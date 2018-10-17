@@ -53,7 +53,7 @@
 #  knowledge of the CeCILL and CeCILL-C licenses and that you accept its terms.
 #
 
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.12)
 cmake_policy(SET CMP0046 OLD)
 
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
