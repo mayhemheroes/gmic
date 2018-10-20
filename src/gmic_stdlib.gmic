@@ -24612,18 +24612,30 @@ gui_merge_layers :
   r $wh0,1,100%,0
 
 _gui_merge_layers :
-  res="" ({'{0,n}'})
-  l.
-    str="$1(" l={size(['$str'])}
-    s +,{'$str'}
-    if {$!>1} repeat $!
-      if {$>!=$!-1" && "same([{$>,^}],['$str'],$l)}
-        l[{$>+1}] s +,{')'} if {$!>1} res={0,t} fi a y endl
-      fi
-      if {narg({'$res'})} break fi
-    done fi rm
-  endl
-  if {narg({'$res'})} u $res else u "${2--1}" fi
+  u {`"
+    s = ['"{n}"']; const ss = size(s);
+    r = vectorss();
+    t = ['$1('];
+    p = q = find(s,t);
+    p>=0?(
+      q+=size(t);
+      while (q<ss && s[q]!=_')',++q);
+      q>=ss?(p = -1):while (q<ss && s[q]==_')',++q);
+    );
+    p>=0?copy(r,s[p + size(t)],q - p - size(t) - 1):(d = ['${2--1}']; copy(r,d,size(d)))"`}
+
+  # res="" ({'{0,n}'})
+  # l.
+  #   str="$1(" l={size(['$str'])}
+  #   s +,{'$str'}
+  #   if {$!>1} repeat $!
+  #     if {$>!=$!-1" && "same([{$>,^}],['$str'],$l)}
+  #       l[{$>+1}] s +,{')'} if {$!>1} res={0,t} fi a y endl
+  #     fi
+  #     if {narg({'$res'})} break fi
+  #   done fi rm
+  # endl
+  # if {narg({'$res'})} u $res else u "${2--1}" fi
 
 # gui_split_preview : "command",_split_type,_split_posx,_split_posy
 # 'split_type' can be { 0=no split | 1=forw. horiz. | 2=forw. vert. | 3=back. horiz. | 4=back. vert. | 5=dupl. left | 6=dupl. top | 7=dupl. bottom | 8=dupl. right | 9=dupl. horiz.l | 10=dupl. vert. | 11=checkered | 12=checkered inv. }
