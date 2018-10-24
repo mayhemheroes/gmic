@@ -4376,51 +4376,6 @@ update_server :
     "  i raw:$source,char v + e[] $_gmic_c\"      [retrieved from archive '\"$source\"']\n\"$_gmic_n v - "\
     "  onfail v + e[] $_gmic_r\"      [error, not reachable!]\n\"$_gmic_n v -"\
     "  endl endl"
-  m "calibrate_name : "\
-    "replace {'_'},32 autocrop 32 "\
-    "in={t} "\
-    "f 'i>=_'A'&&i<=_'Z'?i-_'A'+_'a':i' "\
-    "replace_str <i>color,<i>Color "\
-    "replace_str <i>lineart,<i>Lineart "\
-    "replace_str <i>extrapolated,<i>Extrapolated "\
-    "replace_str [collages],[Collages] "\
-    "replace_str b&amp;w,B&amp;W "\
-    "replace_str clut,CLUT "\
-    "replace_str cmyk,CMYK "\
-    "replace_str crt,CRT "\
-    "replace_str dcp,DCP "\
-    "replace_str faves,Faves "\
-    "replace_str fft,FFT "\
-    "replace_str flickr,Flickr "\
-    "replace_str fov,FOV "\
-    "replace_str fx,FX "\
-    "replace_str g/m,G/M "\
-    "replace_str gimp,GIMP "\
-    "replace_str gold-meinel,Gold-Meinel "\
-    "replace_str google,Google "\
-    "replace_str g\47mic,G\47MIC "\
-    "replace_str haldCLUT,HaldCLUT "\
-    "replace_str hsi,HSI "\
-    "replace_str hsl,HSL "\
-    "replace_str hsv,HSV "\
-    "replace_str html,HTML "\
-    "replace_str julia,Julia "\
-    "replace_str lab,Lab "\
-    "replace_str r/b,R/B "\
-    "replace_str rgb,RGB "\
-    "replace_str pca,PCA "\
-    "replace_str richardson-lucy,Richardson-Lucy "\
-    "replace_str roddy,Roddy "\
-    "replace_str ycbcr,YCbCr "\
-    "replace_str jpeg,JPEG "\
-    "replace_str \" x-\",\" X-\" "\
-    "replace_str \" y-\",\" Y-\" "\
-    "replace_str xy-,XY- "\
-    "f 'y==0&&i>=_'a'&&i<=_'z'?i-_'a'+_'A':i' "\
-    "if {['{t}']=='Sep'} replace_str Sep,sep fi "\
-    "if {['{t}']=='Note'} replace_str Note,note fi "\
-    "if {['{t}']=='Url'} replace_str Url,url fi "\
-    "out={t} if {['$in']!=['$out']} v + e[] $_gmic_m\"       Warning: String '\"$in\"' substituted by '\"$out\"'\"$_gmic_n v - fi"
 
   # Copy latest command definitions on G'MIC server if necessary.
   v + e[] "> Upload latest version ("${-strver}") of commands on G'MIC server.\n" v -
@@ -4506,7 +4461,7 @@ update_server :
           autocrop[0] 32
 
           if {$!>1} # Found new filter.
-            -calibrate_name[0] +replace[0] 32,{'~'}
+            _update_server_calibrate_name[0] +replace[0] 32,{'~'}
             name=$path{t} rm.
             merge_request=1
             nb_filters+=1
@@ -4522,7 +4477,7 @@ update_server :
             autocrop 32
             if {w} # Folder name specified after the underscore(s).
               varname {0,t} locale_${}=$locale # Keep locale of each folder
-              -calibrate_name
+              _update_server_calibrate_name[0]
               replace 32,{'~'}
               path=$path{0,t}/
             fi
@@ -4541,7 +4496,7 @@ update_server :
           if {$!>=3} if {{1,@0}==_'='}
             if {0,find(crop(),'"<span "')<0}
               rows[0] 1,100%
-              -calibrate_name[0]
+              _update_server_calibrate_name[0]
               i[0] ({':'};32) i[2] (32)
             fi
           fi fi
@@ -4722,6 +4677,40 @@ update_server :
 
   # All done, exiting.
   rm v + e[] $_gmic_g"> All done !\n"$_gmic_n
+
+_update_server_calibrate_name :
+  replace {'_'},{'" "'} autocrop {'" "'}
+  in={t}
+
+  s +,{'.'} s +,{':'} s +,{';'}
+
+  repeat $! l[$>]
+    s +,{'" "'} s +,{'"/"'} s +,{'"["'} s +,{'"<"'} s +,{'"("'} s +,{'">"'}
+    first={"ind = 0; while (ind<l && (c = lowercase(i[#ind,0]); !((c>=_'a' && c<=_'z') || (c>=_'0' && c<=_'9'))), ++ind); ind<l?ind:0"}
+    f "x+y?i:( # Capitalize all words except a few ones
+       s = crop();
+       s=='a' || s=='an' || s=='and' ||
+       s=='as' || s=='at' || s=='but' || s=='by' ||
+       s=='for' || s=='from' || s=='in' || s=='into' ||
+       s=='like' || s=='near' || s=='nor' || s=='of' || s=='off' ||
+       s=='on' || s=='onto' || s=='or' || s=='over' || s=='past' ||
+       s=='per' || s=='than' || s=='the' || s=='to' || s=='up' ||
+       s=='upon' || s=='via' || s=='with'?i:uppercase(i)
+       )"
+    f[$first,-1] "x+y?i:uppercase(i)" # Always capitalize the first and last words.
+    a y
+  endl done
+  a y
+  replace_str "<I>","<i>"
+  replace_str "<Img Src","<img src"
+  replace_str "<A Href","<a href"
+  replace_str "<a Href","<a href"
+  replace_str ".Gpl",".gpl"
+  if {['{t}']=='Sep'} replace_str "Sep","sep" fi
+  if {['{t}']=='Note'} replace_str "Note","note" fi
+  if {['{t}']=='Url'} replace_str "Url","url" fi
+  out={t}
+  if {['$in']!=['$out']} v + e[] $_gmic_m"       Warning: String '"$in"' substituted by '"$out"'"$_gmic_n v - fi
 
 _update_server_move :
   if {!narg($_nbm)} _nbm=0 fi
@@ -25338,8 +25327,7 @@ fx_gmicky_preview :
 #@gui : url = link{"View latest major changelog (2.0.0)","https://discuss.pixls.us/t/release-of-gmic-2-0-0"}
 
 #@gui Privacy notice : _none_, _none_
-#@gui : note = note{"
-#@gui : This plugin may download up-to-date filter definitions from the <a href="https://gmic.eu">gmic.eu</a> server.\n\n
+#@gui : note = note{"This plugin may download up-to-date filter definitions from the <a href="https://gmic.eu">gmic.eu</a> server.\n\n
 #@gui : It is the case when first launched after a fresh installation, and periodically
 #@gui : with a frequency which can be set in the settings dialog.
 #@gui : The user should be aware that the following information may be retrieved
@@ -27733,10 +27721,10 @@ fx_freaky_bw_preview :
 #@gui : Stretch contrast = choice("None","Automatic","Automatic &amp; Contrast Mask","Manual Controls")
 #@gui : note = note ("To activate the sliders below chose 'Manual Controls'")
 #@gui : sep = separator()
-#@gui : Ln amplitude = float(2,0,60)
-#@gui : Ln size = float(6,0,64)
-#@gui : Ln neightborhood-smoothness = float(5,0,40)
-#@gui : Ln average-smoothness = float(20,0,40)
+#@gui : LN amplitude = float(2,0,60)
+#@gui : LN size = float(6,0,64)
+#@gui : LN neightborhood-smoothness = float(5,0,40)
+#@gui : LN average-smoothness = float(20,0,40)
 #@gui : sep = separator(), note = note("<small>Author: <i>PhotoComiX</i>.      Latest update: <i>2011/05/04</i>.</small>")
 #@gui : url = link(0,"Forum thread about the filter discussion","http://gimpchat.com/viewtopic.php?f=10&t=914")
 fx_ink_wash :
