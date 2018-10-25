@@ -778,12 +778,12 @@ CImg<T>& inpaint(const CImg<t>& mask, const unsigned int method) {
   do {
     is_pixel = false;
 
-    if (depth()==1) { // 2d image.
+    if (depth()==1) { // 2D image.
       CImg_3x3(M,t);
       CImg_3x3(I,T);
 
       switch (method) {
-      case 0: // Average 2d (low-connectivity).
+      case 0: // Average 2D (low-connectivity).
         cimg_for3x3(_mask,x,y,0,0,M,t) if (Mcc && (!Mcp || !Mpc || !Mnc || !Mcn)) {
           is_pixel = true;
           const unsigned int wcp = Mcp?0U:1U, wpc = Mpc?0U:1U, wnc = Mnc?0U:1U, wcn = Mcn?0U:1U,
@@ -796,7 +796,7 @@ CImg<T>& inpaint(const CImg<t>& mask, const unsigned int method) {
         }
         break;
 
-      case 1: // Average 2d (high-connectivity).
+      case 1: // Average 2D (high-connectivity).
         cimg_for3x3(_mask,x,y,0,0,M,t) if (Mcc && (!Mpp || !Mcp || !Mnp || !Mpc || !Mnc || !Mpn || !Mcn || !Mnn)) {
           is_pixel = true;
           const unsigned int
@@ -813,7 +813,7 @@ CImg<T>& inpaint(const CImg<t>& mask, const unsigned int method) {
         }
         break;
 
-      case 2: { // Median 2d (low-connectivity).
+      case 2: { // Median 2D (low-connectivity).
         T J[4];
         cimg_for3x3(_mask,x,y,0,0,M,t)
           if (Mcc && (!Mcp || !Mpc || !Mnc || !Mcn)) {
@@ -831,7 +831,7 @@ CImg<T>& inpaint(const CImg<t>& mask, const unsigned int method) {
           }
       } break;
 
-      default: // Median 2d (high-connectivity).
+      default: // Median 2D (high-connectivity).
         T J[8];
         cimg_for3x3(_mask,x,y,0,0,M,t)
           if (Mcc && (!Mpp || !Mcp || !Mnp || !Mpc || !Mnc || !Mpn || !Mcn || !Mnn)) {
@@ -853,12 +853,12 @@ CImg<T>& inpaint(const CImg<t>& mask, const unsigned int method) {
           }
       }
 
-    } else { // 3d image.
+    } else { // 3D image.
       CImg_3x3x3(M,t);
       CImg_3x3x3(I,T);
 
       switch (method) {
-      case 0: // Average 3d (low-connectivity).
+      case 0: // Average 3D (low-connectivity).
         cimg_for3x3x3(_mask,x,y,z,0,M,t)
           if (Mccc && (!Mccp || !Mcpc || !Mpcc || !Mncc || !Mcnc || !Mccn)) {
             is_pixel = true;
@@ -875,7 +875,7 @@ CImg<T>& inpaint(const CImg<t>& mask, const unsigned int method) {
           }
         break;
 
-      case 1: // Average 3d (high-connectivity).
+      case 1: // Average 3D (high-connectivity).
         cimg_for3x3x3(_mask,x,y,z,0,M,t)
           if (Mccc && (!Mppp || !Mcpp || !Mnpp || !Mpcp || !Mccp || !Mncp || !Mpnp || !Mcnp ||
                        !Mnnp || !Mppc || !Mcpc || !Mnpc || !Mpcc || !Mncc || !Mpnc || !Mcnc ||
@@ -911,7 +911,7 @@ CImg<T>& inpaint(const CImg<t>& mask, const unsigned int method) {
           }
         break;
 
-      case 2: { // Median 3d (low-connectivity).
+      case 2: { // Median 3D (low-connectivity).
         T J[6];
         cimg_for3x3x3(_mask,x,y,z,0,M,t)
           if (Mccc && (!Mccp || !Mcpc || !Mpcc || !Mncc || !Mcnc || !Mccn)) {
@@ -931,7 +931,7 @@ CImg<T>& inpaint(const CImg<t>& mask, const unsigned int method) {
           }
       } break;
 
-      default: { // Median 3d (high-connectivity).
+      default: { // Median 3D (high-connectivity).
         T J[26];
         cimg_for3x3x3(_mask,x,y,z,0,M,t)
           if (Mccc && (!Mppp || !Mcpp || !Mnpp || !Mpcp || !Mccp || !Mncp || !Mpnp || !Mcnp ||
@@ -995,7 +995,7 @@ CImg<T>& inpaint_patch(const CImg<t>& mask, const unsigned int patch_size=11,
                        const bool is_blend_outer=false) {
   if (depth()>1)
     throw CImgInstanceException(_cimg_instance
-                                "inpaint_patch(): Instance image is volumetric (should be 2d).",
+                                "inpaint_patch(): Instance image is volumetric (should be 2D).",
                                 cimg_instance);
   if (!is_sameXYZ(mask))
     throw CImgArgumentException(_cimg_instance
@@ -3672,7 +3672,7 @@ gmic& gmic::display_plots(const CImgList<T>& images, const CImgList<char>& image
   return *this;
 }
 
-// Display selected 3d objects.
+// Display selected 3D objects.
 //-----------------------------
 template<typename T>
 gmic& gmic::display_objects3d(const CImgList<T>& images, const CImgList<char>& images_names,
@@ -3680,7 +3680,7 @@ gmic& gmic::display_objects3d(const CImgList<T>& images, const CImgList<char>& i
                               const CImg<unsigned char>& background3d,
                               const bool exit_on_anykey) {
   if (!images || !images_names || !selection) {
-    print(images,0,"Display 3d object [].");
+    print(images,0,"Display 3D object [].");
     return *this;
   }
   const bool is_verbose = verbosity>=0 || is_debug;
@@ -3689,13 +3689,13 @@ gmic& gmic::display_objects3d(const CImgList<T>& images, const CImgList<char>& i
   CImg<char> error_message(1024);
   cimg_forY(selection,l) if (!gmic_check(images[selection[l]]).is_CImg3d(true,error_message))
     error(images,0,0,
-          "Command 'display3d': Invalid 3d object [%d] in selected image%s (%s).",
+          "Command 'display3d': Invalid 3D object [%d] in selected image%s (%s).",
           selection[l],gmic_selection_err.data(),error_message.data());
 
   // Check for available display.
   if (!is_display_available) {
     cimg::unused(background3d,exit_on_anykey);
-    print(images,0,"Display 3d object%s (skipped, no display %s).",
+    print(images,0,"Display 3D object%s (skipped, no display %s).",
           gmic_selection.data(),cimg_display?"available":"support");
     return *this;
   }
@@ -3723,7 +3723,7 @@ gmic& gmic::display_objects3d(const CImgList<T>& images, const CImgList<char>& i
     CImg<float> vertices(img,false), pose3d(4,4,1,1,0);
     pose3d(0,0) = pose3d(1,1) = pose3d(2,2) = pose3d(3,3) = 1;
     vertices.CImg3dtoobject3d(primitives,colors,opacities,false);
-    print(images,0,"Display 3d object [%u] = '%s' (%d vertices, %u primitives).",
+    print(images,0,"Display 3D object [%u] = '%s' (%d vertices, %u primitives).",
           uind,images_names[uind].data(),
           vertices.width(),primitives.size());
     disp.set_title("%s (%d vertices, %u primitives)",
@@ -3735,7 +3735,7 @@ gmic& gmic::display_objects3d(const CImgList<T>& images, const CImgList<char>& i
                                 light3d_x,light3d_y,light3d_z,
                                 specular_lightness3d,specular_shininess3d,
                                 true,pose3d,exit_on_anykey);
-    print(images,0,"Selected 3d pose = [ %g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g ].",
+    print(images,0,"Selected 3D pose = [ %g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g ].",
           pose3d[0],pose3d[1],pose3d[2],pose3d[3],
           pose3d[4],pose3d[5],pose3d[6],pose3d[7],
           pose3d[8],pose3d[9],pose3d[10],pose3d[11],
@@ -4949,7 +4949,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                 gmic_argument_text_printed(),gmic_selection.data(),
                                 "Add image%s");
 
-        // Add 3d objects together, or shift a 3d object.
+        // Add 3D objects together, or shift a 3D object.
         if (!std::strcmp("add3d",command)) {
           gmic_substitute_args(true);
           float tx = 0, ty = 0, tz = 0;
@@ -4960,7 +4960,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                           &tx,&ty,&end)==2 ||
               cimg_sscanf(argument,"%f,%f,%f%c",
                           &tx,&ty,&tz,&end)==3) {
-            print(images,0,"Shift 3d object%s by displacement (%g,%g,%g).",
+            print(images,0,"Shift 3D object%s by displacement (%g,%g,%g).",
                   gmic_selection.data(),
                   tx,ty,tz);
             cimg_forY(selection,l) {
@@ -4970,7 +4970,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               catch (CImgException&) {
                 if (!img.is_CImg3d(true,&(*message=0)))
                   error(images,0,0,
-                        "Command 'add3d': Invalid 3d object [%d], in selected image%s (%s).",
+                        "Command 'add3d': Invalid 3D object [%d], in selected image%s (%s).",
                         uind,gmic_selection_err.data(),message.data());
                 else throw;
               }
@@ -4980,7 +4980,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                      sep==']' &&
                      (ind=selection2cimg(indices,images.size(),images_names,"add3d")).height()==1) {
             const CImg<T> img0 = gmic_image_arg(*ind);
-            print(images,0,"Merge 3d object%s with 3d object [%u].",
+            print(images,0,"Merge 3D object%s with 3D object [%u].",
                   gmic_selection.data(),*ind);
             cimg_forY(selection,l) {
               const unsigned int _ind = selection[l];
@@ -4993,12 +4993,12 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               catch (CImgException&) {
                 if (!img0.is_CImg3d(true,&(*message=0)))
                   error(images,0,0,
-                        "Command 'add3d': Invalid 3d object [%u], in specified "
+                        "Command 'add3d': Invalid 3D object [%u], in specified "
                         "argument '%s' (%s).",
                         *ind,gmic_argument_text(),message.data());
                 else if (!img.is_CImg3d(true,message))
                   error(images,0,0,
-                        "Command 'add3d': Invalid 3d object [%d], in selected image%s (%s).",
+                        "Command 'add3d': Invalid 3D object [%d], in selected image%s (%s).",
                         _ind,gmic_selection_err.data(),message.data());
                 else throw;
               }
@@ -5010,7 +5010,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             g_list.assign();
             ++position;
           } else {
-            print(images,0,"Merge 3d object%s.",
+            print(images,0,"Merge 3D object%s.",
                   gmic_selection.data());
             if (selection) {
               g_list.assign(selection.height());
@@ -5022,7 +5022,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   const unsigned int uind = selection[l];
                   if (!images[uind].is_CImg3d(true,&(*message=0)))
                     error(images,0,0,
-                          "Command 'add3d': Invalid 3d object [%d], in selected image%s (%s).",
+                          "Command 'add3d': Invalid 3D object [%d], in selected image%s (%s).",
                           uind,gmic_selection_err.data(),message.data());
                 }
                 throw;
@@ -5815,7 +5815,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           ++position; continue;
         }
 
-        // Check validity of 3d object.
+        // Check validity of 3D object.
         if (!is_get && !std::strcmp("check3d",command)) {
           gmic_substitute_args(false);
           bool is_full_check = true;
@@ -5824,7 +5824,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             ++position;
           } else is_full_check = true;
           if (is_very_verbose)
-            print(images,0,"Check validity of 3d object%s (%s check)",
+            print(images,0,"Check validity of 3D object%s (%s check)",
                   gmic_selection.data(),
                   is_full_check?"full":"fast");
           cimg_forY(selection,l) {
@@ -5838,7 +5838,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 cimg::mutex(29,0);
               }
               error(images,0,0,
-                    "Command 'check3d': Invalid 3d object [%d], in selected image%s (%s).",
+                    "Command 'check3d': Invalid 3D object [%d], in selected image%s (%s).",
                     uind,gmic_selection_err.data(),message.data());
             }
           }
@@ -5908,7 +5908,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           is_released = false; ++position; continue;
         }
 
-        // Set 3d object color.
+        // Set 3D object color.
         if (!std::strcmp("color3d",command) || !std::strcmp("col3d",command)) {
           gmic_substitute_args(false);
           float R = 200, G = 200, B = 200;
@@ -5923,12 +5923,12 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                           &R,&G,&B,&opacity,&end)==4) {
             const bool set_opacity = (opacity>=0);
             if (set_opacity)
-              print(images,0,"Set colors of 3d object%s to (%g,%g,%g), with opacity %g.",
+              print(images,0,"Set colors of 3D object%s to (%g,%g,%g), with opacity %g.",
                     gmic_selection.data(),
                     R,G,B,
                     opacity);
             else
-              print(images,0,"Set color of 3d object%s to (%g,%g,%g).",
+              print(images,0,"Set color of 3D object%s to (%g,%g,%g).",
                     gmic_selection.data(),
                     R,G,B);
             cimg_forY(selection,l) {
@@ -5938,7 +5938,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               catch (CImgException&) {
                 if (!img.is_CImg3d(true,&(*message=0)))
                   error(images,0,0,
-                        "Command 'color3d': Invalid 3d object [%d], "
+                        "Command 'color3d': Invalid 3D object [%d], "
                         "in selected image%s (%s).",
                         uind,gmic_selection_err.data(),message.data());
                 else throw;
@@ -6326,7 +6326,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           is_released = false; ++position; continue;
         }
 
-        // Set double-sided mode for 3d rendering.
+        // Set double-sided mode for 3D rendering.
         if (!std::strcmp("double3d",item)) {
           gmic_substitute_args(false);
           bool state = true;
@@ -6335,7 +6335,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             ++position;
           } else state = true;
           is_double3d = state;
-          print(images,0,"%s double-sided mode for 3d rendering.",
+          print(images,0,"%s double-sided mode for 3D rendering.",
                 is_double3d?"Enable":"Disable");
           continue;
         }
@@ -6533,7 +6533,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           is_released = true; continue;
         }
 
-        // Display 3d object.
+        // Display 3D object.
         if (!is_get && !std::strcmp("display3d",command)) {
           gmic_substitute_args(true);
           exit_on_anykey = 0;
@@ -6910,7 +6910,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           sep = *formula = *indices = 0;
           float fact = 1;
           if (cimg_sscanf(argument,"'%4095[^']'%c",formula,&end)==1) {
-            print(images,0,"Build 3d elevation of image%s, with elevation formula '%s'.",
+            print(images,0,"Build 3D elevation of image%s, with elevation formula '%s'.",
                   gmic_selection.data(),
                   formula);
             cimg_forY(selection,l) {
@@ -6925,7 +6925,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           } else if (cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]%c%c",indices,&sep,&end)==2 &&
                      sep==']' &&
                      (ind=selection2cimg(indices,images.size(),images_names,"elevation3d")).height()==1) {
-            print(images,0,"Build 3d elevation of image%s, with elevation map [%u].",
+            print(images,0,"Build 3D elevation of image%s, with elevation map [%u].",
                   gmic_selection.data(),
                   *ind);
             CImg<typename CImg<T>::Tfloat> elev;
@@ -6942,12 +6942,12 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           } else {
             if (cimg_sscanf(argument,"%f%c",
                             &fact,&end)==1) {
-              print(images,0,"Build 3d elevation of image%s, with elevation factor %g.",
+              print(images,0,"Build 3D elevation of image%s, with elevation factor %g.",
                     gmic_selection.data(),
                     fact);
               ++position;
             } else
-              print(images,0,"Build 3d elevation of image%s.",
+              print(images,0,"Build 3D elevation of image%s.",
                     gmic_selection.data());
             cimg_forY(selection,l) {
               CImg<T>& img = gmic_check(images[selection[l]]);
@@ -7162,14 +7162,14 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           ++position; continue;
         }
 
-        // Set 3d focale.
+        // Set 3D focale.
         if (!std::strcmp("focale3d",item)) {
           gmic_substitute_args(false);
           value = 700;
           if (cimg_sscanf(argument,"%lf%c",&value,&end)==1) ++position;
           else value = 700;
           focale3d = (float)value;
-          print(images,0,"Set 3d focale to %g.",
+          print(images,0,"Set 3D focale to %g.",
                 focale3d);
           continue;
         }
@@ -7644,7 +7644,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Matrix inverse.
         gmic_simple_command("invert",invert,"Invert matrix image%s.");
 
-        // Extract 3d isoline.
+        // Extract 3D isoline.
         if (!std::strcmp("isoline3d",command)) {
           gmic_substitute_args(false);
           float x0 = -3, y0 = -3, x1 = 3, y1 = 3, dx = 256, dy = 256;
@@ -7654,7 +7654,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                           &value,&end)==1 ||
               cimg_sscanf(argument,"%lf%c%c",
                           &value,&sep,&end)==2) {
-            print(images,0,"Extract 3d isolines from image%s, using isovalue %g%s.",
+            print(images,0,"Extract 3D isolines from image%s, using isovalue %g%s.",
                   gmic_selection.data(),
                   value,sep=='%'?"%":"");
             cimg_forY(selection,l) {
@@ -7715,7 +7715,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             dx = cimg::round(dx);
             dy = cimg::round(dy);
             strreplace_fw(formula);
-            print(images,0,"Extract 3d isoline %g from formula '%s', in range (%g,%g)-(%g,%g) "
+            print(images,0,"Extract 3D isoline %g from formula '%s', in range (%g,%g)-(%g,%g) "
                   "with size %g%sx%g%s.",
                   value,
                   formula,
@@ -7729,13 +7729,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                x0,y0,x1,y1,(int)dx,(int)dy).move_to(vertices);
             vertices.object3dtoCImg3d(primitives,false).move_to(images);
             primitives.assign();
-            cimg_snprintf(title,_title.width(),"[3d isoline %g of '%s']",value,formula);
+            cimg_snprintf(title,_title.width(),"[3D isoline %g of '%s']",value,formula);
             CImg<char>::string(title).move_to(images_names);
           } else arg_error("isoline3d");
           is_released = false; ++position; continue;
         }
 
-        // Extract 3d isosurface.
+        // Extract 3D isosurface.
         if (!std::strcmp("isosurface3d",command)) {
           gmic_substitute_args(false);
           float x0 = -3, y0 = -3, z0 = -3, x1 = 3, y1 = 3, z1 = 3,
@@ -7746,7 +7746,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                           &value,&end)==1 ||
               cimg_sscanf(argument,"%lf%c%c",
                           &value,&sep,&end)==2) {
-            print(images,0,"Extract 3d isosurface from image%s, using isovalue %g%s.",
+            print(images,0,"Extract 3D isosurface from image%s, using isovalue %g%s.",
                   gmic_selection.data(),
                   value,sep=='%'?"%":"");
             cimg_forY(selection,l) {
@@ -7832,7 +7832,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             dy = cimg::round(dy);
             dz = cimg::round(dz);
             strreplace_fw(formula);
-            print(images,0,"Extract 3d isosurface %g from formula '%s', "
+            print(images,0,"Extract 3D isosurface %g from formula '%s', "
                   "in range (%g,%g,%g)-(%g,%g,%g) with size %g%sx%g%sx%g%s.",
                   value,
                   formula,
@@ -7848,7 +7848,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                   x0,y0,z0,x1,y1,z1,(int)dx,(int)dy,(int)dz).move_to(vertices);
             vertices.object3dtoCImg3d(primitives,false).move_to(images);
             primitives.assign();
-            cimg_snprintf(title,_title.width(),"[3d isosurface %g of '%s']",value,formula);
+            cimg_snprintf(title,_title.width(),"[3D isosurface %g of '%s']",value,formula);
             CImg<char>::string(title).move_to(images_names);
           } else arg_error("isosurface3d");
           is_released = false; ++position; continue;
@@ -8197,14 +8197,14 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           is_released = false; continue;
         }
 
-        // Set 3d light position.
+        // Set 3D light position.
         if (!std::strcmp("light3d",item)) {
           gmic_substitute_args(true);
           float lx = 0, ly = 0, lz = -5e8f;
           sep = *indices = 0;
           if (cimg_sscanf(argument,"%f,%f,%f%c",
                           &lx,&ly,&lz,&end)==3) {
-            print(images,0,"Set 3d light position to (%g,%g,%g).",
+            print(images,0,"Set 3D light position to (%g,%g,%g).",
                   lx,ly,lz);
             light3d_x = lx;
             light3d_y = ly;
@@ -8213,11 +8213,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           } else if (cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]%c%c",indices,&sep,&end)==2 &&
                      sep==']' &&
                      (ind=selection2cimg(indices,images.size(),images_names,"light3d")).height()==1) {
-            print(images,0,"Set 3d light texture from image [%u].",*ind);
+            print(images,0,"Set 3D light texture from image [%u].",*ind);
             light3d.assign(images[*ind],false);
             ++position;
           } else {
-            print(images,0,"Reset 3d light to default.");
+            print(images,0,"Reset 3D light to default.");
             light3d.assign();
             light3d_x = light3d_y = 0; light3d_z = -5e8f;
           }
@@ -8382,7 +8382,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                 gmic_selection.data(),gmic_argument_text_printed(),
                                 "Multiply matrix/vector%s");
 
-        // Set 3d rendering modes.
+        // Set 3D rendering modes.
         if (!std::strcmp("mode3d",item)) {
           gmic_substitute_args(false);
           float mode = 4;
@@ -8391,7 +8391,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               (mode=cimg::round(mode))>=-1 && mode<=5) ++position;
           else mode = 4;
           render3d = (int)mode;
-          print(images,0,"Set static 3d rendering mode to %s.",
+          print(images,0,"Set static 3D rendering mode to %s.",
                 render3d==-1?"bounding-box":
                 render3d==0?"pointwise":render3d==1?"linear":render3d==2?"flat":
                 render3d==3?"flat-shaded":render3d==4?"Gouraud-shaded":
@@ -8407,7 +8407,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               (mode=cimg::round(mode))>=-1 && mode<=5) ++position;
           else mode = -1;
           renderd3d = (int)mode;
-          print(images,0,"Set dynamic 3d rendering mode to %s.",
+          print(images,0,"Set dynamic 3D rendering mode to %s.",
                 renderd3d==-1?"bounding-box":
                 renderd3d==0?"pointwise":renderd3d==1?"linear":renderd3d==2?"flat":
                 renderd3d==3?"flat-shaded":renderd3d==4?"Gouraud-shaded":
@@ -8699,7 +8699,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           continue;
         }
 
-        // Draw 3d object.
+        // Draw 3D object.
         if (!std::strcmp("object3d",command)) {
           gmic_substitute_args(true);
           float x = 0, y = 0, z = 0;
@@ -8766,8 +8766,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               _render3d<=5 && is_zbuffer<=1 && _is_double3d<=1) {
             const CImg<T> img0 = gmic_image_arg(*ind);
 
-            print(images,0,"Draw 3d object [%u] at (%g%s,%g%s,%g) on image%s, with opacity %g, "
-                  "%s rendering, %s-sided mode, %sz-buffer, focale %g, 3d light at (%g,%g,%g) "
+            print(images,0,"Draw 3D object [%u] at (%g%s,%g%s,%g) on image%s, with opacity %g, "
+                  "%s rendering, %s-sided mode, %sz-buffer, focale %g, 3D light at (%g,%g,%g) "
                   "and specular properties (%g,%g)",
                   *ind,
                   x,sepx=='%'?"%":"",
@@ -8791,7 +8791,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             } catch (CImgException&) {
               if (!vertices.is_CImg3d(true,&(*message=0)))
                 error(images,0,0,
-                      "Command 'object3d': Invalid 3d object [%u], specified "
+                      "Command 'object3d': Invalid 3D object [%u], specified "
                       "in argument '%s' (%s).",
                       *ind,gmic_argument_text(),message.data());
               else throw;
@@ -8846,7 +8846,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           if (cimg_sscanf(argument,"%lf%c",
                           &value,&end)==1) ++position;
           else value = 1;
-          print(images,0,"Set opacity of 3d object%s to %g.",
+          print(images,0,"Set opacity of 3D object%s to %g.",
                 gmic_selection.data(),
                 value);
           cimg_forY(selection,l) {
@@ -8856,7 +8856,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             catch (CImgException&) {
               if (!img.is_CImg3d(true,&(*message=0)))
                 error(images,0,0,
-                      "Command 'opacity3d': Invalid 3d object [%d], "
+                      "Command 'opacity3d': Invalid 3D object [%d], "
                       "in selected image%s (%s).",
                       uind,gmic_selection.data(),message.data());
               else throw;
@@ -8922,7 +8922,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                     "Command 'output': File '%s', format does not take any output options (options '%s' specified).",
                     formula,options.data());
 
-            print(images,0,"Output 3d object%s as %s file '%s'.",
+            print(images,0,"Output 3D object%s as %s file '%s'.",
                   gmic_selection.data(),uext.data(),formula);
 
             cimg_forY(selection,l) {
@@ -8937,7 +8937,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               } catch (CImgException&) {
                 if (!vertices.is_CImg3d(true,&(*message=0)))
                   error(images,0,0,
-                        "Command 'output': 3d object file '%s', invalid 3d object [%u] "
+                        "Command 'output': 3D object file '%s', invalid 3D object [%u] "
                         "in selected image%s (%s).",
                         formula,uind,gmic_selection.data(),message.data());
                 else throw;
@@ -10371,7 +10371,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               (!*argy ||
                cimg_sscanf(argy,"%f%c",&cy,&end)==1 ||
                (cimg_sscanf(argy,"%f%c%c",&cy,&sep1,&end)==2 && sep1=='%')) &&
-              interpolation<=2 && boundary<=3) { // 2d rotation
+              interpolation<=2 && boundary<=3) { // 2D rotation
             if (*argx) {
               print(images,0,"Rotate image%s of %g deg., with %s interpolation, %s boundary conditions "
                     "and center at (%g%s,%g%s).",
@@ -10406,7 +10406,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                      (!*argz ||
                       cimg_sscanf(argz,"%f%c",&cz,&end)==1 ||
                       (cimg_sscanf(argz,"%f%c%c",&cz,&sep1,&end)==2 && sep2=='%')) &&
-                     interpolation<=2 && boundary<=3) { // 3d rotation
+                     interpolation<=2 && boundary<=3) { // 3D rotation
             if (*argx) {
               print(images,0,"Rotate image%s around axis (%g,%g,%g) with angle %g deg., %s interpolation, "
                     "%s boundary conditions and center at (%g%s,%g%s,%g%s).",
@@ -10502,13 +10502,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           is_released = false; ++position; continue;
         }
 
-        // Rotate 3d object.
+        // Rotate 3D object.
         if (!std::strcmp("rotate3d",command)) {
           gmic_substitute_args(false);
           float u = 0, v = 0, w = 1, angle = 0;
           if (cimg_sscanf(argument,"%f,%f,%f,%f%c",
                           &u,&v,&w,&angle,&end)==4) {
-            print(images,0,"Rotate 3d object%s around axis (%g,%g,%g), with angle %g deg.",
+            print(images,0,"Rotate 3D object%s around axis (%g,%g,%g), with angle %g deg.",
                   gmic_selection.data(),
                   u,v,w,
                   angle);
@@ -10520,7 +10520,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               catch (CImgException&) {
                 if (!img.is_CImg3d(true,&(*message=0)))
                   error(images,0,0,
-                        "Command 'rotate3d': Invalid 3d object [%d], "
+                        "Command 'rotate3d': Invalid 3D object [%d], "
                         "in selected image%s (%s).",
                         uind,gmic_selection_err.data(),message.data());
                 else throw;
@@ -10557,9 +10557,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                 gmic_selection.data(),gmic_argument_text_printed(),
                                 "Compute sequential bitwise left rotation of image%s");
 
-        // Reverse 3d object orientation.
+        // Reverse 3D object orientation.
         if (!std::strcmp("reverse3d",command)) {
-          print(images,0,"Reverse orientation of 3d object%s.",
+          print(images,0,"Reverse orientation of 3D object%s.",
                 gmic_selection.data());
           cimg_forY(selection,l) {
             const unsigned int uind = selection[l];
@@ -10568,7 +10568,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             catch (CImgException&) {
               if (!img.is_CImg3d(true,&(*message=0)))
                 error(images,0,0,
-                      "Command 'reverse3d': Invalid 3d object [%d], "
+                      "Command 'reverse3d': Invalid 3D object [%d], "
                       "in selected image%s (%s).",
                       uind,gmic_selection_err.data(),message.data());
               else throw;
@@ -11123,7 +11123,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           is_released = false; ++position; continue;
         }
 
-        // Shift 3d object, with opposite displacement.
+        // Shift 3D object, with opposite displacement.
         if (!std::strcmp("sub3d",command)) {
           gmic_substitute_args(false);
           float tx = 0, ty = 0, tz = 0;
@@ -11133,7 +11133,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                           &tx,&ty,&end)==2 ||
               cimg_sscanf(argument,"%f,%f,%f%c",
                           &tx,&ty,&tz,&end)==3) {
-            print(images,0,"Shift 3d object%s with displacement -(%g,%g,%g).",
+            print(images,0,"Shift 3D object%s with displacement -(%g,%g,%g).",
                   gmic_selection.data(),
                   tx,ty,tz);
             cimg_forY(selection,l) {
@@ -11143,7 +11143,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               catch (CImgException&) {
                 if (!img.is_CImg3d(true,&(*message=0)))
                   error(images,0,0,
-                        "Command 'sub3d': Invalid 3d object [%d], in selected image%s (%s).",
+                        "Command 'sub3d': Invalid 3D object [%d], in selected image%s (%s).",
                         uind,gmic_selection_err.data(),message.data());
                 else throw;
               }
@@ -11308,7 +11308,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           is_released = false; ++position; continue;
         }
 
-        // Split 3d objects, into 6 vector images
+        // Split 3D objects, into 6 vector images
         // { header,N,vertices,primitives,colors,opacities }
         if (!std::strcmp("split3d",command)) {
           bool keep_shared = true;
@@ -11317,7 +11317,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             keep_shared = *argument=='1';
             ++position;
           }
-          print(images,0,"Split 3d object%s into 6 property vectors%s.",
+          print(images,0,"Split 3D object%s into 6 property vectors%s.",
                 gmic_selection.data(),
                 keep_shared?"":" and clone shared data");
           unsigned int off = 0;
@@ -11340,7 +11340,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             } catch (CImgException&) {
               if (!img.is_CImg3d(true,&(*message=0)))
                 error(images,0,0,
-                      "Command 'split3d': Invalid 3d object [%d], in selected image%s (%s).",
+                      "Command 'split3d': Invalid 3D object [%d], in selected image%s (%s).",
                       uind - off,gmic_selection_err.data(),message.data());
               else throw;
             }
@@ -11428,7 +11428,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           is_released = false; continue;
         }
 
-        // Input 3d sphere.
+        // Input 3D sphere.
         if (!std::strcmp("sphere3d",item)) {
           gmic_substitute_args(false);
           float radius = 100, recursions = 3;
@@ -11438,18 +11438,18 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                            &radius,&recursions,&end)==2) &&
               recursions>=0) {
             recursions = cimg::round(recursions);
-            print(images,0,"Input 3d sphere, with radius %g and %g recursions.",
+            print(images,0,"Input 3D sphere, with radius %g and %g recursions.",
                   radius,
                   recursions);
             CImg<T>::sphere3d(primitives,radius,(unsigned int)recursions).move_to(vertices);
             vertices.object3dtoCImg3d(primitives,false).move_to(images);
             primitives.assign();
-            CImg<char>::string("[3d sphere]").move_to(images_names);
+            CImg<char>::string("[3D sphere]").move_to(images_names);
           } else arg_error("sphere3d");
           is_released = false; ++position; continue;
         }
 
-        // Set 3d specular light parameters.
+        // Set 3D specular light parameters.
         if (!std::strcmp("specl3d",item)) {
           gmic_substitute_args(false);
           value = 0.15;
@@ -11457,7 +11457,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                           &value,&end)==1 && value>=0) ++position;
           else value = 0.15;
           specular_lightness3d = (float)value;
-          print(images,0,"Set lightness of 3d specular light to %g.",
+          print(images,0,"Set lightness of 3D specular light to %g.",
                 specular_lightness3d);
           continue;
         }
@@ -11469,7 +11469,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                           &value,&end)==1 && value>=0) ++position;
           else value = 0.8;
           specular_shininess3d = (float)value;
-          print(images,0,"Set shininess of 3d specular light to %g.",
+          print(images,0,"Set shininess of 3D specular light to %g.",
                 specular_shininess3d);
           continue;
         }
@@ -11480,7 +11480,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Hyperbolic sine.
         gmic_simple_command("sinh",sinh,"Compute pointwise hyperpolic sine of image%s.");
 
-        // Extract 3d streamline.
+        // Extract 3D streamline.
         if (!std::strcmp("streamline3d",command)) {
           gmic_substitute_args(false);
           unsigned int is_backward = 0, is_oriented_only = 0;
@@ -11511,7 +11511,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                cimg_sscanf(argz,"%f%c",&z,&end)==1 ||
                (cimg_sscanf(argz,"%f%c%c",&z,&sepz,&end)==2 && sepz=='%')) &&
               L>=0 && dl>0 && interpolation<4 && is_backward<=1 && is_oriented_only<=1) {
-            print(images,0,"Extract 3d streamline from image%s, starting from (%g%s,%g%s,%g%s).",
+            print(images,0,"Extract 3D streamline from image%s, starting from (%g%s,%g%s,%g%s).",
                   gmic_selection.data(),
                   x,sepx=='%'?"%":"",
                   y,sepy=='%'?"%":"",
@@ -11559,7 +11559,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                   &is_oriented_only,&end)==9) &&
                      dl>0 && interpolation<4) {
             strreplace_fw(formula);
-            print(images,0,"Extract 3d streamline from formula '%s', starting from (%g,%g,%g).",
+            print(images,0,"Extract 3D streamline from formula '%s', starting from (%g,%g,%g).",
                   formula,
                   x,y,z);
             CImg<T>::streamline((const char *)formula,x,y,z,L,dl,interpolation,
@@ -11578,7 +11578,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             vertices.object3dtoCImg3d(primitives,g_list_uc,false).move_to(images);
             primitives.assign();
             g_list_uc.assign();
-            cimg_snprintf(title,_title.width(),"[3d streamline of '%s' at (%g,%g,%g)]",
+            cimg_snprintf(title,_title.width(),"[3D streamline of '%s' at (%g,%g,%g)]",
                           formula,x,y,z);
             CImg<char>::string(title).move_to(images_names);
           } else arg_error("streamline3d");
@@ -12739,7 +12739,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           is_released = false; continue;
         }
 
-        // Rescale a 3d object (* or /).
+        // Rescale a 3D object (* or /).
         const bool divide3d = !std::strcmp("div3d",command);
         if (!std::strcmp("mul3d",command) || divide3d) {
           gmic_substitute_args(false);
@@ -12751,11 +12751,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               cimg_sscanf(argument,"%f,%f,%f%c",
                           &sx,&sy,&sz,&end)==3) {
             if (divide3d)
-              print(images,0,"Scale 3d object%s with factors (1/%g,1/%g,1/%g).",
+              print(images,0,"Scale 3D object%s with factors (1/%g,1/%g,1/%g).",
                     gmic_selection.data(),
                     sx,sy,sz);
             else
-              print(images,0,"Scale 3d object%s with factors (%g,%g,%g).",
+              print(images,0,"Scale 3D object%s with factors (%g,%g,%g).",
                     gmic_selection.data(),
                     sx,sy,sz);
             cimg_forY(selection,l) {
@@ -12767,7 +12767,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               } catch (CImgException&) {
                 if (!img.is_CImg3d(true,&(*message=0)))
                   error(images,0,0,
-                        "Command '%s3d': Invalid 3d object [%d], in selected image%s (%s).",
+                        "Command '%s3d': Invalid 3D object [%d], in selected image%s (%s).",
                         divide3d?"div":"mul",uind,gmic_selection_err.data(),message.data());
                 else throw;
               }
@@ -13571,8 +13571,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           input_images.insert(1);
         } else if (!cimg::strcasecmp("off",ext) || (file_type && !std::strcmp(file_type,"off"))) {
 
-          // 3d object .off file.
-          print(images,0,"Input 3d object '%s' at position%s",
+          // 3D object .off file.
+          print(images,0,"Input 3D object '%s' at position%s",
                 _filename0,_gmic_selection.data());
 
           if (*options)
