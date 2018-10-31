@@ -11311,49 +11311,53 @@ segment_watershed : check "${1=2}>=0"
     - {1+$min}
   endl done v +
 
-#@cli shape2bump : _resolution>=0,0<=_weight_avg_max_avg<=1,_dilation
+#@cli shape2bump : _resolution>=0,0<=_weight_avg_max_avg<=1,_dilation,_smoothness>=0
 #@cli : Estimate bumpmap from binary shape in selected images.
-#@cli : Default value: 'resolution=256', 'weight_avg_max=0.75' and 'dilation=0'.
-shape2bump : check "isint(${1=256}) && $1>=0 && ${2=0.75}>=0 && $2<=1 && isval(${3=0})"
-  e[^-1] "Estimate bumpmap from binary shape in image$?, using "${"if $1 u \"resolution $1\" else u \"full resolution\" fi"}", avg/max weight $2 and dilation $3."
-  v - repeat $! l[$>]
-    norm > 0
-    siz={[w,h]}
+#@cli : Default value: 'resolution=256', 'weight_avg_max=0.75', 'dilation=0' and 'smoothness=100'.
+shape2bump : check "isint(${1=256}) && $1>=0 && ${2=0.75}>=0 && $2<=1 && isval(${3=0}) && ${4=100}>=0"
+  e[^-1] "Estimate bumpmap from binary shape in image$?, using "${"if $1 u \"resolution $1\" else u \"full resolution\" fi"}", avg/max weight $2, dilation $3 and smoothness $4."
+  v - repeat $!
+    +l[$>]
+      norm > 0
+      siz={[w,h]}
 
-    # Generate skeleton.
-    distance 0 + $3
-    +f. "const boundary = 1; (i>j(-1)&&i>j(1)) || (i>j(0,-1)&&i>j(0,1)) || (i>j(-1,-1)&&i>j(1,1)) || (i>j(-1,1)&&i>j(1,-1))"
+      # Generate skeleton.
+      distance 0 + $3
+      +f. "const boundary = 1; (i>j(-1)&&i>j(1)) || (i>j(0,-1)&&i>j(0,1)) || (i>j(-1,-1)&&i>j(1,1)) || (i>j(-1,1)&&i>j(1,-1))"
 
-    # Downsize for faster computation.
-    is_resized=0
-    if {$1" && "max(w,h)>$1} rr2d $1,$1,0,2 gt. 0 thinning. 1 *.. {$1/max($siz)} is_resized=1 fi
+      # Downsize for faster computation.
+      is_resized=0
+      if {$1" && "max(w,h)>$1} rr2d $1,$1,0,2 gt. 0 thinning. 1 *.. {$1/max($siz)} is_resized=1 fi
 
-    # Generate z-map.
-    +f. 0 .x2
-    f[1] "*if (i,
-      r = i(#0,x,y);
-      ir = floor(r);
-      r2 = r^2;
-      for (q = -ir, q<=ir, ++q,
-        Y = y + q;
-        for (p = -ir, p<=ir, ++p,
-          X = x + p;
-          dist = norm(p,q);
-          if (dist<r,
-            elev = sqrt(r2 - dist^2);
-            i(#2,X,Y) = max(i(#2,X,Y),elev);
-            if ($2<1, i(#3,X,Y) += elev; ++i(#4,X,Y));
-          );
-        )
-      );
-    ); i"
+      # Generate z-map.
+      +f. 0 .x2
+      f[1] "*if (i,
+        r = i(#0,x,y);
+        ir = floor(r);
+        r2 = r^2;
+        for (q = -ir, q<=ir, ++q,
+          Y = y + q;
+          for (p = -ir, p<=ir, ++p,
+            X = x + p;
+            dist = norm(p,q);
+            if (dist<r,
+              elev = sqrt(r2 - dist^2);
+              i(#2,X,Y) = max(i(#2,X,Y),elev);
+              if ($2<1, i(#3,X,Y) += elev; ++i(#4,X,Y));
+            );
+          )
+        );
+      ); i"
 
-    if {$2<1} M={-3,iM} max. 1 /[-2,-1] n. 0,$M j. ..,0,0,0,0,$2
-    else rm[-2,-1]
-    fi
+      if {$2<1} M={-3,iM} max. 1 /[-2,-1] n. 0,$M j. ..,0,0,0,0,$2
+      else rm[-2,-1]
+      fi
+      k.
+      if $is_resized *. {max([$siz]/[w,h])} r $siz,1,1,5 c 0,100% fi
+    endl
+    if $4 M={iM} (1^0^1) r. [0],[0] !=[0] 0 *. [0] smooth.. .,$4,0.1,0 rm. b. 0.5 n. 0,$M endif # Smooth bumpmap
     k.
-    if $is_resized *. {max([$siz]/[w,h])} r $siz,1,1,5 c 0,100% fi
-  endl done v +
+  done v +
 
 #@cli skeleton : _boundary_conditions={ 0=dirichlet | 1=neumann }
 #@cli : Compute skeleton of binary shapes using distance transform and constrained thinning.
@@ -33010,7 +33014,7 @@ fx_equalize_shadow_preview :
 #@gui : note = note{"<small>Parameter <i>Minimal shape area</i> is only active in <i>Multiple colored shapes</i> input mode.</small>"}
 #@gui : Preview Detected Shapes = bool(0)
 #@gui : Erosion / Dilation = float(0,-10,10)
-#@gui : Smoothness = float(2,0,6)
+#@gui : Smoothness = float(3,0,6)
 #@gui : Bump Factor = float(1,-5,5)
 #@gui : Avg / Max Weight = float(1,0,1)
 #@gui : Resolution = choice{4,"Full (Slower)","2048","1024","512","256","128","64 (Faster)"}
@@ -33122,7 +33126,7 @@ fx_illuminate_shape2d_preview_interactive :
         fi
         lightx,lighty={rgb,3.5*(2*[$x/w,$y/h]-1)}
         if {[$ox,$oy,$ob,$olightz]!=[$x,$y,$b,$lightz]}
-          +fx_illuminate_shape2d[normal,rgb] 4,0,${3-6},1,1,""$9,0,${11-15},""${16-25},$lightx,$lighty,$lightz,0,""0,0
+          +fx_illuminate_shape2d[normal,rgb] 4,0,${3-6},1,1,""$9,0,${11-15},""${16-25},$lightx,$lighty,$lightz,$29,""0,0
           +j[background] .,0,0,0,0,1,[alpha],255 rm..
           +r2dx[light_alpha,light_rgb] {light_rgb,8+$lightz*(w-8)} j... .,{[$x,$y]-[w,h]/2},0,0,1,.. rm[-2,-1]
           r. $wsiz,1,100% to. "Light: ("{``{_round([$lightx,$lighty,$lightz],0.1)}}")",2,2,16
@@ -33214,9 +33218,9 @@ _fx_illuminate_shape2d : # Input selection must contains a single image. Output 
     return
   fi
 
-  if {$input_type<=1} shape2bump. {arg($resolution,2048,1024,512,256,128,64)},$weight_avg_max,{$dilation%*max(w,h)} fi
+  if {$input_type<=1} shape2bump. {arg($resolution,2048,1024,512,256,128,64)},$weight_avg_max,{$dilation%*max(w,h)},{$shape_smoothness*50} fi
   if {$input_type<=2}
-    if $shape_smoothness mM={[im,iM]} guided. ..,$shape_smoothness%,100 n. $mM fi
+    if {$input_type==2" && "$shape_smoothness} mM={[im,iM]} guided. ..,$shape_smoothness%,100 n. $mM fi
     *. $bump_factor
   fi
 
