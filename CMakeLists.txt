@@ -7,7 +7,7 @@
 #                 - cmake .
 #                 - make
 #
-#                ( http://gmic.eu )
+#                ( https://gmic.eu )
 #
 #  Author      : Sander Knopper
 #                ( https://github.com/saknopper )
@@ -243,7 +243,7 @@ endif()
 
 # gmic_stdlib.h header
 if(NOT EXISTS ${CMAKE_SOURCE_DIR}/src/gmic_stdlib.h)
-  file(DOWNLOAD http://gmic.eu/gmic_stdlib.h ${CMAKE_SOURCE_DIR}/src/gmic_stdlib.h)
+  file(DOWNLOAD https://gmic.eu/gmic_stdlib.h ${CMAKE_SOURCE_DIR}/src/gmic_stdlib.h)
   file(TOUCH ${CMAKE_SOURCE_DIR}/src/gmic_stdlib.h)
 endif()
 

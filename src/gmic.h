@@ -4,13 +4,13 @@
  #                ( C++ header file )
  #
  #  Description : GREYC's Magic for Image Computing - G'MIC API file
- #                ( http://gmic.eu )
+ #                ( https://gmic.eu )
  #
  #  Note        : Include this file in your C++ source code, if you
  #                want to use the G'MIC interpreter in your own program.
  #
  #  Copyright   : David Tschumperle
- #                ( http://tschumperle.users.greyc.fr/ )
+ #                ( https://tschumperle.users.greyc.fr/ )
  #
  #  Licenses    : This file is 'dual-licensed', you have to choose one
  #                of the two licenses below to apply.

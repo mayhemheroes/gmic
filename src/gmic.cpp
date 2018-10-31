@@ -4,10 +4,10 @@
  #                ( C++ source file )
  #
  #  Description : GREYC's Magic for Image Computing - G'MIC core
- #                ( http://gmic.eu )
+ #                ( https://gmic.eu )
  #
  #  Copyright   : David Tschumperle
- #                ( http://tschumperle.users.greyc.fr/ )
+ #                ( https://tschumperle.users.greyc.fr/ )
  #
  #  Licenses    : This file is 'dual-licensed', you have to choose one
  #                of the two licenses below to apply.
