@@ -153,7 +153,7 @@ PRERELEASE = `date +%y%m%d`
 PRERELEASE_CFLAGS = -Dgmic_prerelease="\\\"$(PRERELEASE)\\\""
 
 # Minimal set of flags mandatory to compile G'MIC.
-MANDATORY_CFLAGS = -Dgmic_build -Dcimg_use_zlib `pkg-config --cflags zlib || echo -I$(USR)/$(INCLUDE)` $(PRERELEASE_CFLAGS) $(EXTRA_CFLAGS)
+MANDATORY_CFLAGS = -Dgmic_build -Dcimg_date=\\\"\\\" -Dcimg_time=\\\"\\\" -Dcimg_use_zlib `pkg-config --cflags zlib || echo -I$(USR)/$(INCLUDE)` $(PRERELEASE_CFLAGS) $(EXTRA_CFLAGS)
 MANDATORY_LIBS = `pkg-config --libs zlib || echo -lz` $(EXTRA_LIBS)
 ifndef NO_SRIPDLIB
 MANDATORY_CFLAGS += -std=c++11 -pedantic
