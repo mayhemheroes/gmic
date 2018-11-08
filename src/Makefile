@@ -672,7 +672,7 @@ do_gmic_stdlib.h:
 #-----------------------
 bashcompletion:
 	@mkdir -p ../resources
-	@\gmic v - gmic_stdlib.gmic raw:gmic_stdlib.gmic,uchar document_gmic bash 2> ../resources/gmic_bashcompletion.sh
+	@\gmic v - gmic_stdlib.gmic raw:gmic_stdlib.gmic,uchar nm gmic document_gmic bash 2> ../resources/gmic_bashcompletion.sh
 	@echo "Bash completion script 'gmic_bashcompletion.sh' has been successfully generated in '../resources/'."
 
 # Man pages
@@ -719,9 +719,9 @@ endif
 	  cp -f ../man/gmic.1.gz $(DESTDIR)$(USR)/share/man/fr/man1/gmic.1.gz; \
 	fi
 	@if [ -f ../resources/gmic_bashcompletion.sh ]; then \
-	  if [ -d /etc/bash_completion.d/ ]; then \
-	    mkdir -p $(DESTDIR)/etc/bash_completion.d/; \
-            cp -f ../resources/gmic_bashcompletion.sh $(DESTDIR)/etc/bash_completion.d/gmic; \
+	  if [ -d /usr/share/bash-completion/completions ]; then \
+	    mkdir -p $(DESTDIR)/usr/share/bash-completion/completions/; \
+            cp -f ../resources/gmic_bashcompletion.sh $(DESTDIR)/usr/share/bash-completion/completions/gmic; \
 	  fi; \
 	  if [ -d /opt/local/etc/bash_completion.d/ ]; then \
             mkdir -p $(DESTDIR)/opt/local/etc/bash_completion.d/; \
