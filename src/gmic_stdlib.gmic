@@ -2354,20 +2354,22 @@ _document_gmic_declaration_bash :
   fi
 
 _document_gmic_footer_bash : skip $1
+
+  str_coms= repeat $_nbcoms str_coms=${str_coms}" "${_coms$>} done
   v +
+  e[] "\tcoms=\""${str_coms}" \"\n"
   e[] "\topts=\"\\" repeat $_nbopts e[] "\t      "${_opts$>}\\ done e[] "\t     \""
-  e[] "\n\tcoms=\"\\" repeat $_nbcoms e[] "\t      "${_coms$>}\\ done e[] "\t     \""
   e[] "\n\tcase \"${prev}\" in"
   repeat $_argcommand  # Regular commands with arguments.
     if {'${_command$>}'!='i'" && "'${_command$>}'!='o'" && "!same('${_command$>}','input',5)" && "!same('${_command$>}','output',6)}
-      e[] "\t\t\""${_command$>}"\" | \"-"${_command$>}"\" | \"--"${_command$>}"\" | \"+"${_command$>}"\")"
-      e[] "\t\tCOMPREPLY=( $(compgen -W \""${_argument$>}"\") )\n\t\treturn 0\n\t\t;;"
+      e[] "\t\t\""${_command$>}"\" | \"-"${_command$>}"\" | \"--"${_command$>}"\" | \"+"${_command$>}"\")\n\t\t    "\
+          "COMPREPLY=( $(compgen -W \""${_argument$>}"\") ); return 0;;"
     fi
   done
   repeat $_shortcut # Shortcut commands (with arguments).
     if {['${_shortcut$>}']!='i'" && "['${_shortcut$>}']!='o'" && "narg(${_argumentlink${_shortcutlink$>}})}
-      e[] "\t\t\""${_shortcut$>}"\" | \"-"${_shortcut$>}"\" | \"--"${_shortcut$>}"\" | \"+"${_shortcut$>}"\")"
-      e[] "\t\tCOMPREPLY=( $(compgen -W \""${_argumentlink${_shortcutlink$>}}"\") )\n\t\treturn 0\n\t\t;;"
+      e[] "\t\t\""${_shortcut$>}"\" | \"-"${_shortcut$>}"\" | \"--"${_shortcut$>}"\" | \"+"${_shortcut$>}"\") "\
+          "COMPREPLY=( $(compgen -W \""${_argumentlink${_shortcutlink$>}}"\") ); return 0;;"
     fi
   done
   e[] "\tesac\n
