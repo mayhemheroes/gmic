@@ -2358,8 +2358,8 @@ _document_gmic_footer_bash : skip $1
 
   str_coms= repeat $_nbcoms str_coms=${str_coms}" "${_coms$>} done
   v +
-  e[] "\tcoms=\""${str_coms}" \"\n"
-  e[] "\topts=\"\\" repeat $_nbopts e[] "\t      "${_opts$>}\\ done e[] "\t     \""
+  e[] "\tcoms=\""${str_coms}" \""
+  e[] "\topts=$(echo \"\$coms\" | sed \"s: \\([^ ]\\+\\): \\1 -\\1 \\+\\1 --\\1:g\")"
   e[] "\n\tcase \"${prev}\" in"
   repeat $_argcommand  # Regular commands with arguments.
     if {'${_command$>}'!='i'" && "'${_command$>}'!='o'" && "!same('${_command$>}','input',5)" && "!same('${_command$>}','output',6)}
@@ -2457,7 +2457,7 @@ _document_gmic_declaration_html :
     _shortcutlink$_shortcut={t}
     _shortcutqualifier$_shortcut=$qualifier
     _shortcut+=1
-  else                                         # Declaration of a regular command.
+  else                                     # Declaration of a regular command.
     _command_name={0,t}
     v +
     e[] ${-eoff}${-doff}"<p style=\"margin-left:20px\"><a id=\""{0,t}"\"><font color=\"#005090\">&nbsp;&nbsp;<b>"{0,t}$qualifier"</b>:</font></a>"
