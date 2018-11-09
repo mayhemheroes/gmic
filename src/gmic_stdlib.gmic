@@ -12087,9 +12087,9 @@ close_binary :
     nm. stroke_radii
 
     # Detect end points.
-    +compose_channels[e_curvatures] max nm. curvatures
     compose_channels[e_smooth_curvatures] max nm[e_smooth_curvatures] smooth_curvatures
-    +f[smooth_curvatures] "i>=("$endpoint_threshold"%)/(max(1,i(#"$stroke_radii"))) || i(#"$curvatures")>=0.25"
+    +compose_channels[e_curvatures] max nm. curvatures
+    f. "i(#"$smooth_curvatures")>=("$endpoint_threshold"%)/(max(1,i(#"$stroke_radii"))) || i>=0.25"
     label_fg. 0,1 nm. keypoints
     if {iM>0}
       {iM},1,1,3,-1 nm. keycoords
@@ -12107,7 +12107,7 @@ close_binary :
         ); ret"
       channels[keycoords] 0,3 # Channels 2,3 = number of connexions and normal angle for each keypoint.
     fi
-    rm[curvatures,smooth_curvatures,stroke_radii,keypoints]
+    rm[smooth_curvatures,stroke_radii,keypoints]
 
     # Estimate point normals.
     if {!narg($keycoords)}
