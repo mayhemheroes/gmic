@@ -11935,13 +11935,11 @@ circle : skip ${4=1},${5=0},${6=0}
   fi
   v - ellipse $1,$2,$3,$3,0,${4--1} v +
 
-#@cli close_binary : 0<=_endpoint_rate<=100,_endpoint_connectivity>=0,_spline_distmax>=0,_segment_distmax>=0,0<=_spline_anglemax<=180,_spline_roundness>=0,_area_min>=0,_allow_self_intersection={ 0 | 1 },0<=_hd_detection_rate<=1,0<=_hd_angle<=180,_hd_grouping_dist>=0,0<=_hd_grouping_angle<=180,0<=_hd_grouping_ratio<=1
+#@cli close_binary : 0<=_endpoint_rate<=100,_endpoint_connectivity>=0,_spline_distmax>=0,_segment_distmax>=0,0<=_spline_anglemax<=180,_spline_roundness>=0,_area_min>=0,_allow_self_intersection={ 0 | 1 }
 #@cli : Automatically close open shapes in binary images (defining white strokes on black background).
-#@cli : Parameter names starting with 'hd_' are related to the hatch detection algorithm. Set 'hd_detection_rate>0' to disable this module.
-#@cli : Default values: 'endpoint_rate=85', 'endpoint_connectivity=2', 'spline_distmax=80', 'segment_distmax=20', 'spline_anglemax=90', 'spline_roundness=1','area_min=100', 'allow_self_intersection=1', 'hd_detection_rate=0', 'hd_angle=25', 'hd_grouping_dist=64', 'hd_grouping_angle=5' and 'hd_grouping_ratio=0.2'.
+#@cli : Default values: 'endpoint_rate=85', 'endpoint_connectivity=2', 'spline_distmax=80', 'segment_distmax=20', 'spline_anglemax=90', 'spline_roundness=1','area_min=100', 'allow_self_intersection=1'.
 close_binary :
   check "${1=85}>=0 && $1<=100 && ${2=2}>=0 && ${3=80}>=0 && ${4=20}>=0 && ${5=90}>=0 && $5<=180 && ${6=1}>=0 && ${7=100}>=0 && isval(${8=1})"
-  check "${9=0}>=0 && $9<=1 && ${10=25}>=0 && $10<=180 && ${11=64}>=0 && ${12=5}>=0 && $12<=180 && ${13=0.2}>=0 && $13<=1"
   e[^-1] "Close open shapes in binary image$?, with endpoint rate $1, endpoint connectivity $2, spline max distance $3, segment max distance $4, spline max angle $5, "\
           "spline roundness $6, area min $7 and self intersections "${"arg 1+!$8,allowed,\"not allowed\""}"."
 
@@ -11955,12 +11953,6 @@ close_binary :
   spline_roundness=$6
   area_min=$7                       # in px
   allow_self_intersections={!!$8}   # 0 or 1
-
-  hd_detection_rate=$9              # in [0,1]
-  hd_angle=$10                      # in deg
-  hd_grouping_dist=$11              # in px
-  hd_grouping_angle=$12             # in deg
-  hd_grouping_ratio=$13             # in [0,1]
 
   # Define useful functions to navigate through edgels.
   _edgel_lib="
@@ -12116,13 +12108,6 @@ close_binary :
       channels[keycoords] 0,3 # Channels 2,3 = number of connexions and normal angle for each keypoint.
     fi
     rm[curvatures,smooth_curvatures,stroke_radii,keypoints]
-
-    # Remove hatch keypoints if requested.
-    if {narg($keycoords)" && "$hd_detection_rate>0}
-      _close_binary[strokes] $endpoint_threshold,$hd_detection_rate,$hd_angle,$hd_grouping_dist,$hd_grouping_angle,$hd_grouping_ratio
-      f[keycoords] "begin(dis = vectors(-1)); P = (I)[0,2]; i(#"$keydiscard",P)?dis:I";
-      rm[keydiscard] discard[keycoords] -1 r[keycoords] {keycoords,[h/4,1,1,4]},-1
-    fi
 
     # Estimate point normals.
     if {!narg($keycoords)}
@@ -12359,267 +12344,6 @@ close_binary :
     rm[strokes]
     nm[new_strokes] $nm
   endl done v +
-
-# Hatches detection system for the 'close_binary' algorithm.
-# Selected input image must be the binary image of strokes (named 'strokes').
-# Return binary image of keypoints to ignore.
-_close_binary :
-  endpoint_threshold=$1
-  hd_detection_rate={max(0.001,1-$2)}
-  hd_angle=$3
-  hd_grouping_dist=$4
-  hd_grouping_angle=$5
-  hd_grouping_ratio=$6
-
-  # Extract primary edgel normals.
-  i[e_normals] 100%,100%,1,4,"
-    N = crop(#"$strokes",x - 1,y - 1,0,0,3,3,1,1,1);
-    N[4]?[ N[5]?-1:0, N[7]?-1:90, N[3]?-1:180, N[1]?-1:270 ]:[-1,-1,-1,-1];
-  "
-  # Smooth edgel normals.
-  f[e_normals] $_edgel_lib"
-    if (i<0,-1,
-      ppos = npos = pos = [ x,y,c ];
-      u = vec(pos);
-      for (t = 1, t<=5, ++t,
-        ppos = previous(#"$strokes",ppos);
-        npos = next(#"$strokes",npos);
-        if (ppos==npos, break());
-        w = exp(-t^2/30);
-        u+=w*vec(npos);
-        u+=w*vec(ppos);
-      );
-      ang = (atan2(u[1],u[0])*180/pi)%360;
-    )"
-
-  # Estimate edgel curvatures (both positive and negative)
-  +f[e_normals] $_edgel_lib"
-    kappa = 0;
-    if (i<0,-1,
-      pos = [ x,y,c ];
-      ppos = previous(#"$strokes",pos);
-      npos = next(#"$strokes",pos);
-      pu = vec(ppos);
-      nu = vec(npos);
-      du = (nu - pu)/2;
-      cr = cross([vec(pos),0],[du,0]);
-      kappa = sign(cr[2])*norm(du);
-    ); kappa"
-  nm. e_curvatures
-
-  # Compute pointwise high curvature points (both positive and negative).
-  +min[e_curvatures] 0 *. -1
-  max[e_curvatures] 0
-  compose_channels[-2,-1] max
-  nm[-2,-1] pos_curvatures,neg_curvatures
-
-  # Detect positive and negative curvature keypoints.
-  l[pos_curvatures]
-    +>= {$endpoint_threshold%} label_fg. 0,1 iM={iM}
-    if {$iM>0}
-      $iM,1,1,3,-1
-      f.. "> # Keep only a single point on connected regions of high curvatures.
-        ret = 0;
-        if (i,
-          j = i - 1;
-          old_max = I[#2,j];
-          kappa = i(#0);
-          if (kappa>old_max[2],
-            I[#2,j] = [ x,y,kappa ];
-            i(#1,old_max[0],old_max[1]) = 0;
-            ret = i;
-          );
-        ); ret"
-    fi
-    k.
-  endl
-
-  l[neg_curvatures]
-    >= {$endpoint_threshold%}
-    f "N = crop(x-1,y-1,3,3,0); i && sum(N)==2"
-    f "N = crop(x-1,y-1,3,3,0); (i && sum(N)==1) || (i && (N[5] || N[7] || N[8]))"
-    label_fg 0 {iM},1,1,3
-    f.. "begin(off = 0); if(i, I[#-1,off++] = [ x,y,-1]); i"
-    k.
-  endl
-  a[-2,-1] x nm. keycoords
-  i[keypoints] [e_normals],[e_normals]
-  f[keycoords] "P = I; i(#-1,P[0],P[1]) = 1 + x; I"
-
-  # Manage visualization.
-  if {narg($_debug)}
-    i[visu] [strokes]
-    vfact=3
-    r[visu] {$vfact*[w,h]},1,3 n. 0,128
-    $vfact,$vfact,1,1,x+y n. 0.6,0.75
-    line. 0,0,{w-2},0,1,0.5 line. 0,0,0,{h-1},1,0.5
-    line. 1,{h-1},{w-1},{h-1},1,1 line. {w-1},0,{w-1},{h-1},1,1
-    r. ..,0,2 *[-2,-1]
-    f[keycoords] "
-      _I = I;
-       P = int("$vfact"*(_I[0,2]+0.5));
-       col = _I[2]>0?[128,255,0]:[255,64,0];
-       r = "$vfact"/2;
-       ellipse(#"$visu",P,r,r,0,0.5,col);
-       I(#-1,P) = [ 255,255,255 ];
-    I"
-  fi
-
-  # Voting process to detect segments.
-  channels[keycoords] 0,1
-  i[vote] {keycoords,[w,w]},1,2
-
-  f[e_normals] $_edgel_lib"
-    const ang_th = cos("$hd_angle"*pi/180);
-    if (i>=0,
-      breakpoint();
-      pos0 = [ x,y,c ];
-      if (!i(#"$keypoints",pos0[0,2]),
-        N0 = vec(pos0);
-
-        # Forward loop.
-        pos = pos0; Lf = Vf = 0;
-        do (
-          N = vec(pos);
-          if (dot(N,N0)>ang_th, ++Vf);
-          ++Lf;
-          pos = next(#"$strokes",pos);
-          Kf = i(#"$keypoints",pos[0],pos[1]);
-          if (Lf>32 && Vf/Lf<0.75, break()); # Allow considerable speedup
-        _(while), !Kf && pos!=pos0
-        );
-
-        # Backward loop.
-        pos = pos0; Lb = Vb = 0;
-        do (
-          pos = previous(#"$strokes,"pos);
-          Kb = i(#"$keypoints",pos[0],pos[1]);
-          if (!Kb,
-            N = vec(pos);
-            if (dot(N,N0)>ang_th, ++Vb);
-            ++Lb;
-          );
-          if (Lb>32 && Vb/Lb<0.75, break()); # Allow considerable speedup
-        _(while), !Kb && pos!=pos0);
-
-        if (Kf && Kb && Kf!=Kb,
-          --Kf; --Kb;
-          critical(
-            i(#"$vote",Kf,Kb,0,0)+=(Vf + Vb)/(Lf + Lb);
-            ++i(#"$vote",Kf,Kb,0,1);
-          );
-        );
-      );
-    ); i"
-  rm[keypoints]
-
-  l[vote] s c max. 1 / >= $hd_detection_rate endl
-  is={is} if {!$is} k[strokes] i[keydiscard] [strokes],[strokes] return fi
-
-  i[keylines] $is,1,1,2
-  f[vote] "begin(off = 0); if (i,I[#-1,off++] = [x,y]); i"
-  rm[vote]
-
-  # Manage visualization (2).
-  if {narg($_debug)}
-    f[keylines] "> # Draw segments on visu image.
-      _I = I;
-      i0 = _I[0];
-      i1 = _I[1];
-      P0 = I[#"$keycoords",i0];
-      P1 = I[#"$keycoords",i1];
-      (P0+=0.5)*=w#"$visu"/w#"$strokes";
-      (P1+=0.5)*=w#"$visu"/w#"$strokes";
-      polygon(#"$visu",2,P0,P1,0.5,[255,255,255]);
-      I"
-  fi
-
-  # Detect groups of hatches.
-  [keylines],1,1,1,-1 a[keylines,-1] c
-  f[keylines] ">"${-math_lib}"
-    is_proj_in(X,A,B) = ( # Test if projected of point X on (AB) belongs to segment [A,B]
-      pX = proj(X,A,B);
-      dot(pX - A,pX - B)<=0;
-    );
-
-    _I = I;
-    i0 = _I[0];
-    i1 = _I[1];
-    parent = _I[2]<0?x:_I[2];
-
-    P0 = I[#"$keycoords",i0];
-    P1 = I[#"$keycoords",i1];
-    dP = P1 - P0;
-    ndP = norm(dP);
-
-    for (k = x + 1, k<w, ++k,
-      breakpoint();
-      _J = I[k]; j0 = _J[0]; j1 = _J[1]; p = _J[2];
-      Q0 = I[#"$keycoords",j0];
-      Q1 = I[#"$keycoords",j1];
-      dQ = Q1 - Q0;
-      ndQ = norm(dQ);
-
-      dist = dist(P0,P1,Q0,Q1);
-      dot = dot(dP,dQ)/(ndP*ndQ);
-      ang = acos(dist>0?abs(dot):(P0==Q0 || P1==Q1)?dot:-dot)*180/pi; # Manage also connected segments (duplicate point).
-      ratio = min(ndP,ndQ)/max(ndP,ndQ);
-      nb_projs = is_proj_in(P0,Q0,Q1) + is_proj_in(P1,Q0,Q1) + is_proj_in(Q0,P0,P1) + is_proj_in(Q1,P0,P1);
-
-      if (dist<="$hd_grouping_dist" && ang<="$hd_grouping_angle" && ratio>="$hd_grouping_ratio" && nb_projs>=1,
-        if (p<0,  # Had no parents before
-          i(k,0,0,2) = parent;
-        _(else),  # Had a parent before
-          minp = min(parent,p);
-          for (l = 0, l<w, ++l, tp = i(l,0,0,2); if (tp==p || tp==parent, i(l,0,0,2) = minp)); # Reparent segments
-          parent = minp;
-        );
-      );
-    );
-    [ i0,i1,parent ]"
-
-  +channels[keylines] 100% histogram. {w},0,{w-1} a[keylines,-1] c
-
-  # Generate map of removed keypoints.
-  i[keydiscard] [strokes],[strokes]
-  f[keylines] "
-     _I = I;
-     i0 = _I[0];
-     i1 = _I[1];
-     par = _I[2];
-     occ = i(par,0,0,3);
-     if (occ>=3,
-       P0 = I[#"$keycoords",i0];
-       P1 = I[#"$keycoords",i1];
-       i(#"$keydiscard",P0) = 1;
-       i(#"$keydiscard",P1) = 1;
-     );
-     I;"
-
-  # Manage visualization (3).
-  if {narg($_debug)}
-    [keylines],1,1,3 rand. 64,255 round. nm. colormap
-    f[keylines] "
-      _I = I;
-      i0 = _I[0];
-      i1 = _I[1];
-      par = _I[2];
-      occ = i(par,0,0,3);
-      if (occ>=3,
-        P0 = I[#"$keycoords",i0];
-        P1 = I[#"$keycoords",i1];
-        (P0+=0.5)*=w#"$visu"/w#"$strokes";
-        (P1+=0.5)*=w#"$visu"/w#"$strokes";
-        col = I(#"$colormap",par);
-        polygon(#"$visu",2,P0,P1,1,col);
-        polygon(#"$visu",2,P0+[1,0],P1+[1,0],1,col);
-        polygon(#"$visu",2,P0+[0,1],P1+[0,1],1,col);
-        polygon(#"$visu",2,P0+[1,1],P1+[1,1],1,col);
-      ); I"
-    -d
-  fi
-
-  k[strokes,keydiscard]
 
 #@cli ellipse : x[%],y[%],R[%],r[%],_angle,_opacity,_pattern,_color1,... : (+)
 #@cli : Draw specified colored ellipse on selected images.
