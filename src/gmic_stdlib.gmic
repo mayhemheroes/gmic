@@ -12027,8 +12027,8 @@ close_binary :
           npos = next(#"$strokes",npos);
           if (ppos==npos, break());
           w = exp(-t^2/30);
-          u+=w*vec(npos);
           u+=w*vec(ppos);
+          u+=w*vec(npos);
         );
         ang = (atan2(u[1],u[0])*180/pi)%360;
       )"
@@ -12036,7 +12036,7 @@ close_binary :
     # Estimate edgel curvature.
     +f[e_normals] $_edgel_lib"
       const boundary = 1;
-      i<-1?0:(
+      i<-1?-2:(
         pos = [ x,y,c ];
         ppos = previous(#"$strokes",pos);
         npos = next(#"$strokes",pos);
@@ -12044,12 +12044,33 @@ close_binary :
         nu = vec(npos);
         du = (nu - pu)/2;
         cr = cross([vec(pos),0],[du,0]);
-        cr[2]>=0?norm(du):0;
+        norm(du)*sign(cr[2]);
       )"
     nm. e_curvatures
 
+    # Smooth edgel curvature.
+    +f[e_curvatures] $_edgel_lib"
+      const boundary = 1;
+      i<-1?-2:(
+        ppos = npos = pos = [ x,y,c ];
+        val = i; sumw = 0;
+        for (t = 1, t<=5, ++t,
+          ppos = previous(#"$strokes",ppos);
+          npos = next(#"$strokes",npos);
+          if (ppos==npos, break());
+          w = exp(-t^2/30);
+          val+=w*i(ppos[0],ppos[1],0,ppos[2]);
+          val+=w*i(npos[0],npos[1],0,npos[2]);
+          sumw+=2*w;
+        );
+        val/sumw;
+      )"
+    nm. e_smooth_curvatures
+
     # Detect end points.
+    max[e_curvatures,e_smooth_curvatures] 0
     +compose_channels[e_curvatures] max nm. curvatures
+    compose_channels[e_smooth_curvatures] max nm[e_smooth_curvatures] smooth_curvatures
     +>=[curvatures] {$endpoint_threshold%}
     label_fg. 0,1 nm. keypoints
     if {iM>0}
@@ -12068,7 +12089,7 @@ close_binary :
         ); ret"
       channels[keycoords] 0,3 # Channels 2, 3 = number of connexions and normal angle for each keypoint.
     fi
-    rm[curvatures,keypoints]
+    rm[curvatures,smooth_curvatures,keypoints]
 
     # Remove hatch keypoints if requested.
     if {narg($keycoords)" && "$hd_detection_rate>0}
