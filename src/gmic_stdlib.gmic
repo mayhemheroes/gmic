@@ -12067,6 +12067,33 @@ close_binary :
       )"
     nm. e_smooth_curvatures
 
+    # Estimate stroke radius.
+    +distance[strokes] 0
+    f. "
+      i<1-0.01||i>1+0.01?0:(
+        p = x; q = y; d = 1;
+        for (is_better = 1, is_better && d<32,
+          next_p = p;
+          next_q = q;
+          is_better = 0;
+          pp = p - 1;
+          np = p + 1;
+          pq = q - 1;
+          nq = q + 1;
+          (nd = i(pp,pq))>d?(d = nd; next_p = pp; next_q = pq; is_better = 1);
+          (nd = i(p, pq))>d?(d = nd; next_p = p;  next_q = pq; is_better = 1);
+          (nd = i(np,pq))>d?(d = nd; next_p = np; next_q = pq; is_better = 1);
+          (nd = i(pp,q))>d?(d = nd; next_p = pp; next_q = q; is_better = 1);
+          (nd = i(np,q))>d?(d = nd; next_p = np; next_q = q; is_better = 1);
+          (nd = i(pp,nq))>d?(d = nd; next_p = pp; next_q = nq; is_better = 1);
+          (nd = i(p, nq))>d?(d = nd; next_p = p;  next_q = nq; is_better = 1);
+          (nd = i(np,nq))>d?(d = nd; next_p = np; next_q = nq; is_better = 1);
+          p = next_p;
+          q = next_q;
+        );
+        d)"
+    nm. stroke_radii
+
     # Detect end points.
     +compose_channels[e_curvatures] max nm. curvatures
     compose_channels[e_smooth_curvatures] max nm[e_smooth_curvatures] smooth_curvatures
@@ -12086,9 +12113,9 @@ close_binary :
             ret = 1;
           );
         ); ret"
-      channels[keycoords] 0,3 # Channels 2, 3 = number of connexions and normal angle for each keypoint.
+      channels[keycoords] 0,3 # Channels 2,3 = number of connexions and normal angle for each keypoint.
     fi
-    rm[curvatures,smooth_curvatures,keypoints]
+    rm[curvatures,smooth_curvatures,stroke_radii,keypoints]
 
     # Remove hatch keypoints if requested.
     if {narg($keycoords)" && "$hd_detection_rate>0}
