@@ -8218,19 +8218,21 @@ expand_z : check "$1>=0 && ${2=1}>=0 && $2<=3"
 #@cli : Default value: 'extract_xyz_coordinates=0'.
 #@cli : $ image.jpg +blur 3 quantize. 4,0 +extract_region[0] [1],0,1,3
 extract_region : check ${"is_image_arg $1"}" && isval(${2=0})"
-  e[^-1] "Extract pixels of image$? for labels [${3--1}] in image $1, with"${"arg 1+!!$2,out"}" coordinates."
-  v - $=arg pass$1 mv. 0 repeat {$!-1} l[0,{1+$<}]
-    repeat {$#-2}
-      {1,[1,whd,1,s+($2?3:0)]}
-      f[0] ">begin(k = 0);
-             if (i=="${arg{3+$>}}",
-               if ($2,
-                 I[#-1,k++] = [ I(#1),x,y,z ],
-                 I[#-1,k++] = I(#1));
-             );
-             end(resize(#-1,1,k,1,s#-1,0));
-             i"
-    done
+  if {$#<3} e[0--3] "Extract pixels of image$? for labels [] in image $1, with"${"arg 1+!!$2,out"}" coordinates -> no labels provided, ignoring." return fi
+  e[^-1] "Extract pixels of image$? for labels {${3--1}} in image $1, with"${"arg 1+!!$2,out"}" coordinates."
+  v - pass$1 mv. 0 repeat {$!-1} l[0,{1+$<}]
+    1,16,1,{s+($2?3:0)} if {$#>3} .x{$#-3} fi
+    f[0] ">"${-math_lib}"
+      begin(
+        const N = iM + 1;  # Number of labels
+        R = [ ${3--1} ];   # Requested labels
+        hash = vectorN(0); # Correspondence table
+        for (k = 0, k<size(R), ++k, hash[R[k]] = k + 2);
+      );
+      (ind = hash[i])>0?(
+        $2?dar_insert(#ind,[ I(#1),x,y,z ]):dar_insert(#ind,I(#1));
+      ); i;
+      end(for (k = 2, k<l, ++k, resize(#k,1,dar_size(#k),1,-100,0)))"
     rm[1]
   endl done rm[0] v +
 
@@ -19275,7 +19277,8 @@ math_lib :
     if (_dar_pos<=_dar_siz,
       _dar_siz>=h(#ind) - 1?resize(#ind,1,_dar_siz*2 + 2,1,s#ind,0);
       for (_dar_c = 0, _dar_c<s#ind, ++_dar_c, copy(i(#ind,_dar_pos + 1,0,0,_dar_c),i(#ind,_dar_pos,0,0,_dar_c),_dar_siz - _dar_pos));
-      copy(i[#ind,_dar_pos],elt,max(1,size(elt)),h(#ind),1);
+      unref(_dar_elt); _dar_elt = elt;
+      copy(i[#ind,_dar_pos],_dar_elt,max(1,size(_dar_elt)),h(#ind),1);
       (dar_size(ind#)) = ++_dar_siz;
     );
   );
@@ -19283,7 +19286,8 @@ math_lib :
   dar_insert(ind,elt) = ( # Inserts new element 'elt' at the end of dynamic array #ind.
     _dar_siz = dar_size(#ind);
     _dar_siz>=h(#ind) - 1?resize(#ind,1,_dar_siz*2 + 2,1,s#ind,0);
-    copy(i[#ind,_dar_siz],elt,max(1,size(elt)),h(#ind),1);
+    unref(_dar_elt); _dar_elt = elt;
+    copy(i[#ind,_dar_siz],_dar_elt,max(1,size(_dar_elt)),h(#ind),1);
     (dar_size(ind#)) = ++_dar_siz;
   );
 
@@ -24217,6 +24221,7 @@ x_waves :
   sh. 8,{7+3*i[6]},0,0 r. 3,{h/3},1,1,-1
   (0,1,0;1,0,1;0,1,0) /. 2
   ball[] 20,200,255,128,1,0.7,3.5
+
   0 $w,$w .
   l3d {$w/2},-200,-1000 sl3d 0.4 ss3d 0.8 f3d 500 time0=$|
   do
