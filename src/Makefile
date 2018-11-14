@@ -141,7 +141,7 @@ STRIP = strip
 endif
 
 ifndef QMAKE
-QMAKE=qmake
+QMAKE = qmake
 endif
 
 #--------------------------------------------------------
