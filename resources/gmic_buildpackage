@@ -51,6 +51,17 @@ if [ "$OSTYPE" == "msys" ]; then
     echo
     echo " - Build G'MIC packages for Windows ($BITS bits)."
 
+    # Input sources.
+    cd $HOME
+    rm -rf gmic gmic-qt gmic_gimp_qt *.iss
+    mkdir gmic
+    cp -rf /e/work/src/gmic/resources/gmic_instimg*.bmp $HOME
+    cp -rf /e/work/src/gmic/resources/CeCILL.rtf $HOME
+    cp -rf /e/work/src/gmic-qt $HOME
+    cp -rf /e/work/src/gmic/src $HOME/gmic
+    cp -rf /e/work/src/gmic-community/libcgmic/*gmic* $HOME/gmic/src
+    cp -rf /e/work/src/zart $HOME/gmic/
+
     # Get version number.
     cd $HOME/gmic/src
     RELEASE0=`grep "#define gmic_version" gmic.h | tail -c5`
@@ -73,18 +84,10 @@ if [ "$OSTYPE" == "msys" ]; then
     else SUFFIX=_pre;
     fi
 
-    # Clean old packages and input sources.
+    # Delete old packages.
     cd $HOME
-    rm -rf gmic gmic-qt gmic_gimp_qt gmic_*${SVERSION}${SUFFIX}*_win${BITS}* gmic-*${SVERSION}${SUFFIX}*-win${BITS}* *.iss
-    mkdir gmic
-    cp -rf /e/work/src/gmic/resources/gmic_instimg*.bmp $HOME
-    cp -rf /e/work/src/gmic/resources/CeCILL.rtf $HOME
-    cp -rf /e/work/src/gmic-qt $HOME
-    cp -rf /e/work/src/gmic/src $HOME/gmic
-    cp -rf /e/work/src/gmic-community/libcgmic/*gmic* $HOME/gmic/src
-    cp -rf /e/work/src/zart $HOME/gmic/
     cp -rf /e/work/src/gmic/resources/gmic_film_cluts.gmz $HOME/build${BITS}-gimp-qt
-    rm -rf $HOME/build${BITS}-gimp-qt/update*.gmic
+    rm -rf $HOME/build${BITS}-gimp-qt/update*.gmic gmic_*${SVERSION}${SUFFIX}*_win${BITS}* gmic-*${SVERSION}${SUFFIX}*-win${BITS}*
 
     echo " - Release number : $SVERSION$SUFFIX (GIMP $GIMPVER)."
 
