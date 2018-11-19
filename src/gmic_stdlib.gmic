@@ -1750,7 +1750,7 @@ dh :
 
 #@cli display_histogram : _width>=0,_height>=0,_clusters>0,_min_value[%],_max_value[%],_show_axes={ 0 | 1 },_expression.
 #@cli : Render a channel-by-channel histogram.
-#@cli : If selected image has several slices, the rendering is performed for all input slices.
+#@cli : If selected images have several slices, the rendering is performed for all input slices.
 #@cli : 'expression' is a mathematical expression used to transform the histogram data for visualization purpose.
 #@cli : (eq. to 'dh').
 #@cli : if specified 'width' or 'height' is '0', then image size is set to half the screen size.
@@ -1979,7 +1979,7 @@ dq :
   _display_quiver $*
 
 #@cli display_quiver : _size_factor>0,_arrow_size>=0,_color_mode={ 0=monochrome | 1=grayscale | 2=color }
-#@cli : Render selected image of 2D vectors as a field of 2D arrows.
+#@cli : Render selected images of 2D vectors as a field of 2D arrows.
 #@cli : (eq. to 'dq').
 #@cli : Default values: 'size_factor=16', 'arrow_size=1.5' and 'color_mode=1'.
 #@cli : $ image.jpg +luminance gradient[-1] xy rv[-2,-1] *[-2] -1 a[-2,-1] c crop 60,10,90,30 +display_quiver[1] ,
@@ -2053,7 +2053,7 @@ dt :
   _display_tensors $*
 
 #@cli display_tensors : _size_factor>0,_ellipse_size>=0,_color_mode={ 0=monochrome | 1=grayscale | 2=color },_outline>=0
-#@cli : Render selected image of tensors as a field of 2D ellipses.
+#@cli : Render selected images of tensors as a field of 2D ellipses.
 #@cli : (eq. to 'dt').
 #@cli : Default values: 'size_factor=16', 'ellipse_size=1.5', 'color_mode=2' and 'outline=2'.
 #@cli : $ image.jpg diffusiontensors 0.1,0.9 resize2dx 32 +display_tensors 64,2
@@ -3259,7 +3259,7 @@ _outputx :
 #@cli : $ command "average : pass$""1 add[^-1] [-1] remove[-1] div 2" sample ? +mirror y +average[0] [1]
 
 #@cli plot : _plot_type,_vertex_type,_xmin,_xmax,_ymin,_ymax,_exit_on_anykey={ 0 | 1 } : 'formula',_resolution>=0,_plot_type,_vertex_type,_xmin,xmax,_ymin,_ymax,_exit_on_anykey={ 0 | 1 } : (+)
-#@cli : Display selected image or formula in an interactive viewer (use the instant display window [0] if opened).
+#@cli : Display selected images or formula in an interactive viewer (use the instant display window [0] if opened).
 #@cli : 'plot_type' can be { 0=none | 1=lines | 2=splines | 3=bar }.
 #@cli : 'vertex_type' can be { 0=none | 1=points | 2,3=crosses | 4,5=circles | 6,7=squares }.
 #@cli : 'xmin','xmax','ymin','ymax' set the coordinates of the displayed xy-axes.
@@ -5535,7 +5535,7 @@ argmin :
 #@cli / : eq. to 'div'. : (+)
 
 #@cli div : value[%] : [image] : 'formula' : (no arg) : (+)
-#@cli : Divide selected image by specified value, image or mathematical expression,
+#@cli : Divide selected images by specified value, image or mathematical expression,
 #@cli : or compute the pointwise quotient of selected images.
 #@cli : (eq. to '/').
 #@cli : $ image.jpg div '1+abs(cos(x/10)*sin(y/10))'
@@ -5706,7 +5706,7 @@ mul_complex :
 #@cli ^ : eq. to 'pow'. : (+)
 
 #@cli pow : value[%] : [image] : 'formula' : (no arg) : (+)
-#@cli : Raise selected image to the power of specified value, image or mathematical
+#@cli : Raise selected images to the power of specified value, image or mathematical
 #@cli : expression, or compute the pointwise sequential powers of selected images.
 #@cli : (eq. to '^').
 #@cli : $ image.jpg div 255 +pow 0.5 mul 255
@@ -7204,7 +7204,7 @@ replace_color : check "$1>=0 && $2>=0"
   endl done v +
 
 #@cli retinex : _value_offset>0,_colorspace={ hsi | hsv | lab | lrgb | rgb | ycbcr },0<=_min_cut<=100,0<=_max_cut<=100,_sigma_low>0,_sigma_mid>0,_sigma_high>0
-#@cli : Apply multi-scale retinex algorithm on selected image to improve color consistency.
+#@cli : Apply multi-scale retinex algorithm on selected images to improve color consistency.
 #@cli : (as described in the page http://www.ipol.im/pub/art/2014/107/).
 #@cli : Default values: 'offset=1', 'colorspace=hsv', 'min_cut=1', 'max_cut=1', 'sigma_low=15','sigma_mid=80' and 'sigma_high=250'.
 retinex : check "${1=5}>0 && ${3=1}>=0 && $3<=100 && ${4=1}>=0 && $4<=100 && ${5=15}>0 && ${6=80}>0 && ${7=250}>0" skip "${2=hsv}"
@@ -9020,13 +9020,93 @@ upscale_smart : skip ${2=100%},${3=100%} check "${4=2}>=0 && ${5=0.4}>=0 && $5<=
   endl done v +
 
 #@cli warp : [warping_field],_mode,_interpolation,_boundary_conditions,_nb_frames>0 : (+)
-#@cli : Warp selected image with specified displacement field.
+#@cli : Warp selected images with specified displacement field.
 #@cli : 'mode' can be { 0=backward-absolute | 1=backward-relative | 2=forward-absolute | 3=forward-relative }.
 #@cli : 'interpolation' can be { 0=nearest-neighbor | 1=linear | 2=cubic }.
 #@cli : 'boundary_conditions' can be { 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }.
 #@cli : Default values: 'mode=0', 'interpolation=1', 'boundary_conditions=1' and 'nb_frames=1'.
 #@cli : $ image.jpg 100%,100%,1,2,'X=x/w-0.5;Y=y/h-0.5;R=(X*X+Y*Y)^0.5;A=atan2(Y,X);130*R*if(c==0,cos(4*A),sin(8*A))' warp[-2] [-1],1,1,0 quiver[-1] [-1],10,1,1,1,100
 #@cli : $$
+
+#@cli warp_patch : [warping_field],patch_size>=0,_std_factor>0,_boundary_conditions.
+#@cli : Patch-warp selected images, with specified displacement field (backward-absolute mode) and patch size.
+#@cli : Argument 'std_factor' sets the std of the gaussian weights for the patch overlap, equal to 'std = std_factor*patch_size'.
+#@cli : 'boundary_conditions' can be { 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }.
+#@cli : Default values: 'std_factor=0.3' and 'boundary_conditions=3'.
+warp_patch : check ${is_image_arg\ $1}" && isint(${2=3}) && $2>=0 && isval(${3=0.3}) && $3>0 && isint(${4=3}) && $4>=0 && $4<=3"
+  e[^-1] "Patch-warp image$? with backward-absolute displacement field $1, patch size $2, std factor $3 and "${"arg 1+$4,dirichlet,neumann,periodic,mirror"}" boundary conditions."
+  v - if {$2<=1} pass$1 warp[^-1] .,0 rm. v + return fi
+  repeat $! pass$1 l[$>,-1]
+    [0],[0],[0],1,1 a[0,-1] c # Add weighting channel
+    100%,100%,100%,{0,s}
+
+    if {1,s>=3} # 3D version
+      f[1] "*
+        begin(
+          const p = $2;
+          const stdf = $3;
+          const boundary = $4;
+          const ppp = p^3;
+          const p1 = int(p/2);
+          const p2 = p - p1 - 1;
+          void_return = vectors();
+
+          # Pre-compute gaussian weights.
+          if (stdf<5,
+            weights = vectorppp();
+            offw = 0;
+            for (zw = -p1, zw<=p2, ++zw,
+              for (yw = -p1, yw<=p2, ++yw,
+                for (xw = -p1, xw<=p2, ++xw,
+                  weights[offw++] = exp(-(xw^2 + yw^2)/(2*(stdf*p)^2));
+                );
+              );
+            );
+          );
+        );
+
+        u = i(x,y,z,0);
+        v = i(x,y,z,1);
+        w = i(x,y,z,2);
+        patch = crop(#0,u - p1, v - p1,w - p1,p,p,p,boundary);
+        stdf<5?
+          draw(#2,patch,x - p1,y - p1,z - p1,0,p,p,p,s#0,-1,weights):
+          draw(#2,patch,x - p1,y - p1,z - p1,0,p,p,p,s#0,-1);
+        void_return"
+    else # 2D version
+      f[1] "*
+        begin(
+          const p = $2;
+          const stdf = $3;
+          const boundary = $4;
+          const pp = p^2;
+          const p1 = int(p/2);
+          const p2 = p - p1 - 1;
+          void_return = vectors();
+
+          # Pre-compute gaussian weights.
+          if (stdf<5,
+            weights = vectorpp();
+            offw = 0;
+            for (yw = -p1, yw<=p2, ++yw,
+              for (xw = -p1, xw<=p2, ++xw,
+                weights[offw++] = exp(-(xw^2 + yw^2)/(2*(stdf*p)^2));
+              );
+            );
+          );
+        );
+
+        u = i(x,y,z,0);
+        v = i(x,y,z,1);
+        patch = crop(#0,u - p1, v - p1,p,p,boundary);
+        stdf<5?
+          draw(#2,patch,x - p1,y - p1,0,0,p,p,1,s#0,-1,weights):
+          draw(#2,patch,x - p1,y - p1,0,0,p,p,1,s#0,-1);
+        void_return"
+    fi
+
+    s. c,-{0,s-1} /[-2,-1] k.
+  endl done v +
 
 #---------------------------------
 #
@@ -9402,7 +9482,7 @@ deinterlace : skip ${1=0}
 #@cli : $ image.jpg +denoise 5,5,8
 
 #@cli denoise_haar : _threshold>=0,_nb_scales>=0,_cycle_spinning>0
-#@cli : Denoise selected image using haar-wavelet thresholding with cycle spinning.
+#@cli : Denoise selected images using haar-wavelet thresholding with cycle spinning.
 #@cli : Set 'nb_scales==0' to automatically determine the optimal number of scales.
 #@cli : Default values: 'threshold=1.4', 'nb_scale=0' and 'cycle_spinning=10'.
 #@cli : $ image.jpg noise 20 cut 0,255 +denoise_haar[-1] 0.8
@@ -9500,7 +9580,7 @@ denoise_patchpca : check "${1=1.8} && $1>=0 && isint(${2=7}) && $2>0 && isint(${
 #@cli : $ image.jpg +dilate 10
 
 #@cli dilate_circ : _size>=0,_boundary_conditions,_is_normalized={ 0 | 1 }
-#@cli : Apply circular dilation of selected image by specified size.
+#@cli : Apply circular dilation of selected images by specified size.
 #@cli : Default values: 'boundary_conditions=1' and 'is_normalized=0'.
 #@cli : $ image.jpg +dilate_circ 7
 dilate_circ : check $1>=0 skip ${2=1},${3=0}
@@ -9509,7 +9589,7 @@ dilate_circ : check $1>=0 skip ${2=1},${3=0}
   v - shape_circle $1 dilate[^-1] .,$2,$3 rm. v +
 
 #@cli dilate_oct : _size>=0,_boundary_conditions,_is_normalized={ 0 | 1 }
-#@cli : Apply octagonal dilation of selected image by specified size.
+#@cli : Apply octagonal dilation of selected images by specified size.
 #@cli : Default values: 'boundary_conditions=1' and 'is_normalized=0'.
 #@cli : $ image.jpg +dilate_oct 7
 dilate_oct : check $1>=0 skip ${2=1},${3=0}
@@ -10683,13 +10763,13 @@ syntexturize_patchmatch : check "${1=100%}>0 && ${2=$1}>0 && isint(${3=0}) && $3
       # Synthesis.
       psize={-2,min(w,h,$4)}
       repeat {1+$6*$<}
-        +_syntexturize_patchmatch.. .,{int(max(3,$5*$scale%))}
+        +warp_patch.. .,{int(max(3,$5*$scale%))}
         patchmatch. ...,$psize,$psize,1,4,4,0,.. rm..
       done
       rm..
 
     done
-    _syntexturize_patchmatch.. .,$5
+    warp_patch.. .,$5
     rm. r $width,$height,1,100%,0,0,0.5,0.5
   endl done v +
 
@@ -14736,7 +14816,7 @@ spline3d : check ${13=128}>=2
 
 #@cli sprite3d
 #@cli : Convert selected images as 3D sprites.
-#@cli : Selected image with alpha channels are managed.
+#@cli : Selected images with alpha channels are managed.
 #@cli : $ image.jpg sprite3d
 sprite3d :
   e[^-1] "Convert image$? as 3D sprites."
@@ -15298,7 +15378,7 @@ apply_timeout :
 
 #@cli check3d : _is_full_check={ 0 | 1 } : (+)
 #@cli : Check validity of selected 3D vector objects, and display an error message
-#@cli : if one of the selected image is not a valid 3D vector object.
+#@cli : if one of the selected images is not a valid 3D vector object.
 #@cli : Full 3D object check is slower but more precise.
 #@cli : Default value: 'is_full_check=1'.
 
@@ -15764,7 +15844,7 @@ img2ascii : skip "${1= !\042#$%&\047()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRS
   endl
   w={-2,w} h={-2,h}
 
-  # Transform selected image to ascii art.
+  # Transform selected images to ascii art.
   repeat {$!-2} l[$>,-2,-1]
     luminance[0] n[0] 0,255
     nw={0,round(w/$w,1,1)}
@@ -17295,7 +17375,7 @@ spherize : check "${1=50%}>=0 && ${3=0}>=0 && ${6=1}>0 && isint(${8=1}) && $8>=0
   endl done v +
 
 #@cli symmetrize : _x[%],_y[%],_angle,_boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror },_is_antisymmetry={ 0 | 1 },_swap_sides={ 0 | 1 }
-#@cli : Symmetrize selected image regarding specified axis.
+#@cli : Symmetrize selected images regarding specified axis.
 #@cli : Default values: 'x=y=50%', 'angle=90', 'boundary_conditions=3', 'is_antisymmetry=0' and 'swap_sides=0'.
 #@cli : $ image.jpg +symmetrize 50%,50%,45 +symmetrize[-1] 50%,50%,-45
 symmetrize : skip ${1=50%},${2=50%},${3=90},${4=3},${5=0},${6=0}
@@ -19172,7 +19252,7 @@ img2hex :
   u {t} rm. r. $whds,-1 v +
 
 #@cli img2str
-#@cli : Return the content of the latest of the selected image as a special G'MIC input string.
+#@cli : Return the content of the latest of the selected images as a special G'MIC input string.
 img2str :
   v -
   u "("
@@ -19218,7 +19298,7 @@ hex2img8 :
   mv. 0 done v +
 
 #@cli is_3d
-#@cli : Return 1 if all of the selected image are 3D objects, 0 otherwise.
+#@cli : Return 1 if all of the selected images are 3D objects, 0 otherwise.
 is_3d :
   v - u 1 l check3d 1 onfail u 0 endl v +
 
@@ -19777,9 +19857,9 @@ toc :
   e[^-1] "Elapsed time: "${}" s".
 
 #@cli uchar2base64 : _encoding={ 0=base64 | 1=base64url }
-#@cli : Encode the values of the latest of the selected image as a base64-encoded string.
+#@cli : Encode the values of the latest of the selected images as a base64-encoded string.
 #@cli : The string can be decoded using command 'base642uchar'.
-#@cli : Selected image must have values that are integers in [0,255].
+#@cli : Selected images must have values that are integers in [0,255].
 #@cli : Default values: 'encoding=0'.
 uchar2base64 : skip "${1=0}"
   v -
