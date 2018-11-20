@@ -9940,18 +9940,43 @@ _ihaar_z : # Inverse haar transform along the z-axis.
   if {d%2} v + error "Command 'ihaar': Invalid image depth="{h}" (is not even)." fi
   s z,2 r 100%,100%,200% (-1/1) r. {-2,w},{-2,h} *[-2,-1] + / {sqrt(2)}
 
-#@gmic ilaplacian
-#@gmic : Compute the inverse of the selected Laplacian images, using a simple Poisson solver in Fourier space.
-#@gmic : Estimated inversions are not exact, and resulting pixel values are zero-centered.
+#@gmic ilaplacian : nb_iterations>=0,_time_step>0,_[initial_estimate]
+#@gmic : Invert selected Laplacian images.
+#@gmic : If given 'nb_iterations' is '0', inversion is done in Fourier space (single iteration),
+#@gmic : otherwise by applying 'nb_iterations' of a Laplacian-inversion PDE flow (with specified 'time_step').
+#@gmic : Note that the resulting inversions are just estimation of possible/approximated solutions.
+#@gmic : Default values: 'nb_iterations=0','time_step=5' and '[initial_estimated]=(undefined)'.
 #@gmic : $ image.jpg +laplacian +ilaplacian[-1]
-ilaplacian :
-  e[^-1] "Invert Laplacian image$?."
-  v - repeat $! l[$>]
-    fft
-    100%,100%,1,1,"2*(cos(x*2*pi/w) + cos(y*2*pi/h)) - 4" =. 1
-    /[-3,-2] . rm.
-    = 0 ifft rm.
-  endl done v +
+ilaplacian : check "${1=0}>=0 && ${2=5}>=0" skip "${3=}"
+  v - is_estimate=${"is_image_arg $3"} nb_iter={round($1)}
+  if {!$nb_iter} # Inversion in Fourier space
+    if $is_estimate
+      v + e[0--4] "Invert Laplacian image$? in Fourier space, with initial estimate $3." v -
+      pass$3 1 ia=${-average_colors} rm.
+    else
+      v + e[0--4] "Invert Laplacian image$? in Fourier space." v -
+      ia=0
+    fi
+    repeat $! l[$>]
+      fft 100%,100%,1,1,"2*(cos(x*2*pi/w) + cos(y*2*pi/h)) - 4" =. 1
+      /[-3,-2] . rm.
+      = 0 ifft rm.
+    endl done + 'begin(S=resize([$ia],s,0));S'
+
+  else # Inversion with PDE-flow
+    if $is_estimate
+      v + e[0--4] "Invert Laplacian image$? using $1 iterations of PDE flow, with time step $2 and initial estimate $3." v -
+      repeat $! pass$3 0 l[$>,-1]
+        repeat $1 +laplacian. -. ... *. {10/max(abs(im),abs(iM))} +[^0] done k.
+      endl done
+    else
+      v + e[0--4] "Invert Laplacian image$? using $1 iterations of PDE flow, with time step $2." v -
+      repeat $! l[$>]
+        +f 0 repeat $1 +laplacian. -. ... *. {10/max(abs(im),abs(iM))} +[^0] done k.
+      endl done
+    fi
+  fi
+  v +
 
 #@cli inn
 #@cli : Compute gradient-directed 2nd derivative of image(s).
@@ -10484,7 +10509,7 @@ periodize_poisson :
   v - repeat $! l[$>]
     s c repeat $! l[$>]
       mM={[im,iM]} sum={0,ia}
-      laplacian ilaplacian + $sum c $mM
+      laplacian ilaplacian 0 + $sum c $mM
     endl done a c
   endl done v +
 
@@ -18003,7 +18028,7 @@ blend_seamless : check "${2=0}>=0 && ${3=100%}>=0" skip ${1=0}
       g[0] x,-1 g[1] y,-1 +
 
       # Inverse Laplacian and renormalize
-      ilaplacian
+      ilaplacian 0
       +fc. $avg
       +[-2,-1]
       c 0,255
@@ -27553,7 +27578,7 @@ fx_freaky_bw :
     f.. "i - i(x-1,y,0,0)"
     f. "i - i(x,y-1,0,0)"
     +[-2,-1]
-    ilaplacian.
+    ilaplacian. 0
     shrink_xy. 1 +. $ia n. 0,255
 
     # Merge result with original color image.
