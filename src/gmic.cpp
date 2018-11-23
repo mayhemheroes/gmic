@@ -4603,7 +4603,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         default :
 
           // Extract command name.
-          // (faster than 'err = cimg_sscanf(item,"%255[a-zA-Z_0-9]%c%c",command,&sep0,&sep1);').
+          // (same as but faster than 'err = cimg_sscanf(item,"%255[a-zA-Z_0-9]%c%c",command,&sep0,&sep1);').
           const char *ps = item;
           char *pd = command;
           char *const pde = _command.end() - 1;
@@ -4613,8 +4613,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             else break;
           }
           if (pd!=command) {
-            ++err;
             *pd = 0;
+            ++err;
             if (*ps) {
               sep0 = *(ps++);
               ++err;
@@ -4648,8 +4648,42 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       if (is_command) {
         sep0 = sep1 = 0;
         strreplace_fw(item);
-        err = cimg_sscanf(item,"%255[^[]%c%255[a-zA-Z_0-9.eE%^,:+-]%c%c",
-                          command,&sep0,s_selection,&sep1,&end);
+
+        // Extract selection.
+        // (same as but faster than 'err = cimg_sscanf(item,"%255[^[]%c%255[a-zA-Z_0-9.eE%^,:+-]%c%c",
+        //                                             command,&sep0,s_selection,&sep1,&end);
+        const char *ps = item;
+        char *pd = command;
+        char *const pde = _command.end() - 1;
+        for (err = 0; *ps && *ps!='[' && pd<pde; ++ps) *(pd++) = *ps;
+        if (pd!=command) {
+          *pd = 0;
+          ++err;
+          if (*ps) {
+            sep0 = *(ps++);
+            ++err;
+            if (*ps) {
+              const char *pde2 = _s_selection.end() - 1;
+              for (pd = s_selection; *ps && pd<pde2; ++ps) {
+                const char c = *ps;
+                if ((c>='a' && c<='z') || (c>='A' && c<='Z') || (c>='0' && c<='9') ||
+                    c=='_' || c=='.' || c=='e' || c=='E' || c=='%' || c=='^' || c==','
+                    || c==':' || c=='+' || c=='-') *(pd++) = c;
+                else break;
+              }
+              if (pd!=s_selection) {
+                *pd = 0;
+                ++err;
+                if (*ps) {
+                  sep1 = *(ps++);
+                  ++err;
+                  if (*ps) ++err;
+                }
+              }
+            }
+          }
+        }
+
         const unsigned int l_command = err==1?(unsigned int)std::strlen(command):0;
         if (err==1 && l_command>=2 && command[l_command - 1]=='.') { // Selection shortcut
           err = 4; sep0 = '['; sep1 = ']'; *s_selection = '-';
