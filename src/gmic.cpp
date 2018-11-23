@@ -4601,7 +4601,27 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         case '<' : case '=' : case '>' :
           is_command = _gmic_eok(1) || ((item[1]==*item || item[1]=='=') && _gmic_eok(2)); break;
         default :
-          err = cimg_sscanf(item,"%255[a-zA-Z_0-9]%c%c",command,&sep0,&sep1);
+
+          // Extract command name.
+          // (faster than 'err = cimg_sscanf(item,"%255[a-zA-Z_0-9]%c%c",command,&sep0,&sep1);').
+          const char *ps = item;
+          char *pd = command;
+          char *const pde = _command.end() - 1;
+          for (err = 0; *ps && pd<pde; ++ps) {
+            const char c = *ps;
+            if ((c>='a' && c<='z') || (c>='A' && c<='Z') || (c>='0' && c<='9') || c=='_') *(pd++) = c;
+            else break;
+          }
+          if (pd!=command) {
+            ++err;
+            *pd = 0;
+            if (*ps) {
+              sep0 = *(ps++);
+              ++err;
+              if (*ps) { sep1 = *(ps++); ++err; }
+            }
+          }
+
           is_command = err==1 || (err==2 && sep0=='.') || (err==3 && (sep0=='[' || (sep0=='.' && sep1=='.')));
           is_command&=*item<'0' || *item>'9';
           if (is_command) { // Look for a builtin command
