@@ -4635,7 +4635,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           err = 4; sep0 = '['; sep1 = ']'; *s_selection = '-';
           if (command[l_command - 2]!='.') { s_selection[1] = '1'; command[l_command - 1] = 0; }
           else if (l_command>=3 && command[l_command - 3]!='.') { s_selection[1] = '2'; command[l_command - 2] = 0; }
-          else if (l_command>=4) { s_selection[1] = '3'; command[l_command - 3] = 0; }
+          else if (l_command>=4 && command[l_command - 4]!='.') { s_selection[1] = '3'; command[l_command - 3] = 0; }
+          else { is_command = false; ind_custom = ~0U; *s_selection = 0; }
           s_selection[2] = 0;
         }
         if (err==1) { // No selection -> all images
