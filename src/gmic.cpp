@@ -14289,6 +14289,15 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
   } catch (CImgException &e) {
     const char *const e_ptr = e.what() + (!std::strncmp(e.what(),"[gmic_math_parser] ",19)?19:0);
     CImg<char> error_message(e_ptr,(unsigned int)std::strlen(e_ptr) + 1);
+
+    const char *const s_fopen = "cimg::fopen(): Failed to open file '";
+    const unsigned int l_fopen = std::strlen(s_fopen);
+    if (!std::strncmp(error_message,s_fopen,l_fopen) &&
+        !std::strcmp(error_message.end() - 18,"' with mode 'rb'.")) {
+      error_message[error_message.width() - 18] = 0;
+      error(images,0,0,"Unknown filename '%s'.",error_message.data(l_fopen));
+    }
+
     for (char *str = std::strstr(error_message,"CImg<"); str; str = std::strstr(str,"CImg<")) {
       str[0] = 'g'; str[1] = 'm'; str[2] = 'i'; str[3] = 'c';
     }
