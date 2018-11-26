@@ -6648,7 +6648,7 @@ _apply_channels : check "isint(${3=0}) && $3>=0 && $3<=2"
   v +
 
 _ac :
-  whs={w},{h},1,{s} ${1--1} k[0] r $whs,0
+  whds={w},{h},{d},{s} ${1--1} k[0] r $whds,0
 
 _ac_all : _p="" _f="" _b="" _s=0,100%
 
@@ -29006,21 +29006,31 @@ fx_transfer_rgb_preview :
     rm.
   endl done fi
 
-#@gui Transfer Colors [Histogram] : fx_transfer_histogram, fx_transfer_histogram(1)+
+#@gui Transfer Colors [Histogram] : fx_transfer_histogram, fx_transfer_histogram_preview(1)+
 #@gui : Channel(s) = choice("All","RGBA [All]","RGB [All]","RGB [Red]","RGB [Green]","RGB [Blue]","RGBA [Alpha]","Linear RGB [All]","Linear RGB [Red]","Linear RGB [Green]","Linear RGB [Blue]","YCbCr [Luminance]","YCbCr [Blue-Red Chrominances]","YCbCr [Blue Chrominance]","YCbCr [Red Chrominance]","YCbCr [Green Chrominance]","Lab [Lightness]","Lab [ab-Chrominances]","Lab [a-Chrominance]","Lab [b-Chrominance]","Lch [ch-Chrominances]","Lch [c-Chrominance]","Lch [h-Chrominance]","HSV [Hue]","HSV [Saturation]","HSV [Value]","HSI [Intensity]","HSL [Lightness]","CMYK [Cyan]","CMYK [Magenta]","CMYK [Yellow]","CMYK [Key]","YIQ [Luma]","YIQ [Chromas]")
+#@gui : sep = separator(), Preview Type = choice("Full","Forward Horizontal","Forward Vertical","Backward Horizontal","Backward Vertical","Duplicate Top","Duplicate Left","Duplicate Bottom","Duplicate Right","Duplicate Horizontal","Duplicate Vertical","Checkered","Checkered Inverse"), Preview split = point(50,50,0,0,200,200,200,0,10,0)
 #@gui : sep = separator(), note = note{"<small><b>Note: </b>
 #@gui : The bottom layer contains the reference colors.\n
 #@gui : This filter needs at least two layers to work properly. Set the <i>Input layers</i> option to handle multiple input layers.
 #@gui : </small>"}
 #@gui : sep = separator(), note = note("<small>Author: <i>David Tschumperl&#233;</i>.      Latest Update: <i>2018/11/26</i>.</small>")
-fx_transfer_histogram : skip $*
+fx_transfer_histogram :
+  to_colormode 0
   repeat {$!-1} l[$>,-1]
     nm0={0,n} nm1={1,n}
-    m "_split : +z "{[w#0,0,0,0,w#0+w#1-1,h#1-1,0,s#1-1]}" r.. "{[w#0,h#0,1,s#0,0]}
-    a x
-    ac "_split transfer_histogram[0] [1] a x",$1
+    m "_split : s z r[0] "{[w#0,h#0,1,s#0,0]}" r[1] "{[w#1,h#1,1,s#1,0]}
+    a z
+    ac "_split transfer_histogram[0] [1] a z",$1
     _split uncommand _split
     nm[0] $nm0 nm[1] $nm1
+  endl done
+
+fx_transfer_histogram_preview :
+  to_colormode 0
+  repeat {$!-1} l[$>,-1]
+    m "_psplit : s z r[0] "{[w#0,h#0,1,s#0,0]}" r[1] "{[w#1,h#1,1,s#1,0]}
+    a z
+    gui_split_preview "_psplit fx_transfer_histogram $1 rm.",${-3--1}
   endl done
 
 #@gui User-Defined : fx_custom_transform, fx_custom_transform
@@ -32981,7 +32991,7 @@ fx_illuminate_shape2d_preview :
   if $keep_input_bg
     repeat {$!-1} l[$>,-1]
       fx_illuminate_shape2d $*
-      rv to_colormode  0 a z
+      rv to_colormode 0 a z
       gui_split_preview "slices 50%,100%",$-1
     endl done
   else
