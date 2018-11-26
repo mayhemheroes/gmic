@@ -27775,13 +27775,19 @@ fx_boost_chroma_preview :
 
 #@gui Boost-Fade : fx_boost_fade, fx_boost_fade_preview
 #@gui : Amplitude = float(5,0,10)
+#@gui : Chromaticity from = choice("YCbCr","Lab")
 #@gui : sep = separator(), Preview Type = choice("Full","Forward Horizontal","Forward Vertical","Backward Horizontal","Backward Vertical","Duplicate Top","Duplicate Left","Duplicate Bottom","Duplicate Right","Duplicate Horizontal","Duplicate Vertical","Checkered","Checkered Inverse"), Preview split = point(50,50,0,0,200,200,200,0,10,0)
-#@gui : sep = separator(), note = note("<small>Author: <i>David Tschumperl&#233;</i>.      Latest Update: <i>2011/12/10</i>.</small>")
+#@gui : sep = separator(), note = note("<small>Author: <i>David Tschumperl&#233;</i>.      Latest Update: <i>2018/11/26</i>.</small>")
 fx_boost_fade :
-  i[0] 640,480,1,3 rand[0] 0,1 b[0] {10-$1} n[0] 0,255 transfer_histogram[^0] [0] rm[0]
+  repeat $! l[$>]
+    100%,100%,1,3 rand. 0,1 b. {10-10*($1/10)^0.5} n. 0,255
+    to_colormode 0 a z
+    ac "s z transfer_histogram.. . a z",${"arg 1+$2,ycbcr_cbcr,lab_ab"}
+    slices 0
+  endl done
 
 fx_boost_fade_preview :
-  gui_split_preview "fx_boost_fade $*",${-3--1}
+  gui_split_preview "fx_boost_fade $1,$2",${-3--1}
 
 #@gui Channel Processing : fx_channel_processing, fx_channel_processing_preview(1)
 #@gui : Brightness (%) = float(0,-100,100)
