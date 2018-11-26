@@ -28970,7 +28970,7 @@ fx_sepia :
 fx_sepia_preview :
   gui_split_preview "fx_sepia $*",${-3--1}
 
-#@gui Transfer Colors [Advanced] : fx_transfer_rgb, fx_transfer_rgb_preview
+#@gui Transfer Colors [Variationnal] : fx_transfer_rgb, fx_transfer_rgb_preview(1)+
 #@gui : Regularization = int(8,0,32)
 #@gui : Preserve Luminance = float(0.2,0,1)
 #@gui : Precision = _choice(1,"Low","Normal","High","Very High")
@@ -29006,17 +29006,23 @@ fx_transfer_rgb_preview :
     rm.
   endl done fi
 
-#@gui Transfer Colors [Basic] : fx_transfer_colors, fx_transfer_colors
-#@gui : Transfer Brightness = bool(0)
-#@gui : Revert Layers = bool(0)
-#@gui : note = note{"<small><b>Note: </b>
-#@gui : The bottom layer contains the target colors.\n
+#@gui Transfer Colors [Histogram] : fx_transfer_histogram, fx_transfer_histogram(1)+
+#@gui : Channel(s) = choice("All","RGBA [All]","RGB [All]","RGB [Red]","RGB [Green]","RGB [Blue]","RGBA [Alpha]","Linear RGB [All]","Linear RGB [Red]","Linear RGB [Green]","Linear RGB [Blue]","YCbCr [Luminance]","YCbCr [Blue-Red Chrominances]","YCbCr [Blue Chrominance]","YCbCr [Red Chrominance]","YCbCr [Green Chrominance]","Lab [Lightness]","Lab [ab-Chrominances]","Lab [a-Chrominance]","Lab [b-Chrominance]","Lch [ch-Chrominances]","Lch [c-Chrominance]","Lch [h-Chrominance]","HSV [Hue]","HSV [Saturation]","HSV [Value]","HSI [Intensity]","HSL [Lightness]","CMYK [Cyan]","CMYK [Magenta]","CMYK [Yellow]","CMYK [Key]","YIQ [Luma]","YIQ [Chromas]")
+#@gui : sep = separator(), note = note{"<small><b>Note: </b>
+#@gui : The bottom layer contains the reference colors.\n
 #@gui : This filter needs at least two layers to work properly. Set the <i>Input layers</i> option to handle multiple input layers.
 #@gui : </small>"}
-#@gui : sep = separator(), note = note("<small>Author: <i>David Tschumperl&#233;</i>.      Latest Update: <i>2010/29/12</i>.</small>")
-fx_transfer_colors :
-  if ${2=0} _fx_revert_layers fi
-  transfer_histogram[^-1] .,$1
+#@gui : sep = separator(), note = note("<small>Author: <i>David Tschumperl&#233;</i>.      Latest Update: <i>2018/11/26</i>.</small>")
+fx_transfer_histogram : skip $*
+  repeat {$!-1} l[$>,-1]
+    nm0={0,n} nm1={1,n}
+    m "_split : +z "{[w#0,0,0,0,w#0+w#1-1,h#1-1,0,s#1-1]}" r.. "{[w#0,h#0,1,s#0,0]}
+    a x
+    ac "_split transfer_histogram[0] [1] a x",$1
+    _split
+    nm[0] $nm0 nm[1] $nm1
+    uncommand _split
+  endl done
 
 #@gui User-Defined : fx_custom_transform, fx_custom_transform
 #@gui : Red - Green - Blue - Alpha = text{"i"}
