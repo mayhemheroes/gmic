@@ -1433,27 +1433,27 @@ CImg<T> get_inpaint_patch(const CImg<t>& mask, const unsigned int patch_size=11,
 }
 
 CImg<T>& max(const char *const expression, CImgList<T> &images) {
-  return max((+*this)._fill(expression,true,true,&images,&images,"max",this));
+  return max((+*this)._fill(expression,true,1,&images,&images,"max",this));
 }
 
 CImg<T>& min(const char *const expression, CImgList<T> &images) {
-  return min((+*this)._fill(expression,true,true,&images,&images,"min",this));
+  return min((+*this)._fill(expression,true,1,&images,&images,"min",this));
 }
 
 CImg<T>& operator_andeq(const char *const expression, CImgList<T> &images) {
-  return operator&=((+*this)._fill(expression,true,true,&images,&images,"operator&=",this));
+  return operator&=((+*this)._fill(expression,true,1,&images,&images,"operator&=",this));
 }
 
 CImg<T>& operator_brseq(const char *const expression, CImgList<T> &images) {
-  return operator<<=((+*this)._fill(expression,true,true,&images,&images,"operator<<=",this));
+  return operator<<=((+*this)._fill(expression,true,1,&images,&images,"operator<<=",this));
 }
 
 CImg<T>& operator_blseq(const char *const expression, CImgList<T> &images) {
-  return operator>>=((+*this)._fill(expression,true,true,&images,&images,"operator>>=",this));
+  return operator>>=((+*this)._fill(expression,true,1,&images,&images,"operator>>=",this));
 }
 
 CImg<T>& operator_diveq(const char *const expression, CImgList<T> &images) {
-  return div((+*this)._fill(expression,true,true,&images,&images,"operator/=",this));
+  return div((+*this)._fill(expression,true,1,&images,&images,"operator/=",this));
 }
 
 template<typename t>
@@ -1465,7 +1465,7 @@ CImg<T>& operator_eq(const t val) {
 }
 
 CImg<T>& operator_eq(const char *const expression, CImgList<T> &images) {
-  return operator_eq((+*this)._fill(expression,true,true,&images,&images,"operator_eq",this));
+  return operator_eq((+*this)._fill(expression,true,1,&images,&images,"operator_eq",this));
 }
 
 template<typename t>
@@ -1492,7 +1492,7 @@ CImg<T>& operator_ge(const t val) {
 }
 
 CImg<T>& operator_ge(const char *const expression, CImgList<T> &images) {
-  return operator_ge((+*this)._fill(expression,true,true,&images,&images,"operator_ge",this));
+  return operator_ge((+*this)._fill(expression,true,1,&images,&images,"operator_ge",this));
 }
 
 template<typename t>
@@ -1519,7 +1519,7 @@ CImg<T>& operator_gt(const t val) {
 }
 
 CImg<T>& operator_gt(const char *const expression, CImgList<T> &images) {
-  return operator_gt((+*this)._fill(expression,true,true,&images,&images,"operator_gt",this));
+  return operator_gt((+*this)._fill(expression,true,1,&images,&images,"operator_gt",this));
 }
 
 template<typename t>
@@ -1546,7 +1546,7 @@ CImg<T>& operator_le(const t val) {
 }
 
 CImg<T>& operator_le(const char *const expression, CImgList<T> &images) {
-  return operator_le((+*this)._fill(expression,true,true,&images,&images,"operator_le",this));
+  return operator_le((+*this)._fill(expression,true,1,&images,&images,"operator_le",this));
 }
 
 template<typename t>
@@ -1573,7 +1573,7 @@ CImg<T>& operator_lt(const t val) {
 }
 
 CImg<T>& operator_lt(const char *const expression, CImgList<T> &images) {
-  return operator_lt((+*this)._fill(expression,true,true,&images,&images,"operator_lt",this));
+  return operator_lt((+*this)._fill(expression,true,1,&images,&images,"operator_lt",this));
 }
 
 template<typename t>
@@ -1592,15 +1592,15 @@ CImg<T>& operator_lt(const CImg<t>& img) {
 }
 
 CImg<T>& operator_minuseq(const char *const expression, CImgList<T> &images) {
-  return operator-=((+*this)._fill(expression,true,true,&images,&images,"operator-=",this));
+  return operator-=((+*this)._fill(expression,true,1,&images,&images,"operator-=",this));
 }
 
 CImg<T>& operator_modeq(const char *const expression, CImgList<T> &images) {
-  return operator%=((+*this)._fill(expression,true,true,&images,&images,"operator%=",this));
+  return operator%=((+*this)._fill(expression,true,1,&images,&images,"operator%=",this));
 }
 
 CImg<T>& operator_muleq(const char *const expression, CImgList<T> &images) {
-  return mul((+*this)._fill(expression,true,true,&images,&images,"operator*=",this));
+  return mul((+*this)._fill(expression,true,1,&images,&images,"operator*=",this));
 }
 
 template<typename t>
@@ -1612,7 +1612,7 @@ CImg<T>& operator_neq(const t val) {
 }
 
 CImg<T>& operator_neq(const char *const expression, CImgList<T> &images) {
-  return operator_neq((+*this)._fill(expression,true,true,&images,&images,"operator_neq",this));
+  return operator_neq((+*this)._fill(expression,true,1,&images,&images,"operator_neq",this));
 }
 
 template<typename t>
@@ -1631,19 +1631,19 @@ CImg<T>& operator_neq(const CImg<t>& img) {
 }
 
 CImg<T>& operator_oreq(const char *const expression, CImgList<T> &images) {
-  return operator|=((+*this)._fill(expression,true,true,&images,&images,"operator|=",this));
+  return operator|=((+*this)._fill(expression,true,1,&images,&images,"operator|=",this));
 }
 
 CImg<T>& operator_pluseq(const char *const expression, CImgList<T> &images) {
-  return operator+=((+*this)._fill(expression,true,true,&images,&images,"operator+=",this));
+  return operator+=((+*this)._fill(expression,true,1,&images,&images,"operator+=",this));
 }
 
 CImg<T>& operator_xoreq(const char *const expression, CImgList<T> &images) {
-  return operator^=((+*this)._fill(expression,true,true,&images,&images,"operator^=",this));
+  return operator^=((+*this)._fill(expression,true,1,&images,&images,"operator^=",this));
 }
 
 CImg<T>& pow(const char *const expression, CImgList<T> &images) {
-  return pow((+*this)._fill(expression,true,true,&images,&images,"pow",this));
+  return pow((+*this)._fill(expression,true,1,&images,&images,"pow",this));
 }
 
 template<typename t>
@@ -1654,6 +1654,14 @@ CImg<T>& replace(CImg<t>& img) {
 template<typename t>
 CImg<T> get_replace(const CImg<t>& img) const {
   return +img;
+}
+
+CImg<T>& gmic_eval(const char *const expression, CImgList<T> &images) {
+  return _fill(expression,true,2,&images,&images,"eval",0);
+}
+
+CImg<T> get_gmic_eval(const char *const expression, CImgList<T> &images) const {
+  return (+*this).gmic_eval(expression,images);
 }
 
 CImg<T>& reverse_CImg3d() {
@@ -1686,11 +1694,11 @@ CImg<T> get_reverse_CImg3d() const {
 }
 
 CImg<T>& rol(const char *const expression, CImgList<T> &images) {
-  return rol((+*this)._fill(expression,true,true,&images,&images,"rol",this));
+  return rol((+*this)._fill(expression,true,1,&images,&images,"rol",this));
 }
 
 CImg<T>& ror(const char *const expression, CImgList<T> &images) {
-  return ror((+*this)._fill(expression,true,true,&images,&images,"ror",this));
+  return ror((+*this)._fill(expression,true,1,&images,&images,"ror",this));
 }
 
 template<typename t>
@@ -4726,11 +4734,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       }
       position = position_argument;
 
-      if (is_command) {
-        std::strncpy(current_command,command,_current_command.width() - 1);
-        current_command[_current_command.width() - 1] = 0;
-      } else *current_command = 0;
-
       const bool
         is_verbose_command = is_get?false:
           is_command && *item=='v' && (!item[1] || !std::strcmp(item,"verbose")),
@@ -4741,9 +4744,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         is_check_command = is_get || is_verbose_command || is_echo_command || is_input_command?false:
           !std::strcmp(item,"check"),
         is_skip_command = is_get || is_verbose_command || is_echo_command || is_input_command ||
-          is_check_command?false:!std::strcmp(item,"skip"),
-        is_eval_command = is_get || is_verbose_command || is_echo_command || is_input_command ||
-          is_check_command || is_skip_command?false:!std::strcmp(item,"eval");
+          is_check_command?false:!std::strcmp(item,"skip");
 
       // Check for verbosity command, prior to the first output of a log message.
       bool is_verbose = verbosity>=0 || is_debug, is_verbose_argument = false;
@@ -4772,7 +4773,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       // Generate strings for displaying image selections when verbosity>=0.
       CImg<char> gmic_selection;
       if (is_debug ||
-          (verbosity>=0 && !is_eval_command && !is_check_command && !is_skip_command &&
+          (verbosity>=0 && !is_check_command && !is_skip_command &&
            !is_echo_command && !is_verbose_command))
         selection2string(selection,images_names,1,gmic_selection);
 
@@ -4879,6 +4880,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
         if (item!=_item.data() + (is_double_hyphen?2:is_simple_hyphen || is_plus?1:0)) item = _item;
         command0 = *command?*command:*item;
+
+        if (is_command) {
+          std::strncpy(current_command,command,_current_command.width() - 1);
+          current_command[_current_command.width() - 1] = 0;
+        } else *current_command = 0;
 
         // Check if a new name has been requested for a command that does not allow that.
         if (new_name && !is_get && !is_input_command)
@@ -6664,14 +6670,21 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         // Evaluate expression.
-        if (is_eval_command) {
+        if (!std::strcmp("eval",command)) {
+          if (is_get && !is_selection)
+            error(images,0,0,
+                  "Command 'eval': Image selection is missing.");
           gmic_substitute_args(false);
-          print(images,0,"Evaluate math expression '%s'.",
-                gmic_argument_text_printed());
+          gmic_argument_text_printed();
+          if (*argument_text=='\'') cimg::strpare(argument_text,'\'',true,false);
           name.assign(argument,(unsigned int)std::strlen(argument) + 1);
+          cimg::strpare(name,'\'',true,false);
           strreplace_fw(name);
-          CImg<T> &img = images.size()?images.back():CImg<T>::empty();
-          try {
+
+          if (!is_selection) { // No selection -> single evaluation
+            print(images,0,"Evaluate expression '%s' and assign it to status.",
+                  argument_text.data());
+            CImg<T> &img = images.size()?images.back():CImg<T>::empty();
             CImg<double> output;
             img.eval(output,name,0,0,0,0,&images,&images);
             if (output.height()>1) // Vector-valued result
@@ -6680,10 +6693,12 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               cimg_snprintf(formula,_formula.width(),"%.17g",*output);
               CImg<char>::string(formula).move_to(status);
             }
-          } catch (CImgException &e) {
-            const char *err = std::strstr(e.what(),"eval(): ");
-            if (!err) err = e.what(); else err+=8;
-            error(images,0,0,"Command 'eval': %s",err);
+          } else { // Selection -> loop over images
+            print(images,0,"Evaluate expression '%s' looped over image%s.",
+                  argument_text.data(),
+                  gmic_selection.data());
+            cimg_forY(selection,l) gmic_apply(gmic_eval(name.data(),images));
+            is_released = false;
           }
           ++position; continue;
         }
@@ -14065,7 +14080,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   _filename0,options.data());
 
           try {
-
             try {
               input_images.load(filename);
             } catch (CImgIOException&) {
@@ -14308,9 +14322,12 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       str[0] = 'g'; str[1] = 'm'; str[2] = 'i'; str[3] = 'c';
     }
     if (*current_command && current_command[1]) {
-      const char *cc = current_command;
-      while (*cc=='-' || *cc=='+') ++cc;
-      error(images,0,cc,"Command '%s': %s",current_command,error_message.data());
+      const char *em = error_message.data();
+      if (!std::strncmp("gmic<",em,5)) {
+        em = std::strstr(em,"(): ");
+        if (em) em+=4; else em = error_message.data();
+      }
+      error(images,0,current_command,"Command '%s': %s",current_command,em);
     } else error(images,0,0,"%s",error_message.data());
   }
 
