@@ -4495,7 +4495,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
   // Allocate string variables, widely used afterwards
   // (prevents stack overflow on recursive calls while remaining thread-safe).
   CImg<char> _formula(4096), _color(4096), message(1024), _title(256), _indices(256),
-    _argx(256), _argy(256), _argz(256), _argc(256), _current_command(256), argument_text(81),
+    _argx(256), _argy(256), _argz(256), _argc(256), argument_text(81),
     _command(256), _s_selection(256);
 
   char
@@ -4507,11 +4507,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     *const argy = _argy.data(),
     *const argz = _argz.data(),
     *const argc = _argc.data(),
-    *const current_command = _current_command.data(),
     *const command = _command.data(),
     *const s_selection = _s_selection.data();
   *formula = *color = *title = *indices = *argx = *argy = *argz = *argc =
-    *current_command = *command = *s_selection = 0;
+    *command = *s_selection = 0;
 
   try {
 
@@ -4537,6 +4536,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     if (!commands_line && is_start) { print(images,0,"Start G'MIC interpreter."); is_start = false; }
     while (position<commands_line.size() && !is_quit && !is_return) {
       const bool is_first_item = !position;
+      *command = *s_selection = 0;
 
       // Process debug info.
       if (next_debug_line!=~0U) { debug_line = next_debug_line; next_debug_line = ~0U; }
@@ -4647,8 +4647,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       }
 
       // Split command/selection, if necessary.
-      *command = *s_selection = 0;
-
       bool is_selection = false;
       const unsigned int siz = images._width;
       CImg<unsigned int> selection;
@@ -4880,11 +4878,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
         if (item!=_item.data() + (is_double_hyphen?2:is_simple_hyphen || is_plus?1:0)) item = _item;
         command0 = *command?*command:*item;
-
-        if (is_command) {
-          std::strncpy(current_command,command,_current_command.width() - 1);
-          current_command[_current_command.width() - 1] = 0;
-        } else *current_command = 0;
 
         // Check if a new name has been requested for a command that does not allow that.
         if (new_name && !is_get && !is_input_command)
@@ -14321,13 +14314,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     for (char *str = std::strstr(error_message,"cimg:"); str; str = std::strstr(str,"cimg:")) {
       str[0] = 'g'; str[1] = 'm'; str[2] = 'i'; str[3] = 'c';
     }
-    if (*current_command && current_command[1]) {
+    if (*command) {
       const char *em = error_message.data();
       if (!std::strncmp("gmic<",em,5)) {
         em = std::strstr(em,"(): ");
         if (em) em+=4; else em = error_message.data();
       }
-      error(images,0,current_command,"Command '%s': %s",current_command,em);
+      error(images,0,command,"Command '%s': %s",command,em);
     } else error(images,0,0,"%s",error_message.data());
   }
 
