@@ -505,7 +505,7 @@ CImg<T> get_gmic_invert_endianness(const char *const stype) const {
   return (+*this).gmic_invert_endianness(stype);
 }
 
-CImg<T>& gmic_patchmatch(const CImg<T>& patch_image,
+CImg<T>& gmic_matchpatch(const CImg<T>& patch_image,
                          const unsigned int patch_width,
                          const unsigned int patch_height,
                          const unsigned int patch_depth=1,
@@ -513,11 +513,11 @@ CImg<T>& gmic_patchmatch(const CImg<T>& patch_image,
                          const unsigned int nb_randoms=5,
                          const bool is_score=false,
                          const CImg<T> *const initialization=0) {
-  return get_gmic_patchmatch(patch_image,patch_width,patch_height,patch_depth,
+  return get_gmic_matchpatch(patch_image,patch_width,patch_height,patch_depth,
                              nb_iterations,nb_randoms,is_score,initialization).move_to(*this);
 }
 
-CImg<T> get_gmic_patchmatch(const CImg<T>& patch_image,
+CImg<T> get_gmic_matchpatch(const CImg<T>& patch_image,
                             const unsigned int patch_width,
                             const unsigned int patch_height,
                             const unsigned int patch_depth=1,
@@ -526,7 +526,7 @@ CImg<T> get_gmic_patchmatch(const CImg<T>& patch_image,
                             const bool is_score=false,
                             const CImg<T> *const initialization=0) const {
   CImg<floatT> score, res;
-  res = _patchmatch(patch_image,patch_width,patch_height,patch_depth,
+  res = _matchpatch(patch_image,patch_width,patch_height,patch_depth,
                     nb_iterations,nb_randoms,
                     initialization?*initialization:CImg<T>::const_empty(),
                     is_score,is_score?score:CImg<floatT>::empty());
@@ -2152,11 +2152,11 @@ const char *gmic::builtin_commands_names[] = {
   "j","j3d",
   "k","keep",
   "l","l3d","label","le","light3d","line","local","log","log10","log2","lt",
-  "m","m*","m/","m3d","mandelbrot","map","max","md3d","mdiv","median","min","mirror","mmul","mod","mode3d","moded3d",
-    "move","mse","mul","mul3d","mutex","mv",
+  "m","m*","m/","m3d","mandelbrot","map","matchpatch","max","md3d","mdiv","median","min","mirror","mmul","mod",
+    "mode3d","moded3d","move","mse","mul","mul3d","mutex","mv",
   "n","name","neq","nm","noarg","noise","normalize",
   "o","o3d","object3d","onfail","opacity3d","or","output",
-  "p","parallel","pass","patchmatch","permute","plasma","plot","point","polygon","pow","print",
+  "p","parallel","pass","permute","plasma","plot","point","polygon","pow","print",
     "progress",
   "q","quit",
   "r","r3d","rand","remove","repeat","resize","return","reverse","reverse3d",
@@ -8365,23 +8365,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           is_released = false; ++position; continue;
         }
 
-        // Manage mutexes.
-        if (!std::strcmp("mutex",item)) {
-          gmic_substitute_args(false);
-          unsigned int number, is_lock = 1;
-          if ((cimg_sscanf(argument,"%u%c",
-                           &number,&end)==1 ||
-               cimg_sscanf(argument,"%u,%u%c",
-                           &number,&is_lock,&end)==2) &&
-              number<256 && is_lock<=1) {
-            print(images,0,"%s mutex #%u.",
-                  is_lock?"Lock":"Unlock",number);
-            if (is_lock) gmic_mutex().lock(number);
-            else gmic_mutex().unlock(number);
-          } else arg_error("mutex");
-          ++position; continue;
-        }
-
         // Multiplication.
         gmic_arithmetic_command("mul",
                                 operator*=,
@@ -8444,6 +8427,19 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                 "Multiply matrix/vector%s by expression %s",
                                 gmic_selection.data(),gmic_argument_text_printed(),
                                 "Multiply matrix/vector%s");
+
+        // Matrix division.
+        gmic_arithmetic_command("mdiv",
+                                operator/=,
+                                "Divide matrix/vector%s by %g%s",
+                                gmic_selection.data(),value,ssep,Tfloat,
+                                operator/=,
+                                "Divide matrix/vector%s by matrix/vector image [%d]",
+                                gmic_selection.data(),ind[0],
+                                operator_diveq,
+                                "Divide matrix/vector%s by expression %s",
+                                gmic_selection.data(),gmic_argument_text_printed(),
+                                "Divide matrix/vector%s");
 
         // Set 3D rendering modes.
         if (!std::strcmp("mode3d",item)) {
@@ -8535,19 +8531,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           is_released = false; ++position; continue;
         }
 
-        // Matrix division.
-        gmic_arithmetic_command("mdiv",
-                                operator/=,
-                                "Divide matrix/vector%s by %g%s",
-                                gmic_selection.data(),value,ssep,Tfloat,
-                                operator/=,
-                                "Divide matrix/vector%s by matrix/vector image [%d]",
-                                gmic_selection.data(),ind[0],
-                                operator_diveq,
-                                "Divide matrix/vector%s by expression %s",
-                                gmic_selection.data(),gmic_argument_text_printed(),
-                                "Divide matrix/vector%s");
-
         // MSE.
         if (!std::strcmp("mse",command)) {
           print(images,0,"Compute the %dx%d matrix of MSE values, from image%s.",
@@ -8570,6 +8553,62 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             g_list.assign();
           }
           is_released = false; continue;
+        }
+
+        // Get patch-matching correspondence map.
+        if (!std::strcmp("matchpatch",command)) {
+          gmic_substitute_args(true);
+          float patch_width, patch_height, patch_depth = 1, nb_iterations = 5, nb_randoms = 5;
+          unsigned int is_score = 0;
+          *argx = 0; ind0.assign();
+          if (((cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%f,%c",
+                            indices,&patch_width,&end)==2 && (patch_height=patch_width)) ||
+               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%f,%f,%c",
+                           indices,&patch_width,&patch_height,&end)==3 ||
+               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%f,%f,%f%c",
+                           indices,&patch_width,&patch_height,&patch_depth,&end)==4 ||
+               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%f,%f,%f,%f%c",
+                           indices,&patch_width,&patch_height,&patch_depth,&nb_iterations,&end)==5 ||
+               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%f,%f,%f,%f,%f%c",
+                           indices,&patch_width,&patch_height,&patch_depth,&nb_iterations,&nb_randoms,&end)==6 ||
+               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%f,%f,%f,%f,%f,%u%c",
+                           indices,&patch_width,&patch_height,&patch_depth,&nb_iterations,&nb_randoms,
+                           &is_score,&end)==7 ||
+               (cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%f,%f,%f,%f,%f,%u,[%255[a-zA-Z0-9_.%+-]%c%c",
+                            indices,&patch_width,&patch_height,&patch_depth,&nb_iterations,&nb_randoms,
+                            &is_score,argx,&sep,&end)==9 && sep==']')) &&
+              (ind=selection2cimg(indices,images.size(),images_names,"matchpatch")).height()==1 &&
+              (!*argx ||
+               (ind0=selection2cimg(argx,images.size(),images_names,"matchpatch")).height()==1) &&
+              patch_width>=1 && patch_height>=1 && patch_depth>=1 &&
+              nb_iterations>=0 && nb_randoms>=0 && is_score<=1) {
+            const CImg<T> *initialization = 0;
+            patch_width = cimg::round(patch_width);
+            patch_height = cimg::round(patch_height);
+            patch_depth = cimg::round(patch_depth);
+            nb_iterations = cimg::round(nb_iterations);
+            nb_randoms = cimg::round(nb_randoms);
+            if (ind0) initialization = &images[*ind0];
+            print(images,0,"Estimate correspondence map between image%s and patch image [%u], "
+                  "using %gx%gx%g patches, %g iteration%s, and %g randomization%s "
+                  "(%sscore returned).",
+                  gmic_selection.data(),
+                  *ind,
+                  patch_width,patch_height,patch_depth,
+                  nb_iterations,nb_iterations!=1?"s":"",
+                  nb_randoms,nb_randoms!=1?"s":"",
+                  is_score?"":"no ");
+            const CImg<T> patch_image = gmic_image_arg(*ind);
+            cimg_forY(selection,l) gmic_apply(gmic_matchpatch(patch_image,
+                                                              (unsigned int)patch_width,
+                                                              (unsigned int)patch_height,
+                                                              (unsigned int)patch_depth,
+                                                              (unsigned int)nb_iterations,
+                                                              (unsigned int)nb_randoms,
+                                                              (bool)is_score,
+                                                              initialization));
+          } else arg_error("matchpatch");
+          is_released = false; ++position; continue;
         }
 
         // Draw mandelbrot/julia fractal.
@@ -8605,6 +8644,23 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                                               true,(bool)is_julia,paramr,parami));
           } else arg_error("mandelbrot");
           is_released = false; ++position; continue;
+        }
+
+        // Manage mutexes.
+        if (!std::strcmp("mutex",item)) {
+          gmic_substitute_args(false);
+          unsigned int number, is_lock = 1;
+          if ((cimg_sscanf(argument,"%u%c",
+                           &number,&end)==1 ||
+               cimg_sscanf(argument,"%u,%u%c",
+                           &number,&is_lock,&end)==2) &&
+              number<256 && is_lock<=1) {
+            print(images,0,"%s mutex #%u.",
+                  is_lock?"Lock":"Unlock",number);
+            if (is_lock) gmic_mutex().lock(number);
+            else gmic_mutex().unlock(number);
+          } else arg_error("mutex");
+          ++position; continue;
         }
 
         goto gmic_commands_others;
@@ -9940,62 +9996,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 _scale);
           cimg_forY(selection,l) gmic_apply(draw_plasma(alpha,beta,_scale));
           is_released = false; continue;
-        }
-
-        // Get patch-match correspondence map.
-        if (!std::strcmp("patchmatch",command)) {
-          gmic_substitute_args(true);
-          float patch_width, patch_height, patch_depth = 1, nb_iterations = 5, nb_randoms = 5;
-          unsigned int is_score = 0;
-          *argx = 0; ind0.assign();
-          if (((cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%f,%c",
-                            indices,&patch_width,&end)==2 && (patch_height=patch_width)) ||
-               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%f,%f,%c",
-                           indices,&patch_width,&patch_height,&end)==3 ||
-               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%f,%f,%f%c",
-                           indices,&patch_width,&patch_height,&patch_depth,&end)==4 ||
-               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%f,%f,%f,%f%c",
-                           indices,&patch_width,&patch_height,&patch_depth,&nb_iterations,&end)==5 ||
-               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%f,%f,%f,%f,%f%c",
-                           indices,&patch_width,&patch_height,&patch_depth,&nb_iterations,&nb_randoms,&end)==6 ||
-               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%f,%f,%f,%f,%f,%u%c",
-                           indices,&patch_width,&patch_height,&patch_depth,&nb_iterations,&nb_randoms,
-                           &is_score,&end)==7 ||
-               (cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%f,%f,%f,%f,%f,%u,[%255[a-zA-Z0-9_.%+-]%c%c",
-                            indices,&patch_width,&patch_height,&patch_depth,&nb_iterations,&nb_randoms,
-                            &is_score,argx,&sep,&end)==9 && sep==']')) &&
-              (ind=selection2cimg(indices,images.size(),images_names,"patchmatch")).height()==1 &&
-              (!*argx ||
-               (ind0=selection2cimg(argx,images.size(),images_names,"patchmatch")).height()==1) &&
-              patch_width>=1 && patch_height>=1 && patch_depth>=1 &&
-              nb_iterations>=0 && nb_randoms>=0 && is_score<=1) {
-            const CImg<T> *initialization = 0;
-            patch_width = cimg::round(patch_width);
-            patch_height = cimg::round(patch_height);
-            patch_depth = cimg::round(patch_depth);
-            nb_iterations = cimg::round(nb_iterations);
-            nb_randoms = cimg::round(nb_randoms);
-            if (ind0) initialization = &images[*ind0];
-            print(images,0,"Estimate correspondence map between image%s and patch image [%u], "
-                  "using %gx%gx%g patches, %g iteration%s, and %g randomization%s "
-                  "(%sscore returned).",
-                  gmic_selection.data(),
-                  *ind,
-                  patch_width,patch_height,patch_depth,
-                  nb_iterations,nb_iterations!=1?"s":"",
-                  nb_randoms,nb_randoms!=1?"s":"",
-                  is_score?"":"no ");
-            const CImg<T> patch_image = gmic_image_arg(*ind);
-            cimg_forY(selection,l) gmic_apply(gmic_patchmatch(patch_image,
-                                                              (unsigned int)patch_width,
-                                                              (unsigned int)patch_height,
-                                                              (unsigned int)patch_depth,
-                                                              (unsigned int)nb_iterations,
-                                                              (unsigned int)nb_randoms,
-                                                              (bool)is_score,
-                                                              initialization));
-          } else arg_error("patchmatch");
-          is_released = false; ++position; continue;
         }
 
         // Display as a graph plot.

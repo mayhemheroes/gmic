@@ -3994,7 +3994,7 @@ update_gallery_html : check "isbool(${1=0})"
   commands_colors=gallery_colors,solarize,hsv2rgb,transfer_rgb
   commands_deformations=gallery_deformations,deform,map_sphere,seamcarve,spherize,twirl,warp_perspective,water,wave
   commands_filtering=gallery_filtering,blur_angular,blur_linear,blur_radial,glow,smooth,bilateral,dog,deriche,distance,gradient_norm,normalize_local,sharpen,solidify
-  commands_patterns=gallery_patterns,tsp,chessboard,mandelbrot,maze_mask,plasma,shape_fern,shape_snowflake,sierpinski,syntexturize_patchmatch,truchet,turbulence,watermark_visible,weave
+  commands_patterns=gallery_patterns,tsp,chessboard,mandelbrot,maze_mask,plasma,shape_fern,shape_snowflake,sierpinski,syntexturize_matchpatch,truchet,turbulence,watermark_visible,weave
   commands_3drendering=gallery_3drendering,add3d,distribution3d,elevation3d,gmic3d,imageblocks3d,imagerubik3d,skeleton3d,spherical3d,tensors3d,text3d,torus3d,weird3d
   commands_codesamples=gallery_codesamples
 
@@ -4631,7 +4631,7 @@ update_server :
     replace_str "<i>David Tschumperl&#233;</i>","<i><a href=\""$url"\">David Tschumperl&#233;</a></i>"
     o cimgz:/tmp/update$_version.gmic,uchar
 
-    (240,241,242)
+    (242)
     repeat {w}
       v={i[$>]}
       _update_server_upload[] ${_path_rc}update$_version.gmic,plain_update$v.gmic
@@ -10149,12 +10149,12 @@ inpaint_morpho : check ${is_image_arg\ $1}
     k. nm $nm
   endl done v +
 
-#@cli inpaint_patchmatch : [mask],_nb_scales={ 0=auto | >0 },_patch_size>0,_nb_iterations_per_scale>0,_blend_size>=0,_allow_outer_blending={ 0 | 1 },_is_already_initialized={ 0 | 1 }
-#@cli : Inpaint selected images by specified binary mask, using a multi-scale patchmatch algorithm.
+#@cli inpaint_matchpatch : [mask],_nb_scales={ 0=auto | >0 },_patch_size>0,_nb_iterations_per_scale>0,_blend_size>=0,_allow_outer_blending={ 0 | 1 },_is_already_initialized={ 0 | 1 }
+#@cli : Inpaint selected images by specified binary mask, using a multi-scale matchpatch algorithm.
 #@cli : Default values: 'nb_scales=0', 'patch_size=9', 'nb_iterations_per_scale=10', 'blend_size=5', 'allow_outer_blending=1' and 'is_already_initialized=0'.
-#@cli : $ image.jpg 100%,100% ellipse[-1] 30%,30%,40,30,0,1,255 +inpaint_patchmatch[0] [1]
-inpaint_patchmatch : check ${is_image_arg\ $1}"&& ${2=0}>=0 && isint(${3=9}) && $3>0 && isint(${4=10}) && $4>0 && isint(${5=5}) && $5>=0" skip ${6=1},${7=0}
-  e[^-1] "Inpaint image$? with mask $1, using a multiscale patchmatch algorithm with "${"v - if $2 u \"$2 \" else u auto- fi v +"}\
+#@cli : $ image.jpg 100%,100% ellipse[-1] 30%,30%,40,30,0,1,255 +inpaint_matchpatch[0] [1]
+inpaint_matchpatch : check ${is_image_arg\ $1}"&& ${2=0}>=0 && isint(${3=9}) && $3>0 && isint(${4=10}) && $4>0 && isint(${5=5}) && $5>=0" skip ${6=1},${7=0}
+  e[^-1] "Inpaint image$? with mask $1, using a multiscale patch-matching algorithm with "${"v - if $2 u \"$2 \" else u auto- fi v +"}\
           "scales, $3x$3 patches, $4 iterations per scale and blending size $5."
   v - repeat $! pass$1 0 l[$>,-1]
 
@@ -10189,7 +10189,7 @@ inpaint_patchmatch : check ${is_image_arg\ $1}"&& ${2=0}>=0 && isint(${3=9}) && 
 
         # Estimate initial correspondence map.
         100%,100%,1,1,x +f. y mv[scaled_mask] $! a[-3--1] c
-        patchmatch[scaled_img] [scaled_reference],$patch_size,$patch_size,1,4,4,0,.
+        matchpatch[scaled_img] [scaled_reference],$patch_size,$patch_size,1,4,4,0,.
         rm[scaled_reference,-1]
         nm. correspondence
         first_iter=0
@@ -10209,13 +10209,13 @@ inpaint_patchmatch : check ${is_image_arg\ $1}"&& ${2=0}>=0 && isint(${3=9}) && 
         rm[correspondence] nm. correspondence
         a[correspondence] [scaled_mask],c
 
-        # Refine correspondence map iteratively with patchmatch.
+        # Refine correspondence map iteratively with matchpatch.
         nbs1={max(1,$nb_scales-1)}
         nb_iter={round(max(1,$4*(($<+1)/$nbs1)^2))}
 
         repeat $nb_iter
-          _inpaint_patchmatch[scaled_img] [correspondence],[scaled_mask],$blend_size,$6
-          +patchmatch[scaled_img] [scaled_reference],$patch_size,$patch_size,1,4,4,0,[correspondence]
+          _inpaint_matchpatch[scaled_img] [correspondence],[scaled_mask],$blend_size,$6
+          +matchpatch[scaled_img] [scaled_reference],$patch_size,$patch_size,1,4,4,0,[correspondence]
           j[correspondence] . rm.
           if {*1} w1[scaled_img] $visu_size,0 fi
           if {*2} w2[correspondence] $visu_size,1 fi
@@ -10229,14 +10229,14 @@ inpaint_patchmatch : check ${is_image_arg\ $1}"&& ${2=0}>=0 && isint(${3=9}) && 
     # Generate final result.
     if $correspondence
       ==[mask] 0
-      _inpaint_patchmatch[img] [correspondence],[mask],$5,$6
+      _inpaint_matchpatch[img] [correspondence],[mask],$5,$6
       rm[correspondence]
     fi
     +[img] $im
   endl rm[mask] done v +
 
-# _inpaint_patchmatch : [correspondence_map],[mask],blend_size>0,_allow_outer_blending={ 0 | 1 }
-_inpaint_patchmatch :
+# _inpaint_matchpatch : [correspondence_map],[mask],blend_size>0,_allow_outer_blending={ 0 | 1 }
+_inpaint_matchpatch :
   pass$1 1 pass$2 {!$3" || "!$4}
   if {!$3}
     warp[0] [1],0,0,1
@@ -10792,12 +10792,12 @@ syntexturize : check "${1=100%}>0 && ${2=$1}>0"
 
   endl done v +
 
-#@cli syntexturize_patchmatch : _width[%]>0,_height[%]>0,_nb_scales>=0,_patch_size>0,_blending_size>=0,_precision>=0
+#@cli syntexturize_matchpatch : _width[%]>0,_height[%]>0,_nb_scales>=0,_patch_size>0,_blending_size>=0,_precision>=0
 #@cli : Resynthetize 'width'x'height' versions of selected micro-textures using a patch-matching algorithm.
 #@cli : If 'nbscales==0', the number of scales used is estimated from the image size.
 #@cli : Default values: 'width=height=100%', 'nb_scales=0', 'patch_size=7', 'blending_size=5' and 'precision=1'.
-#@cli : $ image.jpg crop 25%,25%,75%,75% syntexturize_patchmatch 512,512
-syntexturize_patchmatch : check "${1=100%}>0 && ${2=$1}>0 && isint(${3=0}) && $3>=0 && isint(${4=7}) && $4>0 && ${5=5}>=0 && ${6=1}>=0"
+#@cli : $ image.jpg crop 25%,25%,75%,75% syntexturize_matchpatch 512,512
+syntexturize_matchpatch : check "${1=100%}>0 && ${2=$1}>0 && isint(${3=0}) && $3>=0 && isint(${4=7}) && $4>0 && ${5=5}>=0 && ${6=1}>=0"
   e[^-1] "Resynthetize $1x$2 version(s) of texture$? using a patch-matching algorithm with "${"v - if $3 u \"$3 \" else u auto- fi v +"}"scales, $4x$4 patches, blending size $5 and precision $6."
   v - repeat $! l[$>]
     nb_scales={round(if($3,$3,log2(min(w,h)/16)),1,1)}
@@ -10843,7 +10843,7 @@ syntexturize_patchmatch : check "${1=100%}>0 && ${2=$1}>0 && isint(${3=0}) && $3
       psize={-2,min(w,h,$4)}
       repeat {1+$6*$<}
         +warp_patch.. .,{int(max(3,$5*$scale%))}
-        patchmatch. ...,$psize,$psize,1,4,4,0,.. rm..
+        matchpatch. ...,$psize,$psize,1,4,4,0,.. rm..
       done
       rm..
 
@@ -10852,8 +10852,8 @@ syntexturize_patchmatch : check "${1=100%}>0 && ${2=$1}>0 && isint(${3=0}) && $3
     rm. r $width,$height,1,100%,0,0,0.5,0.5
   endl done v +
 
-# _syntexturize_patchmatch : [correspondence_map],blend_size>0
-_syntexturize_patchmatch : check ${is_image_arg\ $1}" && isint(${2=3}) && $2>=0"
+# _syntexturize_matchpatch : [correspondence_map],blend_size>0
+_syntexturize_matchpatch : check ${is_image_arg\ $1}" && isint(${2=3}) && $2>=0"
   if {$2<=1} pass$1 warp[^-1] .,0 rm.
   else repeat $! pass$1 l[$>,-1]
     [1],[1],1,[0]
@@ -11364,16 +11364,14 @@ patches : check "isint($1) && $1>0 && isint($2) && $2>0 && isint($3) && $3>0"
   repeat $! l[$<] s y,$H s x,$W k[0-{$N-1}] endl done
   v +
 
-#@cli patchmatch : [patch_image],patch_width>=1,_patch_height>=1,_patch_depth>=1,_nb_iterations>=0,_nb_randoms>=0,_output_score={ 0 | 1 },_[guide] : (+)
+#@cli matchpatch : [patch_image],patch_width>=1,_patch_height>=1,_patch_depth>=1,_nb_iterations>=0,_nb_randoms>=0,_output_score={ 0 | 1 },_[guide] : (+)
 #@cli : Estimate correspondence map between selected images and specified patch image, using
-#@cli : the patchmatch algorithm, as described in the paper :
-#@cli : "PatchMatch: A Randomized Correspondence Algorithm for Structural Image Editing", by
-#@cli : Connelly Barnes, Eli Shechtman, Adam Finkelstein, Dan B Goldman(2009).
+#@cli : a patch-matching algorithm.
 #@cli : Each pixel of the returned correspondence map gives the location (p,q) of the closest patch in
-#@cli : the specified patch image. If 'output_score=1', the third channel gives the corresponding
+#@cli : the specified patch image. If 'output_score=1', the third channel also gives the corresponding
 #@cli : matching score for each patch as well.
 #@cli : Default values: 'patch_height=patch_width', 'patch_depth=1', 'nb_iterations=5', 'nb_randoms=5', 'output_score=0' and 'guide=(undefined)'.
-#@cli : $ image.jpg sample ? to_rgb +patchmatch[0] [1],3 +warp[-2] [-1],0
+#@cli : $ image.jpg sample ? to_rgb +matchpatch[0] [1],3 +warp[-2] [-1],0
 
 #@cli plot2value
 #@cli : Retrieve values from selected 2D graph plots.
@@ -15844,10 +15842,10 @@ frame_seamless : check "$1>=0 && isint(${2=7}) && $2>0 && isint(${3=5}) && $3>=0
     if {!$4} r {max(1,w-$1)},{max(1,h-$1)},1,100%,0,0,0.5,0.5 fi
     100%,100%,1,1,-1 r[-2,-1] {w+$1},{h+$1},1,100%,0,0,0.5,0.5 n. 0,1
     shift -$w2,-$h2,0,0,2
-    inpaint_patchmatch.. [1],0,$2,10,$3
+    inpaint_matchpatch.. [1],0,$2,10,$3
     rectangle. $1,$1,{w-1-$1},{h-1-$1}
     shift -$w4,-$h4,0,0,2
-    inpaint_patchmatch.. [1],0,$2,10,$3
+    inpaint_matchpatch.. [1],0,$2,10,$3
     rm.
     shift {$w4+$w2},{$h4+$h2},0,0,2
   endl done v +
@@ -33869,7 +33867,7 @@ fx_syntexturize :
 fx_syntexturize_preview :
   gui_split_preview "fx_syntexturize 100%,100%,$3",${-3--1}
 
-#@gui Resynthetize Texture [Patch-Based] : syntexturize_patchmatch, fx_syntexturize_patchmatch_preview(1)
+#@gui Resynthetize Texture [Patch-Based] : syntexturize_matchpatch, fx_syntexturize_matchpatch_preview(1)
 #@gui : Width = _int(512,32,8192)
 #@gui : Height = _int(512,32,8192)
 #@gui : Number of Scales = int(0,0,16)
@@ -33882,16 +33880,16 @@ fx_syntexturize_preview :
 #@gui : note = note{"<small><b>Note:</b> This filter tries to re-synthetize an input texture image onto a bigger output image (with an arbitrary size).
 #@gui : Beware, this filter is quite slow to compute!</small>"}
 #@gui : sep = separator(), note = note("<small>Authors: <i>David Tschumperl&#233;</i>.      Latest Update: <i>2015/22/10</i>.</small>")
-_fx_syntexturize_patchmatch_preview :
+_fx_syntexturize_matchpatch_preview :
   repeat $! l[$>]
     if $7 +b {20.5-$7/50}% -[0] [1] fc. ${average_colors.} + c 0,255 fi
     w={w} h={h}
-    syntexturize_patchmatch 100%,100%,${3--1}
+    syntexturize_matchpatch 100%,100%,${3--1}
     to_rgba r $w,$h,1,4,0,0,0.5,0.5
   endl done
 
-fx_syntexturize_patchmatch_preview :
-  gui_split_preview "_fx_syntexturize_patchmatch_preview ${1--2}",${-3--1}
+fx_syntexturize_matchpatch_preview :
+  gui_split_preview "_fx_syntexturize_matchpatch_preview ${1--2}",${-3--1}
 
 #@gui Rorschach : fx_rorschach, fx_rorschach
 #@gui : Scale = float(3,0,10)
@@ -34152,7 +34150,7 @@ fx_inpaint_morpho :
 fx_inpaint_morpho_preview :
   fx_inpaint_morpho ${1-4},{1+$5}
 
-#@gui Inpaint [Multi-Scale] : fx_inpaint_patchmatch, fx_inpaint_patchmatch_preview(1)
+#@gui Inpaint [Multi-Scale] : fx_inpaint_matchpatch, fx_inpaint_matchpatch_preview(1)
 #@gui : Number of Scales = _int(0,0,16)
 #@gui : note = note{"<small>(Set <i>Number of scales</i> to <i>0</i> for automatic scale detection)</small>"}
 #@gui : Patch Size = _int(9,1,64)
@@ -34164,7 +34162,7 @@ fx_inpaint_morpho_preview :
 #@gui : sep = separator(), Preview progression While Running = _bool(0)
 #@gui : sep = separator(), note = note{"<small><b>Note:</b> Preview and final result may strongly differ.</small>"}
 #@gui : sep = separator(), note = note("<small>Author: <i>David Tschumperl&#233;</i>.      Latest Update: <i>2015/25/11</i>.</small>")
-fx_inpaint_patchmatch :
+fx_inpaint_matchpatch :
   repeat $! l[$>]
     R=$6 G=$7 B=$8 A=$9
     if {!$A" && "(s==2" || "s==4)} split_opacity +!=. 0 *[0,-1] a c R=0 G=0 B=0 fi # Purely transparent color.
@@ -34174,12 +34172,12 @@ fx_inpaint_patchmatch :
       visu_size=${fitscreen[]" "{0,w},{0,h},1,25%,50%}
       w1.. $visu_size,0,"[Preview] G'MIC: Inpaint [multi-scale]"
     fi
-    srand 0 inpaint_patchmatch.. [1],${1-5}
+    srand 0 inpaint_matchpatch.. [1],${1-5}
     rm.
   endl done
 
-fx_inpaint_patchmatch_preview :
-  fx_inpaint_patchmatch ${1-9},{1+$10},0
+fx_inpaint_matchpatch_preview :
+  fx_inpaint_matchpatch ${1-9},{1+$10},0
 
 #@gui Inpaint [Patch-Based] : fx_inpaint_patch, fx_inpaint_patch_preview
 #@gui : Patch Size = _int(7,1,64)
