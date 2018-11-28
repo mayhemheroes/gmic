@@ -8573,12 +8573,15 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                            indices,&patch_width,&patch_height,&patch_depth,&nb_iterations,&end)==5 ||
                cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%f,%f,%f,%f,%f%c",
                            indices,&patch_width,&patch_height,&patch_depth,&nb_iterations,&nb_randoms,&end)==6 ||
-               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%f,%f,%f,%f,%f,%u%c",
+               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%f,%f,%f,%f,%f,%f%c",
                            indices,&patch_width,&patch_height,&patch_depth,&nb_iterations,&nb_randoms,
-                           &is_score,&end)==7 ||
-               (cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%f,%f,%f,%f,%f,%u,[%255[a-zA-Z0-9_.%+-]%c%c",
+                           &occ_penalization,&end)==7 ||
+               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%f,%f,%f,%f,%f,%f,%u%c",
+                           indices,&patch_width,&patch_height,&patch_depth,&nb_iterations,&nb_randoms,
+                           &occ_penalization,&is_score,&end)==8 ||
+               (cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%f,%f,%f,%f,%f,%f,%u,[%255[a-zA-Z0-9_.%+-]%c%c",
                             indices,&patch_width,&patch_height,&patch_depth,&nb_iterations,&nb_randoms,
-                            &is_score,argx,&sep,&end)==9 && sep==']')) &&
+                            &occ_penalization,&is_score,argx,&sep,&end)==10 && sep==']')) &&
               (ind=selection2cimg(indices,images.size(),images_names,"matchpatch")).height()==1 &&
               (!*argx ||
                (ind0=selection2cimg(argx,images.size(),images_names,"matchpatch")).height()==1) &&
@@ -8592,13 +8595,14 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             nb_randoms = cimg::round(nb_randoms);
             if (ind0) initialization = &images[*ind0];
             print(images,0,"Estimate correspondence map between image%s and patch image [%u], "
-                  "using %gx%gx%g patches, %g iteration%s, and %g randomization%s "
+                  "using %gx%gx%g patches, %g iteration%s, %g randomization%s and occurence penalization %g "
                   "(%sscore returned).",
                   gmic_selection.data(),
                   *ind,
                   patch_width,patch_height,patch_depth,
                   nb_iterations,nb_iterations!=1?"s":"",
                   nb_randoms,nb_randoms!=1?"s":"",
+                  occ_penalization,
                   is_score?"":"no ");
             const CImg<T> patch_image = gmic_image_arg(*ind);
             cimg_forY(selection,l) gmic_apply(gmic_matchpatch(patch_image,
