@@ -13612,9 +13612,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             // Make a temporary copy (or link) of the original file.
 #if cimg_OS==1
             const char *const _filename_path = realpath(_filename,0);
-            if (symlink(_filename_path,filename_tmp))
+            if (!_filename_path || symlink(_filename_path,filename_tmp))
               CImg<unsigned char>::get_load_raw(_filename).save_raw(filename_tmp);
-            std::free((void*)_filename_path);
+            if (_filename_path) std::free((void*)_filename_path);
 #else // #if cimg_OS==1
             CImg<unsigned char>::get_load_raw(_filename).save_raw(filename_tmp);
 #endif // #if cimg_OS==1
