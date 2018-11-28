@@ -508,26 +508,28 @@ CImg<T> get_gmic_invert_endianness(const char *const stype) const {
 CImg<T>& gmic_matchpatch(const CImg<T>& patch_image,
                          const unsigned int patch_width,
                          const unsigned int patch_height,
-                         const unsigned int patch_depth=1,
-                         const unsigned int nb_iterations=5,
-                         const unsigned int nb_randoms=5,
-                         const bool is_score=false,
-                         const CImg<T> *const initialization=0) {
+                         const unsigned int patch_depth,
+                         const unsigned int nb_iterations,
+                         const unsigned int nb_randoms,
+                         const float occ_penalization,
+                         const bool is_score,
+                         const CImg<T> *const initialization) {
   return get_gmic_matchpatch(patch_image,patch_width,patch_height,patch_depth,
-                             nb_iterations,nb_randoms,is_score,initialization).move_to(*this);
+                             nb_iterations,nb_randoms,occ_penalization,is_score,initialization).move_to(*this);
 }
 
 CImg<T> get_gmic_matchpatch(const CImg<T>& patch_image,
                             const unsigned int patch_width,
                             const unsigned int patch_height,
-                            const unsigned int patch_depth=1,
-                            const unsigned int nb_iterations=5,
-                            const unsigned int nb_randoms=5,
-                            const bool is_score=false,
-                            const CImg<T> *const initialization=0) const {
+                            const unsigned int patch_depth,
+                            const unsigned int nb_iterations,
+                            const unsigned int nb_randoms,
+                            const float occ_penalization,
+                            const bool is_score,
+                            const CImg<T> *const initialization) const {
   CImg<floatT> score, res;
   res = _matchpatch(patch_image,patch_width,patch_height,patch_depth,
-                    nb_iterations,nb_randoms,
+                    nb_iterations,nb_randoms,occ_penalization,
                     initialization?*initialization:CImg<T>::const_empty(),
                     is_score,is_score?score:CImg<floatT>::empty());
   if (score) res.resize(-100,-100,-100,3,0).draw_image(0,0,0,2,score);
@@ -8558,7 +8560,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Get patch-matching correspondence map.
         if (!std::strcmp("matchpatch",command)) {
           gmic_substitute_args(true);
-          float patch_width, patch_height, patch_depth = 1, nb_iterations = 5, nb_randoms = 5;
+          float patch_width, patch_height, patch_depth = 1, nb_iterations = 5, nb_randoms = 5, occ_penalization = 0;
           unsigned int is_score = 0;
           *argx = 0; ind0.assign();
           if (((cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%f,%c",
@@ -8605,6 +8607,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                                               (unsigned int)patch_depth,
                                                               (unsigned int)nb_iterations,
                                                               (unsigned int)nb_randoms,
+                                                              occ_penalization,
                                                               (bool)is_score,
                                                               initialization));
           } else arg_error("matchpatch");
