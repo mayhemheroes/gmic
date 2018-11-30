@@ -9051,7 +9051,7 @@ upscale_smart : skip ${2=100%},${3=100%} check "${4=2}>=0 && ${5=0.4}>=0 && $5<=
 #@cli : 'boundary_conditions' can be { 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }.
 #@cli : Default values: 'std_factor=0.3' and 'boundary_conditions=3'.
 warp_patch : check ${is_image_arg\ $1}" && isint(${2=3}) && $2>=1 && isint(${3=$2}) && $3>=1 && isint(${4=1}) && $4>=1 && isval(${5=0.3}) && $5>0 && isint(${6=3}) && $6>=0 && $6<=3"
-  e[^-1] "Patch-warp image$? with backward-absolute displacement field $1, using $2x$3x$4 patchs, std factor $5 and "${"arg 1+$6,dirichlet,neumann,periodic,mirror"}" boundary conditions."
+  e[^-1] "Patch-warp image$? with backward-absolute displacement field $1, using $2x$3x$4 patches, std factor $5 and "${"arg 1+$6,dirichlet,neumann,periodic,mirror"}" boundary conditions."
   v - if {$2<=1} pass$1 warp[^-1] .,0 rm. v + return fi
   repeat $! pass$1 l[$>,-1]
     [0],[0],[0],1,1 a[0,-1] c # Add weighting channel
@@ -9571,7 +9571,7 @@ denoise_patchpca : check "${1=1.8} && $1>=0 && isint(${2=7}) && $2>0 && isint(${
       eig = eig(M);
       lambda = sqrt(abs(eig[0,"$N2"]));
 
-      # Determine number of lambdas to keep and project neighboring patchs.
+      # Determine number of lambdas to keep and project neighboring patches.
       for (k = 0, k<size(lambda) && lambda[k]>=$1*"$stdnoise", ++k);
       Qt = eig["$N2","{$N2*$N2}"];
       Q = transp(Qt,"$N2");
@@ -14208,8 +14208,8 @@ parametric3d : skip "${1=(2+cos(b))*sin(a)}","${2=(2+cos(b))*cos(a)}","${3=sin(b
 #@cli : Default values: 'patch_size=7', 'M=1000', 'N=3000', 'normalize_input=1', 'normalize_output=0', and 'lambda_xy=0'.
 #@cli : $ image.jpg pca_patch3d 7
 pca_patch3d : check "isint(${1=7}) && $1>0 && isint(${2=1000}) && $2>0 && isint(${3=3000}) && $3>0" skip ${4=1},${5=0},${6=0}
-  e[^-1] "Get 3D patch-pca representation"${arg\ 1+($!>1),s,""}" of image$?, from $2 $1x$1 input patchs, "\
-          "with $3 output patchs, input normalization "${arg\ 1+!$4,enabled,disabled}", output normalization "\
+  e[^-1] "Get 3D patch-pca representation"${arg\ 1+($!>1),s,""}" of image$?, from $2 $1x$1 input patches, "\
+          "with $3 output patches, input normalization "${arg\ 1+!$4,enabled,disabled}", output normalization "\
           ${arg\ 1+!$5,enabled,disabled}" and lambda_xy $6."
   v -
   P1={int($1/2)}       # Backward half-patch size.
@@ -14219,7 +14219,7 @@ pca_patch3d : check "isint(${1=7}) && $1>0 && isint(${2=1000}) && $2>0 && isint(
   repeat $! l[$>] nm={0,n}
     s={s}
 
-    # Pick set of M random located patchs.
+    # Pick set of M random located patches.
     1,$2 rand. 0,{0,w-1} +rand. 0,{0,h-1} +f. 0 a[-3--1] x round. 1 +patches[0] $1,$1,1,{^} y[2--1] a[2--1] x
     z[1] 0,1 transpose[1] *[1] $6 a[1,2] y s[^0] x
 
@@ -14234,7 +14234,7 @@ pca_patch3d : check "isint(${1=7}) && $1>0 && isint(${2=1000}) && $2>0 && isint(
     if $5 sqrt.. /.. {-2,iM} r.. . /. .. fi
     rm..
 
-    # Pick set of N random located patchs.
+    # Pick set of N random located patches.
     repeat $3
       x={round(u({0,w}))}
       y={round(u({0,h}))}
@@ -27156,7 +27156,7 @@ fx_recolorize :
     if $3 s=$>,{$>+1} else s={2*$>},{2*$>+1} fi
     l[$s] rv[0,1]
       channels[0] 0 to_rgb.. # Convert to pure gray.
-      to_rgba. split_opacity. !=. 0  # Retrieve mask of color patchs.
+      to_rgba. split_opacity. !=. 0  # Retrieve mask of color patches.
       srgb2rgb[-3,-2] rgb2lab8[-3,-2] channels... 0 channels.. 1,2 # Now, list is [0]=lightness / [1]=chroma / [2]=mask.
       +.. 1 *.. . +gradient_norm... *. -1 watershed... . rm. -.. 1 # Get first estimate for the color interpolation.
       +diffusiontensors... $2,1,0.5,0.5 ==.. 0 *. .. rm..

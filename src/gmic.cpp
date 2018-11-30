@@ -6419,7 +6419,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               sigma_s>=0 && sigma_r>=0 && psize>=0 && rsize>=0 && is_fast_approximation<=1) {
             psize = cimg::round(psize);
             rsize = cimg::round(rsize);
-            print(images,0,"Denoise image%s using %gx%g patchs, with standard deviations %lg,%g, "
+            print(images,0,"Denoise image%s using %gx%g patches, with standard deviations %lg,%g, "
                   "lookup size %g and smoothness %g.",
                   gmic_selection.data(),
                   psize,
@@ -14306,7 +14306,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     CImg<char> error_message(e_ptr,(unsigned int)std::strlen(e_ptr) + 1);
 
     const char *const s_fopen = "cimg::fopen(): Failed to open file '";
-    const unsigned int l_fopen = std::strlen(s_fopen);
+    const unsigned int l_fopen = (unsigned int)std::strlen(s_fopen);
     if (!std::strncmp(error_message,s_fopen,l_fopen) &&
         !std::strcmp(error_message.end() - 18,"' with mode 'rb'.")) {
       error_message[error_message.width() - 18] = 0;
