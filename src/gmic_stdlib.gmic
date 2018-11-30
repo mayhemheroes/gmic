@@ -9045,13 +9045,13 @@ upscale_smart : skip ${2=100%},${3=100%} check "${4=2}>=0 && ${5=0.4}>=0 && $5<=
 #@cli : $ image.jpg 100%,100%,1,2,'X=x/w-0.5;Y=y/h-0.5;R=(X*X+Y*Y)^0.5;A=atan2(Y,X);130*R*if(c==0,cos(4*A),sin(8*A))' warp[-2] [-1],1,1,0 quiver[-1] [-1],10,1,1,1,100
 #@cli : $$
 
-#@cli warp_patch : [warping_field],patch_size>=0,_std_factor>0,_boundary_conditions.
+#@cli warp_patch : [warping_field],patch_width>=1,_patch_height>=1,_patch_depth>=1,_std_factor>0,_boundary_conditions.
 #@cli : Patch-warp selected images, with specified 2D or 3D displacement field (in backward-absolute mode).
 #@cli : Argument 'std_factor' sets the std of the gaussian weights for the patch overlap, equal to 'std = std_factor*patch_size'.
 #@cli : 'boundary_conditions' can be { 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }.
 #@cli : Default values: 'std_factor=0.3' and 'boundary_conditions=3'.
-warp_patch : check ${is_image_arg\ $1}" && isint(${2=3}) && $2>=0 && isval(${3=0.3}) && $3>0 && isint(${4=3}) && $4>=0 && $4<=3"
-  e[^-1] "Patch-warp image$? with backward-absolute displacement field $1, patch size $2, std factor $3 and "${"arg 1+$4,dirichlet,neumann,periodic,mirror"}" boundary conditions."
+warp_patch : check ${is_image_arg\ $1}" && isint(${2=3}) && $2>=1 && isint(${3=$2}) && $3>=1 && isint(${4=1}) && $4>=1 && isval(${5=0.3}) && $5>0 && isint(${6=3}) && $6>=0 && $6<=3"
+  e[^-1] "Patch-warp image$? with backward-absolute displacement field $1, using $2x$3x$4 patchs, std factor $5 and "${"arg 1+$6,dirichlet,neumann,periodic,mirror"}" boundary conditions."
   v - if {$2<=1} pass$1 warp[^-1] .,0 rm. v + return fi
   repeat $! pass$1 l[$>,-1]
     [0],[0],[0],1,1 a[0,-1] c # Add weighting channel
@@ -9060,21 +9060,28 @@ warp_patch : check ${is_image_arg\ $1}" && isint(${2=3}) && $2>=0 && isval(${3=0
     if {1,s>=3} # 3D version
       eval[1] "*
         begin(
-          const p = $2;
-          const stdf = $3;
-          const boundary = $4;
-          const ppp = p^3;
-          const p1 = int(p/2);
-          const p2 = p - p1 - 1;
+          const pw = $2;
+          const ph = $3;
+          const pd = $4;
+          const stdf = $5;
+          const boundary = $6;
+
+          const pw1 = int(pw/2);
+          const pw2 = pw - pw1 - 1;
+          const ph1 = int(ph/2);
+          const ph2 = ph - ph1 - 1;
+          const pd1 = int(pd/2);
+          const pd2 = pd - pd1 - 1;
+          const pwhd = pw*ph*pd;
 
           # Pre-compute gaussian weights.
           if (stdf<5,
-            weights = vectorppp();
+            weights = vectorpwhd();
             offw = 0;
-            for (zw = -p1, zw<=p2, ++zw,
-              for (yw = -p1, yw<=p2, ++yw,
-                for (xw = -p1, xw<=p2, ++xw,
-                  weights[offw++] = exp(-(xw^2 + yw^2)/(2*(stdf*p)^2));
+            for (zw = -pd1, zw<=pd2, ++zw,
+              for (yw = -ph1, yw<=ph2, ++yw,
+                for (xw = -pw1, xw<=pw2, ++xw,
+                  weights[offw++] = exp(-xw^2/(2*(stdf*pw)^2) - yw^2/(2*(stdf*ph)^2) - zw^2/(2*(stdf*pd)^2));
                 );
               );
             );
@@ -9084,27 +9091,31 @@ warp_patch : check ${is_image_arg\ $1}" && isint(${2=3}) && $2>=0 && isval(${3=0
         u = i(x,y,z,0);
         v = i(x,y,z,1);
         w = i(x,y,z,2);
-        patch = crop(#0,u - p1, v - p1,w - p1,p,p,p,boundary);
+        patch = crop(#0,u - pw1, v - ph1,w - pd1,pw,ph,pd,boundary);
         stdf<5?
-          draw(#2,patch,x - p1,y - p1,z - p1,0,p,p,p,s#0,-1,weights):
-          draw(#2,patch,x - p1,y - p1,z - p1,0,p,p,p,s#0,-1)"
+          draw(#2,patch,x - pw1,y - ph1,z - pd1,0,pw,ph,pd,s#0,-1,weights):
+          draw(#2,patch,x - pw1,y - ph1,z - pd1,0,pw,ph,pd,s#0,-1)"
     else # 2D version
       eval[1] "*
         begin(
-          const p = $2;
-          const stdf = $3;
-          const boundary = $4;
-          const pp = p^2;
-          const p1 = int(p/2);
-          const p2 = p - p1 - 1;
+          const pw = $2;
+          const ph = $3;
+          const stdf = $5;
+          const boundary = $6;
+
+          const pw1 = int(pw/2);
+          const pw2 = pw - pw1 - 1;
+          const ph1 = int(ph/2);
+          const ph2 = ph - ph1 - 1;
+          const pwh = pw*ph;
 
           # Pre-compute gaussian weights.
           if (stdf<5,
-            weights = vectorpp();
+            weights = vectorpwh();
             offw = 0;
-            for (yw = -p1, yw<=p2, ++yw,
-              for (xw = -p1, xw<=p2, ++xw,
-                weights[offw++] = exp(-(xw^2 + yw^2)/(2*(stdf*p)^2));
+            for (yw = -ph1, yw<=ph2, ++yw,
+              for (xw = -pw1, xw<=pw2, ++xw,
+                weights[offw++] = exp(-xw^2/(2*(stdf*pw)^2) - yw^2/(2*(stdf*ph)^2));
               );
             );
           );
@@ -9112,10 +9123,10 @@ warp_patch : check ${is_image_arg\ $1}" && isint(${2=3}) && $2>=0 && isval(${3=0
 
         u = i(x,y,z,0);
         v = i(x,y,z,1);
-        patch = crop(#0,u - p1, v - p1,p,p,boundary);
+        patch = crop(#0,u - pw1, v - ph1,pw,ph,boundary);
         stdf<5?
-          draw(#2,patch,x - p1,y - p1,0,0,p,p,1,s#0,-1,weights):
-          draw(#2,patch,x - p1,y - p1,0,0,p,p,1,s#0,-1)"
+          draw(#2,patch,x - pw1,y - ph1,0,0,pw,ph,1,s#0,-1,weights):
+          draw(#2,patch,x - pw1,y - ph1,0,0,pw,ph,1,s#0,-1)"
     fi
 
     s. c,-{0,s-1} /[-2,-1] k.
@@ -10840,7 +10851,8 @@ syntexturize_matchpatch : check "${1=100%}>0 && ${2=$1}>0 && isint(${3=0}) && $3
       # Synthesis.
       psize={-2,min(w,h,$4)}
       repeat {1+$6*$<}
-        +warp_patch.. .,{int(max(3,$5*$scale%))}
+        psynth={int(max(3,$5*$scale%))}
+        +warp_patch.. .,$psynth
         matchpatch. ...,$psize,$psize,1,4,4,0,0,.. rm..
       done
       rm..
