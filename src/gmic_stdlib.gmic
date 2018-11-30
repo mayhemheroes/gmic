@@ -2018,7 +2018,7 @@ _display_quiver : check "${1=16}>0 && ${2=1.5}>=0 && isint(${3=2}) && $3>=0 && $
   endl done v +
 
 #@cli drgba : eq. to 'display_rgba'.
-drgba : skip "${1=none}"
+drgba : skip "${1=none},${2=$1},${3=$1}"
   v - _gmic_s="$?" v +
   _display_rgba ${^0}
   v - if {!${}} noarg fi v +
@@ -2028,12 +2028,12 @@ drgba : skip "${1=none}"
 #@cli : (eq. to 'drgba').
 #@cli : Default values: 'background_RGB_color=undefined' (checkerboard).
 #@cli : $ image.jpg +norm threshold[-1] 40% blur[-1] 3 normalize[-1] 0,255 append c display_rgba
-display_rgba : skip "${1=none}"
+display_rgba : skip "${1=none},${2=$1},${3=$1}"
   v - _gmic_s="$?" v +
   _$0 ${^0}
   v - if {!${}} noarg fi v +
 
-_display_rgba : skip "${1=}"
+_display_rgba : skip "${1=},${2=$1},${3=$1}"
   v - l[] is_rgb={"isval($1)"} onfail is_rgb=0 endl v +
   if $is_rgb e[0--4] "Render RGBA image"$_gmic_s" over RGB background ($*)."
   else e[0--4] "Render RGBA image"$_gmic_s" over a checkerboard background."
