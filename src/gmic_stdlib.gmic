@@ -10274,30 +10274,32 @@ _inpaint_matchpatch :
   fi
   k[0]
 
-# _inpaint_warping : fill-in zero-valued vectors in absolute warping field.
-_inpaint_warping :
+# _inpaint_warping2d : fill-in zero-valued vectors in absolute 2d warping field.
+_inpaint_warping2d :
   repeat $! l[$>]
-    100%,100%,1,2,">begin(zero=[0,0]; N=0); I(#-1)==zero?zero:[++N,1]"
+    100%,100%,100%,2,"> begin(const S = s#0; zero0 = vectorS(); zero1 = [0,0]; N = 0); I(#-1)==zero0?zero1:[++N,1]"
     s. c distance. 1 *. -1
     watershed.. . rm.
 
     # Propagate offsets in each distinct voronoi cell.
     repeat 2
       f.. ">i?I:( # Forward propagation
-        nP = [ 0,0 ];
+        nP = I;
+        const sP = size(nP);
         r = i(#-1);
-        (P = J(-1,-1))[0] && j(#-1,-1,-1)==r?(nP = P + [1,1]):
-        (P = J(0,-1))[0] && j(#-1,0,-1)==r?(nP = P + [0,1]):
-        (P = J(1,-1))[0] && j(#-1,1,-1)==r?(nP = P + [-1,1]):
-        (P = J(-1,0))[0] && j(#-1,-1,0)==r?(nP = P + [1,0]);
+        (P = J(-1,-1))[0] && j(#-1,-1,-1)==r?(nP[0] = ++P[0]; nP[1] = ++P[1]; sP>2?copy(nP[2],P[2],sP-2)):
+        (P = J(0,-1))[0] && j(#-1,0,-1)==r  ?(nP[0] = P[0];   nP[1] = ++P[1]; sP>2?copy(nP[2],P[2],sP-2)):
+        (P = J(1,-1))[0] && j(#-1,1,-1)==r  ?(nP[0] = --P[0]; nP[1] = ++P[1]; sP>2?copy(nP[2],P[2],sP-2)):
+        (P = J(-1,0))[0] && j(#-1,-1,0)==r  ?(nP[0] = ++P[0]; nP[1] = P[1]; sP>2?copy(nP[2],P[2],sP-2));
         nP)"
       f.. "<i?I:( # Backward propagation
-        nP = [ 0,0 ];
+        nP = I;
+        const sP = size(nP);
         r = i(#-1);
-        (P = J(1,1))[0] && j(#-1,1,1)==r?(nP = P + [-1,-1]):
-        (P = J(0,1))[0] && j(#-1,0,1)==r?(nP = P + [0,-1]):
-        (P = J(-1,1))[0] && j(#-1,-1,1)==r?(nP = P + [1,-1]):
-        (P = J(1,0))[0] && j(#-1,1,0)==r?(nP = P + [-1,0]);
+        (P = J(1,1))[0] && j(#-1,1,1)==r  ?(nP[0] = --P[0]; nP[1] = --P[1]; sP>2?copy(nP[2],P[2],sP-2)):
+        (P = J(0,1))[0] && j(#-1,0,1)==r  ?(nP[0] = P[0];   nP[1] = --P[1]; sP>2?copy(nP[2],P[2],sP-2)):
+        (P = J(-1,1))[0] && j(#-1,-1,1)==r?(nP[0] = ++P[0]; nP[1] = --P[1]; sP>2?copy(nP[2],P[2],sP-2)):
+        (P = J(1,0))[0] && j(#-1,1,0)==r  ?(nP[0] = --P[0]; nP[1] = P[1]; sP>2?copy(nP[2],P[2],sP-2));
         nP)"
     done
     rm.
