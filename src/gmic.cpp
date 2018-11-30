@@ -532,7 +532,8 @@ CImg<T> get_gmic_matchpatch(const CImg<T>& patch_image,
                     nb_iterations,nb_randoms,occ_penalization,
                     initialization?*initialization:CImg<T>::const_empty(),
                     is_score,is_score?score:CImg<floatT>::empty());
-  if (score) res.resize(-100,-100,-100,3,0).draw_image(0,0,0,2,score);
+  const unsigned int s = res._spectrum;
+  if (score) res.resize(-100,-100,-100,s + 1,0).draw_image(0,0,0,s,score);
   return res;
 }
 
