@@ -7148,7 +7148,7 @@ luminance :
 #@cli : $$
 mix_rgb : skip ${1=1},${2=0},${3=0},${4=0},${5=1},${6=0},${7=0},${8=0},${9=1}
   e[^-1] "Apply matrix [ $1 $2 $3 ; $4 $5 $6 ; $7 $8 $9 ] to RGB colors of image$?."
-  v - r 100%,100%,100%,3,0,2 mix_channels (${1-3};${4-6};${7-9}) v +
+  v - to_color repeat $! sh[$>] 0,2 mix_channels. (${1-3};${4-6};${7-9}) rm. done v +
 
 #@cli pseudogray : _max_increment>=0,_JND_threshold>=0,_bits_depth>0
 #@cli : Generate pseudogray colormap with specified increment and perceptual threshold.
@@ -7429,16 +7429,16 @@ rgb2xyz : skip "${1=,}"
   v - l[] if {isval("$1")} illu={"$1?1:0"} else if {["'$1'"]!=','} noarg fi illu=1 fi onfail noarg illu=1 endl v +
   e[^-1] "Convert color representation of image$? from RGB to XYZ, using the D"{arg(1+$illu,50,65)}" illuminant."
   v -
-  / 255
   if $illu # D65
-    mix_rgb 0.4124564,0.3575761,0.1804375,\
-            0.2126729,0.7151522,0.0721750,\
-            0.0193339,0.1191920,0.9503041
+    mix_rgb {[0.4124564,0.3575761,0.1804375,\
+              0.2126729,0.7151522,0.0721750,\
+              0.0193339,0.1191920,0.9503041]/255}
   else # D50
-    mix_rgb 0.43603516,0.38511658,0.14305115,\
-            0.22248840,0.71690369,0.06060791,\
-            0.01391602,0.09706116,0.71392822
-  fi v +
+    mix_rgb {[0.43603516,0.38511658,0.14305115,\
+              0.22248840,0.71690369,0.06060791,\
+              0.01391602,0.09706116,0.71392822]/255}
+  fi
+  v +
 
 #@cli rgb2xyz8 : illuminant={ 0=D50 | 1=D65 } : (no arg)
 #@cli : Convert color representation of selected images from RGB to XYZ8.
@@ -7480,8 +7480,9 @@ rgb2yiq8 :
 #@cli : $ image.jpg rgb2ycbcr split c
 rgb2ycbcr :
   e[^-1] "Convert color representation of image$? from RGB to YCbCr."
-  v - mix_rgb 66,129,25,-38,-74,112,112,-94,-18 + 128 / 256
+  v - mix_rgb 66,129,25,-38,-74,112,112,-94,-18
   repeat $!
+    sh[$>] 0,2 +. 128 /. 256 rm.
     sh[$>] 0 +. 16 rm.
     sh[$>] 1,2 +. 128 rm.
   done v +
@@ -7491,10 +7492,10 @@ rgb2ycbcr :
 #@cli : $ image.jpg rgb2yuv split c
 rgb2yuv :
   e[^-1] "Convert color representation of image$? from RGB to YUV."
-  v - / 255
-  mix_rgb 0.299,0.587,0.114,\
-          -0.14713,-0.28886,0.436,\
-          0.615,-0.51498,-0.10001
+  v -
+  mix_rgb {[0.299,0.587,0.114,\
+            -0.14713,-0.28886,0.436,\
+            0.615,-0.51498,-0.10001]/255}
   v +
 
 #@cli rgb2yuv8
@@ -7918,15 +7919,15 @@ xyz2rgb : skip "${1=,}"
   e[^-1] "Convert color representation of image$? from XYZ to RGB, using the D"{arg(1+$illu,50,65)}" illuminant."
   v -
   if $illu # D65
-    mix_rgb 3.2404542,-1.5371385,-0.4985314,\
-            -0.9692660,1.8760108,0.0415560,\
-            0.0556434,-0.2040259,1.0572252
+    mix_rgb {[3.2404542,-1.5371385,-0.4985314,\
+              -0.9692660,1.8760108,0.0415560,\
+              0.0556434,-0.2040259,1.0572252]*255}
   else # D50
-    mix_rgb 3.134274799724,-1.617275708956,-0.490724283042,\
-            -0.978795575994,1.916161689117,0.033453331711,\
-            0.071976988401,-0.228984974402,1.405718224383
+    mix_rgb {[3.134274799724,-1.617275708956,-0.490724283042,\
+              -0.978795575994,1.916161689117,0.033453331711,\
+              0.071976988401,-0.228984974402,1.405718224383]*255}
   fi
-  * 255 c 0,255 v +
+  c 0,255 v +
 
 #@cli xyz82rgb : illuminant={ 0=D50 | 1=D65 } : (no arg)
 #@cli : Convert color representation of selected images from XYZ8 to RGB.
@@ -7938,18 +7939,20 @@ xyz82rgb : skip "${1=,}"
     sh[$>] 0 /. 255 rm.
     sh[$>] 1 /. 255 rm.
     sh[$>] 2 /. 231.8182 rm.
-  done -xyz2rgb $illu v +
+  done xyz2rgb $illu v +
 
 #@cli ycbcr2rgb
 #@cli : Convert color representation of selected images from YCbCr to RGB.
 ycbcr2rgb :
   e[^-1] "Convert color representation of image$? from YCbCr to RGB."
-  v - repeat $! l[$>] sh 0 -. 16 rm. sh 1,2 -. 128 rm. endl done
-  mix_rgb 298,0,409,\
-          298,-100,-208,\
-          298,516,0
-  + 128 / 256 c 0,255
-  v +
+  v - repeat $!
+    sh[$>] 0 -. 16 rm.
+    sh[$>] 1,2 -. 128 rm.
+    sh[$>] 0,2 mix_rgb. 298,0,409,\
+                        298,-100,-208,\
+                        298,516,0
+    +. 128 /. 256 c. 0,255 rm.
+  done v +
 
 #@cli yiq2rgb
 #@cli : Convert color representation of selected images from YIQ to RGB.
@@ -7979,10 +7982,10 @@ yiq82rgb :
 yuv2rgb :
   e[^-1] "Convert color representation of image$? from YUV to RGB."
   v -
-  mix_rgb 1,0,1.13983,\
-          1,-0.39465,-0.5806,\
-          1,2.03211,0
-  * 255 c 0,255 v +
+  mix_rgb {[1,0,1.13983,\
+            1,-0.39465,-0.5806,\
+            1,2.03211,0]*255}
+  c 0,255 v +
 
 #@cli yuv82rgb
 #@cli : Convert selected images from YUV8 to RGB color bases.
