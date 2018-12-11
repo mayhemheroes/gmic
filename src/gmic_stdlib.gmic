@@ -3985,7 +3985,7 @@ update_gallery_html : check "isbool(${1=0})"
   x "ln -fs ../highslide ."
 
   # Define categories and sample pictures.
-  categories=arrays,artistic,blackandwhite,colors,deformations,filtering,patterns,3drendering,codesamples
+  categories=arrays,artistic,blackandwhite,colors,deformations,filtering,patterns,3drendering,stylization,codesamples
   nb_categories={narg($categories)}
   commands_arrays=gallery_arrays,array,array_fade,array_mirror,frame_blur,frame_cube,frame_painting,img2ascii,imagegrid,rotate_tiles,vignette,tunnel
   commands_artistic=gallery_artistic,boxfitting,cartoon,cubism,draw_whirl,fractalize,halftone,sketchbw,light_relief,mosaic,linify,polaroid,polygonize,poster_hope,rodilius,stencil,stained_glass
@@ -3995,6 +3995,7 @@ update_gallery_html : check "isbool(${1=0})"
   commands_filtering=gallery_filtering,blur_angular,blur_linear,blur_radial,glow,smooth,bilateral,dog,deriche,distance,gradient_norm,normalize_local,sharpen,solidify
   commands_patterns=gallery_patterns,tsp,chessboard,mandelbrot,maze_mask,plasma,shape_fern,shape_snowflake,sierpinski,syntexturize_matchpatch,truchet,turbulence,watermark_visible,weave
   commands_3drendering=gallery_3drendering,add3d,distribution3d,elevation3d,gmic3d,imageblocks3d,imagerubik3d,skeleton3d,spherical3d,tensors3d,text3d,torus3d,weird3d
+  commands_stylization=gallery_stylization
   commands_codesamples=gallery_codesamples
 
   pics=apples,bottles,butterfly,car,cat,cliff,david,dog,duck,eagle,elephant,earth,flower,fruits,greece,gummy,inside,landscape,leaf,leno,lion,mandrill,monalisa,parrots,pencils,rooster,rose,square,teddy,tiger,wall,waterfall,zelda
@@ -4050,6 +4051,7 @@ update_gallery_html : check "isbool(${1=0})"
          $td_filtering"<a href=\"filtering.shtml#menu\">Filtering</a></td>"\
          $td_patterns"<a href=\"patterns.shtml#menu\">Patterns</a></td>"\
          $td_3drendering"<a href=\"3drendering.shtml#menu\">3D rendering</a></td>"\
+         $td_stylization"<a href=\"stylization.shtml#menu\">Stylization</a></td>"\
          $td_codesamples"<a href=\"codesamples.shtml#menu\">Code samples</a></td>"\
          "</tr></table></font>\n"
 
@@ -4264,7 +4266,7 @@ _gallery :
 
 __gallery :
   if {$!==2} if {w>h} a y else a x fi
-  else append_tiles 2
+  else montage A # append_tiles 2
   fi
 
 # Function that inserts a new 'Update information' filter for a previous version number,
@@ -7739,7 +7741,7 @@ transfer_histogram : check ${"is_image_arg $1"}" && ${2=256}>0" skip "${3=0}"
       r[$>] $w0,$h0,$d0,$s0,0
     done
   else repeat $! pass$1 _transfer_histogram[$>,-1] $2 done rm.
-  fi
+  fi v +
 
 _transfer_histogram :
   repeat {min(s#0,s#1)}
@@ -36699,6 +36701,14 @@ fx_solve_maze_preview :
 #@cli : $ image.jpg fx_quadtree 2,1024,1.05,0,2.33,0.68,0.39,1,0 _label="Quadtree~variations"
 #@cli : $ image.jpg fx_vector_painting 9.37,0 _label="Vector~painting"
 
+#@cli gallery_blackandwhite
+#@cli : This entry defines some examples of black-and-white filters for the G'MIC gallery page.
+#@cli : $ image.jpg fx_freaky_bw 90,20,0,0,0,0 _label="Freaky~B&amp;W"
+#@cli : $ image.jpg fx_engrave 0.5,50,0,8,40,0,0,0,10,1,0,0,0,1,0 _label="Engrave"
+#@cli : $ image.jpg fx_gcd_layeretch 11,4,12,0.12,100,8.5,5,0,0,3,1,1,0 _label="Multi-layer~etch"
+#@cli : $ image.jpg fx_pencil_portraitbw 30,120,1,0.5,144,79,21,0 _label="Pencil~portrait"
+#@cli : $ image.jpg fx_gcd_etch 125,153,171,185,0.1,50,80,50,10,15,12,20,0,1,0.3,1,0,0 _label="Threshold~etch"
+
 #@cli gallery_colors
 #@cli : This entry defines some examples of color filters for the G'MIC gallery page.
 #@cli : $ image.jpg fx_color_abstraction 1,10,0.2,0 _label="Color~abstraction"
@@ -36752,13 +36762,14 @@ fx_solve_maze_preview :
 #@cli : $ sample leno,lion,leno resize 400,400 transition3d 20,5,5 rm. _fps=10 _label="transition3d"
 #@cli : $ 256,192 fx_text_pointcloud3d 64,"G'MIC","Rocks!",1,200,220,255,255,255,255,255,2,2,1,19 _fps=10 _label="3D~text~pointcloud"
 
-#@cli gallery_blackandwhite
-#@cli : This entry defines some examples of black-and-white filters for the G'MIC gallery page.
-#@cli : $ image.jpg fx_freaky_bw 90,20,0,0,0,0 _label="Freaky~B&amp;W"
-#@cli : $ image.jpg fx_engrave 0.5,50,0,8,40,0,0,0,10,1,0,0,0,1,0 _label="Engrave"
-#@cli : $ image.jpg fx_gcd_layeretch 11,4,12,0.12,100,8.5,5,0,0,3,1,1,0 _label="Multi-layer~etch"
-#@cli : $ image.jpg fx_pencil_portraitbw 30,120,1,0.5,144,79,21,0 _label="Pencil~portrait"
-#@cli : $ image.jpg fx_gcd_etch 125,153,171,185,0.1,50,80,50,10,15,12,20,0,1,0.3,1,0,0 _label="Threshold~etch"
+#@cli gallery_stylization
+#@cli : This entry defines some examples of image stylization for the G'MIC gallery page.
+#@cli : $ sample car _fx_stylize starrynight _output_mode=1 +fx_stylize 1,4,0,0,0.5,2,3,0.5,0.1,2,5,0,0.7,100,0,1,0,5,5,7,1,30,1000,2,0 _label="Stylize"
+#@cli : $ sample car _fx_stylize graytree _output_mode=1 +fx_stylize 1,4,0,0,0.5,2,3,0.5,0.1,2,5,0,0.7,100,0,1,0,5,5,7,1,30,1000,2,0 _label="Stylize"
+#@cli : $ sample car _fx_stylize yellowredblue _output_mode=1 +fx_stylize 1,4,0,0,0.5,2,3,0.5,0.1,2,5,0,0.7,100,0,1,0,5,5,7,1,30,1000,2,0 _label="Stylize"
+#@cli : $ sample car _fx_stylize littlebayatlaciotat _output_mode=1 +fx_stylize 1,4,0,0,0.5,2,3,0.5,0.1,2,5,0,0.7,100,0,1,0,5,5,7,1,30,1000,2,0 _label="Stylize"
+#@cli : $ sample car _fx_stylize lesdemoisellesdavignon _output_mode=1 +fx_stylize 1,4,0,0,0.5,2,3,0.5,0.1,2,5,0,0.7,100,0,1,0,5,5,7,1,30,1000,2,0 _label="Stylize"
+
 
 #@cli gallery_codesamples
 #@cli : This entry defines some examples of coding-fun filters for the G'MIC gallery page.
