@@ -4096,8 +4096,18 @@ update_gallery_html : check "isbool(${1=0})"
 
             l[] # Create a HTML representation of the command
               ({'${example$nex}'}) y
-              +replace_str. "image.jpg","<a href=\"https://gmic.eu/img/sample_"$sample".png\" target=\"_blank\">"$sample".png</a>"
-              y -.. . is_input={-2,im!=0||iM!=0}
+              is_input={find(crop(),'image.jpg')>=0}
+
+              if {!$is_input" && "find(crop(),'"sample "')>=0}
+                 s +,{'"sample "'}
+                 if {0,crop()=='"sample "'" && "$!>1} l[1]
+                   s +,{'" "'}
+                   if {0,find(crop(),_',')==-1} sample={0,t} is_input=1 fi
+                   a y
+                 endl fi
+                 a y
+              fi
+              replace_str. "image.jpg","<a href=\"https://gmic.eu/img/sample_"$sample".png\" target=\"_blank\">"$sample".png</a>"
               replace_str. "_output_mode=1",""
               l. s +,{'" "'} repeat $! if {$<,crop(0,0,1,5)=='_fps='||crop(0,0,1,7)=='_label='} # Discard '_fps=?' and '_label=?'
                 rm[$<]
@@ -32303,7 +32313,7 @@ fx_frame_smooth :
 #@gui : Vignette Max Radius = float(85,0,100)
 #@gui : sep = separator(), note = note("<small>Author: <i>David Tschumperl&#233;</i>.      Latest Update: <i>2010/29/12</i>.</small>")
 fx_old_photo :
-  -vignette ${1-3} -old_photo
+  vignette ${1-3} old_photo
 
 #@gui Polaroid : fx_polaroid, fx_polaroid(1)
 #@gui : Frame Size = int(10,0,400)
@@ -32318,7 +32328,7 @@ fx_old_photo :
 #@gui : Vignette Max Radius = float(95,0,100)
 #@gui : sep = separator(), note = note("<small>Author: <i>David Tschumperl&#233;</i>.      Latest Update: <i>2016/20/06</i>.</small>")
 fx_polaroid :
-  -vignette ${8-10} polaroid $1,$2 drop_shadow $3%,$4%,$5%,$6 rotate $7,1,0
+  vignette ${8-10} polaroid $1,$2 drop_shadow $3%,$4%,$5%,$6 rotate $7,1,0
 
 #@gui Tunnel : fx_tunnel, fx_tunnel(1)
 #@gui : Depth = int(4,1,100)
@@ -32339,7 +32349,7 @@ fx_tunnel :
 fx_vignette :
   repeat $! to_rgb l[$>]
     to_rgba split_opacity
-    =. 0 -vignette. ${1-3} a c +fc ${4-7} rv blend alpha
+    =. 0 vignette. ${1-3} a c +fc ${4-7} rv blend alpha
   endl done
 
 #@gui ____<b>Frequencies</b>
@@ -32908,7 +32918,7 @@ fx_contrast_swm :
 #@gui : Angle = float(0,0,360)
 #@gui : sep = separator(), note = note("<small>Author: <i>David Tschumperl&#233;</i>.      Latest Update: <i>2012/14/11</i>.</small>")
 fx_drop_shadow :
-  * -1 + 255 -vignette {255*$5},80,95 * -1 + 255
+  * -1 + 255 vignette {255*$5},80,95 * -1 + 255
   drop_shadow $1%,$2%,$3%,$4 rotate $6,1,0
 
 #@gui Drop Shadow 3D : fx_drop_shadow3d, fx_drop_shadow3d_preview(1)
@@ -36714,6 +36724,7 @@ fx_solve_maze_preview :
 
 #@cli gallery_blackandwhite
 #@cli : This entry defines some examples of black-and-white filters for the G'MIC gallery page.
+#@cli : $ sample monalisa fx_freaky_bw 90,20,0,0,0,0 _label="Freaky~B&amp;W"
 #@cli : $ image.jpg fx_freaky_bw 90,20,0,0,0,0 _label="Freaky~B&amp;W"
 #@cli : $ image.jpg fx_engrave 0.5,50,0,8,40,0,0,0,10,1,0,0,0,1,0 _label="Engrave"
 #@cli : $ image.jpg fx_gcd_layeretch 11,4,12,0.12,100,8.5,5,0,0,3,1,1,0 _label="Multi-layer~etch"
