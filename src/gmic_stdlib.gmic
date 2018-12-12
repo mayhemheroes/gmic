@@ -4061,7 +4061,7 @@ update_gallery_html : check "isbool(${1=0})"
 
     repeat $nb_commands
       command=${"arg "1+$>,$commands}
-      _is_stylization={;'$command'=='gallery_stylization'}
+      is_stylization={;'$command'=='gallery_stylization'}
 
       v + e[] $_gmic_m"    - Command '"$_gmic_b$command$_gmic_n"' ["{1+$>}/$nb_commands"]."$_gmic_n v -
       +l # Parse command definition and examples
@@ -4150,7 +4150,7 @@ update_gallery_html : check "isbool(${1=0})"
               db3d m3d md3d f3d l3d sl3d ss3d 0.8 srand 512
               etime=$| _run etime={_round($|-$etime,0.01)}
 
-              if $_is_stylization
+              if $is_stylization
                 +l _gallery o $filename_full,70 rm endl k.
                 _gallery
                 width,height={[w,h]}
@@ -4184,7 +4184,14 @@ update_gallery_html : check "isbool(${1=0})"
               fi
             endl fi
 
-            l[] $filename_full width,height={round([w,h]*(max(w,h)<300?1.75:1))} rm endl
+            is_samesize=0
+            l[]
+              $filename_full
+              width,height={round([w,h]*(max(w,h)<300?1.75:1))}
+              if $filename_original $filename_original is_samesize={w==w#0" && "h==h#0} fi
+              rm
+            endl
+            if {!$is_samesize} filename_original=$filename_full fi
 
             if {!($col%$nb_cols)} html=${html}"<tr>\n" fi
             if {$nb_examples==1} counter= else counter=" <font size=\"-2\"><i>"[{$>+1}/$nb_examples]"</i></font>" fi
@@ -4212,10 +4219,6 @@ update_gallery_html : check "isbool(${1=0})"
                   "</center></div>\n"\
                   "<div class=\"highslide-caption\">Command: <tt>$ gmic "${replaced_example$nex}"</tt>"${html_etime}"</div></div></center></td>\n"
             else
-              # html=${html}\
-              #     "  <td><center><div><a href=\""$filename_full"\" class=\"highslide\" onclick=\"return hs.expand(this, { width: "{$width+64}", height: "{$height+64}" })\">"\
-              #     "<img alt=\""gallery_$command$nex"\" border=\"0\" src=\""$filename_thumb"\" /><br/><b>"${_label}${html_codesample}"</b></a>"\
-              #     "<div class=\"highslide-caption\">Command: <tt>$ gmic "${replaced_example$nex}"</tt>"${html_etime}"</div></div></center></td>\n"
               html=${html}\
                   "  <td><center><div><a href=\"#\" onclick=\"return hs.htmlExpand(this, { width: "{$width+64}", height: "{$height+64}" })\">\n"\
                   "  <img alt=\""gallery_$command$nex"\" border=\"0\" src=\""$filename_thumb"\" /><br/><b>"${_label}${html_codesample}"</b></a>\n"\
