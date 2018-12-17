@@ -38,6 +38,8 @@ Source: build64-gimp-qt\libicudt61.dll; DestDir: {app}
 Source: build64-gimp-qt\libicuin61.dll; DestDir: {app}
 Source: build64-gimp-qt\libicuuc61.dll; DestDir: {app}
 Source: build64-gimp-qt\libpcre2-16-0.dll; DestDir: {app}
+Source: build64-gimp-qt\LIBEAY32.dll; DestDir: {app}
+Source: build64-gimp-qt\SSLEAY32.dll; DestDir: {app}
 Source: build64-gimp-qt\Qt5Core.dll; DestDir: {app}
 Source: build64-gimp-qt\Qt5Gui.dll; DestDir: {app}
 Source: build64-gimp-qt\Qt5Network.dll; DestDir: {app}

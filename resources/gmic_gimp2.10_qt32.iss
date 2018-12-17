@@ -37,6 +37,8 @@ Source: build32-gimp-qt\libfftw3-3.dll; DestDir: {app}\platforms
 Source: build32-gimp-qt\libgcc_s_dw2-1.dll; DestDir: {app}\platforms
 Source: build32-gimp-qt\libpcre2-16-0.dll; DestDir: {app}\platforms
 Source: build32-gimp-qt\libstdc++-6.dll; DestDir: {app}\platforms
+Source: build32-gimp-qt\LIBEAY32.dll; DestDir: {app}
+Source: build32-gimp-qt\SSLEAY32.dll; DestDir: {app}
 Source: build32-gimp-qt\qt5core.dll; DestDir: {app}\platforms
 Source: build32-gimp-qt\qt5gui.dll; DestDir: {app}\platforms
 Source: build32-gimp-qt\qt5network.dll; DestDir: {app}\platforms

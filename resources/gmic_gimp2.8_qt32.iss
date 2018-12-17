@@ -51,6 +51,8 @@ Source: build32-gimp-qt\libpcre16-0.dll; DestDir: {app}
 Source: build32-gimp-qt\libpng16-16.dll; DestDir: {app}
 Source: build32-gimp-qt\libstdc++-6.dll; DestDir: {app}
 Source: build32-gimp-qt\libwinpthread-1.dll; DestDir: {app}
+Source: build32-gimp-qt\LIBEAY32.dll; DestDir: {app}
+Source: build32-gimp-qt\SSLEAY32.dll; DestDir: {app}
 Source: build32-gimp-qt\Qt5Core.dll; DestDir: {app}
 Source: build32-gimp-qt\Qt5Gui.dll; DestDir: {app}
 Source: build32-gimp-qt\Qt5Network.dll; DestDir: {app}
