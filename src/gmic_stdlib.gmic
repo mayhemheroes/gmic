@@ -1588,7 +1588,7 @@ _display_array : check ${1=13}>0" && "${2=$1}>0
       wait[0-3]
       oc0=$c0
       repeat 4
-        if {$>" && "!{*$>}" && "${x$>}>=0} -w$> 0 x$>=-1 y$>=-1 c$>=0 fi
+        if {$>" && "!{*$>}" && "${x$>}>=0} w$> 0 x$>=-1 y$>=-1 c$>=0 fi
         if {*$>,o} c$>={(${c$>}+sign({*$>,o}))%s} wait[$>] -1 fi
         if {{*$>,SPACE}" || "{*$>,ENTER}" || "{*$>,ARROWRIGHT}" || "{*$>,ARROWDOWN}} c$>={(${c$>}+1)%s} wait[$>] -1 fi
         if {{*$>,BACKSPACE}" || "{*$>,ARROWLEFT}" || "{*$>,ARROWUP}} c$>={(${c$>}-1)%s} wait[$>] -1 fi
@@ -1876,7 +1876,7 @@ _display_parallel :
     a x com={t} rm
   endl
   m "__dp : parallel "$com __dp uncommand __dp
-  -d[] v +
+  d[] v +
 
 #@cli dp0 : eq. to 'display_parallel0'.
 dp0 :
@@ -1904,7 +1904,7 @@ _display_parallel0 :
     a x com={t} rm
   endl
   m "__dp0 : parallel "$com __dp0 uncommand __dp0
-  -d[] v +
+  d[] v +
 
 #@cli display_polar : _width>32,_height>32,_outline_type,_fill_R,_fill_G,_fill_B,_theta_start,_theta_end,_xlabel,_ylabel
 #@cli : Render polar curve from selected image data.
@@ -2530,7 +2530,7 @@ _document_gmic_description_html :
     fi
     v -
 
-  elif $is_equivalent # Reached line as '#@cli : (eq. to -shortcut)'.
+  elif $is_equivalent # Reached line as '#@cli : (eq. to shortcut)'.
     replace_str "eq. to","equivalent to shorcut command"
     s +,39 if {$!==5} i[2] ({'"<font color=\"blue\"><b>"'}) i[4] ({'"</b></font>"'}) y fi a y
     v + e[] ${-don}"<i>"{t}"</i>" v -
@@ -9868,7 +9868,7 @@ _haar_z : # Direct haar transform along the z-axis.
 #@cli : $ image.jpg +heat_flow 20
 heat_flow : skip ${1=10},${2=30},${3=0}
   e[^-1] "Apply $1 iterations of the heat flow on image$?, with time step $2."
-  v - -pde_flow $1,$2,laplacian,$3 v +
+  v - pde_flow $1,$2,laplacian,$3 v +
 
 #@cli hessian : { xx | xy | xz | yy | yz | zz }...{ xx | xy | xz | yy | yz | zz } : (no arg) : (+)
 #@cli : Compute the hessian components (second derivatives) of selected images.
@@ -10411,7 +10411,7 @@ map_tones_fast : check "${1=3%}>=0 && ${2=0.3}>=0"
 #@cli : $ image.jpg +meancurvature_flow 20
 meancurvature_flow : skip ${1=10},${2=30},${3=0}
   e[^-1] "Apply $1 iterations of the mean curvature flow on image$?, with time step $2."
-  v - -pde_flow $1,$2,iee,$3 v +
+  v - pde_flow $1,$2,iee,$3 v +
 
 #@cli median : size>=0,_threshold>0 : (+)
 #@cli : Apply (opt. thresholded) median filter on selected images with structuring element size x size.
@@ -10531,7 +10531,7 @@ peronamalik_flow : check "${1=20}>0 && ${2=5}>=0" skip ${3=5},${4=0}
            (C+i(x-1,y,z,s-1,0,1))*(i-j(-1,0,0,0,0,1)) +
            (C+i(x,y+1,z,s-1,0,1))*(j(0,1,0,0,0,1)-i) -
            (C+i(x,y-1,z,s-1,0,1))*(i-j(0,-1,0,0,0,1)))\"'"
-  -pde_flow $2,$3,_peronamalik_flow,$4
+  pde_flow $2,$3,_peronamalik_flow,$4
   uncommand _peronamalik_flow
   v +
 
@@ -10915,7 +10915,7 @@ _syntexturize_matchpatch : check ${is_image_arg\ $1}" && isint(${2=3}) && $2>=0"
 #@cli : $ image.jpg +tv_flow 40
 tv_flow : skip ${1=10},${2=30},${3=0}
   e[^-1] "Apply $1 iterations of the total variation flow on image$?, with time step $2."
-  v - -pde_flow $1,$2,curvature,$3 v +
+  v - pde_flow $1,$2,curvature,$3 v +
 
 #@cli unsharp : radius[%]>=0,_amount>=0,_threshold[%]>=0
 #@cli : Apply unsharp mask on selected images.
@@ -11369,7 +11369,7 @@ minimal_path : check "$1>=0 && $2>=0 && $3>=0" skip ${7=0}
 
 #@cli mse : : (+)
 #@cli : Compute MSE (Mean-Squared Error) matrix between selected images.
-#@cli : $ image.jpg +noise 30 +noise[0] 35 +noise[0] 38 cut. 0,255 -mse
+#@cli : $ image.jpg +noise 30 +noise[0] 35 +noise[0] 38 cut. 0,255 mse
 
 #@cli patches : patch_width>0,patch_height>0,patch_depth>0,x0,y0,z0,_x1,_y1,_z1,...,_xN,_yN,_zN
 #@cli : Extract N+1 patches from selected images, centered at specified locations.
@@ -11470,13 +11470,13 @@ pointcloud : check "${1=0}<=3 && ${2=0}>=0 && ${3=0}>=0 && ${4=0}>=0"
 psnr : skip "${1=}"
   if {isval("$1")}
     e[0--3] "Compute the "$!x$!" matrix of PSNR values, from image$? with maximum value $1."
-    v - -mse log10 - {log10(($1)^2)}
+    v - mse log10 - {log10(($1)^2)}
   else
     e[0--3] "Compute the "$!x$!" matrix of PSNR values, from image$?."
     v - noarg
     if {$!}
       $! repeat {$!-1} =. {$>,iM},$> done
-      -mse[^-1] sqr. log10 -.. 'max(i[#-1,x],i[#-1,y])' rm.
+      mse[^-1] sqr. log10 -.. 'max(i[#-1,x],i[#-1,y])' rm.
     fi
   fi
   * -10 nm [PSNR] v +
@@ -16970,7 +16970,7 @@ poster_edges : check "${1=40}>=0 && $1<=100 && ${2=5}>=0 && $2<=100 && ${3=0.5}>
     +g xy,1 a[-2,-1] c norm. b. $3 n. 0,255
     apply_curve. 1,0,1,{max(0,(100-($1%)^0.1*100)*255%)},0.99,{min(255,(101-($1%)^0.1*100+$2)*255%)},0.01,255,0 c. 0,1
     if $4 smooth. {min(50,$4)},0,1,{$4/40},{$4/40},0.8,90 fi
-    if $5 -autoindex[0] {round((4-sqrt($5+1))*32+2)} fi
+    if $5 autoindex[0] {round((4-sqrt($5+1))*32+2)} fi
     if $6 smooth[0] {min(50,$6)},0,1,{$6/40},{$6/40},0.8,90 fi
     *
   endl a c endl done v +
@@ -18244,14 +18244,14 @@ apply_camera : skip "${1=},${4=}" check "${2=0}>=0 && ${3=0}>=0"
   e[^-1] "Apply command '$1' on camera stream ""#$2, with $3 frames skip and output filename '$4'."
   v - is_ext "$4",avi is_outavi=${}
   l[] i=0 do
-    -camera $2,1,$3 $1 w. -1,-1,"[G'MIC] Camera ""#$2 ("{w}x{h}")"
+    camera $2,1,$3 $1 w. -1,-1,"[G'MIC] Camera ""#$2 ("{w}x{h}")"
     if {narg("$4")} if $is_outavi z. 0,{w-(w%8)-1} o. "$4",25,mp4v,1 else o. ${filename\ "$4",$i} i+=1 fi fi
     if {*,S} o. gmic_camera.png fi
     if {({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,D}} w[] {{*,w}*1.5},{{*,h}*1.5} wait -1 fi # Increase window size.
     if {({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,C}} w[] {{*,w}/1.5},{{*,h}/1.5} wait -1 fi # Decrease window size.
     if {({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,R}} w[] {0,w},{0,h} wait -1 fi             # Reset window size.
     rm.
-  while {{*}" && "!{*,ESC}" && "!{*,Q}} -camera $2,0 endl v +
+  while {{*}" && "!{*,ESC}" && "!{*,Q}} camera $2,0 endl v +
 
 #@cli apply_files : "filename_pattern",_"command",_first_frame>=0,_last_frame={ >=0 | -1=last },_frame_step>=1,_output_filename
 #@cli : Apply a G'MIC command on specified input image files, in a streamed way.
@@ -19352,7 +19352,7 @@ img2str :
         u ${}{^}
         rm.
         if {$y!=h-1} u ${}; fi
-        -e ${}
+        e ${}
       done
       if {$z!=d-1} u ${}/ fi
     done
@@ -20145,14 +20145,14 @@ demo : check "isint(${1=2}) && $1>=0 && $1<=2"
 
     # Manage user selection.
     if {!$mb" && "$omb" && "$ind_clicked" && "$ind_clicked==$ind}
-      m "com : -v 0 "${arg\ $ind,$commands} parallel $parallel_mode,"l[] com v -1 rm endl" uncommand com
+      m "com : v 0 "${arg\ $ind,$commands} parallel $parallel_mode,"l[] com v -1 rm endl" uncommand com
     elif {!$mb} ind_clicked=0
     fi
     omb=$mb
 
     wait 20
   while {{*}" && "!{*,ESC}" && "!{*,Q}}
-  rm w 0 endl -v 0 e[] ""
+  rm w 0 endl v 0 e[] ""
 
 _demo_color_curves :
   v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
@@ -20312,7 +20312,7 @@ x_2048 :
           if {iM<0} rm[-2,-1]
           else # At least one tile fusions.
             discard. -1
-            rv[0,-2] _x_2048_object3d rv[0,-3] -vshift2048. *3d. 121 # Only tiles that do not move in this step.
+            rv[0,-2] _x_2048_object3d rv[0,-3] vshift2048. *3d. 121 # Only tiles that do not move in this step.
             j[1] [2],18,130 j3d[1] .,78,190 rm[-3,-1]
             N={h} repeat {h} v={-{1+$>},@$>} ++3d[{2+($v>>4)}] {$v&3},{($v>>2)&3} done # Only tiles that move.
             +3d[-$N--1] rm..
@@ -23134,7 +23134,7 @@ x_quantize_rgb : check "isint(${1=16}) && $1>1"
     fi
 
     if {!narg($visu_centroids)} # Update colormap.
-      +luminance[centroids] -a. [centroids],y sort. +,x rows. 1 r. {visu,w-10},50,1,3
+      +luminance[centroids] a. [centroids],y sort. +,x rows. 1 r. {visu,w-10},50,1,3
       0 t. "Colors: "{centroids,w},2,0,16,1,255,255,255 +dilate. 3 j... ..,2,2,0,0,1,.,255
       rm[-2,-1] nm. visu_centroids j[visu] [visu_centroids],5,310
     fi
@@ -24102,7 +24102,7 @@ x_starfield3d :
         r[2] 3,{2,h/3},1,1,-1 s[2] x %[4] 1000
         +/[4] 1000 *. -1 n. 0,2 c. 0,1 sqr. j.. . rm.
         a[2-4] x
-        y -a y
+        y a y
       endl
       j3d. ..,50%,50%,-600,1,0,0,0,240 -3d.. 0,0,{min(12,$t0/10-4)}
 
@@ -24776,7 +24776,7 @@ fx_logo_version3 : skip "${1=Universal plug-in}"
     0 t. {`arg(1+$>,{'$s'})`},0,0,53,1,1 frame. 3,0,0
     r. 500%,500%,1,1,3 b. 3% >=. 50%
     distance. 1 <=. 10
-    [-1]x3 -whirls[-4--2] ,
+    [-1]x3 whirls[-4--2] ,
     r$>={u(0.4,1)} g$>={u(0.2,1)} b$>={u(0.6,1)}
     *[-4] ${r$>} *... ${g$>} *.. ${b$>}
     a[-4--2] c n.. 0,255 *. 255 a[-2,-1] c
@@ -26303,7 +26303,7 @@ fx_diffusiontensors :
     wh={[w,h]}
     +diffusiontensors ${5-8}
     r2dx. $1%
-    -dt. {round(125/$1)},$2,{$3<3?$3:0},$4
+    dt. {round(125/$1)},$2,{$3<3?$3:0},$4
     if {$3==3}
       remove_opacity.. r.. .,.,1,100%,3 blend[0] [1],shapeaverage0 dilate. {1+2*$4} a c
     else k. fi
@@ -26520,7 +26520,7 @@ fx_painting_preview :
 #@gui : sep = separator(), Preview Type = choice("Full","Forward Horizontal","Forward Vertical","Backward Horizontal","Backward Vertical","Duplicate Top","Duplicate Left","Duplicate Bottom","Duplicate Right","Duplicate Horizontal","Duplicate Vertical","Checkered","Checkered Inverse"), Preview split = point(50,50,0,0,200,200,200,0,10,0)
 #@gui : sep = separator(), note = note("<small>Author: <i>David Tschumperl&#233;</i>.      Latest Update: <i>2010/29/12</i>.</small>")
 fx_pen_drawing :
-  -drawing $1
+  drawing $1
 
 fx_pen_drawing_preview :
   gui_split_preview "fx_pen_drawing $*",${-3--1}
@@ -26965,7 +26965,7 @@ fx_vector_painting_preview :
 #@gui : sep = separator(), Preview Type = choice("Full","Forward Horizontal","Forward Vertical","Backward Horizontal","Backward Vertical","Duplicate Top","Duplicate Left","Duplicate Bottom","Duplicate Right","Duplicate Horizontal","Duplicate Vertical","Checkered","Checkered Inverse"), Preview split = point(50,50,0,0,200,200,200,0,10,0)
 #@gui : sep = separator(), note = note("<small>Author: <i>David Tschumperl&#233;</i>.      Latest Update: <i>2010/29/12</i>.</small>")
 fx_draw_whirl :
-  repeat $! l[$>] split_opacity -draw_whirl[0] $* a c endl done
+  repeat $! l[$>] split_opacity draw_whirl[0] $* a c endl done
 
 fx_draw_whirl_preview :
   gui_split_preview "fx_draw_whirl $*",${-3--1}
@@ -27743,7 +27743,7 @@ fx_stamp :
     norm
     if $7 r 150%,150%,1,1,3 fi
     noise $5
-    if $1 -otsu 256 else >= $2% fi
+    if $1 otsu 256 else >= $2% fi
     b {if($7,1.5,1)*$3},0 sharpen $4 n 0,255
     apply_curve 1,0,0,101,33,170,229,255,255
     if $7 r $wh,1,1,2 fi
@@ -28095,7 +28095,7 @@ fx_colormap :
       r. 3,{w/3},1,1,-1 permute. yzcx r. $3,1,1,3,3
       index[0] .,$2,1 rm.
     else                      # Adaptive colormap.
-      -autoindex[0] $3,$2,{if($3<=32,1,0)}
+      autoindex[0] $3,$2,{if($3<=32,1,0)}
     fi
     a c
   endl done
@@ -28920,7 +28920,7 @@ fx_retrofade :
   repeat $! l[$>] split_opacity l[0]
     +f 0
     repeat $1
-      +noise[0] $3 c. 0,255 -autoindex. $2,0,0
+      +noise[0] $3 c. 0,255 autoindex. $2,0,0
       +[-2,-1]
       progress {$>*100/$1}
     done
@@ -29205,7 +29205,7 @@ fx_distance_preview :
 #@gui : sep = separator(), Preview Type = choice("Full","Forward Horizontal","Forward Vertical","Backward Horizontal","Backward Vertical","Duplicate Top","Duplicate Left","Duplicate Bottom","Duplicate Right","Duplicate Horizontal","Duplicate Vertical","Checkered","Checkered Inverse"), Preview split = point(50,50,0,0,200,200,200,0,10,0)
 #@gui : sep = separator(), note = note("<small>Author: <i>David Tschumperl&#233;</i>.      Latest Update: <i>2010/29/12</i>.</small>")
 fx_edges :
-  to_rgb b $1% -edges $2%
+  to_rgb b $1% edges $2%
   if $3 negate fi
   n 0,255
 
@@ -29413,29 +29413,29 @@ _fx_morpho_v2 :
     m "my_dilate : ("$ckernel") dilate[^-1] . rm."
   fi
   # Erosion
-  if {$1==0} m "my_action : -my_erode $3"
+  if {$1==0} m "my_action : my_erode $3"
   # Dilation
-  elif {$1==1} m "my_action : -my_dilate $3"
+  elif {$1==1} m "my_action : my_dilate $3"
   # Opening
-  elif {$1==2} m "my_action : -my_erode $3 -my_dilate $3"
+  elif {$1==2} m "my_action : my_erode $3 my_dilate $3"
   # Closing
-  elif {$1==3} m "my_action : -my_dilate $3 -my_erode $3"
+  elif {$1==3} m "my_action : my_dilate $3 my_erode $3"
   # Original - Erosion
   elif {$1==4} m "my_action : +my_erode $3 -"
   # Dilation - Original
   elif {$1==5} m "my_action : +my_dilate $3 rv -"
   # Original - Opening
-  elif {$1==6} m "my_action : +my_erode $3 -my_dilate. $3 -"
+  elif {$1==6} m "my_action : +my_erode $3 my_dilate. $3 -"
   # Closing - Original
-  elif {$1==7} m "my_action : +my_dilate $3 -my_erode. $3 rv -"
+  elif {$1==7} m "my_action : +my_dilate $3 my_erode. $3 rv -"
   # Original - (Opening + Closing)/2
-  elif {$1==8} m "my_action : +my_erode $3 -my_dilate. $3 +my_dilate.. $3 -my_erode. $3 +[-2,-1] /. 2 -"
+  elif {$1==8} m "my_action : +my_erode $3 my_dilate. $3 +my_dilate.. $3 my_erode. $3 +[-2,-1] /. 2 -"
   # Closing - Opening
-  else m "my_action : +my_erode $3 -my_dilate. $3 -my_dilate.. $3 -my_erode.. $3 -"
+  else m "my_action : +my_erode $3 my_dilate. $3 my_dilate.. $3 my_erode.. $3 -"
   fi
   repeat $! l[$>]
     if {!$6} split_opacity fi
-    -my_action[0]
+    my_action[0]
     a c
   endl done
   if $5 repeat $! l[$>] split_opacity negate[0] a c endl done fi
@@ -29774,7 +29774,7 @@ fx_drop_water_preview :
 #@gui : Mode = choice{"to Nadir / Zenith","to Equirectangular"}
 #@gui : sep = separator(), note = note("<small>Author: <i>David Tschumperl&#233;</i>.      Latest Update: <i>2015/29/12</i>.</small>")
 fx_equirectangular2nadirzenith :
-  if $1 -nadirzenith2equirectangular else equirectangular2nadirzenith fi
+  if $1 nadirzenith2equirectangular else equirectangular2nadirzenith fi
 
 #@gui Euclidean - Polar : fx_euclidean2polar, fx_euclidean2polar(1)
 #@gui : Center (%) = point(50,50,0,1)
@@ -29829,7 +29829,7 @@ fx_rotoidoscope :
 #@gui : sep = separator(), note = note("<small>Author: <i>David Tschumperl&#233;</i>.      Latest Update: <i>2010/29/12</i>.</small>")
 fx_kaleidoscope :
   if {!$7} to_a fi
-  shift $3%,$4%,0,0,2 -kaleidoscope $1%,$2%,$5,$6,$7
+  shift $3%,$4%,0,0,2 kaleidoscope $1%,$2%,$5,$6,$7
 
 #@gui Kaleidoscope [Symmetry] : fx_symmetrizoscope, fx_symmetrizoscope(1)
 #@gui : Iterations = int(4,1,32)
@@ -29902,7 +29902,7 @@ fx_quadrangle_preview :
     if {$!==2}
       drgba to[0] Quadrangle to[1] Result frame 1,1,0
       +a x a[0,1] y rr2d ${-gui_preview_wh},0,3
-      -k[{max(w#0,h#0)>max(w#1,h#1)?0:1}]
+      k[{max(w#0,h#0)>max(w#1,h#1)?0:1}]
     fi
   endl done
 
@@ -30242,7 +30242,7 @@ fx_textured_glass_preview :
 #@gui : sep = separator(), note = note("<small>Author: <i>David Tschumperl&#233;</i>.      Latest Update: <i>2010/29/12</i>.</small>")
 fx_twirl :
   if {!$4} to_a fi
-  -twirl $1,$2%,$3%,$4
+  twirl $1,$2%,$3%,$4
 
 #@gui Water : water, water(0)
 #@gui : Amplitude = float(30,0,300)
@@ -30683,7 +30683,7 @@ fx_8bits :
   remove_opacity repeat $! l[$>]
     w={w} h={h}
     r $1%,$1%,1,100%,2
-    +luminance sharpen. $2 -otsu. 256 blend[-2,-1] shapeaverage0
+    +luminance sharpen. $2 otsu. 256 blend[-2,-1] shapeaverage0
     l. s c quantize $3,1,1 a c endl
     r. $w,$h,1,100%,1
   endl done
@@ -34627,7 +34627,7 @@ fx_smooth_haar_preview :
 #@gui : Sharpness = float(50,0,100)
 #@gui : sep = separator(), note = note("<small>Author: <i>David Tschumperl&#233;</i>.      Latest Update: <i>2010/29/12</i>.</small>")
 fx_upscale_smart :
-  to_rgb -upscale_smart $1,$2,1,$3,$4,$5 c 0,255
+  to_rgb upscale_smart $1,$2,1,$3,$4,$5 c 0,255
 
 fx_upscale_smart_preview :
   repeat $!
@@ -35141,7 +35141,7 @@ fx_equation_plot :
   repeat $! l[$>]
     w={w} h={h} rm
     $4,1,1,$5,"X=$2+($3-$2)*x/($4-1);$1"
-    -dg $w,$h,$6,$7,$2,$3
+    dg $w,$h,$6,$7,$2,$3
   endl done
 
 #@gui Gradient [Corners] : fx_corner_gradient, fx_corner_gradient
