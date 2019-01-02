@@ -2056,17 +2056,17 @@ bool *gmic::abort_ptr(bool *const p_is_abort) {
 
 // Manage mutexes.
 struct _gmic_mutex {
-#if cimg_OS==2
-  HANDLE mutex[256];
-  _gmic_mutex() { for (unsigned int i = 0; i<256; ++i) mutex[i] = CreateMutex(0,FALSE,0); }
-  void lock(const unsigned int n) { WaitForSingleObject(mutex[n],INFINITE); }
-  void unlock(const unsigned int n) { ReleaseMutex(mutex[n]); }
-#elif defined(_PTHREAD_H) // #if cimg_OS==2
+#ifdef _PTHREAD_H
   pthread_mutex_t mutex[256];
   _gmic_mutex() { for (unsigned int i = 0; i<256; ++i) pthread_mutex_init(&mutex[i],0); }
   void lock(const unsigned int n) { pthread_mutex_lock(&mutex[n]); }
   void unlock(const unsigned int n) { pthread_mutex_unlock(&mutex[n]); }
-#else // #if cimg_OS==2
+#elif cimg_OS==2 // #ifdef _PTHREAD_H
+  HANDLE mutex[256];
+  _gmic_mutex() { for (unsigned int i = 0; i<256; ++i) mutex[i] = CreateMutex(0,FALSE,0); }
+  void lock(const unsigned int n) { WaitForSingleObject(mutex[n],INFINITE); }
+  void unlock(const unsigned int n) { ReleaseMutex(mutex[n]); }
+#else // #ifdef _PTHREAD_H
   _gmic_mutex() {}
   void lock(const unsigned int) {}
   void unlock(const unsigned int) {}
@@ -2086,11 +2086,11 @@ struct _gmic_parallel {
   gmic_exception exception;
   gmic gmic_instance;
 #ifdef gmic_is_parallel
-#if cimg_OS!=2
+#ifdef _PTHREAD_H
   pthread_t thread_id;
-#else // #if cimg_OS!=2
+#elif cimg_OS==2
   HANDLE thread_id;
-#endif // #if cimg_OS!=2
+#endif // #ifdef _PTHREAD_H
 #endif // #ifdef gmic_is_parallel
   _gmic_parallel() { variables_sizes.assign(gmic_varslots); }
 };
@@ -2118,12 +2118,12 @@ static DWORD WINAPI gmic_parallel(void *arg)
     cimglist_for(threads_data,i) cimg_forY(threads_data[i],l)
       if (&threads_data(i,l)!=&st && threads_data(i,l).is_thread_running) {
         threads_data(i,l).gmic_instance.is_abort_thread = true;
-#if cimg_OS!=2
+#ifdef _PTHREAD_H
         pthread_join(threads_data(i,l).thread_id,0);
-#else // #if cimg_OS!=2
+#elif cimg_OS==2 // #ifdef _PTHREAD_H
         WaitForSingleObject(threads_data(i,l).thread_id,INFINITE);
         CloseHandle(threads_data(i,l).thread_id);
-#endif // #if cimg_OS!=2
+#endif // #ifdef _PTHREAD_H
         threads_data(i,l).is_thread_running = false;
       }
 #endif // #ifdef gmic_is_parallel
@@ -2131,9 +2131,9 @@ static DWORD WINAPI gmic_parallel(void *arg)
     st.exception._command_help.assign(e._command_help);
     st.exception._message.assign(e._message);
   }
-#if defined(gmic_is_parallel) && cimg_OS!=2
+#if defined(gmic_is_parallel) && defined(_PTHREAD_H)
   pthread_exit(0);
-#endif // #if defined(gmic_is_parallel) && cimg_OS!=2
+#endif // #if defined(gmic_is_parallel) && defined(_PTHREAD_H)
   return 0;
 }
 
@@ -9764,7 +9764,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           // Run threads.
           cimg_forY(_threads_data,l) {
 #ifdef gmic_is_parallel
-#if cimg_OS!=2
+#ifdef _PTHREAD_H
 
 #if defined(__MACOSX__) || defined(__APPLE__)
             const uint64T stacksize = (uint64T)8*1024*1024;
@@ -9776,10 +9776,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 #endif // #if defined(__MACOSX__) || defined(__APPLE__)
               pthread_create(&_threads_data[l].thread_id,0,gmic_parallel<T>,(void*)&_threads_data[l]);
 
-#else // #if cimg_OS!=2
+#elif cimg_OS==2 // #ifdef _PTHREAD_H
             _threads_data[l].thread_id = CreateThread(0,0,gmic_parallel<T>,
                                                       (void*)&_threads_data[l],0,0);
-#endif // #if cimg_OS!=2
+#endif // #ifdef _PTHREAD_H
 #else // #ifdef gmic_is_parallel
             gmic_parallel<T>((void*)&_threads_data[l]);
 #endif // #ifdef gmic_is_parallel
@@ -9789,12 +9789,12 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           if (wait_mode) {
             cimg_forY(_threads_data,l) if (_threads_data[l].is_thread_running) {
 #ifdef gmic_is_parallel
-#if cimg_OS!=2
+#ifdef _PTHREAD_H
               pthread_join(_threads_data[l].thread_id,0);
-#else // #if cimg_OS!=2
+#elif cimg_OS==2 // #ifdef _PTHREAD_H
               WaitForSingleObject(_threads_data[l].thread_id,INFINITE);
               CloseHandle(_threads_data[l].thread_id);
-#endif // #if cimg_OS!=2
+#endif // #ifdef _PTHREAD_H
               _threads_data[l].is_thread_running = false;
 #endif // #ifdef gmic_is_parallel
             }
@@ -14205,12 +14205,12 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 #ifdef gmic_is_parallel
     cimglist_for(threads_data,i) cimg_forY(threads_data[i],l) {
       if (!threads_data(i,l).is_thread_running) threads_data(i,l).gmic_instance.is_abort_thread = true;
-#if cimg_OS!=2
+#ifdef _PTHREAD_H
       pthread_join(threads_data(i,l).thread_id,0);
-#else // #if cimg_OS!=2
+#elif cimg_OS==2 // #ifdef _PTHREAD_H
       WaitForSingleObject(threads_data(i,l).thread_id,INFINITE);
       CloseHandle(threads_data(i,l).thread_id);
-#endif // #if cimg_OS!=2
+#endif // #ifdef _PTHREAD_H
       is_released&=threads_data(i,l).gmic_instance.is_released;
       threads_data(i,l).is_thread_running = false;
     }
