@@ -3399,8 +3399,7 @@ void gmic::_gmic(const char *const commands_line,
   }
   cimg::mutex(22,0);
 
-  static const unsigned int seed = cimg::srand();
-  cimg::unused(seed);
+  cimg::srand();
   setlocale(LC_NUMERIC,"C");
   cimg_exception_mode = cimg::exception_mode();
   cimg::exception_mode(0);
