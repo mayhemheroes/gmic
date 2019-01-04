@@ -167,14 +167,6 @@ namespace cimg_library {
 #endif
 #define cimg_plugin "gmic.cpp"
 
-// #ifdef cimg_use_abort
-// static struct cimg_is_abort {
-//   bool value, *ptr;
-//   cimg_is_abort():value(false),ptr(&value) {}
-// } _cimg_is_abort;
-// #define cimg_abort_test if (*_cimg_is_abort.ptr) throw CImgAbortException()
-// #endif // #ifdef cimg_use_abort
-
 #ifdef cimg_use_abort
 inline bool *gmic_abort_ptr(bool *const p_is_abort);
 #define cimg_abort_init bool *const gmic_is_abort = ::gmic_abort_ptr(0)
@@ -190,7 +182,7 @@ inline double gmic_mp_ext(char *const str, void *const p_list);
 #ifndef cimg_appname
 #define cimg_appname "gmic"
 #endif // #ifndef cimg_appname
-#include <pthread.h>
+#include <pthread.h>  // Make sure Windows version also uses pthreads.
 #include "./CImg.h"
 
 #if cimg_OS==2
