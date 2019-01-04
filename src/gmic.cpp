@@ -8909,6 +8909,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   _specular_lightness3d,_specular_shininess3d);
             CImgList<float> opacities;
             vertices.assign(img0,false);
+
             try {
               if (_render3d>=3) {
                 vertices.CImg3dtoobject3d(primitives,g_list_uc,opacities,false);
@@ -8936,6 +8937,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                          _light3d_x,_light3d_y,_light3d_z,
                                          _specular_lightness3d,_specular_shininess3d,
                                          zbuffer));
+
                 g_list_f.assign();
               } else {
                 gmic_apply(draw_object3d(nx,ny,z,vertices,primitives,g_list_uc,opacities,
