@@ -354,7 +354,7 @@ CImg<T> get_draw_object3d(const float x0, const float y0, const float z0,
                           const float g_opacity, CImg<floatT>& zbuffer) const {
   return (+*this).draw_object3d(x0,y0,z0,vertices,primitives,colors,opacities,render_mode,
                                 double_sided,focale,light_x,light_y,light_z,specular_lightness,
-                                g_opacity,specular_shininess,zbuffer);
+                                specular_shininess,g_opacity,zbuffer);
 }
 
 CImg<T> get_draw_plasma(const float alpha, const float beta, const unsigned int scale) const {
@@ -8923,7 +8923,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                       *ind,gmic_argument_text(),message.data());
               else throw;
             }
-            cimglist_for(opacities,o) if (!opacities[o].is_shared()) opacities[o]*=opacity;
+
             cimg_forY(selection,l) {
               CImg<T> &img = images[selection[l]];
               const float
