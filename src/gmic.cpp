@@ -350,11 +350,11 @@ CImg<T> get_draw_object3d(const float x0, const float y0, const float z0,
                           const unsigned int render_mode, const bool double_sided,
                           const float focale,
                           const float light_x, const float light_y,const float light_z,
-                          const float specular_light, const float specular_shine,
-                          CImg<floatT>& zbuffer) const {
+                          const float specular_lightness, const float specular_shininess,
+                          const float g_opacity, CImg<floatT>& zbuffer) const {
   return (+*this).draw_object3d(x0,y0,z0,vertices,primitives,colors,opacities,render_mode,
-                                double_sided,focale,light_x,light_y,light_z,specular_light,
-                                specular_shine,zbuffer);
+                                double_sided,focale,light_x,light_y,light_z,specular_lightness,
+                                g_opacity,specular_shininess,zbuffer);
 }
 
 CImg<T> get_draw_plasma(const float alpha, const float beta, const unsigned int scale) const {
@@ -1899,7 +1899,7 @@ inline char *_gmic_argument_text(const char *const argument, CImg<char>& argumen
     if (is_get) { \
       images[__ind].get_##function.move_to(images); \
       images_names[__ind].get_copymark().move_to(images_names); \
-    } else images[__ind].function; \
+    } else images[__ind].function;                              \
   }
 
 // Macro for simple commands that has no arguments and act on images.
@@ -8935,14 +8935,14 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                          _render3d,_is_double3d,_focale3d,
                                          _light3d_x,_light3d_y,_light3d_z,
                                          _specular_lightness3d,_specular_shininess3d,
-                                         zbuffer));
+                                         opacity,zbuffer));
                 g_list_f.assign();
               } else {
                 gmic_apply(draw_object3d(nx,ny,z,vertices,primitives,g_list_uc,opacities,
                                          _render3d,_is_double3d,_focale3d,
                                          _light3d_x,_light3d_y,_light3d_z,
                                          _specular_lightness3d,_specular_shininess3d,
-                                         zbuffer));
+                                         opacity,zbuffer));
                 g_list_uc.assign();
               }
             }
