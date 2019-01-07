@@ -70,7 +70,7 @@ if [ "$OSTYPE" == "msys" ]; then
     RELEASE3=`echo $RELEASE0 | head -c3 | tail -c1`
     VERSION=${RELEASE1}${RELEASE2}${RELEASE3}
     SVERSION=${RELEASE1}.${RELEASE2}.${RELEASE3}
-    IS_210=`uname -a | grep 2.10 | wc -l`
+    IS_210=`uname -a | grep 2.11 | wc -l`
     if [ "$IS_210" == "1" ]; then GIMPVER=2.10
     else GIMPVER=2.8
     fi
@@ -121,10 +121,12 @@ if [ "$OSTYPE" == "msys" ]; then
 
     # Compile sources.
     cd $HOME/gmic/src && make clean && rm -f gmic *.o && cp -f /e/work/src/CImg/CImg.h .
-    make OPT_CFLAGS="-Ofast -m${BITS} -mtune=generic" cli libc libcstatic
+    if [ "$IS_210" == "1" ]; then
+        make OPT_CFLAGS="-Ofast -m${BITS} -mtune=generic" cli libc libcstatic
+    fi
 
-    cd $HOME/gmic/zart && rm -rf .obj && qmake GMIC_PATH=../src zart.pro && make clean
-    make release
+#    cd $HOME/gmic/zart && rm -rf .obj && qmake GMIC_PATH=../src zart.pro && make clean
+#    make release
 
     cd $HOME/gmic-qt && rm -rf .obj
     if [ "$1" == "final" ]; then
@@ -139,64 +141,72 @@ if [ "$OSTYPE" == "msys" ]; then
 
     # Copy binaries into their respective folders.
     cd $HOME
-    cp -f gmic/src/gmic.exe build${BITS}-cli/
-    cp -f gmic/src/gmic.h gmic/src/gmic_libc.h gmic/src/use_lib* gmic/src/lib*.d* build${BITS}-lib/
-    cp -f gmic/zart/release/zart.exe build${BITS}-zart/
-    cp -f gmic-qt/release/gmic_qt.exe build${BITS}-qt/
     cp -f gmic-qt/release/gmic_gimp_qt.exe build${BITS}-gimp-qt/
-    cp -f gmic-qt/release/gmic_krita_qt.exe build${BITS}-krita-qt/
+    if [ "$IS_210" == "1" ]; then
+        cp -f gmic/src/gmic.exe build${BITS}-cli/
+        cp -f gmic/src/gmic.h gmic/src/gmic_libc.h gmic/src/use_lib* gmic/src/lib*.d* build${BITS}-lib/
+        #    cp -f gmic/zart/release/zart.exe build${BITS}-zart/
+        cp -f gmic-qt/release/gmic_qt.exe build${BITS}-qt/
+        cp -f gmic-qt/release/gmic_krita_qt.exe build${BITS}-krita-qt/
+    fi
 
     # Construct G'MIC (CLI) archive.
-    cp -rf build${BITS}-cli ${OUTDIR_CLI} &&
-        cp -f /e/work/src/gmic/COPYING ${OUTDIR_CLI} &&
-        sed s\/_gmic_version\/${SVERSION}${SUFFIX}\/ /e/work/src/gmic/README > ${OUTDIR_CLI}/README &&
-        zip -r -9 ${OUTZIP_CLI} ${OUTDIR_CLI} &&
-        cp -f ${OUTZIP_CLI} /e/work/src/
+    if [ "$IS_210" == "1" ]; then
+        cp -rf build${BITS}-cli ${OUTDIR_CLI} &&
+            cp -f /e/work/src/gmic/COPYING ${OUTDIR_CLI} &&
+            sed s\/_gmic_version\/${SVERSION}${SUFFIX}\/ /e/work/src/gmic/README > ${OUTDIR_CLI}/README &&
+            zip -r -9 ${OUTZIP_CLI} ${OUTDIR_CLI} &&
+            cp -f ${OUTZIP_CLI} /e/work/src/
+    fi
 
     # Construct G'MIC (LIB) archive.
-    cp -rf build${BITS}-lib ${OUTDIR_LIB} &&
-        cp -f /e/work/src/gmic/COPYING ${OUTDIR_LIB} &&
-        sed s\/_gmic_version\/${SVERSION}${SUFFIX}\/ /e/work/src/gmic/README > ${OUTDIR_LIB}/README &&
-        zip -r -9 ${OUTZIP_LIB} ${OUTDIR_LIB} &&
-        cp -f ${OUTZIP_LIB} /e/work/src/
+    if [ "$IS_210" == "1" ]; then
+        cp -rf build${BITS}-lib ${OUTDIR_LIB} &&
+            cp -f /e/work/src/gmic/COPYING ${OUTDIR_LIB} &&
+            sed s\/_gmic_version\/${SVERSION}${SUFFIX}\/ /e/work/src/gmic/README > ${OUTDIR_LIB}/README &&
+            zip -r -9 ${OUTZIP_LIB} ${OUTDIR_LIB} &&
+            cp -f ${OUTZIP_LIB} /e/work/src/
+    fi
 
-#    if [ "$BITS" == "64" ]
+    # # Construct ZART archive.
+    # if [ "$IS_210" == "1" ]; then
+        # cp -rf build${BITS}-zart ${OUTDIR_ZART} &&
+        #     cp -f /e/work/src/gmic/COPYING ${OUTDIR_ZART} &&
+        #     sed s\/_gmic_version\/${SVERSION}${SUFFIX}\/ /e/work/src/gmic/README > ${OUTDIR_ZART}/README &&
+        #     zip -r -9 ${OUTZIP_ZART} ${OUTDIR_ZART} &&
+        #     cp -f ${OUTZIP_ZART} /e/work/src/
+    # fi
 
-       # # Construct ZART archive.
-       # cp -rf build${BITS}-zart ${OUTDIR_ZART} &&
-       #     cp -f /e/work/src/gmic/COPYING ${OUTDIR_ZART} &&
-       #     sed s\/_gmic_version\/${SVERSION}${SUFFIX}\/ /e/work/src/gmic/README > ${OUTDIR_ZART}/README &&
-       #     zip -r -9 ${OUTZIP_ZART} ${OUTDIR_ZART} &&
-       #     cp -f ${OUTZIP_ZART} /e/work/src/
+    # # Construct G'MIC (Qt standalone) archive.
+    #if [ "$IS_210" == "1" ]; then
+    # cp -rf build${BITS}-qt ${OUTDIR_QT} &&
+    #     cp -f /e/work/src/gmic/COPYING ${OUTDIR_QT} &&
+    #     sed s\/_gmic_version\/${SVERSION}${SUFFIX}\/ /e/work/src/gmic/README > ${OUTDIR_QT}/README &&
+    #     zip -r -9 ${OUTZIP_QT} ${OUTDIR_QT} &&
+    #     cp -f ${OUTZIP_QT} /e/work/src/
+    # fi
 
-       # # Construct G'MIC (Qt standalone) archive.
-       # cp -rf build${BITS}-qt ${OUTDIR_QT} &&
-       #     cp -f /e/work/src/gmic/COPYING ${OUTDIR_QT} &&
-       #     sed s\/_gmic_version\/${SVERSION}${SUFFIX}\/ /e/work/src/gmic/README > ${OUTDIR_QT}/README &&
-       #     zip -r -9 ${OUTZIP_QT} ${OUTDIR_QT} &&
-       #     cp -f ${OUTZIP_QT} /e/work/src/
+    # Construct G'MIC for GIMP (Qt) archive and installer.
+    cp -rf build${BITS}-gimp-qt ${OUTDIR_GIMP_QT} &&
+        cp -f /e/work/src/gmic/COPYING ${OUTDIR_GIMP_QT} &&
+        sed s\/_gmic_version\/${SVERSION}${SUFFIX}\/ /e/work/src/gmic/README > ${OUTDIR_GIMP_QT}/README &&
+        zip -r -9 ${OUTZIP_GIMP_QT} ${OUTDIR_GIMP_QT} &&
+        cp -f ${OUTZIP_GIMP_QT} /e/work/src/
 
-       # Construct G'MIC for GIMP (Qt) archive and installer.
-       cp -rf build${BITS}-gimp-qt ${OUTDIR_GIMP_QT} &&
-           cp -f /e/work/src/gmic/COPYING ${OUTDIR_GIMP_QT} &&
-           sed s\/_gmic_version\/${SVERSION}${SUFFIX}\/ /e/work/src/gmic/README > ${OUTDIR_GIMP_QT}/README &&
-           zip -r -9 ${OUTZIP_GIMP_QT} ${OUTDIR_GIMP_QT} &&
-           cp -f ${OUTZIP_GIMP_QT} /e/work/src/
+    cp -f /e/.config/gmic/update$VERSION.gmicz $HOME/build${BITS}-gimp-qt/update$VERSION.gmic
+    /c/Program\ Files\ \(x86\)/Inno\ Setup\ 5/ISCC.exe installer_qt.iss
+    touch ${OUTINST_GIMP_QT} &&
+        sleep 3 &&
+        cp -f ${OUTINST_GIMP_QT} /e/work/src/
 
-       cp -f /e/.config/gmic/update$VERSION.gmicz $HOME/build${BITS}-gimp-qt/update$VERSION.gmic
-       /c/Program\ Files\ \(x86\)/Inno\ Setup\ 5/ISCC.exe installer_qt.iss
-       touch ${OUTINST_GIMP_QT} &&
-           sleep 3 &&
-           cp -f ${OUTINST_GIMP_QT} /e/work/src/
-
-       # Construct G'MIC for Krita (Qt) archive.
-       cp -rf build${BITS}-krita-qt ${OUTDIR_KRITA_QT} &&
-           cp -f /e/work/src/gmic/COPYING ${OUTDIR_KRITA_QT} &&
-           sed s\/_gmic_version\/${SVERSION}${SUFFIX}\/ /e/work/src/gmic/README > ${OUTDIR_KRITA_QT}/README &&
-           zip -r -9 ${OUTZIP_KRITA_QT} ${OUTDIR_KRITA_QT} &&
-           cp -f ${OUTZIP_KRITA_QT} /e/work/src/
-
-#    fi
+    # Construct G'MIC for Krita (Qt) archive.
+    if [ "$IS_210" == "1" ]; then
+        cp -rf build${BITS}-krita-qt ${OUTDIR_KRITA_QT} &&
+            cp -f /e/work/src/gmic/COPYING ${OUTDIR_KRITA_QT} &&
+            sed s\/_gmic_version\/${SVERSION}${SUFFIX}\/ /e/work/src/gmic/README > ${OUTDIR_KRITA_QT}/README &&
+            zip -r -9 ${OUTZIP_KRITA_QT} ${OUTDIR_KRITA_QT} &&
+            cp -f ${OUTZIP_KRITA_QT} /e/work/src/
+    fi
 
     echo " - All done!"
     exit 0;
