@@ -1460,10 +1460,9 @@ CImg<T>& operator_diveq(const char *const expression, CImgList<T> &images) {
 }
 
 template<typename t>
-CImg<T>& operator_eq(const t val) {
+CImg<T>& operator_eq(const t value) {
   if (is_empty()) return *this;
-  cimg_pragma_openmp(parallel for cimg_openmp_if_size(size(),131072))
-  cimg_rof(*this,ptrd,T) *ptrd = (T)(*ptrd == (T)val);
+  cimg_openmp_for(*this,*ptr == (T)value,131072);
   return *this;
 }
 
@@ -1487,10 +1486,9 @@ CImg<T>& operator_eq(const CImg<t>& img) {
 }
 
 template<typename t>
-CImg<T>& operator_ge(const t val) {
+CImg<T>& operator_ge(const t value) {
   if (is_empty()) return *this;
-  cimg_pragma_openmp(parallel for cimg_openmp_if_size(size(),131072))
-  cimg_rof(*this,ptrd,T) *ptrd = (T)(*ptrd >= (T)val);
+  cimg_openmp_for(*this,*ptr >= (T)value,131072);
   return *this;
 }
 
@@ -1514,10 +1512,9 @@ CImg<T>& operator_ge(const CImg<t>& img) {
 }
 
 template<typename t>
-CImg<T>& operator_gt(const t val) {
+CImg<T>& operator_gt(const t value) {
   if (is_empty()) return *this;
-  cimg_pragma_openmp(parallel for cimg_openmp_if_size(size(),131072))
-  cimg_rof(*this,ptrd,T) *ptrd = (T)(*ptrd > (T)val);
+  cimg_openmp_for(*this,*ptr > (T)value,131072);
   return *this;
 }
 
@@ -1541,10 +1538,9 @@ CImg<T>& operator_gt(const CImg<t>& img) {
 }
 
 template<typename t>
-CImg<T>& operator_le(const t val) {
+CImg<T>& operator_le(const t value) {
   if (is_empty()) return *this;
-  cimg_pragma_openmp(parallel for cimg_openmp_if_size(size(),131072))
-  cimg_rof(*this,ptrd,T) *ptrd = (T)(*ptrd <= (T)val);
+  cimg_openmp_for(*this,*ptr <= (T)value,131072);
   return *this;
 }
 
@@ -1568,10 +1564,9 @@ CImg<T>& operator_le(const CImg<t>& img) {
 }
 
 template<typename t>
-CImg<T>& operator_lt(const t val) {
+CImg<T>& operator_lt(const t value) {
   if (is_empty()) return *this;
-  cimg_pragma_openmp(parallel for cimg_openmp_if_size(size(),131072))
-  cimg_rof(*this,ptrd,T) *ptrd = (T)(*ptrd < (T)val);
+  cimg_openmp_for(*this,*ptr < (T)value,131072);
   return *this;
 }
 
@@ -1607,10 +1602,9 @@ CImg<T>& operator_muleq(const char *const expression, CImgList<T> &images) {
 }
 
 template<typename t>
-CImg<T>& operator_neq(const t val) {
+CImg<T>& operator_neq(const t value) {
   if (is_empty()) return *this;
-  cimg_pragma_openmp(parallel for cimg_openmp_if_size(size(),131072))
-  cimg_rof(*this,ptrd,T) *ptrd = (T)(*ptrd != (T)val);
+  cimg_openmp_for(*this,*ptr != (T)value,131072);
   return *this;
 }
 
