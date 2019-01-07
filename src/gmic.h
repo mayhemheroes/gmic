@@ -182,7 +182,6 @@ inline double gmic_mp_ext(char *const str, void *const p_list);
 #ifndef cimg_appname
 #define cimg_appname "gmic"
 #endif // #ifndef cimg_appname
-#include <pthread.h>  // Make sure Windows version also uses pthreads.
 #include "./CImg.h"
 
 #if cimg_OS==2
