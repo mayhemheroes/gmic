@@ -74,7 +74,6 @@ if [ "$OSTYPE" == "msys" ]; then
     if [ "$IS_210" == "1" ]; then GIMPVER=2.10
     else GIMPVER=2.8
     fi
-
     if [ "$1" == "final" ]; then
         SUFFIX="";
         sed "s/PRERELEASE_CFLAGS = /NO_PRERELEASE_CFLAGS = /" Makefile > /tmp/Makefile
@@ -83,18 +82,15 @@ if [ "$OSTYPE" == "msys" ]; then
         mv /tmp/Makefile Makefile
     else SUFFIX=_pre;
     fi
-
-    # Delete old packages.
-    cd $HOME
-    cp -rf /e/work/src/gmic/resources/gmic_film_cluts.gmz $HOME/build${BITS}-gimp-qt
-    rm -rf $HOME/build${BITS}-gimp-qt/update*.gmic gmic_*${SVERSION}${SUFFIX}*_win${BITS}* gmic-*${SVERSION}${SUFFIX}*-win${BITS}*
-
-    echo " - Release number : $SVERSION$SUFFIX (GIMP $GIMPVER)."
-
     sed "s/rm -rf CImg.h gmic_stdlib.h /rm -rf /" Makefile > /tmp/Makefile
     mv /tmp/Makefile Makefile
 
+    echo " - Release number : $SVERSION$SUFFIX (GIMP $GIMPVER)."
+
+    # Delete old package files.
     cd $HOME
+    cp -rf /e/work/src/gmic/resources/gmic_film_cluts.gmz $HOME/build${BITS}-gimp-qt
+    rm -rf $HOME/build${BITS}-gimp-qt/update*.gmic gmic_*${SVERSION}${SUFFIX}*_win${BITS}* gmic-*${SVERSION}${SUFFIX}*-win${BITS}*
     sed s\/XXX\/${SVERSION}${SUFFIX}\/g /e/work/src/gmic/resources/gmic_gimp${GIMPVER}_qt${BITS}.iss > tmp.iss &&
         sed s\/xxx\/${VERSION}\/g tmp.iss > installer_qt.iss
 
@@ -122,7 +118,7 @@ if [ "$OSTYPE" == "msys" ]; then
     # Compile sources.
     cd $HOME/gmic/src && make clean && rm -f gmic *.o && cp -f /e/work/src/CImg/CImg.h .
     if [ "$IS_210" == "1" ]; then
-        make OPT_CFLAGS="-Ofast -m${BITS} -mtune=generic" cli libc libcstatic
+        make OPT_CFLAGS="-Ofast -m${BITS} -mtune=generic" OPENCV_CFLAGS="" OPENCV_LIBS="" cli libc libcstatic
     fi
 
 #    cd $HOME/gmic/zart && rm -rf .obj && qmake GMIC_PATH=../src zart.pro && make clean
@@ -145,8 +141,8 @@ if [ "$OSTYPE" == "msys" ]; then
     if [ "$IS_210" == "1" ]; then
         cp -f gmic/src/gmic.exe build${BITS}-cli/
         cp -f gmic/src/gmic.h gmic/src/gmic_libc.h gmic/src/use_lib* gmic/src/lib*.d* build${BITS}-lib/
-        #    cp -f gmic/zart/release/zart.exe build${BITS}-zart/
-        cp -f gmic-qt/release/gmic_qt.exe build${BITS}-qt/
+        # cp -f gmic/zart/release/zart.exe build${BITS}-zart/
+        # cp -f gmic-qt/release/gmic_qt.exe build${BITS}-qt/
         cp -f gmic-qt/release/gmic_krita_qt.exe build${BITS}-krita-qt/
     fi
 
