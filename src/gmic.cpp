@@ -634,7 +634,7 @@ CImg<T> _gmic_shift(const float delta_x, const float delta_y=0, const float delt
     switch (boundary_conditions) {
     case 3 : { // Mirror
       const float w2 = 2.f*width(), h2 = 2.f*height(), d2 = 2.f*depth(), s2 = 2.f*spectrum();
-      cimg_pragma_openmp(parallel for collapse(3) cimg_openmp_if_size(res.size(),4096))
+      cimg_pragma_openmp(parallel for cimg_openmp_collapse(3) cimg_openmp_if_size(res.size(),4096))
       cimg_forXYZC(res,x,y,z,c) {
         const float
           mx = cimg::mod(x - delta_x,w2),
@@ -648,25 +648,25 @@ CImg<T> _gmic_shift(const float delta_x, const float delta_y=0, const float delt
       }
     } break;
     case 2 : // Periodic
-      cimg_pragma_openmp(parallel for collapse(3) cimg_openmp_if_size(res.size(),4096))
+      cimg_pragma_openmp(parallel for cimg_openmp_collapse(3) cimg_openmp_if_size(res.size(),4096))
       cimg_forXYZC(res,x,y,z,c) res(x,y,z,c) = _linear_atXYZC(cimg::mod(x - delta_x,(float)_width),
                                                               cimg::mod(y - delta_y,(float)_height),
                                                               cimg::mod(z - delta_z,(float)_depth),
                                                               cimg::mod(c - delta_c,(float)_spectrum));
       break;
     case 1 : // Neumann
-      cimg_pragma_openmp(parallel for collapse(3) cimg_openmp_if_size(res.size(),4096))
+      cimg_pragma_openmp(parallel for cimg_openmp_collapse(3) cimg_openmp_if_size(res.size(),4096))
       cimg_forXYZC(res,x,y,z,c) res(x,y,z,c) = _linear_atXYZC(x - delta_x,y - delta_y,z - delta_z,c - delta_c);
       break;
     default : // Dirichlet
-      cimg_pragma_openmp(parallel for collapse(3) cimg_openmp_if_size(res.size(),4096))
+      cimg_pragma_openmp(parallel for cimg_openmp_collapse(3) cimg_openmp_if_size(res.size(),4096))
       cimg_forXYZC(res,x,y,z,c) res(x,y,z,c) = linear_atXYZC(x - delta_x,y - delta_y,z - delta_z,c - delta_c,(T)0);
     }
   else if (delta_z!=0) // 3D shift
     switch (boundary_conditions) {
     case 3 : { // Mirror
       const float w2 = 2.f*width(), h2 = 2.f*height(), d2 = 2.f*depth();
-      cimg_pragma_openmp(parallel for collapse(3) cimg_openmp_if_size(res.size(),4096))
+      cimg_pragma_openmp(parallel for cimg_openmp_collapse(3) cimg_openmp_if_size(res.size(),4096))
       cimg_forC(res,c) cimg_forXYZ(res,x,y,z) {
         const float
           mx = cimg::mod(x - delta_x,w2),
@@ -678,24 +678,24 @@ CImg<T> _gmic_shift(const float delta_x, const float delta_y=0, const float delt
       }
     } break;
     case 2 : // Periodic
-      cimg_pragma_openmp(parallel for collapse(3) cimg_openmp_if_size(res.size(),4096))
+      cimg_pragma_openmp(parallel for cimg_openmp_collapse(3) cimg_openmp_if_size(res.size(),4096))
       cimg_forC(res,c) cimg_forXYZ(res,x,y,z) res(x,y,z,c) = _linear_atXYZ(cimg::mod(x - delta_x,(float)_width),
                                                                            cimg::mod(y - delta_y,(float)_height),
                                                                            cimg::mod(z - delta_z,(float)_depth),c);
     break;
     case 1 : // Neumann
-      cimg_pragma_openmp(parallel for collapse(3) cimg_openmp_if_size(res.size(),4096))
+      cimg_pragma_openmp(parallel for cimg_openmp_collapse(3) cimg_openmp_if_size(res.size(),4096))
       cimg_forC(res,c) cimg_forXYZ(res,x,y,z) res(x,y,z,c) = _linear_atXYZ(x - delta_x,y - delta_y,z - delta_z,c);
       break;
     default : // Dirichlet
-      cimg_pragma_openmp(parallel for collapse(3) cimg_openmp_if_size(res.size(),4096))
+      cimg_pragma_openmp(parallel for cimg_openmp_collapse(3) cimg_openmp_if_size(res.size(),4096))
       cimg_forC(res,c) cimg_forXYZ(res,x,y,z) res(x,y,z,c) = linear_atXYZ(x - delta_x,y - delta_y,z - delta_z,c,(T)0);
     }
   else if (delta_y!=0) // 2D shift
     switch (boundary_conditions) {
     case 3 : { // Mirror
       const float w2 = 2.f*width(), h2 = 2.f*height();
-      cimg_pragma_openmp(parallel for collapse(3) cimg_openmp_if_size(res.size(),4096))
+      cimg_pragma_openmp(parallel for cimg_openmp_collapse(3) cimg_openmp_if_size(res.size(),4096))
       cimg_forZC(res,z,c) cimg_forXY(res,x,y) {
         const float
           mx = cimg::mod(x - delta_x,w2),
@@ -705,38 +705,38 @@ CImg<T> _gmic_shift(const float delta_x, const float delta_y=0, const float delt
       }
     } break;
     case 2 : // Periodic
-      cimg_pragma_openmp(parallel for collapse(3) cimg_openmp_if_size(res.size(),4096))
+      cimg_pragma_openmp(parallel for cimg_openmp_collapse(3) cimg_openmp_if_size(res.size(),4096))
       cimg_forZC(res,z,c) cimg_forXY(res,x,y) res(x,y,z,c) = _linear_atXY(cimg::mod(x - delta_x,(float)_width),
                                                                           cimg::mod(y - delta_y,(float)_height),z,c);
       break;
     case 1 : // Neumann
-      cimg_pragma_openmp(parallel for collapse(3) cimg_openmp_if_size(res.size(),4096))
+      cimg_pragma_openmp(parallel for cimg_openmp_collapse(3) cimg_openmp_if_size(res.size(),4096))
       cimg_forZC(res,z,c) cimg_forXY(res,x,y) res(x,y,z,c) = _linear_atXY(x - delta_x,y - delta_y,z,c);
       break;
     default : // Dirichlet
-      cimg_pragma_openmp(parallel for collapse(3) cimg_openmp_if_size(res.size(),4096))
+      cimg_pragma_openmp(parallel for cimg_openmp_collapse(3) cimg_openmp_if_size(res.size(),4096))
       cimg_forZC(res,z,c) cimg_forXY(res,x,y) res(x,y,z,c) = linear_atXY(x - delta_x,y - delta_y,z,c,(T)0);
     }
   else // 1D shift
     switch (boundary_conditions) {
     case 3 : { // Mirror
       const float w2 = 2.f*width();
-      cimg_pragma_openmp(parallel for collapse(3) cimg_openmp_if_size(res.size(),4096))
+      cimg_pragma_openmp(parallel for cimg_openmp_collapse(3) cimg_openmp_if_size(res.size(),4096))
       cimg_forYZC(res,y,z,c) cimg_forX(res,x) {
         const float mx = cimg::mod(x - delta_x,w2);
         res(x,y,z,c) = _linear_atX(mx<width()?mx:w2 - mx - 1,y,z,c);
       }
     } break;
     case 2 : // Periodic
-      cimg_pragma_openmp(parallel for collapse(3) cimg_openmp_if_size(res.size(),4096))
+      cimg_pragma_openmp(parallel for cimg_openmp_collapse(3) cimg_openmp_if_size(res.size(),4096))
       cimg_forYZC(res,y,z,c) cimg_forX(res,x) res(x,y,z,c) = _linear_atX(cimg::mod(x - delta_x,(float)_width),y,z,c);
       break;
     case 1 : // Neumann
-      cimg_pragma_openmp(parallel for collapse(3) cimg_openmp_if_size(res.size(),4096))
+      cimg_pragma_openmp(parallel for cimg_openmp_collapse(3) cimg_openmp_if_size(res.size(),4096))
       cimg_forYZC(res,y,z,c) cimg_forX(res,x) res(x,y,z,c) = _linear_atX(x - delta_x,y,z,c);
       break;
     default : // Dirichlet
-      cimg_pragma_openmp(parallel for collapse(3) cimg_openmp_if_size(res.size(),4096))
+      cimg_pragma_openmp(parallel for cimg_openmp_collapse(3) cimg_openmp_if_size(res.size(),4096))
       cimg_forYZC(res,y,z,c) cimg_forX(res,x) res(x,y,z,c) = linear_atX(x - delta_x,y,z,c,(T)0);
     }
   return res;
