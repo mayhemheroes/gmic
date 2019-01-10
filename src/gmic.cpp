@@ -3951,11 +3951,18 @@ CImg<char> gmic::substitute_item(const char *const source,
                 *substr = '0'; substr[1] = 0;
               }
               is_substituted = true;
-            } else if (*feature=='[' && feature[1]=='u' && feature[2]==',' &&
-                       feature[3]=='v' && feature[4]==']' && !feature[5]) { // Display width,height
+            } else if (*feature=='w' && feature[1]==',' && feature[2]=='h' && !feature[3]) { // Display width,height
+              cimg_snprintf(substr,substr.width(),"%u,%u",
+                            (unsigned int)disp.width(),(unsigned int)disp.height());
+              is_substituted = true;
+            } else if (*feature=='d' && feature[1]==',' && feature[2]=='e' && !feature[3]) { // Window width,height
+              cimg_snprintf(substr,substr.width(),"%u,%u",
+                            (unsigned int)disp.window_width(),(unsigned int)disp.window_height());
+              is_substituted = true;
+            } else if (*feature=='u' && feature[1]==',' && feature[2]=='v' && !feature[3]) { // Display width,height
               try {
                 cimg_snprintf(substr,substr.width(),"%u,%u",
-                              (unsigned int)disp.window_width(),(unsigned int)disp.window_height());
+                              (unsigned int)CImgDisplay::screen_width(),(unsigned int)CImgDisplay::screen_height());
               } catch (CImgDisplayException&) {
                 *substr = '0'; substr[1] = ','; substr[2] = '0'; substr[3] = 0;
               }
