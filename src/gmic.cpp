@@ -3936,22 +3936,32 @@ CImg<char> gmic::substitute_item(const char *const source,
                 if (flush_request) disp._keys[0] = 0;
                 break;
               } else if (*feature=='w' && feature[1]=='h' && !feature[2]) { // Display width*height
-              cimg_snprintf(substr,substr.width(),"%ld",
-                            (long)disp.width()*disp.height());
+              cimg_snprintf(substr,substr.width(),"%lu",
+                            (unsigned long)disp.width()*disp.height());
               is_substituted = true;
             } else if (*feature=='d' && feature[1]=='e' && !feature[2]) { // Window width*height
-              cimg_snprintf(substr,substr.width(),"%ld",
-                            (long)disp.window_width()*disp.window_height());
+              cimg_snprintf(substr,substr.width(),"%lu",
+                            (unsigned long)disp.window_width()*disp.window_height());
               is_substituted = true;
             } else if (*feature=='u' && feature[1]=='v' && !feature[2]) { // Screen width*height
               try {
-                cimg_snprintf(substr,substr.width(),"%ld",
-                              (long)CImgDisplay::screen_width()*CImgDisplay::screen_height());
+                cimg_snprintf(substr,substr.width(),"%lu",
+                              (unsigned long)CImgDisplay::screen_width()*CImgDisplay::screen_height());
               } catch (CImgDisplayException&) {
                 *substr = '0'; substr[1] = 0;
               }
               is_substituted = true;
+            } else if (*feature=='[' && feature[1]=='u' && feature[2]==',' &&
+                       feature[3]=='v' && feature[4]==']' && !feature[5]) { // Display width,height
+              try {
+                cimg_snprintf(substr,substr.width(),"%u,%u",
+                              (unsigned int)disp.window_width(),(unsigned int)disp.window_height());
+              } catch (CImgDisplayException&) {
+                *substr = '0'; substr[1] = ','; substr[2] = '0'; substr[3] = 0;
+              }
+              is_substituted = true;
             }
+
             if (!is_substituted) { // Pressed state of specified key
               bool &ik = disp.is_key(feature);
               cimg_snprintf(substr,substr.width(),"%d",(int)ik);
