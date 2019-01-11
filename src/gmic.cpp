@@ -13292,7 +13292,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               const char *ns = std::strchr(s,',');
               if (ns==s) { is_valid_name = false; break; }
               if (!ns || ns>=s_op_left) ns = s_op_left;
-              CImg<char>(s,ns - s + 1).move_to(name);
+              CImg<char>(s,(unsigned int)(ns - s + 1)).move_to(name);
               name.back() = 0;
               if (cimg_sscanf(name,"%255[a-zA-Z0-9_]%c",title,&sep)==1 && (*title<'0' || *title>'9'))
                 name.move_to(varnames);
@@ -13308,7 +13308,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 while (s<s_end) {
                   const char *ns = std::strchr(s,',');
                   if (!ns) ns = s_end;
-                  CImg<char>(s,ns - s + 1).move_to(name);
+                  CImg<char>(s,(unsigned int)(ns - s + 1)).move_to(name);
                   name.back() = 0;
                   name.move_to(varvalues);
                   s = ns + 1;
@@ -13907,8 +13907,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             if (!cimg::strcasecmp(stype,svalue_type)) \
               CImg<value_type>::get_load_raw(filename, \
                                              (unsigned int)dx,(unsigned int)dy, \
-                                             (unsigned int)dz,(unsigned int)dc,false,false,offset).\
-                move_to(input_images);
+                                             (unsigned int)dz,(unsigned int)dc,false,false,\
+                                             (cimg_ulong)offset).move_to(input_images);
             gmic_load_raw(unsigned char,"uchar")
             else gmic_load_raw(unsigned char,"unsigned char")
               else gmic_load_raw(char,"char")
