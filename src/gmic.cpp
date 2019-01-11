@@ -4144,7 +4144,8 @@ CImg<char> gmic::substitute_item(const char *const source,
                 CImg<char> _status;
                 status.move_to(_status); // Save status because 'selection2cimg' may change it
                 try {
-                  const CImg<unsigned int> inds = selection2cimg(subset,img.size(),CImgList<char>::empty(),"",false);
+                  const CImg<unsigned int> inds = selection2cimg(subset,(unsigned int)img.size(),
+                                                                 CImgList<char>::empty(),"",false);
                   values.assign(1,inds.height());
                   cimg_foroff(inds,p) values[p] = img[inds[p]];
                 } catch (gmic_exception &e) {
