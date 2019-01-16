@@ -6170,13 +6170,17 @@ map_clut :
     rm[0] mv. 0 a[^-1] c nm[0] $nm
   endl done rm. v +
 
-#@cli mix_channels : (a00,...,aMN)
+#@cli mix_channels : (a00,...,aMN) : [matrix]
 #@cli : Apply specified matrix to channels of selected images.
 #@cli : $ image.jpg +mix_channels (0,1,0;1,0,0;0,0,1)
 mix_channels :
   e[^-1] "Apply matrix $1 to channels of image$?."
-  v - repeat $! l[$>] nm={0,n}
-    whd={w},{h},{d} r {w*h*d},{s},1,1,-1 i[0] ${^0} m* r $whd,{h},-1
+  v -
+  if ${"is_image_arg $1"} pass$1 1 mat=${-img2str$1} rm. else mat=${^0} fi
+  repeat $! l[$>] nm={0,n}
+    whd={w},{h},{d} r {w*h*d},{s},1,1,-1
+    i[0] $mat
+    m* r $whd,{h},-1
   nm $nm endl done v +
 
 #@cli negate : base_value : (no arg)
