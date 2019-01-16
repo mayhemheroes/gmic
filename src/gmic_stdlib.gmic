@@ -898,7 +898,7 @@ _help_usage :
 \n          It draws a single line if '"${c}"nb_vertices"$n"' is set to 2.
 \n       . '"${c}"ellipse(_#ind,xc,yc,radius1,_radius2,_angle,_opacity,_color)"$n"' draws a filled ellipse in image "${g}"[ind]"$n"
 \n          (or in default image selected if '"${c}"ind"$n"' is not specified) with specified coordinates and geometry.
-\n       . '"${c}"resize(#ind,w,_h,_d,_s,_interp,_boundary_conditions,cx,_cy,_cz,_cc)"$n"' resizes an image of the
+\n       . '"${c}"resize(#ind,w,_h,_d,_s,_interp,_boundary_conditions,_cx,_cy,_cz,_cc)"$n"' resizes an image of the
 \n          associated list with specified dimension and interpolation method. When using this,
 \n          function, you should consider retrieving the (non-constant) image dimensions using the
 \n          dynamic functions '"${c}"w(_#ind)"$n"', '"${c}"h(_#ind)"$n"', '"${c}"d(_#ind)"$n"', '"${c}"s(_#ind)"$n"', '"${c}"wh(_#ind)"$n"',
@@ -19356,23 +19356,21 @@ img2hex :
 #@cli img2str
 #@cli : Return the content of the latest of the selected images as a special G'MIC input string.
 img2str :
-  v -
-  u "("
-  repeat {s},c
-    repeat {d},z
-      repeat {h},y
-        +z. 0,$y,$z,$c,100%,$y,$z,$c
-        u ${}{^}
-        rm.
-        if {$y!=h-1} u ${}; fi
-        e ${}
-      done
-      if {$z!=d-1} u ${}/ fi
-    done
-    if {$c!=s-1} u ${}^ fi
-  done
-  u ${}")"
-  v +
+  v - i[-2] 256
+  eval. ">begin(off = 0);
+    is_xmax = x==w - 1;
+    is_ymax = y==h - 1;
+    is_zmax = z==d - 1;
+    is_cmax = c==s - 1;
+    sep = is_cmax && is_zmax && is_ymax && is_xmax?0:
+          is_zmax && is_ymax && is_xmax?_'^':
+          is_ymax && is_xmax?_'/':
+          is_xmax?_';':_',';
+    it = vtos(i);
+    off + size(it) + 1>=w(#-2)?resize(#-2,round(1.5*w(#-2)),1,1,1,0);
+    for (k = 0, k<size(it) && it[k], ++k, i[#-2,off++] = it[k]);
+    i[#-2,off++] = sep"
+  u {-2,t} rm.. v +
 
 #@cli img2text : _line_separator
 #@cli : Return text contained in a multi-line image.
