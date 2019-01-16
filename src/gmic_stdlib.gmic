@@ -30640,6 +30640,31 @@ fx_lomo :
 fx_lomo_preview :
   gui_split_preview "fx_lomo $*",${-3--1}
 
+#@gui Mess With Bits : fx_mess_with_birs, fx_mess_with_bits_preview
+#@gui : note = note("<small><b>Input processing:</b></small>")
+#@gui : Pre-normalize = bool(1)
+#@gui : Smoothness (%) = float(15,0,100)
+#@gui : Multiplier = int(1,1,256)
+#@gui : sep = separator(), note = note("<small><b>Output processing:</b></small>")
+#@gui : Reversing = choice{1,"None","Reverse bits","Reverse bytes"}
+#@gui : Bit masking (start) = int(0,0,15)
+#@gui : Bit masking (end) = int(15,0,15)
+#@gui : sep = separator(), Preview Type = choice("Full","Forward Horizontal","Forward Vertical","Backward Horizontal","Backward Vertical","Duplicate Top","Duplicate Left","Duplicate Bottom","Duplicate Right","Duplicate Horizontal","Duplicate Vertical","Checkered","Checkered Inverse"), Preview split = point(50,50,0,0,200,200,200,0,10,0)
+#@gui : sep = separator(), note = note("<small>Author: <i>David Tschumperl&#233;</i>.      Latest Update: <i>2019/01/16</i>.</small>")
+fx_mess_with_bits :
+  repeat $! l[$>]
+    b {($2/100)^2*100}% if $1 n 0,255 fi * $3 round
+    # -> Here, images are 'ushort'-valued.
+    if {$4==1} f "for (k = res = 0, k<15, ++k, res|=((i>>k)&1)<<(15-k))"
+    elif {$4==2} f "res = ((i>>8)&255) | ((i&255)<<8)"
+    fi
+    f "begin( mask = (65535>>(15-max($5,$6))) & (65535<<min($5,$6))); i & mask"
+    n 0,255
+  endl done
+
+fx_mess_with_bits_preview :
+  gui_split_preview "fx_mess_with_bits $*",${-3--1}
+
 #@gui Noise [Additive] : fx_noise, fx_noise_preview(0)
 #@gui : Amplitude = float(10,0,200)
 #@gui : Noise Type = choice("Gaussian","Uniform","Salt and Pepper","Poisson")
