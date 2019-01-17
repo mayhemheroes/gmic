@@ -6176,12 +6176,11 @@ map_clut :
 mix_channels :
   e[^-1] "Apply matrix $1 to channels of image$?."
   v -
-  if ${"is_image_arg $1"} pass$1 1 mat=${-img2str$1} rm. else mat=${^0} fi
-  repeat $! l[$>] nm={0,n}
-    whd={w},{h},{d} r {w*h*d},{s},1,1,-1
-    i[0] $mat
-    m* r $whd,{h},-1
-  nm $nm endl done v +
+  if ${"is_image_arg $1"} pass$1 1 else (${^0}) fi
+  repeat {$!-1} l[$>] nm={n}
+    whd={[w,h,d]} r. {[whd,s]},1,1,-1
+    pass. 0 mv. 0 m* r $whd,{h},-1
+  nm $nm endl done rm. v +
 
 #@cli negate : base_value : (no arg)
 #@cli : Negate image values.
