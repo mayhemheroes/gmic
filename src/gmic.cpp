@@ -3835,148 +3835,145 @@ CImg<char> gmic::substitute_item(const char *const source,
              (inbraces[1]>='0' && inbraces[1]<='9' && !inbraces[2]) ||
              (inbraces[1]==',' && inbraces[2]) ||
              (inbraces[1]>='0' && inbraces[1]<='9' && inbraces[2]==',' && inbraces[3]))) {
-#if cimg_display==0
-          *substr = '0'; substr[1] = 0;
-          is_substituted = true;
-#else // #if cimg_display==0
+
           unsigned int wind = 0;
-          const char *feature = inbraces.data() + 1;
+          char *feature = inbraces.data() + 1;
           if (*feature>='0' && *feature<='9') wind = (unsigned int)(*(feature++) - '0');
           CImgDisplay &disp = _display_windows[wind];
-
           if (!*feature) {
+#if cimg_display==0
+            *substr = '0'; substr[1] = 0;
+#else
             cimg_snprintf(substr,substr.width(),"%d",disp?(disp.is_closed()?0:1):0);
-            is_substituted = true;
-          } else if (*feature==',') {
-            bool flush_request = false;
-            if (*(++feature)=='-' &&
-                feature[1]!='w' && feature[1]!='h' && feature[1]!='d' && feature[1]!='e' &&
-                feature[1]!='u' && feature[1]!='v' && feature[1]!='n' && feature[1]!='t') {
-              flush_request = true; ++feature;
-            }
-            if (!feature[1]) switch (*feature) { // Single-char features
-              case 'w' : // Display width
-                cimg_snprintf(substr,substr.width(),"%d",disp.width());
-                is_substituted = true;
-                break;
-              case 'h' : // Display height
-                cimg_snprintf(substr,substr.width(),"%d",disp.height());
-                is_substituted = true;
-                break;
-              case 'd' : // Window width
-                cimg_snprintf(substr,substr.width(),"%d",disp.window_width());
-                is_substituted = true;
-                break;
-              case 'e' : // Window height
-                cimg_snprintf(substr,substr.width(),"%d",disp.window_height());
-                is_substituted = true;
-                break;
-              case 'u' : // Screen width
-                try {
-                  cimg_snprintf(substr,substr.width(),"%d",CImgDisplay::screen_width());
-                } catch (CImgDisplayException&) {
-                  *substr = '0'; substr[1] = 0;
-                }
-                is_substituted = true;
-                break;
-              case 'v' : // Screen height
-                try {
-                  cimg_snprintf(substr,substr.width(),"%d",CImgDisplay::screen_height());
-                } catch (CImgDisplayException&) {
-                  *substr = '0'; substr[1] = 0;
-                }
-                is_substituted = true;
-                break;
-              case 'n' : // Normalization type
-                cimg_snprintf(substr,substr.width(),"%d",disp.normalization());
-                is_substituted = true;
-                break;
-              case 't' : // Window title
-                cimg_snprintf(substr,substr.width(),"%s",disp.title());
-                is_substituted = true;
-                break;
-              case 'x' : // X-coordinate of mouse pointer
-                cimg_snprintf(substr,substr.width(),"%d",disp.mouse_x());
-                is_substituted = true;
-                if (flush_request) { disp._mouse_x = -1; disp._mouse_y = -1; }
-                break;
-              case 'y' : // Y-coordinate of mouse pointer
-                cimg_snprintf(substr,substr.width(),"%d",disp.mouse_y());
-                is_substituted = true;
-                if (flush_request) { disp._mouse_x = -1; disp._mouse_y = -1; }
-                break;
-              case 'b' : // State of mouse buttons
-                cimg_snprintf(substr,substr.width(),"%d",disp.button());
-                is_substituted = true;
-                if (flush_request) disp._button = 0;
-                break;
-              case 'o' : // State of mouse wheel
-                cimg_snprintf(substr,substr.width(),"%d",disp.wheel());
-                is_substituted = true;
-                if (flush_request) disp._wheel = 0;
-                break;
-              case 'c' : // Closed state of display window
-                cimg_snprintf(substr,substr.width(),"%d",(int)disp.is_closed());
-                is_substituted = true;
-                if (flush_request) disp._is_closed = false;
-                break;
-              case 'r' : // Resize event
-                cimg_snprintf(substr,substr.width(),"%d",(int)disp.is_resized());
-                is_substituted = true;
-                if (flush_request) disp._is_resized = false;
-                break;
-              case 'm' : // Move event
-                cimg_snprintf(substr,substr.width(),"%d",(int)disp.is_moved());
-                is_substituted = true;
-                if (flush_request) disp._is_moved = false;
-                break;
-              case 'k' : // Key event
-                cimg_snprintf(substr,substr.width(),"%u",disp.key());
-                is_substituted = true;
-                if (flush_request) disp._keys[0] = 0;
-                break;
-              } else if (*feature=='w' && feature[1]=='h' && !feature[2]) { // Display width*height
-              cimg_snprintf(substr,substr.width(),"%lu",
-                            (unsigned long)disp.width()*disp.height());
-              is_substituted = true;
-            } else if (*feature=='d' && feature[1]=='e' && !feature[2]) { // Window width*height
-              cimg_snprintf(substr,substr.width(),"%lu",
-                            (unsigned long)disp.window_width()*disp.window_height());
-              is_substituted = true;
-            } else if (*feature=='u' && feature[1]=='v' && !feature[2]) { // Screen width*height
-              try {
-                cimg_snprintf(substr,substr.width(),"%lu",
-                              (unsigned long)CImgDisplay::screen_width()*CImgDisplay::screen_height());
-              } catch (CImgDisplayException&) {
-                *substr = '0'; substr[1] = 0;
-              }
-              is_substituted = true;
-            } else if (*feature=='w' && feature[1]==',' && feature[2]=='h' && !feature[3]) { // Display width,height
-              cimg_snprintf(substr,substr.width(),"%u,%u",
-                            (unsigned int)disp.width(),(unsigned int)disp.height());
-              is_substituted = true;
-            } else if (*feature=='d' && feature[1]==',' && feature[2]=='e' && !feature[3]) { // Window width,height
-              cimg_snprintf(substr,substr.width(),"%u,%u",
-                            (unsigned int)disp.window_width(),(unsigned int)disp.window_height());
-              is_substituted = true;
-            } else if (*feature=='u' && feature[1]==',' && feature[2]=='v' && !feature[3]) { // Display width,height
-              try {
-                cimg_snprintf(substr,substr.width(),"%u,%u",
-                              (unsigned int)CImgDisplay::screen_width(),(unsigned int)CImgDisplay::screen_height());
-              } catch (CImgDisplayException&) {
-                *substr = '0'; substr[1] = ','; substr[2] = '0'; substr[3] = 0;
-              }
-              is_substituted = true;
-            }
-
-            if (!is_substituted) { // Pressed state of specified key
-              bool &ik = disp.is_key(feature);
-              cimg_snprintf(substr,substr.width(),"%d",(int)ik);
-              is_substituted = true;
-              if (flush_request) ik = false;
-            }
-          }
 #endif // #if cimg_display==0
+            is_substituted = true;
+          } else if (*(feature++)==',') do {
+              is_substituted = false;
+              char *const e_feature = std::strchr(feature,',');
+              if (e_feature) *e_feature = 0;
+#if cimg_display==0
+              *substr = '0'; substr[1] = 0;
+              is_substituted = true;
+#else // #if cimg_display==0
+              bool flush_request = false;
+              if (*feature=='-' &&
+                  feature[1]!='w' && feature[1]!='h' && feature[1]!='d' && feature[1]!='e' &&
+                  feature[1]!='u' && feature[1]!='v' && feature[1]!='n' && feature[1]!='t') {
+                flush_request = true; ++feature;
+              }
+              if (*feature && !feature[1]) switch (*feature) { // Single-char features
+                case 'w' : // Display width
+                  cimg_snprintf(substr,substr.width(),"%d",disp.width());
+                  is_substituted = true;
+                  break;
+                case 'h' : // Display height
+                  cimg_snprintf(substr,substr.width(),"%d",disp.height());
+                  is_substituted = true;
+                  break;
+                case 'd' : // Window width
+                  cimg_snprintf(substr,substr.width(),"%d",disp.window_width());
+                  is_substituted = true;
+                  break;
+                case 'e' : // Window height
+                  cimg_snprintf(substr,substr.width(),"%d",disp.window_height());
+                  is_substituted = true;
+                  break;
+                case 'u' : // Screen width
+                  try {
+                    cimg_snprintf(substr,substr.width(),"%d",CImgDisplay::screen_width());
+                  } catch (CImgDisplayException&) {
+                    *substr = '0'; substr[1] = 0;
+                  }
+                  is_substituted = true;
+                  break;
+                case 'v' : // Screen height
+                  try {
+                    cimg_snprintf(substr,substr.width(),"%d",CImgDisplay::screen_height());
+                  } catch (CImgDisplayException&) {
+                    *substr = '0'; substr[1] = 0;
+                  }
+                  is_substituted = true;
+                  break;
+                case 'n' : // Normalization type
+                  cimg_snprintf(substr,substr.width(),"%d",disp.normalization());
+                  is_substituted = true;
+                  break;
+                case 't' : // Window title
+                  cimg_snprintf(substr,substr.width(),"%s",disp.title());
+                  is_substituted = true;
+                  break;
+                case 'x' : // X-coordinate of mouse pointer
+                  cimg_snprintf(substr,substr.width(),"%d",disp.mouse_x());
+                  is_substituted = true;
+                  if (flush_request) { disp._mouse_x = -1; disp._mouse_y = -1; }
+                  break;
+                case 'y' : // Y-coordinate of mouse pointer
+                  cimg_snprintf(substr,substr.width(),"%d",disp.mouse_y());
+                  is_substituted = true;
+                  if (flush_request) { disp._mouse_x = -1; disp._mouse_y = -1; }
+                  break;
+                case 'b' : // State of mouse buttons
+                  cimg_snprintf(substr,substr.width(),"%d",disp.button());
+                  is_substituted = true;
+                  if (flush_request) disp._button = 0;
+                  break;
+                case 'o' : // State of mouse wheel
+                  cimg_snprintf(substr,substr.width(),"%d",disp.wheel());
+                  is_substituted = true;
+                  if (flush_request) disp._wheel = 0;
+                  break;
+                case 'c' : // Closed state of display window
+                  cimg_snprintf(substr,substr.width(),"%d",(int)disp.is_closed());
+                  is_substituted = true;
+                  if (flush_request) disp._is_closed = false;
+                  break;
+                case 'r' : // Resize event
+                  cimg_snprintf(substr,substr.width(),"%d",(int)disp.is_resized());
+                  is_substituted = true;
+                  if (flush_request) disp._is_resized = false;
+                  break;
+                case 'm' : // Move event
+                  cimg_snprintf(substr,substr.width(),"%d",(int)disp.is_moved());
+                  is_substituted = true;
+                  if (flush_request) disp._is_moved = false;
+                  break;
+                case 'k' : // Key event
+                  cimg_snprintf(substr,substr.width(),"%u",disp.key());
+                  is_substituted = true;
+                  if (flush_request) disp._keys[0] = 0;
+                  break;
+                } else if (*feature=='w' && feature[1]=='h' && !feature[2]) { // Display width*height
+                cimg_snprintf(substr,substr.width(),"%lu",
+                              (unsigned long)disp.width()*disp.height());
+                is_substituted = true;
+              } else if (*feature=='d' && feature[1]=='e' && !feature[2]) { // Window width*height
+                cimg_snprintf(substr,substr.width(),"%lu",
+                              (unsigned long)disp.window_width()*disp.window_height());
+                is_substituted = true;
+              } else if (*feature=='u' && feature[1]=='v' && !feature[2]) { // Screen width*height
+                try {
+                  cimg_snprintf(substr,substr.width(),"%lu",
+                                (unsigned long)CImgDisplay::screen_width()*CImgDisplay::screen_height());
+                } catch (CImgDisplayException&) {
+                  *substr = '0'; substr[1] = 0;
+                }
+                is_substituted = true;
+              }
+              if (*feature && !is_substituted) { // Pressed state of specified key
+                bool &ik = disp.is_key(feature);
+                cimg_snprintf(substr,substr.width(),"%d",(int)ik);
+                is_substituted = true;
+                if (flush_request) ik = false;
+              }
+#endif // #if cimg_display==0
+              if (is_substituted)
+                CImg<char>::string(substr,false,true).append_string_to(substituted_items,ptr_sub);
+              if (e_feature) {
+                *e_feature = ','; feature = e_feature + 1;
+                CImg<char>::append_string_to(',',substituted_items,ptr_sub);
+              } else ++feature;
+            } while (*feature);
+          *substr = 0; is_substituted = true;
         }
 
         // Double-backquoted string.
