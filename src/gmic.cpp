@@ -3840,14 +3840,16 @@ CImg<char> gmic::substitute_item(const char *const source,
           char *feature = inbraces.data() + 1;
           if (*feature>='0' && *feature<='9') wind = (unsigned int)(*(feature++) - '0');
           CImgDisplay &disp = _display_windows[wind];
+
           if (!*feature) {
 #if cimg_display==0
             *substr = '0'; substr[1] = 0;
 #else
             cimg_snprintf(substr,substr.width(),"%d",disp?(disp.is_closed()?0:1):0);
-#endif // #if cimg_display==0
             is_substituted = true;
-          } else if (*(feature++)==',') do {
+#endif // #if cimg_display==0
+          } else if (*(feature++)==',') {
+            do {
               is_substituted = false;
               char *const e_feature = std::strchr(feature,',');
               if (e_feature) *e_feature = 0;
@@ -3973,7 +3975,8 @@ CImg<char> gmic::substitute_item(const char *const source,
                 CImg<char>::append_string_to(',',substituted_items,ptr_sub);
               } else ++feature;
             } while (*feature);
-          *substr = 0; is_substituted = true;
+            *substr = 0; is_substituted = true;
+          }
         }
 
         // Double-backquoted string.
