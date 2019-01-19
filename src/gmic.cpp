@@ -3840,6 +3840,7 @@ CImg<char> gmic::substitute_item(const char *const source,
           char *feature = inbraces.data() + 1;
           if (*feature>='0' && *feature<='9') wind = (unsigned int)(*(feature++) - '0');
           CImgDisplay &disp = _display_windows[wind];
+          char *e_feature = 0;
 
           if (!*feature) {
 #if cimg_display==0
@@ -3851,7 +3852,7 @@ CImg<char> gmic::substitute_item(const char *const source,
           } else if (*(feature++)==',') {
             do {
               is_substituted = false;
-              char *const e_feature = std::strchr(feature,',');
+              e_feature = std::strchr(feature,',');
               if (e_feature) *e_feature = 0;
 #if cimg_display==0
               *substr = '0'; substr[1] = 0;
@@ -3863,7 +3864,10 @@ CImg<char> gmic::substitute_item(const char *const source,
                   feature[1]!='u' && feature[1]!='v' && feature[1]!='n' && feature[1]!='t') {
                 flush_request = true; ++feature;
               }
-              if (*feature && !feature[1]) switch (*feature) { // Single-char features
+              if (!*feature) { // Empty feature
+                cimg_snprintf(substr,substr.width(),"%d",disp?(disp.is_closed()?0:1):0);
+                is_substituted = true;
+              } else if (*feature && !feature[1]) switch (*feature) { // Single-char features
                 case 'w' : // Display width
                   cimg_snprintf(substr,substr.width(),"%d",disp.width());
                   is_substituted = true;
@@ -3973,8 +3977,8 @@ CImg<char> gmic::substitute_item(const char *const source,
               if (e_feature) {
                 *e_feature = ','; feature = e_feature + 1;
                 CImg<char>::append_string_to(',',substituted_items,ptr_sub);
-              } else ++feature;
-            } while (*feature);
+              } else feature+=std::strlen(feature);
+            } while (*feature || e_feature);
             *substr = 0; is_substituted = true;
           }
         }
