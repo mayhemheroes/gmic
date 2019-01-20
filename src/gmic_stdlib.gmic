@@ -30644,10 +30644,15 @@ fx_lomo_preview :
 #@gui : Reversing = choice{1,"None","Reverse bits","Reverse bytes"}
 #@gui : Bit masking (start) = int(0,0,15)
 #@gui : Bit masking (end) = int(15,0,15)
+#@gui : Opacity (%) = float(100,0,100)
+#@gui : sep = separator(), Channel(s) = choice("All","RGBA [All]","RGB [All]","RGB [Red]","RGB [Green]","RGB [Blue]","RGBA [Alpha]","Linear RGB [All]","Linear RGB [Red]","Linear RGB [Green]","Linear RGB [Blue]","YCbCr [Luminance]","YCbCr [Blue-Red Chrominances]","YCbCr [Blue Chrominance]","YCbCr [Red Chrominance]","YCbCr [Green Chrominance]","Lab [Lightness]","Lab [ab-Chrominances]","Lab [a-Chrominance]","Lab [b-Chrominance]","Lch [ch-Chrominances]","Lch [c-Chrominance]","Lch [h-Chrominance]","HSV [Hue]","HSV [Saturation]","HSV [Value]","HSI [Intensity]","HSL [Lightness]","CMYK [Cyan]","CMYK [Magenta]","CMYK [Yellow]","CMYK [Key]","YIQ [Luma]","YIQ [Chromas]")
 #@gui : sep = separator(), Preview Type = choice("Full","Forward Horizontal","Forward Vertical","Backward Horizontal","Backward Vertical","Duplicate Top","Duplicate Left","Duplicate Bottom","Duplicate Right","Duplicate Horizontal","Duplicate Vertical","Checkered","Checkered Inverse"), Preview split = point(50,50,0,0,200,200,200,0,10,0)
 #@gui : sep = separator(), note = note("<small>Author: <i>David Tschumperl&#233;</i>.      Latest Update: <i>2019/01/16</i>.</small>")
 fx_mess_with_bits :
-  repeat $! l[$>]
+  ac "_fx_mess_with_bits ${1-7}",$8
+
+_fx_mess_with_bits :
+  repeat $! +l[$>]
     b {($2/100)^2*100}% if $1 n 0,255 fi * $3 round
     # -> Here, images are 'ushort'-valued.
     if {$4==1} f "for (k = res = 0, k<15, ++k, res|=((i>>k)&1)<<(15-k))"
@@ -30655,7 +30660,7 @@ fx_mess_with_bits :
     fi
     f "begin( mask = (65535>>(15-max($5,$6))) & (65535<<min($5,$6))); i & mask"
     n 0,255
-  endl done
+  endl j[$>] .,0,0,0,0,{$7%} rm. done
 
 fx_mess_with_bits_preview :
   gui_split_preview "fx_mess_with_bits $*",${-3--1}
