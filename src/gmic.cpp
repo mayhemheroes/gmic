@@ -3836,11 +3836,15 @@ CImg<char> gmic::substitute_item(const char *const source,
              (inbraces[1]==',' && inbraces[2]) ||
              (inbraces[1]>='0' && inbraces[1]<='9' && inbraces[2]==',' && inbraces[3]))) {
 
-          unsigned int wind = 0;
           char *feature = inbraces.data() + 1;
+          unsigned int wind = 0;
           if (*feature>='0' && *feature<='9') wind = (unsigned int)(*(feature++) - '0');
-          CImgDisplay &disp = _display_windows[wind];
           char *e_feature = 0;
+#if cimg_display!=0
+          CImgDisplay &disp = _display_windows[wind];
+#else
+          cimg::unused(wind);
+#endif
 
           if (!*feature) {
 #if cimg_display==0
