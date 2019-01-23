@@ -653,7 +653,7 @@ _help_usage :
 \n       . '"${c}"e"$n"': window height (i.e. height of the window widget).
 \n       . '"${c}"de"$n"': window width x window height.
 \n       . '"${c}"u"$n"': screen width (actually independent on the window size).
-\n       .' "${c}"v"$n"': screen height (actually independent on the window size).
+\n       . '"${c}"v"$n"': screen height (actually independent on the window size).
 \n       . '"${c}"uv"$n"': screen width x screen height.
 \n       . '"${c}"n"$n"': current normalization type of the instant display.
 \n       . '"${c}"t"$n"': window title of the instant display.
@@ -1202,9 +1202,10 @@ _help_header_html :
   _gmic_g="<b><font color=\"#009000\">"
   _gmic_m="<b><font color=\"#900090\">"
   _gmic_c="<b><font color=\"#005090\">"
+  _gmic_expr="<b><font color=\"#6080A0\">"
 
   v +
--e[] "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">
+  e[] "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">
 \n<!--#include file=\"header.html\" -->
 \n<div id=\"bloc_option\">
 \n<div id=\"top_rouge\"><div id=\"text_top\">Reference</div></div>
@@ -1266,7 +1267,7 @@ _help_header_html :
 \n</pre>
 "
 v -
--_help_section "Usage"
+ _help_section "Usage"
 
 _help_section_html :
   _section+=1
@@ -1275,9 +1276,12 @@ _help_section_html :
   v -
 
 _help_paragraph_html :
-  v +
-  e[] "<pre>$*</pre>"
-  v -
+  ({'"$*"'})
+  replace_str. "'"$_gmic_c,$_gmic_expr
+  replace_str. "'"$_gmic_g,$_gmic_g
+  replace_str. $_gmic_n"'",$_gmic_n
+  v + e[] "<pre>"{t}"</pre>" v -
+  rm.
 
 _help_footer_html :
   v +
@@ -2535,7 +2539,7 @@ _document_gmic_description_html :
 
   elif $is_equivalent # Reached line as '#@cli : (eq. to shortcut)'.
     replace_str "eq. to","equivalent to shorcut command"
-    s +,39 if {$!==5} i[2] ({'"<font color=\"blue\"><b>"'}) i[4] ({'"</b></font>"'}) y fi a y
+    s +,39 if {$!==5} rm[1,3] i[1] ({'"<font color=\"blue\"><b>"'}) i[3] ({'"</b></font>"'}) y fi a y
     v + e[] ${-don}"<i>"{t}"</i>" v -
 
   else                                    # Reached line as '#@cli : description'.
