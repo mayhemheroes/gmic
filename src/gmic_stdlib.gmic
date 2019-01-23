@@ -1198,12 +1198,12 @@ _help_header_html :
   _section=0
   if {narg($_prerelease)} strprerelease=" (pre-release ""#"$_prerelease")" else strprerelease="" fi
   _gmic_n="</span>"
-  _gmic_r="<span style=\\\"color: \#900000\\\">"
-  _gmic_g="<span style=\\\"color: \#009000\\\">"
-  _gmic_m="<span style=\\\"color: \#900090\\\">"
-  _gmic_c="<span style=\\\"color: \#005090\\\">"
-  _gmic_b="<span style=\\\"font-weight: bold\\\">"
-  _gmic_quotedc="<span style=\\\"color: \#902030; background-color: \#E4E4E4; font-family: monospace\\\">"
+  _gmic_r="<span style=\"color: \#900000\">"
+  _gmic_g="<span style=\"color: \#009000\">"
+  _gmic_m="<span style=\"color: \#900090\">"
+  _gmic_c="<span style=\"color: \#005090\">"
+  _gmic_b="<span style=\"font-weight: bold\">"
+  _gmic_quotedc="<span class=\"ref_code\">"
   _gmic_quotedg="<span style=\\\"color: \#203090; font-family: monospace\\\">"
   v +
   e[] "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">
@@ -1287,6 +1287,7 @@ _help_paragraph_html :
   replace_str. "https://gmic.eu/tutorial/","<a href=\"https://gmic.eu/tutorial/\">https://gmic.eu/tutorial/</a>"
 
   v + e[] "<pre>"{t}"</pre>" v -
+#  v + e[] "<p>"{t}"</p>" v -
   rm.
 
 _help_footer_html :
@@ -2490,7 +2491,7 @@ _document_gmic_declaration_html :
     _command_name={0,t}
     v +
     e[] ${-eoff}${-doff}"<br/><hr style=\"border-top: 1px solid \#ccc;\"/><p><a id=\""{0,t}"\">"\
-     "<span style=\"font-family: monospace; font-size:110%; padding: 3px; border: 1px solid; background-color: \#F0F0FF; color: \#6060A0\"><b>"&nbsp;{0,t}&nbsp;"</b></span></a>"$qualifier"&nbsp;&nbsp;&nbsp;<a style=\"font-weight: normal\" href=\"#"$_command_name"\">&#128279;</a>"
+     "<span class=\"ref_decl\"><b>"{0,t}"</b></span></a>"$qualifier"&nbsp;&nbsp;&nbsp;<a style=\"font-weight: normal\" href=\"#"$_command_name"\">&#128279;</a>"
     if {$!>1}
       e[] "<p style=\"margin-left:50px; font-family: monospace; color: \#900090; text-align: left\">"
       repeat {$!-1} l[{1+$>}]
@@ -2518,7 +2519,7 @@ _document_gmic_description_html :
       do
         if {"const ind = "$ind"; h#ind==1 && i#ind==39 && h#(ind+2)==1 && i#(ind+2)==39 && h#(ind+1)<48 && (im#(ind+1)>32 || "$is_default")"}
           l[$ind,{$ind+2}] rm
-          ({'"<span style=\\\"color: \#902030; background-color: \#E4E4E4; font-style: normal; font-family: monospace;\\\">"'})
+          ({'"<span class=\"ref_code\">"'})
           ({'"</span>"'})
           y endl
           ind+=2
@@ -2567,7 +2568,7 @@ _document_gmic_description_html :
   elif $is_equivalent # Reached line as '#@cli : (eq. to shortcut)'.
     replace_str "eq. to","equivalent to shorcut command"
     s +,39 if {$!==5} rm[1,3] i[1]
-    ({'"<span style=\\\"color: \#507090; background-color: \#E4E4E4; font-style: normal; font-family: monospace;\\\">"'})
+    ({'"<span class=\"ref_code\">"'})
     i[3] ({'"</span>"'})
     y fi a y
     v + e[] ${-don}"<i>"{t}"</i>" v -
@@ -2585,7 +2586,7 @@ _document_gmic_example_html :
     else autocrop {'$'} autocrop {'" "'} tuturl=https://gmic.eu/tutorial/{0,t}.shtml
     fi
     v +
-    e[] ${-eon}"<tr><td width=\"24\" align=\"center\"><a target=\"_blank\" href=\""$tuturl"\">&#128712;</td>"\
+    e[] ${-eon}"<tr><td width=\"24\" align=\"center\"><a target=\"_blank\" style=\"font-weight: normal\" href=\""$tuturl"\">&#128712;</td>"\
                 "<td><a target=\"_blank\" href=\""$tuturl"\">A tutorial page exists for this command.</a></td></tr>"
     v -
   else # Regular example.
@@ -2594,7 +2595,7 @@ _document_gmic_example_html :
        l[] v -99 reset foo v -1 _document_gmic o $_filename,85 rm endl
        uncommand foo
     fi
-    ({'${-eon}"<tr><td width=\"24\" align=\"center\"><div><a href=\""$_filename"\" class=\"highslide\" onclick=\"return hs.expand(this)\">"\
+    ({'${-eon}"<tr><td width=\"24\" align=\"center\"><div><a href=\""$_filename"\" style=\"font-weight: normal\" class=\"highslide\" onclick=\"return hs.expand(this)\">"\
          "&#128269;</a><div class=\"highslide-caption\">"{t}"</div></div></td><td><span style=\"font-family: monospace; text-align: left\">"{t}"</span></td></tr>"'})
     replace_str. " "$_command_name,"<span style=\"font-weight: bold; color: \#200080\"> "$_command_name"</span>"
     replace_str. "+"$_command_name,"<span style=\"font-weight: bold; color: \#200080\">+"$_command_name"</span>"
