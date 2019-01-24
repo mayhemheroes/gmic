@@ -2304,8 +2304,9 @@ _document_gmic_example_ascii :
 _document_gmic_footer_ascii : skip $1
   if $_shortcut # Document shortcuts.
     ({'"Command shortcuts"'}) _document_gmic_subsection_ascii. v + e[] "" v - rm.
+    _sort_shortcuts[]
     v + repeat $_shortcut
-      e[] "    "$_gmic_m${_gmic_b}${_shortcut$>}" "${_shortcutqualifier$>}":"$_gmic_n" eq. to '"$_gmic_g${_shortcutlink$>}$_gmic_n"'."
+      e[] "    "$_gmic_m${_gmic_b}${_sshortcut$>}" "${_sshortcutqualifier$>}":"$_gmic_n" eq. to '"$_gmic_g${_sshortcutlink$>}$_gmic_n"'."
     done v -
   fi
   v + e[] "\n   "$_gmic_c"[ Total number of commands: "$_command" ]"$_gmic_n v -
@@ -2603,6 +2604,7 @@ _document_gmic_example_html :
     replace_str. "+"$_command_name".","+<span style=\"font-weight: bold; color: \#200080\">"$_command_name"</span>."
     replace_str. "+"$_command_name"[","+<span style=\"font-weight: bold; color: \#200080\">"$_command_name"</span>["
     replace_str. $_command_name"<","<span style=\"font-weight: bold; color: \#200080\">"$_command_name"</span><"
+    replace_str. ">"$_command_name,"><span style=\"font-weight: bold; color: \#200080\">"$_command_name"</span>"
     v +
     e[] {t}
     v - rm.
@@ -2612,11 +2614,12 @@ _document_gmic_footer_html : skip $1
   if $_shortcut # Document shortcuts.
     _subsection+=1
     ({'"Command shortcuts"'}) _document_gmic_subsection_html. rm.
+    _sort_shortcuts[]
     v + e[] "<p style=\"margin-left:20px\">"
     repeat $_shortcut
-      e[] "<font color=\"green\"><b>&nbsp;&nbsp;"${_shortcut$>}" "${_shortcutqualifier$>}"</b>:</font>"
-      v - ({'${_shortcutlink$>}'}) scl={t} rm. v +
-      e[] "<font color=\"blue\"><i>Shortcut for command '<a href=\"#"$scl"\">"${_shortcutlink$>}"</a>'</i></font><br/>"
+      e[] "<font color=\"green\"><b>&nbsp;&nbsp;"${_sshortcut$>}" "${_sshortcutqualifier$>}"</b>:</font>"
+      v - ({'${_sshortcutlink$>}'}) scl={t} rm. v +
+      e[] "<font color=\"blue\"><i>Shortcut for command '<a href=\"#"$scl"\">"${_sshortcutlink$>}"</a>'</i></font><br/>"
     done
     e[] "</p>" v -
   fi
@@ -2824,8 +2827,9 @@ _document_gmic_example_latex :
 _document_gmic_footer_latex :
   if $_shortcut # Document shortcuts.
     ({'"Command shortcuts"'}) _document_gmic_subsection_latex. rm.
+    _sort_shortcuts[]
     v + repeat $_shortcut
-      e[] "$\\bullet$~'\\texttt{\\Ca{"${_shortcut$>}"}}' "${_shortcutqualifier$>}"~is equivalent to~~'\\texttt{\\Ca{"${_shortcutlink$>}"}}'.\\\\"
+      e[] "$\\bullet$~'\\texttt{\\Ca{"${_sshortcut$>}"}}' "${_sshortcutqualifier$>}"~is equivalent to~~'\\texttt{\\Ca{"${_sshortcutlink$>}"}}'.\\\\"
     done v -
   fi
   if $1
@@ -2937,6 +2941,16 @@ _document_gmic :
   - 255 append_tiles 2 + 255
   if {w<256} - 255 r 256,100%,1,3,0,0,0.5,0.5 + 255 fi
   if {h<256} - 255 r 100%,256,1,3,0,0,0.5,0.5 + 255 fi
+
+# Sort shortcut by lexicographic order and generate new sorted variables 'sshortcut_?'.
+_sort_shortcuts :
+  $_shortcut,1,1,1,x s x repeat $! nm[$>] ${_shortcut$>} done sort_list +,n a x
+  repeat {w} i={i[$>]}
+    _sshortcut$>=${_shortcut$i}
+    _sshortcutqualifier$>=${_shortcutqualifier$i}
+    _sshortcutlink$>=${_shortcutlink$i}
+  done
+  rm
 
 #@cli e : eq. to 'echo'. : (+)
 
