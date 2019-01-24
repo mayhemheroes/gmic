@@ -1284,7 +1284,7 @@ _help_paragraph_html :
   replace_str. "  - ","  &bull; "
   replace_str. "  . ","  &#9702; "
   replace_str. "  _ ","  &#9654; "
-  replace_str. "https://gmic.eu/tutorial/","<a href=\"https://gmic.eu/tutorial/\">https://gmic.eu/tutorial/</a>"
+  add_link_html. 1
   v + e[] "<pre>"{t}"</pre>" v -
   rm.
 
@@ -2509,6 +2509,7 @@ _document_gmic_description_html :
   replace_str "\\n","<br/>"
   replace_str "G'MIC","<b><font color=\"#900090\">G\47MIC</font></b>"
   replace_str "(no arg)","<font color=\"#900090\">(no arg)</font>"
+  add_link_html. 1
 
   if {!$_is_example" && "!$is_equivalent}
     # Colorize parameters between single quotes.
@@ -2623,6 +2624,25 @@ _document_gmic_footer_html : skip $1
   e[] ${-eoff}${-doff}"<p style=\"margin-left:50px\"><font color=\"blue\"><b>[ Total number of commands: "$_command" ]</b></font>"
   v -
   uncommand don,doff,eon,eoff
+
+# Replace URL with HTML link in selected images of string.
+# $1 can be { 0=open in same window (default) | 1=open in new window }
+add_link_html : check "isbool(${1=0})"
+  repeat $!
+    _add_link_html[$>] $1,http://
+    _add_link_html[$>] $1,https://
+  done
+
+_add_link_html :
+  if $1 target=" target=\"_blank\"" fi
+  s +,{'"$2"'}
+  repeat {$!-1} if {$>,crop()==['"$2"']}
+    l[{$>+1}]
+      s +,{'" "'} s[0] +,{')'} s[0] +,{']'} s[0] +,39 s[0] +,{'\"'} s[0] +,{'<'}
+      url="$2"{0,t} i[1] ({'</a>'}) y[1]
+    a y endl
+    rm[$>] i[$>] ({'"<a href=\""$url"\""$target">$2"'}) y[$>]
+  fi done a y
 
 # Define document_gmic commands for images-only output.
 _document_gmic_header_images : skip $1
