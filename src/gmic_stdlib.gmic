@@ -30679,6 +30679,39 @@ _fx_noise :
 fx_noise_preview :
   gui_split_preview "fx_noise $*",${-3--1}
 
+#@gui Noise [Perlin] : fx_noise_perlin, fx_noise_perlin_preview(1)
+#@gui : Amplitude = float(100,0,512)
+#@gui : Seed (%) = point(50,50)
+#@gui : Previous seed = value(50,50)
+#@gui : Scale (%) = point(75,50)
+#@gui : X/Y Ratio = float(0,-4,4)
+#@gui : sep = separator(), Channel(s) = choice(2,"All","RGBA [all]","RGB [all]","RGB [red]","RGB [green]","RGB [blue]","RGBA [alpha]","Linear RGB [all]","Linear RGB [red]","Linear RGB [green]","Linear RGB [blue]","YCbCr [luminance]","YCbCr [blue-red chrominances]","YCbCr [blue chrominance]","YCbCr [red chrominance]","YCbCr [green chrominance]","Lab [lightness]","Lab [ab-chrominances]","Lab [a-chrominance]","Lab [b-chrominance]","Lch [ch-chrominances]","Lch [c-chrominance]","Lch [h-chrominance]","HSV [hue]","HSV [saturation]","HSV [value]","HSI [intensity]","HSL [lightness]","CMYK [cyan]","CMYK [magenta]","CMYK [yellow]","CMYK [key]","YIQ [luma]","YIQ [chromas]")
+#@gui : sep = separator(), Preview Type = choice("Full","Forward Horizontal","Forward Vertical","Backward Horizontal","Backward Vertical","Duplicate Top","Duplicate Left","Duplicate Bottom","Duplicate Right","Duplicate Horizontal","Duplicate Vertical","Checkered","Checkered Inverse"), Preview split = point(50,50,0,0,200,200,200,0,10,0)
+#@gui : sep = separator(), note = note("<small>Author: <i>David Tschumperl&#233;</i>.      Latest Update: <i>2019/01/24</i>.</small>")
+fx_noise_perlin :
+  amplitude,seedx,seedy,pseedx,pseedy,radx,rady,ratio,channel=${1-9}
+  if {$seedx!=$pseedx" || "$seedy!=$pseedy}
+    deltax,deltay={[$radx,$rady]-[$pseedx,$pseedy]}
+    radx,rady={[$seedx,$seedy]+[$deltax,$deltay]}
+  fi
+  __status=\{$amplitude\}\{$seedx,$seedy\}\{$seedx,$seedy\}\{$radx,$rady\}\{$ratio\}\{$channel\}
+  r={200/(1+norm($radx-$seedx,$rady-$seedy))}
+  x0,y0,x1,y1={"const M = max(w,h);
+                const ratio = 2^"$ratio";
+                dx = M*"$r"/h*ratio;
+                dy = M*"$r"/w/ratio;
+                [-"$seedx" - dx, -"$seedy" - dy, -"$seedx" + dx, -"$seedy" + dy]"}
+  ac "+noise_perlin. "$x0","$y0","$x1","$y1" *. "$amplitude" + c 0,255",$channel
+  if $__is_preview
+    line $seedx%,$seedy%,$radx%,$rady%,1,0xF0F0F0F0,255
+    line $seedx%,$seedy%,$radx%,$rady%,1,0x0F0F0F0F,0
+  fi
+
+fx_noise_perlin_preview :
+  __is_preview=1
+  gui_split_preview "fx_noise_perlin ${1--4}",${-3--1}
+  u $__status\{$-3\}\{$-2,$-1\}
+
 #@gui Noise [Spread] : fx_spread, fx_spread_preview(0)
 #@gui : X-Variations = float(4,0,20)
 #@gui : Y-Variations = float(4,0,20)
