@@ -582,7 +582,8 @@ _help_usage :
 \n
 \n       . '"${c}"$!"$n"': The current number of images in the list.
 \n       . '"${c}"$>"$n"' and '"${c}"$<"$n"': The increasing/decreasing indice of the latest (currently running)
-\n          '"${c}"repeat...done"$n"' loop.
+\n          '"${c}"repeat...done"$n"' loop. '"${c}"$>"$n"' goes from '"${g}"0"$n"' (first loop iteration) to
+\n          '"${g}"nb_iterations - 1"$n"' (last iteration). '"${c}"$>"$n"' does the opposite.
 \n       . '"${c}"$/"$n"': The current call stack. Stack items are separated by slashes '"${g}"/"$n"'.
 \n       . '"${c}"$|"$n"': The current value (expressed in seconds) of a millisecond precision timer.
 \n       . '"${c}"$^"$n"': The current verbosity level.
@@ -1277,9 +1278,9 @@ _help_section_html :
   v -
 
 _help_paragraph_html :
-  ({'"$*"'})
-  replace_str. "'"$_gmic_c,$_gmic_quotedc
-  replace_str. "'"$_gmic_g,$_gmic_quotedg
+  ({'{/"$*"}'})
+  replace_str. "'"{/$_gmic_c},$_gmic_quotedc
+  replace_str. "'"{/$_gmic_g},$_gmic_quotedg
   replace_str. $_gmic_n"'",$_gmic_n
   replace_str. "  - ","  &bull; "
   replace_str. "  . ","  &#9702; "
@@ -6231,16 +6232,14 @@ negate : skip "${1=,}"
 #@cli : $ image.jpg +noise[0] 50,0 +noise[0] 50,1 +noise[0] 10,2 cut 0,255
 #@cli : $ 300,300,1,3 [0] noise[0] 20,0 noise[1] 20,1 +histogram 100 display_graph[-2,-1] 400,300,3
 
-#@cli noise_perlin : x0,y0,z0,x1,y1,z1 : x0,y0,x1,y1
+#@cli noise_perlin : _scale_x[%]>0,_scale_y[%]>0,_scale_z[%]>0,_seed_x,_seed_y,_seed_z
 #@cli : Render 2D or 3D Perlin noise on selected images, from specified coordinates.
 #@cli : The Perlin noise is a specific type of smooth noise, described here : 'https://en.wikipedia.org/wiki/Perlin_noise'.
-#@cli : Default values: 'x0=y0=0' and 'x1=y1=10'
+#@cli : Default values: 'scale_x=scale_y=scale_z=16' and 'seed_x=seed_y=seed_z=0'.
 #@cli : $$ 500,500,1,3 noise_perlin ,
-noise_perlin : check "isval(${1=0}) && isval(${2=0}) && isval(${3=10}) && isval(${4=10})"
+noise_perlin : check "${1=16}>0 && ${2=$1}>0 && ${3=$1}>0 && isval(${4=0}) && isval(${5=0}) && isval(${6=0})"
+  e[^-1] "Render Perlin noise on image$?, with scales (${1-3}) and seeds (${4-6})."
   v -
-  if {$#<=4} x0,y0,z0,x1,y1,z1=$1,$2,0,$3,$4,1 else $=arg x0,y0,z0,x1,y1,z1=$1,$2,$3,$4,$arg5,$arg6 fi
-  v + e[^-1] "Render Perlin noise on image$?, from coordinates ("$x0,$y0,$z0")-("$x1,$y1,$z1")." v -
-
   init="permutation = [ 151,160,137,91,90,15,131,13,201,95,96,53,194,233,7,225,140,36,103,30,69,142,8,99,37,240,21,10,23,
           190,6,148,247,120,234,75,0,26,197,62,94,252,219,203,117,35,11,32,57,177,33,88,237,149,56,87,174,20,125,136,171,
           168,68,175,74,165,71,134,139,48,27,166,77,146,158,231,83,111,229,122,60,211,133,230,220,105,92,41,55,46,245,40,
@@ -6254,10 +6253,18 @@ noise_perlin : check "isval(${1=0}) && isval(${2=0}) && isval(${3=10}) && isval(
         fade(t) = (t*t*t*(t*(t*6 - 15) + 10));
         lerp(t,a,b) = (a + t*(b - a));
         pcmod255 = vectors(); for (k = 0, k<s, ++k, pcmod255[k] = p[k%255]);
-        const x0 = "$x0"; const y0 = "$y0"; const z0 = "$z0";
-        const x1 = "$x1"; const y1 = "$y1"; const z1 = "$z1";
-        const dx = x1 - x0; const dy = y1 - y0; const dz = z1 - z0;
-        const fw = dx/max(w - 1,1); const fh = dy/max(h - 1,1); const fd = dz/max(d - 1,1);"
+        sx = ['$1']; is_px = sx[size(sx) - 1]==_'%';
+        sy = ['$2']; is_py = sy[size(sy) - 1]==_'%';
+        sz = ['$3']; is_pz = sz[size(sz) - 1]==_'%';
+        x0 = $4;
+        y0 = $5;
+        z0 = $6;
+        x1 = x0 + (is_px?1/$1:w/$1);
+        y1 = y0 + (is_py?1/$2:h/$2);
+        z1 = z0 + (is_pz?1/$3:d/$3);
+        fw = (x1 - x0)/max(w - 1,1);
+        fh = (y1 - y0)/max(h - 1,1);
+        fd = (z1 - z0)/max(d - 1,1);"
 
   repeat $! if {$>,d>1} # 3D version
     f[$>] "*begin("$init" grad(hash,x,y,z) = ( gh = hash&15; gu = gh<8?x:y; gv = gh<4?y:gh==12 || gh==14?x:z; (!(gh&1)?gu:-gu) + (!(gh&2)?gv:-gv)));
@@ -30680,37 +30687,40 @@ fx_noise_preview :
   gui_split_preview "fx_noise $*",${-3--1}
 
 #@gui Noise [Perlin] : fx_noise_perlin, fx_noise_perlin_preview(1)
+#@gui : Random seed = int(0,0,65536)
+#@gui : sep = separator(), note = note("<small><b>1st scale:</b></small>")
 #@gui : Amplitude = float(100,0,512)
-#@gui : Seed (%) = point(50,50)
-#@gui : Previous seed = value(50,50)
-#@gui : Scale (%) = point(75,50)
-#@gui : X/Y Ratio = float(0,-4,4)
+#@gui : X-Scale (%) = float(8,0,100)
+#@gui : X/Y-Ratio = float(0,-4,4)
+#@gui : sep = separator(), note = note("<small><b>2nd scale:</b></small>")
+#@gui : Amplitude = float(0,0,512)
+#@gui : X-Scale (%) = float(4,0,100)
+#@gui : X/Y-Ratio = float(0,-4,4)
+#@gui : sep = separator(), note = note("<small><b>3rd scale:</b></small>")
+#@gui : Amplitude = float(0,0,512)
+#@gui : X-Scale (%) = float(2,0,100)
+#@gui : X/Y-Ratio = float(0,-4,4)
+#@gui : sep = separator(), note = note("<small><b>4th scale:</b></small>")
+#@gui : Amplitude = float(0,0,512)
+#@gui : X-Scale (%) = float(1,0,100)
+#@gui : X/Y-Ratio = float(0,-4,4)
 #@gui : sep = separator(), Channel(s) = choice(2,"All","RGBA [all]","RGB [all]","RGB [red]","RGB [green]","RGB [blue]","RGBA [alpha]","Linear RGB [all]","Linear RGB [red]","Linear RGB [green]","Linear RGB [blue]","YCbCr [luminance]","YCbCr [blue-red chrominances]","YCbCr [blue chrominance]","YCbCr [red chrominance]","YCbCr [green chrominance]","Lab [lightness]","Lab [ab-chrominances]","Lab [a-chrominance]","Lab [b-chrominance]","Lch [ch-chrominances]","Lch [c-chrominance]","Lch [h-chrominance]","HSV [hue]","HSV [saturation]","HSV [value]","HSI [intensity]","HSL [lightness]","CMYK [cyan]","CMYK [magenta]","CMYK [yellow]","CMYK [key]","YIQ [luma]","YIQ [chromas]")
 #@gui : sep = separator(), Preview Type = choice("Full","Forward Horizontal","Forward Vertical","Backward Horizontal","Backward Vertical","Duplicate Top","Duplicate Left","Duplicate Bottom","Duplicate Right","Duplicate Horizontal","Duplicate Vertical","Checkered","Checkered Inverse"), Preview split = point(50,50,0,0,200,200,200,0,10,0)
 #@gui : sep = separator(), note = note("<small>Author: <i>David Tschumperl&#233;</i>.      Latest Update: <i>2019/01/24</i>.</small>")
+_fx_noise_perlin :
+  seedx,seedy={[$1>>8,$1&255]}
+  repeat $! l[$>]
+    .,.,1,. noise_perlin. {r=2^$4;s=max(w,h)*$3%;[max(1,s/r),max(1,s*r)]},1,$seedx,$seedy *. $2 +
+    .,.,1,. noise_perlin. {r=2^$7;s=max(w,h)*$6%;[max(1,s/r),max(1,s*r)]},1,$seedx,$seedy *. $5 +
+    .,.,1,. noise_perlin. {r=2^$10;s=max(w,h)*$9%;[max(1,s/r),max(1,s*r)]},1,$seedx,$seedy *. $8 +
+    .,.,1,. noise_perlin. {r=2^$13;s=max(w,h)*$12%;[max(1,s/r),max(1,s*r)]},1,$seedx,$seedy *. $11 +
+  endl done
+
 fx_noise_perlin :
-  amplitude,seedx,seedy,pseedx,pseedy,radx,rady,ratio,channel=${1-9}
-  if {$seedx!=$pseedx" || "$seedy!=$pseedy}
-    deltax,deltay={[$radx,$rady]-[$pseedx,$pseedy]}
-    radx,rady={[$seedx,$seedy]+[$deltax,$deltay]}
-  fi
-  __status=\{$amplitude\}\{$seedx,$seedy\}\{$seedx,$seedy\}\{$radx,$rady\}\{$ratio\}\{$channel\}
-  r={200/(1+norm($radx-$seedx,$rady-$seedy))}
-  x0,y0,x1,y1={"const M = max(w,h);
-                const ratio = 2^"$ratio";
-                dx = M*"$r"/h*ratio;
-                dy = M*"$r"/w/ratio;
-                [-"$seedx" - dx, -"$seedy" - dy, -"$seedx" + dx, -"$seedy" + dy]"}
-  ac "+noise_perlin. "$x0","$y0","$x1","$y1" *. "$amplitude" + c 0,255",$channel
-  if $__is_preview
-    line $seedx%,$seedy%,$radx%,$rady%,1,0xF0F0F0F0,255
-    line $seedx%,$seedy%,$radx%,$rady%,1,0x0F0F0F0F,0
-  fi
+  ac "_fx_noise_perlin $*",$-4,1
 
 fx_noise_perlin_preview :
-  __is_preview=1
-  gui_split_preview "fx_noise_perlin ${1--4}",${-3--1}
-  u $__status\{$-3\}\{$-2,$-1\}
+  gui_split_preview "fx_noise_perlin $*",${-3--1}
 
 #@gui Noise [Spread] : fx_spread, fx_spread_preview(0)
 #@gui : X-Variations = float(4,0,20)
