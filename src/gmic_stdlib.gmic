@@ -99,7 +99,7 @@
 #
 #      _ 'bool(default_value={ 0 | 1 | false | true })'                           : Add a boolean parameter (0 or 1) (as a checkbutton).
 #      _ 'button(_alignment)'                                                     : Add a boolean parameter (0 or 1) (as a button).
-#      _ 'choice(_default_indice,Choice0,..,ChoiceN)'                             : Add a integer parameter (as a combobox).
+#      _ 'choice(_default_index,Choice0,..,ChoiceN)'                             : Add a integer parameter (as a combobox).
 #      _ 'color(R,_G,_B,_A)'                                                      : Add R,G,B[,A] parameters (as a colorchooser).
 #      _ 'point(_X,_Y,_removable={ -1 | 0 | 1 },_burst={ 0 | 1 },_R,_G,_B,_[-]A,_radius%,_is_visible={ 0 | 1 })' :
 #          Add X,Y parameters (as a moveable point over the preview).
@@ -286,7 +286,7 @@ _help_usage :
   _help_paragraph "  - At any time, "${-GMIC}" manages one list of numbered (and optionally named) pixel-based images,
 \n     entirely stored in computer memory (uncompressed).
 \n
-\n  - The first image of the list has indice '"${g}"0"$n"' and is denoted by '"${c}"[0]"$n"'. The second image of the
+\n  - The first image of the list has index '"${g}"0"$n"' and is denoted by '"${c}"[0]"$n"'. The second image of the
 \n     list is denoted by '"${c}"[1]"$n"', the third by '"${c}"[2]"$n"' and so on.
 \n
 \n  - Negative indices are treated in a periodic way: '"${c}"[-1]"$n"' refers to the last image of the list,
@@ -444,7 +444,7 @@ _help_usage :
 \n    . '"${c}"command[^0,1]"$n"': Apply command on all images except the first two.
 \n    . '"${c}"command[name1,name2]"$n"': Apply command on named images '"${g}"name1"$n"' and '"${g}"name2"$n"'.
 \n
-\n  - Indices in selections are always sorted in increasing order, and duplicate indices are
+\n  - indices in selections are always sorted in increasing order, and duplicate indices are
 \n     discarded. For instance, selections '"${c}"[3-1,1-3]"$n"' and '"${c}"[1,1,1,3,2]"$n"' are both equivalent to
 \n     '"${c}"[1-3]"$n"'. If you want to repeat a single command multiple times on an image, use a
 \n     '"${c}"repeat..done"$n"' loop instead. Inverting the order of images for a command is achieved by
@@ -575,13 +575,13 @@ _help_usage :
 \n
 \n  - '"${c}"$name"$n"' and '"${c}"${name}"$n"' are both substituted by the value of the specified named "${g}"variable"$n"
 \n     (set previously by the item '"${c}"name=value"$n"'). If this variable has not been already set, the
-\n     expression is substituted by the highest positive "${g}"indice"$n" of the named image '"${g}"[name]"$n"'. If no
+\n     expression is substituted by the highest positive "${g}"index"$n" of the named image '"${g}"[name]"$n"'. If no
 \n     image has this name, the expression is substituted by the value of the "${g}"OS environment variable"$n"
 \n     with same name (it may be thus an empty string).
 \n     The following reserved variables are predefined by the "${-GMIC}" interpreter:
 \n
 \n       . '"${c}"$!"$n"': The current number of images in the list.
-\n       . '"${c}"$>"$n"' and '"${c}"$<"$n"': The increasing/decreasing indice of the latest (currently running)
+\n       . '"${c}"$>"$n"' and '"${c}"$<"$n"': The increasing/decreasing index of the latest (currently running)
 \n          '"${c}"repeat...done"$n"' loop. '"${c}"$>"$n"' goes from '"${g}"0"$n"' (first loop iteration) to
 \n          '"${g}"nb_iterations - 1"$n"' (last iteration). '"${c}"$>"$n"' does the opposite.
 \n       . '"${c}"$/"$n"': The current call stack. Stack items are separated by slashes '"${g}"/"$n"'.
@@ -643,8 +643,8 @@ _help_usage :
 \n  - '"${c}"{*}"$n"' is substituted by the "${g}"visibility state"$n" of the instant display window "${c}"[0]"$n" (can be
 \n     "${g}"{ 0=closed | 1=visible }"$n").
 \n
-\n  - '"${c}"{*,feature1,...,featureN}"$n"' or '"${c}"{*indice,feature1,...,featureN}"$n"' is substituted by a specific
-\n      set of features of the instant display window "${c}"#0"$n" (or "${c}"#indice"$n", if specified).
+\n  - '"${c}"{*,feature1,...,featureN}"$n"' or '"${c}"{*index,feature1,...,featureN}"$n"' is substituted by a specific
+\n      set of features of the instant display window "${c}"#0"$n" (or "${c}"#index"$n", if specified).
 \n      Requested '"${g}"features"$n"' can be:
 \n
 \n       . '"${c}"w"$n"': display width (i.e. width of the display area managed by the window).
@@ -796,9 +796,9 @@ _help_usage :
 \n          a vector '"${g}"A"$n"' with specified interpolation mode. '"${g}"interpolation'"$n" can be "${g}"{ -1=none
 \n          (memory content) | 0=none | 1=nearest | 2=average | 3=linear | 4=grid | 5=bicubic |
 \n          6=lanczos }"$n", and '"${g}"boundary_conditions'"$n"  can be "${g}"{ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }"$n".
-\n       . Function '"${c}"find(A,B,_is_forward,_starting_indice)"$n"' returns the index where sub-vector "${g}"B"$n"
+\n       . Function '"${c}"find(A,B,_is_forward,_starting_index)"$n"' returns the index where sub-vector "${g}"B"$n"
 \n          appears in vector "${g}"A"$n", (or "${g}"-1"$n" if "${g}"B"$n" is not found in "${g}"A"$n"). Argument "${g}"A"$n" can be also replaced by
-\n          an image indice "${g}"#ind"$n".
+\n          an image index "${g}"#ind"$n".
 \n       . A "${g}"2"$n"-dimensional vector may be seen as a complex number and used in those particular
 \n          functions/operators:
 \n          '"${c}"**"$n"' (complex multiplication), '"${c}"//"$n"' (complex division), '"${c}"^^"$n"' (complex exponentiation),
@@ -830,7 +830,7 @@ _help_usage :
 \n       . A special case happens for "${g}"empty"$n" strings: Values of both expressions "${c}"[ '' ]"$n" and "${c}"''"$n" are "${g}"0"$n".
 \n       . Functions '"${c}"lowercase()"$n"' and '"${c}"uppercase()"$n"' return string with all string characters
 \n          lowercased or uppercased.
-\n       . Function '"${c}"stov(str,_starting_indice,_is_strict)"$n"' parses specified string '"${c}"str"$n"' and returns the value
+\n       . Function '"${c}"stov(str,_starting_index,_is_strict)"$n"' parses specified string '"${c}"str"$n"' and returns the value
 \n          contained in it.
 \n       . Function '"${c}"vtos(expr,_nb_digits,_siz)"$n"' returns a vector of size '"${c}"siz"$n"' which contains
 \n          the ascii representation of values described by expression '"${c}"expr"$n"'.
@@ -1058,7 +1058,7 @@ _help_usage :
 \n    . '"${c}"$""\*"$n"' is substituted by a copy of the specified string of arguments.
 \n    . '"${c}"$\"*\""$n"' is substituted by a copy of the specified string of arguments, each being
 \n       double-quoted.
-\n    . '"${c}"$""#"$n"' is substituted by the maximum indice of known arguments (either specified by the user
+\n    . '"${c}"$""#"$n"' is substituted by the maximum index of known arguments (either specified by the user
 \n       or set to a default value in the custom command).
 \n    . '"${c}"$""[]"$n"' is substituted by the list of selected image indices that have been specified during the
 \n       command invocation.
@@ -1095,7 +1095,7 @@ _help_usage :
   _help_paragraph "   All available "${-GMIC}" commands are listed below, classified by themes. When several choices of
 \n   command arguments are possible, they appear separated by '"${g}"|"$n"'. An argument specified inside '"${g}"[]"$n"'
 \n   or starting by '"${g}"_"$n"' is optional except when standing for an existing image "${c}"[image]"$n", where '"${g}"image"$n"'
-\n   can be either an indice number or an image name. In this case, the '"${g}"[]"$n"' characters are mandatory
+\n   can be either an index number or an image name. In this case, the '"${g}"[]"$n"' characters are mandatory
 \n   when writing the item. A command marked with '"${g}"(+)"$n"' is one of the "${g}"builtin"$n" commands. Note also that
 \n   all images that serve as illustrations in this reference documentation are normalized in "${g}"[0,255]"$n"
 \n   before being displayed. You may need to do this explicitly (command '"${c}"normalize 0,255"$n"') if you
@@ -2157,9 +2157,9 @@ document_gmic : skip ${1="ascii"},${2=""},${3=1}
   _document_gmic_header_$1[] $3
 
   # Define parsing variables.
-  _subsection=0                              # Indice of current subsection.
-  _example=0                                 # Indice of current example.
-  _command=0                                 # Indice of current command.
+  _subsection=0                              # Index of current subsection.
+  _example=0                                 # Index of current example.
+  _command=0                                 # Index of current command.
   _is_example=0                              # Boolean telling if current line is an example.
   _path="$2"                                 # Path of example images.
   ks0="0" ks1="k[0]"
@@ -3022,7 +3022,7 @@ function1d : check "${1=1}>=0 && $1<=1" skip ${2=0},${3=0}
 #@cli i : eq. to 'input'. : (+)
 
 #@cli input : [type:]filename : [type:]http://URL : [selection]x_nb_copies>0 : { width>0[%] | [image_w] },{ _height>0[%] | [image_h] },{ _depth>0[%] | [image_d] },{ _spectrum>0[%] | [image_s] },_{ value1,_value2,... | 'formula' } : (value1{,|;|/|^}value2{,|;|/|^}...) : 0 : (+)
-#@cli : Insert a new image taken from a filename or from a copy of an existing image [indice],
+#@cli : Insert a new image taken from a filename or from a copy of an existing image [index],
 #@cli : or insert new image with specified dimensions and values. Single quotes may be omitted in
 #@cli : 'formula'. Specifying argument '0' inserts an 'empty' image.
 #@cli : (eq. to 'i' | (no arg)).
@@ -5508,7 +5508,7 @@ sort_str :
 
 #@cli argmax
 #@cli : Compute the argmax of selected images. Returns a single image
-#@cli : with each pixel value being the indice of the input image with maximal value.
+#@cli : with each pixel value being the index of the input image with maximal value.
 #@cli : $ image.jpg sample lena,lion,square +argmax
 argmax :
   e[^-1] "Compute argmax of image$?."
@@ -5517,7 +5517,7 @@ argmax :
 
 #@cli argmin
 #@cli : Compute the argmin of selected images. Returns a single image
-#@cli : with each pixel value being the indice of the input image with minimal value.
+#@cli : with each pixel value being the index of the input image with minimal value.
 #@cli : $ image.jpg sample lena,lion,square +argmin
 argmin :
   e[^-1] "Compute argmin of image$?."
@@ -8388,7 +8388,7 @@ extract_region : check ${"is_image_arg $1"}" && isval(${2=0})"
 #@cli : - 'Va:b' to assemble two blocks 'a' and 'b' vertically.
 #@cli : - 'Ra' to rotate a block 'a' by 90 deg. ('RRa' for 180 deg. and 'RRRa' for 270 deg.).
 #@cli : - 'Ma' to mirror a block 'a' along the X-axis ('MRRa' for the Y-axis).
-#@cli : A block 'a' can be an image indice (treated periodically) or a nested layout expression 'Hb:c','Vb:c','Rb' or 'Mb' itself.
+#@cli : A block 'a' can be an image index (treated periodically) or a nested layout expression 'Hb:c','Vb:c','Rb' or 'Mb' itself.
 #@cli : For example, layout code 'H0:V1:2' creates an image where image [0] is on the left, and images [1] and [2] vertically packed on the right.
 #@cli : Default values: 'layout_code=X', 'montage_mode=2', output_mode='0' and 'processing_command=""'.
 #@cli : $ image.jpg sample ? +plasma[0] shape_cupid 256 normalize 0,255 frame 3,3,0 frame 10,10,255 to_rgb +montage A +montage[^-1] H1:V0:VH2:1H0:3
@@ -8468,7 +8468,7 @@ montage : check "isval(${2=2}) && $2>=0 && $2<=3" skip "${1=X}",${3=0},"${4=}"
 _montage :
   if {$_p>$_lcode} v + error "Command 'montage': Incomplete layout code '"$_scode"'." fi
   c={arg($_p,$_code)}
-  if {$c>=0} _p+=1 u $c # Single indice.
+  if {$c>=0} _p+=1 u $c # Single index.
   elif {$c==-4} # Mirror.
     _p+=1 l=${-_montage} f[$l] 'a=i(5,y)%2;if((x==7&&a)||(x==6&&!a),!i,if(x==1,i(3,0)-i(3,y)-i,i))' u $l
   elif {$c==-3} # Rotation.
@@ -15658,10 +15658,10 @@ apply_timeout :
 #@cli : $ image.jpg +local repeat 3 deform 20 done endlocal
 #@cli : $$
 
-#@cli mutex : indice,_action={ 0=unlock | 1=lock } : (+)
+#@cli mutex : index,_action={ 0=unlock | 1=lock } : (+)
 #@cli : Lock or unlock specified mutex for multi-threaded programming.
 #@cli : A locked mutex can be unlocked only by the same thread. All mutexes are unlocked by default.
-#@cli : 'indice' designates the mutex indice, in [0,255].
+#@cli : 'index' designates the mutex index, in [0,255].
 #@cli : Default value: 'action=1'.
 
 #@cli noarg : (+)
@@ -15690,7 +15690,7 @@ parallel : skip "${1=},${2=},${3=},${4=},${5=},${6=},${7=},${8=},${9=},${10=},${
   v - parallel $"*" v +
 
 #@cli progress : 0<=value<=100 : -1 : (+)
-#@cli : Set the progress indice of the current processing pipeline.
+#@cli : Set the progress index of the current processing pipeline.
 #@cli : This command is useful only when G'MIC is used by an embedding application.
 
 #@cli q : eq. to 'quit'. : (+)
@@ -15709,7 +15709,7 @@ parallel : skip "${1=},${2=},${3=},${4=},${5=},${6=},${7=},${8=},${9=},${10=},${
 #@cli : Return from current custom command.
 
 #@cli rprogress : 0<=value<=100 | -1 | "command",0<=value_min<=100,0<=value_max<=100
-#@cli : Set the progress indice of the current processing pipeline (relatively to
+#@cli : Set the progress index of the current processing pipeline (relatively to
 #@cli : previously defined progress bounds), or call the specified command with
 #@cli : specified progress bounds.
 rprogress : skip ${2=""}
@@ -15717,7 +15717,7 @@ rprogress : skip ${2=""}
   if {!narg($_progress_bounds)} _progress_bounds=0,100 fi
   m={arg(-2,$_progress_bounds)} M={arg(-1,$_progress_bounds)}
   if {$#==2&&!narg($2)} # 1 argument -> Set progress bar.
-    v + e[0--3] "Set relative progress indice to $1%." v -
+    v + e[0--3] "Set relative progress index to $1%." v -
     progress {if($1<0,-1,min(100,max(0,$m+($M-$m)*$1%)))}
   elif {$#==3} # 3 arguments -> Call command with specified bounds.
     nm={min($2,$-1)} nM={max($2,$-1)}
@@ -19011,7 +19011,7 @@ alert : skip "${1=[G"{`39`}"MIC Alert]},${2=This is an alert box.},${3=OK}"
 
     while {{*$disp}" && "!{*$disp,ESC}}
 
-    # Return result (indice of clicked button or '-1').
+    # Return result (index of clicked button or '-1').
     w$disp 0 rm u $clicked
   endl
   v +
@@ -21626,7 +21626,7 @@ x_hanoi :
     if {{*,CTRLLEFT}&&{*,D}} w[] {w*1.5},{h*1.5} elif {{*,CTRLLEFT}&&{*,C}} w[] {w},{h} fi
     rm[-2,-1]
 
-    # Get indice of top disk for each rod.
+    # Get index of top disk for each rod.
     top0,top1,top2,ytop0,ytop1,ytop2=-1
     repeat 6
       rod={round(${x$>})}
@@ -24403,7 +24403,7 @@ x_tictactoe :
     (21,1344,86016,4161,16644,66576,65793,4368;\                              # The list of winning configurations.
      0,0,0,0,1,2,0,0;\                                                        # Corresponding X coords for the stroke.
      0,1,2,0,0,0,0,0;\                                                        # Corresponding Y coords for the stroke.
-     3,3,3,4,4,4,5,6)                                                         # Corresponding indice of the stroke sprite.
+     3,3,3,4,4,4,5,6)                                                         # Corresponding index of the stroke sprite.
     repeat {w}                                                               # Start to check configurations.
       tmp1={@$>}                                                              # Save the current configuration code (used several times).
       if {($state&$tmp1)==$tmp1||($state&(2*$tmp1))==2*$tmp1}                # If a winner has been found.
@@ -25843,7 +25843,7 @@ fx_ministeck_preview :
 #@gui : \n     . <i>H(a,b)</i> or <i>V(a,b)</i> stand respectively for an horizontal and vertical merge of two blocks <i>a</i> and <i>b</i>.
 #@gui : \n     . <i>R(a)</i>, stands for a 90-deg. rotated version of a block <i>a</i>. Use <i>RR(a)</i> and <i>RRR(a)</i> for resp. 180-deg and 270-deg. rotations.
 #@gui : \n     . <i>M(a)</i>, stands for a X-mirrored version of a block <i>a</i>. Use <i>MRR(a)</i> for a Y-mirrored version of <i>a</i>.\n\n
-#@gui : - A block <i>a</i> can be a layer indice or a nested montage expression itself.\n
+#@gui : - A block <i>a</i> can be a layer index or a nested montage expression itself.\n
 #@gui : - Layer indices start from <i>0 (top layer)</i> and are treated periodically.
 #@gui : </small>"}
 #@gui : url = link("Click here for a tutorial","http://blog.patdavid.net/2014/05/gmic-montage.html")

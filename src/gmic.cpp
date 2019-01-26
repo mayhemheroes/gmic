@@ -2932,7 +2932,7 @@ gmic& gmic::add_commands(std::FILE *const file, const char *const filename,
 
 // Return subset indices from a selection string.
 //-----------------------------------------------
-CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned int indice_max,
+CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned int index_max,
                                         const CImgList<char>& names,
                                         const char *const command, const bool is_selection,
                                         CImg<char> *const new_name) {
@@ -2940,13 +2940,13 @@ CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned
   // Try to detect common cases to be faster.
   if (string && !*string) return CImg<unsigned int>(); // Empty selection
   if (!string || (*string=='^' && !string[1])) { // Whole selection
-    CImg<unsigned int> res(1,indice_max); cimg_forY(res,y) res[y] = (unsigned int)y; return res;
+    CImg<unsigned int> res(1,index_max); cimg_forY(res,y) res[y] = (unsigned int)y; return res;
   } else if (*string>='0' && *string<='9' && !string[1]) { // Single positive digit
     const unsigned int ind = *string - '0';
-    if (ind<indice_max) return CImg<unsigned int>::vector(ind);
+    if (ind<index_max) return CImg<unsigned int>::vector(ind);
   } else if (*string=='-' && string[1]>='0' && string[2]<='9' && !string[2]) { // Single negative digit
-    const unsigned int ind = indice_max - string[1] + '0';
-    if (ind<indice_max) return CImg<unsigned int>::vector(ind);
+    const unsigned int ind = index_max - string[1] + '0';
+    if (ind<index_max) return CImg<unsigned int>::vector(ind);
   }
 
   // Manage remaining cases.
@@ -2955,7 +2955,7 @@ CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned
     ctypel = is_selection?'[':'\'',
     ctyper = is_selection?']':'\'';
 
-  CImg<bool> is_selected(1,indice_max,1,1,false);
+  CImg<bool> is_selected(1,index_max,1,1,false);
   CImg<char> name, item;
   bool is_inverse = *string=='^';
   const char *it = string + (is_inverse?1:0);
@@ -2980,7 +2980,7 @@ CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned
     if (!*item) { // Particular cases [:N] or [^:N]
       if (is_inverse) { iind0 = 0; iind1 = -1; is_inverse = false; }
       else continue;
-    } else if (cimg_sscanf(item,"%f%c",&ind0,&end)==1) { // Single indice
+    } else if (cimg_sscanf(item,"%f%c",&ind0,&end)==1) { // Single index
       iind1 = iind0 = (int)cimg::round(ind0);
     } else if (cimg_sscanf(item,"%f-%f%c",&ind0,&ind1,&end)==2) { // Sequence between 2 indices
       iind0 = (int)cimg::round(ind0);
@@ -2998,47 +2998,47 @@ CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned
                      command,stype,ctypel,string,ctyper,name.data());
       }
     } else if (cimg_sscanf(item,"%f%c%c",&ind0,&sep,&end)==2 && sep=='%') { // Single percent
-      iind1 = iind0 = (int)cimg::round(ind0*((int)indice_max - 1)/100) - (ind0<0?1:0);
+      iind1 = iind0 = (int)cimg::round(ind0*((int)index_max - 1)/100) - (ind0<0?1:0);
     } else if (cimg_sscanf(item,"%f%%-%f%c%c",&ind0,&ind1,&sep,&end)==3 && sep=='%') {
       // Sequence between 2 percents.
-      iind0 = (int)cimg::round(ind0*((int)indice_max - 1)/100) - (ind0<0?1:0);
-      iind1 = (int)cimg::round(ind1*((int)indice_max - 1)/100) - (ind1<0?1:0);
+      iind0 = (int)cimg::round(ind0*((int)index_max - 1)/100) - (ind0<0?1:0);
+      iind1 = (int)cimg::round(ind1*((int)index_max - 1)/100) - (ind1<0?1:0);
     } else if (cimg_sscanf(item,"%f%%-%f%c",&ind0,&ind1,&end)==2) {
-      // Sequence between a percent and an indice.
-      iind0 = (int)cimg::round(ind0*((int)indice_max - 1)/100) - (ind0<0?1:0);;
+      // Sequence between a percent and an index.
+      iind0 = (int)cimg::round(ind0*((int)index_max - 1)/100) - (ind0<0?1:0);;
       iind1 = (int)cimg::round(ind1);
     } else if (cimg_sscanf(item,"%f-%f%c%c",&ind0,&ind1,&sep,&end)==3 && sep=='%') {
-      // Sequence between an indice and a percent.
+      // Sequence between an index and a percent.
       iind0 = (int)cimg::round(ind0);
-      iind1 = (int)cimg::round(ind1*((int)indice_max - 1)/100) - (ind1<0?1:0);;
+      iind1 = (int)cimg::round(ind1*((int)index_max - 1)/100) - (ind1<0?1:0);;
     } else error("Command '%s': Invalid %s %c%s%c.",
                  command,stype,ctypel,string,ctyper);
 
-    if (!indice_max) error("Command '%s': Invalid %s %c%s%c (no data available).",
+    if (!index_max) error("Command '%s': Invalid %s %c%s%c (no data available).",
                            command,stype,ctypel,string,ctyper);
     if (!is_label) {
       int
-        uind0 = (int)(iind0<0?iind0 + indice_max:iind0),
-        uind1 = (int)(iind1<0?iind1 + indice_max:iind1);
+        uind0 = (int)(iind0<0?iind0 + index_max:iind0),
+        uind1 = (int)(iind1<0?iind1 + index_max:iind1);
       if (uind0>uind1) { cimg::swap(uind0,uind1); cimg::swap(iind0,iind1); }
-      if (uind0<0 || uind0>=(int)indice_max)
-        error("Command '%s': Invalid %s %c%s%c (contains indice '%d', "
+      if (uind0<0 || uind0>=(int)index_max)
+        error("Command '%s': Invalid %s %c%s%c (contains index '%d', "
               "not in range -%u...%u).",
-              command,stype,ctypel,string,ctyper,iind0,indice_max,indice_max - 1);
-      if (uind1<0 || uind1>=(int)indice_max)
-        error("Command '%s': Invalid %s %c%s%c (contains indice '%d', "
+              command,stype,ctypel,string,ctyper,iind0,index_max,index_max - 1);
+      if (uind1<0 || uind1>=(int)index_max)
+        error("Command '%s': Invalid %s %c%s%c (contains index '%d', "
               "not in range -%u...%u).",
-              command,stype,ctypel,string,ctyper,iind1,indice_max,indice_max - 1);
+              command,stype,ctypel,string,ctyper,iind1,index_max,index_max - 1);
       const int istep = (int)cimg::round(step);
       for (int l = uind0; l<=uind1; l+=istep) is_selected[l] = true;
     }
   }
-  unsigned int indice = 0;
-  cimg_for(is_selected,p,bool) if (*p) ++indice;
-  CImg<unsigned int> selection(1,is_inverse?indice_max - indice:indice);
-  indice = 0;
-  if (is_inverse) { cimg_forY(is_selected,l) if (!is_selected[l]) selection[indice++] = (unsigned int)l; }
-  else cimg_forY(is_selected,l) if (is_selected[l]) selection[indice++] = (unsigned int)l;
+  unsigned int index = 0;
+  cimg_for(is_selected,p,bool) if (*p) ++index;
+  CImg<unsigned int> selection(1,is_inverse?index_max - index:index);
+  index = 0;
+  if (is_inverse) { cimg_forY(is_selected,l) if (!is_selected[l]) selection[index++] = (unsigned int)l; }
+  else cimg_forY(is_selected,l) if (is_selected[l]) selection[index++] = (unsigned int)l;
   return selection;
 }
 
@@ -4276,7 +4276,7 @@ CImg<char> gmic::substitute_item(const char *const source,
         }
         nsource+=2;
 
-        // Substitute '$>' and '$<' -> Forward/backward indice of current loop.
+        // Substitute '$>' and '$<' -> Forward/backward index of current loop.
       } else if (nsource[1]=='>' || nsource[1]=='<') {
         if (!nb_repeatdones)
           error(images,0,0,
@@ -4308,7 +4308,7 @@ CImg<char> gmic::substitute_item(const char *const source,
         }
         nsource+=l_name;
 
-        // Substitute '$name' and '${name}' -> Variable, image indice or environment variable.
+        // Substitute '$name' and '${name}' -> Variable, image index or environment variable.
       } else if ((((is_braces && cimg_sscanf(inbraces,"%255[a-zA-Z0-9_]",
                                              substr.assign(256).data())==1) &&
                    !inbraces[std::strlen(substr)]) ||
@@ -4340,7 +4340,7 @@ CImg<char> gmic::substitute_item(const char *const source,
             if (images_names[l] && !std::strcmp(images_names[l],name)) {
               is_name_found = true; ind = l; break;
             }
-          if (is_name_found) { // Latest image indice
+          if (is_name_found) { // Latest image index
             cimg_snprintf(substr,substr.width(),"%d",ind);
             CImg<char>(substr.data(),(unsigned int)std::strlen(substr),1,1,1,true).
               append_string_to(substituted_items,ptr_sub);
@@ -9844,7 +9844,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           is_released = false; ++position; continue;
         }
 
-        // Set progress indice.
+        // Set progress index.
         if (!std::strcmp("progress",item)) {
           gmic_substitute_args(false);
           value = -1;
@@ -9852,10 +9852,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                           &value,&end)==1) {
             if (value<0) value = -1; else if (value>100) value = 100;
             if (value>=0)
-              print(images,0,"Set progress indice to %g%%.",
+              print(images,0,"Set progress index to %g%%.",
                     value);
             else
-              print(images,0,"Disable progress indice.");
+              print(images,0,"Disable progress index.");
             *progress = (float)value;
           } else arg_error("progress");
           ++position; continue;
@@ -12970,7 +12970,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   is_braces = true;
                 }
 
-                // Substitute $# -> maximum indice of known arguments.
+                // Substitute $# -> maximum index of known arguments.
                 if (nsource[1]=='#') {
                   nsource+=2;
                   cimg_snprintf(substr,substr.width(),"%u",nb_arguments);
@@ -13063,7 +13063,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   has_arguments = true;
 
                   // Substitute ${i=$#} -> value of the i^th argument, or the default value,
-                  // i.e. the maximum indice of known arguments.
+                  // i.e. the maximum index of known arguments.
                 } else if (cimg_sscanf(nsource,"${%d=$#%c",&ind,&sep)==2 && sep=='}' &&
                            ind>0) {
                   if (ind>=arguments.width()) arguments.insert(2 + 2*ind - arguments.size());
