@@ -15502,17 +15502,17 @@ at : check "${2=10%}>0 && ${3=10%}>0 && ${4=10%}>0 && ${5=0}>=0 && ${6=0}>=0 && 
   v - _gmic_s="$?" v +
   _apply_tiles "$1",${2--1}
 
-#@cli apply_tiles : "command",_bloc_width[%]>0,_bloc_height[%]>0,_bloc_depth[%]>0,_overlap_width[%]>=0,_overlap_height[%]>=0,_overlap_depth[%]>=0,_boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }
-#@cli : Apply specified command on each bloc (neighborhood) of the selected images, eventually with overlapping blocs.
+#@cli apply_tiles : "command",_tile_width[%]>0,_tile_height[%]>0,_tile_depth[%]>0,_overlap_width[%]>=0,_overlap_height[%]>=0,_overlap_depth[%]>=0,_boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }
+#@cli : Apply specified command on each tile (neighborhood) of the selected images, eventually with overlapping tiles.
 #@cli : (eq. to 'at').
-#@cli : Default values: 'bloc_width=bloc_height=bloc_depth=10%','overlap_width=overlap_height=overlap_depth=0' and 'boundary_conditions=1'.
+#@cli : Default values: 'tile_width=tile_height=tile_depth=10%','overlap_width=overlap_height=overlap_depth=0' and 'boundary_conditions=1'.
 #@cli : $ image.jpg +equalize[0] 256 +apply_tiles[0] "equalize 256",16,16,1,50%,50%
 apply_tiles : check "${2=10%}>0 && ${3=10%}>0 && ${4=10%}>0 && ${5=0}>=0 && ${6=0}>=0 && ${7=0}>=0 && isint(${8=1}) && $8>=0 && $8<=3"
   v - _gmic_s="$?" v +
   _$0 "$1",${2--1}
 
 _apply_tiles :
-  e[0--3] "Apply command '$1' on $2x$3x$4 blocs of image$?, with overlaps ($5,$6,$7) and "${"arg 1+$8,dirichlet,neumann,periodic,mirror"}" boundary conditions."
+  e[0--3] "Apply command '$1' on $2x$3x$4 tiles of image$?, with overlaps ($5,$6,$7) and "${"arg 1+$8,dirichlet,neumann,periodic,mirror"}" boundary conditions."
   v - repeat $! l[$>]
     bw={cut(round(${"is_percent $2"}?w*$2:$2),1,w)}
     bh={cut(round(${"is_percent $3"}?h*$3:$3),1,h)}
