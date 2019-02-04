@@ -5899,107 +5899,58 @@ complex2polar :
     r[1] [0],3 +atan2[1] [0] nm. {1,n} sqr[-3,-2] +[-3,-2] sqrt..
   endl done v +
 
-#@cli compress_clut : _max_nbpoints>=1,_max_error>=0,_avg_error>=0
+#@cli compress_clut : _max_error>0,_avg_error>0,_max_nbpoints>=8
 #@cli : Compress selected color LUTs as sequences of colored keypoints.
-#@cli : Default values: 'max_nb_points=2048', 'max_error=17.5' and 'avg_error=1.75'.
-compress_clut : check "isint(${1=2048}) && $1>=1 && ${2=17.5}>=0 && ${3=1.75}>=0"
-  e[^-1] "Compress color LUT$? as a set of colored keypoints, with $1 max points, maximum error $2 and average error $3."
-  v -
+#@cli : Default values: 'max_error=8', 'avg_error=2' and 'max_nb_points=1024'.
+compress_clut : check "isint(${1=8}) && $1>0 && ${2=2}>0 && isint(${3=1024}) && $3>8"
+  e[^-1] "Compress color LUT$? as a set of colored keypoints, with maximum error $1, average error $2 and $3 maximum keypoints."
+  v - max_error,avg_error,max_keypoints=${1--1}
+  to_rgb
   repeat $! l[$>] strvar {b} nm=${}
-    if {iM>255} / 257 fi # Input is probably 16bits
-    if {d==1} S={cbrt(wh)} r $S,$S,$S,3,-1 r3dx 32 round fi # Input is a 2D haldclut image
-    w={w} h={h} d={d} w_size=${fitscreen" "$w,$h,$d,256,50%}
-    v + e[] "  > Process clut '"$nm"' ("${w}"x"${h}"x"${d}")." v -
-    nm clut
-    100%,100%,100% nm. keypoints
-    +laplacian[0] norm. ^. 0.5 nm. potential
+    if {iM>255} / 257 fi # When input is 16bits
+    if {d==1} S={cbrt(wh)} r $S,$S,$S,3,-1 r3dx 32 round fi # When input is a 2D haldclut image
+    v + e[] "\n* Process CLUT '"$nm"' ("{w}"x"{h}"x"{d}")." v -
 
-    # Insert initialization keypoints.
-    0 nm. keycoords
-    _w1={max(1,$w-1)} _h1={max(1,$h-1)} _d1={max(1,$d-1)}
-    m "add_keypoint : \
-         x={round($""1)} y={round($""2)} z={round($""3)} \
-         X={round($x*255/$_w1)} Y={round($y*255/$_h1)} Z={round($z*255/$_h1)} \
-         rgb={clut,I($x,$y,$z)} \
-         =[keypoints] 1,$x,$y,$z \
-         ($X,$Y,$Z,$rgb) a[keycoords,-1] y"
-    add_keypoint 0,0,0    add_keypoint $_w1,0,0    add_keypoint $_w1,$_h1,0    add_keypoint 0,$_h1,0
-    add_keypoint 0,0,$_d1 add_keypoint $_w1,0,$_d1 add_keypoint $_w1,$_h1,$_d1 add_keypoint 0,$_h1,$_d1
-    add_keypoint {potential,xM},{potential,yM},{potential,zM}
+    # Initialize keypoints (corners of the RGB cube).
+    1,8,1,6
+    eval "
+      coords = [ 0,0,0, 255,0,0, 255,255,0, 0,255,0, 0,0,255, 255,0,255, 255,255,255, 0,255,255 ];
+      for (k = 0, k<size(coords)/3, ++k,
+        P = coords[3*k,3];
+        I[k] = [ P, I(#0,round(P*([w#0,h#0,d#0]-1)/255)) ]
+      )"
 
-    0 nm. error
-    max_error=inf avg_error=inf
-    target_max_error=$2 target_avg_error=$3
-    best_max_error=inf best_avg_error=inf best_nbpts=0
-
-    # Step 1 : Add new keypoints iteratively until quality constraints are reached.
-    #-------------------------------------------------------------------------------
-    v + e[] "" v -
-    iter=0
-    repeat inf
-      if {keycoords,h>=$1} break fi
-
-      # Find new keypoint.
-      if {$iter<2} # Using farthest point sampling
-        +distance[keypoints] 1,[potential],0 X={xM} Y={yM} Z={zM} rm.
-      else # Using location of maximal reconstruction error
-        +decompress_clut[keycoords] $w,$h,$d
-        if {*0} w. $w_size,0,"Reconstructed CLUT (step 1)" fi
-        -. [clut] abs. max_error={iM} avg_error={ia} X={xM} Y={yM} Z={zM} rm.
-        if {$max_error<=$target_max_error" && "$avg_error<=$target_avg_error} break fi # Found a good-enough solution
-        ($max_error^{10*$avg_error}) a[error,-1] x _compress_clut_draw_error
-        if {$max_error<$best_max_error}
-          best_max_error=$max_error
-          best_avg_error=$avg_error
-          best_nbpts={keycoords,h}
-        fi
-        iter=0
-      fi
-      v + e[] "\r    - Insert keypoint "{keycoords,h}": Max error = "{_$max_error}" ( avg = "{_$avg_error}" )        " v -
-      add_keypoint $X,$Y,$Z
-      iter+=1
-    done
-
-    if {$max_error>$target_max_error" || "$avg_error>$target_avg_error} # Didn't fulfilled the quality constraints
-      rows[keycoords] 0,{$best_nbpts-1} # -> Go back to the latest 'best' configuration
-      max_error=$best_max_error
-      avg_error=$best_avg_error
-    fi
-    rows[keycoords] 0,{keycoords,min($1-1,h-1)}
-
-    # Step 2 : Remove keypoints iteratively while preserving quality constraints.
-    #-----------------------------------------------------------------------------
-    v + e[] "" v -
-    nb_attempts=1
-    target_max_error={max($2,round($max_error,0.1,1))} target_avg_error={max($3,round($avg_error,0.1,1))}
+    # Iteratively add keypoints.
+    sep="\n"
     do
-      nb_max_attempts={keycoords,round(h*75%)}
-      v + e[] "\r    - Remove attempt \#"$nb_attempts/$nb_max_attempts" : Keypoints "{keycoords,h}", Max error = "{_$max_error}" ( avg = "{_$avg_error}" )        " v -
-      k={keycoords,round(u(h-1))} +l[keycoords] s y rm[$k] a y nm new_keycoords endl  # Remove random keypoint
-      +decompress_clut[new_keycoords] $w,$h,$d
-      if {*0} w. 400,400,0,"Reconstructed CLUT (step 2)" fi
-      -. [clut] abs. new_max_error={iM} new_avg_error={ia} rm.
-      if {$new_max_error<=$target_max_error" && "$new_avg_error<=$target_avg_error}
-        max_error=$new_max_error
-        avg_error=$new_avg_error
-        rm[keycoords] nm[new_keycoords] keycoords
-        ($max_error^{10*$avg_error}) a[error,-1] x _compress_clut_draw_error
-        nb_attempts=0
-      else rm[new_keycoords] nb_attempts+=1
-      fi
-    while {$nb_attempts<=$nb_max_attempts}
-    v + e[] "" v -
+      _compress_clut. {0,[w,h,d]} -. [0] norm. emax,eavg={[iM,ia]}
+      v + e[] "\r"$sep"  > Add [#"{1,h}"] Max_Err = "{_$emax}", Avg_Err = "{_$eavg}"         " v - sep=""
+      if {$emax<$max_error" && "$eavg<$avg_error} rm. break fi
+      1,1,1,6,{"P = [ xM,yM,zM ]; [ round(P*255/[max(1,w#0-1),max(1,h#0-1),max(1,d#0-1)]), I(#0,P) ]"} rm..
+      a[-2,-1] y
+    while {1,h<$max_keypoints}
 
-    k[keycoords] nm $nm
-    o ${_path_rc}comp_$nm.gmz,uchar
+    # Iteratively remove keypoints.
+    max_error,avg_error={[max($max_error,ceil($emax)),max($avg_error,ceil($avg_error))]}
+    nb_attempts=1
+    sep="\n"
+    do
+      nb_max_attempts={round(h*75%)}
+      i={round(u(h-1))} +l. s y rm[$i] a y endl # Remove random keypoint
+      _compress_clut. {0,[w,h,d]} -. [0] norm. emax,eavg={[iM,ia]} rm.
+      if {$emax<$max_error" && "$eavg<$avg_error}
+        rv[-2,-1] nb_attempts=0
+        v + e[] "\r"$sep"  > Rem [#"{1,h}"] Max_Err = "{_$emax}", Avg_Err = "{_$eavg}"       " v - sep=""
+      else nb_attempts+=1
+      fi
+      rm.
+    while {$nb_attempts<=$nb_max_attempts}
+    k.
   endl done v +
 
-  # Draw evolution of the reconstruction error.
-_compress_clut_draw_error :
-  if {error,w>=2}
-    +dg[error] 640,480,1,0,0,{keycoords,h},0,{error,@0},"Number of keypoints","Maximum reconstruction error"
-    if {*1} w1. 100%,100%,0,"Evolution of the reconstruction error" fi
-  rm. fi
+# Insert decompress CLUT (and keep float-valued precision, contrary to 'decompress_clut') : $1,$2,$3 = width,height,depth
+_compress_clut :
+  $1,$2,$3,4,1 eval.. "*PC = I; P = round(PC[0,3]*([w#1,h#1,d#1]-1)/255); I(#-1,P) = [ PC[3,3],0 ]" s. c,-3 inpaint_diffusion.. .,100%,1 rm.
 
 #@cli compress_rle : _is_binary_data={ 0 | 1 },_maximum_sequence_length>=0
 #@cli : Compress selected images as 2xN data matrices, using RLE algorithm.
