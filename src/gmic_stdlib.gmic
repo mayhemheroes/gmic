@@ -5901,8 +5901,8 @@ complex2polar :
 
 #@cli compress_clut : _max_error>0,_avg_error>0,_max_nbpoints>=8
 #@cli : Compress selected color LUTs as sequences of colored keypoints.
-#@cli : Default values: 'max_error=8', 'avg_error=2' and 'max_nb_points=1024'.
-compress_clut : check "isint(${1=8}) && $1>0 && ${2=2}>0 && isint(${3=1024}) && $3>8"
+#@cli : Default values: 'max_error=8', 'avg_error=2' and 'max_nb_points=2048'.
+compress_clut : check "isint(${1=8}) && $1>0 && ${2=2}>0 && isint(${3=2048}) && $3>8"
   e[^-1] "Compress color LUT$? as a set of colored keypoints, with maximum error $1, average error $2 and $3 maximum keypoints."
   v - max_error,avg_error,max_keypoints=${1--1}
   to_rgb
@@ -5997,15 +5997,8 @@ compress_rle : skip ${1=0} check "isint(${2=0}) && $2>=0"
 #@cli : Default value: 'width=height=depth=64'.
 decompress_clut : check "isint(${1=64}) && $1>0 && isint(${2=$1}) && $2>0 && isint(${3=$1}) && $3>0"
   e[^-1] "Decompress color LUT$? into a $1x$2x$3 volumetric image."
-  v - transpose repeat $! l[$>]
-    s y *[0] {($1-1)/255} *[1] {($2-1)/255} *[2] {($3-1)/255} round[0-2] a y
-    100%,1,1,1,255 a y pointcloud 0,$1,$2,$3 solidify 100%,1,15 c 0,255
-  endl done v +
-
-# Upcoming version.
-_decompress_clut : check "isint(${1=64}) && $1>0 && isint(${2=$1}) && $2>0 && isint(${3=$1}) && $3>0"
-  e[^-1] "Decompress color LUT$? into a $1x$2x$3 volumetric image."
   v - repeat $! l[$>]
+    if {w>1" && "s==1} permute cyzx fi
     $1,$2,$3,4,1 eval.. "*PC = I; P = round(PC[0,3]*([w#1,h#1,d#1]-1)/255); I(#-1,P) = [ PC[3,3],0 ]"
     s. c,-3 inpaint_diffusion.. .,100%,1 k..
   endl done round c 0,255 v +
