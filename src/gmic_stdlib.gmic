@@ -10142,12 +10142,10 @@ inpaint_diffusion : check ${is_image_arg\ $1}" && ${2=75%}>=0 && isint(${3=1}) &
         r... ..,3
         if {$3==0} # Isotropic diffusion
           repeat $nb_iter j... ..,0,0,0,0,1,. b... 0.5 done
-        elif {$3==1} # Delaunay-guided
-          +distance. 1
 
-          # Apply specific gradient scheme for distance function
-          100%,100%,100%,{d==1?2:3}
-          eval.. "*
+        elif {$3==1} # Delaunay-guided
+          +distance. 1 100%,100%,100%,{d==1?2:3}
+          eval.. "* # Apply specific gradient scheme for distance function
             const boundary = 1;
             maxabs(a,b) = (abs(a)>abs(b)?a:b);
             ix = maxabs(j(1) - i,i - j(-1));
@@ -10161,12 +10159,14 @@ inpaint_diffusion : check ${is_image_arg\ $1}" && ${2=75%}>=0 && isint(${3=1}) &
             j[-4] ...,0,0,0,0,1,..
             +warp[-4] .,1,2,1 *.. -1 warp[-5] ..,1,2,1 +[-5,-1] /[-4] 2
           done rm.
+
         elif {$3==2} # Edge-guided
           repeat $nb_iter
             +diffusiontensors... 0,1,1.5,0.5
             j[-4] ...,0,0,0,0,1,..
             smooth[-4] .,1,10,0 rm.
           done
+
         else # Mask-guided
           +r[1] .,2 g. a[-{d==1?2:3}--1] c orientation.
           repeat $nb_iter
