@@ -10113,27 +10113,18 @@ inpaint_diffusion : check ${is_image_arg\ $1}" && ${2=75%}>=0 && isint(${3=1}) &
   v - s0="isotropic" s1="delaunay-guided" s2="edge-guided" s3="mask-guided"
   v + e[^-1] "Inpaint image$? by mask $1, using a multiscale diffusion algorithm with $2 scales and $4 iterations of "${s$3}" diffusion." v -
   repeat $! nm={n} pass$1 l[$>,-1]
-    nb_scalesM={round(log2(max(w,h,d)))}
+    nb_scalesM={ceil(log2(max(w,h,d)))}
     nb_scales={round(${"is_percent $2"}?$nb_scalesM*$2:$2)}
     nb_scales={max(1,min($nb_scales,$nb_scalesM))}
     nb_iter={max(5,$4)}
 
     repeat $nb_scales
-      scale={2^$<}
-      width={0,max(1,round(w/$scale))}
-      height={0,max(1,round(h/$scale))}
-      depth={0,max(1,round(d/$scale))}
-      $width,$height,$depth,{0,s} 100%,100%,100%
-      eval[1] "const wl1 = w#-1 - 1;
-               const hl1 = h#-1 - 1;
-               const dl1 = d#-1 - 1;
-               const w1 = max(1,w - 1);
-               const h1 = max(1,h - 1);
-               const d1 = max(1,d - 1);
+      {0,"S = 2^"$<"; round([ max(1,w/S), max(1,h/S), max(1,d/S), s ])"}
+      100%,100%,100%
+      eval[1] "const wl1 = w#-1 - 1;    const hl1 = h#-1 - 1;    const dl1 = d#-1 - 1;
+               const w1 = max(1,w - 1); const h1 = max(1,h - 1); const d1 = max(1,d - 1);
                !i?(
-                 X = round(x*wl1/w1);
-                 Y = round(y*hl1/h1);
-                 Z = round(z*dl1/d1);
+                 X = round(x*wl1/w1); Y = round(y*hl1/h1); Z = round(z*dl1/d1);
                  I(#-2,X,Y,Z) += I(#0,x,y,z);
                  ++i(#-1,X,Y,Z)
                );I"
@@ -10153,19 +10144,19 @@ inpaint_diffusion : check ${is_image_arg\ $1}" && ${2=75%}>=0 && isint(${3=1}) &
           repeat $nb_iter j... ..,0,0,0,0,1,. b... 0.5 done
         elif {$3==1} # Delaunay-guided
           +distance. 1
-          l. # Apply specific gradient scheme for distance function
-            100%,100%,100%,{d==1?2:3}
-            eval.. "*
-              const boundary = 1;
-              maxabs(a,b) = (abs(a)>abs(b)?a:b);
-              ix = maxabs(j(1) - i,i - j(-1));
-              iy = maxabs(j(0,1) - i,i - j(0,-1));
-              d>1?(
-                iz = maxabs(j(0,0,1) - i,i - j(0,0,-1));
-                copy(I(#-1),[ ix,iy,iz ],3,whd);
-              ):copy(I(#-1),[ ix,iy ],2,whd)"
-            k. orientation
-          endl
+
+          # Apply specific gradient scheme for distance function
+          100%,100%,100%,{d==1?2:3}
+          eval.. "*
+            const boundary = 1;
+            maxabs(a,b) = (abs(a)>abs(b)?a:b);
+            ix = maxabs(j(1) - i,i - j(-1));
+            iy = maxabs(j(0,1) - i,i - j(0,-1));
+            d>1?(
+              iz = maxabs(j(0,0,1) - i,i - j(0,0,-1));
+              copy(I(#-1),[ ix,iy,iz ],3,whd);
+            ):copy(I(#-1),[ ix,iy ],2,whd)"
+          rm.. orientation.
           repeat {$nb_iter}
             j[-4] ...,0,0,0,0,1,..
             +warp[-4] .,1,2,1 *.. -1 warp[-5] ..,1,2,1 +[-5,-1] /[-4] 2
@@ -10178,7 +10169,7 @@ inpaint_diffusion : check ${is_image_arg\ $1}" && ${2=75%}>=0 && isint(${3=1}) &
           done
         else # Mask-guided
           +r[1] .,2 g. a[-{d==1?2:3}--1] c orientation.
-          repeat {$nb_iter}
+          repeat $nb_iter
             j[-4] ...,0,0,0,0,1,..
             +warp[-4] .,1,2,1 *.. -1 warp[-5] ..,1,2,1 +[-5,-1] /[-4] 2
           done rm.
