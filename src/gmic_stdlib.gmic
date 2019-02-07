@@ -5936,19 +5936,16 @@ compress_clut : check "isint(${1=8}) && $1>0 && ${2=2}>0 && isint(${3=2048}) && 
 
     # Iteratively remove keypoints.
     max_error,avg_error={[max($max_error,ceil($emax)),max($avg_error,ceil($avg_error))]}
-    attempts=0
     sep="\n"
-    max_attempts={h}
-    do
-      i={round(u(h-1))} +l. s y rm[$i] a y endl # Remove random keypoint
+    repeat {h}
+      +l. s y rm[$<] a y endl # Remove random keypoint
       +decompress_clut. {0,[w,h,d]} -. [0] norm. emax,eavg={[iM,ia]} rm.
       if {$emax<=$max_error" && "$eavg<=$avg_error}
-        rv[-2,-1] # attempts=0
+        rv[-2,-1]
         v + e[] "\r"$sep"  > Rem [#"{1,h}"] Max_Err = "{_$emax}", Avg_Err = "{_$eavg}"       " v - sep=""
-      else attempts+=1
       fi
       rm.
-    while {$attempts<$max_attempts}
+    done
     k. nm $nm
   endl done v +
 
