@@ -2970,12 +2970,15 @@ CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned
     if (it_comma) { item.assign(it,(unsigned int)(it_comma - it + 1)); item.back() = 0; it = it_comma + 1; }
     else { CImg<char>::string(it).move_to(item); stopflag = true; }
 
-    char end, *const it_colon = std::strchr(item,':');
+    char end, *it_colon = std::strchr(item,':');
     if (it_colon) {
-      *it_colon = 0;
-      if (cimg_sscanf(it_colon + 1,"%f%c",&step,&end)!=1 || step<=0)
+      *(it_colon++) = sep = 0;
+      if (!((cimg_sscanf(it_colon,"%f%c",&step,&end)==1 ||
+             cimg_sscanf(it_colon,"%f%c%c",&step,&sep,&end)==2) &&
+            (!sep || sep=='%') && step>=0))
         error("Command '%s': Invalid %s %c%s%c (syntax error after colon ':').",
               command,stype,ctypel,string,ctyper);
+      if (sep=='%') step*=index_max/100.0f;
     }
     if (!*item) { // Particular cases [:N] or [^:N]
       if (is_inverse) { iind0 = 0; iind1 = -1; is_inverse = false; }
