@@ -2961,7 +2961,7 @@ CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned
   const char *it = string + (is_inverse?1:0);
   for (bool stopflag = false; !stopflag; ) {
     float ind0 = 0, ind1 = 0, step = 1;
-    int iind0 = 0, iind1 = 0;
+    int iind0 = 0, iind1 = 0, istep = 1;
     bool is_label = false;
     char sep = 0;
     name.assign(256);
@@ -2973,12 +2973,15 @@ CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned
     char end, *it_colon = std::strchr(item,':');
     if (it_colon) {
       *(it_colon++) = sep = 0;
-      if (!((cimg_sscanf(it_colon,"%f%c",&step,&end)==1 ||
-             cimg_sscanf(it_colon,"%f%c%c",&step,&sep,&end)==2) &&
-            (!sep || sep=='%') && step>=0))
+      if ((cimg_sscanf(it_colon,"%f%c",&step,&end)==1 ||
+           cimg_sscanf(it_colon,"%f%c%c",&step,&sep,&end)==2) &&
+          (!sep || sep=='%') && step>0) {
+        if (sep=='%') step*=index_max/100.0f;
+      } else step = 0;
+      istep = (int)cimg::round(step);
+      if (istep<=0)
         error("Command '%s': Invalid %s %c%s%c (syntax error after colon ':').",
               command,stype,ctypel,string,ctyper);
-      if (sep=='%') step*=index_max/100.0f;
     }
     if (!*item) { // Particular cases [:N] or [^:N]
       if (is_inverse) { iind0 = 0; iind1 = -1; is_inverse = false; }
@@ -3032,7 +3035,6 @@ CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned
         error("Command '%s': Invalid %s %c%s%c (contains index '%d', "
               "not in range -%u...%u).",
               command,stype,ctypel,string,ctyper,iind1,index_max,index_max - 1);
-      const int istep = (int)cimg::round(step);
       for (int l = uind0; l<=uind1; l+=istep) is_selected[l] = true;
     }
   }
