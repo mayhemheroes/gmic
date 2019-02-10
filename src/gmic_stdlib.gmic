@@ -12675,6 +12675,13 @@ gaussian : skip ${1=3},${2=$1},${3=0}
 #@cli : Default values: 'offset_x=offset_y=0', 'opacity=1', 'pattern=(undefined)' and 'color1=0'.
 #@cli : $ image.jpg grid 10%,10%,0,0,0.5,255
 #@cli : $ 400,400,1,3,255 grid 10%,10%,0,0,0.3,0xCCCCCCCC,128,32,16
+#@cli grid : size_x[%]>=0,size_y[%]>=0,_offset_x[%],_offset_y[%],_opacity,_pattern,_color1,...
+#@cli : Draw xy-grid on selected images.
+#@cli : 'pattern' is an hexadecimal number starting with '0x' which can be omitted
+#@cli : even if a color is specified.
+#@cli : Default values: 'offset_x=offset_y=0', 'opacity=1', 'pattern=(undefined)' and 'color1=0'.
+#@cli : $ image.jpg grid 10%,10%,0,0,0.5,255
+#@cli : $ 400,400,1,3,255 grid 10%,10%,0,0,0.3,0xCCCCCCCC,128,32,16
 grid : check "$1>=0 && $2>=0" skip ${3=0},${4=0},${5=1},${6=0},${7=$6}
   if ${"is_pattern \"$6\""}
     e[0--3] "Draw xy-grid on image$?, with sizes ($1,$2), offsets ($3,$4), opacity $5, pattern $6 and color (${7--1})."
@@ -12683,43 +12690,64 @@ grid : check "$1>=0 && $2>=0" skip ${3=0},${4=0},${5=1},${6=0},${7=$6}
     e[0--3] "Draw xy-grid on image$?, with sizes ($1,$2), offsets ($3,$4), opacity $5, and color (${6--1})."
     v - pattern=0xFFFFFFFF color=${6--1}
   fi
-  is_percentsx=${is_percent\ $1} is_percentsy=${is_percent\ $2}
-  is_percentox=${is_percent\ $3} is_percentoy=${is_percent\ $4}
+  if {$_version>=250}
+    eval "
+      is_percent(str) = (unref(_is_pct); _is_pct=['#str']; _is_pct[size(_is_pct) - 1]==_'%');
+      for (k = 0, k<l, ++k,
 
-  repeat $! l[$>]
-    w={w} h={h} s={s}
+        # Horizontal lines.
+        size = is_percent($1)?max(1,w#k*$1):$1;
+        size>=1?(
+          off = (is_percent($3)?size*$3:$3)%size;
+          for (x = off, x<w#k, x+=size, polygon(#k,-2,x,0,x,h - 1,$5,"$pattern","$color"));
+        );
 
-    # Draw grid along x-axis.
-    size={if($is_percentsx,max(1,w*$1),$1)}
-    if {$size>=1}
-      offset={if($is_percentox,$size*$3,$3)}
-      ({'CImg3d'}) +. 0.5 # Header
-      1,{1+int($w/$size)},1,1,'y' *. $size +. {$offset%$size} # Points
-      1,{h},1,1,{$h/2} a[-2,-1] x z. 0,2 n={h} i.. ($n;$n)
-      (1,0;1,{$n-1}) r. 2,$n,1,1,3 round. # Primitives
-      (-128;1;$h;$s) 1,$h,1,$s line. 0,0,0,100%,1,$pattern,$color # Colors.
-      if {$n>1} 1,{4*($n-1)},1,1,-128,0,0,0 fi
-      (-128;1;$h;1) 1,$h,1,1 line. 0,0,0,100%,1,$pattern,1 # Opacities.
-      if {$n>1} 1,{4*($n-1)},1,1,-128,0,0,0 fi
-      y[^0] a[^0] y j3d[0] [1],0,0,0,$5,0,0,0 rm[1] # Merge and draw.
-    fi
+        # Vertical lines.
+        size = is_percent($2)?max(1,h#k*$2):$2;
+        size>=1?(
+          off = (is_percent($4)?size*$4:$4)%size;
+          for (y = off, y<h#k, y+=size, polygon(#k,-2,0,y,w - 1,y,$5,"$pattern","$color"));
+        )
+      )"
+  else
+    is_percentsx=${is_percent\ $1} is_percentsy=${is_percent\ $2}
+    is_percentox=${is_percent\ $3} is_percentoy=${is_percent\ $4}
 
-    # Draw grid along y-axis.
-    size={if($is_percentsy,max(1,h*$2),$2)}
-    if {$size>=1}
-      offset={if($is_percentoy,$size*$4,$4)}
-      ({'CImg3d'}) +. 0.5 # Header
-      1,{1+int($h/$size)},1,1,'y' *. $size +. {$offset%$size} # Points.
-      i.. 1,{h},1,1,{$w/2} a[-2,-1] x z. 0,2 n={h} i.. ($n;$n)
-      (1,0;1,{$n-1}) r. 2,$n,1,1,3 round. # Primitives.
-      (-128;$w;1;$s) $w,1,1,$s line. 0,0,100%,0,1,$pattern,$color # Colors.
-      if {$n>1} 1,{4*($n-1)},1,1,-128,0,0,0 fi
-      (-128;$w;1;1) $w,1,1,1 line. 0,0,100%,0,1,$pattern,1 # Opacities
-      if {$n>1} 1,{4*($n-1)},1,1,-128,0,0,0 fi
-      y[^0] a[^0] y j3d.. .,0,0,0,$5,0,0,0 rm. # Merge and draw.
-    fi
+    repeat $! l[$>]
+      w={w} h={h} s={s}
 
-  endl done v +
+      # Draw grid along x-axis.
+      size={if($is_percentsx,max(1,w*$1),$1)}
+      if {$size>=1}
+        offset={if($is_percentox,$size*$3,$3)}
+        ({'CImg3d'}) +. 0.5 # Header
+        1,{1+int($w/$size)},1,1,'y' *. $size +. {$offset%$size} # Points
+        1,{h},1,1,{$h/2} a[-2,-1] x z. 0,2 n={h} i.. ($n;$n)
+        (1,0;1,{$n-1}) r. 2,$n,1,1,3 round. # Primitives
+        (-128;1;$h;$s) 1,$h,1,$s line. 0,0,0,100%,1,$pattern,$color # Colors.
+        if {$n>1} 1,{4*($n-1)},1,1,-128,0,0,0 fi
+        (-128;1;$h;1) 1,$h,1,1 line. 0,0,0,100%,1,$pattern,1 # Opacities.
+        if {$n>1} 1,{4*($n-1)},1,1,-128,0,0,0 fi
+        y[^0] a[^0] y j3d[0] [1],0,0,0,$5,0,0,0 rm[1] # Merge and draw.
+      fi
+
+      # Draw grid along y-axis.
+      size={if($is_percentsy,max(1,h*$2),$2)}
+      if {$size>=1}
+        offset={if($is_percentoy,$size*$4,$4)}
+        ({'CImg3d'}) +. 0.5 # Header
+        1,{1+int($h/$size)},1,1,'y' *. $size +. {$offset%$size} # Points.
+        i.. 1,{h},1,1,{$w/2} a[-2,-1] x z. 0,2 n={h} i.. ($n;$n)
+        (1,0;1,{$n-1}) r. 2,$n,1,1,3 round. # Primitives.
+        (-128;$w;1;$s) $w,1,1,$s line. 0,0,100%,0,1,$pattern,$color # Colors.
+        if {$n>1} 1,{4*($n-1)},1,1,-128,0,0,0 fi
+        (-128;$w;1;1) $w,1,1,1 line. 0,0,100%,0,1,$pattern,1 # Opacities
+        if {$n>1} 1,{4*($n-1)},1,1,-128,0,0,0 fi
+        y[^0] a[^0] y j3d.. .,0,0,0,$5,0,0,0 rm. # Merge and draw.
+      fi
+    endl done
+  fi
+  v +
 
 #@cli j : eq. to 'image'. : (+)
 
