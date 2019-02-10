@@ -19152,12 +19152,13 @@ dec2str :
 #@cli dec2bin : decimal_int1,...
 #@cli : Convert specified decimal integers into their binary representations.
 dec2bin :
-  v - res=${_$0\ $1} repeat {$#-1} res=$res,${_$0\ ${arg\ $>+2,${^0}}} done u $res v +
-
-_dec2bin : check isint($1)
-  res="" r={abs($1)}
-  do res={$r%2}$res r={int($r/2)} while $r
-  u ${arg\ 1+($1>=0),-,""}$res
+  v -
+  u {`"const sgn = sign($1);
+       const N = (isinf($1) || isnan($1)?1:1 + floor(log2(max(1,abs($1))))) + (sgn>=0?0:1);
+       res = vectorN();
+       sgn>=0?0:(res[0] = _'-');
+       for (val = abs($1); k = size(res) - 1, k>=(sgn<0?1:0), --k, res[k] = _'0' + (val&1); val>>=1); res"`}
+  v +
 
 #@cli dec2hex : decimal_int1,...
 #@cli : Convert specified decimal integers into their hexadecimal representations.
@@ -19364,7 +19365,7 @@ hex :
 #@cli hex2dec : hexadecimal_int1,...
 #@cli : Convert specified hexadecimal integers into their decimal representations.
 hex2dec :
-  v - u {str=['"$1"'];str[0]==_'-'?-stov([['0x'],str[1,size(str)-1]]):stov([['0x'],str])} v +
+  v - u {"str = ['$1']; str[0]==_'-'?-stov([['0x'],str[1,size(str)-1]]):stov([['0x'],str])"} v +
 
 #@cli hex2img : "hexadecimal_string"
 #@cli : Insert new image 1xN at the end of the list with values specified by the given hexadecimal-encoded string.
