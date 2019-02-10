@@ -19162,29 +19162,12 @@ _dec2bin : check isint($1)
 #@cli dec2hex : decimal_int1,...
 #@cli : Convert specified decimal integers into their hexadecimal representations.
 dec2hex :
-  v - res=${_$0\ $1} repeat {$#-1} res=$res,${_$0\ ${arg\ $>+2,${^0}}} done u $res v +
-
-_dec2hex : check isint($1)
-  res="" r={abs($1)}
-  do res=${-_dec2hex_{$r%16}}$res r={int($r/16)} while $r
-  u ${arg\ 1+($1>=0),-,""}$res
-
-_dec2hex_0 : u 0
-_dec2hex_1 : u 1
-_dec2hex_2 : u 2
-_dec2hex_3 : u 3
-_dec2hex_4 : u 4
-_dec2hex_5 : u 5
-_dec2hex_6 : u 6
-_dec2hex_7 : u 7
-_dec2hex_8 : u 8
-_dec2hex_9 : u 9
-_dec2hex_10 : u a
-_dec2hex_11 : u b
-_dec2hex_12 : u c
-_dec2hex_13 : u d
-_dec2hex_14 : u e
-_dec2hex_15 : u f
+  v -
+  u {`"begin(tab = [ _'0',_'1',_'2',_'3',_'4',_'5',_'6',_'7',_'8',_'9',_'a',_'b',_'c',_'d',_'e',_'f' ]);
+       const N = ceil(log($1)/log(16));
+       res = vectorN();
+       for (val = $1; k = size(res) - 1, k>=0, --k, res[k] = tab[val&15]; val>>=4); res"`}
+  v +
 
 #@cli dec2oct : decimal_int1,...
 #@cli : Convert specified decimal integers into their octal representations.
