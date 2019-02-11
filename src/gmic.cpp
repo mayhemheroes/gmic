@@ -261,17 +261,6 @@ CImg<T> get_copymark() const {
   return res;
 }
 
-template<typename tc>
-CImg<T> get_draw_axes(const float x0, const float x1, const float y0, const float y1,
-                      const tc *const color, const float opacity=1,
-                      const int subdivisionx=-60, const int subdivisiony=-60,
-                      const float precisionx=0, const float precisiony=0,
-                      const unsigned int patternx=~0U, const unsigned int patterny=~0U,
-                      const unsigned int font_height=13) const {
-  return (+*this).draw_axes(x0,x1,y0,y1,color,opacity,subdivisionx,subdivisiony,
-                            precisionx,precisiony,patternx,patterny,font_height);
-}
-
 CImg<T> get_draw_circle(const int x, const int y, const int r, const T *const col,
                         const float opacity) const {
   return (+*this).draw_circle(x,y,r,col,opacity);
@@ -302,21 +291,11 @@ CImg<T> get_draw_fill(const int x, const int y, const int z,
 
 template<typename t, typename tc>
 CImg<T> get_draw_graph(const CImg<t>& data,
-                       const tc *const color, const float opacity=1,
-                       const unsigned int plot_type=1, const int vertex_type=1,
-                       const double ymin=0, const double ymax=0,
-                       const unsigned int pattern=~0U) const {
+                       const tc *const color, const float opacity,
+                       const unsigned int plot_type, const int vertex_type,
+                       const double ymin, const double ymax,
+                       const unsigned int pattern) const {
   return (+*this).draw_graph(data,color,opacity,plot_type,vertex_type,ymin,ymax,pattern);
-}
-
-template<typename tc>
-CImg<T> get_draw_grid(const float sizex, const float sizey,
-                      const float offsetx, const float offsety,
-                      const bool invertx, const bool inverty,
-                      const tc *const color, const float opacity=1,
-                      const unsigned int patternx=~0U, const unsigned int patterny=~0U) {
-  return (+*this).draw_grid(sizex,sizey,offsetx,offsety,invertx,inverty,color,opacity,
-                            patternx,patterny);
 }
 
 CImg<T> get_draw_image(const int x, const int y, const int z, const int c,
@@ -6877,11 +6856,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 nR = cimg::round(sepz=='%'?R*rmax/100:R),
                 nr = cimg::round(sepc=='%'?r*rmax/100:r);
               if (sep=='x') {
-                if (nR==nr) { gmic_apply(draw_circle(nx,ny,(int)nR,g_img.data(),opacity,~0U)); }
-                else gmic_apply(draw_ellipse(nx,ny,nR,nr,angle,g_img.data(),opacity,~0U));
+                gmic_apply(draw_ellipse(nx,ny,nR,nr,angle,g_img.data(),opacity,pattern));
               } else {
-                if (nR==nr) { gmic_apply(draw_circle(nx,ny,(int)nR,g_img.data(),opacity)); }
-                else gmic_apply(draw_ellipse(nx,ny,nR,nr,angle,g_img.data(),opacity));
+                gmic_apply(draw_ellipse(nx,ny,nR,nr,angle,g_img.data(),opacity));
               }
             }
           } else arg_error("ellipse");
