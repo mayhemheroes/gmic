@@ -19074,14 +19074,15 @@ bin :
 #@cli bin2dec : binary_int1,...
 #@cli : Convert specified binary integers into their decimal representations.
 bin2dec :
-  v -
+  v - $=arg res,sep= repeat $# res=$res$sep${_$0\ ${arg{$>+1}}} sep=, done u $res v +
+
+_bin2dec :
   u {"str = vtos(abs($1));
       for (k = val = 0, str[k], ++k,
         c = str[k];
         (val<<=1)+=(c==_'0'?0:c==_'1'?1:nan);
         isnan(val)?break()
       ); sign($1)*val"}
-  v +
 
 # compress_gmic
 # Compress .gmic custom command files for compressing update files a little bit,
@@ -19166,14 +19167,12 @@ dec2hex :
   v - $=arg res,sep= repeat $# res=$res$sep${_$0\ ${arg{$>+1}}} sep=, done u $res v +
 
 _dec2hex :
-  v -
   u {`"begin(tab = [ _'0',_'1',_'2',_'3',_'4',_'5',_'6',_'7',_'8',_'9',_'a',_'b',_'c',_'d',_'e',_'f' ]);
        const sgn = sign($1);
        const N = (isinf($1) || isnan($1)?1:1 + floor(log2(max(1,abs($1)))/4)) + (sgn>=0?0:1);
        res = vectorN();
        sgn>=0?0:(res[0] = _'-');
        for (val = abs($1); k = size(res) - 1, k>=(sgn<0?1:0), --k, res[k] = tab[val&15]; val>>=4); res"`}
-  v +
 
 #@cli dec2oct : decimal_int1,...
 #@cli : Convert specified decimal integers into their octal representations.
@@ -19181,13 +19180,11 @@ dec2oct :
   v - $=arg res,sep= repeat $# res=$res$sep${_$0\ ${arg{$>+1}}} sep=, done u $res v +
 
 _dec2oct :
-  v -
   u {`"const sgn = sign($1);
        const N = (isinf($1) || isnan($1)?1:1 + floor(log2(max(1,abs($1)))/3)) + (sgn>=0?0:1);
        res = vectorN();
        sgn>=0?0:(res[0] = _'-');
        for (val = abs($1); k = size(res) - 1, k>=(sgn<0?1:0), --k, res[k] = _'0' + (val&7); val>>=3); res"`}
-  v +
 
 #@cli fact : value
 #@cli : Return the factorial of the specified value.
@@ -19371,7 +19368,10 @@ hex :
 #@cli hex2dec : hexadecimal_int1,...
 #@cli : Convert specified hexadecimal integers into their decimal representations.
 hex2dec :
-  v - u {"str = ['$1']; str[0]==_'-'?-stov([['0x'],str[1,size(str)-1]]):stov([['0x'],str])"} v +
+  v - $=arg res,sep= repeat $# res=$res$sep${_$0\ ${arg{$>+1}}} sep=, done u $res v +
+
+_hex2dec :
+  u {"str = ['$1']; str[0]==_'-'?-stov([['0x'],str[1,size(str)-1]]):stov([['0x'],str])"}
 
 #@cli hex2img : "hexadecimal_string"
 #@cli : Insert new image 1xN at the end of the list with values specified by the given hexadecimal-encoded string.
@@ -19852,14 +19852,15 @@ oct :
 #@cli oct2dec : octal_int1,...
 #@cli : Convert specified octal integers into their decimal representations.
 oct2dec :
-  v -
+  v - $=arg res,sep= repeat $# res=$res$sep${_$0\ ${arg{$>+1}}} sep=, done u $res v +
+
+_oct2dec :
   u {"str = vtos(abs($1));
       for (k = val = 0, str[k], ++k,
         c = str[k];
         (val<<=3)+=(c>=_'0' && c<=_'7'?c - _'0':nan);
         isnan(val)?break()
       ); sign($1)*val"}
-  v +
 
 #@cli padint : number,_size>0
 #@cli : Return a integer with 'size' digits (eventually left-padded with '0').
