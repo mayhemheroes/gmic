@@ -699,7 +699,7 @@ man:
 #-----------------------------
 install:
 	mkdir -p $(DESTDIR)$(PLUGINDIR)/
-	cp -f ../resources/gmic_film_cluts.gmz $(DESTDIR)$(PLUGINDIR)/
+	cp -f ../resources/gmic_cluts.gmz $(DESTDIR)$(PLUGINDIR)/
 	mkdir -p $(DESTDIR)$(USR)/$(BIN)/
 	cp -f gmic $(DESTDIR)$(USR)/$(BIN)/
 	mkdir -p $(DESTDIR)$(USR)/$(INCLUDE)/
