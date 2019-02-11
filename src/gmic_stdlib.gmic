@@ -19151,17 +19151,21 @@ dec2str :
 #@cli dec2bin : decimal_int1,...
 #@cli : Convert specified decimal integers into their binary representations.
 dec2bin :
-  v -
+  v - $=arg res,sep= repeat $# res=$res$sep${_$0\ ${arg{$>+1}}} sep=, done u $res v +
+
+_dec2bin :
   u {`"const sgn = sign($1);
        const N = (isinf($1) || isnan($1)?1:1 + floor(log2(max(1,abs($1))))) + (sgn>=0?0:1);
        res = vectorN();
        sgn>=0?0:(res[0] = _'-');
        for (val = abs($1); k = size(res) - 1, k>=(sgn<0?1:0), --k, res[k] = _'0' + (val&1); val>>=1); res"`}
-  v +
 
 #@cli dec2hex : decimal_int1,...
 #@cli : Convert specified decimal integers into their hexadecimal representations.
 dec2hex :
+  v - $=arg res,sep= repeat $# res=$res$sep${_$0\ ${arg{$>+1}}} sep=, done u $res v +
+
+_dec2hex :
   v -
   u {`"begin(tab = [ _'0',_'1',_'2',_'3',_'4',_'5',_'6',_'7',_'8',_'9',_'a',_'b',_'c',_'d',_'e',_'f' ]);
        const sgn = sign($1);
@@ -19174,6 +19178,9 @@ dec2hex :
 #@cli dec2oct : decimal_int1,...
 #@cli : Convert specified decimal integers into their octal representations.
 dec2oct :
+  v - $=arg res,sep= repeat $# res=$res$sep${_$0\ ${arg{$>+1}}} sep=, done u $res v +
+
+_dec2oct :
   v -
   u {`"const sgn = sign($1);
        const N = (isinf($1) || isnan($1)?1:1 + floor(log2(max(1,abs($1)))/3)) + (sgn>=0?0:1);
