@@ -30356,6 +30356,49 @@ fx_zoom :
 #@gui ____<b>Degradations</b>
 #-----------------------------
 
+#@gui Add Grain : fx_simulate_grain, fx_simulate_grain_preview(0)
+#@gui : Preset = choice{"Orwo NP20-GDR","Kodak TMAX 400","Kodak TMAX 3200","Kodak TRI-X 1600","Unknown"}
+#@gui : Blend Mode = choice(1,"Alpha","Grain Merge","Hard Light","Overlay","Soft Light","Grain Only")
+#@gui : Opacity = float(0.2,0,1)
+#@gui : Scale = float(100,30,200)
+#@gui : Colored Grain = bool()
+#@gui : sep = separator()
+#@gui : Brightness (%) = float(0,-100,100)
+#@gui : Contrast (%) = float(0,-100,100)
+#@gui : Gamma (%) = float(0,-100,100)
+#@gui : Hue (%) = float(0,-100,100)
+#@gui : Saturation (%) = float(0,-100,100)
+#@gui : sep = separator(), Preview Type = choice("Full","Forward Horizontal","Forward Vertical","Backward Horizontal","Backward Vertical","Duplicate Top","Duplicate Left","Duplicate Bottom","Duplicate Right","Duplicate Horizontal","Duplicate Vertical","Checkered","Checkered Inverse")
+#@gui : Preview Grain Alone = bool()
+#@gui : sep = separator(), note = note("<small>Author: <i>David Tschumperl&#233;</i>.      Latest Update: <i>2016/02/08</i>.</small>")
+fx_simulate_grain :
+  __fx_simulate_grain ${arg\ {1+$1},${-_fx_simulate_grain}},${2-10},0,0
+
+_fx_simulate_grain :
+  u grain_orwo_np20,grain_kodak_tmax400,grain_kodak_tmax3200,grain_kodak_trix1600,grain_unknown
+
+fx_simulate_grain_preview :
+  gui_split_preview "_fx_simulate_grain_preview $*",$-2
+
+_fx_simulate_grain_preview :
+  __fx_simulate_grain ${arg\ {1+$1},${-_fx_simulate_grain}},${2-12}
+
+__fx_simulate_grain :
+  bm0=alpha bm1=grainmerge bm2=hardlight bm3=overlay bm4=softlight bm5=alpha
+  if ${_path_rc}$1.cimgz i ${_path_rc}$1.cimgz
+  else i https://gmic.eu/data_film_presets/$1.cimgz o. ${_path_rc}$1.cimgz
+  fi
+
+  repeat {$!-1} l[$>,-1] split_opacity[0]
+    +syntexturize. {0,max(10,100*w/$4)},{0,max(10,100*h/$4)}
+    if $5 +syntexturize.. {w},{h} +syntexturize... {w},{h} a[-3--1] c fi
+    r. {0,w},{0,h},1,100%,5 c. 0,255
+    adjust_colors. ${6-10}
+    if $12 k[0,-1] rv
+    else blend[0,-1] ${bm$2},{if($2<=4,$3,1)}
+    fi
+  a[^-1] c endl done rm.
+
 #@gui Blur [Angular] : fx_blur_angular, fx_blur_angular_preview(1)
 #@gui : Amplitude (%) = float(2,0,20)
 #@gui : Center (%) = point(50,50,0,1)
@@ -31531,49 +31574,6 @@ fx_map_tones_fast_preview :
 #@gui ____<b>Color Grading</b>
 #------------------------------
 
-#@gui Add Grain : fx_simulate_grain, fx_simulate_grain_preview(0)
-#@gui : Preset = choice{"Orwo NP20-GDR","Kodak TMAX 400","Kodak TMAX 3200","Kodak TRI-X 1600","Unknown"}
-#@gui : Blend Mode = choice(1,"Alpha","Grain Merge","Hard Light","Overlay","Soft Light","Grain Only")
-#@gui : Opacity = float(0.2,0,1)
-#@gui : Scale = float(100,30,200)
-#@gui : Colored Grain = bool()
-#@gui : sep = separator()
-#@gui : Brightness (%) = float(0,-100,100)
-#@gui : Contrast (%) = float(0,-100,100)
-#@gui : Gamma (%) = float(0,-100,100)
-#@gui : Hue (%) = float(0,-100,100)
-#@gui : Saturation (%) = float(0,-100,100)
-#@gui : sep = separator(), Preview Type = choice("Full","Forward Horizontal","Forward Vertical","Backward Horizontal","Backward Vertical","Duplicate Top","Duplicate Left","Duplicate Bottom","Duplicate Right","Duplicate Horizontal","Duplicate Vertical","Checkered","Checkered Inverse")
-#@gui : Preview Grain Alone = bool()
-#@gui : sep = separator(), note = note("<small>Author: <i>David Tschumperl&#233;</i>.      Latest Update: <i>2016/02/08</i>.</small>")
-fx_simulate_grain :
-  __fx_simulate_grain ${arg\ {1+$1},${-_fx_simulate_grain}},${2-10},0,0
-
-_fx_simulate_grain :
-  u grain_orwo_np20,grain_kodak_tmax400,grain_kodak_tmax3200,grain_kodak_trix1600,grain_unknown
-
-fx_simulate_grain_preview :
-  gui_split_preview "_fx_simulate_grain_preview $*",$-2
-
-_fx_simulate_grain_preview :
-  __fx_simulate_grain ${arg\ {1+$1},${-_fx_simulate_grain}},${2-12}
-
-__fx_simulate_grain :
-  bm0=alpha bm1=grainmerge bm2=hardlight bm3=overlay bm4=softlight bm5=alpha
-  if ${_path_rc}$1.cimgz i ${_path_rc}$1.cimgz
-  else i https://gmic.eu/data_film_presets/$1.cimgz o. ${_path_rc}$1.cimgz
-  fi
-
-  repeat {$!-1} l[$>,-1] split_opacity[0]
-    +syntexturize. {0,max(10,100*w/$4)},{0,max(10,100*h/$4)}
-    if $5 +syntexturize.. {w},{h} +syntexturize... {w},{h} a[-3--1] c fi
-    r. {0,w},{0,h},1,100%,5 c. 0,255
-    adjust_colors. ${6-10}
-    if $12 k[0,-1] rv
-    else blend[0,-1] ${bm$2},{if($2<=4,$3,1)}
-    fi
-  a[^-1] c endl done rm.
-
 #@gui B&amp;W Films : fx_colorgrade_bw, fx_colorgrade_bw_preview(1)+
 #@gui : Preset = choice{"None",
 #@gui : "Agfa APX 100","Agfa APX 25","Fuji Neopan 1600","Fuji Neopan Acros 100","Ilford Delta 100","Ilford Delta 3200","Ilford Delta 400","Ilford FP4 Plus 125",
@@ -31937,7 +31937,7 @@ _fx_colorgrade_print :
 fx_colorgrade_print_preview :
   gui_split_preview "fx_colorgrade_print $*",${-3--1}
 
-#@gui RocketStock Color Grading : fx_colorgrade_rocketstock, fx_colorgrade_rocketstock_preview(1)+
+#@gui RocketStock LUTs : fx_colorgrade_rocketstock, fx_colorgrade_rocketstock_preview(1)+
 #@gui : Preset = choice{"None", "Arabica 12", "Ava 614", "Azrael 93", "Bourbon 64", "Byers 11", "Chemical 168", "Clayton 33", "Clouseau 54",
 #@gui : "Cobi 3", "Contrail 35", "Cubicle 99", "Django 25", "Domingo 145", "Faded 47", "Folger 50", "Fusion 88", "Hyla 68", "Korben 214",
 #@gui : "Lenox 340", "Lucky 64", "McKinnon 75", "Milo 5", "Neon 770", "Paladin 1875", "Pasadena 21", "Pitaya 15", "Reeve 38", "Remy 24",
