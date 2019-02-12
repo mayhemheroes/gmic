@@ -6004,11 +6004,40 @@ compress_clut : check "isint(${1=8}) && $1>0 && ${2=2}>0 && isint(${3=2048}) && 
       v + e[] "\r"$sep"  > Rem [#"{1,min($index,h-1)}"/"{1,h}"] Max_Err = "{_$emax}", Avg_Err = "{_$eavg}"       " v - sep=""
       rm.
     while {$index<h}
-    k. nm $nm
+    k. to_clutname $nm nm ${}
 
     # Sort keypoints by lexicographic order.
     1,100%,1,1,"P = I(#0); P[0]*65536 + P[1]*256 + P[2]" rv a x sort +,y z. 1,100%
 
+  endl done v +
+
+# batch_compress_cluts : "file_pattern" : "file_list.txt"
+# Run CLUT compression in batch.
+batch_compress_cluts :
+  v - rm
+  if "$1" i raw:"$1".txt,uchar s -,{'\n'}
+  else files "$1" ({'${}'}) s -,{','}
+  fi
+  repeat $! l[$>]
+    filename={t} 0 nm. $filename ext={x} rm
+    basename $filename
+    l[] ({'${}'}) replace_str .$ext,"" basename={t} rm endl
+
+    if cclut_$basename.gmz
+      v + e[] "* Skip file '"$filename"' (CLUT already compressed)." v -
+    else
+      if {lowercase(['$ext'])=='cube'} input_cube $filename
+      elif {lowercase(['$ext'])=='png'} i $filename S={round(cbrt(wh))} r $S,$S,$S,100%,-1
+      else v + e[] "* Skip file '"$filename"' (unknown CLUT format)." v - continue
+      fi
+
+      v + e[] "* Compress file '"$filename"'." v -
+      if {w>64} r3dx 64 fi
+      to_rgb
+      v + compress_clut , v -
+      o cclut_$basename.gmz
+    fi
+    rm
   endl done v +
 
 #@cli compress_rle : _is_binary_data={ 0 | 1 },_maximum_sequence_length>=0
@@ -20059,6 +20088,7 @@ to_clutname :
           ss[ps]==_'{' || ss[ps]==_'}' ||
           ss[ps]==_'[' || ss[ps]==_']' ||
           ss[ps]==_'\'' || ss[ps]==_'\"')?0:
+         (ps && ss[ps]>=_'0' && ss[ps]<=_'9' && ss[ps-1]>=_'a' && ss[ps-1]<=_'z')?(sd[pd++] = _'_'; sd[pd++] = ss[ps]):
          (sd[pd++] = ss[ps]);
        ); sd[pd] = 0; sd"`} v +
 
