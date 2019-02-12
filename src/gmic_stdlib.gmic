@@ -1528,7 +1528,7 @@ clut : check "isval(${2=48}) && $2>0"
         rm
       done
       if {!$!} v + error[0--4] "Command '$0': Unknown CLUT name '"$name"'." fi
-      decompress_clut $2,$2,$2 round c 0,255
+      decompress_clut $2,$2,$2 round c 0,255 to_rgb
       o. ${_path_rc}clut_$name.cimgz,uchar
     fi
     nm "[CLUT: "$name"]" k.
@@ -1538,6 +1538,7 @@ clut : check "isval(${2=48}) && $2>0"
 # What it does is:
 #
 # - Standardize CLUT name.
+# - Convert RGB CLUTs to Grayscale when possible.
 # - Remove duplicates and sort by lexicographic order.
 # - Display list of CLUTs to ease documentation update of command 'clut'.
 #
@@ -1582,6 +1583,16 @@ clean_cluts :
       = 0,0,100%  nm={t} rm
     endl
     nm $nm
+  endl done
+
+  # Convert RGB CLUTs to Grayscale when possible.
+  repeat $! l[$>]
+    if {"R = crop(#0,0,0,0,3,1,h,1,1);
+         G = crop(#0,0,0,0,4,1,h,1,1);
+         B = crop(#0,0,0,0,5,1,h,1,1);
+         R==G && G==B?1:0"}
+      channels 0,3
+    fi
   endl done
 
   # Search for duplicates and sort.
