@@ -6035,13 +6035,14 @@ compress_clut : check "isint(${1=8}) && $1>0 && ${2=2}>0 && isint(${3=2048}) && 
   endl done v +
 
 # compress_cluts : "file_pattern" : "file_list.txt"
-# Compress several CLUT files.
+# Batch compress CLUT files.
 compress_cluts :
   v - rm
   if "$1" i raw:"$1",uchar s -,{'\n'}
   else files "$1" ({'${}'}) s -,{','}
   fi
-  repeat $! l[$>]
+  rv
+  repeat $! l[$<]
     filename={t} 0 nm. $filename ext={x} rm
     basename $filename
     l[] ({'${}'}) replace_str .$ext,"" basename={t} rm endl
@@ -6051,7 +6052,7 @@ compress_cluts :
     else
       if {lowercase(['$ext'])=='cube'} input_cube $filename
       elif {lowercase(['$ext'])=='png'} i $filename S={round(cbrt(wh))} r $S,$S,$S,100%,-1
-      else v + e[] "* Skip file '"$filename"' (unknown CLUT format)." v - 0 continue
+      else v + e[] "* Skip file '"$filename"' (unknown CLUT format)." v - continue
       fi
 
       v + e[] "* Compress file '"$filename"'." v -
