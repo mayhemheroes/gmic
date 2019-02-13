@@ -1549,11 +1549,20 @@ clean_cluts :
   # Standardize names.
   repeat $! l[$>]
     nm={n}
+
+    # Manage Fuji XTrans III naming conventions.
+    if {"str = lowercase(['"$nm"']);
+         find(str,'fuji_xtrans_iii')==0"} l[]
+      ({'$nm'})
+      replace_str "_-_","_" nm={t} rm
+    endl fi
+
+    # Manage RawTherapee naming conventions.
     if {"str = lowercase(['"$nm"']);
          find(str,'kodak')==0 ||
          find(str,'polaroid')==0 ||
          find(str,'fuji')==0 ||
-         find(str,'ilford')==0"} l[] # Manage RawTherapee naming conventions
+         find(str,'ilford')==0"} l[]
       ({'$nm'},{'*'})
       replace_str " 1 "," " replace_str " 1*","*"
       replace_str " 2 "," " replace_str " 2*","*"
@@ -1568,15 +1577,17 @@ clean_cluts :
 
     to_clutname $nm nm=${}
 
+    # Manage PictureFX naming conventions.
     if {"str = lowercase(['"$nm"']);
          find(str,'technicalfx')==0 ||
          find(str,'analogfx')==0 ||
          find(str,'goldfx')==0 ||
-         find(str,'zilverfx')==0"} l[] # Manage PictureFX naming conventions
+         find(str,'zilverfx')==0"} l[]
       ({'$nm'})
       replace_str "-","_" nm={t} rm
     endl fi
 
+    # Other name changes.
     l[]
       ({'$nm'},{'*'})
       replace_str "_v_2*","*"
