@@ -8938,20 +8938,20 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                          _light3d_x,_light3d_y,_light3d_z,
                                          _specular_lightness3d,_specular_shininess3d,
                                          opacity,zbuffer));
-                g_list_f.assign();
+
               } else {
                 gmic_apply(draw_object3d(nx,ny,z,vertices,primitives,g_list_uc,opacities,
                                          _render3d,_is_double3d,_focale3d,
                                          _light3d_x,_light3d_y,_light3d_z,
                                          _specular_lightness3d,_specular_shininess3d,
                                          opacity,zbuffer));
-                g_list_uc.assign();
               }
             }
           } else arg_error("object3d");
+          g_list_f.assign();
+          g_list_uc.assign();
           vertices.assign();
           primitives.assign();
-
           is_released = false; ++position; continue;
         }
 
