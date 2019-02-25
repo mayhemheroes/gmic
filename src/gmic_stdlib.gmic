@@ -1550,14 +1550,26 @@ clean_cluts :
   repeat $! l[$>]
     nm={n}
 
-    # Manage Fuji XTrans III naming conventions.
+    # Standardize names for 'SmallHD MovieLook'.
+    if {"str = lowercase(['"$nm"']);
+         find(str,'smallhd_movielook_')==0"} l[]
+      ({'$nm'}) z. 18,100%
+      replace_str "apocalypsethisverymoment","apocalypse_this_very_moment"
+      replace_str "bobford","bob_ford"
+      replace_str "lifegivingtree","life_giving_tree"
+      replace_str "savingprivatedamon","saving_private_damon"
+      replace_str "thematrices","the_matrices"
+      nm={t} rm
+    endl fi
+
+    # Standardize names for 'Fuji XTrans III'.
     if {"str = lowercase(['"$nm"']);
          find(str,'fuji_xtrans_iii')==0"} l[]
       ({'$nm'})
       replace_str "_-_","_" nm={t} rm
     endl fi
 
-    # Manage RawTherapee naming conventions.
+    # Standardize names for 'RawTherapee'.
     if {"str = lowercase(['"$nm"']);
          find(str,'kodak')==0 ||
          find(str,'polaroid')==0 ||
@@ -1577,7 +1589,7 @@ clean_cluts :
 
     to_clutname $nm nm=${}
 
-    # Manage PictureFX naming conventions.
+    # Standardize names for 'PictureFX'.
     if {"str = lowercase(['"$nm"']);
          find(str,'technicalfx')==0 ||
          find(str,'analogfx')==0 ||
@@ -32046,6 +32058,30 @@ _fx_colorgrade_colorslide :
 
 fx_colorgrade_colorslide_preview :
   gui_split_preview "fx_colorgrade_colorslide $*",${-3--1}
+
+#@gui SmallHD Movie Look [Free] : fx_colorgrade_smallhd, fx_colorgrade_smallhd_preview(1)+
+#@gui : Preset = choice{"None","Apocalypse This Very Moment","BBoyz2","Bob Ford","Life Giving Tree","Moonrise","SavingPrivateDamon","TheMatrices"}
+#@gui : sep = separator()
+#@gui : Strength (%) = float(100,0,100)
+#@gui : Brightness (%) = float(0,-100,100)
+#@gui : Contrast (%) = float(0,-100,100)
+#@gui : Gamma (%) = float(0,-100,100)
+#@gui : Hue (%) = float(0,-100,100)
+#@gui : Saturation (%) = float(0,-100,100)
+#@gui : Normalize Colors = choice("None","Pre-Process","Post-Process","Both")
+#@gui : sep = separator(), Preview Type = choice("Full","Forward Horizontal","Forward Vertical","Backward Horizontal","Backward Vertical","Duplicate Top","Duplicate Left","Duplicate Bottom","Duplicate Right","Duplicate Horizontal","Duplicate Vertical","Checkered","Checkered Inverse"), Preview split = point(50,50,0,0,200,200,200,0,10,0)
+#@gui : sep = separator(), note = note("<small><b>Note:</b> The 7 color LUTs proposed in this filter are provided by <b>SmallHD</b>, and are freely available at:</small>")
+#@gui : url = link("SmallHD Free Movie Look Pack","https://www.smallhd.com/community/movie-looks-download")
+#@gui : sep = separator(), note = note("<small>Author: <i>David Tschumperl&#233;</i>.      Latest Update: <i>2019/02/25</i>.</small>")
+fx_colorgrade_smallhd :
+  _fx_colorgrade $1,${arg\ {max(1,$1)},${-_$0}},${2--1}
+
+_fx_colorgrade_smallhd :
+  u apocalypse_this_very_moment,bboyz2,bob_ford,life_giving_tree,moonrise,saving_private_damon,the_matrices
+
+fx_colorgrade_smallhd_preview :
+  gui_split_preview "fx_colorgrade_smallhd $*",${-3--1}
+
 
 #@gui User-Defined : fx_colorgrade_userdefined, fx_colorgrade_userdefined_preview(1)+
 #@gui : Specify HaldCLUT As = choice(2,"Top Layer","Bottom Layer","Filename")
