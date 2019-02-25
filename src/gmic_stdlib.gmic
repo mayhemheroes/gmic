@@ -1551,6 +1551,13 @@ clean_cluts :
     nm={n}
 
     # Standardize names for 'SmallHD MovieLook'.
+    if {"str = lowercase(['"$nm"*']);
+         find(str,'_-_rec_709*')>=0"} l[]
+      ({'$nm'}) z. 0,{w-11}
+      nm={t} rm
+    endl fi
+
+    # Standardize names for 'SmallHD MovieLook'.
     if {"str = lowercase(['"$nm"']);
          find(str,'smallhd_movielook_')==0"} l[]
       ({'$nm'}) z. 18,100%
@@ -6056,7 +6063,7 @@ compress_clut : check "isint(${1=8}) && $1>0 && ${2=2}>0 && isint(${3=2048}) && 
     while {1,h<$max_keypoints}
 
     # Iteratively remove keypoints.
-    max_error,avg_error={[max($max_error,round($emax,0.5,1)),max($avg_error,round($avg_error,0.5,1))]}
+    max_error,avg_error={[max($max_error,round($emax,0.5,1)),max($avg_error,round($eavg,0.5,1))]}
     step={h==$max_keypoints?3:1}
     index=0 sep="\n"
 
@@ -31830,6 +31837,29 @@ _fx_colorgrade_instant_pro :
 fx_colorgrade_instant_pro_preview :
   gui_split_preview "fx_colorgrade_instant_pro $*",${-3--1}
 
+#@gui Lutify.Me [Free] : fx_colorgrade_lutifyme, fx_colorgrade_lutifyme_preview(1)+
+#@gui : Preset = choice{"None","Hackmanite","Herderite","Heulandite","Hiddenite","Hilutite","Howlite","Hypersthene"}
+#@gui : sep = separator()
+#@gui : Strength (%) = float(100,0,100)
+#@gui : Brightness (%) = float(0,-100,100)
+#@gui : Contrast (%) = float(0,-100,100)
+#@gui : Gamma (%) = float(0,-100,100)
+#@gui : Hue (%) = float(0,-100,100)
+#@gui : Saturation (%) = float(0,-100,100)
+#@gui : Normalize Colors = choice("None","Pre-Process","Post-Process","Both")
+#@gui : sep = separator(), Preview Type = choice("Full","Forward Horizontal","Forward Vertical","Backward Horizontal","Backward Vertical","Duplicate Top","Duplicate Left","Duplicate Bottom","Duplicate Right","Duplicate Horizontal","Duplicate Vertical","Checkered","Checkered Inverse"), Preview split = point(50,50,0,0,200,200,200,0,10,0)
+#@gui : sep = separator(), note = note("<small><b>Note:</b> The 7 color LUTs proposed in this filter are provided by <b>Lutify.Me</b>, and are freely available at:</small>")
+#@gui : url = link("Lutify.Me Free LUTs","https://lutify.me/free-luts/")
+#@gui : sep = separator(), note = note("<small>Author: <i>David Tschumperl&#233;</i>.      Latest Update: <i>2019/02/25</i>.</small>")
+fx_colorgrade_lutifyme :
+  _fx_colorgrade $1,${arg\ {max(1,$1)},${-_$0}},${2--1}
+
+_fx_colorgrade_lutifyme :
+  u hackmanite,herderite,heulandite,hiddenite,hilutite,howlite,hypersthene
+
+fx_colorgrade_lutifyme_preview :
+  gui_split_preview "fx_colorgrade_lutifyme $*",${-3--1}
+
 #@gui Negative [Color] : fx_colorgrade_negative_color, fx_colorgrade_negative_color_preview(1)+
 #@gui : Preset = choice{"None",
 #@gui : "Agfa Ultra Color 100","Agfa Vista 200","Fuji Superia 200","Fuji Superia HG 1600","Fuji Superia Reala 100","Fuji Superia X-Tra 800",
@@ -32081,7 +32111,6 @@ _fx_colorgrade_smallhd :
 
 fx_colorgrade_smallhd_preview :
   gui_split_preview "fx_colorgrade_smallhd $*",${-3--1}
-
 
 #@gui User-Defined : fx_colorgrade_userdefined, fx_colorgrade_userdefined_preview(1)+
 #@gui : Specify HaldCLUT As = choice(2,"Top Layer","Bottom Layer","Filename")
