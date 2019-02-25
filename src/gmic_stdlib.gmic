@@ -6093,10 +6093,18 @@ compress_cluts :
     filename={t} 0 nm. $filename ext={x} rm
     basename $filename
     l[] ({'${}'}) replace_str .$ext,"" basename={t} rm endl
+    need_compression=1
 
     if cclut_$basename.gmz
-      v + e[] "* Skip file '"$filename"' (CLUT already compressed)." v -
-    else
+      i cclut_$basename.gmz
+      if {h!=2048}
+        v + e[] "* Skip file '"$filename"' (CLUT already compressed)." v -
+        need_compression=0
+      fi
+      rm.
+    fi
+
+    if $need_compression
       if {lowercase(['$ext'])=='cube'} input_cube $filename
       elif {lowercase(['$ext'])=='png'} i $filename S={round(cbrt(wh))} r $S,$S,$S,100%,-1
       else v + e[] "* Skip file '"$filename"' (unknown CLUT format)." v - continue
