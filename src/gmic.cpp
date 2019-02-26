@@ -6060,7 +6060,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           capture_height = cimg::round(capture_height);
           if (!nb_frames) {
             print(images,0,"Release camera #%g.",cam_index);
-            CImg<T>::get_load_camera((unsigned int)cam_index,0,true);
+            CImg<T>::get_load_camera((unsigned int)cam_index,0,0,0,true);
           } else {
             if (capture_width)
               print(images,0,"Insert %g image%s from camera #%g, with %g frames skipping "
@@ -6085,8 +6085,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 std::fflush(cimg::output());
                 cimg::mutex(29,0);
               }
-              CImg<T>::get_load_camera((unsigned int)cam_index,(unsigned int)skip_frames,false,
-                                       (unsigned int)capture_width,(unsigned int)capture_height).
+              CImg<T>::get_load_camera((unsigned int)cam_index,
+                                       (unsigned int)capture_width,(unsigned int)capture_height,
+                                       (unsigned int)skip_frames,false).
                 move_to(images);
               images_names.insert(name);
             }
