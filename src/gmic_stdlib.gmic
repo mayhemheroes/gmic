@@ -3866,9 +3866,10 @@ update_instimg :
   o $HOME/work/src/gmic/resources/gmic_instimg_small.bmp
   rm
 
-# Generate Color Grading page for the G'MIC website.
+# Generate Color Presets page for the G'MIC website.
 # Input images : samples you want to generate
-update_color_grading_html :
+# $1 = upload to G'MIC server, can be { 0 | 1 }.
+update_color_presets_html : check "isbool(${1=0})"
   if {!$!} error[^-1] "Command '$0': Missing input images !" fi
   v -
 
@@ -3876,8 +3877,12 @@ update_color_grading_html :
   jpeg_quality=70   # Set JPEG quality of output images.
   thumb_width=180   # Set thumbnail width.
   thumb_height=90   # Set mini thumbnail height.
-  categories=creative,bw,instant_consumer,instant_pro,fujixtransiii,negative_color,negative_new,negative_old,print,colorslide,picturefx,others
-  category_names="Creative Pack",\
+  categories=creative,lutifyme,picturefx,others,\
+             bw,instant_consumer,instant_pro,fujixtransiii,negative_color,negative_new,negative_old,print,colorslide
+  category_names="Creative: Creative Pack",\
+                 "Creative: Lutify.Me",\
+                 "Creative: PictureFX",\
+                 "Creative: Others",\
                  "Films: Black and White",\
                  "Films: Instant [Consumer]",\
                  "Films: Instant [Pro]",\
@@ -3886,10 +3891,11 @@ update_color_grading_html :
                  "Films: Negative [New]",\
                  "Films: Negative [Old]",\
                  "Films: Print Films",\
-                 "Films: Slide [Color]",\
-                 "PictureFX",\
-                 "Others"
+                 "Films: Slide [Color]"
   category_authors="RawTherapee",\
+                   "Lutify.Me",\
+                   "Marc Roovers",\
+                   0,\
                    "Pat David",\
                    "Pat David",\
                    "Pat David",\
@@ -3898,10 +3904,11 @@ update_color_grading_html :
                    "Pat David",\
                    "Pat David",\
                    "Juan Melara",\
-                   "Pat David",\
-                   "Marc Roovers",\
-                   0
+                   "Pat David"
   category_authors_url="https://rawpedia.rawtherapee.com/Film_Simulation",\
+                       "https://lutify.me/free-luts/",\
+                       "http://www.digicrea.be/haldclut-set-style-a-la-nik-software",\
+                       0,\
                        "http://blog.patdavid.net/2013/08/film-emulation-presets-in-gmic-gimp.html",\
                        "http://blog.patdavid.net/2013/08/film-emulation-presets-in-gmic-gimp.html",\
                        "http://blog.patdavid.net/2013/08/film-emulation-presets-in-gmic-gimp.html",\
@@ -3910,9 +3917,7 @@ update_color_grading_html :
                        "http://blog.patdavid.net/2013/08/film-emulation-presets-in-gmic-gimp.html",\
                        "http://blog.patdavid.net/2013/08/film-emulation-presets-in-gmic-gimp.html",\
                        "http://juanmelara.com.au/print-film-emulation-luts-for-download",\
-                       "http://blog.patdavid.net/2013/08/film-emulation-presets-in-gmic-gimp.html",\
-                       "http://www.digicrea.be/haldclut-set-style-a-la-nik-software",\
-                       0
+                       "http://blog.patdavid.net/2013/08/film-emulation-presets-in-gmic-gimp.html"
 
   m "_thumb : frame 3%,3%,255 to_rgba drop_shadow 2,2,3 repeat $! l[$>] i[0] 100%,100%,1,3,245 blend alpha endl done"
   m "_title : ({'\"$""*\"'}) replace_str. \"_\",\" \" replace_str. \"iii\",\"III\" f. \"(!y || j(0,-1)==32) && i>=_'a' && i<=_'z'?uppercase(i):i\" u {t} rm."
@@ -3955,7 +3960,8 @@ update_color_grading_html :
     +to[0] "Reference",4,{0,h-28},20,2 frame. 1,1,0
     o. original/$basename.jpg,$jpeg_quality rm.
     +_thumb[1] o. original/thumb_$basename.jpg,$jpeg_quality rm.
-    +r2dy[0] $thumb_height _thumb. o. original/minithumb_$basename.jpg,$jpeg_quality rm.
+    +r2dy[0] $thumb_height r. {h},{h},1,100%,0,0,0.5,0.5 _thumb.
+    o. original/minithumb_$basename.jpg,$jpeg_quality rm.
   endl done
 
   # Generate color grading data and rendering on each input sample.
@@ -4123,6 +4129,10 @@ with or endorsed by the companies that own the trademarks.</i></font></p>\n\n
   rm
   category=${arg\ 1,$categories}
   x "ln -fs "${category}_$basename0.shtml" index.shtml"
+  if $1
+    v + e[] "\n  * Transfer color presets on G'MIC server.\n" v -
+    x "lftp ftp://"$GMIC_LOGIN":"$GMIC_PASSWD"@ftp.gmic.eu -e \"mirror -eRL . /www/gmic/color_presets ; quit\""
+  fi
   v + e[] "\n > All done, for "$nb_presets" presets.\n"
 
 # Generate gallery page for the G'MIC website.
