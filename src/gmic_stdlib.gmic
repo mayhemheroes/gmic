@@ -6189,7 +6189,7 @@ decompress_clut_rbf : check "isint(${1=48}) && $1>0 && isint(${2=$1}) && $2>0 &&
     $1,$2,$3,{s-3},"*
       begin(
         rbf(_r) = (r = _r; r^2*log(1 + r));
-        xyz(p) = (I[#0,p])[0,3]*([w,h,d]-1)/255;
+        xyz(p) = (I[#0,p])[0,3]*([w,h,d] - 1)/255;
         const N = h#0;
         const N2 = N^2;
         const Ns = N*s;
@@ -6199,6 +6199,14 @@ decompress_clut_rbf : check "isint(${1=48}) && $1>0 && isint(${2=$1}) && $2>0 &&
           for (q = p, q<N, ++q,  A[q + N*p] = A[p + N*q] = rbf(norm(xyz(p) - xyz(q))));
           copy(B[s*p],(I[#0,p])[3,s],s);
         );
+
+       # eig = eig(A);
+       # D = diag(eig[0,N]^-1);
+       # U = eig[N,N2];
+       # Ut = transp(U,N);
+       # invA = mul(mul(Ut,D,N),U,N);
+       # W = mul(invA,B,s);
+
         W = solve(A,B,s);
       );
       res = vectors(0);
