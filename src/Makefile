@@ -166,8 +166,8 @@ PRERELEASE_CFLAGS = -Dgmic_prerelease="\\\"$(PRERELEASE)\\\""
 MANDATORY_CFLAGS = -Dgmic_build -Dcimg_date=\\\"\\\" -Dcimg_time=\\\"\\\" -Dcimg_use_zlib $(shell pkg-config --cflags zlib || echo -I$(USR)/$(INCLUDE)) $(PRERELEASE_CFLAGS) $(EXTRA_CFLAGS)
 MANDATORY_LIBS = $(shell pkg-config --libs zlib || echo -lz) $(EXTRA_LIBS)
 
-MANDATORY_CFLAGS += -Dcimg_use_lapack
-MANDATORY_LIBS += -lblas -llapack
+#MANDATORY_CFLAGS += -Dcimg_use_lapack
+#MANDATORY_LIBS += -lblas -llapack
 
 ifndef NO_SRIPDLIB
 MANDATORY_CFLAGS += -std=c++11 -pedantic
