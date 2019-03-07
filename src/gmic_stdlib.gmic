@@ -6109,7 +6109,7 @@ compress_cluts :
     basename $filename
     l[] ({'${}'}) replace_str .$ext,"" basename={t} rm endl
     need_compression=1
-    cclut=cclut_$basename.gmz
+    cclut=cclut_rbf_$basename.gmz
 
     if $cclut
       i $cclut
@@ -6126,7 +6126,7 @@ compress_cluts :
     fi
 
     if $need_compression
-      0 o. cclut_$basename.gmz rm. # Lock current file
+      0 o. $cclut rm. # Lock current file
       if {lowercase(['$ext'])=='cube'} input_cube $filename
       elif {lowercase(['$ext'])=='png'} i $filename S={round(cbrt(wh))} r $S,$S,$S,100%,-1
       else v + e[] "* Skip file '"$filename"' (unknown CLUT format)." v - continue
@@ -6136,7 +6136,7 @@ compress_cluts :
       if {w>64} r3dx 64 fi
       to_rgb
       v + tic compress_clut ,,2047 toc v -
-      o cclut_$basename.gmz
+      o $cclut
     fi
   endl done v +
 
