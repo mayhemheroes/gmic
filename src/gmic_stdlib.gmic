@@ -1531,7 +1531,7 @@ clut : check "isval(${2=48}) && $2>0"
         rm
       done
       if {!$!} v + error[0--4] "Command '$0': Unknown CLUT name '"$name"'." fi
-      decompress_clut_pde $2,$2,$2 round c 0,255 to_rgb
+      decompress_clut $2,$2,$2 round c 0,255 to_rgb
       o. ${_path_rc}clut_$name.cimgz,uchar
     fi
     nm "[CLUT: "$name"]" k.
@@ -6180,12 +6180,12 @@ compress_rle : skip ${1=0} check "isint(${2=0}) && $2>=0"
 #@cli : $ image.jpg +add 30% cut[-1] 0,255
 #@cli : $ image.jpg +cut 25%,75%
 
-#@cli decompress_clut : _width>0,_height>0,_depth>0
+#@cli decompress_clut_rbf : _width>0,_height>0,_depth>0
 #@cli : Decompress selected colored keypoints into 3D CLUTs, using thin plate spline interpolation.
 #@cli : Default value: 'width=height=depth=48'.
-decompress_clut : check "isint(${1=48}) && $1>0 && isint(${2=$1}) && $2>0 && isint(${3=$1}) && $3>0"
+decompress_clut_rbf : check "isint(${1=48}) && $1>0 && isint(${2=$1}) && $2>0 && isint(${3=$1}) && $3>0"
   e[^-1] "Decompress colored keypoint$? into $1x$2x$3 CLUTs."
-  v - repeat $! l[$>]
+  v - repeat $! l[$>] nm={n}
     $1,$2,$3,{s-3},"*
       begin(
         rbf(r) = (r^2*log(1+r));
@@ -6203,15 +6203,15 @@ decompress_clut : check "isint(${1=48}) && $1>0 && isint(${2=$1}) && $2>0 && isi
       );
       res = vectors(0);
       for (p = 0, p<N, ++p, res += W[s*p,s]*rbf(norm([x,y,z] - xyz(p))))"
-    rm..
+    rm.. nm $nm
   endl done v +
 
-#@cli decompress_clut_pde : _width>0,_height>0,_depth>0
+#@cli decompress_clut : _width>0,_height>0,_depth>0
 #@cli : Decompress selected colored keypoints into 3D CLUTs, using multiscale diffusion PDE's.
 #@cli : Default value: 'width=height=depth=64'.
-decompress_clut_pde : check "isint(${1=64}) && $1>0 && isint(${2=$1}) && $2>0 && isint(${3=$1}) && $3>0"
+decompress_clut : check "isint(${1=64}) && $1>0 && isint(${2=$1}) && $2>0 && isint(${3=$1}) && $3>0"
   e[^-1] "Decompress colored keypoint$? into $1x$2x$3 CLUTs."
-  v - repeat $! l[$>]
+  v - repeat $! l[$>] nm={n}
     if {w==6" && "s==1} permute cyzx fi # Manage old way of storing keypoints
     1,1,1,{s-3}
     do
@@ -6235,7 +6235,7 @@ decompress_clut_pde : check "isint(${1=64}) && $1>0 && isint(${2=$1}) && $2>0 &&
         j[-4] ...,0,0,0,0,1,.. k[0,1]
       fi
       if {"w<$1 || h<$2 || d<$3"} r. {[min($1,2*w),min($2,2*h),min($3,2*d)]},100%,3 else break fi
-    while 1 k.
+    while 1 k. nm $nm
   endl done v +
 
 #@cli decompress_rle
