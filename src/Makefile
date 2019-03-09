@@ -265,8 +265,8 @@ endif
 
 # Enable support of the Eigen library.
 # (https://eigen.tuxfamily.org/)
-#EIGEN_CFLAGS = -I$(USR)/include/eigen3  -Dcimg_use_eigen
-#EIGEN_LIBS =
+EIGEN_CFLAGS = -I$(USR)/include/eigen3  -Dcimg_use_eigen
+EIGEN_LIBS =
 
 # Enable native support of JPEG image files, using the JPEG library.
 # (http://libjpeg.sourceforge.net/)
