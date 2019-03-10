@@ -261,17 +261,6 @@ CImg<T> get_copymark() const {
   return res;
 }
 
-CImg<T> get_draw_circle(const int x, const int y, const int r, const T *const col,
-                        const float opacity) const {
-  return (+*this).draw_circle(x,y,r,col,opacity);
-}
-
-CImg<T> get_draw_circle(const int x, const int y, const int r, const T *const col,
-                        const float opacity,
-                        const unsigned int pattern) const {
-  return (+*this).draw_circle(x,y,r,col,opacity,pattern);
-}
-
 CImg<T> get_draw_ellipse(const int x, const int y, const float r0, const float r1,
                          const float angle, const T *const col, const float opacity) const {
   return (+*this).draw_ellipse(x,y,r0,r1,angle,col,opacity);
@@ -6854,8 +6843,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 nx = (int)cimg::round(sepx=='%'?x*(img.width() - 1)/100:x),
                 ny = (int)cimg::round(sepy=='%'?y*(img.height() - 1)/100:y);
               const float
-                nR = cimg::round(sepz=='%'?R*rmax/100:R),
-                nr = cimg::round(sepc=='%'?r*rmax/100:r);
+                nR = sepz=='%'?R*rmax/100:R,
+                nr = sepc=='%'?r*rmax/100:r;
               if (sep=='x') {
                 gmic_apply(draw_ellipse(nx,ny,nR,nr,angle,g_img.data(),opacity,pattern));
               } else {
