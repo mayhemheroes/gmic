@@ -8775,7 +8775,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               noise_type==1?"uniform":
               noise_type==2?"salt&pepper":
               noise_type==3?"poisson":"rice";
-            if (sep=='%') sigma = -sigma;
+            if (sep=='%' && noise_type!=2) sigma = -sigma;
             print(images,0,"Add %s noise to image%s, with standard deviation %g%s.",
                   s_type,
                   gmic_selection.data(),
