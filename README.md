@@ -46,7 +46,7 @@ Other open-source projects are known to use some of the <b><font color="#000066"
 
 -----------------------
 
-# Give Us Support !
+## Give Us Support !
 
   If you appreciate what we do on G'MIC, please consider supporting us !
   We collaborate with ["Association LILA (Libre comme l'Art)"](libreart.info/en/projects/gmic),
