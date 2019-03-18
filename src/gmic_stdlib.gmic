@@ -1513,10 +1513,13 @@ clut : check "isval(${2=48}) && $2>0"
   v - to_clutname "$1" name=${} l[]
   v + e[^-1] "Input CLUT '"$name"' with resolution $2." v -
     path_clut=${_path_rc}
-    if {['$XDG_CACHE_HOME']!=0} path_clut=$XDG_CACHE_HOME/gmic/
-    elif {isdir(['$HOME/.cache'])} path_clut=$HOME/.cache/gmic/
+
+    if ${-is_windows} else
+      if {['$XDG_CACHE_HOME']!=0} path_clut=$XDG_CACHE_HOME/gmic/
+      elif {isdir(['$HOME/.cache'])} path_clut=$HOME/.cache/gmic/
+      fi
+      if {!isdir('$path_clut')} x "mkdir -p "$path_clut fi
     fi
-    if {!isdir('$path_clut')} x "mkdir -p "$path_clut fi
     if ${path_clut}clut_$name.cimgz i ${path_clut}clut_$name.cimgz fi
     if {"!"$!" || w!=$2 || h!=$2 || d!=$2"}
       if {narg($GMIC_SYSTEM_PATH)} g_path_unix=$GMIC_SYSTEM_PATH
@@ -4845,7 +4848,7 @@ update_server :
     replace_str "<i>David Tschumperl&#233;</i>","<i><a href=\""$url"\">David Tschumperl&#233;</a></i>"
     o cimgz:/tmp/update$_version.gmic,uchar
 
-    (250,251,252,253)
+    (250,251,252,253,254)
     repeat {w}
       v={i[$>]}
       _update_server_upload[] ${_path_rc}update$_version.gmic,plain_update$v.gmic
