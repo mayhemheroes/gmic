@@ -1520,30 +1520,26 @@ clut : check "isval(${2=48}) && $2>0"
       if {!isdir('$path_clut')} x "mkdir -p "$path_clut fi
     fi
     if ${path_clut}clut_$name.cimgz i ${path_clut}clut_$name.cimgz fi
-    if {$!"!=1 || w<$2 || h<$2 || d<$2"}
+    if {$!"!=1 || w<$2 || h<$2 || d<$2"} # Decompression needed
+      rm
       if {narg($GMIC_SYSTEM_PATH)} g_path_unix=$GMIC_SYSTEM_PATH
       else g_path_unix=/usr/lib/gimp/2.0/plug-ins/
       fi
-      rm repeat 2
-        if {!$>" && "(\
-            isfile('${_path_rc}gmic_cluts.gmz')" || "\
-            isfile('${-path_gimp}plug-ins/gmic_cluts.gmz')" || "\
-            isfile('${-path_gimp}plug-ins/gmic_gimp_qt/gmic_cluts.gmz')" || "\
-            isfile('${g_path_unix}gmic_cluts.gmz'))}
-          if {isfile('${_path_rc}gmic_cluts.gmz')} i ${_path_rc}gmic_cluts.gmz
-          elif {isfile('${-path_gimp}plug-ins/gmic_cluts.gmz')} i ${-path_gimp}plug-ins/gmic_cluts.gmz
-          elif {isfile('${-path_gimp}plug-ins/gmic_gimp_qt/gmic_cluts.gmz')} i ${-path_gimp}plug-ins/gmic_gimp_qt/gmic_cluts.gmz
-          elif {isfile('${g_path_unix}gmic_cluts.gmz')} i ${g_path_unix}gmic_cluts.gmz
-          fi
-        else l[] i https://gmic.eu/gmic_cluts.gmz o ${_path_rc}gmic_cluts.gmz,uchar endl
-        fi
-        repeat $! if {['{$>,n}']==['$name']} k[$>] break fi done
-        if {$!==1} break fi # CLUT found!
-        rm
+      path_test0=$path_clut
+      path_test1=$_path_rc
+      path_test2=${-path_gimp}plug-ins/
+      path_test3=${-path_gimp}plug-ins/gmic_gimp_qt/
+      path_test4=$g_path_unix
+      repeat 4 file_clut=${path_test$>}/gmic_cluts.gmz
+        if {isfile(['$file_clut'])} i $file_clut break fi
       done
-      if {!$!} v + error[0--4] "Command '$0': Unknown CLUT name '"$name"'." fi
+      if {!$!} # Download from G'MIC server
+        i https://gmic.eu/gmic_cluts.gmz o ${path_clut}gmic_cluts.gmz
+      fi
+      repeat $! if {['{$>,n}']==['$name']} k[$>] break fi done
+      if {$!!=1} v + error[0--4] "Command '$0': Unknown CLUT name '"$name"'." fi
       decompress_clut $2,$2,$2 round c 0,255 to_rgb
-      o. ${path_clut}clut_$name.cimgz,uchar
+      o. ${path_clut}clut_$name.cimgz
     elif {"w>$2 || h>$2 || d>$2"} r $2,$2,$2,3,2 # Downsize from higher resolution
     fi
     nm "[CLUT: "$name"]" k.
