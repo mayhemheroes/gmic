@@ -1512,7 +1512,12 @@ v : # Allow 'gmic +v' to get the version number.
 clut : check "isval(${2=48}) && $2>0"
   v - to_clutname "$1" name=${} l[]
   v + e[^-1] "Input CLUT '"$name"' with resolution $2." v -
-    if ${_path_rc}clut_$name.cimgz i ${_path_rc}clut_$name.cimgz fi
+    path_clut=${_path_rc}
+    if {['$XDG_CACHE_HOME']!=0} path_clut=$XDG_CACHE_HOME/gmic/
+    elif {isdir(['$HOME/.cache'])} path_clut=$HOME/.cache/gmic/
+    fi
+    if {!isdir('$path_clut')} x "mkdir -p "$path_clut fi
+    if ${path_clut}clut_$name.cimgz i ${path_clut}clut_$name.cimgz fi
     if {"!"$!" || w!=$2 || h!=$2 || d!=$2"}
       if {narg($GMIC_SYSTEM_PATH)} g_path_unix=$GMIC_SYSTEM_PATH
       else g_path_unix=/usr/lib/gimp/2.0/plug-ins/
@@ -1536,7 +1541,7 @@ clut : check "isval(${2=48}) && $2>0"
       done
       if {!$!} v + error[0--4] "Command '$0': Unknown CLUT name '"$name"'." fi
       decompress_clut $2,$2,$2 round c 0,255 to_rgb
-      o. ${_path_rc}clut_$name.cimgz,uchar
+      o. ${path_clut}clut_$name.cimgz,uchar
     fi
     nm "[CLUT: "$name"]" k.
   endl v +
