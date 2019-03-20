@@ -32824,8 +32824,8 @@ fx_apply_multiscale_preview :
 #@gui : Tends to Be Square = bool(0)
 #@gui : Force Transparency = bool(1)
 #@gui : Display layer name = bool(0)
-#@gui : Font size (%) = float(5,0,10)_0
-#@gui : Font opacity (%) = float(85,0,100)_0
+#@gui : Font height (px) = float(16,0,64)_0
+#@gui : Font colors = choice(1,"White on black","Black on white")_0
 #@gui : sep = separator()
 #@gui : Output Coordinates File = _bool(0)
 #@gui : Output Folder = _folder()
@@ -32834,7 +32834,13 @@ fx_apply_multiscale_preview :
 #@gui : This problem being NP-hard, the algorithm finds (of course) a <b>non-optimal</b>, but often acceptable solution to this packing problem.</small>"}
 #@gui : sep = separator(), note = note("<small>Author: <i>David Tschumperl&#233;</i>.      Latest Update: <i>2019/03/20</i>.</small>")
 fx_pack : skip "${8=}"
-  if $4 drgba repeat $! gui_layer_name[$>] nm=${} to[$>] {``$nm},1%,1%,$5%,1,{$6%} done fi
+  if $4 to_rgba repeat $! l[$>] gui_layer_name nm=${}
+    0 t. {``$nm},3,0,$5,1,1 frame. 1,1,0
+    if $6 *. -1 fi
+    n. 0,255 to_rgba. r. {[w+2,h+1,1,4]},0,0,0,1
+    rv a y,{w#0>w?0.5:0}
+  endl done
+  fi
   if $3 to_a fi
   repeat $! gui_layer_name[$>] nm$>=${} nm[$>] {`lowercase(['${nm$>}'])`} done
   c0="w" c1="h" c2="max(w,h)" c3="w*h" c4="n"
@@ -32848,6 +32854,7 @@ fx_pack : skip "${8=}"
     done a x o raw:$filename,uchar rm endl
   fi
   nm "name(G'MIC packing),pos(0,0),mode(normal)"
+  if $4 autocrop fi
 
 fx_pack_preview :
   if {!$!} return fi
