@@ -16408,32 +16408,31 @@ pack : skip ${1=0},${2=max(w,h)}
   nm={0,n} to_colormode 0
 
   # Sort images by decreasing size.
-  repeat $! nm$>={0,n} nm[$>] $> done
-  if {['$2']=='n'} sort_list +,n
-  else sort_list -,"$2"
-  fi
+  repeat $! nm$>={$>,n} nm[$>] ${nm$>}:$> done
+  m "_pack : ({'{n}'}) l. s +,{':'} u {t} rm endl"
+  if {['$2']=='n'} sort_list +,n else sort_list -,"$2" fi
 
   # Start packing
-  offsets{0,n}=0,0
+  offsets${-_pack[0]}=0,0
   N=$!
   i[0] 0 # List of empty slots.
 
   do l[0,1,2]
-    w1={1,w} h1={1,h} w2={2,w} h2={2,h}
+    w1,h1,w2,h2={[w#1,h#1,w#2,h#2]}
 
     # Search an empty slot that fits.
-    slot=-1 min_slot_area=inf
+    slot,min_slot_area=-1,inf
     repeat {0,h}
-      x={0,i(0,$>)} y={0,i(1,$>)} w={0,i(2,$>)} h={0,i(3,$>)}
+      x,y,w,h={0,crop(0,$>,4,1)}
       slot_area={$w*$h}
       if {$w>=$w2" && "$h>=$h2" && "$slot_area<=$min_slot_area} # Found a fit.
-        slot=$> min_slot_area=$slot_area
+        slot,min_slot_area=$>,$slot_area
       fi
     done
 
     if {$slot>=0} # Empty slot found -> Use it.
-      x={0,i(0,$slot)} y={0,i(1,$slot)} w={0,i(2,$slot)} h={0,i(3,$slot)}
-      j[1] [2],$x,$y offsets{2,n}=$x,$y
+      x,y,w,h={0,crop(0,$slot,4,1)}
+      j[1] [2],$x,$y offsets${-_pack[2]}=$x,$y
       l[0]
         s y rm[$slot]
         area1={max(($w-$w2)*$h,$w2*($h-$h2))}
@@ -16459,13 +16458,13 @@ pack : skip ${1=0},${2=max(w,h)}
       fi
 
       if {$metric_h<=$metric_v} # Append horizontally.
-        offsets{2,n}=$w1,0
+        offsets${-_pack[2]}=$w1,0
         a[1,2] x,0
         if {$h2<$h1} ($w1,$h2,$w2,{$h1-$h2}) a[0,-1] y
         elif {$h2>$h1} (0,$h1,$w1,{$h2-$h1}) a[0,-1] y
         fi
       else # Append vertically.
-        offsets{2,n}=0,$h1
+        offsets${-_pack[2]}=0,$h1
         a[1,2] y,0
         if {$w2<$w1} ($w2,$h1,{$w1-$w2},$h2) a[0,-1] y
         elif {$w2>$w1} ($w1,0,{$w2-$w1},$h1) a[0,-1] y
@@ -16480,7 +16479,7 @@ pack : skip ${1=0},${2=max(w,h)}
   status=
   repeat $N if {narg($status)} status=$status,${offsets$>} else status=${offsets$>} fi done
   nm $nm u $status
-  v +
+  uncommand _pack v +
 
 #@cli puzzle : _width>0,_height>0,_M>=1,_N>=1,_curvature,_centering,_connectors_variability,_resolution>=1
 #@cli : Input puzzle binary mask with specified size and geometry.
