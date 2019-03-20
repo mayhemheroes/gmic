@@ -5574,8 +5574,8 @@ sort_list : skip ${1=+},${2=i}
         if {h>1} r. 2,{h-1},1,1,0 else rm. 0 fi
         pivot={{int(($lo+$hi)/2)},n}
         do if {$lo<=$hi}
-          do if ${_sort_list_lexi\ \"{$lo,n}\",\"$pivot\",$op} lo+=1 else break fi while 1
-          do if ${_sort_list_lexi\ \"$pivot\",\"{$hi,n}\",$op} hi-=1 else break fi while 1
+          do _sort_list_lexi {``{$lo,n}},{``$pivot},{``$op} if ${} lo+=1 else break fi while 1
+          do _sort_list_lexi {``$pivot},{``{$hi,n}},{``$op} if ${} hi-=1 else break fi while 1
           if {$lo<=$hi} rv[$lo,$hi] lo+=1 hi-=1 fi
         else break fi while 1
         if {$lo0<$hi} ($lo0,$hi) a[-2,-1] y fi
@@ -16409,7 +16409,9 @@ pack : skip ${1=0},${2=max(w,h)}
 
   # Sort images by decreasing size.
   repeat $! nm$>={0,n} nm[$>] $> done
-  sort_list -,"$2"
+  if {['$2']=='n'} sort_list +,n
+  else sort_list -,"$2"
+  fi
 
   # Start packing
   offsets{0,n}=0,0
@@ -32819,7 +32821,7 @@ fx_apply_multiscale_preview :
   endl done
 
 #@gui Pack : fx_pack, fx_pack_preview(1)
-#@gui : Order By = choice(2,"Width","Height","Maximum Dimension","Area")
+#@gui : Order By = choice(2,"Width","Height","Maximum Dimension","Area","Name")
 #@gui : Tends to Be Square = bool(0)
 #@gui : Force Transparency = bool(1)
 #@gui : Display layer name = bool(0)
@@ -32831,12 +32833,12 @@ fx_apply_multiscale_preview :
 #@gui : sep = separator()
 #@gui : note = note{"<small>This filter tries to pack all input layers into a single image, while trying to minimize the empty areas.
 #@gui : This problem being NP-hard, the algorithm finds (of course) a <b>non-optimal</b>, but often acceptable solution to this packing problem.</small>"}
-#@gui : sep = separator(), note = note("<small>Author: <i>David Tschumperl&#233;</i>.      Latest Update: <i>2015/11/05</i>.</small>")
+#@gui : sep = separator(), note = note("<small>Author: <i>David Tschumperl&#233;</i>.      Latest Update: <i>2019/03/20</i>.</small>")
 fx_pack : skip "${8=}"
-  if $4 drgba repeat $! nm=${gui_layer_name[$>]} to[$>] $nm,1%,1%,$5%,1,{$6%} done fi
+  if $4 drgba repeat $! gui_layer_name[$>] nm=${} to[$>] {``$nm},1%,1%,$5%,1,{$6%} done fi
   if $3 to_a fi
-  if $7 repeat $! nm$>=${gui_layer_name[$>]} done fi
-  c0="w" c1="h" c2="max(w,h)" c3="w*h"
+  repeat $! gui_layer_name[$>] nm$>=${} nm[$>] {`lowercase(['${nm$>}'])`} done
+  c0="w" c1="h" c2="max(w,h)" c3="w*h" c4="n"
   pack $2,${c$1} coords=${}
   if $7
     repeat 256 filename "$8/gmic_pack.txt",$> filename=${} if $filename else break fi done
