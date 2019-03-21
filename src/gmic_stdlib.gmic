@@ -3760,7 +3760,7 @@ _sample :
     name=${_sp_name${arg{1+$>}}}
 
     # Retrieve image data.
-    filename=${_path_rc}sample_$name.png
+    filename=${-path_cache}sample_$name.png
     url=https://gmic.eu/img/sample_$name.png
     if $filename $filename
     else
@@ -20075,13 +20075,18 @@ padint : check "isint($1)" skip ${2=4}
 #@cli path_cache
 #@cli : Return a path to store G'MIC data files for one user (whose value is OS-dependent).
 path_cache :
-  u $_path_rc
-  if {!${-is_windows}}
-    if {['$XDG_CACHE_HOME']!=0} u $XDG_CACHE_HOME/gmic/
-    elif {isdir(['$HOME/.cache'])} u $HOME/.cache/gmic/
+  v -
+  if {!narg({'$_path_cache'})}
+    _path_cache=$_path_rc
+    if {!${-is_windows}}
+      if {['$XDG_CACHE_HOME']!=0} _path_cache=$XDG_CACHE_HOME/gmic/
+      elif {isdir(['$HOME/.cache'])} _path_cache=$HOME/.cache/gmic/
+      fi
+      if {!isdir('$_path_cache')} x "mkdir -p "$_path_cache fi
     fi
-    if {!isdir('${}')} x "mkdir -p "${} fi
   fi
+  u $_path_cache
+  v +
 
 #@cli path_gimp
 #@cli : Return a path to store GIMP configuration files for one user (whose value is OS-dependent).
@@ -25179,7 +25184,7 @@ _gui_download_all_data :
    repeat {narg(${_filenames_$1})}
      filename=${_prefix_$1}${arg\ 1+$>,${_filenames_$1}}.${_ext_$1}
      v + e[] "Download "$filename v -
-     if {$2" || "!isfile('${_path_rc}$filename')} l[] ${_url_$1}/$filename o ${_path_rc}$filename rm onfail endl fi
+     if {$2" || "!isfile('${-path_cache}$filename')} l[] ${_url_$1}/$filename o ${-path_cache}$filename rm onfail endl fi
      progress {100*$_n/$_N}
      _n+=1
    done
@@ -30934,8 +30939,8 @@ _fx_simulate_grain_preview :
 
 __fx_simulate_grain :
   bm0=alpha bm1=grainmerge bm2=hardlight bm3=overlay bm4=softlight bm5=alpha
-  if ${_path_rc}$1.cimgz i ${_path_rc}$1.cimgz
-  else i https://gmic.eu/data_film_presets/$1.cimgz o. ${_path_rc}$1.cimgz
+  if ${-path_cache}$1.cimgz i ${-path_cache}$1.cimgz
+  else i https://gmic.eu/data_film_presets/$1.cimgz o. ${-path_cache}$1.cimgz
   fi
 
   repeat {$!-1} l[$>,-1] split_opacity[0]
@@ -33382,8 +33387,8 @@ fx_lightglow_preview :
 #@gui : sep = separator(), note = note("<small>Author: <i>David Tschumperl&#233;</i>.      Latest Update: <i>2015/01/07</i>.</small>")
 fx_light_leaks :
   filename=lightleak_${"padint $1",6}.cimgz
-  if ${_path_rc}$filename i ${_path_rc}$filename
-  else i https://gmic.eu/data_lightleaks/$filename o. ${_path_rc}$filename
+  if ${-path_cache}$filename i ${-path_cache}$filename
+  else i https://gmic.eu/data_lightleaks/$filename o. ${-path_cache}$filename
   fi
   mode=${arg\ 1+$7,normal,lighten,screen,dodge,add,darken,multiply,burn,overlay,softlight,hardlight,difference,subtract,grainextract,grainmerge,divide,hue,saturation,value}
   mv. 0
