@@ -1512,13 +1512,7 @@ v : # Allow 'gmic +v' to get the version number.
 clut : check "isval(${2=48}) && $2>0"
   v - to_clutname "$1" name=${} l[]
   v + e[^-1] "Input CLUT '"$name"' with resolution $2." v -
-    path_clut=${_path_rc}
-    if {!${-is_windows}}
-      if {['$XDG_CACHE_HOME']!=0} path_clut=$XDG_CACHE_HOME/gmic/
-      elif {isdir(['$HOME/.cache'])} path_clut=$HOME/.cache/gmic/
-      fi
-      if {!isdir('$path_clut')} x "mkdir -p "$path_clut fi
-    fi
+    path_clut=${-path_cache}
     if ${path_clut}clut_$name.cimgz i ${path_clut}clut_$name.cimgz fi
     if {$!"!=1 || w<$2 || h<$2 || d<$2"} # Decompression needed
       rm
@@ -20077,6 +20071,17 @@ _oct2dec :
 #@cli : Return a integer with 'size' digits (eventually left-padded with '0').
 padint : check "isint($1)" skip ${2=4}
   v - u "" repeat $2 u ${}{int($1/10^$<)%10} done v +
+
+#@cli path_cache
+#@cli : Return a path to store G'MIC data files for one user (whose value is OS-dependent).
+path_cache :
+  u $_path_rc
+  if {!${-is_windows}}
+    if {['$XDG_CACHE_HOME']!=0} u $XDG_CACHE_HOME/gmic/
+    elif {isdir(['$HOME/.cache'])} u $HOME/.cache/gmic/
+    fi
+    if {!isdir('${}')} x "mkdir -p "${} fi
+  fi
 
 #@cli path_gimp
 #@cli : Return a path to store GIMP configuration files for one user (whose value is OS-dependent).
