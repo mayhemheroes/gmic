@@ -7654,6 +7654,15 @@ _rgb2hsx8 :
     sh[$>] 1,2 *. 255 rm.
   done
 
+#@cli rgb2int
+#@cli : Convert color representation of selected images from RGB to INT24 scalars.
+#@cli : $ image.jpg rgb2int
+rgb2int :
+  e[^-1] "Convert color representation of image$? from RGB to INT24 scalars."
+  v - to_rgb round repeat $! l[$>]
+    s c <<[0] 16 <<[1] 8 +
+  endl done v +
+
 #@cli rgb2lab : illuminant={ 0=D50 | 1=D65 } : (no arg)
 #@cli : Convert color representation of selected images from RGB to Lab.
 #@cli : Default value: 'illuminant=1'.
@@ -7710,14 +7719,38 @@ rgb2luv :
     +*... 13 *... . *[-2,-1] a c
   endl done v +
 
-#@cli rgb2int
-#@cli : Convert color representation of selected images from RGB to INT24 scalars.
-#@cli : $ image.jpg rgb2int
-rgb2int :
-  e[^-1] "Convert color representation of image$? from RGB to INT24 scalars."
-  v - to_rgb round repeat $! l[$>]
-    s c <<[0] 16 <<[1] 8 +
-  endl done v +
+#@cli rgb2ryb
+#@cli : Convert color representation of selected images from RGB to RYB.
+#@cli : $ image.jpg rgb2ryb split c
+rgb2ryb :
+  e[^-1] "Convert color representation of image$? from RGB to RYB."
+  v - to_color
+  f "red = R;
+     green = G;
+     blue = B;
+     white = min(red,green,blue);
+     red-=white;
+     green-=white;
+     blue-=white;
+     maxgreen = max(red,green,blue);
+     yellow = min(red,green);
+     red-=yellow;
+     green-=yellow;
+     blue>0 && green>0?(blue/=2; green/=2);
+     yellow+=green;
+     blue+=green;
+     maxyellow = max(red,yellow,blue);
+     maxyellow>0?(
+       N = maxgreen/maxyellow;
+       red*=N;
+       yellow*=N;
+       blue*=N;
+     );
+     red+=white;
+     yellow+=white;
+     blue+=white;
+     [ red,yellow,blue ]"
+  v +
 
 #@cli rgb2srgb
 #@cli : Convert color representation of selected images from linear RGB to sRGB.
@@ -7822,6 +7855,38 @@ remove_opacity :
     elif {s==4} channels 0,2
     fi
   nm {n} endl done v +
+
+#@cli ryb2rgb
+#@cli : Convert color representation of selected images from RYB to RGB.
+ryb2rgb :
+  e[^-1] "Convert color representation of image$? from RYB to RGB."
+  v - to_color
+  f "red = R;
+     yellow = G;
+     blue = B;
+     white = min(red,yellow,blue);
+     red-=white;
+     yellow-=white;
+     blue-=white;
+     maxyellow = max(red,yellow,blue);
+     green = min(yellow,blue);
+     yellow-=green;
+     blue-=green;
+     blue>0 && green>0?(blue*=2; green*=2);
+     red+=yellow;
+     green+=yellow;
+     maxgreen = max(red,green,blue);
+     maxgreen>0?(
+       N = maxyellow/maxgreen;
+       red*=N;
+       green*=N;
+       blue*=N;
+     );
+     red+=white;
+     green+=white;
+     blue+=white;
+     [ red,green,blue ]"
+  v +
 
 #@cli select_color : tolerance[%]>=0,col1,...,colN
 #@cli : Select pixels with specified color in selected images.
