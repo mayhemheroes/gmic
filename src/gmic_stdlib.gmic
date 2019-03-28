@@ -4676,6 +4676,14 @@ update_server :
             nb_filters+=1
             i[0,1] (32) a y
             v + e[] $_gmic_c"  "$nb_filters". "$_gmic_n$name" ("{round($>*$progress_factor)}"%)." v -
+            nm $name
+
+            # Force filter to move if necessary.
+            repeat $_nbm if {['$name']==['${_to_move$>}']}
+              v + e[] $_gmic_m"       -> Moved to '"${_move_to$>}$_gmic_n"'." v -
+              nm ${_move_to$>}/{b}
+            fi done
+            is_testing={same(['{n}'],'/Testing/',9)}
 
           else # Found new folder (opt. parent(s)).
 
@@ -4705,7 +4713,7 @@ update_server :
           if {$!>=3} if {{1,@0}==_'='}
             if {find(#0,'"<span "')<0}
               rows[0] 1,100%
-              _update_server_calibrate_name[0]
+              if {!$is_testing} _update_server_calibrate_name[0] fi
               i[0] ({':'};32) i[2] (32)
             fi
           fi fi
@@ -4727,13 +4735,6 @@ update_server :
   done
 
   a[$merge_start--1] y # Final merge.
-
-  # Force filters to move if necessary.
-  v + e[] "\n> Force filters to move, if necessary." v -
-  repeat $!,ind repeat $_nbm if {['{$ind,n}']==['${_to_move$>}']}
-    v + e[] $_gmic_c"  "$ind$_gmic_n". Move '"${_gmic_g}{$ind,n}$_gmic_n"' to '"$_gmic_g${_move_to$>}$_gmic_n"'." v -
-    nm[$ind] ${_move_to$>}/{$ind,b}
-  fi done done
 
   # Sort filter code by lexicographical order.
   v + e[] "\n> Sort filters by lexicographic order." v -
@@ -4896,7 +4897,7 @@ _update_server_calibrate_name :
   repeat $! l[$>]
     s +,{'" "'} s +,{'"/"'} s +,{'"["'} s +,{'"<"'} s +,{'"("'} s +,{'">"'} s +,{'"-"'}
     first={"ind = 0; while (ind<l && (c = lowercase(i[#ind,0]); !((c>=_'a' && c<=_'z') || (c>=_'0' && c<=_'9'))), ++ind); ind<l?ind:0"}
-    f "x+y?i:( # Capitalize all words except a few ones
+    f "x+y || h<=2?i:( # Capitalize all words except a few ones
        s = crop();
        s=='a' || s=='an' || s=='and' ||
        s=='as' || s=='at' || s=='but' || s=='by' ||
@@ -4931,7 +4932,7 @@ _update_server_calibrate_name :
   if {['{t}']=='Note'} replace_str "Note","note" fi
   if {['{t}']=='Url'} replace_str "Url","url" fi
   out={t}
-  if {['$in']!=['$out']} v + e[] $_gmic_m"       Warning: String '"$in"' substituted by '"$out"'"$_gmic_n v - fi
+  if {['$in']!=['$out']} v + e[] $_gmic_g"       Warning: String '"$in"' substituted by '"$out"'"$_gmic_n v - fi
 
 _update_server_move :
   if {!narg($_nbm)} _nbm=0 fi
