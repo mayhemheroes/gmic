@@ -4928,6 +4928,9 @@ _update_server_calibrate_name :
   replace_str "Min-T","Min-t"
   replace_str "Max-T","Max-t"
   replace_str "SRGB","sRGB"
+  replace_str " i "," I "
+  replace_str " Ii "," II "
+  replace_str " Iii "," III "
   if {['{t}']=='Sep'} replace_str "Sep","sep" fi
   if {['{t}']=='Note'} replace_str "Note","note" fi
   if {['{t}']=='Url'} replace_str "Url","url" fi
@@ -28338,7 +28341,7 @@ fx_colorblind_preview :
 fx_color_presets :
   category=${arg\ 1+$1,creative,filtergrade,lutifyme,on1,picturefx,rocketstock,smallhd,others}
   presets=${-_fx_cluts_$category}
-   index={arg(1+$1,${2-9})}
+  index={arg(1+$1,${2-9})}
   thumbsize,strength,brightness,contrast,gamma,hue,saturation,normalize=${10-17}
   if {$normalize==1" || "$normalize==3} repeat $! l[$>] split_opacity balance_gamma[0] , a c endl done fi # Pre-normalization
   if {$index>=2} # Apply CLUT
@@ -28363,12 +28366,12 @@ fx_color_presets :
         adjust_colors. $brightness,$contrast,$gamma,$hue,$saturation,0,255
         if {$normalize==2" || "$normalize==3} l. split_opacity n[0] 0,255 a c endl fi # Post-normalization
         ({'$clut_name'}) _update_server_calibrate_name. clut_name={t} rm.
-        to. $clut_name,1%,1%,7.5%,1
+        to. $clut_name,1%,1%,7.5%,2,0.5
       done
       rm[$N]
       progress {$>*100/($Np-1)}
     done
-    k[$N--1] frame 1,1,0,0,0,255 - 255 append_tiles {floor(sqrt($!))} + 255
+    k[$N--1] frame 1,1,0,0,0,255 - 128 append_tiles {floor(sqrt($!))} + 128
   fi
 
 fx_color_presets_preview :
@@ -29549,13 +29552,13 @@ fx_sepia_preview :
 #@gui : Category = choice{"Black & White","Instant [Consumer]","Instant [Pro]","Fuji XTrans III","Negative [Color]","Negative [New]","Negative [Old]","Print Films","Slide [Color]"}
 
 ##### Black & White
-#@gui : Preset = choice{1,"All [Collage]",
+#@gui : Preset = choice{1,"All [Collage]","None",
 #@gui : "Agfa APX 100","Agfa APX 25","Fuji Neopan 1600","Fuji Neopan Acros 100","Ilford Delta 100","Ilford Delta 3200","Ilford Delta 400","Ilford FP4 Plus 125",
 #@gui : "Ilford HP5 Plus 400","Ilford HPS 800","Ilford Pan F Plus 50","Ilford XP2","Kodak BW 400 CN","Kodak HIE (HS Infra)","Kodak T-Max 100","Kodak T-Max 3200",
 #@gui : "Kodak T-Max 400","Kodak Tri-X 400","Polaroid 664","Polaroid 667","Polaroid 672","Rollei IR 400","Rollei Ortho 25","Rollei Retro 100 Tonal","Rollei Retro 80s"}_2
 
 ##### Instant [Consumer]
-#@gui : Preset = choice{1,"All [Collage]",
+#@gui : Preset = choice{1,"All [Collage]","None",
 #@gui : "Polaroid PX-100UV+ Cold --","Polaroid PX-100UV+ Cold -","Polaroid PX-100UV+ Cold","Polaroid PX-100UV+ Cold +","Polaroid PX-100UV+ Cold ++","Polaroid PX-100UV+ Cold +++",
 #@gui : "Polaroid PX-100UV+ Warm --","Polaroid PX-100UV+ Warm -","Polaroid PX-100UV+ Warm","Polaroid PX-100UV+ Warm +","Polaroid PX-100UV+ Warm ++","Polaroid PX-100UV+ Warm +++",
 #@gui : "Polaroid PX-680 --","Polaroid PX-680 -","Polaroid PX-680","Polaroid PX-680 +","Polaroid PX-680 ++",
@@ -29568,7 +29571,7 @@ fx_sepia_preview :
 #@gui : "Polaroid Time Zero (Expired) Cold ---","Polaroid Time Zero (Expired) Cold --","Polaroid Time Zero (Expired) Cold -","Polaroid Time Zero (Expired) Cold"}_0
 
 ##### Instant [Pro]
-#@gui : Preset = choice{1,"All [Collage]",
+#@gui : Preset = choice{1,"All [Collage]","None",
 #@gui : "Fuji FP-100c --","Fuji FP-100c -","Fuji FP-100c","Fuji FP-100c (alt)","Fuji FP-100c +","Fuji FP-100c ++","Fuji FP-100c ++a","Fuji FP-100c +++",
 #@gui : "Fuji FP-100c Cool --","Fuji FP-100c Cool -","Fuji FP-100c Cool","Fuji FP-100c Cool +","Fuji FP-100c Cool ++",
 #@gui : "Fuji FP-100c Negative --","Fuji FP-100c Negative -","Fuji FP-100c Negative","Fuji FP-100c Negative +","Fuji FP-100c Negative ++","Fuji FP-100c Negative ++a","Fuji FP-100c Negative +++",
@@ -29586,17 +29589,17 @@ fx_sepia_preview :
 #@gui : "Polaroid 690 Warm --","Polaroid 690 Warm -","Polaroid 690 Warm","Polaroid 690 Warm +","Polaroid 690 Warm ++"}_0
 
 #### Fuji XTrans III
-#@gui : Preset = choice{1,"All [Collage]",
+#@gui : Preset = choice{1,"All [Collage]","None",
 #@gui : "Acros","Acros+G","Acros+R","Acros+Ye","Astia","Classic Chrome","Mono","Mono+G","Mono+R","Mono+Ye",
 #@gui : "Pro Neg Hi","Pro Neg Std","Provia","Sepia","Velvia"}_0
 
 ##### Negative [Color]
-#@gui : Preset = choice{1,"All [Collage]",
+#@gui : Preset = choice{1,"All [Collage]","None",
 #@gui : "Agfa Ultra Color 100","Agfa Vista 200","Fuji Superia 200","Fuji Superia HG 1600","Fuji Superia Reala 100","Fuji Superia X-Tra 800","Kodak Ektar 100",
 #@gui : "Kodak Elite 100 XPRO","Kodak Elite Color 200","Kodak Elite Color 400","Kodak Portra 160 NC","Kodak Portra 160 VC","Lomography Redscale 100"}_0
 
 ##### Negative [New]
-#@gui : Preset = choice{1,"All [Collage]",
+#@gui : Preset = choice{1,"All [Collage]","None",
 #@gui : "Fuji 160C -","Fuji 160C","Fuji 160C +","Fuji 160C ++",
 #@gui : "Fuji 400H -","Fuji 400H","Fuji 400H +","Fuji 400H ++",
 #@gui : "Fuji 800Z -","Fuji 800Z","Fuji 800Z +","Fuji 800Z ++",
@@ -29608,7 +29611,7 @@ fx_sepia_preview :
 #@gui : "Kodak TRI-X 400 -","Kodak TRI-X 400","Kodak TRI-X 400 +","Kodak TRI-X 400 ++","Kodak TRI-X 400 (alt)"}_0
 
 ##### Negative [Old]
-#@gui : Preset = choice{1,"All [Collage]",
+#@gui : Preset = choice{1,"All [Collage]","None",
 #@gui : "Fuji Ilford Delta 3200 -","Fuji Ilford Delta 3200","Fuji Ilford Delta 3200 +","Fuji Ilford Delta 3200 ++",
 #@gui : "Fuji Neopan 1600 -","Fuji Neopan 1600","Fuji Neopan 1600 +","Fuji Neopan 1600 ++",
 #@gui : "Fuji Superia 100 -","Fuji Superia 100","Fuji Superia 100 +","Fuji Superia 100 ++",
@@ -29622,19 +29625,21 @@ fx_sepia_preview :
 #@gui : "Kodak Portra 400 VC -","Kodak Portra 400 VC","Kodak Portra 400 VC +","Kodak Portra 400 VC ++"}_0
 
 ##### Print Films
-#@gui : Preset = choice{1,"All [Collage]","Fuji 3510 (Constlclip)","Fuji 3510 (Constlmap)","Fuji 3510 (Cuspclip)",
+#@gui : Preset = choice{1,"All [Collage]","None",
+#@gui : "Fuji 3510 (Constlclip)","Fuji 3510 (Constlmap)","Fuji 3510 (Cuspclip)",
 #@gui : "Fuji 3513 (Constlclip)","Fuji 3513 (Constlmap)","Fuji 3513 (Cuspclip)",
 #@gui : "Kodak 2383 (Constlclip)","Kodak 2383 (Constlmap)","Kodak 2383 (Cuspclip)",
 #@gui : "Kodak 2393 (Constlclip)","Kodak 2393 (Constlmap)","Kodak 2393 (Cuspclip)"}_0
 
 #### Slide [Color]
-#@gui : Preset = choice{1,"All [Collage]",
+#@gui : Preset = choice{1,"All [Collage]","None",
 #@gui : "Agfa Precisa 100","Fuji Astia 100F","Fuji FP 100C","Fuji Provia 100F","Fuji Provia 400F","Fuji Provia 400X","Fuji Sensia 100",
 #@gui : "Fuji Superia 200 XPRO","Fuji Velvia 50","Generic Fuji Astia 100","Generic Fuji Provia 100","Generic Fuji Velvia 100",
 #@gui : "Generic Kodachrome 64","Generic Kodak Ektachrome 100 VS","Kodak E-100 GX Ektachrome 100","Kodak Ektachrome 100 VS","Kodak Elite Chrome 200",
 #@gui : "Kodak Elite Chrome 400","Kodak Elite ExtraColor 100","Kodak Kodachrome 200","Kodak Kodachrome 25","Kodak Kodachrome 64","Lomography X-Pro Slide 200",
 #@gui : "Polaroid 669","Polaroid 690","Polaroid Polachrome"}_0
 
+#@gui : Thumbnail size = int(512,0,1024)_1
 #@gui : sep = separator()
 #@gui : Strength (%) = float(100,0,100)
 #@gui : Brightness (%) = float(0,-100,100)
@@ -29654,11 +29659,43 @@ fx_simulate_film :
   category=${arg\ 1+$1,bw,instant_consumer,instant_pro,fujixtransiii,negative_color,negative_new,negative_old,print,colorslide}
   presets=${-_fx_cluts_$category}
   index={arg(1+$1,${2-10})}
-  preset=${arg\ {max(1,$index)},$presets}
-  _fx_cluts $index,$preset,${11--1}
+  thumbsize,strength,brightness,contrast,gamma,hue,saturation,normalize=${11-18}
+  if {$normalize==1" || "$normalize==3} repeat $! l[$>] split_opacity balance_gamma[0] , a c endl done fi # Pre-normalization
+  if {$index>=2} # Apply CLUT
+    clut ${arg\ 1+$index-2,$presets}
+    repeat {$!-1} if {$strength<100} +map_clut[$>] . j[$>] .,0,0,0,0,{$strength%} rm. else map_clut[$>] . fi done
+    rm.
+    adjust_colors $brightness,$contrast,$gamma,$hue,$saturation,0,255
+    if {$normalize==2" || "$normalize==3} repeat $! l[$>] split_opacity n[0] 0,255 a c endl done fi # Post-normalization
+
+  elif {$index==1} # "None"
+    adjust_colors $brightness,$contrast,$gamma,$hue,$saturation,0,255
+    if {$normalize==2" || "$normalize==3} repeat $! l[$>] split_opacity n[0] 0,255 a c endl done fi # Post-normalization
+
+  else # Collage
+    repeat $! l[$>] if {max(w,h)>$thumbsize} rr2d $thumbsize,$thumbsize,0,2 fi endl done
+    N=$! +to "Original",1%,1%,7.5%,1
+    Np={narg($presets)} repeat $Np
+      clut_name=${arg\ 1+$>,$presets}
+      clut $clut_name mv. $N
+      repeat $N
+        if {$strength<100} [$>] +map_clut. [$N] j.. .,0,0,0,0,{$strength%} rm. else +map_clut[$>] [$N] fi
+        adjust_colors. $brightness,$contrast,$gamma,$hue,$saturation,0,255
+        if {$normalize==2" || "$normalize==3} l. split_opacity n[0] 0,255 a c endl fi # Post-normalization
+        ({'$clut_name'}) _update_server_calibrate_name. clut_name={t} rm.
+        to. $clut_name,1%,1%,7.5%,2,0.5
+      done
+      rm[$N]
+      progress {$>*100/($Np-1)}
+    done
+    k[$N--1] frame 1,1,0,0,0,255 - 128 append_tiles {floor(sqrt($!))} + 128
+  fi
 
 fx_simulate_film_preview :
-  gui_split_preview "fx_simulate_film $*",${-3--1}
+  index={arg(1+$1,${2-10})}
+  if {!$index} gui_warning_preview "Collage preview is disabled"
+  else gui_split_preview "fx_simulate_film $*",${19-21}
+  fi
   u "{$1}{$2}_"{2*($1==0)}\
         "{$3}_"{2*($1==1)}\
         "{$4}_"{2*($1==2)}\
@@ -29668,7 +29705,8 @@ fx_simulate_film_preview :
         "{$8}_"{2*($1==6)}\
         "{$9}_"{2*($1==7)}\
         "{$10}_"{2*($1==8)}\
-        "{$11}{$12}{$13}{$14}{$15}{$16}{$17}{$18}{$19,$20}"
+        "{$11}_"{1+!$index}\
+        "{$12}{$13}{$14}{$15}{$16}{$17}{$18}{$19}{$20,$21}"
 
 _fx_cluts_bw :
   u agfa_apx_100,agfa_apx_25,fuji_neopan_1600,fuji_neopan_acros_100,ilford_delta_100,ilford_delta_3200,ilford_delta_400,ilford_fp_4_plus_125,\
