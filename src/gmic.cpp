@@ -4629,8 +4629,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           is_command&=*item<'0' || *item>'9';
           if (is_command) { // Look for a builtin command
             const int
-              ind0 = builtin_commands_inds[*command],
-              ind1 = builtin_commands_inds(*command,1);
+              ind0 = builtin_commands_inds[(unsigned int)*command],
+              ind1 = builtin_commands_inds((unsigned int)*command,1);
             if (ind0>=0) is_command = search_sorted(command,builtin_commands_names + ind0,ind1 - ind0 + 1U,__ind);
             if (!is_command) { // Look for a custom command
               hash_custom = hashcode(command,false);
@@ -13504,8 +13504,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
         // New IxJxKxL image specified as array.
         CImg<bool> au(256,1,1,1,false);
-        au['0'] = au['1'] = au['2'] = au['3'] = au['4'] = au['5'] = au['6'] = au['7'] = au['8'] = au['9'] =
-          au['.'] = au['e'] = au['E'] = au['i'] = au['n'] = au['f'] = au['a'] = au['+'] = au['-'] = true;
+        au[(int)'0'] = au[(int)'1'] = au[(int)'2'] = au[(int)'3'] = au[(int)'4'] = au[(int)'5'] = au[(int)'6'] =
+          au[(int)'7'] = au[(int)'8'] = au[(int)'9'] = au[(int)'.'] = au[(int)'e'] = au[(int)'E'] = au[(int)'i'] =
+          au[(int)'n'] = au[(int)'f'] = au[(int)'a'] = au[(int)'+'] = au[(int)'-'] = true;
         unsigned int l, cx = 0, cy = 0, cz = 0, cc = 0, maxcx = 0, maxcy = 0, maxcz = 0;
         const char *nargument = 0;
         CImg<char> s_value(256);
