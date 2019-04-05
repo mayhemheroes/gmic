@@ -6231,9 +6231,9 @@ decompress_clut : check "isint(${1=64}) && $1>0 && isint(${2=$1}) && $2>0 && isi
     do
       +f. 0 .,.,.,1
       if $is_relative
-        eval[0] "PC = I; P = PC[0,3]; X = round(P*([w#1,h#1,d#1] - 1)/255); I(#2,X)+=PC[3,s-3] - P; ++i(#3,X); I"
+        eval[0] "begin(fact = ([w#1,h#1,d#1] - 1)/255); PC = I; P = PC[0,3]; X = round(P*fact); I(#2,X)+=PC[3,s-3] - P; ++i(#3,X); I"
       else
-        eval[0] "PC = I; X = round(PC[0,3]*([w#1,h#1,d#1] - 1)/255); I(#2,X)+=PC[3,s-3]; ++i(#3,X); I"
+        eval[0] "begin(fact = ([w#1,h#1,d#1] - 1)/255); PC = I; P = PC[0,3]; X = round(P*fact); I(#2,X)+=PC[3,s-3]; ++i(#3,X); I"
       fi
       f. "*i?(I(#2)/=i;1):0"
       if {im} rm[-3,-1] # No missing data so far
@@ -6254,7 +6254,7 @@ decompress_clut : check "isint(${1=64}) && $1>0 && isint(${2=$1}) && $2>0 && isi
       fi
       if {"w<$1 || h<$2 || d<$3"} r. {[min($1,2*w),min($2,2*h),min($3,2*d)]},100%,3 else break fi
     while 1 k.
-    if $is_relative + '"[ x,y,z ]*255/([w,h,d] - 1)"' c 0,255 fi
+    if $is_relative + '"begin(fact = *255/([w,h,d] - 1)); [ x,y,z ]*fact"' c 0,255 fi
     nm $nm
   endl done v +
 
