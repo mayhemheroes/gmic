@@ -24747,9 +24747,10 @@ _x_tictactoe5 : # Generate a ++ diagonal stroke and his mask.
 _x_tictactoe6 : # Generate a +- diagonal stroke and his mask.
   421,421,1,1,1 line. 10%,90%,90%,10%,1,0 erode. 6 _x_tictactoe __x_tictactoe 180,10,10
 
-#@cli x_warp
+#@cli x_warp : _x_grid>=2,_ygrid>=2
 #@cli : Launch the interactive image warper.
-x_warp :
+#@cli : Default values: 'x_grid=ygrid=3'.
+x_warp : check "isint(${1=3}) && $1>=2 && isint(${2=$1}) && $2>=2"
   if {!{*,u}} error[0--3] "Command '$0': No display available." return fi
   if {!$!} error[0--3] "Command '$0': Requires at least one input image!" return fi
   v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
@@ -24763,7 +24764,6 @@ x_warp :
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' to exit.\n
 ----\n
 -----------------------------------------------------"
-
   v - repeat $! l[$>] nm={n}
     nm img0
 
@@ -24776,7 +24776,7 @@ x_warp :
 
       # Re-generate set of keypoints.
       if {!narg($keypoints)}
-        nbp,nbq=3
+        nbp,nbq=$1,$2
         1,{$nbp*$nbq},1,4,"const nbp = "$nbp"; const nbq = "$nbq";
           p = y%nbp;
           q = int(y/nbp);
