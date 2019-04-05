@@ -24747,6 +24747,161 @@ _x_tictactoe5 : # Generate a ++ diagonal stroke and his mask.
 _x_tictactoe6 : # Generate a +- diagonal stroke and his mask.
   421,421,1,1,1 line. 10%,90%,90%,10%,1,0 erode. 6 _x_tictactoe __x_tictactoe 180,10,10
 
+#@cli x_warp
+#@cli : Launch the interactive image warper.
+x_warp :
+  if {!{*,u}} error[0--3] "Command '$0': No display available." return fi
+  v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
+  e[] "\n
+------ "${g}"Interactive image warper"$n" ---------------------\n
+----\n
+---- "${c}"Mouse"$n" to insert/move/delete keypoints.\n
+---- Key '"${c}"R"$n"' to reset the keypoints.\n
+---- Key '"${c}"SPACE"$n"' to shows/hide keypoints.\n
+---- Key '"${c}"TAB"$n"' to change keypoint radius.\n
+---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' to exit.\n
+----\n
+-----------------------------------------------------"
+
+  v - repeat $! l[$>] nm={n}
+    nm img0
+
+    # Start interactive window.
+    selected_keypoint=-1
+    view_keypoints=1
+    timing=0
+    radius_keypoints=5
+    do
+
+      # Re-generate set of keypoints.
+      if {!narg($keypoints)}
+        nbp,nbq=3
+        1,{$nbp*$nbq},1,4,"const nbp = "$nbp"; const nbq = "$nbq";
+          p = y%nbp;
+          q = int(y/nbp);
+          x = p*100/(nbp - 1);
+          y = q*100/(nbq - 1);
+          [ x,y,x,y ]"
+        N0={h} nm. keypoints
+        if {narg($warp)} rm[warp] fi
+        if {narg($imgw)} rm[imgw] fi
+        if {narg($imgr)} rm[imgr] fi
+      fi
+
+      # Generate base image for visualization.
+      if {!narg($img)}
+        if {*} wdims=${"fitscreen "{*,d},{img0,{*,d}*h/w}}
+        else wdims=${"fitscreen "{img0,[w,h]},1,128,60%}
+        fi
+        +to_rgb[img0] r. $wdims,1,100%,2 nm. img
+        w[img] $wdims,0,"G'MIC Funny Warp"
+        if {narg($warp)} rm[warp] fi
+        if {narg($imgw)} rm[imgw] fi
+        if {narg($imgr)} rm[imgr] fi
+      fi
+
+      # Generate warp field.
+      if {!narg($warp)}
+        +_x_warp_rbf[keypoints] {img,round([w,h]/4)}
+        r. {img,[w,h]},1,100%,3 *. 4 nm. warp
+        if {narg($imgw)} rm[imgw] fi
+        if {narg($imgr)} rm[imgr] fi
+      fi
+
+      # Generate warped image.
+      if {!narg($imgw)}
+        +warp[img] [warp],0,1,3 nm. imgw
+        if {narg($imgr)} rm[imgr] fi
+      fi
+
+      # Render visualization.
+      if {!narg($imgr)}
+        i[imgr] [imgw]
+        if $view_keypoints
+          eval[keypoints] "*
+            begin(
+              col1 = [ 64,200,255 ];
+              col2 = [ 255,255,255 ];
+              fact = ([ w#"$imgw",h#"$imgw" ] - 1)/100;
+              const radius1 = "$radius_keypoints";
+              const radius2 = radius1 + 2;
+              const opacity = min(1,5/"($radius_keypoints-1)");
+            );
+            X = round((I)[0,2]*fact);
+            ellipse(#-1,X,radius2,radius2,0,opacity,0);
+            ellipse(#-1,X,radius1,radius1,0,opacity,y<"$N0"?col1:col2); I"
+        fi
+        w. wait
+      fi
+
+      # Manage user interaction
+      mb={*,b} mxy={[{*,x,y}]*100/([{*,w,h}]-1)} mouse_over={{*,x}>=0}
+
+      if {$mouse_over" && "$mb" && "$selected_keypoint<0" && "h#$keypoints>0} # Determine selected keypoint
+        selected_keypoint={keypoints,"dmin = inf; kmin = -1;
+          for (k = 0, k<h, ++k, dist = norm((I[k])[0,2] - ["$mxy"]); dist<dmin?(dmin = dist; kmin = k));
+          kmin && dmin<2?kmin:-1"}
+      fi
+
+      if {{*,-SPACE}" || "$mb==4} view_keypoints={!$view_keypoints} rm[imgr] fi  # Show/hide keypoints
+
+      if {*,-R} rm[keypoints] fi # Reset keypoints
+
+      if {*,-TAB} radius_keypoints={max(2,($radius_keypoints+2)%16)} rm[imgr] fi # Change keypoint radius
+
+      if {*,r} rm[img] fi # Window resize
+
+      if {$mouse_over" && "$mb==1" && "$selected_keypoint<0} # Add keypoint
+        wxy={warp,I(round([$mxy]*([w,h]-1)/100))*100/([w,h]-1)}
+        ({"[ "$mxy,$wxy" ]"}) permute. zycx a[keypoints,-1] y
+        selected_keypoint={keypoints,h-1}
+        rm[warp]
+
+      elif {$mouse_over" && "$mb==1" && "$selected_keypoint>=0} # Move keypoint
+        ({"[ "$mxy" ]"}) permute. zycx j[keypoints] .,0,$selected_keypoint rm.
+        rm[warp]
+
+      elif {$mouse_over" && "$mb==2" && "$selected_keypoint>=0} # Remove keypoint
+        1,1,1,4,-1 j[keypoints] .,0,$selected_keypoint rm. discard[keypoints] -1 r[keypoints] 1,{keypoints,h/4},1,4,-1
+        N0-={$selected_keypoint<$N0?1:0}
+        rm[warp]
+
+      elif {!$mb} selected_keypoint=-1
+      fi
+    while {{*}" && "!{*,ESC}" && "!{*,Q}}
+
+    to[imgw] "Processing fullres...",5,5,20,2 w[imgw]
+    k[img0,keypoints]
+    _x_warp_rbf[keypoints] {img0,[w,h]}
+    warp[img0] .,0,2,3 rm.
+
+  endl done w 0 v +
+
+# Generate 2d warping field from set of keypoints.
+# $1,$2 = width,height
+_x_warp_rbf :
+  if {!h} $1,$2,1,2,[x,y]
+  else $1,$2,1,{s#0-2},"*
+    begin(
+      rbf(_r) = (r = _r; r*log(1+r));
+      fact = ([w,h] - 1)/100;
+      xy(p) = (I[#0,p])[0,2]*fact;
+      const N = h#0;
+      const N2 = N^2;
+      const Ns = N*s;
+      A = vectorN2();
+      B = vectorNs();
+      for (p = 0, p<N, ++p,
+        for (q = p, q<N, ++q,  A[q + N*p] = A[p + N*q] = rbf(norm(xy(p) - xy(q))));
+        copy(B[s*p],(I[#0,p])[2,s]*([w,h]-1)/100 - xy(p),s);
+      );
+      W = solve(A,B,s);
+    );
+    res = [ x,y ];
+    for (p = 0, p<N, ++p, res += W[s*p,s]*rbf(norm([x,y] - xy(p))));"
+  fi
+  k.
+
 #@cli x_waves
 #@cli : Launch the image waves demo.
 x_waves :
