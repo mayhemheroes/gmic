@@ -24783,9 +24783,7 @@ x_warp : check "isint(${1=3}) && $1>=2 && isint(${2=$1}) && $2>=2"
           y = q*100/(nbq - 1);
           [ x,y,x,y ]"
         N0={h} nm. keypoints
-        if {narg($warp)} rm[warp] fi
-        if {narg($imgw)} rm[imgw] fi
-        if {narg($imgr)} rm[imgr] fi
+        l rm[warp] onfail l rm[imgw] onfail l rm[imgr] onfail endl endl endl
       fi
 
       # Generate base image for visualization.
@@ -24795,23 +24793,20 @@ x_warp : check "isint(${1=3}) && $1>=2 && isint(${2=$1}) && $2>=2"
         fi
         +to_rgb[img0] r. $wdims,1,100%,2 nm. img
         w[img] $wdims,0,"G'MIC Funny Warp"
-        if {narg($warp)} rm[warp] fi
-        if {narg($imgw)} rm[imgw] fi
-        if {narg($imgr)} rm[imgr] fi
+        l rm[warp] onfail l rm[imgw] onfail l rm[imgr] onfail endl endl endl
       fi
 
       # Generate warp field.
       if {!narg($warp)}
         +_x_warp_rbf[keypoints] {img,round([w,h]/4)}
         r. {img,[w,h]},1,100%,3 *. 4 nm. warp
-        if {narg($imgw)} rm[imgw] fi
-        if {narg($imgr)} rm[imgr] fi
+        l rm[imgw] onfail l rm[imgr] onfail endl endl
       fi
 
       # Generate warped image.
       if {!narg($imgw)}
         +warp[img] [warp],0,1,3 nm. imgw
-        if {narg($imgr)} rm[imgr] fi
+        l rm[imgr] onfail endl
       fi
 
       # Render visualization.
