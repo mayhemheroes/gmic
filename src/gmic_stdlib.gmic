@@ -24799,7 +24799,7 @@ x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2"
 
       # Generate warp field.
       if {!narg($warp)}
-        +_x_warp_rbf[keypoints] {img,round([w,h]/4)}
+        +_x_warp_pde[keypoints] {img,round([w,h]/4)}
         r. {img,[w,h]},1,100%,3 *. 4 nm. warp
         l rm[imgw] onfail l rm[imgr] onfail endl endl
       fi
@@ -24900,7 +24900,7 @@ _x_warp_rbf :
 # $1,$2 = width,height
 _x_warp_pde :
   if {!h} $1,$2,1,2,[x,y] return fi
-  8,8,1,{s-2},"[x,y]*100/([w,h]-1)"
+  8,8,1,2
   do
     +f. 0 .,.,.,1
     eval[0] "begin(fact = ([w#1,h#1] - 1)/100); PC = I; P = PC[0,2]; X = round(P*fact); I(#2,X)+=PC[2,2] - P; ++i(#3,X); I"
@@ -24921,7 +24921,9 @@ _x_warp_pde :
       j[-4] ...,0,0,0,0,1,.. k[0,1]
     fi
     if {"w<$1 || h<$2"} r. {[min($1,2*w),min($2,2*h),1]},100%,3 else break fi
-    while 1 k. f. "begin(fact = ([w,h] - 1)*100); I*fact"
+    while 1
+    k.
+    f. "begin(fact = ([$1,$2] - 1)/100); [x,y] + I*fact"
 
 #@cli x_waves
 #@cli : Launch the image waves demo.
