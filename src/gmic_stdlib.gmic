@@ -24836,9 +24836,12 @@ x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2"
       mb={*,b} mxy={[{*,x,y}]*100/([{*,w,h}]-1)} mouse_over={{*,x}>=0}
 
       if {$mouse_over" && "$mb" && "$selected_keypoint<0" && "h#$keypoints>0} # Determine selected keypoint
-        selected_keypoint={keypoints,"dmin = inf; kmin = -1;
-          for (k = 0, k<h, ++k, dist = norm((I[k])[0,2] - ["$mxy"]); dist<dmin?(dmin = dist; kmin = k));
-          kmin>=0 && dmin<2?kmin:-1"}
+        selected_keypoint={keypoints,"dmin = inf; kmin = -1; fact = ([w#"$imgr",h#"$imgr"]-1)/100;
+          for (k = 0, k<h, ++k,
+            dist = norm(((I[k])[0,2] - ["$mxy"])*fact);
+            dist<dmin?(dmin = dist; kmin = k)
+          );
+          kmin>=0 && dmin<"max(4,$radius_keypoints)"?kmin:-1"}
       fi
 
       if {{*,-SPACE}" || "$mb==4} view_keypoints={!$view_keypoints} rm[imgr] fi  # Show/hide keypoints
