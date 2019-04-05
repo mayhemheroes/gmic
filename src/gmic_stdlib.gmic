@@ -24766,6 +24766,7 @@ x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2"
 -----------------------------------------------------"
   v -
   radius_keypoints=4
+  method=0 method0=rbf method1=pde
   repeat $! l[$>] nm={n}
     nm img0
 
@@ -24799,7 +24800,7 @@ x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2"
 
       # Generate warp field.
       if {!narg($warp)}
-        +_x_warp_pde[keypoints] {img,round([w,h]/4)}
+        +_x_warp_${method$method}[keypoints] {img,round([w,h]/4)}
         r. {img,[w,h]},1,100%,3 *. 4 nm. warp
         l rm[imgw] onfail l rm[imgr] onfail endl endl
       fi
@@ -24821,13 +24822,13 @@ x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2"
               fact = ([ w#"$imgw",h#"$imgw" ] - 1)/100;
               const radius1 = "$radius_keypoints";
               const radius2 = radius1 + 2;
-              const opacity = min(1,5/"($radius_keypoints-1)");
+              const opacity = min(1,3/"($radius_keypoints-1)");
             );
             X = round((I)[0,2]*fact);
             ellipse(#-1,X,radius2,radius2,0,opacity,0);
             ellipse(#-1,X,radius1,radius1,0,opacity,y<"$N0"?col1:col2); I"
         fi
-        w.
+        w. -1,-1,"G'MIC Funny Warp ["${method$method}"]"
       fi
 
       # Manage user interaction
@@ -24845,6 +24846,8 @@ x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2"
       if {*,-R} rm[keypoints] fi # Reset keypoints
 
       if {*,-TAB} radius_keypoints={max(2,($radius_keypoints+2)%16)} rm[imgr] fi # Change keypoint radius
+
+      if {*,-M} method={1-$method} rm[warp] fi # Change method
 
       if {*,r} rm[img] fi # Window resize
 
@@ -24870,7 +24873,7 @@ x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2"
     to[imgw] "Processing fullres...",5,5,20,2 w[imgw]
     k[img0,keypoints]
     _x_warp_rbf[keypoints] {img0,[w,h]}
-    warp[img0] .,0,2,3 rm.
+    warp[img0] .,0,2,3 rm. nm $nm
 
   endl done w 0 v +
 
@@ -24880,7 +24883,8 @@ _x_warp_rbf :
   if {!h} $1,$2,1,2,[x,y] return fi
   $1,$2,1,2,"*
     begin(
-      rbf(_r) = (r = _r; r*log(1+r));
+#      rbf(_r) = (r = _r; r*log(1+r));
+      rbf(_r) = (r = _r);
       fact = ([w,h] - 1)/100;
       xy(p) = (I[#0,p])[0,2]*fact;
       const N = h#0;
