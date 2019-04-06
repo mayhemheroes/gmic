@@ -24820,8 +24820,8 @@ x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2 && isint(${3=0
 
       # Generate warp field.
       if {!narg($warp)}
-        +_x_warp_rbf[keypoints] {img,round([w,h]/6)}
-        r. {img,[w,h]},1,100%,3 *. 6 nm. warp
+        +_x_warp_rbf[keypoints] {img,round([w,h]/6)} *. 6
+        r. {img,[w,h]},1,100%,3 +. '[x,y]' nm. warp
         l rm[imgw] onfail l rm[imgr] onfail endl endl
       fi
 
@@ -24919,7 +24919,7 @@ _x_warp_rbf :
       );
       W = solve(A,B,2);
     );
-    res = [ x,y ];
+    res = [ 0,0 ];
     for (p = 0, p<N, ++p, res += W[2*p,2]*(norm([x,y] - xy(p))));"
   k.
 
