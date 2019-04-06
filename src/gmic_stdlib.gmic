@@ -24747,10 +24747,10 @@ _x_tictactoe5 : # Generate a ++ diagonal stroke and his mask.
 _x_tictactoe6 : # Generate a +- diagonal stroke and his mask.
   421,421,1,1,1 line. 10%,90%,90%,10%,1,0 erode. 6 _x_tictactoe __x_tictactoe 180,10,10
 
-#@cli x_warp : _x_grid>=2,_ygrid>=2
+#@cli x_warp : _nb_keypoints_xgrid>=2,_nb_keypoints_ygrid>=2,_nb_keypoints_contours>=0
 #@cli : Launch the interactive image warper.
-#@cli : Default values: 'x_grid=ygrid=2'.
-x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2"
+#@cli : Default values: 'nb_keypoints_xgrid=nb_keypoints_ygrid=2' and 'nb_keypoints_contours=0'
+x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2 && isint(${3=0}) && $3>=0"
   if {!{*,u}} error[0--3] "Command '$0': No display available." return fi
   if {!$!} error[0--3] "Command '$0': Requires at least one input image!" return fi
   v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
@@ -24766,7 +24766,6 @@ x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2"
 -----------------------------------------------------"
   v -
   radius_keypoints=4
-  method=0 method0=rbf method1=pde
   repeat $! l[$>] nm={n}
     nm img0
 
@@ -24774,19 +24773,6 @@ x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2"
     selected_keypoint=-1
     view_keypoints=1
     do
-
-      # Re-generate set of keypoints.
-      if {!narg($keypoints)}
-        nbp,nbq=$1,$2
-        1,{$nbp*$nbq},1,4,"const nbp = "$nbp"; const nbq = "$nbq";
-          p = y%nbp;
-          q = int(y/nbp);
-          x = p*100/(nbp - 1);
-          y = q*100/(nbq - 1);
-          [ x,y,x,y ]"
-        N0={h} nm. keypoints
-        l rm[warp] onfail l rm[imgw] onfail l rm[imgr] onfail endl endl endl
-      fi
 
       # Generate base image for visualization.
       if {!narg($img)}
@@ -24798,9 +24784,42 @@ x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2"
         l rm[warp] onfail l rm[imgw] onfail l rm[imgr] onfail endl endl endl
       fi
 
+      # Re-generate set of keypoints.
+      if {!narg($keypoints)}
+
+        # Keypoints located on regular grid.
+        nbp,nbq=$1,$2
+        1,{$nbp*$nbq},1,4,"const nbp = "$nbp"; const nbq = "$nbq";
+          p = y%nbp;
+          q = int(y/nbp);
+          x = p*100/(nbp - 1);
+          y = q*100/(nbq - 1);
+          [ x,y,x,y ]"
+
+        # Keypoints located on contours.
+        nbc=$3
+        if {$nbc>0}
+          +b[img] 0.5 gradient_norm. sqrt. {round([w,h]/4)} gaussian. 20%
+          1,$nbc,1,4,">
+            begin(gauss = crop(#-1));
+            st = stats(#-2);
+            iM = st[1];
+            xM = st[8];
+            yM = st[9];
+            img = vector(#w#-1*h#-1,-iM);
+            draw(#-2,img,xM - w#-1/2,yM - h#-1/2,0,0,w#-1,h#-1,1,1,-1,gauss);
+            nxyM = [ xM,yM ]*100/([w#-2,h#-2]-1);
+            [ nxyM,nxyM ]"
+          rm[-3,-2]
+          a[-2,-1] y
+        fi
+        N0={h} nm. keypoints
+        l rm[warp] onfail l rm[imgw] onfail l rm[imgr] onfail endl endl endl
+      fi
+
       # Generate warp field.
       if {!narg($warp)}
-        +_x_warp_${method$method}[keypoints] {img,round([w,h]/4)}
+        +_x_warp_rbf[keypoints] {img,round([w,h]/4)}
         r. {img,[w,h]},1,100%,3 *. 4 nm. warp
         l rm[imgw] onfail l rm[imgr] onfail endl endl
       fi
@@ -24828,7 +24847,7 @@ x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2"
             ellipse(#-1,X,radius2,radius2,0,opacity,0);
             ellipse(#-1,X,radius1,radius1,0,opacity,y<"$N0"?col1:col2); I"
         fi
-        w. -1,-1,"G'MIC Funny Warp ["${method$method}"]"
+        w.
       fi
 
       # Manage user interaction
@@ -24849,8 +24868,6 @@ x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2"
       if {*,-R} rm[keypoints] fi # Reset keypoints
 
       if {*,-TAB} radius_keypoints={max(2,($radius_keypoints+2)%16)} rm[imgr] fi # Change keypoint radius
-
-      if {*,-M} method={1-$method} rm[warp] fi # Change method
 
       if {*,r} rm[img] fi # Window resize
 
@@ -24886,51 +24903,20 @@ _x_warp_rbf :
   if {!h} $1,$2,1,2,[x,y] return fi
   $1,$2,1,2,"*
     begin(
-#      rbf(_r) = (r = _r; r*log(1+r));
-      rbf(_r) = (_r);
       fact = ([w,h] - 1)/100;
       xy(p) = (I[#0,p])[0,2]*fact;
       const N = h#0;
       A = vector(#N*N);
       B = vector(#N*2);
       for (p = 0, p<N, ++p,
-        for (q = p, q<N, ++q,  A[q + N*p] = A[p + N*q] = rbf(norm(xy(p) - xy(q))));
+        for (q = p, q<N, ++q,  A[q + N*p] = A[p + N*q] = norm(xy(p) - xy(q)));
         copy(B[2*p],(I[#0,p])[2,2]*([w,h]-1)/100 - xy(p),2);
       );
       W = solve(A,B,2);
     );
     res = [ x,y ];
-    for (p = 0, p<N, ++p, res += W[2*p,2]*rbf(norm([x,y] - xy(p))));"
+    for (p = 0, p<N, ++p, res += W[2*p,2]*(norm([x,y] - xy(p))));"
   k.
-
-# Generate 2d warping field from set of keypoints, using diffusion PDE's.
-# $1,$2 = width,height
-_x_warp_pde :
-  if {!h} $1,$2,1,2,[x,y] return fi
-  8,8,1,2
-  do
-    +f. 0 .,.,.,1
-    eval[0] "begin(fact = ([w#1,h#1] - 1)/100); PC = I; P = PC[0,2]; X = round(P*fact); I(#2,X)+=PC[2,2] - P; ++i(#3,X); I"
-    f. "*i?(I(#2)/=i;1):0"
-    if {im} rm[-3,-1] # No missing data so far
-    else # Reconstruct missing data by anisotropic diffusion scheme
-      +distance. 1 .,.,.,2
-      eval.. "* # Specific gradient discretization for distance function
-        const boundary = 1;
-        maxabs(a,b) = (abs(a)>abs(b)?a:b);
-        I(#-1) = [ maxabs(j(1) - i,i - j(-1)),
-                   maxabs(j(0,1) - i,i - j(0,-1)) ]"
-      orientation. rm..
-      repeat 20
-        j[-4] ...,0,0,0,0,1,..
-        +warp[-4] .,1,2,1 *.. -1 warp[-5] ..,1,2,1 +[-5,-1] /[-4] 2
-      done
-      j[-4] ...,0,0,0,0,1,.. k[0,1]
-    fi
-    if {"w<$1 || h<$2"} r. {[min($1,2*w),min($2,2*h),1]},100%,3 else break fi
-    while 1
-    k.
-    f. "begin(fact = ([$1,$2] - 1)/100); [x,y] + I*fact"
 
 #@cli x_waves
 #@cli : Launch the image waves demo.
