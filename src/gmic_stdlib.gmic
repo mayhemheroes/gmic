@@ -24780,8 +24780,8 @@ x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2 && isint(${3=0
         if {*} wdims=${"fitscreen "{*,d},{img0,{*,d}*h/w}}
         else wdims=${"fitscreen "{img0,[w,h]},1,128,60%}
         fi
-        +to_rgb[img0] r. $wdims,1,100%,2 nm. img
-        w[img] $wdims,0,"G'MIC Funny Warp"
+        w[] $wdims,0,"[G'MIC] Interactive Warp"
+        +to_color[img0] r. $wdims,1,100%,2 nm. img
         l rm[warp] onfail l rm[imgw] onfail l rm[imgr] onfail endl endl endl
       fi
 
@@ -24836,6 +24836,7 @@ x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2 && isint(${3=0
       # Render visualization.
       if {!narg($imgr)}
         i[imgr] [imgw]
+        if {s==4} drgba. fi
         if $view_keypoints
           eval[keypoints] "*
             begin(
@@ -24873,7 +24874,8 @@ x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2 && isint(${3=0
       if {*,-TAB} radius_keypoints={max(2,($radius_keypoints+2)%16)} view_keypoints=1 rm[imgr] fi # Change keypoint radius
 
       if {{*,SHIFTLEFT}" || "{*,SHIFTRIGHT}} # View original
-        w[img] do wait while {{*,SHIFTLEFT}" || "{*,SHIFTRIGHT}} rm[imgr]
+        if {img,s==4} +drgba[img] w. rm. else w[img] fi
+        do wait while {{*,SHIFTLEFT}" || "{*,SHIFTRIGHT}} rm[imgr]
       fi
 
       if {*,r} rm[img] fi # Window resize
@@ -24897,7 +24899,7 @@ x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2 && isint(${3=0
       fi
     while {{*}" && "!{*,ESC}" && "!{*,Q}" && "!{*,ENTER}}
 
-    to[imgw] "Processing fullres...",5,5,20,2 w[imgw]
+    +drgba[imgw] to. "Processing fullres...",5,5,20,2 w. rm.
     k[img0,keypoints]
     _x_warp_rbf[keypoints] {img0,[w,h]} +. '[x,y]'
     warp[img0] .,0,2,3 rm. nm $nm
@@ -31227,7 +31229,7 @@ fx_warp_interactive :
   x_warp $2,$3,$4,$1
 
 fx_warp_interactive_preview :
-  repeat $! l[$>]
+  repeat $! l[$>] to_color drgba
 
     # Keypoints located on regular grid.
     nbp,nbq=$2,$3
