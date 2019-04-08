@@ -31204,7 +31204,7 @@ fx_twirl :
   if {!$4} to_a fi
   twirl $1,$2%,$3%,$4
 
-#@gui Warp [interactive] : fx_warp_interactive, gui_no_preview
+#@gui Warp [interactive] : fx_warp_interactive, fx_warp_interactive_preview
 #@gui : Preview precision = choice{1,"Coarsest (faster)","Coarse","Normal","Fine","Finest (slower)"}
 #@gui : sep = separator(), note = note{"<small><b>Pre-defined keypoints</b></small>"}
 #@gui : on X-Axis = int(2,2,10)
@@ -31225,6 +31225,48 @@ fx_twirl :
 #@gui : sep = separator(), note = note("<small>Author: <i>David Tschumperl&#233;</i>.      Latest Update: <i>2019/04/08</i>.</small>")
 fx_warp_interactive :
   x_warp $2,$3,$4,$1
+
+fx_warp_interactive_preview :
+  repeat $! l[$>]
+
+    # Keypoints located on regular grid.
+    nbp,nbq=$2,$3
+    1,{$nbp*$nbq},1,2,"const nbp = "$nbp"; const nbq = "$nbq";
+      p = y%nbp;
+      q = int(y/nbp);
+      x = p*(w#0-1)/(nbp - 1);
+      y = q*(h#0-1)/(nbq - 1);
+      [ x,y ]"
+
+    # Keypoints located on contours.
+    nbc=$4
+    if {$nbc>0}
+      +b[0] 0.5 gradient_norm. sqrt. {round([w,h]/4)} gaussian. 20%
+      1,$nbc,1,2,">
+        begin(gauss = crop(#-1));
+        st = stats(#-2);
+        iM = st[1];
+        xM = st[8];
+        yM = st[9];
+        img = vector(#w#-1*h#-1,-iM);
+        draw(#-2,img,xM - w#-1/2,yM - h#-1/2,0,0,w#-1,h#-1,1,1,-1,gauss);
+        [ xM,yM ]"
+      rm[-3,-2]
+      a[-2,-1] y
+    fi
+    eval. "*
+      begin(
+        col1 = [ 64,200,255 ];
+        const radius1 = 3;
+        const radius2 = radius1 + 2;
+      );
+      X = I;
+      ellipse(#0,X,radius2,radius2,0,1,0);
+      ellipse(#0,X,radius1,radius1,0,1,col1); I"
+    rm.
+
+  endl done
+
 
 #@gui Water : water, water(0)
 #@gui : Amplitude = float(30,0,300)
