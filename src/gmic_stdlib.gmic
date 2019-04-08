@@ -24747,10 +24747,10 @@ _x_tictactoe5 : # Generate a ++ diagonal stroke and his mask.
 _x_tictactoe6 : # Generate a +- diagonal stroke and his mask.
   421,421,1,1,1 line. 10%,90%,90%,10%,1,0 erode. 6 _x_tictactoe __x_tictactoe 180,10,10
 
-#@cli x_warp : _nb_keypoints_xgrid>=2,_nb_keypoints_ygrid>=2,_nb_keypoints_contours>=0
+#@cli x_warp : _nb_keypoints_xgrid>=2,_nb_keypoints_ygrid>=2,_nb_keypoints_contours>=0,_preview_fidelity={ 0=coarsest | 1=coarse | 2=normal | 3=fine | 4=finest }
 #@cli : Launch the interactive image warper.
-#@cli : Default values: 'nb_keypoints_xgrid=nb_keypoints_ygrid=2' and 'nb_keypoints_contours=0'
-x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2 && isint(${3=0}) && $3>=0"
+#@cli : Default values: 'nb_keypoints_xgrid=nb_keypoints_ygrid=2', 'nb_keypoints_contours=0' and 'preview_fidelity=1'.
+x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2 && isint(${3=0}) && $3>=0 && isint(${4=1}) && $4>=0 && $4<=4"
   if {!{*,u}} error[0--3] "Command '$0': No display available." return fi
   if {!$!} error[0--3] "Command '$0': Requires at least one input image!" return fi
   v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
@@ -24758,11 +24758,11 @@ x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2 && isint(${3=0
 ------ "${g}"Interactive image warper"$n" ---------------------\n
 ----\n
 ---- "${c}"Mouse"$n" to insert/move/delete keypoints.\n
----- Key '"${c}"R"$n"' to reset the keypoints.\n
 ---- Key '"${c}"SPACE"$n"' to shows/hide keypoints.\n
 ---- Key '"${c}"TAB"$n"' to change keypoint radius.\n
 ---- Key '"${c}"SHIFT"$n"' to toggle to original image.\n
----- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' to exit.\n
+---- Key '"${c}"R"$n"' to reset keypoint positions.\n
+---- Keys '"${c}"ESC"$n"', '"${c}"ENTER"$n"' or '"${c}"Q"$n"' to exit.\n
 ----\n
 -----------------------------------------------------"
   v -
@@ -24820,7 +24820,8 @@ x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2 && isint(${3=0
 
       # Generate warp field.
       if {!narg($warp)}
-        +_x_warp_rbf[keypoints] {img,round([w,h]/6)} *. 6
+        subsamp={arg(1+$4,8,6,4,2,1)}
+        +_x_warp_rbf[keypoints] {img,round([w,h]/$subsamp)} *. $subsamp
         r. {img,[w,h]},1,100%,3 +. '[x,y]'
         nm. warp
         l rm[imgw] onfail l rm[imgr] onfail endl endl
@@ -31202,6 +31203,28 @@ fx_textured_glass_preview :
 fx_twirl :
   if {!$4} to_a fi
   twirl $1,$2%,$3%,$4
+
+#@gui Warp [interactive] : fx_warp_interactive, gui_no_preview
+#@gui : Preview precision = choice{"Coarsest (faster)","Coarse","Normal","Fine","Finest (slower)"}
+#@gui : sep = separator(), note = note{"<small><b>Pre-defined keypoints</b></small>"}
+#@gui : on X-Axis = int(2,2,10)
+#@gui : on Y-Axis = int(2,2,10)
+#@gui : on Contours = int(0,0,32)
+#@gui : sep = separator()
+#@gui : note = note{"<b>Instructions:</b>"}
+#@gui : note = note{"
+#@gui : Use mouse buttons to add/move/remove keypoints on interactive, in order to create the deformation map.\n\n
+#@gui : - <b>Left mouse button</b>: Add or remove keypoint.\n
+#@gui : - <b>Right mouse button</b>: Remove keypoint.\n
+#@gui : - <b>Middle mouse button</b> or <b>SPACE</b> key: Show/hide keypoints.\n
+#@gui : - <b>TAB</b> key: Increase keypoint radius.\n
+#@gui : - <b>SHIFT</b> key: Toggle to original image.\n
+#@gui : - <b>R</b> key: Reset keypoint positions.\n
+#@gui : - <b>ESC</b>, <b>ENTER</b> or <b>Q</b> keys to apply on fullres image.
+#@gui : "}
+#@gui : sep = separator(), note = note("<small>Author: <i>David Tschumperl&#233;</i>.      Latest Update: <i>2019/04/08</i>.</small>")
+fx_warp_interactive :
+  x_warp $2,$3,$4,$1
 
 #@gui Water : water, water(0)
 #@gui : Amplitude = float(30,0,300)
