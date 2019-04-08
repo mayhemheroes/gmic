@@ -31206,12 +31206,11 @@ fx_twirl :
   if {!$4} to_a fi
   twirl $1,$2%,$3%,$4
 
-#@gui Warp [interactive] : fx_warp_interactive, fx_warp_interactive_preview
+#@gui Warp [interactive] : fx_warp_interactive, fx_warp_interactive_preview(1)
 #@gui : Preview precision = choice{1,"Coarsest (faster)","Coarse","Normal","Fine","Finest (slower)"}
 #@gui : sep = separator(), note = note{"<small><b>Pre-defined keypoints</b></small>"}
-#@gui : on X-Axis = int(2,2,10)
-#@gui : on Y-Axis = int(2,2,10)
-#@gui : on Contours = int(0,0,32)
+#@gui : Regular grid = int(2,2,10)
+#@gui : Contours = int(0,0,32)
 #@gui : sep = separator()
 #@gui : note = note{"<b>Instructions:</b>"}
 #@gui : note = note{"
@@ -31226,13 +31225,14 @@ fx_twirl :
 #@gui : "}
 #@gui : sep = separator(), note = note("<small>Author: <i>David Tschumperl&#233;</i>.      Latest Update: <i>2019/04/08</i>.</small>")
 fx_warp_interactive :
-  x_warp $2,$3,$4,$1
+  x_warp $2,$2,$3,$1
 
 fx_warp_interactive_preview :
-  repeat $! l[$>] to_color drgba
+  repeat $! l[$>]
+    rr2d $_preview_width,$_preview_height,0,3 to_color drgba
 
     # Keypoints located on regular grid.
-    nbp,nbq=$2,$3
+    nbp,nbq=$2,$2
     1,{$nbp*$nbq},1,2,"const nbp = "$nbp"; const nbq = "$nbq";
       p = y%nbp;
       q = int(y/nbp);
@@ -31241,7 +31241,7 @@ fx_warp_interactive_preview :
       [ x,y ]"
 
     # Keypoints located on contours.
-    nbc=$4
+    nbc=$3
     if {$nbc>0}
       +b[0] 0.5 gradient_norm. sqrt. {round([w,h]/4)} gaussian. 20%
       1,$nbc,1,2,">
@@ -31268,7 +31268,6 @@ fx_warp_interactive_preview :
     rm.
 
   endl done
-
 
 #@gui Water : water, water(0)
 #@gui : Amplitude = float(30,0,300)
