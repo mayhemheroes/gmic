@@ -28273,21 +28273,33 @@ fx_color_abstraction_preview :
 #@gui : sep = separator(), Preview Type = choice("Full","Forward Horizontal","Forward Vertical","Backward Horizontal","Backward Vertical","Duplicate Top","Duplicate Left","Duplicate Bottom","Duplicate Right","Duplicate Horizontal","Duplicate Vertical","Checkered","Checkered Inverse"), Preview split = point(50,50,0,0,200,200,200,0,10)_0
 #@gui : sep = separator(), note = note("<small>Author: <i>David Tschumperl&#233;</i>.      Latest Update: <i>2016/02/08</i>.</small>")
 fx_apply_haldclut : skip "${2=}"
-  if {$1<2}
+  mode=$1
+  filename="$2"
+  strength,brightness,contrast,gamma,hue,saturation,normalize=${3-9}
+
+  if {$mode<2} # CLUT as a layer
     if {$!<2} gui_warning_preview "Input layer with HaldCLUT is missing" return fi
-    ind={if($1,-1,0)} map_clut[^$ind] [$ind] rm[$ind]
-  else
+    ind_clut={$mode?$!-1:0}
+  else # CLUT as a file
     l
       0 nm. "$2" ext={x} rm.
       if {lowercase(['$ext'])=='cube'} input_cube "$2"
       else i "$2"
       fi
+      ind_clut={$!-1}
     onfail gui_warning_preview "Specified HaldCLUT filename not found" return
     endl
-    map_clut[^-1] . rm.
-    if {iM>255} / 255 fi # Was possibly a 16bits HaldCLUT.
   fi
-  _fx_cluts 0,1,${3--1}
+  if {$ind_clut,iM>255} /[$ind_clut] 255 fi # Possibly a 16bits HaldCLUT.
+
+  if {$normalize==1" || "$normalize==3} # Pre-normalization
+    repeat $! if {$>!=$ind_clut} l[$>] split_opacity balance_gamma[0] , a c endl fi done
+  fi
+  map_clut[^$ind_clut] [$ind_clut] rm[$ind_clut]
+  adjust_colors $brightness,$contrast,$gamma,$hue,$saturation,0,255
+  if {$normalize==2" || "$normalize==3} # Post-normalization
+     repeat $! l[$>] split_opacity n[0] 0,255 a c endl done
+  fi
 
 fx_apply_haldclut_preview : skip "${2=}"
   if {$1<2} gui_warning_preview "No preview available in this mode" return fi
