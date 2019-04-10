@@ -7476,10 +7476,10 @@ lut_rainbow :
 
 #@cli lut_contrast : _nb_colors>1,_min_rgb_value
 #@cli : Generate a RGB colormap where consecutive colors have high contrast.
-#@cli : This function performs a specific energy minimization to generate the result, so
+#@cli : This function performs a specific score maximization to generate the result, so
 #@cli : it may take some time when 'nb_colors' is high.
 #@cli : Default values: 'nb_colors=256' and 'min_rgb_value=64'.
-lut_contrast : check "isint(${1=256}) && $1>=1 && isval(${2=64})"
+lut_contrast : check "isint(${1=256}) && $1>=1 && isval(${2=48})"
   e[^-1] "Generate high-contrast RGB colormap with $1 colors and min RGB value $2."
   v - l[]
 
@@ -7491,7 +7491,7 @@ lut_contrast : check "isint(${1=256}) && $1>=1 && isval(${2=64})"
       +neq. 0 distance. 1 xyzM={[xM,yM,zM]} rm.
       col={round([$xyzM]*255/(w-1))}
       if {max($col)>=$2} =. 1,$xyzM N+=1 else =. -1,$xyzM fi
-      v + e[] "\r  [ FPS ] > Colors \#"$N v -
+      v + e[] "\r  [ Init ] > Colors \#"$N v -
     while {$N<$1}
     >. 0 {is},1,1,3
     eval.. ">begin(k = 0); i>0?(I[#-1,k++] = round([ x,y,z ]*255/63))"
@@ -7510,10 +7510,9 @@ lut_contrast : check "isint(${1=256}) && $1>=1 && isval(${2=64})"
     v + e[] "" v -
     +srgb2lab a c
     energy_max=${-_lut_contrast.}
-    nb_iter=50000
-    repeat $nb_iter
-      progress={round(100*$>/($nb_iter-1))}
-      v + e[] "\r  [ Optim "$progress"%] > Energy = "{_$energy_max} v -
+    nb_attempts=1000
+    do
+      v + e[] "\r  [ Optim ] > Score = "{_$energy_max}", Attempts = "$nb_attempts"      " v -
       . eval "
         do(
           k0 = round(u("$N0",w-1));
@@ -7521,8 +7520,8 @@ lut_contrast : check "isint(${1=256}) && $1>=1 && isval(${2=64})"
         k0==k1);
         tmp = I[k0]; I[k0] = I[k1]; I[k1] = tmp"
       energy=${-_lut_contrast.}
-      if {$energy>$energy_max} energy_max=$energy k. else rm. fi
-    done
+      if {$energy>$energy_max} energy_max=$energy k. nb_attempts=1000 else rm. nb_attempts-=1 fi
+    while {$nb_attempts>0}
 
     channels 0,2
   endl v +
