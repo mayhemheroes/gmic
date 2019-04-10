@@ -12425,14 +12425,25 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                     boundary==0?"dirichlet":boundary==1?"neumann":boundary==2?"periodic":"mirror",
                     (int)nb_frames);
               unsigned int off = 0;
+              CImg<T> _warp;
+              if (!(mode%2)) _warp.assign(warping_field,false);
+
               cimg_forY(selection,l) {
                 const unsigned int _ind = selection[l] + off;
                 CImg<T>& img = gmic_check(images[_ind]);
                 g_list.assign((int)nb_frames);
                 name = images_names[_ind];
                 cimglist_for(g_list,t)
-                  g_list[t] = img.get_warp(warping_field*((t + 1.f)/nb_frames),mode,
-                                           interpolation,boundary);
+                  if (mode%2) g_list[t] = img.get_warp(warping_field*(t/(nb_frames - 1)),mode,interpolation,boundary);
+                  else {
+                    cimg_forXYZ(_warp,x,y,z) {
+                      const float fact = t/(nb_frames - 1);
+                      if (_warp.spectrum()>0) _warp(x,y,z,0) = x + (warping_field(x,y,z,0) - x)*fact;
+                      if (_warp.spectrum()>1) _warp(x,y,z,1) = y + (warping_field(x,y,z,1) - y)*fact;
+                      if (_warp.spectrum()>2) _warp(x,y,z,2) = z + (warping_field(x,y,z,2) - z)*fact;
+                    }
+                    g_list[t] = img.get_warp(_warp,mode,interpolation,boundary);
+                  }
                 if (is_get) {
                   images_names.insert((int)nb_frames,name.copymark());
                   g_list.move_to(images,~0U);
