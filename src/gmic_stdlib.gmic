@@ -23024,7 +23024,7 @@ x_morph : check "isint(${1=1}) && $1>=0 && $1<=4"
 ---- "${c}"Mouse"$n" to insert/move/delete keypoints.\n
 ---- Key '"${c}"SPACE"$n"' to shows/hide keypoints.\n
 ---- Key '"${c}"TAB"$n"' to change keypoint radius.\n
----- Key '"${c}"SHIFT"$n"' to toggle to original image.\n
+---- Key '"${c}"ENTER"$n"' to toggle inbetween animation.\n
 ---- Key '"${c}"R"$n"' to reset keypoint positions.\n
 ---- Keys '"${c}"ESC"$n"', '"${c}"ENTER"$n"' or '"${c}"Q"$n"' to exit.\n
 ----\n
@@ -23041,6 +23041,7 @@ x_morph : check "isint(${1=1}) && $1>=0 && $1<=4"
     view_keypoints=1
     move_shift=-1,-1
     time_inbetween=0.5
+    animate_inbetween=0
 
     do
 
@@ -23099,15 +23100,15 @@ x_morph : check "isint(${1=1}) && $1>=0 && $1<=4"
 
       # Generate morph image
       if {!narg($imgm)}
-        onemt={1-$time_inbetween}
-        +*[warp1] $time_inbetween *. -1 +warp[imgb0] .,1,2,3 rm.. *. $onemt
-        +*[warp0] $onemt *. -1 +warp[imgb1] .,1,2,3 rm.. *. $time_inbetween
+        t,onemt={t=$animate_inbetween?0.5*(1+sin(2*($time_inbetween+$|-$animate_inbetween))):$time_inbetween;[t,1-t]}
+        +*[warp1] $t *. -1 +warp[imgb0] .,1,2,3 rm.. *. $onemt
+        +*[warp0] $onemt *. -1 +warp[imgb1] .,1,2,3 rm.. *. $t
         +[-2,-1] nm. imgm
         w2. -1,-1,0,"[G'MIC] Interactive Morph (Inbetween)"
       fi
 
       # Manage user interaction
-      wait
+      if $animate_inbetween wait 40 else wait fi
 
       repeat 2,i
         mb={*$i,b} mxy={[{*$i,x,y}]*100/([{*$i,w,h}]-1)} mouse_over={{*$i,x}>=0}
@@ -23127,27 +23128,29 @@ x_morph : check "isint(${1=1}) && $1>=0 && $1<=4"
 
         if {*$i,-TAB} radius_keypoints={max(2,($radius_keypoints+2)%16)} view_keypoints=1 l rm[imgr0,imgr1] onfail endl fi # Change keypoint radius
 
-        if {*$i,o} time_inbetween={max(0,min(1,$time_inbetween+0.05*{*$i,-o}))} l rm[imgm] onfail endl fi # Change time of inbetween
+        if {*$i,-ENTER} animate_inbetween={$animate_inbetween?0:$|} fi # Start inbetween animation
+
+        if {*$i,o} time_inbetween={max(0,min(1,$time_inbetween+0.05*{*$i,-o}))} animate_inbetween=0 l rm[imgm] onfail endl fi # Change time of inbetween
 
         if {*$i,r} rm[imgb$i] fi # Window resize
 
-        if {$mouse_over" && "($mb==1" || "$mb==4)" && "$selected_keypoint<0} # Add keypoint
+        if {$mouse_over" && "($mb==1" || "$mb==2)" && "$selected_keypoint<0} # Add keypoint
           move_shift=0,0
           ({keypoints,"[ "$mxy,$mxy",h ]"}) permute. zycx a[keypoints,-1] y
           selected_keypoint={keypoints,h-1}
           rm[imgr0,imgr1,warp0,warp1]
 
-        elif {$mouse_over" && "$mb==1" && "$selected_keypoint>=0} # Move keypoint on other window
+        elif {$mouse_over" && "$mb==1" && "$selected_keypoint>=0} # Move keypoint on same window
+          ({[$mxy]}) permute. zycx j[keypoints] .,0,$selected_keypoint,0,{2*$i} rm.
+          rm[imgr0,imgr1,warp0,warp1]
+
+        elif {$mouse_over" && "$mb==2" && "$selected_keypoint>=0} # Move keypoint on other window
           if {max($move_shift)<0} move_shift={keypoints,P=I[$selected_keypoint];P[2,2]-P[0,2]} fi
           coords={[$mxy]+[$move_shift]}
           ({[$coords]}) permute. zycx j[keypoints] .,0,$selected_keypoint,0,{2*(1-$i)} rm.
           rm[imgr0,imgr1,warp0,warp1]
 
-        elif {$mouse_over" && "$mb==4" && "$selected_keypoint>=0} # Move keypoint on same window
-          ({[$mxy]}) permute. zycx j[keypoints] .,0,$selected_keypoint,0,{2*$i} rm.
-          rm[imgr0,imgr1,warp0,warp1]
-
-        elif {$mouse_over" && "$mb==2" && "$selected_keypoint>=0} # Remove keypoint
+        elif {$mouse_over" && "$mb==4" && "$selected_keypoint>=0} # Remove keypoint
           1,1,1,5,-1 j[keypoints] .,0,$selected_keypoint rm. discard[keypoints] -1 r[keypoints] 1,{keypoints,h/5},1,5,-1
           N0-={$selected_keypoint<$N0?1:0} selected_keypoint=-1 move_shift=-1,-1
           rm[imgr0,imgr1,warp0,warp1]
@@ -23157,8 +23160,11 @@ x_morph : check "isint(${1=1}) && $1>=0 && $1<=4"
 
       done
 
-      if {*2,o} time_inbetween={max(0,min(1,$time_inbetween+0.05*{*2,-o}))} l rm[imgm] onfail endl fi # Change time of inbetween
+      if {*2,o} time_inbetween={max(0,min(1,$time_inbetween+0.05*{*2,-o}))} animate_inbetween=0 l rm[imgm] onfail endl fi # Change time of inbetween
+      if {*2,-ENTER} animate_inbetween={$animate_inbetween?0:$|} fi # Start inbetween animation
+      if {*2,-b} time_inbetween=0.5 l rm[imgm] onfail endl fi # Reset inbetween time
 
+      if $animate_inbetween l rm[imgm] onfail endl fi
     while {{*}" && "!{*,ESC}" && "!{*,Q}" && "!{*,ENTER}}
 
   endl done w0 0 w1 0 v +
