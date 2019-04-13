@@ -8103,9 +8103,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               for (unsigned int k = callstack.size() - 1; k>=local_callstack_size; --k) {
                 const char *const s = callstack[k].data();
                 if (*s=='*') switch (s[1]) {
-                  case 'r' : if (nb_repeatdones) --nb_repeatdones; break;
-                  case 'd' : if (nb_dowhiles) --nb_dowhiles; break;
-                  case 'f' : if (nb_fordones) --nb_fordones; break;
+                  case 'r' : --nb_repeatdones; break;
+                  case 'd' : --nb_dowhiles; break;
+                  case 'f' : --nb_fordones; break;
                   }
                 callstack.remove(k);
               }
