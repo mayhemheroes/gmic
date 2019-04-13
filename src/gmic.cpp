@@ -8099,7 +8099,16 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 else if (!_is_get && nb_locals==1 && !std::strcmp("onfail",it)) break;
               }
             }
-            if (callstack.size()>local_callstack_size) callstack.remove(local_callstack_size,callstack.size() - 1);
+            if (callstack.size()>local_callstack_size)
+              for (unsigned int k = callstack.size() - 1; k>=local_callstack_size; --k) {
+                const char *const s = callstack[k].data();
+                if (*s=='*') switch (s[1]) {
+                  case 'r' : if (nb_repeatdones) --nb_repeatdones; break;
+                  case 'd' : if (nb_dowhiles) --nb_dowhiles; break;
+                  case 'f' : if (nb_fordones) --nb_fordones; break;
+                  }
+                callstack.remove(k);
+              }
             if (nb_locals==1 && position<commands_line.size()) { // Onfail block found
               if (is_very_verbose) print(images,0,"Reach 'onfail' block.");
               try {
