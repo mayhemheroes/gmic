@@ -23128,8 +23128,6 @@ x_morph : check "isint(${1=3}) && $1>=0 && $1<=4"
 
       if {*,-ENTER} animate_inbetween={$animate_inbetween?0:$|} fi # Start inbetween animation
 
-
-
       if {*,r} rm[imgb0,imgb1] fi # Window resize
 
       if {$mouse_over" && "($mb==1" || "$mb==2)" && "$selected_keypoint<0} # Add keypoint
@@ -23138,15 +23136,10 @@ x_morph : check "isint(${1=3}) && $1>=0 && $1<=4"
         selected_keypoint={keypoints,h-1}
         rm[imgr]
 
-      elif {$mouse_over" && "$mb==1" && "$selected_keypoint>=0} # Move keypoint on same window
+      elif {$mouse_over" && "($mb==1" || "$mb==2)" && "$selected_keypoint>=0} # Move keypoint
+        if {$mb==2" && "!$move_other} frame={!$frame} move_other=1 fi # Move on other window
         ({[$mxy]}) permute. zycx j[keypoints] .,0,$selected_keypoint,0,{2*$frame} rm.
         rm[imgr]
-
-      elif {$mouse_over" && "$mb==2" && "$selected_keypoint>=0} # Move keypoint on other window
-        if {!$move_other} frame={!$frame} fi
-        ({[$mxy]}) permute. zycx j[keypoints] .,0,$selected_keypoint,0,{2*$frame} rm.
-        rm[imgr]
-        move_other=1
 
       elif {$mouse_over" && "$mb==4" && "$selected_keypoint>=0} # Remove keypoint
         1,1,1,5,-1 j[keypoints] .,0,$selected_keypoint rm. discard[keypoints] -1 r[keypoints] 1,{keypoints,h/5},1,5,-1
