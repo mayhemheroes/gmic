@@ -23034,12 +23034,14 @@ x_morph : check "isint(${1=3}) && $1>=0 && $1<=4"
   e[] "\n
 ------ "${g}"Interactive image morpher"$n" ---------------------\n
 ----\n
----- "${c}"Mouse"$n" to insert/move/delete keypoints.\n
----- Key '"${c}"SPACE"$n"' to shows/hide keypoints.\n
----- Key '"${c}"TAB"$n"' to change keypoint radius.\n
----- Key '"${c}"ENTER"$n"' to toggle inbetween animation.\n
----- Key '"${c}"R"$n"' to reset keypoint positions.\n
----- Keys '"${c}"ESC"$n"', '"${c}"ENTER"$n"' or '"${c}"Q"$n"' to exit.\n
+---- "${c}"Left mouse button"$n": Add/move keypoints (same image).\n
+---- "${c}"Right mouse button"$n": Add/move keypoints (other image).\n
+---- Key '"${c}"DELETE"$n"' or "${c}"Middle mouse button"$n": Delete keypoint.\n
+---- Key '"${c}"SPACE"$n"' or "${c}"Middle mouse button"$n": Toggle source/target.\n
+---- Key '"${c}"TAB"$n"': Change keypoint radius.\n
+---- Key '"${c}"ENTER"$n"': Play/stop inbetween animation.\n
+---- Key '"${c}"R"$n"': Reset keypoint positions.\n
+---- Keys '"${c}"ESC"$n"', '"${c}"ENTER"$n"' or '"${c}"Q"$n"': Exit.\n
 ----\n
 -----------------------------------------------------"
   v -
@@ -23122,7 +23124,7 @@ x_morph : check "isint(${1=3}) && $1>=0 && $1<=4"
 
       mb={*,b} mxy={[{*,x,y}]*100/([{*,w,h}]-1)} mouse_over={{*,x}>=0}
 
-      if {$mouse_over" && "$mb" && "$selected_keypoint<0" && "h#$keypoints>0} # Determine selected keypoint
+      if {$mouse_over" && "($mb" || "{*,DELETE})" && "$selected_keypoint<0" && "h#$keypoints>0} # Determine selected keypoint
         selected_keypoint={keypoints,"dmin = inf; kmin = -1; fact = ([w#"$imgr",h#"$imgr"]-1)%;
           for (k = 0, k<h, ++k,
             dist = norm(((I[k])[2*"$frame",2] - ["$mxy"])*fact);
@@ -23155,7 +23157,7 @@ x_morph : check "isint(${1=3}) && $1>=0 && $1<=4"
         ({[$mxy]}) permute. zycx j[keypoints] .,0,$selected_keypoint,0,{2*$frame} rm.
         rmn imgr
 
-      elif {$mouse_over" && "$mb==4" && "$selected_keypoint>=0} # Remove keypoint
+      elif {$mouse_over" && "$selected_keypoint>=0" && ("{*,-DELETE}" || "$mb==4")"} # Delete keypoint
         1,1,1,5,-1 j[keypoints] .,0,$selected_keypoint rm. discard[keypoints] -1 r[keypoints] 1,{keypoints,h/5},1,5,-1
         N0-={$selected_keypoint<$N0?1:0} selected_keypoint=-1
         rmn imgr
