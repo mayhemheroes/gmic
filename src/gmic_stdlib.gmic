@@ -23043,6 +23043,7 @@ x_morph : check "isint(${1=3}) && $1>=0 && $1<=4"
     move_shift=-1,-1
     time_inbetween=0.5
     animate_inbetween=0
+    frame=0
 
     do
 
@@ -23053,51 +23054,46 @@ x_morph : check "isint(${1=3}) && $1>=0 && $1<=4"
         l rm[warp0,warp1] onfail endl
       fi
 
-      repeat 2,i omi={1-$i}
-
-        # Generate base image.
-        if {!narg(${imgb$i})}
-          if {*$i} wdims=${"fitscreen "{*$i,d},{img$i,{*$i,d}*h/w}}
-          else wdims=${"fitscreen "{img$i,[w,h]},1,128,45%}
-          fi
-          w$i[] $wdims,0,"[G'MIC] Interactive Morph ("${"s0=Source s1=Target u $s"$i}")"
-          +to_color[img$i] r. $wdims,1,100%,2 n. 0,255 nm. imgb$i
-          l rm[imgr$i] onfail l rm[warp$i] onfail endl endl
+      # Generate base images.
+      if {!narg($imgb0)" || "!narg($imgb1)}
+        if {*} wdims=${"fitscreen "{*,d},{img0,{*,d}*h/w}}
+        else wdims=${"fitscreen "{img0,[w,h]},1,128,50%}
         fi
+        w[] $wdims,0,"[G'MIC] Interactive Morph"
+        repeat 2 +to_color[img$>] r. $wdims,1,100%,2 n. 0,255 nm. imgb$> done
+        l rm[imgr0] onfail l rm[warp0,warp1] onfail endl endl
+      fi
 
-        # Generate warp field.
-        if {!narg(${warp$i})}
-          subsamp={arg(1+$1,8,6,4,2,1)}
-          if $i +l[keypoints] s c,-2 rv[0,1] a c endl +_x_warp_rbf. {imgb$i,round([w,h]/$subsamp)} rm..
-          else +_x_warp_rbf[keypoints] {imgb$i,round([w,h]/$subsamp)}
-          fi
-          *. $subsamp
-          r. {imgb$i,[w,h]},1,100%,3
-          nm. warp$i
-          l rm[imgm] onfail endl
+      # Generate warp fields.
+      if {(!narg($warp0)" || "!narg($warp1))}
+        subsamp={arg(1+$1,8,6,4,2,1)}
+        +_x_warp_rbf[keypoints] {imgb0,round([w,h]/$subsamp)}
+        +l[keypoints] s c,-2 rv[0,1] a c endl +_x_warp_rbf. {imgb0,round([w,h]/$subsamp)} rm..
+        *[-2,-1] $subsamp
+        r[-2,-1] {imgb0,[w,h]},1,100%,3
+        nm[-2,-1] warp0,warp1
+        l rm[imgm] onfail endl
+      fi
+
+      # Render visualization.
+      if {!narg($imgr)}
+        i[imgr] [imgb$frame]
+        if {s==4} drgba. fi
+        if $view_keypoints
+          eval[keypoints] "*
+            begin(
+              fact = ([ w#"$imgb0",h#"$imgb0" ] - 1)/100;
+              const radius1 = "$radius_keypoints";
+              const radius2 = radius1 + 2;
+              const opacity = min(1,3/"($radius_keypoints-1)");
+            );
+            X = round((I)[2*"$frame",2]*fact);
+            y=="$selected_keypoint"?(ellipse(#-1,X,radius2+2,radius2+2,0,1,255));
+            ellipse(#-1,X,radius2,radius2,0,opacity,0);
+            ellipse(#-1,X,radius1,radius1,0,opacity,I[#"$colormap",i4]); I"
         fi
-
-        # Render visualization.
-        if {!narg(${imgr$i})}
-          i[imgr$i] [imgb$i]
-          if {s==4} drgba. fi
-          if $view_keypoints
-            eval[keypoints] "*
-              begin(
-                fact = ([ w#"${imgb$i}",h#"${imgb$i}" ] - 1)/100;
-                const radius1 = "$radius_keypoints";
-                const radius2 = radius1 + 2;
-                const opacity = min(1,3/"($radius_keypoints-1)");
-              );
-              X = round((I)[2*"$i",2]*fact);
-              y=="$selected_keypoint"?(ellipse(#-1,X,radius2+2,radius2+2,0,1,255));
-              ellipse(#-1,X,radius2,radius2,0,opacity,0);
-              ellipse(#-1,X,radius1,radius1,0,opacity,I[#"$colormap",i4]); I"
-          fi
-          w$i.
-        fi
-
-      done
+        w. -1,-1,0,"[G'MIC] Interactive Morph ("${"s0=Source s1=Target u ${s"$frame"}"}")"
+      fi
 
       # Generate morph image
       if {!narg($imgm)}
@@ -23111,62 +23107,62 @@ x_morph : check "isint(${1=3}) && $1>=0 && $1<=4"
       # Manage user interaction
       if $animate_inbetween wait 40 else wait fi
 
-      repeat 2,i
-        mb={*$i,b} mxy={[{*$i,x,y}]*100/([{*$i,w,h}]-1)} mouse_over={{*$i,x}>=0}
+      mb={*,b} mxy={[{*,x,y}]*100/([{*,w,h}]-1)} mouse_over={{*,x}>=0}
 
-        if {$mouse_over" && "$mb" && "$selected_keypoint<0" && "h#$keypoints>0} # Determine selected keypoint
-          selected_keypoint={keypoints,"dmin = inf; kmin = -1; fact = ([w#"${imgr$i}",h#"${imgr$i}"]-1)%;
-            for (k = 0, k<h, ++k,
-              dist = norm(((I[k])[2*"$i",2] - ["$mxy"])*fact);
-              dist<dmin?(dmin = dist; kmin = k)
-            );
-            kmin>=0 && dmin<"max(8,1.5*$radius_keypoints)"?kmin:-1"}
-        fi
+      if {$mouse_over" && "$mb" && "$selected_keypoint<0" && "h#$keypoints>0} # Determine selected keypoint
+        selected_keypoint={keypoints,"dmin = inf; kmin = -1; fact = ([w#"$imgr",h#"$imgr"]-1)%;
+          for (k = 0, k<h, ++k,
+            dist = norm(((I[k])[2*"$frame",2] - ["$mxy"])*fact);
+            dist<dmin?(dmin = dist; kmin = k)
+          );
+          kmin>=0 && dmin<"max(8,1.5*$radius_keypoints)"?kmin:-1"}
+      fi
 
-        if {*$i,-SPACE} view_keypoints={!$view_keypoints} l rm[imgr0,imgr1] onfail endl fi  # Show/hide keypoints
+      if {*,-SPACE} frame={!$frame} l rm[imgr] onfail endl fi  # Swap frames
 
-        if {*$i,-R} l rm[keypoints] onfail endl fi # Reset keypoints
+      if {*,-K} view_keypoints={!$view_keypoints} l rm[imgr] onfail endl fi  # Show/hide keypoints
 
-        if {*$i,-TAB} radius_keypoints={max(2,($radius_keypoints+2)%8)} view_keypoints=1 l rm[imgr0,imgr1] onfail endl fi # Change keypoint radius
+      if {*,-R} l rm[keypoints] onfail endl fi # Reset keypoints
 
-        if {*$i,-ENTER} animate_inbetween={$animate_inbetween?0:$|} fi # Start inbetween animation
+      if {*,-TAB} radius_keypoints={max(2,($radius_keypoints+2)%8)} view_keypoints=1 l rm[imgr] onfail endl fi # Change keypoint radius
 
-        if {*$i,o} time_inbetween={max(0,min(1,$time_inbetween+0.05*{*$i,-o}))} animate_inbetween=0 l rm[imgm] onfail endl fi # Change time of inbetween
+      if {*,-ENTER} animate_inbetween={$animate_inbetween?0:$|} fi # Start inbetween animation
 
-        if {*$i,r} rm[imgb$i] fi # Window resize
+      if {*,o} time_inbetween={max(0,min(1,$time_inbetween+0.05*{*,-o}))} animate_inbetween=0 l rm[imgm] onfail endl fi # Change time of inbetween
 
-        if {$mouse_over" && "($mb==1" || "$mb==2)" && "$selected_keypoint<0} # Add keypoint
-          move_shift=0,0
-#          wxy={warp$i,[$mxy]+I([$mxy]*([w,h]-1)/100,1)*100/([w,h]-1)}
-#          ({keypoints,i?[$wxy,$mxy,h]:[$mxy,$wxy,h]})
-          ({keypoints,[$mxy,$mxy,h]})
-          permute. zycx a[keypoints,-1] y
-          selected_keypoint={keypoints,h-1}
-          rm[imgr0,imgr1,warp0,warp1]
+      if {*,r} rm[imgb0,imgb1] fi # Window resize
 
-        elif {$mouse_over" && "$mb==1" && "$selected_keypoint>=0} # Move keypoint on same window
-          ({[$mxy]}) permute. zycx j[keypoints] .,0,$selected_keypoint,0,{2*$i} rm.
-          rm[imgr0,imgr1,warp0,warp1]
+      if {$mouse_over" && "($mb==1" || "$mb==2)" && "$selected_keypoint<0} # Add keypoint
+        move_shift=0,0
+        ({keypoints,[$mxy,$mxy,h]})
+        permute. zycx a[keypoints,-1] y
+        selected_keypoint={keypoints,h-1}
+        rm[imgr,warp0,warp1]
 
-        elif {$mouse_over" && "$mb==2" && "$selected_keypoint>=0} # Move keypoint on other window
-          if {max($move_shift)<0} move_shift={keypoints,P=I[$selected_keypoint];P[2,2]-P[0,2]} fi
-          coords={[$mxy]+[$move_shift]}
-          ({[$coords]}) permute. zycx j[keypoints] .,0,$selected_keypoint,0,{2*$omi} rm.
-          rm[imgr0,imgr1,warp0,warp1]
+      elif {$mouse_over" && "$mb==1" && "$selected_keypoint>=0} # Move keypoint on same window
+        ({[$mxy]}) permute. zycx j[keypoints] .,0,$selected_keypoint,0,{2*$frame} rm.
+        rm[imgr]
 
-        elif {$mouse_over" && "$mb==4" && "$selected_keypoint>=0} # Remove keypoint
-          1,1,1,5,-1 j[keypoints] .,0,$selected_keypoint rm. discard[keypoints] -1 r[keypoints] 1,{keypoints,h/5},1,5,-1
-          N0-={$selected_keypoint<$N0?1:0} selected_keypoint=-1 move_shift=-1,-1
-          rm[imgr0,imgr1,warp0,warp1]
+      elif {$mouse_over" && "$mb==2" && "$selected_keypoint>=0} # Move keypoint on other window
+        if {max($move_shift)<0} move_shift={keypoints,P=I[$selected_keypoint];P[2,2]-P[0,2]} fi
+        coords={[$mxy]+[$move_shift]}
+        ({[$coords]}) permute. zycx j[keypoints] .,0,$selected_keypoint,0,{2*$frame} rm.
+        rm[imgr]
 
-        elif {!{*0,b}" && "!{*1,b}} selected_keypoint=-1 move_shift=-1,-1 l rm[imgr0,imgr1] onfail endl
-        fi
+      elif {$mouse_over" && "$mb==4" && "$selected_keypoint>=0} # Remove keypoint
+        1,1,1,5,-1 j[keypoints] .,0,$selected_keypoint rm. discard[keypoints] -1 r[keypoints] 1,{keypoints,h/5},1,5,-1
+        N0-={$selected_keypoint<$N0?1:0} selected_keypoint=-1 move_shift=-1,-1
+        rm[imgr]
 
-      done
+      elif {!{*,b}}
+        if {$selected_keypoint>=0} l rm[warp0,warp1] onfail endl fi
+        selected_keypoint=-1 move_shift=-1,-1 l
+        rm[imgr] onfail endl
+      fi
 
       if {*2,o} time_inbetween={max(0,min(1,$time_inbetween+0.05*{*2,-o}))} animate_inbetween=0 l rm[imgm] onfail endl fi # Change time of inbetween
       if {*2,-ENTER} animate_inbetween={$animate_inbetween?0:$|} fi # Start inbetween animation
-      if {*2,-b} time_inbetween=0.5 l rm[imgm] onfail endl fi # Reset inbetween time
+      if {*2,-b} time_inbetween=0.5 animate_inbetween=0 l rm[imgm] onfail endl fi # Reset inbetween time
 
       if $animate_inbetween l rm[imgm] onfail endl fi
     while {{*}" && "!{*,ESC}" && "!{*,Q}" && "!{*,ENTER}}
