@@ -23041,12 +23041,12 @@ x_morph : check "isint(${1=16}) && isint(${2=3}) && $2>=0 && $2<=4"
 ---- Key '"${c}"DELETE"$n"' or "${c}"middle mouse button"$n": Delete keypoint.\n
 ---- Key '"${c}"SPACE"$n"' or "${c}"mouse wheel"$n": Toggle source/target.\n\n
 ---- "${b}"Inbetween window:"$n"\n
----- "${c}"Mouse wheel"$n": Change morphing time from 0 to 1.\n
+---- "${c}"Mouse wheel"$n": Change morphing time, from 0 to 1.\n
 ---- "${c}"Left mouse button"$n": Reset morphing time to 0.5.\n\n
 ---- "${b}"Both windows:"$n"\n
 ---- Key '"${c}"TAB"$n"': Change keypoint radius.\n
 ---- Key '"${c}"ENTER"$n"': Play/stop inbetween animation.\n
----- Key '"${c}"R"$n"': Reset keypoint positions.\n
+---- Key '"${c}"R"$n"': Reset keypoints.\n
 ---- Key '"${c}"K"$n"': Show/hide keypoints.\n
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"': Process fullres and exit.\n
 ----\n
@@ -31077,6 +31077,40 @@ fx_symmetrizoscope :
     ang={$2+180*$>/max(1,$1-1)}
     symmetrize 50%,50%,$ang,$3,0,{if($4!=2,$4,$>%2)}
   done
+
+#@gui Morph [Interactive] : fx_morph_interactive, fx_morph_interactive_preview
+#@gui : Number of frames = int(16,3,1024)
+#@gui : Preview precision = choice{2,"Coarsest (faster)","Coarse","Normal","Fine","Finest (slower)"}
+#@gui : sep = separator()
+#@gui : note = note{"<b>Instructions:</b>"}
+#@gui : note = note{"
+#@gui : Use mouse buttons to add/move/remove correspondence keypoints over the interactive window that will appear, in order to create the morphing.\n\n
+#@gui : <span color="#EE5500"><b>Source/target window:</b></span>\n\n
+#@gui : - <b>Left mouse button</b>: Add new keypoint on current image and move it on the other one.\n
+#@gui : - <b>Right mouse button</b>: Add/move keypoint on current image.\n
+#@gui : - Key <b>DELETE</b> or <b>middle mouse button</b>: Delete keypoint.\n
+#@gui : - Key <b>SPACE</b> or <b>mouse wheel</b>: Toggle source/target.\n\n
+#@gui : <span color="#EE5500"><b>Inbetween window:</b></span>\n\n
+#@gui : - <b>Mouse wheel</b>: Change morphing time, from 0 to 1.\n
+#@gui : - <b>Left mouse button</b>: Reset morphing time to 0.5.\n\n
+#@gui : <span color="#EE5500"><b>Both windows:</b></span>\n\n
+#@gui : - Key <b>TAB</b>: Change keypoint radius.\n
+#@gui : - Key <b>ENTER</b>: Play/stop inbetween animation.\n
+#@gui : - Key <b>R</b>: Reset keypoints.\n
+#@gui : - Key <b>K</b>: Show/hide keypoints.\n
+#@gui : - Keys <b>ESC</b> or <b>Q</b>: Process fullres and exit.
+#@gui : "}
+#@gui : sep = separator(), note = note("<small>Author: <i>David Tschumperl&#233;</i>.      Latest Update: <i>2019/04/16</i>.</small>")
+fx_morph_interactive :
+  rv
+  x_morph $1,$2
+  repeat $! gui_set_layer_name[$>] "Morphing ""#"$> done
+  rv
+
+fx_morph_interactive_preview :
+  if {$!<2} gui_warning_preview "This filter requires at least two input layers!"
+  else gui_no_preview ,
+  fi
 
 #@gui Perspective : fx_warp_perspective, fx_warp_perspective(1)
 #@gui : X-Angle = float(1.73,-4,4)
