@@ -23032,19 +23032,21 @@ x_morph : check "isint(${1=16}) && isint(${2=3}) && $2>=0 && $2<=4"
   if {$!%2} error[0--3] "Command '$0': Requires an even number of input images!" return fi
   v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
   e[] "\n
------- "${g}"Interactive image morpher"$n" ---------------------\n
+------ "${g}"Interactive image morpher"$n" ---------------------------\n
 ----\n
----- "${c}"Left mouse button"$n": Add/move keypoints (same image).\n
----- "${c}"Right mouse button"$n": Add/move keypoints (other image).\n
----- Key '"${c}"DELETE"$n"' or "${c}"Middle mouse button"$n": Delete keypoint.\n
----- Key '"${c}"SPACE"$n"' or "${c}"Middle mouse button"$n": Toggle source/target.\n
+---- "${c}"Left mouse button"$n": Add/move keypoints on current image.\n
+---- "${c}"Right mouse button"$n": Add keypoint on current image and\n
+----  move it on the other one.\n
+---- Key '"${c}"DELETE"$n"' or "${c}"middle mouse button"$n": Delete keypoint.\n
+---- Key '"${c}"SPACE"$n"' or "${c}"mouse wheel"$n": Toggle source/target.\n
+---- "${c}"Mouse wheel"$n" (on inbetween window): Change time.\n
 ---- Key '"${c}"TAB"$n"': Change keypoint radius.\n
 ---- Key '"${c}"ENTER"$n"': Play/stop inbetween animation.\n
 ---- Key '"${c}"R"$n"': Reset keypoint positions.\n
 ---- Key '"${c}"K"$n"': Show/hide keypoints.\n
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"': Exit.\n
 ----\n
------------------------------------------------------"
+-----------------------------------------------------------"
   v -
   offset=0
   radius_keypoints=3
@@ -23117,7 +23119,7 @@ x_morph : check "isint(${1=16}) && isint(${2=3}) && $2>=0 && $2<=4"
         t,onemt={t=$animate_inbetween?0.5*(1+sin(2*($time_inbetween+$|-$animate_inbetween))):$time_inbetween;[t,1-t]}
         +*[warp1] $t *. -1 +warp[imgb0] .,1,2,3 rm.. *. $onemt
         +*[warp0] $onemt *. -1 +warp[imgb1] .,1,2,3 rm.. *. $t
-        +[-2,-1] nm. imgm
+        +[-2,-1] c. 0,255 nm. imgm
         w1. -1,-1,0,"[G'MIC] Interactive Morph (Inbetween)"
       fi
 
@@ -23135,17 +23137,20 @@ x_morph : check "isint(${1=16}) && isint(${2=3}) && $2>=0 && $2<=4"
           kmin>=0 && dmin<"max(8,1.5*$radius_keypoints)"?kmin:-1"}
       fi
 
-      if {{*,-o}" || "{*,-SPACE}} frame={!$frame} rmn imgr fi # Swap frames
+      if {{*,-o}" || "{*,-SPACE}" || "{*1,-SPACE}} frame={!$frame} rmn imgr fi # Swap frames
 
-      if {*,-K} view_keypoints={!$view_keypoints} rmn imgr fi # Show/hide keypoints
+      if {{*,-K}" || "{*1,-K}} view_keypoints={!$view_keypoints} rmn imgr fi # Show/hide keypoints
 
-      if {*,-R} rmn keypoints fi # Reset keypoints
+      if {{*,-R}" || "{*1,-R}} rmn keypoints fi # Reset keypoints
 
-      if {*,-TAB} radius_keypoints={max(2,($radius_keypoints+2)%8)} view_keypoints=1 rmn imgr fi # Change keypoint radius
+      if {{*,-TAB}" || "{*1,-TAB}} radius_keypoints={max(2,($radius_keypoints+2)%8)} view_keypoints=1 rmn imgr fi # Change keypoint radius
 
-      if {*,-ENTER} animate_inbetween={$animate_inbetween?0:$|} fi # Start inbetween animation
+      if {{*,-ENTER}" || "{*1,-ENTER}} animate_inbetween={$animate_inbetween?0:$|} fi # Start inbetween animation
 
       if {*,r} rmn imgb0,imgb1 fi # Window resize
+      if {*1,r} rmn imgm fi
+      if {*1,o} time_inbetween={max(0,min(1,$time_inbetween+0.05*{*1,-o}))} animate_inbetween=0 rmn imgm fi # Change time of inbetween
+      if {*1,-b} time_inbetween=0.5 animate_inbetween=0 rmn imgm fi # Reset inbetween time
 
       if {$mouse_over" && "($mb==1" || "$mb==2)" && "$selected_keypoint<0} # Add keypoint
         if {$mb==2" && "!$move_other} frame={!$frame} move_other=1 fi # Move on other window
@@ -23170,12 +23175,8 @@ x_morph : check "isint(${1=16}) && isint(${2=3}) && $2>=0 && $2<=4"
         rmn warp0,warp1,imgr
       fi
 
-      if {*1,o} time_inbetween={max(0,min(1,$time_inbetween+0.05*{*1,-o}))} animate_inbetween=0 rmn imgm fi # Change time of inbetween
-      if {*1,-ENTER} animate_inbetween={$animate_inbetween?0:$|} fi # Start inbetween animation
-      if {*1,-b} time_inbetween=0.5 animate_inbetween=0 rmn imgm fi # Reset inbetween time
-
       if $animate_inbetween rmn imgm fi
-    while {{*}" && "!{*,ESC}" && "!{*,Q}" && "!{*,ENTER}}
+    while {{*}" && "!{*,ESC}" && "!{*,Q}" && "{*1}" && "!{*1,ESC}" && "!{*1,Q}}
 
     # Render fullres morphing.
     rmn colormap,imgb0,imgb1,warp0,warp1,imgr,imgm
@@ -23187,7 +23188,7 @@ x_morph : check "isint(${1=16}) && isint(${2=3}) && $2>=0 && $2<=4"
       t,onemt={t=$>/max(1,$1-1);[t,1-t]}
       +*[warp1] $t *. -1 +warp[img0] .,1,2,3 rm.. *. $onemt
       +*[warp0] $onemt *. -1 +warp[img1] .,1,2,3 rm.. *. $t
-      +[-2,-1] nm. "Frame "$>
+      +[-2,-1] c. 0,255 nm. "Frame "$>
       if {{*}" && "{*1}} w1 0 fi
       if {{*}" || "{*1}}
         text="Processing frame \#"$>"/"{$1-1}"..."
@@ -25129,7 +25130,7 @@ x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2 && isint(${3=0
           kmin>=0 && dmin<"max(8,1.5*$radius_keypoints)"?kmin:-1"}
       fi
 
-      if {{*,-SPACE}" || "$mb==4} view_keypoints={!$view_keypoints} rmn imgr fi  # Show/hide keypoints
+      if {{*,-SPACE}" || "$mb==4} view_keypoints={!$view_keypoints} rmn imgr fi # Show/hide keypoints
 
       if {*,-R} rmn keypoints __x_warp_keypoints= fi # Reset keypoints
 
