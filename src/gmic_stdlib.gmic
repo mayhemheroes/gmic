@@ -23029,7 +23029,7 @@ x_minimal_path :
 #@cli : Default values: 'nb_frames=16' and 'preview_fidelity=3'.
 x_morph : check "isint(${1=16}) && isint(${2=3}) && $2>=0 && $2<=4"
   if {!{*,u}} error[0--3] "Command '$0': No display available." return fi
-  if {$!%2} error[0--3] "Command '$0': Requires an even number of input images!" return fi
+  if {$!<2} error[0--3] "Command '$0': Requires at least two input images!" return fi
   v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r b=$_gmic_b v +
   e[] "\n
 ------ "${g}"Interactive image morpher"$n" ---------------------------\n
@@ -23054,7 +23054,7 @@ x_morph : check "isint(${1=16}) && isint(${2=3}) && $2>=0 && $2<=4"
   v -
   offset=0
   radius_keypoints=3
-  repeat {$!-1} l[{[$>,$>+1]+$offset}] nm={0,n}
+  repeat {$!-1} l[{[$>,$>+1]+$offset}] nm0={0,n} nm1={1,n}
     to_colormode 0
     rr2d ${-max_wh},2
     nm img0,img1
@@ -23185,7 +23185,7 @@ x_morph : check "isint(${1=16}) && isint(${2=3}) && $2>=0 && $2<=4"
       t,onemt={t=$>/max(1,$1-1);[t,1-t]}
       +*[warp1] $t *. -1 +warp[img0] .,1,2,3 rm.. *. $onemt
       +*[warp0] $onemt *. -1 +warp[img1] .,1,2,3 rm.. *. $t
-      +[-2,-1] c. 0,255 nm. $nm" (Frame "$>")"
+      +[-2,-1] c. 0,255 nm. ${nm0}_$>
       if {{*}" && "{*1}} w1 0 fi
       if {{*}" || "{*1}}
         text="Processing frame \#"$>"/"{$1-1}"..."
@@ -23193,7 +23193,7 @@ x_morph : check "isint(${1=16}) && isint(${2=3}) && $2>=0 && $2<=4"
         if {*1} +r. {*1,d,e},1,100%,2 to. $text,5,5,20,2 w1. rm. fi
       fi
     done
-    k[-$1--1]
+    nm. $nm1 k[-$1--1]
     offset+={$!-2}
   endl done w0 0 w1 0 v +
 
