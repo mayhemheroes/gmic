@@ -23046,8 +23046,9 @@ x_morph : check "isint(${1=16}) && isint(${2=3}) && $2>=0 && $2<=4"
 ----\n
 -----------------------------------------------------"
   v -
+  offset=0
   radius_keypoints=3
-  repeat {$!/2} l[{[2*$>,2*$>+1]}]
+  repeat {$!-1} l[{[$>,$>+1]+$offset}]
     to_colormode 0
     rr2d ${-max_wh},2
     nm img0,img1
@@ -23176,27 +23177,27 @@ x_morph : check "isint(${1=16}) && isint(${2=3}) && $2>=0 && $2<=4"
       if $animate_inbetween rmn imgm fi
     while {{*}" && "!{*,ESC}" && "!{*,Q}" && "!{*,ENTER}}
 
-  endl done
+    # Render fullres morphing.
+    rmn colormap,imgb0,imgb1,warp0,warp1,imgr,imgm
+    +_x_warp_rbf[keypoints] {img0,[w,h]}
+    +l[keypoints] s c,-2 rv[0,1] a c endl +_x_warp_rbf. {img0,[w,h]} rm..
+    nm[-2,-1] warp0,warp1
 
-  # Render fullres morphing.
-  rmn colormap,imgb0,imgb1,warp0,warp1,imgr,imgm
-  +_x_warp_rbf[keypoints] {img0,[w,h]}
-  +l[keypoints] s c,-2 rv[0,1] a c endl +_x_warp_rbf. {img0,[w,h]} rm..
-  nm[-2,-1] warp0,warp1
-
-  repeat $1
-    t,onemt={t=$>/max(1,$1-1);[t,1-t]}
-    +*[warp1] $t *. -1 +warp[img0] .,1,2,3 rm.. *. $onemt
-    +*[warp0] $onemt *. -1 +warp[img1] .,1,2,3 rm.. *. $t
-    +[-2,-1] nm. "Frame "$>
-    if {{*}" || "{*1}}
-      text="Processing frame \#"$>"/"{$1-1}"..."
-      if {*} +r. {*,d,e},1,100%,2 to. $text,5,5,20,2 w. rm. fi
-      if {*1} +r. {*1,d,e},1,100%,2 to. $text,5,5,20,2 w1. rm. fi
-    fi
-  done
-  k[-$1--1]
-  w0 0 w1 0 v +
+    repeat $1
+      t,onemt={t=$>/max(1,$1-1);[t,1-t]}
+      +*[warp1] $t *. -1 +warp[img0] .,1,2,3 rm.. *. $onemt
+      +*[warp0] $onemt *. -1 +warp[img1] .,1,2,3 rm.. *. $t
+      +[-2,-1] nm. "Frame "$>
+      if {{*}" && "{*1}} w1 0 fi
+      if {{*}" || "{*1}}
+        text="Processing frame \#"$>"/"{$1-1}"..."
+        if {*} +r. {*,d,e},1,100%,2 to. $text,5,5,20,2 w. rm. fi
+        if {*1} +r. {*1,d,e},1,100%,2 to. $text,5,5,20,2 w1. rm. fi
+      fi
+    done
+    k[-$1--1]
+    offset+={$!-2}
+  endl done w0 0 w1 0 v +
 
 #@cli x_pacman
 #@cli : Launch pacman game.
@@ -31482,7 +31483,7 @@ fx_twirl :
   if {!$4} to_a fi
   twirl $1,$2%,$3%,$4
 
-#@gui Warp [interactive] : fx_warp_interactive, fx_warp_interactive_preview(1)
+#@gui Warp [Interactive] : fx_warp_interactive, fx_warp_interactive_preview(1)
 #@gui : Preview precision = choice{1,"Coarsest (faster)","Coarse","Normal","Fine","Finest (slower)"}
 #@gui : sep = separator(), note = note{"<small><b>Pre-defined keypoints</b></small>"}
 #@gui : Regular grid = int(2,2,10)
