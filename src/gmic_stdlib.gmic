@@ -23054,7 +23054,7 @@ x_morph : check "isint(${1=16}) && isint(${2=3}) && $2>=0 && $2<=4"
   v -
   offset=0
   radius_keypoints=3
-  repeat {$!-1} l[{[$>,$>+1]+$offset}]
+  repeat {$!-1} l[{[$>,$>+1]+$offset}] nm={0,n}
     to_colormode 0
     rr2d ${-max_wh},2
     nm img0,img1
@@ -23069,7 +23069,6 @@ x_morph : check "isint(${1=16}) && isint(${2=3}) && $2>=0 && $2<=4"
     frame=0
 
     do
-
       # Generate set of keypoints (x0,y0,x1,y1,index_color)
       if {!narg($keypoints)}
         1,4,1,5,"p = y%2; q = int(y/2); [ [ p,q,p,q ]*100,y ]"
@@ -23129,7 +23128,6 @@ x_morph : check "isint(${1=16}) && isint(${2=3}) && $2>=0 && $2<=4"
 
       # Manage user interaction
       if $animate_inbetween wait 40 else wait fi
-
       mb={*,b} mxy={[{*,x,y}]*100/([{*,w,h}]-1)} mouse_over={{*,x}>=0}
 
       if {$mouse_over" && "($mb" || "{*,DELETE})" && "$selected_keypoint<0" && "h#$keypoints>0} # Determine selected keypoint
@@ -23142,15 +23140,10 @@ x_morph : check "isint(${1=16}) && isint(${2=3}) && $2>=0 && $2<=4"
       fi
 
       if {{*,-o}" || "{*,-SPACE}" || "{*1,-SPACE}} frame={!$frame} rmn imgr fi # Swap frames
-
       if {{*,-K}" || "{*1,-K}} view_keypoints={!$view_keypoints} rmn imgr fi # Show/hide keypoints
-
       if {{*,-R}" || "{*1,-R}} rmn keypoints rmn imgr fi # Reset keypoints
-
       if {{*,-TAB}" || "{*1,-TAB}} radius_keypoints={max(2,($radius_keypoints+2)%8)} view_keypoints=1 rmn imgr fi # Change keypoint radius
-
       if {{*,-ENTER}" || "{*1,-ENTER}} animate_inbetween={$animate_inbetween?0:$|} fi # Start inbetween animation
-
       if {*,r} rmn imgb0,imgb1 fi # Window resize
       if {*1,r} rmn imgm fi
       if {*1,o} time_inbetween={max(0,min(1,$time_inbetween+0.05*{*1,-o}))} animate_inbetween=0 rmn imgm fi # Change time of inbetween
@@ -23192,7 +23185,7 @@ x_morph : check "isint(${1=16}) && isint(${2=3}) && $2>=0 && $2<=4"
       t,onemt={t=$>/max(1,$1-1);[t,1-t]}
       +*[warp1] $t *. -1 +warp[img0] .,1,2,3 rm.. *. $onemt
       +*[warp0] $onemt *. -1 +warp[img1] .,1,2,3 rm.. *. $t
-      +[-2,-1] c. 0,255 nm. "Frame "$>
+      +[-2,-1] c. 0,255 nm. $nm" (Frame "$>")"
       if {{*}" && "{*1}} w1 0 fi
       if {{*}" || "{*1}}
         text="Processing frame \#"$>"/"{$1-1}"..."
