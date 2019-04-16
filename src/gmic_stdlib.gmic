@@ -25043,32 +25043,37 @@ x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2 && isint(${3=0
       # Generate set of keypoints.
       if {!narg($keypoints)}
 
-        # Keypoints located on regular grid.
-        nbp,nbq=$1,$2
-        1,{$nbp*$nbq},1,4,"const nbp = "$nbp"; const nbq = "$nbq";
-          p = y%nbp;
-          q = int(y/nbp);
-          x = p*100/(nbp - 1);
-          y = q*100/(nbq - 1);
-          [ x,y,x,y ]"
+        if {narg($__x_warp_keypoints)} ($__x_warp_keypoints) r. 1,{w/4},1,4,-1
+        else
 
-        # Keypoints located on contours.
-        nbc=$3
-        if {$nbc>0}
-          +b[imgb] 0.5 gradient_norm. sqrt. {round([w,h]/4)} gaussian. 20%
-          1,$nbc,1,4,">
-            begin(gauss = crop(#-1));
-            st = stats(#-2);
-            iM = st[1];
-            xM = st[8];
-            yM = st[9];
-            img = vector(#w#-1*h#-1,-iM);
-            draw(#-2,img,xM - w#-1/2,yM - h#-1/2,0,0,w#-1,h#-1,1,1,-1,gauss);
-            nxyM = [ xM,yM ]*100/([w#-2,h#-2]-1);
-            [ nxyM,nxyM ]"
-          rm[-3,-2]
-          a[-2,-1] y
+          # Keypoints located on regular grid.
+          nbp,nbq=$1,$2
+          1,{$nbp*$nbq},1,4,"const nbp = "$nbp"; const nbq = "$nbq";
+            p = y%nbp;
+            q = int(y/nbp);
+            x = p*100/(nbp - 1);
+            y = q*100/(nbq - 1);
+            [ x,y,x,y ]"
+
+          # Keypoints located on contours.
+          nbc=$3
+          if {$nbc>0}
+            +b[imgb] 0.5 gradient_norm. sqrt. {round([w,h]/4)} gaussian. 20%
+            1,$nbc,1,4,">
+              begin(gauss = crop(#-1));
+              st = stats(#-2);
+              iM = st[1];
+              xM = st[8];
+              yM = st[9];
+              img = vector(#w#-1*h#-1,-iM);
+              draw(#-2,img,xM - w#-1/2,yM - h#-1/2,0,0,w#-1,h#-1,1,1,-1,gauss);
+              nxyM = [ xM,yM ]*100/([w#-2,h#-2]-1);
+              [ nxyM,nxyM ]"
+            rm[-3,-2]
+            a[-2,-1] y
+          fi
         fi
+
         N0={h} nm. keypoints
         rmn warp,imgw,imgr
       fi
@@ -25157,12 +25162,12 @@ x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2 && isint(${3=0
       elif {!$mb} selected_keypoint=-1
       fi
     while {{*}" && "!{*,ESC}" && "!{*,Q}" && "!{*,ENTER}}
+    __x_warp_keypoints={keypoints,^}
 
     +drgba[imgw] to. "Processing fullres...",5,5,20,2 w. rm.
     k[img,keypoints]
     _x_warp_rbf[keypoints] {img,[w,h]} +. '[x,y]'
     warp[img] .,0,2,3 rm. nm $nm
-
   endl done c 0,255 w 0 v +
 
 # Generate 2d warping field from set of keypoints, using RBF reconstruction.
@@ -31482,6 +31487,7 @@ fx_twirl :
 #@gui : sep = separator(), note = note{"<small><b>Pre-defined keypoints</b></small>"}
 #@gui : Regular grid = int(2,2,10)
 #@gui : Contours = int(0,0,32)
+#@gui : Keypoints = value(-1)
 #@gui : sep = separator()
 #@gui : note = note{"<b>Instructions:</b>"}
 #@gui : note = note{"
@@ -31496,44 +31502,55 @@ fx_twirl :
 #@gui : "}
 #@gui : sep = separator(), note = note("<small>Author: <i>David Tschumperl&#233;</i>.      Latest Update: <i>2019/04/08</i>.</small>")
 fx_warp_interactive :
+  if {$4!=-1} __x_warp_keypoints=${4--1} fi
   x_warp $2,$2,$3,$1
+  u "{$1}{$2}{$3}{"$__x_warp_keypoints"}"
 
 fx_warp_interactive_preview :
+  if {$4!=-1} __x_warp_keypoints=${4--1} fi
   repeat $! l[$>]
     rr2d $_preview_width,$_preview_height,0,3 to_color drgba
+    if {narg($__x_warp_keypoints)} ($__x_warp_keypoints) r. 1,{w/4},1,4,-1
+    else
 
-    # Keypoints located on regular grid.
-    nbp,nbq=$2,$2
-    1,{$nbp*$nbq},1,2,"const nbp = "$nbp"; const nbq = "$nbq";
-      p = y%nbp;
-      q = int(y/nbp);
-      x = p*(w#0-1)/(nbp - 1);
-      y = q*(h#0-1)/(nbq - 1);
-      [ x,y ]"
+      # Keypoints located on regular grid.
+      nbp,nbq=$2,$2
+      1,{$nbp*$nbq},1,4,"const nbp = "$nbp"; const nbq = "$nbq";
+        p = y%nbp;
+        q = int(y/nbp);
+        x = p*100/(nbp - 1);
+        y = q*100/(nbq - 1);
+        [ x,y,x,y ]"
 
-    # Keypoints located on contours.
-    nbc=$3
-    if {$nbc>0}
-      +b[0] 0.5 gradient_norm. sqrt. {round([w,h]/4)} gaussian. 20%
-      1,$nbc,1,2,">
-        begin(gauss = crop(#-1));
-        st = stats(#-2);
-        iM = st[1];
-        xM = st[8];
-        yM = st[9];
-        img = vector(#w#-1*h#-1,-iM);
-        draw(#-2,img,xM - w#-1/2,yM - h#-1/2,0,0,w#-1,h#-1,1,1,-1,gauss);
-        [ xM,yM ]"
-      rm[-3,-2]
-      a[-2,-1] y
+      # Keypoints located on contours.
+      nbc=$3
+      if {$nbc>0}
+        +b[0] 0.5 gradient_norm. sqrt. {round([w,h]/4)} gaussian. 20%
+        1,$nbc,1,4,">
+          begin(gauss = crop(#-1));
+          st = stats(#-2);
+          iM = st[1];
+          xM = st[8];
+          yM = st[9];
+          img = vector(#w#-1*h#-1,-iM);
+          draw(#-2,img,xM - w#-1/2,yM - h#-1/2,0,0,w#-1,h#-1,1,1,-1,gauss);
+          nxyM = [ xM,yM ]*100/([w#-2,h#-2]-1);
+          [ nxyM,nxyM ]"
+        rm[-3,-2]
+        a[-2,-1] y
+      fi
     fi
+
+    +_x_warp_rbf. {0,round([w,h]/4)} *. 4 r. [0],[0],1,100%,3 +. '[x,y]' warp[0] .,0,1,3 rm.
+
     eval. "*
       begin(
         col1 = [ 64,200,255 ];
         const radius1 = 3;
         const radius2 = radius1 + 2;
+        fact = ([ w#0,h#0 ] - 1)%
       );
-      X = I;
+      X = (I)[0,2]*fact;
       ellipse(#0,X,radius2,radius2,0,1,0);
       ellipse(#0,X,radius1,radius1,0,1,col1); I"
     rm.
