@@ -23159,10 +23159,10 @@ x_morph : check "isint(${1=16}) && isint(${2=3}) && $2>=0 && $2<=4"
         ({[$mxy]}) permute. zycx j[keypoints] .,0,$selected_keypoint,0,{2*$frame} rm.
         rmn imgr
 
-      elif {$mouse_over" && "$selected_keypoint>=0" && ("{*,-DELETE}" || "$mb==4")"} # Delete keypoint
+      elif {$mouse_over" && "$selected_keypoint>=0" && ("{*,-DELETE}" || "$mb==4") && "h#$keypoints>4} # Delete keypoint
         1,1,1,5,-1 j[keypoints] .,0,$selected_keypoint rm. discard[keypoints] -1 r[keypoints] 1,{keypoints,h/5},1,5,-1
         N0-={$selected_keypoint<$N0?1:0} selected_keypoint=-1
-        rmn imgr
+        rmn warp0,warp1,imgr
 
       elif {!{*,b}" && "$selected_keypoint>=0}
         if $move_other frame={!$frame} move_other=0 fi
@@ -25011,16 +25011,17 @@ x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2 && isint(${3=0
   if {!$!} error[0--3] "Command '$0': Requires at least one input image!" return fi
   v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
   e[] "\n
------- "${g}"Interactive image warper"$n" ---------------------\n
+------ "${g}"Interactive image warper"$n" -----------------------------\n
 ----\n
----- "${c}"Mouse"$n" to insert/move/delete keypoints.\n
----- Key '"${c}"SPACE"$n"' to shows/hide keypoints.\n
----- Key '"${c}"TAB"$n"' to change keypoint radius.\n
----- Key '"${c}"SHIFT"$n"' to toggle to original image.\n
----- Key '"${c}"R"$n"' to reset keypoint positions.\n
----- Keys '"${c}"ESC"$n"', '"${c}"ENTER"$n"' or '"${c}"Q"$n"' to exit.\n
+---- "${c}"Left mouse button"$n": Add and move keypoint.\n
+---- "${c}"Right mouse button"$n": Delete keypoint.\n
+---- Key '"${c}"SPACE"$n"' or "${c}"Middle mouse button"$n": Show/hide keypoints.\n
+---- Key '"${c}"TAB"$n"': Change keypoint radius.\n
+---- Key '"${c}"SHIFT"$n"': Toggle to original image.\n
+---- Key '"${c}"R"$n"': Reset keypoints.\n
+---- Keys '"${c}"ESC"$n"', '"${c}"ENTER"$n"' or '"${c}"Q"$n"': Process fullres and exit.\n
 ----\n
------------------------------------------------------"
+-------------------------------------------------------------"
   v -
   radius_keypoints=4
   repeat $! l[$>] nm={n}
@@ -25139,10 +25140,6 @@ x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2 && isint(${3=0
         do wait while {{*,SHIFTLEFT}" || "{*,SHIFTRIGHT}} rmn imgr
       fi
 
-      if {*,K} # Save keypoints
-        o[keypoints] keypoints.gmz
-      fi
-
       if {*,r} rmn imgb fi # Window resize
 
       if {$mouse_over" && "$mb==1" && "$selected_keypoint<0} # Add keypoint
@@ -25155,7 +25152,7 @@ x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2 && isint(${3=0
         ({"[ "$mxy" ]"}) permute. zycx j[keypoints] .,0,$selected_keypoint rm.
         rmn warp
 
-      elif {$mouse_over" && "$mb==2" && "$selected_keypoint>=0} # Remove keypoint
+      elif {$mouse_over" && "$mb==2" && "$selected_keypoint>=0" && "h#$keypoints>4} # Remove keypoint
         1,1,1,4,-1 j[keypoints] .,0,$selected_keypoint rm. discard[keypoints] -1 r[keypoints] 1,{keypoints,h/4},1,4,-1
         N0-={$selected_keypoint<$N0?1:0} selected_keypoint=-1
         rmn warp
