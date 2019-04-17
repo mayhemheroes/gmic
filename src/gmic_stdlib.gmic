@@ -23071,7 +23071,9 @@ x_morph : check "isint(${1=16}) && isint(${2=3}) && $2>=0 && $2<=4"
     do
       # Generate set of keypoints (x0,y0,x1,y1,index_color)
       if {!narg($keypoints)}
-        1,4,1,5,"p = y%2; q = int(y/2); [ [ p,q,p,q ]*100,y ]"
+        if {narg($__x_morph_keypoints)} ($__x_morph_keypoints) r. 1,{w/5},1,5,-1
+        else 1,4,1,5,"p = y%2; q = int(y/2); [ [ p,q,p,q ]*100,y ]"
+        fi
         N0={h} nm. keypoints
         rmn warp0,warp1
       fi
@@ -23174,6 +23176,7 @@ x_morph : check "isint(${1=16}) && isint(${2=3}) && $2>=0 && $2<=4"
 
       if $animate_inbetween rmn imgm fi
     while {{*}" && "!{*,ESC}" && "!{*,Q}" && "{*1}" && "!{*1,ESC}" && "!{*1,Q}}
+    if {!$<} __x_morph_keypoints={keypoints,^} fi
 
     # Render fullres morphing.
     rmn colormap,imgb0,imgb1,warp0,warp1,imgr,imgm
@@ -25042,7 +25045,6 @@ x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2 && isint(${3=0
 
       # Generate set of keypoints.
       if {!narg($keypoints)}
-
         if {narg($__x_warp_keypoints)} ($__x_warp_keypoints) r. 1,{w/4},1,4,-1
         else
 
@@ -25073,7 +25075,6 @@ x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2 && isint(${3=0
             a[-2,-1] y
           fi
         fi
-
         N0={h} nm. keypoints
         rmn warp,imgw,imgr
       fi
@@ -25158,7 +25159,7 @@ x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2 && isint(${3=0
       elif {!$mb} selected_keypoint=-1
       fi
     while {{*}" && "!{*,ESC}" && "!{*,Q}" && "!{*,ENTER}}
-    __x_warp_keypoints={keypoints,^}
+    if {!$<} __x_warp_keypoints={keypoints,^} fi
 
     +drgba[imgw] to. "Processing fullres...",5,5,20,2 w. rm.
     k[img,keypoints]
@@ -31081,6 +31082,7 @@ fx_symmetrizoscope :
 #@gui Morph [Interactive] : fx_morph_interactive, fx_morph_interactive_preview
 #@gui : Number of frames = int(16,3,1024)
 #@gui : Preview precision = choice{2,"Coarsest (faster)","Coarse","Normal","Fine","Finest (slower)"}
+#@gui : Keypoints = value(-1)
 #@gui : sep = separator()
 #@gui : note = note{"<b>Instructions:</b>"}
 #@gui : note = note{"
@@ -31102,14 +31104,18 @@ fx_symmetrizoscope :
 #@gui : "}
 #@gui : sep = separator(), note = note("<small>Author: <i>David Tschumperl&#233;</i>.      Latest Update: <i>2019/04/16</i>.</small>")
 fx_morph_interactive :
+  if {$3!=-1} __x_morph_keypoints=${3--1} fi
   rv
   x_morph $1,$2
   repeat $! gui_set_layer_name[$>] "Morphing ""#"$> gui_set_layer_pos[$>] 0,0 done
   rv
+  u "{$1}{$2}{"$__x_morph_keypoints"}"
 
 fx_morph_interactive_preview :
-  if {$!<2} gui_warning_preview "This filter requires at least two input layers!"
-  else gui_no_preview ,
+  if {$!<2} gui_warning_preview "This filter requires at least two input layers!" return fi
+  + n 0,255
+  if {$3!=-1} gui_warning_preview "No preview available\n\nKeypoints from previous\nrun have been saved"
+  else gui_warning_preview "No preview available"
   fi
 
 #@gui Perspective : fx_warp_perspective, fx_warp_perspective(1)
