@@ -13964,18 +13964,18 @@ circle3d : skip ${1=0},${2=0},${3=0},${4=1}
   nm. [3D\ circle]
   v +
 
-#@cli circles3d : _radius>=0,_is_filled={ 0 | 1 }
+#@cli circles3d : _radius>=0,_is_wireframe={ 0 | 1 }
 #@cli : Convert specified 3D objects to sets of 3D circles with specified radius.
-#@cli : Default values: 'radius=1' and 'is_filled=1'.
+#@cli : Default values: 'radius=1' and 'is_wireframe=1'.
 #@cli : $ image.jpg luminance resize2dy 40 threshold 50% * 255 pointcloud3d color3d[-1] 255,255,255 circles3d 0.7
-circles3d : check ${1=1}>=0 skip ${2=1}
-  e[^-1] "Convert 3D object$? to sets of 3D "${arg\ 1+$2,wireframe,filled}" circles with radius $1."
+circles3d : check "${1=1}>=0 && isbool(${2=0})"
+  e[^-1] "Convert 3D object$? to sets of 3D "${arg\ 1+$2,filled,wireframe}" circles with radius $1."
   v - p3d 0 repeat $! l[$>]
     -3d {$1/2},0,0 ++3d $1,0,0 +3d[1] [0]
     s3d # Two 3d objects decomposed here!
     rows[7] 0 j[1] [7] # Number of points
     rv[2,8] # Points
-    rv[3,9] l[3] r 2,{h/2},1,1,-1 z 1,1 s y,2 i[0] 1,100%,1,1,5 1,100%,1,1,{!$2} 2,100% a x y endl # Primitives
+    rv[3,9] l[3] r 2,{h/2},1,1,-1 z 1,1 s y,2 i[0] 1,100%,1,1,5 1,100%,1,1,$2 2,100% a x y endl # Primitives
     k[0-5] a y
   endl done v +
 
