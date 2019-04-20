@@ -2195,13 +2195,13 @@ bool gmic::check_filename(const char *const filename) {
 }
 
 template<typename T>
-bool gmic::check_cond(const char *const expr, bool &is_filename, CImg<T>& img, CImgList<T>& images) {
+bool gmic::check_cond(const char *const expr, CImg<T>& img, CImgList<T>& images) {
   bool res = false;
   float _res = 0;
   char end;
-  if (cimg_sscanf(expr,"%f%c",&_res,&end)==1) { res = (bool)_res; is_filename = false; }
-  else try { if (img.eval(expr,0,0,0,0,&images,&images)) res = true; is_filename = false; }
-  catch (CImgException&) { res = check_filename(expr); is_filename = true; }
+  if (cimg_sscanf(expr,"%f%c",&_res,&end)==1) res = (bool)_res;
+  else try { if (img.eval(expr,0,0,0,0,&images,&images)) res = true; }
+  catch (CImgException&) { }
   return res;
 }
 
@@ -4494,7 +4494,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     interpolation = 0;
   char end, sep = 0, sep0 = 0, sep1 = 0, sepx = 0, sepy = 0, sepz = 0, sepc = 0, axis = 0;
   double vmin = 0, vmax = 0, value, value0, value1, nvalue, nvalue0, nvalue1;
-  bool is_cond, is_filename, is_endlocal = false;
+  bool is_cond, is_endlocal = false;
   float opacity = 0;
   int err;
 
@@ -5347,12 +5347,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           name.assign(argument,(unsigned int)std::strlen(argument) + 1);
           strreplace_fw(name);
           CImg<T> &img = images.size()?images.back():CImg<T>::empty();
-          is_cond = check_cond(name,is_filename,img,images);
+          is_cond = check_cond(name,img,images);
           if (is_very_verbose)
-            print(images,0,"Check %s '%s' -> %s.",
-                  is_filename?"file":"expression",
-                  gmic_argument_text_printed(),
-                  is_filename?(is_cond?"found":"not found"):(is_cond?"true":"false"));
+            print(images,0,"Check condition '%s' -> %s.",gmic_argument_text_printed(),is_cond?"true":"false");
           if (!is_cond) {
             if (is_first_item && callstack.size()>1 && callstack.back()[0]!='*')
               gmic::error(images,0,callstack.back(),"Command '%s': Invalid argument '%s'.",
@@ -7062,26 +7059,17 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // For.
         if (!std::strcmp("for",item)) {
           gmic_substitute_args(false);
-          float _is_cond = 0;
-          is_filename = false;
-          if (cimg_sscanf(argument,"%f%c",&_is_cond,&end)!=1) {
-            is_filename = true;
-            name.assign(argument,(unsigned int)std::strlen(argument) + 1);
-            strreplace_fw(name);
-            _is_cond = (float)check_filename(name);
-          }
-          const bool
-            is_cond = (bool)_is_cond,
-            is_first = !nb_fordones || fordones(0,nb_fordones - 1)!=position;
+          name.assign(argument,(unsigned int)std::strlen(argument) + 1);
+          strreplace_fw(name);
+          CImg<T> &img = images.size()?images.back():CImg<T>::empty();
+          is_cond = check_cond(name,img,images);
+          const bool is_first = !nb_fordones || fordones(0,nb_fordones - 1)!=position;
           if (is_very_verbose)
-            print(images,0,"%s %s -> %s '%s' %s.",
+            print(images,0,"%s %s -> condition '%s' %s.",
                   !is_first?"Reach":is_cond?"Start":"Skip",
                   is_first?"'for...done' block":"'for' command",
-                  is_filename?"file":"condition",
                   gmic_argument_text_printed(),
-                  is_filename?(is_cond?"exists":
-                               "does not exist"):
-                  (is_cond?"holds":"does not hold"));
+                  is_cond?"holds":"does not hold");
           if (is_cond) {
             if (is_first) {
               if (is_debug_info && debug_line!=~0U) {
@@ -12209,22 +12197,14 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           if (s[0]!='*' || s[1]!='d')
             error(images,0,0,
                   "Command 'while': Not associated to a 'do' command within the same scope.");
-          float _is_cond = 0;
-          is_filename = false;
-          if (cimg_sscanf(argument,"%f%c",&_is_cond,&end)!=1) {
-            is_filename = true;
-            name.assign(argument,(unsigned int)std::strlen(argument) + 1);
-            strreplace_fw(name);
-            _is_cond = (float)check_filename(name);
-          }
-          const bool is_cond = (bool)_is_cond;
+          name.assign(argument,(unsigned int)std::strlen(argument) + 1);
+          strreplace_fw(name);
+          CImg<T> &img = images.size()?images.back():CImg<T>::empty();
+          is_cond = check_cond(name,img,images);
           if (is_very_verbose)
-            print(images,0,"Reach 'while' command -> %s '%s' %s.",
-                  is_filename?"file":"condition",
+            print(images,0,"Reach 'while' command -> condition '%s' %s.",
                   gmic_argument_text_printed(),
-                  is_filename?(is_cond?"exists":
-                               "does not exist"):
-                  (is_cond?"holds":"does not hold"));
+                  is_cond?"holds":"does not hold");
           if (is_cond) {
             position = dowhiles[nb_dowhiles - 1];
             next_debug_line = debug_line; next_debug_filename = debug_filename;
@@ -12607,31 +12587,21 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         if (!std::strcmp("if",item) || (!std::strcmp("elif",item) && check_elif)) {
           gmic_substitute_args(false);
           check_elif = false;
-          float _is_cond = 0;
-          is_filename = false;
-          if (cimg_sscanf(argument,"%f%c",&_is_cond,&end)!=1) {
-            is_filename = true;
-            name.assign(argument,(unsigned int)std::strlen(argument) + 1);
-            strreplace_fw(name);
-            _is_cond = (float)check_filename(name);
-          }
-          const bool is_cond = (bool)_is_cond;
+          name.assign(argument,(unsigned int)std::strlen(argument) + 1);
+          strreplace_fw(name);
+          CImg<T> &img = images.size()?images.back():CImg<T>::empty();
+          is_cond = check_cond(name,img,images);
           if (*item=='i') {
             if (is_debug_info && debug_line!=~0U) {
               cimg_snprintf(argx,_argx.width(),"*if#%u",debug_line);
               CImg<char>::string(argx).move_to(callstack);
             } else CImg<char>::string("*if").move_to(callstack);
-            if (is_very_verbose) print(images,0,"Start 'if...endif' block -> %s '%s' %s.",
-                                       is_filename?"file":"condition",
+            if (is_very_verbose) print(images,0,"Start 'if...endif' block -> condition '%s' %s.",
                                        gmic_argument_text_printed(),
-                                       is_filename?(is_cond?"exists":"does not exist"):
-                                       (is_cond?"holds":"does not hold"));
-          } else if (is_very_verbose) print(images,0,"Reach 'elif' block -> %s '%s' %s.",
-                                            is_filename?"file":"condition",
+                                       is_cond?"holds":"does not hold");
+          } else if (is_very_verbose) print(images,0,"Reach 'elif' block -> condition '%s' %s.",
                                             gmic_argument_text_printed(),
-                                            is_filename?(is_cond?"exists":
-                                                         "does not exist"):
-                                            (is_cond?"holds":"does not hold"));
+                                            is_cond?"holds":"does not hold");
           if (!is_cond) {
             for (int nb_ifs = 1; nb_ifs && position<commands_line.size(); ++position) {
               const char *it = commands_line[position].data();
