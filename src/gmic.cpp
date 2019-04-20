@@ -2194,6 +2194,20 @@ bool gmic::check_filename(const char *const filename) {
   return res;
 }
 
+template<typename T>
+bool gmic::check_cond(const char *const expr, bool &is_filename, const CImg<T>& img, const CImgList<T>& images) {
+  bool res = false;
+  float _res = 0;
+  char end;
+  if (cimg_sscanf(expr,"%f%c",&_res,&end)==1) res = (bool)_res;
+  else try { if (img.eval(expr,0,0,0,0,&images,&images)) res = true; }
+    catch (CImgException&) {
+      is_filename = true;
+      res = check_filename(expr);
+    }
+  return res;
+}
+
 // Return a hashcode from a string.
 unsigned int gmic::hashcode(const char *const str, const bool is_variable) {
   if (!str) return 0U;

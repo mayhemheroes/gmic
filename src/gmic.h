@@ -246,6 +246,9 @@ struct gmic {
                           gmic_image<int>& d, const int i, const int j);
   static int levenshtein(const char *const s, const char *const t);
   static bool check_filename(const char *const filename);
+  template<typename T>
+  static bool check_cond(const char *const expr, bool &is_filename,
+                         const gmic_image<T>& img, const gmic_list<T>& images);
   static unsigned int hashcode(const char *const str, const bool is_variable);
   static bool command_has_arguments(const char *const command);
   static const char* basename(const char *const str);
