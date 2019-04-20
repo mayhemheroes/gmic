@@ -147,7 +147,7 @@
 cli_noarg :
   use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r version
   v + e[] "\n[gmic] No commands, options or data provided (type "${c}"'gmic help'"$n" to get help)." v -
-  if {{*,u}>0}
+  if {*,u}>0
     v + e[] "[gmic] "${c}"Running in demo mode."$n v - parallel 0,"demo ," e[] ""
   else
     v + e[] "\n" v -
@@ -183,18 +183,18 @@ h :
 #@cli : Display help (optionally for specified command only) and exit.
 #@cli : (eq. to 'h').
 help : skip ${1=""},${2=1}
-  if {!$!} return fi
+  if !$! return fi
   y a y
   +_help $1,$2 k[0]
-  if {narg(${})} _help[0] ${},0 fi # In case of shortcut, display also help for shortcut command.
+  if narg(${}) _help[0] ${},0 fi # In case of shortcut, display also help for shortcut command.
   rm
 
 _help : skip ${1=""}
   v -1 use_vt100
-  if {!narg("$1")} _is_example=0 __help ascii v + e[] "" v - rm u "" return fi # Global help.
+  if !narg("$1") _is_example=0 __help ascii v + e[] "" v - rm u "" return fi # Global help.
 
   ({'"$1"'}) autocrop. {'-'}
-  if {{@100%}==_']'" && "i!=_'['} l. s -,{'['} k[0] endl fi
+  if {@100%}==_']'" && "i!=_'[' l. s -,{'['} k[0] endl fi
   command={t} rm.
 
   # Help requested for a specific command.
@@ -202,13 +202,13 @@ _help : skip ${1=""}
   if $2 e[] "" __help_header_ascii[] fi
   r 1,{h+1},1,1,0,0,0,1
   s +,{'"#@cli "$command" :"'} s +,{'"#@cli "$command":"'} s +,{'"#@cli "$command"\n"'}
-  if {$!==1}
+  if $!==1
     l[] m "foo : "$command # Detect command misspelling.
       repeat 16 uncommand $command done # Be sure the specified command does not exist anymore !
       foo uncommand foo
-    onfail ({'${}'}) s -,{'" (did you mean "'} if {$!>1} s[1] -,39 k[1] misspelling={t} fi rm
+    onfail ({'${}'}) s -,{'" (did you mean "'} if $!>1 s[1] -,39 k[1] misspelling={t} fi rm
     endl
-    if {narg($misspelling)} misspelling=" (did you mean '"$misspelling"' ?)" fi
+    if narg($misspelling) misspelling=" (did you mean '"$misspelling"' ?)" fi
     v + e[] "\n[gmic] Command '"$command"' has no description"$misspelling". Try 'gmic -h' for global help.\n\n" v -
     rm u "" return
   fi
@@ -216,11 +216,11 @@ _help : skip ${1=""}
   stopflag=0
   _is_example=0
   _document_gmic_header_ascii[] 0
-  repeat $! l[$>] if {h>6" && "same([{^}],'#@cli',5)}
+  repeat $! l[$>] if h>6" && "same([{^}],'#@cli',5)
     rows 6,100% autocrop {'" "'} # Discard '#@cli'.
-    if {i!=_':'} # Command declaration.
+    if i!=_':' # Command declaration.
       s -,{'": "'} autocrop {'" "'} autocrop {':'} autocrop {'" "'}
-      if {['{0,t}']==['$command']}
+      if ['{0,t}']==['$command']
         _document_gmic_declaration_ascii
         if $_shortcut # Found shortcut command.
           v + e[] "\n    "$_gmic_m${_gmic_b}$command":"$_gmic_n" Shortcut for command '"$_gmic_m$_gmic_b$_shortcutlink0$_gmic_n"'." v -
@@ -230,15 +230,15 @@ _help : skip ${1=""}
       fi
     else
       rows 1,100% # Discard ':' char.
-      if {i==_':'} stopflag=1 # Subsection
+      if i==_':' stopflag=1 # Subsection
       else
         _is_tutorial=
         autocrop {'" "'}
-        if {i==_'$'} # Example of use.
+        if i==_'$' # Example of use.
           rows 1,100% autocrop {'" "'} # Discard '$' character.
-          if {i==_'$'} # Tutorial page.
+          if i==_'$' # Tutorial page.
              v + e[] "" v -
-             if {h==1" && "i==_'$'} tuturl=https://gmic.eu/tutorial/_$command.shtml
+             if h==1" && "i==_'$' tuturl=https://gmic.eu/tutorial/_$command.shtml
              else autocrop {'$'} autocrop {'" "'} tuturl=https://gmic.eu/tutorial/{0,t}.shtml
              fi
              rm ({'$_gmic_n${_gmic_b}"Tutorial:"$_gmic_n$_gmic_r" "$tuturl'}) y
@@ -1181,14 +1181,14 @@ _help_header_ascii :
   _help_section "Usage"
 
 __help_header_ascii :
-  if {narg($_prerelease)} strprerelease=" (pre-release ""#"$_prerelease")" else strprerelease="" fi
+  if narg($_prerelease) strprerelease=" (pre-release ""#"$_prerelease")" else strprerelease="" fi
   str="\n  "${_gmic_b}"gmic: GREYC\'s Magic for Image Computing."$_gmic_n"
 \n        "$_gmic_g"(https://gmic.eu)"$_gmic_n"
 \n
 \n        "${_gmic_m}${_gmic_b}"Version "${-strver}$strprerelease$_gmic_n"
 \n        Copyright (c) 2008-2019, David Tschumperle / GREYC Lab / CNRS.
 \n        "$_gmic_c"(https://www.greyc.fr)"$_gmic_n
-  if {['$$_e']==0} m "_e : e[] \"$""*\"" fi
+  if ['$$_e']==0 m "_e : e[] \"$""*\"" fi
   v + _e[] $str v -
 
 _help_section_ascii :
@@ -1213,7 +1213,7 @@ _help_footer_ascii :
 # Commands to output help in html format.
 _help_header_html :
   _section=0
-  if {narg($_prerelease)} strprerelease=" (pre-release ""#"$_prerelease")" else strprerelease="" fi
+  if narg($_prerelease) strprerelease=" (pre-release ""#"$_prerelease")" else strprerelease="" fi
   _gmic_n="</span>"
   _gmic_r="<span style=\"color: \#900000\">"
   _gmic_g="<span style=\"color: \#900090\">"
@@ -1322,7 +1322,7 @@ _help_footer_html :
 # Commands to output help in latex format.
 _help_header_latex :
   strver=${-strver}
-  if {narg($_prerelease)} strprerelease=" (pre-release \\#"$_prerelease")" else strprerelease="" fi
+  if narg($_prerelease) strprerelease=" (pre-release \\#"$_prerelease")" else strprerelease="" fi
   _gmic_n="§\\aftergroup\\Ccn§"
   _gmic_b="§\\aftergroup\\Ccb§"
   _gmic_r="§\\aftergroup\\Ccr§"
@@ -1473,7 +1473,7 @@ _help_footer_man :
 # use_vt100
 # This command defines some global variables used to output colored text on VT100 terminals.
 use_vt100 :
-  v - if {0$_vt100>0}
+  v - if 0$_vt100>0
     _gmic_n="\33[0;0;0m"
     _gmic_r="\33[0;31;59m"
     _gmic_g="\33[0;32;59m"

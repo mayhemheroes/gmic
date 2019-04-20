@@ -2195,17 +2195,17 @@ bool gmic::check_filename(const char *const filename) {
 }
 
 template<typename T>
-bool gmic::check_cond(const char *const expr, CImgList<T>& images) {
+bool gmic::check_cond(const char *const expr, CImgList<T>& images, bool &is_valid_cond) {
   bool res = false;
   float _res = 0;
   char end;
   CImg<char> _expr(expr,(unsigned int)std::strlen(expr) + 1);
-  if (cimg_sscanf(_expr,"%f%c",&_res,&end)==1) res = (bool)_res;
+  if (cimg_sscanf(_expr,"%f%c",&_res,&end)==1) { res = (bool)_res; is_valid_cond = true; }
   else {
     CImg<T> &img = images.size()?images.back():CImg<T>::empty();
     strreplace_fw(_expr);
-    try { if (img.eval(_expr,0,0,0,0,&images,&images)) res = true; }
-    catch (CImgException&) { }
+    try { if (img.eval(_expr,0,0,0,0,&images,&images)) res = true; is_valid_cond = true; }
+    catch (CImgException&) { is_valid_cond = false; }
   }
   return res;
 }
@@ -4499,7 +4499,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     interpolation = 0;
   char end, sep = 0, sep0 = 0, sep1 = 0, sepx = 0, sepy = 0, sepz = 0, sepc = 0, axis = 0;
   double vmin = 0, vmax = 0, value, value0, value1, nvalue, nvalue0, nvalue1;
-  bool is_cond, is_endlocal = false;
+  bool is_cond, is_valid_cond, is_endlocal = false;
   float opacity = 0;
   int err;
 
@@ -5349,7 +5349,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Check expression or filename.
         if (is_command_check) {
           gmic_substitute_args(false);
-          is_cond = check_cond(argument,images);
+          is_cond = check_cond(argument,images,is_valid_cond);
+          if (!is_valid_cond) arg_error("check");
           if (is_very_verbose)
             print(images,0,"Check condition '%s' -> %s.",gmic_argument_text_printed(),is_cond?"true":"false");
           if (!is_cond) {
@@ -7061,7 +7062,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // For.
         if (!std::strcmp("for",item)) {
           gmic_substitute_args(false);
-          is_cond = check_cond(argument,images);
+          is_cond = check_cond(argument,images,is_valid_cond);
+          if (!is_valid_cond) arg_error("for");
           const bool is_first = !nb_fordones || fordones(0,nb_fordones - 1)!=position;
           if (is_very_verbose)
             print(images,0,"%s %s -> condition '%s' %s.",
@@ -10117,8 +10119,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           const char *varname = title;
           float number = 0;
           *title = 0;
-          is_cond = false; // is_valid_argument?
-          if (cimg_sscanf(argument,"%f%c",&number,&end)==1) is_cond = true;
+          is_valid_cond = false; // is_valid_argument?
+          if (cimg_sscanf(argument,"%f%c",&number,&end)==1) is_valid_cond = true;
           else {
             name.assign(argument,(unsigned int)std::strlen(argument) + 1);
             for (char *ps = name.data() + name.width() - 2; ps>=name.data(); --ps) {
@@ -10126,60 +10128,59 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               else if ((*ps<'a' || *ps>'z') && (*ps<'A' || *ps>'Z') && (*ps<'0' || *ps>'9') && *ps!='_') break;
             }
             if (*name) {
-              if (cimg_sscanf(name,"%f%c",&number,&end)==1) is_cond = true;
+              if (cimg_sscanf(name,"%f%c",&number,&end)==1) is_valid_cond = true;
               else {
                 CImg<T> &img = images.size()?images.back():CImg<T>::empty();
                 strreplace_fw(name);
-                try { number = (float)img.eval(name,0,0,0,0,&images,&images); is_cond = true; }
+                try { number = (float)img.eval(name,0,0,0,0,&images,&images); is_valid_cond = true; }
                 catch (CImgException&) { }
               }
             }
           }
 
-          if (is_cond) {
-            const unsigned int nb = number<=0?0U:
-              cimg::type<float>::is_inf(number)?~0U:(unsigned int)cimg::round(number);
-            if (nb) {
-              if (is_debug_info && debug_line!=~0U) {
-                cimg_snprintf(argx,_argx.width(),"*repeat#%u",debug_line);
-                CImg<char>::string(argx).move_to(callstack);
-              } else CImg<char>::string("*repeat").move_to(callstack);
-              if (is_very_verbose) {
-                if (*varname) print(images,0,"Start 'repeat...done' block with variable '%s' (%u iteration%s).",
+          if (!is_valid_cond) arg_error("repeat");
+          const unsigned int nb = number<=0?0U:
+            cimg::type<float>::is_inf(number)?~0U:(unsigned int)cimg::round(number);
+          if (nb) {
+            if (is_debug_info && debug_line!=~0U) {
+              cimg_snprintf(argx,_argx.width(),"*repeat#%u",debug_line);
+              CImg<char>::string(argx).move_to(callstack);
+            } else CImg<char>::string("*repeat").move_to(callstack);
+            if (is_very_verbose) {
+              if (*varname) print(images,0,"Start 'repeat...done' block with variable '%s' (%u iteration%s).",
                                   varname,nb,nb>1?"s":"");
-                else print(images,0,"Start 'repeat...done' block (%u iteration%s).",
-                           nb,nb>1?"s":"");
-              }
-              const unsigned int l = (unsigned int)std::strlen(varname);
-              if (nb_repeatdones>=repeatdones._height) repeatdones.resize(5,std::max(2*repeatdones._height,8U),1,1,0);
-              unsigned int *const rd = repeatdones.data(0,nb_repeatdones++);
-              rd[0] = position; rd[1] = nb; rd[2] = 0;
-              if (l) {
-                const unsigned int hash = hashcode(varname,true);
-                rd[3] = hash;
-                rd[4] = variables[hash]->_width;
-                CImg<char>::string(varname).move_to(*variables_names[hash]);
-                CImg<char>::string("0").move_to(*variables[hash]);
-              } else rd[3] = rd[4] = ~0U;
-            } else {
-              if (is_very_verbose) {
-                if (*varname) print(images,0,"Skip 'repeat...done' block with variable '%s' (0 iteration).",
-                                    varname);
-                else print(images,0,"Skip 'repeat...done' block (0 iteration).");
-              }
-              int nb_repeat_fors = 0;
-              for (nb_repeat_fors = 1; nb_repeat_fors && position<commands_line.size(); ++position) {
-                const char *it = commands_line[position].data();
-                it+=*it=='-';
-                if (!std::strcmp("repeat",it) || !std::strcmp("for",it)) ++nb_repeat_fors;
-                else if (!std::strcmp("done",it)) --nb_repeat_fors;
-              }
-              if (nb_repeat_fors && position>=commands_line.size())
-                error(images,0,0,
-                      "Command 'repeat': Missing associated 'done' command.");
-              continue;
+              else print(images,0,"Start 'repeat...done' block (%u iteration%s).",
+                         nb,nb>1?"s":"");
             }
-          } else arg_error("repeat");
+            const unsigned int l = (unsigned int)std::strlen(varname);
+            if (nb_repeatdones>=repeatdones._height) repeatdones.resize(5,std::max(2*repeatdones._height,8U),1,1,0);
+            unsigned int *const rd = repeatdones.data(0,nb_repeatdones++);
+            rd[0] = position; rd[1] = nb; rd[2] = 0;
+            if (l) {
+              const unsigned int hash = hashcode(varname,true);
+              rd[3] = hash;
+              rd[4] = variables[hash]->_width;
+              CImg<char>::string(varname).move_to(*variables_names[hash]);
+              CImg<char>::string("0").move_to(*variables[hash]);
+            } else rd[3] = rd[4] = ~0U;
+          } else {
+            if (is_very_verbose) {
+              if (*varname) print(images,0,"Skip 'repeat...done' block with variable '%s' (0 iteration).",
+                                  varname);
+              else print(images,0,"Skip 'repeat...done' block (0 iteration).");
+            }
+            int nb_repeat_fors = 0;
+            for (nb_repeat_fors = 1; nb_repeat_fors && position<commands_line.size(); ++position) {
+              const char *it = commands_line[position].data();
+              it+=*it=='-';
+              if (!std::strcmp("repeat",it) || !std::strcmp("for",it)) ++nb_repeat_fors;
+              else if (!std::strcmp("done",it)) --nb_repeat_fors;
+            }
+            if (nb_repeat_fors && position>=commands_line.size())
+              error(images,0,0,
+                    "Command 'repeat': Missing associated 'done' command.");
+            continue;
+          }
           ++position; continue;
         }
 
@@ -12214,7 +12215,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           if (s[0]!='*' || s[1]!='d')
             error(images,0,0,
                   "Command 'while': Not associated to a 'do' command within the same scope.");
-          is_cond = check_cond(argument,images);
+          is_cond = check_cond(argument,images,is_valid_cond);
+          if (!is_valid_cond) arg_error("while");
           if (is_very_verbose)
             print(images,0,"Reach 'while' command -> condition '%s' %s.",
                   gmic_argument_text_printed(),
@@ -12600,7 +12602,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // If...[elif]...[else]...endif.
         if (!std::strcmp("if",item) || (!std::strcmp("elif",item) && check_elif)) {
           gmic_substitute_args(false);
-          is_cond = check_cond(argument,images);
+          is_cond = check_cond(argument,images,is_valid_cond);
+          if (!is_valid_cond) arg_error(*item=='i'?"if":"elif");
           check_elif = false;
           if (*item=='i') {
             if (is_debug_info && debug_line!=~0U) {
