@@ -2195,16 +2195,13 @@ bool gmic::check_filename(const char *const filename) {
 }
 
 template<typename T>
-bool gmic::check_cond(const char *const expr, bool &is_filename, const CImg<T>& img, const CImgList<T>& images) {
+bool gmic::check_cond(const char *const expr, bool &is_filename, CImg<T>& img, CImgList<T>& images) {
   bool res = false;
   float _res = 0;
   char end;
-  if (cimg_sscanf(expr,"%f%c",&_res,&end)==1) res = (bool)_res;
-  else try { if (img.eval(expr,0,0,0,0,&images,&images)) res = true; }
-    catch (CImgException&) {
-      is_filename = true;
-      res = check_filename(expr);
-    }
+  if (cimg_sscanf(expr,"%f%c",&_res,&end)==1) { res = (bool)_res; is_filename = false; }
+  else try { if (img.eval(expr,0,0,0,0,&images,&images)) res = true; is_filename = false; }
+  catch (CImgException&) { res = check_filename(expr); is_filename = true; }
   return res;
 }
 
@@ -4497,7 +4494,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     interpolation = 0;
   char end, sep = 0, sep0 = 0, sep1 = 0, sepx = 0, sepy = 0, sepz = 0, sepc = 0, axis = 0;
   double vmin = 0, vmax = 0, value, value0, value1, nvalue, nvalue0, nvalue1;
-  bool is_endlocal = false;
+  bool is_cond, is_filename, is_endlocal = false;
   float opacity = 0;
   int err;
 
@@ -5349,13 +5346,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           gmic_substitute_args(false);
           name.assign(argument,(unsigned int)std::strlen(argument) + 1);
           strreplace_fw(name);
-          bool is_cond = false, is_filename = false;
           CImg<T> &img = images.size()?images.back():CImg<T>::empty();
-          try { if (img.eval(name,0,0,0,0,&images,&images)) is_cond = true; }
-          catch (CImgException&) {
-            is_filename = true;
-            is_cond = check_filename(name);
-          }
+          is_cond = check_cond(name,is_filename,img,images);
           if (is_very_verbose)
             print(images,0,"Check %s '%s' -> %s.",
                   is_filename?"file":"expression",
@@ -5366,7 +5358,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               gmic::error(images,0,callstack.back(),"Command '%s': Invalid argument '%s'.",
                           callstack.back().data(),_gmic_argument_text(parent_arguments,argument_text,true));
             else error(images,0,0,
-                       "Command 'check': Expression '%s' is false (and no file with this name exists).",
+                       "Command 'check': Expression '%s' evaluated to false.",
                        gmic_argument_text());
           }
           ++position; continue;
@@ -7071,7 +7063,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         if (!std::strcmp("for",item)) {
           gmic_substitute_args(false);
           float _is_cond = 0;
-          bool is_filename = false;
+          is_filename = false;
           if (cimg_sscanf(argument,"%f%c",&_is_cond,&end)!=1) {
             is_filename = true;
             name.assign(argument,(unsigned int)std::strlen(argument) + 1);
@@ -12218,7 +12210,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             error(images,0,0,
                   "Command 'while': Not associated to a 'do' command within the same scope.");
           float _is_cond = 0;
-          bool is_filename = false;
+          is_filename = false;
           if (cimg_sscanf(argument,"%f%c",&_is_cond,&end)!=1) {
             is_filename = true;
             name.assign(argument,(unsigned int)std::strlen(argument) + 1);
@@ -12616,7 +12608,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           gmic_substitute_args(false);
           check_elif = false;
           float _is_cond = 0;
-          bool is_filename = false;
+          is_filename = false;
           if (cimg_sscanf(argument,"%f%c",&_is_cond,&end)!=1) {
             is_filename = true;
             name.assign(argument,(unsigned int)std::strlen(argument) + 1);
