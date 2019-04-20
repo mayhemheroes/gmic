@@ -2195,12 +2195,15 @@ bool gmic::check_filename(const char *const filename) {
 }
 
 template<typename T>
-bool gmic::check_cond(const char *const expr, CImg<T>& img, CImgList<T>& images) {
+bool gmic::check_cond(const char *const expr, CImgList<T>& images) {
   bool res = false;
   float _res = 0;
   char end;
-  if (cimg_sscanf(expr,"%f%c",&_res,&end)==1) res = (bool)_res;
-  else try { if (img.eval(expr,0,0,0,0,&images,&images)) res = true; }
+  CImg<char> _expr(expr,(unsigned int)std::strlen(expr) + 1);
+  CImg<T> &img = images.size()?images.back():CImg<T>::empty();
+  strreplace_fw(_expr);
+  if (cimg_sscanf(_expr,"%f%c",&_res,&end)==1) res = (bool)_res;
+  else try { if (img.eval(_expr,0,0,0,0,&images,&images)) res = true; }
   catch (CImgException&) { }
   return res;
 }
@@ -5344,10 +5347,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Check expression or filename.
         if (is_command_check) {
           gmic_substitute_args(false);
-          name.assign(argument,(unsigned int)std::strlen(argument) + 1);
-          strreplace_fw(name);
-          CImg<T> &img = images.size()?images.back():CImg<T>::empty();
-          is_cond = check_cond(name,img,images);
+          is_cond = check_cond(argument,images);
           if (is_very_verbose)
             print(images,0,"Check condition '%s' -> %s.",gmic_argument_text_printed(),is_cond?"true":"false");
           if (!is_cond) {
@@ -7059,10 +7059,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // For.
         if (!std::strcmp("for",item)) {
           gmic_substitute_args(false);
-          name.assign(argument,(unsigned int)std::strlen(argument) + 1);
-          strreplace_fw(name);
-          CImg<T> &img = images.size()?images.back():CImg<T>::empty();
-          is_cond = check_cond(name,img,images);
+          is_cond = check_cond(argument,images);
           const bool is_first = !nb_fordones || fordones(0,nb_fordones - 1)!=position;
           if (is_very_verbose)
             print(images,0,"%s %s -> condition '%s' %s.",
@@ -12197,10 +12194,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           if (s[0]!='*' || s[1]!='d')
             error(images,0,0,
                   "Command 'while': Not associated to a 'do' command within the same scope.");
-          name.assign(argument,(unsigned int)std::strlen(argument) + 1);
-          strreplace_fw(name);
-          CImg<T> &img = images.size()?images.back():CImg<T>::empty();
-          is_cond = check_cond(name,img,images);
+          is_cond = check_cond(argument,images);
           if (is_very_verbose)
             print(images,0,"Reach 'while' command -> condition '%s' %s.",
                   gmic_argument_text_printed(),
@@ -12586,11 +12580,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // If...[elif]...[else]...endif.
         if (!std::strcmp("if",item) || (!std::strcmp("elif",item) && check_elif)) {
           gmic_substitute_args(false);
+          is_cond = check_cond(argument,images);
           check_elif = false;
-          name.assign(argument,(unsigned int)std::strlen(argument) + 1);
-          strreplace_fw(name);
-          CImg<T> &img = images.size()?images.back():CImg<T>::empty();
-          is_cond = check_cond(name,img,images);
           if (*item=='i') {
             if (is_debug_info && debug_line!=~0U) {
               cimg_snprintf(argx,_argx.width(),"*if#%u",debug_line);
