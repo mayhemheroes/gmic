@@ -10125,12 +10125,14 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               if (*ps==',' && ps[1] && (ps[1]<'0' || ps[1]>'9')) { varname = ps + 1; *ps = 0; break; }
               else if ((*ps<'a' || *ps>'z') && (*ps<'A' || *ps>'Z') && (*ps<'0' || *ps>'9') && *ps!='_') break;
             }
-            if (cimg_sscanf(name,"%f%c",&number,&end)==1) is_cond = true;
-            else {
-              CImg<T> &img = images.size()?images.back():CImg<T>::empty();
-              strreplace_fw(name);
-              try { number = (float)img.eval(name,0,0,0,0,&images,&images); is_cond = true; }
-              catch (CImgException&) { }
+            if (*name) {
+              if (cimg_sscanf(name,"%f%c",&number,&end)==1) is_cond = true;
+              else {
+                CImg<T> &img = images.size()?images.back():CImg<T>::empty();
+                strreplace_fw(name);
+                try { number = (float)img.eval(name,0,0,0,0,&images,&images); is_cond = true; }
+                catch (CImgException&) { }
+              }
             }
           }
 
