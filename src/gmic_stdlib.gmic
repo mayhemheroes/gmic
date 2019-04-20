@@ -3755,7 +3755,7 @@ _sample :
     # Retrieve image data.
     filename=${-path_cache}sample_$name.png
     url=https://gmic.eu/img/sample_$name.png
-    if $filename $filename
+    if {isfile(['$filename'])} $filename
     else
       if ${is_rand{1+$>}} l[] $url o. $filename onfail testimage2d {m=max($W,$H);m>0?m:400} endl
       else $url o. $filename
@@ -4367,7 +4367,7 @@ update_gallery_html : check "isbool(${1=0})"
             l[]
               $filename_full
               width,height={round([w,h]*(max(w,h)<300?1.75:1))}
-              if $filename_original $filename_original is_samesize={w==w#0" && "h==h#0} fi
+              if {isfile(['$filename'])}_original $filename_original is_samesize={w==w#0" && "h==h#0} fi
               rm
             endl
             if {!$is_samesize} filename_original=$filename_full fi
@@ -4988,7 +4988,7 @@ _update_server_binaries :
   do
     repeat $N
       file=${file$>}
-      if $file
+      if {isfile(['$file'])}
         strreplace $file,_$1_,_
         file_short=${}
         is_win=${strcontains[]" "$file,win}
@@ -33581,7 +33581,7 @@ fx_pack : skip "${8=}"
   c0="w" c1="h" c2="max(w,h)" c3="w*h" c4="n"
   pack $2,${c$1} coords=${}
   if $7
-    repeat 256 filename "$8/gmic_pack.txt",$> filename=${} if $filename else break fi done
+    repeat 256 filename "$8/gmic_pack.txt",$> filename=${} if {isfile(['$filename'])} else break fi done
     if {!narg($filename)} filename="$8/gmic_pack.txt" fi
     l[] repeat {narg($coords)/2}
       x={arg(1+2*$>,$coords)} y={arg(2+2*$>,$coords)}
@@ -37299,7 +37299,7 @@ fx_gmic_demos :
 
 fx_gmic_demos_preview :
   rm filename=${-path_tmp}gmic_demos.cimgz
-  if $filename $filename
+  if {isfile(['$filename'])} $filename
   else l[] https://gmic.eu/img/gmic_demos.cimgz o $filename endl
   fi
   k[$1,-1] rows. $1 map[0] [1] k[0]
