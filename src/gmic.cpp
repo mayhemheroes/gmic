@@ -6623,7 +6623,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           continue;
         }
 
-        // Else and elif.
+        // Else and eluded elif.
         if (!std::strcmp("else",item) || (!std::strcmp("elif",item) && !check_elif)) {
           const CImg<char> &s = callstack.back();
           if (s[0]!='*' || s[1]!='i')
