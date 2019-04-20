@@ -4739,21 +4739,21 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       position = position_argument;
 
       const bool
-        is_verbose_command = is_get?false:
+        is_command_verbose = is_get?false:
           is_command && *item=='v' && (!item[1] || !std::strcmp(item,"verbose")),
-        is_echo_command = is_get || is_verbose_command?false:
+        is_command_echo = is_get || is_command_verbose?false:
           is_command && *command=='e' && (!command[1] || !std::strcmp(command,"echo")),
-        is_input_command = is_get || is_verbose_command || is_echo_command?false:
+        is_command_input = is_get || is_command_verbose || is_command_echo?false:
           is_command && *command=='i' && (!command[1] || !std::strcmp(command,"input")),
-        is_check_command = is_get || is_verbose_command || is_echo_command || is_input_command?false:
+        is_command_check = is_get || is_command_verbose || is_command_echo || is_command_input?false:
           !std::strcmp(item,"check"),
-        is_skip_command = is_get || is_verbose_command || is_echo_command || is_input_command ||
-          is_check_command?false:!std::strcmp(item,"skip");
+        is_command_skip = is_get || is_command_verbose || is_command_echo || is_command_input ||
+          is_command_check?false:!std::strcmp(item,"skip");
 
       // Check for verbosity command, prior to the first output of a log message.
       bool is_verbose = verbosity>=0 || is_debug, is_verbose_argument = false;
       const int old_verbosity = verbosity;
-      if (is_verbose_command) {
+      if (is_command_verbose) {
         // Do a first fast check.
         if (*argument=='-' && !argument[1]) { --verbosity; is_verbose_argument = true; }
         else if (*argument=='+' && !argument[1]) { ++verbosity; is_verbose_argument = true; }
@@ -4777,8 +4777,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       // Generate strings for displaying image selections when verbosity>=0.
       CImg<char> gmic_selection;
       if (is_debug ||
-          (verbosity>=0 && !is_check_command && !is_skip_command &&
-           !is_echo_command && !is_verbose_command))
+          (verbosity>=0 && !is_command_check && !is_command_skip &&
+           !is_command_echo && !is_command_verbose))
         selection2string(selection,images_names,1,gmic_selection);
 
       if (is_debug) {
@@ -4886,7 +4886,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         command0 = *command?*command:*item;
 
         // Check if a new name has been requested for a command that does not allow that.
-        if (new_name && !is_get && !is_input_command)
+        if (new_name && !is_get && !is_command_input)
           error(images,0,0,
                 "Item '%s %s': Unknown name '%s'.",
                 initial_item,initial_argument,new_name.data());
@@ -5342,7 +5342,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       gmic_commands_c :
 
         // Check expression or filename.
-        if (is_check_command) {
+        if (is_command_check) {
           gmic_substitute_args(false);
           name.assign(argument,(unsigned int)std::strlen(argument) + 1);
           strreplace_fw(name);
@@ -6696,7 +6696,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         // Echo.
-        if (!is_get && is_echo_command) {
+        if (!is_get && is_command_echo) {
           if (is_verbose) {
             gmic_substitute_args(false);
             name.assign(argument,(unsigned int)std::strlen(argument) + 1);
@@ -10659,7 +10659,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         // Skip argument.
-        if (is_skip_command) {
+        if (is_command_skip) {
           gmic_substitute_args(false);
           if (is_very_verbose)
             print(images,0,"Skip argument '%s'.",
@@ -12143,7 +12143,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
         // Set verbosity
         // (actually only display a log message, since it has been already processed before).
-        if (is_verbose_command) {
+        if (is_command_verbose) {
           if (*argument=='-' && !argument[1])
             print(images,0,"Decrement verbosity level (set to %d).",
                   verbosity);
@@ -12836,7 +12836,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         // Execute custom command.
-        if (!is_input_command && is_command) {
+        if (!is_command_input && is_command) {
           if (hash_custom==~0U) { // A --builtin_command not supporting double hyphen (e.g. --v)
             hash_custom = hashcode(command,false);
             is_command = search_sorted(command,commands_names[hash_custom],
@@ -13241,7 +13241,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       } // if (is_command) {
 
       // Variable assignment.
-      if (!is_input_command && (*item=='_' || (*item>='a' && *item<='z') || (*item>='A' && *item<='Z'))) {
+      if (!is_command_input && (*item=='_' || (*item>='a' && *item<='z') || (*item>='A' && *item<='Z'))) {
         const char *const s_op_right = std::strchr(item,'=');
         if (s_op_right) {
           const char *s_op_left = s_op_right;
@@ -13361,7 +13361,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       }
 
       // Input.
-      if (is_input_command) ++position;
+      if (is_command_input) ++position;
       else {
         std::strcpy(command,"input");
         argument = item - (is_double_hyphen?2:is_simple_hyphen || is_plus?1:0);
@@ -14106,7 +14106,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           } catch (CImgException&) {
             std::FILE *file = 0;
             if (!(file=cimg::std_fopen(filename,"r"))) {
-              if (is_input_command)
+              if (is_command_input)
                 error(images,0,0,
                       "Unknown filename '%s'.",
                       gmic_argument_text());
