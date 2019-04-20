@@ -2200,11 +2200,13 @@ bool gmic::check_cond(const char *const expr, CImgList<T>& images) {
   float _res = 0;
   char end;
   CImg<char> _expr(expr,(unsigned int)std::strlen(expr) + 1);
-  CImg<T> &img = images.size()?images.back():CImg<T>::empty();
-  strreplace_fw(_expr);
   if (cimg_sscanf(_expr,"%f%c",&_res,&end)==1) res = (bool)_res;
-  else try { if (img.eval(_expr,0,0,0,0,&images,&images)) res = true; }
-  catch (CImgException&) { }
+  else {
+    CImg<T> &img = images.size()?images.back():CImg<T>::empty();
+    strreplace_fw(_expr);
+    try { if (img.eval(_expr,0,0,0,0,&images,&images)) res = true; }
+    catch (CImgException&) { }
+  }
   return res;
 }
 
@@ -10112,11 +10114,27 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Repeat.
         if (!std::strcmp("repeat",item)) {
           gmic_substitute_args(false);
+          const char *varname = title;
           float number = 0;
-          *title  = 0;
-          if (cimg_sscanf(argument,"%f%c",&number,&end)==1 ||
-              (cimg_sscanf(argument,"%f,%255[a-zA-Z0-9_]%c",&number,title,&sep)==2 &&
-               (*title<'0' || *title>'9'))) {
+          *title = 0;
+          is_cond = false; // is_valid_argument?
+          if (cimg_sscanf(argument,"%f%c",&number,&end)==1) is_cond = true;
+          else {
+            name.assign(argument,(unsigned int)std::strlen(argument) + 1);
+            for (char *ps = name.data() + name.width() - 2; ps>=name.data(); --ps) {
+              if (*ps==',' && ps[1] && (ps[1]<'0' || ps[1]>'9')) { varname = ps + 1; *ps = 0; break; }
+              else if ((*ps<'a' || *ps>'z') && (*ps<'A' || *ps>'Z') && (*ps<'0' || *ps>'9') && *ps!='_') break;
+            }
+            if (cimg_sscanf(name,"%f%c",&number,&end)==1) is_cond = true;
+            else {
+              CImg<T> &img = images.size()?images.back():CImg<T>::empty();
+              strreplace_fw(name);
+              try { number = (float)img.eval(name,0,0,0,0,&images,&images); is_cond = true; }
+              catch (CImgException&) { }
+            }
+          }
+
+          if (is_cond) {
             const unsigned int nb = number<=0?0U:
               cimg::type<float>::is_inf(number)?~0U:(unsigned int)cimg::round(number);
             if (nb) {
@@ -10125,26 +10143,26 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 CImg<char>::string(argx).move_to(callstack);
               } else CImg<char>::string("*repeat").move_to(callstack);
               if (is_very_verbose) {
-                if (*title) print(images,0,"Start 'repeat...done' block with variable '%s' (%u iteration%s).",
-                                  title,nb,nb>1?"s":"");
+                if (*varname) print(images,0,"Start 'repeat...done' block with variable '%s' (%u iteration%s).",
+                                  varname,nb,nb>1?"s":"");
                 else print(images,0,"Start 'repeat...done' block (%u iteration%s).",
                            nb,nb>1?"s":"");
               }
-              const unsigned int l = (unsigned int)std::strlen(title);
+              const unsigned int l = (unsigned int)std::strlen(varname);
               if (nb_repeatdones>=repeatdones._height) repeatdones.resize(5,std::max(2*repeatdones._height,8U),1,1,0);
               unsigned int *const rd = repeatdones.data(0,nb_repeatdones++);
               rd[0] = position; rd[1] = nb; rd[2] = 0;
               if (l) {
-                const unsigned int hash = hashcode(title,true);
+                const unsigned int hash = hashcode(varname,true);
                 rd[3] = hash;
                 rd[4] = variables[hash]->_width;
-                CImg<char>::string(title).move_to(*variables_names[hash]);
+                CImg<char>::string(varname).move_to(*variables_names[hash]);
                 CImg<char>::string("0").move_to(*variables[hash]);
               } else rd[3] = rd[4] = ~0U;
             } else {
               if (is_very_verbose) {
-                if (*title) print(images,0,"Skip 'repeat...done' block with variable '%s' (0 iteration).",
-                                  title);
+                if (*varname) print(images,0,"Skip 'repeat...done' block with variable '%s' (0 iteration).",
+                                    varname);
                 else print(images,0,"Skip 'repeat...done' block (0 iteration).");
               }
               int nb_repeat_fors = 0;
