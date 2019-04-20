@@ -16228,7 +16228,7 @@ frame_painting :
   skip ${4=225},${5=200},${6=120},${13=123456789}
   e[^-1] "Add painting frame to image$?, with size $1, contrast $2, profile smoothness $3, color (${4-6}), vignette size $7, "\
           "vignette strength $8, defects contrast $9, defects density $10, defects size $11, defects smoothness $12 and serial number $13."
-  if {!$1} return fi
+  if !$1 return fi
   v - repeat $! l[$>]
     $1,$1 s={max(w,h)} rm.                             # Determine size of the frame
     ({'${dec2bin\ $13}'}) -. {'0'} r. $s               # Generate frame profile from serial number
@@ -16311,7 +16311,7 @@ frame_seamless : check "$1>=0 && isint(${2=7}) && $2>0 && isint(${3=5}) && $3>=0
   repeat $! l[$>]
     w2={round(w/2)} h2={round(h/2)}
     w4={round(w/4)} h4={round(h/4)}
-    if {!$4} r {max(1,w-$1)},{max(1,h-$1)},1,100%,0,0,0.5,0.5 fi
+    if !$4 r {max(1,w-$1)},{max(1,h-$1)},1,100%,0,0,0.5,0.5 fi
     100%,100%,1,1,-1 r[-2,-1] {w+$1},{h+$1},1,100%,0,0,0.5,0.5 n. 0,1
     shift -$w2,-$h2,0,0,2
     inpaint_matchpatch.. [1],0,$2,10,$3
@@ -16404,11 +16404,11 @@ img2ascii : skip "${1= !\042#$%&\047()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRS
       r[0] [1] -[0] [1] sqr[0] r[0] 1,1,100%,1,2 y[0]
       C={0,ym} rm[0]
       +slices[1] $C mv. 0
-      if {narg("$5")} +f[0] $C a[0,-1] c fi
+      if narg("$5") +f[0] $C a[0,-1] c fi
     endl done
     append_tiles[0--2] $nw,$nh
 
-    if {narg("$5")} s[0] c l[1]  # Export as ascii file.
+    if narg("$5") s[0] c l[1]  # Export as ascii file.
        r $nw,$nh,1,1,1
        ({'"$1"'}) map[0] . k[0]
        s y i[1-$!] ({'\n'})
@@ -16480,12 +16480,12 @@ imagegrid_triangular : check "$1>=1 && ${2=$1}>=1 && isint(${3=0}) && $3>=0 && $
 
   # Create triangular patterns and outlines (always square!).
   M={max($1,$2)}
-  if {$3==4" || "$3==5} # Decreasing/Increasing.
+  if $3==4" || "$3==5 # Decreasing/Increasing.
     $M,$M,1,1,x>y ++. 2 a[-2,-1] x ++. 4 a[-2,-1] y
     $M,$M,1,1,"!x || !y || x==y" r. 200%,200%,1,1,0,2
     a[-2,-1] c
-    if {$3==5} mirror. y fi
-  elif {$3==3} # Cube.
+    if $3==5 mirror. y fi
+  elif $3==3 # Cube.
     $M,$M,1,1,x>y 100%,100%,1,1,w-1-x>=y a[-2,-1] x ++. 2 mirror. y a[-2,-1] y
     ++. 4 =. 4,50%,50% =.. 2 a[-2,-1] x label. 0,0
     (2,2,2,0,1,2,1,1,3,3,3,1,1,0) map.. . rm.
@@ -16494,11 +16494,11 @@ imagegrid_triangular : check "$1>=1 && ${2=$1}>=1 && isint(${3=0}) && $3>=0 && $
     line. {$M-1},{$M-1},{3*$M-1},{$M-1},1,1 line. {2*$M},0,0,0,1,1
     line. {2*$M},0,100%,100%,1,1 line. {2*$M},100%,100%,0,1,1
     a[-2,-1] c
-  elif {$3==2} # Horizontal + vertical.
+  elif $3==2 # Horizontal + vertical.
     $M,$M,1,1,x>y ++. 2 mirror. x a[-2,-1] x ++. 4 mirror. y a[-2,-1] y
     100%,100%,1,1,"!x || !y || x==int(w/2) || y==int(h/2) || x==y || w-1-x==y"
     a[-2,-1] c
-  elif {$3==1} # Vertical.
+  elif $3==1 # Vertical.
     $M,$M,1,1,x>y 100%,100%,1,1,w-1-x<=y a[-2,-1] y ++. 2 mirror. x a[-2,-1] x
     100%,100%,1,1,"!x || x==int(w/2) || x==y || w-1-x==y"
     a[-2,-1] c
@@ -16511,7 +16511,7 @@ imagegrid_triangular : check "$1>=1 && ${2=$1}>=1 && isint(${3=0}) && $3>=0 && $
   # Apply grid on images.
   repeat {$!-1}
     wh={$>,w},{$>,h}
-    if {$1>$2} r[$>] 100%,{$>,$1*h/$2} elif {$1<$2} r[$>] {$>,$2*w/$1} fi
+    if $1>$2 r[$>] 100%,{$>,$1*h/$2} elif $1<$2 r[$>] {$>,$2*w/$1} fi
     +r. [$>],[$>],1,2,0,2,0.5,0.5
     s. c
     blend[$>,-2] shapeaverage
@@ -16545,11 +16545,11 @@ map_sprites : check "isint($1) && $1>0 && isint(${2=0}) && $2>=0 && $2<=2"
   e[^-1] "Map set of $1 sprites to image selection$?."
   v - norm[0--{$1+1}] quantize[0--{$1+1}] $1,0,1
   slices[-$1--1] 0 r[-$1--1] ${max_wh[-$1--1]},1,100%,0,0,0.5,0.5
-  if {$2==1}
+  if $2==1
     N={4*$1}
     repeat {$!-$1} *[$>] 4 +rand[$>] 0,3 round. +[$>,-1] done
     repeat $1 l[{1+$<}] +mirror xy +rotate 90 endl done
-  elif {$2==2}
+  elif $2==2
     N={2*$1}
     repeat {$!-$1} *[$>] 2 +rand[$>] 0,1 round. +[$>,-1] done
     repeat $1 l[{1+$<}] +mirror xy endl done
@@ -16567,15 +16567,15 @@ map_sprites : check "isint($1) && $1>0 && isint(${2=0}) && $2>=0 && $2<=2"
 #@cli : $ image.jpg repeat 10 +resize2dx[-1] 75% balance_gamma[-1] ${-RGB} done pack 0
 pack : skip ${1=0},${2=max(w,h)}
   e[^-1] "Pack image$? into a single image."
-  if {$!<2} return fi
-  if {${-max_d}>1} error[0--3] "Command '$0': Selected images contain at least one volumetric image (depth>1). Should all be 2D." fi
+  if $!<2 return fi
+  if ${-max_d}>1 error[0--3] "Command '$0': Selected images contain at least one volumetric image (depth>1). Should all be 2D." fi
   v -
   nm={0,n} to_colormode 0
 
   # Sort images by decreasing size.
   repeat $! nm$>={$>,n} nm[$>] ${nm$>}:$> done
   m "_pack : ({'{n}'}) l. s +,{':'} u {t} rm endl"
-  if {['$2']=='n'} sort_list +,n else sort_list -,"$2" fi
+  if ['$2']=='n' sort_list +,n else sort_list -,"$2" fi
 
   # Start packing
   offsets${-_pack[0]}=0,0
@@ -16590,26 +16590,26 @@ pack : skip ${1=0},${2=max(w,h)}
     repeat {0,h}
       x,y,w,h={0,crop(0,$>,4,1)}
       slot_area={$w*$h}
-      if {$w>=$w2" && "$h>=$h2" && "$slot_area<=$min_slot_area} # Found a fit.
+      if $w>=$w2" && "$h>=$h2" && "$slot_area<=$min_slot_area # Found a fit.
         slot,min_slot_area=$>,$slot_area
       fi
     done
 
-    if {$slot>=0} # Empty slot found -> Use it.
+    if $slot>=0 # Empty slot found -> Use it.
       x,y,w,h={0,crop(0,$slot,4,1)}
       j[1] [2],$x,$y offsets${-_pack[2]}=$x,$y
       l[0]
         s y rm[$slot]
         area1={max(($w-$w2)*$h,$w2*($h-$h2))}
         area2={max(($w-$w2)*$h2,$w*($h-$h2))}
-        if {$area1>=$area2} # Split - type1
-          if {$w2<$w} i[$slot] ({$x+$w2},$y,{$w-$w2},$h) fi
-          if {$h2<$h} i[$slot] ($x,{$y+$h2},$w2,{$h-$h2}) fi
+        if $area1>=$area2 # Split - type1
+          if $w2<$w i[$slot] ({$x+$w2},$y,{$w-$w2},$h) fi
+          if $h2<$h i[$slot] ($x,{$y+$h2},$w2,{$h-$h2}) fi
         else # Split - type 2
-          if {$w2<$w} i[$slot] ({$x+$w2},$y,{$w-$w2},$h2) fi
-          if {$h2<$h} i[$slot] ($x,{$y+$h2},$w,{$h-$h2}) fi
+          if $w2<$w i[$slot] ({$x+$w2},$y,{$w-$w2},$h2) fi
+          if $h2<$h i[$slot] ($x,{$y+$h2},$w,{$h-$h2}) fi
         fi
-        a y if {!$!} 0 fi
+        a y if !$! 0 fi
       endl
       rm[2]
 
@@ -16622,17 +16622,17 @@ pack : skip ${1=0},${2=max(w,h)}
         metric_v={if($w2<$w1,($w1-$w2)*$h2,($w2-$w1)*$h1)}
       fi
 
-      if {$metric_h<=$metric_v} # Append horizontally.
+      if $metric_h<=$metric_v # Append horizontally.
         offsets${-_pack[2]}=$w1,0
         a[1,2] x,0
-        if {$h2<$h1} ($w1,$h2,$w2,{$h1-$h2}) a[0,-1] y
-        elif {$h2>$h1} (0,$h1,$w1,{$h2-$h1}) a[0,-1] y
+        if $h2<$h1 ($w1,$h2,$w2,{$h1-$h2}) a[0,-1] y
+        elif $h2>$h1 (0,$h1,$w1,{$h2-$h1}) a[0,-1] y
         fi
       else # Append vertically.
         offsets${-_pack[2]}=0,$h1
         a[1,2] y,0
-        if {$w2<$w1} ($w2,$h1,{$w1-$w2},$h2) a[0,-1] y
-        elif {$w2>$w1} ($w1,0,{$w2-$w1},$h1) a[0,-1] y
+        if $w2<$w1 ($w2,$h1,{$w1-$w2},$h2) a[0,-1] y
+        elif $w2>$w1 ($w1,0,{$w2-$w1},$h1) a[0,-1] y
         fi
       fi
     fi
@@ -16642,7 +16642,7 @@ pack : skip ${1=0},${2=max(w,h)}
 
   # Return offsets.
   status=
-  repeat $N if {narg($status)} status=$status,${offsets$>} else status=${offsets$>} fi done
+  repeat $N if narg($status) status=$status,${offsets$>} else status=${offsets$>} fi done
   nm $nm u $status
   uncommand _pack v +
 
@@ -16654,8 +16654,8 @@ puzzle : check "isint(${1=512}) && $1>0 && isint(${2=$1}) && $2>0 && isint(${3=5
          skip ${5=0.5},${6=0.5},${7=0.5}
   e[^-1] "Draw $3x$4 puzzle pattern on image$?, with curvature $5, centering $6, connectors variability $7 and resolution $8."
   v - l[]
-    if {$4>=2} _puzzle[] $3,{$4-1},${5-8} +3d. 0,1 fi
-    if {$3>=2} _puzzle[] $4,{$3-1},${5-8} r3d. 0,0,1,-90 +3d. 1,$4 fi
+    if $4>=2 _puzzle[] $3,{$4-1},${5-8} +3d. 0,1 fi
+    if $3>=2 _puzzle[] $4,{$3-1},${5-8} r3d. 0,0,1,-90 +3d. 1,$4 fi
     *3d {$1/$3},{$2/$4} quadrangle3d 0,0,0,{$1-1},0,0,{$1-1},{$2-1},0,0,{$2-1},0 p3d. 1 +3d col3d 1
     $1,$2 j3d. ..,0,0,0,1,1,0,0 rm..
   endl v +
@@ -16732,9 +16732,9 @@ taquin : check "isint($1) && $1>0 & isint(${2=$1}) && $2>0" skip ${3=0},${4=50},
    *. '1-2*(x/w<y/h)' *. $4
    repeat {$!-1} l[$>,-1] split_opacity[0] +[0] . a[^-1] c endl done rm. c 0,255
    frame $6,$6,${7-10}
-   if {$3==3} f. 0 fi
+   if $3==3 f. 0 fi
    repeat $! mv[$>] {u($!)} done
-   if {$3==1} f[0] 0 elif {$3==2} f. 0 fi
+   if $3==1 f[0] 0 elif $3==2 f. 0 fi
    append_tiles $1,$2
  nm $nm endl done v +
 
@@ -16773,7 +16773,7 @@ boxfitting : check "isint(${1=3}) && $1>=1 && isint(${2=0}) && $2>=0 && ${3=0.1}
     repeat 1e8
 
       # Add random non-intersecting squares with min size.
-      if {$><1} # Takes random points for the first iteration.
+      if $><1 # Takes random points for the first iteration.
         100%,100% noise. {max(1e-3,$3)},2 ==. 1
       else # Then, try to take points near the median axis of the distance function otherwise.
         +distance. 1 +rand. 0,1 *[-2,-1] max_patch. {round($prec*$min_size)}
@@ -16783,14 +16783,14 @@ boxfitting : check "isint(${1=3}) && $1>=1 && isint(${2=0}) && $2>=0 && ${3=0.1}
       # Discard new squares that intersect something.
       dilate. $min_size area_fg. 0,1 ==. {($min_size)^2}
       +dilate.. 3 ==. 0 *[-2,-1] area_fg. 0,1 ==. {($min_size)^2}
-      if {!iM} nb_attempts+=1 if {$nb_attempts>$4} rm. break fi # If no new squares have been placed.
+      if !iM nb_attempts+=1 if $nb_attempts>$4 rm. break fi # If no new squares have been placed.
       else nb_attempts=0 fi
       +[-2,-1]
 
       # Make current squares grown until max square size is reached.
       repeat {int(($max_size-$min_size)/2)}
         +dilate. 3 area_fg. 0,1 ==. {($min_size+2*$>+2)^2}
-        if {!iM} rm. break fi  # No more squares to grow.
+        if !iM rm. break fi  # No more squares to grow.
         -|[-2,-1]
       done
 
@@ -16826,10 +16826,10 @@ brushify : check ${"is_image_arg $1"}" &&"\         # $1: [brush]
     rm[0] n 0,1 threshold 0.1,1 autocrop r ${-max_wh},1,1,0,0,0.5,0.5
     a z nm brush
     wb={w} hb={h} whb={wh} ls={255*$6}
-    if {$5==0} +f. 0
-    elif {$5==1} +n. -$ls,0
-    elif {$5==2} +g xy +[-2,-1] min. 0 n. -$ls,0
-    elif {$5==3} +g xy +[-2,-1] max. 0 n. 0,$ls
+    if $5==0 +f. 0
+    elif $5==1 +n. -$ls,0
+    elif $5==2 +g xy +[-2,-1] min. 0 n. -$ls,0
+    elif $5==3 +g xy +[-2,-1] max. 0 n. 0,$ls
     else +g xy +[-2,-1] n. -$ls,$ls
     fi
     nm. brushlight
@@ -16906,7 +16906,7 @@ color_ellipses : skip ${1=1400},${2=5},${3=0.1}
 #@cli : $ image.jpg cubism ,
 cubism : check "${1=50}>=0 && ${2=10}>=0 && $2<=50 && ${5=0}>=0" skip ${3=75},${4=0.7}
   e[^-1] "Apply cubism effect on image$?, with density $1, thickness $2, maximum angle $3 deg., opacity $4 and smoothness $5."
-  if {"!$1 || !$2 || !$3 || !$4"} return fi
+  if "!$1 || !$2 || !$3 || !$4" return fi
   v - repeat $! l[$>]
     w={w} h={h} s={s}
     P={round($2*max(w,h)/200)}
@@ -16930,12 +16930,12 @@ cubism : check "${1=50}>=0 && ${2=10}>=0 && $2<=50 && ${5=0}>=0" skip ${3=75},${
 
     # Generate materials.
     (-128;$w;$h;$s) +b[0] $5
-    if {$N>1} 4,{$N-1},1,1,-128,0,0,0 fi
+    if $N>1 4,{$N-1},1,1,-128,0,0,0 fi
     1,$N,1,1,1
 
     # Apply effect on current image.
     y[1--1] a[1--1] y rv3d.
-    if {$4>=1} j3d[0] [1],0,0,0,1,2,0,0 rm[1]
+    if $4>=1 j3d[0] [1],0,0,0,1,2,0,0 rm[1]
     else +j3d[0] [1],0,0,0,1,2,0,0 rm[1] blend alpha,$4
     fi
 
@@ -16978,7 +16978,7 @@ drop_shadow : check "${3=5}>=0 && ${4=0}>=0 && $4<=1" skip ${1=20},${2=$1},${5=1
     w={w} h={h} s={s} +channels 100% coords=${autocrop_coords.\ 0} rm. z $coords  # Crop part with opaque pixels.
     r {w+abs($dx)},{h+abs($dy)},1,100%,0,0,{if($dx>0,0,1)},{if($dy>0,0,1)} r. {w+4*$sigma},{h+4*$sigma},1,100%,0,0,0.5,0.5
     +channels. 100%
-    if {!$4} shift. $dx,$dy # Flat shadow.
+    if !$4 shift. $dx,$dy # Flat shadow.
     else # Curved shadow.
       (0;{pi}) r. ..,3 sin. *. -$4 +. 1 *. $dx
       (0,{pi}) r. ..,3 sin. *. -$4 +. 1 *. $dy
@@ -16987,7 +16987,7 @@ drop_shadow : check "${3=5}>=0 && ${4=0}>=0 && $4<=1" skip ${1=20},${2=$1},${5=1
     b. $sigma,0
     r. 100%,100%,1,2,0,0,0,0,0,1 mv. 0 blend alpha
     +channels. 100% >=. 1 * autocrop 0
-    if {!$5} $w,$h,1,$s j. ..,{arg(1,$coords)},{arg(2,$coords)} rm.. fi
+    if !$5 $w,$h,1,$s j. ..,{arg(1,$coords)},{arg(2,$coords)} rm.. fi
     nm $nm
   endl done v +
 
@@ -17033,7 +17033,7 @@ fire_edges : check "${1=0.7}>=0 && ${2=0.25}>=0 && $2<=1 && ${3=0.5}>=0 && ${4=2
       n. 0,255
       j[0] .,0,0,0,0,1,[1],1 rm.
       correlate[0] [2]
-      if {$>>=$6" && "($>-$6)%($7+1)==0} [0] fi
+      if $>>=$6" && "($>-$6)%($7+1)==0 [0] fi
     done rm[0-2]
   nm $nm endl done
   (0,255,255,255,255^0,0,255,255,255^0,0,0,128,255) r. 256,1,1,3,3
@@ -17091,7 +17091,7 @@ halftone : check "${1=5}>=2 && ${2=8}>=2 && ${3=8}>=2 && ${5=0}>=0" skip ${4=5}
     repeat $1
       s={round(($2*$<+$3*$>)/($1-1))}
       $s,$s =. 1,50%,50% distance. 1,{$4%3} +shift. {round(w/2)},{round(h/2)},0,0,2 min[-2,-1]
-      if {$4>=3} <. {100*$</($1-1.1)}% *. {-255} +. {255-$>}
+      if $4>=3 <. {100*$</($1-1.1)}% *. {-255} +. {255-$>}
       else <. {100*$>/($1-1.1)}% *. 255 -. $>
       fi
       r. ..,0,2 b. $5 +==.. $> *[-2,-1] +[-2,-1]
@@ -17104,7 +17104,7 @@ halftone : check "${1=5}>=2 && ${2=8}>=2 && ${3=8}>=2 && ${5=0}>=0" skip ${4=5}
 #@cli : $ image.jpg +hardsketchbw 200,70,0.1,10 median[-1] 2 +local reverse blur[-1] 3 blend[-2,-1] overlay endlocal
 hardsketchbw : skip ${1=300},${2=50},${3=0.1},${4=20},${5=0}
   e[^-1] "Apply hard B&W sketch effect on image$?, with amplitude $1, density $2, opacity $3 and edge threshold $4."
-  if {!$2} channels 0 f 255 return fi
+  if !$2 channels 0 f 255 return fi
   v - luminance n 0,1
 
   if $5 # Fast version.
@@ -17236,7 +17236,7 @@ linify : check "${1=40}>=0 && $1<=100 && ${2=2}>=0 && ${3=40%}>0 && ${4=10}>=0 &
     else r2dy[0] {${"-is_percent $3"}?max(1,$3*h):min(h,$3)}
     fi
     n[0] 0,100
-    if {narg($_debug)" && "!{*,w}} w[] ${-fitscreen[]\ {1,[w,h]}} fi
+    if narg($_debug)" && "!{*,w} w[] ${-fitscreen[]\ {1,[w,h]}} fi
     eval "
       is_in(ind,P) = (P[0]>=0 && P[0]<w#ind && P[1]>=0 && P[1]<h#ind);
       const add = $6;
@@ -17318,30 +17318,30 @@ pixelsort : check "(str1='${1=+}'; str1=='+' || str1=='-') && "\
                   "('${3=}'==0 || "${"is_image_arg $3"}") && "\
                   "('${4=}'==0 || "${"is_image_arg $4"}")"
   v - s0="descending" s1="ascending" v +
-  if {'$3'!=0" && "'$4'!=0}
+  if '$3'!=0" && "'$4'!=0
     e[^-1] "Apply 'pixelsort' effect to image$? in "${s{['$1']=='+'}}" order, along axis $2, with sorting criterion $3 and mask $4."
-  elif {'$3'!=0" && "'$4'==0}
+  elif '$3'!=0" && "'$4'==0
     e[^-1] "Apply 'pixelsort' effect to image$? in "${s{['$1']=='+'}}" order, along axis $2, with sorting criterion $3."
-  elif {'$3'==0" && "'$4'!=0}
+  elif '$3'==0" && "'$4'!=0
     e[^-1] "Apply 'pixelsort' effect to image$? in "${s{['$1']=='+'}}" order, along axis $2, with mask $4."
   else
     e[^-1] "Apply 'pixelsort' effect to image$? in "${s{['$1']=='+'}}" order, along axis $2."
   fi
   v - repeat $!
-    if {'$3'!=0} pass$3 0 else +compose_channels[$>] + fi
-    if {'$4'!=0} pass$4 0 else [$>],[$>],[$>],1,1 fi
+    if '$3'!=0 pass$3 0 else +compose_channels[$>] + fi
+    if '$4'!=0 pass$4 0 else [$>],[$>],[$>],1,1 fi
     l[$>,-2,-1]
       nm={0,n} >=. 50% mv.. 0 a c
       order={`";'$1'=='+'?'<':'>'"`}
-      if {'$2'=='x';}
+      if '$2'=='x';
         _pixelsort $order channels 1,{s-2}
-      elif {'$2'=='y';}
+      elif '$2'=='y';
         permute yxzc _pixelsort $order channels 1,{s-2} permute yxzc
-      elif {'$2'=='z';}
+      elif '$2'=='z';
         permute zxyc _pixelsort $order channels 1,{s-2} permute yzxc
-      elif {'$2'=='xy';}
+      elif '$2'=='xy';
         _pixelsort $order permute yxzc _pixelsort $order channels 1,{s-2} permute yxzc
-      elif {'$2'=='yx';}
+      elif '$2'=='yx';
         permute yxzc _pixelsort $order permute yxzc _pixelsort $order channels 1,{s-2}
       fi
       nm $nm
@@ -17405,7 +17405,7 @@ polygonize : check "${1=300}>=0 && ${2=2%}>=0 && ${3=0.1%}>=0 && ${4=10%}>0 && $
     repeat $1 +warp[1] .,0,0 +[-2,-1] done
     permute. cxyz z. 0,2 y. j[2] .,0,8 rm[-3,-1]
     [0],[0] j3d. [1],0,0,0,1,2 rm[1]
-    if {$3>0}
+    if $3>0
       min_area={0,if(${is_percent\ $3},$3*w*h,$3)}
       +area. 0,1 >=. $min_area +.. 1 *.. . distance. 1 *. -1 watershed.. . rm.
     fi
@@ -17449,13 +17449,13 @@ rodilius : check "${1=10}>=0 && $1<=200 && ${2=10}>=0 && $2<=100 && ${3=400}>=0 
   e[^-1] "Apply rodilius filter on image$? with amplitude $1, thickness $2, sharpness $3, $4 orientations, offset $5 and "\
     ${arg\ 1+!$6,brighter,darker}" color mode."
   v - repeat $! l[$>] split_opacity rv
-    if {!$6} negate. fi
+    if !$6 negate. fi
     +f. 0 nm. {-2,n}
     repeat {round($4)}
       angle={$5+$>*180/round($4)}
       +blur_linear.. $1%,{$1*$2/100}%,$angle,1 b. 0.7 sharpen. $3 max[-2,-1]
     done rm..
-    if {!$6} negate. fi
+    if !$6 negate. fi
   rv a c endl done v +
 
 #@cli stained_glass : _edges[%]>=0, shading>=0, is_thin_separators={ 0 | 1 }
@@ -17479,7 +17479,7 @@ stained_glass : check "${1=40%}>=0 && ${2=0.2}>=0" skip ${3=0}
 #@cli : $ image.jpg stars ,
 stars : check "${1=10%}>=0 && ${2=1}>=0 && ${3=32}>0 && ${4=5}>=1 && ${5=0.38}>=0 && $5<=1 && ${6=0.5}>=0" skip ${7=200},${8=$7},${9=$8},${10=1}
   e[^-1] "Add $1 random stars to image$?, with depth $2, size $3, $4 branches, thickness $5, smoothness $6, color ($7,$8,$9) and opacity $10."
-  if {!$1} return fi
+  if !$1 return fi
   v -
 
   # Generate star sprites.
@@ -17597,7 +17597,7 @@ sponge : skip ${1=13}
   endl done v +
 
 _circle :
-  if {$1%2==0} 2,2 else 1 fi
+  if $1%2==0 2,2 else 1 fi
   +. 1 r. $1,$1,1,1,0,0,0.5,0.5 distance. 1 n. 0,1 sqrt. c. 0.85,0.86 *. -1 n. 0,1
 
 #@cli stencil : _radius[%]>=0,_smoothness>=0,_iterations>=0
@@ -17745,7 +17745,7 @@ equirectangular2nadirzenith :
 #@cli : $ image.jpg +fisheye ,
 fisheye : skip ${1=50},${2=50},${3=50},${4=1.2}
   e[^-1] "Apply Fish-eye effect on image$?, centered at ($1%,$2%) with radius $3% and amplitude $4."
-  if {$4==0} return fi
+  if $4==0 return fi
   v - repeat $! l[$>]
     100%,100%,1,1 =. 1,$1%,$2% distance. 1 c. 0,$3% *. -1 n. 0,1 ^. {1/$4}
     i.. ({-$1/100},{1-$1/100};{-$1/100},{1-$1/100}^{-$2/100},{-$2/100};{1-$2/100},{1-$2/100}) r.. .,.,1,2,3
@@ -17892,7 +17892,7 @@ rotoidoscope : skip ${1=50%},${2=50%},${5=1} check "${3=10}>0 && ${4=3}>=0"
 #@cli : $ image.jpg grid 5%,5%,0,0,0.6,255 spherize ,
 spherize : check "${1=50%}>=0 && ${3=0}>=0 && ${6=1}>0 && isint(${8=1}) && $8>=0 && $8<=2" skip "${2=1},${4=50%},${5=50%},${7=0}"
   e[^-1] "Apply spherize effect on image$?, with radius $1, strength $2, smoothness $3, center ($4,$5), x/y-ratio $6, angle $7 and "${"arg 1+$8,nearest-neighbor,linear,cubic"}" interpolation."
-  if {!$1||!$2} return fi
+  if !$1||!$2 return fi
   v - repeat $! l[$>]
     rmax={${"is_percent $1"}?0.5*sqrt((w-1)^2+(h-1)^2)*$1:$1}
     centerx={${"is_percent $4"}?(w-1)*$4:$4}
@@ -18009,7 +18009,7 @@ wave : skip ${1=4},${2=0.4},${3=50},${4=50}
 #@cli : $ image.jpg +wind ,
 wind : check "isint(${1=20}) && $1>=0 && ${3=0.7}>=0 && $3<=1" skip "${2=0},${4=20}"
   e[^-1] "Apply wind effect on image$?, with amplitude $1, angle "{round($2/45)*45}" deg., attenuation $3 and threshold $4."
-  if {!$1} return fi
+  if !$1 return fi
   v -
   dxdy=${-_wind{round($2/45)%8}}
   fact={(1-$3)^(1/$1)}
@@ -18038,7 +18038,7 @@ _wind7 : u 1,-1
 zoom : skip ${1=2},${2=0.5},${3=0.5},${4=0.5},${5=0}
   e[^-1] "Apply zoom effect on image$?, with factor $1 and center ($2,$3)."
   v - repeat $! l[$>]
-    if {d==1} # 2D image.
+    if d==1 # 2D image.
        ({(w-1)*$2*(1-1/$1)},{(w-1)*($2+(1-$2)/$1)})
        ({({-2,h}-1)*$3*(1-1/$1)};{({-2,h}-1)*($3+(1-$3)/$1)})
        r[-2--1] ...,...,1,1,3 a[-2--1] c warp.. .,0,1,$5
@@ -18259,9 +18259,9 @@ blend : skip ${1=alpha},${2=1},${3=1},${4=0}
     to_colormode[0] {$s+1-(s#0%2)}                 # Target format (G,GA,RGB or RGBA).
     to_colormode[1] {$s+1-(s%2)}                   # Mask format (G,GA,RGB or RGBA).
     if {0,"s==2 || s==4"} # Target has alpha.
-      if {"s==2 || s==4"} # Mask has alpha.
+      if "s==2 || s==4" # Mask has alpha.
         sh[0,1] 0,{s-2} _blend_$1[2,3] rm[2,3]
-        if {['"$1"']=='alpha'} # Special blending code for alpha-mode.
+        if ['"$1"']=='alpha' # Special blending code for alpha-mode.
           sh[0,1] 0,{{0,s}-2} sh[0,1] 100% *[2,4] *[3,4] rm[2,3]
           +channels[1] 100% sh[1] 100% f[3] 255 rm[3]
           j[0] [1],0,0,0,0,{max(0,min(1,$2))},[2],255 rm[1,2]
@@ -18273,7 +18273,7 @@ blend : skip ${1=alpha},${2=1},${3=1},${4=0}
         sh[0] 0,{{0,s}-2} rv[1,2] _blend_$1[1,2] j[1] [2],0,0,0,0,{max(0,min(1,$2))} rm[^0]
       fi
     else # Target has no alpha.
-      if {"s==2 || s==4"} # Mask has alpha.
+      if "s==2 || s==4" # Mask has alpha.
         sh[1] 0,{s-2} _blend_$1[0,2] rm[2]
         sh[1] 100% j[0] [1],0,0,0,0,{max(0,min(1,$2))},[2],255 rm[^0]
       else # Mask has no alpha.
@@ -18460,7 +18460,7 @@ _blend_xor :
 #@cli : $ image.jpg testimage2d {w},{h} +blend_edges 0.8
 blend_edges : check {$1>=0}
   e[^-1] "Blend image$? using 'edges' mode, with smoothness $1."
-  if {$!>1} v - to_rgb r[^0] [0],0,0,0.5,0.5 repeat $! l[$>]
+  if $!>1 v - to_rgb r[^0] [0],0,0,0.5,0.5 repeat $! l[$>]
     +gradient_norm +. 1 b. $1 n. 1,10 sqr. s.. c *[-4--2] . a[-4--1] c
   endl done r[^0] [0],0,0,0.5,0.5 + s. c /[-4--2] . rm. a[-3--1] c v + fi
 
@@ -18482,9 +18482,9 @@ _fade :
 #@cli : $ image.jpg testimage2d {w},{h} +mirror[0] y +blend_median
 blend_median :
   e[^-1] "Blend image$? using 'median' mode."
-  if {$!<2} return fi
+  if $!<2 return fi
   v - to_colormode 0 r ${-max_whd},100%,0,0,0.5,0.5,0.5
-  if {$!==2} + / 2
+  if $!==2 + / 2
   else
     whds={w},{h},{d},{s} r 100%,100%,{d*s},1,-1 a c
     100%,100%,100%,1,"med(I(#0))" k. r $whds,-1
@@ -18499,11 +18499,11 @@ blend_seamless : check "${2=0}>=0 && ${3=100%}>=0" skip ${1=0}
   v + e[^-1] "Blend image$? using seamless mode (Poisson-based), in "${s{$1!=0}}" mode with inner fading $2 and outer fading $3." v -
   to_a[^0] r {0,w+32},{0,h+32},1,100%,0,0,0.5,0.5 # Avoid periodic boundaries problems.
 
-  if {['$3']!='100%'} # With outer fading.
+  if ['$3']!='100%' # With outer fading.
     repeat {$!-1} l[0,1]
       +blend_seamless $1,$2,100% channels.. 100% !=.. 0 distance.. 1
       iM={-2,iM} ic={if(${is_percent\ $3},2*$3*$iM,1+$3)}
-      if {$ic<=$iM} c.. 0,{max(1,$ic)} n.. 0,1
+      if $ic<=$iM c.. 0,{max(1,$ic)} n.. 0,1
       else n.. 0,{max(0,2-$ic/$iM)}
       fi
       *.. -1 +.. 1
@@ -18528,10 +18528,10 @@ blend_seamless : check "${2=0}>=0 && ${3=100%}>=0" skip ${1=0}
       fi
 
       # Compute the desired gradient map.
-      if {$2}
+      if $2
         distance. 0
         iM={iM} ic={if(${is_percent\ $2},2*$2*$iM,1+$2)}
-        if {$ic<=$iM} c. 0,{max(1,$ic)} n. 0,1
+        if $ic<=$iM c. 0,{max(1,$ic)} n. 0,1
         else n. 0,{max(0,2-$ic/$iM)}
         fi
       fi
@@ -18640,9 +18640,9 @@ sub_alpha : check "${2=1}>=1 && "${"is_image_arg $1"}
 #@cli : Default value: 'delay=30'.
 #@cli : $ image.jpg animate flower,"0,3","20,8",9
 animate : skip ${1=30},${2=0},${3=""},${4=10},${5=1},"${6=}"
-  if {"isval($1)"}
+  if "isval($1)"
     e[0--3] "Animate image$?, with a delay of $1 ms"${"v - if $2 u \", in back-and-forth mode\" else u \"\" fi v +"}.
-    if {!$!} return fi
+    if !$! return fi
     v -
     speed,pause,direction,scale,frame=$1,-1,1,1,0
     is_same_size={"res = 1; s = [ w#0,h#0 ]; for (k = 1, k<l && res, ++k, res = (s==[ w#k,h#k ]))"}
@@ -18656,18 +18656,18 @@ animate : skip ${1=30},${2=0},${3=""},${4=10},${5=1},"${6=}"
       fi
       frame+=$direction
       if $2
-        if {$frame==-1} frame=0 direction=1
-        elif {$frame==$!} frame={$!-1} direction=-1
+        if $frame==-1 frame=0 direction=1
+        elif $frame==$! frame={$!-1} direction=-1
         fi
       else frame%=$!
       fi
       wait $speed
-      if {({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,D}} w[] {{*,w}*1.5},{{*,h}*1.5} scale*=1.5 wait -1 fi # Increase window size.
-      if {({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,C}} w[] {{*,w}/1.5},{{*,h}/1.5} scale/=1.5 wait -1 fi # Decrease window size.
-      if {({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,R}} w[] {0,w},{0,h} scale=1 wait -1 fi             # Reset window size.
+      if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,D} w[] {{*,w}*1.5},{{*,h}*1.5} scale*=1.5 wait -1 fi # Increase window size.
+      if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,C} w[] {{*,w}/1.5},{{*,h}/1.5} scale/=1.5 wait -1 fi # Decrease window size.
+      if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,R} w[] {0,w},{0,h} scale=1 wait -1 fi             # Reset window size.
       if {*,o} speed={min(500,max(10,$speed-10*{*,o}))} wait -1 fi
       if {*,SPACE}
-        if {$pause>=0} direction=$pause pause=-1
+        if $pause>=0 direction=$pause pause=-1
         else pause=$direction direction=0 fi
         wait -1
       fi
@@ -18675,14 +18675,14 @@ animate : skip ${1=30},${2=0},${3=""},${4=10},${5=1},"${6=}"
     while {{*}" && "!{*,Q}" && "!{*,ESC}} w 0 v +
   else
     e[0--3] "Compute animated version of filter '$1', from parameters $2 to $3 with $4 frames."
-    if {!($5||narg("$6"))} return fi
+    if !($5||narg("$6")) return fi
     v - ($2) ($3) y[-2,-1] x a[-2,-1] y r. 100%,$4,1,1,3 mv. 0 rprogress 0
     repeat {$!-1},u
       v + e[] " > Animate image ["$>"]" v -
       repeat $4 +l[0,1]
         -$1. {0,@{$>*{0,w}}-{($>+1)*{0,w}-1}} rm[0]
-        if {narg("$6")} o ${filename\ "$6",$u,$>} fi
-        if {!$5} rm fi
+        if narg("$6") o ${filename\ "$6",$u,$>} fi
+        if !$5 rm fi
         rprogress {100*($>+1)/$4}
         v + e[] "\r > Animate image ["$u"] : Frame "{$>+1}"/$4    " v -
       endl done
@@ -18697,11 +18697,11 @@ apply_camera : skip "${1=},${4=}" check "${2=0}>=0 && ${3=0}>=0"
   v - is_ext "$4",avi is_outavi=${}
   l[] i=0 do
     camera $2,1,$3 $1 w. -1,-1,"[G'MIC] Camera ""#$2 ("{w}x{h}")"
-    if {narg("$4")} if $is_outavi z. 0,{w-(w%8)-1} o. "$4",25,mp4v,1 else o. ${filename\ "$4",$i} i+=1 fi fi
+    if narg("$4") if $is_outavi z. 0,{w-(w%8)-1} o. "$4",25,mp4v,1 else o. ${filename\ "$4",$i} i+=1 fi fi
     if {*,S} o. gmic_camera.png fi
-    if {({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,D}} w[] {{*,w}*1.5},{{*,h}*1.5} wait -1 fi # Increase window size.
-    if {({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,C}} w[] {{*,w}/1.5},{{*,h}/1.5} wait -1 fi # Decrease window size.
-    if {({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,R}} w[] {0,w},{0,h} wait -1 fi             # Reset window size.
+    if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,D} w[] {{*,w}*1.5},{{*,h}*1.5} wait -1 fi # Increase window size.
+    if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,C} w[] {{*,w}/1.5},{{*,h}/1.5} wait -1 fi # Decrease window size.
+    if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,R} w[] {0,w},{0,h} wait -1 fi             # Reset window size.
     rm.
   while {{*}" && "!{*,ESC}" && "!{*,Q}} camera $2,0 endl v +
 
@@ -18732,18 +18732,18 @@ _apply_stream : skip "${2=},${6=}"
       v + e[] "\r  > Frame ""#"$frame$_N"        " v -
       frame+=$5
       l $2 onfail error[0--5] "Command 'apply_stream': Specified command errored: "${} endl
-      if {!$!} continue fi
-      if {narg("$6")}
+      if !$! continue fi
+      if narg("$6")
         if $is_outavi z. 0,{w-(w%8)-1} o. "$6",25,mp4v,1 else o. ${filename\ "$6",$i} i+=1 fi
       fi
       if {*}
         title="[G'MIC] Frame ""#"$frame
-        if {!narg($wh)} wh=${fitscreen[]\ {w},{h}} w. $wh,0,$title
+        if !narg($wh) wh=${fitscreen[]\ {w},{h}} w. $wh,0,$title
         else w. -1,-1,0,$title
         fi
-        if {({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,D}} w[] {{*,w}*1.5},{{*,h}*1.5} wait -1 fi # Increase window size.
-        if {({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,C}} w[] {{*,w}/1.5},{{*,h}/1.5} wait -1 fi # Decrease window size.
-        if {({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,R}} w[] {0,w},{0,h} wait -1 fi             # Reset window size.
+        if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,D} w[] {{*,w}*1.5},{{*,h}*1.5} wait -1 fi # Increase window size.
+        if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,C} w[] {{*,w}/1.5},{{*,h}/1.5} wait -1 fi # Decrease window size.
+        if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,R} w[] {0,w},{0,h} wait -1 fi             # Reset window size.
       fi
       rm.
     fi
@@ -18778,8 +18778,8 @@ _average_stream : skip "${5=}"
       v + e[] "\r  > Frame ""#"$frame$_N"        " v -
       imM={v=[$imM];[min(im,v[0]),max(iM,v[1])]}
       N+=1
-      if {$!>1} + fi
-      if {narg("$5")}
+      if $!>1 + fi
+      if narg("$5")
         +/. $N c. $imM
         if $is_outavi z. 0,{w-(w%8)-1} o. "$5",25,mp4v,1 else o. ${filename\ "$5",$i} i+=1 fi
         rm.
@@ -18787,12 +18787,12 @@ _average_stream : skip "${5=}"
       if {*}
         title="[G'MIC] Frame ""#"$frame
         +n 0,255
-        if {!narg($wh)} wh=${fitscreen[]\ {w},{h}} w. $wh,0,$title
+        if !narg($wh) wh=${fitscreen[]\ {w},{h}} w. $wh,0,$title
         else w. -1,-1,0,$title
         fi
-        if {({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,D}} w[] {{*,w}*1.5},{{*,h}*1.5} wait -1 fi # Increase window size.
-        if {({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,C}} w[] {{*,w}/1.5},{{*,h}/1.5} wait -1 fi # Decrease window size.
-        if {({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,R}} w[] {0,w},{0,h} wait -1 fi             # Reset window size.
+        if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,D} w[] {{*,w}*1.5},{{*,h}*1.5} wait -1 fi # Increase window size.
+        if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,C} w[] {{*,w}/1.5},{{*,h}/1.5} wait -1 fi # Decrease window size.
+        if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,R} w[] {0,w},{0,h} wait -1 fi             # Reset window size.
         rm.
       fi
       frame+=$4
@@ -18823,26 +18823,26 @@ _fade_stream : skip "${6=}"
   frame=$3 i=0 go_on=1
 
   l $1 onfail go_on=0 endl # Load first image.
-  if {!$go_on} return fi
+  if !$go_on return fi
   w={w} h={h} s={s}
   if {*} w. ${fitscreen\ $w,$h},0,"[G'MIC]" fi
   pframe=$frame frame+=$5
   do
     l[] $1 onfail go_on=0 endl
-    if {!$go_on} break fi
+    if !$go_on break fi
     to_colormode. $s r. $w,$h
-    repeat {$2+2} if {$<}
+    repeat {$2+2} if $<
       title="[G'MIC] Frame ""#"$pframe" -> ""#"$frame$_N" ("{1+$>}/$2")"
       v + e[] "\r  - "$title v -
       +j[0] [1],0,0,0,0,{$>/($2+1)}
-      if {narg("$6")}
+      if narg("$6")
         if $is_outavi z. 0,{w-(w%8)-1} o. "$6",25,mp4v,1 else filename "$6",$i i+=1 o. ${} fi
       fi
       if {*}
         w. -1,-1,0,$title
-        if {({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,D}} w[] {{*,w}*1.5},{{*,h}*1.5} wait -1 fi # Increase window size.
-        if {({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,C}} w[] {{*,w}/1.5},{{*,h}/1.5} wait -1 fi # Decrease window size.
-        if {({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,R}} w[] {0,w},{0,h} wait -1 fi             # Reset window size.
+        if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,D} w[] {{*,w}*1.5},{{*,h}*1.5} wait -1 fi # Increase window size.
+        if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,C} w[] {{*,w}/1.5},{{*,h}/1.5} wait -1 fi # Decrease window size.
+        if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,R} w[] {0,w},{0,h} wait -1 fi             # Reset window size.
       fi
       rm.
     fi done
@@ -18850,7 +18850,7 @@ _fade_stream : skip "${6=}"
   while {$go_on" && "($4==-1" || "$frame<=$4)}
 
   # Output last frame.
-  if {narg("$6")}
+  if narg("$6")
     if $is_outavi z. 0,{w-(w%8)-1} o[] "$6",25,mp4v,0 else filename "$6",$i o. ${} fi
   fi
   rm
@@ -18861,7 +18861,7 @@ _fade_stream : skip "${6=}"
 files2video : check "isint(${3=25}) && $3>0" skip "${2=output.avi}",${4=mp4v}
   v -
   files=${"files \"$1\""} arg2var _file,$files nb_files=${}
-  ({'$files'}) if {w>128} z. 0,127 s_files={t}... else s_files=$files fi rm.
+  ({'$files'}) if w>128 z. 0,127 s_files={t}... else s_files=$files fi rm.
   v + e[^-1] "Convert image files '"$s_files"' into frames of output video '$2', with $3 fps and $4 codec.\n" v -
   repeat $nb_files l[]
     file=${_file{$>+1}}
@@ -18913,7 +18913,7 @@ _median_stream :
         imM={v=[$imM];[min(im,v[0]),max(iM,v[1])]}
         if {*}
           title="[G'MIC] Frame ""#"$frame
-          if {!narg($wh)} wh=${fitscreen[]\ {w},{h}} w. $wh,1,$title
+          if !narg($wh) wh=${fitscreen[]\ {w},{h}} w. $wh,1,$title
           else w. -1,-1,1,$title
           fi
         fi
@@ -18941,9 +18941,9 @@ _median_stream :
         l[] $1 nm. img onfail go_on=0 endl
         if $img
           v + e[] "\r    > Frame ""#"$frame$_N"        " v -
-          if {{*}" && "!$>}
+          if {*}" && "!$>
             title="[G'MIC] Frame ""#"$frame
-            if {!narg($wh)} wh=${fitscreen[]\ {img,w},{img,h}} w[img] $wh,1,$title
+            if !narg($wh) wh=${fitscreen[]\ {img,w},{img,h}} w[img] $wh,1,$title
             else w[img] -1,-1,1,$title
             fi
           fi
@@ -18955,7 +18955,7 @@ _median_stream :
       cumulate[hist] z
       N2={int($N/2)}
       [hist],[hist],1,[hist]
-      if {$N%2} # Odd number of frames.
+      if $N%2 # Odd number of frames.
         f. ":go_on = 1; for (z = 0, i(#"$hist",x,y,z,c)<"$N2" && z<256, ++z); z"
       else # Even number of frames.
         f. ":begin(N2p = "$N2"; N2n = N2p + 1);
@@ -18974,9 +18974,9 @@ _median_stream :
           l[] $1 nm. img onfail go_on=0 endl
           if $go_on
             v + e[] "\r    > Frame ""#"$frame$_N"        " v -
-            if {{*}" && "!$>}
+            if {*}" && "!$>
               title="[G'MIC] Frame ""#"$frame
-              if {!narg($wh)} wh=${fitscreen[]\ {w},{h}} w. $wh,1,$title
+              if !narg($wh) wh=${fitscreen[]\ {w},{h}} w. $wh,1,$title
               else w. -1,-1,1,$title
               fi
             fi
@@ -18999,8 +18999,8 @@ _median_stream :
 
 # Median blending optimized to deal with a lot of input frames.
 __median_stream :
-  if {$!<2} return
-  elif {$!==2} + / 2
+  if $!<2 return
+  elif $!==2 + / 2
   else
     f. ":
       stack = vector"{0,2*$!}"();
@@ -19021,7 +19021,7 @@ __median_stream :
         if (range[0]<hi,push(range[0],hi));
         if (lo<range[1],push(lo,range[1]));
       )"
-    if {$!%2} k[{int($!/2)}]
+    if $!%2 k[{int($!/2)}]
     else k[{int($!/2-1)},{$!/2}] + / 2
     fi
   fi
@@ -19032,12 +19032,12 @@ __median_stream :
 #@cli : $ image.jpg +rotate 20,1,1,50%,50% morph 9
 morph : check "$1>=0 && ${2=0.1}>=0 && ${3=4}>=0"
   e[^-1] "Create morphing sequence between image$?, with $1 inner frames, smoothness $2 and precision $3.\n"
-  if {!$1} return fi
+  if !$1 return fi
   v - r[^0] [0],3 repeat {$!-1} nm={$>,n} l[$<,{$<+1}]
     v + e[] "\r > Morph image "$>" to image "{$>+1}".    " v -
     +equalize[0,1] n[-2,-1] 0,255
     +displacement[3] [2],$2,$3 +displacement[2] [3],$2,$3 rm[-4,-3]
-    repeat {$1+2} if {$>&&$<}
+    repeat {$1+2} if $>&&$<
       t={$>/($1+1)} omt={1-$t}
       +*[2] $t +warp[0] .,1,1,1 rm.. *. $omt
       +*[3] {1-$t} +warp[1] .,1,1,1 rm.. *. $t
@@ -19069,33 +19069,33 @@ _morph_stream : skip "${8=}"
   frame=$5 i=0 go_on=1
 
   l $1 onfail go_on=0 endl # Load first image.
-  if {!$go_on} return fi
+  if !$go_on return fi
   w={w} h={h} s={s}
   if {*} w. ${fitscreen\ $w,$h},0,"[G'MIC]" fi
   pframe=$frame frame+=$7
   do
     l[] $1 onfail go_on=0 endl
-    if {!$go_on} break fi
+    if !$go_on break fi
     to_colormode. $s r. $w,$h
     cutvals={[min(im#0,im#1),max(iM#0,iM#1)]}
     v + e[] "\r  - Frame ""#"$pframe" -> ""#"$frame"            " v -
     +equalize[0,1] n[-2,-1] 0,255
     +displacement[3] [2],$3,$4 +displacement[2] [3],$3,$4 rm[-4,-3]
-    repeat {$2+2} if {$<}
+    repeat {$2+2} if $<
       title="Frame ""#"$pframe" -> ""#"$frame" ("$>/$2")        "
       v + e[] "\r  - "$title v -
       t={$>/($2+1)} omt={1-$t}
       +*[2] $t +warp[0] .,1,1,1 rm.. *. $omt
       +*[3] {1-$t} +warp[1] .,1,1,1 rm.. *. $t
       +[-2,-1] c. $cutvals
-      if {narg("$8")}
+      if narg("$8")
         if $is_outavi z. 0,{w-(w%8)-1} o. "$8",25,mp4v,1 else filename "$8",$i i+=1 o. ${} fi
       fi
       if {*}
         w. -1,-1,0,$title
-        if {({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,D}} w[] {{*,w}*1.5},{{*,h}*1.5} wait -1 fi # Increase window size.
-        if {({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,C}} w[] {{*,w}/1.5},{{*,h}/1.5} wait -1 fi # Decrease window size.
-        if {({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,R}} w[] {0,w},{0,h} wait -1 fi             # Reset window size.
+        if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,D} w[] {{*,w}*1.5},{{*,h}*1.5} wait -1 fi # Increase window size.
+        if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,C} w[] {{*,w}/1.5},{{*,h}/1.5} wait -1 fi # Decrease window size.
+        if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,R} w[] {0,w},{0,h} wait -1 fi             # Reset window size.
       fi
       rm.
     fi done
@@ -19103,7 +19103,7 @@ _morph_stream : skip "${8=}"
   while {$go_on" && "($6==-1" || "$frame<=$6)}
 
   # Output last frame.
-  if {narg("$8")}
+  if narg("$8")
     if $is_outavi z. 0,{w-(w%8)-1} o[] "$8",25,mp4v,0 else filename "$8",$i o. ${} fi
   fi
   rm
@@ -19140,18 +19140,18 @@ register_rigid : check ${is_image_arg\ $1}" && ${2=1}>=0 && isint(${3=0}) && $3>
 transition : check ${is_image_arg\ $1}" && $2>=0 && ${3=0}>=0 && $3<=100" skip ${4=-1}
   v - frame={round($4)} s0=" and shading $3" s1=", shading $3 and single-frame-only "$frame v +
   e[^-1] "Create transition sequence between image$? with $2 added frames, transition shape $1"${s{$4>0}}"."
-  if {$!<2" || "!$2} return fi
+  if $!<2" || "!$2 return fi
   v - to_colormode 0 r ${-max_whd},100%,0,0,0.5,0.5
   pass$1 0 norm. r. [0],[0],[0],1,3 n. 0,1 mv. 0
   repeat {$!-2} l[0,{$<+1},{$<+2}]
     nm0={1,n}
-    if $3 repeat $2 if {$4<0" || "$>==$frame}
+    if $3 repeat $2 if $4<0" || "$>==$frame
       val0={($>+0.5)/$2-$3%}
       val1={($>+0.5)/$2+$3%}
       +f[0] '(i-$val0)/($val1-$val0)' c. 0,1
       +j[2] [1],0,0,0,0,1,. rm..
       nm. $nm0\ ""#{1+$>}
-    fi done else repeat $2 if {$4<0" || "$>==$frame}
+    fi done else repeat $2 if $4<0" || "$>==$frame
       +>=[0] {($>+0.5)/$2}
       +j[2] [1],0,0,0,0,1,. rm..
       nm. $nm0\ ""#{1+$>}
@@ -19166,7 +19166,7 @@ transition : check ${is_image_arg\ $1}" && $2>=0 && ${3=0}>=0 && $3<=100" skip $
 #@cli : $ image.jpg +blur 5 transition3d 9 display_rgba
 transition3d : check "isint(${1=10}) && $1>=2 && isint(${2=3}) && $2>0 && isint(${3=$2}) && $3>0" skip ${4=1},${5=1},${6=0},${7=1}
   e[^-1] "Create 3D transition sequence between image$?, with $1 frames, $2x$3 tiles and rotation axis ($4,$5,$6).\n"
-  if {$!<2} return fi
+  if $!<2 return fi
   v -
   slices 0 to_rgb r ${-max_whds},3
   off=0 repeat {$!-1} l[{$>+$off},{$>+$off+1}]
@@ -19248,18 +19248,18 @@ video2files : check "isint(${3=0}) && $3>=0 && isint(${4=-1}) && ($4>=0 || $4==-
 #@cli : If a single image is in the selection, it is used as an icon for the alert box.
 #@cli : Default values: 'title=[G'MIC Alert]' and 'message=This is an alert box.'.
 alert : skip "${1=[G"{`39`}"MIC Alert]},${2=This is an alert box.},${3=OK}"
-  if {$!==1}
+  if $!==1
     e[0--3] "Display alert box, with image$?, title '$1', message '$2' and buttons '${3--1}'."
   else
     e[0--3] "Display alert box, with title '$1', message '$2' and buttons '${3--1}'."
   fi
   v -
 
-  if {$!==1} logo= else logo=[] fi
+  if $!==1 logo= else logo=[] fi
   +l$logo
 
     # Manage alert icon.
-    if {$!==1} to_rgb
+    if $!==1 to_rgb
     else # No logo provided, generate default logo (alert).
       64,64 polygon 3,50%,10%,10%,90%,90%,90%,1,1 b 3 >= 50%
       +erode. 5 -. .. ==. 0
@@ -19306,7 +19306,7 @@ alert : skip "${1=[G"{`39`}"MIC Alert]},${2=This is an alert box.},${3=OK}"
     # Render alert box graphics.
     +l
       channels 0,3 sh 1,100% -[50%--1] 200 rm[50%--1] frame 8,8,0
-      if {$!<6} a[^-1] x else append_tiles[^-1] , fi
+      if $!<6 a[^-1] x else append_tiles[^-1] , fi
       0 t. "$2",0,0,16,1,0,-200,-200,-200 r. {w+16},{h+8},1,4,0
       a[-2,-1] x,0.5 rv a y,0.5
       sh 1,100% +. 200 rm.
@@ -19324,19 +19324,19 @@ alert : skip "${1=[G"{`39`}"MIC Alert]},${2=This is an alert box.},${3=OK}"
     a[-2,-1] c
 
     # Enter event loop.
-    repeat 9 if {!{*$>}} disp=$> break fi done   # Find available display window.
-    if {!narg($disp)} v + error[0--4] "Command '$0': Cannot open display window for alert box." fi
+    repeat 9 if !{*$>} disp=$> break fi done   # Find available display window.
+    if !narg($disp) v + error[0--4] "Command '$0': Cannot open display window for alert box." fi
 
     selected={if($#==3,0,-1)} clicked=-1
     do
 
       # Render current view.
       +channels. 0,2
-      if {$clicked>=0}
+      if $clicked>=0
         x0={-3,i($clicked,0)} y0={-3,i($clicked,1)}
         sh[$clicked] 7,9
         j.. .,$x0,$y0 rm.
-      elif {$selected>=0}
+      elif $selected>=0
         x0={-3,i($selected,0)} y0={-3,i($selected,1)}
         sh[$selected] 4,6
         j.. .,$x0,$y0 rm.
@@ -19345,13 +19345,13 @@ alert : skip "${1=[G"{`39`}"MIC Alert]},${2=This is an alert box.},${3=OK}"
 
       # Handle user interactions.
       xm={*$disp,x} ym={*$disp,y} bm={{*$disp,b}&1} val={i($xm,$ym,0,3)}
-      if {$bm" && "$val} clicked={$val-1}
-      elif {$bm" && "!$val" && "$clicked>=0} selected=$clicked clicked=-1
-      elif {!$bm" && "$clicked>=0" && "$clicked==$val-1} break
+      if $bm" && "$val clicked={$val-1}
+      elif $bm" && "!$val" && "$clicked>=0 selected=$clicked clicked=-1
+      elif !$bm" && "$clicked>=0" && "$clicked==$val-1 break
       fi
       if {*$disp,ARROWRIGHT} selected={($selected+1)%{-2,w}} wait -1
       elif {*$disp,ARROWLEFT} selected={($selected-1)%{-2,w}+($selected==-1)} wait -1
-      elif {$selected>=0" && "{*$disp,ENTER}} clicked=$selected break
+      elif $selected>=0" && "{*$disp,ENTER} clicked=$selected break
       fi
 
     while {{*$disp}" && "!{*$disp,ESC}}
@@ -19432,8 +19432,8 @@ base642uchar :
 basename : skip ${2=unused}
   v -
   l[] ({"'$1'"}) replace 92,47 s +,47
-  if {i==47} a y $2={t} u ""
-  elif {$!==1} u {t} $2=""
+  if i==47 a y $2={t} u ""
+  elif $!==1 u {t} $2=""
   else a[^-1] y u {t} $2={-2,t}
   fi
   rm endl
@@ -19470,11 +19470,11 @@ compress_gmic :
   v +
 
 _compress_gmic :
-  if {i==_'#'}
-    if {h<5" || "(!same([{^}],'#@gui',5)" && "!same([{^}],'#@cli',5)" && "!same([{^}],'#@web',5))} rm. (10) fi
+  if i==_'#'
+    if h<5" || "(!same([{^}],'#@gui',5)" && "!same([{^}],'#@cli',5)" && "!same([{^}],'#@web',5)) rm. (10) fi
   else
-    l. s +,32,35 if {$!>2} k[0] fi a y endl
-    autocrop. 32 if {!w} rm. (10) fi
+    l. s +,32,35 if $!>2 k[0] fi a y endl
+    autocrop. 32 if !w rm. (10) fi
   fi
 
 # compress_gmic_cli
@@ -19488,11 +19488,11 @@ compress_gmic_cli :
   v +
 
 _compress_gmic_cli :
-  if {i==_'#'}
-    if {!same([{^}],'#@cli',5)" || (i[5]!=_' ' && i[5]!=_':')"} rm. (10) fi
+  if i==_'#'
+    if !same([{^}],'#@cli',5)" || (i[5]!=_' ' && i[5]!=_':')" rm. (10) fi
   else
-    l. s +,32,35 if {$!>2} k[0] fi a y endl
-    autocrop. 32 if {!w} rm. (10) fi
+    l. s +,32,35 if $!>2 k[0] fi a y endl
+    autocrop. 32 if !w rm. (10) fi
   fi
 
 # compress_gmic_gui
@@ -19506,11 +19506,11 @@ compress_gmic_gui :
   v +
 
 _compress_gmic_gui :
-  if {i==_'#'}
-    if {!same([{^}],'#@gui',5)} rm. (10) fi
+  if i==_'#'
+    if !same([{^}],'#@gui',5) rm. (10) fi
   else
-    l. s +,32,35 if {$!>2} k[0] fi a y endl
-    autocrop. 32 if {!w} rm. (10) fi
+    l. s +,32,35 if $!>2 k[0] fi a y endl
+    autocrop. 32 if !w rm. (10) fi
   fi
 
 #@cli dec : decimal_int1,...
@@ -19593,8 +19593,8 @@ file_rm :
   v -
   if ${-is_windows}
     1 nm. "$1" dir={/{f}} base={/{b}} ext={/{x}} rm. com=""
-    if {narg($dir)} com="cd \""$dir"\\\" && " fi
-    if {narg($ext)} com=${com}"del \""$base.$ext"\"" else com=${com}"del \""$base"\"" fi
+    if narg($dir) com="cd \""$dir"\\\" && " fi
+    if narg($ext) com=${com}"del \""$base.$ext"\"" else com=${com}"del \""$base"\"" fi
     x $com
   else
     x "rm -f \"$1\""
@@ -19605,14 +19605,14 @@ file_rm :
 #@cli : Return a filename numbered with specified indices.
 filename : skip "${1=default}"
   v -
-  if {$#==1} u "$1"
+  if $#==1 u "$1"
   else
   (${2--1}) nm. "$1" u {f}{b}
   repeat {w}
     u ${}_{int(i/100000)%10}{int(i/10000)%10}{int(i/1000)%10}{int(i/100)%10}{int(i/10)%10}{i%10}
     shift. -1
   done
-  if {narg({'{x}'})} u ${}.{x} fi
+  if narg({'{x}'}) u ${}.{x} fi
   rm.
   fi
   v +
@@ -19627,7 +19627,7 @@ filename : skip "${1=default}"
 #@cli fitratio_wh : min_width,min_height,ratio_wh
 #@cli : Return a 2D size 'width,height' which is bigger than 'min_width,min_height' and has the specified w/h ratio.
 fitratio_wh :
-  v - if {$3*$2>$1} u {int($3*$2)},$2 else u $1,{int($1/$3)} fi v +
+  v - if $3*$2>$1 u {int($3*$2)},$2 else u $1,{int($1/$3)} fi v +
 
 #@cli fitscreen : width,height,_depth,_minimal_size[%],_maximal_size[%]
 #@cli : Return the 'ideal' size WxH for a window intended to display an image of specified size on screen.
@@ -19658,7 +19658,7 @@ fontchart :
   e[^-1] "Generate G'MIC font chart."
   v - l[]
     repeat 256
-      if {$>==92} char=\\ else char={`max(1,(c=$>;c>=23&&c<=28?32:c))`} fi
+      if $>==92 char=\\ else char={`max(1,(c=$>;c>=23&&c<=28?32:c))`} fi
       0 t. {``$char},0,0,50,1,255
     done
     a z,0.5
@@ -19678,7 +19678,7 @@ font2cimgh :
   v - repeat $! l[$>] bnm={0,b}
     v + e[] "  > Encode font '"$bnm"'." v -
     W,H={[w/256,h]}
-    if {!isint($W)} error[0--4] "Font image '"$bnm"' has wrong dimensions ("{[w,h,d,s]}")." fi
+    if !isint($W) error[0--4] "Font image '"$bnm"' has wrong dimensions ("{[w,h,d,s]}")." fi
     +f "i==im || i==iM" is_binary={im==1} rm.
 
     # Find best parameters for RLE compression.
@@ -19686,7 +19686,7 @@ font2cimgh :
     do
       M={floor(($Mm+$MM)/2)}
       +compress_rle $is_binary,$M rows. 6,100% +. {32-im} iM={iM}
-      if {iM<126} Mm=$M rm. elif {iM>126} MM=$M rm. fi
+      if iM<126 Mm=$M rm. elif iM>126 MM=$M rm. fi
     while {$iM!=126}
     k. nb_chunks={1+int(h/65536)}
 
@@ -19700,7 +19700,7 @@ font2cimgh :
       if {$>,i[h-1]==_'\\'&&i[h-2]!=_'\\'} rows[$>] 0,{$>,h-2} rows[{$>+1}] -1,100% =[{$>+1}] {'\\'} fi
       l[$>]
         i[0] ({'"      \""'}) ({'\"'})
-        if {!$<} ({'" };"'}) fi
+        if !$< ({'" };"'}) fi
         ({'\n'})
         y a y
       endl
@@ -19716,9 +19716,9 @@ font2cimgh :
 #@cli : Useful to display the framerate when displaying animations.
 fps :
   v -
-  if {narg($_fps_fps)}
+  if narg($_fps_fps)
     dt={$|-$_fps_time}
-    if {$dt>1} _fps_fps={round($_fps_nbframes/$dt)} _fps_time=$| _fps_nbframes=0 fi
+    if $dt>1 _fps_fps={round($_fps_nbframes/$dt)} _fps_time=$| _fps_nbframes=0 fi
     u $_fps_fps
     _fps_nbframes+=1
   else _fps_nbframes=0 _fps_time=$| _fps_fps=-1 u -1
@@ -19762,8 +19762,8 @@ hex2img :
 #@cli : Convert specified hexadecimal string into a string.
 hex2str : skip ${1=""}
   v -
-  if {!narg("$1")} u "" v + return fi
-  ({'$*'}) if {w<2} rm. u "" v + return fi
+  if !narg("$1") u "" v + return fi
+  ({'$*'}) if w<2 rm. u "" v + return fi
   f. 'v=i-if(i>=97,87,48);if(x%2,v,v*16)' r. 2,{int(w/2)},1,1,-1 cumulate. x z. 1,1
   u {t} rm. v +
 
@@ -19795,7 +19795,7 @@ img2str :
 #@cli : Return text contained in a multi-line image.
 #@cli : Default value: 'line_separator= '.
 img2text : skip "${1= }"
-  v - +l s y s -,0 y x if {$!>1} i[1--2] ({'"$1"'}) fi a x u {0,t} rm endl v +
+  v - +l s y s -,0 y x if $!>1 i[1--2] ({'"$1"'}) fi a x u {0,t} rm endl v +
 
 #@cli img82hex
 #@cli : Convert selected 8bits-valued vectors into their hexadecimal representations (ascii-encoded).
@@ -20144,9 +20144,9 @@ _max_whds :
     d={max($d,d)}
     s={max($s,s)}
   mv. 0 done
-  if {$1>=4} u $w,$h,$d,$s
-  elif {$1==3} u $w,$h,$d
-  elif {$1==2} u $w,$h
+  if $1>=4 u $w,$h,$d,$s
+  elif $1==3 u $w,$h,$d
+  elif $1==2 u $w,$h
   else u $w
   fi
 
@@ -20206,9 +20206,9 @@ _min_whds :
     d={min($d,d)}
     s={min($s,s)}
   mv. 0 done
-  if {$1>=4} u $w,$h,$d,$s
-  elif {$1==3} u $w,$h,$d
-  elif {$1==2} u $w,$h
+  if $1>=4 u $w,$h,$d,$s
+  elif $1==3 u $w,$h,$d
+  elif $1==2 u $w,$h
   else u $w
   fi
 
@@ -20246,13 +20246,13 @@ padint : check "isint($1)" skip ${2=4}
 #@cli : Return a path to store G'MIC data files for one user (whose value is OS-dependent).
 path_cache :
   v -
-  if {!narg({'$_path_cache'})}
+  if !narg({'$_path_cache'})
     _path_cache=$_path_rc
-    if {!${-is_windows}}
-      if {isdir(['$HOME/.cache'])} _path_cache=$HOME/.cache/gmic/
-      elif {['$XDG_CACHE_HOME']!=0} _path_cache=$XDG_CACHE_HOME/gmic/
+    if !${-is_windows}
+      if isdir(['$HOME/.cache']) _path_cache=$HOME/.cache/gmic/
+      elif ['$XDG_CACHE_HOME']!=0 _path_cache=$XDG_CACHE_HOME/gmic/
       fi
-      if {!isdir('$_path_cache')} x "mkdir -p "$_path_cache fi
+      if !isdir('$_path_cache') x "mkdir -p "$_path_cache fi
     fi
   fi
   u $_path_cache
@@ -20262,10 +20262,10 @@ path_cache :
 #@cli : Return a path to store GIMP configuration files for one user (whose value is OS-dependent).
 path_gimp :
   v -
-  if {!narg({'$_path_gimp'})}
-    if {narg({'${GIMP2_DIRECTORY}'})} _path_gimp=${GIMP2_DIRECTORY}
-    elif {narg({'${USERPROFILE}'})} _path_gimp=${USERPROFILE}
-    elif {narg({'${HOME}'})} _path_gimp=${HOME}
+  if !narg({'$_path_gimp'})
+    if narg({'${GIMP2_DIRECTORY}'}) _path_gimp=${GIMP2_DIRECTORY}
+    elif narg({'${USERPROFILE}'}) _path_gimp=${USERPROFILE}
+    elif narg({'${HOME}'}) _path_gimp=${HOME}
     fi
     if ${-is_windows} sep={`92`} else sep=/ fi
     if $_path_gimp${sep}AppData${sep}Roaming${sep}GIMP${sep}2.10${sep}pluginrc
@@ -20285,11 +20285,11 @@ path_gimp :
 #@cli : Return a path to store temporary files (whose value is OS-dependent).
 path_tmp :
   v -
-  if {!narg({'$_path_tmp'})}
-    if {narg({'${TMP}'})} _path_tmp=${TMP}
-    elif {narg({'${TEMP}'})} _path_tmp=${TEMP}
-    elif {narg({'${TMPDIR}'})} _path_tmp=${TMPDIR}
-    elif {narg({'${HOME}'})} _path_tmp="/tmp"
+  if !narg({'$_path_tmp'})
+    if narg({'${TMP}'}) _path_tmp=${TMP}
+    elif narg({'${TEMP}'}) _path_tmp=${TEMP}
+    elif narg({'${TMPDIR}'}) _path_tmp=${TMPDIR}
+    elif narg({'${HOME}'}) _path_tmp="/tmp"
     fi
     if ${-is_windows} _path_tmp=$_path_tmp{`92`} else _path_tmp=$_path_tmp/ fi
   fi
@@ -20343,11 +20343,11 @@ strlen : skip "${1=}"
 #@cli : Search and replace substrings in an input string.
 strreplace : skip "${3=}"
   v -
-  if {narg("$3")}
+  if narg("$3")
     ls=${strlen\ "$2"}
     lr={${strlen\ "$3"}-1}
     l[] ({'"$1"'}) s +,{'"$2"'} s y,-$ls
-    repeat $! if {[{$>,^}]==['"$2"']} rows[$>] 0,$lr f[$>] {'"$3"'} fi done
+    repeat $! if [{$>,^}]==['"$2"'] rows[$>] 0,$lr f[$>] {'"$3"'} fi done
     a y u {t} rm endl
   else
     l[] ({'"$1"'}) s -,{'"$2"'} a y u {t} rm endl
@@ -20366,7 +20366,7 @@ strvar :
    (i>=_'0' && i<=_'9') || (i>=_'a' && i<=_'z') || i==_'_'?i:
    (i>=_'A' && i<=_'Z')?i - _'A' + _'a':
    _'_'"
-   if {"i>=_'0' && i<=_'9'"} r. {w+1},1,1,1,0,0,1 =. {_'_'} fi
+   if "i>=_'0' && i<=_'9'" r. {w+1},1,1,1,0,0,1 =. {_'_'} fi
    y. do h={h} replace_str. "__","_" while {h!=$h}
    u {t} rm. v +
 
@@ -20381,7 +20381,7 @@ strver : check ${1=$_version}>0
 #@cli : Use it in conjunction with 'toc'.
 tic :
   e[^-1] "Initialize timer."
-  v - if {!narg($_ticpos)} _ticpos=0 fi _tic$_ticpos=$| _ticpos={$_ticpos+1} v +
+  v - if !narg($_ticpos) _ticpos=0 fi _tic$_ticpos=$| _ticpos={$_ticpos+1} v +
 
 #@cli toc
 #@cli : Display elapsed time of the tic-toc timer since the last call to 'tic'.
@@ -20415,7 +20415,7 @@ to_clutname :
 #@cli : Default values: 'encoding=0'.
 uchar2base64 : skip "${1=0}"
   v -
-  if {isval("$1")} encoding=$1 else encoding=0 noarg fi
+  if isval("$1") encoding=$1 else encoding=0 noarg fi
   {ceil(whds*4/3)+([0,2,1])[whds%3]}
   eval "
     hash = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
@@ -20438,7 +20438,7 @@ uchar2base64 : skip "${1=0}"
 #@cli : Default values: 'encoding=0'.
 img2base64 : skip "${1=0}"
   v -
-  if {isval("$1")} encoding=$1 else encoding=0 noarg fi
+  if isval("$1") encoding=$1 else encoding=0 noarg fi
   +serialize u ${uchar2base64\ $encoding} rm.
   v +
 
@@ -20469,11 +20469,11 @@ covariance_colors : skip "${1=avg}"
 #@cli demo : _run_in_parallel={ 0=no | 1=yes | 2=auto }
 #@cli : Show a menu to select and view all G'MIC interactive demos.
 demo : check "isint(${1=2}) && $1>=0 && $1<=2"
-  if {!{*,u}} error[0--3] "Command '$0': No display available." return fi
+  if !{*,u} error[0--3] "Command '$0': No display available." return fi
   v -
   use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r
   strver=${-strver}
-  if {narg($_prerelease)} strver=${strver}_pre#$_prerelease fi
+  if narg($_prerelease) strver=${strver}_pre#$_prerelease fi
   v +
   e[] "\n
 ------ "${g}"G\47MIC demos"$n" ------------------\n
@@ -20498,7 +20498,7 @@ demo : check "isint(${1=2}) && $1>=0 && $1<=2"
   nb_entries={narg($entries)}
   parallel_mode={1-if($1!=2,$1,$_cpus>=2)}
   strver=${-strver}
-  if {narg($_prerelease)} strver.=_pre#$_prerelease fi
+  if narg($_prerelease) strver.=_pre#$_prerelease fi
 
   # Generate menu graphics.
   l[]
@@ -20578,7 +20578,7 @@ demo : check "isint(${1=2}) && $1>=0 && $1<=2"
   do
     mx,my,mb={menu_fgcol,x={*,x};y={*,y};[x<0?-1:x*(w-1)/({*,w}-1),y<0?-1:y*(h-1)/({*,h}-1),{*,b}]}
     ind={menu_ind,i($mx,$my)}
-    if {$mb" && "!$ind_clicked} ind_clicked=$ind fi
+    if $mb" && "!$ind_clicked ind_clicked=$ind fi
 
     # Render current view.
     [background]
@@ -20591,25 +20591,25 @@ demo : check "isint(${1=2}) && $1>=0 && $1<=2"
     j[background3d] .,0,8 rm.
     +r3d[background3d] 1,2,3,{20*$|} *3d. {menu_fgcol,[w,h]/2-30},300 +3d. 0,0,300
     j3d.. .,50%,50%,0,1,1,0,0,200 rm.
-    if {$|-$time0>5} alpha+=0.02 fi
-    if {$alpha>1} alpha-=1 cfx,cfy,cfz=$nfx,$nfy,$nfz nfx,nfy,nfz={[g,g,g]} time0={$|-u*3} fi
+    if $|-$time0>5 alpha+=0.02 fi
+    if $alpha>1 alpha-=1 cfx,cfy,cfz=$nfx,$nfy,$nfz nfx,nfy,nfz={[g,g,g]} time0={$|-u*3} fi
 
-    if {$ind>0} +==[menu_ind] $ind j.. [menu_bgcol],0,0,0,0,{$mb" && "$ind_clicked==$ind?0.6:1},. rm. fi # Draw selection background
+    if $ind>0 +==[menu_ind] $ind j.. [menu_bgcol],0,0,0,0,{$mb" && "$ind_clicked==$ind?0.6:1},. rm. fi # Draw selection background
     j. [menu_fgcol],0,0,0,0,1,[menu_opac]
 
-    if {$mx>0}
+    if $mx>0
       +r3d[cursor3d] 1,1.3,0.6,{50*cos($|)}
       j3d.. .,$mx,$my,0,1,4,0,0,800,{-2,[w,h]/2},-1000,0.7 rm.
     fi
 
     w. -1,-1,0
-    if {{*,CTRLLEFT}&&{*,D}} w. 150%,150% elif {{*,CTRLLEFT}&&{*,C}} w. 100%,100% fi
+    if {*,CTRLLEFT}&&{*,D} w. 150%,150% elif {*,CTRLLEFT}&&{*,C} w. 100%,100% fi
     rm.
 
     # Manage user selection.
-    if {!$mb" && "$omb" && "$ind_clicked" && "$ind_clicked==$ind}
+    if !$mb" && "$omb" && "$ind_clicked" && "$ind_clicked==$ind
       m "com : v 0 "${arg\ $ind,$commands} parallel $parallel_mode,"l[] com v -1 rm endl" uncommand com
-    elif {!$mb} ind_clicked=0
+    elif !$mb ind_clicked=0
     fi
     omb=$mb
 
@@ -20619,7 +20619,7 @@ demo : check "isint(${1=2}) && $1>=0 && $1<=2"
 
 _demo_color_curves :
   v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
-  if {!narg($__demo_color_curve)}
+  if !narg($__demo_color_curve)
     e[] "\n
 ------ "${g}"Color curves"$n" ----------------------------------------------------------------------------\n
 ----\n
@@ -20647,7 +20647,7 @@ _demo_color_curves :
 #@cli x_2048
 #@cli : Launch the 2048 game.
 x_2048 :
-  if {!{*,u}} error[0--3] "Command '$0': No display available." return fi
+  if !{*,u} error[0--3] "Command '$0': No display available." return fi
   v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
   e[] "\n
 ------ "${g}"2048"$n" -----------------------------------------------\n
@@ -20711,7 +20711,7 @@ x_2048 :
     if {0,iM==11} # Game won.
       alert "Game Over","\nCongratulations! You got the 2048 title!\n\n   Your score: "$score,"OK"
       break
-    elif {!iM} # Game lost.
+    elif !iM # Game lost.
       alert "Game Over","\nBad luck! You lost the game!\n\n   Your score: "$score,"OK"
       break
     fi
@@ -20750,7 +20750,7 @@ x_2048 :
         +==[0,-1] insert_new={$insert_new||!im} rm.
         +f[0,-1] 'if(i,x,-1)' discard[-2,-1] -1 rv[-2,-1] -[-2,-1] rv[0,-2] rm..
 
-        if {(im||iM)&&!{*,k}} # Render animation for shift.
+        if (im||iM)&&!{*,k} # Render animation for shift.
           /. 5 z. 0,2 y.
           repeat 5
             j.. .,0,8,0,0,-1
@@ -20761,18 +20761,18 @@ x_2048 :
         rm[-2,-1]
 
         # Tile fusions.
-        if {!$>} dscore=0
+        if !$> dscore=0
           [0] +f[0] 'if(i,i*16+4*y+x,-1)' discard. -1
           repeat {h}
             x={i[$>]&3} y={(i[$>]>>2)&3} n={i[$>]>>4}
-            if {$x>0" && "{0,i($x-1,$y)}==$n}
+            if $x>0" && "{0,i($x-1,$y)}==$n
               =[0] 0,$x,$y =[0] {$n+1},{$x-1},$y =.. 0,$x,$y insert_new=1 dscore+={2^($n+1)}
             else =. -1,0,$>
             fi
           done
           score+=$dscore
 
-          if {iM<0} rm[-2,-1]
+          if iM<0 rm[-2,-1]
           else # At least one tile fusions.
             discard. -1
             rv[0,-2] _x_2048_object3d rv[0,-3] vshift2048. *3d. 121 # Only tiles that do not move in this step.
@@ -20802,7 +20802,7 @@ x_2048 :
 #@cli x_blobs
 #@cli : Launch the blobs editor.
 x_blobs :
-  if {!{*,u}} error[0--3] "Command '$0': No display available." return fi
+  if !{*,u} error[0--3] "Command '$0': No display available." return fi
   v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
   e[] "\n
 ------ "${g}"Blobs editor"$n" --------------------------\n
@@ -20828,20 +20828,20 @@ x_blobs :
     fps=${-fps}
 
     # Render image of blobs and find nearest blob to mouse pointer.
-    if {$!>1}
+    if $!>1
       {0,[w,h]},1,2
       repeat {1,h}
         r={1,i[2]*(1+i[3]*cos(i[4]+i[5]*$|*1000))}
         ellipse. {1,@0,1},$r,$r,0,1,{1,@6-7}
         d={sqrt(($x-{1,@0})^2+($y-{1,@1})^2)}
-        if {$d<$r} nearest=$> fi
+        if $d<$r nearest=$> fi
       shift[1] 0,-1,0,0,2 done
       b. 15
       +norm. +>=. 50 <=.. 40 *[-3,-1]
       +*[0,-1] rm.. rv[-2,-1] *. 1.6 c. 0,255 +[-2,-1]
-      if {$fps>0} to. $fps" fps",5,{h-29},24,2,0.2 fi
+      if $fps>0 to. $fps" fps",5,{h-29},24,2,0.2 fi
       w.
-      if {{*,CTRLLEFT}&&{*,D}} w[] {2*[w,h]} elif {{*,CTRLLEFT}&&{*,C}} w[] {[w,h]} fi
+      if {*,CTRLLEFT}&&{*,D} w[] {2*[w,h]} elif {*,CTRLLEFT}&&{*,C} w[] {[w,h]} fi
       rm.
     else
       +to[0] "G\47MIC Blobs Editor",75,100,35,3,1,200,128,255
@@ -20852,24 +20852,24 @@ x_blobs :
            * Colors and sizes of appearing blobs are\n   chosen randomly",\
            50,180,18,1,1,255
       w.
-      if {{*,CTRLLEFT}&&{*,D}} w[] {1.5*[w,h]} elif {{*,CTRLLEFT}&&{*,C}} w[] {[w,h]} fi
+      if {*,CTRLLEFT}&&{*,D} w[] {1.5*[w,h]} elif {*,CTRLLEFT}&&{*,C} w[] {[w,h]} fi
       rm.
     fi
     wait 20
 
     # Manage blob insertion, removal or move.
-    if {$x<0||$y<0} continue fi
-    if {$b&1}
-      if {$nearest>=0" || "$moving>=0} # Move existing blob.
-        if {$moving<0} moving=$nearest fi
+    if $x<0||$y<0 continue fi
+    if $b&1
+      if $nearest>=0" || "$moving>=0 # Move existing blob.
+        if $moving<0 moving=$nearest fi
         =[1] $x,0,$moving =[1] $y,1,$moving
         else # Insert new blob.
           ($x,$y,{u(20,50)},{u(-0.3,0.3)},{u(0,pi/2)},{u(0,0.009)},{u(64,255)},{u(64,255)}) a[^0] y
           moving={h-1}
         fi
-    elif {$b&2} # Remove existing blob.
-      if {$nearest>=0} l[1] s y rm[$nearest] a y endl nearest=-1 fi
-    elif {$b&4} # Remove all blobs.
+    elif $b&2 # Remove existing blob.
+      if $nearest>=0 l[1] s y rm[$nearest] a y endl nearest=-1 fi
+    elif $b&4 # Remove all blobs.
       k[0]
     else
       moving=-1
@@ -20881,7 +20881,7 @@ x_blobs :
 #@cli x_bouncing
 #@cli : Launch the bouncing balls demo.
 x_bouncing :
-  if {!{*,u}} error[0--3] "Command '$0': No display available." return fi
+  if !{*,u} error[0--3] "Command '$0': No display available." return fi
   v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
   e[] "\n
 ------ "${g}"Bouncing balls"$n" ------------------------------\n
@@ -20908,14 +20908,14 @@ x_bouncing :
       bw={$>,w} bh={$>,h}
       y={${h$>}*abs(cos(${t$>}*pi/60))-$bh/2}
       dt=1
-      if {$y<0} d={-$y} y=0 bh-=$d bw+=$d dt={max(0.2,1-($d/$bh)^2)} else dt=1 fi
-      if {${x$>}+$bw/2>w}
+      if $y<0 d={-$y} y=0 bh-=$d bw+=$d dt={max(0.2,1-($d/$bh)^2)} else dt=1 fi
+      if ${x$>}+$bw/2>w
         d={${x$>}+$bw/2-w} bw-=$d bh+={0.5*$d}
-        if {${x$>}+$bw/4>w} vx$>={-${vx$>}} fi
+        if ${x$>}+$bw/4>w vx$>={-${vx$>}} fi
       fi
-      if {${x$>}-$bw/2<0}
+      if ${x$>}-$bw/2<0
         d={$bw/2-${x$>}} bw-=$d bh+={0.5*$d}
-        if {${x$>}-$bw/4<0} vx$>={-${vx$>}} fi
+        if ${x$>}-$bw/4<0 vx$>={-${vx$>}} fi
       fi
       +r[$>] $bw,$bh,1,4,3 s. c,-3
       j... ..,{max(0,min({$N,w-$bw},${x$>}-$bw/2))},{{$N,h}-{h}-$y-70},0,0,1,.,255 rm[-2,-1]
@@ -20925,10 +20925,10 @@ x_bouncing :
 
     +rows. {h-2*70},{h-1-70} mirror. y *. [{$N+1}]
     j.. .,0,{-2,h-71},0,0,0.5 rm.
-    fps=${-fps} if {$fps>0} to. $fps" fps",5,{h-29},24,2,0.2 fi
+    fps=${-fps} if $fps>0 to. $fps" fps",5,{h-29},24,2,0.2 fi
     w.
 
-    if {{*,CTRLLEFT}&&{*,D}} w[] {1.5*w},{1.5*h} elif {{*,CTRLLEFT}&&{*,C}} w[] {w},{h} fi
+    if {*,CTRLLEFT}&&{*,D} w[] {1.5*w},{1.5*h} elif {*,CTRLLEFT}&&{*,C} w[] {w},{h} fi
     rm. wait 20
   while {{*}" && "!{*,ESC}" && "!{*,Q}}
   w 0 rm endl v +
@@ -20938,11 +20938,11 @@ x_bouncing :
 #@cli : Set 'colorspace' to 'last' to apply last defined color curves without opening interactive windows.
 #@cli : Default value: 'colorspace=rgb'.
 x_color_curves : skip ${1=rgb}
-  if {['"$1"']!='last'&&!{*,u}} error[0--3] "Command '$0': No display available." return fi
+  if ['"$1"']!='last'&&!{*,u} error[0--3] "Command '$0': No display available." return fi
   v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
   e[^-1] "Apply color curves of image$?, in the '$1' colorspace."
-  if {['"$1"']=='last'} v -
-    if {!narg($_xcc_colorbase)} v + return fi
+  if ['"$1"']=='last' v -
+    if !narg($_xcc_colorbase) v + return fi
     __x_color_curves[] $_xcc_colorbase
   else
     e[] "\n
@@ -20965,29 +20965,29 @@ x_color_curves : skip ${1=rgb}
 
   to_color repeat $! l[$>]
 
-    if {['"$1"']!='last'} # Open interactive windows to set color curves.
+    if ['"$1"']!='last' # Open interactive windows to set color curves.
       +r[0] ${fitscreen[]\ {0,w},{0,h},1,128,70%},1,100%,3
       +l. xcc_goto s c histogram 256,0,255 xcc_info endl # Compute additional info for each image channel (histogram and color axis).
       __C0= __C1= __C2= __C3= __C4=
-      if {narg($__xcc_C0)} __C0=$__xcc_C0 fi
-      if {narg($__xcc_C1)} __C1=$__xcc_C1 fi
-      if {narg($__xcc_C2)} __C2=$__xcc_C2 fi
-      if {narg($__xcc_C3)} __C3=$__xcc_C3 fi
-      if {narg($__xcc_C4)} __C4=$__xcc_C4 fi
+      if narg($__xcc_C0) __C0=$__xcc_C0 fi
+      if narg($__xcc_C1) __C1=$__xcc_C1 fi
+      if narg($__xcc_C2) __C2=$__xcc_C2 fi
+      if narg($__xcc_C3) __C3=$__xcc_C3 fi
+      if narg($__xcc_C4) __C4=$__xcc_C4 fi
 
       x={1,({*,u}-560-w)/2} y={1,({*,v}-h)/2}
-      if {$!==5} # 3 channels.
+      if $!==5 # 3 channels.
         parallel "w[] 256,256,0,0,"$x","$y",\"Curve: "$_title0"\" x_select_function1d... __C0,"$_color0"",\
                  "w[] 256,256,0,0,"{$x+280}","$y",\"Curve: "$_title1"\" x_select_function1d.. __C1,"$_color1"",\
                  "w[] 256,256,0,0,"$x","{$y+300}",\"Curve: "$_title2"\" x_select_function1d. __C2,"$_color2"",\
                  "w. 100%,100%,0,0,"{$x+560}","$y" _x_color_curves[-4]"
-      elif {$!==6} # 4 channels.
+      elif $!==6 # 4 channels.
         parallel "w[] 256,256,0,0,"$x","$y",\"Curve: "$_title0"\" x_select_function1d[-4] __C0,"$_color0"",\
                  "w[] 256,256,0,0,"{$x+280}","$y",\"Curve: "$_title1"\" x_select_function1d... __C1,"$_color1"",\
                  "w[] 256,256,0,0,"$x","{$y+300}",\"Curve: "$_title2"\" x_select_function1d.. __C2,"$_color2"",\
                  "w[] 256,256,0,0,"{$x+280}","{$y+300}",\"Curve: "$_title3"\" x_select_function1d. __C3,"$_color3"",\
                  "w. 100%,100%,0,0,"{$x+560}","$y" _x_color_curves[-5]"
-      elif {$!==7} # 5 channels.
+      elif $!==7 # 5 channels.
         parallel "w[] 256,256,0,0,"$x","$y",\"Curve: "$_title0"\" x_select_function1d[-5] __C0,"$_color0"",\
                  "w[] 256,256,0,0,"{$x+280}","$y",\"Curve: "$_title1"\" x_select_function1d[-4] __C1,"$_color1"",\
                  "w[] 256,256,0,0,"$x","{$y+300}",\"Curve: "$_title2"\" x_select_function1d... __C2,"$_color2"",\
@@ -21007,7 +21007,7 @@ x_color_curves : skip ${1=rgb}
   uncommand xcc_goto,xcc_backto,xcc_info v +
 
 _x_color_curves :
-  title={0,b} if {narg({'{0,x}'})} title=$title.{0,x} fi ({'$title'}) discard. {'~'} title={t} rm.
+  title={0,b} if narg({'{0,x}'}) title=$title.{0,x} fi ({'$title'}) discard. {'~'} title={t} rm.
   +drgba. w. 100%,100%,0,"[G"{`39`}"MIC] Image: "$title rm.
   xcc_goto. .
 
@@ -21018,11 +21018,11 @@ _x_color_curves :
     # Manage user events.
     oviewmode=$viewmode is_ctrl={{*,CTRLLEFT}" || "{*,CTRLRIGHT}} x={*,x} y={*,y}
     if {*,r} need_refresh=1 # Window resize.
-    elif {$is_ctrl" && "{*,-D}} w[] {{*,w}*125%},{{*,h}*125%} need_refresh=1 # Increase window size.
-    elif {$is_ctrl" && "{*,-C}} w[] {{*,w}*80%},{{*,h}*80%} need_refresh=1 # Decrease window size.
-    elif {$is_ctrl" && "{*,-R}} w[] {w},{h} need_refresh=1 # Reset window size.
-    elif {{*,b}&1} viewmode={x={*,x};if(x<w/3,1,if(x<2*w/3,2,3))} # Change viewmode.
-    elif {{*,b}&2" && "$x>=0" && "$y>=0} # Add control point from picked color.
+    elif $is_ctrl" && "{*,-D} w[] {{*,w}*125%},{{*,h}*125%} need_refresh=1 # Increase window size.
+    elif $is_ctrl" && "{*,-C} w[] {{*,w}*80%},{{*,h}*80%} need_refresh=1 # Decrease window size.
+    elif $is_ctrl" && "{*,-R} w[] {w},{h} need_refresh=1 # Reset window size.
+    elif {*,b}&1 viewmode={x={*,x};if(x<w/3,1,if(x<2*w/3,2,3))} # Change viewmode.
+    elif {*,b}&2" && "$x>=0" && "$y>=0 # Add control point from picked color.
       xc={$x*w/{*,w}} yc={$y*h/{*,h}} +z[0] $xc,$yc,$xc,$yc
       repeat {s} (${__C$>},{i[$>]/255%},{i[$>]/255%}) r. 2,{w/2},1,1,-1 sort. +,y __C$>={^} rm. done
       rm. wait -1
@@ -21031,7 +21031,7 @@ _x_color_curves :
     need_refresh={$need_refresh||$oviewmode!=$viewmode}
 
     # Update result.
-    repeat {s} if {['_${oC$>}']!=['_${__C$>}']} # Channel must be updated.
+    repeat {s} if ['_${oC$>}']!=['_${__C$>}'] # Channel must be updated.
       function1d[] 1,${__C$>} *. {255%} r. 256,1,1,1,5 c. 0,255
       +channels[0] $> map. .. j[1] .,0,0,0,$> rm[-2,-1]
       need_refresh=1 oC$>=${__C$>}
@@ -21039,64 +21039,64 @@ _x_color_curves :
 
     # Display view.
     if $need_refresh
-      if {$viewmode==0} # Modified view.
+      if $viewmode==0 # Modified view.
         +xcc_backto[1]
-      elif {$viewmode%2} # Split view.
+      elif $viewmode%2 # Split view.
         w2={0,int(w/2)} b={$viewmode==1} +z[{!$b}] 0,{$w2-1} +z[$b] $w2,100%
         xcc_backto.. xcc_backto. a[-2,-1] x line. 50%,0,50%,100%,1,0
       else # Original view.
         +xcc_backto[0]
       fi
-      if {s>3} drgba. fi w. rm. refresh=0
+      if s>3 drgba. fi w. rm. refresh=0
     fi
 
   while {{*}" && "!{*,ESC}" && "!{*,Q}" && "!{*,SPACE}" && "!{*,ENTER}}
   w 0
-  repeat 5 if {narg(${__C$>})} __xcc_C$>=${__C$>} __C$>=-1 fi done  # Transfer curves to output variable and request curve widgets to close;
+  repeat 5 if narg(${__C$>}) __xcc_C$>=${__C$>} __C$>=-1 fi done  # Transfer curves to output variable and request curve widgets to close;
 
 # Define colorspace conversion functions.
 __x_color_curves :
-  if {['"$1"']=='rgb'}
+  if ['"$1"']=='rgb'
     _color0="255,180,180" _color1="180,255,180" _color2="180,180,255" _color3="220,220,220" _title0=Red _title1=Green _title2=Blue _title3=Alpha
     m "xcc_goto:" m "xcc_backto:"
     m "xcc_info: (0,255;0,0;0,0) (0,0;0,255;0,0) (0,0;0,0;0,255) r[-3--1] 256,3,1,1,3 "\
       "a[0,-3] y a[1,-2] y a[2,-1] y"
-  elif {['"$1"']=='cmy'}
+  elif ['"$1"']=='cmy'
     _color0="180,255,255" _color1="255,180,255" _color2="255,255,100" _color3="220,220,220" _title0=Cyan _title1=Magenta _title2=Yellow _title3=Alpha
     m "xcc_goto: s c,-3 rgb2cmy[0] a c" m "xcc_backto: s c,-3 cmy2rgb[0] a c"
     m "xcc_info: (255,0;255,255;255,255) (255,255;255,0;255,255) (255,255;255,255;255,0) r[-3--1] 256,3,1,1,3 "\
       "a[0,-3] y a[1,-2] y a[2,-1] y"
-  elif {['"$1"']=='cmyk'}
+  elif ['"$1"']=='cmyk'
     _color0="180,255,255" _color1="255,180,255" _color2="255,255,100" _color3="180,180,180" _color4="220,220,220" _title0=Cyan _title1=Magenta _title2=Yellow _title3=Key _title4=Alpha
     m "xcc_goto: s c,-3 rgb2cmyk[0] a c" m "xcc_backto: s c,-4 cmyk2rgb[0] a c"
     m "xcc_info: (255,0;255,255;255,255) (255,255;255,0;255,255) (255,255;255,255;255,0) (255,0) r[-4--1] 256,3,1,1,3 "\
       "a[0,-4] y a[1,-3] y a[2,-2] y a[3,-1] y"
-  elif {['"$1"']=='hsi'}
+  elif ['"$1"']=='hsi'
     _color0="255,220,220" _color1="220,220,220" _color2="180,180,180" _color3="220,220,220" _title0=Hue _title1=Saturation _title2=Intensity _title3=Alpha
     m "xcc_goto: s c,-3 rgb2hsi8[0] a c" m "xcc_backto: s c,-3 hsi82rgb[0] a c"
     m "xcc_info: 256,1,1,3,if(!c,x,128) 256,1,1,3,if(!c,0,if(c==1,x,128)) 256,1,1,3,if(!c,0,if(c==1,0,x)) hsi82rgb[-3--1] permute[-3--1] xcyz "\
       "a[0,-3] y a[1,-2] y a[2,-1] y"
-  elif {['"$1"']=='hsl'}
+  elif ['"$1"']=='hsl'
     _color0="255,220,220" _color1="220,220,220" _color2="180,180,180" _color3="220,220,220" _title0=Hue _title1=Saturation _title2=Lightness _title3=Alpha
     m "xcc_goto: s c,-3 rgb2hsl8[0] a c" m "xcc_backto: s c,-3 hsl82rgb[0] a c"
     m "xcc_info: 256,1,1,3,if(!c,x,128) 256,1,1,3,if(!c,0,if(c==1,x,128)) 256,1,1,3,if(!c,0,if(c==1,0,x)) hsl82rgb[-3--1] permute[-3--1] xcyz "\
       "a[0,-3] y a[1,-2] y a[2,-1] y"
-  elif {['"$1"']=='hsv'}
+  elif ['"$1"']=='hsv'
     _color0="255,220,220" _color1="220,220,220" _color2="180,180,180" _color3="220,220,220" _title0=Hue _title1=Saturation _title2=Value _title3=Alpha
     m "xcc_goto: s c,-3 rgb2hsv8[0] a c" m "xcc_backto: s c,-3 hsv82rgb[0] a c"
     m "xcc_info: 256,1,1,3,if(!c,x,255) 256,1,1,3,if(!c,0,if(c==1,x,128)) 256,1,1,3,if(!c,0,if(c==1,0,x)) hsv82rgb[-3--1] permute[-3--1] xcyz "\
       "a[0,-3] y a[1,-2] y a[2,-1] y"
-  elif {['"$1"']=='lab'}
+  elif ['"$1"']=='lab'
     _color0="180,180,180" _color1="220,180,220" _color2="220,220,180" _color3="220,220,220" _title0=Lightness _title1=Chroma-A _title2=Chroma-B _title3=Alpha
     m "xcc_goto: s c,-3 srgb2rgb[0] apo[0] rgb2lab8,0,4 a c" m "xcc_backto: s c,-3 apo[0] lab82rgb,0,4 rgb2srgb[0] a c"
     m "xcc_info: 256,1,1,3,if(!c,x,128) 256,1,1,3,if(!c,240,if(c==1,x,128)) 256,1,1,3,if(!c,240,if(c==1,128,x)) lab82rgb[-3--1] permute[-3--1] xcyz "\
       "a[0,-3] y a[1,-2] y a[2,-1] y"
-  elif {['"$1"']=='lch'}
+  elif ['"$1"']=='lch'
     _color0="180,180,180" _color1="220,180,220" _color2="255,220,220" _color3="220,220,220" _title0=Lightness _title1=Chroma _title2=Hue _title3=Alpha
     m "xcc_goto: s c,-3 srgb2rgb[0] apo[0] rgb2lch8[0],0,4 a c" m "xcc_backto: s c,-3 apo[0] lch82rgb[0],0,4 rgb2srgb[0] a c"
     m "xcc_info: 256,1,1,3,if(!c,x,0) 256,1,1,3,if(!c,255,if(c==1,x,128)) 256,1,1,3,if(!c,220,if(c==1,128,x)) lch82rgb[-3--1] permute[-3--1] xcyz "\
       "a[0,-3] y a[1,-2] y a[2,-1] y"
-  elif {['"$1"']=='ycbcr'}
+  elif ['"$1"']=='ycbcr'
     _color0="180,180,180" _color1="220,220,255" _color2="255,220,220" _color3="220,220,220" _title0=Luma _title1=Blue\ chroma _title2=Red\ chroma _title3=Alpha
     m "xcc_goto: s c,-3 rgb2ycbcr[0] a c" m "xcc_backto: s c,-3 ycbcr2rgb[0] a c"
     m "xcc_info: 256,1,1,3,if(!c,x,128) 256,1,1,3,if(!c,128,if(c==1,x,128)) 256,1,1,3,if(!c,128,if(c==1,128,x)) ycbcr2rgb[-3--1] permute[-3--1] xcyz "\
@@ -21109,7 +21109,7 @@ __x_color_curves :
 #@cli : When >0, argument 'max_resolution' defines the maximal image resolution used in the interactive window.
 #@cli : Default values: 'is_lineart=1', 'max_resolution=1024' and 'multichannels_output=0'.
 x_colorize : skip ${1=0},${3=0},${4=0},${5=0},${6=0} check "${2=1024}==0 || $2>=128"
-  if {!{*,u}} error[0--3] "Command '$0': No display available." return fi
+  if !{*,u} error[0--3] "Command '$0': No display available." return fi
   v - s0="image" s1="lineart" s2="multichannel" s3="merged" use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
   e[^-1] "Colorize selected B&W "${s{!$1}}"$? interactively, with maximum resolution $2 and "${s{2+!$3}}" output."
   e[] "\n
@@ -21157,7 +21157,7 @@ x_colorize : skip ${1=0},${3=0},${4=0},${5=0},${6=0} check "${2=1024}==0 || $2>=
 
   __color=255,255,255
 
-  if {!$is_palette1" && "!$is_palette2" && "!$is_grabber}
+  if !$is_palette1" && "!$is_palette2" && "!$is_grabber
     repeat $N l[$>]
       parallel $thread_main,$thread_color
     endl done
@@ -21172,16 +21172,16 @@ x_colorize : skip ${1=0},${3=0},${4=0},${5=0},${6=0} check "${2=1024}==0 || $2>=
 _x_colorize :
 
   # Init variables and images.
-  name={n} title={b} if {narg({x})} title=$title.{x} fi
+  name={n} title={b} if narg({x}) title=$title.{x} fi
   w={w} h={h}
 
   if $1 # Line-art.
-    if {s==4} sh. 3 if {abs(im-iM)>64} +*. -1 rm.. +. 255 else rm. sh. 0 fi
+    if s==4 sh. 3 if abs(im-iM)>64 +*. -1 rm.. +. 255 else rm. sh. 0 fi
     else sh. 0
     fi
     n 0,255
     else # Regular image.
-    if {s==1} sh. 0
+    if s==1 sh. 0
     else +luminance.
     fi
   fi
@@ -21191,13 +21191,13 @@ _x_colorize :
   fdim=${fitscreen[]\ $w,$h} ww={arg(1,$fdim)} wh={arg(2,$fdim)} x0=0 y0=0 x1={w-1} y1={h-1}
   selection=-1 view_markers=2 contrast=9 xpan=-1 ypan=-1 replace_color= current_replace_color=
 
-  if {narg($_gui_control_points)>=6}  ($_gui_control_points) r. {w/6},6,1,1,-1 # Import list of control points from plug-in GUI.
+  if narg($_gui_control_points)>=6  ($_gui_control_points) r. {w/6},6,1,1,-1 # Import list of control points from plug-in GUI.
   else 0 # Empty list of control points.
   fi
   nm. points
 
   # Compute potential map.
-  if {$2>0} if {$w>$h} +r2dx[img] {min($2,$w)},2 else +r2dy[img] {min($2,$h)},2 fi else [img] fi
+  if $2>0 if $w>$h +r2dx[img] {min($2,$w)},2 else +r2dy[img] {min($2,$h)},2 fi else [img] fi
   __x_colorize. $1
   pw={potential,w} ph={potential,h}
 
@@ -21205,7 +21205,7 @@ _x_colorize :
   do
 
     # Handle user events for zoom/navigation/resizing.
-    if {narg($replace_color)" && "{*,x}<0" && "{*,y}<0} wait 200 else wait fi
+    if narg($replace_color)" && "{*,x}<0" && "{*,y}<0 wait 200 else wait fi
     x={*,x} y={*,y} b={*,b} o={*,-o}
     is_ctrl={{*,CTRLLEFT}" || "{*,CTRLRIGHT}}
     is_shift={{*,SHIFTLEFT}" || "{*,SHIFTRIGHT}}
@@ -21219,33 +21219,33 @@ _x_colorize :
       x0={$cx-$dx/2} x1={$cx+$dx/2}
       y0={$cy-$dy/2} y1={$cy+$dy/2}
       ww=$nww wh=$nwh
-    elif {$is_ctrl" && "{*,-D}} # Increase window size.
+    elif $is_ctrl" && "{*,-D} # Increase window size.
       nww={min({*,u},$ww*1.25)} nwh={min({*,v},$wh*1.25)} m={min($nww,$nwh)}
-      if {$m==$nww} ww=$m wh={$h*$m/$w} else ww={$w*$m/$h} wh=$m fi
-    elif {$is_ctrl" && "{*,-C}} # Decrease window size.
+      if $m==$nww ww=$m wh={$h*$m/$w} else ww={$w*$m/$h} wh=$m fi
+    elif $is_ctrl" && "{*,-C} # Decrease window size.
       nww={$ww/1.25} nwh={$wh/1.25}
-      if {min($nww,$nwh)>=64} ww=$nww wh=$nwh fi
-    elif {$is_ctrl" && "{*,R}} # Reset window size.
+      if min($nww,$nwh)>=64 ww=$nww wh=$nwh fi
+    elif $is_ctrl" && "{*,R} # Reset window size.
       fdim=${fitscreen[]\ $w,$h} ww={arg(1,$fdim)} wh={arg(2,$fdim)}
       x0=0 y0=0 x1={$w-1} y1={$h-1}
-    elif {($is_shift" && "$o<0)" || "{*,ARROWLEFT}} # Go left.
+    elif ($is_shift" && "$o<0)" || "{*,ARROWLEFT} # Go left.
       dx={($x1-$x0)/6} x0-=$dx x1-=$dx
-    elif {($is_shift" && "$o>0)" || "{*,ARROWRIGHT}} # Go right.
+    elif ($is_shift" && "$o>0)" || "{*,ARROWRIGHT} # Go right.
       dx={($x1-$x0)/6} x0+=$dx x1+=$dx
-    elif {($is_ctrl" && "$o>0)" || "({*,ARROWUP}" && "!$is_ctrl)} # Go up.
+    elif ($is_ctrl" && "$o>0)" || "({*,ARROWUP}" && "!$is_ctrl) # Go up.
       dy={($y1-$y0)/6} y0-=$dy y1-=$dy
-    elif {($is_ctrl" && "$o<0)" || "({*,ARROWDOWN}" && "!$is_ctrl)} # Go down.
+    elif ($is_ctrl" && "$o<0)" || "({*,ARROWDOWN}" && "!$is_ctrl) # Go down.
       dy={($y1-$y0)/6} y0+=$dy y1+=$dy
-    elif {$o>0" || "($is_ctrl" && "{*,ARROWUP})} # Zoom in.
-      if {$x1-$x0>16" && "$y1-$y0>16}
+    elif $o>0" || "($is_ctrl" && "{*,ARROWUP}) # Zoom in.
+      if $x1-$x0>16" && "$y1-$y0>16
         cx={if($x>=0" && "!{*,ARROWUP},$x,($x0+$x1)/2)}
         cy={if($y>=0" && "!{*,ARROWUP},$y,($y0+$y1)/2)}
         x0={$cx+($x0-$cx)*0.75} y0={$cy+($y0-$cy)*0.75}
         x1={$cx+($x1-$cx)*0.75} y1={$cy+($y1-$cy)*0.75}
       fi
-    elif {$o<0" || "($is_ctrl" && "{*,ARROWDOWN})} # Zoom out.
+    elif $o<0" || "($is_ctrl" && "{*,ARROWDOWN}) # Zoom out.
       zfactor={max(($x1-$x0+1)/$w,($y1-$y0+1)/$h)}
-      if {$zfactor<1.3}
+      if $zfactor<1.3
         cx={if($x>=0" && "!{*,ARROWDOWN},$x,($x0+$x1)/2)}
         cy={if($y>=0" && "!{*,ARROWDOWN},$y,($y0+$y1)/2)}
         x0={$cx+($x0-$cx)/0.75} y0={$cy+($y0-$cy)/0.75}
@@ -21256,79 +21256,79 @@ _x_colorize :
         dx={($w-$x0-$x1)/2} dy={($h-$y0-$y1)/2}
         x0+=$dx x1+=$dx y0+=$dy y1+=$dy
       fi
-    elif {$b&4" && "!$is_mouseout} # Pan.
-      if {$panx<0" && "$pany<0} panx=$x pany=$y
+    elif $b&4" && "!$is_mouseout # Pan.
+      if $panx<0" && "$pany<0 panx=$x pany=$y
       else dx={round($panx-$x)} dy={round($pany-$y)} x0+=$dx y0+=$dy x1+=$dx y1+=$dy
       fi
     else panx=-1 pany=-1
     fi
-    if {$ww!=$oww" || "$wh!=$owh" || "$ox0!=$x0" || "$oy0!=$y0" || "$ox1!=$x1" || "$oy1!=$y1} rm[baseview] fi
+    if $ww!=$oww" || "$wh!=$owh" || "$ox0!=$x0" || "$oy0!=$y0" || "$ox1!=$x1" || "$oy1!=$y1 rm[baseview] fi
 
     # Handle events related to control points management.
     N={points,w}
-    if {narg($baseview)" && "($b&3" || "{*,X}" || "{*,P})" && "$x>=0" && "$y>=0" && "$x<$w" && "$y<$h}
-      if {$selection==-1" && "$N} # Check for selection of an existing point.
+    if narg($baseview)" && "($b&3" || "{*,X}" || "{*,P})" && "$x>=0" && "$y>=0" && "$x<$w" && "$y<$h
+      if $selection==-1" && "$N # Check for selection of an existing point.
         ($x;$y) r. $N,2 -. [points] *. {max($ww,$wh)/max($x1-$x0,$y1-$y0)} sqr. s. y +[-2,-1]
         dmin={im} selection={if($dmin>25,-1,xm)} rm.
       fi
-      if {narg($replace_color)} # Go back from 'Replace color' mode.
+      if narg($replace_color) # Go back from 'Replace color' mode.
         replace_color= wait -1
-      elif {$selection>=0}
-        if {$b&1" && "$view_markers} # Move existing point.
+      elif $selection>=0
+        if $b&1" && "$view_markers # Move existing point.
           +columns[points] $selection ox={i[0]} oy={i[1]} =. $x =. $y,0,1 j[points] .,$selection rm.
           rm[view]
-        elif {($b&2" || "{*,X})" && "$view_markers} # Remove existing point.
-          if {$N>1} +z[points] {$selection+1},100% j[points] .,$selection rm. r[points] {$N-1},100%,1,1,0
+        elif ($b&2" || "{*,X})" && "$view_markers # Remove existing point.
+          if $N>1 +z[points] {$selection+1},100% j[points] .,$selection rm. r[points] {$N-1},100%,1,1,0
           else rm[points] i[points] 0 fi
           wait -1 rm[view]
         fi
-      elif {$b&1} # Add new point
-       ($x;$y;0) ($__color) y. y +. 1 a[-2,-1] y a[points,-1] x selection=$N if {!$view_markers} view_markers=2 fi rm[view]
-      elif {$b&2" || "{*,P}} # Pick color from image.
+      elif $b&1 # Add new point
+       ($x;$y;0) ($__color) y. y +. 1 a[-2,-1] y a[points,-1] x selection=$N if !$view_markers view_markers=2 fi rm[view]
+      elif $b&2" || "{*,P} # Pick color from image.
         __color={colors,I($x*$pw/$w,$y*$ph/$h)}
       fi
     else selection=-1
-      if {{*,-SPACE}" && "narg($colors)} replace_color= rm[colors] # Update color map.
+      if {*,-SPACE}" && "narg($colors) replace_color= rm[colors] # Update color map.
       elif {*,-TAB} view_markers={($view_markers-1)%3} rm[view] wait -1 # Toggle markers.
-      elif {!$is_ctrl" && "{*,-R}}  # Switch color replace mode.
-        if {narg($replace_color)} replace_color= else replace_color=$__color fi
+      elif !$is_ctrl" && "{*,-R}  # Switch color replace mode.
+        if narg($replace_color) replace_color= else replace_color=$__color fi
         rm[baseview] wait -1
       elif {*,PAGEDOWN} contrast={max(0,$contrast-1)} rm[view] wait -1 # Decrease contrast.
       elif {*,PAGEUP} contrast={min(9,$contrast+1)} rm[view] wait -1 # Increase contrast.
-      elif {{*,BACKSPACE}" && "$N} if {$N>1} z[points] 0,{$N-2} else i=$points rm[points] i[$i] 0 nm[$i] points fi rm[view] wait -1 # Remove last point.
+      elif {*,BACKSPACE}" && "$N if $N>1 z[points] 0,{$N-2} else i=$points rm[points] i[$i] 0 nm[$i] points fi rm[view] wait -1 # Remove last point.
       fi
     fi
 
     # Manage zoomed view bounds.
     w2={round(($x1-$x0)/2)} h2={round(($y1-$y0)/2)}
-    if {$x0<-$w2} x1-={$x0+$w2} x0=-$w2 fi
-    if {$y0<-$h2} y1-={$y0+$h2} y0=-$h2 fi
-    if {$x1>=$w+$w2} x0+={$w-1+$w2-$x1} x1={$w-1+$w2} fi
-    if {$y1>=$h+$h2} y0+={$h-1+$h2-$y1} y1={$h-1+$h2} fi
+    if $x0<-$w2 x1-={$x0+$w2} x0=-$w2 fi
+    if $y0<-$h2 y1-={$y0+$h2} y0=-$h2 fi
+    if $x1>=$w+$w2 x0+={$w-1+$w2-$x1} x1={$w-1+$w2} fi
+    if $y1>=$h+$h2 y0+={$h-1+$h2-$y1} y1={$h-1+$h2} fi
 
     # Render color map.
-    if {!narg($colors)}
+    if !narg($colors)
       N={points,w}
-      if {narg($view)} to[view] "Processing...",5,5,20,2 w[view] fi
+      if narg($view) to[view] "Processing...",5,5,20,2 w[view] fi
       if $N
         [points]
         sh. 0,0,0,0 *. {$pw/$w} rm.
         sh. 1,1,0,0 *. {$ph/$h} rm.
         pointcloud. -1,$pw,$ph
         +compose_channels. max !=. 0 distance. 1 *. 0.02 +. 1 ^. -1 +. [potential] # Additional term that depends on marker's positions.
-        if {!$1} dilate.. 3 fi
+        if !$1 dilate.. 3 fi
         watershed.. . rm. -. 1
       else [potential],[potential],1,3,255
       fi
       nm. colors
-      if {narg($baseview)} rm[baseview] fi
+      if narg($baseview) rm[baseview] fi
     fi
 
     # Manage replace color mode.
-    if {!narg($replace_color)" && "narg($points_replaced)}
+    if !narg($replace_color)" && "narg($points_replaced)
       rm[points,colors,view] nm[colors_replaced] colors nm[points_replaced] points current_replace_color=
-    elif {narg($replace_color)" && "['$__color']!=['$current_replace_color']}
-      if {narg($colors_replaced)} rm[colors_replaced,points_replaced] fi
+    elif narg($replace_color)" && "['$__color']!=['$current_replace_color']
+      if narg($colors_replaced) rm[colors_replaced,points_replaced] fi
       current_replace_color=$__color
       if {points,w}
         +replace_color[colors] 0,0,$replace_color,$current_replace_color
@@ -21339,39 +21339,39 @@ _x_colorize :
       fi
       nm.. colors_replaced
       nm. points_replaced
-      if {narg($baseview)} rm[baseview] fi
+      if narg($baseview) rm[baseview] fi
     fi
 
     # Render base image.
-    if {!narg($baseview)}
+    if !narg($baseview)
       nx0={$x0*$pw/$w} ny0={$y0*$ph/$h}
       nx1={$x1*$pw/$w} ny1={$y1*$ph/$h}
       +z[img] $x0,$y0,$x1,$y1
       r. $ww,$wh,1,100%,{if($ww<w" && "$wh<h,2,1)}
-      if {narg($replace_color)" && "{points,w}} icolors=$colors_replaced else icolors=$colors fi
+      if narg($replace_color)" && "{points,w} icolors=$colors_replaced else icolors=$colors fi
       +z[$icolors] $nx0,$ny0,$nx1,$ny1
       r. $ww,$wh,1,100%,{if($ww<w" && "$wh<h,2,3)}
       if $1 *.. -1 +.. 255 channels.. -3,0 blend. ..,alpha rm..
       else rgb2ycbcr. j. ..,0,0,0,0 rm.. ycbcr2rgb.
       fi
       nm. baseview
-      if {narg($view)} rm[view] fi
+      if narg($view) rm[view] fi
     fi
 
     # Render view.
-    if {!narg($view)}
+    if !narg($view)
       [baseview] r. 100%,100%,1,3
-      if {$contrast<9} /. {10-$contrast} +. {128*(1-1/(10-$contrast))} fi
+      if $contrast<9 /. {10-$contrast} +. {128*(1-1/(10-$contrast))} fi
       if $view_markers
-        if {$view_markers==2} rad1=5 rad2=3 else rad1=3 rad2=2 fi
-        if {narg($replace_color)" && "{points,w}} ipoints=$points_replaced else ipoints=$points fi
+        if $view_markers==2 rad1=5 rad2=3 else rad1=3 rad2=2 fi
+        if narg($replace_color)" && "{points,w} ipoints=$points_replaced else ipoints=$points fi
         repeat {$ipoints,w}
           +columns[$ipoints] $> x={(i[0]-$x0)*$ww/(1+$x1-$x0)} y={(i[1]-$y0)*$wh/(1+$y1-$y0)} col={i[3]-1},{i[4]-1},{i[5]-1} rm.
           circle. $x,$y,$rad1,1,0 circle. $x,$y,$rad2,1,$col
         done
       fi
 
-      if {narg($replace_color)}
+      if narg($replace_color)
         to. "Replace      by",5,5,20,2
         rectangle. 80,8,111,25,1,0 rectangle. 82,10,109,23,1,$replace_color
         rectangle. 150,8,181,25,1,0 rectangle. 152,10,179,23,1,$current_replace_color
@@ -21384,7 +21384,7 @@ _x_colorize :
   while {{*}" && "!{*,ESC}" && "!{*,Q}" && "!{*,ENTER}}
 
   # Recompute colors at full resolution.
-  if {narg($view)} to[view] "Processing fullres...",5,5,20,2 w[view] fi
+  if narg($view) to[view] "Processing fullres...",5,5,20,2 w[view] fi
   k[0,img,points]
   N={points,w} status=
   if $N
@@ -21392,7 +21392,7 @@ _x_colorize :
     [img] __x_colorize. $1
     pointcloud[points] -1,$w,$h
     +compose_channels[points] max !=. 0 distance. 1 *. 0.02 +. 1 ^. -1 +[potential,-1]
-    if {!$1} zfact={{img,max(w,h)}/{potential,max(w,h)}} dilate[points] {int(3*$zfact)} fi
+    if !$1 zfact={{img,max(w,h)}/{potential,max(w,h)}} dilate[points] {int(3*$zfact)} fi
     watershed[points] [potential] -[points] 1 nm[points] colors
   else [img],[img],1,3,255 nm. colors
   fi
@@ -21424,7 +21424,7 @@ __x_colorize :
 #@cli x_connect4
 #@cli : Launch the Connect Four game.
 x_connect4 :
-  if {!{*,u}} error[0--3] "Command '$0': No display available." return fi
+  if !{*,u} error[0--3] "Command '$0': No display available." return fi
   v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
   e[] "\n
 ------ "${g}"Connect Four"$n" --------------------------------------------\n
@@ -21482,7 +21482,7 @@ x_connect4 :
   do
 
     # Initialize game.
-    if {!narg($visu)}
+    if !narg($visu)
       {board,[w,h]*$R},1,3,64
       repeat {board,h},y repeat {board,w},x
         val={board,i($x,$y)} if $val j. [token{$val-1}],{$x*$R},{$y*$R},0,0,1,[tokenm],255 fi
@@ -21494,16 +21494,16 @@ x_connect4 :
     fi
 
     # Estimate ymax for each column.
-    if {!narg($ymax)}
+    if !narg($ymax)
       i[ymax] {board,w},1,1,1,"y=-1; for (k = 0, k<h#"$board", ++k, if(!i(#"$board",x,k),y = k)); y"
-      if {iM<0} winner=-1,-1,-1 fi # Draw game
+      if iM<0 winner=-1,-1,-1 fi # Draw game
     fi
 
-    if {narg($winner)} # End of game animation
+    if narg($winner) # End of game animation
       i[tmpvisu] [visu]
       x={arg(1,$winner)} y={arg(2,$winner)} c={arg(3,$winner)}
-      if {$x<0} # Draw game
-        if {!narg($text)}
+      if $x<0 # Draw game
+        if !narg($text)
           0 t. "Draw game",0,0,57,1,1 r2dx. {tmpvisu,w/2} expand_xy. 3,0 +dilate. 5 n.. 0,255 to_rgb..
           nm[-2,-1] text,textm
         fi
@@ -21519,13 +21519,13 @@ x_connect4 :
       fi
       w[tmpvisu] 100%,100% rm[tmpvisu] wait 20
 
-      if {{*,-SPACE}" || "{*,-ENTER}} # Restart new game
+      if {*,-SPACE}" || "{*,-ENTER} # Restart new game
         rm[visu,ymax] f[board] 0 winner=
       fi
 
-    elif {!$is_falling} # Manage column selection
+    elif !$is_falling # Manage column selection
 
-      if {!${autoplayer$turn}}
+      if !${autoplayer$turn}
         x={visu,X={*,x};X<0?X:int(X*w#$board/w)}
         yM={i("#"$ymax,$x)}
         if {board,$x<0" || "$x>=w} w[visu] 100%,100%
@@ -21537,23 +21537,23 @@ x_connect4 :
         wait
       fi
 
-      if {{*,-b}&1" && "$yM>=0" && "$x>=0} is_falling=1 yv=0 dyv=1 # Manual play
-      elif {${autoplayer$turn}" || "{*,-SPACE}" || "{*,ENTER}} # Computer play
+      if {*,-b}&1" && "$yM>=0" && "$x>=0 is_falling=1 yv=0 dyv=1 # Manual play
+      elif ${autoplayer$turn}" || "{*,-SPACE}" || "{*,ENTER} # Computer play
         if {*,-ENTER} autoplayer$turn=1 fi
         max_score=-inf max_col=
         repeat {board,w},move1
           yM1={i("#"$ymax,$move1)}
-          if {$yM1>=0}
+          if $yM1>=0
             +=[board] {1+$turn},$move1,$yM1 nm. board1
             i[ymax1] {board,w},1,1,1,"y=-1; for (k = 0, k<h#"$board1", ++k, if(!i(#"$board1",x,k),y = k)); y"
             opp_max_score=-inf opp_max_board={board,^}
             opp_turn={($turn+1)%2}
             repeat {board,w},move2
               yM2={i("#"$ymax1,$move2)}
-              if {$yM2>=0}
+              if $yM2>=0
                 +=[board1] {1+$opp_turn},$move2,$yM2
                 +f. "const p = 1 + "$opp_turn"; "$evalf score={is+u} rm.
-                if {$score>$opp_max_score} opp_max_score=$score opp_max_board={^} fi
+                if $score>$opp_max_score opp_max_score=$score opp_max_board={^} fi
                 rm.
               fi
             done
@@ -21561,14 +21561,14 @@ x_connect4 :
 
             {board,[w,h,1,1]},$opp_max_board
             f. "const p = 1 + "$turn"; "$evalf score={is+u} rm.
-            if {$score>$max_score} max_score=$score max_col=$move1 fi
+            if $score>$max_score max_score=$score max_col=$move1 fi
           fi
         done
         x=$max_col is_falling=1 yv=0 dyv=1
       fi
 
     else # Manage token falling animation
-      if {!narg($column)}
+      if !narg($column)
         $R,{board,h*$R},1,3,64
         repeat {board,h} v={board,i($x,$>)} if $v j. [token{$v-1}],0,{$>*$R},0,0,1,[tokenm],255 fi done
         nm. column
@@ -21580,7 +21580,7 @@ x_connect4 :
       j. [cache],0,0,0,0,1,[cachem],255
       i[tmpvisu] [visu]
       j[tmpvisu] ..,{$R*$x},0,0,0 rm.. w[tmpvisu] 100%,100%
-      if {$yv>=$yM*$R}
+      if $yv>=$yM*$R
         j[visu] [tmpvisu] is_falling=0
         =[board] {$turn+1},$x,$yM
         rm[ymax,column]
@@ -21592,7 +21592,7 @@ x_connect4 :
                       case_d1 = i==j(1,1) && i==j(2,2) && i==j(3,3);
                       case_d2 = i==j(1,-1) && i==j(2,-2) && i==j(3,-3);
                       case_h?1:case_v?2:case_d1?3:case_d2?4)"
-        if {iM} winner={[xM,yM,i(xM,yM)]} # Player won !
+        if iM winner={[xM,yM,i(xM,yM)]} # Player won !
         else turn={($turn+1)%2}
         fi
         rm.
@@ -21608,7 +21608,7 @@ x_connect4 :
 #@cli x_fire
 #@cli : Launch the fire effect demo.
 x_fire : skip "${1=G\47MIC}"
-  if {!{*,u}} error[0--3] "Command '$0': No display available." return fi
+  if !{*,u} error[0--3] "Command '$0': No display available." return fi
   v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
   e[] "\n
 ------ "${g}"Fire effect"$n" ------------------------\n
@@ -21622,7 +21622,7 @@ x_fire : skip "${1=G\47MIC}"
 
   # Init image data.
   i[0] 100,32 w[0] {[4.5*w,6.75*h]},0,"[G"{`39`}"MIC] Fire Effect"
-  if {{*,w}<0.5*{*,u}} w[] {[{*,w},{*,h}]*1.5} fi
+  if {*,w}<0.5*{*,u} w[] {[{*,w},{*,h}]*1.5} fi
   i[1] (0,255,255,255,255^0,0,255,255,255^0,0,0,128,255) r[1] 256,1,1,3,3
   i[2] (0,0,0;0,0,0;1,1,1;0,1,0) *[2] 0.21
   text3d "$1",33,3,1
@@ -21640,9 +21640,9 @@ x_fire : skip "${1=G\47MIC}"
     *3d. 0.25,0.16,1 j3d[0] .,50%,50%,0,1,3,0,0
     rm.
     angle+=3                                         # Update 3D angle.
-    fps=${-fps} if {$fps>0} to. $fps" fps",5,{h-22},16,1,0.2 fi
+    fps=${-fps} if $fps>0 to. $fps" fps",5,{h-22},16,1,0.2 fi
     w.
-    if {{*,CTRLLEFT}&&{*,D}} w[] {1.5*[w,h]} elif {{*,CTRLLEFT}&&{*,C}} w[] {[w,h]} fi
+    if {*,CTRLLEFT}&&{*,D} w[] {1.5*[w,h]} elif {*,CTRLLEFT}&&{*,C} w[] {[w,h]} fi
     rm. wait 40
   while {{*}" && "!{*,ESC}" && "!{*,Q}}
 
