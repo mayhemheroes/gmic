@@ -222,7 +222,7 @@ _help : skip ${1=""}
       s -,{'": "'} autocrop {'" "'} autocrop {':'} autocrop {'" "'}
       if {['{0,t}']==['$command']}
         _document_gmic_declaration_ascii
-        if $_shortcut  # Found shortcut command.
+        if $_shortcut # Found shortcut command.
           v + e[] "\n    "$_gmic_m${_gmic_b}$command":"$_gmic_n" Shortcut for command '"$_gmic_m$_gmic_b$_shortcutlink0$_gmic_n"'." v -
           u $_shortcutlink0 return
         fi
@@ -2791,7 +2791,7 @@ _document_gmic_header_images : skip $1
   use_vt100
   v +
   e[] "\n - Generate example images from set of commands '"${_gmic_c}$_name${gmic_n}"'.\n"
-  if image.jpg else l[] sp pencils onfail testimage2d 400 endl o. image.jpg rm. fi
+  if {isfile('image.jpg')} else l[] sp pencils onfail testimage2d 400 endl o. image.jpg rm. fi
   v -
 
 _document_gmic_subsection_images :
@@ -3946,7 +3946,7 @@ update_color_presets_html : check "isbool(${1=0})"
 
   # Generate thumbnails.
   v + e[] "\n  * Generate thumbnails from samples." v -
-  if original else x "mkdir original" fi
+  if {!isdir('original')} x "mkdir original" fi
   nb_samples=$!
   to_rgb repeat $nb_samples l[$<]
     nm[0] sample_{1+$<}
@@ -4635,7 +4635,7 @@ update_server :
     ind={$>-$offset}
     if {{{$ind-1},@-1}==10" && "same([{^}],'#@gui',5)" && "({$ind,@5}==32" || "{$ind,@5}==_'_')} l[$ind] # Line starts by '#@gui[_] '
 
-      if {i[5]==_'_'} locale=_{`[i[6],i[7]]`}  # Retrieve locale if any specified
+      if {i[5]==_'_'} locale=_{`[i[6],i[7]]`} # Retrieve locale if any specified
       else locale=
       fi
 
@@ -5414,7 +5414,7 @@ _update_header_html : check "${2=0}>=0 && isbool(${3=0})"
 
         is_gmic={find(#-1,'gmic.eu')>=0}
         is_cimg={find(#-1,'cimg.eu')>=0}
-        if (!$is_gmic" && "!$is_cimg} v + return fi
+        if {!$is_gmic" && "!$is_cimg} v + return fi
 
         # Retrieve latest stable version specified in the header file.
         +l. s -,{'>'}
@@ -6117,7 +6117,7 @@ compress_clut : check "isint(${1=8}) && $1>0 && ${2=2}>0 && isint(${3=2048}) && 
 # Batch compress CLUT files.
 compress_cluts :
   v - rm
-  if "$1" i raw:"$1",uchar s -,{'\n'}
+  if {isfile(['"$1"'])} i raw:"$1",uchar s -,{'\n'}
   else files "$1" ({'${}'}) s -,{','}
   fi
   rv
