@@ -1487,7 +1487,7 @@ use_vt100 :
 version :
   v -
   m "_e : echo_stdout[] \"$""*\""
-  if {$^>=-1} _e "" fi
+  if $^>=-1 _e "" fi
   __help_header_ascii[]
   uncommand _e
   v +
@@ -1515,10 +1515,10 @@ clut : check "isval(${2=48}) && $2>0"
   v - to_clutname "$1" name=${} l[]
   v + e[^-1] "Input CLUT '"$name"' with resolution $2." v -
     path_clut=${-path_cache}
-    if {isfile(['${path_clut}clut_$name.cimgz'])} i ${path_clut}clut_$name.cimgz fi
-    if {$!"!=1 || w<$2 || h<$2 || d<$2"} # Decompression needed
+    if isfile(['${path_clut}clut_$name.cimgz']) i ${path_clut}clut_$name.cimgz fi
+    if $!"!=1 || w<$2 || h<$2 || d<$2" # Decompression needed
       rm
-      if {narg($GMIC_SYSTEM_PATH)} g_path_unix=$GMIC_SYSTEM_PATH
+      if narg($GMIC_SYSTEM_PATH) g_path_unix=$GMIC_SYSTEM_PATH
       else g_path_unix=/usr/lib/gimp/2.0/plug-ins/
       fi
       path_test0=$path_clut
@@ -1529,14 +1529,14 @@ clut : check "isval(${2=48}) && $2>0"
       repeat 5 file_clut=${path_test$>}/gmic_cluts.gmz
         l[] $file_clut onfail endl if $! break fi
       done
-      if {!$!} # Download from G'MIC server
+      if !$! # Download from G'MIC server
         i https://gmic.eu/gmic_cluts.gmz o ${path_clut}gmic_cluts.gmz
       fi
-      repeat $! if {['{$>,n}']==['$name']} k[$>] break fi done
-      if {$!!=1} v + error[0--4] "Command '$0': Unknown CLUT name '"$name"'." fi
+      repeat $! if ['{$>,n}']==['$name'] k[$>] break fi done
+      if $!!=1 v + error[0--4] "Command '$0': Unknown CLUT name '"$name"'." fi
       decompress_clut $2,$2,$2 round c 0,255 to_rgb
       o. ${path_clut}clut_$name.cimgz
-    elif {"w>$2 || h>$2 || d>$2"} r $2,$2,$2,3,2 # Downsize from higher resolution
+    elif "w>$2 || h>$2 || d>$2" r $2,$2,$2,3,2 # Downsize from higher resolution
     fi
     nm "[CLUT: "$name"]" k.
   endl v +
@@ -1558,15 +1558,15 @@ clean_cluts :
     nm={n}
 
     # Standardize names for 'SmallHD MovieLook'.
-    if {"str = lowercase(['"$nm"*']);
-         find(str,'_-_rec_709*')>=0"} l[]
+    if "str = lowercase(['"$nm"*']);
+        find(str,'_-_rec_709*')>=0" l[]
       ({'$nm'}) z. 0,{w-11}
       nm={t} rm
     endl fi
 
     # Standardize names for 'SmallHD MovieLook'.
-    if {"str = lowercase(['"$nm"']);
-         find(str,'smallhd_movielook_')==0"} l[]
+    if "str = lowercase(['"$nm"']);
+        find(str,'smallhd_movielook_')==0" l[]
       ({'$nm'}) z. 18,100%
       replace_str "apocalypsethisverymoment","apocalypse_this_very_moment"
       replace_str "bobford","bob_ford"
@@ -1577,18 +1577,18 @@ clean_cluts :
     endl fi
 
     # Standardize names for 'Fuji XTrans III'.
-    if {"str = lowercase(['"$nm"']);
-         find(str,'fuji_xtrans_iii')==0"} l[]
+    if "str = lowercase(['"$nm"']);
+        find(str,'fuji_xtrans_iii')==0" l[]
       ({'$nm'})
       replace_str "_-_","_" nm={t} rm
     endl fi
 
     # Standardize names for 'RawTherapee'.
-    if {"str = lowercase(['"$nm"']);
-         find(str,'kodak')==0 ||
-         find(str,'polaroid')==0 ||
-         find(str,'fuji')==0 ||
-         find(str,'ilford')==0"} l[]
+    if "str = lowercase(['"$nm"']);
+        find(str,'kodak')==0 ||
+        find(str,'polaroid')==0 ||
+        find(str,'fuji')==0 ||
+        find(str,'ilford')==0" l[]
       ({'$nm'},{'*'})
       replace_str " ","_"
       replace_str "xp_2","xp2"
@@ -1606,11 +1606,11 @@ clean_cluts :
     to_clutname $nm nm=${}
 
     # Standardize names for 'PictureFX'.
-    if {"str = lowercase(['"$nm"']);
-         find(str,'technicalfx')==0 ||
-         find(str,'analogfx')==0 ||
-         find(str,'goldfx')==0 ||
-         find(str,'zilverfx')==0"} l[]
+    if "str = lowercase(['"$nm"']);
+        find(str,'technicalfx')==0 ||
+        find(str,'analogfx')==0 ||
+        find(str,'goldfx')==0 ||
+        find(str,'zilverfx')==0" l[]
       ({'$nm'})
       replace_str "-","_" nm={t} rm
     endl fi
@@ -1629,10 +1629,10 @@ clean_cluts :
 
   # Convert RGB CLUTs to Grayscale when possible.
   repeat $! l[$>]
-    if {"R = crop(#0,0,0,0,3,1,h,1,1);
-         G = crop(#0,0,0,0,4,1,h,1,1);
-         B = crop(#0,0,0,0,5,1,h,1,1);
-         R==G && G==B?1:0"}
+    if "R = crop(#0,0,0,0,3,1,h,1,1);
+        G = crop(#0,0,0,0,4,1,h,1,1);
+        B = crop(#0,0,0,0,5,1,h,1,1);
+        R==G && G==B?1:0"
       channels 0,3
     fi
   endl done
@@ -1643,7 +1643,7 @@ clean_cluts :
     v + e[] "\r- Search duplicates for ["$p"] = '"$nm0"'                        " v -
     q={$p+1} for {$q<$!}
       nm={$q,n}
-      if {['$nm0']==['$nm']}
+      if ['$nm0']==['$nm']
         v + e[] "   > Found duplicate ["$q"] -> Original 1x"{$p,h}", new 1x"{$q,h}"\n" v -
         rv[$p,$q] rm[$q]
       else q+=1
@@ -1657,7 +1657,7 @@ clean_cluts :
   doc="#@cli clut : \"clut_name\",_resolution>0\n"\
       "#@cli : Insert one of the "$!" pre-defined CLUTs at the end of the image list.\\n\n"\
       "#@cli : 'clut_name' can be {" sep="|"
-  repeat $! l[$>] if {!$<} sep="}" fi doc=${doc}" "{n}" "$sep endl done
+  repeat $! l[$>] if !$< sep="}" fi doc=${doc}" "{n}" "$sep endl done
   doc=${doc}"\n"\
       "#@cli : $ clut summer\n"
   v + e[] "\n"$doc
@@ -1699,8 +1699,8 @@ _display0 :
   v -
   w=0 h=0 d=0 s=0
   repeat $! l[$>] w+={w} h={max($h,h)} d={max($d,d)} s={max($s,s)} endl done
-  if {$!==1} w -1,-1,0,0,-1,-1,{0,n}\ ($wx$hx$dx$s)
-  elif {$!==2} w -1,-1,0,0,-1,-1,{0,n},{n}\ ($wx$hx$dx$s)
+  if $!==1 w -1,-1,0,0,-1,-1,{0,n}\ ($wx$hx$dx$s)
+  elif $!==2 w -1,-1,0,0,-1,-1,{0,n},{n}\ ($wx$hx$dx$s)
   else w -1,-1,0,0,-1,-1,{0,n},...,{n}\ ($wx$hx$dx$s)
   fi
   v + d v - w[] 0 v +
@@ -1731,11 +1731,11 @@ _display_array : check ${1=13}>0" && "${2=$1}>0
   dyb={round($2/2,1,1)} dyf={$2-1-$dyb}
 
   repeat $! l[$>]
-    if {w<128" && "h<128} r 128,128,100%,100%,0,0,0.5,0.5 fi # Manage cases of small and large images.
+    if w<128" && "h<128 r 128,128,100%,100%,0,0,0.5,0.5 fi # Manage cases of small and large images.
     x0=0 y0=0 w={w} h={h}
     wmax={0.9*{*,u}} hmax={0.9*{*,v}}
     do
-      if {w>=$wmax||h>=$hmax}
+      if w>=$wmax" || "h>=$hmax
         n={n} nm. "Image "'{b}.{x}'" is too large, please select a sub-image."
         +select. 2 x0={i[0]} y0={i[1]} w={1+i[3]-i[0]} h={1+i[4]-i[1]}
         rm. nm. $n
@@ -1754,32 +1754,32 @@ _display_array : check ${1=13}>0" && "${2=$1}>0
       wait[0-3]
       oc0=$c0
       repeat 4
-        if {$>" && "!{*$>}" && "${x$>}>=0} w$> 0 x$>=-1 y$>=-1 c$>=0 fi
+        if $>" && "!{*$>}" && "${x$>}>=0 w$> 0 x$>=-1 y$>=-1 c$>=0 fi
         if {*$>,o} c$>={(${c$>}+sign({*$>,o}))%s} wait[$>] -1 fi
-        if {{*$>,SPACE}" || "{*$>,ENTER}" || "{*$>,ARROWRIGHT}" || "{*$>,ARROWDOWN}} c$>={(${c$>}+1)%s} wait[$>] -1 fi
-        if {{*$>,BACKSPACE}" || "{*$>,ARROWLEFT}" || "{*$>,ARROWUP}} c$>={(${c$>}-1)%s} wait[$>] -1 fi
+        if {*$>,SPACE}" || "{*$>,ENTER}" || "{*$>,ARROWRIGHT}" || "{*$>,ARROWDOWN} c$>={(${c$>}+1)%s} wait[$>] -1 fi
+        if {*$>,BACKSPACE}" || "{*$>,ARROWLEFT}" || "{*$>,ARROWUP} c$>={(${c$>}-1)%s} wait[$>] -1 fi
       done
-      if {$oc0!=$c0} c1=$c0 c2=$c0 c3=$c0 fi
+      if $oc0!=$c0 c1=$c0 c2=$c0 c3=$c0 fi
       xm={*,x} ym={*,y}
-      if {$xm>=0" && "{*,b}&1} x1=$xm y1=$ym fi
-      if {$xm>=0" && "{*,b}&2} x2=$xm y2=$ym fi
-      if {$xm>=0" && "{*,b}&4} x3=$xm y3=$ym fi
+      if $xm>=0" && "{*,b}&1 x1=$xm y1=$ym fi
+      if $xm>=0" && "{*,b}&2 x2=$xm y2=$ym fi
+      if $xm>=0" && "{*,b}&4 x3=$xm y3=$ym fi
 
       # Generate main image view.
-      if {$xm>=0" && "($oxm!=$xm" || "$oym!=$ym)} w[] -1,-1,-1,-1,-1,-1,{-2,b}.{-2,x}" - ("$xm,$ym")" fi
-      if {$x1!=$ox1" || "$y1!=$oy1" || "$x2!=$ox2" || "$y2!=$oy2" || "$x3!=$ox3" || "$y3!=$oy3}
+      if $xm>=0" && "($oxm!=$xm" || "$oym!=$ym) w[] -1,-1,-1,-1,-1,-1,{-2,b}.{-2,x}" - ("$xm,$ym")" fi
+      if $x1!=$ox1" || "$y1!=$oy1" || "$x2!=$ox2" || "$y2!=$oy2" || "$x3!=$ox3" || "$y3!=$oy3
         .
-        if {$x1>=0}
+        if $x1>=0
           xb={$x1-$dxb} yb={$y1-$dyb} xe={$x1+$dxf} ye={$y1+$dyf}
           rectangle. $xb,$yb,$xe,$ye,0.2,0,255,255
           rectangle. $xb,$yb,$xe,$ye,1,0xFFFFFFFF,0,255,255
         fi
-        if {$x2>=0}
+        if $x2>=0
           xb={$x2-$dxb} yb={$y2-$dyb} xe={$x2+$dxf} ye={$y2+$dyf}
           rectangle. $xb,$yb,$xe,$ye,0.2,255,32,255
           rectangle. $xb,$yb,$xe,$ye,1,0xFFFFFFFF,255,32,255
         fi
-        if {$x3>=0}
+        if $x3>=0
           xb={$x3-$dxb} yb={$y3-$dyb} xe={$x3+$dxf} ye={$y3+$dyf}
           rectangle. $xb,$yb,$xe,$ye,0.2,255,255,0
           rectangle. $xb,$yb,$xe,$ye,1,0xFFFFFFFF,255,255,0
@@ -1788,21 +1788,21 @@ _display_array : check ${1=13}>0" && "${2=$1}>0
       fi
 
       # Generate zoomed views.
-      if {$x1>=0" && "($ox1!=$x1" || "$oy1!=$y1" || "$oc1!=$c1)}
+      if $x1>=0" && "($ox1!=$x1" || "$oy1!=$y1" || "$oc1!=$c1)
         +z.. {$x1-$dxb},{$y1-$dyb},0,$c1,{$x1+$dxf},{$y1+$dyf},0,$c1
         +z.. {$x1-$dxb},{$y1-$dyb},0,{$x1+$dxf},{$y1+$dyf},0
         __display_array[-2,-1] $1,$2,0,255,255
         w1. {w},{h},0,0,-1,-1,{-3,b}" - ("$x1,$y1,c=$c1")"
         rm. ox1=$x1 oy1=$y1 oc1=$c1
       fi
-      if {$x2>=0" && "($ox2!=$x2" || "$oy2!=$y2" || "$oc2!=$c2)}
+      if $x2>=0" && "($ox2!=$x2" || "$oy2!=$y2" || "$oc2!=$c2)
         +z.. {$x2-$dxb},{$y2-$dyb},0,$c2,{$x2+$dxf},{$y2+$dyf},0,$c2
         +z.. {$x2-$dxb},{$y2-$dyb},0,{$x2+$dxf},{$y2+$dyf},0
         __display_array[-2,-1] $1,$2,255,32,255
         w2. {w},{h},0,0,-1,-1,{-3,b}" - ("$x2,$y2,c=$c2")"
         rm. ox2=$x2 oy2=$y2 oc2=$c2
       fi
-      if {$x3>=0" && "($ox3!=$x3" || "$oy3!=$y3" || "$oc3!=$c3)}
+      if $x3>=0" && "($ox3!=$x3" || "$oy3!=$y3" || "$oc3!=$c3)
         +z.. {$x3-$dxb},{$y3-$dyb},0,$c3,{$x3+$dxf},{$y3+$dyf},0,$c3
         +z.. {$x3-$dxb},{$y3-$dyb},0,{$x3+$dxf},{$y3+$dyf},0
         __display_array[-2,-1] $1,$2,255,255,0
@@ -1864,13 +1864,13 @@ _display_graph : check "${1=0}>=0 && ${2=0}>=0" skip ${3=1},${4=0},${5=0},${6=0}
   v - repeat $! l[$>] nm={0,n}
 
     # Determine output size.
-    if {$1>0&&$2>0} w,h=$1,$2 else w,h={{*,u}/2},{{*,v}/2} fi
+    if $1>0" && "$2>0 w,h=$1,$2 else w,h={{*,u}/2},{{*,v}/2} fi
     w,h={[max($w,33),max($h,33)]}
 
     # Determine xmin,xmax/ymin,ymax.
     one={$3!=3} siz={w*h*d}
-    if {$5==$6} xmin=0 xmax={$siz-$one} else xmin={min($5,$6)} xmax={max($5,$6)} fi
-    if {$7==$8} ymin={im-(iM-im)/20} ymax={iM+(iM-im)/20} else ymin={min($7,$8)} ymax={max($7,$8)} fi
+    if $5==$6 xmin=0 xmax={$siz-$one} else xmin={min($5,$6)} xmax={max($5,$6)} fi
+    if $7==$8 ymin={im-(iM-im)/20} ymax={iM+(iM-im)/20} else ymin={min($7,$8)} ymax={max($7,$8)} fi
     dx={$xmax-$xmin} dy={$ymax-$ymin}
 
     # Determine number of axes tick marks.
@@ -1883,8 +1883,8 @@ _display_graph : check "${1=0}>=0 && ${2=0}>=0" skip ${3=1},${4=0},${5=0},${6=0}
     grid. {$deltax*$gw/$dx},{$deltay*$gh/$dy},{($offx-$xmin)*$gw/$dx},{$gh-($offy-$ymin)*$gh/$dy},0.25,0xCCCCCCCC,0
 
     # Define color palette for curves.
-    if {{-2,s}==1} (120,120,200)
-    elif {{-2,s}<=3} (220,10,10;10,220,10;10,10,220)
+    if {-2,s}==1 (120,120,200)
+    elif {-2,s}<=3 (220,10,10;10,220,10;10,10,220)
     else
       (0,255) r. 256,1,1,1,3 map. 2 z. 2,100% permute. cxyz r. 3,{-3,max(3,s)},1,1,0,2
       sh. 0,2,0,0 f. 255,0,0,0,255,0,0,0,255 rm.
@@ -1898,10 +1898,10 @@ _display_graph : check "${1=0}>=0 && ${2=0}>=0" skip ${3=1},${4=0},${5=0},${6=0}
 
     100%,100%,1,1,255
     axes. $xmin,$xmax,$ymax,$ymin,14,1,0
-    if {$xmin>0} axes. 0,0,$ymax,$ymin,14,1,160 fi
-    if {$xmax<0} axes. {w-1},{w-1},$ymax,$ymin,14,1,160 fi
-    if {$ymin>0} axes. $xmin,$xmax,{h-1},{h-1},14,1,160 fi
-    if {$ymax<0} axes. $xmin,$xmax,0,0,14,1,160 fi
+    if $xmin>0 axes. 0,0,$ymax,$ymin,14,1,160 fi
+    if $xmax<0 axes. {w-1},{w-1},$ymax,$ymin,14,1,160 fi
+    if $ymin>0 axes. $xmin,$xmax,{h-1},{h-1},14,1,160 fi
+    if $ymax<0 axes. $xmin,$xmax,0,0,14,1,160 fi
     +erode. 3 !=. 255 r.. 100%,100%,1,3 j... ..,0,0,0,0,1,.,1 rm[-2,-1]
     frame. 16,16,220
     0 t. "$9",0,0,14,1,-220,-220,-220 j.. .,{({-2,w}-w)/2},{{-2,h}-16},0,0,-1 rm.
@@ -1935,15 +1935,15 @@ _display_histogram : check "${1=0}>=0 && ${2=0}>=0 && ${3=256}>0" skip ${4=0%},$
     repeat $s l[{-1-$>}] s z histogram $3,$m,$M a z endl done
     a c f '"${7--1}"' vM={iM} s z
     repeat $! l[$>]
-      if {$1>0&&$2>0} wh=$1,$2 else wh={{*,u}/2},{{*,v}/2} fi
+      if $1>0" && "$2>0 wh=$1,$2 else wh={{*,u}/2},{{*,v}/2} fi
       $wh,1,{s},-255
       repeat {s} sh[-2,-1] $> graph. ..,3,0,$vM,0,1,0 rm[-2,-1] done
       rm.. + 255
       if $6
         100%,100%
         axes. $m,$M,$vM,0,14,1,255
-        if {$m>0} axes. 0,0,$vM,0,14,1,200 fi
-        if {$M<0} axes. {w-1},{w-1},$vM,0,14,1,200 fi
+        if $m>0 axes. 0,0,$vM,0,14,1,200 fi
+        if $M<0 axes. {w-1},{w-1},$vM,0,14,1,200 fi
         +dilate. 3 r.. ... j... ..,0,0,0,0,1,.,255 rm[-2,-1]
       fi
     endl done
@@ -1968,7 +1968,7 @@ display_parametric : check "${1=512}>0 && ${2=$1}>0 && ${4=0}>=0" skip ${3=3},${
     i[0] ({'CImg3d'}) +[0] 0.5 i[1] ($N;$N)  # Header + nb of vertices/primitives.
 
     # Calibrate colors of vertices.
-    if {s==4} +channels. 3,3 r. 100%,100%,1,2 a[-2,-1] c is_grayscale=1
+    if s==4 +channels. 3,3 r. 100%,100%,1,2 a[-2,-1] c is_grayscale=1
     else is_grayscale={s<4} channels. 0,5
     fi
 
@@ -1993,7 +1993,7 @@ display_parametric : check "${1=512}>0 && ${2=$1}>0 && ${4=0}>=0" skip ${3=3},${
 
     if $3 l[0] s3d f[1] 'i-y' rm[3] i[3] (2,0,1;2,{$N-2},{$N-1}) r[3] 3,{$N-1},1,1,3 round[3]  # Convert point cloud to connected segments.
       r[5] 1,{h-1},1,1,0
-      if {$3>1} r[4] 3,{4,h/3},1,1,-1 r[4] 3,{4,h-1},1,1,2 else rm[4] i[4] 3,{$N-1} fi
+      if $3>1 r[4] 3,{4,h/3},1,1,-1 r[4] 3,{4,h-1},1,1,2 else rm[4] i[4] 3,{$N-1} fi
       y a y endl j3d[1] [0],50%,50%,0,{if($3>1,$3-1,$3)},2,0,0
     fi
 
@@ -2004,10 +2004,10 @@ display_parametric : check "${1=512}>0 && ${2=$1}>0 && ${4=0}>=0" skip ${3=3},${
       xc={0.5*($xm+$xM)} yc={0.5*($ym+$yM)} dx={0.5*($xM-$xm)/0.96} dy={0.5*($yM-$ym)/0.96}
       xm={$xc-$dx} xM={$xc+$dx} ym={$yc-$dy} yM={$yc+$dy}
       100%,100%,1,1,255 axes. $xm,$xM,$yM,$ym,14,1,0
-      if {$xm>0} axes. 0,0,$yM,$ym,14,1,160 fi
-      if {$xM<0} axes. {w-1},{w-1},$yM,$ym,14,1,160 fi
-      if {$ym>0} axes. $xm,$xM,{h-1},{h-1},14,1,160 fi
-      if {$yM<0} axes. $xm,$xM,0,0,14,1,160 fi
+      if $xm>0 axes. 0,0,$yM,$ym,14,1,160 fi
+      if $xM<0 axes. {w-1},{w-1},$yM,$ym,14,1,160 fi
+      if $ym>0 axes. $xm,$xM,{h-1},{h-1},14,1,160 fi
+      if $yM<0 axes. $xm,$xM,0,0,14,1,160 fi
       +erode. 3 !=. 255 r.. 100%,100%,1,3 j... ..,0,0,0,0,1,.,1 rm[-2,-1]
       frame 1,1,128 frame 15,15,220
       0 t. "$7",0,0,14,1,-220,-220,-220 j.. .,{({-2,w}-w)/2},{{-2,h}-16},0,0,-1 rm.
@@ -2032,7 +2032,7 @@ _display_parallel :
   e[0--3] "Display image$? in parallel."
   print
   v -
-  if {$!<=1} d v + return fi
+  if $!<=1 d v + return fi
   $!,1,1,1,x ({'{^}'}) rm..
   l.
     s -,{','} y x
@@ -2060,7 +2060,7 @@ _display_parallel0 :
   e[0--3] "Display image$? in parallel, without value normalization."
   print
   v -
-  if {$!<=1} d0 v + return fi
+  if $!<=1 d0 v + return fi
   $!,1,1,1,x ({'{^}'}) rm..
   l.
     s -,{','} y x
@@ -2101,7 +2101,7 @@ display_polar : check "${1=500}>32 && ${2=$1}>32" skip ${3=1},${4=200},${5=$4},$
     fi
 
     # Generate 3D object for filling.
-    if {"$4>=0 && $5>=0 && $6>=0"}
+    if "$4>=0 && $5>=0 && $6>=0"
       ({'CImg3d'}) +. 0.5 ({$N+1},$N)
       +z[coords] 0,-1,2,100% z. 0,2
       1,$N,1,1,3 1,$N 1,$N,1,1,'1+y' ++. 1 a[-4--1] x =. 1,3,100%
@@ -2113,17 +2113,17 @@ display_polar : check "${1=500}>32 && ${2=$1}>32" skip ${3=1},${4=200},${5=$4},$
 
     # Render graph image.
     {$1-32},{$2-32},1,3,255
-    L={0.1*max($1,$2)} grid. $L,$L,0,0,0.25,0xCCCCCCCC,0  # Draw background grid.
-    if {"$4>=0 && $5>=0 && $6>=0"}                        # Draw curve filling.
+    L={0.1*max($1,$2)} grid. $L,$L,0,0,0.25,0xCCCCCCCC,0  # Draw background grid
+    if "$4>=0 && $5>=0 && $6>=0"                          # Draw curve filling
       j3d. [_plot_polar_fill],50%,50%,0,1,2,1,0
       rm[_plot_polar_fill]
     fi
     if $3
-      if {$3>=0}                                          # Draw curve outline.
+      if $3>=0                                            # Draw curve outline
         j3d. [_plot_polar_outline],50%,50%,0,1,1,0,0
       fi
-      if {$3!=0}                                          # Draw curve vertices.
-        if {abs($3)>1} circles3d[_plot_polar_outline] {abs($3)} fi
+      if $3!=0                                            # Draw curve vertices
+        if abs($3)>1 circles3d[_plot_polar_outline] {abs($3)} fi
         j3d. [_plot_polar_outline],50%,50%,0,0.2,2,0,0
       fi
       rm[_plot_polar_outline]
@@ -2187,7 +2187,7 @@ _display_quiver : check "${1=16}>0 && ${2=1.5}>=0 && isint(${3=2}) && $3>=0 && $
 drgba : skip "${1=none},${2=$1},${3=$1}"
   v - _gmic_s="$?" v +
   _display_rgba ${^0}
-  v - if {!${}} noarg fi v +
+  v - if !${} noarg fi v +
 
 #@cli display_rgba : _background_RGB_color
 #@cli : Render selected RGBA images over a checkerboard or colored background.
@@ -2197,14 +2197,14 @@ drgba : skip "${1=none},${2=$1},${3=$1}"
 display_rgba : skip "${1=none},${2=$1},${3=$1}"
   v - _gmic_s="$?" v +
   _$0 ${^0}
-  v - if {!${}} noarg fi v +
+  v - if !${} noarg fi v +
 
 _display_rgba : skip "${1=},${2=$1},${3=$1}"
   v - l[] is_rgb={"isval($1)"} onfail is_rgb=0 endl v +
   if $is_rgb e[0--4] "Render RGBA image"$_gmic_s" over RGB background ($*)."
   else e[0--4] "Render RGBA image"$_gmic_s" over a checkerboard background."
   fi
-  v - repeat $! l[$>] if {s==2" || "s==4}
+  v - repeat $! l[$>] if s==2" || "s==4
     if $is_rgb i[0] 100%,100%,1,3 fc[0] {[$*]}
     else i[0] (160,128;128,160) r[0] 16,16 r[0] [1],[1],1,{s-1},0,2
     fi
@@ -2270,7 +2270,7 @@ display_warp :
 _display_warp : check "${1=15}>0"
   e[0--3] "Render 2D warping field"$_gmic_s", with cell size $1."
   v - repeat $! l[$>]
-    if {d!=1||s!=2}
+    if d!=1" || "s!=2
       v + error[0--3] "Command 'display_warp': Invalid image ["{$!-$>-1}"]: Dimensions "{w}","{h}","{d}","{s}" does not represent a 2D field of 2D vectors."
     fi
     i[0] 100%,100%,1,1,1 grid[0] $1,$1 nm[0] {1,n}
@@ -2282,12 +2282,12 @@ _display_warp : check "${1=15}>0"
 #@cli : Default values: 'format=ascii', 'image_path=""' and 'write_wrapper=1'.\n
 #@cli : Example(s) : raw:filename.gmic,char document_gmic html,img
 document_gmic : skip ${1="ascii"},${2=""},${3=1}
-  if {!$!} return fi
+  if !$! return fi
   v -1
 
   # Concatenate command data and split them into lines.
   _name={0,b} # Basename for the commands definition file.
-  if {$!>1} i[1--2] (10) fi a y m {t} s -,10
+  if $!>1 i[1--2] (10) fi a y m {t} s -,10
 
   # Output header.
   _document_gmic_header_$1[] $3
@@ -2302,10 +2302,10 @@ document_gmic : skip ${1="ascii"},${2=""},${3=1}
   go_on=1
 
   # Parse lines of the commands file.
-  repeat $! l[$>] if {$go_on" && "h>7" && "same([{^}],'#@cli',5)" && (i[5]==_' ' || i[5]==_':')"} # Process only lines starting with '#@cli'.
+  repeat $! l[$>] if $go_on" && "h>7" && "same([{^}],'#@cli',5)" && (i[5]==_' ' || i[5]==_':')" # Process only lines starting with '#@cli'.
     rows 6,100% autocrop {'" "'}  # Discard '#@cli'.
     _is_example=0
-    if {i!=_':'}
+    if i!=_':'
 
       # Reached line as '#@cli Command : Arguments_line1 : Arguments_line2 : (qualifier)'.
       _command+=1
@@ -2314,23 +2314,23 @@ document_gmic : skip ${1="ascii"},${2=""},${3=1}
 
     else
       rows 1,100% # Discard ':' char.
-      if {i==_':'}
+      if i==_':'
 
         # Reached line as '#@cli :: Subsection name'.
         _subsection+=1
         rows 1,100% autocrop {'" "'} # Discard ':' character.
-        if {"['"{t}"']=='Additional Gallery Images'"} go_on=0
+        if ['{t}']=='Additional Gallery Images' go_on=0
         else _document_gmic_subsection_$1
         fi
 
       else
         autocrop {'" "'}
-        if {i==_'$'}
+        if i==_'$'
 
           # Reached line as '#@cli : $ Example of use'.
           rows 1,100% autocrop {'" "'} # Discard '$' character.
           _is_example=1
-          if {i!=_'$'} _example+=1 fi # Reached '#@cli : $$' for announcing available tutorial page.
+          if i!=_'$' _example+=1 fi # Reached '#@cli : $$' for announcing available tutorial page.
           _filename=$_path$_name$_example.jpg
           _document_gmic_example_$1
 
@@ -2355,8 +2355,8 @@ _document_gmic_subsection_ascii :
   v -
 
 _document_gmic_declaration_ascii :
-  if {[{^}]=='(+)'} qualifier=" "{t} rm. else qualifier="" fi
-  if {$!>1" && "same([{^}],'"eq. to "',7)} # Declaration of a shortcut command.
+  if [{^}]=='(+)' qualifier=" "{t} rm. else qualifier="" fi
+  if $!>1" && "same([{^}],'"eq. to "',7) # Declaration of a shortcut command.
     rows. 7,100% autocrop. {'.'} autocrop. {'" "'} autocrop. 39
     _shortcut$_shortcut={0,t}
     _shortcutlink$_shortcut={t}
@@ -2380,24 +2380,24 @@ _document_gmic_description_ascii :
   s="      " bs0="\n" bs1="\\\\\n         "
   is_equivalent={same([{^}],"'(eq. to '",8)}
   is_default={same([{^}],"'Default value'",13)}
-  y x if {!narg($_is_tutorial)} _document_gmic_split_ascii 96 fi
-  if {$!==1" && "0$_vt100>0" && "$is_equivalent}
+  y x if !narg($_is_tutorial) _document_gmic_split_ascii 96 fi
+  if $!==1" && "0$_vt100>0" && "$is_equivalent
     replace_str "eq. to","equivalent to shortcut command"
-    s +,39 if {$!==5} i[2] ({'$_gmic_m$_gmic_b'}) i[4] ({'$_gmic_n'}) y fi a y
+    s +,39 if $!==5 i[2] ({'$_gmic_m$_gmic_b'}) i[4] ({'$_gmic_n'}) y fi a y
   fi
   repeat {$!-1} ({'${bs$_is_example}$s"  "'}) a[$>,-1] x done a x
-  if {0$_vt100>0}
+  if 0$_vt100>0
     replace_str "Default values:","\n"$s$_gmic_n${_gmic_b}"Default values:"$_gmic_n
     replace_str "Default value:","\n"$s$_gmic_n${_gmic_b}"Default value:"$_gmic_n
     replace_str "G'MIC",${_gmic_g}"G'MIC"$_gmic_n
     replace_str "(no arg)",${_gmic_g}"(no arg)"$_gmic_n
 
-    if {!$_is_example" && "!$is_equivalent}
+    if !$_is_example" && "!$is_equivalent
       # Colorize parameters between single quotes.
-      s +,39 if {$!>=3}
+      s +,39 if $!>=3
         ind=0 closing=0
         do
-          if {"const ind = "$ind"; h#ind==1 && i#ind==39 && h#(ind+2)==1 && i#(ind+2)==39 && h#(ind+1)<48 && (im#(ind+1)>32 || "$is_default")"}
+          if "const ind = "$ind"; h#ind==1 && i#ind==39 && h#(ind+2)==1 && i#(ind+2)==39 && h#(ind+1)<48 && (im#(ind+1)>32 || "$is_default")"
             l[$ind,{$ind+2}] rm (39,{'$_gmic_c'}) ({'$_gmic_n'},39) y endl
             ind+=2
           fi
@@ -2407,10 +2407,10 @@ _document_gmic_description_ascii :
       fi
 
       # Colorize parameters between braces '{}'.
-      s +,{'\{'} s +,{'\}'} if {$!>=3}
+      s +,{'\{'} s +,{'\}'} if $!>=3
         ind=0 closing=0
         do
-          if {"const ind = "$ind"; h#ind==1 && i#ind==123 && h#(ind+2)==1 && i#(ind+2)==125"}
+          if "const ind = "$ind"; h#ind==1 && i#ind==123 && h#(ind+2)==1 && i#(ind+2)==125"
             l[$ind,{$ind+2}] rm ({'$_gmic_g'},123) (125,{'$_gmic_n'}) y endl
             ind+=2
           fi
@@ -2420,10 +2420,10 @@ _document_gmic_description_ascii :
       fi
 
       # Colorize parameters between brackets '[]'.
-      s +,{'['} s +,{']'} if {$!>=3}
+      s +,{'['} s +,{']'} if $!>=3
         ind=0 closing=0
         do
-          if {"const ind = "$ind"; h#ind==1 && i#ind==91 && h#(ind+2)==1 && i#(ind+2)==93"}
+          if "const ind = "$ind"; h#ind==1 && i#ind==91 && h#(ind+2)==1 && i#(ind+2)==93"
             l[$ind,{$ind+2}] rm ({'$_gmic_c'},91) (93,{'$_gmic_n'}) y endl
             ind+=2
           fi
@@ -2449,13 +2449,13 @@ _document_gmic_footer_ascii : skip $1
   v + e[] "\n   "$_gmic_c"[ Total number of commands: "$_command" ]"$_gmic_n v -
 
 _document_gmic_split_ascii :
-  do if {w>$1}
+  do if w>$1
     i={$1-1}
-    repeat {$1/2} if {C=i($1-1-$>);C==32||C==38||C==42||C==43||C==44||C==46||C==47||C==58||C==59||C==63||C==92||C==124} i={$1-1-$>} break
+    repeat {$1/2} if C=i($1-1-$>);C==32||C==38||C==42||C==43||C==44||C==46||C==47||C==58||C==59||C==63||C==92||C==124 i={$1-1-$>} break
     fi done
     +z. {$i+1},100% z.. 0,$i
   fi while {w>$1}
-  if {$!>1" && "w<10} a[-2,-1] x fi
+  if $!>1" && "w<10 a[-2,-1] x fi
 
 # Define document_gmic commands for bash auto-completion script output.
 _document_gmic_header_bash : skip $1
@@ -2496,21 +2496,21 @@ _document_gmic_declaration_bash :
   _coms$_nbcoms={0,t}
   _nbcoms+=1
 
-  if {"s = ["{^}"]; s=='input' || s=='i' || s=='output' || s=='o' || s=='command' || s=='m'"} return fi # Manage special commands (remove arguments).
+  if "s = ["{^}"]; s=='input' || s=='i' || s=='output' || s=='o' || s=='command' || s=='m'" return fi # Manage special commands (remove arguments).
 
-  repeat $! if {[{^}]=='(+)'} rm[$<] fi done # Discard '(+)' qualifier.
-  if {$!==2" && "same([{^}],'"eq. to "',7)} # Command is a shortcut.
+  repeat $! if [{^}]=='(+)' rm[$<] fi done # Discard '(+)' qualifier.
+  if $!==2" && "same([{^}],'"eq. to "',7) # Command is a shortcut.
     rows. 7,100% autocrop. {'.'} autocrop. {'" "'} autocrop. 39 autocrop. {'-'}
     _shortcut$_shortcut={0,t}
     _shortcutlink$_shortcut=${str2hex\ {1,t}}
     rm.
     _shortcut+=1
-  elif {$!>1} # Command is regular and has arguments.
+  elif $!>1 # Command is regular and has arguments.
     _command$_argcommand={0,t}
-    if {[{0,^}]=='help'}
+    if [{0,^}]=='help'
       _argument$_argcommand="$coms\" -- \"$cur"  # Manage help command.
     else
-      if {$!==2} ({'>'}) fi # Add shadow parameter when single argument.
+      if $!==2 ({'>'}) fi # Add shadow parameter when single argument.
       replace_str[^0] " ","_"
       replace_str[^0] "'","\\\\'"
       i[2--2] ({'" "'}) a[^0] y
@@ -2528,13 +2528,13 @@ _document_gmic_footer_bash : skip $1
   e[] "\topts=$(echo \"\$coms\" | sed \"s: \\([^ ]\\+\\): \\1 -\\1 \\+\\1 --\\1:g\")"
   e[] "\n\tcase \"${prev}\" in"
   repeat $_argcommand  # Regular commands with arguments.
-    if {'${_command$>}'!='i'" && "'${_command$>}'!='o'" && "!same('${_command$>}','input',5)" && "!same('${_command$>}','output',6)}
+    if '${_command$>}'!='i'" && "'${_command$>}'!='o'" && "!same('${_command$>}','input',5)" && "!same('${_command$>}','output',6)
       e[] "\t\t\""${_command$>}"\" | \"-"${_command$>}"\" | \"--"${_command$>}"\" | \"+"${_command$>}"\")\n\t\t    "\
           "COMPREPLY=( $(compgen -W \""${_argument$>}"\") ); return 0;;"
     fi
   done
   repeat $_shortcut # Shortcut commands (with arguments).
-    if {['${_shortcut$>}']!='i'" && "['${_shortcut$>}']!='o'" && "narg(${_argumentlink${_shortcutlink$>}})}
+    if ['${_shortcut$>}']!='i'" && "['${_shortcut$>}']!='o'" && "narg(${_argumentlink${_shortcutlink$>}})
       e[] "\t\t\""${_shortcut$>}"\" | \"-"${_shortcut$>}"\" | \"--"${_shortcut$>}"\" | \"+"${_shortcut$>}"\") "\
           "COMPREPLY=( $(compgen -W \""${_argumentlink${_shortcutlink$>}}"\") ); return 0;;"
     fi
@@ -2615,9 +2615,9 @@ _document_gmic_subsection_html :
   v -
 
 _document_gmic_declaration_html :
-  if {[{^}]=='(+)'} qualifier=" (+)" rm. else qualifier="" fi
+  if [{^}]=='(+)' qualifier=" (+)" rm. else qualifier="" fi
   s1="\n" s0=" |<br/>"
-  if {$!>1" && "same([{^}],'"eq. to "',7)} # Declaration of a shortcut command.
+  if $!>1" && "same([{^}],'"eq. to "',7) # Declaration of a shortcut command.
     rows. 7,100% autocrop. {'.'} autocrop. {'" "'} autocrop. 39
     _shortcut$_shortcut={0,t}
     _shortcutlink$_shortcut={t}
@@ -2628,10 +2628,10 @@ _document_gmic_declaration_html :
     v +
     e[] ${-eoff}${-doff}"<br/><hr style=\"border-top: 1px solid \#ccc;\"/><p><a id=\""{0,t}"\">"\
      "<span class=\"ref_decl\"><b>"{0,t}"</b></span></a>"$qualifier"&nbsp;&nbsp;&nbsp;<a style=\"font-weight: normal\" href=\"#"$_command_name"\"><img src=\"img/icon_link.png\" /></a>"
-    if {$!>1}
+    if $!>1
       e[] "<p style=\"margin-left:50px; font-family: monospace; color: \#900090; text-align: left\">"
       repeat {$!-1} l[{1+$>}]
-        if {h>48} v - replace_str ",",", " v + fi
+        if h>48 v - replace_str ",",", " v + fi
         e[] "<span style=\"margin-left:-1.5em\">"{0,t}"</span>"${s{$<==0}}
       endl done
       e[] "</p>"
@@ -2649,12 +2649,12 @@ _document_gmic_description_html :
   replace_str "(no arg)","<font color=\"#900090\">(no arg)</font>"
   add_link_html. 1
 
-  if {!$_is_example" && "!$is_equivalent}
+  if !$_is_example" && "!$is_equivalent
     # Colorize parameters between single quotes.
-    s +,39 if {$!>=3}
+    s +,39 if $!>=3
       ind=0 closing=0
       do
-        if {"const ind = "$ind"; h#ind==1 && i#ind==39 && h#(ind+2)==1 && i#(ind+2)==39 && h#(ind+1)<48 && (im#(ind+1)>32 || "$is_default")"}
+        if "const ind = "$ind"; h#ind==1 && i#ind==39 && h#(ind+2)==1 && i#(ind+2)==39 && h#(ind+1)<48 && (im#(ind+1)>32 || "$is_default")"
           l[$ind,{$ind+2}] rm
           ({'"<span class=\"ref_code\">"'})
           ({'"</span>"'})
@@ -2667,10 +2667,10 @@ _document_gmic_description_html :
     fi
 
     # Colorize parameters between braces '{}'.
-    s +,{'\{'} s +,{'\}'} if {$!>=3}
+    s +,{'\{'} s +,{'\}'} if $!>=3
       ind=0 closing=0
       do
-        if {"const ind = "$ind"; h#ind==1 && i#ind==123 && h#(ind+2)==1 && i#(ind+2)==125"}
+        if "const ind = "$ind"; h#ind==1 && i#ind==123 && h#(ind+2)==1 && i#(ind+2)==125"
           l[$ind,{$ind+2}] rm ({'"<span style=\"color: \#900090; font-family: monospace\">"'},123) (125,{'"</span>"'}) y endl
           ind+=2
         fi
@@ -2680,10 +2680,10 @@ _document_gmic_description_html :
     fi
 
     # Colorize parameters between brackets '[]'.
-    s +,{'['} s +,{']'} if {$!>=3}
+    s +,{'['} s +,{']'} if $!>=3
       ind=0 closing=0
       do
-        if {"const ind = "$ind"; h#ind==1 && i#ind==91 && h#(ind+2)==1 && i#(ind+2)==93"}
+        if "const ind = "$ind"; h#ind==1 && i#ind==91 && h#(ind+2)==1 && i#(ind+2)==93"
           l[$ind,{$ind+2}] rm ({'"<font color=\"#005090\">"'},91) (93,{'"</font>"'}) y endl
           ind+=2
         fi
@@ -2696,7 +2696,7 @@ _document_gmic_description_html :
 
   if $is_default # Reached line as '#@cli : Default value(s) : ... '.
     s +,{':'} l[^0] a y endl autocrop {':'} autocrop {'" "'}
-    if {$!>1}
+    if $!>1
       replace_str "ref_code","ref_defvals"
       v + e[] ${-don}"<br/><b>"{0,t}"</b>: "{t}
     else
@@ -2706,22 +2706,22 @@ _document_gmic_description_html :
 
   elif $is_equivalent # Reached line as '#@cli : (eq. to shortcut)'.
     replace_str "eq. to","equivalent to shortcut command"
-    s +,39 if {$!==5} rm[1,3] i[1]
+    s +,39 if $!==5 rm[1,3] i[1]
     ({'"<span class=\"ref_code\">"'})
     i[3] ({'"</span>"'})
     y fi a y
     v + e[] ${-don}"<i>"{t}"</i>" v -
 
   else                                    # Reached line as '#@cli : description'.
-    if {(i<_'A'" || "i>_'Z')" && "i!=40" && "i!=39} v + e[] ${-don}"&nbsp;"{t} v -
+    if (i<_'A'" || "i>_'Z')" && "i!=40" && "i!=39 v + e[] ${-don}"&nbsp;"{t} v -
     else v + e[] ${-don}{t} v -
     fi
 
   fi
 
 _document_gmic_example_html :
-  if {i==_'$'} # Link to a tutorial page.
-    if {h==1" && "i==_'$'} tuturl=https://gmic.eu/tutorial/_$_command_name.shtml
+  if i==_'$' # Link to a tutorial page.
+    if h==1" && "i==_'$' tuturl=https://gmic.eu/tutorial/_$_command_name.shtml
     else autocrop {'$'} autocrop {'" "'} tuturl=https://gmic.eu/tutorial/{0,t}.shtml
     fi
     v +
@@ -2729,7 +2729,7 @@ _document_gmic_example_html :
                 "<td><a target=\"_blank\" href=\""$tuturl"\">A tutorial page exists for this command.</a></td></tr>"
     v -
   else # Regular example.
-    if {!isfile(['$_filename'])} # Generate picture only if the file doesn't yet exist.
+    if !isfile(['$_filename']) # Generate picture only if the file doesn't yet exist.
        m "foo : "{t}
        l[] v -99 reset foo v -1 _document_gmic o $_filename,85 rm endl
        uncommand foo
@@ -2791,7 +2791,7 @@ _document_gmic_header_images : skip $1
   use_vt100
   v +
   e[] "\n - Generate example images from set of commands '"${_gmic_c}$_name${gmic_n}"'.\n"
-  if {isfile('image.jpg')} else l[] sp pencils onfail testimage2d 400 endl o. image.jpg rm. fi
+  if isfile('image.jpg') else l[] sp pencils onfail testimage2d 400 endl o. image.jpg rm. fi
   v -
 
 _document_gmic_subsection_images :
@@ -2802,11 +2802,11 @@ _document_gmic_declaration_images : _command_name={0,t}
 _document_gmic_description_images :
 
 _document_gmic_example_images :
-  if {i==_'$'} return fi
+  if i==_'$' return fi
   v +
   e[] "    "${_gmic_c}"["$_example"]"${_gmic_n}" Command '"${_gmic_g}$_command_name${_gmic_n}"': $ "{t}
   v -
-  if {!isfile(['$_filename'])} # Generate picture only if the file doesn't yet exist.
+  if !isfile(['$_filename']) # Generate picture only if the file doesn't yet exist.
     m "foo"$_example" : "{t}
     l[] v -1 reset v -99 etime=$| foo$_example etime={_round($|-$etime,0.01)} v -1 _document_gmic o $_filename,85 rm endl
     uncommand foo$_example
@@ -2890,9 +2890,9 @@ _document_gmic_subsection_latex :
 
 _document_gmic_declaration_latex :
   _is_desc=0
-  if {[{^}]=='(+)'} qualifier={t} rm. else qualifier="" fi
+  if [{^}]=='(+)' qualifier={t} rm. else qualifier="" fi
   e1="\\end{flushleft}" e0="~~~\\\\"
-  if {$!>1" && "same([{^}],'"eq. to "',7)}  # Declaration of a shortcut command.
+  if $!>1" && "same([{^}],'"eq. to "',7)  # Declaration of a shortcut command.
     _document_gmic_replace_latex
     rows. 7,100% autocrop. {'.'} autocrop. {'" "'} autocrop. 39
     _shortcut$_shortcut={0,t}
@@ -2903,10 +2903,10 @@ _document_gmic_declaration_latex :
     _document_gmic_replace_latex[0]
     _command_name={0,t}
     v + e[] ${-eoff}"\n\n\\subsection{\\emph{"{0,t}"\\index{"{0,t}"}} "$qualifier"}\\vspace*{-0.7em}"
-    if {$!>1}
+    if $!>1
       e[] "~\\\\\\textbf{\\Cb{Arguments: }}\\begin{flushleft}"
       repeat {$!-1} l[{1+$>}]
-        v - s y,-60 if {$!>1} i[1--2] ({'\\-'}) fi y a y
+        v - s y,-60 if $!>1 i[1--2] ({'\\-'}) fi y a y
         _document_gmic_replace_latex v +
         e[] "{\\small \\Cb{\\hspace*{0.5cm}$\\bullet$~~\\texttt{"{0,t}"}}}"${e{$<==0}}
       endl done
@@ -2921,7 +2921,7 @@ _document_gmic_description_latex :
   _document_gmic_replace_latex
   if $is_default # Reached line as '#@cli : Default value(s) : ... '.
     s +,{':'} l[^0] a y endl autocrop {':'} autocrop {'" "'}
-    if {$!>1}
+    if $!>1
       replace_str[1] " and ","} and \\\\texttt{"
       v + e[] ${-eoff}"\\begin{flushleft}\\Cc{\\textbf{"{0,t}"}:\\\\~\\\\\\hspace*{0.5cm}{\\small $\\bullet$~~\\texttt{"{t}"}}}\\end{flushleft}" v -
     else v + e[] ${-eoff}$s"~\\\\"{0,t} v -
@@ -2930,28 +2930,28 @@ _document_gmic_description_latex :
     rows. 8,100% autocrop. {'.'} autocrop. {')'} autocrop. {'" "'}
     v + e[] ${-eoff}$s"(\\emph{eq. to} {\\small \\texttt{"{t}"}})." v -
   else                                    # Reached line as '#@cli : description'.
-    if {(i<_'A'" || "i>_'Z')" && "i!=40" && "i!=39} v + e[] ${-eoff}{t} v -
+    if (i<_'A'" || "i>_'Z')" && "i!=40" && "i!=39 v + e[] ${-eoff}{t} v -
     else v + e[] ${-eoff}$s{t} v -
     fi
   fi
   _is_desc=1
 
 _document_gmic_example_latex :
-  if {i==_'$'} # Link to a tutorial page.
-    if {h==1" && "i==_'$'} tuturl=https://gmic.eu/tutorial/\\_$_command_name.shtml
+  if i==_'$' # Link to a tutorial page.
+    if h==1" && "i==_'$' tuturl=https://gmic.eu/tutorial/\\_$_command_name.shtml
     else autocrop {'$'} autocrop {'" "'} tuturl=https://gmic.eu/tutorial/{0,t}.shtml
     fi
     l[] ({'$tuturl'}) replace_str "_","\\_"
-    s x,-60 if {$!>1} i[1--2] ({'\\\\-'}) fi a x
+    s x,-60 if $!>1 i[1--2] ({'\\\\-'}) fi a x
     replace_str. "_","\\_" tuturl={t} rm endl
     v +
     e[] ${-eoff}
-    if {!$_is_ex} e[] "~\\\\" fi
+    if !$_is_ex e[] "~\\\\" fi
     e[] "~\\textbf{Tutorial page: }\\\\\\url{"$tuturl"}"
     v -
   else # Regular example.
     _is_desc=0
-    if {!isfile(['$_filename'])} # Generate picture only if the file doesn't yet exist.
+    if !isfile(['$_filename']) # Generate picture only if the file doesn't yet exist.
        m "foo : "{t}
        l[] v -99 reset foo v -1 _document_gmic o $_filename,85 rm endl
        uncommand foo
@@ -3013,8 +3013,8 @@ _document_gmic_subsection_man :
   v -
 
 _document_gmic_declaration_man :
-  if {[{^}]=='(+)'} qualifier=" "{t} rm. else qualifier="" fi
-  if {$!>1" && "same([{^}],'"eq. to "',7)}  # Declaration of a shortcut command.
+  if [{^}]=='(+)' qualifier=" "{t} rm. else qualifier="" fi
+  if $!>1" && "same([{^}],'"eq. to "',7)  # Declaration of a shortcut command.
     rows. 7,100% autocrop. {'.'} autocrop. {'" "'} autocrop. 39
     _shortcut$_shortcut={0,t}
     _shortcutlink$_shortcut={t}
@@ -3036,7 +3036,7 @@ _document_gmic_declaration_man :
 
 _document_gmic_description_man :
   s="        " bs0="\n" bs1="\\\\\n         "
-  y x if {!narg($_is_tutorial)} _document_gmic_split_ascii 96 fi
+  y x if !narg($_is_tutorial) _document_gmic_split_ascii 96 fi
   repeat {$!-1} ({'${bs_is_example}$s"  "'}) a[$>,-1] x done a x
   replace_str "Default values:","Default values:"
   replace_str "Default value:","Default value:"
@@ -3053,22 +3053,22 @@ _document_gmic :
   repeat $! l[$>] W$>={w} H$>={h} D$>={d} S$>={s} IS_3D$>=${-_is_3d} endl done
   repeat $! l[$>]
     if ${IS_3D$>} r3d 1,1,0,-80 r3d 0,1,0,80 snapshot3d 400
-    else if {w>8192} z 0,8191 elif {h>8192} rows 0,8191 fi n 0,255
+    else if w>8192 z 0,8191 elif h>8192 rows 0,8191 fi n 0,255
     fi
   endl done
-  +append_tiles 2 if {w>1024} r={round(1024*100/w,0.1)} r[^-1] $r%,$r%,1,100%,2 fi rm.
+  +append_tiles 2 if w>1024 r={round(1024*100/w,0.1)} r[^-1] $r%,$r%,1,100%,2 fi rm.
   repeat $! l[$>]
-    if {s==1} r {w},{h},1,3 else r {w},{h},1,3,0 fi
-    if {w<=h&&h<256} r2dy 256,2 elif {h<=w&&w<256} r2dx 256,2 fi
-    if {w<=h&&h>512} r2dy 512,2 elif {h<=w&&w>512} r2dx 512,2 fi
-    if {h<48} r 100%,48 fi
-    if {w<48} r 48,100% fi
+    if s==1 r {w},{h},1,3 else r {w},{h},1,3,0 fi
+    if w<=h&&h<256 r2dy 256,2 elif h<=w&&w<256 r2dx 256,2 fi
+    if w<=h&&h>512 r2dy 512,2 elif h<=w&&w>512 r2dx 512,2 fi
+    if h<48 r 100%,48 fi
+    if w<48 r 48,100% fi
     frame 1,1,0 frame 4,4,255
   endl done
   N=$! repeat $N l[$>]
     {w},16,1,3,255
-    if {w>75}
-      if {$N>1} if {w>110} t. Image\ [$>]:,3,3,15 else t. [$>]:,3,3,15 fi fi
+    if w>75
+      if $N>1 if w>110 t. Image\ [$>]:,3,3,15 else t. [$>]:,3,3,15 fi fi
       if ${IS_3D$>} 0 t. (3d\ object),0,0,13,1,255
       else 0 t. (${W$>}x${H$>}x${D$>}x${S$>}),0,0,13,1,255
       fi
@@ -3078,8 +3078,8 @@ _document_gmic :
     rv[-2,-1] a[-2,-1] y
   endl done
   - 255 append_tiles 2 + 255
-  if {w<256} - 255 r 256,100%,1,3,0,0,0.5,0.5 + 255 fi
-  if {h<256} - 255 r 100%,256,1,3,0,0,0.5,0.5 + 255 fi
+  if w<256 - 255 r 256,100%,1,3,0,0,0.5,0.5 + 255 fi
+  if h<256 - 255 r 100%,256,1,3,0,0,0.5,0.5 + 255 fi
 
 # Sort shortcut by lexicographic order and generate new sorted variables 'sshortcut_?'.
 _document_gmic_sort_shortcuts :
@@ -3121,7 +3121,7 @@ function1d : check "${1=1}>=0 && $1<=1" skip ${2=0},${3=0}
   smoothness={max(0,min(1,$1))}
   (${2--1}) r 2,{int(w/2)},1,1,-1
   sort +,y s x size={0,if(iM>=0,1+int(iM),0)}
-  if {!$size} rm 0 break fi
+  if !$size rm 0 break fi
   a x
 
   # Compute slopes for splines.
@@ -3136,7 +3136,7 @@ function1d : check "${1=1}>=0 && $1<=1" skip ${2=0},${3=0}
     yp1={0,i(2,$>+1)*$smoothness+(1-$smoothness)*$slope}
     i={round($x0,1,1)} j={round($x1,1,0)}
     line[1] $i,0,$j,0,1,$>
-    if {$j-$i<=1} # Linear interpolation for very close points.
+    if $j-$i<=1 # Linear interpolation for very close points.
       ({$y0-$x0*$slope}^{$slope}^0^0)
     else # Cubic interpolation otherwise.
       (1,$x0,{($x0)^2},{($x0)^3};\
@@ -3234,7 +3234,7 @@ input_cube : skip ${2=1}
 
     rm.
     permute yzcx
-    if {[$range]!=[0,0,0,1,1,1]}
+    if [$range]!=[0,0,0,1,1,1]
       f "begin(
            range = ["$range"];
            dmin = range[0,3];
@@ -3244,7 +3244,7 @@ input_cube : skip ${2=1}
          (I - dmin)*255/delta"
     else * 255
     fi
-    if {"w>1 && h==1 && d==1 && $2"} size={w} s c y.. y y. z r $size,$size,$size a c fi
+    if "w>1 && h==1 && d==1 && $2" size={w} s c y.. y y. z r $size,$size,$size a c fi
     nm "$1"
   endl v +
 
@@ -3264,7 +3264,7 @@ _input_glob :
   N=$!
   m "_ig : $""=arg repeat $""# i ${arg{1+$>}} done"
   _ig ${} uncommand _ig
-  if {$N==$!} v + error[0--3] "Command 'input_glob': No matching filenames for pattern '$*'." fi
+  if $N==$! v + error[0--3] "Command 'input_glob': No matching filenames for pattern '$*'." fi
   v +
 
 #@cli input_gpl : filename
@@ -3276,7 +3276,7 @@ input_gpl :
     colors=0
     repeat $! l[$>]
       s -,32
-      if {$!>=3" && "isint({0,t})" && "isint({1,t})" && "isint({2,t})} colors=$colors;{0,t},{1,t},{2,t} fi
+      if $!>=3" && "isint({0,t})" && "isint({1,t})" && "isint({2,t}) colors=$colors;{0,t},{1,t},{2,t} fi
       rm 0
     onfail rm 0 endl done
     rm ($colors) rows 1,100% nm "$1" permute yzcx
@@ -3295,9 +3295,9 @@ output_cube :
  e[^-1] "Output CLUT$? as file '$1'."
  v - N=$! repeat $N +l[$>] to_rgb
    l={round((w*h*d)^(1/3))}
-   if {w*h*d!=$l^3} v + error "Command '$0': CLUT '"{n}"' has invalid dimensions "({w},{h},{d},{s}). fi
+   if w*h*d!=$l^3 v + error "Command '$0': CLUT '"{n}"' has invalid dimensions "({w},{h},{d},{s}). fi
    r $l,$l,$l,3,-1 permute cxyz / 255
-   if {$N>1} fn=${"filename \"$1\",$>"} else fn="$1" fi
+   if $N>1 fn=${"filename \"$1\",$>"} else fn="$1" fi
    o dlm:$fn rm i raw:$fn,uchar replace {','},32
    0 nm. $fn basename={b} rm.
    header="\# Created by: G'MIC (https://gmic.eu)\n"\
@@ -3319,7 +3319,7 @@ output_ggr : skip "${2=}"
  e[^-1] "Output image$? as .ggr gradient file '$1'."
  v - N=$!
   repeat $N +l[$>] r 1,{w*h*d},1,100%,-1 to_rgba / 255
-    if {narg("$2")} name="$2"
+    if narg("$2") name="$2"
     else l[] 1 nm. "$1" ({'{b}'}) f "if(x==0 && i>=_'a' && i<=_'z',i-_'a'+_'A',i)" name={t} rm endl
     fi
     ({'"GIMP Gradient\nName: "$name\n{0,h}\n'})
@@ -3332,7 +3332,7 @@ output_ggr : skip "${2=}"
       ({'$start" "$mid" "$end" "$r" "$g" "$b" "$a" "$r" "$g" "$b" "$a" 0 0\n"'})
     done
     rm[0] a x
-    if {$N>1} o raw:${"filename \"$1\",$>"},char else o raw:"$1",char fi
+    if $N>1 o raw:${"filename \"$1\",$>"},char else o raw:"$1",char fi
     rm
   endl done v +
 
@@ -3350,7 +3350,7 @@ outputn :
 
 _outputn :
   v -
-  if {$#==1} filename=${filename\ "$1",$>}
+  if $#==1 filename=${filename\ "$1",$>}
   else filename=${filename\ "$1",$2}
   fi
   v +
@@ -3371,7 +3371,7 @@ outputp :
   _$0 $*
 
 _outputp : skip ${1="_"}
-  if {$!>1} e[0--4] "Output image"$_gmic_s" as their initial locations, prefixed by '$1'."
+  if $!>1 e[0--4] "Output image"$_gmic_s" as their initial locations, prefixed by '$1'."
   else e[0--4] "Output image"$_gmic_s" as its initial location, prefixed by '$1'."
   fi
   v - repeat $! o[$>] {$>,f}$1{$>,b}.{$>,x} done v +
@@ -3389,7 +3389,7 @@ outputw :
   _$0 $*
 
 _outputw :
-  if {$!>1} e[0--4] "Output image"$_gmic_s" as their initial location."
+  if $!>1 e[0--4] "Output image"$_gmic_s" as their initial location."
   else e[0--4] "Output image"$_gmic_s" as its initial location."
   fi
   v - repeat $! o[$>] {$>,n} done v +
@@ -3411,9 +3411,9 @@ _outputx :
   v -
   $=arg
   is_last_arg=0 is_same_location=0
-  if {isval($-1)} is_last_arg={isint($-1)&&$-1>=0&&$-1<=1} is_same_location=$-1 fi
+  if isval($-1) is_last_arg={isint($-1)&&$-1>=0&&$-1<=1} is_same_location=$-1 fi
   N={$#-$is_last_arg} s0= s1=s
-  if {!$N} v + e[0--3] "Output image"$_gmic_s" at same location, with same base filename but extension '' (skipped, no extension provided)." return
+  if !$N v + e[0--3] "Output image"$_gmic_s" at same location, with same base filename but extension '' (skipped, no extension provided)." return
   fi
   if $is_same_location
     v +
@@ -3421,7 +3421,7 @@ _outputx :
     else e[0--4] "Output image"$_gmic_s" at same location, with same base filename but extension"${s{$N>1}}" '$*'."
     fi
     v -  repeat $! l[$>]
-      repeat $N ext=${arg{1+$>}} if {ext=lowercase(['$ext']);ext=='jpg'||ext=='jpeg'} ext.=,85 fi o {0,f}{0,b}.$ext done
+      repeat $N ext=${arg{1+$>}} if ext=lowercase(['$ext']);ext=='jpg'||ext=='jpeg' ext.=,85 fi o {0,f}{0,b}.$ext done
     endl done
   else
     v +
@@ -3429,7 +3429,7 @@ _outputx :
     else e[0--4] "Output image"$_gmic_s" with same base filename but extension"${s{$N>1}}" '$*'."
     fi
     v -  repeat $! l[$>]
-      repeat $N ext=${arg{1+$>}} if {ext=lowercase(['$ext']);ext=='jpg'||ext=='jpeg'} ext.=,85 fi o {0,b}.$ext done
+      repeat $N ext=${arg{1+$>}} if ext=lowercase(['$ext']);ext=='jpg'||ext=='jpeg' ext.=,85 fi o {0,b}.$ext done
     endl done
   fi
   v +
@@ -3485,15 +3485,15 @@ shape_circle : check "${1=512}>=0"
   e[^-1] "Input a $1x$1 circle binary shape."
   v -
   ir={round($1)}
-  if {!$ir} 0
-  elif {$ir<2} $ir,$ir,1,1,1
+  if !$ir 0
+  elif $ir<2 $ir,$ir,1,1,1
   else
     {int($ir/2)+($ir%2)},{int($ir/2)+($ir%2)} =. 1,100%,100%
     distance. 1 <=. {(i+0.4)/sqrt(2)}
     +mirror. x
-    if {$ir>1&&($ir%2)} r. {w-1},100%,1,1,0,0,1 fi
+    if $ir>1&&($ir%2) r. {w-1},100%,1,1,0,0,1 fi
     a[-2,-1] x +mirror. y
-    if {$ir>1&&($ir%2)} r. 100%,{h-1},1,1,0,0,0,1 fi
+    if $ir>1&&($ir%2) r. 100%,{h-1},1,1,0,0,0,1 fi
     a[-2,-1] y
   fi
   nm. "[2D circle shape]"
@@ -3506,10 +3506,10 @@ shape_circle : check "${1=512}>=0"
 shape_cupid : check "${1=512}>=0"
   e[^-1] "Input a $1x$1 cupid binary shape." v -
   ir={round($1)}
-  if {!$ir} 0
+  if !$ir 0
   else
     base642img "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"
-    decompress_rle. r. $ir,$ir,1,1,5 if {$ir>480} b. 0.2% fi >=. 40%
+    decompress_rle. r. $ir,$ir,1,1,5 if $ir>480 b. 0.2% fi >=. 40%
   fi
   nm "[2D cupid shape]" v +
 
@@ -3521,15 +3521,15 @@ shape_diamond : check "${1=512}>=0"
   e[^-1] "Input a $1x$1 diamond binary shape."
   v -
   ir={round($1)}
-  if {!$ir} 0
-  elif {$ir<2} $ir,$ir,1,1,1
+  if !$ir 0
+  elif $ir<2 $ir,$ir,1,1,1
   else
     {int($ir/2)+($ir%2)},{int($ir/2)+($ir%2)} =. 1,100%,100%
     distance. 1,1 <=. {i/2}
     +mirror. x
-    if {$ir>1&&($ir%2)} r. {w-1},100%,1,1,0,0,1 fi
+    if $ir>1&&($ir%2) r. {w-1},100%,1,1,0,0,1 fi
     a[-2,-1] x +mirror. y
-    if {$ir>1&&($ir%2)} r. 100%,{h-1},1,1,0,0,0,1 fi
+    if $ir>1&&($ir%2) r. 100%,{h-1},1,1,0,0,0,1 fi
     a[-2,-1] y
   fi
   nm. "[2D diamond shape]"
@@ -3543,7 +3543,7 @@ shape_fern : check "${1=512}>=0 && ${2=50%}>=0 && isval(${3=30}) && ${4=0.3}>=0 
   e[^-1] "Input a $1x$1 Barnsley fern, with density $2, angle $3 and opacity $4."
   v -
   ir={round($1)}
-  if {!$ir} 0
+  if !$ir 0
   else l[]
     N={${"is_percent $2"}?$ir^2*$2:$2}
     $N,1,1,2
@@ -3585,7 +3585,7 @@ shape_gear : check "${1=512}>=0 && isint(${2=12}) && $2>0 && ${3=20}>=0 && $3<=1
   e[^-1] "Input a $1x$1 gear binary shape with $2 teeth, teeth height $3, teeth offset $4 and inner radius $5."
   v -
   ir={round($1)}
-  if {!$ir} 0
+  if !$ir 0
   else l[]
     $ir,$ir
     polygon {"
@@ -3614,7 +3614,7 @@ shape_heart : check "${1=512}>=0"
   e[^-1] "Input a $1x$1 heart binary shape."
   v -
   ir={round($1)}
-  if {!$ir} 0
+  if !$ir 0
   else l[]
       2048,1,1,1,"t = x*2*pi/w; 16*sin(t)^3"
       2048,1,1,1,"t = x*2*pi/w; 13*cos(t) - 5*cos(2*t) - 2*cos(3*t) - cos(4*t)"
@@ -3633,7 +3633,7 @@ shape_polygon : check "${1=512}>=0 && isint(${2=5}) && $2>=3" skip ${3=0}
   e[^-1] "Input a $1x$1 polygon binary shape, with $2 vertices and angle $3 deg."
   v -
   ir={round($1)}
-  if {!$ir} 0
+  if !$ir 0
   else l[]
       (0;{2*pi}) + {($3-90)*pi/180} r. 1,{$2+1},1,1,3 rows. 0,{h-2}
       ir2={round($ir/2)}
@@ -3653,7 +3653,7 @@ shape_snowflake : check "${1=512}>=0 && isint(${2=5}) && $2>=0 && $2<=6"
   e[^-1] "Input a $1x$1 snowflake binary shape, with $2 recursions."
   v -
   ir={round($1)}
-  if {!$ir} 0
+  if !$ir 0
   else l[]
     $ir,$ir (0;120;240) *. {pi/180} +sin. cos.. a[-2,-1] c
     repeat $2
@@ -3684,7 +3684,7 @@ shape_star : check "${1=512}>=0 && ${2=5}>0 && ${3=0.5}>=0 && $3<=1"
   e[^-1] "Input a $1x$1 star binary shape, with $2 branches and thickness $3."
   v -
   ir={round($1)}
-  if {!$ir} 0
+  if !$ir 0
   else l[]
       star3d $2,$3 col3d 1 c3d n3d *3d $1,$1
       $1,$1 j3d. ..,50%,50%,0,1,2 rm..
@@ -3706,7 +3706,7 @@ shape_star : check "${1=512}>=0 && ${2=5}>0 && ${3=0.5}>=0 && $3<=1"
 #@cli sp : eq. to 'sample'.
 sp : skip "${1=?}",${2=0}
   v - _sample[] "$1",${2--1}
-  if {!${}} noarg fi v +
+  if !${} noarg fi v +
 
 #@cli sample : _name1={ ? | apples | balloons | barbara | boats | bottles | butterfly | cameraman | car | cat | cliff | chick | colorful | david | dog | duck | eagle | elephant | earth | flower | fruits | gmicky | gmicky_mahvin | gmicky_wilber | greece | gummy | house | inside | landscape | leaf | lena | leno | lion | mandrill | monalisa | monkey | parrots | pencils | peppers | portrait0 | portrait1 | portrait2 | portrait3 | portrait4 | portrait5 | portrait6 | portrait7 | portrait8 | portrait9 | roddy | rooster | rose | square | swan | teddy | tiger | tulips | wall | waterfall | zelda },_name2,...,_nameN,_width={ >=0 | 0 (auto) },_height = { >=0 | 0 (auto) } : (no arg)
 #@cli : Input a new sample RGB image (opt. with specified size).
@@ -3715,7 +3715,7 @@ sp : skip "${1=?}",${2=0}
 #@cli : $ repeat 6 sample done
 sample : skip "${1=?}",${2=0}
   v - _sample[] "$1",${2--1}
-  if {!${}} noarg fi v +
+  if !${} noarg fi v +
 
 __sample :
   u apples,balloons,barbara,boats,bottles,butterfly,cameraman,car,cat,chick,cliff,colorful,\
@@ -3725,9 +3725,9 @@ __sample :
     roddy,rooster,rose,square,swan,teddy,tiger,tulips,wall,waterfall,zelda
 
 _sample :
-  if {"$#>=3 && isval($-2) && isint($-2) && $-2>=0 && isval($-1) && isint($-1) && $-1>=0"} # W and H specified.
+  if "$#>=3 && isval($-2) && isint($-2) && $-2>=0 && isval($-1) && isint($-1) && $-1>=0" # W and H specified.
     N={$#-2} W=$-2 H=$-1
-  elif {"$#>=2 && isval($-1) && isint($-1) && $-1>=0"} # Only W specified.
+  elif "$#>=2 && isval($-1) && isint($-1) && $-1>=0" # Only W specified.
     N={$#-1} W=$-1 H=0
   else # No dimensions specified
     N={$#} W=0 H=0
@@ -3740,13 +3740,13 @@ _sample :
   is_arg=1
   repeat $N
     arg=${arg{1+$>}} is_rand{1+$>}=0
-    if {['$arg']=='?'} arg={round(u(1,$M))} is_rand{1+$>}=1
-    elif {!isval($arg)" || "!isint($arg)} repeat $M name=${_sp_name{1+$>}} if {'$name'!=0" && "'$name'==['$arg']} arg={1+$>} break fi done
+    if ['$arg']=='?' arg={round(u(1,$M))} is_rand{1+$>}=1
+    elif !isval($arg)" || "!isint($arg) repeat $M name=${_sp_name{1+$>}} if '$name'!=0" && "'$name'==['$arg'] arg={1+$>} break fi done
     else arg={($arg%$M)+1} fi
-    if {!isval($arg)" || "!isint($arg)} is_arg=0 break fi
+    if !isval($arg)" || "!isint($arg) is_arg=0 break fi
     arg{1+$>}=$arg
   done
-  if {!$is_arg} N=1 W=0 H=0 arg1={round(u(1,$M))} fi
+  if !$is_arg N=1 W=0 H=0 arg1={round(u(1,$M))} fi
 
   # Input sample images.
   repeat $N
@@ -3755,7 +3755,7 @@ _sample :
     # Retrieve image data.
     filename=${-path_cache}sample_$name.png
     url=https://gmic.eu/img/sample_$name.png
-    if {isfile(['$filename'])} $filename
+    if isfile(['$filename']) $filename
     else
       if ${is_rand{1+$>}} l[] $url o. $filename onfail testimage2d {m=max($W,$H);m>0?m:400} endl
       else $url o. $filename
@@ -3763,10 +3763,10 @@ _sample :
     fi
 
     # Resize to desired dimensions.
-    if {$W>0" && "$H==0} r2dx. $W round.
-    elif {$W==0" && "$H>0} r2dy. $H round.
-    elif {$W>0" && "$H>0}
-      if {w/$W>h/$H} r2dy. $H else r2dx. $W fi
+    if $W>0" && "$H==0 r2dx. $W round.
+    elif $W==0" && "$H>0 r2dy. $H round.
+    elif $W>0" && "$H>0
+      if w/$W>h/$H r2dy. $H else r2dx. $W fi
       r. $W,$H,1,100%,0,0,0.5,0.5 round.
     fi
     nm. $name
@@ -3832,7 +3832,7 @@ _update :
   v -
   out=${_path_rc}update$_version.gmic
   l[] cimgz:https://gmic.eu/update$_version.gmic
-    if {h>7" && "same([{^}],'#@gmic',6)} o raw:$out,char fi
+    if h>7" && "same([{^}],'#@gmic',6) o raw:$out,char fi
     rm
   onfail v + error[0--3] "Command 'update' : Unreachable update file."
   endl
@@ -3865,7 +3865,7 @@ update_instimg :
 # Input images : samples you want to generate
 # $1 = upload to G'MIC server, can be { 0 | 1 }.
 update_color_presets_html : check "isbool(${1=0})"
-  if {!$!} error[^-1] "Command '$0': Missing input images !" fi
+  if !$! error[^-1] "Command '$0': Missing input images !" fi
   v -
 
   # Init variables.
@@ -3946,7 +3946,7 @@ update_color_presets_html : check "isbool(${1=0})"
 
   # Generate thumbnails.
   v + e[] "\n  * Generate thumbnails from samples." v -
-  if {!isdir('original')} x "mkdir original" fi
+  if !isdir('original') x "mkdir original" fi
   nb_samples=$!
   to_rgb repeat $nb_samples l[$<]
     nm[0] sample_{1+$<}
@@ -3975,7 +3975,7 @@ update_color_presets_html : check "isbool(${1=0})"
       v + e[] "    - "$preset v -
       clut $preset,64 to_rgb.
       s={sqrt(w*h*d)} +r. $s,$s,1,3,-1
-      if {iM<=255} *. 257 fi  # Force PNG to be saved in 16bits.
+      if iM<=255 *. 257 fi  # Force PNG to be saved in 16bits.
       o. $category/clut/$preset.png
       rm.
 
@@ -4053,20 +4053,20 @@ with or endorsed by the companies that own the trademarks.</i></font></p>\n\n
         _category_name=${}
 
         arg {1+$>},$category_authors_url
-        if {isval(${})} _category_author_url_start= _category_author_url_end=
+        if isval(${}) _category_author_url_start= _category_author_url_end=
         else _category_author_url_start="<a href=\""${}"\">" _category_author_url_end="</a>"
         fi
 
         arg {1+$>},$category_authors
-        if {isval(${})} _category_author=""
+        if isval(${}) _category_author=""
         else _category_author=$_category_author_url_start${}$_category_author_url_end
         fi
 
-        if {narg($_category_author)}
+        if narg($_category_author)
           _category_author="<font size=\"1\">(by "$_category_author")</font>"
         fi
 
-        if {['$_category']==['$category']}
+        if ['$_category']==['$category']
           string "<li><font color=\"#CC7700\"><b>"$_category_name"</b> "$_category_author"</font></li>\n"
         else
           string "<li><a href=\""${_category}_$basename.shtml"#browse\">"$_category_name"</a> "$_category_author"</li>\n"
@@ -4076,7 +4076,7 @@ with or endorsed by the companies that own the trademarks.</i></font></p>\n\n
       string "</ul>\n</td>\n<td align=\"left\" valign=\"top\">Select sample image:<br/><br/>\n"
       repeat {$nb_samples}
         _basename=${basename$>}
-        if {['$_basename']==['$basename']}
+        if ['$_basename']==['$basename']
           string "<a href=\""${category}_$_basename.shtml"#browse\"><img alt=\"\" style=\"border-color:#CC7700;\" border=\"3\" src=\""original/minithumb_$_basename.jpg"\"/></a>\n"
         else
           string "<a href=\""${category}_$_basename.shtml"#browse\"><img alt=\"\" border=\"0\" src=\""original/minithumb_$_basename.jpg"\"/></a>\n"
@@ -4097,7 +4097,7 @@ with or endorsed by the companies that own the trademarks.</i></font></p>\n\n
 
         ({'$preset'}) replace_seq. 39,"92,92,39" preset_esc={t} rm.
         _title $preset title=${}
-        if {$>%4==0} if $> string "</tr>\n" fi string "<tr>" fi
+        if $>%4==0 if $> string "</tr>\n" fi string "<tr>" fi
 
         string "
 <td><table>\n
@@ -4140,10 +4140,10 @@ update_gallery_html : check "isbool(${1=0})"
   use_vt100
 
   # Check directory and clean in case of upload.
-  if {narg(${"files *"})}
-    if {narg(${"files *_full_*.jpg"})" && "\
-        narg(${"files *_thumb_*.jpg"})" && "\
-        narg(${"files *_original_*.jpg"})}
+  if narg(${"files *"})
+    if narg(${"files *_full_*.jpg"})" && "\
+       narg(${"files *_thumb_*.jpg"})" && "\
+       narg(${"files *_original_*.jpg"})
        if $1 x 0,"rm -f *" fi
     else v + error[0--4] "Current folder should be empty!"
     fi
@@ -4185,7 +4185,7 @@ update_gallery_html : check "isbool(${1=0})"
 
   repeat $nb_categories,ncat
     category=${arg\ 1+$>,$categories}
-    if {isfile('$category.shtml')} continue fi
+    if isfile('$category.shtml') continue fi
     v + e[] "\n  * Process category '"$_gmic_b$category$_gmic_n"'." v -
 
     commands=${commands_$category}
@@ -4194,7 +4194,7 @@ update_gallery_html : check "isbool(${1=0})"
 
     repeat $nb_categories
       cat=${arg\ 1+$>,$categories}
-      if {;'$cat'=='$category'} td_$cat="<td bgcolor=\"#DDDDDD\">"
+      if '$cat'=='$category' td_$cat="<td bgcolor=\"#DDDDDD\">"
       else td_$cat="<td>"
       fi
     done
@@ -4245,8 +4245,8 @@ update_gallery_html : check "isbool(${1=0})"
       v + e[] $_gmic_m"    - Command '"$_gmic_b$command$_gmic_n"' ["{1+$>}/$nb_commands"]."$_gmic_n v -
       +l # Parse command definition and examples
         s -,{'"#@cli "$command" :"'}
-        if {$!<2} s -,{'"#@cli "$command"\n"'} i[1] ({'\n'}) a[-2,-1] y fi
-        if {$!<2} v + warn[] "    ** Command '"$command"' not found! **" v -
+        if $!<2 s -,{'"#@cli "$command"\n"'} i[1] ({'\n'}) a[-2,-1] y fi
+        if $!<2 v + warn[] "    ** Command '"$command"' not found! **" v -
         else
           k.
           eval "
@@ -4277,11 +4277,11 @@ update_gallery_html : check "isbool(${1=0})"
               ({'${example$nex}'}) y
               is_input={find(#-1,'image.jpg')>=0}
 
-              if {!$is_input" && "find(#-1,'"sample "')>=0}
+              if !$is_input" && "find(#-1,'"sample "')>=0
                  s +,{'"sample "'}
-                 if {0,crop()=='"sample "'" && "$!>1} l[1]
+                 if 0,crop()=='"sample "'" && "$!>1 l[1]
                    s +,{'" "'}
-                   if {find(#0,_',')==-1} sample={0,t} is_input=1 fi
+                   if find(#0,_',')==-1 sample={0,t} is_input=1 fi
                    a y
                  endl fi
                  a y
@@ -4292,7 +4292,7 @@ update_gallery_html : check "isbool(${1=0})"
                 rm[$<]
               fi done a y endl
               l. s +,{'" "'} repeat $! if {$<,crop(0,0,1,8)=='https://'} l[$<] # Add hyperlink
-                if {crop(0,0,1,24)=='https://gmic.eu/samples/'}
+                if crop(0,0,1,24)=='https://gmic.eu/samples/'
                   is_codesample=1
                   basename_codesample={`crop(0,24,1,h-24)`}
                   filename_codesample="../../resources/samples"/$basename_codesample
@@ -4311,7 +4311,7 @@ update_gallery_html : check "isbool(${1=0})"
             if $is_input sample_=${sample}_ else sample_= fi
             filename_original=${category}_${sample_}original_$nex.jpg
             filename_thumb_original=${category}_${sample_}thumb_original_$nex.jpg
-            if {"find(['"${example$nex}"'],' _fps=')>=0"}
+            if "find(['"${example$nex}"'],' _fps=')>=0"
               filename_full=${category}_${sample_}full_$nex.gif
               filename_thumb=${category}_${sample_}thumb_$nex.gif
               _is_animated=1
@@ -4323,7 +4323,7 @@ update_gallery_html : check "isbool(${1=0})"
 
             etime=
             _label=
-            if {!isfile('$filename_thumb')} l[]
+            if !isfile('$filename_thumb') l[]
               if $is_input sp $sample,600 o image.jpg rm fi
 
               db3d m3d md3d f3d l3d sl3d ss3d 0.8 srand 512
@@ -4367,16 +4367,16 @@ update_gallery_html : check "isbool(${1=0})"
             l[]
               $filename_full
               width,height={round([w,h]*(max(w,h)<300?1.75:1))}
-              if {isfile(['$filename'])}_original $filename_original is_samesize={w==w#0" && "h==h#0} fi
+              if isfile(['${filename}_original']) $filename_original is_samesize={w==w#0" && "h==h#0} fi
               rm
             endl
-            if {!$is_samesize} filename_original=$filename_full fi
+            if !$is_samesize filename_original=$filename_full fi
 
-            if {!($col%$nb_cols)} html=${html}"<tr>\n" fi
-            if {$nb_examples==1} counter= else counter=" <font size=\"-2\"><i>"[{$>+1}/$nb_examples]"</i></font>" fi
+            if !($col%$nb_cols) html=${html}"<tr>\n" fi
+            if $nb_examples==1 counter= else counter=" <font size=\"-2\"><i>"[{$>+1}/$nb_examples]"</i></font>" fi
 
             html_etime=
-            if {narg($etime)} html_etime="<br/><font size=\"-2\"><i>(generated in "${etime}"s)</i></font>" fi
+            if narg($etime) html_etime="<br/><font size=\"-2\"><i>(generated in "${etime}"s)</i></font>" fi
 
             html_codesample=
             if $is_codesample
@@ -4387,7 +4387,7 @@ update_gallery_html : check "isbool(${1=0})"
                               "<a onclick=\"javascript:$( '#dialog"$nex"' ).dialog( 'open' );\" style=\"cursor: pointer;\"><i><font size=\"-1\">[ Source code ]</font></i></a>\n"
             fi
 
-            if {['$_label']==0} _label=$command$counter else ({'$_label'}) replace_str. "~"," " _label={t} rm. fi
+            if ['$_label']==0 _label=$command$counter else ({'$_label'}) replace_str. "~"," " _label={t} rm. fi
             if $is_input
               html=${html}\
                   "  <td><center><div><a href=\"#\" onclick=\"return hs.htmlExpand(this, { width: "{$width+64}", height: "{$height+64}" })\">\n"\
@@ -4408,7 +4408,7 @@ update_gallery_html : check "isbool(${1=0})"
             fi
             nex+=1
             col={($col+1)%$nb_cols}
-            if {!$col} html=${html}"</tr>\n" fi
+            if !$col html=${html}"</tr>\n" fi
           done
         fi
         rm
@@ -4437,38 +4437,38 @@ _gallery :
   repeat $! l[$>] W$>={w} H$>={h} D$>={d} S$>={s} IS_3D$>=${-_is_3d} endl done
   repeat $! l[$>]
     if ${IS_3D$>} r3d 1,1,0,-80 r3d 0,1,0,80 snapshot3d 400
-    else if {w>8192} z 0,8191 elif {h>8192} rows 0,8191 fi n 0,255
+    else if w>8192 z 0,8191 elif h>8192 rows 0,8191 fi n 0,255
     fi
   endl done
 
-  if {!$_is_animated}
+  if !$_is_animated
     +__gallery
-    if {w>1024} r={round(1024*100/w,0.1)} r[^-1] $r%,$r%,1,100%,2 fi rm.
+    if w>1024 r={round(1024*100/w,0.1)} r[^-1] $r%,$r%,1,100%,2 fi rm.
   fi
 
   repeat $! l[$>]
-    if {s==1} r {w},{h},1,3
-    elif {s==4} drgba
+    if s==1 r {w},{h},1,3
+    elif s==4 drgba
     else r {w},{h},1,3,0 fi
-    if {w<=h&&h<256} r2dy 256,2 elif {h<=w&&w<256} r2dx 256,2 fi
-    if {w<=h&&h>620} r2dy 620,2 elif {h<=w&&w>620} r2dx 620,2 fi
-    if {h<48} r 100%,48 fi
-    if {w<48} r 48,100% fi
-    if {$_is_animated" && "(w>480" || "h>480)} rr2d 480,480,0,2 fi
+    if w<=h&&h<256 r2dy 256,2 elif h<=w&&w<256 r2dx 256,2 fi
+    if w<=h&&h>620 r2dy 620,2 elif h<=w&&w>620 r2dx 620,2 fi
+    if h<48 r 100%,48 fi
+    if w<48 r 48,100% fi
+    if $_is_animated" && "(w>480" || "h>480) rr2d 480,480,0,2 fi
     frame 1,1,0 frame 4,4,255
   endl done
 
-  if {$_is_animated}
+  if $_is_animated
     - 255 r ${-max_wh},1,3,0,0,0.5,0.5 + 255
   else
     - 255 __gallery + 255
-    if {w<256} - 255 r 256,100%,1,100%,0,0,0.5,0.5 + 255 fi
-    if {h<256} - 255 r 100%,256,1,100%,0,0,0.5,0.5 + 255 fi
+    if w<256 - 255 r 256,100%,1,100%,0,0,0.5,0.5 + 255 fi
+    if h<256 - 255 r 100%,256,1,100%,0,0,0.5,0.5 + 255 fi
   fi
 
 
 __gallery :
-  if {$!==2} if {w>h} a y else a x fi
+  if $!==2 if w>h a y else a x fi
   else montage A # append_tiles 2
   fi
 
@@ -4483,10 +4483,10 @@ update_deprecate : check "isint($1) && $1>0 && $1<999"
   if $is_deprecated
     v + e[0--4] "  > Version $1 already deprecated -> Removing deprecation." v -
     off1={"data = crop(); find(data,'\n#@gui !<b><i>&gt;&gt; UPDATE"" INFORMATION</i></b>')"}
-    if {$off1>0}
+    if $off1>0
       +rows $off1,100% rows[0] 0,{$off1-1}
       off2={"data = crop(); find(data,'\n\n')"}
-      if {$off2>0}
+      if $off2>0
         rows. {$off2+2},100% a y
         o cimgz:$file,uchar
         _update_server_upload $file
@@ -4633,23 +4633,23 @@ update_server :
 
   repeat $!
     ind={$>-$offset}
-    if {{{$ind-1},@-1}==10" && "same([{^}],'#@gui',5)" && "({$ind,@5}==32" || "{$ind,@5}==_'_')} l[$ind] # Line starts by '#@gui[_] '
+    if {{$ind-1},@-1}==10" && "same([{^}],'#@gui',5)" && "({$ind,@5}==32" || "{$ind,@5}==_'_') l[$ind] # Line starts by '#@gui[_] '
 
-      if {i[5]==_'_'} locale=_{`[i[6],i[7]]`} # Retrieve locale if any specified
+      if i[5]==_'_' locale=_{`[i[6],i[7]]`} # Retrieve locale if any specified
       else locale=
       fi
 
       is_folder=0
       s +,10
-      if {{0,@5}==_'_'} +rows[0] 8,100% rows[0] 0,7 # Treat a localized filter as a regular filter.
+      if {0,@5}==_'_' +rows[0] 8,100% rows[0] 0,7 # Treat a localized filter as a regular filter.
       else +rows[0] 5,100% rows[0] 0,4
       fi
       autocrop. 32 mv. 1
 
-      if {narg($locale)" && "find(#1,'hide(')>=0} # Found a hide() pragma.
+      if narg($locale)" && "find(#1,'hide(')>=0 # Found a hide() pragma.
         i[1] ({'" "'})
 
-      elif {{1,@0}!=_':'} # Found a new filter or folder definition.
+      elif {1,@0}!=_':' # Found a new filter or folder definition.
         l[1]
 
           # Format string by removing special character sequences.
@@ -4662,7 +4662,7 @@ update_server :
           replace[0] {','},{';'}
           autocrop[0] 32
 
-          if {$!>1} # Found new filter.
+          if $!>1 # Found new filter.
             _update_server_calibrate_name[0] +replace[0] 32,{'~'}
             name=$path{t} rm.
             merge_request=1
@@ -4672,7 +4672,7 @@ update_server :
             nm $name
 
             # Force filter to move if necessary.
-            repeat $_nbm if {['$name']==['${_to_move$>}']}
+            repeat $_nbm if ['$name']==['${_to_move$>}']
               v + e[] $_gmic_m"       -> Moved to '"${_move_to$>}$_gmic_n"'." v -
               name=${_move_to$>}/{b} nm $name
             fi done
@@ -4680,12 +4680,12 @@ update_server :
 
           else # Found new folder (opt. parent(s)).
 
-            if {i==_'_'} # Folder has parents before creating it.
+            if i==_'_' # Folder has parents before creating it.
               do path=${"parent[] "$path} shift 0,-1,0,0 while {i==_'_'}
               autocrop 0
             fi
             autocrop 32
-            if {w} # Folder name specified after the underscore(s).
+            if w # Folder name specified after the underscore(s).
               varname {0,t} locale_${}=$locale # Keep locale of each folder
               _update_server_calibrate_name[0]
               replace 32,{'~'}
@@ -4693,7 +4693,7 @@ update_server :
             fi
             is_folder=1
 
-          fi # if {$!>1}
+          fi # if $!>1
         endl # l[1]
 
         if $is_folder rm[0,1] i[0] (10) # Discard folder definition (will be recreated afterwards).
@@ -4701,24 +4701,24 @@ update_server :
 
       else # Found possibly a filter argument.
 
-        if {$!>=3} l[1]
+        if $!>=3 l[1]
           s +,{'='}
-          if {$!>=3} if {{1,@0}==_'='}
-            if {find(#0,'"<span "')<0}
+          if $!>=3 if {1,@0}==_'='
+            if find(#0,'"<span "')<0
               rows[0] 1,100%
-              if {!$is_testing} _update_server_calibrate_name[0] fi
+              if !$is_testing _update_server_calibrate_name[0] fi
               i[0] ({':'};32) i[2] (32)
             fi
           fi fi
         endl fi
         i[1] (32)
 
-      fi # if {i!=_':'}
+      fi # if i!=_':'
       a y
 
     endl fi
 
-    if {$merge_request" && "$ind>0} # Merge previous lines.
+    if $merge_request" && "$ind>0 # Merge previous lines.
       a[$merge_start-{$ind-1}] y
       offset+={$ind-$merge_start-1}
       merge_start+=1
@@ -4741,7 +4741,7 @@ update_server :
 
   repeat $! l[$>]
     npath=${"parent "{0,n}}
-    if {['$path']!=['$npath']} # Need to change the path.
+    if ['$path']!=['$npath'] # Need to change the path.
       nc=${"nb_levels[] "$path}
       nn=${"nb_levels[] "$npath}
 
@@ -4752,9 +4752,9 @@ update_server :
       do
         nc=${"nb_levels[] "$basis}
         nn=${"nb_levels[] "$nbasis}
-        if {$nc>$nn} basis=${"parent[] "$basis} nb_up+=1
-        elif {$nn>$nc} nbasis=${"parent[] "$nbasis} nb_down+=1
-        elif {['$nbasis']!=['$basis']} basis=${"parent[] "$basis} nb_up+=1 nbasis=${"parent[] "$nbasis} nb_down+=1
+        if $nc>$nn basis=${"parent[] "$basis} nb_up+=1
+        elif $nn>$nc nbasis=${"parent[] "$nbasis} nb_down+=1
+        elif ['$nbasis']!=['$basis'] basis=${"parent[] "$basis} nb_up+=1 nbasis=${"parent[] "$nbasis} nb_down+=1
         fi
       while {['$nbasis']!=['$basis']}
 
@@ -4771,7 +4771,7 @@ update_server :
           balise="i"
         done rm
       endl fi
-      if {narg(['$command'])} nm={0,n} i[0] ({'$command'}) y[0] a y nm $nm
+      if narg(['$command']) nm={0,n} i[0] ({'$command'}) y[0] a y nm $nm
       fi
 
       path=$npath
@@ -4786,21 +4786,21 @@ update_server :
 
   # Remove useless comments and line breaks.
   repeat $! l[$>] s -,10 repeat $! l[$<]
-    if {i[0]==_'#'" && "i[1]!=_'@'} rm fi
+    if i[0]==_'#'" && "i[1]!=_'@' rm fi
   endl done i[^0] ({'\n'}) a y endl done
 
   # Retrieve G'MIC command name for each filter.
   repeat $! +l[$>] command_name$>=""
     +rows 0,5 head={t} rm.
-    if {['$head']=='"#@gui "'} s -,{':'}
-      if {$!>=1} l[1] s -,{','}
+    if ['$head']=='"#@gui "' s -,{':'}
+      if $!>=1 l[1] s -,{','}
         if $! autocrop[0] 32 command_name$>={0,t} fi
       endl fi
     fi
   rm endl done
 
   # Save reordered .gmic file.
-  if {$nb_filters>400}
+  if $nb_filters>400
     v + e[] "> Compress and save output .gmic files." v -
     +a y l.
     compress_gmic[0]
@@ -4826,7 +4826,7 @@ update_server :
 
     # Upload filter files on G'MIC server.
     o raw:${_path_rc}update$_version.gmic,uchar
-    if {"d = date(3); h = date(4); h>=7 && d>=1 && d<=5"} url=http://bit.ly/2CmhX65 # url=http://bit.ly/2uaBRMB
+    if "d = date(3); h = date(4); h>=7 && d>=1 && d<=5" url=http://bit.ly/2CmhX65 # url=http://bit.ly/2uaBRMB
     else url=http://bit.ly/2CmhX65 # url=http://bit.ly/2uaBRMB #
     fi
     replace_str "<i>David Tschumperl&#233;</i>","<i><a href=\""$url"\">David Tschumperl&#233;</a></i>"
@@ -4847,13 +4847,13 @@ update_server :
   echo_stdout "*** List of filters in the G\47MIC plug-in ("$nb_filters" filters, on "{date(0)}/{date(1)}/{date(2)}" "{date(4)}:{date(5)}") ***\n"
   echo_stdout "* List of filters, sorted by path:\n"
   repeat $! l[$>]
-    ({'{0,n}'}) if {i!=_'!'}
+    ({'{0,n}'}) if i!=_'!'
       r. {w-1},1,1,1,0,0,1
       replace_str. "&amp;","&"
       replace_str. "&#233;","e"
       replace_str. "/","~/~"
       replace. {'~'},32
-      if {narg(${command_name$>})} echo_stdout[] "  "{t}" (command '"${command_name$>}"')"
+      if narg(${command_name$>}) echo_stdout[] "  "{t}" (command '"${command_name$>}"')"
       else echo_stdout[] "  "{t}
       fi
     fi rm.
@@ -4869,7 +4869,7 @@ update_server :
 
   sort_list +,n
   repeat $! l[$>]
-    ({'{0,n}'}) if {i!=_'!'}
+    ({'{0,n}'}) if i!=_'!'
       replace_str. "&amp;","&"
       replace_str. "&#233;","e"
       replace. {'~'},32
@@ -4924,21 +4924,21 @@ _update_server_calibrate_name :
   replace_str " i "," I "
   replace_str " Ii "," II "
   replace_str " Iii "," III "
-  if {['{t}']=='Sep'} replace_str "Sep","sep" fi
-  if {['{t}']=='Note'} replace_str "Note","note" fi
-  if {['{t}']=='Url'} replace_str "Url","url" fi
+  if ['{t}']=='Sep' replace_str "Sep","sep" fi
+  if ['{t}']=='Note' replace_str "Note","note" fi
+  if ['{t}']=='Url' replace_str "Url","url" fi
   out={t}
-  if {['$in']!=['$out']} v + e[] $_gmic_g"       Warning: String '"$in"' substituted by '"$out"'"$_gmic_n v - fi
+  if ['$in']!=['$out'] v + e[] $_gmic_g"       Warning: String '"$in"' substituted by '"$out"'"$_gmic_n v - fi
 
 _update_server_move :
-  if {!narg($_nbm)} _nbm=0 fi
+  if !narg($_nbm) _nbm=0 fi
   _to_move${_nbm}="$1" _move_to${_nbm}="$2" _nbm+=1
 
 _update_server_upload : skip "${2=""}"
-  if {narg("$2")} out="$2" else basename "$1" out=${} fi
+  if narg("$2") out="$2" else basename "$1" out=${} fi
   l[] GMIC_LOGIN=${gmic_ftp\ 0} onfail GMIC_LOGIN="" endl
   l[] GMIC_PASSWD=${gmic_ftp\ 1} onfail GMIC_PASSWD="" endl
-  if {narg($GMIC_LOGIN)}
+  if narg($GMIC_LOGIN)
     x 0,"lftp ftp://"$GMIC_LOGIN":"$GMIC_PASSWD"@ftp.gmic.eu -e \"put -O /www/gmic/ \\\"$1\\\" -o \\\""$out"\\\"; quit\" >/dev/null"
   fi
 
@@ -4988,7 +4988,7 @@ _update_server_binaries :
   do
     repeat $N
       file=${file$>}
-      if {isfile(['$file'])}
+      if isfile(['$file'])
         strreplace $file,_$1_,_
         file_short=${}
         is_win=${strcontains[]" "$file,win}
@@ -4999,9 +4999,7 @@ _update_server_binaries :
         v + e[] "- Upload file '"$file"' to 'https://gmic.eu/files/prerelease_"$folder/$file_short"'." v -
         _update_server_upload $file,"files/prerelease_"$folder/$file_short
 
-        if {!$is_pre}
-#          v + e[] "- Upload file '"$file"' to 'https://gmic.eu/files/"$folder/$file"'." v -
-#          _update_server_upload $file,"files/"$folder/$file
+        if !$is_pre
           v + e[] "- Upload file '"$file"' to 'https://gmic.eu/files/"$folder/$file_short"'." v -
           _update_server_upload $file,"files/"$folder/$file_short
         fi
@@ -5009,17 +5007,17 @@ _update_server_binaries :
         file$>= n+=1
       fi
     done
-    if {$n<$N}
-      if {!($t%4)}
+    if $n<$N
+      if !($t%4)
         remaining= sep=
-        repeat $N if {narg(${file$>})} remaining.=${sep}${file$>} sep=", " fi done
+        repeat $N if narg(${file$>}) remaining.=${sep}${file$>} sep=", " fi done
         v + e[] "- Waiting for files: "$remaining"." v -
       fi
       wait 5000 t+=1
     fi
   while {$n<$N" && "$|<$t0+60*60*4}
   v +
-  if {$n<$N} e[] "- Partial uploads done (timeout reached)."
+  if $n<$N e[] "- Partial uploads done (timeout reached)."
   else e[] "- All uploads done !"
   fi
 
@@ -5184,7 +5182,7 @@ update_tutorial_html :
   rm
 
   # Start page conversion.
-  if {!narg($_N)} _N=0 fi
+  if !narg($_N) _N=0 fi
   0 repeat $_N
     o. ${_output_html$>} o. ${_output_shtml$>}
   done rm.
@@ -5198,11 +5196,11 @@ update_tutorial_html :
 
 # Add page to the list of pages to explore.
 __update_tutorial_html : skip ${3=""},${4=""},${5=""}
-  if {!narg($_N)} _N=0 fi
+  if !narg($_N) _N=0 fi
   _input$_N=$1 _height$_N=$2
 
   # Determine parent id for toc.
-  if {narg("$5")} _tocid$_N="$5"
+  if narg("$5") _tocid$_N="$5"
   else
     ({'"$1"'}) s -,{'/'} if $! _tocid$_N={0,t} rm else _tocid$_N=index fi
   fi
@@ -5211,15 +5209,15 @@ __update_tutorial_html : skip ${3=""},${4=""},${5=""}
   ({'"$1"'}) s -,{'/'}
   output_base=""
   if $! output_base={t} fi
-  if {$!>2" && "i[0]!=_'-'} output_base={-2,t}_{t} fi
+  if $!>2" && "i[0]!=_'-' output_base={-2,t}_{t} fi
   rm
-  if {narg($output_base)}
-    ({'$output_base'}) if {i==_'-'} =. {'_'} output_base={t} fi rm. # Replace first '-' by underscore if necessary.
+  if narg($output_base)
+    ({'$output_base'}) if i==_'-' =. {'_'} output_base={t} fi rm. # Replace first '-' by underscore if necessary.
   fi
-  if {narg("$3")} _output_shtml$_N="$3".shtml _output_html$_N="$3".html _img_prefix$_N="$3"
+  if narg("$3") _output_shtml$_N="$3".shtml _output_html$_N="$3".html _img_prefix$_N="$3"
   else _output_shtml$_N=$output_base.shtml _output_html$_N=$output_base.html _img_prefix$_N=$output_base
   fi
-  if {narg("$4")} _output_html$_N="$4".html fi
+  if narg("$4") _output_html$_N="$4".html fi
   _N+=1
 
 # Retrieve one html page and convert it.
@@ -5278,26 +5276,26 @@ _update_tutorial_html :
 
   # Search and replace links to 'internal' pages.
   s +,{'"<a "'}
-  repeat $! if {$>>0" && "[{{$>-1},^}]=='"<a "'} l[$>] s +,{'href=\"'} l.
+  repeat $! if $>>0" && "[{{$>-1},^}]=='"<a "' l[$>] s +,{'href=\"'} l.
     s +,{'\"'}
-    if {$!>0}
+    if $!>0
       link={0,t}
       ({'$link'}) z. 0,48 baselink={t} rm.
 
-      if {['$baselink']=='http://www.particularart.com/tools-and-toys/gmic/'}  # Check for a 'local' link.
+      if ['$baselink']=='http://www.particularart.com/tools-and-toys/gmic/'  # Check for a 'local' link.
 
         # Retrieve anchor if any.
-        l[] anchor="" ({'$link'}) s +,{"'#'"} if {$!>1} anchor=#{t} link={0,t} fi rm endl
+        l[] anchor="" ({'$link'}) s +,{"'#'"} if $!>1 anchor=#{t} link={0,t} fi rm endl
         ({'$link'}) autocrop. {'/'}
-        l. s -,{'/'} if {com='command-guide';$!>6" && "[{-2,^}]!=com" && "[{-3,^}]!=com} relink={-2,t}_{t}.shtml else relink={t}.shtml fi rm endl
-        ({'$relink'}) if {i==_'-'} =. {'_'} relink={t} fi rm. # Replace first '-' by underscore if necessary.
+        l. s -,{'/'} if com='command-guide';$!>6" && "[{-2,^}]!=com" && "[{-3,^}]!=com relink={-2,t}_{t}.shtml else relink={t}.shtml fi rm endl
+        ({'$relink'}) if i==_'-' =. {'_'} relink={t} fi rm. # Replace first '-' by underscore if necessary.
 
         if $relink # If the relinked page exists.
           relink=$relink$anchor
           v + e[] "    > Local link '"$link$anchor"' relinked to '"$relink"'." v -
           rm[0] i[0] ({'$relink'}) y[0]
         else # Else try to relink to reference page if link to a command.
-          ({'$relink'}) if {i==_'_'}
+          ({'$relink'}) if i==_'_'
             l. z 1,100% s -,{'.'} command=${basename\ {0,t}} k[0] endl
             relink="https://gmic.eu/reference.shtml#"$command
             v + e[] "    > Local link '"$link$anchor"' relinked to '"$relink"' "${_gmic_g}"(reference command)."${_gmic_n} v -
@@ -5311,14 +5309,14 @@ _update_tutorial_html :
         fi
        else l # External link.
          0 nm. $link ext={x} rm.
-         if {narg($ext)} ext=${strlowercase\ $ext} fi
-         if {s=['$ext'];s=='png'||s=='jpg'||s=='jpeg'}  # Check for an image link.
+         if narg($ext) ext=${strlowercase\ $ext} fi
+         if s=['$ext'];s=='png'||s=='jpg'||s=='jpeg'  # Check for an image link.
            basename $link relink=img/$5_${} 0 nm. $relink relink={f}{b}.jpg rm.
            if $relink v + e[] "    > External image link '"$link"' relinked to '"$relink"'." v -
            else
              l[] i $link k[0] is_opaque=0
-             split_opacity if {$!==1" || "ia>250} is_opaque=1 fi a c
-             if {$is_opaque} to_rgb else to_rgba i[0] 100%,100%,1,3 fc[0] 245,245,245 blend alpha fi
+             split_opacity if $!==1" || "ia>250 is_opaque=1 fi a c
+             if $is_opaque to_rgb else to_rgba i[0] 100%,100%,1,3 fc[0] 245,245,245 blend alpha fi
              o $relink,60 rm
              # x "git add "$relink
              v + e[] "    > Image link '"$link"' converted and relinked to '"$relink"'." v -
@@ -5339,7 +5337,7 @@ _update_tutorial_html :
 
   # Manage embedded images.
   s +,{'"<img"'}
-  repeat $! if {$>>0" && "[{{$>-1},^}]=='"<img "'}
+  repeat $! if $>>0" && "[{{$>-1},^}]=='"<img "'
     l[$>]
       s +,{'"src=\""'}
       l[2]
@@ -5348,7 +5346,7 @@ _update_tutorial_html :
         if $relink v + e[] "    > Image '"$link"' relinked to '"$relink"'." v -
         else
           l[] i $link k[0] is_opaque=0
-          split_opacity if {$!==1" || "ia>250} is_opaque=1 fi a c
+          split_opacity if $!==1" || "ia>250 is_opaque=1 fi a c
           if $is_opaque to_rgb frame 1,1,0 frame 10,10,245
           else to_rgba i[0] 100%,100%,1,3 fc[0] 245,245,245 blend alpha
           fi
@@ -5402,7 +5400,7 @@ _update_tutorial_html :
 # $2 = version number
 # $3 = is_prerelease = { 0 | 1 }
 _update_header_html : check "${2=0}>=0 && isbool(${3=0})"
-  if {!$2} return fi
+  if !$2 return fi
   v -
   filename=$1
   l[]

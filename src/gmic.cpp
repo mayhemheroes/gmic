@@ -2199,11 +2199,11 @@ bool gmic::check_cond(const char *const expr, CImgList<T>& images, bool &is_vali
   bool res = false;
   float _res = 0;
   char end;
-  CImg<char> _expr(expr,(unsigned int)std::strlen(expr) + 1);
-  if (cimg_sscanf(_expr,"%f%c",&_res,&end)==1) { res = (bool)_res; is_valid_cond = true; }
+  if (cimg_sscanf(expr,"%f%c",&_res,&end)==1) { res = (bool)_res; is_valid_cond = true; }
   else {
-    CImg<T> &img = images.size()?images.back():CImg<T>::empty();
+    CImg<char> _expr(expr,(unsigned int)std::strlen(expr) + 1);
     strreplace_fw(_expr);
+    CImg<T> &img = images.size()?images.back():CImg<T>::empty();
     try { if (img.eval(_expr,0,0,0,0,&images,&images)) res = true; is_valid_cond = true; }
     catch (CImgException&) { is_valid_cond = false; }
   }
@@ -10119,7 +10119,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           const char *varname = title;
           float number = 0;
           *title = 0;
-          is_valid_cond = false; // is_valid_argument?
+          is_valid_cond = false;
           if (cimg_sscanf(argument,"%f%c",&number,&end)==1) is_valid_cond = true;
           else {
             name.assign(argument,(unsigned int)std::strlen(argument) + 1);
