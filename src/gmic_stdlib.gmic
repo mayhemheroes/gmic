@@ -21653,7 +21653,7 @@ x_fire : skip "${1=G\47MIC}"
 #@cli x_fireworks
 #@cli : Launch the fireworks demo.
 x_fireworks :
-  if {!{*,u}} error[0--3] "Command '$0': No display available." return fi
+  if !{*,u} error[0--3] "Command '$0': No display available." return fi
   v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
   e[] "\n
 ------ "${g}"Fireworks"$n" --------------------------\n
@@ -21670,7 +21670,7 @@ x_fireworks :
   time=0
   do                                               # Start animation loop.
     time-=1
-    if {$!==2\ ||\ $time<0} # Insert new rocket.
+    if $!==2\ ||\ $time<0   # Insert new rocket.
       i[0] ({u(w)},\        # X-position
             {h},\           # Y-position
             {u(-3,3)},\     # X-velocity
@@ -21688,8 +21688,8 @@ x_fireworks :
       radius={if({$i,@4}>0,{$i,@5}/3,{$i,@5}*(1+2*({$i,@4}+2)/120))}
       ellipse. {$i,@0},{$i,@1},{$i,@5},{max(1,$radius)},{atan2({$i,@3},{$i,@2})*180/pi},0.6,{$i,@6-8}  # Draw rocket.
       ({$i,@2},{$i,@3},0,0.09,-1,0,0,0,0) +[$i,-1] # Compute new position of the rocket.
-      if {{$i,@0}<0\ ||\ {$i,@0}>=w\ ||\ {$i,@1}>=h\ ||\ $radius<0} to_be_removed=1 fi # Discard if rocket disappear.
-      if {{$i,@4}<0\ &&\ {$i,@4}>=-1} # In case of explosion -> Split current rocket into several colorful rockets.
+      if {$i,@0}<0\ ||\ {$i,@0}>=w\ ||\ {$i,@1}>=h\ ||\ $radius<0 to_be_removed=1 fi # Discard if rocket disappear.
+      if {$i,@4}<0\ &&\ {$i,@4}>=-1 # In case of explosion -> Split current rocket into several colorful rockets.
         color={min(255,80+u(200))},{min(255,80+u(200))},{min(255,80+u(200))}
         radius={u(10)}
         N={5+u(10)}
@@ -21701,16 +21701,16 @@ x_fireworks :
       fi
       if $to_be_removed rm[$i] else i+=1 fi  # If processed rocket has to be removed.
     done
-    fps=${-fps} if {$fps>0} to. $fps" fps",3,{h-20},14,1,0.2 fi
+    fps=${-fps} if $fps>0 to. $fps" fps",3,{h-20},14,1,0.2 fi
     w. wait 20  # Display rendered frame.
-    if {{*,CTRLLEFT}&&{*,D}} w[] {3*w},{3*h} elif {{*,CTRLLEFT}&&{*,C}} w[] {1.5*w},{1.5*h} fi
+    if {*,CTRLLEFT}&&{*,D} w[] {3*w},{3*h} elif {*,CTRLLEFT}&&{*,C} w[] {1.5*w},{1.5*h} fi
   while {{*}" && "!{*,ESC}" && "!{*,Q}}
   rm w 0 endl v +
 
 #@cli x_fisheye
 #@cli : Launch the fish-eye effect demo.
 x_fisheye :
-  if {!{*,u}} error[0--3] "Command '$0': No display available." return fi
+  if !{*,u} error[0--3] "Command '$0': No display available." return fi
   v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
   e[] "\n
 ------ "${g}"Fish-eye effect"$n" --------------------\n
@@ -21723,7 +21723,7 @@ x_fisheye :
 ----\n
 -------------------------------------------"
   v -
-  if {$!>0} a x n 0,255 r2dy 220 else
+  if $!>0 a x n 0,255 r2dy 220 else
   120,90,1,3 rand. 0,255 plasma. 0.3,3 n 0,255
   t "  G\47MIC\nFISH-EYE\n EFFECT",20,13,23,1,255 scale3x b 5 sharpen 1000
   f i+150-3*abs(y-h/2) c. 0,255 frame_fuzzy. 15,10,15,1.5,0 to_rgb.
@@ -21734,22 +21734,22 @@ x_fisheye :
   w.. {1.25*{-2,w}},{1.25*{-2,h}},0,"[G"{`39`}"MIC] Fish-Eye Effect"
   do
     wait 40
-    if {{*,b}==1} R={min(80,$R+8)} fi
-    if {{*,b}==2} R={max(3,$R-8)} fi
+    if {*,b}==1 R={min(80,$R+8)} fi
+    if {*,b}==2 R={max(3,$R-8)} fi
     +j3d.. .,{50+30*cos($|*2.5)}%,{50+30*sin($|*1.6)}%,{80+230*sin($|*2.6)},0.7,3,0,0 r3d.. 1,0.2,0.6,3
-    if {{*,x}>=0}
+    if {*,x}>=0
     fisheye. {{*,x}*100/{*,w}},{{*,y}*100/{*,h}},$R
     fi
     w.
-    if {{*,CTRLLEFT}&&{*,D}} w[] {3*w},{3*h} elif {{*,CTRLLEFT}&&{*,C}} w[] {1.5*w},{1.5*h} fi
+    if {*,CTRLLEFT}&&{*,D} w[] {3*w},{3*h} elif {*,CTRLLEFT}&&{*,C} w[] {1.5*w},{1.5*h} fi
     rm.
-    if {{*}==0" || "{*,ESC}" || "{*,Q}} rm[-2,-1] w 0 v + return fi
+    if {*}==0" || "{*,ESC}" || "{*,Q} rm[-2,-1] w 0 v + return fi
   while 1
 
 #@cli x_fourier
 #@cli : Launch the fourier filtering demo.
 x_fourier :
-  if {!{*,u}} error[0--3] "Command '$0': No display available." return fi
+  if !{*,u} error[0--3] "Command '$0': No display available." return fi
   v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
   e[] "\n
 ------ "${g}"Fourier-filtering"$n" ----------------------------------------\n
@@ -21762,7 +21762,7 @@ x_fourier :
 ----\n
 -----------------------------------------------------------------"
   v -
-  if {!$!} sp ? r2dx 400 fi
+  if !$! sp ? r2dx 400 fi
 
   repeat $! l[$>]
 
@@ -21771,8 +21771,8 @@ x_fourier :
     freqmin=0      # min freq. (in %)
     freqmax=100    # max freq. (in %)
 
-    if {w>3*{*,u}/5} r2dx. {3*{*,u}/10} fi  # Reduce image size if necessary.
-    if {h>3*{*,v}/5} r2dy. {3*{*,v}/5} fi
+    if w>3*{*,u}/5 r2dx. {3*{*,u}/10} fi  # Reduce image size if necessary.
+    if h>3*{*,v}/5 r2dy. {3*{*,v}/5} fi
 
     # Compute fourier transform.
     +fft. nm.. real nm. imag
@@ -21786,7 +21786,7 @@ x_fourier :
     w[0,-2] -1,-1,0,"[G"{`39`}"MIC] Fourier Filtering"
 
     l
-    if {!narg($first_time)}
+    if !narg($first_time)
       parallel 0,"alert[thumb] \"[G"{`39`}"MIC Fourier Filtering]\",\
             \"The G\47MIC Fourier filtering demo illustrates the effect\n\
             of bandpass frequency filtering on an image. Use your mouse\n\
@@ -21829,20 +21829,20 @@ x_fourier :
 
       wait
 
-      if {{*,b}" && "{*,x}>={*,w}/2}  # If mouse button pressed on the right pane.
+      if {*,b}" && "{*,x}>={*,w}/2  # If mouse button pressed on the right pane.
         r={200*sqrt(({*,x}-3*{*,w}/4)^2+({*,y}-{*,h}/2)^2)/\ # Compute selected radius (in %).
            sqrt(({*,w}/2)^2+{*,h}^2)}
-        if {{*,b}&1} freqmax=$r        # Update max freq. if left button.
-        else freqmin={max(0,$r-3)}      # Update min freq. if other button.
+        if {*,b}&1 freqmax=$r        # Update max freq. if left button.
+        else freqmin={max(0,$r-3)}   # Update min freq. if other button.
         fi
-        if {$freqmin>=$freqmax} freqmin=$freqmax fi   # Check that the min/max freq. are ordered.
-        need_update=1                                      # Tell that the image must be updated.
+        if $freqmin>=$freqmax freqmin=$freqmax fi   # Check that the min/max freq. are ordered.
+        need_update=1                               # Tell that the image must be updated.
       fi
 
       if {*,r} need_update=1 fi
-      if {({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,D}} w[] {{*,w}*1.5},{{*,h}*1.5} need_update=1 fi # Increase window size.
-      if {({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,C}} w[] {{*,w}/1.5},{{*,h}/1.5} need_update=1 fi # Decrease window size.
-      if {({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,R}} w[] {2*{0,w}},{0,h} need_update=1 fi         # Reset window size.
+      if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,D} w[] {{*,w}*1.5},{{*,h}*1.5} need_update=1 fi # Increase window size.
+      if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,C} w[] {{*,w}/1.5},{{*,h}/1.5} need_update=1 fi # Decrease window size.
+      if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,R} w[] {2*{0,w}},{0,h} need_update=1 fi         # Reset window size.
 
     while {{*}" && "!{*,ESC}" && "!{*,Q}}
     w 0
@@ -21856,20 +21856,20 @@ x_fourier :
 #@cli : Assigning '-1' to it forces the interactive window to close.
 #@cli : Default values: 'variable_name=xgc_variable'.
 x_grab_color : skip ${1=xgc_variable}
-  if {!{*,u}} error[0--3] "Command '$0': No display available." return fi
-  if {!$!} error[0--3] "Command '$0': Missing specified input image." fi
+  if !{*,u} error[0--3] "Command '$0': No display available." return fi
+  if !$! error[0--3] "Command '$0': Missing specified input image." fi
   v - l[0] nm={n} nm. img v +
   e[^-1] "Open "${arg\ {0,s},GRAY,GRAYA,RGB,RGBA}" color grabber widget for image$?, with variable name '$1'."
   v -
 
-  if {!{*}} w[] ${fitscreen[]\ {w},{h},1,128,50%},0,0,-1,-1,"Grab a color" fi
+  if !{*} w[] ${fitscreen[]\ {w},{h},1,128,50%},0,0,-1,-1,"Grab a color" fi
   _x_grab_color +dilate. 3 nm. icon_mask *.. 255 to_rgb.. nm.. icon_sprite
 
   xc=5 yc=5 o$1=$$1
 
   cursor[0] 0
   do
-    if {!narg($visu0)}
+    if !narg($visu0)
       +r[img] {*,w},{*,h},1,100%,2 drgba. w. nm. visu0
     fi
 
@@ -21877,14 +21877,14 @@ x_grab_color : skip ${1=xgc_variable}
     hc={narg($$1)?40:24}
     yc={visu0,nhc=h-$hc-8;!$mouse_over?$yc:$y<$hc||$yc+$hc>=h?nhc:$y>=nhc?5:$yc}
 
-    if {[0$ox,0$oy,0$ob,0$ohc,0$oyc,0$ocolor,0${o$1}]!=[$x,$y,$b,$hc,$yc,0$color,0$$1]}
+    if [0$ox,0$oy,0$ob,0$ohc,0$oyc,0$ocolor,0${o$1}]!=[$x,$y,$b,$hc,$yc,0$color,0$$1]
       i[visu] [visu0]
-      if {narg($color)}
+      if narg($color)
         24,$hc,1,[img] fc. $color
-        if {narg($$1)} rectangle. 0,24,100%,100%,1,$$1 line. 0,24,100%,24,1,0 fi
+        if narg($$1) rectangle. 0,24,100%,100%,1,$$1 line. 0,24,100%,24,1,0 fi
         drgba. frame. 1,1,0 frame. 1,1,255 j[visu] .,$xc,$yc rm.
         0
-        if {narg($$1)}
+        if narg($$1)
           t. "Position ("$X","$Y")\nColor    ("{``$color}")\nSelected ("{``$$1}")",1,0,15,1,255
         else
           t. "Position ("$X","$Y")\nColor ("{``$color}")",1,0,15,1,255
@@ -21898,16 +21898,16 @@ x_grab_color : skip ${1=xgc_variable}
         Y={img,round($y*(h-1)/({*,h}-1))}
         color={img,round(I($X,$Y))}
         j[visu] [icon_sprite],$x,{icon_sprite,$y-h+1},0,0,1,[icon_mask]
-        if {$b&1} $1=$color fi
+        if $b&1 $1=$color fi
       fi
       w[visu] rm[visu]
 
       ox=$x oy=$y ob=$b ohc=$hc oyc=$yc ocolor=$color o$1=$$1
     fi
 
-    if {arg(1,{'$1'})==_'_'" && "arg(2,{'$1'})==_'_'} wait 50 else wait fi
+    if arg(1,{'$1'})==_'_'" && "arg(2,{'$1'})==_'_' wait 50 else wait fi
     if {*,r} w[] -1 rm[visu0] yc=5 v - fi
-    if {['$$1']=='-1'} break fi # Close request
+    if ['$$1']=='-1' break fi # Close request
 
   while {{*}" && "!{*,ESC}" && "!{*,Q}}
   w 0 k[img] nm $nm endl
