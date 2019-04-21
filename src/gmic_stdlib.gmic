@@ -3967,8 +3967,8 @@ update_color_presets_html : check "isbool(${1=0})"
     presets=${-_fx_cluts_$category}
 
     v + e[] "\n  * Category ""#"{1+$>}": "$category"\n" v -
-    if $category else x "mkdir "$category fi
-    if $category/clut else x "mkdir "$category/clut fi
+    if !isdir(['$category']) x "mkdir "$category fi
+    if !isdir(['$category/clut']) x "mkdir "$category/clut fi
 
     repeat narg({/$presets})
       preset=${arg\ {1+$>},$presets}
@@ -3981,8 +3981,8 @@ update_color_presets_html : check "isbool(${1=0})"
 
       repeat $nb_samples l[{2*$>},{2*$>+1},-1]
         basename={0,b}
-        if $category/$basename/$preset.jpg else
-          if $category/$basename else x "mkdir \""$category/$basename"\"" fi
+        if !isfile(['$category/$basename/$preset.jpg'])
+          if !isdir(['$category/$basename']) x "mkdir \""$category/$basename"\"" fi
           +map_clut[^-1] .
           _title $preset
           to.. ${},4,{-2,h-28},20,2 frame.. 1,1,0
