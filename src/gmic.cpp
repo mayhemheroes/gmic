@@ -4425,7 +4425,6 @@ gmic& gmic::_run(const gmic_list<char>& commands_line,
   is_start = true;
   is_quit = false;
   is_return = false;
-  check_elif = false;
   if (p_progress) progress = p_progress; else { _progress = -1; progress = &_progress; }
   if (p_is_abort) is_abort = p_is_abort; else { _is_abort = false; is_abort = &_is_abort; }
   is_abort_thread = false;
@@ -4499,7 +4498,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     interpolation = 0;
   char end, sep = 0, sep0 = 0, sep1 = 0, sepx = 0, sepy = 0, sepz = 0, sepc = 0, axis = 0;
   double vmin = 0, vmax = 0, value, value0, value1, nvalue, nvalue0, nvalue1;
-  bool is_cond, is_valid_cond, is_endlocal = false;
+  bool is_cond, is_valid_cond, is_endlocal = false, check_elif = false;
   float opacity = 0;
   int err;
 
@@ -9727,7 +9726,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             gi.is_quit = false;
             gi.is_return = false;
             gi.is_double3d = is_double3d;
-            gi.check_elif = false;
             gi.verbosity = verbosity;
             gi.render3d = render3d;
             gi.renderd3d = renderd3d;
