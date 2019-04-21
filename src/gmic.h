@@ -306,6 +306,10 @@ struct gmic {
 				   const unsigned int *const variables_sizes,
                                    const gmic_image<unsigned int> *const command_selection,
                                    const bool is_image_expr);
+
+  template<typename T>
+  void wait_threads(void *const p_gmic_threads, const bool try_abort, const T foo);
+
   template<typename T>
   gmic& print(const gmic_list<T>& list, const gmic_image<unsigned int> *const callstack_selection,
 	      const char *format, ...);
