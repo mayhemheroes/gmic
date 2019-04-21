@@ -8078,6 +8078,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             _run(commands_line,position,g_list,g_list_c,images,images_names,variables_sizes,is_noarg,0,
                  command_selection);
           } catch (gmic_exception &e) {
+            check_elif = false;
             int nb_locals = 0;
             for (nb_locals = 1; nb_locals && position<commands_line.size(); ++position) {
               const char *it = commands_line[position].data();
