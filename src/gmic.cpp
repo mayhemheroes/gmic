@@ -2081,7 +2081,7 @@ static DWORD WINAPI gmic_parallel(void *arg)
       if (&gmic_threads(i,l)!=&st && gmic_threads(i,l).is_thread_running) {
         gmic_threads(i,l).gmic_instance.is_abort_thread = true;
 
-        std::fprintf(stderr,"\nDEBUG : STOP THREAD %lu!\n",gmic_threads(i,l).thread_id);
+//        std::fprintf(stderr,"\nDEBUG : STOP THREAD %lu!\n",gmic_threads(i,l).thread_id);
 
 #ifdef _PTHREAD_H
         pthread_join(gmic_threads(i,l).thread_id,0);
@@ -2091,7 +2091,7 @@ static DWORD WINAPI gmic_parallel(void *arg)
 #endif // #ifdef _PTHREAD_H
         gmic_threads(i,l).is_thread_running = false;
 
-        std::fprintf(stderr,"\nDEBUG : THREAD %lu STOPPED !\n",gmic_threads(i,l).thread_id);
+//        std::fprintf(stderr,"\nDEBUG : THREAD %lu STOPPED !\n",gmic_threads(i,l).thread_id);
       }
 #endif // #ifdef gmic_is_parallel
     st.exception._command_help.assign(e._command_help);
