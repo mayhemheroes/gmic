@@ -2073,23 +2073,6 @@ static DWORD WINAPI gmic_parallel(void *arg)
                           *st.parent_images,*st.parent_images_names,
                           st.variables_sizes,0,0,st.command_selection);
   } catch (gmic_exception &e) {
-
-    // Send all remaining running threads the 'abort' signal.
-/*#ifdef gmic_is_parallel
-    CImgList<_gmic_parallel<T> > &gmic_threads = *st.gmic_threads;
-    cimglist_for(gmic_threads,i) cimg_forY(gmic_threads[i],l)
-      if (&gmic_threads(i,l)!=&st && gmic_threads(i,l).is_thread_running) {
-        gmic_threads(i,l).gmic_instance.is_abort_thread = true;
-#ifdef _PTHREAD_H
-        pthread_join(gmic_threads(i,l).thread_id,0);
-#elif cimg_OS==2 // #ifdef _PTHREAD_H
-        WaitForSingleObject(gmic_threads(i,l).thread_id,INFINITE);
-        CloseHandle(gmic_threads(i,l).thread_id);
-#endif // #ifdef _PTHREAD_H
-        gmic_threads(i,l).is_thread_running = false;
-      }
-#endif // #ifdef gmic_is_parallel
-*/
     st.exception._command_help.assign(e._command_help);
     st.exception._message.assign(e._message);
   }
@@ -2214,25 +2197,20 @@ bool gmic::check_cond(const char *const expr, CImgList<T>& images, bool &is_vali
 template<typename T>
 void gmic::wait_threads(void *const p_gmic_threads, const bool try_abort, const T foo) {
   cimg::unused(foo);
-  CImgList<_gmic_parallel<T> > &gmic_threads = *(CImgList<_gmic_parallel<T> >*)p_gmic_threads;
+  CImg<_gmic_parallel<T> > &gmic_threads = *(CImg<_gmic_parallel<T> >*)p_gmic_threads;
 #ifdef gmic_is_parallel
-  cimglist_for(gmic_threads,i) cimg_forY(gmic_threads[i],l) {
-    if (try_abort && !gmic_threads(i,l).is_thread_running)
-      gmic_threads(i,l).gmic_instance.is_abort_thread = true;
+  cimg_forY(gmic_threads,l) {
+    if (try_abort && !gmic_threads[l].is_thread_running)
+      gmic_threads[l].gmic_instance.is_abort_thread = true;
 #ifdef _PTHREAD_H
-    pthread_join(gmic_threads(i,l).thread_id,0);
+    pthread_join(gmic_threads[l].thread_id,0);
 #elif cimg_OS==2 // #ifdef _PTHREAD_H
-    WaitForSingleObject(gmic_threads(i,l).thread_id,INFINITE);
-    CloseHandle(gmic_threads(i,l).thread_id);
+    WaitForSingleObject(gmic_threads[l].thread_id,INFINITE);
+    CloseHandle(gmic_threads[l].thread_id);
 #endif // #ifdef _PTHREAD_H
-    is_released&=gmic_threads(i,l).gmic_instance.is_released;
-    gmic_threads(i,l).is_thread_running = false;
+    is_released&=gmic_threads[l].gmic_instance.is_released;
+    gmic_threads[l].is_thread_running = false;
   }
-
-  // Check for possible exceptions thrown by threads.
-  cimglist_for(gmic_threads,i) cimg_forY(gmic_threads[i],l)
-    if (gmic_threads(i,l).exception._message)
-      throw gmic_threads(i,l).exception;
 #endif // #ifdef gmic_is_parallel
 }
 
@@ -9809,17 +9787,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
           // Wait threads if immediate waiting mode selected.
           if (wait_mode) {
-            cimg_forY(_gmic_threads,l) if (_gmic_threads[l].is_thread_running) {
-#ifdef gmic_is_parallel
-#ifdef _PTHREAD_H
-              pthread_join(_gmic_threads[l].thread_id,0);
-#elif cimg_OS==2 // #ifdef _PTHREAD_H
-              WaitForSingleObject(_gmic_threads[l].thread_id,INFINITE);
-              CloseHandle(_gmic_threads[l].thread_id);
-#endif // #ifdef _PTHREAD_H
-              _gmic_threads[l].is_thread_running = false;
-#endif // #ifdef gmic_is_parallel
-            }
+            wait_threads((void*)&_gmic_threads,false,(T)0);
 
             // Get 'released' state of the image list.
             cimg_forY(_gmic_threads,l) is_released&=_gmic_threads[l].gmic_instance.is_released;
@@ -14230,8 +14198,12 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       is_released = false;
     } // End main parsing loop of _run()
 
-    // Wait for remaining threads to finish.
-    wait_threads(&gmic_threads,true,(T)0);
+    // Wait for remaining threads to finish and possibly throw exceptions from threads.
+    cimglist_for(gmic_threads,k) {
+      wait_threads(&gmic_threads[k],true,(T)0);
+      cimg_forY(gmic_threads[k],l) if (gmic_threads(k,l).exception._message)
+        throw gmic_threads(k,l).exception;
+    }
 
     // Post-check global environment consistency.
     if (images_names.size()!=images.size())
@@ -14305,7 +14277,15 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         is_quit = true;
       }
     }
+  } catch (gmic_exception &e) {
+    // Wait for remaining threads to finish.
+    cimglist_for(gmic_threads,k) wait_threads(&gmic_threads[k],true,(T)0);
+    throw;
+
   } catch (CImgAbortException &) { // Special case of abort (abort from a CImg method)
+    // Wait for remaining threads to finish.
+    cimglist_for(gmic_threads,k) wait_threads(&gmic_threads[k],true,(T)0);
+
     // Do the same as for a cancellation point.
     const bool is_very_verbose = verbosity>0 || is_debug;
     if (is_very_verbose) print(images,0,"Abort G'MIC interpreter (caught abort signal).");
@@ -14314,7 +14294,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     repeatdones.assign(nb_repeatdones = 0);
     position = commands_line.size();
     is_released = is_quit = true;
+
   } catch (CImgException &e) {
+    // Wait for remaining threads to finish.
+    cimglist_for(gmic_threads,k) wait_threads(&gmic_threads[k],true,(T)0);
+
     const char *const e_ptr = e.what() + (!std::strncmp(e.what(),"[gmic_math_parser] ",19)?19:0);
     CImg<char> error_message(e_ptr,(unsigned int)std::strlen(e_ptr) + 1);
 
