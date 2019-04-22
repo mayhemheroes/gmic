@@ -1435,7 +1435,7 @@ _help_header_man :
   _gmic_b="\\fB"
   _gmic_r=""
   _gmic_g=""
-  _gmic_c="\\fB"
+  _gmic_c="\\fI"
   _gmic_m=""
   _prerelease=
   __help_header_ascii
@@ -1450,8 +1450,9 @@ _help_section_man :
   _section+=1
   {narg({'"$1"'})},1,1,1,{'-'}
   v +
-  e[] "\n \\fB"$_section". $1"
-  e[] "    "${_space{narg({'$_section'})}}{t}"\\fR\n"
+#  e[] "\n \\fB"$_section". $1"
+#  e[] "    "${_space{narg({'$_section'})}}{t}"\\fR\n"
+  e[] "\n \\fI"$_section". $1\\fR\n"
   v -
   rm.
 
@@ -1459,9 +1460,11 @@ _help_paragraph_man :
   l[] ({'"$*"'})
   replace_str "\\fR","__N"
   replace_str "\\fB","__B"
+  replace_str "\\fI","__I"
   replace_str "\\","\\\\\\\\"
   replace_str "__N","\\\\fR"
   replace_str "__B","\\\\fB"
+  replace_str "__I","\\\\fI"
   v +
   e[] {0,t}
   v -
@@ -3009,7 +3012,7 @@ _document_gmic_header_man : skip $1
 
 _document_gmic_subsection_man :
   v +
-  e[] "\n "$_gmic_b"** "{0,t}":"$_gmic_n
+  e[] "\n ** \\fI"{0,t}":\\fR"
   v -
 
 _document_gmic_declaration_man :
@@ -3037,9 +3040,9 @@ _document_gmic_declaration_man :
 _document_gmic_description_man :
   s="        " bs0="\n" bs1="\\\\\n         "
   y x if !narg($_is_tutorial) _document_gmic_split_ascii 96 fi
-  repeat $!-1 ({'${bs_is_example}$s"  "'}) a[$>,-1] x done a x
-  replace_str "Default values:","Default values:"
-  replace_str "Default value:","Default value:"
+  repeat $!-1 ({'${bs$_is_example}$s"  "'}) a[$>,-1] x done a x
+  replace_str "Default values:",${bs0}${s}"\\fIDefault values:\\fR"
+  replace_str "Default value:",${bs0}${s}"\\fIDefault value:\\fR"
   replace_str "\\","\\\\"
   v + repeat $! e[] $s{$>,t} v - done
 
