@@ -10114,28 +10114,28 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         if (!std::strcmp("repeat",item)) {
           gmic_substitute_args(false);
           const char *varname = title;
-          bool is_valid_cond = false;
           float number = 0;
           *title = 0;
-          if (cimg_sscanf(argument,"%f%c",&number,&end)==1) is_valid_cond = true;
-          else {
+          if (cimg_sscanf(argument,"%f%c",&number,&end)!=1) {
             name.assign(argument,(unsigned int)std::strlen(argument) + 1);
             for (char *ps = name.data() + name.width() - 2; ps>=name.data(); --ps) {
               if (*ps==',' && ps[1] && (ps[1]<'0' || ps[1]>'9')) { varname = ps + 1; *ps = 0; break; }
               else if ((*ps<'a' || *ps>'z') && (*ps<'A' || *ps>'Z') && (*ps<'0' || *ps>'9') && *ps!='_') break;
             }
             if (*name) {
-              if (cimg_sscanf(name,"%f%c",&number,&end)==1) is_valid_cond = true;
-              else {
+              if (cimg_sscanf(name,"%f%c",&number,&end)!=1) {
                 CImg<T> &img = images.size()?images.back():CImg<T>::empty();
                 strreplace_fw(name);
-                try { number = (float)img.eval(name,0,0,0,0,&images,&images); is_valid_cond = true; }
-                catch (CImgException&) { }
+                try { number = (float)img.eval(name,0,0,0,0,&images,&images); }
+                catch (CImgException &e) {
+                  const char *const e_ptr = std::strstr(e.what(),": ");
+                  error(images,0,command,
+                        "Command 'repeat': Invalid argument '%s': %s",
+                        cimg::strellipsize(name,64,false),e_ptr?e_ptr + 2:e.what());
+                }
               }
             }
           }
-
-          if (!is_valid_cond) arg_error("repeat");
           const unsigned int nb = number<=0?0U:
             cimg::type<float>::is_inf(number)?~0U:(unsigned int)cimg::round(number);
           if (nb) {
