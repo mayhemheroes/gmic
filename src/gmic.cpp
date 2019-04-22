@@ -14199,11 +14199,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     } // End main parsing loop of _run()
 
     // Wait for remaining threads to finish and possibly throw exceptions from threads.
-    cimglist_for(gmic_threads,k) {
-      wait_threads(&gmic_threads[k],true,(T)0);
-      cimg_forY(gmic_threads[k],l) if (gmic_threads(k,l).exception._message)
-        throw gmic_threads(k,l).exception;
-    }
+    cimglist_for(gmic_threads,k) wait_threads(&gmic_threads[k],true,(T)0);
+    cimglist_for(gmic_threads,k) cimg_forY(gmic_threads[k],l)
+      if (gmic_threads(k,l).exception._message) throw gmic_threads(k,l).exception;
 
     // Post-check global environment consistency.
     if (images_names.size()!=images.size())
