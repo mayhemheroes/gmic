@@ -3248,7 +3248,7 @@ bool gmic::check_cond(const char *const expr, CImgList<T>& images, const char *c
     catch (CImgException &e) {
       const char *const e_ptr = std::strstr(e.what(),": ");
       error(images,0,command,
-            "Command '%s': Invalid argument '%s' (%s)",
+            "Command '%s': Invalid argument '%s': %s",
             command,cimg::strellipsize(_expr,64,false),e_ptr?e_ptr + 2:e.what());
     }
   }
