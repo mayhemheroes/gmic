@@ -246,8 +246,6 @@ struct gmic {
                           gmic_image<int>& d, const int i, const int j);
   static int levenshtein(const char *const s, const char *const t);
   static bool check_filename(const char *const filename);
-  template<typename T>
-  static bool check_cond(const char *const expr, gmic_list<T>& images, bool &is_valid_cond);
   static unsigned int hashcode(const char *const str, const bool is_variable);
   static bool command_has_arguments(const char *const command);
   static const char* basename(const char *const str);
@@ -321,6 +319,9 @@ struct gmic {
   template<typename T>
   gmic& error(const gmic_list<T>& list, const gmic_image<unsigned int> *const callstack_selection,
 	      const char *const command, const char *format, ...);
+
+  template<typename T>
+  bool check_cond(const char *const expr, gmic_list<T>& images, const char *const command);
 
   template<typename T>
   gmic& debug(const gmic_list<T>& list, const char *format, ...);
