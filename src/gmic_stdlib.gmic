@@ -21483,7 +21483,7 @@ x_connect4 :
     # Initialize game.
     if !narg($visu)
       {board,[w,h]*$R},1,3,64
-      repeat {board,h},y repeat {board,w},x
+      repeat h#$board,y repeat w#$board,x
         val={board,i($x,$y)} if $val j. [token{$val-1}],{$x*$R},{$y*$R},0,0,1,[tokenm],255 fi
       done done
       +r[cache,cachem] {board,[w,h]*$R},1,100%,0,2 a[-2,-1] c blend[-2,-1] alpha
@@ -21540,14 +21540,14 @@ x_connect4 :
       elif ${autoplayer$turn}" || "{*,-SPACE}" || "{*,ENTER} # Computer play
         if {*,-ENTER} autoplayer$turn=1 fi
         max_score=-inf max_col=
-        repeat {board,w},move1
+        repeat w#$board,move1
           yM1={i("#"$ymax,$move1)}
           if $yM1>=0
             +=[board] {1+$turn},$move1,$yM1 nm. board1
             i[ymax1] {board,w},1,1,1,"y=-1; for (k = 0, k<h#"$board1", ++k, if(!i(#"$board1",x,k),y = k)); y"
             opp_max_score=-inf opp_max_board={board,^}
             opp_turn={($turn+1)%2}
-            repeat {board,w},move2
+            repeat w#$board,move2
               yM2={i("#"$ymax1,$move2)}
               if $yM2>=0
                 +=[board1] {1+$opp_turn},$move2,$yM2
@@ -21569,7 +21569,7 @@ x_connect4 :
     else # Manage token falling animation
       if !narg($column)
         $R,{board,h*$R},1,3,64
-        repeat {board,h} v={board,i($x,$>)} if $v j. [token{$v-1}],0,{$>*$R},0,0,1,[tokenm],255 fi done
+        repeat h#$board v={board,i($x,$>)} if $v j. [token{$v-1}],0,{$>*$R},0,0,1,[tokenm],255 fi done
         nm. column
       fi
 
@@ -22327,7 +22327,7 @@ x_jawbreaker : check "${1=12}>0 && $1<20 && ${2=13}>0 && $2<20 && ${3=5}>0 && $3
 
           # Manage board shifts (vertical and horizontal).
           flood[board] $x,$y,0,0,0,1,0
-          repeat {board,w}
+          repeat w#$board
             +columns[board] $> mirror. y
             h={board,h} l. s -,0 a y if $! r 1,$h,1,1,0 mirror y else i 1,$h fi endl
             j[board] .,$> rm.
@@ -23823,7 +23823,7 @@ x_quantize_rgb : check "isint(${1=16}) && $1>1"
 
       # Estimate new centroids positions.
       &[colors] 255 +index[colors] [centroids] *. 256 +[colors,-1]      # Estimate nearest centroids for all colors.
-      repeat {colors,s}                                                 # Recompute centroid positions.
+      repeat s#$colors                                                  # Recompute centroid positions.
         sh[colors] $> +histogram. {centroids,w*256},0,{centroids,w*256-1} rm..
         i.. 256,1,1,1,'x' r.. {w},1,1,1,0,2 *.. . r[-2,-1] {centroids,w},1,1,1,2 max. 0.01 /[-2,-1]
       done a[-{colors,s}--1] c
@@ -24139,7 +24139,7 @@ x_segment : check "${1=1024}==0 || $1>=128"
         if $marker_mode
           if $marker_mode==2 rad1=5 rad2=3 opa=1 else rad1=3 rad2=2 opa=0.8 fi
           col0=255,0,0 col1=0,255,0
-          repeat {points,w}
+          repeat w#$points
             +columns[points] $> x={(i[0]-$x0)*$ww/(1+$x1-$x0)} y={(i[1]-$y0)*$wh/(1+$y1-$y0)} l={i[3]-1} rm.
             circle. $x,$y,$rad1,1,0 circle. $x,$y,$rad2,$opa,${col$l}
           done
@@ -24375,7 +24375,7 @@ x_select_function1d : skip ${1=xsf_variable},${2=220},${3=$2},${4=$2}
       j3d.. .,0,100%,0,1,1,0,0 rm.
 
       # Draw control points.
-      repeat {points,h}
+      repeat h#$points
         x={points,i(0,$>)} y={100-{points,i(1,$>)}}
         circle. $x%,$y%,6,1,0xFFFFFFFF,0
       done
