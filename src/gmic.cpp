@@ -10129,7 +10129,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 try { number = (float)img.eval(name,0,0,0,0,&images,&images); }
                 catch (CImgException &e) {
                   const char *const e_ptr = std::strstr(e.what(),": ");
-                  error(images,0,command,
+                  error(images,0,"repeat",
                         "Command 'repeat': Invalid argument '%s': %s",
                         cimg::strellipsize(name,64,false),e_ptr?e_ptr + 2:e.what());
                 }
