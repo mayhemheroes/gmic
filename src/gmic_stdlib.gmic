@@ -20046,6 +20046,40 @@ _bin2dec :
         isnan(val)?break()
       ); sign($1)*val"}
 
+# Command to check what lines of G'MIC sources are larger than 120 columns.
+_check120 :
+  v - use_vt100
+  i raw:"$1",char s +,10
+  1,$!,1,2,">begin(line = 1); is_lines=i[#y,0]==10; line+=is_lines?h#y:0; [is_lines || h#y<=120?-1:y,line]"
+  lines={{@-1}-1} f. "I = I; if(I[0]<0,I[1]=-1); I"
+  discard. -1
+  if {w}
+    r. 1,{h/2},1,2,-1
+    repeat {h}
+      l,L={I[$>]}
+      v + e[] $_gmic_c"  - [Line "$_gmic_b$L$_gmic_n$_gmic_c", "$_gmic_b{$l,h}$_gmic_n$_gmic_c" chars]: "$_gmic_n{$l,t} v -
+    done
+  fi
+  rm
+  _total_lines+=$lines
+  v + e[] "  - Scanned : "${lines}" lines"
+
+check120 :
+  v -
+  _total_lines=0
+  files 0,*.h c={`narg($files)?',':0`} if {narg(${})} files=$files$c${} fi
+  files 0,*.cpp c={`narg($files)?',':0`} if {narg(${})} files=$files$c${} fi
+  files 0,*.c c={`narg($files)?',':0`} if {narg(${})} files=$files$c${} fi
+  files 0,*.gmic c={`narg($files)?',':0`} if {narg(${})} files=$files$c${} fi
+  repeat {narg($files)}
+    arg 1+$>,$files file=${}
+    v + e[] " * File '"$file"'."
+    _check120 $file
+    v -
+  done
+  v +
+  e[] " - Total scanned : "${_total_lines}" lines"
+
 # compress_gmic
 # Compress .gmic custom command files for compressing update files a little bit,
 # by removing empty lines, and useless comments.
