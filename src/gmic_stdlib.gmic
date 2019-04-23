@@ -17080,7 +17080,8 @@ frame_round : skip ${1=10},${2=10},${3=0},${4=0},${5=255},${6=$5},${7=$6},${8=25
     b. $3 i... 100%,100%,1,4 fc... $5,$6,$7,$8 blend_fade[0,1] . rm.
   nm $nm endl done v +
 
-#@cli frame_seamless : frame_size>=0,_patch_size>0,_blend_size>=0,_frame_direction={ 0=inner (preserve image size) | 1=outer }
+#@cli frame_seamless : frame_size>=0,_patch_size>0,_blend_size>=0,\
+# _frame_direction={ 0=inner (preserve image size) | 1=outer }
 #@cli : Insert frame in selected images, so that tiling the resulting image makes less visible seams.
 #@cli : Default values: 'patch_size=7', 'blend_size=5' and 'frame_direction=1'.
 #@cli : $ image.jpg +frame_seamless 30 array 2,2
@@ -17149,8 +17150,10 @@ _frame :
 
 #@cli img2ascii : _charset,_analysis_scale>0,_analysis_smoothness[%]>=0,_synthesis_scale>0,_output_ascii_filename
 #@cli : Render selected images as binary ascii art.
-#@cli : This command returns the corresponding the list of widths and heights (expressed as a number of characters) for each selected image.
-#@cli : Default values: 'charset=[ascii charset]', 'analysis_scale=16', 'analysis_smoothness=20%', 'synthesis_scale=16' and '_output_ascii_filename=[undefined]'.
+#@cli : This command returns the corresponding the list of widths and heights (expressed as a number of characters)
+#@cli : for each selected image.
+#@cli : Default values: 'charset=[ascii charset]', 'analysis_scale=16', 'analysis_smoothness=20%', \
+# 'synthesis_scale=16' and '_output_ascii_filename=[undefined]'.
 #@cli : $ image.jpg img2ascii ,
 img2ascii : check "${2=16}>0 && ${3=20%}>=0 && ${4=16}>0"
             skip "${1= !\042#$%&\047()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ\133\\\135^_\140abcdefghijk"\
@@ -17249,10 +17252,12 @@ imagegrid_hexagonal : check "isint(${1=32}) && $1>0 && ${2=0.1}>=0 && $2<=1"
 
   endl done v +
 
-#@cli imagegrid_triangular : pattern_width>=1,_pattern_height>=1,_pattern_type,0<=_outline_opacity<=1,_outline_color1,...
+#@cli imagegrid_triangular : pattern_width>=1,_pattern_height>=1,_pattern_type,0<=_outline_opacity<=1,\
+# _outline_color1,...
 #@cli : Create triangular grids from selected images.
 #@cli : 'pattern type' can be { 0=horizontal | 1=vertical | 2=crossed | 3=cube | 4=decreasing | 5=increasing }.
-#@cli : Default values: 'pattern_width=24', 'pattern_height=pattern_width', 'pattern_type=0', 'outline_opacity=0.1' and 'outline_color1=0'.
+#@cli : Default values: 'pattern_width=24', 'pattern_height=pattern_width', 'pattern_type=0', 'outline_opacity=0.1' \
+# and 'outline_color1=0'.
 #@cli : $ image.jpg imagegrid_triangular 6,10,3,0.5
 imagegrid_triangular : check "$1>=1 && ${2=$1}>=1 && isint(${3=0}) && $3>=0 && $3<=5" skip ${4=0},${5=0}
   v - s0="horizontal" s1="vertical" s2="crossed" s3="cube" v +
@@ -17431,7 +17436,8 @@ pack : skip ${1=0},${2=max(w,h)}
 
 #@cli puzzle : _width>0,_height>0,_M>=1,_N>=1,_curvature,_centering,_connectors_variability,_resolution>=1
 #@cli : Input puzzle binary mask with specified size and geometry.
-#@cli : Default values: 'width=height=512', 'M=N=5', 'curvature=0.5', 'centering=0.5', 'connectors_variability=0.5' and 'resolution=64'.
+#@cli : Default values: 'width=height=512', 'M=N=5', 'curvature=0.5', 'centering=0.5', 'connectors_variability=0.5' \
+# and 'resolution=64'.
 #@cli : $ puzzle ,
 puzzle : check "isint(${1=512}) && $1>0 && isint(${2=$1}) && $2>0 && isint(${3=5}) && $3>0 &&
                 isint(${4=$3}) && $4>0 && isint(${8=64}) && $8>0"
@@ -17503,7 +17509,8 @@ shift_tiles : check "${2=$1}>=0" skip ${3=20}
     $1,$2,1,2 noise. $3 r. ..,..,1,2 warp.. .,1,1,0 rm.
   endl done v +
 
-#@cli taquin : M>0,_N>0,_remove_tile={ 0=none | 1=first | 2=last | 3=random },_relief,_border_thickness[%],_border_outline[%],_outline_color
+#@cli taquin : M>0,_N>0,_remove_tile={ 0=none | 1=first | 2=last | 3=random },_relief,_border_thickness[%],\
+# _border_outline[%],_outline_color
 #@cli : Create MxN taquin puzzle from selected images.
 #@cli : Default value: 'N=M', 'relief=50', 'border_thickness=5', 'border_outline=0' and 'remove_tile=0'.
 #@cli : $ image.jpg +taquin 8
@@ -17585,10 +17592,16 @@ boxfitting : check "isint(${1=3}) && $1>=1 && isint(${2=0}) && $2>=0 && ${3=0.1}
     blend shapeaverage0
   endl done v +
 
-#@cli brushify : [brush],_brush_nb_sizes>=1,0<=_brush_min_size_factor<=1,_brush_nb_orientations>=1,_brush_light_type,0<=_brush_light_strength<=1,_brush_opacity,_painting_density[%]>=0,0<=_painting_contours_coherence<=1,0<=_painting_orientation_coherence<=1,_painting_coherence_alpha[%]>=0,_painting_coherence_sigma[%]>=0,_painting_primary_angle,0<=_painting_angle_dispersion<=1
+#@cli brushify : [brush],_brush_nb_sizes>=1,0<=_brush_min_size_factor<=1,_brush_nb_orientations>=1,\
+# _brush_light_type,0<=_brush_light_strength<=1,_brush_opacity,_painting_density[%]>=0,\
+# 0<=_painting_contours_coherence<=1,0<=_painting_orientation_coherence<=1,_painting_coherence_alpha[%]>=0,\
+# _painting_coherence_sigma[%]>=0,_painting_primary_angle,0<=_painting_angle_dispersion<=1
 #@cli : Apply specified brush to create painterly versions of specified images.
 #@cli : 'brush_light_type' can be { 0=none | 1=flat | 2=darken | 3=lighten | 4=full }.
-#@cli : Default values: 'brush_nb_sizes=3', 'brush_min_size_factor=0.66', 'brush_nb_orientations=12', 'brush_light_type=0', 'brush_light_strength=0.25', 'brush_opacity=0.8', 'painting_density=20%', 'painting_contours_coherence=0.9', 'painting_orientation_coherence=0.9', 'painting_coherence_alpha=1', 'painting_coherence_sigma=1', 'painting_primary_angle=0', 'painting_angle_dispersion=0.2'
+#@cli : Default values: 'brush_nb_sizes=3', 'brush_min_size_factor=0.66', 'brush_nb_orientations=12', \
+# 'brush_light_type=0', 'brush_light_strength=0.25', 'brush_opacity=0.8', 'painting_density=20%', \
+# 'painting_contours_coherence=0.9', 'painting_orientation_coherence=0.9', 'painting_coherence_alpha=1', \
+# 'painting_coherence_sigma=1', 'painting_primary_angle=0', 'painting_angle_dispersion=0.2'
 #@cli : $ image.jpg 40,40 gaussian[-1] 8,2 spread[-1] 4,0 +brushify[0] [1]
 brushify : check ${"is_image_arg $1"}" &&"\         # $1: [brush]
                     "isint(${2=4}) && $2>=1 &&"\      # $2: brush_nb_sizes
@@ -17669,7 +17682,8 @@ brushify : check ${"is_image_arg $1"}" &&"\         # $1: [brush]
 
 #@cli cartoon : _smoothness,_sharpening,_threshold>=0,_thickness>=0,_color>=0,quantization>0
 #@cli : Apply cartoon effect on selected images.
-#@cli : Default values: 'smoothness=3', 'sharpening=150', 'threshold=20', 'thickness=0.25', 'color=1.5' and 'quantization=8'.
+#@cli : Default values: 'smoothness=3', 'sharpening=150', 'threshold=20', 'thickness=0.25', 'color=1.5' \
+# and 'quantization=8'.
 #@cli : $ image.jpg cartoon 3,80,15
 cartoon : skip ${1=3},${2=150},${3=20},${4=0.25},${5=1.5},${6=8}
   e[^-1] "Apply cartoon effect on image$?, with smoothness $1, sharpening $2, threshold $3, thickness $4, color $5
@@ -17808,9 +17822,11 @@ ellipsionism : check "${1=10}>0 && ${2=3}>0 && ${5=8}>0 && ${6=0.6}>0" skip ${3=
     rm.. blend alpha
   endl done v +
 
-#@cli fire_edges : _edges>=0,0<=_attenuation<=1,_smoothness>=0,_threshold>=0,_nb_frames>0,_starting_frame>=0,frame_skip>=0
+#@cli fire_edges : _edges>=0,0<=_attenuation<=1,_smoothness>=0,_threshold>=0,_nb_frames>0,_starting_frame>=0,\
+# frame_skip>=0
 #@cli : Generate fire effect from edges of selected images.
-#@cli : Default values: 'edges=0.7', 'attenuation=0.25', 'smoothness=0.5', 'threshold=25', 'nb_frames=1', 'starting_frame=20' and 'frame_skip=0'.
+#@cli : Default values: 'edges=0.7', 'attenuation=0.25', 'smoothness=0.5', 'threshold=25', 'nb_frames=1', \
+# 'starting_frame=20' and 'frame_skip=0'.
 #@cli : $ image.jpg fire_edges ,
 fire_edges : check "${1=0.7}>=0 && ${2=0.25}>=0 && $2<=1 && ${3=0.5}>=0 && ${4=25}>=0 && ${5=1}>0 &&
                     ${6=20}>=0 && ${7=0}>=0"
@@ -17872,7 +17888,8 @@ glow : skip ${1=1%}
   e[^-1] "Add soft glow on image$?, with amplitude $1."
   v - repeat $! l[$>] split_opacity +b[0] $1 n. [0] blend_edges[0,-1] 1 a c endl done v +
 
-#@cli halftone : nb_levels>=2,_size_dark>=2,_size_bright>=2,_shape={ 0=square | 1=diamond | 2=circle | 3=inv-square | 4=inv-diamond | 5=inv-circle },_smoothness[%]>=0
+#@cli halftone : nb_levels>=2,_size_dark>=2,_size_bright>=2,_shape={ 0=square | 1=diamond | 2=circle | \
+# 3=inv-square | 4=inv-diamond | 5=inv-circle },_smoothness[%]>=0
 #@cli : Apply halftone dithering to selected images.
 #@cli : Default values: 'nb_levels=5', 'size_dark=8', 'size_bright=8', 'shape=5' and 'smoothnesss=0'.
 #@cli : $ image.jpg halftone ,
@@ -18000,9 +18017,11 @@ lightrays : check "${1=50}>=0 && $1<=100 && ${4=1}>=0 && ${5=1}>=0" skip ${2=50%
     r. .. *[-2,-1] polar2euclidean $2,$3 n 0,255
   endl done v +
 
-#@cli light_relief : _ambient_light,_specular_lightness,_specular_size,_light_smoothness,_darkness,_xl,_yl,_zl,_zscale,_opacity_is_heightmap={ 0 | 1 }
+#@cli light_relief : _ambient_light,_specular_lightness,_specular_size,_light_smoothness,_darkness,_xl,_yl,_zl,\
+# _zscale,_opacity_is_heightmap={ 0 | 1 }
 #@cli : Apply relief light to selected images.
-#@cli : Default values(s) : 'ambient_light=0.3', 'specular_lightness=0.5', 'specular_size=0.2', 'darkness=0', 'xl=0.2', 'yl=zl=0.5',
+#@cli : Default values(s) : 'ambient_light=0.3', 'specular_lightness=0.5', 'specular_size=0.2', 'darkness=0', \
+# 'xl=0.2', 'yl=zl=0.5',
 #@cli : 'zscale=1', 'opacity=1' and 'opacity_is_heightmap=0'.
 #@cli : $ image.jpg blur 2 light_relief 0.3,4,0.1,0
 light_relief : skip ${1=0.3},${2=0.5},${3=0.2},${4=0},${5=0.2},${6=0.5},${7=0.5},${8=1},${9=1},${10=0}
@@ -18018,10 +18037,12 @@ light_relief : skip ${1=0.3},${2=0.5},${3=0.2},${4=0},${5=0.2},${6=0.5},${7=0.5}
     split_opacity[0] +[0,-1] a c c 0,255
   endl done v +
 
-#@cli linify : 0<=_density<=100,_spreading>=0,_resolution[%]>0,_line_opacity>=0,_line_precision>0,_mode={ 0=subtractive | 1=additive }
+#@cli linify : 0<=_density<=100,_spreading>=0,_resolution[%]>0,_line_opacity>=0,_line_precision>0,\
+# _mode={ 0=subtractive | 1=additive }
 #@cli : Apply linify effect on selected images.
 #@cli : The algorithm is inspired from the one described on the webpage 'http://linify.me/about'.
-#@cli : Default values: 'density=50', 'spreading=2', 'resolution=40%', 'line_opacity=10', 'line_precision=24' and 'mode=0'.
+#@cli : Default values: 'density=50', 'spreading=2', 'resolution=40%', 'line_opacity=10', 'line_precision=24' \
+# and 'mode=0'.
 #@cli : $ image.jpg linify 40
 linify : check "${1=40}>=0 && $1<=100 && ${2=2}>=0 && ${3=40%}>0 && ${4=10}>=0 && isint(${5=24}) && $5>0 &&
                 isbool(${6=0})"
@@ -18216,9 +18237,11 @@ polygonize : check "${1=300}>=0 && ${2=2%}>=0 && ${3=0.1%}>=0 && ${4=10%}>0 && $
     blend shapeaverage
   endl done v +
 
-#@cli poster_edges : 0<=_edge_threshold<=100,0<=_edge_shade<=100,_edge_thickness>=0,_edge_antialiasing>=0,0<=_posterization_level<=15,_posterization_antialiasing>=0
+#@cli poster_edges : 0<=_edge_threshold<=100,0<=_edge_shade<=100,_edge_thickness>=0,_edge_antialiasing>=0,\
+# 0<=_posterization_level<=15,_posterization_antialiasing>=0
 #@cli : Apply poster edges effect on selected images.
-#@cli : Default values: 'edge_threshold=40', 'edge_shade=5', 'edge_thickness=0.5', 'edge_antialiasing=10', 'posterization_level=12' and 'posterization_antialiasing=0'.
+#@cli : Default values: 'edge_threshold=40', 'edge_shade=5', 'edge_thickness=0.5', 'edge_antialiasing=10', \
+# 'posterization_level=12' and 'posterization_antialiasing=0'.
 #@cli : $ image.jpg +poster_edges ,
 poster_edges : check "${1=40}>=0 && $1<=100 && ${2=5}>=0 && $2<=100 && ${3=0.5}>=0 && ${4=10}>=0 &&
                       ${5=12}>=0 && $5<=15 && ${6=0}>=0"
@@ -18246,9 +18269,11 @@ poster_hope : check "${1=3}>=0"
     map[0] [1] rm[1]
   endl done v +
 
-#@cli rodilius : 0<=_amplitude<=100,_0<=thickness<=100,_sharpness>=0,_nb_orientations>0,_offset,_color_mode={ 0=darker | 1=brighter }
+#@cli rodilius : 0<=_amplitude<=100,_0<=thickness<=100,_sharpness>=0,_nb_orientations>0,_offset,\
+# _color_mode={ 0=darker | 1=brighter }
 #@cli : Apply rodilius (fractalius-like) filter on selected images.
-#@cli : Default values: 'amplitude=10', 'thickness=10', 'sharpness=400', 'nb_orientations=7', 'offset=0' and 'color_mode=1'.
+#@cli : Default values: 'amplitude=10', 'thickness=10', 'sharpness=400', 'nb_orientations=7', 'offset=0' \
+# and 'color_mode=1'.
 #@cli : $ image.jpg rodilius 12,10,300,10 normalize_local 10,6
 #@cli : $ image.jpg normalize_local 10,16 rodilius 10,4,400,16 smooth 60,0,1,1,4 normalize_local 10,16
 rodilius : check "${1=10}>=0 && $1<=200 && ${2=10}>=0 && $2<=100 && ${3=400}>=0 && ${4=7}>0" skip ${5=0},${6=1}
@@ -18282,7 +18307,8 @@ stained_glass : check "${1=40%}>=0 && ${2=0.2}>=0" skip ${3=0}
 
 #@cli stars : _density[%]>=0,_depth>=0,_size>0,_nb_branches>=1,0<=_thickness<=1,_smoothness[%]>=0,_R,_G,_B,_opacity
 #@cli : Add random stars to selected images.
-#@cli : Default values: 'density=10%', 'depth=1', 'size=32', 'nb_branches=5', 'thickness=0.38', 'smoothness=0.5', 'R=G=B=200' and 'opacity=1'.
+#@cli : Default values: 'density=10%', 'depth=1', 'size=32', 'nb_branches=5', 'thickness=0.38', 'smoothness=0.5', \
+# 'R=G=B=200' and 'opacity=1'.
 #@cli : $ image.jpg stars ,
 stars : check "${1=10%}>=0 && ${2=1}>=0 && ${3=32}>0 && ${4=5}>=1 && ${5=0.38}>=0 && $5<=1 && ${6=0.5}>=0"
         skip ${7=200},${8=$7},${9=$8},${10=1}
@@ -18310,10 +18336,12 @@ stars : check "${1=10%}>=0 && ${2=1}>=0 && ${3=32}>0 && ${4=5}>=1 && ${5=0.38}>=
   endl done
   rm[-4--1] v +
 
-#@cli sketchbw : _nb_angles>0,_start_angle,_angle_range>=0,_length>=0,_threshold>=0,_opacity,_bgfactor>=0,_density>0,_sharpness>=0,_anisotropy>=0,_smoothness>=0,_coherence>=0,_is_boost={ 0 | 1 },_is_curved={ 0 | 1 }
+#@cli sketchbw : _nb_angles>0,_start_angle,_angle_range>=0,_length>=0,_threshold>=0,_opacity,_bgfactor>=0,\
+# _density>0,_sharpness>=0,_anisotropy>=0,_smoothness>=0,_coherence>=0,_is_boost={ 0 | 1 },_is_curved={ 0 | 1 }
 #@cli : Apply sketch effect to selected images.
-#@cli : Default values: 'nb_angles=2', 'start_angle=45', 'angle_range=180', 'length=30', 'threshold=3', 'opacity=0.03',
-#@cli : 'bgfactor=0', 'density=0.6', 'sharpness=0.1', 'anisotropy=0.6', 'smoothness=0.25', 'coherence=1', 'is_boost=0' and 'is_curved=1'.
+#@cli : Default values: 'nb_angles=2', 'start_angle=45', 'angle_range=180', 'length=30', 'threshold=3', \
+# 'opacity=0.03', 'bgfactor=0', 'density=0.6', 'sharpness=0.1', 'anisotropy=0.6', 'smoothness=0.25', 'coherence=1', \
+# 'is_boost=0' and 'is_curved=1'.
 #@cli : $ image.jpg +sketchbw 1 reverse blur[-1] 3 blend[-2,-1] overlay
 sketchbw :
   check "${1=2}>0 && ${3=180}>=0 && ${4=30}>=0 && ${5=3}>=0 && ${7=0}>=0 && ${8=0.6}>0 && ${9=0.1}>=0 &&
