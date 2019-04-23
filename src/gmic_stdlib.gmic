@@ -11487,7 +11487,8 @@ split_freq :
 #@cli : Default values: 'nb_iterations=60', 'dt=5' and 'nb_scales=0'.
 #@cli : $ image.jpg command "foo : gradient x" +solve_poisson foo +foo[0] +laplacian[1]
 solve_poisson : check "${2=60}>=0 && ${3=5}>0 && ${4=0}>=0"
-  e[^-1] "Solve Poisson equation for image$?, for laplacian command '$1', with $2 iterations, time step $3 and "${arg\ 1+($4==0),$4,auto}" scales."
+  e[^-1] "Solve Poisson equation for image$?, for laplacian command '$1', with $2 iterations, time step $3 and "\
+         ${arg\ 1+($4==0),$4,auto}" scales."
   v - repeat $! l[$>]
     [0]
     repeat if($4,$4,int(max(log2(max(w,h))-1,1)))
@@ -11607,8 +11608,10 @@ syntexturize : check "${1=100%}>0 && ${2=$1}>0"
 #@cli : If 'nbscales==0', the number of scales used is estimated from the image size.
 #@cli : Default values: 'width=height=100%', 'nb_scales=0', 'patch_size=7', 'blending_size=5' and 'precision=1'.
 #@cli : $ image.jpg crop 25%,25%,75%,75% syntexturize_matchpatch 512,512
-syntexturize_matchpatch : check "${1=100%}>0 && ${2=$1}>0 && isint(${3=0}) && $3>=0 && isint(${4=7}) && $4>0 && ${5=5}>=0 && ${6=1}>=0"
-  e[^-1] "Resynthetize $1x$2 version(s) of texture$? using a patch-matching algorithm with "${"v - if $3 u \"$3 \" else u auto- fi v +"}"scales, $4x$4 patches, blending size $5 and precision $6."
+syntexturize_matchpatch : check "${1=100%}>0 && ${2=$1}>0 && isint(${3=0}) && $3>=0 && isint(${4=7}) && $4>0 &&
+                                 ${5=5}>=0 && ${6=1}>=0"
+  e[^-1] "Resynthetize $1x$2 version(s) of texture$? using a patch-matching algorithm with "\
+         ${"v - if $3 u \"$3 \" else u auto- fi v +"}"scales, $4x$4 patches, blending size $5 and precision $6."
   v - repeat $! l[$>]
     nb_scales={round(if($3,$3,log2(min(w,h)/16)),1,1)}
     width={if(${"is_percent $1"},round(w*$1,1,1),$1)}
@@ -11795,7 +11798,8 @@ watermark_fourier : check ${2=33}>0
 #@cli : $ image.jpg luminance stencil[-1] 1 +area 0
 #@cli : $$
 area : check "$1>=0" skip ${2=0}
-  e[^-1] "Compute area of connected components in image$?, with tolerance $1 and "${arg\ 1+!$2,high,low}" connectivity."
+  e[^-1] "Compute area of connected components in image$?, with tolerance $1 and "\
+         ${arg\ 1+!$2,high,low}" connectivity."
   v - repeat $! l[$>] s c
     repeat $! label[$>] $1,$2 nb={$>,1+iM} +histogram[$>] $nb,0,{$nb-1} map[$>] . rm. done
   a c endl done v +
@@ -11806,7 +11810,8 @@ area : check "$1>=0" skip ${2=0}
 #@cli : Default values: 'is_high_connectivity=0'.
 #@cli : $ image.jpg luminance stencil[-1] 1 +area_fg 0
 area_fg : check "$1>=0" skip ${2=0}
-  e[^-1] "Compute area of foreground connected components in image$?, with tolerance $1 and "${arg\ 1+!$2,high,low}" connectivity."
+  e[^-1] "Compute area of foreground connected components in image$?, with tolerance $1 and "\
+         ${arg\ 1+!$2,high,low}" connectivity."
   v - repeat $! l[$>] s c
     repeat $! label_fg[$>] $1,$2 nb={$>,1+iM} +histogram[$>] $nb,0,{$nb-1} =. 0 map[$>] . rm. done
   a c endl done v +
@@ -11847,7 +11852,8 @@ _at_quadrangle2 : check "${9=1}>=0 && $9<=2 && ${10=0}>=0 && $10<=3"
     x3={round(${"is_percent $7"}?(w-1)*$7:$7)}
     y3={round(${"is_percent $8"}?(h-1)*$8:$8)}
     ($x0,$x1;$x3,$x2^$y0,$y1;$y3,$y2)
-    r. {P0=[$x0,$y0];P1=[$x1,$y1];P2=[$x2,$y2];P3=[$x3,$y3];1+round([max(norm(P1-P0),norm(P3-P2)),max(norm(P3-P0),norm(P2-P1))])},1,2,3
+    r. {P0=[$x0,$y0];P1=[$x1,$y1];P2=[$x2,$y2];P3=[$x3,$y3];\
+        1+round([max(norm(P1-P0),norm(P3-P2)),max(norm(P3-P0),norm(P2-P1))])},1,2,3
     warp.. .,0,$9,$10 rm.
   endl done
 
@@ -11866,7 +11872,8 @@ _at_quadrangle3 : check "${13=1}>=0 && $13<=2 && ${14=0}>=0 && $14<=3"
     y3={round(${"is_percent $11"}?(h-1)*$11:$11)}
     z3={round(${"is_percent $12"}?(h-1)*$12:$12)}
     ($x0,$x1;$x3,$x2^$y0,$y1;$y3,$y2^$z0,$z1;$z3,$z2)
-    r. {P0=[$x0,$y0,$z0];P1=[$x1,$y1,$z1];P2=[$x2,$y2,$z2];P3=[$x3,$y3,$z2];1+round([max(norm(P1-P0),norm(P3-P2)),max(norm(P3-P0),norm(P2-P1))])},1,3,3
+    r. {P0=[$x0,$y0,$z0];P1=[$x1,$y1,$z1];P2=[$x2,$y2,$z2];P3=[$x3,$y3,$z2];\
+        1+round([max(norm(P1-P0),norm(P3-P2)),max(norm(P3-P0),norm(P2-P1))])},1,3,3
     warp.. .,0,$13,$14 rm.
   endl done
 
@@ -12103,7 +12110,8 @@ isophotes : skip ${1=64}
 #@cli : Similar to 'label' except that 0-valued pixels are not labeled.
 #@cli : Default value: 'is_high_connectivity=0'.
 label_fg : check "$1>=0" skip ${2=0}
-  e[^-1] "Label foreground connected components on image [1], with tolerance $1 and "${arg\ 1+!$2,high,low}" connectivity."
+  e[^-1] "Label foreground connected components on image [1], with tolerance $1 and "\
+         ${arg\ 1+!$2,high,low}" connectivity."
   v - repeat $! l[$>]
     if d>1 +z -1,-1,-1,{w-1},{h-1},{d-1} label. $1,$2 z. 1,1,1,{w-1},{h-1},{d-1}
     else +z -1,-1,{w-1},{h-1} label. $1,$2 z. 1,1,{w-1},{h-1}
@@ -12133,7 +12141,8 @@ min_patch : check "isint(${1=16}) && $1>=1"
 #@cli : Default value: 'is_high_connectivity=0'.
 #@cli : $ image.jpg +gradient_norm fill[-1] 1/(1+i) minimal_path[-1] 0,0,0,100%,100%,0 pointcloud[-1] 0 *[-1] 280 to_rgb[-1] resize[-1] [-2],0 or
 minimal_path : check "$1>=0 && $2>=0 && $3>=0" skip ${7=0}
-  e[^-1] "Compute minimal path between points ($1,$2,$3) and ($4,$5,$6) for potential map$?, with "${arg\ 1+$7,low,high}" connectivity."
+  e[^-1] "Compute minimal path between points ($1,$2,$3) and ($4,$5,$6) for potential map$?, with "\
+         ${arg\ 1+$7,low,high}" connectivity."
   v - repeat $! l[$>] nm={0,n}
     - {im} + {iM/100}
     100%,100% = 1,${4-6} distance. 1,[0],{if($7,4,3)} k.
@@ -12211,13 +12220,15 @@ plot2value :
 #@cli : $ 3000,2 rand 0,400 +pointcloud 0 dilate[-1] 3
 #@cli : $ 3000,2 rand 0,400 {w} {w},3 rand[-1] 0,255 append y +pointcloud 0 dilate[-1] 3
 pointcloud : check "${1=0}<=3 && ${2=0}>=0 && ${3=0}>=0 && ${4=0}>=0"
-  e[^-1] "Convert image$? to point clouds, in "${arg\ 2+($1>=0)*$1-($1<0),{-$1}-opacity,binary,cumulative,labeling}" mode,"\
-          "with dimensions $2x$3x$4."
+  e[^-1] "Convert image$? to point clouds, in "${arg\ 2+($1>=0)*$1-($1<0),{-$1}-opacity,binary,cumulative,labeling}\
+         " mode, with dimensions $2x$3x$4."
   v - repeat $! l[$>] nm={0,n}
     if $1!=3 # Render point cloud image from set of point coordinates
 
       # Force input data to be of size Nx1x1xM.
-      if "d>1 || (w>1 && h>1 && s>1)" v + error "Command '$0': Invalid input image "{w}x{h}x{d}x{s}". Should be NxMx1x1, Nx1x1xM or 1xNx1xM." fi
+      if "d>1 || (w>1 && h>1 && s>1)"
+         v + error "Command '$0': Invalid input image "{w}x{h}x{d}x{s}". Should be NxMx1x1, Nx1x1xM or 1xNx1xM."
+      fi
       if "w>1 && h>1 && s==1" r 100%,1,1,{h},-1  # NxMx1x1 -> Nx1x1xM
       elif "w==1 && h>1 && s>1" r {h},1,1,{s},-1 # 1xNx1xM -> Nx1x1xM
       fi
@@ -12289,7 +12300,9 @@ segment_watershed : check "${1=2}>=0"
 #@cli : Estimate bumpmap from binary shape in selected images.
 #@cli : Default value: 'resolution=256', 'weight_avg_max=0.75', 'dilation=0' and 'smoothness=100'.
 shape2bump : check "isint(${1=256}) && $1>=0 && ${2=0.75}>=0 && $2<=1 && isnumber(${3=0}) && ${4=100}>=0"
-  e[^-1] "Estimate bumpmap from binary shape in image$?, using "${"v - if $1 u \"resolution $1\" else u \"full resolution\" fi v +"}", avg/max weight $2, dilation $3 and smoothness $4."
+  e[^-1] "Estimate bumpmap from binary shape in image$?, using "\
+         ${"v - if $1 u \"resolution $1\" else u \"full resolution\" fi v +"}", avg/max weight $2, dilation $3
+          and smoothness $4."
   v - repeat $!
     +l[$>]
       norm > 0
@@ -12297,7 +12310,8 @@ shape2bump : check "isint(${1=256}) && $1>=0 && ${2=0.75}>=0 && $2<=1 && isnumbe
 
       # Generate skeleton.
       distance 0 + $3
-      +f. "const boundary = 1; (i>j(-1)&&i>j(1)) || (i>j(0,-1)&&i>j(0,1)) || (i>j(-1,-1)&&i>j(1,1)) || (i>j(-1,1)&&i>j(1,-1))"
+      +f. "const boundary = 1;
+           (i>j(-1)&&i>j(1)) || (i>j(0,-1)&&i>j(0,1)) || (i>j(-1,-1)&&i>j(1,1)) || (i>j(-1,1)&&i>j(1,-1))"
 
       # Downsize for faster computation.
       is_resized=0
@@ -12348,17 +12362,24 @@ skeleton : check "!isnumber(${1=1}) || ($1>=0 && $1<=1)"
 
     # [3] = Pixels on median axis.
     +distance[0] 0
-    f. "const boundary = 1; (i>j(-1)&&i>j(1)) || (i>j(0,-1)&&i>j(0,1)) || (i>j(-1,-1)&&i>j(1,1)) || (i>j(-1,1)&&i>j(1,-1))"
+    f. "const boundary = 1;
+        (i>j(-1)&&i>j(1)) || (i>j(0,-1)&&i>j(0,1)) || (i>j(-1,-1)&&i>j(1,1)) || (i>j(-1,1)&&i>j(1,-1))"
 
     # Extract boundary pixels.
-    f[0] ">"${-math_lib}"const boundary = "$bc"; i && (!j(-1) || !j(1) || !j(0,-1) || !j(0,1))?dar_insert(#1,[x,y]); i;"
+    f[0] ">"${-math_lib}"const boundary = "$bc";
+          i && (!j(-1) || !j(1) || !j(0,-1) || !j(0,1))?dar_insert(#1,[x,y]); i;"
 
     # Run thinning algorithm.
     eval ${-math_lib}"
       const boundary = "$bc";
 
       # Lookup tables for detecting the simple points.
-      is_removable = [ 0,0,1,1,0,0,1,1,1,1,0,1,1,1,0,1,1,1,0,0,1,1,1,1,0,0,0,0,0,0,0,1,0,0,1,1,0,0,1,1,1,1,0,1,1,1,0,1,1,1,0,0,1,1,1,1,0,0,0,0,0,0,0,1,1,1,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,1,1,0,0,1,1,0,1,1,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,1,0,0,1,1,1,1,0,1,1,1,0,1,1,1,0,0,1,1,1,1,0,0,0,0,0,0,0,1,0,0,1,1,0,0,1,1,1,1,0,1,1,1,0,1,1,1,0,0,1,1,1,1,0,0,0,0,0,0,0,1,1,1,0,0,1,1,0,0,0,0,0,0,0,0,0,0,1,1,0,0,1,1,1,1,0,0,0,0,0,0,0,1,1,1,0,0,1,1,0,0,1,1,0,1,1,1,0,1,1,1,0,0,1,1,1,1,1,1,0,1,1,1,1,0 ];
+      is_removable = [ 0,0,1,1,0,0,1,1,1,1,0,1,1,1,0,1,1,1,0,0,1,1,1,1,0,0,0,0,0,0,0,1,0,0,1,1,0,0,1,1,1,1,0,1,1,1,0,
+                       1,1,1,0,0,1,1,1,1,0,0,0,0,0,0,0,1,1,1,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+                       0,0,1,1,0,0,1,1,0,0,1,1,0,1,1,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,1,1,0,0,1,1,1,1,0,1,1,
+                       1,0,1,1,1,0,0,1,1,1,1,0,0,0,0,0,0,0,1,0,0,1,1,0,0,1,1,1,1,0,1,1,1,0,1,1,1,0,0,1,1,1,1,0,0,0,0,
+                       0,0,0,1,1,1,0,0,1,1,0,0,0,0,0,0,0,0,0,0,1,1,0,0,1,1,1,1,0,0,0,0,0,0,0,1,1,1,0,0,1,1,0,0,1,1,0,
+                       1,1,1,0,1,1,1,0,0,1,1,1,1,1,1,0,1,1,1,1,0 ];
       dotm = [ 128,64,32,16,0,8,4,2,1 ];
       is_removed = 1;
 
@@ -12515,7 +12536,8 @@ ssd_patch : check ${is_image_arg\ $1} skip ${2=0},${3=0}
 thinning : check "!isnumber(${1=1}) || ($1>=0 && $1<=1)"
   v -
   if isnumber($1) bc=$1 else bc=1 noarg fi
-  v + e[^-1] "Apply morphological thinning to binary image$? with "${"arg 1+"$bc",dirichlet,neumann"}" boundary conditions." v -
+  v + e[^-1] "Apply morphological thinning to binary image$? with "\
+             ${"arg 1+"$bc",dirichlet,neumann"}" boundary conditions." v -
   repeat $! l[$>] s c repeat $! l[$>]
                     # [0] = 2D binary shape (current iteration)
     1,16,1,2        # [1] = List of boundary pixels (current iteration)
@@ -12523,7 +12545,8 @@ thinning : check "!isnumber(${1=1}) || ($1>=0 && $1<=1)"
     1,16,1,2        # [3] = List of boundary pixels (for next iteration)
 
     # Extract boundary pixels.
-    f[0] ">"${-math_lib}"const boundary = "$bc"; i && (!j(-1) || !j(1) || !j(0,-1) || !j(0,1))?dar_insert(#1,[x,y]); i;"
+    f[0] ">"${-math_lib}"const boundary = "$bc";
+          i && (!j(-1) || !j(1) || !j(0,-1) || !j(0,1))?dar_insert(#1,[x,y]); i;"
 
     # Run thinning algorithm.
     eval ${-math_lib}"
@@ -12697,7 +12720,8 @@ variance_patch : check "isint(${1=16}) && $1>=1"
 #@cli : Default values: 'thickness=1%', 'head_length=10%', 'head_thickness=3%', 'opacity=1', 'pattern=(undefined)' and 'color1=0'.
 #@cli : $ 400,400,1,3 repeat 100 arrow 50%,50%,{u(100)}%,{u(100)}%,3,20,10,0.3,${-RGB} done
 arrow : check "${5=1%}>=0 && ${6=10%}>=0 && ${7=3%}" skip ${8=1}
-  e[^-1] "Draw arrow in image$?, from ($1,$2) to ($3,$4), with thickness $5, head length $6, head_thickness $7 and opacity $8."
+  e[^-1] "Draw arrow in image$?, from ($1,$2) to ($3,$4), with thickness $5, head length $6,
+          head_thickness $7 and opacity $8."
   v - repeat $! l[$>]
     polygon. 7,{"
       x0 = "${"is_percent $1"}"?(w-1)*$1:$1;
@@ -12725,10 +12749,12 @@ arrow : check "${5=1%}>=0 && ${6=10%}>=0 && ${7=3%}" skip ${8=1}
 #@cli : $ 400,400,1,3,255 axes -1,1,1,-1
 axes : check "isint(${5=14}) && $5>=0 && ${6=1}>=0" skip ${7=0},${8=0}
   if ${"is_pattern \"$7\""}
-    e[0--3] "Draw xy-axes on image$?, with x-range ($1,$2), y-range ($3,$4), font height $5, opacity $6, pattern $7 and color (${8--1})."
+    e[0--3] "Draw xy-axes on image$?, with x-range ($1,$2), y-range ($3,$4), font height $5, opacity $6,
+             pattern $7 and color (${8--1})."
     v - pattern=$7 color=${8--1}
   else
-    e[0--3] "Draw xy-axes on image$?, with x-range ($1,$2), y-range ($3,$4), font height $5, opacity $6 and color (${7--1})."
+    e[0--3] "Draw xy-axes on image$?, with x-range ($1,$2), y-range ($3,$4), font height $5, opacity $6
+             and color (${7--1})."
     v - pattern=0xFFFFFFFF color=${7--1}
   fi
   if !$5" || "!$6 v + return fi
@@ -12842,7 +12868,8 @@ chromeball64x64 :
 #@cli : Default values: 'size2=size1', 'offset1=offset2=0', 'angle=0', 'opacity=1', 'color1=0' and 'color2=255'.
 #@cli : $ image.jpg chessboard 32,32,0,0,25,0.3,255,128,0,0,128,255
 chessboard : check "$1>0 && ${2=$1}>0" skip ${3=0},${4=0},${5=0},${6=1},${7=0},${8=255}
-  e[^-1] "Draw chessboard on image$?, with sizes ($1,$2), offsets ($3,$4), angle $5 deg., opacity $6 and colors (${7--1})."
+  e[^-1] "Draw chessboard on image$?, with sizes ($1,$2), offsets ($3,$4), angle $5 deg., opacity $6 and
+          colors (${7--1})."
   v - i[0] (${7--1}) r[0] {{0,w}/2},1,1,2,-1 permute[0] cyzx
   repeat $!-1
     w={w} h={h} theta={$5*pi/180}
@@ -12905,7 +12932,8 @@ cie1931 :
 #@cli : $ image.jpg repeat 300 circle {u(100)}%,{u(100)}%,{u(30)},0.3,${-RGB} done circle 50%,50%,100,0.7,255
 circle : skip ${4=1},${5=0},${6=0}
   if ${"is_pattern \"$5\""}
-    e[0--3] "Draw outlined circle at ($1,$2) with radius $3 on image$?, with opacity $4, pattern $5 and color (${6--1})."
+    e[0--3] "Draw outlined circle at ($1,$2) with radius $3 on image$?, with opacity $4, pattern $5 and
+             color (${6--1})."
   else
     e[0--3] "Draw filled circle at ($1,$2) with radius $3 on image$?, with opacity $4 and color (${5--1})."
   fi
@@ -12915,9 +12943,11 @@ circle : skip ${4=1},${5=0},${6=0}
 #@cli : Automatically close open shapes in binary images (defining white strokes on black background).
 #@cli : Default values: 'endpoint_rate=75', 'endpoint_connectivity=2', 'spline_distmax=80', 'segment_distmax=20', 'spline_anglemax=90', 'spline_roundness=1','area_min=100', 'allow_self_intersection=1'.
 close_binary :
-  check "${1=75}>=0 && $1<=100 && ${2=2}>=0 && ${3=80}>=0 && ${4=20}>=0 && ${5=90}>=0 && $5<=180 && ${6=1}>=0 && ${7=100}>=0 && isnumber(${8=1})"
-  e[^-1] "Close open shapes in binary image$?, with endpoint rate $1, endpoint connectivity $2, spline max distance $3, segment max distance $4, spline max angle $5, "\
-          "spline roundness $6, area min $7 and self intersections "${"arg 1+!$8,allowed,\"not allowed\""}"."
+  check "${1=75}>=0 && $1<=100 && ${2=2}>=0 && ${3=80}>=0 && ${4=20}>=0 && ${5=90}>=0 && $5<=180 && ${6=1}>=0 &&
+         ${7=100}>=0 && isnumber(${8=1})"
+  e[^-1] "Close open shapes in binary image$?, with endpoint rate $1, endpoint connectivity $2, spline max distance $3,
+          segment max distance $4, spline max angle $5, spline roundness $6, area min $7 and self intersections "\
+          ${"arg 1+!$8,allowed,\"not allowed\""}"."
 
   # Set algorithm parameters.
   v -
@@ -13066,7 +13096,8 @@ close_binary :
     compose_channels[e_smooth_curvatures] max nm[e_smooth_curvatures] smooth_curvatures
     +compose_channels[e_curvatures] max nm. curvatures
 
-    f. "i(#"$smooth_curvatures")>=("$endpoint_threshold"%)/(max(1,i(#"$stroke_radii"))) || i>=max(0.25,"$endpoint_threshold"%)"
+    f. "i(#"$smooth_curvatures")>=("$endpoint_threshold"%)/(max(1,i(#"$stroke_radii"))) ||
+        i>=max(0.25,"$endpoint_threshold"%)"
     label_fg. 0,1 nm. keypoints
     if iM>0
       {iM},1,1,3,-1 nm. keycoords
@@ -13151,7 +13182,8 @@ close_binary :
           Ic = I;
           indS = Ic[1];
           indT = Ic[2];
-          if (i(#"$keycoords",indS,0,0,2)<"$endpoint_connectivity" && i(#"$keycoords",indT,0,0,2)<"$endpoint_connectivity",
+          if (i(#"$keycoords",indS,0,0,2)<"$endpoint_connectivity" &&
+              i(#"$keycoords",indT,0,0,2)<"$endpoint_connectivity",
             S = I(#"$keycoords",indS)[0,2];
             T = I(#"$keycoords",indT)[0,2];
             angS = i(#"$keycoords",indS,0,0,3)*pi/180;
@@ -13184,23 +13216,47 @@ close_binary :
                 for_spline(
                   if (i(#"$new_strokes",P[0] + 1,P[1])==0,
                     edgels = area = 0; Q0 = Q = [ P[0] + 1,P[1],2 ];
-                    do (i(#"$new_strokes",Q[0],Q[1]) = 4; area+=(Q[2]&1?0:1-Q[2])*(Q[0]+!Q[2]); Q = next2(#"$new_strokes",Q), Q!=Q0 && ++edgels<=max_edgels);
-                    if (edgels<=max_edgels && area>=area_min_threshold && area<area_max_threshold, is_cond = 0; break());
+                    do (
+                      i(#"$new_strokes",Q[0],Q[1]) = 4;
+                      area+=(Q[2]&1?0:1-Q[2])*(Q[0]+!Q[2]);
+                      Q = next2(#"$new_strokes",Q),
+                    Q!=Q0 && ++edgels<=max_edgels);
+                    if (edgels<=max_edgels && area>=area_min_threshold && area<area_max_threshold,
+                      is_cond = 0; break()
+                    );
                   );
                   if (i(#"$new_strokes",P[0],P[1] + 1)==0,
                     edgels = area = 0; Q0 = Q = [ P[0],P[1] + 1,3 ];
-                    do (i(#"$new_strokes",Q[0],Q[1]) = 4; area+=(Q[2]&1?0:1-Q[2])*(Q[0]+!Q[2]); Q = next2(#"$new_strokes",Q), Q!=Q0 && ++edgels<=max_edgels);
-                    if (edgels<=max_edgels && area>=area_min_threshold && area<area_max_threshold, is_cond = 0; break());
+                    do (
+                      i(#"$new_strokes",Q[0],Q[1]) = 4;
+                      area+=(Q[2]&1?0:1-Q[2])*(Q[0]+!Q[2]);
+                      Q = next2(#"$new_strokes",Q),
+                    Q!=Q0 && ++edgels<=max_edgels);
+                    if (edgels<=max_edgels && area>=area_min_threshold && area<area_max_threshold,
+                      is_cond = 0; break()
+                    );
                   );
                   if (i(#"$new_strokes",P[0] - 1,P[1])==0,
                     edgels = area = 0; Q0 = Q = [ P[0] - 1,P[1],0 ];
-                    do (i(#"$new_strokes",Q[0],Q[1]) = 4; area+=(Q[2]&1?0:1-Q[2])*(Q[0]+!Q[2]); Q = next2(#"$new_strokes",Q), Q!=Q0 && ++edgels<=max_edgels);
-                    if (edgels<=max_edgels && area>=area_min_threshold && area<area_max_threshold, is_cond = 0; break());
+                    do (
+                      i(#"$new_strokes",Q[0],Q[1]) = 4;
+                      area+=(Q[2]&1?0:1-Q[2])*(Q[0]+!Q[2]);
+                      Q = next2(#"$new_strokes",Q),
+                    Q!=Q0 && ++edgels<=max_edgels);
+                    if (edgels<=max_edgels && area>=area_min_threshold && area<area_max_threshold,
+                      is_cond = 0; break()
+                    );
                   );
                   if (i(#"$new_strokes",P[0],P[1] - 1)==0,
                     edgels = area = 0; Q0 = Q = [ P[0],P[1] - 1,1 ];
-                    do (i(#"$new_strokes",Q[0],Q[1]) = 4; area+=(Q[2]&1?0:1-Q[2])*(Q[0]+!Q[2]); Q = next2(#"$new_strokes",Q), Q!=Q0 && ++edgels<=max_edgels);
-                    if (edgels<=max_edgels && area>=area_min_threshold && area<area_max_threshold, is_cond = 0; break());
+                    do (
+                      i(#"$new_strokes",Q[0],Q[1]) = 4;
+                      area+=(Q[2]&1?0:1-Q[2])*(Q[0]+!Q[2]);
+                      Q = next2(#"$new_strokes",Q),
+                    Q!=Q0 && ++edgels<=max_edgels);
+                    if (edgels<=max_edgels && area>=area_min_threshold && area<area_max_threshold,
+                      is_cond = 0; break()
+                    );
                   );
                 0);
 
@@ -13271,23 +13327,47 @@ close_binary :
               for_segment(
                 if (i(#"$new_strokes",P[0] + 1,P[1])==1,
                   edgels = area = 0; Q0 = Q = [ P[0] + 1,P[1],2 ];
-                  do (i(#"$new_strokes",Q[0],Q[1]) = 2; area+=(Q[2]&1?0:1-Q[2])*(Q[0]+!Q[2]); Q = next3(#"$new_strokes",Q), Q!=Q0 && ++edgels<=max_edgels);
-                  if (edgels<=max_edgels && area>=area_min_threshold && area<area_max_threshold, is_cond = 0; break());
+                  do (
+                    i(#"$new_strokes",Q[0],Q[1]) = 2;
+                    area+=(Q[2]&1?0:1-Q[2])*(Q[0]+!Q[2]);
+                    Q = next3(#"$new_strokes",Q),
+                  Q!=Q0 && ++edgels<=max_edgels);
+                  if (edgels<=max_edgels && area>=area_min_threshold && area<area_max_threshold,
+                    is_cond = 0; break()
+                  );
                 );
                 if (i(#"$new_strokes",P[0],P[1] + 1)==1,
                   edgels = area = 0; Q0 = Q = [ P[0],P[1] + 1,3 ];
-                  do (i(#"$new_strokes",Q[0],Q[1]) = 2; area+=(Q[2]&1?0:1-Q[2])*(Q[0]+!Q[2]); Q = next3(#"$new_strokes",Q), Q!=Q0 && ++edgels<=max_edgels);
-                  if (edgels<=max_edgels && area>=area_min_threshold && area<area_max_threshold, is_cond = 0; break());
+                  do (
+                    i(#"$new_strokes",Q[0],Q[1]) = 2;
+                    area+=(Q[2]&1?0:1-Q[2])*(Q[0]+!Q[2]);
+                    Q = next3(#"$new_strokes",Q),
+                  Q!=Q0 && ++edgels<=max_edgels);
+                  if (edgels<=max_edgels && area>=area_min_threshold && area<area_max_threshold,
+                    is_cond = 0; break()
+                  );
                 );
                 if (i(#"$new_strokes",P[0] - 1,P[1])==1,
                   edgels = area = 0; Q0 = Q = [ P[0] - 1,P[1],0 ];
-                  do (i(#"$new_strokes",Q[0],Q[1]) = 2; area+=(Q[2]&1?0:1-Q[2])*(Q[0]+!Q[2]); Q = next3(#"$new_strokes",Q), Q!=Q0 && ++edgels<=max_edgels);
-                  if (edgels<=max_edgels && area>=area_min_threshold && area<area_max_threshold, is_cond = 0; break());
+                  do (
+                    i(#"$new_strokes",Q[0],Q[1]) = 2;
+                    area+=(Q[2]&1?0:1-Q[2])*(Q[0]+!Q[2]);
+                    Q = next3(#"$new_strokes",Q),
+                  Q!=Q0 && ++edgels<=max_edgels);
+                  if (edgels<=max_edgels && area>=area_min_threshold && area<area_max_threshold,
+                    is_cond = 0; break()
+                  );
                 );
                 if (i(#"$new_strokes",P[0],P[1] - 1)==1,
                   edgels = area = 0; Q0 = Q = [ P[0],P[1] - 1,1 ];
-                  do (i(#"$new_strokes",Q[0],Q[1]) = 2; area+=(Q[2]&1?0:1-Q[2])*(Q[0]+!Q[2]); Q = next3(#"$new_strokes",Q), Q!=Q0 && ++edgels<=max_edgels);
-                  if (edgels<=max_edgels && area>=area_min_threshold && area<area_max_threshold, is_cond = 0; break());
+                  do (
+                    i(#"$new_strokes",Q[0],Q[1]) = 2;
+                    area+=(Q[2]&1?0:1-Q[2])*(Q[0]+!Q[2]);
+                    Q = next3(#"$new_strokes",Q),
+                  Q!=Q0 && ++edgels<=max_edgels);
+                  if (edgels<=max_edgels && area>=area_min_threshold && area<area_max_threshold,
+                    is_cond = 0; break()
+                  );
                 );
               0);
 
@@ -13456,8 +13536,8 @@ linethick : check "${5=2}>=0 && isnumber(${6=1}) && isnumber(${7=0})"
 #@cli : 'alpha=0.6', 'sigma=1.1' and 'cut_low=cut_high=0'.
 #@cli : $ image.jpg +marble ,
 marble : skip ${1=0.2},${2=0.1},${3=45},${4=0},${5=0.4},${6=0.8},${7=0.6},${8=1.1},${9=0%},${10=100%}
-  e[^-1] "Render marble like pattern on image$?, with image weight $1, pattern weight $2, angle $3 deg., amplitude $4, "\
-          "sharpness $5, anisotropy $6, alpha $7, sigma $8, and cut ($9,$10)."
+  e[^-1] "Render marble like pattern on image$?, with image weight $1, pattern weight $2, angle $3 deg.,
+          amplitude $4, sharpness $5, anisotropy $6, alpha $7, sigma $8, and cut ($9,$10)."
   v - sx={$2*sin($3*pi/180)} sy={$2*cos($3*pi/180)} f sin(x*$sx+y*$sy+i*$1)
   if $4 smooth $4,$5,$6,$7,$8 fi
   c $9,$10 n 0,255
@@ -13559,8 +13639,10 @@ maze_mask : check "isint(${1=24}) && $1>0"
 #@cli : 'precision' tells about the desired number of failed trials before ending the filling process.
 #@cli : Default values: 'nb_scales=5', 'min_scale=25', 'allow_rotation=3', 'spacing=1', 'precision=7' and 'max_iterations=256'.
 #@cli : $ 512,512,1,3,"min(255,y*c/2)" 100%,100% circle 50%,50%,100,1,255 append c image.jpg resize2dy[-1] 24 to_rgba pack_sprites 3,25
-pack_sprites : check "isint(${1=5}) && $1>=0 && ${2=25}>=0 && $2<=100 && isint(${3=3}) && $3>=0 && $3<=3 && isint(${4=1}) && isint(${5=7}) && $5>=0 && isint(${6=256}) && $6>=0"
-  e[^-1] "Randomly pack image$? with $1 scales, minimum scale $2%, "${arg\ 1+$3,no,180\"\ \"deg.,90\"\ \"deg.,any}" rotation, spacing $4, precision $5 and $6 maximum iterations."
+pack_sprites : check "isint(${1=5}) && $1>=0 && ${2=25}>=0 && $2<=100 && isint(${3=3}) && $3>=0 && $3<=3 &&
+                      isint(${4=1}) && isint(${5=7}) && $5>=0 && isint(${6=256}) && $6>=0"
+  e[^-1] "Randomly pack image$? with $1 scales, minimum scale $2%, "${arg\ 1+$3,no,180\"\ \"deg.,90\"\ \"deg.,any}\
+         " rotation, spacing $4, precision $5 and $6 maximum iterations."
   v - N={$!-1} is_first_time=1
   repeat $! r[$>] 100%,100%,1,{$>,max(2,s)} done   # Ensure all images have a binary shape mask.
 
@@ -13712,7 +13794,8 @@ piechart : check $1>=0
 #@cli : Default values: 'density=20', 'offset1=offset2=50', 'angle=0', 'aliasing=10', 'shading=1', 'opacity=1' and 'color=255'.
 #@cli : $ image.jpg polka_dots 10,15,0,0,20,10,1,0.5,0,128,255
 polka_dots : check $1>=0 skip ${2=20},${3=50},${4=50},${5=0},${6=10},${7=1},${8=1},${9=255}
-  e[^-1] "Draw polka dots on image$?, with diameter $1, density $2, angle $3 deg., shift ($4,$5), aliasing $6 and shading $7."
+  e[^-1] "Draw polka dots on image$?, with diameter $1, density $2, angle $3 deg., shift ($4,$5), aliasing $6 and
+          shading $7."
   v - theta={$5*pi/180} ct={cos($theta)} st={sin($theta)} mid1={$1/2} mid2={$2/2}
   i[0] (${9--1}) y[0] c
   repeat $!-1
@@ -13741,7 +13824,8 @@ polka_dots : check $1>=0 skip ${2=20},${3=50},${4=50},${5=0},${6=10},${7=1},${8=
 #@cli : $ 100,100,1,2,'if(c==0,x-w/2,y-h/2)' 500,500,1,3,255 quiver[-1] [-2],10
 #@cli : $ image.jpg +resize2dy 600 luminance[0] gradient[0] mul[1] -1 reverse[0,1] append[0,1] c blur[0] 8 orientation[0] quiver[1] [0],20,1,1,0.8,255
 quiver : check ${"is_image_arg $1"}" && ${2=5%}>0 && ${3=1}>=0 && isbool(${4=1})" skip "${5=1},${6=0}"
-  e[^-1] "Draw 2D vector field $1 on image$?, with sampling $2, factor $3, arrows "${"arg 1+$4,disabled,enabled"}", opacity $5 and color (${6--1})."
+  e[^-1] "Draw 2D vector field $1 on image$?, with sampling $2, factor $3, arrows "${"arg 1+$4,disabled,enabled"}",
+          opacity $5 and color (${6--1})."
   v - pass$1 repeat $!-1 l[$>,-1]
     eval ${-math_lib}"
       s_sampling = ['$2'];
@@ -13924,7 +14008,8 @@ text_outline : skip ${2=1%}
   _text_outline "$1",${2--1}
 
 _text_outline : skip ${3=1%},${4=7.5%},${5=2},${6=1},${7=255}
-  e[0--3] "Draw outlined text '$1' at position ($2,$3) on image$?, with font height $4, outline $5, opacity $6 and color ${7--1}."
+  e[0--3] "Draw outlined text '$1' at position ($2,$3) on image$?, with font height $4, outline $5, opacity $6 and
+           color ${7--1}."
   v - if $5
     repeat $! l[$>]
       0 t. "$1",0,0,{-2,${"is_percent $4"}?h*$4:$4},1,${7--1},1 expand_xy. {1+$5},0
@@ -13954,7 +14039,9 @@ triangle_shade :
   repeat $!-1 l[$>,-1] repeat s#0
     a={i(0,0,0,$>)} b={i(0,1,0,$>)} c={i(0,2,0,$>)}
     sh[0] $>
-    f. "s = "$invarea"*("$s1" + "$s2"*x + "$s3"*y); t = "$invarea"*("$t1" + "$t2"*x + "$t3"*y); s>=0 && t>=0 && t+s<=1 ? "$a"*x+"$b"*y+"$c":i"
+    f. "s = "$invarea"*("$s1" + "$s2"*x + "$s3"*y);
+        t = "$invarea"*("$t1" + "$t2"*x + "$t3"*y);
+        s>=0 && t>=0 && t+s<=1 ? "$a"*x+"$b"*y+"$c":i"
     rm.
   done endl done
   rm. v +
@@ -13980,7 +14067,8 @@ truchet : check "isint(${1=32}) && $1>0 && ${2=3}>=0" skip ${3=1}
 #@cli : $ 400,400,1,3 turbulence 16
 #@cli : $$
 turbulence : check "${1=32}>0 && ${2=6}>0" skip ${3=3},${4=0},${5=0}
-  e[^-1] "Render fractal noise or turbulence on image$?, with radius $1, octaves $2, damping per octave $3, difference $4 and mode $5."
+  e[^-1] "Render fractal noise or turbulence on image$?, with radius $1, octaves $2, damping per octave $3,
+          difference $4 and mode $5."
   v - repeat $! l[$>] nm={0,n}
     if $4 . fi
     f. 0 +noise. 10,0 b. $1,0
@@ -14110,7 +14198,8 @@ animate3d : skip ${1=640},${2=480},${3=0},${4=1},${5=0},"${7=""}" check ${6=1}>=
 #@cli : Apply 3D camera matrix to selected 3D objects.
 #@cli : Default values: 'target_x=0', 'target_y=0', 'target_z=0', 'up_x=0', 'up_y=-1' and 'up_z=0'.
 apply_camera3d : skip ${4=0},${5=0},${6=0},${7=0},${8=-1},${9=0}
-  e[^-1] "Apply 3D camera matrix to 3D object$?, with camera position ($1,$2,$3), target position ($4,$5,$6) and up-vector ($7,$8,$9)."
+  e[^-1] "Apply 3D camera matrix to 3D object$?, with camera position ($1,$2,$3), target position ($4,$5,$6) and
+          up-vector ($7,$8,$9)."
   v -
   ({$4-$1}^{$5-$2}^{$6-$3})  # f.
   ($7^$8^$9)                 # up.
@@ -14138,7 +14227,8 @@ apply_matrix3d :
 #@cli : Duplicate a 3D object along the X,Y and Z axes.
 #@cli : Default values: 'size_y=1', 'size_z=1' and 'offset_x=offset_y=offset_z=100%'.
 #@cli : $ torus3d 10,1 +array3d 5,5,5,110%,110%,300%
-array3d : check "isint($1) && $1>0 && isint(${2=1}) && $2>0 && isint(${3=1}) && $3>0" skip ${4=100%},${5=100%},${6=100%}
+array3d : check "isint($1) && $1>0 && isint(${2=1}) && $2>0 && isint(${3=1}) && $3>0"
+  skip ${4=100%},${5=100%},${6=100%}
   e[^-1] "Duplicate 3D object$? along X,Y,Z axes with factors ($1,$2,$3) and offsets ($4,$5,$6)."
   v - repeat $! l[$>]
 
@@ -14986,9 +15076,10 @@ parametric3d : skip "${1=(2+cos(b))*sin(a)}","${2=(2+cos(b))*cos(a)}","${3=sin(b
 #@cli : The 3D patch-pca is estimated from M patches on the input image, and displayed as a cloud of N 3D points.
 #@cli : Default values: 'patch_size=7', 'M=1000', 'N=3000', 'normalize_input=1', 'normalize_output=0', and 'lambda_xy=0'.
 #@cli : $ image.jpg pca_patch3d 7
-pca_patch3d : check "isint(${1=7}) && $1>0 && isint(${2=1000}) && $2>0 && isint(${3=3000}) && $3>0" skip ${4=1},${5=0},${6=0}
-  e[^-1] "Get 3D patch-pca representation"${arg\ 1+($!>1),s,""}" of image$?, from $2 $1x$1 input patches, "\
-          "with $3 output patches, input normalization "${arg\ 1+!$4,enabled,disabled}", output normalization "\
+pca_patch3d : check "isint(${1=7}) && $1>0 && isint(${2=1000}) && $2>0 && isint(${3=3000}) && $3>0"
+              skip ${4=1},${5=0},${6=0}
+  e[^-1] "Get 3D patch-pca representation"${arg\ 1+($!>1),s,""}" of image$?, from $2 $1x$1 input patches,
+          with $3 output patches, input normalization "${arg\ 1+!$4,enabled,disabled}", output normalization "\
           ${arg\ 1+!$5,enabled,disabled}" and lambda_xy $6."
   v -
   P1={int($1/2)}       # Backward half-patch size.
@@ -15313,7 +15404,9 @@ _primitives3d :
 
         ):N==9?( # Textured triangle
           v0 = i[#3,pp++]; v1 = i[#3,pp++]; v2 = i[#3,pp++];
-          tx0 = i[#3,pp++]; ty0 = i[#3,pp++]; tx1 = i[#3,pp++]; ty1 = i[#3,pp++]; tx2 = i[#3,pp++]; ty2 = i[#3,pp++];
+          tx0 = i[#3,pp++]; ty0 = i[#3,pp++];
+          tx1 = i[#3,pp++]; ty1 = i[#3,pp++];
+          tx2 = i[#3,pp++]; ty2 = i[#3,pp++];
           mode==0?(
             get_RGBA(tx0,ty0,0); add_point(v0,R,G,B,A);
             get_RGBA(tx1,ty1,0); add_point(v1,R,G,B,A);
@@ -15336,7 +15429,10 @@ _primitives3d :
 
         ):N==12?( # Textured quadrangle
           v0 = i[#3,pp++]; v1 = i[#3,pp++]; v2 = i[#3,pp++]; v3 = i[#3,pp++];
-          tx0 = i[#3,pp++]; ty0 = i[#3,pp++]; tx1 = i[#3,pp++]; ty1 = i[#3,pp++]; tx2 = i[#3,pp++]; ty2 = i[#3,pp++]; tx3 = i[#3,pp++]; ty3 = i[#3,pp++];
+          tx0 = i[#3,pp++]; ty0 = i[#3,pp++];
+          tx1 = i[#3,pp++]; ty1 = i[#3,pp++];
+          tx2 = i[#3,pp++]; ty2 = i[#3,pp++];
+          tx3 = i[#3,pp++]; ty3 = i[#3,pp++];
           mode==0?(
             get_RGBA(tx0,ty0,0); add_point(v0,R,G,B,A);
             get_RGBA(tx1,ty1,0); add_point(v1,R,G,B,A);
@@ -15460,7 +15556,11 @@ rotation3d :
 #@cli : $ sierpinski3d 3,100,-100 +primitives3d 1 color3d[-2] ${-RGB}
 sierpinski3d : check ${1=4}>=0 skip ${2=1},${3=1}
 -e[^-1] "Input 3D Sierpinski pyramid of degree $1, with width $2 and height $3."
-  v - l[] _sierpinski3d {-$2/2},{-$2/2},{-$3/2},{$2/2},{-$2/2},{-$3/2},{$2/2},{$2/2},{-$3/2},{-$2/2},{$2/2},{-$3/2},0,0,{$3/2},$1 +3d endl
+  v - l[]
+    _sierpinski3d {-$2/2},{-$2/2},{-$3/2},{$2/2},{-$2/2},{-$3/2},\
+                  {$2/2},{$2/2},{-$3/2},{-$2/2},{$2/2},{-$3/2},\
+                  0,0,{$3/2},$1
+  +3d endl
   nm. [3D\ sierpinski] v +
 
 _sierpinski3d :
@@ -15881,7 +15981,8 @@ text3d : skip ${2=53},${3=10},${4=1.5}
 
 #@cli t3d : eq. to 'texturize3d'.
 t3d : check ${"is_image_arg $1"}" && (!narg(${2=}) || "${"is_image_arg $2"}")"
-  e[^-1] "Texturize 3D object$? with texture $1"${"v - if narg($2) u \" and texture coordinates $2\" else u \"\" fi v +"}"."
+  e[^-1] "Texturize 3D object$? with texture $1"\
+         ${"v - if narg($2) u \" and texture coordinates $2\" else u \"\" fi v +"}"."
   v - pass$1 0 slices. 0 if s==1 to_rgb. else channels. 0,2 fi
   if narg($2) pass$2 else 0 fi
   _texturize3d
@@ -15894,7 +15995,8 @@ t3d : check ${"is_image_arg $1"}" && (!narg(${2=}) || "${"is_image_arg $2"}")"
 #@cli : Default value: 'ind_coords=(undefined)'.
 #@cli : $ image.jpg torus3d 100,30 texturize3d[-1] [-2] keep[-1]
 texturize3d : check ${"is_image_arg $1"}" && (!narg(${2=}) || "${"is_image_arg $2"}")"
-  e[^-1] "Texturize 3D object$? with texture $1"${"v - if narg($2) u \" and texture coordinates $2\" else u \"\" fi v +"}"."
+  e[^-1] "Texturize 3D object$? with texture $1"\
+         ${"v - if narg($2) u \" and texture coordinates $2\" else u \"\" fi v +"}"."
   v - pass$1 0 slices. 0 if s==1 to_rgb. else channels. 0,2 fi
   if narg($2) pass$2 else 0 fi
   _$0
@@ -16035,10 +16137,10 @@ volume3d :
 weird3d : skip ${1=32}
   e[^-1] "Input 3D weird object, with resolution $1."
   v -
-  isosurface3d "'\
-    T = 1.61803399;\
-    2 - (cos(x + T*y) + cos(x - T*y) + cos(y + T*z) + cos(y - T*z) + cos(z - T*x) + cos(z + T*x))\
-    '",0,-4.7,-4.7,-4.7,4.7,4.7,4.7,$1,$1,$1
+  isosurface3d '"
+    T = 1.61803399;
+    2 - (cos(x + T*y) + cos(x - T*y) + cos(y + T*z) + cos(y - T*z) + cos(z - T*x) + cos(z + T*x))"',\
+    0,-4.7,-4.7,-4.7,4.7,4.7,4.7,$1,$1,$1
   c3d. n3d. nm. [3D\ weird]
   v +
 
@@ -16079,7 +16181,8 @@ apc :
   _apply_parallel_channels "$*"
 
 #@cli apply_parallel_channels : "command"
-#@cli : Apply specified command on each of the selected images, by parallelizing it for all channel of the images independently.
+#@cli : Apply specified command on each of the selected images, by parallelizing it for all channel
+#@cli : of the images independently.
 #@cli : (eq. to 'apc').
 #@cli : $ image.jpg apply_parallel_channels "blur 3"
 apply_parallel_channels :
@@ -16098,7 +16201,8 @@ apo : check "${2=0}>=0 && isint(${3=0}) && $3>=0"
   _apply_parallel_overlap "$1",${2--1}
 
 #@cli apply_parallel_overlap : "command",overlap[%],nb_threads={ 0=auto | 1 | 2 | 4 | 8 | 16 }
-#@cli : Apply specified command on each of the selected images, by parallelizing it on 'nb_threads' overlapped sub-images.
+#@cli : Apply specified command on each of the selected images, by parallelizing it on 'nb_threads'
+#@cli : overlapped sub-images.
 #@cli : (eq. to 'apo').\n
 #@cli : 'nb_threads' must be a power of 2.
 #@cli : Default values: 'overlap=0','nb_threads=0'.
@@ -16112,7 +16216,8 @@ _apply_parallel_overlap : check "${2=0}>=0 && isint(${3=0}) && $3>=0"
   e[0--3] "Apply parallelized command '$1' on image"$_gmic_s", with overlap $2 and "$N" threads."
   v -
   __apo_exception=""
-  m "_check1 : if $!!=1 rm 0 __apo_exception=\"Command 'apply_parallel_overlap': Specified command '$1' changes the size of the image stack.\" fi"
+  m "_check1 : if $!!=1 rm 0 __apo_exception=\"Command 'apply_parallel_overlap': Specified command '$1' changes the
+     size of the image stack.\" fi"
   repeat $! l[$>]
     _apply_parallel_overlap$N "$1",$2
   endl done
@@ -16160,7 +16265,8 @@ _apply_parallel_overlap16 :
   _apply_parallel_overlap2 "_apply_parallel_overlap8 \"$1\",$2",$2
 
 #@cli at : eq. to 'apply_tiles'.
-at : check "${2=10%}>0 && ${3=10%}>0 && ${4=10%}>0 && ${5=0}>=0 && ${6=0}>=0 && ${7=0}>=0 && isint(${8=1}) && $8>=0 && $8<=3"
+at : check "${2=10%}>0 && ${3=10%}>0 && ${4=10%}>0 && ${5=0}>=0 && ${6=0}>=0 && ${7=0}>=0 &&
+            isint(${8=1}) && $8>=0 && $8<=3"
   v - _gmic_s="$?" v +
   _apply_tiles "$1",${2--1}
 
@@ -16169,12 +16275,14 @@ at : check "${2=10%}>0 && ${3=10%}>0 && ${4=10%}>0 && ${5=0}>=0 && ${6=0}>=0 && 
 #@cli : (eq. to 'at').
 #@cli : Default values: 'tile_width=tile_height=tile_depth=10%','overlap_width=overlap_height=overlap_depth=0' and 'boundary_conditions=1'.
 #@cli : $ image.jpg +equalize[0] 256 +apply_tiles[0] "equalize 256",16,16,1,50%,50%
-apply_tiles : check "${2=10%}>0 && ${3=10%}>0 && ${4=10%}>0 && ${5=0}>=0 && ${6=0}>=0 && ${7=0}>=0 && isint(${8=1}) && $8>=0 && $8<=3"
+apply_tiles : check "${2=10%}>0 && ${3=10%}>0 && ${4=10%}>0 && ${5=0}>=0 && ${6=0}>=0 && ${7=0}>=0 &&
+                     isint(${8=1}) && $8>=0 && $8<=3"
   v - _gmic_s="$?" v +
   _$0 "$1",${2--1}
 
 _apply_tiles :
-  e[0--3] "Apply command '$1' on $2x$3x$4 tiles of image$?, with overlaps ($5,$6,$7) and "${"arg 1+$8,dirichlet,neumann,periodic,mirror"}" boundary conditions."
+  e[0--3] "Apply command '$1' on $2x$3x$4 tiles of image$?, with overlaps ($5,$6,$7) and "\
+          ${"arg 1+$8,dirichlet,neumann,periodic,mirror"}" boundary conditions."
   v - repeat $! l[$>]
     bw={cut(round(${"is_percent $2"}?w*$2:$2),1,w)}
     bh={cut(round(${"is_percent $3"}?h*$3:$3),1,h)}
@@ -16541,10 +16649,12 @@ frame_fuzzy : skip ${2=$1},${3=5},${4=1},${5=255},${6=$5},${7=$6},${8=255}
 #@cli : Default values: 'size=10%', 'contrast=0.4', 'profile_smoothness=6%', 'R=225', 'G=200', 'B=120', 'vignette_size=2%', 'vignette_contrast=400', 'defects_contrast=50', 'defects_density=10', 'defects_size=1', 'defects_smoothness=0.5%' and 'serial_number=123456789'.
 #@cli : $ image.jpg frame_painting ,
 frame_painting :
-  check "${1=10%}>=0 && ${2=0.4}>=0 && $2<=1 && ${3=6%}>=0 && ${7=2%}>=0 && ${8=400}>=0 && ${9=50}>=0 && ${10=10}>=0 && $10<=100 && ${11=1}>=0 && ${12=0.5%}>=0"
+  check "${1=10%}>=0 && ${2=0.4}>=0 && $2<=1 && ${3=6%}>=0 && ${7=2%}>=0 && ${8=400}>=0 && ${9=50}>=0 &&
+         ${10=10}>=0 && $10<=100 && ${11=1}>=0 && ${12=0.5%}>=0"
   skip ${4=225},${5=200},${6=120},${13=123456789}
-  e[^-1] "Add painting frame to image$?, with size $1, contrast $2, profile smoothness $3, color (${4-6}), vignette size $7, "\
-          "vignette strength $8, defects contrast $9, defects density $10, defects size $11, defects smoothness $12 and serial number $13."
+  e[^-1] "Add painting frame to image$?, with size $1, contrast $2, profile smoothness $3, color (${4-6}),
+          vignette size $7, vignette strength $8, defects contrast $9, defects density $10, defects size $11,
+          defects smoothness $12 and serial number $13."
   if !$1 return fi
   v - repeat $! l[$>]
     $1,$1 s={max(w,h)} rm.                             # Determine size of the frame
@@ -16611,7 +16721,8 @@ frame_pattern : check $1>=3 skip ${2=0},${3=}
 #@cli : Default values: 'sharpness=10', 'size=10', 'smoothness=0', 'shading=0' and 'R=G=B=A=255'.
 #@cli : $ image.jpg frame_round 10
 frame_round : skip ${1=10},${2=10},${3=0},${4=0},${5=255},${6=$5},${7=$6},${8=255}
-  e[^-1] "Draw round frame on image$?, with sharpness $1, size $2, smoothness $3, shading $4 and RGBA color ($5,$6,$7,$8)."
+  e[^-1] "Draw round frame on image$?, with sharpness $1, size $2, smoothness $3, shading $4 and
+          RGBA color ($5,$6,$7,$8)."
   v - to_rgba repeat $! l[$>] nm={0,n}
     100%,100%,1,1,"-(abs(x/w-0.5)^$1 + abs(y/h-0.5)^$1)^(1/$1)" >=. $2%
     if $4 distance. 1 n. 0,1 *. -1 +. 1 ^. {1/$4} fi
@@ -16690,8 +16801,11 @@ _frame :
 #@cli : This command returns the corresponding the list of widths and heights (expressed as a number of characters) for each selected image.
 #@cli : Default values: 'charset=[ascii charset]', 'analysis_scale=16', 'analysis_smoothness=20%', 'synthesis_scale=16' and '_output_ascii_filename=[undefined]'.
 #@cli : $ image.jpg img2ascii ,
-img2ascii : skip "${1= !\042#$%&\047()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ\133\\\135^_\140abcdefghijklmnopqrstuvwxyz\173|\174~}","${5=}" check "${2=16}>0 && ${3=20%}>=0 && ${4=16}>0"
-  e[^-1] "Render image$? as binary ascii art, with charset '$1', analysis scale $2, analysis smoothness $3, synthesis scale $4 and output ascii filename '$5'."
+img2ascii : check "${2=16}>0 && ${3=20%}>=0 && ${4=16}>0"
+            skip "${1= !\042#$%&\047()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ\133\\\135^_\140abcdefghijk"\
+                 "lmnopqrstuvwxyz\173|\174~}","${5=}"
+  e[^-1] "Render image$? as binary ascii art, with charset '$1', analysis scale $2, analysis smoothness $3,
+          synthesis scale $4 and output ascii filename '$5'."
   v -
   is_multi={$!>1}
 
@@ -16885,7 +16999,8 @@ map_sprites : check "isint($1) && $1>0 && isint(${2=0}) && $2>=0 && $2<=2"
 pack : skip ${1=0},${2=max(w,h)}
   e[^-1] "Pack image$? into a single image."
   if $!<2 return fi
-  if ${-max_d}>1 error[0--3] "Command '$0': Selected images contain at least one volumetric image (depth>1). Should all be 2D." fi
+  if ${-max_d}>1 error[0--3] "Command '$0': Selected images contain at least one volumetric image (depth>1).
+                             Should all be 2D." fi
   v -
   nm={0,n} to_colormode 0
 
@@ -16967,9 +17082,11 @@ pack : skip ${1=0},${2=max(w,h)}
 #@cli : Input puzzle binary mask with specified size and geometry.
 #@cli : Default values: 'width=height=512', 'M=N=5', 'curvature=0.5', 'centering=0.5', 'connectors_variability=0.5' and 'resolution=64'.
 #@cli : $ puzzle ,
-puzzle : check "isint(${1=512}) && $1>0 && isint(${2=$1}) && $2>0 && isint(${3=5}) && $3>0 && isint(${4=$3}) && $4>0 && isint(${8=64}) && $8>0"
+puzzle : check "isint(${1=512}) && $1>0 && isint(${2=$1}) && $2>0 && isint(${3=5}) && $3>0 &&
+                isint(${4=$3}) && $4>0 && isint(${8=64}) && $8>0"
          skip ${5=0.5},${6=0.5},${7=0.5}
-  e[^-1] "Draw $3x$4 puzzle pattern on image$?, with curvature $5, centering $6, connectors variability $7 and resolution $8."
+  e[^-1] "Draw $3x$4 puzzle pattern on image$?, with curvature $5, centering $6, connectors variability $7
+          and resolution $8."
   v - l[]
     if $4>=2 _puzzle[] $3,{$4-1},${5-8} +3d. 0,1 fi
     if $3>=2 _puzzle[] $4,{$3-1},${5-8} r3d. 0,0,1,-90 +3d. 1,$4 fi
@@ -17039,8 +17156,10 @@ shift_tiles : check "${2=$1}>=0" skip ${3=20}
 #@cli : Create MxN taquin puzzle from selected images.
 #@cli : Default value: 'N=M', 'relief=50', 'border_thickness=5', 'border_outline=0' and 'remove_tile=0'.
 #@cli : $ image.jpg +taquin 8
-taquin : check "isint($1) && $1>0 & isint(${2=$1}) && $2>0" skip ${3=0},${4=50},${5=5%},${6=0},${7=0},${8=$7},${9=$8},${10=255}
- e[^-1] "Create $1x$2 taquin puzzle from image$?, with relief $4, border thickness $5, border outline $6 and outline color (${7--1})."
+taquin : check "isint($1) && $1>0 & isint(${2=$1}) && $2>0"
+         skip ${3=0},${4=50},${5=5%},${6=0},${7=0},${8=$7},${9=$8},${10=255}
+ e[^-1] "Create $1x$2 taquin puzzle from image$?, with relief $4, border thickness $5, border outline $6 and
+         outline color (${7--1})."
  v - repeat $! l[$>] nm={0,n}
    split_tiles $1,$2 r ${-min_wh},100%,100%,0
    100%,100%,1,1,1
@@ -17126,12 +17245,12 @@ brushify : check ${"is_image_arg $1"}" &&"\         # $1: [brush]
                     "isint(${4=12}) && $4>=1 &&"\     # $4: brush_nb_orientations
                     "isint(${5=4}) && $5>=0 &&"\      # $5: brush_light_type
                     "${6=0.07}>=0 && $6<=1 &&"\       # $6: brush_light_strength
-                    "isnumber(${7=0.75}) &&"\            # $7: brush_opacity
+                    "isnumber(${7=0.75}) &&"\         # $7: brush_opacity
                     "${8=40%}>=0 && $8>=0 &&"\        # $8: painting_density[%]
                     "${9=0.7}>=0 && $9<=1 &&"\        # $9: painting_contours_coherence
                     "${10=1}>=0 && $10<=1 &&"\        # $10: painting_orientation_coherence
-                    "${11=1}>=0 && ${12=0.5%}>=0 &&"\ # $11 and $12: painting_coherence_alpha and painting_coherence_sigma
-                    "isnumber(${13=45}) &&"\             # $13: painting_primary_angle
+                    "${11=1}>=0 && ${12=0.5%}>=0 &&"\ # $11 and $12: painting_coherence_alpha and sigma
+                    "isnumber(${13=45}) &&"\          # $13: painting_primary_angle
                     "${14=0.2}>=0 && $14<=1"          # $14: painting_angle_dispersion
   e[^-1] "Brushify image$?, with brush $1."
   v -
@@ -17202,7 +17321,8 @@ brushify : check ${"is_image_arg $1"}" &&"\         # $1: [brush]
 #@cli : Default values: 'smoothness=3', 'sharpening=150', 'threshold=20', 'thickness=0.25', 'color=1.5' and 'quantization=8'.
 #@cli : $ image.jpg cartoon 3,80,15
 cartoon : skip ${1=3},${2=150},${3=20},${4=0.25},${5=1.5},${6=8}
-  e[^-1] "Apply cartoon effect on image$?, with smoothness $1, sharpening $2, threshold $3, thickness $4, color $5 and quantization $6."
+  e[^-1] "Apply cartoon effect on image$?, with smoothness $1, sharpening $2, threshold $3, thickness $4, color $5
+          and quantization $6."
   v - repeat $! l[$>] split_opacity l[0] to_rgb
     b $1 sharpen $2,1 c 0,255 n 0,255
     if $4 +edges $3 b. $4 >=. 0.9 else 100%,100%,1,1,1 fi
@@ -17215,14 +17335,17 @@ cartoon : skip ${1=3},${2=150},${3=20},${4=0.25},${5=1.5},${6=8}
 #@cli : $ image.jpg +color_ellipses ,,0.15
 color_ellipses : skip ${1=1400},${2=5},${3=0.1}
   e[^-1] "Add $1 random color ellipses to image$?, with maximum radius $2 and opacity $1."
-  v - repeat $1 ellipse {u(0,100)}%,{u(0,100)}%,{u(0,$2)}%,{u(0,$2)}%,{u(0,360)},$3,{u(60,255)},{u(60,255)},{u(60,255)},255 done v +
+  v - repeat $1
+    ellipse {u(0,100)}%,{u(0,100)}%,{u(0,$2)}%,{u(0,$2)}%,{u(0,360)},$3,{u(60,255)},{u(60,255)},{u(60,255)},255
+  done v +
 
 #@cli cubism : _density>=0,0<=_thickness<=50,_max_angle,_opacity,_smoothness>=0
 #@cli : Apply cubism effect on selected images.
 #@cli : Default values: 'density=50', 'thickness=10', 'max_angle=75', 'opacity=0.7' and 'smoothness=0'.
 #@cli : $ image.jpg cubism ,
 cubism : check "${1=50}>=0 && ${2=10}>=0 && $2<=50 && ${5=0}>=0" skip ${3=75},${4=0.7}
-  e[^-1] "Apply cubism effect on image$?, with density $1, thickness $2, maximum angle $3 deg., opacity $4 and smoothness $5."
+  e[^-1] "Apply cubism effect on image$?, with density $1, thickness $2, maximum angle $3 deg., opacity $4 and
+          smoothness $5."
   if "!$1 || !$2 || !$3 || !$4" return fi
   v - repeat $! l[$>]
     w={w} h={h} s={s}
@@ -17293,7 +17416,8 @@ drop_shadow : check "${3=5}>=0 && ${4=0}>=0 && $4<=1" skip ${1=20},${2=$1},${5=1
     dy={if(${is_percent\ $2},h*$2,$2)}
     sigma={if(${is_percent\ $3},max(w,h)*$3,$3)}
     w={w} h={h} s={s} +channels 100% coords=${autocrop_coords.\ 0} rm. z $coords  # Crop part with opaque pixels.
-    r {w+abs($dx)},{h+abs($dy)},1,100%,0,0,{if($dx>0,0,1)},{if($dy>0,0,1)} r. {w+4*$sigma},{h+4*$sigma},1,100%,0,0,0.5,0.5
+    r {w+abs($dx)},{h+abs($dy)},1,100%,0,0,{if($dx>0,0,1)},{if($dy>0,0,1)}
+    r. {w+4*$sigma},{h+4*$sigma},1,100%,0,0,0.5,0.5
     +channels. 100%
     if !$4 shift. $dx,$dy # Flat shadow.
     else # Curved shadow.
@@ -17337,9 +17461,10 @@ ellipsionism : check "${1=10}>0 && ${2=3}>0 && ${5=8}>0 && ${6=0.6}>0" skip ${3=
 #@cli : Generate fire effect from edges of selected images.
 #@cli : Default values: 'edges=0.7', 'attenuation=0.25', 'smoothness=0.5', 'threshold=25', 'nb_frames=1', 'starting_frame=20' and 'frame_skip=0'.
 #@cli : $ image.jpg fire_edges ,
-fire_edges : check "${1=0.7}>=0 && ${2=0.25}>=0 && $2<=1 && ${3=0.5}>=0 && ${4=25}>=0 && ${5=1}>0 && ${6=20}>=0 && ${7=0}>=0"
-  e[^-1] "Generate fire effect from edges of image$?, with edges $1, attenuation $2, smoothness $3, threshold $4, "\
-          "$5 frames, starting frame $6 and frame skip $7."
+fire_edges : check "${1=0.7}>=0 && ${2=0.25}>=0 && $2<=1 && ${3=0.5}>=0 && ${4=25}>=0 && ${5=1}>0 &&
+                    ${6=20}>=0 && ${7=0}>=0"
+  e[^-1] "Generate fire effect from edges of image$?, with edges $1, attenuation $2, smoothness $3, threshold $4,
+          $5 frames, starting frame $6 and frame skip $7."
   v - repeat $! l[$>] nm={0,n}
     norm +gradient_norm n. 0,1 roundify. $1 f[0] 0
     (0,0,0;0,0,0;1,1,1;0,1,0) *. {(1-$2^4)/4}
@@ -17402,7 +17527,8 @@ glow : skip ${1=1%}
 #@cli : $ image.jpg halftone ,
 halftone : check "${1=5}>=2 && ${2=8}>=2 && ${3=8}>=2 && ${5=0}>=0" skip ${4=5}
   v - s0="square" s1="diamond" s2="circle" s3="inv-square" s4="inv-diamond" s5="inv-circle" v +
-  e[^-1] "Apply halftone dithering to image$?, with $1 levels, dark size $3, bright size $4, "${s$4}" shape and smoothness $5."
+  e[^-1] "Apply halftone dithering to image$?, with $1 levels, dark size $3, bright size $4, "\
+         ${s$4}" shape and smoothness $5."
   v - repeat $! l[$>] s c repeat $! l[$>]
     (0,255) a y quantize $1,0 rows 0,{h-2}
     repeat $1
@@ -17471,7 +17597,8 @@ _heart9x7 :
 #@cli : Default values: 'density=8', 'radius=5', 'threshold=80', 'opacity=0.1' and 'votesize=100%'.
 #@cli : $ image.jpg +houghsketchbw ,
 houghsketchbw : check "${1=8}>=0 && ${2=5}>=0 && ${3=80}>=0 && $3<=100 && ${4=0.1}>=0 && $4<=1 && ${5=100%}>0"
-  e[^-1] "Apply hough B&W sketch effect on image$?, with density $1, radius $2, threshold $3, opacity $4 and votesize $5."
+  e[^-1] "Apply hough B&W sketch effect on image$?, with density $1, radius $2, threshold $3, opacity $4
+          and votesize $5."
   v - luminance repeat $! l[$>] nm={0,n}
 
     # Compute normalized Hough transform.
@@ -17545,8 +17672,10 @@ light_relief : skip ${1=0.3},${2=0.5},${3=0.2},${4=0},${5=0.2},${6=0.5},${7=0.5}
 #@cli : The algorithm is inspired from the one described on the webpage 'http://linify.me/about'.
 #@cli : Default values: 'density=50', 'spreading=2', 'resolution=40%', 'line_opacity=10', 'line_precision=24' and 'mode=0'.
 #@cli : $ image.jpg linify 40
-linify : check "${1=40}>=0 && $1<=100 && ${2=2}>=0 && ${3=40%}>0 && ${4=10}>=0 && isint(${5=24}) && $5>0 && isbool(${6=0})"
-  e[^-1] "Apply linify effect on image$?, with density $1, spreading $2, resolution $3, line opacity $4, line precision $5 and "${"-arg 1+$6,subtractive,additive"}" mode."
+linify : check "${1=40}>=0 && $1<=100 && ${2=2}>=0 && ${3=40%}>0 && ${4=10}>=0 && isint(${5=24}) && $5>0 &&
+                isbool(${6=0})"
+  e[^-1] "Apply linify effect on image$?, with density $1, spreading $2, resolution $3, line opacity $4,
+          line precision $5 and "${"-arg 1+$6,subtractive,additive"}" mode."
   v - repeat $! l[$>] remove_opacity nm={n}
     100%,100%,1,{s},$6?0:255
     if {0,w>h} r2dx[0] {${"-is_percent $3"}?max(1,$3*w):min(w,$3)}
@@ -17590,7 +17719,9 @@ linify : check "${1=40}>=0 && $1<=100 && ${2=2}>=0 && ${3=40%}>0 && ${4=10}>=0 &
         if (!(nb_lines%250),
           progress = density==ref0?100:round(100*(ref - ref0)/(density - ref0));
           ext('progress ',vtos(progress));
-          if (narg("$_debug"),ext('+c[1] 0,255 r. {*,w},{*,h},1,3,2 to. ',vtos(progress),'%,1%,1%,5%,1 w. -1,-1,0 rm.'));
+          if (narg("$_debug"),
+            ext('+c[1] 0,255 r. {*,w},{*,h},1,3,2 to. ',vtos(progress),'%,1%,1%,5%,1 w. -1,-1,0 rm.')
+          );
         );
         ++nb_lines;
         breakpoint();
@@ -17623,7 +17754,9 @@ old_photo :
 #@cli : $ image.jpg pencilbw ,
 pencilbw : skip ${1=0.3},${2=60}
   e[^-1] "Apply B&W pencil effect on image$?, with size $1 and amplitude $2."
-  v - repeat $! l[$>] split_opacity l[0] norm b $1 sharpen 4000 smooth $2,0,1 equalize sqrt n 0,255 endl a c endl done v +
+  v - repeat $! l[$>] split_opacity l[0]
+    norm b $1 sharpen 4000 smooth $2,0,1 equalize sqrt n 0,255
+  endl a c endl done v +
 
 #@cli pixelsort : _ordering={ + | - },_axis={ x | y | z | xy | yx },_[sorting_criterion],_[mask]
 #@cli : Apply a 'pixel sorting' algorithm on selected images, as described in the page :
@@ -17636,11 +17769,14 @@ pixelsort : check "(str1='${1=+}'; str1=='+' || str1=='-') && "\
                   "('${4=}'==0 || "${"is_image_arg $4"}")"
   v - s0="descending" s1="ascending" v +
   if '$3'!=0" && "'$4'!=0
-    e[^-1] "Apply 'pixelsort' effect to image$? in "${s{['$1']=='+'}}" order, along axis $2, with sorting criterion $3 and mask $4."
+    e[^-1] "Apply 'pixelsort' effect to image$? in "${s{['$1']=='+'}}" order, along axis $2,
+            with sorting criterion $3 and mask $4."
   elif '$3'!=0" && "'$4'==0
-    e[^-1] "Apply 'pixelsort' effect to image$? in "${s{['$1']=='+'}}" order, along axis $2, with sorting criterion $3."
+    e[^-1] "Apply 'pixelsort' effect to image$? in "${s{['$1']=='+'}}" order, along axis $2,
+            with sorting criterion $3."
   elif '$3'==0" && "'$4'!=0
-    e[^-1] "Apply 'pixelsort' effect to image$? in "${s{['$1']=='+'}}" order, along axis $2, with mask $4."
+    e[^-1] "Apply 'pixelsort' effect to image$? in "${s{['$1']=='+'}}" order, along axis $2,
+            with mask $4."
   else
     e[^-1] "Apply 'pixelsort' effect to image$? in "${s{['$1']=='+'}}" order, along axis $2."
   fi
@@ -17733,8 +17869,10 @@ polygonize : check "${1=300}>=0 && ${2=2%}>=0 && ${3=0.1%}>=0 && ${4=10%}>0 && $
 #@cli : Apply poster edges effect on selected images.
 #@cli : Default values: 'edge_threshold=40', 'edge_shade=5', 'edge_thickness=0.5', 'edge_antialiasing=10', 'posterization_level=12' and 'posterization_antialiasing=0'.
 #@cli : $ image.jpg +poster_edges ,
-poster_edges : check "${1=40}>=0 && $1<=100 && ${2=5}>=0 && $2<=100 && ${3=0.5}>=0 && ${4=10}>=0 && ${5=12}>=0 && $5<=15 && ${6=0}>=0"
-  e[^-1] "Apply poster edge on image$?, with edge threshold $1, edge shade $2, edge thickness $3, edge antialiasing $4, $5 level of posterization and posterization antialiasing $6."
+poster_edges : check "${1=40}>=0 && $1<=100 && ${2=5}>=0 && $2<=100 && ${3=0.5}>=0 && ${4=10}>=0 &&
+                      ${5=12}>=0 && $5<=15 && ${6=0}>=0"
+  e[^-1] "Apply poster edge on image$?, with edge threshold $1, edge shade $2, edge thickness $3,
+          edge antialiasing $4, $5 level of posterization and posterization antialiasing $6."
   v - repeat $! l[$>] split_opacity l[0]
     +g xy,1 a[-2,-1] c norm. b. $3 n. 0,255
     apply_curve. 1,0,1,{max(0,(100-($1%)^0.1*100)*255%)},0.99,{min(255,(101-($1%)^0.1*100+$2)*255%)},0.01,255,0 c. 0,1
@@ -17763,8 +17901,8 @@ poster_hope : check "${1=3}>=0"
 #@cli : $ image.jpg rodilius 12,10,300,10 normalize_local 10,6
 #@cli : $ image.jpg normalize_local 10,16 rodilius 10,4,400,16 smooth 60,0,1,1,4 normalize_local 10,16
 rodilius : check "${1=10}>=0 && $1<=200 && ${2=10}>=0 && $2<=100 && ${3=400}>=0 && ${4=7}>0" skip ${5=0},${6=1}
-  e[^-1] "Apply rodilius filter on image$? with amplitude $1, thickness $2, sharpness $3, $4 orientations, offset $5 and "\
-    ${arg\ 1+!$6,brighter,darker}" color mode."
+  e[^-1] "Apply rodilius filter on image$? with amplitude $1, thickness $2, sharpness $3, $4 orientations,
+          offset $5 and "${arg\ 1+!$6,brighter,darker}" color mode."
   v - repeat $! l[$>] split_opacity rv
     if !$6 negate. fi
     +f. 0 nm. {-2,n}
@@ -17780,7 +17918,8 @@ rodilius : check "${1=10}>=0 && $1<=200 && ${2=10}>=0 && $2<=100 && ${3=400}>=0 
 #@cli : Default values: 'edges=40%', 'shading=0.2' and 'is_precise=0'.
 #@cli : $ image.jpg stained_glass 20%,0.1
 stained_glass : check "${1=40%}>=0 && ${2=0.2}>=0" skip ${3=0}
-  e[^-1] "Apply stained glass effect on image$?, with edges $1, shading $2 and thin-separators "${arg\ 1+!$3,enabled,disabled}"."
+  e[^-1] "Apply stained glass effect on image$?, with edges $1, shading $2 and thin-separators "\
+         ${arg\ 1+!$3,enabled,disabled}"."
   v - repeat $! l[$>]
     im={im-1} - $im  # Ensure strict positiveness of image labels.
     +gradient_norm >=. $1 *.. .
@@ -17794,8 +17933,10 @@ stained_glass : check "${1=40%}>=0 && ${2=0.2}>=0" skip ${3=0}
 #@cli : Add random stars to selected images.
 #@cli : Default values: 'density=10%', 'depth=1', 'size=32', 'nb_branches=5', 'thickness=0.38', 'smoothness=0.5', 'R=G=B=200' and 'opacity=1'.
 #@cli : $ image.jpg stars ,
-stars : check "${1=10%}>=0 && ${2=1}>=0 && ${3=32}>0 && ${4=5}>=1 && ${5=0.38}>=0 && $5<=1 && ${6=0.5}>=0" skip ${7=200},${8=$7},${9=$8},${10=1}
-  e[^-1] "Add $1 random stars to image$?, with depth $2, size $3, $4 branches, thickness $5, smoothness $6, color ($7,$8,$9) and opacity $10."
+stars : check "${1=10%}>=0 && ${2=1}>=0 && ${3=32}>0 && ${4=5}>=1 && ${5=0.38}>=0 && $5<=1 && ${6=0.5}>=0"
+        skip ${7=200},${8=$7},${9=$8},${10=1}
+  e[^-1] "Add $1 random stars to image$?, with depth $2, size $3, $4 branches, thickness $5, smoothness $6,
+          color ($7,$8,$9) and opacity $10."
   if !$1 return fi
   v -
 
@@ -17824,17 +17965,19 @@ stars : check "${1=10%}>=0 && ${2=1}>=0 && ${3=32}>0 && ${4=5}>=1 && ${5=0.38}>=
 #@cli : 'bgfactor=0', 'density=0.6', 'sharpness=0.1', 'anisotropy=0.6', 'smoothness=0.25', 'coherence=1', 'is_boost=0' and 'is_curved=1'.
 #@cli : $ image.jpg +sketchbw 1 reverse blur[-1] 3 blend[-2,-1] overlay
 sketchbw :
-  check "${1=2}>0 && ${3=180}>=0 && ${4=30}>=0 && ${5=3}>=0 && ${7=0}>=0 && ${8=0.6}>0 && ${9=0.1}>=0 && ${10=0.6}>=0 && ${11=0.25}>=0 && ${12=1}>=0"
+  check "${1=2}>0 && ${3=180}>=0 && ${4=30}>=0 && ${5=3}>=0 && ${7=0}>=0 && ${8=0.6}>0 && ${9=0.1}>=0 &&
+         ${10=0.6}>=0 && ${11=0.25}>=0 && ${12=1}>=0"
   skip ${2=45},${6=0.03},${13=0},${14=0}
   e[^-1] "Apply B&W sketch effect on image$?."
-  nb_angles,start_angle,angle_range,length,threshold,opacity,bgfactor,density,sharpness,anisotropy,smoothness,coherence,is_boost,is_curved=${1-14}
+  nb_angles,start_angle,angle_range,length,threshold,opacity,bgfactor,density,sharpness,\
+  anisotropy,smoothness,coherence,is_boost,is_curved=${1-14}
   length={max($length,1)}
   v - repeat $! l[$>]
-    {0,[w,h,1,1,0]}                                                       # [1] = canvas to draw onto
+    {0,[w,h,1,1,0]}                                                    # [1] = canvas to draw onto
     +gradient_norm[0] sqrt.
     diffusiontensors[0] $sharpness,$anisotropy,$smoothness,$coherence
-    a[0,-1] c                                                             # [0] = field of stroke tensors + gradient norm
-    1,{$density*wh/sqrt($length)},1,2,round(u([w#0,h#0]-1))               # [2] = set of random points
+    a[0,-1] c                                                          # [0] = field of stroke tensors + gradient norm
+    1,{$density*wh/sqrt($length)},1,2,round(u([w#0,h#0]-1))            # [2] = set of random points
 
     repeat $nb_angles
 
@@ -18023,7 +18166,8 @@ deform : skip ${1=10},${2=1}
 #@cli : Default values: 'center_x=center_y=50%', 'stretch_factor=1' and 'boundary_conditions=1'.
 #@cli : $ image.jpg +euclidean2polar ,
 euclidean2polar : skip ${1=50%},${2=50%} check "${3=1}>0 && isint(${4=1}) && $4>=0 && $4<=3"
-  e[^-1] "Apply euclidean to polar transform on image$?, with center point ($1,$2), stretch factor $3 and "${"arg 1+$4,dirichlet,neumann,periodic,mirror"}" boundary conditions."
+  e[^-1] "Apply euclidean to polar transform on image$?, with center point ($1,$2), stretch factor $3 and "\
+         ${"arg 1+$4,dirichlet,neumann,periodic,mirror"}" boundary conditions."
   v - repeat $! l[$>]
     cx={if(${is_percent\ $1},$1*(w-1),$1)}
     cy={if(${is_percent\ $2},$2*(h-1),$2)}
@@ -18075,7 +18219,8 @@ fisheye : skip ${1=50},${2=50},${3=50},${4=1.2}
 #@cli : Default values: 'amplitude=30', 'frequency=6', 'offset_r=0', 'angle=0', 'center_x=center_y=50%' and 'boundary_conditions=3'.
 #@cli : $ image.jpg flower ,
 flower : skip ${1=30},${2=6},${3=0},${4=0},${5=50%},${6=50%},${7=3}
-  e[^-1] "Apply flower deformation on image$?, with amplitude $1, frequency $2, offset $3, angle $4 deg. and center point ($1,$2)."
+  e[^-1] "Apply flower deformation on image$?, with amplitude $1, frequency $2, offset $3, angle $4 deg. and
+          center point ($1,$2)."
   v - if ${"is_percent $3"}
     transform_polar "r + (R*$3) + R*$1/100*cos(a*$2+$4*pi/180)","a",$5,$6,$7
   else
@@ -18147,12 +18292,16 @@ nadirzenith2equirectangular :
 #@cli : Default values: 'center_x=center_y=50%', 'stretch_factor=1' and 'boundary_conditions=1'.
 #@cli : $ image.jpg +euclidean2polar ,
 polar2euclidean : skip ${1=50%},${2=50%} check "${3=1}>0 && isint(${4=1}) && $4>=0 && $4<=3"
-  e[^-1] "Apply polar to euclidean transform on image$?, with center point ($1,$2), stretch factor $3 and "${"arg 1+$4,dirichlet,neumann,periodic,mirror"}" boundary conditions."
+  e[^-1] "Apply polar to euclidean transform on image$?, with center point ($1,$2), stretch factor $3 and "\
+         ${"arg 1+$4,dirichlet,neumann,periodic,mirror"}" boundary conditions."
   v - repeat $! l[$>]
     cx={if(${is_percent\ $1},$1*(w-1),$1)}
     cy={if(${is_percent\ $2},$2*(h-1),$2)}
     R={sqrt(max($cx^2,(w-1-$cx)^2)+max($cy^2,(h-1-$cy)^2))}
-    f 'X=sqrt((x-$cx)^2+(y-$cy)^2);tmp=atan2((y-$cy),(x-$cx));Y=if(tmp<0,tmp+2*pi,tmp);i((X/$R)^(1/$3)*(w-1),Y*(h-1)/(2*pi),z,c,1,$4)'
+    f "X = sqrt((x-$cx)^2+(y-$cy)^2);
+       tmp = atan2((y-$cy),(x-$cx));
+       Y = if(tmp<0,tmp+2*pi,tmp);
+       i((X/$R)^(1/$3)*(w-1),Y*(h-1)/(2*pi),z,c,1,$4)"
   endl done v +
 
 #@cli raindrops : _amplitude,_density>=0,_wavelength>=0,_merging_steps>=0
@@ -18207,8 +18356,10 @@ rotoidoscope : skip ${1=50%},${2=50%},${5=1} check "${3=10}>0 && ${4=3}>=0"
 #@cli : Apply spherize effect on selected images.
 #@cli : Default values: 'radius=50%', 'strength=1', 'smoothness=0', 'center_x=center_y=50%', 'ratio_x/y=1', 'angle=0' and 'interpolation=1'.
 #@cli : $ image.jpg grid 5%,5%,0,0,0.6,255 spherize ,
-spherize : check "${1=50%}>=0 && ${3=0}>=0 && ${6=1}>0 && isint(${8=1}) && $8>=0 && $8<=2" skip "${2=1},${4=50%},${5=50%},${7=0}"
-  e[^-1] "Apply spherize effect on image$?, with radius $1, strength $2, smoothness $3, center ($4,$5), x/y-ratio $6, angle $7 and "${"arg 1+$8,nearest-neighbor,linear,cubic"}" interpolation."
+spherize : check "${1=50%}>=0 && ${3=0}>=0 && ${6=1}>0 && isint(${8=1}) && $8>=0 && $8<=2"
+           skip "${2=1},${4=50%},${5=50%},${7=0}"
+  e[^-1] "Apply spherize effect on image$?, with radius $1, strength $2, smoothness $3, center ($4,$5),
+          x/y-ratio $6, angle $7 and "${"arg 1+$8,nearest-neighbor,linear,cubic"}" interpolation."
   if !$1||!$2 return fi
   v - repeat $! l[$>]
     rmax={${"is_percent $1"}?0.5*sqrt((w-1)^2+(h-1)^2)*$1:$1}
@@ -18305,7 +18456,8 @@ warp_perspective : skip ${1=1.5},${2=0},${3=1},${4=50},${5=50},${6=2}
 water : check ${2=1.5}>=0 skip ${1=30},${3=1},${4=45}
   e[^-1] "Apply water deformation on image$?, with amplitude $1, smoothness $2 and angle $3."
   v - repeat $! l[$>]
-    25%,25%,25%,1 noise. $1 g. xy *.. {-sin($3*pi/180)} *. {cos($3*pi/180)} +[-2,-1] b. $2 *. 2 r. ..,..,1,2,3 warp.. .,1 rm.
+    25%,25%,25%,1 noise. $1 g. xy *.. {-sin($3*pi/180)} *. {cos($3*pi/180)} +[-2,-1] b. $2 *. 2
+    r. ..,..,1,2,3 warp.. .,1 rm.
   endl done v +
 
 #@cli wave : _amplitude>=0,_frequency>=0,_center_x,_center_y
@@ -18325,7 +18477,8 @@ wave : skip ${1=4},${2=0.4},${3=50},${4=50}
 #@cli : Default values: 'amplitude=20', 'angle=0', 'attenuation=0.7' and 'threshold=20'.
 #@cli : $ image.jpg +wind ,
 wind : check "isint(${1=20}) && $1>=0 && ${3=0.7}>=0 && $3<=1" skip "${2=0},${4=20}"
-  e[^-1] "Apply wind effect on image$?, with amplitude $1, angle "{round($2/45)*45}" deg., attenuation $3 and threshold $4."
+  e[^-1] "Apply wind effect on image$?, with amplitude $1, angle "{round($2/45)*45}" deg., attenuation $3
+          and threshold $4."
   if !$1 return fi
   v -
   dxdy=${-_wind{round($2/45)%8}}
@@ -18445,7 +18598,8 @@ scanlines : skip ${1=60},${2=2},${3=0},${4=0},${5=0}
 #@cli : Default values: 'frequency=5', 'direction=1', 'darkness=0.8' and 'lightness=2'.
 #@cli : $ image.jpg +shade_stripes 30
 shade_stripes : skip ${1=5},${2=1},${3=0.8},${4=2}
-  e[^-1] "Add "${arg\ 1+!$2,vertical,horizontal}" shaded stripes to image$?, with frequency $1, darkness $3 and lightness $4."
+  e[^-1] "Add "${arg\ 1+!$2,vertical,horizontal}" shaded stripes to image$?, with frequency $1, darkness $3 and
+          lightness $4."
   v - n 0,255 repeat $! l[$>]
     {max(1,w*($2!=0))},{max(1,h*($2==0))} noise. $1,2 ==. 1 distance. 1 r. .. n. $3,$4 * c 0,255
   endl done v +
@@ -18527,7 +18681,8 @@ vignette : check "${1=100}>=0 && ${2=70}>=0 && $2<=100 && ${3=90}>=0 && $3<=100"
 #@cli : Add or remove a visible watermark on selected images (value range must be [0,255]).
 #@cli : Default values: 'text=(c) G'MIC', 'opacity=0.3', 'size=53', 'angle=25', 'mode=1' and 'smoothness=0'.
 #@cli : $ image.jpg watermark_visible ,0.7
-watermark_visible : skip "${1=\251\ G\47MIC}" check "${2=0.3}>0 && $2<1 && ${3=53}>0 && ${6=0.5}>=0" skip ${4=25},${5=1}
+watermark_visible : check "${2=0.3}>0 && $2<1 && ${3=53}>0 && ${6=0.5}>=0"
+                    skip "${1=\251\ G\47MIC}",${4=25},${5=1}
   e[^-1] ${arg\ 1+!$5,Add,Remove}" visible watermark '$1' on image$?, with opacity $2, size $3, angle $4 deg."
   v - repeat $! l[$>]
     0 t. "$1",0,0,$3,1,255 rotate. $4,0,0 b. $6 n. 0,255
@@ -18670,7 +18825,8 @@ _blend_seamless :
 _blend_seamless_mixed :
   +blend_seamless 1 rm[1]
 _blend_saturation :
-  to_color sh 0,2 rgb2hsv[2,3] shift[2,3] 0,0,0,-1,2 sh[2] 1,2 j[1] [4],0,0,0,1 rm[4] shift[2,3] 0,0,0,1,2 hsv2rgb[2,3] rm[2,3]
+  to_color sh 0,2 rgb2hsv[2,3] shift[2,3] 0,0,0,-1,2 sh[2] 1,2 j[1] [4],0,0,0,1 rm[4] shift[2,3] 0,0,0,1,2
+  hsv2rgb[2,3] rm[2,3]
 _blend_screen :
   +-[0] 255 -[1] 255 *[1,2] /[1] 255 *[1] -1 +[1] 255
 _blend_shapeareamax :
@@ -18813,7 +18969,8 @@ blend_median :
 #@cli : Default values: 'is_mixed=0', 'inner_fading=0' and 'outer_fading=100%'.
 blend_seamless : check "${2=0}>=0 && ${3=100%}>=0" skip ${1=0}
   v - s0="non-mixed" s1="mixed"
-  v + e[^-1] "Blend image$? using seamless mode (Poisson-based), in "${s{$1!=0}}" mode with inner fading $2 and outer fading $3." v -
+  v + e[^-1] "Blend image$? using seamless mode (Poisson-based), in "${s{$1!=0}}" mode with inner fading $2 and
+              outer fading $3." v -
   to_a[^0] r {0,w+32},{0,h+32},1,100%,0,0,0.5,0.5 # Avoid periodic boundaries problems.
 
   if ['$3']!='100%' # With outer fading.
@@ -18979,9 +19136,15 @@ animate : skip ${1=30},${2=0},${3=""},${4=10},${5=1},"${6=}"
       else frame%=$!
       fi
       wait $speed
-      if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,D} w[] {{*,w}*1.5},{{*,h}*1.5} scale*=1.5 wait -1 fi # Increase window size.
-      if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,C} w[] {{*,w}/1.5},{{*,h}/1.5} scale/=1.5 wait -1 fi # Decrease window size.
-      if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,R} w[] {0,w},{0,h} scale=1 wait -1 fi             # Reset window size.
+
+      # Increase window size.
+      if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,D} w[] {{*,w}*1.5},{{*,h}*1.5} scale*=1.5 wait -1 fi
+
+      # Decrease window size.
+      if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,C} w[] {{*,w}/1.5},{{*,h}/1.5} scale/=1.5 wait -1 fi
+
+      # Reset window size.
+      if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,R} w[] {0,w},{0,h} scale=1 wait -1 fi
       if {*,o} speed={min(500,max(10,$speed-10*{*,o}))} wait -1 fi
       if {*,SPACE}
         if $pause>=0 direction=$pause pause=-1
