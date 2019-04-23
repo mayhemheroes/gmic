@@ -1983,10 +1983,12 @@ dg : check "${1=0}>=0 && ${2=0}>=0" skip ${3=1},${4=0},${5=0},${6=0},${7=0},${8=
 #@cli : if specified 'width' or 'height' is '0', then image size is set to half the screen size.
 #@cli : Default values: 'width=0', 'height=0', 'plot_type=1', 'vertex_type=1', 'xmin=xmax=ymin=ymax=0 (auto)', 'xlabel="x-axis"' and 'ylabel="y-axis"'.
 #@cli : $ 128,1,1,1,'cos(x/10+u)' +display_graph 400,300,3
-display_graph : check "${1=0}>=0 && ${2=0}>=0" skip ${3=1},${4=0},${5=0},${6=0},${7=0},${8=0},"${9=x-axis}","${10=y-axis}"
+display_graph : check "${1=0}>=0 && ${2=0}>=0"
+  skip ${3=1},${4=0},${5=0},${6=0},${7=0},${8=0},"${9=x-axis}","${10=y-axis}"
   _display_graph ${1-8},"$9","$10"
 
-_display_graph : check "${1=0}>=0 && ${2=0}>=0" skip ${3=1},${4=0},${5=0},${6=0},${7=0},${8=0},"${9=x-axis}","${10=y-axis}"
+_display_graph : check "${1=0}>=0 && ${2=0}>=0"
+  skip ${3=1},${4=0},${5=0},${6=0},${7=0},${8=0},"${9=x-axis}","${10=y-axis}"
   e[0--3] "Render $1x$2 graph plot from data of image$?."
   v - repeat $! l[$>] nm={0,n}
 
@@ -2054,7 +2056,8 @@ display_histogram :
   _$0 $"*"
 
 _display_histogram : check "${1=0}>=0 && ${2=0}>=0 && ${3=256}>0" skip ${4=0%},${5=100%},${6=1},"${7=i}"
-  e[0--3] "Render $1x$2 channel-by-channel histogram of image"$_gmic_s", with $3 clusters, minimum value $4 and maximum value $5."
+  e[0--3] "Render $1x$2 channel-by-channel histogram of image"$_gmic_s", with $3 clusters, minimum value $4
+ and maximum value $5."
   v - repeat $! l[$>] nm={0,n}
     if ${is_percent\ $4} m={im+(iM-im)*$4} else m=$4 fi
     if ${is_percent\ $5} M={im+(iM-im)*$5} else M=$5 fi
@@ -2088,8 +2091,8 @@ _display_histogram : check "${1=0}>=0 && ${2=0}>=0 && ${3=256}>0" skip ${4=0%},$
 #@cli : $ 1000,1,1,2,u(-100,100) quantize 4,1 noise 12 channels 0,2 +normalize 0,255 append c display_parametric 512,512,0.1,8
 display_parametric : check "${1=512}>0 && ${2=$1}>0 && ${4=0}>=0" skip ${3=3},${5=1},${6=1},"${7=x-axis}","${8=y-axis}"
   v - s0="no " s1="" o0="" o1="colored "
-  v + e[^-1] "Render $1x$2 parametric graph plot from data of image$?, with "${o{$3>1}}"outline opacity "{if($3>1,$3-1,$3)}\
-               ", vertex radius $4, "${s{$5!=0}}"antialiasing and "${s{$6!=0}}"decoration." v -
+  v + e[^-1] "Render $1x$2 parametric graph plot from data of image$?, with "${o{$3>1}}"outline opacity "\
+      {if($3>1,$3-1,$3)}", vertex radius $4, "${s{$5!=0}}"antialiasing and "${s{$6!=0}}"decoration." v -
   repeat $! l[$>]
     nm={0,n} N={w*h*d}
     i[0] ({'CImg3d'}) +[0] 0.5 i[1] ($N;$N)  # Header + nb of vertices/primitives.
@@ -2118,7 +2121,8 @@ display_parametric : check "${1=512}>0 && ${2=$1}>0 && ${4=0}>=0" skip ${3=3},${
       +circles3d[0] $4 j3d[1] [2],50%,50%,0,1,3,0,0 rm[2]
     fi
 
-    if $3 l[0] s3d f[1] 'i-y' rm[3] i[3] (2,0,1;2,{$N-2},{$N-1}) r[3] 3,{$N-1},1,1,3 round[3]  # Convert point cloud to connected segments.
+    # Convert point cloud to connected segments.
+    if $3 l[0] s3d f[1] 'i-y' rm[3] i[3] (2,0,1;2,{$N-2},{$N-1}) r[3] 3,{$N-1},1,1,3 round[3]
       r[5] 1,{h-1},1,1,0
       if $3>1 r[4] 3,{4,h/3},1,1,-1 r[4] 3,{4,h-1},1,1,2 else rm[4] i[4] 3,{$N-1} fi
       y a y endl j3d[1] [0],50%,50%,0,{if($3>1,$3-1,$3)},2,0,0
@@ -2206,7 +2210,8 @@ _display_parallel0 :
 #@cli : Default values: 'width=500', 'height=width', 'outline_type=1', 'fill_R=fill_G=fill_B=200', 'theta_start=0', 'theta_end=360', 'xlabel="x-axis"' and 'ylabel="y-axis"'.
 #@cli : $ 300,1,1,1,'0.3+abs(cos(10*pi*x/w))+u(0.4)' display_polar 512,512,4,200,255,200
 #@cli : $ 3000,1,1,1,'x^3/1e10' display_polar 400,400,1,-1,,,0,{15*360}
-display_polar : check "${1=500}>32 && ${2=$1}>32" skip ${3=1},${4=200},${5=$4},${6=$5},${7=0},${8=360},"${9=x-axis}","${10=y-axis}"
+display_polar : check "${1=500}>32 && ${2=$1}>32"
+  skip ${3=1},${4=200},${5=$4},${6=$5},${7=0},${8=360},"${9=x-axis}","${10=y-axis}"
   e[^-1] "Render $1x$2 polar graph plot from data of image"$_gmic_s", with outline $4 and fill color ($4,$5,$6)."
   v - repeat $! l[$>] nm={0,n}
 
@@ -2281,7 +2286,8 @@ display_quiver :
   _$0 $*
 
 _display_quiver : check "${1=16}>0 && ${2=1.5}>=0 && isint(${3=2}) && $3>=0 && $3<=2"
-  e[0--3] "Render field of 2D arrows from image"$_gmic_s", with size factor $1, arrow size $2 in "${arg\ 1+$3,monochrome,grayscale,color}" mode."
+  e[0--3] "Render field of 2D arrows from image"$_gmic_s", with size factor $1, arrow size $2 in "\
+          ${arg\ 1+$3,monochrome,grayscale,color}" mode."
   v - repeat $! l[$>]
     +norm. /.. {max(1e-6,iM)} rm. # Normalize vector values.
     {$1*w},{$1*h},1,{"1<<cut($3,0,2)"}
@@ -2355,7 +2361,8 @@ display_tensors :
   _$0 $*
 
 _display_tensors : check "${1=16}>0 && ${2=1.5}>=0 && isint(${3=2}) && $3>=0 && $3<=2 && ${4=2}>=0"
-  e[0--3] "Render field of 2x2 tensors from image"$_gmic_s", with size factor $1, ellipse size $2 in "${arg\ 1+$3,monochrome,grayscale,color}" mode and outline $4."
+  e[0--3] "Render field of 2x2 tensors from image"$_gmic_s", with size factor $1, ellipse size $2 in "\
+          ${arg\ 1+$3,monochrome,grayscale,color}" mode and outline $4."
   v - repeat $! l[$>]
     * {($2*$1/2)/max(abs(im),abs(iM))} # Normalize tensor values.
     {$1*w},{$1*h},1,{"1<<cut($3,0,2)"}
@@ -2398,7 +2405,8 @@ _display_warp : check "${1=15}>0"
   e[0--3] "Render 2D warping field"$_gmic_s", with cell size $1."
   v - repeat $! l[$>]
     if d!=1" || "s!=2
-      v + error[0--3] "Command 'display_warp': Invalid image ["{$!-$>-1}"]: Dimensions "{w}","{h}","{d}","{s}" does not represent a 2D field of 2D vectors."
+      v + error[0--3] "Command 'display_warp': Invalid image ["{$!-$>-1}"]: Dimensions "{w}","{h}","{d}","{s}"
+       does not represent a 2D field of 2D vectors."
     fi
     i[0] 100%,100%,1,1,1 grid[0] $1,$1 nm[0] {1,n}
     warp[0] [1],1,1,0 rm[1]
@@ -2429,7 +2437,8 @@ document_gmic : skip ${1="ascii"},${2=""},${3=1}
   go_on=1
 
   # Parse lines of the commands file.
-  repeat $! l[$>] if $go_on" && "h>7" && "same([{^}],'#@cli',5)" && (i[5]==_' ' || i[5]==_':')" # Process only lines starting with '#@cli'.
+  repeat $! l[$>] # Process only lines starting with '#@cli'.
+  if $go_on" && "h>7" && "same([{^}],'#@cli',5)" && (i[5]==_' ' || i[5]==_':')"
     rows 6,100% autocrop {'" "'}  # Discard '#@cli'.
     _is_example=0
     if i!=_':'
@@ -2524,7 +2533,8 @@ _document_gmic_description_ascii :
       s +,39 if $!>=3
         ind=0 closing=0
         do
-          if "const ind = "$ind"; h#ind==1 && i#ind==39 && h#(ind+2)==1 && i#(ind+2)==39 && h#(ind+1)<48 && (im#(ind+1)>32 || "$is_default")"
+          if "const ind = "$ind"; h#ind==1 && i#ind==39 && h#(ind+2)==1 && i#(ind+2)==39 &&
+              h#(ind+1)<48 && (im#(ind+1)>32 || "$is_default")"
             l[$ind,{$ind+2}] rm (39,{'$_gmic_c'}) ({'$_gmic_n'},39) y endl
             ind+=2
           fi
@@ -2570,7 +2580,8 @@ _document_gmic_footer_ascii : skip $1
     ({'"Command shortcuts"'}) _document_gmic_subsection_ascii. v + e[] "" v - rm.
     _document_gmic_sort_shortcuts[]
     v + repeat $_shortcut
-      e[] "    "$_gmic_m${_gmic_b}${_sshortcut$>}" "${_sshortcutqualifier$>}":"$_gmic_n" eq. to '"$_gmic_g${_sshortcutlink$>}$_gmic_n"'."
+      e[] "    "$_gmic_m${_gmic_b}${_sshortcut$>}" "${_sshortcutqualifier$>}":"$_gmic_n" eq. to '"\
+          $_gmic_g${_sshortcutlink$>}$_gmic_n"'."
     done v -
   fi
   v + e[] "\n   "$_gmic_c"[ Total number of commands: "$_command" ]"$_gmic_n v -
@@ -2578,7 +2589,8 @@ _document_gmic_footer_ascii : skip $1
 _document_gmic_split_ascii :
   do if w>$1
     i={$1-1}
-    repeat $1/2 if C=i($1-1-$>);C==32||C==38||C==42||C==43||C==44||C==46||C==47||C==58||C==59||C==63||C==92||C==124 i={$1-1-$>} break
+    repeat $1/2 if C=i($1-1-$>);C==32||C==38||C==42||C==43||C==44||C==46||C==47||C==58||C==59||C==63||C==92||C==124
+      i={$1-1-$>} break
     fi done
     +z. {$i+1},100% z.. 0,$i
   fi while w>$1
@@ -2623,7 +2635,8 @@ _document_gmic_declaration_bash :
   _coms$_nbcoms={0,t}
   _nbcoms+=1
 
-  if "s = ["{^}"]; s=='input' || s=='i' || s=='output' || s=='o' || s=='command' || s=='m'" return fi # Manage special commands (remove arguments).
+  # Manage special commands (remove arguments).
+  if "s = ["{^}"]; s=='input' || s=='i' || s=='output' || s=='o' || s=='command' || s=='m'" return fi
 
   repeat $! if [{^}]=='(+)' rm[$<] fi done # Discard '(+)' qualifier.
   if $!==2" && "same([{^}],'"eq. to "',7) # Command is a shortcut.
@@ -2655,7 +2668,8 @@ _document_gmic_footer_bash : skip $1
   e[] "\topts=$(echo \"\$coms\" | sed \"s: \\([^ ]\\+\\): \\1 -\\1 \\+\\1 --\\1:g\")"
   e[] "\n\tcase \"${prev}\" in"
   repeat $_argcommand  # Regular commands with arguments.
-    if '${_command$>}'!='i'" && "'${_command$>}'!='o'" && "!same('${_command$>}','input',5)" && "!same('${_command$>}','output',6)
+    if '${_command$>}'!='i'" && "'${_command$>}'!='o'" && "!same('${_command$>}','input',5)" && "\
+       !same('${_command$>}','output',6)
       e[] "\t\t\""${_command$>}"\" | \"-"${_command$>}"\" | \"--"${_command$>}"\" | \"+"${_command$>}"\")\n\t\t    "\
           "COMPREPLY=( $(compgen -W \""${_argument$>}"\") ); return 0;;"
     fi
@@ -2675,7 +2689,8 @@ _document_gmic_footer_bash : skip $1
 
 # Define document_gmic commands for html output.
 _document_gmic_header_html :
-  if $1 v + e[] "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">
+  if $1 v + e[] "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\"
+ \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">
 \n<head>
 \n<script type=\"text/javascript\" src=\"highslide/highslide.js\"></script>
 \n<link rel=\"stylesheet\" type=\"text/css\" href=\"highslide/highslide.css\" />
@@ -2719,7 +2734,8 @@ _document_gmic_ex_on_html :
   if $_is_ex
     u ""
   else
-    u "<br/><table style=\"margin-left:50px\" width=\"95%\" bgcolor=\"#FFFFFF\" bordercolor=\"black\" border=\"1\" cellpadding=\"4\" cellspacing=\"0\">"\
+    u "<br/><table style=\"margin-left:50px\" width=\"95%\" bgcolor=\"#FFFFFF\" bordercolor=\"black\" border=\"1\"
+       cellpadding=\"4\" cellspacing=\"0\">"\
       "<tr><td colspan=\"2\" bgcolor=\"#000000\"><font color=\"white\"><b>Example of use:</b></font></td></tr>"
     _is_ex=1
   fi
@@ -2737,7 +2753,8 @@ _document_gmic_ex_off_html :
 
 _document_gmic_subsection_html :
   v +
-  e[] ${-eoff}${-doff}"<hr style=\"border-top: 1px solid \#ccc;\"/>\n<br/><h2><a href=\"#toc\"><img alt=\"\" border=\"0\" src=\"img/back_top.png\" /></a>&nbsp;&nbsp;"\
+  e[] ${-eoff}${-doff}"<hr style=\"border-top: 1px solid \#ccc;\"/>\n<br/><h2><a href=\"#toc\"><img alt=\"\"
+      border=\"0\" src=\"img/back_top.png\" /></a>&nbsp;&nbsp;"\
       "<a id=\"subsection"$_subsection"\"><font color=\"#B00000\">"{0,t}"</font></a></h2>"
   v -
 
@@ -2754,7 +2771,8 @@ _document_gmic_declaration_html :
     _command_name={0,t}
     v +
     e[] ${-eoff}${-doff}"<br/><hr style=\"border-top: 1px solid \#ccc;\"/><p><a id=\""{0,t}"\">"\
-     "<span class=\"ref_decl\"><b>"{0,t}"</b></span></a>"$qualifier"&nbsp;&nbsp;&nbsp;<a style=\"font-weight: normal\" href=\"#"$_command_name"\"><img src=\"img/icon_link.png\" /></a>"
+     "<span class=\"ref_decl\"><b>"{0,t}"</b></span></a>"$qualifier"&nbsp;&nbsp;&nbsp;<a style=\"font-weight: normal\"
+     href=\"#"$_command_name"\"><img src=\"img/icon_link.png\" /></a>"
     if $!>1
       e[] "<p style=\"margin-left:50px; font-family: monospace; color: \#900090; text-align: left\">"
       repeat $!-1 l[{1+$>}]
@@ -2781,7 +2799,8 @@ _document_gmic_description_html :
     s +,39 if $!>=3
       ind=0 closing=0
       do
-        if "const ind = "$ind"; h#ind==1 && i#ind==39 && h#(ind+2)==1 && i#(ind+2)==39 && h#(ind+1)<48 && (im#(ind+1)>32 || "$is_default")"
+        if "const ind = "$ind"; h#ind==1 && i#ind==39 && h#(ind+2)==1 && i#(ind+2)==39 &&
+                                h#(ind+1)<48 && (im#(ind+1)>32 || "$is_default")"
           l[$ind,{$ind+2}] rm
           ({'"<span class=\"ref_code\">"'})
           ({'"</span>"'})
@@ -2798,7 +2817,9 @@ _document_gmic_description_html :
       ind=0 closing=0
       do
         if "const ind = "$ind"; h#ind==1 && i#ind==123 && h#(ind+2)==1 && i#(ind+2)==125"
-          l[$ind,{$ind+2}] rm ({'"<span style=\"color: \#900090; font-family: monospace\">"'},123) (125,{'"</span>"'}) y endl
+          l[$ind,{$ind+2}]
+            rm ({'"<span style=\"color: \#900090; font-family: monospace\">"'},123) (125,{'"</span>"'}) y
+          endl
           ind+=2
         fi
         ind+=1
