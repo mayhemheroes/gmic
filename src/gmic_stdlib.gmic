@@ -2873,8 +2873,9 @@ _document_gmic_example_html :
     else autocrop {'$'} autocrop {'" "'} tuturl=https://gmic.eu/tutorial/{0,t}.shtml
     fi
     v +
-    e[] ${-eon}"<tr><td width=\"24\" align=\"center\"><a target=\"_blank\" href=\""$tuturl"\"><img src=\"img/icon_info.png\" /></td>"\
-                "<td><a target=\"_blank\" href=\""$tuturl"\">A tutorial page exists for this command.</a></td></tr>"
+    e[] ${-eon}"<tr><td width=\"24\" align=\"center\"><a target=\"_blank\" href=\""$tuturl"\">
+                <img src=\"img/icon_info.png\" /></td>
+                <td><a target=\"_blank\" href=\""$tuturl"\">A tutorial page exists for this command.</a></td></tr>"
     v -
   else # Regular example.
     if !isfile(['{/$_filename}']) # Generate picture only if the file doesn't yet exist.
@@ -2882,8 +2883,10 @@ _document_gmic_example_html :
        l[] v -99 reset foo v -1 _document_gmic o $_filename,85 rm endl
        uncommand foo
     fi
-    ({'${-eon}"<tr><td width=\"24\" align=\"center\"><div><a href=\""$_filename"\" class=\"highslide\" onclick=\"return hs.expand(this)\">"\
-         "<img src=\"img/icon_magnifier.png\" /></a><div class=\"highslide-caption\"><b>"{t}"</b></div></div></td><td><span style=\"font-family: monospace; text-align: left\"><b>"{t}"</b></span></td></tr>"'})
+    ({'${-eon}"<tr><td width=\"24\" align=\"center\"><div><a href=\""$_filename"\" class=\"highslide\"
+       onclick=\"return hs.expand(this)\">
+       <img src=\"img/icon_magnifier.png\" /></a><div class=\"highslide-caption\"><b>"{t}"</b></div></div></td>
+       <td><span style=\"font-family: monospace; text-align: left\"><b>"{t}"</b></span></td></tr>"'})
     replace_str. " "$_command_name" "," <span style=\"font-weight: bold; color: \#900090\">"$_command_name"</span> "
     replace_str. " "$_command_name"."," <span style=\"font-weight: bold; color: \#900090\">"$_command_name"</span>."
     replace_str. " "$_command_name"["," <span style=\"font-weight: bold; color: \#900090\">"$_command_name"</span>["
@@ -2911,7 +2914,8 @@ _document_gmic_footer_html : skip $1
     e[] "</p>" v -
   fi
   v +
-  e[] ${-eoff}${-doff}"<p style=\"margin-left:50px\"><font color=\"blue\"><b>[ Total number of commands: "$_command" ]</b></font>"
+  e[] ${-eoff}${-doff}"<p style=\"margin-left:50px\"><font color=\"blue\"><b>[ Total number of
+      commands: "$_command" ]</b></font>"
   v -
   uncommand don,doff,eon,eoff
 
@@ -2956,7 +2960,9 @@ _document_gmic_example_images :
   v -
   if !isfile(['{/$_filename}']) # Generate picture only if the file doesn't yet exist.
     m "foo"$_example" : "{t}
-    l[] v -1 reset v -99 etime=$| foo$_example etime={_round($|-$etime,0.01)} v -1 _document_gmic o $_filename,85 rm endl
+    l[]
+      v -1 reset v -99 etime=$| foo$_example etime={_round($|-$etime,0.01)} v -1 _document_gmic o $_filename,85 rm
+    endl
     uncommand foo$_example
     v +
     e[] "\r    "${_gmic_c}"["$_example"]"${_gmic_n}" Command '"${_gmic_g}$_command_name${_gmic_n}"': $ "{t}\
@@ -3071,7 +3077,8 @@ _document_gmic_description_latex :
     s +,{':'} l[^0] a y endl autocrop {':'} autocrop {'" "'}
     if $!>1
       replace_str[1] " and ","} and \\\\texttt{"
-      v + e[] ${-eoff}"\\begin{flushleft}\\Cc{\\textbf{"{0,t}"}:\\\\~\\\\\\hspace*{0.5cm}{\\small $\\bullet$~~\\texttt{"{t}"}}}\\end{flushleft}" v -
+      v + e[] ${-eoff}"\\begin{flushleft}\\Cc{\\textbf{"{0,t}"}:\\\\~\\\\\\hspace*{0.5cm}{\\small
+              $\\bullet$~~\\texttt{"{t}"}}}\\end{flushleft}" v -
     else v + e[] ${-eoff}$s"~\\\\"{0,t} v -
     fi
   elif $is_equivalent # Reached line as '#@cli : (eq. to 'shortcut').'.
@@ -3116,7 +3123,8 @@ _document_gmic_footer_latex :
     ({'"Command shortcuts"'}) _document_gmic_subsection_latex. rm.
     _document_gmic_sort_shortcuts[]
     v + repeat $_shortcut
-      e[] "$\\bullet$~'\\texttt{\\Ca{"${_sshortcut$>}"}}' "${_sshortcutqualifier$>}"~is equivalent to~~'\\texttt{\\Ca{"${_sshortcutlink$>}"}}'.\\\\"
+      e[] "$\\bullet$~'\\texttt{\\Ca{"${_sshortcut$>}"}}' "${_sshortcutqualifier$>}"~is equivalent
+          to~~'\\texttt{\\Ca{"${_sshortcutlink$>}"}}'.\\\\"
     done v -
   fi
   if $1
@@ -3561,12 +3569,15 @@ _outputx :
   is_last_arg=0 is_same_location=0
   if isnumber($-1) is_last_arg={isint($-1)&&$-1>=0&&$-1<=1} is_same_location=$-1 fi
   N={$#-$is_last_arg} s0= s1=s
-  if !$N v + e[0--3] "Output image"$_gmic_s" at same location, with same base filename but extension '' (skipped, no extension provided)." return
+  if !$N v + e[0--3] "Output image"$_gmic_s" at same location, with same base filename but extension ''
+                      (skipped, no extension provided)." return
   fi
   if $is_same_location
     v +
-    if $is_last_arg e[0--4] "Output image"$_gmic_s" at same location, with same base filename but extension"${s{$N>1}}"' ${^-1}'."
-    else e[0--4] "Output image"$_gmic_s" at same location, with same base filename but extension"${s{$N>1}}" '$*'."
+    if $is_last_arg
+      e[0--4] "Output image"$_gmic_s" at same location, with same base filename but extension"${s{$N>1}}"' ${^-1}'."
+    else
+      e[0--4] "Output image"$_gmic_s" at same location, with same base filename but extension"${s{$N>1}}" '$*'."
     fi
     v -  repeat $! l[$>]
       repeat $N ext=${arg{1+$>}} if ext=lowercase(['$ext']);ext=='jpg'||ext=='jpeg' ext.=,85 fi o {0,f}{0,b}.$ext done
@@ -3729,7 +3740,8 @@ shape_fern : check "${1=512}>=0 && ${2=50%}>=0 && isnumber(${3=30}) && ${4=0.3}>
 #@cli : Input a 2D gear binary shape with specified size.
 #@cli : Default value: 'size=512', 'nb_teeth=12', 'height_teeth=20', 'offset_teeth=0' and 'inner_radius=40'.
 #@cli : $ shape_gear ,
-shape_gear : check "${1=512}>=0 && isint(${2=12}) && $2>0 && ${3=20}>=0 && $3<=100 && ${4=0}>=0 && $4<=100 && ${5=40}>=0 && $5<=100"
+shape_gear : check "${1=512}>=0 && isint(${2=12}) && $2>0 && ${3=20}>=0 && $3<=100 && ${4=0}>=0 && $4<=100 &&
+                    ${5=40}>=0 && $5<=100"
   e[^-1] "Input a $1x$1 gear binary shape with $2 teeth, teeth height $3, teeth offset $4 and inner radius $5."
   v -
   ir={round($1)}
@@ -3889,7 +3901,10 @@ _sample :
   repeat $N
     arg=${arg{1+$>}} is_rand{1+$>}=0
     if ['$arg']=='?' arg={round(u(1,$M))} is_rand{1+$>}=1
-    elif !isnumber($arg)" || "!isint($arg) repeat $M name=${_sp_name{1+$>}} if '$name'!=0" && "'$name'==['$arg'] arg={1+$>} break fi done
+    elif !isnumber($arg)" || "!isint($arg)
+      repeat $M name=${_sp_name{1+$>}}
+        if '$name'!=0" && "'$name'==['$arg'] arg={1+$>} break fi
+      done
     else arg={($arg%$M)+1} fi
     if !isnumber($arg)" || "!isint($arg) is_arg=0 break fi
     arg{1+$>}=$arg
@@ -3941,7 +3956,11 @@ testimage2d : check "${1=512}>0 && ${2=$1}>0 && ${3=3}>0"
   e[^-1] "Input 2D synthetic image of size $1x$2x$3."
   v -
   Dmax2={0.15*min($1,$2)^2}
-  $1,$2,1,$3,'X=x-w/2;Y=y-h/2;a=atan2(Y,X);if(X^2+Y^2<=$Dmax2,255*abs(cos(c+200*(x/w-0.5)*(y/h-0.5))),850*(a%(0.1*(c+1))))'
+  $1,$2,1,$3,"
+    X = x - w/2;
+    Y = y - h/2;
+    a = atan2(Y,X);
+    if (X^2 + Y^2<="$Dmax2",255*abs(cos(c+200*(x/w-0.5)*(y/h-0.5))),850*(a%(0.1*(c+1))))"
   polygon. 4,20%,20%,60%,20%,70%,70%,35%,45%,0.9,0,255,0
   torus3d {$1/7},{$1/20} r3d. 0,1,1,-80 col3d. 128,200,255
   j3d.. .,30%,70%,0,1,5,0,0 rm. round. 1
@@ -4063,7 +4082,8 @@ update_color_presets_html : check "isbool(${1=0})"
                        "http://blog.patdavid.net/2013/08/film-emulation-presets-in-gmic-gimp.html"
 
   m "_thumb : frame 3%,3%,255 to_rgba drop_shadow 2,2,3 repeat $! l[$>] i[0] 100%,100%,1,3,245 blend alpha endl done"
-  m "_title : ({'\"$""*\"'}) replace_str. \"_\",\" \" replace_str. \"iii\",\"III\" f. \"(!y || j(0,-1)==32) && i>=_'a' && i<=_'z'?uppercase(i):i\" u {t} rm."
+  m "_title : ({'\"$""*\"'}) replace_str. \"_\",\" \" replace_str. \"iii\",\"III\" f. \"(!y || j(0,-1)==32) &&
+     i>=_'a' && i<=_'z'?uppercase(i):i\" u {t} rm."
 
   nb_presets=0
   repeat narg($categories)
@@ -4172,13 +4192,16 @@ update_color_presets_html : check "isbool(${1=0})"
 </script>\n
 <div id=\"bloc_option\"><div id=\"top_bleu\"><div id=\"text_top\">Color Presets</div></div>\n
 <div id=\"center\"><div id=\"text_centre_intro\">\n
-<p>Among all features available in <b><font color=\"#000066\">G\47MIC</font></b>, our <b>Color Presets</b> and <b>Simulate Film</b> filters are able to apply
-various pre-defined <b>color CLUTs</b> on your images
+<p>Among all features available in <b><font color=\"#000066\">G\47MIC</font></b>, our <b>Color Presets</b> and
+<b>Simulate Film</b> filters are able to apply various pre-defined <b>color CLUTs</b> on your images
 (<b>550+</b> color CLUTs available).</p>\n\n
-<p>Below, you can navigate through the different proposed presets and see how they modify the colors of some sample images.\n
-You can also download each color preset separately as its corresponding <a href=\"http://www.quelsolaar.com/technology/clut.html\">HaldCLUT</a> file (in <b>.png</b> format), to use it in\n
+<p>Below, you can navigate through the different proposed presets and see how they modify the colors of some sample
+images.\n
+You can also download each color preset separately as its corresponding
+<a href=\"http://www.quelsolaar.com/technology/clut.html\">HaldCLUT</a> file (in <b>.png</b> format), to use it in\n
 other software that support this feature.</p>\n\n
-<p><b>Image credits:</b> Sample images below have been borrowed from <a href=\"https://www.flickr.com/photos/patdavid/\">Patrick David</a>,\n
+<p><b>Image credits:</b> Sample images below have been borrowed from
+<a href=\"https://www.flickr.com/photos/patdavid/\">Patrick David</a>,\n
 <a href=\"https://www.flickr.com/photos/davelau/\">Chi King</a>,
 <a href=\"https://pixabay.com/en/tulips-tulip-field-tulpenbluete-3359902/\">Capri23auto</a>
 and
@@ -4186,8 +4209,10 @@ and
 distributed a minima under\n
 <a href=\"https://creativecommons.org/licenses/by-sa/2.0/\">CC-by-SA 2.0</a>.</p>\n\n
 <p><font size=\"-1\"><b>Disclaimer:</b><br/>\n
-<i>The trademarked names which may appear in the filenames of the HaldCLUT images are there for informational purposes only. They serve only to inform the user which film stock the given HaldCLUT image\n
-is designed to approximate. As there is no way to convey this information other than by using the trademarked name, we believe this constitutes fair use. Neither the publisher nor the authors are affiliated\n
+<i>The trademarked names which may appear in the filenames of the HaldCLUT images are there for informational purposes
+only. They serve only to inform the user which film stock the given HaldCLUT image\n
+is designed to approximate. As there is no way to convey this information other than by using the trademarked name,
+we believe this constitutes fair use. Neither the publisher nor the authors are affiliated\n
 with or endorsed by the companies that own the trademarks.</i></font></p>\n\n
 </div></div><div id=\"footer\"><img alt=\"\" src=\"images/footer.jpg\" /></div></div>\n
 <div id=\"bloc_option\"><div id=\"top_bleu\"><div id=\"text_top\"><a id=\"browse\">Browse</a></div></div>\n
@@ -4217,7 +4242,8 @@ with or endorsed by the companies that own the trademarks.</i></font></p>\n\n
         if ['$_category']==['$category']
           string "<li><font color=\"#CC7700\"><b>"$_category_name"</b> "$_category_author"</font></li>\n"
         else
-          string "<li><a href=\""${_category}_$basename.shtml"#browse\">"$_category_name"</a> "$_category_author"</li>\n"
+          string "<li><a href=\""${_category}_$basename.shtml"#browse\">"$_category_name"</a> "$_category_author\
+                 "</li>\n"
         fi
       done
 
@@ -4225,18 +4251,22 @@ with or endorsed by the companies that own the trademarks.</i></font></p>\n\n
       repeat $nb_samples
         _basename=${basename$>}
         if ['$_basename']==['$basename']
-          string "<a href=\""${category}_$_basename.shtml"#browse\"><img alt=\"\" style=\"border-color:#CC7700;\" border=\"3\" src=\""original/minithumb_$_basename.jpg"\"/></a>\n"
+          string "<a href=\""${category}_$_basename.shtml"#browse\"><img alt=\"\" style=\"border-color:#CC7700;\"
+                  border=\"3\" src=\""original/minithumb_$_basename.jpg"\"/></a>\n"
         else
-          string "<a href=\""${category}_$_basename.shtml"#browse\"><img alt=\"\" border=\"0\" src=\""original/minithumb_$_basename.jpg"\"/></a>\n"
+          string "<a href=\""${category}_$_basename.shtml"#browse\"><img alt=\"\" border=\"0\" src=\""\
+                 original/minithumb_$_basename.jpg"\"/></a>\n"
         fi
       done
-      string "</td>\n</tr></table>\n</div></div><div id=\"footer\"><img alt=\"\" src=\"images/footer.jpg\" /></div></div>\n"
+      string "</td>\n</tr></table>\n</div></div><div id=\"footer\"><img alt=\"\" src=\"images/footer.jpg\"
+              /></div></div>\n"
       string "\n
 <div id=\"bloc_option\"><div id=\"top_bleu\"><div id=\"text_top\">Presets ("{narg({/$presets})}")</div></div>\n
 <div id=\"center\"><div id=\"text_centre_intro\">\n
 <center><table>\n
 <tr><td>\n
-<div><a href=\"original/"$basename".jpg\" class=\"highslide\" onclick=\"return hs.expand(this)\"><img alt=\"\" border=\"0\" src=\"original/thumb_"$basename".jpg\" /></a>\n
+<div><a href=\"original/"$basename".jpg\" class=\"highslide\" onclick=\"return hs.expand(this)\"><img alt=\"\"
+border=\"0\" src=\"original/thumb_"$basename".jpg\" /></a>\n
 <div class=\"highslide-caption\"><b>Reference Image</b></div></div>\n
 </td></tr>\n
 <tr><td align=\"center\"><b>Reference Image</b></td></tr>\n\n"
@@ -4254,9 +4284,12 @@ with or endorsed by the companies that own the trademarks.</i></font></p>\n\n
 <img alt=\"\" border=\"0\" src=\""$category/$basename/thumb_$preset".jpg\" />\n
 </a>\n
 <div class=\"highslide-maincontent\"><center>\n
-<img alt=\"\" border=\"0\" src=\""$category/$basename/$preset.jpg"\" onclick=\"hs.close()\" onmouseover=\"javascript:this.src='"$category/$basename/$preset_esc.jpg"';\" onmouseout=\"javascript:this.src='original/"$basename".jpg';\" />\n
+<img alt=\"\" border=\"0\" src=\""$category/$basename/$preset.jpg"\" onclick=\"hs.close()\"
+onmouseover=\"javascript:this.src='"$category/$basename/$preset_esc.jpg"';\"
+onmouseout=\"javascript:this.src='original/"$basename".jpg';\" />\n
 </center></div>\n
-<div class=\"highslide-caption\"><b>Preset:</b> <i>"$title"</i> [<a href=\""$category/clut/$preset.png"\">Download HaldCLUT</a>]</div></div>\n
+<div class=\"highslide-caption\"><b>Preset:</b> <i>"$title"</i>
+[<a href=\""$category/clut/$preset.png"\">Download HaldCLUT</a>]</div></div>\n
 </td></tr>\n
 <tr><td align=\"center\"><font size=\"-1\">"$title"</font></td></tr>\n
 </table></td>\n\n"
@@ -4314,18 +4347,24 @@ update_gallery_html : check "isbool(${1=0})"
   # Define categories and sample pictures.
   categories=arrays,artistic,blackandwhite,colors,deformations,filtering,patterns,3drendering,stylization,codesamples
   nb_categories={narg($categories)}
-  commands_arrays=gallery_arrays,array,array_fade,array_mirror,frame_blur,frame_cube,frame_painting,img2ascii,imagegrid,rotate_tiles,vignette,tunnel
-  commands_artistic=gallery_artistic,boxfitting,cartoon,cubism,draw_whirl,fractalize,halftone,sketchbw,light_relief,mosaic,linify,polaroid,polygonize,poster_hope,rodilius,stencil,stained_glass
+  commands_arrays=gallery_arrays,array,array_fade,array_mirror,frame_blur,frame_cube,frame_painting,img2ascii,\
+                  imagegrid,rotate_tiles,vignette,tunnel
+  commands_artistic=gallery_artistic,boxfitting,cartoon,cubism,draw_whirl,fractalize,halftone,sketchbw,light_relief,\
+                    mosaic,linify,polaroid,polygonize,poster_hope,rodilius,stencil,stained_glass
   commands_blackandwhite=gallery_blackandwhite,pencilbw,old_photo,sepia
   commands_colors=gallery_colors,solarize,hsv2rgb,transfer_rgb
   commands_deformations=gallery_deformations,deform,map_sphere,seamcarve,spherize,twirl,warp_perspective,water,wave
-  commands_filtering=gallery_filtering,blur_angular,blur_linear,blur_radial,glow,smooth,bilateral,dog,deriche,distance,gradient_norm,normalize_local,sharpen,solidify
-  commands_patterns=gallery_patterns,tsp,chessboard,mandelbrot,maze_mask,plasma,shape_fern,shape_snowflake,sierpinski,syntexturize_matchpatch,truchet,turbulence,watermark_visible,weave
-  commands_3drendering=gallery_3drendering,add3d,distribution3d,elevation3d,gmic3d,imageblocks3d,imagerubik3d,skeleton3d,spherical3d,tensors3d,text3d,torus3d,weird3d
+  commands_filtering=gallery_filtering,blur_angular,blur_linear,blur_radial,glow,smooth,bilateral,dog,deriche,\
+                     distance,gradient_norm,normalize_local,sharpen,solidify
+  commands_patterns=gallery_patterns,tsp,chessboard,mandelbrot,maze_mask,plasma,shape_fern,shape_snowflake,\
+                    sierpinski,syntexturize_matchpatch,truchet,turbulence,watermark_visible,weave
+  commands_3drendering=gallery_3drendering,add3d,distribution3d,elevation3d,gmic3d,imageblocks3d,imagerubik3d,\
+                       skeleton3d,spherical3d,tensors3d,text3d,torus3d,weird3d
   commands_stylization=gallery_stylization
   commands_codesamples=gallery_codesamples
 
-  pics=apples,bottles,butterfly,car,cat,cliff,david,dog,duck,eagle,elephant,earth,flower,fruits,greece,gummy,inside,landscape,leaf,leno,lion,mandrill,monalisa,parrots,pencils,rooster,rose,square,teddy,tiger,wall,waterfall,zelda
+  pics=apples,bottles,butterfly,car,cat,cliff,david,dog,duck,eagle,elephant,earth,flower,fruits,greece,gummy,inside,\
+       landscape,leaf,leno,lion,mandrill,monalisa,parrots,pencils,rooster,rose,square,teddy,tiger,wall,waterfall,zelda
 
   # Generate HTML pages.
   i raw:$HOME/work/src/gmic/src/gmic_stdlib.gmic,uchar
@@ -4357,16 +4396,20 @@ update_gallery_html : check "isbool(${1=0})"
          "<div id=\"center\"><div id=\"text_centre_intro\">\n"\
          "This gallery gives a quick overview of the kind of features and generic filters available in the "\
          "<b><font color=\"#000066\">G\47MIC</font></b> open-source image processing framework.<br/>\n"\
-         "All the images below have been processed by the CLI interface <tt><a href=\"documentation.shtml\">gmic</a></tt>\n"\
+         "All the images below have been processed by the CLI interface "\
+         "<tt><a href=\"documentation.shtml\">gmic</a></tt>\n"\
          "  of <b><font color=\"#000066\">G\47MIC</font></b>, from a set of initial 2D color images.\n"\
          "Click on an image to enlarge it and display the <b><font color=\"#000066\">G\47MIC</font></b> command-line "\
-         "used for the processing (<i>note: to reproduce this, you may have to escape some characters, according to type of shell you use!</i>).<br/>\n"\
+         "used for the processing (<i>note: to reproduce this, you may have to escape some characters, "\
+         "according to type of shell you use!</i>).<br/>\n"\
          "Remember, <b><font color=\"#000066\">G\47MIC</font></b> lets you define your own image pipelines through\n"\
          "custom <a href=\"https://gmic.eu/gmic_stdlib.gmic\">command files</a>.\n"\
-         "Your custom filters can be easily added afterwards in the plug-in for <a href=\"http://www.gimp.org\">GIMP</a> or "\
+         "Your custom filters can be easily added afterwards in the plug-in for "\
+         "<a href=\"http://www.gimp.org\">GIMP</a> or "\
          "<a href=\"http://www.krita.org\">Krita</a>.</br>\n\n"\
          "For more details, visit the <a href=\"https://gmic.eu/tutorial\">tutorial pages</a> as well as the "\
-         "<a href=\"https://gmic.eu/reference.shtml\">technical reference</a> to get a full documentation on this software.\n"\
+         "<a href=\"https://gmic.eu/reference.shtml\">technical reference</a> to get a full documentation on this "\
+         "software.\n"\
          "<br/><br/>\n<div id=\"menu\">\n"
 
     html_menu="<font size=\"-1\"><table cellspacing=\"0\" cellpadding=\"4\" border=\"1\" align=\"center\"><tr>\n"\
@@ -4434,9 +4477,11 @@ update_gallery_html : check "isbool(${1=0})"
                  endl fi
                  a y
               fi
-              replace_str. "image.jpg","<a href=\"https://gmic.eu/img/sample_"$sample".png\" target=\"_blank\">"$sample".png</a>"
+              replace_str. "image.jpg",\
+                           "<a href=\"https://gmic.eu/img/sample_"$sample".png\" target=\"_blank\">"$sample".png</a>"
               replace_str. "_output_mode=1",""
-              l. s +,{'" "'} repeat $! if {$<,crop(0,0,1,5)=='_fps='||crop(0,0,1,7)=='_label='} # Discard '_fps=?' and '_label=?'
+              # Discard '_fps=?' and '_label=?'
+              l. s +,{'" "'} repeat $! if {$<,crop(0,0,1,5)=='_fps='||crop(0,0,1,7)=='_label='}
                 rm[$<]
               fi done a y endl
               l. s +,{'" "'} repeat $! if {$<,crop(0,0,1,8)=='https://'} l[$<] # Add hyperlink
@@ -4445,8 +4490,10 @@ update_gallery_html : check "isbool(${1=0})"
                   basename_codesample={`crop(0,24,1,h-24)`}
                   filename_codesample="../../resources/samples"/$basename_codesample
                   url_codesample="https://gmic.eu/samples/"$basename_codesample
-                  if $1 x "lftp ftp://"$GMIC_LOGIN":"$GMIC_PASSWD"@ftp.gmic.eu -e \"put -O /www/gmic/samples \\\""$filename_codesample"\\\"; quit\" >/dev/null" fi
-                  i[0] ({'"<a onclick=\"javascript:$( '\#dialog"$nex"' ).dialog( 'open' );\" style=\"cursor: pointer;\">"'})
+                  if $1 x "lftp ftp://"$GMIC_LOGIN":"$GMIC_PASSWD"@ftp.gmic.eu -e \"put -O /www/gmic/samples \\\""\
+                          $filename_codesample"\\\"; quit\" >/dev/null" fi
+                  i[0] ({'"<a onclick=\"javascript:$( '\#dialog"$nex"' ).dialog( 'open' );\"
+                          style=\"cursor: pointer;\">"'})
                 else i[0] ({'"<a href=\""{$<,t}"\" target=\"_blank\">"'})
                 fi
                 ({'</a>'}) y a y
@@ -4528,31 +4575,44 @@ update_gallery_html : check "isbool(${1=0})"
 
             html_codesample=
             if $is_codesample
-               html_codesample="\n<div id=\"dialog"$nex"\" title=\""samples/$basename_codesample"\">\n<font size=\"-1\"><pre>\n"
+               html_codesample="\n<div id=\"dialog"$nex"\" title=\""samples/$basename_codesample"\">"\
+                               "\n<font size=\"-1\"><pre>\n"
                i raw:$url_codesample,uchar html_codesample=${html_codesample}{t} rm.
                html_codesample=${html_codesample}"\n</pre></font></div>\n"\
-                              "<br/><script>$( function() { $( \"#dialog"$nex"\" ).dialog({ autoOpen: false, width:600 }); } );</script>\n"\
-                              "<a onclick=\"javascript:$( '#dialog"$nex"' ).dialog( 'open' );\" style=\"cursor: pointer;\"><i><font size=\"-1\">[ Source code ]</font></i></a>\n"
+                              "<br/><script>$( function() { $( \"#dialog"$nex"\" ).dialog({ autoOpen: false,
+                              width:600 }); } );</script>\n"\
+                              "<a onclick=\"javascript:$( '#dialog"$nex"' ).dialog( 'open' );\"
+                              style=\"cursor: pointer;\"><i><font size=\"-1\">[ Source code ]</font></i></a>\n"
             fi
 
             if ['$_label']==0 _label=$command$counter else ({'$_label'}) replace_str. "~"," " _label={t} rm. fi
             if $is_input
               html=${html}\
-                  "  <td><center><div><a href=\"#\" onclick=\"return hs.htmlExpand(this, { width: "{$width+64}", height: "{$height+64}" })\">\n"\
+                  "  <td><center><div><a href=\"#\" onclick=\"return hs.htmlExpand(this, { width: "{$width+64}",
+                  height: "{$height+64}" })\">\n"\
                   "  <img alt=\""gallery_$command$nex"\" border=\"0\" src=\""$filename_thumb"\" "\
-                  "onmouseover=\"javascript:this.src='"$filename_thumb_original"';\" onmouseout=\"javascript:this.src='"$filename_thumb"';\"/><br/><b>"${_label}${html_codesample}"</b></a>\n"\
+                  "onmouseover=\"javascript:this.src='"$filename_thumb_original"';\"
+                  onmouseout=\"javascript:this.src='"$filename_thumb"';\"/><br/><b>"\
+                  ${_label}${html_codesample}"</b></a>\n"\
                   "  <div class=\"highslide-maincontent\"><center>\n"\
-                  "  <img alt=\""gallery_$command$nex"\" border=\"0\" width=\""$width"\" src=\""$filename_full"\" onclick=\"hs.close()\" onmouseover=\"javascript:this.src='"$filename_full"';\" onmouseout=\"javascript:this.src='"$filename_original"';\"/>\n"\
+                  "  <img alt=\""gallery_$command$nex"\" border=\"0\" width=\""$width"\" src=\""$filename_full"\"
+                  onclick=\"hs.close()\" onmouseover=\"javascript:this.src='"$filename_full"';\"
+                  onmouseout=\"javascript:this.src='"$filename_original"';\"/>\n"\
                   "</center></div>\n"\
-                  "<div class=\"highslide-caption\">Command: <tt>$ gmic "${replaced_example$nex}"</tt>"${html_etime}"</div></div></center></td>\n"
+                  "<div class=\"highslide-caption\">Command: <tt>$ gmic "${replaced_example$nex}"</tt>"\
+                  ${html_etime}"</div></div></center></td>\n"
             else
               html=${html}\
-                  "  <td><center><div><a href=\"#\" onclick=\"return hs.htmlExpand(this, { width: "{$width+64}", height: "{$height+64}" })\">\n"\
-                  "  <img alt=\""gallery_$command$nex"\" border=\"0\" src=\""$filename_thumb"\" /><br/><b>"${_label}${html_codesample}"</b></a>\n"\
+                  "  <td><center><div><a href=\"#\" onclick=\"return hs.htmlExpand(this, { width: "{$width+64}",
+                  height: "{$height+64}" })\">\n"\
+                  "  <img alt=\""gallery_$command$nex"\" border=\"0\" src=\""$filename_thumb"\" /><br/><b>"\
+                  ${_label}${html_codesample}"</b></a>\n"\
                   "  <div class=\"highslide-maincontent\"><center>\n"\
-                  "  <img alt=\""gallery_$command$nex"\" border=\"0\" width=\""$width"\" src=\""$filename_full"\" onclick=\"hs.close()\" />\n"\
+                  "  <img alt=\""gallery_$command$nex"\" border=\"0\" width=\""$width"\" src=\""$filename_full"\"
+                  onclick=\"hs.close()\" />\n"\
                   "</center></div>\n"\
-                  "<div class=\"highslide-caption\">Command: <tt>$ gmic "${replaced_example$nex}"</tt>"${html_etime}"</div></div></center></td>\n"
+                  "<div class=\"highslide-caption\">Command: <tt>$ gmic "${replaced_example$nex}"</tt>"\
+                  ${html_etime}"</div></div></center></td>\n"
             fi
             nex+=1
             col={($col+1)%$nb_cols}
@@ -4646,9 +4706,11 @@ update_deprecate : check "isint($1) && $1>0 && $1<999"
     i[1] ({'"\n\
             \#@gui !<b><i>&gt;&gt; UPDATE"" INFORMATION</i></b> : _none_, _none_\n\
             \#@gui : note = note{\"A <b>new version</b> of the <i>G\47MIC</i> plug-in is available!\\n\\n\n\
-            \#@gui : You are strongly encouraged to upgrade your version, by visiting our <i>Download page</i> :\\n\\n\"}\n\
+            \#@gui : You are strongly encouraged to upgrade your version,
+            by visiting our <i>Download page</i>:\\n\\n\"}\n\
             \#@gui : url = link{\"Visit G\47MIC Download Page\",\"https://gmic.eu/download.shtml\"}\n\
-            \#@gui : note = note{\"\\nOf course, your plug-in will continue to work, but please note that we won\47t be able\n\
+            \#@gui : note = note{\"\\nOf course, your plug-in will continue to work, but please note that we
+            won\47t be able\n\
             \#@gui : to provide filter updates anymore for your current plug-in version.\\n\\n\n\
             \#@gui : Best regards,\\n\\n <i>The G\47MIC team.</i>\"}\n\n"'})
     y[1] a y
@@ -4713,8 +4775,12 @@ update_server :
   _update_server_move[] "/Testing/Zonderr/Spiral","/Rendering"
 
   # Define useful sub-commands.
-  m "parent : l[] ({'$""1'}) s -,{'/'} if $! rm. fi i[0--1] (47) a y u {0,t} rm endl" # Command to return parent of a path
-  m "varname : ({'\"$""1\"'}) f. if((i>=48&&i<=57)||(i>=65&&i<=90)||(i>=97&&i<=122),i,95) u {t} rm." # Convert string to a valid variable name
+
+  # Command to return parent of a path
+  m "parent : l[] ({'$""1'}) s -,{'/'} if $! rm. fi i[0--1] (47) a y u {0,t} rm endl"
+
+  # Convert string to a valid variable name
+  m "varname : ({'\"$""1\"'}) f. if((i>=48&&i<=57)||(i>=65&&i<=90)||(i>=97&&i<=122),i,95) u {t} rm."
   m "load_gmic : "\
     "_nb_sources+=1 filename=${\"basename $""1\"} "\
     "v + e[] $_gmic_c\"  \"$_nb_sources\". \"$_gmic_n$filename\"  \" v - "\
@@ -4781,8 +4847,9 @@ update_server :
 
   repeat $!
     ind={$>-$offset}
-    if {{$ind-1},@-1}==10" && "same([{^}],'#@gui',5)" && "({$ind,@5}==32" || "{$ind,@5}==_'_') l[$ind] # Line starts by '#@gui[_] '
+    if {{$ind-1},@-1}==10" && "same([{^}],'#@gui',5)" && "({$ind,@5}==32" || "{$ind,@5}==_'_') l[$ind]
 
+      # Line starts by '#@gui[_] '
       if i[5]==_'_' locale=_{`[i[6],i[7]]`} # Retrieve locale if any specified
       else locale=
       fi
@@ -4992,7 +5059,8 @@ update_server :
 
   # Display list of filters (sorted alphabetically) on stdout.
   v + e[] "> Output list of filters in stdout.\n" v -
-  echo_stdout "*** List of filters in the G\47MIC plug-in ("$nb_filters" filters, on "{date(0)}/{date(1)}/{date(2)}" "{date(4)}:{date(5)}") ***\n"
+  echo_stdout "*** List of filters in the G\47MIC plug-in ("$nb_filters" filters, on "{date(0)}/{date(1)}/{date(2)}\
+              " "{date(4)}:{date(5)}") ***\n"
   echo_stdout "* List of filters, sorted by path:\n"
   repeat $! l[$>]
     ({'{0,n}'}) if i!=_'!'
@@ -5037,7 +5105,8 @@ _update_server_calibrate_name :
 
   repeat $! l[$>]
     s +,{'" "'} s +,{'"/"'} s +,{'"["'} s +,{'"<"'} s +,{'"("'} s +,{'">"'} s +,{'"-"'}
-    first={"ind = 0; while (ind<l && (c = lowercase(i[#ind,0]); !((c>=_'a' && c<=_'z') || (c>=_'0' && c<=_'9'))), ++ind); ind<l?ind:0"}
+    first={"ind = 0; while (ind<l && (c = lowercase(i[#ind,0]);
+            !((c>=_'a' && c<=_'z') || (c>=_'0' && c<=_'9'))), ++ind); ind<l?ind:0"}
     f "x+y || h<=2?i:( # Capitalize all words except a few ones
        s = crop();
        s=='a' || s=='an' || s=='and' ||
@@ -5087,7 +5156,8 @@ _update_server_upload : skip "${2=""}"
   l[] GMIC_LOGIN=${gmic_ftp\ 0} onfail GMIC_LOGIN="" endl
   l[] GMIC_PASSWD=${gmic_ftp\ 1} onfail GMIC_PASSWD="" endl
   if narg($GMIC_LOGIN)
-    x 0,"lftp ftp://"$GMIC_LOGIN":"$GMIC_PASSWD"@ftp.gmic.eu -e \"put -O /www/gmic/ \\\"$1\\\" -o \\\""$out"\\\"; quit\" >/dev/null"
+    x 0,"lftp ftp://"$GMIC_LOGIN":"$GMIC_PASSWD"@ftp.gmic.eu -e \"put -O /www/gmic/ \\\"$1\\\" -o \\\""$out"\\\";
+         quit\" >/dev/null"
   fi
 
 # Upload released binaries on the G'MIC web server.
@@ -5335,7 +5405,9 @@ update_tutorial_html :
     o. ${_output_html$>} o. ${_output_shtml$>}
   done rm.
   repeat $_N
-    v + _update_tutorial_html[] ${_input$>},${_height$>},${_output_shtml$>},${_output_html$>},${_img_prefix$>},${_tocid$>} v -
+    v +
+    _update_tutorial_html[] ${_input$>},${_height$>},${_output_shtml$>},${_output_html$>},${_img_prefix$>},${_tocid$>}
+    v -
   done
 
   # Clean temp files.
@@ -5412,7 +5484,8 @@ _update_tutorial_html :
          "hs.graphicsDir = 'highslide/graphics/';"\n\
          "hs.wrapperClassName = 'wide-border';"\n\
          "</script>"\n\
-         "<script type=\"text/javascript\" src=\"http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML\"></script>"\n\
+         "<script type=\"text/javascript\"
+         src=\"http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML\"></script>"\n\
          "<body>"\n\n'})
   ({'\n</body></html>'})
   y a y
@@ -5435,7 +5508,11 @@ _update_tutorial_html :
         # Retrieve anchor if any.
         l[] anchor="" ({'$link'}) s +,{"'#'"} if $!>1 anchor=#{t} link={0,t} fi rm endl
         ({'$link'}) autocrop. {'/'}
-        l. s -,{'/'} if com='command-guide';$!>6" && "[{-2,^}]!=com" && "[{-3,^}]!=com relink={-2,t}_{t}.shtml else relink={t}.shtml fi rm endl
+        l. s -,{'/'}
+          if com='command-guide';$!>6" && "[{-2,^}]!=com" && "[{-3,^}]!=com relink={-2,t}_{t}.shtml
+          else relink={t}.shtml
+          fi
+        rm endl
         ({'$relink'}) if i==_'-' =. {'_'} relink={t} fi rm. # Replace first '-' by underscore if necessary.
 
         if $relink # If the relinked page exists.
@@ -5446,11 +5523,13 @@ _update_tutorial_html :
           ({'$relink'}) if i==_'_'
             l. z 1,100% s -,{'.'} command=${basename\ {0,t}} k[0] endl
             relink="https://gmic.eu/reference.shtml#"$command
-            v + e[] "    > Local link '"$link$anchor"' relinked to '"$relink"' "${_gmic_g}"(reference command)."${_gmic_n} v -
+            v + e[] "    > Local link '"$link$anchor"' relinked to '"$relink"' "\
+                    ${_gmic_g}"(reference command)."${_gmic_n} v -
             rm[0] i[0] ({'$relink'}) y[0]
           else # If fail, link to original page with a hard link.
             relink=$link$anchor
-            v + e[] "    > Local link '"$link$anchor"' relinked to '"$relink"' "${_gmic_r}"(no corresponding local page)."${_gmic_n} v -
+            v + e[] "    > Local link '"$link$anchor"' relinked to '"$relink"' "\
+                    ${_gmic_r}"(no corresponding local page)."${_gmic_n} v -
             rm[0] i[0] ({'$relink'}) y[0]
           fi
           rm.
@@ -5564,7 +5643,8 @@ _update_header_html : check "${2=0}>=0 && isbool(${3=0})"
 
         # Retrieve latest stable version specified in the header file.
         +l. s -,{'>'}
-          if {2,"i[0]>=_'0' && i[0]<=_'9' && i[1]==_'.' && i[2]>=_'0' && i[2]<=_'9' && i[3]==_'.' && i[4]>=_'0' && i[4]<=_'9'"}
+          if {2,"i[0]>=_'0' && i[0]<=_'9' && i[1]==_'.' && i[2]>=_'0' && i[2]<=_'9' &&
+                 i[3]==_'.' && i[4]>=_'0' && i[4]<=_'9'"}
             sta={2,`crop(0,0,1,5)`}
           fi
           if $3 pre=${strver\ $2} else sta=${strver\ $2} fi
@@ -5572,11 +5652,15 @@ _update_header_html : check "${2=0}>=0 && isbool(${3=0})"
 
         rm[0]
         if $is_gmic
-          i[0] ({'"                Latest stable version: <b><a href=\"https://gmic.eu/download.shtml\">"$sta"</a></b>"'})
-          if $3 i[1] ({'" &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Current pre-release: <b><a href=\"https://gmic.eu/files/prerelease\">"$pre"</a></b>"'}) fi
+          i[0] ({'"                Latest stable version:
+                   <b><a href=\"https://gmic.eu/download.shtml\">"$sta"</a></b>"'})
+          if $3 i[1] ({'" &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Current pre-release:
+                         <b><a href=\"https://gmic.eu/files/prerelease\">"$pre"</a></b>"'}) fi
         else
-          i[0] ({'"                Latest stable version: <b><a href=\"http://cimg.eu/files/CImg_"$sta".zip\">"$sta"</a></b>"'})
-          if $3 i[1] ({'" &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Current pre-release: <b><a href=\"http://cimg.eu/files/CImg_latest.zip\">"$pre"</a></b>"'}) fi
+          i[0] ({'"                Latest stable version:
+                   <b><a href=\"http://cimg.eu/files/CImg_"$sta".zip\">"$sta"</a></b>"'})
+          if $3 i[1] ({'" &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Current pre-release:
+                         <b><a href=\"http://cimg.eu/files/CImg_latest.zip\">"$pre"</a></b>"'}) fi
         fi
         y
       fi
@@ -6184,8 +6268,10 @@ cast :
   if s='$dtype';s[0]==_'u'&&s[1]!=_'n' dtype="unsigned_"{`s='$dtype';s[1,size(s)-1]`}
   elif s='$dtype';s[0]==_'u'&&s[0,9]=='"unsigned "' dtype="unsigned_"{`s='$dtype';s[9,size(s)-9]`}
   fi
-  ssize={s='$stype';s=='"unsigned_char"'||s=='char'?1:s=='"unsigned_short"'||s=='short'?2:s=='"unsigned_int"'||s=='int'||s=='float'?4:8}
-  dsize={s='$dtype';s=='"unsigned_char"'||s=='char'?1:s=='"unsigned_short"'||s=='short'?2:s=='"unsigned_int"'||s=='int'||s=='float'?4:8}
+  ssize={s='$stype';s=='"unsigned_char"'||s=='char'?1:s=='"unsigned_short"'||s=='short'?2:s=='"unsigned_int"'||\
+         s=='int'||s=='float'?4:8}
+  dsize={s='$dtype';s=='"unsigned_char"'||s=='char'?1:s=='"unsigned_short"'||s=='short'?2:s=='"unsigned_int"'||\
+         s=='int'||s=='float'?4:8}
   repeat $! l[$>]
     w,h,d,s={[w,h,d,s]}
     serialize $1,0,0
@@ -6208,7 +6294,8 @@ complex2polar :
 #@cli : Compress selected color LUTs as sequences of colored keypoints.
 #@cli : Default values: 'max_error=8', 'avg_error=2' and 'max_nb_points=2048'.
 compress_clut : check "isint(${1=8}) && $1>0 && ${2=2}>0 && isint(${3=2048}) && $3>8"
-  e[^-1] "Compress color LUT$? as a set of colored keypoints, with maximum error $1, average error $2 and $3 maximum keypoints."
+  e[^-1] "Compress color LUT$? as a set of colored keypoints, with maximum error $1, average error $2 and
+          $3 maximum keypoints."
   v - max_error,avg_error,max_keypoints=${1--1}
   repeat $! l[$>] nm={b}
     if iM>255 / 257 fi # When input is 16bits
@@ -6248,7 +6335,9 @@ compress_clut : check "isint(${1=8}) && $1>0 && ${2=2}>0 && isint(${3=2048}) && 
       +l. s y rm[$index] a y endl # Remove random keypoint
       +decompress_clut. {0,[w,h,d]} -. [0] norm. emax,eavg={[iM,ia]} rm.
       if $emax<=$max_error" && "$eavg<=$avg_error rv[-2,-1] else index+=1 fi
-      v + e[] "\r"$sep"  > Rem [#"{1,min($index,h-1)}"/"{1,h}"] Max_Err = "{_$emax}", Avg_Err = "{_$eavg}"       " v - sep=""
+      v +
+      e[] "\r"$sep"  > Rem [#"{1,min($index,h-1)}"/"{1,h}"] Max_Err = "{_$emax}", Avg_Err = "{_$eavg}"       "
+      v - sep=""
       rm.
     while $index<h
     k.
@@ -6379,7 +6468,8 @@ decompress_clut : check "isint(${1=64}) && $1>0 && isint(${2=$1}) && $2>0 && isi
     2,2,2,{s-3}
     do
       +f. 0 .,.,.,1
-      eval[0] "begin(fact = ([w#1,h#1,d#1] - 1)/255); PC = I; P = PC[0,3]; X = round(P*fact); I(#2,X)+=PC[3,s-3]; ++i(#3,X); I"
+      eval[0] "begin(fact = ([w#1,h#1,d#1] - 1)/255); PC = I; P = PC[0,3]; X = round(P*fact);
+               I(#2,X)+=PC[3,s-3]; ++i(#3,X); I"
       f. "*i?(I(#2)/=i;1):0"
       if im rm[-3,-1] # No missing data so far
       else # Reconstruct missing data by anisotropic diffusion scheme
@@ -6467,7 +6557,8 @@ eigen2tensor :
       s... c
       -[-5] ... -[-4] ... *.. [-5] *. [-4]
       (1^0^0^1^0^1) r. ... *. [-4] rm[-6--4] +[-3--1]
-    else v + error[0--3] "Command '$0': Invalid image ["{$!-$>-1}"] : Dimensions "{w}","{h}","{d}","{s}" does not represent a field of 2D or 3D eigenvectors."
+    else v + error[0--3] "Command '$0': Invalid image ["{$!-$>-1}"] : Dimensions "{w}","{h}","{d}","{s}" does
+                          not represent a field of 2D or 3D eigenvectors."
     fi
   nm $nm endl done v +
 
@@ -6591,15 +6682,17 @@ negate : skip "${1=,}"
 noise_perlin : check "${1=16}>0 && ${2=$1}>0 && ${3=$1}>0 && isnumber(${4=0}) && isnumber(${5=0}) && isnumber(${6=0})"
   e[^-1] "Render Perlin noise on image$?, with scales (${1-3}) and seeds (${4-6})."
   v -
-  init="permutation = [ 151,160,137,91,90,15,131,13,201,95,96,53,194,233,7,225,140,36,103,30,69,142,8,99,37,240,21,10,23,
-          190,6,148,247,120,234,75,0,26,197,62,94,252,219,203,117,35,11,32,57,177,33,88,237,149,56,87,174,20,125,136,171,
-          168,68,175,74,165,71,134,139,48,27,166,77,146,158,231,83,111,229,122,60,211,133,230,220,105,92,41,55,46,245,40,
-          244,102,143,54,65,25,63,161,1,216,80,73,209,76,132,187,208,89,18,169,200,196,135,130,116,188,159,86,164,100,109,
-          198,173,186,3,64,52,217,226,250,124,123,5,202,38,147,118,126,255,82,85,212,207,206,59,227,47,16,58,17,182,189,
-          28,42,223,183,170,213,119,248,152,2,44,154,163,70,221,153,101,155,167,43,172,9,129,22,39,253,19,98,108,110,79,
-          113,224,232,178,185,112,104,218,246,97,228,251,34,242,193,238,210,144,12,191,179,162,241,81,51,145,235,249,14,
-          239,107,49,192,214,31,181,199,106,157,184,84,204,176,115,121,50,45,127,4,150,254,138,236,205,93,222,114,67,29,
-          24,72,243,141,128,195,78,66,215,61,156,180 ];
+  init="permutation = [ 151,160,137,91,90,15,131,13,201,95,96,53,194,233,7,225,140,36,103,30,69,142,8,99,37,240,
+                        21,10,23,190,6,148,247,120,234,75,0,26,197,62,94,252,219,203,117,35,11,32,57,177,33,88,
+                        237,149,56,87,174,20,125,136,171,168,68,175,74,165,71,134,139,48,27,166,77,146,158,231,
+                        83,111,229,122,60,211,133,230,220,105,92,41,55,46,245,40,244,102,143,54,65,25,63,161,1,
+                        216,80,73,209,76,132,187,208,89,18,169,200,196,135,130,116,188,159,86,164,100,109,198,
+                        173,186,3,64,52,217,226,250,124,123,5,202,38,147,118,126,255,82,85,212,207,206,59,227,47,
+                        16,58,17,182,189,28,42,223,183,170,213,119,248,152,2,44,154,163,70,221,153,101,155,167,
+                        43,172,9,129,22,39,253,19,98,108,110,79,113,224,232,178,185,112,104,218,246,97,228,251,
+                        34,242,193,238,210,144,12,191,179,162,241,81,51,145,235,249,14,239,107,49,192,214,31,
+                        181,199,106,157,184,84,204,176,115,121,50,45,127,4,150,254,138,236,205,93,222,114,67,29,
+                        24,72,243,141,128,195,78,66,215,61,156,180 ];
         p = [ permutation,permutation ];
         fade(t) = (t*t*t*(t*(t*6 - 15) + 10));
         lerp(t,a,b) = (a + t*(b - a));
@@ -6618,7 +6711,10 @@ noise_perlin : check "${1=16}>0 && ${2=$1}>0 && ${3=$1}>0 && isnumber(${4=0}) &&
         fd = (z1 - z0)/max(d - 1,1);"
 
   repeat $! if {$>,d>1} # 3D version
-    f[$>] "*begin("$init" grad(hash,x,y,z) = ( gh = hash&15; gu = gh<8?x:y; gv = gh<4?y:gh==12 || gh==14?x:z; (!(gh&1)?gu:-gu) + (!(gh&2)?gv:-gv)));
+    f[$>] "*begin("$init"
+         grad(hash,x,y,z) = ( gh = hash&15; gu = gh<8?x:y; gv = gh<4?y:gh==12 || gh==14?x:z;
+                             (!(gh&1)?gu:-gu) + (!(gh&2)?gv:-gv))
+       );
        x = x0 + x*fw + pcmod255[c]; y = y0 + y*fh + pcmod255[c]; z = z0 + z*fd + pcmod255[c];
        ix = floor(x); iy = floor(y); iz = floor(z);
        X = ix&255; Y = iy&255; Z = iz&255;
@@ -6636,7 +6732,10 @@ noise_perlin : check "${1=16}>0 && ${2=$1}>0 && ${3=$1}>0 && isnumber(${4=0}) &&
                       lerp(u,grad(p[AB + 1],fx,fy1,fz1),
                              grad(p[BB+1],fx1,fy1,fz1))))"
   else # 2D version
-    f[$>] "*begin("$init" grad(hash,x,y) = ( gh = hash&15; gu = gh<8?x:y; gv = gh<4?y:gh==12 || gh==14?x:0; (!(gh&1)?gu:-gu) + (!(gh&2)?gv:-gv)));
+    f[$>] "*begin("$init"
+         grad(hash,x,y) = ( gh = hash&15; gu = gh<8?x:y; gv = gh<4?y:gh==12 || gh==14?x:0;
+                            (!(gh&1)?gu:-gu) + (!(gh&2)?gv:-gv))
+       );
        x = x0 + x*fw + pcmod255[c]; y = y0 + y*fh + pcmod255[c];
        ix = floor(x); iy = floor(y);
        X = ix&255; Y = iy&255;
@@ -6652,7 +6751,8 @@ noise_perlin : check "${1=16}>0 && ${2=$1}>0 && ${3=$1}>0 && isnumber(${4=0}) &&
 
 #@cli noise_poissondisk : _radius[%]>0,_max_sample_attempts>0
 #@cli : Add poisson disk sampling noise to selected images.
-#@cli : Implements the algorithm from the article "Fast Poisson Disk Sampling in Arbitrary Dimensions", by Robert Bridson (SIGGRAPH'2007).
+#@cli : Implements the algorithm from the article "Fast Poisson Disk Sampling in Arbitrary Dimensions",
+#@cli : by Robert Bridson (SIGGRAPH'2007).
 #@cli : Default values: 'radius=8' and 'max_sample_attempts=30'.
 #@cli : $ 300,300 noise_poissondisk 8
 ##### : Original G'MIC code by Garagecoder (Andy Kelday)
@@ -6975,7 +7075,10 @@ roundify : check $1>=0
 set_vector_covariance :
   e[^-1] "Set covariance matrix of image$? to [ $* ]."
   v - repeat $! l[$>]
-    if narg($*)!=s^2 error[0--4] "Command '$0': Invalid arguments '$*' for image '"{n}"' with size ("{[w,h,d,s]}") ("{s^2}" argument"${"if s==1 u \"\" else u s fi"}" expected)." fi
+    if narg($*)!=s^2
+      error[0--4] "Command '$0': Invalid arguments '$*' for image '"{n}"' with size ("{[w,h,d,s]}") ("{s^2}\
+                  " argument"${"if s==1 u \"\" else u s fi"}" expected)."
+    fi
 
     # Compute current covariance matrix.
     C=${"vector_covariance _avg"}
@@ -7029,7 +7132,8 @@ vector2tensor :
     s c
     if $!==2 +sqr. *.. ... sqr...
     elif $!==3 +sqr.. +*... .. +sqr... *[-5,-4] [-6] sqr[-6]
-    else v + error[0--4] "Command '$0': Invalid image ["{$!-$>-1}"] : Dimensions "{w}","{h}","{d}","{s}" does not represent a field of 2D or 3D vectors."
+    else v + error[0--4] "Command '$0': Invalid image ["{$!-$>-1}"] : Dimensions "{w}","{h}","{d}","{s}" does not
+                          represent a field of 2D or 3D vectors."
     fi
     a c
   endl done v +
@@ -7047,8 +7151,10 @@ vector2tensor :
 #@cli : Processed images have pixel values constrained in [value_min,value_max].
 #@cli : Default values: 'brightness=0', 'contrast=0', 'gamma=0', 'hue_shift=0', 'saturation=0', 'value_min=value_max=0'.
 #@cli : $ image.jpg +adjust_colors 0,30,0,0,30
-adjust_colors : check "${1=0}>=-100 && $1<=100 && ${2=0}>=-100 && $2<=100 && ${3=0}>=-100 && $3<=100 && ${4=0}>=-100 && $4<=100 && ${5=0}>=-100 && $5<=100" skip ${6=0},${7=0}
-  e[^-1] "Adjust colors of image$?, with brightness $1, contrast $2, gamma $3, hue shift $4, saturation $5 and value range [$6,$7]."
+adjust_colors : check "${1=0}>=-100 && $1<=100 && ${2=0}>=-100 && $2<=100 && ${3=0}>=-100 && $3<=100 &&
+                       ${4=0}>=-100 && $4<=100 && ${5=0}>=-100 && $5<=100" skip ${6=0},${7=0}
+  e[^-1] "Adjust colors of image$?, with brightness $1, contrast $2, gamma $3, hue shift $4, saturation $5 and
+          value range [$6,$7]."
   v - repeat $! l[$>] split_opacity
     range={"$6==$7 && $6==0?[im,iM]:[min($6,$7),max($6,$7)]"}
     m={arg(1,$range)} M={arg(2,$range)} fact={255/max(1e-5,$M-$m)}
@@ -7275,7 +7381,9 @@ cmyk2rgb :
 #@cli : Simulate color blindness vision.
 #@cli : $ image.jpg +colorblind 0
 colorblind : check "isint($1) && $1>=0 && $1<=7"
-  v - s0="protanopia" s1="protanomaly" s2="deuteranopia" s3="deuteranomaly" s4="tritanopia" s5="tritanomaly" s6="achromatopsia" s7="achromatomaly"
+  v -
+  s0="protanopia" s1="protanomaly" s2="deuteranopia" s3="deuteranomaly" s4="tritanopia"
+  s5="tritanomaly" s6="achromatopsia" s7="achromatomaly"
   v + e[^-1] "Simulate color blindness of type '"${s$1}"' on image$?." v -
   type0=(0.567,0.433,0;0.558,0.442,0;0,0.242,0.758)
   type1=(0.817,0.183,0;0.333,0.667,0;0,0.125,0.875)
@@ -7767,8 +7875,10 @@ replace_color : check "$1>=0 && $2>=0"
 #@cli : Apply multi-scale retinex algorithm on selected images to improve color consistency.
 #@cli : (as described in the page http://www.ipol.im/pub/art/2014/107/).
 #@cli : Default values: 'offset=1', 'colorspace=hsv', 'min_cut=1', 'max_cut=1', 'sigma_low=15','sigma_mid=80' and 'sigma_high=250'.
-retinex : check "${1=5}>0 && ${3=1}>=0 && $3<=100 && ${4=1}>=0 && $4<=100 && ${5=15}>0 && ${6=80}>0 && ${7=250}>0" skip "${2=hsv}"
-  e[^-1] "Apply Retinex color consistency algorithm on image$?, with value offset $1, colorspace '$2', cuts ($3,$4) and sigmas (${5-7})."
+retinex : check "${1=5}>0 && ${3=1}>=0 && $3<=100 && ${4=1}>=0 && $4<=100 && ${5=15}>0 && ${6=80}>0 && ${7=250}>0"
+  skip "${2=hsv}"
+  e[^-1] "Apply Retinex color consistency algorithm on image$?, with value offset $1, colorspace '$2', cuts ($3,$4)
+          and sigmas (${5-7})."
   v -
   if '$2'=='hsi' mode=hsi_i
   elif '$2'=='hsv' mode=hsv_v
@@ -8504,8 +8614,10 @@ transfer_rgb : check "${2=0.3}>=0 && ${3=8}>=0 && ${4=0.15}>=0 && ${5=64}>=0 && 
 
 # _transfer_rgb : _gamma>=0,_smoothness>=0,_resolution>0
 # Convert selected images into 3D volumetric scalar function for color matching.
-_transfer_rgb : v - l[] check "${1=0}>=0 && ${2=1.5}>=0 && ${3=128}>0" gamma=$1 smoothness=$2 res=$3 onfail noarg gamma=0 smoothness=1.5 res=128 endl v +
-  e[^-1] "Convert image$? as 3D volumetric scalar functions for color matching, with gamma "$gamma", smoothness "$smoothness" and resolution "$res"."
+_transfer_rgb : v - l[] check "${1=0}>=0 && ${2=1.5}>=0 && ${3=128}>0" gamma=$1 smoothness=$2 res=$3
+  onfail noarg gamma=0 smoothness=1.5 res=128 endl v +
+  e[^-1] "Convert image$? as 3D volumetric scalar functions for color matching, with gamma "$gamma",
+          smoothness "$smoothness" and resolution "$res"."
   v - to_rgb repeat $! l[$>]
     b 0.3%
     r {w*h},3,1,1,-1 * {($res-1)/255}
@@ -8719,8 +8831,9 @@ apply_scales : skip "${1=}" check "isint($2) && $2>0 && ${3=25%}>=0 && ${4=100%}
 #@cli : Default values: 'threshold=0%', 'min_area=0.1%', 'is_high_connectivity=0' and 'output_type=1'.
 #@cli : $ 256,256 noise 0.1,2 eq 1 dilate_circ 20 label_fg 0,1 normalize 0,255 +neq 0 *[-1] 255 append c +autocrop_components ,
 autocrop_components : skip ${1=0%} check "${2=0.1%}>=0 && isbool(${3=0}) && isint(${4=1}) && $4>=0 && $4<=2"
-  e[^-1] "Autocrop connected components from image$?, with threshold $1, minimal area $2, "${arg\ 1+$3,low,high}" connectivity "\
-          "and output type set to '"${arg\ 1+$4,crop,segmentation,coordinates}"'.\n"
+  e[^-1] "Autocrop connected components from image$?, with threshold $1, minimal area $2, "\
+         ${arg\ 1+$3,low,high}" connectivity "\
+         "and output type set to '"${arg\ 1+$4,crop,segmentation,coordinates}"'.\n"
   v - repeat $! l[$>]
     min_area={max(1,round(if(${is_percent\ $2},$2*w*h,$2)))}
     +channels 100% >. $1 area_fg. 0,$3 >=. $min_area  # Discard background and small objects.
@@ -8829,7 +8942,8 @@ elevate : check "${1=64}>0" skip ${2=1},${3=1}
 #@cli : Default value: 'boundary_conditions=1'.
 #@cli : $ image.jpg expand_x 30,0
 expand_x : check "$1>=0 && ${2=1}>=0 && $2<=3"
-  e[^-1] "Expand image$? along the x-axis with size $1 and "${"arg 1+$2,dirichlet,neumann,periodic,mirror"}" boundary conditions."
+  e[^-1] "Expand image$? along the x-axis with size $1 and "${"arg 1+$2,dirichlet,neumann,periodic,mirror"}"
+          boundary conditions."
   v - repeat $! r[$>] {$>,w+2*$1},100%,100%,100%,0,$2,0.5,0.5,0.5 done v +
 
 #@cli expand_xy : size>=0,_boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }
@@ -8837,14 +8951,16 @@ expand_x : check "$1>=0 && ${2=1}>=0 && $2<=3"
 #@cli : Default value: 'boundary_conditions=1'.
 #@cli : $ image.jpg expand_xy 30,0
 expand_xy : check "$1>=0 && ${2=1}>=0 && $2<=3"
-  e[^-1] "Expand image$? along the xy-axes with size $1 and "${"arg 1+$2,dirichlet,neumann,periodic,mirror"}" boundary conditions."
+  e[^-1] "Expand image$? along the xy-axes with size $1 and "${"arg 1+$2,dirichlet,neumann,periodic,mirror"}"
+          boundary conditions."
   v - repeat $! r[$>] {$>,w+2*$1},{$>,h+2*$1},100%,100%,0,$2,0.5,0.5,0.5 done v +
 
 #@cli expand_xyz : size>=0,_boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }
 #@cli : Expand selected images along the xyz-axes.
 #@cli : Default value: 'boundary_conditions=1'.
 expand_xyz : check "$1>=0 && ${2=1}>=0 && $2<=3"
-  e[^-1] "Expand image$? along the xyz-axes with size $1 and "${"arg 1+$2,dirichlet,neumann,periodic,mirror"}" boundary conditions."
+  e[^-1] "Expand image$? along the xyz-axes with size $1 and "${"arg 1+$2,dirichlet,neumann,periodic,mirror"}"
+          boundary conditions."
   v - repeat $! r[$>] {$>,w+2*$1},{$>,h+2*$1},{$>,d+2*$1},100%,0,$2,0.5,0.5,0.5 done v +
 
 #@cli expand_y : size_y>=0,_boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }
@@ -8852,14 +8968,16 @@ expand_xyz : check "$1>=0 && ${2=1}>=0 && $2<=3"
 #@cli : Default value: 'boundary_conditions=1'.
 #@cli : $ image.jpg expand_y 30,0
 expand_y : check "$1>=0 && ${2=1}>=0 && $2<=3"
-  e[^-1] "Expand image$? along the y-axis with size $1 and "${"arg 1+$2,dirichlet,neumann,periodic,mirror"}" boundary conditions."
+  e[^-1] "Expand image$? along the y-axis with size $1 and "${"arg 1+$2,dirichlet,neumann,periodic,mirror"}"
+          boundary conditions."
   v - repeat $! r[$>] 100%,{$>,h+2*$1},100%,100%,0,$2,0.5,0.5,0.5 done v +
 
 #@cli expand_z : size_z>=0,_boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }
 #@cli : Expand selected images along the z-axis.
 #@cli : Default value: 'boundary_conditions=1'.
 expand_z : check "$1>=0 && ${2=1}>=0 && $2<=3"
-  e[^-1] "Expand image$? along the z-axis with size $1 and "${"arg 1+$2,dirichlet,neumann,periodic,mirror"}" boundary conditions."
+  e[^-1] "Expand image$? along the z-axis with size $1 and "${"arg 1+$2,dirichlet,neumann,periodic,mirror"}"
+          boundary conditions."
   v - repeat $! r[$>] 100%,100%,{$>,d+2*$1},100%,0,$2,0.5,0.5,0.5 done v +
 
 #@cli extract_region : [label_image],_extract_xyz_coordinates={ 0 | 1 },_label_1,...,_label_M
@@ -8868,7 +8986,8 @@ expand_z : check "$1>=0 && ${2=1}>=0 && $2<=3"
 #@cli : Default value: 'extract_xyz_coordinates=0'.
 #@cli : $ image.jpg +blur 3 quantize. 4,0 +extract_region[0] [1],0,1,3
 extract_region : check ${"is_image_arg $1"}" && isnumber(${2=0})"
-  if $#<3 e[0--3] "Extract pixels of image$? for labels [] in image $1, with"${"arg 1+!!$2,out"}" coordinates -> no labels provided, ignoring." return fi
+  if $#<3 e[0--3] "Extract pixels of image$? for labels [] in image $1, with"${"arg 1+!!$2,out"}" coordinates
+                   -> no labels provided, ignoring." return fi
   e[^-1] "Extract pixels of image$? for labels {${3--1}} in image $1, with"${"arg 1+!!$2,out"}" coordinates."
   v - pass$1 mv. 0 repeat $!-1 l[0,{1+$<}]
     1,16,1,{s+($2?3:0)} if $#>3 .x{$#-3} fi
@@ -8939,14 +9058,20 @@ montage : check "isnumber(${2=2}) && $2>=0 && $2<=3" skip "${1=X}",${3=0},"${4=}
         $N,1,1,1,x s x,-{round(w/$nr,1,1)} repeat $! l[$>] if w>1 i[0] {w-1},1,1,1,-1 a x fi endl done a x
         if $nr>1 i[0] {$nr-1},1,1,1,-2 a x fi y
       else # Other complex montage.
-        ({'"$1"'}) f 'if(i==72||i==104,-1,if(i==86||i==118,-2,if(i==82||i==114,-3,if(i==77||i==109,-4,if(i>=48&&i<=57,i-48,-5)))))'
+        ({'"$1"'}) f "if(i==72 || i==104,-1,
+                      if(i==86 || i==118,-2,
+                      if(i==82 || i==114,-3,
+                      if(i==77 || i==109,-4,
+                      if(i>=48 && i<=57,i-48,-5)))))"
         s +,-1 s +,-2 s +,-3 s +,-4 s +,-5
         repeat $! l[$>] if im>=0 ++. 48 =.. {t} rm. rows 0 fi endl done a y discard -5
       fi
       f 'if(i<0,i,i%$N)'
     endl
     if $!==$N rm v + return fi  # Empty layout code.
-    nm[^-1] 0 repeat h c={i[$>]} if $c>=0 if {$c,n} i.. [$c] i={$!-2} =. $i,0,$> ref$i=$c else nm[$c] 1 ref$c=$c fi fi done # Duplicate multiple references.
+    nm[^-1] 0 repeat h c={i[$>]} # Duplicate multiple references.
+      if $c>=0 if {$c,n} i.. [$c] i={$!-2} =. $i,0,$> ref$i=$c else nm[$c] 1 ref$c=$c fi fi
+    done
     _code={^} _lcode={narg($_code)} rm.
 
     # Determine image positions and sizes.
@@ -8958,7 +9083,8 @@ montage : check "isnumber(${2=2}) && $2>=0 && $2<=3" skip "${1=X}",${3=0},"${4=}
     # Render montage.
     if narg("$4") m "__montage : $4 k[0]"
     else
-    m "__montage : if $""7%2 mirror x fi if $""8%2 mirror y fi rotate {90*$""6} r {max(1,round($""4,1,1))},{max(1,round($""5,1,1))},1,100%,3"
+    m "__montage : if $""7%2 mirror x fi if $""8%2 mirror y fi rotate {90*$""6}
+       r {max(1,round($""4,1,1))},{max(1,round($""5,1,1))},1,100%,3"
     fi
     s=${max_s[^-1]}
     repeat h
@@ -8989,7 +9115,9 @@ _montage :
 
     if $c==-1 # Horizontal merge.
       if $_mode<2
-        h={max($lh,$rh)} +[$l] '0,0,{($h-$lh)*min(1,$_mode)},0,0,0,0,0' +[$r] '0,$lw,{($h-$rh)*min(1,$_mode)},0,0,0,0,0'
+        h={max($lh,$rh)}
+        +[$l] '0,0,{($h-$lh)*min(1,$_mode)},0,0,0,0,0'
+        +[$r] '0,$lw,{($h-$rh)*min(1,$_mode)},0,0,0,0,0'
       else
         h={($_mode-2)*max($lh,$rh)+(3-$_mode)*min($lh,$rh)}
         lf={$h/$lh} rf={$h/$rh} lw={$lw*$lf} rw={$rw*$rf}
@@ -8999,7 +9127,9 @@ _montage :
 
     else # Vertical merge.
       if $_mode<2
-        w={max($lw,$rw)} +[$l] '0,{($w-$lw)*min(1,$_mode)},0,0,0,0,0,0' +[$r] '0,{($w-$rw)*min(1,$_mode)},$lh,0,0,0,0,0'
+        w={max($lw,$rw)}
+        +[$l] '0,{($w-$lw)*min(1,$_mode)},0,0,0,0,0,0'
+        +[$r] '0,{($w-$rw)*min(1,$_mode)},$lh,0,0,0,0,0'
       else
         w={($_mode-2)*max($lw,$rw)+(3-$_mode)*min($lw,$rw)}
         lf={$w/$lw} rf={$w/$rw} lh={$lh*$lf} rh={$rh*$rf}
@@ -9059,13 +9189,21 @@ resize_mn : check "${2=100%}>=0 && ${3=100%}>=0" skip "${4=0.333},${5=0.333}"
     elif !w rm $nw,$nh,$nd,1
     else
       if w==1||$nw<w r $nw,100%,100%,100%,{w==1?1:2}
-      elif $nw>w $nw,100%,100%,100%,${lib}"X = x*(w#-1-1)/(w-1); d = X - int(X); P0 = I(#-1,X-1); P1 = I(#-1,X); P2 = I(#-1,X+1); P3 = I(#-1,X+2); mn(P0,P1,P2,P3,d);" k.
+      elif $nw>w
+        $nw,100%,100%,100%,${lib}"X = x*(w#-1-1)/(w-1); d = X - int(X); P0 = I(#-1,X-1); P1 = I(#-1,X);
+                                  P2 = I(#-1,X+1); P3 = I(#-1,X+2); mn(P0,P1,P2,P3,d);" k.
       fi
-      if h==1||$nh<h r 100%,$nh,100%,100%,{h==1?1:2}
-      elif $nh!=h 100%,$nh,100%,100%,${lib}"Y = y*(h#-1-1)/(h-1); d = Y - int(Y); P0 = I(#-1,x,Y-1); P1 = I(#-1,x,Y); P2 = I(#-1,x,Y+1); P3 = I(#-1,x,Y+2); mn(P0,P1,P2,P3,d);" k.
+      if h==1||$nh<h
+        r 100%,$nh,100%,100%,{h==1?1:2}
+      elif $nh!=h
+        100%,$nh,100%,100%,${lib}"Y = y*(h#-1-1)/(h-1); d = Y - int(Y); P0 = I(#-1,x,Y-1); P1 = I(#-1,x,Y);
+                                  P2 = I(#-1,x,Y+1); P3 = I(#-1,x,Y+2); mn(P0,P1,P2,P3,d);" k.
       fi
-      if d==1||$nd<d r 100%,100%,$nd,100%,{d==1?1:2}
-      elif $nd!=d 100%,100%,$nd,100%,${lib}"Z = z*(d#-1-1)/(d-1); d = Z - int(Z); P0 = I(#-1,x,y,Z-1); P1 = I(#-1,x,y,Z); P2 = I(#-1,x,y,Z+1); P3 = I(#-1,x,y,Z+2); mn(P0,P1,P2,P3,d);" k.
+      if d==1" || "$nd<d
+        r 100%,100%,$nd,100%,{d==1?1:2}
+      elif $nd!=d
+        100%,100%,$nd,100%,${lib}"Z = z*(d#-1-1)/(d-1); d = Z - int(Z); P0 = I(#-1,x,y,Z-1); P1 = I(#-1,x,y,Z);
+                                  P2 = I(#-1,x,y,Z+1); P3 = I(#-1,x,y,Z+2); mn(P0,P1,P2,P3,d);" k.
       fi
     fi
     nm $nm
@@ -9132,7 +9270,8 @@ resize2dx :
   v - _gmic_s="$?" v +
   _$0 $*
 
-_resize2dx : check "$1>0 && ${2=3}>=0 && $2<=6 && ${3=0}>=0 && $3<=3 && ${4=0}>=0 && $4<=1 && ${5=0}>=0 && $5<=1 && ${6=0}>=0 && $6<=1 && ${7=0}>=0 && $7<=1"
+_resize2dx : check "$1>0 && ${2=3}>=0 && $2<=6 && ${3=0}>=0 && $3<=3 && ${4=0}>=0 && $4<=1 && ${5=0}>=0 && $5<=1 &&
+                    ${6=0}>=0 && $6<=1 && ${7=0}>=0 && $7<=1"
   e[0--3] "Resize 2D image"$_gmic_s" to $1 pixels along the x-axis, preserving 2D ratio."
   v - repeat $! l[$>]
     size={if(${is_percent\ $1},$1*w,$1)}
@@ -9160,7 +9299,8 @@ resize2dy :
   v - _gmic_s="$?" v +
   _$0 $*
 
-_resize2dy : check "$1>=0 && ${2=3}>=0 && $2<=6 && ${3=0}>=0 && $3<=3 && ${4=0}>=0 && $4<=1 && ${5=0}>=0 && $5<=1 && ${6=0}>=0 && $6<=1 && ${7=0}>=0 && $7<=1"
+_resize2dy : check "$1>=0 && ${2=3}>=0 && $2<=6 && ${3=0}>=0 && $3<=3 && ${4=0}>=0 && $4<=1 && ${5=0}>=0 && $5<=1 &&
+                    ${6=0}>=0 && $6<=1 && ${7=0}>=0 && $7<=1"
   e[0--3] "Resize 2D image"$_gmic_s" to $1 pixels along the y-axis, preserving 2D ratio."
   v - repeat $! l[$>]
     size={if(${is_percent\ $1},$1*h,$1)}
@@ -9187,7 +9327,8 @@ resize3dx :
   v - _gmic_s="$?" v +
   _$0 $*
 
-_resize3dx : check "$1>0 && ${2=3}>=0 && $2<=6 && ${3=0}>=0 && $3<=3 && ${4=0}>=0 && $4<=1 && ${5=0}>=0 && $5<=1 && ${6=0}>=0 && $6<=1 && ${7=0}>=0 && $7<=1"
+_resize3dx : check "$1>0 && ${2=3}>=0 && $2<=6 && ${3=0}>=0 && $3<=3 && ${4=0}>=0 && $4<=1 && ${5=0}>=0 && $5<=1 &&
+                    ${6=0}>=0 && $6<=1 && ${7=0}>=0 && $7<=1"
   e[0--3] "Resize 3D image"$_gmic_s" to $1 pixels along the x-axis, preserving 3D ratio."
   v - repeat $! l[$>]
     size={if(${is_percent\ $1},$1*w,$1)}
@@ -9214,7 +9355,8 @@ resize3dy :
   v - _gmic_s="$?" v +
   _$0 $*
 
-_resize3dy : check "$1>0 && ${2=3}>=0 && $2<=6 && ${3=0}>=0 && $3<=3 && ${4=0}>=0 && $4<=1 && ${5=0}>=0 && $5<=1 && ${6=0}>=0 && $6<=1 && ${7=0}>=0 && $7<=1"
+_resize3dy : check "$1>0 && ${2=3}>=0 && $2<=6 && ${3=0}>=0 && $3<=3 && ${4=0}>=0 && $4<=1 && ${5=0}>=0 && $5<=1 &&
+                    ${6=0}>=0 && $6<=1 && ${7=0}>=0 && $7<=1"
   e[0--3] "Resize 3D image"$_gmic_s" to $1 pixels along the y-axis, preserving 3D ratio."
   v - repeat $! l[$>]
     size={if(${is_percent\ $1},$1*h,$1)}
@@ -9241,7 +9383,8 @@ resize3dz :
   v - _gmic_s="$?" v +
   _$0 $*
 
-_resize3dz : check "$1>0 && ${2=3}>=0 && $2<=6 && ${3=0}>=0 && $3<=3 && ${4=0}>=0 && $4<=1 && ${5=0}>=0 && $5<=1 && ${6=0}>=0 && $6<=1 && ${7=0}>=0 && $7<=1"
+_resize3dz : check "$1>0 && ${2=3}>=0 && $2<=6 && ${3=0}>=0 && $3<=3 && ${4=0}>=0 && $4<=1 && ${5=0}>=0 && $5<=1 &&
+                    ${6=0}>=0 && $6<=1 && ${7=0}>=0 && $7<=1"
   e[0--3] "Resize 3D image"$_gmic_s" to $1 pixels along the z-axis, preserving 3D ratio."
   v - repeat $! l[$>]
     size={if(${is_percent\ $1},$1*d,$1)}
@@ -9307,8 +9450,9 @@ scale2x :
   e[^-1] "Double xy-dimensions of image$?, using Scale2x algorithm."
   v - repeat $! l[$>]
     r 200%,200%
-    f "dx=x&1;dy=y&1;A=j(0,-2,0,0,0,1);B=j(2,0,0,0,0,1);C=j(-2,0,0,0,0,1);D=j(0,2,0,0,0,1);"\
-      "!dy*(!dx*if(C==A&&C!=D&&A!=B,A,i) + dx*if(A==B&&A!=C&&B!=D,B,i)) + dy*(dx*if(B==D&&B!=A&&D!=C,D,i) + !dx*if(D==C&&D!=B&&C!=A,C,i))"
+    f "dx=x&1;dy=y&1;A=j(0,-2,0,0,0,1);B=j(2,0,0,0,0,1);C=j(-2,0,0,0,0,1);D=j(0,2,0,0,0,1);
+       !dy*(!dx*if(C==A&&C!=D&&A!=B,A,i) + dx*if(A==B&&A!=C&&B!=D,B,i)) +
+       dy*(dx*if(B==D&&B!=A&&D!=C,D,i) + !dx*if(D==C&&D!=B&&C!=A,C,i))"
   endl done v +
 
 #@cli scale3x
@@ -9318,13 +9462,16 @@ scale3x :
   e[^-1] "Triple xy-dimensions of image$?, using Scale3x algorithm."
   v - repeat $! l[$>]
     r 300%,300%
-    f "dx=x%3;dy=y%3;c0=!dx;c1=(dx==1);c2=(dx==2);"\
-      "A=j(-3,-3,0,0,0,1);B=j(0,-3,0,0,0,1);C=j(3,-3,0,0,0,1);"\
-      "D=j(-3,0,0,0,0,1);F=j(3,0,0,0,0,1);"\
-      "G=j(-3,3,0,0,0,1);H=j(0,3,0,0,0,1);I=j(3,3,0,0,0,1);"\
-      "!dy*(c0*if(D==B&&D!=H&&B!=F,D,i) + c1*if((D==B&&D!=H&&B!=F&&i!=C)||(B==F&&B!=D&&F!=H&&i!=A),B,i) + c2*if(B==F&&B!=D&&F!=H,F,i)) + "\
-      "(dy==1)*(c0*if((H==D&&H!=F&&D!=B&&i!=A)||(D==B&&D!=H&&B!=F&&i!=G),D,i) + c1*i + c2*if((B==F&&B!=D&&F!=H&&i!=I)||(F==H&&F!=B&&H!=D&&i!=C),F,i)) + "\
-      "(dy==2)*(c0*if(H==D&&H!=F&&D!=B,D,i) + c1*if((F==H&&F!=B&&H!=D&&i!=G)||(H==D&&H!=F&&D!=B&&i!=I),H,i) + c2*if(F==H&&F!=B&&H!=D,F,i))"
+    f "dx=x%3;dy=y%3;c0=!dx;c1=(dx==1);c2=(dx==2);
+       A=j(-3,-3,0,0,0,1);B=j(0,-3,0,0,0,1);C=j(3,-3,0,0,0,1);
+       D=j(-3,0,0,0,0,1);F=j(3,0,0,0,0,1);
+       G=j(-3,3,0,0,0,1);H=j(0,3,0,0,0,1);I=j(3,3,0,0,0,1);
+       !dy*(c0*if(D==B&&D!=H&&B!=F,D,i) + c1*if((D==B&&D!=H&&B!=F&&i!=C)||(B==F&&B!=D&&F!=H&&i!=A),B,i) +
+            c2*if(B==F&&B!=D&&F!=H,F,i)) +
+       (dy==1)*(c0*if((H==D&&H!=F&&D!=B&&i!=A)||(D==B&&D!=H&&B!=F&&i!=G),D,i) + c1*i +
+            c2*if((B==F&&B!=D&&F!=H&&i!=I)||(F==H&&F!=B&&H!=D&&i!=C),F,i)) +
+       (dy==2)*(c0*if(H==D&&H!=F&&D!=B,D,i) + c1*if((F==H&&F!=B&&H!=D&&i!=G)||(H==D&&H!=F&&D!=B&&i!=I),H,i) +
+            c2*if(F==H&&F!=B&&H!=D,F,i))"
   endl done v +
 
 #@cli scale_dcci2x : _edge_threshold>=0,_exponent>0,_extend_1px={ 0=false | 1=true }
@@ -9359,7 +9506,8 @@ scale_dcci2x : check "${1=1.15}>=0 && ${2=5}>=0" skip ${3=0}
        ratio = (1 + d1)/(1 + d2);
        value = ratio>threshold ? interp(j1): # Up-right edge
                ratio<(1/threshold) ? interp(j2): # Down-right edge
-               (w1 = 1/(1 + d1^exponent); w2 = 1/(1 + d2^exponent); (interp(j1)*w1 + interp(j2)*w2)/(w1 + w2)); # Smooth area
+               (w1 = 1/(1 + d1^exponent); w2 = 1/(1 + d2^exponent);
+                (interp(j1)*w1 + interp(j2)*w2)/(w1 + w2)); # Smooth area
        value/=16)"
 
     # Estimate remaining values.
@@ -9386,7 +9534,8 @@ scale_dcci2x : check "${1=1.15}>=0 && ${2=5}>=0" skip ${3=0}
          ratio = (1 + d1)/(1 + d2);
          value = ratio>threshold ? interp(j1) : # Horizontal edge
                  ratio<(1/threshold) ? interp(j2) : # Vertical edge
-                 (w1 = 1/(1 + d1^exponent); w2 = 1/(1 + d2^exponent); (interp(j1)*w1 + interp(j2)*w2)/(w1 + w2)); # Smooth area
+                 (w1 = 1/(1 + d1^exponent); w2 = 1/(1 + d2^exponent);
+                  (interp(j1)*w1 + interp(j2)*w2)/(w1 + w2)); # Smooth area
          value/=16)"
   endl done v +
 
@@ -9447,7 +9596,8 @@ _scale_dcci2x_mask : skip ${1=1.15}
 #@cli : $ image.jpg seamcarve 60%
 # The main code of this algorithm has been done by Andy (Garagecoder).
 seamcarve : check "${2=100%}>=0 && ${5=25%}>=0" skip ${3=0},${4=1}
-  e[^-1] "Resize image$? to $1x$2 using seam-carving algorithm, "${arg\ 1+!$3,with,without}" priority channel, "${arg\ 1+!$4,with,without}" anti-aliasing and maximum seams $5."
+  e[^-1] "Resize image$? to $1x$2 using seam-carving algorithm, "${arg\ 1+!$3,with,without}" priority channel, "\
+         ${arg\ 1+!$4,with,without}" anti-aliasing and maximum seams $5."
   v - repeat $! l[$>]
     nw={max(1,round(if(${is_percent\ $1},$1*w,$1)))}
     nh={max(1,round(if(${is_percent\ $2},$2*h,$2)))}
@@ -9612,7 +9762,8 @@ split_tiles : skip ${2=$1},${3=0}
 #@cli : 'boundary_conditions' can be { 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }.
 #@cli : Default values: 'amplitude=0.25', 'aspect_ratio=0', 'zoom=0', 'center_x=center_y=50%'  and 'boundary_conditions=0'.
 undistort : check "${1=0.1}>=-1 && $1<=1 && ${6=0}>=0 && $6<=3" skip ${2=0},${3=0},${4=50%},${5=50%}
-  e[^-1] "Undistort barrel/pincushion effect in image$?, with amplitude $1, aspect ratio $2, zoom factor $3, center ($4,$5) and "${"arg 1+$6,dirichlet,neumann,periodic,mirror"}" boundary conditions."
+  e[^-1] "Undistort barrel/pincushion effect in image$?, with amplitude $1, aspect ratio $2, zoom factor $3,
+          center ($4,$5) and "${"arg 1+$6,dirichlet,neumann,periodic,mirror"}" boundary conditions."
   v - repeat $! l[$>]
     center_x={${"is_percent $4"}?w*$4:$4}
     center_y={${"is_percent $5"}?h*$5:$5}
@@ -9679,8 +9830,10 @@ upscale_smart : skip ${2=100%},${3=100%} check "${4=2}>=0 && ${5=0.4}>=0 && $5<=
 #@cli : Argument 'std_factor' sets the std of the gaussian weights for the patch overlap, equal to 'std = std_factor*patch_size'.
 #@cli : 'boundary_conditions' can be { 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }.
 #@cli : Default values: 'std_factor=0.3' and 'boundary_conditions=3'.
-warp_patch : check ${is_image_arg\ $1}" && isint(${2=3}) && $2>=1 && isint(${3=$2}) && $3>=1 && isint(${4=1}) && $4>=1 && isnumber(${5=0.3}) && $5>0 && isint(${6=3}) && $6>=0 && $6<=3"
-  e[^-1] "Patch-warp image$? with backward-absolute displacement field $1, using $2x$3x$4 patches, std factor $5 and "${"arg 1+$6,dirichlet,neumann,periodic,mirror"}" boundary conditions."
+warp_patch : check ${is_image_arg\ $1}" && isint(${2=3}) && $2>=1 && isint(${3=$2}) && $3>=1 &&
+                    isint(${4=1}) && $4>=1 && isnumber(${5=0.3}) && $5>0 && isint(${6=3}) && $6>=0 && $6<=3"
+  e[^-1] "Patch-warp image$? with backward-absolute displacement field $1, using $2x$3x$4 patches, std factor $5
+          and "${"arg 1+$6,dirichlet,neumann,periodic,mirror"}" boundary conditions."
   v - if $2<=1 pass$1 warp[^-1] .,0 rm. v + return fi
   repeat $! pass$1 l[$>,-1]
     [0],[0],[0],1,1 a[0,-1] c # Add weighting channel
@@ -9817,8 +9970,10 @@ blur_angular : skip ${2=50%},${3=50%}
 #@cli : Reference: Masaki Kawase, "Practical Implementation of High Dynamic Range Rendering", GDC 2004.
 #@cli : Default values: 'amplitude=1', 'ratio=2', 'nb_iter=5', 'blend_operator=+', 'kernel=0','normalize_scales=0' and 'axes=(all)'
 #@cli : $ image.jpg blur_bloom ,
-blur_bloom : check "${1=1}>=0 && ${2=2}>=0 && isint(${3=5}) && $3>=0 && isint(${5=0}) && $5>=0 && $5<=4 && isnumber(${6=0})" skip ${4=+},${7=}
-  e[^-1] "Apply bloom effect on image$?, with amplitude $1, ratio $2, $3 iterations, blend operator '$4' and "${"arg 1+!$6,\"\",\"no \""}"scale normalization."
+blur_bloom : check "${1=1}>=0 && ${2=2}>=0 && isint(${3=5}) && $3>=0 && isint(${5=0}) && $5>=0 && $5<=4 &&
+                    isnumber(${6=0})" skip ${4=+},${7=}
+  e[^-1] "Apply bloom effect on image$?, with amplitude $1, ratio $2, $3 iterations, blend operator '$4' and "\
+         ${"arg 1+!$6,\"\",\"no \""}"scale normalization."
   v -
   if narg("$7") axes=$7, fi
   m "_bloom0 : b "$axes"$""1"
@@ -10050,7 +10205,8 @@ _dct :
 #@cli : Default values: 'nb_iter=10', 'dt=20', 'regul=0.7' and 'regul_type=1'.
 #@cli : $ image.jpg blur 3 +deblur 3,40,20,0.01
 deblur : check "${2=10}>=0 && ${3=20}>=0 && ${4=0.7}>=0" skip ${5=1}
-  e[^-1] "Deblur image$? with a regularized Jansson-Van Cittert algorithm, with sigma $1, $2 iterations, time step $3 and regularization $4." v -
+  e[^-1] "Deblur image$? with a regularized Jansson-Van Cittert algorithm, with sigma $1, $2 iterations,
+          time step $3 and regularization $4." v -
   repeat $! l[$>] nm={0,n}
     [0]
     repeat $2
@@ -10073,7 +10229,8 @@ deblur : check "${2=10}>=0 && ${3=20}>=0 && ${4=0.7}>=0" skip ${5=1}
 #@cli : $ image.jpg +blur 1 +deblur_goldmeinel[-1] 1
 ###### : (contribution from Jérôme Boulanger).
 deblur_goldmeinel : check "$1>=0 && ${2=8}>=0 && ${3=1}>=0" skip ${4=1}
-  e[^-1] "Deblur image$? using Gold-Meinel algorithm, with sigma $1, $2 iterations, acceleration $3 and "${arg\ 1+!$4,"",quasi-}"gaussian kernel."
+  e[^-1] "Deblur image$? using Gold-Meinel algorithm, with sigma $1, $2 iterations, acceleration $3 and "\
+         ${arg\ 1+!$4,"",quasi-}"gaussian kernel."
   v - repeat $! l[$>]
     [0] repeat $2
       +b. $1,1,$4 +/[0,-1] rm.. ^. $3 *[-1,-2] # u *= f / Hu
@@ -10086,7 +10243,8 @@ deblur_goldmeinel : check "$1>=0 && ${2=8}>=0 && ${3=1}>=0" skip ${4=1}
 #@cli : $ image.jpg +blur 1 +deblur_richardsonlucy[-1] 1
 ###### : (contribution from Jérôme Boulanger).
 deblur_richardsonlucy : check "$1>=0 && ${2=50}>=0" skip ${3=1}
-  e[^-1] "Deblur image$? using Richardson-Lucy algorithm, with sigma $1, $2 iterations and "${arg\ 1+!$3,"",quasi-}"gaussian kernel."
+  e[^-1] "Deblur image$? using Richardson-Lucy algorithm, with sigma $1, $2 iterations and "\
+         ${arg\ 1+!$3,"",quasi-}"gaussian kernel."
   v - repeat $! l[$>]
     [0] repeat $2
       +b. $1,1,{$3!=0} max. 1e-6 +/[0,-1] rm.. b. $1,1,{$3!=0} *[-1,-2] # u *= H ( f / Hu )
@@ -10278,7 +10436,8 @@ _jf_circle :
 #@cli : Dilate selected images in the (X,Y,Z,I) space.
 #@cli : 'boundary_conditions' can be { 0=dirichlet | 1=neumann }.
 #@cli : Default values: 'size_y=size_x', 'size_z=1', 'threshold=255' and 'boundary_conditions=1'.
-dilate_threshold : check "isint($1) && $1>=1 && isint(${2=$1}) && $2>=1 && isint(${3=1}) && $3>=1 && ${4=255}>=0 && isint(${5=1}) && $5>=0"
+dilate_threshold : check "isint($1) && $1>=1 && isint(${2=$1}) && $2>=1 && isint(${3=1}) && $3>=1 && ${4=255}>=0 &&
+                          isint(${5=1}) && $5>=0"
   e[^-1] "Dilate image$? with mask $1x$2x$3, threshold $4 and "${arg\ $5,dirichlet,neumann}" boundary conditions."
   v - l[]
     dx1={int($1/2)} dx2={$1-$dx1-1}
@@ -10378,7 +10537,8 @@ erode_oct : check $1>=0 skip ${2=1},${3=0}
 #@cli : Erode selected images in the (X,Y,Z,I) space.
 #@cli : 'boundary_conditions' can be { 0=dirichlet | 1=neumann }.
 #@cli : Default values: 'size_y=size_x', 'size_z=1', 'threshold=255' and 'boundary_conditions=1'.
-erode_threshold : check "isint($1) && $1>=1 && isint(${2=$1}) && $2>=1 && isint(${3=1}) && $3>=1 && ${4=255}>=0 && isint(${5=1}) && $5>=0"
+erode_threshold : check "isint($1) && $1>=1 && isint(${2=$1}) && $2>=1 && isint(${3=1}) && $3>=1 && ${4=255}>=0 &&
+                         isint(${5=1}) && $5>=0"
   e[^-1] "Erode image$? with mask $1x$2x$3, threshold $4 and "${arg\ $5,dirichlet,neumann}" boundary conditions."
   v - l[]
     dx1={int($1/2)} dx2={$1-$dx1-1}
@@ -10616,7 +10776,8 @@ ilaplacian : check "${1=0}>=0 && ${2=10}>0" skip "${3=}"
 
   else # Inversion with PDE-flow
     if $is_estimate
-      v + e[0--4] "Invert Laplacian image$? using $1 iterations of PDE flow, with time step $2 and initial estimate $3." v -
+      v + e[0--4] "Invert Laplacian image$? using $1 iterations of PDE flow, with time step $2 and
+                   initial estimate $3." v -
       repeat $! pass$3 0 l[$>,-1]
         repeat $1 +laplacian. -. ... *. {$2/max(abs(im),abs(iM))} +[^0] done k.
       endl done
@@ -10636,19 +10797,19 @@ inn :
   e[^-1] "Compute gradient-directed 2nd derivative of image$?."
   v - repeat $! l[$>]
     if d==1
-      +g xy,0 hessian... xxxyyy      # ixx ixy iyy ix iy
-      *[-5] .. *[-4] . *[-4] 2       # ixixx 2iyixy iyy ix iy
-      +[-5,-4] *[-4] ..              # ix^2ixx+2ixiyixy iyy ix iy
-      sqr[-2,-1] *... . +[-4,-3]     # ix^2ixx+2ixiyixy+iy^2iyy ix^2 iy^2
-      +[-2,-1] +. 1e-8 /             # (ix^2ixx+2ixiyixy+iy^2iyy)/(ix^2+iy^2)
+      +g xy,0 hessian... xxxyyy  # ixx ixy iyy ix iy
+      *[-5] .. *[-4] . *[-4] 2   # ixixx 2iyixy iyy ix iy
+      +[-5,-4] *[-4] ..          # ix^2ixx+2ixiyixy iyy ix iy
+      sqr[-2,-1] *... . +[-4,-3] # ix^2ixx+2ixiyixy+iy^2iyy ix^2 iy^2
+      +[-2,-1] +. 1e-8 /         # (ix^2ixx+2ixiyixy+iy^2iyy)/(ix^2+iy^2)
     else
-      +g xyz,0 hessian[-4] xxxyxzyyyzzz               # ixx ixy ixz iyy iyz izz ix iy iz
-      *[-9] ... *[-8] .. *[-8] 2 *[-7] . *[-7] 2      # ixixx 2iyixy 2izixz iyy iyz izz ix iy iz
-      +[-9--7] *[-7] ...                              # ix^2ixx+2ixiyixy+2ixizixy iyy iyz izz ix iy iz
-      *[-6] .. *[-5] . *[-5] 2                        # ix^2ixx+2ixiyixy+2ixizixy iyiyy 2iziyz izz ix iy iz
-      +[-6,-5] *[-5] .. +[-6,-5]                      # ix^2ixx+2ixiyixy+2ixizixy+iy^2iyy+2iyiziyz izz ix iy iz
-      sqr[-3--1] *[-4] . +[-5,-4]                     # ix^2ixx+2ixiyixy+2ixizixy+iy^2iyy+2iyiziyz+iz^2izz ix^2 iy^2 iz^2
-      +[-3--1] +. 1e-8 /                              # (ix^2ixx+2ixiyixy+2ixizixy+iy^2iyy+2iyiziyz+iz^2izz)/(ix^2+iy^2+iz^2)
+      +g xyz,0 hessian[-4] xxxyxzyyyzzz          # ixx ixy ixz iyy iyz izz ix iy iz
+      *[-9] ... *[-8] .. *[-8] 2 *[-7] . *[-7] 2 # ixixx 2iyixy 2izixz iyy iyz izz ix iy iz
+      +[-9--7] *[-7] ...                         # ix^2ixx+2ixiyixy+2ixizixy iyy iyz izz ix iy iz
+      *[-6] .. *[-5] . *[-5] 2                   # ix^2ixx+2ixiyixy+2ixizixy iyiyy 2iziyz izz ix iy iz
+      +[-6,-5] *[-5] .. +[-6,-5]                 # ix^2ixx+2ixiyixy+2ixizixy+iy^2iyy+2iyiziyz izz ix iy iz
+      sqr[-3--1] *[-4] . +[-5,-4]                # ix^2ixx+2ixiyixy+2ixizixy+iy^2iyy+2iyiziyz+iz^2izz ix^2 iy^2 iz^2
+      +[-3--1] +. 1e-8 /                         # (ix^2ixx+2ixiyixy+2ixizixy+iy^2iyy+2iyiziyz+iz^2izz)/(ix^2+iy^2+iz^2)
     fi
   endl done v +
 
@@ -10668,7 +10829,8 @@ inn :
 #@cli : $ image.jpg 100%,100% ellipse[-1] 30%,30%,40,30,0,1,255 +inpaint_diffusion[0] [1]
 inpaint_diffusion : check ${is_image_arg\ $1}" && ${2=75%}>=0 && isint(${3=1}) && $3>=0 && $3<=3 && ${4=20}>=0"
   v - s0="isotropic" s1="delaunay-guided" s2="edge-guided" s3="mask-guided"
-  v + e[^-1] "Inpaint image$? by mask $1, using a multiscale diffusion algorithm with $2 scales and $4 iterations of "${s$3}" diffusion." v -
+  v + e[^-1] "Inpaint image$? by mask $1, using a multiscale diffusion algorithm with $2 scales
+              and $4 iterations of "${s$3}" diffusion." v -
   repeat $! nm={n} pass$1 l[$>,-1]
     nb_scalesM={ceil(log2(max(w,h,d)))}
     nb_scales={round(${"is_percent $2"}?$nb_scalesM*$2:$2)}
@@ -10759,7 +10921,8 @@ inpaint_flow : check ${is_image_arg\ $1}" && ${2=10}>=0 && ${3=100}>=0 && ${4=5}
 #@cli : Default values: 'maximal_area=4', 'tolerance=0' and 'is_high_connectivity=0'.
 #@cli : $ image.jpg noise 5%,2 +inpaint_holes 8,40
 inpaint_holes : check "${1=4}>=0 && ${2=0}>=0" skip ${3=0}
-  e[^-1] "Inpaint holes with area less than $1 pixels in image$?, with tolerance $2 and "${arg\ 1+!$3,high,low}" connectivity."
+  e[^-1] "Inpaint holes with area less than $1 pixels in image$?, with tolerance $2 and "\
+         ${arg\ 1+!$3,high,low}" connectivity."
   v - repeat $! l[$>]
     100%,100%,100%
     area={if(${is_percent\ $1},$1*w*h*d,$1)}
@@ -10792,9 +10955,11 @@ inpaint_morpho : check ${is_image_arg\ $1}
 #@cli : Inpaint selected images by specified binary mask, using a multi-scale matchpatch algorithm.
 #@cli : Default values: 'nb_scales=0', 'patch_size=9', 'nb_iterations_per_scale=10', 'blend_size=5', 'allow_outer_blending=1' and 'is_already_initialized=0'.
 #@cli : $ image.jpg 100%,100% ellipse[-1] 30%,30%,40,30,0,1,255 +inpaint_matchpatch[0] [1]
-inpaint_matchpatch : check ${is_image_arg\ $1}"&& ${2=0}>=0 && isint(${3=9}) && $3>0 && isint(${4=10}) && $4>0 && isint(${5=5}) && $5>=0" skip ${6=1},${7=0}
-  e[^-1] "Inpaint image$? with mask $1, using a multiscale patch-matching algorithm with "${"v - if $2 u \"$2 \" else u auto- fi v +"}\
-          "scales, $3x$3 patches, $4 iterations per scale and blending size $5."
+inpaint_matchpatch : check ${is_image_arg\ $1}"&& ${2=0}>=0 && isint(${3=9}) && $3>0 && isint(${4=10}) && $4>0 &&
+                           isint(${5=5}) && $5>=0" skip ${6=1},${7=0}
+  e[^-1] "Inpaint image$? with mask $1, using a multiscale patch-matching algorithm with "\
+         ${"v - if $2 u \"$2 \" else u auto- fi v +"}\
+         "scales, $3x$3 patches, $4 iterations per scale and blending size $5."
   v - repeat $! pass$1 0 l[$>,-1]
 
     # Init variables and images.
@@ -11052,7 +11217,8 @@ nlmeans:
 
     # Guided-filtering
     check "${2=4}>0 && ${3=4}>0 && ${4=10}>0" skip "${5=-norm}"
-    e[^-1] "Apply non-local means denoising on image$?, with guide $1, patch size $2, spatial bandwidth $3, tonal bandwidth $4 and patch measure command '$5'."
+    e[^-1] "Apply non-local means denoising on image$?, with guide $1, patch size $2, spatial bandwidth $3,
+            tonal bandwidth $4 and patch measure command '$5'."
     pass$1 0 l. $5 k[0] endl # [1] preprocessed image used to compute weights.
     repeat $!-1 l[$>,-1]
       100%,100%,100%,100%,{-1.0/($4*$4)} # [2] compute a scaling.
@@ -11064,7 +11230,8 @@ nlmeans:
 
     # Non-guided filtering
     check "${1=4}>0 && ${2=4}>0 && ${3=10}>0" skip "${4=-norm}"
-    e[^-1] "Apply non-local means denoising on image$?, with patch size $1, spatial bandwidth $2, tonal bandwidth $3 and patch measure command '$4'."
+    e[^-1] "Apply non-local means denoising on image$?, with patch size $1, spatial bandwidth $2,
+            tonal bandwidth $3 and patch measure command '$4'."
     repeat $! l[$>]
       +l $4 k[0] endl # [1] preprocessed image used to compute weights.
       100%,100%,100%,100%,{-1.0/($3*$3)} # [2] compute a scaling.
@@ -11076,7 +11243,8 @@ nlmeans:
 #@cli nlmeans_core: _reference_image,_scaling_map,_patch_radius>0,_spatial_bandwidth>0
 #@cli : Apply non local means denoising using a image for weight and a map for scaling
 nlmeans_core : check ${is_image_arg\ $1}" && "${is_image_arg\ $2}" && $3>0 && $4>0"
-  e[^-1] "Apply non-local means denoising using weight images $1, scaling map $2, patch size $3 and spatial bandwidth $4."
+  e[^-1] "Apply non-local means denoising using weight images $1, scaling map $2, patch size $3 and
+          spatial bandwidth $4."
   v - pass$1 0 pass$2 0
   repeat $!-2 l[$>,-1,-2]
     # [0] original, [1] weights, [2] scaling [3] sum(weights * patch), [4] sum(weights), [5] max(weights)
@@ -11113,7 +11281,8 @@ nlmeans_core : check ${is_image_arg\ $1}" && "${is_image_arg\ $2}" && $3>0 && $4
 #@cli : $ image.jpg normalize_local 8,10
 normalize_local :
   check "${1=3}>=0 && ${2=16}>0 && isbool(${5=1})" skip ${3=4%},${4=2%},${6=0},${7=255}
-  e[^-1] "Normalize image$? locally, with amplitude $1, radius $2, neighborhood smoothness $3 and average smoothness $4."
+  e[^-1] "Normalize image$? locally, with amplitude $1, radius $2, neighborhood smoothness $3 and
+          average smoothness $4."
   v - repeat $! l[$>]
     +l erode {2*$2+1} s c min endl
     +l.. dilate {2*$2+1} s c max endl
