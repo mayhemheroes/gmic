@@ -4728,10 +4728,8 @@ update_gallery_html : check "isbool(${1=0})"
               rm
             endl
             if !$is_samesize filename_original=$filename_full fi
-
             if !($col%$nb_cols) html=${html}"<tr>\n" fi
             if $nb_examples==1 counter= else counter=" <font size=\"-2\"><i>"[{$>+1}/$nb_examples]"</i></font>" fi
-
             html_etime=
             if narg($etime) html_etime="<br/><font size=\"-2\"><i>(generated in "${etime}"s)</i></font>" fi
 
@@ -4741,17 +4739,16 @@ update_gallery_html : check "isbool(${1=0})"
                                "\n<font size=\"-1\"><pre>\n"
                i raw:$url_codesample,uchar html_codesample=${html_codesample}{t} rm.
                html_codesample=${html_codesample}"\n</pre></font></div>\n"\
-                              "<br/><script>$( function() { $( \"#dialog"$nex"\" ).dialog({ autoOpen: false,
-                              width:600 }); } );</script>\n"\
-                              "<a onclick=\"javascript:$( '#dialog"$nex"' ).dialog( 'open' );\"
-                              style=\"cursor: pointer;\"><i><font size=\"-1\">[ Source code ]</font></i></a>\n"
+                               "<br/><script>$( function() { $( \"#dialog"$nex"\" )."\
+                               "dialog({ autoOpen: false, width:600 }); } );</script>\n
+                                <a onclick=\"javascript:$( '#dialog"$nex"' ).dialog( 'open' );\"
+                                style=\"cursor: pointer;\"><i><font size=\"-1\">[ Source code ]</font></i></a>\n"
             fi
-
             if ['$_label']==0 _label=$command$counter else ({'$_label'}) replace_str. "~"," " _label={t} rm. fi
             if $is_input
               html=${html}\
                   "  <td><center><div><a href=\"#\" onclick=\"return hs.htmlExpand(this, { width: "{$width+64}",
-                  height: "{$height+64}" })\">\n"\
+                  ""height: "{$height+64}" })\">\n"\
                   "  <img alt=\""gallery_$command$nex"\" border=\"0\" src=\""$filename_thumb"\" "\
                   "onmouseover=\"javascript:this.src='"$filename_thumb_original"';\"
                   onmouseout=\"javascript:this.src='"$filename_thumb"';\"/><br/><b>"\
@@ -4766,7 +4763,7 @@ update_gallery_html : check "isbool(${1=0})"
             else
               html=${html}\
                   "  <td><center><div><a href=\"#\" onclick=\"return hs.htmlExpand(this, { width: "{$width+64}",
-                  height: "{$height+64}" })\">\n"\
+                  ""height: "{$height+64}" })\">\n"\
                   "  <img alt=\""gallery_$command$nex"\" border=\"0\" src=\""$filename_thumb"\" /><br/><b>"\
                   ${_label}${html_codesample}"</b></a>\n"\
                   "  <div class=\"highslide-maincontent\"><center>\n"\
@@ -18482,10 +18479,12 @@ warhol : skip ${1=3},${2=$1},${3=2},${4=20}
     done done append_tiles[^0] $1,$2 nm[1] {0,n} rm[0]
   endl done v +
 
-#@cli weave : _density>=0,0<=_thickness<=100,0<=_shadow<=100,_shading>=0,_fibers_amplitude>=0,_fibers_smoothness>=0,_angle,-1<=_x_curvature<=1,-1<=_y_curvature<=1
+#@cli weave : _density>=0,0<=_thickness<=100,0<=_shadow<=100,_shading>=0,_fibers_amplitude>=0,_fibers_smoothness>=0,\
+# _angle,-1<=_x_curvature<=1,-1<=_y_curvature<=1
 #@cli : Apply weave effect to the selected images.
 #@cli : 'angle' can be { 0=0 deg. | 1=22.5 deg. | 2=45 deg. | 3=67.5 deg. }.
-#@cli : Default values: 'density=6', 'thickness=65', 'shadow=40', 'shading=0.5', 'fibers_amplitude=0', 'fibers_smoothness=0', 'angle=0' and 'curvature_x=curvature_y=0'
+#@cli : Default values: 'density=6', 'thickness=65', 'shadow=40', 'shading=0.5', 'fibers_amplitude=0', _
+# 'fibers_smoothness=0', 'angle=0' and 'curvature_x=curvature_y=0'
 #@cli : $ image.jpg weave ,
 weave : check "${1=6}>=0 && ${2=65}>=0 && $2<=100 && ${3=40}>=0 && $3<=100 && ${4=0.5}>=0"
         check "${5=0}>=0 && ${6=0}>=0 && ${7=0}>=0 && $7<=3 && ${8=0}>=-1 && $8<=1 && ${9=0}>=-1 && $9<=1"
@@ -18540,7 +18539,8 @@ deform : skip ${1=10},${2=1}
     2%,2%,1,2 noise. $1 r. ..,..,1,2,5 warp.. .,1,$2,1 rm.
   endl done v +
 
-#@cli euclidean2polar : _center_x[%],_center_y[%],_stretch_factor>0,_boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }
+#@cli euclidean2polar : _center_x[%],_center_y[%],_stretch_factor>0,\
+# _boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }
 #@cli : Apply euclidean to polar transform on selected images.
 #@cli : Default values: 'center_x=center_y=50%', 'stretch_factor=1' and 'boundary_conditions=1'.
 #@cli : $ image.jpg +euclidean2polar ,
@@ -18593,9 +18593,11 @@ fisheye : skip ${1=50},${2=50},${3=50},${4=1.2}
     warp.. .,1,1,1 rm.
   endl done v +
 
-#@cli flower : _amplitude,_frequency,_offset_r[%],_angle,_center_x[%],_center_y[%],_boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror}
+#@cli flower : _amplitude,_frequency,_offset_r[%],_angle,_center_x[%],_center_y[%],\
+# _boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror}
 #@cli : Apply flower deformation on selected images.
-#@cli : Default values: 'amplitude=30', 'frequency=6', 'offset_r=0', 'angle=0', 'center_x=center_y=50%' and 'boundary_conditions=3'.
+#@cli : Default values: 'amplitude=30', 'frequency=6', 'offset_r=0', 'angle=0', 'center_x=center_y=50%' \
+# and 'boundary_conditions=3'.
 #@cli : $ image.jpg flower ,
 flower : skip ${1=30},${2=6},${3=0},${4=0},${5=50%},${6=50%},${7=3}
   e[^-1] "Apply flower deformation on image$?, with amplitude $1, frequency $2, offset $3, angle $4 deg. and
@@ -18606,7 +18608,8 @@ flower : skip ${1=30},${2=6},${3=0},${4=0},${5=50%},${6=50%},${7=3}
     transform_polar "r + $3 + R*$1/100*cos(a*$2+$4*pi/180)","a",$5,$6,$7
   fi v +
 
-#@cli kaleidoscope : _center_x[%],_center_y[%],_radius,_angle,_boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }
+#@cli kaleidoscope : _center_x[%],_center_y[%],_radius,_angle,\
+# _boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }
 #@cli : Create kaleidoscope effect from selected images.
 #@cli : Default values: 'center_x=center_y=50%', 'radius=100', 'angle=30' and 'boundary_conditions=3'.
 #@cli : $ image.jpg +kaleidoscope ,
@@ -18666,7 +18669,8 @@ nadirzenith2equirectangular :
     to_a[0] warp[0] [1],0,0,0 k...
   endl done v +
 
-#@cli polar2euclidean : _center_x[%],_center_y[%],_stretch_factor>0,_boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }
+#@cli polar2euclidean : _center_x[%],_center_y[%],_stretch_factor>0,\
+# _boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }
 #@cli : Apply euclidean to polar transform on selected images.
 #@cli : Default values: 'center_x=center_y=50%', 'stretch_factor=1' and 'boundary_conditions=1'.
 #@cli : $ image.jpg +euclidean2polar ,
@@ -18721,7 +18725,8 @@ _ripple2 : f {-$1/2}*"cos(i*"{2*pi/$2}")"
 _ripple3 : f {-$1/2}*"abs(cos(i*"{2*pi/$2}"))"
 _ripple4 : skip $* n 0,{h-1} 1,{h} rand. {-$1/2},{$1/2} m={im} M={iM} b. {$2/10} n. $m,$M map.. . rm.
 
-#@cli rotoidoscope : _center_x[%],_center_y[%],_tiles>0,_smoothness[%]>=0,_boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }
+#@cli rotoidoscope : _center_x[%],_center_y[%],_tiles>0,_smoothness[%]>=0,\
+# _boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }
 #@cli : Create rotational kaleidoscope effect from selected images.
 #@cli : Default values: 'center_x=center_y=50%', 'tiles=10', 'smoothness=1' and 'boundary_conditions=3'.
 #@cli : $ image.jpg +rotoidoscope ,
@@ -18731,9 +18736,11 @@ rotoidoscope : skip ${1=50%},${2=50%},${5=1} check "${3=10}>0 && ${4=3}>=0"
     repeat $3 +rotate[0] {360/$3},1,$5,$1,$2 blend_edges $4 done
   endl done v +
 
-#@cli spherize : _radius[%]>=0,_strength,_smoothness[%]>=0,_center_x[%],_center_y[%],_ratio_x/y>0,_angle,_interpolation
+#@cli spherize : _radius[%]>=0,_strength,_smoothness[%]>=0,_center_x[%],_center_y[%],_ratio_x/y>0,_angle,\
+# _interpolation
 #@cli : Apply spherize effect on selected images.
-#@cli : Default values: 'radius=50%', 'strength=1', 'smoothness=0', 'center_x=center_y=50%', 'ratio_x/y=1', 'angle=0' and 'interpolation=1'.
+#@cli : Default values: 'radius=50%', 'strength=1', 'smoothness=0', 'center_x=center_y=50%', 'ratio_x/y=1', \
+# 'angle=0' and 'interpolation=1'.
 #@cli : $ image.jpg grid 5%,5%,0,0,0.6,255 spherize ,
 spherize : check "${1=50%}>=0 && ${3=0}>=0 && ${6=1}>0 && isint(${8=1}) && $8>=0 && $8<=2"
            skip "${2=1},${4=50%},${5=50%},${7=0}"
@@ -18768,7 +18775,8 @@ spherize : check "${1=50%}>=0 && ${3=0}>=0 && ${6=1}>0 && isint(${8=1}) && $8>=0
     warp.. .,0,$8,1 rm.
   endl done v +
 
-#@cli symmetrize : _x[%],_y[%],_angle,_boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror },_is_antisymmetry={ 0 | 1 },_swap_sides={ 0 | 1 }
+#@cli symmetrize : _x[%],_y[%],_angle,_boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror },\
+# _is_antisymmetry={ 0 | 1 },_swap_sides={ 0 | 1 }
 #@cli : Symmetrize selected images regarding specified axis.
 #@cli : Default values: 'x=y=50%', 'angle=90', 'boundary_conditions=3', 'is_antisymmetry=0' and 'swap_sides=0'.
 #@cli : $ image.jpg +symmetrize 50%,50%,45 +symmetrize[-1] 50%,50%,-45
@@ -18786,7 +18794,8 @@ symmetrize : skip ${1=50%},${2=50%},${3=90},${4=3},${5=0},${6=0}
   endl done
   v +
 
-#@cli transform_polar : "expr_radius",_"expr_angle",_center_x[%],_center_y[%],_boundary_conditions={ 0=dirichlet | 1=neumann }
+#@cli transform_polar : "expr_radius",_"expr_angle",_center_x[%],_center_y[%],\
+# _boundary_conditions={ 0=dirichlet | 1=neumann }
 #@cli : Apply user-defined transform on polar representation of selected images.
 #@cli : Default values: 'expr_radius=R-r', 'expr_rangle=a', 'center_x=center_y=50%' and 'boundary_conditions=1'.
 #@cli : $ image.jpg +transform_polar[0] R*(r/R)^2,a +transform_polar[0] r,2*a
@@ -18804,7 +18813,8 @@ transform_polar : skip "${1=R-r}","${2=a}",${3=50%},${4=50%},${5=1}
        i("$cx" + nr*cos(na), "$cy" + nr*sin(na), z, c,1,$5)"
   endl done v +
 
-#@cli twirl : _amplitude,_center_x[%],_center_y[%],_boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }
+#@cli twirl : _amplitude,_center_x[%],_center_y[%],\
+# _boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }
 #@cli : Apply twirl deformation on selected images.
 #@cli : Default values: 'amplitude=1', 'center_x=center_y=50%' and 'boundary_conditions=3'.
 #@cli : $ image.jpg twirl 0.6
@@ -18814,7 +18824,8 @@ twirl : skip ${1=1},${2=50%},${3=50%},${4=3}
     [$>],[$>],1,1,$1*x channels. -1,0 warp[$>] .,1,1,2 rm.
   done polar2euclidean $2,$3,1,1 v +
 
-#@cli warp_perspective : _x-angle,_y-angle,_zoom>0,_x-center,_y-center,_boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }
+#@cli warp_perspective : _x-angle,_y-angle,_zoom>0,_x-center,_y-center,\
+# _boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }
 #@cli : Warp selected images with perspective deformation.
 #@cli : Default values: 'x-angle=1.5', 'y-angle=0', 'zoom=1', 'x-center=y-center=50' and 'boundary_conditions=2'.
 #@cli : $ image.jpg warp_perspective ,
@@ -19078,24 +19089,39 @@ watermark_visible : check "${2=0.3}>0 && $2<1 && ${3=53}>0 && ${6=0.5}>=0"
 #
 #--------------------------------------
 
-#@cli blend : [layer],blending_mode,_opacity[%],_selection_is={ 0=base-layers | 1=top-layers } : blending_mode,_opacity[%]
-#@cli : Blend selected G,GA,RGB or RGBA images by specified layer or blend all selected images together, using specified blending mode.
+#@cli blend : [layer],blending_mode,_opacity[%],_selection_is={ 0=base-layers | 1=top-layers } : \
+# blending_mode,_opacity[%]
+#@cli : Blend selected G,GA,RGB or RGBA images by specified layer or blend all selected images together,
+#@cli : using specified blending mode.
 #@cli : 'blending_mode' can be { add | alpha | and | average | blue | burn | darken | difference |
 #@cli : divide | dodge | edges | exclusion | freeze | grainextract | grainmerge | green | hardlight |
 #@cli : hardmix | hue | interpolation | lighten | lightness | linearburn | linearlight | luminance |
-#@cli : multiply | negation | or | overlay | pinlight | red | reflect | saturation | seamless | seamless_mixed | screen |
-#@cli : shapeareamax | shapeareamax0 | shapeareamin | shapeareamin0 | shapeaverage | shapeaverage0 | shapemedian | shapemedian0 |
-#@cli : shapemin | shapemin0 | shapemax | shapemax0 | softburn | softdodge | softlight | stamp | subtract | value | vividlight | xor }.
+#@cli : multiply | negation | or | overlay | pinlight | red | reflect | saturation | seamless | seamless_mixed |
+#@cli : screen | shapeareamax | shapeareamax0 | shapeareamin | shapeareamin0 | shapeaverage | shapeaverage0 |
+#@cli : shapemedian | shapemedian0 | shapemin | shapemin0 | shapemax | shapemax0 | softburn | softdodge |
+#@cli : softlight | stamp | subtract | value | vividlight | xor }.
 #@cli : 'opacity' should be in '[0,1]', or '[0,100]' if expressed with a '%'.
 #@cli : Default values: 'blending_mode=alpha', 'opacity=1' and 'selection_is=0'.
 #@cli : $ image.jpg +drop_shadow , resize2dy[-1] 200 rotate[-1] 20 +blend alpha display_rgba[-2]
 #@cli : $ image.jpg testimage2d {w},{h} blend overlay
-#@cli : $ command "ex : $""=arg repeat $""# +blend[0,1] ${arg{$>+1}} text_outline[-1] Mode:\" \"${arg{$>+1}},2,2,23,2,1,255 done" image.jpg testimage2d {w},{h} ex add,alpha,and,average,blue,burn,darken
-#@cli : $ command "ex : $""=arg repeat $""# +blend[0,1] ${arg{$>+1}} text_outline[-1] Mode:\" \"${arg{$>+1}},2,2,23,2,1,255 done" image.jpg testimage2d {w},{h} ex difference,divide,dodge,exclusion,freeze,grainextract,grainmerge
-#@cli : $ command "ex : $""=arg repeat $""# +blend[0,1] ${arg{$>+1}} text_outline[-1] Mode:\" \"${arg{$>+1}},2,2,23,2,1,255 done" image.jpg testimage2d {w},{h} ex green,hardlight,hardmix,hue,interpolation,lighten,lightness
-#@cli : $ command "ex : $""=arg repeat $""# +blend[0,1] ${arg{$>+1}} text_outline[-1] Mode:\" \"${arg{$>+1}},2,2,23,2,1,255 done" image.jpg testimage2d {w},{h} ex linearburn,linearlight,luminance,multiply,negation,or,overlay
-#@cli : $ command "ex : $""=arg repeat $""# +blend[0,1] ${arg{$>+1}} text_outline[-1] Mode:\" \"${arg{$>+1}},2,2,23,2,1,255 done" image.jpg testimage2d {w},{h} ex pinlight,red,reflect,saturation,screen,shapeaverage,softburn
-#@cli : $ command "ex : $""=arg repeat $""# +blend[0,1] ${arg{$>+1}} text_outline[-1] Mode:\" \"${arg{$>+1}},2,2,23,2,1,255 done" image.jpg testimage2d {w},{h} ex softdodge,softlight,stamp,subtract,value,vividlight,xor
+#@cli : $ command "ex : $""=arg repeat $""# +blend[0,1] ${arg{$>+1}} \
+# text_outline[-1] Mode:\" \"${arg{$>+1}},2,2,23,2,1,255 done" image.jpg testimage2d {w},{h} \
+# ex add,alpha,and,average,blue,burn,darken
+#@cli : $ command "ex : $""=arg repeat $""# +blend[0,1] ${arg{$>+1}} \
+# text_outline[-1] Mode:\" \"${arg{$>+1}},2,2,23,2,1,255 done" image.jpg testimage2d {w},{h} \
+# ex difference,divide,dodge,exclusion,freeze,grainextract,grainmerge
+#@cli : $ command "ex : $""=arg repeat $""# +blend[0,1] ${arg{$>+1}} \
+# text_outline[-1] Mode:\" \"${arg{$>+1}},2,2,23,2,1,255 done" image.jpg testimage2d {w},{h} \
+# ex green,hardlight,hardmix,hue,interpolation,lighten,lightness
+#@cli : $ command "ex : $""=arg repeat $""# +blend[0,1] ${arg{$>+1}} \
+# text_outline[-1] Mode:\" \"${arg{$>+1}},2,2,23,2,1,255 done" image.jpg testimage2d {w},{h} \
+# ex linearburn,linearlight,luminance,multiply,negation,or,overlay
+#@cli : $ command "ex : $""=arg repeat $""# +blend[0,1] ${arg{$>+1}} \
+# text_outline[-1] Mode:\" \"${arg{$>+1}},2,2,23,2,1,255 done" image.jpg testimage2d {w},{h} \
+# ex pinlight,red,reflect,saturation,screen,shapeaverage,softburn
+#@cli : $ command "ex : $""=arg repeat $""# +blend[0,1] ${arg{$>+1}} \
+# text_outline[-1] Mode:\" \"${arg{$>+1}},2,2,23,2,1,255 done" image.jpg testimage2d {w},{h} \
+# ex softdodge,softlight,stamp,subtract,value,vividlight,xor
 blend : skip ${1=alpha},${2=1},${3=1},${4=0}
   v -
   if ${"is_image_arg $1"}
@@ -19460,7 +19486,8 @@ fade_z : skip ${1=30},${2=70}
   v - repeat int($!/2) l[$>,{$>+1}] (0/1) _fade $1,$2 endl done v +
 
 #@cli sub_alpha : [base_image],_opacity_gain>=1
-#@cli : Compute the minimal alpha-channel difference (opposite of alpha blending) between the selected images and the specified base image.
+#@cli : Compute the minimal alpha-channel difference (opposite of alpha blending) between the selected images
+#@cli : and the specified base image.
 #@cli : The alpha difference A-B is defined as the image having minimal opacity, such that alpha_blend(B,A-B) = A.
 #@cli : Default value: 'opacity_gain=1'.
 #@cli : $ image.jpg testimage2d {w},{h} +sub_alpha[0] [1] display_rgba
@@ -19487,7 +19514,8 @@ sub_alpha : check "${2=1}>=1 && "${"is_image_arg $1"}
 #
 #---------------------------------------------
 
-#@cli animate : filter_name,"param1_start,...,paramN_start","param1_end,...,paramN_end",nb_frames>=0,_output_frames={ 0 | 1 },_output_filename : delay>0,_back and forth={ 0 | 1 }
+#@cli animate : filter_name,"param1_start,...,paramN_start","param1_end,...,paramN_end",nb_frames>=0,\
+# _output_frames={ 0 | 1 },_output_filename : delay>0,_back and forth={ 0 | 1 }
 #@cli : Animate filter from starting parameters to ending parameters or animate selected images
 #@cli : in a display window.
 #@cli : Default value: 'delay=30'.
@@ -19564,20 +19592,25 @@ apply_camera : skip "${1=},${4=}" check "${2=0}>=0 && ${3=0}>=0"
     rm.
   while {*}" && "!{*,ESC}" && "!{*,Q} camera $2,0 endl v +
 
-#@cli apply_files : "filename_pattern",_"command",_first_frame>=0,_last_frame={ >=0 | -1=last },_frame_step>=1,_output_filename
+#@cli apply_files : "filename_pattern",_"command",_first_frame>=0,_last_frame={ >=0 | -1=last },_frame_step>=1,\
+# _output_filename
 #@cli : Apply a G'MIC command on specified input image files, in a streamed way.
 #@cli : If a display window is opened, rendered frames are displayed in it during processing.
-#@cli : The output filename may have extension '.avi' (saved as a video), or any other usual image file extension (saved as a sequence of images).
-#@cli : Default values: 'command=(undefined)', 'first_frame=0', 'last_frame=-1', 'frame_step=1' and 'output_filename=(undefined)'.
+#@cli : The output filename may have extension '.avi' (saved as a video), or any other usual image file
+#@cli : extension (saved as a sequence of images).
+#@cli : Default values: 'command=(undefined)', 'first_frame=0', 'last_frame=-1', 'frame_step=1' \
+# and 'output_filename=(undefined)'.
 apply_files : check "isint(${3=0}) && $3>=0 && isint(${4=-1}) && ($4>=0 || $4==-1) && ${5=1}>=1" skip "${2=},${6=}"
   e[^-1] "Apply command '$2' on input image files '$1', with first frame $3, last frame $4, frame step $5 and
           output filename '$6'.\n"
   v - files 3,"$1" _N=/{narg(${})-1} arg2var _file,${} _apply_stream[] "${_file{$frame+1}}","$2",${3-5},"$6" v +
 
-#@cli apply_video : video_filename,_"command",_first_frame>=0,_last_frame={ >=0 | -1=last },_frame_step>=1,_output_filename
+#@cli apply_video : video_filename,_"command",_first_frame>=0,_last_frame={ >=0 | -1=last },_frame_step>=1,\
+# _output_filename
 #@cli : Apply a G'MIC command on all frames of the specified input video file, in a streamed way.
 #@cli : If a display window is opened, rendered frames are displayed in it during processing.
-#@cli : The output filename may have extension '.avi' (saved as a video), or any other usual image file extension (saved as a sequence of images).
+#@cli : The output filename may have extension '.avi' (saved as a video), or any other usual image
+#@cli : file extension (saved as a sequence of images).
 #@cli : Default values: 'first_frame=0', 'last_frame=-1', 'frame_step=1' and 'output_filename=(undefined)'.
 apply_video : check "isint(${3=0}) && $3>=0 && isint(${4=-1}) && ($4>=0 || $4==-1) && ${5=1}>=1" skip "${2=},${6=}"
   e[^-1] "Apply command '$2' on input video file '$1', with first frame $3, last frame $4, frame step $5 and
@@ -19614,7 +19647,8 @@ _apply_stream : skip "${2=},${6=}"
 #@cli average_files : "filename_pattern",_first_frame>=0,_last_frame={ >=0 | -1=last },_frame_step>=1,_output_filename
 #@cli : Average specified input image files, in a streamed way.
 #@cli : If a display window is opened, rendered frames are displayed in it during processing.
-#@cli : The output filename may have extension '.avi' (saved as a video), or any other usual image file extension (saved as a sequence of images).
+#@cli : The output filename may have extension '.avi' (saved as a video), or any other usual image
+#@cli : file extension (saved as a sequence of images).
 #@cli : Default values: 'first_frame=0', 'last_frame=-1', 'frame_step=1' and 'output_filename=(undefined)'.
 average_files : check "isint(${2=0}) && $2>=0 && isint(${3=-1}) && ($3>=0 || $3==-1) && ${4=1}>=1" skip "${5=}"
   e[^-1] "Average input image files '$1', with first frame $2, last frame $3, frame step $4 and
@@ -19624,7 +19658,8 @@ average_files : check "isint(${2=0}) && $2>=0 && isint(${3=-1}) && ($3>=0 || $3=
 #@cli average_video : video_filename,_first_frame>=0,_last_frame={ >=0 | -1=last },_frame_step>=1,_output_filename
 #@cli : Average frames of specified input video file, in a streamed way.
 #@cli : If a display window is opened, rendered frames are displayed in it during processing.
-#@cli : The output filename may have extension '.avi' (saved as a video), or any other usual image file extension (saved as a sequence of images).
+#@cli : The output filename may have extension '.avi' (saved as a video), or any other usual image
+#@cli : file extension (saved as a sequence of images).
 #@cli : Default values: 'first_frame=0', 'last_frame=-1', 'frame_step=1' and 'output_filename=(undefined)'.
 average_video : check "isint(${2=0}) && $2>=0 && isint(${3=-1}) && ($3>=0 || $3==-1) && ${4=1}>=1" skip "${5=}"
   e[^-1] "Average frames of input video file '$1', with first frame $2, last frame $3, frame step $4 and
@@ -19664,21 +19699,26 @@ _average_stream : skip "${5=}"
   / $N c $imM
   if $is_outavi o[] "$5",25,mp4v,0 fi
 
-#@cli fade_files : "filename_pattern",_nb_inner_frames>0,_first_frame>=0,_last_frame={ >=0 | -1=last },_frame_step>=1,_output_filename
+#@cli fade_files : "filename_pattern",_nb_inner_frames>0,_first_frame>=0,_last_frame={ >=0 | -1=last },\
+# _frame_step>=1,_output_filename
 #@cli : Generate a temporal fading from specified input image files, in a streamed way.
 #@cli : If a display window is opened, rendered frames are displayed in it during processing.
-#@cli : The output filename may have extension 'avi' (saved as a video), or any other usual image file extension (saved as a sequence of images).
-#@cli : Default values: 'nb_inner_frames=10', 'first_frame=0', 'last_frame=-1', 'frame_step=1' and 'output_filename=(undefined)'.
+#@cli : The output filename may have extension 'avi' (saved as a video), or any other usual image
+#@cli : file extension (saved as a sequence of images).
+#@cli : Default values: 'nb_inner_frames=10', 'first_frame=0', 'last_frame=-1', 'frame_step=1' \
+# and 'output_filename=(undefined)'.
 fade_files : check "isint(${2=10}) && $2>0 && isint(${3=0}) && $3>=0 &&
                     isint(${4=-1}) && ($4>=0 || $4==-1) && ${5=1}>=1" skip "${6=}"
   e[^-1] "Fade input image files '$1', with $2 inner frames, first frame $3, last frame $4, frame step $5 and
           output filename '$6'.\n"
   v - files 3,"$1" _N=/{narg(${})-1} arg2var _file,${} _fade_stream[] "${_file{$frame+1}}",${2-5},"$6" v +
 
-#@cli fade_video : video_filename,_nb_inner_frames>0,_first_frame>=0,_last_frame={ >=0 | -1=last },_frame_step>=1,_output_filename
+#@cli fade_video : video_filename,_nb_inner_frames>0,_first_frame>=0,_last_frame={ >=0 | -1=last },\
+# _frame_step>=1,_output_filename
 #@cli : Create a temporal fading sequence from specified input video file, in a streamed way.
 #@cli : If a display window is opened, rendered frames are displayed in it during processing.
-#@cli : Default values: 'nb_inner_frames=10', 'first_frame=0', 'last_frame=-1', 'frame_step=1' and 'output_filename=(undefined)'.
+#@cli : Default values: 'nb_inner_frames=10', 'first_frame=0', 'last_frame=-1', 'frame_step=1' \
+# and 'output_filename=(undefined)'.
 fade_video : check "isint(${2=10}) && $2>0 && isint(${3=0}) && $3>=0 &&
                     isint(${4=-1}) && ($4>=0 || $4==-1) && ${5=1}>=1" skip "${6=}"
   e[^-1] "Fade frames of input video file '$1', with $2 inner frames, first frame $3, last frame $4, frame step $5 and
@@ -19740,10 +19780,12 @@ files2video : check "isint(${3=25}) && $3>0" skip "${2=output.avi}",${4=mp4v}
   endl done
   o $"$2",0,0,0 v +
 
-#@cli median_files : "filename_pattern",_first_frame>=0,_last_frame={ >=0 | -1=last },_frame_step>=1,_frame_rows[%]>=1,_is_fast_approximation={ 0 | 1 }
+#@cli median_files : "filename_pattern",_first_frame>=0,_last_frame={ >=0 | -1=last },_frame_step>=1,\
+# _frame_rows[%]>=1,_is_fast_approximation={ 0 | 1 }
 #@cli : Compute the median frame of specified input image files, in a streamed way.
 #@cli : If a display window is opened, rendered frame is displayed in it during processing.
-#@cli : Default values: 'first_frame=0', 'last_frame=-1', 'frame_step=1', 'frame_rows=20%' and 'is_fast_approximation=0'.
+#@cli : Default values: 'first_frame=0', 'last_frame=-1', 'frame_step=1', 'frame_rows=20%' \
+# and 'is_fast_approximation=0'.
 median_files : check "isint(${2=0}) && $2>=0 && isint(${3=-1}) && ($3>=0 || $3==-1) &&
                      ${4=1}>=1 && ${5=20%}>0 && isnumber(${6=0})"
   v - s0="fast" s1="precise"
@@ -19755,10 +19797,12 @@ median_files : check "isint(${2=0}) && $2>=0 && isint(${3=-1}) && ($3>=0 || $3==
     _median_stream "${_file{$frame+1}}",${2-6}
   endl v +
 
-#@cli median_video : video_filename,_first_frame>=0,_last_frame={ >=0 | -1=last },_frame_step>=1,_frame_rows[%]>=1,_is_fast_approximation={ 0 | 1 }
+#@cli median_video : video_filename,_first_frame>=0,_last_frame={ >=0 | -1=last },_frame_step>=1,\
+# _frame_rows[%]>=1,_is_fast_approximation={ 0 | 1 }
 #@cli : Compute the median of all frames of an input video file, in a streamed way.
 #@cli : If a display window is opened, rendered frame is displayed in it during processing.
-#@cli : Default values: 'first_frame=0', 'last_frame=-1', 'frame_step=1', 'frame_rows=100%' and 'is_fast_approximation=1'.
+#@cli : Default values: 'first_frame=0', 'last_frame=-1', 'frame_step=1', 'frame_rows=100%' \
+# and 'is_fast_approximation=1'.
 median_video : check "isint(${2=0}) && $2>=0 && isint(${3=-1}) && ($3>=0 || $3==-1) &&
                       ${4=1}>=1 && ${5=100%}>0 && isnumber(${6=1})"
   v - s0="fast" s1="precise"
@@ -19917,22 +19961,28 @@ morph : check "$1>=0 && ${2=0.1}>=0 && ${3=4}>=0"
     rm[2,3] mv[2--1] 1 nm $nm
   endl done v +
 
-#@cli morph_files : "filename_pattern",_nb_inner_frames>0,_smoothness>=0,_precision>=0,_first_frame>=0,_last_frame={ >=0 | -1=last },_frame_step>=1,_output_filename
+#@cli morph_files : "filename_pattern",_nb_inner_frames>0,_smoothness>=0,_precision>=0,\
+# _first_frame>=0,_last_frame={ >=0 | -1=last },_frame_step>=1,_output_filename
 #@cli : Generate a temporal morphing from specified input image files, in a streamed way.
 #@cli : If a display window is opened, rendered frames are displayed in it during processing.
-#@cli : The output filename may have extension '.avi' (saved as a video), or any other usual image file extension (saved as a sequence of images).
-#@cli : Default values: 'nb_inner_frames=10', 'smoothness=0.1', 'precision=4', 'first_frame=0', 'last_frame=-1', 'frame_step=1' and 'output_filename=(undefined)'.
+#@cli : The output filename may have extension '.avi' (saved as a video), or any other usual image
+#@cli : file extension (saved as a sequence of images).
+#@cli : Default values: 'nb_inner_frames=10', 'smoothness=0.1', 'precision=4', 'first_frame=0', 'last_frame=-1', \
+# 'frame_step=1' and 'output_filename=(undefined)'.
 morph_files : check "isint(${2=10}) && $2>0 && ${3=0.1}>=0 && ${4=4}>=0 &&
                      isint(${5=0}) && $5>=0 && isint(${6=-1}) && ($6>=0 || $6==-1) && ${7=1}>=1" skip "${8=}"
   e[^-1] "Morph input image files '$1', with $2 inner frames, smoothness $3, precision $4, first frame $5,
           last frame $6, frame step $7 and output filename '$8'.\n"
   v - files 3,"$1" _N=/{narg(${})-1} arg2var _file,${} _morph_stream[] "${_file{$frame+1}}",${2-7},"$8" v +
 
-#@cli morph_video : video_filename,_nb_inner_frames>0,_smoothness>=0,_precision>=0,_first_frame>=0,_last_frame={ >=0 | -1=last },_frame_step>=1,_output_filename
+#@cli morph_video : video_filename,_nb_inner_frames>0,_smoothness>=0,_precision>=0,\
+# _first_frame>=0,_last_frame={ >=0 | -1=last },_frame_step>=1,_output_filename
 #@cli : Generate a temporal morphing from specified input video file, in a streamed way.
 #@cli : If a display window is opened, rendered frames are displayed in it during processing.
-#@cli : The output filename may have extension '.avi' (saved as a video), or any other usual image file extension (saved as a sequence of images).
-#@cli : Default values: 'nb_inner_frames=10', 'smoothness=0.1', 'precision=4', 'first_frame=0', 'last_frame=-1', 'frame_step=1' and 'output_filename=(undefined)'.
+#@cli : The output filename may have extension '.avi' (saved as a video), or any other usual image
+#@cli : file extension (saved as a sequence of images).
+#@cli : Default values: 'nb_inner_frames=10', 'smoothness=0.1', 'precision=4', 'first_frame=0', 'last_frame=-1', \
+# 'frame_step=1' and 'output_filename=(undefined)'.
 morph_video : check "isint(${2=10}) && $2>0 && ${3=0.1}>=0 && ${4=4}>=0 &&
                      isint(${5=0}) && $5>=0 && isint(${6=-1}) && ($6>=0 || $6==-1) && ${7=1}>=1" skip "${8=}"
   e[^-1] "Morph frames of input video file '$1', with $2 fading frames, smoothness $3, precision $4, first frame $5,
@@ -19996,7 +20046,8 @@ register_nonrigid : check ${is_image_arg\ $1}" && ${2=0.2}>=0 && ${3=5}>0 && ${4
     warp[$>] .,1,1,1 rm.
   done rm. v +
 
-#@cli register_rigid : [destination],_smoothness>=0,_boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }
+#@cli register_rigid : [destination],_smoothness>=0,\
+# _boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }
 #@cli : Register selected source images with specified destination image, using rigid warp (shift).
 #@cli : Default values: 'smoothness=1' and 'boundary_conditions=0'.
 #@cli : $ image.jpg +shift 30,20 +register_rigid[0] [1]
@@ -20038,7 +20089,8 @@ transition : check ${is_image_arg\ $1}" && $2>=0 && ${3=0}>=0 && $3<=100" skip $
 #@cli transition3d : _nb_frames>=2,_nb_xtiles>0,_nb_ytiles>0,_axis_x,_axis_y,_axis_z,_is_antialias={ 0 | 1 }
 #@cli : Create 3D transition sequence between selected consecutive images.
 #@cli : 'axis_x', 'axis_y' and 'axis_z' can be set as mathematical expressions, depending on 'x' and 'y'.
-#@cli : Default values: 'nb_frames=10', 'nb_xtiles=nb_ytiles=3', 'axis_x=1', 'axis_y=1', 'axis_z=0' and 'is_antialias=1'.
+#@cli : Default values: 'nb_frames=10', 'nb_xtiles=nb_ytiles=3', 'axis_x=1', 'axis_y=1', 'axis_z=0' \
+# and 'is_antialias=1'.
 #@cli : $ image.jpg +blur 5 transition3d 9 display_rgba
 transition3d : check "isint(${1=10}) && $1>=2 && isint(${2=3}) && $2>0 && isint(${3=$2}) && $3>0"
                skip ${4=1},${5=1},${6=0},${7=1}
@@ -20348,7 +20400,8 @@ _check120 :
     r. 1,{h/2},1,2,-1
     repeat {h}
       l,L={I[$>]}
-      v + e[] $_gmic_c"  - [Line "$_gmic_b$L$_gmic_n$_gmic_c", "$_gmic_b{$l,h}$_gmic_n$_gmic_c" chars]: "$_gmic_n{$l,t} v -
+      v + e[] $_gmic_c"  - [Line "$_gmic_b$L$_gmic_n$_gmic_c", "\
+              $_gmic_b{$l,h}$_gmic_n$_gmic_c" chars]: "$_gmic_n{$l,t} v -
     done
   fi
   rm
@@ -22058,7 +22111,8 @@ __x_color_curves :
   else v + error[0--3] "Command 'x_color_curves': Unknown specified color space '$1'."
   fi
 
-#@cli x_colorize : _is_lineart={ 0 | 1 },_max_resolution={ 0 | >=128 },_multichannels_output={ 0 | 1 },_[palette1],_[palette2],_[grabber1]
+#@cli x_colorize : _is_lineart={ 0 | 1 },_max_resolution={ 0 | >=128 },_multichannels_output={ 0 | 1 },\
+# _[palette1],_[palette2],_[grabber1]
 #@cli : Colorized selected B&W images, using an interactive window.
 #@cli : When >0, argument 'max_resolution' defines the maximal image resolution used in the interactive window.
 #@cli : Default values: 'is_lineart=1', 'max_resolution=1024' and 'multichannels_output=0'.
@@ -23647,10 +23701,13 @@ _x_mandelbrot_coords :
 _x_mandelbrot_palette :
   6,1,1,3 rand. 20,255 r. 32,1,1,3,3 r. 1024,1,1,3,0,2 =. 0,0,0,0,0 =. 0,0,0,0,1 =. 0,0,0,0,2
 
-#@cli x_mask_color : _colorspace={ all | rgb | lrgb | ycbcr | lab | lch | hsv | hsi | hsl | cmy | cmyk | yiq },_spatial_tolerance>=0,_color_tolerance>=0
+#@cli x_mask_color : _colorspace={ all | rgb | lrgb | ycbcr | lab | lch | hsv | hsi | hsl | cmy | cmyk | yiq },\
+# _spatial_tolerance>=0,_color_tolerance>=0
 #@cli : Interactively select a color, and add an alpha channel containing the corresponding color mask.
-#@cli : Argument 'colorspace' refers to the color metric used to compute color similarities, and can be basically one of { rgb | lrgb | ycbcr | lab | lch | hsv | hsi | hsl | cmy | cmyk | yiq }.
-#@cli : You can also select one one particular channel of this colorspace, by setting 'colorspace' as 'colorspace_channel' (e.g. 'hsv_h' for the hue).
+#@cli : Argument 'colorspace' refers to the color metric used to compute color similarities, and can be basically
+#@cli : one of { rgb | lrgb | ycbcr | lab | lch | hsv | hsi | hsl | cmy | cmyk | yiq }.
+#@cli : You can also select one one particular channel of this colorspace, by setting 'colorspace' as
+#@cli : 'colorspace_channel' (e.g. 'hsv_h' for the hue).
 #@cli : Default values: 'colorspace=all', 'spatial_tolerance=5' and 'color_tolerance=5'.
 x_mask_color : check "${2=5}>=0 && ${3=5}>=0" skip ${1=all}
   if !{*,u} error[0--3] "Command '$0': No display available." return fi
@@ -25192,7 +25249,8 @@ _x_segment :
 
 #@cli x_select_color : _variable_name
 #@cli : Display a RGB or RGBA color selector.
-#@cli : Argument 'variable_name' specifies the variable that contains the selected color values (as R,G,B,[A]) at any time.
+#@cli : Argument 'variable_name' specifies the variable that contains the selected color values (as R,G,B,[A])
+#@cli : at any time.
 #@cli : Its value specifies the initial selected color. Assigning '-1' to it forces the interactive window to close.
 #@cli : Default value: 'variable_name=xsc_variable'.
 x_select_color : skip ${1=xsc_variable}
@@ -25355,7 +25413,8 @@ x_select_color : skip ${1=xsc_variable}
 #@cli :   - The 2nd, 3rd and 4th rows define the R,G,B color components displayed beside the X and Y axes.
 #@cli : Argument 'variable_name' specifies the variable that contains the selected function keypoints at any time.
 #@cli : Assigning '-1' to it forces the interactive window to close.
-#@cli : Default values: 'variable_name=xsf_variable', 'background_curve_R=220', 'background_curve_G=background_curve_B=background_curve_T'.
+#@cli : Default values: 'variable_name=xsf_variable', 'background_curve_R=220', \
+# 'background_curve_G=background_curve_B=background_curve_T'.
 x_select_function1d : skip ${1=xsf_variable},${2=220},${3=$2},${4=$2}
   if !{*,u} error[0--3] "Command '$0': No display available." return fi
   e[^-1] "Open 1D function widget, with variable name '$1'."
@@ -26040,7 +26099,8 @@ _x_tictactoe5 : # Generate a ++ diagonal stroke and his mask.
 _x_tictactoe6 : # Generate a +- diagonal stroke and his mask.
   421,421,1,1,1 line. 10%,90%,90%,10%,1,0 erode. 6 _x_tictactoe __x_tictactoe 180,10,10
 
-#@cli x_warp : _nb_keypoints_xgrid>=2,_nb_keypoints_ygrid>=2,_nb_keypoints_contours>=0,_preview_fidelity={ 0=coarsest | 1=coarse | 2=normal | 3=fine | 4=finest }
+#@cli x_warp : _nb_keypoints_xgrid>=2,_nb_keypoints_ygrid>=2,_nb_keypoints_contours>=0,\
+# _preview_fidelity={ 0=coarsest | 1=coarse | 2=normal | 3=fine | 4=finest }
 #@cli : Launch the interactive image warper.
 #@cli : Default values: 'nb_keypoints_xgrid=nb_keypoints_ygrid=2', 'nb_keypoints_contours=0' and 'preview_fidelity=1'.
 x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2 && isint(${3=0}) && $3>=0 &&
@@ -26454,7 +26514,8 @@ _gui_merge_layers :
     res"`}
 
 # gui_split_preview : "command",_split_type,_split_posx,_split_posy
-# 'split_type' can be { 0=no split | 1=forw. horiz. | 2=forw. vert. | 3=back. horiz. | 4=back. vert. | 5=dupl. left | 6=dupl. top | 7=dupl. bottom | 8=dupl. right | 9=dupl. horiz.l | 10=dupl. vert. | 11=checkered | 12=checkered inv. }
+# 'split_type' can be { 0=no split | 1=forw. horiz. | 2=forw. vert. | 3=back. horiz. | 4=back. vert. | \
+# 5=dupl. left | 6=dupl. top | 7=dupl. bottom | 8=dupl. right | 9=dupl. horiz.l | 10=dupl. vert. | 11=checkered | 12=checkered inv. }
 # if 'posx' or 'posy' are equal to 'nan', splitting is done at the middle, and moving is not possible.
 # 'compute_entire_image' can be { 0=no | 1=yes }.
 gui_split_preview : check "isint(${2=0}) && $2>=0 && $2<=12 && ${5=0}>=0" skip "${3=nan},${4=nan}"
@@ -27265,7 +27326,11 @@ fx_asciiart_preview :
 #@gui : Opacity = float(0.5,0,1)
 #@gui : First Color = color(0,0,0,255)
 #@gui : Second Color = color(255,255,255,255)
-#@gui : sep = separator(), Preview Type = choice("Full","Forward Horizontal","Forward Vertical","Backward Horizontal","Backward Vertical","Duplicate Top","Duplicate Left","Duplicate Bottom","Duplicate Right","Duplicate Horizontal","Duplicate Vertical","Checkered","Checkered Inverse"), Preview split = point(50,50,0,0,200,200,200,0,10)_0
+#@gui : sep = separator()
+#@gui : Preview Type = choice("Full","Forward Horizontal","Forward Vertical","Backward Horizontal",
+#@gui : "Backward Vertical","Duplicate Top","Duplicate Left","Duplicate Bottom","Duplicate Right",
+#@gui : "Duplicate Horizontal","Duplicate Vertical","Checkered","Checkered Inverse")
+#@gui : Preview split = point(50,50,0,0,200,200,200,0,10)_0
 #@gui : sep = separator(), note = note("<small>Author: <i>David Tschumperl&#233;</i>.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Latest Update: <i>2010/29/12</i>.</small>")
 fx_chessboard :
   to_rgba chessboard ${1-14}
@@ -27554,7 +27619,11 @@ fx_imagegrid_triangular :
 #@gui : sep = separator(),
 #@gui : Preview Original = bool(0)
 #@gui : Tiled Preview = choice(3,"None","2x1","1x2","2x2","3x3","4x4")
-#@gui : sep = separator(), Preview Type = choice("Full","Forward Horizontal","Forward Vertical","Backward Horizontal","Backward Vertical","Duplicate Top","Duplicate Left","Duplicate Bottom","Duplicate Right","Duplicate Horizontal","Duplicate Vertical","Checkered","Checkered Inverse"), Preview split = point(50,50,0,0,200,200,200,0,10)_0
+#@gui : sep = separator()
+#@gui : Preview Type = choice("Full","Forward Horizontal","Forward Vertical","Backward Horizontal",
+#@gui : "Backward Vertical","Duplicate Top","Duplicate Left","Duplicate Bottom","Duplicate Right",
+#@gui : "Duplicate Horizontal","Duplicate Vertical","Checkered","Checkered Inverse")
+#@gui : Preview split = point(50,50,0,0,200,200,200,0,10)_0
 #@gui : sep = separator(), note = note{"<small><b>Note:</b> This filter helps in converting your input pattern as a <b>seamless</b> (a.k.a periodic) texture.</small>"}
 #@gui : sep = separator(), note = note("<small>Author: <i>David Tschumperl&#233;</i>.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Latest Update: <i>2015/24/02</i>.</small>")
 fx_make_seamless :
@@ -27576,7 +27645,11 @@ fx_make_seamless_preview :
 #@gui : sep = separator(),
 #@gui : Preview Original = bool(0)
 #@gui : Tiled Preview = choice(3,"None","2x1","1x2","2x2","3x3","4x4")
-#@gui : sep = separator(), Preview Type = choice("Full","Forward Horizontal","Forward Vertical","Backward Horizontal","Backward Vertical","Duplicate Top","Duplicate Left","Duplicate Bottom","Duplicate Right","Duplicate Horizontal","Duplicate Vertical","Checkered","Checkered Inverse"), Preview split = point(50,50,0,0,200,200,200,0,10)_0
+#@gui : sep = separator()
+#@gui : Preview Type = choice("Full","Forward Horizontal","Forward Vertical","Backward Horizontal",
+#@gui : "Backward Vertical","Duplicate Top","Duplicate Left","Duplicate Bottom","Duplicate Right",
+#@gui : "Duplicate Horizontal","Duplicate Vertical","Checkered","Checkered Inverse")
+#@gui : Preview split = point(50,50,0,0,200,200,200,0,10)_0
 #@gui : sep = separator(), note = note{"<small><b>Note:</b> This filter helps in converting your input pattern as a <b>seamless</b> (a.k.a periodic) texture.</small>"}
 #@gui : sep = separator(), note = note("<small>Author: <i>David Tschumperl&#233;</i>.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Latest Update: <i>2015/15/12</i>.</small>")
 fx_frame_seamless :
@@ -38784,7 +38857,8 @@ fx_solve_maze_preview :
 #@cli : $ image.jpg fx_dreamsmooth 3,1,1,0.8,0,0.8,1,24,0 _label="Dream~smoothing"
 #@cli : $ image.jpg fx_feltpen 300,50,1,0.1,20,5,0 _label="Felt~pen"
 #@cli : $ image.jpg gtutor_fpaint 0.5,0.5,0,0,45,0.5,0.5,0.5,0 _label="Finger~paint"
-#@cli : $ image.jpg fx_graphic_novelfxl 0,2,6,5,20,0,0.62,14,0,1,0.5,0.78,1.92,0,0,0,1,1,1,0.5,0.8,1.28 _label="Novel~FX"
+#@cli : $ image.jpg fx_graphic_novelfxl 0,2,6,5,20,0,0.62,14,0,1,0.5,0.78,1.92,0,0,0,1,1,1,0.5,0.8,1.28 \
+# _label="Novel~FX"
 #@cli : $ image.jpg fx_illustration_look 100,0,0,0,0 _label="Illustration~look"
 #@cli : $ image.jpg fx_lylejk_painting 10,2,4,10,0 _label="Lylejk~painting"
 #@cli : $ image.jpg fx_painting 5,2.5,1.5,50,1,0 _label="Painting"
@@ -38806,16 +38880,20 @@ fx_solve_maze_preview :
 #@cli : $ image.jpg fx_color_abstraction 1,10,0.2,0 _label="Color~abstraction"
 #@cli : $ image.jpg fx_boost_chroma 90,0,0 _label="Boost~chromaticity"
 #@cli : $ image.jpg fx_retrofade 20,6,40,0 _label="Retro~fade"
-#@cli : $ image.jpg fx_tk_vintage 2,0.85,0.7,80,200,5,147,26,161,0.3,235,220,176,0.4,190,181,108,0.2,0,0,100,0,0.3,25,0,0 _label="Vintage~style"
+#@cli : $ image.jpg fx_tk_vintage 2,0.85,0.7,80,200,5,147,26,161,0.3,235,220,176,0.4,190,181,108,0.2,\
+# 0,0,100,0,0.3,25,0,0 _label="Vintage~style"
 
 #@cli gallery_deformations
 #@cli : This entry defines some examples of deformation filters for the G'MIC gallery page.
 #@cli : $ image.jpg animate "flower","30,10,0,0","30,10,0,360",10 rm. _fps=6 _label="flower"
-#@cli : $ image.jpg fx_conformal_maps 8,1,0,"((1.1 + i*z/6)/(1.04 - i*z/6))^6.2",0,0,0,0,0,3,0,0,"1024","1024" _label="Conformal~maps"
-#@cli : $ image.jpg souphead_droste10 40,100,1,1,1,0,0,0,0,0,1,10,1,0,90,0,0,0,0,1,0,1,1,0,0,0,0,0,1,0,0 _label="Continuous~droste"
+#@cli : $ image.jpg fx_conformal_maps 8,1,0,"((1.1 + i*z/6)/(1.04 - i*z/6))^6.2",0,0,0,0,0,3,0,0,"1024","1024" _
+# _label="Conformal~maps"
+#@cli : $ image.jpg souphead_droste10 40,100,1,1,1,0,0,0,0,0,1,10,1,0,90,0,0,0,0,1,0,1,1,0,0,0,0,0,1,0,0 \
+# _label="Continuous~droste"
 #@cli : $ image.jpg fx_crease 30,10,3 _label="Crease"
 #@cli : $ image.jpg fx_distort_lens 0.29,0,0.23,50,50,0,0 _label="Distort~lens"
-#@cli : $ image.jpg fx_drop_water 0,20,2,80,0,3,35,10,1,0.5,0.25,0.5,0.75,0.05,0.15,1 gui_merge_layers _label="Drop~water"
+#@cli : $ image.jpg fx_drop_water 0,20,2,80,0,3,35,10,1,0.5,0.25,0.5,0.75,0.05,0.15,1 gui_merge_layers _
+# _label="Drop~water"
 #@cli : $ image.jpg fx_reflect 50,1,110,160,190,64,0,1.5,0,-3.3,7,1.5 _label="Reflection"
 #@cli : $ image.jpg fx_square_circle 0,1,0,0,0,0,0,0 _label="Square~to~circle"
 #@cli : $ image.jpg fx_textured_glass 40,40,1,1,0,2,0,0 _label="Textured~glass"
@@ -38842,47 +38920,89 @@ fx_solve_maze_preview :
 #@cli : $ 400,400,1,3 fx_satin 20,1,0,0,0,0,255,255,255,255,255,0,0,0,-50,0,0 _label="Satin"
 #@cli : $ 400,400,1,3 fx_seamless_turbulence 15,20,0,1,3,1 _label="Seamless~turbulence"
 #@cli : $ image.jpg fx_shockwaves 10,10,20,0,0 _label="Shock~waves"
-#@cli : $ 400,400,1,3 fx_equation_parametric "sin(t)*(exp(cos(t))-2*cos(4*t)-sin(t/12)^5)","cos(t)*(exp(cos(t))-2*cos(4*t)-sin(t/12)^5)",0,100,4096,1,0,64,0,0,128,0,0,1,1,1 _label="Equation~plot~[parametric]"
+#@cli : $ 400,400,1,3 fx_equation_parametric "sin(t)*(exp(cos(t))-2*cos(4*t)-sin(t/12)^5)",\
+# "cos(t)*(exp(cos(t))-2*cos(4*t)-sin(t/12)^5)",0,100,4096,1,0,64,0,0,128,0,0,1,1,1 _label="Equation~plot~[parametric]"
 #@cli : $ 400,400,1,3 KittyRings 30,8,0,1,113,0,113,0,255,0 _label="Kitaoka~spin~illusion"
 #@cli : $ 400,400,1,3 fx_neon_lightning 50,50,0,50,50,100,50,0.7,3,130,80,50,0.25,0 _label="Neon~lighting"
 #@cli : $ image.jpg fx_lava 8,5,3,0,0 _label="Lava"
-#@cli : $ sample monkey,lion,monkey 100%,100% plasma. equalize. 256 transition[0,1,2] [3],10 rm. _fps=10 _label="transition"
+#@cli : $ sample monkey,lion,monkey 100%,100% plasma. equalize. 256 transition[0,1,2] [3],10 rm. _fps=10 \
+# _label="transition"
 #@cli : $ image.jpg fx_shapeism 2,7,0.38,0,1,5,32,8,3,1,5,0.5,1,0,0,0,255 _label="Shapeism"
 
 #@cli gallery_3drendering
 #@cli : This entry defines some examples of 3D rendering filters for the G'MIC gallery page.
 #@cli : $ sample leno,lion,leno resize 400,400 transition3d 20,5,5 rm. _fps=10 _label="transition3d"
-#@cli : $ 256,192 fx_text_pointcloud3d 64,"G'MIC","Rocks!",1,200,220,255,255,255,255,255,2,2,1,19 _fps=10 _label="3D~text~pointcloud"
+#@cli : $ 256,192 fx_text_pointcloud3d 64,"G'MIC","Rocks!",1,200,220,255,255,255,255,255,2,2,1,19 _fps=10 \
+# _label="3D~text~pointcloud"
 
 #@cli gallery_stylization
 #@cli : This entry defines some examples of image stylization for the G'MIC gallery page.
-#@cli : $ sample car _fx_stylize starrynight _output_mode=1 +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,1000,2,1.85,0 _label="from~Van~Gogh:~Starry~Night"
-#@cli : $ sample car _fx_stylize graytree _output_mode=1 +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,1000,2,1.85,0 _label="from~Mondrian:~Gray~Tree"
-#@cli : $ sample car _fx_stylize yellowredblue _output_mode=1 +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,1000,2,1.85,0 _label="from~Kandinsky:~Yellow-Red-Blue"
-#@cli : $ sample car _fx_stylize littlebayatlaciotat _output_mode=1 +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,1000,2,1.85,0 _label="from~Braque:~Little~Bay~at~La~Ciotat"
-#@cli : $ sample car _fx_stylize leviaducalestaque _output_mode=1 +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,1000,2,1.85,0 _label="from~Braque:~Le~Viaduc~a~l'Estaque"
-#@cli : $ sample car _fx_stylize greatwave _output_mode=1 +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,1000,2,1.85,0 _label="from~Hokusai:~The~Great~Wave"
-#@cli : $ sample elephant input ../img/hatching.png _output_mode=1 +fx_stylize 1,4,0,0,1,2,3,0.5,0.1,2,5,0,0.7,0,0,1,0,5,5,7,1,30,10,2,1.85,0 _label="from~Hatch Drawing"
-#@cli : $ sample cat input ../img/hatching.png _output_mode=1 +fx_stylize 1,4,0,0,1,2,3,0.5,0.1,2,5,0,0.7,0,0,1,0,5,5,7,1,30,10,2,1.85,0 _label="from~Hatch Drawing"
-#@cli : $ sample bottles _fx_stylize starrynight _output_mode=1 +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,1,5,0,0.7,1,0,1,0,5,5,7,1,30,1000,2,1.85,0 _label="from~Van~Gogh:~Starry~Night"
-#@cli : $ sample cat _fx_stylize summertime9a _output_mode=1 +fx_stylize 1,6,0,0,2,0,1,0.5,0.1,2,5,0,0.7,0,2,1,0,5,5,7,1,130,1000,2,1.85,0 _label="from~Pollock:~Summertime~No~9A"
-#@cli : $ sample cat _fx_stylize greatwave _output_mode=1 +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,1000,2,1.85,0 _label="from~Hokusai:~The~Great~Wave"
-#@cli : $ sample dog _fx_stylize convergence _output_mode=1 +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,1000,2,1.85,0 _label="from~Pollock:~Convergence"
-#@cli : $ sample dog _fx_stylize irises _output_mode=1 +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,1,5,0,0.7,1,0,1,0,5,5,7,1,30,1000,2,1.85,0 _label="from~Van~Gogh:~Irises"
-#@cli : $ sample mandrill _fx_stylize themandola _output_mode=1 +fx_stylize 1,5,0,0,0,3,1,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,1000,2,1.85,0 _label="from~Braque:~The~Mandola"
-#@cli : $ sample square _fx_stylize orientalpleasuregardenanagoria _output_mode=1 +fx_stylize 1,6,0,0,0.52,0.5,3,0.14,0.1,2,5,0,0.7,3.39,0,1,0,5,5,7,5,30,100,2,1.85,0 _label="from~Klee:~Oriental~Pleasure~Garden~Anagoria"
-#@cli : $ sample monalisa _fx_stylize squareswithconcentriccircles _output_mode=1 +fx_stylize 1,4,0,0,0.15,3,2,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,1000,2,1.85,0 _label="from~Kandisnky:~Squares~with~Concentric~Circles"
-#@cli : $ sample monalisa _fx_stylize inthestyleofkairouan _output_mode=1 +fx_stylize 1,4,2,0,0.15,3,2,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,1000,2,1.85,0 _label="from~Klee:~In~the~Style~of~Kairouan"
-#@cli : $ sample square _fx_stylize polyphony2 _output_mode=1 +fx_stylize 1,6,0,0,0.15,3,2,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,1000,2,1.85,0 _label="from~Klee:~Polyphony~2"
-#@cli : $ sample square _fx_stylize wheatstacksendofsummer _output_mode=1 +fx_stylize 1,6,0,0,0.15,3,2,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,1000,2,1.85,0 _label="from~Monet:~Wheatstacks~-~End~of~Summer"
-#@cli : $ sample square _fx_stylize portraitdemetzinger _output_mode=1 +fx_stylize 1,5,0,0,0.1,2,3,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,1000,2,1.85,0 _label="from~Delaunay:~Portrait~de~Metzinger"
-#@cli : $ sample monalisa input ../img/mandelbrot.jpg _output_mode=1 +fx_stylize 1,3,3,0,0.15,4,3,0.5,0.1,0,5,0,0.7,1,0,1,0,5,5,7,1,30,1000,2,1.85,0 _label="from~Mandelbrot Fractal~Set"
-#@cli : $ sample bottles _fx_stylize redtree _output_mode=1 +fx_stylize 1,5,0,0,2.12,2,3,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,1000,2,1.85,0 _label="from~Mondrian:~Evening;~Red~Tree"
-#@cli : $ sample bottles _fx_stylize redwaistcoat _output_mode=1 +fx_stylize 1,4,0,0,0.67,3.17,3,0.5,0.06,2,1,0,0.7,5,0,2,0,5,5,7,1,30,1090,2.05,1.85,0 _label="from~Klee:~Red~Waistcoat"
-#@cli : $ sample bottles _fx_stylize reservoirhortadeebro _output_mode=1 +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,1000,2,1.85,0 _label="from~Picasso:~The~Reservoir"
-#@cli : $ sample bottles _fx_stylize almondblossom _output_mode=1 +fx_stylize 1,6,0,0,0,3,3,0.5,0.1,2,5,0,0.7,5,0,2,0,5,5,7,1,30,1000,2,1.85,0 _label="from~Van~Gogh:~Almond~Blossom"
-#@cli : $ sample bottles _fx_stylize landscapenearantwerp _output_mode=1 +fx_stylize 1,6,0,0,2.17,3.65,3,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,1000,2,1.85,0 _label="from~Braque:~Landscape~near~Antwerp"
-#@cli : $ sample bottles _fx_stylize wheatfieldwithcrows _output_mode=1 +fx_stylize 1,6,0,0,3.86,2,3,0.5,0.1,1,5,0,0.7,3.35,1,1,0,5,5,7,1,30,1000,5,1.85,0 _label="from~Van~Gogh:~Wheat~Field~with~Crows"
+#@cli : $ sample car _fx_stylize starrynight _output_mode=1 \
+# +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,1000,2,1.85,0 _label="from~Van~Gogh:~Starry~Night"
+#@cli : $ sample car _fx_stylize graytree _output_mode=1 \
+# +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,1000,2,1.85,0 _label="from~Mondrian:~Gray~Tree"
+#@cli : $ sample car _fx_stylize yellowredblue _output_mode=1 \
+# +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,1000,2,1.85,0 \
+# _label="from~Kandinsky:~Yellow-Red-Blue"
+#@cli : $ sample car _fx_stylize littlebayatlaciotat _output_mode=1 \
+# +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,1000,2,1.85,0 \
+# _label="from~Braque:~Little~Bay~at~La~Ciotat"
+#@cli : $ sample car _fx_stylize leviaducalestaque _output_mode=1 \
+# +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,1000,2,1.85,0 \
+# _label="from~Braque:~Le~Viaduc~a~l'Estaque"
+#@cli : $ sample car _fx_stylize greatwave _output_mode=1 \
+# +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,1000,2,1.85,0 _label="from~Hokusai:~The~Great~Wave"
+#@cli : $ sample elephant input ../img/hatching.png _output_mode=1 \
+# +fx_stylize 1,4,0,0,1,2,3,0.5,0.1,2,5,0,0.7,0,0,1,0,5,5,7,1,30,10,2,1.85,0 _label="from~Hatch Drawing"
+#@cli : $ sample cat input ../img/hatching.png _output_mode=1 \
+# +fx_stylize 1,4,0,0,1,2,3,0.5,0.1,2,5,0,0.7,0,0,1,0,5,5,7,1,30,10,2,1.85,0 _label="from~Hatch Drawing"
+#@cli : $ sample bottles _fx_stylize starrynight _output_mode=1 \
+# +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,1,5,0,0.7,1,0,1,0,5,5,7,1,30,1000,2,1.85,0 _label="from~Van~Gogh:~Starry~Night"
+#@cli : $ sample cat _fx_stylize summertime9a _output_mode=1 \
+# +fx_stylize 1,6,0,0,2,0,1,0.5,0.1,2,5,0,0.7,0,2,1,0,5,5,7,1,130,1000,2,1.85,0 _label="from~Pollock:~Summertime~No~9A"
+#@cli : $ sample cat _fx_stylize greatwave _output_mode=1 \
+# +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,1000,2,1.85,0 _label="from~Hokusai:~The~Great~Wave"
+#@cli : $ sample dog _fx_stylize convergence _output_mode=1 \
+# +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,1000,2,1.85,0 _label="from~Pollock:~Convergence"
+#@cli : $ sample dog _fx_stylize irises _output_mode=1 \
+# +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,1,5,0,0.7,1,0,1,0,5,5,7,1,30,1000,2,1.85,0 _label="from~Van~Gogh:~Irises"
+#@cli : $ sample mandrill _fx_stylize themandola _output_mode=1 \
+# +fx_stylize 1,5,0,0,0,3,1,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,1000,2,1.85,0 _label="from~Braque:~The~Mandola"
+#@cli : $ sample square _fx_stylize orientalpleasuregardenanagoria _output_mode=1 \
+# +fx_stylize 1,6,0,0,0.52,0.5,3,0.14,0.1,2,5,0,0.7,3.39,0,1,0,5,5,7,5,30,100,2,1.85,0 \
+# _label="from~Klee:~Oriental~Pleasure~Garden~Anagoria"
+#@cli : $ sample monalisa _fx_stylize squareswithconcentriccircles _output_mode=1 \
+# +fx_stylize 1,4,0,0,0.15,3,2,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,1000,2,1.85,0 \
+# _label="from~Kandisnky:~Squares~with~Concentric~Circles"
+#@cli : $ sample monalisa _fx_stylize inthestyleofkairouan _output_mode=1 \
+# +fx_stylize 1,4,2,0,0.15,3,2,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,1000,2,1.85,0 \
+# _label="from~Klee:~In~the~Style~of~Kairouan"
+#@cli : $ sample square _fx_stylize polyphony2 _output_mode=1 \
+# +fx_stylize 1,6,0,0,0.15,3,2,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,1000,2,1.85,0 _label="from~Klee:~Polyphony~2"
+#@cli : $ sample square _fx_stylize wheatstacksendofsummer _output_mode=1 \
+# +fx_stylize 1,6,0,0,0.15,3,2,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,1000,2,1.85,0 \
+# _label="from~Monet:~Wheatstacks~-~End~of~Summer"
+#@cli : $ sample square _fx_stylize portraitdemetzinger _output_mode=1 \
+# +fx_stylize 1,5,0,0,0.1,2,3,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,1000,2,1.85,0 \
+# _label="from~Delaunay:~Portrait~de~Metzinger"
+#@cli : $ sample monalisa input ../img/mandelbrot.jpg _output_mode=1 \
+# +fx_stylize 1,3,3,0,0.15,4,3,0.5,0.1,0,5,0,0.7,1,0,1,0,5,5,7,1,30,1000,2,1.85,0 _label="from~Mandelbrot Fractal~Set"
+#@cli : $ sample bottles _fx_stylize redtree _output_mode=1 \
+# +fx_stylize 1,5,0,0,2.12,2,3,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,1000,2,1.85,0 \
+# _label="from~Mondrian:~Evening;~Red~Tree"
+#@cli : $ sample bottles _fx_stylize redwaistcoat _output_mode=1 \
+# +fx_stylize 1,4,0,0,0.67,3.17,3,0.5,0.06,2,1,0,0.7,5,0,2,0,5,5,7,1,30,1090,2.05,1.85,0 \
+# _label="from~Klee:~Red~Waistcoat"
+#@cli : $ sample bottles _fx_stylize reservoirhortadeebro _output_mode=1 \
+# +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,1000,2,1.85,0 _label="from~Picasso:~The~Reservoir"
+#@cli : $ sample bottles _fx_stylize almondblossom _output_mode=1 \
+# +fx_stylize 1,6,0,0,0,3,3,0.5,0.1,2,5,0,0.7,5,0,2,0,5,5,7,1,30,1000,2,1.85,0 _label="from~Van~Gogh:~Almond~Blossom"
+#@cli : $ sample bottles _fx_stylize landscapenearantwerp _output_mode=1 \
+# +fx_stylize 1,6,0,0,2.17,3.65,3,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,1000,2,1.85,0 \
+# _label="from~Braque:~Landscape~near~Antwerp"
+#@cli : $ sample bottles _fx_stylize wheatfieldwithcrows _output_mode=1 \
+# +fx_stylize 1,6,0,0,3.86,2,3,0.5,0.1,1,5,0,0.7,3.35,1,1,0,5,5,7,1,30,1000,5,1.85,0 \
+# _label="from~Van~Gogh:~Wheat~Field~with~Crows"
 
 #@cli gallery_codesamples
 #@cli : This entry defines some examples of coding-fun filters for the G'MIC gallery page.
