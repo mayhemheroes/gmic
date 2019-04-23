@@ -97,39 +97,69 @@
 #
 #           'typedef' can be :
 #
-#      _ 'bool(default_value={ 0 | 1 | false | true })'                           : Add a boolean parameter (0 or 1) (as a checkbutton).
-#      _ 'button(_alignment)'                                                     : Add a boolean parameter (0 or 1) (as a button).
-#      _ 'choice(_default_index,Choice0,..,ChoiceN)'                              : Add a integer parameter (as a combobox).
-#      _ 'color(R,_G,_B,_A)'                                                      : Add R,G,B[,A] parameters (as a colorchooser).
-#      _ 'point(_X,_Y,_removable={ -1 | 0 | 1 },_burst={ 0 | 1 },_R,_G,_B,_[-]A,_radius%)' :
+#      _ 'bool(default_value={ 0 | 1 | false | true })':
+#          Add a boolean parameter (0 or 1) (as a checkbutton).
+#
+#      _ 'button(_alignment)':
+#          Add a boolean parameter (0 or 1) (as a button).
+#
+#      _ 'choice(_default_index,Choice0,..,ChoiceN)':
+#          Add a integer parameter (as a combobox).
+#
+#      _ 'color(R,_G,_B,_A)':
+#          Add R,G,B[,A] parameters (as a colorchooser).
+#
+#      _ 'point(_X,_Y,_removable={ -1 | 0 | 1 },_burst={ 0 | 1 },_R,_G,_B,_[-]A,_radius%)':
 #          Add X,Y parameters (as a moveable point over the preview).
-#      _ 'value(value)'                                                           : Add a pre-defined value parameter (not displayed).
-#      _ 'file[_in,_out](_default_filename)'                                      : Add a filename parameter (as a filechooser).
-#      _ 'float(default_value,min_value,max_value)'                               : Add a float-valued parameter (as a float slider).
-#      _ 'folder(_default_foldername)'                                            : Add a foldername parameter (as a folderchooser).
-#      _ 'int(default_value,min_value,max_value)'                                 : Add a integer parameter (as an integer slider).
-#      _ 'link(_alignment,_label,URL)'                                            : Display a URL (do not add a parameter).
-#      _ 'note(_label)'                                                           : Display a label (do not add a parameter).
-#      _ 'text(_is_multiline={ 0 | 1 },_default text)'                            : Add a single or multi-line text parameter (as a text entry).
-#      _ 'separator()'                                                            : Display an horizontal separator (do not add a parameter).
+#
+#      _ 'value(value)':
+#          Add a pre-defined value parameter (not displayed).
+#
+#      _ 'file[_in,_out](_default_filename)':
+#          Add a filename parameter (as a filechooser).
+#
+#      _ 'float(default_value,min_value,max_value)':
+#          Add a float-valued parameter (as a float slider).
+#
+#      _ 'folder(_default_foldername)':
+#          Add a foldername parameter (as a folderchooser).
+#
+#      _ 'int(default_value,min_value,max_value)':
+#          Add a integer parameter (as an integer slider).
+#
+#      _ 'link(_alignment,_label,URL)':
+#          Display a URL (do not add a parameter).
+#
+#      _ 'note(_label)':
+#          Display a label (do not add a parameter).
+#
+#      _ 'text(_is_multiline={ 0 | 1 },_default text)':
+#          Add a single or multi-line text parameter (as a text entry).
+#
+#      _ 'separator()':
+#          Display an horizontal separator (do not add a parameter).
 #
 #   Type separators '()' can be replaced by '[]' or '{}' if necessary (for instance if parentheses are required in
 #   an argument of the typedef, e.g in a text). You can also replace 'typedef' by '_typedef' to tell the plug-in not
 #   to update the image preview when the corresponding parameter is modified.
 #   After the closing separator, you may specify a 'visibility state' character for the parameter, which can be
-#    { _0: Hidden | _1: Grayed-out | _2: Visible (default) }, opt. followed by a propagation character that tells if this
-#    visibility state must be propagated to neighboring non-valued interface widgets (s.a. separator(), link() or note()).
-#    This propagation character can be { '+'=propagate forward | '-'=propagate backward | '*'=propagate in both directions }.
+#   { _0: Hidden | _1: Grayed-out | _2: Visible (default) }, opt. followed by a propagation character that tells
+#   if this visibility state must be propagated to neighboring non-valued interface widgets
+#   (s.a. separator(), link() or note()).
+#   This propagation character can be:
+#   { '+'=propagate forward | '-'=propagate backward | '*'=propagate in both directions }.
 #
 #   Use '_none_' as a special command or preview_command to tell the plug-in that the entry requires no G'MIC call.
 #
-#   A G'MIC command can return new values for each parameter of the filter, into the status (see command 'status').
-#   To do so, the returned status must follow the syntax : {params1}{params2}{..}{paramsN} where N must be exactly
-#   equal to the number of parameters for the current filter. Optionnally, you can append to each {param}
-#   its visibility state suffix ( e.g: {param}_1 ).
+#   A G'MIC command can set new values for each filter parameter, through the status (see command 'status').
+#   To do so, the returned status must follow the syntax :
+#   '{params1}{params2}{..}{paramsN}' where N must be exactly equal to the number of parameters
+#   for the current filter. Optionnally, you can append to each {param} its visibility state suffix ( e.g: {param}_1 ).
 #
-#   A G'MIC command can also specify the blending mode, the opacity and the position of each of the output image
-#   (i.e. layer in the plug-in). To do so, set the image name to something like 'mode(grainmerge),opacity(50),pos(30,50),name(name)'.
+#   A G'MIC command can also specify the output blending mode, the opacity and the position of each of the output image
+#   (i.e. layer in the plug-in). To do so, set the image name to something like:
+#   'mode(grainmerge),opacity(50),pos(30,50),name(name)'.
+#
 #     - Blending mode name should be the same as the argument of the 'blend' command.
 #     - Opacity is a float number in [0,100].
 #     - X and Y positions are integers.
@@ -154,7 +184,8 @@ cli_noarg :
   fi
   file_update=${_path_rc}update$_version.gmic
   need_update={"Y = date(0); M = date(1); D = date(2); date_current = Y*365 + M*31 + D;
-                Y = date(0,'"{/$file_update}"'); M = date(1,'"{/$file_update}"'); D = date(2,'"{/$file_update}"'); date_file = Y*365 + M*31 + D;
+                Y = date(0,'"{/$file_update}"'); M = date(1,'"{/$file_update}"');
+                D = date(2,'"{/$file_update}"'); date_file = Y*365 + M*31 + D;
                 date_current - date_file>=7"}
   if $need_update
     v + e[] "[gmic] Update commands..." v -
@@ -223,7 +254,8 @@ _help : skip ${1=""}
       if ['{0,t}']==['$command']
         _document_gmic_declaration_ascii
         if $_shortcut # Found shortcut command.
-          v + e[] "\n    "$_gmic_m${_gmic_b}$command":"$_gmic_n" Shortcut for command '"$_gmic_m$_gmic_b$_shortcutlink0$_gmic_n"'." v -
+          v + e[] "\n    "$_gmic_m${_gmic_b}$command":"$_gmic_n" Shortcut for command '"\
+                  $_gmic_m$_gmic_b$_shortcutlink0$_gmic_n"'." v -
           u $_shortcutlink0 return
         fi
         else stopflag=1
@@ -295,10 +327,12 @@ _help_usage :
 \n     list is denoted by '"${c}"[1]"$n"', the third by '"${c}"[2]"$n"' and so on.
 \n
 \n  - Negative indices are treated in a periodic way: '"${c}"[-1]"$n"' refers to the last image of the list,
-\n     '"${c}"[-2]"$n"' to the penultimate one, etc. Thus, if the list has 4 images, '"${c}"[1]"$n"' and '"${c}"[-3]"$n"' both
+\n     '"${c}"[-2]"$n"' to the penultimate one, etc. Thus, if the list has 4 images, '"${c}"[1]"$n"' and '"\
+${c}"[-3]"$n"' both
 \n     designate the second image of the list.
 \n
-\n  - A named image may be also indicated by '"${c}"[name]"$n"', if '"${g}"name"$n"' uses the character set "${g}"[a-zA-Z0-9_]"$n"
+\n  - A named image may be also indicated by '"${c}"[name]"$n"', if '"${g}"name"$n"' uses the character set "\
+${g}"[a-zA-Z0-9_]"$n"
 \n     and does not start with a number. Image names can be set or reassigned at any moment during
 \n     the processing pipeline (see command '"${c}"name"$n"' for this purpose).
 \n
@@ -322,7 +356,8 @@ _help_usage :
 \n    . '"${g}"depth"$n"', the number of image slices (size along the "${g}"'z'-axis"$n").
 \n        (the depth is equal to "${g}"1"$n" for usual color or grayscale 2D images).
 \n    . '"${g}"spectrum"$n"', the number of image channels (size along the "${g}"'c'-axis"$n").
-\n        (the spectrum is respectively equal to "${g}"3"$n" and "${g}"4"$n" for usual "${g}"RGB"$n" and "${g}"RGBA"$n" color images).
+\n        (the spectrum is respectively equal to "${g}"3"$n" and "${g}"4"$n" for usual "${g}"RGB"$n" and "\
+${g}"RGBA"$n" color images).
 \n
 \n  - There are no hard limitations on the size of the image along each dimension. For instance,
 \n     the number of image slices or channels can be of arbitrary size within the limits of
@@ -341,7 +376,8 @@ _help_usage :
 \n
 \n  - Considering '"${g}"float"$n"'-valued pixels ensure to keep the numerical precision when executing
 \n     image processing pipelines. For image input/output operations, you may want to prescribe the
-\n     image datatype to be different than '"${g}"float"$n"' (like '"${g}"bool"$n"', '"${g}"char"$n"', '"${g}"int"$n"', etc...).
+\n     image datatype to be different than '"${g}"float"$n"' (like '"${g}"bool"$n"', '"${g}"char"$n"', '"\
+${g}"int"$n"', etc...).
 \n     This is possible by specifying it as a file option when using I/O commands.
 \n     (see section '"${c}"Input/output properties"$n"' to learn more about file options)."
 
@@ -382,18 +418,19 @@ _help_usage :
 \n       size and values (adding '"${g}"%"$n"' to a dimension means 'percentage of the size along the same
 \n       axis, taken from the last image '"${g}"[-1]"$n"''). Any specified dimension can be also written as
 \n       '"${c}"[image]"$n"', and is then set to the size (along the same axis) of the existing specified image
-\n       "${g}"[image]"$n". '"${g}"values"$n"' can be either a sequence of numbers separated by commas '"${g}","$n"', or a
-\n       mathematical expression, as e.g. in input item '"${c}"256,256,1,3,[x,y,128]"$n"' which
+\n       "${g}"[image]"$n". '"${g}"values"$n"' can be either a sequence of numbers separated by commas '"${g}","$n"',
+\n       or a mathematical expression, as e.g. in input item '"${c}"256,256,1,3,[x,y,128]"$n"' which
 \n       creates a 256x256 RGB color image with a spatial shading on the red and green channels.
 \n       (see section '"${c}"Mathematical expressions"$n"' to learn more about mathematical expressions).
 \n
 \n    . '"${c}"(v1,v2,..)"$n"': Insert a new image from specified prescribed values. Value separator inside
-\n       parentheses can be '"${g}","$n"' (column separator), '"${g}";"$n"' (row separator), '"${g}"/"$n"' (slice separator) or
-\n       '"${g}"^"$n"' (channel separator). For instance, expression '"${c}"(1,2,3;4,5,6;7,8,9)"$n"' creates a 3x3 matrix
-\n       (scalar image), with values running from 1 to 9.
+\n       parentheses can be '"${g}","$n"' (column separator), '"${g}";"$n"' (row separator), '"${g}"/"$n"'
+ (slice separator) or
+\n       '"${g}"^"$n"' (channel separator). For instance, expression '"${c}"(1,2,3;4,5,6;7,8,9)"$n"' creates a
+\n        3x3 matrix (scalar image), with values running from 1 to 9.
 \n
-\n    . '"${c}"0"$n"': Insert a new '"${g}"empty"$n"' image, containing no pixel data. Empty images are used only in rare
-\n       occasions.
+\n    . '"${c}"0"$n"': Insert a new '"${g}"empty"$n"' image, containing no pixel data.
+\n       Empty images are used only in rare occasions.
 \n
 \n  - Input item '"${c}"name=value"$n"' declares a new variable '"${g}"name"$n"', or assign a new value
 \n     to an existing variable. Variable names must use the character set "${g}"[a-zA-Z0-9_]"$n" and cannot
@@ -408,11 +445,14 @@ _help_usage :
 \n     for this purpose). Otherwise, it remains local to the thread that defined it.
 \n
 \n  - Numerical variables can be updated with the use of these special operators:
-\n     '"${g}"+="$n"' (addition), '"${g}"-="$n"' (subtraction), '"${g}"*="$n"' (multiplication), '"${g}"/="$n"' (division), '"${g}"%="$n"' (modulo),
-\n     '"${g}"&="$n"' (bitwise and), '"${g}"|="$n"' (bitwise or), '"${g}"^="$n"' (power), '"${g}"<<="$n"' and '"${g}">>="$n"' (bitwise left and right
+\n     '"${g}"+="$n"' (addition), '"${g}"-="$n"' (subtraction), '"${g}"*="$n"' (multiplication), '"${g}"/="$n"'
+ (division), '"${g}"%="$n"' (modulo),
+\n     '"${g}"&="$n"' (bitwise and), '"${g}"|="$n"' (bitwise or), '"${g}"^="$n"' (power), '"${g}"<<="$n"' and '"\
+${g}">>="$n"' (bitwise left and right
 \n     shifts). For instance, '"${c}"foo=1 foo+=3"$n"'.
 \n
-\n  - Input item '"${c}"name.=string"$n"' concatenates specified '"${g}"string"$n"' to the end of variable '"${g}"name"$n"'.
+\n  - Input item '"${c}"name.=string"$n"' concatenates specified '"${g}"string"$n"' to the end of variable '"\
+${g}"name"$n"'.
 \n
 \n  - Multiple variable assignments and updates are allowed, with expressions:
 \n     '"${c}"name1,name2,...,nameN=value"$n"' or '"${c}"name1,name2,...,nameN=value1,value2,...,valueN"$n"'
@@ -422,7 +462,8 @@ _help_usage :
 
   _help_section "Command items and selections"
 
-  _help_paragraph "  - A "${-GMIC}" item that is not a filename nor a special input string designates a "${g}"command"$n",
+  _help_paragraph "  - A "${-GMIC}" item that is not a filename nor a special input string designates a "\
+${g}"command"$n",
 \n     most of the time. Generally, commands perform image processing operations on one or several
 \n     available images of the list.
 \n
@@ -438,7 +479,8 @@ _help_usage :
 \n
 \n    . '"${c}"command[-2]"$n"': Apply command only on the penultimate image "${g}"[-2]"$n" of the list.
 \n    . '"${c}"command[0,1,3]"$n"': Apply command only on images "${g}"[0],[1]"$n" and "${g}"[3]"$n".
-\n    . '"${c}"command[3-6]"$n"': Apply command only on images "${g}"[3]"$n" to "${g}"[6]"$n" (i.e, "${g}"[3],[4],[5]"$n" and "${g}"[6]"$n").
+\n    . '"${c}"command[3-6]"$n"': Apply command only on images "${g}"[3]"$n" to "${g}"[6]"$n" (i.e, "${g}"[3],[4],[5]"\
+$n" and "${g}"[6]"$n").
 \n    . '"${c}"command[50%-100%]"$n"': Apply command only on the second half of the image list.
 \n    . '"${c}"command[0,-4--1]"$n"': Apply command only on the first image and the last four images.
 \n    . '"${c}"command[0-9:3]"$n"': Apply command only on images "${g}"[0]"$n" to "${g}"[9]"$n", with a step of 3
@@ -457,17 +499,20 @@ _help_usage :
 \n     '"${c}"repeat..done"$n"' loop instead. Inverting the order of images for a command is achieved by
 \n     explicitly inverting the order of the images in the list, with command '"${c}"reverse[selection]"$n"'.
 \n
-\n  - Command selections '"${c}"[-1]"$n"','"${c}"[-2]"$n"' and '"${c}"[-3]"$n"' are so often used that they have their own
-\n     shortcuts, respectively '"${c}"."$n"', '"${c}".."$n"' and '"${c}"..."$n"'. For instance, command '"${c}"blur.."$n"' is equivalent to
+\n  - Command selections '"${c}"[-1]"$n"','"${c}"[-2]"$n"' and '"${c}"[-3]"$n"' are so often used they have their own
+\n     shortcuts, respectively '"${c}"."$n"', '"${c}".."$n"' and '"${c}"..."$n"'. For instance, command '"\
+${c}"blur.."$n"' is equivalent to
 \n     '"${c}"blur[-2]"$n"'. These shortcuts work also when specifying command arguments.
 \n
 \n  - "${-GMIC}" commands invoked without '"${c}"[selection]"$n"' are applied on all images of the list, i.e. the
-\n     default selection is '"${c}"[0--1]"$n"' (except for command '"${c}"input"$n"' whose default selection is '"${c}"[-1]"$n"').
+\n     default selection is '"${c}"[0--1]"$n"' (except for command '"${c}"input"$n"' whose default selection is '"\
+${c}"[-1]"$n"').
 \n
 \n  - Prepending a single hyphen '"${g}"-"$n"' to a "${-GMIC}" command is allowed. This may be useful to recognize
 \n     command items more easily in a one-liner pipeline (typically invoked from a shell).
 \n
-\n  - A "${-GMIC}" command prepended with a plus sign '"${g}"+"$n"' or a double hyphen '"${g}"--"$n"' does not act 'in-place'
+\n  - A "${-GMIC}" command prepended with a plus sign '"${g}"+"$n"' or a double hyphen '"${g}"--"$n"' does not act
+ 'in-place'
 \n     but inserts its result as one or several new images at the end of the image list.
 \n
 \n  - There are two different types of commands that can be run by the "${-GMIC}" interpreter:
@@ -519,8 +564,8 @@ _help_usage :
 \n       the last frame of the video. Set '"${g}"step"$n"' to 0 to force an opened video file to be
 \n       opened/closed. Output framerate and codec can be also set by using the output expression
 \n       '"${c}"filename.avi,_fps,_codec,_keep_open={ 0 | 1 }"$n"'. '"${g}"codec"$n"' is a 4-char string
-\n       (see "${r}"http://www.fourcc.org/codecs.php"$n") or '"${g}"0"$n"' for the default codec. '"${g}"keep_open"$n"' tells if
-\n       the output video file must be kept open for appending new frames afterwards.
+\n       (see "${r}"http://www.fourcc.org/codecs.php"$n") or '"${g}"0"$n"' for the default codec. '"${g}"keep_open"$n"'
+\n       tells if the output video file must be kept open for appending new frames afterwards.
 \n
 \n    . "${g}".cimg[z] files:"$n" Only crops and sub-images of .cimg files can be loaded, using the input
 \n      expressions '"${c}"filename.cimg,N0,N1"$n"', '"${c}"filename.cimg,N0,N1,x0,x1"$n"',
@@ -549,7 +594,8 @@ _help_usage :
 \n       Output expression '"${c}"filename.tiff,_datatype,_compression,_force_multipage,_use_bigtiff"$n"' can
 \n       be used to specify the output pixel type, as well as the compression method.
 \n       '"${g}"datatype"$n"' can be the same as for "${g}".cimg[z]"$n" files. '"${g}"compression"$n"' can be
-\n       "${g}"{ none (default) | lzw | jpeg }"$n". '"${g}"force_multipage"$n" can be "${g}"{ 0=no (default) | 1=yes }"$n".
+\n       "${g}"{ none (default) | lzw | jpeg }"$n". '"${g}"force_multipage"$n" can be "\
+${g}"{ 0=no (default) | 1=yes }"$n".
 \n       '"${g}"use_bigtiff"$n" can be "${g}"{ 0=no | 1=yes (default) }"$n".
 \n
 \n    . "${g}".gif files:"$n" Animated gif files can be saved, using the input expression
@@ -577,10 +623,12 @@ _help_usage :
 
   _help_section "Substitution rules"
 
-  _help_paragraph "  - "${-GMIC}" items containing '"${g}"$"$n"' or '"${g}"{}"$n"' are substituted before being interpreted. Use these
+  _help_paragraph "  - "${-GMIC}" items containing '"${g}"$"$n"' or '"${g}"{}"$n"' are substituted before being
+ interpreted. Use these
 \n     substituting expressions to access various data from the interpreter environment.
 \n
-\n  - '"${c}"$name"$n"' and '"${c}"${name}"$n"' are both substituted by the value of the specified named "${g}"variable"$n"
+\n  - '"${c}"$name"$n"' and '"${c}"${name}"$n"' are both substituted by the value of the specified named "\
+${g}"variable"$n"
 \n     (set previously by the item '"${c}"name=value"$n"'). If this variable has not been already set, the
 \n     expression is substituted by the highest positive "${g}"index"$n" of the named image '"${g}"[name]"$n"'. If no
 \n     image has this name, the expression is substituted by the value of the "${g}"OS environment variable"$n"
@@ -603,8 +651,8 @@ _help_usage :
 \n       . '"${c}"$_vt100"$n"': Set to "${g}"1"$n" (default value) if colored text output is allowed on the console.
 \n       . '"${c}"$_path_rc"$n"': The path to the "${-GMIC}" folder used to store resources and configuration files
 \n         (its value is OS-dependent).
-\n       . '"${c}"$_path_user"$n"': The path to the "${-GMIC}" user file "${g}".gmic"$n" or "${g}"user.gmic"$n" (its value is
-\n          OS-dependent).
+\n       . '"${c}"$_path_user"$n"': The path to the "${-GMIC}" user file "${g}".gmic"$n" or "${g}"user.gmic"$n"
+\n          (its value is OS-dependent).
 \n
 \n  - '"${c}"$$name"$n"' and '"${c}"$${name}"$n"' are both substituted by the G'MIC script code of the specified named
 \n     "${g}"custom command"$n", or by an empty string if no custom command with specified name exists.
@@ -618,11 +666,13 @@ _help_usage :
 \n
 \n  - '"${c}"{/string}"$n"' is substituted by the "${g}"escaped version"$n" of the specified string.
 \n
-\n  - '"${c}"{'string'}"$n"' (between single quotes) is substituted by the "${g}"sequence of ascii codes"$n" that compose
+\n  - '"${c}"{'string'}"$n"' (between single quotes) is substituted by the "${g}"sequence of ascii codes"$n" that
+ compose
 \n     the specified string, separated by commas '"${g}","$n"'. For instance, item '"${c}"{'foo'}"$n"' is substituted
 \n     by '"${c}"102,111,111"$n"'.
 \n
-\n  - '"${c}"{image,feature}"$n"' is substituted by a specific feature of the image "${c}"[image]"$n". '"${g}"image"$n"' can be
+\n  - '"${c}"{image,feature}"$n"' is substituted by a specific feature of the image "${c}"[image]"$n".
+ '"${g}"image"$n"' can be
 \n     either an image number or an image name. It can be also eluded, in which case, the last image
 \n     '"${c}"[-1]"$n"' of the list is considered for the requested feature.
 \n     Specified '"${g}"feature"$n"' can be one of:
@@ -640,15 +690,15 @@ _help_usage :
 \n          expression '"${c}"{0,w+h}"$n"' is substituted by the sum of the width and height of the first image
 \n          (see section '"${c}"Mathematical expressions"$n"' for more details). If a mathematical expression
 \n          starts with an underscore '"${g}"_"$n"', the resulting value is truncated to a readable format.
-\n          For instance, item '"${c}"{_pi}"$n"' is substituted by '"${g}"3.14159"$n"' (while '"${c}"{pi}"$n"' is substituted by
-\n          '"${g}"3.141592653589793"$n"').
+\n          For instance, item '"${c}"{_pi}"$n"' is substituted by '"${g}"3.14159"$n"' (while '"${c}"{pi}"$n"'
+\n           is substituted by '"${g}"3.141592653589793"$n"').
 \n       . A '"${c}"feature"$n"' delimited by backquotes is replaced by a string whose ascii codes correspond
 \n          to the list of values resulting from the evaluation of the specified mathematical
 \n          expression. For instance, item '"${c}"{`[102,111,111]`}"$n"' is substituted by '"${c}"foo"$n"' and item
 \n          '"${c}"{`vector8(65)`}"$n"' by '"${c}"AAAAAAAA"$n"'.
 \n
-\n  - '"${c}"{*}"$n"' is substituted by the "${g}"visibility state"$n" of the instant display window "${c}"[0]"$n" (can be
-\n     "${g}"{ 0=closed | 1=visible }"$n").
+\n  - '"${c}"{*}"$n"' is substituted by the "${g}"visibility state"$n" of the instant display window "${c}"[0]"$n"
+\n     (can be "${g}"{ 0=closed | 1=visible }"$n").
 \n
 \n  - '"${c}"{*,feature1,...,featureN}"$n"' or '"${c}"{*index,feature1,...,featureN}"$n"' is substituted by a specific
 \n      set of features of the instant display window "${c}"#0"$n" (or "${c}"#index"$n", if specified).
@@ -673,8 +723,8 @@ _help_usage :
 \n       . '"${c}"c"$n"': boolean (0 or 1) telling if the instant display has been closed recently.
 \n       . '"${c}"r"$n"': boolean telling if the instant display has been resized recently.
 \n       . '"${c}"m"$n"': boolean telling if the instant display has been moved recently.
-\n       . Any other '"${c}"feature"$n"' stands for a "${g}"keycode name"$n" (in capital letters), and is substituted by
-\n          a boolean describing the current key state "${g}"{ 0=pressed | 1=released }"$n".
+\n       . Any other '"${c}"feature"$n"' stands for a "${g}"keycode name"$n" (in capital letters), and is substituted
+\n          by a boolean describing the current key state "${g}"{ 0=pressed | 1=released }"$n".
 \n       . You can also prepend a hyphen '"${c}"-"$n"' to a '"${g}"feature"$n"' (that supports it) to flush the
 \n          corresponding event immediately after reading its state (works for keys, mouse and
 \n          window events).
@@ -688,7 +738,8 @@ _help_usage :
 
   _help_section "Mathematical expressions"
 
-  _help_paragraph "  - "${-GMIC}" has an embedded "${g}"mathematical parser"$n". It is used to evaluate (possibly complex) expressions
+  _help_paragraph "  - "${-GMIC}" has an embedded "${g}"mathematical parser"$n". It is used to evaluate
+ (possibly complex) expressions
 \n     inside braces '"${g}"{}"$n"', or formulas in commands that may take one as an argument (e.g. '"${c}"fill"$n"').
 \n
 \n  - When the context allows it, a formula is evaluated "${g}"for each pixel"$n" of the selected images
@@ -699,10 +750,12 @@ _help_usage :
 \n
 \n  - The mathematical parser understands the following set of functions, operators and variables:
 \n
-\n    _ "${g}"Usual operators:"$n" "${c}"||"$n" (logical or), "${c}"&&"$n" (logical and), "${c}"|"$n" (bitwise or), "${c}"&"$n" (bitwise and),
+\n    _ "${g}"Usual operators:"$n" "${c}"||"$n" (logical or), "${c}"&&"$n" (logical and), "${c}"|"$n" (bitwise or), "\
+${c}"&"$n" (bitwise and),
 \n       "${c}"!=, ==, <=, >=, <, >, <<"$n" (left bitwise shift), "${c}">>"$n" (right bitwise shift), "${c}"-, +, *, /,
 \n       %"$n" (modulo), "${c}"^"$n" (power), "${c}"!"$n" (logical not), "${c}"~"$n" (bitwise not),
-\n       "${c}"++"$n", "${c}"--"$n", "${c}"+="$n", "${c}"-="$n", "${c}"*="$n", "${c}"/="$n", "${c}"%="$n", "${c}"&="$n", "${c}"|="$n", "${c}"^="$n", "${c}">>="$n", "${c}"<<="$n" (in-place operators).
+\n       "${c}"++"$n", "${c}"--"$n", "${c}"+="$n", "${c}"-="$n", "${c}"*="$n", "${c}"/="$n", "${c}"%="$n", "\
+${c}"&="$n", "${c}"|="$n", "${c}"^="$n", "${c}">>="$n", "${c}"<<="$n" (in-place operators).
 \n
 \n    _ "${g}"Usual math functions:"$n" "${c}"abs(), acos(), acosh(), arg(), argkth(), argmax(), argmin(), asin(),
 \n       asinh(), atan(), atan2(), atanh(), avg(), bool(), cbrt(), ceil(), cos(), cosh(), cut(), exp(), fact(),
@@ -711,20 +764,27 @@ _help_usage :
 \n       "${c}"ror()"$n" (right bit rotation)"${c}", round(), sign(), sin(), sinc(), sinh(), sqrt(), std(),
 \n       srand(_seed), sum(), tan(), tanh(), var(), xor()"$n".
 \n
-\n       . '"${c}"atan2(y,x)"$n"' is the version of '"${c}"atan()"$n"' with two arguments '"${g}"y"$n"' and '"${g}"x"$n"' (as in C/C++).
+\n       . '"${c}"atan2(y,x)"$n"' is the version of '"${c}"atan()"$n"' with two arguments '"${g}"y"$n"' and '"\
+${g}"x"$n"' (as in C/C++).
 \n       . '"${c}"permut(k,n,with_order)"$n"' computes the number of permutations of "${g}"k"$n" objects from a set of
 \n          "${g}"n"$n" objects.
-\n       . '"${c}"gauss(x,_sigma,_is_normalized)"$n"' returns '"${g}"exp(-x^2/(2*s^2))/(is_normalized?sqrt(2*pi*sigma^2):1)"$n"'.
-\n       . '"${c}"cut(value,min,max)"$n"' returns value if it is in range "${g}"[min,max]"$n", or "${g}"min"$n" or "${g}"max"$n" otherwise.
+\n       . '"${c}"gauss(x,_sigma,_is_normalized)"$n"' returns '"\
+${g}"exp(-x^2/(2*s^2))/(is_normalized?sqrt(2*pi*sigma^2):1)"$n"'.
+\n       . '"${c}"cut(value,min,max)"$n"' returns value if it is in range "${g}"[min,max]"$n", or "${g}"min"$n" or "\
+${g}"max"$n" otherwise.
 \n       . '"${c}"narg(a_1,...,a_N)"$n"' returns the number of specified arguments (here, "${g}"N"$n").
 \n       . '"${c}"arg(i,a_1,..,a_N)"$n"' returns the "${g}"ith"$n" argument "${g}"a_i"$n".
-\n       . '"${c}"isnumber()"$n"', '"${c}"isnan()"$n"', '"${c}"isinf()"$n"', '"${c}"isint()"$n"', '"${c}"isbool()"$n"' test the type of the given
+\n       . '"${c}"isnumber()"$n"', '"${c}"isnan()"$n"', '"${c}"isinf()"$n"', '"${c}"isint()"$n"', '"\
+${c}"isbool()"$n"' test the type of the given
 \n          number or expression, and return "${g}"0 (false)"$n" or "${g}"1 (true)"$n".
-\n       . '"${c}"isfile('path')"$n"' (resp. '"${c}"isdir('path')"$n"') returns "${g}"0 (false)"$n" or "${g}"1 (true)"$n" whether its string argument is a
+\n       . '"${c}"isfile('path')"$n"' (resp. '"${c}"isdir('path')"$n"') returns "${g}"0 (false)"$n" or "\
+${g}"1 (true)"$n" whether its string argument is a
 \n          path to an existing file (resp. to a directory) or not.
-\n       . '"${c}"isin(v,a_1,...,a_n)"$n"' returns "${g}"0 (false)"$n" or "${g}"1 (true)"$n" whether the first value '"${g}"v"$n"' appears
+\n       . '"${c}"isin(v,a_1,...,a_n)"$n"' returns "${g}"0 (false)"$n" or "${g}"1 (true)"$n" whether the first value '"\
+${g}"v"$n"' appears
 \n          in the set of other values 'a_i'.
-\n       . '"${c}"argmin()"$n"', '"${c}"argmax()"$n"', '"${c}"avg()"$n"', '"${c}"kth()"$n"', '"${c}"max()"$n"', '"${c}"med()"$n"', '"${c}"min()"$n"', '"${c}"std()"$n"', '"${c}"sum()"$n"'
+\n       . '"${c}"argmin()"$n"', '"${c}"argmax()"$n"', '"${c}"avg()"$n"', '"${c}"kth()"$n"', '"${c}"max()"$n"', '"\
+${c}"med()"$n"', '"${c}"min()"$n"', '"${c}"std()"$n"', '"${c}"sum()"$n"'
 \n          and '"${c}"var()"$n"' can be called with an arbitrary number of scalar/vector arguments.
 \n       . '"${c}"round(value,rounding_value,direction)"$n"' returns a rounded value. '"${g}"direction"$n"' can be
 \n          "${g}"{ -1=to-lowest | 0=to-nearest | 1=to-highest }"$n".
@@ -740,28 +800,32 @@ _help_usage :
 \n       . '"${c}"wh"$n"': shortcut for width x height.
 \n       . '"${c}"whd"$n"': shortcut for width x height x depth.
 \n       . '"${c}"whds"$n"': shortcut for width x height x depth x spectrum (i.e. number of image values).
-\n       . '"${c}"im"$n"','"${c}"iM"$n"','"${c}"ia"$n"','"${c}"iv"$n"','"${c}"is"$n"','"${c}"ip"$n"','"${c}"ic"$n"': Respectively the minimum, maximum, average,
+\n       . '"${c}"im"$n"','"${c}"iM"$n"','"${c}"ia"$n"','"${c}"iv"$n"','"${c}"is"$n"','"${c}"ip"$n"','"${c}"ic"$n"':
+ Respectively the minimum, maximum, average,
 \n          variance, sum, product and median value of the associated image, if any ("${g}"0"$n" otherwise).
-\n       . '"${c}"xm"$n"','"${c}"ym"$n"','"${c}"zm"$n"','"${c}"cm"$n"': The pixel coordinates of the minimum value in the associated
-\n          image, if any ("${g}"0"$n" otherwise).
-\n       . '"${c}"xM"$n"','"${c}"yM"$n"','"${c}"zM"$n"','"${c}"cM"$n"': The pixel coordinates of the maximum value in the associated
-\n          image, if any ("${g}"0"$n" otherwise).
+\n       . '"${c}"xm"$n"','"${c}"ym"$n"','"${c}"zm"$n"','"${c}"cm"$n"': The pixel coordinates of the minimum value
+\n          in the associated image, if any ("${g}"0"$n" otherwise).
+\n       . '"${c}"xM"$n"','"${c}"yM"$n"','"${c}"zM"$n"','"${c}"cM"$n"': The pixel coordinates of the maximum value
+\n          in the associated image, if any ("${g}"0"$n" otherwise).
 \n       . All these variables are considered as "${g}"constant values"$n" by the math parser (for optimization
 \n          purposes) which is indeed the case most of the time. Anyway, this might not be the case,
 \n          if function '"${c}"resize(#ind,..)"$n"' is used in the math expression.
-\n          If so, it is safer to invoke functions '"${c}"l()"$n"', '"${c}"w(_#ind)"$n"', '"${c}"h(_#ind)"$n"', ... '"${c}"s(_#ind)"$n"'
+\n          If so, it is safer to invoke functions '"${c}"l()"$n"', '"${c}"w(_#ind)"$n"', '"${c}"h(_#ind)"$n"', ...
+ '"${c}"s(_#ind)"$n"'
 \n          and '"${c}"ic(_#ind)"$n"' instead of the corresponding named variables.
 \n       . '"${c}"i"$n"': current processed pixel value (i.e. value located at "${g}"(x,y,z,c)"$n") in the associated
 \n          image, if any ("${g}"0"$n" otherwise).
 \n       . '"${c}"iN"$n"': Nth channel value of current processed pixel (i.e. value located at "${g}"(x,y,z,N)"$n") in
-\n          the associated image, if any ("${g}"0"$n" otherwise). '"${g}"N"$n"' must be an integer in range "${g}"[0,9]"$n".
-\n       . '"${c}"R"$n"','"${c}"G"$n"','"${c}"B"$n"' and '"${c}"A"$n"' are equivalent to '"${c}"i0"$n"', '"${c}"i1"$n"', '"${c}"i2"$n"' and '"${c}"i3"$n"' respectively.
+\n          the associated image, if any ("${g}"0"$n" otherwise). '"${g}"N"$n"' must be an integer in range "\
+${g}"[0,9]"$n".
+\n       . '"${c}"R"$n"','"${c}"G"$n"','"${c}"B"$n"' and '"${c}"A"$n"' are equivalent to '"${c}"i0"$n"', '"\
+${c}"i1"$n"', '"${c}"i2"$n"' and '"${c}"i3"$n"' respectively.
 \n       . '"${c}"I"$n"': current vector-valued processed pixel in the associated image, if any ("${g}"0"$n" otherwise).
 \n          The number of vector components is equal to the number of image channels
 \n          (e.g. "${g}"I = [ R,G,B ]"$n" for a "${g}"RGB"$n" image).
 \n       . You may add '"${c}"#ind"$n"' to any of the variable name above to retrieve the information for any
-\n          numbered image "${g}"[ind]"$n" of the list (when this makes sense). For instance '"${c}"ia#0"$n"' denotes the
-\n          average value of the first image of the list).
+\n          numbered image "${g}"[ind]"$n" of the list (when this makes sense). For instance '"${c}"ia#0"$n"' denotes
+\n          the average value of the first image of the list).
 \n       . '"${c}"x"$n"': current processed column of the associated image, if any ("${g}"0"$n" otherwise).
 \n       . '"${c}"y"$n"': current processed row of the associated image, if any ("${g}"0"$n" otherwise).
 \n       . '"${c}"z"$n"': current processed slice of the associated image, if any ("${g}"0"$n" otherwise).
