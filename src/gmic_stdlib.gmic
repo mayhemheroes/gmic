@@ -1677,7 +1677,7 @@ v : # Allow 'gmic +v' to get the version number.
 # goldfx_summer_heat | green_blues | green_mono | green_yellow | hackmanite | herderite | heulandite | hiddenite | \
 # hilutite | hong_kong | horrorblue | howlite | hyla_68 | hypersthene | ilford_delta_100 | ilford_delta_3200 | \
 # ilford_delta_3200_+ | ilford_delta_3200_++ | ilford_delta_3200_- | ilford_delta_400 | ilford_fp_4_plus_125 | \
-# ilford_hp_5 | ilford_hp_5_+ | ilford_hp_5_++ | ilford_hp_5_- | ilford_hp_5_plus_400 | ilford_hps_800 | _
+# ilford_hp_5 | ilford_hp_5_+ | ilford_hp_5_++ | ilford_hp_5_- | ilford_hp_5_plus_400 | ilford_hps_800 | \
 # ilford_pan_f_plus_50 | ilford_xp_2 | kodak_2383_constlclip | kodak_2383_constlmap | kodak_2383_cuspclip | \
 # kodak_2393_constlclip | kodak_2393_constlmap | kodak_2393_cuspclip | kodak_bw_400_cn | \
 # kodak_e-100_gx_ektachrome_100 | kodak_ektachrome_100_vs | kodak_ektachrome_100_vs_generic | kodak_ektar_100 | \
@@ -1699,7 +1699,7 @@ v : # Allow 'gmic +v' to get the version number.
 # lomography_redscale_100 | lomography_x-pro_slide_200 | lucky_64 | mckinnon_75 | milo_5 | mono_tinted | moody_1 | \
 # moody_10 | moody_2 | moody_3 | moody_4 | moody_5 | moody_6 | moody_7 | moody_8 | moody_9 | moonlight | moonrise | \
 # mute_shift | muted_fade | natural_vivid | neon_770 | nightfromday | nostalgic | nw-1 | nw-10 | nw-2 | nw-3 | nw-4 | \
-# nw-5 | nw-6 | nw-7 | nw-8 | nw-9 | orange_tone | oranges | paladin_1875 | pasadena_21 | pink_fade | pitaya_15 | _
+# nw-5 | nw-6 | nw-7 | nw-8 | nw-9 | orange_tone | oranges | paladin_1875 | pasadena_21 | pink_fade | pitaya_15 | \
 # polaroid_664 | polaroid_665 | polaroid_665_+ | polaroid_665_++ | polaroid_665_- | polaroid_665_-- | \
 # polaroid_665_negative | polaroid_665_negative_+ | polaroid_665_negative_- | polaroid_665_negative_hc | \
 # polaroid_667 | polaroid_669 | polaroid_669_+ | polaroid_669_++ | polaroid_669_+++ | polaroid_669_- | \
@@ -2524,7 +2524,7 @@ document_gmic : skip ${1="ascii"},${2=""},${3=1}
 
   # Concatenate command data and split them into lines.
   _name={0,b} # Basename for the commands definition file.
-  if $!>1 i[1--2] (10) fi
+  if $!>1 append_newline[^-1] fi
   a y m {t} s -,10 append_multiline_comments
 
   # Output header.
@@ -3352,13 +3352,37 @@ _document_gmic_sort_shortcuts :
 append_multiline_comments :
   eval "
     for (ind = 0, ind<l()-1, ++ind,
+      hind = h(#ind);
       nind = ind + 1;
-      h(#ind)>2 && i[#ind,0]==_'#' && i[#ind,h(#ind)-1]==_'\\' && i[#nind,0]==_'#'?(
+      hind>2 && i[#ind,0]==_'#' && i[#ind,hind-1]==_'\\' && i[#nind,0]==_'#'?(
         k = 1; while (i[#nind,k]<=_' ',++k);
-        ext('rows[',ind,'] 0,',h(#ind)-2,' rows[',nind,'] ',k,',100% a[',ind,',',nind,'] y');
+        ext('rows[',ind,'] 0,',hind-2,' rows[',nind,'] ',k,',100% a[',ind,',',nind,'] y');
         ind-=1;
       )
     )"
+
+
+
+pol :
+  eval "
+    for (ind = l - 1, ind>=1, --ind,
+      pind = ind - 1;
+      hind = h(#ind);
+      hpind = h(#pind);
+      i[#ind,0]==_'#' && i[#pind,0]==_'#' && i[#pind,hpind-1]==_'\\' ? (
+        k = 1; while (i[#ind,k]<=_' ',++k);
+        print(k);
+        resize(#pind,1,hpind + hind - k - 1,1,1,0,0);
+        copy(i[#pind,hpind - 1],i[#ind,k],hind - k);
+        ext('rm[',ind,']');
+      );
+    );
+  "
+
+# Append a newline character at the end of all selected images of the list
+# (assumed to be colun-vectors representing strings).
+append_newline :
+  eval "for (ind = 0, ind<l, ++ind, hind = h#ind; resize(#ind,1,hind+1,1,1,0,0); i[#ind,hind] = _'\n')"
 
 #@cli e : eq. to 'echo'. : (+)
 
@@ -4529,7 +4553,7 @@ update_gallery_html : check "isbool(${1=0})"
 
   # Generate HTML pages.
   i raw:$HOME/work/src/gmic/src/gmic_stdlib.gmic,uchar
-  s -,10 append_multiline_comments i[1--1] (10) a y
+  s -,10 append_multiline_comments append_newline[^-1] a y
   nb_cols=3
 
   repeat $nb_categories,ncat
@@ -20433,7 +20457,7 @@ compress_gmic :
   v -
   s -,10 append_multiline_comments N=$!
   ap _compress_gmic
-  s -,10 i[1--2] (10) a y
+  s -,10 append_newline[^-1] a y
   v +
 
 _compress_gmic :
