@@ -3363,6 +3363,25 @@ append_multiline_comments :
       );
     )"
 
+pol :
+  to_remove=-1
+  eval "
+    for (ind = l - 1, ind>=1, --ind,
+      pind = ind - 1;
+      hind = h(#ind);
+      hpind = h(#pind);
+      i[#ind,0]==_'#' && i[#pind,0]==_'#' && i[#pind,hpind-1]==_'\\' ? (
+        k = 1; while (i[#ind,k]<=_' ',++k);
+        resize(#pind,1,hpind + hind - k - 1,1,1,0,0);
+        copy(i[#pind,hpind - 1],i[#ind,k],hind - k);
+        ext('to_remove.=,',ind);
+      );
+    )"
+
+  0 rm[$to_remove]
+
+#  -> gmic raw:gmic_stdlib.gmic,uchar rows 0,20% s -,10 pol append_newline[^-1] a y o raw:toto.txt,uchar debug
+
 # Append a newline character at the end of all string images of the list.
 append_newline :
   eval "for (ind = 0, ind<l, ++ind, hind = h#ind; resize(#ind,1,hind+1,1,1,0,0); i[#ind,hind] = _'\n')"
