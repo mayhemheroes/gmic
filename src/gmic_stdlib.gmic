@@ -243,7 +243,7 @@ _help : skip ${1=""}
     v + e[] "\n[gmic] Command '"$command"' has no description"$misspelling". Try 'gmic -h' for global help.\n\n" v -
     rm u "" return
   fi
-  rm[0] a y s -,10 append_multiline_comments
+  rm[0] a y discard 13 s -,10 append_multiline_comments
   stopflag=0
   _is_example=0
   _document_gmic_header_ascii[] 0
@@ -2525,7 +2525,7 @@ document_gmic : skip ${1="ascii"},${2=""},${3=1}
   # Concatenate command data and split them into lines.
   _name={0,b} # Basename for the commands definition file.
   if $!>1 append_newline[^-1] fi
-  a y m {t} s -,10 append_multiline_comments
+  a y m {t} discard 13 s -,10 append_multiline_comments
 
   # Output header.
   _document_gmic_header_$1[] $3
@@ -3554,7 +3554,7 @@ _input_glob :
 input_gpl :
   e[^-1] "Input .gpl palette file '$*'."
   v - l[]
-    i raw:"$*",char replace 9,32 s -,10
+    i raw:"$*",char discard 13 replace 9,32 s -,10
     colors=0
     repeat $! l[$>]
       s -,32
@@ -4538,7 +4538,7 @@ update_gallery_html : check "isbool(${1=0})"
 
   # Generate HTML pages.
   i raw:$HOME/work/src/gmic/src/gmic_stdlib.gmic,uchar
-  s -,10 append_multiline_comments append_newline[^-1] a y
+  discard 13 s -,10 append_multiline_comments append_newline[^-1] a y
   nb_cols=3
 
   repeat $nb_categories,ncat
@@ -5168,7 +5168,7 @@ update_server :
   replace_str " Update : <i>20","   Latest Update: <i>20"
 
   # Remove useless comments and line breaks.
-  repeat $! l[$>] s -,10 append_multiline_comments
+  repeat $! l[$>] discard 13 s -,10 append_multiline_comments
     repeat $! l[$<]
       if i[0]==_'#'" && "i[1]!=_'@' rm fi
     endl done i[^0] ({'\n'}) a y
@@ -20440,7 +20440,7 @@ check120 :
 # by removing empty lines, and useless comments.
 compress_gmic :
   v -
-  s -,10 append_multiline_comments N=$!
+  discard13 s -,10 append_multiline_comments N=$!
   ap _compress_gmic
   s -,10 append_newline[^-1] a y
   v +
