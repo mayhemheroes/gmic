@@ -4527,7 +4527,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     *const argz = _argz.data(),
     *const argc = _argc.data(),
     *const command = _command.data(),
-    *const s_selection = _s_selection.data();
+    *s_selection = _s_selection.data();
   *formula = *color = *title = *indices = *argx = *argy = *argz = *argc =
     *command = *s_selection = 0;
 
@@ -4667,7 +4667,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
       // Split command/selection, if necessary.
       bool is_selection = false;
-      const unsigned int siz = images._width;
+      const unsigned int siz = images._width, selsiz = _s_selection._width;
       CImg<unsigned int> selection;
       CImg<char> new_name;
       if (is_command) {
@@ -4677,6 +4677,12 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Extract selection.
         // (same as but faster than 'err = cimg_sscanf(item,"%255[^[]%c%255[a-zA-Z_0-9.eE%^,:+-]%c%c",
         //                                             command,&sep0,s_selection,&sep1,&end);
+        if (selsiz<_item._width) { // Expand size for getting a possibly large selection
+          _s_selection.assign(_item.width());
+          s_selection = _s_selection.data();
+          *s_selection = 0;
+        }
+
         const char *ps = item;
         char *pd = command;
         char *const pde = _command.end() - 1;
@@ -4750,6 +4756,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         command[_command.width() - 1] = *s_selection = 0;
       }
       position = position_argument;
+      if (_s_selection._width!=selsiz) { // Go back to initial size for selection image.
+        _s_selection.assign(selsiz);
+        s_selection = _s_selection.data();
+        *s_selection = 0;
+      }
 
       const bool
         is_command_verbose = is_get?false:
