@@ -3456,34 +3456,29 @@ function1d : check "${1=1}>=0 && $1<=1" skip ${2=0},${3=0}
 input_cube : skip ${2=1}
   e[^-1] "Input CLUT from file '$1'."
   v - l[]
-    i raw:"$1",uchar
-    f "i<_' ' && i!=10?_' ':i"
+    i raw:"$1",uchar discard 13 f "i<_' ' && i!=10?_' ':i" s -,10 autocrop 32
     i[0] 0
     range={"
-      line = vector512();
+      line = vector1024();
       dmin = [ 0,0,0 ];
       dmax = [ 1,1,1 ];
       dim = size = 0;
       target = 0;
-      pos = 0;
-      while (pos<h,
-        while (i[#-1,pos]<_' ', ++pos);
-        npos = find(#-1,'\n',1,pos);
-        if (npos<0, npos = h);
-        l = npos - pos;
-        copy(line[0],i[pos],l);
-        line[l] = 0;
-        if (same(line,'LUT_1D_SIZE ',12),
+      for (k = 0, k<l, ++k,
+        linesiz = min(size(line)-1,h#k);
+        copy(line[0],i[#k,0],linesiz);
+        line[linesiz] = 0;
+        same(line,'LUT_1D_SIZE ',12)?(
           copy(line[0],line[12],size(line) - 12);
           size = stov(line);
           dim = 1;
           resize(#0,3,size,1,1,0);
-        ,_(else); if (same(line,'LUT_3D_SIZE ',12),
+        ):same(line,'LUT_3D_SIZE ',12)?(
           copy(line[0],line[12],size(line) - 12);
           size = stov(line);
           dim = 3;
           resize(#0,3,size,size,size,0);
-        ,_(else); if (same(line,'DOMAIN_MIN ',11),
+        ):same(line,'DOMAIN_MIN ',11)?(
           copy(line[0],line[11],size(line) - 11);
           dmin[0] = stov(line);
           ind = find(line,_' ');
@@ -3492,7 +3487,7 @@ input_cube : skip ${2=1}
           ind = find(line,_' ');
           copy(line[0],line[ind + 1],size(line) - ind);
           dmin[2] = stov(line);
-        ,_(else); if (same(line,'DOMAIN_MAX ',11),
+        ):same(line,'DOMAIN_MAX ',11)?(
           copy(line[0],line[11],size(line) - 11);
           dmax[0] = stov(line);
           ind = find(line,_' ');
@@ -3501,21 +3496,20 @@ input_cube : skip ${2=1}
           ind = find(line,_' ');
           copy(line[0],line[ind + 1],size(line) - ind);
           dmax[2] = stov(line);
-        ,_(else); val = stov(line); if (val>=0,
-          do (
+        ):(
+          val = stov(line);
+          val>=0?do (
             i[#0,target++] = val;
             ind = find(line,_' ');
-            if (ind<0, break());
+            ind<0?break();
             copy(line[0],line[ind + 1],size(line) - ind);
             val = stov(line);
-            val = 0;
           ,_(while); val>=0);
-        )))));
-        pos = ++npos;
+        );
       );
       [dmin,dmax];"}
 
-    rm.
+    k[0]
     permute yzcx
     if [$range]!=[0,0,0,1,1,1]
       f "begin(
