@@ -20809,6 +20809,53 @@ math_lib :
   v -
   u "
 
+  # Return number of elements in min-heap #ind.
+  heap_size(ind) = i[#ind,whd(#ind)-1];
+
+  # Insert new element 'elt' into min-heap #ind.
+  heap_insert(ind,elt) = (
+    _heap_siz = heap_size(#ind);
+    _heap_siz>=h(#ind) - 1?resize(#ind,1,_heap_siz*2 + 2,1,s#ind,0);
+    hind = h(#ind);
+    unref(_heap_elt);
+    _heap_elt = [ elt ];
+    _heap_eltsiz = max(1,size(_heap_elt));
+
+    copy(i[#ind,_heap_siz],_heap_elt[0],_heap_eltsiz,hind,1);
+    for (_heap_pos = _heap_siz,
+         _heap_pos && (_heap_par = int((_heap_pos + 1)/2) - 1; _heap_elt[0]<i[#ind,_heap_par]),
+         _heap_pos = _heap_par,
+      copy(i[#ind,_heap_pos],i[#ind,_heap_par],_heap_eltsiz,hind,hind);
+      copy(i[#ind,_heap_par],_heap_elt,_heap_eltsiz,hind,1);
+    );
+    (heap_size(#ind)) = ++_heap_siz;
+  );
+
+  # Remove root element from min-heap #ind.
+  heap_remove(ind) = (
+    _heap_siz = heap_size(#ind) - 1;
+    hind = h(#ind);
+    _heap_eltsiz = max(1,s#ind);
+
+    copy(i[#ind,0],i[#ind,_heap_siz],_heap_eltsiz,hind,hind);
+    _heap_pos = 0;
+    do (
+      _heap_left = 2*_heap_pos + 1;
+      _heap_right = _heap_left + 1;
+      value = i[#ind,_heap_pos];
+      _heap_right<_heap_siz && value>i[#ind,_heap_right]?(
+        _heap_swap = i[#ind,_heap_left]<i[#ind,_heap_right]?_heap_left:_heap_right;
+      ):_heap_left<_heap_siz && value>i[#ind,_heap_left]?(
+        _heap_swap = _heap_left;
+      ):break();
+      copy(i[#ind,_heap_siz],i[#ind,_heap_swap],_heap_eltsiz,hind,hind); # Use previous last elt as temporary for swap.
+      copy(i[#ind,_heap_swap],i[#ind,_heap_pos],_heap_eltsiz,hind,hind);
+      copy(i[#ind,_heap_pos],i[#ind,_heap_siz],_heap_eltsiz,hind,hind);
+      _heap_pos = _heap_swap
+    );
+    (heap_size(#ind)) = _heap_siz;
+  );
+
   # Return number of elements in dynamic array #ind.
   dar_size(ind) = i[#ind,whd(#ind)-1];
 
@@ -20846,7 +20893,6 @@ math_lib :
       for (_dar_c = 0, _dar_c<s#ind, ++_dar_c,
         copy(i(#ind,_dar_pos,0,0,_dar_c),i(#ind,_dar_pos + 1,0,0,_dar_c),_dar_siz - _dar_pos)
       );
-#      _dar_siz<=h(#ind)/3 - 1?(resize(#ind,1,max(2,h(#ind)/2),1,s#ind,0); (dar_size(#ind)) = _dar_siz);
     )
   );
 
