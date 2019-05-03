@@ -6611,6 +6611,22 @@ compress_cluts :
     fi
   endl done v +
 
+# cluts2libclut : "compressed_CLUT_collection.gmz"
+# Convert specified compressed CLUT collection for C++ 'libclut'
+# (https://framagit.org/dtschump/libclut)
+cluts2libclut : skip ${1=$HOME/work/src/gmic/resources/gmic_cluts.gmz}
+  e[] "Convert compressed CLUT collection '$1' to .png/.ppm/.txt for C++ libclut."
+  v - l[]
+    i $1
+    0 nm. "$1" basename={b} rm.
+    list=
+    repeat $! l[$>] if s<6 r 100%,100%,1,6,0,1 fi transpose list.={n}"\n" endl done a y
+    o. $basename.png
+    o. $basename.ppm
+    ({'$list'}) o. raw:$basename.txt,uchar
+    rm
+  endl v +
+
 #@cli compress_rle : _is_binary_data={ 0 | 1 },_maximum_sequence_length>=0
 #@cli : Compress selected images as 2xN data matrices, using RLE algorithm.
 #@cli : Set 'maximum_sequence_length=0' to disable maximum length constraint.
