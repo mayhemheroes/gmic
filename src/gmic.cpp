@@ -3431,8 +3431,15 @@ void gmic::_gmic(const char *const commands_line,
 
   // Set pre-defined global variables.
   CImg<char> str(8);
+
+  set_variable("_path_rc",gmic::path_rc(),0);
+  set_variable("_path_user",gmic::path_user(),0);
+
   cimg_snprintf(str,str.width(),"%u",cimg::nb_cpus());
   set_variable("_cpus",str,0);
+
+  cimg_snprintf(str,str.width(),"%u",gmic_version);
+  set_variable("_version",str,0);
 
 #if cimg_OS==1
   cimg_snprintf(str,str.width(),"%u",(unsigned int)getpid());
@@ -3451,12 +3458,9 @@ void gmic::_gmic(const char *const commands_line,
 
 #ifdef gmic_prerelease
   set_variable("_prerelease",gmic_prerelease,0);
+#else
+  set_variable("_prerelease","0",0);
 #endif // #ifdef gmic_prerelease
-
-  cimg_snprintf(str,str.width(),"%u",gmic_version);
-  set_variable("_version",str,0);
-  set_variable("_path_rc",gmic::path_rc(),0);
-  set_variable("_path_user",gmic::path_user(),0);
 
   // Launch the G'MIC interpreter.
   const CImgList<char> items = commands_line?commands_line_to_CImgList(commands_line):CImgList<char>::empty();
