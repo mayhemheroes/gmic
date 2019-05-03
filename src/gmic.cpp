@@ -5418,7 +5418,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 x1 = (int)cimg::round(sep1=='%'?a1*(img.width() - 1)/100:a1);
               gmic_apply(crop(x0,x1,boundary));
             }
-            ++position;
           } else if ((boundary=0,cimg_sscanf(argument,
                                              "%63[0-9.eE%+-],%63[0-9.eE%+-],"
                                              "%63[0-9.eE%+-],%63[0-9.eE%+-]%c",
@@ -5454,7 +5453,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 y1 = (int)cimg::round(sep3=='%'?a3*(img.height() - 1)/100:a3);
               gmic_apply(crop(x0,y0,x1,y1,boundary));
             }
-            ++position;
           } else if ((boundary=0,cimg_sscanf(argument,
                                              "%63[0-9.eE%+-],%63[0-9.eE%+-],%63[0-9.eE%+-],"
                                              "%63[0-9.eE%+-],%63[0-9.eE%+-],%63[0-9.eE%+-]%c",
@@ -5496,7 +5494,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 z1 = (int)cimg::round(sep5=='%'?a5*(img.depth() - 1)/100:a5);
               gmic_apply(crop(x0,y0,z0,x1,y1,z1,boundary));
             }
-            ++position;
           } else if ((boundary=0,cimg_sscanf(argument,
                                              "%63[0-9.eE%+-],%63[0-9.eE%+-],%63[0-9.eE%+-],"
                                              "%63[0-9.eE%+-],%63[0-9.eE%+-],%63[0-9.eE%+-],"
@@ -5549,36 +5546,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 v1 = (int)cimg::round(sep7=='%'?a7*(img.spectrum() - 1)/100:a7);
               gmic_apply(crop(x0,y0,z0,v0,x1,y1,z1,v1,boundary));
             }
-            ++position;
-          } else {
-            if (!is_display_available) {
-              print(images,0,"Crop image%s in interactive mode (skipped, no display %s).",
-                    gmic_selection.data(),cimg_display?"available":"support");
-            } else {
-#if cimg_display!=0
-              print(images,0,"Crop image%s in interactive mode.",
-                    gmic_selection.data());
-              CImgDisplay _disp, &disp = _display_windows[0]?_display_windows[0]:_disp;
-              g_img.assign(6,selection.height()).fill((T)0);
-              cimg_forY(selection,l) {
-                CImg<T>& img = gmic_check(images[selection[l]]);
-                if (disp) disp.resize(cimg_fitscreen(img.width(),img.height(),img.depth()),false);
-                else disp.assign(cimg_fitscreen(img.width(),img.height(),img.depth()),0,1);
-                disp.set_title("%s: crop",basename(images_names[selection[l]]));
-                CImg<int> s = img.get_select(disp,2);
-                print(images,0,"Crop image [%d] with coordinates (%d,%d,%d) - (%d,%d,%d).",
-                      selection[l],
-                      s[0],s[1],s[2],
-                      s[3],s[4],s[5]);
-                gmic_apply(crop(s[0],s[1],s[2],s[3],s[4],s[5]));
-                g_img.draw_image(0,l,s.unroll('x'));
-              }
-              g_img.value_string().move_to(status);
-              g_img.assign();
-#endif // #if cimg_display!=0
-            }
-          }
-          is_released = false; continue;
+          } else arg_error("crop");
+          is_released = false; ++position; continue;
         }
 
         // Cut.
@@ -5616,7 +5585,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               }
               gmic_apply(cut((T)nvalue0,(T)nvalue1));
             }
-            ++position;
           } else if (cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]%c%c",indices,&sep0,&end)==2 &&
                      sep0==']' &&
                      (ind0=selection2cimg(indices,images.size(),images_names,"cut")).height()==1) {
@@ -5626,88 +5594,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   value0,
                   value1);
             cimg_forY(selection,l) gmic_apply(cut((T)value0,(T)value1));
-            ++position;
-          } else {
-            if (!is_display_available) {
-              print(images,0,"Cut image%s in interactive mode (skipped, no display %s).",
-                    gmic_selection.data(),cimg_display?"available":"support");
-            } else {
-#if cimg_display!=0
-              print(images,0,"Cut image%s in interactive mode.",
-                    gmic_selection.data());
-              CImgDisplay _disp, &disp = _display_windows[0]?_display_windows[0]:_disp;
-              g_img.assign(2,selection.height()).fill((T)0);
-              cimg_forY(selection,l) {
-                CImg<T> &img = gmic_check(images[selection[l]]);
-                value0 = value1 = 0;
-                if (img) {
-                  CImg<T> visu = img.depth()>1?img.get_projections2d(img.width()/2,
-                                                                     img.height()/2,
-                                                                     img.depth()/2).
-                    channels(0,std::min(3,img.spectrum()) - 1):
-                    img.get_channels(0,std::min(3,img.spectrum() - 1));
-                  const unsigned int
-                    w = CImgDisplay::_fitscreen(visu.width(),visu.height(),1,256,-85,false),
-                    h = CImgDisplay::_fitscreen(visu.width(),visu.height(),1,256,-85,true);
-                  if (disp) disp.resize(w,h,false); else disp.assign(w,h,0,0);
-                  double percent0 = 0, percent1 = 100;
-                  vmin = 0, vmax = (double)img.max_min(vmin);
-                  bool stopflag = false, is_clicked = false;
-                  int omx = -1, omy = -1;
-                  g_img_uc.assign();
-                  for (disp.show().flush(); !stopflag; ) {
-                    static const unsigned char white[] = { 255,255,255 }, black[] = { 0,0,0 };
-                    const unsigned int key = disp.key();
-                    if (!g_img_uc) {
-                      value0 = vmin + percent0*(vmax - vmin)/100;
-                      value1 = vmin + percent1*(vmax - vmin)/100;
-                      disp.display((g_img_uc=visu.get_cut((T)value0,(T)value1).normalize((T)0,(T)255).resize(disp)).
-                                   draw_text(0,0,"Cut [%g,%g] = [%.3g%%,%.3g%%]",
-                                             white,black,0.7f,13,value0,value1,percent0,percent1)).
-                        set_title("%s (%dx%dx%dx%d)",
-                                  basename(images_names[selection[l]]),
-                                  img.width(),img.height(),img.depth(),img.spectrum()).wait();
-                    }
-                    const int mx = disp.mouse_x(), my = disp.mouse_y();
-                    if (disp.button()) {
-                      if (mx>=0 && my>=0 && (mx!=omx || my!=omy)) {
-                        percent0 = (my - 16)*100./(disp.height() - 32);
-                        percent1 = (mx - 16)*100./(disp.width() - 32);
-                        if (percent0<0) percent0 = 0; else if (percent0>101) percent0 = 101;
-                        if (percent1<0) percent1 = 0; else if (percent1>101) percent1 = 101;
-                        if (percent0>percent1) cimg::swap(percent0,percent1);
-                        omx = mx; omy = my; g_img_uc.assign();
-                      }
-                      is_clicked = true;
-                    } else if (is_clicked) break;
-                    if (disp.is_closed() || (key && key!=cimg::keyCTRLLEFT)) stopflag = true;
-                    if (key==cimg::keyD && disp.is_keyCTRLLEFT()) {
-                      disp.resize(cimg_fitscreen(3*disp.width()/2,3*disp.height()/2,1),
-                                  stopflag=false).set_key(cimg::keyD,false);
-                      g_img_uc.assign();
-                    }
-                    if (key==cimg::keyC && disp.is_keyCTRLLEFT()) {
-                      disp.resize(cimg_fitscreen(2*disp.width()/3,2*disp.height()/3,1),
-                                  stopflag=false).set_key(cimg::keyC,false);
-                      g_img_uc.assign();
-                    }
-                    if (disp.is_resized()) { disp.resize(false); g_img_uc.assign(); }
-                  }
-                  value0 = vmin + percent0*(vmax - vmin)/100;
-                  value1 = vmin + percent1*(vmax - vmin)/100;
-                  print(images,0,"Cut image [%d] in range [%g,%g] = [%.3g%%,%.3g%%].",
-                        selection[l],value0,value1,percent0,percent1);
-                  gmic_apply(cut((T)value0,(T)value1));
-                } else gmic_apply(replace(img));
-                g_img(0,l) = (T)value0; g_img(1,l) = (T)value1;
-              }
-              g_img.value_string().move_to(status);
-              g_img.assign();
-              g_img_uc.assign();
-#endif // #if cimg_display!=0
-            }
-          }
-          is_released = false; continue;
+          } else arg_error("cut");
+          is_released = false; ++position; continue;
         }
 
         // Keep channels.
@@ -10235,7 +10123,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   boundary<=0?"dirichlet":boundary==1?"neumann":boundary==2?"periodic":"mirror",
                   cx,cy,cz,cc);
             cimg_forY(selection,l) gmic_apply(resize(nvalx,nvaly,nvalz,nvalc,iinterpolation,boundary,cx,cy,cz,cc));
-            ++position;
           } else if ((cx=cy=cz=cc=0, iinterpolation=1, boundary=0, true) &&
                      (cimg_sscanf(argument,"%255[][a-zA-Z0-9_.eE%+-]%c",
                                   argx,&end)==1 ||
@@ -10329,35 +10216,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 nvalc = _nvalc?_nvalc:1;
               gmic_apply(resize(nvalx,nvaly,nvalz,nvalc,iinterpolation,boundary,cx,cy,cz,cc));
             }
-            ++position;
-          } else {
-            if (!is_display_available) {
-              print(images,0,"Resize image%s in interactive mode (skipped, no display %s).",
-                    gmic_selection.data(),cimg_display?"available":"support");
-            } else {
-#if cimg_display!=0
-              print(images,0,"Resize image%s in interactive mode.",
-                    gmic_selection.data());
-              CImgDisplay _disp, &disp = _display_windows[0]?_display_windows[0]:_disp;
-              cimg_forY(selection,l) {
-                CImg<T>& img = gmic_check(images[selection[l]]);
-                if (img) {
-                  if (disp) disp.resize(cimg_fitscreen(img.width(),img.height(),1),false);
-                  else disp.assign(cimg_fitscreen(img.width(),img.height(),1),0,1);
-                  disp.set_title("%s: resize",basename(images_names[selection[l]]));
-                  img.get_select(disp,0);
-                  print(images,0,
-                        "Resize image [%d] to %dx%d, with nearest-neighbor interpolation.",
-                        selection[l],
-                        disp.width(),
-                        disp.height());
-                  gmic_apply(resize(disp));
-                } else gmic_apply(replace(img));
-              }
-#endif // #if cimg_display!=0
-            }
-          }
-          is_released = false; continue;
+          } else arg_error("resize");
+          is_released = false; ++position; continue;
         }
 
         // Reverse positions.
@@ -11881,85 +11741,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               }
               gmic_apply(threshold((T)nvalue,(bool)is_soft));
             }
-            ++position;
-          } else {
-            if (!is_display_available) {
-              print(images,0,
-                    "Threshold image%s in interactive mode (skipped, no display %s).",
-                    gmic_selection.data(),cimg_display?"available":"support");
-            } else {
-#if cimg_display!=0
-              print(images,0,"Threshold image%s in interactive mode.",
-                    gmic_selection.data());
-              CImgDisplay _disp, &disp = _display_windows[0]?_display_windows[0]:_disp;
-              g_img.assign(1,selection.height()).fill((T)0);
-              cimg_forY(selection,l) {
-                CImg<T>& img = gmic_check(images[selection[l]]);
-                value = 0;
-                if (img) {
-                  CImg<T> visu = img.depth()>1?img.get_projections2d(img.width()/2,
-                                                                     img.height()/2,
-                                                                     img.depth()/2).
-                    channels(0,std::min(3,img.spectrum()) - 1):
-                    img.get_channels(0,std::min(3,img.spectrum() - 1));
-                  const unsigned int
-                    w = CImgDisplay::_fitscreen(visu.width(),visu.height(),1,256,-85,false),
-                    h = CImgDisplay::_fitscreen(visu.width(),visu.height(),1,256,-85,true);
-                  if (disp) disp.resize(w,h,false); else disp.assign(w,h,0,0);
-                  double percent = 50;
-                  bool stopflag = false, is_clicked = false;
-                  int omx = -1, omy = -1;
-                  g_img_uc.assign();
-                  vmax = (double)img.max_min(vmin);
-                  for (disp.show().flush(); !stopflag; ) {
-                    static const unsigned char white[] = { 255,255,255 }, black[] = { 0,0,0 };
-                    const unsigned int key = disp.key();
-                    if (!g_img_uc) {
-                      value = vmin + percent*(vmax - vmin)/100;
-                      disp.display(((g_img_uc=visu.get_threshold((T)value)*=255).resize(disp)).
-                                   draw_text(0,0,"Threshold %g = %.3g%%",
-                                             white,black,0.7f,13,value,percent)).
-                        set_title("%s (%dx%dx%dx%d)",
-                                  basename(images_names[selection[l]]),
-                                  img.width(),img.height(),img.depth(),img.spectrum()).wait();
-                    }
-                    const int mx = disp.mouse_x(), my = disp.mouse_y();
-                    if (disp.button()) {
-                      if (mx>=0 && my>=0 && (mx!=omx || my!=omy)) {
-                        percent = (my - 16)*100./(disp.height() - 32);
-                        if (percent<0) percent = 0; else if (percent>101) percent = 101;
-                        omx = mx; omy = my; g_img_uc.assign();
-                      }
-                      is_clicked = true;
-                    } else if (is_clicked) break;
-                    if (disp.is_closed() || (key && key!=cimg::keyCTRLLEFT)) stopflag = true;
-                    if (key==cimg::keyD && disp.is_keyCTRLLEFT()) {
-                      disp.resize(cimg_fitscreen(3*disp.width()/2,3*disp.height()/2,1),
-                                  stopflag=false).set_key(cimg::keyD,false);
-                      g_img_uc.assign();
-                    }
-                    if (key==cimg::keyC && disp.is_keyCTRLLEFT()) {
-                      disp.resize(cimg_fitscreen(2*disp.width()/3,2*disp.height()/3,1),
-                                  stopflag=false).set_key(cimg::keyC,false);
-                      g_img_uc.assign();
-                    }
-                    if (disp.is_resized()) { disp.resize(false); g_img_uc.assign(); }
-                  }
-                  value = vmin + percent*(vmax - vmin)/100;
-                  print(images,0,
-                        "Hard-threshold image [%d] by %g = %.3g%%.",
-                        selection[l],value,percent);
-                  gmic_apply(threshold((T)value));
-                } else gmic_apply(replace(img));
-                g_img[l] = (T)value;
-              }
-              g_img.value_string().move_to(status);
-              g_img.assign();
-              g_img_uc.assign();
-#endif // #if cimg_display!=0
-            }
-          }
-          is_released = false; continue;
+          } else arg_error("threshold");
+          is_released = false; ++position; continue;
         }
 
         // Tangent.
