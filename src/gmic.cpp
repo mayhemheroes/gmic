@@ -3443,19 +3443,20 @@ void gmic::_gmic(const char *const commands_line,
 #endif // #if cimg_OS==1
   set_variable("_pid",str,0);
 
+#ifdef cimg_use_vt100
+  set_variable("_vt100","1",0);
+#else
+  set_variable("_vt100","0",0);
+#endif // # if cimg_use_vt100
+
 #ifdef gmic_prerelease
   set_variable("_prerelease",gmic_prerelease,0);
 #endif // #ifdef gmic_prerelease
 
   cimg_snprintf(str,str.width(),"%u",gmic_version);
   set_variable("_version",str,0);
-
   set_variable("_path_rc",gmic::path_rc(),0);
   set_variable("_path_user",gmic::path_user(),0);
-
-#ifdef cimg_use_vt100
-  set_variable("_vt100","1",0);
-#endif // # if cimg_use_vt100
 
   // Launch the G'MIC interpreter.
   const CImgList<char> items = commands_line?commands_line_to_CImgList(commands_line):CImgList<char>::empty();
