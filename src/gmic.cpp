@@ -2112,7 +2112,7 @@ const char *gmic::builtin_commands_names[] = {
   "s","s3d","screen","select","serialize","set","sh","shared","sharpen","shift","sign","sin","sinc","sinh","skip",
     "sl3d","slices","smooth","solve","sort","specl3d","specs3d","sphere3d","split","split3d","sqr","sqrt","srand",
     "ss3d","status","streamline3d","structuretensors","sub","sub3d","svd",
-  "t","tan","tanh","text","threshold","trisolve",
+  "t","tan","tanh","text","trisolve",
   "u","uncommand","unroll","unserialize",
   "v","vanvliet","verbose",
   "w","w0","w1","w2","w3","w4","w5","w6","w7","w8","w9","wait","warn","warp","watershed","while","window",
@@ -11717,38 +11717,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Commands starting by 't...'
         //-----------------------------
       gmic_commands_t :
-
-        // Threshold.
-        if (!std::strcmp("threshold",command)) {
-          gmic_substitute_args(false);
-          unsigned int is_soft = 0;
-          value = 0;
-          sep = 0;
-          if ((cimg_sscanf(argument,"%lf%c",
-                           &value,&end)==1 ||
-               (cimg_sscanf(argument,"%lf%c%c",
-                            &value,&sep,&end)==2 && sep=='%') ||
-               cimg_sscanf(argument,"%lf,%u%c",
-                           &value,&is_soft,&end)==2 ||
-               (cimg_sscanf(argument,"%lf%c,%u%c",
-                            &value,&sep,&is_soft,&end)==3 && sep=='%')) &&
-              is_soft<=1) {
-            print(images,0,"%s-threshold image%s by %g%s.",
-                  is_soft?"Soft":"Hard",
-                  gmic_selection.data(),
-                  value,sep=='%'?"%":"");
-            cimg_forY(selection,l) {
-              CImg<T>& img = gmic_check(images[selection[l]]);
-              nvalue = value;
-              if (sep=='%' && img) {
-                vmax = (double)img.max_min(vmin);
-                nvalue = vmin + (vmax - vmin)*value/100;
-              }
-              gmic_apply(threshold((T)nvalue,(bool)is_soft));
-            }
-          } else arg_error("threshold");
-          is_released = false; ++position; continue;
-        }
 
         // Tangent.
         gmic_simple_command("tan",tan,"Compute pointwise tangent of image%s.");
