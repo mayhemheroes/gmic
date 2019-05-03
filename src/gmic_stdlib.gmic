@@ -760,7 +760,7 @@ ${c}"&="$n", "${c}"|="$n", "${c}"^="$n", "${c}">>="$n", "${c}"<<="$n" (in-place 
 \n
 \n    _ "${g}"Usual math functions:"$n" "${c}"abs(), acos(), acosh(), arg(), argkth(), argmax(), argmin(), asin(),
 \n       asinh(), atan(), atan2(), atanh(), avg(), bool(), cbrt(), ceil(), cos(), cosh(), cut(), exp(), fact(),
-\n       fibo(), floor(), gauss(), int(), isnan(), isnumber(), isinf(), isint(), isbool(), isval(), isfile(), isdir(),
+\n       fibo(), floor(), gauss(), int(), isnan(), isnum(), isinf(), isint(), isbool(), isval(), isfile(), isdir(),
 \n       isin(), kth(), log(), log2(), log10(), max(), med(), min(), narg(), prod(), rol()"$n" (left bit rotation),
 \n       "${c}"ror()"$n" (right bit rotation)"${c}", round(), sign(), sin(), sinc(), sinh(), sqrt(), std(),
 \n       srand(_seed), sum(), tan(), tanh(), var(), xor()"$n".
@@ -775,7 +775,7 @@ ${g}"exp(-x^2/(2*s^2))/(is_normalized?sqrt(2*pi*sigma^2):1)"$n"'.
 ${g}"max"$n" otherwise.
 \n       . '"${c}"narg(a_1,...,a_N)"$n"' returns the number of specified arguments (here, "${g}"N"$n").
 \n       . '"${c}"arg(i,a_1,..,a_N)"$n"' returns the "${g}"ith"$n" argument "${g}"a_i"$n".
-\n       . '"${c}"isnumber()"$n"', '"${c}"isnan()"$n"', '"${c}"isinf()"$n"', '"${c}"isint()"$n"', '"\
+\n       . '"${c}"isnum()"$n"', '"${c}"isnan()"$n"', '"${c}"isinf()"$n"', '"${c}"isint()"$n"', '"\
 ${c}"isbool()"$n"' test the type of the given
 \n          number or expression, and return "${g}"0 (false)"$n" or "${g}"1 (true)"$n".
 \n       . '"${c}"isfile('path')"$n"' (resp. '"${c}"isdir('path')"$n"') returns "${g}"0 (false)"$n" or "\
@@ -1759,7 +1759,7 @@ v : # Allow 'gmic +v' to get the version number.
 # zilverfx_infrared | zilverfx_vintage_bw }
 #@cli : $ clut summer
 
-clut : check "isnumber(${2=48}) && $2>0"
+clut : check "isnum(${2=48}) && $2>0"
   v - to_clutname "$1" name=${} l[]
   v + e[^-1] "Input CLUT '"$name"' with resolution $2." v -
     path_clut=${-path_cache}
@@ -2484,7 +2484,7 @@ display_rgba : skip "${1=none},${2=$1},${3=$1}"
   v - if !${} noarg fi v +
 
 _display_rgba : skip "${1=},${2=$1},${3=$1}"
-  v - l[] is_rgb={"isnumber($1)"} onfail is_rgb=0 endl v +
+  v - l[] is_rgb={"isnum($1)"} onfail is_rgb=0 endl v +
   if $is_rgb e[0--4] "Render RGBA image"$_gmic_s" over RGB background ($*)."
   else e[0--4] "Render RGBA image"$_gmic_s" over a checkerboard background."
   fi
@@ -3738,7 +3738,7 @@ _outputx :
   v -
   $=arg
   is_last_arg=0 is_same_location=0
-  if isnumber($-1) is_last_arg={isint($-1)&&$-1>=0&&$-1<=1} is_same_location=$-1 fi
+  if isnum($-1) is_last_arg={isint($-1)&&$-1>=0&&$-1<=1} is_same_location=$-1 fi
   N={$#-$is_last_arg} s0= s1=s
   if !$N v + e[0--3] "Output image"$_gmic_s" at same location, with same base filename but extension ''
                       (skipped, no extension provided)." return
@@ -3906,7 +3906,7 @@ shape_diamond : check "${1=512}>=0"
 #@cli : Input a 2D Barnsley fern with specified size.
 #@cli : Default value: 'size=512', 'density=50%', 'angle=30', 'opacity=0.3' and 'type=0'.
 #@cli : $ shape_fern ,
-shape_fern : check "${1=512}>=0 && ${2=50%}>=0 && isnumber(${3=30}) && ${4=0.3}>=0 && $4<=1 && isnumber(${5=0})"
+shape_fern : check "${1=512}>=0 && ${2=50%}>=0 && isnum(${3=30}) && ${4=0.3}>=0 && $4<=1 && isnum(${5=0})"
   e[^-1] "Input a $1x$1 Barnsley fern, with density $2, angle $3 and opacity $4."
   v -
   ir={round($1)}
@@ -4100,9 +4100,9 @@ __sample :
     roddy,rooster,rose,square,swan,teddy,tiger,tulips,wall,waterfall,zelda
 
 _sample :
-  if "$#>=3 && isnumber($-2) && isint($-2) && $-2>=0 && isnumber($-1) && isint($-1) && $-1>=0" # W and H specified.
+  if "$#>=3 && isnum($-2) && isint($-2) && $-2>=0 && isnum($-1) && isint($-1) && $-1>=0" # W and H specified.
     N={$#-2} W=$-2 H=$-1
-  elif "$#>=2 && isnumber($-1) && isint($-1) && $-1>=0" # Only W specified.
+  elif "$#>=2 && isnum($-1) && isint($-1) && $-1>=0" # Only W specified.
     N={$#-1} W=$-1 H=0
   else # No dimensions specified
     N={$#} W=0 H=0
@@ -4116,12 +4116,12 @@ _sample :
   repeat $N
     arg=${arg{1+$>}} is_rand{1+$>}=0
     if ['$arg']=='?' arg={round(u(1,$M))} is_rand{1+$>}=1
-    elif !isnumber($arg)" || "!isint($arg)
+    elif !isnum($arg)" || "!isint($arg)
       repeat $M name=${_sp_name{1+$>}}
         if '$name'!=0" && "'$name'==['$arg'] arg={1+$>} break fi
       done
     else arg={($arg%$M)+1} fi
-    if !isnumber($arg)" || "!isint($arg) is_arg=0 break fi
+    if !isnum($arg)" || "!isint($arg) is_arg=0 break fi
     arg{1+$>}=$arg
   done
   if !$is_arg N=1 W=0 H=0 arg1={round(u(1,$M))} fi
@@ -4441,12 +4441,12 @@ with or endorsed by the companies that own the trademarks.</i></font></p>\n\n
         _category_name=${}
 
         arg {1+$>},$category_authors_url
-        if isnumber(${}) _category_author_url_start= _category_author_url_end=
+        if isnum(${}) _category_author_url_start= _category_author_url_end=
         else _category_author_url_start="<a href=\""${}"\">" _category_author_url_end="</a>"
         fi
 
         arg {1+$>},$category_authors
-        if isnumber(${}) _category_author=""
+        if isnum(${}) _category_author=""
         else _category_author=$_category_author_url_start${}$_category_author_url_end
         fi
 
@@ -6893,7 +6893,7 @@ mix_channels :
 #@cli : Default value: 'base_value=(undefined)'.
 #@cli : $ image.jpg +negate
 negate : skip "${1=,}"
-  if isnumber("$*")
+  if isnum("$*")
     e[0--3] "Negate values of image$?, according to base value $*."
     v - - {"$*"} * -1 v +
   else
@@ -6916,7 +6916,7 @@ negate : skip "${1=,}"
 #@cli : described here : 'https://en.wikipedia.org/wiki/Perlin_noise'.
 #@cli : Default values: 'scale_x=scale_y=scale_z=16' and 'seed_x=seed_y=seed_z=0'.
 #@cli : $ 500,500,1,3 noise_perlin ,
-noise_perlin : check "${1=16}>0 && ${2=$1}>0 && ${3=$1}>0 && isnumber(${4=0}) && isnumber(${5=0}) && isnumber(${6=0})"
+noise_perlin : check "${1=16}>0 && ${2=$1}>0 && ${3=$1}>0 && isnum(${4=0}) && isnum(${5=0}) && isnum(${6=0})"
   e[^-1] "Render Perlin noise on image$?, with scales (${1-3}) and seeds (${4-6})."
   v -
   init="permutation = [ 151,160,137,91,90,15,131,13,201,95,96,53,194,233,7,225,140,36,103,30,69,142,8,99,37,240,
@@ -7064,7 +7064,7 @@ noise_poissondisk : check "${1=8}>0 && ${2=30}>0"
 #@cli : Compute the pointwise Lp-norm norm of vector-valued pixels in selected images.
 #@cli : Default value: 'p=2'.
 #@cli : $ image.jpg +normp[0] 0 +normp[0] 1 +normp[0] 2 +normp[0] inf
-normp : check "isnumber(${1==2}) && $1>=0"
+normp : check "isnum(${1==2}) && $1>=0"
   e[^-1] "Compute pointwise L"$1"-norm of vectors, in image$?."
   v -
   if $1==0 != 0 compose_channels +
@@ -7340,12 +7340,25 @@ set_vector_covariance :
        avg + T*(I - avg)"
   endl done v +
 
-#@cli threshold : value[%],_is_soft={ 0 | 1 } : (+)
+#@cli threshold : value[%],_is_soft={ 0 | 1 } :
 #@cli : Threshold values of selected images.
 #@cli : 'soft' can be { 0=hard-thresholding | 1=soft-thresholding }.
 #@cli : Default value: 'is_soft=0'.
 #@cli : $ image.jpg +threshold[0] 50% +threshold[0] 50%,1
 #@cli : $$
+threshold : check "isval($1) && isbool(${2=0})"
+  e[^-1] ${"arg 1+!$2,Soft,Hard"}"-threshold image$? by $1."
+  v -
+  if $2  # Soft thresholding
+    f "begin(
+         str = ['$1'];
+         value = str[size(str)-1]==_'%'?im + (iM-im)*$1:$1
+       );
+       i>=value?i - value:
+       i<=-value?i + value:0"
+  else ge $1
+  fi
+  v +
 
 #@cli unrepeat
 #@cli : Remove repetition of adjacent values in selected images.
@@ -7433,7 +7446,7 @@ apply_channels :
 
 _apply_channels : check "isint(${3=0}) && $3>=0 && $3<=2"
   v - mode="$2"
-  if isnumber("$2") if isint("$2")
+  if isnum("$2") if isint("$2")
     mode=${arg\ 1+$2,all,rgba,rgb,rgb_r,rgb_g,rgb_b,rgba_a,\
                      lrgb,lrgb_r,lrgb_g,lrgb_b,\
                      ycbcr_y,ycbcr_cbcr,ycbcr_cb,ycbcr_cr,ycbcr_cg,\
@@ -7861,7 +7874,7 @@ lab2lch :
 #@cli : Default value: 'illuminant=1'.
 #@cli : $ (50,50;50,50^-3,3;-3,3^-3,-3;3,3) resize 400,400,1,3,3 lab2rgb
 lab2rgb : skip "${1=,}"
-  v - l[] if isnumber("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
+  v - l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
   e[^-1] "Convert color representation of image$? from Lab to RGB, using the D"{arg(1+$illu,50,65)}" illuminant."
   v - lab2xyz $illu xyz2rgb $illu v +
 
@@ -7870,7 +7883,7 @@ lab2rgb : skip "${1=,}"
 #@cli : Default value: 'illuminant=1'.
 #@cli : $ (50,50;50,50^-3,3;-3,3^-3,-3;3,3) resize 400,400,1,3,3 lab2rgb
 lab2srgb : skip "${1=,}"
-  v - l[] if isnumber("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
+  v - l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
   e[^-1] "Convert color representation of image$? from Lab to sRGB, using the D"{arg(1+$illu,50,65)}" illuminant."
   v - lab2rgb $illu rgb2srgb v +
 
@@ -7879,7 +7892,7 @@ lab2srgb : skip "${1=,}"
 #@cli : Default value: 'illuminant=1'.
 #@cli : $ (50,50;50,50^-3,3;-3,3^-3,-3;3,3) resize 400,400,1,3,3 lab2rgb
 lab82srgb : skip "${1=,}"
-  v - l[] if isnumber("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
+  v - l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
   e[^-1] "Convert color representation of image$? from Lab8 to sRGB, using the D"{arg(1+$illu,50,65)}" illuminant."
   v - lab82rgb $illu rgb2srgb v +
 
@@ -7887,7 +7900,7 @@ lab82srgb : skip "${1=,}"
 #@cli : Convert color representation of selected images from Lab to XYZ.
 #@cli : Default value: 'illuminant=1'.
 lab2xyz : skip "${1=,}"
-  v - l[] if isnumber("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
+  v - l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
   e[^-1] "Convert color representation of image$? from Lab to XYZ, using the D"{arg(1+$illu,50,65)}" illuminant."
   v - to_color
   f "
@@ -7914,7 +7927,7 @@ lab2xyz : skip "${1=,}"
 #@cli : Convert color representation of selected images from Lab8 to RGB.
 #@cli : Default value: 'illuminant=1'.
 lab82rgb : skip "${1=,}"
-  v - l[] if isnumber("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
+  v - l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
   e[^-1] "Convert color representation of image$? from Lab8 to RGB, using the D"{arg(1+$illu,50,65)}" illuminant."
   v - repeat $!
     sh[$>] 0 /. 2.55 rm.
@@ -7934,7 +7947,7 @@ lch2lab :
 #@cli : Convert color representation of selected images from Lch to RGB.
 #@cli : Default value: 'illuminant=1'.
 lch2rgb : skip "${1=,}"
-  v - l[] if isnumber("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
+  v - l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
   e[^-1] "Convert color representation of image$? from Lch to RGB, using the D"{arg(1+$illu,50,65)}" illuminant."
   v - lch2lab lab2rgb $illu v +
 
@@ -7942,7 +7955,7 @@ lch2rgb : skip "${1=,}"
 #@cli : Convert color representation of selected images from Lch8 to RGB.
 #@cli : Default value: 'illuminant=1'.
 lch82rgb : skip "${1=,}"
-  v - l[] if isnumber("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
+  v - l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
   e[^-1] "Convert color representation of image$? from Lch8 to RGB, using the D"{arg(1+$illu,50,65)}" illuminant."
   v - repeat $!
     sh[$>] 0 /. 2.55 rm.
@@ -7995,7 +8008,7 @@ lut_rainbow :
 #@cli : This function performs a specific score maximization to generate the result, so
 #@cli : it may take some time when 'nb_colors' is high.
 #@cli : Default values: 'nb_colors=256' and 'min_rgb_value=64'.
-lut_contrast : check "isint(${1=256}) && $1>=1 && isnumber(${2=48})"
+lut_contrast : check "isint(${1=256}) && $1>=1 && isnum(${2=48})"
   e[^-1] "Generate high-contrast RGB colormap with $1 colors and min RGB value $2."
   v - l[]
 
@@ -8284,7 +8297,7 @@ rgb2int :
 #@cli : Convert color representation of selected images from RGB to Lab.
 #@cli : Default value: 'illuminant=1'.
 rgb2lab : skip "${1=,}"
-  v - l[] if isnumber("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
+  v - l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
   e[^-1] "Convert color representation of image$? from RGB to Lab, using the D"{arg(1+$illu,50,65)}" illuminant."
   v - rgb2xyz $illu xyz2lab $illu v +
 
@@ -8293,7 +8306,7 @@ rgb2lab : skip "${1=,}"
 #@cli : Default value: 'illuminant=1'.
 #@cli : $ image.jpg rgb2lab8 split c
 rgb2lab8 : skip "${1=,}"
-  v - l[] if isnumber("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
+  v - l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
   e[^-1] "Convert color representation of image$? from RGB to Lab8, using the D"{arg(1+$illu,50,65)}" illuminant."
   v - rgb2lab $illu repeat $!
     sh[$>] 0 *. 2.55 rm.
@@ -8306,7 +8319,7 @@ rgb2lab8 : skip "${1=,}"
 #@cli : Default value: 'illuminant=1'.
 #@cli : $ image.jpg rgb2lch split c
 rgb2lch : skip "${1=,}"
-  v - l[] if isnumber("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
+  v - l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
   e[^-1] "Convert color representation of image$? from RGB to Lch, using the D"{arg(1+$illu,50,65)}" illuminant."
   v - rgb2lab $illu lab2lch v +
 
@@ -8315,7 +8328,7 @@ rgb2lch : skip "${1=,}"
 #@cli : Default value: 'illuminant=1'.
 #@cli : $ image.jpg rgb2lch8 split c
 rgb2lch8 : skip "${1=,}"
-  v - l[] if isnumber("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
+  v - l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
   e[^-1] "Convert color representation of image$? from RGB to Lch8, using the D"{arg(1+$illu,50,65)}" illuminant."
   v - rgb2lch $illu repeat $!
     sh[$>] 0 *. 2.55 rm.
@@ -8380,7 +8393,7 @@ rgb2srgb :
 #@cli : Default value: 'illuminant=1'.
 #@cli : $ image.jpg rgb2xyz split c
 rgb2xyz : skip "${1=,}"
-  v - l[] if isnumber("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
+  v - l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
   e[^-1] "Convert color representation of image$? from RGB to XYZ, using the D"{arg(1+$illu,50,65)}" illuminant."
   v -
   if $illu # D65
@@ -8399,7 +8412,7 @@ rgb2xyz : skip "${1=,}"
 #@cli : Default value: 'illuminant=1'.
 #@cli : $ image.jpg rgb2xyz8 split c
 rgb2xyz8 : skip "${1=,}"
-  v - l[] if isnumber("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
+  v - l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
   e[^-1] "Convert color representation of image$? from RGB to XYZ8, using the D"{arg(1+$illu,50,65)}" illuminant."
   v - rgb2xyz $illu repeat $!
     sh[$>] 0 *. 255 rm.
@@ -8571,7 +8584,7 @@ split_opacity :
 #@cli : $ image.jpg srgb2lab split c
 #@cli : $ image.jpg srgb2lab +split c mul[-2,-1] 2.5 append[-3--1] c lab2srgb
 srgb2lab : skip "${1=,}"
-  v - l[] if isnumber("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
+  v - l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
   e[^-1] "Convert color representation of image$? from sRGB to Lab, using the D"{arg(1+$illu,50,65)}" illuminant."
   v - srgb2rgb rgb2lab $illu v +
 
@@ -8579,7 +8592,7 @@ srgb2lab : skip "${1=,}"
 #@cli : Convert color representation of selected images from sRGB to Lab8.
 #@cli : Default value: 'illuminant=1'.
 srgb2lab8 : skip "${1=,}"
-  v - l[] if isnumber("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
+  v - l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
   e[^-1] "Convert color representation of image$? from sRGB to Lab8, using the D"{arg(1+$illu,50,65)}" illuminant."
   v - srgb2rgb rgb2lab8 $illu v +
 
@@ -8704,7 +8717,7 @@ to_rgba :
 #@cli : $ image.jpg 100,100,1,3,"u([256,200,100])" +transfer_histogram[0] [1]
 transfer_histogram : check ${"is_image_arg $1"}" && ${2=256}>0" skip "${3=0}"
   v - mode="$3"
-  if isnumber("$3") if isint("$3")
+  if isnum("$3") if isint("$3")
     mode=${arg\ 1+$3,all,rgba,rgb,rgb_r,rgb_g,rgb_b,rgba_a,\
                      lrgb,lrgb_r,lrgb_g,lrgb_b,\
                      ycbcr_y,ycbcr_cbcr,ycbcr_cb,ycbcr_cr,ycbcr_cg,\
@@ -8880,7 +8893,7 @@ _transfer_rgb : v - l[] check "${1=0}>=0 && ${2=1.5}>=0 && ${3=128}>0" gamma=$1 
 #@cli : Convert color representation of selected images from XYZ to Lab.
 #@cli : Default value: 'illuminant=1'.
 xyz2lab : skip "${1=,}"
-  v - l[] if isnumber("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
+  v - l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
   e[^-1] "Convert color representation of image$? from XYZ to Lab, using the D"{arg(1+$illu,50,65)}" illuminant."
   v - to_color
   f "
@@ -8905,7 +8918,7 @@ xyz2lab : skip "${1=,}"
 #@cli : Convert color representation of selected images from XYZ to RGB.
 #@cli : Default value: 'illuminant=1'.
 xyz2rgb : skip "${1=,}"
-  v - l[] if isnumber("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
+  v - l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
   e[^-1] "Convert color representation of image$? from XYZ to RGB, using the D"{arg(1+$illu,50,65)}" illuminant."
   v -
   if $illu # D65
@@ -8923,7 +8936,7 @@ xyz2rgb : skip "${1=,}"
 #@cli : Convert color representation of selected images from XYZ8 to RGB.
 #@cli : Default value: 'illuminant=1'.
 xyz82rgb : skip "${1=,}"
-  v - l[] if isnumber("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
+  v - l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
   e[^-1] "Convert color representation of image$? from XYZ8 to RGB, using the D"{arg(1+$illu,50,65)}" illuminant."
   v - repeat $!
     sh[$>] 0 /. 255 rm.
@@ -9240,7 +9253,7 @@ expand_z : check "$1>=0 && ${2=1}>=0 && $2<=3"
 #@cli : and output them as M column images.
 #@cli : Default value: 'extract_xyz_coordinates=0'.
 #@cli : $ image.jpg +blur 3 quantize. 4,0 +extract_region[0] [1],0,1,3
-extract_region : check ${"is_image_arg $1"}" && isnumber(${2=0})"
+extract_region : check ${"is_image_arg $1"}" && isnum(${2=0})"
   if $#<3 e[0--3] "Extract pixels of image$? for labels [] in image $1, with"${"arg 1+!!$2,out"}" coordinates
                    -> no labels provided, ignoring." return fi
   e[^-1] "Extract pixels of image$? for labels {${3--1}} in image $1, with"${"arg 1+!!$2,out"}" coordinates."
@@ -9279,7 +9292,7 @@ extract_region : check ${"is_image_arg $1"}" && isnumber(${2=0})"
 #@cli : Default values: 'layout_code=X', 'montage_mode=2', output_mode='0' and 'processing_command=""'.
 #@cli : $ image.jpg sample ? +plasma[0] shape_cupid 256 normalize 0,255 frame 3,3,0 frame 10,10,255 to_rgb \
 # +montage A +montage[^-1] H1:V0:VH2:1H0:3
-montage : check "isnumber(${2=2}) && $2>=0 && $2<=3" skip "${1=X}",${3=0},"${4=}"
+montage : check "isnum(${2=2}) && $2>=0 && $2<=3" skip "${1=X}",${3=0},"${4=}"
   if $2<=1 e[0--3] "Create aligned montage from image$?, with layout code '$1' and centering $2."
   else e[0--3] "Create scaled montage from image$?, with layout code '$1' and scale "{$2-2}"."
   fi
@@ -10108,7 +10121,7 @@ upscale_smart : skip ${2=100%},${3=100%} check "${4=2}>=0 && ${5=0.4}>=0 && $5<=
 #@cli : 'boundary_conditions' can be { 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }.
 #@cli : Default values: 'std_factor=0.3' and 'boundary_conditions=3'.
 warp_patch : check ${is_image_arg\ $1}" && isint(${2=3}) && $2>=1 && isint(${3=$2}) && $3>=1 &&
-                    isint(${4=1}) && $4>=1 && isnumber(${5=0.3}) && $5>0 && isint(${6=3}) && $6>=0 && $6<=3"
+                    isint(${4=1}) && $4>=1 && isnum(${5=0.3}) && $5>0 && isint(${6=3}) && $6>=0 && $6<=3"
   e[^-1] "Patch-warp image$? with backward-absolute displacement field $1, using $2x$3x$4 patches, std factor $5
           and "${"arg 1+$6,dirichlet,neumann,periodic,mirror"}" boundary conditions."
   v - if $2<=1 pass$1 warp[^-1] .,0 rm. v + return fi
@@ -10254,7 +10267,7 @@ blur_angular : skip ${2=50%},${3=50%}
 # and 'axes=(all)'
 #@cli : $ image.jpg blur_bloom ,
 blur_bloom : check "${1=1}>=0 && ${2=2}>=0 && isint(${3=5}) && $3>=0 && isint(${5=0}) && $5>=0 && $5<=4 &&
-                    isnumber(${6=0})" skip ${4=+},${7=}
+                    isnum(${6=0})" skip ${4=+},${7=}
   e[^-1] "Apply bloom effect on image$?, with amplitude $1, ratio $2, $3 iterations, blend operator '$4' and "\
          ${"arg 1+!$6,\"\",\"no \""}"scale normalization."
   v -
@@ -12584,7 +12597,7 @@ pointcloud : check "${1=0}<=3 && ${2=0}>=0 && ${3=0}>=0 && ${4=0}>=0"
 #@cli : Default value: 'max_value=255'.
 #@cli : $ image.jpg +noise 30 +noise[0] 35 +noise[0] 38 cut[-1] 0,255 psnr 255 replace_inf 0
 psnr : skip "${1=}"
-  if isnumber("$1")
+  if isnum("$1")
     e[0--3] "Compute the "$!x$!" matrix of PSNR values, from image$? with maximum value $1."
     v - mse log10 - {log10(($1)^2)}
   else
@@ -12614,7 +12627,7 @@ segment_watershed : check "${1=2}>=0"
 #@cli shape2bump : _resolution>=0,0<=_weight_avg_max_avg<=1,_dilation,_smoothness>=0
 #@cli : Estimate bumpmap from binary shape in selected images.
 #@cli : Default value: 'resolution=256', 'weight_avg_max=0.75', 'dilation=0' and 'smoothness=100'.
-shape2bump : check "isint(${1=256}) && $1>=0 && ${2=0.75}>=0 && $2<=1 && isnumber(${3=0}) && ${4=100}>=0"
+shape2bump : check "isint(${1=256}) && $1>=0 && ${2=0.75}>=0 && $2<=1 && isnum(${3=0}) && ${4=100}>=0"
   e[^-1] "Estimate bumpmap from binary shape in image$?, using "\
          ${"v - if $1 u \"resolution $1\" else u \"full resolution\" fi v +"}", avg/max weight $2, dilation $3
           and smoothness $4."
@@ -12666,9 +12679,9 @@ shape2bump : check "isint(${1=256}) && $1>=0 && ${2=0.75}>=0 && $2<=1 && isnumbe
 #@cli : Compute skeleton of binary shapes using distance transform and constrained thinning.
 #@cli : Default value: 'boundary_conditions=1'.
 #@cli : $ shape_cupid 320 +skeleton 0
-skeleton : check "!isnumber(${1=1}) || ($1>=0 && $1<=1)"
+skeleton : check "!isnum(${1=1}) || ($1>=0 && $1<=1)"
   v -
-  if isnumber($1) bc=$1 else bc=1 noarg fi
+  if isnum($1) bc=$1 else bc=1 noarg fi
   v + e[^-1] "Compute skeleton of binary image$? with "${"arg 1+"$bc",dirichlet,neumann"}" boundary conditions." v -
   repeat $! l[$>] s c repeat $! l[$>]
                     # [0] = 2D binary shape
@@ -12849,9 +12862,9 @@ ssd_patch : check ${is_image_arg\ $1} skip ${2=0},${3=0}
 #@cli : (beware, this is a quite slow iterative process)
 #@cli : Default value: 'boundary_conditions=1'.
 #@cli : $ shape_cupid 320 +thinning
-thinning : check "!isnumber(${1=1}) || ($1>=0 && $1<=1)"
+thinning : check "!isnum(${1=1}) || ($1>=0 && $1<=1)"
   v -
-  if isnumber($1) bc=$1 else bc=1 noarg fi
+  if isnum($1) bc=$1 else bc=1 noarg fi
   v + e[^-1] "Apply morphological thinning to binary image$? with "\
              ${"arg 1+"$bc",dirichlet,neumann"}" boundary conditions." v -
   repeat $! l[$>] s c repeat $! l[$>]
@@ -13308,7 +13321,7 @@ circle : skip ${4=1},${5=0},${6=0}
 # 'spline_anglemax=90', 'spline_roundness=1','area_min=100', 'allow_self_intersection=1'.
 close_binary :
   check "${1=75}>=0 && $1<=100 && ${2=2}>=0 && ${3=80}>=0 && ${4=20}>=0 && ${5=90}>=0 && $5<=180 && ${6=1}>=0 &&
-         ${7=100}>=0 && isnumber(${8=1})"
+         ${7=100}>=0 && isnum(${8=1})"
   e[^-1] "Close open shapes in binary image$?, with endpoint rate $1, endpoint connectivity $2, spline max distance $3,
           segment max distance $4, spline max angle $5, spline roundness $6, area min $7 and self intersections "\
           ${"arg 1+!$8,allowed,\"not allowed\""}"."
@@ -13792,8 +13805,8 @@ gaussian : skip ${1=3},${2=$1},${3=0}
   u={cos($3*pi/180)}
   v={sin($3*pi/180)}
   dmax={max(w,h)}
-  if isnumber($1) l1=$1 else l1={${1}10000*$dmax/100} fi
-  if isnumber($2) l2=$2 else l2={${2}10000*$dmax/100} fi
+  if isnum($1) l1=$1 else l1={${1}10000*$dmax/100} fi
+  if isnum($2) l2=$2 else l2={${2}10000*$dmax/100} fi
   l1={1/(2*max(1/3,$l1)^2)}
   l2={1/(2*max(1/3,$l2)^2)}
   A={$l1*$u*$u+$l2*$v*$v}
@@ -13872,7 +13885,7 @@ grid : check "$1>=0 && $2>=0" skip ${3=0},${4=0},${5=1},${6=0},${7=$6}
 #@cli : Draw specified colored thick line on selected images.
 #@cli : Default values: 'thickness=2', 'opacity=1' and 'color1=0'.
 #@cli : $ 400,400,1,3 repeat 100 linethick {u([w,h,w,h,5])},0.5,${-RGB} done
-linethick : check "${5=2}>=0 && isnumber(${6=1}) && isnumber(${7=0})"
+linethick : check "${5=2}>=0 && isnum(${6=1}) && isnum(${7=0})"
   e[^-1] "Draw thick line ($1,$2) - ($3,$4) on image$?, with thickness $5, opacity $6 and color (${7--1})."
   v -
   if !$5 line ${1-4},${6--1}
@@ -16068,7 +16081,7 @@ snapshot3d : check "${2=1}>=0" skip ${1=512},${3=""}
   if ${"is_image_arg $1"} # Background image specified.
     e[0--3] "Take $1x$1 snapshot$? of 3D object$?, with zoom factor $2 and background image $3."
     v - pass$1 0 to_color.
-  elif isnumber($3) # Background color specified.
+  elif isnum($3) # Background color specified.
     e[0--3] "Take $1x$1 snapshot$? of 3D object$?, with zoom factor $2 and background color ${3--1}."
     v - (${3--1}) y. c r. $1,$1 to_color.
   else # Default background color.
@@ -17676,12 +17689,12 @@ brushify : check ${"is_image_arg $1"}" &&"\         # $1: [brush]
                     "isint(${4=12}) && $4>=1 &&"\     # $4: brush_nb_orientations
                     "isint(${5=4}) && $5>=0 &&"\      # $5: brush_light_type
                     "${6=0.07}>=0 && $6<=1 &&"\       # $6: brush_light_strength
-                    "isnumber(${7=0.75}) &&"\         # $7: brush_opacity
+                    "isnum(${7=0.75}) &&"\         # $7: brush_opacity
                     "${8=40%}>=0 && $8>=0 &&"\        # $8: painting_density[%]
                     "${9=0.7}>=0 && $9<=1 &&"\        # $9: painting_contours_coherence
                     "${10=1}>=0 && $10<=1 &&"\        # $10: painting_orientation_coherence
                     "${11=1}>=0 && ${12=0.5%}>=0 &&"\ # $11 and $12: painting_coherence_alpha and sigma
-                    "isnumber(${13=45}) &&"\          # $13: painting_primary_angle
+                    "isnum(${13=45}) &&"\          # $13: painting_primary_angle
                     "${14=0.2}>=0 && $14<=1"          # $14: painting_angle_dispersion
   e[^-1] "Brushify image$?, with brush $1."
   v -
@@ -19591,7 +19604,7 @@ sub_alpha : check "${2=1}>=1 && "${"is_image_arg $1"}
 #@cli : Default value: 'delay=30'.
 #@cli : $ image.jpg animate flower,"0,3","20,8",9
 animate : skip ${1=30},${2=0},${3=""},${4=10},${5=1},"${6=}"
-  if "isnumber($1)"
+  if "isnum($1)"
     e[0--3] "Animate image$?, with a delay of $1 ms"${"v - if $2 u \", in back-and-forth mode\" else u \"\" fi v +"}.
     if !$! return fi
     v -
@@ -19857,7 +19870,7 @@ files2video : check "isint(${3=25}) && $3>0" skip "${2=output.avi}",${4=mp4v}
 #@cli : Default values: 'first_frame=0', 'last_frame=-1', 'frame_step=1', 'frame_rows=20%' \
 # and 'is_fast_approximation=0'.
 median_files : check "isint(${2=0}) && $2>=0 && isint(${3=-1}) && ($3>=0 || $3==-1) &&
-                     ${4=1}>=1 && ${5=20%}>0 && isnumber(${6=0})"
+                     ${4=1}>=1 && ${5=20%}>0 && isnum(${6=0})"
   v - s0="fast" s1="precise"
   v + e[^-1] "Compute median of input image files '$1', with first frame $2, last frame $3, frame step $4,
               frame rows $5, using "${s{!$6}}" algorithm." v -
@@ -19874,7 +19887,7 @@ median_files : check "isint(${2=0}) && $2>=0 && isint(${3=-1}) && ($3>=0 || $3==
 #@cli : Default values: 'first_frame=0', 'last_frame=-1', 'frame_step=1', 'frame_rows=100%' \
 # and 'is_fast_approximation=1'.
 median_video : check "isint(${2=0}) && $2>=0 && isint(${3=-1}) && ($3>=0 || $3==-1) &&
-                      ${4=1}>=1 && ${5=100%}>0 && isnumber(${6=1})"
+                      ${4=1}>=1 && ${5=100%}>0 && isnum(${6=1})"
   v - s0="fast" s1="precise"
   v + e[^-1] "Compute median frame of input video file '$1', with first frame $2, last frame $3, frame step $4,
               frame rows $5, using "${s{!$6}}" algorithm." v -
@@ -21465,7 +21478,7 @@ to_clutname :
 #@cli : Default values: 'encoding=0'.
 uchar2base64 : skip "${1=0}"
   v -
-  if isnumber("$1") encoding=$1 else encoding=0 noarg fi
+  if isnum("$1") encoding=$1 else encoding=0 noarg fi
   {ceil(whds*4/3)+([0,2,1])[whds%3]}
   eval "
     hash = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
@@ -21488,7 +21501,7 @@ uchar2base64 : skip "${1=0}"
 #@cli : Default values: 'encoding=0'.
 img2base64 : skip "${1=0}"
   v -
-  if isnumber("$1") encoding=$1 else encoding=0 noarg fi
+  if isnum("$1") encoding=$1 else encoding=0 noarg fi
   +serialize u ${uchar2base64\ $encoding} rm.
   v +
 
@@ -26427,7 +26440,7 @@ gui_filter_sources : skip ${1=0},${2=1}
     repeat narg($files)
       file=${arg\ 1+$>,$files}
       ({'$file'}) z. {[w-8,w-6]} ver={t} rm.
-      if isnumber($ver)" && "$ver<$_version 0 o. raw:$file,uchar rm. fi
+      if isnum($ver)" && "$ver<$_version 0 o. raw:$file,uchar rm. fi
     done
   onfail
   endl fi
