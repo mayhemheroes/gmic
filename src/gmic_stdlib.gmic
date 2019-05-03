@@ -1601,7 +1601,7 @@ _help_footer_man :
 # use_vt100
 # This command defines some global variables used to output colored text on VT100 terminals.
 use_vt100 :
-  v - if 0$_vt100>0
+  v - if $_vt100
     _gmic_n="\33[0;0;0m"
     _gmic_r="\33[0;31;59m"
     _gmic_g="\33[0;32;59m"
@@ -2574,7 +2574,7 @@ _display_warp : check "${1=15}>0"
 #@cli : Example(s) : raw:filename.gmic,char document_gmic html,img
 document_gmic : skip ${1="ascii"},${2=""},${3=1}
   if !$! return fi
-  if 0$_vt100" && "['"$1"']=='ascii' use_vt100 fi
+  if $_vt100" && "['"$1"']=='ascii' use_vt100 fi
   v -1
 
   # Concatenate command data and split them into lines.
@@ -2675,12 +2675,12 @@ _document_gmic_description_ascii :
   is_equivalent={same([{^}],"'(eq. to '",8)}
   is_default={same([{^}],"'Default value'",13)}
   y x if !narg($_is_tutorial) _document_gmic_split_ascii 96 fi
-  if $!==1" && "0$_vt100>0" && "$is_equivalent
+  if $!==1" && "$_vt100" && "$is_equivalent
     replace_str "eq. to","equivalent to shortcut command"
     s +,39 if $!==5 i[2] ({'$_gmic_m$_gmic_b'}) i[4] ({'$_gmic_n'}) y fi a y
   fi
   repeat $!-1 ({'${bs$_is_example}$s"  "'}) a[$>,-1] x done a x
-  if 0$_vt100>0
+  if $_vt100
     replace_str "Default values:","\n"$s$_gmic_n${_gmic_b}"Default values:"$_gmic_n
     replace_str "Default value:","\n"$s$_gmic_n${_gmic_b}"Default value:"$_gmic_n
     replace_str "G'MIC",${_gmic_g}"G'MIC"$_gmic_n
