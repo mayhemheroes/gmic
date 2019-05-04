@@ -26043,6 +26043,7 @@ x_threshold :
   e[^-1] "Threshold image"$_gmic_s" interactively."
   v - repeat $! l[$>]
     wsiz0=${"fitscreen ."}
+    value=-1
     w[] $wsiz0,0,"[G'MIC] "{n}" - Interactive threshold"
     0
     for {*}" && "!{*,ESC}
@@ -26059,12 +26060,17 @@ x_threshold :
       fi
 
       if $update_view
-        +ge[1] $value% *. 255
-        to. "Threshold: "{_round($value,0.1)}%,1%,1%,{max(13,3.5*h%)}
-        w. rm. update_view=0
+        if $value>=0
+          +ge[1] $value% *. 255
+          to. "Threshold: "{_round($value,0.1)}%,1%,1%,{max(13,3.5*h%)}
+          w. rm.
+        else w.
+        fi
+        update_view=0
       fi
 
       wait
+      if {*,r} update_view=1 fi
       if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,D}
         w[] {{*,w}*1.5},{{*,h}*1.5} wait -1 update_view=1
       fi
