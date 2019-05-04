@@ -7360,6 +7360,46 @@ threshold : check "isval($1) && isbool(${2=0})"
   fi
   v +
 
+#@cli threshold_interactive
+#@cli : Threshold selected images interactively.
+threshold_interactive :
+  e[^-1] "Threshold image"$_gmic_s" interactively."
+  v - repeat $! l[$>]
+    wsiz0=${"fitscreen ."}
+    w[] $wsiz0,0,"[G'MIC] "{n}" - Interactive threshold"
+    0
+    for {*}" && "!{*,ESC}
+
+      if [w#1,h#1]!=[{*,w,h}] # Generate image view
+       rm[1] +slices[0] 50% r. {*,w,h},1,100%,1 w.
+      fi
+
+      mx,my,mb={*,x,y,b}
+      if $mb" && "$mx>=0" && "$my>=0
+        value={"w>h?( dw1 = "{*,w}" - 1; val = (dw1 - "$mx")*100/dw1; ):
+                    ( dh1 = "{*,h}" - 1; val = (dh1 - "$my")*100/dh1; )"}
+        update_view=1
+      fi
+
+      if $update_view
+        +ge[1] $value% *. 255
+        to. "Threshold: "{_round($value,0.1)}%,1%,1%,{max(13,3.5*h%)}
+        w. rm. update_view=0
+      fi
+
+      wait
+      if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,D}
+        w[] {{*,w}*1.5},{{*,h}*1.5} wait -1 update_view=1
+      fi
+      if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,C}
+        w[] {{*,w}/1.5},{{*,h}/1.5} wait -1 update_view=1
+      fi
+      if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,R}
+        w[] $wsiz0 wait -1 update_view=1
+      fi
+    done rm. u $value% ge ${}
+ endl done v +
+
 #@cli unrepeat
 #@cli : Remove repetition of adjacent values in selected images.
 #@cli : $ (1;1;1;1;1;2;2;2;3;4;4;4;5;5;5) +unrepeat
@@ -9171,7 +9211,8 @@ zi :
   _crop_interactive
 
 #@cli crop_interactive
-#@cli : Crop selected image interactively.
+#@cli : Crop selected images interactively.
+#@cli : (eq. to 'zi').
 crop_interactive :
   v - _gmic_s="$?" v +
   _$0
