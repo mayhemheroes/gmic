@@ -22718,6 +22718,55 @@ x_connect4 : check_display
   while {*}" && "!{*,ESC}" && "!{*,Q}
   rm w 0 endl v +
 
+#@cli x_cut
+#@cli : Cut selected images interactively.
+x_cut :
+  e[^-1] "Cut image"$_gmic_s" interactively."
+  v - repeat $! l[$>]
+    wsiz0=${"fitscreen ."}
+    value0,value1=-1,-1
+    w[] $wsiz0,0,"[G'MIC] "{n}" - Interactive cut"
+    0
+    for {*}" && "!{*,ESC}
+
+      if [w#1,h#1]!=[{*,w,h}] # Generate image view
+       rm[1] +slices[0] 50% r. {*,w,h},1,100%,1 w.
+      fi
+
+      mx,my,mb={*,x,y,b}
+      if $mb" && "$mx>=0" && "$my>=0
+        value0,value1={"dw1 = "{*,w}" - 1; value0 = "$mx"*100/dw1;
+                        dh1 = "{*,h}" - 1; value1 = "$my"*100/dh1;
+                        [ value0,value1 ];"}
+        update_view=1
+      fi
+
+      if $update_view
+        if $value0>=0" && "$value1>=0
+          +c[1] $value0%,$value1% n. 0,255
+          to. "Min: "{_round($value0,0.1)}%"\n"\
+              "Max: "{_round($value1,0.1)}%,1%,1%,{max(13,3.5*h%)}
+          w. rm.
+        else w.
+        fi
+        update_view=0
+      fi
+
+      wait
+      if {*,r} update_view=1 fi
+      if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,D}
+        w[] {{*,w}*1.5},{{*,h}*1.5} wait -1 update_view=1
+      fi
+      if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,C}
+        w[] {{*,w}/1.5},{{*,h}/1.5} wait -1 update_view=1
+      fi
+      if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,R}
+        w[] $wsiz0 wait -1 update_view=1
+      fi
+    done
+    w[] 0 rm. u $value0%,$value1% c ${}
+ endl done v +
+
 #@cli x_fire
 #@cli : Launch the fire effect demo.
 x_fire : skip "${1=G\47MIC}" check_display
