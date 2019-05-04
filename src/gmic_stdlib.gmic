@@ -9165,26 +9165,6 @@ autocrop_seq : skip ${1=auto}
 #@cli : $ image.jpg +crop -230,-230,280,280,1 crop[0] -230,-230,280,280,0
 #@cli : $ image.jpg crop 25%,25%,75%,75%
 
-#@cli zi : eq. to 'crop_interactive'. :
-zi :
-  v - _gmic_s="$?" v +
-  _crop_interactive
-
-#@cli crop_interactive
-#@cli : Crop selected images interactively.
-#@cli : (eq. to 'zi').
-crop_interactive :
-  v - _gmic_s="$?" v +
-  _$0
-
-_crop_interactive :
-  e[0--3] "Crop image"$_gmic_s" interactively."
-  v - repeat $! l[$>]
-    w ${"fitscreen "{[w,h,d]}},1,"[G'MIC] "{n}" - Interactive crop"
-    +select 2,{round([w,h,d]/2)},0,1 u {^} z.. ${} rm.
-    w[] 0
-  endl done v +
-
 #@cli diagonal
 #@cli : Transform selected vectors as diagonal matrices.
 #@cli : $ 1,10,1,1,'y' +diagonal
@@ -22717,6 +22697,26 @@ x_connect4 : check_display
 
   while {*}" && "!{*,ESC}" && "!{*,Q}
   rm w 0 endl v +
+
+#@cli xz : eq. to 'x_crop'. :
+xz :
+  v - _gmic_s="$?" v +
+  _x_crop
+
+#@cli x_crop
+#@cli : Crop selected images interactively.
+#@cli : (eq. to 'xz').
+x_crop :
+  v - _gmic_s="$?" v +
+  _$0
+
+_x_crop :
+  e[0--3] "Crop image"$_gmic_s" interactively."
+  v - repeat $! l[$>]
+    w ${"fitscreen "{[w,h,d]}},1,"[G'MIC] "{n}" - Interactive crop"
+    +select 2,{round([w,h,d]/2)},0,1 u {^} z.. ${} rm.
+    w[] 0
+  endl done v +
 
 #@cli x_cut
 #@cli : Cut selected images interactively.
