@@ -1861,7 +1861,7 @@ inline char *_gmic_argument_text(const char *const argument, CImg<char>& argumen
     if (is_get) { \
       images[__ind].get_##function.move_to(images); \
       images_names[__ind].get_copymark().move_to(images_names); \
-    } else images[__ind].function;                              \
+    } else images[__ind].function; \
   }
 
 // Macro for simple commands that has no arguments and act on images.
@@ -4503,8 +4503,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
   CImg<unsigned int> ind, ind0, ind1;
   CImg<unsigned char> g_img_uc;
+  CImg<char> name,_status;
   CImg<float> vertices;
-  CImg<char> name;
   CImg<T> g_img;
 
   unsigned int next_debug_line = ~0U, next_debug_filename = ~0U, _debug_line, _debug_filename,
@@ -5736,7 +5736,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               file = 0;
             }
             if (file) {
-              CImg<char> _status;
               status.move_to(_status); // Save status because 'add_commands()' can change it
               const int _verbosity = verbosity;
               const bool _is_debug = is_debug;
@@ -12853,7 +12852,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                      nc=='_'))) {
 
                       CImg<unsigned int> inds;
-                      CImg<char> _status;
                       const int _verbosity = verbosity;
                       const bool _is_debug = is_debug;
                       verbosity = -16384; is_debug = false;
@@ -13793,7 +13791,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           std::FILE *const file = cimg::fopen(filename,"rb");
 
           bool is_command_error = false;
-          CImg<char> _status;
           status.move_to(_status); // Save status because 'add_commands' can change it
           const int _verbosity = verbosity;
           const bool _is_debug = is_debug;
