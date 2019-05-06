@@ -1997,6 +1997,8 @@ _display2d :
     w[] $wsiz0,0,$nm cursor 0
     posx,posy,sizx,sizy={0,[0,0,w,h]}
     mx,my=-1
+    is_bottom_text=0
+    normalization=0
 
     # Start event loop.
     for {*}" && "!{*,ESC}
@@ -2004,7 +2006,8 @@ _display2d :
 
       # Generate baseview.
       if !narg($baseview)
-        +z[0] {[$iposx,$iposy,0,$iposx+$sizx,$iposy+$sizy,0]} # n. 0,255
+        +z[0] {[$iposx,$iposy,0,$iposx+$sizx,$iposy+$sizy,0]}
+        if $normalization n. 0,255 fi
         cellsizx,cellsizy={[{*,w}/(w-1),{*,h}/(h-1)]}
         r. {floor([$cellsizx,$cellsizy]*[w,h])},1,100%,1
         z. {shift=[$posx-$iposx,$posy-$iposy]*[$cellsizx,$cellsizy];floor([shift,shift+[{*,w,h}]-1])}
@@ -2017,17 +2020,14 @@ _display2d :
       if !narg($view)
         [baseview]
         if $mx>=0
-          line. $mx,0,$mx,100%,0.5,0xFF00FF00,255
-          line. $mx,0,$mx,100%,0.5,0x00FF00FF,0
-          line. 0,$my,100%,$my,0.5,0xFF00FF00,255
-          line. 0,$my,100%,$my,0.5,0x00FF00FF,0
 
           posmx,posmy={floor([$posx,$posy]+[$mx,$my]*[$sizx,$sizy]/[{*,w,h}])}
           if $posmx>=0" && "$posmx<w#0" && "$posmy>=0" && "$posmy<h#0
 
-            0 t. "Point ("$posmx","$posmy") = [ "${d2d_repcommas\ {0,_I($posmx,$posmy)}}" ]",1,0,13,1,1 +dilate. 3 d
-
-            to. "Point ("$posmx","$posmy") = [ "${d2d_repcommas\ {0,_I($posmx,$posmy)}}" ]",1,0,13
+            0 t. "Point ("$posmx","$posmy") = [ "${d2d_repcommas\ {0,_I($posmx,$posmy)}}" ]",1,0,13,1,1 +dilate. 3
+            +f. 64 +f. 0 j.. .,0,0,0,0,1,... rm[-3,-1] +f. 255 j.. .,0,0,0,0,1,... rm[-3,-1] r. 100%,100%,1,..
+            j.. .,0,{$is_bottom_text?h#-2-h#-1:0},0,0,0.85
+            rm.
             x0,y0,x1,y1={[round([$posmx-$posx,$posmy-$posy]*[{*,w,h}]/[$sizx,$sizy]),\
                           round([$posmx-$posx+1,$posmy-$posy+1]*[{*,w,h}]/[$sizx,$sizy])-1]}
             if $x1-$x0>=8" && "$y1-$y0>=8
@@ -2035,6 +2035,10 @@ _display2d :
               rectangle. $x0,$y0,$x1,$y1,1,0xAAAAAAAA,255
             fi
           fi
+          line. $mx,0,$mx,100%,0.5,0xFF00FF00,255
+          line. $mx,0,$mx,100%,0.5,0x00FF00FF,0
+          line. 0,$my,100%,$my,0.5,0xFF00FF00,255
+          line. 0,$my,100%,$my,0.5,0x00FF00FF,0
         fi
         nm. view w.
       fi
@@ -2044,6 +2048,11 @@ _display2d :
       old_mx,old_my=$mx,$my
       nposx,nposy,nsizx,nsizy=$posx,$posy,$sizx,$sizy
       is_CTRL,mb,mx,my,mo={{*,CTRLLEFT}" || "{*,CTRLRIGHT}},{*,b,x,y,-o}
+
+      # Test if text must be displayed at the bottom.
+      if {view,$my<0" || "$my>=h-16} is_bottom_text=0
+      elif $my<16 is_bottom_text=1
+      fi
 
       # Events related to window resizing.
       if {*,r} # Window has been resized -> preserve aspect ratio
@@ -2088,6 +2097,7 @@ _display2d :
       fi
 
       if [$mx,$my]!=[$old_mx,$old_my] rmn view fi
+
     done
     w[] 0 k[0]
   endl done
