@@ -2015,15 +2015,17 @@ _display2d :
       # Generate baseview.
       if !narg($baseview)
         if $alpha_mode +to_a[0] else sh[0] fi
-        +z. {[$iposx,$iposy,0,$iposx+$sizx,$iposy+$sizy,0]} rm..
+        +z. {[$iposx,$iposy,0,0,$iposx+$sizx,$iposy+$sizy,0,s>4&&$alpha_mode?3:min(s-1,2)]} rm..
         if $normalization_mode==1 n. 0,255
         elif $normalization_mode==2 l. s c n 0,255 a c endl
         fi
-        if $alpha_mode drgba. fi
         cellsizx,cellsizy={[{*,w}/(w-1),{*,h}/(h-1)]}
         r. {floor([$cellsizx,$cellsizy]*[w,h])},1,100%,1
         z. {shift=[$posx-$iposx,$posy-$iposy]*[$cellsizx,$cellsizy];floor([shift,shift+[{*,w,h}]-1])}
-        to_rgb.
+        if $alpha_mode drgba.
+        elif s==1 r. 100%,100%,1,3
+        elif s==2 r. 100%,100%,1,3,0
+        fi
         nm. baseview
         rmn view
       fi
