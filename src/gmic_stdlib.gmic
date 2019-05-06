@@ -2075,7 +2075,7 @@ _display2d :
       elif {*,ARROWDOWN}  nposy+={$nsizy/($is_CTRL?4:16)}        # Go down
       elif {*,-SPACE}     nposx,nposy,nsizx,nsizy={0,[0,0,w,h]}  # Reset view
       elif {*,-N}         normalization={!$normalization} rmn baseview  # Switch normalization mode
-      elif $mx>=0" && "$mb==4 # Pan (middle mouse button)
+      elif $mx>=0" && "($mb==4" || "($is_CTRL" && "$mb==1)) # Pan (middle mouse button)
         if {!narg($pan_mx)} pan_mx,pan_my,pan_posx,pan_posy=$mx,$my,$posx,$posy fi
         nposx,nposy={shiftx=($mx-$pan_mx)*$nsizx/{*,w};\
                      shifty=($my-$pan_my)*$nsizy/{*,h};\
@@ -2093,7 +2093,9 @@ _display2d :
       fi
 
       # Constrain image displacement.
-      if $nsizx>1.25*w#0" || "$nsizy>1.25*h#0" || "$nsizx<8" || "$nsizy<8
+      if $nsizx>1.05*w#0" || "$nsizy>1.05*h#0
+        nposx,nposy,nsizx,nsizy=$posx,$posy,{1.05*[w#0,h#0]}
+      elif $nsizx<8" || "$nsizy<8
         nposx,nposy,nsizx,nsizy=$posx,$posy,$sizx,$sizy
       fi
       if $nposx>=w#0 nposx={w#0-1}
