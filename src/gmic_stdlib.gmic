@@ -2000,7 +2000,7 @@ _display2d :
     posx,posy,sizx,sizy={0,[0,0,w,h]}
     mx,my=-1
     is_bottom_text=0
-    normalization_mode=0
+    normalization_mode=1
     alpha_mode=0
 
     # Start event loop.
@@ -2014,7 +2014,8 @@ _display2d :
 
       # Generate baseview.
       if !narg($baseview)
-        +z[0] {[$iposx,$iposy,0,$iposx+$sizx,$iposy+$sizy,0]}
+        if $alpha_mode +to_a[0] else sh[0] fi
+        +z. {[$iposx,$iposy,0,$iposx+$sizx,$iposy+$sizy,0]} rm..
         if $normalization_mode==1 n. 0,255
         elif $normalization_mode==2 l. s c n 0,255 a c endl
         fi
@@ -2092,11 +2093,11 @@ _display2d :
                      shifty=($my-$pan_my)*$nsizy/{*,h};\
                      [$pan_posx-shiftx,$pan_posy-shifty]}
 
-      elif {*,PADSUB}" || "($mx>=0" && "$mo<0) # Zoom out
+      elif $nsizx<1.05*w#0" && "$nsizy<1.05*h#0" && "({*,PADSUB}" || "($mx>=0" && "$mo<0)) # Zoom out
         xc,yc={[$nposx,$nposy]+[$nsizx,$nsizy]/2}
         nposx,nposy,nsizx,nsizy={[[$xc,$yc]+1/0.75*[$nposx-$xc,$nposy-$yc],round(1/0.75*[$nsizx,$nsizy])]}
 
-      elif {*,PADADD}" || "($mx>=0" && "$mo>0) # Zoom in
+      elif $nsizx>4" && "$nsizy>4" && "({*,PADADD}" || "($mx>=0" && "$mo>0)) # Zoom in
         xc,yc={$mx<0?[$nposx,$nposy]+[$nsizx,$nsizy]/2:[$nposx,$nposy]+[$mx,$my]*[$nsizx,$nsizy]/[{*,w,h}]}
         nposx,nposy,nsizx,nsizy={[[$xc,$yc]+0.75*[$nposx-$xc,$nposy-$yc],round(0.75*[$nsizx,$nsizy])]}
 
@@ -2104,11 +2105,6 @@ _display2d :
       fi
 
       # Constrain image displacement.
-      if $nsizx>1.05*w#0" || "$nsizy>1.05*h#0
-        nposx,nposy,nsizx,nsizy=$posx,$posy,{1.05*[w#0,h#0]}
-      elif $nsizx<8" || "$nsizy<8
-        nposx,nposy,nsizx,nsizy=$posx,$posy,$sizx,$sizy
-      fi
       if $nposx>=w#0 nposx={w#0-1}
       elif $nposx+$nsizx<=0 nposx={1-$nsizx}
       fi
