@@ -2069,11 +2069,11 @@ _display2d :
       fi
 
       # Events related to image displacement and mode changes.
-      if {*,ARROWLEFT}    nposx-={($is_CTRL?128:32)*$nsizx/{*,w}}       # Go left
-      elif {*,ARROWRIGHT} nposx+={($is_CTRL?128:32)*$nsizx/{*,w}}       # Go right
-      elif {*,ARROWUP}    nposy-={($is_CTRL?128:32)*$nsizy/{*,h}}       # Go up
-      elif {*,ARROWDOWN}  nposy+={($is_CTRL?128:32)*$nsizy/{*,h}}       # Go down
-      elif {*,-SPACE}     nposx,nposy,nsizx,nsizy={0,[0,0,w,h]}         # Reset view
+      if {*,ARROWLEFT}    nposx-={$nsizx/($is_CTRL?4:16)}        # Go left
+      elif {*,ARROWRIGHT} nposx+={$nsizx/($is_CTRL?4:16)}        # Go right
+      elif {*,ARROWUP}    nposy-={$nsizy/($is_CTRL?4:16)}        # Go up
+      elif {*,ARROWDOWN}  nposy+={$nsizy/($is_CTRL?4:16)}        # Go down
+      elif {*,-SPACE}     nposx,nposy,nsizx,nsizy={0,[0,0,w,h]}  # Reset view
       elif {*,-N}         normalization={!$normalization} rmn baseview  # Switch normalization mode
       elif $mx>=0" && "$mb==4 # Pan (middle mouse button)
         if {!narg($pan_mx)} pan_mx,pan_my,pan_posx,pan_posy=$mx,$my,$posx,$posy fi
@@ -2092,13 +2092,20 @@ _display2d :
       elif {!$mb} pan_mx,pan_my,pan_posx,pan_posy=
       fi
 
-      # Constraint image displacement.
-      if [$nposx,$nposy,$nsizx,$nsizy]!=[$posx,$posy,$sizx,$sizy]" && "\
-         $nposx<w#0" && "$nposy<h#0" && "$nposx+$nsizx>1" && "$nposy+$nsizy>1" && "\
-         $nsizx>=4" && "$nsizy>=4" && "$nsizx<1.25*w#0" && "$nsizy<1.25*h#0
-        posx,posy,sizx,sizy=$nposx,$nposy,$nsizx,$nsizy rmn baseview
+      # Constrain image displacement.
+      if $nsizx>1.25*w#0" || "$nsizy>1.25*h#0" || "$nsizx<8" || "$nsizy<8
+        nposx,nposy,nsizx,nsizy=$posx,$posy,$sizx,$sizy
       fi
-
+      if $nposx>=w#0 nposx={w#0-1}
+      elif $nposx+$nsizx<=0 nposx={1-$nsizx}
+      fi
+      if $nposy>=h#0 nposy={h#0-1}
+      elif $nposy+$nsizy<=0 nposy={1-$nsizy}
+      fi
+      if [$nposx,$nposy,$nsizx,$nsizy]!=[$posx,$posy,$sizx,$sizy]
+        posx,posy,sizx,sizy=$nposx,$nposy,$nsizx,$nsizy
+        rmn baseview
+      fi
       if [$mx,$my]!=[$old_mx,$old_my] rmn view fi
 
     done
