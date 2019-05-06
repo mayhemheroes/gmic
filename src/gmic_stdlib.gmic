@@ -1977,6 +1977,118 @@ _display0 :
   fi
   v + d v - w[] 0 v +
 
+#@cli d2d : eq. to 'display2d'.
+d2d :
+  v - _gmic_s="$?" v +
+  _display2d
+
+#@cli display2d
+display2d :
+  v - _gmic_s="$?" v +
+  _$0
+
+_display2d :
+  e[0--3] "Display 2d image"$_gmic_s"."
+  v -
+  m "d2d_repcommas : ({'\"$""*\"'}) replace. {','},32 u {t} rm."
+
+  repeat $! l[$>] nm={b}
+    wsiz0=${fitscreen\ .,40%,85%}
+    w[] $wsiz0,0,$nm cursor 0
+    posx,posy,sizx,sizy={0,[0,0,w,h]}
+    mx,my=-1
+
+    for {*}" && "!{*,ESC}
+      iposx,iposy={floor([$posx,$posy])}
+
+      # Generate baseview.
+      if !narg($baseview)
+        +z[0] {[$iposx,$iposy,0,$iposx+$sizx,$iposy+$sizy,0]} # n. 0,255
+        cellsizx,cellsizy={[{*,w}/(w-1),{*,h}/(h-1)]}
+        r. {floor([$cellsizx,$cellsizy]*[w,h])},1,100%,1
+        z. {shift=[$posx-$iposx,$posy-$iposy]*[$cellsizx,$cellsizy];floor([shift,shift+[{*,w,h}]-1])}
+        to_rgb.
+        nm. baseview
+        rmn view
+      fi
+
+      # Generate view.
+      if !narg($view)
+        [baseview]
+        if $mx>=0
+          line. $mx,0,$mx,100%,0.5,0xFF00FF00,255
+          line. $mx,0,$mx,100%,0.5,0x00FF00FF,0
+          line. 0,$my,100%,$my,0.5,0xFF00FF00,255
+          line. 0,$my,100%,$my,0.5,0x00FF00FF,0
+
+          posmx,posmy={floor([$posx,$posy]+[$mx,$my]*[$sizx,$sizy]/[{*,w,h}])}
+          if $posmx>=0" && "$posmx<w#0" && "$posmy>=0" && "$posmy<h#0
+            to. "Point ("$posmx","$posmy") = [ "${d2d_repcommas\ {0,_I($posmx,$posmy)}}" ]",1,0,13
+            x0,y0,x1,y1={[round([$posmx-$posx,$posmy-$posy]*[{*,w,h}]/[$sizx,$sizy]),\
+                          round([$posmx-$posx+1,$posmy-$posy+1]*[{*,w,h}]/[$sizx,$sizy])-1]}
+            if $x1-$x0>=8" && "$y1-$y0>=8
+              rectangle. $x0,$y0,$x1,$y1,1,0x55555555,0
+              rectangle. $x0,$y0,$x1,$y1,1,0xAAAAAAAA,255
+            fi
+          fi
+        fi
+        nm. view w.
+      fi
+
+      # Manage user events.
+      wait
+      old_mx,old_my=$mx,$my
+      nposx,nposy,nsizx,nsizy=$posx,$posy,$sizx,$sizy
+      is_CTRL,mb,mx,my,mo={{*,CTRLLEFT}" || "{*,CTRLRIGHT}},{*,b,x,y,-o}
+
+      # Events related to window resizing.
+      if {*,r} # Window has been resized -> preserve aspect ratio
+        w[] {round(w#0>h#0?[{*,d},{*,d}*h#0/w#0]:[{*,e}*w#0/h#0,{*,e}])}
+        wait -1 rmn baseview
+      elif $is_CTRL" && "{*,D} w[] {round([{*,w,h}]*1.5)} wait -1 rmn baseview # Increase window size
+      elif $is_CTRL" && "{*,C} w[] {round([{*,w,h}]/1.5)} wait -1 rmn baseview # Decrease window size
+      elif $is_CTRL" && "{*,R} # Reset window size (and view)
+        posx,posy,sizx,sizy={0,[0,0,w,h]}
+        w[] ${fitscreen\ [0]}
+        wait -1 rmn baseview
+      fi
+
+      # Events related to image displacement.
+      if {*,ARROWLEFT}    nposx+={($is_CTRL?128:32)*$nsizx/{*,w}} # Go left
+      elif {*,ARROWRIGHT} nposx-={($is_CTRL?128:32)*$nsizx/{*,w}} # Go right
+      elif {*,ARROWUP}    nposy+={($is_CTRL?128:32)*$nsizy/{*,h}} # Go up
+      elif {*,ARROWDOWN}  nposy-={($is_CTRL?128:32)*$nsizy/{*,h}} # Go down
+      elif {*,SPACE}      nposx,nposy,nsizx,nsizy={0,[0,0,w,h]}   # Reset view
+      elif $mx>=0" && "$mb==4 # Pan (middle mouse button)
+        if {!narg($pan_mx)} pan_mx,pan_my,pan_posx,pan_posy=$mx,$my,$posx,$posy fi
+        nposx,nposy={shiftx=($mx-$pan_mx)*$nsizx/{*,w};\
+                     shifty=($my-$pan_my)*$nsizy/{*,h};\
+                     [$pan_posx-shiftx,$pan_posy-shifty]}
+
+      elif {*,PADSUB}" || "($mx>=0" && "$mo<0) # Zoom out
+        xc,yc={[$nposx,$nposy]+[$nsizx,$nsizy]/2}
+        nposx,nposy,nsizx,nsizy={[[$xc,$yc]+1/0.75*[$nposx-$xc,$nposy-$yc],round(1/0.75*[$nsizx,$nsizy])]}
+
+      elif {*,PADADD}" || "($mx>=0" && "$mo>0) # Zoom in
+        xc,yc={$mx<0?[$nposx,$nposy]+[$nsizx,$nsizy]/2:[$nposx,$nposy]+[$mx,$my]*[$nsizx,$nsizy]/[{*,w,h}]}
+        nposx,nposy,nsizx,nsizy={[[$xc,$yc]+0.75*[$nposx-$xc,$nposy-$yc],round(0.75*[$nsizx,$nsizy])]}
+
+      elif {!$mb} pan_mx,pan_my,pan_posx,pan_posy=
+      fi
+
+      # Constraint image displacement.
+      if [$nposx,$nposy,$nsizx,$nsizy]!=[$posx,$posy,$sizx,$sizy]" && "\
+         $nposx<w#0" && "$nposy<h#0" && "$nposx+$nsizx>1" && "$nposy+$nsizy>1" && "\
+         $nsizx>=4" && "$nsizy>=4" && "$nsizx<1.25*w#0" && "$nsizy<1.25*h#0
+        posx,posy,sizx,sizy=$nposx,$nposy,$nsizx,$nsizy rmn baseview
+      fi
+
+      if [$mx,$my]!=[$old_mx,$old_my] rmn view fi
+    done
+  endl done
+  uncommand d2d_repcommas
+  v +
+
 #@cli d3d : eq. to 'display3d'. : (+)
 
 #@cli display3d : _[background_image],_exit_on_anykey={ 0 | 1 } : _exit_on_anykey={ 0 | 1 } : (+)
