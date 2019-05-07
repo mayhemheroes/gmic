@@ -1995,13 +1995,14 @@ _display2d :
   m "d2d_repcommas : ({'\"$""*\"'}) replace. {','},32 u {t} rm."
 
   repeat $! l[$>] nm={b}
-    wsiz0=${fitscreen\ .,40%,85%}
-    w[] $wsiz0,0,$nm" ("{w}x{h}x{d}x{s}")" cursor 0
     posx,posy,sizx,sizy={0,[0,0,w,h]}
     alpha_mode,normalization_mode,ratio_mode=0,1,1
     is_bottom_text=0
     notification=
     mx,my=-1
+
+    wsiz0=${fitscreen\ .,40%,85%}
+    w[] $wsiz0,0,$nm" ("{w}x{h}x{d}x{s}")" cursor 0
 
     # Start event loop.
     for {*}" && "!{*,ESC}
@@ -2014,7 +2015,7 @@ _display2d :
       if !narg($baseview)
         if $alpha_mode +to_a[0] else sh[0] fi
         +z. {[$iposx,$iposy,0,0,$iposx+$sizx,$iposy+$sizy,0,s>=4&&$alpha_mode?3:min(s-1,2)]} rm..
-        if $normalization_mode==1 n. 0,255
+        if $normalization_mode==1 sh. 0,{s-$alpha_mode?2:1} n. 0,255 rm.
         elif $normalization_mode==2 l. s c if $alpha_mode sel=^-1 else sel=^ fi n[$sel] 0,255 a c endl
         fi
         cellsizx,cellsizy={[{*,w}/(w-1),{*,h}/(h-1)]}
