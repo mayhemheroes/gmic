@@ -2008,9 +2008,7 @@ _display2d :
       iposx,iposy={floor([$posx,$posy])}
 
       # Correct aspect ratio.
-      if {*,w}>{*,h} sizy={round($sizx*{*,h}/{*,w})}
-      else sizx={round($sizy*{*,w}/{*,h})}
-      fi
+      if $ratio_mode if {*,w}>{*,h} sizy={round($sizx*{*,h}/{*,w})} else sizx={round($sizy*{*,w}/{*,h})} fi fi
 
       # Generate baseview.
       if !narg($baseview)
@@ -2085,7 +2083,7 @@ _display2d :
 
       # Events related to window resizing.
       if {*,r} # Window has been resized -> Preserve aspect ratio
-        nsizx,nsizy={round([{*,d,e}]*[$nsizx,$nsizy]/[{*,w,h}])}
+        if $ratio_mode nsizx,nsizy={round([{*,d,e}]*[$nsizx,$nsizy]/[{*,w,h}])} fi
         if $nsizx>w#0" || "$nsizy>h#0 nsizx,nsizy={0,[w,h]} fi
         w[] {*,d,e}
         wait -1 rmn baseview
@@ -2113,6 +2111,11 @@ _display2d :
         alpha_mode={!$alpha_mode}
         notification=${"s0=Disable s1=Enable u ${s"$alpha_mode"}"}" Alpha"
         rmn baseview
+      elif {*,-R} # Toggle aspect-ratio mode
+        ratio_mode={!$ratio_mode}
+        notification=${"s0=Release s1=Hold u ${s"$ratio_mode"}"}" Aspect Ratio"
+        nposx,nposy,nsizx,nsizy={0,[0,0,w,h]}
+        rmn baseview
       elif $mx>=0" && "($mb==4" || "($is_CTRL" && "$mb==1)) # Pan (middle mouse button)
         if !narg($pan_mx) pan_mx,pan_my,pan_posx,pan_posy=$mx,$my,$posx,$posy fi
         nposx,nposy={shiftx=($mx-$pan_mx)*$nsizx/{*,w};\
@@ -2123,7 +2126,7 @@ _display2d :
         xc,yc={[$nposx,$nposy]+[$nsizx,$nsizy]/2}
         nposx,nposy,nsizx,nsizy={[[$xc,$yc]+1/0.75*[$nposx-$xc,$nposy-$yc],round(1/0.75*[$nsizx,$nsizy])]}
 
-      elif $nsizx>4" && "$nsizy>4" && "({*,PADADD}" || "($mx>=0" && "$mo>0)) # Zoom in
+      elif $nsizx>2" && "$nsizy>2" && "({*,PADADD}" || "($mx>=0" && "$mo>0)) # Zoom in
         xc,yc={$mx<0?[$nposx,$nposy]+[$nsizx,$nsizy]/2:[$nposx,$nposy]+[$mx,$my]*[$nsizx,$nsizy]/[{*,w,h}]}
         nposx,nposy,nsizx,nsizy={[[$xc,$yc]+0.75*[$nposx-$xc,$nposy-$yc],round(0.75*[$nsizx,$nsizy])]}
 
