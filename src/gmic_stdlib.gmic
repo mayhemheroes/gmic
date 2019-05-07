@@ -2000,8 +2000,8 @@ _display2d :
     posx,posy,sizx,sizy={0,[0,0,w,h]}
     mx,my=-1
     is_bottom_text=0
-    normalization_mode=1
-    alpha_mode=0
+    notification=0
+    alpha_mode,normalization_mode,ratio_mode=0,1,1
 
     # Start event loop.
     for {*}" && "!{*,ESC}
@@ -2030,6 +2030,16 @@ _display2d :
         rmn view
       fi
 
+      # Manage notifications.
+      if narg($notification)
+        if !isnum($notification) # Create notification gfx
+          0 t. {``$notification},0,0,16,1,1 to_rgb. *. 255 nm. notification_gfx
+          notification=$|
+        else
+          if $notification>$|+2 rm[notification_gfx] notification= fi
+        fi
+      fi
+
       # Generate view.
       if !narg($view)
         [baseview]
@@ -2054,6 +2064,11 @@ _display2d :
           line. 0,$my,100%,$my,0.5,0xFF00FF00,255
           line. 0,$my,100%,$my,0.5,0x00FF00FF,0
         fi
+
+#        if $notification_gfx
+
+#        fi
+
         nm. view w.
       fi
 
@@ -2069,7 +2084,7 @@ _display2d :
       fi
 
       # Events related to window resizing.
-      if {*,r} # Window has been resized -> preserve aspect ratio
+      if {*,r} # Window has been resized -> Preserve aspect ratio
         nsizx,nsizy={round([{*,d,e}]*[$nsizx,$nsizy]/[{*,w,h}])}
         if $nsizx>w#0" || "$nsizy>h#0 nsizx,nsizy={0,[w,h]} fi
         w[] {*,d,e}
@@ -2089,9 +2104,12 @@ _display2d :
       elif {*,ARROWDOWN} nposy+={$nsizy/($is_CTRL?4:16)} # Go down
       elif {*,-SPACE} nposx,nposy,nsizx,nsizy={0,[0,0,w,h]} # Reset view
       elif {*,-N} normalization_mode={($normalization_mode+1)%3} rmn baseview # Change normalization mode
-      elif {*,-A} alpha_mode={!$alpha_mode} rmn baseview  # Toggle alpha mode
+      elif {*,-A} # Toggle alpha mode
+        notification="Toggle alpha mode"
+        alpha_mode={!$alpha_mode}
+        rmn baseview
       elif $mx>=0" && "($mb==4" || "($is_CTRL" && "$mb==1)) # Pan (middle mouse button)
-        if {!narg($pan_mx)} pan_mx,pan_my,pan_posx,pan_posy=$mx,$my,$posx,$posy fi
+        if !narg($pan_mx) pan_mx,pan_my,pan_posx,pan_posy=$mx,$my,$posx,$posy fi
         nposx,nposy={shiftx=($mx-$pan_mx)*$nsizx/{*,w};\
                      shifty=($my-$pan_my)*$nsizy/{*,h};\
                      [$pan_posx-shiftx,$pan_posy-shifty]}
@@ -2104,7 +2122,7 @@ _display2d :
         xc,yc={$mx<0?[$nposx,$nposy]+[$nsizx,$nsizy]/2:[$nposx,$nposy]+[$mx,$my]*[$nsizx,$nsizy]/[{*,w,h}]}
         nposx,nposy,nsizx,nsizy={[[$xc,$yc]+0.75*[$nposx-$xc,$nposy-$yc],round(0.75*[$nsizx,$nsizy])]}
 
-      elif {!$mb} pan_mx,pan_my,pan_posx,pan_posy=
+      elif !$mb pan_mx,pan_my,pan_posx,pan_posy=
       fi
 
       # Constrain image displacement.
