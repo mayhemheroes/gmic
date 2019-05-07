@@ -174,6 +174,10 @@ MANDATORY_LIBS += -L$(USR)/$(LIB)
 ifdef IS_GCC
 MANDATORY_CFLAGS += -Wall -Wextra -Wshadow -Wfatal-errors -Werror=unknown-pragmas -Werror=unused-label
 MANDATORY_LIBS += -lm
+GCC_VER_GTEQ5 = $(shell expr `$(CXX) -dumpversion | cut -f1 -d.` \>= 5)
+ifeq ($(GCC_VER_GTEQ5),1)
+MANDATORY_CFLAGS += -Wshadow
+endif
 endif
 ifeq ($(OS),Unix)
 MANDATORY_CFLAGS += -Dcimg_use_vt100
