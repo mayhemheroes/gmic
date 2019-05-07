@@ -2088,11 +2088,18 @@ _display2d :
         if $nsizx>w#0" || "$nsizy>h#0 nsizx,nsizy={0,[w,h]} fi
         w[] {*,d,e}
         wait -1 rmn baseview
-      elif $is_CTRL" && "{*,D} w[] {round([{*,w,h}]*1.5)} skip {*,-D} rmn baseview # Increase window size
-      elif $is_CTRL" && "{*,C} w[] {round([{*,w,h}]/1.5)} skip {*,-C} rmn baseview # Decrease window size
+      elif $is_CTRL" && "{*,D}" && "{*,d}<{*,u}" && "{*,e}<{*,v} # Increase window size
+        w[] {round([{*,w,h}]*1.25)}
+        notification="Increase Window Size"
+        skip {*,-D} rmn baseview
+      elif $is_CTRL" && "{*,C}" && "{*,d}>64" && "{*,e}>64 # Decrease window size
+        w[] {round([{*,w,h}]/1.25)}
+        notification="Decrease Window Size"
+        skip {*,-C} rmn baseview
       elif $is_CTRL" && "{*,R} # Reset window size (and view)
         nposx,nposy,nsizx,nsizy={0,[0,0,w,h]}
         w[] ${fitscreen\ [0]}
+        notification="Reset Window Size"
         skip {*,-R} rmn baseview
       fi
 
