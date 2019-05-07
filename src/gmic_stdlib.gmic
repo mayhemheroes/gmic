@@ -2087,12 +2087,12 @@ _display2d :
         if $nsizx>w#0" || "$nsizy>h#0 nsizx,nsizy={0,[w,h]} fi
         w[] {*,d,e}
         wait -1 rmn baseview
-      elif $is_CTRL" && "{*,D} w[] {round([{*,w,h}]*1.5)} wait -1 rmn baseview # Increase window size
-      elif $is_CTRL" && "{*,C} w[] {round([{*,w,h}]/1.5)} wait -1 rmn baseview # Decrease window size
+      elif $is_CTRL" && "{*,D} w[] {round([{*,w,h}]*1.5)} skip {*,-D} rmn baseview # Increase window size
+      elif $is_CTRL" && "{*,C} w[] {round([{*,w,h}]/1.5)} skip {*,-C} rmn baseview # Decrease window size
       elif $is_CTRL" && "{*,R} # Reset window size (and view)
         nposx,nposy,nsizx,nsizy={0,[0,0,w,h]}
-        w[] ${fitscreen\ [0]}
-        wait -1 rmn baseview
+        w[] ${fitscreen\ [0]} skip {*,-R}
+        rmn baseview
       fi
 
       # Events related to image displacement and mode changes.
@@ -2100,18 +2100,18 @@ _display2d :
       elif {*,ARROWRIGHT} nposx+={$nsizx/($is_CTRL?4:16)} # Go right
       elif {*,ARROWUP} nposy-={$nsizy/($is_CTRL?4:16)} # Go up
       elif {*,ARROWDOWN} nposy+={$nsizy/($is_CTRL?4:16)} # Go down
-      elif {*,-SPACE} # Center view
+      elif !$is_CTRL" && "{*,-SPACE} # Center view
         nposx,nposy,nsizx,nsizy={0,[0,0,w,h]}
         notification="Center View"
-      elif {*,-N} # Change normalization mode
+      elif !$is_CTRL" && "{*,-N} # Change normalization mode
         normalization_mode={($normalization_mode+1)%3}
         notification=${"s0=Disable s1=Enable s2=\"Enable C.by.C\" u ${s"$normalization_mode"}"}" Normalization"
         rmn baseview
-      elif {*,-A} # Toggle alpha mode
+      elif !$is_CTRL" && "{*,-A} # Toggle alpha mode
         alpha_mode={!$alpha_mode}
         notification=${"s0=Disable s1=Enable u ${s"$alpha_mode"}"}" Alpha"
         rmn baseview
-      elif {*,-R} # Toggle aspect-ratio mode
+      elif !$is_CTRL" && "{*,-R} # Toggle aspect-ratio mode
         ratio_mode={!$ratio_mode}
         notification=${"s0=Release s1=Hold u ${s"$ratio_mode"}"}" Aspect Ratio"
         nposx,nposy,nsizx,nsizy={0,[0,0,w,h]}
