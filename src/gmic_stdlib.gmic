@@ -2033,7 +2033,7 @@ _display2d :
         if !isnum($notification) # Create notification gfx
           rmn notification_gfx
           0 t. {``$notification},0,0,16,1,255
-          r. {[w,h]+8},1,1,0,0,0.5,0.5 rectangle. 0,0,100%,100%,1,0xFFFFFFFF,255 to_rgb.
+          r. {[w+12,h+8]},1,1,0,0,0.5,0.5 rectangle. 0,0,100%,100%,1,0xFFFFFFFF,255 to_rgb.
           nm. notification_gfx
           notification=$|
         elif isnum($notification)
@@ -2048,7 +2048,6 @@ _display2d :
         if $mx>=0
           posmx,posmy={floor([$posx,$posy]+[$mx,$my]*[$sizx,$sizy]/[{*,w,h}])}
           if $posmx>=0" && "$posmx<w#0" && "$posmy>=0" && "$posmy<h#0
-
             0 t. "Point ("$posmx","$posmy") = [ "${d2d_repcommas\ {0,_I($posmx,$posmy)}}" ]",1,0,13,1,1 +dilate. 3
             +f. 64 +f. 0 j.. .,0,0,0,0,1,... rm[-3,-1] +f. 255 j.. .,0,0,0,0,1,... rm[-3,-1] r. 100%,100%,1,..
             j.. .,0,{$is_bottom_text?h#-2-h#-1:0},0,0,0.85
@@ -2102,19 +2101,25 @@ _display2d :
       elif {*,ARROWRIGHT} nposx+={$nsizx/($is_CTRL?4:16)} # Go right
       elif {*,ARROWUP} nposy-={$nsizy/($is_CTRL?4:16)} # Go up
       elif {*,ARROWDOWN} nposy+={$nsizy/($is_CTRL?4:16)} # Go down
-      elif !$is_CTRL" && "{*,SPACE} # Center view
+      elif $is_CTRL" && "{*,O} # Save copy
+        notification="Save Copy"
+        skip {*,-O}
+      elif $is_CTRL" && "{*,S} # Save screenshot
+        notification="Save Screenshot"
+        skip {*,-S}
+      elif $is_CTRL" && "{*,SPACE} # Center view
         nposx,nposy,nsizx,nsizy={0,[0,0,w,h]}
         notification="Center View"
         skip {*,-SPACE}
-      elif !$is_CTRL" && "{*,N} # Change normalization mode
+      elif $is_CTRL" && "{*,N} # Change normalization mode
         normalization_mode={($normalization_mode+1)%3}
         notification=${"s0=Disable s1=Enable s2=\"Enable C.by.C\" u ${s"$normalization_mode"}"}" Normalization"
         skip {*,-N} rmn baseview
-      elif !$is_CTRL" && "{*,A} # Toggle alpha mode
+      elif $is_CTRL" && "{*,A} # Toggle alpha mode
         alpha_mode={!$alpha_mode}
         notification=${"s0=Disable s1=Enable u ${s"$alpha_mode"}"}" Alpha"
         skip {*,-A} rmn baseview
-      elif !$is_CTRL" && "{*,R} # Toggle aspect-ratio mode
+      elif $is_CTRL" && "{*,R} # Toggle aspect-ratio mode
         ratio_mode={!$ratio_mode}
         notification=${"s0=Release s1=Hold u ${s"$ratio_mode"}"}" Aspect Ratio"
         if !$ratio_mode nposx,nposy,nsizx,nsizy={0,[0,0,w,h]} fi
@@ -40430,8 +40435,8 @@ fx_circle_art :
   # Convert to 3D object.
   l.
     transpose s x,-1 h={h}
-    i[0] ({'CImg3d'},{2*$h},$h)  # Header.
-    ++... . -[-4,-2] i .. i[-3,-1] 1,100% a[-6--1] x  # Vertices.
+    i[0] ({'CImg3d'},{2*$h},$h) # Header.
+    ++... . -[-4,-2] i .. i[-3,-1] 1,100% a[-6--1] x # Vertices.
     1,$h,1,1,5 1,$h,1,1,2*y ++. 1 a[-3--1] x z. 0,5 # Primitives.
     3,$h,1,1,1 1,$h,1,1,-1 y a y # Colors + Opacities.
   endl
