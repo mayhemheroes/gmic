@@ -172,7 +172,7 @@ MANDATORY_CFLAGS += -std=c++11 -pedantic
 endif
 MANDATORY_LIBS += -L$(USR)/$(LIB)
 ifdef IS_GCC
-MANDATORY_CFLAGS += -Wall -Wextra -Wfatal-errors -Werror=unknown-pragmas -Werror=unused-label -Wshadow
+MANDATORY_CFLAGS += -Wall -Wextra -Wfatal-errors -Werror=unknown-pragmas -Werror=unused-label
 MANDATORY_LIBS += -lm
 endif
 ifeq ($(OS),Unix)
