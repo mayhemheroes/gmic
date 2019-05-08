@@ -2105,10 +2105,10 @@ _display2d :
       fi
 
       # Events related to image displacement and mode changes.
-      if {*,ARROWLEFT} nposx-={$nsizx/($is_CTRL?4:16)} # Go left
-      elif {*,ARROWRIGHT} nposx+={$nsizx/($is_CTRL?4:16)} # Go right
-      elif {*,ARROWUP} nposy-={$nsizy/($is_CTRL?4:16)} # Go up
-      elif {*,ARROWDOWN} nposy+={$nsizy/($is_CTRL?4:16)} # Go down
+      if {*,ARROWLEFT} nposx-={$nsizx/($is_CTRL?4:16)} xzoom,yzoom= # Go left
+      elif {*,ARROWRIGHT} nposx+={$nsizx/($is_CTRL?4:16)} xzoom,yzoom= # Go right
+      elif {*,ARROWUP} nposy-={$nsizy/($is_CTRL?4:16)} xzoom,yzoom= # Go up
+      elif {*,ARROWDOWN} nposy+={$nsizy/($is_CTRL?4:16)} xzoom,yzoom= # Go down
       elif $is_CTRL" && "{*,O} # Save copy
         n=0 do filename gmic.gmz,$n n+=1 while isfile(['{/${}}']) o[0] ${}
         notification="Save Copy:\n"${}
@@ -2140,17 +2140,21 @@ _display2d :
         nposx,nposy={shiftx=($mx-$pan_mx)*$nsizx/{*,w};\
                      shifty=($my-$pan_my)*$nsizy/{*,h};\
                      [$pan_posx-shiftx,$pan_posy-shifty]}
+        xzoom,yzoom=
 
       elif $nsizx<w#0" && "$nsizy<h#0" && "({*,PADSUB}" || "($mx>=0" && "$mo<0)) # Zoom out
-        xc,yc={X=[$nposx,$nposy]+[$nsizx,$nsizy]/2;\
-               [max(0,min(X[0],w#0-1)),max(0,min(X[1],h#0-1))]}
-        nposx,nposy,nsizx,nsizy={[[$xc,$yc]+1/0.75*[$nposx-$xc,$nposy-$yc],round(1/0.75*[$nsizx,$nsizy])]}
+        if !narg($xzoom)
+          xzoom,yzoom={X=$mx<0?[$nposx,$nposy]+[$nsizx,$nsizy]/2:\
+                         [$nposx,$nposy]+[$mx,$my]*[$nsizx,$nsizy]/[{*,w,h}];\
+                 [max(0,min(X[0],w#0-1)),max(0,min(X[1],h#0-1))]}
+        fi
+        nposx,nposy,nsizx,nsizy={[[$xzoom,$yzoom]+[$nposx-$xzoom,$nposy-$yzoom]/0.75,round([$nsizx,$nsizy]/0.75)]}
 
       elif $nsizx>2" && "$nsizy>2" && "({*,PADADD}" || "($mx>=0" && "$mo>0)) # Zoom in
-        xc,yc={X=$mx<0?[$nposx,$nposy]+[$nsizx,$nsizy]/2:\
+        xzoom,yzoom={X=$mx<0?[$nposx,$nposy]+[$nsizx,$nsizy]/2:\
                        [$nposx,$nposy]+[$mx,$my]*[$nsizx,$nsizy]/[{*,w,h}];\
                [max(0,min(X[0],w#0-1)),max(0,min(X[1],h#0-1))]}
-        nposx,nposy,nsizx,nsizy={[[$xc,$yc]+0.75*[$nposx-$xc,$nposy-$yc],round(0.75*[$nsizx,$nsizy])]}
+        nposx,nposy,nsizx,nsizy={[[$xzoom,$yzoom]+0.75*[$nposx-$xzoom,$nposy-$yzoom],round(0.75*[$nsizx,$nsizy])]}
 
       elif !$mb pan_mx,pan_my,pan_posx,pan_posy=
       fi
