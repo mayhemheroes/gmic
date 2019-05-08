@@ -294,7 +294,7 @@ struct gmic {
                              const gmic_list<T>& images);
 
   gmic& print(const char *format, ...);
-  gmic& error(const char *format, ...);
+  gmic& error(const bool output_header, const char *format, ...);
   gmic& debug(const char *format, ...);
 
   template<typename T>
@@ -317,7 +317,8 @@ struct gmic {
              const bool force_visible, const char *format, ...);
 
   template<typename T>
-  gmic& error(const gmic_list<T>& list, const gmic_image<unsigned int> *const callstack_selection,
+  gmic& error(const bool output_header, const gmic_list<T>& list,
+              const gmic_image<unsigned int> *const callstack_selection,
 	      const char *const command, const char *format, ...);
 
   template<typename T>
