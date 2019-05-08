@@ -9710,7 +9710,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             // Check for possible exceptions thrown by threads.
             cimg_forY(_gmic_threads,l) if (_gmic_threads[l].exception._message)
               throw _gmic_threads[l].exception;
-
             gmic_threads.remove();
           }
 
@@ -14051,7 +14050,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
   } catch (gmic_exception &e) {
     // Wait for remaining threads to finish.
     cimglist_for(gmic_threads,k) wait_threads(&gmic_threads[k],true,(T)0);
-    throw;
+    const char *p = e.what(), *np = std::strstr(p,"*** ");
+    while (np) { p = np + 4; np = std::strstr(p,"*** "); }
+    error(images,0,e.command_help(),"%s",p);
 
   } catch (CImgAbortException &) { // Special case of abort (abort from a CImg method)
     // Wait for remaining threads to finish.
