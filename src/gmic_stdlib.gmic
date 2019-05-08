@@ -2142,11 +2142,14 @@ _display2d :
                      [$pan_posx-shiftx,$pan_posy-shifty]}
 
       elif $nsizx<w#0" && "$nsizy<h#0" && "({*,PADSUB}" || "($mx>=0" && "$mo<0)) # Zoom out
-        xc,yc={[$nposx,$nposy]+[$nsizx,$nsizy]/2}
+        xc,yc={X=[$nposx,$nposy]+[$nsizx,$nsizy]/2;\
+               [max(0,min(X[0],w#0-1)),max(0,min(X[1],h#0-1))]}
         nposx,nposy,nsizx,nsizy={[[$xc,$yc]+1/0.75*[$nposx-$xc,$nposy-$yc],round(1/0.75*[$nsizx,$nsizy])]}
 
       elif $nsizx>2" && "$nsizy>2" && "({*,PADADD}" || "($mx>=0" && "$mo>0)) # Zoom in
-        xc,yc={$mx<0?[$nposx,$nposy]+[$nsizx,$nsizy]/2:[$nposx,$nposy]+[$mx,$my]*[$nsizx,$nsizy]/[{*,w,h}]}
+        xc,yc={X=$mx<0?[$nposx,$nposy]+[$nsizx,$nsizy]/2:\
+                       [$nposx,$nposy]+[$mx,$my]*[$nsizx,$nsizy]/[{*,w,h}];\
+               [max(0,min(X[0],w#0-1)),max(0,min(X[1],h#0-1))]}
         nposx,nposy,nsizx,nsizy={[[$xc,$yc]+0.75*[$nposx-$xc,$nposy-$yc],round(0.75*[$nsizx,$nsizy])]}
 
       elif !$mb pan_mx,pan_my,pan_posx,pan_posy=
