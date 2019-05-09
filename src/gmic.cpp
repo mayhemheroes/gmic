@@ -14034,8 +14034,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           if (lselection) display_images(images,images_names,lselection>'y',0,false);
         } else {
           if (lselection) {
-            if (images.size()==1) _run(commands_line_to_CImgList("l cli_display onfail d endl"),images,images_names,progress,is_abort);
-            else display_images(images,images_names,lselection>'y',0,false);
+            //            if (images.size()==1) _run(commands_line_to_CImgList("l cli_display onfail d endl"),images,images_names,progress,is_abort); else
+            display_images(images,images_names,lselection>'y',0,false);
           }
           if (lselection3d) display_objects3d(images,images_names,lselection3d>'y',CImg<unsigned char>::empty(),false);
         }
