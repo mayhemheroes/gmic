@@ -2012,7 +2012,7 @@ _display2d :
       iposx,iposy={floor([$posx,$posy])}
 
       # Correct aspect ratio.
-      if $ratio_mode if {*,w}>{*,h} sizy={round($sizx*{*,h}/{*,w})} else sizx={round($sizy*{*,w}/{*,h})} fi fi
+      if $ratio_mode if {*,w}<{*,h} sizy={round($sizx*{*,h}/{*,w})} else sizx={round($sizy*{*,w}/{*,h})} fi fi
 
       # Generate baseview.
       if !narg($baseview)
@@ -2145,7 +2145,7 @@ _display2d :
       fi
 
       # Events related to image selection.
-      if !$is_CTRL" && "$mb==1" && "$mx>0
+      if !$is_CTRL" && "$mb&1" && "$mx>0
         xsel1,ysel1={X=[$nposx,$nposy]+[$mx,$my]*[$nsizx,$nsizy]/[{*,w,h}];\
                      floor([max(0,min(X[0],w#0-1)),max(0,min(X[1],h#0-1))])}
         if !narg($xsel0) xsel0,ysel0=$xsel1,$ysel1 fi
@@ -2156,9 +2156,9 @@ _display2d :
         elif $my>{*,h}-17 nposy+={$nsizx/64} wait_event=0 xzoom,yzoom=
         fi
         rmn view
-      elif $mb!=1
+      elif !($mb&1)
         if narg($xsel0)
-          if norm([$xsel0,$ysel0]-[$xsel1,$ysel1])<2 nposx,nposy,nsizx,nsizy={0,[0,0,w,h]} notification="Center View"
+          if norm([$xsel0,$ysel0]-[$xsel1,$ysel1])<2 nposx,nposy,nsizx,nsizy={0,[0,0,w,h]}
           else nposx,nposy,nsizx,nsizy={[min($xsel0,$xsel1),min($ysel0,$ysel1),abs([$xsel1-$xsel0,$ysel1-$ysel0])+1]}
           fi
           xzoom,yzoom=
