@@ -1994,6 +1994,7 @@ d2d :
 #@cli : - CTRL + A: Enable/disable transparency (show/hide alpha channel).
 #@cli : - CTRL + C: Decrease window size.
 #@cli : - CTRL + D: Increase window size.
+#@cli : - CTRL + F: Toggle fullscreen.
 #@cli : - CTRL + N: Change normalization mode (can be 'none' | 'normal' | 'channel-by-channel').
 #@cli : - CTRL + O: Save a copy of the input image, as a numbered file 'gmic_xxxxxx.gmz'.
 #@cli : - CTRL + R: Reset both window size and view.
@@ -2015,7 +2016,7 @@ _display2d :
 
   repeat $! l[$>] nm={b}
     posx,posy,sizx,sizy={0,[0,0,w,h]}
-    alpha_mode,axes_mode,normalization_mode,ratio_mode=0,1,1,1
+    alpha_mode,axes_mode,fullscreen_mode,normalization_mode,ratio_mode=0,1,0,1,1
     is_bottom_text,wait_event,mx,my=0,1,-1,-1
     xsel0,ysel0,xsel1,ysel1=
     notification=
@@ -2225,6 +2226,11 @@ _display2d :
         alpha_mode={!$alpha_mode}
         notification=${"s0=Disable s1=Enable u ${s"$alpha_mode"}"}" Alpha"
         skip {*,-A} rmn baseview
+      elif $is_CTRL" && "{*,F} # Toggle fullscreen mode
+        fullscreen_mode={!$fullscreen_mode}
+        if $fullscreen_mode fullscreen_presize={*,w,h} w[] {*,u,v},0,1 else w[] $fullscreen_presize,0,0 fi
+        notification=${"s0=Disable s1=Enable u ${s"$fullscreen_mode"}"}" Fullscreen"
+        skip {*,-F} rmn baseview
       elif $is_CTRL" && "{*,X} # Toggle axes mode
         cursor[0] $axes_mode axes_mode={!$axes_mode}
         notification=${"s0=Hide s1=Show u ${s"$axes_mode"}"}" Axes"
