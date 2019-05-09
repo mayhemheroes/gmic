@@ -2069,7 +2069,7 @@ _display2d :
         wait_event=0
         if !isnum($notification) # Create notification gfx
           rmn notification_gfx
-          0 t. {``$notification},0,0,16,1,255
+          0 t. {``$notification},0,0,20,1,255
           r. {[w+12,h+8]},1,1,0,0,0.5,0.5 rectangle. 0,0,100%,100%,1,0xFFFFFFFF,255 to_rgb.
           nm. notification_gfx
           notification=$|
@@ -2087,24 +2087,20 @@ _display2d :
 
           if narg($xsel0)
             dselx,dsely={[$xsel1-$xsel0,$ysel1-$ysel0]}
-            0 t. "Box ( "{``{[min($xsel0,$xsel1),min($ysel0,$ysel1)]}}" ) - "\
-                     "( "{``{[max($xsel0,$xsel1),max($ysel0,$ysel1)]}}" )\n"\
-                     "Size = ( "{``{abs([$dselx,$dsely]+1)}}" ), "\
-                     "Length = "{_norm($dselx,$dsely)}"\n"\
-                     "Angle = "{_atan2($dsely,$dselx)*180/pi}"\260",1,0,16,1,1
-            +dilate. 3 +f. 64 +f. 0 j.. .,0,0,0,0,1,... rm[-3,-1] +f. 255 j.. .,0,0,0,0,1,...
-            rm[-3,-1] r. 100%,100%,1,..
-            j.. .,0,{$is_bottom_text?h#-2-h#-1:0},0,0,0.85
-            rm.
+            0 t. " Box ( "{``{[min($xsel0,$xsel1),min($ysel0,$ysel1)]}}" ) - "\
+                     "( "{``{[max($xsel0,$xsel1),max($ysel0,$ysel1)]}}" ) \n"\
+                     " Size = ( "{``{abs([$dselx,$dsely]+1)}}" ), "\
+                     "Length = "{_norm($dselx,$dsely)}" \n"\
+                     " Angle = "{_atan2($dsely,$dselx)*180/pi}"\260 ",1,0,14,1,1
+            n. 0,255 +dilate. 3 *. -1 n. 0,80 +[-2,-1] r. 100%,100%,1,..
+            j.. .,0,{$is_bottom_text?h#-2-h#-1:0},0,0,0.85 rm.
           fi
 
           if $posmx>=0" && "$posmx<w#0" && "$posmy>=0" && "$posmy<h#0
             if !narg($xsel0)
-              0 t. "Point ( "$posmx","$posmy" ) = [ "${_d2d_format\ {0,_I($posmx,$posmy)}}" ]",1,0,16,1,1
-              +dilate. 3 +f. 64 +f. 0 j.. .,0,0,0,0,1,... rm[-3,-1] +f. 255 j.. .,0,0,0,0,1,...
-              rm[-3,-1] r. 100%,100%,1,..
-              j.. .,0,{$is_bottom_text?h#-2-h#-1:0},0,0,0.85
-              rm.
+              0 t. " Point ( "$posmx","$posmy" ) = [ "${_d2d_format\ {0,_I($posmx,$posmy)}}" ] ",1,0,14,1,1
+              n. 0,255 +dilate. 3 *. -1 n. 0,80 +[-2,-1] r. 100%,100%,1,..
+              j.. .,0,{$is_bottom_text?h#-2-h#-1:0},0,0,0.85 rm.
             fi
             x0,y0,x1,y1={[round([$posmx-$posx,$posmy-$posy]*[{*,w,h}]/[$sizx,$sizy]),\
                           round([$posmx-$posx+1,$posmy-$posy+1]*[{*,w,h}]/[$sizx,$sizy])-1]}
