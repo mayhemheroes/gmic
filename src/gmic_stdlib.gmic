@@ -2012,12 +2012,12 @@ _display2d :
       iposx,iposy={floor([$posx,$posy])}
 
       # Correct aspect ratio.
-      if $ratio_mode if {*,w}<{*,h} sizy={round($sizx*{*,h}/{*,w})} else sizx={round($sizy*{*,w}/{*,h})} fi fi
+      if $ratio_mode if {*,w}>{*,h} sizy={round($sizx*{*,h}/{*,w})} else sizx={round($sizy*{*,w}/{*,h})} fi fi
 
       # Generate baseview.
       if !narg($baseview)
-        if $alpha_mode +to_a[0] else sh[0] fi
-        +z. {[$iposx,$iposy,0,0,$iposx+$sizx,$iposy+$sizy,0,s>=4&&$alpha_mode?3:min(s-1,2)]} rm..
+        +z[0] {[$iposx,$iposy,0,0,$iposx+$sizx,$iposy+$sizy,0,s#0>=4&&$alpha_mode?3:min(s-1,2)]}
+        if $alpha_mode" && "s!=4" && "s!=2 100%,100% rectangle. {A=-[$iposx,$iposy];[A,A+[w#0,h#0]-1]},1,255 a[-2,-1] c fi
         if $normalization_mode==1 sh. 0,{s-($alpha_mode?2:1)} n. 0,255 rm.
         elif $normalization_mode==2 l. s c if $alpha_mode sel=^-1 else sel=^ fi n[$sel] 0,255 a c endl
         fi
@@ -2060,7 +2060,7 @@ _display2d :
             0 t. "Box ( "{``{[min($xsel0,$xsel1),min($ysel0,$ysel1)]}}" ) - "\
                      "( "{``{[max($xsel0,$xsel1),max($ysel0,$ysel1)]}}" )\n"\
                      "Size = ( "{``{abs([$xsel1-$xsel0+1,$ysel1-$ysel0+1])}}" ), "\
-                     "Length = "{_norm($xsel1-$xsel0,$ysel1-$ysel0)}"\n"\
+                     "Length = "{_norm($xsel1-$xsel0+1,$ysel1-$ysel0+1)}"\n"\
                      "Angle = "{_atan2($ysel1-$ysel0,$xsel1-$xsel0)*180/pi}"\260",1,0,16,1,1
             +dilate. 3 +f. 64 +f. 0 j.. .,0,0,0,0,1,... rm[-3,-1] +f. 255 j.. .,0,0,0,0,1,...
             rm[-3,-1] r. 100%,100%,1,..
@@ -2084,7 +2084,6 @@ _display2d :
             fi
           fi
 
-
           line. $mx,0,$mx,100%,0.5,0xFF00FF00,255 # Draw horizontal/vertical axes
           line. $mx,0,$mx,100%,0.5,0x00FF00FF,0
           line. 0,$my,100%,$my,0.5,0xFF00FF00,255
@@ -2101,8 +2100,8 @@ _display2d :
           rectangle. $x0,$y0,$x1,$y1,1,0xAAAAAAAA,255
           if $xsel0>$xsel1 x0,x1=$x1,$x0 fi
           if $ysel0>$ysel1 y0,y1=$y1,$y0 fi
-          line. $x0,$y0,$x1,$y1,1,0x55555555,0
-          line. $x0,$y0,$x1,$y1,1,0xAAAAAAAA,255
+          line. $x0,$y0,$x1,$y1,1,0x33333333,0
+          line. $x0,$y0,$x1,$y1,1,0xCCCCCCCC,255
         fi
 
         if $notification_gfx
@@ -2158,7 +2157,7 @@ _display2d :
         rmn view
       elif !($mb&1)
         if narg($xsel0)
-          if norm([$xsel0,$ysel0]-[$xsel1,$ysel1])<2 nposx,nposy,nsizx,nsizy={0,[0,0,w,h]}
+          if min(abs([$xsel1-$xsel0,$ysel1-$ysel0]))<2 nposx,nposy,nsizx,nsizy={0,[0,0,w,h]}
           else nposx,nposy,nsizx,nsizy={[min($xsel0,$xsel1),min($ysel0,$ysel1),abs([$xsel1-$xsel0,$ysel1-$ysel0])+1]}
           fi
           xzoom,yzoom=
@@ -2197,7 +2196,7 @@ _display2d :
         notification=${"s0=Release s1=Hold u ${s"$ratio_mode"}"}" Aspect Ratio"
         if !$ratio_mode nposx,nposy,nsizx,nsizy={0,[0,0,w,h]} fi
         skip {*,-Z} rmn baseview
-      elif $mx>=0" && "($mb==4" || "($is_CTRL" && "$mb==1)) # Pan (middle mouse button)
+      elif $mx>=0" && "($mb&4" || "($is_CTRL" && "$mb&1)) # Pan (middle mouse button)
         if !narg($pan_mx) pan_mx,pan_my,pan_posx,pan_posy=$mx,$my,$posx,$posy fi
         nposx,nposy={shiftx=($mx-$pan_mx)*$nsizx/{*,w};\
                      shifty=($my-$pan_my)*$nsizy/{*,h};\
