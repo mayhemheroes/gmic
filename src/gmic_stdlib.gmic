@@ -2000,12 +2000,12 @@ _display2d :
 
   repeat $! l[$>] nm={b}
     posx,posy,sizx,sizy={0,[0,0,w,h]}
-    alpha_mode,axis_mode,normalization_mode,ratio_mode=0,0,1,1
+    alpha_mode,axes_mode,normalization_mode,ratio_mode=0,1,1,1
     is_bottom_text,wait_event,mx,my=0,1,-1,-1
     xsel0,ysel0,xsel1,ysel1=
     notification=
     wsiz0=${fitscreen\ .,40%,85%}
-    w[] $wsiz0,0,$nm" ("{w}x{h}x{d}x{s}")" cursor 0
+    w[] $wsiz0,0,$nm" ("{w}x{h}x{d}x{s}")" cursor[0] 0
 
     # Start event loop.
     for {*}" && "!{*,ESC}
@@ -2098,10 +2098,12 @@ _display2d :
             fi
           fi
 
-          line. $mx,0,$mx,100%,0.5,0xFF00FF00,255 # Draw horizontal/vertical axes
-          line. $mx,0,$mx,100%,0.5,0x00FF00FF,0
-          line. 0,$my,100%,$my,0.5,0xFF00FF00,255
-          line. 0,$my,100%,$my,0.5,0x00FF00FF,0
+          if $axes_mode
+            line. $mx,0,$mx,100%,0.5,0xFF00FF00,255 # Draw horizontal/vertical axes
+            line. $mx,0,$mx,100%,0.5,0x00FF00FF,0
+            line. 0,$my,100%,$my,0.5,0xFF00FF00,255
+            line. 0,$my,100%,$my,0.5,0x00FF00FF,0
+          fi
         fi
 
         if narg($xsel0) # Draw rectangular selection
@@ -2208,6 +2210,10 @@ _display2d :
         alpha_mode={!$alpha_mode}
         notification=${"s0=Disable s1=Enable u ${s"$alpha_mode"}"}" Alpha"
         skip {*,-A} rmn baseview
+      elif $is_CTRL" && "{*,X} # Toggle axes mode
+        cursor[0] $axes_mode axes_mode={!$axes_mode}
+        notification=${"s0=Hide s1=Show u ${s"$axes_mode"}"}" Axes"
+        skip {*,-X} rmn view
       elif $is_CTRL" && "{*,Z} # Toggle aspect-ratio mode
         ratio_mode={!$ratio_mode}
         notification=${"s0=Release s1=Hold u ${s"$ratio_mode"}"}" Aspect Ratio"
