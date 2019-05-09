@@ -2066,11 +2066,12 @@ _display2d :
           posmx,posmy={floor([$posx,$posy]+[$mx,$my]*[$sizx,$sizy]/[{*,w,h}])}
 
           if narg($xsel0)
+            dselx,dsely={[$xsel1-$xsel0,$ysel1-$ysel0]}
             0 t. "Box ( "{``{[min($xsel0,$xsel1),min($ysel0,$ysel1)]}}" ) - "\
                      "( "{``{[max($xsel0,$xsel1),max($ysel0,$ysel1)]}}" )\n"\
-                     "Size = ( "{``{abs([$xsel1-$xsel0+1,$ysel1-$ysel0+1])}}" ), "\
-                     "Length = "{_norm($xsel1-$xsel0+1,$ysel1-$ysel0+1)}"\n"\
-                     "Angle = "{_atan2($ysel1-$ysel0,$xsel1-$xsel0)*180/pi}"\260",1,0,16,1,1
+                     "Size = ( "{``{abs([$dselx,$dsely]+1)}}" ), "\
+                     "Length = "{_norm($dselx,$dsely)}"\n"\
+                     "Angle = "{_atan2($dsely,$dselx)*180/pi}"\260",1,0,16,1,1
             +dilate. 3 +f. 64 +f. 0 j.. .,0,0,0,0,1,... rm[-3,-1] +f. 255 j.. .,0,0,0,0,1,...
             rm[-3,-1] r. 100%,100%,1,..
             j.. .,0,{$is_bottom_text?h#-2-h#-1:0},0,0,0.85
@@ -2109,8 +2110,12 @@ _display2d :
           rectangle. $x0,$y0,$x1,$y1,1,0xAAAAAAAA,255
           if $xsel0>$xsel1 x0,x1=$x1,$x0 fi
           if $ysel0>$ysel1 y0,y1=$y1,$y0 fi
-          line. $x0,$y0,$x1,$y1,1,0x33333333,0
-          line. $x0,$y0,$x1,$y1,1,0xCCCCCCCC,255
+          if $xsel0!=$xsel1" && "$ysel0!=$ysel1
+            x0,y0,x1,y1={[(0.5+[$xsel0-$posx,$ysel0-$posy])*[{*,w,h}]/[$sizx,$sizy],\
+                          (0.5+[$xsel1-$posx,$ysel1-$posy])*[{*,w,h}]/[$sizx,$sizy]]}
+            line. $x0,$y0,$x1,$y1,1,0x33333333,0
+            line. $x0,$y0,$x1,$y1,1,0xCCCCCCCC,255
+          fi
         fi
 
         if $notification_gfx
