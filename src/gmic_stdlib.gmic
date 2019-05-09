@@ -1999,6 +1999,7 @@ _display2d :
     alpha_mode,normalization_mode,ratio_mode=0,1,1
     is_bottom_text=0
     notification=
+    wait_event=1
     mx,my=-1
 
     xsel0,ysel0,xsel1,ysel1=
@@ -2036,6 +2037,7 @@ _display2d :
 
       # Manage notifications.
       if narg($notification)
+        wait_event=0
         if !isnum($notification) # Create notification gfx
           rmn notification_gfx
           0 t. {``$notification},0,0,16,1,255
@@ -2043,7 +2045,7 @@ _display2d :
           nm. notification_gfx
           notification=$|
         elif isnum($notification)
-          if $|>$notification+1 rm[notification_gfx] notification= fi
+          if $|>$notification+1 rm[notification_gfx] wait_event=1 notification= fi
           rmn view
         fi
       fi
@@ -2092,7 +2094,9 @@ _display2d :
       fi
 
       # Manage user events.
-      if narg($notification) wait 40 else wait fi
+      if $wait_event wait else wait 40 fi
+      wait_event=1
+
       old_mx,old_my=$mx,$my
       nposx,nposy,nsizx,nsizy=$posx,$posy,$sizx,$sizy
       is_CTRL,mb,mx,my,mo={{*,CTRLLEFT}" || "{*,CTRLRIGHT}},{*,b,x,y,-o}
@@ -2123,10 +2127,16 @@ _display2d :
       fi
 
       # Events related to image selection.
-      if !$is_CTRL" && "$mb==1
+      if !$is_CTRL" && "$mb==1" && "$mx>0
         xsel1,ysel1={X=[$nposx,$nposy]+[$mx,$my]*[$nsizx,$nsizy]/[{*,w,h}];\
                      floor([max(0,min(X[0],w#0-1)),max(0,min(X[1],h#0-1))])}
         if !narg($xsel0) xsel0,ysel0=$xsel1,$ysel1 fi
+        if $mx<=16 nposx-={$nsizx/64} wait_event=0 xzoom,yzoom=
+        elif $mx>={*,w}-17 nposx+={$nsizx/64} wait_event=0 xzoom,yzoom=
+        fi
+        if $my<=16 nposy-={$nsizy/64} wait_event=0 xzoom,yzoom=
+        elif $my>{*,h}-17 nposy+={$nsizx/64} wait_event=0 xzoom,yzoom=
+        fi
         rmn view
       elif
         $mb!=1 xsel0,ysel0,xsel1,ysel1=
