@@ -2056,7 +2056,7 @@ _display2d :
         z. {shift=[$posx-$iposx,$posy-$iposy]*[$cellsizx,$cellsizy];floor([shift,shift+[{*,w,h}]-1])}
 
         if $alpha_mode
-          (128,160;160,128) r. 32,32,1,3 r. ..,..,1,100%,0,2,0.5,0.5 sh.. 100% j.. ...,0,0,0,0,1,.,255 rm[-3,-1]
+          (128,160;160,128) r. 32,32,1,{-2,s-1} r. ..,..,1,100%,0,2,0.5,0.5 sh.. 100% j.. ...,0,0,0,0,1,.,255 rm[-3,-1]
         elif s==1 r. 100%,100%,1,3
         elif s==2 r. 100%,100%,1,3,0
         fi
@@ -2192,8 +2192,10 @@ _display2d :
         rmn view
       elif !($mb&1)
         if narg($xsel0)
-          if [$xsel0,$ysel0]==[$xsel1,$ysel1] nposx,nposy,nsizx,nsizy={0,[0,0,w,h]} # One px selection -> reset view
-          else nposx,nposy,nsizx,nsizy={[min($xsel0,$xsel1),min($ysel0,$ysel1),abs([$xsel1-$xsel0,$ysel1-$ysel0])+1]} # Otherwise, zoom in
+          if [$xsel0,$ysel0]==[$xsel1,$ysel1] # One px selection -> reset view
+            nposx,nposy,nsizx,nsizy={0,[0,0,w,h]}
+          else # Otherwise, zoom in
+            nposx,nposy,nsizx,nsizy={[min($xsel0,$xsel1),min($ysel0,$ysel1),abs([$xsel1-$xsel0,$ysel1-$ysel0])+1]}
           fi
           xzoom,yzoom=
           rmn view
