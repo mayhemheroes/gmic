@@ -2192,32 +2192,6 @@ _display2d :
         skip {*,-R} rmn baseview
       fi
 
-      # Events related to image selection.
-      if !$is_CTRL" && "$mb&1" && "$mx>0
-        xsel1,ysel1={X=[$nposx,$nposy]+[$mx,$my]*[$nsizx,$nsizy]/[{*,w,h}];\
-                     floor([max(0,min(X[0],w#0-1)),max(0,min(X[1],h#0-1))])}
-        if !narg($xsel0) xsel0,ysel0=$xsel1,$ysel1 fi
-        if $mx<=16 nposx-={$nsizx/64} wait_event=0 xzoom,yzoom=
-        elif $mx>={*,w}-17 nposx+={$nsizx/64} wait_event=0 xzoom,yzoom=
-        fi
-        if $my<=16 nposy-={$nsizy/64} wait_event=0 xzoom,yzoom=
-        elif $my>{*,h}-17 nposy+={$nsizx/64} wait_event=0 xzoom,yzoom=
-        fi
-        rmn view
-      elif !($mb&1)
-        if narg($xsel0)
-          if [$xsel0,$ysel0]==[$xsel1,$ysel1] # One px selection -> reset view or exit.
-            if narg($exit_on_single_click)" && "$nsizx>=w#0" && "$nsizy>=h#0 break fi
-            nposx,nposy,nsizx,nsizy={0,[0,0,w,h]}
-          else # Otherwise, zoom in
-            nposx,nposy,nsizx,nsizy={[min($xsel0,$xsel1),min($ysel0,$ysel1),abs([$xsel1-$xsel0,$ysel1-$ysel0])+1]}
-          fi
-          xzoom,yzoom=
-          rmn view
-        fi
-        xsel0,ysel0,xsel1,ysel1=
-      fi
-
       # Events related to image displacement and mode changes.
       if {*,ARROWLEFT} nposx-={$nsizx/($is_CTRL?4:16)} xzoom,yzoom= # Go left
       elif {*,ARROWRIGHT} nposx+={$nsizx/($is_CTRL?4:16)} xzoom,yzoom= # Go right
@@ -2278,6 +2252,32 @@ _display2d :
         nposx,nposy,nsizx,nsizy={[[$xzoom,$yzoom]+0.75*[$nposx-$xzoom,$nposy-$yzoom],round(0.75*[$nsizx,$nsizy])]}
 
       elif !($mb&4)" && "!($is_CTRL" && "$mb&1) pan_mx,pan_my,pan_posx,pan_posy=
+      fi
+
+      # Events related to image selection.
+      if !$is_CTRL" && "$mb&1" && "$mx>0
+        xsel1,ysel1={X=[$nposx,$nposy]+[$mx,$my]*[$nsizx,$nsizy]/[{*,w,h}];\
+                     floor([max(0,min(X[0],w#0-1)),max(0,min(X[1],h#0-1))])}
+        if !narg($xsel0) xsel0,ysel0=$xsel1,$ysel1 fi
+        if $mx<=16 nposx-={$nsizx/64} wait_event=0 xzoom,yzoom=
+        elif $mx>={*,w}-17 nposx+={$nsizx/64} wait_event=0 xzoom,yzoom=
+        fi
+        if $my<=16 nposy-={$nsizy/64} wait_event=0 xzoom,yzoom=
+        elif $my>{*,h}-17 nposy+={$nsizx/64} wait_event=0 xzoom,yzoom=
+        fi
+        rmn view
+      elif !($mb&1)
+        if narg($xsel0)
+          if [$xsel0,$ysel0]==[$xsel1,$ysel1] # One px selection -> reset view or exit.
+            if narg($exit_on_single_click)" && "$nsizx>=w#0" && "$nsizy>=h#0 break fi
+            nposx,nposy,nsizx,nsizy={0,[0,0,w,h]}
+          else # Otherwise, zoom in
+            nposx,nposy,nsizx,nsizy={[min($xsel0,$xsel1),min($ysel0,$ysel1),abs([$xsel1-$xsel0,$ysel1-$ysel0])+1]}
+          fi
+          xzoom,yzoom=
+          rmn view
+        fi
+        xsel0,ysel0,xsel1,ysel1=
       fi
 
       # Constrain image displacement.
