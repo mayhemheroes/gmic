@@ -2009,15 +2009,20 @@ _display2d :
 
     # Start event loop.
     for {*}" && "!{*,ESC}
-      iposx,iposy={floor([$posx,$posy])}
 
-      # Correct aspect ratio.
-      if $ratio_mode if {*,w}>{*,h} sizy={round($sizx*{*,h}/{*,w})} else sizx={round($sizy*{*,w}/{*,h})} fi fi
+      # Correct aspect ratio while centering image.
+      if $ratio_mode
+        if {*,w}>{*,h} posy,sizy={nsizy=round($sizx*{*,h}/{*,w});[$posy-(nsizy-$sizy)/2,nsizy]}
+        else posx,sizx={nsizx=round($sizy*{*,w}/{*,h});[$posx-(nsizx-$sizx)/2,nsizx]}
+        fi
+      fi
+      if $sizx>w#0" || "$sizy>h#0 sizx,sizy={0,[w,h]} fi
 
       # Generate baseview.
       if !narg($baseview)
+        iposx,iposy={floor([$posx,$posy])}
         +z[0] {[$iposx,$iposy,0,0,$iposx+$sizx,$iposy+$sizy,0,s#0>=4&&$alpha_mode?3:min(s-1,2)]}
-        if $alpha_mode" && "s!=4" && "s!=2 100%,100% rectangle. {A=-[$iposx,$iposy];[A,A+[w#0,h#0]-1]},1,255 a[-2,-1] c fi
+        if $alpha_mode" && "s!=4" && "s!=2 100%,100%,1,1,100 rectangle. {A=-[$iposx,$iposy];[A,A+[w#0,h#0]-1]},1,255 a[-2,-1] c fi
         if $normalization_mode==1 sh. 0,{s-($alpha_mode?2:1)} n. 0,255 rm.
         elif $normalization_mode==2 l. s c if $alpha_mode sel=^-1 else sel=^ fi n[$sel] 0,255 a c endl
         fi
@@ -2026,8 +2031,7 @@ _display2d :
         z. {shift=[$posx-$iposx,$posy-$iposy]*[$cellsizx,$cellsizy];floor([shift,shift+[{*,w,h}]-1])}
 
         if $alpha_mode
-          (128,160;160,128) r. 32,32,1,3 r. ..,..,1,100%,0,2,0.5,0.5
-          sh.. 100% j.. ...,0,0,0,0,1,.,255 rm[-3,-1]
+          (128,160;160,128) r. 32,32,1,3 r. ..,..,1,100%,0,2,0.5,0.5 sh.. 100% j.. ...,0,0,0,0,1,.,255 rm[-3,-1]
         elif s==1 r. 100%,100%,1,3
         elif s==2 r. 100%,100%,1,3,0
         fi
@@ -2124,10 +2128,9 @@ _display2d :
       fi
 
       # Events related to window resizing.
-      if {*,r} # Window has been resized -> Preserve aspect ratio
-        if $nsizx>w#0" || "$nsizy>h#0 nsizx,nsizy={0,[w,h]} fi
+      if {*,r} # Window has been resized
         w[] {*,d,e}
-        wait -1 rmn baseview
+        rmn baseview
       elif $is_CTRL" && "{*,D}" && "{*,d}<{*,u}" && "{*,e}<{*,v} # Increase window size
         w[] {round([{*,w,h}]*1.25)}
         notification="Increase Window Size"
