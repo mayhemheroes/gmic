@@ -1992,7 +1992,10 @@ display2d :
 _display2d :
   e[0--3] "Start interactive display of 2d image"$_gmic_s"."
   v -
-  m "d2d_repcommas : ({'\"$""*\"'}) replace. {','},32 u {t} rm."
+  m "_d2d_format :
+       if $""#>=8 $""=arg u $arg1\" \"$arg2\" \"$arg3\" \"$arg4\" \"...\" \"$arg5\" \"$arg6\" \"$arg7\" \"$arg8
+       else ({'\"$""*\"'}) replace. {','},32 u {t} rm.
+       fi"
 
   repeat $! l[$>] nm={b}
     posx,posy,sizx,sizy={0,[0,0,w,h]}
@@ -2080,7 +2083,7 @@ _display2d :
 
           if $posmx>=0" && "$posmx<w#0" && "$posmy>=0" && "$posmy<h#0
             if !narg($xsel0)
-              0 t. "Point ( "$posmx","$posmy" ) = [ "${d2d_repcommas\ {0,_I($posmx,$posmy)}}" ]",1,0,16,1,1
+              0 t. "Point ( "$posmx","$posmy" ) = [ "${_d2d_format\ {0,_I($posmx,$posmy)}}" ]",1,0,16,1,1
               +dilate. 3 +f. 64 +f. 0 j.. .,0,0,0,0,1,... rm[-3,-1] +f. 255 j.. .,0,0,0,0,1,...
               rm[-3,-1] r. 100%,100%,1,..
               j.. .,0,{$is_bottom_text?h#-2-h#-1:0},0,0,0.85
@@ -2243,7 +2246,7 @@ _display2d :
     done
     k[0] w[] 0
   endl done
-  uncommand d2d_repcommas
+  uncommand _d2d_format
   v +
 
 #@cli d3d : eq. to 'display3d'. : (+)
