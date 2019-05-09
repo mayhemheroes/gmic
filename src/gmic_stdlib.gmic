@@ -2017,11 +2017,16 @@ _display2d :
   repeat $! l[$>] nm={b}
     posx,posy,sizx,sizy={0,[0,0,w,h]}
     alpha_mode,axes_mode,fullscreen_mode,normalization_mode,ratio_mode=0,1,0,1,1
+    window_x,window_y,exit_on_single_click=$_d2d_core_params
     is_bottom_text,wait_event,mx,my=0,1,-1,-1
     xsel0,ysel0,xsel1,ysel1=
     notification=
     wsiz0=${fitscreen\ .,40%,85%}
-    w[] $wsiz0,0,$nm" ("{w}x{h}x{d}x{s}")" cursor[0] 0
+
+    if narg($window_x) w[] $wsiz0,0,0,$window_x,$window_y,$nm" ("{w}x{h}x{d}x{s}")"
+    else w[] $wsiz0,0,$nm" ("{w}x{h}x{d}x{s}")"
+    fi
+    cursor[0] 0
 
     # Start event loop.
     for {*}" && "!{*,ESC}
@@ -2188,7 +2193,8 @@ _display2d :
         rmn view
       elif !($mb&1)
         if narg($xsel0)
-          if [$xsel0,$ysel0]==[$xsel1,$ysel1] # One px selection -> reset view
+          if [$xsel0,$ysel0]==[$xsel1,$ysel1] # One px selection -> reset view or exit.
+            if narg($exit_on_single_click)" && "$nsizx>=w#0" && "$nsizy>=h#0 break fi
             nposx,nposy,nsizx,nsizy={0,[0,0,w,h]}
           else # Otherwise, zoom in
             nposx,nposy,nsizx,nsizy={[min($xsel0,$xsel1),min($ysel0,$ysel1),abs([$xsel1-$xsel0,$ysel1-$ysel0])+1]}
