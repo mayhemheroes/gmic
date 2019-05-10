@@ -2047,7 +2047,6 @@ _display2d :
     for {*}" && "!{*,ESC}
 
       # Correct aspect ratio while centering image.
-#      if $sizx>w#0" && "$sizy>h#0 posx,posy,sizx,sizy={0,[0,0,w,h]} rmn baseview fi
       if $ratio_mode
         if {*,w}/$sizx<{*,h}/$sizy posy,sizy={nsizy=round($sizx*{*,h}/{*,w});[$posy-(nsizy-$sizy)/2,nsizy]}
         else posx,sizx={nsizx=round($sizy*{*,w}/{*,h});[$posx-(nsizx-$sizx)/2,nsizx]}
@@ -2186,6 +2185,7 @@ _display2d :
       # Events related to window resizing.
       if {*,r} # Window has been resized
         w[] {*,d,e}
+        if $nsizx>w#0" && "$nsizy>h#0 nposx,nposy,nsizx,nsizy={[0,0,w#0,h#0]} fi
         rmn baseview
       elif $is_CTRL" && "{*,D}" && "{*,d}<{*,u}" && "{*,e}<{*,v} # Increase window size
         w[] {round([{*,w,h}]*1.25)}
@@ -2290,6 +2290,7 @@ _display2d :
                  [max(0,min(X[0],w#0-1)),max(0,min(X[1],h#0-1))]}
         fi
         nposx,nposy,nsizx,nsizy={[[$xzoom,$yzoom]+[$nposx-$xzoom,$nposy-$yzoom]/0.75,round([$nsizx,$nsizy]/0.75)]}
+        if $nsizx>w#0" && "$nsizy>h#0 nsizx,nsizy={[w#0,h#0]} fi
       elif ($nsizx>2" || "$nsizy>2)" && "({*,PADADD}" || "($mx>=0" && "$mo>0)) # Zoom in
         xzoom,yzoom={X=$mx<0?[$nposx,$nposy]+[$nsizx,$nsizy]/2:\
                              [$nposx,$nposy]+[$mx,$my]*[$nsizx,$nsizy]/[{*,w,h}];\
