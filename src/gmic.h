@@ -384,7 +384,7 @@ struct gmic {
   static bool is_display_available;
 
   gmic_list<char> *commands, *commands_names, *commands_has_arguments,
-    *const _variables, *const _variables_names, **const variables, **const variables_names,
+    *_variables, *_variables_names, **variables, **variables_names,
     commands_files, callstack;
   gmic_image<unsigned int> dowhiles, fordones, repeatdones;
   gmic_image<unsigned char> light3d;

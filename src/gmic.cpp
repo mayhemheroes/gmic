@@ -1858,7 +1858,7 @@ const CImgList<T>& _gmic_display(CImgDisplay &disp, const char *const title, con
       const int wx = disp.window_x(), wy = disp.window_y();
       disp.close();
       CImg<charT> com(128);
-      std::sprintf(com,"v - _d2d_core_params=%d,%d,1 l d2d onfail d endl",wx,wy);
+      std::sprintf(com,"v - _d2d_core_params=%d,%d,%d l d2d onfail d endl",wx,wy,(int)exit_on_anykey);
       t gmic_instance;
       cimg::swap(gmic_instance.commands,gmic_instance0.commands);
       cimg::swap(gmic_instance.commands_names,gmic_instance0.commands_names);
