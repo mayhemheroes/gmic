@@ -4363,6 +4363,39 @@ CImg<char> gmic::substitute_item(const char *const source,
             append_string_to(substituted_items,ptr_sub);
         continue;
 
+        //  '$[...]' and '$$[...]' expressions.
+      } else if (nsource[1]=='[' || (nsource[1]=='$' && nsource[2]=='[')) {
+        is_2dollars = nsource[1]=='$';
+        const char *const ptr_beg = nsource + 2 + (is_2dollars?1:0), *ptr_end = ptr_beg; unsigned int p = 0;
+        for (p = 1; p>0 && *ptr_end; ++ptr_end) { if (*ptr_end=='[') ++p; if (*ptr_end==']') --p; }
+        if (p) {
+          CImg<char>::append_string_to(*(nsource++),substituted_items,ptr_sub);
+          CImg<char>::append_string_to(*(nsource++),substituted_items,ptr_sub);
+          if (is_2dollars) CImg<char>::append_string_to(*(nsource++),substituted_items,ptr_sub);
+          continue;
+        }
+        l_inbraces = (int)(ptr_end - ptr_beg - 1);
+        inbraces.assign(ptr_beg,l_inbraces + 1).back() = 0;
+        if (l_inbraces>0)
+          substitute_item(inbraces,images,images_names,parent_images,parent_images_names,variables_sizes,
+                          command_selection,false).move_to(inbraces);
+        if (is_2dollars) {
+          cimglist_for(images_names,l) if (!std::strcmp(inbraces,images_names[l])) {
+            cimg_snprintf(substr,substr.width(),"%d,",l);
+            CImg<char>(substr.data(),(unsigned int)std::strlen(substr),1,1,1,true).
+              append_string_to(substituted_items,ptr_sub);
+          }
+          if (*substr) --ptr_sub;
+        } else {
+          cimglist_for(images_names,l) if (!std::strcmp(inbraces,images_names[l])) {
+            cimg_snprintf(substr,substr.width(),"%d",l);
+            CImg<char>(substr.data(),(unsigned int)std::strlen(substr),1,1,1,true).
+              append_string_to(substituted_items,ptr_sub);
+            break;
+          }
+        }
+        nsource+=l_inbraces + 3 + (is_2dollars?1:0);
+        continue;
         //  '${...}' and '$${...}' expressions.
       } else if (nsource[1]=='{' || (nsource[1]=='$' && nsource[2]=='{')) {
         is_2dollars = nsource[1]=='$';
@@ -4370,6 +4403,8 @@ CImg<char> gmic::substitute_item(const char *const source,
         for (p = 1; p>0 && *ptr_end; ++ptr_end) { if (*ptr_end=='{') ++p; if (*ptr_end=='}') --p; }
         if (p) {
           CImg<char>::append_string_to(*(nsource++),substituted_items,ptr_sub);
+          CImg<char>::append_string_to(*(nsource++),substituted_items,ptr_sub);
+          if (is_2dollars) CImg<char>::append_string_to(*(nsource++),substituted_items,ptr_sub);
           continue;
         }
         l_inbraces = (int)(ptr_end - ptr_beg - 1);
@@ -12884,16 +12919,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                     if (i!=nb_arguments) CImg<char>::append_string_to(',',substituted_command,ptr_sub);
                   }
                   has_arguments = true;
-
-                  // Substitute $[] -> List of selected image indices.
-                } else if (nsource[1]=='[' && nsource[2]==']') {
-                  nsource+=3;
-                  cimg_forY(selection,i) {
-                    cimg_snprintf(substr,substr.width(),"%u,",selection[i]);
-                    CImg<char>(substr.data(),(unsigned int)std::strlen(substr),1,1,1,true).
-                      append_string_to(substituted_command,ptr_sub);
-                  }
-                  if (selection) --ptr_sub;
 
                   // Substitute $= -> transfer (quoted) arguments to named variables.
                 } else if (nsource[1]=='=' &&

@@ -659,6 +659,11 @@ ${g}"variable"$n"
 \n  - '"${c}"$$name"$n"' and '"${c}"$${name}"$n"' are both substituted by the G'MIC script code of the specified named
 \n     "${g}"custom command"$n", or by an empty string if no custom command with specified name exists.
 \n
+\n  - '"${c}"$[name]"$n"' is substituted by the lowest index of the images named '"${g}"name"$n"' in the image list.
+\n    '"${c}"$$[name]"$n"' is similar but returns all indices of images named '"${g}"name"$n"', separated by commas.
+\n     Specified name may contain characters that cannot be used for the variable name '"${g}"$name"$n"'.
+\n     If no image with specified name exists, '"${c}"$[name]"$n"' is an empty string.
+\n
 \n  - '"${c}"${\"-pipeline\"}"$n"' is substituted by the "${g}"status value"$n" after the execution of the specified
 \n     "${-GMIC}" pipeline (see command '"${c}"status"$n"'). Expression '"${c}"${}"$n"' thus stands for the
 \n     "${g}"current status value"$n".
@@ -1186,8 +1191,6 @@ ${g}"custom commands files"$n".
 \n       double-quoted.
 \n    . '"${c}"$""#"$n"' is substituted by the maximum index of known arguments (either specified by the user
 \n       or set to a default value in the custom command).
-\n    . '"${c}"$""[]"$n"' is substituted by the list of selected image indices that have been specified during the
-\n       command invocation.
 \n    . '"${c}"$""?"$n"' is substituted by a printable version of '"${c}"$""[]"$n"' to be used in command descriptions.
 \n    . '"${c}"$i"$n"' and '"${c}"${i}"$n"' are both substituted by the "${g}"i^th"$n" specified argument.
  Negative indices such as
@@ -2032,6 +2035,7 @@ _display2d :
        if $""#>=8 $""=arg u $arg1\" \"$arg2\" \"$arg3\" \"$arg4\" \"...\" \"$arg5\" \"$arg6\" \"$arg7\" \"$arg8
        else ({'\"$""*\"'}) replace. {','},32 u {t} rm.
        fi"
+  m "_rmn : rm[$[\"$""1\"]]"
   repeat $! l[$>] nm={b} nm img
     if {!w} d break fi
     is_moderate_ratio={0,D=[w,h];max(D)/min(D)<6}
@@ -2095,21 +2099,21 @@ _display2d :
         elif s==2 r. 100%,100%,1,3,0
         fi
         nm. baseview
-        rmn view
+        _rmn view
       fi
 
       # Manage notifications.
       if narg($notification)
         wait_event=0
         if !isnum($notification) # Create notification gfx
-          rmn notification_gfx
+          _rmn notification_gfx
           0 t. {``$notification},0,0,20,1,255
           r. {[w+12,h+8]},1,1,0,0,0.5,0.5 rectangle. 0,0,100%,100%,1,0xFFFFFFFF,255 to_rgb.
           nm. notification_gfx
           notification=$|
         elif isnum($notification)
           if $|>$notification+1 rm[notification_gfx] wait_event=1 notification= fi
-          rmn view
+          _rmn view
         fi
       fi
 
@@ -2205,20 +2209,20 @@ _display2d :
       if {*,r} # Window has been resized
         w[] {*,d,e}
         if $nsizx>w#0" && "$nsizy>h#0 nposx,nposy,nsizx,nsizy={[0,0,w#0,h#0]} fi
-        rmn baseview
+        _rmn baseview
       elif $is_CTRL" && "{*,D}" && "{*,d}<{*,u}" && "{*,e}<{*,v} # Increase window size
         w[] {round([{*,w,h}]*1.25)}
         notification="Increase Window Size"
-        skip {*,-D} rmn baseview
+        skip {*,-D} _rmn baseview
       elif $is_CTRL" && "{*,C}" && "{*,d}>64" && "{*,e}>64 # Decrease window size
         w[] {round([{*,w,h}]/1.25)}
         notification="Decrease Window Size"
-        skip {*,-C} rmn baseview
+        skip {*,-C} _rmn baseview
       elif $is_CTRL" && "{*,R} # Reset window size (and view)
         nposx,nposy,nsizx,nsizy={0,[0,0,w,h]}
         w[] $wsiz0
         notification="Reset Window Size"
-        skip {*,-R} rmn baseview
+        skip {*,-R} _rmn baseview
       fi
 
       # Events related to image selection.
@@ -2235,7 +2239,7 @@ _display2d :
         elif $my>{*,h}-17 nposy+={$nsizx/64} wait_event=0 xzoom,yzoom=
         fi
         wait_event=0
-        rmn view
+        _rmn view
       elif !($mb&1)
         if narg($xsel0)
           if [$xsel0,$ysel0]==[$xsel1,$ysel1] # One px selection -> reset view or exit.
@@ -2245,7 +2249,7 @@ _display2d :
             nposx,nposy,nsizx,nsizy={[min($xsel0,$xsel1),min($ysel0,$ysel1),abs([$xsel1-$xsel0,$ysel1-$ysel0])+1]}
           fi
           xzoom,yzoom= mb={$mb&6}
-          rmn view
+          _rmn view
         fi
         xsel0,ysel0,xsel1,ysel1=
       fi
@@ -2270,11 +2274,11 @@ _display2d :
       elif $is_CTRL" && "{*,N} # Change normalization mode
         normalization_mode={($normalization_mode+1)%3}
         notification=${"s0=Disable s1=Enable s2=\"Enable C.by.C\" u ${s"$normalization_mode"}"}" Normalization"
-        skip {*,-N} rmn baseview
+        skip {*,-N} _rmn baseview
       elif $is_CTRL" && "{*,A} # Toggle alpha mode
         alpha_mode={!$alpha_mode}
         notification=${"s0=Disable s1=Enable u ${s"$alpha_mode"}"}" Alpha"
-        skip {*,-A} rmn baseview
+        skip {*,-A} _rmn baseview
       elif $is_CTRL" && "{*,F} # Toggle fullscreen mode
         fullscreen_mode={!$fullscreen_mode}
         if $fullscreen_mode
@@ -2286,16 +2290,16 @@ _display2d :
         fi
         cursor[0] {!$axes_mode}
         notification=${"s0=Disable s1=Enable u ${s"$fullscreen_mode"}"}" Fullscreen"
-        skip {*,-F} rmn baseview
+        skip {*,-F} _rmn baseview
       elif $is_CTRL" && "{*,X} # Toggle axes mode
         cursor[0] $axes_mode axes_mode={!$axes_mode}
         notification=${"s0=Hide s1=Show u ${s"$axes_mode"}"}" Axes"
-        skip {*,-X} rmn view
+        skip {*,-X} _rmn view
       elif $is_CTRL" && "{*,Z}" && "$is_moderate_ratio # Toggle aspect-ratio mode
         ratio_mode={!$ratio_mode}
         notification=${"s0=Release s1=Hold u ${s"$ratio_mode"}"}" Aspect Ratio"
         if !$ratio_mode nposx,nposy,nsizx,nsizy={0,[0,0,w,h]} fi
-        skip {*,-Z} rmn baseview
+        skip {*,-Z} _rmn baseview
       elif $mx>=0" && "($mb&4" || "($is_CTRL" && "$mb&1)) # Pan (middle mouse button)
         if !narg($pan_mx) pan_mx,pan_my,pan_posx,pan_posy=$mx,$my,$posx,$posy fi
         nposx,nposy={shiftx=($mx-$pan_mx)*$nsizx/{*,w};\
@@ -2322,14 +2326,14 @@ _display2d :
       if $nposy>=h#0 nposy={h#0-1} elif $nposy+$nsizy<=0 nposy={1-$nsizy} fi
       if [$nposx,$nposy,$nsizx,$nsizy]!=[$posx,$posy,$sizx,$sizy]
         posx,posy,sizx,sizy=$nposx,$nposy,$nsizx,$nsizy
-        rmn baseview
+        _rmn baseview
       fi
-      if [$mx,$my]!=[$old_mx,$old_my] rmn view fi
+      if [$mx,$my]!=[$old_mx,$old_my] _rmn view fi
       omb=$mb
     done
     k[0] w[] 0
   nm $nm endl done
-  uncommand _d2d_format
+  uncommand _d2d_format,_rmn
   v +
 
 #@cli d3d : eq. to 'display3d'. : (+)
@@ -6353,7 +6357,7 @@ remove_named :
 
 _remove_named :
   e[0--3] "Remove images named '$*'."
-  v - $=arg repeat $#,k repeat $! if ['{$<,n}']==['${arg{1+$k}}'] rm[$<] fi done done v +
+  v - $=arg repeat $# rm[$$[${arg{1+$>}}]] done v +
 
 #@cli rv : eq. to 'reverse'. : (+)
 
