@@ -2047,7 +2047,7 @@ _display2d :
     for {*}" && "!{*,ESC}
 
       # Correct aspect ratio while centering image.
-      if $sizx>w#0" && "$sizy>h#0 posx,posy,sizx,sizy={0,[0,0,w,h]} rmn baseview fi
+#      if $sizx>w#0" && "$sizy>h#0 posx,posy,sizx,sizy={0,[0,0,w,h]} rmn baseview fi
       if $ratio_mode
         if {*,w}/$sizx<{*,h}/$sizy posy,sizy={nsizy=round($sizx*{*,h}/{*,w});[$posy-(nsizy-$sizy)/2,nsizy]}
         else posx,sizx={nsizx=round($sizy*{*,w}/{*,h});[$posx-(nsizx-$sizx)/2,nsizx]}
@@ -2063,7 +2063,9 @@ _display2d :
 
         if !$alpha_mode channels. 0,{min(s#0-1,2)} # No alpha
         elif s#0==1" || "s#0==3 # Alpha mode without alpha channel
-          100%,100%,1,1,64 rectangle. {A=-[$iposx,$iposy];[A,A+[w#0,h#0]-1]},1,255 a[-2,-1] c # Add alpha channel
+          100%,100%,1,1,64 # -> Add alpha channel
+          rectangle. {A=ceil([-$posx,-$posy]*[w,h]/[$sizx,$sizy]);\
+                      [A,A+ceil([w#0,h#0]*[w,h]/[$sizx,$sizy]-1)]},1,255 a[-2,-1] c
         else # Alpha mode with alpha channel
           sh. 100% 100%,100%,1,1,64 rectangle. {A=-[$iposx,$iposy];[A,A+[w#0,h#0]-1]},1,0 +[-2,-1] rm.
         fi
