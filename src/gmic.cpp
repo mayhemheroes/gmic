@@ -3721,7 +3721,7 @@ gmic& gmic::display_images(const CImgList<T>& images, const CImgList<char>& imag
   }
 
   if (visu) {
-    CImgDisplay _disp, &disp = _display_windows[0]?_display_windows[0]:_disp;
+    CImgDisplay _disp[10], &disp = _display_windows[0]?_display_windows[0]:_disp[0];
     CImg<char> title(256);
     if (visu.size()==1)
       cimg_snprintf(title,title.width(),"%s (%dx%dx%dx%d)",
