@@ -2031,7 +2031,7 @@ _display2d :
     if {!w} continue fi
     posx,posy,sizx,sizy={0,[0,0,w,h]}
     alpha_mode,axes_mode,fullscreen_mode,normalization_mode,ratio_mode=0,1,0,1,1
-    window_x,window_y,exit_on_single_click=$_d2d_core_params
+    window_x,window_y,exit_on_singleclick=$_d2d_core_params
     is_bottom_text,wait_event,mx,my=0,1,-1,-1
     xsel0,ysel0,xsel1,ysel1=
     notification=
@@ -2103,8 +2103,9 @@ _display2d :
         [baseview]
         if $mx>=0
           posmx,posmy={floor([$posx,$posy]+[$mx,$my]*[$sizx,$sizy]/[{*,w,h}])}
+          is_selection_a_point={[0$xsel0,0$ysel0]==[0$xsel1,0$ysel1]}
 
-          if narg($xsel0)
+          if narg($xsel0)" && "!$is_selection_a_point
             dselx,dsely={[$xsel1-$xsel0,$ysel1-$ysel0]}
             0 t. " Box ( "{``{[min($xsel0,$xsel1),min($ysel0,$ysel1)]}}" ) - "\
                      "( "{``{[max($xsel0,$xsel1),max($ysel0,$ysel1)]}}" ) \n"\
@@ -2116,7 +2117,7 @@ _display2d :
           fi
 
           if $posmx>=0" && "$posmx<w#0" && "$posmy>=0" && "$posmy<h#0
-            if !narg($xsel0)
+            if !narg($xsel0)" || "$is_selection_a_point
               0 t. " Point ( "$posmx","$posmy" ) = [ "${_d2d_format\ {0,_I($posmx,$posmy)}}" ] ",1,0,14,1,1
               n. 0,255 +dilate. 3 *. -1 n. 0,80 +[-2,-1] r. 100%,100%,1,..
               j.. .,0,{$is_bottom_text?h#-2-h#-1:0},0,0,0.85 rm.
@@ -2270,7 +2271,7 @@ _display2d :
       elif !($mb&1)
         if narg($xsel0)
           if [$xsel0,$ysel0]==[$xsel1,$ysel1] # One px selection -> reset view or exit.
-            if narg($exit_on_single_click)" && "$nsizx>=w#0" && "$nsizy>=h#0 break fi
+            if 0$exit_on_singleclick" && "$nsizx>=w#0" && "$nsizy>=h#0 break fi
             nposx,nposy,nsizx,nsizy={0,[0,0,w,h]}
           else # Otherwise, zoom in
             nposx,nposy,nsizx,nsizy={[min($xsel0,$xsel1),min($ysel0,$ysel1),abs([$xsel1-$xsel0,$ysel1-$ysel0])+1]}
