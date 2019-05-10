@@ -1802,9 +1802,9 @@ static const CImgList<T>& save_gmz(const char *filename, const CImgList<T>& imag
 #undef cimg_plugin
 #elif defined(cimglist_plugin)
 
-// The method below is a variant of the CImgList<T>::_display() method, where
-// G'MIC command 'display2d' is used in place of the native CImg<T>::display() command,
-// for displaying 2d images.
+// The method below is a variant of the method 'CImgList<T>::_display()', where
+// G'MIC command 'display2d' is used in place of the native method 'CImg<T>::display()',
+// for displaying 2d images only.
 template<typename t>
 const CImgList<T>& _gmic_display(CImgDisplay &disp, const char *const title, const CImgList<charT> *const titles,
                                  const bool display_info, const char axis, const float align, unsigned int *const XYZ,
@@ -1863,6 +1863,9 @@ const CImgList<T>& _gmic_display(CImgDisplay &disp, const char *const title, con
       cimg::swap(gmic_instance.commands,gmic_instance0.commands);
       cimg::swap(gmic_instance.commands_names,gmic_instance0.commands_names);
       cimg::swap(gmic_instance.commands_has_arguments,gmic_instance0.commands_has_arguments);
+
+//      std::memcpy(gmic_instance.display_windows,&disp,sizeof(CImgDisplay));
+
       gmic_instance.run(com.data(),_images,_images_names);
       cimg::swap(gmic_instance.commands,gmic_instance0.commands);
       cimg::swap(gmic_instance.commands_names,gmic_instance0.commands_names);
