@@ -383,7 +383,7 @@ struct gmic {
   static gmic_list<void*> list_p_is_abort;
   static bool is_display_available;
 
-  gmic_list<char> *const commands, *const commands_names, *const commands_has_arguments,
+  gmic_list<char> *commands, *commands_names, *commands_has_arguments,
     *const _variables, *const _variables_names, **const variables, **const variables_names,
     commands_files, callstack;
   gmic_image<unsigned int> dowhiles, fordones, repeatdones;

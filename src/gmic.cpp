@@ -1859,7 +1859,14 @@ const CImgList<T>& _gmic_display(CImgDisplay &disp, const char *const title, con
       disp.close();
       CImg<charT> com(128);
       std::sprintf(com,"v - _d2d_core_params=%d,%d,1 l d2d onfail d endl",wx,wy);
-      t gmic_instance(com.data(),_images,_images_names);
+      t gmic_instance;
+      cimg::swap(gmic_instance.commands,gmic_instance0.commands);
+      cimg::swap(gmic_instance.commands_names,gmic_instance0.commands_names);
+      cimg::swap(gmic_instance.commands_has_arguments,gmic_instance0.commands_has_arguments);
+      gmic_instance.run(com.data(),_images,_images_names);
+      cimg::swap(gmic_instance.commands,gmic_instance0.commands);
+      cimg::swap(gmic_instance.commands_names,gmic_instance0.commands_names);
+      cimg::swap(gmic_instance.commands_has_arguments,gmic_instance0.commands_has_arguments);
       disp.show();
     } else _data[0]._display(disp,0,false,XYZ,exit_on_anykey,!is_first_call); // Otherwise, use standard display()
     if (disp.key()) is_exit = true;
