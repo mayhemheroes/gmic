@@ -1994,7 +1994,11 @@ _display0 :
 #@cli d2d : eq. to 'display2d'.
 d2d :
   v - _gmic_s="$?" v +
-  _display2d
+  _display2d 0
+
+_d2d_core :
+  v - _gmic_s="$?" v +
+  _display2d $1
 
 #@cli display2d
 #@cli : Display selected 2d images in an interactive window.
@@ -2017,8 +2021,9 @@ d2d :
 #@cli : - CTRL + Z: Hold/release aspect ratio.
 display2d :
   v - _gmic_s="$?" v +
-  _$0
+  _$0 0
 
+# $1 = exit_on_single_click?, can be { 0=no | 1=yes }.
 _display2d :
   e[0--3] "Start interactive display of 2d image"$_gmic_s"."
   v -
@@ -2030,16 +2035,11 @@ _display2d :
     if {!w} d break fi
     posx,posy,sizx,sizy={0,[0,0,w,h]}
     alpha_mode,axes_mode,fullscreen_mode,normalization_mode,ratio_mode=0,1,0,1,1
-    window_x,window_y,exit_on_singleclick=$_d2d_core_params
     is_bottom_text,wait_event,mx,my,omb=0,1,-1,-1,0
     xsel0,ysel0,xsel1,ysel1=
     notification=
     wsiz0=${fitscreen\ .,40%,85%}
-    if {!{*,w}}
-      if narg($window_x) w[] $wsiz0,0,0,$window_x,$window_y,$nm" ("{w}x{h}x{d}x{s}")"
-      else w[] $wsiz0,0,$nm" ("{w}x{h}x{d}x{s}")"
-      fi
-    fi
+    if {!{*,w}} w[] $wsiz0,0,$nm" ("{w}x{h}x{d}x{s}")" fi
     cursor[0] 0
 
     # Start event loop.
@@ -2163,7 +2163,7 @@ _display2d :
       fi
 
       # Manage user events.
-#      if $wait_event wait else wait 40 fi
+      if $wait_event wait else wait 40 fi
       wait_event=1
 
       old_mx,old_my=$mx,$my
@@ -2215,7 +2215,7 @@ _display2d :
       elif !($mb&1)
         if narg($xsel0)
           if [$xsel0,$ysel0]==[$xsel1,$ysel1] # One px selection -> reset view or exit.
-            if 0$exit_on_singleclick" && "$nsizx>=w#0" && "$nsizy>=h#0 break fi
+            if $1" && "$nsizx>=w#0" && "$nsizy>=h#0 break fi
             nposx,nposy,nsizx,nsizy={0,[0,0,w,h]}
           else # Otherwise, zoom in
             nposx,nposy,nsizx,nsizy={[min($xsel0,$xsel1),min($ysel0,$ysel1),abs([$xsel1-$xsel0,$ysel1-$ysel0])+1]}

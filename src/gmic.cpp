@@ -1855,22 +1855,18 @@ const CImgList<T>& _gmic_display(CImgDisplay &disp, const char *const title, con
     if (_data[0]._depth==1) { // Use custom command 'display2d' for 2D images.
       CImgList<T> _images(_data[0],true);
       CImgList<charT> _images_names(dtitle,true);
-      const int wx = disp.window_x(), wy = disp.window_y();
-      disp.close();
       CImg<charT> com(128);
-      std::sprintf(com,"v - _d2d_core_params=%d,%d,%d l d2d onfail d endl",wx,wy,(int)!is_first_call);
+      std::sprintf(com,"v - l _d2d_core %d onfail d endl",(int)!is_first_call);
       t gmic_instance;
       cimg::swap(gmic_instance.commands,gmic_instance0.commands);
       cimg::swap(gmic_instance.commands_names,gmic_instance0.commands_names);
       cimg::swap(gmic_instance.commands_has_arguments,gmic_instance0.commands_has_arguments);
-
-//      std::memcpy(gmic_instance.display_windows,&disp,sizeof(CImgDisplay));
-
+      gmic_instance.display_windows = &disp;
       gmic_instance.run(com.data(),_images,_images_names);
       cimg::swap(gmic_instance.commands,gmic_instance0.commands);
       cimg::swap(gmic_instance.commands_names,gmic_instance0.commands_names);
       cimg::swap(gmic_instance.commands_has_arguments,gmic_instance0.commands_has_arguments);
-      disp.show();
+      gmic_instance.display_windows = 0;
     } else _data[0]._display(disp,0,false,XYZ,exit_on_anykey,!is_first_call); // Otherwise, use standard display()
     if (disp.key()) is_exit = true;
     disp.resize(cimg_fitscreen(dw,dh,1),false).set_title("%s",dtitle.data());
