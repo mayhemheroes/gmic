@@ -2077,18 +2077,13 @@ _display2d :
 
         # Add alpha channel if necessary.
         if $alpha_mode
-          if (s#0==1" || "s#0==3) # Alpha mode without alpha channel
-            100%,100%,1,1,64 # -> Add alpha channel
-            rectangle. {A=-[$posx,$posy]*[w,h]/[$sizx,$sizy];\
-                        B=A+[w#0,h#0]*[w,h]/[$sizx,$sizy]-1;\
-                        [ceil(A),floor(B)]},1,255
-            a[-2,-1] c
+          coords={A=-[$posx,$posy]*[w,h]/[$sizx,$sizy];\
+                  B=A+[w#0,h#0]*[w,h]/[$sizx,$sizy]-1;\
+                  [ceil(A),floor(B)]}
+          if (s#0==1" || "s#0==3) # Alpha mode without alpha channel -> Add alpha channel
+            100%,100%,1,1,64 rectangle. $coords,1,255 a[-2,-1] c
           else # Alpha mode with alpha channel
-            sh. 100% 100%,100%,1,1,64
-            rectangle. {A=-[$posx,$posy]*[w,h]/[$sizx,$sizy];\
-                        B=A+[w#0,h#0]*[w,h]/[$sizx,$sizy]-1;\
-                        [ceil(A),floor(B)]},1,0
-            +[-2,-1] rm.
+            sh. 100% 100%,100%,1,1,64 rectangle. $coords,1,0 +[-2,-1] rm.
           fi
         fi
 
