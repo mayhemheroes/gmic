@@ -2064,12 +2064,15 @@ _display2d :
         if !$alpha_mode channels. 0,{min(s#0-1,2)} # No alpha
         elif s#0==1" || "s#0==3 # Alpha mode without alpha channel
           100%,100%,1,1,64 # -> Add alpha channel
-          rectangle. {A=ceil([-$posx,-$posy]*[w,h]/[$sizx,$sizy]);\
-                      [A,A+ceil([w#0,h#0]*[w,h]/[$sizx,$sizy]-1)]},1,255 a[-2,-1] c
+          rectangle. {A=-[$posx,$posy]*[w,h]/[$sizx,$sizy];\
+                      B=A+[w#0,h#0]*[w,h]/[$sizx,$sizy]-1;\
+                      [ceil(A),floor(B)]},1,255
+          a[-2,-1] c
         else # Alpha mode with alpha channel
           sh. 100% 100%,100%,1,1,64
-          rectangle. {A=ceil([-$posx,-$posy]*[w,h]/[$sizx,$sizy]);\
-                      [A,A+ceil([w#0,h#0]*[w,h]/[$sizx,$sizy]-1)]},1,0
+          rectangle. {A=-[$posx,$posy]*[w,h]/[$sizx,$sizy];\
+                      B=A+[w#0,h#0]*[w,h]/[$sizx,$sizy]-1;\
+                      [ceil(A),floor(B)]},1,0
           +[-2,-1] rm.
         fi
         if $normalization_mode==1 sh. 0,{s-($alpha_mode?2:1)} n. 0,255 rm.
