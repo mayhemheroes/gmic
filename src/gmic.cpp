@@ -12595,6 +12595,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               const bool _is_get = *it=='+' || (*it=='-' && it[1]=='-');
               it+=(*it=='+' || *it=='-') + (*it=='-' && it[1]=='-');
               if (!std::strcmp("local",it) || !std::strcmp("l",it) ||
+                  !std::strncmp("local.",it,6) || !std::strncmp("l.",it,2) ||
                   !std::strncmp("local[",it,6) || !std::strncmp("l[",it,2)) ++level;
               else if (!_is_get && (!std::strcmp("endlocal",it) || !std::strcmp("endl",it))) --level;
             }
