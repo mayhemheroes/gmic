@@ -2046,8 +2046,10 @@ _display2d :
     # Start event loop.
     for {*}" && "!{*,ESC}
 
+      v + e[] "DEBUG : "$posx,$posy,$sizx,$sizy v -
+
       # Correct aspect ratio while centering image.
-      if $sizx>w#0" || "$sizy>h#0 posx,posy,sizx,sizy={0,[0,0,w,h]} fi
+      if $sizx>w#0" && "$sizy>h#0 posx,posy,sizx,sizy={0,[0,0,w,h]} rmn baseview fi
       if $ratio_mode
         if {*,w}/$sizx<{*,h}/$sizy posy,sizy={nsizy=round($sizx*{*,h}/{*,w});[$posy-(nsizy-$sizy)/2,nsizy]}
         else posx,sizx={nsizx=round($sizy*{*,w}/{*,h});[$posx-(nsizx-$sizx)/2,nsizx]}
@@ -2254,7 +2256,13 @@ _display2d :
         skip {*,-A} rmn baseview
       elif $is_CTRL" && "{*,F} # Toggle fullscreen mode
         fullscreen_mode={!$fullscreen_mode}
-        if $fullscreen_mode fullscreen_presize={*,w,h} w[] {*,u,v},0,1 else w[] $fullscreen_presize,0,0 fi
+        if $fullscreen_mode
+          fullscreen_wsize={*,w,h} fullscreen_params=$nposx,$nposy,$nsizx,$nsizy
+          w[] {*,u,v},0,1
+        else
+          nposx,nposy,nsizx,nsizy=$fullscreen_params
+          w[] $fullscreen_wsize,0,0
+        fi
         cursor[0] {!$axes_mode}
         notification=${"s0=Disable s1=Enable u ${s"$fullscreen_mode"}"}" Fullscreen"
         skip {*,-F} rmn baseview
