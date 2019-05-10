@@ -1856,18 +1856,21 @@ const CImgList<T>& _gmic_display(CImgDisplay &disp, const char *const title, con
       CImgList<T> _images(_data[0],true);
       CImgList<charT> _images_names(dtitle,true);
       CImg<charT> com(128);
-      std::sprintf(com,"v - l _d2d_core %d onfail d endl",(int)!is_first_call);
+      bool is_exception = false;
+      std::sprintf(com,"v - _d2d_core %d",(int)!is_first_call);
       t gmic_instance;
       cimg::swap(gmic_instance.commands,gmic_instance0.commands);
       cimg::swap(gmic_instance.commands_names,gmic_instance0.commands_names);
       cimg::swap(gmic_instance.commands_has_arguments,gmic_instance0.commands_has_arguments);
       void *const _display_windows = gmic_instance.display_windows;
       gmic_instance.display_windows = &disp;
-      gmic_instance.run(com.data(),_images,_images_names);
+      try { gmic_instance.run(com.data(),_images,_images_names); }
+      catch (...) { is_exception = true; }
       cimg::swap(gmic_instance.commands,gmic_instance0.commands);
       cimg::swap(gmic_instance.commands_names,gmic_instance0.commands_names);
       cimg::swap(gmic_instance.commands_has_arguments,gmic_instance0.commands_has_arguments);
       gmic_instance.display_windows = _display_windows;
+      if (is_exception) throw CImgDisplayException("");
     } else _data[0]._display(disp,0,false,XYZ,exit_on_anykey,!is_first_call); // Otherwise, use standard display()
     if (disp.key()) is_exit = true;
     disp.resize(cimg_fitscreen(dw,dh,1),false).set_title("%s",dtitle.data());
@@ -3739,9 +3742,13 @@ gmic& gmic::display_images(const CImgList<T>& images, const CImgList<char>& imag
     }
     print_images(images,images_names,selection,false);
     bool is_exit = false;
-    visu._gmic_display(disp,0,&t_visu,false,'x',0.5f,XYZ,exit_on_anykey,0,true,is_exit,
-                       *this,visu,t_visu);
-
+    try {
+      visu._gmic_display(disp,0,&t_visu,false,'x',0.5f,XYZ,exit_on_anykey,0,true,is_exit,
+                         *this,visu,t_visu);
+    } catch (CImgDisplayException&) {
+      try { error(true,images,0,"display","Unable to display image '%s'.",gmic_names.data()); }
+      catch (gmic_exception&) {}
+    }
     cimglist_for(visu,l) visu[l]._is_shared = is_shared(l);
   }
 #endif // #if cimg_display!=0
