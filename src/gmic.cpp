@@ -1861,12 +1861,13 @@ const CImgList<T>& _gmic_display(CImgDisplay &disp, const char *const title, con
       cimg::swap(gmic_instance.commands,gmic_instance0.commands);
       cimg::swap(gmic_instance.commands_names,gmic_instance0.commands_names);
       cimg::swap(gmic_instance.commands_has_arguments,gmic_instance0.commands_has_arguments);
+      void *const _display_windows = gmic_instance.display_windows;
       gmic_instance.display_windows = &disp;
       gmic_instance.run(com.data(),_images,_images_names);
       cimg::swap(gmic_instance.commands,gmic_instance0.commands);
       cimg::swap(gmic_instance.commands_names,gmic_instance0.commands_names);
       cimg::swap(gmic_instance.commands_has_arguments,gmic_instance0.commands_has_arguments);
-      gmic_instance.display_windows = 0;
+      gmic_instance.display_windows = _display_windows;
     } else _data[0]._display(disp,0,false,XYZ,exit_on_anykey,!is_first_call); // Otherwise, use standard display()
     if (disp.key()) is_exit = true;
     disp.resize(cimg_fitscreen(dw,dh,1),false).set_title("%s",dtitle.data());
