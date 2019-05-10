@@ -2032,7 +2032,7 @@ _display2d :
     posx,posy,sizx,sizy={0,[0,0,w,h]}
     alpha_mode,axes_mode,fullscreen_mode,normalization_mode,ratio_mode=0,1,0,1,1
     window_x,window_y,exit_on_singleclick=$_d2d_core_params
-    is_bottom_text,wait_event,mx,my=0,1,-1,-1
+    is_bottom_text,wait_event,mx,my,omb=0,1,-1,-1,0
     xsel0,ysel0,xsel1,ysel1=
     notification=
     wsiz0=${fitscreen\ .,40%,85%}
@@ -2170,6 +2170,9 @@ _display2d :
       nposx,nposy,nsizx,nsizy=$posx,$posy,$sizx,$sizy
       is_CTRL,mb,mx,my,mo={{*,CTRLLEFT}" || "{*,CTRLRIGHT}},{*,b,x,y,-o}
 
+      # Test end of pan shift.
+      if !($mb&4)" && "!($is_CTRL" && "($mb&1)) pan_mx,pan_my,pan_posx,pan_posy= fi
+
       # Test if text must be displayed at the bottom.
       if {view,$my<0" || "$my>=h-16} is_bottom_text=0
       elif $my<16 is_bottom_text=1
@@ -2192,6 +2195,34 @@ _display2d :
         w[] $wsiz0
         notification="Reset Window Size"
         skip {*,-R} rmn baseview
+      fi
+
+      # Events related to image selection.
+      if !$is_CTRL" && "$mb&1" && "$mx>0
+        xsel,ysel={X=[$nposx,$nposy]+[$mx,$my]*[$nsizx,$nsizy]/[{*,w,h}];\
+                   floor([max(0,min(X[0],w#0-1)),max(0,min(X[1],h#0-1))])}
+        if !narg($xsel0)" && "!($omb&1) xsel0,ysel0,xsel1,ysel1=$xsel,$ysel,$xsel,$ysel
+        elif narg($xsel0) xsel1,ysel1=$xsel,$ysel
+        fi
+        if $mx<=16 nposx-={$nsizx/64} wait_event=0 xzoom,yzoom=
+        elif $mx>={*,w}-17 nposx+={$nsizx/64} wait_event=0 xzoom,yzoom=
+        fi
+        if $my<=16 nposy-={$nsizy/64} wait_event=0 xzoom,yzoom=
+        elif $my>{*,h}-17 nposy+={$nsizx/64} wait_event=0 xzoom,yzoom=
+        fi
+        rmn view
+      elif !($mb&1)
+        if narg($xsel0)
+          if [$xsel0,$ysel0]==[$xsel1,$ysel1] # One px selection -> reset view or exit.
+            if 0$exit_on_singleclick" && "$nsizx>=w#0" && "$nsizy>=h#0 break fi
+            nposx,nposy,nsizx,nsizy={0,[0,0,w,h]}
+          else # Otherwise, zoom in
+            nposx,nposy,nsizx,nsizy={[min($xsel0,$xsel1),min($ysel0,$ysel1),abs([$xsel1-$xsel0,$ysel1-$ysel0])+1]}
+          fi
+          xzoom,yzoom=
+          rmn view
+        fi
+        xsel0,ysel0,xsel1,ysel1=
       fi
 
       # Events related to image displacement and mode changes.
@@ -2252,34 +2283,6 @@ _display2d :
                              [$nposx,$nposy]+[$mx,$my]*[$nsizx,$nsizy]/[{*,w,h}];\
                [max(0,min(X[0],w#0-1)),max(0,min(X[1],h#0-1))]}
         nposx,nposy,nsizx,nsizy={[[$xzoom,$yzoom]+0.75*[$nposx-$xzoom,$nposy-$yzoom],round(0.75*[$nsizx,$nsizy])]}
-
-      elif !($mb&4)" && "!($is_CTRL" && "$mb&1) pan_mx,pan_my,pan_posx,pan_posy=
-      fi
-
-      # Events related to image selection.
-      if !$is_CTRL" && "$mb&1" && "$mx>0
-        xsel1,ysel1={X=[$nposx,$nposy]+[$mx,$my]*[$nsizx,$nsizy]/[{*,w,h}];\
-                     floor([max(0,min(X[0],w#0-1)),max(0,min(X[1],h#0-1))])}
-        if !narg($xsel0) xsel0,ysel0=$xsel1,$ysel1 fi
-        if $mx<=16 nposx-={$nsizx/64} wait_event=0 xzoom,yzoom=
-        elif $mx>={*,w}-17 nposx+={$nsizx/64} wait_event=0 xzoom,yzoom=
-        fi
-        if $my<=16 nposy-={$nsizy/64} wait_event=0 xzoom,yzoom=
-        elif $my>{*,h}-17 nposy+={$nsizx/64} wait_event=0 xzoom,yzoom=
-        fi
-        rmn view
-      elif !($mb&1)
-        if narg($xsel0)
-          if [$xsel0,$ysel0]==[$xsel1,$ysel1] # One px selection -> reset view or exit.
-            if 0$exit_on_singleclick" && "$nsizx>=w#0" && "$nsizy>=h#0 break fi
-            nposx,nposy,nsizx,nsizy={0,[0,0,w,h]}
-          else # Otherwise, zoom in
-            nposx,nposy,nsizx,nsizy={[min($xsel0,$xsel1),min($ysel0,$ysel1),abs([$xsel1-$xsel0,$ysel1-$ysel0])+1]}
-          fi
-          xzoom,yzoom=
-          rmn view
-        fi
-        xsel0,ysel0,xsel1,ysel1=
       fi
 
       # Constrain image displacement.
@@ -2290,7 +2293,7 @@ _display2d :
         rmn baseview
       fi
       if [$mx,$my]!=[$old_mx,$old_my] rmn view fi
-
+      omb=$mb
     done
     k[0] w[] 0
   endl done
