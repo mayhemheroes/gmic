@@ -681,10 +681,10 @@ do_gmic_stdlib.h:
 */\n" > gmic_stdlib.h
 	@\gmic gmic_stdlib.gmic raw:gmic_stdlib.gmic,char compress_gmic 1 a y serialize char,1,0 o -.h,uchar | sed 's/unsigned char/const unsigned char/' | sed 's/unnamed/gmic_stdlib/' >> gmic_stdlib.h
 	@echo "\nconst unsigned long size_data_gmic_stdlib = (unsigned long)sizeof(data_gmic_stdlib);" >> gmic_stdlib.h
-#	@\gmic v - _update_server_upload gmic_stdlib.h
+	@\gmic v - _update_server_upload gmic_stdlib.h
 	@cp -f gmic_stdlib.h /tmp/gmic_stdlib$(VERSION).h
-#	@\gmic v - _update_server_upload /tmp/gmic_stdlib$(VERSION).h
-#	@\gmic v - _update_server_upload gmic_stdlib.h
+	@\gmic v - _update_server_upload /tmp/gmic_stdlib$(VERSION).h
+	@\gmic v - _update_server_upload gmic_stdlib.h
 
 # Bash completion script
 #-----------------------
