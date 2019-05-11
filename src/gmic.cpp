@@ -12920,6 +12920,16 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   }
                   has_arguments = true;
 
+                  // Substitute $[] -> List of selected image indices.
+                } else if (nsource[1]=='[' && nsource[2]==']') {
+                  nsource+=3;
+                  cimg_forY(selection,i) {
+                    cimg_snprintf(substr,substr.width(),"%u,",selection[i]);
+                    CImg<char>(substr.data(),(unsigned int)std::strlen(substr),1,1,1,true).
+                      append_string_to(substituted_command,ptr_sub);
+                  }
+                  if (selection) --ptr_sub;
+
                   // Substitute $= -> transfer (quoted) arguments to named variables.
                 } else if (nsource[1]=='=' &&
                            cimg_sscanf(nsource + 2,"%255[a-zA-Z0-9_]",title)==1 &&
