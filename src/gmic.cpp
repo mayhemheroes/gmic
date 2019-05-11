@@ -8757,21 +8757,93 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           else { pattern = 0; is_cond = false; }
           boundary = pattern%3;
           CImg<char>::string(argument + (is_cond?2:0)).get_split(CImg<char>::vector(','),0,false).move_to(g_list_c);
-
           print(images,0,"Get %s%s with name%s '%s' for image%s (case-%s).",
                 boundary==0?"all image ind":boundary==1?"lowest image ind":"highest image ind",
                 boundary==0 || g_list_c.size()>1?"ices":"ex",
                 g_list_c.size()>1?"s":"",
                 gmic_argument_text_printed() + (is_cond?2:0),gmic_selection.data(),
                 pattern<3?"sensitive":"insensitive");
-          cimglist_for(g_list_c,k) if (k || !is_cond) {
+          int nb_found = 0, last_found = 0;
+          const bool is_single_res = boundary>0 && g_list_c.size()==1;
+          if (!is_single_res) ind.assign(selection.height(),1,1,1,0);
+
+          cimglist_for(g_list_c,k) {
             g_list_c[k].unroll('x');
             if (g_list_c[k].back()) g_list_c[k].resize(g_list_c[k].width()+1,1,1,1,0);
             strreplace_fw(g_list_c[k]);
-            std::fprintf(stderr,"\nDEBUG ! Name '%s'\n",g_list_c[k].data());
-            cimg_forY(selection,l) {
+            switch (pattern) {
+            case 0 : // All indices, case sensitive
+              cimg_forY(selection,l)
+                if (!std::strcmp(g_list_c[k],images_names[selection[l]])) {
+                  nb_found+=(ind[l]==0); ind[l] = 1; last_found = l;
+                }
+              break;
+            case 1 : // Lowest index, case sensitive
+              if (is_single_res) {
+                cimg_forY(selection,l)
+                  if (!std::strcmp(g_list_c[k],images_names[selection[l]])) {
+                    nb_found = 1; last_found = l; break;
+                  }
+              } else
+                cimg_forY(selection,l)
+                  if (!std::strcmp(g_list_c[k],images_names[selection[l]])) {
+                    nb_found+=(ind[l]==0); ind[l] = 1; last_found = l; break;
+                  }
+              break;
+            case 2 : // Highest index, case sensitive
+              if (is_single_res) {
+                cimg_rofY(selection,l)
+                  if (!std::strcmp(g_list_c[k],images_names[selection[l]])) {
+                    nb_found = 1; last_found = l; break;
+                  }
+              } else
+                cimg_rofY(selection,l)
+                  if (!std::strcmp(g_list_c[k],images_names[selection[l]])) {
+                    nb_found+=(ind[l]==0); ind[l] = 1; last_found = l; break;
+                  }
+              break;
+            case 3 : // All indices, case insensitive
+              cimg_forY(selection,l)
+                if (!cimg::strcasecmp(g_list_c[k],images_names[selection[l]])) {
+                  nb_found+=(ind[l]==0); ind[l] = 1; last_found = l;
+                }
+              break;
+            case 4 : // Lowest index, case insensitive
+              if (is_single_res) {
+                cimg_forY(selection,l)
+                  if (!cimg::strcasecmp(g_list_c[k],images_names[selection[l]])) {
+                    nb_found = 1; last_found = l; break;
+                  }
+              } else
+                cimg_forY(selection,l)
+                  if (!cimg::strcasecmp(g_list_c[k],images_names[selection[l]])) {
+                    nb_found+=(ind[l]==0); ind[l] = 1; last_found = l; break;
+                  }
+              break;
+            default : // Highest index, case insensitive
+              if (is_single_res) {
+                cimg_rofY(selection,l)
+                  if (!cimg::strcasecmp(g_list_c[k],images_names[selection[l]])) {
+                    nb_found = 1; last_found = l; break;
+                  }
+              } else
+                cimg_rofY(selection,l)
+                  if (!cimg::strcasecmp(g_list_c[k],images_names[selection[l]])) {
+                    nb_found+=(ind[l]==0); ind[l] = 1; last_found = l; break;
+                  }
+              break;
             }
           }
+          if (!nb_found) CImg<char>(1,1,1,1,0).move_to(status);
+          else if (nb_found==1) {
+            cimg_snprintf(title,_title.width(),"%u",selection[last_found]);
+            CImg<char>::string(title).move_to(status);
+          } else {
+            ind0.assign(nb_found);
+            nb_found = 0; cimg_forX(ind,l) if (ind[l]) ind0[nb_found++] = selection[l];
+            ind0.value_string().move_to(status);
+          }
+          if (!is_single_res) ind.assign();
           g_list_c.assign();
           ++position; continue;
         }
