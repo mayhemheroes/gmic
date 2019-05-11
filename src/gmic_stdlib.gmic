@@ -2032,6 +2032,7 @@ _display2d :
        if $""#>=8 $""=arg u $arg1\" \"$arg2\" \"$arg3\" \"$arg4\" \"...\" \"$arg5\" \"$arg6\" \"$arg7\" \"$arg8
        else ({'\"$""*\"'}) replace. {','},32 u {t} rm.
        fi"
+  m "rmn : nmd $\"*\" rm[${}]"
   repeat $! l[$>] nm={b} nm img
     if {!w} d break fi
     is_moderate_ratio={0,D=[w,h];max(D)/min(D)<6}
@@ -2329,7 +2330,7 @@ _display2d :
     done
     k[0] w[] 0
   nm $nm endl done
-  uncommand _d2d_format
+  uncommand _d2d_format,rmn
   v +
 
 #@cli d3d : eq. to 'display3d'. : (+)
@@ -6341,20 +6342,6 @@ remove_duplicates :
 remove_empty :
   e[^-1] "Remove empty images in selected list of image$?."
   v - repeat $! if {$<,!whds} rm[$<] fi done v +
-
-#@cli rmn : eq. to 'remove_named'.
-rmn :
-  _remove_named $"*"
-
-#@cli remove_named : name1,name2,...nameN
-#@cli : Remove images with specified names, if any in the list.
-remove_named :
-  _remove_named $"*"
-
-_remove_named :
-  e[0--3] "Remove images named '$*'."
-  v - nmd $"*" rm[${}] v +
-#  $=arg repeat $#,k repeat $! if ['{$<,n}']==['${arg{1+$k}}'] rm[$<] fi done done v +
 
 #@cli rv : eq. to 'reverse'. : (+)
 
@@ -24586,6 +24573,7 @@ x_morph : check "isint(${1=16}) && isint(${2=3}) && $2>=0 && $2<=4" check_displa
 ----\n
 -----------------------------------------------------------"
   v -
+  m "rmn : nmd $\"*\" rm[${}]"
   offset=0
   radius_keypoints=3
   repeat $!-1 l[{[$>,$>+1]+$offset}] nm0={0,n} nm1={1,n}
@@ -24738,7 +24726,7 @@ x_morph : check "isint(${1=16}) && isint(${2=3}) && $2>=0 && $2<=4" check_displa
     done
     nm. $nm1 k[-$1--1]
     offset+={$!-2}
-  endl done w0 0 w1 0 v +
+  endl done w0 0 w1 0 uncommand rmn v +
 
 #@cli x_pacman
 #@cli : Launch pacman game.
@@ -26643,6 +26631,7 @@ x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2 && isint(${3=0
 ----\n
 -------------------------------------------------------------"
   v -
+  m "rmn : nmd $\"*\" rm[${}]"
   radius_keypoints=4
   repeat $! l[$>] nm={n}
     nm img
@@ -26786,7 +26775,7 @@ x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2 && isint(${3=0
     k[img,keypoints]
     _x_warp_rbf[keypoints] {img,[w,h]} +. '[x,y]'
     warp[img] .,0,2,3 rm. nm $nm
-  endl done c 0,255 w 0 v +
+  endl done c 0,255 w 0 uncommand rmn v +
 
 # Generate 2d warping field from set of keypoints, using RBF reconstruction.
 # $1,$2 = width,height
