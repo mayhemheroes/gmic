@@ -2228,7 +2228,7 @@ const char *gmic::builtin_commands_names[] = {
   "l","l3d","label","le","light3d","line","local","log","log10","log2","lt",
   "m","m*","m/","m3d","mandelbrot","map","matchpatch","max","md3d","mdiv","median","min","mirror","mmul","mod",
     "mode3d","moded3d","move","mse","mul","mul3d","mutex","mv",
-  "n","name","neq","nm","noarg","noise","normalize",
+  "n","name","named","neq","nm","nmd","noarg","noise","normalize",
   "o","o3d","object3d","onfail","opacity3d","or","output",
   "p","parallel","pass","permute","plasma","plot","point","polygon","pow","print",
     "progress",
@@ -4363,39 +4363,6 @@ CImg<char> gmic::substitute_item(const char *const source,
             append_string_to(substituted_items,ptr_sub);
         continue;
 
-        //  '$[...]' and '$$[...]' expressions.
-      } else if (nsource[1]=='[' || (nsource[1]=='$' && nsource[2]=='[')) {
-        is_2dollars = nsource[1]=='$';
-        const char *const ptr_beg = nsource + 2 + (is_2dollars?1:0), *ptr_end = ptr_beg; unsigned int p = 0;
-        for (p = 1; p>0 && *ptr_end; ++ptr_end) { if (*ptr_end=='[') ++p; if (*ptr_end==']') --p; }
-        if (p) {
-          CImg<char>::append_string_to(*(nsource++),substituted_items,ptr_sub);
-          CImg<char>::append_string_to(*(nsource++),substituted_items,ptr_sub);
-          if (is_2dollars) CImg<char>::append_string_to(*(nsource++),substituted_items,ptr_sub);
-          continue;
-        }
-        l_inbraces = (int)(ptr_end - ptr_beg - 1);
-        inbraces.assign(ptr_beg,l_inbraces + 1).back() = 0;
-        if (l_inbraces>0)
-          substitute_item(inbraces,images,images_names,parent_images,parent_images_names,variables_sizes,
-                          command_selection,false).move_to(inbraces);
-        if (is_2dollars) {
-          cimglist_for(images_names,l) if (!std::strcmp(inbraces,images_names[l])) {
-            cimg_snprintf(substr,substr.width(),"%d,",l);
-            CImg<char>(substr.data(),(unsigned int)std::strlen(substr),1,1,1,true).
-              append_string_to(substituted_items,ptr_sub);
-          }
-          if (*substr) --ptr_sub;
-        } else {
-          cimglist_for(images_names,l) if (!std::strcmp(inbraces,images_names[l])) {
-            cimg_snprintf(substr,substr.width(),"%d",l);
-            CImg<char>(substr.data(),(unsigned int)std::strlen(substr),1,1,1,true).
-              append_string_to(substituted_items,ptr_sub);
-            break;
-          }
-        }
-        nsource+=l_inbraces + 3 + (is_2dollars?1:0);
-        continue;
         //  '${...}' and '$${...}' expressions.
       } else if (nsource[1]=='{' || (nsource[1]=='$' && nsource[2]=='{')) {
         is_2dollars = nsource[1]=='$';
@@ -5074,7 +5041,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           case 'r' : std::strcpy(command,"rotate3d"); break;
           case 's' : std::strcpy(command,"split3d"); break;
           case '-' : std::strcpy(command,"sub3d"); break;
-          } else if (!command4 && command2=='3' && command3=='d') {
+          } else if (!is_get && !command3 && command0=='n' && command1=='m' && command2=='d') {
+          std::strcpy(command,"named"); // Shortcut 'nmd' for 'named".
+        } else if (!command4 && command2=='3' && command3=='d') {
           // Four-chars shortcuts (ending with '3d').
           if (command0=='d' && command1=='b') {
             if (!is_get && !is_selection) CImg<char>::string("double3d").move_to(_item);
@@ -8777,6 +8746,32 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           }
           cimg_forY(selection,l)
             images_names[selection[l]].assign(g_list_c[l%g_list_c.width()]);
+          g_list_c.assign();
+          ++position; continue;
+        }
+
+        // Get image indices from names.
+        if (!is_get && !std::strcmp("named",command)) {
+          gmic_substitute_args(true);
+          if (cimg_sscanf(argument,"%u%c",&pattern,&sep)==2 && pattern>=0 && pattern<=5 && sep==',') is_cond = true;
+          else { pattern = 0; is_cond = false; }
+          boundary = pattern%3;
+          CImg<char>::string(argument + (is_cond?2:0)).get_split(CImg<char>::vector(','),0,false).move_to(g_list_c);
+
+          print(images,0,"Get %s%s with name%s '%s' for image%s (case-%s).",
+                boundary==0?"all image ind":boundary==1?"lowest image ind":"highest image ind",
+                boundary==0 || g_list_c.size()>1?"ices":"ex",
+                g_list_c.size()>1?"s":"",
+                gmic_argument_text_printed() + (is_cond?2:0),gmic_selection.data(),
+                pattern<3?"sensitive":"insensitive");
+          cimglist_for(g_list_c,k) if (k || !is_cond) {
+            g_list_c[k].unroll('x');
+            if (g_list_c[k].back()) g_list_c[k].resize(g_list_c[k].width()+1,1,1,1,0);
+            strreplace_fw(g_list_c[k]);
+            std::fprintf(stderr,"\nDEBUG ! Name '%s'\n",g_list_c[k].data());
+            cimg_forY(selection,l) {
+            }
+          }
           g_list_c.assign();
           ++position; continue;
         }
