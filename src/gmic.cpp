@@ -8733,7 +8733,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
         // Set image name.
         if (!is_get && !std::strcmp("name",command)) {
-          gmic_substitute_args(true);
+          gmic_substitute_args(false);
           if (selection.height()>1)
             CImg<char>::string(argument).get_split(CImg<char>::vector(','),0,false).move_to(g_list_c);
           else CImg<char>::string(argument).move_to(g_list_c);
@@ -8752,7 +8752,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
         // Get image indices from names.
         if (!is_get && !std::strcmp("named",command)) {
-          gmic_substitute_args(true);
+          gmic_substitute_args(false);
           if (cimg_sscanf(argument,"%u%c",&pattern,&sep)==2 && pattern>=0 && pattern<=5 && sep==',') is_cond = true;
           else { pattern = 0; is_cond = false; }
           boundary = pattern%3;
@@ -8762,7 +8762,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           bool is_empty_name = false;
           unsigned int sl = 0;
           for (; argument[sl]; ++sl) if (argument[sl]==',' && argument[sl+1]==',') { is_empty_name = true; break; }
-          if (!is_empty_name && (*argument==',' || argument[sl - 1]==',')) is_empty_name = true;
+          if (!is_empty_name && sl && (*argument==',' || argument[sl - 1]==',')) is_empty_name = true;
           if (is_empty_name) CImg<char>(1,1,1,1,0).move_to(g_list_c);
 
           print(images,0,"Get %s%s with name%s '%s' for image%s (case-%s).",
@@ -9128,7 +9128,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
         // Set 3d object opacity.
         if (!std::strcmp("opacity3d",command)) {
-          gmic_substitute_args(true);
+          gmic_substitute_args(false);
           value = 1;
           if (cimg_sscanf(argument,"%lf%c",
                           &value,&end)==1) ++position;
