@@ -1998,7 +1998,7 @@ d2d :
   _display2d 0
 
 _d2d_core :
-  v - _gmic_s="$?" v +
+  v - _gmic_s="$?" _d2d_core=1 v +
   _display2d $1
 
 #@cli display2d
@@ -2133,51 +2133,53 @@ _display2d :
             j.. .,0,{$is_bottom_text?h#-2-h#-1:0},0,0,0.85 rm.
           fi
 
-          if $posmx>=0" && "$posmx<w#0" && "$posmy>=0" && "$posmy<h#0
-            if !narg($xsel0)" || "$is_selection_a_point
-              if {0,P=I($posmx,$posmy);s==3" && "min(isint(P))" && "min(P)>=0" && "max(P)<=255}
-                hexstr="= \#"\
-                      {0,`digit(x)=(x<10?_'0'+x:_'A'+x-10);\
-                          P=I($posmx,$posmy);\
-                          [digit(P[0]>>4),digit(P[0]&15),\
-                           digit(P[1]>>4),digit(P[1]&15),\
-                           digit(P[2]>>4),digit(P[2]&15)]`}" "
+          if {*,x}>=0
+            if $posmx>=0" && "$posmx<w#0" && "$posmy>=0" && "$posmy<h#0
+              if !narg($xsel0)" || "$is_selection_a_point
+                if {0,P=I($posmx,$posmy);s==3" && "min(isint(P))" && "min(P)>=0" && "max(P)<=255}
+                  hexstr="= \#"\
+                        {0,`digit(x)=(x<10?_'0'+x:_'A'+x-10);\
+                            P=I($posmx,$posmy);\
+                            [digit(P[0]>>4),digit(P[0]&15),\
+                             digit(P[1]>>4),digit(P[1]&15),\
+                             digit(P[2]>>4),digit(P[2]&15)]`}" "
+                fi
+                0 t. " Point ( "$posmx","$posmy" ) = [ "${_d2d_format\ {0,_I($posmx,$posmy)}}" ] "$hexstr,1,0,14,1,1
+                n. 0,255 +dilate. 3 *. -1 n. 0,80 +[-2,-1] r. 100%,100%,1,..
+                j.. .,0,{$is_bottom_text?h#-2-h#-1:0},0,0,0.85 rm.
               fi
-              0 t. " Point ( "$posmx","$posmy" ) = [ "${_d2d_format\ {0,_I($posmx,$posmy)}}" ] "$hexstr,1,0,14,1,1
-              n. 0,255 +dilate. 3 *. -1 n. 0,80 +[-2,-1] r. 100%,100%,1,..
-              j.. .,0,{$is_bottom_text?h#-2-h#-1:0},0,0,0.85 rm.
+              x0,y0,x1,y1={[round([$posmx-$posx,$posmy-$posy]*[{*,w,h}]/[$sizx,$sizy]),\
+                            round([$posmx-$posx+1,$posmy-$posy+1]*[{*,w,h}]/[$sizx,$sizy])-1]}
+              if $x1-$x0>=8" && "$y1-$y0>=8
+                rectangle. $x0,$y0,$x1,$y1,1,0x55555555,0 # Draw pixel contour when zoomed-in
+                rectangle. $x0,$y0,$x1,$y1,1,0xAAAAAAAA,255
+              fi
             fi
-            x0,y0,x1,y1={[round([$posmx-$posx,$posmy-$posy]*[{*,w,h}]/[$sizx,$sizy]),\
-                          round([$posmx-$posx+1,$posmy-$posy+1]*[{*,w,h}]/[$sizx,$sizy])-1]}
-            if $x1-$x0>=8" && "$y1-$y0>=8
-              rectangle. $x0,$y0,$x1,$y1,1,0x55555555,0 # Draw pixel contour when zoomed-in
-              rectangle. $x0,$y0,$x1,$y1,1,0xAAAAAAAA,255
+
+            if $axes_mode
+              line. $mx,0,$mx,100%,0.5,0xFF00FF00,255 # Draw horizontal/vertical axes
+              line. $mx,0,$mx,100%,0.5,0x00FF00FF,0
+              line. 0,$my,100%,$my,0.5,0xFF00FF00,255
+              line. 0,$my,100%,$my,0.5,0x00FF00FF,0
             fi
           fi
 
-          if $axes_mode
-            line. $mx,0,$mx,100%,0.5,0xFF00FF00,255 # Draw horizontal/vertical axes
-            line. $mx,0,$mx,100%,0.5,0x00FF00FF,0
-            line. 0,$my,100%,$my,0.5,0xFF00FF00,255
-            line. 0,$my,100%,$my,0.5,0x00FF00FF,0
-          fi
-        fi
-
-        if narg($xsel0) # Draw rectangular selection
-          x0,y0,x1,y1={xm=min($xsel0,$xsel1);xM=max($xsel0,$xsel1);\
-                       ym=min($ysel0,$ysel1);yM=max($ysel0,$ysel1);\
-                       [[xm-$posx,ym-$posy]*[{*,w,h}]/[$sizx,$sizy],\
-                        [xM+1-$posx,yM+1-$posy]*[{*,w,h}]/[$sizx,$sizy]-1]}
-          rectangle. $x0,$y0,$x1,$y1,0.2,0
-          rectangle. $x0,$y0,$x1,$y1,0.9,0x55555555,0
-          rectangle. $x0,$y0,$x1,$y1,0.9,0xAAAAAAAA,255
-          if $xsel0>$xsel1 x0,x1=$x1,$x0 fi
-          if $ysel0>$ysel1 y0,y1=$y1,$y0 fi
-          if $xsel0!=$xsel1" && "$ysel0!=$ysel1
-            x0,y0,x1,y1={[(0.5+[$xsel0-$posx,$ysel0-$posy])*[{*,w,h}]/[$sizx,$sizy],\
-                          (0.5+[$xsel1-$posx,$ysel1-$posy])*[{*,w,h}]/[$sizx,$sizy]]}
-            line. $x0,$y0,$x1,$y1,0.9,0x33333333,0
-            line. $x0,$y0,$x1,$y1,0.9,0xCCCCCCCC,255
+          if narg($xsel0) # Draw rectangular selection
+            x0,y0,x1,y1={xm=min($xsel0,$xsel1);xM=max($xsel0,$xsel1);\
+                         ym=min($ysel0,$ysel1);yM=max($ysel0,$ysel1);\
+                         [[xm-$posx,ym-$posy]*[{*,w,h}]/[$sizx,$sizy],\
+                          [xM+1-$posx,yM+1-$posy]*[{*,w,h}]/[$sizx,$sizy]-1]}
+            rectangle. $x0,$y0,$x1,$y1,0.2,0
+            rectangle. $x0,$y0,$x1,$y1,0.9,0x55555555,0
+            rectangle. $x0,$y0,$x1,$y1,0.9,0xAAAAAAAA,255
+            if $xsel0>$xsel1 x0,x1=$x1,$x0 fi
+            if $ysel0>$ysel1 y0,y1=$y1,$y0 fi
+            if $xsel0!=$xsel1" && "$ysel0!=$ysel1
+              x0,y0,x1,y1={[(0.5+[$xsel0-$posx,$ysel0-$posy])*[{*,w,h}]/[$sizx,$sizy],\
+                            (0.5+[$xsel1-$posx,$ysel1-$posy])*[{*,w,h}]/[$sizx,$sizy]]}
+              line. $x0,$y0,$x1,$y1,0.9,0x33333333,0
+              line. $x0,$y0,$x1,$y1,0.9,0xCCCCCCCC,255
+            fi
           fi
         fi
 
@@ -2329,7 +2331,8 @@ _display2d :
       if [$mx,$my]!=[$old_mx,$old_my] rmn view fi
       omb=$mb
     done
-    k[0] w[] 0
+    k[0]
+    if !narg($_d2d_core) w[] 0 fi
   nm $nm endl done
   uncommand _d2d_format,rmn
   v +
