@@ -1939,7 +1939,7 @@ using namespace cimg_library;
 #define gmic_comslots 128
 #endif
 #ifndef gmic_winslots
-#define gmic_winslots 128
+#define gmic_winslots 10
 #endif
 
 // Macro to force stringifying selection for error messages.
@@ -2419,7 +2419,7 @@ unsigned int gmic::strescape(const char *const str, char *const res) {
     commands_has_arguments(new CImgList<char>[gmic_comslots]), \
     _variables(new CImgList<char>[gmic_varslots]), _variables_names(new CImgList<char>[gmic_varslots]), \
     variables(new CImgList<char>*[gmic_varslots]), variables_names(new CImgList<char>*[gmic_varslots]), \
-    display_windows(gmic_winslots), is_running(false)
+    is_running(false)
 
 #define display_window(n) (*(CImgDisplay*)display_windows[n])
 
@@ -2445,10 +2445,7 @@ gmic::gmic(const char *const commands_line, const char *const custom_commands,
 
 gmic::~gmic() {
   cimg::exception_mode(cimg_exception_mode);
-#if cimg_display!=0
   cimg_forX(display_windows,l) delete &display_window(l);
-#endif // #if cimg_display!=0
-
   cimg::mutex(21);
 #if defined(__MACOSX__) || defined(__APPLE__)
   void* tid = (void*)(cimg_ulong)getpid();
@@ -3544,12 +3541,13 @@ void gmic::_gmic(const char *const commands_line,
   starting_commands_line = commands_line;
   reference_time = (unsigned long)cimg::time();
   if (is_first) {
-#if cimg_display!=0
     try { is_display_available = (bool)CImgDisplay::screen_width(); } catch (CImgDisplayException&) { }
-#endif
     is_first = false;
   }
-  cimg_forX(display_windows,l) display_windows[l] = new CImgDisplay;
+  if (is_display_available) {
+    display_windows.assign(gmic_winslots);
+    cimg_forX(display_windows,l) display_windows[l] = new CImgDisplay;
+  }
   for (unsigned int l = 0; l<gmic_comslots; ++l) {
     commands_names[l].assign();
     commands[l].assign();
@@ -3678,7 +3676,6 @@ gmic& gmic::display_images(const CImgList<T>& images, const CImgList<char>& imag
     return *this;
   }
 
-#if cimg_display!=0
   CImgList<T> visu;
   CImgList<char> t_visu;
   CImg<bool> is_valid(1,selection.height(),1,1,true);
@@ -3747,7 +3744,6 @@ gmic& gmic::display_images(const CImgList<T>& images, const CImgList<char>& imag
     }
     cimglist_for(visu,l) visu[l]._is_shared = is_shared(l);
   }
-#endif // #if cimg_display!=0
   return *this;
 }
 
@@ -3774,7 +3770,6 @@ gmic& gmic::display_plots(const CImgList<T>& images, const CImgList<char>& image
     return *this;
   }
 
-#if cimg_display!=0
   CImgList<unsigned int> empty_indices;
   cimg_forY(selection,l) if (!gmic_check(images[selection(l)]))
     CImg<unsigned int>::vector(selection(l)).move_to(empty_indices);
@@ -3813,7 +3808,6 @@ gmic& gmic::display_plots(const CImgList<T>& images, const CImgList<char>& image
       if (is_verbose) nb_carriages = 0;
     }
   }
-#endif // #if cimg_display!=0
   return *this;
 }
 
@@ -3845,7 +3839,6 @@ gmic& gmic::display_objects3d(const CImgList<T>& images, const CImgList<char>& i
     return *this;
   }
 
-#if cimg_display!=0
   CImgDisplay _disp, &disp = display_window(0)?display_window(0):_disp;
   cimg_forY(selection,l) {
     const unsigned int uind = selection[l];
@@ -3886,7 +3879,6 @@ gmic& gmic::display_objects3d(const CImgList<T>& images, const CImgList<char>& i
           pose3d[12],pose3d[13],pose3d[14],pose3d[15]);
     if (disp.is_closed()) break;
   }
-#endif // #if cimg_display!=0
   return *this;
 }
 
@@ -6149,7 +6141,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   state?"Show":"Hide",
                   gmic_selection.data(),cimg_display?"available":"support");
           } else {
-#if cimg_display!=0
             if (state) cimg_forY(selection,l) {
                 if (!display_window(l).is_closed()) display_window(selection[l]).show_mouse();
               }
@@ -6159,7 +6150,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             print(images,0,"%s mouse cursor for display window%s.",
                   state?"Show":"Hide",
                   gmic_selection.data());
-#endif // #if cimg_display!=0
           }
           continue;
         }
@@ -11834,9 +11824,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                     feature_type==0?"point":feature_type==1?"segment":
                     feature_type==2?"rectangle":"ellipse",gmic_selection.data(),
                     value,sep=='%'?"%":"",value0,sep0=='%'?"%":"",value1,sep1=='%'?"%":"",
-                    cimg_display==0?"support":"available");
+                    cimg_display?"available":"support");
             } else {
-#if cimg_display!=0
               print(images,0,"Select %s in image%s in interactive mode, from point (%g%s,%g%s,%g%s).",
                     feature_type==0?"point":feature_type==1?"segment":
                     feature_type==2?"rectangle":"ellipse",gmic_selection.data(),
@@ -11859,7 +11848,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                     (bool)exit_on_anykey,is_deep_selection));
                 }
               }
-#endif // #if cimg_display!=0
             }
           } else arg_error("select");
           is_released = false; ++position; continue;
@@ -12314,7 +12302,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   gmic_selection.data(),
                   wind,cimg_display?"available":"support");
           } else {
-#if cimg_display!=0
             // Get images to display and compute associated optimal size.
             unsigned int optw = 0, opth = 0;
             if (dimw && dimh) cimg_forY(selection,l) {
@@ -12393,7 +12380,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               if (g_list) g_list.display(disp);
             }
             g_list.assign();
-#endif // #if cimg_display!=0
           }
           is_released = true; continue;
         }
