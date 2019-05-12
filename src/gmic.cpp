@@ -5821,7 +5821,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         // Import custom commands.
-        if (!std::strcmp("command",item)) {
+        if (!is_get && !std::strcmp("command",item)) {
           gmic_substitute_args(false);
           name.assign(argument,(unsigned int)std::strlen(argument) + 1);
           const char *arg_command_text = gmic_argument_text_printed();
@@ -6057,7 +6057,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         gmic_simple_command("cosh",cosh,"Compute pointwise hyperbolic cosine of image%s.");
 
         // Camera input.
-        if (!std::strcmp("camera",item)) {
+        if (!is_get && !std::strcmp("camera",item)) {
           gmic_substitute_args(false);
           float
             cam_index = 0, nb_frames = 1, skip_frames = 0,
@@ -6153,7 +6153,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       gmic_commands_d :
 
         // Done.
-        if (!std::strcmp("done",item)) {
+        if (!is_get && !std::strcmp("done",item)) {
           const CImg<char> &s = callstack.back();
           if (s[0]!='*' || (s[1]!='r' && s[1]!='f'))
             error(true,images,0,0,
@@ -6189,7 +6189,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         // Do...while.
-        if (!std::strcmp("do",item)) {
+        if (!is_get && !std::strcmp("do",item)) {
           if (is_debug_info && debug_line!=~0U) {
             cimg_snprintf(argx,_argx.width(),"*do#%u",debug_line);
             CImg<char>::string(argx).move_to(callstack);
@@ -6253,7 +6253,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         // Enable debug mode (useful when 'debug' is invoked from a custom command).
-        if (!std::strcmp("debug",item)) {
+        if (!is_get && !std::strcmp("debug",item)) {
           is_debug = true;
           continue;
         }
@@ -6408,7 +6408,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         // Set double-sided mode for 3D rendering.
-        if (!std::strcmp("double3d",item)) {
+        if (!is_get && !std::strcmp("double3d",item)) {
           gmic_substitute_args(false);
           bool state = true;
           if (!argument[1] && (*argument=='0' || *argument=='1')) {
@@ -6643,7 +6643,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       gmic_commands_e :
 
         // Endif.
-        if (!std::strcmp("endif",item) || !std::strcmp("fi",item)) {
+        if (!is_get && (!std::strcmp("endif",item) || !std::strcmp("fi",item))) {
           const CImg<char> &s = callstack.back();
           if (s[0]!='*' || s[1]!='i')
             error(true,images,0,0,
@@ -6655,7 +6655,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         // Else and eluded elif.
-        if (!std::strcmp("else",item) || (!std::strcmp("elif",item) && !check_elif)) {
+        if (!is_get && (!std::strcmp("else",item) || (!std::strcmp("elif",item) && !check_elif))) {
           const CImg<char> &s = callstack.back();
           if (s[0]!='*' || s[1]!='i')
             error(true,images,0,0,
@@ -6678,7 +6678,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         // End local environment.
-        if (!std::strcmp("endlocal",item) || !std::strcmp("endl",item)) {
+        if (!is_get && (!std::strcmp("endlocal",item) || !std::strcmp("endl",item))) {
           const CImg<char> &s = callstack.back();
           if (s[0]!='*' || s[1]!='l')
             error(true,images,0,0,
@@ -6736,7 +6736,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         // Exec.
-        if (!std::strcmp("exec",item)) {
+        if (!is_get && !std::strcmp("exec",item)) {
           gmic_substitute_args(false);
           name.assign(argument,(unsigned int)std::strlen(argument) + 1);
           const char *arg_exec_text = gmic_argument_text_printed();
@@ -7085,7 +7085,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       gmic_commands_f :
 
         // For.
-        if (!std::strcmp("for",item)) {
+        if (!is_get && !std::strcmp("for",item)) {
           gmic_substitute_args(false);
           is_cond = check_cond(argument,images,"for");
           const bool is_first = !nb_fordones || fordones(0,nb_fordones - 1)!=position;
@@ -7213,7 +7213,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         // List of directory files.
-        if (!std::strcmp("files",item)) {
+        if (!is_get && !std::strcmp("files",item)) {
           gmic_substitute_args(false);
           unsigned int mode = 5;
           if ((*argument>='0' && *argument<='5') &&
@@ -7239,7 +7239,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         // Set 3D focale.
-        if (!std::strcmp("focale3d",item)) {
+        if (!is_get && !std::strcmp("focale3d",item)) {
           gmic_substitute_args(false);
           value = 700;
           if (cimg_sscanf(argument,"%lf%c",&value,&end)==1) ++position;
@@ -8285,7 +8285,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         // Set 3D light position.
-        if (!std::strcmp("light3d",item)) {
+        if (!is_get && !std::strcmp("light3d",item)) {
           gmic_substitute_args(true);
           float lx = 0, ly = 0, lz = -5e8f;
           sep = *indices = 0;
@@ -8466,7 +8466,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                 "Divide matrix/vector%s");
 
         // Set 3D rendering modes.
-        if (!std::strcmp("mode3d",item)) {
+        if (!is_get && !std::strcmp("mode3d",item)) {
           gmic_substitute_args(false);
           float mode = 4;
           if (cimg_sscanf(argument,"%f%c",
@@ -8482,7 +8482,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           continue;
         }
 
-        if (!std::strcmp("moded3d",item)) {
+        if (!is_get && !std::strcmp("moded3d",item)) {
           gmic_substitute_args(false);
           float mode = -1;
           if (cimg_sscanf(argument,"%f%c",
@@ -8676,7 +8676,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         // Manage mutexes.
-        if (!std::strcmp("mutex",item)) {
+        if (!is_get && !std::strcmp("mutex",item)) {
           gmic_substitute_args(false);
           unsigned int number, is_lock = 1;
           if ((cimg_sscanf(argument,"%u%c",
@@ -8886,7 +8886,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                 "Compute boolean inequality between image%s");
 
         // Discard custom command arguments.
-        if (!std::strcmp("noarg",item)) {
+        if (!is_get && !std::strcmp("noarg",item)) {
           print(images,0,"Discard command arguments.");
           if (is_noarg) *is_noarg = true;
           continue;
@@ -8929,7 +8929,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       gmic_commands_o :
 
         // Exception handling in local environments.
-        if (!std::strcmp("onfail",item)) {
+        if (!is_get && !std::strcmp("onfail",item)) {
           const CImg<char> &s = callstack.back();
           if (s[0]!='*' || s[1]!='l')
             error(true,images,0,0,
@@ -9793,7 +9793,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         // Run multiple commands in parallel.
-        if (!std::strcmp("parallel",item)) {
+        if (!is_get && !std::strcmp("parallel",item)) {
           gmic_substitute_args(false);
           const char *_arg = argument, *_arg_text = gmic_argument_text_printed();
           bool wait_mode = true;
@@ -9942,7 +9942,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         // Set progress index.
-        if (!std::strcmp("progress",item)) {
+        if (!is_get && !std::strcmp("progress",item)) {
           gmic_substitute_args(false);
           value = -1;
           if (cimg_sscanf(argument,"%lf%c",
@@ -10195,7 +10195,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       gmic_commands_q :
 
         // Quit.
-        if (!std::strcmp("quit",item)) {
+        if (!is_get && !std::strcmp("quit",item)) {
           print(images,0,"Quit G'MIC interpreter.");
           dowhiles.assign(nb_dowhiles = 0);
           fordones.assign(nb_fordones = 0);
@@ -10235,7 +10235,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         // Repeat.
-        if (!std::strcmp("repeat",item)) {
+        if (!is_get && !std::strcmp("repeat",item)) {
           gmic_substitute_args(false);
           const char *varname = title;
           float number = 0;
@@ -10463,7 +10463,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         // Return.
-        if (!std::strcmp("return",item)) {
+        if (!is_get && !std::strcmp("return",item)) {
           if (is_very_verbose) print(images,0,"Return.");
           position = commands_line.size();
           while (callstack && callstack.back()[0]=='*') {
@@ -10763,7 +10763,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       gmic_commands_s :
 
         // Set status.
-        if (!std::strcmp("status",item)) {
+        if (!is_get && !std::strcmp("status",item)) {
           gmic_substitute_args(false);
           print(images,0,"Set status to '%s'.",gmic_argument_text_printed());
           CImg<char>::string(argument).move_to(status);
@@ -11361,7 +11361,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         // Set random generator seed.
-        if (!std::strcmp("srand",item)) {
+        if (!is_get && !std::strcmp("srand",item)) {
           gmic_substitute_args(false);
           value = 0;
           if (cimg_sscanf(argument,"%lf%c",
@@ -11539,7 +11539,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         // Screenshot.
-        if (!std::strcmp("screen",item)) {
+        if (!is_get && !std::strcmp("screen",item)) {
           gmic_substitute_args(false);
           sepx = sepy = sepz = sepc = *argx = *argy = *argz = *argc = 0;
           if (cimg_sscanf(argument,"%255[0-9.eE%+-],%255[0-9.eE%+-],%255[0-9.eE%+-],%255[0-9.eE%+-]%c",
@@ -11607,7 +11607,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         // Input 3D sphere.
-        if (!std::strcmp("sphere3d",item)) {
+        if (!is_get && !std::strcmp("sphere3d",item)) {
           gmic_substitute_args(false);
           float radius = 100, recursions = 3;
           if ((cimg_sscanf(argument,"%f%c",
@@ -11628,7 +11628,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         // Set 3D specular light parameters.
-        if (!std::strcmp("specl3d",item)) {
+        if (!is_get && !std::strcmp("specl3d",item)) {
           gmic_substitute_args(false);
           value = 0.15;
           if (cimg_sscanf(argument,"%lf%c",
@@ -11640,7 +11640,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           continue;
         }
 
-        if (!std::strcmp("specs3d",item)) {
+        if (!is_get && !std::strcmp("specs3d",item)) {
           gmic_substitute_args(false);
           value = 0.8;
           if (cimg_sscanf(argument,"%lf%c",
@@ -12042,7 +12042,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         // Remove custom command.
-        if (!std::strcmp("uncommand",item)) {
+        if (!is_get && !std::strcmp("uncommand",item)) {
           gmic_substitute_args(false);
           if (argument[0]=='*' && !argument[1]) { // Discard all custom commands
             cimg::mutex(23);
@@ -12192,7 +12192,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       gmic_commands_w :
 
         // While.
-        if (!std::strcmp("while",item)) {
+        if (!is_get && !std::strcmp("while",item)) {
           gmic_substitute_args(false);
           const CImg<char>& s = callstack.back();
           if (s[0]!='*' || s[1]!='d')
@@ -12588,7 +12588,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       gmic_commands_others :
 
         // If...[elif]...[else]...endif.
-        if (!std::strcmp("if",item) || (!std::strcmp("elif",item) && check_elif)) {
+        if (!is_get && (!std::strcmp("if",item) || (!std::strcmp("elif",item) && check_elif))) {
           gmic_substitute_args(false);
           is_cond = check_cond(argument,images,*item=='i'?"if":"elif");
           check_elif = false;
@@ -12626,8 +12626,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
         // Break and continue.
         bool is_continue = false;
-        if (!std::strcmp("break",item) ||
-            (!std::strcmp("continue",item) && (is_continue=true)==true)) {
+        if (!is_get && (!std::strcmp("break",item) ||
+                        (!std::strcmp("continue",item) && (is_continue=true)==true))) {
           const char
 	    *const com = is_continue?"continue":"break",
 	    *const Com = is_continue?"Continue":"Break";
