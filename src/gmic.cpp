@@ -8729,7 +8729,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           // Detect possible empty names in argument list.
           bool contains_empty_name = false;
           unsigned int sl = 0;
-          for (; argument[sl]; ++sl) if (argument[sl]==',' && argument[sl+1]==',') { contains_empty_name = true; break; }
+          for (; argument[sl]; ++sl) if (argument[sl]==',' && argument[sl+1]==',') {
+              contains_empty_name = true;
+              break;
+            }
           if (!contains_empty_name && sl && (*argument==',' || argument[sl - 1]==',')) contains_empty_name = true;
           if (contains_empty_name) CImg<char>(1,1,1,1,0).move_to(g_list_c);
 
@@ -14239,10 +14242,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           }
           if (is_first3d) {
             display_objects3d(images,images_names,lselection3d>'y',CImg<unsigned char>::empty(),false);
-            if (lselection) display_images(images,images_names,lselection>'y',0,false);
+            if (lselection)
+              display_images(images,images_names,lselection>'y',0,false);
           } else {
-            if (lselection) display_images(images,images_names,lselection>'y',0,false);
-            if (lselection3d) display_objects3d(images,images_names,lselection3d>'y',CImg<unsigned char>::empty(),false);
+            if (lselection)
+              display_images(images,images_names,lselection>'y',0,false);
+            if (lselection3d)
+              display_objects3d(images,images_names,lselection3d>'y',CImg<unsigned char>::empty(),false);
           }
         } else {
           CImg<unsigned int> seq(1,images.width());
