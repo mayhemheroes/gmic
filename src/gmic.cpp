@@ -12488,83 +12488,84 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           if (cimg_sscanf(argument,"%f%c",
                           &delay,&end)==1) ++position;
           else delay = 0;
-#if cimg_display==0
-          if (!delay)
-            print(images,0,
-                  "Wait for user events on display window%s (skipped, no display support).",
-                  gmic_selection.data());
-          else {
-            delay = cimg::round(delay);
-            print(images,0,
-                  "%s for %g milliseconds according to display window%s.",
-                  delay<0?"Sleep":"Wait",delay,
-                  gmic_selection.data());
-            if (delay<0) cimg::sleep((unsigned int)-delay);
-            else cimg::wait((unsigned int)delay);
-          }
-#else // #if cimg_display==0
-          if (!delay) {
-            print(images,0,"Wait for user events on display window%s.",
-                  gmic_selection.data());
-            switch (selection.height()) {
-            case 1 : CImgDisplay::wait(display_window(selection[0])); break;
-            case 2 : CImgDisplay::wait(display_window(selection[0]),display_window(selection[1])); break;
-            case 3 : CImgDisplay::wait(display_window(selection[0]),display_window(selection[1]),
-                                       display_window(selection[2]));
-              break;
-            case 4 : CImgDisplay::wait(display_window(selection[0]),display_window(selection[1]),
-                                       display_window(selection[2]),display_window(selection[3]));
-              break;
-            case 5 : CImgDisplay::wait(display_window(selection[0]),display_window(selection[1]),
-                                       display_window(selection[2]),display_window(selection[3]),
-                                       display_window(selection[4]));
-              break;
-            case 6 : CImgDisplay::wait(display_window(selection[0]),display_window(selection[1]),
-                                       display_window(selection[2]),display_window(selection[3]),
-                                       display_window(selection[4]),display_window(selection[5]));
-              break;
-            case 7 : CImgDisplay::wait(display_window(selection[0]),display_window(selection[1]),
-                                       display_window(selection[2]),display_window(selection[3]),
-                                       display_window(selection[4]),display_window(selection[5]),
-                                       display_window(selection[6]));
-              break;
-            case 8 : CImgDisplay::wait(display_window(selection[0]),display_window(selection[1]),
-                                       display_window(selection[2]),display_window(selection[3]),
-                                       display_window(selection[4]),display_window(selection[5]),
-                                       display_window(selection[6]),display_window(selection[7]));
-              break;
-            case 9 : CImgDisplay::wait(display_window(selection[0]),display_window(selection[1]),
-                                       display_window(selection[2]),display_window(selection[3]),
-                                       display_window(selection[4]),display_window(selection[5]),
-                                       display_window(selection[6]),display_window(selection[7]),
-                                       display_window(selection[8]));
-              break;
-            case 10 : CImgDisplay::wait(display_window(selection[0]),display_window(selection[1]),
-                                        display_window(selection[2]),display_window(selection[3]),
-                                        display_window(selection[4]),display_window(selection[5]),
-                                        display_window(selection[6]),display_window(selection[7]),
-                                        display_window(selection[8]),display_window(selection[9]));
-              break;
+
+          if (!is_display_available) {
+            if (!delay)
+              print(images,0,
+                    "Wait for user events on display window%s (skipped, no display support).",
+                    gmic_selection.data());
+            else {
+              delay = cimg::round(delay);
+              print(images,0,
+                    "%s for %g milliseconds according to display window%s.",
+                    delay<0?"Sleep":"Wait",delay,
+                    gmic_selection.data());
+              if (delay<0) cimg::sleep((unsigned int)-delay);
+              else cimg::wait((unsigned int)delay);
             }
-          } else if (delay<0) {
-            delay = cimg::round(-delay);
-            print(images,0,
-                  "Flush display events of display window%s and wait for %g milliseconds.",
-                  gmic_selection.data(),delay);
-            cimg_forY(selection,l) display_window(selection[l]).flush();
-            if (selection && display_window(selection[0]))
-              display_window(selection[0]).wait((unsigned int)delay);
-            else cimg::wait((unsigned int)delay);
           } else {
-            delay = cimg::round(delay);
-            print(images,0,"Wait for %g milliseconds according to display window%s.",
-                  delay,
-                  gmic_selection.data());
-            if (selection && display_window(selection[0]))
-              display_window(selection[0]).wait((unsigned int)delay);
-            else cimg::sleep((unsigned int)delay);
+            if (!delay) {
+              print(images,0,"Wait for user events on display window%s.",
+                    gmic_selection.data());
+              switch (selection.height()) {
+              case 1 : CImgDisplay::wait(display_window(selection[0])); break;
+              case 2 : CImgDisplay::wait(display_window(selection[0]),display_window(selection[1])); break;
+              case 3 : CImgDisplay::wait(display_window(selection[0]),display_window(selection[1]),
+                                         display_window(selection[2]));
+                break;
+              case 4 : CImgDisplay::wait(display_window(selection[0]),display_window(selection[1]),
+                                         display_window(selection[2]),display_window(selection[3]));
+                break;
+              case 5 : CImgDisplay::wait(display_window(selection[0]),display_window(selection[1]),
+                                         display_window(selection[2]),display_window(selection[3]),
+                                         display_window(selection[4]));
+                break;
+              case 6 : CImgDisplay::wait(display_window(selection[0]),display_window(selection[1]),
+                                         display_window(selection[2]),display_window(selection[3]),
+                                         display_window(selection[4]),display_window(selection[5]));
+                break;
+              case 7 : CImgDisplay::wait(display_window(selection[0]),display_window(selection[1]),
+                                         display_window(selection[2]),display_window(selection[3]),
+                                         display_window(selection[4]),display_window(selection[5]),
+                                         display_window(selection[6]));
+                break;
+              case 8 : CImgDisplay::wait(display_window(selection[0]),display_window(selection[1]),
+                                         display_window(selection[2]),display_window(selection[3]),
+                                         display_window(selection[4]),display_window(selection[5]),
+                                         display_window(selection[6]),display_window(selection[7]));
+                break;
+              case 9 : CImgDisplay::wait(display_window(selection[0]),display_window(selection[1]),
+                                         display_window(selection[2]),display_window(selection[3]),
+                                         display_window(selection[4]),display_window(selection[5]),
+                                         display_window(selection[6]),display_window(selection[7]),
+                                         display_window(selection[8]));
+                break;
+              case 10 : CImgDisplay::wait(display_window(selection[0]),display_window(selection[1]),
+                                          display_window(selection[2]),display_window(selection[3]),
+                                          display_window(selection[4]),display_window(selection[5]),
+                                          display_window(selection[6]),display_window(selection[7]),
+                                          display_window(selection[8]),display_window(selection[9]));
+                break;
+              }
+            } else if (delay<0) {
+              delay = cimg::round(-delay);
+              print(images,0,
+                    "Flush display events of display window%s and wait for %g milliseconds.",
+                    gmic_selection.data(),delay);
+              cimg_forY(selection,l) display_window(selection[l]).flush();
+              if (selection && display_window(selection[0]))
+                display_window(selection[0]).wait((unsigned int)delay);
+              else cimg::wait((unsigned int)delay);
+            } else {
+              delay = cimg::round(delay);
+              print(images,0,"Wait for %g milliseconds according to display window%s.",
+                    delay,
+                    gmic_selection.data());
+              if (selection && display_window(selection[0]))
+                display_window(selection[0]).wait((unsigned int)delay);
+              else cimg::sleep((unsigned int)delay);
+            }
           }
-#endif // #if cimg_display==0
           continue;
         }
 
@@ -14237,27 +14238,27 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     // Display or print result, if not 'released' before.
     if (!is_released && callstack.size()==1 && images) {
       if (!std::strcmp(set_variable("_host","",'.',0),"cli")) {
-#if cimg_display!=0
-        CImgList<unsigned int> lselection, lselection3d;
-        bool is_first3d = false;
-        display_window(0).assign();
-        cimglist_for(images,l) {
-          const bool is_3d = images[l].is_CImg3d(false);
-          if (!l) is_first3d = is_3d;
-          CImg<unsigned int>::vector(l).move_to(is_3d?lselection3d:lselection);
-        }
-        if (is_first3d) {
-          display_objects3d(images,images_names,lselection3d>'y',CImg<unsigned char>::empty(),false);
-          if (lselection) display_images(images,images_names,lselection>'y',0,false);
+        if (is_display_available) {
+          CImgList<unsigned int> lselection, lselection3d;
+          bool is_first3d = false;
+          display_window(0).assign();
+          cimglist_for(images,l) {
+            const bool is_3d = images[l].is_CImg3d(false);
+            if (!l) is_first3d = is_3d;
+            CImg<unsigned int>::vector(l).move_to(is_3d?lselection3d:lselection);
+          }
+          if (is_first3d) {
+            display_objects3d(images,images_names,lselection3d>'y',CImg<unsigned char>::empty(),false);
+            if (lselection) display_images(images,images_names,lselection>'y',0,false);
+          } else {
+            if (lselection) display_images(images,images_names,lselection>'y',0,false);
+            if (lselection3d) display_objects3d(images,images_names,lselection3d>'y',CImg<unsigned char>::empty(),false);
+          }
         } else {
-          if (lselection) display_images(images,images_names,lselection>'y',0,false);
-          if (lselection3d) display_objects3d(images,images_names,lselection3d>'y',CImg<unsigned char>::empty(),false);
+          CImg<unsigned int> seq(1,images.width());
+          cimg_forY(seq,y) seq[y] = y;
+          print_images(images,images_names,seq,true);
         }
-#else
-        CImg<unsigned int> seq(1,images.width());
-        cimg_forY(seq,y) seq[y] = y;
-        print_images(images,images_names,seq,true);
-#endif // #if cimg_display!=0
       }
       is_released = true;
     }
