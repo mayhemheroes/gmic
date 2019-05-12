@@ -8759,11 +8759,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           CImg<char>::string(argument + (is_cond?2:0)).get_split(CImg<char>::vector(','),0,false).move_to(g_list_c);
 
           // Detect possible empty names in argument list.
-          bool is_empty_name = false;
+          bool contains_empty_name = false;
           unsigned int sl = 0;
-          for (; argument[sl]; ++sl) if (argument[sl]==',' && argument[sl+1]==',') { is_empty_name = true; break; }
-          if (!is_empty_name && sl && (*argument==',' || argument[sl - 1]==',')) is_empty_name = true;
-          if (is_empty_name) CImg<char>(1,1,1,1,0).move_to(g_list_c);
+          for (; argument[sl]; ++sl) if (argument[sl]==',' && argument[sl+1]==',') { contains_empty_name = true; break; }
+          if (!contains_empty_name && sl && (*argument==',' || argument[sl - 1]==',')) contains_empty_name = true;
+          if (contains_empty_name) CImg<char>(1,1,1,1,0).move_to(g_list_c);
 
           print(images,0,"Get %s%s with name%s '%s' for image%s (case-%s).",
                 boundary==0?"all image ind":boundary==1?"lowest image ind":"highest image ind",
