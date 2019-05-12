@@ -388,8 +388,8 @@ struct gmic {
     commands_files, callstack;
   gmic_image<unsigned int> dowhiles, fordones, repeatdones;
   gmic_image<unsigned char> light3d;
+  gmic_image<void*> display_windows;
   gmic_image<char> status;
-  void *display_windows;
 
   float focale3d, light3d_x, light3d_y, light3d_z, specular_lightness3d, specular_shininess3d, _progress, *progress;
   unsigned long reference_time;

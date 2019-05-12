@@ -1862,14 +1862,14 @@ const CImgList<T>& _gmic_display(CImgDisplay &disp, const char *const title, con
       cimg::swap(gmic_instance.commands,gmic_instance0.commands);
       cimg::swap(gmic_instance.commands_names,gmic_instance0.commands_names);
       cimg::swap(gmic_instance.commands_has_arguments,gmic_instance0.commands_has_arguments);
-      void *const _display_windows = gmic_instance.display_windows;
-      gmic_instance.display_windows = &disp;
+      void *const _display_window0 = gmic_instance.display_windows[0];
+      gmic_instance.display_windows[0] = &disp;
       try { gmic_instance.run(com.data(),_images,_images_names); }
       catch (...) { is_exception = true; }
       cimg::swap(gmic_instance.commands,gmic_instance0.commands);
       cimg::swap(gmic_instance.commands_names,gmic_instance0.commands_names);
       cimg::swap(gmic_instance.commands_has_arguments,gmic_instance0.commands_has_arguments);
-      gmic_instance.display_windows = _display_windows;
+      gmic_instance.display_windows[0] = _display_window0;
       if (is_exception) throw CImgDisplayException("");
     } else _data[0]._display(disp,0,false,XYZ,exit_on_anykey,!is_first_call); // Otherwise, use standard display()
     if (disp.key()) is_exit = true;
@@ -2415,21 +2415,13 @@ unsigned int gmic::strescape(const char *const str, char *const res) {
 
 // Constructors / destructors.
 //----------------------------
-#if cimg_display!=0
 #define gmic_new_attr commands(new CImgList<char>[gmic_comslots]), commands_names(new CImgList<char>[gmic_comslots]), \
     commands_has_arguments(new CImgList<char>[gmic_comslots]), \
     _variables(new CImgList<char>[gmic_varslots]), _variables_names(new CImgList<char>[gmic_varslots]), \
     variables(new CImgList<char>*[gmic_varslots]), variables_names(new CImgList<char>*[gmic_varslots]), \
-    display_windows(new CImgDisplay[gmic_winslots]), is_running(false)
-#else
-#define gmic_new_attr commands(new CImgList<char>[gmic_comslots]), commands_names(new CImgList<char>[gmic_comslots]), \
-    commands_has_arguments(new CImgList<char>[gmic_comslots]), \
-    _variables(new CImgList<char>[gmic_varslots]), _variables_names(new CImgList<char>[gmic_varslots]), \
-    variables(new CImgList<char>*[gmic_varslots]), variables_names(new CImgList<char>*[gmic_varslots]), \
-    display_windows(0), is_running(false)
-#endif // #if cimg_display!=0
+    display_windows(10), is_running(false)
 
-#define display_window(n) (((CImgDisplay*)display_windows)[n])
+#define display_window(n) (*(CImgDisplay*)display_windows[n])
 
 CImg<char> gmic::stdlib = CImg<char>::empty();
 
@@ -2454,7 +2446,7 @@ gmic::gmic(const char *const commands_line, const char *const custom_commands,
 gmic::~gmic() {
   cimg::exception_mode(cimg_exception_mode);
 #if cimg_display!=0
-  delete[] &display_window(0);
+  cimg_forX(display_windows,l) delete &display_window(l);
 #endif // #if cimg_display!=0
 
   cimg::mutex(21);
@@ -3557,6 +3549,7 @@ void gmic::_gmic(const char *const commands_line,
 #endif
     is_first = false;
   }
+  cimg_forX(display_windows,l) display_windows[l] = new CImgDisplay;
   for (unsigned int l = 0; l<gmic_comslots; ++l) {
     commands_names[l].assign();
     commands[l].assign();
