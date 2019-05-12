@@ -2419,7 +2419,7 @@ unsigned int gmic::strescape(const char *const str, char *const res) {
     commands_has_arguments(new CImgList<char>[gmic_comslots]), \
     _variables(new CImgList<char>[gmic_varslots]), _variables_names(new CImgList<char>[gmic_varslots]), \
     variables(new CImgList<char>*[gmic_varslots]), variables_names(new CImgList<char>*[gmic_varslots]), \
-    display_windows(10), is_running(false)
+    display_windows(gmic_winslots), is_running(false)
 
 #define display_window(n) (*(CImgDisplay*)display_windows[n])
 
