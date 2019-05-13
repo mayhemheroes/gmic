@@ -8721,7 +8721,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Get image indices from names.
         if (!is_get && !std::strcmp("named",command)) {
           gmic_substitute_args(false);
-          if (cimg_sscanf(argument,"%u%c",&pattern,&sep)==2 && pattern>=0 && pattern<=5 && sep==',') is_cond = true;
+          if (cimg_sscanf(argument,"%u%c",&pattern,&sep)==2 && pattern<=5 && sep==',') is_cond = true;
           else { pattern = 0; is_cond = false; }
           boundary = pattern%3;
           CImg<char>::string(argument + (is_cond?2:0)).get_split(CImg<char>::vector(','),0,false).move_to(g_list_c);
