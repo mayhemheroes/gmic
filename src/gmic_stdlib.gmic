@@ -2036,6 +2036,8 @@ _display2d :
   repeat $! l[$>] nm={b} nm img
     if {!w} d break fi
     is_moderate_ratio={0,D=[w,h];max(D)/min(D)<6}
+    may_have_alpha={s==2||s>=4}
+
     alpha_mode,axes_mode,fullscreen_mode,normalization_mode,ratio_mode=0,1,0,1,$is_moderate_ratio
     posx,posy,sizx,sizy={0,[0,0,w,h]}
     is_bottom_text,wait_event,mx,my,omb=0,1,-1,-1,0
@@ -2060,16 +2062,14 @@ _display2d :
         # Get view corresponding to position and zoom factor.
         ($posx,{$posx+$sizx}) ($posy;{$posy+$sizy}) r[-2,-1] 2,2 a[-2,-1] c
         r. {[{*,w,h}]+1},1,2,3 z. 0,0,{[w,h]-2} round. 1,-1
-        +warp[0] .,0,0,{$normalization_mode?1:0} rm..
-        if ($alpha_mode" && "s>4)" || "(!$alpha_mode" && "s>3) # Discard useless channels
-          channels. 0,{$alpha_mode?3:2}
-        fi
+        +warp[0] .,0,0,1 rm..
+        if {s>($alpha_mode?4:3)} channels. 0,{$alpha_mode?3:2} fi # Discard useless channels
 
         # Normalize view.
-        if $normalization_mode==1 sh. 0,{s-($alpha_mode?2:1)} n. 0,255 rm.
-        elif $normalization_mode==2 l. s c if $alpha_mode sel=^-1 else sel=^ fi n[$sel] 0,255 a c endl
+        if $normalization_mode==1 sh. 0,{s-($alpha_mode" && "$may_have_alpha?2:1)} n. 0,255 rm.
+        elif $normalization_mode==2 l. s c if $alpha_mode" && "$may_have_alpha sel=^-1 else sel=^ fi n[$sel] 0,255 a c endl
         fi
-        if $normalization_mode" && "($posx<0" || "$posy<0" || "$posx+$sizx>=w#0" || "$posy+$sizy>=h#0)
+        if $posx<0" || "$posy<0" || "$posx+$sizx>=w#0" || "$posy+$sizy>=h#0
           100%,100%
           rectangle. {A=-[$posx,$posy]*[w,h]/[$sizx,$sizy];\
                       B=A+[w#0,h#0]*[w,h]/[$sizx,$sizy]-1;\
@@ -2082,7 +2082,7 @@ _display2d :
           coords={A=-[$posx,$posy]*[w,h]/[$sizx,$sizy];\
                   B=A+[w#0,h#0]*[w,h]/[$sizx,$sizy]-1;\
                   [ceil(A),floor(B)]}
-          if (s#0==1" || "s#0==3) # Alpha mode without alpha channel -> Add alpha channel
+          if !$may_have_alpha # Alpha mode without alpha channel -> Add alpha channel
             100%,100%,1,1,64 rectangle. $coords,1,255 a[-2,-1] c
           else # Alpha mode with alpha channel
             sh. 100% 100%,100%,1,1,64 rectangle. $coords,1,0 +[-2,-1] rm.
@@ -28151,7 +28151,8 @@ fx_gmicky_preview :
 #@gui : - <b>2018/06/21</b> : version <i>2.3.0</i>.\n
 #@gui : - <b>2018/10/04</b> : version <i>2.4.0</i>.\n
 #@gui : - <b>2019/03/15</b> : version <i>2.5.0</i>.\n
-#@gui : - <span foreground="purple"><b>2019/04/29</b> : version <i>2.6.0</i> (Current stable).</span>\n
+#@gui : - <b>2019/04/29</b> : version <i>2.6.0</i>.\n
+#@gui : - <span foreground="purple"><b>2019/05/13</b> : version <i>2.6.2</i> (Current stable).</span>\n
 #@gui : "}
 #@gui : sep = separator()
 ##@gui : url = link{"View changelog to upcoming major version (2.7)","https://discuss.pixls.us/t/on-the-road-to-2-6-0"}
