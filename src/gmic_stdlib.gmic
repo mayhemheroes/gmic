@@ -6905,9 +6905,9 @@ compress_clut : check "isint(${1=8}) && $1>0 && ${2=2}>0 && isint(${3=2048}) && 
 
   endl done v +
 
-# compress_cluts : "file_pattern" : "file_list.txt"
+# compress_cluts : "file_pattern",_max_error>0,_avg_error>0,_max_nb_points>=8 : "file_list.txt"
 # Batch compress CLUT files.
-compress_cluts :
+compress_cluts : check "${2=8}>0 && ${3=2}>0 && isint(${4=2047})>8"
   v - rm
   if isfile(['{/"$1"}']) i raw:"$1",uchar s -,{'\n'}
   else files "$1" ({'${}'}) s -,{','}
@@ -6944,7 +6944,7 @@ compress_cluts :
       v + e[] "* Compress file '"$filename"'." v -
       if w>64 r3dx 64 fi
       to_rgb
-      v + tic compress_clut ,,2047 toc v -
+      v + tic compress_clut $2,$3,$4 toc v -
       o $cclut
     fi
   endl done v +
