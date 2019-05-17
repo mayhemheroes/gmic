@@ -4873,7 +4873,7 @@ onmouseout=\"javascript:this.src='original/"$basename".jpg';\" />\n
   x "ln -fs "${category}_$basename0.shtml" index.shtml"
   if $1
     v + e[] "\n  * Transfer color presets on G'MIC server.\n" v -
-    x "lftp ftp://"$GMIC_LOGIN":"$GMIC_PASSWD"@ftp.gmic.eu -e \"mirror -eRL . /www/gmic/color_presets ; quit\""
+    x "lftp ftp://"$GMIC_LOGIN":"$GMIC_PASSWD"@"$GMIC_FTP" -e \"mirror -eRL . /www/gmic/color_presets ; quit\""
   fi
   v + e[] "\n > All done, for "$nb_presets" presets.\n"
 
@@ -5055,7 +5055,7 @@ update_gallery_html : check "isbool(${1=0})"
                   basename_codesample={`crop(0,24,1,h-24)`}
                   filename_codesample="../../resources/samples"/$basename_codesample
                   url_codesample="https://gmic.eu/samples/"$basename_codesample
-                  if $1 x "lftp ftp://"$GMIC_LOGIN":"$GMIC_PASSWD"@ftp.gmic.eu -e \"put -O /www/gmic/samples \\\""\
+                  if $1 x "lftp ftp://"$GMIC_LOGIN":"$GMIC_PASSWD"@"$GMIC_FTP" -e \"put -O /www/gmic/samples \\\""\
                           $filename_codesample"\\\"; quit\" >/dev/null" fi
                   i[0] ({'"<a onclick=\"javascript:$( '\#dialog"$nex"' ).dialog( 'open' );\"
                           style=\"cursor: pointer;\">"'})
@@ -5198,7 +5198,7 @@ update_gallery_html : check "isbool(${1=0})"
   x "ln -fs artistic.shtml index.shtml"
   if $1
     v + e[] "\n  * Transfer gallery on G'MIC server.\n" v -
-    x "lftp ftp://"$GMIC_LOGIN":"$GMIC_PASSWD"@ftp.gmic.eu -e \"mirror -eRL . /www/gmic/gallery ; quit\""
+    x "lftp ftp://"$GMIC_LOGIN":"$GMIC_PASSWD"@"$GMIC_FTP" -e \"mirror -eRL . /www/gmic/gallery ; quit\""
   fi
   v + e[] "  * All done!.\n"
 
@@ -5720,7 +5720,7 @@ _update_server_upload : skip "${2=""}"
   l[] GMIC_LOGIN=${gmic_ftp\ 0} onfail GMIC_LOGIN="" endl
   l[] GMIC_PASSWD=${gmic_ftp\ 1} onfail GMIC_PASSWD="" endl
   if narg($GMIC_LOGIN)
-    x 0,"lftp ftp://"$GMIC_LOGIN":"$GMIC_PASSWD"@ftp.gmic.eu -e \"put -O /www/gmic/ \\\"$1\\\" -o \\\""$out"\\\";
+    x 0,"lftp ftp://"$GMIC_LOGIN":"$GMIC_PASSWD"@"$GMIC_FTP" -e \"put -O /www/gmic/ \\\"$1\\\" -o \\\""$out"\\\";
          quit\" >/dev/null"
   fi
 
