@@ -2032,7 +2032,7 @@ _display2d :
         x>x1?(x1 = x);
         y>y1?(y1 = x);
       );
-      end(ext('xni0,yni0,xni1,yni1=',x0,',',y0,',',x1,',',y1))"
+      end(x1<0?(x0=y0=-1); ext('xni0,yni0,xni1,yni1=',x0,',',y0,',',x1,',',y1))"
 
     # Start event loop.
     for {*}" && "!{*,ESC}
@@ -2052,7 +2052,10 @@ _display2d :
         r. {[{*,w,h}]+1},1,2,3 z. 0,0,{[w,h]-2} round. 1,-1
         +warp[0] .,0,0,1 rm..
         if {s>($alpha_mode?4:3)} channels. 0,{$alpha_mode?3:2} fi # Discard useless channels
-        if $normalization_mode f. "isinf(i) || isnan(i)?0:i" fi
+        if $xni0>=0
+          if $normalization_mode im,iM={0,[im,iM]} else im,iM=0,255 fi
+          f. "isnan(i)?"$im":isinf(i)?(i<0?"$im":"$iM"):i"
+        fi
 
         # Normalize view.
         if $normalization_mode==1
