@@ -2039,11 +2039,14 @@ _display2d :
 
       # Correct aspect ratio while centering image.
       if $ratio_mode
-        if {*,w}/$sizx<{*,h}/$sizy
-          posy,sizy={nsizy=round($sizx*{*,h}/{*,w});[$posy-(nsizy-$sizy)/2,nsizy]}
-        else
-          posx,sizx={nsizx=round($sizy*{*,w}/{*,h});[$posx-(nsizx-$sizx)/2,nsizx]}
-        fi
+        repeat 2
+          if {*,w}/$sizx<{*,h}/$sizy
+            posy,sizy={nsizy=round($sizx*{*,h}/{*,w});[$posy-(nsizy-$sizy)/2,nsizy]}
+          else
+            posx,sizx={nsizx=round($sizy*{*,w}/{*,h});[$posx-(nsizx-$sizx)/2,nsizx]}
+          fi
+          if $sizx>w#0" && "$sizy>h#0 posx,posy,sizx,sizy={[0,0,w#0,h#0]} fi
+        done
       fi
 
       # Generate baseview.
