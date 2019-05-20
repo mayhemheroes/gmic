@@ -239,25 +239,21 @@ CImg<T>& copymark() {
 }
 
 CImg<T> get_copymark() const {
-  if (is_empty()) return CImg<T>::string("~");
-  CImg<T> res = get_resize(_width + 1,1,1,1,0);
-  const char *const ext = cimg::split_filename(_data);
-  if (*ext) {
-    const int l = (int)(ext - _data - 1);
-    if (l>0) {
-      if (_data[l - 1]=='~') return +*this;
-      std::memcpy(res._data,_data,l);
-    }
-    res[l] = '~'; res[l + 1] = '.';
-    std::memcpy(res._data + l + 2,ext,_data + _width - ext);
-  } else {
-    const int l = (int)(ext - _data);
-    if (_data[l - 1]=='~' || (l>1 && _data[l - 1]==']' && _data[l - 2]=='~')) return +*this;
-    std::memcpy(res._data,_data,l);
-    res[l] = '~';
-    if (ext>_data && *(ext - 1)==']') cimg::swap(res[l],res[l - 1]);
-    std::memcpy(res._data + l + 1,ext,_data + _width - ext);
+  if (is_empty()) return CImg<T>::string("_1");
+  const char *pe = _data + _width - 1, *ext = cimg::split_filename(_data);
+  if (*ext) pe = --ext;
+  unsigned int num = 0, fact = 1, baselength = _width;
+  if (pe>_data+1) { // Try to find ending number if any
+    const char *npe = pe - 1;
+    while (npe>_data && *npe>='0' && *npe<='9') { num+=fact*(*(npe--)-'0'); fact*=10; }
+    if (*npe=='_' && npe[1]!='0') { pe = npe; baselength = pe + _width - ext; }
+    else num = 0;
   }
+  ++num;
+  const unsigned int ndigits = (unsigned int)std::max(1.,std::ceil(std::log10(num + 1.)));
+  CImg<T> res(baselength + ndigits + 1);
+  std::memcpy(res,_data,pe - _data);
+  std::sprintf(res._data + (pe - _data),"_%u%s",num,ext);
   return res;
 }
 
