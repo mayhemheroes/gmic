@@ -239,14 +239,17 @@ CImg<T>& copymark() {
 }
 
 CImg<T> get_copymark() const {
-  if (is_empty()) return CImg<T>::string("_c1");
+  if (is_empty() || !*_data) return CImg<T>::string("_c1");
   const char *pe = _data + _width - 1, *ext = cimg::split_filename(_data);
   if (*ext) pe = --ext;
   unsigned int num = 0, fact = 1, baselength = _width;
   if (pe>_data+2) { // Try to find ending number if any
     const char *npe = pe - 1;
     while (npe>_data && *npe>='0' && *npe<='9') { num+=fact*(*(npe--) - '0'); fact*=10; }
-    if (npe>_data && *(npe-1)=='_' && *npe=='c' && npe[1]!='0') { pe = npe - 1; baselength = pe + _width - ext; }
+    if (npe>_data && npe!=pe - 1 && *(npe-1)=='_' && *npe=='c' && npe[1]!='0') {
+      pe = npe - 1;
+      baselength = pe + _width - ext;
+    }
     else num = 0;
   }
   ++num;
@@ -2356,9 +2359,13 @@ bool gmic::command_has_arguments(const char *const command) {
 
 // Compute the basename of a filename.
 const char* gmic::basename(const char *const str)  {
-  if (!str) return 0;
+  if (!str || !*str) return "";
   const unsigned int l = (unsigned int)std::strlen(str);
-  if (*str=='[' && (str[l - 1]==']' || str[l - 1]=='.')) return str;
+  unsigned int ll = l - 1; // 'Last' character to check
+  while (ll>=3 && str[ll]>='0' && str[ll]<='9') --ll;
+  if (ll>=3 && ll!=l - 1 && str[ll - 1]=='_' && str[ll]=='c' && str[ll + 1]!='0') ll-=2; // Ignore copy mark
+  else ll = l - 1;
+  if (*str=='[' && (str[ll]==']' || str[ll]=='.')) return str;
   const char *p = 0, *np = str;
   while (np>=str && (p=np)) np = std::strchr(np,'/') + 1;
   np = p;
