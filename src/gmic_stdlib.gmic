@@ -8152,15 +8152,14 @@ hsi2rgb :
   v - to_color
   f "
     H = (R/60)%6;
-    S = cut(G,0,1);
-    I = cut(B,0,1);
+    S = G;
+    I = B;
     Z = 1 - abs((H%2) - 1);
     C = I*S/(1 + Z);
     X = C*Z;
     m = I*(1 - S)/3;
     RGB = arg(1 + int(H),[C,X,0],[X,C,0],[0,C,X],[0,X,C],[X,0,C],[C,0,X]);
-    cut((RGB+=m)*=3*255,0,255);
-  "
+    (RGB+=m)*=3*255"
   v +
 
 #@cli hsi82rgb
@@ -8176,14 +8175,13 @@ hsl2rgb :
   v - to_color
   f "
     H = (R/60)%6;
-    S = cut(G,0,1);
-    L = cut(B,0,1);
+    S = G;
+    L = B;
     C = (1 - abs(2*L - 1))*S;
     X = C*(1 - abs(H%2 - 1));
     m = L - C/2;
     RGB = arg(1 + int(H),[C,X,0],[X,C,0],[0,C,X],[0,X,C],[X,0,C],[C,0,X]);
-    cut((RGB+=m)*=255,0,255);
-  "
+    (RGB+=m)*=255"
   v +
 
 #@cli hsl82rgb
@@ -8200,14 +8198,13 @@ hsv2rgb :
   v - to_color
   f "
     H = (R/60)%6;
-    S = cut(G,0,1);
-    V = cut(B,0,1);
+    S = G;
+    V = B;
     C = V*S;
     X = C*(1 - abs(H%2 - 1));
     m = V - C;
     RGB = arg(1 + int(H),[C,X,0],[X,C,0],[0,C,X],[0,X,C],[X,0,C],[C,0,X]);
-    cut((RGB+=m)*=255,0,255);
-  "
+    (RGB+=m)*=255"
   v +
 
 #@cli hsv82rgb
@@ -8588,8 +8585,7 @@ rgb2hsi :
     H = 60*(C==0?0:M==R?((G-B)/C)%6:M==G?(B-R)/C+2:(R-G)/C+4);
     S = sum<=0?0:1 - 3*m/sum;
     I = sum/(3*255);
-    [ cut(H,0,360), cut(S,0,1), cut(I,0,1) ];
-  "
+    [ H, S, I ]"
   v +
 
 #@cli rgb2hsi8
@@ -8612,9 +8608,8 @@ rgb2hsl :
     C = M - m;
     H = 60*(C==0?0:M==R?((G-B)/C)%6:M==G?(B-R)/C+2:(R-G)/C+4);
     L = 0.5*(m + M)/255;
-    S = L>=1 || L<=0?0:C/(1-abs(2*L-1))/255;
-    [ cut(H,0,360), cut(S,0,1), cut(L,0,1) ];
-  "
+    S = L==1 || L==0?0:C/(1-abs(2*L-1))/255;
+    [ H, S, L ]"
   v +
 
 #@cli rgb2hsl8
@@ -8636,8 +8631,7 @@ rgb2hsv :
     C = M - min(R,G,B);
     H = 60*(C==0?0:M==R?((G-B)/C)%6:M==G?(B-R)/C+2:(R-G)/C+4);
     S = M<=0?0:C/M;
-    [ cut(H,0,360), cut(S,0,1), cut(M/255,0,1) ];
-  "
+    [ H, S, M/255 ]"
   v +
 
 #@cli rgb2hsv8
