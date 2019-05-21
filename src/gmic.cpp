@@ -2356,7 +2356,7 @@ bool gmic::command_has_arguments(const char *const command) {
 
 // Compute the basename of a filename.
 const char* gmic::basename(const char *const str)  {
-  if (!str) return str;
+  if (!str) return 0;
   const unsigned int l = (unsigned int)std::strlen(str);
   if (*str=='[' && (str[l - 1]==']' || str[l - 1]=='.')) return str;
   const char *p = 0, *np = str;
