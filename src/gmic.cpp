@@ -13489,12 +13489,12 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         } else
           print(images,0,"Input black image at position%s",
                 _gmic_selection.data());
-        CImg<T> new_image(idx,idy,idz,idc);
+        CImg<T> new_image(idx,idy,idz,idc,(T)0);
         if (s_values) {
           new_image.fill(s_values.data(),true,true,&images,&images);
           cimg_snprintf(title,_title.width(),"[image of '%s']",s_values.data());
           CImg<char>::string(title).move_to(input_images_names);
-        } else { new_image.fill((T)0); CImg<char>::string("[unnamed]").move_to(input_images_names); }
+        } else CImg<char>::string("[unnamed]").move_to(input_images_names);
         new_image.move_to(input_images);
 
       } else if (*arg_input=='(' && arg_input[std::strlen(arg_input) - 1]==')') {
