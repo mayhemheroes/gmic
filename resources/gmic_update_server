@@ -8,12 +8,12 @@ fi
 
 GMIC_LOGIN=`\gmic -v - /home/dtschump/work/src/resources.gmic echo_stdout[] \$\{\"gmic_ftp 0\"\} q`
 GMIC_PASSWD=`\gmic -v - /home/dtschump/work/src/resources.gmic echo_stdout[] \$\{\"gmic_ftp 1\"\} q`
-lftp ftp://$GMIC_LOGIN:$GMIC_PASSWD@ftp.gmic.eu -e "put -O /www/gmic/ /tmp/gui_filters.txt; quit"
+lftp ftp://$GMIC_LOGIN:$GMIC_PASSWD@$GMIC_FTP -e "put -O /www/gmic/ /tmp/gui_filters.txt; quit"
 
 git diff /tmp/gui_filters.old /tmp/gui_filters.txt > /tmp/gui_filters.diff
 diff=`cat /tmp/gui_filters.diff | wc -l`
 if [ $diff -gt 10 ]; then
-    lftp ftp://$GMIC_LOGIN:$GMIC_PASSWD@ftp.gmic.eu -e "put -O /www/gmic/ /tmp/gui_filters.diff; quit"
+    lftp ftp://$GMIC_LOGIN:$GMIC_PASSWD@$GMIC_FTP -e "put -O /www/gmic/ /tmp/gui_filters.diff; quit"
     wget -O /tmp/sendmail.php http://gmic.eu/sendmail.php >/dev/null
 fi
 cp -f /tmp/gui_filters.txt /tmp/gui_filters.old
