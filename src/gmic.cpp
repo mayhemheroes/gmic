@@ -616,10 +616,7 @@ CImg<T> _gmic_shift(const float delta_x, const float delta_y=0, const float delt
     } break;
     case 2 : // Periodic
       cimg_pragma_openmp(parallel for cimg_openmp_collapse(3) cimg_openmp_if_size(res.size(),4096))
-      cimg_forXYZC(res,x,y,z,c) res(x,y,z,c) = _linear_atXYZC(cimg::mod(x - delta_x,(float)_width),
-                                                              cimg::mod(y - delta_y,(float)_height),
-                                                              cimg::mod(z - delta_z,(float)_depth),
-                                                              cimg::mod(c - delta_c,(float)_spectrum));
+      cimg_forXYZC(res,x,y,z,c) res(x,y,z,c) = _linear_atXYZC_p(x - delta_x,y - delta_y,z - delta_z,c - delta_c);
       break;
     case 1 : // Neumann
       cimg_pragma_openmp(parallel for cimg_openmp_collapse(3) cimg_openmp_if_size(res.size(),4096))
@@ -646,9 +643,7 @@ CImg<T> _gmic_shift(const float delta_x, const float delta_y=0, const float delt
     } break;
     case 2 : // Periodic
       cimg_pragma_openmp(parallel for cimg_openmp_collapse(3) cimg_openmp_if_size(res.size(),4096))
-      cimg_forC(res,c) cimg_forXYZ(res,x,y,z) res(x,y,z,c) = _linear_atXYZ(cimg::mod(x - delta_x,(float)_width),
-                                                                           cimg::mod(y - delta_y,(float)_height),
-                                                                           cimg::mod(z - delta_z,(float)_depth),c);
+      cimg_forC(res,c) cimg_forXYZ(res,x,y,z) res(x,y,z,c) = _linear_atXYZ_p(x - delta_x,y - delta_y,z - delta_z,c);
     break;
     case 1 : // Neumann
       cimg_pragma_openmp(parallel for cimg_openmp_collapse(3) cimg_openmp_if_size(res.size(),4096))
@@ -673,8 +668,7 @@ CImg<T> _gmic_shift(const float delta_x, const float delta_y=0, const float delt
     } break;
     case 2 : // Periodic
       cimg_pragma_openmp(parallel for cimg_openmp_collapse(3) cimg_openmp_if_size(res.size(),4096))
-      cimg_forZC(res,z,c) cimg_forXY(res,x,y) res(x,y,z,c) = _linear_atXY(cimg::mod(x - delta_x,(float)_width),
-                                                                          cimg::mod(y - delta_y,(float)_height),z,c);
+      cimg_forZC(res,z,c) cimg_forXY(res,x,y) res(x,y,z,c) = _linear_atXY_p(x - delta_x,y - delta_y,z,c);
       break;
     case 1 : // Neumann
       cimg_pragma_openmp(parallel for cimg_openmp_collapse(3) cimg_openmp_if_size(res.size(),4096))
@@ -696,7 +690,7 @@ CImg<T> _gmic_shift(const float delta_x, const float delta_y=0, const float delt
     } break;
     case 2 : // Periodic
       cimg_pragma_openmp(parallel for cimg_openmp_collapse(3) cimg_openmp_if_size(res.size(),4096))
-      cimg_forYZC(res,y,z,c) cimg_forX(res,x) res(x,y,z,c) = _linear_atX(cimg::mod(x - delta_x,(float)_width),y,z,c);
+      cimg_forYZC(res,y,z,c) cimg_forX(res,x) res(x,y,z,c) = _linear_atX_p(x - delta_x,y,z,c);
       break;
     case 1 : // Neumann
       cimg_pragma_openmp(parallel for cimg_openmp_collapse(3) cimg_openmp_if_size(res.size(),4096))
