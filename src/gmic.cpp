@@ -237,26 +237,6 @@ CImg<T> get_color_CImg3d(const float R, const float G, const float B,
 CImg<T>& copymark() {
   return get_copymark().move_to(*this);
 }
-/*
-CImg<T> get_copymark() const {
-  if (is_empty()) return CImg<T>::string("_1");
-  const char *pe = _data + _width - 1, *ext = cimg::split_filename(_data);
-  if (*ext) pe = --ext;
-  unsigned int num = 0, fact = 1, baselength = _width;
-  if (pe>_data+1) { // Try to find ending number if any
-    const char *npe = pe - 1;
-    while (npe>_data && *npe>='0' && *npe<='9') { num+=fact*(*(npe--)-'0'); fact*=10; }
-    if (*npe=='_' && npe[1]!='0') { pe = npe; baselength = pe + _width - ext; }
-    else num = 0;
-  }
-  ++num;
-  const unsigned int ndigits = (unsigned int)std::max(1.,std::ceil(std::log10(num + 1.)));
-  CImg<T> res(baselength + ndigits + 1);
-  std::memcpy(res,_data,pe - _data);
-  std::sprintf(res._data + (pe - _data),"_%u%s",num,ext);
-  return res;
-}
-*/
 
 CImg<T> get_copymark() const {
   if (is_empty()) return CImg<T>::string("_c1");
