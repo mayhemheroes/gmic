@@ -2030,7 +2030,7 @@ _display2d :
         x<x0?(x0 = x);
         y<y0?(y0 = y);
         x>x1?(x1 = x);
-        y>y1?(y1 = x);
+        y>y1?(y1 = y);
       );
       end(ext('xin0,yin0,xin1,yin1=',x0,',',y0,',',x1,',',y1))"
 
@@ -2038,13 +2038,14 @@ _display2d :
     for {*}" && "!{*,ESC}
 
       # Correct aspect ratio while centering image.
-      if $ratio_mode
+      if $ratio_mode repeat 2
         if {*,w}/$sizx<{*,h}/$sizy
           posy,sizy={nsizy=round($sizx*{*,h}/{*,w});[$posy-(nsizy-$sizy)/2,nsizy]}
         else
           posx,sizx={nsizx=round($sizy*{*,w}/{*,h});[$posx-(nsizx-$sizx)/2,nsizx]}
         fi
-      fi
+        if $<" && "$sizx>w#0" && "$sizy>h#0 posx,posy,sizx,sizy={[0,0,w#0,h#0]} fi
+      done fi
 
       # Generate baseview.
       if !narg($baseview)
