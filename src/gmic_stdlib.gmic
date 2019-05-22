@@ -1648,7 +1648,7 @@ v : # Allow 'gmic +v' to get the version number.
 #@cli : Default values: 'camera_index=0' (default camera), 'nb_frames=1', 'skip_frames=0' and \
 # 'capture_width=capture_height=0' (default size).
 
-#@cli clut : "clut_name",_resolution>0
+#@cli clut : "clut_name",_resolution>0,_cut_and_round={ 0=no | 1=yes }
 #@cli : Insert one of the 715 pre-defined CLUTs at the end of the image list.\n
 #@cli : 'clut_name' can be { 2-strip-process | 60s | 60s_faded | 60s_faded_alt | action_magenta_01 | action_red_01 | \
 # adventure_1453 | agfa_apx_100 | agfa_apx_25 | agfa_precisa_100 | agfa_ultra_color_100 | agfa_vista_200 | \
@@ -1769,9 +1769,10 @@ v : # Allow 'gmic +v' to get the version number.
 # vintage | vintage_163 | vintage_alt | vintage_brighter | vintage_chrome | vintage_warmth_1 | vireo_37 | warm | \
 # warm_highlight | warm_yellow | winterlighthouse | wooden_gold_20 | yellow_55b | yellow_film_01 | yellowstone | \
 # zed_32 | zeke_39 | zilverfx_bw_solarization | zilverfx_infrared | zilverfx_vintage_bw }
+#@cli : Default values: 'resolution=48' and 'cut_and_round=1'.
 #@cli : $ clut summer
 
-clut : check "isnum(${2=48}) && $2>0"
+clut : check "isnum(${2=48}) && $2>0 && isbool(${3=1})"
   v - to_clutname "$1" name=${} l[]
   v + e[^-1] "Input CLUT '"$name"' with resolution $2." v -
     path_clut=${-path_cache}
@@ -1801,7 +1802,8 @@ clut : check "isnum(${2=48}) && $2>0"
           v + error[0--4] "Command '$0': Unknown CLUT name '"$name"'."
         fi
       fi
-      decompress_clut $2,$2,$2 round c 0,255 to_rgb
+      decompress_clut $2,$2,$2
+      if $3 round c 0,255 to_rgb fi
       o. ${path_clut}clut_$name.cimgz
     elif "w>$2 || h>$2 || d>$2" r $2,$2,$2,3,2 # Downsize from higher resolution
     fi
@@ -1926,7 +1928,7 @@ clean_cluts :
   sort_list +,n
 
   # Display all clut names.
-  doc="#@cli clut : \"clut_name\",_resolution>0\n"\
+  doc="#@cli clut : \"clut_name\",_resolution>0,_cut_and_round={ 0=no | 1=yes }\n"\
       "#@cli : Insert one of the "$!" pre-defined CLUTs at the end of the image list.\\n\n"\
       "#@cli : 'clut_name' can be {" sep="|"
   nbc=28
@@ -1944,6 +1946,7 @@ clean_cluts :
   endl done
 
   doc=${doc}"\n"\
+      "#@cli : Default values: 'resolution=48' and 'cut_and_round=1'.\n"\
       "#@cli : $ clut summer\n"
   v + e[] "\n"$doc
 
