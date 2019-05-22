@@ -107,6 +107,7 @@ namespace cimg_library {
     const T& operator()(const unsigned int x, const unsigned int y=0, const unsigned z=0, const unsigned c=0) const {
       return _data[x + y*_width + z*_width*_height + c*_width*_height*_depth ];
     }
+
   };
 
   // Class 'gmic_list<T>'.
@@ -133,11 +134,11 @@ namespace cimg_library {
       return _data;
     }
 
-    T& operator()(const unsigned int l) {
+    gmic_image<T>& operator()(const unsigned int l) {
       return _data[l];
     }
 
-    const T& operator()(const unsigned int l) const {
+    const gmic_image<T>& operator()(const unsigned int l) const {
       return _data[l];
     }
 
