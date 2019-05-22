@@ -2226,8 +2226,7 @@ const char *gmic::builtin_commands_names[] = {
     "mode3d","moded3d","move","mse","mul","mul3d","mutex","mv",
   "n","name","named","neq","nm","nmd","noarg","noise","normalize",
   "o","o3d","object3d","onfail","opacity3d","or","output",
-  "p","parallel","pass","permute","plasma","plot","point","polygon","pow","print",
-    "progress",
+  "p","parallel","pass","permute","plasma","plot","point","polygon","pow","print","progress",
   "q","quit",
   "r","r3d","rand","remove","repeat","resize","return","reverse","reverse3d",
     "rm","rol","ror","rotate","rotate3d","round","rows","rv","rv3d",
@@ -9945,16 +9944,25 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         if (!is_get && !std::strcmp("progress",item)) {
           gmic_substitute_args(false);
           value = -1;
-          if (cimg_sscanf(argument,"%lf%c",
-                          &value,&end)==1) {
-            if (value<0) value = -1; else if (value>100) value = 100;
-            if (value>=0)
-              print(images,0,"Set progress index to %g%%.",
-                    value);
-            else
-              print(images,0,"Disable progress index.");
-            *progress = (float)value;
-          } else arg_error("progress");
+          if (cimg_sscanf(argument,"%lf%c",&value,&end)!=1) {
+            name.assign(argument,(unsigned int)std::strlen(argument) + 1);
+            CImg<T> &img = images.size()?images.back():CImg<T>::empty();
+            strreplace_fw(name);
+            try { value = img.eval(name,0,0,0,0,&images,&images); }
+            catch (CImgException &e) {
+              const char *const e_ptr = std::strstr(e.what(),": ");
+              error(true,images,0,"progress",
+                    "Command 'progress': Invalid argument '%s': %s",
+                    cimg::strellipsize(name,64,false),e_ptr?e_ptr + 2:e.what());
+            }
+          }
+          if (value<0) value = -1; else if (value>100) value = 100;
+          if (value>=0)
+            print(images,0,"Set progress index to %g%%.",
+                  value);
+          else
+            print(images,0,"Disable progress index.");
+          *progress = (float)value;
           ++position; continue;
         }
 
@@ -10238,19 +10246,18 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         if (!is_get && !std::strcmp("repeat",item)) {
           gmic_substitute_args(false);
           const char *varname = title;
-          float number = 0;
           *title = 0;
-          if (cimg_sscanf(argument,"%f%c",&number,&end)!=1) {
+          if (cimg_sscanf(argument,"%lf%c",&value,&end)!=1) {
             name.assign(argument,(unsigned int)std::strlen(argument) + 1);
             for (char *ps = name.data() + name.width() - 2; ps>=name.data(); --ps) {
               if (*ps==',' && ps[1] && (ps[1]<'0' || ps[1]>'9')) { varname = ps + 1; *ps = 0; break; }
               else if ((*ps<'a' || *ps>'z') && (*ps<'A' || *ps>'Z') && (*ps<'0' || *ps>'9') && *ps!='_') break;
             }
             if (*name) {
-              if (cimg_sscanf(name,"%f%c",&number,&end)!=1) {
+              if (cimg_sscanf(name,"%lf%c",&value,&end)!=1) {
                 CImg<T> &img = images.size()?images.back():CImg<T>::empty();
                 strreplace_fw(name);
-                try { number = (float)img.eval(name,0,0,0,0,&images,&images); }
+                try { value = img.eval(name,0,0,0,0,&images,&images); }
                 catch (CImgException &e) {
                   const char *const e_ptr = std::strstr(e.what(),": ");
                   error(true,images,0,"repeat",
@@ -10260,8 +10267,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               }
             }
           }
-          const unsigned int nb = number<=0?0U:
-            cimg::type<float>::is_inf(number)?~0U:(unsigned int)cimg::round(number);
+          const unsigned int nb = value<=0?0U:
+            cimg::type<double>::is_inf(value)?~0U:(unsigned int)cimg::round(value);
           if (nb) {
             if (is_debug_info && debug_line!=~0U) {
               cimg_snprintf(argx,_argx.width(),"*repeat#%u",debug_line);

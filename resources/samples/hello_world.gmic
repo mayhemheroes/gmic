@@ -82,22 +82,22 @@ go :
     x+=$vx vx+=$ax           # Compute new x-position and x-velocity
     y+=$vy vy+={0.5+$ay}     # Compute new y-position and y-velocity (add 0.5 for the gravity!)
 
-    if {$x<=0" || "$x+w#$text_color>=w#$background}  # Detect collision with left and right borders
+    if $x<=0" || "$x+w#$text_color>=w#$background    # Detect collision with left and right borders
       x={max(0,min($x,w#$background-w#$text_color))} # Constrain the x-coordinates to stay inside image
       vx={-$vx}                                      # Revert the x-velocity
     fi
-    if {$y+h#$text_color>0.75*h#$background}         # Detect collision with the ground
+    if $y+h#$text_color>0.75*h#$background           # Detect collision with the ground
       vy=-12                                         # Set new y-velocity (for bouncing)
     fi
 
     ax*=0.5 ay*=0.5                                  # Decrease motion acceleration
 
     # Manage mouse events
-    if {{*,b}&1}                       # Left mouse button -> Set new random accelerations
+    if {*,b}&1                         # Left mouse button -> Set new random accelerations
       vx=0 vy=0
       ax={u(-5,5)} ay={u(-5,5)}
     fi
-    if {{*,-b}&2}                      # Right mouse button -> Change sprite color
+    if {*,-b}&2                        # Right mouse button -> Change sprite color
       repeat {text_color,s}
         shared[text_color] $>          # Color is changed by random normalizations of all color channels independently
         normalize. 0,{u(64,255)}
@@ -106,7 +106,7 @@ go :
     fi
 
     wait[0] 20                            # Wait a little bit to slow down animation (20ms)
-  while {!{*,ESC}" && "!{*,Q}" && "{*}}   # Continue until keys 'ESC' or 'Q' have been pressed and window stays opened
+  while !{*,ESC}" && "!{*,Q}" && "{*}   # Continue until keys 'ESC' or 'Q' have been pressed and window stays opened
 
   remove    # Remove all images used for the demo
   endlocal  # End local environment (is empty at this point)
