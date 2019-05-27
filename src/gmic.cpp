@@ -239,6 +239,8 @@ CImg<T>& copymark() {
 }
 
 CImg<T> get_copymark() const {
+  return CImg<char>::string("");
+
   if (is_empty() || !*_data) return CImg<T>::string("_c1");
   const char *pe = _data + _width - 1, *ext = cimg::split_filename(_data);
   if (*ext) pe = --ext;
