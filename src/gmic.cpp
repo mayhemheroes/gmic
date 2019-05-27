@@ -9164,7 +9164,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           CImg<char> uext = CImg<char>::string(ext);
           cimg::lowercase(uext);
 
-          if (!cimg::strcasecmp(ext,"off")) {
+          if (!std::strcmp(uext,"off")) {
 
             // OFF file (geomview).
             *formula = 0;
@@ -9200,9 +9200,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             vertices.assign();
             primitives.assign();
             g_list_f.assign();
-          } else if (!cimg::strcasecmp(ext,"cpp") || !cimg::strcasecmp(ext,"c") ||
-                     !cimg::strcasecmp(ext,"hpp") || !cimg::strcasecmp(ext,"h") ||
-                     !cimg::strcasecmp(ext,"pan")) {
+          } else if (!std::strcmp(uext,"cpp") || !std::strcmp(uext,"c") ||
+                     !std::strcmp(uext,"hpp") || !std::strcmp(uext,"h") ||
+                     !std::strcmp(uext,"pan")) {
 
             // .cpp, .c, .hpp, .h or .pan file.
             const char *
@@ -9271,7 +9271,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                                  "Command 'output': File '%s', invalid "
                                                  "specified pixel type '%s'.",
                                                  _filename.data(),stype);
-          } else if (!cimg::strcasecmp(ext,"tiff") || !cimg::strcasecmp(ext,"tif")) {
+          } else if (!std::strcmp(uext,"tiff") || !std::strcmp(uext,"tif")) {
 
             // TIFF file.
             const char *
@@ -9358,7 +9358,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                                  "specified pixel type '%s'.",
                                                  _filename.data(),stype);
 
-          } else if (!cimg::strcasecmp(ext,"gif")) {
+          } else if (!std::strcmp(uext,"gif")) {
 
             // GIF file.
             float fps = 0, _nb_loops = 0;
@@ -9396,7 +9396,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                          gmic_selection.data(),uext.data(),_filename.data());
               g_list.save(filename); // Save distinct .gif files
             }
-          } else if (!cimg::strcasecmp(ext,"jpeg") || !cimg::strcasecmp(ext,"jpg")) {
+          } else if (!std::strcmp(uext,"jpeg") || !std::strcmp(uext,"jpg")) {
 
             // JPEG file.
             float quality = 100;
@@ -9437,7 +9437,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 g_list[l].save_jpeg(formula,(unsigned int)cimg::round(quality));
               }
             }
-          } else if (!cimg::strcasecmp(ext,"mnc") && *options) {
+          } else if (!std::strcmp(uext,"mnc") && *options) {
 
             // MNC file.
             g_list.assign(selection.height());
@@ -9474,7 +9474,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 g_list[l].save_minc2(formula,options);
               }
             }
-          } else if (!cimg::strcasecmp(ext,"raw")) {
+          } else if (!std::strcmp(uext,"raw")) {
 
             // RAW data file.
             const char *stype = cimg_sscanf(options,"%255[a-z64]%c",argx,&end)==1?argx:"auto";
@@ -9540,7 +9540,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                                  "Command 'output': File '%s', invalid "
                                                  "specified pixel type '%s'.",
                                                  _filename.data(),stype);
-          } else if (!cimg::strcasecmp(ext,"yuv")) {
+          } else if (!std::strcmp(uext,"yuv")) {
 
             // YUV sequence.
             if (cimg_sscanf(options,"%f",&opacity)!=1) opacity = 444;
@@ -9559,7 +9559,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   _filename.data());
             g_list.save_yuv(filename,ich,true);
 
-          } else if (!cimg::strcasecmp(ext,"cimg") || !cimg::strcasecmp(ext,"cimgz")) {
+          } else if (!std::strcmp(uext,"cimg") || !std::strcmp(uext,"cimgz")) {
 
             // CImg[z] file.
             const char *stype = cimg_sscanf(options,"%255[a-z64]%c",argx,&end)==1?argx:"auto";
@@ -9596,7 +9596,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                                  "Command 'output': File '%s', invalid "
                                                  "specified pixel type '%s'.",
                                                  _filename.data(),stype);
-          } else if (!cimg::strcasecmp(ext,"gmz") || !*ext) {
+          } else if (!std::strcmp(uext,"gmz") || !*ext) {
 
             // GMZ file.
             const char *stype = cimg_sscanf(options,"%255[a-z64]%c",argx,&end)==1?argx:"auto";
@@ -9636,29 +9636,29 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                                  "Command 'output': File '%s', invalid "
                                                  "specified pixel type '%s'.",
                                                  _filename.data(),stype);
-          } else if (!cimg::strcasecmp(ext,"avi") ||
-                     !cimg::strcasecmp(ext,"mov") ||
-                     !cimg::strcasecmp(ext,"asf") ||
-                     !cimg::strcasecmp(ext,"divx") ||
-                     !cimg::strcasecmp(ext,"flv") ||
-                     !cimg::strcasecmp(ext,"mpg") ||
-                     !cimg::strcasecmp(ext,"m1v") ||
-                     !cimg::strcasecmp(ext,"m2v") ||
-                     !cimg::strcasecmp(ext,"m4v") ||
-                     !cimg::strcasecmp(ext,"mjp") ||
-                     !cimg::strcasecmp(ext,"mp4") ||
-                     !cimg::strcasecmp(ext,"mkv") ||
-                     !cimg::strcasecmp(ext,"mpe") ||
-                     !cimg::strcasecmp(ext,"movie") ||
-                     !cimg::strcasecmp(ext,"ogm") ||
-                     !cimg::strcasecmp(ext,"ogg") ||
-                     !cimg::strcasecmp(ext,"ogv") ||
-                     !cimg::strcasecmp(ext,"qt") ||
-                     !cimg::strcasecmp(ext,"rm") ||
-                     !cimg::strcasecmp(ext,"vob") ||
-                     !cimg::strcasecmp(ext,"wmv") ||
-                     !cimg::strcasecmp(ext,"xvid") ||
-                     !cimg::strcasecmp(ext,"mpeg")) {
+          } else if (!std::strcmp(uext,"avi") ||
+                     !std::strcmp(uext,"mov") ||
+                     !std::strcmp(uext,"asf") ||
+                     !std::strcmp(uext,"divx") ||
+                     !std::strcmp(uext,"flv") ||
+                     !std::strcmp(uext,"mpg") ||
+                     !std::strcmp(uext,"m1v") ||
+                     !std::strcmp(uext,"m2v") ||
+                     !std::strcmp(uext,"m4v") ||
+                     !std::strcmp(uext,"mjp") ||
+                     !std::strcmp(uext,"mp4") ||
+                     !std::strcmp(uext,"mkv") ||
+                     !std::strcmp(uext,"mpe") ||
+                     !std::strcmp(uext,"movie") ||
+                     !std::strcmp(uext,"ogm") ||
+                     !std::strcmp(uext,"ogg") ||
+                     !std::strcmp(uext,"ogv") ||
+                     !std::strcmp(uext,"qt") ||
+                     !std::strcmp(uext,"rm") ||
+                     !std::strcmp(uext,"vob") ||
+                     !std::strcmp(uext,"wmv") ||
+                     !std::strcmp(uext,"xvid") ||
+                     !std::strcmp(uext,"mpeg")) {
 
             // Generic video file.
             float fps = 0, keep_open = 0;
@@ -9716,7 +9716,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                     "Command 'output': File '%s', format '%s' does not take any output options "
                     "(options '%s' specified).",
                     _filename.data(),ext,options.data());
-
             if (g_list.size()==1) g_list[0].save(filename); else g_list.save(filename);
           }
 
