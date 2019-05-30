@@ -14695,14 +14695,25 @@ _sierpinski :
   _sierpinski {($1+$3)/2},{($2+$4)/2},$3,$4,{($3+$5)/2},{($4+$6)/2},{$7-1}
   _sierpinski {($1+$5)/2},{($2+$6)/2},$5,$6,{($3+$5)/2},{($4+$6)/2},{$7-1}
 
-#@cli spiralbw
-#@cli : Draw (squared) spiral on selected images.
-#@cli : $ 16,16 spiralbw
-spiralbw :
-  e[^-1] "Draw (squared) black and white spiral on image$?."
-  v - channels 0
-  f "r = min(x,y,w - 1 - x,h - 1 - y);
-     2*r*(w + h - 2*r - 1) + (min(x,h - 1 - y)>=min(w - 1 - x,y)?x + y:2*(w + h - 2 - 2*r) - x - y)"
+#@cli spiralbw : width>0,_height>0,_is_2dcoords={ 0 | 1 }
+#@cli : Input a 2D rectangular spiral image with specified size.
+#@cli : Default values: 'height=width' and 'is_2dcoords=0'.
+#@cli : $ spiralbw 16
+#@cli : $ input.jpg spiralbw {[w,h]},1 +warp[0] [1],0 +warp[2] [1],2
+spiralbw : check "$1>=1 && ${2=$1}>=1 && isbool(${3=0})"
+  e[^-1] "Input 2D rectangular spiral image of size $1x$2."
+  v -
+  main="alpha = min(x,y,w - 1 - x,h - 1 - y);
+        t0 = alpha*2*(w + h) - 4*alpha^2;
+        X = x - alpha;
+        Y = y - alpha;
+        W = w - 2*alpha;
+        H = h - 2*alpha;
+        t = t0 + (Y==0?X:
+                  X==W - 1?W - 1 + Y:
+                  Y==H - 1?2*W + H - 3 - X:
+                  2*(W + H - 2) - Y);"
+  if $3 $1,$2,1,2,$main"[ t%w, int(t/w) ]" else $1,$2,1,1,$main fi
   v +
 
 #@cli spline : x0[%],y0[%],u0[%],v0[%],x1[%],y1[%],u1[%],v1[%],_opacity,_color1,...
