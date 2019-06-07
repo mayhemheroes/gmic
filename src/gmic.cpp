@@ -9327,13 +9327,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               if (!std::strcmp(stype,svalue_type)) { \
                 if (g_list.size()==1 || is_multipage) \
                   CImgList<value_type>(g_list, \
-                                   cimg::type<T>::string()==cimg::type<value_type>::string()). \
+                                       cimg::type<T>::string()==cimg::type<value_type>::string()). \
                     save_tiff(filename,compression_type,0,0,use_bigtiff); \
                 else { \
                   cimglist_for(g_list,l) { \
                     cimg::number_filename(filename,l,6,formula); \
                     CImg<value_type>(g_list[l], \
-                                   cimg::type<T>::string()==cimg::type<value_type>::string()). \
+                                     cimg::type<T>::string()==cimg::type<value_type>::string()). \
                       save_tiff(formula,compression_type,0,0,use_bigtiff); \
                   } \
                 } \
