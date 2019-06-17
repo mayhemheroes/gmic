@@ -41390,6 +41390,83 @@ fx_superformula :
     +[-2,-1]
   endl done
 
+#@gui Symmetric 2D Shape : fx_symmetric_shape2d, fx_symmetric_shape2d_preview(1)
+#@gui : Subdivisions = int(5,2,32)
+#@gui : Center = point(50,50,0,1,255,255,255,128)
+#@gui : Old Center = value(50,50)
+#@gui : Angle / Size = point(50,30,0,1,255,255,255,128)
+#@gui : Old Angle / Size = value(50,30)
+#@gui : sep = separator()
+#@gui : Control Point 1 = point(50,25,1,1,255,128,0,255,4)
+#@gui : Control Point 2 = point(56,42,1,1,255,128,0,255,4)
+#@gui : Control Point 3 = point(52,52,-1,1,255,128,0,255,4)
+#@gui : Control Point 4 = point(52,52,-1,1,255,128,0,255,4)
+#@gui : Control Point 5 = point(52,52,-1,1,255,128,0,255,4)
+#@gui : Control Point 6 = point(52,52,-1,1,255,128,0,255,4)
+#@gui : sep = separator()
+#@gui : Drawing Mode = choice(1,"Outlined","Filled")
+#@gui : Color = color(255,0,255)
+#@gui : Opacity (%) = float(80,0,100)
+#@gui : sep = separator()
+#@gui : note = note("<small>Author: <i>David Tschumperl&#233;</i>.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+#@gui : Latest Update: <i>2019/06/17</i>.</small>")
+fx_symmetric_shape2d :
+  (${10-21}) f. "isnan(i)?-1024:i" discard. -1024 r. 2,{h/2},1,1,-1 permute. cyzx
+  f. "x = R - $2; y = G - $3; [ atan2(y,x), norm(x,y) ]"
+  l. n={h} .x{$1-1} a y f "const pi2 = 2*pi; [ (R + int(y/"$n")*pi2/$1)%pi2, G ]" sort +,y endl
+  f. "[ $2*w#-2,$3*h#-2 ]/100 + [ G*cos(R), G*sin(R) ]*(min(w#-2,h#-2)-1)%" permute. cyzx
+  coords={^} rm.
+
+  repeat $! l[$>] split_opacity l[0] to_rgb
+    if $22 polygon {narg($coords)/2},$coords,{$26%},${23-25}
+    else polygon {narg($coords)/2},$coords,{$26%},0xFFFFFFFF,${23-25}
+    fi
+  endl a c endl done
+
+fx_symmetric_shape2d_preview :
+  cx1,cy1,cx2,cy2,cx3,cy3,cx4,cy4,cx5,cy5,cx6,cy6=${10-21}
+  angx,angy=$6,$7
+  if [$2,$3]!=[$4,$5]" || "[$angx,$angy]!=[$8,$9] # Center or angle has been modified
+    dx,dy={[$2-$4,$3-$5]}
+    repeat 6 i={1+$>}
+      cx$i,cy$i={"
+        const cx = "${cx$i}";
+        const cy = "${cy$i}";
+        dang = atan2($7 - $3,$6 - $2) - atan2($9 - $3,$8 - $2);
+        dsca = norm($6 - $2,$7 - $3)/norm($9 - $3,$8 - $2);
+        [ $2,$3 ] + dsca*rot(dang*180/pi)*[ cx - $4, cy - $5 ]"}
+    done
+    angx,angy={[$6+$2-$4,$7+$3-$5]}
+  fi
+
+  fx_symmetric_shape2d ${1-9},$cx1,$cy1,$cx2,$cy2,$cx3,$cy3,$cx4,$cy4,$cx5,$cy5,$cx6,$cy6,${22-26}
+  eval "
+    t0 = atan2($7 - $3,$6 - $2);
+    for (k = 0, k<$1, ++k,
+      const pi2 = 2*pi;
+      const xc = $2*(w-1)%;
+      const yc = $3*(h-1)%;
+      x = xc + (w+h)*cos(t0 + 2*pi*k/$1);
+      y = yc + (w+h)*sin(t0 + 2*pi*k/$1);
+      polygon(-2,xc,yc,x,y,0.35,0xF0F0F0F0,255);
+      polygon(-2,xc,yc,x,y,0.35,0x0F0F0F0F,0);
+    )"
+
+  u "{$1}"\      # Subdivisions
+    "{$2,$3}"\   # Center
+    "{$2,$3}"\   # Old Center
+    "{"$angx,$angy"}"\   # Angle
+    "{"$angx,$angy"}"\   # Old Angle
+    "{"$cx1,$cy1"}"\ # Control point 1
+    "{"$cx2,$cy2"}"\ # Control point 2
+    "{"$cx3,$cy3"}"\ # Control point 3
+    "{"$cx4,$cy4"}"\ # Control point 4
+    "{"$cx5,$cy5"}"\ # Control point 5
+    "{"$cx6,$cy6"}"\ # Control point 6
+    "{$22}"\     # Drawing mode
+    "{$23,$24,$25}"\ # Color
+    "{$26}"\     # Opacity
+
 #@gui Turbulence : fx_turbulence, fx_turbulence
 #@gui : Radius = float(128,1,1024)
 #@gui : Octaves = int(6,1,12)
