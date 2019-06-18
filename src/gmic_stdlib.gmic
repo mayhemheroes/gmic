@@ -41411,17 +41411,19 @@ fx_superformula :
 #@gui : note = note("<small>Author: <i>David Tschumperl&#233;</i>.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 #@gui : Latest Update: <i>2019/06/17</i>.</small>")
 fx_symmetric_shape2d :
+  repeat $! l[$<]
+    100%,100%,1,4 _fx_symmetric_shape2d. $* rv
+  endl done
+
+_fx_symmetric_shape2d :
   (${10-21}) f. "isnan(i)?-1024:i" discard. -1024 r. 2,{h/2},1,1,-1 permute. cyzx
   f. "x = R - $2; y = G - $3; [ atan2(y,x), norm(x,y) ]"
   l. n={h} .x{$1-1} a y f "const pi2 = 2*pi; [ (R + int(y/"$n")*pi2/$1)%pi2, G ]" sort +,y endl
   f. "[ $2*w#-2,$3*h#-2 ]/100 + [ G*cos(R), G*sin(R) ]*(min(w#-2,h#-2)-1)%" permute. cyzx
   coords={^} rm.
-
-  repeat $! l[$>] split_opacity l[0] to_rgb
-    if $22 polygon {narg($coords)/2},$coords,{$26%},${23-25}
-    else polygon {narg($coords)/2},$coords,{$26%},0xFFFFFFFF,${23-25}
-    fi
-  endl a c endl done
+  if $22 polygon {narg($coords)/2},$coords,1,${23-25},{$26*255%}
+  else polygon {narg($coords)/2},$coords,1,0xFFFFFFFF,${23-25},{$26*255%}
+  fi
 
 fx_symmetric_shape2d_preview :
   cx1,cy1,cx2,cy2,cx3,cy3,cx4,cy4,cx5,cy5,cx6,cy6=${10-21}
@@ -41439,18 +41441,22 @@ fx_symmetric_shape2d_preview :
     angx,angy={[$6+$2-$4,$7+$3-$5]}
   fi
 
-  fx_symmetric_shape2d ${1-9},$cx1,$cy1,$cx2,$cy2,$cx3,$cy3,$cx4,$cy4,$cx5,$cy5,$cx6,$cy6,${22-26}
-  eval "
-    t0 = atan2($7 - $3,$6 - $2);
-    for (k = 0, k<$1, ++k,
-      const pi2 = 2*pi;
-      const xc = $2*(w-1)%;
-      const yc = $3*(h-1)%;
-      x = xc + (w+h)*cos(t0 + 2*pi*k/$1);
-      y = yc + (w+h)*sin(t0 + 2*pi*k/$1);
-      polygon(-2,xc,yc,x,y,0.35,0xF0F0F0F0,255);
-      polygon(-2,xc,yc,x,y,0.35,0x0F0F0F0F,0);
-    )"
+  repeat $! l[$>]
+    r {s=min(w,h);[s,s]},1,100%,0,0,0.5,0.5
+    fx_symmetric_shape2d ${1-9},$cx1,$cy1,$cx2,$cy2,$cx3,$cy3,$cx4,$cy4,$cx5,$cy5,$cx6,$cy6,${22-26}
+    rv blend alpha
+    eval "
+      t0 = atan2($7 - $3,$6 - $2);
+      for (k = 0, k<$1, ++k,
+        const pi2 = 2*pi;
+        const xc = $2*(w-1)%;
+        const yc = $3*(h-1)%;
+        x = xc + (w+h)*cos(t0 + 2*pi*k/$1);
+        y = yc + (w+h)*sin(t0 + 2*pi*k/$1);
+        polygon(-2,xc,yc,x,y,0.35,0xF0F0F0F0,255);
+        polygon(-2,xc,yc,x,y,0.35,0x0F0F0F0F,0);
+      )"
+  endl done
 
   u "{$1}"\      # Subdivisions
     "{$2,$3}"\   # Center
