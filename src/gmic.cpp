@@ -5977,7 +5977,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             opacity = cimg::round(opacity);
             print(images,0,
                   "Convolve image%s with kernel [%u] and %s boundary conditions, "
-                  "with%s normalization and padding %g.",
+                  "with%s normalization and dilation %g.",
                   gmic_selection.data(),
                   *ind,
                   boundary?"neumann":"dirichlet",
@@ -6007,7 +6007,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             opacity = cimg::round(opacity);
             print(images,0,
                   "Correlate image%s with kernel [%u] and %s boundary conditions, "
-                  "with%s normalization and padding %g.",
+                  "with%s normalization and dilation %g.",
                   gmic_selection.data(),
                   *ind,
                   boundary?"neumann":"dirichlet",
