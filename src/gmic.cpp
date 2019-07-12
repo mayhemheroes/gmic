@@ -5962,28 +5962,24 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           gmic_substitute_args(true);
           unsigned int is_normalized = 0;
           boundary = 1;
-          opacity = 1;
           sep = 0;
           if (((cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]%c%c",
                             indices,&sep,&end)==2 && sep==']') ||
                cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%u%c",
                            indices,&boundary,&end)==2 ||
                cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%u,%u%c",
-                           indices,&boundary,&is_normalized,&end)==3 ||
-               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%u,%u,%f%c",
-                           indices,&boundary,&is_normalized,&opacity,&end)==4) &&
+                           indices,&boundary,&is_normalized,&end)==3) &&
               (ind=selection2cimg(indices,images.size(),images_names,"convolve")).height()==1 &&
-              boundary<=1 && opacity>=0.5f) {
-            opacity = cimg::round(opacity);
+              boundary<=1) {
             print(images,0,
                   "Convolve image%s with kernel [%u] and %s boundary conditions, "
-                  "with%s normalization and dilation %g.",
+                  "with%s normalization.",
                   gmic_selection.data(),
                   *ind,
                   boundary?"neumann":"dirichlet",
-                  is_normalized?"":"out",opacity);
+                  is_normalized?"":"out");
             const CImg<T> kernel = gmic_image_arg(*ind);
-            cimg_forY(selection,l) gmic_apply(convolve(kernel,(bool)boundary,(bool)is_normalized,(int)opacity));
+            cimg_forY(selection,l) gmic_apply(convolve(kernel,(bool)boundary,(bool)is_normalized));
           } else arg_error("convolve");
           is_released = false; ++position; continue;
         }
@@ -5993,28 +5989,24 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           gmic_substitute_args(true);
           unsigned int is_normalized = 0;
           boundary = 1;
-          opacity = 1;
           sep = 0;
           if (((cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]%c%c",
                             indices,&sep,&end)==2 && sep==']') ||
                cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%u%c",
                            indices,&boundary,&end)==2 ||
                cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%u,%u%c",
-                           indices,&boundary,&is_normalized,&end)==3 ||
-               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%u,%u,%f%c",
-                           indices,&boundary,&is_normalized,&opacity,&end)==4) &&
+                           indices,&boundary,&is_normalized,&end)==3) &&
               (ind=selection2cimg(indices,images.size(),images_names,"correlate")).height()==1 &&
-              boundary<=1 && opacity>=0.5f) {
-            opacity = cimg::round(opacity);
+              boundary<=1) {
             print(images,0,
                   "Correlate image%s with kernel [%u] and %s boundary conditions, "
-                  "with%s normalization and dilation %g.",
+                  "with%s normalization.",
                   gmic_selection.data(),
                   *ind,
                   boundary?"neumann":"dirichlet",
-                  is_normalized?"":"out",opacity);
+                  is_normalized?"":"out");
             const CImg<T> kernel = gmic_image_arg(*ind);
-            cimg_forY(selection,l) gmic_apply(correlate(kernel,(bool)boundary,(bool)is_normalized,(int)opacity));
+            cimg_forY(selection,l) gmic_apply(correlate(kernel,(bool)boundary,(bool)is_normalized));
           } else arg_error("correlate");
           is_released = false; ++position; continue;
         }
