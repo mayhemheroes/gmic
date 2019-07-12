@@ -5992,7 +5992,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         if (!std::strcmp("correlate",command)) {
           gmic_substitute_args(true);
           unsigned int is_normalized = 0;
-          boundary = pattern = 1;
+          boundary = 1;
+          opacity = 1;
           sep = 0;
           if (((cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]%c%c",
                             indices,&sep,&end)==2 && sep==']') ||
