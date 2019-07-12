@@ -5970,16 +5970,16 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%u,%u%c",
                            indices,&boundary,&is_normalized,&end)==3) &&
               (ind=selection2cimg(indices,images.size(),images_names,"convolve")).height()==1 &&
-              boundary<=1) {
+              boundary<=3) {
             print(images,0,
                   "Convolve image%s with kernel [%u] and %s boundary conditions, "
                   "with%s normalization.",
                   gmic_selection.data(),
                   *ind,
-                  boundary?"neumann":"dirichlet",
+                  boundary==0?"dirichlet":boundary==1?"neumann":boundary==2?"periodic":"mirror",
                   is_normalized?"":"out");
             const CImg<T> kernel = gmic_image_arg(*ind);
-            cimg_forY(selection,l) gmic_apply(convolve(kernel,(bool)boundary,(bool)is_normalized));
+            cimg_forY(selection,l) gmic_apply(convolve(kernel,boundary,(bool)is_normalized));
           } else arg_error("convolve");
           is_released = false; ++position; continue;
         }
@@ -5997,16 +5997,16 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%u,%u%c",
                            indices,&boundary,&is_normalized,&end)==3) &&
               (ind=selection2cimg(indices,images.size(),images_names,"correlate")).height()==1 &&
-              boundary<=1) {
+              boundary<=3) {
             print(images,0,
                   "Correlate image%s with kernel [%u] and %s boundary conditions, "
                   "with%s normalization.",
                   gmic_selection.data(),
                   *ind,
-                  boundary?"neumann":"dirichlet",
+                  boundary==0?"dirichlet":boundary==1?"neumann":boundary==2?"periodic":"mirror",
                   is_normalized?"":"out");
             const CImg<T> kernel = gmic_image_arg(*ind);
-            cimg_forY(selection,l) gmic_apply(correlate(kernel,(bool)boundary,(bool)is_normalized));
+            cimg_forY(selection,l) gmic_apply(correlate(kernel,boundary,(bool)is_normalized));
           } else arg_error("correlate");
           is_released = false; ++position; continue;
         }
