@@ -5993,16 +5993,32 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               (ind=selection2cimg(indices,images.size(),images_names,"correlate")).height()==1 &&
               boundary<=3 && sum_input_channels<=1) {
             is_cond = command[2]=='n'; // is_convolve?
+
+            *argx = *argy = *argz = *argc = 0;
+            if (verbosity>=0 || is_debug) {
+              if (xcenter!=~0U || ycenter!=~0U || zcenter!=~0U)
+                cimg_snprintf(argx,_argx.width(),", kernel center (%d,%d,%d)",
+                              (int)xcenter,(int)ycenter,(int)zcenter);
+              if (xstart!=0 || ystart!=0 || zstart!=0 || xend!=~0U || yend!=~0U || zend!=~0U)
+                cimg_snprintf(argy,_argy.width(),", crop coordinates (%d,%d,%d) - (%d,%d,%d)",
+                              (int)xstart,(int)ystart,(int)zstart,(int)xend,(int)yend,(int)zend);
+              if (xstride!=1 || ystride!=1 || zstride!=1)
+                cimg_snprintf(argz,_argz.width(),", strides (%g,%g,%g)",
+                              xstride,ystride,zstride);
+              if (xdilation!=1 || ydilation!=1 || zdilation!=1)
+                cimg_snprintf(argc,_argc.width(),", dilations (%g,%g,%g)",
+                              xdilation,ydilation,zdilation);
+            }
+
             print(images,0,
-                  "%s image%s with kernel [%u] and %s boundary conditions, "
-                  "with%s normalization, strides (%g,%g,%g) and dilations (%g,%g,%g).",
+                  "%s image%s with kernel [%u], %s boundary conditions, "
+                  "with%s normalization%s%s%s%s.",
                   is_cond?"Convolve":"Correlate",
                   gmic_selection.data(),
                   *ind,
                   boundary==0?"dirichlet":boundary==1?"neumann":boundary==2?"periodic":"mirror",
                   is_normalized?"":"out",
-                  xstride,ystride,zstride,
-                  xdilation,ydilation,zdilation);
+                  *argx?argx:"",*argy?argy:"",*argz?argz:"",*argc?argc:"");
             const CImg<T> kernel = gmic_image_arg(*ind);
             if (is_cond) {
               cimg_forY(selection,l) gmic_apply(convolve(kernel,boundary,(bool)is_normalized,(bool)sum_input_channels,
