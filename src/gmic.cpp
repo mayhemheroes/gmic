@@ -6012,12 +6012,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
             print(images,0,
                   "%s image%s with kernel [%u], %s boundary conditions, "
-                  "with%s normalization%s%s%s%s.",
+                  "with%s normalization%s%s%s%s%s.",
                   is_cond?"Convolve":"Correlate",
                   gmic_selection.data(),
                   *ind,
                   boundary==0?"dirichlet":boundary==1?"neumann":boundary==2?"periodic":"mirror",
                   is_normalized?"":"out",
+                  sum_input_channels?", summing input channels":"",
                   *argx?argx:"",*argy?argy:"",*argz?argz:"",*argc?argc:"");
             const CImg<T> kernel = gmic_image_arg(*ind);
             if (is_cond) {
