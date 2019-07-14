@@ -6006,7 +6006,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   boundary==0?"dirichlet":boundary==1?"neumann":boundary==2?"periodic":"mirror",
                   is_normalized?"":"out");
             const CImg<T> kernel = gmic_image_arg(*ind);
-            cimg_forY(selection,l) gmic_apply(correlate(kernel,boundary,(bool)is_normalized));
+            cimg_forY(selection,l) gmic_apply(correlate(kernel,boundary,(bool)is_normalized,true));
           } else arg_error("correlate");
           is_released = false; ++position; continue;
         }
