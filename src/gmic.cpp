@@ -5961,7 +5961,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         if (!std::strcmp("convolve",command) || !std::strcmp("correlate",command)) {
           gmic_substitute_args(true);
           unsigned int
-            is_normalized = 0, sum_input_channels = 0,
+            is_normalized = 0, channel_mode = 1,
             xcenter = ~0U, ycenter = ~0U, zcenter = ~0U,
             xstart = 0, ystart = 0, zstart = 0,
             xend = ~0U, yend = ~0U, zend = ~0U;
@@ -5977,21 +5977,21 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%u,%u%c",
                            indices,&boundary,&is_normalized,&end)==3 ||
                cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%u,%u,%u%c",
-                           indices,&boundary,&is_normalized,&sum_input_channels,&end)==4 ||
+                           indices,&boundary,&is_normalized,&channel_mode,&end)==4 ||
                cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%u,%u,%u,%u,%u,%u%c",
-                           indices,&boundary,&is_normalized,&sum_input_channels,&xcenter,&ycenter,&zcenter,&end)==7 ||
+                           indices,&boundary,&is_normalized,&channel_mode,&xcenter,&ycenter,&zcenter,&end)==7 ||
                cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u%c",
-                           indices,&boundary,&is_normalized,&sum_input_channels,&xcenter,&ycenter,&zcenter,
+                           indices,&boundary,&is_normalized,&channel_mode,&xcenter,&ycenter,&zcenter,
                            &xstart,&ystart,&zstart,&xend,&yend,&zend,&end)==13 ||
                cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%f,%f,%f%c",
-                           indices,&boundary,&is_normalized,&sum_input_channels,&xcenter,&ycenter,&zcenter,
+                           indices,&boundary,&is_normalized,&channel_mode,&xcenter,&ycenter,&zcenter,
                            &xstart,&ystart,&zstart,&xend,&yend,&zend,&xstride,&ystride,&zstride,&end)==16 ||
                cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%f,%f,%f,%f,%f,%f%c",
-                           indices,&boundary,&is_normalized,&sum_input_channels,&xcenter,&ycenter,&zcenter,
+                           indices,&boundary,&is_normalized,&channel_mode,&xcenter,&ycenter,&zcenter,
                            &xstart,&ystart,&zstart,&xend,&yend,&zend,&xstride,&ystride,&zstride,
                            &xdilation,&ydilation,&zdilation,&end)==19) &&
               (ind=selection2cimg(indices,images.size(),images_names,"correlate")).height()==1 &&
-              boundary<=3 && sum_input_channels<=1) {
+              boundary<=3 && channel_mode<=2) {
             is_cond = command[2]=='n'; // is_convolve?
 
             *argx = *argy = *argz = *argc = 0;
@@ -6012,21 +6012,22 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
             print(images,0,
                   "%s image%s with kernel [%u], %s boundary conditions, "
-                  "with%s normalization%s%s%s%s%s.",
+                  "with%s normalization, %s channel mode%s%s%s.",
                   is_cond?"Convolve":"Correlate",
                   gmic_selection.data(),
                   *ind,
                   boundary==0?"dirichlet":boundary==1?"neumann":boundary==2?"periodic":"mirror",
                   is_normalized?"":"out",
-                  sum_input_channels?", summing input channels":"",
+                  channel_mode==0?"sum input":
+                  channel_mode==1?"one-for-one":"expand",
                   *argx?argx:"",*argy?argy:"",*argz?argz:"",*argc?argc:"");
             const CImg<T> kernel = gmic_image_arg(*ind);
             if (is_cond) {
-              cimg_forY(selection,l) gmic_apply(convolve(kernel,boundary,(bool)is_normalized,(bool)sum_input_channels,
+              cimg_forY(selection,l) gmic_apply(convolve(kernel,boundary,(bool)is_normalized,channel_mode,
                                                          xcenter,ycenter,zcenter,xstart,ystart,zstart,xend,yend,zend,
                                                          xstride,ystride,zstride,xdilation,ydilation,zdilation));
             } else {
-              cimg_forY(selection,l) gmic_apply(correlate(kernel,boundary,(bool)is_normalized,(bool)sum_input_channels,
+              cimg_forY(selection,l) gmic_apply(correlate(kernel,boundary,(bool)is_normalized,channel_mode,
                                                           xcenter,ycenter,zcenter,xstart,ystart,zstart,xend,yend,zend,
                                                           xstride,ystride,zstride,xdilation,ydilation,zdilation));
             }

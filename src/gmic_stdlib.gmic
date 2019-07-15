@@ -241,8 +241,9 @@ _help : skip ${1=""}
       foo uncommand foo
     onfail ({'${}'}) s -,{'" (did you mean "'} if $!>1 s[1] -,39 k[1] misspelling={t} fi rm
     endl
-    if narg($misspelling) misspelling=" (did you mean '"$misspelling"' ?)" fi
-    v + e[] "\n[gmic] Command '"$command"' has no description"$misspelling". Try 'gmic -h' for global help.\n\n" v -
+    if narg($misspelling) misspelling=" (did you mean '"$_gmic_g$misspelling$_gmic_n"' ?)" fi
+    v + e[] "\n[gmic] Command '"$_gmic_r$command$_gmic_n"' has no description"$misspelling". "\
+      "Try '"${_gmic_c}"gmic -h"$_gmic_n"' for global help.\n\n" v -
     rm u "" return
   fi
   rm[0] a y discard 13 s -,10 append_multiline_comments
@@ -10810,11 +10811,12 @@ compose_freq :
   e[^-1] "Compose low and high frequency part$? into new images."
   v - repeat int($!/2) +[$>,{$>+1}] done v +
 
-#@cli convolve : [mask],_boundary_conditions,_is_normalized={ 0 | 1 },_sum_input_channels={ 0 | 1 },\
+#@cli convolve : [mask],_boundary_conditions,_is_normalized={ 0 | 1 },_channel_mode,\
 # _xcenter,_ycenter,_zcenter,_xstart,_ystart,_zstart,_xend,_yend,_zend,_xstride,_ystride,_zstride,\
 # _xdilation,_ydilation,_zdilation : (+)
 #@cli : Convolve selected images by specified mask.
 #@cli : 'boundary_conditions' can be { 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }.
+#@cli : 'channel_mode' can be { 0=sum input channels | 1=one-for-one | 2=expand }.
 #@cli : Default values: 'boundary_conditions=1', 'is_normalized=0', 'sum_input_channels=0', \
 # 'xcenter=ycenter=zcenter=-1' (-1=centered), 'xstart=ystart=zstart=0', 'xend=yend=zend=-1' (-1=max coordinates), \
 # 'xstride=ystride=zstride=1' and 'xdilation=ydilation=zdilation=1'.
@@ -10836,11 +10838,12 @@ convolve_fft : check ${is_image_arg\ $1}
     ifft rm.
   endl done v +
 
-#@cli correlate : [mask],_boundary_conditions,_is_normalized={ 0 | 1 },_sum_input_channels={ 0 | 1 },\
+#@cli correlate : [mask],_boundary_conditions,_is_normalized={ 0 | 1 },_channel_mode,\
 # _xcenter,_ycenter,_zcenter,_xstart,_ystart,_zstart,_xend,_yend,_zend,_xstride,_ystride,_zstride,\
 # _xdilation,_ydilation,_zdilation : (+)
 #@cli : Correlate selected images by specified mask.
 #@cli : 'boundary_conditions' can be { 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }.
+#@cli : 'channel_mode' can be { 0=sum input channels | 1=one-for-one | 2=expand }.
 #@cli : Default values: 'boundary_conditions=1', 'is_normalized=0', 'sum_input_channels=0', \
 # 'xcenter=ycenter=zcenter=-1' (-1=centered), 'xstart=ystart=zstart=0', 'xend=yend=zend=-1' (-1=max coordinates), \
 # 'xstride=ystride=zstride=1' and 'xdilation=ydilation=zdilation=1'.
