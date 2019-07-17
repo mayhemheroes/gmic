@@ -5968,8 +5968,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           float
             xstride = 1, ystride = 1, zstride = 1,
             xdilation = 1, ydilation = 1 , zdilation = 1;
+          is_cond = command[2]=='n'; // is_convolve?
           boundary = 1;
           sep = 0;
+
           if (((cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]%c%c",
                             indices,&sep,&end)==2 && sep==']') ||
                cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%u%c",
@@ -5992,7 +5994,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                            &xdilation,&ydilation,&zdilation,&end)==19) &&
               (ind=selection2cimg(indices,images.size(),images_names,"correlate")).height()==1 &&
               boundary<=3 && channel_mode<=2) {
-            is_cond = command[2]=='n'; // is_convolve?
 
             *argx = *argy = *argz = *argc = 0;
             if (verbosity>=0 || is_debug) {
