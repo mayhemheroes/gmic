@@ -6473,20 +6473,51 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           float sigma_s = 10, sigma_r = 10, smoothness = 1;
           unsigned int is_fast_approximation = 0;
           float psize = 5, rsize = 6;
-          if ((cimg_sscanf(argument,"%f%c",
-                           &sigma_s,&end)==1 ||
-               cimg_sscanf(argument,"%f,%f%c",
-                           &sigma_s,&sigma_r,&end)==2 ||
-               cimg_sscanf(argument,"%f,%f,%f%c",
-                           &sigma_s,&sigma_r,&psize,&end)==3 ||
-               cimg_sscanf(argument,"%f,%f,%f,%f%c",
-                           &sigma_s,&sigma_r,&psize,&rsize,&end)==4 ||
-               cimg_sscanf(argument,"%f,%f,%f,%f,%f%c",
-                           &sigma_s,&sigma_r,&psize,&rsize,&smoothness,&end)==5 ||
-               cimg_sscanf(argument,"%f,%f,%f,%f,%f,%u%c",
-                           &sigma_s,&sigma_r,&psize,&rsize,&smoothness,
-                           &is_fast_approximation,&end)==6) &&
+          if ((cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%f%c",
+                           indices,&sigma_s,&end)==2 ||
+               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%f,%f%c",
+                           indices,&sigma_s,&sigma_r,&end)==3 ||
+               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%f,%f,%f%c",
+                           indices,&sigma_s,&sigma_r,&psize,&end)==4 ||
+               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%f,%f,%f,%f%c",
+                           indices,&sigma_s,&sigma_r,&psize,&rsize,&end)==5 ||
+               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%f,%f,%f,%f,%f%c",
+                           indices,&sigma_s,&sigma_r,&psize,&rsize,&smoothness,&end)==6 ||
+               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%f,%f,%f,%f,%f,%u%c",
+                           indices,&sigma_s,&sigma_r,&psize,&rsize,&smoothness,
+                           &is_fast_approximation,&end)==7) &&
+              (ind=selection2cimg(indices,images.size(),images_names,"denoise")).height()==1 &&
               sigma_s>=0 && sigma_r>=0 && psize>=0 && rsize>=0 && is_fast_approximation<=1) {
+            psize = cimg::round(psize);
+            rsize = cimg::round(rsize);
+            print(images,0,"Denoise image%s using guide image [%u] %gx%g patches, with standard deviations %lg,%g, "
+                  "lookup size %g and smoothness %g.",
+                  gmic_selection.data(),
+                  *ind,
+                  psize,
+                  psize,
+                  sigma_s,
+                  sigma_r,
+                  rsize,
+                  smoothness);
+            const CImg<T> guide = gmic_image_arg(*ind);
+            cimg_forY(selection,l)
+              gmic_apply(blur_patch(guide,sigma_s,sigma_r,(unsigned int)psize,(unsigned int)rsize,smoothness,
+                                    (bool)is_fast_approximation));
+          } else if ((cimg_sscanf(argument,"%f%c",
+                                  &sigma_s,&end)==1 ||
+                      cimg_sscanf(argument,"%f,%f%c",
+                                  &sigma_s,&sigma_r,&end)==2 ||
+                      cimg_sscanf(argument,"%f,%f,%f%c",
+                                  &sigma_s,&sigma_r,&psize,&end)==3 ||
+                      cimg_sscanf(argument,"%f,%f,%f,%f%c",
+                                  &sigma_s,&sigma_r,&psize,&rsize,&end)==4 ||
+                      cimg_sscanf(argument,"%f,%f,%f,%f,%f%c",
+                                  &sigma_s,&sigma_r,&psize,&rsize,&smoothness,&end)==5 ||
+                      cimg_sscanf(argument,"%f,%f,%f,%f,%f,%u%c",
+                                  &sigma_s,&sigma_r,&psize,&rsize,&smoothness,
+                                  &is_fast_approximation,&end)==6) &&
+                     sigma_s>=0 && sigma_r>=0 && psize>=0 && rsize>=0 && is_fast_approximation<=1) {
             psize = cimg::round(psize);
             rsize = cimg::round(rsize);
             print(images,0,"Denoise image%s using %gx%g patches, with standard deviations %lg,%g, "
