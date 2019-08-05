@@ -6527,7 +6527,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                      sigma_s>=0 && sigma_r>=0 && psize>=0 && rsize>=0 && is_fast_approximation<=1) {
             psize = cimg::round(psize);
             rsize = cimg::round(rsize);
-            print(images,0,"Denoise image%s with %gx%g patches, standard deviations %lg,%g, "
+            print(images,0,"Denoise image%s with %gx%g patches, standard deviations (%g%s,%g%s), "
                   "lookup size %g and smoothness %g.",
                   gmic_selection.data(),psize,psize,
                   sigma_s,sep0=='%'?"%":"",
