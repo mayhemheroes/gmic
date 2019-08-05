@@ -6473,62 +6473,68 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           float sigma_s = 10, sigma_r = 10, smoothness = 1;
           unsigned int is_fast_approximation = 0;
           float psize = 5, rsize = 6;
-          if ((cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%f%c",
-                           indices,&sigma_s,&end)==2 ||
-               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%f,%f%c",
-                           indices,&sigma_s,&sigma_r,&end)==3 ||
-               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%f,%f,%f%c",
-                           indices,&sigma_s,&sigma_r,&psize,&end)==4 ||
-               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%f,%f,%f,%f%c",
-                           indices,&sigma_s,&sigma_r,&psize,&rsize,&end)==5 ||
-               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%f,%f,%f,%f,%f%c",
-                           indices,&sigma_s,&sigma_r,&psize,&rsize,&smoothness,&end)==6 ||
-               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%f,%f,%f,%f,%f,%u%c",
-                           indices,&sigma_s,&sigma_r,&psize,&rsize,&smoothness,
+          sep0 = sep1 = *argx = *argy = 0;
+          if ((cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%255[0-9.eE%+-]%c",
+                           indices,argx,&end)==2 ||
+               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%255[0-9.eE%+-],%255[0-9.eE%+-]%c",
+                           indices,argx,argy,&end)==3 ||
+               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%255[0-9.eE%+-],%255[0-9.eE%+-],%f%c",
+                           indices,argx,argy,&psize,&end)==4 ||
+               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%255[0-9.eE%+-],%255[0-9.eE%+-],%f,%f%c",
+                           indices,argx,argy,&psize,&rsize,&end)==5 ||
+               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%255[0-9.eE%+-],%255[0-9.eE%+-],%f,%f,%f%c",
+                           indices,argx,argy,&psize,&rsize,&smoothness,&end)==6 ||
+               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%255[0-9.eE%+-],%255[0-9.eE%+-],%f,%f,%f,%u%c",
+                           indices,argx,argy,&psize,&rsize,&smoothness,
                            &is_fast_approximation,&end)==7) &&
+              (cimg_sscanf(argx,"%f%c",&sigma_s,&end)==1 ||
+               (cimg_sscanf(argx,"%f%c%c",&sigma_s,&sep0,&end)==2 && sep0=='%')) &&
+              (cimg_sscanf(argy,"%f%c",&sigma_r,&end)==1 ||
+               (cimg_sscanf(argy,"%f%c%c",&sigma_r,&sep1,&end)==2 && sep1=='%')) &&
               (ind=selection2cimg(indices,images.size(),images_names,"denoise")).height()==1 &&
               sigma_s>=0 && sigma_r>=0 && psize>=0 && rsize>=0 && is_fast_approximation<=1) {
             psize = cimg::round(psize);
             rsize = cimg::round(rsize);
-            print(images,0,"Denoise image%s using guide image [%u] %gx%g patches, with standard deviations %lg,%g, "
+            print(images,0,"Denoise image%s using guide image [%u], with %gx%g patches, standard deviations (%g%s,%g%s), "
                   "lookup size %g and smoothness %g.",
-                  gmic_selection.data(),
-                  *ind,
-                  psize,
-                  psize,
-                  sigma_s,
-                  sigma_r,
-                  rsize,
-                  smoothness);
+                  gmic_selection.data(),*ind,psize,psize,
+                  sigma_s,sep0=='%'?"%":"",
+                  sigma_r,sep1=='%'?"%":"",
+                  rsize,smoothness);
             const CImg<T> guide = gmic_image_arg(*ind);
+            if (sep0=='%') sigma_s = -sigma_s;
+            if (sep1=='%') sigma_r = -sigma_r;
             cimg_forY(selection,l)
               gmic_apply(blur_patch(guide,sigma_s,sigma_r,(unsigned int)psize,(unsigned int)rsize,smoothness,
                                     (bool)is_fast_approximation));
-          } else if ((cimg_sscanf(argument,"%f%c",
-                                  &sigma_s,&end)==1 ||
-                      cimg_sscanf(argument,"%f,%f%c",
-                                  &sigma_s,&sigma_r,&end)==2 ||
-                      cimg_sscanf(argument,"%f,%f,%f%c",
-                                  &sigma_s,&sigma_r,&psize,&end)==3 ||
-                      cimg_sscanf(argument,"%f,%f,%f,%f%c",
-                                  &sigma_s,&sigma_r,&psize,&rsize,&end)==4 ||
-                      cimg_sscanf(argument,"%f,%f,%f,%f,%f%c",
-                                  &sigma_s,&sigma_r,&psize,&rsize,&smoothness,&end)==5 ||
-                      cimg_sscanf(argument,"%f,%f,%f,%f,%f,%u%c",
-                                  &sigma_s,&sigma_r,&psize,&rsize,&smoothness,
+          } else if ((cimg_sscanf(argument,"%255[0-9.eE%+-]%c",
+                                  argx,&end)==1 ||
+                      cimg_sscanf(argument,"%255[0-9.eE%+-],%255[0-9.eE%+-]%c",
+                                  argx,argy,&end)==2 ||
+                      cimg_sscanf(argument,"%255[0-9.eE%+-],%255[0-9.eE%+-],%f%c",
+                                  argx,argy,&psize,&end)==3 ||
+                      cimg_sscanf(argument,"%255[0-9.eE%+-],%255[0-9.eE%+-],%f,%f%c",
+                                  argx,argy,&psize,&rsize,&end)==4 ||
+                      cimg_sscanf(argument,"%255[0-9.eE%+-],%255[0-9.eE%+-],%f,%f,%f%c",
+                                  argx,argy,&psize,&rsize,&smoothness,&end)==5 ||
+                      cimg_sscanf(argument,"%255[0-9.eE%+-],%255[0-9.eE%+-],%f,%f,%f,%u%c",
+                                  argx,argy,&psize,&rsize,&smoothness,
                                   &is_fast_approximation,&end)==6) &&
+                     (cimg_sscanf(argx,"%f%c",&sigma_s,&end)==1 ||
+                      (cimg_sscanf(argx,"%f%c%c",&sigma_s,&sep0,&end)==2 && sep0=='%')) &&
+                     (cimg_sscanf(argy,"%f%c",&sigma_r,&end)==1 ||
+                      (cimg_sscanf(argy,"%f%c%c",&sigma_r,&sep1,&end)==2 && sep1=='%')) &&
                      sigma_s>=0 && sigma_r>=0 && psize>=0 && rsize>=0 && is_fast_approximation<=1) {
             psize = cimg::round(psize);
             rsize = cimg::round(rsize);
-            print(images,0,"Denoise image%s using %gx%g patches, with standard deviations %lg,%g, "
+            print(images,0,"Denoise image%s with %gx%g patches, standard deviations %lg,%g, "
                   "lookup size %g and smoothness %g.",
-                  gmic_selection.data(),
-                  psize,
-                  psize,
-                  sigma_s,
-                  sigma_r,
-                  rsize,
-                  smoothness);
+                  gmic_selection.data(),psize,psize,
+                  sigma_s,sep0=='%'?"%":"",
+                  sigma_r,sep1=='%'?"%":"",
+                  rsize,smoothness);
+            if (sep0=='%') sigma_s = -sigma_s;
+            if (sep1=='%') sigma_r = -sigma_r;
             cimg_forY(selection,l)
               gmic_apply(blur_patch(sigma_s,sigma_r,(unsigned int)psize,(unsigned int)rsize,smoothness,
                                     (bool)is_fast_approximation));
