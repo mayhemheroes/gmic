@@ -6469,7 +6469,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
         // Patch-based smoothing.
         if (!std::strcmp("denoise",command)) {
-          gmic_substitute_args(false);
+          gmic_substitute_args(true);
           float sigma_s = 10, sigma_r = 10, smoothness = 1;
           unsigned int is_fast_approximation = 0;
           float psize = 5, rsize = 6;
