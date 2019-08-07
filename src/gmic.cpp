@@ -4603,8 +4603,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                  const unsigned int *const variables_sizes,
                  bool *const is_noarg, const char *const parent_arguments,
                  const CImg<unsigned int> *const command_selection) {
-  if (!commands_line || position>=commands_line._width) {
-    if (is_debug) debug(images,"Return from empty function '%s/'.",
+  if (*callstack.back()!='*' && (!commands_line || position>=commands_line._width)) {
+    if (is_debug) debug(images,"Return from empty command '%s/'.",
                         callstack.back().data());
     return *this;
   }
