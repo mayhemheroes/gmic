@@ -27296,7 +27296,7 @@ gui_autocrop_layers :
 #@gui ____<i>About</i>
 #---------------------
 
-#@gui &hearts; Support Us ! &hearts;: _none_,_none_
+#@gui &hearts; Support Us ! &hearts;: _none_,fx_support_us
 #@gui : note = note{"<center><a href="https://gmic.eu"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASwAAA\
 # BXCAMAAACJMYjxAAAAXVBMVEX+/v4cO0s7OU4wPnEiJSju6+qiqrCMlZu3u8BufoHd3+FDY2JRLzljS2bLz9Lp9vrteR34lyZqHE3puI3S7/hbX6GUW4z\
 # wza97QiOaYUa6mqTdfz25i22+VxzqoGYqrht5AAAWRklEQVR42uyabZfiKBCFFYUCDDg7TqIh0f//M7duBSEx2p09Z18+7NzTPUYaE/J4qyjI7H7rt/5m\
@@ -27525,6 +27525,23 @@ gui_autocrop_layers :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperl&#233;</i>.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 #@gui : Latest Update: <i>2019/03/13</i>.</small>")
+fx_support_us :
+  if $!>0 k[0] fi
+  gui_print_preview ""
+  l[]
+    filename=${-path_tmp}gmic_donations.png
+    need_update={"Y = date(0); M = date(1); D = date(2); date_current = Y*365 + M*31 + D;
+                  Y = date(0,'"{/$filename}"'); M = date(1,'"{/$filename}"');
+                  D = date(2,'"{/$filename}"'); date_file = Y*365 + M*31 + D;
+                  date_current - date_file>=15"}
+    if $need_update i https://gmic.eu/img/donations_latest_months.png o. $filename
+    else i $filename
+    fi
+    0 t. "Latest donations to the G'MIC project:",0,0,14,1,1 rows. 0,120% *. 255 channels. -3,0
+    rv a y drgba 255 frame 4,4,255 frame 1,1,0 to_rgba
+  onfail rm
+  endl
+  j.. .,{([w#0,h#0]-[w,h])/2}
 
 #@gui About G'MIC : _none_, _none_
 #@gui : note = note{"<center><a href="https://gmic.eu"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASwAAA\
