@@ -438,23 +438,40 @@ CImg<T> get_gmic_discard(const CImg<t>& values, const char *const axes) const {
   return (+*this).gmic_discard(values,axes);
 }
 
-CImg<T>& gmic_draw_text(const int x, const int y,
+CImg<T>& gmic_draw_text(const float x, const float y,
+                        const bool is_xpercent, const bool is_ypercent,
+                        const bool is_xcentering, const bool is_ycentering,
                         const char *const text, const T *const col,
                         const int bg, const float opacity, const unsigned int siz,
                         const unsigned int nb_cols) {
+  float fx = is_xpercent || is_xcentering?0:x, fy = is_ypercent || is_ycentering?0:y;
   if (is_empty()) {
     const T one[] = { (T)1 };
-    assign().draw_text(x,y,"%s",one,0,opacity,siz,text).resize(-100,-100,1,nb_cols);
+    draw_text((int)cimg::round(fx),(int)cimg::round(fy),"%s",one,0,opacity,siz,text).resize(-100,-100,1,nb_cols);
     cimg_forC(*this,c) get_shared_channel(c)*=col[c];
-  } else draw_text(x,y,"%s",col,bg,opacity,siz,text);
-  return *this;
+    return *this;
+  }
+  if (is_xcentering || is_ycentering) {
+    const char one[] = { 1 };
+    CImg<ucharT> foo;
+    foo.draw_text(0,0,"%s",one,0,1,siz,text);
+    fx = is_xcentering?x*(width() - 1 - foo.width())/(is_xpercent?100:1):is_xpercent?x*(width() - 1)/100:x;
+    fy = is_ycentering?y*(height() - 1 - foo.height())/(is_ypercent?100:1):is_ypercent?y*(height() - 1)/100:y;
+  } else {
+    fx = is_xpercent?x*(width() - 1)/100:x;
+    fy = is_ypercent?y*(height() - 1)/100:y;
+  }
+  return draw_text((int)cimg::round(fx),(int)cimg::round(fy),"%s",col,bg,opacity,siz,text);
 }
 
-CImg<T> get_gmic_draw_text(const int x, const int y,
+CImg<T> get_gmic_draw_text(const float x, const float y,
+                           const bool is_xpercent, const bool is_ypercent,
+                           const bool is_xcentering, const bool is_ycentering,
                            const char *const text, const T *const col,
                            const int bg, const float opacity, const unsigned int siz,
                            const unsigned int nb_cols) const {
-  return (+*this).gmic_draw_text(x,y,text,col,bg,opacity,siz,nb_cols);
+  return (+*this).gmic_draw_text(x,y,is_xpercent,is_ypercent,is_xcentering,is_ycentering,
+                                 text,col,bg,opacity,siz,nb_cols);
 }
 
 CImg<T>& gmic_invert_endianness(const char *const stype) {
@@ -12029,23 +12046,23 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           opacity = 1;
           if ((cimg_sscanf(argument,"%4095[^,]%c",
                            name.data(),&end)==1 ||
-               cimg_sscanf(argument,"%4095[^,],%255[0-9.eE%+-]%c",
+               cimg_sscanf(argument,"%4095[^,],%255[~0-9.eE%+-]%c",
                            name.data(),argx,&end)==2 ||
-               cimg_sscanf(argument,"%4095[^,],%255[0-9.eE%+-],%255[0-9.eE%+-]%c",
+               cimg_sscanf(argument,"%4095[^,],%255[~0-9.eE%+-],%255[~0-9.eE%+-]%c",
                            name.data(),argx,argy,&end)==3 ||
-               cimg_sscanf(argument,"%4095[^,],%255[0-9.eE%+-],%255[0-9.eE%+-],%255[0-9.eE%+-]%c",
+               cimg_sscanf(argument,"%4095[^,],%255[~0-9.eE%+-],%255[~0-9.eE%+-],%255[0-9.eE%+-]%c",
                            name.data(),argx,argy,argz,&end)==4 ||
-               cimg_sscanf(argument,"%4095[^,],%255[0-9.eE%+-],%255[0-9.eE%+-],%255[0-9.eE%+-],%f%c",
+               cimg_sscanf(argument,"%4095[^,],%255[~0-9.eE%+-],%255[~0-9.eE%+-],%255[0-9.eE%+-],%f%c",
                            name.data(),argx,argy,argz,&opacity,&end)==5 ||
-               cimg_sscanf(argument,"%4095[^,],%255[0-9.eE%+-],%255[0-9.eE%+-],%255[0-9.eE%+-],%f,"
+               cimg_sscanf(argument,"%4095[^,],%255[~0-9.eE%+-],%255[~0-9.eE%+-],%255[0-9.eE%+-],%f,"
                            "%4095[0-9.eEinfa,+-]%c",
                            name.data(),argx,argy,argz,&opacity,color,&end)==6) &&
               (!*argx ||
-               cimg_sscanf(argx,"%f%c",&x,&end)==1 ||
-               (cimg_sscanf(argx,"%f%c%c",&x,&sepx,&end)==2 && sepx=='%')) &&
+               cimg_sscanf(argx + (*argx=='~'?1:0),"%f%c",&x,&end)==1 ||
+               (cimg_sscanf(argx + (*argx=='~'?1:0),"%f%c%c",&x,&sepx,&end)==2 && sepx=='%')) &&
               (!*argy ||
-               cimg_sscanf(argy,"%f%c",&y,&end)==1 ||
-               (cimg_sscanf(argy,"%f%c%c",&y,&sepy,&end)==2 && sepy=='%')) &&
+               cimg_sscanf(argy + (*argy=='~'?1:0),"%f%c",&y,&end)==1 ||
+               (cimg_sscanf(argy + (*argy=='~'?1:0),"%f%c%c",&y,&sepy,&end)==2 && sepy=='%')) &&
               (!*argz ||
                cimg_sscanf(argz,"%f%c",&height,&end)==1 ||
                (cimg_sscanf(argz,"%f%c%c",&height,&sep,&end)==2 && sep=='%')) &&
@@ -12066,10 +12083,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               const unsigned int font_height = (unsigned int)cimg::round(sep=='%'?
                                                                          height*img.height()/100:height);
               g_img.assign(std::max(img.spectrum(),(int)nb_cols),1,1,1,(T)0).fill(color,true,false);
-              const int
-                nx = (int)cimg::round(sepx=='%'?x*(img.width() - 1)/100:x),
-                ny = (int)cimg::round(sepy=='%'?y*(img.height() - 1)/100:y);
-              gmic_apply(gmic_draw_text(nx,ny,name,g_img,0,opacity,font_height,nb_cols));
+              gmic_apply(gmic_draw_text(x,y,sepx=='%',sepy=='%',*argx=='~',*argy=='~',
+                                        name,g_img,0,opacity,font_height,nb_cols));
             }
           } else arg_error("text");
           g_img.assign();
