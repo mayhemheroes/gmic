@@ -299,15 +299,60 @@ CImg<T> get_draw_graph(const CImg<t>& data,
   return (+*this).draw_graph(data,color,opacity,plot_type,vertex_type,ymin,ymax,pattern);
 }
 
-CImg<T> get_draw_image(const int x, const int y, const int z, const int c,
-                       const CImg<T>& sprite, const CImg<T>& mask, const float opacity,
-                       const float max_opacity_mask) const {
-  return (+*this).draw_image(x,y,z,c,sprite,mask,opacity,max_opacity_mask);
+CImg<T>& gmic_draw_image(const float x, const float y, const float z, const float c,
+                         const bool is_xpercent, const bool is_ypercent,
+                         const bool is_zpercent, const bool is_cpercent,
+                         const bool is_xcentering, const bool is_ycentering,
+                         const bool is_zcentering, const bool is_ccentering,
+                         const CImg<T>& sprite, const CImg<T>& mask, const float opacity,
+                         const float max_opacity_mask) {
+  const float
+    fx = is_xcentering?x*(width() - sprite.width())/(is_xpercent?100:1):is_xpercent?x*(width() - 1)/100:x,
+    fy = is_ycentering?y*(height() - sprite.height())/(is_ypercent?100:1):is_ypercent?y*(height() - 1)/100:y,
+    fz = is_zcentering?y*(depth() - sprite.depth())/(is_zpercent?100:1):is_zpercent?y*(depth() - 1)/100:z,
+    fc = is_ccentering?c*(spectrum() - sprite.spectrum())/(is_cpercent?100:1):is_cpercent?y*(spectrum() - 1)/100:c;
+  return draw_image((int)cimg::round(fx),(int)cimg::round(fy),
+                    (int)cimg::round(fz),(int)cimg::round(fc),
+                    sprite,mask,opacity,max_opacity_mask);
 }
 
-CImg<T> get_draw_image(const int x, const int y, const int z, const int c,
-                       const CImg<T>& sprite, const float opacity) const {
-  return (+*this).draw_image(x,y,z,c,sprite,opacity);
+CImg<T> get_gmic_draw_image(const float x, const float y, const float z, const float c,
+                            const bool is_xpercent, const bool is_ypercent,
+                            const bool is_zpercent, const bool is_cpercent,
+                            const bool is_xcentering, const bool is_ycentering,
+                            const bool is_zcentering, const bool is_ccentering,
+                            const CImg<T>& sprite, const CImg<T>& mask, const float opacity,
+                            const float max_opacity_mask) const {
+  return (+*this).gmic_draw_image(x,y,z,c,is_xpercent,is_ypercent,is_zpercent,is_cpercent,
+                                  is_xcentering,is_ycentering,is_zcentering,is_ccentering,
+                                  sprite,mask,opacity,max_opacity_mask);
+}
+
+CImg<T>& gmic_draw_image(const float x, const float y, const float z, const float c,
+                         const bool is_xpercent, const bool is_ypercent,
+                         const bool is_zpercent, const bool is_cpercent,
+                         const bool is_xcentering, const bool is_ycentering,
+                         const bool is_zcentering, const bool is_ccentering,
+                         const CImg<T>& sprite, const float opacity) {
+  const float
+    fx = is_xcentering?x*(width() - sprite.width())/(is_xpercent?100:1):is_xpercent?x*(width() - 1)/100:x,
+    fy = is_ycentering?y*(height() - sprite.height())/(is_ypercent?100:1):is_ypercent?y*(height() - 1)/100:y,
+    fz = is_zcentering?y*(depth() - sprite.depth())/(is_zpercent?100:1):is_zpercent?y*(depth() - 1)/100:z,
+    fc = is_ccentering?c*(spectrum() - sprite.spectrum())/(is_cpercent?100:1):is_cpercent?y*(spectrum() - 1)/100:c;
+  return draw_image((int)cimg::round(fx),(int)cimg::round(fy),
+                    (int)cimg::round(fz),(int)cimg::round(fc),
+                    sprite,opacity);
+}
+
+CImg<T> get_gmic_draw_image(const float x, const float y, const float z, const float c,
+                            const bool is_xpercent, const bool is_ypercent,
+                            const bool is_zpercent, const bool is_cpercent,
+                            const bool is_xcentering, const bool is_ycentering,
+                            const bool is_zcentering, const bool is_ccentering,
+                            const CImg<T>& sprite, const float opacity) const {
+  return (+*this).gmic_draw_image(x,y,z,c,is_xpercent,is_ypercent,is_zpercent,is_cpercent,
+                                  is_xcentering,is_ycentering,is_zcentering,is_ccentering,
+                                  sprite,opacity);
 }
 
 CImg<T> get_draw_line(const int x0, const int y0, const int x1, const int y1, const T *const col,
@@ -444,12 +489,12 @@ CImg<T>& gmic_draw_text(const float x, const float y,
                         const char *const text, const T *const col,
                         const int bg, const float opacity, const unsigned int siz,
                         const unsigned int nb_cols) {
-  int ix = 0, iy = 0;
+  float fx = 0, fy = 0;
   if (is_empty()) {
     const T one[] = { (T)1 };
-    ix = is_xpercent || is_xcentering?0:(int)cimg::round(x);
-    iy = is_ypercent || is_ycentering?0:(int)cimg::round(y);
-    draw_text(ix,iy,"%s",one,0,opacity,siz,text).resize(-100,-100,1,nb_cols);
+    fx = is_xpercent || is_xcentering?0:x;
+    fy = is_ypercent || is_ycentering?0:y;
+    draw_text((int)cimg::round(fx),(int)cimg::round(fy),"%s",one,0,opacity,siz,text).resize(-100,-100,1,nb_cols);
     cimg_forC(*this,c) get_shared_channel(c)*=col[c];
     return *this;
   }
@@ -457,15 +502,13 @@ CImg<T>& gmic_draw_text(const float x, const float y,
     const char one[] = { 1 };
     CImg<ucharT> foo;
     foo.draw_text(0,0,"%s",one,0,1,siz,text);
-    ix = (int)cimg::round(is_xcentering?x*(width() - 1 - foo.width())/(is_xpercent?100:1):
-                          is_xpercent?x*(width() - 1)/100:x);
-    iy = (int)cimg::round(is_ycentering?y*(height() - 1 - foo.height())/(is_ypercent?100:1):
-                          is_ypercent?y*(height() - 1)/100:y);
+    fx = is_xcentering?x*(width() - foo.width())/(is_xpercent?100:1):is_xpercent?x*(width() - 1)/100:x;
+    fy = is_ycentering?y*(height() - foo.height())/(is_ypercent?100:1):is_ypercent?y*(height() - 1)/100:y;
   } else {
-    ix = (int)cimg::round(is_xpercent?x*(width() - 1)/100:x);
-    iy = (int)cimg::round(is_ypercent?y*(height() - 1)/100:y);
+    fx = is_xpercent?x*(width() - 1)/100:x;
+    fy = is_ypercent?y*(height() - 1)/100:y;
   }
-  return draw_text(ix,iy,"%s",col,bg,opacity,siz,text);
+  return draw_text((int)cimg::round(fx),(int)cimg::round(fy),"%s",col,bg,opacity,siz,text);
 }
 
 CImg<T> get_gmic_draw_text(const float x, const float y,
@@ -7705,76 +7748,70 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           opacity = 1;
           if (((cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]%c%c",
                             indices,&sep,&end)==2 && sep==']') ||
-               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%255[0-9.eE%+-]%c",
+               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%255[~0-9.eE%+-]%c",
                            indices,argx,&end)==2 ||
-               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%255[0-9.eE%+-],%255[0-9.eE%+-]%c",
+               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%255[~0-9.eE%+-],%255[~0-9.eE%+-]%c",
                            indices,argx,argy,&end)==3 ||
-               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%255[0-9.eE%+-],%255[0-9.eE%+-],"
-                           "%255[0-9.eE%+-]%c",
+               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%255[~0-9.eE%+-],%255[~0-9.eE%+-],"
+                           "%255[~0-9.eE%+-]%c",
                            indices,argx,argy,argz,&end)==4 ||
-               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%255[0-9.eE%+-],%255[0-9.eE%+-],"
-                           "%255[0-9.eE%+-],"
-                           "%255[0-9.eE%+-]%c",
+               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%255[~0-9.eE%+-],%255[~0-9.eE%+-],"
+                           "%255[~0-9.eE%+-],%255[~0-9.eE%+-]%c",
                            indices,argx,argy,argz,argc,&end)==5 ||
-               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%255[0-9.eE%+-],%255[0-9.eE%+-],"
-                           "%255[0-9.eE%+-],%255[0-9.eE%+-],%f%c",
+               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%255[~0-9.eE%+-],%255[~0-9.eE%+-],"
+                           "%255[~0-9.eE%+-],%255[~0-9.eE%+-],%f%c",
                            indices,argx,argy,argz,argc,&opacity,&end)==6 ||
-               (cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%255[0-9.eE%+-],%255[0-9.eE%+-],"
-                            "%255[0-9.eE%+-],%255[0-9.eE%+-],%f,[%255[a-zA-Z0-9_.%+-]%c%c",
+               (cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%255[~0-9.eE%+-],%255[~0-9.eE%+-],"
+                            "%255[~0-9.eE%+-],%255[~0-9.eE%+-],%f,[%255[a-zA-Z0-9_.%+-]%c%c",
                             indices,argx,argy,argz,argc,&opacity,name.data(),&sep,&end)==8 &&
                 sep==']') ||
-               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%255[0-9.eE%+-],%255[0-9.eE%+-],"
-                           "%255[0-9.eE%+-],%255[0-9.eE%+-],%f,[%255[a-zA-Z0-9_.%+-]],%f%c",
+               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%255[~0-9.eE%+-],%255[~0-9.eE%+-],"
+                           "%255[~0-9.eE%+-],%255[~0-9.eE%+-],%f,[%255[a-zA-Z0-9_.%+-]],%f%c",
                            indices,argx,argy,argz,argc,&opacity,name.data(),
                            &max_opacity_mask,&end)==8) &&
               (ind=selection2cimg(indices,images.size(),images_names,"image")).height()==1 &&
               (!*name ||
                (ind0=selection2cimg(name,images.size(),images_names,"image")).height()==1) &&
               (!*argx ||
-               cimg_sscanf(argx,"%f%c",&x,&end)==1 ||
-               (cimg_sscanf(argx,"%f%c%c",&x,&sepx,&end)==2 && sepx=='%')) &&
+               cimg_sscanf(argx + (*argx=='~'?1:0),"%f%c",&x,&end)==1 ||
+               (cimg_sscanf(argx + (*argx=='~'?1:0),"%f%c%c",&x,&sepx,&end)==2 && sepx=='%')) &&
               (!*argy ||
-               cimg_sscanf(argy,"%f%c",&y,&end)==1 ||
-               (cimg_sscanf(argy,"%f%c%c",&y,&sepy,&end)==2 && sepy=='%')) &&
+               cimg_sscanf(argy + (*argy=='~'?1:0),"%f%c",&y,&end)==1 ||
+               (cimg_sscanf(argy + (*argy=='~'?1:0),"%f%c%c",&y,&sepy,&end)==2 && sepy=='%')) &&
               (!*argz ||
-               cimg_sscanf(argz,"%f%c",&z,&end)==1 ||
-               (cimg_sscanf(argz,"%f%c%c",&z,&sepz,&end)==2 && sepz=='%')) &&
+               cimg_sscanf(argz + (*argz=='~'?1:0),"%f%c",&z,&end)==1 ||
+               (cimg_sscanf(argz + (*argz=='~'?1:0),"%f%c%c",&z,&sepz,&end)==2 && sepz=='%')) &&
               (!*argc ||
-               cimg_sscanf(argc,"%f%c",&c,&end)==1 ||
-               (cimg_sscanf(argc,"%f%c%c",&c,&sepc,&end)==2 && sepc=='%'))) {
+               cimg_sscanf(argc + (*argc=='~'?1:0),"%f%c",&c,&end)==1 ||
+               (cimg_sscanf(argc + (*argc=='~'?1:0),"%f%c%c",&c,&sepc,&end)==2 && sepc=='%'))) {
             const CImg<T> sprite = gmic_image_arg(*ind);
             CImg<T> mask;
             if (ind0) {
               mask = gmic_image_arg(*ind0);
-              print(images,0,"Draw image [%u] at (%g%s,%g%s,%g%s,%g%s) on image%s, "
+              print(images,0,"Draw image [%u] at (%s,%s,%s,%s) on image%s, "
                     "with opacity %g and mask [%u].",
                     *ind,
-                    x,sepx=='%'?"%":"",
-                    y,sepy=='%'?"%":"",
-                    z,sepz=='%'?"%":"",
-                    c,sepc=='%'?"%":"",
+                    argx,argy,argz,argc,
                     gmic_selection.data(),
                     opacity,
                     *ind0);
             } else print(images,0,"Draw image [%u] at (%g%s,%g%s,%g%s,%g%s) on image%s, "
                          "with opacity %g.",
                          *ind,
-                         x,sepx=='%'?"%":"",
-                         y,sepy=='%'?"%":"",
-                         z,sepz=='%'?"%":"",
-                         c,sepc=='%'?"%":"",
+                         argx,argy,argz,argc,
                          gmic_selection.data(),
                          opacity);
-            cimg_forY(selection,l) {
-              CImg<T> &img = images[selection[l]];
-              const int
-                nx = (int)cimg::round(sepx=='%'?x*(img.width() - 1)/100:x),
-                ny = (int)cimg::round(sepy=='%'?y*(img.height() - 1)/100:y),
-                nz = (int)cimg::round(sepz=='%'?z*(img.depth() - 1)/100:z),
-                nc = (int)cimg::round(sepc=='%'?c*(img.spectrum() - 1)/100:c);
-              if (ind0) { gmic_apply(draw_image(nx,ny,nz,nc,sprite,mask,opacity,max_opacity_mask)); }
-              else gmic_apply(draw_image(nx,ny,nz,nc,sprite,opacity));
-            }
+            cimg_forY(selection,l)
+              if (ind0) {
+                gmic_apply(gmic_draw_image(x,y,z,c,sepx=='%',sepy=='%',sepz=='%',sepc=='%',
+                                           *argx=='~',*argy=='~',*argz=='~',*argc=='~',
+                                           sprite,mask,opacity,max_opacity_mask));
+              }
+              else {
+                gmic_apply(gmic_draw_image(x,y,z,c,sepx=='%',sepy=='%',sepz=='%',sepc=='%',
+                                           *argx=='~',*argy=='~',*argz=='~',*argc=='~',
+                                           sprite,opacity));
+              }
           } else arg_error("image");
           is_released = false; ++position; continue;
         }
