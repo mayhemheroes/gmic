@@ -14839,19 +14839,19 @@ tetraedron_shade :
 #@cli : $ 0 text "G'MIC",0,0,23,1,255
 
 #@cli to : eq. to 'text_outline'.
-to : skip ${2=1%}
+to : skip ${2=~1%}
   _text_outline "$1",${2--1}
 
 #@cli text_outline : text,[~]_x[%],[~]_y[%],_font_height[%]>0,_outline>=0,_opacity,_color1,...
 #@cli : Draw specified colored and outlined text string on selected images.
 #@cli : If specified x or y argument starts with a '~', following value is expected to be
 #@cli : a centering rather than a position.
-#@cli : Default values: 'x=y=~10%', 'font_height=7.5%', 'outline=2', 'opacity=1' and 'color1=255'.
+#@cli : Default values: 'x=y=~1%', 'font_height=7.5%', 'outline=2', 'opacity=1' and 'color1=255'.
 #@cli : $ image.jpg text_outline "Hi there!",10,10,63,3
-text_outline : skip ${2=1%}
+text_outline : skip ${2=~1%}
   _text_outline "$1",${2--1}
 
-_text_outline : skip ${3=1%},${4=7.5%},${5=2},${6=1},${7=255}
+_text_outline : skip ${3=~1%} check "${4=7.5%}>0 && ${5=2}>=0 && isnum(${6=1}) && isnum(${7=255})"
   e[0--3] "Draw outlined text '$1' at position ($2,$3) on image$?, with font height $4, outline $5, opacity $6 and
            color ${7--1}."
   v -
@@ -14860,8 +14860,9 @@ _text_outline : skip ${3=1%},${4=7.5%},${5=2},${6=1},${7=255}
   repeat $! l[$>]
     0 t. "$1",0,0,{-2,${"is_percent $4"}?h*$4:$4},1,1 expand_xy. {1+$5},0
     +dilate. {2*$5+1}
-    i[-3] (${7--1}) y... c r... .,.,1,100% *[-3,-2]
-    if w#0 j... ..,$xpos,$ypos,0,0,$6,. k[0] else k[1] fi
+    i[-3] (${7--1}) r... {s#0},1,1,1,0,2 y... c r... .,.,1,100%
+    if $5 *[-3,-2] fi
+    if w#0 j... ..,{[($is_xcentering?(w#0-w):w#0)*$xpos,($is_ycentering?(h#0-h):h#0)*$ypos]},0,0,$6,. k[0] else k[1] fi
   endl done
   v +
 
