@@ -12025,40 +12025,38 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           name.assign(4096);
           *argx = *argy = *argz = *name = *color = 0;
           float x = 0, y = 0, height = 16;
-          sep = sepx = sepy = 0;
+          sep = sepx = sepy = sep0 = 0;
           opacity = 1;
           if ((cimg_sscanf(argument,"%4095[^,]%c",
                            name.data(),&end)==1 ||
-               cimg_sscanf(argument,"%4095[^,],%255[0-9.eE%+-]%c",
+               cimg_sscanf(argument,"%4095[^,],%255[~0-9.eE%+-]%c",
                            name.data(),argx,&end)==2 ||
-               cimg_sscanf(argument,"%4095[^,],%255[0-9.eE%+-],%255[0-9.eE%+-]%c",
+               cimg_sscanf(argument,"%4095[^,],%255[~0-9.eE%+-],%255[~0-9.eE%+-]%c",
                            name.data(),argx,argy,&end)==3 ||
-               cimg_sscanf(argument,"%4095[^,],%255[0-9.eE%+-],%255[0-9.eE%+-],%255[0-9.eE%+-]%c",
+               cimg_sscanf(argument,"%4095[^,],%255[~0-9.eE%+-],%255[~0-9.eE%+-],%255[0-9.eE%+-]%c",
                            name.data(),argx,argy,argz,&end)==4 ||
-               cimg_sscanf(argument,"%4095[^,],%255[0-9.eE%+-],%255[0-9.eE%+-],%255[0-9.eE%+-],%f%c",
+               cimg_sscanf(argument,"%4095[^,],%255[~0-9.eE%+-],%255[~0-9.eE%+-],%255[0-9.eE%+-],%f%c",
                            name.data(),argx,argy,argz,&opacity,&end)==5 ||
-               cimg_sscanf(argument,"%4095[^,],%255[0-9.eE%+-],%255[0-9.eE%+-],%255[0-9.eE%+-],%f,"
+               cimg_sscanf(argument,"%4095[^,],%255[~0-9.eE%+-],%255[~0-9.eE%+-],%255[0-9.eE%+-],%f,"
                            "%4095[0-9.eEinfa,+-]%c",
                            name.data(),argx,argy,argz,&opacity,color,&end)==6) &&
               (!*argx ||
-               cimg_sscanf(argx,"%f%c",&x,&end)==1 ||
-               (cimg_sscanf(argx,"%f%c%c",&x,&sepx,&end)==2 && sepx=='%')) &&
+               cimg_sscanf(argx + (*argx=='~'?1:0),"%f%c",&x,&end)==1 ||
+               (cimg_sscanf(argx + (*argx=='~'?1:0),"%f%c%c",&x,&sepx,&end)==2 && sepx=='%')) &&
               (!*argy ||
-               cimg_sscanf(argy,"%f%c",&y,&end)==1 ||
-               (cimg_sscanf(argy,"%f%c%c",&y,&sepy,&end)==2 && sepy=='%')) &&
+               cimg_sscanf(argy + (*argy=='~'?1:0),"%f%c",&y,&end)==1 ||
+               (cimg_sscanf(argy + (*argy=='~'?1:0),"%f%c%c",&y,&sepy,&end)==2 && sepy=='%')) &&
               (!*argz ||
                cimg_sscanf(argz,"%f%c",&height,&end)==1 ||
                (cimg_sscanf(argz,"%f%c%c",&height,&sep,&end)==2 && sep=='%')) &&
               height>=0) {
             strreplace_fw(name);
-            print(images,0,"Draw text '%s' at position (%g%s,%g%s) on image%s, with font "
-                  "height %g%s, opacity %g and color (%s).",
+            print(images,0,"Draw text '%s' at position (%s,%s) on image%s, with font "
+                  "height %s, opacity %g and color (%s).",
                   name.data(),
-                  x,sepx=='%'?"%":"",
-                  y,sepy=='%'?"%":"",
+                  argx,argy,
                   gmic_selection.data(),
-                  height,sep=='%'?"%":"",
-                  opacity,
+                  argz,opacity,
                   *color?color:"default");
             cimg::strunescape(name);
             unsigned int nb_cols = 1;
