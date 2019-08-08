@@ -444,10 +444,12 @@ CImg<T>& gmic_draw_text(const float x, const float y,
                         const char *const text, const T *const col,
                         const int bg, const float opacity, const unsigned int siz,
                         const unsigned int nb_cols) {
-  float fx = is_xpercent || is_xcentering?0:x, fy = is_ypercent || is_ycentering?0:y;
+  int ix = 0, iy = 0;
   if (is_empty()) {
     const T one[] = { (T)1 };
-    draw_text((int)cimg::round(fx),(int)cimg::round(fy),"%s",one,0,opacity,siz,text).resize(-100,-100,1,nb_cols);
+    ix = is_xpercent || is_xcentering?0:(int)cimg::round(x);
+    iy = is_ypercent || is_ycentering?0:(int)cimg::round(y);
+    draw_text(ix,iy,"%s",one,0,opacity,siz,text).resize(-100,-100,1,nb_cols);
     cimg_forC(*this,c) get_shared_channel(c)*=col[c];
     return *this;
   }
@@ -455,13 +457,15 @@ CImg<T>& gmic_draw_text(const float x, const float y,
     const char one[] = { 1 };
     CImg<ucharT> foo;
     foo.draw_text(0,0,"%s",one,0,1,siz,text);
-    fx = is_xcentering?x*(width() - 1 - foo.width())/(is_xpercent?100:1):is_xpercent?x*(width() - 1)/100:x;
-    fy = is_ycentering?y*(height() - 1 - foo.height())/(is_ypercent?100:1):is_ypercent?y*(height() - 1)/100:y;
+    ix = (int)cimg::round(is_xcentering?x*(width() - 1 - foo.width())/(is_xpercent?100:1):
+                          is_xpercent?x*(width() - 1)/100:x);
+    iy = (int)cimg::round(is_ycentering?y*(height() - 1 - foo.height())/(is_ypercent?100:1):
+                          is_ypercent?y*(height() - 1)/100:y);
   } else {
-    fx = is_xpercent?x*(width() - 1)/100:x;
-    fy = is_ypercent?y*(height() - 1)/100:y;
+    ix = (int)cimg::round(is_xpercent?x*(width() - 1)/100:x);
+    iy = (int)cimg::round(is_ypercent?y*(height() - 1)/100:y);
   }
-  return draw_text((int)cimg::round(fx),(int)cimg::round(fy),"%s",col,bg,opacity,siz,text);
+  return draw_text(ix,iy,"%s",col,bg,opacity,siz,text);
 }
 
 CImg<T> get_gmic_draw_text(const float x, const float y,
