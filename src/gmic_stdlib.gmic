@@ -14846,12 +14846,13 @@ to : skip ${2=~1%}
 #@cli : Draw specified colored and outlined text string on selected images.
 #@cli : If specified x or y argument starts with a '~', following value is expected to be
 #@cli : a centering rather than a position.
-#@cli : Default values: 'x=y=~1%', 'font_height=7.5%', 'outline=2', 'opacity=1' and 'color1=255'.
+#@cli : Default values: 'x=y=~1%', 'font_height=7.5%', 'outline=2', 'opacity=1', 'color1=color2=color3=255' and 'color4=255'.
 #@cli : $ image.jpg text_outline "Hi there!",10,10,63,3
 text_outline : skip ${2=~1%}
   _text_outline "$1",${2--1}
 
-_text_outline : skip ${3=~1%} check "${4=7.5%}>0 && ${5=2}>=0 && isnum(${6=1}) && isnum(${7=255})"
+_text_outline : skip ${3=~1%} check "${4=7.5%}>0 && ${5=2}>=0 && isnum(${6=1}) && isnum(${7=255}) && "\
+                                    "isnum(${8=$7}) && isnum(${9=$7}) && isnum(${10=255})"
   e[0--3] "Draw outlined text '$1' at position ($2,$3) on image$?, with font height $4, outline $5, opacity $6 and
            color ${7--1}."
   v -
@@ -14862,7 +14863,7 @@ _text_outline : skip ${3=~1%} check "${4=7.5%}>0 && ${5=2}>=0 && isnum(${6=1}) &
     0 t. "$1",0,0,{-2,$is_fontpercent?h*$4:$4},1,1 expand_xy. {1+$5},0
     +dilate. {2*$5+1}
     i[-3] (${7--1}) r... {s#0},1,1,1,0,2 y... c r... .,.,1,100%
-    if $5 *[-3,-2] fi
+    if $5 *[-3,-2] else rm.. fi
     if w#0
       j... ..,{[($is_xcentering?(w#0-w):$is_xpercent?w#0:1)*$xpos,\
                 ($is_ycentering?(h#0-h):$is_ypercent?h#0:1)*$ypos]},0,0,$6,.
@@ -21894,12 +21895,9 @@ render_donations :
       r. {[w,h]+4},1,100%,0,0,0.5,0.5
       sh. 100% dilate_circ. 3 b. 1 rm.
 
-      i 0 t. $s_month" "$s_year,0,0,24,1,1
-      r. ..,..,1,1,0,0,0.03,0.5 100%,100%,1,3,[0,0,0] j... .,0,0,0,0,0.5,.. rm[-2,-1]
-      i 0 t. {_round($sum)}" \37 = "{_round($sum*$eur2usd)}" $",0,0,24,1,1
-      r. ..,..,1,1,0,0,0.5,0.5 100%,100%,1,3,[0,0,0] j... .,0,0,0,0,1,.. rm[-2,-1]
-      i 0 t. $N" sponsor"${"if "$N"!=1 u s else u \"\" fi"},0,0,24,1,1
-      r. ..,..,1,1,0,0,0.97,0.5 100%,100%,1,3,[0,0,0] j... .,0,0,0,0,0.5,.. rm[-2,-1]
+      to. $s_month" "$s_year,~2%,~50%,24,0,0.5,0
+      to. {_round($sum)}" \37 = "{_round($sum*$eur2usd)}" $",~50%,~50%,24,0,1,0
+      to. $N" sponsor"${"if "$N"!=1 u s else u \"\" fi"},~97%,~50%,24,0,0.5,0
     done
     rv
 
