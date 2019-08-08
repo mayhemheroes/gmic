@@ -7788,17 +7788,23 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             CImg<T> mask;
             if (ind0) {
               mask = gmic_image_arg(*ind0);
-              print(images,0,"Draw image [%u] at (%s,%s,%s,%s) on image%s, "
+              print(images,0,"Draw image [%u] at (%s%g%s,%s%g%s,%s%g%s,%s%g%s) on image%s, "
                     "with opacity %g and mask [%u].",
                     *ind,
-                    argx,argy,argz,argc,
+                    *argx=='~'?"~":"",x,sepx=='%'?"%":"",
+                    *argy=='~'?"~":"",y,sepy=='%'?"%":"",
+                    *argz=='~'?"~":"",z,sepz=='%'?"%":"",
+                    *argc=='~'?"~":"",c,sepc=='%'?"%":"",
                     gmic_selection.data(),
                     opacity,
                     *ind0);
-            } else print(images,0,"Draw image [%u] at (%s,%s,%s,%s) on image%s, "
+            } else print(images,0,"Draw image [%u] at (%s%g%s,%s%g%s,%s%g%s,%s%g%s) on image%s, "
                          "with opacity %g.",
                          *ind,
-                         argx,argy,argz,argc,
+                         *argx=='~'?"~":"",x,sepx=='%'?"%":"",
+                         *argy=='~'?"~":"",y,sepy=='%'?"%":"",
+                         *argz=='~'?"~":"",z,sepz=='%'?"%":"",
+                         *argc=='~'?"~":"",c,sepc=='%'?"%":"",
                          gmic_selection.data(),
                          opacity);
             cimg_forY(selection,l)
@@ -12109,10 +12115,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                (cimg_sscanf(argz,"%f%c%c",&height,&sep,&end)==2 && sep=='%')) &&
               height>=0) {
             strreplace_fw(name);
-            print(images,0,"Draw text '%s' at position (%s,%s) on image%s, with font "
+            print(images,0,"Draw text '%s' at position (%s%g%s,%s%g%s) on image%s, with font "
                   "height %s, opacity %g and color (%s).",
                   name.data(),
-                  argx,argy,
+                  *argx=='~'?"~":"",x,sepx=='%'?"%":"",
+                  *argy=='~'?"~":"",y,sepy=='%'?"%":"",
                   gmic_selection.data(),
                   argz,opacity,
                   *color?color:"default");
