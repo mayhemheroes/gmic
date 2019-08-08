@@ -14839,13 +14839,13 @@ tetraedron_shade :
 #@cli : Any other font size is rendered with anti-aliasing.
 #@cli : Specifying an empty target image resizes it to new dimensions such that the image contains
 #@cli : the entire text string.
-#@cli : Default values: 'x=y=0', 'font_height=16', 'opacity=1' and 'color1=0'.
+#@cli : Default values: 'x=y=0.01~', 'font_height=16', 'opacity=1' and 'color1=0'.
 #@cli : $ image.jpg resize2dy 600 y=0 repeat 30 text {2*$>}" : This is a nice text, isn't it ?",10,$y,{2*$>},0.9,255 \
 # y+={2*$>} done
 #@cli : $ 0 text "G'MIC",0,0,23,1,255
 
 #@cli to : eq. to 'text_outline'.
-to : skip ${2=~1%}
+to : skip ${2=0.01~}
   _text_outline "$1",${2--1}
 
 #@cli text_outline : text,_x[%|~],_y[%|~],_font_height[%]>0,_outline>=0,_opacity,_color1,...
@@ -14853,27 +14853,29 @@ to : skip ${2=~1%}
 #@cli : If one of the x or y argument ends with a '~', its value is expected to be
 #@cli : a centering ratio (in [0,1]) rather than a position.
 #@cli : Usual centering ratio are { 0=left-justified | 0.5=centered | 1=right-justified }.
-#@cli : Default values: 'x=y=~1%', 'font_height=7.5%', 'outline=2', 'opacity=1', 'color1=color2=color3=255' and 'color4=255'.
+#@cli : Default values: 'x=y=0.01~', 'font_height=7.5%', 'outline=2', 'opacity=1', 'color1=color2=color3=255' \
+# and 'color4=255'.
 #@cli : $ image.jpg text_outline "Hi there!",10,10,63,3
-text_outline : skip ${2=~1%}
+text_outline : skip ${2=0.01~}
   _text_outline "$1",${2--1}
 
-_text_outline : skip ${3=~1%} check "${4=7.5%}>0 && ${5=2}>=0 && isnum(${6=1}) && isnum(${7=255}) && "\
-                                    "isnum(${8=$7}) && isnum(${9=$7}) && isnum(${10=255})"
+_text_outline : skip ${3=0.01~} check "${4=7.5%}>0 && ${5=2}>=0 && isnum(${6=1}) && isnum(${7=255}) && "\
+                                   "isnum(${8=$7}) && isnum(${9=$7}) && isnum(${10=255})"
   e[0--3] "Draw outlined text '$1' at position ($2,$3) on image$?, with font height $4, outline $5, opacity $6 and
            color ${7--1}."
   v -
-  is_xcentering,is_ycentering={[(['"$2"'])[0]==_'~',(['"$3"'])[0]==_'~']}
-  is_xpercent,is_ypercent,is_fontpercent=${"is_percent $2"},${"is_percent $3"},${"is_percent $4"}
-  xpos,ypos={`s=['"$2"'];$is_xcentering?s[1,size(s)-1]:s`},{`s=['"$3"'];$is_ycentering?s[1,size(s)-1]:s`}
+  sepx,sepy={"sx=['$2']; sy=['$3']; [sx[size(sx)-1], sy[size(sy)-1]]"}
+  is_fontpercent=${"is_percent $4"}
+  xpos={`s=['"$2"'];$sepx==_'~'||$sepx==_'%'?s[0,size(s)-1]:s`}
+  ypos={`s=['"$3"'];$sepy==_'~'||$sepy==_'%'?s[0,size(s)-1]:s`}
   repeat $! l[$>]
     0 t. "$1",0,0,{-2,$is_fontpercent?h*$4:$4},1,1 expand_xy. {1+$5},0
     +dilate. {2*$5+1}
     i[-3] (${7--1}) r... {s#0},1,1,1,0,2 y... c r... .,.,1,100%
     if $5 *[-3,-2] else rm.. fi
     if w#0
-      j... ..,{[($is_xcentering?(w#0-1-w):$is_xpercent?(w#0-1):1)*$xpos,\
-                ($is_ycentering?(h#0-1-h):$is_ypercent?(h#0-1):1)*$ypos]},0,0,$6,.
+      j... ..,{[($sepx==_'~'?(w#0-1-w):$sepx==_'%'?(w#0-1)%:1)*$xpos,\
+                ($sepy==_'~'?(h#0-1-h):$sepy==_'%'?(h#0-1)%:1)*$ypos]},0,0,$6,.
       k[0]
     else k[1]
     fi
