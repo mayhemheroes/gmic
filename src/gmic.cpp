@@ -7795,7 +7795,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                     gmic_selection.data(),
                     opacity,
                     *ind0);
-            } else print(images,0,"Draw image [%u] at (%g%s,%g%s,%g%s,%g%s) on image%s, "
+            } else print(images,0,"Draw image [%u] at (%s,%s,%s,%s) on image%s, "
                          "with opacity %g.",
                          *ind,
                          argx,argy,argz,argc,
