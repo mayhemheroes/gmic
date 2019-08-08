@@ -12024,7 +12024,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           gmic_substitute_args(false);
           name.assign(4096);
           *argx = *argy = *argz = *name = *color = 0;
-          float x = 0, y = 0, height = 13;
+          float x = 0, y = 0, height = 16;
           sep = sepx = sepy = 0;
           opacity = 1;
           if ((cimg_sscanf(argument,"%4095[^,]%c",
