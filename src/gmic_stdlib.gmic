@@ -21836,7 +21836,8 @@ path_tmp :
 # render_donations: Parse the PayPal .CSV file and generate 'latest-months' donation gfx.
 # $1 = filename.csv
 render_donations :
-  v - l[]
+  v -
+  l[]
     i raw:"$1",uchar s -,{'\n'} rm[0]
 
     # Parse CSV data.
@@ -21917,7 +21918,35 @@ render_donations :
 
     rows -5,100% a y,0.5 r2dx 480
     o $HOME/work/src/gmic/html/img/donations_latest_months.png
-  endl v +
+  endl
+
+  # Generate coin graphics.
+  l[]
+    $HOME/work/src/gmic/html/img/icon_coin.png
+    N=0
+    text$N,r$N,g$N,b$N,file$N="2 \37",32,48,32,"don_2eur.png" N+=1
+    text$N,r$N,g$N,b$N,file$N="5 \37",200,200,200,"don_5eur.png" N+=1
+    text$N,r$N,g$N,b$N,file$N="10 \37",190,100,100,"don_10eur.png" N+=1
+    text$N,r$N,g$N,b$N,file$N="+ \37",255,128,0,"don_moreeur.png" N+=1
+    text$N,r$N,g$N,b$N,file$N="2 $",32,64,48,"don_2usd.png" N+=1
+    text$N,r$N,g$N,b$N,file$N="5 $",200,200,216,"don_5usd.png" N+=1
+    text$N,r$N,g$N,b$N,file$N="10 $",190,100,116,"don_10usd.png" N+=1
+    text$N,r$N,g$N,b$N,file$N="+ $",255,128,16,"don_moreusd.png" N+=1
+    repeat $N +l[0]
+      frame. 10,10,0,0,0,0
+      sh. 0,2
+      (${r$>}^${g$>}^${b$>}) rgb2hsl[-2,-1] H,S={[R,G]} rm.
+      l. s c -[0] {ia#0-$H} %[0] 360 -[1] {ia#1-$S} -[2] 0.05 c[1,2] 0,1 a c endl
+      hsl2rgb. rm.
+      sh. 100% dilate_circ. 10 rm.
+
+      100%,100% t. ${text$>},0.5~,0.5~,45%,1,255 dilate_circ. 10 +dilate_circ. 15 to_rgb.. a[-2,-1] c
+      blend[-2,-1] alpha drop_shadow. 1,1 r2dx. 48
+      o. $HOME/work/src/gmic/html/img/${file$>}
+    endl done
+    rm[0]
+  endl
+  v +
 
 #@cli reset
 #@cli : Reset global parameters of the interpreter environment.
