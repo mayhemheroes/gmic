@@ -21303,6 +21303,16 @@ _is_3d :
     u {"h>6 && int(i[0])==67 && int(i[1])==73 && int(i[2])==109 && int(i[3])==103 && int(i[4])==51 && int(i[5])==100"}
   v +
 
+#@cli is_changed : _value={ 0=false | 1=true }
+#@cli : Set or unset the 'is_changed' flag associated to the image list.
+#@cli : This flag tells the interpreter whether or not the image list should be displayed when the pipeline ends.
+#@cli : Default value: 'value=1'.
+is_changed :
+  v -
+    l[] check "isbool(${1=1})" arg=$1 onfail noarg arg=1 endl
+    if $arg 0 rm. else w9[] 0 fi
+  v +
+
 #@cli is_ext : filename,_extension
 #@cli : Return 1 if specified filename has a given extensioin.
 is_ext : skip "${1=}"
@@ -23299,7 +23309,7 @@ _x_crop :
   v - repeat $! l[$>]
     w ${"fitscreen "{[w,h,d]}},1,"[G'MIC] "{n}" - Interactive crop"
     +select 2,{round([w,h,d]/2)},0,1 u {^} z.. ${} rm.
-    w[] 0
+    w[] 0 is_changed
   endl done v +
 
 #@cli x_cut
