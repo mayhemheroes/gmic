@@ -5363,6 +5363,38 @@ update_deprecate : check "isint($1) && $1>0 && $1<999"
   fi
   rm endl v +
 
+# update_download_version.
+# Update file versions on G'MIC download page, with specified version number.
+# $1 = version number (as '2.7.0').
+update_download_version : check "
+    is_digit(c)=(c>=_'0' && c<=_'9');
+    ver = ['${1=undefined}'];
+    size(ver)==5 && is_digit(ver[0]) && ver[1]==_'.' && is_digit(ver[2]) && ver[3]==_'.' && is_digit(ver[4])"
+  e[^-1] "Replace version number on G'MIC download page to '$1'."
+  v -
+  rm filename=$HOME/work/src/gmic/html/download.shtml i raw:$filename,uchar
+  eval "
+    is_digit(c) = (c>=_'0' && c<=_'9');
+    ver = ['$1'];
+    data = crop();
+    p = stop = N = 0;
+    while (!stop,
+      p = find(data,'gmic_',1,p);
+      p<0?(stop=1):(
+        str = data[p + 5,5];
+        is_digit(str[0]) && str[1]==_'.' && is_digit(str[2]) && str[3]=='.' && is_digit(str[4])?(
+          copy(data[p + 5],ver,size(ver));
+          ++N;
+        );
+        ++p;
+      );
+    );
+    copy(i[0],data,size(data));
+    echo('           -> ',N,' occurences found.');
+    "
+  o raw:$filename,uchar
+  v +
+
 # Function that updates filters definitions on the G'MIC web server.
 # It sorts and merges filters from all available sources, and save
 # a single update file on the G'MIC server. It also print on the standard
