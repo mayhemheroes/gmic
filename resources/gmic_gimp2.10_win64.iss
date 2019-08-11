@@ -1,6 +1,6 @@
 ;---------------------------------------------
 ;
-; File : gmic_gimp2.10_qt64.iss
+; File : gmic_gimp2.10_win64.iss
 ;
 ; Description : Inno Setup Script to create
 ;               a Windows installer for
@@ -29,28 +29,28 @@ DirExistsWarning=no
 WizardImageFile=gmic_instimg.bmp
 WizardSmallImageFile=gmic_instimg_small.bmp
 PrivilegesRequired=lowest
-OutputBaseFilename=gmic_gimp2.10_qt_XXX_win64
+OutputBaseFilename=gmic_XXX_gimp2.10_win64
 
 [Files]
-Source: build64-gimp-qt\gmic_gimp_qt.exe; DestDir: {app}
-Source: build64-gimp-qt\libfftw3-3.dll; DestDir: {app}
-Source: build64-gimp-qt\libicudt61.dll; DestDir: {app}
-Source: build64-gimp-qt\libicuin61.dll; DestDir: {app}
-Source: build64-gimp-qt\libicuuc61.dll; DestDir: {app}
-Source: build64-gimp-qt\libpcre2-16-0.dll; DestDir: {app}
-Source: build64-gimp-qt\LIBEAY32.dll; DestDir: {app}
-Source: build64-gimp-qt\SSLEAY32.dll; DestDir: {app}
-Source: build64-gimp-qt\Qt5Core.dll; DestDir: {app}
-Source: build64-gimp-qt\Qt5Gui.dll; DestDir: {app}
-Source: build64-gimp-qt\Qt5Network.dll; DestDir: {app}
-Source: build64-gimp-qt\Qt5Widgets.dll; DestDir: {app}
-Source: build64-gimp-qt\platforms\qdirect2d.dll; DestDir: {app}\platforms
-Source: build64-gimp-qt\platforms\qminimal.dll; DestDir: {app}\platforms
-Source: build64-gimp-qt\platforms\qoffscreen.dll; DestDir: {app}\platforms
-Source: build64-gimp-qt\platforms\qwebgl.dll; DestDir: {app}\platforms
-Source: build64-gimp-qt\platforms\qwindows.dll; DestDir: {app}\platforms
-Source: build64-gimp-qt\updatexxx.gmic; DestDir: {userappdata}\gmic
-Source: build64-gimp-qt\gmic_cluts.gmz; DestDir: {userappdata}\gmic
+Source: build64-gimp\gmic_gimp_qt.exe; DestDir: {app}
+Source: build64-gimp\libfftw3-3.dll; DestDir: {app}
+Source: build64-gimp\libicudt61.dll; DestDir: {app}
+Source: build64-gimp\libicuin61.dll; DestDir: {app}
+Source: build64-gimp\libicuuc61.dll; DestDir: {app}
+Source: build64-gimp\libpcre2-16-0.dll; DestDir: {app}
+Source: build64-gimp\LIBEAY32.dll; DestDir: {app}
+Source: build64-gimp\SSLEAY32.dll; DestDir: {app}
+Source: build64-gimp\Qt5Core.dll; DestDir: {app}
+Source: build64-gimp\Qt5Gui.dll; DestDir: {app}
+Source: build64-gimp\Qt5Network.dll; DestDir: {app}
+Source: build64-gimp\Qt5Widgets.dll; DestDir: {app}
+Source: build64-gimp\platforms\qdirect2d.dll; DestDir: {app}\platforms
+Source: build64-gimp\platforms\qminimal.dll; DestDir: {app}\platforms
+Source: build64-gimp\platforms\qoffscreen.dll; DestDir: {app}\platforms
+Source: build64-gimp\platforms\qwebgl.dll; DestDir: {app}\platforms
+Source: build64-gimp\platforms\qwindows.dll; DestDir: {app}\platforms
+Source: build64-gimp\updatexxx.gmic; DestDir: {userappdata}\gmic
+Source: build64-gimp\gmic_cluts.gmz; DestDir: {userappdata}\gmic
 
 ;[Icons]
 ;Name: {userstartmenu}\Gimp\Gmic_Gimp\Uninstall Gmic_Gimp; Filename: {uninstallexe}
