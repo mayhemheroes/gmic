@@ -53,7 +53,7 @@ if [ "$OSTYPE" == "msys" ]; then
 
     # Input sources.
     cd $HOME
-    rm -rf gmic gmic-qt gmic_gimp_qt *.iss
+    rm -rf gmic gmic-qt gmic_gimp *.iss
     mkdir gmic
     cp -rf /e/work/src/gmic/resources/gmic_instimg*.bmp $HOME
     cp -rf /e/work/src/gmic/resources/CeCILL.rtf $HOME
@@ -89,10 +89,10 @@ if [ "$OSTYPE" == "msys" ]; then
 
     # Delete old package files.
     cd $HOME
-    cp -rf /e/work/src/gmic/resources/gmic_cluts.gmz $HOME/build${BITS}-gimp-qt
-    rm -rf $HOME/build${BITS}-gimp-qt/update*.gmic gmic_*${SVERSION}${SUFFIX}*_win${BITS}* gmic-*${SVERSION}${SUFFIX}*-win${BITS}*
-    sed s\/XXX\/${SVERSION}${SUFFIX}\/g /e/work/src/gmic/resources/gmic_gimp${GIMPVER}_qt${BITS}.iss > tmp.iss &&
-        sed s\/xxx\/${VERSION}\/g tmp.iss > installer_qt.iss
+    cp -rf /e/work/src/gmic/resources/gmic_cluts.gmz $HOME/build${BITS}-gimp
+    rm -rf $HOME/build${BITS}-gimp/update*.gmic gmic_*${SVERSION}${SUFFIX}*_win${BITS}* gmic-*${SVERSION}${SUFFIX}*-win${BITS}*
+    sed s\/XXX\/${SVERSION}${SUFFIX}\/g /e/work/src/gmic/resources/gmic_gimp${GIMPVER}_win${BITS}.iss > tmp.iss &&
+        sed s\/xxx\/${VERSION}\/g tmp.iss > installer.iss
 
     # Define output files (archives/installers).
     OUTDIR_CLI=gmic-${SVERSION}${SUFFIX}-cli-win${BITS}
@@ -107,12 +107,12 @@ if [ "$OSTYPE" == "msys" ]; then
     OUTDIR_QT=gmic-${SVERSION}${SUFFIX}-qt-win${BITS}
     OUTZIP_QT=gmic_${SVERSION}${SUFFIX}_qt_win${BITS}.zip
 
-    OUTDIR_GIMP_QT=gmic_gimp_qt
-    OUTZIP_GIMP_QT=gmic_${SVERSION}${SUFFIX}_gimp${GIMPVER}_qt_win${BITS}.zip
-    OUTINST_GIMP_QT=gmic_${SVERSION}${SUFFIX}_gimp${GIMPVER}_qt_win${BITS}.exe
+    OUTDIR_GIMP=gmic_gimp
+    OUTZIP_GIMP=gmic_${SVERSION}${SUFFIX}_gimp${GIMPVER}_win${BITS}.zip
+    OUTINST_GIMP=gmic_${SVERSION}${SUFFIX}_gimp${GIMPVER}_win${BITS}.exe
 
-    OUTDIR_KRITA_QT=gmic-${SVERSION}${SUFFIX}-krita-qt-win${BITS}
-    OUTZIP_KRITA_QT=gmic_${SVERSION}${SUFFIX}_krita_qt_win${BITS}.zip
+    OUTDIR_KRITA=gmic-${SVERSION}${SUFFIX}-krita-win${BITS}
+    OUTZIP_KRITA=gmic_${SVERSION}${SUFFIX}_krita_win${BITS}.zip
 
     # Compile sources.
     cd $HOME/gmic/src && make clean && rm -f gmic *.o && cp -f /e/work/src/CImg/CImg.h .
@@ -136,13 +136,13 @@ if [ "$OSTYPE" == "msys" ]; then
 
     # Copy binaries into their respective folders.
     cd $HOME
-    cp -f gmic-qt/release/gmic_gimp_qt.exe build${BITS}-gimp-qt/
+    cp -f gmic-qt/release/gmic_gimp_qt.exe build${BITS}-gimp/
     if [ "$IS_210" == "1" ]; then
         cp -f gmic/src/gmic.exe build${BITS}-cli/
         cp -f gmic/src/gmic.h gmic/src/gmic_libc.h gmic/src/use_lib* gmic/src/lib*.d* build${BITS}-lib/
         # cp -f gmic/zart/release/zart.exe build${BITS}-zart/
         # cp -f gmic-qt/release/gmic_qt.exe build${BITS}-qt/
-        cp -f gmic-qt/release/gmic_krita_qt.exe build${BITS}-krita-qt/
+        cp -f gmic-qt/release/gmic_krita_qt.exe build${BITS}-krita/
     fi
 
     # Construct G'MIC (CLI) archive.
@@ -181,26 +181,26 @@ if [ "$OSTYPE" == "msys" ]; then
     #     cp -f ${OUTZIP_QT} /e/work/src/
     # fi
 
-    # Construct G'MIC for GIMP (Qt) archive and installer.
-    cp -rf build${BITS}-gimp-qt ${OUTDIR_GIMP_QT} &&
-        cp -f /e/work/src/gmic/COPYING ${OUTDIR_GIMP_QT} &&
-        sed s\/_gmic_version\/${SVERSION}${SUFFIX}\/ /e/work/src/gmic/README > ${OUTDIR_GIMP_QT}/README &&
-        zip -r -9 ${OUTZIP_GIMP_QT} ${OUTDIR_GIMP_QT} &&
-        cp -f ${OUTZIP_GIMP_QT} /e/work/src/
+    # Construct G'MIC for GIMP archive and installer.
+    cp -rf build${BITS}-gimp ${OUTDIR_GIMP} &&
+        cp -f /e/work/src/gmic/COPYING ${OUTDIR_GIMP} &&
+        sed s\/_gmic_version\/${SVERSION}${SUFFIX}\/ /e/work/src/gmic/README > ${OUTDIR_GIMP}/README &&
+        zip -r -9 ${OUTZIP_GIMP} ${OUTDIR_GIMP} &&
+        cp -f ${OUTZIP_GIMP} /e/work/src/
 
-    cp -f /e/.config/gmic/update$VERSION.gmicz $HOME/build${BITS}-gimp-qt/update$VERSION.gmic
-    /c/Program\ Files\ \(x86\)/Inno\ Setup\ 5/ISCC.exe installer_qt.iss
-    touch ${OUTINST_GIMP_QT} &&
+    cp -f /e/.config/gmic/update$VERSION.gmicz $HOME/build${BITS}-gimp/update$VERSION.gmic
+    /c/Program\ Files\ \(x86\)/Inno\ Setup\ 5/ISCC.exe installer.iss
+    touch ${OUTINST_GIMP} &&
         sleep 3 &&
-        cp -f ${OUTINST_GIMP_QT} /e/work/src/
+        cp -f ${OUTINST_GIMP} /e/work/src/
 
-    # Construct G'MIC for Krita (Qt) archive.
+    # Construct G'MIC for Krita archive.
     if [ "$IS_210" == "1" ]; then
-        cp -rf build${BITS}-krita-qt ${OUTDIR_KRITA_QT} &&
-            cp -f /e/work/src/gmic/COPYING ${OUTDIR_KRITA_QT} &&
-            sed s\/_gmic_version\/${SVERSION}${SUFFIX}\/ /e/work/src/gmic/README > ${OUTDIR_KRITA_QT}/README &&
-            zip -r -9 ${OUTZIP_KRITA_QT} ${OUTDIR_KRITA_QT} &&
-            cp -f ${OUTZIP_KRITA_QT} /e/work/src/
+        cp -rf build${BITS}-krita ${OUTDIR_KRITA} &&
+            cp -f /e/work/src/gmic/COPYING ${OUTDIR_KRITA} &&
+            sed s\/_gmic_version\/${SVERSION}${SUFFIX}\/ /e/work/src/gmic/README > ${OUTDIR_KRITA}/README &&
+            zip -r -9 ${OUTZIP_KRITA} ${OUTDIR_KRITA} &&
+            cp -f ${OUTZIP_KRITA} /e/work/src/
     fi
 
     echo " - All done!"
@@ -236,15 +236,15 @@ if [ "$HOSTNAME" != "elara" ] ; then
     TARFILE=gmic_${SVERSION}${SUFFIX}.tar
     OUTDIR=gmic-${SVERSION}${SUFFIX}
     OUTPAK=gmic_${SVERSION}${SUFFIX}_${CODENAME}_${ARCH}.deb
-    OUTZIP_GIMP_QT=gmic_${SVERSION}${SUFFIX}_gimp${GIMPVER}_qt_${CODENAME}_${ARCH}.zip
-    OUTZIP_KRITA_QT=gmic_${SVERSION}${SUFFIX}_krita_qt_${CODENAME}_${ARCH}.zip
-    GENERIC_OUTZIP_GIMP_QT=gmic_${SVERSION}${SUFFIX}_gimp${GIMPVER}_qt_linux${BITS}.zip
+    OUTZIP_GIMP=gmic_${SVERSION}${SUFFIX}_gimp${GIMPVER}_${CODENAME}_${ARCH}.zip
+    OUTZIP_KRITA=gmic_${SVERSION}${SUFFIX}_krita_${CODENAME}_${ARCH}.zip
+    GENERIC_OUTZIP_GIMP=gmic_${SVERSION}${SUFFIX}_gimp${GIMPVER}_linux${BITS}.zip
 
     while [ ! -f deb_${TARFILE}.gz ]; do sleep 10; done
     sleep 10
     cp deb_${TARFILE}.gz /tmp/ &&
         cd /tmp/ &&
-        rm -rf $OUTDIR $OUTPAK $OUTZIP_GIMP_QT $OUTZIP_KRITA_QT $GENERIC_OUTZIP_GIMP_QT $GENERIC_OUTZIP_GIMP_QT2 &&
+        rm -rf $OUTDIR $OUTPAK $OUTZIP_GIMP $OUTZIP_KRITA $GENERIC_OUTZIP_GIMP &&
         touch deb_${TARFILE}.gz &&
         tar zxvf deb_${TARFILE}.gz &&
         find gmic-${SVERSION}${SUFFIX} -exec touch {} ;
@@ -263,12 +263,12 @@ if [ "$HOSTNAME" != "elara" ] ; then
     cp -f ../$OUTPAK $SF_HOME/work/src/
 
     if [ -f $HOME/is_qt5 ]; then
-        zip -j -r -9 ../$OUTZIP_GIMP_QT gmic-qt/gmic_gimp_qt README
-        zip -j -r -9 ../$OUTZIP_KRITA_QT gmic-qt/gmic_krita_qt README
-        cp -f ../$OUTZIP_GIMP_QT ../$OUTZIP_KRITA_QT $SF_HOME/work/src/
+        zip -j -r -9 ../$OUTZIP_GIMP gmic-qt/gmic_gimp_qt README
+        zip -j -r -9 ../$OUTZIP_KRITA gmic-qt/gmic_krita_qt README
+        cp -f ../$OUTZIP_GIMP ../$OUTZIP_KRITA $SF_HOME/work/src/
     fi
     if [ "$CODENAME" == "debian_jessie" ]; then
-        cp -f ../$OUTZIP_GIMP_QT $SF_HOME/work/src/$GENERIC_OUTZIP_GIMP_QT
+        cp -f ../$OUTZIP_GIMP $SF_HOME/work/src/$GENERIC_OUTZIP_GIMP
     fi
 
     echo VIRTUALBOX_DONE
@@ -491,10 +491,10 @@ echo " - Create debian packages."
 cp ${HOME}/work/src/deb_${TARFILE}.gz /tmp/ &&
     cd /tmp/ &&
     OUTPAK=gmic_${SVERSION}${SUFFIX}_${CODENAME}_${ARCH}.deb &&
-    OUTZIP_GIMP_QT=gmic_${SVERSION}${SUFFIX}_gimp${GIMPVER}_qt_${CODENAME}_${ARCH}.zip &&
-    OUTZIP_KRITA_QT=gmic_${SVERSION}${SUFFIX}_krita_qt_${CODENAME}_${ARCH}.zip &&
+    OUTZIP_GIMP=gmic_${SVERSION}${SUFFIX}_gimp${GIMPVER}_${CODENAME}_${ARCH}.zip &&
+    OUTZIP_KRITA=gmic_${SVERSION}${SUFFIX}_krita_${CODENAME}_${ARCH}.zip &&
     OUTDIR=gmic-${SVERSION}${SUFFIX} &&
-    rm -rf $OUTPAK $OUTZIP_GIMP_QT $OUTZIP_KRITA_QT &&
+    rm -rf $OUTPAK $OUTZIP_GIMP $OUTZIP_KRITA &&
     touch deb_${TARFILE}.gz &&
     tar zxvf deb_${TARFILE}.gz &&
     find gmic-${SVERSION}${SUFFIX} -exec touch {} \; &&
@@ -504,9 +504,9 @@ cp ${HOME}/work/src/deb_${TARFILE}.gz /tmp/ &&
 cd $OUTDIR &&
     dpkg-buildpackage -d -j3 -rfakeroot;
 mv ../gmic_${SVERSION}_amd64.deb ../$OUTPAK &&
-    zip -j -r -9 ../$OUTZIP_GIMP_QT gmic-qt/gmic_gimp_qt README &&
-    zip -j -r -9 ../$OUTZIP_KRITA_QT gmic-qt/gmic_krita_qt README &&
-    cp -f ../$OUTPAK ../$OUTZIP_GIMP_QT ../$OUTZIP_KRITA_QT $HOME/work/src/
+    zip -j -r -9 ../$OUTZIP_GIMP gmic-qt/gmic_gimp_qt README &&
+    zip -j -r -9 ../$OUTZIP_KRITA gmic-qt/gmic_krita_qt README &&
+    cp -f ../$OUTPAK ../$OUTZIP_GIMP ../$OUTZIP_KRITA $HOME/work/src/
 
 echo ELARA_DONE
 
