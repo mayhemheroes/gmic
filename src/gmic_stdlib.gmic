@@ -5805,10 +5805,10 @@ _update_server_upload : skip "${2=""}"
          quit\" >/dev/null"
   fi
 
-# Upload released binaries on the G'MIC web server.
+# Upload or list released binaries on the G'MIC web server.
 # $1=version number (e.g "1.6.7_pre")
-_update_server_binaries :
-  e[^-1] "Upload released binaries ($1) on the G'MIC web server."
+# $2={ 0=prind list of URLs | 1=upload files }
+_update_server_binaries : check "isbool(${2=1})"
   v -
   is_pre=${"strcontains $1,_pre"}
   N=0
@@ -5843,40 +5843,55 @@ _update_server_binaries :
   file$N=gmic_$1_gimp2.8_win64.exe                  N+=1
   file$N=gmic_$1_krita_win64.zip                    N+=1
 
-  t0=$| n=0 t=0
-  v + e[] "- Waiting for binary files to be build." v -
-  do
+
+  if !$2 # Only get list of URLs
+    v + e[0--3] "List URLs of released binaries ($1) from the G'MIC web server.\n" v -
     repeat $N
       file=${file$>}
-      if isfile(['{/$file}'])
-        strreplace $file,_$1_,_
-        file_short=${}
-        is_win=${strcontains[]" "$file,win}
-        if $is_win folder="windows" else folder="linux" fi
-
-        v + e[] "- Upload file '"$file"' to 'https://gmic.eu/files/prerelease/"$file_short"'." v -
-        _update_server_upload $file,"files/prerelease/"$file_short
-        if !$is_pre
-          v + e[] "- Upload file '"$file"' to 'https://gmic.eu/files/"$folder/$file"'." v -
-          _update_server_upload $file,"files/"$folder/$file
-        fi
-
-        file$>= n+=1
-      fi
+      is_win=${strcontains[]" "$file,win}
+      if $is_win folder="windows" else folder="linux" fi
+      v + e[] "https://gmic.eu/files/"$folder/$file v -
     done
-    if $n<$N
-      if !($t%4)
-        remaining= sep=
-        repeat $N if narg(${file$>}) remaining.=${sep}${file$>} sep=", " fi done
-        v + e[] "- Waiting for files: "$remaining"." v -
+    v + e[] "" v -
+
+  else # Upload files
+    v + e[0--3] "Upload released binaries ($1) on the G'MIC web server." v -
+
+    t0=$| n=0 t=0
+    v + e[] "- Waiting for binary files to be build." v -
+    do
+      repeat $N
+        file=${file$>}
+        if isfile(['{/$file}'])
+          strreplace $file,_$1_,_
+          file_short=${}
+          is_win=${strcontains[]" "$file,win}
+          if $is_win folder="windows" else folder="linux" fi
+
+          v + e[] "- Upload file '"$file"' to 'https://gmic.eu/files/prerelease/"$file_short"'." v -
+          _update_server_upload $file,"files/prerelease/"$file_short
+          if !$is_pre
+            v + e[] "- Upload file '"$file"' to 'https://gmic.eu/files/"$folder/$file"'." v -
+            _update_server_upload $file,"files/"$folder/$file
+          fi
+
+          file$>= n+=1
+        fi
+      done
+      if $n<$N
+        if !($t%4)
+          remaining= sep=
+          repeat $N if narg(${file$>}) remaining.=${sep}${file$>} sep=", " fi done
+          v + e[] "- Waiting for files: "$remaining"." v -
+        fi
+        wait 5000 t+=1
       fi
-      wait 5000 t+=1
+    while $n<$N" && "$|<$t0+60*60*4
+    if $n<$N v + e[] "- Partial uploads done (timeout reached)." v -
+    else v + e[] "- All uploads done !" v -
     fi
-  while $n<$N" && "$|<$t0+60*60*4
-  v +
-  if $n<$N e[] "- Partial uploads done (timeout reached)."
-  else e[] "- All uploads done !"
   fi
+  v +
 
 # Convert G'MIC tutorial from Garry Osgood's blog (http://www.particularart.com), into the G'MIC web look.
 update_tutorial_html :
