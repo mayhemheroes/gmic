@@ -33,7 +33,7 @@ OutputBaseFilename=gmic_XXX_gimp2.8_win64
 
 [Files]
 
-Source: build64-gimp\gmic_gimp_qt.exe; DestDir: {app}
+Source: build64-gimp\gmic_gimp_qt.exe; DestDir: {app}; Flags: ignoreversion
 Source: build64-gimp\libbz2-1.dll; DestDir: {app}
 Source: build64-gimp\libcurl-4.dll; DestDir: {app}
 Source: build64-gimp\LIBEAY32.dll; DestDir: {app}
@@ -74,8 +74,8 @@ Source: build64-gimp\platforms\qdirect2d.dll; DestDir: {app}\platforms
 Source: build64-gimp\platforms\qminimal.dll; DestDir: {app}\platforms
 Source: build64-gimp\platforms\qoffscreen.dll; DestDir: {app}\platforms
 Source: build64-gimp\platforms\qwindows.dll; DestDir: {app}\platforms
-Source: build64-gimp\updatexxx.gmic; DestDir: {userappdata}\gmic
-Source: build64-gimp\gmic_cluts.gmz; DestDir: {userappdata}\gmic
+Source: build64-gimp\updatexxx.gmic; DestDir: {userappdata}\gmic; Flags: ignoreversion
+Source: build64-gimp\gmic_cluts.gmz; DestDir: {userappdata}\gmic; Flags: ignoreversion
 
 ;[Icons]
 ;Name: {userstartmenu}\Gimp\Gmic_Gimp\Uninstall Gmic_Gimp; Filename: {uninstallexe}
