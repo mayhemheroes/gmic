@@ -33546,8 +33546,16 @@ fx_clut_from_ab :
     rm.
     S={arg(1+$2,16,25,36,49,64,81,100,121,144,169,225,256)}
     if $S!=w r. $S,$S,$S,3,3 fi
-    r. {r=round(whd^0.5);[r,r]},1,3,-1
-    rv nm[0] "name(CLUT to '"$nm"')"
+    if $1 # Output as a file
+      is_png={str=lowercase(['$3']);find(str,'.png')==size(str)-4}
+      is_cube={str=lowercase(['$3']);find(str,'.cube')==size(str)-5}
+      if !$is_png" && "!$is_cube $!is_ciube error "Filename extension must be '.cube' or '.png'." fi
+      if $is_png r. {r=round(whd^0.5);[r,r]},1,3,-1 o. "$3" else output_cube. "$3" fi
+      rm.
+    else # Output as a new layer
+      r. {r=round(whd^0.5);[r,r]},1,3,-1
+      rv nm[0] "name(CLUT to '"$nm"')"
+    fi
   endl done
   if $_output_mode rm. fi
 
