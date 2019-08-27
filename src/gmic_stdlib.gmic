@@ -15190,15 +15190,16 @@ arrow3d : check "${7=5%}>=0 && ${8=25%}>=0 && ${9=15%}>=0"
   y[-4] a[-6--1] y +3d. ${1-3} rv3d.
   v +
 
-#@cli axes3d : _size_x,_size_y,_size_z,_font_size>0,_label_x,_label_y,_label_z
+#@cli axes3d : _size_x,_size_y,_size_z,_font_size>0,_label_x,_label_y,_label_z,_is_origin={ 0=no | 1=yes }
 #@cli : Input 3D axes with specified sizes along the x,y and z orientations.
-#@cli : Default values: 'size_x=size_y=size_z=1', 'font_size=23', 'label_x=X', 'label_y=Y' and 'label_z=Z'.
+#@cli : Default values: 'size_x=size_y=size_z=1', 'font_size=23', 'label_x=X', 'label_y=Y', 'label_z=Z' and \
+# 'is_origin=1'
 #@cli : $ axes3d ,
-axes3d : check ${4=23}>0 skip ${1=1},${2=$1},${3=$2},"${5=X},${6=Y},${7=Z}"
+axes3d : check "${4=23}>0 && isbool(${8=1})" skip ${1=1},${2=$1},${3=$2},"${5=X},${6=Y},${7=Z}"
   e[^-1] "Input 3D axes with sizes ($1,$2,$3)."
   v - l[]
   m={max(abs($1),abs($2),abs($3))/40} m2={2*$m} m3={1.2*$m2}
-  _axes3d "O",$4 -3d. $m3,$m3,$m3
+  if $8 _axes3d "O",$4 -3d. $m3,$m3,$m3 fi
   if $1
     line3d 0,0,0,$1,0,0
     cone3d $m,{2*$m},16 r3d. 0,1,0,90 +3d. {$1-$m2},0,0
@@ -33543,8 +33544,7 @@ fx_clut_from_ab :
     l[0]
       s c,-3 +max. 1 /[-3,-1] ==. 0 inpaint_pde.. .,75%,1 distance. 0 *. {-1/(1+$5)} exp.
       f.. "f = i(#-1); f*I + (1-f)*[x,y,z]*255/(w-1)" rm.
-      S={arg(1+$2,16,25,36,49,64,81,100,121,144,169,225,256)}
-      if $S!=w r. $S,$S,$S,3,3 fi
+      S={arg(1+$2,16,25,36,49,64,81,100,121,144,169,225,256)} if $S!=w r. $S,$S,$S,3,3 fi
     endl
 
     if $1==2 # Output as a file
@@ -33563,10 +33563,44 @@ fx_clut_from_ab :
 
 fx_clut_from_ab_preview :
   if $!<2 gui_warning_preview "At least two input layers are needed to run this filter." return fi
-  _is_preview=1
-  fx_clut_from_ab 0,$2,0,0,$5
+  _is_preview,_output_mode=1 fx_clut_from_ab 0,4,0,0,$5
+  repeat $! l[$>]
+    r {a=round(cbrt(wh));[a,a,a]},3,-1
+    +r3dx. 24 _fx_clut_from_ab_preview.
+    S={arg(1+$2,16,25,36,49,64,81,100,121,144,169,225,256)} if $S!=w#0 r[0] $S,$S,$S,3,3 fi
+    r[0] {0,r=round(whd^0.5);[r,r]},1,3,-1
+    rr2d[0] $_preview_width,$_preview_height,2,1 r2dx. 70%
+    sh. 100% b. 1% n. 0,255 rm.
+    blend alpha
+  endl done
+
   file_attr={$1==2?2:1}
   u "{$1}{$2}{$3}_"$file_attr"{$4}_"$file_attr"{$5}"
+
+# Render 3D visualization of a CLUT.
+_fx_clut_from_ab_preview :
+  repeat $! l[$>]
+    fact={256/w}
+
+    # Color data, as a point cloud.
+    pointcloud3d +3d 0.5,0.5,0.5 *3d $fact circles3d {1.25*$fact} o3d {0.004*$fact}
+
+    # Add cube edges.
+    colorcube3d[]
+    l. s3d l.. s y,6 repeat $! sh[$>] 4,100%,0,0 /. 1.25 rm. done endl a y endl # Darken colors of edges
+    p3d. 1
+    l. repeat 8 o={a=$>;0.5*[a&1,(a>>1)&1,(a>>2)&1]} ++3d[0] $o +-3d[0] $o done +3d endl # Increase thickness of edges
+
+    # Add 3D axes, without the 'O'.
+    axes3d 64,64,64,24,R,G,B,0
+    +3d
+
+    # Render 3D snapshot.
+    pose3d 1.2451,0.120715,-0.893986,-58.3864,-0.572953,1.28275,-0.62477,-11.6557,0.696784,0.839071,1.08374,-333.008,0,0,217,1
+    snapshot3d {max(512,0$_preview_width,0$_preview_height)},1.22,255,255,255
+    autocrop frame 10,10,255
+    to_rgba flood 0,0,0,20,1,1,255,255,255,0
+  endl done
 
 #@gui Retinex : fx_retinex, fx_retinex_preview(0)+
 #@gui : Strength (%) = float(75,0,100)
