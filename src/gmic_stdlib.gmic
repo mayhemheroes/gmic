@@ -33394,13 +33394,29 @@ fx_mix_pca :
                "{$30}{${31,32}}"
     fi
 
+    # Find value ranges for gamma correction.
+    if "$4 || $8 || $12" +l
+      f "begin(avg = ["$_avg"]; eig = eig(["$C"]); Pt = eig[3,9]); Pt*(I-avg)"
+      s c repeat $! vmax$>={$>,max(abs(im),abs(iM))} done
+      rm
+    endl else vmax0,vmax1,vmax2=1 fi
+
+    # Modify image values.
     f "begin(
+         do_gamma(val,vmax,gamma) = (vmax*sign(val)*(abs(val)/vmax)^gamma);
+
          const gamma0 = 10^-($4%);
          const gamma1 = 10^-($8%);
          const gamma2 = 10^-($12%);
+         const vmax0 = "$vmax0";
+         const vmax1 = "$vmax1";
+         const vmax2 = "$vmax2";
 
          avg = ["$_avg"];
          eig = eig(["$C"]);
+
+         print(eig[0,3]);
+
          for (k = 3, k<12, k+=3, eig[k]<0?copy(eig[k],eig[k,3]*=-1,3));
          Pt = eig[3,9];
          P = transp(Pt,3);
@@ -33424,12 +33440,9 @@ fx_mix_pca :
          );
        );
        nI = Pt*(I - avg);
-
-       if (abs(nI[0])>255, print(nI));
-
-       nI[0] = 255*sign(nI[0])*(abs(nI[0])/255)^gamma0;
-       nI[1] = 255*sign(nI[1])*(abs(nI[1])/255)^gamma1;
-       nI[2] = 255*sign(nI[2])*(abs(nI[2])/255)^gamma2;
+       nI[0] = do_gamma(nI[0],vmax0,gamma0);
+       nI[1] = do_gamma(nI[1],vmax1,gamma1);
+       nI[2] = do_gamma(nI[2],vmax2,gamma2);
        avg_shift + T*nI"
     c 0,255
   endl a c endl done u $__status
