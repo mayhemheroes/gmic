@@ -33397,7 +33397,7 @@ fx_mix_pca :
     # Find value ranges for gamma correction.
     if "$4 || $8 || $12" +l
       f "begin(avg = ["$_avg"]; eig = eig(["$C"]); Pt = eig[3,9]); Pt*(I-avg)"
-      s c repeat $! vmax$>={$>,max(abs(im),abs(iM))} done
+      s c repeat $! vmax$>={$>,1.1*max(abs(im),abs(iM))} done
       rm
     endl else vmax0,vmax1,vmax2=1 fi
 
@@ -33440,9 +33440,11 @@ fx_mix_pca :
          );
        );
        nI = Pt*(I - avg);
-       nI[0] = do_gamma(nI[0],vmax0,gamma0);
-       nI[1] = do_gamma(nI[1],vmax1,gamma1);
-       nI[2] = do_gamma(nI[2],vmax2,gamma2);
+       ($4 || $8 || $12)?(
+         nI[0] = do_gamma(nI[0],vmax0,gamma0);
+         nI[1] = do_gamma(nI[1],vmax1,gamma1);
+         nI[2] = do_gamma(nI[2],vmax2,gamma2);
+       );
        avg_shift + T*nI"
     c 0,255
   endl a c endl done u $__status
