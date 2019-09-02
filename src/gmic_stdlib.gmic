@@ -5365,7 +5365,7 @@ update_deprecate : check "isint($1) && $1>0 && $1<999"
 
 # update_download_version.
 # Update file versions on G'MIC download page, with specified version number.
-# $1 = version number (e.g. '2.7.0').
+# $1 = version number (e.g. '2.7.1').
 update_download_version : check "
     is_digit(c)=(c>=_'0' && c<=_'9');
     ver = ['${1=undefined}'];
@@ -19041,15 +19041,20 @@ stencilbw : skip ${1=15},${2=10}
     sharpen[0] 1000000 n[0] 0,1 *[0,-1] n[0] 0,255
   a c endl done v +
 
-#@cli stylize : [style_image],_fidelity_finest,_fidelity_coarsest,_fidelity_smoothness_finest>=0,_fildelity_smoothnes_coarsest>=0,0<=_fidelity_chroma<=1,_init_type,_init_resolution>=0,init_max_gradient>=0,_patchsize_analysis>0,_patchsize_synthesis>0,_patchsize_synthesis_final>0,_nb_matches_finest>=0,_nb_matches_coarsest>=0,_penalize_repetitions>=0,_matching_precision>=0,_scale_factor>1,_skip_finest_scales>=0,"image_matching_command"
-#@cli : Transfer colors and textures from specified style image to selected images, using a multi-scale patch-mathing algorithm.
+#@cli stylize : [style_image],_fidelity_finest,_fidelity_coarsest,_fidelity_smoothness_finest>=0,\
+# _fidelity_smoothnes_coarsest>=0,0<=_fidelity_chroma<=1,_init_type,_init_resolution>=0,init_max_gradient>=0,\
+# _patchsize_analysis>0,_patchsize_synthesis>0,_patchsize_synthesis_final>0,_nb_matches_finest>=0,\
+# _nb_matches_coarsest>=0,_penalize_repetitions>=0,_matching_precision>=0,_scale_factor>1,_skip_finest_scales>=0,\
+# "image_matching_command"
+#@cli : Transfer colors and textures from specified style image to selected images, using a multi-scale \
+# patch-mathing algorithm.
 #@cli : If instant display window[0] is opened, the steps of the image synthesis are displayed on it.
 #@cli : 'init_type' can be { 0=best-match | 1=identity | 2=randomized}.
 stylize :
-  check ${"is_image_arg $1"}" && isnum(${2=0.25}) && isnum(${3=2}) && ${4=3}>=0 && ${5=0.5}>=0 && ${6=0.1}>=0 && $6<=1 && "\
-        "isint(${7=0}) && $7>=0 && $7<=3 && isint(${8=16}) && $8>=0 && ${9=0}>=0 && "\
-        "isint(${10=5}) && $10>0 && isint(${11=5}) && $11>0 && isint(${12=$11}) && $12>0 && "\
-        "isint(${13=2}) && isint(${14=30}) && ${15=10}>=0 && ${16=2}>=0 && ${17=1.85}>1 && isint(${18=0})>=0"
+  check ${"is_image_arg $1"}" && isnum(${2=0.25}) && isnum(${3=2}) && ${4=3}>=0 && ${5=0.5}>=0 && ${6=0.1}>=0 && "\
+        "$6<=1 && isint(${7=0}) && $7>=0 && $7<=3 && isint(${8=16}) && $8>=0 && ${9=0}>=0 && isint(${10=5}) && "\
+        "$10>0 && isint(${11=5}) && $11>0 && isint(${12=$11}) && $12>0 && isint(${13=2}) && isint(${14=30}) && "\
+        "${15=10}>=0 && ${16=2}>=0 && ${17=1.85}>1 && isint(${18=0})>=0"
   skip "${19=s c,-3 transfer_histogram[0] [2] b[0,2] xy,0.7 n[0,2] 0,255 n[1,2] 0,200 a[0,1] c a[1,2] c}"
   e[^-1] "Stylize image$? with style image $1."
   v -
@@ -19125,7 +19130,8 @@ stylize :
 
         # Inject gradients from target (in Lab colorspace).
         fidelity={max(0,$fidelity_finest+($fidelity_coarsest-$fidelity_finest)*$factor)}
-        fidelity_smoothness={$fidelity_smoothness_finest+($fidelity_smoothness_coarsest-$fidelity_smoothness_finest)*$factor}
+        fidelity_smoothness={$fidelity_smoothness_finest+\
+                             ($fidelity_smoothness_coarsest-$fidelity_smoothness_finest)*$factor}
 
         if $fidelity>0.1
           sh. 0,2 sh[-5] 0,2 +gradient_norm[-2,-1] rm[-4,-3] # Gradient norm on colors only
@@ -19138,8 +19144,6 @@ stylize :
 
         # Iterate patch-matching steps.
         nb_matches={max(0,round($nb_matches_finest+($nb_matches_coarsest-$nb_matches_finest)*$factor^2))}
-#        v 0 e[] "SCALE ""#"$scale/{$nb_scales-1}": FACTOR = "{_$size_factor}"%, FIDELITY = "{_$fidelity}", FIDELITY_SMOOTHNESS = "{_$fidelity_smoothness}", NB_MATCHS = "$nb_matches v -
-
         nb_scales1={$nb_scales-1}
         nb_matches1={$nb_matches-1}
         if {*} +r. $wsiz,1,100% to. "Scale "$scale/$nb_scales1": 0%",5,2,24 w. -1,-1,0 rm. fi
@@ -28573,7 +28577,8 @@ fx_gmicky_preview :
 #@gui : - <b>2018/10/04</b> : version <i>2.4.0</i>.\n
 #@gui : - <b>2019/03/15</b> : version <i>2.5.0</i>.\n
 #@gui : - <b>2019/04/29</b> : version <i>2.6.0</i>.\n
-#@gui : - <span foreground="purple"><b>2019/08/14</b> : version <i>2.7.0</i> (Current stable).</span>\n
+#@gui : - <b>2019/08/14</b> : version <i>2.7.0</i>.\n
+#@gui : - <span foreground="purple"><b>2019/09/02</b> : version <i>2.7.1</i> (Current stable).</span>\n
 #@gui : "}
 #@gui : sep = separator()
 ##@gui : url = link{"View changelog to upcoming major version (2.7)","https://discuss.pixls.us/t/on-the-road-to-2-6-0"}
@@ -30546,7 +30551,8 @@ fx_smooth_abstract_preview :
 #@gui : "Van Gogh; Irises",
 #@gui : "Van Gogh: The Starry Night",
 #@gui : "Van Gogh: Wheat Field with Crows"}
-#@gui : Scale Style to Fit Target Resolution = choice(6,"No rescaling","10%","20%","30%","50%","75%","100%","150%","200%","250%","300%")
+#@gui : Scale Style to Fit Target Resolution = choice(6,"No rescaling","10%","20%","30%","50%","75%","100%","150%",
+#@gui : "200%","250%","300%")
 #@gui : Style variations = choice("None","All XY-flips","All 90&deg; rotations","All 45&deg; rotations")
 #@gui : Preview Progression While Running = bool(1)
 #@gui : sep = separator(), note = note{"<small><b><span color="blue">Style/Target Parameters:</span></b></small>"}
@@ -30557,8 +30563,10 @@ fx_smooth_abstract_preview :
 #@gui : Fidelity chromaticity = float(0.1,0,1)
 #@gui : sep = separator(), note = note{"<small><b><span color="blue">Image Matching Parameters:</span></b></small>"}
 #@gui : Match Colors with = choice(2,"Nothing","Gamma Balance","Histogram Transfer")
-#@gui : Colorspace = choice{5,"sRGB","Linear RGB","YCbCr","YCbCr (Luma Only)","YCbCr (Chroma Only)","Lab","Lab (Luma Only)","Lab (Chroma Only)"}
-#@gui : Keep Color Channels = choice{"All","Luminance Only (YCbCr)","Luminance Only (Lab)","Chrominances Only (CbCr)","Chrominances Only (ab)"}
+#@gui : Colorspace = choice{5,"sRGB","Linear RGB","YCbCr","YCbCr (Luma Only)","YCbCr (Chroma Only)","Lab",\
+#@gui : "Lab (Luma Only)","Lab (Chroma Only)"}
+#@gui : Keep Color Channels = choice{"All","Luminance Only (YCbCr)","Luminance Only (Lab)","Chrominances Only (CbCr)",\
+#@gui : "Chrominances Only (ab)"}
 #@gui : Smoothness = float(0.7,0,5)
 #@gui : Also match gradients = float(1,0,5)
 #@gui : sep = separator(), note = note{"<small><b><span color="blue">Advanced Parameters:</span></b></small>"}
@@ -30574,7 +30582,9 @@ fx_smooth_abstract_preview :
 #@gui : Matching precision (smaller is faster) = float(2,0,10)
 #@gui : Scale factor = float(1.85,1.1,4)
 #@gui : Skip finest scales = int(0,0,3)
-#@gui : sep = separator(), note = note("<small>Author: <i>David Tschumperl&#233;</i>.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Latest Update: <i>2019/01/10</i>.</small>")
+#@gui : sep = separator()
+#@gui : note = note("<small>Author: <i>David Tschumperl&#233;</i>.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+#@gui : Latest Update: <i>2019/01/10</i>.</small>")
 fx_stylize : l[] if !narg($$stylize) _fx_stylize_ fi onfail endl
   init_resolution={arg(1+$16,8,16,32,64,128,256)}
 
@@ -30589,7 +30599,8 @@ fx_stylize : l[] if !narg($$stylize) _fx_stylize_ fi onfail endl
   elif $12==3 match_colors=$match_colors" rgb2ycbcr[0,1] sh[0,1] 0 f[-2,-1] 128 rm[-2,-1] ycbcr2rgb[0,1]"
   elif $12==4 match_colors=$match_colors" srgb2lab[0,1] sh[0,1] 0 f[-2,-1] 50 rm[-2,-1] lab2srgb[0,1]"
   fi
-  match_colors=$match_colors" b[0,1] xy,$13 repeat 2 l[$>] s c n 0,255 a c endl done *[-2,-1] {$14*255} a[0,-2] c a[1,-1] c"
+  match_colors=$match_colors\
+              " b[0,1] xy,$13 repeat 2 l[$>] s c n 0,255 a c endl done *[-2,-1] {$14*255} a[0,-2] c a[1,-1] c"
 
   patch_penalization=$23
   if $_version<271 patch_penalization*=500 fi
@@ -30636,12 +30647,11 @@ fx_stylize_preview :
 
 _fx_stylize : # Download pre-defined style image
   if isnum($1)
-    name=${"arg 1+$1,landscapenearantwerp,leviaducalestaque,littlebayatlaciotat,themandola,windowsopensimultaneously,portraitdemetzinger,\
-      greatwave,squareswithconcentriccircles,yellowredblue,deathandfire,inthestyleofkairouan,orientalpleasuregardenanagoria,\
-      polyphony2,redwaistcoat,thekiss,\
-      compositionredyellowblue,redtree,graytree,sangiorgiomaggioreatdusk,waterlilypond,\
-      wheatstacksendofsummer,scream,udnie,lesdemoisellesdavignon,seatedwoman,reservoirhortadeebro,convergence,summertime9a,\
-      almondblossom,irises,starrynight,wheatfieldwithcrows"}
+    name=${"arg 1+$1,landscapenearantwerp,leviaducalestaque,littlebayatlaciotat,themandola,windowsopensimultaneously,\
+      portraitdemetzinger,greatwave,squareswithconcentriccircles,yellowredblue,deathandfire,inthestyleofkairouan,\
+      orientalpleasuregardenanagoria,polyphony2,redwaistcoat,thekiss,compositionredyellowblue,redtree,graytree,\
+      sangiorgiomaggioreatdusk,waterlilypond,wheatstacksendofsummer,scream,udnie,lesdemoisellesdavignon,seatedwoman,\
+      reservoirhortadeebro,convergence,summertime9a,almondblossom,irises,starrynight,wheatfieldwithcrows"}
   else name="$1"
   fi
   filename=${-path_cache}style_$name.png
@@ -33631,7 +33641,8 @@ _fx_clut_from_ab_preview :
     +3d
 
     # Render 3D snapshot.
-    pose3d 1.2451,0.120715,-0.893986,-58.3864,-0.572953,1.28275,-0.62477,-11.6557,0.696784,0.839071,1.08374,-333.008,0,0,217,1
+    pose3d 1.2451,0.120715,-0.893986,-58.3864,-0.572953,1.28275,-0.62477,-11.6557,\
+           0.696784,0.839071,1.08374,-333.008,0,0,217,1
     snapshot3d {max(512,0$_preview_width,0$_preview_height)},1.22,255,255,255
     autocrop frame 10,10,255
     to_rgba flood 0,0,0,20,1,1,255,255,255,0
