@@ -218,10 +218,12 @@ struct gmic {
   template<typename T=gmic_pixel_type>
   gmic(const T& pixel_type=(T)0);
 
+  template<typename T=gmic_pixel_type>
   gmic(const char *const commands_line,
        const char *const custom_commands=0,
        const bool include_stdlib=true,
-       float *const p_progress=0, bool *const p_is_abort=0);
+       float *const p_progress=0, bool *const p_is_abort=0,
+       const T& pixel_type=(T)0);
 
   template<typename T>
   gmic(const char *const commands_line,
@@ -229,8 +231,10 @@ struct gmic {
        const bool include_stdlib=true, float *const p_progress=0, bool *const p_is_abort=0);
 
   // Run G'MIC pipeline on an already-constructed object.
+  template<typename T=gmic_pixel_type>
   gmic& run(const char *const commands_line,
-            float *const p_progress=0, bool *const p_is_abort=0);
+            float *const p_progress=0, bool *const p_is_abort=0,
+            const T& pixel_type=(T)0);
 
   template<typename T>
   gmic& run(const char *const commands_line,
@@ -310,7 +314,7 @@ struct gmic {
                                    const bool is_image_expr);
 
   template<typename T>
-  void wait_threads(void *const p_gmic_threads, const bool try_abort, const T foo);
+  void wait_threads(void *const p_gmic_threads, const bool try_abort, const T& pixel_type);
 
   template<typename T>
   gmic& print(const gmic_list<T>& list, const gmic_image<unsigned int> *const callstack_selection,

@@ -2135,9 +2135,9 @@ inline gmic_list<void*>& gmic_runs() { static gmic_list<void*> val; return val; 
 
 template<typename T>
 double gmic::mp_ext(char *const str, void *const p_list, const T& pixel_type) {
+  cimg::unused(pixel_type);
   double res = cimg::type<double>::nan();
   char sep;
-  cimg::unused(pixel_type);
   cimg_pragma_openmp(critical(mp_ext))
   {
     // Retrieve current gmic instance.
@@ -2372,8 +2372,8 @@ bool gmic::check_filename(const char *const filename) {
 
 // Wait for threads to finish.
 template<typename T>
-void gmic::wait_threads(void *const p_gmic_threads, const bool try_abort, const T foo) {
-  cimg::unused(foo);
+void gmic::wait_threads(void *const p_gmic_threads, const bool try_abort, const T& pixel_type) {
+  cimg::unused(pixel_type);
   CImg<_gmic_parallel<T> > &gmic_threads = *(CImg<_gmic_parallel<T> >*)p_gmic_threads;
 #ifdef gmic_is_parallel
   cimg_forY(gmic_threads,l) {
@@ -2493,20 +2493,23 @@ unsigned int gmic::strescape(const char *const str, char *const res) {
 
 CImg<char> gmic::stdlib = CImg<char>::empty();
 
-template<typename T=gmic_pixel_type>
+template<typename T>
 gmic::gmic(const T& pixel_type):gmic_new_attr {
+  cimg::unused(pixel_type);
   CImgList<T> images;
   CImgList<char> images_names;
-  cimg::unused(pixel_type);
   verbosity = -1;
   _gmic(0,images,images_names,0,true,0,0);
   verbosity = 0;
 }
 
+template<typename T>
 gmic::gmic(const char *const commands_line, const char *const custom_commands,
-           const bool include_stdlib, float *const p_progress, bool *const p_is_abort):
+           const bool include_stdlib, float *const p_progress, bool *const p_is_abort,
+           const T& pixel_type):
   gmic_new_attr {
-  CImgList<gmic_pixel_type> images;
+  cimg::unused(pixel_type);
+  CImgList<T> images;
   CImgList<char> images_names;
   _gmic(commands_line,
         images,images_names,custom_commands,
@@ -4577,9 +4580,12 @@ CImg<char> gmic::substitute_item(const char *const source,
 
 // Main parsing procedures.
 //-------------------------
+template<typename T>
 gmic& gmic::run(const char *const commands_line,
-                float *const p_progress, bool *const p_is_abort) {
-  gmic_list<gmic_pixel_type> images;
+                float *const p_progress, bool *const p_is_abort,
+                const T& pixel_type) {
+  cimg::unused(pixel_type);
+  gmic_list<T> images;
   gmic_list<char> images_names;
   return run(commands_line,images,images_names,
              p_progress,p_is_abort);
@@ -14469,13 +14475,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 // Explicitly instantiate constructors and destructor when building the library.
 #define gmic_instantiate(pixel_type) \
 template gmic::gmic(const char *const commands_line, \
-                    gmic_list<gmic_pixel_type>& images, gmic_list<char>& images_names, \
+                    gmic_list<pixel_type>& images, gmic_list<char>& images_names, \
                     const char *const custom_commands, const bool include_stdlib, \
                     float *const p_progress, bool *const p_is_abort); \
 template gmic& gmic::run(const char *const commands_line, \
-                         gmic_list<gmic_pixel_type> &images, gmic_list<char> &images_names, \
+                         gmic_list<pixel_type> &images, gmic_list<char> &images_names, \
                          float *const p_progress, bool *const p_is_abort); \
-template CImgList<gmic_pixel_type>::~CImgList()
+template CImgList<pixel_type>::~CImgList()
 
 
 #ifdef gmic_pixel_type
