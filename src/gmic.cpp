@@ -14483,7 +14483,6 @@ template gmic& gmic::run(const char *const commands_line, \
                          float *const p_progress, bool *const p_is_abort); \
 template CImgList<pixel_type>::~CImgList()
 
-
 #ifdef gmic_pixel_type
 gmic_instantiate(gmic_pixel_type);
 #endif
