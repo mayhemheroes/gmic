@@ -14473,15 +14473,19 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 }
 
 // Explicitly instantiate constructors and destructor when building the library.
-#define gmic_instantiate(pixel_type) \
+#define gmic_instantiate(pt) \
+template gmic::gmic(const pt& pixel_type); \
+template gmic::gmic(const char *const commands_line, const char *const custom_commands, \
+                    const bool include_stdlib, float *const p_progress, bool *const p_is_abort, \
+                    const pt& pixel_type); \
 template gmic::gmic(const char *const commands_line, \
-                    gmic_list<pixel_type>& images, gmic_list<char>& images_names, \
+                    gmic_list<pt>& images, gmic_list<char>& images_names, \
                     const char *const custom_commands, const bool include_stdlib, \
                     float *const p_progress, bool *const p_is_abort); \
 template gmic& gmic::run(const char *const commands_line, \
-                         gmic_list<pixel_type> &images, gmic_list<char> &images_names, \
+                         gmic_list<pt> &images, gmic_list<char> &images_names, \
                          float *const p_progress, bool *const p_is_abort); \
-template CImgList<pixel_type>::~CImgList()
+template CImgList<pt>::~CImgList()
 
 #ifdef gmic_pixel_type
 gmic_instantiate(gmic_pixel_type);
