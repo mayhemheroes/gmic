@@ -52,7 +52,7 @@
 */
 
 #ifndef gmic_version
-#define gmic_version 271
+#define gmic_version 272
 
 #ifndef gmic_pixel_type
 #define gmic_pixel_type float
@@ -175,8 +175,9 @@ inline bool *gmic_abort_ptr(bool *const p_is_abort);
 #define cimg_abort_test if (*gmic_is_abort) throw CImgAbortException()
 #endif // #ifdef cimg_use_abort
 
-inline double gmic_mp_ext(char *const str, void *const p_list);
-#define cimg_mp_ext_function(str) return ::gmic_mp_ext(str._data,&mp.listout)
+template<typename T>
+inline double gmic_mp_ext(char *const str, void *const p_list, const T& pixel_type);
+#define cimg_mp_ext_function(str) return ::gmic_mp_ext(str._data,&mp.listout,(T)0)
 
 #ifndef cimg_display
 #define cimg_display 0
@@ -214,7 +215,8 @@ struct gmic {
   ~gmic();
 
   // Constructors.
-  gmic();
+  template<typename T=gmic_pixel_type>
+  gmic(const T& pixel_type=(T)0);
 
   gmic(const char *const commands_line,
        const char *const custom_commands=0,
@@ -243,6 +245,8 @@ struct gmic {
   // Functions below should be considered as *private*, and should not be used in user's code.
   template<typename T>
   static bool search_sorted(const char *const str, const T& list, const unsigned int length, unsigned int &out_ind);
+  template<typename T>
+  static double mp_ext(char *const str, void *const p_list, const T& pixel_type);
   static int _levenshtein(const char *const s, const char *const t,
                           gmic_image<int>& d, const int i, const int j);
   static int levenshtein(const char *const s, const char *const t);
@@ -254,7 +258,6 @@ struct gmic {
   static char *strreplace_bw(char *const str);
   static unsigned int strescape(const char *const str, char *const res);
   static const gmic_image<char>& decompress_stdlib();
-  static double mp_ext(char *const str, void *const p_list);
   static bool *abort_ptr(bool *const p_is_abort);
 
   template<typename T>
@@ -429,7 +432,8 @@ struct gmic_exception {
   }
 };
 
-inline double gmic_mp_ext(char *const str, void *const p_list) { return gmic::mp_ext(str,p_list); }
+template<typename T>
+inline double gmic_mp_ext(char *const str, void *const p_list, const T& pixel_type) { return gmic::mp_ext(str,p_list,pixel_type); }
 inline bool *gmic_abort_ptr(bool *const p_is_abort) { return gmic::abort_ptr(p_is_abort); }
 
 #endif // #ifndef gmic_version

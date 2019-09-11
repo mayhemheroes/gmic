@@ -2133,9 +2133,11 @@ inline char *_gmic_argument_text(const char *const argument, CImg<char>& argumen
 // Manage list of all gmic runs (for CImg math parser 'ext()').
 inline gmic_list<void*>& gmic_runs() { static gmic_list<void*> val; return val; }
 
-double gmic::mp_ext(char *const str, void *const p_list) {
+template<typename T>
+double gmic::mp_ext(char *const str, void *const p_list, const T& pixel_type) {
   double res = cimg::type<double>::nan();
   char sep;
+  cimg::unused(pixel_type);
   cimg_pragma_openmp(critical(mp_ext))
   {
     // Retrieve current gmic instance.
@@ -2153,9 +2155,9 @@ double gmic::mp_ext(char *const str, void *const p_list) {
       cimg::mutex(24,0);
 
       // Run given command line.
-      CImgList<gmic_pixel_type> &images = *(CImgList<gmic_pixel_type>*)gr[1];
+      CImgList<T> &images = *(CImgList<T>*)gr[1];
       CImgList<char> &images_names = *(CImgList<char>*)gr[2];
-      CImgList<gmic_pixel_type> &parent_images = *(CImgList<gmic_pixel_type>*)gr[3];
+      CImgList<T> &parent_images = *(CImgList<T>*)gr[3];
       CImgList<char> &parent_images_names = *(CImgList<char>*)gr[4];
       const unsigned int *const variables_sizes = (const unsigned int*)gr[5];
       const CImg<unsigned int> *const command_selection = (const CImg<unsigned int>*)gr[6];
@@ -2491,9 +2493,11 @@ unsigned int gmic::strescape(const char *const str, char *const res) {
 
 CImg<char> gmic::stdlib = CImg<char>::empty();
 
-gmic::gmic():gmic_new_attr {
-  CImgList<gmic_pixel_type> images;
+template<typename T=gmic_pixel_type>
+gmic::gmic(const T& pixel_type):gmic_new_attr {
+  CImgList<T> images;
   CImgList<char> images_names;
+  cimg::unused(pixel_type);
   verbosity = -1;
   _gmic(0,images,images_names,0,true,0,0);
   verbosity = 0;
@@ -14463,32 +14467,23 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 }
 
 // Explicitly instantiate constructors and destructor when building the library.
+#define gmic_instantiate(pixel_type) \
+template gmic::gmic(const char *const commands_line, \
+                    gmic_list<gmic_pixel_type>& images, gmic_list<char>& images_names, \
+                    const char *const custom_commands, const bool include_stdlib, \
+                    float *const p_progress, bool *const p_is_abort); \
+template gmic& gmic::run(const char *const commands_line, \
+                         gmic_list<gmic_pixel_type> &images, gmic_list<char> &images_names, \
+                         float *const p_progress, bool *const p_is_abort); \
+template CImgList<gmic_pixel_type>::~CImgList()
+
+
 #ifdef gmic_pixel_type
-template gmic::gmic(const char *const commands_line,
-                    gmic_list<gmic_pixel_type>& images, gmic_list<char>& images_names,
-                    const char *const custom_commands, const bool include_stdlib,
-                    float *const p_progress, bool *const p_is_abort);
-
-template gmic& gmic::run(const char *const commands_line,
-                         gmic_list<gmic_pixel_type> &images, gmic_list<char> &images_names,
-                         float *const p_progress, bool *const p_is_abort);
-
-template CImgList<gmic_pixel_type>::~CImgList();
+gmic_instantiate(gmic_pixel_type);
 #endif
-
 #ifdef gmic_pixel_type2
-template gmic::gmic(const char *const commands_line,
-                    gmic_list<gmic_pixel_type2>& images, gmic_list<char>& images_names,
-                    const char *const custom_commands, const bool include_stdlib,
-                    float *const p_progress, bool *const p_is_abort);
-
-template gmic& gmic::run(const char *const commands_line,
-                         gmic_list<gmic_pixel_type2> &images, gmic_list<char> &images_names,
-                         float *const p_progress=0, bool *const p_is_abort=0);
-
-template CImgList<gmic_pixel_type2>::~CImgList();
+gmic_instantiate(gmic_pixel_type2);
 #endif
-
 template CImgList<char>::~CImgList();
 
 #endif // #ifdef cimg_plugin
