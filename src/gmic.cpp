@@ -2478,9 +2478,6 @@ unsigned int gmic::strescape(const char *const str, char *const res) {
     } else *(ptrd++) = c;
   }
   *ptrd = 0;
-
-  std::fprintf(stderr,"\nDEBUG : res = '%s'\n",res);
-
   return (unsigned int)(ptrd - res);
 }
 
