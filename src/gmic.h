@@ -199,7 +199,7 @@ inline double gmic_mp_ext(char *const str, void *const p_list, const T& pixel_ty
 #endif // #if cimg_OS==2
 
 // Define some special character codes used for replacement in double quoted strings.
-const char gmic_dollar = 23, gmic_lbrace = 24, gmic_rbrace = 25, gmic_comma = 26, gmic_dquote = 28, gmic_newline = 29;
+const char gmic_dollar = 23, gmic_lbrace = 24, gmic_rbrace = 25, gmic_comma = 26, gmic_dquote = 28;
 
 #endif // #ifndef gmic_build
 

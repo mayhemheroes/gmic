@@ -2468,7 +2468,7 @@ unsigned int gmic::strescape(const char *const str, char *const res) {
     if (c=='\\' || c=='\'' || c=='\"') { *(ptrd++) = '\\'; *(ptrd++) = c; }
     else if (c>=7 && c<=13) { *(ptrd++) = '\\'; *(ptrd++) = esc[c - 7]; }
     else if (c>=32 && c<=126) *(ptrd++) = c;
-    else if (c<gmic_dollar || c>gmic_newline) {
+    else if (c<gmic_dollar || c>gmic_dquote) {
       *(ptrd++) = '\\';
       *(ptrd++) = 'x';
       unsigned char d = c>>4;
