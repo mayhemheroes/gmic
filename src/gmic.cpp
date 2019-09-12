@@ -2464,20 +2464,23 @@ unsigned int gmic::strescape(const char *const str, char *const res) {
   const char *const esc = "abtnvfr";
   char *ptrd = res;
   for (const char *ptrs = str; *ptrs; ++ptrs) {
-    const char c = *ptrs;
+    const unsigned char c = *ptrs;
     if (c=='\\' || c=='\'' || c=='\"') { *(ptrd++) = '\\'; *(ptrd++) = c; }
     else if (c>=7 && c<=13) { *(ptrd++) = '\\'; *(ptrd++) = esc[c - 7]; }
     else if (c>=32 && c<=126) *(ptrd++) = c;
     else if (c<gmic_dollar || c>gmic_newline) {
       *(ptrd++) = '\\';
       *(ptrd++) = 'x';
-      char d = c>>4;
-      *(ptrd++) = d + (d<10?'0':'a'-10);
+      unsigned char d = c>>4;
+      *(ptrd++) = (char)(d + (d<10?'0':'a'-10));
       d = c&15;
-      *(ptrd++) = d + (d<10?'0':'a'-10);
+      *(ptrd++) = (char)(d + (d<10?'0':'a'-10));
     } else *(ptrd++) = c;
   }
   *ptrd = 0;
+
+  std::fprintf(stderr,"\nDEBUG : res = '%s'\n",res);
+
   return (unsigned int)(ptrd - res);
 }
 
