@@ -14483,6 +14483,9 @@ template gmic::gmic(const char *const commands_line, \
                     const char *const custom_commands, const bool include_stdlib, \
                     float *const p_progress, bool *const p_is_abort); \
 template gmic& gmic::run(const char *const commands_line, \
+                         float *const p_progress, bool *const p_is_abort,\
+                         const pt& pixel_type); \
+template gmic& gmic::run(const char *const commands_line, \
                          gmic_list<pt> &images, gmic_list<char> &images_names, \
                          float *const p_progress, bool *const p_is_abort); \
 template CImgList<pt>::~CImgList()
