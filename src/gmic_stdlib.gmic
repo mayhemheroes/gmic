@@ -21051,6 +21051,15 @@ autocrop_coords : skip ${1=auto}
 _autocrop0 : autocrop $*
 _autocrop1 : skip $* autocrop
 
+#@cli average_colors
+#@cli : Return the average vector-value of the latest of the selected images.
+average_colors :
+  v -
+  res=""
+  repeat s-1 sh. {1+$>} res=$res,{ia} rm. done
+  sh. 0 u {ia}$res rm.
+  v +
+
 #@cli base642img : "base64_string"
 #@cli : Decode given base64-encoded string as a newly inserted image at the end of the list.
 #@cli : The argument string must have been generated using command 'img2base64'.
@@ -21173,6 +21182,17 @@ _compress_gmic :
     l. s +,32,35 if $!>2 k[0] fi a y endl
     autocrop. 32 if !w rm. (10) fi
   fi
+
+#@cli covariance_colors : _avg_outvarname
+#@cli : Return the covariance matrix of the vector-valued colors in the latest of the selected images
+#@cli : (for arbitrary number of channels).
+#@cli : Parameter 'avg_outvarname' is used as a variable name that takes the value of the average vector-value.
+covariance_colors : skip "${1=avg}"
+  v -
+  $1=${-average_colors}
+  f ">begin(avg = [ "$""$1" ]; const S2 = s^2; C = vectorS2(0); );
+     mI = I - avg; C+=mul(mI,mI,s); end(C/=whd - 1; ext('u ',vtos(C))); I"
+  v +
 
 #@cli dec : decimal_int1,...
 #@cli : Print specified decimal integers into their binary, octal, hexadecimal and string representations.
@@ -21434,6 +21454,16 @@ hex2str : skip ${1=""}
   f. 'v=i-if(i>=97,87,48);if(x%2,v,v*16)' r. 2,{int(w/2)},1,1,-1 cumulate. x z. 1,1
   u {t} rm. v +
 
+#@cli img2base64 : _encoding={ 0=base64 | 1=base64url }
+#@cli : Encode selected images as a base64-encoded string.
+#@cli : The images can be then decoded using command 'base642img'.
+#@cli : Default values: 'encoding=0'.
+img2base64 : skip "${1=0}"
+  v -
+  if isnum("$1") encoding=$1 else encoding=0 noarg fi
+  +serialize u ${uchar2base64\ $encoding} rm.
+  v +
+
 #@cli img2hex
 #@cli : Return representation of last image as an hexadecimal-encoded string.
 #@cli : Input image must have values that are integers in [0,255].
@@ -21463,6 +21493,14 @@ img2str :
 #@cli : Default value: 'line_separator= '.
 img2text : skip "${1= }"
   v - +l s y s -,0 y x if $!>1 i[1--2] ({'"$1"'}) fi a x u {0,t} rm endl v +
+
+#@cli img2var : "variable_name"
+#@cli : Store data from selected images to specified variable name.
+#@cli : Image(s) can be get back afterwards using 'var2img variable_name'.
+#@cli : $ sample lena,landscape img2var _list rm var2img _list
+img2var :
+  e[^-1] "Store data of image$? to variable '$""$1'."
+  v - +serialize auto,0,1 _img2var_$1=${"uchar2base64. 0"} rm. v +
 
 #@cli img82hex
 #@cli : Convert selected 8bits-valued vectors into their hexadecimal representations (ascii-encoded).
@@ -22292,35 +22330,13 @@ uchar2base64 : skip "${1=0}"
   "
   u {t} rm. v +
 
-#@cli img2base64 : _encoding={ 0=base64 | 1=base64url }
-#@cli : Encode selected images as a base64-encoded string.
-#@cli : The images can be then decoded using command 'base642img'.
-#@cli : Default values: 'encoding=0'.
-img2base64 : skip "${1=0}"
-  v -
-  if isnum("$1") encoding=$1 else encoding=0 noarg fi
-  +serialize u ${uchar2base64\ $encoding} rm.
-  v +
+#@cli var2img : "variable_name"
+#@cli : Input image(s) from specified variable name.
+#@cli : This command must be used in cunjunction with 'img2var'.
+var2img :
+  e[^-1] "Input image(s) from variable '$""$1'."
+  v - base642img ${_img2var_$1} v +
 
-#@cli average_colors
-#@cli : Return the average vector-value of the latest of the selected images.
-average_colors :
-  v -
-  res=""
-  repeat s-1 sh. {1+$>} res=$res,{ia} rm. done
-  sh. 0 u {ia}$res rm.
-  v +
-
-#@cli covariance_colors : _avg_outvarname
-#@cli : Return the covariance matrix of the vector-valued colors in the latest of the selected images
-#@cli : (for arbitrary number of channels).
-#@cli : Parameter 'avg_outvarname' is used as a variable name that takes the value of the average vector-value.
-covariance_colors : skip "${1=avg}"
-  v -
-  $1=${-average_colors}
-  f ">begin(avg = [ "$""$1" ]; const S2 = s^2; C = vectorS2(0); );
-     mI = I - avg; C+=mul(mI,mI,s); end(C/=whd - 1; ext('u ',vtos(C))); I"
-  v +
 
 #-------------------------------------
 #
