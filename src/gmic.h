@@ -273,6 +273,8 @@ struct gmic {
   const char *set_variable(const char *const name, const char *const value,
                            const char operation='=',
                            const unsigned int *const variables_sizes=0);
+  const char *set_variable(const char *const name, const gmic_image<unsigned char>& value,
+                           const unsigned int *const variables_sizes=0);
 
   gmic& add_commands(const char *const data_commands, const char *const commands_file=0,
                      unsigned int *count_new=0, unsigned int *count_replaced=0);

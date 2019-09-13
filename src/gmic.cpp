@@ -2300,9 +2300,9 @@ const char *gmic::builtin_commands_names[] = {
   "o","o3d","object3d","onfail","opacity3d","or","output",
   "p","parallel","pass","permute","plasma","plot","point","polygon","pow","print","progress",
   "q","quit",
-  "r","r3d","rand","remove","repeat","resize","return","reverse","reverse3d",
+  "r","r3d","rand","remove","repeat","resize","restore","return","reverse","reverse3d",
     "rm","rol","ror","rotate","rotate3d","round","rows","rv","rv3d",
-  "s","s3d","screen","select","serialize","set","sh","shared","sharpen","shift","sign","sin","sinc","sinh","skip",
+  "s","s3d","save","screen","select","serialize","set","sh","shared","sharpen","shift","sign","sin","sinc","sinh","skip",
     "sl3d","slices","smooth","solve","sort","specl3d","specs3d","sphere3d","split","split3d","sqr","sqrt","srand",
     "ss3d","status","streamline3d","structuretensors","sub","sub3d","svd",
   "t","tan","tanh","text","trisolve",
@@ -2960,6 +2960,36 @@ const char *gmic::set_variable(const char *const name, const char *const value,
     }
   }
   if (!_operation) { // New variable
+    ind = __variables.width();
+    CImg<char>::string(name).move_to(__variables_names);
+    s_value.move_to(__variables);
+  }
+  if (is_thread_global) cimg::mutex(30,0);
+  return __variables[ind].data();
+}
+
+const char *gmic::set_variable(const char *const name, const CImg<unsigned char>& value,
+                               const unsigned int *const variables_sizes) {
+  if (!name || !value) return "";
+  bool is_name_found = false;
+  CImg<char> s_value((char*)value.data(),value.width(),value.height(),value.depth(),value.spectrum(),true);
+  int ind = 0;
+  const bool
+    is_global = *name=='_',
+    is_thread_global = is_global && name[1]=='_';
+  if (is_thread_global) cimg::mutex(30);
+  const unsigned int hash = hashcode(name,true);
+  const int lind = is_global || !variables_sizes?0:(int)variables_sizes[hash];
+  CImgList<char>
+    &__variables = *variables[hash],
+    &__variables_names = *variables_names[hash];
+
+  // Retrieve index of current definition.
+  for (int l = __variables.width() - 1; l>=lind; --l) if (!std::strcmp(__variables_names[l],name)) {
+      is_name_found = true; ind = l; break;
+    }
+  if (is_name_found) s_value.move_to(__variables[ind]); // Update variable
+  else  { // New variable
     ind = __variables.width();
     CImg<char>::string(name).move_to(__variables_names);
     s_value.move_to(__variables);
@@ -3646,10 +3676,10 @@ void gmic::_gmic(const char *const commands_line,
   set_variable("_path_user",gmic::path_user(),0);
 
   cimg_snprintf(str,str.width(),"%u",cimg::nb_cpus());
-  set_variable("_cpus",str,0);
+  set_variable("_cpus",str.data(),0);
 
   cimg_snprintf(str,str.width(),"%u",gmic_version);
-  set_variable("_version",str,0);
+  set_variable("_version",str.data(),0);
 
 #if cimg_OS==1
   cimg_snprintf(str,str.width(),"%u",(unsigned int)getpid());
@@ -3658,7 +3688,7 @@ void gmic::_gmic(const char *const commands_line,
 #else // #if cimg_OS==1
   cimg_snprintf(str,str.width(),"0");
 #endif // #if cimg_OS==1
-  set_variable("_pid",str,0);
+  set_variable("_pid",str.data(),0);
 
 #ifdef cimg_use_vt100
   set_variable("_vt100","1",0);
@@ -11271,6 +11301,23 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             }
           }
           is_change = true; continue;
+        }
+
+        // Save.
+        if (!std::strcmp("save",command)) {
+          gmic_substitute_args(false);
+          if (cimg_sscanf(argument,"%255[a-zA-Z0-9_]%c",argx,&end)==1 &&
+              (*argx<'0' || *argx>'9')) {
+            print(images,0,
+                  "Save image%s to variable '%s'",
+                  gmic_selection.data(),
+                  gmic_argument_text_printed());
+            g_list.assign(selection.height());
+            cimg_forY(selection,l) g_list[l] = images[selection[l]].get_shared();
+            set_variable(argument,g_list.get_serialize(false),variables_sizes);
+            g_list.assign();
+          } else arg_error("save");
+          ++position; continue;
         }
 
         // Shift.
