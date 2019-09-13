@@ -10504,14 +10504,18 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               g_list_c = g_list.back().get_split(CImg<char>::vector(0),0,false);
               g_list_c.remove(0);
               cimglist_for(g_list_c,q) g_list_c[q].resize(1,g_list_c[q].height() + 1,1,1,0).unroll('x');
-              if (g_list_c) {
+              if (g_list_c.size()!=g_list.size() - 1)
+                error(true,images,0,0,
+                      "Command 'restore': Invalid binary encoding of variable '%s'.",
+                      gmic_argument_text());
+              else if (g_list_c) {
                 g_list.remove().move_to(images,~0U);
                 g_list_c.move_to(images_names,~0U);
                 is_change = true;
               }
             } else error(true,images,0,0,
                          "Command 'restore': Variable '%s' has not been assigned.",
-                         gmic_argument_text_printed());
+                         gmic_argument_text());
           } else arg_error("restore");
           ++position; continue;
         }
@@ -11359,12 +11363,22 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   gmic_selection.data(),
                   gmic_argument_text_printed());
             g_list.assign(selection.height());
-            if (is_get) cimg_forY(selection,l) g_list[l] = images[selection[l]].get_shared();
-            else cimg_forY(selection,l) images[selection[l]].move_to(g_list[l]);
-            CImg<char>::string("GMZ").append((images_names>'x'),'x').unroll('y').move_to(g_list);
+            g_list_c.assign(g_list.size());
+            cimg_forY(selection,l) {
+              const unsigned int uind = selection[l];
+              if (is_get) {
+                g_list[l] = images[uind].get_shared();
+                g_list_c[l] = images_names[uind].get_shared();
+              } else {
+                images[uind].move_to(g_list[l]);
+                images_names[uind].move_to(g_list_c[l]);
+              }
+            }
+            CImg<char>::string("GMZ").append((g_list_c>'x'),'x').unroll('y').move_to(g_list);
             if (!is_get) remove_images(images,images_names,selection,0,selection.height() - 1);
             set_variable(argument,g_list.get_serialize(false),variables_sizes);
             g_list.assign();
+            g_list_c.assign();
           } else arg_error("store");
           ++position; continue;
         }
