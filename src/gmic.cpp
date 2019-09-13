@@ -10493,8 +10493,14 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               if (!std::strcmp(__variables_names[l],argument)) {
                 is_name_found = true; vind = l; break;
               }
-            if (is_name_found) { // Regular variable
-              CImgList<T>::get_unserialize(__variables[vind]).move_to(g_list);
+            if (is_name_found) {
+              try {
+                CImgList<T>::get_unserialize(__variables[vind]).move_to(g_list);
+              } catch (CImgArgumentException&) {
+                error(true,images,0,0,
+                      "Command 'restore': Variable '%s' has not assigned with 'save'.",
+                      gmic_argument_text());
+              }
               g_list_c = g_list.back().get_split(CImg<char>::vector(0),0,false);
               g_list_c.remove(0);
               cimglist_for(g_list_c,q) g_list_c[q].resize(1,g_list_c[q].height() + 1,1,1,0).unroll('x');
@@ -10504,7 +10510,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 is_change = true;
               }
             } else error(true,images,0,0,
-                         "Command 'restore': Variable '%s' has not been already assigned.",
+                         "Command 'restore': Variable '%s' does not contain image data.",
                          gmic_argument_text_printed());
           } else arg_error("restore");
           ++position; continue;
