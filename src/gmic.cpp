@@ -2913,6 +2913,10 @@ const char *gmic::set_variable(const char *const name, const char *const value,
   CImgList<char>
     &__variables = *variables[hash],
     &__variables_names = *variables_names[hash];
+
+  if (!operation || operation=='=' || operation=='.') s_value.assign(value,std::strlen(value) + 1,1,1,1,true);
+  else s_value.assign(24);
+
   if (operation) {
     // Retrieve index of current definition.
     for (int l = __variables.width() - 1; l>=lind; --l) if (!std::strcmp(__variables_names[l],name)) {
@@ -2920,7 +2924,7 @@ const char *gmic::set_variable(const char *const name, const char *const value,
       }
     if (operation=='=') {
       if (!is_name_found) _operation = 0; // New variable
-      else CImg<char>::string(value).move_to(__variables[ind]);
+      else s_value.move_to(__variables[ind]);
     } else if (operation=='.') {
       if (!is_name_found) _operation = 0; // New variable
       else if (*value) {
@@ -2940,7 +2944,7 @@ const char *gmic::set_variable(const char *const name, const char *const value,
       if (cimg_sscanf(value,"%lf%c",&rvalue,&end)!=1)
         error(true,"Operation '%s=' requested on variable '%s', with non-numerical argument '%s'.",
               s_operation,name,value);
-      s_value.assign(24); *s_value = 0;
+      *s_value = 0;
       cimg_snprintf(s_value,s_value.width(),"%.17g",
                     operation=='+'?lvalue + rvalue:
                     operation=='-'?lvalue - rvalue:
@@ -2958,7 +2962,7 @@ const char *gmic::set_variable(const char *const name, const char *const value,
   if (!_operation) { // New variable
     ind = __variables.width();
     CImg<char>::string(name).move_to(__variables_names);
-    CImg<char>::string(value).move_to(__variables);
+    s_value.move_to(__variables);
   }
   if (is_thread_global) cimg::mutex(30,0);
   return __variables[ind].data();
