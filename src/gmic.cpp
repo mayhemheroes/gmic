@@ -2459,7 +2459,7 @@ char *gmic::strreplace_bw(char *const str) {
 }
 
 //! Escape a string.
-// 'res' must be a C-string large enough ('4*strlen(str)+1' is always safe).
+// 'res' must be a C-string large enough ('4*strlen(str) + 1' is always safe).
 unsigned int gmic::strescape(const char *const str, char *const res) {
   const char *const esc = "abtnvfr";
   char *ptrd = res;
@@ -8877,7 +8877,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 selection.height()>1?"s":"",gmic_selection.data(),gmic_argument_text_printed());
           cimglist_for(g_list_c,l) {
             g_list_c[l].unroll('x');
-            if (g_list_c[l].back()) g_list_c[l].resize(g_list_c[l].width()+1,1,1,1,0);
+            if (g_list_c[l].back()) g_list_c[l].resize(g_list_c[l].width() + 1,1,1,1,0);
             strreplace_fw(g_list_c[l]);
           }
           cimg_forY(selection,l)
@@ -8897,7 +8897,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           // Detect possible empty names in argument list.
           bool contains_empty_name = false;
           unsigned int sl = 0;
-          for (; argument[sl]; ++sl) if (argument[sl]==',' && argument[sl+1]==',') {
+          for (; argument[sl]; ++sl) if (argument[sl]==',' && argument[sl + 1]==',') {
               contains_empty_name = true;
               break;
             }
@@ -8916,7 +8916,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
           cimglist_for(g_list_c,k) {
             g_list_c[k].unroll('x');
-            if (g_list_c[k].back()) g_list_c[k].resize(g_list_c[k].width()+1,1,1,1,0);
+            if (g_list_c[k].back()) g_list_c[k].resize(g_list_c[k].width() + 1,1,1,1,0);
             strreplace_fw(g_list_c[k]);
             switch (pattern) {
             case 0 : // All indices, case sensitive
@@ -10471,7 +10471,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         // Restore.
-        if (!std::strcmp("restore",command)) {
+        if (!is_get && !is_selection && !std::strcmp("restore",command)) {
           gmic_substitute_args(true);
           if (cimg_sscanf(argument,"%255[a-zA-Z0-9_]%c",argx,&end)==1 &&
               (*argx<'0' || *argx>'9')) {
@@ -10489,18 +10489,24 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               &__variables = *variables[hash],
               &__variables_names = *variables_names[hash];
             bool is_name_found = false;
-            for (int l = __variables.width() - 1; l>=lind; --l) {
-              std::fprintf(stderr,"\nDEBUG0 : -> l = %d\n",l);
+            for (int l = __variables.width() - 1; l>=lind; --l)
               if (!std::strcmp(__variables_names[l],argument)) {
                 is_name_found = true; vind = l; break;
               }
-            }
             if (is_name_found) { // Regular variable
-              CImgList<T>::get_unserialize(__variables[vind]).display("DEBUG"); //.move_to(images);
+              CImgList<T>::get_unserialize(__variables[vind]).move_to(g_list);
+              g_list_c = g_list.back().get_split(CImg<char>::vector(0),0,false);
+              g_list_c.remove(0);
+              cimglist_for(g_list_c,q) g_list_c[q].resize(1,g_list_c[q].height() + 1,1,1,0).unroll('x');
+              if (g_list_c) {
+                g_list.remove().move_to(images,~0U);
+                g_list_c.move_to(images_names,~0U);
+                is_change = true;
+              }
             } else error(true,images,0,0,
                          "Command 'restore': Variable '%s' has not been already assigned.",
                          gmic_argument_text_printed());
-          } else arg_error("save");
+          } else arg_error("restore");
           ++position; continue;
         }
 
@@ -11338,7 +11344,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         // Save.
-        if (!std::strcmp("save",command)) {
+        if (!is_get && !std::strcmp("save",command)) {
           gmic_substitute_args(false);
           if (cimg_sscanf(argument,"%255[a-zA-Z0-9_]%c",argx,&end)==1 &&
               (*argx<'0' || *argx>'9')) {
