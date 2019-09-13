@@ -11355,8 +11355,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             g_list.assign(selection.height());
             if (is_get) cimg_forY(selection,l) g_list[l] = images[selection[l]].get_shared();
             else cimg_forY(selection,l) images[selection[l]].move_to(g_list[l]);
-            name = CImg<char>::string("GMZ");
-            name.append((images_names>'x'),'x').unroll('y').move_to(g_list);
+            CImg<char>::string("GMZ").append((images_names>'x'),'x').unroll('y').move_to(g_list);
             if (!is_get) remove_images(images,images_names,selection,0,selection.height() - 1);
             set_variable(argument,g_list.get_serialize(false),variables_sizes);
             g_list.assign();
