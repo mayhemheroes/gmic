@@ -2283,7 +2283,7 @@ const char *gmic::builtin_commands_names[] = {
   "b","bilateral","blur","boxfilter","break","bsl","bsr",
   "c","camera","channels","check","check3d","col3d","color3d","columns","command","continue","convolve","correlate",
     "cos","cosh","crop","cumulate","cursor","cut",
-  "d","d3d","db3d","debug","denoise","deriche","dijkstra","dilate","discard","displacement","display","display3d",
+  "d","d3d","db3d","debug","denoise","deriche","destock","dijkstra","dilate","discard","displacement","display","display3d",
     "distance","div","div3d","divide","do","done","double3d",
   "e","echo","eigen","eikonal","elevation3d","elif","ellipse","else","endian","endif","endl","endlocal","eq",
     "equalize","erode","error","eval","exec","exp",
@@ -2300,11 +2300,11 @@ const char *gmic::builtin_commands_names[] = {
   "o","o3d","object3d","onfail","opacity3d","or","output",
   "p","parallel","pass","permute","plasma","plot","point","polygon","pow","print","progress",
   "q","quit",
-  "r","r3d","rand","remove","repeat","resize","restore","return","reverse","reverse3d",
+  "r","r3d","rand","remove","repeat","resize","return","reverse","reverse3d",
     "rm","rol","ror","rotate","rotate3d","round","rows","rv","rv3d",
-  "s","s3d","save","screen","select","serialize","set","sh","shared","sharpen","shift","sign","sin","sinc","sinh","skip",
+  "s","s3d","screen","select","serialize","set","sh","shared","sharpen","shift","sign","sin","sinc","sinh","skip",
     "sl3d","slices","smooth","solve","sort","specl3d","specs3d","sphere3d","split","split3d","sqr","sqrt","srand",
-    "ss3d","status","streamline3d","structuretensors","sub","sub3d","svd",
+    "ss3d","status","store","streamline3d","structuretensors","sub","sub3d","svd",
   "t","tan","tanh","text","trisolve",
   "u","uncommand","unroll","unserialize",
   "v","vanvliet","verbose",
@@ -6333,6 +6333,52 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           if (nb_dowhiles>=dowhiles._height) dowhiles.resize(1,std::max(2*dowhiles._height,8U),1,1,0);
           dowhiles[nb_dowhiles++] = position;
           continue;
+        }
+
+        // Destock.
+        if (!is_get && !is_selection && !std::strcmp("destock",command)) {
+          gmic_substitute_args(true);
+          if (cimg_sscanf(argument,"%255[a-zA-Z0-9_]%c",argx,&end)==1 &&
+              (*argx<'0' || *argx>'9')) {
+            print(images,0,
+                  "Destock image data from variable '%s'",
+                  gmic_argument_text_printed());
+            const unsigned int hash = hashcode(argument,true);
+            const bool
+              is_global = *argument=='_',
+              is_thread_global = is_global && argument[1]=='_';
+            const int lind = is_global?0:(int)variables_sizes[hash];
+            int vind = 0;
+            if (is_thread_global) cimg::mutex(30);
+            const CImgList<char>
+              &__variables = *variables[hash],
+              &__variables_names = *variables_names[hash];
+            bool is_name_found = false;
+            for (int l = __variables.width() - 1; l>=lind; --l)
+              if (!std::strcmp(__variables_names[l],argument)) {
+                is_name_found = true; vind = l; break;
+              }
+            if (is_name_found) {
+              try {
+                CImgList<T>::get_unserialize(__variables[vind]).move_to(g_list);
+              } catch (CImgArgumentException&) {
+                error(true,images,0,0,
+                      "Command 'destock': Variable '%s' has not assigned with 'save'.",
+                      gmic_argument_text());
+              }
+              g_list_c = g_list.back().get_split(CImg<char>::vector(0),0,false);
+              g_list_c.remove(0);
+              cimglist_for(g_list_c,q) g_list_c[q].resize(1,g_list_c[q].height() + 1,1,1,0).unroll('x');
+              if (g_list_c) {
+                g_list.remove().move_to(images,~0U);
+                g_list_c.move_to(images_names,~0U);
+                is_change = true;
+              }
+            } else error(true,images,0,0,
+                         "Command 'destock': Variable '%s' does not contain image data.",
+                         gmic_argument_text_printed());
+          } else arg_error("destock");
+          ++position; continue;
         }
 
         // Discard value.
@@ -10470,52 +10516,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           ++position; continue;
         }
 
-        // Restore.
-        if (!is_get && !is_selection && !std::strcmp("restore",command)) {
-          gmic_substitute_args(true);
-          if (cimg_sscanf(argument,"%255[a-zA-Z0-9_]%c",argx,&end)==1 &&
-              (*argx<'0' || *argx>'9')) {
-            print(images,0,
-                  "Restore image data from variable '%s'",
-                  gmic_argument_text_printed());
-            const unsigned int hash = hashcode(argument,true);
-            const bool
-              is_global = *argument=='_',
-              is_thread_global = is_global && argument[1]=='_';
-            const int lind = is_global?0:(int)variables_sizes[hash];
-            int vind = 0;
-            if (is_thread_global) cimg::mutex(30);
-            const CImgList<char>
-              &__variables = *variables[hash],
-              &__variables_names = *variables_names[hash];
-            bool is_name_found = false;
-            for (int l = __variables.width() - 1; l>=lind; --l)
-              if (!std::strcmp(__variables_names[l],argument)) {
-                is_name_found = true; vind = l; break;
-              }
-            if (is_name_found) {
-              try {
-                CImgList<T>::get_unserialize(__variables[vind]).move_to(g_list);
-              } catch (CImgArgumentException&) {
-                error(true,images,0,0,
-                      "Command 'restore': Variable '%s' has not assigned with 'save'.",
-                      gmic_argument_text());
-              }
-              g_list_c = g_list.back().get_split(CImg<char>::vector(0),0,false);
-              g_list_c.remove(0);
-              cimglist_for(g_list_c,q) g_list_c[q].resize(1,g_list_c[q].height() + 1,1,1,0).unroll('x');
-              if (g_list_c) {
-                g_list.remove().move_to(images,~0U);
-                g_list_c.move_to(images_names,~0U);
-                is_change = true;
-              }
-            } else error(true,images,0,0,
-                         "Command 'restore': Variable '%s' does not contain image data.",
-                         gmic_argument_text_printed());
-          } else arg_error("restore");
-          ++position; continue;
-        }
-
         // Resize.
         if (!std::strcmp("resize",command)) {
           gmic_substitute_args(true);
@@ -11349,13 +11349,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           is_change = true; continue;
         }
 
-        // Save.
-        if (!std::strcmp("save",command)) {
+        // Store.
+        if (!std::strcmp("store",command)) {
           gmic_substitute_args(false);
           if (cimg_sscanf(argument,"%255[a-zA-Z0-9_]%c",argx,&end)==1 &&
               (*argx<'0' || *argx>'9')) {
             print(images,0,
-                  "Save image%s to variable '%s'",
+                  "Store image%s as variable '%s'",
                   gmic_selection.data(),
                   gmic_argument_text_printed());
             g_list.assign(selection.height());
@@ -11365,7 +11365,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             if (!is_get) remove_images(images,images_names,selection,0,selection.height() - 1);
             set_variable(argument,g_list.get_serialize(false),variables_sizes);
             g_list.assign();
-          } else arg_error("save");
+          } else arg_error("store");
           ++position; continue;
         }
 
