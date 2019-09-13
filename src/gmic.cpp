@@ -11344,7 +11344,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         // Save.
-        if (!is_get && !std::strcmp("save",command)) {
+        if (!std::strcmp("save",command)) {
           gmic_substitute_args(false);
           if (cimg_sscanf(argument,"%255[a-zA-Z0-9_]%c",argx,&end)==1 &&
               (*argx<'0' || *argx>'9')) {
@@ -11353,9 +11353,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   gmic_selection.data(),
                   gmic_argument_text_printed());
             g_list.assign(selection.height());
-            cimg_forY(selection,l) g_list[l] = images[selection[l]].get_shared();
-            CImg<char> gmz_info = CImg<char>::string("GMZ");
-            gmz_info.append((images_names>'x'),'x').unroll('y').move_to(g_list);
+            if (is_get) cimg_forY(selection,l) g_list[l] = images[selection[l]].get_shared();
+            else cimg_forY(selection,l) images[selection[l]].move_to(g_list[l]);
+            name = CImg<char>::string("GMZ");
+            name.append((images_names>'x'),'x').unroll('y').move_to(g_list);
+            if (!is_get) remove_images(images,images_names,selection,0,selection.height() - 1);
             set_variable(argument,g_list.get_serialize(false),variables_sizes);
             g_list.assign();
           } else arg_error("save");
