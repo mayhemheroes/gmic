@@ -10470,6 +10470,40 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           ++position; continue;
         }
 
+        // Restore.
+        if (!std::strcmp("restore",command)) {
+          gmic_substitute_args(true);
+          if (cimg_sscanf(argument,"%255[a-zA-Z0-9_]%c",argx,&end)==1 &&
+              (*argx<'0' || *argx>'9')) {
+            print(images,0,
+                  "Restore image data from variable '%s'",
+                  gmic_argument_text_printed());
+            const unsigned int hash = hashcode(argument,true);
+            const bool
+              is_global = *argument=='_',
+              is_thread_global = is_global && argument[1]=='_';
+            const int lind = is_global?0:(int)variables_sizes[hash];
+            int vind = 0;
+            if (is_thread_global) cimg::mutex(30);
+            const CImgList<char>
+              &__variables = *variables[hash],
+              &__variables_names = *variables_names[hash];
+            bool is_name_found = false;
+            for (int l = __variables.width() - 1; l>=lind; --l) {
+              std::fprintf(stderr,"\nDEBUG0 : -> l = %d\n",l);
+              if (!std::strcmp(__variables_names[l],argument)) {
+                is_name_found = true; vind = l; break;
+              }
+            }
+            if (is_name_found) { // Regular variable
+              CImgList<T>::get_unserialize(__variables[vind]).display("DEBUG"); //.move_to(images);
+            } else error(true,images,0,0,
+                         "Command 'restore': Variable '%s' has not been already assigned.",
+                         gmic_argument_text_printed());
+          } else arg_error("save");
+          ++position; continue;
+        }
+
         // Resize.
         if (!std::strcmp("resize",command)) {
           gmic_substitute_args(true);
@@ -11314,6 +11348,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   gmic_argument_text_printed());
             g_list.assign(selection.height());
             cimg_forY(selection,l) g_list[l] = images[selection[l]].get_shared();
+            CImg<char> gmz_info = CImg<char>::string("GMZ");
+            gmz_info.append((images_names>'x'),'x').unroll('y').move_to(g_list);
             set_variable(argument,g_list.get_serialize(false),variables_sizes);
             g_list.assign();
           } else arg_error("save");
