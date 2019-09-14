@@ -10495,7 +10495,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               }
             if (is_name_found) {
               try {
-                CImgList<T>::get_unserialize(__variables[vind]).move_to(g_list);
+                CImgList<T>::get_unserialize(__variables[vind].get_shared_rows(8,__variables[vind].height() - 1)).
+                  move_to(g_list);
               } catch (CImgArgumentException&) {
                 error(true,images,0,0,
                       "Command 'restore': Variable '%s' has not been assigned with image data.",
@@ -11376,7 +11377,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             }
             CImg<char>::string("GMZ").append((g_list_c>'x'),'x').unroll('y').move_to(g_list);
             if (!is_get) remove_images(images,images_names,selection,0,selection.height() - 1);
-            set_variable(argument,g_list.get_serialize(false),variables_sizes);
+            set_variable(argument,
+                         CImg<char>::string("[store]").unroll('y').append(g_list.get_serialize(false),'y'),
+                         variables_sizes);
             g_list.assign();
             g_list_c.assign();
           } else arg_error("store");
