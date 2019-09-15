@@ -184,14 +184,15 @@ static CImg<T> append_CImg3d(const CImgList<T>& images) {
 
 CImg<T>& append_string_to(CImg<T>& img, T* &ptrd) const {
   if (!_width) return img;
-  if (ptrd + _width>=img.end()) {
-    CImg<T> tmp(3*img._width/2 + _width + 1);
+  const unsigned int siz = _width;
+  if (ptrd + siz>=img.end()) {
+    CImg<T> tmp(3*img._width/2 + siz + 1);
     std::memcpy(tmp,img,img._width*sizeof(T));
     ptrd = tmp._data + (ptrd - img._data);
     tmp.move_to(img);
   }
-  std::memcpy(ptrd,_data,_width*sizeof(T));
-  ptrd+=_width;
+  std::memcpy(ptrd,_data,siz*sizeof(T));
+  ptrd+=siz;
   return img;
 }
 
@@ -4578,9 +4579,15 @@ CImg<char> gmic::substitute_item(const char *const source,
             is_name_found = true; ind = l; break;
           }
         if (is_name_found) { // Regular variable
-          if (__variables[ind].size()>1)
-            CImg<char>(__variables[ind].data(),(unsigned int)(__variables[ind].size() - 1)).
-              append_string_to(substituted_items,ptr_sub);
+          if (__variables[ind].size()>1) {
+            if (!std::strncmp(__variables[ind],"*store/",7)) {
+              const char *const zero = (char*)std::memchr(__variables[ind],0,__variables[ind].width());
+              CImg<char>(__variables[ind].data(),zero - __variables[ind].data()).
+                append_string_to(substituted_items,ptr_sub);
+            } else
+              CImg<char>(__variables[ind].data(),(unsigned int)(__variables[ind].size() - 1)).
+                append_string_to(substituted_items,ptr_sub);
+          }
         } else {
           for (int l = images.width() - 1; l>=0; --l)
             if (images_names[l] && !std::strcmp(images_names[l],name)) {
@@ -10512,9 +10519,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               }
             if (is_name_found) {
               try {
-                const char *start = (char*)std::memchr(__variables[vind],0,__variables[vind].width());
-                if (!start) throw CImgArgumentException(0);
-                CImgList<T>::get_unserialize(__variables[vind].get_shared_points(start + 1 - __variables[vind].data(),
+                const char *const zero = (char*)std::memchr(__variables[vind],0,__variables[vind].width());
+                if (!zero) throw CImgArgumentException(0);
+                CImgList<T>::get_unserialize(__variables[vind].get_shared_points(zero + 1 - __variables[vind].data(),
                                                                                  __variables[vind].width() - 1)).
                   move_to(g_list);
               } catch (CImgArgumentException&) {
