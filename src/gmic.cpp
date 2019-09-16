@@ -10499,7 +10499,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         if (!is_get && !is_selection && !std::strcmp("restore",command)) {
           gmic_substitute_args(true);
           if (cimg_sscanf(argument,"%4095[,a-zA-Z0-9_]%c",&(*formula=0),&end)==1 &&
-              (*formula<'0' || *formula>'9')) {
+              (*formula<'0' || *formula>'9') && *formula!=',') {
             char *current = formula, *next = std::strchr(formula,','), saved = 0;
             print(images,0,
                   "Restore image data from variable%s '%s'",
@@ -11402,12 +11402,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         if (!std::strcmp("store",command)) {
           gmic_substitute_args(false);
           if (cimg_sscanf(argument,"%4095[,a-zA-Z0-9_]%c",&(*formula=0),&end)==1 &&
-              (*formula<'0' || *formula>'9')) {
+              (*formula<'0' || *formula>'9') && *formula!=',') {
             char *current = formula, *next = std::strchr(formula,','), saved = 0;
             pattern = 1U;
-            if (next) { // Count number of specified variable names
+            if (next) // Count number of specified variable names
               for (const char *ptr = next; ptr; ptr = std::strchr(ptr,',')) { ++ptr; ++pattern; }
-            }
             print(images,0,
                   "Store image%s as variable%s '%s'",
                   gmic_selection.data(),
@@ -11416,7 +11415,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
             if (pattern!=1 && (int)pattern!=selection.height())
               error(true,images,0,0,
-                    "Command 'store': Numbers of selected images and specified arguments do not match.");
+                    "Command 'store': Specified arguments '%s' do not match numbers of selected images.");
 
             g_list.assign(selection.height());
             g_list_c.assign(g_list.size());
@@ -11441,7 +11440,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               set_variable(formula,name,variables_sizes);
             } else for (unsigned int n = 0; n<pattern; ++n) { // Assignment to multiple variables
               if (!*current)
-                error(true,images,00,
+                error(true,images,0,0,
                       "Command 'store': Empty variable name specified in arguments '%s'.",
                       gmic_argument_text());
               saved = next?*next:0;
