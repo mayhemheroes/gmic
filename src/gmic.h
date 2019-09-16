@@ -440,7 +440,9 @@ struct gmic_exception {
 };
 
 template<typename T>
-inline double gmic_mp_ext(char *const str, void *const p_list, const T& pixel_type) { return gmic::mp_ext(str,p_list,pixel_type); }
+inline double gmic_mp_ext(char *const str, void *const p_list, const T& pixel_type) {
+  return gmic::mp_ext(str,p_list,pixel_type);
+}
 inline bool *gmic_abort_ptr(bool *const p_is_abort) { return gmic::abort_ptr(p_is_abort); }
 
 #endif // #ifndef gmic_version
