@@ -11415,7 +11415,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
             if (pattern!=1 && (int)pattern!=selection.height())
               error(true,images,0,0,
-                    "Command 'store': Specified arguments '%s' do not match numbers of selected images.");
+                    "Command 'store': Specified arguments '%s' do not match numbers of selected images.",
+                    gmic_argument_text());
 
             g_list.assign(selection.height());
             g_list_c.assign(g_list.size());
