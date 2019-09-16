@@ -4753,7 +4753,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
   CImg<unsigned int> ind, ind0, ind1;
   CImg<unsigned char> g_img_uc;
-  CImg<char> name,_status;
+  CImg<char> name, _status;
   CImg<float> vertices;
   CImg<T> g_img;
 
@@ -11401,13 +11401,23 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Store.
         if (!std::strcmp("store",command)) {
           gmic_substitute_args(false);
-          *argx = 0;
-          if (cimg_sscanf(argument,"%255[a-zA-Z0-9_]%c",argx,&end)==1 &&
-              (*argx<'0' || *argx>'9')) {
+          if (cimg_sscanf(argument,"%4095[,a-zA-Z0-9_]%c",&(*formula=0),&end)==1 &&
+              (*formula<'0' || *formula>'9')) {
+            char *current = formula, *next = std::strchr(formula,','), saved = 0;
+            pattern = 1U;
+            if (next) { // Count number of specified variable names
+              for (const char *ptr = next; ptr; ptr = std::strchr(ptr,',')) { ++ptr; ++pattern; }
+            }
             print(images,0,
-                  "Store image%s as variable '%s'",
+                  "Store image%s as variable%s '%s'",
                   gmic_selection.data(),
+                  next?"s":"",
                   gmic_argument_text_printed());
+
+            if (pattern!=1 && (int)pattern!=selection.height())
+              error(true,images,0,0,
+                    "Command 'store': Numbers of selected images and specified arguments do not match.");
+
             g_list.assign(selection.height());
             g_list_c.assign(g_list.size());
             cimg_forY(selection,l) {
@@ -11420,16 +11430,41 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 images_names[uind].move_to(g_list_c[l]);
               }
             }
-            CImg<char> content = (g_list_c>'x');
-            content.resize(content.width() + 4,1,1,1,0,0,1);
-            content[0] = 'G'; content[1] = 'M'; content[2] = 'Z'; content[3] = 0;
-            content.move_to(g_list);
 
+            if (pattern==1) { // Assignment to a single variable
+              (g_list_c>'x').move_to(name).resize(name.width() + 4,1,1,1,0,0,1);
+              name[0] = 'G'; name[1] = 'M'; name[2] = 'Z'; name[3] = 0;
+              name.move_to(g_list);
+              g_list.get_serialize(false).unroll('x').move_to(name);
+              name.resize(name.width() + 9 + std::strlen(formula),1,1,1,0,0,1);
+              std::sprintf(name,"%c*store/%s",gmic_store,_formula.data());
+              set_variable(formula,name,variables_sizes);
+            } else for (unsigned int n = 0; n<pattern; ++n) { // Assignment to multiple variables
+              if (!*current)
+                error(true,images,00,
+                      "Command 'store': Empty variable name specified in arguments '%s'.",
+                      gmic_argument_text());
+              saved = next?*next:0;
+              if (next) *next = 0;
+
+              CImgList<T> tmp(2);
+              g_list_c[n].move_to(name).resize(name.width() + 4,1,1,1,0,0,1);
+              name[0] = 'G'; name[1] = 'M'; name[2] = 'Z'; name[3] = 0;
+              name.move_to(tmp[1]);
+              g_list[n].move_to(tmp[0]);
+              tmp.get_serialize(false).unroll('x').move_to(name);
+              name.resize(name.width() + 9 + std::strlen(current),1,1,1,0,0,1);
+              std::sprintf(name,"%c*store/%s",gmic_store,current);
+              set_variable(current,name,variables_sizes);
+
+              if (saved) { // other variables names follow
+                *next = saved;
+                current = next + 1;
+                next = std::strchr(next + 1,',');
+              }
+            }
             if (!is_get) remove_images(images,images_names,selection,0,selection.height() - 1);
-            g_list.get_serialize(false).unroll('x').move_to(content);
-            content.resize(content.width() + 9 + std::strlen(argx),1,1,1,0,0,1);
-            std::sprintf(content,"%c*store/%s",gmic_store,_argx.data());
-            set_variable(argx,content,variables_sizes);
+            name.assign();
             g_list.assign();
             g_list_c.assign();
           } else arg_error("store");
