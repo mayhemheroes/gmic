@@ -10498,53 +10498,69 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Restore.
         if (!is_get && !is_selection && !std::strcmp("restore",command)) {
           gmic_substitute_args(true);
-          if (cimg_sscanf(argument,"%255[a-zA-Z0-9_]%c",argx,&end)==1 &&
-              (*argx<'0' || *argx>'9')) {
+          if (cimg_sscanf(argument,"%4095[,a-zA-Z0-9_]%c",&(*formula=0),&end)==1 &&
+              (*formula<'0' || *formula>'9')) {
+            char *current = formula, *next = std::strchr(formula,','), saved = 0;
             print(images,0,
-                  "Restore image data from variable '%s'",
+                  "Restore image data from variable%s '%s'",
+                  next?"s":"",
                   gmic_argument_text_printed());
-            const unsigned int hash = hashcode(argument,true);
-            const bool
-              is_global = *argument=='_',
-              is_thread_global = is_global && argument[1]=='_';
-            const int lind = is_global?0:(int)variables_sizes[hash];
-            int vind = 0;
-            if (is_thread_global) cimg::mutex(30);
-            const CImgList<char>
-              &__variables = *variables[hash],
-              &__variables_names = *variables_names[hash];
-            bool is_name_found = false;
-            for (int l = __variables.width() - 1; l>=lind; --l)
-              if (!std::strcmp(__variables_names[l],argument)) {
-                is_name_found = true; vind = l; break;
-              }
-            if (is_name_found) {
-              try {
-                const char *const zero = (char*)std::memchr(__variables[vind],0,__variables[vind].width());
-                if (!zero) throw CImgArgumentException(0);
-                CImgList<T>::get_unserialize(__variables[vind].get_shared_points(zero + 1 - __variables[vind].data(),
-                                                                                 __variables[vind].width() - 1)).
-                  move_to(g_list);
-              } catch (CImgArgumentException&) {
+            do {
+              if (!*current)
                 error(true,images,0,0,
-                      "Command 'restore': Variable '%s' has not been assigned with image data.",
+                      "Command 'restore': Empty variable name specified in arguments '%s'.",
                       gmic_argument_text());
+              saved = next?*next:0;
+              if (next) *next = 0;
+              const unsigned int hash = hashcode(current,true);
+              const bool
+                is_global = *current=='_',
+                is_thread_global = is_global && current[1]=='_';
+              const int lind = is_global?0:(int)variables_sizes[hash];
+              int vind = 0;
+              if (is_thread_global) cimg::mutex(30);
+              const CImgList<char>
+                &__variables = *variables[hash],
+                &__variables_names = *variables_names[hash];
+              bool is_name_found = false;
+              for (int l = __variables.width() - 1; l>=lind; --l)
+                if (!std::strcmp(__variables_names[l],current)) {
+                  is_name_found = true; vind = l; break;
+                }
+              if (is_name_found) {
+                try {
+                  const char *const zero = (char*)std::memchr(__variables[vind],0,__variables[vind].width());
+                  if (!zero) throw CImgArgumentException(0);
+                  CImgList<T>::get_unserialize(__variables[vind].get_shared_points(zero + 1 - __variables[vind].data(),
+                                                                                   __variables[vind].width() - 1)).
+                    move_to(g_list);
+                } catch (CImgArgumentException&) {
+                  error(true,images,0,0,
+                        "Command 'restore': Variable '%s' has not been assigned with image data.",
+                        current);
+                }
+                g_list_c = g_list.back().get_split(CImg<char>::vector(0),0,false);
+                g_list_c.remove(0);
+                cimglist_for(g_list_c,q) g_list_c[q].resize(1,g_list_c[q].height() + 1,1,1,0).unroll('x');
+                if (g_list_c.size()!=g_list.size() - 1)
+                  error(true,images,0,0,
+                        "Command 'restore': Invalid binary encoding of variable '%s'.",
+                         current);
+                else if (g_list_c) {
+                  g_list.remove().move_to(images,~0U);
+                  g_list_c.move_to(images_names,~0U);
+                  is_change = true;
+                }
+              } else error(true,images,0,0,
+                           "Command 'restore': Variable '%s' has not been assigned.",
+                           current);
+
+              if (saved) { // other variables names follow
+                *next = saved;
+                current = next + 1;
+                next = std::strchr(next + 1,',');
               }
-              g_list_c = g_list.back().get_split(CImg<char>::vector(0),0,false);
-              g_list_c.remove(0);
-              cimglist_for(g_list_c,q) g_list_c[q].resize(1,g_list_c[q].height() + 1,1,1,0).unroll('x');
-              if (g_list_c.size()!=g_list.size() - 1)
-                error(true,images,0,0,
-                      "Command 'restore': Invalid binary encoding of variable '%s'.",
-                      gmic_argument_text());
-              else if (g_list_c) {
-                g_list.remove().move_to(images,~0U);
-                g_list_c.move_to(images_names,~0U);
-                is_change = true;
-              }
-            } else error(true,images,0,0,
-                         "Command 'restore': Variable '%s' has not been assigned.",
-                         gmic_argument_text());
+            } while (saved);
           } else arg_error("restore");
           ++position; continue;
         }
