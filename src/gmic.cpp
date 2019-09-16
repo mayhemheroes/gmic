@@ -2914,8 +2914,9 @@ const char *gmic::set_variable(const char *const name, const char *const value,
     &__variables = *variables[hash],
     &__variables_names = *variables_names[hash];
 
-  if ((!operation || operation=='=') && !std::strncmp(value,"*store/",7)) { // Get value from image-encoded variable.
-    const char *const cname = value + 7;
+  if ((!operation || operation=='=') && *value==gmic_store &&
+      !std::strncmp(value + 1,"*store/",7) && value[8]) { // Get value from image-encoded variable.
+    const char *const cname = value + 8;
     const bool is_cglobal = *cname=='_';
     const unsigned int chash = hashcode(cname,true);
     const int clind = is_cglobal || !variables_sizes?0:(int)variables_sizes[chash];
@@ -2928,7 +2929,7 @@ const char *gmic::set_variable(const char *const name, const char *const value,
     if (is_name_found) {
       __cvariables[ind].get_resize(__cvariables[ind].width() + std::strlen(name) - std::strlen(cname),1,1,1,0,0,1).
         move_to(s_value);
-      std::sprintf(s_value,"*store/%s",name);
+      std::sprintf(s_value,"%c*store/%s",gmic_store,name);
     } else s_value.assign(1,1,1,1,0);
     is_name_found = false;
   } else if (!operation || operation=='=' || operation=='.') s_value.assign(value,std::strlen(value) + 1,1,1,1,true);
@@ -4579,8 +4580,9 @@ CImg<char> gmic::substitute_item(const char *const source,
           }
         if (is_name_found) { // Regular variable
           if (__variables[ind].size()>1) {
-            if (!std::strncmp(__variables[ind],"*store/",7)) {
-              const char *const zero = (char*)std::memchr(__variables[ind],0,__variables[ind].width());
+            if (*(__variables[ind])==gmic_store && !std::strncmp(__variables[ind].data() + 1,"*store/",7)
+                && __variables(ind,8)) {
+              const char *const zero = (char*)std::memchr(__variables[ind].data() + 8,0,__variables[ind].width());
               CImg<char>(__variables[ind].data(),zero - __variables[ind].data(),1,1,1,true).
                 append_string_to(substituted_items,ptr_sub);
             } else
@@ -11409,8 +11411,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
             if (!is_get) remove_images(images,images_names,selection,0,selection.height() - 1);
             g_list.get_serialize(false).unroll('x').move_to(content);
-            content.resize(content.width() + 8 + std::strlen(argx),1,1,1,0,0,1);
-            std::sprintf(content,"*store/%s",_argx.data());
+            content.resize(content.width() + 9 + std::strlen(argx),1,1,1,0,0,1);
+            std::sprintf(content,"%c*store/%s",gmic_store,_argx.data());
             set_variable(argx,content,variables_sizes);
             g_list.assign();
             g_list_c.assign();
