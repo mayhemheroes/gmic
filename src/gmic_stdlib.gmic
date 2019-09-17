@@ -4224,6 +4224,10 @@ _outputx :
 #@cli : Restore images previously stored in the specified named variables, and insert them at the end
 #@cli : of the image list. Note that restoring image data does not remove the data from
 #@cli : the corresponding named variable (use 'variable_name=' to explicitely delete a variable content).
+# Custom version of natives commands 'store' and 'restore' back-compatible for 2.7.0 and 2.7.1.
+restore : # <- Custom version of the command for G'MIC version <2.7.2
+  e[^-1] "Restore image data from variable"${"v - if $#>1 u s else u \"\" fi v +"}" '$*'."
+  v - $=arg l[] repeat $# base642img ${_${arg{$>+1}}} done endl v +
 
 #@cli screen : _x0[%],_y0[%],_x1[%],_y1[%] : (+)
 #@cli : Take screenshot, optionally grabbed with specified coordinates, and insert it
@@ -4603,6 +4607,16 @@ _sample :
 #@cli : in the selection, and each selected image is assigned to each specified named variable.
 #@cli : Use command 'restore' to get the stored images back in the list.
 #@cli : $ sample eagle,earth store img1,img2 restore img2,img1
+store : # <- Custom version of the command for G'MIC version <2.7.2
+  e[^-1] "Store image$? as variable"${"v - if $#>1 u s else u \"\" fi v +"}" '$*'."
+  v -
+  if $#==1 # Assign to single variable
+    serialize auto,1,1 _$1=${"uchar2base64. 0"} rm
+  else     # Assign to multiple variables
+    if $#!=$! error[0--3] "Command 'store': Specified arguments '$*' do not match numbers of selected images." fi
+    $=arg repeat $! l[$<] serialize auto,1,1 _${arg{$<+1}}=${"uchar2base64. 0"} rm endl done
+  fi
+  v +
 
 #@cli string : "string"
 #@cli : Insert new image containing the ascii codes of specified string.
