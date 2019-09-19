@@ -2079,16 +2079,20 @@ _display2d :
     xsel0,ysel0,xsel1,ysel1,notification=
     wsiz0=${fitscreen\ .,128,85%} wnormalization0={*,n}
     w[] {{*,w}?[-1,-1]:[$wsiz0]},0,$nm" ("{w}x{h}x{d}x{s}")"
+
     cursor[0] 0
-    eval[0] "> # Detect if image has nan of inf values.
-      begin(x0 = w; y0 = h; x1 = y1 = -1);
-      isinf(i) || isnan(i)?(
-        x<x0?(x0 = x);
-        y<y0?(y0 = y);
-        x>x1?(x1 = x);
-        y>y1?(y1 = y);
-      );
-      end(ext('xin0,yin0,xin1,yin1=',x0,',',y0,',',x1,',',y1))"
+    xin0,yin0,xin1,yin1=0,0,{0,[w,h]}
+    if {isnan(ia)" || "isinf(im)" || "isinf(iM)} # Detect if image has nan of inf values, and find bounding box
+      eval[0] "*
+        begin(x0 = w; y0 = h; x1 = y1 = -1);
+        isinf(i) || isnan(i)?critical(
+          x<x0?(x0 = x);
+          y<y0?(y0 = y);
+          x>x1?(x1 = x);
+          y>y1?(y1 = y);
+        );
+        end(ext('xin0,yin0,xin1,yin1=',x0,',',y0,',',x1,',',y1))"
+    fi
 
     # Start event loop.
     for {*}" && "!{*,ESC}
@@ -30614,14 +30618,14 @@ fx_smooth_abstract_preview :
 #@gui : Style Variations = choice("None","All XY-flips","All 90&deg; rotations","All 45&deg; rotations")
 #@gui : Preview Progression While Running = bool(1)
 #@gui : sep = separator(), note = note{"<small><b><span color="blue">Style/Target Parameters:</span></b></small>"}
-#@gui : Fidelity to Target (Finest) = float(0.15,0,5)
+#@gui : Fidelity to Target (Finest) = float(0.5,0,5)
 #@gui : Fidelity to Target (Coarsest) = float(2,0,5)
 #@gui : Fidelity Smoothness (Finest) = float(3,0,5)
 #@gui : Fidelity Smoothness (Coarsest) = float(0.5,0,5)
 #@gui : Fidelity Chromaticity = float(0.1,0,1)
 #@gui : sep = separator(), note = note{"<small><b><span color="blue">Image Matching Parameters:</span></b></small>"}
 #@gui : Match Colors With = choice(2,"Nothing","Gamma Balance","Histogram Transfer")
-#@gui : Colorspace = choice{5,"sRGB","Linear RGB","YCbCr","YCbCr (Luma Only)","YCbCr (Chroma Only)","Lab",\
+#@gui : Colorspace = choice{5,"sRGB","Linear RGB","YCbCr","YCbCr (Luma Only)","YCbCr (Chroma Only)","Lab",
 #@gui : "Lab (Luma Only)","Lab (Chroma Only)"}
 #@gui : Keep Color Channels = choice{"All","Luminance Only (YCbCr)","Luminance Only (Lab)","Chrominances Only (CbCr)",\
 #@gui : "Chrominances Only (ab)"}
