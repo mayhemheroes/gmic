@@ -5748,7 +5748,7 @@ update_server :
             "#  Generated on : "\
             {date(0)}"/"\
             {`v=date(1);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}"/"\
-            {`v=date(2);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}" "\
+            {`v=date(2);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}", "\
             {`v=date(4);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}":"\
             {`v=date(5);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}\n\
             "#"\n\n'})
@@ -5779,8 +5779,11 @@ update_server :
 
   # Display list of filters (sorted alphabetically) on stdout.
   v + e[] "> Output list of filters in stdout.\n" v -
-  echo_stdout "*** List of filters in the G\47MIC plug-in ("$nb_filters" filters, on "{date(0)}/{date(1)}/{date(2)}\
-              " "{date(4)}:{date(5)}") ***\n"
+  echo_stdout "*** List of filters in the G\47MIC plug-in ("$nb_filters" filters, on "
+              {`v=date(1);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}"/"\
+              {`v=date(2);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}", "\
+              {`v=date(4);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}":"\
+              {`v=date(5);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}") ***\n"
   echo_stdout "* List of filters, sorted by path:\n"
   repeat $! l[$>]
     ({'{0,n}'}) if i!=_'!'
@@ -7673,21 +7676,21 @@ polar2complex :
     r[1] [0],3 +sin. cos.. *. ... *[-3,-2]
   endl done v +
 
-#@cli quantize : nb_levels>=1,_keep_values={ 0 | 1 },_is_uniform={ 0 | 1 },_use_kmeans={ 0 | 1 }
+#@cli quantize : nb_levels>=1,_keep_values={ 0 | 1 },_quantization_type={ -1=median-cut | 0=k-means | 1=uniform }
 #@cli : Quantize selected images.
-#@cli : Default value: 'keep_values=1' and 'is_uniform=0'.
+#@cli : Default value: 'keep_values=1' and 'quantization_type=0'.
 #@cli : $ image.jpg luminance +quantize 3
 #@cli : $ 200,200,1,1,'cos(x/10)*sin(y/10)' +quantize[0] 6 +quantize[0] 4 +quantize[0] 3 +quantize[0] 2
-quantize : check "isint($1) && $1>=1 && isbool(${2=1}) && isbool(${3=0}) && isbool(${4=1})"
+quantize : check "isint($1) && $1>=1 && isbool(${2=1}) && isint(${3=0}) && $3>=-1 && $3<=1"
   e[^-1] "Quantize image$? using $1 levels, "${arg\ 1+!$2,with,without}" keeping value range."
   v - repeat $! l[$>]
-    if $3 # Uniform quantization.
+    if $3==1 # Uniform quantization.
       if s==1 # Greyscale image.
         if $2 mM={[im,iM]} n 0,$1 round 1,-1 min {$1-1} n $mM
         else n 0,$1 round 1,-1 min {$1-1} fi
       else mM={[im,iM]} uniform_distribution $1,{s} n. $mM index.. .,0,$2 rm.
       fi
-    else +colormap $1,$4,1 index.. .,0,$2 rm. # Non-uniform quantization.
+    else +colormap $1,{!$3},1 index.. .,0,$2 rm. # Non-uniform quantization.
     fi
   endl done v +
 
@@ -18335,7 +18338,7 @@ cartoon : skip ${1=3},${2=150},${3=20},${4=0.25},${5=1.5},${6=8}
   b $1 sharpen $2,1 c 0,255 n 0,255
   if $4 +edges $3 b. $4 >=. 0.9 else 100%,100%,1,1,1 fi
   rgb2lab.. s.. c *[-3,-2] $5 a[-4--2] c lab2rgb..
-  quantize.. $6,1,0,0
+  quantize.. $6,1,-1
   n.. 0,255 *
   endl a c endl done v +
 
