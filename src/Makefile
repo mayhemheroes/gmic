@@ -404,10 +404,10 @@ lib:
 _lib: libgmic.o use_libgmic.cpp
 	ar rcs libgmic.a libgmic.o
 ifeq ($(OS),Darwin)
-	$(CXX) -shared -o libgmic.so libgmic.o $(LIBS)
+	$(CXX) -shared -std=c++11 -pedantic -o libgmic.so libgmic.o $(LIBS)
 else
-	$(CXX) -shared -Wl,-soname,libgmic.so.$(VERSION1) -o libgmic.so libgmic.o $(LIBS)
-	$(CXX) -o use_libgmic use_libgmic.cpp -L. -lgmic $(LIBS)
+	$(CXX) -shared -std=c++11 -pedantic -Wl,-soname,libgmic.so.$(VERSION1) -o libgmic.so libgmic.o $(LIBS)
+	$(CXX) -o use_libgmic use_libgmic.cpp -std=c++11 -pedantic -L. -lgmic $(LIBS)
 endif
 
 libgmic.o: gmic.cpp gmic.h gmic_stdlib.h CImg.h
