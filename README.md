@@ -46,6 +46,17 @@ Other open-source projects are known to use some of the <b><font color="#000066"
 
 -----------------------
 
+## Packaging Status
+
+<details>
+  <summary>Expand to see the packaging status of gmic...</summary>
+
+[![Packaging status](https://repology.org/badge/vertical-allrepos/gmic.svg?header=gmic)](https://repology.org/project/gmic/versions)
+
+</details>
+
+-----------------------
+
 ## Give Us Support !
 
   If you appreciate what we do on G'MIC, please consider supporting us !
