@@ -48,6 +48,8 @@ Other open-source projects are known to use some of the <b><font color="#000066"
 
 ## Packaging Status
 
+[![Packaging status](https://repology.org/badge/tiny-repos/gmic.svg)](https://repology.org/project/gmic/versions)
+[![latest packaged version(s)](https://repology.org/badge/latest-versions/gmic.svg)](https://repology.org/project/gmic/versions)
 <details>
   <summary>Expand to see the packaging status of G'MIC...</summary>
 
