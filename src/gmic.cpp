@@ -12612,6 +12612,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             posx = posy = -1;
             sep0 = sep1 = 0;
           }
+
           if (dimh==0) dimw = 0;
           strreplace_fw(title);
           cimg::strunescape(title);
