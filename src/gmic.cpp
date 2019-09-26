@@ -12567,7 +12567,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             wind<10) {
           gmic_substitute_args(false);
           int norm = -1, fullscreen = -1;
-          float dimw = -1, dimh = -1, posx = -1, posy = -1;
+          float dimw = -1, dimh = -1, posx = cimg::type<float>::inf(), posy = cimg::type<float>::inf();
           sep0 = sep1 = sepx = sepy = *argx = *argy = *argz = *argc = *title = 0;
           if ((cimg_sscanf(argument,"%255[0-9.eE%+-]%c",
                            argx,&end)==1 ||
@@ -12609,13 +12609,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           else {
             dimw = dimh = -1;
             norm = fullscreen = -1;
-            posx = posy = -1;
+            posx = posy = cimg::type<float>::inf();
             sep0 = sep1 = 0;
           }
-
-          if (dimh==0) dimw = 0;
-          strreplace_fw(title);
-          cimg::strunescape(title);
+          if (dimw==0 || dimh==0) dimw = dimh = 0;
+          if (*title) { strreplace_fw(title); cimg::strunescape(title); }
 
           if (!is_display_available) {
             print(images,0,
@@ -12623,6 +12621,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   gmic_selection.data(),
                   wind,cimg_display?"available":"support");
           } else {
+
             // Get images to display and compute associated optimal size.
             unsigned int optw = 0, opth = 0;
             if (dimw && dimh) cimg_forY(selection,l) {
@@ -12638,7 +12637,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             dimw = dimw<0?-1:cimg::round(sep0=='%'?optw*dimw/100:dimw);
             dimh = dimh<0?-1:cimg::round(sep1=='%'?opth*dimh/100:dimh);
 
-            const bool is_move = posx!=-1 || posy!=-1;
+            const bool is_move = !cimg::type<float>::is_inf(posx) && !cimg::type<float>::is_inf(posy);
             CImgDisplay &disp = display_window(wind);
 
             if (!dimw || !dimh) { // Close
@@ -12648,9 +12647,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             } else {
               if (disp) { // Update
                 if (!selection) disp.show();
-                disp.resize(dimw>0?(int)dimw:disp.window_width(),
-                            dimh>0?(int)dimh:disp.window_height(),
-                            false);
+                if (dimw>=0 || dimh>=0)
+                  disp.resize(dimw>0?(int)dimw:disp.window_width(),
+                              dimh>0?(int)dimh:disp.window_height(),
+                              false);
                 if (is_move) {
                   if (sepx=='%') posx*=(CImgDisplay::screen_width() - disp.window_width())/100.f;
                   if (sepy=='%') posy*=(CImgDisplay::screen_height() - disp.window_height())/100.f;
@@ -12676,28 +12676,30 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   else { disp._min = 0; disp._max = 255; }
                 }
               }
-              if (is_move) print(images,0,
-                                 "Display image%s in %dx%d %sdisplay window [%d], "
-                                 "with%snormalization, "
-                                 "%sfullscreen, at position (%s,%s) and title '%s'.",
-                                 gmic_selection.data(),
-                                 disp.width(),disp.height(),disp.is_fullscreen()?"fullscreen ":"",
-                                 wind,
-                                 disp.normalization()==0?"out ":disp.normalization()==1?" ":
-                                 disp.normalization()==2?" 1st-time ":" auto-",
-                                 disp.is_fullscreen()?"":"no ",
-                                 argz,argc,
-                                 disp.title());
-              else print(images,0,
-                         "Display image%s in %dx%d %sdisplay window [%d], with%snormalization, "
-                         "%sfullscreen and title '%s'.",
-                         gmic_selection.data(),
-                         disp.width(),disp.height(),disp.is_fullscreen()?"fullscreen ":"",
-                         wind,
-                         disp.normalization()==0?"out ":disp.normalization()==1?" ":
-                         disp.normalization()==2?" 1st-time ":" auto-",
-                         disp.is_fullscreen()?"":"no ",
-                         disp.title());
+              if (is_move)
+                print(images,0,
+                      "Display image%s in %dx%d %sdisplay window [%d], "
+                      "with%snormalization, "
+                      "%sfullscreen, at position (%s,%s) and title '%s'.",
+                      gmic_selection.data(),
+                      disp.width(),disp.height(),disp.is_fullscreen()?"fullscreen ":"",
+                      wind,
+                      disp.normalization()==0?"out ":disp.normalization()==1?" ":
+                      disp.normalization()==2?" 1st-time ":" auto-",
+                      disp.is_fullscreen()?"":"no ",
+                      argz,argc,
+                      disp.title());
+              else
+                print(images,0,
+                      "Display image%s in %dx%d %sdisplay window [%d], with%snormalization, "
+                      "%sfullscreen and title '%s'.",
+                      gmic_selection.data(),
+                      disp.width(),disp.height(),disp.is_fullscreen()?"fullscreen ":"",
+                      wind,
+                      disp.normalization()==0?"out ":disp.normalization()==1?" ":
+                      disp.normalization()==2?" 1st-time ":" auto-",
+                      disp.is_fullscreen()?"":"no ",
+                      disp.title());
               if (g_list) g_list.display(disp);
             }
             g_list.assign();
