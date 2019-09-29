@@ -9399,9 +9399,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             g_list_f.assign();
           } else if (!std::strcmp(uext,"cpp") || !std::strcmp(uext,"c") ||
                      !std::strcmp(uext,"hpp") || !std::strcmp(uext,"h") ||
-                     !std::strcmp(uext,"pan") || !std::strcmp(uext,"pnk")) {
+                     !std::strcmp(uext,"pan") || !std::strcmp(uext,"pnk") ||
+                     !std::strcmp(uext,"pgm") || !std::strcmp(uext,"ppm") ||
+                     !std::strcmp(uext,"ppm")) {
 
-            // .cpp, .c, .hpp, .h, .pan or .pnk file.
+            // .cpp, .c, .hpp, .h, .pan, .pnk, .pgm, .ppm or .pnm file.
             const char *
               stype = (cimg_sscanf(options,"%255[a-z64]%c",&(*argx=0),&(end=0))==1 ||
                        (cimg_sscanf(options,"%255[a-z64]%c",&(*argx=0),&end)==2 && end==','))?
