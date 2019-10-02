@@ -40447,6 +40447,7 @@ fx_smooth_bilateral_preview :
   gui_split_preview "fx_smooth_bilateral $*",${-3--1}
 
 #@gui Smooth [Guided] : fx_smooth_guided, fx_smooth_guided_preview(0)
+#@gui : Guide as = choice("Self","Top Layer","Bottom Layer")
 #@gui : Radius = int(5,1,100)
 #@gui : Smoothness = float(30,0,512)
 #@gui : Iterations = int(1,1,10)
@@ -40465,11 +40466,28 @@ fx_smooth_bilateral_preview :
 #@gui : Preview Split = point(50,50,0,0,200,200,200,0,10)_0
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperl&#233;</i>.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-#@gui : Latest Update: <i>2014/29/10</i>.</small>")
-fx_smooth_guided : skip ${5=0},${6=0}
-  ac "repeat $3 guided $1,$2 done",$4
+#@gui : Latest Update: <i>2019/10/02</i>.</small>")
+fx_smooth_guided : skip ${6=0},${7=0}
+  if $1" && "!narg($_guide)
+    if $!<2 gui_warning_preview "Missing guide layer" return fi
+    store[{$1==1?0:-1}] _guide
+  fi
+  if $1==0 # Self-guide
+    ac "repeat $4 guided $2,$3 done",$5
+  elif $1==1 # Guide as top layer
+    ac "restore _guide r. ..,..,1,100%,3 repeat $4 guided[0] [1],$2,$3 done rm.",$5
+    if !narg($_is_preview) restore _guide mv. 0 fi
+  else # Guide as bottom layer
+    ac "restore _guide r. ..,..,1,100%,3 repeat $4 guided[0] [1],$2,$3 done rm.",$5
+    if !narg($_is_preview) restore _guide fi
+  fi
 
 fx_smooth_guided_preview :
+  if $1" && "!narg($_guide)
+    if $!<2 gui_warning_preview "Missing guide layer" return fi
+    store[{$1==1?0:-1}] _guide
+  fi
+  _is_preview=1
   gui_split_preview "fx_smooth_guided $*",${-3--1}
 
 #@gui Smooth [Diffusion] : fx_smooth_diffusion, fx_smooth_diffusion_preview(0)
