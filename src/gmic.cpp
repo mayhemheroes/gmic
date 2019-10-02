@@ -12649,10 +12649,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             } else {
               if (disp) { // Update
                 if (!selection) disp.show();
-                if (dimw>=0 || dimh>=0)
-                  disp.resize(dimw>0?(int)dimw:disp.window_width(),
-                              dimh>0?(int)dimh:disp.window_height(),
-                              false);
+                disp.resize(dimw>0?(int)dimw:disp.window_width(),
+                            dimh>0?(int)dimh:disp.window_height(),
+                            false);
                 if (is_move) {
                   if (sepx=='%') posx*=(CImgDisplay::screen_width() - disp.window_width())/100.f;
                   if (sepy=='%') posy*=(CImgDisplay::screen_height() - disp.window_height())/100.f;
