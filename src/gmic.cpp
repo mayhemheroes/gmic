@@ -13625,8 +13625,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       CImg<char> indicesy(256), indicesz(256), indicesc(256);
       float dx = 0, dy = 1, dz = 1, dc = 1, nb = 1;
       CImg<unsigned int> indx, indy, indz, indc;
-      CImgList<char> input_images_names;
-      CImgList<T> input_images;
       sepx = sepy = sepz = sepc = *indices = *indicesy = *indicesz = *indicesc = *argx = *argy = *argz = *argc = 0;
 
       CImg<char> arg_input(argument,(unsigned int)std::strlen(argument) + 1);
@@ -13640,9 +13638,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Empty image.
         print(images,0,"Input empty image at position%s",
               _gmic_selection.data());
-        input_images.assign(1);
-        CImg<char>::string("[empty]").move_to(input_images_names);
-
+        g_list.assign(1);
+        CImg<char>::string("[empty]").move_to(g_list_c);
 
       } else if ((cimg_sscanf(arg_input,"[%255[a-zA-Z_0-9%.eE%^,:+-]%c%c",indices,&sep,&end)==2 &&
                   sep==']') ||
@@ -13664,8 +13661,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 s_tmp.data(),
                 _gmic_selection.data());
         for (unsigned int i = 0; i<(unsigned int)nb; ++i) cimg_foroff(inds,l) {
-            input_images.insert(gmic_check(images[inds[l]]));
-            input_images_names.insert(images_names[inds[l]].get_copymark());
+            g_list.insert(gmic_check(images[inds[l]]));
+            g_list_c.insert(images_names[inds[l]].get_copymark());
           }
       } else if ((sep=0,true) &&
                  (cimg_sscanf(arg_input,"%255[][a-zA-Z0-9_.eE%+-]%c",
@@ -13744,9 +13741,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         if (s_values) {
           new_image.fill(s_values.data(),true,true,&images,&images);
           cimg_snprintf(title,_title.width(),"[image of '%s']",s_values.data());
-          CImg<char>::string(title).move_to(input_images_names);
-        } else { new_image.fill((T)0); CImg<char>::string("[unnamed]").move_to(input_images_names); }
-        new_image.move_to(input_images);
+          CImg<char>::string(title).move_to(g_list_c);
+        } else { new_image.fill((T)0); CImg<char>::string("[unnamed]").move_to(g_list_c); }
+        new_image.move_to(g_list);
 
       } else if (*arg_input=='(' && arg_input[std::strlen(arg_input) - 1]==')') {
 
@@ -13793,8 +13790,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         print(images,0,"Input image at position%s, with values %s",
               _gmic_selection.data(),
               gmic_argument_text_printed());
-        img.move_to(input_images);
-        arg_input.move_to(input_images_names);
+        img.move_to(g_list);
+        arg_input.move_to(g_list_c);
 
       } else if (*arg_input==gmic_store &&
                  cimg_sscanf(arg_input.data() + 1,"*store/%255[a-zA-Z0-9_]%c",&(*argx=0),&end)==1 &&
@@ -13842,10 +13839,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         } else error(true,images,0,0,
                      "Command 'input': Variable '%s' has not been assigned.",
                      argx);
-
-        g_list.move_to(input_images);
-        g_list_c.move_to(input_images_names);
-
       } else {
 
         // Input filename.
@@ -13929,8 +13922,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           cimg::fclose(file);
         }
         if (!is_stdin && file && _siz==0) { // Empty file -> Insert an empty image
-          input_images_names.insert(__filename0);
-          input_images.insert(1);
+          g_list_c.insert(__filename0);
+          g_list.insert(1);
         } else if (!cimg::strcasecmp("off",ext) || (file_type && !std::strcmp(file_type,"off"))) {
 
           // 3D object .off file.
@@ -13944,10 +13937,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
           CImg<float>::get_load_off(primitives,g_list_f,filename).move_to(vertices);
           const CImg<float> opacities(1,primitives.size(),1,1,1);
-          vertices.object3dtoCImg3d(primitives,g_list_f,opacities,false).move_to(input_images);
+          vertices.object3dtoCImg3d(primitives,g_list_f,opacities,false).move_to(g_list);
           primitives.assign();
           g_list_f.assign();
-          input_images_names.insert(__filename0);
+          g_list_c.insert(__filename0);
         } else if (!cimg::strcasecmp(ext,"cimg") && *options) {
 
           // Part of a .cimg file (non-compressed).
@@ -13981,56 +13974,56 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                     print(images,0,"Input crop [%d] -> [%d] of file '%s' at position%s",
                           (int)n0,(int)n1,
                           _filename0,_gmic_selection.data());
-                    input_images.load_cimg(filename,
-                                           (unsigned int)n0,(unsigned int)n1,
-                                           0U,0U,0U,0U,~0U,~0U,~0U,~0U);
+                    g_list.load_cimg(filename,
+                                     (unsigned int)n0,(unsigned int)n1,
+                                     0U,0U,0U,0U,~0U,~0U,~0U,~0U);
                   } else {
                     print(images,0,"Input crop [%d](%d) -> [%d](%d) of file '%s' at position%s",
                           (int)n0,(int)x0,(int)n1,(int)x1,
                           _filename0,_gmic_selection.data());
-                    input_images.load_cimg(filename,
-                                           (unsigned int)n0,(unsigned int)n1,
-                                           (unsigned int)x0,0U,0U,0U,
-                                           (unsigned int)x1,~0U,~0U,~0U);
+                    g_list.load_cimg(filename,
+                                     (unsigned int)n0,(unsigned int)n1,
+                                     (unsigned int)x0,0U,0U,0U,
+                                     (unsigned int)x1,~0U,~0U,~0U);
                   }
                 } else {
                   print(images,0,"Input crop [%d](%d,%d) -> [%d](%d,%d) of file '%s' at position%s",
                         (int)n0,(int)n1,(int)x0,(int)y0,(int)x1,(int)y1,
                         _filename0,_gmic_selection.data());
-                  input_images.load_cimg(filename,
-                                         (unsigned int)n0,(unsigned int)n1,
-                                         (unsigned int)x0,(unsigned int)y0,0U,0U,
-                                         (unsigned int)x1,(unsigned int)y1,~0U,~0U);
+                  g_list.load_cimg(filename,
+                                   (unsigned int)n0,(unsigned int)n1,
+                                   (unsigned int)x0,(unsigned int)y0,0U,0U,
+                                   (unsigned int)x1,(unsigned int)y1,~0U,~0U);
                 }
               } else {
                 print(images,0,"Input crop [%d](%d,%d,%d) -> [%d](%d,%d,%d) of file '%s' "
                       "at position%s",
                       (int)n0,(int)n1,(int)x0,(int)y0,(int)z0,(int)x1,(int)y1,(int)z1,
                       _filename0,_gmic_selection.data());
-                input_images.load_cimg(filename,
-                                       (unsigned int)n0,(unsigned int)n1,
-                                       (unsigned int)x0,(unsigned int)y0,(unsigned int)z0,0U,
-                                       (unsigned int)x1,(unsigned int)y1,(unsigned int)z1,~0U);
+                g_list.load_cimg(filename,
+                                 (unsigned int)n0,(unsigned int)n1,
+                                 (unsigned int)x0,(unsigned int)y0,(unsigned int)z0,0U,
+                                 (unsigned int)x1,(unsigned int)y1,(unsigned int)z1,~0U);
               }
             } else {
-                print(images,0,"Input crop [%d](%d,%d,%d,%d) -> [%d](%d,%d,%d,%d) of file '%s' "
-                      "at position%s",
-                      (int)n0,(int)n1,
-                      (int)x0,(int)y0,(int)z0,(int)c0,
-                      (int)x1,(int)y1,(int)z1,(int)c1,
-                      _filename0,_gmic_selection.data());
-                input_images.load_cimg(filename,
-                                       (unsigned int)n0,(unsigned int)n1,
-                                       (unsigned int)x0,(unsigned int)y0,
-                                       (unsigned int)z0,(unsigned int)c0,
-                                       (unsigned int)x1,(unsigned int)y1,
-                                       (unsigned int)z1,(unsigned int)c1);
+              print(images,0,"Input crop [%d](%d,%d,%d,%d) -> [%d](%d,%d,%d,%d) of file '%s' "
+                    "at position%s",
+                    (int)n0,(int)n1,
+                    (int)x0,(int)y0,(int)z0,(int)c0,
+                    (int)x1,(int)y1,(int)z1,(int)c1,
+                    _filename0,_gmic_selection.data());
+              g_list.load_cimg(filename,
+                               (unsigned int)n0,(unsigned int)n1,
+                               (unsigned int)x0,(unsigned int)y0,
+                               (unsigned int)z0,(unsigned int)c0,
+                               (unsigned int)x1,(unsigned int)y1,
+                               (unsigned int)z1,(unsigned int)c1);
             }
 
-            if (input_images) {
-              input_images_names.insert(__filename0);
-              if (input_images.size()>1)
-                input_images_names.insert(input_images.size() - 1,__filename0.copymark());
+            if (g_list) {
+              g_list_c.insert(__filename0);
+              if (g_list.size()>1)
+                g_list_c.insert(g_list.size() - 1,__filename0.copymark());
             }
           } else
             error(true,images,0,0,
@@ -14041,25 +14034,25 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           print(images,0,"Input file '%s' at position%s",
                 _filename0,
                 _gmic_selection.data());
-          input_images.load_cimg(filename);
+          g_list.load_cimg(filename);
           bool is_gmz = false;
-          const CImg<char> back = input_images?CImg<char>(input_images.back()):CImg<char>::empty();
+          const CImg<char> back = g_list?CImg<char>(g_list.back()):CImg<char>::empty();
           if (back.width()==1 && back.depth()==1 && back.spectrum()==1 &&
               back[0]=='G' && back[1]=='M' && back[2]=='Z' && !back[3]) {
-            input_images_names = back.get_split(CImg<char>::vector(0),0,false);
-            if (input_images_names) {
+            g_list_c = back.get_split(CImg<char>::vector(0),0,false);
+            if (g_list_c) {
               is_gmz = true;
-              input_images_names.remove(0);
-              cimglist_for(input_images_names,l)
-                input_images_names[l].resize(1,input_images_names[l].height() + 1,1,1,0).
+              g_list_c.remove(0);
+              cimglist_for(g_list_c,l)
+                g_list_c[l].resize(1,g_list_c[l].height() + 1,1,1,0).
                 unroll('x');
-              input_images.remove();
+              g_list.remove();
             }
           }
           if (!is_gmz)
             error(true,images,0,0,"Command 'input': File '%s' is not in .gmz format (magic number not found).",
                   _filename0);
-          if (input_images.size()!=input_images_names.size())
+          if (g_list.size()!=g_list_c.size())
             error(true,images,0,0,"Command 'input': File '%s' is not in .gmz format "
                   "(numbers of images and names do not match).",
                   _filename0);
@@ -14068,11 +14061,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           print(images,0,"Input file '%s' at position%s",
                 _filename0,
                 _gmic_selection.data());
-          input_images.load_cimg(filename);
-          if (input_images) {
-            input_images_names.insert(__filename0);
-            if (input_images.size()>1)
-              input_images_names.insert(input_images.size() - 1,__filename0.copymark());
+          g_list.load_cimg(filename);
+          if (g_list) {
+            g_list_c.insert(__filename0);
+            if (g_list.size()>1)
+              g_list_c.insert(g_list.size() - 1,__filename0.copymark());
           }
 
         } else if (!cimg::strcasecmp(ext,"avi") ||
@@ -14120,7 +14113,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                     _filename0,
                     _gmic_selection.data());
 
-            input_images.load_video(filename,_first_frame,_last_frame,(unsigned int)step);
+            g_list.load_video(filename,_first_frame,_last_frame,(unsigned int)step);
           } else if (cimg_sscanf(options,"%f%c",&first_frame,&end)==1 &&
                      first_frame>=0) {
             // Read a single frame.
@@ -14128,21 +14121,21 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             print(images,0,"Input frame %u of file '%s' at position%s",
                   _first_frame,_filename0,
                   _gmic_selection.data());
-            input_images.load_video(filename,_first_frame,_first_frame);
+            g_list.load_video(filename,_first_frame,_first_frame);
           } else if (!*options) {
             // Read all frames.
             print(images,0,"Input all frames of file '%s' at position%s",
                   _filename0,
                   _gmic_selection.data());
-            input_images.load_video(filename);
+            g_list.load_video(filename);
           } else
             error(true,images,0,0,
                   "Command 'input': video file '%s', invalid file options '%s'.",
                   _filename0,options.data());
-          if (input_images) {
-            input_images_names.insert(__filename0);
-            if (input_images.size()>1)
-              input_images_names.insert(input_images.size() - 1,__filename0.copymark());
+          if (g_list) {
+            g_list_c.insert(__filename0);
+            if (g_list.size()>1)
+              g_list_c.insert(g_list.size() - 1,__filename0.copymark());
           }
         } else if (!cimg::strcasecmp("raw",ext)) {
 
@@ -14188,7 +14181,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               CImg<value_type>::get_load_raw(filename, \
                                              (unsigned int)dx,(unsigned int)dy, \
                                              (unsigned int)dz,(unsigned int)dc,false,false,\
-                                             (cimg_ulong)offset).move_to(input_images);
+                                             (cimg_ulong)offset).move_to(g_list);
             gmic_load_raw(unsigned char,"uchar")
             else gmic_load_raw(unsigned char,"unsigned char")
               else gmic_load_raw(char,"char")
@@ -14207,7 +14200,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                                  "Command 'input': raw file '%s', "
                                                  "invalid specified pixel type '%s'.\n",
                                                  _filename0,stype);
-            input_images_names.insert(__filename0);
+            g_list_c.insert(__filename0);
           } else
             error(true,images,0,0,
                   "Command 'input': raw file '%s', invalid file options '%s'.",
@@ -14239,36 +14232,36 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                     ich/100,(ich/10)%10,ich%10,
                     _filename0,
                     _gmic_selection.data());
-              input_images.load_yuv(filename,(unsigned int)dx,(unsigned int)dy,ich,
-                                    (unsigned int)first_frame,(unsigned int)last_frame,
-                                    (unsigned int)step);
+              g_list.load_yuv(filename,(unsigned int)dx,(unsigned int)dy,ich,
+                              (unsigned int)first_frame,(unsigned int)last_frame,
+                              (unsigned int)step);
             } else if (err==4) { // Load a single frame
               print(images,0,"Input frames %g of YUV-%u:%u:%u file '%s' at position%s",
                     first_frame,
                     ich/100,(ich/10)%10,ich%10,
                     _filename0,
                     _gmic_selection.data());
-              input_images.load_yuv(filename,(unsigned int)dx,(unsigned int)dy,ich,
-                                    (unsigned int)first_frame,(unsigned int)first_frame);
+              g_list.load_yuv(filename,(unsigned int)dx,(unsigned int)dy,ich,
+                              (unsigned int)first_frame,(unsigned int)first_frame);
             } else { // Load all frames
               print(images,0,"Input all frames of YUV-%u:%u:%u file '%s' at position%s",
                     ich/100,(ich/10)%10,ich%10,
                     _filename0,
                     _gmic_selection.data());
-              input_images.load_yuv(filename,(unsigned int)dx,(unsigned int)dy,(unsigned int)ch);
+              g_list.load_yuv(filename,(unsigned int)dx,(unsigned int)dy,(unsigned int)ch);
             }
-            if (input_images) {
-              input_images_names.insert(__filename0);
-              if (input_images.size()>1)
-                input_images_names.insert(input_images.size() - 1,__filename0.copymark());
+            if (g_list) {
+              g_list_c.insert(__filename0);
+              if (g_list.size()>1)
+                g_list_c.insert(g_list.size() - 1,__filename0.copymark());
             }
           } else
             error(true,images,0,0,
                   "Command 'input': YUV file '%s', invalid or missing file options '%s'.",
                   _filename0,options.data());
 
-          } else if (!cimg::strcasecmp("tif",ext) || !cimg::strcasecmp("tiff",ext) ||
-                     (file_type && !std::strcmp(file_type,"tif"))) {
+        } else if (!cimg::strcasecmp("tif",ext) || !cimg::strcasecmp("tiff",ext) ||
+                   (file_type && !std::strcmp(file_type,"tif"))) {
 
           // TIFF file.
           float first_frame = 0, last_frame = 0, step = 1;
@@ -14286,14 +14279,14 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                     first_frame,last_frame,step,
                     _filename0,
                     _gmic_selection.data());
-              input_images.load_tiff(filename,(unsigned int)first_frame,(unsigned int)last_frame,
-                                     (unsigned int)step);
+              g_list.load_tiff(filename,(unsigned int)first_frame,(unsigned int)last_frame,
+                               (unsigned int)step);
             } else if (err==1) { // Load a single frame
               print(images,0,"Input frames %g of TIFF file '%s' at position%s",
                     first_frame,
                     _filename0,
                     _gmic_selection.data());
-              input_images.load_tiff(filename,(unsigned int)first_frame,(unsigned int)first_frame);
+              g_list.load_tiff(filename,(unsigned int)first_frame,(unsigned int)first_frame);
             }
           } else { // Load all frames
             if (*options) error(true,images,0,0,
@@ -14303,12 +14296,12 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             print(images,0,"Input all frames of TIFF file '%s' at position%s",
                   _filename0,
                   _gmic_selection.data());
-            input_images.load_tiff(filename);
+            g_list.load_tiff(filename);
           }
-          if (input_images) {
-            input_images_names.insert(__filename0);
-            if (input_images.size()>1)
-              input_images_names.insert(input_images.size() - 1,__filename0.copymark());
+          if (g_list) {
+            g_list_c.insert(__filename0);
+            if (g_list.size()>1)
+              g_list_c.insert(g_list.size() - 1,__filename0.copymark());
           }
         } else if (!cimg::strcasecmp("gmic",ext)) {
 
@@ -14373,7 +14366,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
           try {
             try {
-              input_images.load(filename);
+              g_list.load(filename);
             } catch (CImgIOException&) {
               if (is_network_file)
                 error(true,images,0,0,
@@ -14384,24 +14377,24 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
             // If .gmz file without extension, process images names anyway.
             bool is_gmz = false;
-            const CImg<char> back = input_images?CImg<char>(input_images.back()):CImg<char>::empty();
+            const CImg<char> back = g_list?CImg<char>(g_list.back()):CImg<char>::empty();
             if (back.width()==1 && back.depth()==1 && back.spectrum()==1 &&
                 back[0]=='G' && back[1]=='M' && back[2]=='Z' && !back[3]) {
-              input_images_names = back.get_split(CImg<char>::vector(0),0,false);
-              if (input_images_names) {
+              g_list_c = back.get_split(CImg<char>::vector(0),0,false);
+              if (g_list_c) {
                 is_gmz = true;
-                input_images_names.remove(0);
-                cimglist_for(input_images_names,l)
-                  input_images_names[l].resize(1,input_images_names[l].height() + 1,1,1,0).
+                g_list_c.remove(0);
+                cimglist_for(g_list_c,l)
+                  g_list_c[l].resize(1,g_list_c[l].height() + 1,1,1,0).
                   unroll('x');
-                input_images.remove(input_images.size() - 1);
+                g_list.remove(g_list.size() - 1);
               }
             }
 
-            if (input_images && !is_gmz) {
-              input_images_names.insert(__filename0);
-              if (input_images.size()>1) {
-                input_images_names.insert(input_images.size() - 1,__filename0.copymark());
+            if (g_list && !is_gmz) {
+              g_list_c.insert(__filename0);
+              if (g_list.size()>1) {
+                g_list_c.insert(g_list.size() - 1,__filename0.copymark());
               }
             }
 
@@ -14448,28 +14441,28 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
       if (is_verbose) {
         cimg::mutex(29);
-        if (input_images) {
-          const unsigned int last = input_images.size() - 1;
-          if (input_images.size()==1) {
-            if (input_images[0].is_CImg3d(false))
+        if (g_list) {
+          const unsigned int last = g_list.size() - 1;
+          if (g_list.size()==1) {
+            if (g_list[0].is_CImg3d(false))
               std::fprintf(cimg::output()," (%u vertices, %u primitives).",
-                           cimg::float2uint((float)input_images(0,6)),
-                           cimg::float2uint((float)input_images(0,7)));
+                           cimg::float2uint((float)g_list(0,6)),
+                           cimg::float2uint((float)g_list(0,7)));
             else
               std::fprintf(cimg::output()," (1 image %dx%dx%dx%d).",
-                           input_images[0].width(),input_images[0].height(),
-                           input_images[0].depth(),input_images[0].spectrum());
+                           g_list[0].width(),g_list[0].height(),
+                           g_list[0].depth(),g_list[0].spectrum());
           } else
             std::fprintf(cimg::output()," (%u images [0] = %dx%dx%dx%d, %s[%u] = %dx%dx%dx%d).",
-                         input_images.size(),
-                         input_images[0].width(),input_images[0].height(),
-                         input_images[0].depth(),input_images[0].spectrum(),
+                         g_list.size(),
+                         g_list[0].width(),g_list[0].height(),
+                         g_list[0].depth(),g_list[0].spectrum(),
                          last==1?"":"(...),",last,
-                         input_images[last].width(),input_images[last].height(),
-                         input_images[last].depth(),input_images[last].spectrum());
+                         g_list[last].width(),g_list[last].height(),
+                         g_list[last].depth(),g_list[last].spectrum());
         } else {
           std::fprintf(cimg::output()," (no available data).");
-          input_images_names.assign();
+          g_list_c.assign();
         }
         std::fflush(cimg::output());
         cimg::mutex(29,0);
@@ -14477,15 +14470,16 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
       for (unsigned int l = 0, lsiz = selection.height() - 1U, off = 0; l<=lsiz; ++l) {
         const unsigned int uind = selection[l] + off;
-        off+=input_images.size();
+        off+=g_list.size();
         if (l!=lsiz) {
-          images.insert(input_images,uind);
-          images_names.insert(input_images_names,uind);
+          images.insert(g_list,uind);
+          images_names.insert(g_list_c,uind);
         } else {
-          input_images.move_to(images,uind);
-          input_images_names.move_to(images_names,uind);
+          g_list.move_to(images,uind);
+          g_list_c.move_to(images_names,uind);
         }
       }
+      g_list.assign(); g_list_c.assign();
       is_change = true;
     } // End main parsing loop of _run()
 
