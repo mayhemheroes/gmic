@@ -4983,7 +4983,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           if (!is_get && (!std::strcmp("wait",command) ||
                           !std::strcmp("cursor",command)))
             selection2cimg(s_selection,10,CImgList<char>::empty(),command).move_to(selection);
-          else if (!is_get && *command=='i' && (!command[1] || !std::strcmp("input",command)))
+          else if (!is_get && ((*command=='i' && (!command[1] || !std::strcmp("input",command))) ||
+                               !std::strcmp("restore",command)))
             selection2cimg(s_selection,siz + 1,images_names,command,true).move_to(selection);
           else if (!is_get &&
                    ((*command=='e' && (!command[1] ||
@@ -10542,8 +10543,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                         "Command 'restore': Invalid binary encoding of variable '%s'.",
                          current);
                 else if (g_list_c) {
-                  g_list.remove().move_to(images,~0U);
-                  g_list_c.move_to(images_names,~0U);
+                  g_list.remove().move_to(images,selection[0]);
+                  g_list_c.move_to(images_names,selection[0]);
                   is_change = true;
                 }
               } else error(true,images,0,0,
