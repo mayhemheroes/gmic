@@ -3155,8 +3155,7 @@ gmic& gmic::add_commands(std::FILE *const file, const char *const filename,
 //-----------------------------------------------
 CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned int index_max,
                                         const CImgList<char>& names,
-                                        const char *const command, const bool is_selection,
-                                        CImg<char> *const new_name) {
+                                        const char *const command, const bool is_selection) {
 
   // Try to detect common cases to be faster.
   if (string && !*string) return CImg<unsigned int>(); // Empty selection
@@ -3217,13 +3216,9 @@ CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned
       cimglist_for(names,l) if (names[l] && !std::strcmp(names[l],name)) {
         is_selected(l) = true; is_label = true;
       }
-      if (!is_label) {
-        if (new_name) {
-          iind0 = iind1 = -1;
-          CImg<char>::string(name).move_to(*new_name);
-        } else error(true,"Command '%s': Invalid %s %c%s%c (undefined label '%s').",
-                     command,stype,ctypel,string,ctyper,name.data());
-      }
+      if (!is_label)
+        error(true,"Command '%s': Invalid %s %c%s%c (undefined label '%s').",
+              command,stype,ctypel,string,ctyper,name.data());
     } else if (cimg_sscanf(item,"%f%c%c",&ind0,&sep,&end)==2 && sep=='%') { // Single percent
       iind1 = iind0 = (int)cimg::round(ind0*((int)index_max - 1)/100) - (ind0<0?1:0);
     } else if (cimg_sscanf(item,"%f%%-%f%c%c",&ind0,&ind1,&sep,&end)==3 && sep=='%') {
@@ -4924,7 +4919,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       bool is_selection = false;
       const unsigned int siz = images._width, selsiz = _s_selection._width;
       CImg<unsigned int> selection;
-      CImg<char> new_name;
       if (is_command) {
         sep0 = sep1 = 0;
         strreplace_fw(item);
@@ -4990,7 +4984,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                           !std::strcmp("cursor",command)))
             selection2cimg(s_selection,10,CImgList<char>::empty(),command).move_to(selection);
           else if (!is_get && *command=='i' && (!command[1] || !std::strcmp("input",command)))
-            selection2cimg(s_selection,siz + 1,images_names,command,true,&new_name).move_to(selection);
+            selection2cimg(s_selection,siz + 1,images_names,command,true).move_to(selection);
           else if (!is_get &&
                    ((*command=='e' && (!command[1] ||
                                        !std::strcmp("echo",command) ||
@@ -5165,12 +5159,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
         if (item!=_item.data() + (is_double_hyphen?2:is_simple_hyphen || is_plus?1:0)) item = _item;
         command0 = *command?*command:*item;
-
-        // Check if a new name has been requested for a command that does not allow that.
-        if (new_name && !is_get && !is_command_input)
-          error(true,images,0,0,
-                "Item '%s %s': Unknown name '%s'.",
-                initial_item,initial_argument,new_name.data());
 
         // Dispatch to dedicated parsing code, regarding the first character of the command.
         // We rely on the compiler to optimize this using an associative array (verified with g++).
@@ -10498,15 +10486,20 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         // Restore.
-        if (!is_get && !is_selection && !std::strcmp("restore",command)) {
-          gmic_substitute_args(true);
+        if (!is_get && !std::strcmp("restore",command)) {
+          gmic_substitute_args(false);
           if (cimg_sscanf(argument,"%4095[,a-zA-Z0-9_]%c",&(*formula=0),&end)==1 &&
               (*formula<'0' || *formula>'9') && *formula!=',') {
             char *current = formula, *next = std::strchr(formula,','), saved = 0;
+            if (!is_selection || !selection) selection.assign(1,1,1,1,images.size());
             print(images,0,
-                  "Restore image data from variable%s '%s'",
+                  "Restore image data from variable%s '%s', at position%s.",
                   next?"s":"",
-                  gmic_argument_text_printed());
+                  gmic_argument_text_printed(),
+                  gmic_selection.data());
+            if (selection.size()!=1)
+              error(true,images,0,0,
+                    "Command 'restore': Selection should contain only one item.");
             do {
               if (!*current)
                 error(true,images,0,0,
@@ -14518,8 +14511,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           input_images_names.move_to(images_names,uind);
         }
       }
-
-      if (new_name) new_name.move_to(images_names[selection[0]]);
       is_change = true;
     } // End main parsing loop of _run()
 
