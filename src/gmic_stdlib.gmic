@@ -4224,19 +4224,6 @@ _outputx :
 #@cli : Output information on selected images, on the standard error (stderr).
 #@cli : (eq. to 'p').
 
-#@cli restore : variable_name1,_variable_name2,... : (+)
-#@cli : Restore images previously stored in the specified named variables, and insert them at the end
-#@cli : of the image list. Note that restoring image data does not remove the data from
-#@cli : the corresponding named variable (use 'variable_name=' to explicitely delete a variable content).
-# Custom version of natives commands 'store' and 'restore' back-compatible for 2.7.0 and 2.7.1.
-restore : # <- Custom version of the command for keeping compatibility with G'MIC<2.7.2
-  e[^-1] "Restore image data from variable"${"v - if $#>1 u s else u \"\" fi v +"}" '$*'."
-  v - $=arg
-  if $_version>=273 repeat $# ${${arg{1+$>}}} done
-  else l[] repeat $# base642img ${_${arg{$>+1}}} done endl
-  fi
-  v +
-
 #@cli screen : _x0[%],_y0[%],_x1[%],_y1[%] : (+)
 #@cli : Take screenshot, optionally grabbed with specified coordinates, and insert it
 #@cli : at the end of the image list.
@@ -4623,6 +4610,14 @@ store : # <- Custom version of the command for keeping compatibility with G'MIC<
   else     # Assign to multiple variables
     if $#!=$! error[0--3] "Command 'store': Specified arguments '$*' do not match numbers of selected images." fi
     $=arg repeat $! l[$<] serialize auto,1,1 _${arg{$<+1}}=${"uchar2base64. 0"} rm endl done
+  fi
+  v +
+
+restore : # <- Command to keep compatibility with G'MIC!=2.7.2 (where this command is native).
+  e[^-1] "Restore image data from variable"${"v - if $#>1 u s else u \"\" fi v +"}" '$*'."
+  v - $=arg
+  if $_version>=273 repeat $# ${${arg{1+$>}}} done
+  else l[] repeat $# base642img ${_${arg{$>+1}}} done endl
   fi
   v +
 
