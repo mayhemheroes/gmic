@@ -7473,7 +7473,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Compute gradient.
         if (!std::strcmp("gradient",command)) {
           gmic_substitute_args(false);
-          int scheme = 3;
+          int scheme = 0;
           *argx = 0;
           if ((cimg_sscanf(argument,"%15[xyz]%c",
                            argx,&end)==1 ||
