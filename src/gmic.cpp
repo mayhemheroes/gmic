@@ -12619,11 +12619,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                       disp.normalization()==2?" 1st-time ":" auto-",
                       disp.is_fullscreen()?"":"no ",
                       disp.title());
-              if (g_list) g_list.display(disp);
+              if (g_list) { g_list.display(disp); is_change = false; }
             }
             g_list.assign();
           }
-          is_change = false; continue;
+          continue;
         }
 
         // Warp.
