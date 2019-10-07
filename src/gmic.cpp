@@ -4754,7 +4754,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
   unsigned int next_debug_line = ~0U, next_debug_filename = ~0U, _debug_line, _debug_filename,
     is_high_connectivity, __ind = 0, boundary = 0, pattern = 0, exit_on_anykey = 0, wind = 0,
-    interpolation = 0;
+    interpolation = 0, hash = 0;
   char end, sep = 0, sep0 = 0, sep1 = 0, sepx = 0, sepy = 0, sepz = 0, sepc = 0, axis = 0;
   double vmin = 0, vmax = 0, value, value0, value1, nvalue, nvalue0, nvalue1;
   bool is_cond, is_endlocal = false, check_elif = false;
@@ -6310,7 +6310,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           if (s[1]=='r') { // End a 'repeat...done' block
             *title = 0;
             unsigned int *const rd = repeatdones.data(0,nb_repeatdones - 1);
-            const unsigned int hash = rd[3], pos = rd[4];
+            const unsigned int pos = rd[4];
+            hash = rd[3];
             ++rd[2];
             if (--rd[1]) {
               position = rd[0] + 1;
@@ -10458,7 +10459,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             unsigned int *const rd = repeatdones.data(0,nb_repeatdones++);
             rd[0] = position; rd[1] = nb; rd[2] = 0;
             if (l) {
-              const unsigned int hash = hashcode(varname,true);
+              hash = hashcode(varname,true);
               rd[3] = hash;
               rd[4] = variables[hash]->_width;
               CImg<char>::string(varname).move_to(*variables_names[hash]);
@@ -12318,12 +12319,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               arg_command.resize(1,arg_command.height() + 1,1,1,0);
               strreplace_fw(arg_command);
               if (*arg_command) {
-                const unsigned int hash = hashcode(arg_command,false);
-                unsigned int iind;
-                if (search_sorted(arg_command,commands_names[hash],commands_names[hash].size(),iind)) {
-                  commands_names[hash].remove(iind);
-                  commands[hash].remove(iind);
-                  commands_has_arguments[hash].remove(iind);
+                hash = hashcode(arg_command,false);
+                if (search_sorted(arg_command,commands_names[hash],commands_names[hash].size(),pattern)) {
+                  commands_names[hash].remove(pattern);
+                  commands[hash].remove(pattern);
+                  commands_has_arguments[hash].remove(pattern);
                   ++nb_removed;
                 }
               }
@@ -13801,7 +13801,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         print(images,0,
               "Input image from variable '%s', at position%s.",
               argx,_gmic_selection.data());
-        const unsigned int hash = hashcode(argx,true);
+        hash = hashcode(argx,true);
+
         const bool
           is_global = *argx=='_',
           is_thread_global = is_global && argx[1]=='_';
@@ -14352,89 +14353,96 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             cimg::mutex(29,0);
           }
           continue;
-        } else {
+        } else { // Other file types.
 
-          // Other file types.
-          print(images,0,"Input file '%s' at position%s",
-                _filename0,
-                _gmic_selection.data());
+          // Check if a custom command handling requested file format exists.
+          cimg_snprintf(formula,_formula.width(),"input_%s",ext);
+          hash = hashcode(formula,false);
+          if (search_sorted(formula,commands_names[hash],commands_names[hash].size(),pattern)) {
 
-          if (*options)
-            error(true,images,0,0,
-                  "Command 'input': File '%s', format does not take any input options (options '%s' specified).",
-                  _filename0,options.data());
 
-          try {
+          } else {
+            print(images,0,"Input file '%s' at position%s",
+                  _filename0,
+                  _gmic_selection.data());
+
+            if (*options)
+              error(true,images,0,0,
+                    "Command 'input': File '%s', format does not take any input options (options '%s' specified).",
+                    _filename0,options.data());
+
             try {
-              g_list.load(filename);
-            } catch (CImgIOException&) {
-              if (is_network_file)
-                error(true,images,0,0,
-                      "Command 'input': Unable to load image file '%s' from network.",
-                      _filename0);
-              else throw;
-            }
-
-            // If .gmz file without extension, process images names anyway.
-            bool is_gmz = false;
-            const CImg<char> back = g_list?CImg<char>(g_list.back()):CImg<char>::empty();
-            if (back.width()==1 && back.depth()==1 && back.spectrum()==1 &&
-                back[0]=='G' && back[1]=='M' && back[2]=='Z' && !back[3]) {
-              g_list_c = back.get_split(CImg<char>::vector(0),0,false);
-              if (g_list_c) {
-                is_gmz = true;
-                g_list_c.remove(0);
-                cimglist_for(g_list_c,l)
-                  g_list_c[l].resize(1,g_list_c[l].height() + 1,1,1,0).
-                  unroll('x');
-                g_list.remove(g_list.size() - 1);
-              }
-            }
-
-            if (g_list && !is_gmz) {
-              g_list_c.insert(__filename0);
-              if (g_list.size()>1) {
-                g_list_c.insert(g_list.size() - 1,__filename0.copymark());
-              }
-            }
-
-          } catch (CImgException&) {
-            std::FILE *efile = 0;
-            if (!(efile = cimg::std_fopen(filename,"r"))) {
-              if (is_command_input)
-                error(true,images,0,0,
-                      "Unknown filename '%s'.",
-                      gmic_argument_text());
-              else {
-                CImg<char>::string(filename).move_to(name);
-                const unsigned int foff = (*name=='+' || *name=='-') + (*name=='-' && name[1]=='-');
-                const char *misspelled = 0;
-                char *const posb = std::strchr(name,'[');
-                if (posb) *posb = 0; // Discard selection from the command name
-                int dmin = 4;
-                // Look for a builtin command
-                for (unsigned int l = 0; l<sizeof(builtin_commands_names)/sizeof(char*); ++l) {
-                  const char *const c = builtin_commands_names[l];
-                  const int d = levenshtein(c,name.data() + foff);
-                  if (d<dmin) { dmin = d; misspelled = builtin_commands_names[l]; }
-                }
-                for (unsigned int i = 0; i<gmic_comslots; ++i) // Look for a custom command
-                  cimglist_for(commands_names[i],l) {
-                    const char *const c = commands_names[i][l].data();
-                    const int d = levenshtein(c,name.data() + foff);
-                    if (d<dmin) { dmin = d; misspelled = commands_names[i][l].data(); }
-                  }
-                if (misspelled)
+              try {
+                g_list.load(filename);
+              } catch (CImgIOException&) {
+                if (is_network_file)
                   error(true,images,0,0,
-                        "Unknown command or filename '%s' (did you mean '%s' ?).",
-                        gmic_argument_text(),misspelled);
-                else error(true,images,0,0,
-                           "Unknown command or filename '%s'.",
-                           gmic_argument_text());
+                        "Command 'input': Unable to load image file '%s' from network.",
+                        _filename0);
+                else throw;
               }
-            } else { std::fclose(efile); throw; }
+
+              // If .gmz file without extension, process images names anyway.
+              bool is_gmz = false;
+              const CImg<char> back = g_list?CImg<char>(g_list.back()):CImg<char>::empty();
+              if (back.width()==1 && back.depth()==1 && back.spectrum()==1 &&
+                  back[0]=='G' && back[1]=='M' && back[2]=='Z' && !back[3]) {
+                g_list_c = back.get_split(CImg<char>::vector(0),0,false);
+                if (g_list_c) {
+                  is_gmz = true;
+                  g_list_c.remove(0);
+                  cimglist_for(g_list_c,l)
+                    g_list_c[l].resize(1,g_list_c[l].height() + 1,1,1,0).
+                    unroll('x');
+                  g_list.remove(g_list.size() - 1);
+                }
+              }
+
+              if (g_list && !is_gmz) {
+                g_list_c.insert(__filename0);
+                if (g_list.size()>1) {
+                  g_list_c.insert(g_list.size() - 1,__filename0.copymark());
+                }
+              }
+            } catch (CImgException&) {
+              std::FILE *efile = 0;
+              if (!(efile = cimg::std_fopen(filename,"r"))) {
+                if (is_command_input)
+                  error(true,images,0,0,
+                        "Unknown filename '%s'.",
+                        gmic_argument_text());
+                else {
+                  CImg<char>::string(filename).move_to(name);
+                  const unsigned int foff = (*name=='+' || *name=='-') + (*name=='-' && name[1]=='-');
+                  const char *misspelled = 0;
+                  char *const posb = std::strchr(name,'[');
+                  if (posb) *posb = 0; // Discard selection from the command name
+                  int dmin = 4;
+                  // Look for a builtin command
+                  for (unsigned int l = 0; l<sizeof(builtin_commands_names)/sizeof(char*); ++l) {
+                    const char *const c = builtin_commands_names[l];
+                    const int d = levenshtein(c,name.data() + foff);
+                    if (d<dmin) { dmin = d; misspelled = builtin_commands_names[l]; }
+                  }
+                  for (unsigned int i = 0; i<gmic_comslots; ++i) // Look for a custom command
+                    cimglist_for(commands_names[i],l) {
+                      const char *const c = commands_names[i][l].data();
+                      const int d = levenshtein(c,name.data() + foff);
+                      if (d<dmin) { dmin = d; misspelled = commands_names[i][l].data(); }
+                    }
+                  if (misspelled)
+                    error(true,images,0,0,
+                          "Unknown command or filename '%s' (did you mean '%s' ?).",
+                          gmic_argument_text(),misspelled);
+                  else error(true,images,0,0,
+                             "Unknown command or filename '%s'.",
+                             gmic_argument_text());
+                }
+              } else { std::fclose(efile); throw; }
+            }
           }
         }
+
         if (*filename_tmp) std::remove(filename_tmp); // Clean temporary file if used
         if (is_network_file) std::remove(_filename);  // Clean temporary file if network input
       }
