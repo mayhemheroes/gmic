@@ -9871,11 +9871,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             hash = hashcode(formula,false);
             if (search_sorted(formula,commands_names[hash],commands_names[hash].size(),pattern)) { // Command found
               cimg_snprintf(formula,_formula.width(),"output_%s %s v -1 q",uext.data(),filename);
-
               const CImgList<char> ncommands_line = commands_line_to_CImgList(formula);
               unsigned int nposition = 0, o_verbosity = verbosity;
               bool _is_noarg = false;
-
               _run(ncommands_line,nposition,images,images_names,images,images_names,variables_sizes,&_is_noarg,argument,&selection);
               verbosity = o_verbosity;
               is_quit = false;
@@ -14378,11 +14376,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           hash = hashcode(formula,false);
           if (search_sorted(formula,commands_names[hash],commands_names[hash].size(),pattern)) { // Command found
             cimg_snprintf(formula,_formula.width(),"input_%s %s v -1 q",ext,_filename0);
-
             const CImgList<char> ncommands_line = commands_line_to_CImgList(formula);
             unsigned int nposition = 0, o_verbosity = verbosity;
             bool _is_noarg = false;
-
             _run(ncommands_line,nposition,g_list,g_list_c,images,images_names,variables_sizes,&_is_noarg,argument,0);
             verbosity = o_verbosity;
             is_quit = false;
