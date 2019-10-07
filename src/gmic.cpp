@@ -14359,7 +14359,16 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           cimg_snprintf(formula,_formula.width(),"input_%s",ext);
           hash = hashcode(formula,false);
           if (search_sorted(formula,commands_names[hash],commands_names[hash].size(),pattern)) {
+            cimg_snprintf(formula,_formula.width(),"input_%s %s v -1 quit",ext,_filename0);
 
+            const CImgList<char> ncommands_line = commands_line_to_CImgList(formula);
+            CImg<unsigned int> nvariables_sizes(gmic_varslots);
+            unsigned int nposition = 0, o_verbosity = verbosity;
+            bool _is_noarg = false;
+
+            cimg_forX(nvariables_sizes,l) nvariables_sizes[l] = variables[l]->size();
+            _run(ncommands_line,nposition,g_list,g_list_c,images,images_names,nvariables_sizes,&_is_noarg,argument,0);
+            verbosity = o_verbosity;
 
           } else {
             print(images,0,"Input file '%s' at position%s",
