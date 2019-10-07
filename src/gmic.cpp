@@ -14358,7 +14358,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           // Check if a custom command handling requested file format exists.
           cimg_snprintf(formula,_formula.width(),"input_%s",ext);
           hash = hashcode(formula,false);
-          if (search_sorted(formula,commands_names[hash],commands_names[hash].size(),pattern)) {
+          if (search_sorted(formula,commands_names[hash],commands_names[hash].size(),pattern)) { // Command found
             cimg_snprintf(formula,_formula.width(),"input_%s %s v -1 quit",ext,_filename0);
 
             const CImgList<char> ncommands_line = commands_line_to_CImgList(formula);
@@ -14370,7 +14370,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             _run(ncommands_line,nposition,g_list,g_list_c,images,images_names,nvariables_sizes,&_is_noarg,argument,0);
             verbosity = o_verbosity;
 
-          } else {
+          } else { // Not found -> Try generic image loader
             print(images,0,"Input file '%s' at position%s",
                   _filename0,
                   _gmic_selection.data());
