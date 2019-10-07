@@ -4012,6 +4012,18 @@ input_cube : skip ${2=1}
     nm "$1"
   endl v +
 
+#@cli input_flo : "filename"
+#@cli : Insert optical flow data from a .flo filename (vision.middlebury.edu file format).
+input_flo :
+  e[^-1] "Input optical flow from file '$1'"
+  v - l[]
+    i raw:"$1",float
+    if i!=202021.25 endian. fi
+    if i!=202021.25 v + error[0--3] "Command 'input_flo': Filename '$1' is not a valid .flo file." return fi
+    +rows 1,2 cast. float,uint w,h={^} rm.
+    rows 3,100% r 2,$w,$h,1,-1 permute yzcx
+  endl v +
+
 #@cli ig : eq. to 'input_glob'.
 ig :
   _input_glob "$*"
@@ -4053,7 +4065,7 @@ input_gpl :
 #@cli : (eq. to 'o').
 #@cli : Default value: 'format_options'=(undefined).
 
-#@cli output_cube : filename
+#@cli output_cube : "filename"
 #@cli : Output selected CLUTs as a .cube file (Adobe CLUT format).
 output_cube :
  e[^-1] "Output CLUT$? as file '$1'."
@@ -4074,6 +4086,16 @@ output_cube :
           "# LUT data points\n"
    i[0] ({'$header'})
    y a y o raw:$fn,uchar rm
+ endl done p[] v +
+
+#@cli output_flo : "filename"
+#@cli : Output selected optical flow as a .flo file (vision.middlebury.edu file format).
+output_flo :
+ v - N=$! repeat $N +l[$>]
+   w,h={[w,h]}
+   channels 0,1 permute cxyz i[0] (202021.25) i[1] ($w,$h) cast[1] uint,float y a y
+   if $N>1 fn=${"filename \"$1\",$>"} else fn="$1" fi
+   o raw:$fn,float rm
  endl done p[] v +
 
 #@cli output_ggr : filename,_gradient_name

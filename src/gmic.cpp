@@ -9870,13 +9870,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             cimg_snprintf(formula,_formula.width(),"output_%s",uext.data());
             hash = hashcode(formula,false);
             if (search_sorted(formula,commands_names[hash],commands_names[hash].size(),pattern)) { // Command found
-              cimg_snprintf(formula,_formula.width(),"output_%s %s v -1 q",uext.data(),filename);
+              cimg_snprintf(formula,_formula.width(),"output_%s %s v -1 return",uext.data(),filename);
               const CImgList<char> ncommands_line = commands_line_to_CImgList(formula);
               unsigned int nposition = 0, o_verbosity = verbosity;
               bool _is_noarg = false;
               _run(ncommands_line,nposition,images,images_names,images,images_names,variables_sizes,&_is_noarg,argument,&selection);
+              is_quit = is_return = *is_abort = false;
               verbosity = o_verbosity;
-              is_quit = false;
 
             } else { // Not found -> Try generic image saver
 
@@ -14375,13 +14375,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           cimg_snprintf(formula,_formula.width(),"input_%s",ext);
           hash = hashcode(formula,false);
           if (search_sorted(formula,commands_names[hash],commands_names[hash].size(),pattern)) { // Command found
-            cimg_snprintf(formula,_formula.width(),"input_%s %s v -1 q",ext,_filename0);
+            cimg_snprintf(formula,_formula.width(),"input_%s %s v -1 return",ext,_filename0);
             const CImgList<char> ncommands_line = commands_line_to_CImgList(formula);
             unsigned int nposition = 0, o_verbosity = verbosity;
             bool _is_noarg = false;
             _run(ncommands_line,nposition,g_list,g_list_c,images,images_names,variables_sizes,&_is_noarg,argument,0);
+            is_quit = is_return = *is_abort = false;
             verbosity = o_verbosity;
-            is_quit = false;
 
           } else { // Not found -> Try generic image loader
 
@@ -14548,8 +14548,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     // Post-check validity of shared images.
     cimglist_for(images,l) gmic_check(images[l]);
 
-    // Display or print result, if not 'released' before.
-    if (is_change && callstack.size()==1 && images) {
+    // Display or print result.
+    if (is_change && !is_quit && !is_return && callstack.size()==1 && images) {
       if (!std::strcmp(set_variable("_host","",'.',0),"cli")) {
         if (is_display_available) {
           CImgList<unsigned int> lselection, lselection3d;
