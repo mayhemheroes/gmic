@@ -14384,10 +14384,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             is_quit = false;
 
           } else { // Not found -> Try generic image loader
+
             print(images,0,"Input file '%s' at position%s",
                   _filename0,
                   _gmic_selection.data());
-
             if (*options)
               error(true,images,0,0,
                     "Command 'input': File '%s', format does not take any input options (options '%s' specified).",
