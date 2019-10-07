@@ -9865,32 +9865,50 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               g_list.save_ffmpeg_external(filename,(unsigned int)fps);
             }
           } else { // Any other extension
-            g_list.assign(selection.height());
-            cimg_forY(selection,l) if (!gmic_check(images[selection(l)]))
-              CImg<unsigned int>::vector(selection(l)).move_to(empty_indices);
-            if (empty_indices && is_verbose) {
-              selection2string(empty_indices>'y',images_names,1,eselec);
-              warn(images,0,false,
-                   "Command 'output': Image%s %s empty.",
-                   eselec.data(),empty_indices.size()>1?"are":"is");
-            }
-            cimg_forY(selection,l)
-              g_list[l].assign(images[selection[l]],g_list[l]?true:false);
-            if (g_list.size()==1)
-              print(images,0,"Output image%s as %s file '%s' (1 image %dx%dx%dx%d).",
-                    gmic_selection.data(),
-                    uext.data(),_filename.data(),
-                    g_list[0].width(),g_list[0].height(),
-                    g_list[0].depth(),g_list[0].spectrum());
-            else print(images,0,"Output image%s as %s file '%s'.",
-                       gmic_selection.data(),uext.data(),_filename.data());
 
-            if (*options)
-              error(true,images,0,0,
-                    "Command 'output': File '%s', format '%s' does not take any output options "
-                    "(options '%s' specified).",
-                    _filename.data(),ext,options.data());
-            if (g_list.size()==1) g_list[0].save(filename); else g_list.save(filename);
+            // Check if a custom command handling requested file format exists.
+            cimg_snprintf(formula,_formula.width(),"output_%s v -1 q",uext.data());
+            hash = hashcode(formula,false);
+            if (search_sorted(formula,commands_names[hash],commands_names[hash].size(),pattern)) { // Command found
+              cimg_snprintf(formula,_formula.width(),"output_%s %s",uext.data(),filename);
+
+              const CImgList<char> ncommands_line = commands_line_to_CImgList(formula);
+              unsigned int nposition = 0, o_verbosity = verbosity;
+              bool _is_noarg = false;
+
+              _run(ncommands_line,nposition,images,images_names,images,images_names,variables_sizes,&_is_noarg,argument,&selection);
+              verbosity = o_verbosity;
+              is_quit = false;
+
+            } else { // Not found -> Try generic image saver
+
+              g_list.assign(selection.height());
+              cimg_forY(selection,l) if (!gmic_check(images[selection(l)]))
+                CImg<unsigned int>::vector(selection(l)).move_to(empty_indices);
+              if (empty_indices && is_verbose) {
+                selection2string(empty_indices>'y',images_names,1,eselec);
+                warn(images,0,false,
+                     "Command 'output': Image%s %s empty.",
+                     eselec.data(),empty_indices.size()>1?"are":"is");
+              }
+              cimg_forY(selection,l)
+                g_list[l].assign(images[selection[l]],g_list[l]?true:false);
+              if (g_list.size()==1)
+                print(images,0,"Output image%s as %s file '%s' (1 image %dx%dx%dx%d).",
+                      gmic_selection.data(),
+                      uext.data(),_filename.data(),
+                      g_list[0].width(),g_list[0].height(),
+                      g_list[0].depth(),g_list[0].spectrum());
+              else print(images,0,"Output image%s as %s file '%s'.",
+                         gmic_selection.data(),uext.data(),_filename.data());
+
+              if (*options)
+                error(true,images,0,0,
+                      "Command 'output': File '%s', format '%s' does not take any output options "
+                      "(options '%s' specified).",
+                      _filename.data(),ext,options.data());
+              if (g_list.size()==1) g_list[0].save(filename); else g_list.save(filename);
+            }
           }
 
           if (*cext) { // When output forced to 'ext' : copy final file to specified location
@@ -14359,7 +14377,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           cimg_snprintf(formula,_formula.width(),"input_%s",ext);
           hash = hashcode(formula,false);
           if (search_sorted(formula,commands_names[hash],commands_names[hash].size(),pattern)) { // Command found
-            cimg_snprintf(formula,_formula.width(),"input_%s %s v -1 quit",ext,_filename0);
+            cimg_snprintf(formula,_formula.width(),"input_%s %s v -1 q",ext,_filename0);
 
             const CImgList<char> ncommands_line = commands_line_to_CImgList(formula);
             unsigned int nposition = 0, o_verbosity = verbosity;
@@ -14367,6 +14385,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
             _run(ncommands_line,nposition,g_list,g_list_c,images,images_names,variables_sizes,&_is_noarg,argument,0);
             verbosity = o_verbosity;
+            is_quit = false;
 
           } else { // Not found -> Try generic image loader
             print(images,0,"Input file '%s' at position%s",
