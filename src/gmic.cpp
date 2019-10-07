@@ -9867,10 +9867,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           } else { // Any other extension
 
             // Check if a custom command handling requested file format exists.
-            cimg_snprintf(formula,_formula.width(),"output_%s v -1 q",uext.data());
+            cimg_snprintf(formula,_formula.width(),"output_%s",uext.data());
             hash = hashcode(formula,false);
             if (search_sorted(formula,commands_names[hash],commands_names[hash].size(),pattern)) { // Command found
-              cimg_snprintf(formula,_formula.width(),"output_%s %s",uext.data(),filename);
+              cimg_snprintf(formula,_formula.width(),"output_%s %s v -1 q",uext.data(),filename);
 
               const CImgList<char> ncommands_line = commands_line_to_CImgList(formula);
               unsigned int nposition = 0, o_verbosity = verbosity;
