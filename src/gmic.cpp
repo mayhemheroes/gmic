@@ -9874,7 +9874,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               const CImgList<char> ncommands_line = commands_line_to_CImgList(formula);
               unsigned int nposition = 0, o_verbosity = verbosity;
               bool _is_noarg = false;
-              _run(ncommands_line,nposition,images,images_names,images,images_names,variables_sizes,&_is_noarg,argument,&selection);
+              _run(ncommands_line,nposition,images,images_names,images,images_names,variables_sizes,&_is_noarg,
+                   argument,&selection);
               is_quit = is_return = *is_abort = false;
               verbosity = o_verbosity;
 
