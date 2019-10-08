@@ -20593,7 +20593,7 @@ median_files : check "isint(${2=0}) && $2>=0 && isint(${3=-1}) && ($3>=0 || $3==
               frame rows $5, using "${s{!$6}}" algorithm." v -
   files 3,"$1" _N=/{narg(${})-1} arg2var _file,${}
   l[]
-    i[res] ${_file{$frame+1}} f. 0
+    ${_file{$frame+1}} nm. res f. 0
     _median_stream "${_file{$frame+1}}",${2-6}
   endl v +
 
@@ -20610,7 +20610,7 @@ median_video : check "isint(${2=0}) && $2>=0 && isint(${3=-1}) && ($3>=0 || $3==
               frame rows $5, using "${s{!$6}}" algorithm." v -
   _N=
   l[]
-    i[res] "$1",0 f. 0
+    "$1",0 nm. res f. 0
     _median_stream "\"$1\",$frame",${2-6}
   endl v +
 
@@ -20651,7 +20651,7 @@ _median_stream :
     if $6
       # Fast method : compute median frame using streamed histogram computation.
       N=0
-      i[hist] {w},$drows,256,{s}
+      {w},$drows,256,{s} nm. hist
       do
         l[] $1 nm. img onfail go_on=0 endl
         if $img
