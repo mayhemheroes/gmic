@@ -13945,10 +13945,10 @@ close_binary :
     nm. strokes
 
     # Extract primary edgel normals.
-    i[e_normals] 100%,100%,1,4,"
+    100%,100%,1,4,"
       N = crop(#"$strokes",x - 1,y - 1,0,0,3,3,1,1,1);
       N[4]?[ N[5]?-2:0, N[7]?-2:90, N[3]?-2:180, N[1]?-2:270 ]:[-2,-2,-2,-2];
-    "
+    " nm. e_normals
 
     # Smooth edgel normals.
     f[e_normals] $_edgel_lib"
@@ -14055,7 +14055,7 @@ close_binary :
 
     # Estimate point normals.
     if !narg($keycoords)
-      rm[e_normals,e_curvatures] i[new_strokes] [strokes]
+      rm[e_normals,e_curvatures] [strokes] nm. new_strokes
     else
       f[keycoords] "
         P = (I)[0,2];
@@ -14072,7 +14072,7 @@ close_binary :
       rm[e_normals,e_curvatures]
 
       # Detect pairs of keypoints preserving the spline constraints.
-      i[keypairs] 256,1,1,3
+      256,1,1,3 nm. keypairs
       f[keycoords] ">
         begin(ind = 0);
         for (nx = x + 1, nx<w, ++nx,
@@ -14102,7 +14102,7 @@ close_binary :
       fi
 
       # Find and connect splines.
-      i[new_strokes] [strokes]
+      [strokes] nm. new_strokes
       ind_strokes={$allow_self_intersections?$strokes:$new_strokes}
 
       if narg($keypairs)
@@ -23221,7 +23221,7 @@ _x_colorize :
           rm[view]
         elif ($b&2" || "{*,X})" && "$view_markers # Remove existing point.
           if $N>1 +z[points] {$selection+1},100% j[points] .,$selection rm. r[points] {$N-1},100%,1,1,0
-          else rm[points] i[points] 0 fi
+          else rm[points] 0 nm. points fi
           wait -1 rm[view]
         fi
       elif $b&1 # Add new point
@@ -23819,7 +23819,7 @@ x_fourier : check_display
       if $need_update # If image must be updated.
 
         # Generated filtering mask.
-        i[mask] [logmag],[logmag]
+        [logmag],[logmag] nm. mask
         r={sqrt(w^2+h^2)*$freqmax/200} ellipse[mask] 50%,50%,$r,$r,0,1,1
         r={max(0,sqrt(w^2+h^2)*$freqmin/200-1)} if $r ellipse[mask] 50%,50%,$r,$r,0,1,0 fi
 
@@ -26466,7 +26466,7 @@ x_select_function1d : skip ${1=xsf_variable},${2=220},${3=$2},${4=$2} check_disp
     elif $is_ctrl" && "{*,-D} ww={view,w*125%} wh={view,h*125%} # Increase window size.
     elif $is_ctrl" && "{*,-C} ww={view,w*75%} wh={view,h*75%} # Decrease window size.
     elif $is_ctrl" && "{*,R} ww=$reset_w wh=$reset_h # Reset window size.
-    elif !$is_ctrl" && "{*,R} rm[points] i[points] (0,0;100,100) $1={points,^} rm[view] # Reset keypoints.
+    elif !$is_ctrl" && "{*,R} rm[points] (0,0;100,100) nm. points $1={points,^} rm[view] # Reset keypoints.
     elif $b&3 # Add/move/delete point.
       is_inside={$X>=0" && "$Y>=0" && "$X<=100" && "$Y<=100}
 
@@ -26498,7 +26498,7 @@ x_select_function1d : skip ${1=xsf_variable},${2=220},${3=$2},${4=$2} check_disp
     # Check points variable modification from another thread.
     if ['$$1']=='-1' break fi # Close request
     if ['$$1']!=['{points,^}'] # Keypoints changed
-      rm[points] i[points] ($$1) y. x r. 2,{w/2},1,1,-1 l rm[view] onfail endl
+      rm[points] ($$1) nm. points y. x r. 2,{w/2},1,1,-1 l rm[view] onfail endl
     fi
 
   while {*}" && "!{*,ESC}" && "!{*,Q}
@@ -26856,6 +26856,7 @@ x_tetris : check_display
   i[m16] 3,2,1,1,0,1,1,1,1,0
   i[m20] 3,2,1,1,0,1,0,1,1,1
   i[m24] 3,2,1,1,1,1,0,0,1,1
+
   if u<0.25  # Enable extended set.
     i[m28] 2,1,1,1,1,1
     i[m32] 2,2,1,1,1,1,0,1
