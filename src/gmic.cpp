@@ -3157,7 +3157,7 @@ CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned
                                         const CImgList<char>& names,
                                         const char *const command, const bool is_selection) {
 
-  // Try to detect common cases to be faster.
+  // First, try to detect the most common cases.
   if (string && !*string) return CImg<unsigned int>(); // Empty selection
   if (!string || (*string=='^' && !string[1])) { // Whole selection
     CImg<unsigned int> res(1,index_max); cimg_forY(res,y) res[y] = (unsigned int)y; return res;
@@ -3176,7 +3176,7 @@ CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned
     ctyper = is_selection?']':'\'';
 
   CImg<bool> is_selected(1,index_max,1,1,false);
-  CImg<char> name, item;
+  CImg<char> name(256), name2(256), item;
   bool is_inverse = *string=='^';
   const char *it = string + (is_inverse?1:0);
   for (bool stopflag = false; !stopflag; ) {
@@ -3184,7 +3184,6 @@ CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned
     int iind0 = 0, iind1 = 0, istep = 1;
     bool is_label = false;
     char sep = 0;
-    name.assign(256);
 
     const char *const it_comma = std::strchr(it,',');
     if (it_comma) { item.assign(it,(unsigned int)(it_comma - it + 1)); item.back() = 0; it = it_comma + 1; }
@@ -3233,6 +3232,14 @@ CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned
       // Sequence between an index and a percent.
       iind0 = (int)cimg::round(ind0);
       iind1 = (int)cimg::round(ind1*((int)index_max - 1)/100) - (ind1<0?1:0);;
+
+/*    } else if (cimg_sscanf(item,"%255[a-zA-Z0-9_]%c",name.data(),&end)==1 &&
+               (*name<'0' || *name>'9')) {
+      // Sequence between 2 labels
+*/
+
+
+
     } else error(true,"Command '%s': Invalid %s %c%s%c.",
                  command,stype,ctypel,string,ctyper);
 
