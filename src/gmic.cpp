@@ -3176,7 +3176,7 @@ CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned
     ctyper = is_selection?']':'\'';
 
   CImg<bool> is_selected(1,index_max,1,1,false);
-  CImg<char> name, name2, item;
+  CImg<char> name, item;
   bool is_inverse = *string=='^';
   const char *it = string + (is_inverse?1:0);
   for (bool stopflag = false; !stopflag; ) {
@@ -3232,19 +3232,11 @@ CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned
       // Sequence between an index and a percent.
       iind0 = (int)cimg::round(ind0);
       iind1 = (int)cimg::round(ind1*((int)index_max - 1)/100) - (ind1<0?1:0);;
-
-/*    } else if (cimg_sscanf(item,"%255[a-zA-Z0-9_]%c",name.data(),&end)==1 &&
-               (*name<'0' || *name>'9')) {
-      // Sequence between 2 labels
-*/
-
-
-
     } else error(true,"Command '%s': Invalid %s %c%s%c.",
                  command,stype,ctypel,string,ctyper);
 
     if (!index_max) error(true,"Command '%s': Invalid %s %c%s%c (no data available).",
-                           command,stype,ctypel,string,ctyper);
+                          command,stype,ctypel,string,ctyper);
     if (!is_label) {
       int
         uind0 = (int)(iind0<0?iind0 + index_max:iind0),
