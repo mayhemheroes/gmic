@@ -3176,7 +3176,7 @@ CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned
     ctyper = is_selection?']':'\'';
 
   CImg<bool> is_selected(1,index_max,1,1,false);
-  CImg<char> name(256), name2(256), item;
+  CImg<char> name, name2, item;
   bool is_inverse = *string=='^';
   const char *it = string + (is_inverse?1:0);
   for (bool stopflag = false; !stopflag; ) {
@@ -3210,7 +3210,7 @@ CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned
     } else if (cimg_sscanf(item,"%f-%f%c",&ind0,&ind1,&end)==2) { // Sequence between 2 indices
       iind0 = (int)cimg::round(ind0);
       iind1 = (int)cimg::round(ind1);
-    } else if (cimg_sscanf(item,"%255[a-zA-Z0-9_]%c",name.data(),&end)==1 && // Label
+    } else if (cimg_sscanf(item,"%255[a-zA-Z0-9_]%c",name.assign(256).data(),&end)==1 && // Label
                (*name<'0' || *name>'9')) {
       cimglist_for(names,l) if (names[l] && !std::strcmp(names[l],name)) {
         is_selected(l) = true; is_label = true;
