@@ -1,4 +1,4 @@
-s#
+#
 #  File        : CMakeLists.txt
 #                ( cmake-based build system configuration file )
 #
