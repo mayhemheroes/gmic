@@ -22142,7 +22142,8 @@ path_tmp :
 
 # render_donations: Parse the PayPal .CSV file and generate 'latest-months' donation gfx.
 # $1 = filename.csv
-render_donations : skip "${1="$HOME"/Desktop/dons_paypal.csv}"
+# $2 = number of latest months.
+render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2=5}
   v -
   l[]
     i raw:"$1",uchar s -,{'\n'} rm[0]
@@ -22188,7 +22189,7 @@ render_donations : skip "${1="$HOME"/Desktop/dons_paypal.csv}"
 
     # Compute image for donations of the last months.
     all_N,all_sum,all_max=0 all_min=inf
-    repeat 5
+    repeat $2
       edate={y=date(0);m=date(1)-1-$>;m<=0?(--y;m+=12);100*y+m}
       s_month=${"arg "$edate%100",January,February,March,April,May,June,July,August,\
                                   September,October,November,December"}
