@@ -9869,7 +9869,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             cimg_snprintf(formula,_formula.width(),"output_%s",uext.data());
             hash = hashcode(formula,false);
             if (search_sorted(formula,commands_names[hash],commands_names[hash].size(),pattern)) { // Command found
-              cimg_snprintf(formula,_formula.width(),"output_%s[%s] \"%s\" v -1 return",uext.data(),s_selection,filename);
+              cimg_snprintf(formula,_formula.width(),"output_%s[%s] \"%s\" v -1 return",
+                            uext.data(),*s_selection?s_selection:"^",filename);
               const CImgList<char> ncommands_line = commands_line_to_CImgList(formula);
               unsigned int nposition = 0, o_verbosity = verbosity;
               bool _is_noarg = false;
