@@ -27128,11 +27128,12 @@ _x_tictactoe6 : # Generate a +- diagonal stroke and his mask.
   421,421,1,1,1 line. 10%,90%,90%,10%,1,0 erode. 6 _x_tictactoe __x_tictactoe 180,10,10
 
 #@cli x_warp : _nb_keypoints_xgrid>=2,_nb_keypoints_ygrid>=2,_nb_keypoints_contours>=0,\
-# _preview_fidelity={ 0=coarsest | 1=coarse | 2=normal | 3=fine | 4=finest }
+# _preview_fidelity={ 0=coarsest | 1=coarse | 2=normal | 3=fine | 4=finest },\
+# _[background_image],0<=_background_opacity<=1
 #@cli : Launch the interactive image warper.
 #@cli : Default values: 'nb_keypoints_xgrid=nb_keypoints_ygrid=2', 'nb_keypoints_contours=0' and 'preview_fidelity=1'.
 x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2 && isint(${3=0}) && $3>=0 &&
-                isint(${4=1}) && $4>=0 && $4<=4" check_display
+                isint(${4=1}) && $4>=0 && $4<=4 && ${6=0.5}>=0 && $6<=1" skip ${5=} check_display
   if !$! error[0--3] "Command '$0': Requires at least one input image!" return fi
   v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
   e[] "\n
@@ -27148,10 +27149,13 @@ x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2 && isint(${3=0
 ----\n
 -------------------------------------------------------------"
   v -
+  if ${"is_image_arg $5"} pass$5 store. background fi
   m "rmn : nmd $\"*\" rm[${}]"
   radius_keypoints=4
+
   repeat $! l[$>] nm={n}
     nm img
+    if narg($background) $background rr2d. {-2,[w,h]},2,3 store. rbackground fi
 
     # Start interactive window.
     selected_keypoint=-1
@@ -27221,7 +27225,10 @@ x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2 && isint(${3=0
 
       # Render visualization.
       if !narg($imgr)
-        [imgw] nm. imgr
+        [imgw]
+        if narg($rbackground) $rbackground j.. .,0,0,0,0,$6 rm. fi
+        nm. imgr
+
         if s==4 drgba. fi
         if $view_keypoints
           eval[keypoints] "*
