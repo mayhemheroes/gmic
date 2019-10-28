@@ -2187,7 +2187,6 @@ double gmic::mp_store(const Ts *const img,
                       const unsigned int w, const unsigned int h, const unsigned d, const unsigned int s,
                       const char *const str, void *const p_list, const T& pixel_type) {
   cimg::unused(pixel_type);
-  double res = cimg::type<double>::nan();
   cimg_pragma_openmp(critical(mp_store))
     {
     // Retrieve current gmic instance.
@@ -2198,17 +2197,33 @@ double gmic::mp_store(const Ts *const img,
       CImg<void*> &gr = grl[ind];
       if (gr[1]==(void*)p_list) break;
     }
-    if (ind<0) { cimg::mutex(24,0); res = cimg::type<double>::nan(); } // Instance not found
+    if (ind<0) cimg::mutex(24,0); // Instance not found
     else {
       CImg<void*> &gr = grl[ind];
       gmic &gi = *(gmic*)gr[0];
       cimg::mutex(24,0);
 
-      CImg<T>(img,w,h,d,s).display("DEBUG");
-      std::fprintf(stderr,"\nDEBUG : %s\n",str);
+      const unsigned int *const variables_sizes = (const unsigned int*)gr[5];
+      CImg<char> _varname(256);
+      char *const varname = _varname.data(), end;
+      if (cimg_sscanf(str,"%256[a-zA-Z0-9_]%c",&(*varname=0),&end)==1 &&
+          (*varname<'0' || *varname>'9')) {
+
+        CImgList<T> g_list;
+        CImg<T>(img,w,h,d,s).move_to(g_list);
+        CImg<char> name = CImg<char>::string(varname);
+        name.resize(name.width() + 4,1,1,1,0,0,1);
+        name[0] = 'G'; name[1] = 'M'; name[2] = 'Z'; name[3] = 0;
+        name.unroll('y').move_to(g_list);
+
+        g_list.get_serialize(false).unroll('x').move_to(name);
+        name.resize(name.width() + 9 + std::strlen(varname),1,1,1,0,0,1);
+        std::sprintf(name,"%c*store/%s",gmic_store,_varname.data());
+        gi.set_variable(_varname.data(),name,variables_sizes);
+      } else gi.error(true,"toto");
     }
   }
-  return res;
+  return cimg::type<double>::nan();
 }
 
 // Manage correspondence between abort pointers and thread ids.
