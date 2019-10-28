@@ -2220,7 +2220,10 @@ double gmic::mp_store(const Ts *const img,
         name.resize(name.width() + 9 + std::strlen(varname),1,1,1,0,0,1);
         std::sprintf(name,"%c*store/%s",gmic_store,_varname.data());
         gi.set_variable(_varname.data(),name,variables_sizes);
-      } else gi.error(true,"toto");
+      } else
+        throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'store()': "
+                                    "Invalid variable name '%s' specified.",
+                                    cimg::type<T>::string(),str);
     }
   }
   return cimg::type<double>::nan();
@@ -11416,7 +11419,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             if (pattern==1) { // Assignment to a single variable
               (g_list_c>'x').move_to(name).resize(name.width() + 4,1,1,1,0,0,1);
               name[0] = 'G'; name[1] = 'M'; name[2] = 'Z'; name[3] = 0;
-              name.move_to(g_list);
+              name.unroll('y').move_to(g_list);
               g_list.get_serialize(false).unroll('x').move_to(name);
               name.resize(name.width() + 9 + std::strlen(formula),1,1,1,0,0,1);
               std::sprintf(name,"%c*store/%s",gmic_store,_formula.data());
@@ -11432,7 +11435,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               CImgList<T> tmp(2);
               g_list_c[n].move_to(name).resize(name.width() + 4,1,1,1,0,0,1);
               name[0] = 'G'; name[1] = 'M'; name[2] = 'Z'; name[3] = 0;
-              name.move_to(tmp[1]);
+              name.unroll('y').move_to(tmp[1]);
               g_list[n].move_to(tmp[0]);
               tmp.get_serialize(false).unroll('x').move_to(name);
               name.resize(name.width() + 9 + std::strlen(current),1,1,1,0,0,1);
