@@ -177,8 +177,15 @@ inline bool *gmic_abort_ptr(bool *const p_is_abort);
 
 template<typename T>
 inline double gmic_mp_ext(char *const str, void *const p_list, const T& pixel_type);
-#define cimg_mp_ext_function(str) return ::gmic_mp_ext(str._data,&mp.listout,(T)0)
+#define cimg_mp_ext_function(str) return ::gmic_mp_ext(str,&mp.listout,(T)0)
 
+template<typename Ts, typename T>
+inline double gmic_mp_store(const Ts *const img,
+                            const unsigned int w, const unsigned int h, const unsigned int d, const unsigned int s,
+                            const char *const str, void *const p_list, const T& pixel_type);
+#define cimg_mp_store_function(img,str) return ::gmic_mp_store(img._data,\
+                                                               img._width,img._height,img._depth,img._spectrum,\
+                                                               str,&mp.listout,(T)0)
 #ifndef cimg_display
 #define cimg_display 0
 #endif // #ifndef cimg_display
@@ -252,6 +259,10 @@ struct gmic {
   static bool search_sorted(const char *const str, const T& list, const unsigned int length, unsigned int &out_ind);
   template<typename T>
   static double mp_ext(char *const str, void *const p_list, const T& pixel_type);
+  template<typename Ts, typename T>
+  static double mp_store(const Ts *const img,
+                         const unsigned int w, const unsigned int h, const unsigned int d, const unsigned int s,
+                         const char *const str, void *const p_list, const T& pixel_type);
   static int _levenshtein(const char *const s, const char *const t,
                           gmic_image<int>& d, const int i, const int j);
   static int levenshtein(const char *const s, const char *const t);
@@ -442,6 +453,12 @@ struct gmic_exception {
 template<typename T>
 inline double gmic_mp_ext(char *const str, void *const p_list, const T& pixel_type) {
   return gmic::mp_ext(str,p_list,pixel_type);
+}
+template<typename Ts, typename T>
+inline double gmic_mp_store(const Ts *const img,
+                            const unsigned int w, const unsigned int h, const unsigned int d, const unsigned int s,
+                            const char *const str, void *const p_list, const T& pixel_type) {
+  return gmic::mp_store(img,w,h,d,s,str,p_list,pixel_type);
 }
 inline bool *gmic_abort_ptr(bool *const p_is_abort) { return gmic::abort_ptr(p_is_abort); }
 

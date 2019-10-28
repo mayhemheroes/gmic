@@ -2182,6 +2182,35 @@ double gmic::mp_ext(char *const str, void *const p_list, const T& pixel_type) {
   return res;
 }
 
+template<typename Ts, typename T>
+double gmic::mp_store(const Ts *const img,
+                      const unsigned int w, const unsigned int h, const unsigned d, const unsigned int s,
+                      const char *const str, void *const p_list, const T& pixel_type) {
+  cimg::unused(pixel_type);
+  double res = cimg::type<double>::nan();
+  cimg_pragma_openmp(critical(mp_store))
+    {
+    // Retrieve current gmic instance.
+    cimg::mutex(24);
+    CImgList<void*> &grl = gmic_runs();
+    int ind;
+    for (ind = grl.width() - 1; ind>=0; --ind) {
+      CImg<void*> &gr = grl[ind];
+      if (gr[1]==(void*)p_list) break;
+    }
+    if (ind<0) { cimg::mutex(24,0); res = cimg::type<double>::nan(); } // Instance not found
+    else {
+      CImg<void*> &gr = grl[ind];
+      gmic &gi = *(gmic*)gr[0];
+      cimg::mutex(24,0);
+
+      CImg<T>(img,w,h,d,s).display("DEBUG");
+      std::fprintf(stderr,"\nDEBUG : %s\n",str);
+    }
+  }
+  return res;
+}
+
 // Manage correspondence between abort pointers and thread ids.
 CImgList<void*> gmic::list_p_is_abort = CImgList<void*>();
 bool *gmic::abort_ptr(bool *const p_is_abort) {
