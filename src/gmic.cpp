@@ -2134,11 +2134,11 @@ inline char *_gmic_argument_text(const char *const argument, CImg<char>& argumen
 inline gmic_list<void*>& gmic_runs() { static gmic_list<void*> val; return val; }
 
 template<typename T>
-double gmic::mp_ext(char *const str, void *const p_list, const T& pixel_type) {
+double gmic::mp_call(char *const str, void *const p_list, const T& pixel_type) {
   cimg::unused(pixel_type);
   double res = cimg::type<double>::nan();
   char sep;
-  cimg_pragma_openmp(critical(mp_ext))
+  cimg_pragma_openmp(critical(mp_call))
   {
     // Retrieve current gmic instance.
     cimg::mutex(24);

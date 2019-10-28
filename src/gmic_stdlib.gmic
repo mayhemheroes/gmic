@@ -1062,7 +1062,7 @@ ${g}"N=24"$n").
 \n       . '"${c}"unref(a,b,...)"$n"' destroys references to the named variable given as arguments.
 \n       . '"${c}"breakpoint()"$n"' inserts a possible computation breakpoint (not supported by the cli interface).
 \n       . '"${c}"_(expr)"$n"' just ignores its arguments (mainly useful for debugging).
-\n       . '"${c}"ext('pipeline')"$n"' executes the specified "${-GMIC}" pipeline as if it was called outside
+\n       . '"${c}"call('pipeline')"$n"' executes the specified "${-GMIC}" pipeline as if it was called outside
 \n          the currently evaluated expression.
 \n       . '"${c}"correlate(I,wI,hI,dI,sI,K,wK,hK,dK,sK,_boundary_conditions,_is_normalized,_channel_mode,
 \n                    _xcenter,_ycenter,_zcenter,_xstart,_ystart,_zstart,_xend,_yend,_zend,
@@ -2091,7 +2091,7 @@ _display2d :
           x>x1?(x1 = x);
           y>y1?(y1 = y);
         );
-        end(ext('xin0,yin0,xin1,yin1=',x0,',',y0,',',x1,',',y1))"
+        end(call('xin0,yin0,xin1,yin1=',x0,',',y0,',',x1,',',y1))"
     fi
 
     # Start event loop.
@@ -3847,7 +3847,7 @@ append_multiline_comments :
         k = 1; while (i[#ind,k]<=_' ',++k);
         resize(#pind,1,hpind + hind - k - 1,1,1,0,0);
         copy(i[#pind,hpind - 1],i[#ind,k],hind - k);
-        ext('to_remove.=,',ind);
+        call('to_remove.=,',ind);
       );
     )"
   0 rm[$to_remove]
@@ -4624,24 +4624,6 @@ _sample :
 #@cli : in the selection, and each selected image is assigned to each specified named variable.
 #@cli : Use command 'input $variable' to bring the stored images back in the list.
 #@cli : $ sample eagle,earth store img1,img2 input $img2 $img1
-store : # <- Custom version of the command for keeping compatibility with G'MIC<2.7.2
-  e[^-1] "Store image$? as variable"${"v - if $#>1 u s else u \"\" fi v +"}" '$*'."
-  v -
-  if $#==1 # Assign to single variable
-    serialize auto,1,1 _$1=${"uchar2base64. 0"} rm
-  else     # Assign to multiple variables
-    if $#!=$! error[0--3] "Command 'store': Specified arguments '$*' do not match numbers of selected images." fi
-    $=arg repeat $! l[$<] serialize auto,1,1 _${arg{$<+1}}=${"uchar2base64. 0"} rm endl done
-  fi
-  v +
-
-restore : # <- Command to keep compatibility with G'MIC!=2.7.2 (where this command is native).
-  e[^-1] "Restore image data from variable"${"v - if $#>1 u s else u \"\" fi v +"}" '$*'."
-  v - $=arg
-  if $_version>=273 repeat $# ${${arg{1+$>}}} done
-  else l[] repeat $# base642img ${_${arg{$>+1}}} done endl
-  fi
-  v +
 
 #@cli string : "string"
 #@cli : Insert new image containing the ascii codes of specified string.
@@ -5156,7 +5138,7 @@ update_gallery_html : check "isbool(${1=0})"
                 beg = ind + 10;
                 end = find(str,_'\n',1,beg) - 1;
                 com = vector1024(0);
-                ext('+rows[0] ',beg,',',end);
+                call('+rows[0] ',beg,',',end);
               );
             );
           ";
@@ -17320,7 +17302,7 @@ _apply_tiles :
         for (y = 0, y<h#0, y+="$sh",
           for (x = 0, x<w#0, x+="$sw",
             draw(crop(#0,x,y,z,w,h,d,$8),0,0,0,0,w,h,d);
-            ext('__at.');
+            call('__at.');
             breakpoint();
             draw(#1,crop(#-1),x,y,z,0,w,h,d,s#0,-1,mask);
             draw(#1,mask,x,y,z,s#0,w,h,d,1,-1);
@@ -18767,9 +18749,9 @@ linify : check "${1=40}>=0 && $1<=100 && ${2=2}>=0 && ${3=40%}>0 && ${4=10}>=0 &
         P = P0*fact; while (is_in(#1,P), i(#1,P)-=om2add*opacity*spreading; P-=dP);
         if (!(nb_lines%250),
           progress = density==ref0?100:round(100*(ref - ref0)/(density - ref0));
-          ext('progress ',vtos(progress));
+          call('progress ',vtos(progress));
           if (narg("$_debug"),
-            ext('+c[1] 0,255 r. {*,w},{*,h},1,3,2 to. ',vtos(progress),'%,1%,1%,5%,1 w. -1,-1,0 rm.')
+            call('+c[1] 0,255 r. {*,w},{*,h},1,3,2 to. ',vtos(progress),'%,1%,1%,5%,1 w. -1,-1,0 rm.')
           );
         );
         ++nb_lines;
@@ -21270,7 +21252,7 @@ covariance_colors : skip "${1=avg}"
   v -
   $1=${-average_colors}
   f ">begin(avg = [ "$""$1" ]; const S2 = s^2; C = vectorS2(0); );
-     mI = I - avg; C+=mul(mI,mI,s); end(C/=whd - 1; ext('u ',vtos(C))); I"
+     mI = I - avg; C+=mul(mI,mI,s); end(C/=whd - 1; call('u ',vtos(C))); I"
   v +
 
 #@cli dec : decimal_int1,...
@@ -30727,7 +30709,6 @@ fx_stylize : l[] if !narg($$stylize) _fx_stylize_ fi onfail endl
               " b[0,1] xy,$13 repeat 2 l[$>] s c n 0,255 a c endl done *[-2,-1] {$14*255} a[0,-2] c a[1,-1] c"
 
   patch_penalization=$23
-  if $_version<271 patch_penalization*=500 fi
 
   # Insert style image at the end of the list.
   if $1<2 # Custom style (top or bottom layer)
@@ -33593,7 +33574,7 @@ fx_mix_pca :
 
          if ("0$_is_preview",
            L = [ 2,5,10]*sqrt(1e-5 + eig[0,3]);
-           ext('__cols=',vtos(round([
+           call('__cols=',vtos(round([
              avg - L[0]*eig[3,3],
              avg + L[0]*eig[3,3],
              avg - L[1]*eig[6,3],
