@@ -2200,14 +2200,13 @@ double gmic::mp_store(const Ts *const ptr,
   else {
     CImg<void*> &gr = grl[ind];
     gmic &gi = *(gmic*)gr[0];
-    cimg::mutex(24,0);
 
     const unsigned int *const variables_sizes = (const unsigned int*)gr[5];
     CImg<char> _varname(256);
     char *const varname = _varname.data(), end;
-    if (cimg_sscanf(str,"%256[a-zA-Z0-9_]%c",&(*varname=0),&end)==1 &&
-        (*varname<'0' || *varname>'9')) {
 
+    if (cimg_sscanf(str,"%255[a-zA-Z0-9_]%c",&(*varname=0),&end)==1 &&
+        (*varname<'0' || *varname>'9')) {
       CImgList<T> g_list;
       CImg<T>(ptr,w,h,d,s).move_to(g_list);
       CImg<char> name = CImg<char>::string(varname);
@@ -2219,10 +2218,13 @@ double gmic::mp_store(const Ts *const ptr,
       name.resize(name.width() + 9 + std::strlen(varname),1,1,1,0,0,1);
       std::sprintf(name,"%c*store/%s",gmic_store,_varname.data());
       gi.set_variable(_varname.data(),name,variables_sizes);
-    } else
+      cimg::mutex(24,0);
+    } else {
+      cimg::mutex(24,0);
       throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'store()': "
                                   "Invalid variable name '%s' specified.",
                                   cimg::type<T>::string(),str);
+    }
   }
   return cimg::type<double>::nan();
 }
