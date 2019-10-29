@@ -180,12 +180,10 @@ inline double gmic_mp_call(char *const str, void *const p_list, const T& pixel_t
 #define cimg_mp_call_function(str) return ::gmic_mp_call(str,&mp.listout,(T)0)
 
 template<typename Ts, typename T>
-inline double gmic_mp_store(const Ts *const img,
+inline double gmic_mp_store(const Ts *const ptr,
                             const unsigned int w, const unsigned int h, const unsigned int d, const unsigned int s,
                             const char *const str, void *const p_list, const T& pixel_type);
-#define cimg_mp_store_function(img,str) return ::gmic_mp_store(img._data,\
-                                                               img._width,img._height,img._depth,img._spectrum,\
-                                                               str,&mp.listout,(T)0)
+#define cimg_mp_store_function(ptr,w,h,d,s,str) return ::gmic_mp_store(ptr,w,h,d,s,str,&mp.listout,(T)0)
 #ifndef cimg_display
 #define cimg_display 0
 #endif // #ifndef cimg_display
@@ -260,7 +258,7 @@ struct gmic {
   template<typename T>
   static double mp_call(char *const str, void *const p_list, const T& pixel_type);
   template<typename Ts, typename T>
-  static double mp_store(const Ts *const img,
+  static double mp_store(const Ts *const ptr,
                          const unsigned int w, const unsigned int h, const unsigned int d, const unsigned int s,
                          const char *const str, void *const p_list, const T& pixel_type);
   static int _levenshtein(const char *const s, const char *const t,
@@ -455,10 +453,10 @@ inline double gmic_mp_call(char *const str, void *const p_list, const T& pixel_t
   return gmic::mp_call(str,p_list,pixel_type);
 }
 template<typename Ts, typename T>
-inline double gmic_mp_store(const Ts *const img,
+inline double gmic_mp_store(const Ts *const ptr,
                             const unsigned int w, const unsigned int h, const unsigned int d, const unsigned int s,
                             const char *const str, void *const p_list, const T& pixel_type) {
-  return gmic::mp_store(img,w,h,d,s,str,p_list,pixel_type);
+  return gmic::mp_store(ptr,w,h,d,s,str,p_list,pixel_type);
 }
 inline bool *gmic_abort_ptr(bool *const p_is_abort) { return gmic::abort_ptr(p_is_abort); }
 

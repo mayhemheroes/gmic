@@ -2183,7 +2183,7 @@ double gmic::mp_call(char *const str, void *const p_list, const T& pixel_type) {
 }
 
 template<typename Ts, typename T>
-double gmic::mp_store(const Ts *const img,
+double gmic::mp_store(const Ts *const ptr,
                       const unsigned int w, const unsigned int h, const unsigned d, const unsigned int s,
                       const char *const str, void *const p_list, const T& pixel_type) {
   cimg::unused(pixel_type);
@@ -2209,7 +2209,7 @@ double gmic::mp_store(const Ts *const img,
         (*varname<'0' || *varname>'9')) {
 
       CImgList<T> g_list;
-      CImg<T>(img,w,h,d,s).move_to(g_list);
+      CImg<T>(ptr,w,h,d,s).move_to(g_list);
       CImg<char> name = CImg<char>::string(varname);
       name.resize(name.width() + 4,1,1,1,0,0,1);
       name[0] = 'G'; name[1] = 'M'; name[2] = 'Z'; name[3] = 0;
