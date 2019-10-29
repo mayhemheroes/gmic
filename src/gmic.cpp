@@ -2200,7 +2200,6 @@ double gmic::mp_store(const Ts *const ptr,
   else {
     CImg<void*> &gr = grl[ind];
     gmic &gi = *(gmic*)gr[0];
-
     const unsigned int *const variables_sizes = (const unsigned int*)gr[5];
     CImg<char> _varname(256);
     char *const varname = _varname.data(), end;
