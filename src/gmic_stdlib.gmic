@@ -21627,6 +21627,22 @@ is_pattern : skip "${1=;}"
 is_percent :
   v - u {"s=['$1'];s[size(s)-1]==_'%'"} v +
 
+#@cli is_variable_name : "str"
+#@cli Returns 1 if specified argument can be considered as a variable name, 0 otherwise.
+is_variable_name :
+  v -
+  l[]
+    u {"str = ['$1'];
+        res = 1;
+        for (k = 0, res && k<size(str), ++k,
+          c = str[k];
+          res&= (c>=_'a' && c<=_'z') || (c>=_'A' && c<=_'Z') || (c>=_'0' && c<=_'9') || c=='_';
+        );
+        c = str[0];
+        res && (c<_'0' || c>_'9')"}
+  onfail u 0 endl
+  v +
+
 #@cli is_videofilename
 #@cli : Return 1 if extension of specified filename is typical from video files.
 is_videofilename : skip "${1=}"
