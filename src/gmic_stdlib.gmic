@@ -1406,9 +1406,10 @@ _help_header_html :
 \n<li><a href=\"#subsection17\">Degradations</a></li>
 \n<li><a href=\"#subsection18\">Blending and fading</a></li>
 \n<li><a href=\"#subsection19\">Image sequences and videos</a></li>
-\n<li><a href=\"#subsection20\">Convenience functions</a></li>
-\n<li><a href=\"#subsection21\">Other interactive commands</a></li>
-\n<li><a href=\"#subsection22\">Command shortcuts</a></li>
+\n<li><a href=\"#subsection20\">Neural networks</a></li>
+\n<li><a href=\"#subsection21\">Convenience functions</a></li>
+\n<li><a href=\"#subsection22\">Other interactive commands</a></li>
+\n<li><a href=\"#subsection23\">Command shortcuts</a></li>
 \n</ul>
 \n<li><a href=\"#section13\">Examples of use</a></li>
 \n</ul>
@@ -20961,6 +20962,380 @@ video2files : check "isint(${3=0}) && $3>=0 && isint(${4=-1}) && ($4>=0 || $4==-
   onfail stopflag=1
   endl while !$stopflag" && "($frame<=$4" || "$4==-1)
   v +
+
+#------------------------------
+#
+#@cli :: Neural networks
+#
+#------------------------------
+# The following commands (starting with 'nn_') is an attempt to have a way to manage
+# neural networks (evaluate and learn). Consider all this at being at an early stage!
+
+#@cli nn_new_inputvector : module_name,nb_values
+#@cli : Add an input vector to the neural network.
+nn_new_inputvector : check ${"is_variable_name $1"}" && isint($2) && $2>0"
+  e[^-1] "[NN] Add input vector '$1' with $2 values."
+  v -
+  name="$1"
+  1,$2
+  nm. $name
+  _nn_${name}_type="inputvector"
+  _nn_${name}_previous=
+  v +
+
+#@cli : nn_new_outputvector : module_name,previous_module_name
+#@cli : Add an output vector to the neural network.
+nn_new_outputvector : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
+  e[^-1] "[NN] Add output vector '$1', linked to previous module '$2'."
+  v -
+  name="$1"
+  name_previous="$2"
+  type_previous=${_nn_${name_previous}_type}
+  if !narg($type_previous)
+    error[0--3] "Command 'nn_new_outputvector': Unknown name for previous module '"${name_previous}"'."
+  fi
+  if '$type_previous'=='fullyconnected'" || "\
+     '$type_previous'=='inputvector'
+    1,{${name_previous},h}
+  else
+    error[0--3] "Command 'nn_new_outputvector': Invalid type for previous module '"${type_previous}"'."
+  fi
+  nm. $name
+  _nn_${name}_type="outputvector"
+  _nn_${name}_previous=$name_previous
+  _nn_${name}_next=
+  _nn_${name_previous}_next=$name
+  v +
+
+#@cli nn_new_fullyconnected : module_name,previous_module_name,nb_neurons,activation_function
+#@cli : Add a fully-connected layer to the neural network.
+nn_new_fullyconnected : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($3) && $3>0" skip "${4=leakyrelu}"
+  e[^-1] "[NN] Add fully-connected layer '$1', linked to previous module '$2', with $3 neurons and '$4' activation."
+  v -
+  name="$1"
+  name_previous="$2"
+  type_previous=${_nn_${name_previous}_type}
+  if !narg($type_previous)
+    error[0--3] "Command 'nn_new_fullyconnected': Unknown name for previous module '"${name_previous}"'."
+  fi
+  if '$type_previous'=='fullyconnected'" || "\
+     '$type_previous'=='inputvector'
+    {${name_previous},h+1},$3
+  else
+    error[0--3] "Command 'nn_new_fullyconnected': Invalid type for previous module '"${type_previous}"'."
+  fi
+  rand. -1,1
+  nm. $name
+  _nn_${name}_type="fullyconnected"
+  _nn_${name}_activation="$4"
+  _nn_${name}_previous=$name_previous
+  _nn_${name_previous}_next=$name
+  v +
+
+#@cli nn_reset_gradients : module_name
+#@cli : Reset all neural network gradients to zero.
+nn_reset_gradients : check ${"is_variable_name $1"}
+  e[^-1] "[NN] Reset all neural-network gradients."
+  v -
+  name=${"nn_name_input $1"}
+  type=${_nn_${name}_type}
+  for narg($name)
+    if '$type'=='fullyconnected'
+      _nn_${name}_sumdW,_nn_${name}_sumdB=
+    fi
+    name=${_nn_${name}_next}
+    type=${_nn_${name}_type}
+  done
+  v +
+
+#@cli nn_propagate : module_name
+#@cli : Propagate input through the neural network.
+nn_propagate : check ${"is_variable_name $1"}
+  e[^-1] "[NN] Propagate input, through the neural-network."
+  v -
+  name=${"nn_name_input $1"}
+  type=${_nn_${name}_type}
+  for narg($name)
+    nn_propagate_$type $name
+    name=${_nn_${name}_next}
+    type=${_nn_${name}_type}
+  done
+  v +
+
+#@cli nn_propagate_batch : module_name,[inputs_zstacked]
+#@cli : Batch propagate specified inputs through the neural network.
+#@cli : Insert image of corresponding network outputs at the end of the list.
+nn_propagate_batch : check ${"is_variable_name $1"}" && "${"is_image_arg $2"}
+  e[^-1] "[NN] Batch propapate inputs $2, through the neural network."
+  v -
+  input_name=${"nn_name_input $1"}
+  input_type=${_nn_${input_name}_type}
+  output_name=${"nn_name_output $1"}
+  output_type=${_nn_${output_name}_type}
+  pass$2 1 N={d}
+  if "const ind = "${$input_name}"; w!=w#ind || h!=h#ind || s!=s#ind"
+    error[0--3] "Command 'nn_backpropagate_batch': Dimensions of specified inputs ("{[w,h,d,s]}") do not "\
+                "match network input dimensions ("{$input_name,[w,h,d,s]}")."
+  fi
+  {$output_name,[w,h,$N,s]}
+
+  nn_reset_gradients $input_name
+  repeat $N
+    +slices.. $> f[$input_name] . rm.
+    nn_propagate $input_name
+    j. [$output_name],0,0,$>,0 # Store network result
+  done
+  rm[-2]
+  v +
+
+#@cli nn_backpropagate : module_name,[error_name]
+#@cli : Back-propagate specified error through the neural network.
+nn_backpropagate : check ${"is_variable_name $1"}" && "${"is_image_arg $2"}
+  e[^-1] "[NN] Back-propagate error $2, through the neural-network."
+  v -
+  name=${"nn_name_output $1"}
+  type=${_nn_${name}_type}
+  pass$2 1 store. _nn_${name}_error
+  for narg($name)
+    nn_backpropagate_$type $name
+    name=${_nn_${name}_previous}
+    type=${_nn_${name}_type}
+  done
+  v +
+
+#@cli nn_backpropagate_batch : module_name,[inputs_zstacked],[expected_outputs_zstacked],_insert_network_outputs={ 0 | 1 }
+#@cli : Batch propagate and backpropagate inputs and errors in neural network.
+#@cli : Insert image of corresponding network outputs at the end of the list.
+#@cli : Return loss value.
+nn_backpropagate_batch : check ${"is_variable_name $1"}" && "${"is_image_arg $2"}" && "${"is_image_arg $3"}" && isbool(${4=0})"
+  e[^-1] "[NN] Batch back-propapate errors from inputs $2 and expected outputs $3, through the neural network."
+  v -
+  input_name=${"nn_name_input $1"}
+  input_type=${_nn_${input_name}_type}
+  output_name=${"nn_name_output $1"}
+  output_type=${_nn_${output_name}_type}
+  pass$2 1 N={d}
+  if "const ind = "${$input_name}"; w!=w#ind || h!=h#ind || s!=s#ind"
+    error[0--3] "Command 'nn_backpropagate_batch': Dimensions of specified inputs ("{[w,h,d,s]}") do not "\
+                "match network input dimensions ("{$input_name,[w,h,d,s]")."
+  fi
+  pass$3 1
+  if "const ind = "${$output_name}"; d!="$N" || w!=w#ind || h!=h#ind || s!=s#ind"
+    error[0--3] "Command 'nn_backpropagate_batch': Dimensions of specified expected outputs ("{[w,h,d,s]}") do not "\
+                "match network output dimensions ("{$output_name,[w,h,d,s]")."
+  fi
+  if $4 +f. 0 ind_inputs,ind_expected_outputs=-3,-2
+  else ind_inputs,ind_expected_outputs=-2,-1
+  fi
+
+  nn_reset_gradients $input_name
+  loss=0
+  repeat $N
+    +slices[$ind_inputs] $> f[$input_name] . rm.
+    nn_propagate $input_name
+    if $4 j. [$output_name],0,0,$>,0 fi # Store network result
+    +slices[$ind_expected_outputs] $> -. [$output_name] *. -1
+    loss+={"sum(sqr(crop(#-1)))"}
+    nn_backpropagate $output_name,.
+    rm.
+  done
+  rm[$ind_inputs,$ind_expected_outputs]
+  u $loss
+  v +
+
+#@cli nn_update : module_name,epsilon
+#@cli : Update neural network weights, after back-propagation of the error.
+nn_update : check ${"is_variable_name $1"}" && ${2=0.001}>0"
+  e[^-1] "[NN] Update neural-network weights, with epsilon $2."
+  v -
+
+  # Retrieve max(|gradients|).
+  name=${"nn_name_input $1"}
+  type=${_nn_${name}_type}
+  gradmax=0
+  for narg($name)
+    if '$type'=='fullyconnected'
+      ${_nn_${name}_sumdB} ${_nn_${name}_sumdW} a[-2,-1] x
+      gradmax={max(1e-8,$gradmax,abs(im),abs(iM))}
+      rm.
+    fi
+    name=${_nn_${name}_next}
+    type=${_nn_${name}_type}
+  done
+  epsilon={$2/$gradmax}
+#  epsilon=$2
+
+  # Update weights.
+  name=${"nn_name_input $1"}
+  type=${_nn_${name}_type}
+  for narg($name)
+    nn_update_$type $name,$epsilon
+    name=${_nn_${name}_next}
+    type=${_nn_${name}_type}
+  done
+  v +
+
+# [internal] nn_define_leakyrelu
+# Return a string that defines a Leaky-RELU activation function, and its derivative.
+nn_define_leakyrelu :
+  u "sigma(x) = (x<0?0.01*x:x);"\
+    "dsigma(x) = (x<0?0.01:1);"
+
+# [internal] nn_define_relu
+# Return a string that defines a RELU activation function, and its derivative.
+nn_define_relu :
+  u "sigma(x) = (x<0?0:x);"\
+    "dsigma(x) = (x<0?0:1);"
+
+# [internal] nn_define_sigmoid
+# Return a string that defines a sigmoid activation function, and its derivative.
+nn_define_sigmoid :
+  u "sigma(x) = (0.5 + 0.5*tanh(0.5*x));"\
+    "dsigma(x) = (sigma(x)*(1 - sigma(x)));"
+
+# [internal] nn_name_input : module_name
+# Return the input module name of the neural network, and check its type.
+nn_name_input :
+  name="$1"
+  if !narg(${_nn_${name}_type})
+    error[0--3] "Command 'nn_name_input': Unknown module name '"${name}"'."
+  fi
+  for narg($name)
+    input_name=${name}
+    name=${_nn_${name}_previous}
+  done
+  input_type=${_nn_${input_name}_type}
+  if '$input_type'!='inputvector'
+    error[0--3] "Command 'nn_name_input': Invalid input type '"${input_type}"' (should be 'inputvector')."
+  fi
+  u $input_name
+
+# [internal] nn_name_output : module_name
+# Return the output module name of the neural network, and check its type.
+nn_name_output :
+  name="$1"
+  if !narg(${_nn_${name}_type})
+    error[0--3] "Command 'nn_name_output': Unknown module name '"${name}"'."
+  fi
+  for narg($name)
+    output_name=${name}
+    name=${_nn_${name}_next}
+  done
+  output_type=${_nn_${output_name}_type}
+  if '$output_type'!='outputvector'
+    error[0--3] "Command 'nn_name_output': Invalid output type '"${output_type}"' (should be 'outputvector')."
+  fi
+  u $output_name
+
+# [internal] nn_propagate_inputvector : module_name
+# Propagate data through an input-vector (just copy its value as its output).
+nn_propagate_inputvector :
+  name="$1"
+  +store[$name] _nn_${name}_output
+
+# [internal] nn_propagate_outputvector : module_name
+# Populate output vector with data output from latest layer.
+nn_propagate_outputvector :
+  name="$1"
+  name_input=${_nn_${name}_previous}
+  ${_nn_${name_input}_output}
+  j[$name] .
+  rm.
+
+# [internal] nn_propagate_fullyconnected : module_name
+# Propagate data through a fully-connected layer.
+nn_propagate_fullyconnected :
+  name="$1"
+  name_previous=${_nn_${name}_previous}
+  activation=${_nn_${name}_activation}
+  ${_nn_${name_previous}_output}
+  eval ${-nn_define_$activation}"
+    vsigma(X) = ( unref(_tmp); _tmp = X; for (_k = 0, _k<size(X), ++_k, _tmp[_k] = sigma(_tmp[_k])); _tmp );
+    const ind = "${$name}";
+    W = crop(#ind,0,w#ind-1);
+    B = crop(#ind,w#ind-1,1);
+    X = crop(#-1);
+    Z = mul(W,X,1) + B;
+    out = vsigma(Z);
+    store(Z,'_nn_"${name}"_Z');
+    store(out,'_nn_"${name}"_output');"
+  rm.
+
+# [internal] nn_backpropagate_inputvector : module_name
+# Back-propagate error through an input-vector (actually do nothing).
+nn_backpropagate_inputvector :
+  skip $*
+
+# [internal] nn_backpropagate_outputvector : module_name
+# Back-propagate error through an output-vector (do nothing, just pass it to previous layer).
+nn_backpropagate_outputvector :
+  name="$1"
+  name_input=${_nn_${name}_previous}
+  _nn_${name_input}_error=${_nn_${name}_error}
+
+# [internal] nn_backpropagate_fullyconnected : module_name
+# Back-propagate error through a fully-connected layer.
+nn_backpropagate_fullyconnected :
+  name="$1"
+  name_previous=${_nn_${name}_previous}
+  activation=${_nn_${name}_activation}
+  if !narg(${_nn_${name}_sumdW})
+    {$name,[w-1,h]}
+    {$name,[1,h]}
+  else
+    ${_nn_${name}_sumdW}         # [-6] = sumdW
+    ${_nn_${name}_sumdB}         # [-5] = sumdB
+  fi
+  ${_nn_${name_previous}_output} # [-4] = X
+  ${_nn_${name}_Z}               # [-3] = Z
+  ${_nn_${name}_output}          # [-2] = output
+  ${_nn_${name}_error}           # [-1] = error
+
+  eval ${-nn_define_$activation}"
+    vdsigma(X) = ( unref(_tmp); _tmp = X; for (_k = 0, _k<size(X), ++_k, _tmp[_k] = dsigma(_tmp[_k])); _tmp );
+    const ind = "${$name}";
+    W = crop(#ind,0,w#ind-1);
+    B = crop(#ind,w#ind-1,1);
+    sumdW = crop(#-6);
+    sumdB = crop(#-5);
+    X = crop(#-4);
+    Z = crop(#-3);
+    out = crop(#-2);
+    error = crop(#-1);
+    dB = error*vdsigma(Z);
+    dW = mul(dB,X,size(X));
+    dX = mul(transp(W,w#ind-1),dB,1);
+    sumdW+=dW;
+    sumdB+=dB;
+    store(dB,'_nn_"${name}"_dB');
+    store(dW,'_nn_"${name}"_dW',w#ind-1,h#ind);
+    store(sumdB,'_nn_"${name}"_sumdB');
+    store(sumdW,'_nn_"${name}"_sumdW',w#ind-1,h#ind);
+    store(dX,'_nn_"${name_previous}"_error');
+  "
+  rm[-6--1]
+
+# [internal] nn_update_inputvector : module_name,epsilon
+# Update weights for an input vector (actually do nothing)
+nn_update_inputvector :
+  skip $*
+
+# [internal] nn_update_outputvector : module_name,epsilon
+# Update weights for an output vector (actually do nothing)
+nn_update_outputvector :
+  skip $*
+
+# [internal] nn_update_fullyconnected : module_name,epsilon
+# Update weights for a fully-connected layer.
+nn_update_fullyconnected :
+  name="$1"
+  ${_nn_${name}_sumdW}
+  ${_nn_${name}_sumdB}
+  a[-2,-1] x
+#  *. {$2/max(abs(im),abs(iM))}
+  *. $2
+  -[$name,-1]
+
 
 #------------------------------
 #
