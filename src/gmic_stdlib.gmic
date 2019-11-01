@@ -21070,7 +21070,7 @@ nn_propagate_batch : check ${"is_variable_name $1"}" && "${"is_image_arg $2"}
   v -
   input_name=${"nn_name_input $1"}
   input_type=${_nn_${input_name}_type}
-  output_name=${"nn_name_output $1"}
+  output_name=${"nn_name_output $1,$0"}
   output_type=${_nn_${output_name}_type}
   pass$2 1 N={d}
   if "const ind = "${$input_name}"; w!=w#ind || h!=h#ind || s!=s#ind"
@@ -21093,7 +21093,7 @@ nn_propagate_batch : check ${"is_variable_name $1"}" && "${"is_image_arg $2"}
 nn_backpropagate : check ${"is_variable_name $1"}" && "${"is_image_arg $2"}
   e[^-1] "[NN] Back-propagate error $2, through the neural-network."
   v -
-  name=${"nn_name_output $1"}
+  name=${"nn_name_output $1,$0"}
   type=${_nn_${name}_type}
   pass$2 1 store. _nn_${name}_error
   for narg($name)
@@ -21112,7 +21112,7 @@ nn_backpropagate_batch : check ${"is_variable_name $1"}" && "${"is_image_arg $2"
   v -
   input_name=${"nn_name_input $1"}
   input_type=${_nn_${input_name}_type}
-  output_name=${"nn_name_output $1"}
+  output_name=${"nn_name_output $1,$0"}
   output_type=${_nn_${output_name}_type}
   pass$2 1 N={d}
   if "const ind = "${$input_name}"; w!=w#ind || h!=h#ind || s!=s#ind"
@@ -21195,10 +21195,10 @@ nn_define_sigmoid :
 
 # [internal] nn_name_input : module_name
 # Return the input module name of the neural network, and check its type.
-nn_name_input :
+nn_name_input : skip "${2=nn_name_input}"
   name="$1"
   if !narg(${_nn_${name}_type})
-    error[0--3] "Command 'nn_name_input': Unknown module name '"${name}"'."
+    error[0--4] "Command 'nn_name_input': Unknown module name '"${name}"'."
   fi
   for narg($name)
     input_name=${name}
@@ -21206,16 +21206,16 @@ nn_name_input :
   done
   input_type=${_nn_${input_name}_type}
   if '$input_type'!='inputvector'
-    error[0--3] "Command 'nn_name_input': Invalid input type '"${input_type}"' (should be 'inputvector')."
+    error[0--4] "Command 'nn_name_input': Invalid input type '"${input_type}"' (should be 'inputvector')."
   fi
   u $input_name
 
 # [internal] nn_name_output : module_name
 # Return the output module name of the neural network, and check its type.
-nn_name_output :
+nn_name_output : skip "${2=nn_name_output}"
   name="$1"
   if !narg(${_nn_${name}_type})
-    error[0--3] "Command 'nn_name_output': Unknown module name '"${name}"'."
+    error[0--4] "Command '$2': Unknown module name '"${name}"'."
   fi
   for narg($name)
     output_name=${name}
@@ -21223,7 +21223,7 @@ nn_name_output :
   done
   output_type=${_nn_${output_name}_type}
   if '$output_type'!='outputvector'
-    error[0--3] "Command 'nn_name_output': Invalid output type '"${output_type}"' (should be 'outputvector')."
+    error[0--4] "Command '$2': Invalid output type '"${output_type}"' (should be 'outputvector')."
   fi
   u $output_name
 
