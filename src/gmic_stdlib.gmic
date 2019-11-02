@@ -20974,19 +20974,19 @@ video2files : check "isint(${3=0}) && $3>=0 && isint(${4=-1}) && ($4>=0 || $4==-
 # [internal] nn_define_leakyrelu
 # Return a string that defines a Leaky-RELU activation function, and its derivative.
 nn_define_leakyrelu :
-  u "leakyrelu(x) = (x<0?0.01*x:x); "\
+  u "leakyrelu(x) = (x<0?0.01*x:x);"{`10`}\
     "d_leakyrelu(x) = (x<0?0.01:1);"
 
 # [internal] nn_define_relu
 # Return a string that defines a RELU activation function, and its derivative.
 nn_define_relu :
-  u "relu(x) = (x<0?0:x); "\
+  u "relu(x) = (x<0?0:x);"{`10`}\
     "d_relu(x) = (x<0?0:1);"
 
 # [internal] nn_define_sigmoid
 # Return a string that defines a sigmoid activation function, and its derivative.
 nn_define_sigmoid :
-  u "sigmoid(x) = (0.5 + 0.5*tanh(0.5*x)); "\
+  u "sigmoid(x) = (0.5 + 0.5*tanh(0.5*x));"{`10`}\
     "d_sigmoid(x) = (sigma(x)*(1 - sigma(x)));"
 
 # [internal] nn_name_input : module_name
@@ -21142,81 +21142,46 @@ nn_propagate : check ${"is_variable_name $1"}
   eval ${"nn_compile_propagate $1"}
   v +
 
-# [internal] nn_propagate_inputvector : module_name
-# Propagate data through an input-vector (just copy its value as its output).
-nn_propagate_inputvector :
-  name="$1"
-  +store[$name] _nn_${name}_O
-
-# [internal] nn_propagate_outputvector : module_name
-# Populate output vector with data output from latest layer.
-nn_propagate_outputvector :
-  name="$1"
-  name_input=${_nn_${name}_previous}
-  ${_nn_${name_input}_O}
-  j[$name] .
-  rm.
-
-# [internal] nn_propagate_fullyconnected : module_name
-# Propagate data through a fully-connected layer.
-nn_propagate_fullyconnected :
-  name="$1"
-  name_previous=${_nn_${name}_previous}
-  activation=${_nn_${name}_activation}
-  ${_nn_${name_previous}_O}
-  eval ${-nn_define_$activation}"
-    v_activ(S,X) = ( unref(_tmp); _tmp = X; for (_k = 0, _k<size(X), ++_k, _tmp[_k] = ""#S(_tmp[_k])); _tmp );
-    const ind = "${$name}";
-    W = crop(#ind,0,w#ind-1);
-    B = crop(#ind,w#ind-1,1);
-    X = crop(#-1);
-    Z = mul(W,X,1) + B;
-    O = v_activ("$activation",Z);
-    store(Z,'_nn_"${name}"_Z');
-    store(O,'_nn_"${name}"_O');"
-  rm.
-
-#@cli nn_compile_propagate : module_name
-#@cli : Generate fast code for propagating input through the neural network,
-#@cli : starting from the specified module name.
+# [internal] nn_compile_propagate : module_name
+# Generate code to propagate output of the specified module through the neural network.
 nn_compile_propagate : check ${"is_variable_name $1"}
-  e[^-1] "[NN] Generate code for propagating data from '$1', through the neural-network."
+  e[^-1] "[NN] Generate code to propagate output of '$1', through the neural-network."
   v -
   nl={`10`}
   name="$1"
-  _code=");"${nl}
+  _code_begin=
+  _code_body=
   for narg($name)
     type=${_nn_${name}_type}
     activation=${_nn_${name}_activation}
-    nn_compile_propagate_$type $name,_code
     if narg($activation)" && "!narg(${is_$activation}) # Add activation function if necessary
-      _code=${-nn_define_$activation}${nl}$_code
+      _code_begin.=${-nn_define_$activation}${nl}
       is_$activation=1
     fi
+    nn_compile_propagate_$type $name
     name=${_nn_${name}_next}
   done
-  _code="begin("${nl}\
-        "v_activ(S,X) = ( unref(_tmp); _tmp = X; for (_k = 0, _k<size(X), ++_k, _tmp[_k] = ""#S(_tmp[_k])); _tmp );"${nl}\
-        ${_code}
-  u $_code
-  _code=
+  u "begin("${nl}\
+    "v_activ(S,X) = ( unref(_tmp); _tmp = X; for (_k = 0, _k<size(X), ++_k, _tmp[_k] = ""#S(_tmp[_k])); _tmp );"${nl}\
+    ${_code_begin}\
+    ");"${nl}\
+    ${_code_body}
+  _code_begin,_code_body=
   v +
 
 # [internal] nn_compile_propagate_inputvector : module_name,code_variable
 # Propagate data through an input-vector (just copy its value as its output).
 nn_compile_propagate_inputvector :
   nl={`10`}
-  $2=${$2}\
-     "O_$1 = crop(#"${$1}");"${nl}\
-     "store(O_$1,'_nn_$1_O');"${nl}
+  _code_body.="O_$1 = crop(#"${$1}");"${nl}\
+              "store(O_$1,'_nn_$1_O');"${nl}
 
 # [internal] nn_compile_propagate_outputvector : module_name,code_variable
 # Populate output vector with data output from latest layer.
 nn_compile_propagate_outputvector :
   nl={`10`}
   previous_name=${_nn_$1_previous}
-  $2=${$2}\
-     "draw(#"${$1}",O_"${previous_name}");"${nl}
+  _code_body.="draw(#"${$1}",O_"${previous_name}");"${nl}
 
 # [internal] nn_compile_propagate_fullyconnected : module_name,code_variable
 # Propagate data through a fully-connected layer.
@@ -21225,13 +21190,13 @@ nn_compile_propagate_fullyconnected :
   activation=${_nn_$1_activation}
   previous_name=${_nn_$1_previous}
   ind=${$1}
-  $2="W_$1 = crop(#"$ind",0,w#"$ind"-1);"${nl}\
-     "B_$1 = crop(#"$ind",w#"$ind"-1,1);"${nl}\
-     ${$2}\
-     "Z_$1 = mul(W_$1,O_"${previous_name}",1) + B_$1;"${nl}\
-     "O_$1 = v_activ("$activation",Z_$1);"${nl}\
-     "store(Z_$1,'_nn_$1_Z');"${nl}\
-     "store(O_$1,'_nn_$1_O');"${nl}
+  _code_begin.="W_$1 = crop(#"$ind",0,w#"$ind"-1);"${nl}\
+               "B_$1 = crop(#"$ind",w#"$ind"-1,1);"${nl}
+
+  _code_body.="Z_$1 = mul(W_$1,O_"${previous_name}",1) + B_$1;"${nl}\
+              "O_$1 = v_activ("$activation",Z_$1);"${nl}\
+              "store(Z_$1,'_nn_$1_Z');"${nl}\
+              "store(O_$1,'_nn_$1_O');"${nl}
 
 #@cli nn_backpropagate_batch : module_name,[inputs_zstacked],[expected_outputs_zstacked],_insert_network_outputs={ 0 | 1 }
 #@cli : Batch propagate and backpropagate inputs and errors in neural network.
