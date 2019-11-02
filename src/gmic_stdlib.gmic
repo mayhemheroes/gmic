@@ -21138,20 +21138,22 @@ nn_propagate : check ${"is_variable_name $1"}
     name=${_nn_${name}_next}
     type=${_nn_${name}_type}
   done
+
+#  eval ${"nn_compile_propagate $1"}
   v +
 
 # [internal] nn_propagate_inputvector : module_name
 # Propagate data through an input-vector (just copy its value as its output).
 nn_propagate_inputvector :
   name="$1"
-  +store[$name] _nn_${name}_output
+  +store[$name] _nn_${name}_O
 
 # [internal] nn_propagate_outputvector : module_name
 # Populate output vector with data output from latest layer.
 nn_propagate_outputvector :
   name="$1"
   name_input=${_nn_${name}_previous}
-  ${_nn_${name_input}_output}
+  ${_nn_${name_input}_O}
   j[$name] .
   rm.
 
@@ -21161,7 +21163,7 @@ nn_propagate_fullyconnected :
   name="$1"
   name_previous=${_nn_${name}_previous}
   activation=${_nn_${name}_activation}
-  ${_nn_${name_previous}_output}
+  ${_nn_${name_previous}_O}
   eval ${-nn_define_$activation}"
     v_activ(S,X) = ( unref(_tmp); _tmp = X; for (_k = 0, _k<size(X), ++_k, _tmp[_k] = ""#S(_tmp[_k])); _tmp );
     const ind = "${$name}";
@@ -21171,7 +21173,7 @@ nn_propagate_fullyconnected :
     Z = mul(W,X,1) + B;
     out = v_activ("$activation",Z);
     store(Z,'_nn_"${name}"_Z');
-    store(out,'_nn_"${name}"_output');"
+    store(out,'_nn_"${name}"_O');"
   rm.
 
 #@cli nn_backpropagate_batch : module_name,[inputs_zstacked],[expected_outputs_zstacked],_insert_network_outputs={ 0 | 1 }
@@ -21221,7 +21223,7 @@ nn_backpropagate : check ${"is_variable_name $1"}" && "${"is_image_arg $2"}
   v -
   name=${"nn_name_output $1,$0"}
   type=${_nn_${name}_type}
-  pass$2 1 store. _nn_${name}_error
+  pass$2 1 store. _nn_${name}_E
   for narg($name)
     nn_backpropagate_$type $name
     name=${_nn_${name}_previous}
@@ -21239,7 +21241,7 @@ nn_backpropagate_inputvector :
 nn_backpropagate_outputvector :
   name="$1"
   name_input=${_nn_${name}_previous}
-  _nn_${name_input}_error=${_nn_${name}_error}
+  _nn_${name_input}_E=${_nn_${name}_E}
 
 # [internal] nn_backpropagate_fullyconnected : module_name
 # Back-propagate error through a fully-connected layer.
@@ -21254,10 +21256,10 @@ nn_backpropagate_fullyconnected :
     ${_nn_${name}_sumdW}         # [-6] = sumdW
     ${_nn_${name}_sumdB}         # [-5] = sumdB
   fi
-  ${_nn_${name_previous}_output} # [-4] = X
+  ${_nn_${name_previous}_O}      # [-4] = X
   ${_nn_${name}_Z}               # [-3] = Z
-  ${_nn_${name}_output}          # [-2] = output
-  ${_nn_${name}_error}           # [-1] = error
+  ${_nn_${name}_O}               # [-2] = output
+  ${_nn_${name}_E}               # [-1] = error
 
   eval ${-nn_define_$activation}"
     v_d_activ(S,X) = ( unref(_tmp); _tmp = X; for (_k = 0, _k<size(X), ++_k, _tmp[_k] = ""#S(_tmp[_k])); _tmp );
@@ -21279,7 +21281,7 @@ nn_backpropagate_fullyconnected :
     store(dW,'_nn_"${name}"_dW',w#ind-1,h#ind);
     store(sumdB,'_nn_"${name}"_sumdB');
     store(sumdW,'_nn_"${name}"_sumdW',w#ind-1,h#ind);
-    store(dX,'_nn_"${name_previous}"_error');
+    store(dX,'_nn_"${name_previous}"_E');
   "
   rm[-6--1]
 
