@@ -21237,13 +21237,7 @@ nn_backpropagate : check ${"is_variable_name $1"}" && "${"is_image_arg $2"}
   nn_compile_propagate $name_input
   _nn_code_body.="expected = crop(#-1);"${_nl}\
                  "dE_"${name_previous}" = O_"${name_previous}" - expected;"${_nl}
-  nn_compile_backpropagate $name_output
-
-  # v 0
-  # e[] "BEGIN CODE = \n"$_nn_code_begin
-  # e[] "BODY CODE = \n"$_nn_code_body
-  # e[] "END CODE = \n"$_nn_code_end
-
+  nn_compile_backpropagate $name_previous
   eval "begin("${_nl}${_nn_code_begin}");"${_nl}\
        ${_nn_code_body}\
        "end("${_nl}${_nn_code_end}");"${_nl}
@@ -21285,6 +21279,7 @@ nn_compile_backpropagate_fullyconnected :
                  "critical(sumdB_$1+=dB_$1; sumdW_$1+=dW_$1);"${_nl}
   _nn_code_end.="store(sumdB_$1,'_nn_$1_sumdB');"${_nl}\
                 "store(sumdW_$1,'_nn_$1_sumdW',w#"$ind"-1,h#"$ind");"${_nl}
+
 
 # [internal] nn_backpropagate_inputvector : module_name
 # Back-propagate error through an input-vector (actually do nothing).
