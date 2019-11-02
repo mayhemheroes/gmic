@@ -20971,6 +20971,58 @@ video2files : check "isint(${3=0}) && $3>=0 && isint(${4=-1}) && ($4>=0 || $4==-
 # The following commands (starting with 'nn_') is an attempt to have a way to manage
 # neural networks (evaluate and learn). Consider all this at being at an early stage!
 
+# [internal] nn_define_leakyrelu
+# Return a string that defines a Leaky-RELU activation function, and its derivative.
+nn_define_leakyrelu :
+  u "leakyrelu(x) = (x<0?0.01*x:x); "\
+    "d_leakyrelu(x) = (x<0?0.01:1);"
+
+# [internal] nn_define_relu
+# Return a string that defines a RELU activation function, and its derivative.
+nn_define_relu :
+  u "relu(x) = (x<0?0:x); "\
+    "d_relu(x) = (x<0?0:1);"
+
+# [internal] nn_define_sigmoid
+# Return a string that defines a sigmoid activation function, and its derivative.
+nn_define_sigmoid :
+  u "sigmoid(x) = (0.5 + 0.5*tanh(0.5*x)); "\
+    "d_sigmoid(x) = (sigma(x)*(1 - sigma(x)));"
+
+# [internal] nn_name_input : module_name
+# Return the input module name of the neural network, and check its type.
+nn_name_input : skip "${2=nn_name_input}"
+  name="$1"
+  if !narg(${_nn_${name}_type})
+    error[0--4] "Command 'nn_name_input': Unknown module name '"${name}"'."
+  fi
+  for narg($name)
+    input_name=${name}
+    name=${_nn_${name}_previous}
+  done
+  input_type=${_nn_${input_name}_type}
+  if '$input_type'!='inputvector'
+    error[0--4] "Command 'nn_name_input': Invalid input type '"${input_type}"' (should be 'inputvector')."
+  fi
+  u $input_name
+
+# [internal] nn_name_output : module_name
+# Return the output module name of the neural network, and check its type.
+nn_name_output : skip "${2=nn_name_output}"
+  name="$1"
+  if !narg(${_nn_${name}_type})
+    error[0--4] "Command '$2': Unknown module name '"${name}"'."
+  fi
+  for narg($name)
+    output_name=${name}
+    name=${_nn_${name}_next}
+  done
+  output_type=${_nn_${output_name}_type}
+  if '$output_type'!='outputvector'
+    error[0--4] "Command '$2': Invalid output type '"${output_type}"' (should be 'outputvector')."
+  fi
+  u $output_name
+
 #@cli nn_new_inputvector : module_name,nb_values
 #@cli : Add an input vector to the neural network.
 nn_new_inputvector : check ${"is_variable_name $1"}" && isint($2) && $2>0"
@@ -21048,20 +21100,6 @@ nn_reset_gradients : check ${"is_variable_name $1"}
   done
   v +
 
-#@cli nn_propagate : module_name
-#@cli : Propagate input through the neural network.
-nn_propagate : check ${"is_variable_name $1"}
-  e[^-1] "[NN] Propagate input, through the neural-network."
-  v -
-  name=${"nn_name_input $1"}
-  type=${_nn_${name}_type}
-  for narg($name)
-    nn_propagate_$type $name
-    name=${_nn_${name}_next}
-    type=${_nn_${name}_type}
-  done
-  v +
-
 #@cli nn_propagate_batch : module_name,[inputs_zstacked]
 #@cli : Batch propagate specified inputs through the neural network.
 #@cli : Insert image of corresponding network outputs at the end of the list.
@@ -21088,20 +21126,53 @@ nn_propagate_batch : check ${"is_variable_name $1"}" && "${"is_image_arg $2"}
   rm[-2]
   v +
 
-#@cli nn_backpropagate : module_name,[error_name]
-#@cli : Back-propagate specified error through the neural network.
-nn_backpropagate : check ${"is_variable_name $1"}" && "${"is_image_arg $2"}
-  e[^-1] "[NN] Back-propagate error $2, through the neural-network."
+#@cli nn_propagate : module_name
+#@cli : Propagate input through the neural network.
+nn_propagate : check ${"is_variable_name $1"}
+  e[^-1] "[NN] Propagate input, through the neural-network."
   v -
-  name=${"nn_name_output $1,$0"}
+  name=${"nn_name_input $1"}
   type=${_nn_${name}_type}
-  pass$2 1 store. _nn_${name}_error
   for narg($name)
-    nn_backpropagate_$type $name
-    name=${_nn_${name}_previous}
+    nn_propagate_$type $name
+    name=${_nn_${name}_next}
     type=${_nn_${name}_type}
   done
   v +
+
+# [internal] nn_propagate_inputvector : module_name
+# Propagate data through an input-vector (just copy its value as its output).
+nn_propagate_inputvector :
+  name="$1"
+  +store[$name] _nn_${name}_output
+
+# [internal] nn_propagate_outputvector : module_name
+# Populate output vector with data output from latest layer.
+nn_propagate_outputvector :
+  name="$1"
+  name_input=${_nn_${name}_previous}
+  ${_nn_${name_input}_output}
+  j[$name] .
+  rm.
+
+# [internal] nn_propagate_fullyconnected : module_name
+# Propagate data through a fully-connected layer.
+nn_propagate_fullyconnected :
+  name="$1"
+  name_previous=${_nn_${name}_previous}
+  activation=${_nn_${name}_activation}
+  ${_nn_${name_previous}_output}
+  eval ${-nn_define_$activation}"
+    v_activ(S,X) = ( unref(_tmp); _tmp = X; for (_k = 0, _k<size(X), ++_k, _tmp[_k] = ""#S(_tmp[_k])); _tmp );
+    const ind = "${$name}";
+    W = crop(#ind,0,w#ind-1);
+    B = crop(#ind,w#ind-1,1);
+    X = crop(#-1);
+    Z = mul(W,X,1) + B;
+    out = v_activ("$activation",Z);
+    store(Z,'_nn_"${name}"_Z');
+    store(out,'_nn_"${name}"_output');"
+  rm.
 
 #@cli nn_backpropagate_batch : module_name,[inputs_zstacked],[expected_outputs_zstacked],_insert_network_outputs={ 0 | 1 }
 #@cli : Batch propagate and backpropagate inputs and errors in neural network.
@@ -21143,123 +21214,20 @@ nn_backpropagate_batch : check ${"is_variable_name $1"}" && "${"is_image_arg $2"
   u {sqrt($loss)/$N}
   v +
 
-#@cli nn_update : module_name,epsilon
-#@cli : Update neural network weights, after back-propagation of the error.
-nn_update : check ${"is_variable_name $1"}" && ${2=0.001}>0"
-  e[^-1] "[NN] Update neural-network weights, with epsilon $2."
+#@cli nn_backpropagate : module_name,[error_name]
+#@cli : Back-propagate specified error through the neural network.
+nn_backpropagate : check ${"is_variable_name $1"}" && "${"is_image_arg $2"}
+  e[^-1] "[NN] Back-propagate error $2, through the neural-network."
   v -
-
-  # Retrieve max(|gradients|).
-  name=${"nn_name_input $1"}
+  name=${"nn_name_output $1,$0"}
   type=${_nn_${name}_type}
-  gradmax=0
+  pass$2 1 store. _nn_${name}_error
   for narg($name)
-    if '$type'=='fullyconnected'
-      ${_nn_${name}_sumdB} ${_nn_${name}_sumdW} a[-2,-1] x
-      gradmax={max(1e-8,$gradmax,abs(im),abs(iM))}
-      rm.
-    fi
-    name=${_nn_${name}_next}
-    type=${_nn_${name}_type}
-  done
-  epsilon={$2/$gradmax}
-#  epsilon=$2
-
-  # Update weights.
-  name=${"nn_name_input $1"}
-  type=${_nn_${name}_type}
-  for narg($name)
-    nn_update_$type $name,$epsilon
-    name=${_nn_${name}_next}
+    nn_backpropagate_$type $name
+    name=${_nn_${name}_previous}
     type=${_nn_${name}_type}
   done
   v +
-
-# [internal] nn_define_leakyrelu
-# Return a string that defines a Leaky-RELU activation function, and its derivative.
-nn_define_leakyrelu :
-  u "leakyrelu(x) = (x<0?0.01*x:x); "\
-    "d_leakyrelu(x) = (x<0?0.01:1);"
-
-# [internal] nn_define_relu
-# Return a string that defines a RELU activation function, and its derivative.
-nn_define_relu :
-  u "relu(x) = (x<0?0:x); "\
-    "d_relu(x) = (x<0?0:1);"
-
-# [internal] nn_define_sigmoid
-# Return a string that defines a sigmoid activation function, and its derivative.
-nn_define_sigmoid :
-  u "sigmoid(x) = (0.5 + 0.5*tanh(0.5*x)); "\
-    "d_sigmoid(x) = (sigma(x)*(1 - sigma(x)));"
-
-# [internal] nn_name_input : module_name
-# Return the input module name of the neural network, and check its type.
-nn_name_input : skip "${2=nn_name_input}"
-  name="$1"
-  if !narg(${_nn_${name}_type})
-    error[0--4] "Command 'nn_name_input': Unknown module name '"${name}"'."
-  fi
-  for narg($name)
-    input_name=${name}
-    name=${_nn_${name}_previous}
-  done
-  input_type=${_nn_${input_name}_type}
-  if '$input_type'!='inputvector'
-    error[0--4] "Command 'nn_name_input': Invalid input type '"${input_type}"' (should be 'inputvector')."
-  fi
-  u $input_name
-
-# [internal] nn_name_output : module_name
-# Return the output module name of the neural network, and check its type.
-nn_name_output : skip "${2=nn_name_output}"
-  name="$1"
-  if !narg(${_nn_${name}_type})
-    error[0--4] "Command '$2': Unknown module name '"${name}"'."
-  fi
-  for narg($name)
-    output_name=${name}
-    name=${_nn_${name}_next}
-  done
-  output_type=${_nn_${output_name}_type}
-  if '$output_type'!='outputvector'
-    error[0--4] "Command '$2': Invalid output type '"${output_type}"' (should be 'outputvector')."
-  fi
-  u $output_name
-
-# [internal] nn_propagate_inputvector : module_name
-# Propagate data through an input-vector (just copy its value as its output).
-nn_propagate_inputvector :
-  name="$1"
-  +store[$name] _nn_${name}_output
-
-# [internal] nn_propagate_outputvector : module_name
-# Populate output vector with data output from latest layer.
-nn_propagate_outputvector :
-  name="$1"
-  name_input=${_nn_${name}_previous}
-  ${_nn_${name_input}_output}
-  j[$name] .
-  rm.
-
-# [internal] nn_propagate_fullyconnected : module_name
-# Propagate data through a fully-connected layer.
-nn_propagate_fullyconnected :
-  name="$1"
-  name_previous=${_nn_${name}_previous}
-  activation=${_nn_${name}_activation}
-  ${_nn_${name_previous}_output}
-  eval ${-nn_define_$activation}"
-    v_activ(S,X) = ( unref(_tmp); _tmp = X; for (_k = 0, _k<size(X), ++_k, _tmp[_k] = ""#S(_tmp[_k])); _tmp );
-    const ind = "${$name}";
-    W = crop(#ind,0,w#ind-1);
-    B = crop(#ind,w#ind-1,1);
-    X = crop(#-1);
-    Z = mul(W,X,1) + B;
-    out = v_activ("$activation",Z);
-    store(Z,'_nn_"${name}"_Z');
-    store(out,'_nn_"${name}"_output');"
-  rm.
 
 # [internal] nn_backpropagate_inputvector : module_name
 # Back-propagate error through an input-vector (actually do nothing).
@@ -21314,6 +21282,38 @@ nn_backpropagate_fullyconnected :
     store(dX,'_nn_"${name_previous}"_error');
   "
   rm[-6--1]
+
+#@cli nn_update : module_name,epsilon
+#@cli : Update neural network weights, after back-propagation of the error.
+nn_update : check ${"is_variable_name $1"}" && ${2=0.001}>0"
+  e[^-1] "[NN] Update neural-network weights, with epsilon $2."
+  v -
+
+  # Retrieve max(|gradients|).
+  name=${"nn_name_input $1"}
+  type=${_nn_${name}_type}
+  gradmax=0
+  for narg($name)
+    if '$type'=='fullyconnected'
+      ${_nn_${name}_sumdB} ${_nn_${name}_sumdW} a[-2,-1] x
+      gradmax={max(1e-8,$gradmax,abs(im),abs(iM))}
+      rm.
+    fi
+    name=${_nn_${name}_next}
+    type=${_nn_${name}_type}
+  done
+  epsilon={$2/$gradmax}
+#  epsilon=$2
+
+  # Update weights.
+  name=${"nn_name_input $1"}
+  type=${_nn_${name}_type}
+  for narg($name)
+    nn_update_$type $name,$epsilon
+    name=${_nn_${name}_next}
+    type=${_nn_${name}_type}
+  done
+  v +
 
 # [internal] nn_update_inputvector : module_name,epsilon
 # Update weights for an input vector (actually do nothing)
