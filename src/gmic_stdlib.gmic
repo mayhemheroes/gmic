@@ -21177,12 +21177,13 @@ nn_propagate_fullyconnected :
   rm.
 
 #@cli nn_compile_propagate : module_name
-#@cli : Generate fast code for propagating input through the neural network.
+#@cli : Generate fast code for propagating input through the neural network,
+#@cli : starting from the specified module name.
 nn_compile_propagate : check ${"is_variable_name $1"}
-  e[^-1] "[NN] Generate code for propagating input, through the neural-network."
+  e[^-1] "[NN] Generate code for propagating data from '$1', through the neural-network."
   v -
   nl={`10`}
-  name=${"nn_name_input $1"}
+  name="$1"
   _code=");"${nl}
   for narg($name)
     type=${_nn_${name}_type}
@@ -21202,13 +21203,23 @@ nn_compile_propagate : check ${"is_variable_name $1"}
   v +
 
 # [internal] nn_compile_propagate_inputvector : module_name,code_variable
+# Propagate data through an input-vector (just copy its value as its output).
 nn_compile_propagate_inputvector :
   nl={`10`}
   $2=${$2}\
      "O_$1 = crop(#"${$1}");"${nl}\
      "store(O_$1,'_nn_$1_O');"${nl}
 
+# [internal] nn_compile_propagate_outputvector : module_name,code_variable
+# Populate output vector with data output from latest layer.
+nn_compile_propagate_outputvector :
+  nl={`10`}
+  previous_name=${_nn_$1_previous}
+  $2=${$2}\
+     "draw(#"${$1}",O_"${previous_name}");"${nl}
+
 # [internal] nn_compile_propagate_fullyconnected : module_name,code_variable
+# Propagate data through a fully-connected layer.
 nn_compile_propagate_fullyconnected :
   nl={`10`}
   activation=${_nn_$1_activation}
@@ -21221,13 +21232,6 @@ nn_compile_propagate_fullyconnected :
      "O_$1 = v_activ("$activation",Z_$1);"${nl}\
      "store(Z_$1,'_nn_$1_Z');"${nl}\
      "store(O_$1,'_nn_$1_O');"${nl}
-
-# [internal] nn_compile_propagate_outputvector : module_name,code_variable
-nn_compile_propagate_outputvector :
-  nl={`10`}
-  previous_name=${_nn_$1_previous}
-  $2=${$2}\
-     "draw(#"${$1}",O_"${previous_name}");"${nl}
 
 #@cli nn_backpropagate_batch : module_name,[inputs_zstacked],[expected_outputs_zstacked],_insert_network_outputs={ 0 | 1 }
 #@cli : Batch propagate and backpropagate inputs and errors in neural network.
