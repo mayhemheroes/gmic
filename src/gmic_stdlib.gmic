@@ -21178,20 +21178,20 @@ nn_update : check ${"is_variable_name $1"}" && ${2=0.001}>0"
 # [internal] nn_define_leakyrelu
 # Return a string that defines a Leaky-RELU activation function, and its derivative.
 nn_define_leakyrelu :
-  u "sigma(x) = (x<0?0.01*x:x);"\
-    "dsigma(x) = (x<0?0.01:1);"
+  u "leakyrelu(x) = (x<0?0.01*x:x); "\
+    "d_leakyrelu(x) = (x<0?0.01:1);"
 
 # [internal] nn_define_relu
 # Return a string that defines a RELU activation function, and its derivative.
 nn_define_relu :
-  u "sigma(x) = (x<0?0:x);"\
-    "dsigma(x) = (x<0?0:1);"
+  u "relu(x) = (x<0?0:x); "\
+    "d_relu(x) = (x<0?0:1);"
 
 # [internal] nn_define_sigmoid
 # Return a string that defines a sigmoid activation function, and its derivative.
 nn_define_sigmoid :
-  u "sigma(x) = (0.5 + 0.5*tanh(0.5*x));"\
-    "dsigma(x) = (sigma(x)*(1 - sigma(x)));"
+  u "sigmoid(x) = (0.5 + 0.5*tanh(0.5*x)); "\
+    "d_sigmoid(x) = (sigma(x)*(1 - sigma(x)));"
 
 # [internal] nn_name_input : module_name
 # Return the input module name of the neural network, and check its type.
@@ -21250,13 +21250,13 @@ nn_propagate_fullyconnected :
   activation=${_nn_${name}_activation}
   ${_nn_${name_previous}_output}
   eval ${-nn_define_$activation}"
-    vsigma(X) = ( unref(_tmp); _tmp = X; for (_k = 0, _k<size(X), ++_k, _tmp[_k] = sigma(_tmp[_k])); _tmp );
+    v_activ(S,X) = ( unref(_tmp); _tmp = X; for (_k = 0, _k<size(X), ++_k, _tmp[_k] = ""#S(_tmp[_k])); _tmp );
     const ind = "${$name}";
     W = crop(#ind,0,w#ind-1);
     B = crop(#ind,w#ind-1,1);
     X = crop(#-1);
     Z = mul(W,X,1) + B;
-    out = vsigma(Z);
+    out = v_activ("$activation",Z);
     store(Z,'_nn_"${name}"_Z');
     store(out,'_nn_"${name}"_output');"
   rm.
@@ -21292,7 +21292,7 @@ nn_backpropagate_fullyconnected :
   ${_nn_${name}_error}           # [-1] = error
 
   eval ${-nn_define_$activation}"
-    vdsigma(X) = ( unref(_tmp); _tmp = X; for (_k = 0, _k<size(X), ++_k, _tmp[_k] = dsigma(_tmp[_k])); _tmp );
+    v_d_activ(S,X) = ( unref(_tmp); _tmp = X; for (_k = 0, _k<size(X), ++_k, _tmp[_k] = ""#S(_tmp[_k])); _tmp );
     const ind = "${$name}";
     W = crop(#ind,0,w#ind-1);
     B = crop(#ind,w#ind-1,1);
@@ -21302,7 +21302,7 @@ nn_backpropagate_fullyconnected :
     Z = crop(#-3);
     out = crop(#-2);
     error = crop(#-1);
-    dB = error*vdsigma(Z);
+    dB = error*v_d_activ("$activation",Z);
     dW = mul(dB,X,size(X));
     dX = mul(transp(W,w#ind-1),dB,1);
     sumdW+=dW;
