@@ -21113,11 +21113,14 @@ nn_propagate_batch : check ${"is_variable_name $1"}" && "${"is_image_arg $2"}
     error[0--3] "Command 'nn_propagate_batch': Dimensions of specified inputs ("{[w,h,d,s]}") do not "\
                 "match network input dimensions ("{$name_input,[w,h,d,s]}")."
   fi
+
   {$name_output,[w,h,$N,s]}
   _nn_code_begin=
-  _nn_code_body="O_"${name_input}" = crop(0,0,z,0,w,h,1,s);" # Get input
+  _nn_code_body="x||y?0:("\
+                "O_"${name_input}" = crop(0,0,z,0,w,h,1,s);" # Get input
   nn_compile_propagate ${_nn_${name_input}_next}
-  _nn_code_body.="draw(#-1,O_"${_nn_${name_output}_previous}",0,0,z,0,w#-1,h#-1,1,s#-1);" # Set output
+  _nn_code_body.="draw(#-1,O_"${_nn_${name_output}_previous}",0,0,z,0,w#-1,h#-1,1,s#-1);"\ # Set output
+                 "0);"
   eval.. ":begin("${_nn_code_begin}");"${_nn_code_body} # Parallel evaluation
   _nn_code_begin,_nn_code_body=
   rm[-2]
@@ -21203,15 +21206,17 @@ nn_backpropagate_batch : check ${"is_variable_name $1"}" && "${"is_image_arg $2"
   fi
 
   _nn_code_begin="loss = 0;"
-  _nn_code_body="O_"${name_input}" = crop(0,0,z,0,w,h,1,s);" # Get input
+  _nn_code_body="x||y?0:("\
+                "O_"${name_input}" = crop(0,0,z,0,w,h,1,s);" # Get input
   _nn_code_end="call('loss=',loss);"
-
   nn_compile_propagate ${_nn_${name_input}_next}
+
   if $4 _nn_code_body.="draw(#-1,O_"${_nn_${name_output}_previous}",0,0,z,0,w#-1,h#-1,1,s#-1);" fi # Set output if requested
   _nn_code_body.="expected = crop(#"${ind_expected}",0,0,z,0,w#"${ind_expected}",h#"${ind_expected}",1,s#"${ind_expected}");"\
                  "dE_"${name_previous}" = O_"${name_previous}" - expected;"\
                  "critical(loss+=norm(dE_"${name_previous}")^2);"
   nn_compile_backpropagate $name_previous
+  _nn_code_body.="0);"
 
   # v 0
   # e[] "CODE BEGIN = \n"$_nn_code_begin
@@ -21220,7 +21225,7 @@ nn_backpropagate_batch : check ${"is_variable_name $1"}" && "${"is_image_arg $2"
   # e[] "LOSS = "$loss
   # q
 
-  eval[$ind_inputs] ":begin("${_nn_code_begin}");"${_nn_code_body}"end("${_nn_code_end}");" # Parallel evaluation
+  eval[$ind_inputs] ">begin("${_nn_code_begin}");"${_nn_code_body}"end("${_nn_code_end}");" # Parallel evaluation
   _nn_code_begin,_nn_code_body,_nn_code_end=
   rm[$ind_inputs,$ind_expected]
   u $loss v +
