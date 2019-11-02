@@ -21188,7 +21188,7 @@ nn_backpropagate_batch : check ${"is_variable_name $1"}" && "${"is_image_arg $2"
   _nn_code_begin="loss = 0;"
   _nn_code_body="x||y||c?0:("\                               # Compute only once for each z
                 "O_"${name_input}" = crop(0,0,z,0,w,h,1,s);" # Get input
-  _nn_code_end="call('loss=',loss);"
+  _nn_code_end="call('loss=',sqrt(loss/d));"
   nn_compile_propagate ${_nn_${name_input}_next}
   if $4 _nn_code_body.="draw(#-1,O_"${_nn_${name_output}_previous}",0,0,z,0,w#-1,h#-1,1,s#-1);" fi # Set output if requested
   _nn_code_body.="expected = crop(#"${ind_expected}",0,0,z,0,w#"${ind_expected}",h#"${ind_expected}",1,s#"${ind_expected}");"\
@@ -21198,7 +21198,7 @@ nn_backpropagate_batch : check ${"is_variable_name $1"}" && "${"is_image_arg $2"
   _nn_code_body.=";0);"
 
 
-  # code=":begin("${_nn_code_begin}");"${_nn_code_body}"end("${_nn_code_end}");" # Multi-threaded evaluation
+  # code=":begin("${_nn_code_begin}");"${_nn_code_body}"end("${_nn_code_end}");"
   # ({'$code'}) replace_str. ";",";\n" code={t} rm.
   # v 0
   # e[] "CODE = \n"$code
