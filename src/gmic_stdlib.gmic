@@ -21198,8 +21198,8 @@ nn_backpropagate_batch : check ${"is_variable_name $1"}" && "${"is_image_arg $2"
     error[0--3] "Command 'nn_backpropagate_batch': Dimensions of expected outputs ("{[w,h,d,s]}") do not "\
                 "match network output dimensions ("{$name_output,[w,h,d,s]}")."
   fi
-  if $4 +f. 0 ind_inputs,ind_expected_outputs=-3,-2
-  else ind_inputs,ind_expected_outputs=-2,-1
+  if $4 +f. 0 ind_inputs,ind_expected=-3,-2
+  else ind_inputs,ind_expected=-2,-1
   fi
 
   _nn_code_begin="loss = 0;"
@@ -21207,18 +21207,20 @@ nn_backpropagate_batch : check ${"is_variable_name $1"}" && "${"is_image_arg $2"
   _nn_code_end="call('loss=',loss);"
 
   nn_compile_propagate ${_nn_${name_input}_next}
-  _nn_code_body.="$4?draw(#-1,O_"${_nn_${name_output}_previous}",0,0,z,0,w#-1,h#-1,1,s#-1);"\ # Set output if requested
-                 "expected = crop(#"$ind_expected_outputs");"\
+  if $4 __nn_code_body.="draw(#-1,O_"${_nn_${name_output}_previous}",0,0,z,0,w#-1,h#-1,1,s#-1);" fi # Set output if requested
+  _nn_code_body.="expected = crop(#"${ind_expected}",0,0,z,0,w#"${ind_expected}",h#"${ind_expected}",1,s#"${ind_expected}");"\
                  "dE_"${name_previous}" = O_"${name_previous}" - expected;"\
                  "critical(loss+=norm(dE_"${name_previous}")^2);"
   nn_compile_backpropagate $name_previous
-  eval[$ind_inputs] ":begin("${_nn_code_begin}");"${_nn_code_body}"end("${_nn_code_end}");" # Parallel evaluation
 
-  # v 0
-  # e[] "CODE BEGIN = \n"$_nn_code_begin
-  # e[] "CODE BODY = \n"$_nn_code_body
-  # e[] "CODE END = \n"$_nn_code_end
-  # e[] "LOSS = "$loss
+  v 0
+  e[] "CODE BEGIN = \n"$_nn_code_begin
+  e[] "CODE BODY = \n"$_nn_code_body
+  e[] "CODE END = \n"$_nn_code_end
+  e[] "LOSS = "$loss
+  q
+
+  eval[$ind_inputs] ":begin("${_nn_code_begin}");"${_nn_code_body}"end("${_nn_code_end}");" # Parallel evaluation
 
   _nn_code_begin,_nn_code_body,_nn_code_end=
   rm. u $loss v +
