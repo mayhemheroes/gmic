@@ -20997,14 +20997,14 @@ nn_name_input : skip "${2=nn_name_input}"
     error[0--4] "Command 'nn_name_input': Unknown module name '"${name}"'."
   fi
   for narg($name)
-    input_name=${name}
+    name_input=${name}
     name=${_nn_${name}_previous}
   done
-  input_type=${_nn_${input_name}_type}
+  input_type=${_nn_${name_input}_type}
   if '$input_type'!='inputvector'
     error[0--4] "Command 'nn_name_input': Invalid input type '"${input_type}"' (should be 'inputvector')."
   fi
-  u $input_name
+  u $name_input
 
 # [internal] nn_name_output : module_name
 # Return the output module name of the neural network, and check its type.
@@ -21014,14 +21014,14 @@ nn_name_output : skip "${2=nn_name_output}"
     error[0--4] "Command '$2': Unknown module name '"${name}"'."
   fi
   for narg($name)
-    output_name=${name}
+    name_output=${name}
     name=${_nn_${name}_next}
   done
-  output_type=${_nn_${output_name}_type}
-  if '$output_type'!='outputvector'
-    error[0--4] "Command '$2': Invalid output type '"${output_type}"' (should be 'outputvector')."
+  type_output=${_nn_${name_output}_type}
+  if '$type_output'!='outputvector'
+    error[0--4] "Command '$2': Invalid output type '"${type_output}"' (should be 'outputvector')."
   fi
-  u $output_name
+  u $name_output
 
 #@cli nn_new_inputvector : module_name,nb_values
 #@cli : Add an input vector to the neural network.
@@ -21106,7 +21106,7 @@ nn_reset_gradients : check ${"is_variable_name $1"}
 nn_propagate_batch : check ${"is_variable_name $1"}" && "${"is_image_arg $2"}
   e[^-1] "[NN] Batch propapate inputs $2, through the neural network."
   v +
-  name_input=${"nn_name_input $1"}
+  name_input=${"nn_name_input $1,$0"}
   type_input=${_nn_${name_input}_type}
   name_output=${"nn_name_output $1,$0"}
   type_output=${_nn_${name_output}_type}
@@ -21132,22 +21132,21 @@ nn_propagate_batch : check ${"is_variable_name $1"}" && "${"is_image_arg $2"}
 nn_propagate : check ${"is_variable_name $1"}
   e[^-1] "[NN] Propagate input, through the neural-network."
   v -
-  name_input=${"nn_name_input $1"}
-  name_output=${"nn_name_output $1"}
-  _nn_code_begin,_nn_code_body=
+  name_input=${"nn_name_input $1,$0"}
+  name_output=${"nn_name_output $1,$0"}
+  _nn_code_begin,_nn_code_body,_nn_code_end=
   nn_compile_propagate $name_input
   eval "begin("${_nl}${_nn_code_begin}");"${_nl}\
        ${_nn_code_body}\
        "draw(#"${$name_output}",O_"${_nn_${name_output}_previous}");" # Populate output
+  _nn_code_begin,_nn_code_body,_nn_code_end=
   v +
 
 # [internal] nn_compile_propagate : module_name
-# Generate code to propagate output of the specified module through the neural network.
-# This command actually insert code in global variables '_nn_code_begin' and '_nn_code_body'.
-nn_compile_propagate : check ${"is_variable_name $1"}
-  e[^-1] "[NN] Generate code to propagate output of '$1', through the neural-network."
-  v -
-  _nn_code_begin.="v_activ(S,X) = ( unref(_tmp); _tmp = X; for (_k = 0, _k<size(X), ++_k, _tmp[_k] = ""#S(_tmp[_k])); _tmp );"${_nl}
+# Generate code to propagate output from the specified module through the neural network.
+# This command actually append code in global variables '_nn_code_begin' and '_nn_code_body'.
+nn_compile_propagate :
+  _nn_code_begin.="v_apply(S,X) = ( unref(_tmp); _tmp = X; for (_k = 0, _k<size(X), ++_k, _tmp[_k] = ""#S(_tmp[_k])); _tmp );"${_nl}
   name="$1"
   for narg($name)
     type=${_nn_${name}_type}
@@ -21159,7 +21158,6 @@ nn_compile_propagate : check ${"is_variable_name $1"}
     nn_compile_propagate_$type $name
     name=${_nn_${name}_next}
   done
-  v +
 
 # [internal] nn_compile_propagate_inputvector : module_name
 # Generate code to propagate data through an input-vector (just copy its content as its output).
@@ -21168,7 +21166,8 @@ nn_compile_propagate_inputvector :
 
 # [internal] nn_compile_propagate_outputvector : module_name
 # Generate code to propagate data through an output vector (actually do nothing).
-nn_compile_propagate_outputvector : skip $*
+nn_compile_propagate_outputvector :
+  skip $*
 
 # [internal] nn_compile_propagate_fullyconnected : module_name
 # Generate code to propagate data through a fully-connected layer.
@@ -21179,7 +21178,7 @@ nn_compile_propagate_fullyconnected :
   _nn_code_begin.="W_$1 = crop(#"$ind",0,w#"$ind"-1);"${_nl}\
                   "B_$1 = crop(#"$ind",w#"$ind"-1,1);"${_nl}
   _nn_code_body.="Z_$1 = mul(W_$1,O_"${previous_name}",1) + B_$1;"${_nl}\
-                "O_$1 = v_activ("$activation",Z_$1);"${_nl}
+                "O_$1 = v_apply("$activation",Z_$1);"${_nl}
 
 #@cli nn_backpropagate_batch : module_name,[inputs_zstacked],[expected_outputs_zstacked],_insert_network_outputs={ 0 | 1 }
 #@cli : Batch propagate and backpropagate inputs and errors in neural network.
@@ -21188,53 +21187,104 @@ nn_compile_propagate_fullyconnected :
 nn_backpropagate_batch : check ${"is_variable_name $1"}" && "${"is_image_arg $2"}" && "${"is_image_arg $3"}" && isbool(${4=0})"
   e[^-1] "[NN] Batch back-propapate errors from inputs $2 and expected outputs $3, through the neural network."
   v -
-  input_name=${"nn_name_input $1"}
-  input_type=${_nn_${input_name}_type}
-  output_name=${"nn_name_output $1,$0"}
-  output_type=${_nn_${output_name}_type}
+  name_input=${"nn_name_input $1,$0"}
+  type_input=${_nn_${name_input}_type}
+  name_output=${"nn_name_output $1,$0"}
+  type_output=${_nn_${name_output}_type}
   pass$2 1 N={d}
-  if "const ind = "${$input_name}"; w!=w#ind || h!=h#ind || s!=s#ind"
+  if "const ind = "${$name_input}"; w!=w#ind || h!=h#ind || s!=s#ind"
     error[0--3] "Command 'nn_backpropagate_batch': Dimensions of specified inputs ("{[w,h,d,s]}") do not "\
-                "match network input dimensions ("{$input_name,[w,h,d,s]")."
+                "match network input dimensions ("{$name_input,[w,h,d,s]")."
   fi
   pass$3 1
-  if "const ind = "${$output_name}"; d!="$N" || w!=w#ind || h!=h#ind || s!=s#ind"
+  if "const ind = "${$name_output}"; d!="$N" || w!=w#ind || h!=h#ind || s!=s#ind"
     error[0--3] "Command 'nn_backpropagate_batch': Dimensions of specified expected outputs ("{[w,h,d,s]}") do not "\
-                "match network output dimensions ("{$output_name,[w,h,d,s]")."
+                "match network output dimensions ("{$name_output,[w,h,d,s]")."
   fi
   if $4 +f. 0 ind_inputs,ind_expected_outputs=-3,-2
   else ind_inputs,ind_expected_outputs=-2,-1
   fi
 
-  nn_reset_gradients $input_name
+  nn_reset_gradients $name_input
   loss=0
   repeat $N
-    +slices[$ind_inputs] $> f[$input_name] . rm.
-    nn_propagate $input_name
-    if $4 j. [$output_name],0,0,$>,0 fi # Store network result
-    +slices[$ind_expected_outputs] $> -. [$output_name] *. -1
+    +slices[$ind_inputs] $> f[$name_input] . rm.
+    nn_propagate $name_input
+    if $4 j. [$name_output],0,0,$>,0 fi # Store network result
+    +slices[$ind_expected_outputs] $> -. [$name_output] *. -1
     loss+={"sum(sqr(crop(#-1)))"}
-    nn_backpropagate $output_name,.
+    nn_backpropagate $name_output,.
     rm.
   done
   rm[$ind_inputs,$ind_expected_outputs]
   u {sqrt($loss)/$N}
   v +
 
-#@cli nn_backpropagate : module_name,[error_name]
-#@cli : Back-propagate specified error through the neural network.
+#@cli nn_backpropagate : module_name,[expected_output]
+#@cli : Propagate input, then back-propagate output error, through the neural network.
 nn_backpropagate : check ${"is_variable_name $1"}" && "${"is_image_arg $2"}
-  e[^-1] "[NN] Back-propagate error $2, through the neural-network."
+  e[^-1] "[NN] Back-propagate error from $2, through the neural-network."
   v -
-  name=${"nn_name_output $1,$0"}
-  type=${_nn_${name}_type}
-  pass$2 1 store. _nn_${name}_E
-  for narg($name)
-    nn_backpropagate_$type $name
-    name=${_nn_${name}_previous}
-    type=${_nn_${name}_type}
-  done
+  name_input=${"nn_name_input $1,$0"}
+  type_input=${_nn_${name_output}_type}
+  name_output=${"nn_name_output $1,$0"}
+  type_output=${_nn_${name_output}_type}
+  name_previous=${_nn_${name_output}_previous}
+  pass$2 1
+
+  _nl={`10`}
+  _nn_code_begin,_nn_code_body,_nn_code_end=
+  nn_compile_propagate $name_input
+  _nn_code_body.="expected = crop(#-1);"${_nl}\
+                 "dE_"${name_previous}" = O_"${name_previous}" - expected;"${_nl}
+  nn_compile_backpropagate $name_output
+
+  # v 0
+  # e[] "BEGIN CODE = \n"$_nn_code_begin
+  # e[] "BODY CODE = \n"$_nn_code_body
+  # e[] "END CODE = \n"$_nn_code_end
+
+  eval "begin("${_nl}${_nn_code_begin}");"${_nl}\
+       ${_nn_code_body}\
+       "end("${_nl}${_nn_code_end}");"${_nl}
+  rm.
   v +
+
+# [internal] nn_compile_backpropagate : module_name
+# Generate code to back-propagate error from the specified module through the neural network.
+# This command actually append code in global variables '_nn_code_begin', '_nn_code_body' and '_nn_code_end'.
+nn_compile_backpropagate :
+  name="$1"
+  for narg($name)
+    type=${_nn_${name}_type}
+    nn_compile_backpropagate_$type $name
+    name=${_nn_${name}_previous}
+  done
+
+# [internal] nn_compile_backpropagate_inputvector : module_name
+# Generate code to back-propagate error through an input-vector (actually do nothing).
+nn_compile_backpropagate_inputvector :
+  skip $*
+
+# [internal] nn_compile_backpropagate_outputvector : module_name
+# Generate code to back-propagate error through an output vector (actually do nothing).
+nn_compile_backpropagate_outputvector :
+  skip $*
+
+# [internal] nn_compile_backpropagate_fullyconnected : module_name
+# Generate code to back-propagate error through a fully-connected layer.
+nn_compile_backpropagate_fullyconnected :
+  activation=${_nn_$1_activation}
+  previous_name=${_nn_$1_previous}
+  ind=${$1}
+  _nn_code_begin.="sumdB_$1 = vector(#h#"$ind");"${_nl}\
+                  "sumdW_$1 = vector(#h#"$ind"*(w#"$ind"-1));"${_nl}
+  _nn_code_body.="dB_$1 = dE_$1*v_apply("$activation",Z_$1);"${_nl}\
+                 "dW_$1 = mul(dB_$1,O_"${previous_name}",size(O_"${previous_name}"));"${_nl}\
+                 "dE_"${previous_name}" = mul(transp(W_$1,w#"$ind"-1),dB_$1,1);"${_nl}\
+                 "critical(sumdB_$1+=dB_$1; sumdW_$1+=dW_$1);"${_nl}
+  _nn_code_end.="store(sumdB_$1,'_nn_$1_sumdB');"${_nl}\
+                "store(sumdW_$1,'_nn_$1_sumdW',w#"$ind"-1,h#"$ind");"${_nl}
 
 # [internal] nn_backpropagate_inputvector : module_name
 # Back-propagate error through an input-vector (actually do nothing).
