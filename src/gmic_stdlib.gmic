@@ -21184,21 +21184,32 @@ nn_backpropagate_batch : check ${"is_variable_name $1"}" && "${"is_image_arg $2"
   v -
   name_input=${"nn_name_input $1,$0"}
   name_output=${"nn_name_output $1,$0"}
+  name_previous=${_nn_${name_output}_previous}
+
+  _nl={`10`}
+
   pass$2 1 N={d}
   if "const ind = "${$name_input}"; w!=w#ind || h!=h#ind || s!=s#ind"
     error[0--3] "Command 'nn_backpropagate_batch': Dimensions of specified inputs ("{[w,h,d,s]}") do not "\
-                "match network input dimensions ("{$name_input,[w,h,d,s]")."
+                "match network input dimensions ("{$name_input,[w,h,d,s]}")."
   fi
   pass$3 1
   if "const ind = "${$name_output}"; d!="$N" || w!=w#ind || h!=h#ind || s!=s#ind"
-    error[0--3] "Command 'nn_backpropagate_batch': Dimensions of specified expected outputs ("{[w,h,d,s]}") do not "\
-                "match network output dimensions ("{$name_output,[w,h,d,s]")."
+    error[0--3] "Command 'nn_backpropagate_batch': Dimensions of expected outputs ("{[w,h,d,s]}") do not "\
+                "match network output dimensions ("{$name_output,[w,h,d,s]}")."
   fi
   if $4 +f. 0 ind_inputs,ind_expected_outputs=-3,-2
   else ind_inputs,ind_expected_outputs=-2,-1
   fi
 
   _nn_code_begin,_nn_code_body,_nn_code_end=
+
+
+  # v 0
+  # e[] "CODE BEGIN = \n"$_nn_code_begin
+  # e[] "CODE BODY = \n"$_nn_code_body
+  # e[] "CODE END = \n"$_nn_code_end
+  # e[] "LOSS = "$loss
 
   # nn_reset_gradients $name_input
   # loss=0
@@ -21226,10 +21237,12 @@ nn_backpropagate : check ${"is_variable_name $1"}" && "${"is_image_arg $2"}
   name_input=${"nn_name_input $1,$0"}
   name_output=${"nn_name_output $1,$0"}
   name_previous=${_nn_${name_output}_previous}
-
-  _nl={`10`}
-
   pass$2 1
+  if "const ind = "${$name_output}"; w!=w#ind || h!=h#ind || s!=s#ind"
+    error[0--3] "Command 'nn_backpropagate': Dimensions of expected output ("{[w,h,d,s]}") do not "\
+                "match network output dimensions ("{$name_output,[w,h,d,s]}")."
+  fi
+
   _nn_code_body,_nn_code_begin,_nn_code_end=
   nn_compile_propagate $name_input
   _nn_code_body.="draw(#"${$name_output}",O_"${_nn_${name_output}_previous}");"\ # Set output
@@ -21238,13 +21251,6 @@ nn_backpropagate : check ${"is_variable_name $1"}" && "${"is_image_arg $2"}
                  "call('loss=',norm(dE_"${name_previous}"));"
   nn_compile_backpropagate $name_previous
   eval "begin("${_nn_code_begin}");"${_nn_code_body}"end("${_nn_code_end}");"
-
-  # v 0
-  # e[] "CODE BEGIN = \n"$_nn_code_begin
-  # e[] "CODE BODY = \n"$_nn_code_body
-  # e[] "CODE END = \n"$_nn_code_end
-  # e[] "LOSS = "$loss
-
   _nn_code_begin,_nn_code_body,_nn_code_end=
   rm. u $loss v +
 
