@@ -21127,7 +21127,7 @@ nn_propagate : check ${"is_variable_name $1"}
 # Generate code to propagate output from the specified module through the neural network.
 # This command actually append code in global variables '_nn_code_begin' and '_nn_code_body'.
 nn_compile_propagate :
-  _nn_code_begin.="v_apply(S,X) = ( unref(_tmp); _tmp = X; for (_k = 0, _k<size(X), ++_k, _tmp[_k] = ""#S(_tmp[_k])); _tmp );"${_nl}
+  _nn_code_begin.="v_apply(S,X) = ( unref(_tmp); _tmp = X; for (_k = 0, _k<size(X), ++_k, _tmp[_k] = ""#S(_tmp[_k])); _tmp );"
   name="$1"
   for narg($name)
     type=${_nn_${name}_type}
@@ -21143,7 +21143,7 @@ nn_compile_propagate :
 # [internal] nn_compile_propagate_inputvector : module_name
 # Generate code to propagate data through an input-vector (just copy its content as its output).
 nn_compile_propagate_inputvector :
-  _nn_code_body.="O_$1 = crop(#"${$1}");"${_nl}
+  _nn_code_body.="O_$1 = crop(#"${$1}");"
 
 # [internal] nn_compile_propagate_outputvector : module_name
 # Generate code to propagate data through an output vector (actually do nothing).
@@ -21156,10 +21156,10 @@ nn_compile_propagate_fullyconnected :
   activation=${_nn_$1_activation}
   name_previous=${_nn_$1_previous}
   ind=${$1}
-  _nn_code_begin.="W_$1 = crop(#"$ind",0,w#"$ind"-1);"${_nl}\
-                  "B_$1 = crop(#"$ind",w#"$ind"-1,1);"${_nl}
-  _nn_code_body.="Z_$1 = mul(W_$1,O_"${name_previous}",1) + B_$1;"${_nl}\
-                 "O_$1 = v_apply("$activation",Z_$1);"${_nl}
+  _nn_code_begin.="W_$1 = crop(#"$ind",0,w#"$ind"-1);"\
+                  "B_$1 = crop(#"$ind",w#"$ind"-1,1);"
+  _nn_code_body.="Z_$1 = mul(W_$1,O_"${name_previous}",1) + B_$1;"\
+                 "O_$1 = v_apply("$activation",Z_$1);"
 
 #@cli nn_backpropagate_batch : module_name,[inputs_zstacked],[expected_outputs_zstacked],_insert_network_outputs={ 0 | 1 }
 #@cli : Batch propagate and backpropagate inputs and errors in neural network.
@@ -21197,12 +21197,13 @@ nn_backpropagate_batch : check ${"is_variable_name $1"}" && "${"is_image_arg $2"
   nn_compile_backpropagate $name_previous
   _nn_code_body.=";0);"
 
+
+  # code=":begin("${_nn_code_begin}");"${_nn_code_body}"end("${_nn_code_end}");" # Multi-threaded evaluation
+  # ({'$code'}) replace_str. ";",";\n" code={t} rm.
   # v 0
-  # e[] "CODE BEGIN = \n"$_nn_code_begin
-  # e[] "CODE BODY = \n"$_nn_code_body
-  # e[] "CODE END = \n"$_nn_code_end
-  # e[] "LOSS = "$loss
- # q
+  # e[] "CODE = \n"$code
+  # q
+
 
   eval[$ind_inputs] ":begin("${_nn_code_begin}");"${_nn_code_body}"end("${_nn_code_end}");" # Multi-threaded evaluation
   _nn_code_begin,_nn_code_body,_nn_code_end=
@@ -21264,14 +21265,14 @@ nn_compile_backpropagate_fullyconnected :
   activation=${_nn_$1_activation}
   previous_name=${_nn_$1_previous}
   ind=${$1}
-  _nn_code_begin.="sumdB_$1 = vector(#size(B_$1),0);"${_nl}\
-                  "sumdW_$1 = vector(#size(W_$1),0);"${_nl}
-  _nn_code_body.="dB_$1 = dE_$1*v_apply("$activation",Z_$1);"${_nl}\
-                 "dW_$1 = mul(dB_$1,O_"${previous_name}",size(O_"${previous_name}"));"${_nl}\
-                 "dE_"${previous_name}" = mul(transp(W_$1,w#"$ind"-1),dB_$1,1);"${_nl}\
-                 "critical(sumdB_$1+=dB_$1; sumdW_$1+=dW_$1);"${_nl}
-  _nn_code_end.="store(sumdB_$1,'_nn_$1_dB');"${_nl}\
-                "store(sumdW_$1,'_nn_$1_dW',w#"$ind"-1,h#"$ind");"${_nl}
+  _nn_code_begin.="sumdB_$1 = vector(#size(B_$1),0);"\
+                  "sumdW_$1 = vector(#size(W_$1),0);"
+  _nn_code_body.="dB_$1 = dE_$1*v_apply(d_"$activation",Z_$1);"\
+                 "dW_$1 = mul(dB_$1,O_"${previous_name}",size(O_"${previous_name}"));"\
+                 "dE_"${previous_name}" = mul(transp(W_$1,w#"$ind"-1),dB_$1,1);"\
+                 "critical(sumdB_$1+=dB_$1; sumdW_$1+=dW_$1);"
+  _nn_code_end.="store(sumdB_$1,'_nn_$1_dB');"\
+                "store(sumdW_$1,'_nn_$1_dW',w#"$ind"-1,h#"$ind");"
 
 #@cli nn_update : module_name,epsilon
 #@cli : Update neural network weights, after back-propagation of the error.
