@@ -21358,16 +21358,16 @@ nn_update_fullyconnected :
   *. $2
   -[$name,-1]
 
-#@cli nn_output module_name,filename
+#@cli nn_output : module_name,filename
 #@cli : Output specified network as a file.
 nn_output : check ${"is_variable_name $1"}
-  e[^-1] "Output network containing module '$1' as file '$2'."
-  v - nn_serialize $1 o. raw:"$2",uchar rm. v +
+  e[^-1] "[NN] Output network containing module '$1' as file '$2'."
+  v - nn_serialize $1,1 o. raw:"$2",uchar rm. v +
 
-#@cli nn_serialize module_name,_is_compressed={ 0 | 1 }
+#@cli nn_serialize : module_name,_is_compressed={ 0 | 1 }
 #@cli : Serialize network into a single image, optionnally in a compressed form.
 nn_serialize : check ${"is_variable_name $1"}" && isbool(${2=0})"
-  e[^-1] "Serialize network containing module '$1', with"${"v - s0,s1=out, u ${s$2} v +"}" compression."
+  e[^-1] "[NN] Serialize network containing module '$1', with"${"v - s0,s1=out, u ${s$2} v +"}" compression."
   v -
   modules=${"nn_list_modules $1"}
   name_input=${"nn_name_input $1"}
@@ -21402,6 +21402,24 @@ nn_serialize_fullyconnected :
   u "_nn_$1_type=fullyconnected "\
     "_nn_$1_activation="${_nn_$1_activation}" "\
     "_nn_$1_next="${_nn_$1_next}" "
+
+#@cli nn_unserialize
+#@cli : Unserialize specified selection to retrieve a neural network.
+nn_unserialize :
+  e[^-1] "[NN] Unserialize serialized network$?."
+  v -
+  repeat $! l[$<]
+    unserialize run {t} rm.
+  endl done
+  v +
+
+#@cli nn_input : "filename"
+#@cli : Input neural network from file.
+nn_input :
+  e[^-1] "[NN] Input neural network from file '$1'."
+  v - l[]
+    i raw:"$1",uchar nn_unserialize.
+  endl v +
 
 #------------------------------
 #
