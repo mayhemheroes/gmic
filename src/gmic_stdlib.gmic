@@ -21001,6 +21001,12 @@ nn_define_loss_mse :
   u "loss_mse(x,truth) = (norm(x - truth)^2);"\
     "d_loss_mse(x,truth) = (2*(x - truth));"
 
+# [internal] nn_define_loss_ce
+# Return a string that defines the CR loss function (Cross Entropy), and its derivative.
+nn_define_loss_ce :
+  u "loss_ce(x,truth) = ;"\
+    "d_loss_ce(x,truth) = ;"
+
 # [internal] nn_name_input : module_name
 # Return the input module name of the neural network, and check its type.
 nn_name_input : skip "${2=nn_name_input}"
@@ -21184,6 +21190,7 @@ nn_backpropagate_batch : check ${"is_variable_name $1"}" && "${"is_image_arg $2"
   name_input=${"nn_name_input $1,$0"}
   name_output=${"nn_name_output $1,$0"}
   name_previous=${_nn_${name_output}_previous}
+  func_loss="$5"
   pass$2 1 N={d} #  [-3 or -2] = shared copy of [inputs_zstacked]
   if "const ind = "${$name_input}"; w!=w#ind || h!=h#ind || s!=s#ind"
     error[0--3] "Command 'nn_backpropagate_batch': Dimensions of specified inputs ("{[w,h,d,s]}") do not "\
@@ -21198,15 +21205,15 @@ nn_backpropagate_batch : check ${"is_variable_name $1"}" && "${"is_image_arg $2"
   else ind_inputs,ind_expected=-2,-1
   fi
 
-  _nn_code_begin=${-nn_define_loss_$5}"L = 0;"
+  _nn_code_begin=${-nn_define_loss_${func_loss}}"L = 0;"
   _nn_code_body="x||y||c?0:("\                               # Compute only once for each z
                 "O_"${name_input}" = crop(0,0,z,0,w,h,1,s);" # Get input
   _nn_code_end="call('loss=',sqrt(L/d));"
   nn_compile_propagate ${_nn_${name_input}_next}
   if $4 _nn_code_body.="draw(#-1,O_"${_nn_${name_output}_previous}",0,0,z,0,w#-1,h#-1,1,s#-1);" fi # Set output if requested
   _nn_code_body.="expected = crop(#"${ind_expected}",0,0,z,0,w#"${ind_expected}",h#"${ind_expected}",1,s#"${ind_expected}");"\
-                 "dE_"${name_previous}" = d_loss_$5(O_"${name_previous}",expected);"\
-                 "critical(L+=loss_$5(O_"${name_previous}",expected));"
+                 "dE_"${name_previous}" = d_loss_"${func_loss}"(O_"${name_previous}",expected);"\
+                 "critical(L+=loss_"${func_loss}"(O_"${name_previous}",expected));"
   nn_compile_backpropagate $name_previous
   _nn_code_body.=";0);"
 
@@ -21222,28 +21229,30 @@ nn_backpropagate_batch : check ${"is_variable_name $1"}" && "${"is_image_arg $2"
   u $loss
   v +
 
-#@cli nn_backpropagate : module_name,[expected_output]
+#@cli nn_backpropagate : module_name,[expected_output],_loss_function
 #@cli : Propagate input, then back-propagate output error, through the neural network.
 #@cli : This command set the network output.
 #@cli : Return average loss.
-nn_backpropagate : check ${"is_variable_name $1"}" && "${"is_image_arg $2"}
+nn_backpropagate : check ${"is_variable_name $1"}" && "${"is_image_arg $2"} skip ${3="mse"}
   e[^-1] "[NN] Back-propagate error from $2."
   v -
   name_input=${"nn_name_input $1,$0"}
   name_output=${"nn_name_output $1,$0"}
   name_previous=${_nn_${name_output}_previous}
+  func_loss="$3"
   pass$2 1
   if "const ind = "${$name_output}"; w!=w#ind || h!=h#ind || s!=s#ind"
     error[0--3] "Command 'nn_backpropagate': Dimensions of expected output ("{[w,h,d,s]}") do not "\
                 "match network output dimensions ("{$name_output,[w,h,d,s]}")."
   fi
 
-  _nn_code_body,_nn_code_begin,_nn_code_end=
+  _nn_code_body,_nn_code_end=
+  _nn_code_begin=${-nn_define_loss_${func_loss}}
   nn_compile_propagate $name_input
   _nn_code_body.="draw(#"${$name_output}",O_"${_nn_${name_output}_previous}");"\ # Set output
                  "expected = crop(#-1);"\
-                 "dE_"${name_previous}" = O_"${name_previous}" - expected;"\
-                 "call('loss=',norm(dE_"${name_previous}"));"
+                 "dE_"${name_previous}" = d_loss_"${func_loss}"(O_"${name_previous}",expected);"\
+                 "call('loss=',loss_"${func_loss}"(O_"${name_previous}",expected));"
   nn_compile_backpropagate $name_previous
   eval "begin("${_nn_code_begin}");"${_nn_code_body}"end("${_nn_code_end}");"
   _nn_code_begin,_nn_code_body,_nn_code_end=
