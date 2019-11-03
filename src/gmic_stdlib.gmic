@@ -20998,8 +20998,8 @@ nn_define_activation_sigmoid :
 # [internal] nn_define_loss_mse
 # Return a string that defines the MSE loss function, and its derivative.
 nn_define_loss_mse :
-  u "loss_me"
-
+  u "loss_mse(x,ref) = (norm(x - ref)^2);"\
+    "d_loss_mse(x,ref) = (2*(x - ref));"
 
 # [internal] nn_name_input : module_name
 # Return the input module name of the neural network, and check its type.
@@ -21173,11 +21173,12 @@ nn_compile_propagate_fullyconnected :
   _nn_code_body.="Z_$1 = mul(W_$1,O_"${name_previous}",1) + B_$1;"\
                  "O_$1 = v_apply(activation_"$activation",Z_$1);"
 
-#@cli nn_backpropagate_batch : module_name,[inputs_zstacked],[expected_outputs_zstacked],_insert_network_outputs={ 0 | 1 }
+#@cli nn_backpropagate_batch : module_name,[inputs_zstacked],[expected_outputs_zstacked],_insert_network_outputs={ 0 | 1 },_loss_function
 #@cli : Batch propagate and backpropagate inputs and errors in neural network.
 #@cli : Optionnally insert image of corresponding network outputs at the end of the list.
-#@cli : Return average loss.
-nn_backpropagate_batch : check ${"is_variable_name $1"}" && "${"is_image_arg $2"}" && "${"is_image_arg $3"}" && isbool(${4=0})"
+#@cli : Return averaged loss.
+nn_backpropagate_batch : check ${"is_variable_name $1"}" && "${"is_image_arg $2"}" && "${"is_image_arg $3"}" && "\
+                               "isbool(${4=0})" skip ${5="mse"}
   e[^-1] "[NN] Batch back-propapate errors from inputs $2 and expected outputs $3."
   v -
   name_input=${"nn_name_input $1,$0"}
