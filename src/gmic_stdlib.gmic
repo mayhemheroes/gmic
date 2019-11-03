@@ -20971,29 +20971,35 @@ video2files : check "isint(${3=0}) && $3>=0 && isint(${4=-1}) && ($4>=0 || $4==-
 # The following commands (starting with 'nn_') is an attempt to have a way to manage
 # neural networks (evaluate and learn). Consider all this at being at an early stage!
 
-# [internal] nn_activation_none
+# [internal] nn_define_activation_none
 # Return a string that defines a identity activation function, and its derivative.
-nn_activation_none :
-  u "none(x) = (x);"\
-    "d_none(x) = (1);"
+nn_define_activation_none :
+  u "activation_none(x) = (x);"\
+    "d_activation_none(x) = (1);"
 
-# [internal] nn_activation_leakyrelu
+# [internal] nn_define_activation_leakyrelu
 # Return a string that defines a Leaky-RELU activation function, and its derivative.
-nn_activation_leakyrelu :
-  u "leakyrelu(x) = (x<0?0.01*x:x);"\
-    "d_leakyrelu(x) = (x<0?0.01:1);"
+nn_define_activation_leakyrelu :
+  u "activation_leakyrelu(x) = (x<0?0.01*x:x);"\
+    "d_activation_leakyrelu(x) = (x<0?0.01:1);"
 
-# [internal] nn_activation_relu
+# [internal] nn_define_activation_relu
 # Return a string that defines a RELU activation function, and its derivative.
-nn_activation_relu :
-  u "relu(x) = (x<0?0:x);"\
-    "d_relu(x) = (x<0?0:1);"
+nn_define_activation_relu :
+  u "activation_relu(x) = (x<0?0:x);"\
+    "d_activation_relu(x) = (x<0?0:1);"
 
-# [internal] nn_activation_sigmoid
+# [internal] nn_define_activation_sigmoid
 # Return a string that defines a sigmoid activation function, and its derivative.
-nn_activation_sigmoid :
-  u "sigmoid(x) = (0.5 + 0.5*tanh(0.5*x));"\
-    "d_sigmoid(x) = (sigma(x)*(1 - sigma(x)));"
+nn_define_activation_sigmoid :
+  u "activation_sigmoid(x) = (0.5 + 0.5*tanh(0.5*x));"\
+    "d_activation_sigmoid(x) = (sigma(x)*(1 - sigma(x)));"
+
+# [internal] nn_define_loss_mse
+# Return a string that defines the MSE loss function, and its derivative.
+nn_define_loss_mse :
+  u "loss_me"
+
 
 # [internal] nn_name_input : module_name
 # Return the input module name of the neural network, and check its type.
@@ -21139,7 +21145,7 @@ nn_compile_propagate :
     type=${_nn_${name}_type}
     activation=${_nn_${name}_activation}
     if narg($activation)" && "!narg(${is_$activation}) # Add activation function if necessary
-      _nn_code_begin.=${-nn_activation_$activation}
+      _nn_code_begin.=${-nn_define_activation_$activation}
       is_$activation=1
     fi
     nn_compile_propagate_$type $name
@@ -21165,7 +21171,7 @@ nn_compile_propagate_fullyconnected :
   _nn_code_begin.="W_$1 = crop(#"$ind",0,w#"$ind"-1);"\
                   "B_$1 = crop(#"$ind",w#"$ind"-1,1);"
   _nn_code_body.="Z_$1 = mul(W_$1,O_"${name_previous}",1) + B_$1;"\
-                 "O_$1 = v_apply("$activation",Z_$1);"
+                 "O_$1 = v_apply(activation_"$activation",Z_$1);"
 
 #@cli nn_backpropagate_batch : module_name,[inputs_zstacked],[expected_outputs_zstacked],_insert_network_outputs={ 0 | 1 }
 #@cli : Batch propagate and backpropagate inputs and errors in neural network.
@@ -21273,7 +21279,7 @@ nn_compile_backpropagate_fullyconnected :
   ind=${$1}
   _nn_code_begin.="sumdB_$1 = vector(#size(B_$1),0);"\
                   "sumdW_$1 = vector(#size(W_$1),0);"
-  _nn_code_body.="dB_$1 = dE_$1*v_apply(d_"$activation",Z_$1);"\
+  _nn_code_body.="dB_$1 = dE_$1*v_apply(d_activation_"$activation",Z_$1);"\
                  "dW_$1 = mul(dB_$1,O_"${previous_name}",size(O_"${previous_name}"));"\
                  "dE_"${previous_name}" = mul(transp(W_$1,w#"$ind"-1),dB_$1,1);"\
                  "critical(sumdB_$1+=dB_$1; sumdW_$1+=dW_$1);"
