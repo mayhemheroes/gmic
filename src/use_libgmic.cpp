@@ -81,7 +81,7 @@ int main() {
                  img._height,
                  img._depth,
                  img._spectrum,
-                 img._data);
+                 (void*)img._data);
 
     // Fill each image buffer with sinus values (with different frequencies).
     float *ptr = img;
@@ -135,7 +135,7 @@ int main() {
                  images[i]._height,
                  images[i]._depth,
                  images[i]._spectrum,
-                 images[i]._data);
+                 (void*)images[i]._data);
   }
 
   // Fourth step : Free image resources.
