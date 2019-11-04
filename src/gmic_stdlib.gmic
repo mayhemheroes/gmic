@@ -1064,8 +1064,10 @@ ${g}"N=24"$n").
 \n       . '"${c}"_(expr)"$n"' just ignores its arguments (mainly useful for debugging).
 \n       . '"${c}"call('pipeline')"$n"' executes the specified "${-GMIC}" pipeline as if it was called outside
 \n          the currently evaluated expression.
-\n       . '"${c}"store(A,'varname',_w,_h,_d,_s)"$n"' transfers the data of vector '"${g}"A"${n}"' as a '"${g}"w x h x d x s"$n"' image
-\n          to the "${-GMIC}" variable '"${g}"$varname"${n}"'. Thus, the data becomes available outside the math expression
+\n       . '"${c}"store(A,'varname',_w,_h,_d,_s)"$n"' transfers the data of vector '"${g}"A"${n}"' as a
+ '"${g}"w x h x d x s"$n"' image
+\n          to the "${-GMIC}" variable '"${g}"$varname"${n}"'. Thus, the data becomes available outside the math
+ expression
 \n          (that is equivalent to using the regular command '"${c}"store"${n}"', but directly in the math expression).
 \n       . '"${c}"correlate(I,wI,hI,dI,sI,K,wK,hK,dK,sK,_boundary_conditions,_is_normalized,_channel_mode,
 \n                    _xcenter,_ycenter,_zcenter,_xstart,_ystart,_zstart,_xend,_yend,_zend,
@@ -21090,7 +21092,8 @@ nn_new_outputvector : check ${"is_variable_name $1"}" && "${"is_variable_name $2
 
 #@cli nn_new_fullyconnected : module_name,previous_module_name,nb_neurons,activation_function
 #@cli : Add a fully-connected layer to the neural network.
-nn_new_fullyconnected : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($3) && $3>0" skip "${4=leakyrelu}"
+nn_new_fullyconnected : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($3) && $3>0"
+                        skip "${4=leakyrelu}"
   e[^-1] "[NN] Add fully-connected layer '$1', linked to previous module '$2', with $3 neurons and '$4' activation."
   v -
   name="$1"
@@ -21133,7 +21136,7 @@ nn_propagate_batch : check ${"is_variable_name $1"}" && "${"is_image_arg $2"}
   nn_compile_propagate ${_nn_${name_input}_next}
   _nn_code_body.="draw(#-1,O_"${_nn_${name_output}_previous}",0,0,z,0,w#-1,h#-1,1,s#-1);"\ # Set output
                  "0);" # End of 'x||y||c' condition
-  eval.. ":begin("${_nn_code_begin}");"${_nn_code_body} # Multi-threaded evaluation
+  eval.. ">begin("${_nn_code_begin}");"${_nn_code_body} # Multi-threaded evaluation
   _nn_code_begin,_nn_code_body=
   rm[-2]
   v +
@@ -21156,7 +21159,8 @@ nn_propagate : check ${"is_variable_name $1"}
 # Generate code to propagate output from the specified module through the neural network.
 # This command actually append code in global variables '_nn_code_begin' and '_nn_code_body'.
 nn_compile_propagate :
-  _nn_code_begin.="v_apply(S,X) = ( unref(_tmp); _tmp = X; for (_k = 0, _k<size(X), ++_k, _tmp[_k] = ""#S(_tmp[_k])); _tmp );"
+  _nn_code_begin.="v_apply(S,X) = "\
+                  "( unref(_tmp); _tmp = X; for (_k = 0, _k<size(X), ++_k, _tmp[_k] = ""#S(_tmp[_k])); _tmp );"
   name="$1"
   for narg($name)
     type=${_nn_${name}_type}
@@ -21190,7 +21194,8 @@ nn_compile_propagate_fullyconnected :
   _nn_code_body.="Z_$1 = mul(W_$1,O_"${name_previous}",1) + B_$1;"\
                  "O_$1 = v_apply(activation_"$activation",Z_$1);"
 
-#@cli nn_backpropagate_batch : module_name,[inputs_zstacked],[expected_outputs_zstacked],_insert_network_outputs={ 0 | 1 },_loss_function
+#@cli nn_backpropagate_batch : module_name,[inputs_zstacked],[expected_outputs_zstacked],\
+# _insert_network_outputs={ 0 | 1 },_loss_function
 #@cli : Batch propagate and backpropagate inputs and errors in neural network.
 #@cli : Optionnally insert image of corresponding network outputs at the end of the list.
 #@cli : Return averaged loss.
@@ -21221,20 +21226,23 @@ nn_backpropagate_batch : check ${"is_variable_name $1"}" && "${"is_image_arg $2"
                 "O_"${name_input}" = crop(0,0,z,0,w,h,1,s);" # Get input
   _nn_code_end="call('loss=',L/nb_inputs);"
   nn_compile_propagate ${_nn_${name_input}_next}
-  if $4 _nn_code_body.="draw(#-1,O_"${_nn_${name_output}_previous}",0,0,z,0,w#-1,h#-1,1,s#-1);" fi # Set output if requested
-  _nn_code_body.="expected = crop(#"${ind_expected}",0,0,z,0,w#"${ind_expected}",h#"${ind_expected}",1,s#"${ind_expected}");"\
+  if $4 # Set output if requested
+    _nn_code_body.="draw(#-1,O_"${_nn_${name_output}_previous}",0,0,z,0,w#-1,h#-1,1,s#-1);"
+  fi
+  _nn_code_body.="expected = crop(#"${ind_expected}",0,0,z,0,"\
+                 "w#"${ind_expected}",h#"${ind_expected}",1,s#"${ind_expected}");"\
                  "dE_"${name_previous}" = d_loss_"${func_loss}"(O_"${name_previous}",expected);"\
                  "critical(L+=loss_"${func_loss}"(O_"${name_previous}",expected));"
   nn_compile_backpropagate $name_previous
   _nn_code_body.=";0);"
 
-  # code=":begin("${_nn_code_begin}");"${_nn_code_body}"end("${_nn_code_end}");"
+  # code=">begin("${_nn_code_begin}");"${_nn_code_body}"end("${_nn_code_end}");"
   # ({'$code'}) replace_str. ";",";\n" code={t} rm.
   # v 0
   # e[] "CODE = \n"$code
   # q
 
-  eval[$ind_inputs] ":begin("${_nn_code_begin}");"${_nn_code_body}"end("${_nn_code_end}");" # Multi-threaded evaluation
+  eval[$ind_inputs] ">begin("${_nn_code_begin}");"${_nn_code_body}"end("${_nn_code_end}");" # Multi-threaded evaluation
   _nn_code_begin,_nn_code_body,_nn_code_end=
   rm[$ind_inputs,$ind_expected]
   u $loss
