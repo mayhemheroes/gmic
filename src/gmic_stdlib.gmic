@@ -21230,6 +21230,7 @@ nn_backpropagate_batch : check ${"is_variable_name $1"}" && "${"is_image_arg $2"
   _nn_code_body="x||y||c?0:("\                               # Compute only once for each z
                 "O_"${name_input}" = crop(0,0,z,0,w,h,1,s);" # Get input
   _nn_code_end="call('loss=',L/nb_inputs);"
+  _nn_code_end_t=
   nn_compile_propagate ${_nn_${name_input}_next}
   if $4 # Set output if requested
     _nn_code_body.="draw(#-1,O_"${_nn_${name_output}_previous}",0,0,z,0,w#-1,h#-1,1,s#-1);"
@@ -21241,13 +21242,13 @@ nn_backpropagate_batch : check ${"is_variable_name $1"}" && "${"is_image_arg $2"
   nn_compile_backpropagate $name_previous
   _nn_code_body.=";0);"
 
-  # code=">begin("${_nn_code_begin}");"${_nn_code_body}"end("${_nn_code_end}");"
-  # ({'$code'}) replace_str. ";",";\n" code={t} rm.
-  # v 0
-  # e[] "CODE = \n"$code
-  # q
+   # code=">begin("${_nn_code_begin}");"${_nn_code_body}"end("${_nn_code_end}");"
+   # ({'$code'}) replace_str. ";",";\n" code={t} rm.
+   # v 0
+   # e[] "CODE = \n"$code
+   # q
 
-  eval[$ind_inputs] ">begin("${_nn_code_begin}");"${_nn_code_body}"end("${_nn_code_end}");" # Multi-threaded evaluation
+  eval[$ind_inputs] ":begin("${_nn_code_begin}");"${_nn_code_body}"end("${_nn_code_end}");" # Multi-threaded evaluation
   _nn_code_begin,_nn_code_body,_nn_code_end=
   rm[$ind_inputs,$ind_expected]
   u $loss
@@ -21314,8 +21315,9 @@ nn_compile_backpropagate_fullyconnected :
   _nn_code_body.="dB_$1 = dE_$1*v_apply(d_activation_"$activation",Z_$1);"\
                  "dW_$1 = mul(dB_$1,O_"${previous_name}",size(O_"${previous_name}"));"\
                  "dE_"${previous_name}" = mul(transp(W_$1,w#"$ind"-1),dB_$1,1);"\
-                 "critical(sumdB_$1+=dB_$1; sumdW_$1+=dW_$1);"
-  _nn_code_end.="store(sumdB_$1/=nb_inputs,'_nn_$1_dB');"\
+                 "sumdB_$1+=dB_$1; sumdW_$1+=dW_$1;"
+  _nn_code_end.="merge(sumdB_$1,+); merge(sumdW_$1,+);"\
+                "store(sumdB_$1/=nb_inputs,'_nn_$1_dB');"\
                 "store(sumdW_$1/=nb_inputs,'_nn_$1_dW',w#"$ind"-1,h#"$ind");"
 
 #@cli nn_update : module_name,epsilon
