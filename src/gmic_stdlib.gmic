@@ -16026,6 +16026,21 @@ _normalize3d :
     fi
   endl done v +
 
+#@cli nb_primitives3d
+#@cli : Return the number of primitives of selected 3d objects.
+nb_primitives3d :
+  e[^-1] "Return number of primitives of 3d object$?."
+  v - res=
+  repeat $! l[$>]
+    if i[7]>0 res.=$c{i[7]} # Regular value
+    else l.
+      s3d 0
+      res.=$c{"N = p = 0; while (p<h, i[p++]==-128?(W = i[p++]; H = i[p++]; S = i[p++]; H*S!=0?(p+=W*H*S)); ++N)"}
+      a y
+    endl fi
+    c=","
+  endl done u $res v +
+
 #@cli o3d : eq. to 'opacity3d'. : (+)
 
 #@cli opacity3d : _opacity : (+)
@@ -17006,6 +17021,7 @@ texturize3d : check ${"is_image_arg $1"}" && (!narg(${2=}) || "${"is_image_arg $
 
 _texturize3d :
   repeat $!-2 l[$>,-2,-1]
+    np=${nb_primitives3d[0]}
     s3d[0]
 
     # Retrieve texture coordinates for each vertex.
@@ -17016,7 +17032,6 @@ _texturize3d :
     fi
 
     # Texturize 3D object
-    np={1,i[1]}
     1,{5,2*h}
     1,{5,3*h}
     1,{5,h},1,1,1
