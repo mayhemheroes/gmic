@@ -21048,15 +21048,15 @@ nn_list_modules :
 nn_name_input : skip "${2=nn_name_input}"
   name="$1"
   if !narg(${_nn_${name}_type})
-    error[0--4] "Command 'nn_name_input': Unknown module name '"${name}"'."
+    error[0--4] "Command 'nn_name_input': Unknown module name '"$name"'."
   fi
   for narg($name)
-    name_input=${name}
+    name_input=$name
     name=${_nn_${name}_previous}
   done
   type_input=${_nn_${name_input}_type}
   if '$type_input'!='input'
-    error[0--4] "Command 'nn_name_input': Invalid input type '"${type_input}"' (should be 'input')."
+    error[0--4] "Command 'nn_name_input': Invalid input type '"$type_input"' (should be 'input')."
   fi
   u $name_input
 
@@ -21065,15 +21065,15 @@ nn_name_input : skip "${2=nn_name_input}"
 nn_name_output : skip "${2=nn_name_output}"
   name="$1"
   if !narg(${_nn_${name}_type})
-    error[0--4] "Command '$2': Unknown module name '"${name}"'."
+    error[0--4] "Command '$2': Unknown module name '"$name"'."
   fi
   for narg($name)
-    name_output=${name}
+    name_output=$name
     name=${_nn_${name}_next}
   done
   type_output=${_nn_${name_output}_type}
   if '$type_output'!='outputvector'
-    error[0--4] "Command '$2': Invalid output type '"${type_output}"' (should be 'outputvector')."
+    error[0--4] "Command '$2': Invalid output type '"$type_output"' (should be 'outputvector')."
   fi
   u $name_output
 
@@ -21086,9 +21086,9 @@ nn_new_input : check ${"is_variable_name $1"}" && isint($2) && $2>0 && isint(${3
   $2,$3,1,$4
   nm. $name
   _nn_${name}_type="input"
-  _nn_${name}_output_width=$2
-  _nn_${name}_output_height=$3
-  _nn_${name}_output_spectrum=$4
+  _nn_${name}_width=$2
+  _nn_${name}_height=$3
+  _nn_${name}_spectrum=$4
   _nn_${name}_previous=
   v +
 
@@ -21101,19 +21101,19 @@ nn_new_outputvector : check ${"is_variable_name $1"}" && "${"is_variable_name $2
   name_previous="$2"
   type_previous=${_nn_${name_previous}_type}
   if !narg($type_previous)
-    error[0--3] "Command 'nn_new_outputvector': Unknown name for previous module '"${name_previous}"'."
+    error[0--3] "Command 'nn_new_outputvector': Unknown name for previous module '"$name_previous"'."
   fi
   if '$type_previous'=='fullyconnected'" || "\
      '$type_previous'=='input'
-    1,{${name_previous},h}
+    1,{$name_previous,h}
   else
-    error[0--3] "Command 'nn_new_outputvector': Invalid type for previous module '"${type_previous}"'."
+    error[0--3] "Command 'nn_new_outputvector': Invalid type for previous module '"$type_previous"'."
   fi
   nm. $name
   _nn_${name}_type="outputvector"
-  _nn_${name}_output_width=1
-  _nn_${name}_output_height={h}
-  _nn_${name}_output_spectrum=1
+  _nn_${name}_width=1
+  _nn_${name}_height={h}
+  _nn_${name}_spectrum=1
   _nn_${name}_previous=$name_previous
   _nn_${name}_next=
   _nn_${name_previous}_next=$name
@@ -21128,21 +21128,25 @@ nn_new_fullyconnected : check ${"is_variable_name $1"}" && "${"is_variable_name 
   name="$1"
   name_previous="$2"
   type_previous=${_nn_${name_previous}_type}
+  width_previous=${_nn_${name_previous}_width}
+  height_previous=${_nn_${name_previous}_height}
+  spectrum_previous=${_nn_${name_previous}_spectrum}
   if !narg($type_previous)
-    error[0--3] "Command 'nn_new_fullyconnected': Unknown name for previous module '"${name_previous}"'."
+    error[0--3] "Command 'nn_new_fullyconnected': Unknown name for previous module '"$name_previous"'."
   fi
-  if '$type_previous'=='fullyconnected'" || "\
-     '$type_previous'=='input'
-    {${name_previous},h+1},$3
+  if '$type_previous'=='input'
+    {$name_previous,$width_previous*$height_previous*$spectrum_previous+1},$3
+  elif '$type_previous'=='fullyconnected'
+    {$name_previous,$height_previous+1},$3
   else
-    error[0--3] "Command 'nn_new_fullyconnected': Invalid type for previous module '"${type_previous}"'."
+    error[0--3] "Command 'nn_new_fullyconnected': Invalid type for previous module '"$type_previous"'."
   fi
   rand. -1,1
   nm. $name
   _nn_${name}_type="fullyconnected"
-  _nn_${name}_output_width=1
-  _nn_${name}_output_height=$3
-  _nn_${name}_output_spectrum=1
+  _nn_${name}_width=1
+  _nn_${name}_height=$3
+  _nn_${name}_spectrum=1
   _nn_${name}_activation="$4"
   _nn_${name}_previous=$name_previous
   _nn_${name_previous}_next=$name
@@ -21156,19 +21160,22 @@ nn_propagate_batch : check ${"is_variable_name $1"}" && "${"is_image_arg $2"}
   v -
   name_input=${"nn_name_input $1,$0"}
   name_output=${"nn_name_output $1,$0"}
+  width_input=${_nn_${name_input}_width}
+  height_input=${_nn_${name_input}_height}
+  spectrum_input=${_nn_${name_input}_spectrum}
   pass$2 1 N={d} # [-2] = shared copy of [inputs_zstacked]
-  if "const ind = "${$name_input}"; w!=w#ind || h!=h#ind || s!=s#ind"
+  if "w!="$width_input" || h!="$height_input" || s!="$spectrum_input
     error[0--3] "Command 'nn_propagate_batch': Dimensions of specified inputs ("{[w,h,d,s]}") do not "\
-                "match network input dimensions ("{$name_input,[w,h,d,s]}")."
+                "match network input dimensions ("$width_input,$height_input,$spectrum_input")."
   fi
   {$name_output,[w,h,$N,s]} # [-1] = network outputs (to be filled)
   _nn_code_begin=
-  _nn_code_body="x||y||c?0:("\                               # Compute only once for each z
-                "O_"${name_input}" = crop(0,0,z,0,w,h,1,s);" # Get input
+  _nn_code_body="x||y||c?0:("\                             # Compute only once for each z
+                "O_"$name_input" = crop(0,0,z,0,w,h,1,s);" # Get input
   nn_compile_propagate ${_nn_${name_input}_next}
   _nn_code_body.="draw(#-1,O_"${_nn_${name_output}_previous}",0,0,z,0,w#-1,h#-1,1,s#-1);"\ # Set output
                  "0);" # End of 'x||y||c' condition
-  eval.. ":begin("${_nn_code_begin}");"${_nn_code_body} # Multi-threaded evaluation
+  eval.. ":begin("$_nn_code_begin");"$_nn_code_body # Multi-threaded evaluation
   _nn_code_begin,_nn_code_body=
   rm[-2]
   v +
@@ -21183,7 +21190,7 @@ nn_propagate : check ${"is_variable_name $1"}
   _nn_code_begin,_nn_code_body=
   nn_compile_propagate $name_input
   _nn_code_body.="draw(#"${$name_output}",O_"${_nn_${name_output}_previous}");" # Set output
-  eval "begin("${_nn_code_begin}");"${_nn_code_body} # Single evalutation
+  eval "begin("$_nn_code_begin");"$_nn_code_body # Single evalutation
   _nn_code_begin,_nn_code_body=
   v +
 
@@ -21223,7 +21230,7 @@ nn_compile_propagate_fullyconnected :
   ind=${$1}
   _nn_code_begin.="W_$1 = crop(#"$ind",0,w#"$ind"-1);"\
                   "B_$1 = crop(#"$ind",w#"$ind"-1,1);"
-  _nn_code_body.="Z_$1 = mul(W_$1,O_"${name_previous}",1) + B_$1;"\
+  _nn_code_body.="Z_$1 = mul(W_$1,O_"$name_previous",1) + B_$1;"\
                  "O_$1 = v_apply(activation_"$activation",Z_$1);"
 
 #@cli nn_backpropagate_batch : module_name,[inputs_zstacked],[expected_outputs_zstacked],\
@@ -21238,34 +21245,41 @@ nn_backpropagate_batch : check ${"is_variable_name $1"}" && "${"is_image_arg $2"
   name_input=${"nn_name_input $1,$0"}
   name_output=${"nn_name_output $1,$0"}
   name_previous=${_nn_${name_output}_previous}
+  width_input=${_nn_${name_input}_width}
+  height_input=${_nn_${name_input}_height}
+  spectrum_input=${_nn_${name_input}_spectrum}
+  width_output=${_nn_${name_output}_width}
+  height_output=${_nn_${name_output}_height}
+  spectrum_output=${_nn_${name_output}_spectrum}
+
   func_loss="$5"
   pass$2 1 nb_inputs={d} #  [-3 or -2] = shared copy of [inputs_zstacked]
-  if "const ind = "${$name_input}"; w!=w#ind || h!=h#ind || s!=s#ind"
+  if "w!="$width_input" || h!="$height_input" || s!="$spectrum_input
     error[0--3] "Command 'nn_backpropagate_batch': Dimensions of specified inputs ("{[w,h,d,s]}") do not "\
-                "match network input dimensions ("{$name_input,[w,h,d,s]}")."
+                "fit with network input dimensions ("$width_input,$height_input,$spectrum_input")."
   fi
   pass$3 1 # [-2 or -1] = shared copy of [expected_outputs_zstacked]
-  if "const ind = "${$name_output}"; d!="${nb_inputs}" || w!=w#ind || h!=h#ind || s!=s#ind"
+  if "d!="$nb_inputs" || w!="$width_output" || h!="$height_output" || s!="$spectrum_output
     error[0--3] "Command 'nn_backpropagate_batch': Dimensions of expected outputs ("{[w,h,d,s]}") do not "\
-                "match network output dimensions ("{$name_output,[w,h,d,s]}")."
+                "match network output dimensions ("$width_output,$height_outpu,$spectrum_output")."
   fi
   if $4 +f. 0 ind_inputs,ind_expected=-3,-2 # [-1] = network outputs (to be filled)
   else ind_inputs,ind_expected=-2,-1
   fi
 
-  _nn_code_begin=${-nn_define_loss_${func_loss}}"L = 0; const nb_inputs = "${nb_inputs}";"
-  _nn_code_body="x||y||c?0:("\                               # Compute only once for each z
-                "O_"${name_input}" = crop(0,0,z,0,w,h,1,s);" # Get input
+  _nn_code_begin=${-nn_define_loss_$func_loss}"L = 0; const nb_inputs = "$nb_inputs";"
+  _nn_code_body="x||y||c?0:("\                             # Compute only once for each z
+                "O_"$name_input" = crop(0,0,z,0,w,h,1,s);" # Get input
   _nn_code_end="call('loss=',L/nb_inputs);"
   _nn_code_end_t=
   nn_compile_propagate ${_nn_${name_input}_next}
   if $4 # Set output if requested
     _nn_code_body.="draw(#-1,O_"${_nn_${name_output}_previous}",0,0,z,0,w#-1,h#-1,1,s#-1);"
   fi
-  _nn_code_body.="expected = crop(#"${ind_expected}",0,0,z,0,"\
-                 "w#"${ind_expected}",h#"${ind_expected}",1,s#"${ind_expected}");"\
-                 "dE_"${name_previous}" = d_loss_"${func_loss}"(O_"${name_previous}",expected);"\
-                 "critical(L+=loss_"${func_loss}"(O_"${name_previous}",expected));"
+  _nn_code_body.="expected = crop(#"$ind_expected",0,0,z,0,"\
+                 "w#"$ind_expected",h#"$ind_expected",1,s#"$ind_expected");"\
+                 "dE_"$name_previous" = d_loss_"$func_loss"(O_"$name_previous",expected);"\
+                 "critical(L+=loss_"$func_loss"(O_"$name_previous",expected));"
   nn_compile_backpropagate $name_previous
   _nn_code_body.=";0);"
 
@@ -21275,7 +21289,7 @@ nn_backpropagate_batch : check ${"is_variable_name $1"}" && "${"is_image_arg $2"
    # e[] "CODE = \n"$code
    # q
 
-  eval[$ind_inputs] ":begin("${_nn_code_begin}");"${_nn_code_body}"end("${_nn_code_end}");" # Multi-threaded evaluation
+  eval[$ind_inputs] ":begin("$_nn_code_begin");"${_nn_code_body}"end("$_nn_code_end");" # Multi-threaded evaluation
   _nn_code_begin,_nn_code_body,_nn_code_end=
   rm[$ind_inputs,$ind_expected]
   u $loss
@@ -21291,22 +21305,25 @@ nn_backpropagate : check ${"is_variable_name $1"}" && "${"is_image_arg $2"} skip
   name_input=${"nn_name_input $1,$0"}
   name_output=${"nn_name_output $1,$0"}
   name_previous=${_nn_${name_output}_previous}
+  width_output=${_nn_${name_output}_width}
+  height_output=${_nn_${name_output}_height}
+  spectrum_output=${_nn_${name_output}_spectrum}
   func_loss="$3"
   pass$2 1
-  if "const ind = "${$name_output}"; w!=w#ind || h!=h#ind || s!=s#ind"
+  if "w!="$width_output" || h!="$height_output" || s!="$spectrum_output
     error[0--3] "Command 'nn_backpropagate': Dimensions of expected output ("{[w,h,d,s]}") do not "\
-                "match network output dimensions ("{$name_output,[w,h,d,s]}")."
+                "fit with network output dimensions ("$width_output,$height_output,$spectrum_output")."
   fi
 
   _nn_code_body,_nn_code_end=
-  _nn_code_begin=${-nn_define_loss_${func_loss}}"const nb_inputs = 1;"
+  _nn_code_begin=${-nn_define_loss_$func_loss}"const nb_inputs = 1;"
   nn_compile_propagate $name_input
   _nn_code_body.="draw(#"${$name_output}",O_"${_nn_${name_output}_previous}");"\ # Set output
                  "expected = crop(#-1);"\
-                 "dE_"${name_previous}" = d_loss_"${func_loss}"(O_"${name_previous}",expected);"\
-                 "call('loss=',loss_"${func_loss}"(O_"${name_previous}",expected));"
+                 "dE_"$name_previous" = d_loss_"$func_loss"(O_"$name_previous",expected);"\
+                 "call('loss=',loss_"$func_loss"(O_"$name_previous",expected));"
   nn_compile_backpropagate $name_previous
-  eval "begin("${_nn_code_begin}");"${_nn_code_body}"end("${_nn_code_end}");"
+  eval "begin("$_nn_code_begin");"${_nn_code_body}"end("$_nn_code_end");"
   _nn_code_begin,_nn_code_body,_nn_code_end=
   rm. u $loss v +
 
@@ -21340,8 +21357,8 @@ nn_compile_backpropagate_fullyconnected :
   _nn_code_begin.="sumdB_$1 = vector(#size(B_$1),0);"\
                   "sumdW_$1 = vector(#size(W_$1),0);"
   _nn_code_body.="dB_$1 = dE_$1*v_apply(d_activation_"$activation",Z_$1);"\
-                 "dW_$1 = mul(dB_$1,O_"${previous_name}",size(O_"${previous_name}"));"\
-                 "dE_"${previous_name}" = mul(transp(W_$1,w#"$ind"-1),dB_$1,1);"\
+                 "dW_$1 = mul(dB_$1,O_"$previous_name",size(O_"$previous_name"));"\
+                 "dE_"$previous_name" = mul(transp(W_$1,w#"$ind"-1),dB_$1,1);"\
                  "sumdB_$1+=dB_$1; sumdW_$1+=dW_$1;"
   _nn_code_end.="merge(sumdB_$1,+); merge(sumdW_$1,+);"\
                 "store(sumdB_$1/=nb_inputs,'_nn_$1_dB');"\
@@ -21419,12 +21436,12 @@ nn_serialize : check ${"is_variable_name $1"}" && isbool(${2=0})"
 
   for narg($name)
     attributes.="_nn_$1_type="${_nn_$1_type}" "\
-                "_nn_$1_output_width="${_nn_$1_output_width}" "\
-                "_nn_$1_output_height="${_nn_$1_output_height}" "\
-                "_nn_$1_output_spectrum="${_nn_$1_output_spectrum}" "\
+                "_nn_$1_width="${_nn_$1_width}" "\
+                "_nn_$1_height="${_nn_$1_height}" "\
+                "_nn_$1_spectrum="${_nn_$1_spectrum}" "\
                 "_nn_$1_previous="${_nn_$1_previous}" "\
-                "_nn_$1_next="${_nn_$1_next}" "
-    attributes.=${"nn_serialize_"$type" "$name}
+                "_nn_$1_next="${_nn_$1_next}" "\
+                ${"nn_serialize_"$type" "$name}
     name=${_nn_${name}_next}
     type=${_nn_${name}_type}
   done
