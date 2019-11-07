@@ -21072,15 +21072,15 @@ nn_name_output : skip "${2=nn_name_output}"
     name=${_nn_${name}_next}
   done
   type_output=${_nn_${name_output}_type}
-  if '$type_output'!='outputvector'
-    error[0--4] "Command '$2': Invalid output type '"$type_output"' (should be 'outputvector')."
+  if '$type_output'!='output'
+    error[0--4] "Command '$2': Invalid output type '"$type_output"' (should be 'output')."
   fi
   u $name_output
 
 #@cli nn_new_input : module_name,width,_height,_spectrum
-#@cli : Add an input with specified size to the neural network.
+#@cli : Add an input module with specified size to the neural network.
 nn_new_input : check ${"is_variable_name $1"}" && isint($2) && $2>0 && isint(${3=1}) && $3>0 && isint(${4=1}) && $4>0"
-  e[^-1] "[NN] Add input '$1' with size ($2,$3,$4)."
+  e[^-1] "[NN] Add input module '$1' with size ($2,$3,$4)."
   v -
   name="$1"
   $2,$3,1,$4
@@ -21092,25 +21092,25 @@ nn_new_input : check ${"is_variable_name $1"}" && isint($2) && $2>0 && isint(${3
   _nn_${name}_previous=
   v +
 
-#@cli : nn_new_outputvector : module_name,previous_module_name
-#@cli : Add an output vector to the neural network.
-nn_new_outputvector : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
-  e[^-1] "[NN] Add output vector '$1', linked to previous module '$2'."
+#@cli : nn_new_output : module_name,previous_module_name
+#@cli : Add an output module to the neural network.
+nn_new_output : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
+  e[^-1] "[NN] Add output module '$1', linked to previous module '$2'."
   v -
   name="$1"
   name_previous="$2"
   type_previous=${_nn_${name_previous}_type}
   if !narg($type_previous)
-    error[0--3] "Command 'nn_new_outputvector': Unknown name for previous module '"$name_previous"'."
+    error[0--3] "Command 'nn_new_output': Unknown name for previous module '"$name_previous"'."
   fi
   if '$type_previous'=='fullyconnected'" || "\
      '$type_previous'=='input'
     1,{$name_previous,h}
   else
-    error[0--3] "Command 'nn_new_outputvector': Invalid type for previous module '"$type_previous"'."
+    error[0--3] "Command 'nn_new_output': Invalid type for previous module '"$type_previous"'."
   fi
   nm. $name
-  _nn_${name}_type="outputvector"
+  _nn_${name}_type="output"
   _nn_${name}_width=1
   _nn_${name}_height={h}
   _nn_${name}_spectrum=1
@@ -21120,10 +21120,10 @@ nn_new_outputvector : check ${"is_variable_name $1"}" && "${"is_variable_name $2
   v +
 
 #@cli nn_new_fullyconnected : module_name,previous_module_name,nb_neurons,activation_function
-#@cli : Add a fully-connected layer to the neural network.
+#@cli : Add a fully-connected module to the neural network.
 nn_new_fullyconnected : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($3) && $3>0"
                         skip "${4=leakyrelu}"
-  e[^-1] "[NN] Add fully-connected layer '$1', linked to previous module '$2', with $3 neurons and '$4' activation."
+  e[^-1] "[NN] Add fully-connected module '$1', linked to previous module '$2', with $3 neurons and '$4' activation."
   v -
   name="$1"
   name_previous="$2"
@@ -21217,9 +21217,9 @@ nn_compile_propagate :
 nn_compile_propagate_input :
   _nn_code_body.="O_$1 = crop(#"${$1}");"
 
-# [internal] nn_compile_propagate_outputvector : module_name
+# [internal] nn_compile_propagate_output : module_name
 # Generate code to propagate data through an output vector (actually do nothing).
-nn_compile_propagate_outputvector :
+nn_compile_propagate_output :
   skip $*
 
 # [internal] nn_compile_propagate_fullyconnected : module_name
@@ -21343,9 +21343,9 @@ nn_compile_backpropagate :
 nn_compile_backpropagate_input :
   skip $*
 
-# [internal] nn_compile_backpropagate_outputvector : module_name
+# [internal] nn_compile_backpropagate_output : module_name
 # Generate code to back-propagate error through an output vector (actually do nothing).
-nn_compile_backpropagate_outputvector :
+nn_compile_backpropagate_output :
   skip $*
 
 # [internal] nn_compile_backpropagate_fullyconnected : module_name
@@ -21401,9 +21401,9 @@ nn_update : check ${"is_variable_name $1"}" && ${2=0.001}>0"
 nn_update_input :
   skip $*
 
-# [internal] nn_update_outputvector : module_name,epsilon
+# [internal] nn_update_output : module_name,epsilon
 # Update weights for an output vector (actually do nothing)
-nn_update_outputvector :
+nn_update_output :
   skip $*
 
 # [internal] nn_update_fullyconnected : module_name,epsilon
@@ -21452,9 +21452,9 @@ nn_serialize : check ${"is_variable_name $1"}" && isbool(${2=0})"
 # Save attributes of specified input, for serialization purposes.
 nn_serialize_input :
 
-# [internal] nn_serialize_outputvector : module_name
+# [internal] nn_serialize_output : module_name
 # Save attributes of specified output vector, for serialization purposes.
-nn_serialize_outputvector :
+nn_serialize_output :
 
 # [internal] nn_serialize_fullyconnected : module_name
 # Save attributes of specified fully-connected layer, for serialization purposes.
