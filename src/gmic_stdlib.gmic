@@ -21086,6 +21086,9 @@ nn_new_input : check ${"is_variable_name $1"}" && isint($2) && $2>0 && isint(${3
   $2,$3,1,$4
   nm. $name
   _nn_${name}_type="input"
+  _nn_${name}_Ow=$2
+  _nn_${name}_Oh=$3
+  _nn_${name}_Os=$4
   _nn_${name}_previous=
   v +
 
@@ -21108,6 +21111,9 @@ nn_new_outputvector : check ${"is_variable_name $1"}" && "${"is_variable_name $2
   fi
   nm. $name
   _nn_${name}_type="outputvector"
+  _nn_${name}_Ow=1
+  _nn_${name}_Oh={h}
+  _nn_${name}_Os=1
   _nn_${name}_previous=$name_previous
   _nn_${name}_next=
   _nn_${name_previous}_next=$name
@@ -21134,6 +21140,9 @@ nn_new_fullyconnected : check ${"is_variable_name $1"}" && "${"is_variable_name 
   rand. -1,1
   nm. $name
   _nn_${name}_type="fullyconnected"
+  _nn_${name}_Ow=1
+  _nn_${name}_Oh=$3
+  _nn_${name}_Os=1
   _nn_${name}_activation="$4"
   _nn_${name}_previous=$name_previous
   _nn_${name_previous}_next=$name
@@ -21409,6 +21418,12 @@ nn_serialize : check ${"is_variable_name $1"}" && isbool(${2=0})"
   attributes=
 
   for narg($name)
+    attributes.="_nn_$1_type="${_nn_$1_type}" "\
+                "_nn_$1_Ow="${_nn_$1_Ow}" "\
+                "_nn_$1_Oh="${_nn_$1_Oh}" "\
+                "_nn_$1_Os="${_nn_$1_Os}" "\
+                "_nn_$1_previous="${_nn_$1_previous}" "\
+                "_nn_$1_next="${_nn_$1_next}" "
     attributes.=${"nn_serialize_"$type" "$name}
     name=${_nn_${name}_next}
     type=${_nn_${name}_type}
@@ -21419,22 +21434,15 @@ nn_serialize : check ${"is_variable_name $1"}" && isbool(${2=0})"
 # [internal] nn_serialize_input : module_name
 # Save attributes of specified input, for serialization purposes.
 nn_serialize_input :
-  u "_nn_$1_type=input "\
-    "_nn_$1_previous= "\
-    "_nn_$1_next="${_nn_$1_next}" "
 
 # [internal] nn_serialize_outputvector : module_name
 # Save attributes of specified output vector, for serialization purposes.
 nn_serialize_outputvector :
-  u "_nn_$1_type=outputvector "\
-    "_nn_$1_next="${_nn_$1_next}" "
 
 # [internal] nn_serialize_fullyconnected : module_name
 # Save attributes of specified fully-connected layer, for serialization purposes.
 nn_serialize_fullyconnected :
-  u "_nn_$1_type=fullyconnected "\
-    "_nn_$1_activation="${_nn_$1_activation}" "\
-    "_nn_$1_next="${_nn_$1_next}" "
+  u "_nn_$1_activation="${_nn_$1_activation}" "
 
 #@cli nn_unserialize
 #@cli : Unserialize specified selection to retrieve a neural network.
