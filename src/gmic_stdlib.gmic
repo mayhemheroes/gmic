@@ -953,6 +953,9 @@ ${c}"const"$n"'
 \n       . '"${c}"u(max)"$n"' or '"${c}"u(min,max)"$n"': return a random value between "${g}"[0,max]"$n" or "\
 ${g}"[min,max]"$n", following
 \n          a uniform distribution.
+\n       . '"${c}"f2ui(value)"$n"' and '"${c}"ui2f(value)"$n"': Convert a large unsigned integer as a negative
+\n          floating point value (and vice-versa), so that 32bits floats can be used to store large integers
+\n          while keeping a unitary precision.
 \n       . '"${c}"i(_a,_b,_c,_d,_interpolation_type,_boundary_conditions)"$n"': return the value of the pixel
 \n          located at position "${g}"(a,b,c,d)"$n" in the associated image, if any ("${g}"0"$n" otherwise).
 \n          '"${g}"interpolation_type"$n"' can be "${g}"{ 0=nearest neighbor | 1=linear | 2=cubic }"$n".
@@ -16026,21 +16029,6 @@ _normalize3d :
     fi
   endl done v +
 
-#@cli nb_primitives3d
-#@cli : Return the number of primitives of selected 3d objects.
-nb_primitives3d :
-  e[^-1] "Return number of primitives of 3d object$?."
-  v - res=
-  repeat $! l[$>]
-    if i[7]>0 res.=$c{i[7]} # Regular value
-    else l.
-      s3d 0
-      res.=$c{"N = p = 0; while (p<h, i[p++]==-128?(W = i[p++]; H = i[p++]; S = i[p++]; H*S!=0?(p+=W*H*S)); ++N)"}
-      a y
-    endl fi
-    c=","
-  endl done u $res v +
-
 #@cli o3d : eq. to 'opacity3d'. : (+)
 
 #@cli opacity3d : _opacity : (+)
@@ -17021,7 +17009,7 @@ texturize3d : check ${"is_image_arg $1"}" && (!narg(${2=}) || "${"is_image_arg $
 
 _texturize3d :
   repeat $!-2 l[$>,-2,-1]
-    np=${nb_primitives3d[0]}
+    np={f2ui(i[7])}
     s3d[0]
 
     # Retrieve texture coordinates for each vertex.
