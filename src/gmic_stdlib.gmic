@@ -7037,10 +7037,11 @@ complex2polar :
     r[1] [0],3 +atan2[1] [0] nm. {1,n} sqr[-3,-2] +[-3,-2] sqrt..
   endl done v +
 
-#@cli compress_clut : _max_error>0,_avg_error>0,_max_nbpoints>=8
+#@cli compress_clut : _max_error>0,_avg_error>0,_max_nbpoints>=8,_error_metric={ l2 | de2000 | de76 },\
+# _reconstruction_colorspace={ srgb | rgb }
 #@cli : Compress selected color LUTs as sequences of colored keypoints.
 #@cli : Default values: 'max_error=8', 'avg_error=2' and 'max_nb_points=2048'.
-compress_clut : check "${1=8}>0 && ${2=2}>0 && isint(${3=2048}) && $3>8"
+compress_clut : check "${1=8}>0 && ${2=2}>0 && isint(${3=2048}) && $3>8" skip "${4=l2},${5=srgb}"
   e[^-1] "Compress color LUT$? as a set of colored keypoints, with maximum error $1, average error $2 and
           $3 maximum keypoints."
   v - max_error,avg_error,max_keypoints=${1--1}
@@ -7206,12 +7207,12 @@ compress_rle : skip ${1=0} check "isint(${2=0}) && $2>=0"
 #@cli : $ image.jpg +add 30% cut[-1] 0,255
 #@cli : $ image.jpg +cut 25%,75%
 
-#@cli decompress_clut_rbf : _width>0,_height>0,_depth>0,_colorspace={ srgb | rgb }
+#@cli decompress_clut_rbf : _width>0,_height>0,_depth>0,_reconstruction_colorspace={ srgb | rgb }
 #@cli : Decompress selected colored keypoints into 3D CLUTs, using RBF thin plate spline interpolation.
-#@cli : Default value: 'width=height=depth=48' and 'colorspace=srgb'.
+#@cli : Default value: 'width=height=depth=48' and 'reconstruction_colorspace=srgb'.
 decompress_clut_rbf : check "isint(${1=48}) && $1>0 && isint(${2=$1}) && $2>0 && isint(${3=$1}) && $3>0"
                       skip "${4=srgb}"
-  e[^-1] "Decompress colored keypoint$? into $1x$2x$3 CLUTs (RBF approach), using $4 colorspace."
+  e[^-1] "Decompress colored keypoint$? into $1x$2x$3 CLUTs (RBF approach), using $4 colorspace for reconstruction."
   v - m "srgb2srgb :"
   repeat $! l[$>] nm={n}
     srgb2$4
@@ -7237,12 +7238,12 @@ decompress_clut_rbf : check "isint(${1=48}) && $1>0 && isint(${2=$1}) && $2>0 &&
   endl done
   uncommand srgb2srgb v +
 
-#@cli decompress_clut_pde : _width>0,_height>0,_depth>0,_colorspace={ srgb | rgb }
+#@cli decompress_clut_pde : _width>0,_height>0,_depth>0,_reconstruction_colorspace={ srgb | rgb }
 #@cli : Decompress selected colored keypoints into 3D CLUTs, using multiscale diffusion PDE's.
-#@cli : Default values: 'width=height=depth=48' and 'colorspace=srgb'.
+#@cli : Default values: 'width=height=depth=48' and 'reconstruction_colorspace=srgb'.
 decompress_clut_pde : check "isint(${1=48}) && $1>0 && isint(${2=$1}) && $2>0 && isint(${3=$1}) && $3>0"
                       skip "${4=srgb}"
-  e[^-1] "Decompress colored keypoint$? into $1x$2x$3 CLUTs (PDE approach), using $4 colorspace."
+  e[^-1] "Decompress colored keypoint$? into $1x$2x$3 CLUTs (PDE approach), using $4 colorspace for reconstruction."
   v - m "srgb2srgb :"
   repeat $! l[$>] nm={n}
     srgb2$4
@@ -7277,16 +7278,17 @@ decompress_clut_pde : check "isint(${1=48}) && $1>0 && isint(${2=$1}) && $2>0 &&
   endl done
   uncommand srgb2srgb v +
 
-#@cli decompress_clut : _width>0,_height>0,_depth>0
+#@cli decompress_clut : _width>0,_height>0,_depth>0,_reconstruction_colorspace={ srgb | rgb }
 #@cli : Decompress selected colored keypoints into 3D CLUTs, using a mixed RBF/PDE approach.
-#@cli : Default values: 'width=height=depth=48'.
+#@cli : Default values: 'width=height=depth=48' and 'reconstruction_colorspace=srgb'.
 decompress_clut : check "isint(${1=48}) && $1>0 && isint(${2=$1}) && $2>0 && isint(${3=$1}) && $3>0"
-  e[^-1] "Decompress colored keypoint$? into $1x$2x$3 CLUTs."
+                  skip "${4=srgb}"
+  e[^-1] "Decompress colored keypoint$? into $1x$2x$3 CLUTs, using $4 colorspace for reconstruction."
   v - repeat $! l[$>]
     if "h>=320 || (P0 = I[0]; P1 = I[h-1]; val(P) = (P[0]*65536 + P[1]*256 + P[2]); val(P0)>val(P1))"
-      decompress_clut_pde. ${1-3}
+      decompress_clut_pde. ${1-4}
     else
-      decompress_clut_rbf. ${1-3}
+      decompress_clut_rbf. ${1-4}
     fi
   endl done v +
 
