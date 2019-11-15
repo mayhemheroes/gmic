@@ -7206,12 +7206,15 @@ compress_rle : skip ${1=0} check "isint(${2=0}) && $2>=0"
 #@cli : $ image.jpg +add 30% cut[-1] 0,255
 #@cli : $ image.jpg +cut 25%,75%
 
-#@cli decompress_clut_rbf : _width>0,_height>0,_depth>0
+#@cli decompress_clut_rbf : _width>0,_height>0,_depth>0,_colorspace={ srgb | rgb }
 #@cli : Decompress selected colored keypoints into 3D CLUTs, using RBF thin plate spline interpolation.
-#@cli : Default value: 'width=height=depth=48'.
+#@cli : Default value: 'width=height=depth=48' and 'colorspace=srgb'.
 decompress_clut_rbf : check "isint(${1=48}) && $1>0 && isint(${2=$1}) && $2>0 && isint(${3=$1}) && $3>0"
-  e[^-1] "Decompress colored keypoint$? into $1x$2x$3 CLUTs (RBF approach)."
-  v - repeat $! l[$>] nm={n}
+                      skip "${4=srgb}"
+  e[^-1] "Decompress colored keypoint$? into $1x$2x$3 CLUTs (RBF approach), using $4 colorspace."
+  v - m "srgb2srgb :"
+  repeat $! l[$>] nm={n}
+    srgb2$4
     $1,$2,$3,{s-3},"*
       begin(
         rbf(_r) = (r = _r; r^2*log(1 + r));
@@ -7229,8 +7232,10 @@ decompress_clut_rbf : check "isint(${1=48}) && $1>0 && isint(${2=$1}) && $2>0 &&
       );
       res = vectors(0);
       for (p = 0, p<N, ++p, res += W[s*p,s]*rbf(norm([x,y,z] - xyz(p))))"
-    rm.. nm $nm
-  endl done v +
+    rm.. ${4}2srgb
+    nm $nm
+  endl done
+  uncommand srgb2srgb v +
 
 #@cli decompress_clut_pde : _width>0,_height>0,_depth>0,_colorspace={ srgb | rgb }
 #@cli : Decompress selected colored keypoints into 3D CLUTs, using multiscale diffusion PDE's.
@@ -7238,8 +7243,7 @@ decompress_clut_rbf : check "isint(${1=48}) && $1>0 && isint(${2=$1}) && $2>0 &&
 decompress_clut_pde : check "isint(${1=48}) && $1>0 && isint(${2=$1}) && $2>0 && isint(${3=$1}) && $3>0"
                       skip "${4=srgb}"
   e[^-1] "Decompress colored keypoint$? into $1x$2x$3 CLUTs (PDE approach), using $4 colorspace."
-  v -
-  m "srgb2srgb :"
+  v - m "srgb2srgb :"
   repeat $! l[$>] nm={n}
     srgb2$4
 
@@ -7271,8 +7275,7 @@ decompress_clut_pde : check "isint(${1=48}) && $1>0 && isint(${2=$1}) && $2>0 &&
     ${4}2srgb
     nm $nm
   endl done
-  uncommand srgb2srgb
-  v +
+  uncommand srgb2srgb v +
 
 #@cli decompress_clut : _width>0,_height>0,_depth>0
 #@cli : Decompress selected colored keypoints into 3D CLUTs, using a mixed RBF/PDE approach.
