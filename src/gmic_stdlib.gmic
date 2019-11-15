@@ -7044,8 +7044,9 @@ complex2polar :
 # 'reconstruction_colorspace=0'.
 compress_clut : check "${1=8}>0 && ${2=2}>0 && isint(${3=2048}) && $3>8 && isint(${4=0}) && $4>=0 && $4<=2 && "\
                       "isbool(${5=0})"
-  e[^-1] "Compress color LUT$? as a set of colored keypoints, with maximum error $1, average error $2,
-          $3 maximum keypoints."
+  e[^-1] "Compress color LUT$? as a set of colored keypoints, with maximum error $1, average error $2, "\
+         "$3 maximum keypoints, "${"v - s0,s1,s2=L2-RGB,DeltaE_1976,DeltaE_2000 u $s$4 v +"}" metric and "\
+         ${"v - s0,s1=srgb,rgb u $s$4 v +"}" colorspace for reconstruction."
   v - max_error,avg_error,max_keypoints,metric,colorspace=${1-5}
   method=rbf
   repeat $! l[$>] nm={b}
@@ -7074,13 +7075,8 @@ compress_clut : check "${1=8}>0 && ${2=2}>0 && isint(${3=2048}) && $3>8 && isint
     # Iteratively add keypoints.
     sep="\n"
     do
-      +decompress_clut_$method. {0,[w,h,d]}
-
-      if $metric==0
-        -. [0] norm.
-      else
-        deltaE. [1],{$metric-1},"" d
-      fi
+      +decompress_clut_$method. {0,[w,h,d]},$colorspace
+      if $metric==0 -. [0] norm. else deltaE. [1],{$metric-1},"" fi
       emax,eavg={[iM,ia]}
 
       v + e[] "\r"$sep"  > Add [#"{-2,h}"] Max_Err = "{_$emax}", Avg_Err = "{_$eavg}"         " v - sep=""
@@ -7096,9 +7092,9 @@ compress_clut : check "${1=8}>0 && ${2=2}>0 && isint(${3=2048}) && $3>8 && isint
     index=0 sep="\n"
     do
       +l. s y rm[$index] a y endl # Remove kth keypoint
-      +decompress_clut_$method. {0,[w,h,d]}
-#      ciede2000. [1] emax,eavg={[iM,ia]}
-      -. [0] norm. emax,eavg={[iM,ia]} rm.
+      +decompress_clut_$method. {0,[w,h,d]},$colorspace
+      if $metric==0 -. [0] norm. else deltaE. [1],{$metric-1},"" fi
+      emax,eavg={[iM,ia]} rm.
 
       if $emax<=$max_error" && "$eavg<=$avg_error rv[-2,-1] else index+=1 fi
       v +
