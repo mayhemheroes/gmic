@@ -8190,8 +8190,8 @@ deltaE : check ${"is_image_arg $1"}" && isin(${2=2000},0,76,1976,2000)" skip "${
   v -
   pass$1 1 +$3. rm..
   repeat {$!-1} l[$>,-1] nm={0,n} $3[0]
-    if ($2%100)==76 -.. . norm.. # DeltaE76
-    else 100%,100%,1,1,${-math_lib}"ciede2000(I#0,I#1)" rv[0,-1] rm. # DeltaE2000
+    if round($2%100)==76 -.. . norm.. # DeltaE76
+    else 100%,100%,1,1,${-math_lib}"deltaE00(I#0,I#1)" rv[0,-1] rm. # DeltaE2000
     fi
   nm[0] $nm endl done
   rm. v +
@@ -22502,94 +22502,94 @@ math_lib :
     P = A + dot(X - A,_AB)/max(1e-8,dot(_AB,_AB))*_AB;
   );
 
-  # CIEDE2000 color comparison function.
+  # CIE DeltaE_2000 color comparison function.
   # (code adapted from https://github.com/gfiumara/CIEDE2000).
-  ciede2000(lab1,lab2) = (
-    _ciede2000_deg2rad(deg) = (deg*pi/180);
-    unref(_ciede2000_lab1); _ciede2000_lab1 = lab1;
-    unref(_ciede2000_lab2); _ciede2000_lab2 = lab2;
-    unref(_ciede2000_k_L); const _ciede2000_k_L = 1;
-    unref(_ciede2000_k_C); const _ciede2000_k_C = 1;
-    unref(_ciede2000_k_H); const _ciede2000_k_H = 1;
-    unref(_ciede2000_deg360inrad); const _ciede2000_deg360inrad = _ciede2000_deg2rad(360);
-    unref(_ciede2000_deg180inrad); const _ciede2000_deg180inrad = _ciede2000_deg2rad(180);
-    unref(_ciede2000_pow25to7); const _ciede2000_pow25to7 = 25^7;
+  deltaE00(lab1,lab2) = (
+    _deltaE00_deg2rad(deg) = (deg*pi/180);
+    unref(_deltaE00_lab1); _deltaE00_lab1 = lab1;
+    unref(_deltaE00_lab2); _deltaE00_lab2 = lab2;
+    unref(_deltaE00_k_L); const _deltaE00_k_L = 1;
+    unref(_deltaE00_k_C); const _deltaE00_k_C = 1;
+    unref(_deltaE00_k_H); const _deltaE00_k_H = 1;
+    unref(_deltaE00_deg360inrad); const _deltaE00_deg360inrad = _deltaE00_deg2rad(360);
+    unref(_deltaE00_deg180inrad); const _deltaE00_deg180inrad = _deltaE00_deg2rad(180);
+    unref(_deltaE00_pow25to7); const _deltaE00_pow25to7 = 25^7;
 
     # Step 1
-    _ciede2000_C1 = norm(_ciede2000_lab1[1,2]);
-    _ciede2000_C2 = norm(_ciede2000_lab2[1,2]);
-    _ciede2000_barC = (_ciede2000_C1 + _ciede2000_C2)/2;
-    _ciede2000_G = 0.5*(1 - sqrt(_ciede2000_barC^7/(_ciede2000_barC^7 + _ciede2000_pow25to7)));
-    _ciede2000_a1prime = (1 + _ciede2000_G)*_ciede2000_lab1[1];
-    _ciede2000_a2prime = (1 + _ciede2000_G)*_ciede2000_lab2[1];
-    _ciede2000_Cprime1 = norm(_ciede2000_a1prime,_ciede2000_lab1[2]);
-    _ciede2000_Cprime2 = norm(_ciede2000_a2prime,_ciede2000_lab2[2]);
+    _deltaE00_C1 = norm(_deltaE00_lab1[1,2]);
+    _deltaE00_C2 = norm(_deltaE00_lab2[1,2]);
+    _deltaE00_barC = (_deltaE00_C1 + _deltaE00_C2)/2;
+    _deltaE00_G = 0.5*(1 - sqrt(_deltaE00_barC^7/(_deltaE00_barC^7 + _deltaE00_pow25to7)));
+    _deltaE00_a1prime = (1 + _deltaE00_G)*_deltaE00_lab1[1];
+    _deltaE00_a2prime = (1 + _deltaE00_G)*_deltaE00_lab2[1];
+    _deltaE00_Cprime1 = norm(_deltaE00_a1prime,_deltaE00_lab1[2]);
+    _deltaE00_Cprime2 = norm(_deltaE00_a2prime,_deltaE00_lab2[2]);
 
-    _ciede2000_lab1[2]==0 && _ciede2000_a1prime==0?(
-      _ciede2000_hprime1 = 0;
+    _deltaE00_lab1[2]==0 && _deltaE00_a1prime==0?(
+      _deltaE00_hprime1 = 0;
     ):(
-      _ciede2000_hprime1 = atan2(_ciede2000_lab1[2],_ciede2000_a1prime);
-      _ciede2000_hprime1<0?(_ciede2000_hprime1+=_ciede2000_deg360inrad);
-      _ciede2000_lab2[2]==0 && _ciede2000_a2prime==0?(
-        _ciede2000_hprime2 = 0;
+      _deltaE00_hprime1 = atan2(_deltaE00_lab1[2],_deltaE00_a1prime);
+      _deltaE00_hprime1<0?(_deltaE00_hprime1+=_deltaE00_deg360inrad);
+      _deltaE00_lab2[2]==0 && _deltaE00_a2prime==0?(
+        _deltaE00_hprime2 = 0;
       ):(
-        _ciede2000_hprime2 = atan2(_ciede2000_lab2[2],_ciede2000_a2prime);
-        _ciede2000_hprime2<0?(_ciede2000_hprime2+=_ciede2000_deg360inrad);
+        _deltaE00_hprime2 = atan2(_deltaE00_lab2[2],_deltaE00_a2prime);
+        _deltaE00_hprime2<0?(_deltaE00_hprime2+=_deltaE00_deg360inrad);
       );
     );
 
     # Step 2
-    _ciede2000_deltaLprime = _ciede2000_lab2[0] - _ciede2000_lab1[0];
-    _ciede2000_deltaCprime = _ciede2000_Cprime2 - _ciede2000_Cprime1;
-    _ciede2000_CprimeProduct = _ciede2000_Cprime1*_ciede2000_Cprime2;
-    _ciede2000_CprimeProduct==0?(
-      _ciede2000_deltahprime = 0;
+    _deltaE00_deltaLprime = _deltaE00_lab2[0] - _deltaE00_lab1[0];
+    _deltaE00_deltaCprime = _deltaE00_Cprime2 - _deltaE00_Cprime1;
+    _deltaE00_CprimeProduct = _deltaE00_Cprime1*_deltaE00_Cprime2;
+    _deltaE00_CprimeProduct==0?(
+      _deltaE00_deltahprime = 0;
     ):(
-      _ciede2000_deltahprime = _ciede2000_hprime2 - _ciede2000_hprime1;
-      _ciede2000_deltahprime<-_ciede2000_deg180inrad?(
-        _ciede2000_deltahprime += _ciede2000_deg360inrad;
-      ):_ciede2000_deltahprime>_ciede2000_deg180inrad?(
-        _ciede2000_deltahprime -= _ciede2000_deg360inrad;
+      _deltaE00_deltahprime = _deltaE00_hprime2 - _deltaE00_hprime1;
+      _deltaE00_deltahprime<-_deltaE00_deg180inrad?(
+        _deltaE00_deltahprime += _deltaE00_deg360inrad;
+      ):_deltaE00_deltahprime>_deltaE00_deg180inrad?(
+        _deltaE00_deltahprime -= _deltaE00_deg360inrad;
       );
     );
-    _ciede2000_deltaHprime = 2*sqrt(_ciede2000_CprimeProduct)*sin(_ciede2000_deltahprime/2);
+    _deltaE00_deltaHprime = 2*sqrt(_deltaE00_CprimeProduct)*sin(_deltaE00_deltahprime/2);
 
     # Step 3
-    _ciede2000_barLprime = (_ciede2000_lab1[0] + _ciede2000_lab2[0])/2;
-    _ciede2000_barCprime = (_ciede2000_Cprime1 + _ciede2000_Cprime2)/2;
-    _ciede2000_hprimeSum = _ciede2000_hprime1 + _ciede2000_hprime2;
-    _ciede2000_Cprime1*_ciede2000_Cprime2==0?(
-      _ciede2000_barhprime = _ciede2000_hprimeSum;
+    _deltaE00_barLprime = (_deltaE00_lab1[0] + _deltaE00_lab2[0])/2;
+    _deltaE00_barCprime = (_deltaE00_Cprime1 + _deltaE00_Cprime2)/2;
+    _deltaE00_hprimeSum = _deltaE00_hprime1 + _deltaE00_hprime2;
+    _deltaE00_Cprime1*_deltaE00_Cprime2==0?(
+      _deltaE00_barhprime = _deltaE00_hprimeSum;
     ):(
-      abs(_ciede2000_hprime1 - _ciede2000_hprime2)<=_ciede2000_deg180inrad?(
-        _ciede2000_barhprime = _ciede2000_hprimeSum/2;
+      abs(_deltaE00_hprime1 - _deltaE00_hprime2)<=_deltaE00_deg180inrad?(
+        _deltaE00_barhprime = _deltaE00_hprimeSum/2;
       ):(
-        _ciede2000_hprimeSum<_ciede2000_deg360inrad?(
-          _ciede2000_barhprime = (_ciede2000_hprimeSum + _ciede2000_deg360inrad)/2;
+        _deltaE00_hprimeSum<_deltaE00_deg360inrad?(
+          _deltaE00_barhprime = (_deltaE00_hprimeSum + _deltaE00_deg360inrad)/2;
         ):(
-          _ciede2000_barhprime = (_ciede2000_hprimeSum - _ciede2000_deg360inrad)/2;
+          _deltaE00_barhprime = (_deltaE00_hprimeSum - _deltaE00_deg360inrad)/2;
         );
       );
     );
 
-    _ciede2000_T = 1.0 - (0.17*cos(_ciede2000_barhprime - _ciede2000_deg2rad(30))) +
-                         (0.24*cos(2*_ciede2000_barhprime)) +
-                         (0.32*cos(3*_ciede2000_barhprime + _ciede2000_deg2rad(6))) -
-	                 (0.2*cos(4*_ciede2000_barhprime - _ciede2000_deg2rad(63)));
-    _ciede2000_deltaTheta = _ciede2000_deg2rad(30)*
-      exp(-((_ciede2000_barhprime - _ciede2000_deg2rad(275)) / _ciede2000_deg2rad(25))^2);
+    _deltaE00_T = 1.0 - (0.17*cos(_deltaE00_barhprime - _deltaE00_deg2rad(30))) +
+                         (0.24*cos(2*_deltaE00_barhprime)) +
+                         (0.32*cos(3*_deltaE00_barhprime + _deltaE00_deg2rad(6))) -
+	                 (0.2*cos(4*_deltaE00_barhprime - _deltaE00_deg2rad(63)));
+    _deltaE00_deltaTheta = _deltaE00_deg2rad(30)*
+      exp(-((_deltaE00_barhprime - _deltaE00_deg2rad(275)) / _deltaE00_deg2rad(25))^2);
 
-    _ciede2000_R_C = 2*sqrt(_ciede2000_barCprime^7/(_ciede2000_barCprime^7 + _ciede2000_pow25to7));
-    _ciede2000_S_L = 1 + 0.015*(_ciede2000_barLprime - 50)^2/sqrt(20 + (_ciede2000_barLprime - 50)^2);
-    _ciede2000_S_C = 1 + 0.045*_ciede2000_barCprime;
-    _ciede2000_S_H = 1 + 0.015*_ciede2000_barCprime*_ciede2000_T;
-    _ciede2000_R_T = -sin(2*_ciede2000_deltaTheta)* _ciede2000_R_C;
+    _deltaE00_R_C = 2*sqrt(_deltaE00_barCprime^7/(_deltaE00_barCprime^7 + _deltaE00_pow25to7));
+    _deltaE00_S_L = 1 + 0.015*(_deltaE00_barLprime - 50)^2/sqrt(20 + (_deltaE00_barLprime - 50)^2);
+    _deltaE00_S_C = 1 + 0.045*_deltaE00_barCprime;
+    _deltaE00_S_H = 1 + 0.015*_deltaE00_barCprime*_deltaE00_T;
+    _deltaE00_R_T = -sin(2*_deltaE00_deltaTheta)* _deltaE00_R_C;
 
-    sqrt((_ciede2000_deltaLprime/(_ciede2000_k_L*_ciede2000_S_L))^2 +
-         (_ciede2000_deltaCprime/(_ciede2000_k_C*_ciede2000_S_C))^2 +
-         (_ciede2000_deltaHprime/(_ciede2000_k_H*_ciede2000_S_H))^2 +
-         _ciede2000_R_T*_ciede2000_deltaCprime/(_ciede2000_k_C*_ciede2000_S_C)*
-         _ciede2000_deltaHprime/(_ciede2000_k_H*_ciede2000_S_H));
+    sqrt((_deltaE00_deltaLprime/(_deltaE00_k_L*_deltaE00_S_L))^2 +
+         (_deltaE00_deltaCprime/(_deltaE00_k_C*_deltaE00_S_C))^2 +
+         (_deltaE00_deltaHprime/(_deltaE00_k_H*_deltaE00_S_H))^2 +
+         _deltaE00_R_T*_deltaE00_deltaCprime/(_deltaE00_k_C*_deltaE00_S_C)*
+         _deltaE00_deltaHprime/(_deltaE00_k_H*_deltaE00_S_H));
   );"
   v +
 
