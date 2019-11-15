@@ -7038,7 +7038,7 @@ complex2polar :
   endl done v +
 
 #@cli compress_clut : _max_error>0,_avg_error>0,_max_nbpoints>=8,\
-# _error_metric={ 0=L2-norm | 1=delta_76 | 2=deltaE_00 },_reconstruction_colorspace={ 0=srgb | 1=rgb }
+# _error_metric={ 0=L2-norm | 1=deltaE_1976 | 2=deltaE_2000 },_reconstruction_colorspace={ 0=srgb | 1=rgb }
 #@cli : Compress selected color LUTs as sequences of colored keypoints.
 #@cli : Default values: 'max_error=8', 'avg_error=2', 'max_nb_points=2048', 'error_metric=0' and \
 # 'reconstruction_colorspace=0'.
@@ -7046,7 +7046,7 @@ compress_clut : check "${1=8}>0 && ${2=2}>0 && isint(${3=2048}) && $3>8 && isint
                       "isbool(${5=0})"
   e[^-1] "Compress color LUT$? as a set of colored keypoints, with maximum error $1, average error $2,
           $3 maximum keypoints."
-  v - max_error,avg_error,max_keypoints=${1-3}
+  v - max_error,avg_error,max_keypoints,metric,colorspace=${1-5}
   method=rbf
   repeat $! l[$>] nm={b}
     if iM>255 / 257 fi # When input is 16bits
@@ -7060,7 +7060,7 @@ compress_clut : check "${1=8}>0 && ${2=2}>0 && isint(${3=2048}) && $3>8 && isint
       channels 0
     fi
 
-    +rgb2lab 1 # [0] = reference_sRGB, [1] = reference_Lab
+    if $metric +rgb2lab 1 fi
 
     # Initialize keypoints (corners of the RGB cube).
     1,8,1,{s+3}
@@ -7075,9 +7075,13 @@ compress_clut : check "${1=8}>0 && ${2=2}>0 && isint(${3=2048}) && $3>8 && isint
     sep="\n"
     do
       +decompress_clut_$method. {0,[w,h,d]}
-#      srgb2lab. -. [1] norm. emax,eavg={[iM,ia]}
-#      ciede2000. [1],srgb2lab emax,eavg={[iM,ia]}
-      -. [0] norm. emax,eavg={[iM,ia]}
+
+      if $metric==0
+        -. [0] norm.
+      else
+        deltaE. [1],{$metric-1},"" d
+      fi
+      emax,eavg={[iM,ia]}
 
       v + e[] "\r"$sep"  > Add [#"{-2,h}"] Max_Err = "{_$emax}", Avg_Err = "{_$eavg}"         " v - sep=""
       if $emax<=$max_error" && "$eavg<=$avg_error rm. break fi
@@ -8180,16 +8184,18 @@ bayer2rgb : skip ${1=1},${2=1},${3=0.5}
 
   endl done v +
 
-#@cli deltaE : [image],_metric={ 0=deltaE_1976 | 1=deltaE_2000 },"_to_lab_command"
+#@cli deltaE : [image],_metric={ 0=deltaE_1976 | 1=deltaE_2000 },"_to_Lab_command"
 #@cli : Compute the CIE DeltaE color difference between selected images and specified [image].
 #@cli : Argument 'to_lab_command' is a command able to convert colors of [image] into a Lab representation.
-#@cli : Default arguments: 'metric=1' and 'to_lab_command=srgb2lab'.
+#@cli : Default arguments: 'metric=1' and 'to_lab_command=""'.
 #@cli : $ image.jpg +blur 2 +deltaE[0] [1]
-deltaE : check ${"is_image_arg $1"}" && isbool(${2=1})" skip "${3=srgb2lab}"
-  e[^-1] "Compute the CIE DeltaE_"${"v - s0,s1=1976,2000 u $s$2 v +"}" color difference between image$? and image$1."
-  v -
-  pass$1 1 +$3. rm..
-  repeat {$!-1} l[$>,-1] nm={0,n} $3[0]
+deltaE : check ${"is_image_arg $1"}" && isbool(${2=1})" skip "${3=}"
+  e[^-1] "Compute the CIE DeltaE_"${"v - s0,s1=1976,2000 u $s$2 v +"}" color difference between image$? and image$1, "\
+         "with to_Lab command '$3'."
+  v - pass$1 1
+  if narg($3) +$3. rm.. fi
+  repeat {$!-1} l[$>,-1] nm={0,n}
+    if narg($3) $3[0] fi
     if !$2 -.. . norm..                                             # DeltaE_1976
     else 100%,100%,1,1,${-math_lib}"deltaE00(I#0,I#1)" rv[0,-1] rm. # DeltaE_2000
     fi
