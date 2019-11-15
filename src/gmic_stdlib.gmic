@@ -7040,7 +7040,7 @@ complex2polar :
 #@cli compress_clut : _max_error>0,_avg_error>0,_max_nbpoints>=8
 #@cli : Compress selected color LUTs as sequences of colored keypoints.
 #@cli : Default values: 'max_error=8', 'avg_error=2' and 'max_nb_points=2048'.
-compress_clut : check "isint(${1=8}) && $1>0 && ${2=2}>0 && isint(${3=2048}) && $3>8"
+compress_clut : check "${1=1.5}>0 && ${2=1}>0 && isint(${3=2048}) && $3>8"
   e[^-1] "Compress color LUT$? as a set of colored keypoints, with maximum error $1, average error $2 and
           $3 maximum keypoints."
   v - max_error,avg_error,max_keypoints=${1--1}
@@ -7057,6 +7057,8 @@ compress_clut : check "isint(${1=8}) && $1>0 && ${2=2}>0 && isint(${3=2048}) && 
       channels 0
     fi
 
+    +rgb2lab 1 # [0] = reference_sRGB, [1] = reference_Lab
+
     # Initialize keypoints (corners of the RGB cube).
     1,8,1,{s+3}
     eval "
@@ -7069,20 +7071,27 @@ compress_clut : check "isint(${1=8}) && $1>0 && ${2=2}>0 && isint(${3=2048}) && 
     # Iteratively add keypoints.
     sep="\n"
     do
-      +decompress_clut_$method. {0,[w,h,d]} -. [0] norm. emax,eavg={[iM,ia]}
-      v + e[] "\r"$sep"  > Add [#"{1,h}"] Max_Err = "{_$emax}", Avg_Err = "{_$eavg}"         " v - sep=""
+      +decompress_clut_$method. {0,[w,h,d]}
+#      ciede2000. [1] emax,eavg={[iM,ia]}
+      -. [0] norm. emax,eavg={[iM,ia]}
+
+      v + e[] "\r"$sep"  > Add [#"{-2,h}"] Max_Err = "{_$emax}", Avg_Err = "{_$eavg}"         " v - sep=""
       if $emax<=$max_error" && "$eavg<=$avg_error rm. break fi
       1,1,1,{0,s+3},{"P = [ xM,yM,zM ]; [ round(P*255/[max(1,w#0-1),max(1,h#0-1),max(1,d#0-1)]), I(#0,P) ]"} rm..
       a[-2,-1] y
-      if h#1>=320" && "'$method'=='rbf' method=pde rows[1] 0,7 fi # RBF failed, switch back to PDE method.
-    while h#1<$max_keypoints
+      if h>=320" && "'$method'=='rbf' method=pde rows. 0,7 fi # RBF failed, switch back to PDE method.
+    while h<$max_keypoints
+          d
 
     # Iteratively remove keypoints.
     max_error,avg_error={[max($max_error,round($emax,1,1)),max($avg_error,round($eavg,0.25,1))]}
     index=0 sep="\n"
     do
       +l. s y rm[$index] a y endl # Remove kth keypoint
-      +decompress_clut_$method. {0,[w,h,d]} -. [0] norm. emax,eavg={[iM,ia]} rm.
+      +decompress_clut_$method. {0,[w,h,d]}
+#      ciede2000. [1] emax,eavg={[iM,ia]}
+      -. [0] norm. emax,eavg={[iM,ia]} rm.
+
       if $emax<=$max_error" && "$eavg<=$avg_error rv[-2,-1] else index+=1 fi
       v +
       e[] "\r"$sep"  > Rem [#"{1,min($index,h-1)}"/"{1,h}"] Max_Err = "{_$emax}", Avg_Err = "{_$eavg}"       "
@@ -8156,27 +8165,17 @@ bayer2rgb : skip ${1=1},${2=1},${3=0.5}
 
   endl done v +
 
-#@cli ciede2000
-#@cli : Compute images of CIEDE2000 color difference between all selected images, assumed to be in Lab color space.
-#@cli : This function returns N*(N-1)/2 images, where N is the number of images in the selection.
-#@cli : $ image.jpg +blur 2 srgb2lab ciede2000
-ciede2000 :
-  e[^-1] "Compute CIEDE2000 color differences between image$?."
+#@cli ciede2000 : [image],"_to_lab_command"
+#@cli : Compute CIEDE2000 color difference between selected images and specified [image].
+#@cli : Argument 'to_lab_command' is the command that converts colors of [image] into a Lab representation.
+#@cli : Default arguments: 'to_lab_command=srgb2lab'.
+#@cli : $ image.jpg +blur 2 +ciede2000[0] [1]
+ciede2000 : check ${"is_image_arg $1"} skip "${2=srgb2lab}"
+  e[^-1] "Compute CIEDE2000 color differences between image$? and image$1."
   v -
-  if $!==1 v + return fi
-  pairs={"const N = "$!";
-          p = vector(#N*(N-1));
-          off = 0;
-          for (i = 0, i<N, ++i,
-            for (j = i + 1, j<N, ++j,
-              p[off++] = i; p[off++] = j;
-            );
-          ); p"}
-  repeat narg($pairs)/2
-    i0,i1={"i = 2*"$>"; p = ["$pairs"]; p[i,2]"}
-    100%,100%,1,1,${-math_lib}"ciede2000(I#"$i0",I#"$i1")"
-  done
-  v +
+  pass$1 1 +$2. rm..
+  repeat {$!-1} l[$>,-1] $2[0] 100%,100%,1,1,${-math_lib}"ciede2000(I#0,I#1)" rv[0,-1] rm. endl done
+  rm. v +
 
 #@cli cmy2rgb
 #@cli : Convert color representation of selected images from CMY to RGB.
