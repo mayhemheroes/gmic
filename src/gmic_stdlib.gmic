@@ -7209,15 +7209,15 @@ compress_rle : skip ${1=0} check "isint(${2=0}) && $2>=0"
 #@cli : $ image.jpg +add 30% cut[-1] 0,255
 #@cli : $ image.jpg +cut 25%,75%
 
-#@cli decompress_clut_rbf : _width>0,_height>0,_depth>0,_reconstruction_colorspace={ srgb | rgb }
+#@cli decompress_clut_rbf : _width>0,_height>0,_depth>0,_reconstruction_colorspace={ 0=srgb | 1=rgb }
 #@cli : Decompress selected colored keypoints into 3D CLUTs, using RBF thin plate spline interpolation.
-#@cli : Default value: 'width=height=depth=48' and 'reconstruction_colorspace=srgb'.
-decompress_clut_rbf : check "isint(${1=48}) && $1>0 && isint(${2=$1}) && $2>0 && isint(${3=$1}) && $3>0"
-                      skip "${4=srgb}"
-  e[^-1] "Decompress colored keypoint$? into $1x$2x$3 CLUTs (RBF approach), using $4 colorspace for reconstruction."
-  v - m "srgb2srgb :"
+#@cli : Default value: 'width=height=depth=48' and 'reconstruction_colorspace=0'.
+decompress_clut_rbf : check "isint(${1=48}) && $1>0 && isint(${2=$1}) && $2>0 && isint(${3=$1}) && $3>0 && isbool(${4=0})"
+  e[^-1] "Decompress colored keypoint$? into $1x$2x$3 CLUTs (RBF approach), using "\
+         ${"v - s0=srgb s1=rgb u $s$4 v +"}" colorspace for reconstruction."
+  v - cs0=srgb cs1=rgb m "srgb2srgb :"
   repeat $! l[$>] nm={n}
-    srgb2$4
+    srgb2$cs$4
     $1,$2,$3,{s-3},"*
       begin(
         rbf(_r) = (r = _r; r^2*log(1 + r));
@@ -7235,20 +7235,20 @@ decompress_clut_rbf : check "isint(${1=48}) && $1>0 && isint(${2=$1}) && $2>0 &&
       );
       res = vectors(0);
       for (p = 0, p<N, ++p, res += W[s*p,s]*rbf(norm([x,y,z] - xyz(p))))"
-    rm.. ${4}2srgb
+    rm.. ${cs$4}2srgb
     nm $nm
   endl done
   uncommand srgb2srgb v +
 
-#@cli decompress_clut_pde : _width>0,_height>0,_depth>0,_reconstruction_colorspace={ srgb | rgb }
+#@cli decompress_clut_pde : _width>0,_height>0,_depth>0,_reconstruction_colorspace={ 0=srgb | 1=rgb }
 #@cli : Decompress selected colored keypoints into 3D CLUTs, using multiscale diffusion PDE's.
-#@cli : Default values: 'width=height=depth=48' and 'reconstruction_colorspace=srgb'.
-decompress_clut_pde : check "isint(${1=48}) && $1>0 && isint(${2=$1}) && $2>0 && isint(${3=$1}) && $3>0"
-                      skip "${4=srgb}"
-  e[^-1] "Decompress colored keypoint$? into $1x$2x$3 CLUTs (PDE approach), using $4 colorspace for reconstruction."
-  v - m "srgb2srgb :"
+#@cli : Default values: 'width=height=depth=48' and 'reconstruction_colorspace=0'.
+decompress_clut_pde : check "isint(${1=48}) && $1>0 && isint(${2=$1}) && $2>0 && isint(${3=$1}) && $3>0 && isbool(${4=0})"
+  e[^-1] "Decompress colored keypoint$? into $1x$2x$3 CLUTs (PDE approach), using "\
+         ${"v - s0=srgb s1=rgb u $s$4 v +"}" colorspace for reconstruction."
+  v - cs0=srgb cs1=rgb m "srgb2srgb :"
   repeat $! l[$>] nm={n}
-    srgb2$4
+    srgb2$cs$4
 
     2,2,2,{s-3}
     do
@@ -7275,17 +7275,17 @@ decompress_clut_pde : check "isint(${1=48}) && $1>0 && isint(${2=$1}) && $2>0 &&
       if "w<$1 || h<$2 || d<$3" r. {[min($1,2*w),min($2,2*h),min($3,2*d)]},100%,3 else break fi
     while 1 k.
 
-    ${4}2srgb
+    ${cs$4}2srgb
     nm $nm
   endl done
   uncommand srgb2srgb v +
 
-#@cli decompress_clut : _width>0,_height>0,_depth>0,_reconstruction_colorspace={ srgb | rgb }
+#@cli decompress_clut : _width>0,_height>0,_depth>0,_reconstruction_colorspace={ 0=srgb | 1=rgb }
 #@cli : Decompress selected colored keypoints into 3D CLUTs, using a mixed RBF/PDE approach.
-#@cli : Default values: 'width=height=depth=48' and 'reconstruction_colorspace=srgb'.
-decompress_clut : check "isint(${1=48}) && $1>0 && isint(${2=$1}) && $2>0 && isint(${3=$1}) && $3>0"
-                  skip "${4=srgb}"
-  e[^-1] "Decompress colored keypoint$? into $1x$2x$3 CLUTs, using $4 colorspace for reconstruction."
+#@cli : Default values: 'width=height=depth=48' and 'reconstruction_colorspace=0'.
+decompress_clut : check "isint(${1=48}) && $1>0 && isint(${2=$1}) && $2>0 && isint(${3=$1}) && $3>0 && isbool(${4=0})"
+  e[^-1] "Decompress colored keypoint$? into $1x$2x$3 CLUTs, using "\
+         ${"v - s0=srgb s1=rgb u $s$4 v +"}" colorspace for reconstruction."
   v - repeat $! l[$>]
     if "h>=320 || (P0 = I[0]; P1 = I[h-1]; val(P) = (P[0]*65536 + P[1]*256 + P[2]); val(P0)>val(P1))"
       decompress_clut_pde. ${1-4}
