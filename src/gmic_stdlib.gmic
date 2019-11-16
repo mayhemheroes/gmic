@@ -9496,7 +9496,7 @@ xyz2lab : skip "${1=,}"
   v - to_color
   f "
     begin(
-      lab(x) = (24389*x>216?cbrt(x):(24389*x/27 + 16)/116);
+      lab(x) = (x>216/24389?cbrt(x):(x*24389/27 + 16)/116);
       D65 = [ 0.4124564, 0.3575761, 0.1804375,
               0.2126729, 0.7151522, 0.0721750,
               0.0193339, 0.1191920, 0.9503041 ];
@@ -9505,10 +9505,13 @@ xyz2lab : skip "${1=,}"
               0.01391602, 0.09706116, 0.71392822 ];
       white = ("$illu"?D65:D50)*[ 1,1,1 ];
     );
-    fX = lab(i0/white[0]);
-    fY = lab(i1/white[1]);
-    fZ = lab(i2/white[2]);
-    [ cut(116*fY - 16,0,100), 500*(fX - fY), 200*(fY - fZ) ]"
+    xr = i0/white[0];
+    yr = i1/white[1];
+    zr = i2/white[2];
+    fx = lab(xr);
+    fy = lab(yr);
+    fz = lab(zr);
+    [ cut(116*fy - 16,0,100), 500*(fx - fy), 200*(fy - fz) ]"
   v +
 
 #@cli xyz2rgb : illuminant={ 0=D50 | 1=D65 } : (no arg)
