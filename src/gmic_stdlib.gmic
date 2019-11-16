@@ -7061,7 +7061,8 @@ compress_clut : check "${1=8}>0 && ${2=2}>0 && isint(${3=2048}) && $3>8 && isint
       channels 0
     fi
 
-#    if $metric +rgb2lab 1 fi
+    _metric={s==3?$metric:0}
+    if $_metric +rgb2lab 1 fi
 
     # Initialize keypoints (corners of the RGB cube).
     1,8,1,{s+3}
@@ -7076,8 +7077,8 @@ compress_clut : check "${1=8}>0 && ${2=2}>0 && isint(${3=2048}) && $3>8 && isint
     sep="\n"
     do
       +decompress_clut_$method. {0,[w,h,d]},$colorspace
-#      if !$metric -. [0] norm. else deltaE. [1],{$metric-1} fi
-      if !$metric -. [0] norm. else deltaE. [0],{$metric-1},srgb2lab fi
+#      if !$_metric -. [0] norm. else srgb2lab. deltaE. [1],{$_metric-1}," " d fi
+      if !$_metric -. [0] norm. else deltaE. [0],{$_metric-1},srgb2lab fi
       emax,eavg={[iM,ia]}
 
       v + e[] "\r"$sep"  > Add [#"{-2,h}"] Max_Err = "{_$emax}", Avg_Err = "{_$eavg}"         " v - sep=""
@@ -7093,8 +7094,8 @@ compress_clut : check "${1=8}>0 && ${2=2}>0 && isint(${3=2048}) && $3>8 && isint
     do
       +l. s y rm[$index] a y endl # Remove kth keypoint
       +decompress_clut_$method. {0,[w,h,d]},$colorspace
-#      if $metric==0 -. [0] norm. else deltaE. [1],{$metric-1},"" fi
-      if $metric==0 -. [0] norm. else deltaE. [0],{$metric-1},srgb2lab fi
+#      if $_metric==0 -. [0] norm. else srgb2lab. deltaE. [1],{$_metric-1}," " fi
+      if $_metric==0 -. [0] norm. else deltaE. [0],{$_metric-1},srgb2lab fi
       emax,eavg={[iM,ia]} rm.
 
       if $emax<=$max_error" && "$eavg<=$avg_error rv[-2,-1] else index+=1 fi
@@ -8189,8 +8190,7 @@ bayer2rgb : skip ${1=1},${2=1},${3=0.5}
 deltaE : check ${"is_image_arg $1"}" && isbool(${2=1})" skip "${3=srgb2lab}"
   e[^-1] "Compute the CIE DeltaE_"${"v - s0,s1=1976,2000 u $s$2 v +"}" color difference between image$? and image$1, "\
          "with to_Lab command '$3'."
-  v -
-  pass$1 1
+  v - pass$1 1
   needs_to_lab={"s = ['$3']; s!=0 && s!=' '"}
   if $needs_to_lab m "_deltaE_to_lab : $3" +_deltaE_to_lab. rm.. fi
   repeat {$!-1} l[$>,-1] nm={0,n}
