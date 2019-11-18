@@ -7062,7 +7062,7 @@ compress_clut : check "${1=8}>0 && ${2=2}>0 && isint(${3=2048}) && $3>8 && isint
     fi
 
     _metric={s==3?$metric:0}
-    if $_metric +rgb2lab 1 fi
+    if $_metric +srgb2lab 1 fi
 
     # Initialize keypoints (corners of the RGB cube).
     1,8,1,{s+3}
@@ -7077,8 +7077,7 @@ compress_clut : check "${1=8}>0 && ${2=2}>0 && isint(${3=2048}) && $3>8 && isint
     sep="\n"
     do
       +decompress_clut_$method. {0,[w,h,d]},$colorspace
-#      if !$_metric -. [0] norm. else srgb2lab. deltaE. [1],{$_metric-1}," " d fi
-      if !$_metric -. [0] norm. else deltaE. [0],{$_metric-1},srgb2lab fi
+      if !$_metric -. [0] norm. else srgb2lab. deltaE. [1],{$_metric-1}," " fi
       emax,eavg={[iM,ia]}
 
       v + e[] "\r"$sep"  > Add [#"{-2,h}"] Max_Err = "{_$emax}", Avg_Err = "{_$eavg}"         " v - sep=""
@@ -7090,12 +7089,11 @@ compress_clut : check "${1=8}>0 && ${2=2}>0 && isint(${3=2048}) && $3>8 && isint
 
     # Iteratively remove keypoints.
     max_error,avg_error={[max($max_error,round($emax,1,1)),max($avg_error,round($eavg,0.25,1))]}
-    index=0 sep="\n"
+    index=8 sep="\n"
     do
       +l. s y rm[$index] a y endl # Remove kth keypoint
       +decompress_clut_$method. {0,[w,h,d]},$colorspace
-#      if $_metric==0 -. [0] norm. else srgb2lab. deltaE. [1],{$_metric-1}," " fi
-      if $_metric==0 -. [0] norm. else deltaE. [0],{$_metric-1},srgb2lab fi
+      if $_metric==0 -. [0] norm. else srgb2lab. deltaE. [1],{$_metric-1}," " fi
       emax,eavg={[iM,ia]} rm.
 
       if $emax<=$max_error" && "$eavg<=$avg_error rv[-2,-1] else index+=1 fi
