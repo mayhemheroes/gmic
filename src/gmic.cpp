@@ -2721,7 +2721,7 @@ CImg<char> gmic::callstack2string(const CImg<unsigned int> *const callstack_sele
       char *const s = res(l,0)!='*'?0:std::strchr(res[l],'#');
       if (s) { *s = 0; CImg<char>(res[l].data(),(unsigned int)(s - res[l].data() + 1)).move_to(res[l]); }
     }
-    res[l].back() = '/';
+    if (res(l,0)) res[l].back() = '/'; else res.remove(l--);
   }
   CImg<char>::vector(0).move_to(res);
   return res>'x';
@@ -9915,13 +9915,15 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             cimg_snprintf(formula,_formula.width(),"output_%s",uext.data());
             hash = hashcode(formula,false);
             if (search_sorted(formula,commands_names[hash],commands_names[hash].size(),pattern)) { // Command found
-              cimg_snprintf(formula,_formula.width(),"output_%s[%s] \"%s\" v -1 return",
+              cimg_snprintf(formula,_formula.width(),"output_%s[%s] \"%s\"",
                             uext.data(),*s_selection?s_selection:"^",filename);
               const CImgList<char> ncommands_line = commands_line_to_CImgList(formula);
               unsigned int nposition = 0, o_verbosity = verbosity;
               bool _is_noarg = false;
+              CImg<char>::string("").move_to(callstack); // Anonymous scope
               _run(ncommands_line,nposition,images,images_names,images,images_names,variables_sizes,&_is_noarg,
                    argument,&selection);
+              callstack.remove();
               is_quit = is_return = *is_abort = false;
               verbosity = o_verbosity;
 
@@ -14422,11 +14424,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           cimg_snprintf(formula,_formula.width(),"input_%s",ext);
           hash = hashcode(formula,false);
           if (search_sorted(formula,commands_names[hash],commands_names[hash].size(),pattern)) { // Command found
-            cimg_snprintf(formula,_formula.width(),"input_%s[] \"%s\" v -1 return",ext,_filename0);
+            cimg_snprintf(formula,_formula.width(),"input_%s[] \"%s\"",ext,_filename0);
             const CImgList<char> ncommands_line = commands_line_to_CImgList(formula);
             unsigned int nposition = 0, o_verbosity = verbosity;
             bool _is_noarg = false;
+            CImg<char>::string("").move_to(callstack); // Anonymous scope
             _run(ncommands_line,nposition,g_list,g_list_c,images,images_names,variables_sizes,&_is_noarg,argument,0);
+            callstack.remove();
             is_quit = is_return = *is_abort = false;
             verbosity = o_verbosity;
 
