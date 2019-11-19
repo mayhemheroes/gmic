@@ -7092,7 +7092,11 @@ compress_clut : check "${1=8}>0 && ${2=2}>0 && isint(${3=2048}) && $3>8 && isint
     if $_metric max_rounding,avg_rounding=0.1,0.025
     else max_rounding,avg_rounding=1,0.25
     fi
-    max_error,avg_error={[max($max_error,round($emax,$max_rounding,1)),max($avg_error,round($eavg,$avg_rounding,1))]}
+    if $emax>$max_error" || "$eavg>$avg_error
+      max_error=round($max_error,$max_rounding,1)
+      avg_error=round($avg_error,$avg_rounding,1)
+    fi
+
     index=8 sep="\n"
     do
       +l. s y rm[$index] a y endl # Remove kth keypoint
