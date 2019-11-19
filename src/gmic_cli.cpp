@@ -271,15 +271,17 @@ int main(int argc, char **argv) {
     CImgList<char> images_names;
     gmic_instance.run(commands_line.data(),images,images_names);
   } catch (gmic_exception &e) {
+    int exit_status;
+    if (std::sscanf(gmic_instance.status,"***%*[^*]*** %d%c",&exit_status,&sep)!=1) exit_status = -1;
 
     // Something went wrong during the pipeline execution.
-    if (gmic_instance.verbosity<0) {
+    if (gmic_instance.verbosity==-1) {
       std::fprintf(cimg::output(),"\n[gmic] %s%s%s%s",
                    cimg::t_red,cimg::t_bold,
                    e.what(),cimg::t_normal);
       std::fflush(cimg::output());
     }
-    if (*e.command_help()) {
+    if (gmic_instance.verbosity>=-1 && *e.command_help()) {
       std::fprintf(cimg::output(),"\n[gmic] Command '%s' has the following description: \n",
 		   e.command_help());
       std::fflush(cimg::output());
@@ -305,7 +307,7 @@ int main(int argc, char **argv) {
         gmic(tmp_line,images,images_names);
       }
     } else { std::fprintf(cimg::output(),"\n\n"); std::fflush(cimg::output()); }
-    return -1;
+    return exit_status;
   }
   return 0;
 }
