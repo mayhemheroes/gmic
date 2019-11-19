@@ -8254,7 +8254,7 @@ colormap : check "isint($1) && $1>=0" skip ${2=1},${3=1}
     r {whd},1,1,100%,-1
 
     if $1 # Estimate quantized colormap.
-      if !$2 _colormap $1 # Just run the median-cut algorithm
+      if !$2 +_colormap $1 # Just run the median-cut algorithm
       else
         +_colormap $1
         max_diff={(iM-im+1)/8192}
@@ -8283,12 +8283,14 @@ colormap : check "isint($1) && $1>=0" skip ${2=1},${3=1}
           +-.. . abs. diff={iM/w} rm. # Compute colormap difference
           j.. . rm.
         while $diff>$max_diff
-        rm..
+      fi
+      if $3 index.. .,0,0 histogram.. {[w,0,w-1]} a y sort -,x rows 1 # Sort by decreasing occurence
+      else rm..
       fi
 
     else # Extract full colormap.
       repeat s ap "sort +,x" s x,0 ap "shift 0,0,0,1,2" done
-      if $3==2 sort_list -,w fi
+      if $3==2 sort_list -,w fi # Sort by decreasing occurence
       ap "z 0,0" a x
     fi
     if $3==1 +norm rv a c sort +,x channels 1,100% fi # Sort colors by increasing norm.
