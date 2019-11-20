@@ -271,43 +271,48 @@ int main(int argc, char **argv) {
     CImgList<char> images_names;
     gmic_instance.run(commands_line.data(),images,images_names);
   } catch (gmic_exception &e) {
-    int exit_status;
-    if (std::sscanf(gmic_instance.status,"***%*[^*]*** %d%c",&exit_status,&sep)!=1) exit_status = -1;
+    int error_code;
+    bool is_error_code = false;
+    if (std::sscanf(gmic_instance.status,"***%*[^*]*** %d%c",&error_code,&sep)!=1) error_code = -1;
+    else is_error_code = true;
 
-    // Something went wrong during the pipeline execution.
-    if (gmic_instance.verbosity==-1) {
-      std::fprintf(cimg::output(),"\n[gmic] %s%s%s%s",
-                   cimg::t_red,cimg::t_bold,
-                   e.what(),cimg::t_normal);
-      std::fflush(cimg::output());
-    }
-    if (gmic_instance.verbosity>=-1 && *e.command_help()) {
-      std::fprintf(cimg::output(),"\n[gmic] Command '%s' has the following description: \n",
-		   e.command_help());
-      std::fflush(cimg::output());
-      CImgList<gmic_pixel_type> images;
-      CImgList<char> images_names;
-      images.insert(gmic::stdlib);
-      CImg<char> tmp_line(1024);
-      cimg_snprintf(tmp_line,tmp_line.width(),
-                    "v - "
-                    "l[] i raw:\"%s\",char m \"%s\" onfail rm endl "
-                    "l[] i raw:\"%s\",char m \"%s\" onfail rm endl "
-                    "rv help \"%s\",0 q",
-                    filename_update.data(),filename_update.data(),
-                    filename_user,filename_user,
-                    e.command_help());
-      try {
-        gmic(tmp_line,images,images_names);
-      } catch (...) {
-        cimg_snprintf(tmp_line,tmp_line.width(),"v - help \"%s\",1 q",e.command_help());
-        images.assign();
-        images_names.assign();
-        images.insert(gmic::stdlib);
-        gmic(tmp_line,images,images_names);
+    if (!is_error_code) {
+
+      // Something went wrong during the pipeline execution.
+      if (gmic_instance.verbosity<0) {
+        std::fprintf(cimg::output(),"\n[gmic] %s%s%s%s",
+                     cimg::t_red,cimg::t_bold,
+                     e.what(),cimg::t_normal);
+        std::fflush(cimg::output());
       }
-    } else { std::fprintf(cimg::output(),"\n\n"); std::fflush(cimg::output()); }
-    return exit_status;
+      if (*e.command_help()) {
+        std::fprintf(cimg::output(),"\n[gmic] Command '%s' has the following description: \n",
+                     e.command_help());
+        std::fflush(cimg::output());
+        CImgList<gmic_pixel_type> images;
+        CImgList<char> images_names;
+        images.insert(gmic::stdlib);
+        CImg<char> tmp_line(1024);
+        cimg_snprintf(tmp_line,tmp_line.width(),
+                      "v - "
+                      "l[] i raw:\"%s\",char m \"%s\" onfail rm endl "
+                      "l[] i raw:\"%s\",char m \"%s\" onfail rm endl "
+                      "rv help \"%s\",0 q",
+                      filename_update.data(),filename_update.data(),
+                      filename_user,filename_user,
+                      e.command_help());
+        try {
+          gmic(tmp_line,images,images_names);
+        } catch (...) {
+          cimg_snprintf(tmp_line,tmp_line.width(),"v - help \"%s\",1 q",e.command_help());
+          images.assign();
+          images_names.assign();
+          images.insert(gmic::stdlib);
+          gmic(tmp_line,images,images_names);
+        }
+      } else { std::fprintf(cimg::output(),"\n\n"); std::fflush(cimg::output()); }
+    }
+    return error_code;
   }
   return 0;
 }
