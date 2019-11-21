@@ -2313,7 +2313,7 @@ static DWORD WINAPI gmic_parallel(void *arg)
                           *st.parent_images,*st.parent_images_names,
                           st.variables_sizes,0,0,st.command_selection);
   } catch (gmic_exception &e) {
-    st.exception._command_help.assign(e._command_help);
+    st.exception._command.assign(e._command);
     st.exception._message.assign(e._message);
   }
 #if defined(gmic_is_parallel) && defined(_PTHREAD_H)
@@ -8362,11 +8362,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 _run(commands_line,++position,g_list,g_list_c,
                      parent_images,parent_images_names,variables_sizes,is_noarg,0,0);
               } catch (gmic_exception &e2) {
-                cimg::swap(exception._command_help,e2._command_help);
+                cimg::swap(exception._command,e2._command);
                 cimg::swap(exception._message,e2._message);
               }
             } else {
-              cimg::swap(exception._command_help,e._command_help);
+              cimg::swap(exception._command,e._command);
               cimg::swap(exception._message,e._message);
             }
           }
@@ -10162,7 +10162,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
             // Check for possible exceptions thrown by threads.
             cimg_forY(_gmic_threads,l) if (_gmic_threads[l].exception._message)
-              error(false,images,0,_gmic_threads[l].exception.command_help(),"%s",_gmic_threads[l].exception.what());
+              error(false,images,0,_gmic_threads[l].exception.command(),"%s",_gmic_threads[l].exception.what());
             gmic_threads.remove();
           }
 
@@ -13482,7 +13482,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 _run(ncommands_line,nposition,g_list,g_list_c,images,images_names,nvariables_sizes,&_is_noarg,
                      argument,&selection);
               } catch (gmic_exception &e) {
-                cimg::swap(exception._command_help,e._command_help);
+                cimg::swap(exception._command,e._command);
                 cimg::swap(exception._message,e._message);
               }
               g_list.move_to(images,~0U);
@@ -13516,7 +13516,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 _run(ncommands_line,nposition,g_list,g_list_c,images,images_names,nvariables_sizes,&_is_noarg,
                      argument,&selection);
               } catch (gmic_exception &e) {
-                cimg::swap(exception._command_help,e._command_help);
+                cimg::swap(exception._command,e._command);
                 cimg::swap(exception._message,e._message);
               }
 

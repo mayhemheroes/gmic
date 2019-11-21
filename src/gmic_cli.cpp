@@ -289,9 +289,9 @@ int main(int argc, char **argv) {
                      e.what(),cimg::t_normal);
         std::fflush(cimg::output());
       }
-      if (*e.command_help()) {
+      if (*e.command()) {
         std::fprintf(cimg::output(),"\n[gmic] Command '%s' has the following description: \n",
-                     e.command_help());
+                     e.command());
         std::fflush(cimg::output());
         CImgList<gmic_pixel_type> images;
         CImgList<char> images_names;
@@ -304,11 +304,11 @@ int main(int argc, char **argv) {
                       "rv help \"%s\",0 q",
                       filename_update.data(),filename_update.data(),
                       filename_user,filename_user,
-                      e.command_help());
+                      e.command());
         try {
           gmic(tmp_line,images,images_names);
         } catch (...) {
-          cimg_snprintf(tmp_line,tmp_line.width(),"v - help \"%s\",1 q",e.command_help());
+          cimg_snprintf(tmp_line,tmp_line.width(),"v - help \"%s\",1 q",e.command());
           images.assign();
           images_names.assign();
           images.insert(gmic::stdlib);

@@ -422,15 +422,15 @@ struct gmic {
 // Class 'gmic_exception'.
 //------------------------
 struct gmic_exception {
-  gmic_image<char> _command_help, _message;
+  gmic_image<char> _command, _message;
 
   // Constructors.
   gmic_exception() {}
 
   gmic_exception(const char *const command, const char *const message) {
     if (command) {
-      _command_help.assign((unsigned int)std::strlen(command) + 1,1,1,1);
-      std::strcpy(_command_help._data,command);
+      _command.assign((unsigned int)std::strlen(command) + 1,1,1,1);
+      std::strcpy(_command._data,command);
     }
     if (message) {
       _message.assign((unsigned int)std::strlen(message) + 1,1,1,1);
@@ -443,8 +443,8 @@ struct gmic_exception {
     return _message._data?_message._data:"";
   }
 
-  const char *command_help() const {
-    return _command_help._data?_command_help._data:"";
+  const char *command() const {
+    return _command._data?_command._data:"";
   }
 };
 
