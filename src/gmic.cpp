@@ -3248,9 +3248,13 @@ CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned
         error(true,"Command '%s': Invalid %s %c%s%c (syntax error after colon ':').",
               command,stype,ctypel,string,ctyper);
     }
+
     if (!*item) { // Particular cases [:N] or [^:N]
       if (is_inverse) { iind0 = 0; iind1 = -1; is_inverse = false; }
       else continue;
+    } else if (*item=='.' && (!item[1] ||
+                              (item[1]=='.' && (!item[2] || (item[2]=='.' && !item[3]))))) { // Single index (shortcut)
+      iind0 = iind1 = !item[1]?-1:!item[2]?-2:-3;
     } else if (cimg_sscanf(item,"%f%c",&ind0,&end)==1) { // Single index
       iind1 = iind0 = (int)cimg::round(ind0);
     } else if (cimg_sscanf(item,"%f-%f%c",&ind0,&ind1,&end)==2) { // Sequence between 2 indices
@@ -3272,12 +3276,12 @@ CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned
       iind1 = (int)cimg::round(ind1*((int)index_max - 1)/100) - (ind1<0?1:0);
     } else if (cimg_sscanf(item,"%f%%-%f%c",&ind0,&ind1,&end)==2) {
       // Sequence between a percent and an index.
-      iind0 = (int)cimg::round(ind0*((int)index_max - 1)/100) - (ind0<0?1:0);;
+      iind0 = (int)cimg::round(ind0*((int)index_max - 1)/100) - (ind0<0?1:0);
       iind1 = (int)cimg::round(ind1);
     } else if (cimg_sscanf(item,"%f-%f%c%c",&ind0,&ind1,&sep,&end)==3 && sep=='%') {
       // Sequence between an index and a percent.
       iind0 = (int)cimg::round(ind0);
-      iind1 = (int)cimg::round(ind1*((int)index_max - 1)/100) - (ind1<0?1:0);;
+      iind1 = (int)cimg::round(ind1*((int)index_max - 1)/100) - (ind1<0?1:0);
     } else error(true,"Command '%s': Invalid %s %c%s%c.",
                  command,stype,ctypel,string,ctyper);
 
@@ -5011,13 +5015,19 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
         const unsigned int l_command = err==1?(unsigned int)std::strlen(command):0;
         if (err==1 && l_command>=2 && command[l_command - 1]=='.') { // Selection shortcut
-          err = 4; sep0 = '['; sep1 = ']'; *s_selection = '-';
-          if (command[l_command - 2]!='.') { s_selection[1] = '1'; command[l_command - 1] = 0; }
-          else if (l_command>=3 && command[l_command - 3]!='.') { s_selection[1] = '2'; command[l_command - 2] = 0; }
-          else if (l_command>=4 && command[l_command - 4]!='.') { s_selection[1] = '3'; command[l_command - 3] = 0; }
+          err = 4; sep0 = '['; sep1 = ']';
+          if (command[l_command - 2]!='.') {
+            *s_selection = '.'; s_selection[1] = 0; command[l_command - 1] = 0;
+          }
+          else if (l_command>=3 && command[l_command - 3]!='.') {
+            *s_selection = s_selection[1] = '.'; s_selection[2] = 0; command[l_command - 2] = 0;
+          }
+          else if (l_command>=4 && command[l_command - 4]!='.') {
+            *s_selection = s_selection[1] = s_selection[2] = '.'; s_selection[3] = 0; command[l_command - 3] = 0;
+          }
           else { is_command = false; ind_custom = ~0U; *s_selection = 0; }
-          s_selection[2] = 0;
         }
+
         if (err==1) { // No selection -> all images
           selection.assign(1,siz);
           cimg_forY(selection,y) selection[y] = (unsigned int)y;
