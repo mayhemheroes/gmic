@@ -9881,7 +9881,7 @@ extract : check "isin(${2=2},0,1,2,3)"
   else       str.="dar_insert(#-1,I));I"
   fi
   str.=";end(resize(#-1,1,dar_size(#-1),1,s,0))"
-  repeat $! eval[$>] $str rv[$>,-1] rm. done v +
+  repeat $! nm={$>,n} eval[$>] $str nm. $nm rv[$>,-1] rm. done v +
 
 #@cli extract_region : [label_image],_extract_xyz_coordinates={ 0 | 1 },_label_1,...,_label_M
 #@cli : Extract all pixels of selected images whose corresponding label in '[label_image]' is equal to 'label_m',
@@ -22308,8 +22308,8 @@ math_lib :
     _dar_pos = pos;
     _dar_siz = dar_size(#ind);
     if (_dar_pos<=_dar_siz,
-      _dar_siz>=h(#ind) - 1?resize(#ind,1,_dar_siz*2 + 2,1,s#ind,0);
-      for (_dar_c = 0, _dar_c<s#ind, ++_dar_c,
+      _dar_siz>=h(#ind) - 1?resize(#ind,1,_dar_siz*2 + 2,1,s(#ind),0);
+      for (_dar_c = 0, _dar_c<s(#ind), ++_dar_c,
         copy(i(#ind,_dar_pos + 1,0,0,_dar_c),i(#ind,_dar_pos,0,0,_dar_c),_dar_siz - _dar_pos)
       );
       unref(_dar_elt); _dar_elt = elt;
@@ -22321,7 +22321,7 @@ math_lib :
   # Inserts new element 'elt' at the end of dynamic array #ind.
   dar_insert(ind,elt) = (
     _dar_siz = dar_size(#ind);
-    _dar_siz>=h(#ind) - 1?resize(#ind,1,_dar_siz*2 + 2,1,s#ind,0);
+    _dar_siz>=h(#ind) - 1?resize(#ind,1,_dar_siz*2 + 2,1,s(#ind),0);
     unref(_dar_elt); _dar_elt = elt;
     copy(i[#ind,_dar_siz],_dar_elt,max(1,size(_dar_elt)),h(#ind),1);
     (dar_size(ind#)) = ++_dar_siz;
@@ -22334,7 +22334,7 @@ math_lib :
 
     if (_dar_pos<_dar_siz,
       _dar_siz = --dar_size(#ind);
-      for (_dar_c = 0, _dar_c<s#ind, ++_dar_c,
+      for (_dar_c = 0, _dar_c<s(#ind), ++_dar_c,
         copy(i(#ind,_dar_pos,0,0,_dar_c),i(#ind,_dar_pos + 1,0,0,_dar_c),_dar_siz - _dar_pos)
       );
     )
