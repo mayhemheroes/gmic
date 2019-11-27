@@ -224,9 +224,6 @@ struct gmic {
   gmic();
 
   template<typename T>
-  gmic(const T& pixel_type=(T)0);
-
-  template<typename T>
   gmic(const char *const commands_line,
        const char *const custom_commands=0,
        const bool include_stdlib=true,

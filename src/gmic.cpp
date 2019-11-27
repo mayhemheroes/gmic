@@ -2548,16 +2548,6 @@ gmic::gmic():gmic_new_attr {
 }
 
 template<typename T>
-gmic::gmic(const T& pixel_type):gmic_new_attr {
-  cimg::unused(pixel_type);
-  CImgList<T> images;
-  CImgList<char> images_names;
-  verbosity = -1;
-  _gmic(0,images,images_names,0,true,0,0);
-  verbosity = 0;
-}
-
-template<typename T>
 gmic::gmic(const char *const commands_line, const char *const custom_commands,
            const bool include_stdlib, float *const p_progress, bool *const p_is_abort,
            const T& pixel_type):
@@ -14739,7 +14729,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
 // Explicitly instantiate constructors and destructor when building the library.
 #define gmic_instantiate(pt) \
-template gmic::gmic(const pt& pixel_type); \
 template gmic::gmic(const char *const commands_line, const char *const custom_commands, \
                     const bool include_stdlib, float *const p_progress, bool *const p_is_abort, \
                     const pt& pixel_type); \
