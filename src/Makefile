@@ -167,7 +167,7 @@ MANDATORY_CFLAGS = -Dgmic_build -Dcimg_date=\\\"\\\" -Dcimg_time=\\\"\\\" -Dcimg
 MANDATORY_LIBS = $(shell pkg-config --libs zlib || echo -lz) $(EXTRA_LIBS)
 
 ifndef NO_SRIPDLIB
-MANDATORY_CFLAGS += -std=c++11 -pedantic
+MANDATORY_CFLAGS += -std=c++98 -pedantic
 endif
 MANDATORY_LIBS += -L$(USR)/$(LIB)
 ifdef IS_GCC

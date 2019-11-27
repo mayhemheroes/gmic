@@ -2539,6 +2539,14 @@ unsigned int gmic::strescape(const char *const str, char *const res) {
 
 CImg<char> gmic::stdlib = CImg<char>::empty();
 
+gmic::gmic():gmic_new_attr {
+  CImgList<gmic_pixel_type> images;
+  CImgList<char> images_names;
+  verbosity = -1;
+  _gmic(0,images,images_names,0,true,0,0);
+  verbosity = 0;
+}
+
 template<typename T>
 gmic::gmic(const T& pixel_type):gmic_new_attr {
   cimg::unused(pixel_type);

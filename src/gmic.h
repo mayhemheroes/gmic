@@ -221,10 +221,12 @@ struct gmic {
   ~gmic();
 
   // Constructors.
-  template<typename T=gmic_pixel_type>
+  gmic();
+
+  template<typename T>
   gmic(const T& pixel_type=(T)0);
 
-  template<typename T=gmic_pixel_type>
+  template<typename T>
   gmic(const char *const commands_line,
        const char *const custom_commands=0,
        const bool include_stdlib=true,
@@ -237,7 +239,7 @@ struct gmic {
        const bool include_stdlib=true, float *const p_progress=0, bool *const p_is_abort=0);
 
   // Run G'MIC pipeline on an already-constructed object.
-  template<typename T=gmic_pixel_type>
+  template<typename T>
   gmic& run(const char *const commands_line,
             float *const p_progress=0, bool *const p_is_abort=0,
             const T& pixel_type=(T)0);
