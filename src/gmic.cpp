@@ -10039,6 +10039,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               images_names.insert(parent_images_names[selection[l]].get_copymark());
             }
           }
+          selection.value_string().move_to(status);
           is_change = true; continue;
         }
 
