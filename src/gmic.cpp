@@ -2169,12 +2169,14 @@ double gmic::mp_call(char *const str, void *const p_list, const T& pixel_type) {
       } else CImg<char>::string("*ext").move_to(gmic_instance.callstack);
       unsigned int pos = 0;
 
+      --gmic_instance.verbosity;
       try {
         gmic_instance._run(gmic_instance.commands_line_to_CImgList(gmic::strreplace_fw(str)),pos,images,images_names,
                            parent_images,parent_images_names,variables_sizes,0,0,command_selection);
       } catch (gmic_exception&) {
         res = cimg::type<double>::nan();
       }
+      ++gmic_instance.verbosity;
       gmic_instance.callstack.remove();
       if (!gmic_instance.status || !*gmic_instance.status || cimg_sscanf(gmic_instance.status,"%lf%c",&res,&sep)!=1)
         res = cimg::type<double>::nan();
@@ -4660,8 +4662,10 @@ CImg<char> gmic::substitute_item(const char *const source,
           CImg<char>::string("*substitute").move_to(callstack);
           CImg<unsigned int> nvariables_sizes(gmic_varslots);
           cimg_forX(nvariables_sizes,l) nvariables_sizes[l] = variables[l]->size();
+          --verbosity;
           _run(ncommands_line,nposition,images,images_names,parent_images,parent_images_names,
                nvariables_sizes,0,inbraces,command_selection);
+          ++verbosity;
           for (unsigned int l = 0; l<nvariables_sizes._width - 2; ++l) if (variables[l]->size()>nvariables_sizes[l]) {
               variables_names[l]->remove(nvariables_sizes[l],variables[l]->size() - 1);
               variables[l]->remove(nvariables_sizes[l],variables[l]->size() - 1);
