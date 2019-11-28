@@ -2151,7 +2151,7 @@ double gmic::mp_call(char *const str, void *const p_list, const T& pixel_type) {
     if (ind<0) { cimg::mutex(24,0); res = cimg::type<double>::nan(); } // Instance not found
     else {
       CImg<void*> &gr = grl[ind];
-      gmic &gi = *(gmic*)gr[0];
+      gmic &gmic_instance = *(gmic*)gr[0];
       cimg::mutex(24,0);
 
       // Run given command line.
@@ -2162,21 +2162,22 @@ double gmic::mp_call(char *const str, void *const p_list, const T& pixel_type) {
       const unsigned int *const variables_sizes = (const unsigned int*)gr[5];
       const CImg<unsigned int> *const command_selection = (const CImg<unsigned int>*)gr[6];
 
-      if (gi.is_debug_info && gi.debug_line!=~0U) {
+      if (gmic_instance.is_debug_info && gmic_instance.debug_line!=~0U) {
         CImg<char> title(32);
-        cimg_snprintf(title,title.width(),"*ext#%u",gi.debug_line);
-        CImg<char>::string(title).move_to(gi.callstack);
-      } else CImg<char>::string("*ext").move_to(gi.callstack);
+        cimg_snprintf(title,title.width(),"*ext#%u",gmic_instance.debug_line);
+        CImg<char>::string(title).move_to(gmic_instance.callstack);
+      } else CImg<char>::string("*ext").move_to(gmic_instance.callstack);
       unsigned int pos = 0;
 
       try {
-        gi._run(gi.commands_line_to_CImgList(gmic::strreplace_fw(str)),pos,images,images_names,
-                parent_images,parent_images_names,variables_sizes,0,0,command_selection);
+        gmic_instance._run(gmic_instance.commands_line_to_CImgList(gmic::strreplace_fw(str)),pos,images,images_names,
+                           parent_images,parent_images_names,variables_sizes,0,0,command_selection);
       } catch (gmic_exception&) {
         res = cimg::type<double>::nan();
       }
-      gi.callstack.remove();
-      if (!gi.status || !*gi.status || cimg_sscanf(gi.status,"%lf%c",&res,&sep)!=1) res = cimg::type<double>::nan();
+      gmic_instance.callstack.remove();
+      if (!gmic_instance.status || !*gmic_instance.status || cimg_sscanf(gmic_instance.status,"%lf%c",&res,&sep)!=1)
+        res = cimg::type<double>::nan();
     }
   }
   return res;
@@ -2199,7 +2200,7 @@ double gmic::mp_store(const Ts *const ptr,
   if (ind<0) cimg::mutex(24,0); // Instance not found
   else {
     CImg<void*> &gr = grl[ind];
-    gmic &gi = *(gmic*)gr[0];
+    gmic &gmic_instance = *(gmic*)gr[0];
     const unsigned int *const variables_sizes = (const unsigned int*)gr[5];
     CImg<char> _varname(256);
     char *const varname = _varname.data(), end;
@@ -2216,7 +2217,7 @@ double gmic::mp_store(const Ts *const ptr,
       g_list.get_serialize(false).unroll('x').move_to(name);
       name.resize(name.width() + 9 + std::strlen(varname),1,1,1,0,0,1);
       std::sprintf(name,"%c*store/%s",gmic_store,_varname.data());
-      gi.set_variable(_varname.data(),name,variables_sizes);
+      gmic_instance.set_variable(_varname.data(),name,variables_sizes);
       cimg::mutex(24,0);
     } else {
       cimg::mutex(24,0);
@@ -10063,56 +10064,56 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
           // Prepare thread structures.
           cimg_forY(_gmic_threads,l) {
-            gmic &gi = _gmic_threads[l].gmic_instance;
+            gmic &gmic_instance = _gmic_threads[l].gmic_instance;
             for (unsigned int i = 0; i<gmic_comslots; ++i) {
-              gi.commands[i].assign(commands[i],true);
-              gi.commands_names[i].assign(commands_names[i],true);
-              gi.commands_has_arguments[i].assign(commands_has_arguments[i],true);
+              gmic_instance.commands[i].assign(commands[i],true);
+              gmic_instance.commands_names[i].assign(commands_names[i],true);
+              gmic_instance.commands_has_arguments[i].assign(commands_has_arguments[i],true);
             }
             for (unsigned int i = 0; i<gmic_varslots; ++i) {
               if (i==gmic_varslots - 1) { // Share inter-thread global variables
-                gi.variables[i] = variables[i];
-                gi.variables_names[i] = variables_names[i];
+                gmic_instance.variables[i] = variables[i];
+                gmic_instance.variables_names[i] = variables_names[i];
               } else {
                 if (i==gmic_varslots - 2) { // Make a copy of single-thread global variables
-                  gi._variables[i].assign(_variables[i]);
-                  gi._variables_names[i].assign(_variables_names[i]);
+                  gmic_instance._variables[i].assign(_variables[i]);
+                  gmic_instance._variables_names[i].assign(_variables_names[i]);
                   _gmic_threads[l].variables_sizes[i] = variables_sizes[i];
                 } else _gmic_threads[l].variables_sizes[i] = 0;
-                gi.variables[i] = &gi._variables[i];
-                gi.variables_names[i] = &gi._variables_names[i];
+                gmic_instance.variables[i] = &gmic_instance._variables[i];
+                gmic_instance.variables_names[i] = &gmic_instance._variables_names[i];
               }
             }
-            gi.callstack.assign(callstack);
-            gi.commands_files.assign(commands_files,true);
+            gmic_instance.callstack.assign(callstack);
+            gmic_instance.commands_files.assign(commands_files,true);
             cimg_snprintf(title,_title.width(),"*thread%d",l);
-            CImg<char>::string(title).move_to(gi.callstack);
-            gi.light3d.assign(light3d);
-            gi.status.assign(status);
-            gi.debug_filename = debug_filename;
-            gi.debug_line = debug_line;
-            gi.focale3d = focale3d;
-            gi.light3d_x = light3d_x;
-            gi.light3d_y = light3d_y;
-            gi.light3d_z = light3d_z;
-            gi.specular_lightness3d = specular_lightness3d;
-            gi.specular_shininess3d = specular_shininess3d;
-            gi._progress = 0;
-            gi.progress = &gi._progress;
-            gi.is_change = is_change;
-            gi.is_debug = is_debug;
-            gi.is_start = false;
-            gi.is_quit = false;
-            gi.is_return = false;
-            gi.is_double3d = is_double3d;
-            gi.verbosity = verbosity;
-            gi.render3d = render3d;
-            gi.renderd3d = renderd3d;
-            gi._is_abort = _is_abort;
-            gi.is_abort = is_abort;
-            gi.is_abort_thread = false;
-            gi.nb_carriages = nb_carriages;
-            gi.reference_time = reference_time;
+            CImg<char>::string(title).move_to(gmic_instance.callstack);
+            gmic_instance.light3d.assign(light3d);
+            gmic_instance.status.assign(status);
+            gmic_instance.debug_filename = debug_filename;
+            gmic_instance.debug_line = debug_line;
+            gmic_instance.focale3d = focale3d;
+            gmic_instance.light3d_x = light3d_x;
+            gmic_instance.light3d_y = light3d_y;
+            gmic_instance.light3d_z = light3d_z;
+            gmic_instance.specular_lightness3d = specular_lightness3d;
+            gmic_instance.specular_shininess3d = specular_shininess3d;
+            gmic_instance._progress = 0;
+            gmic_instance.progress = &gmic_instance._progress;
+            gmic_instance.is_change = is_change;
+            gmic_instance.is_debug = is_debug;
+            gmic_instance.is_start = false;
+            gmic_instance.is_quit = false;
+            gmic_instance.is_return = false;
+            gmic_instance.is_double3d = is_double3d;
+            gmic_instance.verbosity = verbosity;
+            gmic_instance.render3d = render3d;
+            gmic_instance.renderd3d = renderd3d;
+            gmic_instance._is_abort = _is_abort;
+            gmic_instance.is_abort = is_abort;
+            gmic_instance.is_abort_thread = false;
+            gmic_instance.nb_carriages = nb_carriages;
+            gmic_instance.reference_time = reference_time;
             _gmic_threads[l].images = &images;
             _gmic_threads[l].images_names = &images_names;
             _gmic_threads[l].parent_images = &parent_images;
@@ -10130,7 +10131,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               if (!is_dquoted) *s = c<' '?(c==gmic_dollar?'$':c==gmic_lbrace?'{':c==gmic_rbrace?'}':
                                            c==gmic_comma?',':c==gmic_dquote?'\"':c):c;
             }
-            gi.commands_line_to_CImgList(arguments[l].data()).
+            gmic_instance.commands_line_to_CImgList(arguments[l].data()).
               move_to(_gmic_threads[l].commands_line);
           }
 
