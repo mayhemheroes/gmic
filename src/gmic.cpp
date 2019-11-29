@@ -10005,38 +10005,44 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Pass image from parent context.
         if (!is_get && !std::strcmp("pass",command)) {
           gmic_substitute_args(false);
-          unsigned int shared_state = 2;
-          if (cimg_sscanf(argument,"%u%c",&shared_state,&end)==1 && shared_state<=2) ++position;
-          else shared_state = 2;
-          print(images,0,"Insert image%s from parent context %s%s.",
-                gmic_selection.data(),
-                shared_state==0?"in non-shared state":
-                shared_state==1?"in shared state":"using adaptive state",
-                selection.height()>1?"s":"");
+          if (cimg_sscanf(argument,"%u%c",&(pattern=2),&end)==1 && pattern<=3) ++position;
+          else pattern = 2;
 
-          cimg_forY(selection,l) {
-            CImg<T> &img = parent_images[selection[l]];
-            const T *p = 0;
-            std::memcpy(&p,&img._width,sizeof(void*));
+          if (pattern==3)
+            print(images,0,"Return ind%s of image%s from parent context.",
+                  selection.height()==1?"ex":"ices",
+                  gmic_selection.data());
+          else {
+            print(images,0,"Insert image%s from parent context %s%s.",
+                  gmic_selection.data(),
+                  pattern==0?"in non-shared state":
+                  pattern==1?"in shared state":"using adaptive state",
+                  selection.height()>1?"s":"");
 
-            if (p && !img.data()) {
-              // Parent image is in the current selection -> must search the current list
-              bool found_image = false;
-              cimglist_for(images,i) {
-                if (images[i].data()==p) { // Found it !
-                  images.insert(images[i],~0U,shared_state==1);
-                  images_names.insert(images_names[i].get_copymark());
-                  found_image = true;
-                  break;
+            cimg_forY(selection,l) {
+              CImg<T> &img = parent_images[selection[l]];
+              const T *p = 0;
+              std::memcpy(&p,&img._width,sizeof(void*));
+
+              if (p && !img.data()) {
+                // Parent image is in the current selection -> must search the current list
+                bool found_image = false;
+                cimglist_for(images,i) {
+                  if (images[i].data()==p) { // Found it !
+                    images.insert(images[i],~0U,pattern==1);
+                    images_names.insert(images_names[i].get_copymark());
+                    found_image = true;
+                    break;
+                  }
                 }
+                if (!found_image) error(true,images,0,0,
+                                        "Command 'pass': Unreferenced image [%d] from parent context "
+                                        "(has been re-allocated in current context or reserved by another thread).",
+                                        selection[l]);
+              } else { // Easy case, parent image not in the current selection
+                images.insert(img,~0U,(bool)pattern);
+                images_names.insert(parent_images_names[selection[l]].get_copymark());
               }
-              if (!found_image) error(true,images,0,0,
-                                      "Command 'pass': Unreferenced image [%d] from parent context "
-                                      "(has been re-allocated in current context or reserved by another thread).",
-                                      selection[l]);
-            } else { // Easy case, parent image not in the current selection
-              images.insert(img,~0U,(bool)shared_state);
-              images_names.insert(parent_images_names[selection[l]].get_copymark());
             }
           }
           selection.value_string().move_to(status);
