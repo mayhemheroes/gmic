@@ -10005,18 +10005,18 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Pass image from parent context.
         if (!is_get && !std::strcmp("pass",command)) {
           gmic_substitute_args(false);
-          if (cimg_sscanf(argument,"%u%c",&(pattern=2),&end)==1 && pattern<=3) ++position;
-          else pattern = 2;
+          if (cimg_sscanf(argument,"%d%c",&(err=2),&end)==1 && err>=-1 && err<=2) ++position;
+          else err = 2;
 
-          if (pattern==3)
+          if (err<0)
             print(images,0,"Return ind%s of image%s from parent context.",
                   selection.height()==1?"ex":"ices",
                   gmic_selection.data());
           else {
             print(images,0,"Insert image%s from parent context %s%s.",
                   gmic_selection.data(),
-                  pattern==0?"in non-shared state":
-                  pattern==1?"in shared state":"using adaptive state",
+                  err==0?"in non-shared state":
+                  err==1?"in shared state":"using adaptive state",
                   selection.height()>1?"s":"");
 
             cimg_forY(selection,l) {
@@ -10029,7 +10029,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 bool found_image = false;
                 cimglist_for(images,i) {
                   if (images[i].data()==p) { // Found it !
-                    images.insert(images[i],~0U,pattern==1);
+                    images.insert(images[i],~0U,err==1);
                     images_names.insert(images_names[i].get_copymark());
                     found_image = true;
                     break;
@@ -10040,7 +10040,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                         "(has been re-allocated in current context or reserved by another thread).",
                                         selection[l]);
               } else { // Easy case, parent image not in the current selection
-                images.insert(img,~0U,(bool)pattern);
+                images.insert(img,~0U,(bool)err);
                 images_names.insert(parent_images_names[selection[l]].get_copymark());
               }
             }
