@@ -3253,9 +3253,6 @@ CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned
     if (!*item) { // Particular cases [:N] or [^:N]
       if (is_inverse) { iind0 = 0; iind1 = -1; is_inverse = false; }
       else continue;
-    } else if (*item=='.' && (!item[1] ||
-                              (item[1]=='.' && (!item[2] || (item[2]=='.' && !item[3]))))) { // Single index (shortcut)
-      iind0 = iind1 = !item[1]?-1:!item[2]?-2:-3;
     } else if (cimg_sscanf(item,"%f%c",&ind0,&end)==1) { // Single index
       iind1 = iind0 = (int)cimg::round(ind0);
     } else if (cimg_sscanf(item,"%f-%f%c",&ind0,&ind1,&end)==2) { // Sequence between 2 indices
@@ -5020,13 +5017,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         if (err==1 && l_command>=2 && command[l_command - 1]=='.') { // Selection shortcut
           err = 4; sep0 = '['; sep1 = ']';
           if (command[l_command - 2]!='.') {
-            *s_selection = '.'; s_selection[1] = 0; command[l_command - 1] = 0;
+            *s_selection = '-'; s_selection[1] = '1'; s_selection[2] = 0; command[l_command - 1] = 0;
           }
           else if (l_command>=3 && command[l_command - 3]!='.') {
-            *s_selection = s_selection[1] = '.'; s_selection[2] = 0; command[l_command - 2] = 0;
+            *s_selection = '-'; s_selection[1] = '2'; s_selection[2] = 0; command[l_command - 2] = 0;
           }
           else if (l_command>=4 && command[l_command - 4]!='.') {
-            *s_selection = s_selection[1] = s_selection[2] = '.'; s_selection[3] = 0; command[l_command - 3] = 0;
+            *s_selection = '-'; s_selection[1] = '3'; s_selection[2] = 0; command[l_command - 3] = 0;
           }
           else { is_command = false; ind_custom = ~0U; *s_selection = 0; }
         }
