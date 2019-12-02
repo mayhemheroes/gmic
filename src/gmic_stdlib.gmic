@@ -21679,20 +21679,19 @@ alert : skip "${1=[G"{`39`}"MIC Alert]},${2=This is an alert box.},${3=OK}"
 #@cli arg : n>=1,_arg1,...,_argN
 #@cli : Return the n-th argument of the specified argument list.
 arg : check "isint($1) && ($1)>0"
-  v - $=arg u ${arg{1+($1)}} v +
+  $=arg u ${arg{1+($1)}}
 
 #@cli arg2var : variable_name,argument_1,...,argument_N
 #@cli : For each i in [1...N], set 'variable_name$i=argument_i'.
 #@cli : The variable name should be global to make this command useful (i.e. starts by an underscore).
 arg2var :
-  v - $=arg u {$#-1} repeat ${} $1{1+$>}=${arg{2+$>}} done v +
+  $=arg u {$#-1} repeat ${} $1{1+$>}=${arg{2+$>}} done
 
 #@cli autocrop_coords : value1,value2,... | auto
 #@cli : Return coordinates (x0,y0,z0,x1,y1,z1) of the autocrop that could be performed on the latest
 #@cli : of the selected images.
 #@cli : Default value: 'auto'
 autocrop_coords : skip ${1=auto}
-  v -
   is_auto={['"$1"']=='auto'}
   w={w} h={h} d={d}
   value={i(w-1,h-1,d-1)} +=. {1+$value},100%,100%,100% _autocrop$is_auto. ${1--1} =. $value,100%,100%,100%
@@ -21700,7 +21699,6 @@ autocrop_coords : skip ${1=auto}
   +_autocrop$is_auto. ${1--1}
   x1={$x0+w-1} y1={$y0+h-1} z1={$z0+d-1} rm.
   u $x0,$y0,$z0,$x1,$y1,$z1
-  v +
 
 _autocrop0 : autocrop $*
 _autocrop1 : skip $* autocrop
@@ -21708,23 +21706,21 @@ _autocrop1 : skip $* autocrop
 #@cli average_colors
 #@cli : Return the average vector-value of the latest of the selected images.
 average_colors :
-  v -
   res=""
   repeat s-1 sh. {1+$>} res=$res,{ia} rm. done
   sh. 0 u {ia}$res rm.
-  v +
 
 #@cli base642img : "base64_string"
 #@cli : Decode given base64-encoded string as a newly inserted image at the end of the list.
 #@cli : The argument string must have been generated using command 'img2base64'.
 base642img :
-  v - base642uchar "$1" unserialize. v +
+  base642uchar "$1" unserialize.
 
 #@cli base642uchar : "base64_string"
 #@cli : Decode given base64-encoded string as a newly inserted 1-column image at the end of the list.
 #@cli : The argument string must have been generated using command 'uchar2base64'.
 base642uchar :
-  v - 0
+  0
   eval "
     hash = vector256();
     for (k = _'A', k<=_'Z', ++k, hash[k] = k - _'A');
@@ -21748,21 +21744,18 @@ base642uchar :
       )
     )"
   nm. "[unnamed]"
-  v +
 
 #@cli basename : file_path,_variable_name_for_folder
 #@cli : Return the basename of a file path, and opt. its folder location.
 #@cli : When specified 'variable_name_for_folder' must starts by an underscore
 #@cli : (global variable accessible from calling function).
 basename : skip ${2=unused}
-  v -
   l[] ({"'$1'"}) replace 92,47 s +,47
   if i==47 a y $2={t} u ""
   elif $!==1 u {t} $2=""
   else a[^-1] y u {t} $2={-2,t}
   fi
   rm endl
-  v +
 
 #@cli bin : binary_int1,...
 #@cli : Print specified binary integers into their octal, decimal, hexadecimal and string representations.
@@ -21774,7 +21767,7 @@ bin :
 #@cli bin2dec : binary_int1,...
 #@cli : Convert specified binary integers into their decimal representations.
 bin2dec :
-  v - $=arg res,sep= repeat $# res=$res$sep${_$0\ ${arg{$>+1}}} sep=, done u $res v +
+  $=arg res,sep= repeat $# res=$res$sep${_$0\ ${arg{$>+1}}} sep=, done u $res
 
 _bin2dec :
   u {"str = vtos(abs($1));
@@ -21842,11 +21835,9 @@ _compress_gmic :
 #@cli : (for arbitrary number of channels).
 #@cli : Parameter 'avg_outvarname' is used as a variable name that takes the value of the average vector-value.
 covariance_colors : skip "${1=avg}"
-  v -
   $1=${-average_colors}
   f ">begin(avg = [ "$""$1" ]; const S2 = s^2; C = vectorS2(0); );
      mI = I - avg; C+=mul(mI,mI,s); end(C/=whd - 1; call('u ',vtos(C))); I"
-  v +
 
 #@cli dec : decimal_int1,...
 #@cli : Print specified decimal integers into their binary, octal, hexadecimal and string representations.
@@ -21857,12 +21848,12 @@ dec :
 #@cli dec2str : decimal_int1,...
 #@cli : Convert specifial decimal integers into its string representation.
 dec2str :
-  v - u {`[${^0}]`} v +
+  u {`[${^0}]`}
 
 #@cli dec2bin : decimal_int1,...
 #@cli : Convert specified decimal integers into their binary representations.
 dec2bin :
-  v - $=arg res,sep= repeat $# res=$res$sep${_$0\ ${arg{$>+1}}} sep=, done u $res v +
+  $=arg res,sep= repeat $# res=$res$sep${_$0\ ${arg{$>+1}}} sep=, done u $res
 
 _dec2bin :
   u {`"const sgn = sign($1);
@@ -21874,7 +21865,7 @@ _dec2bin :
 #@cli dec2hex : decimal_int1,...
 #@cli : Convert specified decimal integers into their hexadecimal representations.
 dec2hex :
-  v - $=arg res,sep= repeat $# res=$res$sep${_$0\ ${arg{$>+1}}} sep=, done u $res v +
+  $=arg res,sep= repeat $# res=$res$sep${_$0\ ${arg{$>+1}}} sep=, done u $res
 
 _dec2hex :
   u {`"begin(tab = [ _'0',_'1',_'2',_'3',_'4',_'5',_'6',_'7',_'8',_'9',_'a',_'b',_'c',_'d',_'e',_'f' ]);
@@ -21887,7 +21878,7 @@ _dec2hex :
 #@cli dec2oct : decimal_int1,...
 #@cli : Convert specified decimal integers into their octal representations.
 dec2oct :
-  v - $=arg res,sep= repeat $# res=$res$sep${_$0\ ${arg{$>+1}}} sep=, done u $res v +
+  $=arg res,sep= repeat $# res=$res$sep${_$0\ ${arg{$>+1}}} sep=, done u $res
 
 _dec2oct :
   u {`"const sgn = sign($1);
@@ -21899,7 +21890,7 @@ _dec2oct :
 #@cli fact : value
 #@cli : Return the factorial of the specified value.
 fact : check isint($1)
-  v - res=1 repeat $1 res*={($>+1)} done u $res v +
+  res=1 repeat $1 res*={($>+1)} done u $res
 
 #@cli fibonacci : N>=0
 #@cli : Return the Nth number of the Fibonacci sequence.
@@ -21915,11 +21906,9 @@ file_mv :
 #@cli file_rand
 #@cli : Return a random filename for storing temporary data.
 file_rand :
-  v -
   do filename=${-path_tmp}gmic$_pid{`round(u(vector6(_'0'),vector6(_'9')))`}
   while isfile(['{/$filename}'])
   u $filename
-  v +
 
 #@cli file_rm : filename
 #@cli : Delete a file.
@@ -21939,7 +21928,6 @@ file_rm :
 #@cli filename : filename,_number1,_number2,...,_numberN
 #@cli : Return a filename numbered with specified indices.
 filename : skip "${1=default}"
-  v -
   if $#==1 u "$1"
   else
   (${2--1}) nm. "$1" u {f}{b}
@@ -21950,7 +21938,6 @@ filename : skip "${1=default}"
   if narg({'{x}'}) u ${}.{x} fi
   rm.
   fi
-  v +
 
 #@cli files : _mode,path : (+)
 #@cli : Return the list of files and/or subfolders from specified path.
@@ -21962,13 +21949,12 @@ filename : skip "${1=default}"
 #@cli fitratio_wh : min_width,min_height,ratio_wh
 #@cli : Return a 2D size 'width,height' which is bigger than 'min_width,min_height' and has the specified w/h ratio.
 fitratio_wh :
-  v - if $3*$2>$1 u {int($3*$2)},$2 else u $1,{int($1/$3)} fi v +
+  if $3*$2>$1 u {int($3*$2)},$2 else u $1,{int($1/$3)} fi
 
 #@cli fitscreen : width,height,_depth,_minimal_size[%],_maximal_size[%] : [image],_minimal_size[%],_maximal_size[%]
 #@cli : Return the 'ideal' size WxH for a window intended to display an image of specified size on screen.
 #@cli : Default values: 'depth=1', 'minimal_size=128' and 'maximal_size=85%'.
 fitscreen : skip ${2=},${3=},${4=},${5=}
-  v -
   if ${"is_image_arg $1"}
     l$1 W,H,D={[w,h,d]} endl if narg($2) m=$2 else m=128 fi if narg($3) M=$3 else M=85% fi
   else
@@ -21989,7 +21975,6 @@ fitscreen : skip ${2=},${3=},${4=},${5=}
     s[0] = max(1,s[0],ms[0]);
     s[1] = max(1,s[1],ms[1]);
     round(s)"
-  v +
 
 #@cli fontchart
 #@cli : Insert G'MIC font chart at the end of the image list.
@@ -22056,7 +22041,6 @@ font2cimgh :
 #@cli : Return the number of time this function is called per second, or -1 if this info is not yet available.
 #@cli : Useful to display the framerate when displaying animations.
 fps :
-  v -
   if narg($_fps_fps)
     dt={$|-$_fps_time}
     if $dt>1 _fps_fps={round($_fps_nbframes/$dt)} _fps_time=$| _fps_nbframes=0 fi
@@ -22064,12 +22048,11 @@ fps :
     _fps_nbframes+=1
   else _fps_nbframes=0 _fps_time=$| _fps_fps=-1 u -1
   fi
-  v +
 
 #@cli gcd : a,b
 #@cli : Return the GCD (greatest common divisor) between a and b.
 gcd : check "isint($1) && isint($2) && $1*$2!=0"
-  v - _gcd {max(abs($1),abs($2))},{min(abs($1),abs($2))} v +
+  _gcd {max(abs($1),abs($2))},{min(abs($1),abs($2))}
 
 _gcd :
   r={$1%$2} if $r u ${_gcd\ $2,$r} else u $2 fi
@@ -22084,7 +22067,7 @@ hex :
 #@cli hex2dec : hexadecimal_int1,...
 #@cli : Convert specified hexadecimal integers into their decimal representations.
 hex2dec :
-  v - $=arg res,sep= repeat $# res=$res$sep${_$0\ ${arg{$>+1}}} sep=, done u $res v +
+  $=arg res,sep= repeat $# res=$res$sep${_$0\ ${arg{$>+1}}} sep=, done u $res
 
 _hex2dec :
   u {"str = ['$1']; str[0]==_'-'?-stov([['0x'],str[1,size(str)-1]]):stov([['0x'],str])"}
@@ -22092,61 +22075,58 @@ _hex2dec :
 #@cli hex2img : "hexadecimal_string"
 #@cli : Insert new image 1xN at the end of the list with values specified by the given hexadecimal-encoded string.
 hex2img :
-  v - ({'"$1"'}) 1,{w/2}
+  ({'"$1"'}) 1,{w/2}
   f. "*
     from_char(x) = x>=48 && x<=57?x - 48:x-87;
     off = 2*y;
     from_char(i[#-2,off])*16 + from_char(i[#-2,off+1])"
-  rm.. v +
+  rm..
 
 #@cli hex2str : hexadecimal_string
 #@cli : Convert specified hexadecimal string into a string.
 hex2str : skip ${1=""}
-  v -
   if !narg("$1") u "" v + return fi
   ({'$*'}) if w<2 rm. u "" v + return fi
   f. 'v=i-if(i>=97,87,48);if(x%2,v,v*16)' r. 2,{int(w/2)},1,1,-1 cumulate. x z. 1,1
-  u {t} rm. v +
+  u {t} rm.
 
 #@cli img2base64 : _encoding={ 0=base64 | 1=base64url }
 #@cli : Encode selected images as a base64-encoded string.
 #@cli : The images can be then decoded using command 'base642img'.
 #@cli : Default values: 'encoding=0'.
 img2base64 : skip "${1=0}"
-  v -
   if isnum("$1") encoding=$1 else encoding=0 noarg fi
   +serialize u ${uchar2base64\ $encoding} rm.
-  v +
 
 #@cli img2hex
 #@cli : Return representation of last image as an hexadecimal-encoded string.
 #@cli : Input image must have values that are integers in [0,255].
 img2hex :
-  v - whds={w},{h},{d},{s} y. 2,{h}
+  whds={w},{h},{d},{s} y. 2,{h}
   f.. "*
     to_char(x) = x>=0 && x<=9?48 + x:87 + x;
     i(#-1,0,y) = to_char(int(i/16));
     i(#-1,1,y) = to_char(i%16);
     i"
-  u {t} rm. r. $whds,-1 v +
+  u {t} rm. r. $whds,-1
 
 #@cli img2str
 #@cli : Return the content of the latest of the selected images as a special G'MIC input string.
 img2str :
-  v - i[-2] 256
+  i[-2] 256
   eval. ">begin(off = 0);
     sep = x==w - 1?(y==h - 1?(z==d - 1?(c==s - 1?0:_'^'):_'/'):_';'):_',';
     it = vtos(i);
     off + size(it) + 1>=w(#-2)?resize(#-2,round(1.5*w(#-2)),1,1,1,0);
     for (k = 0, k<size(it) && it[k], ++k, i[#-2,off++] = it[k]);
     i[#-2,off++] = sep"
-  u {-2,t} rm.. v +
+  u {-2,t} rm..
 
 #@cli img2text : _line_separator
 #@cli : Return text contained in a multi-line image.
 #@cli : Default value: 'line_separator= '.
 img2text : skip "${1= }"
-  v - +l s y s -,0 y x if $!>1 i[1--2] ({'"$1"'}) fi a x u {0,t} rm endl v +
+  +l s y s -,0 y x if $!>1 i[1--2] ({'"$1"'}) fi a x u {0,t} rm endl
 
 #@cli img82hex
 #@cli : Convert selected 8bits-valued vectors into their hexadecimal representations (ascii-encoded).
@@ -22170,57 +22150,50 @@ hex2img8 :
 #@cli is_3d
 #@cli : Return 1 if all of the selected images are 3D objects, 0 otherwise.
 is_3d :
-  v - u 1 l check3d 1 onfail u 0 endl v +
+  u 1 l check3d 1 onfail u 0 endl
 
 # Faster version.
 _is_3d :
-  v -
-    u {"h>6 && int(i[0])==67 && int(i[1])==73 && int(i[2])==109 && int(i[3])==103 && int(i[4])==51 && int(i[5])==100"}
-  v +
+  u {"h>6 && int(i[0])==67 && int(i[1])==73 && int(i[2])==109 && int(i[3])==103 && int(i[4])==51 && int(i[5])==100"}
 
 #@cli is_change : _value={ 0=false | 1=true }
 #@cli : Set or unset the 'is_change' flag associated to the image list.
 #@cli : This flag tells the interpreter whether or not the image list should be displayed when the pipeline ends.
 #@cli : Default value: 'value=1'.
 is_change :
-  v -
-    l[] check "isbool(${1=1})" arg=$1 onfail noarg arg=1 endl
-    if $arg 0 rm. else w9[] 0 fi
-  v +
+  l[] check "isbool(${1=1})" arg=$1 onfail noarg arg=1 endl
+  if $arg 0 rm. else w9[] 0 fi
 
 #@cli is_half
 #@cli : Return 1 if the type of image pixels is limited to half-float.
 is_half :
-  v - (2049) u {i==2048} rm. v +
+  (2049) u {i==2048} rm.
 
 #@cli is_ext : filename,_extension
 #@cli : Return 1 if specified filename has a given extensioin.
 is_ext : skip "${1=}"
-  v - 0 nm. "_$1" u {"lowercase(['"{x}"'])==lowercase(['$2'])"} rm. v +
+  0 nm. "_$1" u {"lowercase(['"{x}"'])==lowercase(['$2'])"} rm.
 
 #@cli is_image_arg : string
 #@cli : Return 1 if specified string looks like '[ind]'.
 is_image_arg : skip "${1=;}"
-  v -
   u {"str = ['$1'];
       s1 = size(str) - 1;
       (str[0]==_'[' && str[s1]==_']') || (str[0]=='.' && str[s1]=='.') && min(str)>=45 && max(str)<=122"}
-  v +
 
 #@cli is_pattern : string
 #@cli : Return 1 if specified string looks like a drawing pattern '0x......'.
 is_pattern : skip "${1=;}"
-  v - u {"str = ['$1']; size(str)>2 && same(str,'0x',2)"} v +
+  u {"str = ['$1']; size(str)>2 && same(str,'0x',2)"}
 
 #@cli is_percent : string
 #@cli : Return 1 if specified string ends with a '%', 0 otherwise.
 is_percent :
-  v - u {"s=['$1'];s[size(s)-1]==_'%'"} v +
+  u {"s=['$1'];s[size(s)-1]==_'%'"}
 
 #@cli is_variable_name : "str"
 #@cli Returns 1 if specified argument can be considered as a variable name, 0 otherwise.
 is_variable_name :
-  v -
   l[]
     u {"str = ['$1'];
         res = 1;
@@ -22231,28 +22204,26 @@ is_variable_name :
         c = str[0];
         res && (c<_'0' || c>_'9')"}
   onfail u 0 endl
-  v +
 
 #@cli is_videofilename
 #@cli : Return 1 if extension of specified filename is typical from video files.
 is_videofilename : skip "${1=}"
-  v - 0 nm. "_$1" u {"
+  0 nm. "_$1" u {"
     ext = lowercase(['"{x}"']);
     ext=='avi' || ext=='mov' || ext=='asf' || ext=='divx' || ext=='flv' || ext=='mpg' ||
     ext=='m1v' || ext=='m2v' || ext=='m4v' || ext=='mjp' || ext=='mp4' || ext=='mkv' ||
     ext=='mpe' || ext=='movie' || ext=='ogm' || ext=='ogg' || ext=='ogv' || ext=='qt' || ext=='rm' ||
     ext=='vob' || ext=='wmv' || ext=='xvid' || ext=='mpeg'"}
-  rm. v +
+  rm.
 
 #@cli is_windows
 #@cli : Return 1 if current computer OS is Windows, 0 otherwise.
 is_windows :
-  v - u {narg($OS)==1" && "narg($WINDIR)==1} v +
+  u {narg($OS)==1" && "narg($WINDIR)==1}
 
 #@cli math_lib
 #@cli : Return string that defines a set of several useful macros for the embedded math evaluator.
 math_lib :
-  v -
   u "
 
   # Return number of elements in min-heap #ind.
@@ -22634,93 +22605,92 @@ math_lib :
          _deltaE00_R_T*_deltaE00_deltaCprime/(_deltaE00_k_C*_deltaE00_S_C)*
          _deltaE00_deltaHprime/(_deltaE00_k_H*_deltaE00_S_H));
   );"
-  v +
 
 #@cli mad
 #@cli : Return the MAD (Maximum Absolute Deviation) of the last selected image.
 #@cli : The MAD is defined as MAD = med_i|x_i-med_j(x_j)|
 mad :
-  v - if $! +-. {ic} abs. u {1.4826*ic} rm. else u 0 fi v +
+  if $! +-. {ic} abs. u {1.4826*ic} rm. else u 0 fi
 
 #@cli max_w
 #@cli : Return the maximal width between selected images.
 max_w :
-  v - _minmax_whds max,0,1 v +
+  _minmax_whds max,0,1
 
 #@cli max_h
 #@cli : Return the maximal height between selected images.
 max_h :
-  v - _minmax_whds max,1,1 v +
+  _minmax_whds max,1,1
 
 #@cli max_d
 #@cli : Return the maximal depth between selected images.
 max_d :
-  v - _minmax_whds max,2,1 v +
+  _minmax_whds max,2,1
 
 #@cli max_s
 #@cli : Return the maximal spectrum between selected images.
 max_s :
-  v - _minmax_whds max,3,1 v +
+  _minmax_whds max,3,1
 
 #@cli max_wh
 #@cli : Return the maximal wxh size of selected images.
 max_wh :
-  v - _minmax_whds max,0,2 v +
+  _minmax_whds max,0,2
 
 #@cli max_whd
 #@cli : Return the maximal wxhxd size of selected images.
 max_whd :
-  v - _minmax_whds max,0,3 v +
+  _minmax_whds max,0,3
 
 #@cli max_whds
 #@cli : Return the maximal wxhxdxs size of selected images.
 max_whds :
-  v - _minmax_whds max,0,4 v +
+  _minmax_whds max,0,4
 
 #@cli med
 #@cli : Return the median value of the last selected image.
 med :
-  v - u {ic} v +
+  u {ic}
 
 #@cli median_color
 #@cli : Return the median color value of the last selected image.
 median_color :
-  v - u "" s="" repeat s +channels. $> u ${}$s${med.} s=, rm. done v +
+  u "" s="" repeat s +channels. $> u ${}$s${med.} s=, rm. done
 
 #@cli min_w
 #@cli : Return the minimal width between selected images.
 min_w :
-  v - _minmax_whds min,0,1 v +
+  _minmax_whds min,0,1
 
 #@cli min_h
 #@cli : Return the minimal height between selected images.
 min_h :
-  v - _minmax_whds min,1,1 v +
+  _minmax_whds min,1,1
 
 #@cli min_d
 #@cli : Return the minimal depth between selected images.
 min_d :
-  v - _minmax_whds min,2,1 v +
+  _minmax_whds min,2,1
 
 #@cli min_s
 #@cli : Return the minimal s size of selected images.
 min_s :
-  v - _minmax_whds min,3,1 v +
+  _minmax_whds min,3,1
 
 #@cli min_wh
 #@cli : Return the minimal wxh size of selected images.
 min_wh :
-  v - _minmax_whds min,0,2 v +
+  _minmax_whds min,0,2
 
 #@cli min_whd
 #@cli : Return the minimal wxhxd size of selected images.
 min_whd :
-  v - _minmax_whds min,0,3 v +
+  _minmax_whds min,0,3
 
 #@cli min_whds
 #@cli : Return the minimal wxhxdxs size of selected images.
 min_whds :
-  v - _minmax_whds min,0,4 v +
+  _minmax_whds min,0,4
 
 _minmax_whds :
   u {"
@@ -22747,7 +22717,7 @@ _minmax_whds :
 #@cli normalize_filename : filename
 #@cli : Return a "normalized" version of the specified filename, without spaces and capital letters.
 normalize_filename :
-  v - ({'"$1"'}) f. 'if(i>=65&&i<=90,i+32,if(i==32,95,i))' u {t} rm. v +
+  ({'"$1"'}) f. 'if(i>=65&&i<=90,i+32,if(i==32,95,i))' u {t} rm.
 
 #@cli oct : octal_int1,...
 #@cli : Print specified octal integers into their binary, decimal, hexadecimal and string representations.
@@ -22759,7 +22729,7 @@ oct :
 #@cli oct2dec : octal_int1,...
 #@cli : Convert specified octal integers into their decimal representations.
 oct2dec :
-  v - $=arg res,sep= repeat $# res=$res$sep${_$0\ ${arg{$>+1}}} sep=, done u $res v +
+  $=arg res,sep= repeat $# res=$res$sep${_$0\ ${arg{$>+1}}} sep=, done u $res
 
 _oct2dec :
   u {"str = vtos(abs($1));
@@ -22772,12 +22742,11 @@ _oct2dec :
 #@cli padint : number,_size>0
 #@cli : Return a integer with 'size' digits (eventually left-padded with '0').
 padint : check "isint($1)" skip ${2=4}
-  v - u "" repeat $2 u ${}{int($1/10^$<)%10} done v +
+  u "" repeat $2 u ${}{int($1/10^$<)%10} done
 
 #@cli path_cache
 #@cli : Return a path to store G'MIC data files for one user (whose value is OS-dependent).
 path_cache :
-  v -
   if !narg({'$_path_cache'})
     _path_cache=$_path_rc
     if !${-is_windows}
@@ -22788,12 +22757,10 @@ path_cache :
     fi
   fi
   u $_path_cache
-  v +
 
 #@cli path_gimp
 #@cli : Return a path to store GIMP configuration files for one user (whose value is OS-dependent).
 path_gimp :
-  v -
   if !narg({'$_path_gimp'})
     if narg({'${GIMP2_DIRECTORY}'}) _path_gimp=${GIMP2_DIRECTORY}
     elif narg({'${USERPROFILE}'}) _path_gimp=${USERPROFILE}
@@ -22815,12 +22782,10 @@ path_gimp :
     fi
   fi
   u $_path_gimp
-  v +
 
 #@cli path_tmp
 #@cli : Return a path to store temporary files (whose value is OS-dependent).
 path_tmp :
-  v -
   if !narg({'$_path_tmp'})
     if narg({'${TMP}'}) _path_tmp=${TMP}
     elif narg({'${TEMP}'}) _path_tmp=${TEMP}
@@ -22830,7 +22795,6 @@ path_tmp :
     if ${-is_windows} _path_tmp=$_path_tmp{`92`} else _path_tmp=$_path_tmp/ fi
   fi
   u $_path_tmp
-  v +
 
 # render_donations: Parse the PayPal .CSV file and generate 'latest-months' donation gfx.
 # $1 = filename.csv
@@ -22957,17 +22921,17 @@ reset :
 #@cli RGB
 #@cli : Return a random int-valued RGB color.
 RGB :
-  v - u {round(u(255))},{round(u(255))},{round(u(255))} v +
+  u {round(u(255))},{round(u(255))},{round(u(255))}
 
 #@cli RGBA
 #@cli : Return a random int-valued RGBA color.
 RGBA :
-  v - u {round(u(255))},{round(u(255))},{round(u(255))},{round(u(255))} v +
+  u {round(u(255))},{round(u(255))},{round(u(255))},{round(u(255))}
 
 #@cli std_noise
 #@cli : Return the estimated noise standard deviation of the last selected image.
 std_noise :
-  v - if $! +laplacian. -. {ic} abs. u {1.4826*ic/sqrt(d==1?20:42)} rm. else u 0 fi v +
+  if $! +laplacian. -. {ic} abs. u {1.4826*ic/sqrt(d==1?20:42)} rm. else u 0 fi
 
 #@cli str : string
 #@cli : Print specified string into its binary, octal, decimal and hexadecimal representations.
@@ -22979,22 +22943,21 @@ str : skip $1
 #@cli str2hex : string
 #@cli : Convert specified string into a sequence of hexadecimal values.
 str2hex :
-  v - ({'"$*"'}) y. r. 2,100% f. 'v=if(x,i%16,int(i/16));if(v<=9,48+v,87+v)' u {t} rm. v +
+  ({'"$*"'}) y. r. 2,100% f. 'v=if(x,i%16,int(i/16));if(v<=9,48+v,87+v)' u {t} rm.
 
 #@cli strcontains : string1,string2
 #@cli : Return 1 if the first string contains the second one.
 strcontains :
-  v - l[] ({'"$1"'}) s +,{'"$2"'} u {$!>1} rm endl v +
+  l[] ({'"$1"'}) s +,{'"$2"'} u {$!>1} rm endl
 
 #@cli strlen : string1
 #@cli : Return the length of specified string argument.
 strlen : skip "${1=}"
-  v - u {narg({'"$1"'})} v +
+  u {narg({'"$1"'})}
 
 #@cli strreplace : string,search,replace
 #@cli : Search and replace substrings in an input string.
 strreplace : skip "${3=}"
-  v -
   if narg("$3")
     ls=${strlen\ "$2"}
     lr={${strlen\ "$3"}-1}
@@ -23004,29 +22967,28 @@ strreplace : skip "${3=}"
   else
     l[] ({'"$1"'}) s -,{'"$2"'} a y u {t} rm endl
   fi
-  v +
 
 #@cli strlowercase : string
 #@cli : Return a lower-case version of the specified string.
 strlowercase :
-  v - ({'"$*"'}) +. 'if(i>=65&&i<=90,32,0)' u {t} rm. v +
+  ({'"$*"'}) +. 'if(i>=65&&i<=90,32,0)' u {t} rm.
 
 #@cli strvar : string
 #@cli : Return a simplified version of the specified string, that can be used as a variable name.
 strvar :
-  v - ({'"$*"'}) f. "
+  ({'"$*"'}) f. "
    (i>=_'0' && i<=_'9') || (i>=_'a' && i<=_'z') || i==_'_'?i:
    (i>=_'A' && i<=_'Z')?i - _'A' + _'a':
    _'_'"
    if "i>=_'0' && i<=_'9'" r. {w+1},1,1,1,0,0,1 =. {_'_'} fi
    y. do h={h} replace_str. "__","_" while h!=$h
-   u {t} rm. v +
+   u {t} rm.
 
 #@cli strver : _version
 #@cli : Return the specified version number of the G'MIC interpreter, as a string.
 #@cli : Default value: 'version=$_version'.
 strver : check ${1=$_version}>0
-  v - ({'$1'}) r. {2*w-1} f. 'if(x%2,_'.',i)' u {t} rm. v +
+  ({'$1'}) r. {2*w-1} f. 'if(x%2,_'.',i)' u {t} rm.
 
 #@cli tic
 #@cli : Initialize tic-toc timer.
@@ -23046,7 +23008,7 @@ toc :
 #@cli to_clutname : "string"
 #@cli : Return simplified name that can be used as a CLUT name, from specified input string.
 to_clutname :
-  v - 0 nm. "$1" nm={b} rm.
+  0 nm. "$1" nm={b} rm.
   u {`"ss = lowercase([['"{/$nm}"'],0]);
        const N = 2*size(ss);
        sd = vectorN();
@@ -23058,7 +23020,7 @@ to_clutname :
           ss[ps]==_'\'' || ss[ps]==_'\"')?0:
          (ps && ss[ps]>=_'0' && ss[ps]<=_'9' && ss[ps-1]>=_'a' && ss[ps-1]<=_'z')?(sd[pd++] = _'_'; sd[pd++] = ss[ps]):
          (sd[pd++] = ss[ps]);
-       ); sd[pd] = 0; sd"`} v +
+       ); sd[pd] = 0; sd"`}
 
 #@cli uchar2base64 : _encoding={ 0=base64 | 1=base64url }
 #@cli : Encode the values of the latest of the selected images as a base64-encoded string.
@@ -23066,7 +23028,6 @@ to_clutname :
 #@cli : Selected images must have values that are integers in [0,255].
 #@cli : Default values: 'encoding=0'.
 uchar2base64 : skip "${1=0}"
-  v -
   if isnum("$1") encoding=$1 else encoding=0 noarg fi
   {ceil(whds*4/3)+([0,2,1])[whds%3]}
   eval "
@@ -23082,7 +23043,7 @@ uchar2base64 : skip "${1=0}"
     n==1?(i[#-1,od++] = hash[((ov&3)<<4)]; copy(i[#-1,od],_'=',2,1,0); od+=2):
     n==2?(i[#-1,od++] = hash[((ov&15)<<2)]; i[#-1,od++] = _'=');
   "
-  u {t} rm. v +
+  u {t} rm.
 
 #-------------------------------------
 #
