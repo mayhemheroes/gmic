@@ -21243,7 +21243,6 @@ alert : skip "${1=[G"{`39`}"MIC Alert]},${2=This is an alert box.},${3=OK}"
   else
     e[0--3] "Display alert box, with title '$1', message '$2' and buttons '${3--1}'."
   fi
-  v -
 
   if $!==1 logo= else logo=[] fi
   +l$logo
@@ -21315,7 +21314,7 @@ alert : skip "${1=[G"{`39`}"MIC Alert]},${2=This is an alert box.},${3=OK}"
 
     # Enter event loop.
     repeat 9 if !{*$>} disp=$> break fi done   # Find available display window.
-    if !narg($disp) v + error[0--4] "Command '$0': Cannot open display window for alert box." fi
+    if !narg($disp) error[0--4] "Command '$0': Cannot open display window for alert box." fi
 
     selected={if($#==3,0,-1)} clicked=-1
     do
@@ -21349,25 +21348,23 @@ alert : skip "${1=[G"{`39`}"MIC Alert]},${2=This is an alert box.},${3=OK}"
     # Return result (index of clicked button or '-1').
     w$disp 0 rm u $clicked
   endl
-  v +
 
 #@cli arg : n>=1,_arg1,...,_argN
 #@cli : Return the n-th argument of the specified argument list.
 arg : check "isint($1) && ($1)>0"
-  v - $=arg u ${arg{1+($1)}} v +
+  $=arg u ${arg{1+($1)}}
 
 #@cli arg2var : variable_name,argument_1,...,argument_N
 #@cli : For each i in [1...N], set 'variable_name$i=argument_i'.
 #@cli : The variable name should be global to make this command useful (i.e. starts by an underscore).
 arg2var :
-  v - $=arg u {$#-1} repeat ${} $1{1+$>}=${arg{2+$>}} done v +
+  $=arg u {$#-1} repeat ${} $1{1+$>}=${arg{2+$>}} done
 
 #@cli autocrop_coords : value1,value2,... | auto
 #@cli : Return coordinates (x0,y0,z0,x1,y1,z1) of the autocrop that could be performed on the latest
 #@cli : of the selected images.
 #@cli : Default value: 'auto'
 autocrop_coords : skip ${1=auto}
-  v -
   is_auto={['"$1"']=='auto'}
   w={w} h={h} d={d}
   value={i(w-1,h-1,d-1)} +=. {1+$value},100%,100%,100% _autocrop$is_auto. ${1--1} =. $value,100%,100%,100%
@@ -21375,7 +21372,6 @@ autocrop_coords : skip ${1=auto}
   +_autocrop$is_auto. ${1--1}
   x1={$x0+w-1} y1={$y0+h-1} z1={$z0+d-1} rm.
   u $x0,$y0,$z0,$x1,$y1,$z1
-  v +
 
 _autocrop0 : autocrop $*
 _autocrop1 : skip $* autocrop
@@ -21383,23 +21379,21 @@ _autocrop1 : skip $* autocrop
 #@cli average_colors
 #@cli : Return the average vector-value of the latest of the selected images.
 average_colors :
-  v -
   res=""
   repeat s-1 sh. {1+$>} res=$res,{ia} rm. done
   sh. 0 u {ia}$res rm.
-  v +
 
 #@cli base642img : "base64_string"
 #@cli : Decode given base64-encoded string as a newly inserted image at the end of the list.
 #@cli : The argument string must have been generated using command 'img2base64'.
 base642img :
-  v - base642uchar "$1" unserialize. v +
+  base642uchar "$1" unserialize.
 
 #@cli base642uchar : "base64_string"
 #@cli : Decode given base64-encoded string as a newly inserted 1-column image at the end of the list.
 #@cli : The argument string must have been generated using command 'uchar2base64'.
 base642uchar :
-  v - 0
+  0
   eval "
     hash = vector256();
     for (k = _'A', k<=_'Z', ++k, hash[k] = k - _'A');
@@ -21423,33 +21417,30 @@ base642uchar :
       )
     )"
   nm. "[unnamed]"
-  v +
 
 #@cli basename : file_path,_variable_name_for_folder
 #@cli : Return the basename of a file path, and opt. its folder location.
 #@cli : When specified 'variable_name_for_folder' must starts by an underscore
 #@cli : (global variable accessible from calling function).
 basename : skip ${2=unused}
-  v -
   l[] ({"'$1'"}) replace 92,47 s +,47
   if i==47 a y $2={t} u ""
   elif $!==1 u {t} $2=""
   else a[^-1] y u {t} $2={-2,t}
   fi
   rm endl
-  v +
 
 #@cli bin : binary_int1,...
 #@cli : Print specified binary integers into their octal, decimal, hexadecimal and string representations.
 bin :
-  v - dec=${bin2dec\ ${^0}} v +
+  dec=${bin2dec\ ${^0}}
   e[^-1] "Convert binary integer"${arg\ 1+($#>1),"",s}" '${^0}' to octal '"${dec2oct\ $dec}"',
           decimal '"$dec"', hexadecimal '"${dec2hex\ $dec}"' and string '"${dec2str\ $dec}"'."
 
 #@cli bin2dec : binary_int1,...
 #@cli : Convert specified binary integers into their decimal representations.
 bin2dec :
-  v - $=arg res,sep= repeat $# res=$res$sep${_$0\ ${arg{$>+1}}} sep=, done u $res v +
+  $=arg res,sep= repeat $# res=$res$sep${_$0\ ${arg{$>+1}}} sep=, done u $res
 
 _bin2dec :
   u {"str = vtos(abs($1));
@@ -21461,7 +21452,7 @@ _bin2dec :
 
 # Command to check what lines of G'MIC sources are larger than 120 columns.
 _check120 :
-  v - use_vt100
+  use_vt100
   i raw:"$1",char s +,10
   1,$!,1,2,">begin(line = 1); is_lines=i[#y,0]==10; line+=is_lines?h#y:0; [is_lines || h#y<=120?-1:y,line]"
   lines={{@-1}-1} f. "I = I; if(I[0]<0,I[1]=-1); I"
@@ -21470,16 +21461,15 @@ _check120 :
     r. 1,{h/2},1,2,-1
     repeat h
       l,L={I[$>]}
-      v + e[] $_gmic_c"  - [Line "$_gmic_b$L$_gmic_n$_gmic_c", "\
-              $_gmic_b{$l,h}$_gmic_n$_gmic_c" chars]: "$_gmic_n{$l,t} v -
+      e[] $_gmic_c"  - [Line "$_gmic_b$L$_gmic_n$_gmic_c", "\
+              $_gmic_b{$l,h}$_gmic_n$_gmic_c" chars]: "$_gmic_n{$l,t}
     done
   fi
   rm
   _total_lines+=$lines
-  v + e[] "  - Scanned : "${lines}" lines"
+  e[] "  - Scanned : "${lines}" lines"
 
 check120 :
-  v -
   _total_lines=0
   files 0,*.h c={`narg($files)?',':0`} if narg(${}) files=$files$c${} fi
   files 0,*.cpp c={`narg($files)?',':0`} if narg(${}) files=$files$c${} fi
@@ -21487,22 +21477,18 @@ check120 :
   files 0,*.gmic c={`narg($files)?',':0`} if narg(${}) files=$files$c${} fi
   repeat narg($files)
     arg 1+$>,$files file=${}
-    v + e[] " * File '"$file"'."
-    _check120 $file
-    v -
+    e[] " * File '"$file"'."
+    v + _check120 $file v -
   done
-  v +
   e[] " - Total scanned : "${_total_lines}" lines"
 
 # compress_gmic
 # Compress .gmic custom command files for compressing update files a little bit,
 # by removing empty lines, and useless comments.
 compress_gmic :
-  v -
   discard 13 s -,10 append_multiline_comments N=$!
   ap _compress_gmic
   s -,10 append_newline[^-1] a y
-  v +
 
 _compress_gmic :
   if i==_'#'
@@ -21517,11 +21503,9 @@ _compress_gmic :
 #@cli : (for arbitrary number of channels).
 #@cli : Parameter 'avg_outvarname' is used as a variable name that takes the value of the average vector-value.
 covariance_colors : skip "${1=avg}"
-  v -
   $1=${-average_colors}
   f ">begin(avg = [ "$""$1" ]; const S2 = s^2; C = vectorS2(0); );
      mI = I - avg; C+=mul(mI,mI,s); end(C/=whd - 1; call('u ',vtos(C))); I"
-  v +
 
 #@cli dec : decimal_int1,...
 #@cli : Print specified decimal integers into their binary, octal, hexadecimal and string representations.
@@ -21532,12 +21516,12 @@ dec :
 #@cli dec2str : decimal_int1,...
 #@cli : Convert specifial decimal integers into its string representation.
 dec2str :
-  v - u {`[${^0}]`} v +
+  u {`[${^0}]`}
 
 #@cli dec2bin : decimal_int1,...
 #@cli : Convert specified decimal integers into their binary representations.
 dec2bin :
-  v - $=arg res,sep= repeat $# res=$res$sep${_$0\ ${arg{$>+1}}} sep=, done u $res v +
+  $=arg res,sep= repeat $# res=$res$sep${_$0\ ${arg{$>+1}}} sep=, done u $res
 
 _dec2bin :
   u {`"const sgn = sign($1);
@@ -21549,7 +21533,7 @@ _dec2bin :
 #@cli dec2hex : decimal_int1,...
 #@cli : Convert specified decimal integers into their hexadecimal representations.
 dec2hex :
-  v - $=arg res,sep= repeat $# res=$res$sep${_$0\ ${arg{$>+1}}} sep=, done u $res v +
+  $=arg res,sep= repeat $# res=$res$sep${_$0\ ${arg{$>+1}}} sep=, done u $res
 
 _dec2hex :
   u {`"begin(tab = [ _'0',_'1',_'2',_'3',_'4',_'5',_'6',_'7',_'8',_'9',_'a',_'b',_'c',_'d',_'e',_'f' ]);
@@ -21562,7 +21546,7 @@ _dec2hex :
 #@cli dec2oct : decimal_int1,...
 #@cli : Convert specified decimal integers into their octal representations.
 dec2oct :
-  v - $=arg res,sep= repeat $# res=$res$sep${_$0\ ${arg{$>+1}}} sep=, done u $res v +
+  $=arg res,sep= repeat $# res=$res$sep${_$0\ ${arg{$>+1}}} sep=, done u $res
 
 _dec2oct :
   u {`"const sgn = sign($1);
@@ -21574,7 +21558,7 @@ _dec2oct :
 #@cli fact : value
 #@cli : Return the factorial of the specified value.
 fact : check isint($1)
-  v - res=1 repeat $1 res*={($>+1)} done u $res v +
+  res=1 repeat $1 res*={($>+1)} done u $res
 
 #@cli fibonacci : N>=0
 #@cli : Return the Nth number of the Fibonacci sequence.
@@ -21585,22 +21569,19 @@ fibonacci : check "$1>=0"
 #@cli : Rename or move a file from a location $1 to another location $2.
 file_mv :
   e[^-1] "Move file '$1' to location '$2'."
-  v - if ${-is_windows} x "move "$1" "$2 else x "mv "$1" "$2 fi v +
+  if ${-is_windows} x "move "$1" "$2 else x "mv "$1" "$2 fi
 
 #@cli file_rand
 #@cli : Return a random filename for storing temporary data.
 file_rand :
-  v -
   do filename=${-path_tmp}gmic$_pid{`round(u(vector6(_'0'),vector6(_'9')))`}
   while isfile(['{/$filename}'])
   u $filename
-  v +
 
 #@cli file_rm : filename
 #@cli : Delete a file.
 file_rm :
   e[^-1] "Remove file '$1'."
-  v -
   if ${-is_windows}
     1 nm. "$1" dir={/{f}} base={/{b}} ext={/{x}} rm. com=""
     if narg($dir) com="cd \""$dir"\\\" && " fi
@@ -21609,12 +21590,10 @@ file_rm :
   else
     x "rm -f \"$1\""
   fi
-  v +
 
 #@cli filename : filename,_number1,_number2,...,_numberN
 #@cli : Return a filename numbered with specified indices.
 filename : skip "${1=default}"
-  v -
   if $#==1 u "$1"
   else
   (${2--1}) nm. "$1" u {f}{b}
@@ -21625,7 +21604,6 @@ filename : skip "${1=default}"
   if narg({'{x}'}) u ${}.{x} fi
   rm.
   fi
-  v +
 
 #@cli files : _mode,path : (+)
 #@cli : Return the list of files and/or subfolders from specified path.
@@ -21637,13 +21615,12 @@ filename : skip "${1=default}"
 #@cli fitratio_wh : min_width,min_height,ratio_wh
 #@cli : Return a 2D size 'width,height' which is bigger than 'min_width,min_height' and has the specified w/h ratio.
 fitratio_wh :
-  v - if $3*$2>$1 u {int($3*$2)},$2 else u $1,{int($1/$3)} fi v +
+  if $3*$2>$1 u {int($3*$2)},$2 else u $1,{int($1/$3)} fi
 
 #@cli fitscreen : width,height,_depth,_minimal_size[%],_maximal_size[%] : [image],_minimal_size[%],_maximal_size[%]
 #@cli : Return the 'ideal' size WxH for a window intended to display an image of specified size on screen.
 #@cli : Default values: 'depth=1', 'minimal_size=128' and 'maximal_size=85%'.
 fitscreen : skip ${2=},${3=},${4=},${5=}
-  v -
   if ${"is_image_arg $1"}
     l$1 W,H,D={[w,h,d]} endl if narg($2) m=$2 else m=128 fi if narg($3) M=$3 else M=85% fi
   else
@@ -21664,14 +21641,13 @@ fitscreen : skip ${2=},${3=},${4=},${5=}
     s[0] = max(1,s[0],ms[0]);
     s[1] = max(1,s[1],ms[1]);
     round(s)"
-  v +
 
 #@cli fontchart
 #@cli : Insert G'MIC font chart at the end of the image list.
 #@cli : $ fontchart
 fontchart :
   e[^-1] "Generate G'MIC font chart."
-  v - l[]
+  l[]
     repeat 256
       if $>==92 char=\\ else char={`max(1,(c=$>;c>=23&&c<=28?32:c))`} fi
       0 t. {``$char},0,0,50,1,255
@@ -21684,14 +21660,14 @@ fontchart :
       100%,100%,1,1,200 j[$>] .,{$>,[w,h]-[w#-1,h#-1]},0,0,1,.. rm[-2,-1]
     done
     frame 1,1,128 append_tiles ,
-  endl v +
+  endl
 
 # font2cimgh
 # Encode a font image as a C-style string for CImg.h.
 font2cimgh :
   e[^-1] "Encode font image$? as a C-style string for CImg.h."
-  v - repeat $! l[$>] bnm={0,b}
-    v + e[] "  > Encode font '"$bnm"'." v -
+  repeat $! l[$>] bnm={0,b}
+    e[] "  > Encode font '"$bnm"'."
     W,H={[w/256,h]}
     if !isint($W) error[0--4] "Font image '"$bnm"' has wrong dimensions ("{[w,h,d,s]}")." fi
     +f "i==im || i==iM" is_binary={im==1} rm.
@@ -21705,8 +21681,8 @@ font2cimgh :
     while $iM!=126
     k. nb_chunks={1+int(h/65536)}
 
-    v + e[] "\r  > Encode font '"$bnm"' -> W = "$W", H = "$H", M = "$M", is_binary = "$is_binary",
-             nb_chunks = "$nb_chunks"." v -
+    e[] "\r  > Encode font '"$bnm"' -> W = "$W", H = "$H", M = "$M", is_binary = "$is_binary",
+             nb_chunks = "$nb_chunks"."
 
     # Generate C-style string for storing font data.
     replace_str "\\","\\\\"
@@ -21725,13 +21701,12 @@ font2cimgh :
     i[0] ({'"    static const char *const data_font"${W}x${H}"[] = {"\n'})
     y a y o raw:$bnm.h,uchar
 
-  endl done v +
+  endl done
 
 #@cli fps
 #@cli : Return the number of time this function is called per second, or -1 if this info is not yet available.
 #@cli : Useful to display the framerate when displaying animations.
 fps :
-  v -
   if narg($_fps_fps)
     dt={$|-$_fps_time}
     if $dt>1 _fps_fps={round($_fps_nbframes/$dt)} _fps_time=$| _fps_nbframes=0 fi
@@ -21739,12 +21714,11 @@ fps :
     _fps_nbframes+=1
   else _fps_nbframes=0 _fps_time=$| _fps_fps=-1 u -1
   fi
-  v +
 
 #@cli gcd : a,b
 #@cli : Return the GCD (greatest common divisor) between a and b.
 gcd : check "isint($1) && isint($2) && $1*$2!=0"
-  v - _gcd {max(abs($1),abs($2))},{min(abs($1),abs($2))} v +
+  _gcd {max(abs($1),abs($2))},{min(abs($1),abs($2))}
 
 _gcd :
   r={$1%$2} if $r u ${_gcd\ $2,$r} else u $2 fi
@@ -21752,14 +21726,14 @@ _gcd :
 #@cli hex : hexadecimal_int1,...
 #@cli : Print specified hexadecimal integers into their binary, octal, decimal and string representations.
 hex :
-  v - dec=${hex2dec\ ${^0}} v +
+  dec=${hex2dec\ ${^0}}
   e[^-1] "Convert hexadecimal integer"${arg\ 1+($#>1),s,""}" '${^0}' to binary '"${dec2bin\ $dec}"',
            octal '"${dec2oct\ $dec}"', decimal '"$dec"' and string '"${dec2str\ $dec}"'."
 
 #@cli hex2dec : hexadecimal_int1,...
 #@cli : Convert specified hexadecimal integers into their decimal representations.
 hex2dec :
-  v - $=arg res,sep= repeat $# res=$res$sep${_$0\ ${arg{$>+1}}} sep=, done u $res v +
+  $=arg res,sep= repeat $# res=$res$sep${_$0\ ${arg{$>+1}}} sep=, done u $res
 
 _hex2dec :
   u {"str = ['$1']; str[0]==_'-'?-stov([['0x'],str[1,size(str)-1]]):stov([['0x'],str])"}
@@ -21767,135 +21741,125 @@ _hex2dec :
 #@cli hex2img : "hexadecimal_string"
 #@cli : Insert new image 1xN at the end of the list with values specified by the given hexadecimal-encoded string.
 hex2img :
-  v - ({'"$1"'}) 1,{w/2}
+  ({'"$1"'}) 1,{w/2}
   f. "*
     from_char(x) = x>=48 && x<=57?x - 48:x-87;
     off = 2*y;
     from_char(i[#-2,off])*16 + from_char(i[#-2,off+1])"
-  rm.. v +
+  rm..
 
 #@cli hex2str : hexadecimal_string
 #@cli : Convert specified hexadecimal string into a string.
 hex2str : skip ${1=""}
-  v -
-  if !narg("$1") u "" v + return fi
-  ({'$*'}) if w<2 rm. u "" v + return fi
+  if !narg("$1") u "" return fi
+  ({'$*'}) if w<2 rm. u "" return fi
   f. 'v=i-if(i>=97,87,48);if(x%2,v,v*16)' r. 2,{int(w/2)},1,1,-1 cumulate. x z. 1,1
-  u {t} rm. v +
+  u {t} rm.
 
 #@cli img2base64 : _encoding={ 0=base64 | 1=base64url }
 #@cli : Encode selected images as a base64-encoded string.
 #@cli : The images can be then decoded using command 'base642img'.
 #@cli : Default values: 'encoding=0'.
 img2base64 : skip "${1=0}"
-  v -
   if isnum("$1") encoding=$1 else encoding=0 noarg fi
   +serialize u ${uchar2base64\ $encoding} rm.
-  v +
 
 #@cli img2hex
 #@cli : Return representation of last image as an hexadecimal-encoded string.
 #@cli : Input image must have values that are integers in [0,255].
 img2hex :
-  v - whds={w},{h},{d},{s} y. 2,{h}
+  whds={w},{h},{d},{s} y. 2,{h}
   f.. "*
     to_char(x) = x>=0 && x<=9?48 + x:87 + x;
     i(#-1,0,y) = to_char(int(i/16));
     i(#-1,1,y) = to_char(i%16);
     i"
-  u {t} rm. r. $whds,-1 v +
+  u {t} rm. r. $whds,-1
 
 #@cli img2str
 #@cli : Return the content of the latest of the selected images as a special G'MIC input string.
 img2str :
-  v - i[-2] 256
+  i[-2] 256
   eval. ">begin(off = 0);
     sep = x==w - 1?(y==h - 1?(z==d - 1?(c==s - 1?0:_'^'):_'/'):_';'):_',';
     it = vtos(i);
     off + size(it) + 1>=w(#-2)?resize(#-2,round(1.5*w(#-2)),1,1,1,0);
     for (k = 0, k<size(it) && it[k], ++k, i[#-2,off++] = it[k]);
     i[#-2,off++] = sep"
-  u {-2,t} rm.. v +
+  u {-2,t} rm..
 
 #@cli img2text : _line_separator
 #@cli : Return text contained in a multi-line image.
 #@cli : Default value: 'line_separator= '.
 img2text : skip "${1= }"
-  v - +l s y s -,0 y x if $!>1 i[1--2] ({'"$1"'}) fi a x u {0,t} rm endl v +
+  +l s y s -,0 y x if $!>1 i[1--2] ({'"$1"'}) fi a x u {0,t} rm endl
 
 #@cli img82hex
 #@cli : Convert selected 8bits-valued vectors into their hexadecimal representations (ascii-encoded).
 img82hex :
   e[^-1] "Convert 8bits-valued vector$? into hexadecimal representations (ascii-encoded)."
-  v - % 256 y
+  % 256 y
   repeat $!
     +f[$>] 'v=int(i)&15;v+if(v<10,48,87)' # Lower digit
     f[$>] 'v=int(i)>>4;v+if(v<10,48,87)'  # Higher digit
     a[$>,-1] x
-  done v +
+  done
 
 #@cli hex2img8
 #@cli : Convert selected hexadecimal representations (ascii-encoded) into 8bits-valued vectors.
 hex2img8 :
   e[^-1] "Convert hexadecimal representation$? (ascii-encoded) into 8bits-valued vectors."
-  v - repeat $!
+  repeat $!
     s. x,2 f[-2,-1] 'if(i>=97,i-87,i-48)' *.. 16 +[-2,-1]
-  mv. 0 done v +
+  mv. 0 done
 
 #@cli is_3d
 #@cli : Return 1 if all of the selected images are 3D objects, 0 otherwise.
 is_3d :
-  v - u 1 l check3d 1 onfail u 0 endl v +
+  u 1 l check3d 1 onfail u 0 endl
 
 # Faster version.
 _is_3d :
-  v -
-    u {"h>6 && int(i[0])==67 && int(i[1])==73 && int(i[2])==109 && int(i[3])==103 && int(i[4])==51 && int(i[5])==100"}
-  v +
+  u {"h>6 && int(i[0])==67 && int(i[1])==73 && int(i[2])==109 && int(i[3])==103 && int(i[4])==51 && int(i[5])==100"}
 
 #@cli is_change : _value={ 0=false | 1=true }
 #@cli : Set or unset the 'is_change' flag associated to the image list.
 #@cli : This flag tells the interpreter whether or not the image list should be displayed when the pipeline ends.
 #@cli : Default value: 'value=1'.
 is_change :
-  v -
-    l[] check "isbool(${1=1})" arg=$1 onfail noarg arg=1 endl
-    if $arg 0 rm. else w9[] 0 fi
-  v +
+  l[] check "isbool(${1=1})" arg=$1 onfail noarg arg=1 endl
+  if $arg 0 rm. else w9[] 0 fi
 
 #@cli is_half
 #@cli : Return 1 if the type of image pixels is limited to half-float.
 is_half :
-  v - (2049) u {i==2048} rm. v +
+  (2049) u {i==2048} rm.
 
 #@cli is_ext : filename,_extension
 #@cli : Return 1 if specified filename has a given extensioin.
 is_ext : skip "${1=}"
-  v - 0 nm. "_$1" u {"lowercase(['"{x}"'])==lowercase(['$2'])"} rm. v +
+  0 nm. "_$1" u {"lowercase(['"{x}"'])==lowercase(['$2'])"} rm.
 
 #@cli is_image_arg : string
 #@cli : Return 1 if specified string looks like '[ind]'.
 is_image_arg : skip "${1=;}"
-  v -
   u {"str = ['$1'];
       s1 = size(str) - 1;
       (str[0]==_'[' && str[s1]==_']') || (str[0]=='.' && str[s1]=='.') && min(str)>=45 && max(str)<=122"}
-  v +
 
 #@cli is_pattern : string
 #@cli : Return 1 if specified string looks like a drawing pattern '0x......'.
 is_pattern : skip "${1=;}"
-  v - u {"str = ['$1']; size(str)>2 && same(str,'0x',2)"} v +
+  u {"str = ['$1']; size(str)>2 && same(str,'0x',2)"}
 
 #@cli is_percent : string
 #@cli : Return 1 if specified string ends with a '%', 0 otherwise.
 is_percent :
-  v - u {"s=['$1'];s[size(s)-1]==_'%'"} v +
+  u {"s=['$1'];s[size(s)-1]==_'%'"}
 
 #@cli is_variable_name : "str"
 #@cli Returns 1 if specified argument can be considered as a variable name, 0 otherwise.
 is_variable_name :
-  v -
   l[]
     u {"str = ['$1'];
         res = 1;
@@ -21906,28 +21870,26 @@ is_variable_name :
         c = str[0];
         res && (c<_'0' || c>_'9')"}
   onfail u 0 endl
-  v +
 
 #@cli is_videofilename
 #@cli : Return 1 if extension of specified filename is typical from video files.
 is_videofilename : skip "${1=}"
-  v - 0 nm. "_$1" u {"
+  0 nm. "_$1" u {"
     ext = lowercase(['"{x}"']);
     ext=='avi' || ext=='mov' || ext=='asf' || ext=='divx' || ext=='flv' || ext=='mpg' ||
     ext=='m1v' || ext=='m2v' || ext=='m4v' || ext=='mjp' || ext=='mp4' || ext=='mkv' ||
     ext=='mpe' || ext=='movie' || ext=='ogm' || ext=='ogg' || ext=='ogv' || ext=='qt' || ext=='rm' ||
     ext=='vob' || ext=='wmv' || ext=='xvid' || ext=='mpeg'"}
-  rm. v +
+  rm.
 
 #@cli is_windows
 #@cli : Return 1 if current computer OS is Windows, 0 otherwise.
 is_windows :
-  v - u {narg($OS)==1" && "narg($WINDIR)==1} v +
+  u {narg($OS)==1" && "narg($WINDIR)==1}
 
 #@cli math_lib
 #@cli : Return string that defines a set of several useful macros for the embedded math evaluator.
 math_lib :
-  v -
   u "
 
   # Return number of elements in min-heap #ind.
@@ -22309,93 +22271,92 @@ math_lib :
          _deltaE00_R_T*_deltaE00_deltaCprime/(_deltaE00_k_C*_deltaE00_S_C)*
          _deltaE00_deltaHprime/(_deltaE00_k_H*_deltaE00_S_H));
   );"
-  v +
 
 #@cli mad
 #@cli : Return the MAD (Maximum Absolute Deviation) of the last selected image.
 #@cli : The MAD is defined as MAD = med_i|x_i-med_j(x_j)|
 mad :
-  v - if $! +-. {ic} abs. u {1.4826*ic} rm. else u 0 fi v +
+  if $! +-. {ic} abs. u {1.4826*ic} rm. else u 0 fi
 
 #@cli max_w
 #@cli : Return the maximal width between selected images.
 max_w :
-  v - _minmax_whds max,0,1 v +
+  _minmax_whds max,0,1
 
 #@cli max_h
 #@cli : Return the maximal height between selected images.
 max_h :
-  v - _minmax_whds max,1,1 v +
+  _minmax_whds max,1,1
 
 #@cli max_d
 #@cli : Return the maximal depth between selected images.
 max_d :
-  v - _minmax_whds max,2,1 v +
+  _minmax_whds max,2,1
 
 #@cli max_s
 #@cli : Return the maximal spectrum between selected images.
 max_s :
-  v - _minmax_whds max,3,1 v +
+  _minmax_whds max,3,1
 
 #@cli max_wh
 #@cli : Return the maximal wxh size of selected images.
 max_wh :
-  v - _minmax_whds max,0,2 v +
+  _minmax_whds max,0,2
 
 #@cli max_whd
 #@cli : Return the maximal wxhxd size of selected images.
 max_whd :
-  v - _minmax_whds max,0,3 v +
+  _minmax_whds max,0,3
 
 #@cli max_whds
 #@cli : Return the maximal wxhxdxs size of selected images.
 max_whds :
-  v - _minmax_whds max,0,4 v +
+  _minmax_whds max,0,4
 
 #@cli med
 #@cli : Return the median value of the last selected image.
 med :
-  v - u {ic} v +
+  u {ic}
 
 #@cli median_color
 #@cli : Return the median color value of the last selected image.
 median_color :
-  v - u "" s="" repeat s +channels. $> u ${}$s${med.} s=, rm. done v +
+  u "" s="" repeat s +channels. $> u ${}$s${med.} s=, rm. done
 
 #@cli min_w
 #@cli : Return the minimal width between selected images.
 min_w :
-  v - _minmax_whds min,0,1 v +
+  _minmax_whds min,0,1
 
 #@cli min_h
 #@cli : Return the minimal height between selected images.
 min_h :
-  v - _minmax_whds min,1,1 v +
+  _minmax_whds min,1,1
 
 #@cli min_d
 #@cli : Return the minimal depth between selected images.
 min_d :
-  v - _minmax_whds min,2,1 v +
+  _minmax_whds min,2,1
 
 #@cli min_s
 #@cli : Return the minimal s size of selected images.
 min_s :
-  v - _minmax_whds min,3,1 v +
+  _minmax_whds min,3,1
 
 #@cli min_wh
 #@cli : Return the minimal wxh size of selected images.
 min_wh :
-  v - _minmax_whds min,0,2 v +
+  _minmax_whds min,0,2
 
 #@cli min_whd
 #@cli : Return the minimal wxhxd size of selected images.
 min_whd :
-  v - _minmax_whds min,0,3 v +
+  _minmax_whds min,0,3
 
 #@cli min_whds
 #@cli : Return the minimal wxhxdxs size of selected images.
 min_whds :
-  v - _minmax_whds min,0,4 v +
+  _minmax_whds min,0,4
 
 _minmax_whds :
   u {"
@@ -22422,19 +22383,19 @@ _minmax_whds :
 #@cli normalize_filename : filename
 #@cli : Return a "normalized" version of the specified filename, without spaces and capital letters.
 normalize_filename :
-  v - ({'"$1"'}) f. 'if(i>=65&&i<=90,i+32,if(i==32,95,i))' u {t} rm. v +
+  ({'"$1"'}) f. 'if(i>=65&&i<=90,i+32,if(i==32,95,i))' u {t} rm.
 
 #@cli oct : octal_int1,...
 #@cli : Print specified octal integers into their binary, decimal, hexadecimal and string representations.
 oct :
-  v - dec=${oct2dec\ ${^0}} v +
+  dec=${oct2dec\ ${^0}}
   e[^-1] "Convert octal integer"${arg\ 1+($#>1),"",s}" '${^0}' to binary '"${dec2bin\ $dec}"', decimal '"$dec"',
            hexadecimal '"${dec2hex\ $dec}"' and string '"${dec2str\ $dec}"'."
 
 #@cli oct2dec : octal_int1,...
 #@cli : Convert specified octal integers into their decimal representations.
 oct2dec :
-  v - $=arg res,sep= repeat $# res=$res$sep${_$0\ ${arg{$>+1}}} sep=, done u $res v +
+  $=arg res,sep= repeat $# res=$res$sep${_$0\ ${arg{$>+1}}} sep=, done u $res
 
 _oct2dec :
   u {"str = vtos(abs($1));
@@ -22447,12 +22408,11 @@ _oct2dec :
 #@cli padint : number,_size>0
 #@cli : Return a integer with 'size' digits (eventually left-padded with '0').
 padint : check "isint($1)" skip ${2=4}
-  v - u "" repeat $2 u ${}{int($1/10^$<)%10} done v +
+  u "" repeat $2 u ${}{int($1/10^$<)%10} done
 
 #@cli path_cache
 #@cli : Return a path to store G'MIC data files for one user (whose value is OS-dependent).
 path_cache :
-  v -
   if !narg({'$_path_cache'})
     _path_cache=$_path_rc
     if !${-is_windows}
@@ -22463,12 +22423,10 @@ path_cache :
     fi
   fi
   u $_path_cache
-  v +
 
 #@cli path_gimp
 #@cli : Return a path to store GIMP configuration files for one user (whose value is OS-dependent).
 path_gimp :
-  v -
   if !narg({'$_path_gimp'})
     if narg({'${GIMP2_DIRECTORY}'}) _path_gimp=${GIMP2_DIRECTORY}
     elif narg({'${USERPROFILE}'}) _path_gimp=${USERPROFILE}
@@ -22490,12 +22448,10 @@ path_gimp :
     fi
   fi
   u $_path_gimp
-  v +
 
 #@cli path_tmp
 #@cli : Return a path to store temporary files (whose value is OS-dependent).
 path_tmp :
-  v -
   if !narg({'$_path_tmp'})
     if narg({'${TMP}'}) _path_tmp=${TMP}
     elif narg({'${TEMP}'}) _path_tmp=${TEMP}
@@ -22505,13 +22461,11 @@ path_tmp :
     if ${-is_windows} _path_tmp=$_path_tmp{`92`} else _path_tmp=$_path_tmp/ fi
   fi
   u $_path_tmp
-  v +
 
 # render_donations: Parse the PayPal .CSV file and generate 'latest-months' donation gfx.
 # $1 = filename.csv
 # $2 = number of latest months.
 render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2=5}
-  v -
   l[]
     i raw:"$1",uchar s -,{'\n'} rm[0]
 
@@ -22547,8 +22501,8 @@ render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2
       if '${currency_$e}'=='eur' donation_eur_$e=${donation_$e} else donation_eur_$e={${donation_$e}/$eur2usd} fi
 
       # Print infos.
-      v + e[] "- [#"$e" - "${date_$e}"] "${donation_$e}" "${currency_$e}", from "\
-              ${name_$e}" ("${mail_$e}") : '"${message_$e}"'" v -
+      e[] "- [#"$e" - "${date_$e}"] "${donation_$e}" "${currency_$e}", from "\
+              ${name_$e}" ("${mail_$e}") : '"${message_$e}"'"
 
     endl done
 
@@ -22593,7 +22547,7 @@ render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2
     o $HOME/work/src/gmic/html/img/donations_latest_months.png
   endl
 
-  v + e[] "\nTOTAL : "$all_sum" euros." v -
+  e[] "\nTOTAL : "$all_sum" euros."
 
   # Generate coin graphics.
   l[]
@@ -22621,55 +22575,53 @@ render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2
     endl done
     rm[0]
   endl
-  v +
 
 #@cli reset
 #@cli : Reset global parameters of the interpreter environment.
 reset :
   e[^-1] "Reset global parameters of the interpreter environment."
-  v -1 db3d m3d md3d f3d l3d sl3d ss3d v +
+ 1 db3d m3d md3d f3d l3d sl3d ss3d
 
 #@cli RGB
 #@cli : Return a random int-valued RGB color.
 RGB :
-  v - u {round(u(255))},{round(u(255))},{round(u(255))} v +
+  u {round(u(255))},{round(u(255))},{round(u(255))}
 
 #@cli RGBA
 #@cli : Return a random int-valued RGBA color.
 RGBA :
-  v - u {round(u(255))},{round(u(255))},{round(u(255))},{round(u(255))} v +
+  u {round(u(255))},{round(u(255))},{round(u(255))},{round(u(255))}
 
 #@cli std_noise
 #@cli : Return the estimated noise standard deviation of the last selected image.
 std_noise :
-  v - if $! +laplacian. -. {ic} abs. u {1.4826*ic/sqrt(d==1?20:42)} rm. else u 0 fi v +
+  if $! +laplacian. -. {ic} abs. u {1.4826*ic/sqrt(d==1?20:42)} rm. else u 0 fi
 
 #@cli str : string
 #@cli : Print specified string into its binary, octal, decimal and hexadecimal representations.
 str : skip $1
-  v - dec={'$*'} v +
+  dec={'$*'}
   e[^-1] "Convert string '$*' to binary '"${dec2bin\ $dec}"', octal '"${dec2oct\ $dec}"', decimal '"$dec"' and
            hexadecimal '"${dec2hex\ $dec}"'."
 
 #@cli str2hex : string
 #@cli : Convert specified string into a sequence of hexadecimal values.
 str2hex :
-  v - ({'"$*"'}) y. r. 2,100% f. 'v=if(x,i%16,int(i/16));if(v<=9,48+v,87+v)' u {t} rm. v +
+  ({'"$*"'}) y. r. 2,100% f. 'v=if(x,i%16,int(i/16));if(v<=9,48+v,87+v)' u {t} rm.
 
 #@cli strcontains : string1,string2
 #@cli : Return 1 if the first string contains the second one.
 strcontains :
-  v - l[] ({'"$1"'}) s +,{'"$2"'} u {$!>1} rm endl v +
+  l[] ({'"$1"'}) s +,{'"$2"'} u {$!>1} rm endl
 
 #@cli strlen : string1
 #@cli : Return the length of specified string argument.
 strlen : skip "${1=}"
-  v - u {narg({'"$1"'})} v +
+  u {narg({'"$1"'})}
 
 #@cli strreplace : string,search,replace
 #@cli : Search and replace substrings in an input string.
 strreplace : skip "${3=}"
-  v -
   if narg("$3")
     ls=${strlen\ "$2"}
     lr={${strlen\ "$3"}-1}
@@ -22679,49 +22631,48 @@ strreplace : skip "${3=}"
   else
     l[] ({'"$1"'}) s -,{'"$2"'} a y u {t} rm endl
   fi
-  v +
 
 #@cli strlowercase : string
 #@cli : Return a lower-case version of the specified string.
 strlowercase :
-  v - ({'"$*"'}) +. 'if(i>=65&&i<=90,32,0)' u {t} rm. v +
+  ({'"$*"'}) +. 'if(i>=65&&i<=90,32,0)' u {t} rm.
 
 #@cli strvar : string
 #@cli : Return a simplified version of the specified string, that can be used as a variable name.
 strvar :
-  v - ({'"$*"'}) f. "
+  ({'"$*"'}) f. "
    (i>=_'0' && i<=_'9') || (i>=_'a' && i<=_'z') || i==_'_'?i:
    (i>=_'A' && i<=_'Z')?i - _'A' + _'a':
    _'_'"
    if "i>=_'0' && i<=_'9'" r. {w+1},1,1,1,0,0,1 =. {_'_'} fi
    y. do h={h} replace_str. "__","_" while h!=$h
-   u {t} rm. v +
+   u {t} rm.
 
 #@cli strver : _version
 #@cli : Return the specified version number of the G'MIC interpreter, as a string.
 #@cli : Default value: 'version=$_version'.
 strver : check ${1=$_version}>0
-  v - ({'$1'}) r. {2*w-1} f. 'if(x%2,_'.',i)' u {t} rm. v +
+  ({'$1'}) r. {2*w-1} f. 'if(x%2,_'.',i)' u {t} rm.
 
 #@cli tic
 #@cli : Initialize tic-toc timer.
 #@cli : Use it in conjunction with 'toc'.
 tic :
   e[^-1] "Initialize timer."
-  v - if !narg($_ticpos) _ticpos=0 fi _tic$_ticpos=$| _ticpos+=1 v +
+  if !narg($_ticpos) _ticpos=0 fi _tic$_ticpos=$| _ticpos+=1
 
 #@cli toc
 #@cli : Display elapsed time of the tic-toc timer since the last call to 'tic'.
 #@cli : This command returns the elapsed time in the status value.
 #@cli : Use it in conjunction with 'tic'.
 toc :
-  v - v=$^ _ticpos-=1 u {_$|-${_tic$_ticpos}}
-  v 0 e[^-1] "Elapsed time: "${}" s". v -1 v {$v+1}
+  v=$^ _ticpos-=1 u {_$|-${_tic$_ticpos}}
+  v 0 e[^-1] "Elapsed time: "${}" s". v $v
 
 #@cli to_clutname : "string"
 #@cli : Return simplified name that can be used as a CLUT name, from specified input string.
 to_clutname :
-  v - 0 nm. "$1" nm={b} rm.
+  0 nm. "$1" nm={b} rm.
   u {`"ss = lowercase([['"{/$nm}"'],0]);
        const N = 2*size(ss);
        sd = vectorN();
@@ -22733,7 +22684,7 @@ to_clutname :
           ss[ps]==_'\'' || ss[ps]==_'\"')?0:
          (ps && ss[ps]>=_'0' && ss[ps]<=_'9' && ss[ps-1]>=_'a' && ss[ps-1]<=_'z')?(sd[pd++] = _'_'; sd[pd++] = ss[ps]):
          (sd[pd++] = ss[ps]);
-       ); sd[pd] = 0; sd"`} v +
+       ); sd[pd] = 0; sd"`}
 
 #@cli uchar2base64 : _encoding={ 0=base64 | 1=base64url }
 #@cli : Encode the values of the latest of the selected images as a base64-encoded string.
@@ -22741,7 +22692,6 @@ to_clutname :
 #@cli : Selected images must have values that are integers in [0,255].
 #@cli : Default values: 'encoding=0'.
 uchar2base64 : skip "${1=0}"
-  v -
   if isnum("$1") encoding=$1 else encoding=0 noarg fi
   {ceil(whds*4/3)+([0,2,1])[whds%3]}
   eval "
@@ -22757,7 +22707,7 @@ uchar2base64 : skip "${1=0}"
     n==1?(i[#-1,od++] = hash[((ov&3)<<4)]; copy(i[#-1,od],_'=',2,1,0); od+=2):
     n==2?(i[#-1,od++] = hash[((ov&15)<<2)]; i[#-1,od++] = _'=');
   "
-  u {t} rm. v +
+  u {t} rm.
 
 #-------------------------------------
 #
@@ -22768,11 +22718,9 @@ uchar2base64 : skip "${1=0}"
 #@cli demo : _run_in_parallel={ 0=no | 1=yes | 2=auto }
 #@cli : Show a menu to select and view all G'MIC interactive demos.
 demo : check "isint(${1=2}) && $1>=0 && $1<=2" check_display
-  v -
   use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r
   strver=${-strver}
   if $_prerelease strver=${strver}_pre#$_prerelease fi
-  v +
   e[] "\n
 ------ "${g}"G\47MIC demos"$n" ------------------\n
 ----\n
@@ -22782,7 +22730,7 @@ demo : check "isint(${1=2}) && $1>=0 && $1<=2" check_display
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' to exit.\n
 ----\n
 -------------------------------------"
-  v - l[]
+  l[]
   entries="2048 game","Blobs Editor","Bouncing Balls","Connect Four","Fire Effect","Fireworks","Fish-Eye Effect",\
           "Fourier Filtering","Tower of Hano\357","Histogram Demo","Hough Transform","Jawbreaker","Virtual Landscape",\
           "The Game of Life","Light Effect","Mandelbrot Explorer","3D Metaballs","Minesweeper","Minimal Path",\
@@ -22918,7 +22866,7 @@ demo : check "isint(${1=2}) && $1>=0 && $1<=2" check_display
   rm w 0 endl v 0 e[] ""
 
 _demo_color_curves :
-  v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
+  use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r
   if !narg($__demo_color_curve)
     e[] "\n
 ------ "${g}"Color curves"$n" ----------------------------------------------------------------------------\n
@@ -22934,7 +22882,7 @@ _demo_color_curves :
 ---- Keys '"${c}"ESC"$n"', '"${c}"Q"$n"' or '"${c}"ENTER"$n"' close the current window.\n
 ----\n
 ------------------------------------------------------------------------------------------------"
-    v - __demo_color_curve=1 l[] do rm sp ? while s!=3 endl x_color_curves rgb __demo_color_curve= v +
+    __demo_color_curve=1 l[] do rm sp ? while s!=3 endl x_color_curves rgb __demo_color_curve=
   else
     e[] "\n
 ------ "${g}"Color curves"$n" ----------------------------------------------------------------------------\n
@@ -22947,7 +22895,7 @@ _demo_color_curves :
 #@cli x_2048
 #@cli : Launch the 2048 game.
 x_2048 : check_display
-  v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
+  use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r
   e[] "\n
 ------ "${g}"2048"$n" -----------------------------------------------\n
 ----\n
@@ -22962,7 +22910,7 @@ x_2048 : check_display
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' to exit.\n
 ----\n
 --------------------------------------------------------------"
-  v - l[]
+  l[]
   score=0 f3d 50 m3d 0
   m "_x_2048_setrandom : +==[0] 0 f. 'if(i,4*y+x,-1)' discard. -1
      off={i[round(u(h-1))]} rm. x={$off&3} y={$off>>2} n={if(u<0.75,1,2)}
@@ -23096,12 +23044,12 @@ x_2048 : check_display
     fi
 
   while {*}" && "!{*,ESC}" && "!{*,Q}
-  rm w 0 endl uncommand _x_2048_setrandom,_x_2048_object3d v +
+  rm w 0 endl uncommand _x_2048_setrandom,_x_2048_object3d
 
 #@cli x_blobs
 #@cli : Launch the blobs editor.
 x_blobs : check_display
-  v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
+  use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r
   e[] "\n
 ------ "${g}"Blobs editor"$n" --------------------------\n
 ----\n
@@ -23111,7 +23059,6 @@ x_blobs : check_display
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' to exit.\n
 ----\n
 -----------------------------------------------------"
-  v -
 
   # Create background image [0].
   l[] (0;0^0;128^0;255) r. 450,450,1,3,3 flower. 30,8,0,0,50%,50%,1 water. 20
@@ -23174,12 +23121,12 @@ x_blobs : check_display
     fi
 
   while {*}" && "!{*,ESC}" && "!{*,Q}
-  rm w 0 endl v +
+  rm w 0 endl
 
 #@cli x_bouncing
 #@cli : Launch the bouncing balls demo.
 x_bouncing : check_display
-  v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
+  use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r
   e[] "\n
 ------ "${g}"Bouncing balls"$n" ------------------------------\n
 ----\n
@@ -23188,7 +23135,7 @@ x_bouncing : check_display
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' to exit.\n
 ----\n
 -----------------------------------------------------"
-  v - l[]
+  l[]
   520,320,1,3 plasma 1,1,9 n 0,220
   N=12
   repeat $N
@@ -23226,7 +23173,7 @@ x_bouncing : check_display
     if {*,CTRLLEFT}" && "{*,D} w[] {1.5*w},{1.5*h} elif {*,CTRLLEFT}" && "{*,C} w[] {w},{h} fi
     w. rm. wait 20
   while {*}" && "!{*,ESC}" && "!{*,Q}
-  w 0 rm endl v +
+  w 0 rm endl
 
 #@cli x_color_curves : _colorspace={ rgb | cmy | cmyk | hsi | hsl | hsv | lab | lch | ycbcr | last }
 #@cli : Apply color curves on selected RGB[A] images, using an interactive window.
@@ -23234,10 +23181,10 @@ x_bouncing : check_display
 #@cli : Default value: 'colorspace=rgb'.
 x_color_curves : skip ${1=rgb}
   if ['"$1"']!='last'&&!{*,u} error[0--3] "Command '$0': No display available." return fi
-  v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
+  use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r
   e[^-1] "Apply color curves of image$?, in the '$1' colorspace."
-  if ['"$1"']=='last' v -
-    if !narg($_xcc_colorbase) v + return fi
+  if ['"$1"']=='last'
+    if !narg($_xcc_colorbase) return fi
     __x_color_curves[] $_xcc_colorbase
   else
     e[] "\n
@@ -23254,7 +23201,6 @@ x_color_curves : skip ${1=rgb}
 ---- Keys '"${c}"ESC"$n"', '"${c}"Q"$n"' or '"${c}"ENTER"$n"' close the current window.\n
 ----\n
 ------------------------------------------------------------------------------------------------"
-    v -
     __x_color_curves[] $1 _xcc_colorbase=$1
   fi
 
@@ -23301,7 +23247,7 @@ x_color_curves : skip ${1=rgb}
     xcc_backto
 
   endl done
-  uncommand xcc_goto,xcc_backto,xcc_info v +
+  uncommand xcc_goto,xcc_backto,xcc_info
 
 _x_color_curves :
   title={0,b} if narg({'{0,x}'}) title=$title.{0,x} fi ({'$title'}) discard. {'~'} title={t} rm.
@@ -23410,7 +23356,7 @@ __x_color_curves :
     m "xcc_goto: s c,-3 rgb2ycbcr[0] a c" m "xcc_backto: s c,-3 ycbcr2rgb[0] a c"
     m "xcc_info: 256,1,1,3,if(!c,x,128) 256,1,1,3,if(!c,128,if(c==1,x,128)) 256,1,1,3,if(!c,128,if(c==1,128,x))
        ycbcr2rgb[-3--1] permute[-3--1] xcyz a[0,-3] y a[1,-2] y a[2,-1] y"
-  else v + error[0--3] "Command 'x_color_curves': Unknown specified color space '$1'."
+  else error[0--3] "Command 'x_color_curves': Unknown specified color space '$1'."
   fi
 
 #@cli x_colorize : _is_lineart={ 0 | 1 },_max_resolution={ 0 | >=128 },_multichannels_output={ 0 | 1 },\
@@ -23419,7 +23365,7 @@ __x_color_curves :
 #@cli : When >0, argument 'max_resolution' defines the maximal image resolution used in the interactive window.
 #@cli : Default values: 'is_lineart=1', 'max_resolution=1024' and 'multichannels_output=0'.
 x_colorize : skip ${1=0},${3=0},${4=0},${5=0},${6=0} check "${2=1024}==0 || $2>=128" check_display
-  v - s0="image" s1="lineart" s2="multichannel" s3="merged" use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
+  s0="image" s1="lineart" s2="multichannel" s3="merged" use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r
   e[^-1] "Colorize selected B&W "${s{!$1}}"$? interactively, with maximum resolution $2 and "${s{2+!$3}}" output."
   e[] "\n
 --------------------------------------------------------------------------------------\n
@@ -23441,7 +23387,6 @@ x_colorize : skip ${1=0},${3=0},${4=0},${5=0},${6=0} check "${2=1024}==0 || $2>=
 ---- Keys '"${c}"ESC"$n"', '"${c}"Q"$n"' or '"${c}"ENTER"$n"' exit the interactive window.\n
 ----\n
 --------------------------------------------------------------------------------------"
-  v -
   N=$!
   thread_main="_x_colorize[0] ${1--1}"
   thread_color="w[] 400,320,0,\"Palette: main\" x_select_color[] __color,255,255,255"
@@ -23477,7 +23422,6 @@ x_colorize : skip ${1=0},${3=0},${4=0},${5=0},${6=0} check "${2=1024}==0 || $2>=
     endl done
   fi
   k[0-{$N-1}]
-  v +
 
 _x_colorize :
 
@@ -23745,7 +23689,7 @@ __x_colorize :
 #@cli x_connect4
 #@cli : Launch the Connect Four game.
 x_connect4 : check_display
-  v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
+  use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r
   e[] "\n
 ------ "${g}"Connect Four"$n" --------------------------------------------\n
 ----\n
@@ -23759,7 +23703,7 @@ x_connect4 : check_display
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' close the window.\n
 ----\n
 ----------------------------------------------------------------"
-  v - l[]
+  l[]
 
   # Create sprite graphics.
   7,6 nm. board
@@ -23923,33 +23867,31 @@ x_connect4 : check_display
     fi
 
   while {*}" && "!{*,ESC}" && "!{*,Q}
-  rm w 0 endl v +
+  rm w 0 endl
 
 #@cli xz : eq. to 'x_crop'
 xz :
-  v - _gmic_s="$?" v +
-  _x_crop
+  _gmic_s="$?" v + _x_crop v -
 
 #@cli x_crop
 #@cli : Crop selected images interactively.
 #@cli : (eq. to 'xz').
 x_crop :
-  v - _gmic_s="$?" v +
-  _$0
+  _gmic_s="$?" v + _$0 v -
 
 _x_crop :
   e[0--3] "Crop image"$_gmic_s" interactively."
-  v - repeat $! l[$>]
+  repeat $! l[$>]
     w ${"fitscreen "{[w,h,d]}},1,"[G'MIC] "{n}" - Interactive crop"
     +select 2,{round([w,h,d]/2)},0,1 u {^} z.. ${} rm.
     w[] 0 is_change
-  endl done v +
+  endl done
 
 #@cli x_cut
 #@cli : Cut selected images interactively.
 x_cut :
   e[^-1] "Cut image"$_gmic_s" interactively."
-  v - repeat $! l[$>]
+  repeat $! l[$>]
     wsiz0=${"fitscreen ."}
     value0,value1=-1,-1
     w[] $wsiz0,0,"[G'MIC] "{n}" - Interactive cut"
@@ -23992,12 +23934,12 @@ x_cut :
       fi
     done
     w[] 0 rm. u $value0%,$value1% c ${}
- endl done v +
+ endl done
 
 #@cli x_fire
 #@cli : Launch the fire effect demo.
 x_fire : skip "${1=G\47MIC}" check_display
-  v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
+  use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r
   e[] "\n
 ------ "${g}"Fire effect"$n" ------------------------\n
 ----\n
@@ -24006,7 +23948,6 @@ x_fire : skip "${1=G\47MIC}" check_display
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' to exit.\n
 ----\n
 -------------------------------------------"
-  v -
 
   # Init image data.
   i[0] 100,32 w[0] {[4.5*w,6.75*h]},0,"[G"{`39`}"MIC] Fire Effect"
@@ -24036,12 +23977,11 @@ x_fire : skip "${1=G\47MIC}" check_display
 
   # Exit properly.
   rm[0-3] w 0
-  v +
 
 #@cli x_fireworks
 #@cli : Launch the fireworks demo.
 x_fireworks : check_display
-  v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
+  use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r
   e[] "\n
 ------ "${g}"Fireworks"$n" --------------------------\n
 ----\n
@@ -24050,7 +23990,7 @@ x_fireworks : check_display
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' to exit.\n
 ----\n
 --------------------------------------------"
-  v - l[]
+  l[]
   (16;64^64;32^128;32) r 320,160,1,3,3             # [-2] = Background (color gradient).
   .                                                 # [-1] = Rendered image.
   w. {1.5*w},{1.5*h},0,"[G"{`39`}"MIC] Fireworks"  # Display window.
@@ -24092,12 +24032,12 @@ x_fireworks : check_display
     w. wait 20  # Display rendered frame.
     if {*,CTRLLEFT}" && "{*,D} w[] {3*w},{3*h} elif {*,CTRLLEFT}" && "{*,C} w[] {1.5*w},{1.5*h} fi
   while {*}" && "!{*,ESC}" && "!{*,Q}
-  rm w 0 endl v +
+  rm w 0 endl
 
 #@cli x_fisheye
 #@cli : Launch the fish-eye effect demo.
 x_fisheye : check_display
-  v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
+  use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r
   e[] "\n
 ------ "${g}"Fish-eye effect"$n" --------------------\n
 ----\n
@@ -24108,7 +24048,7 @@ x_fisheye : check_display
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' to exit.\n
 ----\n
 -------------------------------------------"
-  v -
+
   if $!>0 a x n 0,255 r2dy 220 else
   120,90,1,3 rand. 0,255 plasma. 0.3,3 n 0,255
   t "  G\47MIC\nFISH-EYE\n EFFECT",20,13,23,1,255 scale3x b 5 sharpen 1000
@@ -24129,13 +24069,13 @@ x_fisheye : check_display
     w.
     if {*,CTRLLEFT}" && "{*,D} w[] {3*w},{3*h} elif {*,CTRLLEFT}" && "{*,C} w[] {1.5*w},{1.5*h} fi
     rm.
-    if {*}==0" || "{*,ESC}" || "{*,Q} rm[-2,-1] w 0 v + return fi
+    if {*}==0" || "{*,ESC}" || "{*,Q} rm[-2,-1] w 0 return fi
   while 1
 
 #@cli x_fourier
 #@cli : Launch the fourier filtering demo.
 x_fourier : check_display
-  v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
+  use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r
   e[] "\n
 ------ "${g}"Fourier-filtering"$n" ----------------------------------------\n
 ----\n
@@ -24146,7 +24086,7 @@ x_fourier : check_display
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' to exit.\n
 ----\n
 -----------------------------------------------------------------"
-  v -
+
   if !$! sp ? r2dx 400 fi
 
   repeat $! l[$>]
@@ -24239,7 +24179,7 @@ x_fourier : check_display
     w 0
     endl
     rm[^0] # Clean images and window.
-  endl done rm v +
+  endl done rm
 
 #@cli x_grab_color : _variable_name
 #@cli : Open a color grabber widget from the first selected image.
@@ -24248,9 +24188,8 @@ x_fourier : check_display
 #@cli : Default values: 'variable_name=xgc_variable'.
 x_grab_color : skip ${1=xgc_variable} check_display
   if !$! error[0--3] "Command '$0': Missing specified input image." fi
-  v - l[0] nm={n} nm. img v +
+  l[0] nm={n} nm. img
   e[^-1] "Open "${arg\ {0,s},GRAY,GRAYA,RGB,RGBA}" color grabber widget for image$?, with variable name '$1'."
-  v -
 
   if !{*} w[] ${fitscreen[]\ {w},{h},1,128,50%},0,0,-1,-1,"Grab a color" fi
   _x_grab_color +dilate. 3 nm. icon_mask *.. 255 to_rgb.. nm.. icon_sprite
@@ -24296,13 +24235,12 @@ x_grab_color : skip ${1=xgc_variable} check_display
     fi
 
     if arg(1,{'$1'})==_'_'" && "arg(2,{'$1'})==_'_' wait 50 else wait fi
-    if {*,r} w[] -1 rm[visu0] yc=5 v - fi
+    if {*,r} w[] -1 rm[visu0] yc=5 fi
     if ['$$1']=='-1' break fi # Close request
 
   while {*}" && "!{*,ESC}" && "!{*,Q}
   w 0 k[img] nm $nm endl
   u $color
-  v +
 
 # Define color grabber icon.
 _x_grab_color :
@@ -24318,7 +24256,7 @@ _x_grab_color :
 #@cli x_hanoi
 #@cli : Launch the Tower of Hanoi game.
 x_hanoi : check_display
-  v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
+  use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r
   e[] "\n
 ------ "${g}"Tower of Hanoï"$n" ---------------------\n
 ----\n
@@ -24329,7 +24267,7 @@ x_hanoi : check_display
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' to exit.\n
 ----\n
 -------------------------------------------"
-  v - l[]
+  l[]
   l[] # Create 3D rods
     cylinder3d 1,10 r3d 1,0,0,90
     ++3d 10,0,0  +-3d.. 10,0,0
@@ -24430,12 +24368,12 @@ x_hanoi : check_display
     fi
 
   while {*}" && "!{*,ESC}" && "!{*,Q}
-  w[] 0 rm endl v +
+  w[] 0 rm endl
 
 #@cli x_histogram
 #@cli : Launch the histogram demo.
 x_histogram : check_display
-  v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
+  use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r
   e[] "\n
 ------ "${g}"Histogram demo"$n" -------------------------------\n
 ----\n
@@ -24444,7 +24382,7 @@ x_histogram : check_display
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' to exit.\n
 ----\n
 -----------------------------------------------------"
-  v -
+
   if !$! sp ? to_rgb
   else k[0] to_rgb r2dy 300,2 if w>800 r 800,100%,1,3,2 fi n 0,255
   fi
@@ -24527,7 +24465,7 @@ x_histogram : check_display
     fi
     if {*,b}&2\ ||\ {*,SPACE} clusters=64 sharpness=0 smoothness=0 contrast=1 brightness=0 gamma=1 fi
   while {*}" && "!{*,ESC}" && "!{*,Q}
-  w 0 rm v +
+  w 0 rm
 
 _x_histogram :
   val={max(0,min(100,$1))}
@@ -24539,7 +24477,7 @@ _x_histogram :
 #@cli x_hough
 #@cli : Launch the hough transform demo.
 x_hough : check_display
-  v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
+  use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r
   e[] "\n
 ------ "${g}"Hough-transform"$n" -----------------------------------------\n
 ----\n
@@ -24550,7 +24488,7 @@ x_hough : check_display
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' to exit.\n
 ----\n
 -----------------------------------------------------------------"
-  v -
+
   if !$! l[] sp greece onfail testimage2d 400 endl fi
   n 0,255
 
@@ -24619,12 +24557,12 @@ x_hough : check_display
     w 0 w1 0
     rm. endl
     if !{*}" || "!{*1} break fi
-  done rm v +
+  done rm
 
 #@cli x_jawbreaker : 0<_width<20,0<_height<20,0<_balls<=8
 #@cli : Launch the Jawbreaker game.
 x_jawbreaker : check "${1=12}>0 && $1<20 && ${2=13}>0 && $2<20 && ${3=5}>0 && $3<=8" check_display
-  v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
+  use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r
   e[] "\n
 ------ "${g}"Jawbreaker"$n" --------------------------------------------\n
 ----\n
@@ -24640,7 +24578,6 @@ x_jawbreaker : check "${1=12}>0 && $1<20 && ${2=13}>0 && $2<20 && ${3=5}>0 && $3
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' to exit.\n
 ----\n
 --------------------------------------------------------------"
-  v -
 
   # Init images and variables.
   $1,$2 nm. board rand[board] 1,$3 round[board] 1
@@ -24754,7 +24691,7 @@ x_jawbreaker : check "${1=12}>0 && $1<20 && ${2=13}>0 && $2<20 && ${3=5}>0 && $3
 
   # End properly.
   rm[board,undo,balls,back,visu]
-  w 0 v +
+  w 0
 
 _x_jawbreaker_ball :
   mwh={min(w,h)}
@@ -24768,7 +24705,7 @@ _x_jawbreaker_ball :
 #@cli x_landscape
 #@cli : Launch the virtual landscape demo.
 x_landscape : check_display
-  v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
+  use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r
   e[] "\n
 ------ "${g}"Virtual landscape"$n" -------------------------------------\n
 ----\n
@@ -24779,7 +24716,7 @@ x_landscape : check_display
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' to exit.\n
 ----\n
 --------------------------------------------------------------"
-  v - l[]
+  l[]
   W=150 H=350
 
   # Generate global map + colors.
@@ -24856,12 +24793,12 @@ x_landscape : check_display
     if {*,CTRLLEFT}" && "{*,D} w[] 900,600 elif {*,CTRLLEFT}" && "{*,C} w[] 600,400 fi
     wait 20
   while {*}" && "!{*,ESC}" && "!{*,Q}
-  rm w 0 endl v +
+  rm w 0 endl
 
 #@cli x_life
 #@cli : Launch the game of life.
 x_life : check_display
-  v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
+  use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r
   e[] "\n
 ------ "${g}"The game of life"$n" --------------------------------------\n
 ----\n
@@ -24877,7 +24814,7 @@ x_life : check_display
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' to exit.\n
 ----\n
 --------------------------------------------------------------"
-  v -
+
   i[0] 90,90,1,1,0                                             # Image[0] = game state.
   i[1] [0] f[1] 0                                              # Image[1] = generation counter.
   i[2] 400,400,1,3                                             # Image[2] = visualization.
@@ -24945,12 +24882,12 @@ x_life : check_display
   while {*}" && "!{*,ESC}" && "!{*,Q}
 
   # End game and quit properly.
-  rm[0-3] w 0 v +
+  rm[0-3] w 0
 
 #@cli x_light
 #@cli : Launch the light effect demo.
 x_light : check_display
-  v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
+  use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r
   e[] "\n
 ------ "${g}"Light effect"$n" ------------------------\n
 ----\n
@@ -24961,7 +24898,6 @@ x_light : check_display
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' to exit.\n
 ----\n
 -------------------------------------------"
-  v -
 
   # Create warping and color images.
   0 t. "    G\47MIC\nLight effect",0,0,80,1,255 expand_xy. 15,0 b. 3
@@ -25003,12 +24939,12 @@ x_light : check_display
     if {*,CTRLLEFT}" && "{*,D} w[] {3*w},{3*h} elif {*,CTRLLEFT}" && "{*,C} w[] {1.5*w},{1.5*h} fi
     rm. if {*,x}>=0" && "!{*,b} wait else wait 20 fi
   while {*}" && "!{*,ESC}" && "!{*,Q}
-  w[] 0 rm[-3--1] v +
+  w[] 0 rm[-3--1]
 
 #@cli x_mandelbrot : _julia={ 0 | 1 },_c0r,_c0i
 #@cli : Launch Mandelbrot/Julia explorer.
 x_mandelbrot : skip ${1=0},${2=0.317},${3=0.03} check_display
-  v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
+  use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r
   e[] "\n
 ------ "${g}"Mandelbrot/Julia explorer"$n" -----------------\n
 ----\n
@@ -25020,7 +24956,6 @@ x_mandelbrot : skip ${1=0},${2=0.317},${3=0.03} check_display
 --------------------------------------------------"
 
   # Init variables and display.
-  v -
   rm w 512,512,0 _x_mandelbrot_coords $1 _x_mandelbrot_palette
 
   # Start event loop.
@@ -25043,11 +24978,11 @@ x_mandelbrot : skip ${1=0},${2=0.317},${3=0.03} check_display
     fi
     rm.                                                                     # Delete latest rendering.
     if {*,C}                                                                # If 'C' key has been pressed.
-      if $1 v + e[0--4] "Julia set, at c = ("{0,@0-1}")-("{0,@2-3}"), with c0 = ($2,$3)." v -
-      else v + e[0--4] "Mandelbrot set, at c = ("{0,@0-1}")-("{0,@2-3}")." v -
+      if $1 e[0--4] "Julia set, at c = ("{0,@0-1}")-("{0,@2-3}"), with c0 = ($2,$3)."
+      else e[0--4] "Mandelbrot set, at c = ("{0,@0-1}")-("{0,@2-3}")."
       fi
     fi
-    if !{*}" || "{*,ESC}" || "{*,Q} rm w 0 v + return fi
+    if !{*}" || "{*,ESC}" || "{*,Q} rm w 0 return fi
     wait -1
   while 1
 
@@ -25066,7 +25001,7 @@ _x_mandelbrot_palette :
 #@cli : 'colorspace_channel' (e.g. 'hsv_h' for the hue).
 #@cli : Default values: 'colorspace=all', 'spatial_tolerance=5' and 'color_tolerance=5'.
 x_mask_color : check "${2=5}>=0 && ${3=5}>=0" skip ${1=all} check_display
-  v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
+  use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r
   e[^-1] "Interactively create color mask for image$?, with color space $1, spatial tolerance $2 and
           color tolerance $3."
   e[] "\n
@@ -25082,7 +25017,7 @@ x_mask_color : check "${2=5}>=0 && ${3=5}>=0" skip ${1=all} check_display
 ---- Keys '"${c}"ESC"$n"', '"${c}"Q"$n"' or '"${c}"ENTER"$n"' exit the interactive window.\n
 ----\n
 ----------------------------------------------------------------------------------------------------"
-  v - l[] _ac_$1 onfail error[0--3] "Command '$0' : Invalid colorspace '$*'." endl
+  l[] _ac_$1 onfail error[0--3] "Command '$0' : Invalid colorspace '$*'." endl
   m _ac_forward:$_f
   repeat $! l[$>] slices 0 basename {0,n} nm=${}
     wh=${fitscreen\ {[w,h]},1,128,1024}
@@ -25158,7 +25093,6 @@ x_mask_color : check "${2=5}>=0 && ${3=5}>=0" skip ${1=all} check_display
 
   endl done
   uncommand _ac_forward
-  v +
 
 _x_mask_color : # Estimate color mask image.
   100%,100%
@@ -25215,7 +25149,7 @@ _x_mask_color : # Estimate color mask image.
 #@cli x_metaballs3d
 #@cli : Launch the 3D metaballs demo.
 x_metaballs3d : check_display
-  v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
+  use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r
   e[] "\n
 ------ "${g}"3D metaballs"$n" ---------------------------------------\n
 ----\n
@@ -25225,7 +25159,7 @@ x_metaballs3d : check_display
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' to exit.\n
 ----\n
 -----------------------------------------------------------"
-  v - l[]
+  l[]
   100,100 noise. 100,1 plasma. 1,0,10 r. 512,320,1,3 n. 0,1 b. 4,0 n. 0,255
   mix_channels. (0.7,0,0;0,0.9,0;0,0,1.2) c. 0,255 l3d
   0
@@ -25256,12 +25190,12 @@ x_metaballs3d : check_display
     rm[-3--1] wait 20
     if {*,b}" || "{*,SPACE} mode={($mode+if({*,b}&2,-1,1))%6} wait -1 rm[1] i[1] 0 fi
   while {*}" && "!{*,ESC}" && "!{*,Q}
-  rm w 0 endl v +
+  rm w 0 endl
 
 #@cli x_minesweeper : 8<=_width=<20,8<=_height<=20
 #@cli : Launch the Minesweeper game.
 x_minesweeper : check "${1=20}>=8 && $1<=30 && ${2=$1}>=8 && $2<=30" check_display
-  v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
+  use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r
   e[] "\n
 ------ "${g}"Minesweeper"$n" -------------------------------------------\n
 ----\n
@@ -25274,7 +25208,7 @@ x_minesweeper : check "${1=20}>=8 && $1<=30 && ${2=$1}>=8 && $2<=30" check_displ
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' to exit.\n
 ----\n
 --------------------------------------------------------------\n"
-  v -
+
   # Generate random mine field and player board.
   # Labels : 0=mine, 1=empty, 2='1-near', 3='2-near', ..., 9='8-near', 10=still unknown.
   $1,$2 noise. 30,2 ==. 1 nb_mines={is} (1,1,1;1,0,1;1,1,1) +convolve.. .,0 rm.. +. 1 ==.. 0 *[-2,-1] nm. field
@@ -25353,12 +25287,12 @@ x_minesweeper : check "${1=20}>=8 && $1<=30 && ${2=$1}>=8 && $2<=30" check_displ
 
     if $nb_mines==$nb_flags\ &&\ {board,iM}!=11 succeeded=1 fi  # Check if board is cleared.
   while {*}" && "!{*,ESC}" && "!{*,Q}
-  w 0 v +
+  w 0
 
 #@cli x_minimal_path
 #@cli : Launch the minimal path demo.
 x_minimal_path : check_display
-  v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
+  use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r
   e[] "\n
 ------ "${g}"Minimal path"$n" ------------------------------------------\n
 ----\n
@@ -25369,7 +25303,7 @@ x_minimal_path : check_display
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' to exit.\n
 ----\n
 --------------------------------------------------------------"
-  v -
+
   if !$! sp ? fi
   n 0,200 round 1
   repeat $! l[$>]
@@ -25417,14 +25351,14 @@ x_minimal_path : check_display
       while {*}" && "!{*,ESC}" && "!{*,Q}
     fi
     rm[1] w 0
-  endl done v +
+  endl done
 
 #@cli x_morph : _nb_frames>=2,_preview_fidelity={ 0=coarsest | 1=coarse | 2=normal | 3=fine | 4=finest }
 #@cli : Launch the interactive image morpher.
 #@cli : Default values: 'nb_frames=16' and 'preview_fidelity=3'.
 x_morph : check "isint(${1=16}) && isint(${2=3}) && $2>=0 && $2<=4" check_display
   if $!<2 error[0--3] "Command '$0': Requires at least two input images!" return fi
-  v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r b=$_gmic_b v +
+  use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r b=$_gmic_b
   e[] "\n
 ------ "${g}"Interactive image morpher"$n" ---------------------------\n
 ----\n
@@ -25445,7 +25379,7 @@ x_morph : check "isint(${1=16}) && isint(${2=3}) && $2>=0 && $2<=4" check_displa
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"': Process fullres and exit.\n
 ----\n
 -----------------------------------------------------------"
-  v -
+
   m "rmn : nmd $\"*\" rm[${}]"
   offset=0
   radius_keypoints=3
@@ -25599,12 +25533,12 @@ x_morph : check "isint(${1=16}) && isint(${2=3}) && $2>=0 && $2<=4" check_displa
     done
     nm. $nm1 k[-$1--1]
     offset+={$!-2}
-  endl done w0 0 w1 0 uncommand rmn v +
+  endl done w0 0 w1 0 uncommand rmn
 
 #@cli x_pacman
 #@cli : Launch pacman game.
 x_pacman : check_display
-  v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
+  use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r
   e[] "\n
 ------ "${g}"Pacman"$n" -----------------------------------------------\n
 ----\n
@@ -25625,7 +25559,7 @@ x_pacman : check_display
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' to exit.\n
 ----\n
 --------------------------------------------------------------"
-  v - l[]
+  l[]
 
   # Initialize characters gfx.
   m "_pacman_ghost_base_gfx : 31,19 circle. 15,15,15,1,1 31,12,1,1,'y<4+8*abs(cos(x*0.3+0.25*pi*$""1))' a[-2,-1] y"
@@ -25823,7 +25757,7 @@ x_pacman : check_display
     fi
     rm[visu,level_N,levelm_N]
   while $lives
-  rm w 0 endl v +
+  rm w 0 endl
 
 # The functions below create the various sprite gfx.
 _pacman_ghost_standard_gfx :
@@ -25914,7 +25848,7 @@ _pacman_map_level6 :
 #@cli x_paint
 #@cli : Launch the interactive painter.
 x_paint : check_display
-  v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
+  use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r
   e[] "\n
 ------ "${g}"Interactive painter"$n" -----------------------\n
 ----\n
@@ -25927,11 +25861,11 @@ x_paint : check_display
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' to exit.\n
 ----\n
 --------------------------------------------------"
-  v - to_rgb
+  to_rgb
   if !$! i[0] 512,512,1,3,255 nm[0] "[New image]" else k[0] fi
   1 # Brush image [-1]
   parallel "_x_paint[]","w[] 400,320,0,Palette x_select_color[] __color,0,0,0" k[0]
-  v +
+
 
 _x_paint :
 
@@ -26039,7 +25973,7 @@ _x_paint :
 #@cli x_plasma
 #@cli : Launch the plasma effect demo.
 x_plasma : check_display
-  v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
+  use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r
   e[] "\n
 ------ "${g}"Plasma effect"$n" ----------------------\n
 ----\n
@@ -26048,7 +25982,7 @@ x_plasma : check_display
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' to exit.\n
 ----\n
 -------------------------------------------"
-  v - l[]
+  l[]
 
   # Init plasma backgrounds.
   N=8
@@ -26099,12 +26033,12 @@ x_plasma : check_display
     if {*,CTRLLEFT}" && "{*,D} w[] {3*w},{3*h} elif {*,CTRLLEFT}" && "{*,C} w[] {1.5*w},{1.5*h} fi
     rm. wait 20
   while {*}" && "!{*,ESC}" && "!{*,Q}
-  rm[{-2*$N-2}--1] w[] 0 endl v +
+  rm[{-2*$N-2}--1] w[] 0 endl
 
 #@cli x_quantize_rgb : _nbcolors>=2
 #@cli : Launch the RGB color quantization demo.
 x_quantize_rgb : check "isint(${1=16}) && $1>1" check_display
-  v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
+  use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r
   e[] "\n
 ------ "${g}"RGB Quantization"$n" --------------------------------------\n
 ----\n
@@ -26126,7 +26060,7 @@ x_quantize_rgb : check "isint(${1=16}) && $1>1" check_display
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' to exit.\n
 ----\n
 --------------------------------------------------------------"
-  v -
+
   if !$! sp ? fi
   k[0] to_rgb if h>300 r2dy 300 round 1 fi nm. img        # Resize input image if necessary.
   +r {w*h},1,1,3,-1 r. {min(w,8192)},1,1,3 nm. colors     # Get reduced set of image colors.
@@ -26254,7 +26188,7 @@ x_quantize_rgb : check "isint(${1=16}) && $1>1" check_display
     fi
 
   while {*}" && "!{*,Q}" && "!{*,ESC}
-  rm w 0 v +
+  rm w 0
 
  _x_quantize_rgb_3d :
   if $obj3d rm[obj3d] fi
@@ -26270,7 +26204,7 @@ _x_quantize_rgb_text :
 #@cli x_reflection3d
 #@cli : Launch the 3D reflection demo.
 x_reflection3d : check_display
-  v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
+  use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r
   e[] "\n
 ------ "${g}"3D reflection"$n" ----------------------\n
 ----\n
@@ -26279,7 +26213,6 @@ x_reflection3d : check_display
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' to exit.\n
 ----\n
 -------------------------------------------"
-  v -
 
   # Render background.
   128,256,1,3 rand. 0,255 plasma. 1,100 blur_xy. 30,2
@@ -26329,12 +26262,12 @@ x_reflection3d : check_display
     r3d... -1,0.3,0.8,{max(0.005,$|-$tic)*100}
     wait 20
   while {*}" && "!{*,ESC}" && "!{*,Q}
-  rm[-5--1] w[] 0 v +
+  rm[-5--1] w[] 0
 
 #@cli x_rubber3d
 #@cli : Launch the 3D rubber object demo.
 x_rubber3d : check_display
-  v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
+  use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r
   e[] "\n
 ------ "${g}"3D rubber object"$n" -------------------\n
 ----\n
@@ -26343,7 +26276,7 @@ x_rubber3d : check_display
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' to exit.\n
 ----\n
 -------------------------------------------"
-  v - rm
+  rm
   sphere3d 150,0 torus3d 70,15 cylinder3d 20,40
   col3d... 200,200,200,0.3 col3d.. 128,200,76 col3d. 200,128,76
   c3d[-3--1] r3d. 1,0,0,70 +3d[-3--1] +3d. 10,-8,20 *3d. 1.5
@@ -26364,14 +26297,14 @@ x_rubber3d : check_display
     sh[2] 2 -. 1 &. {{1,d}-1} rm.
     frame={($frame-1)%{1,d}}
   while {*}" && "!{*,ESC}" && "!{*,Q}
-  rm w 0 v +
+  rm w 0
 
 #@cli x_segment : _max_resolution={ 0 | >=128 }
 #@cli : Segment foreground from background in selected opaque RGB images, interactively.
 #@cli : Return RGBA images with binary alpha-channels.
 #@cli : Default value: 'max_resolution=1024'.
 x_segment : check "${1=1024}==0 || $1>=128" check_display
-  v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
+  use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r
   e[^-1] "Extract foreground from background in image$? interactively, with maximum resolution $1."
   e[] "\n
 ----------------------------------------------------------------------------------------------------\n
@@ -26394,7 +26327,7 @@ x_segment : check "${1=1024}==0 || $1>=128" check_display
 ---- Keys '"${c}"ESC"$n"', '"${c}"Q"$n"' or '"${c}"ENTER"$n"' exit the interactive window.\n
 ----\n
 ----------------------------------------------------------------------------------------------------"
-  v - repeat $! l[$>]
+  repeat $! l[$>]
 
     # Init variables and images.
     name={0,n} title={0,b} if narg({0,x}) title=$title.{0,x} fi
@@ -26585,7 +26518,7 @@ x_segment : check "${1=1024}==0 || $1>=128" check_display
 
   endl done
   u $status   # Return control points of last image.
-  w 0 v +
+  w 0
 
 # Compute potential function.
 _x_segment :
@@ -26599,11 +26532,11 @@ _x_segment :
 #@cli : Its value specifies the initial selected color. Assigning '-1' to it forces the interactive window to close.
 #@cli : Default value: 'variable_name=xsc_variable'.
 x_select_color : skip ${1=xsc_variable} check_display
-  v - rm
+  rm
   n={narg($$1)} if !$n $1=0,0,0 fi
   rgba_mode={$n>=4} R={arg(1,$$1)} G={arg(2,$$1)} B={arg(3,$$1)} A={if($rgba_mode,arg(4,$$1),255)}
-  v + e[^-1] "Open "${arg\ 1+$rgba_mode,RGB,RGBA}" color selector widget, with variable '$1' and starting color "\
-             ($$1)"." v -
+  e[^-1] "Open "${arg\ 1+$rgba_mode,RGB,RGBA}" color selector widget, with variable '$1' and starting color "\
+             ($$1)"."
   if !{*} w[] {400+24*$rgba_mode},400,0,"Select a color" fi
   update_view=1 is_sv=0 is_h=0 is_a=0 colordb=0 is_thread_variable={arg(1,{'$1'})==_'_'" && "arg(2,{'$1'})==_'_'}
 
@@ -26748,7 +26681,6 @@ x_select_color : skip ${1=xsc_variable} check_display
   rm w 0
   if $rgba_mode u $R,$G,$B,$A else u $R,$G,$B fi
   _xsc_old=${}
-  v +
 
 #@cli x_select_function1d : _variable_name,_background_curve_R,_background_curve_G,_background_curve_B
 #@cli : Open an interactive window, where the user can defined its own 1D function.
@@ -26761,7 +26693,6 @@ x_select_color : skip ${1=xsc_variable} check_display
 # 'background_curve_G=background_curve_B=background_curve_T'.
 x_select_function1d : skip ${1=xsf_variable},${2=220},${3=$2},${4=$2} check_display
   e[^-1] "Open 1D function widget, with variable name '$1'."
-  v -
   if $! k[0] fi
   is_additional_data=$!
   if !{*} w[] 400,400,0,"Create a 1D function" fi
@@ -26873,7 +26804,6 @@ x_select_function1d : skip ${1=xsf_variable},${2=220},${3=$2},${4=$2} check_disp
   while {*}" && "!{*,ESC}" && "!{*,Q}
   w[] 0 u {points,^}
   if $is_additional_data rm[^0] else rm fi
-  v +
 
 #@cli x_select_palette : _variable_name,_number_of_columns={ 0=auto | >0 }
 #@cli : Open a RGB or RGBA color selector widget from a palette.
@@ -26884,10 +26814,10 @@ x_select_function1d : skip ${1=xsf_variable},${2=220},${3=$2},${4=$2} check_disp
 #@cli : Default values: 'variable_name=xsp_variable' and 'number_of_columns=2'.
 x_select_palette : skip ${1=xsp_variable},${2=0} check_display
   if !$! error[0--3] "Command '$0': Missing specified palette image." fi
-  v - k[0] +r {w*h*d},1,1,{s},-1 to_color. rgba_mode={s==4} to_rgba. nm. palette v +
+  k[0] +r {w*h*d},1,1,{s},-1 to_color. rgba_mode={s==4} to_rgba. nm. palette
   e[^-1] "Open "${arg\ 1+$rgba_mode,RGB,RGBA}" color selector widget for palette$?, with variable name '$1'."
-  v -
-  if w>1024 v + error[0--3] "Command '$0': Too much colors ("{w}") in selected palette." fi
+
+  if w>1024 error[0--3] "Command '$0': Too much colors ("{w}") in selected palette." fi
   if !{*} w[] 400,400,0,0,-1,-1,"Palette: "{0,b} fi
 
   selected=-1 oselected=-1
@@ -26976,12 +26906,11 @@ x_select_palette : skip ${1=xsp_variable},${2=0} check_display
   while {*}" && "!{*,ESC}" && "!{*,Q}
   w 0 k[0]
   if $selected>=0 if $rgba_mode u $R,$G,$B,$A else u $R,$G,$B fi else u -1 fi
-  v +
 
 #@cli x_shadebobs
 #@cli : Launch the shade bobs demo.
 x_shadebobs : check_display
-  v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
+  use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r
   e[] "\n
 ------ "${g}"Shade bobs"$n" -------------------------------\n
 ----\n
@@ -26990,7 +26919,7 @@ x_shadebobs : check_display
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' to exit.\n
 ----\n
 -------------------------------------------------"
-  v - rm t=100 w 512,512,0,"[G"{`39`}"MIC] Shade Bobs"
+  rm t=100 w 512,512,0,"[G"{`39`}"MIC] Shade Bobs"
 
   # Start animation loop.
   do
@@ -27020,12 +26949,12 @@ x_shadebobs : check_display
     &[img] 255 +map[img] [colormap] w. rm. wait 20
     if {*,CTRLLEFT}" && "{*,D} w[] 1024,1024 elif {*,CTRLLEFT}" && "{*,C} w[] 512,512 fi
   while {*}" && "!{*,ESC}" && "!{*,Q}
-  rm w 0 v +
+  rm w 0
 
 #@cli x_spline
 #@cli : Launch spline curve editor.
 x_spline : check_display
-  v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
+  use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r
   e[] "\n
 ------ "${g}"Spline curve editor"$n" --------------------------\n
 ----\n
@@ -27043,7 +26972,6 @@ x_spline : check_display
 -----------------------------------------------------"
 
   # Init display and variables.
-  v -
   if $! a x n 0,255 to_rgb else (0;0^0;128^0;0) r. 512,512,1,3,3 nm. "[G"{`39`}"MIC] Spline Editor" fi
   w[0] {0,w},{0,h},0,0,{n} r[0] {*,w},{*,h},1,3,1
   i[1] 1         # Point coordinates
@@ -27139,19 +27067,19 @@ x_spline : check_display
   flood. 0,0,0,0,0,1,0
 
   # Exit properly.
-  rm[0,1] w 0 v +
+  rm[0,1] w 0
 
 #@cli x_starfield3d
 #@cli : Launch the 3D starfield demo.
 x_starfield3d : check_display
-  v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
+  use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r
   e[] "\n
 ------ "${g}"3D starfield"$n" ---------------------------------------\n
 ----\n
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' to exit.\n
 ----\n
 -----------------------------------------------------------"
-  v - l[]
+  l[]
     ({'G\47MIC'}) s x
     x=0 N=$! repeat $N 0 t. {$>,t},0,0,48,1,1 x$>=$x y$>=0 z$>={-3200-150*$>} x={$x+w+8} done k[50%--1]
     expand_xy 6,0 dilate_circ 5 b 0.5 expand_z 1,0 isosurface3d 10% *3d 1,1,5 rv3d
@@ -27199,12 +27127,12 @@ x_starfield3d : check_display
       if !$t x=0 repeat 5 z$>={-3200-150*$>} done fi
 
     while {*}" && "!{*,ESC}" && "!{*,Q}
-    w[] 0 rm endl v +
+    w[] 0 rm endl
 
 #@cli x_tetris
 #@cli : Launch tetris game.
 x_tetris : check_display
-  v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
+  use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r
   e[] "\n
 ------ "${g}"Tetris"$n" --------------------------------------------\n
 ----\n
@@ -27215,7 +27143,7 @@ x_tetris : check_display
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' to exit.\n
 ----\n
 ----------------------------------------------------------"
-  v - rm
+  rm
 
   # Init board and triominos shapes.
   4,1,1,1,1,1,1,1
@@ -27316,13 +27244,13 @@ x_tetris : check_display
     fi
 
   while {*}" && "!{*,ESC}" && "!{*,Q}
-  rm w 0 v +
+  rm w 0
 
 #@cli x_threshold
 #@cli : Threshold selected images interactively.
 x_threshold :
   e[^-1] "Threshold image"$_gmic_s" interactively."
-  v - repeat $! l[$>]
+  repeat $! l[$>]
     wsiz0=${"fitscreen ."}
     value=-1
     w[] $wsiz0,0,"[G'MIC] "{n}" - Interactive threshold"
@@ -27363,12 +27291,12 @@ x_threshold :
       fi
     done
     w[] 0 rm. u $value% ge ${}
- endl done v +
+ endl done
 
 #@cli x_tictactoe
 #@cli : Launch tic-tac-toe game.
 x_tictactoe : check_display
-  v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
+  use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r
   e[] "\n
 ------ "${g}"Tic-Tac-Toe game"$n" -----------------\n
 ----\n
@@ -27376,7 +27304,6 @@ x_tictactoe : check_display
 ---- symbols. Close window to exit game.\n
 ----\n
 -----------------------------------------"
-  v -                          # Become quiet.
 
   # Allocate variables.
   message=0                    # [-7] : State message.
@@ -27400,7 +27327,7 @@ x_tictactoe : check_display
     # Select position by the user.
     do # Enter event loop.
       w[] {w},{h},0,"[G"{`39`}"MIC] "$message wait # Wait for events and force window size if necessary.
-      if !{*}" || "{*,ESC}" || "{*,Q} w[] 0 rm v + return fi # Quit properly if window has been closed.
+      if !{*}" || "{*,ESC}" || "{*,Q} w[] 0 rm return fi # Quit properly if window has been closed.
       if {*,b}&1" && "{*,x}>20" && "{*,y}>20" && "{*,x}<400" && "{*,y}<400 # If mouse button pressed on the board area.
         tmp3={int(({*,x}-15)/130)}                                           # X of the selected position (0,1 or 2).
         tmp2={int(({*,y}-15)/130)}                                           # Y of the selected position (0,1 or 2).
@@ -27434,7 +27361,7 @@ x_tictactoe : check_display
         do wait
           if {*} w[] {*,w},{*,h} fi
         while {*}" && "!{*,ESC}" && "!{*,Q}                                # Wait for the window to be closed.
-        rm w[] 0 v + return                                               # And return properly.
+        rm w[] 0 return                                               # And return properly.
       fi
     done                                                                     # Go on until all configurations checked.
     rm.                                                                      # Delete winning configuration data.
@@ -27448,7 +27375,7 @@ x_tictactoe : check_display
   do wait
     if {*} w[] {*,w},{*,h} fi
   while {*}" && "!{*,ESC}" && "!{*,Q}                                    # Wait for the window to be closed.
-  w[] 0 rm v +                                                           # Return properly.
+  w[] 0 rm                                                           # Return properly.
 
 # Generate Tic-Tac-Toe graphics.
 _x_tictactoe : # Apply a hand-drawing effect.
@@ -27495,7 +27422,7 @@ _x_tictactoe6 : # Generate a +- diagonal stroke and his mask.
 x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2 && isint(${3=0}) && $3>=0 &&
                 isint(${4=1}) && $4>=0 && $4<=4 && ${6=0.5}>=0 && $6<=1" skip ${5=} check_display
   if !$! error[0--3] "Command '$0': Requires at least one input image!" return fi
-  v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
+  use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r
   e[] "\n
 ------ "${g}"Interactive image warper"$n" -----------------------------\n
 ----\n
@@ -27508,7 +27435,7 @@ x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2 && isint(${3=0
 ---- Keys '"${c}"ESC"$n"', '"${c}"ENTER"$n"' or '"${c}"Q"$n"': Process fullres and exit.\n
 ----\n
 -------------------------------------------------------------"
-  v -
+
   if ${"is_image_arg $5"} pass$5 store. background fi
   m "rmn : nmd $\"*\" rm[${}]"
   radius_keypoints=4
@@ -27659,7 +27586,7 @@ x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2 && isint(${3=0
     k[img,keypoints]
     _x_warp_rbf[keypoints] {img,[w,h]} +. '[x,y]'
     warp[img] .,0,2,3 rm. nm $nm
-  endl done c 0,255 w 0 uncommand rmn v +
+  endl done c 0,255 w 0 uncommand rmn
 
 # Generate 2d warping field from set of keypoints, using RBF reconstruction.
 # $1,$2 = width,height
@@ -27685,7 +27612,7 @@ _x_warp_rbf :
 #@cli x_waves
 #@cli : Launch the image waves demo.
 x_waves : check_display
-  v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
+  use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r
   e[] "\n
 ------ "${g}"Image waves"$n" --------------------------\n
 ----\n
@@ -27697,7 +27624,7 @@ x_waves : check_display
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' to exit.\n
 ----\n
 ---------------------------------------------"
-  v -
+
   if !$! l[] # Generate fractal image
     200,200 x={-1.06-u*0.1} y={-0.26-u*0.1}
     mandelbrot $x,$y,{$x+0.1},{$y+0.1},256
@@ -27746,13 +27673,13 @@ x_waves : check_display
       endl
     fi
   while {*}" && "!{*,ESC}" && "!{*,Q}
-  rm w 0 v +
+  rm w 0
 
 #@cli x_whirl : _opacity>=0
 #@cli : Launch the fractal whirls demo.
 #@cli : Default values: 'opacity=0.2'.
 x_whirl : check "${1=0.2}>=0" check_display
-  v - use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r v +
+  use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r
   e[] "\n
 ------ "${g}"Fractal whirls"$n" ----------------------------\n
 ----\n
@@ -27761,7 +27688,7 @@ x_whirl : check "${1=0.2}>=0" check_display
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' to exit.\n
 ----\n
 --------------------------------------------------"
-  v -
+
   5,5,1,3 256,256,1,3 [-1] w. 384,384,0,"[G"{`39`}"MIC] Fractal Whirls"
   tangle=0 tzoom=0 xc={(w-{-3,w})/2} yc={(h-{-3,h})/2}
   do
@@ -27773,7 +27700,7 @@ x_whirl : check "${1=0.2}>=0" check_display
     if {*,CTRLLEFT}" && "{*,D} w[] {3*w},{3*h} elif {*,CTRLLEFT}" && "{*,C} w[] {1.5*w},{1.5*h} fi
     wait 20
   while {*}" && "!{*,ESC}" && "!{*,Q}
-  rm[-3,-2] w[] 0 v +
+  rm[-3,-2] w[] 0
 
 #-------------------------------------
 #
@@ -28706,7 +28633,7 @@ gui_download_all_data :
 _gui_download_all_data :
    repeat narg(${_filenames_$1})
      filename=${_prefix_$1}${arg\ 1+$>,${_filenames_$1}}.${_ext_$1}
-     v + e[] "Download "$filename v -
+     e[] "Download "$filename
      if $2" || "!isfile(['{/${-path_cache}$filename}']) l[]
        ${_url_$1}/$filename o ${-path_cache}$filename rm onfail
      endl fi
