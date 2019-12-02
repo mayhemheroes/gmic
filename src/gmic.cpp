@@ -6957,7 +6957,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         // Echo.
-        if (!is_get && is_command_echo) {
+        if (is_command_echo) {
           if (is_verbose) {
             gmic_substitute_args(false);
             name.assign(argument,(unsigned int)std::strlen(argument) + 1);
