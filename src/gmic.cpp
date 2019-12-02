@@ -5064,13 +5064,15 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         is_command_verbose = is_get?false:
           is_command && *item=='v' && (!item[1] || !std::strcmp(item,"verbose")),
         is_command_echo = is_get || is_command_verbose?false:
-          is_command && *command=='e' && (!command[1] || !std::strcmp(command,"echo")),
-        is_command_input = is_get || is_command_verbose || is_command_echo?false:
+        is_command && *command=='e' && (!command[1] || !std::strcmp(command,"echo")),
+        is_command_error = is_get || is_command_verbose?false:
+          is_command && *command=='e' && !std::strcmp(command,"error"),
+        is_command_input = is_get || is_command_verbose || is_command_echo || is_command_error?false:
           is_command && *command=='i' && (!command[1] || !std::strcmp(command,"input")),
-        is_command_check = is_get || is_command_verbose || is_command_echo || is_command_input?false:
-          !std::strcmp(item,"check"),
-        is_command_skip = is_get || is_command_verbose || is_command_echo || is_command_input ||
-          is_command_check?false:!std::strcmp(item,"skip");
+        is_command_check = is_get || is_command_verbose || is_command_echo || is_command_error ||
+          is_command_input?false:!std::strcmp(item,"check"),
+        is_command_skip = is_get || is_command_verbose || is_command_echo || is_command_error ||
+          is_command_input || is_command_check?false:!std::strcmp(item,"skip");
 
       // Check for verbosity command, prior to the first output of a log message.
       bool is_verbose = verbosity>=0 || is_debug, is_verbose_argument = false;
@@ -5100,7 +5102,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       CImg<char> gmic_selection;
       if (is_debug ||
           (verbosity>=0 && !is_command_check && !is_command_skip &&
-           !is_command_echo && !is_command_verbose))
+           !is_command_echo && !is_command_verbose && !is_command_error))
         selection2string(selection,images_names,1,gmic_selection);
 
       if (is_debug) {
@@ -7007,12 +7009,14 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         // Error.
-        if (!is_get && !std::strcmp("error",command)) {
+        if (is_command_error) {
           gmic_substitute_args(false);
           name.assign(argument,(unsigned int)std::strlen(argument) + 1);
           cimg::strunescape(name);
+          ++verbosity;
           if (is_selection) error(true,images,&selection,0,"%s",name.data());
           else error(true,images,0,0,"%s",name.data());
+          --verbosity;
         }
 
         // Invert endianness.
@@ -14397,7 +14401,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           unsigned int count_new = 0, count_replaced = 0;
           std::FILE *const gfile = cimg::fopen(filename,"rb");
 
-          bool is_command_error = false;
+          bool is_add_error = false;
           status.move_to(_status); // Save status because 'add_commands' can change it, with error()
           const int _verbosity = verbosity;
           const bool _is_debug = is_debug;
@@ -14405,11 +14409,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           try {
             add_commands(gfile,add_debug_info?filename:0,&count_new,&count_replaced);
           } catch (...) {
-            is_command_error = true;
+            is_add_error = true;
           }
           verbosity = _verbosity; is_debug = _is_debug;
           _status.move_to(status);
-          if (is_command_error) {
+          if (is_add_error) {
             if (is_network_file)
               error(true,images,0,0,
                     "Command 'input': Unable to load custom command file '%s' from network.",
