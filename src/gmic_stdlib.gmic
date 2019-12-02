@@ -19720,13 +19720,12 @@ watermark_visible : check "${2=0.3}>0 && $2<1 && ${3=53}>0 && ${6=0.5}>=0"
 # text_outline[-1] Mode:\" \"${arg{$>+1}},2,2,23,2,1,255 done" image.jpg testimage2d {w},{h} \
 # ex softdodge,softlight,stamp,subtract,value,vividlight,xor
 blend : skip ${1=alpha},${2=1},${3=1},${4=0}
-  v -
   if ${"is_image_arg $1"}
     n={narg($*)} mode=${arg\ 1+($n>=2),alpha,$2}
-    v + e[^-1] "Blend image$? with "${arg\ 1+$4,base,top}" layer $1, using '"$mode"' mode and opacity $3." v -
-    repeat $! pass$1 l[$>,-1] if $4 rv fi blend $mode,$3 endl done v + return
+    e[^-1] "Blend image$? with "${arg\ 1+$4,base,top}" layer $1, using '"$mode"' mode and opacity $3."
+    repeat $! pass$1 l[$>,-1] if $4 rv fi blend $mode,$3 endl done return
   fi
-  v + e[^-1] "Blend all image$? together, using '$1' mode and opacity $2." v -
+  e[^-1] "Blend all image$? together, using '$1' mode and opacity $2."
   repeat $!-1 l[0,1]
     r[1] [0],[0],[0],100%,0,0,0.5,0.5
     s={"s0 = s#0<3?1:3; s1 = s<3?1:3; max(s0,s1)"} # Target color format (G or RGB).
@@ -19754,7 +19753,7 @@ blend : skip ${1=alpha},${2=1},${3=1},${4=0}
         _blend_$1 j[0] [1],0,0,0,0,{max(0,min(1,$2))} rm[1]
       fi
     fi
-  endl done v +
+  endl done
 
 _blend_alpha :
 _blend_normal :
@@ -19935,19 +19934,19 @@ _blend_xor :
 #@cli : $ image.jpg testimage2d {w},{h} +blend_edges 0.8
 blend_edges : check {$1>=0}
   e[^-1] "Blend image$? using 'edges' mode, with smoothness $1."
-  if $!>1 v - to_rgb r[^0] [0],0,0,0.5,0.5 repeat $! l[$>]
+  if $!>1 to_rgb r[^0] [0],0,0,0.5,0.5 repeat $! l[$>]
     +gradient_norm +. 1 b. $1 n. 1,10 sqr. s.. c *[-4--2] . a[-4--1] c
-  endl done r[^0] [0],0,0,0.5,0.5 + s. c /[-4--2] . rm. a[-3--1] c v + fi
+  endl done r[^0] [0],0,0,0.5,0.5 + s. c /[-4--2] . rm. a[-3--1] c fi
 
 #@cli blend_fade : [fading_shape]
 #@cli : Blend selected images together using specified fading shape.
 #@cli : $ image.jpg testimage2d {w},{h} 100%,100%,1,1,'cos(y/10)' normalize[-1] 0,1 +blend_fade[0,1] [2]
 blend_fade :
   e[^-1] "Blend image$? together using fading pattern $1."
-  v - r ${-max_whds},0
+  r ${-max_whds},0
   pass$1 0 r. [0],[0],[0],100%,1 max. 0 min. {$!-2}
   repeat $!-1 +-. $> abs. -. 1 *. -1 max. 0 *[$>,-1] done rm.
-  + v +
+  +
 
 _fade :
   r.. ...,5 r. ..,3 c. $1%,$2% n. 0,1 j... ..,0,0,0,0,1,. rm[-2,-1]
@@ -19958,21 +19957,20 @@ _fade :
 blend_median :
   e[^-1] "Blend image$? using 'median' mode."
   if $!<2 return fi
-  v - to_colormode 0 r ${-max_whd},100%,0,0,0.5,0.5,0.5
+  to_colormode 0 r ${-max_whd},100%,0,0,0.5,0.5,0.5
   if $!==2 + / 2
   else
     whds={w},{h},{d},{s} r 100%,100%,{d*s},1,-1 a c
     100%,100%,100%,1,"med(I(#0))" k. r $whds,-1
   fi
-  v +
 
 #@cli blend_seamless : _is_mixed_mode={ 0 | 1 },_inner_fading[%]>=0,_outer_fading[%]>=0
 #@cli : Blend selected images using a seamless blending mode (Poisson-based).
 #@cli : Default values: 'is_mixed=0', 'inner_fading=0' and 'outer_fading=100%'.
 blend_seamless : check "${2=0}>=0 && ${3=100%}>=0" skip ${1=0}
-  v - s0="non-mixed" s1="mixed"
-  v + e[^-1] "Blend image$? using seamless mode (Poisson-based), in "${s{$1!=0}}" mode with inner fading $2 and
-              outer fading $3." v -
+  s0="non-mixed" s1="mixed"
+  e[^-1] "Blend image$? using seamless mode (Poisson-based), in "${s{$1!=0}}" mode with inner fading $2 and
+              outer fading $3."
   to_a[^0] r {0,w+32},{0,h+32},1,100%,0,0,0.5,0.5 # Avoid periodic boundaries problems.
 
   if ['$3']!='100%' # With outer fading.
@@ -20027,7 +20025,7 @@ blend_seamless : check "${2=0}>=0 && ${3=100%}>=0" skip ${1=0}
 
     endl done
   fi
-  z 16,16,{w-17},{h-17} v +
+  z 16,16,{w-17},{h-17}
 
 #@cli fade_diamond : 0<=_start<=100,0<=_end<=100
 #@cli : Create diamond fading from selected images.
@@ -20035,9 +20033,9 @@ blend_seamless : check "${2=0}>=0 && ${3=100%}>=0" skip ${1=0}
 #@cli : $ image.jpg testimage2d {w},{h} +fade_diamond 80,85
 fade_diamond : skip ${1=70},${2=90}
   e[^-1] "Create ($1%,$2%) diamond-shaped fading from image$?."
-  v - repeat int($!/2) l[$>,{$>+1}]
+  repeat int($!/2) l[$>,{$>+1}]
     (0,1,0;1,1,1;0,1,0) _fade $1,$2
-  endl done v +
+  endl done
 
 #@cli fade_linear : _angle,0<=_start<=100,0<=_end<=100
 #@cli : Create linear fading from selected images.
@@ -20045,9 +20043,9 @@ fade_diamond : skip ${1=70},${2=90}
 #@cli : $ image.jpg testimage2d {w},{h} +fade_linear 45,48,52
 fade_linear : skip ${1=45},${2=30},${3=70}
   e[^-1] "Create ($2%,$3%) linear fading from image$?, with angle $1 deg."
-  v - repeat int($!/2) l[$>,{$>+1}]
+  repeat int($!/2) l[$>,{$>+1}]
      64,64,1,1,"x*cos($1*pi/180) + y*sin($1*pi/180)" _fade $2,$3
-  endl done v +
+  endl done
 
 #@cli fade_radial : 0<=_start<=100,0<=_end<=100
 #@cli : Create radial fading from selected images.
@@ -20055,9 +20053,9 @@ fade_linear : skip ${1=45},${2=30},${3=70}
 #@cli : $ image.jpg testimage2d {w},{h} +fade_radial 30,70
 fade_radial : skip ${1=30},${2=70}
   e[^-1] "Create ($1%,$2%) radial fading from image$?."
-  v - repeat int($!/2) l[$>,{$>+1}]
+  repeat int($!/2) l[$>,{$>+1}]
     100%,100% =. 1,50%,50% distance. 1 _fade $1,$2
-  endl done v +
+  endl done
 
 #@cli fade_x : 0<=_start<=100,0<=_end<=100
 #@cli : Create horizontal fading from selected images.
@@ -20065,7 +20063,7 @@ fade_radial : skip ${1=30},${2=70}
 #@cli : $ image.jpg testimage2d {w},{h} +fade_x 30,70
 fade_x : skip ${1=30},${2=70}
   e[^-1] "Create ($1%,$2%) horizontal fading from image$?."
-  v - repeat int($!/2) l[$>,{$>+1}] (0,1) _fade $1,$2 endl done v +
+  repeat int($!/2) l[$>,{$>+1}] (0,1) _fade $1,$2 endl done
 
 #@cli fade_y : 0<=_start<=100,0<=_end<=100
 #@cli : Create vertical fading from selected images.
@@ -20073,14 +20071,14 @@ fade_x : skip ${1=30},${2=70}
 #@cli : $ image.jpg testimage2d {w},{h} +fade_y 30,70
 fade_y : skip ${1=30},${2=70}
   e[^-1] "Create ($1%,$2%) vertical fading from image$?."
-  v - repeat int($!/2) l[$>,{$>+1}] (0;1) _fade $1,$2 endl done v +
+  repeat int($!/2) l[$>,{$>+1}] (0;1) _fade $1,$2 endl done
 
 #@cli fade_z : 0<=_start<=100,0<=_end<=100
 #@cli : Create transversal fading from selected images.
 #@cli : Default values: 'start=30' and 'end=70'.
 fade_z : skip ${1=30},${2=70}
   e[^-1] "Create ($1%,$2%) transversal fading from image$?."
-  v - repeat int($!/2) l[$>,{$>+1}] (0/1) _fade $1,$2 endl done v +
+  repeat int($!/2) l[$>,{$>+1}] (0/1) _fade $1,$2 endl done
 
 #@cli sub_alpha : [base_image],_opacity_gain>=1
 #@cli : Compute the minimal alpha-channel difference (opposite of alpha blending) between the selected images
@@ -20090,7 +20088,7 @@ fade_z : skip ${1=30},${2=70}
 #@cli : $ image.jpg testimage2d {w},{h} +sub_alpha[0] [1] display_rgba
 sub_alpha : check "${2=1}>=1 && "${"is_image_arg $1"}
   e[^-1] "Compute minimal alpha-channel difference between image$? and base image $1, with opacity gain $2."
-  v - remove_opacity repeat $! pass$1 0 l[$>,-1]
+  remove_opacity repeat $! pass$1 0 l[$>,-1]
     to_colormode 0 r ${-max_whd},100%,0,0,0.5,0.5  # Normalize image dimensions.
 
     # Estimate minimal alpha-channel.
@@ -20103,7 +20101,7 @@ sub_alpha : check "${2=1}>=1 && "${"is_image_arg $1"}
     # Synthetize alpha-difference image.
     +replace[2] 0,1 /[0,3] +[0,1] *[1] 255 a c
 
-  endl done v +
+  endl done
 
 #---------------------------------------------
 #
@@ -20121,7 +20119,6 @@ animate : skip ${1=30},${2=0},${3=""},${4=10},${5=1},"${6=}"
   if "isnum($1)"
     e[0--3] "Animate image$?, with a delay of $1 ms"${"if $2 u \", in back-and-forth mode\" else u \"\" fi"}.
     if !$! return fi
-    v -
     speed,pause,direction,scale,frame=$1,-1,1,1,0
     is_same_size={"res = 1; s = [ w#0,h#0 ]; for (k = 1, k<l && res, ++k, res = (s==[ w#k,h#k ]))"}
 
@@ -20156,21 +20153,21 @@ animate : skip ${1=30},${2=0},${3=""},${4=10},${5=1},"${6=}"
         wait -1
       fi
 
-    while {*}" && "!{*,Q}" && "!{*,ESC} w 0 v +
+    while {*}" && "!{*,Q}" && "!{*,ESC} w 0
   else
     e[0--3] "Compute animated version of filter '$1', from parameters $2 to $3 with $4 frames."
     if !($5||narg("$6")) return fi
-    v - ($2) ($3) y[-2,-1] x a[-2,-1] y r. 100%,$4,1,1,3 mv. 0 rprogress 0
+    ($2) ($3) y[-2,-1] x a[-2,-1] y r. 100%,$4,1,1,3 mv. 0 rprogress 0
     repeat $!-1,u
-      v + e[] " > Animate image ["$>"]" v -
+      e[] " > Animate image ["$>"]"
       repeat $4 +l[0,1]
         -$1. {0,@{$>*{0,w}}-{($>+1)*{0,w}-1}} rm[0]
         if narg("$6") o ${filename\ "$6",$u,$>} fi
         if !$5 rm fi
         rprogress {100*($>+1)/$4}
-        v + e[] "\r > Animate image ["$u"] : Frame "{$>+1}"/$4    " v -
+        e[] "\r > Animate image ["$u"] : Frame "{$>+1}"/$4    "
       endl done
-    rm[1] done rm[0] v +
+    rm[1] done rm[0]
   fi
 
 #@cli apply_camera : _"command",_camera_index>=0,_skip_frames>=0,_output_filename
@@ -20178,7 +20175,7 @@ animate : skip ${1=30},${2=0},${3=""},${4=10},${5=1},"${6=}"
 #@cli : Default values: 'command=""', 'camera_index=0' (default camera), 'skip_frames=0' and 'output_filename=""'.
 apply_camera : skip "${1=},${4=}" check "${2=0}>=0 && ${3=0}>=0"
   e[^-1] "Apply command '$1' on camera stream ""#$2, with $3 frames skip and output filename '$4'."
-  v - is_ext "$4",avi is_outavi=${}
+  is_ext "$4",avi is_outavi=${}
   l[] i=0 do
     camera $2,1,$3 $1 w. -1,-1,"[G'MIC] Camera ""#$2 ("{w}x{h}")"
     if narg("$4") if $is_outavi z. 0,{w-(w%8)-1} o. "$4",25,mp4v,1 else o. ${filename\ "$4",$i} i+=1 fi fi
@@ -20187,7 +20184,7 @@ apply_camera : skip "${1=},${4=}" check "${2=0}>=0 && ${3=0}>=0"
     if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,C} w[] {{*,w}/1.5},{{*,h}/1.5} wait -1 fi # Decrease window size.
     if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,R} w[] {0,w},{0,h} wait -1 fi             # Reset window size.
     rm.
-  while {*}" && "!{*,ESC}" && "!{*,Q} camera $2,0 endl v +
+  while {*}" && "!{*,ESC}" && "!{*,Q} camera $2,0 endl
 
 #@cli apply_files : "filename_pattern",_"command",_first_frame>=0,_last_frame={ >=0 | -1=last },_frame_step>=1,\
 # _output_filename
@@ -20200,7 +20197,7 @@ apply_camera : skip "${1=},${4=}" check "${2=0}>=0 && ${3=0}>=0"
 apply_files : check "isint(${3=0}) && $3>=0 && isint(${4=-1}) && ($4>=0 || $4==-1) && ${5=1}>=1" skip "${2=},${6=}"
   e[^-1] "Apply command '$2' on input image files '$1', with first frame $3, last frame $4, frame step $5 and
           output filename '$6'.\n"
-  v - files 3,"$1" _N=/{narg(${})-1} arg2var _file,${} _apply_stream[] "${_file{$frame+1}}","$2",${3-5},"$6" v +
+  files 3,"$1" _N=/{narg(${})-1} arg2var _file,${} v + _apply_stream[] "${_file{$frame+1}}","$2",${3-5},"$6" v -
 
 #@cli apply_video : video_filename,_"command",_first_frame>=0,_last_frame={ >=0 | -1=last },_frame_step>=1,\
 # _output_filename
@@ -20212,7 +20209,7 @@ apply_files : check "isint(${3=0}) && $3>=0 && isint(${4=-1}) && ($4>=0 || $4==-
 apply_video : check "isint(${3=0}) && $3>=0 && isint(${4=-1}) && ($4>=0 || $4==-1) && ${5=1}>=1" skip "${2=},${6=}"
   e[^-1] "Apply command '$2' on input video file '$1', with first frame $3, last frame $4, frame step $5 and
           output filename '$6'.\n"
-  v - _N= _apply_stream[] "\"$1\",$frame","$2",${3-5},"$6" v +
+  _N= v + _apply_stream[] "\"$1\",$frame","$2",${3-5},"$6" v -
 
 _apply_stream : skip "${2=},${6=}"
   is_ext "$6",avi is_outavi=${}
@@ -20220,7 +20217,7 @@ _apply_stream : skip "${2=},${6=}"
   do
     l[] $1 onfail go_on=0 endl
     if $go_on
-      v + e[] "\r  > Frame ""#"$frame$_N"        " v -
+      e[] "\r  > Frame ""#"$frame$_N"        "
       frame+=$5
       l $2 onfail error[0--5] "Command 'apply_stream': Specified command errored: "${} endl
       if !$! continue fi
@@ -20250,7 +20247,7 @@ _apply_stream : skip "${2=},${6=}"
 average_files : check "isint(${2=0}) && $2>=0 && isint(${3=-1}) && ($3>=0 || $3==-1) && ${4=1}>=1" skip "${5=}"
   e[^-1] "Average input image files '$1', with first frame $2, last frame $3, frame step $4 and
           output filename '$5'.\n"
-  v - files 3,"$1" _N=/{narg(${})-1} arg2var _file,${} _average_stream[] "${_file{$frame+1}}",${2-4},"$5" v +
+  files 3,"$1" _N=/{narg(${})-1} arg2var _file,${} v + _average_stream[] "${_file{$frame+1}}",${2-4},"$5" v -
 
 #@cli average_video : video_filename,_first_frame>=0,_last_frame={ >=0 | -1=last },_frame_step>=1,_output_filename
 #@cli : Average frames of specified input video file, in a streamed way.
@@ -20261,7 +20258,7 @@ average_files : check "isint(${2=0}) && $2>=0 && isint(${3=-1}) && ($3>=0 || $3=
 average_video : check "isint(${2=0}) && $2>=0 && isint(${3=-1}) && ($3>=0 || $3==-1) && ${4=1}>=1" skip "${5=}"
   e[^-1] "Average frames of input video file '$1', with first frame $2, last frame $3, frame step $4 and
           output filename '$5'.\n"
-  v - _N= _average_stream[] "\"$1\",$frame",${2-4},"$5" v +
+  _N= v + _average_stream[] "\"$1\",$frame",${2-4},"$5" v -
 
 _average_stream : skip "${5=}"
   is_ext "$5",avi is_outavi=${}
@@ -20270,7 +20267,7 @@ _average_stream : skip "${5=}"
   do
     l[] $1 onfail go_on=0 endl
     if $go_on
-      v + e[] "\r  > Frame ""#"$frame$_N"        " v -
+      e[] "\r  > Frame ""#"$frame$_N"        "
       imM={v=[$imM];[min(im,v[0]),max(iM,v[1])]}
       N+=1
       if $!>1 r ${-max_whds} + fi
@@ -20308,7 +20305,7 @@ fade_files : check "isint(${2=10}) && $2>0 && isint(${3=0}) && $3>=0 &&
                     isint(${4=-1}) && ($4>=0 || $4==-1) && ${5=1}>=1" skip "${6=}"
   e[^-1] "Fade input image files '$1', with $2 inner frames, first frame $3, last frame $4, frame step $5 and
           output filename '$6'.\n"
-  v - files 3,"$1" _N=/{narg(${})-1} arg2var _file,${} _fade_stream[] "${_file{$frame+1}}",${2-5},"$6" v +
+  files 3,"$1" _N=/{narg(${})-1} arg2var _file,${} v + _fade_stream[] "${_file{$frame+1}}",${2-5},"$6" v -
 
 #@cli fade_video : video_filename,_nb_inner_frames>0,_first_frame>=0,_last_frame={ >=0 | -1=last },\
 # _frame_step>=1,_output_filename
@@ -20320,7 +20317,7 @@ fade_video : check "isint(${2=10}) && $2>0 && isint(${3=0}) && $3>=0 &&
                     isint(${4=-1}) && ($4>=0 || $4==-1) && ${5=1}>=1" skip "${6=}"
   e[^-1] "Fade frames of input video file '$1', with $2 inner frames, first frame $3, last frame $4, frame step $5 and
           output filename '$6'.\n"
-  v - _N= _fade_stream[] "\"$1\",$frame",${2-5},"$6" v +
+  _N= v + _fade_stream[] "\"$1\",$frame",${2-5},"$6" v -
 
 _fade_stream : skip "${6=}"
   is_ext "$6",avi is_outavi=${}
@@ -20337,7 +20334,7 @@ _fade_stream : skip "${6=}"
     to_colormode. $s r. $w,$h
     repeat $2+2 if $<
       title="[G'MIC] Frame ""#"$pframe" -> ""#"$frame$_N" ("{1+$>}/$2")"
-      v + e[] "\r  - "$title v -
+      e[] "\r  - "$title
       +j[0] [1],0,0,0,0,{$>/($2+1)}
       if narg("$6")
         if $is_outavi z. 0,{w-(w%8)-1} o. "$6",25,mp4v,1 else filename "$6",$i i+=1 o. ${} fi
@@ -20363,19 +20360,18 @@ _fade_stream : skip "${6=}"
 #@cli : Convert several files into a single video file.
 #@cli : Default values: 'output_filename=output.avi', 'fps=25' and 'codec=mp4v'.
 files2video : check "isint(${3=25}) && $3>0" skip "${2=output.avi}",${4=mp4v}
-  v -
   files=${"files \"$1\""} arg2var _file,$files nb_files=${}
   ({'$files'}) if w>128 z. 0,127 s_files={t}... else s_files=$files fi rm.
-  v + e[^-1] "Convert image files '"$s_files"' into frames of output video '$2', with $3 fps and $4 codec.\n" v -
+  e[^-1] "Convert image files '"$s_files"' into frames of output video '$2', with $3 fps and $4 codec.\n"
   repeat $nb_files l[]
     file=${_file{$>+1}}
     _file=${basename\ $file}
-    v + e[] "\r - Image "{1+$>}/$nb_files" ["$_file"] -> [$2]                    " v -
+    e[] "\r - Image "{1+$>}/$nb_files" ["$_file"] -> [$2]                    "
     i $file o "$2",$3,$4,1
     rm
-  onfail v + e[] "\n - Error occurred on input file '"$file"'.\n" v -
+  onfail e[] "\n - Error occurred on input file '"$file"'.\n"
   endl done
-  o $"$2",0,0,0 v +
+  o $"$2",0,0,0
 
 #@cli median_files : "filename_pattern",_first_frame>=0,_last_frame={ >=0 | -1=last },_frame_step>=1,\
 # _frame_rows[%]>=1,_is_fast_approximation={ 0 | 1 }
@@ -20385,14 +20381,14 @@ files2video : check "isint(${3=25}) && $3>0" skip "${2=output.avi}",${4=mp4v}
 # and 'is_fast_approximation=0'.
 median_files : check "isint(${2=0}) && $2>=0 && isint(${3=-1}) && ($3>=0 || $3==-1) &&
                      ${4=1}>=1 && ${5=20%}>0 && isnum(${6=0})"
-  v - s0="fast" s1="precise"
-  v + e[^-1] "Compute median of input image files '$1', with first frame $2, last frame $3, frame step $4,
-              frame rows $5, using "${s{!$6}}" algorithm." v -
+  s0="fast" s1="precise"
+  e[^-1] "Compute median of input image files '$1', with first frame $2, last frame $3, frame step $4,
+              frame rows $5, using "${s{!$6}}" algorithm."
   files 3,"$1" _N=/{narg(${})-1} arg2var _file,${}
   l[]
     ${_file{$frame+1}} nm. res f. 0
-    _median_stream "${_file{$frame+1}}",${2-6}
-  endl v +
+    v + _median_stream "${_file{$frame+1}}",${2-6} v -
+  endl
 
 #@cli median_video : video_filename,_first_frame>=0,_last_frame={ >=0 | -1=last },_frame_step>=1,\
 # _frame_rows[%]>=1,_is_fast_approximation={ 0 | 1 }
@@ -20402,26 +20398,26 @@ median_files : check "isint(${2=0}) && $2>=0 && isint(${3=-1}) && ($3>=0 || $3==
 # and 'is_fast_approximation=1'.
 median_video : check "isint(${2=0}) && $2>=0 && isint(${3=-1}) && ($3>=0 || $3==-1) &&
                       ${4=1}>=1 && ${5=100%}>0 && isnum(${6=1})"
-  v - s0="fast" s1="precise"
-  v + e[^-1] "Compute median frame of input video file '$1', with first frame $2, last frame $3, frame step $4,
-              frame rows $5, using "${s{!$6}}" algorithm." v -
+  s0="fast" s1="precise"
+  e[^-1] "Compute median frame of input video file '$1', with first frame $2, last frame $3, frame step $4,
+              frame rows $5, using "${s{!$6}}" algorithm."
   _N=
   l[]
     "$1",0 nm. res f. 0
-    _median_stream "\"$1\",$frame",${2-6}
-  endl v +
+    v + _median_stream "\"$1\",$frame",${2-6} v -
+  endl
 
 _median_stream :
 
   # Retrieve min/max values of all frames when fast method is used.
   if $6
-    v + e[] "- Retrieve min/max values of all frames.\n" v -
+    e[] "- Retrieve min/max values of all frames.\n"
     frame=$2 go_on=1
     imM=inf,-inf
     do
       l[] $1 onfail go_on=0 endl
       if $go_on
-        v + e[] "\r    > Frame ""#"$frame$_N"        " v -
+        e[] "\r    > Frame ""#"$frame$_N"        "
         imM={v=[$imM];[min(im,v[0]),max(iM,v[1])]}
         if {*}
           title="[G'MIC] Frame ""#"$frame
@@ -20442,7 +20438,7 @@ _median_stream :
   nb_iter={round(h/$drows,1,1)}
   repeat $nb_iter
     row0={$drows*$>} row1={0,min(h,$row0+$drows-1)}
-    v + e[] "- Iteration \#"{$>+1}/$nb_iter": Load rows "$row0-$row1/$h1".\n" v -
+    e[] "- Iteration \#"{$>+1}/$nb_iter": Load rows "$row0-$row1/$h1".\n"
     frame=$2 go_on=1
 
     if $6
@@ -20452,7 +20448,7 @@ _median_stream :
       do
         l[] $1 nm. img onfail go_on=0 endl
         if $img
-          v + e[] "\r    > Frame ""#"$frame$_N"        " v -
+          e[] "\r    > Frame ""#"$frame$_N"        "
           if {*}" && "!$>
             title="[G'MIC] Frame ""#"$frame
             if !narg($wh) wh=${fitscreen[]\ {img,w},{img,h}} w[img] $wh,1,$title
@@ -20485,7 +20481,7 @@ _median_stream :
         do
           l[] $1 nm. img onfail go_on=0 endl
           if $go_on
-            v + e[] "\r    > Frame ""#"$frame$_N"        " v -
+            e[] "\r    > Frame ""#"$frame$_N"        "
             if {*}" && "!$>
               title="[G'MIC] Frame ""#"$frame
               if !narg($wh) wh=${fitscreen[]\ {w},{h}} w. $wh,1,$title
@@ -20496,7 +20492,7 @@ _median_stream :
             frame+=$4
           fi
         while $go_on" && "($3==-1" || "$frame<=$3)
-        v + e[] "\r    > Compute median blending of "$!" frames." v -
+        e[] "\r    > Compute median blending of "$!" frames."
         __median_stream
       endl
     fi
@@ -20507,7 +20503,7 @@ _median_stream :
     rm.
 
   done
-  v + e[] "- Done!" v -
+  e[] "- Done!"
 
 # Median blending optimized to deal with a lot of input frames.
 __median_stream :
@@ -20545,8 +20541,8 @@ __median_stream :
 morph : check "$1>=0 && ${2=0.1}>=0 && ${3=4}>=0"
   e[^-1] "Create morphing sequence between image$?, with $1 inner frames, smoothness $2 and precision $3.\n"
   if !$1 return fi
-  v - r[^0] [0],3 repeat $!-1 nm={$>,n} l[$<,{$<+1}]
-    v + e[] "\r > Morph image "$>" to image "{$>+1}".    " v -
+  r[^0] [0],3 repeat $!-1 nm={$>,n} l[$<,{$<+1}]
+    e[] "\r > Morph image "$>" to image "{$>+1}".    "
     +equalize[0,1] n[-2,-1] 0,255
     +displacement[3] [2],$2,$3 +displacement[2] [3],$2,$3 rm[-4,-3]
     repeat $1+2 if $>&&$<
@@ -20556,7 +20552,7 @@ morph : check "$1>=0 && ${2=0.1}>=0 && ${3=4}>=0"
       +[-2,-1]
     fi done
     rm[2,3] mv[2--1] 1 nm $nm
-  endl done v +
+  endl done
 
 #@cli morph_files : "filename_pattern",_nb_inner_frames>0,_smoothness>=0,_precision>=0,\
 # _first_frame>=0,_last_frame={ >=0 | -1=last },_frame_step>=1,_output_filename
@@ -20570,7 +20566,7 @@ morph_files : check "isint(${2=10}) && $2>0 && ${3=0.1}>=0 && ${4=4}>=0 &&
                      isint(${5=0}) && $5>=0 && isint(${6=-1}) && ($6>=0 || $6==-1) && ${7=1}>=1" skip "${8=}"
   e[^-1] "Morph input image files '$1', with $2 inner frames, smoothness $3, precision $4, first frame $5,
           last frame $6, frame step $7 and output filename '$8'.\n"
-  v - files 3,"$1" _N=/{narg(${})-1} arg2var _file,${} _morph_stream[] "${_file{$frame+1}}",${2-7},"$8" v +
+  files 3,"$1" _N=/{narg(${})-1} arg2var _file,${} _morph_stream[] "${_file{$frame+1}}",${2-7},"$8"
 
 #@cli morph_video : video_filename,_nb_inner_frames>0,_smoothness>=0,_precision>=0,\
 # _first_frame>=0,_last_frame={ >=0 | -1=last },_frame_step>=1,_output_filename
@@ -20584,7 +20580,7 @@ morph_video : check "isint(${2=10}) && $2>0 && ${3=0.1}>=0 && ${4=4}>=0 &&
                      isint(${5=0}) && $5>=0 && isint(${6=-1}) && ($6>=0 || $6==-1) && ${7=1}>=1" skip "${8=}"
   e[^-1] "Morph frames of input video file '$1', with $2 fading frames, smoothness $3, precision $4, first frame $5,
           last frame $6, frame step $7 and output filename '$8'.\n"
-  v - _N= _morph_stream[] "\"$1\",$frame",${2-7},"$8" v +
+  _N= v + _morph_stream[] "\"$1\",$frame",${2-7},"$8" v -
 
 _morph_stream : skip "${8=}"
   is_ext "$8",avi is_outavi=${}
@@ -20600,12 +20596,12 @@ _morph_stream : skip "${8=}"
     if !$go_on break fi
     to_colormode. $s r. $w,$h
     cutvals={[min(im#0,im#1),max(iM#0,iM#1)]}
-    v + e[] "\r  - Frame ""#"$pframe" -> ""#"$frame"            " v -
+    e[] "\r  - Frame ""#"$pframe" -> ""#"$frame"            "
     +equalize[0,1] n[-2,-1] 0,255
     +displacement[3] [2],$3,$4 +displacement[2] [3],$3,$4 rm[-4,-3]
     repeat $2+2 if $<
       title="Frame ""#"$pframe" -> ""#"$frame" ("$>/$2")        "
-      v + e[] "\r  - "$title v -
+      e[] "\r  - "$title
       t={$>/($2+1)} omt={1-$t}
       +*[2] $t +warp[0] .,1,1,1 rm.. *. $omt
       +*[3] {1-$t} +warp[1] .,1,1,1 rm.. *. $t
@@ -20637,11 +20633,11 @@ _morph_stream : skip "${8=}"
 register_nonrigid : check ${is_image_arg\ $1}" && ${2=0.2}>=0 && ${3=5}>0 && ${4=0}>=0"
   e[^-1] "Register source image$? with destination image $1, using non-rigid warp with smoothness $1,
           precision $2 and $3 scale(s)."
-  v - pass$1 0 equalize. n. 0,255
+  pass$1 0 equalize. n. 0,255
   repeat $!-1
     +equalize[$>] n. 0,255 +displacement.. .,$2,$3,$4 rm..
     warp[$>] .,1,1,1 rm.
-  done rm. v +
+  done rm.
 
 #@cli register_rigid : [destination],_smoothness>=0,\
 # _boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }
@@ -20650,22 +20646,22 @@ register_nonrigid : check ${is_image_arg\ $1}" && ${2=0.2}>=0 && ${3=5}>0 && ${4
 #@cli : $ image.jpg +shift 30,20 +register_rigid[0] [1]
 register_rigid : check ${is_image_arg\ $1}" && ${2=1}>=0 && isint(${3=0}) && $3>=0 && $3<=3"
   e[^-1] "Register source image$? with destination image $1, using rigid warp with smoothness $2."
-  v - pass$1 0 equalize. b. $2 n. 0,255
+  pass$1 0 equalize. b. $2 n. 0,255
   repeat $!-1
     +equalize[$>] b. $2 n. 0,255
     +phase_correlation. .. rm..
     shift[$>] {^},0,$3 rm.
-  done rm. v +
+  done rm.
 
 #@cli transition : [transition_shape],nb_added_frames>=0,100>=shading>=0,_single_frame_only={ -1=disabled | >=0 }
 #@cli : Generate a transition sequence between selected images.
 #@cli : Default values: 'shading=0' and 'single_frame_only=-1'.
 #@cli : $ image.jpg +mirror c 100%,100% plasma[-1] 1,1,6 transition[0,1] [2],5
 transition : check ${is_image_arg\ $1}" && $2>=0 && ${3=0}>=0 && $3<=100" skip ${4=-1}
-  v - frame={round($4)} s0=" and shading $3" s1=", shading $3 and single-frame-only "$frame v +
+  frame={round($4)} s0=" and shading $3" s1=", shading $3 and single-frame-only "$frame
   e[^-1] "Create transition sequence between image$? with $2 added frames, transition shape $1"${s{$4>0}}"."
   if $!<2" || "!$2 return fi
-  v - to_colormode 0 r ${-max_whd},100%,0,0,0.5,0.5
+  to_colormode 0 r ${-max_whd},100%,0,0,0.5,0.5
   pass$1 0 norm. r. [0],[0],[0],1,3 n. 0,1 mv. 0
   repeat $!-2 l[0,{$<+1},{$<+2}]
     nm0={1,n}
@@ -20681,7 +20677,7 @@ transition : check ${is_image_arg\ $1}" && $2>=0 && ${3=0}>=0 && $3<=100" skip $
       nm. $nm0\ ""#{1+$>}
     fi done fi
     mv[2] $!
-  endl done rm[0] v +
+  endl done rm[0]
 
 #@cli transition3d : _nb_frames>=2,_nb_xtiles>0,_nb_ytiles>0,_axis_x,_axis_y,_axis_z,_is_antialias={ 0 | 1 }
 #@cli : Create 3D transition sequence between selected consecutive images.
@@ -20693,10 +20689,9 @@ transition3d : check "isint(${1=10}) && $1>=2 && isint(${2=3}) && $2>0 && isint(
                skip ${4=1},${5=1},${6=0},${7=1}
   e[^-1] "Create 3D transition sequence between image$?, with $1 frames, $2x$3 tiles and rotation axis ($4,$5,$6).\n"
   if $!<2 return fi
-  v -
   slices 0 to_rgb r ${-max_whds},3
   off=0 repeat $!-1 l[{$>+$off},{$>+$off+1}]
-    v + e[] "\r > Generate transition from image "$>" to image "{$>+1}".    " v -
+    e[] "\r > Generate transition from image "$>" to image "{$>+1}".    "
 
     # Create 3D rotation vectors.
     $2,$3,1,1,'$4'
@@ -20740,7 +20735,6 @@ transition3d : check "isint(${1=10}) && $1>=2 && isint(${2=3}) && $2>0 && isint(
     nm[1--2] {0,n}
     off+={$1-2}
   endl done
-  v +
 
 #@cli video2files : input_filename,_output_filename,_first_frame>=0,_last_frame={ >=0 | -1=last },_frame_step>=1
 #@cli : Split specified input video file into image files, one for each frame.
@@ -20749,20 +20743,17 @@ transition3d : check "isint(${1=10}) && $1>=2 && isint(${2=3}) && $2>0 && isint(
 video2files : check "isint(${3=0}) && $3>=0 && isint(${4=-1}) && ($4>=0 || $4==-1) && isint(${5=1}) && $5>=1"
               skip ${2="frame.png"}
   e[^-1] "Split input video file '$1' into image frames '$2', with first frame $3, last frame $4, and frame step $5.\n"
-  v -
   frame=$3 stopflag=0
   do l[]
     i "$1",$frame
     if $!
       o ${"filename \"$2\","$frame} rm
-      v + e[] "\r  > Frame ""#"$frame v -
+      e[] "\r  > Frame ""#"$frame
       frame+=$5
     else stopflag=1
     fi
   onfail stopflag=1
   endl while !$stopflag" && "($frame<=$4" || "$4==-1)
-  v +
-
 
 #------------------------------
 #
