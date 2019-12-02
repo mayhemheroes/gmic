@@ -9931,10 +9931,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               unsigned int nposition = 0;
               bool _is_noarg = false;
               CImg<char>::string("").move_to(callstack); // Anonymous scope
-              --verbosity;
               _run(ncommands_line,nposition,images,images_names,images,images_names,variables_sizes,&_is_noarg,
                    argument,&selection);
-              ++verbosity;
               callstack.remove();
 
             } else { // Not found -> Try generic image saver
@@ -14452,9 +14450,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             unsigned int nposition = 0;
             bool _is_noarg = false;
             CImg<char>::string("").move_to(callstack); // Anonymous scope
-            --verbosity;
             _run(ncommands_line,nposition,g_list,g_list_c,images,images_names,variables_sizes,&_is_noarg,argument,0);
-            ++verbosity;
             callstack.remove();
 
           } else { // Not found -> Try generic image loader
