@@ -20848,7 +20848,6 @@ nn_name_output : skip "${2=nn_name_output}"
 #@cli : Add an input module with specified size to the neural network.
 nn_new_input : check ${"is_variable_name $1"}" && isint($2) && $2>0 && isint(${3=1}) && $3>0 && isint(${4=1}) && $4>0"
   e[^-1] "[NN] Add input module '$1' with size ($2,$3,$4)."
-  v -
   name="$1"
   $2,$3,1,$4
   nm. $name
@@ -20857,13 +20856,11 @@ nn_new_input : check ${"is_variable_name $1"}" && isint($2) && $2>0 && isint(${3
   _nn_${name}_height=$3
   _nn_${name}_spectrum=$4
   _nn_${name}_previous=
-  v +
 
 #@cli : nn_new_output : module_name,previous_module_name
 #@cli : Add an output module to the neural network.
 nn_new_output : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
   e[^-1] "[NN] Add output module '$1', linked to previous module '$2'."
-  v -
   name="$1"
   name_previous="$2"
   type_previous=${_nn_${name_previous}_type}
@@ -20884,14 +20881,12 @@ nn_new_output : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
   _nn_${name}_previous=$name_previous
   _nn_${name}_next=
   _nn_${name_previous}_next=$name
-  v +
 
 #@cli nn_new_fullyconnected : module_name,previous_module_name,nb_neurons,activation_function
 #@cli : Add a fully-connected module to the neural network.
 nn_new_fullyconnected : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($3) && $3>0"
                         skip "${4=leakyrelu}"
   e[^-1] "[NN] Add fully-connected module '$1', linked to previous module '$2', with $3 neurons and '$4' activation."
-  v -
   name="$1"
   name_previous="$2"
   type_previous=${_nn_${name_previous}_type}
@@ -20917,14 +20912,12 @@ nn_new_fullyconnected : check ${"is_variable_name $1"}" && "${"is_variable_name 
   _nn_${name}_activation="$4"
   _nn_${name}_previous=$name_previous
   _nn_${name_previous}_next=$name
-  v +
 
 #@cli nn_propagate_batch : module_name,[inputs_zstacked]
 #@cli : Batch propagate specified inputs through the neural network.
 #@cli : Insert image of corresponding network outputs at the end of the list.
 nn_propagate_batch : check ${"is_variable_name $1"}" && "${"is_image_arg $2"}
   e[^-1] "[NN] Batch propapate inputs $2."
-  v -
   name_input=${"nn_name_input $1,$0"}
   name_output=${"nn_name_output $1,$0"}
   width_input=${_nn_${name_input}_width}
@@ -20945,13 +20938,11 @@ nn_propagate_batch : check ${"is_variable_name $1"}" && "${"is_image_arg $2"}
   eval.. ":begin("$_nn_code_begin");"$_nn_code_body # Multi-threaded evaluation
   _nn_code_begin,_nn_code_body=
   rm[-2]
-  v +
 
 #@cli nn_propagate : module_name
 #@cli : Propagate input through the neural network.
 nn_propagate : check ${"is_variable_name $1"}
   e[^-1] "[NN] Propagate input."
-  v -
   name_input=${"nn_name_input $1,$0"}
   name_output=${"nn_name_output $1,$0"}
   _nn_code_begin,_nn_code_body=
@@ -20959,7 +20950,6 @@ nn_propagate : check ${"is_variable_name $1"}
   _nn_code_body.="draw(#"${$name_output}",O_"${_nn_${name_output}_previous}");" # Set output
   eval "begin("$_nn_code_begin");"$_nn_code_body # Single evalutation
   _nn_code_begin,_nn_code_body=
-  v +
 
 # [internal] nn_compile_propagate : module_name
 # Generate code to propagate output from the specified module through the neural network.
@@ -21008,7 +20998,6 @@ nn_compile_propagate_fullyconnected :
 nn_backpropagate_batch : check ${"is_variable_name $1"}" && "${"is_image_arg $2"}" && "${"is_image_arg $3"}" && "\
                                "isbool(${4=0})" skip ${5="mse"}
   e[^-1] "[NN] Batch back-propapate errors from inputs $2 and expected outputs $3."
-  v -
   name_input=${"nn_name_input $1,$0"}
   name_output=${"nn_name_output $1,$0"}
   name_previous=${_nn_${name_output}_previous}
@@ -21060,7 +21049,6 @@ nn_backpropagate_batch : check ${"is_variable_name $1"}" && "${"is_image_arg $2"
   _nn_code_begin,_nn_code_body,_nn_code_end=
   rm[$ind_inputs,$ind_expected]
   u $loss
-  v +
 
 #@cli nn_backpropagate : module_name,[expected_output],_loss_function
 #@cli : Propagate input, then back-propagate output error, through the neural network.
@@ -21068,7 +21056,6 @@ nn_backpropagate_batch : check ${"is_variable_name $1"}" && "${"is_image_arg $2"
 #@cli : Return average loss.
 nn_backpropagate : check ${"is_variable_name $1"}" && "${"is_image_arg $2"} skip ${3="mse"}
   e[^-1] "[NN] Back-propagate error from $2."
-  v -
   name_input=${"nn_name_input $1,$0"}
   name_output=${"nn_name_output $1,$0"}
   name_previous=${_nn_${name_output}_previous}
@@ -21092,7 +21079,7 @@ nn_backpropagate : check ${"is_variable_name $1"}" && "${"is_image_arg $2"} skip
   nn_compile_backpropagate $name_previous
   eval "begin("$_nn_code_begin");"${_nn_code_body}"end("$_nn_code_end");"
   _nn_code_begin,_nn_code_body,_nn_code_end=
-  rm. u $loss v +
+  rm. u $loss
 
 # [internal] nn_compile_backpropagate : module_name
 # Generate code to back-propagate error from the specified module through the neural network.
@@ -21135,7 +21122,6 @@ nn_compile_backpropagate_fullyconnected :
 #@cli : Update neural network weights, after back-propagation of the error.
 nn_update : check ${"is_variable_name $1"}" && ${2=0.001}>0"
   e[^-1] "[NN] Update network weights, with epsilon $2."
-  v -
 
   # Retrieve max(|gradients|).
   name=${"nn_name_input $1"}
@@ -21161,7 +21147,6 @@ nn_update : check ${"is_variable_name $1"}" && ${2=0.001}>0"
     name=${_nn_${name}_next}
     type=${_nn_${name}_type}
   done
-  v +
 
 # [internal] nn_update_input : module_name,epsilon
 # Update weights for an input (actually do nothing)
@@ -21188,13 +21173,12 @@ nn_update_fullyconnected :
 #@cli : Output specified network as a file.
 nn_output : check ${"is_variable_name $1"}
   e[^-1] "[NN] Output network containing module '$1' as file '$2'."
-  v - nn_serialize $1,1 o. raw:"$2",uchar rm. v +
+  nn_serialize $1,1 o. raw:"$2",uchar rm.
 
 #@cli nn_serialize : module_name,_is_compressed={ 0 | 1 }
 #@cli : Serialize network into a single image, optionnally in a compressed form.
 nn_serialize : check ${"is_variable_name $1"}" && isbool(${2=0})"
   e[^-1] "[NN] Serialize network containing module '$1', with"${"s0,s1=out, u ${s$2}"}" compression."
-  v -
   modules=${"nn_list_modules $1"}
   name_input=${"nn_name_input $1"}
   name=$name_input
@@ -21213,7 +21197,6 @@ nn_serialize : check ${"is_variable_name $1"}" && isbool(${2=0})"
     type=${_nn_${name}_type}
   done
   ({'$attributes'}) y. nm. _nn_serialize +serialize[$modules,-1] auto,$2,1 nm. ${name_input}_serialized rm..
-  v +
 
 # [internal] nn_serialize_input : module_name
 # Save attributes of specified input, for serialization purposes.
@@ -21232,19 +21215,17 @@ nn_serialize_fullyconnected :
 #@cli : Unserialize specified selection to retrieve a neural network.
 nn_unserialize :
   e[^-1] "[NN] Unserialize serialized network$?."
-  v -
   repeat $! l[$<]
     unserialize run {t} rm.
   endl done
-  v +
 
 #@cli nn_input : "filename"
 #@cli : Input neural network from file.
 nn_input :
   e[^-1] "[NN] Input neural network from file '$1'."
-  v - l[]
+  l[]
     i raw:"$1",uchar nn_unserialize.
-  endl v +
+  endl
 
 #------------------------------
 #
