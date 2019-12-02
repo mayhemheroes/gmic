@@ -15034,7 +15034,7 @@ transpose :
 # and 'filename=(undefined)'.
 animate3d : skip ${1=640},${2=480},${3=0},${4=1},${5=0},"${7=""}" check ${6=1}>=0
   e[^-1] "Animate 3D object$?, in a $1x$2 window with angle velocities ($3,$4,$5)."
-  v - is_multi={$!>1} repeat $! +l[$>]
+  is_multi={$!>1} repeat $! +l[$>]
     n3d *3d {$6*min($1,$2)/1.5} c3d
     ax=0 ay=0 az=0 frame=0 vfact=1
     do
@@ -15053,7 +15053,7 @@ animate3d : skip ${1=640},${2=480},${3=0},${4=1},${5=0},"${7=""}" check ${6=1}>=
        if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,-C} vfact={1/1.5} fi # Decrease window size.
        if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,-R} vfact=1 fi # Decrease window size.
     while {*}" && "!{*,ESC}" && "!{*,Q} rm w 0
-  endl done v +
+  endl done
 
 #@cli apply_camera3d : pos_x,pos_y,pos_z,target_x,target_y,target_z,up_x,up_y,up_z
 #@cli : Apply 3D camera matrix to selected 3D objects.
@@ -15061,7 +15061,6 @@ animate3d : skip ${1=640},${2=480},${3=0},${4=1},${5=0},"${7=""}" check ${6=1}>=
 apply_camera3d : skip ${4=0},${5=0},${6=0},${7=0},${8=-1},${9=0}
   e[^-1] "Apply 3D camera matrix to 3D object$?, with camera position ($1,$2,$3), target position ($4,$5,$6) and
           up-vector ($7,$8,$9)."
-  v -
   ({$4-$1}^{$5-$2}^{$6-$3})  # f.
   ($7^$8^$9)                 # up.
   orientation[-2,-1]         # f/|f| and up/|up|.
@@ -15070,7 +15069,6 @@ apply_camera3d : skip ${4=0},${5=0},${6=0},${7=0},${8=-1},${9=0}
   rm... y[-3--1] x mv[-2,-1] -3
   a[-3--1] y z. 0,3  # Rotation matrix R.
   -3d[^-1] $1,$2,$3 pose3d[^-1] {^} rm. -3d 0,0,800
-  v +
 
 _cross3d :
   ({$2*$6-$3*$5}^{$3*$4-$1*$6}^{$1*$5-$2*$4}) orientation. y.
@@ -15080,9 +15078,9 @@ _cross3d :
 #@cli : $ torus3d 10,1 +apply_matrix3d {mul(rot(1,0,1,-15),[1,0,0,0,2,0,0,0,8],3)} double3d 0
 apply_matrix3d :
   e[^-1] "Apply 3x3 matrix (${1-3};${4-6};${7-9}) to 3D object$?."
-  v - repeat $! l[$>]
+  repeat $! l[$>]
     nbp={i[6]} sh 8,{8+3*$nbp-1},0,0 r. 3,$nbp,1,1,-1 3,3,1,1,$* transpose. m*[-2,-1] rm.
-  endl done v +
+  endl done
 
 #@cli array3d : size_x>=1,_size_y>=1,_size_z>=1,_offset_x[%],_offset_y[%],_offset_y[%]
 #@cli : Duplicate a 3D object along the X,Y and Z axes.
@@ -15091,7 +15089,7 @@ apply_matrix3d :
 array3d : check "isint($1) && $1>0 && isint(${2=1}) && $2>0 && isint(${3=1}) && $3>0"
   skip ${4=100%},${5=100%},${6=100%}
   e[^-1] "Duplicate 3D object$? along X,Y,Z axes with factors ($1,$2,$3) and offsets ($4,$5,$6)."
-  v - repeat $! l[$>]
+  repeat $! l[$>]
 
     # Retrieve object dimensions.
     +rows 8,{8+3*i[6]} r. 3,{h/3},1,1,-1 s. x,3
@@ -15117,7 +15115,7 @@ array3d : check "isint($1) && $1>0 && isint(${2=1}) && $2>0 && isint(${3=1}) && 
       ++3d. 0,0,{2^$>*$dz} +3d. ..
       if !($3&(2^$>)) rm.. else +3d.. 0,0,$off off+={2^$>*$dz} fi
     done +3d. 0,0,$off +3d
-  endl done v +
+  endl done
 
 #@cli arrow3d : x0,y0,z0,x1,y1,z1,_radius[%]>=0,_head_length[%]>=0,_head_radius[%]>=0
 #@cli : Input 3D arrow with specified starting and ending 3D points.
@@ -15125,7 +15123,6 @@ array3d : check "isint($1) && $1>0 && isint(${2=1}) && $2>0 && isint(${3=1}) && 
 #@cli : $ repeat 10 a={$>*2*pi/10} arrow3d 0,0,0,{cos($a)},{sin($a)},-0.5 done +3d
 arrow3d : check "${7=5%}>=0 && ${8=25%}>=0 && ${9=15%}>=0"
   e[^-1] "Input 3D arrow, from (${1-3}) to (${4-6}), with radius $7, head length $8 and head radius $9."
-  v -
 
   # Create 3D object.
   L={sqrt(($4-$1)^2+($5-$2)^2+($6-$3)^2)}
@@ -15142,7 +15139,6 @@ arrow3d : check "${7=5%}>=0 && ${8=25%}>=0 && ${9=15%}>=0"
   # Rotate and translate the arrow at specified coordinates.
   s3d.. r[-5] 3,{-5,h/3},1,1,-1 m*[-5,-1]
   y[-4] a[-6--1] y +3d. ${1-3} rv3d.
-  v +
 
 #@cli axes3d : _size_x,_size_y,_size_z,_font_size>0,_label_x,_label_y,_label_z,_is_origin={ 0=no | 1=yes }
 #@cli : Input 3D axes with specified sizes along the x,y and z orientations.
@@ -15151,7 +15147,7 @@ arrow3d : check "${7=5%}>=0 && ${8=25%}>=0 && ${9=15%}>=0"
 #@cli : $ axes3d ,
 axes3d : check "${4=23}>0 && isbool(${8=1})" skip ${1=1},${2=$1},${3=$2},"${5=X},${6=Y},${7=Z}"
   e[^-1] "Input 3D axes with sizes ($1,$2,$3)."
-  v - l[]
+  l[]
   m={max(abs($1),abs($2),abs($3))/40} m2={2*$m} m3={1.2*$m2}
   if $8 _axes3d "O",$4 -3d. $m3,$m3,$m3 fi
   if $1
@@ -15170,7 +15166,7 @@ axes3d : check "${4=23}>0 && isbool(${8=1})" skip ${1=1},${2=$1},${3=$2},"${5=X}
     _axes3d "$7",$4 +3d. 0,0,{$3+$m3}
   fi
   +3d nm [3d\ axes]
-  endl v +
+  endl
 
 _axes3d :
   0 t. "$1",2,0,$2,1,1 +dilate. 3 *.. 255 r.. 100%,100%,1,3
@@ -15183,7 +15179,6 @@ _axes3d :
 #@cli : $ box3d 100,40,30 +primitives3d 1 color3d[-2] ${-RGB}
 box3d : skip ${1=1},${2=$1},${3=$2}
   e[^-1] "Input 3D box, with size ($1,$2,$3)."
-  v -
   1,86,1,1,\
   67.5,73.5,109.5,103.5,51.5,100.5,8,6,\
   0,0,0,$1,0,0,$1,$2,0,0,$2,0,\
@@ -15192,7 +15187,6 @@ box3d : skip ${1=1},${2=$1},${3=$2}
   200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,\
   1,1,1,1,1,1
   nm. [3D\ box]
-  v +
 
 #@cli c3d : eq. to 'center3d'.
 c3d :
@@ -15208,13 +15202,13 @@ center3d :
 
 _center3d :
   e[0--3] "Center 3D object$?."
-  v - check3d 0 repeat $! l[$>]
+  check3d 0 repeat $! l[$>]
     if i[6]
       s3d r[2] 3,{2,h/3},1,1,-1 s[2] x
       -[2] {2,(iM+im)/2} -[3] {3,(iM+im)/2} -[4] {4,(iM+im)/2}
       a[2-4] x y[2] a y
     fi
-  endl done v +
+  endl done
 
 #@cli circle3d : _x0,_y0,_z0,_radius>=0
 #@cli : Input 3D circle at specified coordinates.
@@ -15222,7 +15216,6 @@ _center3d :
 #@cli : $ repeat 500 a={$>*pi/250} circle3d {cos(3*$a)},{sin(2*$a)},0,{$a/50} color3d[-1] ${-RGB},0.4 done add3d
 circle3d : skip ${1=0},${2=0},${3=0},${4=1}
   e[^-1] "Input 3D circle at position ($1,$2,$3) with radius $4."
-  v -
   r={$4/sqrt(3)}
   1,24,1,1,\
   67.5,73.5,109.5,103.5,51.5,100.5,2,1,\
@@ -15230,7 +15223,6 @@ circle3d : skip ${1=0},${2=0},${3=0},${4=1}
   {$1+$r},{$2+$r},{$3+$r},\
   5,0,1,0,0,0,200,200,200,1
   nm. [3D\ circle]
-  v +
 
 #@cli circles3d : _radius>=0,_is_wireframe={ 0 | 1 }
 #@cli : Convert specified 3D objects to sets of 3D circles with specified radius.
@@ -15238,14 +15230,14 @@ circle3d : skip ${1=0},${2=0},${3=0},${4=1}
 #@cli : $ image.jpg luminance resize2dy 40 threshold 50% * 255 pointcloud3d color3d[-1] 255,255,255 circles3d 0.7
 circles3d : check "${1=1}>=0 && isbool(${2=0})"
   e[^-1] "Convert 3D object$? to sets of 3D "${arg\ 1+$2,filled,wireframe}" circles with radius $1."
-  v - p3d 0 repeat $! l[$>]
+  p3d 0 repeat $! l[$>]
     -3d {$1/2},0,0 ++3d $1,0,0 +3d[1] [0]
     s3d # Two 3d objects decomposed here!
     rows[7] 0 j[1] [7] # Number of points
     rv[2,8] # Points
     rv[3,9] l[3] r 2,{h/2},1,1,-1 z 1,1 s y,2 i[0] 1,100%,1,1,5 1,100%,1,1,$2 2,100% a x y endl # Primitives
     k[0-5] a y
-  endl done v +
+  endl done
 
 #@cli col3d : eq. to 'color3d'. : (+)
 
@@ -15260,7 +15252,6 @@ circles3d : check "${1=1}>=0 && isbool(${2=0})"
 #@cli : $ colorcube3d mode3d 2 +primitives3d 1
 colorcube3d :
   e[^-1] "Input 3D RGB-color cube."
-  v -
   (67.5;73.5;109.5;103.5;51.5;100.5;8;6)
   (0;0;0;\
    255;0;0;\
@@ -15285,7 +15276,6 @@ colorcube3d :
   r[-6--1] 64,64,1,3,3 round[-6--1] y[-6--1] i[-7--2] (-128;64;64;3)
   (1;1;1;1;1;1)
   a[-16--1] y nm. [3D\ colorcube]
-  v +
 
 #@cli cone3d : _radius,_height,_nb_subdivisions>0
 #@cli : Input 3D cone at (0,0,0), with specified geometry.
@@ -15293,7 +15283,6 @@ colorcube3d :
 #@cli : $ cone3d 10,40 +primitives3d 1 color3d[-2] ${-RGB}
 cone3d : check ${3=24}>0 skip ${1=1},${2=1}
   e[^-1] "Input 3D cone, with radius $1, height $2 and $3 subdivisions."
-  v -
   # Header.
   (67.5;73.5;109.5;103.5;51.5;100.5)
   ({$3+2};{2*$3})
@@ -15312,7 +15301,6 @@ cone3d : check ${3=24}>0 skip ${1=1},${2=1}
   3,{h},1,1,200
   1,{h},1,1,1
   y[-4--2] a[-6--1] y nm. [3D\ cone]
-  v +
 
 #@cli cubes3d : _size>=0
 #@cli : Convert specified 3D objects to sets of 3D cubes with specified size.
@@ -15320,7 +15308,7 @@ cone3d : check ${3=24}>0 skip ${1=1},${2=1}
 #@cli : $ image.jpg luminance resize2dy 40 threshold 50% * 255 pointcloud3d color3d[-1] 255,255,255 cubes3d 1
 cubes3d : check ${1=1}>=0
   e[^-1] "Convert 3D object$? to sets of 3D cubes with size $1."
-  v - p3d 0 repeat $! l[$>]
+  p3d 0 repeat $! l[$>]
     nbv={@6} nbp={@7}
     if $nbv&&$nbp
       s3d
@@ -15338,21 +15326,19 @@ cubes3d : check ${1=1}>=0
       l[4] r 3,{h/3},1,1,-1 r 18,100%,1,1,0,2 endl r[5] 6,100% # Colors & opacities.
       y a y
     fi
-  endl done v +
+  endl done
 
 #@cli cup3d : _resolution>0
 #@cli : Input 3D cup object.
 #@cli : $ cup3d ,
 cup3d : check ${1=128}>0
   e[^-1] "Input 3D cup, with resolution $1."
-  v -
   100,200
   ellipse. 0%,0%,40%,40%,0,1,1
   ellipse. 0,0,35%,35%,0,1,0
   polygon. 4,0,45%,8%,45%,20%,90%,0,90%,1,1
   ellipse. 0%,100%,30%,10%,0,1,1 b. 0.1%
   lathe3d. $1,2 nm. [3D\ cup]
-  v +
 
 #@cli cylinder3d : _radius,_height,_nb_subdivisions>0
 #@cli : Input 3D cylinder at (0,0,0), with specified geometry.
@@ -15360,7 +15346,7 @@ cup3d : check ${1=128}>0
 #@cli : $ cylinder3d 10,40 +primitives3d 1 color3d[-2] ${-RGB}
 cylinder3d : check ${3=24}>0 skip ${1=1},${2=1}
   e[^-1] "Input 3D cylinder, with radius $1, height $2 and $3 subdivisions."
-  v - l[]
+  l[]
     N={round($3)}
     nbv,nbp={[2*$N+2,3*$N]}
     ({0.5+[{'CImg3d'}]})
@@ -15370,7 +15356,7 @@ cylinder3d : check ${3=24}>0 skip ${1=1},${2=1}
     1,$N,1,13,"i1 = 1 + y; i2 = 1 + (i1%"$N"); const j0 = "$N" + 1; j1 = j0 + i1; j2 = j0 + i2;
                [ 3,0,i2,i1, 3,j0,j1,j2, 4,i1,i2,j2,j1 ]"
     permute[^0,1] "cyzx" 1,$nbp,1,3,200 1,$nbp,1,1,1 y a y
-   nm. [3D\ cylinder] endl v +
+   nm. [3D\ cylinder] endl
 
 #@cli delaunay3d
 #@cli : Generate 3D delaunay triangulations from selected images.
@@ -15380,7 +15366,7 @@ cylinder3d : check ${3=24}>0 skip ${1=1},${2=1}
 # +object3d[0] [1],0,0,0,1,1 max[-1] [0]
 delaunay3d :
   e[^-1] "Generate 3D delaunay triangulation from image$?."
-  v - repeat $! l[$>]
+  repeat $! l[$>]
     channels 0 != 0
 
     # Label each point separately
@@ -15402,7 +15388,7 @@ delaunay3d :
     pointcloud3d[0]
     s3d[0] rm[3-5] i.. 1,100%,1,1,3 a[-2,-1] x
     3,100%,1,1,200 1,100%,1,1,1 =[1] {h},0,1 y a y
-  endl done v +
+  endl done
 
 _delaunay3d :
   f. "A=j($1,$2,$3,0,0,1); B=j($4,$5,$6,0,0,1);
@@ -15414,7 +15400,7 @@ _delaunay3d :
 #@cli : $ image.jpg distribution3d colorcube3d primitives3d[-1] 1 add3d
 distribution3d :
   e[^-1] "Get 3D color distribution of image$?."
-  v - to_rgb permute "cxyz" y
+  to_rgb permute "cxyz" y
   repeat $! l[$>]
     nbp={round(h/3)}
     i.. (67.5;73.5;109.5;103.5;51.5;100.5;\    # Magick number for CImg3d.
@@ -15423,7 +15409,7 @@ distribution3d :
     ..                                         # Colors.
     1,$nbp,1,1,1                               # Opacities.
     a y nm. [3D\ distribution]                 # Build 3D object.
-  endl done v +
+  endl done
 
 #@cli /3d : eq. to 'div3d'. : (+)
 
@@ -15455,7 +15441,7 @@ distribution3d :
 #@cli : $ empty3d
 empty3d :
   e[^-1] "Input empty 3D object."
-  v - (67.5;73.5;109.5;103.5;51.5;100.5;0;0) nm. [3D\ empty] v +
+  (67.5;73.5;109.5;103.5;51.5;100.5;0;0) nm. [3D\ empty]
 
 #@cli extrude3d : _depth>0,_resolution>0,_smoothness[%]>=0
 #@cli : Generate extruded 3D object from selected binary XY-profiles.
@@ -15463,13 +15449,13 @@ empty3d :
 #@cli : $ image.jpg threshold 50% extrude3d 16
 extrude3d : check "${1=16}>0 && ${2=1024}>0 && ${3=0.5%}>=0"
   e[^-1] "Generate extruded 3D object from XY-profile$?, with depth $1, resolution $2 and smoothness $3."
-  v - norm n 0,1 autocrop 0 repeat $! l[$>] nm={0,n}
+  norm n 0,1 autocrop 0 repeat $! l[$>] nm={0,n}
     wr={round(max(1,if(w>h,min($2,w),min($2,h)*w/h)))}
     hr={round(max(1,if(w>h,min($2,w)*h/w,min($2,h))))}
     fact={$1/max(w/$wr,h/$hr)}
     b $3,0 r $wr,$hr,1,1,2 expand_xyz 1,0
     isosurface3d 50% *3d 1,1,$fact rv3d
-  nm $nm endl done v +
+  nm $nm endl done
 
 #@cli f3d : eq. to 'focale3d'. : (+)
 
@@ -15486,19 +15472,18 @@ extrude3d : check "${1=16}>0 && ${2=1024}>0 && ${3=0.5%}>=0"
 #@cli : $ image.jpg r2dy 32 distribution3d gaussians3d 20 colorcube3d primitives3d[-1] 1 +3d
 gaussians3d : check "${1=32}>0" skip ${2=0.3}
   e[^-1] "Convert 3D object$? into sets of gaussian-shaped 3D sprites, with size $1 and opacity $2."
-  v - p3d 2 p3d 0 repeat $! l[$>] nm={0,n} s3d
+  p3d 2 p3d 0 repeat $! l[$>] nm={0,n} s3d
     nbv={h} rm. (-128;$1;$1;1)
     $1,$1 gaussian. 35%,35%,0 c. 30%,100% n. 0,$2 y. a[-2,-1] y      # First opacity is generated.
     if $nbv>1 4,{$nbv-1},1,1,-128,0,0,0 y[-2,-1] a[-2,-1] y fi   # Other ones are shared copies of the first one.
     a y
-  nm $nm endl done v +
+  nm $nm endl done
 
 #@cli gmic3d
 #@cli : Input a 3D G'MIC logo.
 #@cli : $ gmic3d +primitives3d 1
 gmic3d :
   e[^-1] "Input 3D G\47MIC logo."
-  v -
   text3d G,60,20,2 col3d. 16,64,255
   text3d \',60,20,2 +3d. 40 col3d. 64,128,255
   text3d M,60,20,2 +3d. 50 col3d. 96,196,255
@@ -15512,7 +15497,6 @@ gmic3d :
     +3d. {80*cos(0.5+1.02*$>*12*pi/180)},{30*sin(0.8+$>*12*pi/180)},{2*$>-60}
   done
   +3d[-30--1] +3d. 0,5,30 +3d[-2--1] nm. [3d\ gmic]
-  v +
 
 #@cli gyroid3d : _resolution>0,_zoom
 #@cli : Input 3D gyroid at (0,0,0), with specified resolution.
@@ -15520,7 +15504,6 @@ gmic3d :
 #@cli : $ gyroid3d 48 +primitives3d 1
 gyroid3d : check ${1=32}>0 skip ${2=5}
   e[^-1] "Input 3D gyroid, with resolution $1 and range $2."
-  v -
   isosurface3d "'0.49*(\
     cos( 2*x + y + z - pi) + cos( 2*x - y + z - pi)\
     + cos(- 2*x + y - z - pi) + cos(- 2*x - y - z - pi)\
@@ -15543,23 +15526,22 @@ gyroid3d : check ${1=32}>0 skip ${2=5}
     + cos( 2*z + 2*x - pi) + cos(- 2*z - 2*x - pi)\
     ) - 0.69'",0,{-$2},{-$2},{-$2},$2,$2,$2,$1,$1,$1
   c3d. n3d. nm. [3D\ gyroid]
-  v +
 
 #@cli histogram3d
 #@cli : Get 3D color histogram of selected images.
 #@cli : $ image.jpg histogram3d colorcube3d primitives3d[-1] 1 add3d
 histogram3d :
   e[^-1] "Get 3D color histogram of image$?."
-  v - to_rgb repeat $! l[$>]
+  to_rgb repeat $! l[$>]
     r {w*h},3,1,1,-1 pointcloud 1 n 0,255 map 3 pointcloud3d nm "[3D histogram]"
-  endl done v +
+  endl done
 
 #@cli image6cube3d
 #@cli : Generate 3D mapped cubes from 6-sets of selected images.
 #@cli : $ image.jpg animate flower,"30,0","30,5",6 image6cube3d
 image6cube3d :
   e[^-1] "Generate 3D mapped cubes from image$?."
-  v - M={max(${-max_wh})} r $M,$M,1,3 imageplane3d n3d c3d
+  M={max(${-max_wh})} r $M,$M,1,3 imageplane3d n3d c3d
   repeat int($!/6) l[$>-{$>+5}]
     +3d[0] 0,0,-0.5
     r3d[1] 0,1,0,90 +3d[1] -0.5,0,0
@@ -15568,7 +15550,7 @@ image6cube3d :
     r3d[4] 1,0,0,90 +3d[4] 0,0.5,0
     r3d[5] 1,0,0,270 +3d[5] 0,-0.5,0
     +3d nm "[3D image cube]"
-  endl done v +
+  endl done
 
 #@cli imageblocks3d : _maximum_elevation,_smoothness[%]>=0
 #@cli : Generate 3D blocks from selected images.
@@ -15577,7 +15559,7 @@ image6cube3d :
 #@cli : $ image.jpg resize2dy 32 imageblocks3d -20 mode3d 3
 imageblocks3d : check ${2=0}>=0 skip ${1=10},${3=0}
   e[^-1] "Generate 3D blocks from image$?, with maximum elevation $1 and smoothness $2."
-  v - repeat $! l[$>]
+  repeat $! l[$>]
     w={w} h={h}
     split_opacity to_rgb[0] is_opacity={$!==2}
 
@@ -15604,14 +15586,14 @@ imageblocks3d : check ${2=0}>=0 skip ${1=10},${3=0}
     if $is_opacity rm. mv[0] $! /. 255 y. r. 6,100%,1,1 y. fi
 
     a y
-  endl done v +
+  endl done
 
 #@cli imagecube3d
 #@cli : Generate 3D mapped cubes from selected images.
 #@cli : $ image.jpg imagecube3d
 imagecube3d :
   e[^-1] "Generate 3D mapped cubes from image$?."
-  v - slices 50% to_rgb repeat $! l[$>] nm={0,n}
+  slices 50% to_rgb repeat $! l[$>] nm={0,n}
     i.. (67.5;73.5;109.5;103.5;51.5;100.5;\  # Magick number for CImg3d.
          8;6;\                               # Number of vertices and primitives.
          -0.5;-0.5;-0.5;\                    # Vertex coordinates.
@@ -15632,14 +15614,14 @@ imagecube3d :
     y.
     (-128;0;0;0;-128;0;0;0;-128;0;0;0;-128;0;0;0;-128;0;0;0;1;1;1;1;1;1)  # Other faces and opacities.
     a y
-  nm $nm endl done v +
+  nm $nm endl done
 
 #@cli imageplane3d
 #@cli : Generate 3D mapped planes from selected images.
 #@cli : $ image.jpg imageplane3d
 imageplane3d :
   e[^-1] "Generate 3D mapped planes from image$?."
-  v - slices 50% to_color repeat $! l[$>] nm={0,n}
+  slices 50% to_color repeat $! l[$>] nm={0,n}
     i.. (67.5;73.5;109.5;103.5;51.5;100.5;\   # Magick number for CImg3d.
          4;1;\                                # Number of vertices and primitives.
          0;0;0;\                              # Vertex coordinates.
@@ -15651,14 +15633,14 @@ imageplane3d :
     y.
     (1)  # Opacity.
     a y
-  nm $nm endl done v +
+  nm $nm endl done
 
 #@cli imagepyramid3d
 #@cli : Generate 3D mapped pyramids from selected images.
 #@cli : $ image.jpg imagepyramid3d
 imagepyramid3d :
   e[^-1] "Generate 3D mapped pyramids from image$?."
-  v - to_rgb repeat $! l[$>] nm={0,n}
+  to_rgb repeat $! l[$>] nm={0,n}
     w2={w/2}
     i.. (67.5;73.5;109.5;103.5;51.5;100.5;\  # Magick number for CImg3d.
          5;5;\                               # Number of vertices and primitives.
@@ -15676,7 +15658,7 @@ imagepyramid3d :
     y.
     (-128;0;0;0;-128;0;0;0;-128;0;0;0;-128;0;0;0;1;1;1;1;1)  # Other faces and opacities.
     a y
-  nm $nm endl done v +
+  nm $nm endl done
 
 #@cli imagerubik3d : _xy_tiles>=1,0<=xy_shift<=100,0<=z_shift<=100
 #@cli : Generate 3D mapped rubik's cubes from selected images.
@@ -15684,7 +15666,7 @@ imagepyramid3d :
 #@cli : $ image.jpg imagerubik3d ,
 imagerubik3d : check "${1=3}>=1 && ${2=5}>=0 && $2<=100 && ${3=5}>=0 && $3<=100"
   e[^-1] "Generate 3D mapped rubik\47s cubes from image$? with $1 xy-tiles, xy-shift $2 and z-shift $3."
-  v - repeat $! l[$>] nm={0,n}
+  repeat $! l[$>] nm={0,n}
     # Generate primary 3D side.
     ({'CImg3d'}) +. 0.5
     (8,5)
@@ -15711,7 +15693,7 @@ imagerubik3d : check "${1=3}>=1 && ${2=5}>=0 && $2<=100 && ${3=5}>=0 && $3<=100"
     +r3d. 0,1,0,-90 +r3d. 0,1,0,-90 +r3d. 0,1,0,-90  # Generate the 5 other sides.
     +r3d. 0,0,1,-90 +r3d. 0,0,1,180
     +3d
-  nm $nm endl done v +
+  nm $nm endl done
 
 #@cli imagesphere3d : _resolution1>=3,_resolution2>=3
 #@cli : Generate 3D mapped sphere from selected images.
@@ -15719,7 +15701,7 @@ imagerubik3d : check "${1=3}>=1 && ${2=5}>=0 && $2<=100 && ${3=5}>=0 && $3<=100"
 #@cli : $ image.jpg imagesphere3d 32,16
 imagesphere3d : check "${1=32}>=3 && ${2=16}>=3"
   e[^-1] "Generate 3D mapped sphere from image$?, with resolutions ($1,$2)."
-  v - to_rgb repeat $! l[$>] nm={0,n}
+  to_rgb repeat $! l[$>] nm={0,n}
 
     # Generate object header.
     tw={w-1} th={h-1}                    # Maximum texture xy-coordinates.
@@ -15748,7 +15730,7 @@ imagesphere3d : check "${1=32}>=3 && ${2=16}>=3"
 
     # Define sphere textures, opacities and generate object.
     mv[-4] $! i.. (-128;{w};{h};3) y. 1,{4*($nbp-1)},1,1,-128,0,0,0 1,$nbp,1,1,1 a y
-  nm $nm endl done v +
+  nm $nm endl done
 
 #@cli isoline3d : isovalue[%] : 'formula',value,_x0,_y0,_x1,_y1,_size_x>0[%],_size_y>0[%] : (+)
 #@cli : Extract 3D isolines with specified value from selected images or from specified formula.
@@ -15767,7 +15749,7 @@ imagesphere3d : check "${1=32}>=3 && ${2=16}>=3"
 #@cli : Default values: 'font_height=13', 'opacity=1' and 'color=255,255,255'.
 label3d : check ${2=13}>=0 skip ${3=1},${4=255},${5=$4},${6=$5}
   e[^-1] "Generate 3D label '$1' with font height $2, opacity $3 and color (${4--1})."
-  v - l[] 0 t "$1",0,0,$2,1,${4--1},255 sprite3d endl v +
+  l[] 0 t "$1",0,0,$2,1,${4--1},255 sprite3d endl
 
 #@cli label_points3d : _label_size>0,_opacity
 #@cli : Add a numbered label to all vertices of selected 3D objects.
@@ -15775,7 +15757,7 @@ label3d : check ${2=13}>=0 skip ${3=1},${4=255},${5=$4},${6=$5}
 #@cli : $ torus3d 100,40,6,6 label_points3d 23,1 mode3d 1
 label_points3d : check ${1=13}>0 skip ${2=0.8}
   e[^-1] "Label vertices of 3D object$?."
-  v - repeat $!
+  repeat $!
     +p3d[$>] 0 l. s3d rm[-3--1]
     nbp={-2,@0} =.. $nbp,0,1                               # Set correct number of primitives
     (1,0;1,{$nbp-1}) r. 2,$nbp,1,1,3 r. 1,{2*h},1,1,-1    # Create new primitive data
@@ -15790,7 +15772,7 @@ label_points3d : check ${1=13}>0 skip ${2=0.8}
     a y  # Merge final object data.
     endl
     +3d[$>,-1]
-  done v +
+  done
 
 #@cli lathe3d : _resolution>0,_smoothness[%]>=0,_max_angle>=0
 #@cli : Generate 3D object from selected binary XY-profiles.
@@ -15798,7 +15780,7 @@ label_points3d : check ${1=13}>0 skip ${2=0.8}
 #@cli : $ 300,300 rand -1,1 blur 40 sign normalize 0,255 lathe3d ,
 lathe3d : check "${1=128}>0 && ${2=0.5%}>=0 && ${3=361}>=0"
   e[^-1] "Generate lathed 3D object from XY-profile$?, with resolution $1, smoothness $2 and maximum angle $3 deg."
-  v - tmax={($3-180)*pi/180} norm n 0,1 autocrop 0
+  tmax={($3-180)*pi/180} norm n 0,1 autocrop 0
   repeat $! l[$>]
     wr={max(1,w2=2*w;if(w2>h,min($1,w2),min($1,h)*w2/h))}
     hr={max(1,w2=2*w;if(w2>h,min($1,w2)*h/w2,min($1,h)))}
@@ -15808,7 +15790,7 @@ lathe3d : check "${1=128}>0 && ${2=0.5%}>=0 && ${3=361}>=0"
     (0;{{-2,h}-1}) r. $wr,$hr,$wr,1,3 a[-2--1] c
     warp.. .,0,1,0 rm.
     expand_xyz 10,0 b $2 isosurface3d 50% rv3d
-  endl done v +
+  endl done
 
 #@cli l3d : eq. to 'light3d'. : (+)
 
@@ -15823,7 +15805,7 @@ lathe3d : check "${1=128}>0 && ${2=0.5%}>=0 && ${3=361}>=0"
 #@cli : $ repeat 100 a={$>*pi/50} line3d 0,0,0,{cos(3*$a)},{sin(2*$a)},0 color3d. ${-RGB} done add3d
 line3d :
   e[^-1] "Input 3D line (${1-3})-(${4-6})."
-  v - 1,21,1,1,67.5,73.5,109.5,103.5,51.5,100.5,2,1,${1-6},2,0,1,200,200,200,1 nm. [3D\ line] v +
+  1,21,1,1,67.5,73.5,109.5,103.5,51.5,100.5,2,1,${1-6},2,0,1,200,200,200,1 nm. [3D\ line]
 
 #@cli lissajous3d : resolution>1,a,A,b,B,c,C
 #@cli : Input 3D lissajous curves (x(t)=sin(a*t+A*2*pi),y(t)=sin(b*t+B*2*pi),z(t)=sin(c*t+C*2*pi)).
@@ -15831,7 +15813,6 @@ line3d :
 #@cli : $ lissajous3d ,
 lissajous3d : check ${1=1024}>1 skip ${2=2},${3=0},${4=1},${5=0},${6=0},${7=0}
   e[^-1] "Input 3D lissajous curve, with resolution $1, (a,A)=($2,$3), (b,B)=($4,$5) and (c,C)=($6,$7)."
-  v -
   res={round($1)}
 
   # Define object header and vertices.
@@ -15843,7 +15824,6 @@ lissajous3d : check ${1=1024}>1 skip ${2=2},${3=0},${4=1},${5=0},${6=0},${7=0}
   # Define object primitives, colors and opacities.
   1,{$res-1},1,1,2 (0;{$res-2}) r. 1,{$res-1},1,1,3 ++. 1 a[-3--1] x round. 1 r. 1,{w*h},1,1,-1
   1,{3*($res-1)},1,1,200 1,{$res-1},1,1,1 a[-5--1] y nm. [3D\ lissajou]
-  v +
 
 #@cli m3d : eq. to 'mode3d'. : (+)
 
@@ -15888,13 +15868,13 @@ normalize3d :
 
 _normalize3d :
   e[0--3] "Normalize size of 3D object$?."
-  v - check3d 0 repeat $! l[$>]
+  check3d 0 repeat $! l[$>]
     if i[6]
       s3d r[2] 3,{2,h/3},1,1,-1 s[2] x
       factor={v=max({2,iM-im},{3,iM-im},{4,iM-im});if(v,v,1)}
       a[2-4] x /[2] $factor y[2] a y
     fi
-  endl done v +
+  endl done
 
 #@cli o3d : eq. to 'opacity3d'. : (+)
 
@@ -15916,7 +15896,6 @@ parametric3d : skip "${1=(2+cos(b))*sin(a)}","${2=(2+cos(b))*cos(a)}","${3=sin(b
                check "${8=512}>0 && ${9=$8}>0 && ${10=64}>0 && ${11=$10}>0 && ${12=$11}>0 && \
                        ${13=2%}>=0 && ${14=10%}>=0"
   e[^-1] "Input 3D object from parametric surface ($1,$2,$3)."
-  v -
   # Compute (x(a,b),y(a,b),z(a,b)) and normalize it.
   ($4,$5;$4,$5^$6,$6;$7,$7) r. $8,$9,1,2,3 channels. 0,2
   f. "a=i(x,y,0,0);b=i(x,y,0,1);if(c==0,$1,if(c==1,$2,$3))"
@@ -15929,7 +15908,6 @@ parametric3d : skip "${1=(2+cos(b))*sin(a)}","${2=(2+cos(b))*cos(a)}","${3=sin(b
   pointcloud. 1 r. $10,$11,$12,1,0 b. $13,0
   isosurface3d. $14
   c3d. n3d. *3d. {$xmax-$xmin},{$ymax-$ymin},{$zmax-$zmin} nm. [3D\ parametric]
-  v +
 
 #@cli pca_patch3d : _patch_size>0,_M>0,_N>0,_normalize_input={ 0 | 1 },_normalize_output={ 0 | 1 },_lambda_xy
 #@cli : Get 3D patch-pca representation of selected images.
@@ -15942,7 +15920,6 @@ pca_patch3d : check "isint(${1=7}) && $1>0 && isint(${2=1000}) && $2>0 && isint(
   e[^-1] "Get 3D patch-pca representation"${arg\ 1+($!>1),s,""}" of image$?, from $2 $1x$1 input patches,
           with $3 output patches, input normalization "${arg\ 1+!$4,enabled,disabled}", output normalization "\
           ${arg\ 1+!$5,enabled,disabled}" and lambda_xy $6."
-  v -
   P1={int($1/2)}       # Backward half-patch size.
   P2={$1-$P1-1}        # Forward half-patch size.
 
@@ -15990,7 +15967,7 @@ pca_patch3d : check "isint(${1=7}) && $1>0 && isint(${2=1000}) && $2>0 && isint(
     1,$3,1,1,1                                             # Opacities.
     y a[-6--1] y                                         # Merge as a 3D object.
 
-  nm $nm endl done v +
+  nm $nm endl done
 
 #@cli plane3d : _size_x,_size_y,_nb_subdivisions_x>0,_nb_subdisivions_y>0
 #@cli : Input 3D plane at (0,0,0), with specified geometry.
@@ -15998,21 +15975,21 @@ pca_patch3d : check "isint(${1=7}) && $1>0 && isint(${2=1000}) && $2>0 && isint(
 #@cli : $ plane3d 50,30 +primitives3d 1 color3d[-2] ${-RGB}
 plane3d : check "${3=24}>0 && ${4=24}>0" skip ${1=1},${2=$1}
   e[^-1] "Input 3D plane, with size (${1,2}) and subdivisions (${3,4})."
-  v - {$3+1},{$4+1} elevation3d. 0 *3d. {$1/$3},{$2/$4} col3d. 200 nm. [3D\ plane] v +
+  {$3+1},{$4+1} elevation3d. 0 *3d. {$1/$3},{$2/$4} col3d. 200 nm. [3D\ plane]
 
 #@cli point3d : x0,y0,z0
 #@cli : Input 3D point at specified coordinates.
 #@cli : $ repeat 1000 a={$>*pi/500} point3d {cos(3*$a)},{sin(2*$a)},0 color3d[-1] ${-RGB} done add3d
 point3d :
   e[^-1] "Input 3D point ($1,$2,$3)."
-  v - 1,17,1,1,67.5,73.5,109.5,103.5,51.5,100.5,1,1,${1-3},1,0,200,200,200,1 nm. [3D\ point] v +
+  1,17,1,1,67.5,73.5,109.5,103.5,51.5,100.5,1,1,${1-3},1,0,200,200,200,1 nm. [3D\ point]
 
 #@cli pointcloud3d
 #@cli : Convert selected planar or volumetric images to 3D point clouds.
 #@cli : $ image.jpg luminance resize2dy 100 threshold 50% mul 255 pointcloud3d color3d[-1] 255,255,255
 pointcloud3d :
   e[^-1] "Convert image$? to 3D point cloud."
-  v - repeat $! l[$>] nm={0,n}
+  repeat $! l[$>] nm={0,n}
     s z repeat $! l[$>]
       +norm !=. 0
       i.. (1,{w};1,{w}^1,1;{h},{h}) r.. .,.,1,2,3 *[-2,-1] round. permute. cxyz
@@ -16033,7 +16010,7 @@ pointcloud3d :
       fi
       endl done
     +3d
-  nm $nm endl done v +
+  nm $nm endl done
 
 #@cli pose3d : p1,...,p12
 #@cli : Apply 3D pose matrix to selected 3D objects.
@@ -16041,12 +16018,12 @@ pointcloud3d :
 # 0.548966,0,0,0,-206,1 snapshot3d 400
 pose3d :
   e[^-1] "Apply 3D pose matrix [ $1,$2,$3,$4; $5,$6,$7,$8; $9,$10,$11,$12 ] to 3D object$?."
-  v - repeat $! l[$>] if ${-_is_3d}
+  repeat $! l[$>] if ${-_is_3d}
     s3d r[2] 3,{2,h/3},1,1,-1 i[3] 1,{2,h},1,1,1 a[2,3] x
     i[3] ($1,$5,$9;$2,$6,$10;$3,$7,$11;$4,$8,$12) m*[2,3]
     r[2] 1,{2,3*h},1,1,-1 a y
-  else v + error "Command '$0': Image ["{$!-$>-1}"] does not represent a 3D object."
-  fi endl done v +
+  else error "Command '$0': Image ["{$!-$>-1}"] does not represent a 3D object."
+  fi endl done
 
 #@cli p3d : eq. to 'primitives3d'.
 p3d : check "isint($1) && $1>=0 && $1<=2"
@@ -16062,7 +16039,7 @@ primitives3d : check "isint($1) && $1>=0 && $1<=2"
 
 _primitives3d :
   e[0--3] "Convert primitives of 3D object$? to "${"arg 1+$1,points,outlines,non-textured"}"."
-  v - repeat $! l[$>]
+  repeat $! l[$>]
     s3d 1,64 .x2
     eval "
       const mode = $1;
@@ -16327,13 +16304,13 @@ _primitives3d :
       i[#1,1] = nq"
 
     rm[3-5] a y
-  endl done v +
+  endl done
 
 #@cli projections3d : _x[%],_y[%],_z[%],_is_bounding_box={ 0 | 1 }
 #@cli : Generate 3D xy,xz,yz projection planes from specified volumetric images.
 projections3d : skip ${1=50%},${2=50%},${3=50%},${4=1}
   e[^-1] "Generate 3D xy,xz,yz projection planes from image$?."
-  v - n 0,255 repeat $! l[$>]
+  n 0,255 repeat $! l[$>]
     w={w} h={h} d={d}
     x={if(${is_percent\ $1},$1*w,$1)}
     y={if(${is_percent\ $2},$2*h,$2)}
@@ -16346,14 +16323,13 @@ projections3d : skip ${1=50%},${2=50%},${3=50%},${4=1}
     +3d... 0,0,$z +3d.. 0,$y,0 +3d. $x,0,0
     +3d[-3--1] o3d. 0.8
     if $4 box3d $w,$h,$d p3d. 1 o3d. 0.4 +3d[-2,-1] fi
-  endl done v +
+  endl done
 
 #@cli pyramid3d : width,height
 #@cli : Input 3D pyramid at (0,0,0), with specified geometry.
 #@cli : $ pyramid3d 100,-100 +primitives3d 1 color3d[-2] ${-RGB}
 pyramid3d :
   e[^-1] "Input new 3D pyramid, with width $1 and height $2."
-  v -
   (67.5;73.5;109.5;103.5;51.5;100.5;\  # Magick number for CImg3d.
    5;5;\                               # Number of vertices and primitives.
    {-$1/2};{-$1/2};{-$2/2};\           # Vertex coordinates.
@@ -16367,7 +16343,6 @@ pyramid3d :
    3;2;4;1;\
    3;3;4;2)
   1,15,1,1,200 1,5,1,1,1 a[-3--1] y nm. [3D\ pyramid]
-  v +
 
 #@cli quadrangle3d : x0,y0,z0,x1,y1,z1,x2,y2,z2,x3,y3,z3
 #@cli : Input 3D quadrangle at specified coordinates.
@@ -16375,14 +16350,13 @@ pyramid3d :
 # color3d[-1] ${-RGB},0.6 done add3d mode3d 2
 quadrangle3d :
   e[^-1] "Input 3D quadrangle ($1,$2,$3)-($4,$5,$6)-($7,$8,$9)-($10,$11,$12)."
-  v - 1,29,1,1,67.5,73.5,109.5,103.5,51.5,100.5,4,1,${1-12},4,0,1,2,3,200,200,200,1 nm. [3D\ quadrangle] v +
+  1,29,1,1,67.5,73.5,109.5,103.5,51.5,100.5,4,1,${1-12},4,0,1,2,3,200,200,200,1 nm. [3D\ quadrangle]
 
 #@cli random3d : nb_points>=0
 #@cli : Input random 3D point cloud in [0,1]^3.
 #@cli : $ random3d 100 circles3d 0.1 opacity3d 0.5
 random3d : check "$1>=0"
   e[^-1] "Input random 3D point cloud, with $1 points."
-  v -
   if $1<0.5 empty3d
   else l[]
     N={round($1)}
@@ -16393,7 +16367,6 @@ random3d : check "$1>=0"
     y a y
   endl fi
   nm. [3D\ random\ pointcloud]
-  v +
 
 #@cli rv3d : eq. to 'reverse3d'. : (+)
 
@@ -16414,19 +16387,19 @@ random3d : check "$1>=0"
 #@cli : $ rotation3d 1,0,0,0 rotation3d 1,0,0,90 rotation3d 1,0,0,180
 rotation3d :
   e[^-1] "Input 3D rotation matrix around axis ($1,$2,$3) with angle $4 deg."
-  v - 3,3,1,1,{"rot(${1-4})"} nm. [3D\ rotation] v +
+  3,3,1,1,{"rot(${1-4})"} nm. [3D\ rotation]
 
 #@cli sierpinski3d : _recursion_level>=0,_width,_height
 #@cli : Input 3d Sierpinski pyramid.
 #@cli : $ sierpinski3d 3,100,-100 +primitives3d 1 color3d[-2] ${-RGB}
 sierpinski3d : check ${1=4}>=0 skip ${2=1},${3=1}
 -e[^-1] "Input 3D Sierpinski pyramid of degree $1, with width $2 and height $3."
-  v - l[]
+  l[]
     _sierpinski3d {-$2/2},{-$2/2},{-$3/2},{$2/2},{-$2/2},{-$3/2},\
                   {$2/2},{$2/2},{-$3/2},{-$2/2},{$2/2},{-$3/2},\
                   0,0,{$3/2},$1
   +3d endl
-  nm. [3D\ sierpinski] v +
+  nm. [3D\ sierpinski]
 
 _sierpinski3d :
   if $16<=0
@@ -16478,9 +16451,9 @@ _sierpinski3d :
 #@cli size3d
 #@cli : Return bounding box size of the last selected 3D object.
 size3d :
-  v - +rows. 8,{8+3*i[6]} r. 3,{h/3},1,1,-1 s. x,3
+  +rows. 8,{8+3*i[6]} r. 3,{h/3},1,1,-1 s. x,3
   u {-3,iM-im},{-2,iM-im},{iM-im}
-  rm[-3--1] v +
+  rm[-3--1]
 
 #@cli skeleton3d : _metric,_frame_type={ 0=squares | 1=diamonds | 2=circles | 3=auto },_skeleton_opacity,\
 # _frame_opacity,_is_frame_wireframe={ 0 | 1 }
@@ -16491,7 +16464,7 @@ size3d :
 skeleton3d : check "isint(${1=2}) && $1>=0 && $1<=2 && isint(${2=3}) && $2>=0 && $2<=3" skip ${3=1},${4=0.1},${5=1}
   e[^-1] "Build 3D skeletal structure object from image$?, with "${arg\ 1+$1,chebyshev,manhattan,euclidean}" metric, "\
           ${arg\ 1+$2,squares,diamonds,circles,auto}" bones, skeleton opacity $3 and frame opacity $4 ."
-  v - repeat $! l[$>] channels 0
+  repeat $! l[$>] channels 0
 
     # Construct skeleton representation.
     +distance 0,$1
@@ -16526,7 +16499,7 @@ skeleton3d : check "isint(${1=2}) && $1>=0 && $1<=2 && isint(${2=3}) && $2>=0 &&
       else rm empty3d fi
     endl else rm[0] fi
     +3d
-  endl done v +
+  endl done
 
 #@cli snapshot3d : _size>0,_zoom>=0,_backgroundR,_backgroundG,_backgroundB,_backgroundA : [background_image],zoom>=0
 #@cli : Take 2d snapshots of selected 3D objects.
@@ -16537,13 +16510,13 @@ skeleton3d : check "isint(${1=2}) && $1>=0 && $1<=2 && isint(${2=3}) && $2>=0 &&
 snapshot3d : check "${2=1}>=0" skip ${1=512},${3=""}
   if ${"is_image_arg $1"} # Background image specified.
     e[0--3] "Take $1x$1 snapshot$? of 3D object$?, with zoom factor $2 and background image $3."
-    v - pass$1 0 to_color.
+    pass$1 0 to_color.
   elif isnum($3) # Background color specified.
     e[0--3] "Take $1x$1 snapshot$? of 3D object$?, with zoom factor $2 and background color ${3--1}."
-    v - (${3--1}) y. c r. $1,$1 to_color.
+    (${3--1}) y. c r. $1,$1 to_color.
   else # Default background color.
     e[0--3] "Take $1x$1 snapshot$? of 3D object$?, with zoom factor $2 and default background."
-    v - 1,2,1,3,32,64,32,116,64,96 r. $1,$1,1,3,3
+    1,2,1,3,32,64,32,116,64,96 r. $1,$1,1,3,3
   fi
   repeat $!-1 . l[$>,-1]
     if $2!=0 c3d[0] n3d[0] *3d[0] {3*min(w,h)*$2/4} fi
@@ -16554,7 +16527,7 @@ snapshot3d : check "${2=1}>=0" skip ${1=512},${3=""}
       j3d[1] [0],50%,50%,0,1
     fi
    nm[1] {-2,n} rm[0]
-  endl done rm. v +
+  endl done rm.
 
 #@cli sl3d : eq. to 'specl3d'. : (+)
 
@@ -16585,7 +16558,6 @@ snapshot3d : check "${2=1}>=0" skip ${1=512},${3=""}
 #@cli : $ spherical3d 64 +primitives3d 1
 spherical3d : check "${1=64}>=3 && ${2=$1}>=3" skip "${3=abs(1+0.5*cos(3*phi)*sin(4*theta))}"
   e[^-1] "Input 3D spherical object, with subdivisions ($1,$2) and height function '$3'."
-  v -
   ({'CImg3d'}) y. # Magic number.
   n1={round($1)} n2={round($2)}
 
@@ -16614,7 +16586,6 @@ spherical3d : check "${1=64}>=3 && ${2=$1}>=3" skip "${3=abs(1+0.5*cos(3*phi)*si
 
   # Append as a 3D object.
   a[-5--1] y nm. "[3D spherical surface '$3']"
-  v +
 
 #@cli spline3d : x0[%],y0[%],z0[%],u0[%],v0[%],w0[%],x1[%],y1[%],z1[%],u1[%],v1[%],w1[%],_nb_vertices>=2
 #@cli : Input 3D spline with specified geometry.
@@ -16623,7 +16594,6 @@ spherical3d : check "${1=64}>=3 && ${2=$1}>=3" skip "${3=abs(1+0.5*cos(3*phi)*si
 # box3d 1 primitives3d[-1] 1 add3d
 spline3d : check ${13=128}>=2
   e[^-1] "Input new 3D spline from (${1-3}) [${4-6}] to (${7-9}) [${10-12}] with $13 vertices."
-  v -
   ({'CImg3d'}) +. 0.5   # Header.
   ($13;{$13-1})          # Nb vertices / primitives.
   # Define vertices.
@@ -16635,7 +16605,6 @@ spline3d : check ${13=128}>=2
   1,{$13-1},1,1,2 (0,1;{$13-2},{$13-1}) r. 2,..,1,1,3 round. a[-2,-1] x # Primitives.
   1,{3*($13-1)},1,1,200 1,{$13-1},1,1,1 # Colors / opacities.
   y[-3,-4,-6] a[-6--1] y
-  v +
 
 #@cli s3d : eq. to 'split3d'. : (+)
 
@@ -16653,14 +16622,14 @@ spline3d : check ${13=128}>=2
 #@cli : $ image.jpg sprite3d
 sprite3d :
   e[^-1] "Convert image$? as 3D sprites."
-  v - repeat $! l[$>] nm={0,n}
+  repeat $! l[$>] nm={0,n}
     split_opacity
     i[0] (67.5;73.5;109.5;103.5;51.5;100.5;1;1;0;0;0;1;0;-128;{w};{h};{0,s}) y[1]
     if $!==2 (1) a y
     else /. 255 i.. (-128;{w};{h};{s}) y.
     fi
     a y
-  nm $nm endl done v +
+  nm $nm endl done
 
 #@cli sprites3d : [sprite],_sprite_has_alpha_channel={ 0 | 1 }
 #@cli : Convert selected 3D objects as a sprite cloud.
@@ -16670,7 +16639,7 @@ sprite3d :
 # +sprites3d[0] [1],1 display_rgba[-2]
 sprites3d : check ${is_image_arg\ $1} skip ${2=0}
   e[^-1] "Convert image$? as 3D sprites clouds, using sprite $1 ("${"arg {1+!$2},with,without"}" alpha-channel)."
-  v - repeat $!
+  repeat $!
     if !{$>,i(0,7)} continue fi # Do nothing if 3D object is empty.
     pass$1 0
     if !w empty3d rv[$>,-1] nm[$>] {n} rm. continue fi
@@ -16695,7 +16664,7 @@ sprites3d : check ${is_image_arg\ $1} skip ${2=0}
       1,$N,1,1,1
     fi
     y a y
-  endl done v +
+  endl done
 
 #@cli star3d : _nb_branches>0,0<=_thickness<=1
 #@cli : Input 3D star at (0,0,0), with specified geometry.
@@ -16703,13 +16672,11 @@ sprites3d : check ${is_image_arg\ $1} skip ${2=0}
 #@cli : $ star3d , +primitives3d 1 color3d[-2] ${-RGB}
 star3d : check "${1=5}>0 && ${2=0.38}>=0 && $2<=1"
   e[^-1] "Input 3D star, with $1 branches and thickness $2."
-  v -
   N={2*$1} ({'CImg3d'}) +. 0.5 ({$N+1};$N)
   ({-pi/2};{3*pi/2}) r. 1,{$N+1},1,1,3 rows. 0,{h-2} +sin. cos.. a[-2,-1] x
   (1,1;$2,$2) *[-2,-1] z. 0,2 r. 3,{h+1},1,1,0
   (3,$N,1,0;3,$N,$N,{$N-1}) r. 4,$N,1,1,3 round. =. 0,2,100%
   3,$N,1,1,200 1,$N,1,1,1 y[-6,-4--2] a[-6--1] y nm. [3D\ star]
-  v +
 
 #@cli streamline3d : x[%],y[%],z[%],_L>=0,_dl>0,_interpolation,_is_backward={ 0 | 1 },_is_oriented={ 0 | 1 } : \
 # 'formula',x,y,z,_L>=0,_dl>0,_interpolation,_is_backward={ 0 | 1 },_is_oriented={ 0 | 1 } : (+)
@@ -16733,7 +16700,6 @@ star3d : check "${1=5}>0 && ${2=0.38}>=0 && $2<=1"
 #@cli : $ superformula3d ,
 superformula3d : check "${1=1024}>1 && ${2=8}>=1" skip ${3=1},${4=5},${5=8}
   e[^-1] "Input 2D superformula curve, with resolution $1, m=$2 and (n1,n2,n3)=($3,$4,$5)."
-  v -
   res={round($1)}
 
   # Define object header and vertices.
@@ -16748,7 +16714,6 @@ superformula3d : check "${1=1024}>1 && ${2=8}>=1" skip ${3=1},${4=5},${5=8}
   # Define object primitives, colors and opacities.
   1,{$res-1},1,1,2 (0;{$res-2}) r. 1,{$res-1},1,1,3 ++. 1 a[-3--1] x round. 1 r. 1,{w*h},1,1,-1
   1,{3*($res-1)},1,1,200 1,{$res-1},1,1,1 a[-5--1] y nm. [3D\ superformula]
-  v +
 
 #@cli tensors3d : _radius_factor>=0,_shape={ 0=box | >=N=ellipsoid },_radius_min>=0
 #@cli : Generate 3D tensor fields from selected images.
@@ -16758,7 +16723,7 @@ superformula3d : check "${1=1024}>1 && ${2=8}>=1" skip ${3=1},${4=5},${5=8}
 tensors3d : check "${1=1}>=0 && isint(${2=2}) && $2>=0 && ${3=0.05}>=0"
   e[^-1] "Generate 3D tensor field(s) from image$?, with radius factor $1, "\
           ${"if $2 u ellipsoid else u box fi"}" shape and radius min $3."
-  v - repeat $! l[$>]
+  repeat $! l[$>]
 
     # Check input image format.
     if s==1 100%,100%,100%,6,"[i#0,0,0,i#0,0,i#0]" k.
@@ -16814,7 +16779,7 @@ tensors3d : check "${1=1}>=0 && isint(${2=2}) && $2>=0 && ${3=0.05}>=0"
         draw(#ind,col,0,off,0,0,1,size(col),1,1);
         0); I"
     rm[0] +3d
-  endl done v +
+  endl done
 
 #@cli text_pointcloud3d : _"text1",_"text2",_smoothness
 #@cli : Input 3D text pointcloud from the two specified strings.
@@ -16822,7 +16787,6 @@ tensors3d : check "${1=1}>=0 && isint(${2=2}) && $2>=0 && ${3=0.05}>=0"
 #@cli : $ text_pointcloud3d "G'MIC","Rocks!"
 text_pointcloud3d : skip "${1=text1}","${2=text2}",${3=1}
   e[^-1] "Input 3D pointcloud text object from strings '$1' and '$2', with smoothness $3."
-  v -
   0 t. "$1",0,0,53,1,1
   0 t. "$2",0,0,53,1,1 mirror. y
   autocrop[-2,-1] 0
@@ -16840,7 +16804,7 @@ text_pointcloud3d : skip "${1=text1}","${2=text2}",${3=1}
   -|[-2,-1]
 
   b. $3 isosurface3d. 25%
-  c3d. n3d. nm. "[3D text pointcloud]" v +
+  c3d. n3d. nm. "[3D text pointcloud]"
 
 #@cli text3d : text,_font_height>0,_depth>0,_smoothness
 #@cli : Input a 3D text object from specified text.
@@ -16848,17 +16812,16 @@ text_pointcloud3d : skip "${1=text1}","${2=text2}",${3=1}
 #@cli : $ text3d "G'MIC as a\n3D logo!"
 text3d : skip ${2=53},${3=10},${4=1.5}
   e[^-1] "Input 3D text object '$1' with size $2, depth $3 and smoothness $4."
-  v - 0 t. "$1",0,0,$2,1,1 autocrop. 0 r. 100%,100%,$3 expand_xyz. 10,0
-  b. $4 isosurface3d. 40% rv3d. nm. "[3D text '$1']" v +
+  0 t. "$1",0,0,$2,1,1 autocrop. 0 r. 100%,100%,$3 expand_xyz. 10,0
+  b. $4 isosurface3d. 40% rv3d. nm. "[3D text '$1']"
 
 #@cli t3d : eq. to 'texturize3d'.
 t3d : check ${"is_image_arg $1"}" && (!narg(${2=}) || "${"is_image_arg $2"}")"
   e[^-1] "Texturize 3D object$? with texture $1"\
          ${"if narg($2) u \" and texture coordinates $2\" else u \"\" fi"}"."
-  v - pass$1 0 slices. 0 if s==1 to_rgb. else channels. 0,2 fi
+  pass$1 0 slices. 0 if s==1 to_rgb. else channels. 0,2 fi
   if narg($2) pass$2 else 0 fi
-  _texturize3d
-  v +
+  v + _texturize3d v -
 
 #@cli texturize3d : [ind_texture],_[ind_coords]
 #@cli : Texturize selected 3D objects with specified texture and coordinates.
@@ -16869,10 +16832,9 @@ t3d : check ${"is_image_arg $1"}" && (!narg(${2=}) || "${"is_image_arg $2"}")"
 texturize3d : check ${"is_image_arg $1"}" && (!narg(${2=}) || "${"is_image_arg $2"}")"
   e[^-1] "Texturize 3D object$? with texture $1"\
          ${"if narg($2) u \" and texture coordinates $2\" else u \"\" fi"}"."
-  v - pass$1 0 slices. 0 if s==1 to_rgb. else channels. 0,2 fi
+  pass$1 0 slices. 0 if s==1 to_rgb. else channels. 0,2 fi
   if narg($2) pass$2 else 0 fi
-  _$0
-  v +
+  v + _$0 v -
 
 _texturize3d :
   repeat $!-2 l[$>,-2,-1]
@@ -16963,7 +16925,6 @@ _texturize3d :
 #@cli : $ torus3d 10,3 +primitives3d 1 color3d[-2] ${-RGB}
 torus3d : check "${3=24}>2 && ${4=12}>2" skip ${1=1},${2=0.3}
   e[^-1] "Input 3D torus, with radii ($1,$2) and subdivisions ($3,$4)."
-  v -
   # Header.
   nbp={$3*$4}
   1,8,1,1,67.5,73.5,109.5,103.5,51.5,100.5,$nbp,{$4*$3}
@@ -16983,27 +16944,26 @@ torus3d : check "${3=24}>2 && ${4=12}>2" skip ${1=1},${2=0.3}
   # Colors / opacities.
   3,{h},1,1,200 1,{h},1,1,1 y[-4--2] a[-5--1] y
   nm. [3D\ torus]
-  v +
 
 #@cli triangle3d : x0,y0,z0,x1,y1,z1,x2,y2,z2
 #@cli : Input 3D triangle at specified coordinates.
 #@cli : $ repeat 100 a={$>*pi/50} triangle3d 0,0,0,0,0,3,{cos(3*$a)},{sin(2*$a)},0 color3d[-1] ${-RGB} done add3d
 triangle3d :
   e[^-1] "Input 3D triangle ($1,$2,$3)-($4,$5,$6)-($7,$8,$9)."
-  v - 1,25,1,1,67.5,73.5,109.5,103.5,51.5,100.5,3,1,${1-9},3,0,1,2,200,200,200,1 nm. [3D\ triangle] v +
+  1,25,1,1,67.5,73.5,109.5,103.5,51.5,100.5,3,1,${1-9},3,0,1,2,200,200,200,1 nm. [3D\ triangle]
 
 #@cli volume3d
 #@cli : Transform selected 3D volumetric images as 3D parallelepipedic objects.
 #@cli : $ image.jpg animate blur,0,5,30 append z volume3d
 volume3d :
   e[^-1] "Transform image$? as 3D parallelepipedic objects."
-  v - repeat $! l[$>]
+  repeat $! l[$>]
     w={w} h={h} d={d}
     +slices 0 +slices[0] 100% mirror. y
     +columns[0] 0 +columns[0] 100% permute[-2,-1] zyxc mirror.. x
     +rows[0] 0 +rows[0] 100% permute[-2,-1] xzyc mirror.. y
     rm[0] image6cube3d *3d $w,$h,$d
-  endl done v +
+  endl done
 
 #@cli weird3d : _resolution>0
 #@cli : Input 3D weird object at (0,0,0), with specified resolution.
@@ -17011,13 +16971,11 @@ volume3d :
 #@cli : $ weird3d 48 +primitives3d 1 color3d[-2] ${-RGB}
 weird3d : skip ${1=32}
   e[^-1] "Input 3D weird object, with resolution $1."
-  v -
   isosurface3d '"
     T = 1.61803399;
     2 - (cos(x + T*y) + cos(x - T*y) + cos(y + T*z) + cos(y - T*z) + cos(z - T*x) + cos(z + T*x))"',\
     0,-4.7,-4.7,-4.7,4.7,4.7,4.7,$1,$1,$1
   c3d. n3d. nm. [3D\ weird]
-  v +
 
 #-------------------------------
 #
