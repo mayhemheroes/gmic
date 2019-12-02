@@ -312,7 +312,7 @@ struct gmic {
                              const char *const command, const char *const item,
                              const gmic_list<T>& images);
 
-  gmic& print(const char *format, ...);
+  gmic& print(const int verbosity_min, const char *format, ...);
   gmic& error(const bool output_header, const char *format, ...);
   gmic& debug(const char *format, ...);
 
@@ -328,7 +328,8 @@ struct gmic {
   void wait_threads(void *const p_gmic_threads, const bool try_abort, const T& pixel_type);
 
   template<typename T>
-  gmic& print(const gmic_list<T>& list, const gmic_image<unsigned int> *const callstack_selection,
+  gmic& print(const int verbosity_min,
+              const gmic_list<T>& list, const gmic_image<unsigned int> *const callstack_selection,
 	      const char *format, ...);
 
   template<typename T>
