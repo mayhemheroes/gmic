@@ -2422,13 +2422,13 @@ _display2d :
 
 #@cli da : eq. to 'display_array'.
 da :
-  _gmic_s="$?" v + _display_array $* v -
+  _gmic_s="$?" v + _display_array $*
 
 #@cli display_array : _width>0,_height>0
 #@cli : Display images in interactive windows where pixel neighborhoods can be explored.
 #@cli : Default values: 'width=13' and 'height=width'.
 display_array :
-  _gmic_s="$?" v + _$0 $* v -
+  _gmic_s="$?" v + _$0 $*
 
 _display_array : check ${1=13}>0" && "${2=$1}>0
   e[0--3] "Display $1x$2 array of pixel values for image"$_gmic_s"."
@@ -3439,7 +3439,7 @@ _document_gmic_example_html :
   else # Regular example.
     if !isfile(['{/$_filename}']) # Generate picture only if the file doesn't yet exist.
        m "foo : "{t}
-       l[] v -99 reset foo _document_gmic o $_filename,85 rm endl
+       l[] reset foo _document_gmic o $_filename,85 rm endl
        uncommand foo
     fi
     ({'${-eon}"<tr><td width=\"24\" align=\"center\"><div><a href=\""$_filename"\" class=\"highslide\"
@@ -3515,7 +3515,7 @@ _document_gmic_example_images :
   if !isfile(['{/$_filename}']) # Generate picture only if the file doesn't yet exist.
     m "foo"$_example" : "{t}
     l[]
-      reset v -99 etime=$| foo$_example etime={_round($|-$etime,0.01)} _document_gmic o $_filename,85 rm
+      reset etime=$| foo$_example etime={_round($|-$etime,0.01)} _document_gmic o $_filename,85 rm
     endl
     uncommand foo$_example
     e[] "\r    "${_gmic_c}"["$_example"]"${_gmic_n}" Command '"${_gmic_g}$_command_name${_gmic_n}"': $ "{t}\
@@ -3655,7 +3655,7 @@ _document_gmic_example_latex :
     _is_desc=0
     if !isfile(['{/$_filename}']) # Generate picture only if the file doesn't yet exist.
        m "foo : "{t}
-       l[] v -99 reset foo _document_gmic o $_filename,85 rm endl
+       l[] reset foo _document_gmic o $_filename,85 rm endl
        uncommand foo
     fi
     _document_gmic_replace_latex
@@ -5417,14 +5417,14 @@ update_server :
   m "varname : ({'\"$""1\"'}) f. if((i>=48&&i<=57)||(i>=65&&i<=90)||(i>=97&&i<=122),i,95) u {t} rm."
   m "load_gmic : "\
     "_nb_sources+=1 filename=${\"basename $""1\"} "\
-    "v + e[] $_gmic_c\"  \"$_nb_sources\". \"$_gmic_n$filename\"  \" v - "\
+    "e[] $_gmic_c\"  \"$_nb_sources\". \"$_gmic_n$filename\"  \""\
     "l[] "\
-    "  i raw:$""1,char nm {0,b} v + e[] $_gmic_g\"      [retrieved from source '$""1']\"$_gmic_n v - "\
+    "  i raw:$""1,char nm {0,b} e[] $_gmic_g\"      [retrieved from source '$""1']\"$_gmic_n "\
     "onfail l[] "\
     "  source=https://gmic.eu/include/$filename "\
-    "  i raw:$source,char v + e[] $_gmic_c\"      [retrieved from archive '\"$source\"']\n\"$_gmic_n v - "\
-    "  onfail v + e[] $_gmic_r\"      [error, not reachable!]\n\"$_gmic_n v -"\
-    "  endl endl"
+    "  i raw:$source,char e[] $_gmic_c\"      [retrieved from archive '\"$source\"']\n\"$_gmic_n "\
+    "onfail e[] $_gmic_r\"      [error, not reachable!]\n\"$_gmic_n "\
+    "endl endl"
 
   # Copy latest command definitions on G'MIC server if necessary.
   e[] "> Upload latest version ("${-strver}") of commands on G'MIC server.\n"
@@ -20335,7 +20335,7 @@ median_files : check "isint(${2=0}) && $2>=0 && isint(${3=-1}) && ($3>=0 || $3==
   files 3,"$1" _N=/{narg(${})-1} arg2var _file,${}
   l[]
     ${_file{$frame+1}} nm. res f. 0
-    v + _median_stream "${_file{$frame+1}}",${2-6}
+    v + _median_stream "${_file{$frame+1}}",${2-6} v -
   endl
 
 #@cli median_video : video_filename,_first_frame>=0,_last_frame={ >=0 | -1=last },_frame_step>=1,\
@@ -20352,7 +20352,7 @@ median_video : check "isint(${2=0}) && $2>=0 && isint(${3=-1}) && ($3>=0 || $3==
   _N=
   l[]
     "$1",0 nm. res f. 0
-    v + _median_stream "\"$1\",$frame",${2-6}
+    v + _median_stream "\"$1\",$frame",${2-6} v -
   endl
 
 _median_stream :
