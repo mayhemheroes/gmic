@@ -2169,14 +2169,14 @@ double gmic::mp_call(char *const str, void *const p_list, const T& pixel_type) {
       } else CImg<char>::string("*ext").move_to(gmic_instance.callstack);
       unsigned int pos = 0;
 
-      --gmic_instance.verbosity;
       try {
+        --gmic_instance.verbosity;
         gmic_instance._run(gmic_instance.commands_line_to_CImgList(gmic::strreplace_fw(str)),pos,images,images_names,
                            parent_images,parent_images_names,variables_sizes,0,0,command_selection);
+        ++gmic_instance.verbosity;
       } catch (gmic_exception&) {
         res = cimg::type<double>::nan();
       }
-      ++gmic_instance.verbosity;
       gmic_instance.callstack.remove();
       if (!gmic_instance.status || !*gmic_instance.status || cimg_sscanf(gmic_instance.status,"%lf%c",&res,&sep)!=1)
         res = cimg::type<double>::nan();
@@ -2308,19 +2308,19 @@ static DWORD WINAPI gmic_parallel(void *arg)
 #endif // #if cimg_OS!=2
 {
   _gmic_parallel<T> &st = *(_gmic_parallel<T>*)arg;
-  --st.gmic_instance.verbosity;
   try {
     unsigned int pos = 0;
     st.gmic_instance.abort_ptr(st.gmic_instance.is_abort);
     st.gmic_instance.is_debug_info = false;
+    --st.gmic_instance.verbosity;
     st.gmic_instance._run(st.commands_line,pos,*st.images,*st.images_names,
                           *st.parent_images,*st.parent_images_names,
                           st.variables_sizes,0,0,st.command_selection);
+    ++st.gmic_instance.verbosity;
   } catch (gmic_exception &e) {
     st.exception._command.assign(e._command);
     st.exception._message.assign(e._message);
   }
-  ++st.gmic_instance.verbosity;
 #if defined(gmic_is_parallel) && defined(_PTHREAD_H)
   pthread_exit(0);
 #endif // #if defined(gmic_is_parallel) && defined(_PTHREAD_H)
@@ -13495,16 +13495,16 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 g_list_c[l] = images_names[uind];
               }
 
-              --verbosity;
               try {
                 is_debug_info = false;
+                --verbosity;
                 _run(ncommands_line,nposition,g_list,g_list_c,images,images_names,nvariables_sizes,&_is_noarg,
                      argument,&selection);
+                ++verbosity;
               } catch (gmic_exception &e) {
                 cimg::swap(exception._command,e._command);
                 cimg::swap(exception._message,e._message);
               }
-              ++verbosity;
 
               g_list.move_to(images,~0U);
               cimglist_for(g_list_c,l) g_list_c[l].copymark();
@@ -13532,16 +13532,16 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               }
               cimg::mutex(27,0);
 
-              --verbosity;
               try {
                 is_debug_info = false;
+                --verbosity;
                 _run(ncommands_line,nposition,g_list,g_list_c,images,images_names,nvariables_sizes,&_is_noarg,
                      argument,&selection);
+                ++verbosity;
               } catch (gmic_exception &e) {
                 cimg::swap(exception._command,e._command);
                 cimg::swap(exception._message,e._message);
               }
-              ++verbosity;
 
               const unsigned int nb = std::min((unsigned int)selection.height(),g_list.size());
               if (nb>0) {
