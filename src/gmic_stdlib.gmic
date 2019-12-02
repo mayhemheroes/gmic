@@ -2555,22 +2555,22 @@ __display_array :
 
 #@cli dfft : eq. to 'display_fft'.
 dfft :
-  _display_fft
+  v + _display_fft v -
 
 #@cli display_fft
 #@cli : Display fourier transform of selected images, with centered log-module and argument.
 #@cli : (eq. to 'dfft').
 #@cli : $ image.jpg +display_fft
 display_fft :
-  _$0
+  v + _$0 v -
 
 _display_fft :
   e[0--3] "Render fourier transform of image$? with centered log-module and argument."
-  v - repeat $! l[$>] fftpolar +.. 1 log.. n 0,255 a x endl done s x,2 v +
+  repeat $! l[$>] fftpolar +.. 1 log.. n 0,255 a x endl done s x,2
 
 #@cli dg : eq. to 'display_graph'.
 dg : check "${1=0}>=0 && ${2=0}>=0" skip ${3=1},${4=0},${5=0},${6=0},${7=0},${8=0},"${9=x-axis}","${10=y-axis}"
-  _display_graph ${1-8},"$9","$10"
+  v + _display_graph ${1-8},"$9","$10" v -
 
 #@cli display_graph : _width>=0,_height>=0,_plot_type,_vertex_type,_xmin,_xmax,_ymin,_ymax,_xlabel,_ylabel
 #@cli : Render graph plot from selected image data.
@@ -2583,12 +2583,12 @@ dg : check "${1=0}>=0 && ${2=0}>=0" skip ${3=1},${4=0},${5=0},${6=0},${7=0},${8=
 #@cli : $ 128,1,1,1,'cos(x/10+u)' +display_graph 400,300,3
 display_graph : check "${1=0}>=0 && ${2=0}>=0"
   skip ${3=1},${4=0},${5=0},${6=0},${7=0},${8=0},"${9=x-axis}","${10=y-axis}"
-  _display_graph ${1-8},"$9","$10"
+  v + _display_graph ${1-8},"$9","$10" v -
 
 _display_graph : check "${1=0}>=0 && ${2=0}>=0"
   skip ${3=1},${4=0},${5=0},${6=0},${7=0},${8=0},"${9=x-axis}","${10=y-axis}"
   e[0--3] "Render $1x$2 graph plot from data of image$?."
-  v - repeat $! l[$>] nm={0,n}
+  repeat $! l[$>] nm={0,n}
 
     # Determine output size.
     if $1>0" && "$2>0 w,h=$1,$2 else w,h={{*,u}/2},{{*,v}/2} fi
@@ -2634,7 +2634,7 @@ _display_graph : check "${1=0}>=0 && ${2=0}>=0"
     0 t. "$9",0,0,14,1,-220,-220,-220 j.. .,{({-2,w}-w)/2},{{-2,h}-16},0,0,-1 rm.
     0 t. "$10",0,0,14,1,-220,-220,-220 rotate. -90 j.. .,2,{({-2,h}-h)/2},0,0,-1 rm.
 
-  nm $nm endl done c 0,255 v +
+  nm $nm endl done c 0,255
 
 #@cli dh : eq. to 'display_histogram'.
 dh :
@@ -19496,11 +19496,11 @@ fisheye : skip ${1=50},${2=50},${3=50},${4=1.2}
 flower : skip ${1=30},${2=6},${3=0},${4=0},${5=50%},${6=50%},${7=3}
   e[^-1] "Apply flower deformation on image$?, with amplitude $1, frequency $2, offset $3, angle $4 deg. and
           center point ($1,$2)."
-  v - if ${"is_percent $3"}
+  if ${"is_percent $3"}
     transform_polar "r + (R*$3) + R*$1/100*cos(a*$2+$4*pi/180)","a",$5,$6,$7
   else
     transform_polar "r + $3 + R*$1/100*cos(a*$2+$4*pi/180)","a",$5,$6,$7
-  fi v +
+  fi
 
 #@cli kaleidoscope : _center_x[%],_center_y[%],_radius,_angle,\
 # _boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }
