@@ -2107,7 +2107,8 @@ inline char *_gmic_argument_text(const char *const argument, CImg<char>& argumen
      } \
      ++position; \
    } else if (cimg_sscanf(argument,"'%4095[^']%c%c",formula,&sep,&end)==2 && sep=='\'') { \
-     strreplace_fw(formula); gmic_echo(description3 ".",arg3_1,arg3_2); \
+     strreplace_fw(formula); \
+     gmic_echo(description3 ".",arg3_1,arg3_2); \
      cimg_forY(selection,l) { \
        CImg<T>& img = gmic_check(images[selection[l]]); \
        if (is_get) { \
@@ -6970,12 +6971,12 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
         // Echo.
         if (!is_get && is_command_echo) {
-          if (is_verbose) {
+          if (verbosity>=-1 || is_debug) {
             gmic_substitute_args(false);
             name.assign(argument,(unsigned int)std::strlen(argument) + 1);
             cimg::strunescape(name);
-            if (is_selection) print(0,images,&selection,"%s",name.data());
-            else gmic_echo("%s",name.data());
+            if (is_selection) print(-1,images,&selection,"%s",name.data());
+            else print(-1,images,0,"%s",name.data());
           }
           ++position; continue;
         }
@@ -9935,8 +9936,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               unsigned int nposition = 0, o_verbosity = verbosity;
               bool _is_noarg = false;
               CImg<char>::string("").move_to(callstack); // Anonymous scope
+              --verbosity;
               _run(ncommands_line,nposition,images,images_names,images,images_names,variables_sizes,&_is_noarg,
                    argument,&selection);
+              ++verbosity;
               callstack.remove();
               is_quit = is_return = *is_abort = false;
               verbosity = o_verbosity;
@@ -13498,6 +13501,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 g_list[l] = images[uind];
                 g_list_c[l] = images_names[uind];
               }
+              --verbosity;
               try {
                 is_debug_info = false;
                 _run(ncommands_line,nposition,g_list,g_list_c,images,images_names,nvariables_sizes,&_is_noarg,
@@ -13506,6 +13510,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 cimg::swap(exception._command,e._command);
                 cimg::swap(exception._message,e._message);
               }
+              ++verbosity;
               g_list.move_to(images,~0U);
               cimglist_for(g_list_c,l) g_list_c[l].copymark();
               g_list_c.move_to(images_names,~0U);
@@ -13532,6 +13537,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               }
               cimg::mutex(27,0);
 
+              --verbosity;
               try {
                 is_debug_info = false;
                 _run(ncommands_line,nposition,g_list,g_list_c,images,images_names,nvariables_sizes,&_is_noarg,
@@ -13540,6 +13546,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 cimg::swap(exception._command,e._command);
                 cimg::swap(exception._message,e._message);
               }
+              ++verbosity;
 
               const unsigned int nb = std::min((unsigned int)selection.height(),g_list.size());
               if (nb>0) {
@@ -14450,7 +14457,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             unsigned int nposition = 0, o_verbosity = verbosity;
             bool _is_noarg = false;
             CImg<char>::string("").move_to(callstack); // Anonymous scope
+            --verbosity;
             _run(ncommands_line,nposition,g_list,g_list_c,images,images_names,variables_sizes,&_is_noarg,argument,0);
+            ++verbosity;
             callstack.remove();
             is_quit = is_return = *is_abort = false;
             verbosity = o_verbosity;
