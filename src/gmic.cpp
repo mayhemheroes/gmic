@@ -2308,6 +2308,7 @@ static DWORD WINAPI gmic_parallel(void *arg)
 #endif // #if cimg_OS!=2
 {
   _gmic_parallel<T> &st = *(_gmic_parallel<T>*)arg;
+  --st.gmic_instance.verbosity;
   try {
     unsigned int pos = 0;
     st.gmic_instance.abort_ptr(st.gmic_instance.is_abort);
@@ -2319,6 +2320,7 @@ static DWORD WINAPI gmic_parallel(void *arg)
     st.exception._command.assign(e._command);
     st.exception._message.assign(e._message);
   }
+  ++st.gmic_instance.verbosity;
 #if defined(gmic_is_parallel) && defined(_PTHREAD_H)
   pthread_exit(0);
 #endif // #if defined(gmic_is_parallel) && defined(_PTHREAD_H)
@@ -6958,12 +6960,14 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
         // Echo.
         if (is_command_echo) {
-          if (is_verbose) {
+          if (verbosity>=-1 || is_debug) {
             gmic_substitute_args(false);
             name.assign(argument,(unsigned int)std::strlen(argument) + 1);
             cimg::strunescape(name);
+            ++verbosity;
             if (is_selection) print(images,&selection,"%s",name.data());
             else print(images,0,"%s",name.data());
+            --verbosity;
           }
           ++position; continue;
         }
@@ -9923,8 +9927,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               unsigned int nposition = 0;
               bool _is_noarg = false;
               CImg<char>::string("").move_to(callstack); // Anonymous scope
+              --verbosity;
               _run(ncommands_line,nposition,images,images_names,images,images_names,variables_sizes,&_is_noarg,
                    argument,&selection);
+              ++verbosity;
               callstack.remove();
 
             } else { // Not found -> Try generic image saver
@@ -13484,6 +13490,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 g_list[l] = images[uind];
                 g_list_c[l] = images_names[uind];
               }
+
+              --verbosity;
               try {
                 is_debug_info = false;
                 _run(ncommands_line,nposition,g_list,g_list_c,images,images_names,nvariables_sizes,&_is_noarg,
@@ -13492,6 +13500,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 cimg::swap(exception._command,e._command);
                 cimg::swap(exception._message,e._message);
               }
+              ++verbosity;
+
               g_list.move_to(images,~0U);
               cimglist_for(g_list_c,l) g_list_c[l].copymark();
               g_list_c.move_to(images_names,~0U);
@@ -13518,6 +13528,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               }
               cimg::mutex(27,0);
 
+              --verbosity;
               try {
                 is_debug_info = false;
                 _run(ncommands_line,nposition,g_list,g_list_c,images,images_names,nvariables_sizes,&_is_noarg,
@@ -13526,6 +13537,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 cimg::swap(exception._command,e._command);
                 cimg::swap(exception._message,e._message);
               }
+              ++verbosity;
 
               const unsigned int nb = std::min((unsigned int)selection.height(),g_list.size());
               if (nb>0) {
@@ -14436,7 +14448,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             unsigned int nposition = 0;
             bool _is_noarg = false;
             CImg<char>::string("").move_to(callstack); // Anonymous scope
+            --verbosity;
             _run(ncommands_line,nposition,g_list,g_list_c,images,images_names,variables_sizes,&_is_noarg,argument,0);
+            ++verbosity;
             callstack.remove();
 
           } else { // Not found -> Try generic image loader
