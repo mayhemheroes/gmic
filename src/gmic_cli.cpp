@@ -203,8 +203,7 @@ int main(int argc, char **argv) {
         images.assign();
         images_names.assign();
         images.insert(gmic::stdlib);
-        gmic_instance.verbosity = -1;
-        gmic("_host=cli l v 0 help \"\" onfail endl v - q",images,images_names);
+        gmic("v - _host=cli l v 0 help \"\" onfail endl v - q",images,images_names);
       }
     } else { // Help for a specified command
       CImg<char> tmp_line(1024);
@@ -213,7 +212,7 @@ int main(int argc, char **argv) {
         gmic_instance.verbosity = -1;
         gmic_instance.run(tmp_line,images,images_names);
       } catch (...) { // Fallback in case default version of 'help' has been overloaded
-        cimg_snprintf(tmp_line,tmp_line.width(),"l v 0 help \"%s\",1 onfail endl v - q",help_argument);
+        cimg_snprintf(tmp_line,tmp_line.width(),"v - l v 0 help \"%s\",1 onfail endl v - q",help_argument);
         images.assign();
         images_names.assign();
         images.insert(gmic::stdlib);
