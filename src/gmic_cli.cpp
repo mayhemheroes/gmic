@@ -197,26 +197,25 @@ int main(int argc, char **argv) {
     cimg::output(stdout);
     if (is_global_help) { // Global help
       try {
-        gmic_instance.verbosity = -1;
-        gmic_instance.run("l v 0 help \"\" onfail endl v - q",images,images_names);
+        gmic_instance.verbosity = 0;
+        gmic_instance.run("l help \"\" onfail endl q",images,images_names);
       } catch (...) { // Fallback in case default version of 'help' has been overloaded
         images.assign();
         images_names.assign();
         images.insert(gmic::stdlib);
-        gmic("v - _host=cli l v 0 help \"\" onfail endl v - q",images,images_names);
+        gmic("v 0 _host=cli l help \"\" onfail endl q",images,images_names);
       }
     } else { // Help for a specified command
       CImg<char> tmp_line(1024);
       try {
-        cimg_snprintf(tmp_line,tmp_line.width(),"l v 0 help \"%s\",1 onfail endl v - q",help_argument);
-        gmic_instance.verbosity = -1;
+        cimg_snprintf(tmp_line,tmp_line.width(),"l help \"%s\",1 onfail endl q",help_argument);
+        gmic_instance.verbosity = 0;
         gmic_instance.run(tmp_line,images,images_names);
       } catch (...) { // Fallback in case default version of 'help' has been overloaded
-        cimg_snprintf(tmp_line,tmp_line.width(),"v - l v 0 help \"%s\",1 onfail endl v - q",help_argument);
+        cimg_snprintf(tmp_line,tmp_line.width(),"v 0 l help \"%s\",1 onfail endl q",help_argument);
         images.assign();
         images_names.assign();
         images.insert(gmic::stdlib);
-        gmic_instance.verbosity = -1;
         gmic(tmp_line,images,images_names);
       }
     }
@@ -229,8 +228,8 @@ int main(int argc, char **argv) {
 
   CImgList<char> items;
   if (argc==1) { // When no args have been specified
-    gmic_instance.verbosity = -1;
-    CImg<char>::string("l[] v 0 cli_noarg onfail endl v -").move_to(items);
+    CImg<char>::string("l[] cli_noarg onfail endl").move_to(items);
+    gmic_instance.verbosity = 0;
   } else {
     for (int l = 1; l<argc; ++l) { // Split argv as items
       if (std::strchr(argv[l],' ')) {
@@ -297,7 +296,7 @@ int main(int argc, char **argv) {
         images.insert(gmic::stdlib);
         CImg<char> tmp_line(1024);
         cimg_snprintf(tmp_line,tmp_line.width(),
-                      "v - "
+                      "v 0 "
                       "l[] i raw:\"%s\",char m \"%s\" onfail rm endl "
                       "l[] i raw:\"%s\",char m \"%s\" onfail rm endl "
                       "rv help \"%s\",0 q",
@@ -307,7 +306,7 @@ int main(int argc, char **argv) {
         try {
           gmic(tmp_line,images,images_names);
         } catch (...) {
-          cimg_snprintf(tmp_line,tmp_line.width(),"v - help \"%s\",1 q",e.command());
+          cimg_snprintf(tmp_line,tmp_line.width(),"v 0 help \"%s\",1 q",e.command());
           images.assign();
           images_names.assign();
           images.insert(gmic::stdlib);

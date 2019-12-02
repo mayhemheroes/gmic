@@ -175,7 +175,7 @@
 
 # This command is run when the cli tool 'gmic' is invoked without arguments on the command line.
 cli_noarg :
-  use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r version
+  v 0 use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r version
   e[] "\n[gmic] No commands, options or data provided"
   if {*,u}>0
     e[] "[gmic] (type "${c}"'gmic help'"$n" to get help, "${c}"'gmic demo'"$n" to launch demos)."
@@ -208,10 +208,6 @@ cli_start :
 #@cli : messages about its internal state on the standard output (stdout).
 #@cli : This option is useful for developers or to report possible bugs of the interpreter.
 
-# _fe : (forced echo) -> display text regardless of the current verbosity level.
-_fe :
-  V=$^ v -1 e[] $"*" v $V
-
 #@cli h : eq. to 'help'.
 h :
   help $"*"
@@ -228,7 +224,7 @@ help : skip ${1=""},${2=1}
 
 _help : skip ${1=""}
   v - 1 use_vt100
-  if !narg("$1") _is_example=0 __help ascii _fe[] "" rm u "" return fi # Global help.
+  if !narg("$1") _is_example=0 __help ascii e[] "" rm u "" return fi # Global help.
 
   ({'"$1"'}) autocrop. {'-'}
   if {@100%}==_']'" && "i!=_'[' l. s -,{'['} k[0] endl fi
@@ -236,7 +232,7 @@ _help : skip ${1=""}
 
   # Help requested for a specific command.
   ks0="0" ks1="k[0]"
-  if $2 _fe[] "" __help_header_ascii[] fi
+  if $2 e[] "" __help_header_ascii[] fi
   r 1,{h+1},1,1,0,0,0,1
   s +,{'"#@cli "$command" :"'} s +,{'"#@cli "$command":"'} s +,{'"#@cli "$command"\n"'}
   if $!==1
@@ -246,8 +242,8 @@ _help : skip ${1=""}
     onfail ({'${}'}) s -,{'" (did you mean "'} if $!>1 s[1] -,39 k[1] misspelling={t} fi rm
     endl
     if narg($misspelling) misspelling=" (did you mean '"$_gmic_g$misspelling$_gmic_n"' ?)" fi
-    _fe[] "\n[gmic] Command '"$_gmic_r$command$_gmic_n"' has no description"$misspelling". "\
-      "Try '"${_gmic_c}"gmic -h"$_gmic_n"' for global help.\n\n"
+    e[] "\n[gmic] Command '"$_gmic_r$command$_gmic_n"' has no description"$misspelling". "\
+        "Try '"${_gmic_c}"gmic -h"$_gmic_n"' for global help.\n\n"
     rm u "" return
   fi
   rm[0] a y discard 13 s -,10 append_multiline_comments
@@ -261,8 +257,8 @@ _help : skip ${1=""}
       if ['{0,t}']==['$command']
         _document_gmic_declaration_ascii
         if $_shortcut # Found shortcut command.
-          _fe[] "\n    "$_gmic_m${_gmic_b}$command":"$_gmic_n" Shortcut for command '"\
-                $_gmic_m$_gmic_b$_shortcutlink0$_gmic_n"'."
+          e[] "\n    "$_gmic_m${_gmic_b}$command":"$_gmic_n" Shortcut for command '"\
+              $_gmic_m$_gmic_b$_shortcutlink0$_gmic_n"'."
           u $_shortcutlink0 return
         fi
         else stopflag=1
@@ -276,7 +272,7 @@ _help : skip ${1=""}
         if i==_'$' # Example of use.
           rows 1,100% autocrop {'" "'} # Discard '$' character.
           if i==_'$' # Tutorial page.
-             _fe[] ""
+             e[] ""
              if h==1" && "i==_'$' tuturl=https://gmic.eu/tutorial/_$command.shtml
              else autocrop {'$'} autocrop {'" "'} tuturl=https://gmic.eu/tutorial/{0,t}.shtml
              fi
@@ -295,7 +291,7 @@ _help : skip ${1=""}
       fi
     fi
   else stopflag=1 fi ${ks{$!!=0}} endl if $stopflag break fi done
-  _fe[] $_gmic_n"\n" rm u ""
+  e[] $_gmic_n"\n" rm u ""
 
 # Display global help.
 __help :
@@ -1327,6 +1323,7 @@ _help_header_ascii :
   _help_section "Usage"
 
 __help_header_ascii :
+  v 0
   if $_prerelease strprerelease=" (pre-release ""#"$_prerelease")" else strprerelease="" fi
   str="\n  "${_gmic_b}"gmic: GREYC\'s Magic for Image Computing."$_gmic_n"
 \n        "$_gmic_g"(https://gmic.eu)"$_gmic_n"
@@ -1335,23 +1332,27 @@ __help_header_ascii :
 \n        Copyright (c) 2008-2019, David Tschumperle / GREYC Lab / CNRS.
 \n        "$_gmic_c"(https://www.greyc.fr)"$_gmic_n
   if ['$$_e']==0 m "_e : e[] \"$""*\"" fi
-  _fe[] $str
+  e[] $str
 
 _help_section_ascii :
+  v 0
   _section+=1
   {narg({'"$1"'})},1,1,1,{'-'}
-  _fe[] "\n "$_gmic_m$_gmic_b$_section". $1"
-  _fe[] "    "${_space{narg({'$_section'})}}{t}$_gmic_n"\n"
+  e[] "\n "$_gmic_m$_gmic_b$_section". $1"
+  e[] "    "${_space{narg({'$_section'})}}{t}$_gmic_n"\n"
   rm.
 
 _help_paragraph_ascii :
-  _fe[] "$*"
+  v 0
+  e[] "$*"
 
 _help_footer_ascii :
-  _fe[] " "$_gmic_r$_gmic_b"** G\47MIC comes with ABSOLUTELY NO WARRANTY; for details visit: https://gmic.eu **"$_gmic_n
+  v 0
+  e[] " "$_gmic_r$_gmic_b"** G\47MIC comes with ABSOLUTELY NO WARRANTY; for details visit: https://gmic.eu **"$_gmic_n
 
 # Commands to output help in html format.
 _help_header_html :
+  v 0
   _section=0
   if $_prerelease strprerelease=" (pre-release ""#"$_prerelease")" else strprerelease="" fi
   _gmic_n="</span>"
@@ -1362,7 +1363,7 @@ _help_header_html :
   _gmic_b="<span style=\"font-weight: bold\">"
   _gmic_quotedc="<span class=\"ref_code\">"
   _gmic_quotedg="<span style=\\\"color: \#203090; font-family: monospace\\\">"
-  _fe[] "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\"
+  e[] "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\"
  \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">
 \n<!--#include file=\"header.html\" -->
 \n<div id=\"bloc_option\">
@@ -1432,11 +1433,13 @@ v -
  _help_section "Usage"
 
 _help_section_html :
+  v 0
   _section+=1
-  _fe[] "<hr style=\"border-top: 1px solid \#ccc;\"/>\n<h2><a href=\"#toc\"><img alt=\"\" border=\"0\"
-         src=\"img/back_top.png\" />&nbsp;&nbsp;</a><a id=\"section"$_section"\">$1</a></h2>"
+  e[] "<hr style=\"border-top: 1px solid \#ccc;\"/>\n<h2><a href=\"#toc\"><img alt=\"\" border=\"0\"
+       src=\"img/back_top.png\" />&nbsp;&nbsp;</a><a id=\"section"$_section"\">$1</a></h2>"
 
 _help_paragraph_html :
+  v 0
   ({'{/"$*"}'})
   replace_str. "'"{/$_gmic_c},$_gmic_quotedc
   replace_str. "'"{/$_gmic_g},$_gmic_quotedg
@@ -1445,11 +1448,12 @@ _help_paragraph_html :
   replace_str. "  . ","  &#9702; "
   replace_str. "  _ ","  &#9654; "
   add_link_html. 1
-  _fe[] "<pre>"{t}"</pre>"
+  e[] "<pre>"{t}"</pre>"
   rm.
 
 _help_footer_html :
-  _fe[] "
+  v 0
+  e[] "
 \n<br/><b><font color=\"brown\">** G\47MIC comes with ABSOLUTELY NO WARRANTY; for details visit:
  <a href=\"https://gmic.eu\">https://gmic.eu **</a></font></b>
 \n</tt>
@@ -1463,6 +1467,7 @@ _help_footer_html :
 
 # Commands to output help in latex format.
 _help_header_latex :
+  v 0
   strver=${-strver}
   if $_prerelease strprerelease=" (pre-release \\#"$_prerelease")" else strprerelease="" fi
   _gmic_n="§\\aftergroup\\Ccn§"
@@ -1471,7 +1476,7 @@ _help_header_latex :
   _gmic_g="§\\aftergroup\\Ccg§"
   _gmic_c="§\\aftergroup\\Ccb§"
   _gmic_m=""
-  _fe[] "\\documentclass[a4paper,10.5pt,twoside]{book}
+  e[] "\\documentclass[a4paper,10.5pt,twoside]{book}
 \n\\usepackage{hyperref,fancyhdr,graphicx,amssymb,amsmath,times,makeidx,listings,color}
 \n\\graphicspath{{img/}}
 \n\\pagestyle{fancyplain}
@@ -1562,28 +1567,32 @@ _help_header_latex :
 "
 
 _help_section_latex : skip "$1"
-  _fe[] "~\\\\\\section{$1}"
+  v 0
+  e[] "~\\\\\\section{$1}"
 
 _help_paragraph_latex : skip "$1"
-  _fe[] "\\small"
-  _fe[] "\\begin{lstlisting}[escapechar=§]"
-  _fe[] "$1"
-  _fe[] "\\end{lstlisting}"
-  _fe[] "\\normalsize"
+  v 0
+  e[] "\\small"
+  e[] "\\begin{lstlisting}[escapechar=§]"
+  e[] "$1"
+  e[] "\\end{lstlisting}"
+  e[] "\\normalsize"
 
 _help_footer_latex :
-  _fe[] "
+  v 0
+  e[] "
 \n\\printindex
 \n~\\\\$\\square$~End of document.
 \n\n\\end{document}"
 
 # Commands to output help in man page format.
 _help_header_man :
-  _fe[] ".TH G\47MIC 1\n\
-         .SH NAME\n\
-         gmic \\- Perform image processing operations using the G\47MIC framework.\n\
-         \n\
-         .SH HELP\n"
+  v 0
+  e[] ".TH G\47MIC 1\n\
+       .SH NAME\n\
+       gmic \\- Perform image processing operations using the G\47MIC framework.\n\
+       \n\
+       .SH HELP\n"
   _gmic_n="\\fR"
   _gmic_b="\\fB"
   _gmic_r=""
@@ -1600,12 +1609,14 @@ _help_header_man :
   _help_section "Usage"
 
 _help_section_man :
+  v 0
   _section+=1
   {narg({'"$1"'})},1,1,1,{'-'}
-  _fe[] "\n \\fI"$_section". $1\\fR\n"
+  e[] "\n \\fI"$_section". $1\\fR\n"
   rm.
 
 _help_paragraph_man :
+  v 0
   l[] ({'"$*"'})
   replace_str "\\fR","__N"
   replace_str "\\fB","__B"
@@ -1614,7 +1625,7 @@ _help_paragraph_man :
   replace_str "__N","\\\\fR"
   replace_str "__B","\\\\fB"
   replace_str "__I","\\\\fI"
-  _fe[] {0,t}
+  e[] {0,t}
   rm endl
 
 _help_footer_man :
@@ -2978,7 +2989,7 @@ _display_warp : check "${1=15}>0"
 document_gmic : skip ${1="ascii"},${2=""},${3=1}
   if !$! return fi
   if $_vt100" && "['"$1"']=='ascii' use_vt100 fi
-  v -1
+  v 0
 
   # Concatenate command data and split them into lines.
   _name={0,b} # Basename for the commands definition file.
@@ -3441,7 +3452,7 @@ _document_gmic_example_html :
   else # Regular example.
     if !isfile(['{/$_filename}']) # Generate picture only if the file doesn't yet exist.
        m "foo : "{t}
-       l[] v -99 reset foo v -1 _document_gmic o $_filename,85 rm endl
+       l[] v -99 reset foo _document_gmic o $_filename,85 rm endl
        uncommand foo
     fi
     ({'${-eon}"<tr><td width=\"24\" align=\"center\"><div><a href=\""$_filename"\" class=\"highslide\"
@@ -3522,7 +3533,7 @@ _document_gmic_example_images :
   if !isfile(['{/$_filename}']) # Generate picture only if the file doesn't yet exist.
     m "foo"$_example" : "{t}
     l[]
-      v -1 reset v -99 etime=$| foo$_example etime={_round($|-$etime,0.01)} v -1 _document_gmic o $_filename,85 rm
+      reset v -99 etime=$| foo$_example etime={_round($|-$etime,0.01)} _document_gmic o $_filename,85 rm
     endl
     uncommand foo$_example
     v +
@@ -3669,7 +3680,7 @@ _document_gmic_example_latex :
     _is_desc=0
     if !isfile(['{/$_filename}']) # Generate picture only if the file doesn't yet exist.
        m "foo : "{t}
-       l[] v -99 reset foo v -1 _document_gmic o $_filename,85 rm endl
+       l[] v -99 reset foo _document_gmic o $_filename,85 rm endl
        uncommand foo
     fi
     _document_gmic_replace_latex
@@ -22831,7 +22842,7 @@ demo : check "isint(${1=2}) && $1>=0 && $1<=2" check_display
 
     # Manage user selection.
     if !$mb" && "$omb" && "$ind_clicked" && "$ind_clicked==$ind
-      m "com : v 0 "${arg\ $ind,$commands} parallel $parallel_mode,"l[] com v -1 rm endl" uncommand com
+      m "com : v 0 "${arg\ $ind,$commands} parallel $parallel_mode,"l[] com rm endl" uncommand com
     elif !$mb ind_clicked=0
     fi
     omb=$mb
