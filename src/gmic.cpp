@@ -9920,14 +9920,12 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               cimg_snprintf(formula,_formula.width(),"output_%s[%s] \"%s\"",
                             uext.data(),*s_selection?s_selection:"^",filename);
               const CImgList<char> ncommands_line = commands_line_to_CImgList(formula);
-              unsigned int nposition = 0, o_verbosity = verbosity;
+              unsigned int nposition = 0;
               bool _is_noarg = false;
               CImg<char>::string("").move_to(callstack); // Anonymous scope
               _run(ncommands_line,nposition,images,images_names,images,images_names,variables_sizes,&_is_noarg,
                    argument,&selection);
               callstack.remove();
-              is_quit = is_return = *is_abort = false;
-              verbosity = o_verbosity;
 
             } else { // Not found -> Try generic image saver
 
@@ -14435,13 +14433,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           if (search_sorted(formula,commands_names[hash],commands_names[hash].size(),pattern)) { // Command found
             cimg_snprintf(formula,_formula.width(),"input_%s[] \"%s\"",ext,_filename0);
             const CImgList<char> ncommands_line = commands_line_to_CImgList(formula);
-            unsigned int nposition = 0, o_verbosity = verbosity;
+            unsigned int nposition = 0;
             bool _is_noarg = false;
             CImg<char>::string("").move_to(callstack); // Anonymous scope
             _run(ncommands_line,nposition,g_list,g_list_c,images,images_names,variables_sizes,&_is_noarg,argument,0);
             callstack.remove();
-            is_quit = is_return = *is_abort = false;
-            verbosity = o_verbosity;
 
           } else { // Not found -> Try generic image loader
 
