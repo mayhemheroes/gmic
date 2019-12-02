@@ -6023,7 +6023,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               file = 0;
             }
             if (file) {
-              status.move_to(_status); // Save status because 'add_commands()' can change it
+              status.move_to(_status); // Save status because 'add_commands()' can change it, with 'error()'
               const int _verbosity = verbosity;
               const bool _is_debug = is_debug;
               verbosity = -1; is_debug = false;
@@ -14388,7 +14388,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           std::FILE *const gfile = cimg::fopen(filename,"rb");
 
           bool is_command_error = false;
-          status.move_to(_status); // Save status because 'add_commands' can change it
+          status.move_to(_status); // Save status because 'add_commands' can change it, with error()
           const int _verbosity = verbosity;
           const bool _is_debug = is_debug;
           verbosity = -1; is_debug = false;
