@@ -6458,7 +6458,7 @@ _update_header_html : check "${2=0}>=0 && isbool(${3=0})"
 #@cli : $ (1,2,3,4,2,4,3,1,3,4,2,1) split x remove_duplicates append x
 remove_duplicates :
   e[^-1] "Remove duplicates images in selected list of image$?."
-  v - repeat $!,base
+  repeat $!,base
     off=0
     repeat $!-$>-1
       comp={$base+1+$>-$off}
@@ -6466,13 +6466,13 @@ remove_duplicates :
       +-[$base,$comp] abs. is_duplicate={!is} rm.
       if $is_duplicate rm[$comp] off+=1 fi
     done
-  done v +
+  done
 
 #@cli remove_empty
 #@cli : Remove empty images in the selected image list.
 remove_empty :
   e[^-1] "Remove empty images in selected list of image$?."
-  v - repeat $! if {$<,!whds} rm[$<] fi done v +
+  repeat $! if {$<,!whds} rm[$<] fi done
 
 #@cli rv : eq. to 'reverse'. : (+)
 
@@ -6487,9 +6487,9 @@ remove_empty :
 #@cli : Default values: 'ordering=+', 'criterion=i'.
 #@cli : $ (1;4;7;3;9;2;4;7;6;3;9;1;0;3;3;2) split y sort_list +,i append y
 sort_list : skip ${1=+},${2=i}
-  v - s0="descending" s1="ascending" v +
+  s0="descending" s1="ascending"
   e[^-1] "Sort list of image$? in "${s{_'+'=='$1'}}" order, according to the image criterion '$2'."
-  v - if $!
+  if $!
     if '$2'=='n' # Special case : lexicographic order from image names
       op={`;'$1'=='-'?_'>':_'<'`}
       (0,{$!-1})
@@ -6514,7 +6514,7 @@ sort_list : skip ${1=+},${2=i}
       repeat h nm[$>] ${nm{i(0,$>)}} done
       rm.
     fi
-  fi v +
+  fi
 
 _sort_list_lexi :
   u {"
@@ -6534,7 +6534,7 @@ _sort_list_lexi :
 #@cli : Sort selected images (viewed as a list of strings) in lexicographic order.
 sort_str :
   e[^-1] "Sort image$? in lexicographic order."
-  v - y a x
+  y a x
   repeat round(h/4,1,1) y={4*$>}
     repeat $! l[$<]
       +rows $y,{$y+3} f[1] 'if(i>=97&&i<=122,i-32,i)' -. 32 c. 0,63 s. y *.. 64 *... 4096 *[-4] 262144 +[-4--1]
@@ -6543,7 +6543,7 @@ sort_str :
       x0=0 repeat $!-1 x1={$x0+{{1+$>},h}} +z[0] $x0,{$x1-1} x0=$x1 done
       rm[0-$N]
     endl done
-  done s x v +
+  done s x
 
 #---------------------------------
 #
@@ -6591,8 +6591,8 @@ sort_str :
 #@cli : $ image.jpg sample lena,lion,square +argmax
 argmax :
   e[^-1] "Compute argmax of image$?."
-  v - $!,1,1,1,x ({'{^}'}) l. s +,{','} i[0--1:2] ({'i#'}) y a y str={t} endl rm[-2,-1]
-  ${-max_whds},"argmax("$str")" k. nm [argmax] v +
+  $!,1,1,1,x ({'{^}'}) l. s +,{','} i[0--1:2] ({'i#'}) y a y str={t} endl rm[-2,-1]
+  ${-max_whds},"argmax("$str")" k. nm [argmax]
 
 #@cli argmin
 #@cli : Compute the argmin of selected images. Returns a single image
@@ -6601,8 +6601,8 @@ argmax :
 argmin :
   e[^-1] "Compute argmin of image$?."
   if !$! return fi
-  v - $!,1,1,1,x ({'{^}'}) l. s +,{','} i[0--1:2] ({'i#'}) y a y str={t} endl rm[-2,-1]
-  ${-max_whds},"argmin("$str")" k. nm [argmin] v +
+  $!,1,1,1,x ({'{^}'}) l. s +,{','} i[0--1:2] ({'i#'}) y a y str={t} endl rm[-2,-1]
+  ${-max_whds},"argmin("$str")" k. nm [argmin]
 
 #@cli asin : (+)
 #@cli : Compute the pointwise arcsine of selected images.
@@ -6674,12 +6674,12 @@ argmin :
 #@cli : Default value: 'epsilon=1e-8'.
 div_complex : check ${3=1e-8}>=0
   e[^-1] "Divide complex pair$? by complex pair "${"pass$1,$2 -1"}" (with epsilon $3)."
-  v - repeat int($!/2) pass${1,2} 0 l[$>,{$>+1},-2,-1]
+  repeat int($!/2) pass${1,2} 0 l[$>,{$>+1},-2,-1]
     +*[1,2] +*[0,3] -[-2,-1] # bc-ad
     *[0] [2] *[1] [3] +[0,1] # ac+bd
     sqr[1,2] +[1,2] +[1] $3  # c^2+d^2
     /[2] [1] /[0,1]
-  endl done v +
+  endl done
 
 #@cli == : eq. to 'eq'. : (+)
 
@@ -6798,10 +6798,10 @@ div_complex : check ${3=1e-8}>=0
 #@cli : $ image.jpg +mul_channels 1,0.5,0.8
 mul_channels :
   e[^-1] "Multiply channels of image$? by value sequence ($*)."
-  v - $=arg repeat $#,i
+  $=arg repeat $#,i
     fact=${arg{1+($>%$#)}}
     repeat $! if {$>,$i<s} sh[$>] $i *. $fact rm. fi done
-  done v +
+  done
 
 #@cli mul_complex : [multiplier_real,multiplier_imag]
 #@cli : Perform multiplication of the selected complex pairs (real1,imag1,...,realN,imagN) of images by
@@ -6809,10 +6809,10 @@ mul_channels :
 #@cli : In complex pairs, the real image must be always located before the imaginary image in the image list.
 mul_complex :
   e[^-1] "Multiply complex pair$? by complex pair "${"pass$1,$2 -1"}"."
-  v - repeat int($!/2) pass${1,2} 0 l[$>,{$>+1},-2,-1]
+  repeat int($!/2) pass${1,2} 0 l[$>,{$>+1},-2,-1]
     +*[0,3] +*[1,2] +[-2,-1] # ad+bc
     *[0,2] *[1,2] -[0,1] # ac-bd
-  endl done v +
+  endl done
 
 #@cli != : eq. to 'neq'. : (+)
 
@@ -6923,9 +6923,8 @@ mul_complex :
 #@cli : $ image.jpg +apply_curve 1,0,0,128,255,255,0
 apply_curve : check "${1=1}>=0 && $1<=1" skip ${2=0},${3=100}
   e[^-1] "Apply intensity curve with smoothness $1 and keypoints (${2--1}) on image$?."
-  v - function1d ${^0}
+  function1d ${^0}
   repeat $!-1 l[$>,-1] s.. c map[^-1] .,1 rm. a c endl done
-  v +
 
 #@cli apply_gamma : gamma>=0
 #@cli : Apply gamma correction to selected images.
@@ -6933,7 +6932,7 @@ apply_curve : check "${1=1}>=0 && $1<=1" skip ${2=0},${3=100}
 apply_gamma : check $1>=0
   e[^-1] "Apply Gamma-correction to image$?, with gamma $1."
   if $1==1 return fi
-  v - repeat $! l[$>] mM={[im,iM]} n 0,1 ^ {1/$1} n $mM endl done v +
+  repeat $! l[$>] mM={[im,iM]} n 0,1 ^ {1/$1} n $mM endl done
 
 #@cli balance_gamma : _ref_color1,...
 #@cli : Compute gamma-corrected color balance of selected image, with respect to specified reference color.
@@ -6941,11 +6940,11 @@ apply_gamma : check $1>=0
 #@cli : $ image.jpg +balance_gamma 128,64,64
 balance_gamma : check "isnum(${1=128})"
   e[^-1] "Apply gamma-corrected color balance of image$?, with reference color ("${^0}")."
-  v - repeat $! l[$>]
+  repeat $! l[$>]
     (${^0}) r. {-2,s},1,1,1,0,1 s.. c /. 255
     repeat $!-1 /[$>] 255 ^[$>] {log({@$>})/log({$>,ia})} *[$>] 255 done
     rm. a c c 0,255
-  endl done v +
+  endl done
 
 #@cli cast : datatype_source,datatype_target
 #@cli : Cast datatype of image buffer from specified source type to specified target type.
@@ -6953,7 +6952,6 @@ balance_gamma : check "isnum(${1=128})"
 # { uchar | char | ushort | short | uint | int | uint64 | int64 | float | double }.
 cast :
   e[^-1] "Cast datatype of image buffer$? from '$1' to '$2'."
-  v -
   stype="$1"
   if s='$stype';s[0]==_'u'&&s[1]!=_'n' stype="unsigned_"{`s='$stype';s[1,size(s)-1]`}
   elif s='$stype';s[0]==_'u'&&s[0,9]=='"unsigned "' stype="unsigned_"{`s='$stype';s[9,size(s)-9]`}
@@ -6973,16 +6971,16 @@ cast :
     i[1] ({'\n1\ {int($w*$h*$d*$s*$ssize/$dsize)}\ 1\ 1\n'}) y[1]
     replace_str[0] $stype,$dtype
     a y unserialize
-  endl done v +
+  endl done
 
 #@cli complex2polar
 #@cli : Compute complex to polar transforms of selected images.
 #@cli : $ image.jpg +fft complex2polar[-2,-1] log[-2] shift[-2] 50%,50%,0,0,2 remove[-1]
 complex2polar :
   e[^-1] "Compute complex to polar transforms of image$?."
-  v - repeat int($!/2) l[{2*$>},{2*$>+1}]
+  repeat int($!/2) l[{2*$>},{2*$>+1}]
     r[1] [0],3 +atan2[1] [0] nm. {1,n} sqr[-3,-2] +[-3,-2] sqrt..
-  endl done v +
+  endl done
 
 #@cli compress_clut : _max_error>0,_avg_error>0,_max_nbpoints>=8,\
 # _error_metric={ 0=L2-norm | 1=deltaE_1976 | 2=deltaE_2000 },_reconstruction_colorspace={ 0=srgb | 1=rgb | 2=lab },\
@@ -6995,12 +6993,12 @@ compress_clut : check "${1=1.25}>0 && ${2=0.75}>0 && isint(${3=2048}) && $3>8 &&
   e[^-1] "Compress color LUT$? as a set of colored keypoints, with maximum error $1, average error $2, "\
          "$3 maximum keypoints, "${"s0,s1,s2=L2-RGB,DeltaE_1976,DeltaE_2000 u $s$4"}" metric and "\
          ${"s0,s1,s2=srgb,rgb,lab u $s$5"}" colorspace for reconstruction."
-  v - max_error,avg_error,max_keypoints,metric,colorspace,try_rbf=${1-6}
+  max_error,avg_error,max_keypoints,metric,colorspace,try_rbf=${1-6}
   if $try_rbf method=rbf else method=pde fi
   repeat $! l[$>] nm={b}
     if iM>255 / 257 fi # When input is 16bits
     if d==1 S={round(cbrt(wh))} r $S,$S,$S,100%,-1 fi # When input is a 2D haldclut image
-    v + e[] "\n* Process CLUT '"$nm"' ("{w}"x"{h}"x"{d}")." v -
+    e[] "\n* Process CLUT '"$nm"' ("{w}"x"{h}"x"{d}")."
 
     # Detect B&W cluts.
     if "s==3 &&
@@ -7028,7 +7026,7 @@ compress_clut : check "${1=1.25}>0 && ${2=0.75}>0 && isint(${3=2048}) && $3>8 &&
       if !$_metric -. [0] norm. else srgb2lab. deltaE. [1],{$_metric-1}," " fi
       emax,eavg={[iM,ia]}
 
-      v + e[] "\r"$sep"  > Add [#"{-2,h}"] Max_Err = "{_$emax}", Avg_Err = "{_$eavg}"         " v - sep=""
+      e[] "\r"$sep"  > Add [#"{-2,h}"] Max_Err = "{_$emax}", Avg_Err = "{_$eavg}"         " sep=""
       if $emax<=$max_error" && "$eavg<=$avg_error rm. break fi
       1,1,1,{0,s+3},{"P = [ xM,yM,zM ]; [ P*255/[max(1,w#0-1),max(1,h#0-1),max(1,d#0-1)], I(#0,P) ]"} rm..
       a[-2,-1] y
@@ -7052,9 +7050,8 @@ compress_clut : check "${1=1.25}>0 && ${2=0.75}>0 && isint(${3=2048}) && $3>8 &&
       emax,eavg={[iM,ia]} rm.
 
       if $emax<=$max_error" && "$eavg<=$avg_error rv[-2,-1] else index+=1 fi
-      v +
       e[] "\r"$sep"  > Rem [#"{min($index,h-1)}"/"{h}"] Max_Err = "{_$emax}", Avg_Err = "{_$eavg}"       "
-      v - sep=""
+      sep=""
       rm.
     while $index<h
     k.
@@ -7063,12 +7060,12 @@ compress_clut : check "${1=1.25}>0 && ${2=0.75}>0 && isint(${3=2048}) && $3>8 &&
     1,100%,1,1,"P = I(#0); P[0]*65536 + P[1]*256 + P[2]" rv a x sort {`'$method'=='rbf'?_'+':_'-'`},y z. 1,100%
 
     to_clutname $nm nm ${}
-  endl done v +
+  endl done
 
 # compress_cluts : "file_pattern",_max_error>0,_avg_error>0,_max_nb_points>=8 : "file_list.txt"
 # Batch compress CLUT files.
 compress_cluts : check "${2=8}>0 && ${3=2}>0 && isint(${4=2047}) && $4>8"
-  v - rm
+  rm
   if isfile(['{/"$1"}']) i raw:"$1",uchar s -,{'\n'}
   else files "$1" ({'${}'}) s -,{','}
   fi
@@ -7085,10 +7082,10 @@ compress_cluts : check "${2=8}>0 && ${3=2}>0 && isint(${4=2047}) && $4>8"
       if "dat = (date(5) + 60*(date(4) + date(2)*24));
           fdat = (date(5,'"{/$cclut}"') + 60*(date(4,'"{/$cclut}"') + date(2,'"{/$cclut}"')*24));
           !h && dat-fdat<30"
-        v + e[] "* Skip file '"$filename"' (CLUT already being compressed)." v -
+        e[] "* Skip file '"$filename"' (CLUT already being compressed)."
         need_compression=0
       elif h>0" && "h!=2048
-        v + e[] "* Skip file '"$filename"' (CLUT already compressed)." v -
+        e[] "* Skip file '"$filename"' (CLUT already compressed)."
         need_compression=0
       fi
       rm.
@@ -7098,24 +7095,24 @@ compress_cluts : check "${2=8}>0 && ${3=2}>0 && isint(${4=2047}) && $4>8"
       0 o. $cclut rm. # Lock current file
       if lowercase(['$ext'])=='cube' input_cube $filename c. 0,255
       elif lowercase(['$ext'])=='png' i $filename S={round(cbrt(wh))} r $S,$S,$S,100%,-1
-      else v + e[] "* Skip file '"$filename"' (unknown CLUT format)." v - continue
+      else e[] "* Skip file '"$filename"' (unknown CLUT format)." continue
       fi
 
-      v + e[] "* Compress file '"$filename"'." v -
+      e[] "* Compress file '"$filename"'."
       if w>48 r3dx 48 fi
       to_rgb
-      v + tic compress_clut $2,$3,$4 toc v -
+      tic compress_clut $2,$3,$4 toc
       o $cclut
     fi
     rm
-  endl done v +
+  endl done
 
 # cluts2libclut : "compressed_CLUT_collection.gmz"
 # Convert specified compressed CLUT collection for C++ 'libclut'
 # (https://framagit.org/dtschump/libclut)
 cluts2libclut : skip ${1=$HOME/work/src/gmic/resources/gmic_cluts.gmz}
   e[] "Convert compressed CLUT collection '$1' to .png/.ppm/.txt for C++ libclut."
-  v - l[]
+  l[]
     i $1
     0 nm. "$1" basename={b} rm.
     list=
@@ -7124,7 +7121,7 @@ cluts2libclut : skip ${1=$HOME/work/src/gmic/resources/gmic_cluts.gmz}
     o. $basename.ppm
     ({'$list'}) o. raw:$basename.txt,uchar
     rm
-  endl v +
+  endl
 
 #@cli compress_rle : _is_binary_data={ 0 | 1 },_maximum_sequence_length>=0
 #@cli : Compress selected images as 2xN data matrices, using RLE algorithm.
@@ -7132,9 +7129,9 @@ cluts2libclut : skip ${1=$HOME/work/src/gmic/resources/gmic_cluts.gmz}
 #@cli : Default values: 'is_binary_data=0' and 'maximum_sequence_length=0'.
 #@cli : $ image.jpg resize2dy 100 quantize 4 round +compress_rle , +decompress_rle[-1]
 compress_rle : skip ${1=0} check "isint(${2=0}) && $2>=0"
-  v - s0=" for binary data" s1=""
+  s0=" for binary data" s1=""
   if $2 s=", with maximal sequence length "$2 else s="" fi
-  v + e[^-1] "Compress image$? using RLE algorithm"${s{!$1}}$s"." v -
+  e[^-1] "Compress image$? using RLE algorithm"${s{!$1}}$s"."
   repeat $! l[$>] nm={0,n} im={im} header={w};{h};{d};{s};$im;{$1!=0}
     - $im y x ({{0,@-1}+1}) a x r 100%,3
     f '>if(y==0,i,if(y==1,if(i(x,0)==i(x+1,0),-1,x),if(i(x-1,1)==-1,i(x-1,2)+1,1)))'
@@ -7150,7 +7147,7 @@ compress_rle : skip ${1=0} check "isint(${2=0}) && $2>=0"
       *. -1 rv a x y discard -1 f '>if(i(0,y-1)<0&&i==0&&i(0,y+1)<0,-1,i)' discard -1
     fi
     i[0] ($header) a y nm $nm
-  endl done v +
+  endl done
 
 #@cli cumulate : { x | y | z | c }...{ x | y | z | c } : (no arg) : (+)
 #@cli : Compute the cumulative function of specified image data, optionally along the specified axes.
@@ -7171,13 +7168,13 @@ decompress_clut : check "isint(${1=48}) && $1>0 && isint(${2=$1}) && $2>0 && isi
                         "isin(${4=0},0,1,2)"
   e[^-1] "Decompress colored keypoint$? into $1x$2x$3 CLUTs, using "\
          ${"s0,s1=srgb,rgb u $s$4"}" colorspace for reconstruction."
-  v - repeat $! l[$>]
+  repeat $! l[$>]
     if "h>=320 || (P0 = I[0]; P1 = I[h-1]; val(P) = (P[0]*65536 + P[1]*256 + P[2]); val(P0)>val(P1))"
       decompress_clut_pde. ${1-4}
     else
       decompress_clut_rbf. ${1-4}
     fi
-  endl done v +
+  endl done
 
 #@cli decompress_clut_rbf : _width>0,_height>0,_depth>0,_reconstruction_colorspace={ 0=srgb | 1=rgb | 2=lab }
 #@cli : Decompress selected colored keypoints into 3D CLUTs, using RBF thin plate spline interpolation.
@@ -7186,7 +7183,7 @@ decompress_clut_rbf : check "isint(${1=48}) && $1>0 && isint(${2=$1}) && $2>0 &&
                             "isin(${4=0},0,1,2)"
   e[^-1] "Decompress colored keypoint$? into $1x$2x$3 CLUTs (RBF approach), using "\
          ${"s0,s1,s2=srgb,rgb,lab u $s$4"}" colorspace for reconstruction."
-  v - repeat $! l[$>] nm={n}
+  repeat $! l[$>] nm={n}
     if $4 s c,-3 srgb2${"arg $4,rgb,lab"}. a c fi
     $1,$2,$3,{s-3},"*
       begin(
@@ -7209,7 +7206,7 @@ decompress_clut_rbf : check "isint(${1=48}) && $1>0 && isint(${2=$1}) && $2>0 &&
     if $4 ${"arg $4,rgb,lab"}2srgb fi
     nm $nm
   endl done
-  uncommand srgb2srgb v +
+  uncommand srgb2srgb
 
 #@cli decompress_clut_pde : _width>0,_height>0,_depth>0,_reconstruction_colorspace={ 0=srgb | 1=rgb | 2=lab }
 #@cli : Decompress selected colored keypoints into 3D CLUTs, using multiscale diffusion PDE's.
@@ -7218,7 +7215,7 @@ decompress_clut_pde : check "isint(${1=48}) && $1>0 && isint(${2=$1}) && $2>0 &&
                             "isin(${4=0},0,1,2)"
   e[^-1] "Decompress colored keypoint$? into $1x$2x$3 CLUTs (PDE approach), using "\
          ${"s0,s1,s2=srgb,rgb,lab u $s$4"}" colorspace for reconstruction."
-  v - repeat $! l[$>] nm={n}
+  repeat $! l[$>] nm={n}
     if $4 s c,-3 srgb2${"arg $4,rgb,lab"}. a c fi
     2,2,2,{s-3}
     do
@@ -7248,13 +7245,13 @@ decompress_clut_pde : check "isint(${1=48}) && $1>0 && isint(${2=$1}) && $2>0 &&
     if $4 ${"arg $4,rgb,lab"}2srgb fi
     nm $nm
   endl done
-  uncommand srgb2srgb v +
+  uncommand srgb2srgb
 
 #@cli decompress_rle
 #@cli : Decompress selected data vectors, using RLE algorithm.
 decompress_rle :
   e[^-1] "Decompress data vector$?, using RLE algorithm."
-  v - repeat $! l[$>]
+  repeat $! l[$>]
 
     # Retrieve original data dimension and min value.
     y whds={0,@0-3} im={0,@4} is_binary_data={0,@5} rows 6,100%
@@ -7283,7 +7280,7 @@ decompress_rle :
       $siz j3d. ..,0,0,0,1,2,0,0 rm..
     endl done
     a x r $whds,-1 + $im
-  endl done v +
+  endl done
 
 #@cli discard : _value1,_value2,... : { x | y | z | c}...{ x | y | z | c},_value1,_value2,... : (no arg) : (+)
 #@cli : Discard specified values in selected images or discard neighboring duplicate values,
@@ -7298,7 +7295,7 @@ decompress_rle :
 #@cli : $$
 eigen2tensor :
   e[^-1] "Recompose pairs in eigen field$? as 2x2 or 3x3 tensor fields."
-  v - repeat $!/2 l[$>,{$>+1}] nm={0,n}
+  repeat $!/2 l[$>,{$>+1}] nm={0,n}
     if s==2 # 2D tensors.
       s. c
       +sqr. *.. ... sqr... # u^2 uv v^2
@@ -7315,10 +7312,10 @@ eigen2tensor :
       s... c
       -[-5] ... -[-4] ... *.. [-5] *. [-4]
       (1^0^0^1^0^1) r. ... *. [-4] rm[-6--4] +[-3--1]
-    else v + error[0--3] "Command '$0': Invalid image ["{$!-$>-1}"] : Dimensions "{w}","{h}","{d}","{s}" does
+    else error[0--3] "Command '$0': Invalid image ["{$!-$>-1}"] : Dimensions "{w}","{h}","{d}","{s}" does
                           not represent a field of 2D or 3D eigenvectors."
     fi
-  nm $nm endl done v +
+  nm $nm endl done
 
 #@cli endian : _datatype : (+)
 #@cli : Reverse data endianness of selected images, eventually considering the pixel being of the specified datatype.
@@ -7354,25 +7351,23 @@ eigen2tensor :
 
 #@cli ir : eq. to 'inrange'.
 ir :
-  v - _gmic_s="$?" v +
-  _inrange $*
+  _gmic_s="$?" v + _inrange $* v -
 
 #@cli inrange : min[%],max[%]
 #@cli : Detect pixels whose values are in specified range [min,max], in selected images.
 #@cli : (eq. to 'ir').
 #@cli : $ image.jpg +inrange 25%,75%
 inrange :
-  v - _gmic_s="$?" v +
-  _$0 $*
+  _gmic_s="$?" v + _$0 $* v -
 
 _inrange :
   e[0--3] "Detect pixel values in range [$1,$2] in image"$_gmic_s"."
-  v - repeat $! l[$>]
+  repeat $! l[$>]
     m=$1 M=$2
     if ${is_percent\ $1} m={im+(iM-im)*$1} fi
     if ${is_percent\ $2} M={im+(iM-im)*$2} fi
     - {0.5*($m+$M)} abs <= {0.5*abs($M-$m)}
-  endl done v +
+  endl done
 
 #@cli map : [palette],_boundary_conditions : predefined_palette,_boundary_conditions : (+)
 #@cli : Map specified vector-valued palette to selected indexed scalar images.
@@ -7390,27 +7385,26 @@ _inrange :
 map_clut :
   e[^-1] "Map color LUT $1 on image$?."
   if !$! return fi
-  v - to_color
+  to_color
   if ${"is_image_arg $1"} pass$1 0 to_rgb. else clut "$1" fi
   l={round((w*h*d)^(1/3))}
-  if w*h*d!=$l^3 v + error "Command '$0': Specified CLUT $1 has invalid dimensions "({w},{h},{d},{s}). fi
+  if w*h*d!=$l^3 error "Command '$0': Specified CLUT $1 has invalid dimensions "({w},{h},{d},{s}). fi
   r. $l,$l,$l,3,-1
   repeat $!-1 l[$>,-1] nm={0,n} split_opacity[0] /[0] {256/$l}
     +warp. [0],0,1,1
     rm[0] mv. 0 a[^-1] c nm[0] $nm
-  endl done rm. v +
+  endl done rm.
 
 #@cli mix_channels : (a00,...,aMN) : [matrix]
 #@cli : Apply specified matrix to channels of selected images.
 #@cli : $ image.jpg +mix_channels (0,1,0;1,0,0;0,0,1)
 mix_channels :
   e[^-1] "Apply matrix $1 to channels of image$?."
-  v -
   if ${"is_image_arg $1"} pass$1 1 else i ${^0} fi
   repeat $!-1 l[$>] nm={n}
     whd={[w,h,d]} r. {[whd,s]},1,1,-1
     pass. 0 mv. 0 m* r $whd,{h},-1
-  nm $nm endl done rm. v +
+  nm $nm endl done rm.
 
 #@cli negate : base_value : (no arg)
 #@cli : Negate image values.
@@ -7419,12 +7413,11 @@ mix_channels :
 negate : skip "${1=,}"
   if isnum("$*")
     e[0--3] "Negate values of image$?, according to base value $*."
-    v - - {"$*"} * -1 v +
+    - {"$*"} * -1
   else
     e[0--3] "Negate values of image$?."
-    v - repeat $! -[$>] {$>,iM} done * -1
+    repeat $! -[$>] {$>,iM} done * -1
     if ['"$1"']!=',' noarg fi
-    v +
   fi
 
 #@cli noise : std_deviation>=0[%],_noise_type : (+)
@@ -7442,7 +7435,7 @@ negate : skip "${1=,}"
 #@cli : $ 500,500,1,3 noise_perlin ,
 noise_perlin : check "${1=16}>0 && ${2=$1}>0 && ${3=$1}>0 && isnum(${4=0}) && isnum(${5=0}) && isnum(${6=0})"
   e[^-1] "Render Perlin noise on image$?, with scales (${1-3}) and seeds (${4-6})."
-  v -
+
   init="permutation = [ 151,160,137,91,90,15,131,13,201,95,96,53,194,233,7,225,140,36,103,30,69,142,8,99,37,240,
                         21,10,23,190,6,148,247,120,234,75,0,26,197,62,94,252,219,203,117,35,11,32,57,177,33,88,
                         237,149,56,87,174,20,125,136,171,168,68,175,74,165,71,134,139,48,27,166,77,146,158,231,
@@ -7508,7 +7501,7 @@ noise_perlin : check "${1=16}>0 && ${2=$1}>0 && ${3=$1}>0 && isnum(${4=0}) && is
                      grad(p[B],fx1,fy)),
               lerp(u,grad(p[A + 1],fx,fy1),
                      grad(p[B + 1],fx1,fy1)))"
-  fi done v +
+  fi done
 
 #@cli noise_poissondisk : _radius[%]>0,_max_sample_attempts>0
 #@cli : Add poisson disk sampling noise to selected images.
@@ -7519,7 +7512,7 @@ noise_perlin : check "${1=16}>0 && ${2=$1}>0 && ${3=$1}>0 && isnum(${4=0}) && is
 ##### : Original G'MIC code by Garagecoder (Andy Kelday)
 noise_poissondisk : check "${1=8}>0 && ${2=30}>0"
   e[^-1] "Add poisson disk sampling points to image$?, with radius $1 and max sample attempts $2."
-  v - repeat $! l[$>]
+  repeat $! l[$>]
     R={${"is_percent $1"}?max(w,h,d)*$1:$1} # [0] input image to draw samples on
     dim={d>1?3:h>1?2:1} cw={0.999*$R/sqrt($dim)} # dimensions, grid cell width
     ({[w,h,d,1]}) y. c  # [1] image dimensions vector
@@ -7582,7 +7575,7 @@ noise_poissondisk : check "${1=8}>0 && ${2=30}>0"
         if (attempts == max_sample_attempts, dar_remove(#4,R));
       );
     " k[0]
-  endl done v +
+  endl done
 
 #@cli normp : p>=0
 #@cli : Compute the pointwise Lp-norm norm of vector-valued pixels in selected images.
@@ -7590,14 +7583,12 @@ noise_poissondisk : check "${1=8}>0 && ${2=30}>0"
 #@cli : $ image.jpg +normp[0] 0 +normp[0] 1 +normp[0] 2 +normp[0] inf
 normp : check "isnum(${1==2}) && $1>=0"
   e[^-1] "Compute pointwise L"$1"-norm of vectors, in image$?."
-  v -
   if $1==0 != 0 compose_channels +
   elif $1==1 abs compose_channels +
   elif $1==2 norm
   elif $1==inf abs compose_channels max
   else ^ $1 compose_channels + ^ {1/$1}
   fi
-  v +
 
 #@cli norm
 #@cli : Compute the pointwise euclidean norm of vector-valued pixels in selected images.
@@ -7605,7 +7596,7 @@ normp : check "isnum(${1==2}) && $1>=0"
 #@cli : $$
 norm :
   e[^-1] "Compute pointwise euclidean norm of vectors, in image$?."
-  v - sqr compose_channels + sqrt v +
+  sqr compose_channels + sqrt
 
 #@cli n : eq. to 'normalize'. : (+)
 
@@ -7620,14 +7611,14 @@ norm :
 #@cli : $ image.jpg +histogram normalize_sum[-1] display_graph[-1] 400,300
 normalize_sum :
   e[^-1] "Normalize image$? with a unitary sum."
-  v - repeat $! /[$>] {sum={$>,is};if(sum!=0,sum,1)} done v +
+  repeat $! /[$>] {sum={$>,is};if(sum!=0,sum,1)} done
 
 #@cli not
 #@cli : Apply boolean not operation on selected images.
 #@cli : $ image.jpg +ge 50% +not[-1]
 not :
   e[^-1] "Apply boolean not operation on image$?."
-  v - == 0 v +
+  == 0
 
 #@cli orientation
 #@cli : Compute the pointwise orientation of vector-valued pixels in selected images.
@@ -7635,14 +7626,14 @@ not :
 #@cli : $$
 orientation :
   e[^-1] "Compute pointwise orientation vectors, in image$?."
-  v - repeat $! +norm[$>] replace. 0,1 /[$>,-1] done v +
+  repeat $! +norm[$>] replace. 0,1 /[$>,-1] done
 
 #@cli oneminus
 #@cli : For each selected image, compute one minus image.
 #@cli : $ image.jpg normalize 0,1 +oneminus
 oneminus :
   e[^-1] "Compute one minus selected images$?."
-  v + * -1 + 1 v -
+  * -1 + 1
 
 #@cli otsu : _nb_levels>0
 #@cli : Hard-threshold selected images using Otsu's method.
@@ -7651,7 +7642,7 @@ oneminus :
 #@cli : $ image.jpg luminance +otsu ,
 otsu : check "isint(${1=256}) && $1>0"
   e[^-1] "Hard-threshold image$? using Otsu\47s method, with $1 histogram levels."
-  v - repeat $! l[$>]
+  repeat $! l[$>]
     imM={[im,iM]} +histogram $1,$imM
     otsu={"
       sum = sumB = wB = best_variance = best_t = 0;
@@ -7671,15 +7662,15 @@ otsu : check "isint(${1=256}) && $1>0"
       imM[0] + best_t*(imM[1] - imM[0])/(w - 1)"}
     rm. >=. $otsu
     if $> u ${},$otsu else u $otsu fi
-  endl done v +
+  endl done
 
 #@cli polar2complex
 #@cli : Compute polar to complex transforms of selected images.
 polar2complex :
   e[^-1] "Compute polar to complex transforms of image$?."
-  v - repeat int($!/2) l[{2*$>},{2*$>+1}]
+  repeat int($!/2) l[{2*$>},{2*$>+1}]
     r[1] [0],3 +sin. cos.. *. ... *[-3,-2]
-  endl done v +
+  endl done
 
 #@cli quantize : nb_levels>=1,_keep_values={ 0 | 1 },_quantization_type={ -1=median-cut | 0=k-means | 1=uniform }
 #@cli : Quantize selected images.
@@ -7688,7 +7679,7 @@ polar2complex :
 #@cli : $ 200,200,1,1,'cos(x/10)*sin(y/10)' +quantize[0] 6 +quantize[0] 4 +quantize[0] 3 +quantize[0] 2
 quantize : check "isint($1) && $1>=1 && isbool(${2=1}) && isint(${3=0}) && $3>=-1 && $3<=1"
   e[^-1] "Quantize image$? using $1 levels, "${arg\ 1+!$2,with,without}" keeping value range."
-  v - repeat $! l[$>]
+  repeat $! l[$>]
     if $3==1 # Uniform quantization.
       if s==1 # Greyscale image.
         if $2 mM={[im,iM]} n 0,$1 round 1,-1 min {$1-1} n $mM
@@ -7697,7 +7688,7 @@ quantize : check "isint($1) && $1>=1 && isbool(${2=1}) && isint(${3=0}) && $3>=-
       fi
     else +colormap $1,{!$3},1 index.. .,0,$2 rm. # Non-uniform quantization.
     fi
-  endl done v +
+  endl done
 
 #@cli quantize_area : _min_area>0
 #@cli : Quantize selected images such that each flat region has an area greater or equal to 'min_area'.
@@ -7705,8 +7696,7 @@ quantize : check "isint($1) && $1>=1 && isbool(${2=1}) && isint(${3=0}) && $3>=-
 #@cli : $ image.jpg quantize 3 +blur 1 round[-1] +quantize_area[-1] 2
 quantize_area : check "${1=10}>0"
   e[^-1] "Quantize image$? by regions of areas greater than $1."
-  v -
-  if $1==1 v + return fi
+  if $1==1 return fi
   repeat $! l[$>]
     if s>1 +f. "begin(A = resize([ 0,(s-1)/s ],s,3));I+A" norm. round. 0.01 else [0] fi
     area. 0,0 <. $1
@@ -7747,7 +7737,7 @@ quantize_area : check "${1=10}>0"
       rv[0,-1] rm.
     while iM
     rm.
-  endl done v +
+  endl done
 
 #@cli rand : { value0[%] | [image0] },_{ value1[%] | [image1] } : [image] : (+)
 #@cli : Fill selected images with random values uniformly distributed in the specified range.
@@ -7758,28 +7748,28 @@ quantize_area : check "${1=10}>0"
 #@cli : $ (1;2;3;4) +replace 2,3
 replace :
   e[^-1] "Replace pixel values $1 with $2 in image$?."
-  v - f "i==$1?$2:i" v +
+  f "i==$1?$2:i"
 
 #@cli replace_inf : _expression
 #@cli : Replace all infinite values in selected images by specified expression.
 #@cli : $ (0;1;2) log +replace_inf 2
 replace_inf :
   e[^-1] "Replace all infinite values in image$? by expression '$1'."
-  v - f "isinf(i)?$1:i" v +
+  f "isinf(i)?$1:i"
 
 #@cli replace_nan : _expression
 #@cli : Replace all NaN values in selected images by specified expression.
 #@cli : $ (-1;0;2) sqrt +replace_nan 2
 replace_nan :
   e[^-1] "Replace all NaN values in images$? by expression '$1'."
-  v - f "isnan(i)?$1:i" v +
+  f "isnan(i)?$1:i"
 
 #@cli replace_seq : "search_seq","replace_seq"
 #@cli : Search and replace a sequence of values in selected images.
 #@cli : $ (1;2;3;4;5) +replace_seq "2,3,4","7,8"
 replace_seq : skip "${2=}"
   e[^-1] "Replace value sequence '$1' by value sequence '${2--1}' in image$?."
-  v - ns,nd={[narg($1),narg(${2--1})]}
+  ns,nd={[narg($1),narg(${2--1})]}
   repeat $! l[$>]
     s +,$1 ind={"w#0 && crop(#0,0,0,0,0,1,min("$ns",h#0),1,1)!=[$1]"}
     if $ind<$!
@@ -7791,16 +7781,14 @@ replace_seq : skip "${2=}"
       fi
       a y
     fi
-  endl done v +
+  endl done
 
 #@cli replace_str : "search_str","replace_str"
 #@cli : Search and replace a string in selected images (viewed as strings, i.e. sequences of ascii codes).
 #@cli : $ ({'"Hello there, how are you ?"'}) +replace_str "Hello there","Hi David"
 replace_str : skip "${2=}"
   e[^-1] "Replace string '$1' by string '${2--1}' in image$? (viewed as string$?)."
-  v -
   replace_seq {``{'"$1"'}},{'"${2--1}"'}
-  v +
 
 #@cli round : rounding_value>=0,_rounding_type : (no arg) : (+)
 #@cli : Round values of selected images.
@@ -7816,9 +7804,9 @@ replace_str : skip "${2=}"
 roundify : check $1>=0
   e[^-1] "Roundify image$?, with gamma $1."
   if $1==1 return fi
-  v - repeat $! l[$>]
+  repeat $! l[$>]
     +round 1 -.. . +*.. 2 abs. ^. $1 sign... *[-3,-1] *.. 0.5 +
-  endl done v +
+  endl done
 
 #@cli = : eq. to 'set'. : (+)
 
@@ -7835,7 +7823,7 @@ roundify : check $1>=0
 #@cli : is prescribed to given matrix. Matrix size 'N' must be equal to 'spectrum^2'.
 set_vector_covariance :
   e[^-1] "Set covariance matrix of image$? to [ $* ]."
-  v - repeat $! l[$>]
+  repeat $! l[$>]
     if narg($*)!=s^2
       error[0--4] "Command '$0': Invalid arguments '$*' for image '"{n}"' with size ("{[w,h,d,s]}") ("{s^2}\
                   " argument"${"if s==1 u \"\" else u s fi"}" expected)."
@@ -7862,7 +7850,7 @@ set_vector_covariance :
          T = mul(R2,mul(D2,mul(invD1,invR1,s),s),s);
        );
        avg + T*(I - avg)"
-  endl done v +
+  endl done
 
 #@cli threshold : value[%],_is_soft={ 0 | 1 } :
 #@cli : Threshold values of selected images.
@@ -7872,7 +7860,6 @@ set_vector_covariance :
 #@cli : $$
 threshold : check "isexpr($1) && isbool(${2=0})"
   e[^-1] ${"arg 1+!$2,Soft,Hard"}"-threshold image$? by $1."
-  v -
   if $2  # Soft thresholding
     f "begin(
          str = ['$1'];
@@ -7882,33 +7869,32 @@ threshold : check "isexpr($1) && isbool(${2=0})"
        i<=-value?i + value:0"
   else ge $1
   fi
-  v +
 
 #@cli unrepeat
 #@cli : Remove repetition of adjacent values in selected images.
 #@cli : $ (1;1;1;1;1;2;2;2;3;4;4;4;5;5;5) +unrepeat
 unrepeat :
   e[^-1] "Remove repetition of adjacent values in image$?."
-  v - repeat $! l[$>] nm={0,n}
+  repeat $! l[$>] nm={0,n}
     y x ({{0,@-1}+1}) a x r 100%,2
     f. '>if(y==0,i,if(i(x,0)==i(x+1,0),-1,x))'
     z 0,{w-2} s y,2 discard[1] -1 map[1] [0]
     rm[0] nm $nm
-  endl done v +
+  endl done
 
 #@cli vector2tensor
 #@cli : Convert selected vector fields to corresponding tensor fields.
 vector2tensor :
   e[^-1] "Convert vector field$? to tensor field$?."
-  v - repeat $! l[$>]
+  repeat $! l[$>]
     s c
     if $!==2 +sqr. *.. ... sqr...
     elif $!==3 +sqr.. +*... .. +sqr... *[-5,-4] [-6] sqr[-6]
-    else v + error[0--4] "Command '$0': Invalid image ["{$!-$>-1}"] : Dimensions "{w}","{h}","{d}","{s}" does not
-                          represent a field of 2D or 3D vectors."
+    else error[0--4] "Command '$0': Invalid image ["{$!-$>-1}"] : Dimensions "{w}","{h}","{d}","{s}" does not
+                      represent a field of 2D or 3D vectors."
     fi
     a c
-  endl done v +
+  endl done
 
 #---------------------------------
 #
@@ -7928,7 +7914,7 @@ adjust_colors : check "${1=0}>=-100 && $1<=100 && ${2=0}>=-100 && $2<=100 && ${3
                        ${4=0}>=-100 && $4<=100 && ${5=0}>=-100 && $5<=100" skip ${6=0},${7=0}
   e[^-1] "Adjust colors of image$?, with brightness $1, contrast $2, gamma $3, hue shift $4, saturation $5 and
           value range [$6,$7]."
-  v - repeat $! l[$>] split_opacity
+  repeat $! l[$>] split_opacity
     range={"$6==$7 && $6==0?[im,iM]:[min($6,$7),max($6,$7)]"}
     m={arg(1,$range)} M={arg(2,$range)} fact={255/max(1e-5,$M-$m)}
     - $m * $fact
@@ -7947,12 +7933,11 @@ adjust_colors : check "${1=0}>=-100 && $1<=100 && ${2=0}>=-100 && $2<=100 && ${3
     +[0] {$1*2} # Adjust Brightness
     /[0] $fact +[0] $m c[0] $range # Renormalize values.
     a c
-  endl done v +
+  endl done
 
 #@cli ac : eq. to 'apply_channels'.
 ac :
-  v - _gmic_s="$?" v +
-  _apply_channels $"*"
+  _gmic_s="$?" v + _apply_channels $"*" v -
 
 #@cli apply_channels : "command",color_channels,_value_action={ 0=none | 1=cut | 2=normalize }
 #@cli : Apply specified command on the chosen color channel(s) of each selected images.
@@ -7965,11 +7950,10 @@ ac :
 #@cli : Default value: 'value_action=0'.
 #@cli : $ image.jpg +apply_channels "equalize blur 2",ycbcr_cbcr
 apply_channels :
-  v - _gmic_s="$?" v +
-  _$0 $"*"
+  _gmic_s="$?" v + _$0 $"*" v -
 
 _apply_channels : check "isint(${3=0}) && $3>=0 && $3<=2"
-  v - mode="$2"
+  mode="$2"
   if isnum("$2") if isint("$2")
     mode=${arg\ 1+$2,all,rgba,rgb,rgb_r,rgb_g,rgb_b,rgba_a,\
                      lrgb,lrgb_r,lrgb_g,lrgb_b,\
@@ -7980,7 +7964,7 @@ _apply_channels : check "isint(${3=0}) && $3>=0 && $3<=2"
                      cmyk_c,cmyk_m,cmyk_y,cmyk_k,\
                      yiq_y,yiq_iq,ryb,ryb_r,ryb_y,ryb_b}
   fi fi
-  v + e[^-1] "Apply command '$1' on channels '"$mode"' of image"$_gmic_s"." v -
+  e[^-1] "Apply command '$1' on channels '"$mode"' of image"$_gmic_s"."
   ({'$/'}) id={h=0;for(k=0,k<w,((h*=31)+=i[k++])%=1048576)} rm.
   _ac_$mode m _ac_precond$id:$_p m _ac_forward$id:$_f m _ac_backward$id:$_b
   repeat $! l[$>]
@@ -7994,7 +7978,6 @@ _apply_channels : check "isint(${3=0}) && $3>=0 && $3<=2"
     _ac_backward$id[0] a c
   endl done
   uncommand _ac_precond$id,_ac_forward$id,_ac_backward$id
-  v +
 
 _ac :
   whds={w},{h},{d},{s} ${1--1} k[0] r $whds,0
@@ -8080,13 +8063,13 @@ _ac_yiq_q : _p="to_color" _f="rgb2yiq8" _b="yiq82rgb" _s=2
 autoindex : check "isint($1) && $1>0 && ${2=0}>=0" skip ${3=1}
   e[^-1] "Index colors in images$? by adapted colormap with $1 entries, dithering level $2 and "\
           ${arg\ 1+!$3,k-means,median-cut}" method."
-  v - repeat $! l[$>]
+  repeat $! l[$>]
     if w>h if w>256 +r2dx 256 else [0] fi
     else if h>256 +r2dy 256 else [0] fi
     fi
     colormap[1] $1,$3,0
     index[0] [1],$2,1 rm[1]
-  endl done v +
+  endl done
 
 #@cli bayer2rgb : _GM_smoothness,_RB_smoothness1,_RB_smoothness2
 #@cli : Transform selected RGB-Bayer sampled images to color images.
@@ -8094,7 +8077,7 @@ autoindex : check "isint($1) && $1>0 && ${2=0}>=0" skip ${3=1}
 #@cli : $ image.jpg rgb2bayer 0 +bayer2rgb 1,1,0.5
 bayer2rgb : skip ${1=1},${2=1},${3=0.5}
   e[^-1] "Transform RGB-Bayer image$? to color images, with smoothness ($1,$2,$3)."
-  v - channels 0 repeat $! l[$>]
+  channels 0 repeat $! l[$>]
 
     # Expand image size to avoid problems with borders.
     expand_x {"2 + 4*$1"},0 expand_y {"2 + 4*$1"},0
@@ -8135,7 +8118,7 @@ bayer2rgb : skip ${1=1},${2=1},${3=0.5}
     shrink_x {"2 + 4*$1"},0 shrink_y {"2 + 4*$1"},0
     c 0,255
 
-  endl done v +
+  endl done
 
 #@cli deltaE : [image],_metric={ 0=deltaE_1976 | 1=deltaE_2000 },"_to_Lab_command"
 #@cli : Compute the CIE DeltaE color difference between selected images and specified [image].
@@ -8145,7 +8128,7 @@ bayer2rgb : skip ${1=1},${2=1},${3=0.5}
 deltaE : check ${"is_image_arg $1"}" && isbool(${2=1})" skip "${3=srgb2lab}"
   e[^-1] "Compute the CIE DeltaE_"${"s0,s1=1976,2000 u $s$2"}" color difference between image$? and image$1, "\
          "with to_Lab command '$3'."
-  v - pass$1 1
+  pass$1 1
   needs_to_lab={"s = ['$3']; s!=0 && s!=' '"}
   if $needs_to_lab m "_deltaE_to_lab : $3" +_deltaE_to_lab. rm.. fi
   repeat {$!-1} l[$>,-1] nm={0,n}
@@ -8154,32 +8137,31 @@ deltaE : check ${"is_image_arg $1"}" && isbool(${2=1})" skip "${3=srgb2lab}"
     else 100%,100%,100%,1,${-math_lib}"deltaE00(I#0,I#1)" rv[0,-1] rm. # DeltaE_2000
     fi
   nm[0] $nm endl done
-  rm. uncommand _deltaE_to_lab v +
+  rm. uncommand _deltaE_to_lab
 
 #@cli cmy2rgb
 #@cli : Convert color representation of selected images from CMY to RGB.
 cmy2rgb :
   e[^-1] "Convert color representation of image$? from CMY to RGB."
-  v - rgb2cmy v +
+  rgb2cmy
 
 #@cli cmyk2rgb
 #@cli : Convert color representation of selected images from CMYK to RGB.
 cmyk2rgb :
   e[^-1] "Convert color representation of image$? from CMYK to RGB."
-  v - repeat $! l[$>]
+  repeat $! l[$>]
     s c +/. -255 +. 1 *[0-2] . rm. +[0-2] . rm.
     a c cmy2rgb
-  endl done v +
+  endl done
 
 #@cli colorblind : type={ 0=protanopia | 1=protanomaly | 2=deuteranopia | 3=deuteranomaly | \
 # 4=tritanopia | 5=tritanomaly | 6=achromatopsia | 7=achromatomaly }
 #@cli : Simulate color blindness vision.
 #@cli : $ image.jpg +colorblind 0
 colorblind : check "isint($1) && $1>=0 && $1<=7"
-  v -
   s0="protanopia" s1="protanomaly" s2="deuteranopia" s3="deuteranomaly" s4="tritanopia"
   s5="tritanomaly" s6="achromatopsia" s7="achromatomaly"
-  v + e[^-1] "Simulate color blindness of type '"${s$1}"' on image$?." v -
+  e[^-1] "Simulate color blindness of type '"${s$1}"' on image$?."
   type0=(0.567,0.433,0;0.558,0.442,0;0,0.242,0.758)
   type1=(0.817,0.183,0;0.333,0.667,0;0,0.125,0.875)
   type2=(0.625,0.375,0;0.7,0.3,0;0,0.3,0.7)
@@ -8189,7 +8171,6 @@ colorblind : check "isint($1) && $1>=0 && $1<=7"
   type6=(0.299,0.587,0.114;0.299,0.587,0.114;0.299,0.587,0.114)
   type7=(0.618,0.320,0.062;0.163,0.775,0.062;0.163,0.320,0.516)
   repeat $! l[$>] split_opacity l[0] to_rgb mix_channels ${type$1} endl a c endl done
-  v +
 
 #@cli colormap : nb_levels>=0,_method={ 0=median-cut | 1=k-means },_sort_vectors
 #@cli : Estimate best-fitting colormap with 'nb_colors' entries, to index selected images.
@@ -8202,7 +8183,7 @@ colormap : check "isint($1) && $1>=0" skip ${2=1},${3=1}
   if $1 e[0--3] "Estimate colormap with $1 entries for image$?, by "${arg\ 1+!$2,k-means,median-cut}" method."
   else e[0--3] "Estimate full colormap for image$?."
   fi
-  v - repeat $! l[$>] nm={b} is_half=${-is_half}
+  repeat $! l[$>] nm={b} is_half=${-is_half}
     r {whd},1,1,100%,-1
 
     if $1 # Estimate quantized colormap.
@@ -8247,7 +8228,7 @@ colormap : check "isint($1) && $1>=0" skip ${2=1},${3=1}
     fi
     if $3==1 +norm rv a c sort +,x channels 1,100% fi # Sort colors by increasing norm.
     nm "[colormap of "$nm"]"
-  endl done v +
+  endl done
 
 _colormap : # Implementation of the median-cut algorithm.
   m "__colormap : repeat s sh[$""1] $> =.. {iv},$""1,0,0,$> rm. done"
@@ -8268,37 +8249,36 @@ _colormap : # Implementation of the median-cut algorithm.
 #@cli : $$
 compose_channels : skip ${1="+"}
   e[^-1] "Compose all channels of image$?, with operator '$1'."
-  v - repeat $! l[$>]
+  repeat $! l[$>]
     sh 0
     repeat s#-2-1 sh.. {$>+1} l[-2,-1] $1 endl done
     rm. r 100%,100%,100%,1,-1
-  endl done v +
+  endl done
 
 #@cli direction2rgb
 #@cli : Compute RGB representation of selected 2D direction fields.
 #@cli : $ image.jpg luminance gradient append c blur 2 orientation +direction2rgb
 direction2rgb :
   e[^-1] "Compute RGB representation of 2D direction field$?."
-  v - channels 0,1 repeat $! l[$>] nm={0,n}
+  channels 0,1 repeat $! l[$>] nm={0,n}
     s c complex2polar round.. 0.001
     *. {180/pi} %. 360 100%,100%,1,1,1 mv... $!
     if im!=iM n. 0,1 else f. 1 fi
     a c hsv2rgb
-  nm $nm endl done v +
+  nm $nm endl done
 
 #@cli ditheredbw
 #@cli : Create dithered B&W version of selected images.
 #@cli : $ image.jpg +equalize ditheredbw[-1]
 ditheredbw :
   e[^-1] "Create dithered B&W version of image$?."
-  v - repeat $! l[$>] split_opacity
+  repeat $! l[$>] split_opacity
     luminance[0] n[0] 0,255 (0,255) index[0] .,1,1 rm.
-  a c endl done v +
+  a c endl done
 
 #@cli fc : eq. to 'fill_color'.
 fc :
-  v - _gmic_s="$?" v +
-  _fill_color $*
+  _gmic_s="$?" v + _fill_color $* v -
 
 #@cli fill_color : col1,...,colN
 #@cli : Fill selected images with specified color.
@@ -8306,14 +8286,13 @@ fc :
 #@cli : $ image.jpg +fill_color 255,0,255
 #@cli : $$
 fill_color :
-  v - _gmic_s="$?" v +
-  _$0 $*
+  _gmic_s="$?" v + _$0 $* v -
 
 _fill_color :
   e[0--3] "Fill image"$_gmic_s" with color (${^0})."
-  v - repeat $! l[$>]
+  repeat $! l[$>]
     repeat s sh[0] $> f. {arg(1+$>,${^0})} done k[0]
-  nm {n} endl done v +
+  nm {n} endl done
 
 #@cli gradient2rgb : _is_orientation={ 0 | 1 }
 #@cli : Compute RGB representation of 2D gradient of selected images.
@@ -8322,28 +8301,27 @@ _fill_color :
 gradient2rgb : check "isbool(${1=0})"
   arg 1+!$1,"orientation ",""
   e[^-1] "Compute RGB representation of 2D gradient "${}"of image$?."
-  v - norm repeat $! l[$>]
+  norm repeat $! l[$>]
     if $1 gradient_orientation 2 else g xy fi
     a c direction2rgb
-  endl done v +
+  endl done
 
 #@cli hcy2rgb :
 #@cli : Convert color representation of selected images from HCY to RGB.
 hcy2rgb :
   e[^-1] "Convert color representation of image$? from HCY to RGB."
-  v - to_color f "
+  to_color f "
     H = (R/60)%6;
     X = G*(1 - abs(H%2 - 1));
     RGB = arg(1 + int(H),[G,X,0],[X,G,0],[0,G,X],[0,X,G],[X,0,G],[G,0,X]);
     m = B - 0.3*RGB[0] - 0.59*RGB[1] - 0.11*RGB[2];
     cut((RGB+=m)*=255,0,255)"
-  v +
 
 #@cli hsi2rgb
 #@cli : Convert color representation of selected images from HSI to RGB.
 hsi2rgb :
   e[^-1] "Convert color representation of image$? from HSI to RGB."
-  v - to_color
+  to_color
   f "
     H = (R/60)%6;
     S = G;
@@ -8354,19 +8332,18 @@ hsi2rgb :
     m = I*(1 - S)/3;
     RGB = arg(1 + int(H),[C,X,0],[X,C,0],[0,C,X],[0,X,C],[X,0,C],[C,0,X]);
     (RGB+=m)*=3*255"
-  v +
 
 #@cli hsi82rgb
 #@cli : Convert color representation of selected images from HSI8 to RGB.
 hsi82rgb :
   e[^-1] "Convert color representation of image$? from HSI8 to RGB."
-  v - _hsx82rgb hsi2rgb v +
+  _hsx82rgb hsi2rgb
 
 #@cli hsl2rgb
 #@cli : Convert color representation of selected images from HSL to RGB.
 hsl2rgb :
   e[^-1] "Convert color representation of image$? from HSL to RGB."
-  v - to_color
+  to_color
   f "
     H = (R/60)%6;
     S = G;
@@ -8376,20 +8353,19 @@ hsl2rgb :
     m = L - C/2;
     RGB = arg(1 + int(H),[C,X,0],[X,C,0],[0,C,X],[0,X,C],[X,0,C],[C,0,X]);
     (RGB+=m)*=255"
-  v +
 
 #@cli hsl82rgb
 #@cli : Convert color representation of selected images from HSL8 to RGB.
 hsl82rgb :
   e[^-1] "Convert color representation of image$? from HSL8 to RGB."
-  v - _hsx82rgb hsl2rgb v +
+  _hsx82rgb hsl2rgb
 
 #@cli hsv2rgb
 #@cli : Convert color representation of selected images from HSV to RGB.
 #@cli : $ (0,360;0,360^0,0;1,1^1,1;1,1) resize 400,400,1,3,3 hsv2rgb
 hsv2rgb :
   e[^-1] "Convert color representation of image$? from HSV to RGB."
-  v - to_color
+  to_color
   f "
     H = (R/60)%6;
     S = G;
@@ -8399,13 +8375,12 @@ hsv2rgb :
     m = V - C;
     RGB = arg(1 + int(H),[C,X,0],[X,C,0],[0,C,X],[0,X,C],[X,0,C],[C,0,X]);
     (RGB+=m)*=255"
-  v +
 
 #@cli hsv82rgb
 #@cli : Convert color representation of selected images from HSV8 to RGB.
 hsv82rgb :
   e[^-1] "Convert color representation of image$? from HSV8 to RGB."
-  v - _hsx82rgb hsv2rgb v +
+  _hsx82rgb hsv2rgb
 
 _hsx82rgb :
  repeat $!
@@ -8417,52 +8392,52 @@ _hsx82rgb :
 #@cli : Convert color representation of selected images from INT24 to RGB.
 int2rgb :
   e[^-1] "Convert color representation of image$? from INT24 scalars to RGB."
-  v - round repeat $! l[$>]
+  round repeat $! l[$>]
     +>> 8 &[1] 255 +&[0] 255 >>[0] 16 a c
-  endl done v +
+  endl done
 
 #@cli lab2lch
 #@cli : Convert color representation of selected images from Lab to Lch.
 lab2lch :
   e[^-1] "Convert color representation of image$? from Lab to Lch."
-  v - r 100%,100%,100%,3 repeat $! l[$>]
+  r 100%,100%,100%,3 repeat $! l[$>]
     s c complex2polar[-2,-1] a c
-  endl done v +
+  endl done
 
 #@cli lab2rgb : illuminant={ 0=D50 | 1=D65 } : (no arg)
 #@cli : Convert color representation of selected images from Lab to RGB.
 #@cli : Default value: 'illuminant=1'.
 #@cli : $ (50,50;50,50^-3,3;-3,3^-3,-3;3,3) resize 400,400,1,3,3 lab2rgb
 lab2rgb : skip "${1=,}"
-  v - l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
+  l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl
   e[^-1] "Convert color representation of image$? from Lab to RGB, using the D"{arg(1+$illu,50,65)}" illuminant."
-  v - lab2xyz $illu xyz2rgb $illu v +
+  lab2xyz $illu xyz2rgb $illu
 
 #@cli lab2srgb : illuminant={ 0=D50 | 1=D65 } : (no arg)
 #@cli : Convert color representation of selected images from Lab to sRGB.
 #@cli : Default value: 'illuminant=1'.
 #@cli : $ (50,50;50,50^-3,3;-3,3^-3,-3;3,3) resize 400,400,1,3,3 lab2rgb
 lab2srgb : skip "${1=,}"
-  v - l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
+  l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl
   e[^-1] "Convert color representation of image$? from Lab to sRGB, using the D"{arg(1+$illu,50,65)}" illuminant."
-  v - lab2rgb $illu rgb2srgb v +
+  lab2rgb $illu rgb2srgb
 
 #@cli lab82srgb : illuminant={ 0=D50 | 1=D65 } : (no arg)
 #@cli : Convert color representation of selected images from Lab8 to sRGB.
 #@cli : Default value: 'illuminant=1'.
 #@cli : $ (50,50;50,50^-3,3;-3,3^-3,-3;3,3) resize 400,400,1,3,3 lab2rgb
 lab82srgb : skip "${1=,}"
-  v - l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
+  l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl
   e[^-1] "Convert color representation of image$? from Lab8 to sRGB, using the D"{arg(1+$illu,50,65)}" illuminant."
-  v - lab82rgb $illu rgb2srgb v +
+  lab82rgb $illu rgb2srgb
 
 #@cli lab2xyz : illuminant={ 0=D50 | 1=D65 } : (no arg)
 #@cli : Convert color representation of selected images from Lab to XYZ.
 #@cli : Default value: 'illuminant=1'.
 lab2xyz : skip "${1=,}"
-  v - l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
+  l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl
   e[^-1] "Convert color representation of image$? from Lab to XYZ, using the D"{arg(1+$illu,50,65)}" illuminant."
-  v - to_color
+  to_color
   f "
     begin(
       const epsilon = 216/24389;
@@ -8485,75 +8460,72 @@ lab2xyz : skip "${1=,}"
             i0>kappa*epsilon?((i0+16)/116)^3:i0/kappa,
             fz3>epsilon?fz3:(116*fz - 16)/kappa ];
     XYZ*=white"
-  v +
 
 #@cli lab82rgb : illuminant={ 0=D50 | 1=D65 } : (no arg)
 #@cli : Convert color representation of selected images from Lab8 to RGB.
 #@cli : Default value: 'illuminant=1'.
 lab82rgb : skip "${1=,}"
-  v - l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
+  l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl
   e[^-1] "Convert color representation of image$? from Lab8 to RGB, using the D"{arg(1+$illu,50,65)}" illuminant."
-  v - repeat $!
+  repeat $!
     sh[$>] 0 /. 2.55 rm.
     sh[$>] 1 /. 1.275 -. 100 rm.
     sh[$>] 2 /. 1.15909 -. 110 rm.
-  done lab2rgb $illu v +
+  done lab2rgb $illu
 
 #@cli lch2lab
 #@cli : Convert color representation of selected images from Lch to Lab.
 lch2lab :
   e[^-1] "Convert color representation of image$? from Lch to Lab."
-  v - r 100%,100%,100%,3 repeat $! l[$>]
+  r 100%,100%,100%,3 repeat $! l[$>]
     s c polar2complex[-2,-1] a c
-  endl done v +
+  endl done
 
 #@cli lch2rgb : illuminant={ 0=D50 | 1=D65 } : (no arg)
 #@cli : Convert color representation of selected images from Lch to RGB.
 #@cli : Default value: 'illuminant=1'.
 lch2rgb : skip "${1=,}"
-  v - l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
+  l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl
   e[^-1] "Convert color representation of image$? from Lch to RGB, using the D"{arg(1+$illu,50,65)}" illuminant."
-  v - lch2lab lab2rgb $illu v +
+  lch2lab lab2rgb $illu
 
 #@cli lch82rgb : illuminant={ 0=D50 | 1=D65 } : (no arg)
 #@cli : Convert color representation of selected images from Lch8 to RGB.
 #@cli : Default value: 'illuminant=1'.
 lch82rgb : skip "${1=,}"
-  v - l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
+  l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl
   e[^-1] "Convert color representation of image$? from Lch8 to RGB, using the D"{arg(1+$illu,50,65)}" illuminant."
-  v - repeat $!
+  repeat $!
     sh[$>] 0 /. 2.55 rm.
     sh[$>] 1 /. 1.88889 rm.
     sh[$>] 2 /. 40.5845 -. 3.14159 rm.
-  done lch2rgb $illu v +
+  done lch2rgb $illu
 
 #@cli luminance
 #@cli : Compute luminance of selected sRGB images.
 #@cli : $ image.jpg +luminance
 luminance :
   e[^-1] "Compute luminance of image$?."
-  v - remove_opacity srgb2rgb
+  remove_opacity srgb2rgb
   repeat $! l[$>]
   if s==3 sh 0 sh[0] 1 sh[0] 2 *[1] 0.22248840 *[2] 0.71690369 *[3] 0.06060791 +[1-3] rm[1]
   elif s!=1 norm n 0,255
   fi endl done
-  channels 0 rgb2srgb v +
+  channels 0 rgb2srgb
 
 #@cli lightness
 #@cli : Compute lightness of selected sRGB images.
 #@cli : $ image.jpg +lightness
 lightness :
   e[^-1] "Compute lightness of image$?."
-  v - remove_opacity srgb2rgb
+  remove_opacity srgb2rgb
   if s==3 rgb2lab channels 0 * {255/100} elif s!=1 norm n 0,255 rgb2srgb fi
-  v +
 
 #@cli lut_rainbow
 #@cli : Input a 256-entries RGB colormap of rainbow colors.
 #@cli : $ image.jpg lut_rainbow +luminance[-2] map[-1] [-2]
 lut_rainbow :
   e[^-1] "Input RGB colormap of 256 rainbow colors."
-  v -
   base642img[] \
 "MiB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjU2IDEgMSAzICM2MjgKeJxj4uLl5Rfg5xcSl5JXVFVT19LS0dXR0dXVAdK6hkYmZuYWlhYWlpZ"\
 "WllZW1lY21lbWIGBjAyatIcDKysrCwszYQEddUYSVgYERjKAEHKDycABWSSOnwKi03LLGzgkz5q3YtH3f8fNX7zx+9ubTt1/////9+/fP71+/fv748f"\
@@ -8565,7 +8537,6 @@ lut_rainbow :
 "eQhPlFWUQGlUh1dPT19A0MDOACHga6utrYW2P9qaqpArKamrgGCGurqQAFlJQU5GSlxEQE+HgFgAAgK8PFyMgEAsxoliDEgMTggMSAxICMyNgp4nHP3"\
 "jWKILkrMzEvKL1fIKS2JZQAAON0GDg=="
   nm. [lut_rainbow]
-  v +
 
 #@cli lut_contrast : _nb_colors>1,_min_rgb_value
 #@cli : Generate a RGB colormap where consecutive colors have high contrast.
@@ -8574,17 +8545,17 @@ lut_rainbow :
 #@cli : Default values: 'nb_colors=256' and 'min_rgb_value=64'.
 lut_contrast : check "isint(${1=256}) && $1>=1 && isnum(${2=48})"
   e[^-1] "Generate high-contrast RGB colormap with $1 colors and min RGB value $2."
-  v - l[]
+  l[]
 
     # Initialization by farthest point sampling of the RGB cube.
     64,64,64,1 eval "for (k = 0, k<8, ++k, x = !!(k&1); y = !!(k&2); z = !!(k&4); i([x,y,z]*(w-1)) = 1)"
     N={is}
-    v + e[] "" v -
+    e[] ""
     do
       +neq. 0 distance. 1 xyzM={[xM,yM,zM]} rm.
       col={round([$xyzM]*255/(w-1))}
       if max($col)>=$2 =. 1,$xyzM N+=1 else =. -1,$xyzM fi
-      v + e[] "\r  [ Init ] > Colors \#"$N v -
+      e[] "\r  [ Init ] > Colors \#"$N
     while $N<$1
     >. 0 {is},1,1,3
     eval.. ">begin(k = 0); i>0?(I[#-1,k++] = round([ x,y,z ]*255/63))"
@@ -8600,12 +8571,12 @@ lut_contrast : check "isint(${1=256}) && $1>=1 && isnum(${2=48})"
     done a x
 
     # Functional optimization.
-    v + e[] "" v -
+    e[] ""
     +srgb2lab a c
     energy_max=${-_lut_contrast.}
     nb_attempts=1000
     do
-      v + e[] "\r  [ Optim ] > Score = "{_$energy_max}", Attempts = "$nb_attempts"      " v -
+      e[] "\r  [ Optim ] > Score = "{_$energy_max}", Attempts = "$nb_attempts"      "
       . eval "
         do(
           k0 = round(u("$N0",w-1));
@@ -8617,7 +8588,7 @@ lut_contrast : check "isint(${1=256}) && $1>=1 && isnum(${2=48})"
     while $nb_attempts>0
 
     channels 0,2
-  endl v +
+  endl
 
 _lut_contrast :
   100%,1,1,1,">
@@ -8642,7 +8613,7 @@ _lut_contrast :
 #@cli : $$
 mix_rgb : skip ${1=1},${2=0},${3=0},${4=0},${5=1},${6=0},${7=0},${8=0},${9=1}
   e[^-1] "Apply matrix [ $1 $2 $3 ; $4 $5 $6 ; $7 $8 $9 ] to RGB colors of image$?."
-  v - to_color repeat $! sh[$>] 0,2 mix_channels. (${1-3};${4-6};${7-9}) rm. done v +
+  to_color repeat $! sh[$>] 0,2 mix_channels. (${1-3};${4-6};${7-9}) rm. done
 
 #@cli pseudogray : _max_increment>=0,_JND_threshold>=0,_bits_depth>0
 #@cli : Generate pseudogray colormap with specified increment and perceptual threshold.
@@ -8651,11 +8622,10 @@ mix_rgb : skip ${1=1},${2=0},${3=0},${4=0},${5=1},${6=0},${7=0},${8=0},${9=1}
 #@cli : $ pseudogray 5
 pseudogray : check "isint(${1=5}) && $1>=0 && ${2=2.3}>=0 && isint(${3=8}) && $3>0"
   e[^-1] "Generate pseudogray colormap with increment $1, JND threshold $2 and $3 bits depth."
-  v -
 
   # Generate all possible sRGB colors with given increments.
   {round(2^$3)},1,1,3,'x'
-  if !$1 n. 0,255 v + return fi
+  if !$1 n. 0,255 return fi
   {$1+1},{$1+1},{$1+1},1,'x' +f. 'y' +f. 'z' a[-3--1] c r. {w*h*d},1,1,3,-1
   f. 'R=i(x,0,0,0);G=i(x,0,0,1);B=i(x,0,0,2);if(min(R,G,B),-1,i)'
   permute. cxyz discard. -1 r. 3,{h/3},1,1,-1 permute. yzcx
@@ -8681,20 +8651,19 @@ pseudogray : check "isint(${1=5}) && $1>=0 && ${2=2.3}>=0 && isint(${3=8}) && $3
     transpose.
 
   fi
-  v +
 
 #@cli replace_color : tolerance[%]>=0,smoothness[%]>=0,src1,src2,...,dest1,dest2,...
 #@cli : Replace pixels from/to specified colors in selected images.
 #@cli : $ image.jpg +replace_color 40,3,204,153,110,255,0,0
 replace_color : check "$1>=0 && $2>=0"
-  v - l[] (${3--1}) y c s c,2 col1={0,^} col2={1,^} rm endl v +
+  l[] (${3--1}) y c s c,2 col1={0,^} col2={1,^} rm endl
   e[^-1] "Replace color ("$col1") by color ("$col2") in image$?, with tolerance $1 and smoothness $2."
-  v - repeat $! l[$>]
+  repeat $! l[$>]
     1,1,1,100%,$col1 r[1] [0]
     if $1 -[1] [0] norm[1] <=[1] $1 else ==[1] [0] l[1] s c & endl fi
     b[1] $2
     1,1,1,{0,s},$col2 r[2] [0] j[0] [2],0,0,0,0,1,[1] k[0]
-  endl done v +
+  endl done
 
 #@cli retinex : _value_offset>0,_colorspace={ hsi | hsv | lab | lrgb | rgb | ycbcr },\
 # 0<=_min_cut<=100,0<=_max_cut<=100,_sigma_low>0,_sigma_mid>0,_sigma_high>0
@@ -8706,17 +8675,15 @@ retinex : check "${1=5}>0 && ${3=1}>=0 && $3<=100 && ${4=1}>=0 && $4<=100 && ${5
   skip "${2=hsv}"
   e[^-1] "Apply Retinex color consistency algorithm on image$?, with value offset $1, colorspace '$2', cuts ($3,$4)
           and sigmas (${5-7})."
-  v -
   if '$2'=='hsi' mode=hsi_i
   elif '$2'=='hsv' mode=hsv_v
   elif '$2'=='lab' mode=lab_l
   elif '$2'=='rgb' mode=rgb
   elif '$2'=='lrgb' mode=lrgb
   elif '$2'=='ycbcr' mode=ycbcr_y
-  else v + error[0--2] "Command '$0': Invalid colorspace argument '$2'."
+  else error[0--2] "Command '$0': Invalid colorspace argument '$2'."
   fi
   ac "_retinex $1,${3--1}",$mode
-  v +
 
 _retinex :
   - {im-$1} {[w,h,d,s]},1
@@ -8729,9 +8696,9 @@ _retinex :
 #@cli : $ image.jpg +rgb2bayer 0
 rgb2bayer : skip ${1=0},${2=0}
   e[^-1] "Transform image$? to a RGB-Bayer "${arg\ 1+!$2,color,monochrome}" grid, starting from pattern '$1'."
-  v - to_rgb repeat $! l[$>]
+  to_rgb repeat $! l[$>]
     _rgb2bayer$1 r[1] [0],0,2 * if !$2 s c + fi
-  endl done v +
+  endl done
 
 _rgb2bayer0 : (1,0;0,0^0,1;1,0^0,0;0,1)
 _rgb2bayer1 : (0,0;0,1^0,1;1,0^1,0;0,0)
@@ -8743,7 +8710,7 @@ _rgb2bayer3 : (0,0;1,0^1,0;0,1^0,1;0,0)
 #@cli : $ image.jpg rgb2cmy split c
 rgb2cmy :
   e[^-1] "Convert color representation of image$? from RGB to CMY."
-  v - to_rgb * -1 + 255 c 0,255 v +
+  to_rgb * -1 + 255 c 0,255
 
 #@cli rgb2cmyk
 #@cli : Convert color representation of selected images from RGB to CMYK.
@@ -8751,30 +8718,29 @@ rgb2cmy :
 #@cli : $ image.jpg rgb2cmyk split c fill[3] 0 append c cmyk2rgb
 rgb2cmyk :
   e[^-1] "Convert color representation of image$? from RGB to CMYK."
-  v - rgb2cmy repeat $! l[$>]
+  rgb2cmy repeat $! l[$>]
     s c +min -[0-2] . +/. 255 -. 1 *. -1 +==. 0 +[-2,-1]
     /[0-2] . rm. a c
-  endl done v +
+  endl done
 
 #@cli rgb2hcy
 #@cli : Convert color representation of selected images from RGB to HCY.
 #@cli : $ image.jpg rgb2hcy split c
 rgb2hcy :
   e[^-1] "Convert color representation of image$? from RGB to HCY."
-  v - to_color f "
+  to_color f "
     M = max(R,G,B);
     C = M - min(R,G,B);
     H = 60*(C==0?0:M==R?((G-B)/C)%6:M==G?(B-R)/C+2:(R-G)/C+4);
     Y = 0.299*R + 0.587*G + 0.114*B;
     [ H,C/255,Y/255 ]"
-  v +
 
 #@cli rgb2hsi
 #@cli : Convert color representation of selected images from RGB to HSI.
 #@cli : $ image.jpg rgb2hsi split c
 rgb2hsi :
   e[^-1] "Convert color representation of image$? from RGB to HSI."
-  v - to_color
+  to_color
   f "
     m = min(R,G,B);
     M = max(R,G,B);
@@ -8784,14 +8750,13 @@ rgb2hsi :
     S = sum<=0?0:1 - 3*m/sum;
     I = sum/(3*255);
     [ H, S, I ]"
-  v +
 
 #@cli rgb2hsi8
 #@cli : Convert color representation of selected images from RGB to HSI8.
 #@cli : $ image.jpg rgb2hsi8 split c
 rgb2hsi8 :
   e[^-1] "Convert color representation of image$? from RGB to HSI8."
-  v - rgb2hsi _rgb2hsx8 v +
+  rgb2hsi _rgb2hsx8
 
 #@cli rgb2hsl
 #@cli : Convert color representation of selected images from RGB to HSL.
@@ -8799,7 +8764,7 @@ rgb2hsi8 :
 #@cli : $ image.jpg rgb2hsl +split c add[-3] 100 mod[-3] 360 append[-3--1] c hsl2rgb
 rgb2hsl :
   e[^-1] "Convert color representation of image$? from RGB to HSL."
-  v - to_color
+  to_color
   f "
     m = min(R,G,B);
     M = max(R,G,B);
@@ -8808,14 +8773,13 @@ rgb2hsl :
     L = 0.5*(m + M)/255;
     S = L==1 || L==0?0:C/(1 - abs(2*L - 1))/255;
     [ H, S, L ]"
-  v +
 
 #@cli rgb2hsl8
 #@cli : Convert color representation of selected images from RGB to HSL8.
 #@cli : $ image.jpg rgb2hsl8 split c
 rgb2hsl8 :
   e[^-1] "Convert color representation of image$? from RGB to HSL8."
-  v - rgb2hsl _rgb2hsx8 v +
+  rgb2hsl _rgb2hsx8
 
 #@cli rgb2hsv
 #@cli : Convert color representation of selected images from RGB to HSV.
@@ -8823,21 +8787,20 @@ rgb2hsl8 :
 #@cli : $ image.jpg rgb2hsv +split c add[-2] 0.3 cut[-2] 0,1 append[-3--1] c hsv2rgb
 rgb2hsv :
   e[^-1] "Convert color representation of image$? from RGB to HSV."
-  v - to_color
+  to_color
   f "
     M = max(R,G,B);
     C = M - min(R,G,B);
     H = 60*(C==0?0:M==R?((G - B)/C)%6:M==G?(B - R)/C + 2:(R - G)/C + 4);
     S = M<=0?0:C/M;
     [ H, S, M/255 ]"
-  v +
 
 #@cli rgb2hsv8
 #@cli : Convert color representation of selected images from RGB to HSV8.
 #@cli : $ image.jpg rgb2hsv8 split c
 rgb2hsv8 :
   e[^-1] "Convert color representation of image$? from RGB to HSV8."
-  v - rgb2hsv _rgb2hsx8 v +
+  rgb2hsv _rgb2hsx8
 
 _rgb2hsx8 :
   repeat $!
@@ -8850,72 +8813,72 @@ _rgb2hsx8 :
 #@cli : $ image.jpg rgb2int
 rgb2int :
   e[^-1] "Convert color representation of image$? from RGB to INT24 scalars."
-  v - to_rgb round repeat $! l[$>]
+  to_rgb round repeat $! l[$>]
     s c <<[0] 16 <<[1] 8 +
-  endl done v +
+  endl done
 
 #@cli rgb2lab : illuminant={ 0=D50 | 1=D65 } : (no arg)
 #@cli : Convert color representation of selected images from RGB to Lab.
 #@cli : Default value: 'illuminant=1'.
 rgb2lab : skip "${1=,}"
-  v - l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
+  l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl
   e[^-1] "Convert color representation of image$? from RGB to Lab, using the D"{arg(1+$illu,50,65)}" illuminant."
-  v - rgb2xyz $illu xyz2lab $illu v +
+  rgb2xyz $illu xyz2lab $illu
 
 #@cli rgb2lab8 : illuminant={ 0=D50 | 1=D65 } : (no arg)
 #@cli : Convert color representation of selected images from RGB to Lab8.
 #@cli : Default value: 'illuminant=1'.
 #@cli : $ image.jpg rgb2lab8 split c
 rgb2lab8 : skip "${1=,}"
-  v - l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
+  l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl
   e[^-1] "Convert color representation of image$? from RGB to Lab8, using the D"{arg(1+$illu,50,65)}" illuminant."
-  v - rgb2lab $illu repeat $!
+  rgb2lab $illu repeat $!
     sh[$>] 0 *. 2.55 rm.
     sh[$>] 1 +. 100 *. 1.275 rm.
     sh[$>] 2 +. 110 *. 1.15909 rm.
-  done v +
+  done
 
 #@cli rgb2lch : illuminant={ 0=D50 | 1=D65 } : (no arg)
 #@cli : Convert color representation of selected images from RGB to Lch.
 #@cli : Default value: 'illuminant=1'.
 #@cli : $ image.jpg rgb2lch split c
 rgb2lch : skip "${1=,}"
-  v - l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
+  l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl
   e[^-1] "Convert color representation of image$? from RGB to Lch, using the D"{arg(1+$illu,50,65)}" illuminant."
-  v - rgb2lab $illu lab2lch v +
+  rgb2lab $illu lab2lch
 
 #@cli rgb2lch8 : illuminant={ 0=D50 | 1=D65 } : (no arg)
 #@cli : Convert color representation of selected images from RGB to Lch8.
 #@cli : Default value: 'illuminant=1'.
 #@cli : $ image.jpg rgb2lch8 split c
 rgb2lch8 : skip "${1=,}"
-  v - l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
+  l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl
   e[^-1] "Convert color representation of image$? from RGB to Lch8, using the D"{arg(1+$illu,50,65)}" illuminant."
-  v - rgb2lch $illu repeat $!
+  rgb2lch $illu repeat $!
     sh[$>] 0 *. 2.55 rm.
     sh[$>] 1 *. 1.88889 rm.
     sh[$>] 2 +. 3.14159 *. 40.5845 rm.
-  done v +
+  done
 
 #@cli rgb2luv
 #@cli : Convert color representation of selected images from RGB to LUV.
 #@cli : $ image.jpg rgb2luv split c
 rgb2luv :
   e[^-1] "Convert color representation of image$? from RGB to LUV."
-  v - repeat $! l[$>]
+  repeat $! l[$>]
     +rgb2xyz rgb2lab.. channels.. 0 s. c
     *. 3 +*.. 15 +[-2,-1] +. ... +. 1e-8  # Z <- X+15Y+3Z
     *... 4 *.. 9 /[-3,-2] . rm.
     -.. 0.2009 -. 0.4610
     +*... 13 *... . *[-2,-1] a c
-  endl done v +
+  endl done
 
 #@cli rgb2ryb
 #@cli : Convert color representation of selected images from RGB to RYB.
 #@cli : $ image.jpg rgb2ryb split c
 rgb2ryb :
   e[^-1] "Convert color representation of image$? from RGB to RYB."
-  v - to_color
+  to_color
   f "red = R;
      green = G;
      blue = B;
@@ -8941,22 +8904,21 @@ rgb2ryb :
      yellow+=white;
      blue+=white;
      [ red,yellow,blue ]"
-  v +
 
 #@cli rgb2srgb
 #@cli : Convert color representation of selected images from linear RGB to sRGB.
 rgb2srgb :
   e[^-1] "Convert color representation of image$? from linear RGB to sRGB."
-  v - f "val = i/255; sval = val<=0.0031308?val*12.92:1.055*val^0.416667 - 0.055; cut(255*sval,0,255)" v +
+  f "val = i/255; sval = val<=0.0031308?val*12.92:1.055*val^0.416667 - 0.055; cut(255*sval,0,255)"
 
 #@cli rgb2xyz : illuminant={ 0=D50 | 1=D65 } : (no arg)
 #@cli : Convert color representation of selected images from RGB to XYZ.
 #@cli : Default value: 'illuminant=1'.
 #@cli : $ image.jpg rgb2xyz split c
 rgb2xyz : skip "${1=,}"
-  v - l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
+  l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl
   e[^-1] "Convert color representation of image$? from RGB to XYZ, using the D"{arg(1+$illu,50,65)}" illuminant."
-  v -
+
   if $illu # D65
     mix_rgb {[0.4124564,0.3575761,0.1804375,\
               0.2126729,0.7151522,0.0721750,\
@@ -8966,92 +8928,87 @@ rgb2xyz : skip "${1=,}"
               0.22248840,0.71690369,0.06060791,\
               0.01391602,0.09706116,0.71392822]/255}
   fi
-  v +
 
 #@cli rgb2xyz8 : illuminant={ 0=D50 | 1=D65 } : (no arg)
 #@cli : Convert color representation of selected images from RGB to XYZ8.
 #@cli : Default value: 'illuminant=1'.
 #@cli : $ image.jpg rgb2xyz8 split c
 rgb2xyz8 : skip "${1=,}"
-  v - l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
+  l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl
   e[^-1] "Convert color representation of image$? from RGB to XYZ8, using the D"{arg(1+$illu,50,65)}" illuminant."
-  v - rgb2xyz $illu repeat $!
+  rgb2xyz $illu repeat $!
     sh[$>] 0 *. 255 rm.
     sh[$>] 1 *. 255 rm.
     sh[$>] 2 *. 231.8182 rm.
-  done v +
+  done
 
 #@cli rgb2yiq
 #@cli : Convert color representation of selected images from RGB to YIQ.
 #@cli : $ image.jpg rgb2yiq split c
 rgb2yiq :
   e[^-1] "Convert color representation of image$? from RGB to YIQ."
-  v -
   mix_rgb 0.299,0.587,0.114,\
           0.595716,-0.274453,-0.321263,\
           0.211456,-0.522591,0.311135
-  v +
 
 #@cli rgb2yiq8
 #@cli : Convert color representation of selected images from RGB to YIQ8.
 #@cli : $ image.jpg rgb2yiq8 split c
 rgb2yiq8 :
   e[^-1] "Convert color representation of image$? from RGB to YIQ."
-  v - rgb2yiq
+  rgb2yiq
   repeat $!
     sh[$>] 1 +. 151.908 *. 0.8393238012481239 rm.
     sh[$>] 2 +. 133.261 *. 0.9567690472081104 rm.
-  done v +
+  done
 
 #@cli rgb2ycbcr
 #@cli : Convert color representation of selected images from RGB to YCbCr.
 #@cli : $ image.jpg rgb2ycbcr split c
 rgb2ycbcr :
   e[^-1] "Convert color representation of image$? from RGB to YCbCr."
-  v - mix_rgb 66,129,25,-38,-74,112,112,-94,-18
+  mix_rgb 66,129,25,-38,-74,112,112,-94,-18
   repeat $!
     sh[$>] 0,2 +. 128 /. 256 rm.
     sh[$>] 0 +. 16 rm.
     sh[$>] 1,2 +. 128 rm.
-  done v +
+  done
 
 #@cli rgb2yuv
 #@cli : Convert color representation of selected images from RGB to YUV.
 #@cli : $ image.jpg rgb2yuv split c
 rgb2yuv :
   e[^-1] "Convert color representation of image$? from RGB to YUV."
-  v -
   mix_rgb {[0.299,0.587,0.114,\
             -0.14713,-0.28886,0.436,\
             0.615,-0.51498,-0.10001]/255}
-  v +
 
 #@cli rgb2yuv8
 #@cli : Convert color representation of selected images from RGB to YUV8.
 #@cli : $ image.jpg rgb2yuv8 split c
 rgb2yuv8 :
   e[^-1] "Convert color representation of image$? from RGB to YUV8."
-  v - rgb2yuv repeat $!
+  rgb2yuv repeat $!
     sh[$>] 0 *. 255 rm.
     sh[$>] 1 +. 0.44 *. 289.773 rm.
     sh[$>] 2 +. 0.62 *. 205.645 rm.
-  done v +
+  done
 
 #@cli remove_opacity
 #@cli : Remove opacity channel of selected images.
 remove_opacity :
   e[^-1] "Remove opacity channel of image$?."
-  v - repeat $! l[$>]
+  repeat $! l[$>]
     if s==2 channels 0
     elif s==4 channels 0,2
     fi
-  nm {n} endl done v +
+  nm {n} endl done
 
 #@cli ryb2rgb
 #@cli : Convert color representation of selected images from RYB to RGB.
 ryb2rgb :
   e[^-1] "Convert color representation of image$? from RYB to RGB."
-  v - to_color
+  to_color
   f "red = R;
      yellow = G;
      blue = B;
@@ -9077,7 +9034,6 @@ ryb2rgb :
      green+=white;
      blue+=white;
      [ red,green,blue ]"
-  v +
 
 #@cli select_color : tolerance[%]>=0,col1,...,colN
 #@cli : Select pixels with specified color in selected images.
@@ -9085,25 +9041,25 @@ ryb2rgb :
 #@cli : $$
 select_color : skip ${1=0}
   e[^-1] "Select color (${2--1}) in image$?, with tolerance $1."
-  v - repeat $! l[$>]
+  repeat $! l[$>]
     +fc ${2--1} - norm <= $1
-  endl done v +
+  endl done
 
 #@cli sepia
 #@cli : Apply sepia tones effect on selected images.
 #@cli : $ image.jpg sepia
 sepia :
   e[^-1] "Apply sepia tones effect on image$?."
-  v - (0,44,115,143,196,244^0,20,84,119,184,235^0,5,44,73,144,200) r. 256,1,1,3,3
+  (0,44,115,143,196,244^0,20,84,119,184,235^0,5,44,73,144,200) r. 256,1,1,3,3
   repeat $!-1 l[$>,-1] split_opacity luminance[0] map[0] . a[^-1] c endl done
-  rm. v +
+  rm.
 
 #@cli solarize
 #@cli : Solarize selected images.
 #@cli : $ image.jpg solarize
 solarize :
   e[^-1] "Solarize image$?."
-  v - luminance n 0,128 map 1 v +
+  luminance n 0,128 map 1
 
 #@cli split_colors : _tolerance>=0,_max_nb_outputs>0,_min_area>0
 #@cli : Split selected images as several image containing a single color.
@@ -9113,7 +9069,7 @@ solarize :
 #@cli : $ image.jpg quantize 5 +split_colors , display_rgba
 split_colors : check "${1=0}>=0 && isint(${2=256}) && $2>0 && ${3=8}>=1"
   e[^-1] "Split image$? as single color outputs, with tolerance $1, $2 maximal outputs and minimal color area $3."
-  v - repeat $! l[$>]
+  repeat $! l[$>]
     +label 0,1 norm. area. 0,1
 
     # Loop over biggest color regions.
@@ -9131,13 +9087,13 @@ split_colors : check "${1=0}>=0 && isint(${2=256}) && $2>0 && ${3=8}>=1"
     sh[^0] 0,{s-2} *[-$N--1] [0] rm[-$N--1]
     sh[^0] 100% *[-$N--1] 255 rm[0,-$N--1]
 
-  endl done v +
+  endl done
 
 #@cli split_opacity
 #@cli : Split color and opacity parts of selected images.
 split_opacity :
   e[^-1] "Split color and opacity parts of image$?."
-  v - repeat $! l[$<] s c,{if(s==4,-3,if(s==2,-1,-s))} endl done v +
+  repeat $! l[$<] s c,{if(s==4,-3,if(s==2,-1,-s))} endl done
 
 #@cli srgb2lab : illuminant={ 0=D50 | 1=D65 } : (no arg)
 #@cli : Convert color representation of selected images from sRGB to Lab.
@@ -9145,42 +9101,42 @@ split_opacity :
 #@cli : $ image.jpg srgb2lab split c
 #@cli : $ image.jpg srgb2lab +split c mul[-2,-1] 2.5 append[-3--1] c lab2srgb
 srgb2lab : skip "${1=,}"
-  v - l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
+  l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl
   e[^-1] "Convert color representation of image$? from sRGB to Lab, using the D"{arg(1+$illu,50,65)}" illuminant."
-  v - srgb2rgb rgb2lab $illu v +
+  srgb2rgb rgb2lab $illu
 
 #@cli srgb2lab8 : illuminant={ 0=D50 | 1=D65 } : (no arg)
 #@cli : Convert color representation of selected images from sRGB to Lab8.
 #@cli : Default value: 'illuminant=1'.
 srgb2lab8 : skip "${1=,}"
-  v - l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
+  l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl
   e[^-1] "Convert color representation of image$? from sRGB to Lab8, using the D"{arg(1+$illu,50,65)}" illuminant."
-  v - srgb2rgb rgb2lab8 $illu v +
+  srgb2rgb rgb2lab8 $illu
 
 #@cli srgb2rgb
 #@cli : Convert color representation of selected images from sRGB to linear RGB.
 srgb2rgb :
   e[^-1] "Convert color representation of image$? from sRGB to linear RGB."
-  v - f "sval = i/255; val = sval<=0.04045?sval/12.92:((sval + 0.055)/(1.055))^2.4; cut(255*val,0,255)" v +
+  f "sval = i/255; val = sval<=0.04045?sval/12.92:((sval + 0.055)/(1.055))^2.4; cut(255*val,0,255)"
 
 #@cli to_a
 #@cli : Force selected images to have an alpha channel.
 to_a :
   e[^-1] "Force image$? to have an alpha channel."
-  v - repeat $! l[$>]
+  repeat $! l[$>]
     if s==1||s==3 channels 0,{s} sh. {s-1} f. 255 rm. fi
-  endl done v +
+  endl done
 
 #@cli to_color
 #@cli : Force selected images to be in color mode (RGB or RGBA).
 to_color :
   e[^-1] "Force image$? to be in color mode."
-  v - repeat $! l[$>]
-    if s>4 v + error[] "Command '$0': Image ["$>"] is not a G,GA,RGB or RGBA image ("{s}" channels)."
+  repeat $! l[$>]
+    if s>4 error[0--5] "Command '$0': Image ["$>"] is not a G,GA,RGB or RGBA image ("{s}" channels)."
     elif s==2 r 100%,100%,1,4,0,1,0,0,0,1
     elif s==1 r 100%,100%,1,3,1
     fi
-  endl done v +
+  endl done
 
 #@cli to_colormode : mode={ 0=adaptive | 1=G | 2=GA | 3=RGB | 4=RGBA }
 #@cli : Force selected images to be in a given color mode.
@@ -9191,16 +9147,15 @@ to_colormode : skip ${1=0}
   elif $1==3 to_rgb
   elif $1==4 to_rgba
   else
-    v - is_rgb=0 is_alpha=0
+    is_rgb=0 is_alpha=0
     repeat $!
-      if {$>,!s||s>4} v + error "Command '$0': Image ["$>"] is not a G,GA,RGB or RGBA image ("{s}" channels)."
+      if {$>,!s||s>4} error "Command '$0': Image ["$>"] is not a G,GA,RGB or RGBA image ("{s}" channels)."
       elif {$>,s==2} is_alpha=1
       elif {$>,s==3} is_rgb=1
       elif {$>,s==4} is_rgb=1 is_alpha=1
       fi
     done
     to_colormode {if($is_rgb,3,1)+$is_alpha}
-    v +
   fi
 
 #@cli to_gray
@@ -9208,24 +9163,24 @@ to_colormode : skip ${1=0}
 #@cli : $ image.jpg +to_gray
 to_gray :
   e[^-1] "Force image$? to be in GRAY mode."
-  v - repeat $! l[$>]
-    if s>4 v + error[] "Command '$0': Image ["$>"] is not a G,GA,RGB or RGBA image ("{s}" channels)."
+  repeat $! l[$>]
+    if s>4 error[0--5] "Command '$0': Image ["$>"] is not a G,GA,RGB or RGBA image ("{s}" channels)."
     elif s>=3 channels 0,2 luminance
     elif s==2 r 100%,100%,100%,1,0
     fi
-  endl done v +
+  endl done
 
 #@cli to_graya
 #@cli : Force selected images to be in GRAYA mode.
 to_graya :
   e[^-1] "Force image$? to be in GRAYA mode."
-  v - repeat $! l[$>]
-    if s>4 v + error[] "Command '$0': Image ["$>"] is not a G,GA,RGB or RGBA image ("{s}" channels)."
+  repeat $! l[$>]
+    if s>4 error[0--5] "Command '$0': Image ["$>"] is not a G,GA,RGB or RGBA image ("{s}" channels)."
     elif s==4 +channels 3 channels.. 0,2 luminance.. a c
     elif s==3 luminance channels 0,1 sh. 1 f. 255 rm.
     elif s==1 channels 0,1 sh. 1 f. 255 rm.
     fi
-  endl done v +
+  endl done
 
 #@cli to_pseudogray : _max_step>=0,_is_perceptual_constraint={ 0 | 1 },_bits_depth>0
 #@cli : Convert selected scalar images ([0-255]-valued) to pseudo-gray color images.
@@ -9234,7 +9189,7 @@ to_graya :
 #@cli : Extension of this technique to arbitrary increments for more tones, has been done by David Tschumperle.
 to_pseudogray : check "isint(${1=5}) && $1>=0 && isint(${3=8}) && $3>0" skip ${2=1}
   e[^-1] "Convert scalar image$? to pseudo-gray color images, with steps $1."
-  v - channels 0 srgb2rgb pseudogray $1,{2.3*$2},$3
+  channels 0 srgb2rgb pseudogray $1,{2.3*$2},$3
 
   # Compute colormap with 65336 entries, to have match corresponding lightness.
   +srgb2lab. channels. 0 *. {65535/100} round. rows. 0,2
@@ -9245,31 +9200,31 @@ to_pseudogray : check "isint(${1=5}) && $1>=0 && isint(${3=8}) && $3>0" skip ${2
   repeat $!-1
     to_rgb[$>] rgb2lab[$>] channels[$>] 0 *[$>] {65535/100} round[$>] c[$>] 0,65535
     map[$>] .
-  done rm. v +
+  done rm.
 
 #@cli to_rgb
 #@cli : Force selected images to be in RGB mode.
 to_rgb :
    e[^-1] "Force image$? to be in RGB mode."
-   v - repeat $! l[$>]
-     if s>4 v + error[] "Command '$0': Image ["$>"] is not a G,GA,RGB or RGBA image ("{s}" channels)."
+   repeat $! l[$>]
+     if s>4 error[0--5] "Command '$0': Image ["$>"] is not a G,GA,RGB or RGBA image ("{s}" channels)."
      elif s==4 channels 0,2
      elif s==2 channels 0,0 r 100%,100%,100%,3
      elif s==1 r 100%,100%,100%,3
      fi
-   endl done v +
+   endl done
 
 #@cli to_rgba
 #@cli : Force selected images to be in RGBA mode.
 to_rgba :
    e[^-1] "Force image$? to be in RGBA mode."
-   v - repeat $! l[$>]
-     if s>4 v + error[] "Command '$0': Image ["$>"] is not a G,GA,RGB or RGBA image ("{s}" channels)."
+   repeat $! l[$>]
+     if s>4 error[0--5] "Command '$0': Image ["$>"] is not a G,GA,RGB or RGBA image ("{s}" channels)."
      elif s==3 channels 0,3 sh. 3 f. 255 rm.
      elif s==2 r 100%,100%,100%,4 sh. 2 f. .. rm.
      elif s==1 r 100%,100%,100%,4 sh. 3 f. 255 rm.
      fi
-   endl done v +
+   endl done
 
 #@cli transfer_histogram : [reference_image],_nb_levels>0,_color_channels
 #@cli : Transfer histogram of the specified reference image to selected images.
@@ -9277,7 +9232,7 @@ to_rgba :
 #@cli : Default value: 'nb_levels=256' and 'color_channels=all'.
 #@cli : $ image.jpg 100,100,1,3,"u([256,200,100])" +transfer_histogram[0] [1]
 transfer_histogram : check ${"is_image_arg $1"}" && ${2=256}>0" skip "${3=0}"
-  v - mode="$3"
+  mode="$3"
   if isnum("$3") if isint("$3")
     mode=${arg\ 1+$3,all,rgba,rgb,rgb_r,rgb_g,rgb_b,rgba_a,\
                      lrgb,lrgb_r,lrgb_g,lrgb_b,\
@@ -9288,7 +9243,7 @@ transfer_histogram : check ${"is_image_arg $1"}" && ${2=256}>0" skip "${3=0}"
                      cmyk_c,cmyk_m,cmyk_y,cmyk_k,\
                      yiq_y,yiq_iq}
   fi fi
-  v + e[^-1] "Transfer histogram of image $1 to image$?, with $2 levels on channels '"$mode"'." v -
+  e[^-1] "Transfer histogram of image $1 to image$?, with $2 levels on channels '"$mode"'."
   if ['$mode']!='all' repeat $! pass$1 # Small geometric hack to be able to use 'apply_channels'.
       w0,h0,d0,s0={$>,[w,h,d,s]}
       w1,h1,d1,s1={-1,[w,h,d,s]}
@@ -9299,7 +9254,7 @@ transfer_histogram : check ${"is_image_arg $1"}" && ${2=256}>0" skip "${3=0}"
       r[$>] $w0,$h0,$d0,$s0,0
     done
   else repeat $! pass$1 _transfer_histogram[$>,-1] $2 done rm.
-  fi v +
+  fi
 
 _transfer_histogram :
   repeat min(s#0,s#1)
@@ -9322,7 +9277,7 @@ _transfer_histogram :
 #@cli : $ sample pencils,wall +transfer_rgb[0] [1],0,0.01
 transfer_rgb : check "${2=0.3}>=0 && ${3=8}>=0 && ${4=0.15}>=0 && ${5=64}>=0 && isint(${6=0})"
   e[^-1] "Transfer colors of image $1 to image$?."
-  v - sigma=1.5
+  sigma=1.5
   repeat $! pass$1 0 l[$>,-1]
     nm_source={0,b} nm_target={1,b}
     nm[0] source nm[1] target
@@ -9436,27 +9391,27 @@ transfer_rgb : check "${2=0.3}>=0 && ${3=8}>=0 && ${4=0.15}>=0 && ${5=64}>=0 && 
     fi
 
     k[res]
-  endl done v +
+  endl done
 
 # _transfer_rgb : _gamma>=0,_smoothness>=0,_resolution>0
 # Convert selected images into 3D volumetric scalar function for color matching.
-_transfer_rgb : v - l[] check "${1=0}>=0 && ${2=1.5}>=0 && ${3=128}>0" gamma=$1 smoothness=$2 res=$3
-  onfail noarg gamma=0 smoothness=1.5 res=128 endl v +
+_transfer_rgb : l[] check "${1=0}>=0 && ${2=1.5}>=0 && ${3=128}>0" gamma=$1 smoothness=$2 res=$3
+  onfail noarg gamma=0 smoothness=1.5 res=128 endl
   e[^-1] "Convert image$? as 3D volumetric scalar functions for color matching, with gamma "$gamma",
           smoothness "$smoothness" and resolution "$res"."
-  v - to_rgb repeat $! l[$>]
+  to_rgb repeat $! l[$>]
     b 0.3%
     r {w*h},3,1,1,-1 * {($res-1)/255}
     pointcloud 1,$res,$res,$res f 'if(i,i^$gamma,0)' b $smoothness% n 0,1
-  endl done v +
+  endl done
 
 #@cli xyz2lab : illuminant={ 0=D50 | 1=D65 } : (no arg)
 #@cli : Convert color representation of selected images from XYZ to Lab.
 #@cli : Default value: 'illuminant=1'.
 xyz2lab : skip "${1=,}"
-  v - l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
+  l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl
   e[^-1] "Convert color representation of image$? from XYZ to Lab, using the D"{arg(1+$illu,50,65)}" illuminant."
-  v - to_color
+  to_color
   f "
     begin(
       const epsilon = 216/24389;
@@ -9477,15 +9432,13 @@ xyz2lab : skip "${1=,}"
     fy = lab(yr);
     fz = lab(zr);
     [ cut(116*fy - 16,0,100), 500*(fx - fy), 200*(fy - fz) ]"
-  v +
 
 #@cli xyz2rgb : illuminant={ 0=D50 | 1=D65 } : (no arg)
 #@cli : Convert color representation of selected images from XYZ to RGB.
 #@cli : Default value: 'illuminant=1'.
 xyz2rgb : skip "${1=,}"
-  v - l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
+  l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl
   e[^-1] "Convert color representation of image$? from XYZ to RGB, using the D"{arg(1+$illu,50,65)}" illuminant."
-  v -
   if $illu # D65
     mix_rgb {[3.2404542,-1.5371385,-0.4985314,\
               -0.9692660,1.8760108,0.0415560,\
@@ -9495,75 +9448,73 @@ xyz2rgb : skip "${1=,}"
               -0.978795575994,1.916161689117,0.033453331711,\
               0.071976988401,-0.228984974402,1.405718224383]*255}
   fi
-  c 0,255 v +
+  c 0,255
 
 #@cli xyz82rgb : illuminant={ 0=D50 | 1=D65 } : (no arg)
 #@cli : Convert color representation of selected images from XYZ8 to RGB.
 #@cli : Default value: 'illuminant=1'.
 xyz82rgb : skip "${1=,}"
-  v - l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl v +
+  l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl
   e[^-1] "Convert color representation of image$? from XYZ8 to RGB, using the D"{arg(1+$illu,50,65)}" illuminant."
-  v - repeat $!
+  repeat $!
     sh[$>] 0 /. 255 rm.
     sh[$>] 1 /. 255 rm.
     sh[$>] 2 /. 231.8182 rm.
-  done xyz2rgb $illu v +
+  done xyz2rgb $illu
 
 #@cli ycbcr2rgb
 #@cli : Convert color representation of selected images from YCbCr to RGB.
 ycbcr2rgb :
   e[^-1] "Convert color representation of image$? from YCbCr to RGB."
-  v - repeat $!
+  repeat $!
     sh[$>] 0 -. 16 rm.
     sh[$>] 1,2 -. 128 rm.
     sh[$>] 0,2 mix_rgb. 298,0,409,\
                         298,-100,-208,\
                         298,516,0
     +. 128 /. 256 c. 0,255 rm.
-  done v +
+  done
 
 #@cli yiq2rgb
 #@cli : Convert color representation of selected images from YIQ to RGB.
 yiq2rgb :
   e[^-1] "Convert color representation of image$? from YIQ to RGB."
-  v -
   mix_rgb 1,0.9563,0.6210,\
           1,-0.2721,-0.6474,\
           1,-1.1070,1.7046
-  c 0,255 v +
+  c 0,255
 
 #@cli yiq82rgb
 #@cli : Convert color representation of selected images from YIQ8 to RGB.
 yiq82rgb :
   e[^-1] "Convert color representation of image$? from YIQ8 to RGB."
-  v - repeat $!
+  repeat $!
     sh[$>] 1 /. 0.8393238012481239 -. 151.908 rm.
     sh[$>] 2 /. 0.9567690472081104 -. 133.261 rm.
   done
   mix_rgb 1,0.9563,0.6210,\
           1,-0.2721,-0.6474,\
           1,-1.1070,1.7046
-  c 0,255 v +
+  c 0,255
 
 #@cli yuv2rgb
 #@cli : Convert color representation of selected images from YUV to RGB.
 yuv2rgb :
   e[^-1] "Convert color representation of image$? from YUV to RGB."
-  v -
   mix_rgb {[1,0,1.13983,\
             1,-0.39465,-0.5806,\
             1,2.03211,0]*255}
-  c 0,255 v +
+  c 0,255
 
 #@cli yuv82rgb
 #@cli : Convert selected images from YUV8 to RGB color bases.
 yuv82rgb :
   e[^-1] "Convert color representation of image$? from YUV8 to RGB."
-  v - repeat $!
+  repeat $!
     sh[$>] 0 /. 255 rm.
     sh[$>] 1 /. 289.773 -. 0.44 rm.
     sh[$>] 2 /. 205.645 -. 0.62 rm.
-  done yuv2rgb v +
+  done yuv2rgb
 
 #---------------------------------
 #
@@ -9595,21 +9546,21 @@ yuv82rgb :
 append_tiles : check "isint(${1=0}) && isint(${2=0}) && ${3=0.5}>=0 && $3<=1 && ${4=$3}>=0 && $4<=1"
   if !$! e[0--3] "Append image$? as a 0x0-tiled image." return fi
   if !$1&&!$2 # auto-mode
-    v - N={int(sqrt($!))} M={round($!/$N,1,1)}
-    v + e[0--3] "Append image$? as a "${M}x${N}"-tiled image (auto-mode)." v -
+    N={int(sqrt($!))} M={round($!/$N,1,1)}
+    e[0--3] "Append image$? as a "${M}x${N}"-tiled image (auto-mode)."
     MN={$M*$N} if $!%$MN {$MN-($!%$MN)} s. x fi
   elif !$2 # auto-rows
-    v - M=$1 N={round($!/$1,1,1)}
-    v + e[0--3] "Append image$? as a "${M}x${N}"-tiled image." v -
-    if $M>$! v + warn[0--3] "Missing images for having one row in a "${M}x${N}"-tiled image." return fi
+    M=$1 N={round($!/$1,1,1)}
+    e[0--3] "Append image$? as a "${M}x${N}"-tiled image."
+    if $M>$! warn[0--3] "Missing images for having one row in a "${M}x${N}"-tiled image." return fi
     if $!%$M {$M-($!%$M)} s. x fi
   elif !$1 # auto-columns
-    v - M={round($!/$2,1,1)} N=$2
-    v + e[0--3] "Append image$? as a "${M}x${N}"-tiled image." v -
-    if $N>$! v + warn[0--3] "Missing images for having one column in a "${M}x${N}"-tiled image." return fi
+    M={round($!/$2,1,1)} N=$2
+    e[0--3] "Append image$? as a "${M}x${N}"-tiled image."
+    if $N>$! warn[0--3] "Missing images for having one column in a "${M}x${N}"-tiled image." return fi
     if $!%$M {$M-($!%$M)} s. x fi
   else
-    e[0--3] "Append image$?, as $1x$2-tiled images." v -
+    e[0--3] "Append image$?, as $1x$2-tiled images."
     M=$1 N=$2
   fi
 
@@ -9626,7 +9577,6 @@ append_tiles : check "isint(${1=0}) && isint(${2=0}) && ${3=0.5}>=0 && $3<=1 && 
     repeat int($!/$M) a[$>-{$>+$M-1}] x done
     repeat int($!/$N) a[$>-{$>+$N-1}] y done
   endl done
-  v +
 
 #@cli apply_scales : "command",number_of_scales>0,_min_scale[%]>=0,_max_scale[%]>=0,_scale_gamma>0,_interpolation
 #@cli : Apply specified command on different scales of selected images.
@@ -9635,9 +9585,9 @@ append_tiles : check "isint(${1=0}) && isint(${2=0}) && ${3=0.5}>=0 && $3<=1 && 
 #@cli : $ image.jpg apply_scales "blur 5 sharpen 1000",4
 apply_scales : check "isint($2) && $2>0 && ${3=25%}>=0 && ${4=100%}>=0 && ${5=1}>0 && isint(${6=3}) && $6>=0"
                skip "${1=}"
-  v - s0="no" s1="nearest-neighbor" s2="average" s3="linear" s4="grid" s5="bicubic" s6="lanczos" v +
+  s0="no" s1="nearest-neighbor" s2="average" s3="linear" s4="grid" s5="bicubic" s6="lanczos"
   e[^-1] "Apply command '$1' on image$? for $2 scales ($3 -> $4) and "${s{min(6,$6)}}" interpolation."
-  v - repeat $! l[$<] nm={0,n}
+  repeat $! l[$<] nm={0,n}
     scale0={if(${"is_percent $3"},$3*max(w,h,d),$3)}
     scale1={if(${"is_percent $4"},$4*max(w,h,d),$4)}
     repeat $2
@@ -9649,7 +9599,7 @@ apply_scales : check "isint($2) && $2>0 && ${3=25%}>=0 && ${4=100%}>=0 && ${5=1}
       if narg("$1") l. $1 endl fi
     done
     rm[0] nm $nm
-  endl done v +
+  endl done
 
 #@cli autocrop : value1,value2,... : (no arg) : (+)
 #@cli : Autocrop selected images by specified vector-valued intensity.
@@ -9667,7 +9617,7 @@ autocrop_components : skip ${1=0%} check "${2=0.1%}>=0 && isbool(${3=0}) && isin
   e[^-1] "Autocrop connected components from image$?, with threshold $1, minimal area $2, "\
          ${arg\ 1+$3,low,high}" connectivity "\
          "and output type set to '"${arg\ 1+$4,crop,segmentation,coordinates}"'.\n"
-  v - repeat $! l[$>]
+  repeat $! l[$>]
     min_area={max(1,round(if(${is_percent\ $2},$2*w*h,$2)))}
     +channels 100% >. $1 area_fg. 0,$3 >=. $min_area  # Discard background and small objects.
     +area. 0,1 <. $min_area -|[-2,-1] label_fg. 0,1    # Fill small holes in objects.
@@ -9675,7 +9625,7 @@ autocrop_components : skip ${1=0%} check "${2=0.1%}>=0 && isbool(${3=0}) && isin
     # Extract detected objects.
     N={iM} repeat iM
       n={1+$>}
-      v + e[] "\r  > "$n/$N v -
+      e[] "\r  > "$n/$N
       rprogress {100*$n/$N}
       +==[1] $n +*[0,-1] rm..
       if $4==0 coords=${autocrop_coords.\ auto} rm. +z[0] $coords
@@ -9686,7 +9636,7 @@ autocrop_components : skip ${1=0%} check "${2=0.1%}>=0 && isbool(${3=0}) && isin
     rm[0,1]
     if !$! 0 fi
     if $4==2 a x fi
-  endl done v +
+  endl done
 
 #@cli autocrop_seq : value1,value2,... | auto
 #@cli : Autocrop selected images using the crop geometry of the last one by specified vector-valued intensity,
@@ -9696,16 +9646,14 @@ autocrop_components : skip ${1=0%} check "${2=0.1%}>=0 && isbool(${3=0}) && isin
 autocrop_seq : skip ${1=auto}
   e[^-1] "Auto-crop image$? using crop geometry of last image by vector '$*'."
   if !$! return fi
-  v -
   is_auto={['"$1"']=='auto'}
-  if $!==1 _autocrop$is_auto ${1--1} v + return fi
+  if $!==1 _autocrop$is_auto ${1--1} return fi
   coords=${autocrop_coords.\ ${1--1}}
   x0={arg(1,$coords)} y0={arg(2,$coords)} z0={arg(3,$coords)}
   x1={arg(4,$coords)} y1={arg(5,$coords)} z1={arg(6,$coords)}
   if $x0>$x1" || "$y0>$y1" || "$z0>$z1 i[0--2] 0 rm[1--1:2]
   else z $x0,$y0,$z0,$x1,$y1,$z1
   fi
-  v +
 
 #@cli channels : { [image0] | c0[%] },_{ [image1] | c1[%] } : (+)
 #@cli : Keep only specified channels of selected images.
