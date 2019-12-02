@@ -2545,9 +2545,7 @@ CImg<char> gmic::stdlib = CImg<char>::empty();
 gmic::gmic():gmic_new_attr {
   CImgList<gmic_pixel_type> images;
   CImgList<char> images_names;
-  verbosity = -1;
   _gmic(0,images,images_names,0,true,0,0);
-  verbosity = 0;
 }
 
 template<typename T>
@@ -2717,13 +2715,7 @@ CImg<char> gmic::callstack2string(const CImg<unsigned int> *const callstack_sele
     res[7].assign(input_callstack[siz - 2],false);
     res[8].assign(input_callstack[siz - 1],false);
   }
-  cimglist_for(res,l) {
-    if (!verbosity && !_is_debug) {
-      char *const s = res(l,0)!='*'?0:std::strchr(res[l],'#');
-      if (s) { *s = 0; CImg<char>(res[l].data(),(unsigned int)(s - res[l].data() + 1)).move_to(res[l]); }
-    }
-    if (res(l,0)) res[l].back() = '/'; else res.remove(l--);
-  }
+  cimglist_for(res,l) if (res(l,0)) res[l].back() = '/'; else res.remove(l--);
   CImg<char>::vector(0).move_to(res);
   return res>'x';
 }
