@@ -22454,6 +22454,8 @@ render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2
 
     # Compute image for donations of the last months.
     all_N,all_sum,all_max=0 all_min=inf
+    all_amounts,sep=
+
     repeat $2
       edate={y=date(0);m=date(1)-1-$>;m<=0?(--y;m+=12);100*y+m}
       s_month=${"arg "$edate%100",January,February,March,April,May,June,July,August,\
@@ -22465,6 +22467,8 @@ render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2
         val={round(${donation_eur_$e})}
         all_max={max($all_max,${donation_eur_$e})}
         all_min={min($all_min,${donation_eur_$e})}
+        all_amounts.=$sep$val
+        sep=,
         sum+=$val
         N+=1
       fi done
@@ -22485,7 +22489,7 @@ render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2
     rv
 
     all_avg={$all_N?$all_sum/$all_N:0}
-    0 t. "Avg: "{_round(${all_avg},0.1)}"\37 / Min: "{_round($all_min,0.1)}"\37 / Max: "\
+    0 t. "Avg: "{_round(${all_avg},0.1)}"\37 / Med: "{_round(med($all_amounts))}"\37 / Min: "{_round($all_min,0.1)}"\37 / Max: "\
          {_round($all_max,0.1)}"\37",0,0,24,1,1
     *. 200 i[-2] 100%,100%,1,3 a[-2,-1] c
 
