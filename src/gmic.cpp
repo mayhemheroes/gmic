@@ -4844,7 +4844,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     }
 
     // Begin command line parsing.
-    const int old_verbosity = verbosity;
+    const int starting_verbosity = verbosity;
     if (!commands_line && is_start) { print(images,0,"Start G'MIC interpreter."); is_start = false; }
     while (position<commands_line.size() && !is_quit && !is_return) {
       const bool is_first_item = !position;
@@ -14597,7 +14597,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       is_change = true;
     } // End main parsing loop of _run()
 
-    verbosity = old_verbosity;
+    verbosity = starting_verbosity;
 
     // Wait for remaining threads to finish and possibly throw exceptions from threads.
     cimglist_for(gmic_threads,k) wait_threads(&gmic_threads[k],true,(T)0);
