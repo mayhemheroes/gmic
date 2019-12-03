@@ -255,7 +255,7 @@ int main(int argc, char **argv) {
   }
   if (is_invalid_updatefile) { // Display warning message in case of invalid user command file
     CImg<char> tmpstr(1024);
-    cimg_snprintf(tmpstr,tmpstr.width(),"warn \"File '\"{/\"%s\"}\"' is not a valid G'MIC command file.\" ",
+    cimg_snprintf(tmpstr,tmpstr.width(),"warn \"File '\"{/\"%s\"}\"' is not a valid G'MIC update file.\" ",
                   filename_update.data());
     items.insert(CImg<char>::string(tmpstr.data(),false),is_first_item_verbose?2:0);
   }
@@ -296,23 +296,24 @@ int main(int argc, char **argv) {
         images.insert(gmic::stdlib);
         CImg<char> tmp_line(1024);
         cimg_snprintf(tmp_line,tmp_line.width(),
-                      "v 0 "
                       "l[] i raw:\"%s\",char m \"%s\" onfail rm endl "
                       "l[] i raw:\"%s\",char m \"%s\" onfail rm endl "
-                      "rv help \"%s\",0 q",
+                      "rv help \"%s\",0",
                       filename_update.data(),filename_update.data(),
                       filename_user,filename_user,
                       e.command());
         try {
           gmic(tmp_line,images,images_names);
-        } catch (...) {
-          cimg_snprintf(tmp_line,tmp_line.width(),"v 0 help \"%s\",1 q",e.command());
-          images.assign();
+        } catch (...) { // Fallback in case overloaded version of 'help' crashed
+          cimg_snprintf(tmp_line,tmp_line.width(),"help \"%s\",1",e.command());
+          images.assign().insert(gmic::stdlib);
           images_names.assign();
-          images.insert(gmic::stdlib);
           gmic(tmp_line,images,images_names);
         }
-      } else { std::fprintf(cimg::output(),"\n\n"); std::fflush(cimg::output()); }
+      } else {
+        std::fprintf(cimg::output(),"\n\n");
+        std::fflush(cimg::output());
+      }
     }
     return error_code;
   }
