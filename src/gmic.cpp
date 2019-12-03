@@ -2168,7 +2168,6 @@ double gmic::mp_call(char *const str, void *const p_list, const T& pixel_type) {
         CImg<char>::string(title).move_to(gmic_instance.callstack);
       } else CImg<char>::string("*ext").move_to(gmic_instance.callstack);
       unsigned int pos = 0;
-
       try {
         gmic_instance._run(gmic_instance.commands_line_to_CImgList(gmic::strreplace_fw(str)),pos,images,images_names,
                            parent_images,parent_images_names,variables_sizes,0,0,command_selection);
@@ -3789,15 +3788,15 @@ gmic& gmic::print_images(const CImgList<T>& images, const CImgList<char>& images
     cimg_forY(selection,l) {
       const unsigned int uind = selection[l];
       const CImg<T>& img = images[uind];
+      const int o_verbosity = verbosity;
+      const bool o_is_debug = is_debug;
       bool is_valid = true;
-      int o_verbosity = verbosity;
-      bool o_is_debug = is_debug;
       verbosity = 0;
       is_debug = false;
 
       try { gmic_check(img); } catch (gmic_exception&) { is_valid = false; }
-      verbosity = o_verbosity;
       is_debug = o_is_debug;
+      verbosity = o_verbosity;
       cimg_snprintf(title,title.width(),"[%u] = '%s'",
                     uind,images_names[uind].data());
       cimg::strellipsize(title,80,false);
@@ -3840,13 +3839,13 @@ gmic& gmic::display_images(const CImgList<T>& images, const CImgList<char>& imag
   CImg<bool> is_valid(1,selection.height(),1,1,true);
   cimg_forY(selection,l) {
     const CImg<T>& img = images[selection[l]];
-    int o_verbosity = verbosity;
-    bool o_is_debug = is_debug;
-    verbosity = -1;
+    const int o_verbosity = verbosity;
+    const bool o_is_debug = is_debug;
+    verbosity = 0;
     is_debug = false;
     try { gmic_check(img); } catch (gmic_exception&) { is_valid[l] = false; }
-    verbosity = o_verbosity;
     is_debug = o_is_debug;
+    verbosity = o_verbosity;
   }
 
   CImg<char> s_tmp;
@@ -4427,11 +4426,12 @@ CImg<char> gmic::substitute_item(const char *const source,
                 subset.back() = 0;
                 CImg<T> values;
                 ++feature;
-                int o_verbosity = verbosity;
-                bool o_is_debug = is_debug;
-                verbosity = -1; is_debug = false;
-                CImg<char> _status;
-                status.move_to(_status); // Save status because 'selection2cimg' may change it
+                CImg<char> o_status;
+                status.move_to(o_status); // Save status because 'selection2cimg' may change it
+                const int o_verbosity = verbosity;
+                const bool o_is_debug = is_debug;
+                verbosity = 0;
+                is_debug = false;
                 try {
                   const CImg<unsigned int> inds = selection2cimg(subset,(unsigned int)img.size(),
                                                                  CImgList<char>::empty(),"",false);
@@ -4443,9 +4443,9 @@ CImg<char> gmic::substitute_item(const char *const source,
                         "Item substitution '{%s}': %s",
                         cimg::strellipsize(inbraces,64,false),e_ptr?e_ptr + 2:e.what());
                 }
-                _status.move_to(status);
-                verbosity = o_verbosity;
                 is_debug = o_is_debug;
+                verbosity = o_verbosity;
+                o_status.move_to(status);
                 cimg_foroff(values,q) {
                   cimg_snprintf(substr,substr.width(),"%.17g",(double)values[q]);
                   CImg<char>::string(substr,true,true).
@@ -4790,7 +4790,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
   CImg<unsigned int> ind, ind0, ind1;
   CImg<unsigned char> g_img_uc;
-  CImg<char> name, _status;
+  CImg<char> name, o_status;
   CImg<float> vertices;
   CImg<T> g_img;
 
@@ -4844,6 +4844,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     }
 
     // Begin command line parsing.
+    const int old_verbosity = verbosity;
     if (!commands_line && is_start) { print(images,0,"Start G'MIC interpreter."); is_start = false; }
     while (position<commands_line.size() && !is_quit && !is_return) {
       const bool is_first_item = !position;
@@ -6031,10 +6032,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               file = 0;
             }
             if (file) {
-              status.move_to(_status); // Save status because 'add_commands()' can change it, with 'error()'
+              status.move_to(o_status); // Save status because 'add_commands()' can change it, with 'error()'
               const int o_verbosity = verbosity;
               const bool o_is_debug = is_debug;
-              verbosity = -1;
+              verbosity = 0;
               is_debug = false;
               try {
                 add_commands(file,add_debug_info?arg_command:0,&count_new,&count_replaced);
@@ -6043,9 +6044,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 cimg::fclose(file);
                 file = 0;
               }
-              verbosity = o_verbosity;
               is_debug = o_is_debug;
-              _status.move_to(status);
+              verbosity = o_verbosity;
+              o_status.move_to(status);
             }
             if (!file)
               error(true,images,0,0,
@@ -7019,10 +7020,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           gmic_substitute_args(false);
           name.assign(argument,(unsigned int)std::strlen(argument) + 1);
           cimg::strunescape(name);
-          ++verbosity;
           if (is_selection) error(true,images,&selection,0,"%s",name.data());
           else error(true,images,0,0,"%s",name.data());
-          --verbosity;
         }
 
         // Invert endianness.
@@ -8339,7 +8338,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             }
             cimg::mutex(27,0);
           }
+
           const unsigned int local_callstack_size = callstack.size();
+          const int o_verbosity = verbosity;
           try {
             if (next_debug_line!=~0U) { debug_line = next_debug_line; next_debug_line = ~0U; }
             if (next_debug_filename!=~0U) { debug_filename = next_debug_filename; next_debug_filename = ~0U; }
@@ -8373,6 +8374,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 callstack.remove(k);
               }
             if (nb_locals==1 && position<commands_line.size()) { // Onfail block found
+              verbosity = o_verbosity; // Restore verbosity
               if (is_very_verbose) print(images,0,"Reach 'onfail' block.");
               try {
                 _run(commands_line,++position,g_list,g_list_c,
@@ -13418,19 +13420,19 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                      nc=='_'))) {
 
                       CImg<unsigned int> inds;
+                      status.move_to(o_status); // Save status because 'selection2cimg' can change it
                       const int o_verbosity = verbosity;
                       const bool o_is_debug = is_debug;
                       verbosity = 0;
                       is_debug = false;
-                      status.move_to(_status); // Save status because 'selection2cimg' can change it
                       try {
                         inds = selection2cimg(inbraces,nb_arguments + 1,
                                               CImgList<char>::empty(),"",false);
                         is_valid_subset = true;
                       } catch (...) { inds.assign(); is_valid_subset = false; }
-                      _status.move_to(status);
-                      verbosity = o_verbosity;
                       is_debug = o_is_debug;
+                      verbosity = o_verbosity;
+                      o_status.move_to(status);
 
                       if (is_valid_subset) {
                         nsource+=l_inbraces + 3;
@@ -13505,10 +13507,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
               try {
                 is_debug_info = false;
-                const int o_verbosity = verbosity--;
+                --verbosity;
                 _run(ncommands_line,nposition,g_list,g_list_c,images,images_names,nvariables_sizes,&_is_noarg,
                      argument,&selection);
-                verbosity = o_verbosity;
+                ++verbosity;
               } catch (gmic_exception &e) {
                 cimg::swap(exception._command,e._command);
                 cimg::swap(exception._message,e._message);
@@ -13542,10 +13544,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
               try {
                 is_debug_info = false;
-                const int o_verbosity = verbosity--;
+                --verbosity;
                 _run(ncommands_line,nposition,g_list,g_list_c,images,images_names,nvariables_sizes,&_is_noarg,
                      argument,&selection);
-                verbosity = o_verbosity;
+                ++verbosity;
               } catch (gmic_exception &e) {
                 cimg::swap(exception._command,e._command);
                 cimg::swap(exception._message,e._message);
@@ -14410,7 +14412,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           std::FILE *const gfile = cimg::fopen(filename,"rb");
 
           bool is_add_error = false;
-          status.move_to(_status); // Save status because 'add_commands' can change it, with error()
+          status.move_to(o_status); // Save status because 'add_commands' can change it, with error()
           const int o_verbosity = verbosity;
           const bool o_is_debug = is_debug;
           verbosity = 0;
@@ -14420,9 +14422,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           } catch (...) {
             is_add_error = true;
           }
-          verbosity = o_verbosity;
           is_debug = o_is_debug;
-          _status.move_to(status);
+          verbosity = o_verbosity;
+          o_status.move_to(status);
           if (is_add_error) {
             if (is_network_file)
               error(true,images,0,0,
@@ -14594,6 +14596,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       g_list.assign(); g_list_c.assign();
       is_change = true;
     } // End main parsing loop of _run()
+
+    verbosity = old_verbosity;
 
     // Wait for remaining threads to finish and possibly throw exceptions from threads.
     cimglist_for(gmic_threads,k) wait_threads(&gmic_threads[k],true,(T)0);
