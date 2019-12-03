@@ -2170,10 +2170,8 @@ double gmic::mp_call(char *const str, void *const p_list, const T& pixel_type) {
       unsigned int pos = 0;
 
       try {
-        const int o_verbosity = gmic_instance.verbosity--;
         gmic_instance._run(gmic_instance.commands_line_to_CImgList(gmic::strreplace_fw(str)),pos,images,images_names,
                            parent_images,parent_images_names,variables_sizes,0,0,command_selection);
-        gmic_instance.verbosity = o_verbosity;
       } catch (gmic_exception&) {
         res = cimg::type<double>::nan();
       }
@@ -2312,11 +2310,9 @@ static DWORD WINAPI gmic_parallel(void *arg)
     unsigned int pos = 0;
     st.gmic_instance.abort_ptr(st.gmic_instance.is_abort);
     st.gmic_instance.is_debug_info = false;
-    const int o_verbosity = st.gmic_instance.verbosity--;
     st.gmic_instance._run(st.commands_line,pos,*st.images,*st.images_names,
                           *st.parent_images,*st.parent_images_names,
                           st.variables_sizes,0,0,st.command_selection);
-    st.gmic_instance.verbosity = o_verbosity;
   } catch (gmic_exception &e) {
     st.exception._command.assign(e._command);
     st.exception._message.assign(e._message);
@@ -4658,10 +4654,8 @@ CImg<char> gmic::substitute_item(const char *const source,
           CImg<char>::string("*substitute").move_to(callstack);
           CImg<unsigned int> nvariables_sizes(gmic_varslots);
           cimg_forX(nvariables_sizes,l) nvariables_sizes[l] = variables[l]->size();
-          const int o_verbosity = verbosity--;
           _run(ncommands_line,nposition,images,images_names,parent_images,parent_images_names,
                nvariables_sizes,0,inbraces,command_selection);
-          verbosity = o_verbosity;
           for (unsigned int l = 0; l<nvariables_sizes._width - 2; ++l) if (variables[l]->size()>nvariables_sizes[l]) {
               variables_names[l]->remove(nvariables_sizes[l],variables[l]->size() - 1);
               variables[l]->remove(nvariables_sizes[l],variables[l]->size() - 1);
