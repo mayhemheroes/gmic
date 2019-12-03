@@ -10229,7 +10229,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
         // Print.
         if (!is_get && !std::strcmp("print",command)) {
+          ++verbosity;
           print_images(images,images_names,selection);
+          --verbosity;
           is_change = false; continue;
         }
 
@@ -14597,8 +14599,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       is_change = true;
     } // End main parsing loop of _run()
 
-    verbosity = starting_verbosity;
-
     // Wait for remaining threads to finish and possibly throw exceptions from threads.
     cimglist_for(gmic_threads,k) wait_threads(&gmic_threads[k],true,(T)0);
     cimglist_for(gmic_threads,k) cimg_forY(gmic_threads[k],l)
@@ -14635,7 +14635,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     cimglist_for(images,l) gmic_check(images[l]);
 
     // Display or print result.
-    if (is_change && !is_quit && !is_return && callstack.size()==1 && images) {
+    if (verbosity>0 && is_change && !is_quit && !is_return && callstack.size()==1 && images) {
       if (!std::strcmp(set_variable("_host","",'.',0),"cli")) {
         if (is_display_available) {
           CImgList<unsigned int> lselection, lselection3d;
@@ -14679,6 +14679,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         is_quit = true;
       }
     }
+
+    verbosity = starting_verbosity;
+
   } catch (gmic_exception&) {
     // Wait for remaining threads to finish.
     cimglist_for(gmic_threads,k) wait_threads(&gmic_threads[k],true,(T)0);
