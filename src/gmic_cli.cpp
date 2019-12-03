@@ -201,19 +201,19 @@ int main(int argc, char **argv) {
     cimg::output(stdout);
 
     if (is_global_help) try { // Global help
-        gmic_instance.run("l help \"\" onfail endl",images,images_names);
+        gmic_instance.run("l help \"\" onfail endl q",images,images_names);
       } catch (...) { // Fallback in case overloaded version of 'help' crashed
         images.assign().insert(gmic::stdlib);
         images_names.assign();
-        gmic("_host=cli l help \"\" onfail endl",images,images_names);
+        gmic("_host=cli l help \"\" onfail endl q",images,images_names);
       }
     else { // Help for a specified command
       CImg<char> tmp_line(1024);
       try {
-        cimg_snprintf(tmp_line,tmp_line.width(),"l help \"%s\",1 onfail endl",help_argument);
+        cimg_snprintf(tmp_line,tmp_line.width(),"l help \"%s\",1 onfail endl q",help_argument);
         gmic_instance.run(tmp_line,images,images_names);
       } catch (...) { // Fallback in case overloaded version of 'help' crashed
-        cimg_snprintf(tmp_line,tmp_line.width(),"l help \"%s\",1 onfail endl",help_argument);
+        cimg_snprintf(tmp_line,tmp_line.width(),"l help \"%s\",1 onfail endl q",help_argument);
         images.assign().insert(gmic::stdlib);
         images_names.assign();
         gmic(tmp_line,images,images_names);
@@ -228,7 +228,7 @@ int main(int argc, char **argv) {
 
   CImgList<char> items;
   if (argc==1) // When no args have been specified
-    CImg<char>::string("l[] cli_noarg onfail endl").move_to(items);
+    CImg<char>::string("l[] cli_noarg onfail endl q").move_to(items);
   else {
     for (int l = 1; l<argc; ++l) { // Split argv as items
       if (std::strchr(argv[l],' ')) {
@@ -298,7 +298,7 @@ int main(int argc, char **argv) {
         cimg_snprintf(tmp_line,tmp_line.width(),
                       "l[] i raw:\"%s\",char m \"%s\" onfail rm endl "
                       "l[] i raw:\"%s\",char m \"%s\" onfail rm endl "
-                      "rv help \"%s\",0",
+                      "rv help \"%s\",0 q",
                       filename_update.data(),filename_update.data(),
                       filename_user,filename_user,
                       e.command());
