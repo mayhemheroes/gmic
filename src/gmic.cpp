@@ -5063,15 +5063,20 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         is_command_verbose = is_get?false:
           is_command && *item=='v' && (!item[1] || !std::strcmp(item,"verbose")),
         is_command_echo = is_get || is_command_verbose?false:
-        is_command && *command=='e' && (!command[1] || !std::strcmp(command,"echo")),
-        is_command_error = is_get || is_command_verbose?false:
+          is_command && *command=='e' && (!command[1] || !std::strcmp(command,"echo")),
+        is_command_error = is_get || is_command_verbose || is_command_echo?false:
           is_command && *command=='e' && !std::strcmp(command,"error"),
-        is_command_input = is_get || is_command_verbose || is_command_echo || is_command_error?false:
+        is_command_warn = is_get || is_command_verbose || is_command_echo || is_command_error?false:
+          is_command && *command=='w' && !std::strcmp(command,"warn"),
+        is_command_input = is_get || is_command_verbose || is_command_echo || is_command_error ||
+          is_command_warn?false:
           is_command && *command=='i' && (!command[1] || !std::strcmp(command,"input")),
         is_command_check = is_get || is_command_verbose || is_command_echo || is_command_error ||
-          is_command_input?false:!std::strcmp(item,"check"),
+          is_command_warn || is_command_input?false:
+          is_command && *command=='c' && !std::strcmp(item,"check"),
         is_command_skip = is_get || is_command_verbose || is_command_echo || is_command_error ||
-          is_command_input || is_command_check?false:!std::strcmp(item,"skip");
+          is_command_warn || is_command_input || is_command_check?false:
+          is_command && *command=='s' && !std::strcmp(item,"skip");
 
       // Check for verbosity command, prior to the first output of a log message.
       bool is_verbose = verbosity>=1 || is_debug, is_verbose_argument = false;
@@ -5101,7 +5106,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       CImg<char> gmic_selection;
       if (is_debug ||
           (verbosity>=1 && !is_command_check && !is_command_skip &&
-           !is_command_echo && !is_command_verbose && !is_command_error))
+           !is_command_verbose && !is_command_echo && !is_command_error && !is_command_warn))
         selection2string(selection,images_names,1,gmic_selection);
 
       if (is_debug) {
@@ -12546,7 +12551,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         // Warning.
-        if (!is_get && !std::strcmp("warn",command)) {
+        if (is_command_warn) {
           gmic_substitute_args(false);
           bool force_visible = false;
           if ((*argument=='0' || *argument=='1') && argument[1]==',') {
@@ -12554,8 +12559,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           }
           name.assign(argument,(unsigned int)std::strlen(argument) + 1);
           cimg::strunescape(name);
+          ++verbosity;
           if (is_selection) warn(images,&selection,force_visible,"%s",name.data());
           else warn(images,0,force_visible,"%s",name.data());
+          --verbosity;
           ++position; continue;
         }
 
