@@ -3690,7 +3690,7 @@ void gmic::_gmic(const char *const commands_line,
   is_debug = false;
   is_double3d = true;
   nb_carriages = 0;
-  verbosity = 1;
+  verbosity = 0;
   render3d = 4;
   renderd3d = -1;
   focale3d = 700;

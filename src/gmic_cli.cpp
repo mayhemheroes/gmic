@@ -227,10 +227,9 @@ int main(int argc, char **argv) {
   commands_user.assign(); commands_update.assign();
 
   CImgList<char> items;
-  if (argc==1) { // When no args have been specified
+  if (argc==1) // When no args have been specified
     CImg<char>::string("l[] cli_noarg onfail endl").move_to(items);
-    gmic_instance.verbosity = 0;
-  } else {
+  else {
     for (int l = 1; l<argc; ++l) { // Split argv as items
       if (std::strchr(argv[l],' ')) {
         CImg<char>::vector('\"').move_to(items);
@@ -239,6 +238,7 @@ int main(int argc, char **argv) {
       } else CImg<char>::string(argv[l]).move_to(items);
       if (l<argc - 1) items.back().back()=' ';
     }
+    gmic_instance.verbosity = 1;
   }
 
   // Insert startup command.
