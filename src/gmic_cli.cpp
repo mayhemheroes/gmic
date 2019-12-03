@@ -281,7 +281,7 @@ int main(int argc, char **argv) {
     if (!is_error_code) {
 
       // Something went wrong during the pipeline execution.
-      if (gmic_instance.verbosity<0) {
+      if (gmic_instance.verbosity<=0) {
         std::fprintf(cimg::output(),"\n[gmic] %s%s%s%s",
                      cimg::t_red,cimg::t_bold,
                      e.what(),cimg::t_normal);
