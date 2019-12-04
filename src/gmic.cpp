@@ -1920,7 +1920,7 @@ const CImgList<T>& _gmic_display(CImgDisplay &disp, const char *const title, con
       CImgList<charT> _images_names(dtitle,true);
       CImg<charT> com(128);
       bool is_exception = false;
-      std::sprintf(com,"v - _d2d_core %d",(int)!is_first_call);
+      std::sprintf(com,"_d2d_core %d",(int)!is_first_call);
       t gmic_instance;
       cimg::swap(gmic_instance.commands,gmic_instance0.commands);
       cimg::swap(gmic_instance.commands_names,gmic_instance0.commands_names);
