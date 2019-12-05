@@ -236,7 +236,7 @@ int main(int argc, char **argv) {
         CImg<char>(argv[l],(unsigned int)std::strlen(argv[l])).move_to(items);
         CImg<char>::string("\"").move_to(items);
       } else CImg<char>::string(argv[l]).move_to(items);
-      if (l<argc - 1) items.back().back()=' ';
+      items.back().back()=' ';
     }
     gmic_instance.verbosity = 1;
   }
@@ -260,7 +260,8 @@ int main(int argc, char **argv) {
     items.insert(CImg<char>::string(tmpstr.data(),false),is_first_item_verbose?2:0);
   }
 
-  const CImg<char> commands_line(items>'x');
+  CImg<char> commands_line(items>'x');
+  commands_line.back() = 0;
   items.assign();
 
   // Launch G'MIC interpreter.
