@@ -22444,9 +22444,10 @@ render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2
       # Deduced values.
       l[]
         ({'${date_$e}'}) s -,{'/'} day_$e,month_$e,year_$e={0,t},{1,t},{2,t} rm
-        edate_$e={${day_$e}+(100*${month_$e}+100*${year_$e})}
+        edate_$e={${day_$e}+100*(${month_$e}+100*${year_$e})}
       endl
-      donation_charged_$e+={-${donation_$e}*8%} # Subtract LILA charges (8%)
+      donation_charged_$e={${donation_$e}+${charge_paypal}-${donation_$e}*8%} # Subtract all charges (Paypal + 8% LILA).
+
       if '${currency_$e}'=='eur'
         donation_eur_$e=${donation_$e}
         donation_charged_eur_$e=${donation_charged_$e}
@@ -22456,7 +22457,7 @@ render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2
       fi
 
       # Print infos.
-      e[] "- [#"$e" - "${date_$e}"] "${donation_$e}" "${currency_$e}" ("${donation_charged_eur_$e}" eur), from "\
+      e[] "- [#"$e" - "${date_$e}"] "{_${donation_$e}}" "${currency_$e}" ("{_${donation_charged_eur_$e}}" eur), from "\
               ${name_$e}" ("${mail_$e}") : '"${message_$e}"'"
 
     endl done
@@ -22475,22 +22476,17 @@ render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2
 
       repeat $nb_entries,e if $edate==int(${edate_$e}/100)
         val=${donation_eur_$e}
+        charged_val=${donation_charged_eur_$e}
         month_amounts.=$sep$val
         all_amounts.=$all_sep$val
-        all_sep,sep=,
+        all_charged_amounts.=$all_sep$charged_val
+        all_sep=, sep=,
       fi done
 
-       v 1
+      month_sum={sum(0$month_amounts)}
+      N={narg($month_amounts)}
 
-       echo[] "DEBUG : "$month_amounts
-
-      all_max={max($all_amounts)}
-      all_min={min($all_amounts)}
-      all_sum={sum($all_amounts)}
-      all_avg={avg($all_amounts)}
-      q
-
-      600,30,1,3,'x<$sum?[139,181,173]+(y>h/2?0:40):[220,230,240]' r. 500,30,1,3 c. 0,255
+      600,30,1,3,'x<$month_sum?[139,181,173]+(y>h/2?0:40):[220,230,240]' r. 500,30,1,3 c. 0,255
       shape_circle 24 s. x,2 s[-2,-1] y,2
       r[-4] [-5],0,1,0,0 r[-3] [-5],0,1,0,1 r[-2] [-5],0,1,1,0 r[-1] [-5],0,1,1,1 min[-4--1]
       channels. 0  *.. . *. 255 a[-2,-1] c
@@ -22498,10 +22494,15 @@ render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2
       sh. 100% dilate_circ. 3 b. 1 rm.
 
       t. $s_month" "$s_year,0.02~,0.5~,24,0.5,0,0,0,255
-      t. {_round($sum)}" \37 = "{_round($sum*$eur2usd)}" $",0.5~,0.5~,24,1,0,0,0,255
+      t. {_round($month_sum)}" \37 = "{_round($month_sum*$eur2usd)}" $",0.5~,0.5~,24,1,0,0,0,255
       t. $N" sponsor"${"if "$N"!=1 u s else u \"\" fi"},0.97~,0.5~,24,0.5,0,0,0,255
     done
     rv
+
+    all_max={max(0$all_amounts)}
+    all_min={min(0$all_amounts)}
+    all_sum={sum(0$all_amounts)}
+    all_avg={avg(0$all_amounts)}
 
     0 t. "Avg: "{_round(${all_avg},0.1)}"\37 / "\
          "Med: "{_round(med($all_amounts))}"\37 / "\
@@ -22513,7 +22514,8 @@ render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2
     o $HOME/work/src/gmic/html/img/donations_latest_months.png
   endl
 
-  e[] "\nTOTAL : "$all_sum" euros."
+  all_charged_sum={sum(0$all_charged_amounts)}
+  e[] "\nTOTAL : "{_round($all_sum)}" eur (charged : "{_round($all_charged_sum)}" eur)."
 
   # Generate coin graphics.
   l[]
