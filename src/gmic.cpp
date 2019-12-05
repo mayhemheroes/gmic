@@ -2342,7 +2342,7 @@ const char *gmic::builtin_commands_names[] = {
   "l","l3d","label","le","light3d","line","local","log","log10","log2","lt",
   "m","m*","m/","m3d","mandelbrot","map","matchpatch","max","md3d","mdiv","median","min","mirror","mmul","mod",
     "mode3d","moded3d","move","mse","mul","mul3d","mutex","mv",
-  "n","name","named","neq","nm","nmd","noarg","noise","normalize",
+  "n","name","named","neq","network","nm","nmd","noarg","noise","normalize",
   "o","o3d","object3d","onfail","opacity3d","or","output",
   "p","parallel","pass","permute","plasma","plot","point","polygon","pow","print","progress",
   "q","quit",
@@ -9132,6 +9132,19 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                 "Compute boolean inequality between image%s and expression %s'",
                                 gmic_selection.data(),gmic_argument_text_printed(),
                                 "Compute boolean inequality between image%s");
+
+        // Manage network permissions.
+        if (!is_get && !std::strcmp("network",item)) {
+          gmic_substitute_args(false);
+          if (cimg_sscanf(argument,"%u%c",
+                          &pattern,&end)==1 &&
+              pattern<=1) {
+            print(images,0,"%s load-from-network mode.",
+                  pattern?"Enable":"Disable");
+            cimg::network_mode((bool)pattern,true);
+          } else arg_error("network");
+          ++position; continue;
+        }
 
         // Discard custom command arguments.
         if (!is_get && !std::strcmp("noarg",item)) {
