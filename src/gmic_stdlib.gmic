@@ -9215,11 +9215,23 @@ transfer_histogram : check ${"is_image_arg $1"}" && ${2=256}>0" skip "${3=0}"
 
 _transfer_histogram :
   repeat min(s#0,s#1)
-    sh $> im,iM={[min(im#0,im#1),max(iM#0,iM#1)]}
-    equalize.. $1
-    +histogram_cumul. $1,1,$im,$iM *. {$iM-$im} +. $im rm..
-    index.. .,0,0 *.. {($iM-$im)/$1} +.. $im
-    rm[-2,-1]
+    sh $>
+    +histogram[-2,-1] $1 cumulate[-2,-1] /.. {-2,i[-1,2]} /. {i[-1,2]}
+    f.. "*
+      const w1 = w -1;
+      val = i; X = x;
+      val<i[#-1,X]?(
+        step = int(X/2);
+        while (X && step>=1, nX = max(0,X - step); val<i[#-1,nX]?(X = nX):(step = int(step/2)));
+        X?(vc = i[#-1,X]; vp = i[#-1,X - 1]; (vc - val)>(val - vp)?--X); # Rounding
+      ):(
+        step = int((w1 - X)/2);
+        while (X<w1 && step>=1, nX = min(w1,X + step); val>i[#-1,nX]?(X = nX):(step = int(step/2)));
+        X<w1?(vc = i[#-1,X]; vn = i[#-1,X + 1]; (val - vc)>(vn - val)?++X); # Rounding
+      );
+      im#-3 + (iM#-3 - im#-3)*X/w1"
+    n[-4] 0,{w-1} round[-4] map[-4] ..
+    k[0,1]
   done
 
 #@cli transfer_rgb : [target],_gamma>=0,_regularization>=0,_luminosity_constraints>=0,_rgb_resolution>=0,\
@@ -43767,38 +43779,3 @@ fx_solve_maze_preview :
 # End:
 #
 # (End of G'MIC custom commands)
-
-bug :
-
-  err=0
-  srand 0
-  repeat 40 l[]
-    sp $> sp {$>+1} luminance
-
-  +histogram[-2,-1] 256 b[-2,-1] 1
-  cumulate[-2,-1] /.. {-2,i[-1,2]} /. {i[-1,2]}
-  f. "*
-    const w1 = w -1;
-    val = i; X = x;
-    val<i[#-2,X]?(
-      step = int(X/2);
-      while (X && step>=1, nX = max(0,X - step); val<i[#-2,nX]?(X = nX):(step = int(step/2)));
-      X?(vc = i[#-2,X]; vp = i[#-2,X - 1]; (vc - val)>(val - vp)?--X); # Rounding
-    ):(
-      step = int((w1 - X)/2);
-      while (X<w1 && step>=1, nX = min(w1,X + step); val>i[#-2,nX]?(X = nX):(step = int(step/2)));
-      X<w1?(vc = i[#-2,X]; vn = i[#-2,X + 1]; (val - vc)>(vn - val)?++X); # Rounding
-    );
-    im#0 + (iM#0 - im#0)*X/w1" rm..
-  n[1] 0,{w-1} round[1] map[1] . rm.
-
-  k[0,1]
-  +histogram[-2,-1] 256,0,255 b[-2,-1] 1
-  normalize_sum[-2,-1]
-
-  +-[-2,-1] sqr. err+={sqrt(is)}
-  rm
-
-  endl done
-
-  echo "ERROR = "$err
