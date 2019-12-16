@@ -43771,9 +43771,8 @@ fx_solve_maze_preview :
 bug :
   sp lena,colorful luminance
 
-#  im,iM={[min(im#0,im#1),max(iM#0,iM#1)]}
-  +histogram[-2,-1] 1024,0,255 b[-2,-1] 2
-
+  im,iM={[min(im#0,im#1),max(iM#0,iM#1)]}
+  +histogram[-2,-1] 1024,$im,$iM b[-2,-1] 2
   cumulate[-2,-1] /.. {-2,i[-1,2]} /. {i[-1,2]}
   f. "
     const w1 = w -1;
@@ -43787,11 +43786,11 @@ bug :
       while (X<w1 && step>=1, nX = min(w1,X + step); val>i[#-2,nX]?(X = nX):(step = int(step/2)));
       X<w1?(vc = i[#-2,X]; vn = i[#-2,X + 1]; (val - vc)>(vn - val)?++X); # Rounding
     );
-    255*X/w1" rm..
+    X/w1" rm..
 
-  *[1] {(w-1)/255} round[1]
+  f[1] (i-$im)*(w#-1-1)/($iM-$im) round[1]
+  f. $im+i*($iM-$im)
   map[1] . rm.
-
 
   k[0,1]
   +histogram[-2,-1] 256,0,255 b[-2,-1] 2
