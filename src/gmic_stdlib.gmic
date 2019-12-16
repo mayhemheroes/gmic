@@ -43769,13 +43769,16 @@ fx_solve_maze_preview :
 # (End of G'MIC custom commands)
 
 bug :
-  sp lena,colorful luminance
 
-  im,iM={[min(im#0,im#1),max(iM#0,iM#1)]}
-  +histogram[-2,-1] 1024,$im,$iM b[-2,-1] 2
+  err=0
+  srand 0
+  repeat 40 l[]
+    sp $> sp {$>+1} luminance
+
+  +histogram[-2,-1] 10000 b[-2,-1] 1
   cumulate[-2,-1] /.. {-2,i[-1,2]} /. {i[-1,2]}
   f. "*
-    const im = "$im"; const iM = "$iM"; const w1 = w -1;
+    const w1 = w -1;
     val = i; X = x;
     val<i[#-2,X]?(
       step = int(X/2);
@@ -43786,11 +43789,16 @@ bug :
       while (X<w1 && step>=1, nX = min(w1,X + step); val>i[#-2,nX]?(X = nX):(step = int(step/2)));
       X<w1?(vc = i[#-2,X]; vn = i[#-2,X + 1]; (val - vc)>(vn - val)?++X); # Rounding
     );
-    im + (iM - im)*X/w1" rm..
-  -[1] $im *[1] {(w#-1-1)/($iM-$im)} round[1] map[1] . rm.
+    im#0 + (iM#0 - im#0)*X/w1" rm..
+  n[1] 0,{w-1} round[1] map[1] . rm.
 
   k[0,1]
-  +histogram[-2,-1] 256,0,255 b[-2,-1] 2
+  +histogram[-2,-1] 256,0,255 b[-2,-1] 1
   normalize_sum[-2,-1]
-  a[-2,-1] c
-  dg. 800
+
+  +-[-2,-1] sqr. err+={sqrt(is)}
+  rm
+
+  endl done
+
+  echo "ERROR = "$err
