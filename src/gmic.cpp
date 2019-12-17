@@ -9959,10 +9959,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                             uext.data(),*s_selection?s_selection:"^",filename);
               const CImgList<char> ncommands_line = commands_line_to_CImgList(formula);
               unsigned int nposition = 0;
-              bool _is_noarg = false;
               CImg<char>::string("").move_to(callstack); // Anonymous scope
-              _run(ncommands_line,nposition,images,images_names,images,images_names,variables_sizes,&_is_noarg,
-                   argument,&selection);
+              _run(ncommands_line,nposition,images,images_names,images,images_names,variables_sizes,0,0,&selection);
               callstack.remove();
 
             } else { // Not found -> Try generic image saver
@@ -14481,10 +14479,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           if (is_start_command) { // Execute 'start' command
             const CImgList<char> ncommands_line = commands_line_to_CImgList("${_host}_start");
             unsigned int nposition = 0;
-            bool _is_noarg = false;
             CImg<char>::string("").move_to(callstack); // Anonymous scope
-            _run(ncommands_line,nposition,images,images_names,parent_images,parent_images_names,
-                 variables_sizes,&_is_noarg,parent_arguments,0);
+            _run(ncommands_line,nposition,images,images_names,parent_images,parent_images_names,variables_sizes,0,0,0);
             callstack.remove();
           }
           continue;
@@ -14497,9 +14493,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             cimg_snprintf(formula,_formula.width(),"input_%s[] \"%s\"",ext,_filename0);
             const CImgList<char> ncommands_line = commands_line_to_CImgList(formula);
             unsigned int nposition = 0;
-            bool _is_noarg = false;
             CImg<char>::string("").move_to(callstack); // Anonymous scope
-            _run(ncommands_line,nposition,g_list,g_list_c,images,images_names,variables_sizes,&_is_noarg,argument,0);
+            _run(ncommands_line,nposition,g_list,g_list_c,images,images_names,variables_sizes,0,0,0);
             callstack.remove();
 
           } else { // Not found -> Try generic image loader
