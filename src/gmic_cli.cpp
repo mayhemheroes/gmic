@@ -238,7 +238,9 @@ int main(int argc, char **argv) {
       } else CImg<char>::string(argv[l]).move_to(items);
       items.back().back()=' ';
     }
-    gmic_instance.verbosity = 1;
+    const char *const s_verbosity = std::getenv("GMIC_VERBOSITY");
+    if (!s_verbosity || std::sscanf(s_verbosity,"%d%c",&gmic_instance.verbosity,&sep)!=1)
+      gmic_instance.verbosity = 1;
   }
 
   // Insert startup command.
