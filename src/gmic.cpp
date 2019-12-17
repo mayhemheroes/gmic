@@ -2929,7 +2929,7 @@ gmic& gmic::debug(const char *format, ...) {
 
 // Set variable in the interpreter environment.
 //---------------------------------------------
-// 'operation' can be { 0 (add new variable), '=' (replace or add),'+','-','*','/','%','&','|','^','<','>' }
+// 'operation' can be { 0 (add new variable), '=' (replace or add),'+','-','*','/','%','&','|','^','<','>','.' }
 // Return the variable value.
 const char *gmic::set_variable(const char *const name, const char *const value,
                                const char operation,
@@ -3059,6 +3059,7 @@ gmic& gmic::add_commands(const char *const data_commands, const char *const comm
                          bool *is_start_command) {
   if (!data_commands || !*data_commands) return *this;
   cimg::mutex(23);
+  static CImg<char> s_start;
   CImg<char> s_body(256*1024), s_line(256*1024), s_name(256), debug_info(32);
   unsigned int line_number = 1, pos = 0;
   bool is_last_slash = false, _is_last_slash = false, is_newline = false;
@@ -3067,6 +3068,10 @@ gmic& gmic::add_commands(const char *const data_commands, const char *const comm
   if (commands_file) CImg<char>::string(commands_file).move_to(commands_files);
   if (count_new) *count_new = 0;
   if (count_replaced) *count_replaced = 0;
+  if (is_start_command && !s_start) {
+    const char *const host = set_variable("_host","",'.',0);
+    if (host && *host) { s_start.assign(32); cimg_snprintf(s_start.data(),s_start.width(),"%s_start",host); }
+  }
 
   for (const char *data = data_commands; *data; is_last_slash = _is_last_slash,
          line_number+=is_newline?1:0) {
@@ -3103,7 +3108,7 @@ gmic& gmic::add_commands(const char *const data_commands, const char *const comm
         cimg_sscanf(lines,"%255[a-zA-Z0-9_] %c %262143[^\n]",s_name.data(),&sep,s_body.data())>=2 &&
         (*lines<'0' || *lines>'9') && sep==':') {
 
-      if (is_start_command) *is_start_command|=!std::strcmp(s_name,"start");
+      if (is_start_command) *is_start_command|=!std::strcmp(s_name,s_start);
       hash = (int)hashcode(s_name,false);
       CImg<char> body = CImg<char>::string(s_body);
       if (commands_file) { // Insert debug info code in body
@@ -14440,8 +14445,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           try {
             add_commands(gfile,add_debug_info?filename:0,&count_new,&count_replaced,&is_start_command);
           } catch (...) {
-            is_add_error = is_start_command = true;
+            is_add_error = true; is_start_command = false;
           }
+
           is_debug = o_is_debug;
           verbosity = o_verbosity;
           o_status.move_to(status);
@@ -14473,11 +14479,12 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             cimg::mutex(29,0);
           }
           if (is_start_command) { // Execute 'start' command
-            const CImgList<char> ncommands_line = commands_line_to_CImgList("start");
+            const CImgList<char> ncommands_line = commands_line_to_CImgList("${_host}_start");
             unsigned int nposition = 0;
             bool _is_noarg = false;
             CImg<char>::string("").move_to(callstack); // Anonymous scope
-            _run(ncommands_line,nposition,g_list,g_list_c,images,images_names,variables_sizes,&_is_noarg,argument,0);
+            _run(ncommands_line,nposition,images,images_names,parent_images,parent_images_names,
+                 variables_sizes,&_is_noarg,parent_arguments,0);
             callstack.remove();
           }
           continue;
