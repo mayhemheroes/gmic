@@ -2929,7 +2929,7 @@ gmic& gmic::debug(const char *format, ...) {
 
 // Set variable in the interpreter environment.
 //---------------------------------------------
-// 'operation' can be { 0 (add new variable), '=' (replace or add),'+','-','*','/','%','&','|','^','<','>' }
+// 'operation' can be { 0 (add new variable), '=' (replace or add),'.','+','-','*','/','%','&','|','^','<','>' }
 // Return the variable value.
 const char *gmic::set_variable(const char *const name, const char *const value,
                                const char operation,
@@ -9950,10 +9950,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                             uext.data(),*s_selection?s_selection:"^",filename);
               const CImgList<char> ncommands_line = commands_line_to_CImgList(formula);
               unsigned int nposition = 0;
-              bool _is_noarg = false;
               CImg<char>::string("").move_to(callstack); // Anonymous scope
-              _run(ncommands_line,nposition,images,images_names,images,images_names,variables_sizes,&_is_noarg,
-                   argument,&selection);
+              _run(ncommands_line,nposition,images,images_names,images,images_names,variables_sizes,0,0,0);
               callstack.remove();
 
             } else { // Not found -> Try generic image saver
@@ -14477,9 +14475,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             cimg_snprintf(formula,_formula.width(),"input_%s[] \"%s\"",ext,_filename0);
             const CImgList<char> ncommands_line = commands_line_to_CImgList(formula);
             unsigned int nposition = 0;
-            bool _is_noarg = false;
             CImg<char>::string("").move_to(callstack); // Anonymous scope
-            _run(ncommands_line,nposition,g_list,g_list_c,images,images_names,variables_sizes,&_is_noarg,argument,0);
+            _run(ncommands_line,nposition,g_list,g_list_c,images,images_names,variables_sizes,0,0,0);
             callstack.remove();
 
           } else { // Not found -> Try generic image loader
