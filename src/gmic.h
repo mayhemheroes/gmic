@@ -287,10 +287,10 @@ struct gmic {
 
   gmic& add_commands(const char *const data_commands, const char *const commands_file=0,
                      unsigned int *count_new=0, unsigned int *count_replaced=0,
-                     bool *const is_init_command=0);
+                     bool *const is_entrypoint=0);
   gmic& add_commands(std::FILE *const file, const char *const filename=0,
                      unsigned int *count_new=0, unsigned int *count_replaced=0,
-                     bool *const is_init_command=0);
+                     bool *const is_entrypoint=0);
 
   gmic_image<char> callstack2string(const bool _is_debug=false) const;
   gmic_image<char> callstack2string(const gmic_image<unsigned int>& callstack_selection,
