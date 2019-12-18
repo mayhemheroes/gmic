@@ -3099,11 +3099,17 @@ gmic& gmic::add_commands(const char *const data_commands, const char *const comm
     if (!*lines) continue; // Empty line found
     *s_name = *s_body = 0;
 
-    if (!is_last_slash && std::strchr(lines,':') && // Check for a command definition
-        cimg_sscanf(lines,"%255[a-zA-Z0-9_] %c %262143[^\n]",s_name.data(),&sep,s_body.data())>=2 &&
-        (*lines<'0' || *lines>'9') && sep==':') {
+    if ((is_runfile && hash<0) || // Check for a command definition (or implicit '__init__')
+        (!is_last_slash && std::strchr(lines,':') &&
+         cimg_sscanf(lines,"%255[a-zA-Z0-9_] %c %262143[^\n]",s_name.data(),&sep,s_body.data())>=2 &&
+         (*lines<'0' || *lines>'9') && sep==':')) {
+      CImg<char> body = CImg<char>::string(hash<0 && !*s_name?lines:s_body);
+      if (hash<0 && !*s_name) {
+        std::strcpy(s_name,"__init__");
+        if (is_init_command) *is_init_command = true;
+      }
       hash = (int)hashcode(s_name,false);
-      CImg<char> body = CImg<char>::string(s_body);
+
       if (commands_file) { // Insert debug info code in body
         if (commands_files.width()<2)
           l_debug_info = cimg_snprintf(debug_info.data() + 1,debug_info.width() - 2,"%x",line_number);
