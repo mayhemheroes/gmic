@@ -106,12 +106,11 @@ int main(int argc, char **argv) {
   gmic gmic_instance;
   gmic_instance.set_variable("_host","cli",0);
   gmic_instance.add_commands("cli_start : ");
-  gmic_instance.allow_init_command = true;
 
   // Load startup command files.
   CImg<char> commands_user, commands_update, filename_update;
   bool is_invalid_userfile = false, is_invalid_updatefile = false;
-  char sep = 0;
+  char sep = 0, end = 0;
 
   // Import update file (from resources directory).
   filename_update.assign(1024);
@@ -239,9 +238,15 @@ int main(int argc, char **argv) {
       } else CImg<char>::string(argv[l]).move_to(items);
       items.back().back()=' ';
     }
+
+    // Determine special mode for running .gmic scripts : 'gmic commands.gmic'.
+    if (argc==2 && std::sscanf(argv[1],"%*[^.].gmi%c%c",&sep,&end)==1 && sep=='c')
+      gmic_instance.is_rungmicfile = true;
+
+    // Determine initial verbosity.
     const char *const s_verbosity = std::getenv("GMIC_VERBOSITY");
     if (!s_verbosity || std::sscanf(s_verbosity,"%d%c",&gmic_instance.verbosity,&sep)!=1)
-      gmic_instance.verbosity = 1;
+      gmic_instance.verbosity = gmic_instance.is_rungmicfile?0:1;
   }
 
   // Insert startup command.
