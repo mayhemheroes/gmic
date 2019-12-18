@@ -361,9 +361,11 @@ cli:
 debug:
 	$(MAKE) "CFLAGS+=$(GMIC_CLI_CFLAGS) $(DEBUG_CFLAGS)" "LIBS+=$(GMIC_CLI_LIBS)" _cli
 
-_cli: gmic.cpp gmic.h gmic_stdlib.h CImg.h
-	$(CXX) -o gmic_cli.o -c gmic.cpp $(CFLAGS)
+_cli: gmic_cli.o gmic.cpp gmic.h gmic_stdlib.h CImg.h
 	$(CXX) -o gmic gmic_cli.cpp gmic_cli.o $(CFLAGS) $(LIBS)
+
+gmic_cli.o:
+	$(CXX) -o gmic_cli.o -c gmic.cpp $(CFLAGS)
 
 # CLI (static)
 #-------------

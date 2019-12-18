@@ -2929,7 +2929,7 @@ gmic& gmic::debug(const char *format, ...) {
 
 // Set variable in the interpreter environment.
 //---------------------------------------------
-// 'operation' can be { 0 (add new variable), '=' (replace or add),'+','-','*','/','%','&','|','^','<','>' }
+// 'operation' can be { 0 (add new variable), '=' (replace or add),'+','-','*','/','%','&','|','^','<','>','.' }
 // Return the variable value.
 const char *gmic::set_variable(const char *const name, const char *const value,
                                const char operation,
@@ -3055,7 +3055,8 @@ const char *gmic::set_variable(const char *const name, const CImg<unsigned char>
 // Add custom commands from a char* buffer.
 //------------------------------------------
 gmic& gmic::add_commands(const char *const data_commands, const char *const commands_file,
-                         unsigned int *count_new, unsigned int *count_replaced) {
+                         unsigned int *count_new, unsigned int *count_replaced,
+                         bool *is_init_command) {
   if (!data_commands || !*data_commands) return *this;
   cimg::mutex(23);
   CImg<char> s_body(256*1024), s_line(256*1024), s_name(256), debug_info(32);
@@ -3098,11 +3099,16 @@ gmic& gmic::add_commands(const char *const data_commands, const char *const comm
     if (!*lines) continue; // Empty line found
     *s_name = *s_body = 0;
 
-    if (!is_last_slash && std::strchr(lines,':') && // Check for a command definition
-        cimg_sscanf(lines,"%255[a-zA-Z0-9_] %c %262143[^\n]",s_name.data(),&sep,s_body.data())>=2 &&
-        (*lines<'0' || *lines>'9') && sep==':') {
+    if (hash<0 || // Check for new command definition (or implicit '__init__')
+        (!is_last_slash && std::strchr(lines,':') &&
+         cimg_sscanf(lines,"%255[a-zA-Z0-9_] %c %262143[^\n]",s_name.data(),&sep,s_body.data())>=2 &&
+         (*lines<'0' || *lines>'9') && sep==':')) {
+      CImg<char> body = CImg<char>::string(hash<0 && !*s_name?lines:s_body);
+      if (hash<0 && !*s_name) {
+        std::strcpy(s_name,"__init__");
+//        if (is_init_command) *is_init_command = true;
+      }
       hash = (int)hashcode(s_name,false);
-      CImg<char> body = CImg<char>::string(s_body);
       if (commands_file) { // Insert debug info code in body
         if (commands_files.width()<2)
           l_debug_info = cimg_snprintf(debug_info.data() + 1,debug_info.width() - 2,"%x",line_number);
@@ -3125,7 +3131,6 @@ gmic& gmic::add_commands(const char *const data_commands, const char *const comm
       body.move_to(commands[hash][pos]);
 
     } else { // Continuation of a previous line
-      if (hash<0) error(true,"Command 'command': Syntax error in expression '%s'.",lines);
       if (!is_last_slash) commands[hash][pos].back() = ' ';
       else --(commands[hash][pos]._width);
       const CImg<char> body = CImg<char>(lines,(unsigned int)(linee - lines + 2));
@@ -3162,7 +3167,8 @@ gmic& gmic::add_commands(const char *const data_commands, const char *const comm
 // Add commands from a file.
 //---------------------------
 gmic& gmic::add_commands(std::FILE *const file, const char *const filename,
-                         unsigned int *count_new, unsigned int *count_replaced) {
+                         unsigned int *count_new, unsigned int *count_replaced,
+                         bool *is_init_command) {
   if (!file) return *this;
 
   // Try reading it first as a .cimg file.
@@ -3170,7 +3176,7 @@ gmic& gmic::add_commands(std::FILE *const file, const char *const filename,
     CImg<char> buffer;
     buffer.load_cimg(file).unroll('x');
     buffer.resize(buffer.width() + 1,1,1,1,0);
-    add_commands(buffer.data(),filename,count_new,count_replaced);
+    add_commands(buffer.data(),filename,count_new,count_replaced,is_init_command);
   } catch (...) {
     std::rewind(file);
     std::fseek(file,0,SEEK_END);
@@ -3180,7 +3186,7 @@ gmic& gmic::add_commands(std::FILE *const file, const char *const filename,
       CImg<char> buffer((unsigned int)siz + 1);
       if (std::fread(buffer.data(),sizeof(char),siz,file)) {
         buffer[siz] = 0;
-        add_commands(buffer.data(),filename,count_new,count_replaced);
+        add_commands(buffer.data(),filename,count_new,count_replaced,is_init_command);
       }
     }
   }
@@ -3682,6 +3688,7 @@ void gmic::_gmic(const char *const commands_line,
   setlocale(LC_NUMERIC,"C");
   cimg_exception_mode = cimg::exception_mode();
   cimg::exception_mode(0);
+  is_rungmicfile = false;
   is_debug = false;
   is_double3d = true;
   nb_carriages = 0;
@@ -9950,10 +9957,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                             uext.data(),*s_selection?s_selection:"^",filename);
               const CImgList<char> ncommands_line = commands_line_to_CImgList(formula);
               unsigned int nposition = 0;
-              bool _is_noarg = false;
               CImg<char>::string("").move_to(callstack); // Anonymous scope
-              _run(ncommands_line,nposition,images,images_names,images,images_names,variables_sizes,&_is_noarg,
-                   argument,&selection);
+              _run(ncommands_line,nposition,images,images_names,images,images_names,variables_sizes,0,0,&selection);
               callstack.remove();
 
             } else { // Not found -> Try generic image saver
@@ -14426,6 +14431,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           unsigned int count_new = 0, count_replaced = 0;
           std::FILE *const gfile = cimg::fopen(filename,"rb");
 
+          bool is_init_command = false;
           bool is_add_error = false;
           status.move_to(o_status); // Save status because 'add_commands' can change it, with error()
           const int o_verbosity = verbosity;
@@ -14433,10 +14439,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           verbosity = 0;
           is_debug = false;
           try {
-            add_commands(gfile,add_debug_info?filename:0,&count_new,&count_replaced);
+            add_commands(gfile,add_debug_info?filename:0,&count_new,&count_replaced,&is_init_command);
           } catch (...) {
-            is_add_error = true;
+            is_add_error = true; is_init_command = false;
           }
+
           is_debug = o_is_debug;
           verbosity = o_verbosity;
           o_status.move_to(status);
@@ -14467,6 +14474,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             std::fflush(cimg::output());
             cimg::mutex(29,0);
           }
+          if (is_rungmicfile && is_init_command && callstack.size()==1) { // Execute '__init__' command
+            const CImgList<char> ncommands_line = commands_line_to_CImgList("__init__");
+            unsigned int nposition = 0;
+            CImg<char>::string("").move_to(callstack); // Anonymous scope
+            _run(ncommands_line,nposition,images,images_names,parent_images,parent_images_names,variables_sizes,0,0,0);
+            callstack.remove();
+          }
           continue;
         } else { // Other file types.
 
@@ -14477,9 +14491,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             cimg_snprintf(formula,_formula.width(),"input_%s[] \"%s\"",ext,_filename0);
             const CImgList<char> ncommands_line = commands_line_to_CImgList(formula);
             unsigned int nposition = 0;
-            bool _is_noarg = false;
             CImg<char>::string("").move_to(callstack); // Anonymous scope
-            _run(ncommands_line,nposition,g_list,g_list_c,images,images_names,variables_sizes,&_is_noarg,argument,0);
+            _run(ncommands_line,nposition,g_list,g_list_c,images,images_names,variables_sizes,0,0,0);
             callstack.remove();
 
           } else { // Not found -> Try generic image loader

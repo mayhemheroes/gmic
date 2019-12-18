@@ -286,9 +286,11 @@ struct gmic {
                            const unsigned int *const variables_sizes=0);
 
   gmic& add_commands(const char *const data_commands, const char *const commands_file=0,
-                     unsigned int *count_new=0, unsigned int *count_replaced=0);
+                     unsigned int *count_new=0, unsigned int *count_replaced=0,
+                     bool *is_start_command=0);
   gmic& add_commands(std::FILE *const file, const char *const filename=0,
-                     unsigned int *count_new=0, unsigned int *count_replaced=0);
+                     unsigned int *count_new=0, unsigned int *count_replaced=0,
+                     bool *is_start_command=0);
 
   gmic_image<char> callstack2string(const bool _is_debug=false) const;
   gmic_image<char> callstack2string(const gmic_image<unsigned int>& callstack_selection,
@@ -413,7 +415,7 @@ struct gmic {
   unsigned long reference_time;
   unsigned int nb_dowhiles, nb_fordones, nb_repeatdones, nb_carriages, debug_filename, debug_line, cimg_exception_mode;
   int verbosity,render3d, renderd3d;
-  bool is_change, is_debug, is_running, is_start, is_return, is_quit, is_double3d, is_debug_info,
+  bool is_rungmicfile, is_change, is_debug, is_running, is_start, is_return, is_quit, is_double3d, is_debug_info,
     _is_abort, *is_abort, is_abort_thread;
   const char *starting_commands_line;
 };
