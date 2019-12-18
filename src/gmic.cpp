@@ -3688,6 +3688,7 @@ void gmic::_gmic(const char *const commands_line,
   setlocale(LC_NUMERIC,"C");
   cimg_exception_mode = cimg::exception_mode();
   cimg::exception_mode(0);
+  allow_init_command = false;
   is_debug = false;
   is_double3d = true;
   nb_carriages = 0;
@@ -14473,9 +14474,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             std::fflush(cimg::output());
             cimg::mutex(29,0);
           }
-          if (callstack.size()==1 && is_init_command &&
-              !std::strcmp(set_variable("_host","",'.',0),"cli")) { // Execute 'cli_start' command
-            const CImgList<char> ncommands_line = commands_line_to_CImgList("cli_start");
+          if (allow_init_command && is_init_command && callstack.size()==1) { // Execute '__init__' command
+            const CImgList<char> ncommands_line = commands_line_to_CImgList("__init__");
             unsigned int nposition = 0;
             CImg<char>::string("").move_to(callstack); // Anonymous scope
             _run(ncommands_line,nposition,images,images_names,parent_images,parent_images_names,variables_sizes,0,0,0);

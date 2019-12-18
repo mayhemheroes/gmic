@@ -106,6 +106,7 @@ int main(int argc, char **argv) {
   gmic gmic_instance;
   gmic_instance.set_variable("_host","cli",0);
   gmic_instance.add_commands("cli_start : ");
+  gmic_instance.allow_init_command = true;
 
   // Load startup command files.
   CImg<char> commands_user, commands_update, filename_update;
