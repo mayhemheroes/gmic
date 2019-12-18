@@ -3055,7 +3055,8 @@ const char *gmic::set_variable(const char *const name, const CImg<unsigned char>
 // Add custom commands from a char* buffer.
 //------------------------------------------
 gmic& gmic::add_commands(const char *const data_commands, const char *const commands_file,
-                         unsigned int *count_new, unsigned int *count_replaced) {
+                         unsigned int *count_new, unsigned int *count_replaced,
+                         bool *const is_init_command) {
   if (!data_commands || !*data_commands) return *this;
   cimg::mutex(23);
   CImg<char> s_body(256*1024), s_line(256*1024), s_name(256), debug_info(32);
@@ -3162,7 +3163,8 @@ gmic& gmic::add_commands(const char *const data_commands, const char *const comm
 // Add commands from a file.
 //---------------------------
 gmic& gmic::add_commands(std::FILE *const file, const char *const filename,
-                         unsigned int *count_new, unsigned int *count_replaced) {
+                         unsigned int *count_new, unsigned int *count_replaced,
+                         bool *const is_init_command) {
   if (!file) return *this;
 
   // Try reading it first as a .cimg file.
@@ -3170,7 +3172,7 @@ gmic& gmic::add_commands(std::FILE *const file, const char *const filename,
     CImg<char> buffer;
     buffer.load_cimg(file).unroll('x');
     buffer.resize(buffer.width() + 1,1,1,1,0);
-    add_commands(buffer.data(),filename,count_new,count_replaced);
+    add_commands(buffer.data(),filename,count_new,count_replaced,is_init_command);
   } catch (...) {
     std::rewind(file);
     std::fseek(file,0,SEEK_END);
@@ -3180,7 +3182,7 @@ gmic& gmic::add_commands(std::FILE *const file, const char *const filename,
       CImg<char> buffer((unsigned int)siz + 1);
       if (std::fread(buffer.data(),sizeof(char),siz,file)) {
         buffer[siz] = 0;
-        add_commands(buffer.data(),filename,count_new,count_replaced);
+        add_commands(buffer.data(),filename,count_new,count_replaced,is_init_command);
       }
     }
   }

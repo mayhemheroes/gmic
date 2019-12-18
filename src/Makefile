@@ -364,7 +364,7 @@ debug:
 _cli: gmic_cli.o gmic.cpp gmic.h gmic_stdlib.h CImg.h
 	$(CXX) -o gmic gmic_cli.cpp gmic_cli.o $(CFLAGS) $(LIBS)
 
-gmic_cli.o:
+gmic_cli.o: gmic.cpp gmic.h gmic_stdlib.h CImg.h
 	$(CXX) -o gmic_cli.o -c gmic.cpp $(CFLAGS)
 
 # CLI (static)
