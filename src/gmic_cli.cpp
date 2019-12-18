@@ -240,8 +240,7 @@ int main(int argc, char **argv) {
     }
 
     // Determine special mode for running .gmic scripts : 'gmic commands.gmic'.
-    if (argc==2 && std::sscanf(argv[1],"%*[^.].gmi%c%c",&sep,&end)==1 && sep=='c')
-      gmic_instance.is_run_single_gmic_file = true;
+    gmic_instance.is_run_single_gmic_file = argc==2 && !std::strcmp(cimg::split_filename(argv[1]),"gmic");
 
     // Determine initial verbosity.
     const char *const s_verbosity = std::getenv("GMIC_VERBOSITY");

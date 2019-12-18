@@ -3128,7 +3128,6 @@ gmic& gmic::add_commands(const char *const data_commands, const char *const comm
       body.move_to(commands[hash][pos]);
 
     } else { // Continuation of a previous line
-//      if (hash<0) error(true,"Command 'command': Syntax error in expression '%s'.",lines);
       if (!is_last_slash) commands[hash][pos].back() = ' ';
       else --(commands[hash][pos]._width);
       const CImg<char> body = CImg<char>(lines,(unsigned int)(linee - lines + 2));
