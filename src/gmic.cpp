@@ -3686,7 +3686,7 @@ void gmic::_gmic(const char *const commands_line,
   setlocale(LC_NUMERIC,"C");
   cimg_exception_mode = cimg::exception_mode();
   cimg::exception_mode(0);
-  is_runfile = false;
+  is_run_single_gmic_file = false;
   is_debug = false;
   is_double3d = true;
   nb_carriages = 0;
@@ -14431,13 +14431,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
           bool is_entrypoint = false, is_add_error = false;
           status.move_to(o_status); // Save status because 'add_commands' can change it, with error()
-          const int o_verbosity = verbosity;
+          int o_verbosity = verbosity;
           const bool o_is_debug = is_debug;
           verbosity = 0;
           is_debug = false;
           try {
             add_commands(gfile,add_debug_info?filename:0,&count_new,&count_replaced,
-                         is_runfile && callstack.size()==1?&is_entrypoint:0);
+                         is_run_single_gmic_file && callstack.size()==1?&is_entrypoint:0);
           } catch (...) {
             is_add_error = true; is_entrypoint = false;
           }
@@ -14475,7 +14475,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             const CImgList<char> ncommands_line = commands_line_to_CImgList("__entrypoint__");
             unsigned int nposition = 0;
             CImg<char>::string("").move_to(callstack); // Anonymous scope
-            const int o_verbosity = verbosity++;
+            o_verbosity = verbosity++;
             _run(ncommands_line,nposition,images,images_names,parent_images,parent_images_names,variables_sizes,0,0,0);
             verbosity = o_verbosity;
             callstack.remove();
