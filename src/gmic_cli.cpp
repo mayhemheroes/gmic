@@ -110,7 +110,7 @@ int main(int argc, char **argv) {
   // Load startup command files.
   CImg<char> commands_user, commands_update, filename_update;
   bool is_invalid_userfile = false, is_invalid_updatefile = false;
-  char sep = 0, end = 0;
+  char sep = 0;
 
   // Import update file (from resources directory).
   filename_update.assign(1024);
