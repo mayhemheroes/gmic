@@ -3682,6 +3682,7 @@ void gmic::_gmic(const char *const commands_line,
   setlocale(LC_NUMERIC,"C");
   cimg_exception_mode = cimg::exception_mode();
   cimg::exception_mode(0);
+  is_runfile = false;
   is_debug = false;
   is_double3d = true;
   nb_carriages = 0;

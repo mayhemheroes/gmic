@@ -240,14 +240,13 @@ int main(int argc, char **argv) {
     }
 
     // Determine special mode for running .gmic scripts : 'gmic commands.gmic'.
-//    if (argc==2 && std::sscanf(argv[1],"%*[^.].gmi%c%c",&sep,&end)==1 && sep=='c')
-//      gmic_instance.is_rungmicfile = true;
+    if (argc==2 && std::sscanf(argv[1],"%*[^.].gmi%c%c",&sep,&end)==1 && sep=='c')
+      gmic_instance.is_runfile = true;
 
     // Determine initial verbosity.
     const char *const s_verbosity = std::getenv("GMIC_VERBOSITY");
     if (!s_verbosity || std::sscanf(s_verbosity,"%d%c",&gmic_instance.verbosity,&sep)!=1)
-//      gmic_instance.verbosity = gmic_instance.is_rungmicfile?0:1;
-      gmic_instance.verbosity = 1;
+      gmic_instance.verbosity = gmic_instance.is_runfile?0:1;
   }
 
   // Insert startup command.
