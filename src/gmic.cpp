@@ -4803,7 +4803,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     interpolation = 0, hash = 0;
   char end, sep = 0, sep0 = 0, sep1 = 0, sepx = 0, sepy = 0, sepz = 0, sepc = 0, axis = 0;
   double vmin = 0, vmax = 0, value, value0, value1, nvalue, nvalue0, nvalue1;
-  bool is_cond, is_endlocal = false, check_elif = false;
+  bool is_cond, is_endlocal = false, check_elif = false, run_entrypoint = false;
   float opacity = 0;
   int err;
 
@@ -4878,7 +4878,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
       // Substitute expressions in current item.
       const char
-        *const initial_item = commands_line[position].data(),
+        *const initial_item = run_entrypoint?"__entrypoint__":commands_line[position].data(),
         *const empty_argument = "",
         *initial_argument = empty_argument;
 
@@ -13569,6 +13569,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 cimg::swap(exception._command,e._command);
                 cimg::swap(exception._message,e._message);
               }
+              if (run_entrypoint) { --verbosity; run_entrypoint = false; }
 
               const unsigned int nb = std::min((unsigned int)selection.height(),g_list.size());
               if (nb>0) {
@@ -14435,8 +14436,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           verbosity = 0;
           is_debug = false;
           try {
-            add_commands(gfile,add_debug_info?filename:0,&count_new,&count_replaced,
-                         is_run_single_gmic_file && callstack.size()==1?&is_entrypoint:0);
+            add_commands(gfile,add_debug_info?filename:0,&count_new,&count_replaced,is_command_input?0:&is_entrypoint);
           } catch (...) {
             is_add_error = true; is_entrypoint = false;
           }
@@ -14470,15 +14470,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             std::fflush(cimg::output());
             cimg::mutex(29,0);
           }
-          if (is_entrypoint) { // Execute '__entrypoint__' command
-            const CImgList<char> ncommands_line = commands_line_to_CImgList("__entrypoint__");
-            unsigned int nposition = 0;
-            CImg<char>::string("").move_to(callstack); // Anonymous scope
-            o_verbosity = verbosity++;
-            _run(ncommands_line,nposition,images,images_names,parent_images,parent_images_names,variables_sizes,0,0,0);
-            verbosity = o_verbosity;
-            callstack.remove();
-          }
+          if (is_entrypoint) { verbosity++; --position; run_entrypoint = true; } // Tell parser to run '__entrypoint__' in next iteration
           continue;
 
         } else { // Other file types.
