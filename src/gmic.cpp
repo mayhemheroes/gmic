@@ -3103,7 +3103,7 @@ gmic& gmic::add_commands(const char *const data_commands, const char *const comm
          cimg_sscanf(lines,"%255[a-zA-Z0-9_] %c %262143[^\n]",s_name.data(),&sep,s_body.data())>=2 &&
          (*lines<'0' || *lines>'9') && sep==':') || hash<0) {
       CImg<char> body = CImg<char>::string(hash<0 && !*s_name?lines:s_body);
-      if (hash<0 && !*s_name) { std::strcpy(s_name,"__entrypoint__"); if (is_entrypoint) *is_entrypoint = true; }
+      if (hash<0 && !*s_name) { std::strcpy(s_name,"_main_"); if (is_entrypoint) *is_entrypoint = true; }
       hash = (int)hashcode(s_name,false);
 
       if (commands_file) { // Insert debug info code in body
@@ -3685,7 +3685,7 @@ void gmic::_gmic(const char *const commands_line,
   setlocale(LC_NUMERIC,"C");
   cimg_exception_mode = cimg::exception_mode();
   cimg::exception_mode(0);
-  is_run_gmicfile = false;
+  allow_entrypoint = false;
   is_debug = false;
   is_double3d = true;
   nb_carriages = 0;
@@ -4878,7 +4878,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
       // Substitute expressions in current item.
       const char
-        *const initial_item = run_entrypoint?"__entrypoint__":commands_line[position].data(),
+        *const initial_item = run_entrypoint?"_main_":commands_line[position].data(),
         *const empty_argument = "",
         *initial_argument = empty_argument;
 
@@ -14437,7 +14437,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           is_debug = false;
           try {
             add_commands(gfile,add_debug_info?filename:0,&count_new,&count_replaced,
-                         is_run_gmicfile && callstack.size()==1 && !is_command_input?&is_entrypoint:0);
+                         allow_entrypoint && callstack.size()==1 && !is_command_input?&is_entrypoint:0);
           } catch (...) {
             is_add_error = true; is_entrypoint = false;
           }
@@ -14471,7 +14471,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             std::fflush(cimg::output());
             cimg::mutex(29,0);
           }
-          if (is_entrypoint) { // Tell parser to run '__entrypoint__' in next iteration
+          if (is_entrypoint) { // Tell parser to run '_main_' in next iteration
             verbosity++;
             --position;
             run_entrypoint = true;
