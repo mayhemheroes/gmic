@@ -14436,7 +14436,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           verbosity = 0;
           is_debug = false;
           try {
-            add_commands(gfile,add_debug_info?filename:0,&count_new,&count_replaced,is_command_input?0:&is_entrypoint);
+            add_commands(gfile,add_debug_info?filename:0,&count_new,&count_replaced,
+                         is_run_single_gmic_file && callstack.size()==1 && !is_command_input?&is_entrypoint:0);
           } catch (...) {
             is_add_error = true; is_entrypoint = false;
           }

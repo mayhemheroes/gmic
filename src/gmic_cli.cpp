@@ -239,8 +239,14 @@ int main(int argc, char **argv) {
       items.back().back()=' ';
     }
 
-    // Determine special mode for running .gmic scripts : 'gmic commands.gmic'.
-    gmic_instance.is_run_single_gmic_file = argc==2 && !std::strcmp(cimg::split_filename(argv[1]),"gmic");
+    // Determine special mode for running .gmic files as scripts : 'gmic commands.gmic [arguments]'.
+    if ((argc==2 || argc==3) && !std::strcmp(cimg::split_filename(argv[1]),"gmic")) {
+      std::FILE *gmic_file = std::fopen(argv[1],"rb");
+      if (gmic_file) {
+        gmic().add_commands(gmic_file,argv[1],0,0,&gmic_instance.is_run_single_gmic_file);
+        std::fclose(gmic_file);
+      }
+    }
 
     // Determine initial verbosity.
     const char *const s_verbosity = std::getenv("GMIC_VERBOSITY");
