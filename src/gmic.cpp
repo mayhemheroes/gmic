@@ -3685,7 +3685,7 @@ void gmic::_gmic(const char *const commands_line,
   setlocale(LC_NUMERIC,"C");
   cimg_exception_mode = cimg::exception_mode();
   cimg::exception_mode(0);
-  is_run_single_gmic_file = false;
+  is_run_gmicfile = false;
   is_debug = false;
   is_double3d = true;
   nb_carriages = 0;
@@ -14437,7 +14437,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           is_debug = false;
           try {
             add_commands(gfile,add_debug_info?filename:0,&count_new,&count_replaced,
-                         is_run_single_gmic_file && callstack.size()==1 && !is_command_input?&is_entrypoint:0);
+                         is_run_gmicfile && callstack.size()==1 && !is_command_input?&is_entrypoint:0);
           } catch (...) {
             is_add_error = true; is_entrypoint = false;
           }
@@ -14471,7 +14471,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             std::fflush(cimg::output());
             cimg::mutex(29,0);
           }
-          if (is_entrypoint) { verbosity++; --position; run_entrypoint = true; } // Tell parser to run '__entrypoint__' in next iteration
+          if (is_entrypoint) { // Tell parser to run '__entrypoint__' in next iteration
+            verbosity++;
+            --position;
+            run_entrypoint = true;
+          }
           continue;
 
         } else { // Other file types.

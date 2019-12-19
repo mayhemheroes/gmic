@@ -243,7 +243,7 @@ int main(int argc, char **argv) {
     if ((argc==2 || argc==3) && !std::strcmp(cimg::split_filename(argv[1]),"gmic")) {
       std::FILE *gmic_file = std::fopen(argv[1],"rb");
       if (gmic_file) {
-        gmic().add_commands(gmic_file,argv[1],0,0,&gmic_instance.is_run_single_gmic_file);
+        gmic().add_commands(gmic_file,argv[1],0,0,&gmic_instance.is_run_gmicfile);
         std::fclose(gmic_file);
       }
     }
@@ -251,7 +251,7 @@ int main(int argc, char **argv) {
     // Determine initial verbosity.
     const char *const s_verbosity = std::getenv("GMIC_VERBOSITY");
     if (!s_verbosity || std::sscanf(s_verbosity,"%d%c",&gmic_instance.verbosity,&sep)!=1)
-      gmic_instance.verbosity = gmic_instance.is_run_single_gmic_file?0:1;
+      gmic_instance.verbosity = gmic_instance.is_run_gmicfile?0:1;
   }
 
   // Insert startup command.
