@@ -245,7 +245,17 @@ int main(int argc, char **argv) {
       if (!*ext || !std::strcmp(ext,"gmic")) {
         std::FILE *gmic_file = std::fopen(argv[1],"rb");
         if (gmic_file) {
-          gmic().add_commands(gmic_file,argv[1],0,0,&gmic_instance.allow_entrypoint);
+          bool allow_entrypoint = false;
+          gmic gi(0,0,false,0,0,(gmic_pixel_type)0);
+          gi.add_commands(gmic_file,argv[1],0,0,&allow_entrypoint);
+          if (allow_entrypoint && argc==3) { // Check if command '_main_' has arguments
+            const unsigned int hash = (int)gmic::hashcode("_main_",false);
+            unsigned int ind = 0;
+            if (gmic::search_sorted("_main_",gi.commands_names[hash],
+                                    gi.commands_names[hash].size(),ind)) // Command found
+              allow_entrypoint = (bool)gi.commands_has_arguments[hash](ind,0);
+          }
+          gmic_instance.allow_entrypoint = allow_entrypoint;
           std::fclose(gmic_file);
         }
       }
