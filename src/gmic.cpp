@@ -3099,7 +3099,7 @@ gmic& gmic::add_commands(const char *const data_commands, const char *const comm
     if (!*lines) continue; // Empty line found
     *s_name = *s_body = 0;
 
-    if ((!is_last_slash && std::strchr(lines,':') && // Check for a command definition (or implicit '__init__')
+    if ((!is_last_slash && std::strchr(lines,':') && // Check for a command definition (or implicit '_main_')
          cimg_sscanf(lines,"%255[a-zA-Z0-9_] %c %262143[^\n]",s_name.data(),&sep,s_body.data())>=2 &&
          (*lines<'0' || *lines>'9') && sep==':') || ((*s_name=0), hash<0)) {
       CImg<char> body = CImg<char>::string(hash<0 && !*s_name?lines:s_body);
@@ -14803,5 +14803,7 @@ gmic_instantiate(gmic_pixel_type);
 gmic_instantiate(gmic_pixel_type2);
 #endif
 template CImgList<char>::~CImgList();
+template bool gmic::search_sorted(const char *const str, const gmic_list<char>& list,
+                                  const unsigned int length, unsigned int &out_ind);
 
 #endif // #ifdef cimg_plugin
