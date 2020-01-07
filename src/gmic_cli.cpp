@@ -240,11 +240,14 @@ int main(int argc, char **argv) {
     }
 
     // Determine special mode for running .gmic files as scripts : 'gmic commands.gmic [arguments]'.
-    if ((argc==2 || argc==3) && !std::strcmp(cimg::split_filename(argv[1]),"gmic")) {
-      std::FILE *gmic_file = std::fopen(argv[1],"rb");
-      if (gmic_file) {
-        gmic().add_commands(gmic_file,argv[1],0,0,&gmic_instance.allow_entrypoint);
-        std::fclose(gmic_file);
+    if (argc==2 || argc==3) {
+      const char *const ext = cimg::split_filename(argv[1]);
+      if (!*ext || !std::strcmp(ext,"gmic")) {
+        std::FILE *gmic_file = std::fopen(argv[1],"rb");
+        if (gmic_file) {
+          gmic().add_commands(gmic_file,argv[1],0,0,&gmic_instance.allow_entrypoint);
+          std::fclose(gmic_file);
+        }
       }
     }
 

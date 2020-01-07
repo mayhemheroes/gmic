@@ -52,7 +52,7 @@
 */
 
 #ifndef gmic_version
-#define gmic_version 281
+#define gmic_version 282
 
 #ifndef gmic_pixel_type
 #define gmic_pixel_type float
@@ -78,7 +78,7 @@ namespace cimg_library {
     unsigned int _height;      // Number of image lines (dimension along the Y-axis)
     unsigned int _depth;       // Number of image slices (dimension along the Z-axis)
     unsigned int _spectrum;    // Number of image channels (dimension along the C-axis)
-    bool _is_shared;           // Tells if the data buffer is shared by another structure
+    bool _is_shared;           // Tells if the data buffer has been allocated by another object
     T *_data;                  // Pointer to the first pixel value
 
     // Destructor.
@@ -90,6 +90,14 @@ namespace cimg_library {
     // Allocate memory for specified image dimensions.
     gmic_image<T>& assign(const unsigned int size_x, const unsigned int size_y=1,
                           const unsigned int size_z=1, const unsigned int size_c=1);
+
+    // Create image by copying existing buffer of t values.
+    template<typename t>
+    gmic_image<T>& assign(const t *const values, const unsigned int size_x, const unsigned int size_y=1,
+                          const unsigned int size_z=1, const unsigned int size_c=1);
+
+    gmic_image<T>& assign(const T *const values, const unsigned int size_x, const unsigned int size_y,
+                          const unsigned int size_z, const unsigned int size_c, const bool is_shared);
 
     // Pixel access.
     operator T*() {

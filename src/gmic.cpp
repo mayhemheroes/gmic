@@ -3101,7 +3101,7 @@ gmic& gmic::add_commands(const char *const data_commands, const char *const comm
 
     if ((!is_last_slash && std::strchr(lines,':') && // Check for a command definition (or implicit '__init__')
          cimg_sscanf(lines,"%255[a-zA-Z0-9_] %c %262143[^\n]",s_name.data(),&sep,s_body.data())>=2 &&
-         (*lines<'0' || *lines>'9') && sep==':') || hash<0) {
+         (*lines<'0' || *lines>'9') && sep==':') || ((*s_name=0), hash<0)) {
       CImg<char> body = CImg<char>::string(hash<0 && !*s_name?lines:s_body);
       if (hash<0 && !*s_name) { std::strcpy(s_name,"_main_"); if (is_entrypoint) *is_entrypoint = true; }
       hash = (int)hashcode(s_name,false);
@@ -14420,7 +14420,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             if (g_list.size()>1)
               g_list_c.insert(g_list.size() - 1,__filename0.copymark());
           }
-        } else if (!cimg::strcasecmp("gmic",ext)) {
+        } else if ((allow_entrypoint && !*ext) || !cimg::strcasecmp("gmic",ext)) {
 
           // G'MIC command file.
           const bool add_debug_info = (*options!='0');
