@@ -3067,6 +3067,7 @@ gmic& gmic::add_commands(const char *const data_commands, const char *const comm
   if (commands_file) CImg<char>::string(commands_file).move_to(commands_files);
   if (count_new) *count_new = 0;
   if (count_replaced) *count_replaced = 0;
+  if (is_entrypoint) *is_entrypoint = false;
 
   for (const char *data = data_commands; *data; is_last_slash = _is_last_slash,
          line_number+=is_newline?1:0) {
@@ -3103,7 +3104,8 @@ gmic& gmic::add_commands(const char *const data_commands, const char *const comm
          cimg_sscanf(lines,"%255[a-zA-Z0-9_] %c %262143[^\n]",s_name.data(),&sep,s_body.data())>=2 &&
          (*lines<'0' || *lines>'9') && sep==':') || ((*s_name=0), hash<0)) {
       CImg<char> body = CImg<char>::string(hash<0 && !*s_name?lines:s_body);
-      if (hash<0 && !*s_name) { std::strcpy(s_name,"_main_"); if (is_entrypoint) *is_entrypoint = true; }
+      if (hash<0 && !*s_name) std::strcpy(s_name,"_main_");
+      if (is_entrypoint && !std::strcmp(s_name,"_main_")) *is_entrypoint = true;
       hash = (int)hashcode(s_name,false);
 
       if (commands_file) { // Insert debug info code in body
