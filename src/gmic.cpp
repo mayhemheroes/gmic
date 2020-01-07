@@ -14803,5 +14803,7 @@ gmic_instantiate(gmic_pixel_type);
 gmic_instantiate(gmic_pixel_type2);
 #endif
 template CImgList<char>::~CImgList();
+template bool gmic::search_sorted(const char *const str, const gmic_list<char>& list,
+                                  const unsigned int length, unsigned int &out_ind);
 
 #endif // #ifdef cimg_plugin
