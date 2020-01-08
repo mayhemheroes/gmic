@@ -8752,7 +8752,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Map LUT.
         if (!std::strcmp("map",command)) {
           gmic_substitute_args(true);
-          unsigned int lut_type = 0;
           sep = *indices = 0;
           boundary = 0;
           if (((cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]%c%c",indices,&sep,&end)==2 && sep==']') ||
@@ -8765,22 +8764,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   boundary==0?"dirichlet":boundary==1?"neumann":boundary==2?"periodic":"mirror");
             const CImg<T> palette = gmic_image_arg(*ind);
             cimg_forY(selection,l) gmic_apply(map(palette,boundary));
-          } else if ((cimg_sscanf(argument,"%u%c",&lut_type,&end)==1 ||
-                      cimg_sscanf(argument,"%u,%u%c",&lut_type,&boundary,&end)==2) &&
-                     lut_type<=7 && boundary<=3) {
-            print(images,0,"Map %s color LUT on image%s, with %s boundary conditions.",
-                  lut_type==0?"default":lut_type==1?"HSV":lut_type==2?"lines":lut_type==3?"hot":
-                  lut_type==4?"cool":lut_type==5?"jet":lut_type==6?"flag":"cube",
-                  gmic_selection.data(),
-                  boundary==0?"dirichlet":boundary==1?"neumann":boundary==2?"periodic":"mirror");
-            const CImg<T>
-              palette = lut_type==0?CImg<T>::default_LUT256():lut_type==1?CImg<T>::HSV_LUT256():
-              lut_type==2?CImg<T>::lines_LUT256():lut_type==3?CImg<T>::hot_LUT256():
-              lut_type==4?CImg<T>::cool_LUT256():lut_type==5?CImg<T>::jet_LUT256():
-              lut_type==6?CImg<T>::flag_LUT256():CImg<T>::cube_LUT256();
-            cimg_forY(selection,l) gmic_apply(map(palette,boundary));
-          } else arg_error("map");
-          is_change = true; ++position; continue;
+            is_change = true; ++position; continue;
+          }
+          // If command 'map' has been invoked with different arguments, custom version in stdlib
+          // will be used rather than the native version.
         }
 
         // Median filter.

@@ -7353,6 +7353,82 @@ _inrange :
 #@cli : $ image.jpg +rgb2ycbcr split[-1] c (0,255,0) resize[-1] 256,1,1,1,3 map[-4] [-1] remove[-1] append[-3--1] c \
 # ycbcr2rgb[-1]
 #@cli : $$
+map : check "isint(${2=0}) && $2>=0 && $2<=3"
+  s0,s1,s2,s3=dirichlet,neumann,periodic,mirror
+  n0,n1,n2,n3,n4,n5,n6,n7=default,HSV,lines,hot,cool,jet,flag,cube
+  boundary,name=${s$2},${n$2}
+  e[^-1] "Map color LUT '"$name"' on image$?, with "$boundary" boundary conditions."
+  palette $1 map[^-1] .,$2 rm.
+
+#@cli palette : palette_name | palette_number
+#@cli : Input specified color palette at the end of the image list.
+palette :
+  names=default,hsv,lines,hot,cool,jet,flag,cube
+  l[] if isint("$1") name=${"arg 1+$1,"$names} else name="$1" fi onfail name="$1" endl
+  e[^-1] "Input color palette '"$name"'."
+  base642img ${-_palette_$name}
+
+_palette_default : # Default
+  u "MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjU2IDEgMSAzICM0OQp4nBMQwA8MCIAAAqCAAJhAAGwgAC4QAB8IAJgfYW6F2QnTO9zlFRIWPB\
+jJGADzWIAQ"
+
+_palette_hsv : # HSV
+  u "MSBmbG9hdCBsaXR0bGVfZW5kaWFuCjI1NiAxIDEgMyAjMTAxMwp4nO2V/0/UdRzHT0E5CLW7womZwAcFvJKI44uGwb1fz7sGciOgO1DpDKEdwRBNiA\
++II0o6jsVysK44mG1egu4aTINk7KPDL7hYHSYVFepB4XYbZIcL6Bw0r8+f4A9tlOO5PX95vV97/fDa6/14SiTvQvI/Md93DIJQCcnlw6DBEpiH3oTDsR/rR\
+vbgtdFsfDqmxbjzFXCTKhhdL8E+HYc/3NFQzkaB93AQFjfhoXc9yFcGk/QJOAJXIYR7SJ2KPylW6aL+pFukUd8gh/Yq6fQX6LbBToXGz2i6rIUqeRMteCvI\
+X2agDZyGIpXbKVkdRHb7AhtyfMNc7jbmx+Uwk+Oeal73VYpkWf+62trTVOmcnL0w/jYLGD7LLtp/YblqX4pRbqJtXBxxMi0tegtpzl1DHncjFbosdN95il4\
+f7aIxRz9pBq/TVWGEknucJNinKNI2T987JOIdrUbGYCBWXZbjmrAB1X2bkdizBX91K9Brj0FJZwKibLswcZLQYU1FniUD8mYdbjbtg8mcD229ET51pbhScw\
+Q8X4X48tol/yuPbonEzA+oqvgU9on1BKviB1i2foa1WddRgzmSxDoVG3MpR3+IONtxarOeIFlzOzWaz5Ckrkd8H6CZsm+pyPgzjRvuin0z9J12kcJtPuK+/\
+CHOQY4lCLLmZzDcFIZGcyQ09duxok6JSzU7Ic5HXLkGM2Xp+KIkC0XGXIQXGDBhKET73mLo9Ycgz3oHN7Q1/4FdPX4O4WqRH1GFTsUR3I8uRazSCD4xH/1J\
+++BN0UGjzoApNRUOLWFt1i7o9Amw7I3BbYMCYQVbUGjcjLMlGzBdJkdMeSAq+dXoq5FgwTtHtdIpkZdO+jh4RGTmdfpc0S9ys4u+TDolstNCV7SNIj+P0nm\
+hgIYcu2nCGUsu90b627uS/LifWLy6U+RpKZt8cg2b18Wrlhg/y1rWIyuda1EFDEeJ+VTPtnG9bNF7l3nc/mIehYlZtFPMoSwxg4rF/KmjjMEmuia0UmLPae\
+q1n6Mo20XqsA6RvPlHMpl/JZ+6e8TzD+ho4krEKaVwR69Fl+JpFEVsxFYuFBPPRqAt+HnsCYqFXLYDNwOT8aFUjTTf3fCRZOLSoh7HPHlImD2AOXcRuqcPo\
+thVjsjJ6iXnz+PqwOZqZFjK0Wo9iFsnixBuOwBDZx7O2PWY6n4VsT1pqOgDLggv48FAItjgizg+9ByGHVvhNxKCzNFgtIw9hTvONVg/6Yc3XCuQPeqhUefv\
+VOyaoDvuH+iw52ua9QrUID1HAbLT9FFwK8m4JupQ1FGm8S3xZjJpv3kHfWANpSa7lIz8b6zCep69L7zHQoVwVuVtUP0D25hx5w=="
+
+_palette_lines : # lines
+  u "MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjU2IDEgMSAzICM2MTcKeJwNkhGgu1AYxT8YDP4QDB4Eg+BKEATBYBAEQXDhQhAMHgweBBeuXB\
+gMgmAwCIIgCIJBEAQPguBKEASDwWDwYDD4/tGx75zf+Q4gAuhCPFVzM0CgvUXFmr0plIpkB2KwW4bppr16aMgRzge16wbwTbxW0L6Y0IxsjiFyZyQvAISoD\
+PFMYgWlnTUI/M4bsllO+I5M0GuoWm+LP6kImrtktjhu8sxjaJ9V6zwNDy0FijoRcloRzGvghbDTAiO+Z8/Hv9JoKRbRr79JjwXqpOfBGxRasEejCH2kHyhr\
+uCHk2jXJ5xkgGFdjPgp/4IZ4HDTk4LTjXrAED56dzkIskRGG8Gwh9FdqTh8bkMgp0+JG9tb+xXpLf58ugHG/GoPG6ZmnSGh+Bn1OyCkX23dUAjon753DhyT\
+JuhiCaxcy8acf79DuuwbQNo/NItIqXXWF491E8R0ECNOppKlesjlaK8wsIqpKwL3QJwnhCygGtbCWbgbvJ0W4GFMOSrgnpIQ9rZHDYMyVS261dE1U1B/hkU\
+InqiU/44MDQ/m4BMtHV9Wq5bgqjtJ6laFWKUDtOwsRFvaMLvSAZbHj+u9o/u0itAN5xHX85KSu4GblHN0BJgEHfPGtksZjK4JkzFY1AvkIMTEJBX7tO4HCF\
+6Hov85VvUXaEWosOIqirYUDkWW/OH7FGP18B9h0jjs49tyukEYSKYiZTjCmPnkxI7neAWkOOTxrs4A3blzFEhvJsgMXqmsicxgRGMFil7o5wS3HuIZmAGcc\
+g8wvlM8UfPWXpfJN5JTPj+YlnxB6QD6tvGmdD9oUxoBrWc3mf8h5fjM="
+
+_palette_hot : # hot
+  u "MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjU2IDEgMSAzICMxMTQKeJxjYGbj5OEXEpWQllNUUdfSNTA2s7Sxd3L18PYLDAmPik1ITsvMyS\
+8qraiua2xp7+qdMHnazDnzFy1dsXrdxi3bd+09cPjYyTPnL129cfvewyfPX7398Pnbzz//hw5goAkYOoFKG//TBNAkUAEAWH6Q"
+
+_palette_cool : # cool
+  u "MSBmbG9hdCBsaXR0bGVfZW5kaWFuCjI1NiAxIDEgMyAjODk1Cnic7dX7a81xHMfxr/udud+Z+9yP+92OmRmGY4aZmWEYhoOZYViSliRJWtJakpYkSV\
+qSlqQlSZKWpCWtJWlJWtLyfOVV/ghbe+yHtZ3zPZ/P+/16BYG+iuP5EeYbxShHFWoRLAqCGMQihDAiyEYUxSjBJZSiHBW4h0pUoRqvUYNa1KMBjQgSgqA12\
+qMzYtAL/TAIsRiJOExACNMxG/MRRiKSkYII0pCOTGQjB7nIQxT5KEQRinEGZ3EOJTiPC7iIS7iMK7iKUlzDdZShHDdwE7dQgdu4g7u4h/t4gIeoxCM8xhNU\
+4Sme4Tmq8QIv8Qqv8QZv8Q41eI8P+IhafMJn1KEeX/AV39CA7/iBn2jEL/xGE4LFQdACLdEKrdEGbdEO7dEBHdEJndEFXdENMeiOHuiJXuiNPuiLfuiPARi\
+IQRiMIRiKWAzDcIzASIzCaIxBHMZiHMZjAiZiEiYjhCmYimmYjhmYiVmYjTmYi3mYjwVYiHiEsQgJWIxELEESliIZy7AcK5CClViF1YhgDVKxFmlYh/XYgH\
+RsRAY2IRObkYUtyMZWbMN25GAHdmIXcrEbe7AXediH/TiAKA7iEA4jH0dQgKMoxDEcxwkU4SRO4bSd8u+K/DfH/T+Ffo0Cv2a+3+OQ3zPqZ9jvZ8rzM+7xM\
++f6M+z0Z8rxZ9zmz5ztM8jymWT6jDJ8Zuk+w/U+0zSfcarPPOI7WOU7SfEdLfedJfsOk3ynib7jBN+57l4zoFnQTGg2NCOaFc2MZkczpFnSTGm2NGOaNc2c\
+Zk8zqFnUTGo2NaOaVc2sZlczrFnWTGu2NeOadc28Zl87oF3QTmg3tCPaFe2Mdkc7pF3STmm3tGPaNe2cdk87qF3UTmo3taPaVe2sdlc7rF3WTmu3tePade2\
+8dr/JWfDL2fDTWfHd2fHNWfLF2VLnrPnk7PnoLHrvbHrnrHrj7HrlLHvhbHvurHvq7HviLHzkbHzorLzv7LzrLL3tbL3lrL3h7C1zFl9zNl91Vl92dl90lp\
+93tp9z1p9x9qsD1AXqBHWDOkJdoc5Qd6hD1CXqFHWLOkZdo85R96iD1EXqJHWTOkpdpc5Sd6nD1GXqNHWbOk5dp85T9zW6C+vdjTXuymp3Z6W7tMLdWuquL\
+XH3Rt3FEXdzyF2tzlZ317rLy93t4fDfrqfzY7eM/5cBzZo1+9/8ARSvF3c="
+
+_palette_jet : # jet
+  u "MSBmbG9hdCBsaXR0bGVfZW5kaWFuCjI1NiAxIDEgMyAjMzUzCnic7dbBR4MBHMbxNyIiRpQYETGWiBERb40Ro4x4iRGjjHiJEaPLTp3eU6edOu1Ul5\
+06vadOO3XaqdNOnd5Tpx36Pjx/QjPN+/Jhhx3m/X0fFgT5M5snDIMgReGEz4iRYIAUY2RYPuU7KKKECkLUEaGFGF308IQEz+jjBQO8Yoh3pPjACJ8Y4wsTf\
+CPDD6ZYqvIbsIJVrKGAdWxgC0VsYwe7KKGMfRyggkMc4RghqqjhDHWco4FLRLhCE9do4QZt3CHGPTp4QBePuZnIW81b/S+6fscdv/PYN2j7Ji3fqOmbRb5h\
+wzet+8Y131y3VwNqQU2oDTWiVtSM2lFDaklNqS01ptbUnNpTg2pRTapNNTp1s5kbnrjpsRsfufnUGxh6EwNvpO/NJN5Qz5uKvbHImwu9wZI3qW1qo5k3m3r\
+DiTetbWvj2jqbv93cm/9NF1Xe6p+2evFWntc/uUV+fgEA+6WF"
+
+_palette_flag : # flag
+  u "MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjU2IDEgMSAzICMyNAp4nPv/n4Hh/wjGDCMeD4JIGEAMAH3RPtA="
+
+_palette_cube : # cube
+  u "MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjU2IDEgMSAzICMzNzAKeJxjYOcTlVHWMrSwd/MNiU7KLCiva+2ZPGvhivXb9h45fenmg+fvvv\
+75/eXts/s3Lp46vGfruuULZk7qbqkty89IjAr2cbUzN9BUkhbhZWPk4BeTVdE2snRw9wuNSc4qrKhv650ye9HKDdv3HT1z+dbDF++//f31+c3Te9cvnDy0e\
+8vaZfNnTOxqrinNS0+IDPJ2sTXT11CUEuZhZeIUEJdT1TG2cvTwD4tNyS6qbGjvmzpn8aqNO/YfO3vl9qOXH77/+/np9ZO7186fOLhr85ql86ZP6GyqLslN\
+i48I9HK2MdVTV5AU4mZh5hKUkFfTNbF28gwIj0vNKa5q7OifNnfJ6k07Dxw/d/XO41cff/xnIAawcAtJKqjrmdo4ewVGxKflllQ3dU6YPm/pms27Dp44f+3\
+uk9effv6nKyDG/0R5jb6AlUdYSlFD38zWxTsoMiE9r7SmuWvijPnL1m7Zfejkhev3nr75/Iu+AQkAzZ6QNg=="
 
 #@cli map_clut : [clut] | "clut_name"
 #@cli : Map specified RGB color LUT to selected images.
@@ -21744,13 +21820,13 @@ hex2str : skip ${1=""}
   f. 'v=i-if(i>=97,87,48);if(x%2,v,v*16)' r. 2,{int(w/2)},1,1,-1 cumulate. x z. 1,1
   u {t} rm.
 
-#@cli img2base64 : _encoding={ 0=base64 | 1=base64url }
+#@cli img2base64 : _encoding={ 0=base64 | 1=base64url },_store_names={ 0 | 1 }
 #@cli : Encode selected images as a base64-encoded string.
 #@cli : The images can be then decoded using command 'base642img'.
 #@cli : Default values: 'encoding=0'.
-img2base64 : skip "${1=0}"
+img2base64 : check "isbool(${1=0}) && isbool(${2=1})"
   if isnum("$1") encoding=$1 else encoding=0 noarg fi
-  +serialize u ${uchar2base64\ $encoding} rm.
+  +serialize auto,1,$2 u ${uchar2base64\ $encoding} rm.
 
 #@cli img2hex
 #@cli : Return representation of last image as an hexadecimal-encoded string.
