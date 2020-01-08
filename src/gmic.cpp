@@ -1866,7 +1866,7 @@ static CImg<T> copy_rounded(const CImg<T>& list) {
 }
 
 // The method below is a variant of the method 'CImgList<T>::_display()', where
-// G'MIC command 'display2d' is used in place of the native method 'CImg<T>::display()',
+// G'MIC command 'display2d' is used in place of the built-in method 'CImg<T>::display()',
 // for displaying 2d images only.
 template<typename t>
 const CImgList<T>& _gmic_display(CImgDisplay &disp, const char *const title, const CImgList<charT> *const titles,
@@ -2322,7 +2322,7 @@ static DWORD WINAPI gmic_parallel(void *arg)
   return 0;
 }
 
-// Array of G'MIC builtin commands (must be sorted in lexicographic order!).
+// Array of G'MIC built-in commands (must be sorted in lexicographic order!).
 const char *gmic::builtin_commands_names[] = {
   "!=","%","&","*","*3d","+","+3d","-","-3d","/","/3d","<","<<","<=","=","==",">",">=",">>",
   "a","abs","acos","acosh","add","add3d","and","append","asin","asinh","atan","atan2","atanh","autocrop","axes",
@@ -4913,6 +4913,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       const bool is_get = is_double_hyphen || is_plus;
 
       unsigned int hash_custom = ~0U, ind_custom = ~0U;
+//      bool is_builtin_command = false;
       bool is_command = *item>='a' && *item<='z' && _gmic_eok(1); // Alphabetical shortcut commands
       is_command|= *item=='m' && (item[1]=='*' || item[1]=='/') && _gmic_eok(2); // Shortcuts 'm*' and 'm/'
       is_command|= *item=='f' && item[1]=='i' && _gmic_eok(2); // Shortcuts 'fi'
@@ -4950,11 +4951,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
           is_command = err==1 || (err==2 && sep0=='.') || (err==3 && (sep0=='[' || (sep0=='.' && sep1=='.')));
           is_command&=*item<'0' || *item>'9';
-          if (is_command) { // Look for a builtin command
+          if (is_command) { // Look for a built-in command
             const int
               _ind0 = builtin_commands_inds[(unsigned int)*command],
               _ind1 = builtin_commands_inds((unsigned int)*command,1);
-            if (_ind0>=0) is_command = search_sorted(command,builtin_commands_names + _ind0,_ind1 - _ind0 + 1U,__ind);
+            if (_ind0>=0)
+              is_command = search_sorted(command,builtin_commands_names + _ind0,
+                                         _ind1 - _ind0 + 1U,__ind);
             if (!is_command) { // Look for a custom command
               hash_custom = hashcode(command,false);
               is_command = search_sorted(command,commands_names[hash_custom],
@@ -4963,6 +4966,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           }
         }
       }
+
+//      std::fprintf(stderr,"\nDEBUG : Command = '%s', is_builtin = %d\n",command,(int)is_builtin_command);
 
       // Split command/selection, if necessary.
       bool is_selection = false;
@@ -5224,6 +5229,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
         // Dispatch to dedicated parsing code, regarding the first character of the command.
         // We rely on the compiler to optimize this using an associative array (verified with g++).
+//        if (is_builtin_command)
         switch (command0) {
         case 'a' : goto gmic_commands_a;
         case 'b' : goto gmic_commands_b;
@@ -5231,12 +5237,12 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         case 'd' : goto gmic_commands_d;
         case 'e' : goto gmic_commands_e;
         case 'f' :
-          if (command[1]=='i' && !command[2]) goto gmic_commands_e; // (Skip for 'fi')
+          if (command[1]=='i' && !command[2]) goto gmic_commands_e; // (Redirect for 'fi')
           goto gmic_commands_f;
         case 'g' : goto gmic_commands_g;
         case 'h' : goto gmic_commands_h;
         case 'i' :
-          if (command[1]=='f' && !command[2]) goto gmic_commands_others; // (Skip for 'if')
+          if (command[1]=='f' && !command[2]) goto gmic_commands_others; // (Redirect for 'if')
           goto gmic_commands_i;
         case 'k' : goto gmic_commands_k;
         case 'l' : goto gmic_commands_l;
@@ -5253,7 +5259,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         case 'w' : goto gmic_commands_w;
         case 'x' : goto gmic_commands_x;
         default : goto gmic_commands_others;
-        }
+        } // else goto gmic_commands_others;
 
         //-----------------------------
         // Commands starting by 'a...'
@@ -7947,7 +7953,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             is_change = true; ++position; continue;
           }
           // When command 'index' is invoked with different arguments, custom version in stdlib
-          // is used rather than the native version.
+          // is used rather than the built-in version.
         }
 
         // Matrix inverse.
@@ -8752,7 +8758,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             is_change = true; ++position; continue;
           }
           // If command 'map' is invoked with different arguments, custom version in stdlib
-          // is used rather than the native version.
+          // is used rather than the built-in version.
         }
 
         // Median filter.
@@ -13171,7 +13177,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
         // Execute custom command.
         if (!is_command_input && is_command) {
-          if (hash_custom==~0U) { // A --builtin_command not supporting double hyphen (e.g. --v)
+          if (hash_custom==~0U) { // A --built-in_command not supporting double hyphen (e.g. --v)
             hash_custom = hashcode(command,false);
             is_command = search_sorted(command,commands_names[hash_custom],
                                        commands_names[hash_custom].size(),ind_custom);
@@ -14522,7 +14528,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   char *const posb = std::strchr(name,'[');
                   if (posb) *posb = 0; // Discard selection from the command name
                   int dmin = 4;
-                  // Look for a builtin command
+                  // Look for a built-in command
                   for (unsigned int l = 0; l<sizeof(builtin_commands_names)/sizeof(char*); ++l) {
                     const char *const c = builtin_commands_names[l];
                     const int d = levenshtein(c,name.data() + foff);
