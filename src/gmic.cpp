@@ -4957,10 +4957,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             const int
               _ind0 = builtin_commands_inds[(unsigned int)*command],
               _ind1 = builtin_commands_inds((unsigned int)*command,1);
-            if (_ind0>=0) {
+            if (_ind0>=0)
               is_builtin_command = is_command = search_sorted(command,builtin_commands_names + _ind0,
                                                               _ind1 - _ind0 + 1U,__ind);
-            }
             if (!is_command) { // Look for a custom command
               hash_custom = hashcode(command,false);
               is_command = search_sorted(command,commands_names[hash_custom],
