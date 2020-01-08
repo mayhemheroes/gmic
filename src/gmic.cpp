@@ -7963,6 +7963,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           }
           // When command 'index' is invoked with different arguments, custom version in stdlib
           // is used rather than the built-in version.
+          goto gmic_commands_others;
         }
 
         // Matrix inverse.
@@ -8770,6 +8771,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           }
           // If command 'map' is invoked with different arguments, custom version in stdlib
           // is used rather than the built-in version.
+          goto gmic_commands_others;
         }
 
         // Median filter.
