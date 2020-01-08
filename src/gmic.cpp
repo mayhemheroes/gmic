@@ -1866,7 +1866,7 @@ static CImg<T> copy_rounded(const CImg<T>& list) {
 }
 
 // The method below is a variant of the method 'CImgList<T>::_display()', where
-// G'MIC command 'display2d' is used in place of the native method 'CImg<T>::display()',
+// G'MIC command 'display2d' is used in place of the built-in method 'CImg<T>::display()',
 // for displaying 2d images only.
 template<typename t>
 const CImgList<T>& _gmic_display(CImgDisplay &disp, const char *const title, const CImgList<charT> *const titles,
@@ -2322,7 +2322,7 @@ static DWORD WINAPI gmic_parallel(void *arg)
   return 0;
 }
 
-// Array of G'MIC builtin commands (must be sorted in lexicographic order!).
+// Array of G'MIC built-in commands (must be sorted in lexicographic order!).
 const char *gmic::builtin_commands_names[] = {
   "!=","%","&","*","*3d","+","+3d","-","-3d","/","/3d","<","<<","<=","=","==",">",">=",">>",
   "a","abs","acos","acosh","add","add3d","and","append","asin","asinh","atan","atan2","atanh","autocrop","axes",
@@ -3067,6 +3067,7 @@ gmic& gmic::add_commands(const char *const data_commands, const char *const comm
   if (commands_file) CImg<char>::string(commands_file).move_to(commands_files);
   if (count_new) *count_new = 0;
   if (count_replaced) *count_replaced = 0;
+  if (is_entrypoint) *is_entrypoint = false;
 
   for (const char *data = data_commands; *data; is_last_slash = _is_last_slash,
          line_number+=is_newline?1:0) {
@@ -3103,7 +3104,8 @@ gmic& gmic::add_commands(const char *const data_commands, const char *const comm
          cimg_sscanf(lines,"%255[a-zA-Z0-9_] %c %262143[^\n]",s_name.data(),&sep,s_body.data())>=2 &&
          (*lines<'0' || *lines>'9') && sep==':') || ((*s_name=0), hash<0)) {
       CImg<char> body = CImg<char>::string(hash<0 && !*s_name?lines:s_body);
-      if (hash<0 && !*s_name) { std::strcpy(s_name,"_main_"); if (is_entrypoint) *is_entrypoint = true; }
+      if (hash<0 && !*s_name) std::strcpy(s_name,"_main_");
+      if (is_entrypoint && !std::strcmp(s_name,"_main_")) *is_entrypoint = true;
       hash = (int)hashcode(s_name,false);
 
       if (commands_file) { // Insert debug info code in body
@@ -4911,19 +4913,22 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       const bool is_get = is_double_hyphen || is_plus;
 
       unsigned int hash_custom = ~0U, ind_custom = ~0U;
-      bool is_command = *item>='a' && *item<='z' && _gmic_eok(1); // Alphabetical shortcut commands
+      bool
+        is_command = *item>='a' && *item<='z' && _gmic_eok(1); // Alphabetical shortcut commands
       is_command|= *item=='m' && (item[1]=='*' || item[1]=='/') && _gmic_eok(2); // Shortcuts 'm*' and 'm/'
       is_command|= *item=='f' && item[1]=='i' && _gmic_eok(2); // Shortcuts 'fi'
+      bool is_builtin_command = is_command;
+
       if (!is_command) {
         *command = sep0 = sep1 = 0;
         switch (*item) {
-        case '!' : is_command = item[1]=='=' && _gmic_eok(2); break;
+        case '!' : is_builtin_command = is_command = item[1]=='=' && _gmic_eok(2); break;
         case '%' : case '&' : case '^' : case '|' :
-          is_command = _gmic_eok(1); break;
+          is_builtin_command = is_command = _gmic_eok(1); break;
         case '*' : case '+' : case '-' : case '/' :
-          is_command = _gmic_eok(1) || (item[1]=='3' && item[2]=='d' && _gmic_eok(3)); break;
+          is_builtin_command = is_command = _gmic_eok(1) || (item[1]=='3' && item[2]=='d' && _gmic_eok(3)); break;
         case '<' : case '=' : case '>' :
-          is_command = _gmic_eok(1) || ((item[1]==*item || item[1]=='=') && _gmic_eok(2)); break;
+          is_builtin_command = is_command = _gmic_eok(1) || ((item[1]==*item || item[1]=='=') && _gmic_eok(2)); break;
         default :
 
           // Extract command name.
@@ -4948,11 +4953,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
           is_command = err==1 || (err==2 && sep0=='.') || (err==3 && (sep0=='[' || (sep0=='.' && sep1=='.')));
           is_command&=*item<'0' || *item>'9';
-          if (is_command) { // Look for a builtin command
+          if (is_command) { // Look for a built-in command
             const int
               _ind0 = builtin_commands_inds[(unsigned int)*command],
               _ind1 = builtin_commands_inds((unsigned int)*command,1);
-            if (_ind0>=0) is_command = search_sorted(command,builtin_commands_names + _ind0,_ind1 - _ind0 + 1U,__ind);
+            if (_ind0>=0)
+              is_builtin_command = is_command = search_sorted(command,builtin_commands_names + _ind0,
+                                                              _ind1 - _ind0 + 1U,__ind);
             if (!is_command) { // Look for a custom command
               hash_custom = hashcode(command,false);
               is_command = search_sorted(command,commands_names[hash_custom],
@@ -5222,20 +5229,17 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
         // Dispatch to dedicated parsing code, regarding the first character of the command.
         // We rely on the compiler to optimize this using an associative array (verified with g++).
+        if (!is_builtin_command) goto gmic_commands_others;
         switch (command0) {
         case 'a' : goto gmic_commands_a;
         case 'b' : goto gmic_commands_b;
         case 'c' : goto gmic_commands_c;
         case 'd' : goto gmic_commands_d;
         case 'e' : goto gmic_commands_e;
-        case 'f' :
-          if (command[1]=='i' && !command[2]) goto gmic_commands_e; // (Skip for 'fi')
-          goto gmic_commands_f;
+        case 'f' : goto gmic_commands_f;
         case 'g' : goto gmic_commands_g;
         case 'h' : goto gmic_commands_h;
-        case 'i' :
-          if (command[1]=='f' && !command[2]) goto gmic_commands_others; // (Skip for 'if')
-          goto gmic_commands_i;
+        case 'i' : goto gmic_commands_i;
         case 'k' : goto gmic_commands_k;
         case 'l' : goto gmic_commands_l;
         case 'm' : goto gmic_commands_m;
@@ -5488,6 +5492,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Commands starting by 'b...'
         //-----------------------------
       gmic_commands_b :
+        if (!is_get && item[1]=='r' && item[2]=='e' && item[3]=='a' && item[4]=='k' && !item[5]) // Redirect 'break'
+          goto gmic_commands_others;
 
         // Blur.
         if (!std::strcmp("blur",command)) {
@@ -6361,6 +6367,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Commands starting by 'd...'
         //-----------------------------
       gmic_commands_d :
+        if (command[1]=='i' && command[2]=='v' && command[3]=='3' && command[4]=='d' && !command[5]) // Redirect 'div3d'
+          goto gmic_commands_others;
 
         // Done.
         if (!is_get && !std::strcmp("done",item)) {
@@ -6889,6 +6897,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Commands starting by 'e...'
         //-----------------------------
       gmic_commands_e :
+        if (check_elif && !std::strcmp("elif",item)) // Redirect 'elif'
+          goto gmic_commands_others;
 
         // Endif.
         if (!is_get && (!std::strcmp("endif",item) || !std::strcmp("fi",item))) {
@@ -6903,7 +6913,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         // Else and eluded elif.
-        if (!is_get && (!std::strcmp("else",item) || (!std::strcmp("elif",item) && !check_elif))) {
+        if (!is_get && (!std::strcmp("else",item) || (!check_elif && !std::strcmp("elif",item)))) {
           const CImg<char> &s = callstack.back();
           if (s[0]!='*' || s[1]!='i')
             error(true,images,0,0,
@@ -7333,6 +7343,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Commands starting by 'f...'
         //-----------------------------
       gmic_commands_f :
+        if ((command[1]=='i' && !command[2]) || // Redirect 'fi'
+            (command[1]=='f' && command[2]=='t' && !command[3])) // Redirect 'fft'
+          goto gmic_commands_e;
 
         // For.
         if (!is_get && !std::strcmp("for",item)) {
@@ -7840,6 +7853,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Commands starting by 'i...'
         //-----------------------------
       gmic_commands_i :
+        if (is_command_input || // Redirect 'input'
+            (command[1]=='f' && !command[2]) || // Redirect 'if'
+            (command[1]=='f' && command[2]=='f' && command[3]=='t' && !command[4])) // Redirect 'ifft'
+          goto gmic_commands_others;
 
         // Draw image.
         if (!std::strcmp("image",command)) {
@@ -7924,7 +7941,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Index image with a LUT.
         if (!std::strcmp("index",command)) {
           gmic_substitute_args(true);
-          unsigned int lut_type = 0, map_indexes = 0;
+          unsigned int map_indexes = 0;
           float dithering = 0;
           sep = 0;
           if (((cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]%c%c",
@@ -7942,25 +7959,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   map_indexes?" and index mapping":"");
             const CImg<T> palette = gmic_image_arg(*ind);
             cimg_forY(selection,l) gmic_apply(index(palette,ndithering,(bool)map_indexes));
-          } else if ((cimg_sscanf(argument,"%u%c",&lut_type,&end)==1 ||
-                      cimg_sscanf(argument,"%u,%f%c",&lut_type,&dithering,&end)==2 ||
-                      cimg_sscanf(argument,"%u,%f,%u%c",
-                                  &lut_type,&dithering,&map_indexes,&end)==3) &&
-                     lut_type<=7) {
-            const float ndithering = dithering<0?0:dithering>1?1:dithering;
-            print(images,0,"Index values in image%s by %s color LUT, with dithering level %g%s.",
-                  gmic_selection.data(),
-                  lut_type==0?"default":lut_type==1?"HSV":lut_type==2?"lines":lut_type==3?"hot":
-                  lut_type==4?"cool":lut_type==5?"jet":lut_type==6?"flag":"cube",
-                  ndithering,map_indexes?" and index mapping":"");
-            const CImg<T>
-              palette = lut_type==0?CImg<T>::default_LUT256():lut_type==1?CImg<T>::HSV_LUT256():
-              lut_type==2?CImg<T>::lines_LUT256():lut_type==3?CImg<T>::hot_LUT256():
-              lut_type==4?CImg<T>::cool_LUT256():lut_type==5?CImg<T>::jet_LUT256():
-              lut_type==6?CImg<T>::flag_LUT256():CImg<T>::cube_LUT256();
-            cimg_forY(selection,l) gmic_apply(index(palette,ndithering,(bool)map_indexes));
-          } else arg_error("index");
-          is_change = true; ++position; continue;
+            is_change = true; ++position; continue;
+          }
+          // When command 'index' is invoked with different arguments, custom version in stdlib
+          // is used rather than the built-in version.
+          goto gmic_commands_others;
         }
 
         // Matrix inverse.
@@ -8566,6 +8569,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Commands starting by 'm...'
         //-----------------------------
       gmic_commands_m :
+        if (command[1]=='u' && command[2]=='l' && command[3]=='3' && command[4]=='d' && !command[5]) // Redirect 'mul3d'
+          goto gmic_commands_others;
 
         // Move images.
         if (!std::strcmp("move",command)) {
@@ -8750,7 +8755,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Map LUT.
         if (!std::strcmp("map",command)) {
           gmic_substitute_args(true);
-          unsigned int lut_type = 0;
           sep = *indices = 0;
           boundary = 0;
           if (((cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]%c%c",indices,&sep,&end)==2 && sep==']') ||
@@ -8763,22 +8767,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   boundary==0?"dirichlet":boundary==1?"neumann":boundary==2?"periodic":"mirror");
             const CImg<T> palette = gmic_image_arg(*ind);
             cimg_forY(selection,l) gmic_apply(map(palette,boundary));
-          } else if ((cimg_sscanf(argument,"%u%c",&lut_type,&end)==1 ||
-                      cimg_sscanf(argument,"%u,%u%c",&lut_type,&boundary,&end)==2) &&
-                     lut_type<=7 && boundary<=3) {
-            print(images,0,"Map %s color LUT on image%s, with %s boundary conditions.",
-                  lut_type==0?"default":lut_type==1?"HSV":lut_type==2?"lines":lut_type==3?"hot":
-                  lut_type==4?"cool":lut_type==5?"jet":lut_type==6?"flag":"cube",
-                  gmic_selection.data(),
-                  boundary==0?"dirichlet":boundary==1?"neumann":boundary==2?"periodic":"mirror");
-            const CImg<T>
-              palette = lut_type==0?CImg<T>::default_LUT256():lut_type==1?CImg<T>::HSV_LUT256():
-              lut_type==2?CImg<T>::lines_LUT256():lut_type==3?CImg<T>::hot_LUT256():
-              lut_type==4?CImg<T>::cool_LUT256():lut_type==5?CImg<T>::jet_LUT256():
-              lut_type==6?CImg<T>::flag_LUT256():CImg<T>::cube_LUT256();
-            cimg_forY(selection,l) gmic_apply(map(palette,boundary));
-          } else arg_error("map");
-          is_change = true; ++position; continue;
+            is_change = true; ++position; continue;
+          }
+          // If command 'map' is invoked with different arguments, custom version in stdlib
+          // is used rather than the built-in version.
+          goto gmic_commands_others;
         }
 
         // Median filter.
@@ -12945,259 +12938,262 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         //----------------------------
       gmic_commands_others :
 
-        // If...[elif]...[else]...endif.
-        if (!is_get && (!std::strcmp("if",item) || (!std::strcmp("elif",item) && check_elif))) {
-          gmic_substitute_args(false);
-          is_cond = check_cond(argument,images,*item=='i'?"if":"elif");
-          check_elif = false;
-          if (*item=='i') {
-            if (is_debug_info && debug_line!=~0U) {
-              cimg_snprintf(argx,_argx.width(),"*if#%u",debug_line);
-              CImg<char>::string(argx).move_to(callstack);
-            } else CImg<char>::string("*if").move_to(callstack);
-            if (is_very_verbose) print(images,0,"Start 'if...endif' block -> condition '%s' %s.",
-                                       gmic_argument_text_printed(),
-                                       is_cond?"holds":"does not hold");
-          } else if (is_very_verbose) print(images,0,"Reach 'elif' block -> condition '%s' %s.",
-                                            gmic_argument_text_printed(),
-                                            is_cond?"holds":"does not hold");
-          if (!is_cond) {
-            for (int nb_ifs = 1; nb_ifs && position<commands_line.size(); ++position) {
-              const char *it = commands_line[position].data();
-              if (*it==1 &&
-                  cimg_sscanf(commands_line[position].data() + 1,"%x,%x",&_debug_line,&(_debug_filename=0))>0) {
-                is_debug_info = true; next_debug_line = _debug_line; next_debug_filename = _debug_filename;
-              } else {
+        if (is_builtin_command) {
+
+          // If...[elif]...[else]...endif.
+          if (!is_get && (!std::strcmp("if",item) || (check_elif && !std::strcmp("elif",item)))) {
+            gmic_substitute_args(false);
+            is_cond = check_cond(argument,images,*item=='i'?"if":"elif");
+            check_elif = false;
+            if (*item=='i') {
+              if (is_debug_info && debug_line!=~0U) {
+                cimg_snprintf(argx,_argx.width(),"*if#%u",debug_line);
+                CImg<char>::string(argx).move_to(callstack);
+              } else CImg<char>::string("*if").move_to(callstack);
+              if (is_very_verbose) print(images,0,"Start 'if...endif' block -> condition '%s' %s.",
+                                         gmic_argument_text_printed(),
+                                         is_cond?"holds":"does not hold");
+            } else if (is_very_verbose) print(images,0,"Reach 'elif' block -> condition '%s' %s.",
+                                              gmic_argument_text_printed(),
+                                              is_cond?"holds":"does not hold");
+            if (!is_cond) {
+              for (int nb_ifs = 1; nb_ifs && position<commands_line.size(); ++position) {
+                const char *it = commands_line[position].data();
+                if (*it==1 &&
+                    cimg_sscanf(commands_line[position].data() + 1,"%x,%x",&_debug_line,&(_debug_filename=0))>0) {
+                  is_debug_info = true; next_debug_line = _debug_line; next_debug_filename = _debug_filename;
+                } else {
+                  it+=*it=='-';
+                  if (!std::strcmp("if",it)) ++nb_ifs;
+                  else if (!std::strcmp("endif",it) || !std::strcmp("fi",it)) { --nb_ifs; if (!nb_ifs) --position; }
+                  else if (nb_ifs==1) {
+                    if (!std::strcmp("else",it)) --nb_ifs;
+                    else if (!std::strcmp("elif",it)) { --nb_ifs; check_elif = true; --position; }
+                  }
+                }
+              }
+              continue;
+            }
+            ++position; continue;
+          }
+
+          // Break and continue.
+          bool is_continue = false;
+          if (!is_get && (!std::strcmp("break",item) ||
+                          (!std::strcmp("continue",item) && (is_continue=true)==true))) {
+            const char
+              *const com = is_continue?"continue":"break",
+              *const Com = is_continue?"Continue":"Break";
+            unsigned int callstack_repeat = 0, callstack_do = 0, callstack_for = 0, callstack_local = 0;
+            for (unsigned int l = callstack.size() - 1; l; --l) {
+              const char *const s = callstack[l].data();
+              if (s[0]=='*' && s[1]=='r') { callstack_repeat = l; break; }
+              else if (s[0]=='*' && s[1]=='d') { callstack_do = l; break; }
+              else if (s[0]=='*' && s[1]=='f') { callstack_for = l; break; }
+              else if (s[0]=='*' && s[1]=='l') { callstack_local = l; break; }
+              else if (s[0]!='*' || s[1]!='i') break;
+            }
+            const char *stb = 0, *ste = 0;
+            unsigned int callstack_ind = 0;
+            int level = 0;
+            if (callstack_repeat) {
+              print(images,0,"%s %scurrent 'repeat...done' block.",
+                    Com,is_continue?"to next iteration of ":"");
+              for (level = 1; level && position<commands_line.size(); ++position) {
+                const char *it = commands_line[position].data();
                 it+=*it=='-';
-                if (!std::strcmp("if",it)) ++nb_ifs;
-                else if (!std::strcmp("endif",it) || !std::strcmp("fi",it)) { --nb_ifs; if (!nb_ifs) --position; }
-                else if (nb_ifs==1) {
-                  if (!std::strcmp("else",it)) --nb_ifs;
-                  else if (!std::strcmp("elif",it)) { --nb_ifs; check_elif = true; --position; }
+                if (!std::strcmp("repeat",it) || !std::strcmp("for",it)) ++level;
+                else if (!std::strcmp("done",it)) --level;
+              }
+              callstack_ind = callstack_repeat;
+              stb = "repeat"; ste = "done";
+            } else if (callstack_do) {
+              print(images,0,"%s %scurrent 'do...while' block.",
+                    Com,is_continue?"to next iteration of ":"");
+              for (level = 1; level && position<commands_line.size(); ++position) {
+                const char *it = commands_line[position].data();
+                it+=*it=='-';
+                if (!std::strcmp("do",it)) ++level;
+                else if (!std::strcmp("while",it)) --level;
+              }
+              callstack_ind = callstack_do;
+              stb = "do"; ste = "while";
+            } else if (callstack_for) {
+              print(images,0,"%s %scurrent 'for...done' block.",
+                    Com,is_continue?"to next iteration of ":"");
+              for (level = 1; level && position<commands_line.size(); ++position) {
+                const char *it = commands_line[position].data();
+                it+=*it=='-';
+                if (!std::strcmp("repeat",it) || !std::strcmp("for",it)) ++level;
+                else if (!std::strcmp("done",it)) --level;
+              }
+              callstack_ind = callstack_for;
+              stb = "for"; ste = "done";
+            } else if (callstack_local) {
+              print(images,0,"%s %scurrent local environment.",
+                    Com,is_continue?"to end of ":"");
+              for (level = 1; level && position<commands_line.size(); ++position) {
+                const char *it = commands_line[position].data();
+                const bool _is_get = *it=='+' || (*it=='-' && it[1]=='-');
+                it+=(*it=='+' || *it=='-') + (*it=='-' && it[1]=='-');
+                if (!std::strcmp("local",it) || !std::strcmp("l",it) ||
+                    !std::strncmp("local.",it,6) || !std::strncmp("l.",it,2) ||
+                    !std::strncmp("local[",it,6) || !std::strncmp("l[",it,2)) ++level;
+                else if (!_is_get && (!std::strcmp("endlocal",it) || !std::strcmp("endl",it))) --level;
+              }
+              callstack_ind = callstack_local;
+              stb = "local"; ste = "endlocal";
+            } else {
+              print(images,0,"%s",Com);
+              error(true,images,0,0,
+                    "Command '%s': There are no loops or local environment to %s.",com,com);
+              continue;
+            }
+            if (level && position>=commands_line.size())
+              error(true,images,0,0,
+                    "Command '%s': Missing associated '%s' command.",stb,ste);
+            if (is_continue || callstack_local) {
+              if (callstack_ind<callstack.size() - 1) callstack.remove(callstack_ind + 1,callstack.size() - 1);
+              --position;
+            } else {
+              callstack.remove(callstack_ind,callstack.size() - 1);
+              if (callstack_do) { --nb_dowhiles; ++position; }
+              else if (callstack_repeat) --nb_repeatdones;
+              else --nb_fordones;
+            }
+            continue;
+          }
+
+          // Compute direct or inverse FFT.
+          const bool inv_fft = !std::strcmp("ifft",command);
+          if (!std::strcmp("fft",command) || inv_fft) {
+            gmic_substitute_args(false);
+            bool is_valid_argument = *argument!=0;
+            if (is_valid_argument) for (const char *s = argument; *s; ++s) {
+                const char _s = *s;
+                if (_s!='x' && _s!='y' && _s!='z') { is_valid_argument = false; break; }
+              }
+            if (is_valid_argument) {
+              print(images,0,"Compute %sfourier transform of image%s along the '%s'-ax%cs with complex pair%s",
+                    inv_fft?"inverse ":"",
+                    gmic_selection.data(),
+                    gmic_argument_text_printed(),
+                    std::strlen(argument)>1?'e':'i',
+                    selection.height()>2?"s":selection.height()>=1?"":"().");
+              ++position;
+            } else
+              print(images,0,"Compute %sfourier transform of image%s with complex pair%s",
+                    inv_fft?"inverse ":"",
+                    gmic_selection.data(),
+                    selection.height()>2?"s":selection.height()>=1?"":" ().");
+            cimg_forY(selection,l) {
+              const unsigned int
+                uind0 = selection[l],
+                uind1 = l + 1<selection.height()?selection[l + 1]:~0U;
+              CImg<T> &img0 = gmic_check(images[uind0]),
+                              &img1 = uind1!=~0U?gmic_check(images[uind1]):CImg<T>::empty();
+              name = images_names[uind0];
+              if (uind1!=~0U) { // Complex transform
+                if (is_verbose) {
+                  cimg::mutex(29);
+                  std::fprintf(cimg::output()," ([%u],[%u])%c",uind0,uind1,
+                               l>=selection.height() - 2?'.':',');
+                  std::fflush(cimg::output());
+                  cimg::mutex(29,0);
+                }
+                if (is_get) {
+                  g_list.assign(img0,img1);
+                  if (is_valid_argument) for (const char *s = argument; *s; ++s) g_list.FFT(*s,inv_fft);
+                  else g_list.FFT(inv_fft);
+                  g_list.move_to(images,~0U);
+                  images_names.insert(2,name.copymark());
+                } else {
+                  g_list.assign(2);
+                  g_list[0].swap(img0);
+                  g_list[1].swap(img1);
+                  if (is_valid_argument) for (const char *s = argument; *s; ++s) g_list.FFT(*s,inv_fft);
+                  else g_list.FFT(inv_fft);
+                  g_list[0].swap(img0);
+                  g_list[1].swap(img1);
+                  name.get_copymark().move_to(images_names[uind1]);
+                  name.move_to(images_names[uind0]);
+                }
+                ++l;
+              } else { // Real transform
+                if (is_verbose) {
+                  cimg::mutex(29);
+                  std::fprintf(cimg::output()," ([%u],0)%c",uind0,
+                               l>=selection.height() - 2?'.':',');
+                  std::fflush(cimg::output());
+                  cimg::mutex(29,0);
+                }
+                if (is_get) {
+                  g_list.assign(img0);
+                  CImg<T>(g_list[0].width(),g_list[0].height(),g_list[0].depth(),g_list[0].spectrum(),(T)0).
+                    move_to(g_list);
+                  if (is_valid_argument) for (const char *s = argument; *s; ++s) g_list.FFT(*s,inv_fft);
+                  else g_list.FFT(inv_fft);
+                  g_list.move_to(images,~0U);
+                  images_names.insert(2,name.copymark());
+                } else {
+                  g_list.assign(1);
+                  g_list[0].swap(img0);
+                  CImg<T>(g_list[0].width(),g_list[0].height(),g_list[0].depth(),g_list[0].spectrum(),(T)0).
+                    move_to(g_list);
+                  if (is_valid_argument) for (const char *s = argument; *s; ++s) g_list.FFT(*s,inv_fft);
+                  else g_list.FFT(inv_fft);
+                  g_list[0].swap(img0);
+                  g_list[1].move_to(images,uind0 + 1);
+                  name.get_copymark().move_to(images_names,uind0 + 1);
+                  name.move_to(images_names[uind0]);
                 }
               }
             }
-            continue;
+            g_list.assign();
+            is_change = true; continue;
           }
-          ++position; continue;
-        }
 
-        // Break and continue.
-        bool is_continue = false;
-        if (!is_get && (!std::strcmp("break",item) ||
-                        (!std::strcmp("continue",item) && (is_continue=true)==true))) {
-          const char
-	    *const com = is_continue?"continue":"break",
-	    *const Com = is_continue?"Continue":"Break";
-          unsigned int callstack_repeat = 0, callstack_do = 0, callstack_for = 0, callstack_local = 0;
-          for (unsigned int l = callstack.size() - 1; l; --l) {
-            const char *const s = callstack[l].data();
-            if (s[0]=='*' && s[1]=='r') { callstack_repeat = l; break; }
-            else if (s[0]=='*' && s[1]=='d') { callstack_do = l; break; }
-            else if (s[0]=='*' && s[1]=='f') { callstack_for = l; break; }
-            else if (s[0]=='*' && s[1]=='l') { callstack_local = l; break; }
-            else if (s[0]!='*' || s[1]!='i') break;
+          // Rescale a 3D object (* or /).
+          const bool divide3d = !std::strcmp("div3d",command);
+          if (!std::strcmp("mul3d",command) || divide3d) {
+            gmic_substitute_args(false);
+            float sx = 0, sy = 1, sz = 1;
+            if ((cimg_sscanf(argument,"%f%c",
+                             &sx,&end)==1 && ((sz=sy=sx),1)) ||
+                cimg_sscanf(argument,"%f,%f%c",
+                            &sx,&sy,&end)==2 ||
+                cimg_sscanf(argument,"%f,%f,%f%c",
+                            &sx,&sy,&sz,&end)==3) {
+              if (divide3d)
+                print(images,0,"Scale 3D object%s with factors (1/%g,1/%g,1/%g).",
+                      gmic_selection.data(),
+                      sx,sy,sz);
+              else
+                print(images,0,"Scale 3D object%s with factors (%g,%g,%g).",
+                      gmic_selection.data(),
+                      sx,sy,sz);
+              cimg_forY(selection,l) {
+                const unsigned int uind = selection[l];
+                CImg<T>& img = images[uind];
+                try {
+                  if (divide3d) { gmic_apply(scale_CImg3d(1/sx,1/sy,1/sz)); }
+                  else gmic_apply(scale_CImg3d(sx,sy,sz));
+                } catch (CImgException&) {
+                  if (!img.is_CImg3d(true,&(*message=0)))
+                    error(true,images,0,0,
+                          "Command '%s3d': Invalid 3D object [%d], in selected image%s (%s).",
+                          divide3d?"div":"mul",uind,gmic_selection_err.data(),message.data());
+                  else throw;
+                }
+              }
+            } else { if (divide3d) arg_error("div3d"); else arg_error("mul3d"); }
+            is_change = true; ++position; continue;
           }
-          const char *stb = 0, *ste = 0;
-          unsigned int callstack_ind = 0;
-          int level = 0;
-          if (callstack_repeat) {
-            print(images,0,"%s %scurrent 'repeat...done' block.",
-                  Com,is_continue?"to next iteration of ":"");
-            for (level = 1; level && position<commands_line.size(); ++position) {
-              const char *it = commands_line[position].data();
-              it+=*it=='-';
-              if (!std::strcmp("repeat",it) || !std::strcmp("for",it)) ++level;
-              else if (!std::strcmp("done",it)) --level;
-            }
-            callstack_ind = callstack_repeat;
-            stb = "repeat"; ste = "done";
-          } else if (callstack_do) {
-            print(images,0,"%s %scurrent 'do...while' block.",
-                  Com,is_continue?"to next iteration of ":"");
-            for (level = 1; level && position<commands_line.size(); ++position) {
-              const char *it = commands_line[position].data();
-              it+=*it=='-';
-              if (!std::strcmp("do",it)) ++level;
-              else if (!std::strcmp("while",it)) --level;
-            }
-            callstack_ind = callstack_do;
-            stb = "do"; ste = "while";
-          } else if (callstack_for) {
-            print(images,0,"%s %scurrent 'for...done' block.",
-                  Com,is_continue?"to next iteration of ":"");
-            for (level = 1; level && position<commands_line.size(); ++position) {
-              const char *it = commands_line[position].data();
-              it+=*it=='-';
-              if (!std::strcmp("repeat",it) || !std::strcmp("for",it)) ++level;
-              else if (!std::strcmp("done",it)) --level;
-            }
-            callstack_ind = callstack_for;
-            stb = "for"; ste = "done";
-          } else if (callstack_local) {
-            print(images,0,"%s %scurrent local environment.",
-                  Com,is_continue?"to end of ":"");
-            for (level = 1; level && position<commands_line.size(); ++position) {
-              const char *it = commands_line[position].data();
-              const bool _is_get = *it=='+' || (*it=='-' && it[1]=='-');
-              it+=(*it=='+' || *it=='-') + (*it=='-' && it[1]=='-');
-              if (!std::strcmp("local",it) || !std::strcmp("l",it) ||
-                  !std::strncmp("local.",it,6) || !std::strncmp("l.",it,2) ||
-                  !std::strncmp("local[",it,6) || !std::strncmp("l[",it,2)) ++level;
-              else if (!_is_get && (!std::strcmp("endlocal",it) || !std::strcmp("endl",it))) --level;
-            }
-            callstack_ind = callstack_local;
-            stb = "local"; ste = "endlocal";
-          } else {
-            print(images,0,"%s",Com);
-            error(true,images,0,0,
-                  "Command '%s': There are no loops or local environment to %s.",com,com);
-            continue;
-          }
-          if (level && position>=commands_line.size())
-            error(true,images,0,0,
-                  "Command '%s': Missing associated '%s' command.",stb,ste);
-          if (is_continue || callstack_local) {
-	    if (callstack_ind<callstack.size() - 1) callstack.remove(callstack_ind + 1,callstack.size() - 1);
-	    --position;
-	  } else {
-            callstack.remove(callstack_ind,callstack.size() - 1);
-            if (callstack_do) { --nb_dowhiles; ++position; }
-            else if (callstack_repeat) --nb_repeatdones;
-            else --nb_fordones;
-          }
-          continue;
-        }
-
-        // Compute direct or inverse FFT.
-        const bool inv_fft = !std::strcmp("ifft",command);
-        if (!std::strcmp("fft",command) || inv_fft) {
-          gmic_substitute_args(false);
-          bool is_valid_argument = *argument!=0;
-          if (is_valid_argument) for (const char *s = argument; *s; ++s) {
-              const char _s = *s;
-              if (_s!='x' && _s!='y' && _s!='z') { is_valid_argument = false; break; }
-            }
-          if (is_valid_argument) {
-            print(images,0,"Compute %sfourier transform of image%s along the '%s'-ax%cs with complex pair%s",
-                  inv_fft?"inverse ":"",
-                  gmic_selection.data(),
-                  gmic_argument_text_printed(),
-                  std::strlen(argument)>1?'e':'i',
-                  selection.height()>2?"s":selection.height()>=1?"":"().");
-            ++position;
-          } else
-            print(images,0,"Compute %sfourier transform of image%s with complex pair%s",
-                  inv_fft?"inverse ":"",
-                  gmic_selection.data(),
-                  selection.height()>2?"s":selection.height()>=1?"":" ().");
-          cimg_forY(selection,l) {
-            const unsigned int
-	      uind0 = selection[l],
-	      uind1 = l + 1<selection.height()?selection[l + 1]:~0U;
-            CImg<T> &img0 = gmic_check(images[uind0]),
-                    &img1 = uind1!=~0U?gmic_check(images[uind1]):CImg<T>::empty();
-            name = images_names[uind0];
-            if (uind1!=~0U) { // Complex transform
-              if (is_verbose) {
-                cimg::mutex(29);
-                std::fprintf(cimg::output()," ([%u],[%u])%c",uind0,uind1,
-			     l>=selection.height() - 2?'.':',');
-                std::fflush(cimg::output());
-                cimg::mutex(29,0);
-              }
-              if (is_get) {
-                g_list.assign(img0,img1);
-                if (is_valid_argument) for (const char *s = argument; *s; ++s) g_list.FFT(*s,inv_fft);
-                else g_list.FFT(inv_fft);
-                g_list.move_to(images,~0U);
-                images_names.insert(2,name.copymark());
-              } else {
-                g_list.assign(2);
-                g_list[0].swap(img0);
-                g_list[1].swap(img1);
-                if (is_valid_argument) for (const char *s = argument; *s; ++s) g_list.FFT(*s,inv_fft);
-                else g_list.FFT(inv_fft);
-                g_list[0].swap(img0);
-                g_list[1].swap(img1);
-                name.get_copymark().move_to(images_names[uind1]);
-                name.move_to(images_names[uind0]);
-              }
-              ++l;
-            } else { // Real transform
-              if (is_verbose) {
-                cimg::mutex(29);
-                std::fprintf(cimg::output()," ([%u],0)%c",uind0,
-			     l>=selection.height() - 2?'.':',');
-                std::fflush(cimg::output());
-                cimg::mutex(29,0);
-              }
-              if (is_get) {
-                g_list.assign(img0);
-                CImg<T>(g_list[0].width(),g_list[0].height(),g_list[0].depth(),g_list[0].spectrum(),(T)0).
-                  move_to(g_list);
-                if (is_valid_argument) for (const char *s = argument; *s; ++s) g_list.FFT(*s,inv_fft);
-                else g_list.FFT(inv_fft);
-                g_list.move_to(images,~0U);
-                images_names.insert(2,name.copymark());
-              } else {
-                g_list.assign(1);
-                g_list[0].swap(img0);
-                CImg<T>(g_list[0].width(),g_list[0].height(),g_list[0].depth(),g_list[0].spectrum(),(T)0).
-                  move_to(g_list);
-                if (is_valid_argument) for (const char *s = argument; *s; ++s) g_list.FFT(*s,inv_fft);
-                else g_list.FFT(inv_fft);
-                g_list[0].swap(img0);
-                g_list[1].move_to(images,uind0 + 1);
-                name.get_copymark().move_to(images_names,uind0 + 1);
-                name.move_to(images_names[uind0]);
-              }
-            }
-          }
-          g_list.assign();
-          is_change = true; continue;
-        }
-
-        // Rescale a 3D object (* or /).
-        const bool divide3d = !std::strcmp("div3d",command);
-        if (!std::strcmp("mul3d",command) || divide3d) {
-          gmic_substitute_args(false);
-          float sx = 0, sy = 1, sz = 1;
-          if ((cimg_sscanf(argument,"%f%c",
-                           &sx,&end)==1 && ((sz=sy=sx),1)) ||
-              cimg_sscanf(argument,"%f,%f%c",
-                          &sx,&sy,&end)==2 ||
-              cimg_sscanf(argument,"%f,%f,%f%c",
-                          &sx,&sy,&sz,&end)==3) {
-            if (divide3d)
-              print(images,0,"Scale 3D object%s with factors (1/%g,1/%g,1/%g).",
-                    gmic_selection.data(),
-                    sx,sy,sz);
-            else
-              print(images,0,"Scale 3D object%s with factors (%g,%g,%g).",
-                    gmic_selection.data(),
-                    sx,sy,sz);
-            cimg_forY(selection,l) {
-              const unsigned int uind = selection[l];
-              CImg<T>& img = images[uind];
-              try {
-                if (divide3d) { gmic_apply(scale_CImg3d(1/sx,1/sy,1/sz)); }
-                else gmic_apply(scale_CImg3d(sx,sy,sz));
-              } catch (CImgException&) {
-                if (!img.is_CImg3d(true,&(*message=0)))
-                  error(true,images,0,0,
-                        "Command '%s3d': Invalid 3D object [%d], in selected image%s (%s).",
-                        divide3d?"div":"mul",uind,gmic_selection_err.data(),message.data());
-                else throw;
-              }
-            }
-          } else { if (divide3d) arg_error("div3d"); else arg_error("mul3d"); }
-          is_change = true; ++position; continue;
-        }
+        } // if (is_builtin_command)
 
         // Execute custom command.
         if (!is_command_input && is_command) {
-          if (hash_custom==~0U) { // A --builtin_command not supporting double hyphen (e.g. --v)
+          if (hash_custom==~0U) { // A --built-in_command not supporting double hyphen (e.g. --v)
             hash_custom = hashcode(command,false);
             is_command = search_sorted(command,commands_names[hash_custom],
                                        commands_names[hash_custom].size(),ind_custom);
@@ -14548,7 +14544,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   char *const posb = std::strchr(name,'[');
                   if (posb) *posb = 0; // Discard selection from the command name
                   int dmin = 4;
-                  // Look for a builtin command
+                  // Look for a built-in command
                   for (unsigned int l = 0; l<sizeof(builtin_commands_names)/sizeof(char*); ++l) {
                     const char *const c = builtin_commands_names[l];
                     const int d = levenshtein(c,name.data() + foff);
