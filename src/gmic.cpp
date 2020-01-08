@@ -5229,55 +5229,33 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
         // Dispatch to dedicated parsing code, regarding the first character of the command.
         // We rely on the compiler to optimize this using an associative array (verified with g++).
-        if (is_builtin_command)
-          switch (command0) {
-          case 'a' : goto gmic_commands_a;
-          case 'b' :
-            if (!is_get && !std::strcmp("break",item))
-              goto gmic_commands_others;
-            else goto gmic_commands_b;
-          case 'c' : goto gmic_commands_c;
-          case 'd' :
-            if (command[1]=='i' && command[2]=='v' && command[3]=='3' && command[4]=='d' && !command[5]) // 'div3d'
-              goto gmic_commands_others;
-            else goto gmic_commands_d;
-          case 'e' :
-            if (check_elif && !std::strcmp("elif",item)) // 'elif'
-              goto gmic_commands_others;
-            else goto gmic_commands_e;
-          case 'f' :
-            if ((command[1]=='i' && !command[2]) || // 'fi'
-                (command[1]=='f' && command[2]=='t' && !command[3])) // 'fft'
-              goto gmic_commands_e;
-            else goto gmic_commands_f;
-          case 'g' : goto gmic_commands_g;
-          case 'h' : goto gmic_commands_h;
-          case 'i' :
-            if (is_command_input || // 'input'
-                (command[1]=='f' && !command[2]) || // 'if'
-                (command[1]=='f' && command[2]=='f' && command[3]=='t' && !command[4])) // 'ifft'
-              goto gmic_commands_others;
-            else goto gmic_commands_i;
-          case 'k' : goto gmic_commands_k;
-          case 'l' : goto gmic_commands_l;
-          case 'm' :
-            if (command[1]=='u' && command[2]=='l' && command[3]=='3' && command[4]=='d' && !command[5]) // 'mul3d'
-              goto gmic_commands_others;
-            else goto gmic_commands_m;
-          case 'n' : goto gmic_commands_n;
-          case 'o' : goto gmic_commands_o;
-          case 'p' : goto gmic_commands_p;
-          case 'q' : goto gmic_commands_q;
-          case 'r' : goto gmic_commands_r;
-          case 's' : goto gmic_commands_s;
-          case 't' : goto gmic_commands_t;
-          case 'u' : goto gmic_commands_u;
-          case 'v' : goto gmic_commands_v;
-          case 'w' : goto gmic_commands_w;
-          case 'x' : goto gmic_commands_x;
-          default : goto gmic_commands_others;
-          }
-        else goto gmic_commands_others;
+        if (!is_builtin_command) goto gmic_commands_others;
+        switch (command0) {
+        case 'a' : goto gmic_commands_a;
+        case 'b' : goto gmic_commands_b;
+        case 'c' : goto gmic_commands_c;
+        case 'd' : goto gmic_commands_d;
+        case 'e' : goto gmic_commands_e;
+        case 'f' : goto gmic_commands_f;
+        case 'g' : goto gmic_commands_g;
+        case 'h' : goto gmic_commands_h;
+        case 'i' : goto gmic_commands_i;
+        case 'k' : goto gmic_commands_k;
+        case 'l' : goto gmic_commands_l;
+        case 'm' : goto gmic_commands_m;
+        case 'n' : goto gmic_commands_n;
+        case 'o' : goto gmic_commands_o;
+        case 'p' : goto gmic_commands_p;
+        case 'q' : goto gmic_commands_q;
+        case 'r' : goto gmic_commands_r;
+        case 's' : goto gmic_commands_s;
+        case 't' : goto gmic_commands_t;
+        case 'u' : goto gmic_commands_u;
+        case 'v' : goto gmic_commands_v;
+        case 'w' : goto gmic_commands_w;
+        case 'x' : goto gmic_commands_x;
+        default : goto gmic_commands_others;
+        }
 
         //-----------------------------
         // Commands starting by 'a...'
@@ -5514,6 +5492,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Commands starting by 'b...'
         //-----------------------------
       gmic_commands_b :
+        if (!is_get && item[1]=='r' && item[2]=='e' && item[3]=='a' && item[4]=='k' && !item[5]) // Redirect 'break'
+          goto gmic_commands_others;
 
         // Blur.
         if (!std::strcmp("blur",command)) {
@@ -6387,6 +6367,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Commands starting by 'd...'
         //-----------------------------
       gmic_commands_d :
+        if (command[1]=='i' && command[2]=='v' && command[3]=='3' && command[4]=='d' && !command[5]) // Redirect 'div3d'
+          goto gmic_commands_others;
 
         // Done.
         if (!is_get && !std::strcmp("done",item)) {
@@ -6915,6 +6897,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Commands starting by 'e...'
         //-----------------------------
       gmic_commands_e :
+        if (check_elif && !std::strcmp("elif",item)) // Redirect 'elif'
+          goto gmic_commands_others;
 
         // Endif.
         if (!is_get && (!std::strcmp("endif",item) || !std::strcmp("fi",item))) {
@@ -7359,6 +7343,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Commands starting by 'f...'
         //-----------------------------
       gmic_commands_f :
+        if ((command[1]=='i' && !command[2]) || // Redirect 'fi'
+            (command[1]=='f' && command[2]=='t' && !command[3])) // Redirect 'fft'
+          goto gmic_commands_e;
 
         // For.
         if (!is_get && !std::strcmp("for",item)) {
@@ -7866,6 +7853,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Commands starting by 'i...'
         //-----------------------------
       gmic_commands_i :
+        if (is_command_input || // Redirect 'input'
+            (command[1]=='f' && !command[2]) || // Redirect 'if'
+            (command[1]=='f' && command[2]=='f' && command[3]=='t' && !command[4])) // Redirect 'ifft'
+          goto gmic_commands_others;
 
         // Draw image.
         if (!std::strcmp("image",command)) {
@@ -8577,6 +8568,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Commands starting by 'm...'
         //-----------------------------
       gmic_commands_m :
+        if (command[1]=='u' && command[2]=='l' && command[3]=='3' && command[4]=='d' && !command[5]) // Redirect 'mul3d'
+          goto gmic_commands_others;
 
         // Move images.
         if (!std::strcmp("move",command)) {
