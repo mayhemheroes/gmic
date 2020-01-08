@@ -7926,7 +7926,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Index image with a LUT.
         if (!std::strcmp("index",command)) {
           gmic_substitute_args(true);
-          unsigned int lut_type = 0, map_indexes = 0;
+          unsigned int map_indexes = 0;
           float dithering = 0;
           sep = 0;
           if (((cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]%c%c",
@@ -7944,25 +7944,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   map_indexes?" and index mapping":"");
             const CImg<T> palette = gmic_image_arg(*ind);
             cimg_forY(selection,l) gmic_apply(index(palette,ndithering,(bool)map_indexes));
-          } else if ((cimg_sscanf(argument,"%u%c",&lut_type,&end)==1 ||
-                      cimg_sscanf(argument,"%u,%f%c",&lut_type,&dithering,&end)==2 ||
-                      cimg_sscanf(argument,"%u,%f,%u%c",
-                                  &lut_type,&dithering,&map_indexes,&end)==3) &&
-                     lut_type<=7) {
-            const float ndithering = dithering<0?0:dithering>1?1:dithering;
-            print(images,0,"Index values in image%s by %s color LUT, with dithering level %g%s.",
-                  gmic_selection.data(),
-                  lut_type==0?"default":lut_type==1?"HSV":lut_type==2?"lines":lut_type==3?"hot":
-                  lut_type==4?"cool":lut_type==5?"jet":lut_type==6?"flag":"cube",
-                  ndithering,map_indexes?" and index mapping":"");
-            const CImg<T>
-              palette = lut_type==0?CImg<T>::default_LUT256():lut_type==1?CImg<T>::HSV_LUT256():
-              lut_type==2?CImg<T>::lines_LUT256():lut_type==3?CImg<T>::hot_LUT256():
-              lut_type==4?CImg<T>::cool_LUT256():lut_type==5?CImg<T>::jet_LUT256():
-              lut_type==6?CImg<T>::flag_LUT256():CImg<T>::cube_LUT256();
-            cimg_forY(selection,l) gmic_apply(index(palette,ndithering,(bool)map_indexes));
-          } else arg_error("index");
-          is_change = true; ++position; continue;
+            is_change = true; ++position; continue;
+          }
+          // When command 'index' is invoked with different arguments, custom version in stdlib
+          // is used rather than the native version.
         }
 
         // Matrix inverse.
@@ -8766,8 +8751,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             cimg_forY(selection,l) gmic_apply(map(palette,boundary));
             is_change = true; ++position; continue;
           }
-          // If command 'map' has been invoked with different arguments, custom version in stdlib
-          // will be used rather than the native version.
+          // If command 'map' is invoked with different arguments, custom version in stdlib
+          // is used rather than the native version.
         }
 
         // Median filter.
