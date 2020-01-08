@@ -4913,20 +4913,22 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       const bool is_get = is_double_hyphen || is_plus;
 
       unsigned int hash_custom = ~0U, ind_custom = ~0U;
-//      bool is_builtin_command = false;
-      bool is_command = *item>='a' && *item<='z' && _gmic_eok(1); // Alphabetical shortcut commands
+      bool
+        is_command = *item>='a' && *item<='z' && _gmic_eok(1); // Alphabetical shortcut commands
       is_command|= *item=='m' && (item[1]=='*' || item[1]=='/') && _gmic_eok(2); // Shortcuts 'm*' and 'm/'
       is_command|= *item=='f' && item[1]=='i' && _gmic_eok(2); // Shortcuts 'fi'
+      bool is_builtin_command = is_command;
+
       if (!is_command) {
         *command = sep0 = sep1 = 0;
         switch (*item) {
-        case '!' : is_command = item[1]=='=' && _gmic_eok(2); break;
+        case '!' : is_builtin_command = is_command = item[1]=='=' && _gmic_eok(2); break;
         case '%' : case '&' : case '^' : case '|' :
-          is_command = _gmic_eok(1); break;
+          is_builtin_command = is_command = _gmic_eok(1); break;
         case '*' : case '+' : case '-' : case '/' :
-          is_command = _gmic_eok(1) || (item[1]=='3' && item[2]=='d' && _gmic_eok(3)); break;
+          is_builtin_command = is_command = _gmic_eok(1) || (item[1]=='3' && item[2]=='d' && _gmic_eok(3)); break;
         case '<' : case '=' : case '>' :
-          is_command = _gmic_eok(1) || ((item[1]==*item || item[1]=='=') && _gmic_eok(2)); break;
+          is_builtin_command = is_command = _gmic_eok(1) || ((item[1]==*item || item[1]=='=') && _gmic_eok(2)); break;
         default :
 
           // Extract command name.
@@ -4955,9 +4957,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             const int
               _ind0 = builtin_commands_inds[(unsigned int)*command],
               _ind1 = builtin_commands_inds((unsigned int)*command,1);
-            if (_ind0>=0)
-              is_command = search_sorted(command,builtin_commands_names + _ind0,
-                                         _ind1 - _ind0 + 1U,__ind);
+            if (_ind0>=0) {
+              is_builtin_command = is_command = search_sorted(command,builtin_commands_names + _ind0,
+                                                              _ind1 - _ind0 + 1U,__ind);
+            }
             if (!is_command) { // Look for a custom command
               hash_custom = hashcode(command,false);
               is_command = search_sorted(command,commands_names[hash_custom],
@@ -4966,8 +4969,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           }
         }
       }
-
-//      std::fprintf(stderr,"\nDEBUG : Command = '%s', is_builtin = %d\n",command,(int)is_builtin_command);
 
       // Split command/selection, if necessary.
       bool is_selection = false;
@@ -5229,37 +5230,38 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
         // Dispatch to dedicated parsing code, regarding the first character of the command.
         // We rely on the compiler to optimize this using an associative array (verified with g++).
-//        if (is_builtin_command)
-        switch (command0) {
-        case 'a' : goto gmic_commands_a;
-        case 'b' : goto gmic_commands_b;
-        case 'c' : goto gmic_commands_c;
-        case 'd' : goto gmic_commands_d;
-        case 'e' : goto gmic_commands_e;
-        case 'f' :
-          if (command[1]=='i' && !command[2]) goto gmic_commands_e; // (Redirect for 'fi')
-          goto gmic_commands_f;
-        case 'g' : goto gmic_commands_g;
-        case 'h' : goto gmic_commands_h;
-        case 'i' :
-          if (command[1]=='f' && !command[2]) goto gmic_commands_others; // (Redirect for 'if')
-          goto gmic_commands_i;
-        case 'k' : goto gmic_commands_k;
-        case 'l' : goto gmic_commands_l;
-        case 'm' : goto gmic_commands_m;
-        case 'n' : goto gmic_commands_n;
-        case 'o' : goto gmic_commands_o;
-        case 'p' : goto gmic_commands_p;
-        case 'q' : goto gmic_commands_q;
-        case 'r' : goto gmic_commands_r;
-        case 's' : goto gmic_commands_s;
-        case 't' : goto gmic_commands_t;
-        case 'u' : goto gmic_commands_u;
-        case 'v' : goto gmic_commands_v;
-        case 'w' : goto gmic_commands_w;
-        case 'x' : goto gmic_commands_x;
-        default : goto gmic_commands_others;
-        } // else goto gmic_commands_others;
+        if (is_builtin_command && !is_command_input)
+          switch (command0) {
+          case 'a' : goto gmic_commands_a;
+          case 'b' : goto gmic_commands_b;
+          case 'c' : goto gmic_commands_c;
+          case 'd' : goto gmic_commands_d;
+          case 'e' : goto gmic_commands_e;
+          case 'f' :
+            if (command[1]=='i' && !command[2]) goto gmic_commands_e; // (Redirect for 'fi')
+            goto gmic_commands_f;
+          case 'g' : goto gmic_commands_g;
+          case 'h' : goto gmic_commands_h;
+          case 'i' :
+            if (command[1]=='f' && !command[2]) goto gmic_commands_others; // (Redirect for 'if')
+            goto gmic_commands_i;
+          case 'k' : goto gmic_commands_k;
+          case 'l' : goto gmic_commands_l;
+          case 'm' : goto gmic_commands_m;
+          case 'n' : goto gmic_commands_n;
+          case 'o' : goto gmic_commands_o;
+          case 'p' : goto gmic_commands_p;
+          case 'q' : goto gmic_commands_q;
+          case 'r' : goto gmic_commands_r;
+          case 's' : goto gmic_commands_s;
+          case 't' : goto gmic_commands_t;
+          case 'u' : goto gmic_commands_u;
+          case 'v' : goto gmic_commands_v;
+          case 'w' : goto gmic_commands_w;
+          case 'x' : goto gmic_commands_x;
+          default : goto gmic_commands_others;
+          }
+        else goto gmic_commands_others;
 
         //-----------------------------
         // Commands starting by 'a...'

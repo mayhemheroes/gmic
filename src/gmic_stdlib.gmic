@@ -7318,7 +7318,9 @@ eigen2tensor :
 
 #@cli index : { [palette] | predefined_palette },0<=_dithering<=1,_map_palette={ 0 | 1 } : (+)
 #@cli : Index selected vector-valued images by specified vector-valued palette.
-#@cli : 'predefined_palette' can be { 0=default | 1=HSV | 2=lines | 3=hot | 4=cool | 5=jet | 6=flag | 7=cube }.
+#@cli : 'predefined_palette' can be { default | hsv | lines | hot | cool | jet | flag | cube | rainbow | algae | amp |\
+# balance | curl | deep | delta | dense | diff | haline | ice | matter | oxy | phase | rain | solar | speed | tarn |\
+# tempo | thermal | topo | turbid | aurora | hocuspocus | srb2 | uzebox }
 #@cli : Default values: 'dithering=0' and 'map_palette=0'.
 #@cli : $ image.jpg +index 1,1,1
 #@cli : $ image.jpg (0;255;255^0;128;255^0;0;255) +index[-2] [-1],1,1
@@ -7350,7 +7352,9 @@ _inrange :
 
 #@cli map : [palette],_boundary_conditions : predefined_palette,_boundary_conditions : (+)
 #@cli : Map specified vector-valued palette to selected indexed scalar images.
-#@cli : 'predefined_palette' can be { 0=default | 1=HSV | 2=lines | 3=hot | 4=cool | 5=jet | 6=flag | 7=cube }.
+#@cli : 'predefined_palette' can be { default | hsv | lines | hot | cool | jet | flag | cube | rainbow | algae | amp |\
+# balance | curl | deep | delta | dense | diff | haline | ice | matter | oxy | phase | rain | solar | speed | tarn |\
+# tempo | thermal | topo | turbid | aurora | hocuspocus | srb2 | uzebox }
 #@cli : 'boundary_conditions' can be { 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }.
 #@cli : Default value: 'boundary_conditions=0'.
 #@cli : $ image.jpg +luminance map[-1] 3
@@ -8489,23 +8493,6 @@ lightness :
   remove_opacity srgb2rgb
   if s==3 rgb2lab channels 0 * {255/100} elif s!=1 norm n 0,255 rgb2srgb fi
 
-#@cli lut_rainbow
-#@cli : Input a 256-entries RGB colormap of rainbow colors.
-#@cli : $ image.jpg lut_rainbow +luminance[-2] map[-1] [-2]
-lut_rainbow :
-  e[^-1] "Input RGB colormap of 256 rainbow colors."
-  base642img[] \
-"MiB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjU2IDEgMSAzICM2MjgKeJxj4uLl5Rfg5xcSl5JXVFVT19LS0dXR0dXVAdK6hkYmZuYWlhYWlpZ"\
-"WllZW1lY21lbWIGBjAyatIcDKysrCwszYQEddUYSVgYERjKAEHKDycABWSSOnwKi03LLGzgkz5q3YtH3f8fNX7zx+9ubTt1/////9+/fP71+/fv748f"\
-"3Ht2/fvn77+vXrNyj4CgJfgBAGvgCZn9+/fvbozo3LZ04e2rdjw+olC2ZM6GqqKspOCPdztTTSU5MXZmXm4uMXFBIWEhaXlJNXVlUHetvA0MjYxNTC2"\
-"t7JycXV3dPL28fH18/fPyAwMCgoOAQEQkPDgCA8IhxERURGRsXExCUkp2Vk55dW1DV19E2dvXD5mg2bNm/eBAQbN27cAATr165dt3bNaqxg7dq16zcA"\
-"lW7dtmPXrn0HDh4+duLkmXMXL184d+rooX07t21as3zR3BkTulvqK4tz0pJiwv29XR3srMxNjAz1oUAPCIARp6WlqamhrqaqoiQvJysnJ6+goKCoqKS"\
-"kqKSoIA8UkZIUFxXm5+UVEBISEuTn5eFkYhOWVNA0NHd09w+JSkjLyi+tbGhp6+6fNHXG7Dlz589fsHDR4iVLli5bvmzpsmXLl69YsWIlEKyCgNUQcv"\
-"UakPs3bt6yfefufQePnTx39fbDx4/v37p25viBHZvXrFg0Z/rE7ta6isKspKjQIDQQEgKmgoMDAwMDAvz8/Hy8PD3dPVxdnB3trK0sjI0MdbU11FSVF"\
-"eQhPlFWUQGlUh1dPT19A0MDOACHga6utrYW2P9qaqpArKamrgGCGurqQAFlJQU5GSlxEQE+HgFgAAgK8PFyMgEAsxoliDEgMTggMSAxICMyNgp4nHP3"\
-"jWKILkrMzEvKL1fIKS2JZQAAON0GDg=="
-  nm. [lut_rainbow]
-
 #@cli lut_contrast : _nb_colors>1,_min_rgb_value
 #@cli : Generate a RGB colormap where consecutive colors have high contrast.
 #@cli : This function performs a specific score maximization to generate the result, so
@@ -8608,8 +8595,8 @@ palette :
   base642img ${-_palette_$name}
 
 _palette_names :
-  u default,hsv,lines,hot,cool,jet,flag,cube,algae,amp,balance,curl,deep,delta,dense,diff,gray,haline,ice,matter,\
-    oxy,phase,rain,solar,speed,tarn,tempo,thermal,topo,turbid,aurora,hocuspocus,srb2,uzebox
+  u default,hsv,lines,hot,cool,jet,flag,cube,rainbow,algae,amp,balance,curl,deep,delta,dense,diff,haline,ice,\
+    matter,oxy,phase,rain,solar,speed,tarn,tempo,thermal,topo,turbid,aurora,hocuspocus,srb2,uzebox
 
 # The color palettes below comes from the CImg library 'http://cimg.eu/'.
 _palette_default :
@@ -8673,6 +8660,16 @@ _palette_cube :
 8vaZfNnTOxqrinNS0+IDPJ2sTXT11CUEuZhZeIUEJdT1TG2cvTwD4tNyS6qbGjvmzpn8aqNO/YfO3vl9qOXH77/+/np9ZO7186fOLhr85ql86ZP6GyqLslN\
 i48I9HK2MdVTV5AU4mZh5hKUkFfTNbF28gwIj0vNKa5q7OifNnfJ6k07Dxw/d/XO41cff/xnIAawcAtJKqjrmdo4ewVGxKflllQ3dU6YPm/pms27Dp44f+3\
 uk9effv6nKyDG/0R5jb6AlUdYSlFD38zWxTsoMiE9r7SmuWvijPnL1m7Zfejkhev3nr75/Iu+AQkAzZ6QNg=="
+
+_palette_rainbow :
+  u "MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjU2IDEgMSAzICM2MjgKeJxj4uLl5Rfg5xcSl5JXVFVT19LS0dXR0dXVAdK6hkYmZuYWlhYWlp\
+ZWllZW1lY21lbWIGBjAyatIcDKysrCwszYQEddUYSVgYERjKAEHKDycABWSSOnwKi03LLGzgkz5q3YtH3f8fNX7zx+9ubTt1/////9+/fP71+/fv748f3Ht\
+2/fvn77+vXrNyj4CgJfgBAGvgCZn9+/fvbozo3LZ04e2rdjw+olC2ZM6GqqKspOCPdztTTSU5MXZmXm4uMXFBIWEhaXlJNXVlUHetvA0MjYxNTC2t7JycXV\
+3dPL28fH18/fPyAwMCgoOAQEQkPDgCA8IhxERURGRsXExCUkp2Vk55dW1DV19E2dvXD5mg2bNm/eBAQbN27cAATr165dt3bNaqxg7dq16zcAlW7dtmPXrn0\
+HDh4+duLkmXMXL184d+rooX07t21as3zR3BkTulvqK4tz0pJiwv29XR3srMxNjAz1oUAPCIARp6WlqamhrqaqoiQvJysnJ6+goKCoqKSkqKSoIA8UkZIUFx\
+Xm5+UVEBISEuTn5eFkYhOWVNA0NHd09w+JSkjLyi+tbGhp6+6fNHXG7Dlz589fsHDR4iVLli5bvmzpsmXLl69YsWIlEKyCgNUQcvUakPs3bt6yfefufQePn\
+Tx39fbDx4/v37p25viBHZvXrFg0Z/rE7ta6isKspKjQIDQQEgKmgoMDAwMDAvz8/Hy8PD3dPVxdnB3trK0sjI0MdbU11FSVFeQhPlFWUQGlUh1dPT19A0MD\
+OACHga6utrYW2P9qaqpArKamrgGCGurqQAFlJQU5GSlxEQE+HgFgAAgK8PFyMgEAsxoliA=="
 
 # The color palettes below have been converted from 'https://matplotlib.org/cmocean/'.
 _palette_algae :
@@ -8761,14 +8758,6 @@ w6hp+YnJ4F+sXl1bWNrZ09yH96fkm4Jt7ekchkCoVCJpPubohXf/GH+7vbm+ury1T79OT4Z9zoMKD3dH
 /x8vD093FydnRzsbW0QcGsrC3NTgDcy0NfT0dbS1AB+NVUVZSUF6AEpCXFREYhraAxpreAIW3sorbunl7ePr38AMjAoOCQ0LDwiMiomNg4Vn5CYnIJOTQPm\
 bIAugNSl5ZiKymrgbsA2AXhbB5D39EH0EdwYfnxyeuYLwH9bWl5dh/T7h8cngH9BuCLeAD84gEyi6i/PTwF+b2dzbWVx4evs9AQeNzLY39vV2dbShAW1MWU\
 lRQW52Rlp6KQEFNCGgsZQYhcnBztq4X+BNf73lZGSFBcTFREWfiIkKCjAz8f3mJeHh5uLk4ODnY2VhRkGY2JkoKejpXn0Bx9diU0="
-
-_palette_gray :
-  u "MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjU2IDEgMSAzICM0MjkKeJxjYAACRkYmJmZmFlY2dg5OLm4eXj5+AUEhYRFRMXEJSSlpGVk5eQ\
-VFJWUVVVU1dQ1NLW0dXT19AwNDI2MTUzNzC0tLK2sbWzt7B0cnJ2cXVzd3D08vb28fXz//gMCg4JCQ0LDwiMio6JjYuLj4hMSk5JTUtPSMzKys7JzcvPyCw\
-qLiktKy8orKquqamtq6+obGpuaW1rb2js6u7p7evv4JEydNnjJ12vQZM2fNnjN33oKFixYvWbps+YqVq1avWbtuw8ZNm7ds3bZ9x87de/bu23/g4OEjR48d\
-P3Hy9Jmz585fvHT5ytXrN27eun333v0Hjx4/efr8xcvXb96++/Dx05ev3378/PXn7z8GVP+zc2D1PywAIP6HBADY/+AAAPkfEgAg/0MCAOR/SACA/Q8JAIj\
-/oQEA8z9SABD2/3xIAMD8vx4YABD/79oN9v+hw2D/nwL5/8JFoP+vgfx/B+j/h0D/P3vx8hXQ/+8/fvr89dv3n79+Y/E/J6b/EQkA5H9YAjA0giUAK2tYAn\
-CGJwAf0hMAsQGAnADWb4AlgF17MAPgEuEAAACRLlys"
 
 _palette_haline :
   u "MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjU2IDEgMSAzICM3MDQKeJzT1NLS0tbW0dHRBQI9EADSOtpamhrqaqrKSorycrLSUpISYqIiwk\
