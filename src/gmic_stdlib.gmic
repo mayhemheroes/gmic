@@ -42951,9 +42951,11 @@ fx_neon_lightning :
 #@gui : note = note{"<small><span color="#FF0055"><b>Navigation:</b></span></small>"}
 #@gui : Zoom Center = point(50,50,0,0,255,255,255,200)
 #@gui : Zoom Factor = float(0.5,0,1)
+#@gui : Angle = float(0,-180,180)_0
 #@gui : Zoom In = button()
 #@gui : Center = button()
 #@gui : Zoom Out = button()
+#@gui : Reset View = button()
 #@gui : Display Coordinates on Preview Window = bool(1)
 #@gui : Preview subsampling = choice(2,"None","x1.5","x2","x2.5","x3","x3.5","x4")
 #@gui : sep = separator()
@@ -43032,14 +43034,17 @@ fx_newton_fractal_preview : skip "${6=},${7=},${8=},${22=},${25=},${28=}"
   is_color_by_iter={$12==1?2:0}
   is_color_by_value={$12==2?2:0}
   _size0={min(${-gui_preview_wh})}
-  _size={$_size0/arg(1+$42,1,1.5,2,2.5,3,3.5,4)}
-  if "$38 || $39 || $40"
+  _size={$_size0/arg(1+$44,1,1.5,2,2.5,3,3.5,4)}
+  if "$39 || $40 || $41"
     x0,y0,x1,y1={"P0 = [${1,2}];
                   dP = [${3,4}] - P0;
                   C = P0 + [${35,36}]%*dP;
-                  zfact = $37*($38?1:$39?0:-2);
+                  zfact = $37*($39?1:$40?0:-2);
                   dC = 0.5*dP*(1 - 0.98*zfact);
                   [C - dC,C + dC]"}
+    px,py=50
+  elif $42
+    x0,y0,x1,y1=-2,-2,2,2
     px,py=50
   else
     x0,y0,x1,y1=${1-4}
@@ -43052,7 +43057,7 @@ fx_newton_fractal_preview : skip "${6=},${7=},${8=},${22=},${25=},${28=}"
     x0r,y0r,x1r,y1r={"C = ["$px,$py"]%*w; dC = 0.5*w*(1 - 0.98*$37); round([C - dC, C + dC - 1])"}
     rectangle $x0r,$y0r,$x1r,$y1r,0.7,0xF0F0F0F0,255,255,255,255
     rectangle $x0r,$y0r,$x1r,$y1r,0.7,0x0F0F0F0F,0,0,0,255
-    if $41 to "Z0 = ( "{_$x0}" , "{_$y0}" )\nZ1 = ( "{_$x1}" , "{_$y1}" )",2,2,16 fi
+    if $43 to "Z0 = ( "{_$x0}" , "{_$y0}" )\nZ1 = ( "{_$x1}" , "{_$y1}" )",2,2,16 fi
   endl done
 
   u "{"$x0"}{"$y0"}{"$x1"}{"$y1"}{$5}"\
@@ -43076,7 +43081,7 @@ fx_newton_fractal_preview : skip "${6=},${7=},${8=},${22=},${25=},${28=}"
     "{$26}_"$is_color_by_custom\
     "{$27}{$28}{$29}{$30}{$31}{$32}{$33}"\
     "{$34}"_{$33==0?0:2}\
-    "{"$px,$py"}{$37}{0}{0}{0}{$41}{$42}"
+    "{"$px,$py"}{$37}{$38}{0}{0}{0}{0}{$43}{$44}"
 
 #@gui Plasma : fx_plasma, fx_plasma(0)
 #@gui : Alpha = float(0.5,0,5)
