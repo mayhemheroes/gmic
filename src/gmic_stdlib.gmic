@@ -894,7 +894,8 @@ ${g}"N"$n".
 \n          self-exponentiation), '"${c}"cabs()"$n"' (complex modulus), '"${c}"carg()"$n"' (complex argument),
  '"${c}"cconj()"$n"'
 \n          (complex conjugate), '"${c}"cexp()"$n"' (complex exponential), '"${c}"clog()"$n"' (complex logarithm)
-\n          '"${c}"ccos()"$n"' (complex cosine), '"${c}"csin()"$n"' (complex sine), '"${c}"ctan()"$n"' (complex tangent),
+\n          '"${c}"ccos()"$n"' (complex cosine), '"${c}"csin()"$n"' (complex sine), '"${c}"ctan()"$n"' \
+(complex tangent),
 \n          '"${c}"ccosh()"$n"' (complex hyperpolic cosine), '"${c}"csinh()"$n"' (complex hyperbolic sine)
 \n          and '"${c}"ctanh()"$n"' (complex hyperbolic tangent).
 \n       . A "${g}"MN"$n"-dimensional vector may be seen as a "${g}"M"${n}" x "${g}"N"$n" matrix and used in those
@@ -14815,6 +14816,50 @@ maze_mask : check "isint(${1=24}) && $1>0"
     while iM#0
     rm[0] + _render_maze. $1 nm. [maze]
   endl done
+
+#@cli newton_fractal : z0r,z0i,z1r,z1i,_iteration_max>=0,0<=_iteration_method<=2,_convergence_precision>0,_expr_p(z),\
+# _expr_dp(z),_expr_d2p(z)
+#@cli : Draw newton fractal on selected images, for complex numbers in range (z0r,z0i) - (z1r,z1i).
+#@cli : Resulting images have 3 channels whose meaning is [ last_zr, last_zi, nb_iter_used_for_convergence ].
+#@cli : 'iterative_method' can be { 0=secant | 1=newton | 2=householder }.
+#@cli : Default values: 'iteration_max=200', 'iteration_method=1', 'convergence_precision=0.01', 'expr_p(z)=z^^3-1', \
+# 'expr_dp(z)=3*z^^2' and 'expr_d2z(z)=6*z'.
+newton_fractal : check "${5=200}>=0 && isin(${6=1},0,1,2) && ${7=0.01}>0" skip "${8=z^^3-1},${9=3*z^^2},${10=6*z}"
+  m0,m1,m2=secant,newton,householder
+  e[^-1] "Draw newton fractal on image$?, for complex range ($1,$2)-($3,$4), with $5 max "${m$6}" iterations, "\
+   "precision $7, and expressions 'p(z)=$8', 'dp(z)=$9' and 'd2p(z)=$10'."
+  channels 0,2
+  f "*
+    const dx = abs($3 - $1);
+    const dy = abs($4 - $2);
+    const itermax = $5;
+    const method = $6;
+    const precision = $7;
+    p(z) = ($8);
+    dp(z) = ($9);
+    d2p(z) = ($10);
+
+    zn = [ $1 + x*dx/(w-1), $2 + y*dy/(h-1) ];
+
+    !method?(znm1 = zn + [ precision,0 ]);
+    for (iter = 0, iter<itermax, ++iter,
+      pzn = p(zn);
+      method==0?(
+        znp1 = zn - pzn**(zn - znm1)//(pzn - p(znm1)); # secant
+        znm1 = zn;
+      ):method==1?(
+        dpzn = dp(zn);
+        znp1 = zn - pzn//dpzn; # newton
+      ):( # householder
+        dpzn = dp(zn);
+        d2pzn = d2p(zn);
+        hn = (pzn**d2pzn)//(2*dpzn^^2);
+        znp1 = zn - pzn//dpzn**([1,0] + hn);
+      );
+      norm(znp1 - zn)<precision?break();
+      zn = znp1;
+    );
+    [ zn,iter ]"
 
 #@cli j3d : eq. to 'object3d'. : (+)
 
