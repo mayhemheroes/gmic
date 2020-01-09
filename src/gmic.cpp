@@ -4917,16 +4917,14 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         is_builtin_command =
         (*item>='a' && *item<='z' && _gmic_eok(1)) || // Alphabetical shortcut commands
         (*item=='m' && (item[1]=='*' || item[1]=='/') && _gmic_eok(2)) || // Shortcuts 'm*' and 'm/'
-        (*item=='f' && item[1]=='i' && _gmic_eok(2)), // Shortcuts 'fi'
+        (*item=='f' && item[1]=='i' && _gmic_eok(2)) || // Shortcuts 'fi'
+        (*item=='!' && item[1]=='=' && _gmic_eok(2)) || // Shortcut '!='
+        ((*item=='%' || *item=='&' || *item=='^' || *item=='|') && _gmic_eok(1)), // Shortcuts '%','&','^' and '|'
         is_command = is_builtin_command;
 
       if (!is_builtin_command) {
         *command = sep0 = sep1 = 0;
         switch (*item) {
-        case '!' :
-          is_builtin_command = item[1]=='=' && _gmic_eok(2); break;
-        case '%' : case '&' : case '^' : case '|' :
-          is_builtin_command = _gmic_eok(1); break;
         case '*' : case '+' : case '-' : case '/' :
           is_builtin_command = _gmic_eok(1) || (item[1]=='3' && item[2]=='d' && _gmic_eok(3)); break;
         case '<' : case '=' : case '>' :
