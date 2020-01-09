@@ -43048,10 +43048,12 @@ fx_newton_fractal_preview : skip "${6=},${7=},${8=},${22=},${25=},${28=}"
   if "$39 || $40 || $41"
     x0,y0,x1,y1={"P0 = [${1,2}];
                   dP = [${3,4}] - P0;
+                  M = P0 + 0.5*dP;
                   C = P0 + [${35,36}]%*dP;
+                  C = M + rot($38)*(C - M);
                   zfact = $37*($39?1:$40?0:-2);
                   dC = 0.5*dP*(1 - 0.98*zfact);
-                  [C - dC,C + dC]"}
+                  [ C - dC, C + dC ]"}
     px,py=50
   elif $42
     x0,y0,x1,y1=-2,-2,2,2
@@ -43065,7 +43067,7 @@ fx_newton_fractal_preview : skip "${6=},${7=},${8=},${22=},${25=},${28=}"
 
   repeat $! l[$>]
     r2dx $_size0,1
-    x0r,y0r,x1r,y1r={"C = ["$px,$py"]%*w; dC = 0.5*w*(1 - 0.98*$37); round([C - dC, C + dC - 1])"}
+    x0r,y0r,x1r,y1r={"C = [ "$px,$py" ]%*w; dC = 0.5*w*(1 - 0.98*$37); round([ C - dC, C + dC - 1 ])"}
     rectangle $x0r,$y0r,$x1r,$y1r,0.7,0xF0F0F0F0,255,255,255,255
     rectangle $x0r,$y0r,$x1r,$y1r,0.7,0x0F0F0F0F,0,0,0,255
     if $43 to "Z0 = ( "{_$x0}" , "{_$y0}" )\nZ1 = ( "{_$x1}" , "{_$y1}" )",2,2,16 fi
