@@ -14817,32 +14817,39 @@ maze_mask : check "isint(${1=24}) && $1>0"
     rm[0] + _render_maze. $1 nm. [maze]
   endl done
 
-#@cli newton_fractal : z0r,z0i,z1r,z1i,0<=_descent_method<=2,_iteration_max>=0,_convergence_precision>0,_expr_p(z),\
+#@cli newton_fractal : z0r,z0i,z1r,z1i,_angle,0<=_descent_method<=2,_iteration_max>=0,_convergence_precision>0,_expr_p(z),\
 # _expr_dp(z),_expr_d2p(z)
 #@cli : Draw newton fractal on selected images, for complex numbers in range (z0r,z0i) - (z1r,z1i).
 #@cli : Resulting images have 3 channels whose meaning is [ last_zr, last_zi, nb_iter_used_for_convergence ].
 #@cli : 'descent_method' can be { 0=secant | 1=newton | 2=householder }.
-#@cli : Default values: 'descent_method=1', 'iteration_max=200', 'convergence_precision=0.01', 'expr_p(z)=z^^3-1', \
+#@cli : Default values: 'angle=0', 'descent_method=1', 'iteration_max=200', 'convergence_precision=0.01', 'expr_p(z)=z^^3-1', \
 # 'expr_dp(z)=3*z^^2' and 'expr_d2z(z)=6*z'.
-#@cli : $ 400,400 newton_fractal -1.5,-1.5,1.5,1.5,2,200,0.01,"z^^6 + z^^3 - 1","6*z^^5 + 3*z^^2","30*z^^4 + 6*z" \
+#@cli : $ 400,400 newton_fractal -1.5,-1.5,1.5,1.5,0,2,200,0.01,"z^^6 + z^^3 - 1","6*z^^5 + 3*z^^2","30*z^^4 + 6*z" \
 # f "[ atan2(i1,i0)*90+20,1,cut(i2/30,0.2,0.7) ]" hsl2rgb
-newton_fractal : check "isin(${5=1},0,1,2) && ${6=200}>=0 && ${7=0.01}>0" skip "${8=z^^3-1},${9=3*z^^2},${10=6*z}"
+newton_fractal : check "isin(${6=1},0,1,2) && ${7=200}>=0 && ${8=0.01}>0" skip "${4=0},${9=z^^3-1},${10=3*z^^2},${11=6*z}"
   m0,m1,m2=secant,newton,householder
-  e[^-1] "Draw newton fractal on image$?, for complex range ($1,$2)-($3,$4), with $6 max "${m$5}" iterations, "\
-   "precision $7, and expressions 'p(z)=$8', 'dp(z)=$9' and 'd2p(z)=$10'."
+  e[^-1] "Draw newton fractal on image$?, for complex range ($1,$2)-($3,$4), with angle $5, $7 max "${m$6}" iterations, "\
+   "precision $8, and expressions 'p(z)=$9', 'dp(z)=$10' and 'd2p(z)=$11'."
   channels 0,2
   f "*
-    const dx = abs($3 - $1);
-    const dy = abs($4 - $2);
-    const method = $5;
-    const itermax = $6;
-    const precision = $7;
+    begin(
+      const dx = abs($3 - $1);
+      const dy = abs($4 - $2);
+      const angle = $5;
+      const method = $6;
+      const itermax = $7;
+      const precision = $8;
 
-    p(z) = ($8);
-    dp(z) = ($9);
-    d2p(z) = ($10);
+      zc = [ $1 + $3, $2 + $4 ]/2;
+      R = rot(angle);
+    );
+
+    p(z) = ($9);
+    dp(z) = ($10);
+    d2p(z) = ($11);
 
     zn = [ $1 + x*dx/(w-1), $2 + y*dy/(h-1) ];
+    angle?(zn = (R*(zn-=zc)+=zc));
 
     !method?(znm1 = zn + [ precision,0 ]);
     for (iter = 0, iter<itermax, ++iter,
@@ -42951,7 +42958,7 @@ fx_neon_lightning :
 #@gui : note = note{"<span color="#FF0055"><b>Navigation:</b></span>"}
 #@gui : Zoom Center = point(50,50,0,0,255,255,255,200)
 #@gui : Zoom Factor = float(0.5,0,1)
-#@gui : Angle = float(0,-180,180)_0
+#@gui : Angle = float(0,-180,180)
 #@gui : Zoom In = button()
 #@gui : Center = button()
 #@gui : Zoom Out = button()
@@ -42984,7 +42991,7 @@ fx_newton_fractal : skip "${6=},${7=},${8=},${22=},${25=},${28=}"
     if !narg($dpz) dpz="[1,0]" fi
     if !narg($d2pz) d2pz="[1,0]" fi
 
-    newton_fractal ${1-4},$9,$10,{10^-$11},$pz,$dpz,$d2pz
+    newton_fractal ${1-4},$38,$9,$10,{10^-$11},$pz,$dpz,$d2pz
 
     if $12==1 # Color by iteration
       channels 100%
