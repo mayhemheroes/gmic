@@ -4914,21 +4914,23 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
       unsigned int hash_custom = ~0U, ind_custom = ~0U;
       bool
-        is_command = *item>='a' && *item<='z' && _gmic_eok(1); // Alphabetical shortcut commands
-      is_command|= *item=='m' && (item[1]=='*' || item[1]=='/') && _gmic_eok(2); // Shortcuts 'm*' and 'm/'
-      is_command|= *item=='f' && item[1]=='i' && _gmic_eok(2); // Shortcuts 'fi'
-      bool is_builtin_command = is_command;
+        is_builtin_command =
+        (*item>='a' && *item<='z' && _gmic_eok(1)) || // Alphabetical shortcut commands
+        (*item=='m' && (item[1]=='*' || item[1]=='/') && _gmic_eok(2)) || // Shortcuts 'm*' and 'm/'
+        (*item=='f' && item[1]=='i' && _gmic_eok(2)), // Shortcuts 'fi'
+        is_command = is_builtin_command;
 
-      if (!is_command) {
+      if (!is_builtin_command) {
         *command = sep0 = sep1 = 0;
         switch (*item) {
-        case '!' : is_builtin_command = is_command = item[1]=='=' && _gmic_eok(2); break;
+        case '!' :
+          is_builtin_command = item[1]=='=' && _gmic_eok(2); break;
         case '%' : case '&' : case '^' : case '|' :
-          is_builtin_command = is_command = _gmic_eok(1); break;
+          is_builtin_command = _gmic_eok(1); break;
         case '*' : case '+' : case '-' : case '/' :
-          is_builtin_command = is_command = _gmic_eok(1) || (item[1]=='3' && item[2]=='d' && _gmic_eok(3)); break;
+          is_builtin_command = _gmic_eok(1) || (item[1]=='3' && item[2]=='d' && _gmic_eok(3)); break;
         case '<' : case '=' : case '>' :
-          is_builtin_command = is_command = _gmic_eok(1) || ((item[1]==*item || item[1]=='=') && _gmic_eok(2)); break;
+          is_builtin_command = _gmic_eok(1) || ((item[1]==*item || item[1]=='=') && _gmic_eok(2)); break;
         default :
 
           // Extract command name.
@@ -4950,23 +4952,27 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               if (*ps) { sep1 = *(ps++); ++err; }
             }
           }
+          is_command =
+            (err==1 || (err==2 && sep0=='.') || (err==3 && (sep0=='[' || (sep0=='.' && sep1=='.')))) &&
+            (*item<'0' || *item>'9');
 
-          is_command = err==1 || (err==2 && sep0=='.') || (err==3 && (sep0=='[' || (sep0=='.' && sep1=='.')));
-          is_command&=*item<'0' || *item>'9';
-          if (is_command) { // Look for a built-in command
-            const int
-              _ind0 = builtin_commands_inds[(unsigned int)*command],
-              _ind1 = builtin_commands_inds((unsigned int)*command,1);
-            if (_ind0>=0)
-              is_builtin_command = is_command = search_sorted(command,builtin_commands_names + _ind0,
-                                                              _ind1 - _ind0 + 1U,__ind);
-            if (!is_command) { // Look for a custom command
+          if (is_command) {
+            if (!is_builtin_command) { // Search for known built-in command name
+              const int
+                _ind0 = builtin_commands_inds[(unsigned int)*command],
+                _ind1 = builtin_commands_inds((unsigned int)*command,1);
+              if (_ind0>=0)
+                is_builtin_command = search_sorted(command,builtin_commands_names + _ind0,
+                                                   _ind1 - _ind0 + 1U,__ind);
+            }
+            if (!is_builtin_command) { // Search for a custom command name
               hash_custom = hashcode(command,false);
               is_command = search_sorted(command,commands_names[hash_custom],
                                          commands_names[hash_custom].size(),ind_custom);
             }
           }
         }
+        is_command|=is_builtin_command;
       }
 
       // Split command/selection, if necessary.
@@ -7963,6 +7969,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           }
           // When command 'index' is invoked with different arguments, custom version in stdlib
           // is used rather than the built-in version.
+          is_builtin_command = false;
           goto gmic_commands_others;
         }
 
@@ -8771,6 +8778,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           }
           // If command 'map' is invoked with different arguments, custom version in stdlib
           // is used rather than the built-in version.
+          is_builtin_command = false;
           goto gmic_commands_others;
         }
 
