@@ -4919,55 +4919,52 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         (*item=='m' && (item[1]=='*' || item[1]=='/') && _gmic_eok(2)) || // Shortcuts 'm*' and 'm/'
         (*item=='f' && item[1]=='i' && _gmic_eok(2)) || // Shortcuts 'fi'
         (*item=='!' && item[1]=='=' && _gmic_eok(2)) || // Shortcut '!='
-        ((*item=='%' || *item=='&' || *item=='^' || *item=='|') && _gmic_eok(1)), // Shortcuts '%','&','^' and '|'
+        ((*item=='%' || *item=='&' || *item=='^' || *item=='|') && _gmic_eok(1)) || // Shortcuts '%','&','^' and '|'
+        ((*item=='*' || *item=='+' || *item=='-' || *item=='/') && // Shortcuts '*','+','-','/',
+         (_gmic_eok(1) || (item[1]=='3' && item[2]=='d' && _gmic_eok(3)))) || // '*3d','+3d','-3d' and '/3d'
+        ((*item=='<' || *item=='=' || *item=='>') && // Shortcuts '<','=','>','<=','==' and '>='
+         (_gmic_eok(1) || ((item[1]==*item || item[1]=='=') && _gmic_eok(2)))),
         is_command = is_builtin_command;
 
       if (!is_builtin_command) {
         *command = sep0 = sep1 = 0;
-        switch (*item) {
-        case '*' : case '+' : case '-' : case '/' :
-          is_builtin_command = _gmic_eok(1) || (item[1]=='3' && item[2]=='d' && _gmic_eok(3)); break;
-        case '<' : case '=' : case '>' :
-          is_builtin_command = _gmic_eok(1) || ((item[1]==*item || item[1]=='=') && _gmic_eok(2)); break;
-        default :
 
-          // Extract command name.
-          // (same as but faster than 'err = cimg_sscanf(item,"%255[a-zA-Z_0-9]%c%c",command,&sep0,&sep1);').
-          const char *ps = item;
-          char *pd = command;
-          char *const pde = _command.end() - 1;
-          for (err = 0; *ps && pd<pde; ++ps) {
-            const char c = *ps;
-            if ((c>='a' && c<='z') || (c>='A' && c<='Z') || (c>='0' && c<='9') || c=='_') *(pd++) = c;
-            else break;
-          }
-          if (pd!=command) {
-            *pd = 0;
+        // Extract command name.
+        // (same as but faster than 'err = cimg_sscanf(item,"%255[a-zA-Z_0-9]%c%c",command,&sep0,&sep1);').
+        const char *ps = item;
+        char *pd = command;
+        char *const pde = _command.end() - 1;
+        for (err = 0; *ps && pd<pde; ++ps) {
+          const char c = *ps;
+          if ((c>='a' && c<='z') || (c>='A' && c<='Z') || (c>='0' && c<='9') || c=='_') *(pd++) = c;
+          else break;
+        }
+        if (pd!=command) {
+          *pd = 0;
+          ++err;
+          if (*ps) {
+            sep0 = *(ps++);
             ++err;
-            if (*ps) {
-              sep0 = *(ps++);
-              ++err;
-              if (*ps) { sep1 = *(ps++); ++err; }
-            }
+            if (*ps) { sep1 = *(ps++); ++err; }
           }
-          is_command =
-            (err==1 || (err==2 && sep0=='.') || (err==3 && (sep0=='[' || (sep0=='.' && sep1=='.')))) &&
-            (*item<'0' || *item>'9');
+        }
+        is_command =
+          (err==1 || (err==2 && sep0=='.') || (err==3 && (sep0=='[' || (sep0=='.' && sep1=='.')))) &&
+          (*item<'0' || *item>'9');
 
-          if (is_command) {
-            if (!is_builtin_command) { // Search for known built-in command name
-              const int
-                _ind0 = builtin_commands_inds[(unsigned int)*command],
-                _ind1 = builtin_commands_inds((unsigned int)*command,1);
-              if (_ind0>=0)
-                is_builtin_command = search_sorted(command,builtin_commands_names + _ind0,
-                                                   _ind1 - _ind0 + 1U,__ind);
-            }
-            if (!is_builtin_command) { // Search for a custom command name
-              hash_custom = hashcode(command,false);
-              is_command = search_sorted(command,commands_names[hash_custom],
-                                         commands_names[hash_custom].size(),ind_custom);
-            }
+        if (is_command) {
+          if (!is_builtin_command) { // Search for known built-in command name
+            const int
+              _ind0 = builtin_commands_inds[(unsigned int)*command],
+              _ind1 = builtin_commands_inds((unsigned int)*command,1);
+            if (_ind0>=0)
+              is_builtin_command = search_sorted(command,builtin_commands_names + _ind0,
+                                                 _ind1 - _ind0 + 1U,__ind);
+          }
+          if (!is_builtin_command) { // Search for a custom command name
+            hash_custom = hashcode(command,false);
+            is_command = search_sorted(command,commands_names[hash_custom],
+                                       commands_names[hash_custom].size(),ind_custom);
           }
         }
         is_command|=is_builtin_command;
