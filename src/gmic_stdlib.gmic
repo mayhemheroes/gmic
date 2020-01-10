@@ -7013,26 +7013,27 @@ compress_clut : check "${1=1.25}>0 && ${2=0.75}>0 && isint(${3=2048}) && $3>8 &&
     while h<$max_keypoints
 
     # Iteratively remove keypoints.
-    if $_metric max_rounding,avg_rounding=0.1,0.025
-    else max_rounding,avg_rounding=1,0.25
-    fi
-    if $emax>$max_error" || "$eavg>$avg_error
-      max_error=round($max_error,$max_rounding,1)
-      avg_error=round($avg_error,$avg_rounding,1)
-    fi
+    if {h>8}
+      if $_metric max_rounding,avg_rounding=0.1,0.025
+      else max_rounding,avg_rounding=1,0.25
+      fi
+      if $emax>$max_error" || "$eavg>$avg_error
+        max_error=round($max_error,$max_rounding,1)
+        avg_error=round($avg_error,$avg_rounding,1)
+      fi
+      index=8 sep="\n"
+      do
+        +l. s y rm[$index] a y endl # Remove kth keypoint
+        +decompress_clut_$method. {0,[w,h,d]},$colorspace
+        if $_metric==0 -. [0] norm. else srgb2lab. deltaE. [1],{$_metric-1}," " fi
+        emax,eavg={[iM,ia]} rm.
 
-    index=8 sep="\n"
-    do
-      +l. s y rm[$index] a y endl # Remove kth keypoint
-      +decompress_clut_$method. {0,[w,h,d]},$colorspace
-      if $_metric==0 -. [0] norm. else srgb2lab. deltaE. [1],{$_metric-1}," " fi
-      emax,eavg={[iM,ia]} rm.
-
-      if $emax<=$max_error" && "$eavg<=$avg_error rv[-2,-1] else index+=1 fi
-      e[] "\r"$sep"  > Rem [#"{min($index,h-1)}"/"{h}"] Max_Err = "{_$emax}", Avg_Err = "{_$eavg}"       "
-      sep=""
-      rm.
-    while $index<h
+        if $emax<=$max_error" && "$eavg<=$avg_error rv[-2,-1] else index+=1 fi
+        e[] "\r"$sep"  > Rem [#"{min($index,h-1)}"/"{h}"] Max_Err = "{_$emax}", Avg_Err = "{_$eavg}"       "
+        sep=""
+        rm.
+      while $index<h
+    fi
     k.
 
     # Sort keypoints in lexicographic order (increasing order for RBF, decreasing for PDE).
