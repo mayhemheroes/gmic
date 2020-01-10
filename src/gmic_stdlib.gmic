@@ -9647,12 +9647,16 @@ _transfer_histogram :
 #@cli : Default value: 'color_channels=all'.
 transfer_pca : check ${"is_image_arg $1"} skip "${2=all}"
   e[^-1] "Transfer mean and covariance matrix of image$1 to image$?, for channels '$2'."
-  pass$1
+  pass$1 to_colormode[^-1] {s}
   if ['"$2"']!='all'
+    to_color
     repeat $!-1 l[$>,-1]
       ac. "+store _transfer_pca_reference",$2
       ac.. "_transfer_pca",$2
     endl done rm.
+  elif {s==1} # Particular case, to be solved easily
+    std_ref,avg_ref={[sqrt(iv),ia]} rm.
+    repeat $! l[$>] - {ia} * {$std_ref/sqrt(iv)} + $avg_ref endl done
   else
     store. _transfer_pca_reference
     repeat $! _transfer_pca[$>] done
