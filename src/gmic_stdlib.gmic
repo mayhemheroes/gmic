@@ -9641,6 +9641,44 @@ _transfer_histogram :
     k[0,1]
   done
 
+#@cli transfer_pca : [reference_image],_color_channels
+#@cli : Transfer mean and covariance matrix of specified vector-valued reference image to selected images.
+#@cli : Argument 'color channels' is the same as with command 'apply_channels'.
+#@cli : Default value: 'color_channels=all'.
+transfer_pca : check ${"is_image_arg $1"} skip "${2=all}"
+  e[^-1] "Transfer mean and covariance matrix of image$1 to image$?, for channels '$2'."
+  pass$1
+  if ['"$2"']!='all'
+    repeat $!-1 l[$>,-1]
+      ac. "+store _transfer_pca_reference",$2
+      ac.. "_transfer_pca",$2
+    endl done rm.
+  else
+    store. _transfer_pca_reference
+    repeat $! _transfer_pca[$>] done
+  fi
+  _transfer_pca_reference=
+
+_transfer_pca :
+  $_transfer_pca_reference
+  f.. "*begin(
+         Cov_src = [ "${"covariance_colors[0] _Avg_src"}" ];
+         Avg_src = [ "$_Avg_src" ];
+         Eig_src = eig(Cov_src);
+         Lambda_src = 1/sqrt(1e-6+Eig_src[0,s]);
+         Rot_src = mul(diag(Lambda_src),Eig_src[s,s*s],s);
+
+         Cov_ref = [ "${"covariance_colors[1] _Avg_ref"}" ];
+         Avg_ref = [ "$_Avg_ref" ];
+         Eig_ref = eig(Cov_ref);
+         Lambda_ref = sqrt(Eig_ref[0,s]);
+         Rot_ref = mul(transp(Eig_ref[s,s*s],s),diag(Lambda_ref),s);
+
+         M = mul(Rot_ref,Rot_src,s);
+       );
+       Avg_ref + M*(I - Avg_src)"
+  rm.
+
 #@cli transfer_rgb : [target],_gamma>=0,_regularization>=0,_luminosity_constraints>=0,_rgb_resolution>=0,\
 # _is_constraints={ 0 | 1 }
 #@cli : Transfer colors from selected source images to selected reference image (given as argument).
@@ -21936,8 +21974,10 @@ _compress_gmic :
 #@cli : Parameter 'avg_outvarname' is used as a variable name that takes the value of the average vector-value.
 covariance_colors : skip "${1=avg}"
   $1=${-average_colors}
-  f ">begin(avg = [ "$""$1" ]; const S2 = s^2; C = vectorS2(0); );
-     mI = I - avg; C+=mul(mI,mI,s); end(C/=whd - 1; call('u ',vtos(C))); I"
+  f ">begin( avg = [ "$""$1" ]; const S2 = s^2; C = vectorS2(0); );
+      mI = I - avg; C+=mul(mI,mI,s);
+      end( C/=whd - 1; call('u ',vtos(C)) );
+      I"
 
 #@cli dec : decimal_int1,...
 #@cli : Print specified decimal integers into their binary, octal, hexadecimal and string representations.
