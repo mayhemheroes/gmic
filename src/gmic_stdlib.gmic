@@ -9667,21 +9667,21 @@ transfer_pca : check ${"is_image_arg $1"} skip "${2=all}"
 _transfer_pca :
   $_transfer_pca_reference
   f.. "*begin(
-         Cov_src = [ "${"covariance_colors[0] _Avg_src"}" ];
-         Avg_src = [ "$_Avg_src" ];
-         Eig_src = eig(Cov_src);
-         Lambda_src = 1/sqrt(1e-6+Eig_src[0,s]);
-         Rot_src = mul(diag(Lambda_src),Eig_src[s,s*s],s);
+         cov_src = [ "${"covariance_colors[0] _avg_src"}" ];
+         avg_src = [ "$_avg_src" ];
+         eig_src = eig(cov_src);
+         lambda_src = 1/sqrt(1e-6 + eig_src[0,s]);
+         rot_src = mul(diag(lambda_src),eig_src[s,s*s],s);
 
-         Cov_ref = [ "${"covariance_colors[1] _Avg_ref"}" ];
-         Avg_ref = [ "$_Avg_ref" ];
-         Eig_ref = eig(Cov_ref);
-         Lambda_ref = sqrt(Eig_ref[0,s]);
-         Rot_ref = mul(transp(Eig_ref[s,s*s],s),diag(Lambda_ref),s);
+         cov_ref = [ "${"covariance_colors[1] _avg_ref"}" ];
+         avg_ref = [ "$_avg_ref" ];
+         eig_ref = eig(cov_ref);
+         lambda_ref = sqrt(eig_ref[0,s]);
+         rot_ref = mul(transp(eig_ref[s,s*s],s),diag(lambda_ref),s);
 
-         M = mul(Rot_ref,Rot_src,s);
+         M = mul(rot_ref,rot_src,s);
        );
-       Avg_ref + M*(I - Avg_src)"
+       avg_ref + M*(I - avg_src)"
   rm.
 
 #@cli transfer_rgb : [target],_gamma>=0,_regularization>=0,_luminosity_constraints>=0,_rgb_resolution>=0,\
