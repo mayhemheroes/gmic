@@ -248,11 +248,17 @@ CImg<T> get_color_CImg3d(const float R, const float G, const float B,
 }
 
 CImg<T>& copymark() {
+//  return *this;
   return get_copymark().move_to(*this);
 }
 
 CImg<T> get_copymark() const {
-  if (is_empty() || !*_data) return CImg<T>::string("_c1");
+  if (is_empty() || !*_data) return CImg<T>::string("_");
+  CImg<T> res(std::strlen(_data) + 2);
+  *res = '_'; std::memcpy(res._data + 1,_data,sizeof(T)*(res._width - 1));
+  return res;
+
+/*  if (is_empty() || !*_data) return CImg<T>::string("_c1");
   const char *pe = _data + _width - 1, *ext = cimg::split_filename(_data);
   if (*ext) pe = --ext;
   unsigned int num = 0, fact = 1, baselength = _width;
@@ -271,6 +277,7 @@ CImg<T> get_copymark() const {
   std::memcpy(res,_data,pe - _data);
   std::sprintf(res._data + (pe - _data),"_c%u%s",num,ext);
   return res;
+*/
 }
 
 CImg<T> get_draw_ellipse(const int x, const int y, const float r0, const float r1,
