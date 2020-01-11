@@ -21123,14 +21123,15 @@ register_nonrigid : check ${is_image_arg\ $1}" && ${2=0.2}>=0 && ${3=5}>0 && ${4
 #@cli register_rigid : [destination],_smoothness>=0,\
 # _boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }
 #@cli : Register selected source images with specified destination image, using rigid warp (shift).
-#@cli : Default values: 'smoothness=1' and 'boundary_conditions=0'.
+#@cli : Default values: 'smoothness=0.1%' and 'boundary_conditions=0'.
 #@cli : $ image.jpg +shift 30,20 +register_rigid[0] [1]
-register_rigid : check ${is_image_arg\ $1}" && ${2=1}>=0 && isint(${3=0}) && $3>=0 && $3<=3"
+register_rigid : check ${is_image_arg\ $1}" && ${2=0.1%}>=0 && isint(${3=0}) && $3>=0 && $3<=3"
   e[^-1] "Register source image$? with destination image $1, using rigid warp with smoothness $2."
-  pass$1 0 equalize. b. $2 n. 0,255
+  pass$1 0
+  b. $2 equalize. 256 n. 0,255
   repeat $!-1
-    +equalize[$>] b. $2 n. 0,255
-    +phase_correlation. .. rm..
+    +b[$>] $2 equalize. 256 n. 0,255
+    phase_correlation. ..
     shift[$>] {^},0,$3 rm.
   done rm.
 
@@ -39135,7 +39136,7 @@ fx_align_layers :
   if ${4=0} _fx_revert_layers fi
   remove_opacity
   if $1 register_nonrigid[^-1] .,$2,0.1,$3
-  else register_rigid[^-1] .,{3*$2}
+  else register_rigid[^-1] .,{$2/5}
   fi
 
 fx_align_layers_preview :
