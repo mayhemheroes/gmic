@@ -9641,15 +9641,19 @@ _transfer_histogram :
 transfer_pca : check ${"is_image_arg $1"} skip "${2=all}"
   channels=${"_ac_colorspace \"$2\""}
   e[^-1] "Transfer mean vector and covariance matrix from image$1 to image$?, for channels '"$channels"'."
-  pass$1 to_colormode[^-1] {s}
-  if ['$channels']!='all'
+  pass$1 1 sref={s} rm.
+  to_colormode[^-1] $sref
+  if {$sref==1} # Scalar case can to be solved more easily
+    pass$1
+    var_ref,avg_ref={[iv,ia]} rm.
+    repeat $! l[$>] - {ia} * {sqrt($var_ref/iv)} + $avg_ref endl done
+  elif ['$channels']!='all'
+    pass$1 {$sref==3?2:0}
     to_color
     ac. "+store _transfer_pca_reference",$channels rm.
     ac "_transfer_pca",$channels,1
-  elif {s==1} # Scalar case can to be solved more easily
-    var_ref,avg_ref={[iv,ia]} rm.
-    repeat $! l[$>] - {ia} * {sqrt($var_ref/iv)} + $avg_ref endl done
   else
+    pass$1
     store. _transfer_pca_reference
     repeat $! _transfer_pca[$>] done
   fi
