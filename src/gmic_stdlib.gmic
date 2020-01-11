@@ -6975,7 +6975,7 @@ compress_clut : check "${1=1.25}>0 && ${2=0.75}>0 && isint(${3=2048}) && $3>8 &&
   max_error,avg_error,max_keypoints,metric,colorspace,try_rbf=${1-6}
   if $try_rbf method=rbf else method=pde fi
   repeat $! l[$>] nm={b}
-    if iM>255 / 257 fi # When input is 16bits
+    if iM>1024 / 257 fi # When input is 16bits
     if d==1 S={round(cbrt(wh))} r $S,$S,$S,100%,-1 fi # When input is a 2D haldclut image
     e[] "\n* Process CLUT '"$nm"' ("{w}"x"{h}"x"{d}")."
 
@@ -7013,26 +7013,27 @@ compress_clut : check "${1=1.25}>0 && ${2=0.75}>0 && isint(${3=2048}) && $3>8 &&
     while h<$max_keypoints
 
     # Iteratively remove keypoints.
-    if $_metric max_rounding,avg_rounding=0.1,0.025
-    else max_rounding,avg_rounding=1,0.25
-    fi
-    if $emax>$max_error" || "$eavg>$avg_error
-      max_error=round($max_error,$max_rounding,1)
-      avg_error=round($avg_error,$avg_rounding,1)
-    fi
+    if {h>8}
+      if $_metric max_rounding,avg_rounding=0.1,0.025
+      else max_rounding,avg_rounding=1,0.25
+      fi
+      if $emax>$max_error" || "$eavg>$avg_error
+        max_error=round($max_error,$max_rounding,1)
+        avg_error=round($avg_error,$avg_rounding,1)
+      fi
+      index=8 sep="\n"
+      do
+        +l. s y rm[$index] a y endl # Remove kth keypoint
+        +decompress_clut_$method. {0,[w,h,d]},$colorspace
+        if $_metric==0 -. [0] norm. else srgb2lab. deltaE. [1],{$_metric-1}," " fi
+        emax,eavg={[iM,ia]} rm.
 
-    index=8 sep="\n"
-    do
-      +l. s y rm[$index] a y endl # Remove kth keypoint
-      +decompress_clut_$method. {0,[w,h,d]},$colorspace
-      if $_metric==0 -. [0] norm. else srgb2lab. deltaE. [1],{$_metric-1}," " fi
-      emax,eavg={[iM,ia]} rm.
-
-      if $emax<=$max_error" && "$eavg<=$avg_error rv[-2,-1] else index+=1 fi
-      e[] "\r"$sep"  > Rem [#"{min($index,h-1)}"/"{h}"] Max_Err = "{_$emax}", Avg_Err = "{_$eavg}"       "
-      sep=""
-      rm.
-    while $index<h
+        if $emax<=$max_error" && "$eavg<=$avg_error rv[-2,-1] else index+=1 fi
+        e[] "\r"$sep"  > Rem [#"{min($index,h-1)}"/"{h}"] Max_Err = "{_$emax}", Avg_Err = "{_$eavg}"       "
+        sep=""
+        rm.
+      while $index<h
+    fi
     k.
 
     # Sort keypoints in lexicographic order (increasing order for RBF, decreasing for PDE).
@@ -7578,7 +7579,7 @@ norm :
 
 #@cli n : eq. to 'normalize'. : (+)
 
-#@cli normalize : { value0[%] | [image0] },{ value1[%] | [image1] } : [image] : (+)
+#@cli normalize : { value0[%] | [image0] },{ value1[%] | [image1] },_constant_case_ratio : [image] : (+)
 #@cli : Linearly normalize values of selected images in specified range.
 #@cli : (eq. to 'n').
 #@cli : $ image.jpg split x,2 normalize[-1] 64,196 append x
@@ -9639,6 +9640,49 @@ _transfer_histogram :
     n[-4] 0,{w-1} round[-4] map[-4] ..
     k[0,1]
   done
+
+#@cli transfer_pca : [reference_image],_color_channels
+#@cli : Transfer mean and covariance matrix of specified vector-valued reference image to selected images.
+#@cli : Argument 'color channels' is the same as with command 'apply_channels'.
+#@cli : Default value: 'color_channels=all'.
+#@cli : $ sample lena,earth +transfer_pca[0] [1]
+transfer_pca : check ${"is_image_arg $1"} skip "${2=all}"
+  e[^-1] "Transfer mean vector and covariance matrix from image$1 to image$?, for channels '$2'."
+  pass$1 to_colormode[^-1] {s}
+  if ['"$2"']!='all'
+    to_color
+    repeat $!-1 l[$>,-1]
+      ac. "+store _transfer_pca_reference",$2
+      ac.. "_transfer_pca",$2
+    endl done rm.
+  elif {s==1} # Scalar case can to be solved more easily
+    var_ref,avg_ref={[iv,ia]} rm.
+    repeat $! l[$>] - {ia} * {sqrt($var_ref/iv)} + $avg_ref endl done
+  else
+    store. _transfer_pca_reference
+    repeat $! _transfer_pca[$>] done
+  fi
+  _transfer_pca_reference=
+
+_transfer_pca :
+  $_transfer_pca_reference
+  f.. "*begin(
+         cov = [ "${"covariance_colors[0] _avg"}" ];
+         avg = [ "$_avg" ];
+         eig = eig(cov);
+         lambda = 1/sqrt(1e-6 + eig[0,s]);
+         rot = mul(diag(lambda),eig[s,s*s],s);
+
+         cov_ref = [ "${"covariance_colors[1] _avg_ref"}" ];
+         avg_ref = [ "$_avg_ref" ];
+         eig_ref = eig(cov_ref);
+         lambda_ref = sqrt(eig_ref[0,s]);
+         rot_ref = mul(transp(eig_ref[s,s*s],s),diag(lambda_ref),s);
+
+         M = mul(rot_ref,rot,s);
+       );
+       avg_ref + M*(I - avg)"
+  rm.
 
 #@cli transfer_rgb : [target],_gamma>=0,_regularization>=0,_luminosity_constraints>=0,_rgb_resolution>=0,\
 # _is_constraints={ 0 | 1 }
@@ -14817,32 +14861,40 @@ maze_mask : check "isint(${1=24}) && $1>0"
     rm[0] + _render_maze. $1 nm. [maze]
   endl done
 
-#@cli newton_fractal : z0r,z0i,z1r,z1i,0<=_descent_method<=2,_iteration_max>=0,_convergence_precision>0,_expr_p(z),\
-# _expr_dp(z),_expr_d2p(z)
+#@cli newton_fractal : z0r,z0i,z1r,z1i,_angle,0<=_descent_method<=2,_iteration_max>=0,_convergence_precision>0,\
+# _expr_p(z),_expr_dp(z),_expr_d2p(z)
 #@cli : Draw newton fractal on selected images, for complex numbers in range (z0r,z0i) - (z1r,z1i).
 #@cli : Resulting images have 3 channels whose meaning is [ last_zr, last_zi, nb_iter_used_for_convergence ].
 #@cli : 'descent_method' can be { 0=secant | 1=newton | 2=householder }.
-#@cli : Default values: 'descent_method=1', 'iteration_max=200', 'convergence_precision=0.01', 'expr_p(z)=z^^3-1', \
-# 'expr_dp(z)=3*z^^2' and 'expr_d2z(z)=6*z'.
-#@cli : $ 400,400 newton_fractal -1.5,-1.5,1.5,1.5,2,200,0.01,"z^^6 + z^^3 - 1","6*z^^5 + 3*z^^2","30*z^^4 + 6*z" \
+#@cli : Default values: 'angle=0', 'descent_method=1', 'iteration_max=200', 'convergence_precision=0.01', \
+# 'expr_p(z)=z^^3-1', 'expr_dp(z)=3*z^^2' and 'expr_d2z(z)=6*z'.
+#@cli : $ 400,400 newton_fractal -1.5,-1.5,1.5,1.5,0,2,200,0.01,"z^^6 + z^^3 - 1","6*z^^5 + 3*z^^2","30*z^^4 + 6*z" \
 # f "[ atan2(i1,i0)*90+20,1,cut(i2/30,0.2,0.7) ]" hsl2rgb
-newton_fractal : check "isin(${5=1},0,1,2) && ${6=200}>=0 && ${7=0.01}>0" skip "${8=z^^3-1},${9=3*z^^2},${10=6*z}"
+newton_fractal : check "isin(${6=1},0,1,2) && ${7=200}>=0 && ${8=0.01}>0"
+                 skip "${4=0},${9=z^^3-1},${10=3*z^^2},${11=6*z}"
   m0,m1,m2=secant,newton,householder
-  e[^-1] "Draw newton fractal on image$?, for complex range ($1,$2)-($3,$4), with $6 max "${m$5}" iterations, "\
-   "precision $7, and expressions 'p(z)=$8', 'dp(z)=$9' and 'd2p(z)=$10'."
+  e[^-1] "Draw newton fractal on image$?, for complex range ($1,$2)-($3,$4), with angle $5, $7 max "${m$6}" "\
+   "iterations, precision $8, and expressions 'p(z)=$9', 'dp(z)=$10' and 'd2p(z)=$11'."
   channels 0,2
   f "*
-    const dx = abs($3 - $1);
-    const dy = abs($4 - $2);
-    const method = $5;
-    const itermax = $6;
-    const precision = $7;
+    begin(
+      const dx = abs($3 - $1);
+      const dy = abs($4 - $2);
+      const angle = $5;
+      const method = $6;
+      const itermax = $7;
+      const precision = $8;
 
-    p(z) = ($8);
-    dp(z) = ($9);
-    d2p(z) = ($10);
+      zc = [ $1 + $3, $2 + $4 ]/2;
+      R = rot(-angle);
+    );
+
+    p(z) = ($9);
+    dp(z) = ($10);
+    d2p(z) = ($11);
 
     zn = [ $1 + x*dx/(w-1), $2 + y*dy/(h-1) ];
+    angle?(zn = (R*(zn-=zc)+=zc));
 
     !method?(znm1 = zn + [ precision,0 ]);
     for (iter = 0, iter<itermax, ++iter,
@@ -21927,8 +21979,10 @@ _compress_gmic :
 #@cli : Parameter 'avg_outvarname' is used as a variable name that takes the value of the average vector-value.
 covariance_colors : skip "${1=avg}"
   $1=${-average_colors}
-  f ">begin(avg = [ "$""$1" ]; const S2 = s^2; C = vectorS2(0); );
-     mI = I - avg; C+=mul(mI,mI,s); end(C/=whd - 1; call('u ',vtos(C))); I"
+  f ">begin( avg = [ "$""$1" ]; const S2 = s^2; C = vectorS2(0); );
+      mI = I - avg; C+=mul(mI,mI,s);
+      end( C/=whd - 1; call('u ',vtos(C)) );
+      I"
 
 #@cli dec : decimal_int1,...
 #@cli : Print specified decimal integers into their binary, octal, hexadecimal and string representations.
@@ -22884,6 +22938,16 @@ path_tmp :
     if ${-is_windows} _path_tmp=$_path_tmp{`92`} else _path_tmp=$_path_tmp/ fi
   fi
   u $_path_tmp
+
+#@cli remove_copymark : "image_name"
+#@cli : Remove copy mark from names of selected images.
+remove_copymark :
+  u {`"name = ['$1'];
+       i = find(name,'_c');
+       i>=0 && i<size(name) - 2 && (c=name[i+2])>=_'1' && c<=_'9'?(
+         ext = ['"{$>,x}"'];
+         size(ext)?copy(name[i],[_'.',ext,0]):(name[i]=0);
+       ); name"`}
 
 # render_donations: Parse the PayPal .CSV file and generate 'latest-months' donation gfx.
 # $1 = filename.csv
@@ -31411,8 +31475,8 @@ fx_smooth_abstract_preview :
 #@gui : Fidelity Smoothness (Coarsest) = float(0.5,0,5)
 #@gui : Fidelity Chromaticity = float(0.1,0,1)
 #@gui : sep = separator(), note = note{"<small><b><span color="blue">Image Matching Parameters:</span></b></small>"}
-#@gui : Match Colors With = choice(2,"Nothing","Gamma Balance","Histogram Transfer")
-#@gui : Colorspace = choice{5,"sRGB","Linear RGB","YCbCr","YCbCr (Luma Only)","YCbCr (Chroma Only)","Lab",
+#@gui : Match Colors With = choice(3,"Nothing","Gamma Balance","Histogram Transfer","PCA transfer")
+#@gui : Colorspace = choice{2,"sRGB","Linear RGB","YCbCr","YCbCr (Luma Only)","YCbCr (Chroma Only)","Lab",
 #@gui : "Lab (Luma Only)","Lab (Chroma Only)"}
 #@gui : Keep Color Channels = choice{"All","Luminance Only (YCbCr)","Luminance Only (Lab)","Chrominances Only (CbCr)",\
 #@gui : "Chrominances Only (ab)"}
@@ -31442,6 +31506,7 @@ fx_stylize : l[] if !narg($$stylize) _fx_stylize_ fi onfail endl
   match_colors="s c,-3 mv[1] 3 b[-2,-1] 1% negate[-2,-1] n[-2,-1] 0,1"
   if $10==1 match_colors=$match_colors" ac[0,1] \"balance_gamma ,\","$colorspace
   elif $10==2 match_colors=$match_colors" transfer_histogram[0] [1],256,"$colorspace
+  elif $10==3 match_colors=$match_colors" transfer_pca[0] [1],"$colorspace" c[0] 0,255"
   fi
   if $12==1 match_colors=$match_colors" rgb2ycbcr[0,1] sh[0,1] 1,2 f[-2,-1] 128 rm[-2,-1] ycbcr2rgb[0,1]"
   elif $12==2 match_colors=$match_colors" srgb2lab[0,1] sh[0,1] 1,2 f[-2,-1] 0 rm[-2,-1] lab2srgb[0,1]"
@@ -42892,16 +42957,16 @@ fx_neon_lightning :
 #@gui : Y0 = value(-2)
 #@gui : X1 = value(2)
 #@gui : Y1 = value(2)
-#@gui : note = note{"<small><b>Fractal Type:</b></small>"}
+#@gui : note = note{"<span color="#FF0055"><b>Fractal Type:</b></span>"}
 #@gui : Expression = choice(2,"Custom","z^^2 - 1","z^^3 - 1","z^^5 - 1","z^^6 + z^^3 - 1","z^^8 + 15*z^^4 - 1")
-#@gui : p(z) = text("z^^3 - z^^2 + 1")_1
-#@gui : p'(z) = text("3*z^^2 - 2*z")_1
-#@gui : p''(z) = text("6*z - 2")_1
+#@gui : p(z) = text{"rot(35)*z^^3 - z^^2 + 1"}_1
+#@gui : p'(z) = text{"3*z^^2 - 2*z"}_1
+#@gui : p''(z) = text{"6*z - 2"}_1
 #@gui : Descent method = choice(1,"Secant","Newton","Householder")
 #@gui : Max iterations = int(200,16,1024)
-#@gui : Precision = float(8,0,12)
+#@gui : Precision = float(2,0,12)
 #@gui : sep = separator()
-#@gui : note = note{"<small><b>Rendering:</b></small>"}
+#@gui : note = note{"<span color="#FF0055"><b>Rendering:</b></span>"}
 #@gui : Coloring = choice(1,"By Custom Expression","By Iteration","By Value")
 #
 # Color by iteration
@@ -42923,7 +42988,7 @@ fx_neon_lightning :
 #@gui : Colorspace = choice(3,"RGB,"HSI","HSL","HSV","Lab")_0
 #@gui : Pre-Process = choice(2,"None","Equalize","Normalize","Equalize and Normalize")_0+
 #@gui : note = note{"<small><span color="#EE5500"><b>Tips for Custom expressions:</b></span>\n
-#@gui : - Variables <b>i0,i1</b> stand for the real and imaginary part of the iterated complex number.\n
+#@gui : - Variables <b>i0,i1</b> stand for the real and imaginary parts of the iterated complex number.\n
 #@gui : - Variable <b>i2</b> is the number of iterations required for convergence.\n
 #@gui : - Variable <b>z</b> is the complex number with value <b>[ i0,i1 ]</b>.\n
 #@gui : - Functions <b>p(z), dp(z)</b> and <b>d2p(z)</b> are the expressions used for computing the fractal.
@@ -42941,15 +43006,23 @@ fx_neon_lightning :
 #@gui : Hue (%) = float(0,-100,100)
 #@gui : Saturation (%) = float(0,-100,100)
 #@gui : Equalization (%) = float(0,0,100)
-#@gui : Anti-aliasing = choice(1,"x1","x1.5","x2","x2.5","x3","x3.5","4")
+#@gui : Anti-aliasing = choice(2,"x1","x1.5","x2","x2.5","x3","x3.5","4")
+#@gui : note = note{"<small><b>Note:</b> Anti-aliasing is applied on final rendering only, not on preview.</small>"}
+#@gui : antialias_note = value(0)_2-
 #@gui : sep = separator()
-#@gui : note = note{"<small><b>Navigation:</b></small>"}
+#
+# Navigation
+#
+#@gui : note = note{"<span color="#FF0055"><b>Navigation:</b></span>"}
 #@gui : Zoom Center = point(50,50,0,0,255,255,255,200)
 #@gui : Zoom Factor = float(0.5,0,1)
+#@gui : Angle = float(0,-180,180)
 #@gui : Zoom In = button()
 #@gui : Center = button()
 #@gui : Zoom Out = button()
-#@gui : Display Coordinates = bool(0)
+#@gui : Reset View = button()
+#@gui : Display Coordinates on Preview Window = bool(1)
+#@gui : Preview subsampling = choice(2,"None","x1.5","x2","x2.5","x3","x3.5","x4")
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperl&#233;</i>.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 #@gui : Latest Update: <i>2019/01/09</i>.</small>")
@@ -42976,7 +43049,7 @@ fx_newton_fractal : skip "${6=},${7=},${8=},${22=},${25=},${28=}"
     if !narg($dpz) dpz="[1,0]" fi
     if !narg($d2pz) d2pz="[1,0]" fi
 
-    newton_fractal ${1-4},$9,$10,{10^-$11},$pz,$dpz,$d2pz
+    newton_fractal ${1-4},$38,$9,$10,{10^-$11},$pz,$dpz,$d2pz
 
     if $12==1 # Color by iteration
       channels 100%
@@ -43025,26 +43098,36 @@ fx_newton_fractal_preview : skip "${6=},${7=},${8=},${22=},${25=},${28=}"
   is_color_by_custom={$12==0?2:0}
   is_color_by_iter={$12==1?2:0}
   is_color_by_value={$12==2?2:0}
-  _size={min(${-gui_preview_wh})}
-  if "$37 || $38 || $39"
+  _size0={min(${-gui_preview_wh})}
+  _size={$_size0/arg(1+$44,1,1.5,2,2.5,3,3.5,4)}
+
+  angle=$38
+  if "$39 || $40 || $41"
     x0,y0,x1,y1={"P0 = [${1,2}];
                   dP = [${3,4}] - P0;
-                  C = P0 + [${34,35}]%*dP;
-                  zfact = $36*($37?1:$38?0:-2);
+                  M = P0 + 0.5*dP;
+                  C = P0 + [${35,36}]%*dP;
+                  C = M + rot(-$38)*(C - M);
+                  zfact = $37*($39?1:$40?0:-2);
                   dC = 0.5*dP*(1 - 0.98*zfact);
-                  [C - dC,C + dC]"}
+                  [ C - dC, C + dC ]"}
     px,py=50
+  elif $42
+    x0,y0,x1,y1=-2,-2,2,2
+    px,py=50
+    angle=0
   else
     x0,y0,x1,y1=${1-4}
-    px,py=${34,35}
+    px,py=${35,36}
   fi
-  fx_newton_fractal $x0,$y0,$x1,$y1,$5,"$6","$7","$8",${9-22},"$23","$24","$25",${26--1}
+  fx_newton_fractal $x0,$y0,$x1,$y1,$5,"$6","$7","$8",${9-22},"$23","$24","$25",${26-32},0,${34-37},$angle,${39--1}
 
   repeat $! l[$>]
-    x0r,y0r,x1r,y1r={"C = ["$px,$py"]%*w; dC = 0.5*w*(1 - 0.98*$36); round([C - dC, C + dC - 1])"}
+    r2dx $_size0,1
+    x0r,y0r,x1r,y1r={"C = [ "$px,$py" ]%*w; dC = 0.5*w*(1 - 0.98*$37); round([ C - dC, C + dC - 1 ])"}
     rectangle $x0r,$y0r,$x1r,$y1r,0.7,0xF0F0F0F0,255,255,255,255
     rectangle $x0r,$y0r,$x1r,$y1r,0.7,0x0F0F0F0F,0,0,0,255
-    if $40 to "Z0 = ( "{_$x0}" , "{_$y0}" )\nZ1 = ( "{_$x1}" , "{_$y1}" )",2,2,16 fi
+    if $43 to "Z0 = ( "{_$x0}" , "{_$y0}" )\nZ1 = ( "{_$x1}" , "{_$y1}" )",2,2,16 fi
   endl done
 
   u "{"$x0"}{"$y0"}{"$x1"}{"$y1"}{$5}"\
@@ -43067,7 +43150,8 @@ fx_newton_fractal_preview : skip "${6=},${7=},${8=},${22=},${25=},${28=}"
     "{$25}_"$is_color_by_custom\
     "{$26}_"$is_color_by_custom\
     "{$27}{$28}{$29}{$30}{$31}{$32}{$33}"\
-    "{"$px,$py"}{$36}{0}{0}{0}{$40}"
+    "{$34}"_{$33==0?0:2}\
+    "{"$px,$py"}{$37}{"$angle"}{0}{0}{0}{0}{$43}{$44}"
 
 #@gui Plasma : fx_plasma, fx_plasma(0)
 #@gui : Alpha = float(0.5,0,5)
@@ -44479,67 +44563,67 @@ fx_solve_maze_preview :
 #@cli gallery_stylization
 #@cli : This entry defines some examples of image stylization for the G'MIC gallery page.
 #@cli : $ sample car _fx_stylize starrynight _output_mode=1 \
-# +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,10,2,1.85,0 _label="from~Van~Gogh:~Starry~Night"
+# +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,3,2,0,0.7,1,0,1,0,5,5,7,1,30,10,2,1.85,0 _label="from~Van~Gogh:~Starry~Night"
 #@cli : $ sample car _fx_stylize graytree _output_mode=1 \
-# +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,20,2,1.85,0 _label="from~Mondrian:~Gray~Tree"
+# +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,3,2,0,0.7,1,0,1,0,5,5,7,1,30,20,2,1.85,0 _label="from~Mondrian:~Gray~Tree"
 #@cli : $ sample car _fx_stylize yellowredblue _output_mode=1 \
-# +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,10,2,1.85,0 \
+# +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,3,2,0,0.7,1,0,1,0,5,5,7,1,30,10,2,1.85,0 \
 # _label="from~Kandinsky:~Yellow-Red-Blue"
 #@cli : $ sample car _fx_stylize littlebayatlaciotat _output_mode=1 \
-# +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,2,2,1.85,0 \
+# +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,3,2,0,0.7,1,0,1,0,5,5,7,1,30,2,2,1.85,0 \
 # _label="from~Braque:~Little~Bay~at~La~Ciotat"
 #@cli : $ sample car _fx_stylize leviaducalestaque _output_mode=1 \
-# +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,0,2,1.85,0 \
+# +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,3,2,0,0.7,1,0,1,0,5,5,7,1,30,0,2,1.85,0 \
 # _label="from~Braque:~Le~Viaduc~a~l'Estaque"
 #@cli : $ sample car _fx_stylize greatwave _output_mode=1 \
-# +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,1,2,1.85,0 _label="from~Hokusai:~The~Great~Wave"
+# +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,3,2,0,0.7,1,0,1,0,5,5,7,1,30,1,2,1.85,0 _label="from~Hokusai:~The~Great~Wave"
 #@cli : $ sample elephant input ../img/hatching.png _output_mode=1 \
-# +fx_stylize 1,4,0,0,1,2,3,0.5,0.1,2,5,0,0.7,0,0,1,0,5,5,7,1,30,0,2,1.85,0 _label="from~Hatch~Drawing"
+# +fx_stylize 1,4,0,0,1,2,3,0.5,0.1,3,2,0,0.7,0,0,1,0,5,5,7,1,30,0,2,1.85,0 _label="from~Hatch~Drawing"
 #@cli : $ sample cat input ../img/hatching.png _output_mode=1 \
-# +fx_stylize 1,4,0,0,1,2,3,0.5,0.1,2,5,0,0.7,0,0,1,0,5,5,7,1,30,0,2,1.85,0 _label="from~Hatch~Drawing"
+# +fx_stylize 1,4,0,0,1,2,3,0.5,0.1,3,2,0,0.7,0,0,1,0,5,5,7,1,30,0,2,1.85,0 _label="from~Hatch~Drawing"
 #@cli : $ sample bottles _fx_stylize starrynight _output_mode=1 \
 # +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,1,5,0,0.7,1,0,1,0,5,5,7,1,30,1,2,1.85,0 _label="from~Van~Gogh:~Starry~Night"
 #@cli : $ sample cat _fx_stylize summertime9a _output_mode=1 \
-# +fx_stylize 1,6,0,0,2,0,1,0.5,0.1,2,5,0,0.7,0,2,1,0,5,5,7,1,130,100,2,1.85,0 _label="from~Pollock:~Summertime~No~9A"
+# +fx_stylize 1,6,0,0,2,0,1,0.5,0.1,3,2,0,0.7,0,2,1,0,5,5,7,1,130,100,2,1.85,0 _label="from~Pollock:~Summertime~No~9A"
 #@cli : $ sample cat _fx_stylize greatwave _output_mode=1 \
-# +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,1,2,1.85,0 _label="from~Hokusai:~The~Great~Wave"
+# +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,3,2,0,0.7,1,0,1,0,5,5,7,1,30,1,2,1.85,0 _label="from~Hokusai:~The~Great~Wave"
 #@cli : $ sample dog _fx_stylize convergence _output_mode=1 \
-# +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,50,2,1.85,0 _label="from~Pollock:~Convergence"
+# +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,3,2,0,0.7,1,0,1,0,5,5,7,1,30,50,2,1.85,0 _label="from~Pollock:~Convergence"
 #@cli : $ sample dog _fx_stylize irises _output_mode=1 \
 # +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,1,5,0,0.7,1,0,1,0,5,5,7,1,30,200,2,1.85,0 _label="from~Van~Gogh:~Irises"
 #@cli : $ sample mandrill _fx_stylize themandola _output_mode=1 \
-# +fx_stylize 1,5,0,0,0,3,1,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,10,2,1.85,0 _label="from~Braque:~The~Mandola"
+# +fx_stylize 1,5,0,0,0,3,1,0.5,0.1,3,2,0,0.7,1,0,1,0,5,5,7,1,30,10,2,1.85,0 _label="from~Braque:~The~Mandola"
 #@cli : $ sample square _fx_stylize orientalpleasuregardenanagoria _output_mode=1 \
-# +fx_stylize 1,6,0,0,0.52,0.5,3,0.14,0.1,2,5,0,0.7,3.39,0,1,0,5,5,7,5,30,40,2,1.85,0 \
+# +fx_stylize 1,6,0,0,0.52,0.5,3,0.14,0.1,3,2,0,0.7,3.39,0,1,0,5,5,7,5,30,40,2,1.85,0 \
 # _label="from~Klee:~Oriental~Pleasure~Garden~Anagoria"
 #@cli : $ sample monalisa _fx_stylize squareswithconcentriccircles _output_mode=1 \
-# +fx_stylize 1,4,0,0,0.15,3,2,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,10,2,1.85,0 \
+# +fx_stylize 1,4,0,0,0.15,3,2,0.5,0.1,3,2,0,0.7,1,0,1,0,5,5,7,1,30,10,2,1.85,0 \
 # _label="from~Kandisnky:~Squares~with~Concentric~Circles"
 #@cli : $ sample monalisa _fx_stylize inthestyleofkairouan _output_mode=1 \
-# +fx_stylize 1,4,2,0,0.15,3,2,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,50,2,1.85,0 \
+# +fx_stylize 1,4,2,0,0.15,3,2,0.5,0.1,3,2,0,0.7,1,0,1,0,5,5,7,1,30,50,2,1.85,0 \
 # _label="from~Klee:~In~the~Style~of~Kairouan"
 #@cli : $ sample square _fx_stylize polyphony2 _output_mode=1 \
-# +fx_stylize 1,6,0,0,0.15,3,2,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,10,2,1.85,0 _label="from~Klee:~Polyphony~2"
+# +fx_stylize 1,6,0,0,0.15,3,2,0.5,0.1,3,2,0,0.7,1,0,1,0,5,5,7,1,30,10,2,1.85,0 _label="from~Klee:~Polyphony~2"
 #@cli : $ sample square _fx_stylize wheatstacksendofsummer _output_mode=1 \
-# +fx_stylize 1,6,0,0,0.15,3,2,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,10,2,1.85,0 \
+# +fx_stylize 1,6,0,0,0.15,3,2,0.5,0.1,3,2,0,0.7,1,0,1,0,5,5,7,1,30,10,2,1.85,0 \
 # _label="from~Monet:~Wheatstacks~-~End~of~Summer"
 #@cli : $ sample square _fx_stylize portraitdemetzinger _output_mode=1 \
-# +fx_stylize 1,5,0,0,0.1,2,3,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,500,2,1.85,0 \
+# +fx_stylize 1,5,0,0,0.1,2,3,0.5,0.1,3,2,0,0.7,1,0,1,0,5,5,7,1,30,500,2,1.85,0 \
 # _label="from~Delaunay:~Portrait~de~Metzinger"
 #@cli : $ sample monalisa input ../img/mandelbrot.jpg _output_mode=1 \
 # +fx_stylize 1,3,3,0,0.15,4,3,0.5,0.1,0,5,0,0.7,1,0,1,0,5,5,7,1,30,50,2,1.85,0 _label="from~Mandelbrot~Fractal~Set"
 #@cli : $ sample bottles _fx_stylize redtree _output_mode=1 \
-# +fx_stylize 1,5,0,0,2.12,2,3,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,5,2,1.85,0 \
+# +fx_stylize 1,5,0,0,2.12,2,3,0.5,0.1,3,2,0,0.7,1,0,1,0,5,5,7,1,30,5,2,1.85,0 \
 # _label="from~Mondrian:~Evening;~Red~Tree"
 #@cli : $ sample bottles _fx_stylize redwaistcoat _output_mode=1 \
 # +fx_stylize 1,4,0,0,0.67,3.17,3,0.5,0.06,2,1,0,0.7,5,0,2,0,5,5,7,1,30,0,2.05,1.85,0 \
 # _label="from~Klee:~Red~Waistcoat"
 #@cli : $ sample bottles _fx_stylize reservoirhortadeebro _output_mode=1 \
-# +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,10,2,1.85,0 _label="from~Picasso:~The~Reservoir"
+# +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,3,2,0,0.7,1,0,1,0,5,5,7,1,30,10,2,1.85,0 _label="from~Picasso:~The~Reservoir"
 #@cli : $ sample bottles _fx_stylize almondblossom _output_mode=1 \
-# +fx_stylize 1,6,0,0,0,3,3,0.5,0.1,2,5,0,0.7,5,0,2,0,5,5,7,1,30,10,2,1.85,0 _label="from~Van~Gogh:~Almond~Blossom"
+# +fx_stylize 1,6,0,0,0,3,3,0.5,0.1,3,2,0,0.7,5,0,2,0,5,5,7,1,30,10,2,1.85,0 _label="from~Van~Gogh:~Almond~Blossom"
 #@cli : $ sample bottles _fx_stylize landscapenearantwerp _output_mode=1 \
-# +fx_stylize 1,6,0,0,2.17,3.65,3,0.5,0.1,2,5,0,0.7,1,0,1,0,5,5,7,1,30,10,2,1.85,0 \
+# +fx_stylize 1,6,0,0,2.17,3.65,3,0.5,0.1,3,2,0,0.7,1,0,1,0,5,5,7,1,30,10,2,1.85,0 \
 # _label="from~Braque:~Landscape~near~Antwerp"
 #@cli : $ sample bottles _fx_stylize wheatfieldwithcrows _output_mode=1 \
 # +fx_stylize 1,6,0,0,3.86,2,3,0.5,0.1,1,5,0,0.7,3.35,1,1,0,5,5,7,1,30,10,5,1.85,0 \
