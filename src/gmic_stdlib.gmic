@@ -9600,19 +9600,22 @@ to_rgba :
 transfer_histogram : check ${"is_image_arg $1"}" && ${2=1024}>0" skip "${3=0}"
   channels=${"_ac_colorspace \"$3\""}
   e[^-1] "Transfer histogram of image $1 to image$?, with $2 levels, for channels '"$channels"'."
-  if ['$channels']!='all' repeat $! pass$1 # Small geometric hack to be able to use 'apply_channels'.
-      w0,h0,d0,s0={$>,[w,h,d,s]}
-      w1,h1,d1,s1={-1,[w,h,d,s]}
-      to_colormode[$>] {s}
-      a[$>,-1] x
-      ac_arg="+z "$w0",0,0,100%,"{[$h1,$d1]-1}" r.. "$w0,$h0,$d0",100%,0,0 _transfer_histogram $2 rm."
-      apply_channels[$>] {``$ac_arg},$channels,0
-      r[$>] $w0,$h0,$d0,$s0,0
-    done
-  else repeat $! pass$1 _transfer_histogram[$>,-1] $2 done rm.
+  pass$1 1 sref={s} rm.
+  to_colormode[^-1] $sref
+  if ['$channels']!='all'
+    pass$1 {$sref==3?2:0}
+    to_color
+    ac. "+store _transfer_histogram_reference",$channels rm.
+    ac "_transfer_histogram $2",$channels,1
+  else
+    pass$1
+    store. _transfer_histogram_reference
+    repeat $! _transfer_histogram[$>] $2 done
   fi
+  _transfer_histogram_reference=
 
 _transfer_histogram :
+  $_transfer_histogram_reference
   repeat min(s#0,s#1)
     sh $>
     +histogram[-2,-1] $1 cumulate[-2,-1] /.. {-2,i[-1,2]} /. {i[-1,2]}
@@ -9632,6 +9635,7 @@ _transfer_histogram :
     n[-4] 0,{w-1} round[-4] map[-4] ..
     k[0,1]
   done
+  rm.
 
 #@cli transfer_pca : [reference_image],_color_channels
 #@cli : Transfer mean and covariance matrix of specified vector-valued reference image to selected images.
