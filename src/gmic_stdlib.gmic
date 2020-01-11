@@ -7932,17 +7932,7 @@ apply_channels :
   _gmic_s="$?" v + _$0 $"*"
 
 _apply_channels : check "isint(${3=0}) && $3>=0 && $3<=2"
-  mode="$2"
-  if isnum("$2") if isint("$2")
-    mode=${arg\ 1+$2,all,rgba,rgb,rgb_r,rgb_g,rgb_b,rgba_a,\
-                     lrgb,lrgb_r,lrgb_g,lrgb_b,\
-                     ycbcr_y,ycbcr_cbcr,ycbcr_cb,ycbcr_cr,ycbcr_cg,\
-                     lab_l,lab_ab,lab_a,lab_b,\
-                     lch_ch,lch_c,lch_h,\
-                     hsv_h,hsv_s,hsv_v,hsi_i,hsl_l,\
-                     cmyk_c,cmyk_m,cmyk_y,cmyk_k,\
-                     yiq_y,yiq_iq,ryb,ryb_r,ryb_y,ryb_b}
-  fi fi
+  mode=${"_ac_colorspace $2"}
   e[^-1] "Apply command '$1' on channels '"$mode"' of image"$_gmic_s"."
   ({'$/'}) id={h=0;for(k=0,k<w,((h*=31)+=i[k++])%=1048576)} rm.
   _ac_$mode m _ac_precond$id:$_p m _ac_forward$id:$_f m _ac_backward$id:$_b
@@ -7957,6 +7947,18 @@ _apply_channels : check "isint(${3=0}) && $3>=0 && $3<=2"
     _ac_backward$id[0] a c
   endl done
   uncommand _ac_precond$id,_ac_forward$id,_ac_backward$id
+
+_ac_colorspace :
+  if isnum("$1")
+    arg 1+round($1),all,rgba,rgb,rgb_r,rgb_g,rgb_b,rgba_a,\
+                    lrgb,lrgb_r,lrgb_g,lrgb_b,\
+                    ycbcr_y,ycbcr_cbcr,ycbcr_cb,ycbcr_cr,ycbcr_cg,\
+                    lab_l,lab_ab,lab_a,lab_b,\
+                    lch_ch,lch_c,lch_h,\
+                    hsv_h,hsv_s,hsv_v,hsi_i,hsl_l,\
+                    cmyk_c,cmyk_m,cmyk_y,cmyk_k,\
+                    yiq_y,yiq_iq,ryb,ryb_r,ryb_y,ryb_b
+  else u "$1" fi
 
 _ac :
   whds={w},{h},{d},{s} ${1--1} k[0] r $whds,0
@@ -9596,25 +9598,15 @@ to_rgba :
 #@cli : Default value: 'nb_levels=256' and 'color_channels=all'.
 #@cli : $ image.jpg 100,100,1,3,"u([256,200,100])" +transfer_histogram[0] [1]
 transfer_histogram : check ${"is_image_arg $1"}" && ${2=1024}>0" skip "${3=0}"
-  mode="$3"
-  if isnum("$3") if isint("$3")
-    mode=${arg\ 1+$3,all,rgba,rgb,rgb_r,rgb_g,rgb_b,rgba_a,\
-                     lrgb,lrgb_r,lrgb_g,lrgb_b,\
-                     ycbcr_y,ycbcr_cbcr,ycbcr_cb,ycbcr_cr,ycbcr_cg,\
-                     lab_l,lab_ab,lab_a,lab_b,\
-                     lch_ch,lch_c,lch_h,\
-                     hsv_h,hsv_s,hsv_v,hsi_i,hsl_l,\
-                     cmyk_c,cmyk_m,cmyk_y,cmyk_k,\
-                     yiq_y,yiq_iq}
-  fi fi
-  e[^-1] "Transfer histogram of image $1 to image$?, with $2 levels on channels '"$mode"'."
-  if ['$mode']!='all' repeat $! pass$1 # Small geometric hack to be able to use 'apply_channels'.
+  channels=${"_ac_colorspace \"$3\""}
+  e[^-1] "Transfer histogram of image $1 to image$?, with $2 levels, for channels '"$channels"'."
+  if ['$channels']!='all' repeat $! pass$1 # Small geometric hack to be able to use 'apply_channels'.
       w0,h0,d0,s0={$>,[w,h,d,s]}
       w1,h1,d1,s1={-1,[w,h,d,s]}
       to_colormode[$>] {s}
       a[$>,-1] x
       ac_arg="+z "$w0",0,0,100%,"{[$h1,$d1]-1}" r.. "$w0,$h0,$d0",100%,0,0 _transfer_histogram $2 rm."
-      apply_channels[$>] {``$ac_arg},$mode,0
+      apply_channels[$>] {``$ac_arg},$channels,0
       r[$>] $w0,$h0,$d0,$s0,0
     done
   else repeat $! pass$1 _transfer_histogram[$>,-1] $2 done rm.
@@ -9647,13 +9639,14 @@ _transfer_histogram :
 #@cli : Default value: 'color_channels=all'.
 #@cli : $ sample lena,earth +transfer_pca[0] [1]
 transfer_pca : check ${"is_image_arg $1"} skip "${2=all}"
-  e[^-1] "Transfer mean vector and covariance matrix from image$1 to image$?, for channels '$2'."
+  channels=${"_ac_colorspace \"$2\""}
+  e[^-1] "Transfer mean vector and covariance matrix from image$1 to image$?, for channels '"$channels"'."
   pass$1 to_colormode[^-1] {s}
-  if ['"$2"']!='all'
+  if ['$channels']!='all'
     to_color
     repeat $!-1 l[$>,-1]
-      ac. "+store _transfer_pca_reference",$2
-      ac.. "_transfer_pca",$2
+      ac. "+store _transfer_pca_reference",$channels
+      ac.. "_transfer_pca",$channels
     endl done rm.
   elif {s==1} # Scalar case can to be solved more easily
     var_ref,avg_ref={[iv,ia]} rm.
