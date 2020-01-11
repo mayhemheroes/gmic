@@ -13953,7 +13953,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           if (g_list_c.size()!=g_list.size() - 1)
             error(true,images,0,0,
                   "Command 'input': Invalid binary encoding of variable '%s' "\
-                  "(%d items and %s names)",
+                  "(%d items, %s names)",
                   argx,(int)g_list.size() - 1,(int)g_list_c.size());
           else if (g_list_c) g_list.remove();
         } else error(true,images,0,0,
