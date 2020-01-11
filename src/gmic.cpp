@@ -9077,9 +9077,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           gmic_substitute_args(true);
           ind0.assign(); ind1.assign();
           sep0 = sep1 = *argx = *argy = *indices = 0;
-          value0 = value1 = 0;
-          if (cimg_sscanf(argument,"%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-]%c",
-                          argx,argy,&end)==2 &&
+          value0 = value1 = value = 0;
+          if ((cimg_sscanf(argument,"%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-]%c",
+                           argx,argy,&end)==2 ||
+               cimg_sscanf(argument,"%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-],%lf%c",
+                           argx,argy,&value,&end)==3) &&
               ((cimg_sscanf(argx,"[%255[a-zA-Z0-9_.%+-]%c%c",indices,&sep0,&end)==2 &&
                 sep0==']' &&
                 (ind0=selection2cimg(indices,images.size(),images_names,"normalize")).height()==1) ||
@@ -9092,10 +9094,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                cimg_sscanf(argy,"%lf%c",&value1,&end)==1)) {
             if (ind0) { value0 = images[*ind0].min(); sep0 = 0; }
             if (ind1) { value1 = images[*ind1].max(); sep1 = 0; }
-            print(images,0,"Normalize image%s in range [%g%s,%g%s].",
+            print(images,0,"Normalize image%s in range [%g%s,%g%s], with constant-case ratio %g.",
                   gmic_selection.data(),
                   value0,sep0=='%'?"%":"",
-                  value1,sep1=='%'?"%":"");
+                  value1,sep1=='%'?"%":"",
+                  value);
             cimg_forY(selection,l) {
               CImg<T>& img = gmic_check(images[selection[l]]);
               nvalue0 = value0; nvalue1 = value1;
@@ -9105,7 +9108,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 if (sep0=='%') nvalue0 = vmin + (vmax - vmin)*value0/100;
                 if (sep1=='%') nvalue1 = vmin + (vmax - vmin)*value1/100;
               }
-              gmic_apply(normalize((T)nvalue0,(T)nvalue1));
+              gmic_apply(normalize((T)nvalue0,(T)nvalue1,(float)value));
             }
           } else if (cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]%c%c",indices,&sep0,&end)==2 &&
                      sep0==']' &&
