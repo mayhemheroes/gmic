@@ -11457,7 +11457,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             }
 
             if (pattern==1) { // Assignment to a single variable
-              (g_list_c>'x').move_to(name).resize(name.width() + 4,1,1,1,0,0,1);
+              (g_list_c>'x').move_to(name);
+              name.resize(name.width() + 4,1,1,1,0,0,1);
               name[0] = 'G'; name[1] = 'M'; name[2] = 'Z'; name[3] = 0;
               name.unroll('y').move_to(g_list);
               g_list.get_serialize(false).unroll('x').move_to(name);
@@ -11473,7 +11474,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               if (next) *next = 0;
 
               CImgList<T> tmp(2);
-              g_list_c[n].move_to(name).resize(name.width() + 4,1,1,1,0,0,1);
+              g_list_c[n].move_to(name);
+              name.resize(name.width() + 4,1,1,1,0,0,1);
               name[0] = 'G'; name[1] = 'M'; name[2] = 'Z'; name[3] = 0;
               name.unroll('y').move_to(tmp[1]);
               g_list[n].move_to(tmp[0]);
