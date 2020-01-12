@@ -7922,7 +7922,7 @@ ac :
 #@cli : Apply specified command on the chosen color channel(s) of each selected images.
 #@cli : (eq. to 'ac').\n
 #@cli : Argument 'color_channels' refers to a colorspace, and can be basically one of
-#@cli : { all | rgba | rgb | ryb | lrgb | ycbcr | lab | lch | hsv | hsi | hsl | cmy | cmyk | yiq }.
+#@cli : { all | rgba | [s]rgb | ryb | lrgb | ycbcr | lab | lch | hsv | hsi | hsl | cmy | cmyk | yiq }.
 #@cli : You can also make the processing focus on a few particular channels of this colorspace,
 #@cli : by setting 'color_channels' as 'colorspace_channel' (e.g. 'hsv_h' for the hue).
 #@cli : All channel values are considered to be provided in the [0,255] range.
@@ -7932,10 +7932,10 @@ apply_channels :
   _gmic_s="$?" v + _$0 $"*"
 
 _apply_channels : check "isint(${3=0}) && $3>=0 && $3<=2"
-  mode=${"_ac_colorspace $2"}
-  e[^-1] "Apply command '$1' on channels '"$mode"' of image"$_gmic_s"."
+  channels=${"_ac_channels \"$2\""}
+  e[^-1] "Apply command '$1' on channels '"$channels"' of image"$_gmic_s"."
   ({'$/'}) id={h=0;for(k=0,k<w,((h*=31)+=i[k++])%=1048576)} rm.
-  _ac_$mode m _ac_precond$id:$_p m _ac_forward$id:$_f m _ac_backward$id:$_b
+  _ac_$channels m _ac_precond$id:$_p m _ac_forward$id:$_f m _ac_backward$id:$_b
   repeat $! l[$>]
     _ac_precond$id is_alpha={s==2" || "s==4}
     if $is_alpha s c,{1-s} fi
@@ -7948,7 +7948,7 @@ _apply_channels : check "isint(${3=0}) && $3>=0 && $3<=2"
   endl done
   uncommand _ac_precond$id,_ac_forward$id,_ac_backward$id
 
-_ac_colorspace :
+_ac_channels :
   if isnum("$1")
     arg 1+round($1),all,rgba,rgb,rgb_r,rgb_g,rgb_b,rgba_a,\
                     lrgb,lrgb_r,lrgb_g,lrgb_b,\
@@ -7975,6 +7975,11 @@ _ac_rgb : _p="to_color" _f="" _b="" _s=0,2
 _ac_rgb_r : _ac_rgba_r
 _ac_rgb_g : _ac_rgba_g
 _ac_rgb_b : _ac_rgba_b
+
+_ac_srgb : _ac_rgb
+_ac_srgb_r : _ac_rgb_r
+_ac_srgb_g : _ac_rgb_g
+_ac_srgb_b : _ac_rgb_b
 
 _ac_lrgb : _p="to_color" _f="srgb2rgb" _b="rgb2srgb" _s=0,2
 _ac_lrgb_r : _p="to_color" _f="srgb2rgb" _b="rgb2srgb" _s=0
@@ -9598,8 +9603,9 @@ to_rgba :
 #@cli : Default value: 'nb_levels=256' and 'color_channels=all'.
 #@cli : $ image.jpg 100,100,1,3,"u([256,200,100])" +transfer_histogram[0] [1]
 transfer_histogram : check ${"is_image_arg $1"}" && ${2=1024}>0" skip "${3=0}"
-  channels=${"_ac_colorspace \"$3\""}
-  e[^-1] "Transfer histogram of image $1 to image$?, with $2 levels, for channels '"$channels"'."
+  channels=${"_ac_channels \"$3\""}
+  e[^-1] "Transfer histogram from image ["${"pass$1 -1"}"] to image$?, "\
+         "with $2 levels, for channels '"$channels"'."
   pass$1 1 sref={s} rm.
   to_colormode[^-1] $sref
   if ['$channels']!='all'
@@ -9643,8 +9649,9 @@ _transfer_histogram :
 #@cli : Default value: 'color_channels=all'.
 #@cli : $ sample lena,earth +transfer_pca[0] [1]
 transfer_pca : check ${"is_image_arg $1"} skip "${2=all}"
-  channels=${"_ac_colorspace \"$2\""}
-  e[^-1] "Transfer mean vector and covariance matrix from image$1 to image$?, for channels '"$channels"'."
+  channels=${"_ac_channels \"$2\""}
+  e[^-1] "Transfer mean vector and covariance matrix from image ["${"pass$1 -1"}"] to image$?, "\
+         "for channels '"$channels"'."
   pass$1 1 sref={s} rm.
   to_colormode[^-1] $sref
   if {$sref==1} # Scalar case can to be solved more easily
@@ -21116,14 +21123,15 @@ register_nonrigid : check ${is_image_arg\ $1}" && ${2=0.2}>=0 && ${3=5}>0 && ${4
 #@cli register_rigid : [destination],_smoothness>=0,\
 # _boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }
 #@cli : Register selected source images with specified destination image, using rigid warp (shift).
-#@cli : Default values: 'smoothness=1' and 'boundary_conditions=0'.
+#@cli : Default values: 'smoothness=0.1%' and 'boundary_conditions=0'.
 #@cli : $ image.jpg +shift 30,20 +register_rigid[0] [1]
-register_rigid : check ${is_image_arg\ $1}" && ${2=1}>=0 && isint(${3=0}) && $3>=0 && $3<=3"
+register_rigid : check ${is_image_arg\ $1}" && ${2=0.1%}>=0 && isint(${3=0}) && $3>=0 && $3<=3"
   e[^-1] "Register source image$? with destination image $1, using rigid warp with smoothness $2."
-  pass$1 0 equalize. b. $2 n. 0,255
+  pass$1 0
+  b. $2 equalize. 256 n. 0,1
   repeat $!-1
-    +equalize[$>] b. $2 n. 0,255
-    +phase_correlation. .. rm..
+    +b[$>] $2 equalize. 256 n. 0,1
+    phase_correlation. ..
     shift[$>] {^},0,$3 rm.
   done rm.
 
@@ -35219,20 +35227,44 @@ fx_transfer_rgb_preview :
 #@gui : note = note("<small>Author: <i>David Tschumperl&#233;</i>.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 #@gui : Latest Update: <i>2018/11/26</i>.</small>")
 fx_transfer_histogram :
-  to_colormode 0
-  repeat $!-1 l[$>,-1]
-    nm0={0,n} nm1={1,n}
-    m "_split : s z r.. "{[w#0,h#0,1,s#0,0]}" r. "{[w#1,h#1,1,s#1,0]}
-    a z
-    ac "_split transfer_histogram.. . a z",$1
-    _split uncommand _split
-    nm[0] $nm0 nm[1] $nm1
-  endl done
+  transfer_histogram[^-1] .,256,$1 c[^-1] 0,255
 
 fx_transfer_histogram_preview :
-  to_colormode 0
+  if $!<2 gui_print_preview "Warning:",,"This filter requires at least two input layers to work properly." return fi
   repeat $!-1 l[$>,-1]
     i[0] [0] fx_transfer_histogram[-2,-1] $1 rm.
+    a z gui_split_preview "s z k.",${-3--1}
+  endl done
+
+#@gui Transfer Colors [PCA] : fx_transfer_pca, fx_transfer_pca_preview(1)+
+#@gui : Channel(s) = choice("All","RGBA [All]","RGB [All]","RGB [Red]","RGB [Green]","RGB [Blue]","RGBA [Alpha]",
+#@gui : "Linear RGB [All]","Linear RGB [Red]","Linear RGB [Green]","Linear RGB [Blue]","YCbCr [Luminance]",
+#@gui : "YCbCr [Blue-Red Chrominances]","YCbCr [Blue Chrominance]","YCbCr [Red Chrominance]",
+#@gui : "YCbCr [Green Chrominance]","Lab [Lightness]","Lab [ab-Chrominances]","Lab [a-Chrominance]",
+#@gui : "Lab [b-Chrominance]","Lch [ch-Chrominances]","Lch [c-Chrominance]","Lch [h-Chrominance]","HSV [Hue]",
+#@gui : "HSV [Saturation]","HSV [Value]","HSI [Intensity]","HSL [Lightness]","CMYK [Cyan]","CMYK [Magenta]",
+#@gui : "CMYK [Yellow]","CMYK [Key]","YIQ [Luma]","YIQ [Chromas]","RYB [All]","RYB [Red]","RYB [Yellow]","RYB [Blue]")
+#@gui : sep = separator()
+#@gui : Preview Type = choice("Full","Forward Horizontal","Forward Vertical","Backward Horizontal",
+#@gui : "Backward Vertical","Duplicate Top","Duplicate Left","Duplicate Bottom","Duplicate Right",
+#@gui : "Duplicate Horizontal","Duplicate Vertical","Checkered","Checkered Inverse")
+#@gui : Preview Split = point(50,50,0,0,200,200,200,0,10)_0
+#@gui : sep = separator()
+#@gui : note = note{"<small><b>Note: </b>
+#@gui : The bottom layer contains the reference colors.\n
+#@gui : This filter needs at least two layers to work properly. Set the <i>Input layers</i> option to handle
+#@gui : multiple input layers.
+#@gui : </small>"}
+#@gui : sep = separator()
+#@gui : note = note("<small>Author: <i>David Tschumperl&#233;</i>.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+#@gui : Latest Update: <i>2020/01/11</i>.</small>")
+fx_transfer_pca :
+  transfer_pca[^-1] .,$1 c[^-1] 0,255
+
+fx_transfer_pca_preview :
+  if $!<2 gui_print_preview "Warning:",,"This filter requires at least two input layers to work properly." return fi
+  repeat $!-1 l[$>,-1]
+    i[0] [0] fx_transfer_pca[-2,-1] $1 rm.
     a z gui_split_preview "s z k.",${-3--1}
   endl done
 
@@ -39097,14 +39129,14 @@ fx_watermark_fourier :
 #@gui : Revert Layers = bool(0)
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperl&#233;</i>.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-#@gui : Latest Update: <i>2010/29/12</i>.</small>")
+#@gui : Latest Update: <i>2020/01/11</i>.</small>")
 fx_align_layers :
   to_colormode 0
   r ${-max_wh},1,100%,0,0,0.5,0.5
   if ${4=0} _fx_revert_layers fi
   remove_opacity
   if $1 register_nonrigid[^-1] .,$2,0.1,$3
-  else register_rigid[^-1] .,{3*$2}
+  else register_rigid[^-1] .,$2
   fi
 
 fx_align_layers_preview :
@@ -44566,13 +44598,13 @@ fx_solve_maze_preview :
 #@cli : $ sample car _fx_stylize graytree _output_mode=1 \
 # +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,3,2,0,0.7,1,0,1,0,5,5,7,1,30,20,2,1.85,0 _label="from~Mondrian:~Gray~Tree"
 #@cli : $ sample car _fx_stylize yellowredblue _output_mode=1 \
-# +fx_stylize 1,6,0,0,0.5,5,2,0.5,0.1,3,2,0,0.7,1,0,1,0,5,5,7,1,30,10,2,1.85,0 \
+# +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,3,2,0,0.7,1,0,1,0,5,5,7,1,30,10,2,1.85,0 \
 # _label="from~Kandinsky:~Yellow-Red-Blue"
 #@cli : $ sample car _fx_stylize littlebayatlaciotat _output_mode=1 \
-# +fx_stylize 1,6,0,0,0.5,5,2,0.5,0.1,3,2,0,0.7,1,0,1,0,5,5,7,1,30,2,2,1.85,0 \
+# +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,3,2,0,0.7,1,0,1,0,5,5,7,1,30,2,2,1.85,0 \
 # _label="from~Braque:~Little~Bay~at~La~Ciotat"
 #@cli : $ sample car _fx_stylize leviaducalestaque _output_mode=1 \
-# +fx_stylize 1,6,0,0,0.5,5,2,0.5,0.1,3,2,0,0.7,1,0,1,0,5,5,7,1,30,0,2,1.85,0 \
+# +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,3,2,0,0.7,1,0,1,0,5,5,7,1,30,0,2,1.85,0 \
 # _label="from~Braque:~Le~Viaduc~a~l'Estaque"
 #@cli : $ sample car _fx_stylize greatwave _output_mode=1 \
 # +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,3,2,0,0.7,1,0,1,0,5,5,7,1,30,1,2,1.85,0 _label="from~Hokusai:~The~Great~Wave"
