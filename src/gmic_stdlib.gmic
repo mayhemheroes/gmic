@@ -78,8 +78,9 @@
 #
 # or
 #
-#    '#@gui Command name : command, preview_command, parameter = typedef, parameter2 = typedef'
-#    '#@gui : parameter3 = typedef, parameter4 = typedef ...., parameterN = typedef'
+#    '#@gui Command name : command, preview_command (zoom_factor)[+] [: default_input_mode]
+#    '#@gui : parameter1 = typedef(arguments1...), parameter2 = typedef(arguments2...)'
+#    '#@gui : parameter3 = typedef(arguments3...),
 #
 #   where :
 #
@@ -92,6 +93,9 @@
 #           Use (0) for a 1:1 preview, (1) for previewing the whole image, (2) for 1/2 image and so on...
 #           You can also put an additional '+' sign after the parenthesis to specify the rendered preview
 #           is still accurate for different zoom factors.
+#
+#      'default_input_mode' set the default input mode for that filter. It can be
+#        { x=none | .=active (default) | *=all | +=active & below | -=active & above | v=all visible | i=all invisible }
 #
 #      'parameter = typedef' tells about the names, types and default values of the filter parameters.
 #
@@ -29728,7 +29732,7 @@ _dice3 : _dice1 ellipse. 25%,75%,5.2%,5.2%,0,1,255 ellipse. 75%,25%,5.2%,5.2%,0,
 _dice4 : _dice3 _dice0
 _dice5 : _dice3 ellipse. 25%,50%,5.2%,5.2%,0,1,255 ellipse. 75%,50%,5.2%,5.2%,0,1,255
 
-#@gui Drawn Montage : fx_drawn_montage, fx_drawn_montage_preview(1)
+#@gui Drawn Montage : fx_drawn_montage, fx_drawn_montage_preview(1) : *
 #@gui : Layer = choice("1st","2nd","3rd","4th","5th","6th","7th","8th","9th","10th","11th","12th",
 #@gui : "13th","14th","15th","16th")
 #@gui : Associated Color = color(0,0,0)
@@ -30072,7 +30076,7 @@ fx_ministeck_preview :
     r $w,$h,1,100%,0,0,0.5,0.5
   endl done
 
-#@gui Montage : fx_montage, fx_montage_preview(1)
+#@gui Montage : fx_montage, fx_montage_preview(1) : *
 #@gui : Montage Type = choice("Auto","Custom Layout","Horizontal","Vertical","Horizontal Array","Vertical Array")
 #@gui : Custom Layout = text{"V(H(0,1),H(2,V(3,4)))"}
 #@gui : Merging Mode = choice(1,"Aligned","Scaled")
@@ -31483,8 +31487,8 @@ fx_smooth_abstract_preview :
 #@gui : Fidelity Chromaticity = float(0.1,0,1)
 #@gui : sep = separator(), note = note{"<small><b><span color="blue">Image Matching Parameters:</span></b></small>"}
 #@gui : Match Colors With = choice(3,"Nothing","Gamma Balance","Histogram Transfer","PCA transfer")
-#@gui : Colorspace = choice{3,"sRGB","Linear RGB","YCbCr","YCbCr (Luma/Chroma),"YCbCr (Luma Only)","YCbCr (Chroma Only)",
-#@gui : "Lab","Lab (Luma/Chroma)","Lab (Luma Only)","Lab (Chroma Only)"}
+#@gui : Colorspace = choice{3,"sRGB","Linear RGB","YCbCr","YCbCr (Luma/Chroma),"YCbCr (Luma Only)",
+#@gui : "YCbCr (Chroma Only)","Lab","Lab (Luma/Chroma)","Lab (Luma Only)","Lab (Chroma Only)"}
 #@gui : Keep Color Channels = choice{"All","Luminance Only (YCbCr)","Luminance Only (Lab)","Chrominances Only (CbCr)",\
 #@gui : "Chrominances Only (ab)"}
 #@gui : Smoothness = float(0.7,0,5)
@@ -35172,7 +35176,7 @@ _fx_cluts_colorslide :
     lomography_x-pro_slide_200,\
     polaroid_669,polaroid_690,polaroid_polachrome
 
-#@gui Transfer Colors [Variational] : fx_transfer_rgb, fx_transfer_rgb_preview(1)+
+#@gui Transfer Colors [Variational] : fx_transfer_rgb, fx_transfer_rgb_preview(1)+ : *
 #@gui : Regularization = int(8,0,32)
 #@gui : Preserve Luminance = float(0.2,0,1)
 #@gui : Precision = _choice(1,"Low","Normal","High","Very High")
@@ -35213,7 +35217,7 @@ fx_transfer_rgb_preview :
     rm.
   endl done
 
-#@gui Transfer Colors [Histogram] : fx_transfer_histogram, fx_transfer_histogram_preview(1)+
+#@gui Transfer Colors [Histogram] : fx_transfer_histogram, fx_transfer_histogram_preview(1)+ : *
 #@gui : Channel(s) = choice("All","RGBA [All]","RGB [All]","RGB [Red]","RGB [Green]","RGB [Blue]","RGBA [Alpha]",
 #@gui : "Linear RGB [All]","Linear RGB [Red]","Linear RGB [Green]","Linear RGB [Blue]","YCbCr [Luminance]",
 #@gui : "YCbCr [Blue-Red Chrominances]","YCbCr [Blue Chrominance]","YCbCr [Red Chrominance]",
@@ -35230,7 +35234,6 @@ fx_transfer_rgb_preview :
 #@gui : Preview Split = point(50,50,0,0,200,200,200,0,10)_0
 #@gui : sep = separator()
 #@gui : note = note{"<small><b>Note: </b>
-#@gui : The bottom layer contains the reference colors.\n
 #@gui : This filter needs at least two layers to work properly. Set the <i>Input layers</i> option to handle
 #@gui : multiple input layers.
 #@gui : </small>"}
@@ -35258,7 +35261,7 @@ fx_transfer_histogram_preview :
     rm.
   endl done
 
-#@gui Transfer Colors [PCA] : fx_transfer_pca, fx_transfer_pca_preview(1)+
+#@gui Transfer Colors [PCA] : fx_transfer_pca, fx_transfer_pca_preview(1)+ : *
 #@gui : Channel(s) = choice("All","RGBA [All]","RGB [All]","RGB [Red]","RGB [Green]","RGB [Blue]","RGBA [Alpha]",
 #@gui : "Linear RGB [All]","Linear RGB [Red]","Linear RGB [Green]","Linear RGB [Blue]","YCbCr [Luminance]",
 #@gui : "YCbCr [Blue-Red Chrominances]","YCbCr [Blue Chrominance]","YCbCr [Red Chrominance]",
@@ -35275,7 +35278,6 @@ fx_transfer_histogram_preview :
 #@gui : Preview Split = point(50,50,0,0,200,200,200,0,10)_0
 #@gui : sep = separator()
 #@gui : note = note{"<small><b>Note: </b>
-#@gui : The bottom layer contains the reference colors.\n
 #@gui : This filter needs at least two layers to work properly. Set the <i>Input layers</i> option to handle
 #@gui : multiple input layers.
 #@gui : </small>"}
@@ -39157,7 +39159,7 @@ fx_watermark_fourier :
 #@gui ____<b>Layers</b>
 #-----------------------
 
-#@gui Align Layers : fx_align_layers, fx_align_layers_preview
+#@gui Align Layers : fx_align_layers, fx_align_layers_preview : *
 #@gui : Alignment Type = choice(0,"Rigid","Non-Rigid")
 #@gui : Smoothness = float(0.7,0,1)
 #@gui : Scales = choice(0,"Auto","1","2","3","4","5","6","7","8")
@@ -39180,7 +39182,7 @@ fx_align_layers_preview :
 _fx_revert_layers :
   repeat int($!/2) rv[{2*$>},{2*$>+1}] done
 
-#@gui Blend [Average All] : fx_blend_average_all, fx_blend_average_all
+#@gui Blend [Average All] : fx_blend_average_all, fx_blend_average_all : *
 #@gui : Colorspace = choice(0,"sRGB","Linear RGB","Lab")
 #@gui : sep = separator()
 #@gui : note = note{"<small><b>Note:</b>
@@ -39210,7 +39212,7 @@ _gb_bwd :
   elif $1==2 repeat $! l[$>] sh 0,2 lab2rgb. rgb2srgb. rm. endl done
   fi
 
-#@gui Blend [Edges] : fx_blend_edges, fx_blend_edges(0)
+#@gui Blend [Edges] : fx_blend_edges, fx_blend_edges(0) : *
 #@gui : Opacity = float(1,0,1)
 #@gui : Smoothness = float(0.8,0,5)
 #@gui : Revert Layers = bool(0)
@@ -39225,7 +39227,7 @@ _gb_bwd :
 fx_blend_edges :
   repeat int($!/2) l[$>,{$>+1}] if $3 rv fi +blend_edges[-2,-1] $2 rm... blend[-2,-1] alpha,$1 endl done
 
-#@gui Blend [Fade] : fx_blend_fade, fx_blend_fade(1)
+#@gui Blend [Fade] : fx_blend_fade, fx_blend_fade(1) : +
 #@gui : Preset = choice{1,"Custom","Linear","Circular","Wave","Keftales"}
 #@gui : Offset = float(0,-1,1)
 #@gui : Thinness = float(0,0,10)
@@ -39273,7 +39275,7 @@ _fx_blend_fade2 : [0],[0],1,1,0 =. 1,{($1+1)*50}%,{($2+1)*50}% distance. 1
 _fx_blend_fade3 : [0],[0],1,1,0 =. 1,{($1+1)*50}%,{($2+1)*50}% distance. 1 *. {0.01+$3/2} cos.
 _fx_blend_fade4 : [0],[0],1,1,"((x-w*($1+0.5))*(y-h*($2+0.5)))%(0.2*w*h*(1.001+$3))"
 
-#@gui Blend [Median] : fx_blend_median, fx_blend_median(0)
+#@gui Blend [Median] : fx_blend_median, fx_blend_median(0) : *
 #@gui : Colorspace = choice(0,"sRGB","Linear RGB","Lab")
 #@gui : sep = separator()
 #@gui : note = note{"<small><b>Note:</b>
@@ -39288,7 +39290,7 @@ fx_blend_median :
   blend_median
   _gb_bwd $1
 
-#@gui Blend [Seamless] : fx_blend_seamless, fx_blend_seamless_preview(1)
+#@gui Blend [Seamless] : fx_blend_seamless, fx_blend_seamless_preview(1) : *
 #@gui : Mixed Mode = bool(0)
 #@gui : Inner Fading = float(0,0,100)
 #@gui : Outer Fading = float(25,0,100)
@@ -39325,7 +39327,7 @@ fx_blend_seamless :
 fx_blend_seamless_preview :
   fx_blend_seamless ${1-4},0
 
-#@gui Blend [Standard] : fx_blend, fx_blend_preview
+#@gui Blend [Standard] : fx_blend, fx_blend_preview : *
 #@gui : Mode = choice{6,"Add","Alpha","And","Average","Blue","Burn","Custom formula","Darken","Difference",
 #@gui : "Divide","Dodge","Edges","Exclusion","Freeze","Grain Extract","Grain Merge","Green","Hard Light",
 #@gui : "Hard Mix","Hue","Interpolation","Lighten","Lightness","Linear Burn","Linear Light","Luminance",
@@ -39401,7 +39403,7 @@ fx_split_colors_preview :
     frame 1,1,0 frame 3,3,255 to_rgba append_tiles ,
   endl done
 
-#@gui Fade Layers : fx_fade_layers, fx_fade_layers_preview
+#@gui Fade Layers : fx_fade_layers, fx_fade_layers_preview : +
 #@gui : Inter-Frames = _int(10,2,100)
 #@gui : sep = separator()
 #@gui : note = note{"<small><b>Note:</b>
@@ -39423,7 +39425,7 @@ fx_fade_layers_preview :
   r ${-max_wh},1,100%,0,0,0.5,0.5
   k[0,1] + / 2
 
-#@gui Layers to Tiles : append_tiles, fx_append_tiles_preview(1)
+#@gui Layers to Tiles : append_tiles, fx_append_tiles_preview(1) : *
 #@gui : X-Tiles = int(0,0,256)
 #@gui : Y-Tiles = int(0,0,256)
 #@gui : note = note("<small>For both parameters, <i>0</i> means <i>automatic</i>.</small>")
@@ -39433,7 +39435,7 @@ fx_fade_layers_preview :
 fx_append_tiles_preview :
   frame 1,1,0,0,0,255 append_tiles $1,$2
 
-#@gui Morph Layers : fx_morph_layers, gui_no_preview
+#@gui Morph Layers : fx_morph_layers, gui_no_preview : *
 #@gui : Inter-Frames = _int(10,2,100)
 #@gui : Smoothness = _float(0.2,0,2)
 #@gui : Precision = _float(0.1,0,2)
@@ -39504,7 +39506,7 @@ fx_apply_multiscale_preview :
     frame 1,1,0 frame 3,3,255 append_tiles ,
   endl done
 
-#@gui Pack : fx_pack, fx_pack_preview(1)
+#@gui Pack : fx_pack, fx_pack_preview(1) : *
 #@gui : Order By = choice(2,"Width","Height","Maximum Dimension","Area","Name")
 #@gui : Tends to Be Square = bool(1)
 #@gui : Force Transparency = bool(1)
