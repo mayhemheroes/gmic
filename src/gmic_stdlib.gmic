@@ -35168,8 +35168,7 @@ _fx_cluts_colorslide :
 #@gui : Reference Colors = choice("Bottom Layer","Top Layer")
 #@gui : Add User-Defined Constraints (Interactive) = _bool(0)
 #@gui : sep = separator()
-#@gui : Preview Reference = choice(1,"None","Up-Left","Up-Right","Bottom-Left","Bottom-Right")
-#@gui : sep = separator()
+#@gui : Preview_ref_point = point(1,1,0,0,255,255,255,128,4)_0
 #@gui : Preview Type = choice("Full","Forward Horizontal","Forward Vertical","Backward Horizontal",
 #@gui : "Backward Vertical","Duplicate Top","Duplicate Left","Duplicate Bottom","Duplicate Right",
 #@gui : "Duplicate Horizontal","Duplicate Vertical","Checkered","Checkered Inverse")
@@ -35177,7 +35176,6 @@ _fx_cluts_colorslide :
 #@gui : sep = separator()
 #@gui : note = note{"<small><b>Instructions:</b>\n
 #@gui : - This filter transfers the colors of one layer to all the others.\n
-#@gui : - This is a <b>highly</b> experimental filter, it may be unstable or particularly long to render.\n
 #@gui : - Don't forget to set the <i>Input layers...</i> option on the left to manage your input layers.\n
 #@gui : </small>"}
 #@gui : sep = separator()
@@ -35190,19 +35188,18 @@ fx_transfer_rgb :
 
 fx_transfer_rgb_preview :
   if $!<2 gui_print_preview "Warning:",,"This filter requires at least two input layers to work properly." return fi
-  ref={if($4,0,-1)}
-  pf=${-path_tmp}gmic_tmp o[$ref] $pf
-  gui_split_preview[^$ref] "i "$pf" fx_transfer_rgb $1,$2,0,0,0 rm.",${-3--1}
-  if $4 mv[0] $! fi
-  if $6 repeat $!-1 l[$>,-1]
-    +r2dy. {0,h/3} to. Reference,2,2,13,1,1,255 frame. 2,2,255 frame. 1,1,0
-    if $6==1 j[0] .,5,5
-    elif $6==2 j[0] .,{{0,w}-w-6},6
-    elif $6==3 j[0] .,5,{{0,h}-h-6}
-    else j[0] .,{{0,w}-w-6},{{0,h}-h-6}
-    fi
+  ref={$4?0:-1}
+  +store[$ref] _fx_trgb_ref
+  gui_split_preview[^$ref] "$_fx_trgb_ref fx_transfer_rgb $1,$2,0,0,0 rm.",${-3--1}
+  _fx_trgb_ref=
+
+  mv[$ref] $!
+  repeat $!-1 l[$>,-1]
+    rr2d[0] $_preview_width,$_preview_height,0,3 rr2d. {0,[w,h]/3},0,3
+    to. Reference,2,2,13,1,1,255 frame. 2,2,255 frame. 1,1,0
+    j[0] .,$6%,$7%
     rm.
-  endl done fi
+  endl done
 
 #@gui Transfer Colors [Histogram] : fx_transfer_histogram, fx_transfer_histogram_preview(1)+
 #@gui : Channel(s) = choice("All","RGBA [All]","RGB [All]","RGB [Red]","RGB [Green]","RGB [Blue]","RGBA [Alpha]",
