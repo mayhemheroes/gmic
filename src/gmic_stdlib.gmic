@@ -78,8 +78,9 @@
 #
 # or
 #
-#    '#@gui Command name : command, preview_command, parameter = typedef, parameter2 = typedef'
-#    '#@gui : parameter3 = typedef, parameter4 = typedef ...., parameterN = typedef'
+#    '#@gui Command name : command, preview_command (zoom_factor)[+] [: default_input_mode]
+#    '#@gui : parameter1 = typedef(arguments1...), parameter2 = typedef(arguments2...)'
+#    '#@gui : parameter3 = typedef(arguments3...),
 #
 #   where :
 #
@@ -92,6 +93,9 @@
 #           Use (0) for a 1:1 preview, (1) for previewing the whole image, (2) for 1/2 image and so on...
 #           You can also put an additional '+' sign after the parenthesis to specify the rendered preview
 #           is still accurate for different zoom factors.
+#
+#      'default_input_mode' set the default input mode for that filter. It can be
+#        { x=none | .=active (default) | *=all | +=active & below | -=active & above | v=all visible | i=all invisible }
 #
 #      'parameter = typedef' tells about the names, types and default values of the filter parameters.
 #
@@ -31483,8 +31487,8 @@ fx_smooth_abstract_preview :
 #@gui : Fidelity Chromaticity = float(0.1,0,1)
 #@gui : sep = separator(), note = note{"<small><b><span color="blue">Image Matching Parameters:</span></b></small>"}
 #@gui : Match Colors With = choice(3,"Nothing","Gamma Balance","Histogram Transfer","PCA transfer")
-#@gui : Colorspace = choice{3,"sRGB","Linear RGB","YCbCr","YCbCr (Luma/Chroma),"YCbCr (Luma Only)","YCbCr (Chroma Only)",
-#@gui : "Lab","Lab (Luma/Chroma)","Lab (Luma Only)","Lab (Chroma Only)"}
+#@gui : Colorspace = choice{3,"sRGB","Linear RGB","YCbCr","YCbCr (Luma/Chroma),"YCbCr (Luma Only)",
+#@gui : "YCbCr (Chroma Only)","Lab","Lab (Luma/Chroma)","Lab (Luma Only)","Lab (Chroma Only)"}
 #@gui : Keep Color Channels = choice{"All","Luminance Only (YCbCr)","Luminance Only (Lab)","Chrominances Only (CbCr)",\
 #@gui : "Chrominances Only (ab)"}
 #@gui : Smoothness = float(0.7,0,5)
@@ -35172,7 +35176,7 @@ _fx_cluts_colorslide :
     lomography_x-pro_slide_200,\
     polaroid_669,polaroid_690,polaroid_polachrome
 
-#@gui Transfer Colors [Variational] : fx_transfer_rgb, fx_transfer_rgb_preview(1)+
+#@gui Transfer Colors [Variational] : fx_transfer_rgb, fx_transfer_rgb_preview(1)+ : *
 #@gui : Regularization = int(8,0,32)
 #@gui : Preserve Luminance = float(0.2,0,1)
 #@gui : Precision = _choice(1,"Low","Normal","High","Very High")
@@ -35213,7 +35217,7 @@ fx_transfer_rgb_preview :
     rm.
   endl done
 
-#@gui Transfer Colors [Histogram] : fx_transfer_histogram, fx_transfer_histogram_preview(1)+
+#@gui Transfer Colors [Histogram] : fx_transfer_histogram, fx_transfer_histogram_preview(1)+ : *
 #@gui : Channel(s) = choice("All","RGBA [All]","RGB [All]","RGB [Red]","RGB [Green]","RGB [Blue]","RGBA [Alpha]",
 #@gui : "Linear RGB [All]","Linear RGB [Red]","Linear RGB [Green]","Linear RGB [Blue]","YCbCr [Luminance]",
 #@gui : "YCbCr [Blue-Red Chrominances]","YCbCr [Blue Chrominance]","YCbCr [Red Chrominance]",
@@ -35258,7 +35262,7 @@ fx_transfer_histogram_preview :
     rm.
   endl done
 
-#@gui Transfer Colors [PCA] : fx_transfer_pca, fx_transfer_pca_preview(1)+
+#@gui Transfer Colors [PCA] : fx_transfer_pca, fx_transfer_pca_preview(1)+ : *
 #@gui : Channel(s) = choice("All","RGBA [All]","RGB [All]","RGB [Red]","RGB [Green]","RGB [Blue]","RGBA [Alpha]",
 #@gui : "Linear RGB [All]","Linear RGB [Red]","Linear RGB [Green]","Linear RGB [Blue]","YCbCr [Luminance]",
 #@gui : "YCbCr [Blue-Red Chrominances]","YCbCr [Blue Chrominance]","YCbCr [Red Chrominance]",
@@ -39273,7 +39277,7 @@ _fx_blend_fade2 : [0],[0],1,1,0 =. 1,{($1+1)*50}%,{($2+1)*50}% distance. 1
 _fx_blend_fade3 : [0],[0],1,1,0 =. 1,{($1+1)*50}%,{($2+1)*50}% distance. 1 *. {0.01+$3/2} cos.
 _fx_blend_fade4 : [0],[0],1,1,"((x-w*($1+0.5))*(y-h*($2+0.5)))%(0.2*w*h*(1.001+$3))"
 
-#@gui Blend [Median] : fx_blend_median, fx_blend_median(0)
+#@gui Blend [Median] : fx_blend_median, fx_blend_median(0) : *
 #@gui : Colorspace = choice(0,"sRGB","Linear RGB","Lab")
 #@gui : sep = separator()
 #@gui : note = note{"<small><b>Note:</b>
@@ -39288,7 +39292,7 @@ fx_blend_median :
   blend_median
   _gb_bwd $1
 
-#@gui Blend [Seamless] : fx_blend_seamless, fx_blend_seamless_preview(1)
+#@gui Blend [Seamless] : fx_blend_seamless, fx_blend_seamless_preview(1) : *
 #@gui : Mixed Mode = bool(0)
 #@gui : Inner Fading = float(0,0,100)
 #@gui : Outer Fading = float(25,0,100)
@@ -39325,7 +39329,7 @@ fx_blend_seamless :
 fx_blend_seamless_preview :
   fx_blend_seamless ${1-4},0
 
-#@gui Blend [Standard] : fx_blend, fx_blend_preview
+#@gui Blend [Standard] : fx_blend, fx_blend_preview : +
 #@gui : Mode = choice{6,"Add","Alpha","And","Average","Blue","Burn","Custom formula","Darken","Difference",
 #@gui : "Divide","Dodge","Edges","Exclusion","Freeze","Grain Extract","Grain Merge","Green","Hard Light",
 #@gui : "Hard Mix","Hue","Interpolation","Lighten","Lightness","Linear Burn","Linear Light","Luminance",
