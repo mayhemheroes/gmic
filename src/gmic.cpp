@@ -2131,28 +2131,28 @@ inline char *_gmic_argument_text(const char *const argument, CImg<char>& argumen
    }
 
 // Parse debug info string (eq. to std::sscanf(s,"%x,%x",&line_number,&file_number).
-bool gmic::get_debug_info(const char *const s, unsigned int &line_number, unsigned int &file_number) {
-  const char *_s = s;
-  unsigned int _line_number=~0U;
-  bool is_digit = (*_s>='0' && *_s<='9') || (*_s>='a' && *_s<='f');
+bool gmic::get_debug_info(const char *s, unsigned int &line_number, unsigned int &file_number) {
+  char c = *(++s);
+  bool is_digit = (c>='0' && c<='9') || (c>='a' && c<='f');
   if (is_digit) {
-    _line_number = 0;
+    unsigned int ln = 0;
     while (is_digit) {
-      (_line_number<<=4)|=(*_s>='a'?*_s-'a'+10:*_s-'0');
-      ++_s;
-      is_digit = (*_s>='0' && *_s<='9') || (*_s>='a' && *_s<='f');
+      (ln<<=4)|=(c>='a'?c - 'a' + 10:c - '0');
+      c = *(++s);
+      is_digit = (c>='0' && c<='9') || (c>='a' && c<='f');
     }
-    line_number = _line_number;
-    unsigned int _file_number = 0;
-    if (*(_s++)==',') {
-      is_digit = (*_s>='0' && *_s<='9') || (*_s>='a' && *_s<='f');
-      if (is_digit) while (is_digit) {
-          (_file_number<<=4)|=(*_s>='a'?*_s-'a'+10:*_s-'0');
-          ++_s;
-          is_digit = (*_s>='0' && *_s<='9') || (*_s>='a' && *_s<='f');
-        }
+    line_number = ln;
+    unsigned int fn = 0;
+    if (*(s++)==',') {
+      c = *s;
+      is_digit = (c>='0' && c<='9') || (c>='a' && c<='f');
+      while (is_digit) {
+        (fn<<=4)|=(c>='a'?c - 'a' + 10:c - '0');
+        c = *(++s);
+        is_digit = (c>='0' && c<='9') || (c>='a' && c<='f');
+      }
     }
-    file_number = _file_number;
+    file_number = fn;
     return true;
   }
   return false;
@@ -2800,12 +2800,7 @@ CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) 
       c = *ptrs;
       if (c && c!=1) *(ptrd++) = c;
       else { // Try to retrieve first debug line when discarding debug info
-        unsigned int _debug_filename = ~0U, _debug_line = ~0U;
-        if (!_is_debug_info && cimg_sscanf(ptrs + 1,"%x,%x",&_debug_line,&(_debug_filename=0))) {
-          debug_filename = _debug_filename;
-          debug_line = _debug_line;
-          _is_debug_info = is_debug_info = true;
-        }
+        if (!_is_debug_info) is_debug_info|=(_is_debug_info=get_debug_info(ptrs,debug_line,debug_filename));
         while (c && c!=' ') c = *(++ptrs);
       }
     } *ptrd = 0;
@@ -4887,7 +4882,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       if (next_debug_line!=~0U) { debug_line = next_debug_line; next_debug_line = ~0U; }
       if (next_debug_filename!=~0U) { debug_filename = next_debug_filename; next_debug_filename = ~0U; }
       while (position<commands_line.size() && *commands_line[position]==1)
-        is_debug_info|=get_debug_info(commands_line[position++].data() + 1,debug_line,debug_filename);
+        is_debug_info|=get_debug_info(commands_line[position++].data(),debug_line,debug_filename);
       if (position>=commands_line.size()) break;
 
       // Check consistency of the interpreter environment.
@@ -4909,7 +4904,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
       unsigned int position_argument = position + 1;
       while (position_argument<commands_line.size() && *(commands_line[position_argument])==1)
-        is_debug_info|=get_debug_info(commands_line[position_argument++].data() + 1,next_debug_line,next_debug_filename);
+        is_debug_info|=get_debug_info(commands_line[position_argument++].data(),next_debug_line,next_debug_filename);
       if (position_argument<commands_line.size()) initial_argument = commands_line[position_argument];
 
       CImg<char> _item, _argument;
@@ -6944,7 +6939,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           for (int nb_ifs = 1; nb_ifs && position<commands_line.size(); ++position) {
             const char *it = commands_line[position].data();
             if (*it==1)
-              is_debug_info|=get_debug_info(commands_line[position].data() + 1,next_debug_line,next_debug_filename);
+              is_debug_info|=get_debug_info(commands_line[position].data(),next_debug_line,next_debug_filename);
             else {
               it+=*it=='-';
               if (!std::strcmp("if",it)) ++nb_ifs;
@@ -8379,7 +8374,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             for (nb_locals = 1; nb_locals && position<commands_line.size(); ++position) {
               const char *it = commands_line[position].data();
               if (*it==1)
-                is_debug_info|=get_debug_info(commands_line[position].data() + 1,next_debug_line,next_debug_filename);
+                is_debug_info|=get_debug_info(commands_line[position].data(),next_debug_line,next_debug_filename);
               else {
                 const bool _is_get = *it=='+' || (*it=='-' && it[1]=='-');
                 it+=(*it=='+' || *it=='-') + (*it=='-' && it[1]=='-');
@@ -9219,7 +9214,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           for (int nb_locals = 1; nb_locals && position<commands_line.size(); ++position) {
             const char *it = commands_line[position].data();
             if (*it==1)
-              is_debug_info|=get_debug_info(commands_line[position].data() + 1,next_debug_line,next_debug_filename);
+              is_debug_info|=get_debug_info(commands_line[position].data(),next_debug_line,next_debug_filename);
             else {
               const bool _is_get = *it=='+' || (*it=='-' && it[1]=='-');
               it+=(*it=='+' || *it=='-') + (*it=='-' && it[1]=='-');
@@ -12984,7 +12979,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               for (int nb_ifs = 1; nb_ifs && position<commands_line.size(); ++position) {
                 const char *it = commands_line[position].data();
                 if (*it==1)
-                  is_debug_info|=get_debug_info(commands_line[position].data() + 1,next_debug_line,next_debug_filename);
+                  is_debug_info|=get_debug_info(commands_line[position].data(),next_debug_line,next_debug_filename);
                 else {
                   it+=*it=='-';
                   if (!std::strcmp("if",it)) ++nb_ifs;
