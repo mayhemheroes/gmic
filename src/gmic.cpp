@@ -2131,7 +2131,7 @@ inline char *_gmic_argument_text(const char *const argument, CImg<char>& argumen
    }
 
 // Parse debug info string (eq. to std::sscanf(s,"%x,%x",&line_number,&file_number).
-bool gmic::parse_debug_info(const char *const s, unsigned int &line_number, unsigned int &file_number) {
+bool gmic::get_debug_info(const char *const s, unsigned int &line_number, unsigned int &file_number) {
   const char *_s = s;
   unsigned int _line_number=~0U, _file_number=~0U;
   bool is_digit = (*_s>='0' && *_s<='9') || (*_s>='a' && *_s<='f');
@@ -4889,12 +4889,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       // Process debug info.
       if (next_debug_line!=~0U) { debug_line = next_debug_line; next_debug_line = ~0U; }
       if (next_debug_filename!=~0U) { debug_filename = next_debug_filename; next_debug_filename = ~0U; }
-      while (position<commands_line.size() && *commands_line[position]==1) {
-        if (parse_debug_info(commands_line[position].data() + 1,_debug_line,_debug_filename=0)) {
-          is_debug_info = true; debug_line = _debug_line; debug_filename = _debug_filename;
-        }
-        ++position;
-      }
+      while (position<commands_line.size() && *commands_line[position]==1)
+        is_debug_info = get_debug_info(commands_line[position++].data() + 1,debug_line,debug_filename=0);
       if (position>=commands_line.size()) break;
 
       // Check consistency of the interpreter environment.
