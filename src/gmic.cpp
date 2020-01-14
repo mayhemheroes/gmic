@@ -2130,6 +2130,36 @@ inline char *_gmic_argument_text(const char *const argument, CImg<char>& argumen
        }}} is_change = true; continue; \
    }
 
+// Parse debug info string (eq. to std::sscanf(s,"%x,%x",&line_number,&file_number).
+bool gmic::parse_debug_info(const char *const s, unsigned int &line_number, unsigned int &file_number) {
+  const char *_s = s;
+  unsigned int _line_number=~0U, _file_number=~0U;
+  bool is_digit = (*_s>='0' && *_s<='9') || (*_s>='a' && *_s<='f');
+  if (is_digit) {
+    _line_number = 0;
+    while (is_digit) {
+      (_line_number<<=4)|=(*_s>='a'?*_s-'a'+10:*_s-'0');
+      ++_s;
+      is_digit = (*_s>='0' && *_s<='9') || (*_s>='a' && *_s<='f');
+    }
+    line_number = _line_number;
+    if (*(_s++)==',') {
+      is_digit = (*_s>='0' && *_s<='9') || (*_s>='a' && *_s<='f');
+      if (is_digit) {
+        _file_number = 0;
+        while (is_digit) {
+          (_file_number<<=4)|=(*_s>='a'?*_s-'a'+10:*_s-'0');
+          ++_s;
+          is_digit = (*_s>='0' && *_s<='9') || (*_s>='a' && *_s<='f');
+        }
+        file_number = _file_number;
+      }
+    }
+    return true;
+  }
+  return false;
+}
+
 // Manage list of all gmic runs (for CImg math parser 'ext()').
 inline gmic_list<void*>& gmic_runs() { static gmic_list<void*> val; return val; }
 
@@ -4860,7 +4890,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       if (next_debug_line!=~0U) { debug_line = next_debug_line; next_debug_line = ~0U; }
       if (next_debug_filename!=~0U) { debug_filename = next_debug_filename; next_debug_filename = ~0U; }
       while (position<commands_line.size() && *commands_line[position]==1) {
-        if (cimg_sscanf(commands_line[position].data() + 1,"%x,%x",&_debug_line,&(_debug_filename=0))>0) {
+        if (parse_debug_info(commands_line[position].data() + 1,_debug_line,_debug_filename=0)) {
           is_debug_info = true; debug_line = _debug_line; debug_filename = _debug_filename;
         }
         ++position;

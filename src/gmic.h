@@ -268,6 +268,7 @@ struct gmic {
   static double mp_store(const Ts *const ptr,
                          const unsigned int w, const unsigned int h, const unsigned int d, const unsigned int s,
                          const char *const str, void *const p_list, const T& pixel_type);
+  static bool parse_debug_info(const char *const s, unsigned int &line_number, unsigned int &file_number);
   static int _levenshtein(const char *const s, const char *const t,
                           gmic_image<int>& d, const int i, const int j);
   static int levenshtein(const char *const s, const char *const t);
