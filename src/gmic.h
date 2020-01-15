@@ -82,10 +82,12 @@ namespace cimg_library {
     T *_data;                  // Pointer to the first pixel value
 
     // Destructor.
-    ~gmic_image();
+    ~gmic_image() {
+      if (!_is_shared) delete[] _data;
+    }
 
     // Constructor.
-    gmic_image():_width(0),_height(0),_depth(0),_spectrum(0),_is_shared(false),_data(0) {}
+    gmic_image():_width(0),_height(0),_depth(0),_spectrum(0),_is_shared(false),_data(0) { }
 
     // Allocate memory for specified image dimensions.
     gmic_image<T>& assign(const unsigned int size_x, const unsigned int size_y=1,
@@ -125,7 +127,9 @@ namespace cimg_library {
     gmic_image<T> *_data;          // Pointer to the first image of the list
 
     // Destructor.
-    ~gmic_list();
+    ~gmic_list() {
+      delete[] _data;
+    }
 
     // Constructor.
     gmic_list():_width(0),_allocated_width(0),_data(0) {}
