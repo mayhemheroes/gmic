@@ -247,7 +247,7 @@ endif()
 
 # CImg.h header
 if(NOT EXISTS ${CMAKE_SOURCE_DIR}/src/CImg.h)
-  file(DOWNLOAD https://framagit.org/dtschump/CImg/raw/master/CImg.h ${CMAKE_SOURCE_DIR}/src/CImg.h)
+  file(DOWNLOAD https://github.com/dtschump/CImg/raw/master/CImg.h ${CMAKE_SOURCE_DIR}/src/CImg.h)
   execute_process(COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_SOURCE_DIR}/src/CImg.h)
 endif()
 
