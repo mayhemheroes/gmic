@@ -9480,9 +9480,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                      !std::strcmp(uext,"hpp") || !std::strcmp(uext,"h") ||
                      !std::strcmp(uext,"pan") || !std::strcmp(uext,"pnk") ||
                      !std::strcmp(uext,"pgm") || !std::strcmp(uext,"ppm") ||
-                     !std::strcmp(uext,"ppm")) {
+                     !std::strcmp(uext,"ppm") || !std::strcmp(uext,"hdr") ||
+                     !std::strcmp(uext,"nii")) {
 
-            // .cpp, .c, .hpp, .h, .pan, .pnk, .pgm, .ppm or .pnm file.
+            // .cpp, .c, .hpp, .h, .pan, .pnk, .pgm, .ppm, .pnm, .hdr or .nii file.
             const char *
               stype = (cimg_sscanf(options,"%255[a-z64]%c",&(*argx=0),&(end=0))==1 ||
                        (cimg_sscanf(options,"%255[a-z64]%c",&(*argx=0),&end)==2 && end==','))?
