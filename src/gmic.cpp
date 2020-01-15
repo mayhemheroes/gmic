@@ -14795,8 +14795,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
   return *this;
 }
 
-// Explicitly instantiate constructors and destructor when building the library.
-#define gmic_instantiate(pt) \
+// Explicitly instantiate constructors and destructor when compiling the library.
+#define export_gmic(pt) \
 template gmic::gmic(const char *const commands_line, const char *const custom_commands, \
                     const bool include_stdlib, float *const p_progress, bool *const p_is_abort, \
                     const pt& pixel_type); \
@@ -14810,13 +14810,19 @@ template gmic& gmic::run(const char *const commands_line, \
 template gmic& gmic::run(const char *const commands_line, \
                          gmic_list<pt> &images, gmic_list<char> &images_names, \
                          float *const p_progress, bool *const p_is_abort); \
-template CImgList<pt>::~CImgList()
+template CImg<pt>::~CImg(); \
+template CImg<pt>::CImg(); \
+template CImg<pt>& CImg<pt>::assign(const unsigned int size_x, const unsigned int size_y=1,\
+                                    const unsigned int size_z=1, const unsigned int size_c=1);\
+template CImgList<pt>::~CImgList(); \
+template CImgList<pt>::CImgList(); \
+template CImgList<pt>& CImgList<pt>::assign(const unsigned int n)
 
 #ifdef gmic_pixel_type
-gmic_instantiate(gmic_pixel_type);
+export_gmic(gmic_pixel_type);
 #endif
 #ifdef gmic_pixel_type2
-gmic_instantiate(gmic_pixel_type2);
+export_gmic(gmic_pixel_type2);
 #endif
 template CImgList<char>::~CImgList();
 template bool gmic::search_sorted(const char *const str, const gmic_list<char>& list,
