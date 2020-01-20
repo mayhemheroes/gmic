@@ -2533,9 +2533,13 @@ char *gmic::strreplace_fw(char *const str) {
 
 char *gmic::strreplace_bw(char *const str) {
   if (str) for (char *s = str ; *s; ++s) {
-      const char c = *s;
-      *s = c=='$'?gmic_dollar:c=='{'?gmic_lbrace:c=='}'?gmic_rbrace:c==','?gmic_comma:
-        c=='\"'?gmic_dquote:c;
+      switch (*s) {
+      case '$' : *s = gmic_dollar; break;
+      case '{' : *s = gmic_lbrace; break;
+      case '}' : *s = gmic_rbrace; break;
+      case ',' : *s = gmic_comma; break;
+      case '\"' : *s = gmic_dquote; break;
+      }
     }
   return str;
 }
