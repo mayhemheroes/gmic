@@ -13249,7 +13249,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               } else std::strcpy(command_code_text.data(),command_code);
               for (char *ptrs = command_code_text, *ptrd = ptrs; *ptrs || (bool)(*ptrd=0);
                    ++ptrs)
-                if (*ptrs==1) while (*ptrs!=' ') ++ptrs; else *(ptrd++) = *ptrs;
+                if (*ptrs==1) do ++ptrs; while (*ptrs!=' '); else *(ptrd++) = *ptrs;
               debug(images,"Found custom command '%s: %s' (%s).",
                     command,command_code_text.data(),
                     commands_has_arguments[hash_custom](ind_custom,0)?"takes arguments":
@@ -13524,7 +13524,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               } else std::strcpy(command_code_text.data(),substituted_command.data());
               for (char *ptrs = command_code_text, *ptrd = ptrs; *ptrs || (bool)(*ptrd=0);
                    ++ptrs)
-                if (*ptrs==1) while (*ptrs!=' ') ++ptrs; else *(ptrd++) = *ptrs;
+                if (*ptrs==1) do ++ptrs; while (*ptrs!=' '); else *(ptrd++) = *ptrs;
               debug(images,"Expand command line for command '%s' to: '%s'.",
                     command,command_code_text.data());
             }
