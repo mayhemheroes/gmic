@@ -193,8 +193,8 @@ endif
 # Enable optimizations.
 OPT_CFLAGS = -Ofast
 ifdef IS_GCC
-OPT_CFLAGS = -Ofast -mtune=generic -flto # -fno-finite-math-only
-OPT_LIBS = -flto
+OPT_CFLAGS = -Ofast -mtune=generic # -flto # -fno-finite-math-only
+OPT_LIBS = # -flto
 endif
 ifdef icpc
 OPT_CFLAGS = -fast
