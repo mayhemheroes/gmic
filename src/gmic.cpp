@@ -3120,7 +3120,7 @@ gmic& gmic::add_commands(const char *const data_commands, const char *const comm
 
     // Replace/remove unusual characters.
     char *__line = s_line;
-    for (_line = s_line; *_line; ++_line) if (*_line!=13) *(__line++) = (unsigned char)*_line<' '?' ':*_line;
+    for (_line = s_line; *_line; ++_line) if (*_line!=13) *(__line++) = is_blank(*_line)?' ':*_line;
     *__line = 0;
     _line = s_line; if (*_line=='#') *_line = 0; else do { // Remove comments
         if ((_line=std::strchr(_line,'#')) && *(_line - 1)==' ') { *--_line = 0; break; }
