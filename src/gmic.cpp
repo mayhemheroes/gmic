@@ -2130,6 +2130,11 @@ inline char *_gmic_argument_text(const char *const argument, CImg<char>& argumen
        }}} is_change = true; continue; \
    }
 
+// Return true if value is in specified character range.
+inline bool is_inrange(const char x, const char a, const char b) {
+  return x>=a && x<=b;
+}
+
 // Parse debug info string (eq. to std::sscanf(s,"%x,%x",&line_number,&file_number).
 bool gmic::get_debug_info(const char *s, unsigned int &line_number, unsigned int &file_number) {
   char c = *(++s);
@@ -2762,7 +2767,7 @@ CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) 
   if (!commands_line || !*commands_line) return CImgList<char>();
   bool is_dquoted = false;
   const char *ptrs0 = commands_line;
-  while (*ptrs0==' ') ++ptrs0;  // Remove leading spaces to first item
+  while (is_inrange(*ptrs0,2,' ')) ++ptrs0;  // Remove leading spaces to first item
   CImg<char> item((unsigned int)std::strlen(ptrs0) + 1);
   CImgList<char> items;
   char *ptrd = item.data(), c = 0;
