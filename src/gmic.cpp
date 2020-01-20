@@ -2935,15 +2935,14 @@ gmic& gmic::debug(const char *format, ...) {
 
   for (char *s = message; *s; ++s) {
     char c = *s;
-    if (c<' ') switch (c) {
+    if (c>=gmic_dollar && c<=gmic_dquote) switch (c) {
       case gmic_dollar : std::fprintf(cimg::output(),"\\$"); break;
       case gmic_lbrace : std::fprintf(cimg::output(),"\\{"); break;
       case gmic_rbrace : std::fprintf(cimg::output(),"\\}"); break;
       case gmic_comma : std::fprintf(cimg::output(),"\\,"); break;
       case gmic_dquote : std::fprintf(cimg::output(),"\\\""); break;
       default : std::fputc(c,cimg::output());
-      }
-    else std::fputc(c,cimg::output());
+      } else std::fputc(c,cimg::output());
   }
   std::fprintf(cimg::output(),
                "%s",
@@ -3604,16 +3603,14 @@ gmic& gmic::debug(const CImgList<T>& list, const char *format, ...) {
                  cimg::t_green,list.size(),callstack2string(true).data());
   for (char *s = message; *s; ++s) {
     char c = *s;
-    if (c<' ') {
-      switch (c) {
+    if (c>=gmic_dollar && c<=gmic_dquote) switch (c) {
       case gmic_dollar : std::fprintf(cimg::output(),"\\$"); break;
       case gmic_lbrace : std::fprintf(cimg::output(),"\\{"); break;
       case gmic_rbrace : std::fprintf(cimg::output(),"\\}"); break;
       case gmic_comma : std::fprintf(cimg::output(),"\\,"); break;
       case gmic_dquote : std::fprintf(cimg::output(),"\\\""); break;
       default : std::fputc(c,cimg::output());
-      }
-    } else std::fputc(c,cimg::output());
+      } else std::fputc(c,cimg::output());
   }
   std::fprintf(cimg::output(),
                "%s",
