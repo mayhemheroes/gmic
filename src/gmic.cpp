@@ -2515,10 +2515,13 @@ const char* gmic::basename(const char *const str)  {
 // Replace special characters in a string.
 char *gmic::strreplace_fw(char *const str) {
   if (str) for (char *s = str ; *s; ++s) {
-      const char c = *s;
-      if (c<' ')
-        *s = c==gmic_dollar?'$':c==gmic_lbrace?'{':c==gmic_rbrace?'}':c==gmic_comma?',':
-          c==gmic_dquote?'\"':c;
+      switch (*s) {
+      case gmic_dollar : *s = '$'; break;
+      case gmic_lbrace : *s = '{'; break;
+      case gmic_rbrace : *s = '}'; break;
+      case gmic_comma  : *s = ','; break;
+      case gmic_dquote : *s = '\"'; break;
+      }
     }
   return str;
 }
