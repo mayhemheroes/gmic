@@ -2514,7 +2514,7 @@ const char* gmic::basename(const char *const str)  {
 
 // Return true if specified character is considered as 'blank'.
 inline bool is_blank(const char x) {
-  return (x>1 && x<gmic_dollar) || (x>gmic_store && x<=' ');
+  return (x>1 && x<gmic_dollar) || (x>gmic_dquote && x<=' ');
 }
 
 inline void _strreplace_fw(char &c) {
