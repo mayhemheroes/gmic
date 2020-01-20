@@ -2130,9 +2130,9 @@ inline char *_gmic_argument_text(const char *const argument, CImg<char>& argumen
        }}} is_change = true; continue; \
    }
 
-// Return true if value is in specified character range.
-inline bool is_inrange(const char x, const char a, const char b) {
-  return x>=a && x<=b;
+// Return true if specified character is considered as 'blank'.
+inline bool is_blank(const char x) {
+  return (x>1 && x<gmic_dollar) || (x>gmic_store && x<=' ');
 }
 
 // Parse debug info string (eq. to std::sscanf(s,"%x,%x",&line_number,&file_number).
@@ -2767,7 +2767,7 @@ CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) 
   if (!commands_line || !*commands_line) return CImgList<char>();
   bool is_dquoted = false;
   const char *ptrs0 = commands_line;
-  while (is_inrange(*ptrs0,2,' ')) ++ptrs0;  // Remove leading spaces to first item
+  while (is_blank(*ptrs0)) ++ptrs0; // Remove leading spaces to first item
   CImg<char> item((unsigned int)std::strlen(ptrs0) + 1);
   CImgList<char> items;
   char *ptrd = item.data(), c = 0;
@@ -2792,10 +2792,10 @@ CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) 
              c==','?gmic_comma:c;
     } else { // Non-escaped character outside string
       if (c=='\"') is_dquoted = true;
-      else if (c==' ') {
+      else if (is_blank(c)) {
         *ptrd = 0; CImg<char>(item.data(),(unsigned int)(ptrd - item.data() + 1)).move_to(items);
         ptrd = item.data();
-        ++ptrs; while (*ptrs==' ') ++ptrs; ptrs0 = ptrs--; // Remove trailing spaces to next item
+        ++ptrs; while (is_blank(*ptrs)) ++ptrs; ptrs0 = ptrs--; // Remove trailing spaces to next item
       } else *(ptrd++) = c;
     }
   }
@@ -2815,7 +2815,7 @@ CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) 
     error(true,"Invalid command line: Double quotes are not closed, in expression '%s'.",
           str.data());
   }
-  if (ptrd!=item.data() && c!=' ') {
+  if (ptrd!=item.data() && !is_blank(c)) {
     *ptrd = 0; CImg<char>(item.data(),(unsigned int)(ptrd - item.data() + 1)).move_to(items);
   }
   if (is_debug) {
