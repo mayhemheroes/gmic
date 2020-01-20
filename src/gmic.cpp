@@ -2130,11 +2130,6 @@ inline char *_gmic_argument_text(const char *const argument, CImg<char>& argumen
        }}} is_change = true; continue; \
    }
 
-// Return true if specified character is considered as 'blank'.
-inline bool is_blank(const char x) {
-  return (x>1 && x<gmic_dollar) || (x>gmic_store && x<=' ');
-}
-
 // Parse debug info string (eq. to std::sscanf(s,"%x,%x",&line_number,&file_number).
 bool gmic::get_debug_info(const char *s, unsigned int &line_number, unsigned int &file_number) {
   char c = *(++s);
@@ -2517,30 +2512,39 @@ const char* gmic::basename(const char *const str)  {
   return p;
 }
 
+// Return true if specified character is considered as 'blank'.
+inline bool is_blank(const char x) {
+  return (x>1 && x<gmic_dollar) || (x>gmic_store && x<=' ');
+}
+
+inline void _strreplace_fw(char &c) {
+  switch (c) {
+  case gmic_dollar : c = '$'; break;
+  case gmic_lbrace : c = '{'; break;
+  case gmic_rbrace : c = '}'; break;
+  case gmic_comma : c = ','; break;
+  case gmic_dquote : c = '\"'; break;
+  }
+}
+
+inline void _strreplace_bw(char &c) {
+  switch (c) {
+  case '$' : c = gmic_dollar; break;
+  case '{' : c = gmic_lbrace; break;
+  case '}' : c = gmic_rbrace; break;
+  case ',' : c = gmic_comma; break;
+  case '\"' : c = gmic_dquote; break;
+  }
+}
+
 // Replace special characters in a string.
 char *gmic::strreplace_fw(char *const str) {
-  if (str) for (char *s = str ; *s; ++s) {
-      switch (*s) {
-      case gmic_dollar : *s = '$'; break;
-      case gmic_lbrace : *s = '{'; break;
-      case gmic_rbrace : *s = '}'; break;
-      case gmic_comma  : *s = ','; break;
-      case gmic_dquote : *s = '\"'; break;
-      }
-    }
+  if (str) for (char *s = str ; *s; ++s) _strreplace_fw(*s);
   return str;
 }
 
 char *gmic::strreplace_bw(char *const str) {
-  if (str) for (char *s = str ; *s; ++s) {
-      switch (*s) {
-      case '$' : *s = gmic_dollar; break;
-      case '{' : *s = gmic_lbrace; break;
-      case '}' : *s = gmic_rbrace; break;
-      case ',' : *s = gmic_comma; break;
-      case '\"' : *s = gmic_dquote; break;
-      }
-    }
+  if (str) for (char *s = str ; *s; ++s) _strreplace_bw(*s);
   return str;
 }
 
