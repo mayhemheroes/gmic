@@ -2791,6 +2791,7 @@ CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) 
       case '}' : c = gmic_rbrace; break;
       case ',' : c = gmic_comma; break;
       case '\"' : c = gmic_dquote; break;
+      case '\\' : c = '\\'; break;
       case ' ' : c = ' '; break;
       default : *(ptrd++) = '\\';
       }
