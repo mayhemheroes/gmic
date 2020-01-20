@@ -2798,7 +2798,9 @@ CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) 
     } else if (is_dquoted) { // If non-escaped character inside string
       if (c=='\"') is_dquoted = false;
       else if (c==1) { while (c && c!=' ') c = *(++ptrs); if (!c) break; } // Discard debug info inside string
-      else *(ptrd++) = (c=='$' && ptrs[1]!='?')?gmic_dollar:c=='{'?gmic_lbrace:c=='}'?gmic_rbrace:
+      else *(ptrd++) =
+             (c=='$' && ptrs[1]!='?')?gmic_dollar:
+             c=='{'?gmic_lbrace:c=='}'?gmic_rbrace:
              c==','?gmic_comma:c;
     } else { // Non-escaped character outside string
       if (c=='\"') is_dquoted = true;
@@ -3120,7 +3122,7 @@ gmic& gmic::add_commands(const char *const data_commands, const char *const comm
 
     // Replace/remove unusual characters.
     char *__line = s_line;
-    for (_line = s_line; *_line; ++_line) if (*_line!=13) *(__line++) = is_blank(*_line)?' ':*_line;
+    for (_line = s_line; *_line; ++_line) if (*_line!=13) *(__line++) = *_line==' '?' ':*_line;
     *__line = 0;
     _line = s_line; if (*_line=='#') *_line = 0; else do { // Remove comments
         if ((_line=std::strchr(_line,'#')) && *(_line - 1)==' ') { *--_line = 0; break; }
