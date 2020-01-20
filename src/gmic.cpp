@@ -2796,12 +2796,15 @@ CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) 
       }
       *(ptrd++) = c;
     } else if (is_dquoted) { // If non-escaped character inside string
-      if (c=='\"') is_dquoted = false;
-      else if (c==1) { while (c && c!=' ') c = *(++ptrs); if (!c) break; } // Discard debug info inside string
-      else *(ptrd++) =
-             (c=='$' && ptrs[1]!='?')?gmic_dollar:
-             c=='{'?gmic_lbrace:c=='}'?gmic_rbrace:
-             c==','?gmic_comma:c;
+      if (c==1) { while (c && c!=' ') c = *(++ptrs); if (!c) break; } // Discard debug info inside string
+      else switch (c) {
+        case '\"': is_dquoted = false; break;
+        case '$' : if (ptrs[1]!='?') *ptrd = gmic_dollar; ++ptrd; break;
+        case '{' : *(ptrd++) = gmic_lbrace; break;
+        case '}' : *(ptrd++) = gmic_rbrace; break;
+        case ',' : *(ptrd++) = gmic_comma; break;
+        default : *(ptrd++) = c;
+        }
     } else { // Non-escaped character outside string
       if (c=='\"') is_dquoted = true;
       else if (is_blank(c)) {
