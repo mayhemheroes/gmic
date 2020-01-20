@@ -10179,10 +10179,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             arguments[l].resize(1,arguments[l].height() + 1,1,1,0);
             bool is_dquoted = false;
             for (char *s = arguments[l].data(); *s; ++s) {
-              const char c = *s;
-              if (c=='\"') is_dquoted = !is_dquoted;
-              if (!is_dquoted) *s = c<' '?(c==gmic_dollar?'$':c==gmic_lbrace?'{':c==gmic_rbrace?'}':
-                                           c==gmic_comma?',':c==gmic_dquote?'\"':c):c;
+              if (*s=='\"') is_dquoted = !is_dquoted;
+              else if (!is_dquoted) _strreplace_fw(*s);
             }
             gmic_instance.commands_line_to_CImgList(arguments[l].data()).
               move_to(_gmic_threads[l].commands_line);
@@ -13511,8 +13509,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               if (is_escaped) is_escaped = false;
               else if (c=='\\') is_escaped = true;
               else if (c=='\"') is_dquoted = !is_dquoted;
-              if (!is_dquoted) *s = c<' '?(c==gmic_dollar?'$':c==gmic_lbrace?'{':c==gmic_rbrace?'}':
-                                           c==gmic_comma?',':c==gmic_dquote?'\"':c):c;
+              else if (!is_dquoted) _strreplace_fw(*s);
             }
 
             if (is_debug) {
