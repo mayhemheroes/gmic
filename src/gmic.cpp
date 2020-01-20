@@ -2514,7 +2514,7 @@ const char* gmic::basename(const char *const str)  {
 
 // Return true if specified character is considered as 'blank'.
 inline bool is_blank(const char x) {
-  return (x>1 && x<gmic_dollar) || (x>gmic_dquote && x<=' ');
+  return (x>1 && x<gmic_dollar) || (x>gmic_store && x<=' ');
 }
 
 inline void _strreplace_fw(char &c) {
@@ -2784,14 +2784,16 @@ CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) 
     c = *ptrs;
     if (c=='\\') { // If escaped character
       c = *(++ptrs);
-      if (!c) { c = '\\'; --ptrs; }
-      else if (c=='$') c = gmic_dollar;
-      else if (c=='{') c = gmic_lbrace;
-      else if (c=='}') c = gmic_rbrace;
-      else if (c==',') c = gmic_comma;
-      else if (c=='\"') c = gmic_dquote;
-      else if (c==' ') c = ' ';
-      else *(ptrd++) = '\\';
+      switch (c) {
+      case 0 : c = '\\'; --ptrs; break;
+      case '$' : c = gmic_dollar; break;
+      case '{' : c = gmic_lbrace; break;
+      case '}' : c = gmic_rbrace; break;
+      case ',' : c = gmic_comma; break;
+      case '\"' : c = gmic_dquote; break;
+      case ' ' : c = ' '; break;
+      default : *(ptrd++) = '\\';
+      }
       *(ptrd++) = c;
     } else if (is_dquoted) { // If non-escaped character inside string
       if (c=='\"') is_dquoted = false;
