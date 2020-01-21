@@ -2556,8 +2556,8 @@ unsigned int gmic::strescape(const char *const str, char *const res) {
   for (const char *ptrs = str; *ptrs; ++ptrs) {
     const unsigned char c = *ptrs;
     if (c=='\\' || c=='\'' || c=='\"') { *(ptrd++) = '\\'; *(ptrd++) = c; }
-    else if (c>=7 && c<=13) { *(ptrd++) = '\\'; *(ptrd++) = esc[c - 7]; }
-    else if (c>=32 && c<=126) *(ptrd++) = c;
+    else if (c>='\a' && c<='\r') { *(ptrd++) = '\\'; *(ptrd++) = esc[c - 7]; }
+    else if (c>=' ' && c<='~') *(ptrd++) = c;
     else if (c<gmic_dollar || c>gmic_dquote) {
       *(ptrd++) = '\\';
       *(ptrd++) = 'x';
@@ -3123,19 +3123,17 @@ gmic& gmic::add_commands(const char *const data_commands, const char *const comm
     if (_line<line_end) *_line = 0; else *(line_end - 1) = 0;
     if (*data=='\n') { is_newline = true; ++data; } else is_newline = false; // Skip next '\n'
 
-    // Replace/remove unusual characters.
-    char *__line = s_line;
-    for (_line = s_line; *_line; ++_line) if (*_line!=13) *(__line++) = *_line==' '?' ':*_line;
-    *__line = 0;
-    _line = s_line; if (*_line=='#') *_line = 0; else do { // Remove comments
-        if ((_line=std::strchr(_line,'#')) && *(_line - 1)==' ') { *--_line = 0; break; }
+    // Remove comments.
+    _line = s_line;
+    if (*_line=='#') *_line = 0; else do { // Remove comments
+        if ((_line=std::strchr(_line,'#')) && is_blank(*(_line - 1))) { *--_line = 0; break; }
       } while (_line++);
 
     // Remove useless trailing spaces.
     char *linee = s_line.data() + std::strlen(s_line) - 1;
-    while (linee>=s_line && *linee==' ') --linee;
+    while (linee>=s_line && is_blank(*linee)) --linee;
     *(linee + 1) = 0;
-    char *lines = s_line; while (*lines==' ') ++lines; // Remove useless leading spaces
+    char *lines = s_line; while (is_blank(*lines)) ++lines; // Remove useless leading spaces
     if (!*lines) continue; // Empty line
 
     // Check if last character is a '\'...
