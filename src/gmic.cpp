@@ -6102,12 +6102,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           } else {
             print(images,0,"Import custom commands from expression '%s'",
                   arg_command_text);
-
-/*            std::fprintf(stderr,"\nDEBUG0 : '%s'\n",arg_command);
             cimg::strunescape(arg_command);
-            std::fprintf(stderr,"\nDEBUG1 : '%s'\n",arg_command);
-*/
-
             add_commands(arg_command,0,&count_new,&count_replaced);
           }
           if (is_verbose) {
