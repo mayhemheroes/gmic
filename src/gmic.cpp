@@ -2791,9 +2791,6 @@ CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) 
       case '}' : c = gmic_rbrace; break;
       case ',' : c = gmic_comma; break;
       case '\"' : c = gmic_dquote; break;
-
-//      case '\\' : c = '\\'; break;
-
       case ' ' : c = ' '; break;
       default : *(ptrd++) = '\\';
       }
@@ -6105,6 +6102,12 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           } else {
             print(images,0,"Import custom commands from expression '%s'",
                   arg_command_text);
+
+/*            std::fprintf(stderr,"\nDEBUG0 : '%s'\n",arg_command);
+            cimg::strunescape(arg_command);
+            std::fprintf(stderr,"\nDEBUG1 : '%s'\n",arg_command);
+*/
+
             add_commands(arg_command,0,&count_new,&count_replaced);
           }
           if (is_verbose) {
