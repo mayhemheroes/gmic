@@ -147,10 +147,10 @@ int main(int argc, char **argv) {
   const char
     *const is_help1 = cimg_option("--h",(char*)0,0),
     *const is_help2 = cimg_option("-h",(char*)0,0),
-    *const is_help3 = cimg_option("h",(char*)0,0),
+    *const is_help3 = argc>1 && !std::strcmp(argv[1],"h")?(argc>2?argv[2]:argv[1]):0,
     *const is_help4 = cimg_option("--help",(char*)0,0),
     *const is_help5 = cimg_option("-help",(char*)0,0),
-    *const is_help6 = cimg_option("help",(char*)0,0),
+    *const is_help6 = argc>1 && !std::strcmp(argv[1],"help")?(argc>2?argv[2]:argv[1]):0,
     *const help_command = is_help1?"--h":is_help2?"-h":is_help3?"h":is_help4?"--help":is_help5?"-help":"help",
     *const help_argument = is_help1?is_help1:is_help2?is_help2:is_help3?is_help3:
     is_help4?is_help4:is_help5?is_help5:is_help6;
@@ -223,6 +223,9 @@ int main(int argc, char **argv) {
   }
 
   // Convert 'argv' into G'MIC command line.
+  const bool is_version = argc>1 && (!std::strcmp(argv[1],"version") ||
+                                     !std::strcmp(argv[1],"-version") ||
+                                     !std::strcmp(argv[1],"--version"));
   commands_user.assign();
   commands_update.assign();
 
@@ -264,7 +267,7 @@ int main(int argc, char **argv) {
     // Determine initial verbosity.
     const char *const s_verbosity = std::getenv("GMIC_VERBOSITY");
     if (!s_verbosity || std::sscanf(s_verbosity,"%d%c",&gmic_instance.verbosity,&sep)!=1)
-      gmic_instance.verbosity = gmic_instance.allow_entrypoint?0:1;
+      gmic_instance.verbosity = gmic_instance.allow_entrypoint || is_version?0:1;
   }
 
   // Insert startup command.
