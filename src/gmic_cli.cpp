@@ -201,7 +201,7 @@ int main(int argc, char **argv) {
     cimg::output(stdout);
 
     if (is_global_help) try { // Global help
-        gmic_instance.run("debug help \"\"",images,images_names);
+        gmic_instance.run("help \"\"",images,images_names);
       } catch (...) { // Fallback in case overloaded version of 'help' crashed
         images.assign().insert(gmic::stdlib);
         images_names.assign();
