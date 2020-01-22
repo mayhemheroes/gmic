@@ -202,9 +202,6 @@ int main(int argc, char **argv) {
 
     if (is_global_help) try { // Global help
         gmic_instance.run("debug help \"\"",images,images_names);
-      } catch (gmic_exception &e) { // Fallback in case overloaded version of 'help' crashed
-        std::fprintf(stderr,"\nDEBUG : WHAT = %s\n",e.what());
-        std::exit(0);
       } catch (...) { // Fallback in case overloaded version of 'help' crashed
         images.assign().insert(gmic::stdlib);
         images_names.assign();
