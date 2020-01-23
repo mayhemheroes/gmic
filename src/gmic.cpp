@@ -2777,7 +2777,6 @@ CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) 
   const char *ptrs0 = commands_line;
   while (is_blank(*ptrs0)) ++ptrs0; // Remove leading spaces to first item
 //  CImg<char> item((unsigned int)std::strlen(ptrs0) + 1);
-//  *item = 0;
   CImg<char> item((unsigned int)std::strlen(ptrs0) + 1,1,1,1,0);
   CImgList<char> items;
   char *ptrd = item.data(), c = 0;
@@ -2844,6 +2843,7 @@ CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) 
       } else debug("  item[%u] = '%s'",l,items[l].data());
     }
   }
+
   return items;
 }
 
