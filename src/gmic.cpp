@@ -2286,12 +2286,12 @@ bool *gmic::abort_ptr(bool *const p_is_abort) {
 
 // Manage mutexes.
 struct _gmic_mutex {
-#ifdef _PTHREAD_H
+#if cimg_OS==1 && (defined(cimg_use_pthread) || cimg_display==1)
   pthread_mutex_t mutex[256];
   _gmic_mutex() { for (unsigned int i = 0; i<256; ++i) pthread_mutex_init(&mutex[i],0); }
   void lock(const unsigned int n) { pthread_mutex_lock(&mutex[n]); }
   void unlock(const unsigned int n) { pthread_mutex_unlock(&mutex[n]); }
-#elif cimg_OS==2 // #ifdef _PTHREAD_H
+#elif cimg_OS==2 // #if cimg_OS==1 && (defined(cimg_use_pthread) || cimg_display==1)
   HANDLE mutex[256];
   _gmic_mutex() { for (unsigned int i = 0; i<256; ++i) mutex[i] = CreateMutex(0,FALSE,0); }
   void lock(const unsigned int n) { WaitForSingleObject(mutex[n],INFINITE); }
