@@ -5366,14 +5366,23 @@ update_download_version : check "
     data = crop();
     p = stop = N = 0;
     while (!stop,
-      p = find(data,'gmic_',1,p);
+      p = find(data,'?dwl=gmic_',1,p);
       p<0?(stop=1):(
-        str = data[p + 5,5];
+        str = data[p + 10,5];
         is_digit(str[0]) && str[1]==_'.' && is_digit(str[2]) && str[3]=='.' && is_digit(str[4])?(
-          copy(data[p + 5],ver,size(ver));
+          copy(data[p + 10],ver,size(ver));
           ++N;
         );
         ++p;
+      );
+    );
+    p = find(data,'/source/gmic_',1,0);
+    print(p);
+    p>0?(
+      str = data[p + 13,5];
+      is_digit(str[0]) && str[1]==_'.' && is_digit(str[2]) && str[3]=='.' && is_digit(str[4])?(
+        copy(data[p + 13],ver,size(ver));
+        ++N;
       );
     );
     copy(i[0],data,size(data));
@@ -5847,7 +5856,6 @@ _update_server_upload : skip "${2=""}"
 _update_server_binaries : check "isbool(${2=1})"
   is_pre=${"strcontains $1,_pre"}
   N=0
-  file$N=gmic_$1_debian_wheezy_amd64.deb            N+=1
   file$N=gmic_$1_debian_jessie_amd64.deb            N+=1
   file$N=gmic_$1_debian_stretch_amd64.deb           N+=1
   file$N=gmic_$1_debian_buster_amd64.deb            N+=1

@@ -2286,12 +2286,12 @@ bool *gmic::abort_ptr(bool *const p_is_abort) {
 
 // Manage mutexes.
 struct _gmic_mutex {
-#ifdef _PTHREAD_H
+#if cimg_OS==1 && (defined(cimg_use_pthread) || cimg_display==1)
   pthread_mutex_t mutex[256];
   _gmic_mutex() { for (unsigned int i = 0; i<256; ++i) pthread_mutex_init(&mutex[i],0); }
   void lock(const unsigned int n) { pthread_mutex_lock(&mutex[n]); }
   void unlock(const unsigned int n) { pthread_mutex_unlock(&mutex[n]); }
-#elif cimg_OS==2 // #ifdef _PTHREAD_H
+#elif cimg_OS==2 // #if cimg_OS==1 && (defined(cimg_use_pthread) || cimg_display==1)
   HANDLE mutex[256];
   _gmic_mutex() { for (unsigned int i = 0; i<256; ++i) mutex[i] = CreateMutex(0,FALSE,0); }
   void lock(const unsigned int n) { WaitForSingleObject(mutex[n],INFINITE); }
@@ -2776,7 +2776,8 @@ CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) 
   bool is_dquoted = false;
   const char *ptrs0 = commands_line;
   while (is_blank(*ptrs0)) ++ptrs0; // Remove leading spaces to first item
-  CImg<char> item((unsigned int)std::strlen(ptrs0) + 1);
+//  CImg<char> item((unsigned int)std::strlen(ptrs0) + 1);
+  CImg<char> item((unsigned int)std::strlen(ptrs0) + 1,1,1,1,0);
   CImgList<char> items;
   char *ptrd = item.data(), c = 0;
 
@@ -2842,6 +2843,7 @@ CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) 
       } else debug("  item[%u] = '%s'",l,items[l].data());
     }
   }
+
   return items;
 }
 
