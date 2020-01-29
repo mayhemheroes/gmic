@@ -4320,6 +4320,21 @@ shape_diamond : check "${1=512}>=0"
   fi
   nm. "[2D diamond shape]"
 
+#@cli shape_dragon : _size>=0,_recursion_level>=0
+#@cli : Input a 2D Dragon curve with specified size.
+#@cli : Default value: 'size=512' and 'recursion_level=17'.
+#@cli : $ shape_dragon ,
+shape_dragon : check "${1=512}>=0 && ${2=17}>=0"
+  e[^-1] "Input a $1x$1 Dragon curve, with recursion level $2."
+  ir={round($1)}
+  if !$ir 0
+  else l[]
+    (0,1^0,0) ind=1
+    repeat $2 +f "begin(C = I["$ind"]; R = rot(90)); R*(I-C)+C" ind={2*h} a y done
+    s c -.. {-2,ia} -. {ia} a c n 0,{$1-1} round
+    $1,$1,1,1 eval.. "!x?polygon(#1,2,I(0,y),I(1,y),1,255); I" k.
+  endl fi
+
 #@cli shape_fern : _size>=0,_density[%]>=0,_angle,0<=_opacity<=1,\
 # _type={ 0=Asplenium adiantum-nigrum | 1=Thelypteridaceae }
 #@cli : Input a 2D Barnsley fern with specified size.
