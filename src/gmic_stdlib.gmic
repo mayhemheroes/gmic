@@ -4320,26 +4320,20 @@ shape_diamond : check "${1=512}>=0"
   fi
   nm. "[2D diamond shape]"
 
-#@cli shape_dragon : _size>=0,_recursion_level>=0,_auto_orient={ 0=false | 1=true }
+#@cli shape_dragon : _size>=0,_recursion_level>=0,_angle
 #@cli : Input a 2D Dragon curve with specified size.
-#@cli : Default value: 'size=512', 'recursion_level=20' and 'auto_orient=1'.
+#@cli : Default value: 'size=512', 'recursion_level=20' and 'angle=0'.
 #@cli : $ shape_dragon ,
-shape_dragon : check "${1=512}>=0 && ${2=20}>=0 && isbool(${3=1})"
-  s0="." s1=" and auto-orientation."
-  e[^-1] "Input a $1x$1 Dragon curve, with recursion level $2"${s$3}
+shape_dragon : check "${1=512}>=0 && ${2=20}>=0" skip "${3=0}"
+  e[^-1] "Input a $1x$1 Dragon curve, with recursion level $2 and angle $3."
   ir={round($1)}
   if !$ir 0
   else l[]
     (0,1^0,0) ind=1
     repeat $2 +f "begin(C = I["$ind"]; R = rot(90)); R*(I-C)+C" ind={2*h} a y done
     s c -.. {-2,ia} -. {ia} a c / {max(abs(im),abs(iM))}
-    if $3 # Auto-orient.
-      angle={"T = [ 0,0,0,0 ]; for (y = 0, y<h, ++y, U = I(0,y); T+= mul(U,U,2));
-      eig = eig(T); 50-atan2(eig[3],eig[2])*180/pi"}
-      f. "begin(R = rot("$angle")); R*I"
-    fi
-    n 0,{$1-1} round
-    $1,$1,1,1 eval.. "!x?polygon(#1,2,I(0,y),I(1,y),1,255); I" k.
+    angle={$3-atan2(i1,i0)*180/pi} f. "begin(R = rot("$angle")); R*I"
+    n 0,{$1-1} round $1,$1,1,1 eval.. "!x?polygon(#1,2,I(0,y),I(1,y),1,255); I" k.
   endl fi
 
 #@cli shape_fern : _size>=0,_density[%]>=0,_angle,0<=_opacity<=1,\
