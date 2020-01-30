@@ -1425,7 +1425,8 @@ _help_header_html :
 \n<li><a href=\"#subsection20\">Neural networks</a></li>
 \n<li><a href=\"#subsection21\">Convenience functions</a></li>
 \n<li><a href=\"#subsection22\">Other interactive commands</a></li>
-\n<li><a href=\"#subsection23\">Command shortcuts</a></li>
+\n<li><a href=\"#subsection23\">Funny one-liners</a></li>
+\n<li><a href=\"#subsection24\">Command shortcuts</a></li>
 \n</ul>
 \n<li><a href=\"#section13\">Examples of use</a></li>
 \n</ul>
@@ -4319,6 +4320,22 @@ shape_diamond : check "${1=512}>=0"
   fi
   nm. "[2D diamond shape]"
 
+#@cli shape_dragon : _size>=0,_recursion_level>=0,_angle
+#@cli : Input a 2D Dragon curve with specified size.
+#@cli : Default value: 'size=512', 'recursion_level=18' and 'angle=0'.
+#@cli : $ shape_dragon ,
+shape_dragon : check "${1=512}>=0 && ${2=18}>=0" skip "${3=0}"
+  e[^-1] "Input a $1x$1 Dragon curve, with recursion level $2 and angle $3."
+  ir={round($1)}
+  if !$ir 0
+  else l[]
+    (0,1^0,0) ind=1
+    repeat $2 +f "begin(C = I["$ind"]; R = rot(90)); R*(I - C) + C" ind={2*h} a y done
+    s c -.. {-2,ia} -. {ia} a c / {max(abs(im),abs(iM))}
+    angle={$3-atan2(i1,i0)*180/pi} f. "begin(R = rot("$angle")); R*I"
+    n 0,{$1-1} round $1,$1,1,1 eval.. "!x?polygon(#1,2,I(0,y),I(1,y),1,1); I" k.
+  endl fi
+
 #@cli shape_fern : _size>=0,_density[%]>=0,_angle,0<=_opacity<=1,\
 # _type={ 0=Asplenium adiantum-nigrum | 1=Thelypteridaceae }
 #@cli : Input a 2D Barnsley fern with specified size.
@@ -5377,7 +5394,6 @@ update_download_version : check "
       );
     );
     p = find(data,'/source/gmic_',1,0);
-    print(p);
     p>0?(
       str = data[p + 13,5];
       is_digit(str[0]) && str[1]==_'.' && is_digit(str[2]) && str[3]=='.' && is_digit(str[4])?(
@@ -5731,7 +5747,7 @@ update_server :
     replace_str "<i>David Tschumperl&#233;</i>","<i><a href=\""$url"\">David Tschumperl&#233;</a></i>"
     o cimgz:/tmp/update$_version.gmic,uchar
 
-    (280,281,282,283)
+    (280,281,282,283,284)
     repeat w
       v={i[$>]}
       _update_server_upload[] ${_path_rc}update$_version.gmic,plain_update$v.gmic
@@ -5895,7 +5911,7 @@ _update_server_binaries : check "isbool(${2=1})"
       file=${file$>}
       is_win=${strcontains[]" "$file,win}
       if $is_win folder="windows" else folder="linux" fi
-      e[] "https://gmic.eu/files/"$folder/$file
+      e[] "http://gmic.eu/files/"$folder/$file
     done
     e[] ""
 
@@ -7809,40 +7825,6 @@ roundify : check $1>=0
 #@cli : Default values: 'x=y=z=c=0'.
 #@cli : $ 2,2 set 1,0,0 set 2,1,0 set 3,0,1 set 4,1,1
 #@cli : $ image.jpg repeat 10000 set 255,{u(100)}%,{u(100)}%,0,{u(100)}% done
-
-#@cli set_vector_covariance : coef1,coef2,...,coefN
-#@cli : Apply linear transformation on selected images so that the covariance matrix of their vector-valued pixels
-#@cli : is prescribed to given matrix. Matrix size 'N' must be equal to 'spectrum^2'.
-set_vector_covariance :
-  e[^-1] "Set covariance matrix of image$? to [ $* ]."
-  repeat $! l[$>]
-    if narg($*)!=s^2
-      error[0--4] "Command '$0': Invalid arguments '$*' for image '"{n}"' with size ("{[w,h,d,s]}") ("{s^2}\
-                  " argument"${"if s==1 u \"\" else u s fi"}" expected)."
-    fi
-
-    # Compute current covariance matrix.
-    C=${"vector_covariance _avg"}
-
-    # Transform data to fit new covariance matrix.
-    f "begin(
-         avg = [ "$_avg" ];
-         C1 = [ "$C" ];
-         C2 = [ $* ];
-         eig1 = eig(C1);
-         eig2 = eig(C2);
-         for (k = 0, k<s, ++k, # Align eigenvector orientations.
-           k1s = (k + 1)*s;
-           if (dot(eig2[k1s,s],eig1[k1s,s])<0, copy(eig2[k1s],eig2[k1s,s]*=-1,s));
-         );
-         invD1 = diag(eig1[0,s]^-0.5);
-         invR1 = eig1[s,size(eig1)-s];
-         D2 = diag(eig2[0,s]^0.5);
-         R2 = transp(eig2[s,size(eig2)-s],s);
-         T = mul(R2,mul(D2,mul(invD1,invR1,s),s),s);
-       );
-       avg + T*(I - avg)"
-  endl done
 
 #@cli threshold : value[%],_is_soft={ 0 | 1 } :
 #@cli : Threshold values of selected images.
@@ -23067,7 +23049,7 @@ render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2
     *. 200 i[-2] 100%,100%,1,3 a[-2,-1] c
 
     rows -5,100% a y,0.5 r2dx 480
-    o $HOME/work/src/gmic/html/img/donations_latest_months.png
+    if $2==5 o $HOME/work/src/gmic/html/img/donations_latest_months.png fi
   endl
 
   all_charged_sum={sum(0$all_charged_amounts)}
@@ -28237,6 +28219,34 @@ x_whirl : check "${1=0.2}>=0" check_display
     wait 20
   while {*}" && "!{*,ESC}" && "!{*,Q}
   rm[-3,-2] w[] 0
+
+#-------------------------------------
+#
+#@cli :: Funny one-liners
+#
+#-------------------------------------
+
+#@cli oneliner_sierpinski_carpet :
+#@cli : Draw a sierpinski carpet.
+#@cli : $ 729,729,1,3,"c(x,y,l) = (S = round(w/3^l); (int(x/S)%3)*(int(y/S)%3)==1?255:l<6?c(x,y,l + 1):0); c(x,y,1)"
+oneliner_sierpinski_carpet :
+  729,729,1,3,"c(x,y,l) = (S = round(w/3^l); (int(x/S)%3)*(int(y/S)%3)==1?255:l<6?c(x,y,l + 1):0); c(x,y,1)"
+
+#@cli oneliner_sierpinski_triangle :
+#@cli : Draw a sierpinski triangle.
+#@cli : $ 1024,1024,1,1,">x>y?0:y<2?1:xor(j(0,-1),j(-1,-1))" f. "255*j(-w/2+y/2,0)"
+oneliner_sierpinski_triangle :
+  1024,1024,1,1,">x>y?0:y<2?1:xor(j(0,-1),j(-1,-1))" f. "255*j(-w/2+y/2,0)"
+
+#@cli oneliner_lightspeed :
+#@cli : A colorful lightspeed travel effect.
+#@cli : $ 500,500 repeat 10 +noise_poissondisk[0] {3+$>} done rm[0] a z \
+# f "!z?(R=cut(norm(x-w/2,y-h/2)/20,0,d-1);i(x,y,R)):0" slices 0 to_rgb f "max(I)?u([255,255,255]):I" blur_radial 0.6% \
+# equalize n 0,255
+onliner_lightspeed :
+  500,500 repeat 10 +noise_poissondisk[0] {3+$>} done rm[0] a z \
+  f "!z?(R=cut(norm(x-w/2,y-h/2)/20,0,d-1);i(x,y,R)):0" slices 0 to_rgb f "max(I)?u([255,255,255]):I" blur_radial 0.6% \
+  equalize n 0,255
 
 #-------------------------------------
 #
@@ -44163,6 +44173,22 @@ fx_snowflake :
   repeat $! l[$>] to_color split_opacity l[0]
     shape_snowflake {min(w,h)},$1 100%,100%,1,3,[${3-5}]
     j[0] .,{([w#0,h#0]-[w#1,h#1])/2},0,0,$2,.. k[0]
+  endl a c endl done
+
+#@gui _<i>Others</i>
+
+#@gui Dragon Curve : fx_dragoncurve, fx_dragoncurve(1)
+#@gui : Recursions = int(20,0,30)
+#@gui : Angle = float(0,-180,180)
+#@gui : Opacity = float(1,0,1)
+#@gui : Color = color(255,255,255)
+#@gui : sep = separator()
+#@gui : note = note("<small>Author: <i>David Tschumperl&#233;</i>.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+#@gui : Latest Update: <i>2019/01/29</i>.</small>")
+fx_dragoncurve :
+  repeat $! l[$>] to_color split_opacity l[0]
+    shape_dragon {min(w,h)},$1,$2 100%,100%,1,3,[${4-6}]
+    j[0] .,{([w#0,h#0]-[w#1,h#1])/2},0,0,$3,.. k[0]
   endl a c endl done
 
 #@gui ____<b>Various</b>
