@@ -536,11 +536,11 @@ CImg<T>& gmic_matchpatch(const CImg<T>& patch_image,
                          const unsigned int patch_depth,
                          const unsigned int nb_iterations,
                          const unsigned int nb_randoms,
-                         const float occ_penalization,
+                         const float patch_penalization,
                          const bool is_score,
                          const CImg<T> *const initialization) {
   return get_gmic_matchpatch(patch_image,patch_width,patch_height,patch_depth,
-                             nb_iterations,nb_randoms,occ_penalization,is_score,initialization).move_to(*this);
+                             nb_iterations,nb_randoms,patch_penalization,is_score,initialization).move_to(*this);
 }
 
 CImg<T> get_gmic_matchpatch(const CImg<T>& patch_image,
@@ -549,12 +549,12 @@ CImg<T> get_gmic_matchpatch(const CImg<T>& patch_image,
                             const unsigned int patch_depth,
                             const unsigned int nb_iterations,
                             const unsigned int nb_randoms,
-                            const float occ_penalization,
+                            const float patch_penalization,
                             const bool is_score,
                             const CImg<T> *const initialization) const {
   CImg<floatT> score, res;
   res = _matchpatch(patch_image,patch_width,patch_height,patch_depth,
-                    nb_iterations,nb_randoms,occ_penalization,
+                    nb_iterations,nb_randoms,patch_penalization,
                     initialization?*initialization:CImg<T>::const_empty(),
                     is_score,is_score?score:CImg<floatT>::empty());
   const unsigned int s = res._spectrum;
@@ -8860,7 +8860,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Get patch-matching correspondence map.
         if (!std::strcmp("matchpatch",command)) {
           gmic_substitute_args(true);
-          float patch_width, patch_height, patch_depth = 1, nb_iterations = 5, nb_randoms = 5, occ_penalization = 0;
+          float patch_width, patch_height, patch_depth = 1, nb_iterations = 5, nb_randoms = 5, patch_penalization = 0;
           unsigned int is_score = 0;
           *argx = 0; ind0.assign();
           if (((cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%f,%c",
@@ -8875,13 +8875,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                            indices,&patch_width,&patch_height,&patch_depth,&nb_iterations,&nb_randoms,&end)==6 ||
                cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%f,%f,%f,%f,%f,%f%c",
                            indices,&patch_width,&patch_height,&patch_depth,&nb_iterations,&nb_randoms,
-                           &occ_penalization,&end)==7 ||
+                           &patch_penalization,&end)==7 ||
                cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%f,%f,%f,%f,%f,%f,%u%c",
                            indices,&patch_width,&patch_height,&patch_depth,&nb_iterations,&nb_randoms,
-                           &occ_penalization,&is_score,&end)==8 ||
+                           &patch_penalization,&is_score,&end)==8 ||
                (cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%f,%f,%f,%f,%f,%f,%u,[%255[a-zA-Z0-9_.%+-]%c%c",
                             indices,&patch_width,&patch_height,&patch_depth,&nb_iterations,&nb_randoms,
-                            &occ_penalization,&is_score,argx,&sep,&end)==10 && sep==']')) &&
+                            &patch_penalization,&is_score,argx,&sep,&end)==10 && sep==']')) &&
               (ind=selection2cimg(indices,images.size(),images_names,"matchpatch")).height()==1 &&
               (!*argx ||
                (ind0=selection2cimg(argx,images.size(),images_names,"matchpatch")).height()==1) &&
@@ -8902,7 +8902,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   patch_width,patch_height,patch_depth,
                   nb_iterations,nb_iterations!=1?"s":"",
                   nb_randoms,nb_randoms!=1?"s":"",
-                  occ_penalization,
+                  patch_penalization,
                   is_score?"":"no ");
             const CImg<T> patch_image = gmic_image_arg(*ind);
             cimg_forY(selection,l) gmic_apply(gmic_matchpatch(patch_image,
@@ -8911,7 +8911,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                                               (unsigned int)patch_depth,
                                                               (unsigned int)nb_iterations,
                                                               (unsigned int)nb_randoms,
-                                                              occ_penalization,
+                                                              patch_penalization,
                                                               (bool)is_score,
                                                               initialization));
           } else arg_error("matchpatch");
