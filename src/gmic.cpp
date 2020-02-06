@@ -13838,7 +13838,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                  ((cimg_sscanf(argx,"[%255[a-zA-Z0-9_.%+-]%c%c",indices,&sepx,&end)==2 &&
 		   sepx==']' &&
                    (indx=selection2cimg(indices,images.size(),images_names,"input")).height()==1) ||
-                  (cimg_sscanf(argx,"%f%c",&dx,&end)==1 && dx>=1) ||
+                  ((*argx!='0' || argx[1]!='x') && cimg_sscanf(argx,"%f%c",&dx,&end)==1 && dx>=1) ||
                   (cimg_sscanf(argx,"%f%c%c",&dx,&sepx,&end)==2 && dx>0 && sepx=='%')) &&
                  (!*argy ||
                   (cimg_sscanf(argy,"[%255[a-zA-Z0-9_.%+-]%c%c",indicesy.data(),&sepy,&end)==2 &&
