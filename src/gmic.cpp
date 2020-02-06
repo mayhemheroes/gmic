@@ -13783,26 +13783,24 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       CImg<char> _gmic_selection;
       if (is_verbose) selection2string(selection,images_names,0,_gmic_selection);
 
-      if (*arg_input=='0' &&
-          (!arg_input[1] ||
-           cimg_sscanf(arg_input,"0x%d%c",&nb,&end)==1) && nb>0) {
+      char *last_x = std::strrchr(arg_input,'x');
+      if (last_x && cimg_sscanf(last_x + 1,"%d%c",&nb,&end)==1 && nb>0) *last_x = 0;
+      else { last_x = 0; nb = 1; }
+
+      if (*arg_input=='0' && !arg_input[1]) {
 
         // Empty image(s).
-        CImg<char>::string("[empty]").move_to(g_list_c);
         if (nb==1)
           print(images,0,"Input empty image at position%s",
                 _gmic_selection.data());
-        else {
+        else
           print(images,0,"Input %u empty images at position%s",
                 nb,_gmic_selection.data());
-          g_list_c.insert(nb - 1,g_list_c[0]);
-        }
         g_list.assign(nb);
+        CImg<char>::string("[empty]").move_to(g_list_c);
+        if (--nb) { g_list.insert(nb,g_list[0]); g_list_c.insert(nb,g_list_c[0]); }
 
-      } else if (((cimg_sscanf(arg_input,"[%255[a-zA-Z_0-9%.eE%^,:+-]%c%c",indices,&sep,&end)==2 &&
-                   sep==']') ||
-                  cimg_sscanf(arg_input,"[%255[a-zA-Z_0-9%.eE%^,:+-]]x%d%c",indices,&nb,&end)==2) &&
-                 nb>0) {
+      } else if (cimg_sscanf(arg_input,"[%255[a-zA-Z_0-9%.eE%^,:+-]%c%c",indices,&sep,&end)==2 && sep==']') {
 
         // Nb copies of existing image(s).
         const CImg<unsigned int> inds = selection2cimg(indices,images.size(),images_names,"input");
@@ -13889,8 +13887,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             std::memcpy(s_values_text.data() + 32,"(...)",5);
             std::memcpy(s_values_text.data() + 37,s_values.data() + l - 34,35);  // Last '\0' is included
           } else std::strcpy(s_values_text,s_values);
-          print(images,0,"Input image at position%s, with values '%s'",
-                _gmic_selection.data(),s_values_text.data());
+
+          if (nb==1)
+            print(images,0,"Input image at position%s, with values '%s'",
+                  _gmic_selection.data(),s_values_text.data());
+          else
+            print(images,0,"Input %u images at position%s, with values '%s'",
+                  nb,_gmic_selection.data(),s_values_text.data());
         } else
           print(images,0,"Input black image at position%s",
                 _gmic_selection.data());
@@ -13901,6 +13904,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           CImg<char>::string(title).move_to(g_list_c);
         } else { new_image.fill((T)0); CImg<char>::string("[unnamed]").move_to(g_list_c); }
         new_image.move_to(g_list);
+        if (--nb) { g_list.insert(nb,g_list[0]); g_list_c.insert(nb,g_list_c[0]); }
 
       } else if (*arg_input=='(' && arg_input[std::strlen(arg_input) - 1]==')') {
 
@@ -13949,8 +13953,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               gmic_argument_text_printed());
         img.move_to(g_list);
         arg_input.move_to(g_list_c);
+        if (--nb) { g_list.insert(nb,g_list[0]); g_list_c.insert(nb,g_list_c[0]); }
 
-      } else if (*arg_input==gmic_store &&
+      } else if ((last_x?(*last_x='x'):0), // Restore full input argument
+                 *arg_input==gmic_store &&
                  cimg_sscanf(arg_input.data() + 1,"*store/%255[a-zA-Z0-9_]%c",&(*argx=0),&end)==1 &&
                  (*argx<'0' || *argx>'9')) {
 
@@ -13980,7 +13986,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             if (!zero) throw CImgArgumentException(0);
             CImgList<T>::get_unserialize(__variables[vind].get_shared_points(zero + 1 - __variables[vind].data(),
                                                                              __variables[vind].width() - 1)).
-              move_to(g_list);
+                move_to(g_list);
           } catch (CImgArgumentException&) {
             error(true,images,0,0,
                   "Command 'input': Variable '%s' has not been assigned with command 'store'.",
@@ -13991,7 +13997,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           cimglist_for(g_list_c,q) g_list_c[q].resize(1,g_list_c[q].height() + 1,1,1,0).unroll('x');
           if (g_list_c.size()!=g_list.size() - 1)
             error(true,images,0,0,
-                  "Command 'input': Invalid binary encoding of variable '%s' "\
+                  "Command 'input': Invalid binary encoding of variable '%s' " \
                   "(%d items, %s names)",
                   argx,(int)g_list.size() - 1,(int)g_list_c.size());
           else if (g_list_c) g_list.remove();
