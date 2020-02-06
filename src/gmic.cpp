@@ -13772,7 +13772,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       if (!is_selection || !selection) selection.assign(1,1,1,1,images.size());
 
       CImg<char> indicesy(256), indicesz(256), indicesc(256);
-      float dx = 0, dy = 1, dz = 1, dc = 1, nb = 1;
+      float dx = 0, dy = 1, dz = 1, dc = 1;
+      int nb = 1;
       CImg<unsigned int> indx, indy, indz, indc;
       sepx = sepy = sepz = sepc = *indices = *indicesy = *indicesz = *indicesc = *argx = *argy = *argz = *argc = 0;
 
@@ -13782,24 +13783,31 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       CImg<char> _gmic_selection;
       if (is_verbose) selection2string(selection,images_names,0,_gmic_selection);
 
-      if (*arg_input=='0' && !arg_input[1]) {
+      if (*arg_input=='0' &&
+          (!arg_input[1] ||
+           cimg_sscanf(arg_input,"0x%d%c",&nb,&end)==1) && nb>0) {
 
-        // Empty image.
-        print(images,0,"Input empty image at position%s",
-              _gmic_selection.data());
-        g_list.assign(1);
+        // Empty image(s).
         CImg<char>::string("[empty]").move_to(g_list_c);
+        if (nb==1)
+          print(images,0,"Input empty image at position%s",
+                _gmic_selection.data());
+        else {
+          print(images,0,"Input %u empty images at position%s",
+                nb,_gmic_selection.data());
+          g_list_c.insert(nb - 1,g_list_c[0]);
+        }
+        g_list.assign(nb);
 
-      } else if ((cimg_sscanf(arg_input,"[%255[a-zA-Z_0-9%.eE%^,:+-]%c%c",indices,&sep,&end)==2 &&
-                  sep==']') ||
-                 cimg_sscanf(arg_input,"[%255[a-zA-Z_0-9%.eE%^,:+-]]x%f%c",indices,&nb,&end)==2) {
+      } else if (((cimg_sscanf(arg_input,"[%255[a-zA-Z_0-9%.eE%^,:+-]%c%c",indices,&sep,&end)==2 &&
+                   sep==']') ||
+                  cimg_sscanf(arg_input,"[%255[a-zA-Z_0-9%.eE%^,:+-]]x%d%c",indices,&nb,&end)==2) &&
+                 nb>0) {
 
-        // Nb copies of existing images.
-        nb = cimg::round(nb);
+        // Nb copies of existing image(s).
         const CImg<unsigned int> inds = selection2cimg(indices,images.size(),images_names,"input");
         CImg<char> s_tmp;
         if (is_verbose) selection2string(inds,images_names,1,s_tmp);
-        if (nb<=0) arg_error("input");
         if (nb!=1)
           print(images,0,"Input %u copies of image%s at position%s",
                 (unsigned int)nb,
@@ -13850,6 +13858,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                    (indc=selection2cimg(indicesc,images.size(),images_names,"input")).height()==1) ||
                   (cimg_sscanf(argc,"%f%c",&dc,&end)==1 && dc>=1) ||
                   (cimg_sscanf(argc,"%f%c%c",&dc,&sepc,&end)==2 && dc>0 && sepc=='%'))) {
+
+        std::fprintf(stderr,"\nDEBUG : nb = %d\n",nb);
 
         // New image with specified dimensions and optionally values.
         if (indx) { dx = (float)gmic_check(images[*indx]).width(); sepx = 0; }
