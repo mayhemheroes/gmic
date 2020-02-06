@@ -13859,8 +13859,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   (cimg_sscanf(argc,"%f%c",&dc,&end)==1 && dc>=1) ||
                   (cimg_sscanf(argc,"%f%c%c",&dc,&sepc,&end)==2 && dc>0 && sepc=='%'))) {
 
-        std::fprintf(stderr,"\nDEBUG : nb = %d\n",nb);
-
         // New image with specified dimensions and optionally values.
         if (indx) { dx = (float)gmic_check(images[*indx]).width(); sepx = 0; }
         if (indy) { dy = (float)gmic_check(images[*indy]).height(); sepy = 0; }
