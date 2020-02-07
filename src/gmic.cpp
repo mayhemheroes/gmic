@@ -2799,7 +2799,7 @@ CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) 
       if (c==1) { while (c && c!=' ') c = *(++ptrs); if (!c) break; } // Discard debug info inside string
       else switch (c) {
         case '\"': is_dquoted = false; break;
-        case '$' : if (ptrs[1]!='?') *ptrd = gmic_dollar; else *ptrd = '$'; ++ptrd; break;
+        case '$' : *(ptrd++) = ptrs[1]=='?'?'$':gmic_dollar; break;
         case '{' : *(ptrd++) = gmic_lbrace; break;
         case '}' : *(ptrd++) = gmic_rbrace; break;
         case ',' : *(ptrd++) = gmic_comma; break;
