@@ -2776,8 +2776,7 @@ CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) 
   bool is_dquoted = false;
   const char *ptrs0 = commands_line;
   while (is_blank(*ptrs0)) ++ptrs0; // Remove leading spaces to first item
-//  CImg<char> item((unsigned int)std::strlen(ptrs0) + 1);
-  CImg<char> item((unsigned int)std::strlen(ptrs0) + 1,1,1,1,0);
+  CImg<char> item((unsigned int)std::strlen(ptrs0) + 1);
   CImgList<char> items;
   char *ptrd = item.data(), c = 0;
 
@@ -2800,7 +2799,7 @@ CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) 
       if (c==1) { while (c && c!=' ') c = *(++ptrs); if (!c) break; } // Discard debug info inside string
       else switch (c) {
         case '\"': is_dquoted = false; break;
-        case '$' : if (ptrs[1]!='?') *ptrd = gmic_dollar; ++ptrd; break;
+        case '$' : if (ptrs[1]!='?') *ptrd = gmic_dollar; else *ptrd = '$'; ++ptrd; break;
         case '{' : *(ptrd++) = gmic_lbrace; break;
         case '}' : *(ptrd++) = gmic_rbrace; break;
         case ',' : *(ptrd++) = gmic_comma; break;
