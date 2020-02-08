@@ -4568,7 +4568,6 @@ CImg<char> gmic::substitute_item(const char *const source,
       }
 
       // Substitute '$?' -> String to describes the current command selection.
-      // (located here to avoid substitution when verbosity<1).
       if (nsource[1]=='?') {
         if (command_selection) {
           const unsigned int substr_width = (unsigned int)substr.width();
