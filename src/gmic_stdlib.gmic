@@ -220,11 +220,17 @@ h :
 #@cli : Display help (optionally for specified command only) and exit.
 #@cli : (eq. to 'h').
 help : skip ${1=""},${2=1}
+  if isfile(['$_path_rc/update$_version.gmic'])
+    l[] cimgz:$_path_rc/update$_version.gmic k[0]
+    onfail l[] raw:$_path_rc/update$_version.gmic,uchar k[0] onfail endl
+    endl
+    if $! k. fi
+  fi
   if !$! return fi
   y a y
   +_help $1,$2 k[0]
   if narg(${}) _help[0] ${},0 fi # In case of shortcut, display also help for shortcut command.
-  rm
+  rm q
 
 _help : skip ${1=""}
   v 0 use_vt100
