@@ -892,10 +892,10 @@ ${g}"N"$n".
 \n          (memory content) | 0=none | 1=nearest | 2=average | 3=linear | 4=grid | 5=bicubic |
 \n          6=lanczos }"$n", and '"${g}"boundary_conditions'"$n" can be "${g}"{ 0=dirichlet | 1=neumann | 2=periodic |
 \n          3=mirror }"$n".
-\n       . Function '"${c}"find(A,B,_is_forward,_starting_index)"$n"' returns the index where sub-vector "${g}"B"$n"
-\n          appears in vector "${g}"A"$n", (or "${g}"-1"$n" if "${g}"B"$n" is not found in "${g}"A"$n").
- Argument "${g}"A"$n" can be also replaced by
-\n          an image index "${g}"#ind"$n".
+\n       . Function '"${c}"find(A,B,_starting_index,_is_forward={0 | 1})"$n"' returns the index where
+\n          sub-vector "${g}"B"$n" appears in vector "${g}"A"$n", (or "${g}"-1"$n" if "${g}"B"$n" is not
+  found in "${g}"A"$n").
+\n          Argument "${g}"A"$n" can be also replaced by an image index "${g}"#ind"$n".
 \n       . A "${g}"2"$n"-dimensional vector may be seen as a complex number and used in those particular
 \n          functions/operators:
 \n          '"${c}"**"$n"' (complex multiplication), '"${c}"//"$n"' (complex division), '"${c}"^^"$n"'
@@ -5101,12 +5101,12 @@ update_gallery_html : check "isbool(${1=0})"
           eval "
             str = crop(#-1);
             ind = 0;
-            while ((ind = find(str,'\n#@cli ',1,ind))>=0,
+            while ((ind = find(str,'\n#@cli ',ind))>=0,
               ++ind;
               str[ind+6]!=_':' ? break() :
               str[ind+7]==_' ' && str[ind+8]==_'$' && str[ind+9]==_' '?(
                 beg = ind + 10;
-                end = find(str,_'\n',1,beg) - 1;
+                end = find(str,_'\n',beg) - 1;
                 com = vector1024(0);
                 call('+rows[0] ',beg,',',end);
               );
@@ -5390,7 +5390,7 @@ update_download_version : check "
     data = crop();
     p = stop = N = 0;
     while (!stop,
-      p = find(data,'?dwl=gmic_',1,p);
+      p = find(data,'?dwl=gmic_',p);
       p<0?(stop=1):(
         str = data[p + 10,5];
         is_digit(str[0]) && str[1]==_'.' && is_digit(str[2]) && str[3]=='.' && is_digit(str[4])?(
@@ -5400,7 +5400,7 @@ update_download_version : check "
         ++p;
       );
     );
-    p = find(data,'/source/gmic_',1,0);
+    p = find(data,'/source/gmic_',0);
     p>0?(
       str = data[p + 13,5];
       is_digit(str[0]) && str[1]==_'.' && is_digit(str[2]) && str[3]=='.' && is_digit(str[4])?(
@@ -28496,7 +28496,7 @@ _gui_merge_layers :
     p = q = find(str,ker);
     p>=0?(
       q+=sker;
-      r = find(str,'),',1,q);
+      r = find(str,'),',q);
       q = r>=0?r:(str[sstr-1]==_')'?sstr-1:-1);
     );
     q>=0?copy(res,str[p + sker],q - p - sker):(def = ['${2--1}']; copy(res,def,size(def)));
@@ -44936,7 +44936,7 @@ parse_gui : skip "${1=*}"
     #---------------
     prev_p0 = p0 = p = N = 0;
     while (p<size(source),
-      p = find(source,'#@gui',1,p)%size(source);
+      p = find(source,'#@gui',p)%size(source);
 
       !p || (p>0 && source[p - 1]==_'\n')?( # Found line starting with '#@gui'
         p0 = p; # Remember starting position of line
@@ -44944,7 +44944,7 @@ parse_gui : skip "${1=*}"
 
         # Detect locale.
         #---------------
-        source[p]==_'_' && (l = find(source,' ',1,++p))>=0?(
+        source[p]==_'_' && (l = find(source,' ',++p))>=0?(
           siz = min(l - p,size(locale)-1);
           copy(locale,source[p],siz);
           locale[siz] = 0;
@@ -44955,10 +44955,10 @@ parse_gui : skip "${1=*}"
         #------------------------------
         skip_blank(p);
         source[p]!=_':'?(
-          q = find(source,_':',1,p)%size(source);
-          r = find(source,_'\n',1,p)%size(source);
+          q = find(source,_':',p)%size(source);
+          r = find(source,_'\n',p)%size(source);
           r<q?(
-            l = find(source,'hide(',1,p)%size(source);
+            l = find(source,'hide(',p)%size(source);
             l<r?(p = r + 1; continue()); # Ignore 'hide()' directives for filters.
 
             # Definition of a new folder.
@@ -44969,7 +44969,7 @@ parse_gui : skip "${1=*}"
             levelup?(
               copy(name,name[levelup],r-p+2-levelup); # Clean folder name
               while (levelup--, # Update path
-                lp = find(path,0); l = max(0,find(path,_'/',0,lp-1)); path[l] = 0;
+                lp = find(path,0); l = max(0,find(path,_'/',lp-1,0)); path[l] = 0;
               );
             );
             discard_html(name);
@@ -45015,14 +45015,14 @@ parse_gui : skip "${1=*}"
     source = crop();
     p = 0;
     while (p<size(source),
-      p = find(source,'#@gui',1,p)%size(source);
+      p = find(source,'#@gui',p)%size(source);
       !p || (p>0 && source[p - 1]==_'\n')?( # Found line starting with '#@gui'
         p0 = p; # Remember starting position of line
         p+=5;
-        source[p]==_'_' && (l = find(source,' ',1,++p))>=0?(p = l + 1); # Skip locale
+        source[p]==_'_' && (l = find(source,_' ',++p))>=0?(p = l + 1); # Skip locale
         skip_blank(p);
         source[p]==_':'?(++p; skip_blank(p));
-        r = find(source,_'\n',1,p)%size(source); # Find end of line
+        r = find(source,_'\n',p)%size(source); # Find end of line
 
         # Detect multi-line comment.
         q = r;
@@ -45030,7 +45030,7 @@ parse_gui : skip "${1=*}"
         source[q]==_'\\' && source[r+1]==_'#'?(
           r+=2; skip_blank(r);
           copy(i[#0,q],-1,r-q,1,0);
-#          r = find(source,_'\n',1,
+#          r = find(source,_'\n');
 
           echo('POUET!');
         );
@@ -45067,28 +45067,28 @@ parse_gui : skip "${1=*}"
     #---------------
     p = 0;
     while (p<size(source),
-      p = find(source,'#@gui',1,p)%size(source);
+      p = find(source,'#@gui',p)%size(source);
 
       !p || (p>0 && source[p - 1]==_'\n')?( # Found line starting with '#@gui'
         p0 = p; # Remember starting position of line
         p+=5;
-        source[p]==_'_' && (l = find(source,' ',1,++p))>=0?(p = l + 1); # Skip locale
+        source[p]==_'_' && (l = find(source,_' ',++p))>=0?(p = l + 1); # Skip locale
         skip_blank(p);
 
-        r = find(source,_'\n',1,p)%size(source); # Find end of line
+        r = find(source,_'\n',p)%size(source); # Find end of line
 
         source[p]!=_':'?(
 
           # Filter definition.
           #-------------------
-          l = find(source,'hide(',1,p)%size(source);
+          l = find(source,'hide(',p)%size(source);
           l>=0 && l<r?(p = r + 1; continue()); # Ignore 'hide()' directives for filters.
 
           zoom_factor = -1;
           is_zoom_accurate = 0;
           default_input_mode = 0;
 
-          q0 = q = find(source,_':',1,p)%size(source);
+          q0 = q = find(source,_':',p)%size(source);
           q<r?( # Extract name
             while (is_blank(--q),0);
             copy(name,source[p],q-p+1); name[q-p+1] = 0;
@@ -45096,7 +45096,7 @@ parse_gui : skip "${1=*}"
 
           p = q0 + 1;
           skip_blank(p);
-          q0 = q = find(source,_',',1,p)%size(source);
+          q0 = q = find(source,_',',p)%size(source);
           q<r?( # Extract command
             while (is_blank(--q),0);
             copy(command,source[p],q-p+1); command[q-p+1] = 0;
@@ -45104,11 +45104,11 @@ parse_gui : skip "${1=*}"
 
           p = q0 + 1;
           skip_blank(p);
-          q0 = q = min(r,find(source,_':',1,p)%size(source));
+          q0 = q = min(r,find(source,_':',p)%size(source));
           p<r?( # Extract preview command
             while (is_blank(--q),0);
             source[q]==_'+'?(is_zoom_accurate = 1; while (is_blank(--q),0)); # Extract zoom accuracy property
-            source[q]==_')' && (l = find(source,_'(',0,q))>=p?( # Extract default zoom factor
+            source[q]==_')' && (l = find(source,_'(',q,0))>=p?( # Extract default zoom factor
               zoom_factor = stov(source,l+1);
               isnan(zoom_factor)?(zoom_factor = -1);
               q = l;
@@ -45126,7 +45126,7 @@ parse_gui : skip "${1=*}"
           p = r + 1;
 
           echo('\n\nDEBUG = \'',name,'\' : \'',command,'\' : \'',command_preview,'\' : ',zoom_factor);
-        ):(l = find(source,_'=',1,p))%size(source)<r?(
+        ):(l = find(source,_'=',p))%size(source)<r?(
 
           # Parameter definition.
           #----------------------
@@ -45137,19 +45137,17 @@ parse_gui : skip "${1=*}"
           ):continue();
 
           p = l + 1; skip_blank(p);
-          q = min(find(source,_'(',1,p)%size(source),
-                  find(source,_'{',1,p)%size(source),
-                  find(source,_'[',1,p)%size(source));
+          q = min(find(source,_'(',p)%size(source),
+                  find(source,_'{',p)%size(source),
+                  find(source,_'[',p)%size(source));
           q<r?( # Extract type
             c = source[q]==_'('?_')':source[q]==_'{'?_'}':_']'; # Closing element
             while (is_blank(--q),0);
             copy(type,source[p],q-p+1); type[q-p+1] = 0;
           ):continue();
 
-          p =
-          q = find(source,c,1,p)
-
-
+#          p =
+          q = find(source,c,p);
 
           echo('PARAM \'',name,'\', TYPE : ',type);
         );
