@@ -45010,36 +45010,30 @@ parse_gui : skip "${1=*}"
 
     # Merge all '#@gui' directives into a single line (output as a new image)
     eval "
-    # Define convenience macros.
-    #---------------------------
     is_blank(p) = (source[p]<=32);
     skip_blank(p) = (while (is_blank(p), ++p));
-
-    # Init variables.
-    #----------------
     source = crop();
-
-    # Start parsing.
-    #---------------
     p = 0;
     while (p<size(source),
       p = find(source,'#@gui',1,p)%size(source);
-
       !p || (p>0 && source[p - 1]==_'\n')?( # Found line starting with '#@gui'
         p0 = p; # Remember starting position of line
         p+=5;
         source[p]==_'_' && (l = find(source,' ',1,++p))>=0?(p = l + 1); # Skip locale
         skip_blank(p);
         source[p]==_':'?(++p; skip_blank(p));
-
         r = find(source,_'\n',1,p)%size(source); # Find end of line
+
+        # Detect multi-line comment.
+        0;
+
         call('+rows[0] ',p,',',r);
         i[#-1,h(#-1)-1] = _' ';
         copy(i[#0,p0],-1,r-p0+1,1,0);
         p = r + 1;
       ):++p;
     )"
-    a[^0] y discard.. -1
+    discard -1 a[^0] y
     store[0] code_$> # Store filter code
 
     e[] {0,t}
