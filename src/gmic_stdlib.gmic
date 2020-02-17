@@ -45025,9 +45025,17 @@ parse_gui : skip "${1=*}"
         r = find(source,_'\n',1,p)%size(source); # Find end of line
 
         # Detect multi-line comment.
-        0;
+        q = r;
+        while (is_blank(--q),0);
+        source[q]==_'\\' && source[r+1]==_'#'?(
+          r+=2;
+          skip_blank(r);
+          copy(i[#0,q],-1,r-q,1,0);
 
-        call('+rows[0] ',p,',',r);
+          echo('POUET!');
+        );
+
+        call('+rows[0] ',p,',',q);
         i[#-1,h(#-1)-1] = _' ';
         copy(i[#0,p0],-1,r-p0+1,1,0);
         p = r + 1;
