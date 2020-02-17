@@ -44893,8 +44893,8 @@ fx_solve_maze_preview :
 #-------------------------------------------------------------------------------
 parse_gui : skip "${1=*}"
 
-  filename_filters=$_path_rc/update$_version.gmic
-# filename_filters=$HOME/work/src/gmic/src/gmic_stdlib.gmic
+# filename_filters=$_path_rc/update$_version.gmic
+ filename_filters=$HOME/work/src/gmic/src/gmic_stdlib.gmic
 #  filename_filters=$HOME/toto
 
   # Input .gmic filter definition file.
@@ -45007,7 +45007,49 @@ parse_gui : skip "${1=*}"
 
   # Parse '#@gui' directives for each filters.
   repeat $! l[$>]
-  eval "
+
+    # Merge all '#@gui' directives into a single line (output as a new image)
+    eval "
+    # Define convenience macros.
+    #---------------------------
+    is_blank(p) = (source[p]<=32);
+    skip_blank(p) = (while (is_blank(p), ++p));
+
+    # Init variables.
+    #----------------
+    source = crop();
+
+    # Start parsing.
+    #---------------
+    p = 0;
+    while (p<size(source),
+      p = find(source,'#@gui',1,p)%size(source);
+
+      !p || (p>0 && source[p - 1]==_'\n')?( # Found line starting with '#@gui'
+        p0 = p; # Remember starting position of line
+        p+=5;
+        source[p]==_'_' && (l = find(source,' ',1,++p))>=0?(p = l + 1); # Skip locale
+        skip_blank(p);
+        source[p]==_':'?(++p; skip_blank(p));
+
+        r = find(source,_'\n',1,p)%size(source); # Find end of line
+        call('+rows[0] ',p,',',r);
+        i[#-1,h(#-1)-1] = _' ';
+        copy(i[#0,p0],-1,r-p0+1,1,0);
+        p = r + 1;
+      ):++p;
+    )"
+    a[^0] y discard.. -1
+    store[0] code_$> # Store filter code
+
+    e[] {0,t}
+
+    d
+    q
+
+
+    # Parse filter definition.
+    eval "
     # Define convenience macros.
     #---------------------------
     is_blank(p) = (source[p]<=32);
@@ -45017,7 +45059,7 @@ parse_gui : skip "${1=*}"
     #----------------
     const N = "$>";
     source = crop();
-    name = command = command_preview = vector256();
+    name = command = command_preview = type = vector256();
 
     # Start parsing.
     #---------------
@@ -45031,11 +45073,12 @@ parse_gui : skip "${1=*}"
         source[p]==_'_' && (l = find(source,' ',1,++p))>=0?(p = l + 1); # Skip locale
         skip_blank(p);
 
+        r = find(source,_'\n',1,p)%size(source); # Find end of line
+
         source[p]!=_':'?(
 
           # Filter definition.
           #-------------------
-          r = find(source,_'\n',1,p)%size(source); # Find end of line
           l = find(source,'hide(',1,p)%size(source);
           l>=0 && l<r?(p = r + 1; continue()); # Ignore 'hide()' directives for filters.
 
@@ -45080,14 +45123,33 @@ parse_gui : skip "${1=*}"
 
           p = r + 1;
 
-          echo('DEBUG = \'',name,'\' : \'',command,'\' : \'',command_preview,'\' : ',zoom_factor);
-        ):(
+          echo('\n\nDEBUG = \'',name,'\' : \'',command,'\' : \'',command_preview,'\' : ',zoom_factor);
+        ):(l = find(source,_'=',1,p))%size(source)<r?(
 
           # Parameter definition.
           #----------------------
-          0;
-#          echo('PARAM');
+          ++p; skip_blank(p);
+          q = l; while (is_blank(--q),0);
+          p<r?( # Extract name
+            copy(name,source[p],q-p+1); name[q-p+1] = 0;
+          ):continue();
 
+          p = l + 1; skip_blank(p);
+          q = min(find(source,_'(',1,p)%size(source),
+                  find(source,_'{',1,p)%size(source),
+                  find(source,_'[',1,p)%size(source));
+          q<r?( # Extract type
+            c = source[q]==_'('?_')':source[q]==_'{'?_'}':_']'; # Closing element
+            while (is_blank(--q),0);
+            copy(type,source[p],q-p+1); type[q-p+1] = 0;
+          ):continue();
+
+          p =
+          q = find(source,c,1,p)
+
+
+
+          echo('PARAM \'',name,'\', TYPE : ',type);
         );
 
       ):++p;
