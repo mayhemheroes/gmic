@@ -44962,7 +44962,6 @@ parse_gui : skip "${1=list},${2=*},${3="${_path_rc}update$_version.gmic"}"
       !p || (p>0 && source[p - 1]==_'\n')?( # Found line starting with '#@gui'
         p0 = p; # Remember starting position of line
         p+=5;
-
         source[p]==_'_' && (l = find(source,_' ',++p))>=0?(p = l + 1); # Skip locale
 
         # Detect locale.
@@ -45029,7 +45028,6 @@ parse_gui : skip "${1=list},${2=*},${3="${_path_rc}update$_version.gmic"}"
   _nbfilters=$!
 
   # Parse each filter.
-  c="\n"
   repeat $_nbfilters f=$< _f${f}_path={n} l[$<] if crop(0,0,1,5)!='#@gui' _f${f}_code={t} else
 
     # Separate '#@gui' directives from filter code, and merge them.
@@ -45186,15 +45184,15 @@ parse_gui : skip "${1=list},${2=*},${3="${_path_rc}update$_version.gmic"}"
 _parse_gui_isparams_list : u 0
 _parse_gui_list :
   v 0
-  echo_stdout[] "*** List of filters in the G\47MIC plug-in ("{$_nbfilters-1}" filters, on "\
+  echo_stdout[] "*** List of filters in the G\47MIC plug-in ("$_nbfilters" filters, on "\
                 {`v=date(1);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}"/"\
                 {`v=date(2);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}", "\
                 {`v=date(4);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}":"\
                 {`v=date(5);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}") ***\n"
 
   echo_stdout[] "* List of filters, sorted by path:\n"
-  1,1,1,1x{$_nbfilters-1}
-  repeat $! f={1+$>} nm[$>] -${_f${f}_path} f[$>] $f done
+  1,1,1,1x$_nbfilters
+  repeat $! nm[$>] -${_f$>_path} f[$>] $> done
   sort_list +,n a x
   f=1
   repeat w n={i[$>]}
@@ -45204,8 +45202,8 @@ _parse_gui_list :
   rm
 
   echo_stdout[] "\n* List of filters, sorted alphabetically:\n"
-  1,1,1,1x{$_nbfilters-1}
-  repeat $! f={1+$>} nm[$>] -${_f${f}_name} f[$>] $f done
+  1,1,1,1x$_nbfilters
+  repeat $! nm[$>] -${_f$>_name} f[$>] $> done
   sort_list +,n a x
   f=1
   repeat w n={i[$>]}
