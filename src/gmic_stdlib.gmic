@@ -44906,7 +44906,7 @@ parse_gui : skip "${1=*}"
   eval "
     # Define convenience macros.
     #---------------------------
-    is_blank(p) = (source[p]<=32);
+    is_blank(p) = (source[p]<=_' ');
 
     skip_blank(p) = (while (is_blank(p), ++p));
 
@@ -45008,18 +45008,17 @@ parse_gui : skip "${1=*}"
   if "['$1']!='*'" repeat $! if "s = ['"{$<,n}"']; find(lowercase(s),lowercase(['$1']))<0" rm[$<] fi done fi
 
   # Parse each filter.
-  repeat $!,f l[$>] if crop(0,0,1,5)!='#@gui' store[0] code_$> else
+  repeat $!,f l[$>] if crop(0,0,1,5)!='#@gui' +store[0] code_$> else
 
     # Separate '#@gui' directives from filter code, and merge them.
     eval "
-    is_blank(p) = (source[p]<=32);
+    is_blank(p) = (source[p]<=_' ');
     skip_blank(p) = (while (is_blank(p), ++p));
     source = crop();
     is_first = 1;
     p = 0;
     while (p<size(source),
       p = find(source,'#@gui',p)%size(source);
-
       !p || (p>0 && source[p - 1]==_'\n')?( # Found line starting with '#@gui'
         p0 = p; # Remember starting position of line
         p+=5;
@@ -45027,21 +45026,22 @@ parse_gui : skip "${1=*}"
         skip_blank(p);
         source[p]==_':'?(++p; skip_blank(p));
         r = find(source,_'\n',p)%size(source); # Find end of line
-
-        # Merge multi-line comments.
-        while (1,
-          q = r;
-          while (is_blank(--q),0);
-          source[q]==_'\\' && source[r+1]==_'#'?(
-            r+=2; skip_blank(r);
-            copy(i[#0,q],-1,r-q,1,0); # Part to be discarded
-            r = find(source,_'\n',r);
-          ):break();
+        source[r]==_'\n'?( # Detect and merge multi-line comments.
+          while (1,
+            q = r;
+            while (is_blank(--q),0);
+            source[q]==_'\\' && source[r+1]==_'#'?(
+              r+=2; skip_blank(r);
+              copy(i[#0,q],-1,r-q,1,0); # Part to be discarded
+              r = find(source,_'\n',r);
+              r<0?(r=size(source); break());
+            ):break();
+          );
         );
-
         call('+rows[0] ',p,',',r);
-        i[#-1,h(#-1)-1] = is_first?0:_' ';
-        copy(i[#0,p0],-1,r-p0+1,1,0); # Part to be discarded
+        source[r]==_'\n'?(i[#-1,h(#-1)-1] = is_first?0:_' ');
+
+        copy(i[#0,p0],-1,min(r,size(source)-1)-p0+1,1,0); # Part to be discarded
         p = r + 1;
         is_first = 0;
       ):++p
@@ -45079,79 +45079,83 @@ parse_gui : skip "${1=*}"
     e[] "#@gui "${name_$f}" : "${command_$f}", "${command_preview_$f}
 
     # Parse filter parameters.
-    e[] "\n\n"{/{t}}
-    eval "
-    is_blank(p) = (source[p]<=32);
-    skip_blank(p) = (while (is_blank(p), ++p));
-    source = crop();
-    name = type = vector256();
-    argument = vector65536();
+    if !$! nb_parameters_$f=0 0
+    else
+#      e[] "\n\n"{/{t}}
+      eval "
+        is_blank(p) = (source[p]<=_' ');
+        skip_blank(p) = (while (is_blank(p), ++p));
+        source = crop();
+        name = type = vector256();
+        argument = vector65536();
 
-    p = 0;
-    while (p<size(source),
-      q = find(source,_'=',p)%size(source);
-      source[q]==_'='?( # New parameter found
-        skip_blank(p);
-        r = q + 1; skip_blank(r);
-        while (is_blank(--q),0);
-        copy(name,source[p],q-p+1); name[q-p+1] = 0; # Parameter name
-
-        p = r;
-        q = min(find(source,_'(',p)%size(source),
-                find(source,_'{',p)%size(source),
-                find(source,_'[',p)%size(source));
-        c = source[q]==_'('?_')':source[q]==_'{'?_'}':_']';
-        r = q + 1; skip_blank(r);
-        while (is_blank(--q),0);
-        copy(type,source[p],q-p+1); type[q-p+1] = 0; # Parameter type
-
-        echo('PARAM \'',name,'\' = \'',type,'\'');
-
-        # Extract list of arguments.
-        p = r;
-        r = find(source,c,p)%size(source);
-
-        type[0,5]==[['bool'],0] ||
-        type[0,7]==[['button'],0] ||
-        type[0,6]==[['value'],0] ||
-        type[0,7]==[['filein'],0] ||
-        type[0,8]==[['fileout'],0] ||
-        type[0,7]==[['folder'],0] ||
-        type[0,5]==[['note'],0] ||
-        type[0,10]==[['separator'],0]?( # Single-argument parameter
-          copy(argument,source[p],r-p); argument[r-p] = 0; # Parameter argument
-          p = r + 1;
-          echo('  > one-argument = \'',argument,'\'');
-        ):( # Multiple-arguments parameter -> parse list of arguments
-          while (p<r,
+        p = 0;
+        while (p<size(source),
+          q = find(source,_'=',p)%size(source);
+          source[q]==_'='?( # New parameter found
             skip_blank(p);
-            q = min(r,find(source,_',',p)%size(source));
-            copy(argument,source[p],q-p); argument[q-p] = 0; # Parameter argument
-            p = q + 1;
-            echo('  > argument = \'',argument,'\'');
-          );
-        );
+            r = q + 1; skip_blank(r);
+            while (is_blank(--q),0);
+            copy(name,source[p],q-p+1); name[q-p+1] = 0; # Parameter name
 
-        # Extract visibility state.
-        p = r + 1;
-        p<size(source) && source[p]==_'_' && isin(source[p+1],_'0',_'1',_'2')?(
+            p = r;
+            q = min(find(source,_'(',p)%size(source),
+                    find(source,_'{',p)%size(source),
+                    find(source,_'[',p)%size(source));
+            c = source[q]==_'('?_')':source[q]==_'{'?_'}':_']';
+            r = q + 1; skip_blank(r);
+            while (is_blank(--q),0);
+            copy(type,source[p],q-p+1); type[q-p+1] = 0; # Parameter type
 
-          0;
-        );
+            echo('PARAM \'',name,'\' = \'',type,'\'');
 
-        p = r + 1;
-      ):++p;
-    );
-    "
+            # Extract list of arguments.
+            p = r;
+            r = find(source,c,p)%size(source);
+            nb_arguments = 0;
 
+            type[0,5]==[['bool'],0] ||
+            type[0,7]==[['button'],0] ||
+            type[0,6]==[['value'],0] ||
+            type[0,7]==[['filein'],0] ||
+            type[0,8]==[['fileout'],0] ||
+            type[0,7]==[['folder'],0] ||
+            type[0,5]==[['note'],0] ||
+            type[0,10]==[['separator'],0]?( # Single-argument parameter
+              p!=r?(
+                copy(argument,source[p],r-p); argument[r-p] = 0; # Parameter argument
+                ++nb_arguments
+              ):(argument[0] = 0);
+              p = r + 1;
+              echo('  > argument = \'',argument,'\'');
+            ):( # Multiple-arguments parameter -> parse list of arguments
+              while (p<r,
+                skip_blank(p);
+                q = min(r,find(source,_',',p)%size(source));
+                copy(argument,source[p],q-p); argument[q-p] = 0; # Parameter argument
+                p = q + 1;
+                ++nb_arguments;
+                echo('  > argument = \'',argument,'\'');
+              );
+            );
+            echo('  * nb_args = ',nb_arguments);
 
+            # Extract visibility state.
+            p = r + 1;
+            p<size(source) && source[p]==_'_' && isin(source[p+1],_'0',_'1',_'2')?(
+              0;
+            );
+
+            p = r + 1;
+            skip_blank(p);
+            source[p]==_','?++p;
+          ):++p;
+        )"
+    fi
 
   fi endl done
-  q
 
-
-
-
+       q
 
 # Local Variables:
 # mode: sh
