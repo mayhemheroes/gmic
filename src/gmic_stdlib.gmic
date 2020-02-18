@@ -44892,9 +44892,34 @@ fx_solve_maze_preview :
 #@cli parse_gui : output_format,_filter_name,_gmic_filename
 #@cli : Parse filter definitions and display info about filters in selected output format.
 #@cli : 'output_format' can be { list | xml }
+#@cli :
+#@cli : Here is the list of variables set by the parser:
+#@cli : '$_nbfilters': Number of filters matching the given expression.
+#@cli :
+#@cli : For each filter \#F ('F' in range [0,$_nbfilters-1]):
+#@cli :   '$_fF_name': Filter name.
+#@cli :   '$_fF_path': Full path.
+#@cli :   '$_fF_command': Filter command.
+#@cli :   '$_fF_commandpreview': Filter preview command (empty, if not specified).
+#@cli :   '$_fF_zoomfactor': Default zoom factor (empty, if not specified).
+#@cli :   '$_fF_zoomaccurate': Is preview accurate when zoom changes ? (can be { 0=false | 1=true }).
+#@cli :   '$_fF_inputmode': Default preferred input mode (empty, if not specified).
+#@cli :   '$_fF_code': Filter code (in G'MIC scripting language).
+#@cli :   '$_fF_nbparams': Number of parameters.
+#@cli :
+#@cli :   For each parameter \#P of the filter \#F ('P' in range [0,$_fF_nbparams-1]):
+#@cli :     '$_fF_pP_name': Parameter name.
+#@cli :     '$_fF_pP_type': Parameter type.
+#@cli :     '$_fF_pP_visibility': Parameter visibility.
+#@cli :     '$_fF_pP_propagation': Propagation of the parameter visibility.
+#@cli :     '$_fF_pP_nbargs': Number of parameter arguments.
+#@cli :
+#@cli :     For each argument \#A of the parameter \#P ('A' in range [0,$_fF_pP_nbargs-1]):
+#@cli :       '$_fF_pP_aA': Argument value
+#@cli :
 parse_gui : skip "${1=list},${2=*},${3="$_path_rc/update$_version.gmic"}"
 
-  # Input .gmic filter definition file.
+  e[^-1] "Parse '#@gui' filters '$2' from file '$3' and output result in mode '$1'."
   rm i raw:"$3",uchar
 
   # Extract all filters with locale, full path and code.
@@ -45001,10 +45026,10 @@ parse_gui : skip "${1=list},${2=*},${3="$_path_rc/update$_version.gmic"}"
 
   # Isolate only requested filters.
   if "['$2']!='*'" repeat $! if "s = ['"{$<,n}"']; find(lowercase(s),lowercase(['$2']))<0" rm[$<] fi done fi
-  nbfilters=$!
+  _nbfilters=$!
 
   # Parse each filter.
-  repeat $nbfilters,f f${f}_path={n} l[$<] if crop(0,0,1,5)!='#@gui' f${f}_code={t} else
+  repeat $_nbfilters f=$< _f${f}_path={n} l[$<] if crop(0,0,1,5)!='#@gui' _f${f}_code={t} else
 
     # Separate '#@gui' directives from filter code, and merge them.
     eval "
@@ -45042,36 +45067,36 @@ parse_gui : skip "${1=list},${2=*},${3="$_path_rc/update$_version.gmic"}"
       ):++p
     )"
     a[^0] y discard -1
-    autocrop[0] {'\n'} f${f}_code={0,t} rm[0] # Filter code
+    autocrop[0] {'\n'} _f${f}_code={0,t} rm[0] # Filter code
     s -,0 # Split in two images : definition and parameters
     f "max(_' ',i)" # Replace all blank characters by space
 
     # Parse filter definition.
     l[0]
-      f${f}_iszoomaccurate=0
+      _f${f}_zoomaccurate=0
       s -,{':'} autocrop {'" "'}
-      f${f}_name={0,t} rm[0] # Filter name
+      _f${f}_name={0,t} rm[0] # Filter name
       if $! l[0]
         s -,{','} autocrop {'" "'}
-        f${f}_command={0,t} # Filter command
+        _f${f}_command={0,t} # Filter command
         if $!>1 l[1]
           s -,{'('}
-          f${f}_commandpreview={0,t} # Filter preview command
+          _f${f}_commandpreview={0,t} # Filter preview command
           if $!>1 l[1]
             s +,{'+'}
             discard[0] {')'}
-            f${f}_zoomfactor={0,t} # Default zoom factor
-            if $!>1" && "i[0]==_'+' f${f}_zoomaccurate=1 fi # Is zoom accurate ?
+            _f${f}_zoomfactor={0,t} # Default zoom factor
+            if $!>1" && "i[0]==_'+' _f${f}_zoomaccurate=1 fi # Is zoom accurate ?
           endl fi
         endl fi
         rm
       endl fi
-      if $! f${f}_inputmode={0,t} fi # Default input mode
+      if $! _f${f}_inputmode={0,t} fi # Default input mode
       rm
     endl
 
     # Parse filter parameters.
-    if !$! f${f}_nbparams=0 0
+    if !$! _f${f}_nbparams=0 0
     else
       eval "
         is_blank(p) = (source[p]<=_' ');
@@ -45097,7 +45122,7 @@ parse_gui : skip "${1=list},${2=*},${3="$_path_rc/update$_version.gmic"}"
             r = q + 1; skip_blank(r);
             while (is_blank(--q),0);
             copy(type,source[p],q-p+1); type[q-p+1] = 0; # Parameter type
-            call('f"${f}"_p',nbparams,'_name=\"',name,'\" f"${f}"_p',nbparams,'_type=',type);
+            call('_f"${f}"_p',nbparams,'_name=\"',name,'\" _f"${f}"_p',nbparams,'_type=',type);
 
             # Parse list of arguments.
             p = r;
@@ -45114,7 +45139,7 @@ parse_gui : skip "${1=list},${2=*},${3="$_path_rc/update$_version.gmic"}"
             type[0,10]==[['separator'],0]?( # Single-argument parameter
               p!=r?(
                 copy(argument,source[p],r-p); argument[r-p] = 0; # Parameter argument
-                store(argument,'tmparg'); call('$tmparg autocrop 0 f"${f}"_p',nbparams,'_a0={t} rm.');
+                store(argument,'tmparg'); call('$tmparg autocrop 0 _f"${f}"_p',nbparams,'_a0={t} rm.');
                 nbargs = 1;
               ):(argument[0] = 0);
               p = r + 1;
@@ -45123,19 +45148,19 @@ parse_gui : skip "${1=list},${2=*},${3="$_path_rc/update$_version.gmic"}"
                 skip_blank(p);
                 q = min(r,find(source,_',',p)%size(source));
                 copy(argument,source[p],q-p); argument[q-p] = 0; # Parameter argument
-                store(argument,'tmparg'); call('$tmparg autocrop 0 f"${f}"_p',nbparams,'_a',nbargs,'={t} rm.');
+                store(argument,'tmparg'); call('$tmparg autocrop 0 _f"${f}"_p',nbparams,'_a',nbargs,'={t} rm.');
                 ++nbargs;
                 p = q + 1;
               );
             );
-            call('f"${f}"_p',nbparams,'_nbargs=',nbargs);
+            call('_f"${f}"_p',nbparams,'_nbargs=',nbargs);
 
             # Extract visibility state.
             p = r + 1;
             p<size(source) && source[p]==_'_' && isin(source[p+1],_'0',_'1',_'2')?(
               r = p + 1;
-              call('f"${f}"_p',nbparams,'_visibility=',source[r]-_'0');
-              isin(source[r+1],_'+',_'-',_'*')?call('f"${f}"_p',nbparams,'_propagation=',source[r++]);
+              call('_f"${f}"_p',nbparams,'_visibility=',source[r]-_'0');
+              isin(source[r+1],_'+',_'-',_'*')?call('_f"${f}"_p',nbparams,'_propagation=',source[r++]);
             );
 
             p = r + 1;
@@ -45144,21 +45169,19 @@ parse_gui : skip "${1=list},${2=*},${3="$_path_rc/update$_version.gmic"}"
             ++nbparams;
           ):++p;
         );
-        call('f"${f}"_nbparams=',nbparams)"
+        call('_f"${f}"_nbparams=',nbparams)"
     fi
   fi rm endl done
+  _parse_gui_$1 # Output result of the parsing.
 
-  # Output result of the parsing.
-  repeat $nbfilters,f
+_parse_gui_list :
+  v 0
+  f=1
+  repeat $_nbfilters if ['${_f$>_path}']!='/'
+    e[] [#$f]" '"${_f$>_name}"' ("${_f$>_path}")."
+    f+=1
+  fi done
 
-    echo[] "\n\nFilter : '"${f${f}_name}"' ("${f${f}_nbparams}" parameters), path = '"${f${f}_path}"'"
-    repeat ${f${f}_nbparams},p
-      echo[] "  > Param \#"$p" : "${f${f}_p${p}_name}" (type '"${f${f}_p${p}_type}"'), visibility = "${f${f}_p${p}_visibility}
-      repeat ${f${f}_p${p}_nbargs},a
-        echo[] "    - Arg \#"$a" : "${f${f}_p${p}_a${a}}
-      done
-    done
-  done
 
 # Local Variables:
 # mode: sh
