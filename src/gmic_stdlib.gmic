@@ -45106,7 +45106,7 @@ parse_gui : skip "${1=*}"
 
             echo('DEBUG = ',name,' -> ',type);
 
-            call('f"${f}"_p',nbparams,'_name=',name,' f"${f}"_p',nbparams,'_type=',type);
+            call('f"${f}"_p',nbparams,'_name=\"',name,'\" f"${f}"_p',nbparams,'_type=',type);
 
             # Parse list of arguments.
             p = r;
@@ -45123,7 +45123,11 @@ parse_gui : skip "${1=*}"
             type[0,10]==[['separator'],0]?( # Single-argument parameter
               p!=r?(
                 copy(argument,source[p],r-p); argument[r-p] = 0; # Parameter argument
-                call('f"${f}"_p',nbparams,'_a0=',argument);
+
+                store(argument,'tmparg',1,8);
+                call('$tmparg f"${f}"_p',nbparams,'_a0={t} rm.');
+
+
                 nbargs = 1;
               ):(argument[0] = 0);
               p = r + 1;
@@ -45157,9 +45161,11 @@ parse_gui : skip "${1=*}"
     fi
 
     echo[] "\n\nFilter : '"${f${f}_name}"' ("${f${f}_nbparams}" parameters)."
-    repeat ${f${f}_nbparams}
-      echo[] "  > Param \#"$>" : "${f${f}_p$>_name}" (type '"${f${f}_p$>_type}"')"
-
+    repeat ${f${f}_nbparams},p
+      echo[] "  > Param \#"$p" : "${f${f}_p${p}_name}" (type '"${f${f}_p${p}_type}"')"
+      repeat ${f${f}_p${p}_nbargs},a
+        echo[] "    - Arg \#"$a" : "${f${f}_p${p}_a${a}}
+      done
     done
 
   fi endl done
