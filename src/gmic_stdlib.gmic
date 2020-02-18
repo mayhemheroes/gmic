@@ -44917,7 +44917,7 @@ fx_solve_maze_preview :
 #@cli :     For each argument \#A of the parameter \#P ('A' in range [0,$_fF_pP_nbargs-1]):
 #@cli :       '$_fF_pP_aA': Argument value
 #@cli :
-parse_gui : skip "${1=list},${2=*},${3="$_path_rc/update$_version.gmic"}"
+parse_gui : skip "${1=list},${2=*},${3="${_path_rc}update$_version.gmic"}"
 
   e[^-1] "Parse '#@gui' filters '$2' from file '$3' and output result in mode '$1'."
   rm i raw:"$3",uchar
@@ -45181,34 +45181,36 @@ parse_gui : skip "${1=list},${2=*},${3="$_path_rc/update$_version.gmic"}"
 _parse_gui_isparams_list : u 0
 _parse_gui_list :
   v 0
-  echo_stdout[] "*** List of filters in the G\47MIC plug-in ("$_nbfilters" filters, on "\
+  echo_stdout[] "*** List of filters in the G\47MIC plug-in ("{$_nbfilters-1}" filters, on "\
                 {`v=date(1);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}"/"\
                 {`v=date(2);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}", "\
                 {`v=date(4);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}":"\
                 {`v=date(5);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}") ***\n"
 
   echo_stdout[] "* List of filters, sorted by path:\n"
-  1,1,1,1x$_nbfilters
-  repeat $_nbfilters nm[$>] ${_f$>_path} f[$>] $> done
+  1,1,1,1x{$_nbfilters-1}
+  repeat $! f={1+$>} nm[$>] -${_f${f}_path} f[$>] $f done
   sort_list +,n a x
   f=1
-  repeat $_nbfilters n={i[$>]}
+  repeat w n={i[$>]}
     echo_stdout[] [#$f]" "${_f${n}_path}" (command: '"${_f${n}_command}"')"
     f+=1
   done
   rm
 
   echo_stdout[] "\n* List of filters, sorted alphabetically:\n"
-  1,1,1,1x$_nbfilters
-  repeat $_nbfilters nm[$>] -${_f$>_name} f[$>] $> done
+  1,1,1,1x{$_nbfilters-1}
+  repeat $! f={1+$>} nm[$>] -${_f${f}_name} f[$>] $f done
   sort_list +,n a x
   f=1
-  repeat $_nbfilters n={i[$>]}
+  repeat w n={i[$>]}
     basename ${_f${n}_path},_ppath
     echo_stdout[] [#$f]" "${_f${n}_name}" (in '"$_ppath"')"
     f+=1
   done
   rm
+
+  echo_stdout "\n*** End of list ***\n"
 
 # Local Variables:
 # mode: sh
