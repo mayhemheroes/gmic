@@ -6900,7 +6900,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             XYZ[2] = (unsigned int)cimg::cut(cimg::round(sep1=='%'?(img.depth() - 1)*value1/100:value1),
                                              0.,img.depth() - 1.);
           }
+          ++verbosity;
           display_images(images,images_names,selection,XYZ,exit_on_anykey);
+          --verbosity;
           is_change = false; continue;
         }
 
