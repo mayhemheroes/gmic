@@ -36345,7 +36345,9 @@ fx_euclidean2polar :
 #@gui : Offset (%) = float(0,0,100)
 #@gui : Boundary = choice(3,"Transparent","Nearest","Periodic","Mirror")
 #@gui : sep = separator()
-#@gui : note = note("<small>Author: <i>David Tschumperl&#233;</i>.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+#@gui : note = note("<small>Author: <i>David Tschumperl&#233;</i>.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\
+# Pouet\
+#     Popol
 #@gui : Latest Update: <i>2010/29/12</i>.</small>")
 fx_flower :
   if !$7 to_a fi
@@ -45025,32 +45027,33 @@ parse_gui : skip "${1=*}"
         source[p]==_':'?(++p; skip_blank(p));
         r = find(source,_'\n',p)%size(source); # Find end of line
 
-        # Detect multi-line comment.
-        q = r;
-
-        while (is_blank(--q),0);
-        source[q]==_'\\' && source[r+1]==_'#'?(
-          r+=2; skip_blank(r);
-          copy(i[#0,q],-1,r-q,1,0);
-
-          r = find(source,_'\n',r);
-
-          echo('POUET!');
+        # Merge multi-line comments.
+        while (1,
+          q = r;
+          while (is_blank(--q),0);
+          source[q]==_'\\' && source[r+1]==_'#'?(
+            r+=2; skip_blank(r);
+            copy(i[#0,q],-1,r-q,1,0); # Part to be discarded
+            r = find(source,_'\n',r);
+          ):break();
         );
 
-        call('+rows[0] ',p,',',q);
+        call('+rows[0] ',p,',',r);
         i[#-1,h(#-1)-1] = _' ';
-        copy(i[#0,p0],-1,r-p0+1,1,0);
+        copy(i[#0,p0],-1,r-p0+1,1,0); # Part to be discarded
         p = r + 1;
-      ):++p;
+      ):++p
     )"
     a[^0] y discard -1
     store[0] code_$> # Store filter code
 
-    e[] {0,t}
+    e[] "\n\n"{/{t}}
 
-    d
-    q
+  endl done
+
+  d
+
+  q
 
 
     # Parse filter definition.
