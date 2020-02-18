@@ -45074,8 +45074,6 @@ parse_gui : skip "${1=*}"
       rm
     endl
 
-    e[] "#@gui "${f${f}_name}" : "${f${f}_command}", "${f${f}_commandpreview}
-
     # Parse filter parameters.
     if !$! f${f}_nbparams=0 0
     else
@@ -45103,9 +45101,6 @@ parse_gui : skip "${1=*}"
             r = q + 1; skip_blank(r);
             while (is_blank(--q),0);
             copy(type,source[p],q-p+1); type[q-p+1] = 0; # Parameter type
-
-            echo('DEBUG = ',name,' -> ',type);
-
             call('f"${f}"_p',nbparams,'_name=\"',name,'\" f"${f}"_p',nbparams,'_type=',type);
 
             # Parse list of arguments.
@@ -45123,11 +45118,7 @@ parse_gui : skip "${1=*}"
             type[0,10]==[['separator'],0]?( # Single-argument parameter
               p!=r?(
                 copy(argument,source[p],r-p); argument[r-p] = 0; # Parameter argument
-
-                store(argument,'tmparg',1,8);
-                call('$tmparg f"${f}"_p',nbparams,'_a0={t} rm.');
-
-
+                store(argument,'tmparg'); call('$tmparg autocrop 0 f"${f}"_p',nbparams,'_a0={t} rm.');
                 nbargs = 1;
               ):(argument[0] = 0);
               p = r + 1;
@@ -45136,7 +45127,7 @@ parse_gui : skip "${1=*}"
                 skip_blank(p);
                 q = min(r,find(source,_',',p)%size(source));
                 copy(argument,source[p],q-p); argument[q-p] = 0; # Parameter argument
-                call('f"${f}"_p',nbparams,'_a',nbargs,'=',argument);
+                store(argument,'tmparg'); call('$tmparg autocrop 0 f"${f}"_p',nbparams,'_a',nbargs,'={t} rm.');
                 ++nbargs;
                 p = q + 1;
               );
