@@ -44918,8 +44918,7 @@ fx_solve_maze_preview :
 #@cli :       '$_fF_pP_aA': Argument value
 #@cli :
 parse_gui : skip "${1=list},${2=*},${3="${_path_rc}update$_version.gmic"}"
-
-  e[^-1] "Parse '#@gui' filters '$2' from file '$3' and output result in mode '$1'."
+  e[^-1] "Parse '#@gui' filters '$2' from file '$3' and output result in mode '$1'.\n"
   rm i raw:"$3",uchar
 
   # Extract all filters with locale, full path and code.
@@ -45029,6 +45028,7 @@ parse_gui : skip "${1=list},${2=*},${3="${_path_rc}update$_version.gmic"}"
   _nbfilters=$!
 
   # Parse each filter.
+  c="\n"
   repeat $_nbfilters f=$< _f${f}_path={n} l[$<] if crop(0,0,1,5)!='#@gui' _f${f}_code={t} else
 
     # Separate '#@gui' directives from filter code, and merge them.
@@ -45094,6 +45094,8 @@ parse_gui : skip "${1=list},${2=*},${3="${_path_rc}update$_version.gmic"}"
       if $! _f${f}_inputmode={0,t} fi # Default input mode
       rm
     endl
+
+    e[] "\r  > Parsing filter [#"$f"]: '"${_f${f}_name}"'.                "
 
     # Parse filter parameters.
     isparams=1
@@ -45175,6 +45177,8 @@ parse_gui : skip "${1=list},${2=*},${3="${_path_rc}update$_version.gmic"}"
         call('_f"${f}"_nbparams=',nbparams)"
     fi
   fi rm endl done
+  e[] "\r  > Parsing done!                                "
+  e[] "  > Output filters info in mode '$1'."
   _parse_gui_$1 # Output result of the parsing.
 
 # Output mode 'list' for parsing (output on stdout).
