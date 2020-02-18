@@ -179,7 +179,7 @@
 
 # This command is run when the cli tool 'gmic' is invoked without arguments on the command line.
 cli_noarg :
-  v 0 use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r version
+  v 0 use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r _cli_noarg=1 version
   e[] "[gmic] No commands, options or data provided"
   if {*,u}>0
     e[] "[gmic] (type "${c}"'gmic help'"$n" to get help, "${c}"'gmic demo'"$n" to launch demos)."
@@ -892,10 +892,10 @@ ${g}"N"$n".
 \n          (memory content) | 0=none | 1=nearest | 2=average | 3=linear | 4=grid | 5=bicubic |
 \n          6=lanczos }"$n", and '"${g}"boundary_conditions'"$n" can be "${g}"{ 0=dirichlet | 1=neumann | 2=periodic |
 \n          3=mirror }"$n".
-\n       . Function '"${c}"find(A,B,_is_forward,_starting_index)"$n"' returns the index where sub-vector "${g}"B"$n"
-\n          appears in vector "${g}"A"$n", (or "${g}"-1"$n" if "${g}"B"$n" is not found in "${g}"A"$n").
- Argument "${g}"A"$n" can be also replaced by
-\n          an image index "${g}"#ind"$n".
+\n       . Function '"${c}"find(A,B,_starting_index,_is_forward={0 | 1})"$n"' returns the index where
+\n          sub-vector "${g}"B"$n" appears in vector "${g}"A"$n", (or "${g}"-1"$n" if "${g}"B"$n" is not
+  found in "${g}"A"$n").
+\n          Argument "${g}"A"$n" can be also replaced by an image index "${g}"#ind"$n".
 \n       . A "${g}"2"$n"-dimensional vector may be seen as a complex number and used in those particular
 \n          functions/operators:
 \n          '"${c}"**"$n"' (complex multiplication), '"${c}"//"$n"' (complex division), '"${c}"^^"$n"'
@@ -1663,7 +1663,7 @@ use_vt100 :
 version :
   m "_e : echo_stdout[] \"$""*\""
   __help_header_ascii[]
-  _e "\n"
+  if !narg($_cli_noarg) _e "\n" else _e "" fi
   uncommand _e
 
 v : # Allow 'gmic +v' to get the version number.
@@ -2118,7 +2118,7 @@ _display2d :
     fi
 
     # Start event loop.
-    for {*}" && "!{*,ESC}
+    for {*}" && "!{*,ESC}" && "!(({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,W})
 
       # Correct aspect ratio while centering image.
       if $ratio_mode
@@ -5101,12 +5101,12 @@ update_gallery_html : check "isbool(${1=0})"
           eval "
             str = crop(#-1);
             ind = 0;
-            while ((ind = find(str,'\n#@cli ',1,ind))>=0,
+            while ((ind = find(str,'\n#@cli ',ind))>=0,
               ++ind;
               str[ind+6]!=_':' ? break() :
               str[ind+7]==_' ' && str[ind+8]==_'$' && str[ind+9]==_' '?(
                 beg = ind + 10;
-                end = find(str,_'\n',1,beg) - 1;
+                end = find(str,_'\n',beg) - 1;
                 com = vector1024(0);
                 call('+rows[0] ',beg,',',end);
               );
@@ -5390,7 +5390,7 @@ update_download_version : check "
     data = crop();
     p = stop = N = 0;
     while (!stop,
-      p = find(data,'?dwl=gmic_',1,p);
+      p = find(data,'?dwl=gmic_',p);
       p<0?(stop=1):(
         str = data[p + 10,5];
         is_digit(str[0]) && str[1]==_'.' && is_digit(str[2]) && str[3]=='.' && is_digit(str[4])?(
@@ -5400,7 +5400,7 @@ update_download_version : check "
         ++p;
       );
     );
-    p = find(data,'/source/gmic_',1,0);
+    p = find(data,'/source/gmic_',0);
     p>0?(
       str = data[p + 13,5];
       is_digit(str[0]) && str[1]==_'.' && is_digit(str[2]) && str[3]=='.' && is_digit(str[4])?(
@@ -5754,7 +5754,7 @@ update_server :
     replace_str "<i>David Tschumperl&#233;</i>","<i><a href=\""$url"\">David Tschumperl&#233;</a></i>"
     o cimgz:/tmp/update$_version.gmic,uchar
 
-    (280,281,282,283,284,285)
+    (290)
     repeat w
       v={i[$>]}
       _update_server_upload[] ${_path_rc}update$_version.gmic,plain_update$v.gmic
@@ -28496,7 +28496,7 @@ _gui_merge_layers :
     p = q = find(str,ker);
     p>=0?(
       q+=sker;
-      r = find(str,'),',1,q);
+      r = find(str,'),',q);
       q = r>=0?r:(str[sstr-1]==_')'?sstr-1:-1);
     );
     q>=0?copy(res,str[p + sker],q - p - sker):(def = ['${2--1}']; copy(res,def,size(def)));
@@ -36345,7 +36345,7 @@ fx_euclidean2polar :
 #@gui : Offset (%) = float(0,0,100)
 #@gui : Boundary = choice(3,"Transparent","Nearest","Periodic","Mirror")
 #@gui : sep = separator()
-#@gui : note = note("<small>Author: <i>David Tschumperl&#233;</i>.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+#@gui : note = note("<small>Author: <i>David Tschumperl&#233;</i>.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;\
 #@gui : Latest Update: <i>2010/29/12</i>.</small>")
 fx_flower :
   if !$7 to_a fi
@@ -44886,6 +44886,340 @@ fx_solve_maze_preview :
 #@cli : $ https://gmic.eu/samples/heart.gmic go _fps=15 _label="Heart"
 #@cli : $ https://gmic.eu/samples/distortion.gmic go _fps=20 _label="Distortion"
 #@cli : $ https://gmic.eu/samples/rotozoom.gmic go _fps=15 _label="Rotozoom"
+
+
+
+#@cli parse_gui : output_format,_filter_name,_gmic_filename
+#@cli : Parse filter definitions and display info about filters in selected output format.
+#@cli : 'output_format' can be { list | xml }
+#@cli :
+#@cli : Here is the list of variables set by the parser:
+#@cli : '$_nbfilters': Number of filters matching the given expression.
+#@cli :
+#@cli : For each filter \#F ('F' in range [0,$_nbfilters-1]):
+#@cli :   '$_fF_name': Filter name.
+#@cli :   '$_fF_path': Full path.
+#@cli :   '$_fF_locale': Filter locale (empty, if not specified).
+#@cli :   '$_fF_command': Filter command.
+#@cli :   '$_fF_commandpreview': Filter preview command (empty, if not specified).
+#@cli :   '$_fF_zoomfactor': Default zoom factor (empty, if not specified).
+#@cli :   '$_fF_zoomaccurate': Is preview accurate when zoom changes ? (can be { 0=false | 1=true }).
+#@cli :   '$_fF_inputmode': Default preferred input mode (empty, if not specified).
+#@cli :   '$_fF_code': Filter code (empty, if not specified)
+#@cli :   '$_fF_nbparams': Number of parameters.
+#@cli :
+#@cli :   For each parameter \#P of the filter \#F ('P' in range [0,$_fF_nbparams-1]):
+#@cli :     '$_fF_pP_name': Parameter name.
+#@cli :     '$_fF_pP_type': Parameter type.
+#@cli :     '$_fF_pP_visibility': Parameter visibility.
+#@cli :     '$_fF_pP_propagation': Propagation of the parameter visibility.
+#@cli :     '$_fF_pP_nbargs': Number of parameter arguments.
+#@cli :
+#@cli :     For each argument \#A of the parameter \#P ('A' in range [0,$_fF_pP_nbargs-1]):
+#@cli :       '$_fF_pP_aA': Argument value
+#@cli :
+parse_gui : skip "${1=list},${2=*},${3="${_path_rc}update$_version.gmic"}"
+  e[^-1] "Parse '#@gui' filters '$2' from file '$3' and output result in mode '$1'.\n"
+  rm i raw:"$3",uchar
+
+  # Extract all filters with locale, full path and code.
+  eval "
+    # Define convenience macros.
+    #---------------------------
+    is_blank(p) = (source[p]<=_' ');
+
+    skip_blank(p) = (while (is_blank(p), ++p));
+
+    discard_html(name) = (
+      _l = find(name,0);
+      for (_p = find(name,_'<'), _l>=0 && _p>=0,
+        isin(name[_p+1],_'b',_'i') && name[_p+2]==_'>'?( # Opening tag
+          copy(name[_p],name[_p+3],_l-_p-2);
+          _l-=3;
+        ):name[_p+1]==_'/' && isin(name[_p+2],_'b',_'i') && name[_p+3]==_'>'?( # Closing tag
+          copy(name[_p],name[_p+4],_l-_p-3);
+          _l-=4;
+        ):(_p+=1);
+      );
+    );
+
+    store_block(n,p,q,path,name) = (
+      call('+rows[0] ',p,',',q,' discard. -1 autocrop. 10 autocrop. 32 nm. \"',path,'/',name,'\"');
+    );
+
+    # Init variables.
+    #----------------
+    source = crop();
+    path = prev_path = vector1024();
+    name = prev_name = vector1024();
+
+    # Start parsing.
+    #---------------
+    prev_p0 = p0 = p = N = 0;
+    while (p<size(source),
+      p = find(source,'#@gui',p)%size(source);
+
+      !p || (p>0 && source[p - 1]==_'\n')?( # Found line starting with '#@gui'
+        p0 = p; # Remember starting position of line
+        p+=5;
+        source[p]==_'_' && (l = find(source,_' ',++p))>=0?(p = l + 1); # Skip locale
+
+        # Detect new filter or folder.
+        #------------------------------
+        skip_blank(p);
+        source[p]!=_':'?(
+          q = find(source,_':',p)%size(source);
+          r = find(source,_'\n',p)%size(source);
+          r<q?(
+            l = find(source,'hide(',p)%size(source);
+            l<r?(p = r + 1; continue()); # Ignore 'hide()' directives for filters.
+
+            # Definition of a new folder.
+            #----------------------------
+            while (is_blank(--r),0);
+            copy(name,source[p],r-p+1); name[r-p+1] = 0;
+            for (levelup = 0, name[levelup]==_'_', ++levelup);
+            levelup?(
+              copy(name,name[levelup],r-p+2-levelup); # Clean folder name
+              while (levelup--, # Update path
+                lp = find(path,0); l = max(0,find(path,_'/',lp-1,0)); path[l] = 0;
+              );
+            );
+            discard_html(name);
+            name[0]?(
+              ln = find(name,0); # Update path
+              lp = find(path,0);
+              lp?(path[lp] = _'/'; copy(path[lp+1],name,ln); path[lp+ln+1] = 0):(copy(path,name,ln); path[ln] = 0);
+            );
+            copy(i[#0,p0],-1,r-p0+1,1,0); # Discard line (will be removed later)
+            p = r + 1;
+          ):(
+
+            # Definition of a new filter.
+            #----------------------------
+            while (is_blank(--q),0);
+            copy(name,source[p],q-p+1); name[q-p+1] = 0;
+            store_block(N,prev_p0,p0-1,prev_path,prev_name);
+
+            prev_p0 = p0;
+            prev_path = path;
+            prev_name = name;
+            ++N;
+            p = q + 1;
+          );
+        )
+      ):++p
+    );
+    prev_p0!=p0?store_block(N,prev_p0,size(source)-1,prev_path,prev_name) # Insert last block.
+    "
+  rm[0]
+
+  # Isolate only requested filters.
+  if "['$2']!='*'" repeat $! if "s = ['"{$<,n}"']; find(lowercase(s),lowercase(['$2']))<0" rm[$<] fi done fi
+  _nbfilters=$!
+
+  # Parse each filter.
+  repeat $_nbfilters f=$< _f${f}_path={n} l[$<] if crop(0,0,1,5)!='#@gui' _f${f}_code={t} else
+
+    # Init variables that can be empty.
+    _f${f}_locale,_f${f}_commandpreview,_f${f}_zoomfactor,_f${f}_inputmode,_f${f}_code=
+
+    # Detect locale.
+    if crop(0,0,1,6)=='#@gui_' _f${f}_locale={`crop(0,6,1,2)`} fi
+
+    # Separate '#@gui' directives from filter code, and merge them.
+    eval "
+    is_blank(p) = (source[p]<=_' ');
+    skip_blank(p) = (while (is_blank(p), ++p));
+    source = crop();
+    is_first = 1;
+    p = 0;
+    while (p<size(source),
+      p = find(source,'#@gui',p)%size(source);
+      !p || (p>0 && source[p - 1]==_'\n')?( # Found line starting with '#@gui'
+        p0 = p; # Remember starting position of line
+        p+=5;
+        source[p]==_'_' && (l = find(source,_' ',++p))>=0?(p = l + 1); # Skip locale
+        skip_blank(p);
+        source[p]==_':'?(++p; skip_blank(p));
+        r = find(source,_'\n',p)%size(source); # Find end of line
+        source[r]==_'\n'?( # Detect and merge multi-line comments.
+          while (1,
+            q = r;
+            while (is_blank(--q),0);
+            source[q]==_'\\' && source[r+1]==_'#'?(
+              r+=2; skip_blank(r);
+              copy(i[#0,q],-1,r-q,1,0); # Part to be discarded
+              r = find(source,_'\n',r);
+              r<0?(r=size(source); break());
+            ):break();
+          );
+        );
+        call('+rows[0] ',p,',',r);
+        source[r]==_'\n'?(i[#-1,h(#-1)-1] = is_first?0:_' ');
+        copy(i[#0,p0],-1,min(r,size(source)-1)-p0+1,1,0); # Part to be discarded
+        p = r + 1;
+        is_first = 0;
+      ):++p
+    )"
+    a[^0] y discard -1
+    autocrop[0] {'\n'} _f${f}_code={0,t} rm[0] # Filter code
+    s -,0 # Split in two images : definition and parameters
+    f "max(_' ',i)" # Replace all blank characters by space
+
+    # Parse filter definition.
+    l[0]
+      _f${f}_zoomaccurate=0
+      s -,{':'} autocrop {'" "'}
+      _f${f}_name={0,t} rm[0] # Filter name
+      if $! l[0]
+        s -,{','} autocrop {'" "'}
+        _f${f}_command={0,t} # Filter command
+        if $!>1 l[1]
+          s -,{'('}
+          _f${f}_commandpreview={0,t} # Filter preview command
+          if $!>1 l[1]
+            s +,{'+'}
+            discard[0] {')'}
+            _f${f}_zoomfactor={0,t} # Default zoom factor
+            if $!>1" && "i[0]==_'+' _f${f}_zoomaccurate=1 fi # Is zoom accurate ?
+          endl fi
+        endl fi
+        rm
+      endl fi
+      if $! _f${f}_inputmode={0,t} fi # Default input mode
+      rm
+    endl
+
+    e[] "\r  > Parsing filter [#"$f"]: '"${_f${f}_name}"'.                "
+
+    # Parse filter parameters.
+    isparams=1
+    l[] isparams=${-_parse_gui_isparams_$1} onfail endl
+
+    if !$!" || "!$isparams _f${f}_nbparams=0 0
+    else
+      eval "
+        is_blank(p) = (source[p]<=_' ');
+        skip_blank(p) = (while (is_blank(p), ++p));
+        source = crop();
+        name = type = vector256();
+        argument = vector65536();
+
+        p = nbparams = 0;
+        while (p<size(source),
+          q = find(source,_'=',p)%size(source);
+          source[q]==_'='?( # Found new parameter
+            skip_blank(p);
+            r = q + 1; skip_blank(r);
+            while (is_blank(--q),0);
+            copy(name,source[p],q-p+1); name[q-p+1] = 0; # Parameter name
+
+            p = r;
+            q = min(find(source,_'(',p)%size(source),
+                    find(source,_'{',p)%size(source),
+                    find(source,_'[',p)%size(source));
+            c = source[q]==_'('?_')':source[q]==_'{'?_'}':_']';
+            r = q + 1; skip_blank(r);
+            while (is_blank(--q),0);
+            copy(type,source[p],q-p+1); type[q-p+1] = 0; # Parameter type
+            call('_f"${f}"_p',nbparams,'_name=\"',name,'\" _f"${f}"_p',nbparams,'_type=',type);
+
+            # Parse list of arguments.
+            p = r;
+            r = find(source,c,p)%size(source);
+            nbargs = 0;
+
+            type[0,5]==[['bool'],0] ||
+            type[0,7]==[['button'],0] ||
+            type[0,6]==[['value'],0] ||
+            type[0,7]==[['filein'],0] ||
+            type[0,8]==[['fileout'],0] ||
+            type[0,7]==[['folder'],0] ||
+            type[0,5]==[['note'],0] ||
+            type[0,10]==[['separator'],0]?( # Single-argument parameter
+              p!=r?(
+                copy(argument,source[p],r-p); argument[r-p] = 0; # Parameter argument
+                store(argument,'tmparg'); call('$tmparg autocrop 0 _f"${f}"_p',nbparams,'_a0={t} rm.');
+                nbargs = 1;
+              ):(argument[0] = 0);
+              p = r + 1;
+            ):( # Multiple-arguments parameter -> parse list of arguments
+              while (p<r,
+                skip_blank(p);
+                q = min(r,find(source,_',',p)%size(source));
+                copy(argument,source[p],q-p); argument[q-p] = 0; # Parameter argument
+                store(argument,'tmparg'); call('$tmparg autocrop 0 _f"${f}"_p',nbparams,'_a',nbargs,'={t} rm.');
+                ++nbargs;
+                p = q + 1;
+              );
+            );
+            call('_f"${f}"_p',nbparams,'_nbargs=',nbargs);
+
+            # Extract visibility state.
+            p = r + 1;
+            p<size(source) && source[p]==_'_' && isin(source[p+1],_'0',_'1',_'2')?(
+              r = p + 1;
+              call('_f"${f}"_p',nbparams,'_visibility=',source[r]-_'0');
+              isin(source[r+1],_'+',_'-',_'*')?call('_f"${f}"_p',nbparams,'_propagation=',source[r++]);
+            );
+
+            p = r + 1;
+            skip_blank(p);
+            source[p]==_','?++p;
+            ++nbparams;
+          ):++p;
+        );
+        call('_f"${f}"_nbparams=',nbparams)"
+    fi
+  fi rm endl done
+  e[] "\r  > Parsing done!                                "
+  e[] "  > Output filters info in mode '$1'."
+  _parse_gui_$1 # Output result of the parsing.
+
+# Output mode 'list' (output on stdout).
+_parse_gui_isparams_list : u 0
+_parse_gui_list :
+  v 0
+  echo_stdout[] "*** List of filters in the G\47MIC plug-in ("$_nbfilters" filters, on "\
+                {`v=date(1);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}"/"\
+                {`v=date(2);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}", "\
+                {`v=date(4);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}":"\
+                {`v=date(5);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}") ***\n"
+
+  echo_stdout[] "* List of filters, sorted by path:\n"
+  1,1,1,1x$_nbfilters
+  repeat $! nm[$>] -${_f$>_path} f[$>] $> done
+  sort_list +,n a x
+  f=1
+  repeat w n={i[$>]}
+    echo_stdout[] [#$f]" "${_f${n}_path}" (command: '"${_f${n}_command}"')"
+    f+=1
+  done
+  rm
+
+  echo_stdout[] "\n* List of filters, sorted alphabetically:\n"
+  1,1,1,1x$_nbfilters
+  repeat $! nm[$>] -${_f$>_name} f[$>] $> done
+  sort_list +,n a x
+  f=1
+  repeat w n={i[$>]}
+    basename ${_f${n}_path},_ppath
+    echo_stdout[] [#$f]" "${_f${n}_name}" (in '"$_ppath"')"
+    f+=1
+  done
+  rm
+  echo_stdout "\n*** End of list ***\n"
+
+
+# Output mode 'rebuild'.
+_parse_gui_isparams_rebuild : u 1
+_parse_gui_rebuild :
+  repeat $_nbfilters,f
+    if narg(${_f${f}_locale}) locale=_${_f${f}_locale} else locale= fi
+    echo_stdout[] "\n#@gui"$locale" "${_f${f}_name}" : "${_f${f}_command}
+  done
+
 
 # Local Variables:
 # mode: sh
