@@ -44905,7 +44905,7 @@ fx_solve_maze_preview :
 #@cli :   '$_fF_zoomfactor': Default zoom factor (empty, if not specified).
 #@cli :   '$_fF_zoomaccurate': Is preview accurate when zoom changes ? (can be { 0=false | 1=true }).
 #@cli :   '$_fF_inputmode': Default preferred input mode (empty, if not specified).
-#@cli :   '$_fF_code': Filter code (in G'MIC scripting language).
+#@cli :   '$_fF_code': Filter code (empty, if not specified)
 #@cli :   '$_fF_nbparams': Number of parameters.
 #@cli :
 #@cli :   For each parameter \#P of the filter \#F ('P' in range [0,$_fF_nbparams-1]):
@@ -44964,15 +44964,6 @@ parse_gui : skip "${1=list},${2=*},${3="${_path_rc}update$_version.gmic"}"
         p+=5;
         source[p]==_'_' && (l = find(source,_' ',++p))>=0?(p = l + 1); # Skip locale
 
-        # Detect locale.
-        #---------------
-#        source[p]==_'_' && (l = find(source,' ',++p))>=0?(
-#          siz = min(l - p,size(locale)-1);
-#          copy(locale,source[p],siz);
-#          locale[siz] = 0;
-#          p = l + 1;
-#        ):(0); # copy(locale,[_'e',_'n',0],3); 0);
-
         # Detect new filter or folder.
         #------------------------------
         skip_blank(p);
@@ -45029,6 +45020,12 @@ parse_gui : skip "${1=list},${2=*},${3="${_path_rc}update$_version.gmic"}"
 
   # Parse each filter.
   repeat $_nbfilters f=$< _f${f}_path={n} l[$<] if crop(0,0,1,5)!='#@gui' _f${f}_code={t} else
+
+    # Init variables that can be empty.
+    _f${f}_locale,_f${f}_commandpreview,_f${f}_zoomfactor,_f${f}_inputmode,_f${f}_code=
+
+    # Detect locale.
+    if crop(0,0,1,6)=='#@gui_' _f${f}_locale={`crop(0,6,1,2)`} fi
 
     # Separate '#@gui' directives from filter code, and merge them.
     eval "
@@ -45219,8 +45216,8 @@ _parse_gui_list :
 _parse_gui_isparams_rebuild : u 1
 _parse_gui_rebuild :
   repeat $_nbfilters,f
-    echo_stdout[] "#@gui_"${_f${f}_locale}" "${_f${f}_name}
-
+    if narg(${_f${f}_locale}) locale=_${_f${f}_locale} else locale= fi
+    echo_stdout[] "\n#@gui"$locale" "${_f${f}_name}" : "${_f${f}_command}
   done
 
 
