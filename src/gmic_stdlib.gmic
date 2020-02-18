@@ -44899,6 +44899,7 @@ fx_solve_maze_preview :
 #@cli : For each filter \#F ('F' in range [0,$_nbfilters-1]):
 #@cli :   '$_fF_name': Filter name.
 #@cli :   '$_fF_path': Full path.
+#@cli :   '$_fF_locale': Filter locale (empty, if not specified).
 #@cli :   '$_fF_command': Filter command.
 #@cli :   '$_fF_commandpreview': Filter preview command (empty, if not specified).
 #@cli :   '$_fF_zoomfactor': Default zoom factor (empty, if not specified).
@@ -44942,8 +44943,8 @@ parse_gui : skip "${1=list},${2=*},${3="${_path_rc}update$_version.gmic"}"
       );
     );
 
-    store_block(n,p,q,path,name,locale) = (
-      call('+rows[0] ',p,',',q,' discard. -1 autocrop. 10 autocrop. 32 nm. \"',path,'/',name,'\" locale_',n,'=',locale);
+    store_block(n,p,q,path,name) = (
+      call('+rows[0] ',p,',',q,' discard. -1 autocrop. 10 autocrop. 32 nm. \"',path,'/',name,'\"');
     );
 
     # Init variables.
@@ -44951,7 +44952,6 @@ parse_gui : skip "${1=list},${2=*},${3="${_path_rc}update$_version.gmic"}"
     source = crop();
     path = prev_path = vector1024();
     name = prev_name = vector1024();
-    locale = prev_locale = vector8();
 
     # Start parsing.
     #---------------
@@ -44963,14 +44963,16 @@ parse_gui : skip "${1=list},${2=*},${3="${_path_rc}update$_version.gmic"}"
         p0 = p; # Remember starting position of line
         p+=5;
 
+        source[p]==_'_' && (l = find(source,_' ',++p))>=0?(p = l + 1); # Skip locale
+
         # Detect locale.
         #---------------
-        source[p]==_'_' && (l = find(source,' ',++p))>=0?(
-          siz = min(l - p,size(locale)-1);
-          copy(locale,source[p],siz);
-          locale[siz] = 0;
-          p = l + 1;
-        ):(copy(locale,[_'e',_'n',0],3); 0);
+#        source[p]==_'_' && (l = find(source,' ',++p))>=0?(
+#          siz = min(l - p,size(locale)-1);
+#          copy(locale,source[p],siz);
+#          locale[siz] = 0;
+#          p = l + 1;
+#        ):(0); # copy(locale,[_'e',_'n',0],3); 0);
 
         # Detect new filter or folder.
         #------------------------------
@@ -45007,19 +45009,18 @@ parse_gui : skip "${1=list},${2=*},${3="${_path_rc}update$_version.gmic"}"
             #----------------------------
             while (is_blank(--q),0);
             copy(name,source[p],q-p+1); name[q-p+1] = 0;
-            store_block(N,prev_p0,p0-1,prev_path,prev_name,prev_locale);
+            store_block(N,prev_p0,p0-1,prev_path,prev_name);
 
             prev_p0 = p0;
             prev_path = path;
             prev_name = name;
-            prev_locale = locale;
             ++N;
             p = q + 1;
           );
         )
       ):++p
     );
-    prev_p0!=p0?store_block(N,prev_p0,size(source)-1,prev_path,prev_name,prev_locale) # Insert last block.
+    prev_p0!=p0?store_block(N,prev_p0,size(source)-1,prev_path,prev_name) # Insert last block.
     "
   rm[0]
 
@@ -45181,7 +45182,7 @@ parse_gui : skip "${1=list},${2=*},${3="${_path_rc}update$_version.gmic"}"
   e[] "  > Output filters info in mode '$1'."
   _parse_gui_$1 # Output result of the parsing.
 
-# Output mode 'list' for parsing (output on stdout).
+# Output mode 'list' (output on stdout).
 _parse_gui_isparams_list : u 0
 _parse_gui_list :
   v 0
@@ -45213,8 +45214,17 @@ _parse_gui_list :
     f+=1
   done
   rm
-
   echo_stdout "\n*** End of list ***\n"
+
+
+# Output mode 'rebuild'.
+_parse_gui_isparams_rebuild : u 1
+_parse_gui_rebuild :
+  repeat $_nbfilters,f
+    echo_stdout[] "#@gui_"${_f${f}_locale}" "${_f${f}_name}
+
+  done
+
 
 # Local Variables:
 # mode: sh
