@@ -45008,7 +45008,7 @@ parse_gui : skip "${1=*}"
   # Parse '#@gui' directives for each filters.
   repeat $! l[$>]
 
-    # Merge all '#@gui' directives into a single line (output as a new image)
+    # Separate '#@gui' directives from filter code.
     eval "
     is_blank(p) = (source[p]<=32);
     skip_blank(p) = (while (is_blank(p), ++p));
@@ -45027,10 +45027,12 @@ parse_gui : skip "${1=*}"
 
         # Detect multi-line comment.
         q = r;
+
         while (is_blank(--q),0);
         source[q]==_'\\' && source[r+1]==_'#'?(
           r+=2; skip_blank(r);
           copy(i[#0,q],-1,r-q,1,0);
+
           r = find(source,_'\n',r);
 
           echo('POUET!');
@@ -45042,9 +45044,7 @@ parse_gui : skip "${1=*}"
         p = r + 1;
       ):++p;
     )"
-
-    d
-    discard -1 a[^0] y
+    a[^0] y discard -1
     store[0] code_$> # Store filter code
 
     e[] {0,t}
