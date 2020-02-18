@@ -44889,16 +44889,13 @@ fx_solve_maze_preview :
 
 
 
-# filters : WIP : Generic .gmic file parser for getting infos about GUI filters.
-#-------------------------------------------------------------------------------
-parse_gui : skip "${1=*}"
-
- filename_filters=$_path_rc/update$_version.gmic
-# filename_filters=$HOME/work/src/gmic/src/gmic_stdlib.gmic
-#  filename_filters=$HOME/toto
+#@cli parse_gui : output_format,_filter_name,_gmic_filename
+#@cli : Parse filter definitions and display info about filters in selected output format.
+#@cli : 'output_format' can be { list | xml }
+parse_gui : skip "${1=list},${2=*},${3="$_path_rc/update$_version.gmic"}"
 
   # Input .gmic filter definition file.
-  rm i raw:$filename_filters,uchar
+  rm i raw:"$3",uchar
 
   # Extract all filters with locale, full path and code.
   eval "
@@ -45003,7 +45000,7 @@ parse_gui : skip "${1=*}"
   rm[0]
 
   # Isolate only requested filters.
-  if "['$1']!='*'" repeat $! if "s = ['"{$<,n}"']; find(lowercase(s),lowercase(['$1']))<0" rm[$<] fi done fi
+  if "['$2']!='*'" repeat $! if "s = ['"{$<,n}"']; find(lowercase(s),lowercase(['$2']))<0" rm[$<] fi done fi
 
   # Parse each filter.
   repeat $!,f l[$>] if crop(0,0,1,5)!='#@gui' F${f}_code={t} else
