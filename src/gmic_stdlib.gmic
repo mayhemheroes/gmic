@@ -45085,6 +45085,7 @@ parse_gui : skip "${1=*}"
     skip_blank(p) = (while (is_blank(p), ++p));
     source = crop();
     name = type = vector256();
+    argument = vector65536();
 
     p = 0;
     while (p<size(source),
@@ -45102,15 +45103,41 @@ parse_gui : skip "${1=*}"
         c = source[q]==_'('?_')':source[q]==_'{'?_'}':_']';
         r = q + 1; skip_blank(r);
         while (is_blank(--q),0);
-
         copy(type,source[p],q-p+1); type[q-p+1] = 0; # Parameter type
 
+        echo('PARAM \'',name,'\' = \'',type,'\'');
+
+        # Extract list of arguments.
         p = r;
         r = find(source,c,p)%size(source);
 
+        type[0,5]==[['bool'],0] ||
+        type[0,7]==[['button'],0] ||
+        type[0,6]==[['value'],0] ||
+        type[0,7]==[['filein'],0] ||
+        type[0,8]==[['fileout'],0] ||
+        type[0,7]==[['folder'],0] ||
+        type[0,5]==[['note'],0] ||
+        type[0,10]==[['separator'],0]?( # Single-argument parameters
+          copy(argument,source[p],r-p); argument[r-p] = 0; # Parameter argument
+          p = r + 1;
+          echo('  > one-argument = \'',argument,'\'');
+        ):( # Multiple-arguments parameters
+          while (p<r,
+            skip_blank(p);
+            q = min(r,find(source,_',',p)%size(source));
+            copy(argument,source[p],q-p); argument[q-p] = 0; # Parameter argument
+            p = q + 1;
+            echo('  > argument = \'',argument,'\'');
+          );
+        );
 
+        # Extract visibility state.
+        p = r + 1;
+        p<size(source) && source[p]==_'_' && isin(source[p+1],_'0',_'1',_'2')?(
 
-        echo('PARAM \'',name,'\' = \'',type,'\'');
+          0;
+        );
 
         p = r + 1;
       ):++p;
