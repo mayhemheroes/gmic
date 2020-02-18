@@ -45008,7 +45008,7 @@ parse_gui : skip "${1=*}"
   if "['$1']!='*'" repeat $! if "s = ['"{$<,n}"']; find(lowercase(s),lowercase(['$1']))<0" rm[$<] fi done fi
 
   # Parse each filter.
-  repeat $!,f l[$>] if crop(0,0,1,5)!='#@gui' +store[0] code_$> else
+  repeat $!,f l[$>] if crop(0,0,1,5)!='#@gui' F${f}_code={t} else
 
     # Separate '#@gui' directives from filter code, and merge them.
     eval "
@@ -45040,46 +45040,44 @@ parse_gui : skip "${1=*}"
         );
         call('+rows[0] ',p,',',r);
         source[r]==_'\n'?(i[#-1,h(#-1)-1] = is_first?0:_' ');
-
         copy(i[#0,p0],-1,min(r,size(source)-1)-p0+1,1,0); # Part to be discarded
         p = r + 1;
         is_first = 0;
       ):++p
     )"
     a[^0] y discard -1
-    autocrop[0] {'\n'} code_$f={0,t} rm[0] # Filter code
+    autocrop[0] {'\n'} f${f}_code={0,t} rm[0] # Filter code
     s -,0 # Split in two images : definition and parameters
     f "max(_' ',i)" # Replace all blank characters by space
 
     # Parse filter definition.
     l[0]
-      is_zoom_accurate_$f=0
+      f${f}_iszoomaccurate=0
       s -,{':'} autocrop {'" "'}
-      name_$f={0,t} rm[0] # Filter name
+      f${f}_name={0,t} rm[0] # Filter name
       if $! l[0]
         s -,{','} autocrop {'" "'}
-        command_$f={0,t} # Filter command
-        command_preview_$f={0,t}
+        f${f}_command={0,t} # Filter command
         if $!>1 l[1]
           s -,{'('}
-          command_preview_$f={0,t} # Filter preview command
+          f${f}_commandpreview={0,t} # Filter preview command
           if $!>1 l[1]
             s +,{'+'}
             discard[0] {')'}
-            default_zoom_$f={0,t} # Default zoom factor
-            if $!>1" && "i[0]==_'+' is_zoom_accurate_$f=1 fi # Is zoom accurate ?
+            f${f}_zoomfactor={0,t} # Default zoom factor
+            if $!>1" && "i[0]==_'+' f${f}_zoomaccurate=1 fi # Is zoom accurate ?
           endl fi
         endl fi
         rm
       endl fi
-      if $! default_input_mode_$f={0,t} fi # Default input mode
+      if $! f${f}_inputmode={0,t} fi # Default input mode
       rm
     endl
 
-    e[] "#@gui "${name_$f}" : "${command_$f}", "${command_preview_$f}
+    e[] "#@gui "${f${f}_name}" : "${f${f}_command}", "${f${f}_commandpreview}
 
     # Parse filter parameters.
-    if !$! nb_parameters_$f=0 0
+    if !$! f${f}_nbparams=0 0
     else
       eval "
         is_blank(p) = (source[p]<=_' ');
@@ -45088,10 +45086,10 @@ parse_gui : skip "${1=*}"
         name = type = vector256();
         argument = vector65536();
 
-        p = 0;
+        p = nbparams = 0;
         while (p<size(source),
           q = find(source,_'=',p)%size(source);
-          source[q]==_'='?( # New parameter found
+          source[q]==_'='?( # Found new parameter
             skip_blank(p);
             r = q + 1; skip_blank(r);
             while (is_blank(--q),0);
@@ -45106,12 +45104,13 @@ parse_gui : skip "${1=*}"
             while (is_blank(--q),0);
             copy(type,source[p],q-p+1); type[q-p+1] = 0; # Parameter type
 
-            echo('PARAM \'',name,'\' = \'',type,'\'');
+            echo('DEBUG = ',name);
+            call('f"${f}"_p',nbparams,'_name=',name,' f"${f}"_p',nbparams,'_type=',type);
 
-            # Extract list of arguments.
+            # Parse list of arguments.
             p = r;
             r = find(source,c,p)%size(source);
-            nb_arguments = 0;
+            nbargs = 0;
 
             type[0,5]==[['bool'],0] ||
             type[0,7]==[['button'],0] ||
@@ -45123,39 +45122,44 @@ parse_gui : skip "${1=*}"
             type[0,10]==[['separator'],0]?( # Single-argument parameter
               p!=r?(
                 copy(argument,source[p],r-p); argument[r-p] = 0; # Parameter argument
-                ++nb_arguments
+                call('f"${f}"_p',nbparams,'_a0=',argument);
+                nbargs = 1;
               ):(argument[0] = 0);
               p = r + 1;
-              echo('  > argument = \'',argument,'\'');
             ):( # Multiple-arguments parameter -> parse list of arguments
               while (p<r,
                 skip_blank(p);
                 q = min(r,find(source,_',',p)%size(source));
                 copy(argument,source[p],q-p); argument[q-p] = 0; # Parameter argument
+                call('f"${f}"_p',nbparams,'_a',nbargs,'=',argument);
+                ++nbargs;
                 p = q + 1;
-                ++nb_arguments;
-                echo('  > argument = \'',argument,'\'');
               );
             );
-            echo('  * nb_args = ',nb_arguments);
+            call('f"${f}"_p',nbparams,'_nbargs=',nbargs);
 
             # Extract visibility state.
             p = r + 1;
             p<size(source) && source[p]==_'_' && isin(source[p+1],_'0',_'1',_'2')?(
               r = p + 1;
-              visibility_state = source[r]-_'0';
-              isin(source[r+1],_'+',_'-',_'*')?(visibility_propagation = source[++r]):(visibility_propagation = 0);
-
-              echo('  >> Visibility = ',visibility_state,[visibility_propagation]);
-                            0;
+              call('f"${f}"_p',nbparams,'_visibility=',source[r]-_'0');
+              isin(source[r+1],_'+',_'-',_'*')?call('f"${f}"_p',nbparams,'_propagation=',source[r++]);
             );
 
             p = r + 1;
             skip_blank(p);
             source[p]==_','?++p;
+            ++nbparams;
           ):++p;
-        )"
+        );
+        call('f"${f}"_nbparams=',nbparams)"
     fi
+
+    echo[] "\n\nFilter : '"${f${f}_name}"' ("${f${f}_nbparams}" parameters)."
+    repeat ${f${f}_nbparams}
+      echo[] "  > Param \#"$>" : "${f${f}_p$>_name}
+
+    done
 
   fi endl done
 
@@ -45166,3 +45170,19 @@ parse_gui : skip "${1=*}"
 # End:
 #
 # (End of G'MIC custom commands)
+
+f0_name
+f0_command
+f0_commandpreview
+f0_zoomfactor
+f0_zoomaccurate
+f0_inputmode
+f0_nbparams
+f0_code
+f0_nbparams
+
+f0_p0_name
+f0_p0_nbargs
+f0_p0_a0
+f0_p0_visibility
+f0_p0_propagation
