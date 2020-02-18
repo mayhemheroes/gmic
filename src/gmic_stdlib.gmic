@@ -45001,9 +45001,10 @@ parse_gui : skip "${1=list},${2=*},${3="$_path_rc/update$_version.gmic"}"
 
   # Isolate only requested filters.
   if "['$2']!='*'" repeat $! if "s = ['"{$<,n}"']; find(lowercase(s),lowercase(['$2']))<0" rm[$<] fi done fi
+  nbfilters=$!
 
   # Parse each filter.
-  repeat $!,f l[$>] if crop(0,0,1,5)!='#@gui' F${f}_code={t} else
+  repeat $nbfilters,f l[$<] if crop(0,0,1,5)!='#@gui' F${f}_code={t} else
 
     # Separate '#@gui' directives from filter code, and merge them.
     eval "
@@ -45145,7 +45146,10 @@ parse_gui : skip "${1=list},${2=*},${3="$_path_rc/update$_version.gmic"}"
         );
         call('f"${f}"_nbparams=',nbparams)"
     fi
+  fi rm endl done
 
+  # Output result of the parsing.
+  repeat $nbfilters,f
     echo[] "\n\nFilter : '"${f${f}_name}"' ("${f${f}_nbparams}" parameters)."
     repeat ${f${f}_nbparams},p
       echo[] "  > Param \#"$p" : "${f${f}_p${p}_name}" (type '"${f${f}_p${p}_type}"'), visibility = "${f${f}_p${p}_visibility}
@@ -45153,10 +45157,7 @@ parse_gui : skip "${1=list},${2=*},${3="$_path_rc/update$_version.gmic"}"
         echo[] "    - Arg \#"$a" : "${f${f}_p${p}_a${a}}
       done
     done
-
-  fi endl done
-
-       q
+  done
 
 # Local Variables:
 # mode: sh
