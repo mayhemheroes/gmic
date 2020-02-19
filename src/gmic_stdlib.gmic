@@ -45228,8 +45228,38 @@ _parse_gui_isparams_rebuild : u 1
 _parse_gui_rebuild :
   v 0
   echo_stdout[] "#@gmic"
+
+  path=/
   repeat $_nbfilters,f
     e[] "  >> "$_gmic_c[#$f]$_gmic_n" "${_f${f}_path}${_f${f}_name}
+
+    # Insert directives to change folder if necessary.
+    if ;['$path']!=['${_f${f}_path}']
+      command_path={`"
+        src = ['"$path"'];
+        dest = ['"${_f${f}_path}'"];
+        command = vector1024();
+        for (p = 0, p<min(size(src),size(dest)) && src[p]==dest[p], ++p); # Find common base
+        while (src[p]!=_'/' && dest[p]!=_'/', --p);
+
+        nb_levelup = 0;
+        for (q = p + 1, q<size(src), ++nb_levelup, q = find(src,_'/',q) + 1);
+        nb_levelup?(copy(command,'#@gui '); copy(command[6],_'_',nb_levelup,1,0));
+
+        dest[p]==_'/'?++p;
+        while (p<size(dest),
+          q = find(dest,_'/',p)%size(dest);
+          eoc = find(command,0);
+          !eoc || command[eoc-1]!=_'_'?(copy(command[eoc],'#@gui '); eoc+=6);
+          copy(command[eoc],dest[p],q-p);
+          command[eoc + q - p] = _'\n';
+          p = q + 1;
+        ); command"`}
+      echo_stdout[] $command_path
+    fi
+
+    path=${_f${f}_path}
+
     if narg(${_f${f}_locale}) locale=_${_f${f}_locale} else locale= fi
     if narg(${_f${f}_zoomfactor}) zoomfactor=(${_f${f}_zoomfactor}) else zoomfactor= fi
     if ${_f${f}_zoomaccurate} zoomaccurate=+ else zoomaccurate= fi
