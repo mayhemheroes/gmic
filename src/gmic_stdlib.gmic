@@ -5630,7 +5630,7 @@ parse_gui : skip "${1=*},${2=print}"
       if $! _f${f}_inputmode={0,t} fi # Default input mode
       rm
     endl
-    e[] "\r  > "$_gmic_c[#$f]$_gmic_n" "${_f${f}_path}${_f${f}_name}"      "
+    e[] "\r  > "$_gmic_c[#$f]$_gmic_n" "{`s=vector48(_'" "');copy(s,['${_f${f}_path}${_f${f}_name}']);s`}
 
     # Parse filter parameters.
     parseparams=1
@@ -5717,7 +5717,7 @@ parse_gui : skip "${1=*},${2=print}"
     f+=1
   endl done
   _nbfilters=$f rm
-  e[] "\r  > "${_gmic_g}"Input parsing done!"$_gmic_n"      "
+  e[] "\r  > "${_gmic_g}{`s=vector48(_'" "');copy(s,'"Parsing done!"');s`}$_gmic_n
   v + parse_gui_$2 # Output result of the parsing.
 
 # Output mode 'print' (default output mode).
@@ -5735,6 +5735,7 @@ parse_gui_print :
 #
 parse_gui_parseparams_list : u 0 # Tell parser to not parse filter parameters
 parse_gui_list :
+  e[] "  >> Generate output, in 'list' mode.\n"
   ({'"*** List of filters in the G\47MIC plug-in ("$_nbfilters" filters, on "\
                 {`v=date(1);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}"/"\
                 {`v=date(2);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}", "\
@@ -5765,16 +5766,17 @@ parse_gui_list :
 
   ({'"\n*** End of list ***\n"'})
   y a y
+  e[] "\r  >> "${_gmic_g}{`s=vector48(_'" "');copy(s,'"Output done!"');s`}$_gmic_n
 
 # Output mode 'rebuild'.
 #
 parse_gui_parseparams_rebuild : u 1 # Tell parser to parse filter parameters
 parse_gui_rebuild :
-  e[] "  >> Generate parsed output, in mode 'rebuild'.\n"
+  e[] "  >> Generate output, in 'rebuild' mode.\n"
   path=/
   N={$_nbfilters-1}
   repeat $_nbfilters,f
-    e[] "\r  >> "$_gmic_c[#$f/$N]$_gmic_n" "${_f${f}_path}${_f${f}_name}"      "
+    e[] "\r  >> "$_gmic_c[#$f/$N]$_gmic_n" "{`s=vector48(_'" "');copy(s,['${_f${f}_path}${_f${f}_name}']);s`}
 
     # Insert directives to change folder if necessary.
     if ;['$path']!=['${_f${f}_path}']
@@ -5832,7 +5834,7 @@ parse_gui_rebuild :
     done
   done
   $_nongui y a y
-  e[] "  >> "${_gmic_g}"Output done!"$_gmic_n
+  e[] "\r  >> "${_gmic_g}{`s=vector48(_'" "');copy(s,'"Output done!"');s`}$_gmic_n
 
 # Force certain filters to move from one path to another.
 _update_server_move :
