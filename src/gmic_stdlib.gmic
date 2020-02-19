@@ -5861,7 +5861,7 @@ _update_server_move :
   if !narg($_nbm) _nbm=0 fi
   _to_move$_nbm="$1" _move_to$_nbm="$2" _nbm+=1
 
-_update_server_upload : skip "${2=""}"
+_update_server_upload : skip "${2=""}","${3=0}"
   if narg("$2") out="$2" else basename "$1" out=${} fi
   if !narg($GMIC_LOGIN)
     GMIC_LOGIN=${"gmic_ftp 0"}
@@ -5869,8 +5869,8 @@ _update_server_upload : skip "${2=""}"
     GMIC_FTP=${"gmic_ftp 2"}
   fi
   if narg($GMIC_LOGIN)
-    x 0,"lftp ftp://"$GMIC_LOGIN":"$GMIC_PASSWD"@"$GMIC_FTP" -e \"put -O /www/gmic/ \\\"$1\\\" -o \\\""$out"\\\";
-         quit\" >/dev/null"
+    x $3,"lftp ftp://"$GMIC_LOGIN":"$GMIC_PASSWD"@"$GMIC_FTP" -e \"put -O /www/gmic/ \\\"$1\\\" -o \\\""$out"\\\";
+          quit\" >/dev/null"
   fi
 
 # Upload or list released binaries on the G'MIC web server.
@@ -44920,8 +44920,8 @@ fx_solve_maze_preview :
 #@cli :       '$_fF_pP_aA': Argument value
 #@cli :
 parse_gui : skip "${1=list},${2=*}"
-  e[^-1] "Parse '#@gui' filters '$2' and output in mode '$1'."
-  if !$! return fi
+  e[^-1] "Parse '#@gui' filters '$2' and output in '$1' mode."
+  if !$! i raw:${_path_rc}update$_version.gmic,uchar fi
   use_vt100
   y a y
   0 store. _nongui
@@ -45019,7 +45019,7 @@ parse_gui : skip "${1=list},${2=*}"
   rm[0]
 
   # Isolate only requested filters.
-  _parse_gui_move_filters
+  l _parse_gui_trigger_$1 onfail endl
   if "['$2']!='*'" repeat $! if "s = ['"{$<,n}"']; find(lowercase(s),lowercase(['$2']))<0" rm[$<] fi done fi
 
   # Parse each filter.
@@ -45196,55 +45196,7 @@ parse_gui : skip "${1=list},${2=*}"
   v + _parse_gui_$1 # Output result of the parsing.
   e[] "  > "${_gmic_g}"Output done!"$_gmic_n
 
-# Force filters to move from one path to another
-_parse_gui_move_filters :
-  m "move_filter : skip \"${""2=}\" nmd 3,\"$""1\" ind=${}
-     if $ind basename \"$""1\" nm[$ind] \"$""2\"/${}
-     else v 0 e[0--4] \"Cannot move unknown filter '\"${_gmic_r}\"$""1\"${_gmic_n}\"'
-     to '\"${_gmic_g}\"$""2\"${_gmic_n}\"'\" fi"
-
-  move_filter "Testing/Garagecoder/Anti Alias","Repair"
-  move_filter "Testing/Garagecoder/Auto Balance","Colors"
-  move_filter "Testing/Garagecoder/Compression Blur","Repair"
-  move_filter "Testing/Garagecoder/Emboss","Black &amp; White"
-  move_filter "Testing/Garagecoder/JPEG Smooth","Repair"
-  move_filter "Testing/Garagecoder/Normalize Brightness","Colors"
-  move_filter "Testing/Garagecoder/Sharpen [Gradient]","Details"
-  move_filter "Testing/Garagecoder/Sharpen [Tones]","Details"
-  move_filter "Testing/Garagecoder/Temperature Balance","Colors"
-  move_filter "Testing/Garagecoder/Unquantize [JPEG Smooth]","Repair"
-  move_filter "Testing/Garagecoder/Wiremap","Rendering"
-  move_filter "Testing/Garagecoder/Smooth [Geometric-Median]","Repair"
-  move_filter "Testing/Gmic Tutorials/Hedcut (Experimental)","Patterns"
-  move_filter "Testing/Iain Fergusson/Easy Skin Retouch","Details"
-  move_filter "Testing/Iain Fergusson/Moire Removal","Repair"
-  move_filter "Testing/Iain Fergusson/Halftone Shapes","Patterns"
-  move_filter "Testing/Iain Fergusson/Simple Local Contrast","Details"
-  move_filter "Testing/Iain Fergusson/Turbulent Halftone","Patterns"
-  move_filter "Testing/Joan Rake/Deformations/Ultrawarp++++","Degradations"
-  move_filter "Testing/Naggobot/Blockism","Artistic"
-  move_filter "Testing/Reptorian/Fragment Blur","Degradations"
-  move_filter "Testing/Reptorian/Kaleidoscope [Polar]","Deformations"
-  move_filter "Testing/Reptorian/Logarithmic Distortion","Deformations"
-  move_filter "Testing/Reptorian/Nebulous","Rendering"
-  move_filter "Testing/Samj/Arrays &amp; Tiles/Annular Steiner Chain Round Tiles","Arrays &amp; Tiles"
-  move_filter "Testing/Samj/Arrays &amp; Tiles/Reptile","Patterns"
-  move_filter "Testing/Samj/Artistic/Anguish","Artistic"
-  move_filter "Testing/Samj/Artistic/Chalk It Up","Artistic"
-  move_filter "Testing/Samj/Artistic/Paint Daub","Artistic"
-  move_filter "Testing/Samj/Artistic/Skeletik","Artistic"
-  move_filter "Testing/Samj/Patterns/Denim","Patterns"
-  move_filter "Testing/Samj/Patterns/Soft Random Shades","Patterns"
-  move_filter "Testing/Samj/Rendering/Pythagoras Tree","Rendering"
-  move_filter "Testing/Samj/Rendering/Snowflake 2","Rendering"
-  move_filter "Testing/Samj/Rendering/Twisted Rays","Rendering"
-  move_filter "Testing/Souphead/Disco","Rendering"
-  move_filter "Testing/Souphead/Moon2panorama","Deformations"
-  move_filter "Testing/Souphead/Spiral RGB","Rendering"
-  move_filter "Testing/Souphead/Kitaoka Spin Illusion","Rendering"
-  move_filter "Testing/Zonderr/Spiral","Rendering"
-
-# Output mode 'list' (output on stdout).
+# Output mode 'list'.
 #
 _parse_gui_isparams_list : u 0
 _parse_gui_list :
@@ -45285,10 +45237,9 @@ _parse_gui_isparams_rebuild : u 1
 _parse_gui_rebuild :
   e[] ""
   path=/
-
-  ({'#@gmic\n'})
+  N={$_nbfilters-1}
   repeat $_nbfilters,f
-    e[] "\r  >> "$_gmic_c[#{$f+1}/$_nbfilters]$_gmic_n" "${_f${f}_path}${_f${f}_name}"      "
+    e[] "\r  >> "$_gmic_c[#$f/$N]$_gmic_n" "${_f${f}_path}${_f${f}_name}"      "
 
     # Insert directives to change folder if necessary.
     if ;['$path']!=['${_f${f}_path}']
@@ -45345,10 +45296,64 @@ _parse_gui_rebuild :
       ({'"#@gui"$locale" : "{/${_f${f}_p${p}_name}}" = "${_f${f}_p${p}_type}$sep1{/$args}$sep2$visibility\n'})
     done
   done
-  $_nongui y a y compress_gmic
+  $_nongui y a y
+
+# Force certain filters to move from one path to another.
+_update_server_move :
+  m "move_filter : skip \"${""2=}\" nmd 3,\"$""1\" ind=${}
+     if $ind basename \"$""1\" nm[$ind] \"$""2\"/${}
+     else v 0 e[0--4] \"Cannot move unknown filter '\"${_gmic_r}\"$""1\"${_gmic_n}\"'
+     to '\"${_gmic_g}\"$""2\"${_gmic_n}\"'\" fi"
+
+  sort_list +,n
+  move_filter "Testing/Garagecoder/Anti Alias","Repair"
+  move_filter "Testing/Garagecoder/Auto Balance","Colors"
+  move_filter "Testing/Garagecoder/Compression Blur","Repair"
+  move_filter "Testing/Garagecoder/Emboss","Black &amp; White"
+  move_filter "Testing/Garagecoder/JPEG Smooth","Repair"
+  move_filter "Testing/Garagecoder/Normalize Brightness","Colors"
+  move_filter "Testing/Garagecoder/Sharpen [Gradient]","Details"
+  move_filter "Testing/Garagecoder/Sharpen [Tones]","Details"
+  move_filter "Testing/Garagecoder/Temperature Balance","Colors"
+  move_filter "Testing/Garagecoder/Unquantize [JPEG Smooth]","Repair"
+  move_filter "Testing/Garagecoder/Wiremap","Rendering"
+  move_filter "Testing/Garagecoder/Smooth [Geometric-Median]","Repair"
+  move_filter "Testing/Gmic Tutorials/Hedcut (Experimental)","Patterns"
+  move_filter "Testing/Iain Fergusson/Easy Skin Retouch","Details"
+  move_filter "Testing/Iain Fergusson/Moire Removal","Repair"
+  move_filter "Testing/Iain Fergusson/Halftone Shapes","Patterns"
+  move_filter "Testing/Iain Fergusson/Simple Local Contrast","Details"
+  move_filter "Testing/Iain Fergusson/Turbulent Halftone","Patterns"
+  move_filter "Testing/Joan Rake/Deformations/Ultrawarp++++","Degradations"
+  move_filter "Testing/Naggobot/Blockism","Artistic"
+  move_filter "Testing/Reptorian/Fragment Blur","Degradations"
+  move_filter "Testing/Reptorian/Kaleidoscope [Polar]","Deformations"
+  move_filter "Testing/Reptorian/Logarithmic Distortion","Deformations"
+  move_filter "Testing/Reptorian/Nebulous","Rendering"
+  move_filter "Testing/Samj/Arrays &amp; Tiles/Annular Steiner Chain Round Tiles","Arrays &amp; Tiles"
+  move_filter "Testing/Samj/Arrays &amp; Tiles/Reptile","Patterns"
+  move_filter "Testing/Samj/Artistic/Anguish","Artistic"
+  move_filter "Testing/Samj/Artistic/Chalk It Up","Artistic"
+  move_filter "Testing/Samj/Artistic/Paint Daub","Artistic"
+  move_filter "Testing/Samj/Artistic/Skeletik","Artistic"
+  move_filter "Testing/Samj/Patterns/Denim","Patterns"
+  move_filter "Testing/Samj/Patterns/Soft Random Shades","Patterns"
+  move_filter "Testing/Samj/Rendering/Pythagoras Tree","Rendering"
+  move_filter "Testing/Samj/Rendering/Snowflake 2","Rendering"
+  move_filter "Testing/Samj/Rendering/Twisted Rays","Rendering"
+  move_filter "Testing/Souphead/Disco","Rendering"
+  move_filter "Testing/Souphead/Moon2panorama","Deformations"
+  move_filter "Testing/Souphead/Spiral RGB","Rendering"
+  move_filter "Testing/Souphead/Kitaoka Spin Illusion","Rendering"
+  move_filter "Testing/Zonderr/Spiral","Rendering"
+  uncommand move_filter
 
 update_server2 :
-  e[^-1] "Update filter definition file on G'MIC server."
+  e[^-1] "Update filter definition file on G'MIC server.\n"
+
+  # Be sure to get the latest version of filters.
+  x "cd "$HOME"/work/src/gmic && git pull"
+  x "cd "$HOME"/work/src/gmic-community && git pull"
 
   # Import filters from stdlib and community.
   files=$HOME/work/src/gmic/src/gmic_stdlib.gmic
@@ -45364,16 +45369,65 @@ update_server2 :
   i[1--2] ({'"#@gui ________________\n"'}) y a y
 
   # Create update file.
-  e[^-1] "* Generate filter update file."
-  v + +parse_gui. rebuild,* v -
-  o. raw:update$_version.gmic,uchar
-  rm.
+  +l.
+    e[^-1] "* Generate filter update file."
+    m "_parse_gui_trigger_rebuild : _update_server_move"
+    v + parse_gui. rebuild,* v -
+    uncommand _parse_gui_trigger_rebuild
+
+    # Add footer and header.
+    e[0--3] "* Compress filter update file."
+    compress_gmic
+    i[0] ({'"#@gmic"\n\
+            "#"\n\
+            "#  File         : update"$_version".gmic"\n\
+            "#                 ( G\47MIC command file )"\n\
+            "#"\n\
+            "#  Description  : Update file for G\47MIC commands and filters (for current version "${-strver}")."\n\
+            "#                 ( https://gmic.eu )"\n\
+            "#"\n\
+            "#  License      : CeCILL v2.1"\n\
+            "#                 ( https://cecill.info/licences/Licence_CeCILL_V2.1-en.html )"\n\
+            "#"\n\
+            "#  Generated on : "\
+            {date(0)}"/"\
+            {`v=date(1);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}"/"\
+            {`v=date(2);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}", "\
+            {`v=date(4);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}":"\
+            {`v=date(5);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}\n\
+            "#"\n\n'})
+    ({'"\n\n# Local Variables:"\n\
+       "# mode: sh"\n\
+       "# End:"\n\
+       "#"\n\
+       "# (End of G\47MIC update file)"'})
+      y a y
+
+    # Upload filter files on G'MIC server.
+    e[^-1] "* Upload filter update to G'MIC server."
+    o raw:${_path_rc}update$_version.gmic,uchar
+    if "d = date(3); h = date(4); h>=7 && d>=1 && d<=5" url=http://bit.ly/2CmhX65 # url=http://bit.ly/2uaBRMB
+    else url=http://bit.ly/2CmhX65 # url=http://bit.ly/2uaBRMB #
+    fi
+    replace_str "<i>David Tschumperl&#233;</i>","<i><a href=\""$url"\">David Tschumperl&#233;</a></i>"
+    o cimgz:/tmp/update$_version.gmic,uchar
+
+    (290,$_version)
+    repeat w
+      v={i[$>]}
+      _update_server_upload[] ${_path_rc}update$_version.gmic,plain_update$v.gmic,1
+      _update_server_upload[] /tmp/update$_version.gmic,update$v.gmic,1
+    done
+    rm
+  endl
 
   # Create filter listing.
-  e[^-1] "* Generate filter listing."
-  v + parse_gui. list,* v -
-  o. raw:gui_filters.txt,uchar
-  rm.
+  +l.
+    e[0--3] "* Generate filter listing."
+    v + parse_gui. list,* v -
+    o. raw:/tmp/gui_filters.txt,uchar
+    rm.
+  endl
 
 # Local Variables:
 # mode: sh
