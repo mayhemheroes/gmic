@@ -45211,7 +45211,6 @@ _parse_gui_list :
   rm
   echo_stdout "\n*** End of list ***\n"
 
-
 # Output mode 'rebuild'.
 _parse_gui_isparams_rebuild : u 1
 _parse_gui_rebuild :
@@ -45223,11 +45222,16 @@ _parse_gui_rebuild :
 
     echo_stdout[] "\n#@gui"$locale" "${_f${f}_name}" : "${_f${f}_command}," "${_f${f}_commandpreview}$zoomfactor$zoomaccurate$inputmode
     repeat ${_f${f}_nbparams},p
-
       if narg(${_f${f}_p${p}_visibility}) visibility=_${_f${f}_p${p}_visibility}${_f${f}_p${p}_propagation} else visibility= fi
 
-      echo_stdout[] "#@gui"$locale" : "${_f${f}_p${p}_name}" = "${_f${f}_p${p}_type}()$visibility
+      # Build list of arguments.
+      args= c=
+      repeat ${_f${f}_p${p}_nbargs},a args.=$c${_f${f}_p${p}_a${a}} c=, done
+
+      echo_stdout[] "#@gui"$locale" : "${_f${f}_p${p}_name}" = "${_f${f}_p${p}_type}({/$args})$visibility
     done
+
+    echo_stdout[] {/${_f${f}_code}}
   done
 
 
