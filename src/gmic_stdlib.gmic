@@ -5377,7 +5377,7 @@ update_deprecate : check "isint($1) && $1>0 && $1<999"
 
 # update_download_version.
 # Update file versions on G'MIC download page, with specified version number.
-# $1 = version number (e.g. '2.8.5').
+# $1 = version number (e.g. '2.9.0').
 update_download_version : check "
     is_digit(c)=(c>=_'0' && c<=_'9');
     ver = ['${1=undefined}'];
@@ -5413,314 +5413,512 @@ update_download_version : check "
     "
   o raw:$filename,uchar
 
-# Function that updates filters definitions on the G'MIC web server.
-# It sorts and merges filters from all available sources, and save
-# a single update file on the G'MIC server. It also print on the standard
-# output (stdout), the list of available filters.
-update_server :
+#@cli parse_gui : _filter_name,_output_format
+#@cli : Parse selected filter definitions and generate info about filters in selected output format.
+#@cli : 'output_format' can be { list | print | rebuild }\n
+#@cli : It is possible to define a custom output mode, by implementing the following commands
+#@cli : ('outputmode' must be replaced by the name of the custom user output mode):
+#@cli : . 'parse_gui_outputmode' : A command that outputs the parsing information with a custom format.
+#@cli : . 'parse_gui_parseparams_outputmode' (optional): A simple command that returns 0 or 1. It tells the parser \
+# whether parameters of matching filter must be analyzed (slower) or not.
+#@cli : . 'parse_gui_trigger_outputmode' (optional): A command that is called by the parser just before parsing \
+# the set of each matching filters.\n
+#@cli : Here is the list of variables set by the parser, accessible in command 'parse_gui_outputmode':\n
+#@cli : '$_nbfilters': Number of matching filters.
+#@cli : '$_nongui' (stored as an image): All merged lines in the file that do not correspond to '#@gui' lines.\n
+#@cli : For each filter \#F ('F' in range [0,$_nbfilters-1]):
+#@cli : . '$_fF_name': Filter name.
+#@cli : . '$_fF_path': Full path.
+#@cli : . '$_fF_locale': Filter locale (empty, if not specified).
+#@cli : . '$_fF_command': Filter command.
+#@cli : . '$_fF_commandpreview': Filter preview command (empty, if not specified).
+#@cli : . '$_fF_zoomfactor': Default zoom factor (empty, if not specified).
+#@cli : . '$_fF_zoomaccurate': Is preview accurate when zoom changes ? (can be { 0=false | 1=true }).
+#@cli : . '$_fF_inputmode': Default preferred input mode (empty, if not specified).
+#@cli : . '$_fF_nbparams': Number of parameters.\n
+#@cli : For each parameter \#P of the filter \#F ('P' in range [0,$_fF_nbparams-1]):
+#@cli : . '$_fF_pP_name': Parameter name.
+#@cli : . '$_fF_pP_type': Parameter type.
+#@cli : . '$_fF_pP_visibility': Parameter visibility.
+#@cli : . '$_fF_pP_propagation': Propagation of the parameter visibility.
+#@cli : . '$_fF_pP_nbargs': Number of parameter arguments.\n
+#@cli : For each argument \#A of the parameter \#P ('A' in range [0,$_fF_pP_nbargs-1]):
+#@cli : . '$_fF_pP_aA': Argument value\n
+#@cli : Default parameters: 'filter_name=*' and 'output_format=print'.
+parse_gui : skip "${1=*},${2=print}"
+  e[^-1] "Parse '#@gui' filters '$1' and output in '$2' mode."
+  if !$! i raw:${_path_rc}update$_version.gmic,uchar fi
   use_vt100
+  y a y
+  0 store. _nongui
 
-  # Promote cool testing filters to main filter tree.
-  _update_server_move[] "/Testing/Afre/Clean~Text","/Repair"
-  _update_server_move[] "/Testing/Garagecoder/Anti~Alias","/Repair"
-  _update_server_move[] "/Testing/Garagecoder/Aurora","/Artistic"
-  _update_server_move[] "/Testing/Garagecoder/Auto~Balance","/Colors"
-  _update_server_move[] "/Testing/Garagecoder/Compression~Blur","/Repair"
-  _update_server_move[] "/Testing/Garagecoder/Despeckle","/Repair"
-  _update_server_move[] "/Testing/Garagecoder/Emboss","/Black~&amp;~White"
-  _update_server_move[] "/Testing/Garagecoder/HSL~Adjustment","/Colors"
-  _update_server_move[] "/Testing/Garagecoder/HSV~Select","/Colors"
-  _update_server_move[] "/Testing/Garagecoder/JPEG~Smooth","/Repair"
-  _update_server_move[] "/Testing/Garagecoder/Normalize~Brightness","/Colors"
-  _update_server_move[] "/Testing/Garagecoder/Stereo~Image","/Stereoscopic~3D"
-  _update_server_move[] "/Testing/Garagecoder/Undo~Anaglyph","/Stereoscopic~3D"
-  _update_server_move[] "/Testing/Garagecoder/Sharpen~[Gradient]","/Details"
-  _update_server_move[] "/Testing/Garagecoder/Sharpen~[Tones]","/Details"
-  _update_server_move[] "/Testing/Garagecoder/Temperature~Balance","/Colors"
-  _update_server_move[] "/Testing/Garagecoder/Unquantize~[JPEG~Smooth]","/Repair"
-  _update_server_move[] "/Testing/Garagecoder/Wiremap","/Rendering"
-  _update_server_move[] "/Testing/Garagecoder/Smooth~[Geometric-Median]","/Repair"
-  _update_server_move[] "/Testing/Gmic~Tutorials/Hedcut~(Experimental)","/Patterns"
-  _update_server_move[] "/Testing/Iain~Fergusson/Constrained~Sharpen","/Details"
-  _update_server_move[] "/Testing/Iain~Fergusson/Easy~Skin~Retouch","/Details"
-  _update_server_move[] "/Testing/Iain~Fergusson/Moire~Removal","/Repair"
-  _update_server_move[] "/Testing/Iain~Fergusson/Halftone~Shapes","/Patterns"
-  _update_server_move[] "/Testing/Iain~Fergusson/Simple~Local~Contrast","/Details"
-  _update_server_move[] "/Testing/Iain~Fergusson/Turbulent~Halftone","/Patterns"
-  _update_server_move[] "/Testing/Joan~Rake/Artistic/Ultrawarp++++","/Degradations"
-  _update_server_move[] "/Testing/J&#233;J&#233;/Rays","/Patterns"
-  _update_server_move[] "/Testing/Naggobot/Blockism","/Artistic"
-  _update_server_move[] "/Testing/Reptorian/Fragment~Blur","/Degradations"
-  _update_server_move[] "/Testing/Reptorian/Kaleidoscope~[Polar]","/Deformations"
-  _update_server_move[] "/Testing/Reptorian/Logarithmic~Distortion","/Deformations"
-  _update_server_move[] "/Testing/Reptorian/Nebulous","/Rendering"
-  _update_server_move[] "/Testing/Samj/Arrays~&amp;~Tiles/Annular~Steiner~Chain~Round~Tile","/Arrays~&amp;~Tiles"
-  _update_server_move[] "/Testing/Samj/Arrays~&amp;~Tiles/Reptile","/Patterns"
-  _update_server_move[] "/Testing/Samj/Artistic/Anguish","/Artistic"
-  _update_server_move[] "/Testing/Samj/Artistic/Chalk~It~Up","/Artistic"
-  _update_server_move[] "/Testing/Samj/Artistic/Paint~Daub","/Artistic"
-#  _update_server_move[] "/Testing/Samj/Artistic/Skeletik","/Artistic"
-  _update_server_move[] "/Testing/Samj/Patterns/Denim","/Patterns"
-  _update_server_move[] "/Testing/Samj/Patterns/Soft~Random~Shades","/Patterns"
-  _update_server_move[] "/Testing/Samj/Rendering/Pythagoras~Tree","/Rendering"
-  _update_server_move[] "/Testing/Samj/Rendering/Snowflake~2","/Rendering"
-  _update_server_move[] "/Testing/Samj/Rendering/Twisted~Rays","/Rendering"
-  _update_server_move[] "/Testing/Souphead/Disco","/Rendering"
-  _update_server_move[] "/Testing/Souphead/Moon2panorama","/Deformations"
-  _update_server_move[] "/Testing/Souphead/Spiral~RGB","/Rendering"
-  _update_server_move[] "/Testing/Souphead/Kitaoka~Spin~Illusion","/Rendering"
-  _update_server_move[] "/Testing/Zonderr/Spiral","/Rendering"
+  # Extract all filters with locale and full path.
+  eval "
+    # Define convenience macros.
+    #---------------------------
+    is_blank(p) = (source[p]<=_' ');
 
-  # Define useful sub-commands.
+    skip_blank(p) = (while (is_blank(p), ++p));
 
-  # Command to return parent of a path
-  m "parent : l[] ({'$""1'}) s -,{'/'} if $! rm. fi i[0--1] (47) a y u {0,t} rm endl"
+    discard_html(name) = (
+      _l = find(name,0);
+      for (_p = find(name,_'<'), _l>=0 && _p>=0,
+        isin(name[_p+1],_'b',_'i') && name[_p+2]==_'>'?( # Opening tag
+          copy(name[_p],name[_p+3],_l-_p-2);
+          _l-=3;
+        ):name[_p+1]==_'/' && isin(name[_p+2],_'b',_'i') && name[_p+3]==_'>'?( # Closing tag
+          copy(name[_p],name[_p+4],_l-_p-3);
+          _l-=4;
+        ):(_p+=1);
+      );
+    );
 
-  # Convert string to a valid variable name
-  m "varname : ({'\"$""1\"'}) f. if((i>=48&&i<=57)||(i>=65&&i<=90)||(i>=97&&i<=122),i,95) u {t} rm."
-  m "load_gmic : "\
-    "_nb_sources+=1 filename=${\"basename $""1\"} "\
-    "e[] $_gmic_c\"  \"$_nb_sources\". \"$_gmic_n$filename\"  \" "\
-    "l[] "\
-    "  i raw:$""1,char nm {0,b} e[] $_gmic_g\"      [retrieved from source '$""1']\"$_gmic_n "\
-    "onfail l[] "\
-    "  source=https://gmic.eu/include/$filename "\
-    "  i raw:$source,char e[] $_gmic_c\"      [retrieved from archive '\"$source\"']\n\"$_gmic_n "\
-    "onfail e[] $_gmic_r\"      [error, not reachable!]\n\"$_gmic_n "\
-    "endl endl"
+    store_block(n,p,q,path,name) = (
+      call('+rows[0] ',p,',',q,' discard. -1 autocrop. 10 autocrop. 32 nm. \"',path,'/',name,'\"');
+    );
 
-  # Copy latest command definitions on G'MIC server if necessary.
-  e[] "> Upload latest version ("${-strver}") of commands on G'MIC server.\n"
-  _update_server_upload $HOME/work/src/gmic/src/gmic_stdlib.gmic,gmic_stdlib.$_version
-  _update_server_upload $HOME/work/src/gmic/src/gmic_stdlib.gmic
+    # Init variables.
+    #----------------
+    source = crop();
+    path = prev_path = vector1024();
+    name = prev_name = vector1024();
 
-  # Get command source files and archive them.
-  e[] "> Load and archive .gmic source files.\n"
-  _nb_sources=0
-  load_gmic ${HOME}/work/src/gmic/src/gmic_stdlib.gmic
-  x "cd $HOME/work/src/gmic-community && git pull 2>&1 >/dev/null"
+    # Start parsing.
+    #---------------
+    prev_p0 = p0 = p = N = 0;
+    while (p<size(source),
+      p = find(source,'#@gui',p)%size(source);
 
-  load_gmic ${HOME}/work/src/gmic-community/include/afre.gmic
-  load_gmic ${HOME}/work/src/gmic-community/include/andreas_pahlsson.gmic
-  load_gmic ${HOME}/work/src/gmic-community/include/andy_kelday.gmic
-  load_gmic ${HOME}/work/src/gmic-community/include/arto_huotari.gmic
-  load_gmic ${HOME}/work/src/gmic-community/include/david_tschumperle.gmic
-  load_gmic ${HOME}/work/src/gmic-community/include/garry_osgood.gmic
-  load_gmic ${HOME}/work/src/gmic-community/include/gentlemanbeggar.gmic
-  load_gmic ${HOME}/work/src/gmic-community/include/iain_fergusson.gmic
-  load_gmic ${HOME}/work/src/gmic-community/include/james_prichard.gmic
-  load_gmic ${HOME}/work/src/gmic-community/include/jerome_boulanger.gmic
-  load_gmic ${HOME}/work/src/gmic-community/include/jerome_ferrari.gmic
-  load_gmic ${HOME}/work/src/gmic-community/include/joan_rake.gmic
-  load_gmic ${HOME}/work/src/gmic-community/include/karsten_rodenacker.gmic
-  load_gmic ${HOME}/work/src/gmic-community/include/mccap.gmic
-  load_gmic ${HOME}/work/src/gmic-community/include/martin_souphead.gmic
-  load_gmic ${HOME}/work/src/gmic-community/include/mathew_callaghan.gmic
-  load_gmic ${HOME}/work/src/gmic-community/include/photocomix.gmic
-  load_gmic ${HOME}/work/src/gmic-community/include/stanislav_paskalev.gmic
-  l[]
-    load_gmic ${HOME}/work/src/gmic-community/include/sylvie_alexandre.gmic
-    s +,{'"#@gui <b>"'} i[1--2:2] ({'"#@gui ________<b>Testing<b>\n#@gui <i>Samj</i>\n"'}) y a y
-  endl
-  load_gmic ${HOME}/work/src/gmic-community/include/tom_keil.gmic
-  load_gmic ${HOME}/work/src/gmic-community/include/reptorian.gmic
-  load_gmic ${HOME}/work/src/gmic-community/include/translation_ca.gmic
-  load_gmic ${HOME}/work/src/gmic-community/include/translation_fr.gmic
-  load_gmic ${HOME}/work/src/gmic-community/include/translation_ja.gmic
+      !p || (p>0 && source[p - 1]==_'\n')?( # Found line starting with '#@gui'
+        p0 = p; # Remember starting position of line
+        p+=5;
+        source[p]==_'_' && (l = find(source,_' ',++p))>=0?(p = l + 1); # Skip locale
 
-  # Merge them together.
-  i[0] (10) i[2--1] ({"'\n#@gui ________________\n'"}) y a y discard 13 replace 9,32
-  s +,{'"#@gui"'}
-  repeat int(($!-1)/2) a[{$>+1},{$>+2}] y done
-  nm[0] !header
+        # Detect new filter or folder.
+        #------------------------------
+        skip_blank(p);
+        source[p]!=_':'?(
+          q = find(source,_':',p)%size(source);
+          r = find(source,_'\n',p)%size(source);
+          r<q?(
+            l = find(source,'hide(',p)%size(source);
+            l<r?(p = r + 1; continue()); # Ignore 'hide()' directives for filters.
 
-  # Parse filter tree.
-  e[] "> Start filter parsing.\n"
-  progress_factor={100/($!-1)}
-  merge_request=0
-  merge_start=0
-  nb_filters=0
-  offset=0
-  path=/
+            # Definition of a new folder.
+            #----------------------------
+            while (is_blank(--r),0);
+            copy(name,source[p],r-p+1); name[r-p+1] = 0;
+            for (levelup = 0, name[levelup]==_'_', ++levelup);
+            levelup?(
+              copy(name,name[levelup],r-p+2-levelup); # Clean folder name
+              while (levelup--, # Update path
+                lp = find(path,0); l = max(0,find(path,_'/',lp-1,0)); path[l] = 0;
+              );
+            );
+            discard_html(name);
+            name[0]?(
+              ln = find(name,0); # Update path
+              lp = find(path,0);
+              lp?(path[lp] = _'/'; copy(path[lp+1],name,ln); path[lp+ln+1] = 0):(copy(path,name,ln); path[ln] = 0);
+            );
+            copy(i[#0,p0],-1,r-p0+1,1,0); # Discard line (will be removed later)
+            p = r + 1;
+          ):(
 
-  repeat $!
-    ind={$>-$offset}
-    if {{$ind-1},@-1}==10" && "same([{^}],'#@gui',5)" && "({$ind,@5}==32" || "{$ind,@5}==_'_') l[$ind]
+            # Definition of a new filter.
+            #----------------------------
+            while (is_blank(--q),0);
+            copy(name,source[p],q-p+1); name[q-p+1] = 0;
+            store_block(N,prev_p0,p0-1,prev_path,prev_name);
 
-      # Line starts by '#@gui[_] '
-      if i[5]==_'_' locale=_{`[i[6],i[7]]`} # Retrieve locale if any specified
-      else locale=
-      fi
+            prev_p0 = p0;
+            prev_path = path;
+            prev_name = name;
+            ++N;
+            p = q + 1;
+          );
+        )
+      ):++p
+    );
+    prev_p0!=p0?store_block(N,prev_p0,size(source)-1,prev_path,prev_name) # Insert last block.
+    "
+  rm[0]
 
-      is_folder=0
-      s +,10
-      if {0,@5}==_'_' +rows[0] 8,100% rows[0] 0,7 # Treat a localized filter as a regular filter.
-      else +rows[0] 5,100% rows[0] 0,4
-      fi
-      autocrop. 32 mv. 1
+  # Isolate only requested filters.
+  if "['$1']!='*'" repeat $! if "s = ['"{$<,n}"']; find(lowercase(s),lowercase(['$1']))<0" rm[$<] fi done fi
+  l parse_gui_trigger_$2 onfail endl # Allow global pre-processing before parsing each filter.
 
-      if narg($locale)" && "find(#1,'hide(')>=0 # Found a hide() pragma.
-        i[1] ({'" "'})
+  # Parse each filter.
+  e[] ""
+  f=0 repeat $! _f${f}_path={$>,f} l[$>]
+    if crop(0,0,1,5)!='#@gui' # Non-gui : merge code and skip chunk
+      autocrop {'\n'} $_nongui if h ({'\n'}) mv[-2,-1] 0 a y else rm. fi
+      store _nongui 0 continue
+    fi
 
-      elif {1,@0}!=_':' # Found a new filter or folder definition.
-        l[1]
+    # Init variables.
+    _f${f}_locale=
+    _f${f}_commandpreview=
+    _f${f}_zoomfactor=
+    _f${f}_zoomaccurate=
+    _f${f}_inputmode=
+    _f${f}_nbparams=0
 
-          # Format string by removing special character sequences.
-          s +,{':'}
-          replace_str[0] "<b>"
-          replace_str[0] "</b>"
-          replace_str[0] "<i>"
-          replace_str[0] "</i>"
-          replace[0] {'/'},{'-'}
-          replace[0] {','},{';'}
-          autocrop[0] 32
+    # Detect locale.
+    if crop(0,0,1,6)=='#@gui_' _f${f}_locale={`crop(0,6,1,2)`} fi
 
-          if $!>1 # Found new filter.
-            _update_server_calibrate_name[0] +replace[0] 32,{'~'}
-            name=$path{t} rm.
-            merge_request=1
-            nb_filters+=1
-            i[0,1] (32) a y
-            e[] $_gmic_c"  "$nb_filters". "$_gmic_n$name" ("{round($>*$progress_factor)}"%)."
-            nm $name
+    # Separate '#@gui' lines from other lines, and merge them.
+    eval "
+      is_blank(p) = (source[p]<=_' ');
+      skip_blank(p) = (while (is_blank(p), ++p));
+      source = crop();
+      is_first = 1;
+      p = 0;
+      while (p<size(source),
+        p = find(source,'#@gui',p)%size(source);
+        !p || (p>0 && source[p - 1]==_'\n')?( # Found line starting with '#@gui'
+          p0 = p; # Remember starting position of line
+          p+=5;
+          source[p]==_'_' && (l = find(source,_' ',++p))>=0?(p = l + 1); # Skip locale
+          skip_blank(p);
+          source[p]==_':'?(++p; skip_blank(p));
+          r = find(source,_'\n',p)%size(source); # Find end of line
+          source[r]==_'\n'?( # Detect and merge multi-line comments.
+            while (1,
+              q = r;
+              while (is_blank(--q),0);
+              source[q]==_'\\' && source[r+1]==_'#'?(
+                r+=2; skip_blank(r);
+                copy(i[#0,q],-1,r-q,1,0); # Part to be discarded
+                r = find(source,_'\n',r);
+                r<0?(r=size(source); break());
+              ):break();
+            );
+          );
+          call('+rows[0] ',p,',',r);
+          source[r]==_'\n'?(i[#-1,h(#-1)-1] = is_first?0:_' ');
+          copy(i[#0,p0],-1,min(r,size(source)-1)-p0+1,1,0); # Part to be discarded
+          p = r + 1;
+          is_first = 0;
+        ):++p
+      )"
+    a[^0] y discard -1
+    l[0] autocrop {'\n'} $_nongui if h ({'\n'}) mv[-2,-1] 0 a y else rm. fi store _nongui endl # Merge non-gui code
+    s -,0 # Split in two images : definition and parameters
+    f "max(_' ',i)" # Replace all blank characters by space
 
-            # Force filter to move if necessary.
-            repeat $_nbm if ['$name']==['${_to_move$>}']
-              e[] $_gmic_m"       -> Moved to '"${_move_to$>}$_gmic_n"'."
-              name=${_move_to$>}/{b} nm $name
-            fi done
-            is_testing={same(['{n}'],'/Testing/',9)}
-
-          else # Found new folder (opt. parent(s)).
-
-            if i==_'_' # Folder has parents before creating it.
-              do path=${"parent[] "$path} shift 0,-1,0,0 while i==_'_'
-              autocrop 0
-            fi
-            autocrop 32
-            if w # Folder name specified after the underscore(s).
-              varname {0,t} locale_${}=$locale # Keep locale of each folder
-              _update_server_calibrate_name[0]
-              replace 32,{'~'}
-              path=$path{0,t}/
-            fi
-            is_folder=1
-
-          fi # if $!>1
-        endl # l[1]
-
-        if $is_folder rm[0,1] i[0] (10) # Discard folder definition (will be recreated afterwards).
-        else nm[0] $name fi
-
-      else # Found possibly a filter argument.
-
-        if $!>=3 l[1]
-          s +,{'='}
-          if $!>=3 if {1,@0}==_'='
-            if find(#0,'"<span "')<0
-              rows[0] 1,100%
-              if !$is_testing _update_server_calibrate_name[0] fi
-              i[0] ({':'};32) i[2] (32)
-            fi
-          fi fi
+    # Parse filter definition.
+    l[0]
+      _f${f}_zoomaccurate=0
+      s -,{':'} autocrop {'" "'}
+      _f${f}_name={0,t} rm[0] # Filter name
+      if $! l[0]
+        s -,{','} autocrop {'" "'}
+        _f${f}_command={0,t} # Filter command
+        if $!>1 l[1]
+          s -,{'('}
+          _f${f}_commandpreview={0,t} # Filter preview command
+          if $!>1 l[1]
+            s +,{'+'}
+            discard[0] {')'}
+            _f${f}_zoomfactor={0,t} # Default zoom factor
+            if $!>1" && "i[0]==_'+' _f${f}_zoomaccurate=1 fi # Is zoom accurate ?
+          endl fi
         endl fi
-        i[1] (32)
+        rm
+      endl fi
+      if $! _f${f}_inputmode={0,t} fi # Default input mode
+      rm
+    endl
+    e[] "\r  > "$_gmic_c[#$f]$_gmic_n" "{`s=vector48(_'" "');copy(s,['${_f${f}_path}${_f${f}_name}']);s`}
 
-      fi # if i!=_':'
-      a y
+    # Parse filter parameters.
+    parseparams=1
+    l[] parseparams=${-parse_gui_parseparams_$2} onfail endl
 
-    endl fi
+    if !$!" || "!$parseparams _f${f}_nbparams=0
+    else
+      eval "
+        is_blank(p) = (source[p]<=_' ');
+        skip_blank(p) = (while (is_blank(p), ++p));
+        source = crop();
+        name = type = vector256();
+        argument = vector65536();
 
-    if $merge_request" && "$ind>0 # Merge previous lines.
-      a[$merge_start-{$ind-1}] y
-      offset+={$ind-$merge_start-1}
-      merge_start+=1
-      merge_request=0
+        p = nbparams = 0;
+        while (p<size(source),
+          q = find(source,_'=',p)%size(source);
+          source[q]==_'='?( # Found new parameter
+            skip_blank(p);
+            r = q + 1; skip_blank(r);
+            while (is_blank(--q),0);
+            copy(name,source[p],q-p+1); name[q-p+1] = 0; # Parameter name
+            store(name,'tmparg',q-p+1);
+
+            p = r;
+            q = min(find(source,_'(',p)%size(source),
+                    find(source,_'{',p)%size(source),
+                    find(source,_'[',p)%size(source));
+            c = source[q]==_'('?_')':source[q]==_'{'?_'}':_']';
+            r = q + 1; skip_blank(r);
+            while (is_blank(--q),0);
+            copy(type,source[p],q-p+1); type[q-p+1] = 0; # Parameter type
+            for (i = 0, type[i], ++i, type[i] = lowercase(type[i])); # Force lowercase
+            call('$tmparg _f"${f}"_p',nbparams,'_name={t} rm. _f"${f}"_p',nbparams,'_type=',type);
+
+            # Parse list of arguments.
+            p = r;
+            r = find(source,c,p)%size(source);
+            nbargs = 0;
+
+            type[0,5]==[['bool'],0] ||
+            type[0,7]==[['button'],0] ||
+            type[0,6]==[['value'],0] ||
+            type[0,7]==[['filein'],0] ||
+            type[0,8]==[['fileout'],0] ||
+            type[0,7]==[['folder'],0] ||
+            type[0,5]==[['note'],0] ||
+            type[0,10]==[['separator'],0]?( # Single-argument parameter
+              p!=r?(
+                copy(argument,source[p],r-p); argument[r-p] = 0; # Parameter argument
+                store(argument,'tmparg',1,r-p); call('$tmparg _f"${f}"_p',nbparams,'_a0={t} rm.');
+                nbargs = 1;
+              ):(argument[0] = 0);
+              p = r + 1;
+            ):( # Multiple-arguments parameter -> parse list of arguments
+              while (p<r,
+                skip_blank(p);
+                q = min(r,find(source,_',',p)%size(source));
+                copy(argument,source[p],q-p); argument[q-p] = 0; # Parameter argument
+                store(argument,'tmparg',1,r-p); call('$tmparg _f"${f}"_p',nbparams,'_a',nbargs,'={t} rm.');
+                ++nbargs;
+                p = q + 1;
+              );
+            );
+            call('_f"${f}"_p',nbparams,'_nbargs=',nbargs);
+
+            # Extract visibility state.
+            p = r + 1;
+            p<size(source) && source[p]==_'_' && isin(source[p+1],_'0',_'1',_'2')?(
+              r = p + 1;
+              call('_f"${f}"_p',nbparams,'_visibility=',source[r]-_'0');
+              isin(source[r+1],_'+',_'-',_'*')?call('_f"${f}"_p',nbparams,'_propagation=',[source[++r]]);
+            );
+
+            p = r + 1;
+            skip_blank(p);
+            source[p]==_','?++p;
+            ++nbparams;
+          ):++p;
+        );
+        call('_f"${f}"_nbparams=',nbparams)"
     fi
+    if !$! 0 fi
+    f+=1
+  endl done
+  _nbfilters=$f rm
+  e[] "\r  > "${_gmic_g}{`s=vector64(_'" "');copy(s,'"Parsing done!"');s`}$_gmic_n
+  v + parse_gui_$2 # Output result of the parsing.
 
+# Output mode 'print' (default output mode).
+#
+parse_gui_parseparams_print : u 0 # Tell parser to not parse filter parameters
+parse_gui_trigger_print : sort_list +,n
+parse_gui_print :
+  e[] ""
+  repeat $_nbfilters
+    e[] "  [#"{1+$>}"] "${_f$>_path}${_f$>_name}
   done
+  e[] ""
 
-  a[$merge_start--1] y # Final merge.
+# Output mode 'list'.
+#
+parse_gui_parseparams_list : u 0 # Tell parser to not parse filter parameters
+parse_gui_list :
+  e[] "  >> Generate output, in 'list' mode.\n"
+  ({'"*** List of filters in the G\47MIC plug-in ("$_nbfilters" filters, on "\
+                {`v=date(1);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}"/"\
+                {`v=date(2);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}", "\
+                {`v=date(4);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}":"\
+                {`v=date(5);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}") ***\n\n"'})
 
-  # Sort filter code by lexicographical order.
-  e[] "\n> Sort filters by lexicographic order."
-  sort_list +,n
+  ({'"* List of filters, sorted by path:\n\n"'})
+  l[]
+    1,1,1,1x$_nbfilters
+    repeat $! nm[$>] -${_f$>_path}${_f$>_name} f[$>] $> done
+    sort_list +,n a x
+    repeat w n={0,i[$>]}
+      ({'${_f${n}_path}${_f${n}_name}" (command: '"${_f${n}_command}"')\n"'})
+    done
+    rm[0]
+  endl
 
-  # Rebuild folder structure.
-  e[] "\n> Rebuild folder structure."
-  m "nb_levels : l[] ({'$""1'}) s -,{'/'} u $! rm endl"  # Command to count number of folders in a given path.
+  ({'"\n* List of filters, sorted alphabetically:\n\n"'})
+  l[]
+    1,1,1,1x$_nbfilters
+    repeat $! nm[$>] -${_f$>_name} f[$>] $> done
+    sort_list +,n a x
+    repeat w n={0,i[$>]}
+      ({'${_f${n}_name}" (in '"${_f${n}_path}"')\n"'})
+    done
+    rm[0]
+  endl
 
+  ({'"\n*** End of list ***\n"'})
+  y a y
+  e[] "\r  >> "${_gmic_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_gmic_n
+
+# Output mode 'rebuild'.
+#
+parse_gui_parseparams_rebuild : u 1 # Tell parser to parse filter parameters
+parse_gui_rebuild :
+  e[] "  >> Generate output, in 'rebuild' mode.\n"
   path=/
+  N={$_nbfilters-1}
+  repeat $_nbfilters,f
+    e[] "\r  >> "$_gmic_c[#$f/$N]$_gmic_n" "{`s=vector48(_'" "');copy(s,['${_f${f}_path}${_f${f}_name}']);s`}
 
-  repeat $! l[$>]
-    npath=${"parent "{0,n}}
-    if ['$path']!=['$npath'] # Need to change the path.
-      nc=${"nb_levels[] "$path}
-      nn=${"nb_levels[] "$npath}
+    # Insert directives to change folder if necessary.
+    if ;['$path']!=['${_f${f}_path}']
+      command_path={`"
+        src = ['"$path"'];
+        dest = ['"${_f${f}_path}'"];
+        command = vector1024();
+        for (p = 0, p<min(size(src),size(dest)) && src[p]==dest[p], ++p); # Find common base
+        while (src[p]!=_'/' && dest[p]!=_'/', --p);
 
-      # Get the minimal basis path in common and the number of up/down operations.
-      nb_up=0
-      nb_down=0
-      basis=$path nbasis=$npath
-      do
-        nc=${"nb_levels[] "$basis}
-        nn=${"nb_levels[] "$nbasis}
-        if $nc>$nn basis=${"parent[] "$basis} nb_up+=1
-        elif $nn>$nc nbasis=${"parent[] "$nbasis} nb_down+=1
-        elif ['$nbasis']!=['$basis'] basis=${"parent[] "$basis} nb_up+=1 nbasis=${"parent[] "$nbasis} nb_down+=1
-        fi
-      while ['$nbasis']!=['$basis']
+        nb_levelup = 0;
+        for (q = p + 1, q<size(src), ++nb_levelup, q = find(src,_'/',q) + 1);
+        nb_levelup?(copy(command,'#@gui '); copy(command[6],_'_',nb_levelup,1,0));
 
-      # Deduce the G'MIC command to apply.
-      command=
-      if $nb_up 1,$nb_up,1,1,{'_'} command="#@gui "{t}"\n" rm. fi
-      if $nb_down l[]
-        ({'$npath'}) s -,{'/'} k[-$nb_down--1] replace {'~'},32
-        level={${"nb_levels "$path}-$nb_up}
-        balise=${"if "{$level<=0" && "['$npath']!='/About/'}" u b else u i fi"}
-        repeat $!
-          varname {$>,t} locale=${locale_${}} # Retrieve locale of folder name
-          command=$command"#@gui"$locale" <"$balise">"{$>,t}"</"$balise">\n"
-          balise="i"
-        done rm
-      endl fi
-      if narg(['$command']) nm={0,n} i[0] ({'$command'}) y[0] a y nm $nm
-      fi
+        is_testing = !find(dest,'Testing/');
+        is_about = !find(dest,'About/');
 
-      path=$npath
+        dest[p]==_'/'?++p;
+        while (p<size(dest),
+          q = find(dest,_'/',p)%size(dest);
+          eoc = find(command,0);
+          !eoc || command[eoc-1]!=_'_'?(copy(command[eoc],'#@gui '); eoc+=6);
+          is_italic = (is_testing && find(dest,'Testing/',p)<0) || is_about;
+          copy(command[eoc],is_italic?'<i>':'<b>');
+          copy(command[eoc + 3],dest[p],q-p);
+          copy(command[eoc + 3 + q - p],is_italic?'</i>\n':'</b>\n');
+          p = q + 1;
+        ); command"`}
+      ({'$command_path\n'})
+    fi
+
+    path=${_f${f}_path}
+
+    if narg(${_f${f}_locale}) locale=_${_f${f}_locale} else locale= fi
+    if narg(${_f${f}_zoomfactor}) zoomfactor=(${_f${f}_zoomfactor}) else zoomfactor= fi
+    if ${_f${f}_zoomaccurate} zoomaccurate=+ else zoomaccurate= fi
+    if narg(${_f${f}_inputmode}) inputmode=" : "${_f${f}_inputmode} else inputmode= fi
+    ({'"#@gui"$locale" "${_f${f}_name}" : "${_f${f}_command}," "${_f${f}_commandpreview}$zoomfactor$zoomaccurate$inputmode\n'})
+
+    repeat ${_f${f}_nbparams},p
+      if narg(${_f${f}_p${p}_visibility}) visibility=_${_f${f}_p${p}_visibility}${_f${f}_p${p}_propagation} else visibility= fi
+
+      # Build list of arguments.
+      args= c=
+      repeat ${_f${f}_p${p}_nbargs},a args.=$c${_f${f}_p${p}_a${a}} c=, done
+      sep1,sep2={`"
+        s = ['"$args"'];
+        size(s)?(
+          find(s,_'(')<0 && find(s,_')')<0?[_'(',_',',_')']:
+          find(s,_'{')<0 && find(s,_'}')<0?[_'{',_',',_'}']:
+          [_'[',_',',_']']
+        ):[_'(',_',',_')'];
+      "`}
+      ({'"#@gui"$locale" : "{/${_f${f}_p${p}_name}}" = "${_f${f}_p${p}_type}$sep1{/$args}$sep2$visibility\n'})
+    done
+  done
+  $_nongui y a y
+  e[] "\r  >> "${_gmic_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_gmic_n
+
+# Force certain filters to move from one path to another.
+_update_server_move :
+  m "move_filter : skip \"${""2=}\" nmd 3,\"$""1\" ind=${}
+     if $ind basename \"$""1\" nm[$ind] \"$""2\"/${}
+     else v 0 e[0--4] \"Cannot move unknown filter '\"${_gmic_r}\"$""1\"${_gmic_n}\"'
+     to '\"${_gmic_g}\"$""2\"${_gmic_n}\"'\" fi"
+
+  sort_list +,n
+  move_filter "Testing/Garagecoder/Anti Alias","Repair"
+  move_filter "Testing/Garagecoder/Auto Balance","Colors"
+  move_filter "Testing/Garagecoder/Compression Blur","Repair"
+  move_filter "Testing/Garagecoder/Emboss","Black &amp; White"
+  move_filter "Testing/Garagecoder/JPEG Smooth","Repair"
+  move_filter "Testing/Garagecoder/Normalize Brightness","Colors"
+  move_filter "Testing/Garagecoder/Sharpen [Gradient]","Details"
+  move_filter "Testing/Garagecoder/Sharpen [Tones]","Details"
+  move_filter "Testing/Garagecoder/Temperature Balance","Colors"
+  move_filter "Testing/Garagecoder/Unquantize [JPEG Smooth]","Repair"
+  move_filter "Testing/Garagecoder/Wiremap","Rendering"
+  move_filter "Testing/Garagecoder/Smooth [Geometric-Median]","Repair"
+  move_filter "Testing/Gmic Tutorials/Hedcut (Experimental)","Patterns"
+  move_filter "Testing/Iain Fergusson/Easy Skin Retouch","Details"
+  move_filter "Testing/Iain Fergusson/Moire Removal","Repair"
+  move_filter "Testing/Iain Fergusson/Halftone Shapes","Patterns"
+  move_filter "Testing/Iain Fergusson/Simple Local Contrast","Details"
+  move_filter "Testing/Iain Fergusson/Turbulent Halftone","Patterns"
+  move_filter "Testing/Joan Rake/Deformations/Ultrawarp++++","Degradations"
+  move_filter "Testing/Naggobot/Blockism","Artistic"
+  move_filter "Testing/Reptorian/Fragment Blur","Degradations"
+  move_filter "Testing/Reptorian/Kaleidoscope [Polar]","Deformations"
+  move_filter "Testing/Reptorian/Logarithmic Distortion","Deformations"
+  move_filter "Testing/Reptorian/Nebulous","Rendering"
+  move_filter "Testing/Samj/Arrays &amp; Tiles/Annular Steiner Chain Round Tiles","Arrays &amp; Tiles"
+  move_filter "Testing/Samj/Arrays &amp; Tiles/Reptile","Patterns"
+  move_filter "Testing/Samj/Artistic/Anguish","Artistic"
+  move_filter "Testing/Samj/Artistic/Chalk It Up","Artistic"
+  move_filter "Testing/Samj/Artistic/Paint Daub","Artistic"
+  move_filter "Testing/Samj/Artistic/Skeletik","Artistic"
+  move_filter "Testing/Samj/Patterns/Denim","Patterns"
+  move_filter "Testing/Samj/Patterns/Soft Random Shades","Patterns"
+  move_filter "Testing/Samj/Rendering/Pythagoras Tree","Rendering"
+  move_filter "Testing/Samj/Rendering/Snowflake 2","Rendering"
+  move_filter "Testing/Samj/Rendering/Twisted Rays","Rendering"
+  move_filter "Testing/Souphead/Disco","Rendering"
+  move_filter "Testing/Souphead/Moon2panorama","Deformations"
+  move_filter "Testing/Souphead/Spiral RGB","Rendering"
+  move_filter "Testing/Souphead/Kitaoka Spin Illusion","Rendering"
+  move_filter "Testing/Zonderr/Spiral","Rendering"
+  uncommand move_filter
+
+update_server :
+  e[^-1] "Update filter definition file on G'MIC server.\n"
+
+  # Be sure to get the latest version of filters.
+  x "cd "$HOME"/work/src/gmic && git pull"
+  x "cd "$HOME"/work/src/gmic-community && git pull"
+
+  # Import filters from stdlib and community.
+  files=$HOME/work/src/gmic/src/gmic_stdlib.gmic
+  files $HOME/work/src/gmic-community/include/*.gmic
+  files.=,${}
+  repeat narg($files) l[]
+    file=${"arg 1+$>,"$files}
+    i raw:$file,uchar
+    basename $file basename=${}
+    if ['$basename']=='sylvie_alexandre.gmic'
+      s +,{'"#@gui <b>"'} i[1--2:2] ({'"#@gui ________<b>Testing<b>\n#@gui <i>Samj</i>\n"'}) y a y
+    elif ['$basename']=='template.gmic'
+      rm 0
     fi
   endl done
+  i[1--2] ({'"#@gui ________________\n"'}) y a y
 
-  # Search / replace strings.
-  e[] "> Search and replace strings."
-  replace_str "#@gmic\n",""
-  replace_str "<small>samj","<small>Author: <i>Samj</i>."
-  replace_str " Update : <i>20","   Latest Update: <i>20"
+  # Create update file.
+  +l.
+    e[] "** Generate filter update file."
+    m "parse_gui_trigger_rebuild : _update_server_move"
+    v + parse_gui. *,rebuild v -
+    uncommand parse_gui_trigger_rebuild
 
-  # Remove useless comments and line breaks.
-  repeat $! l[$>] discard 13 s -,10 append_multiline_comments
-    repeat $! l[$<]
-      if i[0]==_'#'" && "i[1]!=_'@' rm fi
-    endl done i[^0] ({'\n'}) a y
-  endl done
-
-  # Retrieve G'MIC command name for each filter.
-  repeat $! +l[$>] command_name$>=""
-    +rows 0,5 head={t} rm.
-    if ['$head']=='"#@gui "' s -,{':'}
-      if $!>=1 l[1] s -,{','}
-        if $! autocrop[0] 32 command_name$>={0,t} fi
-      endl fi
-    fi
-  rm endl done
-
-  # Save reordered .gmic file.
-  if $nb_filters>400
-    e[] "> Compress and save output .gmic files."
-    +a y l.
-    compress_gmic[0]
-
-    # Add footer and header.
+    # Clean, add footer and header.
+    discard. 13
+    l. s -,10 append_multiline_comments i[1--2] (10) a y endl
     i[0] ({'"#@gmic"\n\
             "#"\n\
             "#  File         : update"$_version".gmic"\n\
@@ -5744,9 +5942,10 @@ update_server :
        "# End:"\n\
        "#"\n\
        "# (End of G\47MIC update file)"'})
-    y a y
+      y a y
 
     # Upload filter files on G'MIC server.
+    e[] "** Upload filter update to G'MIC server."
     o raw:${_path_rc}update$_version.gmic,uchar
     if "d = date(3); h = date(4); h>=7 && d>=1 && d<=5" url=http://bit.ly/2CmhX65 # url=http://bit.ly/2uaBRMB
     else url=http://bit.ly/2CmhX65 # url=http://bit.ly/2uaBRMB #
@@ -5754,58 +5953,23 @@ update_server :
     replace_str "<i>David Tschumperl&#233;</i>","<i><a href=\""$url"\">David Tschumperl&#233;</a></i>"
     o cimgz:/tmp/update$_version.gmic,uchar
 
-    (290)
+    (290,$_version)
     repeat w
       v={i[$>]}
-      _update_server_upload[] ${_path_rc}update$_version.gmic,plain_update$v.gmic
-      _update_server_upload[] /tmp/update$_version.gmic,update$v.gmic
-    done rm.
+      _update_server_upload[] ${_path_rc}update$_version.gmic,plain_update$v.gmic,1
+      _update_server_upload[] /tmp/update$_version.gmic,update$v.gmic,1
+    done
+    rm
+  endl
 
-    rm endl
-  fi
-
-  # Display list of filters (sorted alphabetically) on stdout.
-  e[] "> Output list of filters in stdout.\n"
-  echo_stdout "*** List of filters in the G\47MIC plug-in ("$nb_filters" filters, on "\
-              {`v=date(1);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}"/"\
-              {`v=date(2);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}", "\
-              {`v=date(4);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}":"\
-              {`v=date(5);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}") ***\n"
-  echo_stdout "* List of filters, sorted by path:\n"
-  repeat $! l[$>]
-    ({'{0,n}'}) if i!=_'!'
-      r. {w-1},1,1,1,0,0,1
-      replace_str. "&amp;","&"
-      replace_str. "&#233;","e"
-      replace_str. "/","~/~"
-      replace. {'~'},32
-      if narg(${command_name$>}) echo_stdout[] "  "{t}" (command '"${command_name$>}"')"
-      else echo_stdout[] "  "{t}
-      fi
-    fi rm.
-  endl done
-
-  echo_stdout "\n* List of filters, sorted alphabetically:\n"
-
-  repeat $!
-    name={$>,b}
-    path={$>,f}
-    nm[$>] $name"~(in~'"$path"')"
-  done
-
-  sort_list +,n
-  repeat $! l[$>]
-    ({'{0,n}'}) if i!=_'!'
-      replace_str. "&amp;","&"
-      replace_str. "&#233;","e"
-      replace. {'~'},32
-      echo_stdout[] "  "{t}
-    fi rm.
-  endl done
-  echo_stdout "\n*** End of list ***\n"
-
-  # All done, exiting.
-  rm e[] $_gmic_g"> All done !\n"$_gmic_n
+  # Create filter listing.
+  +l.
+    e[] "** Generate filter listing."
+    v + parse_gui. *,list v -
+    o. raw:/tmp/gui_filters.txt,uchar
+    rm.
+  endl
+  rm
 
 _update_server_calibrate_name :
   replace {'_'},{'" "'} autocrop {'" "'}
@@ -5857,11 +6021,7 @@ _update_server_calibrate_name :
   out={t}
   if ['$in']!=['$out'] e[] $_gmic_g"       Warning: String '"$in"' substituted by '"$out"'"$_gmic_n fi
 
-_update_server_move :
-  if !narg($_nbm) _nbm=0 fi
-  _to_move$_nbm="$1" _move_to$_nbm="$2" _nbm+=1
-
-_update_server_upload : skip "${2=""}"
+_update_server_upload : skip "${2=""}","${3=0}"
   if narg("$2") out="$2" else basename "$1" out=${} fi
   if !narg($GMIC_LOGIN)
     GMIC_LOGIN=${"gmic_ftp 0"}
@@ -5869,8 +6029,8 @@ _update_server_upload : skip "${2=""}"
     GMIC_FTP=${"gmic_ftp 2"}
   fi
   if narg($GMIC_LOGIN)
-    x 0,"lftp ftp://"$GMIC_LOGIN":"$GMIC_PASSWD"@"$GMIC_FTP" -e \"put -O /www/gmic/ \\\"$1\\\" -o \\\""$out"\\\";
-         quit\" >/dev/null"
+    x $3,"lftp ftp://"$GMIC_LOGIN":"$GMIC_PASSWD"@"$GMIC_FTP" -e \"put -O /www/gmic/ \\\"$1\\\" -o \\\""$out"\\\";
+          quit\" >/dev/null"
   fi
 
 # Upload or list released binaries on the G'MIC web server.
@@ -10420,10 +10580,10 @@ montage : check "isnum(${2=2}) && $2>=0 && $2<=3" skip "${1=X}",${3=0},"${4=}"
 
     # Render montage.
     if narg("$4") m "__montage : $4 k[0]"
-    else
-    m "__montage : if $""7%2 mirror x fi if $""8%2 mirror y fi rotate {90*$""6}
-       r {max(1,round($""4,1,1))},{max(1,round($""5,1,1))},1,100%,3"
+    else m "__montage : if $""7%2 mirror x fi if $""8%2 mirror y fi rotate {90*$""6}
+                        r {max(1,round($""4,1,1))},{max(1,round($""5,1,1))},1,100%,3"
     fi
+
     s=${max_s[^-1]}
     repeat h
       i={i(0,$>)} xi={i(1,$>)} yi={i(2,$>)} wi={i(3,$>)} hi={i(4,$>)} ai={i(5,$>)} mxi={i(6,$>)} myi={i(7,$>)}
@@ -22077,22 +22237,6 @@ check120 :
   done
   e[] " - Total scanned : "${_total_lines}" lines"
 
-# compress_gmic
-# Compress .gmic custom command files for compressing update files a little bit,
-# by removing empty lines, and useless comments.
-compress_gmic :
-  discard 13 s -,10 append_multiline_comments N=$!
-  ap _compress_gmic
-  s -,10 append_newline[^-1] a y
-
-_compress_gmic :
-  if i==_'#'
-    if h<5" || "(!same([{^}],'#@gui',5)" && "!same([{^}],'#@cli',5)" && "!same([{^}],'#@web',5)) rm. (10) fi
-  else
-    l. s +,32,35 if $!>2 k[0] fi a y endl
-    autocrop. 32 if !w rm. (10) fi
-  fi
-
 #@cli covariance_colors : _avg_outvarname
 #@cli : Return the covariance matrix of the vector-valued colors in the latest of the selected images
 #@cli : (for arbitrary number of channels).
@@ -29442,7 +29586,7 @@ _gui_download_all_data :
 #@gui : Dominik Wefers,
 #@gui : Frank McLaughlin,
 #@gui : <a href="https://29a.ch/">Jonas Wagner</a>,
-#@gui : <a href="www.ixaarii.com​">Void lon iXaarii</a>,
+#@gui : <a href="www.ixaarii.com">Void lon iXaarii</a>,
 #@gui : Mark Boadey,
 #@gui : Laura Haglund,
 #@gui : Lee Elliott,
@@ -29657,7 +29801,7 @@ fx_gmicky_preview :
 #@gui : - <b>2019/04/29</b> : version <i>2.6.0</i>.\n
 #@gui : - <b>2019/08/14</b> : version <i>2.7.0</i>.\n
 #@gui : - <span foreground="purple"><b>2020/02/10</b> : version <i>2.8.4</i> (Current stable).</span>\n
-#@gui : - <b>2020/02/13</b> : version <i>2.8.5</i> (Current pre-release).\n
+#@gui : - <b>2020/02/13</b> : version <i>2.9.0</i> (Current pre-release).\n
 #@gui : "}
 #@gui : sep = separator()
 ##@gui : url = link{"View changelog to upcoming minor version (2.9)","https://discuss.pixls.us/t/on-the-road-to-2-8"}
@@ -30298,11 +30442,11 @@ fx_montage_preview : skip "${2=A}"
        r {max(1,$""4-2*($5+$6))},{max(1,$""5-2*($5+$6))},1,100%,2 fs={min(53,max(w,h)/3)}
        frame $6,$6,${7-10}
        r {w+2*$5},{h+2*$5},1,100%,0,0,0.5,0.5
-       0 t. \#$""1,0,0,$fs,1,255 expand_xy. 3,0 [-1]x3 a[-4--2] c
+       0 t. \\\#$""1,0,0,$fs,1,255 expand_xy. 3,0 [-1]x3 a[-4--2] c
        dilate. {3+2*$fs/20} a.. .,c j[0] [1],{5+$5+$6},{$5+$6},0,0,1,[2],255 k[0]
      else
        r $""4,$""5,1,100%,2 fs={min(53,max(w,h)/3)}
-       0 t. \#$""1,0,0,$fs,1,255 expand_xy. 3,0 [-1]x3 a[-4--2] c
+       0 t. \\\#$""1,0,0,$fs,1,255 expand_xy. 3,0 [-1]x3 a[-4--2] c
        dilate. {3+2*$fs/20} a.. .,c j[0] [1],5,0,0,0,1,[2],255 k[0]
      fi "
   nw={w} nh={h}
@@ -44706,6 +44850,7 @@ fx_solve_maze_preview :
   ellipse $3%,$4%,3,3,0,1,${7-9}
   ellipse $3%,$4%,3,3,0,1,0x1,0
 
+#@gui _
 
 #---------------------------------
 #
@@ -44888,337 +45033,13 @@ fx_solve_maze_preview :
 #@cli : $ https://gmic.eu/samples/rotozoom.gmic go _fps=15 _label="Rotozoom"
 
 
+# TODO :
+#-------
 
-#@cli parse_gui : output_format,_filter_name,_gmic_filename
-#@cli : Parse filter definitions and display info about filters in selected output format.
-#@cli : 'output_format' can be { list | xml }
-#@cli :
-#@cli : Here is the list of variables set by the parser:
-#@cli : '$_nbfilters': Number of filters matching the given expression.
-#@cli :
-#@cli : For each filter \#F ('F' in range [0,$_nbfilters-1]):
-#@cli :   '$_fF_name': Filter name.
-#@cli :   '$_fF_path': Full path.
-#@cli :   '$_fF_locale': Filter locale (empty, if not specified).
-#@cli :   '$_fF_command': Filter command.
-#@cli :   '$_fF_commandpreview': Filter preview command (empty, if not specified).
-#@cli :   '$_fF_zoomfactor': Default zoom factor (empty, if not specified).
-#@cli :   '$_fF_zoomaccurate': Is preview accurate when zoom changes ? (can be { 0=false | 1=true }).
-#@cli :   '$_fF_inputmode': Default preferred input mode (empty, if not specified).
-#@cli :   '$_fF_code': Filter code (empty, if not specified)
-#@cli :   '$_fF_nbparams': Number of parameters.
-#@cli :
-#@cli :   For each parameter \#P of the filter \#F ('P' in range [0,$_fF_nbparams-1]):
-#@cli :     '$_fF_pP_name': Parameter name.
-#@cli :     '$_fF_pP_type': Parameter type.
-#@cli :     '$_fF_pP_visibility': Parameter visibility.
-#@cli :     '$_fF_pP_propagation': Propagation of the parameter visibility.
-#@cli :     '$_fF_pP_nbargs': Number of parameter arguments.
-#@cli :
-#@cli :     For each argument \#A of the parameter \#P ('A' in range [0,$_fF_pP_nbargs-1]):
-#@cli :       '$_fF_pP_aA': Argument value
-#@cli :
-parse_gui : skip "${1=list},${2=*},${3="${_path_rc}update$_version.gmic"}"
-  e[^-1] "Parse '#@gui' filters '$2' from file '$3' and output result in mode '$1'.\n"
-  rm i raw:"$3",uchar
-
-  # Extract all filters with locale, full path and code.
-  eval "
-    # Define convenience macros.
-    #---------------------------
-    is_blank(p) = (source[p]<=_' ');
-
-    skip_blank(p) = (while (is_blank(p), ++p));
-
-    discard_html(name) = (
-      _l = find(name,0);
-      for (_p = find(name,_'<'), _l>=0 && _p>=0,
-        isin(name[_p+1],_'b',_'i') && name[_p+2]==_'>'?( # Opening tag
-          copy(name[_p],name[_p+3],_l-_p-2);
-          _l-=3;
-        ):name[_p+1]==_'/' && isin(name[_p+2],_'b',_'i') && name[_p+3]==_'>'?( # Closing tag
-          copy(name[_p],name[_p+4],_l-_p-3);
-          _l-=4;
-        ):(_p+=1);
-      );
-    );
-
-    store_block(n,p,q,path,name) = (
-      call('+rows[0] ',p,',',q,' discard. -1 autocrop. 10 autocrop. 32 nm. \"',path,'/',name,'\"');
-    );
-
-    # Init variables.
-    #----------------
-    source = crop();
-    path = prev_path = vector1024();
-    name = prev_name = vector1024();
-
-    # Start parsing.
-    #---------------
-    prev_p0 = p0 = p = N = 0;
-    while (p<size(source),
-      p = find(source,'#@gui',p)%size(source);
-
-      !p || (p>0 && source[p - 1]==_'\n')?( # Found line starting with '#@gui'
-        p0 = p; # Remember starting position of line
-        p+=5;
-        source[p]==_'_' && (l = find(source,_' ',++p))>=0?(p = l + 1); # Skip locale
-
-        # Detect new filter or folder.
-        #------------------------------
-        skip_blank(p);
-        source[p]!=_':'?(
-          q = find(source,_':',p)%size(source);
-          r = find(source,_'\n',p)%size(source);
-          r<q?(
-            l = find(source,'hide(',p)%size(source);
-            l<r?(p = r + 1; continue()); # Ignore 'hide()' directives for filters.
-
-            # Definition of a new folder.
-            #----------------------------
-            while (is_blank(--r),0);
-            copy(name,source[p],r-p+1); name[r-p+1] = 0;
-            for (levelup = 0, name[levelup]==_'_', ++levelup);
-            levelup?(
-              copy(name,name[levelup],r-p+2-levelup); # Clean folder name
-              while (levelup--, # Update path
-                lp = find(path,0); l = max(0,find(path,_'/',lp-1,0)); path[l] = 0;
-              );
-            );
-            discard_html(name);
-            name[0]?(
-              ln = find(name,0); # Update path
-              lp = find(path,0);
-              lp?(path[lp] = _'/'; copy(path[lp+1],name,ln); path[lp+ln+1] = 0):(copy(path,name,ln); path[ln] = 0);
-            );
-            copy(i[#0,p0],-1,r-p0+1,1,0); # Discard line (will be removed later)
-            p = r + 1;
-          ):(
-
-            # Definition of a new filter.
-            #----------------------------
-            while (is_blank(--q),0);
-            copy(name,source[p],q-p+1); name[q-p+1] = 0;
-            store_block(N,prev_p0,p0-1,prev_path,prev_name);
-
-            prev_p0 = p0;
-            prev_path = path;
-            prev_name = name;
-            ++N;
-            p = q + 1;
-          );
-        )
-      ):++p
-    );
-    prev_p0!=p0?store_block(N,prev_p0,size(source)-1,prev_path,prev_name) # Insert last block.
-    "
-  rm[0]
-
-  # Isolate only requested filters.
-  if "['$2']!='*'" repeat $! if "s = ['"{$<,n}"']; find(lowercase(s),lowercase(['$2']))<0" rm[$<] fi done fi
-  _nbfilters=$!
-
-  # Parse each filter.
-  repeat $_nbfilters f=$< _f${f}_path={n} l[$<] if crop(0,0,1,5)!='#@gui' _f${f}_code={t} else
-
-    # Init variables that can be empty.
-    _f${f}_locale,_f${f}_commandpreview,_f${f}_zoomfactor,_f${f}_inputmode,_f${f}_code=
-
-    # Detect locale.
-    if crop(0,0,1,6)=='#@gui_' _f${f}_locale={`crop(0,6,1,2)`} fi
-
-    # Separate '#@gui' directives from filter code, and merge them.
-    eval "
-    is_blank(p) = (source[p]<=_' ');
-    skip_blank(p) = (while (is_blank(p), ++p));
-    source = crop();
-    is_first = 1;
-    p = 0;
-    while (p<size(source),
-      p = find(source,'#@gui',p)%size(source);
-      !p || (p>0 && source[p - 1]==_'\n')?( # Found line starting with '#@gui'
-        p0 = p; # Remember starting position of line
-        p+=5;
-        source[p]==_'_' && (l = find(source,_' ',++p))>=0?(p = l + 1); # Skip locale
-        skip_blank(p);
-        source[p]==_':'?(++p; skip_blank(p));
-        r = find(source,_'\n',p)%size(source); # Find end of line
-        source[r]==_'\n'?( # Detect and merge multi-line comments.
-          while (1,
-            q = r;
-            while (is_blank(--q),0);
-            source[q]==_'\\' && source[r+1]==_'#'?(
-              r+=2; skip_blank(r);
-              copy(i[#0,q],-1,r-q,1,0); # Part to be discarded
-              r = find(source,_'\n',r);
-              r<0?(r=size(source); break());
-            ):break();
-          );
-        );
-        call('+rows[0] ',p,',',r);
-        source[r]==_'\n'?(i[#-1,h(#-1)-1] = is_first?0:_' ');
-        copy(i[#0,p0],-1,min(r,size(source)-1)-p0+1,1,0); # Part to be discarded
-        p = r + 1;
-        is_first = 0;
-      ):++p
-    )"
-    a[^0] y discard -1
-    autocrop[0] {'\n'} _f${f}_code={0,t} rm[0] # Filter code
-    s -,0 # Split in two images : definition and parameters
-    f "max(_' ',i)" # Replace all blank characters by space
-
-    # Parse filter definition.
-    l[0]
-      _f${f}_zoomaccurate=0
-      s -,{':'} autocrop {'" "'}
-      _f${f}_name={0,t} rm[0] # Filter name
-      if $! l[0]
-        s -,{','} autocrop {'" "'}
-        _f${f}_command={0,t} # Filter command
-        if $!>1 l[1]
-          s -,{'('}
-          _f${f}_commandpreview={0,t} # Filter preview command
-          if $!>1 l[1]
-            s +,{'+'}
-            discard[0] {')'}
-            _f${f}_zoomfactor={0,t} # Default zoom factor
-            if $!>1" && "i[0]==_'+' _f${f}_zoomaccurate=1 fi # Is zoom accurate ?
-          endl fi
-        endl fi
-        rm
-      endl fi
-      if $! _f${f}_inputmode={0,t} fi # Default input mode
-      rm
-    endl
-
-    e[] "\r  > Parsing filter [#"$f"]: '"${_f${f}_name}"'.                "
-
-    # Parse filter parameters.
-    isparams=1
-    l[] isparams=${-_parse_gui_isparams_$1} onfail endl
-
-    if !$!" || "!$isparams _f${f}_nbparams=0 0
-    else
-      eval "
-        is_blank(p) = (source[p]<=_' ');
-        skip_blank(p) = (while (is_blank(p), ++p));
-        source = crop();
-        name = type = vector256();
-        argument = vector65536();
-
-        p = nbparams = 0;
-        while (p<size(source),
-          q = find(source,_'=',p)%size(source);
-          source[q]==_'='?( # Found new parameter
-            skip_blank(p);
-            r = q + 1; skip_blank(r);
-            while (is_blank(--q),0);
-            copy(name,source[p],q-p+1); name[q-p+1] = 0; # Parameter name
-
-            p = r;
-            q = min(find(source,_'(',p)%size(source),
-                    find(source,_'{',p)%size(source),
-                    find(source,_'[',p)%size(source));
-            c = source[q]==_'('?_')':source[q]==_'{'?_'}':_']';
-            r = q + 1; skip_blank(r);
-            while (is_blank(--q),0);
-            copy(type,source[p],q-p+1); type[q-p+1] = 0; # Parameter type
-            call('_f"${f}"_p',nbparams,'_name=\"',name,'\" _f"${f}"_p',nbparams,'_type=',type);
-
-            # Parse list of arguments.
-            p = r;
-            r = find(source,c,p)%size(source);
-            nbargs = 0;
-
-            type[0,5]==[['bool'],0] ||
-            type[0,7]==[['button'],0] ||
-            type[0,6]==[['value'],0] ||
-            type[0,7]==[['filein'],0] ||
-            type[0,8]==[['fileout'],0] ||
-            type[0,7]==[['folder'],0] ||
-            type[0,5]==[['note'],0] ||
-            type[0,10]==[['separator'],0]?( # Single-argument parameter
-              p!=r?(
-                copy(argument,source[p],r-p); argument[r-p] = 0; # Parameter argument
-                store(argument,'tmparg'); call('$tmparg autocrop 0 _f"${f}"_p',nbparams,'_a0={t} rm.');
-                nbargs = 1;
-              ):(argument[0] = 0);
-              p = r + 1;
-            ):( # Multiple-arguments parameter -> parse list of arguments
-              while (p<r,
-                skip_blank(p);
-                q = min(r,find(source,_',',p)%size(source));
-                copy(argument,source[p],q-p); argument[q-p] = 0; # Parameter argument
-                store(argument,'tmparg'); call('$tmparg autocrop 0 _f"${f}"_p',nbparams,'_a',nbargs,'={t} rm.');
-                ++nbargs;
-                p = q + 1;
-              );
-            );
-            call('_f"${f}"_p',nbparams,'_nbargs=',nbargs);
-
-            # Extract visibility state.
-            p = r + 1;
-            p<size(source) && source[p]==_'_' && isin(source[p+1],_'0',_'1',_'2')?(
-              r = p + 1;
-              call('_f"${f}"_p',nbparams,'_visibility=',source[r]-_'0');
-              isin(source[r+1],_'+',_'-',_'*')?call('_f"${f}"_p',nbparams,'_propagation=',source[r++]);
-            );
-
-            p = r + 1;
-            skip_blank(p);
-            source[p]==_','?++p;
-            ++nbparams;
-          ):++p;
-        );
-        call('_f"${f}"_nbparams=',nbparams)"
-    fi
-  fi rm endl done
-  e[] "\r  > Parsing done!                                "
-  e[] "  > Output filters info in mode '$1'."
-  _parse_gui_$1 # Output result of the parsing.
-
-# Output mode 'list' (output on stdout).
-_parse_gui_isparams_list : u 0
-_parse_gui_list :
-  v 0
-  echo_stdout[] "*** List of filters in the G\47MIC plug-in ("$_nbfilters" filters, on "\
-                {`v=date(1);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}"/"\
-                {`v=date(2);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}", "\
-                {`v=date(4);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}":"\
-                {`v=date(5);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}") ***\n"
-
-  echo_stdout[] "* List of filters, sorted by path:\n"
-  1,1,1,1x$_nbfilters
-  repeat $! nm[$>] -${_f$>_path} f[$>] $> done
-  sort_list +,n a x
-  f=1
-  repeat w n={i[$>]}
-    echo_stdout[] [#$f]" "${_f${n}_path}" (command: '"${_f${n}_command}"')"
-    f+=1
-  done
-  rm
-
-  echo_stdout[] "\n* List of filters, sorted alphabetically:\n"
-  1,1,1,1x$_nbfilters
-  repeat $! nm[$>] -${_f$>_name} f[$>] $> done
-  sort_list +,n a x
-  f=1
-  repeat w n={i[$>]}
-    basename ${_f${n}_path},_ppath
-    echo_stdout[] [#$f]" "${_f${n}_name}" (in '"$_ppath"')"
-    f+=1
-  done
-  rm
-  echo_stdout "\n*** End of list ***\n"
-
-
-# Output mode 'rebuild'.
-_parse_gui_isparams_rebuild : u 1
-_parse_gui_rebuild :
-  repeat $_nbfilters,f
-    if narg(${_f${f}_locale}) locale=_${_f${f}_locale} else locale= fi
-    echo_stdout[] "\n#@gui"$locale" "${_f${f}_name}" : "${_f${f}_command}
-  done
+# - Reimplement 'append_multiline_comments' with faster performances.
+# - Auto-remove useless comments in generated 'update290.gmic'.
+# - Test capitalization of filter names, parameters and choice arguments.
+# - Implement output mode 'xml' for parse_gui.
 
 
 # Local Variables:
