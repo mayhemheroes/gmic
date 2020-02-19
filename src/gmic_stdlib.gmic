@@ -5450,7 +5450,6 @@ parse_gui : skip "${1=*},${2=print}"
   if !$! i raw:${_path_rc}update$_version.gmic,uchar fi
   use_vt100
   y a y
-  0 store. _nongui
 
   # Extract all filters with locale and full path.
   eval "
@@ -5549,11 +5548,10 @@ parse_gui : skip "${1=*},${2=print}"
   l parse_gui_trigger_$2 onfail endl # Allow global pre-processing before parsing each filter.
 
   # Parse each filter.
-  e[] ""
-  f=0 repeat $! _f${f}_path={$>,f} l[$>]
+  e[] "" nbchunks=$!
+  f=0 repeat $nbchunks,c _f${f}_path={$>,f} l[$>]
     if crop(0,0,1,5)!='#@gui' # Non-gui : merge code and skip chunk
-      autocrop {'\n'} $_nongui if h ({'\n'}) mv[-2,-1] 0 a y else rm. fi
-      store _nongui 0 continue
+      autocrop {'\n'} store nongui$c 0 continue
     fi
 
     # Init variables.
@@ -5603,7 +5601,8 @@ parse_gui : skip "${1=*},${2=print}"
         ):++p
       )"
     a[^0] y discard -1
-    l[0] autocrop {'\n'} $_nongui if h ({'\n'}) mv[-2,-1] 0 a y else rm. fi store _nongui endl # Merge non-gui code
+    autocrop[0] {'\n'} store[0] nongui$c
+
     s -,0 # Split in two images : definition and parameters
     f "max(_' ',i)" # Replace all blank characters by space
 
@@ -5717,6 +5716,11 @@ parse_gui : skip "${1=*},${2=print}"
     f+=1
   endl done
   _nbfilters=$f rm
+
+  # Merge all non-gui code.
+  repeat $nbchunks ${nongui$>} done ({'\n'}) a[^-1] .,y rm. a y store. _nongui
+
+  # Done!
   e[] "\r  > "${_gmic_g}{`s=vector64(_'" "');copy(s,'"Parsing done!"');s`}$_gmic_n
   v + parse_gui_$2 # Output result of the parsing.
 
