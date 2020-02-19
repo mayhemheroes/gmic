@@ -44890,9 +44890,9 @@ fx_solve_maze_preview :
 
 
 
-#@cli parse_gui : output_format,_filter_name,_gmic_filename
-#@cli : Parse filter definitions and display info about filters in selected output format.
-#@cli : 'output_format' can be { list | xml }
+#@cli parse_gui : _filter_name,_output_format
+#@cli : Parse selected filter definitions and generate info about filters in selected output format.
+#@cli : 'output_format' can be { list | print | rebuild }
 #@cli :
 #@cli : Here is the list of variables set by the parser:
 #@cli : '$_nbfilters': Number of filters matching the given expression.
@@ -44919,8 +44919,9 @@ fx_solve_maze_preview :
 #@cli :     For each argument \#A of the parameter \#P ('A' in range [0,$_fF_pP_nbargs-1]):
 #@cli :       '$_fF_pP_aA': Argument value
 #@cli :
-parse_gui : skip "${1=list},${2=*}"
-  e[^-1] "Parse '#@gui' filters '$2' and output in '$1' mode."
+#@cli : Default parameters: 'filter_name=*' and 'output_format=print'.
+parse_gui : skip "${1=*},${2=print}"
+  e[^-1] "Parse '#@gui' filters '$1' and output in '$2' mode."
   if !$! i raw:${_path_rc}update$_version.gmic,uchar fi
   use_vt100
   y a y
@@ -45019,8 +45020,8 @@ parse_gui : skip "${1=list},${2=*}"
   rm[0]
 
   # Isolate only requested filters.
-  l _parse_gui_trigger_$1 onfail endl
-  if "['$2']!='*'" repeat $! if "s = ['"{$<,n}"']; find(lowercase(s),lowercase(['$2']))<0" rm[$<] fi done fi
+  if "['$1']!='*'" repeat $! if "s = ['"{$<,n}"']; find(lowercase(s),lowercase(['$1']))<0" rm[$<] fi done fi
+  l _parse_gui_trigger_$2 onfail endl # Allow global pre-processing before parsing each filter.
 
   # Parse each filter.
   e[] ""
@@ -45108,7 +45109,7 @@ parse_gui : skip "${1=list},${2=*}"
 
     # Parse filter parameters.
     isparams=1
-    l[] isparams=${-_parse_gui_isparams_$1} onfail endl
+    l[] isparams=${-_parse_gui_isparams_$2} onfail endl
 
     if !$!" || "!$isparams _f${f}_nbparams=0
     else
@@ -45192,9 +45193,17 @@ parse_gui : skip "${1=list},${2=*}"
   endl done
   _nbfilters=$f rm
   e[] "  > "${_gmic_g}"Parsing done!"$_gmic_n
-  e[] "  >> Output parsing data in mode '$1'."
-  v + _parse_gui_$1 # Output result of the parsing.
+  e[] "  >> Output parsing data in mode '$2'."
+  v + _parse_gui_$2 # Output result of the parsing.
   e[] "  > "${_gmic_g}"Output done!"$_gmic_n
+
+# Output mode 'print' (default output mode).
+#
+_parse_gui_isparams_print : u 0
+_parse_gui_print :
+  repeat $_nbfilters
+    e[] "  [#"$>"] "${_f$>_path}${_f$>_name}
+  done
 
 # Output mode 'list'.
 #
@@ -45372,7 +45381,7 @@ update_server2 :
   +l.
     e[^-1] "* Generate filter update file."
     m "_parse_gui_trigger_rebuild : _update_server_move"
-    v + parse_gui. rebuild,* v -
+    v + parse_gui. *,rebuild v -
     uncommand _parse_gui_trigger_rebuild
 
     # Add footer and header.
@@ -45424,7 +45433,7 @@ update_server2 :
   # Create filter listing.
   +l.
     e[0--3] "* Generate filter listing."
-    v + parse_gui. list,* v -
+    v + parse_gui. *,list v -
     o. raw:/tmp/gui_filters.txt,uchar
     rm.
   endl
