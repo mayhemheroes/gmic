@@ -5417,7 +5417,7 @@ update_download_version : check "
 # It sorts and merges filters from all available sources, and save
 # a single update file on the G'MIC server. It also print on the standard
 # output (stdout), the list of available filters.
-update_server :
+update_server2 :
   use_vt100
 
   # Promote cool testing filters to main filter tree.
@@ -45108,10 +45108,10 @@ parse_gui : skip "${1=*},${2=print}"
     e[] "\r  > "$_gmic_c[#$f]$_gmic_n" "${_f${f}_path}${_f${f}_name}"      "
 
     # Parse filter parameters.
-    isparams=1
-    l[] isparams=${-_parse_gui_isparams_$2} onfail endl
+    parseparams=1
+    l[] parseparams=${-_parse_gui_parseparams_$2} onfail endl
 
-    if !$!" || "!$isparams _f${f}_nbparams=0
+    if !$!" || "!$parseparams _f${f}_nbparams=0
     else
       eval "
         is_blank(p) = (source[p]<=_' ');
@@ -45199,7 +45199,7 @@ parse_gui : skip "${1=*},${2=print}"
 
 # Output mode 'print' (default output mode).
 #
-_parse_gui_isparams_print : u 0
+_parse_gui_parseparams_print : u 0 # Tell parser to not parse filter parameters
 _parse_gui_print :
   repeat $_nbfilters
     e[] "  [#"$>"] "${_f$>_path}${_f$>_name}
@@ -45207,7 +45207,7 @@ _parse_gui_print :
 
 # Output mode 'list'.
 #
-_parse_gui_isparams_list : u 0
+_parse_gui_parseparams_list : u 0 # Tell parser to not parse filter parameters
 _parse_gui_list :
   ({'"*** List of filters in the G\47MIC plug-in ("$_nbfilters" filters, on "\
                 {`v=date(1);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}"/"\
@@ -45242,7 +45242,7 @@ _parse_gui_list :
 
 # Output mode 'rebuild'.
 #
-_parse_gui_isparams_rebuild : u 1
+_parse_gui_parseparams_rebuild : u 1 # Tell parser to parse filter parameters
 _parse_gui_rebuild :
   e[] ""
   path=/
@@ -45357,7 +45357,7 @@ _update_server_move :
   move_filter "Testing/Zonderr/Spiral","Rendering"
   uncommand move_filter
 
-update_server2 :
+update_server :
   e[^-1] "Update filter definition file on G'MIC server.\n"
 
   # Be sure to get the latest version of filters.
