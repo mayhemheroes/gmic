@@ -45161,7 +45161,7 @@ parse_gui : skip "${1=list},${2=*},${3="${_path_rc}update$_version.gmic"}"
             p<size(source) && source[p]==_'_' && isin(source[p+1],_'0',_'1',_'2')?(
               r = p + 1;
               call('_f"${f}"_p',nbparams,'_visibility=',source[r]-_'0');
-              isin(source[r+1],_'+',_'-',_'*')?call('_f"${f}"_p',nbparams,'_propagation=',source[r++]);
+              isin(source[r+1],_'+',_'-',_'*')?call('_f"${f}"_p',nbparams,'_propagation=',[source[++r]]);
             );
 
             p = r + 1;
@@ -45217,7 +45217,17 @@ _parse_gui_isparams_rebuild : u 1
 _parse_gui_rebuild :
   repeat $_nbfilters,f
     if narg(${_f${f}_locale}) locale=_${_f${f}_locale} else locale= fi
-    echo_stdout[] "\n#@gui"$locale" "${_f${f}_name}" : "${_f${f}_command}
+    if narg(${_f${f}_zoomfactor}) zoomfactor=(${_f${f}_zoomfactor}) else zoomfactor= fi
+    if ${_f${f}_zoomaccurate} zoomaccurate=+ else zoomaccurate= fi
+    if narg(${_f${f}_inputmode}) inputmode=" : "${_f${f}_inputmode} else inputmode= fi
+
+    echo_stdout[] "\n#@gui"$locale" "${_f${f}_name}" : "${_f${f}_command}," "${_f${f}_commandpreview}$zoomfactor$zoomaccurate$inputmode
+    repeat ${_f${f}_nbparams},p
+
+      if narg(${_f${f}_p${p}_visibility}) visibility=_${_f${f}_p${p}_visibility}${_f${f}_p${p}_propagation} else visibility= fi
+
+      echo_stdout[] "#@gui"$locale" : "${_f${f}_p${p}_name}" = "${_f${f}_p${p}_type}()$visibility
+    done
   done
 
 
