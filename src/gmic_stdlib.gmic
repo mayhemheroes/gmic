@@ -10420,10 +10420,10 @@ montage : check "isnum(${2=2}) && $2>=0 && $2<=3" skip "${1=X}",${3=0},"${4=}"
 
     # Render montage.
     if narg("$4") m "__montage : $4 k[0]"
-    else
-    m "__montage : if $""7%2 mirror x fi if $""8%2 mirror y fi rotate {90*$""6}
-       r {max(1,round($""4,1,1))},{max(1,round($""5,1,1))},1,100%,3"
+    else m "__montage : if $""7%2 mirror x fi if $""8%2 mirror y fi rotate {90*$""6}
+                        r {max(1,round($""4,1,1))},{max(1,round($""5,1,1))},1,100%,3"
     fi
+
     s=${max_s[^-1]}
     repeat h
       i={i(0,$>)} xi={i(1,$>)} yi={i(2,$>)} wi={i(3,$>)} hi={i(4,$>)} ai={i(5,$>)} mxi={i(6,$>)} myi={i(7,$>)}
@@ -30298,11 +30298,11 @@ fx_montage_preview : skip "${2=A}"
        r {max(1,$""4-2*($5+$6))},{max(1,$""5-2*($5+$6))},1,100%,2 fs={min(53,max(w,h)/3)}
        frame $6,$6,${7-10}
        r {w+2*$5},{h+2*$5},1,100%,0,0,0.5,0.5
-       0 t. \#$""1,0,0,$fs,1,255 expand_xy. 3,0 [-1]x3 a[-4--2] c
+       0 t. \\\#$""1,0,0,$fs,1,255 expand_xy. 3,0 [-1]x3 a[-4--2] c
        dilate. {3+2*$fs/20} a.. .,c j[0] [1],{5+$5+$6},{$5+$6},0,0,1,[2],255 k[0]
      else
        r $""4,$""5,1,100%,2 fs={min(53,max(w,h)/3)}
-       0 t. \#$""1,0,0,$fs,1,255 expand_xy. 3,0 [-1]x3 a[-4--2] c
+       0 t. \\\#$""1,0,0,$fs,1,255 expand_xy. 3,0 [-1]x3 a[-4--2] c
        dilate. {3+2*$fs/20} a.. .,c j[0] [1],5,0,0,0,1,[2],255 k[0]
      fi "
   nw={w} nh={h}
@@ -45227,8 +45227,16 @@ _parse_gui_rebuild :
       # Build list of arguments.
       args= c=
       repeat ${_f${f}_p${p}_nbargs},a args.=$c${_f${f}_p${p}_a${a}} c=, done
+      sep1,sep2={`"
+        s = ['"$args"'];
+        size(s)?(
+          find(s,_'(')<0 && find(s,_')')<0?[_'(',_',',_')']:
+          find(s,_'{')<0 && find(s,_'}')<0?[_'{',_',',_'}']:
+          [_'[',_',',_']']
+        ):[_'(',_',',_')'];
+      "`}
 
-      echo_stdout[] "#@gui"$locale" : "${_f${f}_p${p}_name}" = "${_f${f}_p${p}_type}({/$args})$visibility
+      echo_stdout[] "#@gui"$locale" : "${_f${f}_p${p}_name}" = "${_f${f}_p${p}_type}$sep1{/$args}$sep2$visibility
     done
 
     echo_stdout[] {/${_f${f}_code}}
