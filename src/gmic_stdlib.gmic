@@ -44920,7 +44920,7 @@ fx_solve_maze_preview :
 #@cli :       '$_fF_pP_aA': Argument value
 #@cli :
 parse_gui : skip "${1=list},${2=*}"
-  e[^-1] "Parse '#@gui' filters '$2' and output result in mode '$1'."
+  e[^-1] "Parse '#@gui' filters '$2' and output in mode '$1'."
   if !$! return fi
   use_vt100
   y a y
@@ -45191,9 +45191,10 @@ parse_gui : skip "${1=list},${2=*}"
     f+=1
   endl done
   _nbfilters=$f rm
-  e[] "\n  > "${_gmic_g}"Parsing done!"$_gmic_n
-  e[] "  > Output parsing data in mode '$1'."
+  e[] "  > "${_gmic_g}"Parsing done!"$_gmic_n
+  e[] "  >> Output parsing data in mode '$1'."
   v + _parse_gui_$1 # Output result of the parsing.
+  e[] "  > "${_gmic_g}"Output done!"$_gmic_n
 
 # Force filters to move from one path to another
 _parse_gui_move_filters :
@@ -45247,45 +45248,47 @@ _parse_gui_move_filters :
 #
 _parse_gui_isparams_list : u 0
 _parse_gui_list :
-  echo_stdout[] "*** List of filters in the G\47MIC plug-in ("$_nbfilters" filters, on "\
+  ({'"*** List of filters in the G\47MIC plug-in ("$_nbfilters" filters, on "\
                 {`v=date(1);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}"/"\
                 {`v=date(2);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}", "\
                 {`v=date(4);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}":"\
-                {`v=date(5);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}") ***\n"
+                {`v=date(5);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}") ***\n\n"'})
 
-  echo_stdout[] "* List of filters, sorted by path:\n"
-  1,1,1,1x$_nbfilters
-  repeat $! nm[$>] -${_f$>_path}${_f$>_name} f[$>] $> done
-  sort_list +,n a x
-  f=1
-  repeat w n={i[$>]}
-    echo_stdout[] [#$f]" "${_f${n}_path}${_f$>_name}" (command: '"${_f${n}_command}"')"
-    f+=1
-  done
-  rm
+  ({'"* List of filters, sorted by path:\n\n"'})
+  l[]
+    1,1,1,1x$_nbfilters
+    repeat $! nm[$>] -${_f$>_path}${_f$>_name} f[$>] $> done
+    sort_list +,n a x
+    repeat w n={0,i[$>]}
+      ({'[#$>]" "${_f${n}_path}${_f${n}_name}" (command: '"${_f${n}_command}"')\n"'})
+    done
+    rm[0]
+  endl
 
-  echo_stdout[] "\n* List of filters, sorted alphabetically:\n"
-  1,1,1,1x$_nbfilters
-  repeat $! nm[$>] -${_f$>_name} f[$>] $> done
-  sort_list +,n a x
-  f=1
-  repeat w n={i[$>]}
-    echo_stdout[] [#$f]" "${_f${n}_name}" (in '"${_f${n}_path}"')"
-    f+=1
-  done
-  rm
-  echo_stdout "\n*** End of list ***\n"
+  ({'"\n* List of filters, sorted alphabetically:\n\n"'})
+  l[]
+    1,1,1,1x$_nbfilters
+    repeat $! nm[$>] -${_f$>_name} f[$>] $> done
+    sort_list +,n a x
+    repeat w n={0,i[$>]}
+      ({'[#$>]" "${_f${n}_name}" (in '"${_f${n}_path}"')\n"'})
+    done
+    rm[0]
+  endl
+
+  ({'"\n*** End of list ***\n"'})
+  y a y
 
 # Output mode 'rebuild'.
 #
 _parse_gui_isparams_rebuild : u 1
 _parse_gui_rebuild :
   e[] ""
-  echo_stdout[] "#@gmic"
-
   path=/
+
+  ({'#@gmic\n'})
   repeat $_nbfilters,f
-    e[] "  >> "$_gmic_c[#$f]$_gmic_n" "${_f${f}_path}${_f${f}_name}
+    e[] "\r  >> "$_gmic_c[#{$f+1}/$_nbfilters]$_gmic_n" "${_f${f}_path}${_f${f}_name}"      "
 
     # Insert directives to change folder if necessary.
     if ;['$path']!=['${_f${f}_path}']
@@ -45314,7 +45317,7 @@ _parse_gui_rebuild :
           copy(command[eoc + 3 + q - p],is_italic?'</i>\n':'</b>\n');
           p = q + 1;
         ); command"`}
-      echo_stdout[] $command_path
+      ({'$command_path\n'})
     fi
 
     path=${_f${f}_path}
@@ -45323,8 +45326,8 @@ _parse_gui_rebuild :
     if narg(${_f${f}_zoomfactor}) zoomfactor=(${_f${f}_zoomfactor}) else zoomfactor= fi
     if ${_f${f}_zoomaccurate} zoomaccurate=+ else zoomaccurate= fi
     if narg(${_f${f}_inputmode}) inputmode=" : "${_f${f}_inputmode} else inputmode= fi
+    ({'"#@gui"$locale" "${_f${f}_name}" : "${_f${f}_command}," "${_f${f}_commandpreview}$zoomfactor$zoomaccurate$inputmode\n'})
 
-    echo_stdout[] "#@gui"$locale" "${_f${f}_name}" : "${_f${f}_command}," "${_f${f}_commandpreview}$zoomfactor$zoomaccurate$inputmode
     repeat ${_f${f}_nbparams},p
       if narg(${_f${f}_p${p}_visibility}) visibility=_${_f${f}_p${p}_visibility}${_f${f}_p${p}_propagation} else visibility= fi
 
@@ -45339,19 +45342,18 @@ _parse_gui_rebuild :
           [_'[',_',',_']']
         ):[_'(',_',',_')'];
       "`}
-
-      echo_stdout[] "#@gui"$locale" : "{/${_f${f}_p${p}_name}}" = "${_f${f}_p${p}_type}$sep1{/$args}$sep2$visibility
+      ({'"#@gui"$locale" : "{/${_f${f}_p${p}_name}}" = "${_f${f}_p${p}_type}$sep1{/$args}$sep2$visibility\n'})
     done
   done
-  $_nongui echo_stdout[] {/{t}} rm.
+  $_nongui y a y compress_gmic
 
 update_server2 :
   e[^-1] "Update filter definition file on G'MIC server."
 
+  # Import filters from stdlib and community.
   files=$HOME/work/src/gmic/src/gmic_stdlib.gmic
   files $HOME/work/src/gmic-community/include/*.gmic
   files.=,${}
-
   repeat narg($files) l[]
     file=${"arg 1+$>,"$files}
     i raw:$file,uchar
@@ -45361,8 +45363,17 @@ update_server2 :
   endl done
   i[1--2] ({'"#@gui ________________\n"'}) y a y
 
-  v + parse_gui rebuild,*
+  # Create update file.
+  e[^-1] "* Generate filter update file."
+  v + +parse_gui. rebuild,* v -
+  o. raw:update$_version.gmic,uchar
+  rm.
 
+  # Create filter listing.
+  e[^-1] "* Generate filter listing."
+  v + parse_gui. list,* v -
+  o. raw:gui_filters.txt,uchar
+  rm.
 
 # Local Variables:
 # mode: sh
