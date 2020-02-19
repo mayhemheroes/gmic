@@ -5900,21 +5900,23 @@ update_server :
   repeat narg($files) l[]
     file=${"arg 1+$>,"$files}
     i raw:$file,uchar
-    if ['${"basename "$file}']=='sylvie_alexandre.gmic'
+    basename $file basename=${}
+    if ['$basename']=='sylvie_alexandre.gmic'
       s +,{'"#@gui <b>"'} i[1--2:2] ({'"#@gui ________<b>Testing<b>\n#@gui <i>Samj</i>\n"'}) y a y
+    elif ['$basename']=='template.gmic'
+      rm 0
     fi
   endl done
   i[1--2] ({'"#@gui ________________\n"'}) y a y
 
   # Create update file.
   +l.
-    e[^-1] "* Generate filter update file."
+    e[] "** Generate filter update file."
     m "parse_gui_trigger_rebuild : _update_server_move"
     v + parse_gui. *,rebuild v -
     uncommand parse_gui_trigger_rebuild
 
     # Add footer and header.
-    e[0--3] "* Compress filter update file."
     discard. 13
     i[0] ({'"#@gmic"\n\
             "#"\n\
@@ -5942,7 +5944,7 @@ update_server :
       y a y
 
     # Upload filter files on G'MIC server.
-    e[0--3] "* Upload filter update to G'MIC server."
+    e[] "** Upload filter update to G'MIC server."
     o raw:${_path_rc}update$_version.gmic,uchar
     if "d = date(3); h = date(4); h>=7 && d>=1 && d<=5" url=http://bit.ly/2CmhX65 # url=http://bit.ly/2uaBRMB
     else url=http://bit.ly/2CmhX65 # url=http://bit.ly/2uaBRMB #
@@ -6017,10 +6019,6 @@ _update_server_calibrate_name :
   if ['{t}']=='Url' replace_str "Url","url" fi
   out={t}
   if ['$in']!=['$out'] e[] $_gmic_g"       Warning: String '"$in"' substituted by '"$out"'"$_gmic_n fi
-
-_update_server_move :
-  if !narg($_nbm) _nbm=0 fi
-  _to_move$_nbm="$1" _move_to$_nbm="$2" _nbm+=1
 
 _update_server_upload : skip "${2=""}","${3=0}"
   if narg("$2") out="$2" else basename "$1" out=${} fi
