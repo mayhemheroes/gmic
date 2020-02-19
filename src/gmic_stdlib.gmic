@@ -45019,9 +45019,11 @@ parse_gui : skip "${1=list},${2=*}"
   rm[0]
 
   # Isolate only requested filters.
+  _parse_gui_move_filters
   if "['$2']!='*'" repeat $! if "s = ['"{$<,n}"']; find(lowercase(s),lowercase(['$2']))<0" rm[$<] fi done fi
 
   # Parse each filter.
+  e[] ""
   f=0 repeat $! _f${f}_path={$>,f} l[$>]
     if crop(0,0,1,5)!='#@gui' # Non-gui : merge code and skip chunk
       autocrop {'\n'} $_nongui if h ({'\n'}) mv[-2,-1] 0 a y else rm. fi
@@ -45102,7 +45104,7 @@ parse_gui : skip "${1=list},${2=*}"
       if $! _f${f}_inputmode={0,t} fi # Default input mode
       rm
     endl
-    e[] "  > "$_gmic_c[#$f]$_gmic_n" "${_f${f}_path}${_f${f}_name}
+    e[] "\r  > "$_gmic_c[#$f]$_gmic_n" "${_f${f}_path}${_f${f}_name}"      "
 
     # Parse filter parameters.
     isparams=1
@@ -45125,6 +45127,7 @@ parse_gui : skip "${1=list},${2=*}"
             r = q + 1; skip_blank(r);
             while (is_blank(--q),0);
             copy(name,source[p],q-p+1); name[q-p+1] = 0; # Parameter name
+            store(name,'tmparg',q-p+1);
 
             p = r;
             q = min(find(source,_'(',p)%size(source),
@@ -45134,7 +45137,8 @@ parse_gui : skip "${1=list},${2=*}"
             r = q + 1; skip_blank(r);
             while (is_blank(--q),0);
             copy(type,source[p],q-p+1); type[q-p+1] = 0; # Parameter type
-            call('_f"${f}"_p',nbparams,'_name=\"',name,'\" _f"${f}"_p',nbparams,'_type=',type);
+            for (i = 0, type[i], ++i, type[i] = lowercase(type[i])); # Force lowercase
+            call('$tmparg _f"${f}"_p',nbparams,'_name={t} rm. _f"${f}"_p',nbparams,'_type=',type);
 
             # Parse list of arguments.
             p = r;
@@ -45187,14 +45191,61 @@ parse_gui : skip "${1=list},${2=*}"
     f+=1
   endl done
   _nbfilters=$f rm
-  e[] "  > "${_gmic_g}"Parsing done!"$_gmic_n
+  e[] "\n  > "${_gmic_g}"Parsing done!"$_gmic_n
   e[] "  > Output parsing data in mode '$1'."
-  _parse_gui_$1 # Output result of the parsing.
+  v + _parse_gui_$1 # Output result of the parsing.
+
+# Force filters to move from one path to another
+_parse_gui_move_filters :
+  m "move_filter : skip \"${""2=}\" nmd 3,\"$""1\" ind=${}
+     if $ind basename \"$""1\" nm[$ind] \"$""2\"/${}
+     else v 0 e[0--4] \"Cannot move unknown filter '\"${_gmic_r}\"$""1\"${_gmic_n}\"' to '\"${_gmic_g}\"$""2\"${_gmic_n}\"'\" fi"
+
+  move_filter "Testing/Garagecoder/Anti Alias","Repair"
+  move_filter "Testing/Garagecoder/Auto Balance","Colors"
+  move_filter "Testing/Garagecoder/Compression Blur","Repair"
+  move_filter "Testing/Garagecoder/Emboss","Black &amp; White"
+  move_filter "Testing/Garagecoder/JPEG Smooth","Repair"
+  move_filter "Testing/Garagecoder/Normalize Brightness","Colors"
+  move_filter "Testing/Garagecoder/Sharpen [Gradient]","Details"
+  move_filter "Testing/Garagecoder/Sharpen [Tones]","Details"
+  move_filter "Testing/Garagecoder/Temperature Balance","Colors"
+  move_filter "Testing/Garagecoder/Unquantize [JPEG Smooth]","Repair"
+  move_filter "Testing/Garagecoder/Wiremap","Rendering"
+  move_filter "Testing/Garagecoder/Smooth [Geometric-Median]","Repair"
+  move_filter "Testing/Gmic Tutorials/Hedcut (Experimental)","Patterns"
+  move_filter "Testing/Iain Fergusson/Easy Skin Retouch","Details"
+  move_filter "Testing/Iain Fergusson/Moire Removal","Repair"
+  move_filter "Testing/Iain Fergusson/Halftone Shapes","Patterns"
+  move_filter "Testing/Iain Fergusson/Simple Local Contrast","Details"
+  move_filter "Testing/Iain Fergusson/Turbulent Halftone","Patterns"
+  move_filter "Testing/Joan Rake/Deformations/Ultrawarp++++","Degradations"
+  move_filter "Testing/Naggobot/Blockism","Artistic"
+  move_filter "Testing/Reptorian/Fragment Blur","Degradations"
+  move_filter "Testing/Reptorian/Kaleidoscope [Polar]","Deformations"
+  move_filter "Testing/Reptorian/Logarithmic Distortion","Deformations"
+  move_filter "Testing/Reptorian/Nebulous","Rendering"
+  move_filter "Testing/Samj/Arrays &amp; Tiles/Annular Steiner Chain Round Tiles","Arrays &amp; Tiles"
+  move_filter "Testing/Samj/Arrays &amp; Tiles/Reptile","Patterns"
+  move_filter "Testing/Samj/Artistic/Anguish","Artistic"
+  move_filter "Testing/Samj/Artistic/Chalk It Up","Artistic"
+  move_filter "Testing/Samj/Artistic/Paint Daub","Artistic"
+  move_filter "Testing/Samj/Artistic/Skeletik","Artistic"
+  move_filter "Testing/Samj/Patterns/Denim","Patterns"
+  move_filter "Testing/Samj/Patterns/Soft Random Shades","Patterns"
+  move_filter "Testing/Samj/Rendering/Pythagoras Tree","Rendering"
+  move_filter "Testing/Samj/Rendering/Snowflake 2","Rendering"
+  move_filter "Testing/Samj/Rendering/Twisted Rays","Rendering"
+  move_filter "Testing/Souphead/Disco","Rendering"
+  move_filter "Testing/Souphead/Moon2panorama","Deformations"
+  move_filter "Testing/Souphead/Spiral RGB","Rendering"
+  move_filter "Testing/Souphead/Kitaoka Spin Illusion","Rendering"
+  move_filter "Testing/Zonderr/Spiral","Rendering"
 
 # Output mode 'list' (output on stdout).
+#
 _parse_gui_isparams_list : u 0
 _parse_gui_list :
-  v 0
   echo_stdout[] "*** List of filters in the G\47MIC plug-in ("$_nbfilters" filters, on "\
                 {`v=date(1);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}"/"\
                 {`v=date(2);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}", "\
@@ -45225,9 +45276,10 @@ _parse_gui_list :
   echo_stdout "\n*** End of list ***\n"
 
 # Output mode 'rebuild'.
+#
 _parse_gui_isparams_rebuild : u 1
 _parse_gui_rebuild :
-  v 0
+  e[] ""
   echo_stdout[] "#@gmic"
 
   path=/
@@ -45298,15 +45350,17 @@ update2 :
   files $HOME/work/src/gmic-community/include/*.gmic
   files.=,${}
 
-  repeat narg($files)
+  repeat narg($files) l[]
     file=${"arg 1+$>,"$files}
     e[] $file
     i raw:$file,uchar
-  done
+    if ['${"basename "$file}']=='sylvie_alexandre.gmic'
+      s +,{'"#@gui <b>"'} i[1--2:2] ({'"#@gui ________<b>Testing<b>\n#@gui <i>Samj</i>\n"'}) y a y
+    fi
+  endl done
   i[1--2] ({'"#@gui ________________\n"'}) y a y
 
-  v +
-  parse_gui list,*
+  v + parse_gui rebuild,*
 
 
 # Local Variables:
