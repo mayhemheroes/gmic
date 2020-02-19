@@ -5918,7 +5918,12 @@ update_server :
 
     # Clean, add footer and header.
     discard. 13
-    l. s -,10 append_multiline_comments i[1--2] (10) a y endl
+    l. s -,{'\n'} ({'\n'}) a[^-1] .,y rm. endl # Remove consecutive line feeds
+    eval. "i==_'\\' && j[-1]!=_'\\' && j[+1]==_'\n' && j[+2]==_'#'?( # Merge multi-line comments
+            for (p = 3, j[p] && j[p]<=_' ', ++p); copy(j(),-1,p,1,0))"
+
+    # TODO : Remove useless comments.
+
     i[0] ({'"#@gmic"\n\
             "#"\n\
             "#  File         : update"$_version".gmic"\n\
@@ -5936,8 +5941,8 @@ update_server :
             {`v=date(2);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}", "\
             {`v=date(4);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}":"\
             {`v=date(5);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}\n\
-            "#"\n\n'})
-    ({'"\n\n# Local Variables:"\n\
+            "#"\n'})
+    ({'"\n# Local Variables:"\n\
        "# mode: sh"\n\
        "# End:"\n\
        "#"\n\
@@ -5945,7 +5950,7 @@ update_server :
       y a y
 
     # Upload filter files on G'MIC server.
-    e[] "** Upload filter update to G'MIC server."
+    e[] "** Upload update file."
     o raw:${_path_rc}update$_version.gmic,uchar
     if "d = date(3); h = date(4); h>=7 && d>=1 && d<=5" url=http://bit.ly/2CmhX65 # url=http://bit.ly/2uaBRMB
     else url=http://bit.ly/2CmhX65 # url=http://bit.ly/2uaBRMB #
@@ -45036,7 +45041,6 @@ fx_solve_maze_preview :
 # TODO :
 #-------
 
-# - Reimplement 'append_multiline_comments' with faster performances.
 # - Auto-remove useless comments in generated 'update290.gmic'.
 # - Test capitalization of filter names, parameters and choice arguments.
 # - Implement output mode 'xml' for parse_gui.
