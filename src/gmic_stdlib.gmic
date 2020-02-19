@@ -5377,7 +5377,7 @@ update_deprecate : check "isint($1) && $1>0 && $1<999"
 
 # update_download_version.
 # Update file versions on G'MIC download page, with specified version number.
-# $1 = version number (e.g. '2.8.5').
+# $1 = version number (e.g. '2.9.0').
 update_download_version : check "
     is_digit(c)=(c>=_'0' && c<=_'9');
     ver = ['${1=undefined}'];
@@ -29657,7 +29657,7 @@ fx_gmicky_preview :
 #@gui : - <b>2019/04/29</b> : version <i>2.6.0</i>.\n
 #@gui : - <b>2019/08/14</b> : version <i>2.7.0</i>.\n
 #@gui : - <span foreground="purple"><b>2020/02/10</b> : version <i>2.8.4</i> (Current stable).</span>\n
-#@gui : - <b>2020/02/13</b> : version <i>2.8.5</i> (Current pre-release).\n
+#@gui : - <b>2020/02/13</b> : version <i>2.9.0</i> (Current pre-release).\n
 #@gui : "}
 #@gui : sep = separator()
 ##@gui : url = link{"View changelog to upcoming minor version (2.9)","https://discuss.pixls.us/t/on-the-road-to-2-8"}
@@ -44919,10 +44919,11 @@ fx_solve_maze_preview :
 #@cli :     For each argument \#A of the parameter \#P ('A' in range [0,$_fF_pP_nbargs-1]):
 #@cli :       '$_fF_pP_aA': Argument value
 #@cli :
-parse_gui : skip "${1=list},${2=*},${3="${_path_rc}update$_version.gmic"}"
-  e[^-1] "Parse '#@gui' filters '$2' from file '$3' and output result in mode '$1'."
-  rm i raw:"$3",uchar
+parse_gui : skip "${1=list},${2=*}"
+  e[^-1] "Parse '#@gui' filters '$2' and output result in mode '$1'."
+  if !$! return fi
   use_vt100
+  y a y
   0 store. _nongui
 
   # Extract all filters with locale and full path.
@@ -45246,13 +45247,18 @@ _parse_gui_rebuild :
         for (q = p + 1, q<size(src), ++nb_levelup, q = find(src,_'/',q) + 1);
         nb_levelup?(copy(command,'#@gui '); copy(command[6],_'_',nb_levelup,1,0));
 
+        is_testing = !find(dest,'Testing/');
+        is_about = !find(dest,'About/');
+
         dest[p]==_'/'?++p;
         while (p<size(dest),
           q = find(dest,_'/',p)%size(dest);
           eoc = find(command,0);
           !eoc || command[eoc-1]!=_'_'?(copy(command[eoc],'#@gui '); eoc+=6);
-          copy(command[eoc],dest[p],q-p);
-          command[eoc + q - p] = _'\n';
+          is_italic = (is_testing && find(dest,'Testing/',p)<0) || is_about;
+          copy(command[eoc],is_italic?'<i>':'<b>');
+          copy(command[eoc + 3],dest[p],q-p);
+          copy(command[eoc + 3 + q - p],is_italic?'</i>\n':'</b>\n');
           p = q + 1;
         ); command"`}
       echo_stdout[] $command_path
@@ -45285,6 +45291,22 @@ _parse_gui_rebuild :
     done
   done
   $_nongui echo_stdout[] {/{t}} rm.
+
+
+update2 :
+  files=$HOME/work/src/gmic/src/gmic_stdlib.gmic
+  files $HOME/work/src/gmic-community/include/*.gmic
+  files.=,${}
+
+  repeat narg($files)
+    file=${"arg 1+$>,"$files}
+    e[] $file
+    i raw:$file,uchar
+  done
+  i[1--2] ({'"#@gui ________________\n"'}) y a y
+
+  v +
+  parse_gui list,*
 
 
 # Local Variables:
