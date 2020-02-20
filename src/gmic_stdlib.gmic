@@ -5841,7 +5841,7 @@ parse_gui_rebuild :
   e[] "\r  >> "${_gmic_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_gmic_n
 
 # Force certain filters to move from one path to another.
-_update_server_move :
+_upload_filters_move :
   m "move_filter : skip \"${""2=}\" nmd 3,\"$""1\" ind=${}
      if $ind basename \"$""1\" nm[$ind] \"$""2\"/${}
      else v 0 e[0--4] \"Cannot move unknown filter '\"${_gmic_r}\"$""1\"${_gmic_n}\"'
@@ -5890,8 +5890,8 @@ _update_server_move :
   move_filter "Testing/Zonderr/Spiral","Rendering"
   uncommand move_filter
 
-update_server :
-  e[^-1] "Update filter definition file on G'MIC server.\n"
+upload_filters :
+  e[^-1] "Upload filter definition file on G'MIC server.\n"
 
   # Be sure to get the latest version of filters.
   x "cd "$HOME"/work/src/gmic && git pull"
@@ -5916,7 +5916,7 @@ update_server :
   # Create update file.
   +l.
     e[] "** Generate filter update file."
-    m "parse_gui_trigger_rebuild : _update_server_move"
+    m "parse_gui_trigger_rebuild : _upload_filters_move"
     v + parse_gui. *,rebuild v -
     uncommand parse_gui_trigger_rebuild
 
@@ -6051,7 +6051,7 @@ _upload : skip "${2=""}","${3=0}"
 # Upload or list released binaries on the G'MIC web server.
 # $1=version number (e.g "1.6.7_pre")
 # $2={ 0=print list of URLs | 1=upload files }
-_update_server_binaries : check "isbool(${2=1})"
+upload_binaries : check "isbool(${2=1})"
   is_pre=${"strcontains $1,_pre"}
   N=0
   file$N=gmic_$1_debian_jessie_amd64.deb            N+=1
