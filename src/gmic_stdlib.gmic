@@ -5482,14 +5482,14 @@ parse_gui : skip "${1=*},${2=print}"
     );"
 
   eval $macros"
-    store_block(p,q,path,name) = (
+    store_block(p,q,path,name,hide) = (
       call('+rows[0] ',p,',',q,' discard. -1 autocrop. 10 autocrop. 32 nm. \"',path,'/',name,'\"');
     );
 
     # Init variables.
     #----------------
     source = crop();
-    path = prev_path = name = prev_name = vector1024();
+    path = prev_path = name = prev_name = hide = prev_hide = vector1024();
 
     # Start parsing.
     #---------------
@@ -5502,19 +5502,18 @@ parse_gui : skip "${1=*},${2=print}"
         p+=5;
         source[p]==_'_' && (l = find(source,_' ',++p))>=0?(p = l + 1); # Skip locale
 
-        # Detect new filter or folder.
-        #------------------------------
+        # Detect new filter, folder or hide() directive.
+        #-----------------------------------------------
         skip_blank(p);
         source[p]!=_':'?(
           q = find(source,_':',p)%size(source);
           r = find(source,_'\n',p)%size(source);
-          r<q?(
-            l = find(source,'hide(',p)%size(source);
-            l<r?(p = r + 1; continue()); # Ignore 'hide()' directives for filters.
+          is_hide = q>r && (l=find(source,'hide(',p)%size(source))<r;
+          r<q && !is_hide?(
 
             # Definition of a new folder.
             #----------------------------
-            while (is_blank(--r),0);
+            r0 = r; while (is_blank(--r),0);
             copy(name,source[p],r-p+1); name[r-p+1] = 0;
             for (levelup = 0, name[levelup]==_'_', ++levelup);
             levelup?(
@@ -5529,26 +5528,40 @@ parse_gui : skip "${1=*},${2=print}"
               lp = find(path,0);
               lp?(path[lp] = _'/'; copy(path[lp+1],name,ln); path[lp+ln+1] = 0):(copy(path,name,ln); path[ln] = 0);
             );
-            copy(i[#0,p0],-1,r-p0+1,1,0); # Discard folder definition line (will be removed later)
-            p = r + 1;
-          ):(
+            copy(i[#0,p0],-1,r0-p0+1,1,0); # Discard folder definition line (will be removed later)
+            p = r0 + 1;
+          ):!is_hide?(
 
             # Definition of a new filter.
             #----------------------------
             while (is_blank(--q),0);
             copy(name,source[p],q-p+1); name[q-p+1] = 0;
             clean(name);
-            store_block(prev_p0,p0-1,prev_path,prev_name);
+            store_block(prev_p0,p0-1,prev_path,prev_name,prev_hide);
 
             prev_p0 = p0;
             prev_path = path;
             prev_name = name;
+            prev_hide = hide;
             p = q + 1;
-          );
+          ):(
+
+            # hide() directive.
+            #------------------
+            l0 = l + 5; l = find(source,_')',l0);
+            l<r?(
+              copy(hide,source[l0],l-l0); hide[l-l0] = 0;
+
+              echo('\nHIDE = ',hide,'\n');
+
+              copy(i[#0,p0],-1,r-p0+1,1,0);
+            );
+            p = r + 1;
+          )
         )
       ):++p
     );
-    prev_p0!=p0?store_block(prev_p0,size(source)-1,prev_path,prev_name) # Insert last block.
+    prev_p0!=p0?store_block(prev_p0,size(source)-1,prev_path,prev_name,prev_hide) # Insert last block
     "
   rm[0]
 
@@ -5597,7 +5610,6 @@ parse_gui : skip "${1=*},${2=print}"
       )"
     a[^0] y discard.. -1
     autocrop[0] {'\n'} store[0] nongui$c
-
     s -,0 # Split in two images : definition and parameters
     f "max(_' ',i)" # Replace all blank characters by space
 
