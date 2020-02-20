@@ -5460,13 +5460,9 @@ parse_gui : skip "${1=*},${2=print}"
   # Extract all filter chunks with full path.
   e[] ""
   e[] "\r  > Extract filter chunks."
-  eval "
-    # Define convenience macros.
-    #---------------------------
-    is_blank(p) = (source[p]<=_' ');
-
+  macros="
+    is_blank(p) = ((_c=source[p])<=_' ' && _c!=_'\n');
     skip_blank(p) = (while (is_blank(p), ++p));
-
     clean(name) = (
       _l = find(name,0);
       _l>0?(
@@ -5479,12 +5475,13 @@ parse_gui : skip "${1=*},${2=print}"
           ):name[_p+1]==_'/' && isin(name[_p+2],_'b',_'i') && name[_p+3]==_'>'?( # Closing tag
             copy(name[_p],name[_p+4],_l-_p-3);
             _l-=4;
-          ):++p;
+          ):++_p;
         );
         _p = 0; while (1, _p = find(name,_'/',_p); _p<0 || _p>=_l?break(); name[_p++] = _'-'); # Replace '/' by '-'
       );
-    );
+    );"
 
+  eval $macros"
     store_block(p,q,path,name) = (
       call('+rows[0] ',p,',',q,' discard. -1 autocrop. 10 autocrop. 32 nm. \"',path,'/',name,'\"');
     );
@@ -5532,7 +5529,7 @@ parse_gui : skip "${1=*},${2=print}"
               lp = find(path,0);
               lp?(path[lp] = _'/'; copy(path[lp+1],name,ln); path[lp+ln+1] = 0):(copy(path,name,ln); path[ln] = 0);
             );
-            copy(i[#0,p0],-1,r-p0+1,1,0); # Discard line (will be removed later)
+            copy(i[#0,p0],-1,r-p0+1,1,0); # Discard folder definition line (will be removed later)
             p = r + 1;
           ):(
 
@@ -5540,6 +5537,7 @@ parse_gui : skip "${1=*},${2=print}"
             #----------------------------
             while (is_blank(--q),0);
             copy(name,source[p],q-p+1); name[q-p+1] = 0;
+            clean(name);
             store_block(prev_p0,p0-1,prev_path,prev_name);
 
             prev_p0 = p0;
@@ -5577,9 +5575,7 @@ parse_gui : skip "${1=*},${2=print}"
     if crop(0,0,1,6)=='#@gui_' _f${f}_locale={`crop(0,6,1,2)`} fi
 
     # Separate '#@gui' lines from other lines, and merge them.
-    eval "
-      is_blank(p) = (source[p]<=_' ');
-      skip_blank(p) = (while (is_blank(p), ++p));
+    eval $macros"
       source = crop();
       is_first = 1;
       p = 0;
@@ -5609,7 +5605,7 @@ parse_gui : skip "${1=*},${2=print}"
     l[0]
       _f${f}_zoomaccurate=0
       s -,{':'} autocrop {'" "'}
-      _f${f}_name={0,t} rm[0] # Filter name
+      _f${f}_name={`$macros" name=[['"{0,t}"'],0]; clean(name); name"`} rm[0] # Filter name
       if $! l[0]
         s -,{','} autocrop {'" "'}
         _f${f}_command={0,t} # Filter command
@@ -5636,9 +5632,7 @@ parse_gui : skip "${1=*},${2=print}"
 
     if !$!" || "!$parseparams _f${f}_nbparams=0
     else
-      eval "
-        is_blank(p) = (source[p]<=_' ');
-        skip_blank(p) = (while (is_blank(p), ++p));
+      eval $macros"
         source = crop();
         name = type = vector256();
         argument = vector65536();
