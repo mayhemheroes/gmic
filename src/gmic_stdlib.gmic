@@ -5813,7 +5813,9 @@ parse_gui_gmic :
     if narg(${_f${f}_zoomfactor}) zoomfactor=(${_f${f}_zoomfactor}) else zoomfactor= fi
     if ${_f${f}_zoomaccurate} zoomaccurate=+ else zoomaccurate= fi
     if narg(${_f${f}_inputmode}) inputmode=" : "${_f${f}_inputmode} else inputmode= fi
-    ({'"#@gui"$locale" "${_f${f}_name}" : "${_f${f}_command}," "${_f${f}_commandpreview}$zoomfactor$zoomaccurate$inputmode\n'})
+    strcapitalize ${_f${f}_name} name=${}
+
+    ({'"#@gui"$locale" "$name" : "${_f${f}_command}," "${_f${f}_commandpreview}$zoomfactor$zoomaccurate$inputmode\n'})
 
     repeat ${_f${f}_nbparams},p
       if narg(${_f${f}_p${p}_visibility}) visibility=_${_f${f}_p${p}_visibility}${_f${f}_p${p}_propagation} else visibility= fi
@@ -5821,7 +5823,11 @@ parse_gui_gmic :
 
       # Build list of arguments.
       args= c=
-      repeat ${_f${f}_p${p}_nbargs},a args.=$c${_f${f}_p${p}_a${a}} c=, done
+      if $is_choice # Capitalize arguments
+        repeat ${_f${f}_p${p}_nbargs},a strcapitalize ${_f${f}_p${p}_a${a}} args.=$c${} c=, done
+      else
+        repeat ${_f${f}_p${p}_nbargs},a args.=$c${_f${f}_p${p}_a${a}} c=, done
+      fi
 
       sep1,sep2={`"
         s = ['"$args"'];
@@ -5986,56 +5992,6 @@ upload_filters :
   endl
   rm
 
-_update_server_calibrate_name :
-  replace {'_'},{'" "'} autocrop {'" "'}
-  in={t}
-
-  s +,{'.'} s +,{':'} s +,{';'}
-
-  repeat $! l[$>]
-    s +,{'" "'} s +,{'"/"'} s +,{'"["'} s +,{'"<"'} s +,{'"("'} s +,{'">"'} s +,{'"-"'}
-    first={"ind = 0; while (ind<l && (c = lowercase(i[#ind,0]);
-            !((c>=_'a' && c<=_'z') || (c>=_'0' && c<=_'9'))), ++ind); ind<l?ind:0"}
-    f "x+y || h<=2?i:( # Capitalize all words except a few ones
-       s = crop();
-       s=='a' || s=='an' || s=='and' ||
-       s=='as' || s=='at' || s=='but' || s=='by' ||
-       s=='for' || s=='from' || s=='in' || s=='into' ||
-       s=='like' || s=='near' || s=='nor' || s=='of' || s=='off' ||
-       s=='on' || s=='onto' || s=='or' || s=='over' || s=='past' ||
-       s=='per' || s=='than' || s=='the' || s=='to' || s=='up' ||
-       s=='upon' || s=='via' || s=='with'?i:uppercase(i)
-       )"
-    f[$first,-1] "x+y?i:uppercase(i)" # Always capitalize the first and last words.
-    a y
-  endl done
-  a y
-  replace_str "<B>","<b>"
-  replace_str "</B>","</b>"
-  replace_str "<I>","<i>"
-  replace_str "</I>","</i>"
-  replace_str "<Img Src","<img src"
-  replace_str "<A Href","<a href"
-  replace_str "<a Href","<a href"
-  replace_str ".Gpl",".gpl"
-  replace_str ".Png",".png"
-  replace_str "(Deg)","(deg)"
-  replace_str "(Px)","(px)"
-  replace_str "(S)","(s)"
-  replace_str "(T)","(t)"
-  replace_str "Re-","re-"
-  replace_str "Min-T","Min-t"
-  replace_str "Max-T","Max-t"
-  replace_str "SRGB","sRGB"
-  replace_str " i "," I "
-  replace_str " Ii "," II "
-  replace_str " Iii "," III "
-  if ['{t}']=='Sep' replace_str "Sep","sep" fi
-  if ['{t}']=='Note' replace_str "Note","note" fi
-  if ['{t}']=='Url' replace_str "Url","url" fi
-  out={t}
-  if ['$in']!=['$out'] e[] $_gmic_g"       Warning: String '"$in"' substituted by '"$out"'"$_gmic_n fi
-
 _upload : skip "${2=""}","${3=0}"
   if narg("$2") out="$2" else basename "$1" out=${} fi
   if !narg($GMIC_LOGIN)
@@ -6112,10 +6068,10 @@ upload_binaries : check "isbool(${2=1})"
           if $is_win folder="windows" else folder="linux" fi
 
           e[] "- Upload file '"$file"' to 'https://gmic.eu/files/prerelease/"$file_short"'."
-          _upload $file,"files/prerelease/"$file_short
+          _upload[] $file,"files/prerelease/"$file_short
           if !$is_pre
             e[] "- Upload file '"$file"' to 'https://gmic.eu/files/"$folder/$file"'."
-            _upload $file,"files/"$folder/$file
+            _upload[] $file,"files/"$folder/$file
           fi
 
           file$>= n+=1
@@ -23404,6 +23360,22 @@ str : skip $1
 str2hex :
   ({'"$*"'}) y. r. 2,100% f. 'v=if(x,i%16,int(i/16));if(v<=9,48+v,87+v)' u {t} rm.
 
+#@cli strcapitalize : string
+#@cli : Capitalize specified string.
+strcapitalize :
+  l[] ({'"$1"'})
+    f "(i<=_' ' || i==_'_') && i!=_'\n'?_' ':i" # Replace blank characters and underscores
+    f ">
+       t(s) = ( unref(ss); const ss = size(s); p!=_' ' || lowercase(crop(x,ss))!=s || j[ss]!=_' ');
+       !x || (p=j[-1])==_'.' || p==_':' || p==_';' || p==_'\"' || (find(#0,_' ',x)<0 && p==_' ') ||
+       (p==_' ' &&
+        t('a') && t('an') && t('and') && t('as') && t('at') && t('but') && t('by') && t('for') && t('from') &&
+        t('in') && t('into') && t('like') && t('near') && t('nor') && t('of') && t('off') && t('on') &&
+        t('onto') && t('or') && t('over') && t('past') && t('per') && t('than') && t('the') && t('to') &&
+        t('up') && t('upon') && t('via') && t('with')
+       )?uppercase(i):i"
+    u {t} rm endl
+
 #@cli strcontains : string1,string2
 #@cli : Return 1 if the first string contains the second one.
 strcontains :
@@ -33676,7 +33648,7 @@ fx_color_presets :
         if $strength<100 [$>] +map_clut. [$N] j.. .,0,0,0,0,{$strength%} rm. else +map_clut[$>] [$N] fi
         adjust_colors. $brightness,$contrast,$gamma,$hue,$saturation,0,255
         if $normalize==2" || "$normalize==3 l. split_opacity n[0] 0,255 a c endl fi # Post-normalization
-        ({'$clut_name'}) _update_server_calibrate_name. clut_name={t} rm.
+        strcapitalize $clut_name clut_name={}
         to. $clut_name,0.01~,0.01~,7.5%,1
       done
       rm[$N]
@@ -35368,7 +35340,7 @@ fx_simulate_film :
         if $strength<100 [$>] +map_clut. [$N] j.. .,0,0,0,0,{$strength%} rm. else +map_clut[$>] [$N] fi
         adjust_colors. $brightness,$contrast,$gamma,$hue,$saturation,0,255
         if $normalize==2" || "$normalize==3 l. split_opacity n[0] 0,255 a c endl fi # Post-normalization
-        ({'$clut_name'}) _update_server_calibrate_name. clut_name={t} rm.
+        strcapitalize $clut_name clut_name={}
         to. $clut_name,1%,1%,7.5%,2,0.5
       done
       rm[$N]
