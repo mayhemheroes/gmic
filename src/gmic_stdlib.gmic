@@ -5451,6 +5451,11 @@ parse_gui : skip "${1=*},${2=print}"
   use_vt100
   y a y
 
+  # Merge multi-line comments.
+  discard {'\r'}
+  eval. "*i==_'\\' && j[-1]!=_'\\' && j[+1]==_'\n' && j[+2]==_'#'?(
+          for (p = 3, j[p] && j[p]<=_' ' && j[p]!=_'\n', ++p); copy(i(),-1,p,1,0))"
+
   # Extract all filters with locale and full path.
   eval "
     # Define convenience macros.
@@ -5581,18 +5586,6 @@ parse_gui : skip "${1=*},${2=print}"
           skip_blank(p);
           source[p]==_':'?(++p; skip_blank(p));
           r = find(source,_'\n',p)%size(source); # Find end of line
-          source[r]==_'\n'?( # Detect and merge multi-line comments.
-            while (1,
-              q = r;
-              while (is_blank(--q),0);
-              source[q]==_'\\' && source[r+1]==_'#'?(
-                r+=2; skip_blank(r);
-                copy(i[#0,q],-1,r-q,1,0); # Part to be discarded
-                r = find(source,_'\n',r);
-                r<0?(r=size(source); break());
-              ):break();
-            );
-          );
           call('+rows[0] ',p,',',r);
           source[r]==_'\n'?(i[#-1,h(#-1)-1] = is_first?0:_' ');
           copy(i[#0,p0],-1,min(r,size(source)-1)-p0+1,1,0); # Part to be discarded
@@ -5600,7 +5593,7 @@ parse_gui : skip "${1=*},${2=print}"
           is_first = 0;
         ):++p
       )"
-    a[^0] y discard -1
+    a[^0] y discard.. -1
     autocrop[0] {'\n'} store[0] nongui$c
 
     s -,0 # Split in two images : definition and parameters
@@ -5718,7 +5711,9 @@ parse_gui : skip "${1=*},${2=print}"
   _nbfilters=$f rm
 
   # Merge all non-gui code.
-  repeat $nbchunks ${nongui$>} done ({'\n'}) a[^-1] .,y rm. a y store. _nongui
+  repeat $nbchunks ${nongui$>} if {!w} rm. fi done
+  if $! ({'\n'}) a[^-1] .,y rm. a y else 0 fi
+  store. _nongui
 
   # Done!
   e[] "\r  > "${_gmic_g}{`s=vector64(_'" "');copy(s,'"Parsing done!"');s`}$_gmic_n
@@ -5838,6 +5833,22 @@ parse_gui_gmic :
     done
   done
   $_nongui y a y
+
+  # Clean generated output.
+  discard. -1
+  eval. "* # Remove useless comments
+         i==_'#' && j[-1]<=_' ' &&
+         (c=crop(0,y,1,5))!='#@gui' && c!='#@web' && c!='#@cli'?(p = find(#0,_'\n',y)%h; copy(i(),-1,p-y+1,1,0))"
+  discard. -1
+  autocrop. {_'\n'}
+  eval. "* # Merge consecutive line feeds
+         i==_'\n' && j[1]==_'\n'?(i()=-1)"
+  discard. -1
+  eval. "* # Remove leading spaces on each line
+         i<=_' ' && i!=_'\n' && j[-1]==_'\n'?(
+          for (p = 1, j[p] && j[p]<=_' ' && j[p]!=_'\n', ++p); copy(i(),-1,p,1,0))"
+  discard. -1
+
   e[] "\r  >> "${_gmic_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_gmic_n
 
 # Force certain filters to move from one path to another.
@@ -5919,26 +5930,6 @@ upload_filters :
     m "parse_gui_trigger_gmic : _upload_filters_move"
     v + parse_gui. *,gmic v -
     uncommand parse_gui_trigger_gmic
-
-    # Clean generated output.
-    discard 13
-    eval. "* # Merge multi-line comments
-           i==_'\\' && j[-1]!=_'\\' && j[+1]==_'\n' && j[+2]==_'#'?(
-            for (p = 3, j[p] && j[p]<=_' ' && j[p]!=_'\n', ++p); copy(i(),-1,p,1,0))"
-    discard. -1
-    eval. "* # Remove useless comments
-           i==_'#' && j[-1]<=_' ' &&
-           (c=crop(0,y,1,5))!='#@gui' && c!='#@web' && c!='#@cli'?(p = find(#0,_'\n',y)%h; copy(i(),-1,p-y+1,1,0))"
-    discard. -1
-    eval. "* # Merge consecutive line feeds
-           i==_'\n' && (j[1]==_'\n' || !j[1])?( # Merge consecutive line feeds
-             i()=-1;
-          )"
-    discard. -1
-    eval. "* # Remove leading spaces on each line
-           i<=_' ' && i!=_'\n' && j[-1]==_'\n'?(
-            for (p = 1, j[p] && j[p]<=_' ' && j[p]!=_'\n', ++p); copy(i(),-1,p,1,0))"
-    discard -1
 
     # Add footer and header.
     i[0] ({'"#@gmic"\n\
