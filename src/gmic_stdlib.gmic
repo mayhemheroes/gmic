@@ -5352,7 +5352,7 @@ update_deprecate : check "isint($1) && $1>0 && $1<999"
       if $off2>0
         rows. {$off2+2},100% a y
         o cimgz:$file,uchar
-        _update_server_upload $file
+        _upload[] $file
         e[0--6] "  > Done! Version $1 is not deprecated anymore."
       fi
     fi
@@ -5370,7 +5370,7 @@ update_deprecate : check "isint($1) && $1>0 && $1<999"
             \#@gui : Best regards,\\n\\n <i>The G\47MIC team.</i>\"}\n\n"'})
     y[1] a y
     o cimgz:$file,uchar
-    _update_server_upload $file
+    _upload[] $file
     e[0--4] "  > Done! Version $1 is now deprecated."
   fi
   rm endl
@@ -5971,8 +5971,8 @@ update_server :
     (290,$_version)
     repeat w
       v={i[$>]}
-      _update_server_upload[] ${_path_rc}update$_version.gmic,plain_update$v.gmic,1
-      _update_server_upload[] /tmp/update$_version.gmic,update$v.gmic,1
+      _upload[] ${_path_rc}update$_version.gmic,plain_update$v.gmic,1
+      _upload[] /tmp/update$_version.gmic,update$v.gmic,1
     done
     rm
   endl
@@ -6036,7 +6036,7 @@ _update_server_calibrate_name :
   out={t}
   if ['$in']!=['$out'] e[] $_gmic_g"       Warning: String '"$in"' substituted by '"$out"'"$_gmic_n fi
 
-_update_server_upload : skip "${2=""}","${3=0}"
+_upload : skip "${2=""}","${3=0}"
   if narg("$2") out="$2" else basename "$1" out=${} fi
   if !narg($GMIC_LOGIN)
     GMIC_LOGIN=${"gmic_ftp 0"}
@@ -6112,10 +6112,10 @@ _update_server_binaries : check "isbool(${2=1})"
           if $is_win folder="windows" else folder="linux" fi
 
           e[] "- Upload file '"$file"' to 'https://gmic.eu/files/prerelease/"$file_short"'."
-          _update_server_upload $file,"files/prerelease/"$file_short
+          _upload $file,"files/prerelease/"$file_short
           if !$is_pre
             e[] "- Upload file '"$file"' to 'https://gmic.eu/files/"$folder/$file"'."
-            _update_server_upload $file,"files/"$folder/$file
+            _upload $file,"files/"$folder/$file
           fi
 
           file$>= n+=1
