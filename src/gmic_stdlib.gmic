@@ -256,7 +256,7 @@ _help : skip ${1=""}
         "Try '"${_gmic_c}"gmic -h"$_gmic_n"' for global help.\n\n"
     rm u "" return
   fi
-  rm[0] a y discard 13 s -,10 append_multiline_comments
+  rm[0] a y merge_multiline_comments s -,10
   stopflag=0
   _is_example=0
   _document_gmic_header_ascii[] 0
@@ -2028,11 +2028,8 @@ clean_cluts :
 # Compress .gmic custom command files for compressing update files a little bit,
 # by removing empty lines, and useless comments.
 compress_gmic :
-  discard {'\r'}
-  eval. "*i==_'\\' && j[-1]!=_'\\' && j[+1]==_'\n' && j[+2]==_'#'?( # Merge multi-line comments
-          for (p = 3, j[p] && j[p]<=_' ' && j[p]!=_'\n', ++p); copy(i(),-1,p,1,0))"
-  discard. -1
-  eval " # Discard useless comments
+  merge_multiline_comments
+  eval " # Remove useless comments
     p = 0;
     while (1,
       p = find(#0,_'#',p);
@@ -3049,7 +3046,7 @@ document_gmic : skip ${1="ascii"},${2=""},${3=1}
   # Concatenate command data and split them into lines.
   _name={0,b} # Basename for the commands definition file.
   if $!>1 append_newline[^-1] fi
-  a y m {/{t}} discard 13 s -,10 append_multiline_comments
+  a y m {/{t}} merge_multiline_comments. s -,10
 
   # Output header.
   _document_gmic_header_$1[] $3
@@ -3847,23 +3844,6 @@ _document_gmic_sort_shortcuts :
   done
   rm
 
-# Append multi-line comments in a list of string images.
-append_multiline_comments :
-  to_remove=-1
-  eval "
-    for (ind = l - 1, ind>=1, --ind,
-      pind = ind - 1;
-      hind = h(#ind);
-      hpind = h(#pind);
-      i[#ind,0]==_'#' && i[#pind,0]==_'#' && i[#pind,hpind-1]==_'\\' ? (
-        k = 1; while (i[#ind,k]<=_' ',++k);
-        resize(#pind,1,hpind + hind - k - 1,1,1,0,0);
-        copy(i[#pind,hpind - 1],i[#ind,k],hind - k);
-        call('to_remove.=,',ind);
-      );
-    )"
-  0 rm[$to_remove]
-
 # Append a newline character at the end of all string images of the list.
 append_newline :
   eval "for (ind = 0, ind<l, ++ind, hind = h#ind; resize(#ind,1,hind+1,1,1,0,0); i[#ind,hind] = _'\n')"
@@ -4067,6 +4047,15 @@ input_gpl :
     onfail rm 0 endl done
     rm ($colors) rows 1,100% nm "$1" permute yzcx
   endl
+
+# Merge multi-line comments in a string image.
+merge_multiline_comments :
+  discard {'\r'}
+  repeat $! l[$>]
+    eval "*i==_'\\' && j[-1]!=_'\\' && j[+1]==_'\n' && j[+2]==_'#'?(
+            for (p = 3, j[p] && j[p]<=_' ' && j[p]!=_'\n', ++p); copy(i(),-1,p,1,0))"
+  endl done
+  discard -1
 
 #@cli network : mode={ 0=disabled | 1=enabled } : (+)
 #@cli : Enable or disable load-from-network mode.
@@ -5055,7 +5044,7 @@ update_gallery_html : check "isbool(${1=0})"
 
   # Generate HTML pages.
   i raw:$HOME/work/src/gmic/src/gmic_stdlib.gmic,uchar
-  discard 13 s -,10 append_multiline_comments append_newline[^-1] a y
+  merge_multiline_comments. s -,10 append_newline[^-1] a y
   nb_cols=3
 
   repeat $nb_categories,ncat
