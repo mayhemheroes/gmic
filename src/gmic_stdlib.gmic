@@ -5837,9 +5837,9 @@ parse_gui_gmic :
           [_'[',_',',_']']
         ):[_'(',_',',_')'];
       "`}
-      strcapitalize {/${_f${f}_p${p}_name}} name=${}
+      strcapitalize ${_f${f}_p${p}_name} name=${}
 
-      ({'"#@gui"$locale" : "$name" = "${_f${f}_p${p}_type}$sep1{/$args}$sep2$visibility\n'})
+      ({'"#@gui"$locale" : "{/$name}" = "${_f${f}_p${p}_type}$sep1{/$args}$sep2$visibility\n'})
     done
   done
   $_nongui y a y
@@ -23368,14 +23368,13 @@ strcapitalize :
   l[] ({'"$1"'})
     f "(i<=_' ' || i==_'_') && i!=_'\n'?_' ':i" # Replace blank characters and underscores
     f ">
-       t(s) = ( unref(ss); const ss = size(s); p!=_' ' || lowercase(crop(x,ss))!=s || j[ss]!=_' ');
+       t(s) = ( unref(ss); const ss = size(s); lowercase(crop(x,ss))!=s || j[ss]!=_' ');
        !x || (p=j[-1])==_'.' || p==_':' || p==_';' || p==_'\"' || (find(#0,_' ',x)<0 && p==_' ') ||
-       (p==_' ' &&
+       (p==_' ' || p==_'-') &&
         t('a') && t('an') && t('and') && t('as') && t('at') && t('but') && t('by') && t('for') && t('from') &&
         t('in') && t('into') && t('like') && t('near') && t('nor') && t('of') && t('off') && t('on') &&
         t('onto') && t('or') && t('over') && t('past') && t('per') && t('than') && t('the') && t('to') &&
-        t('up') && t('upon') && t('via') && t('with')
-       )?uppercase(i):i"
+        t('up') && t('upon') && t('via') && t('with')?uppercase(i):i"
     u {t} rm endl
 
 #@cli strcontains : string1,string2
@@ -45024,7 +45023,6 @@ fx_solve_maze_preview :
 
 # TODO :
 #-------
-# - Test capitalization of filter names, parameters and choice arguments.
 # - Manage '#@gui hide()' directive.
 # - Implement output mode 'xml' for parse_gui.
 
