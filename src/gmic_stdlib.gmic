@@ -2025,23 +2025,25 @@ clean_cluts :
 #@cli : $ image.jpg command "foo : mirror y deform $""1" +foo[0] 5 +foo[0] 15
 
 # compress_gmic
+# Compress .gmic custom command files for compressing update files a little bit,
+# by removing empty lines, and useless comments.
 compress_gmic :
   discard {'\r'}
-  eval. "*i==_'\\' && j[-1]!=_'\\' && j[+1]==_'\n' && j[+2]==_'#'?(
+  eval. "*i==_'\\' && j[-1]!=_'\\' && j[+1]==_'\n' && j[+2]==_'#'?( # Merge multi-line comments
           for (p = 3, j[p] && j[p]<=_' ' && j[p]!=_'\n', ++p); copy(i(),-1,p,1,0))"
   discard. -1
-  eval "
+  eval " # Discard useless comments
     p = 0;
     while (1,
       p = find(#0,_'#',p);
-      p<=0?break();
-      ((c=i[p-1])<=_' ' && c!=_'\n') && (cr=crop(0,p,1,5))!='#@gui' && cr!='#@web' && cr!='#@cli'?(
+      p<0?break();
+      (c=i[p-1])<=_' ' && (cr=crop(0,p,1,5))!='#@gui' && cr!='#@web' && cr!='#@cli'?(
         p0 = p;
-        while ((c=i[p-1])<=_' ' && c!=_'\n', --p);
+        p>0?while ((c=i[p-1])<=_' ' && c!=_'\n', --p);
         q = find(#0,_'\n',p0)%h;
         copy(i[p],-1,q-p,1,0);
-        p = q;
-      ):++p;
+        p = q
+      ):++p
     )"
   discard. -1
   autocrop. {_'\n'}
@@ -5892,22 +5894,7 @@ parse_gui_gmic :
   $_nongui y a y
 
   # Clean generated output.
-  eval. "* # Remove useless comments
-         i==_'#' && j[-1]<=_' ' &&
-         (cr=crop(0,y,1,5))!='#@gui' && cr!='#@web' && cr!='#@cli'?(
-           p = y; while ((c=i[p-1])<=_' ' && c!=_'\n', --p);
-           q = find(#0,_'\n',y)%h;
-           copy(i[p],-1,q-p,1,0))"
-  discard. -1
-  autocrop. {_'\n'}
-  eval. "* # Merge consecutive line feeds
-         i==_'\n' && j[1]==_'\n'?(i()=-1)"
-  discard. -1
-  eval. "* # Remove leading spaces on each line
-         i<=_' ' && i!=_'\n' && j[-1]==_'\n'?(
-          for (p = 1, j[p] && j[p]<=_' ' && j[p]!=_'\n', ++p); copy(i(),-1,p,1,0))"
-  discard. -1
-
+  compress_gmic.
   e[] "\r  >> "${_gmic_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_gmic_n
 
 # Force certain filters to move from one path to another.
