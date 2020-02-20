@@ -2024,6 +2024,35 @@ clean_cluts :
 #@cli : Default value: 'add_debug_info=1'.
 #@cli : $ image.jpg command "foo : mirror y deform $""1" +foo[0] 5 +foo[0] 15
 
+# compress_gmic
+compress_gmic :
+  discard {'\r'}
+  eval. "*i==_'\\' && j[-1]!=_'\\' && j[+1]==_'\n' && j[+2]==_'#'?(
+          for (p = 3, j[p] && j[p]<=_' ' && j[p]!=_'\n', ++p); copy(i(),-1,p,1,0))"
+  discard. -1
+  eval "
+    p = 0;
+    while (1,
+      p = find(#0,_'#',p);
+      p<=0?break();
+      ((c=i[p-1])<=_' ' && c!=_'\n') && (cr=crop(0,p,1,5))!='#@gui' && cr!='#@web' && cr!='#@cli'?(
+        p0 = p;
+        while ((c=i[p-1])<=_' ' && c!=_'\n', --p);
+        q = find(#0,_'\n',p0)%h;
+        copy(i[p],-1,q-p,1,0);
+        p = q;
+      ):++p;
+    )"
+  discard. -1
+  autocrop. {_'\n'}
+  eval. "* # Merge consecutive line feeds
+         i==_'\n' && j[1]==_'\n'?(i()=-1)"
+  discard. -1
+  eval. "* # Remove leading spaces on each line
+         i<=_' ' && i!=_'\n' && j[-1]==_'\n'?(
+          for (p = 1, j[p] && j[p]<=_' ' && j[p]!=_'\n', ++p); copy(i(),-1,p,1,0))"
+  discard. -1
+
 #@cli cursor : _mode = { 0=hide | 1=show } : (+)
 #@cli : Show or hide mouse cursor for selected instant display windows.
 #@cli : Command selection (if any) stands for instant display window indices instead of image indices.
