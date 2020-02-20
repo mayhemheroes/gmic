@@ -5477,7 +5477,7 @@ parse_gui : skip "${1=*},${2=print}"
       );
     );
 
-    store_block(n,p,q,path,name) = (
+    store_block(p,q,path,name) = (
       call('+rows[0] ',p,',',q,' discard. -1 autocrop. 10 autocrop. 32 nm. \"',path,'/',name,'\"');
     );
 
@@ -5489,7 +5489,7 @@ parse_gui : skip "${1=*},${2=print}"
 
     # Start parsing.
     #---------------
-    prev_p0 = p0 = p = N = 0;
+    prev_p0 = p0 = p = 0;
     while (p<size(source),
       p = find(source,'#@gui',p)%size(source);
 
@@ -5533,18 +5533,17 @@ parse_gui : skip "${1=*},${2=print}"
             #----------------------------
             while (is_blank(--q),0);
             copy(name,source[p],q-p+1); name[q-p+1] = 0;
-            store_block(N,prev_p0,p0-1,prev_path,prev_name);
+            store_block(prev_p0,p0-1,prev_path,prev_name);
 
             prev_p0 = p0;
             prev_path = path;
             prev_name = name;
-            ++N;
             p = q + 1;
           );
         )
       ):++p
     );
-    prev_p0!=p0?store_block(N,prev_p0,size(source)-1,prev_path,prev_name) # Insert last block.
+    prev_p0!=p0?store_block(prev_p0,size(source)-1,prev_path,prev_name) # Insert last block.
     "
   rm[0]
 
