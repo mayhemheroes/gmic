@@ -5435,6 +5435,7 @@ update_download_version : check "
 #@cli : . '$_fF_zoomfactor': Default zoom factor (empty, if not specified).
 #@cli : . '$_fF_zoomaccurate': Is preview accurate when zoom changes ? (can be { 0=false | 1=true }).
 #@cli : . '$_fF_inputmode': Default preferred input mode (empty, if not specified).
+#@cli : . '$_fF_hide': Path of filter hided by current filter (for localized filters, empty if not specified).
 #@cli : . '$_fF_nbparams': Number of parameters.\n
 #@cli : For each parameter \#P of the filter \#F ('P' in range [0,$_fF_nbparams-1]):
 #@cli : . '$_fF_pP_name': Parameter name.
@@ -5484,6 +5485,9 @@ parse_gui : skip "${1=*},${2=print}"
   eval $macros"
     store_block(p,q,path,name,hide) = (
       call('+rows[0] ',p,',',q,' discard. -1 autocrop. 10 autocrop. 32 nm. \"',path,'/',name,'\"');
+
+      # Insert hide() info at the end of the chunk, with magic number '-2'.
+      hide[0]?call([40,45,50,44,123,39,34],hide,[34,39,125,41],' y. a[-2,-1] y');
     );
 
     # Init variables.
@@ -5546,14 +5550,11 @@ parse_gui : skip "${1=*},${2=print}"
             p = q + 1;
           ):(
 
-            # hide() directive.
-            #------------------
+            # Manage hide() directive.
+            #--------------------------
             l0 = l + 5; l = find(source,_')',l0);
             l<r?(
               copy(hide,source[l0],l-l0); hide[l-l0] = 0;
-
-              echo('\nHIDE = ',hide,'\n');
-
               copy(i[#0,p0],-1,r-p0+1,1,0);
             );
             p = r + 1;
@@ -5583,9 +5584,14 @@ parse_gui : skip "${1=*},${2=print}"
     _f${f}_zoomaccurate=
     _f${f}_inputmode=
     _f${f}_nbparams=0
+    _f${f}_hide=
 
     # Detect locale.
     if crop(0,0,1,6)=='#@gui_' _f${f}_locale={`crop(0,6,1,2)`} fi
+
+    # Detect hided filter.
+    p={"find(#0,-2,h-1,0)"}
+    if $p>=0 +rows. {$p+1},100% _f${f}_hide={t} rm. fi
 
     # Separate '#@gui' lines from other lines, and merge them.
     eval $macros"
