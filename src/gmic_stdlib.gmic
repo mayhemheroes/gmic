@@ -5458,6 +5458,8 @@ parse_gui : skip "${1=*},${2=print}"
   discard. -1
 
   # Extract all filter chunks with full path.
+  e[] ""
+  e[] "\r  > Extract filter chunks."
   eval "
     # Define convenience macros.
     #---------------------------
@@ -5465,16 +5467,21 @@ parse_gui : skip "${1=*},${2=print}"
 
     skip_blank(p) = (while (is_blank(p), ++p));
 
-    discard_html(name) = (
+    clean(name) = (
       _l = find(name,0);
-      for (_p = find(name,_'<'), _l>=0 && _p>=0,
-        isin(name[_p+1],_'b',_'i') && name[_p+2]==_'>'?( # Opening tag
-          copy(name[_p],name[_p+3],_l-_p-2);
-          _l-=3;
-        ):name[_p+1]==_'/' && isin(name[_p+2],_'b',_'i') && name[_p+3]==_'>'?( # Closing tag
-          copy(name[_p],name[_p+4],_l-_p-3);
-          _l-=4;
-        ):(_p+=1);
+      _l>0?(
+        _p = 0; while (1,
+          _p = find(name,_'<',_p);
+          _p<0 || _p>=_l?break();
+          isin(name[_p+1],_'b',_'i') && name[_p+2]==_'>'?( # Opening tag
+            copy(name[_p],name[_p+3],_l-_p-2);
+            _l-=3;
+          ):name[_p+1]==_'/' && isin(name[_p+2],_'b',_'i') && name[_p+3]==_'>'?( # Closing tag
+            copy(name[_p],name[_p+4],_l-_p-3);
+            _l-=4;
+          ):++p;
+        );
+        _p = 0; while (1, _p = find(name,_'/',_p); _p<0 || _p>=_l?break(); name[_p++] = _'-'); # Replace '/' by '-'
       );
     );
 
@@ -5519,7 +5526,7 @@ parse_gui : skip "${1=*},${2=print}"
                 lp = find(path,0); l = max(0,find(path,_'/',lp-1,0)); path[l] = 0;
               );
             );
-            discard_html(name);
+            clean(name);
             name[0]?(
               ln = find(name,0); # Update path
               lp = find(path,0);
@@ -5552,7 +5559,7 @@ parse_gui : skip "${1=*},${2=print}"
   l parse_gui_trigger_$2 onfail endl # Allow global pre-processing before parsing each filter.
 
   # Parse each filter.
-  e[] "" nbchunks=$!
+  nbchunks=$!
   f=0 repeat $nbchunks,c _f${f}_path={$>,f} l[$>]
     if crop(0,0,1,5)!='#@gui' # Non-gui : merge code and skip chunk
       autocrop {'\n'} store nongui$c 0 continue
