@@ -5415,7 +5415,7 @@ update_download_version : check "
 
 #@cli parse_gui : _filter_name,_output_format
 #@cli : Parse selected filter definitions and generate info about filters in selected output format.
-#@cli : 'output_format' can be { list | print | rebuild }.\n
+#@cli : 'output_format' can be { list | print | gmic }.\n
 #@cli : It is possible to define a custom output mode, by implementing the following commands
 #@cli : ('outputmode' must be replaced by the name of the custom user output mode):
 #@cli : . 'parse_gui_outputmode' : A command that outputs the parsing information with a custom format.
@@ -5772,11 +5772,11 @@ parse_gui_list :
   y a y
   e[] "\r  >> "${_gmic_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_gmic_n
 
-# Output mode 'rebuild'.
+# Output mode 'gmic'.
 #
-parse_gui_parseparams_rebuild : u 1 # Tell parser to parse filter parameters
-parse_gui_rebuild :
-  e[] "  >> Generate output, in 'rebuild' mode.\n"
+parse_gui_parseparams_gmic : u 1 # Tell parser to parse filter parameters
+parse_gui_gmic :
+  e[] "  >> Generate output, in 'gmic' mode.\n"
   path=/
   N={$_nbfilters-1}
   repeat $_nbfilters,f
@@ -5916,9 +5916,9 @@ upload_filters :
   # Create update file.
   +l.
     e[] "** Generate filter update file."
-    m "parse_gui_trigger_rebuild : _upload_filters_move"
-    v + parse_gui. *,rebuild v -
-    uncommand parse_gui_trigger_rebuild
+    m "parse_gui_trigger_gmic : _upload_filters_move"
+    v + parse_gui. *,gmic v -
+    uncommand parse_gui_trigger_gmic
 
     # Clean generated output.
     discard 13
@@ -5964,7 +5964,7 @@ upload_filters :
        "# End:"\n\
        "#"\n\
        "# (End of G\47MIC update file)"'})
-      y a y
+    y a y
 
     # Upload filter files on G'MIC server.
     e[] "** Upload update file."
@@ -45057,8 +45057,6 @@ fx_solve_maze_preview :
 
 # TODO :
 #-------
-
-# - Auto-remove useless comments in generated 'update290.gmic'.
 # - Test capitalization of filter names, parameters and choice arguments.
 # - Manage '#@gui hide()' directive.
 # - Implement output mode 'xml' for parse_gui.
