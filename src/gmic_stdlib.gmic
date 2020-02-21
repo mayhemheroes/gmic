@@ -145,7 +145,7 @@
 #
 #   Type separators '()' can be replaced by '[]' or '{}' if necessary (for instance if parentheses are required in
 #   an argument of the typedef, e.g in a text). You can also replace 'typedef' by '_typedef' to tell the plug-in not
-#   to update the image preview when the corresponding parameter is modified.
+#   being responsive, i.e not to update the image preview when the corresponding parameter is modified.
 #   After the closing separator, you may specify a 'visibility state' character for the parameter, which can be
 #   { _0=Hidden | _1=Grayed-out | _2=Visible (default) }, opt. followed by a propagation character that tells
 #   if this visibility state must be propagated to neighboring non-valued interface widgets
@@ -5466,6 +5466,7 @@ update_download_version : check "
 #@cli : For each parameter \#P of the filter \#F ('P' in range [0,$_fF_nbparams-1]):
 #@cli : . '$_fF_pP_name': Parameter name.
 #@cli : . '$_fF_pP_type': Parameter type.
+#@cli : . '$_fF_pP_responsivity': Parameter responsivity (can be { 0 | 1 }).
 #@cli : . '$_fF_pP_visibility': Parameter visibility.
 #@cli : . '$_fF_pP_propagation': Propagation of the parameter visibility.
 #@cli : . '$_fF_pP_nbargs': Number of parameter arguments.\n
@@ -5698,9 +5699,13 @@ parse_gui : skip "${1=*},${2=print}"
             c = source[q]==_'('?_')':source[q]==_'{'?_'}':_']';
             r = q + 1; skip_blank(r);
             while (is_blank(--q),0);
+
+            responsivity = 1;
+            source[p]==_'_'?(responsivity = 0; ++p);
             copy(type,source[p],q-p+1); type[q-p+1] = 0; # Parameter type
             for (i = 0, type[i], ++i, type[i] = lowercase(type[i])); # Force lowercase
-            call('$tmparg _f"${f}"_p',nbparams,'_name={t} rm. _f"${f}"_p',nbparams,'_type=',type);
+            call('$tmparg _f"${f}"_p',nbparams,'_name={t} rm. _f"${f}"_p',nbparams,'_type=',
+                 type,' _f"${f}"_p',nbparams,'_responsivity=',responsivity);
 
             # Parse list of arguments.
             p = r;
@@ -5862,11 +5867,9 @@ parse_gui_update :
     ({'"#@gui"$locale" "$name:${_f${f}_command},${_f${f}_commandpreview}$zoomfactor$zoomaccurate$inputmode\n'})
 
     repeat ${_f${f}_nbparams},p
-      if narg(${_f${f}_p${p}_visibility})
-        visibility=_${_f${f}_p${p}_visibility}${_f${f}_p${p}_propagation}
-      else
-        visibility=
-      fi
+      responsivity,visibility=
+      if !${_f${f}_p${p}_responsivity} responsivity=_ fi
+      if narg(${_f${f}_p${p}_visibility}) visibility=_${_f${f}_p${p}_visibility}${_f${f}_p${p}_propagation} fi
       is_choice={['${_f${f}_p${p}_type}']=='choice'}
 
       # Build list of arguments.
@@ -5890,7 +5893,7 @@ parse_gui_update :
       else strcapitalize ${_f${f}_p${p}_name} name=${}
       fi
 
-      ({'"#@gui"$locale" :"{/$name}=${_f${f}_p${p}_type}$sep1{/$args}$sep2$visibility\n'})
+      ({'"#@gui"$locale" :"{/$name}=$responsivity${_f${f}_p${p}_type}$sep1{/$args}$sep2$visibility\n'})
     done
   done
   $_nongui y a y
@@ -5923,11 +5926,14 @@ parse_gui_update :
   y a y
   e[] "\r  >> "${_gmic_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_gmic_n
 
-# Output mode 'zart'.
+# Output mode 'zart' (output in stdout).
 #
 parse_gui_parseparams_zart : u 1 # Tell parser to not parse filter parameters
 parse_gui_zart :
   e[] "  >> Generate output, in 'zart' mode.\n"
+  echo_stdout[] "<?xml version=\"1.0\" ?>"
+  echo_stdout[] "<document name=\"Presets\">\n"
+
   path=/
   N={$_nbfilters-1}
   repeat $_nbfilters,f
@@ -5935,42 +5941,64 @@ parse_gui_zart :
 
     echo_stdout[] "<!-- "${_f${f}_path}${_f${f}_name}" -->"
     echo_stdout[] "<preset name=\""${_f${f}_name}"\">"
-    echo_stdout[] "  <command>"${_f${f}_commandpreview}"</command>"
-    repeat ${_f{$f}_nbparams},p
-      name=${_f{$f}_p{$p}_name}
-      type=${_f{$f}_p{$p}_type}
-      if s=['$type'];s=='int'||s=='float'
-        echo_stdout[] "  <"$type" name=\""$name"\" default=\""${_f{$f}_p{$p}_a0}"\" min=\""${_f{$f}_p{$p}_a1}"\" max=\""${_f{$f}_p{$p}_a2}"\" />"
+    echo_stdout[] "  <command>"${_f${f}_commandpreview}" $""*</command>"
+    repeat ${_f${f}_nbparams},p
+      name=${_f${f}_p{$p}_name}
+      type=${_f${f}_p{$p}_type}
+      nbargs=${_f${f}_p{$p}_nbargs}
+      repeat $nbargs ({'${_f${f}_p${p}_a$>}'}) autocrop. {'\"'} arg$>={t} rm. done
+
+      if s=['$type'];s=='int'" || "s=='float'
+        echo_stdout[] "  <"$type" name=\""$name"\" default=\""$arg0"\" min=\""$arg1"\" max=\""$arg2"\" />"
+
       elif ['$type']=='separator'
         echo_stdout[] "  <separator />"
+
       elif ['$type']=='note'
-        echo_stdout[] "  <note text=\""${_f${f}_p{$p}_a0}"\" />"
+        ({'$arg0'}) replace_str. "&","&amp;" replace_str. "<","&lt;" replace_str. ">","&gt;" text={t} rm.
+        echo_stdout[] "  <note text=\""$text"\" />"
+
       elif ['$type']=='choice'
         default=0 n=0 args=
-        if isint(${_f${f}_p${p}_a0}) default=${_f${f}_p${p}_a0} n+=1 fi
-        repeat ${_f${f}_p${p}_nbargs}-$n,a
-          ({'${_f${f}_p${p}_a{$n+$a}}'}) autocrop. {'\"'} arg={t} rm.
-          args.=${c}"choice"$n"=\""$arg"\""
-        c=, done
+        if isint($arg0) default=$arg0 n+=1 fi
+        c= repeat $nbargs-$n,a args.=${c}"choice"$>"=\""${arg{$n+$a}}"\"" c=" " done
         echo_stdout[] "  <choice name=\""$name"\" default=\""$default"\" "$args" />"
-      elif ['$type']=='link'
-        align=0 name= url= n=0
-        if isnum(${_f${f}_p${p}_a0}) align=${_f${f}_p${p}_a0} n+=1 fi
-        if ${_f${f}_p${p}_nbargs}-$n>1 name=${_f${f}_p${p}_a$n} url=${_f${f}_p${p}_a{$n+1}}
-        else url,name,align=${_f${f}_p${p}_a$n}
-        fi
-        ({'$name'}) autocrop. {'\"'} name={t} rm.
-        ({'$url'}) autocrop. {'\"'} url={t} rm.
-        echo_stdout[] "  <link name=\""$name"\" url=\""$url"\" align=\""$align"\" />"
-      else
 
+      elif ['$type']=='link'
+        align=-1 name= url= n=0
+        if isnum($arg0) align=$arg0 n+=1 fi
+        if $nbargs-$n>1 name=${arg$n} url=${arg{$n+1}}
+        else url,name=${arg$n}
+        fi
+        if $align==0 align=left elif $align==1 align=right else align=center fi
+        echo_stdout[] "  <link name=\""$name"\" url=\""$url"\" align=\""$align"\" />"
+
+      elif ['$type']=='bool'
+        if lowercase(['$arg0'])=='false' arg0=0
+        elif lowercase(['$arg0'])=='true' arg0=1
+        elif !isnum($arg0) arg0=0
+        fi
+        echo_stdout[] "  <bool name=\""$name"\" default=\""$arg0"\" />"
+
+      elif ['$type']=='color'
+        args=
+        c= repeat $nbargs,a args.=$c${arg$a} c="," done
+        echo_stdout[] "  <color name=\""$name"\" default=\""$args"\" />"
+
+      elif ['$type']=='point'
+        echo_stdout[] "  <value value=\""$arg0"\" /><value value=\""$arg1"\" />"
+
+      elif ['$type']=='value'
+        echo_stdout[] "  <value value=\""$arg0"\" />"
+
+      else
         echo_stdout[] "** POUET : "$type
       fi
 
     done
     echo_stdout[] "</preset>\n"
   done
-
+  echo_stdout[] "</document>"
 
 # Force certain filters to move from one path to another.
 _upload_filters_move :
