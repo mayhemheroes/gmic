@@ -5937,7 +5937,7 @@ parse_gui_zart :
   path=/
   N={$_nbfilters-1}
   repeat $_nbfilters,f
-#    e[] "\r  >> "$_gmic_c[#$f/$N]$_gmic_n" "{`s=vector48(_'" "');copy(s,['${_f${f}_path}${_f${f}_name}']);s`}
+    e[] "\r  >> "$_gmic_c[#$f/$N]$_gmic_n" "{`s=vector48(_'" "');copy(s,['${_f${f}_path}${_f${f}_name}']);s`}
 
     echo_stdout[] "<!-- "${_f${f}_path}${_f${f}_name}" -->"
     echo_stdout[] "<preset name=\""${_f${f}_name}"\">"
@@ -5946,23 +5946,30 @@ parse_gui_zart :
       name=${_f${f}_p{$p}_name}
       type=${_f${f}_p{$p}_type}
       nbargs=${_f${f}_p{$p}_nbargs}
-      repeat $nbargs ({'${_f${f}_p${p}_a$>}'}) autocrop. {'\"'} arg$>={t} rm. done
+      arg0= repeat $nbargs ({'${_f${f}_p${p}_a$>}'}) autocrop. {'\"'} arg$>={t} rm. done
 
-      if s=['$type'];s=='int'" || "s=='float'
-        echo_stdout[] "  <"$type" name=\""$name"\" default=\""$arg0"\" min=\""$arg1"\" max=\""$arg2"\" />"
-
-      elif ['$type']=='separator'
-        echo_stdout[] "  <separator />"
-
-      elif ['$type']=='note'
-        ({'$arg0'}) replace_str. "&","&amp;" replace_str. "<","&lt;" replace_str. ">","&gt;" text={t} rm.
-        echo_stdout[] "  <note text=\""$text"\" />"
+      if ['$type']=='bool'
+        if lowercase(['$arg0'])=='false' arg0=0 elif lowercase(['$arg0'])=='true' arg0=1 elif !isnum($arg0) arg0=0 fi
+        echo_stdout[] "  <bool name=\""$name"\" default=\""$arg0"\" />"
 
       elif ['$type']=='choice'
         default=0 n=0 args=
         if isint($arg0) default=$arg0 n+=1 fi
         c= repeat $nbargs-$n,a args.=${c}"choice"$>"=\""${arg{$n+$a}}"\"" c=" " done
         echo_stdout[] "  <choice name=\""$name"\" default=\""$default"\" "$args" />"
+
+      elif ['$type']=='color'
+        args= c= repeat $nbargs,a args.=$c${arg$a} c="," done
+        echo_stdout[] "  <color name=\""$name"\" default=\""$args"\" />"
+
+      elif s=['$type'];s=='int'" || "s=='float'
+        echo_stdout[] "  <"$type" name=\""$name"\" default=\""$arg0"\" min=\""$arg1"\" max=\""$arg2"\" />"
+
+      elif ['$type']=='file'" || "['$type']=='filein'" || "['$type']=='fileout'
+        echo_stdout[] "  <file name=\""$name"\" default=\""$arg0"\" />"
+
+      elif ['$type']=='folder'
+        echo_stdout[] "  <folder name=\""$name"\" default=\""$arg0"\" />"
 
       elif ['$type']=='link'
         align=-1 name= url= n=0
@@ -5973,26 +5980,26 @@ parse_gui_zart :
         if $align==0 align=left elif $align==1 align=right else align=center fi
         echo_stdout[] "  <link name=\""$name"\" url=\""$url"\" align=\""$align"\" />"
 
-      elif ['$type']=='bool'
-        if lowercase(['$arg0'])=='false' arg0=0
-        elif lowercase(['$arg0'])=='true' arg0=1
-        elif !isnum($arg0) arg0=0
-        fi
-        echo_stdout[] "  <bool name=\""$name"\" default=\""$arg0"\" />"
-
-      elif ['$type']=='color'
-        args=
-        c= repeat $nbargs,a args.=$c${arg$a} c="," done
-        echo_stdout[] "  <color name=\""$name"\" default=\""$args"\" />"
+      elif ['$type']=='note'
+        ({'$arg0'})
+        replace_str. "&","&amp;" replace_str. "<","&lt;" replace_str. ">","&gt;" replace_str. "\"","&quot;"
+        text={t} rm.
+        echo_stdout[] "  <note text=\""$text"\" />"
 
       elif ['$type']=='point'
-        echo_stdout[] "  <value value=\""$arg0"\" /><value value=\""$arg1"\" />"
+        echo_stdout[] "  <point name=\""$name"\" position=\""$arg0,$arg1"\" />"
+
+      elif ['$type']=='separator'
+        echo_stdout[] "  <separator />"
+
+      elif ['$type']=='text'
+        echo_stdout[] "  <text name=\""$name"\" default=\""$arg0"\" />"
 
       elif ['$type']=='value'
         echo_stdout[] "  <value value=\""$arg0"\" />"
 
-      else
-        echo_stdout[] "** POUET : "$type
+      else # Unsupported parameter
+        echo_stdout[] "  <value value=\""$arg0"\" />"
       fi
 
     done
