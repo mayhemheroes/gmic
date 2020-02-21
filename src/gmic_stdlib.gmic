@@ -116,9 +116,6 @@
 #      _ 'point(_X,_Y,_removable={ -1 | 0 | 1 },_burst={ 0 | 1 },_R,_G,_B,_[-]A,_radius[%])':
 #          Add X,Y parameters (as a moveable point over the preview).
 #
-#      _ 'value(value)':
-#          Add a pre-defined value parameter (not displayed).
-#
 #      _ 'file[_in,_out](_default_filename)':
 #          Add a filename parameter (as a filechooser).
 #
@@ -143,9 +140,12 @@
 #      _ 'separator()':
 #          Display an horizontal separator (do not add a parameter).
 #
+#      _ 'value(value)':
+#          Add a pre-defined value parameter (not displayed).
+#
 #   Type separators '()' can be replaced by '[]' or '{}' if necessary (for instance if parentheses are required in
 #   an argument of the typedef, e.g in a text). You can also replace 'typedef' by '_typedef' to tell the plug-in not
-#   to update the image preview when the corresponding parameter is modified.
+#   being responsive, i.e not to update the image preview when the corresponding parameter is modified.
 #   After the closing separator, you may specify a 'visibility state' character for the parameter, which can be
 #   { _0=Hidden | _1=Grayed-out | _2=Visible (default) }, opt. followed by a propagation character that tells
 #   if this visibility state must be propagated to neighboring non-valued interface widgets
@@ -2029,6 +2029,7 @@ clean_cluts :
 # by removing empty lines, and useless comments.
 compress_gmic :
   merge_multiline_comments
+  merge_multiline
   eval " # Remove useless comments
     p = 0;
     while (1,
@@ -4048,6 +4049,13 @@ input_gpl :
     rm ($colors) rows 1,100% nm "$1" permute yzcx
   endl
 
+# Merge multi-lines (lines continued by backslash before NL) in a string image.
+merge_multiline :
+  discard {'\r'}
+  eval[^] "*i==_'\\' && j[-1]!=_'\\' && j[+1]==_'\n'?(
+            for (p = 2, j[p] && j[p]<=_' ' && j[p]!=_'\n', ++p); copy(i(),-1,p,1,0))"
+  discard -1
+
 # Merge multi-line comments in a string image.
 merge_multiline_comments :
   discard {'\r'}
@@ -5433,7 +5441,7 @@ update_download_version : check "
 
 #@cli parse_gui : _filter_name,_output_format
 #@cli : Parse selected filter definitions and generate info about filters in selected output format.
-#@cli : 'output_format' can be { list | print | gmic }.\n
+#@cli : 'output_format' can be { list | print | update | zart }.\n
 #@cli : It is possible to define a custom output mode, by implementing the following commands
 #@cli : ('outputmode' must be replaced by the name of the custom user output mode):
 #@cli : . 'parse_gui_outputmode' : A command that outputs the parsing information with a custom format.
@@ -5458,6 +5466,7 @@ update_download_version : check "
 #@cli : For each parameter \#P of the filter \#F ('P' in range [0,$_fF_nbparams-1]):
 #@cli : . '$_fF_pP_name': Parameter name.
 #@cli : . '$_fF_pP_type': Parameter type.
+#@cli : . '$_fF_pP_responsivity': Parameter responsivity (can be { 0 | 1 }).
 #@cli : . '$_fF_pP_visibility': Parameter visibility.
 #@cli : . '$_fF_pP_propagation': Propagation of the parameter visibility.
 #@cli : . '$_fF_pP_nbargs': Number of parameter arguments.\n
@@ -5466,15 +5475,10 @@ update_download_version : check "
 #@cli : Default parameters: 'filter_name=*' and 'output_format=print'.
 parse_gui : skip "${1=*},${2=print}"
   e[^-1] "Parse '#@gui' filters '$1' and output in '$2' mode."
-  if !$! i raw:${_path_rc}update$_version.gmic,uchar fi
   use_vt100
-  y a y
 
-  # Merge multi-line comments.
-  discard {'\r'}
-  eval. "*i==_'\\' && j[-1]!=_'\\' && j[+1]==_'\n' && j[+2]==_'#'?(
-          for (p = 3, j[p] && j[p]<=_' ' && j[p]!=_'\n', ++p); copy(i(),-1,p,1,0))"
-  discard. -1
+  if !$! i raw:${_path_rc}update$_version.gmic,uchar i raw:${_path_user},uchar fi
+  y a y merge_multiline_comments
 
   # Extract all filter chunks with full path.
   e[] ""
@@ -5690,9 +5694,13 @@ parse_gui : skip "${1=*},${2=print}"
             c = source[q]==_'('?_')':source[q]==_'{'?_'}':_']';
             r = q + 1; skip_blank(r);
             while (is_blank(--q),0);
+
+            responsivity = 1;
+            source[p]==_'_'?(responsivity = 0; ++p);
             copy(type,source[p],q-p+1); type[q-p+1] = 0; # Parameter type
             for (i = 0, type[i], ++i, type[i] = lowercase(type[i])); # Force lowercase
-            call('$tmparg _f"${f}"_p',nbparams,'_name={t} rm. _f"${f}"_p',nbparams,'_type=',type);
+            call('$tmparg _f"${f}"_p',nbparams,'_name={t} rm. _f"${f}"_p',nbparams,'_type=',
+                 type,' _f"${f}"_p',nbparams,'_responsivity=',responsivity);
 
             # Parse list of arguments.
             p = r;
@@ -5755,6 +5763,7 @@ parse_gui : skip "${1=*},${2=print}"
   e[] "\r  > "${_gmic_g}{`s=vector64(_'" "');copy(s,'"Parsing done!"');s`}$_gmic_n
   v + parse_gui_$2 # Output result of the parsing.
 
+#
 # Output mode 'print' (default output mode).
 #
 parse_gui_parseparams_print : u 0 # Tell parser to not parse filter parameters
@@ -5765,6 +5774,7 @@ parse_gui_print :
     echo_stdout[] "  [#"{1+$>}"] "${_f$>_path}${_f$>_name}
   done
 
+#
 # Output mode 'list'.
 #
 parse_gui_parseparams_list : u 0 # Tell parser to not parse filter parameters
@@ -5802,11 +5812,12 @@ parse_gui_list :
   y a y
   e[] "\r  >> "${_gmic_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_gmic_n
 
-# Output mode 'gmic'.
 #
-parse_gui_parseparams_gmic : u 1 # Tell parser to parse filter parameters
-parse_gui_gmic :
-  e[] "  >> Generate output, in 'gmic' mode.\n"
+# Output mode 'update'.
+#
+parse_gui_parseparams_update : u 1 # Tell parser to parse filter parameters
+parse_gui_update :
+  e[] "  >> Generate output, in 'update' mode.\n"
   path=/
   N={$_nbfilters-1}
   repeat $_nbfilters,f
@@ -5851,10 +5862,12 @@ parse_gui_gmic :
     strcapitalize ${_f${f}_name} name=${}
 
     if ['${_f${f}_hide}']!=0 ({'"#@gui"$locale" hide("${_f${f}_hide}")\n"'}) fi
-    ({'"#@gui"$locale" "$name" : "${_f${f}_command}," "${_f${f}_commandpreview}$zoomfactor$zoomaccurate$inputmode\n'})
+    ({'"#@gui"$locale" "$name:${_f${f}_command},${_f${f}_commandpreview}$zoomfactor$zoomaccurate$inputmode\n'})
 
     repeat ${_f${f}_nbparams},p
-      if narg(${_f${f}_p${p}_visibility}) visibility=_${_f${f}_p${p}_visibility}${_f${f}_p${p}_propagation} else visibility= fi
+      responsivity,visibility=
+      if !${_f${f}_p${p}_responsivity} responsivity=_ fi
+      if narg(${_f${f}_p${p}_visibility}) visibility=_${_f${f}_p${p}_visibility}${_f${f}_p${p}_propagation} fi
       is_choice={['${_f${f}_p${p}_type}']=='choice'}
 
       # Build list of arguments.
@@ -5873,16 +5886,151 @@ parse_gui_gmic :
           [_'[',_',',_']']
         ):[_'(',_',',_')'];
       "`}
-      strcapitalize ${_f${f}_p${p}_name} name=${}
 
-      ({'"#@gui"$locale" : "{/$name}" = "${_f${f}_p${p}_type}$sep1{/$args}$sep2$visibility\n'})
+      if s=['${_f${f}_p${p}_type}'];"s=='link' || s=='note' || s=='separator' || s=='value'" name=_
+      else strcapitalize ${_f${f}_p${p}_name} name=${}
+      fi
+
+      ({'"#@gui"$locale" :"{/$name}=$responsivity${_f${f}_p${p}_type}$sep1{/$args}$sep2$visibility\n'})
     done
   done
   $_nongui y a y
 
-  # Clean generated output.
+  # Clean generated output, add footer and header.
   compress_gmic.
+  i[0] ({'"#@gmic"\n\
+          "#"\n\
+          "#  File         : update"$_version".gmic"\n\
+          "#                 ( G\47MIC command file )"\n\
+          "#"\n\
+          "#  Description  : Update file for G\47MIC commands and filters (for current version "${-strver}")."\n\
+          "#                 ( https://gmic.eu )"\n\
+          "#"\n\
+          "#  License      : CeCILL v2.1"\n\
+          "#                 ( https://cecill.info/licences/Licence_CeCILL_V2.1-en.html )"\n\
+          "#"\n\
+          "#  Generated on : "\
+          {date(0)}"/"\
+          {`v=date(1);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}"/"\
+          {`v=date(2);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}", "\
+          {`v=date(4);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}":"\
+          {`v=date(5);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}\n\
+          "#"\n'})
+  ({'"\n# Local Variables:"\n\
+     "# mode: sh"\n\
+     "# End:"\n\
+     "#"\n\
+     "# (End of G\47MIC update file)"'})
+  y a y
   e[] "\r  >> "${_gmic_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_gmic_n
+
+#
+# Output mode 'zart' (output in stdout).
+#
+parse_gui_parseparams_zart : u 1 # Tell parser to not parse filter parameters
+parse_gui_trigger_zart :
+  repeat $! l[$>] # Keep only 1-level folders
+    nm {`s=[['{n}'],0];p=find(s,_'/',size(s)-1,0);p>=0?(p=find(s,_'/',p-1,0);p>0?copy(s,s[p+1],size(s)-p));s`}
+  endl done
+  sort_list +,n
+
+parse_gui_zart :
+  e[] "  >> Generate output, in 'zart' mode.\n"
+  echo_stdout[] "<?xml version=\"1.0\" ?>"
+  echo_stdout[] "<document name=\"Presets\">\n"
+
+  current_group=
+  N={$_nbfilters-1}
+  repeat $_nbfilters,f
+    e[] "\r  >> "$_gmic_c[#$f/$N]$_gmic_n" "{`s=vector48(_'" "');copy(s,['${_f${f}_path}${_f${f}_name}']);s`}
+
+    # Manage groups.
+    0 nm. {`s=['${_f${f}_path}'];s[0,size(s)-1]`} path={b} rm.
+    if ['$current_group']!=['$path']
+      if ['$current_group']!=0 echo_stdout[] "</preset_group>\n"
+      fi
+      echo_stdout[] "<!-- ******** \n\n    "$path"\n\n ******** -->"
+      echo_stdout[] "<preset_group name=\""$path"\">\n"
+      current_group=$path
+    fi
+
+    # Filter definition.
+    _parse_gui_zart[] ${_f${f}_name} fname=${}
+
+    echo_stdout[] "<!-- "$path/$fname}" -->"
+    echo_stdout[] "<preset name=\""$fname"\">"
+    echo_stdout[] "  <command>"${_f${f}_commandpreview}" $""*</command>"
+    repeat ${_f${f}_nbparams},p
+      _parse_gui_zart ${_f${f}_p{$p}_name} name=${}
+      type=${_f${f}_p{$p}_type}
+      nbargs=${_f${f}_p{$p}_nbargs}
+      arg0= repeat $nbargs ({'${_f${f}_p${p}_a$>}'}) autocrop. {'\"'} _parse_gui_zart {t} arg$>=${} rm. done
+
+      if ['$type']=='bool'
+        if lowercase(['$arg0'])=='false' arg0=0 elif lowercase(['$arg0'])=='true' arg0=1 elif !isnum($arg0) arg0=0 fi
+        echo_stdout[] "  <bool name=\""$name"\" default=\""$arg0"\" />"
+
+      elif ['$type']=='choice'
+        default=0 n=0 args=
+        l[] if isint($arg0) default=$arg0 n+=1 fi onfail endl
+        c= repeat $nbargs-$n,a args.=${c}"choice"$>"=\""${arg{$n+$a}}"\"" c=" " done
+        echo_stdout[] "  <choice name=\""$name"\" default=\""$default"\" "$args" />"
+
+      elif ['$type']=='color'
+        args= c= repeat $nbargs,a args.=$c${arg$a} c="," done
+        echo_stdout[] "  <color name=\""$name"\" default=\""$args"\" />"
+
+      elif s=['$type'];s=='int'" || "s=='float'
+        echo_stdout[] "  <"$type" name=\""$name"\" default=\""$arg0"\" min=\""$arg1"\" max=\""$arg2"\" />"
+
+      elif ['$type']=='file'" || "['$type']=='filein'" || "['$type']=='fileout'
+        echo_stdout[] "  <file name=\""$name"\" default=\""$arg0"\" />"
+
+      elif ['$type']=='folder'
+        echo_stdout[] "  <folder name=\""$name"\" default=\""$arg0"\" />"
+
+      elif ['$type']=='link'
+        align=-1 name= url= n=0
+        l[] if isnum($arg0) align=$arg0 n+=1 fi onfail endl
+        if $nbargs-$n>1 name=${arg$n} url=${arg{$n+1}}
+        else url,name=${arg$n}
+        fi
+        if $align==0 align=left elif $align==1 align=right else align=center fi
+        echo_stdout[] "  <link name=\""$name"\" url=\""$url"\" align=\""$align"\" />"
+
+      elif ['$type']=='note'
+        text=$arg0
+        echo_stdout[] "  <note text=\""$text"\" />"
+
+      elif ['$type']=='point'
+        echo_stdout[] "  <point name=\""$name"\" position=\""$arg0,$arg1"\" />"
+
+      elif ['$type']=='separator'
+        echo_stdout[] "  <separator />"
+
+      elif ['$type']=='text'
+        echo_stdout[] "  <text name=\""$name"\" default=\""$arg0"\" />"
+
+      elif ['$type']=='value'
+        echo_stdout[] "  <value value=\""$arg0"\" />"
+
+      else # Unsupported parameter
+        echo_stdout[] "  <value value=\""$arg0"\" />"
+      fi
+
+    done
+    echo_stdout[] "</preset>\n"
+  done
+  if narg($current_group) echo_stdout[] "</preset_group>" fi
+  echo_stdout[] "</document>"
+  e[] "\r  >> "${_gmic_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_gmic_n
+
+_parse_gui_zart :
+  l[]
+    ({'"$*"'})
+    replace_str. "&","&amp;" replace_str. "<","&lt;" replace_str. ">","&gt;" replace_str. "\"","&quot;"
+    u {t} rm.
+  onfail u "" endl
 
 # Force certain filters to move from one path to another.
 _upload_filters_move :
@@ -5960,35 +6108,9 @@ upload_filters :
   # Create update file.
   +l.
     e[] "** Generate filter update file."
-    m "parse_gui_trigger_gmic : _upload_filters_move"
-    v + parse_gui. *,gmic v -
-    uncommand parse_gui_trigger_gmic
-
-    # Add footer and header.
-    i[0] ({'"#@gmic"\n\
-            "#"\n\
-            "#  File         : update"$_version".gmic"\n\
-            "#                 ( G\47MIC command file )"\n\
-            "#"\n\
-            "#  Description  : Update file for G\47MIC commands and filters (for current version "${-strver}")."\n\
-            "#                 ( https://gmic.eu )"\n\
-            "#"\n\
-            "#  License      : CeCILL v2.1"\n\
-            "#                 ( https://cecill.info/licences/Licence_CeCILL_V2.1-en.html )"\n\
-            "#"\n\
-            "#  Generated on : "\
-            {date(0)}"/"\
-            {`v=date(1);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}"/"\
-            {`v=date(2);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}", "\
-            {`v=date(4);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}":"\
-            {`v=date(5);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}\n\
-            "#"\n'})
-    ({'"\n# Local Variables:"\n\
-       "# mode: sh"\n\
-       "# End:"\n\
-       "#"\n\
-       "# (End of G\47MIC update file)"'})
-    y a y
+    m "parse_gui_trigger_update : _upload_filters_move"
+    v + parse_gui. *,update v -
+    uncommand parse_gui_trigger_update
 
     # Upload filter files on G'MIC server.
     e[] "** Upload filter update."
@@ -23388,7 +23510,7 @@ str2hex :
 #@cli strcapitalize : string
 #@cli : Capitalize specified string.
 strcapitalize :
-  l[] ({'"$1"'})
+  l[] ({'{/"$1"}'})
     f "(i<=_' ' || i==_'_') && i!=_'\n'?_' ':i" # Replace blank characters and underscores
     f ">
        t(s) = ( unref(ss); const ss = size(s); lowercase(crop(x,ss))!=s || j[ss]!=_' ');
@@ -31798,7 +31920,7 @@ fx_smooth_abstract_preview :
 #@gui : Match Colors With = choice(3,"Nothing","Gamma Balance","Histogram Transfer","PCA transfer")
 #@gui : Colorspace = choice{3,"sRGB","Linear RGB","YCbCr","YCbCr (Luma/Chroma),"YCbCr (Luma Only)",
 #@gui : "YCbCr (Chroma Only)","Lab","Lab (Luma/Chroma)","Lab (Luma Only)","Lab (Chroma Only)"}
-#@gui : Keep Color Channels = choice{"All","Luminance Only (YCbCr)","Luminance Only (Lab)","Chrominances Only (CbCr)",\
+#@gui : Keep Color Channels = choice{"All","Luminance Only (YCbCr)","Luminance Only (Lab)","Chrominances Only (CbCr)",
 #@gui : "Chrominances Only (ab)"}
 #@gui : Smoothness = float(0.7,0,5)
 #@gui : Also Match Gradients = float(1,0,5)
@@ -34172,77 +34294,77 @@ fx_curves_interactive_preview :
 #@gui : CLUT Opacity = float(0.5,0,1)
 #@gui : sep = separator()
 #@gui : note = note("<small><b>Color correspondences:</b></small>")
-#@gui : Action #1 = choice(1,"Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color #1 = color(0,0,0), Target Color #1 = color(0,0,0)
+#@gui : Action \#1 = choice(1,"Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color \#1 = color(0,0,0), Target Color \#1 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action #2 = choice(1,"Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color #2 = color(255,255,255), Target Color #2 = color(255,196,128)
+#@gui : Action \#2 = choice(1,"Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color \#2 = color(255,255,255), Target Color \#2 = color(255,196,128)
 #@gui : sep = separator()
-#@gui : Action #3 = choice("Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color #3 = color(0,0,0), Target Color #3 = color(0,0,0)
+#@gui : Action \#3 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color \#3 = color(0,0,0), Target Color \#3 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action #4 = choice("Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color #4 = color(0,0,0), Target Color #4 = color(0,0,0)
+#@gui : Action \#4 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color \#4 = color(0,0,0), Target Color \#4 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action #5 = choice("Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color #5 = color(0,0,0), Target Color #5 = color(0,0,0)
+#@gui : Action \#5 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color \#5 = color(0,0,0), Target Color \#5 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action #6 = choice("Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color #6 = color(0,0,0), Target Color #6 = color(0,0,0)
+#@gui : Action \#6 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color \#6 = color(0,0,0), Target Color \#6 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action #7 = choice("Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color #7 = color(0,0,0), Target Color #7 = color(0,0,0)
+#@gui : Action \#7 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color \#7 = color(0,0,0), Target Color \#7 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action #8 = choice("Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color #8 = color(0,0,0), Target Color #8 = color(0,0,0)
+#@gui : Action \#8 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color \#8 = color(0,0,0), Target Color \#8 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action #9 = choice("Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color #9 = color(0,0,0), Target Color #9 = color(0,0,0)
+#@gui : Action \#9 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color \#9 = color(0,0,0), Target Color \#9 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action #10 = choice("Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color #10 = color(0,0,0), Target Color #10 = color(0,0,0)
+#@gui : Action \#10 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color \#10 = color(0,0,0), Target Color \#10 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action #11 = choice("Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color #11 = color(0,0,0), Target Color #11 = color(0,0,0)
+#@gui : Action \#11 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color \#11 = color(0,0,0), Target Color \#11 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action #12 = choice("Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color #12 = color(0,0,0), Target Color #12 = color(0,0,0)
+#@gui : Action \#12 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color \#12 = color(0,0,0), Target Color \#12 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action #13 = choice("Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color #13 = color(0,0,0), Target Color #13 = color(0,0,0)
+#@gui : Action \#13 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color \#13 = color(0,0,0), Target Color \#13 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action #14 = choice("Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color #14 = color(0,0,0), Target Color #14 = color(0,0,0)
+#@gui : Action \#14 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color \#14 = color(0,0,0), Target Color \#14 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action #15 = choice("Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color #15 = color(0,0,0), Target Color #15 = color(0,0,0)
+#@gui : Action \#15 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color \#15 = color(0,0,0), Target Color \#15 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action #16 = choice("Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color #16 = color(0,0,0), Target Color #16 = color(0,0,0)
+#@gui : Action \#16 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color \#16 = color(0,0,0), Target Color \#16 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action #17 = choice("Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color #17 = color(0,0,0), Target Color #17 = color(0,0,0)
+#@gui : Action \#17 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color \#17 = color(0,0,0), Target Color \#17 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action #18 = choice("Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color #18 = color(0,0,0), Target Color #18 = color(0,0,0)
+#@gui : Action \#18 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color \#18 = color(0,0,0), Target Color \#18 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action #19 = choice("Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color #19 = color(0,0,0), Target Color #19 = color(0,0,0)
+#@gui : Action \#19 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color \#19 = color(0,0,0), Target Color \#19 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action #20 = choice("Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color #20 = color(0,0,0), Target Color #20 = color(0,0,0)
+#@gui : Action \#20 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color \#20 = color(0,0,0), Target Color \#20 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action #21 = choice("Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color #21 = color(0,0,0), Target Color #21 = color(0,0,0)
+#@gui : Action \#21 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color \#21 = color(0,0,0), Target Color \#21 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action #22 = choice("Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color #22 = color(0,0,0), Target Color #22 = color(0,0,0)
+#@gui : Action \#22 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color \#22 = color(0,0,0), Target Color \#22 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action #23 = choice("Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color #23 = color(0,0,0), Target Color #23 = color(0,0,0)
+#@gui : Action \#23 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color \#23 = color(0,0,0), Target Color \#23 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action #24 = choice("Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color #24 = color(0,0,0), Target Color #24 = color(0,0,0)
+#@gui : Action \#24 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color \#24 = color(0,0,0), Target Color \#24 = color(0,0,0)
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperl&#233;</i>.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 #@gui : Latest Update: <i>2016/14/06</i>.</small>")
@@ -45042,12 +45164,6 @@ fx_solve_maze_preview :
 #@cli : $ https://gmic.eu/samples/heart.gmic go _fps=15 _label="Heart"
 #@cli : $ https://gmic.eu/samples/distortion.gmic go _fps=20 _label="Distortion"
 #@cli : $ https://gmic.eu/samples/rotozoom.gmic go _fps=15 _label="Rotozoom"
-
-
-# TODO :
-#-------
-# - Implement output mode 'xml' for parse_gui.
-
 
 # Local Variables:
 # mode: sh

@@ -4388,7 +4388,7 @@ CImg<char> gmic::substitute_item(const char *const source,
 
           if (!feature[1]) switch (*feature) { // Single-char feature
             case 'b' : { // Image basename
-              if (ind>=0) {
+              if (ind>=0 && *images_names[ind]) {
                 substr.assign(std::max(substr.width(),images_names[ind].width()));
                 cimg::split_filename(images_names[ind].data(),substr);
                 const char *const basename = gmic::basename(substr);
@@ -4402,7 +4402,7 @@ CImg<char> gmic::substitute_item(const char *const source,
               is_substituted = true;
               break;
             case 'f' : { // Image folder name
-              if (ind>=0) {
+              if (ind>=0 && *images_names[ind]) {
                 substr.assign(std::max(substr.width(),images_names[ind].width()));
                 std::strcpy(substr,images_names[ind]);
                 const char *const basename = gmic::basename(substr);
@@ -4416,7 +4416,7 @@ CImg<char> gmic::substitute_item(const char *const source,
               is_substituted = true;
               break;
             case 'n' : // Image name
-              if (ind>=0) {
+              if (ind>=0 && *images_names[ind]) {
                 substr.assign(std::max(substr.width(),images_names[ind].width()));
                 cimg_snprintf(substr,substr.width(),"%s",images_names[ind].data());
                 strreplace_bw(substr);
@@ -4443,7 +4443,7 @@ CImg<char> gmic::substitute_item(const char *const source,
               *substr = 0; is_substituted = true;
             } break;
             case 'x' : // Image extension
-              if (ind>=0) {
+              if (ind>=0 && *images_names[ind]) {
                 substr.assign(std::max(substr.width(),images_names[ind].width()));
                 cimg_snprintf(substr,substr.width(),"%s",
                               cimg::split_filename(images_names[ind].data()));
