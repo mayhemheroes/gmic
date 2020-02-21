@@ -5475,15 +5475,10 @@ update_download_version : check "
 #@cli : Default parameters: 'filter_name=*' and 'output_format=print'.
 parse_gui : skip "${1=*},${2=print}"
   e[^-1] "Parse '#@gui' filters '$1' and output in '$2' mode."
-  if !$! i raw:${_path_rc}update$_version.gmic,uchar fi
   use_vt100
-  y a y
 
-  # Merge multi-line comments.
-  discard {'\r'}
-  eval. "*i==_'\\' && j[-1]!=_'\\' && j[+1]==_'\n' && j[+2]==_'#'?(
-          for (p = 3, j[p] && j[p]<=_' ' && j[p]!=_'\n', ++p); copy(i(),-1,p,1,0))"
-  discard. -1
+  if !$! i raw:${_path_rc}update$_version.gmic,uchar i raw:${_path_user},uchar fi
+  y a y merge_multiline_comments
 
   # Extract all filter chunks with full path.
   e[] ""
@@ -5946,7 +5941,7 @@ parse_gui_zart :
     # Manage groups.
     0 nm. {`s=['${_f${f}_path}'];s[0,size(s)-1]`} path={b} rm.
     if ['$current_group']!=['$path']
-      if narg($current_group) echo_stdout[] "</preset_group>\n"
+      if ['$current_group']!=0 echo_stdout[] "</preset_group>\n"
       fi
       echo_stdout[] "<!-- ******** \n\n    "$path"\n\n ******** -->"
       echo_stdout[] "<preset_group name=\""$path"\">\n"
@@ -5960,7 +5955,7 @@ parse_gui_zart :
     echo_stdout[] "<preset name=\""$fname"\">"
     echo_stdout[] "  <command>"${_f${f}_commandpreview}" $""*</command>"
     repeat ${_f${f}_nbparams},p
-      name=${_f${f}_p{$p}_name}
+      _parse_gui_zart ${_f${f}_p{$p}_name} name=${}
       type=${_f${f}_p{$p}_type}
       nbargs=${_f${f}_p{$p}_nbargs}
       arg0= repeat $nbargs ({'${_f${f}_p${p}_a$>}'}) autocrop. {'\"'} _parse_gui_zart {t} arg$>=${} rm. done
@@ -6026,7 +6021,8 @@ parse_gui_zart :
 
 _parse_gui_zart :
   l[]
-    ({'"$*"'}) replace_str. "&","&amp;" replace_str. "<","&lt;" replace_str. ">","&gt;" replace_str. "\"","&quot;"
+    ({'"$*"'})
+    replace_str. "&","&amp;" replace_str. "<","&lt;" replace_str. ">","&gt;" replace_str. "\"","&quot;"
     u {t} rm.
   onfail u "" endl
 
