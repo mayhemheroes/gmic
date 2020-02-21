@@ -5441,7 +5441,7 @@ update_download_version : check "
 
 #@cli parse_gui : _filter_name,_output_format
 #@cli : Parse selected filter definitions and generate info about filters in selected output format.
-#@cli : 'output_format' can be { list | print | update }.\n
+#@cli : 'output_format' can be { list | print | update | zart }.\n
 #@cli : It is possible to define a custom output mode, by implementing the following commands
 #@cli : ('outputmode' must be replaced by the name of the custom user output mode):
 #@cli : . 'parse_gui_outputmode' : A command that outputs the parsing information with a custom format.
@@ -5862,7 +5862,11 @@ parse_gui_update :
     ({'"#@gui"$locale" "$name:${_f${f}_command},${_f${f}_commandpreview}$zoomfactor$zoomaccurate$inputmode\n'})
 
     repeat ${_f${f}_nbparams},p
-      if narg(${_f${f}_p${p}_visibility}) visibility=_${_f${f}_p${p}_visibility}${_f${f}_p${p}_propagation} else visibility= fi
+      if narg(${_f${f}_p${p}_visibility})
+        visibility=_${_f${f}_p${p}_visibility}${_f${f}_p${p}_propagation}
+      else
+        visibility=
+      fi
       is_choice={['${_f${f}_p${p}_type}']=='choice'}
 
       # Build list of arguments.
@@ -5918,6 +5922,55 @@ parse_gui_update :
      "# (End of G\47MIC update file)"'})
   y a y
   e[] "\r  >> "${_gmic_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_gmic_n
+
+# Output mode 'zart'.
+#
+parse_gui_parseparams_zart : u 1 # Tell parser to not parse filter parameters
+parse_gui_zart :
+  e[] "  >> Generate output, in 'zart' mode.\n"
+  path=/
+  N={$_nbfilters-1}
+  repeat $_nbfilters,f
+#    e[] "\r  >> "$_gmic_c[#$f/$N]$_gmic_n" "{`s=vector48(_'" "');copy(s,['${_f${f}_path}${_f${f}_name}']);s`}
+
+    echo_stdout[] "<!-- "${_f${f}_path}${_f${f}_name}" -->"
+    echo_stdout[] "<preset name=\""${_f${f}_name}"\">"
+    echo_stdout[] "  <command>"${_f${f}_commandpreview}"</command>"
+    repeat ${_f{$f}_nbparams},p
+      name=${_f{$f}_p{$p}_name}
+      type=${_f{$f}_p{$p}_type}
+      if s=['$type'];s=='int'||s=='float'
+        echo_stdout[] "  <"$type" name=\""$name"\" default=\""${_f{$f}_p{$p}_a0}"\" min=\""${_f{$f}_p{$p}_a1}"\" max=\""${_f{$f}_p{$p}_a2}"\" />"
+      elif ['$type']=='separator'
+        echo_stdout[] "  <separator />"
+      elif ['$type']=='note'
+        echo_stdout[] "  <note text=\""${_f${f}_p{$p}_a0}"\" />"
+      elif ['$type']=='choice'
+        default=0 n=0 args=
+        if isint(${_f${f}_p${p}_a0}) default=${_f${f}_p${p}_a0} n+=1 fi
+        repeat ${_f${f}_p${p}_nbargs}-$n,a
+          ({'${_f${f}_p${p}_a{$n+$a}}'}) autocrop. {'\"'} arg={t} rm.
+          args.=${c}"choice"$n"=\""$arg"\""
+        c=, done
+        echo_stdout[] "  <choice name=\""$name"\" default=\""$default"\" "$args" />"
+      elif ['$type']=='link'
+        align=0 name= url= n=0
+        if isnum(${_f${f}_p${p}_a0}) align=${_f${f}_p${p}_a0} n+=1 fi
+        if ${_f${f}_p${p}_nbargs}-$n>1 name=${_f${f}_p${p}_a$n} url=${_f${f}_p${p}_a{$n+1}}
+        else url,name,align=${_f${f}_p${p}_a$n}
+        fi
+        ({'$name'}) autocrop. {'\"'} name={t} rm.
+        ({'$url'}) autocrop. {'\"'} url={t} rm.
+        echo_stdout[] "  <link name=\""$name"\" url=\""$url"\" align=\""$align"\" />"
+      else
+
+        echo_stdout[] "** POUET : "$type
+      fi
+
+    done
+    echo_stdout[] "</preset>\n"
+  done
+
 
 # Force certain filters to move from one path to another.
 _upload_filters_move :
@@ -45051,12 +45104,6 @@ fx_solve_maze_preview :
 #@cli : $ https://gmic.eu/samples/heart.gmic go _fps=15 _label="Heart"
 #@cli : $ https://gmic.eu/samples/distortion.gmic go _fps=20 _label="Distortion"
 #@cli : $ https://gmic.eu/samples/rotozoom.gmic go _fps=15 _label="Rotozoom"
-
-
-# TODO :
-#-------
-# - Implement output mode 'xml' for parse_gui.
-
 
 # Local Variables:
 # mode: sh
