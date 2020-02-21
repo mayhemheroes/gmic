@@ -5768,6 +5768,7 @@ parse_gui : skip "${1=*},${2=print}"
   e[] "\r  > "${_gmic_g}{`s=vector64(_'" "');copy(s,'"Parsing done!"');s`}$_gmic_n
   v + parse_gui_$2 # Output result of the parsing.
 
+#
 # Output mode 'print' (default output mode).
 #
 parse_gui_parseparams_print : u 0 # Tell parser to not parse filter parameters
@@ -5778,6 +5779,7 @@ parse_gui_print :
     echo_stdout[] "  [#"{1+$>}"] "${_f$>_path}${_f$>_name}
   done
 
+#
 # Output mode 'list'.
 #
 parse_gui_parseparams_list : u 0 # Tell parser to not parse filter parameters
@@ -5815,6 +5817,7 @@ parse_gui_list :
   y a y
   e[] "\r  >> "${_gmic_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_gmic_n
 
+#
 # Output mode 'update'.
 #
 parse_gui_parseparams_update : u 1 # Tell parser to parse filter parameters
@@ -5926,6 +5929,7 @@ parse_gui_update :
   y a y
   e[] "\r  >> "${_gmic_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_gmic_n
 
+#
 # Output mode 'zart' (output in stdout).
 #
 parse_gui_parseparams_zart : u 1 # Tell parser to not parse filter parameters
@@ -5934,19 +5938,32 @@ parse_gui_zart :
   echo_stdout[] "<?xml version=\"1.0\" ?>"
   echo_stdout[] "<document name=\"Presets\">\n"
 
-  path=/
+  current_group=
   N={$_nbfilters-1}
   repeat $_nbfilters,f
     e[] "\r  >> "$_gmic_c[#$f/$N]$_gmic_n" "{`s=vector48(_'" "');copy(s,['${_f${f}_path}${_f${f}_name}']);s`}
 
-    echo_stdout[] "<!-- "${_f${f}_path}${_f${f}_name}" -->"
-    echo_stdout[] "<preset name=\""${_f${f}_name}"\">"
+    # Manage groups.
+    0 nm. {`s=['${_f${f}_path}'];s[0,size(s)-1]`} path={b} rm.
+    if ['$current_group']!=['$path']
+      if narg($current_group) echo_stdout[] "</preset_group>\n"
+      fi
+      echo_stdout[] "<!-- ******** \n\n    "$path"\n\n ******** -->"
+      echo_stdout[] "<preset_group name=\""$path"\">\n"
+      current_group=$path
+    fi
+
+    # Filter definition.
+    _parse_gui_zart[] ${_f${f}_name} fname=${}
+
+    echo_stdout[] "<!-- "$path/$fname}" -->"
+    echo_stdout[] "<preset name=\""$fname"\">"
     echo_stdout[] "  <command>"${_f${f}_commandpreview}" $""*</command>"
     repeat ${_f${f}_nbparams},p
       name=${_f${f}_p{$p}_name}
       type=${_f${f}_p{$p}_type}
       nbargs=${_f${f}_p{$p}_nbargs}
-      arg0= repeat $nbargs ({'${_f${f}_p${p}_a$>}'}) autocrop. {'\"'} arg$>={t} rm. done
+      arg0= repeat $nbargs ({'${_f${f}_p${p}_a$>}'}) autocrop. {'\"'} _parse_gui_zart {t} arg$>=${} rm. done
 
       if ['$type']=='bool'
         if lowercase(['$arg0'])=='false' arg0=0 elif lowercase(['$arg0'])=='true' arg0=1 elif !isnum($arg0) arg0=0 fi
@@ -5954,7 +5971,7 @@ parse_gui_zart :
 
       elif ['$type']=='choice'
         default=0 n=0 args=
-        if isint($arg0) default=$arg0 n+=1 fi
+        l[] if isint($arg0) default=$arg0 n+=1 fi onfail endl
         c= repeat $nbargs-$n,a args.=${c}"choice"$>"=\""${arg{$n+$a}}"\"" c=" " done
         echo_stdout[] "  <choice name=\""$name"\" default=\""$default"\" "$args" />"
 
@@ -5973,7 +5990,7 @@ parse_gui_zart :
 
       elif ['$type']=='link'
         align=-1 name= url= n=0
-        if isnum($arg0) align=$arg0 n+=1 fi
+        l[] if isnum($arg0) align=$arg0 n+=1 fi onfail endl
         if $nbargs-$n>1 name=${arg$n} url=${arg{$n+1}}
         else url,name=${arg$n}
         fi
@@ -5981,9 +5998,7 @@ parse_gui_zart :
         echo_stdout[] "  <link name=\""$name"\" url=\""$url"\" align=\""$align"\" />"
 
       elif ['$type']=='note'
-        ({'$arg0'})
-        replace_str. "&","&amp;" replace_str. "<","&lt;" replace_str. ">","&gt;" replace_str. "\"","&quot;"
-        text={t} rm.
+        text=$arg0
         echo_stdout[] "  <note text=\""$text"\" />"
 
       elif ['$type']=='point'
@@ -6005,7 +6020,15 @@ parse_gui_zart :
     done
     echo_stdout[] "</preset>\n"
   done
+  if narg($current_group) echo_stdout[] "</preset_group>" fi
   echo_stdout[] "</document>"
+  e[] "\r  >> "${_gmic_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_gmic_n
+
+_parse_gui_zart :
+  l[]
+    ({'"$*"'}) replace_str. "&","&amp;" replace_str. "<","&lt;" replace_str. ">","&gt;" replace_str. "\"","&quot;"
+    u {t} rm.
+  onfail u "" endl
 
 # Force certain filters to move from one path to another.
 _upload_filters_move :
@@ -31895,7 +31918,7 @@ fx_smooth_abstract_preview :
 #@gui : Match Colors With = choice(3,"Nothing","Gamma Balance","Histogram Transfer","PCA transfer")
 #@gui : Colorspace = choice{3,"sRGB","Linear RGB","YCbCr","YCbCr (Luma/Chroma),"YCbCr (Luma Only)",
 #@gui : "YCbCr (Chroma Only)","Lab","Lab (Luma/Chroma)","Lab (Luma Only)","Lab (Chroma Only)"}
-#@gui : Keep Color Channels = choice{"All","Luminance Only (YCbCr)","Luminance Only (Lab)","Chrominances Only (CbCr)",\
+#@gui : Keep Color Channels = choice{"All","Luminance Only (YCbCr)","Luminance Only (Lab)","Chrominances Only (CbCr)",
 #@gui : "Chrominances Only (ab)"}
 #@gui : Smoothness = float(0.7,0,5)
 #@gui : Also Match Gradients = float(1,0,5)
