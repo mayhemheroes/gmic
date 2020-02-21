@@ -116,9 +116,6 @@
 #      _ 'point(_X,_Y,_removable={ -1 | 0 | 1 },_burst={ 0 | 1 },_R,_G,_B,_[-]A,_radius[%])':
 #          Add X,Y parameters (as a moveable point over the preview).
 #
-#      _ 'value(value)':
-#          Add a pre-defined value parameter (not displayed).
-#
 #      _ 'file[_in,_out](_default_filename)':
 #          Add a filename parameter (as a filechooser).
 #
@@ -142,6 +139,9 @@
 #
 #      _ 'separator()':
 #          Display an horizontal separator (do not add a parameter).
+#
+#      _ 'value(value)':
+#          Add a pre-defined value parameter (not displayed).
 #
 #   Type separators '()' can be replaced by '[]' or '{}' if necessary (for instance if parentheses are required in
 #   an argument of the typedef, e.g in a text). You can also replace 'typedef' by '_typedef' to tell the plug-in not
@@ -2029,6 +2029,7 @@ clean_cluts :
 # by removing empty lines, and useless comments.
 compress_gmic :
   merge_multiline_comments
+  merge_multiline
   eval " # Remove useless comments
     p = 0;
     while (1,
@@ -4048,6 +4049,13 @@ input_gpl :
     rm ($colors) rows 1,100% nm "$1" permute yzcx
   endl
 
+# Merge multi-lines (lines continued by backslash before NL) in a string image.
+merge_multiline :
+  discard {'\r'}
+  eval[^] "*i==_'\\' && j[-1]!=_'\\' && j[+1]==_'\n'?(
+            for (p = 2, j[p] && j[p]<=_' ' && j[p]!=_'\n', ++p); copy(i(),-1,p,1,0))"
+  discard -1
+
 # Merge multi-line comments in a string image.
 merge_multiline_comments :
   discard {'\r'}
@@ -5433,7 +5441,7 @@ update_download_version : check "
 
 #@cli parse_gui : _filter_name,_output_format
 #@cli : Parse selected filter definitions and generate info about filters in selected output format.
-#@cli : 'output_format' can be { list | print | gmic }.\n
+#@cli : 'output_format' can be { list | print | update }.\n
 #@cli : It is possible to define a custom output mode, by implementing the following commands
 #@cli : ('outputmode' must be replaced by the name of the custom user output mode):
 #@cli : . 'parse_gui_outputmode' : A command that outputs the parsing information with a custom format.
@@ -5802,11 +5810,11 @@ parse_gui_list :
   y a y
   e[] "\r  >> "${_gmic_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_gmic_n
 
-# Output mode 'gmic'.
+# Output mode 'update'.
 #
-parse_gui_parseparams_gmic : u 1 # Tell parser to parse filter parameters
-parse_gui_gmic :
-  e[] "  >> Generate output, in 'gmic' mode.\n"
+parse_gui_parseparams_update : u 1 # Tell parser to parse filter parameters
+parse_gui_update :
+  e[] "  >> Generate output, in 'update' mode.\n"
   path=/
   N={$_nbfilters-1}
   repeat $_nbfilters,f
@@ -5851,7 +5859,7 @@ parse_gui_gmic :
     strcapitalize ${_f${f}_name} name=${}
 
     if ['${_f${f}_hide}']!=0 ({'"#@gui"$locale" hide("${_f${f}_hide}")\n"'}) fi
-    ({'"#@gui"$locale" "$name" : "${_f${f}_command}," "${_f${f}_commandpreview}$zoomfactor$zoomaccurate$inputmode\n'})
+    ({'"#@gui"$locale" "$name:${_f${f}_command},${_f${f}_commandpreview}$zoomfactor$zoomaccurate$inputmode\n'})
 
     repeat ${_f${f}_nbparams},p
       if narg(${_f${f}_p${p}_visibility}) visibility=_${_f${f}_p${p}_visibility}${_f${f}_p${p}_propagation} else visibility= fi
@@ -5873,15 +5881,42 @@ parse_gui_gmic :
           [_'[',_',',_']']
         ):[_'(',_',',_')'];
       "`}
-      strcapitalize ${_f${f}_p${p}_name} name=${}
 
-      ({'"#@gui"$locale" : "{/$name}" = "${_f${f}_p${p}_type}$sep1{/$args}$sep2$visibility\n'})
+      if s=['${_f${f}_p${p}_type}'];"s=='link' || s=='note' || s=='separator' || s=='value'" name=_
+      else strcapitalize ${_f${f}_p${p}_name} name=${}
+      fi
+
+      ({'"#@gui"$locale" :"{/$name}=${_f${f}_p${p}_type}$sep1{/$args}$sep2$visibility\n'})
     done
   done
   $_nongui y a y
 
-  # Clean generated output.
+  # Clean generated output, add footer and header.
   compress_gmic.
+  i[0] ({'"#@gmic"\n\
+          "#"\n\
+          "#  File         : update"$_version".gmic"\n\
+          "#                 ( G\47MIC command file )"\n\
+          "#"\n\
+          "#  Description  : Update file for G\47MIC commands and filters (for current version "${-strver}")."\n\
+          "#                 ( https://gmic.eu )"\n\
+          "#"\n\
+          "#  License      : CeCILL v2.1"\n\
+          "#                 ( https://cecill.info/licences/Licence_CeCILL_V2.1-en.html )"\n\
+          "#"\n\
+          "#  Generated on : "\
+          {date(0)}"/"\
+          {`v=date(1);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}"/"\
+          {`v=date(2);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}", "\
+          {`v=date(4);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}":"\
+          {`v=date(5);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}\n\
+          "#"\n'})
+  ({'"\n# Local Variables:"\n\
+     "# mode: sh"\n\
+     "# End:"\n\
+     "#"\n\
+     "# (End of G\47MIC update file)"'})
+  y a y
   e[] "\r  >> "${_gmic_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_gmic_n
 
 # Force certain filters to move from one path to another.
@@ -5960,35 +5995,9 @@ upload_filters :
   # Create update file.
   +l.
     e[] "** Generate filter update file."
-    m "parse_gui_trigger_gmic : _upload_filters_move"
-    v + parse_gui. *,gmic v -
-    uncommand parse_gui_trigger_gmic
-
-    # Add footer and header.
-    i[0] ({'"#@gmic"\n\
-            "#"\n\
-            "#  File         : update"$_version".gmic"\n\
-            "#                 ( G\47MIC command file )"\n\
-            "#"\n\
-            "#  Description  : Update file for G\47MIC commands and filters (for current version "${-strver}")."\n\
-            "#                 ( https://gmic.eu )"\n\
-            "#"\n\
-            "#  License      : CeCILL v2.1"\n\
-            "#                 ( https://cecill.info/licences/Licence_CeCILL_V2.1-en.html )"\n\
-            "#"\n\
-            "#  Generated on : "\
-            {date(0)}"/"\
-            {`v=date(1);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}"/"\
-            {`v=date(2);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}", "\
-            {`v=date(4);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}":"\
-            {`v=date(5);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}\n\
-            "#"\n'})
-    ({'"\n# Local Variables:"\n\
-       "# mode: sh"\n\
-       "# End:"\n\
-       "#"\n\
-       "# (End of G\47MIC update file)"'})
-    y a y
+    m "parse_gui_trigger_update : _upload_filters_move"
+    v + parse_gui. *,update v -
+    uncommand parse_gui_trigger_update
 
     # Upload filter files on G'MIC server.
     e[] "** Upload filter update."
@@ -34172,76 +34181,76 @@ fx_curves_interactive_preview :
 #@gui : CLUT Opacity = float(0.5,0,1)
 #@gui : sep = separator()
 #@gui : note = note("<small><b>Color correspondences:</b></small>")
-#@gui : Action #1 = choice(1,"Ignore","Lock Source","Replace Source by Target")
+#@gui : Action \#1 = choice(1,"Ignore","Lock Source","Replace Source by Target")
 #@gui : Source Color #1 = color(0,0,0), Target Color #1 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action #2 = choice(1,"Ignore","Lock Source","Replace Source by Target")
+#@gui : Action \#2 = choice(1,"Ignore","Lock Source","Replace Source by Target")
 #@gui : Source Color #2 = color(255,255,255), Target Color #2 = color(255,196,128)
 #@gui : sep = separator()
-#@gui : Action #3 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Action \#3 = choice("Ignore","Lock Source","Replace Source by Target")
 #@gui : Source Color #3 = color(0,0,0), Target Color #3 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action #4 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Action \#4 = choice("Ignore","Lock Source","Replace Source by Target")
 #@gui : Source Color #4 = color(0,0,0), Target Color #4 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action #5 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Action \#5 = choice("Ignore","Lock Source","Replace Source by Target")
 #@gui : Source Color #5 = color(0,0,0), Target Color #5 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action #6 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Action \#6 = choice("Ignore","Lock Source","Replace Source by Target")
 #@gui : Source Color #6 = color(0,0,0), Target Color #6 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action #7 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Action \#7 = choice("Ignore","Lock Source","Replace Source by Target")
 #@gui : Source Color #7 = color(0,0,0), Target Color #7 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action #8 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Action \#8 = choice("Ignore","Lock Source","Replace Source by Target")
 #@gui : Source Color #8 = color(0,0,0), Target Color #8 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action #9 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Action \#9 = choice("Ignore","Lock Source","Replace Source by Target")
 #@gui : Source Color #9 = color(0,0,0), Target Color #9 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action #10 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Action \#10 = choice("Ignore","Lock Source","Replace Source by Target")
 #@gui : Source Color #10 = color(0,0,0), Target Color #10 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action #11 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Action \#11 = choice("Ignore","Lock Source","Replace Source by Target")
 #@gui : Source Color #11 = color(0,0,0), Target Color #11 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action #12 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Action \#12 = choice("Ignore","Lock Source","Replace Source by Target")
 #@gui : Source Color #12 = color(0,0,0), Target Color #12 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action #13 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Action \#13 = choice("Ignore","Lock Source","Replace Source by Target")
 #@gui : Source Color #13 = color(0,0,0), Target Color #13 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action #14 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Action \#14 = choice("Ignore","Lock Source","Replace Source by Target")
 #@gui : Source Color #14 = color(0,0,0), Target Color #14 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action #15 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Action \#15 = choice("Ignore","Lock Source","Replace Source by Target")
 #@gui : Source Color #15 = color(0,0,0), Target Color #15 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action #16 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Action \#16 = choice("Ignore","Lock Source","Replace Source by Target")
 #@gui : Source Color #16 = color(0,0,0), Target Color #16 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action #17 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Action \#17 = choice("Ignore","Lock Source","Replace Source by Target")
 #@gui : Source Color #17 = color(0,0,0), Target Color #17 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action #18 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Action \#18 = choice("Ignore","Lock Source","Replace Source by Target")
 #@gui : Source Color #18 = color(0,0,0), Target Color #18 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action #19 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Action \#19 = choice("Ignore","Lock Source","Replace Source by Target")
 #@gui : Source Color #19 = color(0,0,0), Target Color #19 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action #20 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Action \#20 = choice("Ignore","Lock Source","Replace Source by Target")
 #@gui : Source Color #20 = color(0,0,0), Target Color #20 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action #21 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Action \#21 = choice("Ignore","Lock Source","Replace Source by Target")
 #@gui : Source Color #21 = color(0,0,0), Target Color #21 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action #22 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Action \#22 = choice("Ignore","Lock Source","Replace Source by Target")
 #@gui : Source Color #22 = color(0,0,0), Target Color #22 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action #23 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Action \#23 = choice("Ignore","Lock Source","Replace Source by Target")
 #@gui : Source Color #23 = color(0,0,0), Target Color #23 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action #24 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Action \#24 = choice("Ignore","Lock Source","Replace Source by Target")
 #@gui : Source Color #24 = color(0,0,0), Target Color #24 = color(0,0,0)
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperl&#233;</i>.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
