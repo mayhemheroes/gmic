@@ -4772,6 +4772,7 @@ gmic& gmic::_run(const gmic_list<char>& commands_line,
   debug_line = ~0U;
   is_change = false;
   is_debug_info = false;
+  is_debug = false;
   is_start = true;
   is_quit = false;
   is_return = false;
