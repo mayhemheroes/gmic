@@ -4746,7 +4746,6 @@ gmic& gmic::run(const char *const commands_line,
   is_running = true;
   cimg::mutex(26,0);
   starting_commands_line = commands_line;
-  is_debug = false;
   _run(commands_line_to_CImgList(commands_line),
        images,images_names,p_progress,p_is_abort);
   is_running = false;
@@ -4773,7 +4772,6 @@ gmic& gmic::_run(const gmic_list<char>& commands_line,
   debug_line = ~0U;
   is_change = false;
   is_debug_info = false;
-  is_debug = false;
   is_start = true;
   is_quit = false;
   is_return = false;
