@@ -179,13 +179,14 @@
 
 # This command is run when the cli tool 'gmic' is invoked without arguments on the command line.
 cli_noarg :
-  v 0 use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r version
+  v 0 use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r _cli_noarg=1 version
   eo[] "\n[gmic] No commands, options or data provided"
   if {*,u}>0
     eo[] "[gmic] (type "${c}"'gmic help'"$n" to get help, "${c}"'gmic demo'"$n" to launch demos)."
   else
     eo[] "[gmic] (type "${c}"'gmic help'"$n" to get help)."
   fi
+  eo[] ""
   file_update=${_path_rc}update$_version.gmic
   need_update={"Y = date(0); M = date(1); D = date(2); date_current = Y*365 + M*31 + D;
                 Y = date(0,'"{/$file_update}"'); M = date(1,'"{/$file_update}"');
@@ -228,7 +229,8 @@ help : skip ${1=""},${2=1}
     l[] raw:$_path_user,uchar onfail endl
   fi
   if !$! return fi
-  y a y +_help $1,$2 k[0]
+  y a y
+  eo[] "" +_help $1,$2 k[0]
   if narg(${}) _help[0] ${},0 fi # In case of shortcut, display also help for shortcut command.
   rm v 0 q
 
@@ -1340,7 +1342,7 @@ _help_header_ascii :
 __help_header_ascii :
   v 0
   if $_prerelease strprerelease=" (pre-release ""#"$_prerelease")" else strprerelease="" fi
-  str="\n\n  "${_gmic_b}"gmic: GREYC\'s Magic for Image Computing:"$_gmic_n" command-line interface
+  str="\n  "${_gmic_b}"gmic: GREYC\'s Magic for Image Computing:"$_gmic_n" command-line interface
 \n        "$_gmic_g"(https://gmic.eu)"$_gmic_n"
 \n        "${_gmic_m}${_gmic_b}"Version "${-strver}$strprerelease$_gmic_n"
 \n
@@ -1660,6 +1662,7 @@ use_vt100 :
 #@cli version
 #@cli : Display current version number on stdout.
 version :
+  if !0$_cli_noarg eo[] "" fi
   __help_header_ascii[]
 
 v : # Allow 'gmic +v' to get the version number.
