@@ -327,7 +327,7 @@ struct gmic {
                              const char *const command, const char *const item,
                              const gmic_list<T>& images);
 
-  gmic& print(const char *format, ...);
+  gmic& print(const bool is_stdout, const char *format, ...);
   gmic& error(const bool output_header, const char *format, ...);
   gmic& debug(const char *format, ...);
 
@@ -343,7 +343,8 @@ struct gmic {
   void wait_threads(void *const p_gmic_threads, const bool try_abort, const T& pixel_type);
 
   template<typename T>
-  gmic& print(const gmic_list<T>& list, const gmic_image<unsigned int> *const callstack_selection,
+  gmic& print(const bool is_stdout, const gmic_list<T>& list,
+              const gmic_image<unsigned int> *const callstack_selection,
 	      const char *format, ...);
 
   template<typename T>
@@ -431,7 +432,6 @@ struct gmic {
   bool allow_entrypoint, is_change, is_debug, is_running, is_start, is_return, is_quit, is_double3d, is_debug_info,
     _is_abort, *is_abort, is_abort_thread;
   const char *starting_commands_line;
-  std::FILE *ostream;
 };
 
 // Class 'gmic_exception'.
