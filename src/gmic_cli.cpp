@@ -125,10 +125,8 @@ int main(int argc, char **argv) {
       commands_update.unroll('y').append(CImg<char>::vector(0),'y');
       gmic_instance.add_commands(commands_update);
     } catch (...) { is_invalid_updatefile = true; }
-  if (is_invalid_updatefile || (commands_update && (cimg_sscanf(commands_update," #@gmi%c",&sep)!=1 || sep!='c'))) {
-    commands_update.assign(); // Discard invalid update file
-    is_invalid_updatefile = true;
-  }
+  is_invalid_updatefile|=commands_update && (cimg_sscanf(commands_update," #@gmi%c",&sep)!=1 || sep!='c');
+  commands_update.assign();
 
   // Import user file (in parent of resources directory).
   const char *const filename_user = gmic::path_user();
@@ -138,98 +136,9 @@ int main(int argc, char **argv) {
       commands_user.append(CImg<char>::vector(0),'y');
       gmic_instance.add_commands(commands_user,filename_user);
     } catch (...) { is_invalid_userfile = true; }
-  if (is_invalid_userfile) {
-    commands_user.assign(); // Discard invalid update file
-    is_invalid_userfile = true;
-  }
-
-  // Check if help has been requested.
-  const char
-    *const is_help1 = cimg_option("--h",(char*)0,0),
-    *const is_help2 = cimg_option("-h",(char*)0,0),
-    *const is_help3 = argc>1 && !std::strcmp(argv[1],"h")?(argc>2?argv[2]:argv[1]):0,
-    *const is_help4 = cimg_option("--help",(char*)0,0),
-    *const is_help5 = cimg_option("-help",(char*)0,0),
-    *const is_help6 = argc>1 && !std::strcmp(argv[1],"help")?(argc>2?argv[2]:argv[1]):0,
-    *const help_command = is_help1?"--h":is_help2?"-h":is_help3?"h":is_help4?"--help":is_help5?"-help":"help",
-    *const help_argument = is_help1?is_help1:is_help2?is_help2:is_help3?is_help3:
-    is_help4?is_help4:is_help5?is_help5:is_help6;
-  const bool
-    is_help = is_help1 || is_help2 || is_help3 || is_help4 || is_help5 || is_help6,
-    is_global_help = is_help && !std::strcmp(help_command,help_argument);
-
-  if (is_help) {
-
-    // Load specified commands definitions data.
-    CImgList<gmic_pixel_type> images;
-    CImgList<char> images_names;
-    if (commands_user && !is_global_help) commands_user.move_to(images); // User commands don't appear in global help
-    images.insert(commands_update?commands_update:gmic::stdlib);
-
-    if (!is_global_help) for (int i = 1; i<argc; ++i) { // Load other command files if not global help
-        std::FILE *file = 0;
-        CImg<char> filename_tmp(256); *filename_tmp = 0;
-        if ((!std::strcmp("-m",argv[i]) || !std::strcmp("m",argv[i]) ||
-             !std::strcmp("-command",argv[i]) || !std::strcmp("command",argv[i])) && i<argc - 1) {
-          const char *const filename = argv[++i];
-          if (!cimg::strncasecmp(filename,"http://",7) || !cimg::strncasecmp(filename,"https://",8))
-            try {
-              file = std::fopen(cimg::load_network(filename,filename_tmp),"r");
-            } catch (CImgException&) { file = 0; }
-          else file = std::fopen(filename,"r");
-        } else if (!cimg::strcasecmp("gmic",cimg::split_filename(argv[i]))) {
-          const char *const filename = argv[i];
-          if (!cimg::strncasecmp(filename,"http://",7) || !cimg::strncasecmp(filename,"https://",8))
-            try {
-              file = std::fopen(cimg::load_network(filename,filename_tmp),"r");
-            } catch (CImgException&) { file = 0; }
-          else file = std::fopen(filename,"r");
-        }
-        if (file) {
-          const unsigned int n = images.size();
-          try {
-            CImg<unsigned char>::get_load_cimg(file).move_to(images,0);
-          } catch (CImgIOException&) {
-            CImg<unsigned char>::get_load_raw(file).move_to(images,0);
-          }
-          if (images.size()!=n) CImg<unsigned char>::vector('\n').move_to(images,1);
-          cimg::fclose(file);
-          if (*filename_tmp) std::remove(filename_tmp);
-        }
-      }
-
-    cimg::output(stdout);
-
-    if (is_global_help) try { // Global help
-        gmic_instance.run("help \"\"",images,images_names);
-      } catch (...) { // Fallback in case overloaded version of 'help' crashed
-        images.assign().insert(gmic::stdlib);
-        images_names.assign();
-        gmic("_host=cli l help \"\" onfail endl",images,images_names);
-      }
-    else { // Help for a specified command
-      CImg<char> tmp_line(1024);
-      try {
-        cimg_snprintf(tmp_line,tmp_line.width(),"help \"%s\",1",help_argument);
-        gmic_instance.run(tmp_line,images,images_names);
-      } catch (...) { // Fallback in case overloaded version of 'help' crashed
-        cimg_snprintf(tmp_line,tmp_line.width(),"l help \"%s\",1 onfail endl",help_argument);
-        images.assign().insert(gmic::stdlib);
-        images_names.assign();
-        gmic(tmp_line,images,images_names);
-      }
-    }
-    std::exit(0);
-  }
+  commands_user.assign();
 
   // Convert 'argv' into G'MIC command line.
-  const bool is_version = argc==2 && (!std::strcmp(argv[1],"version") ||
-                                      !std::strcmp(argv[1],"-version") ||
-                                      !std::strcmp(argv[1],"--version") ||
-                                      !std::strcmp(argv[1],"+v"));
-  commands_user.assign();
-  commands_update.assign();
-
   CImgList<char> items;
   if (argc==1) // When no args have been specified
     CImg<char>::string("l[] cli_noarg onfail endl").move_to(items);
@@ -268,7 +177,7 @@ int main(int argc, char **argv) {
     // Determine initial verbosity.
     const char *const s_verbosity = std::getenv("GMIC_VERBOSITY");
     if (!s_verbosity || std::sscanf(s_verbosity,"%d%c",&gmic_instance.verbosity,&sep)!=1)
-      gmic_instance.verbosity = gmic_instance.allow_entrypoint || is_version?0:1;
+      gmic_instance.verbosity = gmic_instance.allow_entrypoint?0:1;
   }
 
   // Insert startup command.
