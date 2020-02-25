@@ -177,7 +177,10 @@ int main(int argc, char **argv) {
     // Determine initial verbosity.
     const char *const s_verbosity = std::getenv("GMIC_VERBOSITY");
     if (!s_verbosity || std::sscanf(s_verbosity,"%d%c",&gmic_instance.verbosity,&sep)!=1)
-      gmic_instance.verbosity = gmic_instance.allow_entrypoint?0:1;
+      gmic_instance.verbosity = gmic_instance.allow_entrypoint?0:
+        (argc==2 || argc==3) && (!std::strcmp(argv[1],"help") || !std::strcmp(argv[1],"-help") ||
+                                 !std::strcmp(argv[1],"h") || !std::strcmp(argv[1],"-h"))?0:
+        argc==2 && (!std::strcmp(argv[1],"version") || !std::strcmp(argv[1],"-version"))?0:1;
   }
 
   // Insert startup command.
