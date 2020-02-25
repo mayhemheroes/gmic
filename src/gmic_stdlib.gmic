@@ -180,11 +180,11 @@
 # This command is run when the cli tool 'gmic' is invoked without arguments on the command line.
 cli_noarg :
   v 0 use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r _cli_noarg=1 version
-  eo[] "\n[gmic] No commands, options or data provided"
+  +e[] "\n[gmic] No commands, options or data provided"
   if {*,u}>0
-    eo[] "[gmic] (type "${c}"'gmic help'"$n" to get help, "${c}"'gmic demo'"$n" to launch demos)."
+    +e[] "[gmic] (type "${c}"'gmic help'"$n" to get help, "${c}"'gmic demo'"$n" to launch demos)."
   else
-    eo[] "[gmic] (type "${c}"'gmic help'"$n" to get help)."
+    +e[] "[gmic] (type "${c}"'gmic help'"$n" to get help)."
   fi
   file_update=${_path_rc}update$_version.gmic
   need_update={"Y = date(0); M = date(1); D = date(2); date_current = Y*365 + M*31 + D;
@@ -192,14 +192,14 @@ cli_noarg :
                 D = date(2,'"{/$file_update}"'); date_file = Y*365 + M*31 + D;
                 date_current - date_file>=7"}
   if $need_update
-    eo[] "[gmic] Updating commands..."
+    +e[] "[gmic] Updating commands..."
     l[] update
-      eo[] "\r[gmic] Updating commands: "${g}"Succeeded!"$n
+      +e[] "\r[gmic] Updating commands: "${g}"Succeeded!"$n
     onfail
-      eo[] "\r[gmic] Updating commands: "${r}"Failed!"$n
+      +e[] "\r[gmic] Updating commands: "${r}"Failed!"$n
     endl
   fi
-  eo[] ""
+  +e[] ""
 
 # cli_start
 # This command is called each time the cli interface 'gmic' starts.
@@ -230,13 +230,13 @@ help : skip ${1=""},${2=1}
   fi
   if !$! return fi
   y a y
-  eo[] "" +_help $1,$2 k[0]
+  +_help $1,$2 k[0]
   if narg(${}) _help[0] ${},0 fi # In case of shortcut, display also help for shortcut command.
-  rm v 0 q
+  +e[] "" rm q
 
 _help : skip ${1=""}
   v 0 use_vt100
-  if !narg("$1") _is_example=0 __help ascii eo[] "" rm u "" return fi # Global help.
+  if !narg("$1") _is_example=0 __help ascii +e[] "" rm u "" return fi # Global help.
 
   ({'"$1"'}) autocrop. {'-'}
   if {@100%}==_']'" && "i!=_'[' l. s -,{'['} k[0] endl fi
@@ -254,7 +254,7 @@ _help : skip ${1=""}
     onfail ({'${}'}) s -,{'" (did you mean "'} if $!>1 s[1] -,39 k[1] misspelling={t} fi rm
     endl
     if narg($misspelling) misspelling=" (did you mean '"$_gmic_g$misspelling$_gmic_n"' ?)" fi
-    eo[] "\n[gmic] Command '"$_gmic_r$command$_gmic_n"' has no description"$misspelling". "\
+    +e[] "\n[gmic] Command '"$_gmic_r$command$_gmic_n"' has no description"$misspelling". "\
          "Try '"${_gmic_c}"gmic -h"$_gmic_n"' for global help.\n\n"
     rm u "" return
   fi
@@ -269,7 +269,7 @@ _help : skip ${1=""}
       if ['{0,t}']==['$command']
         _document_gmic_declaration_ascii
         if $_shortcut # Found shortcut command.
-          eo[] "\n    "$_gmic_m${_gmic_b}$command":"$_gmic_n" Shortcut for command '"\
+          +e[] "\n    "$_gmic_m${_gmic_b}$command":"$_gmic_n" Shortcut for command '"\
                $_gmic_m$_gmic_b$_shortcutlink0$_gmic_n"'."
           u $_shortcutlink0 return
         fi
@@ -284,7 +284,7 @@ _help : skip ${1=""}
         if i==_'$' # Example of use.
           rows 1,100% autocrop {'" "'} # Discard '$' character.
           if i==_'$' # Tutorial page.
-             eo[] ""
+             +e[] ""
              if h==1" && "i==_'$' tuturl=https://gmic.eu/tutorial/_$command.shtml
              else autocrop {'$'} autocrop {'" "'} tuturl=https://gmic.eu/tutorial/{0,t}.shtml
              fi
@@ -1348,23 +1348,23 @@ __help_header_ascii :
 \n
 \n        Copyright (c) 2008-2020, David Tschumperle / GREYC / CNRS.
 \n        "$_gmic_c"(https://www.greyc.fr)"$_gmic_n
-  eo[] $str
+  +e[] $str
 
 _help_section_ascii :
   v 0
   _section+=1
   {narg({'"$1"'})},1,1,1,{'-'}
-  eo[] "\n "$_gmic_m$_gmic_b$_section". $1"
-  eo[] "    "${_space{narg({'$_section'})}}{t}$_gmic_n"\n"
+  +e[] "\n "$_gmic_m$_gmic_b$_section". $1"
+  +e[] "    "${_space{narg({'$_section'})}}{t}$_gmic_n"\n"
   rm.
 
 _help_paragraph_ascii :
   v 0
-  eo[] "$*"
+  +e[] "$*"
 
 _help_footer_ascii :
   v 0
-  eo[] " "$_gmic_r$_gmic_b"** G\47MIC comes with ABSOLUTELY NO WARRANTY; for details visit: https://gmic.eu **"$_gmic_n
+  +e[] " "$_gmic_r$_gmic_b"** G\47MIC comes with ABSOLUTELY NO WARRANTY; for details visit: https://gmic.eu **"$_gmic_n
 
 # Commands to output help in html format.
 _help_header_html :
@@ -1379,7 +1379,7 @@ _help_header_html :
   _gmic_b="<span style=\"font-weight: bold\">"
   _gmic_quotedc="<span class=\"ref_code\">"
   _gmic_quotedg="<span style=\\\"color: \#203090; font-family: monospace\\\">"
-  eo[] "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\"
+  +e[] "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\"
  \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">
 \n<!--#include file=\"header.html\" -->
 \n<div id=\"bloc_option\">
@@ -1451,7 +1451,7 @@ _help_header_html :
 _help_section_html :
   v 0
   _section+=1
-  eo[] "<hr style=\"border-top: 1px solid \#ccc;\"/>\n<h2><a href=\"#toc\"><img alt=\"\" border=\"0\"
+  +e[] "<hr style=\"border-top: 1px solid \#ccc;\"/>\n<h2><a href=\"#toc\"><img alt=\"\" border=\"0\"
        src=\"img/back_top.png\" />&nbsp;&nbsp;</a><a id=\"section"$_section"\">$1</a></h2>"
 
 _help_paragraph_html :
@@ -1464,12 +1464,12 @@ _help_paragraph_html :
   replace_str. "  . ","  &#9702; "
   replace_str. "  _ ","  &#9654; "
   add_link_html. 1
-  eo[] "<pre>"{t}"</pre>"
+  +e[] "<pre>"{t}"</pre>"
   rm.
 
 _help_footer_html :
   v 0
-  eo[] "
+  +e[] "
 \n<br/><b><font color=\"brown\">** G\47MIC comes with ABSOLUTELY NO WARRANTY; for details visit:
  <a href=\"https://gmic.eu\">https://gmic.eu **</a></font></b>
 \n</tt>
@@ -1492,7 +1492,7 @@ _help_header_latex :
   _gmic_g="§\\aftergroup\\Ccg§"
   _gmic_c="§\\aftergroup\\Ccb§"
   _gmic_m=""
-  eo[] "\\documentclass[a4paper,10.5pt,twoside]{book}
+  +e[] "\\documentclass[a4paper,10.5pt,twoside]{book}
 \n\\usepackage{hyperref,fancyhdr,graphicx,amssymb,amsmath,times,makeidx,listings,color}
 \n\\graphicspath{{img/}}
 \n\\pagestyle{fancyplain}
@@ -1584,19 +1584,19 @@ _help_header_latex :
 
 _help_section_latex : skip "$1"
   v 0
-  eo[] "~\\\\\\section{$1}"
+  +e[] "~\\\\\\section{$1}"
 
 _help_paragraph_latex : skip "$1"
   v 0
-  eo[] "\\small"
-  eo[] "\\begin{lstlisting}[escapechar=§]"
-  eo[] "$1"
-  eo[] "\\end{lstlisting}"
-  eo[] "\\normalsize"
+  +e[] "\\small"
+  +e[] "\\begin{lstlisting}[escapechar=§]"
+  +e[] "$1"
+  +e[] "\\end{lstlisting}"
+  +e[] "\\normalsize"
 
 _help_footer_latex :
   v 0
-  eo[] "
+  +e[] "
 \n\\printindex
 \n~\\\\$\\square$~End of document.
 \n\n\\end{document}"
@@ -1604,7 +1604,7 @@ _help_footer_latex :
 # Commands to output help in man page format.
 _help_header_man :
   v 0
-  eo[] ".TH G\47MIC 1\n\
+  +e[] ".TH G\47MIC 1\n\
         .SH NAME\n\
         gmic \\- Perform image processing operations using the G\47MIC framework.\n\
         \n\
@@ -1628,7 +1628,7 @@ _help_section_man :
   v 0
   _section+=1
   {narg({'"$1"'})},1,1,1,{'-'}
-  eo[] "\n \\fI"$_section". $1\\fR\n"
+  +e[] "\n \\fI"$_section". $1\\fR\n"
   rm.
 
 _help_paragraph_man :
@@ -1641,7 +1641,7 @@ _help_paragraph_man :
   replace_str "__N","\\\\fR"
   replace_str "__B","\\\\fB"
   replace_str "__I","\\\\fI"
-  eo[] {0,t}
+  +e[] {0,t}
   rm endl
 
 _help_footer_man :
@@ -1662,8 +1662,8 @@ use_vt100 :
 #@cli version
 #@cli : Display current version number on stdout.
 version :
-  if !0$_cli_noarg eo[] "" fi
   __help_header_ascii[]
+  if !0$_cli_noarg +e[] "" fi
 
 v : # Allow 'gmic +v' to get the version number.
   version
@@ -3111,7 +3111,7 @@ _document_gmic_header_ascii : skip $1
 
 _document_gmic_subsection_ascii :
   v 0
-  eo[] "\n\n "$_gmic_r$_gmic_b"**** "{0,t}":"$_gmic_n"\n"
+  +e[] "\n\n "$_gmic_r$_gmic_b"**** "{0,t}":"$_gmic_n"\n"
 
 _document_gmic_declaration_ascii :
   v 0
@@ -3123,17 +3123,17 @@ _document_gmic_declaration_ascii :
     _shortcutqualifier$_shortcut=$qualifier
     _shortcut+=1
   else                                     # Declaration of a regular command.
-    eo[] "\n    "$_gmic_m${_gmic_b}{0,t}${qualifier}":"$_gmic_n rm[0]
+    +e[] "\n    "$_gmic_m${_gmic_b}{0,t}${qualifier}":"$_gmic_n rm[0]
     if $!
       s="        "
       y x
       repeat $!-1 ({'" |"'}) a[$>,-1] x done  # Insert ' |'.
       repeat $! l[$>] _document_gmic_split_ascii 80
         repeat $!-1 ({'\\\\\n$s" "'}) a[$>,-1] x done
-        a x eo[] $_gmic_c$s{0,t}$_gmic_n
+        a x +e[] $_gmic_c$s{0,t}$_gmic_n
       endl done
     fi
-    eo[] ""
+    +e[] ""
   fi
 
 _document_gmic_description_ascii :
@@ -3196,21 +3196,21 @@ _document_gmic_description_ascii :
 
     fi
   fi
-  repeat $! eo[] $s{$>,t} done
+  repeat $! +e[] $s{$>,t} done
 
 _document_gmic_example_ascii :
 
 _document_gmic_footer_ascii : skip $1
   v 0
   if $_shortcut # Document shortcuts.
-    ({'"Command shortcuts"'}) _document_gmic_subsection_ascii. eo[] "" rm.
+    ({'"Command shortcuts"'}) _document_gmic_subsection_ascii. +e[] "" rm.
     _document_gmic_sort_shortcuts[]
     repeat $_shortcut
-      eo[] "    "$_gmic_m${_gmic_b}${_sshortcut$>}" "${_sshortcutqualifier$>}":"$_gmic_n" eq. to '"\
+      +e[] "    "$_gmic_m${_gmic_b}${_sshortcut$>}" "${_sshortcutqualifier$>}":"$_gmic_n" eq. to '"\
           $_gmic_g${_sshortcutlink$>}$_gmic_n"'."
     done
   fi
-  eo[] "\n   "$_gmic_c"[ Total number of commands: "$_command" ]"$_gmic_n
+  +e[] "\n   "$_gmic_c"[ Total number of commands: "$_command" ]"$_gmic_n
 
 _document_gmic_split_ascii :
   do if w>$1
@@ -3225,7 +3225,7 @@ _document_gmic_split_ascii :
 # Define document_gmic commands for bash auto-completion script output.
 _document_gmic_header_bash : skip $1
   v 0
-  eo[] "#
+  +e[] "#
 \n#  Bash completion rules for 'gmic'.
 \n#
 \n# This file has been generated automatically.
@@ -3289,23 +3289,23 @@ _document_gmic_declaration_bash :
 _document_gmic_footer_bash : skip $1
   v 0
   str_coms= repeat $_nbcoms str_coms=${str_coms}" "${_coms$>} done
-  eo[] "\tcoms=\""${str_coms}" \""
-  eo[] "\topts=$(echo \"\$coms\" | sed \"s: \\([^ ]\\+\\): \\1 -\\1 \\+\\1 --\\1:g\")"
-  eo[] "\n\tcase \"${prev}\" in"
+  +e[] "\tcoms=\""${str_coms}" \""
+  +e[] "\topts=$(echo \"\$coms\" | sed \"s: \\([^ ]\\+\\): \\1 -\\1 \\+\\1 --\\1:g\")"
+  +e[] "\n\tcase \"${prev}\" in"
   repeat $_argcommand  # Regular commands with arguments.
     if '${_command$>}'!='i'" && "'${_command$>}'!='o'" && "!same('${_command$>}','input',5)" && "\
        !same('${_command$>}','output',6)
-      eo[] "\t\t\""${_command$>}"\" | \"-"${_command$>}"\" | \"--"${_command$>}"\" | \"+"${_command$>}"\")\n\t\t    "\
+      +e[] "\t\t\""${_command$>}"\" | \"-"${_command$>}"\" | \"--"${_command$>}"\" | \"+"${_command$>}"\")\n\t\t    "\
           "COMPREPLY=( $(compgen -W \""${_argument$>}"\") ); return 0;;"
     fi
   done
   repeat $_shortcut # Shortcut commands (with arguments).
     if ['${_shortcut$>}']!='i'" && "['${_shortcut$>}']!='o'" && "narg(${_argumentlink${_shortcutlink$>}})
-      eo[] "\t\t\""${_shortcut$>}"\" | \"-"${_shortcut$>}"\" | \"--"${_shortcut$>}"\" | \"+"${_shortcut$>}"\") "\
+      +e[] "\t\t\""${_shortcut$>}"\" | \"-"${_shortcut$>}"\" | \"--"${_shortcut$>}"\" | \"+"${_shortcut$>}"\") "\
           "COMPREPLY=( $(compgen -W \""${_argumentlink${_shortcutlink$>}}"\") ); return 0;;"
     fi
   done
-  eo[] "\tesac\n
+  +e[] "\tesac\n
 \n\tCOMPREPLY=( $(compgen -W \"$opts\" -- \"$cur\") )
 \n\t_filedir
 \n}
@@ -3314,7 +3314,7 @@ _document_gmic_footer_bash : skip $1
 # Define document_gmic commands for html output.
 _document_gmic_header_html :
   v 0
-  if $1 eo[] "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\"
+  if $1 +e[] "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\"
  \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">
 \n<head>
 \n<script type=\"text/javascript\" src=\"highslide/highslide.js\"></script>
@@ -3370,7 +3370,7 @@ _document_gmic_ex_off_html :
 
 _document_gmic_subsection_html :
   v 0
-  eo[] ${-eoff}${-doff}"<hr style=\"border-top: 1px solid \#ccc;\"/>\n<br/><h2><a href=\"#toc\"><img alt=\"\"
+  +e[] ${-eoff}${-doff}"<hr style=\"border-top: 1px solid \#ccc;\"/>\n<br/><h2><a href=\"#toc\"><img alt=\"\"
       border=\"0\" src=\"img/back_top.png\" /></a>&nbsp;&nbsp;"\
       "<a id=\"subsection"$_subsection"\"><font color=\"#B00000\">"{0,t}"</font></a></h2>"
 
@@ -3386,17 +3386,17 @@ _document_gmic_declaration_html :
     _shortcut+=1
   else                                     # Declaration of a regular command.
     _command_name={0,t}
-    eo[] ${-eoff}${-doff}"<br/><hr style=\"border-top: 1px solid \#ccc;\"/><p><a id=\""{0,t}"\">"\
+    +e[] ${-eoff}${-doff}"<br/><hr style=\"border-top: 1px solid \#ccc;\"/><p><a id=\""{0,t}"\">"\
      "<span class=\"ref_decl\"><b>"{0,t}"</b></span></a>"$qualifier"&nbsp;&nbsp;&nbsp;<a style=\"font-weight: normal\"
      href=\"#"$_command_name"\"><img src=\"img/icon_link.png\" /></a>"
     if $!>1
-      eo[] "<p style=\"margin-left:50px; font-family: monospace; color: \#900090; text-align: left\">"
+      +e[] "<p style=\"margin-left:50px; font-family: monospace; color: \#900090; text-align: left\">"
       repeat $!-1 l[{1+$>}]
         if h>48 replace_str ",",", " fi
-        eo[] "<span style=\"margin-left:-1.5em\">"{0,t}"</span>"${s{$<==0}}
+        +e[] "<span style=\"margin-left:-1.5em\">"{0,t}"</span>"${s{$<==0}}
       endl done
-      eo[] "</p>"
-    else eo[] ""
+      +e[] "</p>"
+    else +e[] ""
     fi
   fi
 
@@ -3462,9 +3462,9 @@ _document_gmic_description_html :
     s +,{':'} l[^0] a y endl autocrop {':'} autocrop {'" "'}
     if $!>1
       replace_str "ref_code","ref_defvals"
-      eo[] ${-don}"<br/><b>"{0,t}"</b>: "{t}
+      +e[] ${-don}"<br/><b>"{0,t}"</b>: "{t}
     else
-      eo[] ${-don}"<br/>"{0,t}
+      +e[] ${-don}"<br/>"{0,t}
     fi
 
   elif $is_equivalent # Reached line as '#@cli : (eq. to shortcut)'.
@@ -3473,11 +3473,11 @@ _document_gmic_description_html :
     ({'"<span class=\"ref_code\">"'})
     i[3] ({'"</span>"'})
     y fi a y
-    eo[] ${-don}"<i>"{t}"</i>"
+    +e[] ${-don}"<i>"{t}"</i>"
 
   else                                    # Reached line as '#@cli : description'.
-    if (i<_'A'" || "i>_'Z')" && "i!=40" && "i!=39 eo[] ${-don}"&nbsp;"{t}
-    else eo[] ${-don}{t}
+    if (i<_'A'" || "i>_'Z')" && "i!=40" && "i!=39 +e[] ${-don}"&nbsp;"{t}
+    else +e[] ${-don}{t}
     fi
   fi
 
@@ -3487,7 +3487,7 @@ _document_gmic_example_html :
     if h==1" && "i==_'$' tuturl=https://gmic.eu/tutorial/_$_command_name.shtml
     else autocrop {'$'} autocrop {'" "'} tuturl=https://gmic.eu/tutorial/{0,t}.shtml
     fi
-    eo[] ${-eon}"<tr><td width=\"24\" align=\"center\"><a target=\"_blank\" href=\""$tuturl"\">
+    +e[] ${-eon}"<tr><td width=\"24\" align=\"center\"><a target=\"_blank\" href=\""$tuturl"\">
                 <img src=\"img/icon_info.png\" /></td>
                 <td><a target=\"_blank\" href=\""$tuturl"\">A tutorial page exists for this command.</a></td></tr>"
   else # Regular example.
@@ -3508,7 +3508,7 @@ _document_gmic_example_html :
     replace_str. "+"$_command_name"[","+<span style=\"font-weight: bold; color: \#900090\">"$_command_name"</span>["
     replace_str. $_command_name"<","<span style=\"font-weight: bold; color: \#900090\">"$_command_name"</span><"
     replace_str. ">"$_command_name,"><span style=\"font-weight: bold; color: \#900090\">"$_command_name"</span>"
-    eo[] {t}
+    +e[] {t}
     rm.
   fi
 
@@ -3518,15 +3518,15 @@ _document_gmic_footer_html : skip $1
     _subsection+=1
     ({'"Command shortcuts"'}) _document_gmic_subsection_html. rm.
     _document_gmic_sort_shortcuts[]
-    eo[] "<p style=\"margin-left:20px\">"
+    +e[] "<p style=\"margin-left:20px\">"
     repeat $_shortcut
-      eo[] "<font color=\"green\"><b>&nbsp;&nbsp;"${_sshortcut$>}" "${_sshortcutqualifier$>}"</b>:</font>"
+      +e[] "<font color=\"green\"><b>&nbsp;&nbsp;"${_sshortcut$>}" "${_sshortcutqualifier$>}"</b>:</font>"
       ({'${_sshortcutlink$>}'}) scl={t} rm.
-      eo[] "<font color=\"blue\"><i>Shortcut for command '<a href=\"#"$scl"\">"${_sshortcutlink$>}"</a>'</i></font><br/>"
+      +e[] "<font color=\"blue\"><i>Shortcut for command '<a href=\"#"$scl"\">"${_sshortcutlink$>}"</a>'</i></font><br/>"
     done
-    eo[] "</p>"
+    +e[] "</p>"
   fi
-  eo[] ${-eoff}${-doff}"<p style=\"margin-left:50px\"><font color=\"blue\"><b>[ Total number of \
+  +e[] ${-eoff}${-doff}"<p style=\"margin-left:50px\"><font color=\"blue\"><b>[ Total number of \
       commands: "$_command" ]</b></font>"
   uncommand don,doff,eon,eoff
 
@@ -3584,7 +3584,7 @@ _document_gmic_footer_images : skip $1
 _document_gmic_header_latex :
   v 0
   if $1
-    eo[] "\\documentclass[a4paper,10.5pt,twoside]{book}
+    +e[] "\\documentclass[a4paper,10.5pt,twoside]{book}
 \n\\usepackage{hyperref,fancyhdr,graphicx,amssymb,amsmath,times,makeidx,color}
 \n\\graphicspath{{"$_path"}}
 \n\\pagestyle{fancyplain}
@@ -3616,7 +3616,7 @@ _document_gmic_header_latex :
 \n\\begin{document}
 \n\\tableofcontents"
   fi
-  eo[] "\n\\chapter{List of commands}"
+  +e[] "\n\\chapter{List of commands}"
   m "eon : _document_gmic_ex_on_latex"
   m "eoff : _document_gmic_ex_off_latex"
   _is_desc=0
@@ -3642,7 +3642,7 @@ _document_gmic_ex_off_latex :
 _document_gmic_subsection_latex :
   v 0 _is_desc=0
   _document_gmic_replace_latex
-  eo[] ${-eoff}"\n\\section{"{0,t}"}"
+  +e[] ${-eoff}"\n\\section{"{0,t}"}"
 
 _document_gmic_declaration_latex :
   v 0 _is_desc=0
@@ -3658,13 +3658,13 @@ _document_gmic_declaration_latex :
   else                                         # Declaration of a regular command.
     _document_gmic_replace_latex[0]
     _command_name={0,t}
-    eo[] ${-eoff}"\n\n\\subsection{\\emph{"{0,t}"\\index{"{0,t}"}} "$qualifier"}\\vspace*{-0.7em}"
+    +e[] ${-eoff}"\n\n\\subsection{\\emph{"{0,t}"\\index{"{0,t}"}} "$qualifier"}\\vspace*{-0.7em}"
     if $!>1
-      eo[] "~\\\\\\textbf{\\Cb{Arguments: }}\\begin{flushleft}"
+      +e[] "~\\\\\\textbf{\\Cb{Arguments: }}\\begin{flushleft}"
       repeat $!-1 l[{1+$>}]
         s y,-60 if $!>1 i[1--2] ({'\\-'}) fi y a y
         _document_gmic_replace_latex
-        eo[] "{\\small \\Cb{\\hspace*{0.5cm}$\\bullet$~~\\texttt{"{0,t}"}}}"${e{$<==0}}
+        +e[] "{\\small \\Cb{\\hspace*{0.5cm}$\\bullet$~~\\texttt{"{0,t}"}}}"${e{$<==0}}
       endl done
     fi
   fi
@@ -3679,16 +3679,16 @@ _document_gmic_description_latex :
     s +,{':'} l[^0] a y endl autocrop {':'} autocrop {'" "'}
     if $!>1
       replace_str[1] " and ","} and \\\\texttt{"
-      eo[] ${-eoff}"\\begin{flushleft}\\Cc{\\textbf{"{0,t}"}:\\\\~\\\\\\hspace*{0.5cm}{\\small
+      +e[] ${-eoff}"\\begin{flushleft}\\Cc{\\textbf{"{0,t}"}:\\\\~\\\\\\hspace*{0.5cm}{\\small
               $\\bullet$~~\\texttt{"{t}"}}}\\end{flushleft}"
-    else eo[] ${-eoff}$s"~\\\\"{0,t}
+    else +e[] ${-eoff}$s"~\\\\"{0,t}
     fi
   elif $is_equivalent # Reached line as '#@cli : (eq. to 'shortcut').'.
     rows. 8,100% autocrop. {'.'} autocrop. {')'} autocrop. {'" "'}
-    eo[] ${-eoff}$s"(\\emph{eq. to} {\\small \\texttt{"{t}"}})."
+    +e[] ${-eoff}$s"(\\emph{eq. to} {\\small \\texttt{"{t}"}})."
   else                                    # Reached line as '#@cli : description'.
-    if (i<_'A'" || "i>_'Z')" && "i!=40" && "i!=39 eo[] ${-eoff}{t}
-    else eo[] ${-eoff}$s{t}
+    if (i<_'A'" || "i>_'Z')" && "i!=40" && "i!=39 +e[] ${-eoff}{t}
+    else +e[] ${-eoff}$s{t}
     fi
   fi
   _is_desc=1
@@ -3702,9 +3702,9 @@ _document_gmic_example_latex :
     l[] ({'$tuturl'}) replace_str "_","\\_"
     s x,-60 if $!>1 i[1--2] ({'\\\\-'}) fi a x
     replace_str. "_","\\_" tuturl={t} rm endl
-    eo[] ${-eoff}
-    if !$_is_ex eo[] "~\\\\" fi
-    eo[] "~\\textbf{Tutorial page: }\\\\\\url{"$tuturl"}"
+    +e[] ${-eoff}
+    if !$_is_ex +e[] "~\\\\" fi
+    +e[] "~\\textbf{Tutorial page: }\\\\\\url{"$tuturl"}"
   else # Regular example.
     _is_desc=0
     if !isfile(['{/$_filename}']) # Generate picture only if the file doesn't yet exist.
@@ -3713,8 +3713,8 @@ _document_gmic_example_latex :
        uncommand foo
     fi
     _document_gmic_replace_latex
-    eo[] ${-eon}"\\includegraphics[keepaspectratio=true,height=6cm,width=\\textwidth]{"$_filename"}\\\\"
-    eo[] "{\\footnotesize \\textbf{Example "$_example"~:} \\texttt{"{t}"}}"
+    +e[] ${-eon}"\\includegraphics[keepaspectratio=true,height=6cm,width=\\textwidth]{"$_filename"}\\\\"
+    +e[] "{\\footnotesize \\textbf{Example "$_example"~:} \\texttt{"{t}"}}"
   fi
 
 _document_gmic_footer_latex :
@@ -3723,12 +3723,12 @@ _document_gmic_footer_latex :
     ({'"Command shortcuts"'}) _document_gmic_subsection_latex. rm.
     _document_gmic_sort_shortcuts[]
     repeat $_shortcut
-      eo[] "$\\bullet$~'\\texttt{\\Ca{"${_sshortcut$>}"}}' "${_sshortcutqualifier$>}"~is equivalent
+      +e[] "$\\bullet$~'\\texttt{\\Ca{"${_sshortcut$>}"}}' "${_sshortcutqualifier$>}"~is equivalent
           to~~'\\texttt{\\Ca{"${_sshortcutlink$>}"}}'.\\\\"
     done
   fi
   if $1
-    eo[] "
+    +e[] "
 \n\\printindex
 \n~\\\\$\\square$~End of document.
 \n\n\\end{document}"
@@ -3763,7 +3763,7 @@ _document_gmic_header_man : skip $1
 
 _document_gmic_subsection_man :
   v 0
-  eo[] "\n ** \\fI"{0,t}":\\fR"
+  +e[] "\n ** \\fI"{0,t}":\\fR"
 
 _document_gmic_declaration_man :
   v 0
@@ -3775,17 +3775,17 @@ _document_gmic_declaration_man :
     _shortcutqualifier$_shortcut=$qualifier
     _shortcut+=1
   else                                         # Declaration of a regular command.
-    eo[] "\n    "${_gmic_b}{0,t}${qualifier}":"$_gmic_n rm[0]
+    +e[] "\n    "${_gmic_b}{0,t}${qualifier}":"$_gmic_n rm[0]
     if $!
       s="        "
       y x
       repeat $!-1 ({'" |"'}) a[$>,-1] x done  # Insert ' |'.
       repeat $! l[$>] _document_gmic_split_ascii 80
         repeat $!-1 ({'\n$s"  "'}) a[$>,-1] x done
-        a x eo[] $s{0,t}
+        a x +e[] $s{0,t}
       endl done
     fi
-    eo[] ""
+    +e[] ""
   fi
 
 _document_gmic_description_man :
@@ -3796,7 +3796,7 @@ _document_gmic_description_man :
   replace_str "Default values:",${bs0}${s}"\\fIDefault values:\\fR"
   replace_str "Default value:",${bs0}${s}"\\fIDefault value:\\fR"
   replace_str "\\","\\\\"
-  repeat $! eo[] $s{$>,t} done
+  repeat $! +e[] $s{$>,t} done
 
 _document_gmic_example_man :
 
@@ -3849,6 +3849,8 @@ append_newline :
   eval "for (ind = 0, ind<l, ++ind, hind = h#ind; resize(#ind,1,hind+1,1,1,0,0); i[#ind,hind] = _'\n')"
 
 #@cli e : eq. to 'echo'. : (+)
+e : # Allow '+e[]' to be an equivalent to 'echo_stdout[]'
+  ({'"$*"\n'}) o. -.raw,char rm.
 
 #@cli echo : message : (+)
 #@cli : Output specified message on the error output.
@@ -3860,10 +3862,6 @@ append_newline :
 #@cli : (similar to 'echo' for specified output file stream).
 echo_file : skip "${2='\n'}"
   ({"'${2--1}\n'"}) o. raw:$1,char rm.
-
-#@cli eo : equivalent to 'echo_stdout'
-eo :
-  ({'"$*"\n'}) o. -.raw,char rm.
 
 #@cli echo_stdout : message
 #@cli : Output specified message, on the standard output (stdout).
@@ -5480,7 +5478,8 @@ parse_gui : skip "${1=*},${2=print}"
   e[^-1] "Parse '#@gui' filters '$1' and output in '$2' mode."
   use_vt100
 
-  if !$! i raw:${_path_rc}update$_version.gmic,uchar i raw:${_path_user},uchar fi
+  if !$! l[] i raw:${_path_rc}update$_version.gmic,uchar onfail endl fi
+  if !$! return fi
   y a y merge_multiline_comments
 
   # Extract all filter chunks with full path.
@@ -5774,7 +5773,7 @@ parse_gui_trigger_print : sort_list +,n
 parse_gui_print :
   e[] "\n"
   repeat $_nbfilters
-    eo[] "  [#"{1+$>}"] "${_f$>_path}${_f$>_name}
+    +e[] "  [#"{1+$>}"] "${_f$>_path}${_f$>_name}
   done
 
 #
@@ -5939,8 +5938,8 @@ parse_gui_trigger_zart :
 
 parse_gui_zart :
   e[] "  >> Generate output, in 'zart' mode.\n"
-  eo[] "<?xml version=\"1.0\" ?>"
-  eo[] "<document name=\"Presets\">\n"
+  +e[] "<?xml version=\"1.0\" ?>"
+  +e[] "<document name=\"Presets\">\n"
 
   current_group=
   N={$_nbfilters-1}
@@ -5950,19 +5949,19 @@ parse_gui_zart :
     # Manage groups.
     0 nm. {`s=['${_f${f}_path}'];s[0,size(s)-1]`} path={b} rm.
     if ['$current_group']!=['$path']
-      if ['$current_group']!=0 eo[] "</preset_group>\n"
+      if ['$current_group']!=0 +e[] "</preset_group>\n"
       fi
-      eo[] "<!-- ******** \n\n    "$path"\n\n ******** -->"
-      eo[] "<preset_group name=\""$path"\">\n"
+      +e[] "<!-- ******** \n\n    "$path"\n\n ******** -->"
+      +e[] "<preset_group name=\""$path"\">\n"
       current_group=$path
     fi
 
     # Filter definition.
     _parse_gui_zart[] ${_f${f}_name} fname=${}
 
-    eo[] "<!-- "$path/$fname}" -->"
-    eo[] "<preset name=\""$fname"\">"
-    eo[] "  <command>"${_f${f}_commandpreview}" $""*</command>"
+    +e[] "<!-- "$path/$fname" -->"
+    +e[] "<preset name=\""$fname"\">"
+    +e[] "  <command>"${_f${f}_commandpreview}" $""*</command>"
     repeat ${_f${f}_nbparams},p
       _parse_gui_zart ${_f${f}_p{$p}_name} name=${}
       type=${_f${f}_p{$p}_type}
@@ -5971,26 +5970,26 @@ parse_gui_zart :
 
       if ['$type']=='bool'
         if lowercase(['$arg0'])=='false' arg0=0 elif lowercase(['$arg0'])=='true' arg0=1 elif !isnum($arg0) arg0=0 fi
-        eo[] "  <bool name=\""$name"\" default=\""$arg0"\" />"
+        +e[] "  <bool name=\""$name"\" default=\""$arg0"\" />"
 
       elif ['$type']=='choice'
         default=0 n=0 args=
         l[] if isint($arg0) default=$arg0 n+=1 fi onfail endl
         c= repeat $nbargs-$n,a args.=${c}"choice"$>"=\""${arg{$n+$a}}"\"" c=" " done
-        eo[] "  <choice name=\""$name"\" default=\""$default"\" "$args" />"
+        +e[] "  <choice name=\""$name"\" default=\""$default"\" "$args" />"
 
       elif ['$type']=='color'
         args= c= repeat $nbargs,a args.=$c${arg$a} c="," done
-        eo[] "  <color name=\""$name"\" default=\""$args"\" />"
+        +e[] "  <color name=\""$name"\" default=\""$args"\" />"
 
       elif s=['$type'];s=='int'" || "s=='float'
-        eo[] "  <"$type" name=\""$name"\" default=\""$arg0"\" min=\""$arg1"\" max=\""$arg2"\" />"
+        +e[] "  <"$type" name=\""$name"\" default=\""$arg0"\" min=\""$arg1"\" max=\""$arg2"\" />"
 
       elif ['$type']=='file'" || "['$type']=='filein'" || "['$type']=='fileout'
-        eo[] "  <file name=\""$name"\" default=\""$arg0"\" />"
+        +e[] "  <file name=\""$name"\" default=\""$arg0"\" />"
 
       elif ['$type']=='folder'
-        eo[] "  <folder name=\""$name"\" default=\""$arg0"\" />"
+        +e[] "  <folder name=\""$name"\" default=\""$arg0"\" />"
 
       elif ['$type']=='link'
         align=-1 name= url= n=0
@@ -5999,39 +5998,46 @@ parse_gui_zart :
         else url,name=${arg$n}
         fi
         if $align==0 align=left elif $align==1 align=right else align=center fi
-        eo[] "  <link name=\""$name"\" url=\""$url"\" align=\""$align"\" />"
+        +e[] "  <link name=\""$name"\" url=\""$url"\" align=\""$align"\" />"
 
       elif ['$type']=='note'
         text=$arg0
-        eo[] "  <note text=\""$text"\" />"
+        +e[] "  <note text=\""$text"\" />"
 
       elif ['$type']=='point'
-        eo[] "  <point name=\""$name"\" position=\""$arg0,$arg1"\" />"
+        +e[] "  <point name=\""$name"\" position=\""$arg0,$arg1"\" />"
 
       elif ['$type']=='separator'
-        eo[] "  <separator />"
+        +e[] "  <separator />"
 
       elif ['$type']=='text'
-        eo[] "  <text name=\""$name"\" default=\""$arg0"\" />"
+        +e[] "  <text name=\""$name"\" default=\""$arg0"\" />"
 
       elif ['$type']=='value'
-        eo[] "  <value value=\""$arg0"\" />"
+        +e[] "  <value value=\""$arg0"\" />"
 
       else # Unsupported parameter
-        eo[] "  <value value=\""$arg0"\" />"
+        +e[] "  <value value=\""$arg0"\" />"
       fi
 
     done
-    eo[] "</preset>\n"
+    +e[] "</preset>\n"
   done
-  if narg($current_group) eo[] "</preset_group>" fi
-  eo[] "</document>"
+  if narg($current_group) +e[] "</preset_group>" fi
+  +e[] "</document>"
   e[] "\r  >> "${_gmic_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_gmic_n
 
 _parse_gui_zart :
   l[]
     ({'"$*"'})
-    replace_str. "&","&amp;" replace_str. "<","&lt;" replace_str. ">","&gt;" replace_str. "\"","&quot;"
+    replace_str "&amp;","#amp;"
+#    replace_str "&nbsp;","#nbsp;"
+    replace_str. "&","&amp;"
+    replace_str. "<","&lt;"
+    replace_str. ">","&gt;"
+    replace_str. "\"","&quot;"
+    replace_str "#amp;","&amp;"
+#    replace_str "#nbsp;","&nbsp;"
     u {t} rm.
   onfail u "" endl
 
@@ -45167,6 +45173,74 @@ fx_solve_maze_preview :
 #@cli : $ https://gmic.eu/samples/heart.gmic go _fps=15 _label="Heart"
 #@cli : $ https://gmic.eu/samples/distortion.gmic go _fps=20 _label="Distortion"
 #@cli : $ https://gmic.eu/samples/rotozoom.gmic go _fps=15 _label="Rotozoom"
+
+# WIP : Generate still images that can be animated with A4 transparent sheets.
+#------------------------------------------------------------------------------
+fds :
+  opath=$HOME/Desktop/fds/
+  nm={0,b}
+
+  # Auto-reduce number of frames (4, 5 or 6).
+  skip={"
+    l<=6?1:(
+      const l5 = int(l/5);
+      const l4 = int(l/4);
+      const l6 = int(l/6);
+      5*l5==l?l5:
+      6*l6==l?l6:
+      4*l4==l?l4:(
+        const r6 = abs(6*l6 - l);
+        const r5 = abs(5*l5 - l);
+        const r4 = abs(4*l4 - l);
+        r5<=r4 && r5<=r6?l5:
+        r6<=r4 && r6<=r5?l6:
+        l4
+      )
+    )"}
+  k[^:$skip]
+  if $!>6 rm[6--1] fi
+  N=$!
+
+  # Blend all frames with white background, and set correct resolution.
+  to_rgba 100%,100%,1,3,255 blend[^-1] .,alpha,1,1 rm.
+  rr2d 800,600,0,3 c 0,255 n 0,255
+  - 255 r 877,620,1,100%,0,0,0.5,0.5 + 255
+
+  # Generate merged image and mask.
+  a z 100%,100%,1,100%,"z = x%d#-1; i(#-1,x,y,z,c)" rm..
+  100%,100%,1,1,"x%"$N"?0:255"
+  r 3508,2480,1,100%,1
+
+  # Add number of frames as a label.
+  0 t. "\#"$N,0,0,126,1,255 autocrop. frame. 5,5,0 negate. to_rgb. j[^-1] . rm.
+
+  nm ${opath}image/anim${N}_$nm.png,${opath}mask/mask$N.png
+  ow
+  x "convert "${opath}image/anim${N}_$nm.png" "${opath}pdf/anim${N}_$nm.pdf
+  if !isfile('${opath}pdf/mask$N.pdf')
+    x "convert "${opath}mask/mask$N.png" "${opath}pdf/mask$N.pdf
+  fi
+
+all_fds :
+
+  # Clean directory.
+  opath=$HOME/Desktop/fds/
+  x "rm -f "${opath}/image/*" "${opath}/mask/*" "${opath}/pdf/*
+
+  # Generate images.
+  files $HOME/Desktop/fds/gif/*.gif
+  files=${}
+  repeat narg($files)
+    file=${"arg 1+"$>,$files}
+    basename $file
+    e[] "  > "${}
+    rm i $file fds
+  done
+  rm
+
+  # Merge all results as printable .pdf files.
+  x "pdftk "${opath}"pdf/mask*.pdf cat output "${opath}"all_masks.pdf"
+  x "pdftk "${opath}"pdf/anim*.pdf cat output "${opath}"all_anims.pdf"
 
 # Local Variables:
 # mode: sh
