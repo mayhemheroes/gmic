@@ -5944,21 +5944,23 @@ parse_gui_trigger_json :
   sort_list +,n
 
 parse_gui_json :
-  e[] "  >> Generate output, in 'zart' mode.\n"
-  +e[] "{\n  \"format_version\": \"gmic_json_1.0\",\n  \"gmic_version\": \""${-strver}"\",\n  \"preset_groups\": ["
+  e[] "  >> Generate output, in 'json' mode.\n"
+  +e[] "{\n  \"format_version\": \"gmic_json_1.0\",\n  \"gmic_version\": \""${-strver}"\",\n  \"categories\": ["
 
-  current_group=
+  current_category=
   N={$_nbfilters-1}
   repeat $_nbfilters,f
     e[] "\r  >> "$_gmic_c[#$f/$N]$_gmic_n" "{`s=vector48(_'" "');copy(s,['${_f${f}_path}${_f${f}_name}']);s`}
 
-    # Manage groups.
+    # Manage categories.
     0 nm. {`s=['${_f${f}_path}'];s[0,size(s)-1]`} _parse_gui_json[] {b} path=${} rm.
-    if ['$current_group']!=['$path']
-      if ['$current_group']!=0 +e[] "    ]\n  }," fi
+    if ['$current_category']!=['$path']
+      if ['$current_category']!=0 +e[] "    ]\n  }," fi
       +e[] "  {"
-      +e[] "    \"name\": \""$path"\", \"presets\": ["
-      current_group=$path
+      +e[] "    \"name\": \""$path"\", \"filters\": ["
+      current_category=$path
+    else
+      +e[] "    ,"
     fi
 
     # Filter definition.
@@ -5969,7 +5971,7 @@ parse_gui_json :
     sepf={`$<?_',':0`}
     ppos=1
     repeat ${_f${f}_nbparams},p
-      _parse_gui_zart ${_f${f}_p{$p}_name} name=${}
+      _parse_gui_json ${_f${f}_p{$p}_name} name=${}
       type=${_f${f}_p{$p}_type}
       nbargs=${_f${f}_p{$p}_nbargs}
       arg0= repeat $nbargs ({'${_f${f}_p${p}_a$>}'}) autocrop. {'\"'} _parse_gui_json {t} arg$>=${} rm. done
@@ -5977,35 +5979,35 @@ parse_gui_json :
 
       if ['$type']=='bool'
         if lowercase(['$arg0'])=='false' arg0=0 elif lowercase(['$arg0'])=='true' arg0=1 elif !isnum($arg0) arg0=0 fi
-        +e[] "      { \"type\": \"bool\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"arg_pos\": \""$ppos"\" }"$sepp
+        +e[] "      { \"type\": \"bool\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"pos\": \""$ppos"\" }"$sepp
         ppos+=1
 
       elif ['$type']=='choice'
-        default=0 n=0 args=
+        default=0 n=0 choices=
         l[] if isint($arg0) default=$arg0 n+=1 fi onfail endl
-        c= repeat $nbargs-$n,a args.=${c}"choice"$>"=\""${arg{$n+$a}}"\"" c=" " done
-        +e[] "      { \"type\": \"choice\", \"name\": \""$name"\", \"arg_pos\": \""$ppos"\" }"$sepp # <choice name=\""$name"\" default=\""$default"\" "$args" />"
+        c= repeat $nbargs-$n,a choices.=${c}"\""$>"\": \""${arg{$n+$a}}"\"" c=", " done
+        +e[] "      { \"type\": \"choice\", \"name\": \""$name"\", \"default\": \""$default"\", \"pos\": \""$ppos"\", \"choices\": { "$choices" } }"$sepp # <choice name=\""$name"\" default=\""$default"\" "$args" />"
         ppos+=1
 
       elif ['$type']=='color'
         args= c= repeat $nbargs,a args.=$c${arg$a} c="," done
-        +e[] "      { \"type\": \"color\", \"name\": \""$name"\", \"default\": \""$args"\", \"arg_pos\": \""$ppos"\" }"$sepp
+        +e[] "      { \"type\": \"color\", \"name\": \""$name"\", \"default\": \""$args"\", \"pos\": \""$ppos"\" }"$sepp
         ppos+=$nbargs
 
       elif s=['$type'];s=='int'
-        +e[] "      { \"type\": \"int\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"min\": \""$arg1"\", \"max\": \""$arg2"\", \"arg_pos\": \""$ppos"\" }"$sepp
+        +e[] "      { \"type\": \"int\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"min\": \""$arg1"\", \"max\": \""$arg2"\", \"pos\": \""$ppos"\" }"$sepp
         ppos+=1
 
       elif s=['$type'];s=='float'
-        +e[] "      { \"type\": \"float\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"min\": \""$arg1"\", \"max\": \""$arg2"\", \"arg_pos\": \""$ppos"\" }"$sepp
+        +e[] "      { \"type\": \"float\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"min\": \""$arg1"\", \"max\": \""$arg2"\", \"pos\": \""$ppos"\" }"$sepp
         ppos+=1
 
       elif ['$type']=='file'" || "['$type']=='filein'" || "['$type']=='fileout'
-        +e[] "      { \"type\": \"file\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"arg_pos\": \""$ppos"\" }"$sepp
+        +e[] "      { \"type\": \"file\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"pos\": \""$ppos"\" }"$sepp
         ppos+=1
 
       elif ['$type']=='folder'
-        +e[] "      { \"type\": \"folder\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"arg_pos\": \""$ppos"\"}"$sepp
+        +e[] "      { \"type\": \"folder\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"pos\": \""$ppos"\"}"$sepp
         ppos+=1
 
       elif ['$type']=='link'
@@ -6018,39 +6020,40 @@ parse_gui_json :
         +e[] "      { \"type\": \"link\", \"name\": \""$name"\", \"url\": \""$url"\", \"align\": \""$align"\" }"$sepp
 
       elif ['$type']=='note'
-        text=$arg0
-        +e[] "      { \"type\": \"note\", \"text\": \""$text"\"}"$sepp
+        text={/$arg0}
+        text="This is a note"
+        +e[] "      { \"type\": \"note\", \"text\": \""{/$text}"\"}"$sepp
 
       elif ['$type']=='point'
-        +e[] "      { \"type\": \"point\", \"name\": \""$name"\", \"position\": \""$arg0,$arg1"\", \"arg_pos\": \""$ppos"\" }"$sepp
+        +e[] "      { \"type\": \"point\", \"name\": \""$name"\", \"position\": \""$arg0,$arg1"\", \"pos\": \""$ppos"\" }"$sepp
         ppos+=2
 
       elif ['$type']=='separator'
         +e[] "      { \"type\": \"separator\" }"$sepp
 
       elif ['$type']=='text'
-        +e[] "      { \"type\": \"text\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"arg_pos\": \""$ppos"\" }"$sepp
+        +e[] "      { \"type\": \"text\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"pos\": \""$ppos"\" }"$sepp
         ppos+=1
 
       elif ['$type']=='value'
-        +e[] "      { \"type\": \"value\", \"value\": \""$arg0"\", \"arg_pos\": \""$ppos"\" }"$sepp
+        +e[] "      { \"type\": \"value\", \"value\": \""$arg0"\", \"pos\": \""$ppos"\" }"$sepp
         ppos+=1
 
-      else # Unsupported parameter
+      else # Unknown parameter
         +e[] "      { \"type\": \"unknown\", \"name\": \""$name"\" }"$sepp
-#        +e[] "  <value value=\""$arg0"\" />"
       fi
 
     done
     +e[] "      ]\n    }"
   done
-  if narg($current_group) +e[] "    ]\n  }" fi
+  if narg($current_category) +e[] "    ]\n  }" fi
   +e[] "  ]\n}"
   e[] "\r  >> "${_gmic_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_gmic_n
 
 _parse_gui_json :
   l[]
     ({'"$*"'})
+    replace_str "\"","\\\\\""
     replace_str "&amp;","&"
     replace_str "&nbsp;"," "
     replace_str. "<i>",""
@@ -6085,8 +6088,7 @@ parse_gui_zart :
     # Manage groups.
     0 nm. {`s=['${_f${f}_path}'];s[0,size(s)-1]`} path={b} rm.
     if ['$current_group']!=['$path']
-      if ['$current_group']!=0 +e[] "</preset_group>\n"
-      fi
+      if ['$current_group']!=0 +e[] "</preset_group>\n" fi
       +e[] "<!-- ******** \n\n    "$path"\n\n ******** -->"
       +e[] "<preset_group name=\""$path"\">\n"
       current_group=$path
@@ -6137,7 +6139,7 @@ parse_gui_zart :
         +e[] "  <link name=\""$name"\" url=\""$url"\" align=\""$align"\" />"
 
       elif ['$type']=='note'
-        text=$arg0
+        text={/$arg0}
         +e[] "  <note text=\""$text"\" />"
 
       elif ['$type']=='point'
