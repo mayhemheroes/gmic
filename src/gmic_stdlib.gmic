@@ -2031,19 +2031,24 @@ compress_gmic :
   merge_multiline
   eval " # Remove useless comments
     p = 0;
-    while (1,
-      p = find(#0,_'#',p);
-      p<0?break();
-#      (c=i[p-1])<=_' ' && (cr=crop(0,p,1,5))!='#@gui' && cr!='#@web' && cr!='#@cli'?(
-      (c=i[p-1])==_'\n'  && (cr=crop(0,p,1,5))!='#@gui' && cr!='#@web' && cr!='#@cli'?(
-        p0 = p;
-        p>0?while ((c=i[p-1])<=_' ' && c!=_'\n', --p);
-        q = find(#0,_'\n',p0)%h;
-        copy(i[p],-1,q-p,1,0);
-        p = q
-      ):++p
+    while (p<h,
+      q = find(#-1,_'\n',p)%h;
+      p==q?++p:(
+        i[p]==_'#'?( # Line starts with a '#'
+          cr = crop(0,p,1,5);
+          cr!='#@gui' && cr!='#@cli' && cr!='#@web'?copy(i[p],-1,q-p+1,1,0); # Remove comment line
+        ):( # Line doesn't start with a '#' -> look for comment at line end
+          l = find(#-1,_'#',p);
+          l>=0 && l<q && i[l-1]<=_' '?(
+            while (i[--l]<=_' ',0);
+            copy(i[l+1],-1,q-l-1,1,0);
+          );
+          0;
+        );
+        p = q + 1;
+      );
     )"
-  discard. -1
+  discard -1
   autocrop. {_'\n'}
   eval. "* # Merge consecutive line feeds
          i==_'\n' && j[1]==_'\n'?(i()=-1)"
