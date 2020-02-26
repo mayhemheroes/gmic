@@ -5934,6 +5934,106 @@ parse_gui_update :
   e[] "\r  >> "${_gmic_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_gmic_n
 
 #
+# Output mode 'json' (output in stdout).
+#
+parse_gui_parseparams_json : u 1 # Tell parser to not parse filter parameters
+parse_gui_trigger_json :
+  repeat $! l[$>] # Keep only 1-level folders
+    nm {`s=[['{n}'],0];p=find(s,_'/',size(s)-1,0);p>=0?(p=find(s,_'/',p-1,0);p>0?copy(s,s[p+1],size(s)-p));s`}
+  endl done
+  sort_list +,n
+
+parse_gui_json :
+  e[] "  >> Generate output, in 'zart' mode.\n"
+  +e[] "{\n  \"format_version\": \"gmic_json_1.0\",\n  \"gmic_version\": \""${-strver}"\",\n  \"preset_groups\": ["
+
+  current_group=
+  N={$_nbfilters-1}
+  repeat $_nbfilters,f
+    e[] "\r  >> "$_gmic_c[#$f/$N]$_gmic_n" "{`s=vector48(_'" "');copy(s,['${_f${f}_path}${_f${f}_name}']);s`}
+
+    # Manage groups.
+    0 nm. {`s=['${_f${f}_path}'];s[0,size(s)-1]`} path={b} rm.
+    if ['$current_group']!=['$path']
+      if ['$current_group']!=0 +e[] "    ]\n  }," fi
+      +e[] "  {"
+      +e[] "    \"name\": \""$path"\", \"presets\": ["
+      current_group=$path
+    fi
+
+    # Filter definition.
+    _parse_gui_zart[] ${_f${f}_name} fname=${}
+
+#    +e[] "<!-- "$path/$fname" -->"
+#    +e[] "<preset name=\""$fname"\">"
+#    +e[] "  <command>"${_f${f}_commandpreview}" $""*</command>"
+    repeat ${_f${f}_nbparams},p
+      _parse_gui_zart ${_f${f}_p{$p}_name} name=${}
+      type=${_f${f}_p{$p}_type}
+      nbargs=${_f${f}_p{$p}_nbargs}
+      arg0= repeat $nbargs ({'${_f${f}_p${p}_a$>}'}) autocrop. {'\"'} _parse_gui_zart {t} arg$>=${} rm. done
+
+      if ['$type']=='bool'
+        if lowercase(['$arg0'])=='false' arg0=0 elif lowercase(['$arg0'])=='true' arg0=1 elif !isnum($arg0) arg0=0 fi
+#        +e[] "  <bool name=\""$name"\" default=\""$arg0"\" />"
+
+      elif ['$type']=='choice'
+        default=0 n=0 args=
+        l[] if isint($arg0) default=$arg0 n+=1 fi onfail endl
+        c= repeat $nbargs-$n,a args.=${c}"choice"$>"=\""${arg{$n+$a}}"\"" c=" " done
+#        +e[] "  <choice name=\""$name"\" default=\""$default"\" "$args" />"
+
+      elif ['$type']=='color'
+        args= c= repeat $nbargs,a args.=$c${arg$a} c="," done
+#        +e[] "  <color name=\""$name"\" default=\""$args"\" />"
+
+      elif s=['$type'];s=='int'" || "s=='float'
+#        +e[] "  <"$type" name=\""$name"\" default=\""$arg0"\" min=\""$arg1"\" max=\""$arg2"\" />"
+
+      elif ['$type']=='file'" || "['$type']=='filein'" || "['$type']=='fileout'
+#        +e[] "  <file name=\""$name"\" default=\""$arg0"\" />"
+
+      elif ['$type']=='folder'
+#        +e[] "  <folder name=\""$name"\" default=\""$arg0"\" />"
+
+      elif ['$type']=='link'
+        align=-1 name= url= n=0
+        l[] if isnum($arg0) align=$arg0 n+=1 fi onfail endl
+        if $nbargs-$n>1 name=${arg$n} url=${arg{$n+1}}
+        else url,name=${arg$n}
+        fi
+        if $align==0 align=left elif $align==1 align=right else align=center fi
+ #       +e[] "  <link name=\""$name"\" url=\""$url"\" align=\""$align"\" />"
+
+      elif ['$type']=='note'
+        text=$arg0
+#        +e[] "  <note text=\""$text"\" />"
+
+      elif ['$type']=='point'
+#        +e[] "  <point name=\""$name"\" position=\""$arg0,$arg1"\" />"
+
+      elif ['$type']=='separator'
+#        +e[] "  <separator />"
+
+      elif ['$type']=='text'
+#        +e[] "  <text name=\""$name"\" default=\""$arg0"\" />"
+
+      elif ['$type']=='value'
+#        +e[] "  <value value=\""$arg0"\" />"
+
+      else # Unsupported parameter
+#        +e[] "  <value value=\""$arg0"\" />"
+      fi
+
+    done
+#    +e[] "  },"
+  done
+  if narg($current_group) +e[] "    ]\n  }" fi
+  +e[] "  ]"
+  e[] "\r  >> "${_gmic_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_gmic_n
+
+
+#
 # Output mode 'zart' (output in stdout).
 #
 parse_gui_parseparams_zart : u 1 # Tell parser to not parse filter parameters
