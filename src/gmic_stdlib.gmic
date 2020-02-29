@@ -2031,18 +2031,24 @@ compress_gmic :
   merge_multiline
   eval " # Remove useless comments
     p = 0;
-    while (1,
-      p = find(#0,_'#',p);
-      p<0?break();
-      (c=i[p-1])<=_' ' && (cr=crop(0,p,1,5))!='#@gui' && cr!='#@web' && cr!='#@cli'?(
-        p0 = p;
-        p>0?while ((c=i[p-1])<=_' ' && c!=_'\n', --p);
-        q = find(#0,_'\n',p0)%h;
-        copy(i[p],-1,q-p,1,0);
-        p = q
-      ):++p
+    while (p<h,
+      q = find(#-1,_'\n',p)%h;
+      p==q?++p:(
+        i[p]==_'#'?( # Line starts with a '#'
+          cr = crop(0,p,1,5);
+          cr!='#@gui' && cr!='#@cli' && cr!='#@web'?copy(i[p],-1,q-p+1,1,0); # Remove comment line
+        ):( # Line doesn't start with a '#' -> look for comment at line end
+          l = find(#-1,_'#',p);
+          l>=0 && l<q && i[l-1]<=_' '?(
+            while (i[--l]<=_' ',0);
+            copy(i[l+1],-1,q-l-1,1,0);
+          );
+          0;
+        );
+        p = q + 1;
+      );
     )"
-  discard. -1
+  discard -1
   autocrop. {_'\n'}
   eval. "* # Merge consecutive line feeds
          i==_'\n' && j[1]==_'\n'?(i()=-1)"
@@ -5857,6 +5863,7 @@ parse_gui_update :
 
     path=${_f${f}_path}
 
+    if narg(${_f${f}_commandpreview}) commandpreview=,${_f${f}_commandpreview} else commandpreview= fi
     if narg(${_f${f}_locale}) locale=_${_f${f}_locale} else locale= fi
     if narg(${_f${f}_zoomfactor}) zoomfactor=(${_f${f}_zoomfactor}) else zoomfactor= fi
     if ${_f${f}_zoomaccurate} zoomaccurate=+ else zoomaccurate= fi
@@ -5864,7 +5871,7 @@ parse_gui_update :
     strcapitalize ${_f${f}_name} name=${}
 
     if ['${_f${f}_hide}']!=0 ({'"#@gui"$locale" hide("${_f${f}_hide}")\n"'}) fi
-    ({'"#@gui"$locale" "$name:${_f${f}_command},${_f${f}_commandpreview}$zoomfactor$zoomaccurate$inputmode\n'})
+    ({'"#@gui"$locale" "$name:${_f${f}_command}$commandpreview$zoomfactor$zoomaccurate$inputmode\n'})
 
     repeat ${_f${f}_nbparams},p
       responsivity,visibility=
@@ -5927,6 +5934,138 @@ parse_gui_update :
   e[] "\r  >> "${_gmic_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_gmic_n
 
 #
+# Output mode 'json' (output in stdout).
+#
+parse_gui_parseparams_json : u 1 # Tell parser to not parse filter parameters
+parse_gui_trigger_json :
+  repeat $! l[$>] # Keep only 1-level folders
+    nm {`s=[['{n}'],0];p=find(s,_'/',size(s)-1,0);p>=0?(p=find(s,_'/',p-1,0);p>0?copy(s,s[p+1],size(s)-p));s`}
+  endl done
+  sort_list +,n
+
+parse_gui_json :
+  e[] "  >> Generate output, in 'json' mode.\n"
+  +e[] "{\n  \"format_version\": \"gmic_json_1.0\",\n  \"gmic_version\": \""${-strver}"\",\n  \"categories\": ["
+
+  current_category=
+  N={$_nbfilters-1}
+  repeat $_nbfilters,f
+    e[] "\r  >> "$_gmic_c[#$f/$N]$_gmic_n" "{`s=vector48(_'" "');copy(s,['${_f${f}_path}${_f${f}_name}']);s`}
+
+    # Manage categories.
+    0 nm. {`s=['${_f${f}_path}'];s[0,size(s)-1]`} _parse_gui_json[] {b} path=${} rm.
+    if ['$current_category']!=['$path']
+      if ['$current_category']!=0 +e[] "    ]\n  }," fi
+      +e[] "  {"
+      +e[] "    \"name\": \""$path"\", \"filters\": ["
+      current_category=$path
+    else
+      +e[] "    ,"
+    fi
+
+    # Filter definition.
+    _parse_gui_json[] ${_f${f}_name} fname=${}
+
+    +e[] "    {\n      \"name\": \""$fname"\", \"command\": \""${_f${f}_command}"\", \"parameters\": ["
+
+    sepf={`$<?_',':0`}
+    ppos=1
+    repeat ${_f${f}_nbparams},p
+      _parse_gui_json ${_f${f}_p{$p}_name} name=${}
+      type=${_f${f}_p{$p}_type}
+      nbargs=${_f${f}_p{$p}_nbargs}
+      arg0= repeat $nbargs ({'${_f${f}_p${p}_a$>}'}) autocrop. {'\"'} _parse_gui_json {t} arg$>=${} rm. done
+      sepp={`$<?_',':0`}
+
+      if ['$type']=='bool'
+        if lowercase(['$arg0'])=='false' arg0=0 elif lowercase(['$arg0'])=='true' arg0=1 elif !isnum($arg0) arg0=0 fi
+        +e[] "      { \"type\": \"bool\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"pos\": \""$ppos"\" }"$sepp
+        ppos+=1
+
+      elif ['$type']=='choice'
+        default=0 n=0 choices=
+        l[] if isint($arg0) default=$arg0 n+=1 fi onfail endl
+        c= repeat $nbargs-$n,a choices.=${c}"\""$>"\": \""${arg{$n+$a}}"\"" c=", " done
+        +e[] "      { \"type\": \"choice\", \"name\": \""$name"\", \"default\": \""$default"\", \"pos\": \""$ppos"\", \"choices\": { "$choices" } }"$sepp # <choice name=\""$name"\" default=\""$default"\" "$args" />"
+        ppos+=1
+
+      elif ['$type']=='color'
+        args= c= repeat $nbargs,a args.=$c${arg$a} c="," done
+        +e[] "      { \"type\": \"color\", \"name\": \""$name"\", \"default\": \""$args"\", \"pos\": \""$ppos"\" }"$sepp
+        ppos+=$nbargs
+
+      elif s=['$type'];s=='int'
+        +e[] "      { \"type\": \"int\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"min\": \""$arg1"\", \"max\": \""$arg2"\", \"pos\": \""$ppos"\" }"$sepp
+        ppos+=1
+
+      elif s=['$type'];s=='float'
+        +e[] "      { \"type\": \"float\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"min\": \""$arg1"\", \"max\": \""$arg2"\", \"pos\": \""$ppos"\" }"$sepp
+        ppos+=1
+
+      elif ['$type']=='file'" || "['$type']=='filein'" || "['$type']=='fileout'
+        +e[] "      { \"type\": \"file\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"pos\": \""$ppos"\" }"$sepp
+        ppos+=1
+
+      elif ['$type']=='folder'
+        +e[] "      { \"type\": \"folder\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"pos\": \""$ppos"\"}"$sepp
+        ppos+=1
+
+      elif ['$type']=='link'
+        align=-1 name= url= n=0
+        l[] if isnum($arg0) align=$arg0 n+=1 fi onfail endl
+        if $nbargs-$n>1 name=${arg$n} url=${arg{$n+1}}
+        else url,name=${arg$n}
+        fi
+        if $align==0 align=left elif $align==1 align=right else align=center fi
+        +e[] "      { \"type\": \"link\", \"name\": \""$name"\", \"url\": \""$url"\", \"align\": \""$align"\" }"$sepp
+
+      elif ['$type']=='note'
+        text={/$arg0}
+        text="This is a note"
+        +e[] "      { \"type\": \"note\", \"text\": \""{/$text}"\"}"$sepp
+
+      elif ['$type']=='point'
+        +e[] "      { \"type\": \"point\", \"name\": \""$name"\", \"position\": \""$arg0,$arg1"\", \"pos\": \""$ppos"\" }"$sepp
+        ppos+=2
+
+      elif ['$type']=='separator'
+        +e[] "      { \"type\": \"separator\" }"$sepp
+
+      elif ['$type']=='text'
+        +e[] "      { \"type\": \"text\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"pos\": \""$ppos"\" }"$sepp
+        ppos+=1
+
+      elif ['$type']=='value'
+        +e[] "      { \"type\": \"value\", \"value\": \""$arg0"\", \"pos\": \""$ppos"\" }"$sepp
+        ppos+=1
+
+      else # Unknown parameter
+        +e[] "      { \"type\": \"unknown\", \"name\": \""$name"\" }"$sepp
+      fi
+
+    done
+    +e[] "      ]\n    }"
+  done
+  if narg($current_category) +e[] "    ]\n  }" fi
+  +e[] "  ]\n}"
+  e[] "\r  >> "${_gmic_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_gmic_n
+
+_parse_gui_json :
+  l[]
+    ({'"$*"'})
+    replace_str "\"","\\\\\""
+    replace_str "&amp;","&"
+    replace_str "&nbsp;"," "
+    replace_str. "<i>",""
+    replace_str. "</i>",""
+    replace_str. "<b>",""
+    replace_str. "</b>",""
+    replace_str. "<small>",""
+    replace_str. "</small>",""
+    u {t} rm.
+  onfail u "" endl
+
+#
 # Output mode 'zart' (output in stdout).
 #
 parse_gui_parseparams_zart : u 1 # Tell parser to not parse filter parameters
@@ -5949,8 +6088,7 @@ parse_gui_zart :
     # Manage groups.
     0 nm. {`s=['${_f${f}_path}'];s[0,size(s)-1]`} path={b} rm.
     if ['$current_group']!=['$path']
-      if ['$current_group']!=0 +e[] "</preset_group>\n"
-      fi
+      if ['$current_group']!=0 +e[] "</preset_group>\n" fi
       +e[] "<!-- ******** \n\n    "$path"\n\n ******** -->"
       +e[] "<preset_group name=\""$path"\">\n"
       current_group=$path
@@ -6001,7 +6139,7 @@ parse_gui_zart :
         +e[] "  <link name=\""$name"\" url=\""$url"\" align=\""$align"\" />"
 
       elif ['$type']=='note'
-        text=$arg0
+        text={/$arg0}
         +e[] "  <note text=\""$text"\" />"
 
       elif ['$type']=='point'
@@ -34303,77 +34441,77 @@ fx_curves_interactive_preview :
 #@gui : CLUT Opacity = float(0.5,0,1)
 #@gui : sep = separator()
 #@gui : note = note("<small><b>Color correspondences:</b></small>")
-#@gui : Action \#1 = choice(1,"Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color \#1 = color(0,0,0), Target Color \#1 = color(0,0,0)
+#@gui : Action #1 = choice(1,"Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color #1 = color(0,0,0), Target Color #1 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action \#2 = choice(1,"Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color \#2 = color(255,255,255), Target Color \#2 = color(255,196,128)
+#@gui : Action #2 = choice(1,"Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color #2 = color(255,255,255), Target Color #2 = color(255,196,128)
 #@gui : sep = separator()
-#@gui : Action \#3 = choice("Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color \#3 = color(0,0,0), Target Color \#3 = color(0,0,0)
+#@gui : Action #3 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color #3 = color(0,0,0), Target Color #3 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action \#4 = choice("Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color \#4 = color(0,0,0), Target Color \#4 = color(0,0,0)
+#@gui : Action #4 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color #4 = color(0,0,0), Target Color #4 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action \#5 = choice("Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color \#5 = color(0,0,0), Target Color \#5 = color(0,0,0)
+#@gui : Action #5 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color #5 = color(0,0,0), Target Color #5 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action \#6 = choice("Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color \#6 = color(0,0,0), Target Color \#6 = color(0,0,0)
+#@gui : Action #6 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color #6 = color(0,0,0), Target Color #6 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action \#7 = choice("Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color \#7 = color(0,0,0), Target Color \#7 = color(0,0,0)
+#@gui : Action #7 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color #7 = color(0,0,0), Target Color #7 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action \#8 = choice("Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color \#8 = color(0,0,0), Target Color \#8 = color(0,0,0)
+#@gui : Action #8 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color #8 = color(0,0,0), Target Color #8 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action \#9 = choice("Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color \#9 = color(0,0,0), Target Color \#9 = color(0,0,0)
+#@gui : Action #9 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color #9 = color(0,0,0), Target Color #9 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action \#10 = choice("Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color \#10 = color(0,0,0), Target Color \#10 = color(0,0,0)
+#@gui : Action #10 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color #10 = color(0,0,0), Target Color #10 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action \#11 = choice("Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color \#11 = color(0,0,0), Target Color \#11 = color(0,0,0)
+#@gui : Action #11 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color #11 = color(0,0,0), Target Color #11 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action \#12 = choice("Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color \#12 = color(0,0,0), Target Color \#12 = color(0,0,0)
+#@gui : Action #12 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color #12 = color(0,0,0), Target Color #12 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action \#13 = choice("Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color \#13 = color(0,0,0), Target Color \#13 = color(0,0,0)
+#@gui : Action #13 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color #13 = color(0,0,0), Target Color #13 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action \#14 = choice("Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color \#14 = color(0,0,0), Target Color \#14 = color(0,0,0)
+#@gui : Action #14 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color #14 = color(0,0,0), Target Color #14 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action \#15 = choice("Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color \#15 = color(0,0,0), Target Color \#15 = color(0,0,0)
+#@gui : Action #15 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color #15 = color(0,0,0), Target Color #15 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action \#16 = choice("Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color \#16 = color(0,0,0), Target Color \#16 = color(0,0,0)
+#@gui : Action #16 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color #16 = color(0,0,0), Target Color #16 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action \#17 = choice("Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color \#17 = color(0,0,0), Target Color \#17 = color(0,0,0)
+#@gui : Action #17 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color #17 = color(0,0,0), Target Color #17 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action \#18 = choice("Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color \#18 = color(0,0,0), Target Color \#18 = color(0,0,0)
+#@gui : Action #18 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color #18 = color(0,0,0), Target Color #18 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action \#19 = choice("Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color \#19 = color(0,0,0), Target Color \#19 = color(0,0,0)
+#@gui : Action #19 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color #19 = color(0,0,0), Target Color #19 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action \#20 = choice("Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color \#20 = color(0,0,0), Target Color \#20 = color(0,0,0)
+#@gui : Action #20 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color #20 = color(0,0,0), Target Color #20 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action \#21 = choice("Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color \#21 = color(0,0,0), Target Color \#21 = color(0,0,0)
+#@gui : Action #21 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color #21 = color(0,0,0), Target Color #21 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action \#22 = choice("Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color \#22 = color(0,0,0), Target Color \#22 = color(0,0,0)
+#@gui : Action #22 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color #22 = color(0,0,0), Target Color #22 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action \#23 = choice("Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color \#23 = color(0,0,0), Target Color \#23 = color(0,0,0)
+#@gui : Action #23 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color #23 = color(0,0,0), Target Color #23 = color(0,0,0)
 #@gui : sep = separator()
-#@gui : Action \#24 = choice("Ignore","Lock Source","Replace Source by Target")
-#@gui : Source Color \#24 = color(0,0,0), Target Color \#24 = color(0,0,0)
+#@gui : Action #24 = choice("Ignore","Lock Source","Replace Source by Target")
+#@gui : Source Color #24 = color(0,0,0), Target Color #24 = color(0,0,0)
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperl&#233;</i>.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 #@gui : Latest Update: <i>2016/14/06</i>.</small>")
