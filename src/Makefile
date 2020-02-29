@@ -685,7 +685,7 @@ do_gmic_stdlib.h:
 #-----------------------
 bashcompletion:
 	@mkdir -p ../resources
-	@\gmic v - gmic_stdlib.gmic raw:gmic_stdlib.gmic,uchar nm gmic document_gmic bash 2> ../resources/gmic_bashcompletion.sh
+	@\gmic v - gmic_stdlib.gmic raw:gmic_stdlib.gmic,uchar nm gmic document_gmic bash > ../resources/gmic_bashcompletion.sh
 	@echo "Bash completion script 'gmic_bashcompletion.sh' has been successfully generated in '../resources/'."
 
 # Man pages
