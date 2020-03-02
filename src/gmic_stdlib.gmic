@@ -44509,9 +44509,9 @@ fx_animate_lissajous_preview : skip "${4=}"
 
 #@gui Moir&eacute; Animation : fx_moire, fx_moire_preview(1)+ : *
 #@gui : Stripe orientation = choice(1,"Horizontal","Vertical")
-#@gui : Output format = _choice{1,"Same as Input","A4 / 75 PPI (Recommended)","A4 / 150 PPI","A4 / 300 PPI"}
+#@gui : Output format = choice{1,"Same as Input","A4 / 75 PPI (Recommended)","A4 / 150 PPI","A4 / 300 PPI"}
 #@gui : Auto-Reduce Number of Frames = bool(1)
-#@gui : Landscape = _bool(1)
+#@gui : Landscape = bool(1)
 #@gui : Margin (%) = float(2,0,30)
 #@gui : sep = separator()
 #@gui : Print Frame Numbers = choice(1,"Disable","Top Left","Top Right","Bottom Left","Bottom Right")
@@ -44559,11 +44559,20 @@ fx_moire :
   N=$!
 
   # Constrain size of frames.
-  if 0$_is_preview W,H=$_preview_width,$_preview_height
+  if 0$_is_preview
+    W,H=$_preview_width,$_preview_height
+    if $2
+      if $W>$H W={$H/sqrt(2)} else H={$W*sqrt(2)} fi
+      fW,fH=$W,$H
+      W,H/={arg($2,3,2,1)}
+    fi
   elif $2 W,H,fW,fH={"$2==1?[620,877]:$2==2?[1240,1754]:[2480,3508]"},2480,3508
   else W,H=${-max_wh}
   fi
-  if $4 W,H=$H,$W fW,fH=$fH,$fW fi # Landscape mode
+
+  if $2" && "$4 # Landscape mode
+    W,H=$H,$W fW,fH=$fH,$fW
+  fi
   if !narg($fW) fW,fH=$W,$H fi
   repeat $! l[$>] if [w,h]!=[$W,$H]
     - 255
@@ -44581,8 +44590,8 @@ fx_moire :
     100%,100%,1,1,"y%"$N"?0:255"
   fi
 
-  # Upscale 400% with nearest-neighbor for printing.
-  if !0$_is_preview" && "$3 r $fW,$fH,1,100%,1 fi
+  # Upscale with nearest-neighbor for printing.
+  if $2 r $fW,$fH,1,100%,1 fi
 
   # Insert frame number label.
   if $6" && "$7
@@ -45429,74 +45438,6 @@ fx_solve_maze_preview :
 #@cli : $ https://gmic.eu/samples/heart.gmic go _fps=15 _label="Heart"
 #@cli : $ https://gmic.eu/samples/distortion.gmic go _fps=20 _label="Distortion"
 #@cli : $ https://gmic.eu/samples/rotozoom.gmic go _fps=15 _label="Rotozoom"
-
-# WIP : Generate still images that can be animated with A4 transparent sheets.
-#------------------------------------------------------------------------------
-fds :
-  opath=$HOME/Desktop/fds/
-  nm={0,b}
-
-  # Auto-reduce number of frames (4, 5 or 6).
-  skip={"
-    l<=6?1:(
-      const l5 = int(l/5);
-      const l4 = int(l/4);
-      const l6 = int(l/6);
-      5*l5==l?l5:
-      6*l6==l?l6:
-      4*l4==l?l4:(
-        const r6 = abs(6*l6 - l);
-        const r5 = abs(5*l5 - l);
-        const r4 = abs(4*l4 - l);
-        r5<=r4 && r5<=r6?l5:
-        r6<=r4 && r6<=r5?l6:
-        l4
-      )
-    )"}
-  k[^:$skip]
-  if $!>6 rm[6--1] fi
-  N=$!
-
-  # Blend all frames with white background, and set correct resolution.
-  to_rgba 100%,100%,1,3,255 blend[^-1] .,alpha,1,1 rm.
-  rr2d 800,600,0,3 c 0,255 n 0,255
-  - 255 r 877,620,1,100%,0,0,0.5,0.5 + 255
-
-  # Generate merged image and mask.
-  a z 100%,100%,1,100%,"z = x%d#-1; i(#-1,x,y,z,c)" rm..
-  100%,100%,1,1,"x%"$N"?0:255"
-  r 3508,2480,1,100%,1
-
-  # Add number of frames as a label.
-  0 t. "\#"$N,0,0,126,1,255 autocrop. frame. 5,5,0 negate. to_rgb. j[^-1] . rm.
-
-  nm ${opath}image/anim${N}_$nm.png,${opath}mask/mask$N.png
-  ow
-  x "convert "${opath}image/anim${N}_$nm.png" "${opath}pdf/anim${N}_$nm.pdf
-  if !isfile('${opath}pdf/mask$N.pdf')
-    x "convert "${opath}mask/mask$N.png" "${opath}pdf/mask$N.pdf
-  fi
-
-all_fds :
-
-  # Clean directory.
-  opath=$HOME/Desktop/fds/
-  x "rm -f "${opath}/image/*" "${opath}/mask/*" "${opath}/pdf/*
-
-  # Generate images.
-  files $HOME/Desktop/fds/gif/*.gif
-  files=${}
-  repeat narg($files)
-    file=${"arg 1+"$>,$files}
-    basename $file
-    e[] "  > "${}
-    rm i $file fds
-  done
-  rm
-
-  # Merge all results as printable .pdf files.
-  x "pdftk "${opath}"pdf/mask*.pdf cat output "${opath}"all_masks.pdf"
-  x "pdftk "${opath}"pdf/anim*.pdf cat output "${opath}"all_anims.pdf"
 
 # Local Variables:
 # mode: sh
