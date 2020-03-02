@@ -220,12 +220,12 @@ h :
 #@cli : Display help (optionally for specified command only) and exit.
 #@cli : (eq. to 'h').
 help : skip ${1=""},${2=1}
-  if isfile(['$_path_rc/update$_version.gmic'])
+  if isfile(['{/$_path_rc/update$_version.gmic}'])
     l[] cimgz:$_path_rc/update$_version.gmic
     onfail l[] it $_path_rc/update$_version.gmic onfail endl
     endl
   fi
-  if narg("$1")" && "isfile(['$_path_user'])
+  if narg("$1")" && "isfile(['{/$_path_user}'])
     l[] it $_path_user onfail endl
   fi
   if !$! return fi
@@ -3528,7 +3528,8 @@ _document_gmic_footer_html : skip $1
     repeat $_shortcut
       +e[] "<font color=\"green\"><b>&nbsp;&nbsp;"${_sshortcut$>}" "${_sshortcutqualifier$>}"</b>:</font>"
       ({'${_sshortcutlink$>}'}) scl={t} rm.
-      +e[] "<font color=\"blue\"><i>Shortcut for command '<a href=\"#"$scl"\">"${_sshortcutlink$>}"</a>'</i></font><br/>"
+      +e[] "<font color=\"blue\"><i>Shortcut for command '<a href=\"#"$scl"\">"${_sshortcutlink$>}\
+           "</a>'</i></font><br/>"
     done
     +e[] "</p>"
   fi
@@ -3862,6 +3863,8 @@ e : # Allow '+e[]' to be an equivalent to 'echo_stdout[]'
 #@cli : Output specified message on the error output.
 #@cli : (eq. to 'e').\n
 #@cli : Command selection (if any) stands for displayed call stack subset instead of image indices.
+echo : # Allow '+echo[]' to be an equivalent to 'echo_stdout[]'
+  ({'"$*"\n'}) o. -.raw,char rm.
 
 #@cli echo_file : filename,message
 #@cli : Output specified message, appending it to specified output file.
@@ -5475,7 +5478,7 @@ update_download_version : check "
 
 #@cli parse_gui : _filter_name,_output_format
 #@cli : Parse selected filter definitions and generate info about filters in selected output format.
-#@cli : 'output_format' can be { list | print | update | zart }.\n
+#@cli : 'output_format' can be { json | list | print | update | zart }.\n
 #@cli : It is possible to define a custom output mode, by implementing the following commands
 #@cli : ('outputmode' must be replaced by the name of the custom user output mode):
 #@cli : . 'parse_gui_outputmode' : A command that outputs the parsing information with a custom format.
@@ -6007,35 +6010,42 @@ parse_gui_json :
 
       if ['$type']=='bool'
         if lowercase(['$arg0'])=='false' arg0=0 elif lowercase(['$arg0'])=='true' arg0=1 elif !isnum($arg0) arg0=0 fi
-        ({'"      { \"type\": \"bool\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"pos\": \""$ppos"\" }"$sepp\n'})
+        ({'"      { \"type\": \"bool\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"pos\": \""$ppos"\" }"\
+          $sepp\n'})
         ppos+=1
 
       elif ['$type']=='choice'
         default=0 n=0 choices=
         l[] if isint($arg0) default=$arg0 n+=1 fi onfail endl
         c= repeat $nbargs-$n,a choices.=${c}"\""$>"\": \""${arg{$n+$a}}"\"" c=", " done
-        ({'"      { \"type\": \"choice\", \"name\": \""$name"\", \"default\": \""$default"\", \"pos\": \""$ppos"\", \"choices\": { "$choices" } }"$sepp\n'})
+        ({'"      { \"type\": \"choice\", \"name\": \""$name"\", \"default\": \""$default"\", \"pos\": \""$ppos"\", "\
+           "\"choices\": { "$choices" } }"$sepp\n'})
         ppos+=1
 
       elif ['$type']=='color'
         args= c= repeat $nbargs,a args.=$c${arg$a} c="," done
-        ({'"      { \"type\": \"color\", \"name\": \""$name"\", \"default\": \""$args"\", \"pos\": \""$ppos"\" }"$sepp\n'})
+        ({'"      { \"type\": \"color\", \"name\": \""$name"\", \"default\": \""$args"\", \"pos\": \""$ppos"\" }"\
+          $sepp\n'})
         ppos+=$nbargs
 
       elif s=['$type'];s=='int'
-        ({'"      { \"type\": \"int\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"min\": \""$arg1"\", \"max\": \""$arg2"\", \"pos\": \""$ppos"\" }"$sepp\n'})
+        ({'"      { \"type\": \"int\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"min\": \""$arg1"\", "\
+           "\"max\": \""$arg2"\", \"pos\": \""$ppos"\" }"$sepp\n'})
         ppos+=1
 
       elif s=['$type'];s=='float'
-        ({'"      { \"type\": \"float\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"min\": \""$arg1"\", \"max\": \""$arg2"\", \"pos\": \""$ppos"\" }"$sepp\n'})
+         ({'"      { \"type\": \"float\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"min\": \""$arg1"\", "\
+            "max\": \""$arg2"\", \"pos\": \""$ppos"\" }"$sepp\n'})
         ppos+=1
 
       elif ['$type']=='file'" || "['$type']=='filein'" || "['$type']=='fileout'
-        ({'"      { \"type\": \"file\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"pos\": \""$ppos"\" }"$sepp\n'})
+        ({'"      { \"type\": \"file\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"pos\": \""$ppos"\" }"\
+          $sepp\n'})
         ppos+=1
 
       elif ['$type']=='folder'
-        ({'"      { \"type\": \"folder\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"pos\": \""$ppos"\"}"$sepp\n'})
+        ({'"      { \"type\": \"folder\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"pos\": \""$ppos"\"}"\
+          $sepp\n'})
         ppos+=1
 
       elif ['$type']=='link'
@@ -6053,14 +6063,16 @@ parse_gui_json :
         ({'"      { \"type\": \"note\", \"text\": \""{/$text}"\"}"$sepp\n'})
 
       elif ['$type']=='point'
-        ({'"      { \"type\": \"point\", \"name\": \""$name"\", \"position\": \""$arg0,$arg1"\", \"pos\": \""$ppos"\" }"$sepp\n'})
+        ({'"      { \"type\": \"point\", \"name\": \""$name"\", \"position\": \""$arg0,$arg1"\", \"pos\": "\
+           "\""$ppos"\" }"$sepp\n'})
         ppos+=2
 
       elif ['$type']=='separator'
         ({'"      { \"type\": \"separator\" }"$sepp\n'})
 
       elif ['$type']=='text'
-        ({'"      { \"type\": \"text\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"pos\": \""$ppos"\" }"$sepp\n'})
+        ({'"      { \"type\": \"text\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"pos\": \""$ppos"\" }"\
+          $sepp\n'})
         ppos+=1
 
       elif ['$type']=='value'
@@ -32196,7 +32208,7 @@ _fx_stylize : # Download pre-defined style image
   else name="$1"
   fi
   filename=${-path_cache}style_$name.png
-  if isfile(['$filename']) $filename
+  if isfile(['{/$filename}']) $filename
   else i https://gmic.eu/img/style_$name.png o. $filename
   fi
 
@@ -44505,6 +44517,110 @@ fx_animate_lissajous_preview : skip "${4=}"
   fx_animate_preview fx_lissajous,"${5-22}",\
                                   "${23-40}",0
 
+#@gui Moir&eacute; Animation : fx_moire, fx_moire_preview(1)+ : *
+#@gui : Stripe orientation = choice(1,"Horizontal","Vertical")
+#@gui : Input Transparency = choice("Replace With White","Reconstruct From Previous Frames")
+#@gui : Output Format = choice{1,"Same as Input","A4 / 75 PPI (Recommended)","A4 / 150 PPI","A4 / 300 PPI"}
+#@gui : Auto-Reduce Number of Frames = bool(1)
+#@gui : Landscape = bool(1)
+#@gui : Margin (%) = float(2,0,30)
+#@gui : sep = separator()
+#@gui : Print Frame Numbers = choice(1,"Disable","Top Left","Top Right","Bottom Left","Bottom Right")
+#@gui : Size of Frame Numbers (%) = float(5,0,30)
+#@gui : sep = separator()
+#@gui : note = note{"<small><b><span color="#EE5500">Instructions:</span></b>\n\n
+#@gui : This filter renders Moire Animations, as shown on
+#@gui : <a href="https://www.youtube.com/watch?v=f5plDb_JRq4">this video</a>.\n
+#@gui : To make the animation visible:\n\n
+#@gui : &bull; Before running the filter, ensure that all frames are aligned and have the same size
+#@gui : (and preferably without alpha)!\n
+#@gui : &bull; Run the filter. It is recommended to keep the number of frames &lt;=6.\n
+#@gui : &bull; Print the first layer (merged frames) on a A4 blank paper.\n
+#@gui : &bull; Print the second layer (mask) on a A4 transparent sheet.\n
+#@gui : &bull; Drag the transparent layer over the A4 paper to render the animation effect.
+#@gui : "}
+#@gui : sep = separator()
+#@gui : note = note("<small>Author: <i>David Tschumperl&#233;</i>.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+#@gui : Latest Update: <i>2020/03/02</i>.</small>")
+fx_moire :
+  if 0$_is_preview" && "!narg($_preview_width) _preview_width,_preview_height=512 fi
+
+  # Reconstruct frames from base image.
+  if $2 repeat $! if $>" && "{$<,s==2||s==4} blend[$<] [{$<+1}],alpha,1,1 fi done fi
+
+  # Auto-reduce number of frames (4, 5 or 6).
+  if $4
+    skip={"
+      l<=6?1:(
+        const l5 = int(l/5);
+        const l4 = int(l/4);
+        const l6 = int(l/6);
+        5*l5==l?l5:
+        6*l6==l?l6:
+        4*l4==l?l4:(
+          const r6 = abs(6*l6 - l);
+          const r5 = abs(5*l5 - l);
+          const r4 = abs(4*l4 - l);
+          r5<=r4 && r5<=r6?l5:
+          r6<=r4 && r6<=r5?l6:
+          l4
+        )
+      )"}
+    k[^:$skip]
+    if $!>6 rm[6--1] fi
+  fi
+  N=$!
+
+  # Blend with white background.
+  repeat $! l[$>] if s==2||s==4 drgba 255 fi endl done
+
+  # Constrain size of frames.
+  if 0$_is_preview
+    W,H=$_preview_width,$_preview_height
+    if $3
+      if $W>$H W={$H/sqrt(2)} else H={$W*sqrt(2)} fi
+      fW,fH=$W,$H
+      W,H/={arg($3,3,2,1)}
+    fi
+  elif $3 W,H,fW,fH={"$3==1?[620,877]:$3==2?[1240,1754]:[2480,3508]"},2480,3508
+  else W,H=${-max_wh}
+  fi
+
+  if $3" && "$5 # Landscape mode
+    W,H=$H,$W fW,fH=$fH,$fW
+  fi
+  if !narg($fW) fW,fH=$W,$H fi
+  repeat $! l[$>] if [w,h]!=[$W,$H]
+    - 255
+    rr2d {(100-$6)%*[$W,$H]},2,2
+    r $W,$H,1,100%,0,0,0.5,0.5
+    + 255
+  fi endl done
+
+  # Generate merged image and mask.
+  if $1 # Vertical stripes
+    100%,100%,1,100%,"i(#x%"$N",x,y,z,c)" rm[^-1]
+    100%,100%,1,1,"x%"$N"?0:255"
+  else # Horizontal stripes
+    100%,100%,1,100%,"i(#y%"$N",x,y,z,c)" rm[^-1]
+    100%,100%,1,1,"y%"$N"?0:255"
+  fi
+
+  # Upscale with nearest-neighbor for printing.
+  if $3 r $fW,$fH,1,100%,1 fi
+
+  # Insert frame number label.
+  if $7" && "$8
+    ax,ay={a=$7-1;[a%2,int(a/2)]}
+    0 t. "#"$N,0,0,{0,h*$8%},1,255 autocrop. frame. 5%,15%,0 negate. to_rgb. j[^-1] .,$ax~,$ay~ rm.
+  fi
+  nm "name(Merged Frames),pos(0,0),opacity(100),mode(alpha)","name(Mask),pos(0,0),opacity(100),mode(alpha)"
+  u $N
+
+fx_moire_preview :
+  _is_preview=1
+  fx_moire $*
+
 #@gui Rodilius [Animated] : fx_animate_rodilius, fx_animate_rodilius_preview(1)
 #@gui : Frames = _int(10,2,100)
 #@gui : Output as Frames = _bool(1)
@@ -45339,74 +45455,6 @@ fx_solve_maze_preview :
 #@cli : $ https://gmic.eu/samples/heart.gmic go _fps=15 _label="Heart"
 #@cli : $ https://gmic.eu/samples/distortion.gmic go _fps=20 _label="Distortion"
 #@cli : $ https://gmic.eu/samples/rotozoom.gmic go _fps=15 _label="Rotozoom"
-
-# WIP : Generate still images that can be animated with A4 transparent sheets.
-#------------------------------------------------------------------------------
-fds :
-  opath=$HOME/Desktop/fds/
-  nm={0,b}
-
-  # Auto-reduce number of frames (4, 5 or 6).
-  skip={"
-    l<=6?1:(
-      const l5 = int(l/5);
-      const l4 = int(l/4);
-      const l6 = int(l/6);
-      5*l5==l?l5:
-      6*l6==l?l6:
-      4*l4==l?l4:(
-        const r6 = abs(6*l6 - l);
-        const r5 = abs(5*l5 - l);
-        const r4 = abs(4*l4 - l);
-        r5<=r4 && r5<=r6?l5:
-        r6<=r4 && r6<=r5?l6:
-        l4
-      )
-    )"}
-  k[^:$skip]
-  if $!>6 rm[6--1] fi
-  N=$!
-
-  # Blend all frames with white background, and set correct resolution.
-  to_rgba 100%,100%,1,3,255 blend[^-1] .,alpha,1,1 rm.
-  rr2d 800,600,0,3 c 0,255 n 0,255
-  - 255 r 877,620,1,100%,0,0,0.5,0.5 + 255
-
-  # Generate merged image and mask.
-  a z 100%,100%,1,100%,"z = x%d#-1; i(#-1,x,y,z,c)" rm..
-  100%,100%,1,1,"x%"$N"?0:255"
-  r 3508,2480,1,100%,1
-
-  # Add number of frames as a label.
-  0 t. "\#"$N,0,0,126,1,255 autocrop. frame. 5,5,0 negate. to_rgb. j[^-1] . rm.
-
-  nm ${opath}image/anim${N}_$nm.png,${opath}mask/mask$N.png
-  ow
-  x "convert "${opath}image/anim${N}_$nm.png" "${opath}pdf/anim${N}_$nm.pdf
-  if !isfile('${opath}pdf/mask$N.pdf')
-    x "convert "${opath}mask/mask$N.png" "${opath}pdf/mask$N.pdf
-  fi
-
-all_fds :
-
-  # Clean directory.
-  opath=$HOME/Desktop/fds/
-  x "rm -f "${opath}/image/*" "${opath}/mask/*" "${opath}/pdf/*
-
-  # Generate images.
-  files $HOME/Desktop/fds/gif/*.gif
-  files=${}
-  repeat narg($files)
-    file=${"arg 1+"$>,$files}
-    basename $file
-    e[] "  > "${}
-    rm i $file fds
-  done
-  rm
-
-  # Merge all results as printable .pdf files.
-  x "pdftk "${opath}"pdf/mask*.pdf cat output "${opath}"all_masks.pdf"
-  x "pdftk "${opath}"pdf/anim*.pdf cat output "${opath}"all_anims.pdf"
 
 # Local Variables:
 # mode: sh
