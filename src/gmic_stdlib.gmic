@@ -3528,7 +3528,8 @@ _document_gmic_footer_html : skip $1
     repeat $_shortcut
       +e[] "<font color=\"green\"><b>&nbsp;&nbsp;"${_sshortcut$>}" "${_sshortcutqualifier$>}"</b>:</font>"
       ({'${_sshortcutlink$>}'}) scl={t} rm.
-      +e[] "<font color=\"blue\"><i>Shortcut for command '<a href=\"#"$scl"\">"${_sshortcutlink$>}"</a>'</i></font><br/>"
+      +e[] "<font color=\"blue\"><i>Shortcut for command '<a href=\"#"$scl"\">"${_sshortcutlink$>}\
+           "</a>'</i></font><br/>"
     done
     +e[] "</p>"
   fi
@@ -6009,35 +6010,42 @@ parse_gui_json :
 
       if ['$type']=='bool'
         if lowercase(['$arg0'])=='false' arg0=0 elif lowercase(['$arg0'])=='true' arg0=1 elif !isnum($arg0) arg0=0 fi
-        ({'"      { \"type\": \"bool\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"pos\": \""$ppos"\" }"$sepp\n'})
+        ({'"      { \"type\": \"bool\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"pos\": \""$ppos"\" }"\
+          $sepp\n'})
         ppos+=1
 
       elif ['$type']=='choice'
         default=0 n=0 choices=
         l[] if isint($arg0) default=$arg0 n+=1 fi onfail endl
         c= repeat $nbargs-$n,a choices.=${c}"\""$>"\": \""${arg{$n+$a}}"\"" c=", " done
-        ({'"      { \"type\": \"choice\", \"name\": \""$name"\", \"default\": \""$default"\", \"pos\": \""$ppos"\", \"choices\": { "$choices" } }"$sepp\n'})
+        ({'"      { \"type\": \"choice\", \"name\": \""$name"\", \"default\": \""$default"\", \"pos\": \""$ppos"\", "\
+           "\"choices\": { "$choices" } }"$sepp\n'})
         ppos+=1
 
       elif ['$type']=='color'
         args= c= repeat $nbargs,a args.=$c${arg$a} c="," done
-        ({'"      { \"type\": \"color\", \"name\": \""$name"\", \"default\": \""$args"\", \"pos\": \""$ppos"\" }"$sepp\n'})
+        ({'"      { \"type\": \"color\", \"name\": \""$name"\", \"default\": \""$args"\", \"pos\": \""$ppos"\" }"\
+          $sepp\n'})
         ppos+=$nbargs
 
       elif s=['$type'];s=='int'
-        ({'"      { \"type\": \"int\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"min\": \""$arg1"\", \"max\": \""$arg2"\", \"pos\": \""$ppos"\" }"$sepp\n'})
+        ({'"      { \"type\": \"int\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"min\": \""$arg1"\", "\
+           "\"max\": \""$arg2"\", \"pos\": \""$ppos"\" }"$sepp\n'})
         ppos+=1
 
       elif s=['$type'];s=='float'
-        ({'"      { \"type\": \"float\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"min\": \""$arg1"\", \"max\": \""$arg2"\", \"pos\": \""$ppos"\" }"$sepp\n'})
+         ({'"      { \"type\": \"float\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"min\": \""$arg1"\", "\
+            "max\": \""$arg2"\", \"pos\": \""$ppos"\" }"$sepp\n'})
         ppos+=1
 
       elif ['$type']=='file'" || "['$type']=='filein'" || "['$type']=='fileout'
-        ({'"      { \"type\": \"file\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"pos\": \""$ppos"\" }"$sepp\n'})
+        ({'"      { \"type\": \"file\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"pos\": \""$ppos"\" }"\
+          $sepp\n'})
         ppos+=1
 
       elif ['$type']=='folder'
-        ({'"      { \"type\": \"folder\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"pos\": \""$ppos"\"}"$sepp\n'})
+        ({'"      { \"type\": \"folder\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"pos\": \""$ppos"\"}"\
+          $sepp\n'})
         ppos+=1
 
       elif ['$type']=='link'
@@ -6055,14 +6063,16 @@ parse_gui_json :
         ({'"      { \"type\": \"note\", \"text\": \""{/$text}"\"}"$sepp\n'})
 
       elif ['$type']=='point'
-        ({'"      { \"type\": \"point\", \"name\": \""$name"\", \"position\": \""$arg0,$arg1"\", \"pos\": \""$ppos"\" }"$sepp\n'})
+        ({'"      { \"type\": \"point\", \"name\": \""$name"\", \"position\": \""$arg0,$arg1"\", \"pos\": "\
+           "\""$ppos"\" }"$sepp\n'})
         ppos+=2
 
       elif ['$type']=='separator'
         ({'"      { \"type\": \"separator\" }"$sepp\n'})
 
       elif ['$type']=='text'
-        ({'"      { \"type\": \"text\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"pos\": \""$ppos"\" }"$sepp\n'})
+        ({'"      { \"type\": \"text\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"pos\": \""$ppos"\" }"\
+          $sepp\n'})
         ppos+=1
 
       elif ['$type']=='value'
@@ -44519,9 +44529,11 @@ fx_animate_lissajous_preview : skip "${4=}"
 #@gui : Size of Frame Numbers (%) = float(5,0,30)
 #@gui : sep = separator()
 #@gui : note = note{"<small><b><span color="#EE5500">Instructions:</span></b>\n\n
-#@gui : This filter renders Moire Animations, as shown on <a href="https://www.youtube.com/watch?v=f5plDb_JRq4">this video</a>.\n
+#@gui : This filter renders Moire Animations, as shown on
+#@gui : <a href="https://www.youtube.com/watch?v=f5plDb_JRq4">this video</a>.\n
 #@gui : To make the animation visible:\n\n
-#@gui : &bull; Before running the filter, ensure that all frames are aligned and have the same size (and preferably without alpha)!\n
+#@gui : &bull; Before running the filter, ensure that all frames are aligned and have the same size
+#@gui : (and preferably without alpha)!\n
 #@gui : &bull; Run the filter. It is recommended to keep the number of frames &lt;=6.\n
 #@gui : &bull; Print the first layer (merged frames) on a A4 blank paper.\n
 #@gui : &bull; Print the second layer (mask) on a A4 transparent sheet.\n
@@ -44533,10 +44545,8 @@ fx_animate_lissajous_preview : skip "${4=}"
 fx_moire :
   if 0$_is_preview" && "!narg($_preview_width) _preview_width,_preview_height=512 fi
 
-  # Manage input frame transparency.
-  if $2 repeat $! if $>" && "{$<,s==2||s==4} blend[$<] [{$<+1}],alpha,1,1 fi done
-  else repeat $! l[$>] if s==2||s==4 drgba 255 fi endl done
-  fi
+  # Reconstruct frames from base image.
+  if $2 repeat $! if $>" && "{$<,s==2||s==4} blend[$<] [{$<+1}],alpha,1,1 fi done fi
 
   # Auto-reduce number of frames (4, 5 or 6).
   if $4
@@ -44560,6 +44570,9 @@ fx_moire :
     if $!>6 rm[6--1] fi
   fi
   N=$!
+
+  # Blend with white background.
+  repeat $! l[$>] if s==2||s==4 drgba 255 fi endl done
 
   # Constrain size of frames.
   if 0$_is_preview
@@ -44602,6 +44615,7 @@ fx_moire :
     0 t. "#"$N,0,0,{0,h*$8%},1,255 autocrop. frame. 5%,15%,0 negate. to_rgb. j[^-1] .,$ax~,$ay~ rm.
   fi
   nm "name(Merged Frames),pos(0,0),opacity(100),mode(alpha)","name(Mask),pos(0,0),opacity(100),mode(alpha)"
+  u $N
 
 fx_moire_preview :
   _is_preview=1
