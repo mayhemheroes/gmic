@@ -44507,6 +44507,94 @@ fx_animate_lissajous_preview : skip "${4=}"
   fx_animate_preview fx_lissajous,"${5-22}",\
                                   "${23-40}",0
 
+#@gui Moir&eacute; Animation : fx_moire, fx_moire_preview(1)+ : *
+#@gui : Stripe orientation = choice(1,"Horizontal","Vertical")
+#@gui : Output format = _choice{1,"Same as Input","A4 / 75 PPI (Recommended)","A4 / 150 PPI","A4 / 300 PPI"}
+#@gui : Auto-Reduce Number of Frames = bool(1)
+#@gui : Landscape = _bool(1)
+#@gui : Margin (%) = float(2,0,30)
+#@gui : sep = separator()
+#@gui : Print Frame Numbers = choice(1,"Disable","Top Left","Top Right","Bottom Left","Bottom Right")
+#@gui : Size of Frame Numbers (%) = float(5,0,30)
+#@gui : sep = separator()
+#@gui : note = note{"<small><b><span color="#EE5500">Instructions:</span></b>\n\n
+#@gui : This filter renders Moire Animations, as shown on <a href="https://www.youtube.com/watch?v=f5plDb_JRq4">this video</a>.\n
+#@gui : To make the animation visible:\n\n
+#@gui : &bull; Before running the filter, ensure that all frames are aligned and have the same size (and preferably without alpha)!\n
+#@gui : &bull; Run the filter. It is recommended to keep the number of frames &lt;=6.\n
+#@gui : &bull; Print the first layer (merged frames) on a A4 blank paper.\n
+#@gui : &bull; Print the second layer (mask) on a A4 transparent sheet.\n
+#@gui : &bull; Drag the transparent layer over the A4 paper to render the animation effect.
+#@gui : "}
+#@gui : sep = separator()
+#@gui : note = note("<small>Author: <i>David Tschumperl&#233;</i>.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+#@gui : Latest Update: <i>2020/03/02</i>.</small>")
+fx_moire :
+  if 0$_is_preview" && "!narg($_preview_width) _preview_width,_preview_height=512 fi
+
+  # Check if some animation frames must be rendered (frames with transparency).
+  repeat $! if $>" && "{$<,s==2||s==4} blend[$<] [{$<+1}],alpha,1,1 fi done
+
+  # Auto-reduce number of frames (4, 5 or 6).
+  if $3
+    skip={"
+      l<=6?1:(
+        const l5 = int(l/5);
+        const l4 = int(l/4);
+        const l6 = int(l/6);
+        5*l5==l?l5:
+        6*l6==l?l6:
+        4*l4==l?l4:(
+          const r6 = abs(6*l6 - l);
+          const r5 = abs(5*l5 - l);
+          const r4 = abs(4*l4 - l);
+          r5<=r4 && r5<=r6?l5:
+          r6<=r4 && r6<=r5?l6:
+          l4
+        )
+      )"}
+    k[^:$skip]
+    if $!>6 rm[6--1] fi
+  fi
+  N=$!
+
+  # Constrain size of frames.
+  if 0$_is_preview W,H=$_preview_width,$_preview_height
+  elif $2 W,H,fW,fH={"$2==1?[620,877]:$2==2?[1240,1754]:[2480,3508]"},2480,3508
+  else W,H=${-max_wh}
+  fi
+  if $4 W,H=$H,$W fW,fH=$fH,$fW fi # Landscape mode
+  if !narg($fW) fW,fH=$W,$H fi
+  repeat $! l[$>] if [w,h]!=[$W,$H]
+    - 255
+    rr2d {(100-$5)%*[$W,$H]},2,2
+    r $W,$H,1,100%,0,0,0.5,0.5
+    + 255
+  fi endl done
+
+  # Generate merged image and mask.
+  if $1 # Vertical stripes
+    100%,100%,1,100%,"i(#x%"$N",x,y,z,c)" rm[^-1]
+    100%,100%,1,1,"x%"$N"?0:255"
+  else # Horizontal stripes
+    100%,100%,1,100%,"i(#y%"$N",x,y,z,c)" rm[^-1]
+    100%,100%,1,1,"y%"$N"?0:255"
+  fi
+
+  # Upscale 400% with nearest-neighbor for printing.
+  if !0$_is_preview" && "$3 r $fW,$fH,1,100%,1 fi
+
+  # Insert frame number label.
+  if $6" && "$7
+    ax,ay={a=$6-1;[a%2,int(a/2)]}
+    0 t. "#"$N,0,0,{0,h*$7%},1,255 autocrop. frame. 5%,15%,0 negate. to_rgb. j[^-1] .,$ax~,$ay~ rm.
+  fi
+  nm "name(Merged Frames),pos(0,0),opacity(100),mode(alpha)","name(Mask),pos(0,0),opacity(100),mode(alpha)"
+
+fx_moire_preview :
+  _is_preview=1
+  fx_moire $*
+
 #@gui Rodilius [Animated] : fx_animate_rodilius, fx_animate_rodilius_preview(1)
 #@gui : Frames = _int(10,2,100)
 #@gui : Output as Frames = _bool(1)
