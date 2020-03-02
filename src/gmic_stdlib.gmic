@@ -4026,10 +4026,11 @@ input_flo :
 
 #@cli ig : eq. to 'input_glob'.
 ig :
-  _input_glob "$*"
+  v + _input_glob "$*"
 
 #@cli input_glob : pattern
 #@cli : Insert new images from several filenames that match the specified glob pattern.
+#@cli : (eq. to 'ig').
 input_glob :
   _input_glob "$*"
 
@@ -4044,7 +4045,7 @@ _input_glob :
 #@cli input_gpl : filename
 #@cli : Input specified filename as a .gpl palette data file.
 input_gpl :
-  e[^-1] "Input .gpl palette file '$*'"
+  e[^-1] "Input .gpl palette file '$*'."
   l[]
     i raw:"$*",char discard 13 replace 9,32 s -,10
     colors=0
@@ -4055,6 +4056,18 @@ input_gpl :
     onfail rm 0 endl done
     rm ($colors) rows 1,100% nm "$1" permute yzcx
   endl
+
+#@cli it : eq. to 'input_text'.
+it :
+  e[^-1] "Input text-data file '$*'."
+  i raw:"$*",uchar
+
+#@cli input_text : filename
+#@cli : Input specified text-data filename as a new image.
+#@cli : (eq. to 'it').
+input_text :
+  e[^-1] "Input text-data file '$*'."
+  i raw:"$*",uchar
 
 # Merge multi-lines (lines continued by backslash before NL) in a string image.
 merge_multiline :
@@ -4138,6 +4151,20 @@ output_ggr : skip "${2=}"
     if $N>1 o raw:${"filename \"$1\",$>"},char else o raw:"$1",char fi
     rm
   endl done is_change 0
+
+#@cli ot : eq. to 'output_text'.
+ot :
+  v + _output_text "$*"
+
+#@cli output_text : filename
+#@cli : Output selected images as text-data filenames.
+#@cli : (eq. to 'ot').
+output_text :
+  v + _output_text "$1"
+
+_output_text :
+  e[0--3] "Output image$? as text-data filename '$1'."
+  o raw:"$1",uchar
 
 #@cli on : eq. to 'outputn'.
 on :
@@ -5934,7 +5961,7 @@ parse_gui_update :
   e[] "\r  >> "${_gmic_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_gmic_n
 
 #
-# Output mode 'json' (output in stdout).
+# Output mode 'json'.
 #
 parse_gui_parseparams_json : u 1 # Tell parser to not parse filter parameters
 parse_gui_trigger_json :
