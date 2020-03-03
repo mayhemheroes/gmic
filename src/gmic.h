@@ -298,7 +298,7 @@ struct gmic {
   const char *set_variable(const char *const name, const gmic_image<unsigned char>& value,
                            const unsigned int *const variables_sizes=0);
 
-  void update_command_files();
+  void update_path_commands();
 
   gmic& add_commands(const char *const data_commands, const char *const commands_file=0,
                      unsigned int *count_new=0, unsigned int *count_replaced=0,

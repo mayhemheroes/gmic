@@ -3098,8 +3098,8 @@ const char *gmic::set_variable(const char *const name, const CImg<unsigned char>
   return __variables[ind].data();
 }
 
-// Update global variable '$_command_files' from member list 'command_files'.
-void gmic::update_command_files() {
+// Update global variable '$_path_commands' from member list 'command_files'.
+void gmic::update_path_commands() {
   if (commands_files) {
     CImgList<unsigned char> ltmp(commands_files.size());
     CImg<unsigned char> tmp;
@@ -3108,7 +3108,7 @@ void gmic::update_command_files() {
     tmp[0] = 'G'; tmp[1] = 'M'; tmp[2] = 'Z'; tmp[3] = 0;
     tmp.unroll('y').move_to(ltmp);
     ltmp.get_serialize(false).unroll('x').move_to(tmp);
-    const char *const _command_files = "_command_files";
+    const char *const _command_files = "_path_commands";
     tmp.resize(tmp.width() + 9 + std::strlen(_command_files),1,1,1,0,0,1);
     std::sprintf((char*)tmp.data(),"%c*store/%s",gmic_store,_command_files);
     set_variable(_command_files,tmp,0);
@@ -6080,7 +6080,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   !add_debug_info?" without debug info":"");
             add_commands(file,arg_command,&count_new,&count_replaced);
             cimg::fclose(file);
-            update_command_files();
+            update_path_commands();
 
           } else if (!cimg::strncasecmp(arg_command,"http://",7) ||
                      !cimg::strncasecmp(arg_command,"https://",8)) { // Try to read from network
@@ -14504,7 +14504,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           try {
             add_commands(gfile,filename,&count_new,&count_replaced,
                          allow_entrypoint && callstack.size()==1 && !is_command_input?&is_entrypoint:0);
-            update_command_files();
+            update_path_commands();
           } catch (...) {
             is_add_error = true; is_entrypoint = false;
           }
