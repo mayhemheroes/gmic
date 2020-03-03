@@ -228,6 +228,9 @@ help : skip ${1=""},${2=1}
   if narg("$1")" && "isfile(['{/$_path_user}'])
     l[] it $_path_user onfail endl
   fi
+  if narg("$1")" && "narg($_path_commands) l[]
+    $_path_commands repeat $! l[$>] it {n} k. onfail rm 0 endl done onfail
+  endl fi
   if !$! return fi
   y a y
   +_help $1,$2 k[0]
@@ -255,7 +258,7 @@ _help : skip ${1=""}
     endl
     if narg($misspelling) misspelling=" (did you mean '"$_gmic_g$misspelling$_gmic_n"' ?)" fi
     +e[] "\n[gmic] Command '"$_gmic_r$command$_gmic_n"' has no description"$misspelling". "\
-         "Try '"${_gmic_c}"gmic -h"$_gmic_n"' for global help.\n\n"
+         "Try '"${_gmic_c}"gmic -h"$_gmic_n"' for global help."
     rm u "" return
   fi
   rm[0] a y merge_multiline_comments s -,10
@@ -671,6 +674,7 @@ ${g}"variable"$n"
 \n         (its value is OS-dependent).
 \n       . '"${c}"$_path_user"$n"': The path to the "${-GMIC}" user file "${g}".gmic"$n" or "${g}"user.gmic"$n"
 \n          (its value is OS-dependent).
+\n       . '"${c}"$_path_commands"$n"': A list of all imported command files (stored as a list-valued variable).
 \n
 \n  - '"${c}"$$name"$n"' and '"${c}"$${name}"$n"' are both substituted by the G'MIC script code of the specified named
 \n     "${g}"custom command"$n", or by an empty string if no custom command with specified name exists.
