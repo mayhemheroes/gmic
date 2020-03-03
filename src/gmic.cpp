@@ -3220,7 +3220,7 @@ gmic& gmic::add_commands(std::FILE *const file, const char *const filename,
     buffer.load_cimg(file).unroll('x');
     buffer.resize(buffer.width() + 1,1,1,1,0);
     add_commands(buffer.data(),filename,count_new,count_replaced,is_entrypoint);
-  } catch (...) {
+  } catch (...) { // If failed, read as a text file
     std::rewind(file);
     std::fseek(file,0,SEEK_END);
     const cimg_long siz = std::ftell(file);
@@ -6063,6 +6063,18 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   !add_debug_info?" without debug info":"");
             add_commands(file,add_debug_info?arg_command:0,&count_new,&count_replaced);
             cimg::fclose(file);
+
+            // Update global variable $_command_files.
+            g_list.assign(commands_files.size());
+            (commands_files>'x').move_to(name);
+            name.resize(name.width() + 4,1,1,1,0,0,1);
+            name[0] = 'G'; name[1] = 'M'; name[2] = 'Z'; name[3] = 0;
+            name.unroll('y').move_to(g_list);
+            g_list.get_serialize(false).unroll('x').move_to(name);
+            const char *const _command_files = "_command_files";
+            name.resize(name.width() + 9 + std::strlen(_command_files),1,1,1,0,0,1);
+            std::sprintf(name,"%c*store/%s",gmic_store,_command_files);
+            set_variable(_command_files,name,variables_sizes);
           } else if (!cimg::strncasecmp(arg_command,"http://",7) ||
                      !cimg::strncasecmp(arg_command,"https://",8)) { // Try to read from network
             print(images,0,"Import commands from URL '%s'%s",
