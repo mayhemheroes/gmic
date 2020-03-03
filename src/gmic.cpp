@@ -6101,6 +6101,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               try {
                 add_commands(file,arg_command,&count_new,&count_replaced);
                 cimg::fclose(file);
+                update_path_commands();
               } catch (...) {
                 cimg::fclose(file);
                 file = 0;
