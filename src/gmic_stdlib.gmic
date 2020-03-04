@@ -3247,11 +3247,13 @@ _document_gmic_header_bash : skip $1
 \n_"$_name"()
 \n{
 \n\tlocal cur prev opts coms
-\n\t_init_completion || return
-\n\tCOMPREPLY=()
-\n\tcur=\"${COMP_WORDS[COMP_CWORD]}\"
-\n\tprev=\"${COMP_WORDS[COMP_CWORD-1]}\"
-"
+\n\tif type -t _init_completion >/dev/null; then
+\n\t\t_init_completion -n = || return
+\n\telse
+\n\t\tCOMPREPLY=()
+\n\t\tcur=\"${COMP_WORDS[COMP_CWORD]}\"
+\n\t\tprev=\"${COMP_WORDS[COMP_CWORD-1]}\"
+\n\tfi"
   _opts=
   _coms=
   _argcommand=0
@@ -3317,7 +3319,12 @@ _document_gmic_footer_bash : skip $1
   done
   +e[] "\tesac\n
 \n\tCOMPREPLY=( $(compgen -W \"$opts\" -- \"$cur\") )
-\n\t_filedir
+\n\tif type -t _filedir >/dev/null; then
+\n\t\t_filedir
+\n\telse
+\n\t\tcomptopt -o filenames 2>/dev/null
+\n\t\tCOMPREPLY=( $(compgen -f -- ${cur}) )
+\n\tfi
 \n}
 \ncomplete -F _"$_name" -o filenames gmic"
 
