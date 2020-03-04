@@ -3098,23 +3098,6 @@ const char *gmic::set_variable(const char *const name, const CImg<unsigned char>
   return __variables[ind].data();
 }
 
-// Update global variable '$_path_commands' from member list 'command_files'.
-void gmic::update_path_commands() {
-  if (commands_files) {
-    CImgList<unsigned char> ltmp(commands_files.size());
-    CImg<unsigned char> tmp;
-    (commands_files>'x').move_to(tmp);
-    tmp.resize(tmp.width() + 4,1,1,1,0,0,1);
-    tmp[0] = 'G'; tmp[1] = 'M'; tmp[2] = 'Z'; tmp[3] = 0;
-    tmp.unroll('y').move_to(ltmp);
-    ltmp.get_serialize(false).unroll('x').move_to(tmp);
-    const char *const _command_files = "_path_commands";
-    tmp.resize(tmp.width() + 9 + std::strlen(_command_files),1,1,1,0,0,1);
-    std::sprintf((char*)tmp.data(),"%c*store/%s",gmic_store,_command_files);
-    set_variable(_command_files,tmp,0);
-  }
-}
-
 // Add custom commands from a char* buffer.
 //------------------------------------------
 gmic& gmic::add_commands(const char *const data_commands, const char *const commands_file,
@@ -3127,7 +3110,21 @@ gmic& gmic::add_commands(const char *const data_commands, const char *const comm
   bool is_last_slash = false, _is_last_slash = false, is_newline = false;
   int hash = -1, l_debug_info = 0;
   char sep = 0;
-  if (commands_file) CImg<char>::string(commands_file).move_to(commands_files);
+  if (commands_file) {
+    CImg<char>::string(commands_file).move_to(commands_files);
+
+    CImgList<unsigned char> ltmp(commands_files.size()); // Update global variable '$_path_commands'.
+    CImg<unsigned char> tmp;
+    (commands_files>'x').move_to(tmp);
+    tmp.resize(tmp.width() + 4,1,1,1,0,0,1);
+    tmp[0] = 'G'; tmp[1] = 'M'; tmp[2] = 'Z'; tmp[3] = 0;
+    tmp.unroll('y').move_to(ltmp);
+    ltmp.get_serialize(false).unroll('x').move_to(tmp);
+    const char *const _command_files = "_path_commands";
+    tmp.resize(tmp.width() + 9 + std::strlen(_command_files),1,1,1,0,0,1);
+    std::sprintf((char*)tmp.data(),"%c*store/%s",gmic_store,_command_files);
+    set_variable(_command_files,tmp,0);
+  }
   if (count_new) *count_new = 0;
   if (count_replaced) *count_replaced = 0;
   if (is_entrypoint) *is_entrypoint = false;
@@ -3226,7 +3223,7 @@ gmic& gmic::add_commands(const char *const data_commands, const char *const comm
 
 // Add commands from a file.
 //---------------------------
-gmic& gmic::add_commands(std::FILE *const file, const char *const filename,
+gmic& gmic::add_commands(std::FILE *const file, const char *const commands_file,
                          unsigned int *count_new, unsigned int *count_replaced,
                          bool *const is_entrypoint) {
   if (!file) return *this;
@@ -3236,7 +3233,7 @@ gmic& gmic::add_commands(std::FILE *const file, const char *const filename,
     CImg<char> buffer;
     buffer.load_cimg(file).unroll('x');
     buffer.resize(buffer.width() + 1,1,1,1,0);
-    add_commands(buffer.data(),filename,count_new,count_replaced,is_entrypoint);
+    add_commands(buffer.data(),commands_file,count_new,count_replaced,is_entrypoint);
   } catch (...) { // If failed, read as a text file
     std::rewind(file);
     std::fseek(file,0,SEEK_END);
@@ -3246,7 +3243,7 @@ gmic& gmic::add_commands(std::FILE *const file, const char *const filename,
       CImg<char> buffer((unsigned int)siz + 1);
       if (std::fread(buffer.data(),sizeof(char),siz,file)) {
         buffer[siz] = 0;
-        add_commands(buffer.data(),filename,count_new,count_replaced,is_entrypoint);
+        add_commands(buffer.data(),commands_file,count_new,count_replaced,is_entrypoint);
       }
     }
   }
@@ -6080,7 +6077,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   !add_debug_info?" without debug info":"");
             add_commands(file,arg_command,&count_new,&count_replaced);
             cimg::fclose(file);
-            update_path_commands();
 
           } else if (!cimg::strncasecmp(arg_command,"http://",7) ||
                      !cimg::strncasecmp(arg_command,"https://",8)) { // Try to read from network
@@ -6101,7 +6097,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               try {
                 add_commands(file,arg_command,&count_new,&count_replaced);
                 cimg::fclose(file);
-                update_path_commands();
               } catch (...) {
                 cimg::fclose(file);
                 file = 0;
@@ -14505,7 +14500,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           try {
             add_commands(gfile,filename,&count_new,&count_replaced,
                          allow_entrypoint && callstack.size()==1 && !is_command_input?&is_entrypoint:0);
-            update_path_commands();
           } catch (...) {
             is_add_error = true; is_entrypoint = false;
           }
