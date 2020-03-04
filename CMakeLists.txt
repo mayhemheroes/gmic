@@ -95,6 +95,7 @@ option(ENABLE_PNG "Add support for handling images in PNG format" ON)
 option(ENABLE_TIFF "Add support for handling images in Tiff format" ON)
 option(ENABLE_ZLIB "Add support for data compression via Zlib" ON)
 option(ENABLE_DYNAMIC_LINKING "Dynamically link the binaries to the GMIC shared library" OFF)
+option(ENABLE_LTO "Enable -flto (Link Time Optimizer) on gcc and clang" ON)
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
@@ -136,7 +137,7 @@ if(ZLIB_FOUND)
   link_directories(${ZLIB_LIBRARY_DIRS})
 endif()
 
-# curl support
+# Curl support
 if(ENABLE_CURL)
   find_package(CURL)
 endif()
@@ -146,7 +147,7 @@ if(CURL_FOUND)
   link_directories(${CURL_LIBRARY_DIRS})
 endif()
 
-#X11 support
+# X11 support
 if(ENABLE_X)
   find_package(X11)
 endif()
@@ -237,6 +238,10 @@ if(OPENEXR_FOUND)
   link_directories(${OPENEXR_LIBRARY_DIRS})
 endif()
 
+if (ENABLE_LTO AND (CMAKE_COMPILER_IS_GNUCC OR (CMAKE_CSS_COMPILER_IS STREQUAL "Clang")))
+  set(CLI_COMPILE_FLAGS "${CLI_COMPILE_FLAGS} -flto")
+  list(APPEND EXTRA_LIBRARIES "-flto")
+endif()
 
 if(ENABLE_DYNAMIC_LINKING)
   if(NOT BUILD_LIB)
