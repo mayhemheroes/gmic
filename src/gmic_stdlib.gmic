@@ -44531,7 +44531,7 @@ fx_animate_lissajous_preview : skip "${4=}"
 #@gui Moir&eacute; Animation : fx_moire, fx_moire_preview(1)+ : *
 #@gui : Stripe orientation = choice(1,"Horizontal","Vertical")
 #@gui : Input Transparency = choice("Replace With White","Reconstruct From Previous Frames")
-#@gui : Output Format = choice{1,"Same as Input","A4 / 75 PPI (Recommended)","A4 / 100 PPI",
+#@gui : Output Format = choice{2,"Same as Input","A4 / 75 PPI","A4 / 100 PPI (Recommended)",
 #@gui : "A4 / 150 PPI","A4 / 300 PPI"}
 #@gui : Auto-Reduce Number of Frames = bool(1)
 #@gui : Landscape = bool(1)
@@ -44547,8 +44547,8 @@ fx_animate_lissajous_preview : skip "${4=}"
 #@gui : &bull; Before running the filter, ensure that all frames are aligned and have the same size
 #@gui : (and preferably without alpha)!\n
 #@gui : &bull; Run the filter. It is recommended to keep the number of frames &lt;=6.\n
-#@gui : &bull; Print the first layer (merged frames) on a A4 blank paper.\n
-#@gui : &bull; Print the second layer (mask) on a A4 transparent sheet.\n
+#@gui : &bull; Print the first layer (merged frames) on a A4 blank paper, at 300 PPI.\n
+#@gui : &bull; Print the second layer (mask) on a A4 transparent sheet, at 300 PPI.\n
 #@gui : &bull; Drag the transparent layer over the A4 paper to render the animation effect.
 #@gui : "}
 #@gui : sep = separator()
@@ -44630,7 +44630,7 @@ fx_moire :
 
   # Insert frame number label.
   if $7" && "$8
-    ax,ay={a=$7-1;[a%2,int(a/2)]}
+    ax,ay={a=$7-1;[a%2?0.95:0.05,int(a/2)?0.95:0.05]}
     0 t. "#"$N,0,0,{0,h*$8%},1,255 autocrop. frame. 5%,15%,0 negate. to_rgb. j[^-1] .,$ax~,$ay~ rm.
   fi
   nm "name(Merged Frames),pos(0,0),opacity(100),mode(alpha)","name(Mask),pos(0,0),opacity(100),mode(alpha)"

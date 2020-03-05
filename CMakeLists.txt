@@ -95,7 +95,7 @@ option(ENABLE_PNG "Add support for handling images in PNG format" ON)
 option(ENABLE_TIFF "Add support for handling images in Tiff format" ON)
 option(ENABLE_ZLIB "Add support for data compression via Zlib" ON)
 option(ENABLE_DYNAMIC_LINKING "Dynamically link the binaries to the GMIC shared library" OFF)
-option(ENABLE_LTO "Enable -flto (Link Time Optimizer) on gcc and clang" ON)
+option(ENABLE_LTO "Enable -flto (Link Time Optimizer) on gcc and clang" OFF)
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
