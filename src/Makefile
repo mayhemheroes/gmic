@@ -193,12 +193,15 @@ endif
 # Enable optimizations.
 OPT_CFLAGS = -Ofast
 ifdef IS_GCC
-OPT_CFLAGS = -Ofast -mtune=generic -flto # -fno-finite-math-only
-OPT_LIBS = -flto
+OPT_CFLAGS = -Ofast -mtune=generic
 endif
 ifdef icpc
 OPT_CFLAGS = -fast
 endif
+
+# Enable link-time optimization
+LTO_CFLAGS = -flto
+LTO_LIBS = -flto
 
 # Enable multi-threading support.
 PARALLEL_CFLAGS = -Dgmic_is_parallel
@@ -343,8 +346,8 @@ native:
 GMIC_CLI_CFLAGS = $(MANDATORY_CFLAGS) $(ABORT_CFLAGS) $(PARALLEL_CFLAGS) $(EIGEN_CFLAGS) $(FFTW_CFLAGS) $(CURL_CFLAGS) $(PNG_CFLAGS) $(JPEG_CFLAGS) $(TIFF_CFLAGS)
 GMIC_CLI_LIBS = $(MANDATORY_LIBS) $(PARALLEL_LIBS) $(EIGEN_LIBS) $(FFTW_LIBS) $(CURL_LIBS) $(PNG_LIBS) $(JPEG_LIBS) $(TIFF_LIBS)
 ifeq ($(OS),Unix) # Unix.
-GMIC_CLI_CFLAGS += $(OPENMP_CFLAGS) $(X11_CFLAGS) $(OPENEXR_CFLAGS) $(OPENCV_CFLAGS) # $(XSHM_CFLAGS) # $(MAGICK_CFLAGS)
-GMIC_CLI_LIBS += $(OPENMP_LIBS) $(X11_LIBS) $(OPENEXR_LIBS) $(OPENCV_LIBS) # $(XSHM_LIBS) # $(MAGICK_LIBS)
+GMIC_CLI_CFLAGS += $(OPENMP_CFLAGS) $(X11_CFLAGS) $(OPENEXR_CFLAGS) $(OPENCV_CFLAGS) $(LTO_CFLAGS) # $(XSHM_CFLAGS) # $(MAGICK_CFLAGS)
+GMIC_CLI_LIBS += $(OPENMP_LIBS) $(X11_LIBS) $(OPENEXR_LIBS) $(OPENCV_LIBS) $(LTO_LIBS) # $(XSHM_LIBS) # $(MAGICK_LIBS)
 else
 ifeq ($(OS),Darwin) # MacOSX.
 GMIC_CLI_CFLAGS += $(X11_CFLAGS) $(OPENEXR_CFLAGS) $(OPENCV_CFLAGS)
