@@ -806,11 +806,14 @@ ${g}"1 (true)"$n" whether its string
 \n       . '"${c}"isin(v,a_1,...,a_n)"$n"' returns "${g}"0 (false)"$n" or "${g}"1 (true)"$n" whether the first value '"\
 ${g}"v"$n"' appears
 \n          in the set of other values 'a_i'.
+\n       . '"${c}"inrange(value,m,M,include_boundaries)"$n"' returns "${g}"0 (false)"$n" or "${g}"1 (true)"$n" whether the
+\n          specified value lies in range "${g}"[m,M]"$n" or not (range "${g}"]m,M["$n" if '"${g}"include_boundaries=0"$n"').
 \n       . '"${c}"argmin()"$n"', '"${c}"argmax()"$n"', '"${c}"avg()"$n"', '"${c}"kth()"$n"', '"${c}"max()"$n"', '"\
 ${c}"med()"$n"', '"${c}"min()"$n"', '"${c}"std()"$n"', '"${c}"sum()"$n"'
 \n          and '"${c}"var()"$n"' can be called with an arbitrary number of scalar/vector arguments.
 \n       . '"${c}"round(value,rounding_value,direction)"$n"' returns a rounded value. '"${g}"direction"$n"' can be
 \n          "${g}"{ -1=to-lowest | 0=to-nearest | 1=to-highest }"$n".
+\n       . '"${c}"lerp(a,b,t)"$n"' returns '"${g}"a*(1-t) + b*t"$n"'.
 \n
 \n    _ "${g}"Variable names"$n" below are pre-defined. They can be overridden.
 \n
@@ -7849,23 +7852,25 @@ index : check "${2=0}>=0 && $2<=1 && isbool(${3=0})"
   palette $1 index[^-1] .,$2,$3 rm.
 
 #@cli ir : eq. to 'inrange'.
-ir :
+ir : check "isbool(${3=1})"
   _gmic_s="$?" v + _inrange $*
 
-#@cli inrange : min[%],max[%]
+#@cli inrange : min[%],max[%],_include_boundaries={ 0=no | 1=yes }
 #@cli : Detect pixels whose values are in specified range [min,max], in selected images.
 #@cli : (eq. to 'ir').
+#@cli : Default value: 'include_boundaries=1'.
 #@cli : $ image.jpg +inrange 25%,75%
-inrange :
+inrange : check "isbool(${3=1})"
   _gmic_s="$?" v + _$0 $*
 
-_inrange :
-  e[0--3] "Detect pixel values in range [$1,$2] in image"$_gmic_s"."
+_inrange : skip "${3=1}"
+  s0="out" s1=""
+  e[0--3] "Detect pixel values in range [$1,$2] in image"$_gmic_s", with"${s$2}" boundaries included."
   repeat $! l[$>]
     m=$1 M=$2
     if ${is_percent\ $1} m={im+(iM-im)*$1} fi
     if ${is_percent\ $2} M={im+(iM-im)*$2} fi
-    - {0.5*($m+$M)} abs <= {0.5*abs($M-$m)}
+    f. inrange(i,$m,$M,$3)
   endl done
 
 #@cli map : [palette],_boundary_conditions : palette_name,_boundary_conditions : (+)
