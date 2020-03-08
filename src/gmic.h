@@ -208,12 +208,26 @@ inline double gmic_mp_store(const Ts *const ptr,
 #include <process.h>
 #include <psapi.h>
 
+#ifndef cimg_uint64
+#define cimg_uint64 __int64
+#endif
+
 #elif cimg_OS==1
 #include <cerrno>
 #include <sys/resource.h>
 #include <sys/syscall.h>
 #include <signal.h>
+
+#ifndef cimg_uint64
+#if UINTPTR_MAX==0xffffffff || defined(__arm__) || defined(_M_ARM) || ((ULONG_MAX)==(UINT_MAX))
+#define cimg_uint64 unsigned long long
+#else
+#define cimg_uint64 unsigned long
+#endif
+
 #endif // #if cimg_OS==2
+#endif
+
 
 // Define some special character codes used for replacement in double quoted strings.
 const char gmic_dollar = 23, gmic_lbrace = 24, gmic_rbrace = 25, gmic_comma = 26, gmic_dquote = 28,
@@ -425,7 +439,7 @@ struct gmic {
   gmic_image<char> status;
 
   float focale3d, light3d_x, light3d_y, light3d_z, specular_lightness3d, specular_shininess3d, _progress, *progress;
-  unsigned long reference_time;
+  cimg_uint64 reference_time;
   unsigned int nb_dowhiles, nb_fordones, nb_repeatdones, nb_carriages, debug_filename, debug_line, cimg_exception_mode;
   int verbosity,render3d, renderd3d;
   bool allow_entrypoint, is_change, is_debug, is_running, is_start, is_return, is_quit, is_double3d, is_debug_info,

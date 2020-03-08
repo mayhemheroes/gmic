@@ -3757,7 +3757,7 @@ void gmic::_gmic(const char *const commands_line,
   specular_lightness3d = 0.15f;
   specular_shininess3d = 0.8f;
   starting_commands_line = commands_line;
-  reference_time = (unsigned long)cimg::time();
+  reference_time = cimg::time();
   if (is_first) {
     try { is_display_available = (bool)CImgDisplay::screen_width(); } catch (CImgDisplayException&) { }
     is_first = false;
