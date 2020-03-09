@@ -5769,8 +5769,11 @@ parse_gui : skip "${1=*},${2=print}"
             type[0,5]==[['note'],0] ||
             type[0,10]==[['separator'],0]?( # Single-argument parameter
               p!=r?(
-                copy(argument,source[p],r-p); argument[r-p] = 0; # Parameter argument
-                store(argument,'tmparg',1,r-p); call('$tmparg _f"${f}"_p',nbparams,'_a0={t} rm.');
+                skip_blank(p);
+                pe = r;
+                while (is_blank(--pe),0);
+                copy(argument,source[p],pe-p+1); argument[pe-p+1] = 0; # Parameter argument
+                store(argument,'tmparg',1,pe-p+1); call('$tmparg _f"${f}"_p',nbparams,'_a0={t} rm.');
                 nbargs = 1;
               ):(argument[0] = 0);
               p = r + 1;
@@ -5780,7 +5783,7 @@ parse_gui : skip "${1=*},${2=print}"
                 pe = q = min(r,find(source,_',',p)%size(source));
                 while (is_blank(--pe),0);
                 copy(argument,source[p],pe-p+1); argument[pe-p+1] = 0; # Parameter argument
-                store(argument,'tmparg',1,r-p); call('$tmparg _f"${f}"_p',nbparams,'_a',nbargs,'={t} rm.');
+                store(argument,'tmparg',1,pe-p+1); call('$tmparg _f"${f}"_p',nbparams,'_a',nbargs,'={t} rm.');
                 ++nbargs;
                 p = q + 1;
               );
@@ -6101,14 +6104,15 @@ parse_gui_json :
     done
     ({'"      ]\n    }\n"'})
   done
-  if narg($current_category) ({'"    ]\n  }\n"'}) fi
+  if ['$current_category']!=0 ({'"    ]\n  }\n"'}) fi
   ({'"  ]\n}\n"'})
   y a y html2utf8
   e[] "\r  >> "${_gmic_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_gmic_n
 
 _parse_gui_json :
   l[]
-    ({'"$*"'})
+    ({'{/"$*"}'})
+    replace_str "\\","\\\\"
     replace_str "\"","\\\""
     replace_str "\n","\\n"
     replace_str "&amp;","&"
