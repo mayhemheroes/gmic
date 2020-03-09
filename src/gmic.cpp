@@ -2553,18 +2553,16 @@ char *gmic::strreplace_bw(char *const str) {
 unsigned int gmic::strescape(const char *const str, char *const res) {
   const char *const esc = "abtnvfr";
   char *ptrd = res;
-  for (const char *ptrs = str; *ptrs; ++ptrs) {
+  for (const unsigned char *ptrs = (unsigned char*)str; *ptrs; ++ptrs) {
     const unsigned char c = *ptrs;
     if (c=='\\' || c=='\'' || c=='\"') { *(ptrd++) = '\\'; *(ptrd++) = c; }
     else if (c>='\a' && c<='\r') { *(ptrd++) = '\\'; *(ptrd++) = esc[c - 7]; }
     else if (c>=' ' && c<='~') *(ptrd++) = c;
     else if (c<gmic_dollar || c>gmic_dquote) {
       *(ptrd++) = '\\';
-      *(ptrd++) = 'x';
-      unsigned char d = c>>4;
-      *(ptrd++) = (char)(d + (d<10?'0':'a'-10));
-      d = c&15;
-      *(ptrd++) = (char)(d + (d<10?'0':'a'-10));
+      *(ptrd++) = (char)('0' + (c>>6));
+      *(ptrd++) = (char)('0' + ((c>>3)&7));
+      *(ptrd++) = (char)('0' + (c&7));
     } else *(ptrd++) = c;
   }
   *ptrd = 0;
