@@ -2560,12 +2560,9 @@ unsigned int gmic::strescape(const char *const str, char *const res) {
     else if (c>=' ' && c<='~') *(ptrd++) = c;
     else if (c<gmic_dollar || c>gmic_dquote) {
       *(ptrd++) = '\\';
-      unsigned char d = c>>6;
-      *(ptrd++) = (char)('0' + d);
-      d = (c>>3)&7;
-      *(ptrd++) = (char)('0' + d);
-      d = c&7;
-      *(ptrd++) = (char)('0' + d);
+      *(ptrd++) = (char)('0' + (c>>6));
+      *(ptrd++) = (char)('0' + ((c>>3)&7));
+      *(ptrd++) = (char)('0' + (c&7));
     } else *(ptrd++) = c;
   }
   *ptrd = 0;
