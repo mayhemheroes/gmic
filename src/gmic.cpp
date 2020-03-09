@@ -2267,7 +2267,7 @@ bool *gmic::abort_ptr(bool *const p_is_abort) {
   void* tid = (void*)(cimg_ulong)GetCurrentThreadId();
 #else
   void* tid = (void*)0;
-#endif
+#endif // #if defined(__MACOSX__) || defined(__APPLE__)
   cimg::mutex(21);
   bool *res = p_is_abort;
   int ind = -1;
@@ -2300,7 +2300,7 @@ struct _gmic_mutex {
   _gmic_mutex() {}
   void lock(const unsigned int) {}
   void unlock(const unsigned int) {}
-#endif // #if cimg_OS==2
+#endif // #if cimg_OS==1 && (defined(cimg_use_pthread) || cimg_display==1)
 };
 inline _gmic_mutex& gmic_mutex() { static _gmic_mutex val; return val; }
 
