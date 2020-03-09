@@ -167,12 +167,12 @@ namespace cimg_library {
 
 #ifndef cimg_verbosity
 #define cimg_verbosity 1
-#endif // #ifndef cimg_verbosity
+#endif
 
 #ifdef _MSC_VER
 #pragma comment(linker,"/STACK:6291456")
 #pragma inline_depth(2)
-#endif // #ifdef _MSC_VER
+#endif
 
 #include <locale>
 #ifdef cimg_version
@@ -185,7 +185,7 @@ namespace cimg_library {
 inline bool *gmic_abort_ptr(bool *const p_is_abort);
 #define cimg_abort_init bool *const gmic_is_abort = ::gmic_abort_ptr(0)
 #define cimg_abort_test if (*gmic_is_abort) throw CImgAbortException()
-#endif // #ifdef cimg_use_abort
+#endif
 
 template<typename T>
 inline double gmic_mp_call(char *const str, void *const p_list, const T& pixel_type);
@@ -198,19 +198,15 @@ inline double gmic_mp_store(const Ts *const ptr,
 #define cimg_mp_store_function(ptr,w,h,d,s,str) return ::gmic_mp_store(ptr,w,h,d,s,str,&mp.listout,(T)0)
 #ifndef cimg_display
 #define cimg_display 0
-#endif // #ifndef cimg_display
+#endif
 #ifndef cimg_appname
 #define cimg_appname "gmic"
-#endif // #ifndef cimg_appname
+#endif
 #include "./CImg.h"
 
 #if cimg_OS==2
 #include <process.h>
 #include <psapi.h>
-
-#ifndef cimg_uint64
-#define cimg_uint64 __int64
-#endif
 
 #elif cimg_OS==1
 #include <cerrno>
@@ -218,22 +214,26 @@ inline double gmic_mp_store(const Ts *const ptr,
 #include <sys/syscall.h>
 #include <signal.h>
 
-#ifndef cimg_uint64
-#if UINTPTR_MAX==0xffffffff || defined(__arm__) || defined(_M_ARM) || ((ULONG_MAX)==(UINT_MAX))
-#define cimg_uint64 unsigned long long
-#else
-#define cimg_uint64 unsigned long
-#endif
-
 #endif // #if cimg_OS==2
-#endif
-
 
 // Define some special character codes used for replacement in double quoted strings.
 const char gmic_dollar = 23, gmic_lbrace = 24, gmic_rbrace = 25, gmic_comma = 26, gmic_dquote = 28,
   gmic_store = 29; // <- this one is only used in variable names.
 
 #endif // #ifndef gmic_build
+
+// Define cimg_uint64 type.
+#ifndef cimg_uint64
+#if cimg_OS==2
+#define cimg_uint64 __int64
+#else // #if cimg_OS==2
+#if UINTPTR_MAX==0xffffffff || defined(__arm__) || defined(_M_ARM) || ((ULONG_MAX)==(UINT_MAX))
+#define cimg_uint64 unsigned long long
+#else
+#define cimg_uint64 unsigned long
+#endif // #if UINTPTR_MAX==0xffffffff || defined(__arm__) || defined(_M_ARM) || ((ULONG_MAX)==(UINT_MAX))
+#endif // #if cimg_OS==2
+#endif // #ifndef cimg_uint64
 
 // Define main libgmic class 'gmic'.
 //----------------------------------
