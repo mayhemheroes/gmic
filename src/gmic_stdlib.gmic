@@ -45481,6 +45481,59 @@ fx_solve_maze_preview :
 #@cli : $ https://gmic.eu/samples/distortion.gmic go _fps=20 _label="Distortion"
 #@cli : $ https://gmic.eu/samples/rotozoom.gmic go _fps=15 _label="Rotozoom"
 
+bug :
+  it $HOME/work/src/gmic-community/include/translation_ja.gmic
+  eval "
+    source = crop();
+    svalue = vector8();
+    p = 0;
+    while (1,
+      p = p0 = find(source,'&#',p);
+      p<0?break();
+      p+=2;
+      p>=size(source)?break();
+      q = find(source,';',p);
+      q>p && q<=p+8 && !isnan(val=stov(source,p))?(
+        copy(svalue,source[p],q-p); svalue[q-p] = 0;
+        val = stov(svalue,0,1);
+        !isnan(val) && isint(val) && val>0?(
+
+          # Encode in UTF-8.
+          val<0x7F?(
+            i[p0++] = val
+          ):val<0x7FF?(
+            i[p0++] = (val>>6)|0xC0;
+            i[p0++] = (val&0x3F)|0x80;
+          ):val<0xFFF?(
+            i[p0++] = 0xE0;
+            i[p0++] = (val>>6)|0xA0;
+            i[p0++] = (val&0X3F)|0x80;
+          ):val<0x1FFF?(
+            i[p0++] = 0xE1;
+            i[p0++] = (val>>6)|0x80;
+            i[p0++] = (val&0X3F)|0x80;
+          ):val<0x3FFF?(
+            i[p0++] = (val>>12)|0xE2;
+            i[p0++] = (val>>6)|0x80;
+            i[p0++] = (val&0X3F)|0x80;
+          ):val<0x7FFF?(
+            i[p0++] = (val>>12)|0xE4;
+            i[p0++] = (val>>6)|0x80;
+            i[p0++] = (val&0X3F)|0x80;
+          ):val<0xBFFF?(
+            i[p0++] = (val>>12)|0xE8;
+            i[p0++] = (val>>6)|0x80;
+            i[p0++] = (val&0X3F)|0x80;
+          );
+          copy(i[p0],-1,q-p0+1,1,0);
+          p = q + 1;
+        );
+      );
+    )"
+  discard -1
+
+
+
 # Local Variables:
 # mode: sh
 # End:
