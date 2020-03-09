@@ -222,18 +222,18 @@ const char gmic_dollar = 23, gmic_lbrace = 24, gmic_rbrace = 25, gmic_comma = 26
 
 #endif // #ifndef gmic_build
 
-// Define cimg_uint64 type.
-#ifndef cimg_uint64
+// Define gmic_uint64 type.
+#ifndef gmic_uint64
 #if cimg_OS==2
-#define cimg_uint64 __int64
+#define gmic_uint64 __int64
 #else // #if cimg_OS==2
 #if UINTPTR_MAX==0xffffffff || defined(__arm__) || defined(_M_ARM) || ((ULONG_MAX)==(UINT_MAX))
-#define cimg_uint64 unsigned long long
+#define gmic_uint64 unsigned long long
 #else
-#define cimg_uint64 unsigned long
+#define gmic_uint64 unsigned long
 #endif // #if UINTPTR_MAX==0xffffffff || defined(__arm__) || defined(_M_ARM) || ((ULONG_MAX)==(UINT_MAX))
 #endif // #if cimg_OS==2
-#endif // #ifndef cimg_uint64
+#endif // #ifndef gmic_uint64
 
 // Define main libgmic class 'gmic'.
 //----------------------------------
@@ -439,7 +439,7 @@ struct gmic {
   gmic_image<char> status;
 
   float focale3d, light3d_x, light3d_y, light3d_z, specular_lightness3d, specular_shininess3d, _progress, *progress;
-  cimg_uint64 reference_time;
+  gmic_uint64 reference_time;
   unsigned int nb_dowhiles, nb_fordones, nb_repeatdones, nb_carriages, debug_filename, debug_line, cimg_exception_mode;
   int verbosity,render3d, renderd3d;
   bool allow_entrypoint, is_change, is_debug, is_running, is_start, is_return, is_quit, is_double3d, is_debug_info,
