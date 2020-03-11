@@ -5954,6 +5954,7 @@ parse_gui_update :
       ({'"#@gui"$locale" :"{/$name}=$responsivity${_f${f}_p${p}_type}$sep1{/$args}$sep2$visibility\n'})
     done
   done
+  repeat $! l[$>] utf82html endl done
   $_nongui y a y
 
   # Clean generated output, add footer and header.
@@ -5982,17 +5983,6 @@ parse_gui_update :
      "#"\n\
      "# (End of G\47MIC update file)"'})
   y a y
-
-  # Replace some UTF-8 characters, in case the plug-in doesn't succeed in displaying them correctly.
-  replace_str " ","&nbsp;"
-  replace_str "à","&agrave;"
-  replace_str "å","&aring;"
-  replace_str "ä","&auml;"
-  replace_str "ç","&ccedil;"
-  replace_str "é","&eacute;"
-  replace_str "è","&egrave;"
-  replace_str "ö","&ouml;"
-  replace_str "ü","&uuml;"
 
   e[] "\r  >> "${_gmic_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_gmic_n
 
@@ -6257,45 +6247,73 @@ _parse_gui_zart :
     u {t} rm.
   onfail u "" endl
 
-# Convert ascii buffer with HTML codes (e.g. &#37197;), as an UTF-8 encoded buffer.
+# Convert last ascii buffer with HTML codes (e.g. &#37197;), as an UTF-8 encoded buffer.
 html2utf8 :
-  eval "
-    source = crop();
-    svalue = vector8();
-    p = 0;
-    while (1,
-      p = p0 = find(source,'&#',p);
-      p<0?break();
-      p+=2;
-      p>=size(source)?break();
-      q = find(source,';',p);
-      q>p && q<=p+8 && !isnan(val=stov(source,p))?(
-        copy(svalue,source[p],q-p); svalue[q-p] = 0;
-        val = stov(svalue,0,1);
-        !isnan(val) && isint(val) && val>0?(
+  if h
+    eval "
+      source = crop();
+      svalue = vector8();
+      p = 0;
+      while (1,
+        p = p0 = find(source,'&#',p);
+        p<0?break();
+        p+=2;
+        p>=size(source)?break();
+        q = find(source,';',p);
+        q>p && q<=p+8 && !isnan(val=stov(source,p))?(
+          copy(svalue,source[p],q-p); svalue[q-p] = 0;
+          val = stov(svalue,0,1);
+          !isnan(val) && isint(val) && val>0?(
 
-          # Encode in UTF-8.
-          val<=0x007f?( # 7 bits or less -> 1 byte
-            i[p0++] = val;
-          ):val<=0x07ff?( # 11 bits or less -> 2 bytes
-            i[p0++] = (val>>6)|0xc0;
-            i[p0++] = (val&0x3f)|0x80;
-          ):val<=0xffff?( # 16 bits or less -> 3 bytes
-            i[p0++] = (val>>12)|0xe0;
-            i[p0++] = ((val>>6)&0x3f)|0x80;
-            i[p0++] = (val&0x3f)|0x80;
-          ):( # 21 bits or less -> 4 bytes
-            i[p0++] = (val>>18)|0xf0;
-            i[p0++] = ((val>>12)&0x3f)|0x80;
-            i[p0++] = ((val>>6)&0x3f)|0x80;
-            i[p0++] = (val&0x3f)|0x80;
+            # Encode in UTF-8.
+            val<=0x007f?( # 7 bits or less -> 1 byte
+              i[p0++] = val;
+            ):val<=0x07ff?( # 11 bits or less -> 2 bytes
+              i[p0++] = (val>>6)|0xc0;
+              i[p0++] = (val&0x3f)|0x80;
+            ):val<=0xffff?( # 16 bits or less -> 3 bytes
+              i[p0++] = (val>>12)|0xe0;
+              i[p0++] = ((val>>6)&0x3f)|0x80;
+              i[p0++] = (val&0x3f)|0x80;
+            ):( # 21 bits or less -> 4 bytes
+              i[p0++] = (val>>18)|0xf0;
+              i[p0++] = ((val>>12)&0x3f)|0x80;
+              i[p0++] = ((val>>6)&0x3f)|0x80;
+              i[p0++] = (val&0x3f)|0x80;
+            );
+            copy(i[p0],-1,q-p0+1,1,0);
+            p = q + 1;
           );
-          copy(i[p0],-1,q-p0+1,1,0);
-          p = q + 1;
+        );
+      )"
+    discard. -1
+  fi
+
+# Convert last UTF-8 encoded buffer to ascii buffer with HTML codes.
+utf82html :
+  if h
+    eval "
+      write_seq() = ( copy(res[q],'&#'); q+=2; s = vtos(val); l = find(s,0); copy(res[q],s,l); q+=l; res[q++]=_';' );
+      res = vector(#4*wh);
+      for (q = p = 0, p<wh, ++p,
+        i = i[p];
+        !(i&0x80)?( # 1-byte
+          res[q++] = i;
+        ):(i&0xe0)==0xc0?( # 2-bytes
+          val = (i&0x1f)<<6; i = i[p + 1]; val|= (i&0x3f);
+          write_seq();
+        ):(i&0xf0)==0xe0?( # 3-bytes
+          val = (i&0xf)<<12; i = i[p + 1]; val|= (i&0x3f)<<6; i = i[p + 2]; val|= (i&0x3f);
+          write_seq();
+        ):(i&0xf8)==0xf0?( # 4-bytes
+          val = (i&0x7)<<18; i = i[p + 1]; val|= (i&0x3f)<<12; i = i[p + 2]; val|= (i&0x3f)<<6;
+          i = i[p + 3]; val|= (i&0x3f);
+          write_seq();
         );
       );
-    )"
-  discard. -1
+      store(res,'res',1,q)"
+    rm. $res
+  fi
 
 # Force certain filters to move from one path to another.
 _upload_filters_move :
