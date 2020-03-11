@@ -807,8 +807,8 @@ ${g}"1 (true)"$n" whether its string
 ${g}"v"$n"' appears
 \n          in the set of other values 'a_i'.
 \n       . '"${c}"inrange(value,m,M,include_boundaries)"$n"' returns "${g}"0 (false)"$n" or "${g}"1 (true)"$n" whether
-\n          the specified value lies in range "${g}"[m,M]"$n" or not
-\n          (checked range is "${g}"]m,M["$n" if '"${g}"include_boundaries=0"$n"').
+\n          the specified value lies in range "${g}"[m,M]"$n" or not (checked range is "${g}"]m,M["$n" if
+\n          '"${g}"include_boundaries=0"$n"').
 \n       . '"${c}"argmin()"$n"', '"${c}"argmax()"$n"', '"${c}"avg()"$n"', '"${c}"kth()"$n"', '"${c}"max()"$n"', '"\
 ${c}"med()"$n"', '"${c}"min()"$n"', '"${c}"std()"$n"', '"${c}"sum()"$n"'
 \n          and '"${c}"var()"$n"' can be called with an arbitrary number of scalar/vector arguments.
@@ -5631,6 +5631,7 @@ parse_gui : skip "${1=*},${2=print}"
             l<r?(
               copy(hide,source[l0],l-l0); hide[l-l0] = 0;
               copy(i[#0,p0],-1,r-p0+1,1,0);
+#              hide[0] = 0;
             );
             p = r + 1;
           )
@@ -5826,7 +5827,8 @@ parse_gui : skip "${1=*},${2=print}"
 parse_gui_parseparams_print : u 0 # Tell parser to not parse filter parameters
 parse_gui_trigger_print : sort_list +,n
 parse_gui_print :
-  e[] "\n"
+  e[] "\r"${_gmic_g}{`vector68(_'" "')`}$_gmic_n
+  e[] "  > "${_gmic_g}"List of matching filters:"$_gmic_n"\n\n"
   repeat $_nbfilters
     +e[] "  [#"{1+$>}"] "${_f$>_path}${_f$>_name}
   done
@@ -5980,6 +5982,18 @@ parse_gui_update :
      "#"\n\
      "# (End of G\47MIC update file)"'})
   y a y
+
+  # Replace some UTF-8 characters, in case the plug-in doesn't succeed in displaying them correctly.
+  replace_str " ","&nbsp;"
+  replace_str "à","&agrave;"
+  replace_str "å","&aring;"
+  replace_str "ä","&auml;"
+  replace_str "ç","&ccedil;"
+  replace_str "é","&eacute;"
+  replace_str "è","&egrave;"
+  replace_str "ö","&ouml;"
+  replace_str "ü","&uuml;"
+
   e[] "\r  >> "${_gmic_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_gmic_n
 
 #
@@ -6016,7 +6030,11 @@ parse_gui_json :
     # Filter definition.
     _parse_gui_json[] ${_f${f}_name} fname=${}
 
-    ({'"    {\n      \"name\": \""$fname"\", \"command\": \""${_f${f}_command}"\", \"parameters\": [\n"'})
+    locale=en
+    if narg(${_f${f}_locale}) locale=${_f${f}_locale} fi
+
+    ({'"    {\n      \"name\": \""$fname"\", \"lang\": \""$locale"\", \"command\": \""${_f${f}_command}"\", "\
+       "\"parameters\": [\n"'})
 
     sepf={`$<?_',':0`}
     ppos=1
@@ -6058,12 +6076,12 @@ parse_gui_json :
         ppos+=1
 
       elif ['$type']=='file'" || "['$type']=='filein'" || "['$type']=='fileout'
-        ({'"      { \"type\": \"file\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"pos\": \""$ppos"\" }"\
+        ({'"      { \"type\": \"file\", \"name\": \""$name"\", \"default\": \""{/$arg0}"\", \"pos\": \""$ppos"\" }"\
           $sepp\n'})
         ppos+=1
 
       elif ['$type']=='folder'
-        ({'"      { \"type\": \"folder\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"pos\": \""$ppos"\"}"\
+        ({'"      { \"type\": \"folder\", \"name\": \""$name"\", \"default\": \""{/$arg0}"\", \"pos\": \""$ppos"\"}"\
           $sepp\n'})
         ppos+=1
 
@@ -6074,11 +6092,11 @@ parse_gui_json :
         else url,name=${arg$n}
         fi
         if $align==0 align=left elif $align==1 align=right else align=center fi
-        ({'"      { \"type\": \"link\", \"name\": \""$name"\", \"url\": \""$url"\", \"align\": \""$align"\" }"$sepp\n'})
+        ({'"      { \"type\": \"link\", \"name\": \""$name"\", \"url\": \""{/$url}"\", \"align\": \""$align"\" }"\
+          $sepp\n'})
 
       elif ['$type']=='note'
-        text={/$arg0}
-        ({'"      { \"type\": \"note\", \"text\": \""$text"\"}"$sepp\n'})
+        ({'"      { \"type\": \"note\", \"text\": \""{/$arg0}"\"}"$sepp\n'})
 
       elif ['$type']=='point'
         ({'"      { \"type\": \"point\", \"name\": \""$name"\", \"position\": \""$arg0,$arg1"\", \"pos\": "\
@@ -6089,14 +6107,12 @@ parse_gui_json :
         ({'"      { \"type\": \"separator\" }"$sepp\n'})
 
       elif ['$type']=='text'
-        text={/$arg0}
-        ({'"      { \"type\": \"text\", \"name\": \""$name"\", \"default\": \""$text"\", \"pos\": \""$ppos"\" }"\
+        ({'"      { \"type\": \"text\", \"name\": \""$name"\", \"default\": \""{/$arg0}"\", \"pos\": \""$ppos"\" }"\
           $sepp\n'})
         ppos+=1
 
       elif ['$type']=='value'
-        text={/$arg0}
-        ({'"      { \"type\": \"value\", \"value\": \""$text"\", \"pos\": \""$ppos"\" }"$sepp\n'})
+        ({'"      { \"type\": \"value\", \"value\": \""{/$arg0}"\", \"pos\": \""$ppos"\" }"$sepp\n'})
         ppos+=1
 
       else # Unknown parameter
@@ -6115,8 +6131,9 @@ _parse_gui_json :
   l[]
     ({'{/"$*"}'})
     replace_str "\\","\\\\"
-    replace_str "\"","\\\""
     replace_str "\n","\\n"
+    replace_str "\r","\\r"
+    replace_str "\"","\\\""
     replace_str "&amp;","&"
     replace_str "&nbsp;"," "
     replace_str. "<i>",""
