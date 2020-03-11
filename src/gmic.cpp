@@ -2447,12 +2447,11 @@ bool gmic::check_filename(const char *const filename) {
 // Wait for threads to finish.
 template<typename T>
 void gmic::wait_threads(void *const p_gmic_threads, const bool try_abort, const T& pixel_type) {
-  if (is_thread) return; // Only the main instance can wait for threads completion
   cimg::unused(pixel_type);
   CImg<_gmic_parallel<T> > &gmic_threads = *(CImg<_gmic_parallel<T> >*)p_gmic_threads;
 #ifdef gmic_is_parallel
   cimg_forY(gmic_threads,l) {
-    if (try_abort && !gmic_threads[l].is_thread_running)
+    if (try_abort && gmic_threads[l].is_thread_running)
       gmic_threads[l].gmic_instance.is_abort_thread = true;
 
     if (gmic_threads[l].is_thread_running) {
@@ -2580,7 +2579,7 @@ unsigned int gmic::strescape(const char *const str, char *const res) {
     commands_has_arguments(new CImgList<char>[gmic_comslots]), \
     _variables(new CImgList<char>[gmic_varslots]), _variables_names(new CImgList<char>[gmic_varslots]), \
     variables(new CImgList<char>*[gmic_varslots]), variables_names(new CImgList<char>*[gmic_varslots]), \
-    is_running(false),is_thread(false)
+    is_running(false)
 
 #define display_window(n) (*(CImgDisplay*)display_windows[n])
 
@@ -10143,7 +10142,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           // Prepare thread structures.
           cimg_forY(_gmic_threads,l) {
             gmic &gmic_instance = _gmic_threads[l].gmic_instance;
-            gmic_instance.is_thread = true;
             for (unsigned int i = 0; i<gmic_comslots; ++i) {
               gmic_instance.commands[i].assign(commands[i],true);
               gmic_instance.commands_names[i].assign(commands_names[i],true);
