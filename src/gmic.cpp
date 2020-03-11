@@ -3595,7 +3595,8 @@ bool gmic::check_cond(const char *const expr, CImgList<T>& images, const char *c
   bool res = false;
   float _res = 0;
   char end;
-  if (cimg_sscanf(expr,"%f%c",&_res,&end)==1) res = (bool)_res;
+  if (*expr>='0' && *expr<='9' && !expr[1]) res = (bool)(*expr - '0');
+  else if (cimg_sscanf(expr,"%f%c",&_res,&end)==1) res = (bool)_res;
   else {
     CImg<char> _expr(expr,(unsigned int)std::strlen(expr) + 1);
     strreplace_fw(_expr);
@@ -4614,7 +4615,7 @@ CImg<char> gmic::substitute_item(const char *const source,
 
         // Substitute '$|' -> Timer value.
       } else if (nsource[1]=='|') {
-        cimg_snprintf(substr,substr.width(),"%g",(cimg::time() - reference_time)/1000.);
+        cimg_snprintf(substr,substr.width(),"%.17g",(cimg::time() - reference_time)/1000.);
         CImg<char>(substr.data(),(unsigned int)std::strlen(substr),1,1,1,true).
           append_string_to(substituted_items,ptr_sub);
         nsource+=2;
