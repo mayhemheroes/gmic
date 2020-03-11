@@ -2447,20 +2447,25 @@ bool gmic::check_filename(const char *const filename) {
 // Wait for threads to finish.
 template<typename T>
 void gmic::wait_threads(void *const p_gmic_threads, const bool try_abort, const T& pixel_type) {
+  if (is_thread) return; // Only the main instance can wait for threads completion
   cimg::unused(pixel_type);
   CImg<_gmic_parallel<T> > &gmic_threads = *(CImg<_gmic_parallel<T> >*)p_gmic_threads;
 #ifdef gmic_is_parallel
   cimg_forY(gmic_threads,l) {
     if (try_abort && !gmic_threads[l].is_thread_running)
       gmic_threads[l].gmic_instance.is_abort_thread = true;
+
+    if (gmic_threads[l].is_thread_running) {
+      gmic_threads[l].is_thread_running = false;
 #ifdef _PTHREAD_H
-    pthread_join(gmic_threads[l].thread_id,0);
+      pthread_join(gmic_threads[l].thread_id,0);
 #elif cimg_OS==2 // #ifdef _PTHREAD_H
-    WaitForSingleObject(gmic_threads[l].thread_id,INFINITE);
-    CloseHandle(gmic_threads[l].thread_id);
+      WaitForSingleObject(gmic_threads[l].thread_id,INFINITE);
+      CloseHandle(gmic_threads[l].thread_id);
 #endif // #ifdef _PTHREAD_H
+    }
+
     is_change|=gmic_threads[l].gmic_instance.is_change;
-    gmic_threads[l].is_thread_running = false;
   }
 #endif // #ifdef gmic_is_parallel
 }
@@ -4791,6 +4796,7 @@ gmic& gmic::_run(const gmic_list<char>& commands_line,
   if (p_progress) progress = p_progress; else { _progress = -1; progress = &_progress; }
   if (p_is_abort) is_abort = p_is_abort; else { _is_abort = false; is_abort = &_is_abort; }
   is_abort_thread = false;
+  is_thread = false;
   abort_ptr(is_abort);
   *progress = -1;
   cimglist_for(commands_line,l) {
@@ -10138,6 +10144,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           // Prepare thread structures.
           cimg_forY(_gmic_threads,l) {
             gmic &gmic_instance = _gmic_threads[l].gmic_instance;
+            gmic_instance.is_thread = true;
             for (unsigned int i = 0; i<gmic_comslots; ++i) {
               gmic_instance.commands[i].assign(commands[i],true);
               gmic_instance.commands_names[i].assign(commands_names[i],true);
