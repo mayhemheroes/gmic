@@ -4614,7 +4614,7 @@ CImg<char> gmic::substitute_item(const char *const source,
 
         // Substitute '$|' -> Timer value.
       } else if (nsource[1]=='|') {
-        cimg_snprintf(substr,substr.width(),"%g",(cimg::time() - reference_time)/1000.);
+        cimg_snprintf(substr,substr.width(),"%.17g",(cimg::time() - reference_time)/1000.);
         CImg<char>(substr.data(),(unsigned int)std::strlen(substr),1,1,1,true).
           append_string_to(substituted_items,ptr_sub);
         nsource+=2;
