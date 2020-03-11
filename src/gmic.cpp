@@ -2308,7 +2308,7 @@ inline _gmic_mutex& gmic_mutex() { static _gmic_mutex val; return val; }
 template<typename T>
 struct _gmic_parallel {
   CImgList<char> *images_names, *parent_images_names, commands_line;
-  CImgList<_gmic_parallel<T> > *gmic_threads;
+  CImg<_gmic_parallel<T> > *gmic_threads;
   CImgList<T> *images, *parent_images;
   CImg<unsigned int> variables_sizes;
   const CImg<unsigned int> *command_selection;
@@ -2341,6 +2341,8 @@ static DWORD WINAPI gmic_parallel(void *arg)
                           *st.parent_images,*st.parent_images_names,
                           st.variables_sizes,0,0,st.command_selection);
   } catch (gmic_exception &e) {
+    cimg_forY(*st.gmic_threads,l)
+      (*st.gmic_threads)[l].gmic_instance.is_abort_thread = true;
     st.exception._command.assign(e._command);
     st.exception._message.assign(e._message);
   }
@@ -2454,15 +2456,17 @@ void gmic::wait_threads(void *const p_gmic_threads, const bool try_abort, const 
     if (try_abort && gmic_threads[l].is_thread_running)
       gmic_threads[l].gmic_instance.is_abort_thread = true;
 
+    cimg::mutex(25);
     if (gmic_threads[l].is_thread_running) {
       gmic_threads[l].is_thread_running = false;
+      cimg::mutex(25,0);
 #ifdef _PTHREAD_H
       pthread_join(gmic_threads[l].thread_id,0);
 #elif cimg_OS==2 // #ifdef _PTHREAD_H
       WaitForSingleObject(gmic_threads[l].thread_id,INFINITE);
       CloseHandle(gmic_threads[l].thread_id);
 #endif // #ifdef _PTHREAD_H
-    }
+    } else cimg::mutex(25,0);
 
     is_change|=gmic_threads[l].gmic_instance.is_change;
   }
@@ -10195,7 +10199,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             _gmic_threads[l].images_names = &images_names;
             _gmic_threads[l].parent_images = &parent_images;
             _gmic_threads[l].parent_images_names = &parent_images_names;
-            _gmic_threads[l].gmic_threads = &gmic_threads;
+            _gmic_threads[l].gmic_threads = &_gmic_threads;
             _gmic_threads[l].command_selection = command_selection;
             _gmic_threads[l].is_thread_running = true;
 
