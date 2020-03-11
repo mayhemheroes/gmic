@@ -2580,7 +2580,7 @@ unsigned int gmic::strescape(const char *const str, char *const res) {
     commands_has_arguments(new CImgList<char>[gmic_comslots]), \
     _variables(new CImgList<char>[gmic_varslots]), _variables_names(new CImgList<char>[gmic_varslots]), \
     variables(new CImgList<char>*[gmic_varslots]), variables_names(new CImgList<char>*[gmic_varslots]), \
-    is_running(false)
+    is_running(false),is_thread(false)
 
 #define display_window(n) (*(CImgDisplay*)display_windows[n])
 
@@ -4796,7 +4796,6 @@ gmic& gmic::_run(const gmic_list<char>& commands_line,
   if (p_progress) progress = p_progress; else { _progress = -1; progress = &_progress; }
   if (p_is_abort) is_abort = p_is_abort; else { _is_abort = false; is_abort = &_is_abort; }
   is_abort_thread = false;
-  is_thread = false;
   abort_ptr(is_abort);
   *progress = -1;
   cimglist_for(commands_line,l) {
