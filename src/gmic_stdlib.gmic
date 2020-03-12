@@ -4667,7 +4667,7 @@ _sample :
 #@cli : Set random generator seed.
 #@cli : If no argument is specified, a random value is used as the random generator seed.
 
-#@cli store : variable_name1,_variable_name2,... : (+)
+#@cli store : _is_compressed={ 0 | 1 },variable_name1,_variable_name2,... : (+)
 #@cli : Store selected images into one or several named variables.
 #@cli : Selected images are transferred to the variables, and are so removed from the image list.
 #@cli : (except if the prepended variant of the command '+store[selection]' is used).
@@ -18308,11 +18308,13 @@ apply_timeout :
   else
     e[0--3] "Apply command '$1' on image$?, with a timeout of $2 seconds."
     l[] ({'$/'}) id={is} rm endl
-    __done$id=0 __is_timeout$id=0
     l
-    parallel "$1 __done"$id"=1",\
-             "do if $|-"$|">$2 __is_timeout"$id"=1 error \"\" elif $__done"$id" break fi wait 100 while 1"
+      +store initial
+      __done$id=0 __is_timeout$id=0
+      parallel "$1 __done"$id"=1",\
+               "do if $|-"$|">$2 __is_timeout"$id"=1 error \"\" elif $__done"$id" break fi wait 100 while 1"
     onfail
+      rm $initial
       if ${__is_timeout$id} error[0--5] "Command '$0': Time out ($2 seconds) for command '$1'."
       else error[0--5] "Command '$0': "${}
       fi
