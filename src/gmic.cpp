@@ -11483,14 +11483,14 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                cimg_sscanf(argument,"%4095[,a-zA-Z0-9_]%c",&(*formula=0),&end)==1) &&
               is_compressed<=1 &&
               (*formula<'0' || *formula>'9') && *formula!=',') {
-            char *current = formula + (*argument=='0' || *argument=='1'?2:0), *next = std::strchr(current,','), saved = 0;
+            char *current = formula, *next = std::strchr(current,','), saved = 0;
             pattern = 1U;
             if (next) // Count number of specified variable names
               for (const char *ptr = next; ptr; ptr = std::strchr(ptr,',')) { ++ptr; ++pattern; }
             print(images,0,
-                  "Store image%s as %scompressed variable%s '%s'",
+                  "Store image%s as %s variable%s '%s'",
                   gmic_selection.data(),
-                  is_compressed?"":"un",
+                  is_compressed?"compressed":"",
                   next?"s":"",
                   gmic_argument_text_printed() + (*argument=='0' || *argument=='1'?2:0));
 
@@ -11539,6 +11539,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               name.resize(name.width() + 9 + std::strlen(current),1,1,1,0,0,1);
               std::sprintf(name,"%c*store/%s",gmic_store,current);
               set_variable(current,name,variables_sizes);
+
+              std::fprintf(stderr,"\nDEBUG : current = %s\n",current);
 
               if (saved) { // other variables names follow
                 *next = saved;
