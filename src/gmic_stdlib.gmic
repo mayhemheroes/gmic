@@ -18309,10 +18309,12 @@ apply_timeout :
     e[0--3] "Apply command '$1' on image$?, with a timeout of $2 seconds."
     l[] ({'$/'}) id={is} rm endl
     l
+      +store initial
       __done$id=0 __is_timeout$id=0
       parallel "$1 __done"$id"=1",\
                "do if $|-"$|">$2 __is_timeout"$id"=1 error \"\" elif $__done"$id" break fi wait 100 while 1"
     onfail
+      rm $initial
       if ${__is_timeout$id} error[0--5] "Command '$0': Time out ($2 seconds) for command '$1'."
       else error[0--5] "Command '$0': "${}
       fi
