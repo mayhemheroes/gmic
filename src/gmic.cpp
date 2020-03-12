@@ -11478,22 +11478,26 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Store.
         if (!std::strcmp("store",command)) {
           gmic_substitute_args(false);
-          if (cimg_sscanf(argument,"%4095[,a-zA-Z0-9_]%c",&(*formula=0),&end)==1 &&
+          unsigned int is_compressed = 0U;
+          if ((cimg_sscanf(argument,"%u,%4095[,a-zA-Z0-9_]%c",&is_compressed,&(*formula=0),&end)==2 ||
+               cimg_sscanf(argument,"%4095[,a-zA-Z0-9_]%c",&(*formula=0),&end)==1) &&
+              is_compressed<=1 &&
               (*formula<'0' || *formula>'9') && *formula!=',') {
-            char *current = formula, *next = std::strchr(formula,','), saved = 0;
+            char *current = formula, *next = std::strchr(current,','), saved = 0;
             pattern = 1U;
             if (next) // Count number of specified variable names
               for (const char *ptr = next; ptr; ptr = std::strchr(ptr,',')) { ++ptr; ++pattern; }
             print(images,0,
-                  "Store image%s as variable%s '%s'",
+                  "Store image%s as %s variable%s '%s'",
                   gmic_selection.data(),
+                  is_compressed?"compressed":"",
                   next?"s":"",
-                  gmic_argument_text_printed());
+                  gmic_argument_text_printed() + (*argument=='0' || *argument=='1'?2:0));
 
             if (pattern!=1 && (int)pattern!=selection.height())
               error(true,images,0,0,
                     "Command 'store': Specified arguments '%s' do not match numbers of selected images.",
-                    gmic_argument_text());
+                    gmic_argument_text() + (*argument=='0' || *argument=='1'?2:0));
 
             g_list.assign(selection.height());
             g_list_c.assign(g_list.size());
@@ -11513,7 +11517,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               name.resize(name.width() + 4,1,1,1,0,0,1);
               name[0] = 'G'; name[1] = 'M'; name[2] = 'Z'; name[3] = 0;
               name.unroll('y').move_to(g_list);
-              g_list.get_serialize(false).unroll('x').move_to(name);
+              g_list.get_serialize((bool)is_compressed).unroll('x').move_to(name);
               name.resize(name.width() + 9 + std::strlen(formula),1,1,1,0,0,1);
               std::sprintf(name,"%c*store/%s",gmic_store,_formula.data());
               set_variable(formula,name,variables_sizes);
@@ -11521,7 +11525,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               if (!*current)
                 error(true,images,0,0,
                       "Command 'store': Empty variable name specified in arguments '%s'.",
-                      gmic_argument_text());
+                      gmic_argument_text() + (*argument=='0' || *argument=='1'?2:0));
               saved = next?*next:0;
               if (next) *next = 0;
 
@@ -11531,10 +11535,12 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               name[0] = 'G'; name[1] = 'M'; name[2] = 'Z'; name[3] = 0;
               name.unroll('y').move_to(tmp[1]);
               g_list[n].move_to(tmp[0]);
-              tmp.get_serialize(false).unroll('x').move_to(name);
+              tmp.get_serialize((bool)is_compressed).unroll('x').move_to(name);
               name.resize(name.width() + 9 + std::strlen(current),1,1,1,0,0,1);
               std::sprintf(name,"%c*store/%s",gmic_store,current);
               set_variable(current,name,variables_sizes);
+
+              std::fprintf(stderr,"\nDEBUG : current = %s\n",current);
 
               if (saved) { // other variables names follow
                 *next = saved;
