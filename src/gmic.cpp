@@ -4338,7 +4338,6 @@ CImg<char> gmic::substitute_item(const char *const source,
                 CImg<char>::string(substr,false,true).append_string_to(substituted_items,ptr_sub);
               if (e_feature) {
                 *e_feature = ','; feature = e_feature + 1;
-//                CImg<char>::append_string_to(',',substituted_items,ptr_sub);
                 CImg<char>::append_string_to(delimiter,substituted_items,ptr_sub);
               } else feature+=std::strlen(feature);
             } while (*feature || e_feature);
