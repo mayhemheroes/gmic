@@ -13812,6 +13812,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       char *last_x = std::strrchr(arg_input,'x');
       if (last_x && cimg_sscanf(last_x + 1,"%d%c",&nb,&end)==1 && nb>0) *last_x = 0;
       else { last_x = 0; nb = 1; }
+      cimg_uint64 larg = 0;
 
       if (*arg_input=='0' && !arg_input[1]) {
 
@@ -13826,51 +13827,62 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         CImg<char>::string("[empty]").move_to(g_list_c);
         if (--nb) { g_list.insert(nb,g_list[0]); g_list_c.insert(nb,g_list_c[0]); }
 
-      } else if (*arg_input=='(' && arg_input[std::strlen(arg_input) - 1]==')') {
-
-        // New IxJxKxL image specified as array.
-        CImg<bool> au(256,1,1,1,false);
-        au[(int)'0'] = au[(int)'1'] = au[(int)'2'] = au[(int)'3'] = au[(int)'4'] = au[(int)'5'] = au[(int)'6'] =
-          au[(int)'7'] = au[(int)'8'] = au[(int)'9'] = au[(int)'.'] = au[(int)'e'] = au[(int)'E'] = au[(int)'i'] =
-          au[(int)'n'] = au[(int)'f'] = au[(int)'a'] = au[(int)'+'] = au[(int)'-'] = true;
-        unsigned int l, cx = 0, cy = 0, cz = 0, cc = 0, maxcx = 0, maxcy = 0, maxcz = 0;
-        const char *nargument = 0;
-        CImg<char> s_value(256);
-        char separator = 0;
+      } else if (*arg_input=='(' && arg_input[(larg = (cimg_uint64)std::strlen(arg_input)) - 1]==')') {
         CImg<T> img;
 
-        for (nargument = arg_input.data() + 1; *nargument; ) {
-          *s_value = separator = 0;
-          char *pd = s_value;
-          // Do something faster than 'scanf("%255[0-9.eEinfa+-]")'.
-          for (l = 0; l<255 && au((unsigned int)*nargument); ++l) *(pd++) = *(nargument++);
-          if (l<255) *pd = 0; else arg_error("input");
-          if (*nargument) separator = *(nargument++);
-          if ((separator=='^' || separator=='/' || separator==';' || separator==',' || separator==')') &&
-              cimg_sscanf(s_value,"%lf%c",&value,&end)==1) {
-            if (cx>maxcx) maxcx = cx;
-            if (cy>maxcy) maxcy = cy;
-            if (cz>maxcz) maxcz = cz;
-            if (cx>=img._width || cy>=img._height || cz>=img._depth || cc>=img._spectrum)
-              img.resize(cx>=img._width?7*cx/4 + 1:std::max(1U,img._width),
-                         cy>=img._height?4*cy/4 + 1:std::max(1U,img._height),
-                         cz>=img._depth?7*cz/4 + 1:std::max(1U,img._depth),
-                         cc>=img._spectrum?7*cc/4 + 1:std::max(1U,img._spectrum),0);
-            img(cx,cy,cz,cc) = (T)value;
-            switch (separator) {
-            case '^' : cx = cy = cz = 0; ++cc; break;
-            case '/' : cx = cy = 0; ++cz; break;
-            case ';' : cx = 0; ++cy; break;
-            case ',' : ++cx; break;
-            case ')' : break;
-            default : arg_error("input");
-            }
-          } else arg_error("input");
+        if (larg>3 && arg_input[1]=='\'' && arg_input[larg - 2]=='\'') {
+
+          // String encoded as an image.
+          CImg<char> str(arg_input.data() + 2,larg - 3);
+          str.back() = 0;
+          cimg::strunescape(str);
+          img.assign(str.data(),(unsigned int)std::strlen(str));
+
+        } else {
+
+          // New IxJxKxL image specified as array.
+          CImg<bool> au(256,1,1,1,false);
+          au[(int)'0'] = au[(int)'1'] = au[(int)'2'] = au[(int)'3'] = au[(int)'4'] = au[(int)'5'] = au[(int)'6'] =
+            au[(int)'7'] = au[(int)'8'] = au[(int)'9'] = au[(int)'.'] = au[(int)'e'] = au[(int)'E'] = au[(int)'i'] =
+            au[(int)'n'] = au[(int)'f'] = au[(int)'a'] = au[(int)'+'] = au[(int)'-'] = true;
+          unsigned int l, cx = 0, cy = 0, cz = 0, cc = 0, maxcx = 0, maxcy = 0, maxcz = 0;
+          const char *nargument = 0;
+          CImg<char> s_value(256);
+          char separator = 0;
+
+          for (nargument = arg_input.data() + 1; *nargument; ) {
+            *s_value = separator = 0;
+            char *pd = s_value;
+            // Do something faster than 'scanf("%255[0-9.eEinfa+-]")'.
+            for (l = 0; l<255 && au((unsigned int)*nargument); ++l) *(pd++) = *(nargument++);
+            if (l<255) *pd = 0; else arg_error("input");
+            if (*nargument) separator = *(nargument++);
+            if ((separator=='^' || separator=='/' || separator==';' || separator==',' || separator==')') &&
+                cimg_sscanf(s_value,"%lf%c",&value,&end)==1) {
+              if (cx>maxcx) maxcx = cx;
+              if (cy>maxcy) maxcy = cy;
+              if (cz>maxcz) maxcz = cz;
+              if (cx>=img._width || cy>=img._height || cz>=img._depth || cc>=img._spectrum)
+                img.resize(cx>=img._width?7*cx/4 + 1:std::max(1U,img._width),
+                           cy>=img._height?4*cy/4 + 1:std::max(1U,img._height),
+                           cz>=img._depth?7*cz/4 + 1:std::max(1U,img._depth),
+                           cc>=img._spectrum?7*cc/4 + 1:std::max(1U,img._spectrum),0);
+              img(cx,cy,cz,cc) = (T)value;
+              switch (separator) {
+              case '^' : cx = cy = cz = 0; ++cc; break;
+              case '/' : cx = cy = 0; ++cz; break;
+              case ';' : cx = 0; ++cy; break;
+              case ',' : ++cx; break;
+              case ')' : break;
+              default : arg_error("input");
+              }
+            } else arg_error("input");
+          }
+          img.resize(maxcx + 1,maxcy + 1,maxcz + 1,cc + 1,0);
+          print(images,0,"Input image at position%s, with values %s",
+                _gmic_selection.data(),
+                gmic_argument_text_printed());
         }
-        img.resize(maxcx + 1,maxcy + 1,maxcz + 1,cc + 1,0);
-        print(images,0,"Input image at position%s, with values %s",
-              _gmic_selection.data(),
-              gmic_argument_text_printed());
         img.move_to(g_list);
         arg_input.move_to(g_list_c);
         if (--nb) { g_list.insert(nb,g_list[0]); g_list_c.insert(nb,g_list_c[0]); }
