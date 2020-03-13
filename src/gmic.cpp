@@ -11541,8 +11541,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               std::sprintf(name,"%c*store/%s",gmic_store,current);
               set_variable(current,name,variables_sizes);
 
-              std::fprintf(stderr,"\nDEBUG : current = %s\n",current);
-
               if (saved) { // other variables names follow
                 *next = saved;
                 current = next + 1;
