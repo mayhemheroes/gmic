@@ -13838,14 +13838,19 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
       } else if (*arg_input=='(' && arg_input[(larg = (cimg_uint64)std::strlen(arg_input)) - 1]==')') {
         CImg<T> img;
+        char delimiter = 0;
 
-        if (larg>3 && arg_input[1]=='\'' && arg_input[larg - 2]=='\'') {
+        if (arg_input[1]=='\'' &&
+            ((larg>3 && arg_input[larg - 2]=='\'') ||
+             (larg>5 && arg_input[larg - 3]==':' && arg_input[larg - 4]=='\'' &&
+              ((delimiter = arg_input[larg-2])==',' || delimiter==';' || delimiter=='/' || delimiter=='^')))) {
 
           // String encoded as an image.
-          CImg<char> str(arg_input.data() + 2,larg - 3);
+          CImg<char> str(arg_input.data() + 2,larg - (delimiter?3:5));
           str.back() = 0;
           cimg::strunescape(str);
           img.assign(str.data(),(unsigned int)std::strlen(str));
+          if (delimiter && delimiter!=',') img.unroll(delimiter==';'?'y':delimiter=='/'?'z':'c');
 
         } else {
 
