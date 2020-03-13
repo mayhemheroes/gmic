@@ -4169,6 +4169,7 @@ CImg<char> gmic::substitute_item(const char *const source,
         // '{...}' expression.
       } else if (*nsource=='{') {
         const char *const ptr_beg = nsource + 1, *ptr_end = ptr_beg;
+        char delimiter = 0;
         unsigned int p = 0;
         for (p = 1; p>0 && *ptr_end; ++ptr_end) { if (*ptr_end=='{') ++p; if (*ptr_end=='}') --p; }
         if (p) {
@@ -4176,14 +4177,21 @@ CImg<char> gmic::substitute_item(const char *const source,
           continue;
         }
         l_inbraces = (int)(ptr_end - ptr_beg - 1);
-
         if (l_inbraces>0) {
+          if (l_inbraces>2 && ptr_beg[l_inbraces - 2]==':') {
+            const char del = ptr_beg[l_inbraces - 1];
+            if (del==',' || del==';' || del=='/' || del=='^') {
+              delimiter = del;
+              l_inbraces-=2;
+            }
+          }
           inbraces.assign(ptr_beg,l_inbraces + 1).back() = 0;
           substitute_item(inbraces,images,images_names,parent_images,parent_images_names,variables_sizes,
                           command_selection,false).move_to(inbraces);
           strreplace_fw(inbraces);
         }
-        nsource+=l_inbraces + 2;
+        nsource+=l_inbraces + 2 + (delimiter?2:0);
+        if (!delimiter) delimiter = ',';
         if (!*inbraces)
           error(true,images,0,0,
                 "Item substitution '{}': Empty braces.");
@@ -4330,7 +4338,8 @@ CImg<char> gmic::substitute_item(const char *const source,
                 CImg<char>::string(substr,false,true).append_string_to(substituted_items,ptr_sub);
               if (e_feature) {
                 *e_feature = ','; feature = e_feature + 1;
-                CImg<char>::append_string_to(',',substituted_items,ptr_sub);
+//                CImg<char>::append_string_to(',',substituted_items,ptr_sub);
+                CImg<char>::append_string_to(delimiter,substituted_items,ptr_sub);
               } else feature+=std::strlen(feature);
             } while (*feature || e_feature);
             *substr = 0; is_substituted = true;
@@ -4478,7 +4487,7 @@ CImg<char> gmic::substitute_item(const char *const source,
               is_substituted = true;
               break;
             case '^' : { // Sequence of all pixel values
-              img.value_string(',').move_to(vs);
+              img.value_string(delimiter).move_to(vs);
               if (vs && *vs) { --vs._width; vs.append_string_to(substituted_items,ptr_sub); }
               *substr = 0; is_substituted = true;
             } break;
@@ -4488,7 +4497,7 @@ CImg<char> gmic::substitute_item(const char *const source,
           if (!is_substituted && *feature=='@') { // Subset of values
             if (l_feature>=2) {
               if (feature[1]=='^' && !feature[2]) { // All pixel values
-                img.value_string(',').move_to(vs);
+                img.value_string(delimiter).move_to(vs);
                 if (vs && *vs) { --vs._width; vs.append_string_to(substituted_items,ptr_sub); }
                 *substr = 0; is_substituted = true;
               } else {
@@ -4520,7 +4529,7 @@ CImg<char> gmic::substitute_item(const char *const source,
                   cimg_snprintf(substr,substr.width(),"%.17g",(double)values[q]);
                   CImg<char>::string(substr,true,true).
                     append_string_to(substituted_items,ptr_sub);
-                  *(ptr_sub - 1) = ',';
+                  *(ptr_sub - 1) = delimiter;
                 }
                 if (values) --ptr_sub;
               }
@@ -4547,7 +4556,7 @@ CImg<char> gmic::substitute_item(const char *const source,
                   append_string_to(substituted_items,ptr_sub);
               } else {
                 if (output.height()>1) { // Vector-valued result
-                  output.value_string(',',0,is_rounded?"%g":"%.17g").move_to(vs);
+                  output.value_string(delimiter,0,is_rounded?"%g":"%.17g").move_to(vs);
                   if (vs && *vs) { --vs._width; vs.append_string_to(substituted_items,ptr_sub); }
                 } else { // Scalar result
                   if (is_rounded) cimg_snprintf(substr,substr.width(),"%g",*output);
@@ -13887,10 +13896,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         arg_input.move_to(g_list_c);
         if (--nb) { g_list.insert(nb,g_list[0]); g_list_c.insert(nb,g_list_c[0]); }
 
-      } else if ((last_x?(*last_x='x'):0), // Restore full input argument
-                 *arg_input==gmic_store &&
+      } else if (*arg_input==gmic_store &&
                  cimg_sscanf(arg_input.data() + 1,"*store/%255[a-zA-Z0-9_]%c",&(*argx=0),&end)==1 &&
                  (*argx<'0' || *argx>'9')) {
+        if (last_x) *last_x = 'x'; // Restore full input argument
 
         // Binary-stored variable.
         print(images,0,
