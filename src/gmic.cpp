@@ -4372,7 +4372,7 @@ CImg<char> gmic::substitute_item(const char *const source,
             inbraces[inbraces.width() - 2] = 0;
             cimg::strunescape(inbraces);
             for (*substr = 0; *s; ++s) {
-              cimg_snprintf(substr,substr.width(),"%d,",(int)(unsigned char)*s);
+              cimg_snprintf(substr,substr.width(),"%d%c",(int)(unsigned char)*s,delimiter);
               CImg<char>(substr.data(),(unsigned int)std::strlen(substr),1,1,1,true).
                 append_string_to(substituted_items,ptr_sub);
             }
