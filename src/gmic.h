@@ -194,8 +194,10 @@ inline double gmic_mp_call(char *const str, void *const p_list, const T& pixel_t
 template<typename Ts, typename T>
 inline double gmic_mp_store(const Ts *const ptr,
                             const unsigned int w, const unsigned int h, const unsigned int d, const unsigned int s,
+                            const bool is_compressed,
                             const char *const str, void *const p_list, const T& pixel_type);
-#define cimg_mp_store_function(ptr,w,h,d,s,str) return ::gmic_mp_store(ptr,w,h,d,s,str,&mp.listout,(T)0)
+#define cimg_mp_store_function(ptr,w,h,d,s,is_compressed,str) \
+  return ::gmic_mp_store(ptr,w,h,d,s,is_compressed,str,&mp.listout,(T)0)
 #ifndef cimg_display
 #define cimg_display 0
 #endif
@@ -285,6 +287,7 @@ struct gmic {
   template<typename Ts, typename T>
   static double mp_store(const Ts *const ptr,
                          const unsigned int w, const unsigned int h, const unsigned int d, const unsigned int s,
+                         const bool is_compressed,
                          const char *const str, void *const p_list, const T& pixel_type);
   static bool get_debug_info(const char *const s, unsigned int &line_number, unsigned int &file_number);
   static int _levenshtein(const char *const s, const char *const t,
@@ -483,8 +486,9 @@ inline double gmic_mp_call(char *const str, void *const p_list, const T& pixel_t
 template<typename Ts, typename T>
 inline double gmic_mp_store(const Ts *const ptr,
                             const unsigned int w, const unsigned int h, const unsigned int d, const unsigned int s,
+                            const bool is_compressed,
                             const char *const str, void *const p_list, const T& pixel_type) {
-  return gmic::mp_store(ptr,w,h,d,s,str,p_list,pixel_type);
+  return gmic::mp_store(ptr,w,h,d,s,is_compressed,str,p_list,pixel_type);
 }
 inline bool *gmic_abort_ptr(bool *const p_is_abort) { return gmic::abort_ptr(p_is_abort); }
 
