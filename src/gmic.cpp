@@ -13826,112 +13826,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         CImg<char>::string("[empty]").move_to(g_list_c);
         if (--nb) { g_list.insert(nb,g_list[0]); g_list_c.insert(nb,g_list_c[0]); }
 
-      } else if (cimg_sscanf(arg_input,"[%255[a-zA-Z_0-9%.eE%^,:+-]%c%c",indices,&sep,&end)==2 && sep==']') {
-
-        // Nb copies of existing image(s).
-        const CImg<unsigned int> inds = selection2cimg(indices,images.size(),images_names,"input");
-        CImg<char> s_tmp;
-        if (is_verbose) selection2string(inds,images_names,1,s_tmp);
-        if (nb!=1)
-          print(images,0,"Input %u copies of image%s at position%s",
-                (unsigned int)nb,
-                s_tmp.data(),
-                _gmic_selection.data());
-        else
-          print(images,0,"Input copy of image%s at position%s",
-                s_tmp.data(),
-                _gmic_selection.data());
-        for (unsigned int i = 0; i<(unsigned int)nb; ++i) cimg_foroff(inds,l) {
-            g_list.insert(gmic_check(images[inds[l]]));
-            g_list_c.insert(images_names[inds[l]].get_copymark());
-          }
-      } else if ((sep=0,true) &&
-                 (cimg_sscanf(arg_input,"%255[][a-zA-Z0-9_.eE%+-]%c",
-                              argx,&end)==1 ||
-                  cimg_sscanf(arg_input,"%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-]%c",
-                              argx,argy,&end)==2 ||
-                  cimg_sscanf(arg_input,"%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-],"
-			      "%255[][a-zA-Z0-9_.eE%+-]%c",
-                              argx,argy,argz,&end)==3 ||
-                  cimg_sscanf(arg_input,"%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-],"
-			      "%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-]%c",
-                              argx,argy,argz,argc,&end)==4 ||
-                  cimg_sscanf(arg_input,"%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-],"
-			      "%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-],%c",
-                              argx,argy,argz,argc,&sep)==5) &&
-                 ((cimg_sscanf(argx,"[%255[a-zA-Z0-9_.%+-]%c%c",indices,&sepx,&end)==2 &&
-		   sepx==']' &&
-                   (indx=selection2cimg(indices,images.size(),images_names,"input")).height()==1) ||
-                  (cimg_sscanf(argx,"%f%c",&dx,&end)==1 && dx>=1) ||
-                  (cimg_sscanf(argx,"%f%c%c",&dx,&sepx,&end)==2 && dx>0 && sepx=='%')) &&
-                 (!*argy ||
-                  (cimg_sscanf(argy,"[%255[a-zA-Z0-9_.%+-]%c%c",indicesy.data(),&sepy,&end)==2 &&
-		   sepy==']' &&
-                   (indy=selection2cimg(indicesy,images.size(),images_names,"input")).height()==1) ||
-                  (cimg_sscanf(argy,"%f%c",&dy,&end)==1 && dy>=1) ||
-                  (cimg_sscanf(argy,"%f%c%c",&dy,&sepy,&end)==2 && dy>0 && sepy=='%')) &&
-                 (!*argz ||
-                  (cimg_sscanf(argz,"[%255[a-zA-Z0-9_.%+-]%c%c",indicesz.data(),&sepz,&end)==2 &&
-		   sepz==']' &&
-                   (indz=selection2cimg(indicesz,images.size(),images_names,"input")).height()==1) ||
-                  (cimg_sscanf(argz,"%f%c",&dz,&end)==1 && dz>=1) ||
-                  (cimg_sscanf(argz,"%f%c%c",&dz,&sepz,&end)==2 && dz>0 && sepz=='%')) &&
-                 (!*argc ||
-                  (cimg_sscanf(argc,"[%255[a-zA-Z0-9_.%+-]%c%c",indicesc.data(),&sepc,&end)==2 &&
-		   sepc==']' &&
-                   (indc=selection2cimg(indicesc,images.size(),images_names,"input")).height()==1) ||
-                  (cimg_sscanf(argc,"%f%c",&dc,&end)==1 && dc>=1) ||
-                  (cimg_sscanf(argc,"%f%c%c",&dc,&sepc,&end)==2 && dc>0 && sepc=='%'))) {
-
-        // New image with specified dimensions and optionally values.
-        if (indx) { dx = (float)gmic_check(images[*indx]).width(); sepx = 0; }
-        if (indy) { dy = (float)gmic_check(images[*indy]).height(); sepy = 0; }
-        if (indz) { dz = (float)gmic_check(images[*indz]).depth(); sepz = 0; }
-        if (indc) { dc = (float)gmic_check(images[*indc]).spectrum(); sepc = 0; }
-        int idx = 0, idy = 0, idz = 0, idc = 0;
-        const CImg<T>& img = images.size()?gmic_check(images.back()):CImg<T>::empty();
-        if (sepx=='%') { idx = (int)cimg::round(dx*img.width()/100); if (!idx) ++idx; }
-        else idx = (int)cimg::round(dx);
-        if (sepy=='%') { idy = (int)cimg::round(dy*img.height()/100); if (!idy) ++idy; }
-        else idy = (int)cimg::round(dy);
-        if (sepz=='%') { idz = (int)cimg::round(dz*img.depth()/100); if (!idz) ++idz; }
-        else idz = (int)cimg::round(dz);
-        if (sepc=='%') { idc = (int)cimg::round(dc*img.spectrum()/100); if (!idc) ++idc; }
-        else idc = (int)cimg::round(dc);
-        if (idx<=0 || idy<=0 || idz<=0 || idc<=0) arg_error("input");
-        CImg<char> s_values;
-        if (sep) {
-          const char *_s_values = arg_input.data() + std::strlen(argx) + std::strlen(argy) +
-            std::strlen(argz) + std::strlen(argc) + 4;
-          s_values.assign(_s_values,(unsigned int)std::strlen(_s_values) + 1);
-          cimg::strpare(s_values,'\'',true,false);
-          strreplace_fw(s_values);
-          CImg<char> s_values_text(72);
-          const unsigned int l = (unsigned int)std::strlen(s_values);
-          if (l>=72) {
-            std::memcpy(s_values_text.data(),s_values.data(),32);
-            std::memcpy(s_values_text.data() + 32,"(...)",5);
-            std::memcpy(s_values_text.data() + 37,s_values.data() + l - 34,35);  // Last '\0' is included
-          } else std::strcpy(s_values_text,s_values);
-
-          if (nb==1)
-            print(images,0,"Input image at position%s, with values '%s'",
-                  _gmic_selection.data(),s_values_text.data());
-          else
-            print(images,0,"Input %u images at position%s, with values '%s'",
-                  nb,_gmic_selection.data(),s_values_text.data());
-        } else
-          print(images,0,"Input black image at position%s",
-                _gmic_selection.data());
-        CImg<T> new_image(idx,idy,idz,idc);
-        if (s_values) {
-          new_image.fill(s_values.data(),true,true,&images,&images);
-          cimg_snprintf(title,_title.width(),"[image of '%s']",s_values.data());
-          CImg<char>::string(title).move_to(g_list_c);
-        } else { new_image.fill((T)0); CImg<char>::string("[unnamed]").move_to(g_list_c); }
-        new_image.move_to(g_list);
-        if (--nb) { g_list.insert(nb,g_list[0]); g_list_c.insert(nb,g_list_c[0]); }
-
       } else if (*arg_input=='(' && arg_input[std::strlen(arg_input) - 1]==')') {
 
         // New IxJxKxL image specified as array.
@@ -14030,6 +13924,114 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         } else error(true,images,0,0,
                      "Command 'input': Variable '%s' has not been assigned.",
                      argx);
+
+      } else if (cimg_sscanf(arg_input,"[%255[a-zA-Z_0-9%.eE%^,:+-]%c%c",indices,&sep,&end)==2 && sep==']') {
+
+        // Nb copies of existing image(s).
+        const CImg<unsigned int> inds = selection2cimg(indices,images.size(),images_names,"input");
+        CImg<char> s_tmp;
+        if (is_verbose) selection2string(inds,images_names,1,s_tmp);
+        if (nb!=1)
+          print(images,0,"Input %u copies of image%s at position%s",
+                (unsigned int)nb,
+                s_tmp.data(),
+                _gmic_selection.data());
+        else
+          print(images,0,"Input copy of image%s at position%s",
+                s_tmp.data(),
+                _gmic_selection.data());
+        for (unsigned int i = 0; i<(unsigned int)nb; ++i) cimg_foroff(inds,l) {
+            g_list.insert(gmic_check(images[inds[l]]));
+            g_list_c.insert(images_names[inds[l]].get_copymark());
+          }
+
+      } else if ((sep=0,true) &&
+                 (cimg_sscanf(arg_input,"%255[][a-zA-Z0-9_.eE%+-]%c",
+                              argx,&end)==1 ||
+                  cimg_sscanf(arg_input,"%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-]%c",
+                              argx,argy,&end)==2 ||
+                  cimg_sscanf(arg_input,"%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-],"
+			      "%255[][a-zA-Z0-9_.eE%+-]%c",
+                              argx,argy,argz,&end)==3 ||
+                  cimg_sscanf(arg_input,"%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-],"
+			      "%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-]%c",
+                              argx,argy,argz,argc,&end)==4 ||
+                  cimg_sscanf(arg_input,"%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-],"
+			      "%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-],%c",
+                              argx,argy,argz,argc,&sep)==5) &&
+                 ((cimg_sscanf(argx,"[%255[a-zA-Z0-9_.%+-]%c%c",indices,&sepx,&end)==2 &&
+		   sepx==']' &&
+                   (indx=selection2cimg(indices,images.size(),images_names,"input")).height()==1) ||
+                  (cimg_sscanf(argx,"%f%c",&dx,&end)==1 && dx>=1) ||
+                  (cimg_sscanf(argx,"%f%c%c",&dx,&sepx,&end)==2 && dx>0 && sepx=='%')) &&
+                 (!*argy ||
+                  (cimg_sscanf(argy,"[%255[a-zA-Z0-9_.%+-]%c%c",indicesy.data(),&sepy,&end)==2 &&
+		   sepy==']' &&
+                   (indy=selection2cimg(indicesy,images.size(),images_names,"input")).height()==1) ||
+                  (cimg_sscanf(argy,"%f%c",&dy,&end)==1 && dy>=1) ||
+                  (cimg_sscanf(argy,"%f%c%c",&dy,&sepy,&end)==2 && dy>0 && sepy=='%')) &&
+                 (!*argz ||
+                  (cimg_sscanf(argz,"[%255[a-zA-Z0-9_.%+-]%c%c",indicesz.data(),&sepz,&end)==2 &&
+		   sepz==']' &&
+                   (indz=selection2cimg(indicesz,images.size(),images_names,"input")).height()==1) ||
+                  (cimg_sscanf(argz,"%f%c",&dz,&end)==1 && dz>=1) ||
+                  (cimg_sscanf(argz,"%f%c%c",&dz,&sepz,&end)==2 && dz>0 && sepz=='%')) &&
+                 (!*argc ||
+                  (cimg_sscanf(argc,"[%255[a-zA-Z0-9_.%+-]%c%c",indicesc.data(),&sepc,&end)==2 &&
+		   sepc==']' &&
+                   (indc=selection2cimg(indicesc,images.size(),images_names,"input")).height()==1) ||
+                  (cimg_sscanf(argc,"%f%c",&dc,&end)==1 && dc>=1) ||
+                  (cimg_sscanf(argc,"%f%c%c",&dc,&sepc,&end)==2 && dc>0 && sepc=='%'))) {
+
+        // New image with specified dimensions and optionally values.
+        if (indx) { dx = (float)gmic_check(images[*indx]).width(); sepx = 0; }
+        if (indy) { dy = (float)gmic_check(images[*indy]).height(); sepy = 0; }
+        if (indz) { dz = (float)gmic_check(images[*indz]).depth(); sepz = 0; }
+        if (indc) { dc = (float)gmic_check(images[*indc]).spectrum(); sepc = 0; }
+        int idx = 0, idy = 0, idz = 0, idc = 0;
+        const CImg<T>& img = images.size()?gmic_check(images.back()):CImg<T>::empty();
+        if (sepx=='%') { idx = (int)cimg::round(dx*img.width()/100); if (!idx) ++idx; }
+        else idx = (int)cimg::round(dx);
+        if (sepy=='%') { idy = (int)cimg::round(dy*img.height()/100); if (!idy) ++idy; }
+        else idy = (int)cimg::round(dy);
+        if (sepz=='%') { idz = (int)cimg::round(dz*img.depth()/100); if (!idz) ++idz; }
+        else idz = (int)cimg::round(dz);
+        if (sepc=='%') { idc = (int)cimg::round(dc*img.spectrum()/100); if (!idc) ++idc; }
+        else idc = (int)cimg::round(dc);
+        if (idx<=0 || idy<=0 || idz<=0 || idc<=0) arg_error("input");
+        CImg<char> s_values;
+        if (sep) {
+          const char *_s_values = arg_input.data() + std::strlen(argx) + std::strlen(argy) +
+            std::strlen(argz) + std::strlen(argc) + 4;
+          s_values.assign(_s_values,(unsigned int)std::strlen(_s_values) + 1);
+          cimg::strpare(s_values,'\'',true,false);
+          strreplace_fw(s_values);
+          CImg<char> s_values_text(72);
+          const unsigned int l = (unsigned int)std::strlen(s_values);
+          if (l>=72) {
+            std::memcpy(s_values_text.data(),s_values.data(),32);
+            std::memcpy(s_values_text.data() + 32,"(...)",5);
+            std::memcpy(s_values_text.data() + 37,s_values.data() + l - 34,35);  // Last '\0' is included
+          } else std::strcpy(s_values_text,s_values);
+
+          if (nb==1)
+            print(images,0,"Input image at position%s, with values '%s'",
+                  _gmic_selection.data(),s_values_text.data());
+          else
+            print(images,0,"Input %u images at position%s, with values '%s'",
+                  nb,_gmic_selection.data(),s_values_text.data());
+        } else
+          print(images,0,"Input black image at position%s",
+                _gmic_selection.data());
+        CImg<T> new_image(idx,idy,idz,idc);
+        if (s_values) {
+          new_image.fill(s_values.data(),true,true,&images,&images);
+          cimg_snprintf(title,_title.width(),"[image of '%s']",s_values.data());
+          CImg<char>::string(title).move_to(g_list_c);
+        } else { new_image.fill((T)0); CImg<char>::string("[unnamed]").move_to(g_list_c); }
+        new_image.move_to(g_list);
+        if (--nb) { g_list.insert(nb,g_list[0]); g_list_c.insert(nb,g_list_c[0]); }
+
       } else {
 
         // Input filename.
