@@ -2213,6 +2213,7 @@ double gmic::mp_call(char *const str, void *const p_list, const T& pixel_type) {
 template<typename Ts, typename T>
 double gmic::mp_store(const Ts *const ptr,
                       const unsigned int w, const unsigned int h, const unsigned d, const unsigned int s,
+                      const bool is_compressed,
                       const char *const str, void *const p_list, const T& pixel_type) {
   cimg::unused(pixel_type);
 
@@ -2241,7 +2242,7 @@ double gmic::mp_store(const Ts *const ptr,
       name[0] = 'G'; name[1] = 'M'; name[2] = 'Z'; name[3] = 0;
       name.unroll('y').move_to(g_list);
 
-      g_list.get_serialize(false).unroll('x').move_to(name);
+      g_list.get_serialize(is_compressed).unroll('x').move_to(name);
       name.resize(name.width() + 9 + std::strlen(varname),1,1,1,0,0,1);
       std::sprintf(name,"%c*store/%s",gmic_store,_varname.data());
       gmic_instance.set_variable(_varname.data(),name,variables_sizes);
