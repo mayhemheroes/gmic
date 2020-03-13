@@ -13820,7 +13820,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       char *last_x = std::strrchr(arg_input,'x');
       if (last_x && cimg_sscanf(last_x + 1,"%d%c",&nb,&end)==1 && nb>0) *last_x = 0;
       else { last_x = 0; nb = 1; }
-      cimg_uint64 larg = 0;
+      unsigned int larg = 0;
 
       if (*arg_input=='0' && !arg_input[1]) {
 
@@ -13835,7 +13835,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         CImg<char>::string("[empty]").move_to(g_list_c);
         if (--nb) { g_list.insert(nb,g_list[0]); g_list_c.insert(nb,g_list_c[0]); }
 
-      } else if (*arg_input=='(' && arg_input[(larg = (cimg_uint64)std::strlen(arg_input)) - 1]==')') {
+      } else if (*arg_input=='(' && arg_input[(larg = (unsigned int)std::strlen(arg_input)) - 1]==')') {
         CImg<T> img;
         char delimiter = 0;
 
@@ -13845,7 +13845,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               ((delimiter = arg_input[larg-2])==',' || delimiter==';' || delimiter=='/' || delimiter=='^')))) {
 
           // String encoded as an image.
-          CImg<char> str(arg_input.data() + 2,larg - (delimiter?3:5));
+          CImg<char> str(arg_input.data() + 2,larg - (delimiter?5:3));
           str.back() = 0;
           cimg::strunescape(str);
           img.assign(str.data(),(unsigned int)std::strlen(str));
