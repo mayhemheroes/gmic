@@ -4169,6 +4169,7 @@ CImg<char> gmic::substitute_item(const char *const source,
         // '{...}' expression.
       } else if (*nsource=='{') {
         const char *const ptr_beg = nsource + 1, *ptr_end = ptr_beg;
+        char delimiter = 0;
         unsigned int p = 0;
         for (p = 1; p>0 && *ptr_end; ++ptr_end) { if (*ptr_end=='{') ++p; if (*ptr_end=='}') --p; }
         if (p) {
@@ -4176,14 +4177,21 @@ CImg<char> gmic::substitute_item(const char *const source,
           continue;
         }
         l_inbraces = (int)(ptr_end - ptr_beg - 1);
-
         if (l_inbraces>0) {
+          if (l_inbraces>2 && ptr_beg[l_inbraces - 2]==':') {
+            const char del = ptr_beg[l_inbraces - 1];
+            if (del==',' || del==';' || del=='/' || del=='^') {
+              delimiter = del;
+              l_inbraces-=2;
+            }
+          }
           inbraces.assign(ptr_beg,l_inbraces + 1).back() = 0;
           substitute_item(inbraces,images,images_names,parent_images,parent_images_names,variables_sizes,
                           command_selection,false).move_to(inbraces);
           strreplace_fw(inbraces);
         }
-        nsource+=l_inbraces + 2;
+        nsource+=l_inbraces + 2 + (delimiter?2:0);
+        if (!delimiter) delimiter = ',';
         if (!*inbraces)
           error(true,images,0,0,
                 "Item substitution '{}': Empty braces.");
@@ -4330,7 +4338,8 @@ CImg<char> gmic::substitute_item(const char *const source,
                 CImg<char>::string(substr,false,true).append_string_to(substituted_items,ptr_sub);
               if (e_feature) {
                 *e_feature = ','; feature = e_feature + 1;
-                CImg<char>::append_string_to(',',substituted_items,ptr_sub);
+//                CImg<char>::append_string_to(',',substituted_items,ptr_sub);
+                CImg<char>::append_string_to(delimiter,substituted_items,ptr_sub);
               } else feature+=std::strlen(feature);
             } while (*feature || e_feature);
             *substr = 0; is_substituted = true;
@@ -4363,7 +4372,7 @@ CImg<char> gmic::substitute_item(const char *const source,
             inbraces[inbraces.width() - 2] = 0;
             cimg::strunescape(inbraces);
             for (*substr = 0; *s; ++s) {
-              cimg_snprintf(substr,substr.width(),"%d,",(int)(unsigned char)*s);
+              cimg_snprintf(substr,substr.width(),"%d%c",(int)(unsigned char)*s,delimiter);
               CImg<char>(substr.data(),(unsigned int)std::strlen(substr),1,1,1,true).
                 append_string_to(substituted_items,ptr_sub);
             }
@@ -4478,7 +4487,7 @@ CImg<char> gmic::substitute_item(const char *const source,
               is_substituted = true;
               break;
             case '^' : { // Sequence of all pixel values
-              img.value_string(',').move_to(vs);
+              img.value_string(delimiter).move_to(vs);
               if (vs && *vs) { --vs._width; vs.append_string_to(substituted_items,ptr_sub); }
               *substr = 0; is_substituted = true;
             } break;
@@ -4488,7 +4497,7 @@ CImg<char> gmic::substitute_item(const char *const source,
           if (!is_substituted && *feature=='@') { // Subset of values
             if (l_feature>=2) {
               if (feature[1]=='^' && !feature[2]) { // All pixel values
-                img.value_string(',').move_to(vs);
+                img.value_string(delimiter).move_to(vs);
                 if (vs && *vs) { --vs._width; vs.append_string_to(substituted_items,ptr_sub); }
                 *substr = 0; is_substituted = true;
               } else {
@@ -4520,7 +4529,7 @@ CImg<char> gmic::substitute_item(const char *const source,
                   cimg_snprintf(substr,substr.width(),"%.17g",(double)values[q]);
                   CImg<char>::string(substr,true,true).
                     append_string_to(substituted_items,ptr_sub);
-                  *(ptr_sub - 1) = ',';
+                  *(ptr_sub - 1) = delimiter;
                 }
                 if (values) --ptr_sub;
               }
@@ -4547,7 +4556,7 @@ CImg<char> gmic::substitute_item(const char *const source,
                   append_string_to(substituted_items,ptr_sub);
               } else {
                 if (output.height()>1) { // Vector-valued result
-                  output.value_string(',',0,is_rounded?"%g":"%.17g").move_to(vs);
+                  output.value_string(delimiter,0,is_rounded?"%g":"%.17g").move_to(vs);
                   if (vs && *vs) { --vs._width; vs.append_string_to(substituted_items,ptr_sub); }
                 } else { // Scalar result
                   if (is_rounded) cimg_snprintf(substr,substr.width(),"%g",*output);
@@ -13812,6 +13821,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       char *last_x = std::strrchr(arg_input,'x');
       if (last_x && cimg_sscanf(last_x + 1,"%d%c",&nb,&end)==1 && nb>0) *last_x = 0;
       else { last_x = 0; nb = 1; }
+      cimg_uint64 larg = 0;
 
       if (*arg_input=='0' && !arg_input[1]) {
 
@@ -13825,6 +13835,121 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         g_list.assign(nb);
         CImg<char>::string("[empty]").move_to(g_list_c);
         if (--nb) { g_list.insert(nb,g_list[0]); g_list_c.insert(nb,g_list_c[0]); }
+
+      } else if (*arg_input=='(' && arg_input[(larg = (cimg_uint64)std::strlen(arg_input)) - 1]==')') {
+        CImg<T> img;
+        char delimiter = 0;
+
+        if (arg_input[1]=='\'' &&
+            ((larg>3 && arg_input[larg - 2]=='\'') ||
+             (larg>5 && arg_input[larg - 3]==':' && arg_input[larg - 4]=='\'' &&
+              ((delimiter = arg_input[larg-2])==',' || delimiter==';' || delimiter=='/' || delimiter=='^')))) {
+
+          // String encoded as an image.
+          CImg<char> str(arg_input.data() + 2,larg - (delimiter?3:5));
+          str.back() = 0;
+          cimg::strunescape(str);
+          img.assign(str.data(),(unsigned int)std::strlen(str));
+          if (delimiter && delimiter!=',') img.unroll(delimiter==';'?'y':delimiter=='/'?'z':'c');
+
+        } else {
+
+          // New IxJxKxL image specified as array.
+          CImg<bool> au(256,1,1,1,false);
+          au[(int)'0'] = au[(int)'1'] = au[(int)'2'] = au[(int)'3'] = au[(int)'4'] = au[(int)'5'] = au[(int)'6'] =
+            au[(int)'7'] = au[(int)'8'] = au[(int)'9'] = au[(int)'.'] = au[(int)'e'] = au[(int)'E'] = au[(int)'i'] =
+            au[(int)'n'] = au[(int)'f'] = au[(int)'a'] = au[(int)'+'] = au[(int)'-'] = true;
+          unsigned int l, cx = 0, cy = 0, cz = 0, cc = 0, maxcx = 0, maxcy = 0, maxcz = 0;
+          const char *nargument = 0;
+          CImg<char> s_value(256);
+          char separator = 0;
+
+          for (nargument = arg_input.data() + 1; *nargument; ) {
+            *s_value = separator = 0;
+            char *pd = s_value;
+            // Do something faster than 'scanf("%255[0-9.eEinfa+-]")'.
+            for (l = 0; l<255 && au((unsigned int)*nargument); ++l) *(pd++) = *(nargument++);
+            if (l<255) *pd = 0; else arg_error("input");
+            if (*nargument) separator = *(nargument++);
+            if ((separator=='^' || separator=='/' || separator==';' || separator==',' || separator==')') &&
+                cimg_sscanf(s_value,"%lf%c",&value,&end)==1) {
+              if (cx>maxcx) maxcx = cx;
+              if (cy>maxcy) maxcy = cy;
+              if (cz>maxcz) maxcz = cz;
+              if (cx>=img._width || cy>=img._height || cz>=img._depth || cc>=img._spectrum)
+                img.resize(cx>=img._width?7*cx/4 + 1:std::max(1U,img._width),
+                           cy>=img._height?4*cy/4 + 1:std::max(1U,img._height),
+                           cz>=img._depth?7*cz/4 + 1:std::max(1U,img._depth),
+                           cc>=img._spectrum?7*cc/4 + 1:std::max(1U,img._spectrum),0);
+              img(cx,cy,cz,cc) = (T)value;
+              switch (separator) {
+              case '^' : cx = cy = cz = 0; ++cc; break;
+              case '/' : cx = cy = 0; ++cz; break;
+              case ';' : cx = 0; ++cy; break;
+              case ',' : ++cx; break;
+              case ')' : break;
+              default : arg_error("input");
+              }
+            } else arg_error("input");
+          }
+          img.resize(maxcx + 1,maxcy + 1,maxcz + 1,cc + 1,0);
+          print(images,0,"Input image at position%s, with values %s",
+                _gmic_selection.data(),
+                gmic_argument_text_printed());
+        }
+        img.move_to(g_list);
+        arg_input.move_to(g_list_c);
+        if (--nb) { g_list.insert(nb,g_list[0]); g_list_c.insert(nb,g_list_c[0]); }
+
+      } else if (*arg_input==gmic_store &&
+                 cimg_sscanf(arg_input.data() + 1,"*store/%255[a-zA-Z0-9_]%c",&(*argx=0),&end)==1 &&
+                 (*argx<'0' || *argx>'9')) {
+        if (last_x) *last_x = 'x'; // Restore full input argument
+
+        // Binary-stored variable.
+        print(images,0,
+              "Input image from variable '%s', at position%s.",
+              argx,_gmic_selection.data());
+        hash = hashcode(argx,true);
+
+        const bool
+          is_global = *argx=='_',
+          is_thread_global = is_global && argx[1]=='_';
+        const int lind = is_global?0:(int)variables_sizes[hash];
+        int vind = 0;
+        if (is_thread_global) cimg::mutex(30);
+        const CImgList<char>
+          &__variables = *variables[hash],
+          &__variables_names = *variables_names[hash];
+        bool is_name_found = false;
+        for (int l = __variables.width() - 1; l>=lind; --l)
+          if (!std::strcmp(__variables_names[l],argx)) {
+            is_name_found = true; vind = l; break;
+          }
+        if (is_name_found) {
+          try {
+            const char *const zero = (char*)std::memchr(__variables[vind],0,__variables[vind].width());
+            if (!zero) throw CImgArgumentException(0);
+            CImgList<T>::get_unserialize(__variables[vind].get_shared_points(zero + 1 - __variables[vind].data(),
+                                                                             __variables[vind].width() - 1)).
+                move_to(g_list);
+          } catch (CImgArgumentException&) {
+            error(true,images,0,0,
+                  "Command 'input': Variable '%s' has not been assigned with command 'store'.",
+                  argx);
+          }
+          g_list_c = g_list.back().get_split(CImg<char>::vector(0),0,false);
+          g_list_c.remove(0);
+          cimglist_for(g_list_c,q) g_list_c[q].resize(1,g_list_c[q].height() + 1,1,1,0).unroll('x');
+          if (g_list_c.size()!=g_list.size() - 1)
+            error(true,images,0,0,
+                  "Command 'input': Invalid binary encoding of variable '%s' " \
+                  "(%d items, %s names)",
+                  argx,(int)g_list.size() - 1,(int)g_list_c.size());
+          else if (g_list_c) g_list.remove();
+        } else error(true,images,0,0,
+                     "Command 'input': Variable '%s' has not been assigned.",
+                     argx);
 
       } else if (cimg_sscanf(arg_input,"[%255[a-zA-Z_0-9%.eE%^,:+-]%c%c",indices,&sep,&end)==2 && sep==']') {
 
@@ -13845,6 +13970,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             g_list.insert(gmic_check(images[inds[l]]));
             g_list_c.insert(images_names[inds[l]].get_copymark());
           }
+
       } else if ((sep=0,true) &&
                  (cimg_sscanf(arg_input,"%255[][a-zA-Z0-9_.eE%+-]%c",
                               argx,&end)==1 ||
@@ -13932,104 +14058,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         new_image.move_to(g_list);
         if (--nb) { g_list.insert(nb,g_list[0]); g_list_c.insert(nb,g_list_c[0]); }
 
-      } else if (*arg_input=='(' && arg_input[std::strlen(arg_input) - 1]==')') {
-
-        // New IxJxKxL image specified as array.
-        CImg<bool> au(256,1,1,1,false);
-        au[(int)'0'] = au[(int)'1'] = au[(int)'2'] = au[(int)'3'] = au[(int)'4'] = au[(int)'5'] = au[(int)'6'] =
-          au[(int)'7'] = au[(int)'8'] = au[(int)'9'] = au[(int)'.'] = au[(int)'e'] = au[(int)'E'] = au[(int)'i'] =
-          au[(int)'n'] = au[(int)'f'] = au[(int)'a'] = au[(int)'+'] = au[(int)'-'] = true;
-        unsigned int l, cx = 0, cy = 0, cz = 0, cc = 0, maxcx = 0, maxcy = 0, maxcz = 0;
-        const char *nargument = 0;
-        CImg<char> s_value(256);
-        char separator = 0;
-        CImg<T> img;
-
-        for (nargument = arg_input.data() + 1; *nargument; ) {
-          *s_value = separator = 0;
-          char *pd = s_value;
-          // Do something faster than 'scanf("%255[0-9.eEinfa+-]")'.
-          for (l = 0; l<255 && au((unsigned int)*nargument); ++l) *(pd++) = *(nargument++);
-          if (l<255) *pd = 0; else arg_error("input");
-          if (*nargument) separator = *(nargument++);
-          if ((separator=='^' || separator=='/' || separator==';' || separator==',' || separator==')') &&
-              cimg_sscanf(s_value,"%lf%c",&value,&end)==1) {
-            if (cx>maxcx) maxcx = cx;
-            if (cy>maxcy) maxcy = cy;
-            if (cz>maxcz) maxcz = cz;
-            if (cx>=img._width || cy>=img._height || cz>=img._depth || cc>=img._spectrum)
-              img.resize(cx>=img._width?7*cx/4 + 1:std::max(1U,img._width),
-                         cy>=img._height?4*cy/4 + 1:std::max(1U,img._height),
-                         cz>=img._depth?7*cz/4 + 1:std::max(1U,img._depth),
-                         cc>=img._spectrum?7*cc/4 + 1:std::max(1U,img._spectrum),0);
-            img(cx,cy,cz,cc) = (T)value;
-            switch (separator) {
-            case '^' : cx = cy = cz = 0; ++cc; break;
-            case '/' : cx = cy = 0; ++cz; break;
-            case ';' : cx = 0; ++cy; break;
-            case ',' : ++cx; break;
-            case ')' : break;
-            default : arg_error("input");
-            }
-          } else arg_error("input");
-        }
-        img.resize(maxcx + 1,maxcy + 1,maxcz + 1,cc + 1,0);
-        print(images,0,"Input image at position%s, with values %s",
-              _gmic_selection.data(),
-              gmic_argument_text_printed());
-        img.move_to(g_list);
-        arg_input.move_to(g_list_c);
-        if (--nb) { g_list.insert(nb,g_list[0]); g_list_c.insert(nb,g_list_c[0]); }
-
-      } else if ((last_x?(*last_x='x'):0), // Restore full input argument
-                 *arg_input==gmic_store &&
-                 cimg_sscanf(arg_input.data() + 1,"*store/%255[a-zA-Z0-9_]%c",&(*argx=0),&end)==1 &&
-                 (*argx<'0' || *argx>'9')) {
-
-        // Binary-stored variable.
-        print(images,0,
-              "Input image from variable '%s', at position%s.",
-              argx,_gmic_selection.data());
-        hash = hashcode(argx,true);
-
-        const bool
-          is_global = *argx=='_',
-          is_thread_global = is_global && argx[1]=='_';
-        const int lind = is_global?0:(int)variables_sizes[hash];
-        int vind = 0;
-        if (is_thread_global) cimg::mutex(30);
-        const CImgList<char>
-          &__variables = *variables[hash],
-          &__variables_names = *variables_names[hash];
-        bool is_name_found = false;
-        for (int l = __variables.width() - 1; l>=lind; --l)
-          if (!std::strcmp(__variables_names[l],argx)) {
-            is_name_found = true; vind = l; break;
-          }
-        if (is_name_found) {
-          try {
-            const char *const zero = (char*)std::memchr(__variables[vind],0,__variables[vind].width());
-            if (!zero) throw CImgArgumentException(0);
-            CImgList<T>::get_unserialize(__variables[vind].get_shared_points(zero + 1 - __variables[vind].data(),
-                                                                             __variables[vind].width() - 1)).
-                move_to(g_list);
-          } catch (CImgArgumentException&) {
-            error(true,images,0,0,
-                  "Command 'input': Variable '%s' has not been assigned with command 'store'.",
-                  argx);
-          }
-          g_list_c = g_list.back().get_split(CImg<char>::vector(0),0,false);
-          g_list_c.remove(0);
-          cimglist_for(g_list_c,q) g_list_c[q].resize(1,g_list_c[q].height() + 1,1,1,0).unroll('x');
-          if (g_list_c.size()!=g_list.size() - 1)
-            error(true,images,0,0,
-                  "Command 'input': Invalid binary encoding of variable '%s' " \
-                  "(%d items, %s names)",
-                  argx,(int)g_list.size() - 1,(int)g_list_c.size());
-          else if (g_list_c) g_list.remove();
-        } else error(true,images,0,0,
-                     "Command 'input': Variable '%s' has not been assigned.",
-                     argx);
       } else {
 
         // Input filename.
