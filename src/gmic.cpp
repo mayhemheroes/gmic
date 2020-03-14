@@ -4181,7 +4181,7 @@ CImg<char> gmic::substitute_item(const char *const source,
           if ((*ptr_beg!='`' || ptr_beg[1]!='`') && *ptr_beg!='/' &&
               l_inbraces>2 && ptr_beg[l_inbraces - 2]==':') {
             const char del = ptr_beg[l_inbraces - 1];
-            if (del==',' || del==';' || del=='/' || del=='^') {
+            if (del==',' || del==';' || del=='/' || del=='^' || del==' ') {
               delimiter = del;
               l_inbraces-=2;
             }
