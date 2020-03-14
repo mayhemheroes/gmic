@@ -4684,13 +4684,6 @@ _sample :
 #@cli : Use command 'input $variable' to bring the stored images back in the list.
 #@cli : $ sample eagle,earth store img1,img2 input $img2 $img1
 
-#@cli string : "string"
-#@cli : Insert new image containing the character codes of specified string.
-#@cli : $ string "foo bar"
-string :
-  e[^-1] "Input new image from string '$1'."
-  ('"$1"') nm. "$1"
-
 #@cli testimage2d : _width>0,_height>0,_spectrum>0
 #@cli : Input a 2D synthetic image.
 #@cli : Default values: 'width=512', 'height=width' and 'spectrum=3'.
@@ -4925,7 +4918,7 @@ update_color_presets_html : check "isbool(${1=0})"
       basename={$>,b}
       e[] "    - "$category_name" / "$basename
 
-      string "
+      ('"
 <!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\"\n
                       \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n\n
 <!--#include file=\"header.html\" -->\n
@@ -4961,7 +4954,7 @@ with or endorsed by the companies that own the trademarks.</i></font></p>\n\n
 <div id=\"center\"><div id=\"text_centre_intro\">\n
 <table><tr>\n
 <td valign=\"top\" width=\"400\">Select category:\n
-<ul>\n"
+<ul>\n"')
       repeat narg($categories)
         _category=${arg\ {1+$>},$categories}
         arg {1+$>},$category_names
@@ -4982,27 +4975,27 @@ with or endorsed by the companies that own the trademarks.</i></font></p>\n\n
         fi
 
         if ['$_category']==['$category']
-          string "<li><font color=\"#CC7700\"><b>"$_category_name"</b> "$_category_author"</font></li>\n"
+          ('"<li><font color=\"#CC7700\"><b>"$_category_name"</b> "$_category_author"</font></li>\n"')
         else
-          string "<li><a href=\""${_category}_$basename.shtml"#browse\">"$_category_name"</a> "$_category_author\
-                 "</li>\n"
+          ('"<li><a href=\""${_category}_$basename.shtml"#browse\">"$_category_name"</a> "$_category_author\
+            "</li>\n"')
         fi
       done
 
-      string "</ul>\n</td>\n<td align=\"left\" valign=\"top\">Select sample image:<br/><br/>\n"
+      ('"</ul>\n</td>\n<td align=\"left\" valign=\"top\">Select sample image:<br/><br/>\n"')
       repeat $nb_samples
         _basename=${basename$>}
         if ['$_basename']==['$basename']
-          string "<a href=\""${category}_$_basename.shtml"#browse\"><img alt=\"\" style=\"border-color:#CC7700;\"
-                  border=\"3\" src=\""original/minithumb_$_basename.jpg"\"/></a>\n"
+          ('"<a href=\""${category}_$_basename.shtml"#browse\"><img alt=\"\" style=\"border-color:#CC7700;\"
+             border=\"3\" src=\""original/minithumb_$_basename.jpg"\"/></a>\n"')
         else
-          string "<a href=\""${category}_$_basename.shtml"#browse\"><img alt=\"\" border=\"0\" src=\""\
-                 original/minithumb_$_basename.jpg"\"/></a>\n"
+          ('"<a href=\""${category}_$_basename.shtml"#browse\"><img alt=\"\" border=\"0\" src=\""\
+             original/minithumb_$_basename.jpg"\"/></a>\n"')
         fi
       done
-      string "</td>\n</tr></table>\n</div></div><div id=\"footer\"><img alt=\"\" src=\"images/footer.jpg\"
-              /></div></div>\n"
-      string "\n
+      ('"</td>\n</tr></table>\n</div></div><div id=\"footer\"><img alt=\"\" src=\"images/footer.jpg\"
+         /></div></div>\n"')
+      ('"\n
 <div id=\"bloc_option\"><div id=\"top_bleu\"><div id=\"text_top\">Presets ("{narg({/$presets})}")</div></div>\n
 <div id=\"center\"><div id=\"text_centre_intro\">\n
 <center><table>\n
@@ -5011,15 +5004,15 @@ with or endorsed by the companies that own the trademarks.</i></font></p>\n\n
 border=\"0\" src=\"original/thumb_"$basename".jpg\" /></a>\n
 <div class=\"highslide-caption\"><b>Reference Image</b></div></div>\n
 </td></tr>\n
-<tr><td align=\"center\"><b>Reference Image</b></td></tr>\n\n"
+<tr><td align=\"center\"><b>Reference Image</b></td></tr>\n\n"')
       repeat narg({/$presets})
         preset=${arg\ {1+$>},$presets}
 
         ('$preset') replace_seq. 39,"92,92,39" preset_esc={t} rm.
         _title $preset title=${}
-        if $>%4==0 if $> string "</tr>\n" fi string "<tr>" fi
+        if $>%4==0 if $> ('"</tr>\n"') fi ('"<tr>"') fi
 
-        string "
+        ('"
 <td><table>\n
 <tr><td>\n
 <div><a href=\"#\" onclick=\"return hs.htmlExpand(this, { width: "$width", height: "$height" })\">\n
@@ -5034,13 +5027,13 @@ onmouseout=\"javascript:this.src='original/"$basename".jpg';\" />\n
 [<a href=\""$category/clut/$preset.png"\">Download HaldCLUT</a>]</div></div>\n
 </td></tr>\n
 <tr><td align=\"center\"><font size=\"-1\">"$title"</font></td></tr>\n
-</table></td>\n\n"
+</table></td>\n\n"')
       done
-      string "
+      ('"
 </tr></table></center>\n
-</div></div><div id=\"footer\"><img alt=\"\" src=\"images/footer.jpg\" /></div></div>\n"
-      string "<!--#include file=\"copyright.html\" -->\n
-<!--#include file=\"footer.html\" -->\n"
+</div></div><div id=\"footer\"><img alt=\"\" src=\"images/footer.jpg\" /></div></div>\n"')
+      ('"<!--#include file=\"copyright.html\" -->\n
+<!--#include file=\"footer.html\" -->\n"')
       a[$nb_samples--1] x ot. ${category}_$basename.shtml rm.
     done
   done
