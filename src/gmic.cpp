@@ -4364,7 +4364,7 @@ CImg<char> gmic::substitute_item(const char *const source,
           *substr = 0; is_substituted = true;
         }
 
-        // Sequence of ascii characters.
+        // Sequence of character codes.
         if (!is_substituted && inbraces.width()>=3 && *inbraces=='\'' &&
             inbraces[inbraces.width() - 2]=='\'') {
           const char *s = inbraces.data() + 1;
@@ -13843,15 +13843,17 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         if (arg_input[1]=='\'' &&
             ((larg>3 && arg_input[larg - 2]=='\'') ||
              (larg>5 && arg_input[larg - 3]==':' && arg_input[larg - 4]=='\'' &&
-              ((delimiter = arg_input[larg-2])==',' || delimiter==';' || delimiter=='/' || delimiter=='^')))) {
+              ((delimiter = arg_input[larg-2])==',' || delimiter==';' || delimiter=='/' || delimiter=='^' ||
+               delimiter=='x' || delimiter=='y' || delimiter=='z' || delimiter=='c')))) {
 
           // String encoded as an image.
           CImg<char> str(arg_input.data() + 2,larg - (delimiter?5:3));
           str.back() = 0;
           cimg::strunescape(str);
           img.assign(str.data(),(unsigned int)std::strlen(str));
-          if (delimiter && delimiter!=',') img.unroll(delimiter==';'?'y':delimiter=='/'?'z':'c');
-
+          if (delimiter && delimiter!=',' && delimiter!='x')
+            img.unroll(delimiter==';' || delimiter=='y'?'y':
+                       delimiter=='/' || delimiter=='z'?'z':'c');
         } else {
 
           // New IxJxKxL image specified as array.
