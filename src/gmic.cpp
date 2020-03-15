@@ -4514,10 +4514,8 @@ CImg<char> gmic::substitute_item(const char *const source,
                 try {
                   const CImg<unsigned int> inds = selection2cimg(subset,(unsigned int)img.size(),
                                                                  CImgList<char>::empty(),"",false);
-                  if (inds.height()) {
-                    values.assign(1,inds.height());
-                    cimg_foroff(inds,q) values[q] = img[inds[q]];
-                  }
+                  values.assign(1,inds.height());
+                  cimg_foroff(inds,q) values[q] = img[inds[q]];
                 } catch (gmic_exception &e) {
                   const char *const e_ptr = std::strstr(e.what(),": ");
                   error(true,images,0,0,
@@ -5099,10 +5097,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         if (err==1) { // No selection -> all images
-          if (siz) {
-            selection.assign(1,siz);
-            cimg_forY(selection,y) selection[y] = (unsigned int)y;
-          }
+          selection.assign(1,siz);
+          cimg_forY(selection,y) selection[y] = (unsigned int)y;
         } else if (err==2 && sep0=='[' && item[std::strlen(command) + 1]==']') { // Empty selection
           is_selection = true;
         } else if (err==4 && sep1==']') { // Other selections
@@ -9388,8 +9384,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               const float
                 nx = sepx=='%'?x*(img.width() - 1)/100:x,
                 ny = sepy=='%'?y*(img.height() - 1)/100:y;
-              CImg<float> zbuffer;
-              if (is_zbuffer) zbuffer.assign(img.width(),img.height(),1,1,0);
+              CImg<float> zbuffer(is_zbuffer?img.width():0,is_zbuffer?img.height():0,1,1,0);
               if (g_list_f) {
                 gmic_apply(draw_object3d(nx,ny,z,vertices,primitives,g_list_f,opacities,
                                          _render3d,_is_double3d,_focale3d,
