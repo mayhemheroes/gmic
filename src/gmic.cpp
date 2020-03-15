@@ -4097,6 +4097,10 @@ gmic& gmic::display_objects3d(const CImgList<T>& images, const CImgList<char>& i
     CImg<float> vertices(img,false), pose3d(4,4,1,1,0);
     pose3d(0,0) = pose3d(1,1) = pose3d(2,2) = pose3d(3,3) = 1;
     vertices.CImg3dtoobject3d(primitives,colors,opacities,false);
+
+    std::fprintf(stderr,"\nDEBUG\n");
+
+
     print(images,0,"Display 3D object [%u] = '%s' (%d vertices, %u primitives).",
           uind,images_names[uind].data(),
           vertices.width(),primitives.size());
