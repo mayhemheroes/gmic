@@ -3266,10 +3266,7 @@ CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned
   // First, try to detect the most common cases.
   if (string && !*string) return CImg<unsigned int>(); // Empty selection
   if (!string || (*string=='^' && !string[1])) { // Whole selection
-    CImg<unsigned int> res;
-    if (index_max) res.assign(1,index_max);
-    cimg_forY(res,y) res[y] = (unsigned int)y;
-    return res;
+    CImg<unsigned int> res(1,index_max); cimg_forY(res,y) res[y] = (unsigned int)y; return res;
   } else if (*string>='0' && *string<='9' && !string[1]) { // Single positive digit
     const unsigned int ind = *string - '0';
     if (ind<index_max) return CImg<unsigned int>::vector(ind);
@@ -3284,11 +3281,10 @@ CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned
     ctypel = is_selection?'[':'\'',
     ctyper = is_selection?']':'\'';
 
-  CImg<bool> is_selected;
+  CImg<bool> is_selected(1,index_max,1,1,false);
   CImg<char> name, item;
   bool is_inverse = *string=='^';
   const char *it = string + (is_inverse?1:0);
-  if (index_max) is_selected.assign(1,index_max,1,1,false);
   for (bool stopflag = false; !stopflag; ) {
     float ind0 = 0, ind1 = 0, step = 1;
     int iind0 = 0, iind1 = 0, istep = 1;
@@ -3366,10 +3362,7 @@ CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned
   }
   unsigned int index = 0;
   cimg_for(is_selected,p,bool) if (*p) ++index;
-  CImg<unsigned int> selection;
-  if (is_inverse && index_max!=index) selection.assign(1,index_max - index);
-  else if (!is_inverse && index) selection.assign(1,index);
-  if (!selection) return selection;
+  CImg<unsigned int> selection(1,is_inverse?index_max - index:index);
   index = 0;
   if (is_inverse) { cimg_forY(is_selected,l) if (!is_selected[l]) selection[index++] = (unsigned int)l; }
   else cimg_forY(is_selected,l) if (is_selected[l]) selection[index++] = (unsigned int)l;
@@ -4097,10 +4090,6 @@ gmic& gmic::display_objects3d(const CImgList<T>& images, const CImgList<char>& i
     CImg<float> vertices(img,false), pose3d(4,4,1,1,0);
     pose3d(0,0) = pose3d(1,1) = pose3d(2,2) = pose3d(3,3) = 1;
     vertices.CImg3dtoobject3d(primitives,colors,opacities,false);
-
-    std::fprintf(stderr,"\nDEBUG\n");
-
-
     print(images,0,"Display 3D object [%u] = '%s' (%d vertices, %u primitives).",
           uind,images_names[uind].data(),
           vertices.width(),primitives.size());
@@ -4525,10 +4514,8 @@ CImg<char> gmic::substitute_item(const char *const source,
                 try {
                   const CImg<unsigned int> inds = selection2cimg(subset,(unsigned int)img.size(),
                                                                  CImgList<char>::empty(),"",false);
-                  if (inds.height()) {
-                    values.assign(1,inds.height());
-                    cimg_foroff(inds,q) values[q] = img[inds[q]];
-                  }
+                  values.assign(1,inds.height());
+                  cimg_foroff(inds,q) values[q] = img[inds[q]];
                 } catch (gmic_exception &e) {
                   const char *const e_ptr = std::strstr(e.what(),": ");
                   error(true,images,0,0,
@@ -5110,10 +5097,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         if (err==1) { // No selection -> all images
-          if (siz) {
-            selection.assign(1,siz);
-            cimg_forY(selection,y) selection[y] = (unsigned int)y;
-          }
+          selection.assign(1,siz);
+          cimg_forY(selection,y) selection[y] = (unsigned int)y;
         } else if (err==2 && sep0=='[' && item[std::strlen(command) + 1]==']') { // Empty selection
           is_selection = true;
         } else if (err==4 && sep1==']') { // Other selections
@@ -9399,8 +9384,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               const float
                 nx = sepx=='%'?x*(img.width() - 1)/100:x,
                 ny = sepy=='%'?y*(img.height() - 1)/100:y;
-              CImg<float> zbuffer;
-              if (is_zbuffer) zbuffer.assign(img.width(),img.height(),1,1,0);
+              CImg<float> zbuffer(is_zbuffer?img.width():0,is_zbuffer?img.height():0,1,1,0);
               if (g_list_f) {
                 gmic_apply(draw_object3d(nx,ny,z,vertices,primitives,g_list_f,opacities,
                                          _render3d,_is_double3d,_focale3d,
