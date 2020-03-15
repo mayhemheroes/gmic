@@ -4514,8 +4514,10 @@ CImg<char> gmic::substitute_item(const char *const source,
                 try {
                   const CImg<unsigned int> inds = selection2cimg(subset,(unsigned int)img.size(),
                                                                  CImgList<char>::empty(),"",false);
-                  values.assign(1,inds.height());
-                  cimg_foroff(inds,q) values[q] = img[inds[q]];
+                  if (inds.height()) {
+                    values.assign(1,inds.height());
+                    cimg_foroff(inds,q) values[q] = img[inds[q]];
+                  }
                 } catch (gmic_exception &e) {
                   const char *const e_ptr = std::strstr(e.what(),": ");
                   error(true,images,0,0,
@@ -5097,10 +5099,12 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         if (err==1) { // No selection -> all images
-          selection.assign(1,siz);
-          cimg_forY(selection,y) selection[y] = (unsigned int)y;
+          if (siz) {
+            selection.assign(1,siz);
+            cimg_forY(selection,y) selection[y] = (unsigned int)y;
+          }
         } else if (err==2 && sep0=='[' && item[std::strlen(command) + 1]==']') { // Empty selection
-          selection.assign(); is_selection = true;
+          is_selection = true;
         } else if (err==4 && sep1==']') { // Other selections
           is_selection = true;
           if (!is_get && (!std::strcmp("wait",command) ||
