@@ -3266,7 +3266,10 @@ CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned
   // First, try to detect the most common cases.
   if (string && !*string) return CImg<unsigned int>(); // Empty selection
   if (!string || (*string=='^' && !string[1])) { // Whole selection
-    CImg<unsigned int> res(1,index_max); cimg_forY(res,y) res[y] = (unsigned int)y; return res;
+    CImg<unsigned int> res;
+    if (index_max) res.assign(1,index_max);
+    cimg_forY(res,y) res[y] = (unsigned int)y;
+    return res;
   } else if (*string>='0' && *string<='9' && !string[1]) { // Single positive digit
     const unsigned int ind = *string - '0';
     if (ind<index_max) return CImg<unsigned int>::vector(ind);
@@ -3281,10 +3284,11 @@ CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned
     ctypel = is_selection?'[':'\'',
     ctyper = is_selection?']':'\'';
 
-  CImg<bool> is_selected(1,index_max,1,1,false);
+  CImg<bool> is_selected;
   CImg<char> name, item;
   bool is_inverse = *string=='^';
   const char *it = string + (is_inverse?1:0);
+  if (index_max) is_selected.assign(1,index_max,1,1,false);
   for (bool stopflag = false; !stopflag; ) {
     float ind0 = 0, ind1 = 0, step = 1;
     int iind0 = 0, iind1 = 0, istep = 1;
@@ -3362,7 +3366,10 @@ CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned
   }
   unsigned int index = 0;
   cimg_for(is_selected,p,bool) if (*p) ++index;
-  CImg<unsigned int> selection(1,is_inverse?index_max - index:index);
+  CImg<unsigned int> selection;
+  if (is_inverse && index_max!=index) selection.assign(1,index_max - index);
+  else if (!is_inverse && index) selection.assign(1,index);
+  if (!selection) return selection;
   index = 0;
   if (is_inverse) { cimg_forY(is_selected,l) if (!is_selected[l]) selection[index++] = (unsigned int)l; }
   else cimg_forY(is_selected,l) if (is_selected[l]) selection[index++] = (unsigned int)l;
