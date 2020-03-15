@@ -9388,7 +9388,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               const float
                 nx = sepx=='%'?x*(img.width() - 1)/100:x,
                 ny = sepy=='%'?y*(img.height() - 1)/100:y;
-              CImg<float> zbuffer(is_zbuffer?img.width():0,is_zbuffer?img.height():0,1,1,0);
+              CImg<float> zbuffer;
+              if (is_zbuffer) zbuffer.assign(img.width(),img.height(),1,1,0);
               if (g_list_f) {
                 gmic_apply(draw_object3d(nx,ny,z,vertices,primitives,g_list_f,opacities,
                                          _render3d,_is_double3d,_focale3d,
