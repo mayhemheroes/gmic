@@ -3972,7 +3972,7 @@ input_cube : skip ${2=1}
     it "$1" f "i<_' ' && i!=10?_' ':i" s -,10
     i[0] 0
     range={"
-      line = vector128();
+      ref(vector128(),line);
       dmin = [ 0,0,0 ];
       dmax = [ 1,1,1 ];
       dim = size = 0;
@@ -4485,7 +4485,7 @@ shape_gear : check "${1=512}>=0 && isint(${2=12}) && $2>0 && ${3=20}>=0 && $3<=1
       const nb_teeth = $2;
       const height_teeth = $3%;
       const offset_teeth = 2*$4%;
-      pts = vector2048();
+      ref(vector2048(),pts);
       for (i = 0, i<size(pts),
         a = i*2*pi/size(pts);
         r =  1 - height_teeth + height_teeth*(int(a*nb_teeth/pi + 2*nb_teeth - offset_teeth)%2);
@@ -5186,7 +5186,7 @@ update_gallery_html : check "isbool(${1=0})"
               str[ind+7]==_' ' && str[ind+8]==_'$' && str[ind+9]==_' '?(
                 beg = ind + 10;
                 end = find(str,_'\n',beg) - 1;
-                com = vector1024(0);
+                ref(vector1024(0),com);
                 call('+rows[0] ',beg,',',end);
               );
             );
@@ -7768,15 +7768,15 @@ decompress_clut_rbf : check "isint(${1=48}) && $1>0 && isint(${2=$1}) && $2>0 &&
         const N = h#0;
         const N2 = N^2;
         const Ns = N*s;
-        A = vectorN2();
-        B = vectorNs();
+        ref(vectorN2(),A);
+        ref(vectorNs(),B);
         for (p = 0, p<N, ++p,
           for (q = p, q<N, ++q,  A[q + N*p] = A[p + N*q] = rbf(norm(xyz(p) - xyz(q))));
           copy(B[s*p],(I[#0,p])[3,s],s);
         );
         W = solve(A,B,s);
       );
-      res = vectors(0);
+      ref(vectors(0),res);
       for (p = 0, p<N, ++p, res += W[s*p,s]*rbf(norm([x,y,z] - xyz(p))))"
     rm..
     if $4 ${"arg $4,rgb,lab"}2srgb fi
@@ -8746,8 +8746,8 @@ colormap : check "isint($1) && $1>=0" skip ${2=1},${3=1}
           if $is_half
             ..,1,1,{1,s}
             eval "
-              csum = vector(#w*s#0);
-              cocc = vector(#w,0);
+              ref(vector(#w*s#0),csum);
+              ref(vector(#w,0),cocc);
               for (k = 0, k<w#2, ++k,
                 val = i[#2,k];
                 for (c = 0, c<s#0, ++c, csum[val + c*w]+=i(#0,k,0,0,c));
@@ -11711,7 +11711,7 @@ warp_patch : check ${is_image_arg\ $1}" && isint(${2=3}) && $2>=1 && isint(${3=$
 
           # Pre-compute gaussian weights.
           if (stdf<5,
-            weights = vectorpwhd();
+            ref(vectorpwhd(),weights);
             offw = 0;
             for (zw = -pd1, zw<=pd2, ++zw,
               for (yw = -ph1, yw<=ph2, ++yw,
@@ -11747,7 +11747,7 @@ warp_patch : check ${is_image_arg\ $1}" && isint(${2=3}) && $2>=1 && isint(${3=$
 
           # Pre-compute gaussian weights.
           if (stdf<5,
-            weights = vectorpwh();
+            ref(vectorpwh(),weights);
             offw = 0;
             for (yw = -ph1, yw<=ph2, ++yw,
               for (xw = -pw1, xw<=pw2, ++xw,
@@ -12204,8 +12204,8 @@ denoise_patchpca : check "${1=1.8} && $1>=0 && isint(${2=7}) && $2>0 && isint(${
       m1 = int($3/2); m2 = $3 - m1 - 1;
       patch(x,y) = crop(x-n1,y-n1,0,c,$2,$2,1,1,1);
       ngauss(x) = exp(-x*x/(2*n1*n1));
-      zero = vector"$N2"(0);
-      mask = vector"$N2"(0);
+      ref(vector"$N2"(0),zero);
+      ref(vector"$N2"(0),mask);
       for (l = 0; q = -n1, q<=n2, ++q,
         for (p = -n1, p<=n2, ++p, mask[l++] = ngauss(p)*ngauss(q)
         )
@@ -12216,7 +12216,7 @@ denoise_patchpca : check "${1=1.8} && $1>=0 && isint(${2=7}) && $2>0 && isint(${
       X = patch(x,y);
 
       # Build correlation matrix for PCA.
-      M = vector"{$N2*$N2}"(0);
+      ref(vector"{$N2*$N2}"(0),M);
       for (q = -m1, q<=m2, ++q,
         for (p = -m1, p<=m2, ++p,
           Xk = patch(x + p,y + q) - X;
@@ -22554,7 +22554,7 @@ base642img :
 base642uchar :
   0
   eval "
-    hash = vector256();
+    ref(vector256(),hash);
     for (k = _'A', k<=_'Z', ++k, hash[k] = k - _'A');
     for (k = _'a', k<=_'z', ++k, hash[k] = k - _'a' + 26);
     for (k = _'0', k<=_'9', ++k, hash[k] = k - _'0' + 52);
@@ -28801,8 +28801,8 @@ _x_warp_rbf :
       fact = ([w,h] - 1)/100;
       xy(p) = (I[#0,p])[0,2]*fact;
       const N = h#0;
-      A = vector(#N*N);
-      B = vector(#N*2);
+      ref(vector(#N*N),A);
+      ref(vector(#N*2),B);
       for (p = 0, p<N, ++p,
         for (q = p, q<N, ++q,  A[q + N*p] = A[p + N*q] = norm(xy(p) - xy(q)));
         copy(B[2*p],(I[#0,p])[2,2]*fact - xy(p),2);
@@ -29055,7 +29055,7 @@ _gui_merge_layers :
     def = ['${2--1}'];
     ker = ['$1(']; const sker = size(ker);
     const N = max(size(str),size(def));
-    res = vectorN(0);
+    ref(vectorN(0),res);
     p = q = find(str,ker);
     p>=0?(
       q+=sker;
@@ -37949,7 +37949,7 @@ fx_jpeg_artefacts :
     repeat 3
       # Compute DCT of image with 8x8 blocs.
       [$>]
-      f[$>] "begin(boundary = 2; res = vector64());
+      f[$>] "begin(boundary = 2; ref(vector64(),res));
         if (!(x%8) && !(y%8),
           src = crop(x,y,8,8);
           for (l = 0, l<8, ++l, for (k = 0, k<8, ++k, off = k + 8*l; res[off] = sum(src*crop(#"$dct",0,0,off,8,8,1))));
@@ -37961,7 +37961,7 @@ fx_jpeg_artefacts :
       +r[Q] {$>,w},100%,1,1,0,2 /.. . round.. *[-2,-1]
 
       # Compute iDCT of 8x8 blocs.
-      f. "begin(boundary = 2; res = vector64());
+      f. "begin(boundary = 2; ref(vector64(),res));
         if (!(x%8) && !(y%8),
           src = crop(x,y,8,8);
           for (l = 0, l<8, ++l, for (k = 0, k<8, ++k, off = k + 8*l; res[off] = sum(src*crop(#"$idct",0,0,off,8,8,1))));
@@ -38577,13 +38577,13 @@ _fx_equalize_local_histograms :
       const boundary = 1;
       const N = $3;
       const sigma = ($6?1:-1)*(0.1+$4);
-      weights = vector512();
+      ref(vector512(),weights);
       for (k = 0, k<size(weights), ++k, # Pre-compute exponentials
         weights[k] = sigma>=0?exp(-sqr(k/sigma)):1 - exp(-sqr(k/sigma))
       );
     );
 
-    bins = vector512(0);
+    ref(vector512(0),bins);
 
     for (c = 0, c<s, ++c,
       V = crop(x - N,y - N,0,c,2*N + 1,2*N + 1,1,1);
