@@ -1983,9 +1983,9 @@ clean_cluts :
 
   # Convert RGB CLUTs to Grayscale when possible.
   repeat $! l[$>]
-    if "R = crop(#0,0,0,0,3,1,h,1,1);
-        G = crop(#0,0,0,0,4,1,h,1,1);
-        B = crop(#0,0,0,0,5,1,h,1,1);
+    if "ref(crop(#0,0,0,0,3,1,h,1,1),R);
+        ref(crop(#0,0,0,0,4,1,h,1,1),G);
+        ref(crop(#0,0,0,0,5,1,h,1,1),B);
         R==G && G==B?1:0"
       channels 0,3
     fi
@@ -5178,7 +5178,7 @@ update_gallery_html : check "isbool(${1=0})"
         else
           k.
           eval "
-            str = crop(#-1);
+            ref(crop(#-1),str);
             ind = 0;
             while ((ind = find(str,'\n#@cli ',ind))>=0,
               ++ind;
@@ -5424,10 +5424,10 @@ update_deprecate : check "isint($1) && $1>0 && $1<999"
   +l. s +,{'"UPDATE"" INFORMATION"'} is_deprecated={$!>1} rm endl # Check if deprecation has not been already done.
   if $is_deprecated
     e[0--4] "  > Version $1 already deprecated -> Removing deprecation."
-    off1={"data = crop(); find(data,'\n#@gui !<b><i>&gt;&gt; UPDATE"" INFORMATION</i></b>')"}
+    off1={"ref(crop(),data); find(data,'\n#@gui !<b><i>&gt;&gt; UPDATE"" INFORMATION</i></b>')"}
     if $off1>0
       +rows $off1,100% rows[0] 0,{$off1-1}
-      off2={"data = crop(); find(data,'\n\n')"}
+      off2={"ref(crop(),data); find(data,'\n\n')"}
       if $off2>0
         rows. {$off2+2},100% a y
         o cimgz:$file,uchar
@@ -5466,7 +5466,7 @@ update_download_version : check "
   eval "
     is_digit(c) = (c>=_'0' && c<=_'9');
     ver = ['$1'];
-    data = crop();
+    ref(crop(),data);
     p = stop = N = 0;
     while (!stop,
       p = find(data,'?dwl=gmic_',p);
@@ -5568,7 +5568,7 @@ parse_gui : skip "${1=*},${2=print}"
 
     # Init variables.
     #----------------
-    source = crop();
+    ref(crop(),source);
     path = prev_path = name = prev_name = hide = prev_hide = vector1024();
 
     # Start parsing.
@@ -5672,7 +5672,7 @@ parse_gui : skip "${1=*},${2=print}"
 
     # Separate '#@gui' lines from other lines, and merge them.
     eval $macros"
-      source = crop();
+      ref(crop(),source);
       is_first = 1;
       p = 0;
       while (p<size(source),
@@ -5719,7 +5719,7 @@ parse_gui : skip "${1=*},${2=print}"
       if $! _f${f}_inputmode={0,t} fi # Default input mode
       rm
     endl
-    e[] "\r  > "$_gmic_c[#$f]$_gmic_n" "{`s=vector48(_'" "');copy(s,['${_f${f}_path}${_f${f}_name}']);s`}
+    e[] "\r  > "$_gmic_c[#$f]$_gmic_n" "{`copy(vector48(_'" "'),['${_f${f}_path}${_f${f}_name}'])`}
 
     # Parse filter parameters.
     parseparams=1
@@ -5728,9 +5728,10 @@ parse_gui : skip "${1=*},${2=print}"
     if !$!" || "!$parseparams _f${f}_nbparams=0
     else
       eval $macros"
-        source = crop();
-        name = type = vector256();
-        argument = vector65536();
+        ref(crop(),source);
+        ref(vector256(),name);
+        ref(vector256(),type);
+        ref(vector65536(),argument);
 
         p = nbparams = 0;
         while (p<size(source),
@@ -5819,7 +5820,7 @@ parse_gui : skip "${1=*},${2=print}"
   store. _nongui
 
   # Done!
-  e[] "\r  > "${_gmic_g}{`s=vector64(_'" "');copy(s,'"Parsing done!"');s`}$_gmic_n
+  e[] "\r  > "${_gmic_g}{`copy(vector64(_'" "'),'"Parsing done!"')`}$_gmic_n
   v + parse_gui_$2 # Output result of the parsing.
 
 #
@@ -5870,7 +5871,7 @@ parse_gui_list :
 
   ('"\n*** End of list ***\n"')
   y a y
-  e[] "\r  >> "${_gmic_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_gmic_n
+  e[] "\r  >> "${_gmic_g}{`copy(vector64(_'" "'),'"Output done!"')`}$_gmic_n
 
 #
 # Output mode 'update'.
@@ -5881,14 +5882,14 @@ parse_gui_update :
   path=/
   N={$_nbfilters-1}
   repeat $_nbfilters,f
-    e[] "\r  >> "$_gmic_c[#$f/$N]$_gmic_n" "{`s=vector48(_'" "');copy(s,['${_f${f}_path}${_f${f}_name}']);s`}
+    e[] "\r  >> "$_gmic_c[#$f/$N]$_gmic_n" "{`copy(vector48(_'" "'),['${_f${f}_path}${_f${f}_name}'])`}
 
     # Insert directives to change folder if necessary.
     if ;['$path']!=['${_f${f}_path}']
       command_path={`"
         src = ['"$path"'];
         dest = ['"${_f${f}_path}'"];
-        command = vector1024();
+        ref(vector1024(),command);
         for (p = 0, p<min(size(src),size(dest)) && src[p]==dest[p], ++p); # Find common base
         while (src[p]!=_'/' && dest[p]!=_'/', --p);
 
@@ -5983,7 +5984,7 @@ parse_gui_update :
     "#"\n\
     "# (End of G\47MIC update file)"')
   y a y
-  e[] "\r  >> "${_gmic_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_gmic_n
+  e[] "\r  >> "${_gmic_g}{`copy(vector64(_'" "'),'"Output done!"')`}$_gmic_n
 
 #
 # Output mode 'json'.
@@ -6002,7 +6003,7 @@ parse_gui_json :
   current_category=
   N={$_nbfilters-1}
   repeat $_nbfilters,f
-    e[] "\r  >> "$_gmic_c[#$f/$N]$_gmic_n" "{`s=vector48(_'" "');copy(s,['${_f${f}_path}${_f${f}_name}']);s`}
+    e[] "\r  >> "$_gmic_c[#$f/$N]$_gmic_n" "{`copy(vector48(_'" "'),['${_f${f}_path}${_f${f}_name}'])`}
 
     # Manage categories.
     0 nm. {`s=['${_f${f}_path}'];s[0,size(s)-1]`} _parse_gui_json[] {b} path=${} rm.
@@ -6114,7 +6115,7 @@ parse_gui_json :
   if ['$current_category']!=0 ('"    ]\n  }\n"') fi
   ('"  ]\n}\n"')
   y a y html2utf8
-  e[] "\r  >> "${_gmic_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_gmic_n
+  e[] "\r  >> "${_gmic_g}{`copy(vector64(_'" "'),'"Output done!"')`}$_gmic_n
 
 _parse_gui_json :
   l[]
@@ -6152,7 +6153,7 @@ parse_gui_zart :
   current_group=
   N={$_nbfilters-1}
   repeat $_nbfilters,f
-    e[] "\r  >> "$_gmic_c[#$f/$N]$_gmic_n" "{`s=vector48(_'" "');copy(s,['${_f${f}_path}${_f${f}_name}']);s`}
+    e[] "\r  >> "$_gmic_c[#$f/$N]$_gmic_n" "{`copy(vector48(_'" "'),['${_f${f}_path}${_f${f}_name}'])`}
 
     # Manage groups.
     0 nm. {`s=['${_f${f}_path}'];s[0,size(s)-1]`} path={b} rm.
@@ -6232,7 +6233,7 @@ parse_gui_zart :
   done
   if narg($current_group) +e[] "</preset_group>" fi
   +e[] "</document>"
-  e[] "\r  >> "${_gmic_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_gmic_n
+  e[] "\r  >> "${_gmic_g}{`copy(vector64(_'" "'),'"Output done!"')`}$_gmic_n
 
 _parse_gui_zart :
   l[]
@@ -6250,8 +6251,8 @@ _parse_gui_zart :
 html2utf8 :
   if h
     eval "
-      source = crop();
-      svalue = vector8();
+      ref(crop(),source);
+      ref(vector8(),svalue);
       p = 0;
       while (1,
         p = p0 = find(source,'&#',p);
@@ -6293,7 +6294,7 @@ utf82html :
   if h
     eval "
       write_seq() = ( copy(res[q],'&#'); q+=2; s = vtos(val); l = find(s,0); copy(res[q],s,l); q+=l; res[q++]=_';' );
-      res = vector(#4*wh);
+      ref(vector(#4*wh),res);
       for (q = p = 0, p<wh, ++p,
         i = i[p];
         !(i&0x80)?( # 1-byte
@@ -18281,7 +18282,7 @@ _apply_tiles :
     $bw,$bh,$bd,[0]
     m "__at : $1 k. r "$bw,$bh,$bd,{0,s},0
     eval "
-      mask = crop(#2);
+      ref(crop(#2),mask);
       for (z = 0, z<d#0, z+="$sd",
         for (y = 0, y<h#0, y+="$sh",
           for (x = 0, x<w#0, x+="$sw",
@@ -38585,7 +38586,7 @@ _fx_equalize_local_histograms :
     bins = vector512(0);
 
     for (c = 0, c<s, ++c,
-      V = crop(x - N,y - N,0,c,2*N+1,2*N+1,1,1);
+      V = crop(x - N,y - N,0,c,2*N + 1,2*N + 1,1,1);
       for (k = 0, k<size(V), ++k, # Compute local weighted histogram
         val = V[k];
         diff = abs(val - V[size(V)/2]);
