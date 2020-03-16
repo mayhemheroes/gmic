@@ -13850,7 +13850,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           CImg<char> str(arg_input.data() + 2,larg - (delimiter?5:3));
           str.back() = 0;
           cimg::strunescape(str);
-          img.assign(str.data(),(unsigned int)std::strlen(str));
+          img.assign((unsigned char*)str.data(),(unsigned int)std::strlen(str));
           if (delimiter && delimiter!=',' && delimiter!='x')
             img.unroll(delimiter==';' || delimiter=='y'?'y':
                        delimiter=='/' || delimiter=='z'?'z':'c');
