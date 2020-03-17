@@ -13940,19 +13940,20 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   "Command 'input': Variable '%s' has not been assigned with command 'store'.",
                   argx);
           }
-          g_list_c = g_list.back().get_split(CImg<char>::vector(0),0,false);
-          g_list_c.remove(0);
-          cimglist_for(g_list_c,q) g_list_c[q].resize(1,g_list_c[q].height() + 1,1,1,0).unroll('x');
-          if (g_list_c.size()!=g_list.size() - 1)
-            error(true,images,0,0,
-                  "Command 'input': Invalid binary encoding of variable '%s' " \
-                  "(%d items, %s names)",
-                  argx,(int)g_list.size() - 1,(int)g_list_c.size());
-          else if (g_list_c) g_list.remove();
+          if (g_list.width()>1) { // List is not empty
+            g_list_c = g_list.back().get_split(CImg<char>::vector(0),0,false);
+            g_list_c.remove(0);
+            cimglist_for(g_list_c,q) g_list_c[q].resize(1,g_list_c[q].height() + 1,1,1,0).unroll('x');
+            if (g_list_c.size()!=g_list.size() - 1)
+              error(true,images,0,0,
+                    "Command 'input': Invalid binary encoding of variable '%s' " \
+                    "(%d items, %s names)",
+                    argx,(int)g_list.size() - 1,(int)g_list_c.size());
+            else if (g_list_c) g_list.remove();
+          } else { g_list.assign(); g_list_c.assign(); }
         } else error(true,images,0,0,
                      "Command 'input': Variable '%s' has not been assigned.",
                      argx);
-
       } else if (cimg_sscanf(arg_input,"[%255[a-zA-Z_0-9%.eE%^,:+-]%c%c",indices,&sep,&end)==2 && sep==']') {
 
         // Nb copies of existing image(s).
