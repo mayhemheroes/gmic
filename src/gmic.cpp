@@ -13910,7 +13910,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
         // Binary-stored variable.
         print(images,0,
-              "Input image from variable '%s', at position%s.",
+              "Input image from variable '%s', at position%s",
               argx,_gmic_selection.data());
         hash = hashcode(argx,true);
 
@@ -13940,7 +13940,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   "Command 'input': Variable '%s' has not been assigned with command 'store'.",
                   argx);
           }
-          if (g_list.width()>1) { // List is not empty
+          if (g_list.width()==1 && !g_list_c) // Empty list
+            g_list.assign();
+          else { // List is not empty
             g_list_c = g_list.back().get_split(CImg<char>::vector(0),0,false);
             g_list_c.remove(0);
             cimglist_for(g_list_c,q) g_list_c[q].resize(1,g_list_c[q].height() + 1,1,1,0).unroll('x');
@@ -13949,8 +13951,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                     "Command 'input': Invalid binary encoding of variable '%s' " \
                     "(%d items, %s names)",
                     argx,(int)g_list.size() - 1,(int)g_list_c.size());
-            else if (g_list_c) g_list.remove();
-          } else { g_list.assign(); g_list_c.assign(); }
+            g_list.remove();
+          }
         } else error(true,images,0,0,
                      "Command 'input': Variable '%s' has not been assigned.",
                      argx);
