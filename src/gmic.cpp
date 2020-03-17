@@ -13942,7 +13942,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           }
           if (g_list.width()==1 && !g_list_c) // Empty list
             g_list.assign();
-          else { // List is not empty
+          else { // Non-empty list
             g_list_c = g_list.back().get_split(CImg<char>::vector(0),0,false);
             g_list_c.remove(0);
             cimglist_for(g_list_c,q) g_list_c[q].resize(1,g_list_c[q].height() + 1,1,1,0).unroll('x');
