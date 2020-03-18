@@ -18303,10 +18303,12 @@ _apply_tiles :
 
 #@cli apply_timeout : "command",_timeout={ 0=no timeout | >0=with specified timeout (in seconds) }
 #@cli : Apply a command with a timeout.
+#@cli : Set variable '$_is_timeout' to '1' if timeout occured, '0' otherwise.
 apply_timeout :
   if $2<=0
     e[0--3] "Apply command '$1' on image$?, with no timeout."
     $1
+    _is_timeout=0
   else
     e[0--3] "Apply command '$1' on image$?, with a timeout of $2 seconds."
     l[] ('$/') id={is} rm endl
@@ -18317,7 +18319,8 @@ apply_timeout :
                "l[] do if $|-"$|">$2 __is_timeout"$id"=1 error \"\" elif $__done"$id" break fi wait 100 while 1 endl"
     onfail
       rm $initial
-      if ${__is_timeout$id} error[0--5] "Command '$0': Time out ($2 seconds) for command '$1'."
+      _is_timeout=0
+      if ${__is_timeout$id} _is_timeout=1 error[0--5] "Command '$0': Time out ($2 seconds) for command '$1'."
       else error[0--5] "Command '$0': "${}
       fi
     endl
@@ -29079,9 +29082,17 @@ gui_split_preview : check "isint(${2=0}) && $2>=0 && $2<=12 && ${5=0}>=0" skip "
   posx,posy={$is_movable?cut([$3,$4],0,100):[50,50]}
   pw,ph=${-gui_preview_wh}
   repeat $! l[$>]
-    is_timeout=0
-    +l apply_timeout _split_preview,0$_preview_timeout onfail gui_timeout_preview is_timeout=1 endl
-    if $is_timeout" || "!$2 k.
+    is_failed=0
+    +l
+      apply_timeout _split_preview,0$_preview_timeout
+    onfail
+      if 0$_is_timeout gui_timeout_preview
+      else gui_error_preview ${}
+      fi
+      is_failed=1
+    endl
+
+    if $is_failed" || "!$2 k.
     else
       drgba rr2d $pw,$ph,0,2
       r {[max(w#0,w#1),max(h#0,h#1)]},1,100%,0,0,0.5,0.5
