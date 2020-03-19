@@ -679,7 +679,7 @@ do_gmic_stdlib.h:
  #  knowledge of the CeCILL and CeCILL-C licenses and that you accept its terms.\n\
  #\n\
 */\n" > gmic_stdlib.h
-	@\gmic gmic_stdlib.gmic raw:gmic_stdlib.gmic,char compress_gmic 1 a y serialize char,1,0 o -.h,uchar | sed 's/unsigned char/const unsigned char/' | sed 's/unnamed/gmic_stdlib/' >> gmic_stdlib.h
+	@\gmic gmic_stdlib.gmic it gmic_stdlib.gmic parse_gui *,update serialize uchar,1,0 o -.h | sed 's/unsigned char/const unsigned char/' | sed 's/unnamed/gmic_stdlib/' >> gmic_stdlib.h
 	@echo "\nconst unsigned long size_data_gmic_stdlib = (unsigned long)sizeof(data_gmic_stdlib);" >> gmic_stdlib.h
 	@\gmic v - _upload gmic_stdlib.h
 	@cp -f gmic_stdlib.h /tmp/gmic_stdlib$(VERSION).h
@@ -690,14 +690,14 @@ do_gmic_stdlib.h:
 #-----------------------
 bashcompletion:
 	@mkdir -p ../resources
-	@\gmic v - gmic_stdlib.gmic raw:gmic_stdlib.gmic,uchar nm gmic document_gmic bash > ../resources/gmic_bashcompletion.sh
+	@\gmic v - gmic_stdlib.gmic it gmic_stdlib.gmic nm gmic document_gmic bash > ../resources/gmic_bashcompletion.sh
 	@echo "Bash completion script 'gmic_bashcompletion.sh' has been successfully generated in '../resources/'."
 
 # Man pages
 #----------
 man:
 	@mkdir -p ../man
-	@\gmic gmic_stdlib.gmic raw:gmic_stdlib.gmic,uchar __help man > ../man/gmic.1
+	@\gmic gmic_stdlib.gmic it gmic_stdlib.gmic __help man > ../man/gmic.1
 	@gzip -f ../man/gmic.1
 	@echo "Man file 'gmic.1.gz' has been successfully generated in '../man/'."
 
