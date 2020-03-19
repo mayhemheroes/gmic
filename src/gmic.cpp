@@ -2162,11 +2162,11 @@ bool gmic::get_debug_info(const char *s, unsigned int &line_number, unsigned int
 inline gmic_list<void*>& gmic_runs() { static gmic_list<void*> val; return val; }
 
 template<typename T>
-double gmic::mp_call(char *const str, void *const p_list, const T& pixel_type) {
+double gmic::mp_run(char *const str, void *const p_list, const T& pixel_type) {
   cimg::unused(pixel_type);
   double res = cimg::type<double>::nan();
   char sep;
-  cimg_pragma_openmp(critical(mp_call))
+  cimg_pragma_openmp(critical(mp_run))
   {
     // Retrieve current gmic instance.
     cimg::mutex(24);
