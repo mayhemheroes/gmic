@@ -2258,8 +2258,31 @@ double gmic::mp_store(const Ts *const ptr,
 }
 
 double gmic::mp_name(double *const ptr, const unsigned int ind, const unsigned int siz) {
-  std::fprintf(stderr,"\nDEBUG : ind = %u, siz = %u\n",ind,siz);
-  for (unsigned int k = 0; k<siz; ++k) ptr[k] = 1976;
+
+  // Retrieve current gmic instance.
+  cimg::mutex(24);
+  CImgList<void*> &grl = gmic_runs();
+
+/*  int ind;
+  for (ind = grl.width() - 1; ind>=0; --ind) {
+    CImg<void*> &gr = grl[ind];
+    if (gr[1]==(void*)p_list) break;
+  }
+  if (ind<0) { cimg::mutex(24,0); *ptr = 0; } // Instance not found
+  else {
+    CImg<void*> &gr = grl[ind];
+    gmic &gmic_instance = *(gmic*)gr[0];
+    cimg::mutex(24,0);
+
+    CImgList<T> &images = *(CImgList<T>*)gr[1];
+    CImgList<char> &images_names = *(CImgList<char>*)gr[2];
+    if (ind<images_names.size()) {
+      const char *ptrs = images_names[ind];
+      for (unsigned int k = 0; k<siz && ptrs[k]; ++k) ptr[k] = (double)ptrs[k];
+      if (k<siz) ptr[k] = 0;
+    } else *ptr = 0;
+  }
+*/
   return cimg::type<double>::nan();
 }
 
