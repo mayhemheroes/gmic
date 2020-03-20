@@ -199,6 +199,8 @@ inline double gmic_mp_store(const Ts *const ptr,
 #define cimg_mp_func_store(ptr,w,h,d,s,is_compressed,str) \
   return ::gmic_mp_store(ptr,w,h,d,s,is_compressed,str,&mp.listout,(T)0)
 
+#define cimg_mp_func_name 1
+
 #ifndef cimg_display
 #define cimg_display 0
 #endif
