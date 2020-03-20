@@ -2257,6 +2257,12 @@ double gmic::mp_store(const Ts *const ptr,
   return cimg::type<double>::nan();
 }
 
+double gmic::mp_name(double *const ptr, const unsigned int ind, const unsigned int siz) {
+  std::fprintf(stderr,"\nDEBUG : ind = %u, siz = %u\n",ind,siz);
+  for (unsigned int k = 0; k<siz; ++k) ptr[k] = 1976;
+  return cimg::type<double>::nan();
+}
+
 // Manage correspondence between abort pointers and thread ids.
 CImgList<void*> gmic::list_p_is_abort = CImgList<void*>();
 bool *gmic::abort_ptr(bool *const p_is_abort) {
