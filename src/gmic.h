@@ -196,8 +196,9 @@ inline double gmic_mp_store(const Ts *const ptr,
                             const unsigned int w, const unsigned int h, const unsigned int d, const unsigned int s,
                             const bool is_compressed,
                             const char *const str, void *const p_list, const T& pixel_type);
-#define cimg_mp_store_function(ptr,w,h,d,s,is_compressed,str) \
+#define cimg_mp_func_store(ptr,w,h,d,s,is_compressed,str) \
   return ::gmic_mp_store(ptr,w,h,d,s,is_compressed,str,&mp.listout,(T)0)
+
 #ifndef cimg_display
 #define cimg_display 0
 #endif
