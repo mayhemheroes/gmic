@@ -2162,23 +2162,24 @@ bool gmic::get_debug_info(const char *s, unsigned int &line_number, unsigned int
 inline gmic_list<void*>& gmic_runs() { static gmic_list<void*> val; return val; }
 
 template<typename T>
-double gmic::mp_run(char *const str, void *const p_list, const T& pixel_type) {
+double gmic::mp_run(char *const str,
+                    void *const p_list, const T& pixel_type) {
   cimg::unused(pixel_type);
   double res = cimg::type<double>::nan();
   char sep;
   cimg_pragma_openmp(critical(mp_run))
   {
-    // Retrieve current gmic instance.
+    // Retrieve current gmic run.
     cimg::mutex(24);
     CImgList<void*> &grl = gmic_runs();
-    int ind;
-    for (ind = grl.width() - 1; ind>=0; --ind) {
-      CImg<void*> &gr = grl[ind];
+    int p;
+    for (p = grl.width() - 1; p>=0; --p) {
+      CImg<void*> &gr = grl[p];
       if (gr[1]==(void*)p_list) break;
     }
-    if (ind<0) { cimg::mutex(24,0); res = cimg::type<double>::nan(); } // Instance not found
+    if (p<0) { cimg::mutex(24,0); res = cimg::type<double>::nan(); } // Instance not found
     else {
-      CImg<void*> &gr = grl[ind];
+      CImg<void*> &gr = grl[p];
       gmic &gmic_instance = *(gmic*)gr[0];
       cimg::mutex(24,0);
 
@@ -2213,21 +2214,21 @@ double gmic::mp_run(char *const str, void *const p_list, const T& pixel_type) {
 template<typename Ts, typename T>
 double gmic::mp_store(const Ts *const ptr,
                       const unsigned int w, const unsigned int h, const unsigned d, const unsigned int s,
-                      const bool is_compressed,
-                      const char *const str, void *const p_list, const T& pixel_type) {
+                      const bool is_compressed, const char *const str,
+                      void *const p_list, const T& pixel_type) {
   cimg::unused(pixel_type);
 
-  // Retrieve current gmic instance.
+  // Retrieve current gmic run.
   cimg::mutex(24);
   CImgList<void*> &grl = gmic_runs();
-  int ind;
-  for (ind = grl.width() - 1; ind>=0; --ind) {
-    CImg<void*> &gr = grl[ind];
+  int p;
+  for (p = grl.width() - 1; p>=0; --p) {
+    CImg<void*> &gr = grl[p];
     if (gr[1]==(void*)p_list) break;
   }
-  if (ind<0) cimg::mutex(24,0); // Instance not found
+  if (p<0) cimg::mutex(24,0); // Instance not found
   else {
-    CImg<void*> &gr = grl[ind];
+    CImg<void*> &gr = grl[p];
     gmic &gmic_instance = *(gmic*)gr[0];
     const unsigned int *const variables_sizes = (const unsigned int*)gr[5];
     CImg<char> _varname(256);
@@ -2257,32 +2258,31 @@ double gmic::mp_store(const Ts *const ptr,
   return cimg::type<double>::nan();
 }
 
-double gmic::mp_name(double *const ptr, const unsigned int ind, const unsigned int siz) {
+template<typename T>
+double gmic::mp_name(double *const ptr, const unsigned int ind, const unsigned int siz,
+                     void *const p_list, const T& pixel_type) {
+  cimg::unused(pixel_type);
 
-  // Retrieve current gmic instance.
+  // Retrieve current gmic run.
   cimg::mutex(24);
   CImgList<void*> &grl = gmic_runs();
-
-/*  int ind;
-  for (ind = grl.width() - 1; ind>=0; --ind) {
-    CImg<void*> &gr = grl[ind];
+  int p;
+  for (p = grl.width() - 1; p>=0; --p) {
+    CImg<void*> &gr = grl[p];
     if (gr[1]==(void*)p_list) break;
   }
-  if (ind<0) { cimg::mutex(24,0); *ptr = 0; } // Instance not found
+  if (p<0) { cimg::mutex(24,0); *ptr = 0; } // Instance not found
   else {
-    CImg<void*> &gr = grl[ind];
-    gmic &gmic_instance = *(gmic*)gr[0];
+    CImg<void*> &gr = grl[p];
     cimg::mutex(24,0);
-
-    CImgList<T> &images = *(CImgList<T>*)gr[1];
     CImgList<char> &images_names = *(CImgList<char>*)gr[2];
     if (ind<images_names.size()) {
       const char *ptrs = images_names[ind];
-      for (unsigned int k = 0; k<siz && ptrs[k]; ++k) ptr[k] = (double)ptrs[k];
+      unsigned int k;
+      for (k = 0; k<siz && ptrs[k]; ++k) ptr[k] = (double)ptrs[k];
       if (k<siz) ptr[k] = 0;
     } else *ptr = 0;
   }
-*/
   return cimg::type<double>::nan();
 }
 

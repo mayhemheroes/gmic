@@ -188,21 +188,24 @@ inline bool *gmic_abort_ptr(bool *const p_is_abort);
 #endif
 
 template<typename T>
-inline double gmic_mp_run(char *const str, void *const p_list, const T& pixel_type);
+inline double gmic_mp_run(char *const str,
+                          void *const p_list, const T& pixel_type);
 #define cimg_mp_func_run(str) \
   return ::gmic_mp_run(str,&mp.listout,(T)0)
 
 template<typename Ts, typename T>
 inline double gmic_mp_store(const Ts *const ptr,
                             const unsigned int w, const unsigned int h, const unsigned int d, const unsigned int s,
-                            const bool is_compressed,
-                            const char *const str, void *const p_list, const T& pixel_type);
+                            const bool is_compressed, const char *const str,
+                            void *const p_list, const T& pixel_type);
 #define cimg_mp_func_store(ptr,w,h,d,s,is_compressed,str) \
   return ::gmic_mp_store(ptr,w,h,d,s,is_compressed,str,&mp.listout,(T)0)
 
-inline double gmic_mp_name(double *const ptr, const unsigned int ind, const unsigned int siz);
+template<typename T>
+inline double gmic_mp_name(double *const ptr, const unsigned int ind, const unsigned int siz,
+                           void *const p_list, const T& pixel_type);
 #define cimg_mp_func_name(ptr,ind,siz) \
-  return ::gmic_mp_name(ptr,ind,siz)
+  return ::gmic_mp_name(ptr,ind,siz,&mp.listout,(T)0)
 
 #ifndef cimg_display
 #define cimg_display 0
@@ -289,13 +292,16 @@ struct gmic {
   template<typename T>
   static bool search_sorted(const char *const str, const T& list, const unsigned int length, unsigned int &out_ind);
   template<typename T>
-  static double mp_run(char *const str, void *const p_list, const T& pixel_type);
+  static double mp_run(char *const str,
+                       void *const p_list, const T& pixel_type);
   template<typename Ts, typename T>
   static double mp_store(const Ts *const ptr,
                          const unsigned int w, const unsigned int h, const unsigned int d, const unsigned int s,
-                         const bool is_compressed,
-                         const char *const str, void *const p_list, const T& pixel_type);
-  static double mp_name(double *const ptr, const unsigned int ind, const unsigned int siz);
+                         const bool is_compressed, const char *const str,
+                         void *const p_list, const T& pixel_type);
+  template<typename T>
+  static double mp_name(double *const ptr, const unsigned int ind, const unsigned int siz,
+                        void *const p_list, const T& pixel_type);
   static bool get_debug_info(const char *const s, unsigned int &line_number, unsigned int &file_number);
   static int _levenshtein(const char *const s, const char *const t,
                           gmic_image<int>& d, const int i, const int j);
@@ -487,20 +493,23 @@ struct gmic_exception {
 };
 
 template<typename T>
-inline double gmic_mp_run(char *const str, void *const p_list, const T& pixel_type) {
+inline double gmic_mp_run(char *const str,
+                          void *const p_list, const T& pixel_type) {
   return gmic::mp_run(str,p_list,pixel_type);
 }
 
 template<typename Ts, typename T>
 inline double gmic_mp_store(const Ts *const ptr,
                             const unsigned int w, const unsigned int h, const unsigned int d, const unsigned int s,
-                            const bool is_compressed,
-                            const char *const str, void *const p_list, const T& pixel_type) {
+                            const bool is_compressed, const char *const str,
+                            void *const p_list, const T& pixel_type) {
   return gmic::mp_store(ptr,w,h,d,s,is_compressed,str,p_list,pixel_type);
 }
 
-inline double gmic_mp_name(double *const ptr, const unsigned int ind, const unsigned int siz) {
-  return gmic::mp_name(ptr,ind,siz);
+template<typename T>
+inline double gmic_mp_name(double *const ptr, const unsigned int ind, const unsigned int siz,
+                           void *const p_list, const T& pixel_type) {
+  return gmic::mp_name(ptr,ind,siz,p_list,pixel_type);
 }
 
 inline bool *gmic_abort_ptr(bool *const p_is_abort) { return gmic::abort_ptr(p_is_abort); }
