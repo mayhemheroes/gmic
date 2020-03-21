@@ -2262,6 +2262,7 @@ template<typename T>
 double gmic::mp_name(const unsigned int ind, double *const ptr, const unsigned int siz,
                      void *const p_list, const T& pixel_type) {
   cimg::unused(pixel_type);
+  std::memset(ptr,0,siz*sizeof(double));
 
   // Retrieve current gmic run.
   cimg::mutex(24);
