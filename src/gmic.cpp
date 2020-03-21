@@ -2162,23 +2162,24 @@ bool gmic::get_debug_info(const char *s, unsigned int &line_number, unsigned int
 inline gmic_list<void*>& gmic_runs() { static gmic_list<void*> val; return val; }
 
 template<typename T>
-double gmic::mp_run(char *const str, void *const p_list, const T& pixel_type) {
+double gmic::mp_run(char *const str,
+                    void *const p_list, const T& pixel_type) {
   cimg::unused(pixel_type);
   double res = cimg::type<double>::nan();
   char sep;
   cimg_pragma_openmp(critical(mp_run))
   {
-    // Retrieve current gmic instance.
+    // Retrieve current gmic run.
     cimg::mutex(24);
     CImgList<void*> &grl = gmic_runs();
-    int ind;
-    for (ind = grl.width() - 1; ind>=0; --ind) {
-      CImg<void*> &gr = grl[ind];
+    int p;
+    for (p = grl.width() - 1; p>=0; --p) {
+      CImg<void*> &gr = grl[p];
       if (gr[1]==(void*)p_list) break;
     }
-    if (ind<0) { cimg::mutex(24,0); res = cimg::type<double>::nan(); } // Instance not found
+    if (p<0) { cimg::mutex(24,0); res = cimg::type<double>::nan(); } // Instance not found
     else {
-      CImg<void*> &gr = grl[ind];
+      CImg<void*> &gr = grl[p];
       gmic &gmic_instance = *(gmic*)gr[0];
       cimg::mutex(24,0);
 
@@ -2213,21 +2214,21 @@ double gmic::mp_run(char *const str, void *const p_list, const T& pixel_type) {
 template<typename Ts, typename T>
 double gmic::mp_store(const Ts *const ptr,
                       const unsigned int w, const unsigned int h, const unsigned d, const unsigned int s,
-                      const bool is_compressed,
-                      const char *const str, void *const p_list, const T& pixel_type) {
+                      const bool is_compressed, const char *const str,
+                      void *const p_list, const T& pixel_type) {
   cimg::unused(pixel_type);
 
-  // Retrieve current gmic instance.
+  // Retrieve current gmic run.
   cimg::mutex(24);
   CImgList<void*> &grl = gmic_runs();
-  int ind;
-  for (ind = grl.width() - 1; ind>=0; --ind) {
-    CImg<void*> &gr = grl[ind];
+  int p;
+  for (p = grl.width() - 1; p>=0; --p) {
+    CImg<void*> &gr = grl[p];
     if (gr[1]==(void*)p_list) break;
   }
-  if (ind<0) cimg::mutex(24,0); // Instance not found
+  if (p<0) cimg::mutex(24,0); // Instance not found
   else {
-    CImg<void*> &gr = grl[ind];
+    CImg<void*> &gr = grl[p];
     gmic &gmic_instance = *(gmic*)gr[0];
     const unsigned int *const variables_sizes = (const unsigned int*)gr[5];
     CImg<char> _varname(256);
@@ -2252,6 +2253,64 @@ double gmic::mp_store(const Ts *const ptr,
       throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'store()': "
                                   "Invalid variable name '%s' specified.",
                                   cimg::type<T>::string(),str);
+    }
+  }
+  return cimg::type<double>::nan();
+}
+
+template<typename T>
+double gmic::mp_name(const unsigned int ind, double *const ptr, const unsigned int siz,
+                     void *const p_list, const T& pixel_type) {
+  cimg::unused(pixel_type);
+
+  // Retrieve current gmic run.
+  cimg::mutex(24);
+  CImgList<void*> &grl = gmic_runs();
+  int p;
+  for (p = grl.width() - 1; p>=0; --p) {
+    CImg<void*> &gr = grl[p];
+    if (gr[1]==(void*)p_list) break;
+  }
+  if (p<0) { cimg::mutex(24,0); *ptr = 0; } // Instance not found
+  else {
+    CImg<void*> &gr = grl[p];
+    cimg::mutex(24,0);
+    CImgList<char> &images_names = *(CImgList<char>*)gr[2];
+    if (ind<images_names.size()) { // #ind specified
+      const char *ptrs = images_names[ind];
+      unsigned int k;
+      for (k = 0; k<siz && ptrs[k]; ++k) ptr[k] = (double)ptrs[k];
+      if (k<siz) ptr[k] = 0;
+    } else *ptr = 0;
+  }
+  return cimg::type<double>::nan();
+}
+
+template<typename T>
+double gmic::mp_setname(const unsigned int ind, const double *const ptr, const unsigned int siz,
+                        void *const p_list, const T& pixel_type) {
+  cimg::unused(pixel_type);
+
+  // Retrieve current gmic run.
+  cimg::mutex(24);
+  CImgList<void*> &grl = gmic_runs();
+  int p;
+  for (p = grl.width() - 1; p>=0; --p) {
+    CImg<void*> &gr = grl[p];
+    if (gr[1]==(void*)p_list) break;
+  }
+  if (p<0) cimg::mutex(24,0); // Instance not found
+  else {
+    CImg<void*> &gr = grl[p];
+    cimg::mutex(24,0);
+    CImgList<char> &images_names = *(CImgList<char>*)gr[2];
+    if (ind<images_names.size()) {
+      unsigned int len = 0;
+      if (siz) while (len<siz && ptr[len]) ++len; else len = *ptr?1:0;
+      CImg<char> name(len + 1);
+      for (unsigned int k = 0; k<len; ++k) name[k] = (char)ptr[k];
+      name[len] = 0;
+      name.move_to(images_names[ind]);
     }
   }
   return cimg::type<double>::nan();

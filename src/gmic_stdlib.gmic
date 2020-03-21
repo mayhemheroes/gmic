@@ -65,7 +65,7 @@
 #        starts a new command description.
 #      _ '#@cli : description' add a new description line to the current command description.
 #
-#*** Specific rules for the universal plug-in :
+#*** Specific rules for the universal plug-in 'gmic-qt':
 #
 # - A comment line starting with '#@gui' will be parsed by the plug-in to define the filters tree.
 # - A comment line starting with '#@gui_xx' will define a filter only for a specific language 'xx'
@@ -1104,9 +1104,11 @@ ${g}"N=24"$n").
 \n       . '"${c}"run('pipeline')"$n"' executes the specified "${-GMIC}" pipeline as if it was called outside
 \n          the currently evaluated expression.
 \n       . '"${c}"store(A,'varname',_w,_h,_d,_s,_is_compressed)"$n"' transfers the data of vector '"${g}"A"${n}"' as a
-\n          '"${g}"w x h x d x s"$n"' image to the "${-GMIC}" variable '"${g}"$varname"${n}"'. Thus, the data becomes
+\n          '"${g}"w x h x d x s"$n"' image to the "${-GMIC}" variable '"${g}"$varname"$n"'. Thus, the data becomes
 \n          available outside the math expression (that is equivalent to using the regular command
 \n          '"${c}"store"${n}"', but directly in the math expression).
+\n       . '"${c}"name(_#ind,size)"$n"' returns a vector of size "${g}"size"$n", whose values are the characters
+\n          codes of the name of image "${c}"[ind]"$n" (or default image selected if '"${c}"ind"$n"' is not specified).
 \n       . '"${c}"correlate(I,wI,hI,dI,sI,K,wK,hK,dK,sK,_boundary_conditions,_is_normalized,_channel_mode,
 \n                    _xcenter,_ycenter,_zcenter,_xstart,_ystart,_zstart,_xend,_yend,_zend,
 \n                    _xstride,_ystride,_zstride,_xdilation,_ydilation,_zdilation)"$n"'
@@ -1429,30 +1431,30 @@ _help_header_html :
 \n</ul>
 \n<li><a href=\"#section12\">List of commands</a></li>
 \n<ul>
-\n<li><a href=\"#subsection1\">Global options</a></li>
-\n<li><a href=\"#subsection2\">Input/output</a></li>
-\n<li><a href=\"#subsection3\">List manipulation</a></li>
-\n<li><a href=\"#subsection4\">Mathematical operators</a></li>
-\n<li><a href=\"#subsection5\">Values manipulation</a></li>
-\n<li><a href=\"#subsection6\">Colors manipulation</a></li>
-\n<li><a href=\"#subsection7\">Geometry manipulation</a></li>
+\n<li><a href=\"#subsection1\">Global Options</a></li>
+\n<li><a href=\"#subsection2\">Input/Output</a></li>
+\n<li><a href=\"#subsection3\">List Manipulation</a></li>
+\n<li><a href=\"#subsection4\">Mathematical Operators</a></li>
+\n<li><a href=\"#subsection5\">Values Manipulation</a></li>
+\n<li><a href=\"#subsection6\">Colors Manipulation</a></li>
+\n<li><a href=\"#subsection7\">Geometry Manipulation</a></li>
 \n<li><a href=\"#subsection8\">Filtering</a></li>
-\n<li><a href=\"#subsection9\">Features extraction</a></li>
-\n<li><a href=\"#subsection10\">Image drawing</a></li>
-\n<li><a href=\"#subsection11\">Matrix computation</a></li>
-\n<li><a href=\"#subsection12\">3D rendering</a></li>
-\n<li><a href=\"#subsection13\">Control flow</a></li>
-\n<li><a href=\"#subsection14\">Arrays,tiles and frames</a></li>
+\n<li><a href=\"#subsection9\">Features Extraction</a></li>
+\n<li><a href=\"#subsection10\">Image Drawing</a></li>
+\n<li><a href=\"#subsection11\">Matrix Computation</a></li>
+\n<li><a href=\"#subsection12\">3D Rendering</a></li>
+\n<li><a href=\"#subsection13\">Control Flow</a></li>
+\n<li><a href=\"#subsection14\">Arrays,Tiles and Frames</a></li>
 \n<li><a href=\"#subsection15\">Artistic</a></li>
 \n<li><a href=\"#subsection16\">Warpings</a></li>
 \n<li><a href=\"#subsection17\">Degradations</a></li>
-\n<li><a href=\"#subsection18\">Blending and fading</a></li>
-\n<li><a href=\"#subsection19\">Image sequences and videos</a></li>
-\n<li><a href=\"#subsection20\">Neural networks</a></li>
-\n<li><a href=\"#subsection21\">Convenience functions</a></li>
-\n<li><a href=\"#subsection22\">Other interactive commands</a></li>
-\n<li><a href=\"#subsection23\">Funny one-liners</a></li>
-\n<li><a href=\"#subsection24\">Command shortcuts</a></li>
+\n<li><a href=\"#subsection18\">Blending and Fading</a></li>
+\n<li><a href=\"#subsection19\">Image Sequences and Videos</a></li>
+\n<li><a href=\"#subsection20\">Neural Networks</a></li>
+\n<li><a href=\"#subsection21\">Convenience Functions</a></li>
+\n<li><a href=\"#subsection22\">Other Interactive Commands</a></li>
+\n<li><a href=\"#subsection23\">Funny One-Liners</a></li>
+\n<li><a href=\"#subsection24\">Command Shortcuts</a></li>
 \n</ul>
 \n<li><a href=\"#section13\">Examples of use</a></li>
 \n</ul>
@@ -2053,7 +2055,7 @@ compress_gmic :
       q = find(#-1,_'\n',p)%h;
       p==q?++p:(
         i[p]==_'#'?( # Line starts with a '#'
-          cr = crop(0,p,1,5);
+          ref(crop(0,p,1,5),cr);
           cr!='#@gui' && cr!='#@cli' && cr!='#@web'?copy(i[p],-1,q-p+1,1,0); # Remove comment line
         ):( # Line doesn't start with a '#' -> look for comment at line end
           l = find(#-1,_'#',p);
@@ -2944,7 +2946,7 @@ _display_quiver : check "${1=16}>0 && ${2=1.5}>=0 && isint(${3=2}) && $3>=0 && $
     +norm. /.. {max(1e-6,iM)} rm. # Normalize vector values.
     {$1*w},{$1*h},1,{"1<<cut($3,0,2)"}
     eval.. "
-      begin(C = resize([255],s#1,1));
+      begin(ref(resize([255],s#1,1),C));
       "${-math_lib}"
       len = norm2(I(x,y));
       ang = atan2(i(x,y,0,1),i(x,y,0,0))*180/pi;
@@ -11397,7 +11399,7 @@ scale_dcci2x : check "${1=1.15}>=0 && ${2=5}>=0" skip ${3=0}
                 ]));
        );
        if (!((x*y)%2),i,
-       P = crop(x - 3,y - 3,0,c,7,7,1,1);
+       ref(crop(x - 3,y - 3,0,c,7,7,1,1),P);
        d1 = d(j1);
        d2 = d(j2);
        ratio = (1 + d1)/(1 + d2);
@@ -11425,7 +11427,7 @@ scale_dcci2x : check "${1=1.15}>=0 && ${2=5}>=0" skip ${3=0}
                 ]));
        );
        if ((x%2) + (y%2)!=1,i,
-         P = crop(x - 3,y - 3,0,c,7,7,1,1);
+         ref(crop(x - 3,y - 3,0,c,7,7,1,1),P);
          d1 = d(j1);
          d2 = d(j2);
          ratio = (1 + d1)/(1 + d2);
@@ -11726,7 +11728,7 @@ warp_patch : check ${is_image_arg\ $1}" && isint(${2=3}) && $2>=1 && isint(${3=$
         u = i(x,y,z,0);
         v = i(x,y,z,1);
         w = i(x,y,z,2);
-        patch = crop(#0,u - pw1, v - ph1,w - pd1,pw,ph,pd,boundary);
+        ref(crop(#0,u - pw1, v - ph1,w - pd1,pw,ph,pd,boundary),patch);
         stdf<5?
           draw(#2,patch,x - pw1,y - ph1,z - pd1,0,pw,ph,pd,s#0,-1,weights):
           draw(#2,patch,x - pw1,y - ph1,z - pd1,0,pw,ph,pd,s#0,-1);
@@ -11759,7 +11761,7 @@ warp_patch : check ${is_image_arg\ $1}" && isint(${2=3}) && $2>=1 && isint(${3=$
         );
         u = i(x,y,z,0);
         v = i(x,y,z,1);
-        patch = crop(#0,u - pw1, v - ph1,pw,ph,boundary);
+        ref(crop(#0,u - pw1, v - ph1,pw,ph,boundary),patch);
         stdf<5?
           draw(#2,patch,x - pw1,y - ph1,0,0,pw,ph,1,s#0,-1,weights):
           draw(#2,patch,x - pw1,y - ph1,0,0,pw,ph,1,s#0,-1);
@@ -12203,7 +12205,7 @@ denoise_patchpca : check "${1=1.8} && $1>=0 && isint(${2=7}) && $2>0 && isint(${
     begin(
       n1 = int($2/2); n2 = $2 - n1 - 1;
       m1 = int($3/2); m2 = $3 - m1 - 1;
-      patch(x,y) = crop(x-n1,y-n1,0,c,$2,$2,1,1,1);
+      patch(x,y) = crop(x - n1,y - n1,0,c,$2,$2,1,1,1);
       ngauss(x) = exp(-x*x/(2*n1*n1));
       ref(vector"$N2"(0),zero);
       ref(vector"$N2"(0),mask);
@@ -12214,13 +12216,13 @@ denoise_patchpca : check "${1=1.8} && $1>=0 && isint(${2=7}) && $2>0 && isint(${
     );
 
     if (!(x%$4) && !(y%$4),  # Sub-sampling
-      X = patch(x,y);
+      ref(patch(x,y),X);
 
       # Build correlation matrix for PCA.
       ref(vector"{$N2*$N2}"(0),M);
       for (q = -m1, q<=m2, ++q,
         for (p = -m1, p<=m2, ++p,
-          Xk = patch(x + p,y + q) - X;
+          ref(patch(x + p,y + q) - X,Xk);
           M += mul(Xk,Xk,"$N2");
         )
       );
@@ -14277,7 +14279,7 @@ skeleton : check "!isnum(${1=1}) || ($1>=0 && $1<=1)"
           (icc && !i(#3,xc,yc))?(
             xp = xc - 1; yp = yc - 1;
             xn = xc + 1; yn = yc + 1;
-            V = crop(#0,xp,yp,3,3);
+            ref(crop(#0,xp,yp,3,3),V);
             val = dot(dotm,V>0);
             is_removable[val]?(
               i(#0,xc,yc) = 0;
@@ -14457,7 +14459,7 @@ thinning : check "!isnum(${1=1}) || ($1>=0 && $1<=1)"
           icc?(
             xp = xc - 1; yp = yc - 1;
             xn = xc + 1; yn = yc + 1;
-            V = crop(#0,xp,yp,3,3);
+            ref(crop(#0,xp,yp,3,3),V);
             val = dot(dotm,V>0);
             (val & hm_and[it8])==hm_eq[it8]?(
               dar_insert(#2,[xc,yc]);
@@ -14936,7 +14938,7 @@ close_binary :
 
     # Extract primary edgel normals.
     100%,100%,1,4,"
-      N = crop(#"$strokes",x - 1,y - 1,0,0,3,3,1,1,1);
+      ref(crop(#"$strokes",x - 1,y - 1,0,0,3,3,1,1,1),N);
       N[4]?[ N[5]?-2:0, N[7]?-2:90, N[3]?-2:180, N[1]?-2:270 ]:[-2,-2,-2,-2];
     " nm. e_normals
 
@@ -17923,13 +17925,13 @@ tensors3d : check "${1=1}>=0 && isint(${2=2}) && $2>=0 && ${3=0.05}>=0"
         R = eig[3,9];
         anisotropy = sqrt(((L[0] - L[1])^2 + (L[1] - L[2])^2 + (L[2] - L[0])^2)/(2*(L[0]^2 + L[1]^2 + L[2]^2)));
 
-        pts = crop(#ind,0,8,0,0,1,3*N,1,1);
+        ref(crop(#ind,0,8,0,0,1,3*N,1,1),pts);
         pts *= resize(L,size(pts),0,2);
         pts = mul(pts,R,3);
         pts += resize([x,y,z],size(pts),0,2);
         draw(#ind,pts,0,8,0,0,1,size(pts),1,1);
 
-        col0 = cut(255*anisotropy*abs([ R[0],R[1],R[2] ]) + (1-anisotropy)*200,0,255);
+        col0 = cut(255*anisotropy*abs([ R[0],R[1],R[2] ]) + (1 - anisotropy)*200,0,255);
         col = resize(col0,3*P,0,2);
         const off = siz - 4*P;
         draw(#ind,col,0,off,0,0,1,size(col),1,1);
@@ -19302,8 +19304,8 @@ brushify : check ${"is_image_arg $1"}" &&"\         # $1: [brush]
       ang = round(((atan2(V[1],V[0])%(2*pi))*$4/(2*pi)))%$4;
       col = I(#"$img",P);
       ind = amp*$4 + ang;
-      brush = crop(#"$brush",0,0,ind,0,"$wb","$hb",1,1);
-      brushlight = crop(#"$brushlight",0,0,ind,0,"$wb","$hb",1,1);
+      ref(crop(#"$brush",0,0,ind,0,"$wb","$hb",1,1),brush);
+      ref(crop(#"$brushlight",0,0,ind,0,"$wb","$hb",1,1),brushlight);
       brush_r = cut(col[0] + brushlight,0,255);
       brush_g = cut(col[1] + brushlight,0,255);
       brush_b = cut(col[2] + brushlight,0,255);
@@ -21920,7 +21922,7 @@ video2files : check "isint(${3=0}) && $3>=0 && isint(${4=-1}) && ($4>=0 || $4==-
 
 #------------------------------
 #
-#@cli :: Neural networks
+#@cli :: Neural Networks
 #
 #------------------------------
 # The following commands (starting with 'nn_') is an attempt to have a way to manage
@@ -28686,7 +28688,7 @@ x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2 && isint(${3=0
           if $nbc>0
             +b[imgb] 0.5 gradient_norm. sqrt. {round([w,h]/4)} gaussian. 20%
             1,$nbc,1,4,">
-              begin(gauss = crop(#-1));
+              begin(ref(crop(#-1),gauss));
               st = stats(#-2);
               iM = st[1];
               xM = st[8];
@@ -28912,7 +28914,7 @@ x_whirl : check "${1=0.2}>=0" check_display
 
 #-------------------------------------
 #
-#@cli :: Funny one-liners
+#@cli :: Funny One-Liners
 #
 #-------------------------------------
 
@@ -29195,7 +29197,7 @@ gui_print_preview : skip "${1=},${3=}" check "${2=32}>=0 && ${4=20}>=0"
     ('"$3"') is_err={"crop(0,4)=='*** '"} rm.
 
     if $is_err
-      x={"T = crop(0,0,0,3,32,h,1,1);
+      x={"ref(crop(0,0,0,3,32,h,1,1),T);
           for (c = 32, c<w, ++c, crop(c,0,0,3,32,h,1,1)==T?break());
           c<w?for (0, c<w, ++c, max(crop(#-1,c-2,0,0,3,5,h,1,1))<=0?break());
           c<w?c:0"}
@@ -30536,7 +30538,7 @@ _fx_drawn_montage :
     fi
 
     # Render region boundaries of layout layer, for preview.
-    +f. "const boundaries = 1; V = crop(x-2,y-2,5,5); if (min(V)==max(V),0,i)"
+    +f. "const boundaries = 1; ref(crop(x - 2,y - 2,5,5),V); if (min(V)==max(V),0,i)"
     (0,0,0,$cols) r. 3,{$nb_layers+1},1,1,-1 1,100%,1,1,y?255:0 a[-2,-1] x permute. yzcx map.. . rm.
 
     repeat $nb_layers
@@ -37359,7 +37361,7 @@ fx_warp_interactive_preview :
       if $nbc>0
         +b[0] 0.5 gradient_norm. sqrt. {round([w,h]/4)} gaussian. 20%
         1,$nbc,1,4,">
-          begin(gauss = crop(#-1));
+          begin(ref(crop(#-1),gauss));
           st = stats(#-2);
           iM = st[1];
           xM = st[8];
@@ -37963,7 +37965,7 @@ fx_jpeg_artefacts :
       [$>]
       f[$>] "begin(boundary = 2; ref(vector64(),res));
         if (!(x%8) && !(y%8),
-          src = crop(x,y,8,8);
+          ref(crop(x,y,8,8),src);
           for (l = 0, l<8, ++l, for (k = 0, k<8, ++k, off = k + 8*l; res[off] = sum(src*crop(#"$dct",0,0,off,8,8,1))));
           draw(#-1,res,x,y,0,0,8,8);
         ); i"
@@ -37975,7 +37977,7 @@ fx_jpeg_artefacts :
       # Compute iDCT of 8x8 blocs.
       f. "begin(boundary = 2; ref(vector64(),res));
         if (!(x%8) && !(y%8),
-          src = crop(x,y,8,8);
+          ref(crop(x,y,8,8),src);
           for (l = 0, l<8, ++l, for (k = 0, k<8, ++k, off = k + 8*l; res[off] = sum(src*crop(#"$idct",0,0,off,8,8,1))));
           draw(#"$>",res,x,y,0,0,8,8);
         ); i"
@@ -38598,7 +38600,7 @@ _fx_equalize_local_histograms :
     ref(vector512(0),bins);
 
     for (c = 0, c<s, ++c,
-      V = crop(x - N,y - N,0,c,2*N + 1,2*N + 1,1,1);
+      ref(crop(x - N,y - N,0,c,2*N + 1,2*N + 1,1,1),V);
       for (k = 0, k<size(V), ++k, # Compute local weighted histogram
         val = V[k];
         diff = abs(val - V[size(V)/2]);
