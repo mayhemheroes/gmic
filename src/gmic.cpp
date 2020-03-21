@@ -2259,7 +2259,7 @@ double gmic::mp_store(const Ts *const ptr,
 }
 
 template<typename T>
-double gmic::mp_name(double *const ptr, const unsigned int ind, const unsigned int siz,
+double gmic::mp_name(const unsigned int ind, double *const ptr, const unsigned int siz,
                      void *const p_list, const T& pixel_type) {
   cimg::unused(pixel_type);
 
@@ -2299,17 +2299,20 @@ double gmic::mp_setname(const unsigned int ind, const double *const ptr, const u
     CImg<void*> &gr = grl[p];
     if (gr[1]==(void*)p_list) break;
   }
-  if (p<0) { cimg::mutex(24,0); *ptr = 0; } // Instance not found
+  if (p<0) cimg::mutex(24,0); // Instance not found
   else {
     CImg<void*> &gr = grl[p];
     cimg::mutex(24,0);
     CImgList<char> &images_names = *(CImgList<char>*)gr[2];
-    if (ind<images_names.size()) {
+
+/*    if (ind<images_names.size()) {
       const char *ptrs = images_names[ind];
       unsigned int k;
       for (k = 0; k<siz && ptrs[k]; ++k) ptr[k] = (double)ptrs[k];
       if (k<siz) ptr[k] = 0;
     } else *ptr = 0;
+*/
+
   }
   return cimg::type<double>::nan();
 }

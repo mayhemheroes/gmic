@@ -202,15 +202,15 @@ inline double gmic_mp_store(const Ts *const ptr,
   return ::gmic_mp_store(ptr,w,h,d,s,is_compressed,str,&mp.listout,(T)0)
 
 template<typename T>
-inline double gmic_mp_name(double *const ptr, const unsigned int ind, const unsigned int siz,
+inline double gmic_mp_name(const unsigned int ind, double *const ptr, const unsigned int siz,
                            void *const p_list, const T& pixel_type);
-#define cimg_mp_func_name(ptr,ind,siz) \
-  return ::gmic_mp_name(ptr,ind,siz,&mp.listout,(T)0)
+#define cimg_mp_func_name(ind,ptr,siz) \
+  return ::gmic_mp_name(ind,ptr,siz,&mp.listout,(T)0)
 
 template<typename T>
 inline double gmic_mp_setname(const unsigned int ind, const double *const ptr, const unsigned int siz,
                               void *const p_list, const T& pixel_type);
-//#define cimg_mp_func_setname(ptr,ind,siz) \
+#define cimg_mp_func_setname(ptr,ind,siz) \
   return ::gmic_mp_setname(ind,ptr,siz,&mp.listout,(T)0)
 
 #ifndef cimg_display
@@ -306,7 +306,7 @@ struct gmic {
                          const bool is_compressed, const char *const str,
                          void *const p_list, const T& pixel_type);
   template<typename T>
-  static double mp_name(double *const ptr, const unsigned int ind, const unsigned int siz,
+  static double mp_name(const unsigned int ind, double *const ptr, const unsigned int siz,
                         void *const p_list, const T& pixel_type);
   template<typename T>
   static double mp_setname(const unsigned int ind, const double *const ptr, const unsigned int siz,
@@ -516,9 +516,9 @@ inline double gmic_mp_store(const Ts *const ptr,
 }
 
 template<typename T>
-inline double gmic_mp_name(double *const ptr, const unsigned int ind, const unsigned int siz,
+inline double gmic_mp_name(const unsigned int ind, double *const ptr, const unsigned int siz,
                            void *const p_list, const T& pixel_type) {
-  return gmic::mp_name(ptr,ind,siz,p_list,pixel_type);
+  return gmic::mp_name(ind,ptr,siz,p_list,pixel_type);
 }
 
 template<typename T>
