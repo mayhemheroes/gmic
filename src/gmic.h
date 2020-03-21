@@ -210,7 +210,7 @@ inline double gmic_mp_name(const unsigned int ind, double *const ptr, const unsi
 template<typename T>
 inline double gmic_mp_setname(const unsigned int ind, const double *const ptr, const unsigned int siz,
                               void *const p_list, const T& pixel_type);
-#define cimg_mp_func_setname(ptr,ind,siz) \
+#define cimg_mp_func_setname(ind,ptr,siz) \
   return ::gmic_mp_setname(ind,ptr,siz,&mp.listout,(T)0)
 
 #ifndef cimg_display
