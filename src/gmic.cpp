@@ -2305,14 +2305,15 @@ double gmic::mp_setname(const unsigned int ind, const double *const ptr, const u
     cimg::mutex(24,0);
     CImgList<char> &images_names = *(CImgList<char>*)gr[2];
 
-/*    if (ind<images_names.size()) {
-      const char *ptrs = images_names[ind];
-      unsigned int k;
-      for (k = 0; k<siz && ptrs[k]; ++k) ptr[k] = (double)ptrs[k];
-      if (k<siz) ptr[k] = 0;
-    } else *ptr = 0;
-*/
+    images_names.print("NAMES");
 
+    if (ind<images_names.size()) {
+      unsigned int l = 0;
+      while (l<siz && ptr[l]) ++l;
+      CImg<char> name(siz + 1);
+      for (l = 0; l<siz; ++l) name[l] = (char)ptr[l];
+      name[siz] = 0;
+    }
   }
   return cimg::type<double>::nan();
 }
