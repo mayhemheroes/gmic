@@ -2288,7 +2288,7 @@ double gmic::mp_name(const unsigned int ind, double *const ptr, const unsigned i
 }
 
 template<typename T>
-double gmic::mp_setname(const unsigned int ind, const double *const ptr, const unsigned int siz,
+double gmic::mp_setname(const unsigned int ind, const char *const str,
                         void *const p_list, const T& pixel_type) {
   cimg::unused(pixel_type);
 
@@ -2305,14 +2305,7 @@ double gmic::mp_setname(const unsigned int ind, const double *const ptr, const u
     CImg<void*> &gr = grl[p];
     cimg::mutex(24,0);
     CImgList<char> &images_names = *(CImgList<char>*)gr[2];
-    if (ind<images_names.size()) {
-      unsigned int len = 0;
-      if (siz) while (len<siz && ptr[len]) ++len; else len = *ptr?1:0;
-      CImg<char> name(len + 1);
-      for (unsigned int k = 0; k<len; ++k) name[k] = (char)ptr[k];
-      name[len] = 0;
-      name.move_to(images_names[ind]);
-    }
+    if (ind<images_names.size()) CImg<char>::string(str).move_to(images_names[ind]);
   }
   return cimg::type<double>::nan();
 }

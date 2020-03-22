@@ -208,10 +208,10 @@ inline double gmic_mp_name(const unsigned int ind, double *const ptr, const unsi
   return ::gmic_mp_name(ind,ptr,siz,&mp.listout,(T)0)
 
 template<typename T>
-inline double gmic_mp_setname(const unsigned int ind, const double *const ptr, const unsigned int siz,
+inline double gmic_mp_setname(const unsigned int ind, const char *const str,
                               void *const p_list, const T& pixel_type);
-#define cimg_mp_func_setname(ind,ptr,siz) \
-  return ::gmic_mp_setname(ind,ptr,siz,&mp.listout,(T)0)
+#define cimg_mp_func_setname(ind,str) \
+  return ::gmic_mp_setname(ind,str,&mp.listout,(T)0)
 
 #ifndef cimg_display
 #define cimg_display 0
@@ -309,7 +309,7 @@ struct gmic {
   static double mp_name(const unsigned int ind, double *const ptr, const unsigned int siz,
                         void *const p_list, const T& pixel_type);
   template<typename T>
-  static double mp_setname(const unsigned int ind, const double *const ptr, const unsigned int siz,
+  static double mp_setname(const unsigned int ind, const char *const str,
                            void *const p_list, const T& pixel_type);
   static bool get_debug_info(const char *const s, unsigned int &line_number, unsigned int &file_number);
   static int _levenshtein(const char *const s, const char *const t,
@@ -522,9 +522,9 @@ inline double gmic_mp_name(const unsigned int ind, double *const ptr, const unsi
 }
 
 template<typename T>
-inline double gmic_mp_setname(const unsigned int ind, const double *const ptr, const unsigned int siz,
+inline double gmic_mp_setname(const unsigned int ind, const char *const str,
                               void *const p_list, const T& pixel_type) {
-  return gmic::mp_setname(ind,ptr,siz,p_list,pixel_type);
+  return gmic::mp_setname(ind,str,p_list,pixel_type);
 }
 
 inline bool *gmic_abort_ptr(bool *const p_is_abort) { return gmic::abort_ptr(p_is_abort); }
