@@ -2258,11 +2258,11 @@ double gmic::mp_store(const Ts *const ptr,
   return cimg::type<double>::nan();
 }
 
-template<typename T>
-double gmic::mp_name(const unsigned int ind, double *const ptr, const unsigned int siz,
+template<typename T, typename Ts>
+double gmic::mp_name(const unsigned int ind, Ts *const out_str, const unsigned int siz,
                      void *const p_list, const T& pixel_type) {
   cimg::unused(pixel_type);
-  std::memset(ptr,0,siz*sizeof(double));
+  std::memset(out_str,0,siz*sizeof(Ts));
 
   // Retrieve current gmic run.
   cimg::mutex(24);
@@ -2272,7 +2272,7 @@ double gmic::mp_name(const unsigned int ind, double *const ptr, const unsigned i
     CImg<void*> &gr = grl[p];
     if (gr[1]==(void*)p_list) break;
   }
-  if (p<0) { cimg::mutex(24,0); *ptr = 0; } // Instance not found
+  if (p<0) cimg::mutex(24,0); // Instance not found
   else {
     CImg<void*> &gr = grl[p];
     cimg::mutex(24,0);
@@ -2280,9 +2280,9 @@ double gmic::mp_name(const unsigned int ind, double *const ptr, const unsigned i
     if (ind<images_names.size()) { // #ind specified
       const char *ptrs = images_names[ind];
       unsigned int k;
-      for (k = 0; k<siz && ptrs[k]; ++k) ptr[k] = (double)ptrs[k];
-      if (k<siz) ptr[k] = 0;
-    } else *ptr = 0;
+      for (k = 0; k<siz && ptrs[k]; ++k) out_str[k] = (Ts)ptrs[k];
+      if (k<siz) out_str[k] = 0;
+    }
   }
   return cimg::type<double>::nan();
 }
