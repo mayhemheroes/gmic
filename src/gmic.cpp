@@ -589,7 +589,7 @@ const CImg<T>& gmic_print(const char *const title, const bool is_debug,
       cimg_foroff(*this,off) {
         std::fprintf(cimg::output(),cimg::type<T>::format_s(),cimg::type<T>::format(_data[off]));
         if (off!=siz1) std::fprintf(cimg::output(),"%s",
-                                    off%whd==whd1?"^":
+                                    off%whd==whd1?" ^ ":
                                     off%wh==wh1?"\\":
                                     off%_width==w1?";":",");
         if (off==11 && siz>24) { off = siz1 - 12; std::fprintf(cimg::output(),"(...),"); }
