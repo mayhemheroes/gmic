@@ -777,12 +777,11 @@ clean:
 	@if [ -h use_libcgmic.c ]; then rm -f use_libcgmic.c; fi
 
 bug:
-	make OPT_CFLAGS="-g" OPT_LIBS="" lib
+#	make OPT_CFLAGS="-g" OPT_LIBS="" lib
 	g++ -c -Dcimg_display=0 -o FT.o FT.cpp -g
 	g++ -c -o WS.o WS.cpp -g
 	g++ -c -o test.o test.cpp -g
-	g++ -o test test.o FT.o WS.o libgmic.o -pthread -g -fopenmp -lpng -ljpeg -ltiff -lz -lfftw3 -lfftw3_threads -lX11 -lcurl
-
-#	g++ -o test test.o FT.o WS.o -lgmic -pthread
+#	g++ -o test test.o FT.o WS.o libgmic.o -pthread -g -fopenmp -lpng -ljpeg -ltiff -lz -lfftw3 -lfftw3_threads -lX11 -lcurl
+	g++ -o test test.o FT.o WS.o -lgmic -pthread
 
 # End of Makefile.
