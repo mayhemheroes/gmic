@@ -2782,7 +2782,10 @@ const char* gmic::path_rc(const char *const custom_path) {
 //----------------------------
 bool gmic::init_rc(const char *const custom_path) {
   CImg<char> dirname = CImg<char>::string(path_rc(custom_path));
-  if (dirname.width()>=2) dirname[dirname.width() - 2] = 0;
+  if (dirname.width()>=2) {
+    char &c = dirname[dirname.width() - 2];
+    if (c=='/' || c=='\\') c = 0;
+  }
   if (!cimg::is_directory(dirname)) {
     std::remove(dirname); // In case 'dirname' is already a file
 #if cimg_OS==2
