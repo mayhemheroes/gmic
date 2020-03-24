@@ -190,14 +190,17 @@ ifeq ($(OS),Windows)
 MANDATORY_LIBS += -Wl,--stack,16777216
 endif
 
-# Enable optimizations.
-OPT_CFLAGS = -Ofast
+# Enable optimizations for 'cli'.
+OPT_CLI_CFLAGS = -Ofast
 ifdef IS_GCC
-OPT_CFLAGS = -Ofast -mtune=generic
+OPT_CLI_CFLAGS = -Ofast -mtune=generic
 endif
 ifdef icpc
-OPT_CFLAGS = -fast
+OPT_CLI_CFLAGS = -fast
 endif
+
+# Enable optimizations for other targets.
+OPT_CFLAGS = -O2
 
 # Enable link-time optimization
 LTO_CFLAGS = -flto
@@ -346,14 +349,14 @@ native:
 GMIC_CLI_CFLAGS = $(MANDATORY_CFLAGS) $(ABORT_CFLAGS) $(PARALLEL_CFLAGS) $(EIGEN_CFLAGS) $(FFTW_CFLAGS) $(CURL_CFLAGS) $(PNG_CFLAGS) $(JPEG_CFLAGS) $(TIFF_CFLAGS)
 GMIC_CLI_LIBS = $(MANDATORY_LIBS) $(PARALLEL_LIBS) $(EIGEN_LIBS) $(FFTW_LIBS) $(CURL_LIBS) $(PNG_LIBS) $(JPEG_LIBS) $(TIFF_LIBS)
 ifeq ($(OS),Unix) # Unix
-OPT_CFLAGS += $(LTO_CFLAGS)
-OPT_LIBS += $(LTO_LIBS)
+OPT_CLI_CFLAGS += $(LTO_CFLAGS)
+OPT_CLI_LIBS += $(LTO_LIBS)
 GMIC_CLI_CFLAGS += $(OPENMP_CFLAGS) $(X11_CFLAGS) $(OPENEXR_CFLAGS) $(OPENCV_CFLAGS) # $(XSHM_CFLAGS) # $(MAGICK_CFLAGS)
 GMIC_CLI_LIBS += $(OPENMP_LIBS) $(X11_LIBS) $(OPENEXR_LIBS) $(OPENCV_LIBS) # $(XSHM_LIBS) # $(MAGICK_LIBS)
 else
 ifeq ($(OS),Darwin) # MacOSX
 GMIC_CLI_CFLAGS += $(X11_CFLAGS) $(OPENEXR_CFLAGS) $(OPENCV_CFLAGS)
-GMIC_CLI_LIBS += $(X11_LIBS) $(OPENEXR_LIBS) $(OPENCV_LIBS) $(OPT_LIBS)
+GMIC_CLI_LIBS += $(X11_LIBS) $(OPENEXR_LIBS) $(OPENCV_LIBS)
 else # Windows
 GMIC_CLI_CFLAGS += $(OPENMP_CFLAGS) $(GDI32_CFLAGS) $(OPENCV_CFLAGS)
 GMIC_CLI_LIBS += $(OPENMP_LIBS) $(GDI32_LIBS) $(OPENCV_LIBS)
@@ -361,7 +364,7 @@ endif
 endif
 
 cli:
-	$(MAKE) "CFLAGS+=$(GMIC_CLI_CFLAGS) $(OPT_CFLAGS)" "LIBS+=$(GMIC_CLI_LIBS) $(OPT_LIBS)" _cli
+	$(MAKE) "CFLAGS+=$(GMIC_CLI_CFLAGS) $(OPT_CLI_CFLAGS)" "LIBS+=$(GMIC_CLI_LIBS) $(OPT_LIBS)" _cli
 	$(STRIP) gmic$(EXE)
 
 debug:
@@ -399,7 +402,7 @@ GMIC_LIB_LIBS += $(OPENMP_LIBS) $(X11_LIBS)
 else
 ifeq ($(OS),Darwin) # MacOSX.
 GMIC_LIB_CFLAGS += $(X11_CFLAGS)
-GMIC_LIB_LIBS += $(X11_LIBS) $(OPT_LIBS)
+GMIC_LIB_LIBS += $(X11_LIBS)
 else # Windows.
 GMIC_LIB_CFLAGS += $(OPENMP_CFLAGS) $(GDI32_CFLAGS)
 GMIC_LIB_LIBS += $(OPENMP_LIBS) $(GDI32_LIBS)
@@ -431,7 +434,7 @@ GMIC_LIBC_LIBS += $(OPENMP_LIBS) $(X11_LIBS)
 else
 ifeq ($(OS),Darwin) # MacOSX.
 GMIC_LIBC_CFLAGS += $(X11_CFLAGS)
-GMIC_LIBC_LIBS += $(X11_LIBS) $(OPT_LIBS)
+GMIC_LIBC_LIBS += $(X11_LIBS)
 else # Windows.
 GMIC_LIBC_CFLAGS += $(OPENMP_CFLAGS) $(GDI32_CFLAGS)
 GMIC_LIBC_LIBS += $(OPENMP_LIBS) $(GDI32_LIBS)
@@ -486,7 +489,7 @@ GMIC_LIBC_STATIC_LIBS += $(OPENMP_LIBS) $(X11_LIBS)
 else
 ifeq ($(OS),Darwin) # MacOSX.
 GMIC_LIBC_STATIC_CFLAGS += $(X11_CFLAGS)
-GMIC_LIBC_STATIC_LIBS += $(X11_LIBS) $(OPT_LIBS)
+GMIC_LIBC_STATIC_LIBS += $(X11_LIBS)
 else # Windows.
 GMIC_LIBC_STATIC_CFLAGS += $(OPENMP_CFLAGS) $(GDI32_CFLAGS)
 GMIC_LIBC_STATIC_LIBS += $(OPENMP_LIBS) $(GDI32_LIBS)
@@ -775,13 +778,5 @@ clean:
 	@if [ -h gmic_libc.h ]; then rm -f gmic_libc.h; fi
 	@if [ -h gmic_libc.cpp ]; then rm -f gmic_libc.cpp; fi
 	@if [ -h use_libcgmic.c ]; then rm -f use_libcgmic.c; fi
-
-bug:
-#	make OPT_CFLAGS="-g" OPT_LIBS="" lib
-	g++ -c -Dcimg_display=0 -o FT.o FT.cpp -g
-	g++ -c -o WS.o WS.cpp -g
-	g++ -c -o test.o test.cpp -g
-#	g++ -o test test.o FT.o WS.o libgmic.o -pthread -g -fopenmp -lpng -ljpeg -ltiff -lz -lfftw3 -lfftw3_threads -lX11 -lcurl
-	g++ -o test test.o FT.o WS.o -lgmic -pthread
 
 # End of Makefile.

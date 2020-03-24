@@ -65,6 +65,8 @@
 
 int main() {
 
+  gmic::init_rc(); // Initialize resources folder
+
   // First step : Create a list of input images.
   //--------------------------------------------
   std::fprintf(stderr,"\n- 1st step : Create input list of images.\n");
