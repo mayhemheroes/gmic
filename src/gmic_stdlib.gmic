@@ -2164,17 +2164,24 @@ _display2d :
     wsiz0=${fitscreen\ .,128,85%} wnormalization0={*,n}
 
     if $is_multiview
-      com_iskey,sep_iskey,com_isvisible,sep_isvisible,com_flushkey,sep_flushkey=
+      com_iskey,sep_iskey,com_isvisible,sep_isvisible,com_flushkey,sep_flushkey,\
+       com_mousex,com_mousey,com_mouseb,com_mouseo,sep_mousebxyo=
       repeat {img,d}
         w$>[] {{*$>,w}?[-1,-1]:[$wsiz0]},0,$nm" ("{w}x{h}x{d}x{s}")-#"$>
         com_iskey.=$sep_iskey"{*"$>",$""1}" sep_iskey=||
         com_flushkey.=$sep_flushkey"{*"$>",-$""1}" sep_flushkey=,
         com_isvisible.=$sep_isvisible"{*"$>"}" sep_isvisible=&&
+        com_mouseb.=$sep_mousebxyo"{*"$>",b}"
+        com_mousex.=$sep_mousebxyo"{*"$>",x}"
+        com_mousey.=$sep_mousebxyo"{*"$>",y}"
+        com_mouseo.=$sep_mousebxyo"{*"$>",-o}"
+        sep_mousebxyo=,
       done
       m "iskey : u {"$com_iskey"}"\n\
         "flushkey : skip "$com_flushkey\n\
         "isvisible : u {"$com_isvisible"}"\n\
-        "mouse_bxyo : u {*,b,x,y,-o}"
+        "mouse_bxyo : u {max("$com_mouseb")},{max("$com_mousex")},{max("$com_mousey")},{max("$com_mouseo")}"
+
     else
       w[] {{*,w}?[-1,-1]:[$wsiz0]},0,$nm" ("{w}x{h}x{d}x{s}")"
       m "iskey : u {*,$""1}"\n\
@@ -2183,7 +2190,7 @@ _display2d :
         "mouse_bxyo : u {*,b,x,y,-o}"
     fi
 
-    cursor[0] 0
+    repeat {img,d} cursor[$>] 0 done
     xin0,yin0,xin1,yin1=0,0,{0,[w,h]}
     if isnan(ia)" || "isinf(im)" || "isinf(iM) # Detect if image has nan or inf values, and find bounding box
       eval[0] "*
@@ -2490,11 +2497,11 @@ _display2d :
           nposx,nposy,nsizx,nsizy=$fullscreen_params
           w[] $fullscreen_wsize,0,0
         fi
-        cursor[0] {!$axes_mode}
+        repeat {img,d} cursor[$>] {!$axes_mode} done
         notification=${"s0=Disable s1=Enable u ${s"$fullscreen_mode"}"}" Fullscreen"
         flushkey F rmn baseview
       elif $is_CTRL" && "${"iskey X"} # Toggle axes mode
-        cursor[0] $axes_mode axes_mode={!$axes_mode}
+        repeat {img,d} cursor[$>] $axes_mode done axes_mode={!$axes_mode}
         notification=${"s0=Hide s1=Show u ${s"$axes_mode"}"}" Axes"
         flushkey X rmn view
       elif $is_CTRL" && "${"iskey Z"}" && "$is_moderate_ratio # Toggle aspect-ratio mode
