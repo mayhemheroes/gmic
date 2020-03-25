@@ -2162,7 +2162,7 @@ _display2d :
 
     cursor[0] 0
     xin0,yin0,xin1,yin1=0,0,{0,[w,h]}
-    if isnan(ia)" || "isinf(im)" || "isinf(iM) # Detect if image has nan of inf values, and find bounding box
+    if isnan(ia)" || "isinf(im)" || "isinf(iM) # Detect if image has nan or inf values, and find bounding box
       eval[0] "*
         begin(x0 = w; y0 = h; x1 = y1 = -1);
         isinf(i) || isnan(i)?critical(
@@ -2173,9 +2173,11 @@ _display2d :
         );
         end(run('xin0,yin0,xin1,yin1=',x0,',',y0,',',x1,',',y1))"
     fi
+    __d2d_posx,__d2d_posy,__d2d_sizx,__d2d_sizy=
 
     # Start event loop.
     for {*}" && "!{*,ESC}" && "!(({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,W})
+      __d2d_posx,__d2d_posy,__d2d_sizx,__d2d_sizy=posx,posy,sizx,sizy
 
       # Correct aspect ratio while centering image.
       if $ratio_mode
@@ -5944,11 +5946,25 @@ parse_gui_update :
       if !${_f${f}_p${p}_responsivity} responsivity=_ fi
       if narg(${_f${f}_p${p}_visibility}) visibility=_${_f${f}_p${p}_visibility}${_f${f}_p${p}_propagation} fi
       is_choice={['${_f${f}_p${p}_type}']=='choice'}
+      is_color={['${_f${f}_p${p}_type}']=='color'}
 
       # Build list of arguments.
       args= c=
-      if $is_choice # Capitalize arguments
+      if $is_choice # Capitalize arguments of choice()
         repeat ${_f${f}_p${p}_nbargs},a strcapitalize ${_f${f}_p${p}_a${a}} args.=$c${} c=, done
+      elif $is_color # Force HTML color code for color()
+        if inrange(${_f${f}_p${p}_nbargs},3,4)" && "\
+           inrange(${_f${f}_p${p}_a0},0,255)" && "\
+           inrange(${_f${f}_p${p}_a1},0,255)" && "\
+           inrange(${_f${f}_p${p}_a2},0,255)" && "\
+           (${_f${f}_p${p}_nbargs}==3" || "inrange(${_f${f}_p${p}_a3},0,255))
+          args=#
+          repeat ${_f${f}_p${p}_nbargs},a
+            args.={`"tab = [ _'0',_'1',_'2',_'3',_'4',_'5',_'6',_'7',_'8',_'9',_'a',_'b',_'c',_'d',_'e',_'f' ];
+                     const v = "${_f${f}_p${p}_a${a}}"; [ tab[(v>>4)&15],tab[v&15] ]"`}
+          done
+        else repeat ${_f${f}_p${p}_nbargs},a args.=$c${_f${f}_p${p}_a${a}} c=, done
+        fi
       else
         repeat ${_f${f}_p${p}_nbargs},a args.=$c${_f${f}_p${p}_a${a}} c=, done
       fi
@@ -22897,7 +22913,7 @@ hex2dec :
   $=arg res,sep= repeat $# res=$res$sep${_$0\ ${arg{$>+1}}} sep=, done u $res
 
 _hex2dec :
-  u {"str = ['$1']; str[0]==_'-'?-stov([['0x'],str[1,size(str)-1]]):stov([['0x'],str])"}
+  u {"str = ['$1']; str[0]==_'-'?-stov([['0x'],str[1,max(1,size(str)-1)]]):stov([['0x'],str])"}
 
 #@cli hex2img : "hexadecimal_string"
 #@cli : Insert new image 1xN at the end of the list with values specified by the given hexadecimal-encoded string.
@@ -43866,8 +43882,11 @@ fx_symmetric_shape2d_preview :
     "{$26}"      # Opacity
 
 #@gui Tree : fx_tree, fx_tree_preview(1)
+#@gui : note = note("<small><b><span color="#EE5500">Global parameters:</span></b></small>")
 #@gui : Recursion Depth = int(11,1,18)
 #@gui : Random Seed = int(10000,0,65535)
+#@gui : X-ratio = float(0,-1,1)
+#@gui : Y-ratio = float(0,-1,1)
 #@gui : note = note("<small><b><span color="#FF0055">Note:</span></b> Set <i>Random Seed</i> to <b>0</b> to make it random as well.</small>")
 #@gui : sep = separator(), note = note("<small><b><span color="#EE5500">Trunk:</span></b></small>")
 #@gui : Thickness (%) = float(15,0,100)
@@ -43893,12 +43912,12 @@ fx_symmetric_shape2d_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2020/03/24</i>.</small>")
 _fx_tree:
-  recursion_depth,random_seed,\
+  recursion_depth,random_seed,xratio,yratio,\
   trunk_thickness,base_thickness,trunk_angle,\
   avg_branching,std_branching,avg_leftangle,avg_rightangle,std_angle,avg_length,std_length,avg_thickness,std_thickness,\
-  Rt,Gt,Bt,At,Ot,Rl,Gl,Bl,Al,Ol,gammaRGBA,gammaO=${1-26}
+  Rt,Gt,Bt,At,Ot,Rl,Gl,Bl,Al,Ol,gammaRGBA,gammaO=${1-28}
 
-  W,H={[w,h]} l[]
+  W,H,S={[w,h,min(w,h)]} l[]
     if $2 srand $2 fi
 
     # Init trunk.
@@ -43951,10 +43970,11 @@ _fx_tree:
     done
     a y
 
-    # Normalize coordinates to fit image size.
+    # Normalize coordinates to fit image size and aspect ratio.
     1,100%,1,4,"[ i0#-1,i2#-1,i4#-1,i6#-1 ]"
     1,100%,1,4,"[ i1#-2,i3#-2,i5#-2,i7#-2 ]"
-    -.. 0.5 *.. {-2,$W/(2.1*max(abs(iM),abs(im)))} +.. {$W/2} *. {$H/(1.05*max(iM))}
+    sx,sy={10^[$xratio,$yratio]}
+    -.. 0.5 *.. {-2,$S*$sx/(2.1*max(abs(iM),abs(im)))} +.. {$W/2} *. {$S*$sy/(1.05*max(iM))}
     f... "round([ i0#-2,i0#-1,i1#-2,i1#-1,i2#-2,i2#-1,i3#-2,i3#-1,i8 ])"
     rm[-2,-1]
 
