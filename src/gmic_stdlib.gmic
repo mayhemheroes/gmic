@@ -2325,11 +2325,20 @@ _display2d :
                 rectangle. $x0,$y0,$x1,$y1,1,0xAAAAAAAA,255
               fi
             fi
-            if $axes_mode
-              line. $mx,0,$mx,100%,0.5,0xFF00FF00,255 # Draw horizontal/vertical axes
-              line. $mx,0,$mx,100%,0.5,0x00FF00FF,0
-              line. 0,$my,100%,$my,0.5,0xFF00FF00,255
-              line. 0,$my,100%,$my,0.5,0x00FF00FF,0
+            if $axes_mode # Draw horizontal/vertical axes
+              if $is_multiview repeat d
+                 +slices. $>
+                 line. $mx,0,$mx,100%,0.5,0xFF00FF00,255
+                 line. $mx,0,$mx,100%,0.5,0x00FF00FF,0
+                 line. 0,$my,100%,$my,0.5,0xFF00FF00,255
+                 line. 0,$my,100%,$my,0.5,0x00FF00FF,0
+                 j.. .,0,0,$> rm.
+              done else
+                line. $mx,0,$mx,100%,0.5,0xFF00FF00,255
+                line. $mx,0,$mx,100%,0.5,0x00FF00FF,0
+                line. 0,$my,100%,$my,0.5,0xFF00FF00,255
+                line. 0,$my,100%,$my,0.5,0x00FF00FF,0
+              fi
             fi
           fi
 
@@ -2338,9 +2347,18 @@ _display2d :
                          ym=min($ysel0,$ysel1);yM=max($ysel0,$ysel1);\
                          [[xm-$posx,ym-$posy]*[{*,w,h}]/[$sizx,$sizy],\
                           [xM+1-$posx,yM+1-$posy]*[{*,w,h}]/[$sizx,$sizy]-1]}
-            rectangle. $x0,$y0,$x1,$y1,0.2,0
-            rectangle. $x0,$y0,$x1,$y1,0.9,0x55555555,0
-            rectangle. $x0,$y0,$x1,$y1,0.9,0xAAAAAAAA,255
+            if $is_multiview repeat d
+              +slices. $>
+              rectangle. $x0,$y0,$x1,$y1,0.2,0
+              rectangle. $x0,$y0,$x1,$y1,0.9,0x55555555,0
+              rectangle. $x0,$y0,$x1,$y1,0.9,0xAAAAAAAA,255
+              j.. .,0,0,$> rm.
+            done else
+              rectangle. $x0,$y0,$x1,$y1,0.2,0
+              rectangle. $x0,$y0,$x1,$y1,0.9,0x55555555,0
+              rectangle. $x0,$y0,$x1,$y1,0.9,0xAAAAAAAA,255
+            fi
+
             if $xsel0>$xsel1 x0,x1=$x1,$x0 fi
             if $ysel0>$ysel1 y0,y1=$y1,$y0 fi
             if $xsel0!=$xsel1" && "$ysel0!=$ysel1
