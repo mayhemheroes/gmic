@@ -43866,8 +43866,11 @@ fx_symmetric_shape2d_preview :
     "{$26}"      # Opacity
 
 #@gui Tree : fx_tree, fx_tree_preview(1)
+#@gui : note = note("<small><b><span color="#EE5500">Global parameters:</span></b></small>")
 #@gui : Recursion Depth = int(11,1,18)
 #@gui : Random Seed = int(10000,0,65535)
+#@gui : X-ratio = float(0,-1,1)
+#@gui : Y-ratio = float(0,-1,1)
 #@gui : note = note("<small><b><span color="#FF0055">Note:</span></b> Set <i>Random Seed</i> to <b>0</b> to make it random as well.</small>")
 #@gui : sep = separator(), note = note("<small><b><span color="#EE5500">Trunk:</span></b></small>")
 #@gui : Thickness (%) = float(15,0,100)
@@ -43893,12 +43896,12 @@ fx_symmetric_shape2d_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2020/03/24</i>.</small>")
 _fx_tree:
-  recursion_depth,random_seed,\
+  recursion_depth,random_seed,xratio,yratio,\
   trunk_thickness,base_thickness,trunk_angle,\
   avg_branching,std_branching,avg_leftangle,avg_rightangle,std_angle,avg_length,std_length,avg_thickness,std_thickness,\
-  Rt,Gt,Bt,At,Ot,Rl,Gl,Bl,Al,Ol,gammaRGBA,gammaO=${1-26}
+  Rt,Gt,Bt,At,Ot,Rl,Gl,Bl,Al,Ol,gammaRGBA,gammaO=${1-28}
 
-  W,H={[w,h]} l[]
+  W,H,S={[w,h,min(w,h)]} l[]
     if $2 srand $2 fi
 
     # Init trunk.
@@ -43951,10 +43954,11 @@ _fx_tree:
     done
     a y
 
-    # Normalize coordinates to fit image size.
+    # Normalize coordinates to fit image size and aspect ratio.
     1,100%,1,4,"[ i0#-1,i2#-1,i4#-1,i6#-1 ]"
     1,100%,1,4,"[ i1#-2,i3#-2,i5#-2,i7#-2 ]"
-    -.. 0.5 *.. {-2,$W/(2.1*max(abs(iM),abs(im)))} +.. {$W/2} *. {$H/(1.05*max(iM))}
+    sx,sy={10^[$xratio,$yratio]}
+    -.. 0.5 *.. {-2,$S*$sx/(2.1*max(abs(iM),abs(im)))} +.. {$W/2} *. {$S*$sy/(1.05*max(iM))}
     f... "round([ i0#-2,i0#-1,i1#-2,i1#-1,i2#-2,i2#-1,i3#-2,i3#-1,i8 ])"
     rm[-2,-1]
 
