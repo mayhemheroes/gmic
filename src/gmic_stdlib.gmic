@@ -2153,6 +2153,7 @@ _display2d :
 
   repeat $! l[$>] nm={b} nm img
     if !w v - d v + break fi
+    is_multiview={d>1}
     is_moderate_ratio={0,D=[w,h];max(D)/min(D)<6}
     may_have_alpha={s==2||s>=4}
     alpha_mode,axes_mode,fullscreen_mode,ratio_mode={s==1||s==3},1,0,$is_moderate_ratio
@@ -2204,7 +2205,7 @@ _display2d :
         ($posx,{$posx+$sizx}) ($posy;{$posy+$sizy}) r[-2,-1] 2,2 a[-2,-1] c
         r. {[{*,w,h}]+1},1,2,3 z. 0,0,{[w,h]-2} round. 1,-1 ind_warp={$!-1}
         +warp[0] .,0,0,1
-        if {img,d>1} repeat {img,d-1} +slices[img] {1+$>} warp. [$ind_warp],0,0,1 done a[-{img,d}--1] z fi
+        if $is_multiview repeat {img,d-1} +slices[img] {1+$>} warp. [$ind_warp],0,0,1 done a[-{img,d}--1] z fi
         rm..
 
         if s>($alpha_mode?4:3) channels. 0,{$alpha_mode?3:2} fi # Discard useless channels
@@ -2340,7 +2341,7 @@ _display2d :
         fi
 
         nm. view
-        if d==1 w. else repeat d +slices[view] $> w$>. rm. done fi
+        if $is_multiview repeat d +slices[view] $> w$>. rm. done else w. fi
       fi
 
       # Manage user events.
