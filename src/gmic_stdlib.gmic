@@ -2162,9 +2162,21 @@ _display2d :
     is_bottom_text,wait_event,mx,my,omb=0,1,-1,-1,0
     xsel0,ysel0,xsel1,ysel1,notification=
     wsiz0=${fitscreen\ .,128,85%} wnormalization0={*,n}
-    w[] {{*,w}?[-1,-1]:[$wsiz0]},0,$nm" ("{w}x{h}x{d}x{s}")"
 
-    m "iskey : u {*,$""1}"
+    if $is_multiview
+      com_iskey,sep_iskey,com_isvisible,sep_isvisible=
+      repeat {img,d}
+        w$>[] {{*$>,w}?[-1,-1]:[$wsiz0]},0,$nm" ("{w}x{h}x{d}x{s}")-#"$>
+        com_iskey.=$sep_iskey"{*"$>",$""1}" sep_iskey=||
+        com_isvisible.=$sep_isvisible"{*"$>"}" sep_isvisible=&&
+      done
+      m "iskey : u {"$com_iskey"}"\n\
+        "isvisible : u {"$com_isvisible"}"
+    else
+      w[] {{*,w}?[-1,-1]:[$wsiz0]},0,$nm" ("{w}x{h}x{d}x{s}")"
+      m "iskey : u {*,$""1}"\n\
+        "isvisible : u {*}"
+    fi
 
     cursor[0] 0
     xin0,yin0,xin1,yin1=0,0,{0,[w,h]}
@@ -2181,7 +2193,7 @@ _display2d :
     fi
 
     # Start event loop.
-    for {*}" && "!${"iskey ESC"}" && "!((${"iskey CTRLLEFT"}" || "${"iskey CTRLRIGHT"})" && "${"iskey W"})
+    for ${-isvisible}" && "!${"iskey ESC"}" && "!((${"iskey CTRLLEFT"}" || "${"iskey CTRLRIGHT"})" && "${"iskey W"})
 
       # Correct aspect ratio while centering image.
       if $ratio_mode
