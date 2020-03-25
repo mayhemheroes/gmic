@@ -5944,11 +5944,26 @@ parse_gui_update :
       if !${_f${f}_p${p}_responsivity} responsivity=_ fi
       if narg(${_f${f}_p${p}_visibility}) visibility=_${_f${f}_p${p}_visibility}${_f${f}_p${p}_propagation} fi
       is_choice={['${_f${f}_p${p}_type}']=='choice'}
+      is_color={['${_f${f}_p${p}_type}']=='color'}
+      is_color=0
 
       # Build list of arguments.
       args= c=
-      if $is_choice # Capitalize arguments
+      if $is_choice # Capitalize arguments of choice()
         repeat ${_f${f}_p${p}_nbargs},a strcapitalize ${_f${f}_p${p}_a${a}} args.=$c${} c=, done
+      elif $is_color # Force HTML color code for color()
+        if inrange(${_f${f}_p${p}_nbargs},3,4)" && "\
+           inrange(${_f${f}_p${p}_a0},0,255)" && "\
+           inrange(${_f${f}_p${p}_a1},0,255)" && "\
+           inrange(${_f${f}_p${p}_a2},0,255)" && "\
+           (${_f${f}_p${p}_nbargs}==3" || "inrange(${_f${f}_p${p}_a3},0,255))
+          args=#
+          repeat ${_f${f}_p${p}_nbargs},a
+            args.={`"tab = [ _'0',_'1',_'2',_'3',_'4',_'5',_'6',_'7',_'8',_'9',_'a',_'b',_'c',_'d',_'e',_'f' ];
+                     const v = "${_f${f}_p${p}_a${a}}"; [ tab[(v>>4)&15],tab[v&15] ]"`}
+          done
+        else repeat ${_f${f}_p${p}_nbargs},a args.=$c${_f${f}_p${p}_a${a}} c=, done
+        fi
       else
         repeat ${_f${f}_p${p}_nbargs},a args.=$c${_f${f}_p${p}_a${a}} c=, done
       fi
@@ -22897,7 +22912,7 @@ hex2dec :
   $=arg res,sep= repeat $# res=$res$sep${_$0\ ${arg{$>+1}}} sep=, done u $res
 
 _hex2dec :
-  u {"str = ['$1']; str[0]==_'-'?-stov([['0x'],str[1,size(str)-1]]):stov([['0x'],str])"}
+  u {"str = ['$1']; str[0]==_'-'?-stov([['0x'],str[1,max(1,size(str)-1)]]):stov([['0x'],str])"}
 
 #@cli hex2img : "hexadecimal_string"
 #@cli : Insert new image 1xN at the end of the list with values specified by the given hexadecimal-encoded string.
