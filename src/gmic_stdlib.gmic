@@ -2164,17 +2164,20 @@ _display2d :
     wsiz0=${fitscreen\ .,128,85%} wnormalization0={*,n}
 
     if $is_multiview
-      com_iskey,sep_iskey,com_isvisible,sep_isvisible=
+      com_iskey,sep_iskey,com_isvisible,sep_isvisible,com_flushkey,sep_flushkey=
       repeat {img,d}
         w$>[] {{*$>,w}?[-1,-1]:[$wsiz0]},0,$nm" ("{w}x{h}x{d}x{s}")-#"$>
         com_iskey.=$sep_iskey"{*"$>",$""1}" sep_iskey=||
+        com_flushkey.=$sep_flushkey"{*"$>",-$""1}" sep_flushkey=,
         com_isvisible.=$sep_isvisible"{*"$>"}" sep_isvisible=&&
       done
       m "iskey : u {"$com_iskey"}"\n\
+        "flushkey : skip "$com_flushkey\n\
         "isvisible : u {"$com_isvisible"}"
     else
       w[] {{*,w}?[-1,-1]:[$wsiz0]},0,$nm" ("{w}x{h}x{d}x{s}")"
       m "iskey : u {*,$""1}"\n\
+        "flushkey : skip {*,-$""1}"\n\
         "isvisible : u {*}"
     fi
 
@@ -2365,7 +2368,7 @@ _display2d :
 
       old_mx,old_my=$mx,$my
       nposx,nposy,nsizx,nsizy=$posx,$posy,$sizx,$sizy
-      is_CTRL,mb,mx,my,mo={{*,CTRLLEFT}" || "{*,CTRLRIGHT}},{*,b,x,y,-o}
+      is_CTRL,mb,mx,my,mo={${"iskey CTRLLEFT"}" || "${"iskey CTRLRIGHT"}},{*,b,x,y,-o}
 
       # Test end of pan shift.
       if !($mb&4)" && "!($is_CTRL" && "($mb&1)) pan_mx,pan_my,pan_posx,pan_posy= fi
@@ -2383,16 +2386,16 @@ _display2d :
       elif $is_CTRL" && "{*,D}" && "{*,d}<{*,u}" && "{*,e}<{*,v} # Increase window size
         w[] {round([{*,w,h}]*1.25)}
         notification="Increase Window Size"
-        skip {*,-D} rmn baseview
+        flushkey D rmn baseview
       elif $is_CTRL" && "{*,C}" && "{*,d}>64" && "{*,e}>64 # Decrease window size
         w[] {round([{*,w,h}]/1.25)}
         notification="Decrease Window Size"
-        skip {*,-C} rmn baseview
+        flushkey C rmn baseview
       elif $is_CTRL" && "{*,R} # Reset window size (and view)
         nposx,nposy,nsizx,nsizy={0,[0,0,w,h]}
         w[] $wsiz0
         notification="Reset Window Size"
-        skip {*,-R} rmn baseview
+        flushkey R rmn baseview
       fi
 
       # Events related to image selection.
@@ -2425,30 +2428,30 @@ _display2d :
       fi
 
       # Events related to image displacement and mode changes.
-      if {*,ARROWLEFT} nposx-={$nsizx/($is_CTRL?4:16)} xzoom,yzoom= # Go left
-      elif {*,ARROWRIGHT} nposx+={$nsizx/($is_CTRL?4:16)} xzoom,yzoom= # Go right
-      elif {*,ARROWUP} nposy-={$nsizy/($is_CTRL?4:16)} xzoom,yzoom= # Go up
-      elif {*,ARROWDOWN} nposy+={$nsizy/($is_CTRL?4:16)} xzoom,yzoom= # Go down
-      elif $is_CTRL" && "{*,O} # Save copy
+      if ${"iskey ARROWLEFT"} nposx-={$nsizx/($is_CTRL?4:16)} xzoom,yzoom= # Go left
+      elif ${"iskey ARROWRIGHT"} nposx+={$nsizx/($is_CTRL?4:16)} xzoom,yzoom= # Go right
+      elif ${"iskey ARROWUP"} nposy-={$nsizy/($is_CTRL?4:16)} xzoom,yzoom= # Go up
+      elif ${"iskey ARROWDOWN"} nposy+={$nsizy/($is_CTRL?4:16)} xzoom,yzoom= # Go down
+      elif $is_CTRL" && "${"iskey O"} # Save copy
         n=0 do filename gmic.gmz,$n n+=1 while isfile(['{/${}}']) o[0] ${}
         notification="Save Copy:\n"${}
-        skip {*,-O}
-      elif $is_CTRL" && "{*,S} # Save screenshot
+        flushkey O
+      elif $is_CTRL" && "${"iskey S"} # Save screenshot
         n=0 do filename gmic.png,$n n+=1 while isfile(['{/${}}']) o[baseview] ${}
         notification="Save Screenshot:\n"${}
-        skip {*,-S}
-      elif $is_CTRL" && "{*,SPACE} # Center view
+        flushkey S
+      elif $is_CTRL" && "${"iskey SPACE"} # Center view
         nposx,nposy,nsizx,nsizy={0,[0,0,w,h]}
         notification="Center View"
-        skip {*,-SPACE}
+        flushkey SPACE
       elif $is_CTRL" && "{*,N} # Change normalization mode
         normalization_mode={($normalization_mode+1)%3}
         notification=${"s0=Disable s1=Enable s2=\"Enable C.by.C\" u ${s"$normalization_mode"}"}" Normalization"
-        skip {*,-N} rmn baseview
+        flushkey N rmn baseview
       elif $is_CTRL" && "{*,A} # Toggle alpha mode
         alpha_mode={!$alpha_mode}
         notification=${"s0=Disable s1=Enable u ${s"$alpha_mode"}"}" Alpha"
-        skip {*,-A} rmn baseview
+        flushkey A rmn baseview
       elif $is_CTRL" && "{*,F} # Toggle fullscreen mode
         fullscreen_mode={!$fullscreen_mode}
         if $fullscreen_mode
@@ -2460,16 +2463,16 @@ _display2d :
         fi
         cursor[0] {!$axes_mode}
         notification=${"s0=Disable s1=Enable u ${s"$fullscreen_mode"}"}" Fullscreen"
-        skip {*,-F} rmn baseview
+        flushkey F rmn baseview
       elif $is_CTRL" && "{*,X} # Toggle axes mode
         cursor[0] $axes_mode axes_mode={!$axes_mode}
         notification=${"s0=Hide s1=Show u ${s"$axes_mode"}"}" Axes"
-        skip {*,-X} rmn view
+        flushkey X rmn view
       elif $is_CTRL" && "{*,Z}" && "$is_moderate_ratio # Toggle aspect-ratio mode
         ratio_mode={!$ratio_mode}
         notification=${"s0=Release s1=Hold u ${s"$ratio_mode"}"}" Aspect Ratio"
         if !$ratio_mode nposx,nposy,nsizx,nsizy={0,[0,0,w,h]} fi
-        skip {*,-Z} rmn baseview
+        flushkey Z rmn baseview
       elif $mx>=0" && "($mb&4" || "($is_CTRL" && "$mb&1)) # Pan (middle mouse button)
         if !narg($pan_mx) pan_mx,pan_my,pan_posx,pan_posy=$mx,$my,$posx,$posy fi
         nposx,nposy={shiftx=($mx-$pan_mx)*$nsizx/{*,w};\
