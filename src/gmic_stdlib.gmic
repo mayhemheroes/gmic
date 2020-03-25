@@ -2150,11 +2150,10 @@ _display2d :
        else ('\"$""*\"') replace. {','},32 u {t} rm.
        fi"
   m "rmn : nmd $\"*\" rm[${}]"
-  m "iskey : if $_is_multiview u {*,$""1} else u {*,$""1} fi"
 
   repeat $! l[$>] nm={b} nm img
     if !w v - d v + break fi
-    _is_multiview={d>1}
+    is_multiview={d>1}
     is_moderate_ratio={0,D=[w,h];max(D)/min(D)<6}
     may_have_alpha={s==2||s>=4}
     alpha_mode,axes_mode,fullscreen_mode,ratio_mode={s==1||s==3},1,0,$is_moderate_ratio
@@ -2164,6 +2163,8 @@ _display2d :
     xsel0,ysel0,xsel1,ysel1,notification=
     wsiz0=${fitscreen\ .,128,85%} wnormalization0={*,n}
     w[] {{*,w}?[-1,-1]:[$wsiz0]},0,$nm" ("{w}x{h}x{d}x{s}")"
+
+    m "iskey : u {*,$""1}"
 
     cursor[0] 0
     xin0,yin0,xin1,yin1=0,0,{0,[w,h]}
@@ -2180,7 +2181,7 @@ _display2d :
     fi
 
     # Start event loop.
-    for {*}" && "!{*,ESC}" && "!(({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,W})
+    for {*}" && "!${"iskey ESC"}" && "!((${"iskey CTRLLEFT"}" || "${"iskey CTRLRIGHT"})" && "${"iskey W"})
 
       # Correct aspect ratio while centering image.
       if $ratio_mode
@@ -2206,7 +2207,7 @@ _display2d :
         ($posx,{$posx+$sizx}) ($posy;{$posy+$sizy}) r[-2,-1] 2,2 a[-2,-1] c
         r. {[{*,w,h}]+1},1,2,3 z. 0,0,{[w,h]-2} round. 1,-1 ind_warp={$!-1}
         +warp[0] .,0,0,1
-        if $_is_multiview repeat {img,d-1} +slices[img] {1+$>} warp. [$ind_warp],0,0,1 done a[-{img,d}--1] z fi
+        if $is_multiview repeat {img,d-1} +slices[img] {1+$>} warp. [$ind_warp],0,0,1 done a[-{img,d}--1] z fi
         rm..
 
         if s>($alpha_mode?4:3) channels. 0,{$alpha_mode?3:2} fi # Discard useless channels
@@ -2342,7 +2343,7 @@ _display2d :
         fi
 
         nm. view
-        if $_is_multiview repeat d +slices[view] $> w$>. rm. done else w. fi
+        if $is_multiview repeat d +slices[view] $> w$>. rm. done else w. fi
       fi
 
       # Manage user events.
@@ -2503,10 +2504,10 @@ _display2d :
     k[0]
     if narg($_d2d_core) w[] -1,-1,$wnormalization0
     else
-      if $_is_multiview repeat d w$>[] 0 done else w[] 0 fi
+      if $is_multiview repeat d w$>[] 0 done else w[] 0 fi
     fi
-  nm $nm endl done
-  uncommand _d2d_format,rmn
+  nm $nm uncommand iskey endl done
+  uncommand _d2d_format,rmn,iskey
 
 #@cli d3d : eq. to 'display3d'. : (+)
 
