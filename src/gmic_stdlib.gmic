@@ -2329,8 +2329,15 @@ _display2d :
               x0,y0,x1,y1={[round([$posmx-$posx,$posmy-$posy]*[{*,w,h}]/[$sizx,$sizy]),\
                             round([$posmx-$posx+1,$posmy-$posy+1]*[{*,w,h}]/[$sizx,$sizy])-1]}
               if $x1-$x0>=8" && "$y1-$y0>=8
-                rectangle. $x0,$y0,$x1,$y1,1,0x55555555,0 # Draw pixel contour when zoomed-in
-                rectangle. $x0,$y0,$x1,$y1,1,0xAAAAAAAA,255
+                if $is_multiview repeat d
+                  +slices. $>
+                  rectangle. $x0,$y0,$x1,$y1,1,0x55555555,0 # Draw pixel contour when zoomed-in
+                  rectangle. $x0,$y0,$x1,$y1,1,0xAAAAAAAA,255
+                  j.. .,0,0,$> rm.
+                done else
+                  rectangle. $x0,$y0,$x1,$y1,1,0x55555555,0 # Draw pixel contour when zoomed-in
+                  rectangle. $x0,$y0,$x1,$y1,1,0xAAAAAAAA,255
+                fi
               fi
             fi
             if $axes_mode # Draw horizontal/vertical axes
