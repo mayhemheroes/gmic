@@ -2199,28 +2199,35 @@ _display2d :
         "idisp : u {argmax("$com_idisp")}"
 
       # Auto-arrange display window layout in multi-view mode.
+      ww,wh={[$wsiz0]+[8,40]}
       if d==2
-        ww,wh=$wsiz0
-        w0[] -1,-1,-1,-1,0,0
-        if {*,u}/$ww>{*,v}/$wh w1[] -1,-1,-1,-1,{$ww+16},0
-        else w1[] -1,-1,-1,-1,0,{$wh+40}
+        if {*,u}/$ww>{*,v}/$wh # Horizontal alignment
+          ox,oy={round([{*,u}-2*$ww,{*,v}-$wh]/2)}
+          w0[] -1,-1,-1,-1,$ox,$oy
+          w1[] -1,-1,-1,-1,{$ox+$ww},$oy
+        else # Vertical alignment
+          ox,oy={round([{*,u}-$ww,{*,v}-2*$wh]/2)}
+          w0[] -1,-1,-1,-1,$ox,$oy
+          w1[] -1,-1,-1,-1,$ox,{$oy+$wh}
         fi
       elif d<=4
-        ww,wh={[$wsiz0]+[16,40]}
-        w0[] -1,-1,-1,-1,0,0
-        w1[] -1,-1,-1,-1,$ww,0
-        w2[] -1,-1,-1,-1,0,$wh
+        ox,oy={round([{*,u}-2*$ww,{*,v}-2*$wh]/2)}
+        ww,wh+=$ox,$oy
+        w0[] -1,-1,-1,-1,$ox,$oy
+        w1[] -1,-1,-1,-1,$ww,$oy
+        w2[] -1,-1,-1,-1,$ox,$wh
         if d==4 w3[] -1,-1,-1,-1,$ww,$wh fi
       else
-        ww,wh={[$wsiz0]+[16,40]}
-        ww2,wh2={2*[$ww,$wh]}
-        w0[] -1,-1,-1,-1,0,0
-        w1[] -1,-1,-1,-1,$ww,0
-        w2[] -1,-1,-1,-1,$ww2,0
-        w3[] -1,-1,-1,-1,0,$wh
+        ox,oy={round([{*,u}-3*$ww,{*,v}-(d>6?3:2)*$wh]/2)}
+        ww2,wh2={2*[$ww,$wh]+[$ox,$oy]}
+        ww,wh+=$ox,$oy
+        w0[] -1,-1,-1,-1,$ox,$oy
+        w1[] -1,-1,-1,-1,$ww,$oy
+        w2[] -1,-1,-1,-1,$ww2,$oy
+        w3[] -1,-1,-1,-1,$ox,$wh
         w4[] -1,-1,-1,-1,$ww,$wh
         if d>5 w5[] -1,-1,-1,-1,$ww2,$wh fi
-        if d>6 w6[] -1,-1,-1,-1,0,$wh2 fi
+        if d>6 w6[] -1,-1,-1,-1,$ox,$wh2 fi
         if d>7 w7[] -1,-1,-1,-1,$ww,$wh2 fi
         if d>8 w8[] -1,-1,-1,-1,$ww2,$wh2 fi
       fi
