@@ -1464,8 +1464,16 @@ CImg<T>& max(const char *const expression, CImgList<T> &images) {
   return max((+*this)._fill(expression,true,1,&images,&images,"max",this));
 }
 
+CImg<T>& maxabs(const char *const expression, CImgList<T> &images) {
+  return maxabs((+*this)._fill(expression,true,1,&images,&images,"maxabs",this));
+}
+
 CImg<T>& min(const char *const expression, CImgList<T> &images) {
   return min((+*this)._fill(expression,true,1,&images,&images,"min",this));
+}
+
+CImg<T>& minabs(const char *const expression, CImgList<T> &images) {
+  return minabs((+*this)._fill(expression,true,1,&images,&images,"minabs",this));
 }
 
 CImg<T>& operator_andeq(const char *const expression, CImgList<T> &images) {
@@ -2424,8 +2432,8 @@ const char *gmic::builtin_commands_names[] = {
   "j","j3d",
   "k","keep",
   "l","l3d","label","le","light3d","line","local","log","log10","log2","lt",
-  "m","m*","m/","m3d","mandelbrot","map","matchpatch","max","md3d","mdiv","median","min","mirror","mmul","mod",
-    "mode3d","moded3d","move","mse","mul","mul3d","mutex","mv",
+  "m","m*","m/","m3d","mandelbrot","map","matchpatch","max","maxabs","md3d","mdiv","median","min","minabs","mirror",
+    "mmul","mod","mode3d","moded3d","move","mse","mul","mul3d","mutex","mv",
   "n","name","named","neq","network","nm","nmd","noarg","noise","normalize",
   "o","o3d","object3d","onfail","opacity3d","or","output",
   "p","parallel","pass","permute","plasma","plot","point","polygon","pow","print","progress",
@@ -8802,6 +8810,20 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                 "Compute pointwise maximum between image%s and expression %s",
                                 gmic_selection.data(),gmic_argument_text_printed(),
                                 "Compute pointwise maximum of all image%s together");
+
+        // Maxabs.
+        gmic_arithmetic_command("maxabs",
+                                maxabs,
+                                "Compute pointwise maxabs between image%s and %g%s",
+                                gmic_selection.data(),value,ssep,T,
+                                maxabs,
+                                "Compute pointwise maxabs between image%s and image [%d]",
+                                gmic_selection.data(),ind[0],
+                                maxabs,
+                                "Compute pointwise maxabs between image%s and expression %s",
+                                gmic_selection.data(),gmic_argument_text_printed(),
+                                "Compute pointwise maxabs of all image%s together");
+
         // Min.
         gmic_arithmetic_command("min",
                                 min,
@@ -8814,6 +8836,19 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                 "Compute pointwise minimum between image%s and expression %s",
                                 gmic_selection.data(),gmic_argument_text_printed(),
                                 "Compute pointwise minimum of image%s");
+
+        // Minabs.
+        gmic_arithmetic_command("minabs",
+                                minabs,
+                                "Compute pointwise minabs between image%s and %g%s",
+                                gmic_selection.data(),value,ssep,T,
+                                minabs,
+                                "Compute pointwise minabs between image%s and image [%d]",
+                                gmic_selection.data(),ind[0],
+                                minabs,
+                                "Compute pointwise minabs between image%s and expression %s",
+                                gmic_selection.data(),gmic_argument_text_printed(),
+                                "Compute pointwise minabs of image%s");
 
         // Matrix multiplication.
         gmic_arithmetic_command("mmul",
