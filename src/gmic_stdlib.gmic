@@ -2167,8 +2167,8 @@ _display2d :
     posx,posy,sizx,sizy={0,[0,0,w,h]}
     is_bottom_text,wait_event,mx,my,omb=0,1,-1,-1,0
     xsel0,ysel0,xsel1,ysel1,notification=
-    wsiz0=${fitscreen\ .,128,85%}
     wnormalization0={*,n}
+    wsiz0=${fitscreen\ .,128,{d==1?85:d<=4?45:30}%}
 
     if $is_multiview
       if narg($_d2d_names) l[] $_d2d_names repeat $! wname$>={$>,t} done rm endl fi
@@ -2187,6 +2187,14 @@ _display2d :
         "flushkey : skip "$com_flushkey\n\
         "isvisible : u {min("$com_isvisible")}"\n\
         "idisp : u {argmax("$com_idisp")}"
+
+      # Arrange position of display windows.
+      if d==2
+        w0[] -1,-1,-1,-1,0,0
+        ww,wh=$wsiz0
+        if {*,u}/$ww>{*,v}/$wh w1[] -1,-1,-1,-1,{$ww+16},0 else w1[] -1,-1,-1,-1,0,{$wh+16} fi
+      fi
+
     else
       w[] {{*,w}?[-1,-1]:[$wsiz0]},0,$nm" ("{w}x{h}x{d}x{s}")"
       m "iskey : u {*,$""1}"\n\
@@ -2560,7 +2568,7 @@ _display2d :
       if $is_multiview repeat d w$>[] 0 done else w[] 0 fi
     fi
   nm $nm uncommand iskey,flushkey,isvisible,idisp endl done
-  uncommand _d2d_format,rmn,iskey d[]
+  uncommand _d2d_format,rmn d[]
 
 #@cli d3d : eq. to 'display3d'. : (+)
 
