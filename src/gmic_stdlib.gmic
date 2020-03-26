@@ -2151,8 +2151,14 @@ _display2d :
        fi"
   m "rmn : nmd $\"*\" rm[${}]"
 
-  repeat $! l[$>] nm={b} nm img
+  repeat $! l[$>]
+    if s=['{n}'];find(s,_'.',size(s)-1,-1)>0 nm={b}.{x} else nm={b} fi
+    nm img
+
     if !w v - d v + break fi
+    if d>10
+      error[0--6] "Command 'display2d': Input image has "{d}" slices, cannot manage more than 10 simultaneous views."
+    fi
     is_multiview={d>1}
     is_moderate_ratio={0,D=[w,h];max(D)/min(D)<6}
     may_have_alpha={s==2||s>=4}
@@ -2165,29 +2171,28 @@ _display2d :
     wnormalization0={*,n}
 
     if $is_multiview
-      com_iskey,sep_iskey,com_isvisible,sep_isvisible,com_flushkey,sep_flushkey,\
-       com_mousex,com_mousey,com_mouseb,com_mouseo,sep_mousebxyo=
+      if narg($_d2d_names) l[] $_d2d_names repeat $! wname$>={$>,t} done rm endl fi
+      com_iskey,com_flushkey,com_isvisible,com_idisp,sep=
       repeat {img,d}
-        w$>[] {{*$>,w}?[-1,-1]:[$wsiz0]},0,$nm" ("{w}x{h}x{d}x{s}")-#"$>
-        com_iskey.=$sep_iskey"{*"$>",$""1}" sep_iskey=||
-        com_flushkey.=$sep_flushkey"{*"$>",-$""1}" sep_flushkey=,
-        com_isvisible.=$sep_isvisible"{*"$>"}" sep_isvisible=&&
-        com_mouseb.=$sep_mousebxyo"{*"$>",b}"
-        com_mousex.=$sep_mousebxyo"{*"$>",x}"
-        com_mousey.=$sep_mousebxyo"{*"$>",y}"
-        com_mouseo.=$sep_mousebxyo"{*"$>",-o}"
-        sep_mousebxyo=,
+        if narg($_d2d_names) w$>[] {{*$>,w}?[-1,-1]:[$wsiz0]},0,${wname$>}" ("{w}x{h}x{d}x{s}")"
+        else w$>[] {{*$>,w}?[-1,-1]:[$wsiz0]},0,$nm" ("{w}x{h}x{d}x{s}")-#"$>
+        fi
+        com_iskey.=$sep"{*"$>",$""1}"
+        com_flushkey.=$sep"{*"$>",-$""1}"
+        com_isvisible.=$sep"{*"$>"}"
+        com_idisp.=$sep"{*"$>",x}"
+        sep=,
       done
-      m "iskey : u {"$com_iskey"}"\n\
+      m "iskey : u {max("$com_iskey")}"\n\
         "flushkey : skip "$com_flushkey\n\
-        "isvisible : u {"$com_isvisible"}"\n\
-        "mouse_bxyo : u {[max("$com_mouseb"),max("$com_mousex"),max("$com_mousey"),sum("$com_mouseo")]}"
+        "isvisible : u {min("$com_isvisible")}"\n\
+        "idisp : u {argmax("$com_idisp")}"
     else
       w[] {{*,w}?[-1,-1]:[$wsiz0]},0,$nm" ("{w}x{h}x{d}x{s}")"
       m "iskey : u {*,$""1}"\n\
         "flushkey : skip {*,-$""1}"\n\
         "isvisible : u {*}"\n\
-        "mouse_bxyo : u {*,b,x,y,-o}"
+        "idisp : u 0"
     fi
 
     repeat {img,d} cursor[$>] 0 done
@@ -2245,9 +2250,14 @@ _display2d :
 
         # Normalize view.
         if $normalization_mode==1
-          sh. 0,{s-($alpha_mode" && "$may_have_alpha?2:1)} n. 0,255 rm.
+          sh. 0,{s-($alpha_mode" && "$may_have_alpha?2:1)}
+          if $is_multiview repeat {img,d} +slices. $> n. 0,255 j.. .,0,0,$> rm. done else n. 0,255 fi
+          rm.
         elif $normalization_mode==2
-          l. s c if $alpha_mode" && "$may_have_alpha sel=^-1 else sel=^ fi n[$sel] 0,255 a c endl
+          sh. 0,{s-($alpha_mode" && "$may_have_alpha?2:1)}
+          if $is_multiview repeat d*s z,c={[$>%d,int($>/d)]} sh. $z,$z,$c n. 0,255 rm. done
+          else repeat s sh. $> n. 0,255 rm. done
+          fi
         fi
         if $posx<0" || "$posy<0" || "$posx+$sizx>=w#0" || "$posy+$sizy>=h#0
           100%,100%
@@ -2315,39 +2325,41 @@ _display2d :
           if $mx>=0
             if $posmx>=0" && "$posmx<w#0" && "$posmy>=0" && "$posmy<h#0
               if !narg($xsel0)" || "$is_selection_a_point
-                if {0,P=I($posmx,$posmy);s==3" && "min(isint(P))" && "min(P)>=0" && "max(P)<=255}
-                  hexstr="= \#"\
-                        {0,`digit(x)=(x<10?_'0'+x:_'A'+x-10);\
-                            P=I($posmx,$posmy);\
-                            [digit(P[0]>>4),digit(P[0]&15),\
-                             digit(P[1]>>4),digit(P[1]&15),\
-                             digit(P[2]>>4),digit(P[2]&15)]`}" "
-                else hexstr= fi
-                0 t. " Point ( "$posmx","$posmy" ) = [ "${_d2d_format\ {0,_I($posmx,$posmy)}}" ] "$hexstr,1,0,14,1,1
-                n. 0,255 +dilate. 3 *. -1 n. 0,80 +[-2,-1] r. 100%,100%,1,..
-                j.. .,0,{$is_bottom_text?h#-2-h#-1:0},0,0,0.85 rm.
+                repeat {img,d}
+                  if {img,P=I($posmx,$posmy,$>);s==3" && "min(isint(P))" && "min(P)>=0" && "max(P)<=255}
+                    hexstr="= \#"\
+                          {img,`digit(x)=(x<10?_'0'+x:_'A'+x-10);\
+                                P=I($posmx,$posmy,$>);\
+                                [digit(P[0]>>4),digit(P[0]&15),\
+                                 digit(P[1]>>4),digit(P[1]&15),\
+                                 digit(P[2]>>4),digit(P[2]&15)]`}" "
+                  else hexstr= fi
+                  0 t. " Point ( "$posmx","$posmy" ) = [ "${_d2d_format\ {img,_I($posmx,$posmy,$>)}}" ] "$hexstr,\
+                       1,0,14,1,1
+                  n. 0,255 +dilate. 3 *. -1 n. 0,80 +[-2,-1] r. 100%,100%,1,..
+                  if $> +slices.. $> j. ..,0,$is_bottom_text~,0,0,0.85 j... .,0,0,$> rm[-2,-1]
+                  else j.. .,0,$is_bottom_text~,0,0,0.85 rm.
+                  fi
+                done
               fi
               x0,y0,x1,y1={[round([$posmx-$posx,$posmy-$posy]*[{*,w,h}]/[$sizx,$sizy]),\
                             round([$posmx-$posx+1,$posmy-$posy+1]*[{*,w,h}]/[$sizx,$sizy])-1]}
-              if $x1-$x0>=8" && "$y1-$y0>=8
-                rectangle. $x0,$y0,$x1,$y1,1,0x55555555,0 # Draw pixel contour when zoomed-in
-                rectangle. $x0,$y0,$x1,$y1,1,0xAAAAAAAA,255
+              if $x1-$x0>=8" && "$y1-$y0>=8 # Draw pixel contour when zoomed-in
+                repeat d if $> +slices. $> fi
+                  rectangle. $x0,$y0,$x1,$y1,1,0x55555555,0
+                  rectangle. $x0,$y0,$x1,$y1,1,0xAAAAAAAA,255
+                  if $> j.. .,0,0,$> rm. fi
+                done
               fi
             fi
             if $axes_mode # Draw horizontal/vertical axes
-              if $is_multiview repeat d
-                 +slices. $>
+              repeat d if $> +slices. $> fi
                  line. $mx,0,$mx,100%,0.5,0xFF00FF00,255
                  line. $mx,0,$mx,100%,0.5,0x00FF00FF,0
                  line. 0,$my,100%,$my,0.5,0xFF00FF00,255
                  line. 0,$my,100%,$my,0.5,0x00FF00FF,0
-                 j.. .,0,0,$> rm.
-              done else
-                line. $mx,0,$mx,100%,0.5,0xFF00FF00,255
-                line. $mx,0,$mx,100%,0.5,0x00FF00FF,0
-                line. 0,$my,100%,$my,0.5,0xFF00FF00,255
-                line. 0,$my,100%,$my,0.5,0x00FF00FF,0
-              fi
+                 if $> j.. .,0,0,$> rm. fi
+              done
             fi
           fi
 
@@ -2356,42 +2368,28 @@ _display2d :
                          ym=min($ysel0,$ysel1);yM=max($ysel0,$ysel1);\
                          [[xm-$posx,ym-$posy]*[{*,w,h}]/[$sizx,$sizy],\
                           [xM+1-$posx,yM+1-$posy]*[{*,w,h}]/[$sizx,$sizy]-1]}
-            if $is_multiview repeat d
-              +slices. $>
+            repeat d if $> +slices. $> fi
               rectangle. $x0,$y0,$x1,$y1,0.2,0
               rectangle. $x0,$y0,$x1,$y1,0.9,0x55555555,0
               rectangle. $x0,$y0,$x1,$y1,0.9,0xAAAAAAAA,255
-              j.. .,0,0,$> rm.
-            done else
-              rectangle. $x0,$y0,$x1,$y1,0.2,0
-              rectangle. $x0,$y0,$x1,$y1,0.9,0x55555555,0
-              rectangle. $x0,$y0,$x1,$y1,0.9,0xAAAAAAAA,255
-            fi
-
+              if $> j.. .,0,0,$> rm. fi
+            done
             if $xsel0>$xsel1 x0,x1=$x1,$x0 fi
             if $ysel0>$ysel1 y0,y1=$y1,$y0 fi
             if $xsel0!=$xsel1" && "$ysel0!=$ysel1
               x0,y0,x1,y1={[(0.5+[$xsel0-$posx,$ysel0-$posy])*[{*,w,h}]/[$sizx,$sizy],\
                             (0.5+[$xsel1-$posx,$ysel1-$posy])*[{*,w,h}]/[$sizx,$sizy]]}
-              if $is_multiview repeat d
-                +slices. $>
+              repeat d if $> +slices. $> fi
                 line. $x0,$y0,$x1,$y1,0.9,0x33333333,0
                 line. $x0,$y0,$x1,$y1,0.9,0xCCCCCCCC,255
-                j.. .,0,0,$> rm.
-              done else
-                line. $x0,$y0,$x1,$y1,0.9,0x33333333,0
-                line. $x0,$y0,$x1,$y1,0.9,0xCCCCCCCC,255
-              fi
+                if $> j.. .,0,0,$> rm. fi
+              done
             fi
           fi
         fi
 
         if $notification_gfx
-          if $is_multiview
-            +r[notification_gfx] 100%,100%,. j.. .,{[w#-2-w-4,4]},0,0,{sqrt(max(0,1-($|-$notification)))} rm.
-          else
-            j. [notification_gfx],{notification_gfx,[w#-1-w-4,4]},0,0,{sqrt(max(0,1-($|-$notification)))}
-          fi
+          +r[notification_gfx] 100%,100%,. j.. .,{[w#-2-w-4,4]},0,0,{sqrt(max(0,1-($|-$notification)))} rm.
         fi
 
         nm. view
@@ -2400,11 +2398,12 @@ _display2d :
 
       # Manage user events.
       if $wait_event wait else wait 40 fi
+      idisp=${-idisp} # Index of 'active' display window
       wait_event=1
 
       old_mx,old_my=$mx,$my
       nposx,nposy,nsizx,nsizy=$posx,$posy,$sizx,$sizy
-      is_CTRL,mb,mx,my,mo={${"iskey CTRLLEFT"}" || "${"iskey CTRLRIGHT"}},${-mouse_bxyo}
+      is_CTRL,mb,mx,my,mo={${"iskey CTRLLEFT"}" || "${"iskey CTRLRIGHT"}},{*$idisp,b,x,y,-o}
 
       # Test end of pan shift.
       if !($mb&4)" && "!($is_CTRL" && "($mb&1)) pan_mx,pan_my,pan_posx,pan_posy= fi
@@ -2415,21 +2414,24 @@ _display2d :
       fi
 
       # Events related to window resizing.
-      if {*,r} # Window has been resized
-        w[] {*,d,e}
+      if {*$idisp,r} # Window has been resized
+        w$idisp[] {*$idisp,d,e}
+        if $is_multiview repeat {img,d} w$>[] {*$idisp,w,h} done fi
         if $nsizx>w#0" && "$nsizy>h#0 nposx,nposy,nsizx,nsizy={[0,0,w#0,h#0]} fi
         rmn baseview
-      elif $is_CTRL" && "{*,D}" && "{*,d}<{*,u}" && "{*,e}<{*,v} # Increase window size
-        w[] {round([{*,w,h}]*1.25)}
+      elif $is_CTRL" && "${"iskey D"}" && "{*$idisp,d}<{*$idisp,u}" && "{*$idisp,e}<{*$idisp,v} # Increase window size
+        w$idisp[] {round([{*$idisp,w,h}]*1.25)}
+        if $is_multiview repeat {img,d} w$>[] {*$idisp,w,h} done fi
         notification="Increase Window Size"
         flushkey D rmn baseview
-      elif $is_CTRL" && "{*,C}" && "{*,d}>64" && "{*,e}>64 # Decrease window size
-        w[] {round([{*,w,h}]/1.25)}
+      elif $is_CTRL" && "${"iskey C"}" && "{*$idisp,d}>64" && "{*$idisp,e}>64 # Decrease window size
+        w$idisp[] {round([{*$idisp,w,h}]/1.25)}
+        if $is_multiview repeat {img,d} w$>[] {*$idisp,w,h} done fi
         notification="Decrease Window Size"
         flushkey C rmn baseview
-      elif $is_CTRL" && "{*,R} # Reset window size (and view)
+      elif $is_CTRL" && "${"iskey R"} # Reset window size (and view)
         nposx,nposy,nsizx,nsizy={0,[0,0,w,h]}
-        w[] $wsiz0
+        repeat {img,d} w$>[] $wsiz0 done
         notification="Reset Window Size"
         flushkey R rmn baseview
       fi
@@ -2557,8 +2559,8 @@ _display2d :
     else
       if $is_multiview repeat d w$>[] 0 done else w[] 0 fi
     fi
-  nm $nm uncommand iskey endl done
-  uncommand _d2d_format,rmn,iskey
+  nm $nm uncommand iskey,flushkey,isvisible,idisp endl done
+  uncommand _d2d_format,rmn,iskey d[]
 
 #@cli d3d : eq. to 'display3d'. : (+)
 
@@ -2891,16 +2893,21 @@ display_parallel :
 _display_parallel :
   e[0--3] "Display image$? in parallel."
   print
-  if $!<=1 v - d v + return fi
-  $!,1,1,1,x ('{^}') rm..
-  l.
-    s -,{','} y x
-    i[0--2] ('d[')
-    i[2--2:2] ('],')
-    (']')
-    a x com={t} rm
-  endl
-  m "__dp : parallel "$com __dp uncommand __dp
+  is_d2d_compatible={"res = l<=10; for (k = 0, k<l, ++k, res&=(w#k==w && h#k==h && d#k==1 && s#k==s))"}
+  if $is_d2d_compatible
+    N=$!
+    repeat $!
+      if s=['{$>,n}'];find(s,_'.',size(s)-1,-1)>0 nm={$>,b}.{$>,x} else nm={$>,b} fi
+      ('$nm':;)
+    done
+    store[-$N--1] _d2d_names
+    a z d2d s z
+    _d2d_names=
+  else
+    if $!<=1 v - d v + return fi
+    14,$! eval. "!x?copy(i(),[[',d['],vtos(y,10,10),_']'])" =. 0 discard. 0 str={t} rm.
+    m "__dp : parallel "$str __dp uncommand __dp
+  fi
   d[]
 
 #@cli dp0 : eq. to 'display_parallel0'.
@@ -4654,7 +4661,7 @@ shape_star : check "${1=512}>=0 && ${2=5}>0 && ${3=0.5}>=0 && $3<=1"
 
 #@cli sh : eq. to 'shared'. : (+)
 
-#@cli shared : x0[%],x1[%],y[%],z[%],v[%] : y0[%],y1[%],z[%],v[%] : z0[%],z1[%],v[%] : v0[%],v1[%] : v0[%] : \
+#@cli shared : x0[%],x1[%],y[%],z[%],c[%] : y0[%],y1[%],z[%],c[%] : z0[%],z1[%],c[%] : c0[%],c1[%] : c0[%] : \
 # (no arg) : (+)
 #@cli : Insert shared buffers from (opt. points/rows/planes/channels of) selected images.
 #@cli : Shared buffers cannot be returned by a command, nor a local environment.
