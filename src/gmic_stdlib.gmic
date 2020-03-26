@@ -2151,7 +2151,10 @@ _display2d :
        fi"
   m "rmn : nmd $\"*\" rm[${}]"
 
-  repeat $! l[$>] nm={b} nm img
+  repeat $! l[$>]
+    if s=['{n}'];find(s,_'.',size(s)-1,-1)>0 nm={b}.{x} else nm={b} fi
+    nm img
+
     if !w v - d v + break fi
     if d>10
       error[0--6] "Command 'display2d': Input image has "{d}" slices, cannot manage more than 10 simultaneous views."
@@ -2168,9 +2171,12 @@ _display2d :
     wnormalization0={*,n}
 
     if $is_multiview
+      if narg($_d2d_names) l[] $_d2d_names repeat $! wname$>={$>,t} done rm endl fi
       com_iskey,com_flushkey,com_isvisible,com_idisp,sep=
       repeat {img,d}
-        w$>[] {{*$>,w}?[-1,-1]:[$wsiz0]},0,$nm" ("{w}x{h}x{d}x{s}")-#"$>
+        if narg($_d2d_names) w$>[] {{*$>,w}?[-1,-1]:[$wsiz0]},0,${wname$>}" ("{w}x{h}x{d}x{s}")"
+        else w$>[] {{*$>,w}?[-1,-1]:[$wsiz0]},0,$nm" ("{w}x{h}x{d}x{s}")-#"$>
+        fi
         com_iskey.=$sep"{*"$>",$""1}"
         com_flushkey.=$sep"{*"$>",-$""1}"
         com_isvisible.=$sep"{*"$>"}"
@@ -2888,12 +2894,19 @@ _display_parallel :
   e[0--3] "Display image$? in parallel."
   print
   is_d2d_compatible={"res = 1; for (k = 0, k<l, ++k, res&=(w#k==w && h#k==h && d#k==1 && s#k==s))"}
-  if $is_d2d_compatible a z d2d s z
+  if $is_d2d_compatible
+    N=$!
+    repeat $!
+      if s=['{$>,n}'];find(s,_'.',size(s)-1,-1)>0 nm={$>,b}.{$>,x} else nm={$>,b} fi
+      ('$nm':;)
+    done
+    store[-$N--1] _d2d_names
+    a z d2d s z
+    _d2d_names=
   else
     if $!<=1 v - d v + return fi
-    $!,1,1,1,x ('{^}') rm..
-    l. s -,{','} y x i[0--2] ('d[') i[2--2:2] ('],') (']') a x com={t} rm endl
-    m "__dp : parallel "$com __dp uncommand __dp
+    14,$! eval. "!x?copy(i(),[[',d['],vtos(y,10,10),_']'])" =. 0 discard. 0 str={t} rm.
+    m "__dp : parallel "$str __dp uncommand __dp
   fi
   d[]
 
