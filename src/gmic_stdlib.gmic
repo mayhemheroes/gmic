@@ -2175,24 +2175,19 @@ _display2d :
         com_iskey.=$sep"{*"$>",$""1}"
         com_flushkey.=$sep"{*"$>",-$""1}"
         com_isvisible.=$sep"{*"$>"}"
-        com_mouseb.=$sep"{*"$>",b}"
-        com_mousex.=$sep"{*"$>",x}"
-        com_mousey.=$sep"{*"$>",y}"
-        com_mouseo.=$sep"{*"$>",-o}"
+        com_idisp.=$sep"{*"$>",x}"
         sep=,
       done
       m "iskey : u {max("$com_iskey")}"\n\
         "flushkey : skip "$com_flushkey\n\
         "isvisible : u {min("$com_isvisible")}"\n\
-        "idisp : u {argmax("$com_idisp")}"\n\
-        "mouse_bxyo : u {[max("$com_mouseb"),max("$com_mousex"),max("$com_mousey"),sum("$com_mouseo")]}"
+        "idisp : u {argmax("$com_idisp")}"
     else
       w[] {{*,w}?[-1,-1]:[$wsiz0]},0,$nm" ("{w}x{h}x{d}x{s}")"
       m "iskey : u {*,$""1}"\n\
         "flushkey : skip {*,-$""1}"\n\
         "isvisible : u {*}"\n\
-        "idisp : u 0"\n\
-        "mouse_bxyo : u {*,b,x,y,-o}"
+        "idisp : u 0"
     fi
 
     repeat {img,d} cursor[$>] 0 done
@@ -2405,11 +2400,12 @@ _display2d :
 
       # Manage user events.
       if $wait_event wait else wait 40 fi
+      idisp=${-idisp} # Index of 'active' display window
       wait_event=1
 
       old_mx,old_my=$mx,$my
       nposx,nposy,nsizx,nsizy=$posx,$posy,$sizx,$sizy
-      is_CTRL,mb,mx,my,mo={${"iskey CTRLLEFT"}" || "${"iskey CTRLRIGHT"}},${-mouse_bxyo}
+      is_CTRL,mb,mx,my,mo={${"iskey CTRLLEFT"}" || "${"iskey CTRLRIGHT"}},{*$idisp,b,x,y,-o}
 
       # Test end of pan shift.
       if !($mb&4)" && "!($is_CTRL" && "($mb&1)) pan_mx,pan_my,pan_posx,pan_posy= fi
@@ -2420,21 +2416,24 @@ _display2d :
       fi
 
       # Events related to window resizing.
-      if {*,r} # Window has been resized
-        w[] {*,d,e}
+      if {*$idisp,r} # Window has been resized
+        w$idisp[] {*$idisp,d,e}
+        if $is_multiview repeat {img,d} w$>[] {*$idisp,w,h} done fi
         if $nsizx>w#0" && "$nsizy>h#0 nposx,nposy,nsizx,nsizy={[0,0,w#0,h#0]} fi
         rmn baseview
-      elif $is_CTRL" && "{*,D}" && "{*,d}<{*,u}" && "{*,e}<{*,v} # Increase window size
-        w[] {round([{*,w,h}]*1.25)}
+      elif $is_CTRL" && "${"iskey D"}" && "{*$idisp,d}<{*$idisp,u}" && "{*$idisp,e}<{*$idisp,v} # Increase window size
+        w$idisp[] {round([{*$idisp,w,h}]*1.25)}
+        if $is_multiview repeat {img,d} w$>[] {*$idisp,w,h} done fi
         notification="Increase Window Size"
         flushkey D rmn baseview
-      elif $is_CTRL" && "{*,C}" && "{*,d}>64" && "{*,e}>64 # Decrease window size
-        w[] {round([{*,w,h}]/1.25)}
+      elif $is_CTRL" && "${"iskey C"}" && "{*$idisp,d}>64" && "{*$idisp,e}>64 # Decrease window size
+        w$idisp[] {round([{*$idisp,w,h}]/1.25)}
+        if $is_multiview repeat {img,d} w$>[] {*$idisp,w,h} done fi
         notification="Decrease Window Size"
         flushkey C rmn baseview
-      elif $is_CTRL" && "{*,R} # Reset window size (and view)
+      elif $is_CTRL" && "${"iskey R"} # Reset window size (and view)
         nposx,nposy,nsizx,nsizy={0,[0,0,w,h]}
-        w[] $wsiz0
+        repeat {img,d} w$>[] $wsiz0 done
         notification="Reset Window Size"
         flushkey R rmn baseview
       fi
