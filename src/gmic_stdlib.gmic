@@ -2153,6 +2153,9 @@ _display2d :
 
   repeat $! l[$>] nm={b} nm img
     if !w v - d v + break fi
+    if d>10
+      error[0--6] "Command 'display2d': Input image has "{d}" slices, cannot manage more than 10 simultaneous views."
+    fi
     is_multiview={d>1}
     is_moderate_ratio={0,D=[w,h];max(D)/min(D)<6}
     may_have_alpha={s==2||s>=4}
@@ -2165,28 +2168,30 @@ _display2d :
     wnormalization0={*,n}
 
     if $is_multiview
-      com_iskey,sep_iskey,com_isvisible,sep_isvisible,com_flushkey,sep_flushkey,\
-       com_mousex,com_mousey,com_mouseb,com_mouseo,sep_mousebxyo=
+      com_iskey,com_isvisible,com_flushkey,\
+       com_idisp,com_mousex,com_mousey,com_mouseb,com_mouseo,sep=
       repeat {img,d}
         w$>[] {{*$>,w}?[-1,-1]:[$wsiz0]},0,$nm" ("{w}x{h}x{d}x{s}")-#"$>
-        com_iskey.=$sep_iskey"{*"$>",$""1}" sep_iskey=||
-        com_flushkey.=$sep_flushkey"{*"$>",-$""1}" sep_flushkey=,
-        com_isvisible.=$sep_isvisible"{*"$>"}" sep_isvisible=&&
-        com_mouseb.=$sep_mousebxyo"{*"$>",b}"
-        com_mousex.=$sep_mousebxyo"{*"$>",x}"
-        com_mousey.=$sep_mousebxyo"{*"$>",y}"
-        com_mouseo.=$sep_mousebxyo"{*"$>",-o}"
-        sep_mousebxyo=,
+        com_iskey.=$sep"{*"$>",$""1}"
+        com_flushkey.=$sep"{*"$>",-$""1}"
+        com_isvisible.=$sep"{*"$>"}"
+        com_mouseb.=$sep"{*"$>",b}"
+        com_mousex.=$sep"{*"$>",x}"
+        com_mousey.=$sep"{*"$>",y}"
+        com_mouseo.=$sep"{*"$>",-o}"
+        sep=,
       done
-      m "iskey : u {"$com_iskey"}"\n\
+      m "iskey : u {max("$com_iskey")}"\n\
         "flushkey : skip "$com_flushkey\n\
-        "isvisible : u {"$com_isvisible"}"\n\
+        "isvisible : u {min("$com_isvisible")}"\n\
+        "idisp : u {argmax("$com_idisp")}"\n\
         "mouse_bxyo : u {[max("$com_mouseb"),max("$com_mousex"),max("$com_mousey"),sum("$com_mouseo")]}"
     else
       w[] {{*,w}?[-1,-1]:[$wsiz0]},0,$nm" ("{w}x{h}x{d}x{s}")"
       m "iskey : u {*,$""1}"\n\
         "flushkey : skip {*,-$""1}"\n\
         "isvisible : u {*}"\n\
+        "idisp : u 0"\n\
         "mouse_bxyo : u {*,b,x,y,-o}"
     fi
 
