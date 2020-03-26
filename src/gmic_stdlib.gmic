@@ -2178,7 +2178,7 @@ _display2d :
 
     if $is_multiview
       if narg($_d2d_names) l[] $_d2d_names repeat $! wname$>={$>,t} done rm endl fi
-      com_iskey,com_flushkey,com_isvisible,com_idisp,sep=
+      com_iskey,com_flushkey,com_isvisible,com_isresizeed,com_idisp,sep=
       repeat {img,d}
         if narg($_d2d_names) w$>[] {{*$>,w}?[-1,-1]:[$wsiz0]},0,${wname$>}" ("{w}x{h}x{d}x{s}")"
         else w$>[] {{*$>,w}?[-1,-1]:[$wsiz0]},0,$nm" ("{w}x{h}x{d}x{s}")-#"$>
@@ -2186,12 +2186,14 @@ _display2d :
         com_iskey.=$sep"{*"$>",$""1}"
         com_flushkey.=$sep"{*"$>",-$""1}"
         com_isvisible.=$sep"{*"$>"}"
+        com_isresized.=$sep"{*"$>",r}"
         com_idisp.=$sep"{*"$>",x}"
         sep=,
       done
       m "iskey : u {max("$com_iskey")}"\n\
         "flushkey : skip "$com_flushkey\n\
         "isvisible : u {min("$com_isvisible")}"\n\
+        "isresized : u {max("$com_isresized")}"\n\
         "idisp : u {argmax("$com_idisp")}"
 
       # Auto-arrange display window layout in multi-view mode.
@@ -2226,6 +2228,7 @@ _display2d :
       m "iskey : u {*,$""1}"\n\
         "flushkey : skip {*,-$""1}"\n\
         "isvisible : u {*}"\n\
+        "isresized : u {*,r}"\n\
         "idisp : u 0"
     fi
 
@@ -2446,10 +2449,13 @@ _display2d :
       fi
 
       # Events related to window resizing.
-      if {*$idisp,r} # Window has been resized
-        w$idisp[] {*$idisp,d,e}
-        if $is_multiview repeat {img,d} w$>[] {*$idisp,w,h} done fi
-        if $nsizx>w#0" && "$nsizy>h#0 nposx,nposy,nsizx,nsizy={[0,0,w#0,h#0]} fi
+      if ${-isresized} # One of the display windows has been resized
+        repeat {img,d},w if {*$w,r}
+          w$w[] {*$w,d,e}
+          if $is_multiview repeat {img,d} w$>[] {*$w,w,h} done fi
+          if $nsizx>w#0" && "$nsizy>h#0 nposx,nposy,nsizx,nsizy={[0,0,w#0,h#0]} fi
+          break
+        fi done
         rmn baseview
       elif $is_CTRL" && "${"iskey D"}" && "{*$idisp,d}<{*$idisp,u}" && "{*$idisp,e}<{*$idisp,v} # Increase window size
         w$idisp[] {round([{*$idisp,w,h}]*1.25)}
@@ -2591,7 +2597,7 @@ _display2d :
     else
       if $is_multiview repeat d w$>[] 0 done else w[] 0 fi
     fi
-  nm $nm uncommand iskey,flushkey,isvisible,idisp endl done
+  nm $nm uncommand iskey,flushkey,isvisible,isresized,idisp endl done
   uncommand _d2d_format,rmn d[]
 
 #@cli d3d : eq. to 'display3d'. : (+)
