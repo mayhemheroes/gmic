@@ -2167,12 +2167,20 @@ _display2d :
     posx,posy,sizx,sizy={0,[0,0,w,h]}
     is_bottom_text,wait_event,mx,my,omb=0,1,-1,-1,0
     xsel0,ysel0,xsel1,ysel1,notification=
-    wsiz0=${fitscreen\ .,128,85%}
     wnormalization0={*,n}
 
     if $is_multiview
+      if {d==2} if {*,u}/w>={*,v}/h wsiz0={r={*,u}*0.48;round([r,r*h/w])} else wsiz0={r={*,v}*0.40;round([r*w/h,r])} fi
+      elif {d<=4} wsiz0=${fitscreen\ .,128,45%}
+      else wsiz0=${fitscreen\ .,128,30%}
+      fi
+      wsiz0=${fitscreen\ $wsiz0,1,128,90%}
+
+    else wsiz0=${fitscreen\ .,128,85%} fi
+
+    if $is_multiview
       if narg($_d2d_names) l[] $_d2d_names repeat $! wname$>={$>,t} done rm endl fi
-      com_iskey,com_flushkey,com_isvisible,com_idisp,sep=
+      com_iskey,com_flushkey,com_isvisible,com_isresizeed,com_idisp,sep=
       repeat {img,d}
         if narg($_d2d_names) w$>[] {{*$>,w}?[-1,-1]:[$wsiz0]},0,${wname$>}" ("{w}x{h}x{d}x{s}")"
         else w$>[] {{*$>,w}?[-1,-1]:[$wsiz0]},0,$nm" ("{w}x{h}x{d}x{s}")-#"$>
@@ -2180,18 +2188,56 @@ _display2d :
         com_iskey.=$sep"{*"$>",$""1}"
         com_flushkey.=$sep"{*"$>",-$""1}"
         com_isvisible.=$sep"{*"$>"}"
+        com_isresized.=$sep"{*"$>",r}"
         com_idisp.=$sep"{*"$>",x}"
         sep=,
       done
       m "iskey : u {max("$com_iskey")}"\n\
         "flushkey : skip "$com_flushkey\n\
         "isvisible : u {min("$com_isvisible")}"\n\
+        "isresized : u {max("$com_isresized")}"\n\
         "idisp : u {argmax("$com_idisp")}"
+
+      # Auto-arrange display window layout in multi-view mode.
+      ww,wh={[$wsiz0]+[8,40]}
+      if d==2
+        if {*,u}/$ww>{*,v}/$wh # Horizontal alignment
+          ox,oy={round([max(0,{*,u}-2*$ww),max(0,{*,v}-$wh)]/2)}
+          w0[] -1,-1,-1,-1,$ox,$oy
+          w1[] -1,-1,-1,-1,{$ox+$ww},$oy
+        else # Vertical alignment
+          ox,oy={round([{*,u}-$ww,{*,v}-2*$wh]/2)}
+          w0[] -1,-1,-1,-1,$ox,$oy
+          w1[] -1,-1,-1,-1,$ox,{$oy+$wh}
+        fi
+      elif d<=4
+        ox,oy={round([max(0,{*,u}-2*$ww),max(0,{*,v}-2*$wh)]/2)}
+        ww,wh+=$ox,$oy
+        w0[] -1,-1,-1,-1,$ox,$oy
+        w1[] -1,-1,-1,-1,$ww,$oy
+        w2[] -1,-1,-1,-1,$ox,$wh
+        if d==4 w3[] -1,-1,-1,-1,$ww,$wh fi
+      else
+        ox,oy={round([max(0,{*,u}-3*$ww),max(0,{*,v}-(d>6?3:2)*$wh)]/2)}
+        ww2,wh2={2*[$ww,$wh]+[$ox,$oy]}
+        ww,wh+=$ox,$oy
+        w0[] -1,-1,-1,-1,$ox,$oy
+        w1[] -1,-1,-1,-1,$ww,$oy
+        w2[] -1,-1,-1,-1,$ww2,$oy
+        w3[] -1,-1,-1,-1,$ox,$wh
+        w4[] -1,-1,-1,-1,$ww,$wh
+        if d>5 w5[] -1,-1,-1,-1,$ww2,$wh fi
+        if d>6 w6[] -1,-1,-1,-1,$ox,$wh2 fi
+        if d>7 w7[] -1,-1,-1,-1,$ww,$wh2 fi
+        if d>8 w8[] -1,-1,-1,-1,$ww2,$wh2 fi
+      fi
+
     else
       w[] {{*,w}?[-1,-1]:[$wsiz0]},0,$nm" ("{w}x{h}x{d}x{s}")"
       m "iskey : u {*,$""1}"\n\
         "flushkey : skip {*,-$""1}"\n\
         "isvisible : u {*}"\n\
+        "isresized : u {*,r}"\n\
         "idisp : u 0"
     fi
 
@@ -2319,7 +2365,7 @@ _display2d :
                  "Length = "{_norm($dselx,$dsely)}" \n"\
                  " Angle = "{_atan2($dsely,$dselx)*180/pi}"\260 ",1,0,14,1,1
             n. 0,255 +dilate. 3 *. -1 n. 0,80 +[-2,-1] r. 100%,100%,..,..
-            j.. .,0,{$is_bottom_text?h#-2-h#-1:0},0,0,0.85 rm.
+            j.. .,0,$is_bottom_text~,0,0,0.85 rm.
           fi
 
           if $mx>=0
@@ -2337,28 +2383,26 @@ _display2d :
                   0 t. " Point ( "$posmx","$posmy" ) = [ "${_d2d_format\ {img,_I($posmx,$posmy,$>)}}" ] "$hexstr,\
                        1,0,14,1,1
                   n. 0,255 +dilate. 3 *. -1 n. 0,80 +[-2,-1] r. 100%,100%,1,..
-                  if $> +slices.. $> j. ..,0,$is_bottom_text~,0,0,0.85 j... .,0,0,$> rm[-2,-1]
-                  else j.. .,0,$is_bottom_text~,0,0,0.85 rm.
-                  fi
+                  j.. .,0,$is_bottom_text~,$>,0,0.85 rm.
                 done
               fi
               x0,y0,x1,y1={[round([$posmx-$posx,$posmy-$posy]*[{*,w,h}]/[$sizx,$sizy]),\
                             round([$posmx-$posx+1,$posmy-$posy+1]*[{*,w,h}]/[$sizx,$sizy])-1]}
               if $x1-$x0>=8" && "$y1-$y0>=8 # Draw pixel contour when zoomed-in
-                repeat d if $> +slices. $> fi
+                repeat d==1?1:d*s if d==1 sh. else sh. {z=$>%d;[z,z,int($>/d)]} fi
                   rectangle. $x0,$y0,$x1,$y1,1,0x55555555,0
                   rectangle. $x0,$y0,$x1,$y1,1,0xAAAAAAAA,255
-                  if $> j.. .,0,0,$> rm. fi
+                  rm.
                 done
               fi
             fi
             if $axes_mode # Draw horizontal/vertical axes
-              repeat d if $> +slices. $> fi
-                 line. $mx,0,$mx,100%,0.5,0xFF00FF00,255
-                 line. $mx,0,$mx,100%,0.5,0x00FF00FF,0
-                 line. 0,$my,100%,$my,0.5,0xFF00FF00,255
-                 line. 0,$my,100%,$my,0.5,0x00FF00FF,0
-                 if $> j.. .,0,0,$> rm. fi
+              repeat d==1?1:d*s if d==1 sh. else sh. {z=$>%d;[z,z,int($>/d)]} fi
+                line. $mx,0,$mx,100%,0.5,0xFF00FF00,255
+                line. $mx,0,$mx,100%,0.5,0x00FF00FF,0
+                line. 0,$my,100%,$my,0.5,0xFF00FF00,255
+                line. 0,$my,100%,$my,0.5,0x00FF00FF,0
+                rm.
               done
             fi
           fi
@@ -2368,21 +2412,21 @@ _display2d :
                          ym=min($ysel0,$ysel1);yM=max($ysel0,$ysel1);\
                          [[xm-$posx,ym-$posy]*[{*,w,h}]/[$sizx,$sizy],\
                           [xM+1-$posx,yM+1-$posy]*[{*,w,h}]/[$sizx,$sizy]-1]}
-            repeat d if $> +slices. $> fi
+            repeat d==1?1:d*s if d==1 sh. else sh. {z=$>%d;[z,z,int($>/d)]} fi
               rectangle. $x0,$y0,$x1,$y1,0.2,0
               rectangle. $x0,$y0,$x1,$y1,0.9,0x55555555,0
               rectangle. $x0,$y0,$x1,$y1,0.9,0xAAAAAAAA,255
-              if $> j.. .,0,0,$> rm. fi
+              rm.
             done
             if $xsel0>$xsel1 x0,x1=$x1,$x0 fi
             if $ysel0>$ysel1 y0,y1=$y1,$y0 fi
             if $xsel0!=$xsel1" && "$ysel0!=$ysel1
               x0,y0,x1,y1={[(0.5+[$xsel0-$posx,$ysel0-$posy])*[{*,w,h}]/[$sizx,$sizy],\
                             (0.5+[$xsel1-$posx,$ysel1-$posy])*[{*,w,h}]/[$sizx,$sizy]]}
-              repeat d if $> +slices. $> fi
+              repeat d==1?1:d*s if d==1 sh. else sh. {z=$>%d;[z,z,int($>/d)]} fi
                 line. $x0,$y0,$x1,$y1,0.9,0x33333333,0
                 line. $x0,$y0,$x1,$y1,0.9,0xCCCCCCCC,255
-                if $> j.. .,0,0,$> rm. fi
+                rm.
               done
             fi
           fi
@@ -2414,10 +2458,13 @@ _display2d :
       fi
 
       # Events related to window resizing.
-      if {*$idisp,r} # Window has been resized
-        w$idisp[] {*$idisp,d,e}
-        if $is_multiview repeat {img,d} w$>[] {*$idisp,w,h} done fi
-        if $nsizx>w#0" && "$nsizy>h#0 nposx,nposy,nsizx,nsizy={[0,0,w#0,h#0]} fi
+      if ${-isresized} # One of the display windows has been resized
+        repeat {img,d},w if {*$w,r}
+          w$w[] {*$w,d,e}
+          if $is_multiview repeat {img,d} w$>[] {*$w,w,h} done fi
+          if $nsizx>w#0" && "$nsizy>h#0 nposx,nposy,nsizx,nsizy={[0,0,w#0,h#0]} fi
+          break
+        fi done
         rmn baseview
       elif $is_CTRL" && "${"iskey D"}" && "{*$idisp,d}<{*$idisp,u}" && "{*$idisp,e}<{*$idisp,v} # Increase window size
         w$idisp[] {round([{*$idisp,w,h}]*1.25)}
@@ -2471,11 +2518,13 @@ _display2d :
       elif ${"iskey ARROWUP"} nposy-={$nsizy/($is_CTRL?4:16)} xzoom,yzoom= # Go up
       elif ${"iskey ARROWDOWN"} nposy+={$nsizy/($is_CTRL?4:16)} xzoom,yzoom= # Go down
       elif $is_CTRL" && "${"iskey O"} # Save copy
-        n=0 do filename gmic.gmz,$n n+=1 while isfile(['{/${}}']) o[0] ${}
+        n=0 do filename gmic.gmz,$n n+=1 while isfile(['{/${}}'])
+        if $is_multiview +slices[img] $idisp o. ${} rm. else o[img] ${} fi
         notification="Save Copy:\n"${}
         flushkey O
       elif $is_CTRL" && "${"iskey S"} # Save screenshot
-        n=0 do filename gmic.png,$n n+=1 while isfile(['{/${}}']) o[baseview] ${}
+        n=0 do filename gmic.png,$n n+=1 while isfile(['{/${}}'])
+        if $is_multiview +slices[baseview] $idisp o. ${} rm. else o[baseview] ${} fi
         notification="Save Screenshot:\n"${}
         flushkey S
       elif $is_CTRL" && "${"iskey SPACE"} # Center view
@@ -2559,8 +2608,8 @@ _display2d :
     else
       if $is_multiview repeat d w$>[] 0 done else w[] 0 fi
     fi
-  nm $nm uncommand iskey,flushkey,isvisible,idisp endl done
-  uncommand _d2d_format,rmn,iskey d[]
+  nm $nm uncommand iskey,flushkey,isvisible,isresized,idisp endl done
+  uncommand _d2d_format,rmn d[]
 
 #@cli d3d : eq. to 'display3d'. : (+)
 

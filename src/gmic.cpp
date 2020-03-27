@@ -12744,12 +12744,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         // Display images in display window.
-        wind = 0;
+        sep = '0';
         if (!is_get &&
             (!std::strcmp("window",command) ||
-             cimg_sscanf(command,"window%u%c",&wind,&end)==1 ||
-             cimg_sscanf(command,"w%u%c",&wind,&end)==1) &&
-            wind<10) {
+             cimg_sscanf(command,"window%c%c",&sep,&end)==1 ||
+             cimg_sscanf(command,"w%c%c",&sep,&end)==1) &&
+            sep>='0' && sep<='9') {
+          wind = (unsigned int)(sep - '0');
           gmic_substitute_args(false);
           int norm = -1, fullscreen = -1;
           float dimw = -1, dimh = -1, posx = cimg::type<float>::inf(), posy = cimg::type<float>::inf();
