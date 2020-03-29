@@ -2098,24 +2098,20 @@ compress_gmic :
 
 #@cli d0 : eq. to 'display0'.
 d0 :
-  _gmic_s="$?" v + _display0
+  _gmic_s="$?" v + _display2d 0,0
 
 #@cli display0
 #@cli : Display selected images without value normalization.
 #@cli : (eq. to 'd0').
 display0 :
-  _gmic_s="$?" v + _$0
-
-_display0 :
-  e[0--3] "Display image$?, without value normalization."
-  repeat $! l[$>] w ${"fitscreen [0]"},0 v - d v + endl done
+  _gmic_s="$?" v + _display2d 0,0
 
 #@cli d2d : eq. to 'display2d'.
 d2d :
-  _gmic_s="$?" v + _display2d 0
+  _gmic_s="$?" v + _display2d 0,1
 
 _d2d_core :
-  _gmic_s="$?" _d2d_core=1 v + _display2d $1
+  _gmic_s="$?" _d2d_core=1 v + _display2d $1,1
 
 #@cli display2d
 #@cli : Display selected 2d images in an interactive window.
@@ -2140,10 +2136,11 @@ _d2d_core :
 #@cli : - CTRL + X: Show/hide axes.
 #@cli : - CTRL + Z: Hold/release aspect ratio.
 display2d :
-  _gmic_s="$?" v + _$0 0
+  _gmic_s="$?" v + _$0 0,1
 
 # $1 = exit_on_single_click?, can be { 0=no | 1=yes }.
-_display2d :
+# $2 = default window normalization for display window #0.
+_display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
   e[0--3] "Start interactive display of 2d image"$_gmic_s"."
   m "_d2d_format :
        if $""#>=8 u {_([$""*])[0,4]:\\ }\\ ...\\ {_([$""*])[$""#-4,4]:\\ }
@@ -2163,7 +2160,7 @@ _display2d :
     is_moderate_ratio={0,D=[w,h];max(D)/min(D)<6}
     may_have_alpha={s==2||s>=4}
     alpha_mode,axes_mode,fullscreen_mode,ratio_mode={s==1||s==3},1,0,$is_moderate_ratio
-    normalization_mode={{*}?!!{*,n}:1}
+    normalization_mode={{*}?!!{*,n}:$2}
     posx,posy,sizx,sizy={0,[0,0,w,h]}
     is_bottom_text,wait_event,mx,my,omb=0,1,-1,-1,0
     xsel0,ysel0,xsel1,ysel1,notification=
@@ -2931,15 +2928,16 @@ display_parametric : check "${1=512}>0 && ${2=$1}>0 && ${4=0}>=0" skip ${3=3},${
 
 #@cli dp : eq. to 'display_parallel'.
 dp :
-  _gmic_s="$?" v + _display_parallel
+  _gmic_s="$?" v + _display_parallel 1
 
 #@cli display_parallel
 #@cli : Display each selected image in a separate interactive display window.
 #@cli : (eq. to 'dp').
 display_parallel :
-  _gmic_s="$?" v + _$0
+  _gmic_s="$?" v + _$0 1
 
-_display_parallel :
+# $1 = Normalization used for display window.
+_display_parallel : check ${1=0}>=0
   e[0--3] "Display image$? in parallel."
   print
   is_d2d_compatible={"res = l<=10; for (k = 0, k<l, ++k, res&=(w#k==w && h#k==h && d#k==1 && s#k==s))"}
@@ -2950,7 +2948,7 @@ _display_parallel :
       ('$nm':;)
     done
     store[-$N--1] _d2d_names
-    a z d2d s z
+    a z _display2d 0,$1 s z
     _d2d_names=
   else
     if $!<=1 v - d v + return fi
@@ -2961,28 +2959,13 @@ _display_parallel :
 
 #@cli dp0 : eq. to 'display_parallel0'.
 dp0 :
-  _gmic_s="$?" v + _display_parallel0
+  _gmic_s="$?" v + _display_parallel 0
 
 #@cli display_parallel0
 #@cli : Display each selected image in a separate interactive display window, without value normalization.
 #@cli : (eq. to 'dp0').
 display_parallel0 :
-  _gmic_s="$?" v + _$0
-
-_display_parallel0 :
-  e[0--3] "Display image$? in parallel, without value normalization."
-  print
-  if $!<=1 d0 return fi
-  $!,1,1,1,x ('{^}') rm..
-  l.
-    s -,{','} y x
-    i[0--2] ('d0[')
-    i[2--2:2] ('],')
-    (']')
-    a x com={t} rm
-  endl
-  m "__dp0 : parallel "$com __dp0 uncommand __dp0
-  d[]
+  _gmic_s="$?" v + _display_parallel 0
 
 #@cli display_polar : _width>32,_height>32,_outline_type,_fill_R,_fill_G,_fill_B,_theta_start,_theta_end,_xlabel,_ylabel
 #@cli : Render polar curve from selected image data.
