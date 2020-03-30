@@ -2166,7 +2166,7 @@ _display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
     xsel0,ysel0,xsel1,ysel1,notification=
     wnormalization0={*,n}
 
-    if $is_multiview
+    if $is_multiview" && "['$OSTYPE']!='darwin'
       if {d==2} if {*,u}/w>={*,v}/h wsiz0={r={*,u}*0.48;round([r,r*h/w])} else wsiz0={r={*,v}*0.40;round([r*w/h,r])} fi
       elif {d<=4} wsiz0=${fitscreen\ .,128,45%}
       else wsiz0=${fitscreen\ .,128,30%}
@@ -2196,37 +2196,39 @@ _display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
         "idisp : u {argmax("$com_idisp")}"
 
       # Auto-arrange display window layout in multi-view mode.
-      ww,wh={[$wsiz0]+[8,40]}
-      if d==2
-        if {*,u}/$ww>{*,v}/$wh # Horizontal alignment
-          ox,oy={round([max(0,{*,u}-2*$ww),max(0,{*,v}-$wh)]/2)}
+      if ['$OSTYPE']!='darwin'
+        ww,wh={[$wsiz0]+[8,40]}
+        if d==2
+          if {*,u}/$ww>{*,v}/$wh # Horizontal alignment
+            ox,oy={round([max(0,{*,u}-2*$ww),max(0,{*,v}-$wh)]/2)}
+            w0[] -1,-1,-1,-1,$ox,$oy
+            w1[] -1,-1,-1,-1,{$ox+$ww},$oy
+          else # Vertical alignment
+            ox,oy={round([{*,u}-$ww,{*,v}-2*$wh]/2)}
+            w0[] -1,-1,-1,-1,$ox,$oy
+            w1[] -1,-1,-1,-1,$ox,{$oy+$wh}
+          fi
+        elif d<=4
+          ox,oy={round([max(0,{*,u}-2*$ww),max(0,{*,v}-2*$wh)]/2)}
+          ww,wh+=$ox,$oy
           w0[] -1,-1,-1,-1,$ox,$oy
-          w1[] -1,-1,-1,-1,{$ox+$ww},$oy
-        else # Vertical alignment
-          ox,oy={round([{*,u}-$ww,{*,v}-2*$wh]/2)}
+          w1[] -1,-1,-1,-1,$ww,$oy
+          w2[] -1,-1,-1,-1,$ox,$wh
+          if d==4 w3[] -1,-1,-1,-1,$ww,$wh fi
+        else
+          ox,oy={round([max(0,{*,u}-3*$ww),max(0,{*,v}-(d>6?3:2)*$wh)]/2)}
+          ww2,wh2={2*[$ww,$wh]+[$ox,$oy]}
+          ww,wh+=$ox,$oy
           w0[] -1,-1,-1,-1,$ox,$oy
-          w1[] -1,-1,-1,-1,$ox,{$oy+$wh}
+          w1[] -1,-1,-1,-1,$ww,$oy
+          w2[] -1,-1,-1,-1,$ww2,$oy
+          w3[] -1,-1,-1,-1,$ox,$wh
+          w4[] -1,-1,-1,-1,$ww,$wh
+          if d>5 w5[] -1,-1,-1,-1,$ww2,$wh fi
+          if d>6 w6[] -1,-1,-1,-1,$ox,$wh2 fi
+          if d>7 w7[] -1,-1,-1,-1,$ww,$wh2 fi
+          if d>8 w8[] -1,-1,-1,-1,$ww2,$wh2 fi
         fi
-      elif d<=4
-        ox,oy={round([max(0,{*,u}-2*$ww),max(0,{*,v}-2*$wh)]/2)}
-        ww,wh+=$ox,$oy
-        w0[] -1,-1,-1,-1,$ox,$oy
-        w1[] -1,-1,-1,-1,$ww,$oy
-        w2[] -1,-1,-1,-1,$ox,$wh
-        if d==4 w3[] -1,-1,-1,-1,$ww,$wh fi
-      else
-        ox,oy={round([max(0,{*,u}-3*$ww),max(0,{*,v}-(d>6?3:2)*$wh)]/2)}
-        ww2,wh2={2*[$ww,$wh]+[$ox,$oy]}
-        ww,wh+=$ox,$oy
-        w0[] -1,-1,-1,-1,$ox,$oy
-        w1[] -1,-1,-1,-1,$ww,$oy
-        w2[] -1,-1,-1,-1,$ww2,$oy
-        w3[] -1,-1,-1,-1,$ox,$wh
-        w4[] -1,-1,-1,-1,$ww,$wh
-        if d>5 w5[] -1,-1,-1,-1,$ww2,$wh fi
-        if d>6 w6[] -1,-1,-1,-1,$ox,$wh2 fi
-        if d>7 w7[] -1,-1,-1,-1,$ww,$wh2 fi
-        if d>8 w8[] -1,-1,-1,-1,$ww2,$wh2 fi
       fi
 
     else
