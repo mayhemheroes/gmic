@@ -2166,7 +2166,7 @@ _display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
     xsel0,ysel0,xsel1,ysel1,notification=
     wnormalization0={*,n}
 
-    if $is_multiview" && "!${-is_mac}
+    if $is_multiview" && "!${-is_macosx}
       if {d==2} if {*,u}/w>={*,v}/h wsiz0={r={*,u}*0.48;round([r,r*h/w])} else wsiz0={r={*,v}*0.40;round([r*w/h,r])} fi
       elif {d<=4} wsiz0=${fitscreen\ .,128,45%}
       else wsiz0=${fitscreen\ .,128,30%}
@@ -2196,7 +2196,7 @@ _display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
         "idisp : u {argmax("$com_idisp")}"
 
       # Auto-arrange display window layout in multi-view mode.
-      if !${-is_mac}
+      if !${-is_macosx}
         ww,wh={[$wsiz0]+[8,40]}
         if d==2
           if {*,u}/$ww>{*,v}/$wh # Horizontal alignment
@@ -23201,10 +23201,18 @@ is_videofilename : skip "${1=}"
     ext=='vob' || ext=='wmv' || ext=='xvid' || ext=='mpeg'"}
   rm.
 
-#@cli is_mac
-#@cli : Return 1 if current computer OS is Darwin (Mac), 0 otherwise.
-is_mac :
-  u {same(['$OSTYPE'],'darwin',6)}
+#@cli is_macosx
+#@cli : Return 1 if current computer OS is Darwin (MacOSX), 0 otherwise.
+is_macosx :
+  if !narg($_is_macosx) l[]
+    file=${-path_tmp}gmic_uname
+    x "uname >"$file
+    it $file
+    _is_macosx={same(crop(),'Darwin',6,0)}
+    rm
+  onfail _is_macosx=0 rm
+  endl fi
+  u $_is_macosx
 
 #@cli is_windows
 #@cli : Return 1 if current computer OS is Windows, 0 otherwise.
