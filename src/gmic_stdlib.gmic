@@ -221,15 +221,15 @@ h :
 #@cli : (eq. to 'h').
 help : skip ${1=""},${2=1}
   if narg("$1")" && "isfile(['{/$_path_user}'])
-    l[] it $_path_user onfail endl
+    l[] it[] $_path_user onfail endl
   fi
   if isfile(['{/$_path_rc/update$_version.gmic}'])
     l[] cimgz:$_path_rc/update$_version.gmic
-    onfail l[] it $_path_rc/update$_version.gmic onfail endl
+    onfail l[] it[] $_path_rc/update$_version.gmic onfail endl
     endl
   fi
   if narg("$1")" && "narg($_path_commands) l[]
-    $_path_commands repeat $! l[$>] it {n} k. onfail rm 0 endl done onfail
+    $_path_commands repeat $! l[$>] it[] {n} k. onfail rm 0 endl done onfail
   endl fi
   if !$! return fi
   y a y
@@ -4085,7 +4085,7 @@ function1d : check "${1=1}>=0 && $1<=1" skip ${2=0},${3=0}
 input_cube : skip ${2=1}
   e[^-1] "Input CLUT from file '$1'"
   l[]
-    it "$1" f "i<_' ' && i!=10?_' ':i" s -,10
+    it[] "$1" f "i<_' ' && i!=10?_' ':i" s -,10
     i[0] 0
     range={"
       ref(vector128(),line);
@@ -4189,7 +4189,7 @@ _input_glob :
 input_gpl :
   e[^-1] "Input .gpl palette file '$*'."
   l[]
-    it "$*" discard 13 replace 9,32 s -,10
+    it[] "$*" discard 13 replace 9,32 s -,10
     colors=0
     repeat $! l[$>]
       s -,32
@@ -4245,7 +4245,7 @@ output_cube :
    if w*h*d!=$l^3 error "Command '$0': CLUT '"{n}"' has invalid dimensions "({w},{h},{d},{s}). fi
    r $l,$l,$l,3,-1 permute cxyz / 255
    if $N>1 fn=${"filename \"$1\",$>"} else fn="$1" fi
-   o dlm:$fn rm it $fn replace {','},32
+   o dlm:$fn rm it[] $fn replace {','},32
    0 nm. $fn basename={b} rm.
    header="\# Created by: G'MIC (https://gmic.eu)\n"\
           "TITLE \""$basename"\"\n\n"\
@@ -5218,7 +5218,7 @@ update_gallery_html : check "isbool(${1=0})"
        landscape,leaf,leno,lion,mandrill,monalisa,parrots,pencils,rooster,rose,square,teddy,tiger,wall,waterfall,zelda
 
   # Generate HTML pages.
-  it $HOME/work/src/gmic/src/gmic_stdlib.gmic
+  it[] $HOME/work/src/gmic/src/gmic_stdlib.gmic
   merge_multiline_comments. s -,10 append_newline[^-1] a y
   nb_cols=3
 
@@ -5428,7 +5428,7 @@ update_gallery_html : check "isbool(${1=0})"
             if $is_codesample
                html_codesample="\n<div id=\"dialog"$nex"\" title=\""samples/$basename_codesample"\">"\
                                "\n<font size=\"-1\"><pre>\n"
-               it $url_codesample html_codesample=${html_codesample}{t} rm.
+               it[] $url_codesample html_codesample=${html_codesample}{t} rm.
                html_codesample=${html_codesample}"\n</pre></font></div>\n"\
                                "<br/><script>$( function() { $( \"#dialog"$nex"\" )."\
                                "dialog({ autoOpen: false, width:600 }); } );</script>\n
@@ -5578,7 +5578,7 @@ update_download_version : check "
     ver = ['${1=undefined}'];
     size(ver)==5 && is_digit(ver[0]) && ver[1]==_'.' && is_digit(ver[2]) && ver[3]==_'.' && is_digit(ver[4])"
   e[^-1] "Replace version number on G'MIC download page to '$1'."
-  rm filename=$HOME/work/src/gmic/html/download.shtml it $filename
+  rm filename=$HOME/work/src/gmic/html/download.shtml it[] $filename
   eval "
     is_digit(c) = (c>=_'0' && c<=_'9');
     ver = ['$1'];
@@ -5645,7 +5645,7 @@ update_download_version : check "
 parse_gui : skip "${1=*},${2=print}"
   e[^-1] "Parse '#@gui' filters '$1' and output in '$2' mode."
   use_vt100
-  if !$! l[] it ${_path_rc}update$_version.gmic onfail endl fi
+  if !$! l[] it[] ${_path_rc}update$_version.gmic onfail endl fi
   if !$! return fi
   y a y merge_multiline_comments
 
@@ -6512,7 +6512,7 @@ upload_filters :
   files.=,${}
   repeat narg($files) l[]
     file=${"arg 1+$>,"$files}
-    it $file
+    it[] $file
     basename $file basename=${}
     if ['$basename']=='sylvie_alexandre.gmic'
       s +,{'"#@gui <b>"'} i[1--2:2] ('"#@gui ________<b>Testing<b>\n#@gui <i>Samj</i>\n"') y a y
@@ -6862,7 +6862,7 @@ _update_tutorial_html :
   # Get web page.
   e[] "    > Retrieve page '"$url"'."
   x "wget -q "$url" -O __tmp.html"
-  it __tmp.html
+  it[] __tmp.html
 
   # Discard or replace undesired text.
   discard 13
@@ -7042,7 +7042,7 @@ _update_header_html : check "${2=0}>=0 && isbool(${3=0})"
   if !$2 return fi
   filename=$1
   l[]
-    it $filename
+    it[] $filename
     s +,{'\n'}
     repeat $! if {$>,h>=64} l[$>]
       +autocrop {'" "'} autocrop. {'\t'}
@@ -7813,7 +7813,7 @@ compress_clut : check "${1=1.25}>0 && ${2=0.75}>0 && isint(${3=2048}) && $3>8 &&
 # Batch compress CLUT files.
 compress_cluts : check "${2=1.25}>0 && ${3=0.75}>0 && isint(${4=2047}) && $4>8"
   rm
-  if isfile(['{/"$1"}']) it "$1" s -,{'\n'}
+  if isfile(['{/"$1"}']) it[] "$1" s -,{'\n'}
   else files "$1" ('${}') s -,{','}
   fi
   rv
@@ -22557,7 +22557,7 @@ nn_unserialize :
 nn_input :
   e[^-1] "[NN] Input neural network from file '$1'."
   l[]
-    it "$1" nn_unserialize.
+    it[] "$1" nn_unserialize.
   endl
 
 #------------------------------
@@ -22786,7 +22786,7 @@ _bin2dec :
 # Command to check what lines of G'MIC sources are larger than 120 columns.
 _check120 :
   use_vt100
-  it "$1" s +,10
+  it[] "$1" s +,10
   1,$!,1,2,">begin(line = 1); is_lines=i[#y,0]==10; line+=is_lines?h#y:0; [is_lines || h#y<=120?-1:y,line]"
   lines={{@-1}-1} f. "I = I; if(I[0]<0,I[1]=-1); I"
   discard. -1
@@ -23207,7 +23207,7 @@ is_macosx :
   if !narg($_is_macosx) l[]
     file=${-path_tmp}gmic_uname
     x "uname >"$file
-    it $file
+    it[] $file
     _is_macosx={same(crop(),'Darwin',6,0)}
     rm
   onfail _is_macosx=0 rm
@@ -23804,7 +23804,7 @@ remove_copymark :
 # $2 = number of latest months.
 render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2=5}
   l[]
-    it "$1" s -,{'\n'} rm[0]
+    it[] "$1" s -,{'\n'} rm[0]
 
     # Parse CSV data.
     eur2usd=1.12 # Change rate from EUR to USD
