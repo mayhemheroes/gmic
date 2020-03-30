@@ -221,15 +221,15 @@ h :
 #@cli : (eq. to 'h').
 help : skip ${1=""},${2=1}
   if narg("$1")" && "isfile(['{/$_path_user}'])
-    l[] it $_path_user onfail endl
+    l[] it[] $_path_user onfail endl
   fi
   if isfile(['{/$_path_rc/update$_version.gmic}'])
     l[] cimgz:$_path_rc/update$_version.gmic
-    onfail l[] it $_path_rc/update$_version.gmic onfail endl
+    onfail l[] it[] $_path_rc/update$_version.gmic onfail endl
     endl
   fi
   if narg("$1")" && "narg($_path_commands) l[]
-    $_path_commands repeat $! l[$>] it {n} k. onfail rm 0 endl done onfail
+    $_path_commands repeat $! l[$>] it[] {n} k. onfail rm 0 endl done onfail
   endl fi
   if !$! return fi
   y a y
@@ -2098,24 +2098,20 @@ compress_gmic :
 
 #@cli d0 : eq. to 'display0'.
 d0 :
-  _gmic_s="$?" v + _display0
+  _gmic_s="$?" v + _display2d 0,0
 
 #@cli display0
 #@cli : Display selected images without value normalization.
 #@cli : (eq. to 'd0').
 display0 :
-  _gmic_s="$?" v + _$0
-
-_display0 :
-  e[0--3] "Display image$?, without value normalization."
-  repeat $! l[$>] w ${"fitscreen [0]"},0 v - d v + endl done
+  _gmic_s="$?" v + _display2d 0,0
 
 #@cli d2d : eq. to 'display2d'.
 d2d :
-  _gmic_s="$?" v + _display2d 0
+  _gmic_s="$?" v + _display2d 0,1
 
 _d2d_core :
-  _gmic_s="$?" _d2d_core=1 v + _display2d $1
+  _gmic_s="$?" _d2d_core=1 v + _display2d $1,1
 
 #@cli display2d
 #@cli : Display selected 2d images in an interactive window.
@@ -2140,10 +2136,11 @@ _d2d_core :
 #@cli : - CTRL + X: Show/hide axes.
 #@cli : - CTRL + Z: Hold/release aspect ratio.
 display2d :
-  _gmic_s="$?" v + _$0 0
+  _gmic_s="$?" v + _$0 0,1
 
 # $1 = exit_on_single_click?, can be { 0=no | 1=yes }.
-_display2d :
+# $2 = default window normalization for display window #0.
+_display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
   e[0--3] "Start interactive display of 2d image"$_gmic_s"."
   m "_d2d_format :
        if $""#>=8 u {_([$""*])[0,4]:\\ }\\ ...\\ {_([$""*])[$""#-4,4]:\\ }
@@ -2152,7 +2149,7 @@ _display2d :
   m "rmn : nmd $\"*\" rm[${}]"
 
   repeat $! l[$>]
-    if s=['{n}'];find(s,_'.',size(s)-1,-1)>0 nm={b}.{x} else nm={b} fi
+    ('{n}') if s=crop();find(s,_'.',size(s)-1,-1)>0 nm={-2,b}.{-2,x} else nm={-2,b} fi rm.
     nm img
 
     if !w v - d v + break fi
@@ -2163,13 +2160,13 @@ _display2d :
     is_moderate_ratio={0,D=[w,h];max(D)/min(D)<6}
     may_have_alpha={s==2||s>=4}
     alpha_mode,axes_mode,fullscreen_mode,ratio_mode={s==1||s==3},1,0,$is_moderate_ratio
-    normalization_mode={{*}?!!{*,n}:1}
+    normalization_mode={{*}?!!{*,n}:$2}
     posx,posy,sizx,sizy={0,[0,0,w,h]}
     is_bottom_text,wait_event,mx,my,omb=0,1,-1,-1,0
     xsel0,ysel0,xsel1,ysel1,notification=
     wnormalization0={*,n}
 
-    if $is_multiview
+    if $is_multiview" && "!${-is_macosx}
       if {d==2} if {*,u}/w>={*,v}/h wsiz0={r={*,u}*0.48;round([r,r*h/w])} else wsiz0={r={*,v}*0.40;round([r*w/h,r])} fi
       elif {d<=4} wsiz0=${fitscreen\ .,128,45%}
       else wsiz0=${fitscreen\ .,128,30%}
@@ -2199,37 +2196,39 @@ _display2d :
         "idisp : u {argmax("$com_idisp")}"
 
       # Auto-arrange display window layout in multi-view mode.
-      ww,wh={[$wsiz0]+[8,40]}
-      if d==2
-        if {*,u}/$ww>{*,v}/$wh # Horizontal alignment
-          ox,oy={round([max(0,{*,u}-2*$ww),max(0,{*,v}-$wh)]/2)}
+      if !${-is_macosx}
+        ww,wh={[$wsiz0]+[8,40]}
+        if d==2
+          if {*,u}/$ww>{*,v}/$wh # Horizontal alignment
+            ox,oy={round([max(0,{*,u}-2*$ww),max(0,{*,v}-$wh)]/2)}
+            w0[] -1,-1,-1,-1,$ox,$oy
+            w1[] -1,-1,-1,-1,{$ox+$ww},$oy
+          else # Vertical alignment
+            ox,oy={round([{*,u}-$ww,{*,v}-2*$wh]/2)}
+            w0[] -1,-1,-1,-1,$ox,$oy
+            w1[] -1,-1,-1,-1,$ox,{$oy+$wh}
+          fi
+        elif d<=4
+          ox,oy={round([max(0,{*,u}-2*$ww),max(0,{*,v}-2*$wh)]/2)}
+          ww,wh+=$ox,$oy
           w0[] -1,-1,-1,-1,$ox,$oy
-          w1[] -1,-1,-1,-1,{$ox+$ww},$oy
-        else # Vertical alignment
-          ox,oy={round([{*,u}-$ww,{*,v}-2*$wh]/2)}
+          w1[] -1,-1,-1,-1,$ww,$oy
+          w2[] -1,-1,-1,-1,$ox,$wh
+          if d==4 w3[] -1,-1,-1,-1,$ww,$wh fi
+        else
+          ox,oy={round([max(0,{*,u}-3*$ww),max(0,{*,v}-(d>6?3:2)*$wh)]/2)}
+          ww2,wh2={2*[$ww,$wh]+[$ox,$oy]}
+          ww,wh+=$ox,$oy
           w0[] -1,-1,-1,-1,$ox,$oy
-          w1[] -1,-1,-1,-1,$ox,{$oy+$wh}
+          w1[] -1,-1,-1,-1,$ww,$oy
+          w2[] -1,-1,-1,-1,$ww2,$oy
+          w3[] -1,-1,-1,-1,$ox,$wh
+          w4[] -1,-1,-1,-1,$ww,$wh
+          if d>5 w5[] -1,-1,-1,-1,$ww2,$wh fi
+          if d>6 w6[] -1,-1,-1,-1,$ox,$wh2 fi
+          if d>7 w7[] -1,-1,-1,-1,$ww,$wh2 fi
+          if d>8 w8[] -1,-1,-1,-1,$ww2,$wh2 fi
         fi
-      elif d<=4
-        ox,oy={round([max(0,{*,u}-2*$ww),max(0,{*,v}-2*$wh)]/2)}
-        ww,wh+=$ox,$oy
-        w0[] -1,-1,-1,-1,$ox,$oy
-        w1[] -1,-1,-1,-1,$ww,$oy
-        w2[] -1,-1,-1,-1,$ox,$wh
-        if d==4 w3[] -1,-1,-1,-1,$ww,$wh fi
-      else
-        ox,oy={round([max(0,{*,u}-3*$ww),max(0,{*,v}-(d>6?3:2)*$wh)]/2)}
-        ww2,wh2={2*[$ww,$wh]+[$ox,$oy]}
-        ww,wh+=$ox,$oy
-        w0[] -1,-1,-1,-1,$ox,$oy
-        w1[] -1,-1,-1,-1,$ww,$oy
-        w2[] -1,-1,-1,-1,$ww2,$oy
-        w3[] -1,-1,-1,-1,$ox,$wh
-        w4[] -1,-1,-1,-1,$ww,$wh
-        if d>5 w5[] -1,-1,-1,-1,$ww2,$wh fi
-        if d>6 w6[] -1,-1,-1,-1,$ox,$wh2 fi
-        if d>7 w7[] -1,-1,-1,-1,$ww,$wh2 fi
-        if d>8 w8[] -1,-1,-1,-1,$ww2,$wh2 fi
       fi
 
     else
@@ -2931,15 +2930,16 @@ display_parametric : check "${1=512}>0 && ${2=$1}>0 && ${4=0}>=0" skip ${3=3},${
 
 #@cli dp : eq. to 'display_parallel'.
 dp :
-  _gmic_s="$?" v + _display_parallel
+  _gmic_s="$?" v + _display_parallel 1
 
 #@cli display_parallel
 #@cli : Display each selected image in a separate interactive display window.
 #@cli : (eq. to 'dp').
 display_parallel :
-  _gmic_s="$?" v + _$0
+  _gmic_s="$?" v + _$0 1
 
-_display_parallel :
+# $1 = Normalization used for display window.
+_display_parallel : check ${1=0}>=0
   e[0--3] "Display image$? in parallel."
   print
   is_d2d_compatible={"res = l<=10; for (k = 0, k<l, ++k, res&=(w#k==w && h#k==h && d#k==1 && s#k==s))"}
@@ -2950,7 +2950,7 @@ _display_parallel :
       ('$nm':;)
     done
     store[-$N--1] _d2d_names
-    a z d2d s z
+    a z _display2d 0,$1 s z
     _d2d_names=
   else
     if $!<=1 v - d v + return fi
@@ -2961,28 +2961,13 @@ _display_parallel :
 
 #@cli dp0 : eq. to 'display_parallel0'.
 dp0 :
-  _gmic_s="$?" v + _display_parallel0
+  _gmic_s="$?" v + _display_parallel 0
 
 #@cli display_parallel0
 #@cli : Display each selected image in a separate interactive display window, without value normalization.
 #@cli : (eq. to 'dp0').
 display_parallel0 :
-  _gmic_s="$?" v + _$0
-
-_display_parallel0 :
-  e[0--3] "Display image$? in parallel, without value normalization."
-  print
-  if $!<=1 d0 return fi
-  $!,1,1,1,x ('{^}') rm..
-  l.
-    s -,{','} y x
-    i[0--2] ('d0[')
-    i[2--2:2] ('],')
-    (']')
-    a x com={t} rm
-  endl
-  m "__dp0 : parallel "$com __dp0 uncommand __dp0
-  d[]
+  _gmic_s="$?" v + _display_parallel 0
 
 #@cli display_polar : _width>32,_height>32,_outline_type,_fill_R,_fill_G,_fill_B,_theta_start,_theta_end,_xlabel,_ylabel
 #@cli : Render polar curve from selected image data.
@@ -4100,7 +4085,7 @@ function1d : check "${1=1}>=0 && $1<=1" skip ${2=0},${3=0}
 input_cube : skip ${2=1}
   e[^-1] "Input CLUT from file '$1'"
   l[]
-    it "$1" f "i<_' ' && i!=10?_' ':i" s -,10
+    it[] "$1" f "i<_' ' && i!=10?_' ':i" s -,10
     i[0] 0
     range={"
       ref(vector128(),line);
@@ -4204,7 +4189,7 @@ _input_glob :
 input_gpl :
   e[^-1] "Input .gpl palette file '$*'."
   l[]
-    it "$*" discard 13 replace 9,32 s -,10
+    it[] "$*" discard 13 replace 9,32 s -,10
     colors=0
     repeat $! l[$>]
       s -,32
@@ -4260,7 +4245,7 @@ output_cube :
    if w*h*d!=$l^3 error "Command '$0': CLUT '"{n}"' has invalid dimensions "({w},{h},{d},{s}). fi
    r $l,$l,$l,3,-1 permute cxyz / 255
    if $N>1 fn=${"filename \"$1\",$>"} else fn="$1" fi
-   o dlm:$fn rm it $fn replace {','},32
+   o dlm:$fn rm it[] $fn replace {','},32
    0 nm. $fn basename={b} rm.
    header="\# Created by: G'MIC (https://gmic.eu)\n"\
           "TITLE \""$basename"\"\n\n"\
@@ -5233,7 +5218,7 @@ update_gallery_html : check "isbool(${1=0})"
        landscape,leaf,leno,lion,mandrill,monalisa,parrots,pencils,rooster,rose,square,teddy,tiger,wall,waterfall,zelda
 
   # Generate HTML pages.
-  it $HOME/work/src/gmic/src/gmic_stdlib.gmic
+  it[] $HOME/work/src/gmic/src/gmic_stdlib.gmic
   merge_multiline_comments. s -,10 append_newline[^-1] a y
   nb_cols=3
 
@@ -5443,7 +5428,7 @@ update_gallery_html : check "isbool(${1=0})"
             if $is_codesample
                html_codesample="\n<div id=\"dialog"$nex"\" title=\""samples/$basename_codesample"\">"\
                                "\n<font size=\"-1\"><pre>\n"
-               it $url_codesample html_codesample=${html_codesample}{t} rm.
+               it[] $url_codesample html_codesample=${html_codesample}{t} rm.
                html_codesample=${html_codesample}"\n</pre></font></div>\n"\
                                "<br/><script>$( function() { $( \"#dialog"$nex"\" )."\
                                "dialog({ autoOpen: false, width:600 }); } );</script>\n
@@ -5593,7 +5578,7 @@ update_download_version : check "
     ver = ['${1=undefined}'];
     size(ver)==5 && is_digit(ver[0]) && ver[1]==_'.' && is_digit(ver[2]) && ver[3]==_'.' && is_digit(ver[4])"
   e[^-1] "Replace version number on G'MIC download page to '$1'."
-  rm filename=$HOME/work/src/gmic/html/download.shtml it $filename
+  rm filename=$HOME/work/src/gmic/html/download.shtml it[] $filename
   eval "
     is_digit(c) = (c>=_'0' && c<=_'9');
     ver = ['$1'];
@@ -5660,7 +5645,7 @@ update_download_version : check "
 parse_gui : skip "${1=*},${2=print}"
   e[^-1] "Parse '#@gui' filters '$1' and output in '$2' mode."
   use_vt100
-  if !$! l[] it ${_path_rc}update$_version.gmic onfail endl fi
+  if !$! l[] it[] ${_path_rc}update$_version.gmic onfail endl fi
   if !$! return fi
   y a y merge_multiline_comments
 
@@ -6527,7 +6512,7 @@ upload_filters :
   files.=,${}
   repeat narg($files) l[]
     file=${"arg 1+$>,"$files}
-    it $file
+    it[] $file
     basename $file basename=${}
     if ['$basename']=='sylvie_alexandre.gmic'
       s +,{'"#@gui <b>"'} i[1--2:2] ('"#@gui ________<b>Testing<b>\n#@gui <i>Samj</i>\n"') y a y
@@ -6553,7 +6538,7 @@ upload_filters :
     replace_str "<i>David Tschumperlé</i>","<i><a href=\""$url"\">David Tschumperlé</a></i>"
     o cimgz:/tmp/update$_version.gmic,uchar
 
-    (290,$_version)
+    (290,291,$_version)
     repeat w
       v={i[$>]}
       _upload[] ${_path_rc}update$_version.gmic,plain_update$v.gmic,1
@@ -6877,7 +6862,7 @@ _update_tutorial_html :
   # Get web page.
   e[] "    > Retrieve page '"$url"'."
   x "wget -q "$url" -O __tmp.html"
-  it __tmp.html
+  it[] __tmp.html
 
   # Discard or replace undesired text.
   discard 13
@@ -7057,7 +7042,7 @@ _update_header_html : check "${2=0}>=0 && isbool(${3=0})"
   if !$2 return fi
   filename=$1
   l[]
-    it $filename
+    it[] $filename
     s +,{'\n'}
     repeat $! if {$>,h>=64} l[$>]
       +autocrop {'" "'} autocrop. {'\t'}
@@ -7828,7 +7813,7 @@ compress_clut : check "${1=1.25}>0 && ${2=0.75}>0 && isint(${3=2048}) && $3>8 &&
 # Batch compress CLUT files.
 compress_cluts : check "${2=1.25}>0 && ${3=0.75}>0 && isint(${4=2047}) && $4>8"
   rm
-  if isfile(['{/"$1"}']) it "$1" s -,{'\n'}
+  if isfile(['{/"$1"}']) it[] "$1" s -,{'\n'}
   else files "$1" ('${}') s -,{','}
   fi
   rv
@@ -22572,7 +22557,7 @@ nn_unserialize :
 nn_input :
   e[^-1] "[NN] Input neural network from file '$1'."
   l[]
-    it "$1" nn_unserialize.
+    it[] "$1" nn_unserialize.
   endl
 
 #------------------------------
@@ -22801,7 +22786,7 @@ _bin2dec :
 # Command to check what lines of G'MIC sources are larger than 120 columns.
 _check120 :
   use_vt100
-  it "$1" s +,10
+  it[] "$1" s +,10
   1,$!,1,2,">begin(line = 1); is_lines=i[#y,0]==10; line+=is_lines?h#y:0; [is_lines || h#y<=120?-1:y,line]"
   lines={{@-1}-1} f. "I = I; if(I[0]<0,I[1]=-1); I"
   discard. -1
@@ -23215,6 +23200,19 @@ is_videofilename : skip "${1=}"
     ext=='mpe' || ext=='movie' || ext=='ogm' || ext=='ogg' || ext=='ogv' || ext=='qt' || ext=='rm' ||
     ext=='vob' || ext=='wmv' || ext=='xvid' || ext=='mpeg'"}
   rm.
+
+#@cli is_macosx
+#@cli : Return 1 if current computer OS is Darwin (MacOSX), 0 otherwise.
+is_macosx :
+  if !narg($_is_macosx) l[]
+    file=${-path_tmp}gmic_uname
+    x "uname >"$file
+    it[] $file
+    _is_macosx={same(crop(),'Darwin',6,0)}
+    rm
+  onfail _is_macosx=0 rm
+  endl fi
+  u $_is_macosx
 
 #@cli is_windows
 #@cli : Return 1 if current computer OS is Windows, 0 otherwise.
@@ -23806,7 +23804,7 @@ remove_copymark :
 # $2 = number of latest months.
 render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2=5}
   l[]
-    it "$1" s -,{'\n'} rm[0]
+    it[] "$1" s -,{'\n'} rm[0]
 
     # Parse CSV data.
     eur2usd=1.12 # Change rate from EUR to USD
@@ -30407,10 +30405,10 @@ fx_gmicky_preview :
 #@gui : - <b>2019/04/29</b> : version <i>2.6.0</i>.\n
 #@gui : - <b>2019/08/14</b> : version <i>2.7.0</i>.\n
 #@gui : - <span foreground="purple"><b>2020/03/28</b> : version <i>2.9.0</i> (Current stable).</span>\n
-##@gui : - <b>2020/02/13</b> : version <i>2.9.0</i> (Current pre-release).\n
+#@gui : - <b>2020/03/30</b> : version <i>2.9.1</i> (Current pre-release).\n
 #@gui : "}
 #@gui : sep = separator()
-##@gui : url = link{"View changelog to upcoming major version (2.9)","https://discuss.pixls.us/t/on-the-road-to-3-0"}
+#@gui : url = link{"View changelog to upcoming major version (3.0)","https://discuss.pixls.us/t/on-the-road-to-3-0"}
 #@gui : url = link{"View latest minor changelog (2.9)","https://discuss.pixls.us/t/release-of-gmic-2-9"}
 #@gui : url = link{"View latest major changelog (2.0)","https://discuss.pixls.us/t/release-of-gmic-2-0-0"}
 
@@ -34196,7 +34194,7 @@ fx_color_presets :
         if $strength<100 [$>] +map_clut. [$N] j.. .,0,0,0,0,{$strength%} rm. else +map_clut[$>] [$N] fi
         adjust_colors. $brightness,$contrast,$gamma,$hue,$saturation,0,255
         if $normalize==2" || "$normalize==3 l. split_opacity n[0] 0,255 a c endl fi # Post-normalization
-        strcapitalize $clut_name clut_name={}
+        strcapitalize $clut_name clut_name=${}
         to. $clut_name,0.01~,0.01~,7.5%,1
       done
       rm[$N]
@@ -35869,7 +35867,7 @@ fx_simulate_film :
         if $strength<100 [$>] +map_clut. [$N] j.. .,0,0,0,0,{$strength%} rm. else +map_clut[$>] [$N] fi
         adjust_colors. $brightness,$contrast,$gamma,$hue,$saturation,0,255
         if $normalize==2" || "$normalize==3 l. split_opacity n[0] 0,255 a c endl fi # Post-normalization
-        strcapitalize $clut_name clut_name={}
+        strcapitalize $clut_name clut_name=${}
         to. $clut_name,1%,1%,7.5%,2,0.5
       done
       rm[$N]
