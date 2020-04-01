@@ -6002,6 +6002,7 @@ parse_gui_update :
   e[] "  >> Generate output, in 'update' mode.\n"
   path=/
   N={$_nbfilters-1}
+  is_af={date([1,2])==[4,1]" && "(date(4)%2)} # April fool mode ?
   repeat $_nbfilters,f
     e[] "\r  >> "$_gmic_c[#$f/$N]$_gmic_n" "{`copy(vector48(_'" "'),['${_f${f}_path}${_f${f}_name}'])`}
 
@@ -6057,7 +6058,11 @@ parse_gui_update :
       # Build list of arguments.
       args= c=
       if $is_choice # Capitalize arguments of choice()
-        repeat ${_f${f}_p${p}_nbargs},a strcapitalize ${_f${f}_p${p}_a${a}} args.=$c${} c=, done
+        repeat ${_f${f}_p${p}_nbargs},a
+          if $is_af straprilfool ${_f${f}_p${p}_a${a}}
+          else strcapitalize ${_f${f}_p${p}_a${a}}
+          fi
+        args.=$c${} c=, done
       elif $is_color # Force HTML color code for color()
         if inrange(${_f${f}_p${p}_nbargs},3,4)" && "\
            inrange(${_f${f}_p${p}_a0},0,255)" && "\
@@ -6074,7 +6079,6 @@ parse_gui_update :
       else
         repeat ${_f${f}_p${p}_nbargs},a args.=$c${_f${f}_p${p}_a${a}} c=, done
       fi
-
       sep1,sep2={`"
         s = ['"$args"'];
         size(s)?(
@@ -6083,7 +6087,6 @@ parse_gui_update :
           [_'[',_',',_']']
         ):[_'(',_',',_')'];
       "`}
-
       if s=['${_f${f}_p${p}_type}'];"s=='link' || s=='note' || s=='separator' || s=='value'" name=_
       else strcapitalize ${_f${f}_p${p}_name} name=${}
       fi
@@ -6120,6 +6123,23 @@ parse_gui_update :
     "# (End of G\47MIC update file)"')
   y a y
   e[] "\r  >> "${_gmic_g}{`copy(vector64(_'" "'),'"Output done!"')`}$_gmic_n
+
+# April Fool version!
+straprilfool : skip "${1=}"
+  if ['"$1"']==0 u "" return fi
+  l[] ('{/"$1"}')
+    f "(i<=_' ' || i==_'_') && i!=_'\n'?_' ':i" # Replace blank characters and underscores
+    f "x%2?lowercase(i):uppercase(i)"
+    f "c = lowercase(i);
+       c==_'o'?_'0':
+       c==_'i'?_'1':
+       c==_'e'?_'3':
+       c==_'a'?_'4':
+       c==_'s'?_'5':
+       c==_'t'?_'7':
+       c==_'b'?_'8':
+       i"
+  u {t} rm endl
 
 #
 # Output mode 'json'.
@@ -6501,10 +6521,14 @@ _upload_filters_move :
 
 upload_filters :
   e[^-1] "Upload filter definition file on G'MIC server.\n"
+  rm
 
   # Be sure to get the latest version of filters.
   x "cd "$HOME"/work/src/gmic && git pull"
   x "cd "$HOME"/work/src/gmic-community && git pull"
+
+  # Define the list of compatible versions.
+  (290,291,$_version) store. compat
 
   # Import filters from stdlib and community.
   files=$HOME/work/src/gmic/src/gmic_stdlib.gmic
@@ -6538,7 +6562,7 @@ upload_filters :
     replace_str "<i>David Tschumperlé</i>","<i><a href=\""$url"\">David Tschumperlé</a></i>"
     o cimgz:/tmp/update$_version.gmic,uchar
 
-    (290,291,$_version)
+    $compat
     repeat w
       v={i[$>]}
       _upload[] ${_path_rc}update$_version.gmic,plain_update$v.gmic,1
@@ -6547,12 +6571,29 @@ upload_filters :
     rm
   endl
 
+  # Create JSON file.
+  +l.
+    e[] "** Generate JSON filters file."
+    v + parse_gui. *,json v -
+
+    # Upload filter files on G'MIC server.
+    e[] "** Upload JSON filters."
+    ot ${_path_rc}/filters$_version.json
+
+    $compat
+    repeat w
+      v={i[$>]}
+      _upload[] ${_path_rc}/filters$_version.json,filters$v.json,1
+    done
+    rm
+  endl
+
   # Create filter listing.
   +l.
     e[] "** Generate filter listing."
     v + parse_gui. *,list v -
-    ot. /tmp/gui_filters.txt
-    rm.
+    ot /tmp/gui_filters.txt
+    rm
   endl
   rm
 
@@ -31485,7 +31526,7 @@ fx_cutout :
   repeat $! l[$>] split_opacity l[0]
     median {10-$3}
     quantize $1
-    +area. 0,1 med=${-med} rm.
+    +luminance. round. area. 0,1 med={ic} rm.
     inpaint_holes {$med*$2%},0,1
     if $4 n 0,255 fi
   endl a c endl done
