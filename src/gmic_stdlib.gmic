@@ -6521,10 +6521,14 @@ _upload_filters_move :
 
 upload_filters :
   e[^-1] "Upload filter definition file on G'MIC server.\n"
+  rm
 
   # Be sure to get the latest version of filters.
   x "cd "$HOME"/work/src/gmic && git pull"
   x "cd "$HOME"/work/src/gmic-community && git pull"
+
+  # Define the list of compatible versions.
+  (290,291,$_version) store. compat
 
   # Import filters from stdlib and community.
   files=$HOME/work/src/gmic/src/gmic_stdlib.gmic
@@ -6558,7 +6562,7 @@ upload_filters :
     replace_str "<i>David Tschumperlé</i>","<i><a href=\""$url"\">David Tschumperlé</a></i>"
     o cimgz:/tmp/update$_version.gmic,uchar
 
-    (290,291,$_version)
+    $compat
     repeat w
       v={i[$>]}
       _upload[] ${_path_rc}update$_version.gmic,plain_update$v.gmic,1
@@ -6567,12 +6571,30 @@ upload_filters :
     rm
   endl
 
+  # Create JSON file.
+  +l.
+    e[] "** Generate JSON filters file."
+    v + parse_gui. *,json v -
+
+    # Upload filter files on G'MIC server.
+    e[] "** Upload JSON filters."
+    ot ${_path_rc}/filters$_version.json
+    _upload[] /tmp/filters$_version.json,update$v.gmic,1
+
+    $compat
+    repeat w
+      v={i[$>]}
+      _upload[] ${_path_rc}/filters$_version.json,filters$v.json,1
+    done
+    rm
+  endl
+
   # Create filter listing.
   +l.
     e[] "** Generate filter listing."
     v + parse_gui. *,list v -
-    ot. /tmp/gui_filters.txt
-    rm.
+    ot /tmp/gui_filters.txt
+    rm
   endl
   rm
 
