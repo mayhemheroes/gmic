@@ -4801,7 +4801,7 @@ CImg<char> gmic::substitute_item(const char *const source,
                nvariables_sizes,0,inbraces,command_selection);
           if (images.size()!=psize)
             error(true,images,0,0,
-                  "Item substitution '${%s}': Expression incorrectly changes the number of images (from %u to %u).",
+                  "Item substitution '${\"%s\"}': Expression incorrectly changes the number of images (from %u to %u).",
                   cimg::strellipsize(inbraces,64,false),psize,images.size());
           for (unsigned int l = 0; l<nvariables_sizes._width - 2; ++l) if (variables[l]->size()>nvariables_sizes[l]) {
               variables_names[l]->remove(nvariables_sizes[l],variables[l]->size() - 1);
