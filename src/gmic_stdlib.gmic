@@ -6002,6 +6002,7 @@ parse_gui_update :
   e[] "  >> Generate output, in 'update' mode.\n"
   path=/
   N={$_nbfilters-1}
+  is_af={date([1,2])==[4,1]} # April fool mode ?
   repeat $_nbfilters,f
     e[] "\r  >> "$_gmic_c[#$f/$N]$_gmic_n" "{`copy(vector48(_'" "'),['${_f${f}_path}${_f${f}_name}'])`}
 
@@ -6057,7 +6058,11 @@ parse_gui_update :
       # Build list of arguments.
       args= c=
       if $is_choice # Capitalize arguments of choice()
-        repeat ${_f${f}_p${p}_nbargs},a strcapitalize ${_f${f}_p${p}_a${a}} args.=$c${} c=, done
+        repeat ${_f${f}_p${p}_nbargs},a
+          if $is_af straprilfool ${_f${f}_p${p}_a${a}}
+          else strcapitalize ${_f${f}_p${p}_a${a}}
+          fi
+        args.=$c${} c=, done
       elif $is_color # Force HTML color code for color()
         if inrange(${_f${f}_p${p}_nbargs},3,4)" && "\
            inrange(${_f${f}_p${p}_a0},0,255)" && "\
@@ -6074,7 +6079,6 @@ parse_gui_update :
       else
         repeat ${_f${f}_p${p}_nbargs},a args.=$c${_f${f}_p${p}_a${a}} c=, done
       fi
-
       sep1,sep2={`"
         s = ['"$args"'];
         size(s)?(
@@ -6083,7 +6087,6 @@ parse_gui_update :
           [_'[',_',',_']']
         ):[_'(',_',',_')'];
       "`}
-
       if s=['${_f${f}_p${p}_type}'];"s=='link' || s=='note' || s=='separator' || s=='value'" name=_
       else strcapitalize ${_f${f}_p${p}_name} name=${}
       fi
@@ -6120,6 +6123,23 @@ parse_gui_update :
     "# (End of G\47MIC update file)"')
   y a y
   e[] "\r  >> "${_gmic_g}{`copy(vector64(_'" "'),'"Output done!"')`}$_gmic_n
+
+# April Fool version!
+straprilfool : skip "${1=}"
+  if ['"$1"']==0 u "" return fi
+  l[] ('{/"$1"}')
+    f "(i<=_' ' || i==_'_') && i!=_'\n'?_' ':i" # Replace blank characters and underscores
+    f "x%2?lowercase(i):uppercase(i)"
+    f "c = lowercase(i);
+       c==_'o'?_'0':
+       c==_'i'?_'1':
+       c==_'e'?_'3':
+       c==_'a'?_'4':
+       c==_'s'?_'5':
+       c==_'t'?_'7':
+       c==_'b'?_'8':
+       i"
+  u {t} rm endl
 
 #
 # Output mode 'json'.
