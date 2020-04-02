@@ -2165,6 +2165,7 @@ _display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
     is_bottom_text,wait_event,mx,my,omb=0,1,-1,-1,0
     xsel0,ysel0,xsel1,ysel1,notification=
     wnormalization0={*,n}
+    fontsize,fontsize_notif=16,16
 
     if $is_multiview" && "!${-is_macos}
       if {d==2} if {*,u}/w>={*,v}/h wsiz0={r={*,u}*0.48;round([r,r*h/w])} else wsiz0={r={*,v}*0.40;round([r*w/h,r])} fi
@@ -2339,7 +2340,15 @@ _display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
         wait_event=0
         if !isnum($notification) # Create notification gfx
           rmn notification_gfx
-          0 t. {``$notification},0,0,20,1,255
+
+          do
+            0 t. {``$notification},0,0,$fontsize_notif,1,255
+            if {baseview,w#-1>0.75*w" && "$fontsize_notif>13} fontsize_notif={max(13,round($fontsize_notif/1.5))} rm.
+            elif {baseview,w#-1<0.5*w/2" && "$fontsize_notif<64} fontsize_notif={min(64,round($fontsize_notif*1.5))} rm.
+            else break
+            fi
+          while 1
+
           r. {[w+12,h+8]},1,1,0,0,0.5,0.5 rectangle. 0,0,100%,100%,1,0xFFFFFFFF,255 to_rgb.
           nm. notification_gfx
           notification=$|
@@ -2358,11 +2367,17 @@ _display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
 
           if narg($xsel0)" && "!$is_selection_a_point
             dselx,dsely={[$xsel1-$xsel0,$ysel1-$ysel0]}
-            0 t. " Box ( "{``{[min($xsel0,$xsel1),min($ysel0,$ysel1)]}}" ) - "\
-                 "( "{``{[max($xsel0,$xsel1),max($ysel0,$ysel1)]}}" ) \n"\
-                 " Size = ( "{``{abs([$dselx,$dsely]+1)}}" ), "\
-                 "Length = "{_norm($dselx,$dsely)}" \n"\
-                 " Angle = "{_atan2($dsely,$dselx)*180/pi}"\260 ",1,0,14,1,1
+            do
+              0 t. " Box ( "{``{[min($xsel0,$xsel1),min($ysel0,$ysel1)]}}" ) - "\
+                   "( "{``{[max($xsel0,$xsel1),max($ysel0,$ysel1)]}}" ) \n"\
+                   " Size = ( "{``{abs([$dselx,$dsely]+1)}}" ), "\
+                   "Length = "{_norm($dselx,$dsely)}" \n"\
+                   " Angle = "{_atan2($dsely,$dselx)*180/pi}"\260 ",1,0,$fontsize,1,1
+              if {baseview,w#-1>0.75*w" && "$fontsize>13} fontsize={max(13,round($fontsize/1.5))} rm.
+              elif {baseview,w#-1<0.5*w/2" && "$fontsize<64} fontsize={min(64,round($fontsize*1.5))} rm.
+              else break
+              fi
+            while 1
             n. 0,255 +dilate. 3 *. -1 n. 0,80 +[-2,-1] r. 100%,100%,..,..
             j.. .,0,$is_bottom_text~,0,0,0.85 rm.
           fi
@@ -2379,8 +2394,15 @@ _display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
                                  digit(P[1]>>4),digit(P[1]&15),\
                                  digit(P[2]>>4),digit(P[2]&15)]`}" "
                   else hexstr= fi
-                  0 t. " Point ( "$posmx","$posmy" ) = [ "${_d2d_format\ {img,_I($posmx,$posmy,$>)}}" ] "$hexstr,\
-                       1,0,14,1,1
+                  do
+                    0 t. " Point ( "$posmx","$posmy" ) = [ "${_d2d_format\ {img,_I($posmx,$posmy,$>)}}" ] "$hexstr,\
+                         1,0,$fontsize,1,1
+                    if {baseview,w#-1>0.75*w" && "$fontsize>13} fontsize={max(13,round($fontsize/1.5))} rm.
+                    elif {baseview,w#-1<0.5*w" && "$fontsize<64} fontsize={min(64,round($fontsize*1.5))} rm.
+                    else break
+                    fi
+                  while 1
+
                   n. 0,255 +dilate. 3 *. -1 n. 0,80 +[-2,-1] r. 100%,100%,1,..
                   j.. .,0,$is_bottom_text~,$>,0,0.85 rm.
                 done
