@@ -206,6 +206,8 @@ int main(int argc, char **argv) {
   commands_line.back() = 0;
   items.assign();
 
+  std::fprintf(stderr,"\nDEBUG : Command Line = '%s'\n",commands_line.data());
+
   // Launch G'MIC interpreter.
   try {
     CImgList<gmic_pixel_type> images;
