@@ -2165,7 +2165,7 @@ _display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
     is_bottom_text,wait_event,mx,my,omb=0,1,-1,-1,0
     xsel0,ysel0,xsel1,ysel1,notification=
     wnormalization0={*,n}
-    _fontsize,_fontsize_notif=16 fontsize,fontsize_notif=
+    fontsize,fontsize_notif=
 
     if $is_multiview" && "!${-is_macos}
       if {d==2} if {*,u}/w>={*,v}/h wsiz0={r={*,u}*0.48;round([r,r*h/w])} else wsiz0={r={*,v}*0.40;round([r*w/h,r])} fi
@@ -2340,15 +2340,16 @@ _display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
         wait_event=0
         if !isnum($notification) # Create notification gfx
           rmn notification_gfx
+          ofs,fs={narg($fontsize_notif)?0$fontsize_notif:16}
           do
-            0 t. {``$notification},0,0,{narg($fontsize_notif)?0$fontsize_notif:$_fontsize_notif},1,255
+            0 t. {``$notification},0,0,$fs,1,255
             if narg($fontsize_notif) break
-            elif {baseview,"w#-1>0.7*w && "$_fontsize_notif>13}
-              _fontsize_notif={max(13,round($_fontsize_notif/1.25))} rm.
-            elif {baseview,"w#-1<0.3*w && "$_fontsize_notif<64}
-              _fontsize_notif={min(64,round($_fontsize_notif*1.25))} rm.
+            elif {baseview,"(w#-1>0.7*w || h#-1>0.25*h) && "$fs>13" && "$ofs>=$fs}
+              ofs,fs=$fs,{max(13,round($fs/1.25))} rm.
+            elif {baseview,"w#-1<0.3*w && h#-1<0.25*h && "$fs<64" && "$ofs<=$fs}
+              ofs,fs=$fs,{min(64,round($fs*1.25))} rm.
             else
-              fontsize_notif=$_fontsize_notif break
+              fontsize_notif=$fs break
             fi
           while 1
 
@@ -2370,19 +2371,20 @@ _display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
 
           if narg($xsel0)" && "!$is_selection_a_point
             dselx,dsely={[$xsel1-$xsel0,$ysel1-$ysel0]}
+            ofs,fs={narg($fontsize)?0$fontsize:16}
             do
               0 t. " Box ( "{``{[min($xsel0,$xsel1),min($ysel0,$ysel1)]}}" ) - "\
                    "( "{``{[max($xsel0,$xsel1),max($ysel0,$ysel1)]}}" ) \n"\
                    " Size = ( "{``{abs([$dselx,$dsely]+1)}}" ), "\
                    "Length = "{_norm($dselx,$dsely)}" \n"\
-                   " Angle = "{_atan2($dsely,$dselx)*180/pi}"\260 ",1,0,{narg($fontsize)?0$fontsize:$_fontsize},1,1
+                   " Angle = "{_atan2($dsely,$dselx)*180/pi}"\260 ",1,0,$fs,1,1
               if narg($fontsize) break
-              elif {baseview,"w#-1>0.7*w && "$_fontsize>13}
-                _fontsize={max(13,round($_fontsize/1.25))} rm.
-              elif {baseview,"w#-1<0.3*w && "$_fontsize<64}
-                _fontsize={min(64,round($_fontsize*1.25))} rm.
+              elif {baseview,"(w#-1>0.7*w || h#-1>0.45*h) && "$fs>13" && "$ofs>=$fs}
+                ofs,fs=$fs,{max(13,round($fs/1.25))} rm.
+              elif {baseview,"w#-1<0.3*w && h#-1<0.45*h && "$fs<64" && "$ofs<=$fs}
+                ofs,fs=$fs,{min(64,round($fs*1.25))} rm.
               else
-                fontsize=$_fontsize break
+                fontsize=$fs break
               fi
             while 1
             n. 0,255 +dilate. 3 *. -1 n. 0,80 +[-2,-1] r. 100%,100%,..,..
@@ -2401,16 +2403,17 @@ _display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
                                  digit(P[1]>>4),digit(P[1]&15),\
                                  digit(P[2]>>4),digit(P[2]&15)]`}" "
                   else hexstr= fi
+                  ofs,fs={narg($fontsize)?0$fontsize:16}
                   do
                     0 t. " Point ( "$posmx","$posmy" ) = [ "${_d2d_format\ {img,_I($posmx,$posmy,$>)}}" ] "$hexstr,\
-                         1,0,{narg($fontsize)?0$fontsize:$_fontsize},1,1
+                         1,0,$fs,1,1
                     if narg($fontsize) break
-                    elif {baseview,"w#-1>0.7*w && "$_fontsize>13}
-                      _fontsize={max(13,round($_fontsize/1.25))} rm.
-                    elif {baseview,"w#-1<0.3*w && "$_fontsize<64}
-                      _fontsize={min(64,round($_fontsize*1.25))} rm.
+                    elif {baseview,"(w#-1>0.7*w || h#-1>0.15*h) && "$fs>13" && "$ofs>=$fs}
+                      _ofs,fs=$fs,{max(13,round($fs/1.25))} rm.
+                    elif {baseview,"w#-1<0.3*w && h#-1<0.15*h && "$fs<64" && "$ofs<=$fs}
+                      ofs,fs=$fs,{min(64,round($fs*1.25))} rm.
                     else
-                      fontsize=$_fontsize break
+                      fontsize=$fs break
                     fi
                   while 1
 
