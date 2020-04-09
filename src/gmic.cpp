@@ -15009,6 +15009,7 @@ export_gmic(gmic_pixel_type);
 export_gmic(gmic_pixel_type2);
 #endif
 template CImgList<char>::~CImgList();
+template CImgList<char>& CImgList<char>::assign(const unsigned int n);
 template bool gmic::search_sorted(const char *const str, const gmic_list<char>& list,
                                   const unsigned int length, unsigned int &out_ind);
 
