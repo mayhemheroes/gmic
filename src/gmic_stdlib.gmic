@@ -2165,6 +2165,7 @@ _display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
     is_bottom_text,wait_event,mx,my,omb=0,1,-1,-1,0
     xsel0,ysel0,xsel1,ysel1,notification=
     wnormalization0={*,n}
+    fontsize,fontsize_notif=
 
     if $is_multiview" && "!${-is_macos}
       if {d==2} if {*,u}/w>={*,v}/h wsiz0={r={*,u}*0.48;round([r,r*h/w])} else wsiz0={r={*,v}*0.40;round([r*w/h,r])} fi
@@ -2339,7 +2340,19 @@ _display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
         wait_event=0
         if !isnum($notification) # Create notification gfx
           rmn notification_gfx
-          0 t. {``$notification},0,0,20,1,255
+          ofs,fs={narg($fontsize_notif)?0$fontsize_notif:16}
+          do
+            0 t. {``$notification},0,0,$fs,1,255
+            if narg($fontsize_notif) break
+            elif {baseview,"(w#-1>0.7*w || h#-1>0.25*h) && "$fs>13" && "$ofs>=$fs}
+              ofs,fs=$fs,{max(13,round($fs/1.25))} rm.
+            elif {baseview,"w#-1<0.3*w && h#-1<0.25*h && "$fs<64" && "$ofs<=$fs}
+              ofs,fs=$fs,{min(64,round($fs*1.25))} rm.
+            else
+              fontsize_notif=$fs break
+            fi
+          while 1
+
           r. {[w+12,h+8]},1,1,0,0,0.5,0.5 rectangle. 0,0,100%,100%,1,0xFFFFFFFF,255 to_rgb.
           nm. notification_gfx
           notification=$|
@@ -2358,11 +2371,22 @@ _display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
 
           if narg($xsel0)" && "!$is_selection_a_point
             dselx,dsely={[$xsel1-$xsel0,$ysel1-$ysel0]}
-            0 t. " Box ( "{``{[min($xsel0,$xsel1),min($ysel0,$ysel1)]}}" ) - "\
-                 "( "{``{[max($xsel0,$xsel1),max($ysel0,$ysel1)]}}" ) \n"\
-                 " Size = ( "{``{abs([$dselx,$dsely]+1)}}" ), "\
-                 "Length = "{_norm($dselx,$dsely)}" \n"\
-                 " Angle = "{_atan2($dsely,$dselx)*180/pi}"\260 ",1,0,14,1,1
+            ofs,fs={narg($fontsize)?0$fontsize:16}
+            do
+              0 t. " Box ( "{``{[min($xsel0,$xsel1),min($ysel0,$ysel1)]}}" ) - "\
+                   "( "{``{[max($xsel0,$xsel1),max($ysel0,$ysel1)]}}" ) \n"\
+                   " Size = ( "{``{abs([$dselx,$dsely]+1)}}" ), "\
+                   "Length = "{_norm($dselx,$dsely)}" \n"\
+                   " Angle = "{_atan2($dsely,$dselx)*180/pi}"\260 ",1,0,$fs,1,1
+              if narg($fontsize) break
+              elif {baseview,"(w#-1>0.7*w || h#-1>0.45*h) && "$fs>13" && "$ofs>=$fs}
+                ofs,fs=$fs,{max(13,round($fs/1.25))} rm.
+              elif {baseview,"w#-1<0.3*w && h#-1<0.45*h && "$fs<64" && "$ofs<=$fs}
+                ofs,fs=$fs,{min(64,round($fs*1.25))} rm.
+              else
+                fontsize=$fs break
+              fi
+            while 1
             n. 0,255 +dilate. 3 *. -1 n. 0,80 +[-2,-1] r. 100%,100%,..,..
             j.. .,0,$is_bottom_text~,0,0,0.85 rm.
           fi
@@ -2379,8 +2403,20 @@ _display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
                                  digit(P[1]>>4),digit(P[1]&15),\
                                  digit(P[2]>>4),digit(P[2]&15)]`}" "
                   else hexstr= fi
-                  0 t. " Point ( "$posmx","$posmy" ) = [ "${_d2d_format\ {img,_I($posmx,$posmy,$>)}}" ] "$hexstr,\
-                       1,0,14,1,1
+                  ofs,fs={narg($fontsize)?0$fontsize:16}
+                  do
+                    0 t. " Point ( "$posmx","$posmy" ) = [ "${_d2d_format\ {img,_I($posmx,$posmy,$>)}}" ] "$hexstr,\
+                         1,0,$fs,1,1
+                    if narg($fontsize) break
+                    elif {baseview,"(w#-1>0.7*w || h#-1>0.15*h) && "$fs>13" && "$ofs>=$fs}
+                      _ofs,fs=$fs,{max(13,round($fs/1.25))} rm.
+                    elif {baseview,"w#-1<0.3*w && h#-1<0.15*h && "$fs<64" && "$ofs<=$fs}
+                      ofs,fs=$fs,{min(64,round($fs*1.25))} rm.
+                    else
+                      fontsize=$fs break
+                    fi
+                  while 1
+
                   n. 0,255 +dilate. 3 *. -1 n. 0,80 +[-2,-1] r. 100%,100%,1,..
                   j.. .,0,$is_bottom_text~,$>,0,0.85 rm.
                 done
@@ -2464,21 +2500,25 @@ _display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
           if $nsizx>w#0" && "$nsizy>h#0 nposx,nposy,nsizx,nsizy={[0,0,w#0,h#0]} fi
           break
         fi done
+        fontsize,fontsize_notif=
         rmn baseview
       elif $is_CTRL" && "${"iskey D"}" && "{*$idisp,d}<{*$idisp,u}" && "{*$idisp,e}<{*$idisp,v} # Increase window size
         w$idisp[] {round([{*$idisp,w,h}]*1.25)}
         if $is_multiview repeat {img,d} w$>[] {*$idisp,w,h} done fi
         notification="Increase Window Size"
+        fontsize,fontsize_notif=
         flushkey D rmn baseview
       elif $is_CTRL" && "${"iskey C"}" && "{*$idisp,d}>64" && "{*$idisp,e}>64 # Decrease window size
         w$idisp[] {round([{*$idisp,w,h}]/1.25)}
         if $is_multiview repeat {img,d} w$>[] {*$idisp,w,h} done fi
         notification="Decrease Window Size"
+        fontsize,fontsize_notif=
         flushkey C rmn baseview
       elif $is_CTRL" && "${"iskey R"} # Reset window size (and view)
         nposx,nposy,nsizx,nsizy={0,[0,0,w,h]}
         repeat {img,d} w$>[] $wsiz0 done
         notification="Reset Window Size"
+        fontsize,fontsize_notif=
         flushkey R rmn baseview
       fi
 
@@ -11912,7 +11952,6 @@ warp_patch : check ${is_image_arg\ $1}" && isint(${2=3}) && $2>=1 && isint(${3=$
           const pd = $4;
           const stdf = $5;
           const boundary = $6;
-
           const pw1 = int(pw/2);
           const pw2 = pw - pw1 - 1;
           const ph1 = int(ph/2);
@@ -23247,8 +23286,9 @@ is_videofilename : skip "${1=}"
 #@cli : Return 1 if current computer OS is Darwin (MacOS), 0 otherwise.
 is_macos :
   if !narg($_is_macos) l[]
+    if ${-is_windows} _is_macos=0 return fi
     file=${-path_tmp}gmic_uname
-    x "uname >"$file
+    x "uname >"{/$file}
     it[] $file
     _is_macos={same(crop(),'Darwin',6,0)}
     rm
