@@ -3,21 +3,23 @@
 
 <head><meta charset="UTF-8"></head>
 
-<!--#include file="../../header.html" -->
+<!--#include file="header.html" -->
 <link href="../../style.css" rel="stylesheet" type="text/css">
 
-<div id="bloc_option"><div id="top_bleu"><div id="text_top">Using <i>libgmic</i></div></div>
+<div id="bloc_option"><div id="top_bleu"><div id="text_top"><i>3D Boucing Balls</i></div></div>
   <div id="center"><div id="text_centre_intro">
 
-      <p>Hello friends,</p>
-      <p>I’ve finally decided to write a tutorial to illustrate how I’ve implemented, as a <a href="https://gmic.eu">G’MIC</a> script, the animation I’ve recently posted on Twitter (shown on <em>Fig.1.</em> below).</p>
+      <h1>Goals of this tutorial:</h1>
+
+      <p>The idea is to let people discover the possibilities of the G’MIC language for creative coding and quick prototyping.
+        We'll show how to write a G'MIC script that generates the animation below, without going into all the details of the script’s source code.</p>
+      <p><em>⇒ You don’t need any prior knowledge of the G’MIC language to follow this tutorial.</em></p>
+
       <div align="center">
         <p><img src="eb40d7c0c29e06b588ffaf47f0bf3733b0870c75.gif" alt="ezgif.com-optimize (2)" data-base62-sha1="xz985XhT7YfSvoZIdEZimhhooi9" width="350" height="350"><br>
           <small><em>Fig.1. 3D balls bouncing on a sheet</em></small></p>
       </div>
-      <h1>Goals of the tutorial:</h1>
-      <p>The idea is to let people discover the possibilities of the G’MIC language for creative coding and quick prototyping, rather than really going into all the details of the script’s source code.</p>
-      <p><em>⇒ You don’t need any prior knowledge of the G’MIC language to follow this tutorial.</em></p>
+
       <p>Perhaps this will make some people want to go deeper into its use for implementing custom image filters, who knows ? (despite the fact we all know the syntax looks a bit esoteric at a first glance! <img src="stuck_out_tongue.png" height="24" title=":stuck_out_tongue:" class="emoji" alt=":stuck_out_tongue:">).</p>
       <p><img src="warning.png" height="24" title=":warning:" class="emoji" alt=":warning:"> At the end, we won’t get <strong>exactly</strong> the same animation as above, but something really similar (I don’t remember nor saved the exact parameters I’ve used at first to be honest!). <img src="warning.png" title=":warning:" height="24" class="emoji" alt=":warning:"></p>
       <p>Final code will be about <strong>50</strong> lines long. I’ll use G’MIC version <strong>2.9.0</strong>, which is the most up to date version, at the time of writing this tutorial. Ready ? So, let’s go for a G’MIC ride!</p>
@@ -170,7 +172,7 @@
           while {*}" &amp;&amp; "!{*,ESC}
       </code></pre>
       <p><strong>Quick explanation:</strong> Inside the animation loop, we first create a temporary 3D meshed plane (with command <code>plane3d 300,300,10,10</code>), that becomes then the image <code>[-1]</code>. We center it at 3D coordinates (0,0,0) (with command <code>c3d.</code> a.k.a. <a href="https://gmic.eu/reference.shtml#center3d"><code>center3d[-1]</code></a>), and texturize it with our texture image (with command <code>t3d. [texture]</code> a.k.a <a href="https://gmic.eu/reference.shtml#texturize3d"><code>texturize3d[-1]</code></a>). This 3D object is then rotated along the Z-axis (with command <code>r3d. 0,0,1,{4*$t}</code> a.k.a <a href="https://gmic.eu/reference.shtml#rotate3d"><code>rotate3d[-1]</code></a>) with an angle that depends on our previously introduced time variable <code>t</code>. In G’MIC, an <code>{expression}</code> (between braces) means we force its evaluation by the G’MIC math evaluator, i.e. when arithmetic operations are involved. Finally, we draw this 3D object <code>[-1]</code> into a copy of image <code>[background]</code> (with command <code>j3d</code>, a.k.a <a href="https://gmic.eu/reference.shtml#object3d"><code>object3d</code></a>). The <code>+</code> sign in front of the <code>j3d</code> command tells G’MIC not to act directly on the image <code>[background]</code>, but to draw the 3D object on a <em>copy</em> of <code>[background]</code> that is inserted at the end of the list, as a new image (so now <code>[-1]</code> is our 2D rendered frame, while <code>[-2]</code> is our 3D textured plane).<br>
-        This rendered image is displayed on the display window (with command <code>w.</code> a.k.a <code>window</code>), and the rendered frame as well as the 3D object are removed from the list (with command <code>rm[-2,-1]</code> a.k.a <a href="https://gmic.eu/reference.shtml#remove"><code>remove</code></a>), since we don’t need them anymore at this point.</p>
+        This rendered image is displayed on the display window (with command <code>w.</code> a.k.a <a href="https://gmic.eu/reference.shtml#window"><code>window</code></a>), and the rendered frame as well as the 3D object are removed from the list (with command <code>rm[-2,-1]</code> a.k.a <a href="https://gmic.eu/reference.shtml#remove"><code>remove</code></a>), since we don’t need them anymore at this point.</p>
       <p>You get the idea: G’MIC makes it possible to create complex pipelines very quickly and in very few lines, hence the sometimes rough aspect of the script code. The syntax may seem surprising at first, but it obeys a set of relatively simple rules that make writing concise and efficient once you know them <img src="slight_smile.png" title=":slight_smile:" height="24" class="emoji" alt=":slight_smile:"></p>
       <p>That is now what we get when running the command:</p>
       <div align="center">
