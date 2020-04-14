@@ -4860,9 +4860,9 @@ gmic& gmic::_run(const gmic_list<char>& commands_line,
   unsigned int position = 0;
   setlocale(LC_NUMERIC,"C");
   callstack.assign(1U);
-  callstack._data[0].assign(2,1,1,1);
-  callstack._data[0]._data[0] = '.';
-  callstack._data[0]._data[1] = 0;
+  callstack[0].assign(2,1,1,1);
+  callstack[0][0] = '.';
+  callstack[0][1] = 0;
   dowhiles.assign(nb_dowhiles = 0U);
   fordones.assign(nb_fordones = 0U);
   repeatdones.assign(nb_repeatdones = 0U);
@@ -14231,6 +14231,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           *const filename = *filename_tmp?filename_tmp:_filename,
           *const ext = cimg::split_filename(filename);
         const bool is_stdin = *filename=='-' && (!filename[1] || filename[1]=='.');
+        CImg<char> uext = CImg<char>::string(ext);
+        cimg::lowercase(uext);
 
         const char *file_type = 0;
         std::FILE *const file = is_stdin?0:cimg::std_fopen(filename,"rb");
@@ -14239,13 +14241,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           std::fseek(file,0,SEEK_END);
           _siz = std::ftell(file);
           std::rewind(file);
-          file_type = *ext?0:cimg::ftype(file,0);
+          file_type = *uext?0:cimg::ftype(file,0);
           cimg::fclose(file);
         }
         if (!is_stdin && file && _siz==0) { // Empty file -> Insert an empty image
           g_list_c.insert(__filename0);
           g_list.insert(1);
-        } else if (!cimg::strcasecmp("off",ext) || (file_type && !std::strcmp(file_type,"off"))) {
+        } else if (!std::strcmp("off",uext) || (file_type && !std::strcmp(file_type,"off"))) {
 
           // 3D object .off file.
           print(images,0,"Input 3D object '%s' at position%s",
@@ -14262,7 +14264,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           primitives.assign();
           g_list_f.assign();
           g_list_c.insert(__filename0);
-        } else if (!cimg::strcasecmp(ext,"cimg") && *options) {
+        } else if (!std::strcmp(uext,"cimg") && *options) {
 
           // Part of a .cimg file (non-compressed).
           float
@@ -14351,7 +14353,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   "Command 'input': .cimg file '%s', invalid file options '%s'.",
                   _filename0,options.data());
 
-        } else if (!cimg::strcasecmp(ext,"gmz")) {
+        } else if (!std::strcmp(uext,"gmz")) {
           print(images,0,"Input file '%s' at position%s",
                 _filename0,
                 _gmic_selection.data());
@@ -14378,7 +14380,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   "(numbers of images and names do not match).",
                   _filename0);
 
-        } else if (!cimg::strcasecmp(ext,"cimg") || !cimg::strcasecmp(ext,"cimgz")) {
+        } else if (!std::strcmp(uext,"cimg") || !std::strcmp(uext,"cimgz")) {
           print(images,0,"Input file '%s' at position%s",
                 _filename0,
                 _gmic_selection.data());
@@ -14389,28 +14391,28 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               g_list_c.insert(g_list.size() - 1,__filename0.copymark());
           }
 
-        } else if (!cimg::strcasecmp(ext,"avi") ||
-                   !cimg::strcasecmp(ext,"mov") ||
-                   !cimg::strcasecmp(ext,"asf") ||
-                   !cimg::strcasecmp(ext,"divx") ||
-                   !cimg::strcasecmp(ext,"flv") ||
-                   !cimg::strcasecmp(ext,"mpg") ||
-                   !cimg::strcasecmp(ext,"m1v") ||
-                   !cimg::strcasecmp(ext,"m2v") ||
-                   !cimg::strcasecmp(ext,"m4v") ||
-                   !cimg::strcasecmp(ext,"mjp") ||
-                   !cimg::strcasecmp(ext,"mp4") ||
-                   !cimg::strcasecmp(ext,"mkv") ||
-                   !cimg::strcasecmp(ext,"mpe") ||
-                   !cimg::strcasecmp(ext,"movie") ||
-                   !cimg::strcasecmp(ext,"ogm") ||
-                   !cimg::strcasecmp(ext,"ogg") ||
-                   !cimg::strcasecmp(ext,"qt") ||
-                   !cimg::strcasecmp(ext,"rm") ||
-                   !cimg::strcasecmp(ext,"vob") ||
-                   !cimg::strcasecmp(ext,"wmv") ||
-                   !cimg::strcasecmp(ext,"xvid") ||
-                   !cimg::strcasecmp(ext,"mpeg")) {
+        } else if (!std::strcmp(uext,"avi") ||
+                   !std::strcmp(uext,"mov") ||
+                   !std::strcmp(uext,"asf") ||
+                   !std::strcmp(uext,"divx") ||
+                   !std::strcmp(uext,"flv") ||
+                   !std::strcmp(uext,"mpg") ||
+                   !std::strcmp(uext,"m1v") ||
+                   !std::strcmp(uext,"m2v") ||
+                   !std::strcmp(uext,"m4v") ||
+                   !std::strcmp(uext,"mjp") ||
+                   !std::strcmp(uext,"mp4") ||
+                   !std::strcmp(uext,"mkv") ||
+                   !std::strcmp(uext,"mpe") ||
+                   !std::strcmp(uext,"movie") ||
+                   !std::strcmp(uext,"ogm") ||
+                   !std::strcmp(uext,"ogg") ||
+                   !std::strcmp(uext,"qt") ||
+                   !std::strcmp(uext,"rm") ||
+                   !std::strcmp(uext,"vob") ||
+                   !std::strcmp(uext,"wmv") ||
+                   !std::strcmp(uext,"xvid") ||
+                   !std::strcmp(uext,"mpeg")) {
 
           // Image sequence file.
           float first_frame = 0, last_frame = -1, step = 1;
@@ -14458,7 +14460,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             if (g_list.size()>1)
               g_list_c.insert(g_list.size() - 1,__filename0.copymark());
           }
-        } else if (!cimg::strcasecmp("raw",ext)) {
+        } else if (!std::strcmp(uext,"raw")) {
 
           // Raw file.
           dx = 0; dy = dz = dc = 1;
@@ -14526,7 +14528,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             error(true,images,0,0,
                   "Command 'input': raw file '%s', invalid file options '%s'.",
                   _filename0,options.data());
-        } else if (!cimg::strcasecmp("yuv",ext)) {
+        } else if (!std::strcmp(uext,"yuv")) {
 
           // YUV file.
           float first_frame = 0, last_frame = 0, step = 1, ch = 444;
@@ -14581,7 +14583,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   "Command 'input': YUV file '%s', invalid or missing file options '%s'.",
                   _filename0,options.data());
 
-        } else if (!cimg::strcasecmp("tif",ext) || !cimg::strcasecmp("tiff",ext) ||
+        } else if (!std::strcmp(uext,"tif") || !std::strcmp(uext,"tiff") ||
                    (file_type && !std::strcmp(file_type,"tif"))) {
 
           // TIFF file.
@@ -14624,7 +14626,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             if (g_list.size()>1)
               g_list_c.insert(g_list.size() - 1,__filename0.copymark());
           }
-        } else if ((allow_entrypoint && !*ext) || !cimg::strcasecmp("gmic",ext)) {
+        } else if ((allow_entrypoint && !*uext) || !std::strcmp(uext,"gmic")) {
 
           // G'MIC command file.
           const bool add_debug_info = (*options!='0');
@@ -14685,12 +14687,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         } else { // Other file types.
 
           // Check if a custom command handling requested file format exists.
-          cimg_snprintf(formula,_formula.width(),"input_%s",ext);
-          cimg::lowercase(formula + 6);
+          cimg_snprintf(formula,_formula.width(),"input_%s",uext.data());
           hash = hashcode(formula,false);
           if (search_sorted(formula,commands_names[hash],commands_names[hash].size(),pattern)) { // Command found
-            cimg_snprintf(formula,_formula.width(),"input_%s[] \"%s\"",ext,_filename0);
-            for (char *p = formula + 6; *p!='['; ++p) *p = cimg::lowercase(*p);
+            cimg_snprintf(formula,_formula.width(),"input_%s[] \"%s\"",uext.data(),_filename0);
             const CImgList<char> ncommands_line = commands_line_to_CImgList(formula);
             unsigned int nposition = 0;
             CImg<char>::string("").move_to(callstack); // Anonymous scope
