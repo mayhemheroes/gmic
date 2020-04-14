@@ -14686,9 +14686,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
           // Check if a custom command handling requested file format exists.
           cimg_snprintf(formula,_formula.width(),"input_%s",ext);
+          cimg::lowercase(formula + 6);
           hash = hashcode(formula,false);
           if (search_sorted(formula,commands_names[hash],commands_names[hash].size(),pattern)) { // Command found
             cimg_snprintf(formula,_formula.width(),"input_%s[] \"%s\"",ext,_filename0);
+            for (char *p = formula + 6; *p!='['; ++p) *p = cimg::lowercase(*p);
             const CImgList<char> ncommands_line = commands_line_to_CImgList(formula);
             unsigned int nposition = 0;
             CImg<char>::string("").move_to(callstack); // Anonymous scope
