@@ -35932,7 +35932,9 @@ fx_simulate_film :
     repeat $! l[$>] split_opacity balance_gamma[0] , a c endl done
   fi
   if $index>=2 # Apply CLUT
-    clut ${arg\ 1+$index-2,$presets}
+    path_clut=${-path_cache}
+    name=${arg\ 1+$index-2,$presets}
+    clut $name,{0$_is_preview" && "!isfile(['{/${path_clut}clut_$name.cimgz}'])?17:48}
     repeat $!-1 if $strength<100 +map_clut[$>] . j[$>] .,0,0,0,0,{$strength%} rm. else map_clut[$>] . fi done
     rm.
     adjust_colors $brightness,$contrast,$gamma,$hue,$saturation,0,255
@@ -35962,6 +35964,7 @@ fx_simulate_film :
   fi
 
 fx_simulate_film_preview :
+  _is_preview=1
   index={arg(1+$1,${2-10})}
   if !$index gui_warning_preview "Preview disabled in 'Collage' mode"
   else gui_split_preview "fx_simulate_film $*",${19-21}
