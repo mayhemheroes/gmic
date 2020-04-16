@@ -1415,7 +1415,7 @@ _help_header_html :
  <a href=\"http://www.gnu.org/licenses/fdl-1.3.txt\">GNU Free Documentation License</a>, version 1.3.</li>
 \n<li>A <a href=\"gmic_reference.pdf\">.pdf version</a> of this document is available.</li>
 \n<li>Interested in a concrete introduction to G\47MIC programming ? Then visit our
- <a href=\"https://gmic.eu/tutorials/bouncing_balls3d\"><i>3D Bouncing Balls Tutorial</i></a> first!</li>
+ <a href=\"https://gmic.eu/tutorials/bouncing_balls3d\">3D Bouncing Balls Tutorial</a> first!</li>
 \n<li>We also suggest you read the more complete <a href=\"tutorial/index.shtml\">tutorial pages</a> by
  <a href=\"http://particularart.com/\">Garry Osgood</a>, which provide a user-friendly explanation
  of most of the G\47MIC basics (a bit outdated but mostly valid).</li>
@@ -4997,7 +4997,6 @@ update_color_presets_html : check "isbool(${1=0})"
   x "ln -fs "$HTML"/favicon.png ."
   x "ln -fs "$HTML"/footer.html ."
   x "ln -fs "$HTML"/header.html ."
-  x "ln -fs "$HTML"/gmicmenu ."
   x "ln -fs "$HTML"/jquery-1.11.0.min.js ."
   x "ln -fs "$HTML"/style.css ."
   x "ln -fs "$HTML"/images ."
@@ -5232,7 +5231,6 @@ update_gallery_html : check "isbool(${1=0})"
   x "ln -fs "$HTML"/favicon.png ."
   x "ln -fs "$HTML"/footer.html ."
   x "ln -fs "$HTML"/header.html ."
-  x "ln -fs "$HTML"/gmicmenu ."
   x "ln -fs "$HTML"/jquery-1.11.0.min.js ."
   x "ln -fs "$HTML"/style.css ."
   x "ln -fs "$HTML"/images ."
@@ -6881,7 +6879,6 @@ update_tutorial_html :
   x "ln -fs ../../gmic/html/favicon.png ."
   x "ln -fs ../../gmic/html/footer.html ."
   x "ln -fs ../../gmic/html/header.html ."
-  x "ln -fs ../../gmic/html/gmicmenu ."
   x "ln -fs ../../gmic/html/jquery-1.11.0.min.js ."
   x "ln -fs ../../gmic/html/style.css ."
   x "ln -fs ../../gmic/html/images ."
@@ -30078,7 +30075,7 @@ fx_support_us :
 #@gui : and will install them as persistent files on your hard drive. After this operation, you won't need a permanent
 #@gui : internet connection anymore in order to use some of the G'MIC filters."}
 #@gui : note = note()
-#@gui : note = note{"<b><span color="#EE5500">Warning:</span></b> A <b>lot of data</b> will be downloaded by this filter.
+#@gui : note = note{"<b><span color="#EE5500">Warning:</span></b> A <b>lot of data</b> will be downloaded.
 #@gui : This can take a long time !"}
 #@gui : sep = separator()
 #@gui : Force re-Download from Scratch = _bool(0)
@@ -34259,7 +34256,9 @@ fx_color_presets :
     repeat $! l[$>] split_opacity balance_gamma[0] , a c endl done
   fi
   if $index>=2 # Apply CLUT
-    clut ${arg\ 1+$index-2,$presets}
+    path_clut=${-path_cache}
+    name=${arg\ 1+$index-2,$presets}
+    clut $name,{0$_is_preview" && "!isfile(['{/${path_clut}clut_$name.cimgz}'])?17:48}
     repeat $!-1 if $strength<100 +map_clut[$>] . j[$>] .,0,0,0,0,{$strength%} rm. else map_clut[$>] . fi done
     rm.
     adjust_colors $brightness,$contrast,$gamma,$hue,$saturation,0,255
@@ -34289,6 +34288,7 @@ fx_color_presets :
   fi
 
 fx_color_presets_preview :
+  _is_preview=1
   index={arg(1+$1,${2-21})}
   if !$index gui_warning_preview "Preview disabled in 'Collage' mode"
   else gui_split_preview "fx_color_presets $*",${30-32}
@@ -35932,7 +35932,9 @@ fx_simulate_film :
     repeat $! l[$>] split_opacity balance_gamma[0] , a c endl done
   fi
   if $index>=2 # Apply CLUT
-    clut ${arg\ 1+$index-2,$presets}
+    path_clut=${-path_cache}
+    name=${arg\ 1+$index-2,$presets}
+    clut $name,{0$_is_preview" && "!isfile(['{/${path_clut}clut_$name.cimgz}'])?17:48}
     repeat $!-1 if $strength<100 +map_clut[$>] . j[$>] .,0,0,0,0,{$strength%} rm. else map_clut[$>] . fi done
     rm.
     adjust_colors $brightness,$contrast,$gamma,$hue,$saturation,0,255
@@ -35962,6 +35964,7 @@ fx_simulate_film :
   fi
 
 fx_simulate_film_preview :
+  _is_preview=1
   index={arg(1+$1,${2-10})}
   if !$index gui_warning_preview "Preview disabled in 'Collage' mode"
   else gui_split_preview "fx_simulate_film $*",${19-21}
