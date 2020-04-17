@@ -2398,13 +2398,14 @@ _display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
             if $posmx>=0" && "$posmx<w#0" && "$posmy>=0" && "$posmy<h#0
               if !narg($xsel0)" || "$is_selection_a_point
                 repeat {img,d}
-                  if {img,P=I($posmx,$posmy,$>);s==3" && "min(isint(P))" && "min(P)>=0" && "max(P)<=255}
+                  if {img,P=I($posmx,$posmy,$>);(s>=1" || "s<=4)" && "min(isint(P))" && "min(P)>=0" && "max(P)<=255}
                     hexstr="= \#"\
-                          {img,`digit(x)=(x<10?_'0'+x:_'A'+x-10);\
-                                P=I($posmx,$posmy,$>);\
-                                [digit(P[0]>>4),digit(P[0]&15),\
-                                 digit(P[1]>>4),digit(P[1]&15),\
-                                 digit(P[2]>>4),digit(P[2]&15)]`}" "
+                          {img,`"digit(x) = (x<10?_'0' + x:_'A' + x - 10);\
+                                 P = I("$posmx,$posmy,$>");\
+                                 [ digit(P[0]>>4),digit(P[0]&15),\
+                                   s<2?0:digit(P[1]>>4),s<2?0:digit(P[1]&15),\
+                                   s<3?0:digit(P[2]>>4),s<3?0:digit(P[2]&15),\
+                                   s<4?0:digit(P[3]>>4),s<4?0:digit(P[3]&15) ]"`}" "
                   else hexstr= fi
                   ofs,fs={narg($fontsize)?0$fontsize:16}
                   do
