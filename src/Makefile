@@ -7,7 +7,7 @@
 #                 . the G'MIC command line tool (type 'make cli').
 #                 . the G'MIC library, with the C++ API (type 'make lib').
 #                 . the G'MIC library, with the C API (type 'make libc' or 'make libcstatic').
-#                 . the G'MIC plug-in for GIMP, recommended Qt-based version (type 'make gimp').
+#                 . the G'MIC plug-in for GIMP (type 'make gimp').
 #                 . the G'MIC plug-in for Krita (type 'make krita').
 #                 . To compile all of them, just type 'make', or 'make all').
 #
