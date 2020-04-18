@@ -2150,7 +2150,7 @@ _display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
        else ('\"$""*\"') replace. {','},32 u {t} rm.
        fi"
   m "rmn : nmd $\"*\" rm[${}]"
-
+  p
   repeat $! l[$>]
     ('{n}') if s=crop();find(s,_'.',size(s)-1,-1)>0 nm={-2,b}.{-2,x} else nm={-2,b} fi rm.
     nm img
@@ -2398,13 +2398,14 @@ _display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
             if $posmx>=0" && "$posmx<w#0" && "$posmy>=0" && "$posmy<h#0
               if !narg($xsel0)" || "$is_selection_a_point
                 repeat {img,d}
-                  if {img,P=I($posmx,$posmy,$>);s==3" && "min(isint(P))" && "min(P)>=0" && "max(P)<=255}
+                  if {img,P=I($posmx,$posmy,$>);(s>=1" || "s<=4)" && "min(isint(P))" && "min(P)>=0" && "max(P)<=255}
                     hexstr="= \#"\
-                          {img,`digit(x)=(x<10?_'0'+x:_'A'+x-10);\
-                                P=I($posmx,$posmy,$>);\
-                                [digit(P[0]>>4),digit(P[0]&15),\
-                                 digit(P[1]>>4),digit(P[1]&15),\
-                                 digit(P[2]>>4),digit(P[2]&15)]`}" "
+                          {img,`"digit(x) = (x<10?_'0' + x:_'A' + x - 10);\
+                                 P = I("$posmx,$posmy,$>");\
+                                 [ digit(P[0]>>4),digit(P[0]&15),\
+                                   s<2?0:digit(P[1]>>4),s<2?0:digit(P[1]&15),\
+                                   s<3?0:digit(P[2]>>4),s<3?0:digit(P[2]&15),\
+                                   s<4?0:digit(P[3]>>4),s<4?0:digit(P[3]&15) ]"`}" "
                   else hexstr= fi
                   ofs,fs={narg($fontsize)?0$fontsize:16}
                   do
@@ -6570,7 +6571,7 @@ upload_filters :
   x "cd "$HOME"/work/src/gmic-community && git pull"
 
   # Define the list of compatible versions.
-  (291,$_version) store. compat
+  (290,291,$_version) store. compat
 
   # Import filters from stdlib and community.
   files=$HOME/work/src/gmic/src/gmic_stdlib.gmic
