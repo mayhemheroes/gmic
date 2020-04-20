@@ -5166,7 +5166,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         if (err==1) { // No selection -> all images
-          selection.assign(1,siz);
+          if (!is_get && *command=='p' && command[1]=='a' && command[2]=='s' && command[3]=='s' && !command[4])
+            selection.assign(1,parent_images.size());
+          else selection.assign(1,siz);
           cimg_forY(selection,y) selection[y] = (unsigned int)y;
         } else if (err==2 && sep0=='[' && item[std::strlen(command) + 1]==']') { // Empty selection
           is_selection = true;
@@ -10184,7 +10186,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           gmic_substitute_args(false);
           if (cimg_sscanf(argument,"%d%c",&(err=2),&end)==1 && err>=-1 && err<=2) ++position;
           else err = 2;
-
           if (err<0)
             print(images,0,"Return ind%s of image%s from parent context.",
                   selection.height()==1?"ex":"ices",
