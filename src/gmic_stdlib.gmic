@@ -9791,6 +9791,29 @@ _palette_uzebox :
 "MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjU2IDEgMSAzICM1Mwp4nGNQ8ciduO3Wf4aRSkOBChR4QEEuFEyEgm1QcAsK/kPBcNFPLgilEK\
 yiEPynEAAA16V90A=="
 
+# Command that tries to compress a smooth-enough palette.
+compress_palette :
+  rm palette "$1"
+  N={w}
+  do
+    N-=1
+    +r. $N,1,1,3,2 round.
+    r. ..,3 round.
+    deltaE. ..
+    dEavg,dEmax={[ia,iM]} rm.
+    e[] "N = "$N", dEavg = "$dEavg", dEmax = "$dEmax
+  while $dEavg<0.75" && "$dEmax<1.25
+  N+=1
+  r $N,1,1,3,2 round.
+  e[] ""
+  img2base64 0,0 rm
+  str=\"${}\"
+  ('$str') s. x,-119 ('\\\n') if $!>2 a[0--3] .,x fi rm.
+  i[0] ('"  base642img \\\n"')
+  ('"\n  r. 256,1,1,3,3 round.\n"')
+  a x
+  ot pal.txt
+
 #@cli pseudogray : _max_increment>=0,_JND_threshold>=0,_bits_depth>0
 #@cli : Generate pseudogray colormap with specified increment and perceptual threshold.
 #@cli : If 'JND_threshold' is 0, no perceptual constraints are applied.
