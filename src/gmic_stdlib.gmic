@@ -16484,6 +16484,17 @@ _axes3d :
   i... (67.5;73.5;109.5;103.5;51.5;100.5;1;1;0;0;0;1;0;-128;{w};{h};3)
   i.. (-128;{w};{h};1) y[-3,-1] a[-4--1] y
 
+#@cli boundingbox3d
+#@cli : Replace selected 3D objects by their 3D bounding boxes.
+#@cli : $ torus3d 100,30 +boundingbox3d +3d[-1] [-2]
+boundingbox3d :
+  e[^-1] "Replace 3D object$? by their 3D bounding boxes."
+  repeat $! l[$>]
+    nbv={f2ui(i[6])} rows 8,{8+3*$nbv} r. 3,$nbv,1,1,-1 s. x
+    xc,yc,zc,sx,sy,sz={"[ (im#0 + iM#0)/2, (im#1 + iM#1)/2, (im#2 + iM#2)/2, iM#0 - im#0,iM#1 - im#1, iM#2 - im#2 ]"}
+    rm box3d $sx,$sy,$sz c3d +3d $xc,$yc,$zc p3d. 1
+  endl done
+
 #@cli box3d : _size_x,_size_y,_size_z
 #@cli : Input 3D box at (0,0,0), with specified geometry.
 #@cli : Default values: 'size_x=1' and 'size_z=size_y=size_x'.
