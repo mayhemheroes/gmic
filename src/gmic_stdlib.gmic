@@ -1230,6 +1230,7 @@ ${g}"N=24"$n").
 \n    . "${g}"CTRL+G"$n": Save 3D object, as numbered file 'gmic_xxxx.off'.
 \n    . "${g}"CTRL+P"$n": Print current 3D pose on stderr.
 \n    . "${g}"CTRL+T"$n": Switch between single/double-sided 3D modes.
+\n    . "${g}"CTRL+W"$n": Show/hide shadow.
 \n    . "${g}"CTRL+X"$n": Show/hide 3D bounding box.
 \n    . "${g}"CTRL+Z"$n": Enable/disable z-buffered rendering."
 
@@ -2689,6 +2690,7 @@ _display3d :
     is_zbuffer=1
     is_axes3d=1
     is_boundingbox=0
+    is_shadow=1
     mode_render=4
     mode_drender=-1
     mode_background=3
@@ -2731,17 +2733,23 @@ _display3d :
       if !narg($render)
         $pose3d p={^} rm.
         m={$is_motion?$mode_drender:$mode_render}
-        [background] +f. -1 nm[-2,-1] render,silhouette
+        [background] nm. render
         if $m<0
           if !narg($boundingbox3d) +boundingbox3d[object3d] o3d. 0.35 nm. boundingbox3d fi
           +pose3d[boundingbox3d] $p
           j3d[render] .,$posx%,$posy%,0,1,1,0,0,$focale rm.
         else
           +pose3d[object3d] $p
-          j3d[render] .,$posx%,$posy%,0,1,$m,{$mode_orientation==2},$is_zbuffer,$focale rm.
+          if $is_shadow
+            {render,[w,h]},1,3,-1
+            j3d. ..,$posx%,$posy%,0,1,$m,{$mode_orientation==2},$is_zbuffer,$focale
+            +channels. 0 !=. -1
+            +b. 1.5% 100%,100%,1,3,0 j[render] .,0,0,0,0,0.5,.. rm[-2,-1]
+            j[render] ..,0,0,0,0,1,. rm[-2,-1]
+          else j3d[render] .,$posx%,$posy%,0,1,$m,{$mode_orientation==2},$is_zbuffer,$focale
+          fi
+          rm.
         fi
-        rm[silhouette]
-
         if $is_axes3d
           +pose3d[axes3d] $p
           eval " # Colorize axes depending on their Z-sign
@@ -2840,15 +2848,15 @@ _display3d :
           notification="Background: "${n$mode_background}
           rmn background
         elif {*,-C}" && "{*,w}>128" && "{*,h}>128 w[] {0.8*[{*,w,h}]} # Decrease window size
-          notification="Decrease Window Size"
+          notification="Decrease Window Size" fontsize_notif=
           rmn background
         elif {*,-D}" && "{*,w}<0.8*{*,u}" && "{*,h}<0.8*{*,v} w[] {1.25*[{*,w,h}]} # Increase window size
-          notification="Increase Window Size"
+          notification="Increase Window Size" fontsize_notif=
           rmn background
         elif {*,-F} # Toggle fullscreen
           is_fullscreen={!$is_fullscreen}
           if $is_fullscreen w[] {*,u,v} else w[] {0.75*[{*,u,v}]} fi
-          n0,n1="Off","On" notification="Fullscreen: "${n$is_fullscreen}
+          n0,n1="Off","On" notification="Fullscreen: "${n$is_fullscreen} fontsize_notif=
           rmn background
         elif {*,-G} # Save object as a .off file
           n=0 do filename gmic.off,$n n+=1 while isfile(['{/${}}'])
@@ -2862,7 +2870,7 @@ _display3d :
           $pose3d v 0 e[] "  > 3D Pose = [ "{^}" ]." rm.
         elif {*,-R} # Reset window
           w[] {0.7*[{*,u,v}]}
-          notification="Reset Window Size"
+          notification="Reset Window Size" fontsize_notif=
           rmn background
         elif {*,-S} # Save screenshot
           n=0 do filename gmic.png,$n n+=1 while isfile(['{/${}}'])
@@ -2872,6 +2880,10 @@ _display3d :
           mode_orientation={($mode_orientation+1)%3}
           n0,n1,n2="Forward","Backward","Double-Sided" notification="Orientation: "${n$mode_orientation}
           if $mode_orientation rv3d[object3d] fi
+          rmn render
+        elif {*,-W} # Show/hide shadow
+          is_shadow={!$is_shadow}
+          n0,n1="Off","On" notification="Shadow: "${n$is_shadow}
           rmn render
         elif {*,-X} # Show/hide bounding box
           is_boundingbox={!$is_boundingbox}
@@ -2883,7 +2895,7 @@ _display3d :
           rmn render
         fi
       fi
-      if {*,-r} rmn background fi
+      if {*,-r} rmn background fontsize_notif= fi
 
       if $mx>=0 # Manage mouse-drag
         if $mb
