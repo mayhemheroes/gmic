@@ -2803,11 +2803,7 @@ nd3d :
         rmn render
       fi
       if $is_CTRL
-        if {*,-A}
-          is_axes3d={!$is_axes3d}
-          n0,n1="Off","On" notification="3D Axes: "${n$is_axes3d}
-          rmn render
-        elif {*,-B}
+        if {*,-B}
           mode_background={($mode_background+1)%4}
           n0,n1,n2,n3="Black","White","Gray","Color" notification="Background: "${n$mode_background}
           rmn background
@@ -2822,14 +2818,22 @@ nd3d :
           if $is_fullscreen w[] {*,u,v} else w[] {0.75*[{*,u,v}]} fi
           n0,n1="Off","On" notification="Fullscreen: "${n$is_fullscreen}
           rmn background
-        elif {*,R}
+        elif {*,-R}
           w[] {0.7*[{*,u,v}]}
           notification="Reset Window Size"
           rmn background
-        elif {*,T}
+        elif {*,-S}
+          n=0 do filename gmic.png,$n n+=1 while isfile(['{/${}}'])
+          o[render] ${}
+          notification="Save Screenshot:\n"${}
+        elif {*,-T}
           mode_orientation={($mode_orientation+1)%3}
           n0,n1,n2="Forward","Backward","Double-Sided" notification="Orientation: "${n$mode_orientation}
           if $mode_orientation!=2 rmn object3d fi
+          rmn render
+        elif {*,-X}
+          is_axes3d={!$is_axes3d}
+          n0,n1="Off","On" notification="3D Axes: "${n$is_axes3d}
           rmn render
         elif {*,-Z}
           is_zbuffer={!$is_zbuffer}
