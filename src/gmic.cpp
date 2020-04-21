@@ -4311,6 +4311,10 @@ CImg<char> gmic::substitute_item(const char *const source,
                     cimg_snprintf(substr,substr.width(),"%d",disp.window_height());
                     is_substituted = true;
                     break;
+                  case 'f' : // Is fullscreen?
+                    cimg_snprintf(substr,substr.width(),"%d",disp.is_fullscreen());
+                    is_substituted = true;
+                    break;
                   case 'u' : // Screen width
                     try {
                       cimg_snprintf(substr,substr.width(),"%d",CImgDisplay::screen_width());
