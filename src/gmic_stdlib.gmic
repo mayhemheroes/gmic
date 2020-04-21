@@ -2661,6 +2661,146 @@ _display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
 #@cli : (eq. to 'd3d').
 #@cli : Default values: '[background_image]=(default)' and 'exit_on_anykey=0'.
 
+# WIP : New version of display3d.
+nd3d :
+  m "rmn : nmd $\"*\" rm[${}]"
+  ('$?') f. "(i==_',') || (i>=_'0' && i<=_'9')?i:-1" discard. -1 indices={t} rm.
+  repeat $! l[$>] check3d 0 nm={n} nbv,nbp={f2ui(i[6,2])}
+    e[0--4] "Display 3D object ["{arg(1+$>,$indices)}"] = '"$nm"' ("$nbv" vertices, "$nbp" primitives)."
+
+    # Init display window and variables.
+    if !{*} w[] {[{*,u,v}]/2} else p_disp_normalize={*,n} fi
+    (1,0,0,0;0,1,0,0;0,0,1,0) store. pose3d
+    render=1 focale=800 mode=4 dmode=-1 is_zbuffer=1 is_doublesided=1 show_axes=1
+    posx,posy,posz=50,50,0
+    mx0,my0,mx1,my1=
+
+    # Start interactive loop.
+    do
+      is_motion={narg($mx0)}
+
+      # Init background image.
+      if !narg($background) 0 nm. background fi
+      if {$background,[w,h]!=[{*,w,h}]}
+        rm[background] 3,2,1,1,"32,32,64,64,116,96" permute. cyzx r. {*,w,h},1,3,3
+        circle. 50%,50%,{0.375*min(w,h)},0.05,0xFFFF0000,255
+        round. nm. background
+        rmn obj3d
+        render=1
+      fi
+
+      # Normalize 3D object.
+      if !narg($obj3d)
+        +c3d[0] n3d. *3d. {0.65*min({*,w,h})} nm. obj3d rmn bbox3d render=1
+      fi
+
+      if !narg($axes3d)
+        axes3d 40,40,40,20,X,Y,Z,0
+        l. s3d a[0-3] y off_axes={0,h} a y endl
+        nm. axes3d
+      fi
+
+      # Render 3D object.
+      if $render
+        $pose3d p={^} rm.
+        m={$is_motion?$dmode:$mode}
+        if $m<0
+          if !narg($bbox3d) +boundingbox3d[obj3d] o3d. 0.35 nm. bbox3d fi
+          +pose3d[bbox3d] $p
+          +j3d[background] .,$posx%,$posy%,$posz,1,1,0,0 rm..
+        else
+          +pose3d[obj3d] $p
+          +j3d[background] .,$posx%,$posy%,$posz,1,$m,$is_doublesided,$is_zbuffer,$focale rm..
+        fi
+        if $show_axes
+          +pose3d[axes3d] $p
+          eval " # Colorize axes depending on their Z-sign
+            const off = "$off_axes";
+            i[13]>0?copy(i[off],50,3,1,0);
+            i[19]>0?copy(i[off+3],50,3,1,0);
+            i[25]>0?copy(i[off+6],50,3,1,0);
+          "
+          j3d.. .,50,{-2,h-50},0,0.5,1 rm.
+        fi
+
+        w. -1,-1,0,$nm" ("$nbv" vertices, "$nbp" primitives)"
+        rm.
+        render=0
+      fi
+
+      if !$is_motion wait else wait 20 fi
+
+      # Manage user-events
+      mx,my,mb={*,x,y,b}
+      is_CTRL={{*,CTRLLEFT}" || "{*,CTRLRIGHT}}
+      if {*,-F1} render,mode,dmode={M=0;m=$mode;wasbbox=$dmode<0;[1,M,m!=M?(wasbbox?-1:M):(wasbbox?M:-1)]}
+      elif {*,-F2} render,mode,dmode={M=1;m=$mode;wasbbox=$dmode<0;[1,M,m!=M?(wasbbox?-1:M):(wasbbox?M:-1)]}
+      elif {*,-F3} render,mode,dmode={M=2;m=$mode;wasbbox=$dmode<0;[1,M,m!=M?(wasbbox?-1:M):(wasbbox?M:-1)]}
+      elif {*,-F4} render,mode,dmode={M=3;m=$mode;wasbbox=$dmode<0;[1,M,m!=M?(wasbbox?-1:M):(wasbbox?M:-1)]}
+      elif {*,-F5} render,mode,dmode={M=4;m=$mode;wasbbox=$dmode<0;[1,M,m!=M?(wasbbox?-1:M):(wasbbox?M:-1)]}
+      elif {*,-F6} render,mode,dmode={M=5;m=$mode;wasbbox=$dmode<0;[1,M,m!=M?(wasbbox?-1:M):(wasbbox?M:-1)]}
+      elif {*,A}" && "$is_CTRL render,show_axes=1,{!$show_axes}
+      elif {*,D}" && "$is_CTRL" && "{*,w}<0.8*{*,u}" && "{*,h}<0.8*{*,v} w[] {1.25*[{*,w,h}]} rmn background
+      elif {*,C}" && "$is_CTRL" && "{*,w}>128" && "{*,h}>128 w[] {0.8*[{*,w,h}]} rmn background
+      fi
+      if {*,-r} rmn background,obj3d fi
+
+      if $mx>=0 # Manage mouse-drag
+        if $mb
+          if !narg($mx0) mx0,my0,mx1,my1=$mx,$my,$mx,$my else mx1,my1=$mx,$my fi
+        else
+          if narg($mx1) render=1 fi
+          mx0,my0,mx1,my1=
+        fi
+      fi
+
+      # Estimate new 3D pose from motion.
+      if narg($mx1)" && "($mx0!=$mx1" || "$my0!=$my1)
+        render=1
+        if $mb&1" && "!$is_CTRL # Rotation
+          rotation3d[] {"
+            const w2 = "{*,w}"/2;
+            const h2 = "{*,h}"/2;
+            const R = 0.375*min("{*,w,h}");
+            const u0 = "$mx0" - w2;
+            const v0 = "$my0" - h2;
+            const u1 = "$mx1" - w2;
+            const v1 = "$my1" - h2;
+            n0 = norm(u0,v0);
+            nu0 = n0>R?u0*R/n0:u0;
+            nv0 = n0>R?v0*R/n0:v0;
+            nw0 = sqrt(max(0,R^2 - nu0^2 - nv0^2));
+            n1 = norm(u1,v1);
+            nu1 = n1>R?u1*R/n1:u1;
+            nv1 = n1>R?v1*R/n1:v1;
+            nw1 = sqrt(max(0,R^2 - nu1^2 - nv1^2));
+            u = nv0*nw1 - nw0*nv1;
+            v = nw0*nu1 - nu0*nw1;
+            w = nv0*nu1 - nu0*nv1;
+            n = norm(u,v,w);
+            [ u,v,w,-asin(n/R^2)*180/pi ]"}
+          $pose3d m*[-2,-1] store. pose3d
+          mx0,my0=$mx1,$my1
+        elif $mb&4" || "($mb&1" && "$is_CTRL) # Pan
+          posx,posy={"
+            const px = "$mx1-$mx0+$posx*{*,w}%";
+            const py = "$my1-$my0+$posy*{*,h}%";
+            cut([ px*100/"{*,w}", py*100/"{*,h}" ],0,100)"}
+          mx0,my0=$mx1,$my1
+        elif $mb&2 # Zoom
+          posz+={5*($my1-$my0)}
+          mx0,my0=$mx1,$my1
+        fi
+      fi
+      if {*,o} render=1 posz-={25*{*,-o}} fi # Zoom with mousewheel
+
+    while {*}" && "!{*,ESC}" && "!($is_CTRL" && "{*,W})
+    k[0]
+  endl done
+
+  if narg($p_disp_normalize) w[] -1,-1,$p_disp_normalize else w[] 0 fi
+  uncommand rmn
+
 #@cli da : eq. to 'display_array'.
 da :
   _gmic_s="$?" v + _display_array $*
@@ -4843,6 +4983,7 @@ _sample :
 #@cli : to the named variable. Otherwise, there must be as many variable names as images
 #@cli : in the selection, and each selected image is assigned to each specified named variable.
 #@cli : Use command 'input $variable' to bring the stored images back in the list.
+#@cli : Default value: 'is_compressed=0'.
 #@cli : $ sample eagle,earth store img1,img2 input $img2 $img1
 
 #@cli testimage2d : _width>0,_height>0,_spectrum>0
@@ -9490,130 +9631,90 @@ _palette_flag :
 
 _palette_cube :
   base642img \
-"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjU2IDEgMSAzICMzNzAKeJxjYOcTlVHWMrSwd/MNiU7KLCiva+2ZPGvhivXb9h45fenmg+fvvv\
-75/eXts/s3Lp46vGfruuULZk7qbqkty89IjAr2cbUzN9BUkhbhZWPk4BeTVdE2snRw9wuNSc4qrKhv650ye9HKDdv3HT1z+dbDF++//f31+c3Te9cvnDy0e\
-8vaZfNnTOxqrinNS0+IDPJ2sTXT11CUEuZhZeIUEJdT1TG2cvTwD4tNyS6qbGjvmzpn8aqNO/YfO3vl9qOXH77/+/np9ZO7186fOLhr85ql86ZP6GyqLslN\
-i48I9HK2MdVTV5AU4mZh5hKUkFfTNbF28gwIj0vNKa5q7OifNnfJ6k07Dxw/d/XO41cff/xnIAawcAtJKqjrmdo4ewVGxKflllQ3dU6YPm/pms27Dp44f+3\
-uk9effv6nKyDG/0R5jb6AlUdYSlFD38zWxTsoMiE9r7SmuWvijPnL1m7Zfejkhev3nr75/Iu+AQkAzZ6QNg=="
+"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjMxIDEgMSAzICMzMzgKeJxj5BCQkFfXN7Nz8wuLS80trWnpmTJn8erNuw6dunTr0cuPP39/e/f83v\
+Xzxw/s2LBy4cyJnY1VRVnJ0cHezjYmOqqyoryszFxCUoqahhaOHgER8en55XVtfdPmLV27dc+RM1fuPH79+ffvL2+e3Ll69ui+beuWz5ve395QUZCRGBHo6\
+WhlpKUsLczNwsIjIqOsbWzt7BUUlZhZWNnYMWHGguXrt+87fu7avadvv/759enVo1uXTx/es2XNkjlTe1vryvLS4sL83e0tDDQUJQQ5Wdj4xGRVdU1tXX1C\
+YpKzi6ubuybNWrhy486DJy/cePD8/fd/DIQAE6eghKKGgYW9u39YXFpeWV1r79Q5S9Zs2XP49OVbj159+vWf9oCQN5kI+oIOgIVbWFpZy8jK0TMwIjGjoKK\
+hvX/6vOXrtu07evbqnSdvvvymQ0ABAC/raR8=" r. 256,1,1,3,3 round.
 
 _palette_rainbow :
   base642img \
-"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjU2IDEgMSAzICM2MjgKeJxj4uLl5Rfg5xcSl5JXVFVT19LS0dXR0dXVAdK6hkYmZuYWlhYWlp\
-ZWllZW1lY21lbWIGBjAyatIcDKysrCwszYQEddUYSVgYERjKAEHKDycABWSSOnwKi03LLGzgkz5q3YtH3f8fNX7zx+9ubTt1/////9+/fP71+/fv748f3Ht\
-2/fvn77+vXrNyj4CgJfgBAGvgCZn9+/fvbozo3LZ04e2rdjw+olC2ZM6GqqKspOCPdztTTSU5MXZmXm4uMXFBIWEhaXlJNXVlUHetvA0MjYxNTC2t7JycXV\
-3dPL28fH18/fPyAwMCgoOAQEQkPDgCA8IhxERURGRsXExCUkp2Vk55dW1DV19E2dvXD5mg2bNm/eBAQbN27cAATr165dt3bNaqxg7dq16zcAlW7dtmPXrn0\
-HDh4+duLkmXMXL184d+rooX07t21as3zR3BkTulvqK4tz0pJiwv29XR3srMxNjAz1oUAPCIARp6WlqamhrqaqoiQvJysnJ6+goKCoqKSkqKSoIA8UkZIUFx\
-Xm5+UVEBISEuTn5eFkYhOWVNA0NHd09w+JSkjLyi+tbGhp6+6fNHXG7Dlz589fsHDR4iVLli5bvmzpsmXLl69YsWIlEKyCgNUQcvUakPs3bt6yfefufQePn\
-Tx39fbDx4/v37p25viBHZvXrFg0Z/rE7ta6isKspKjQIDQQEgKmgoMDAwMDAvz8/Hy8PD3dPVxdnB3trK0sjI0MdbU11FSVFeQhPlFWUQGlUh1dPT19A0MD\
-OACHga6utrYW2P9qaqpArKamrgGCGurqQAFlJQU5GSlxEQE+HgFgAAgK8PFyMgEAsxoliA=="
+"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjI1IDEgMSAzICM1NjcKeJxj5ublE+DnF5KQUVBWU9fS0tHV0dXVAVL6RiZm5haWFpaWVpZWVtbW1i\
+BsbWMDJq3BwMrK0sLMWF9LRYqLkYGRAQygFAYbG2DkVrH2iUjNq2zpnTp3+eadB09fvvXo+dvPP/7+//v375/fv37++PH9+7dvX799/fr1GwQAWV+/ACEUA\
+Bmf3796+uDW1XMnD+3dum75wpkTOhvK81Ii/Z3NDbSUxNhZuPkEhISFhMWl5RRV1LV09AyMjE1MLWwcnJxd3T29vH18/fz9AwIDg4JDQCA0DAjCI0BkRGRk\
+dExsQnJaZm5ReW1T54Tp85au3rBp8+ZNmzZt3Lhxw4YN69euXbd2zWpMABTfsHHTpq3bd+7ae+Dg4eMnTp+9cPnC2RNHDuzatnH10gWzJvW01JUXZCbHhvt\
+5OttbW5gYGepDgJ6enq6OjpaWpoa6mqqKorysnJy8goKCopKSopKigrycrLSkuIggHy+/kJCQAB8PFzOHiIyKnqm9R0BYbHJmXmlVY2tn38SpM2bPmTd/wc\
+JFi5csWbZ82dJly5avWLFiJRCsAoPVYGL1GqBDN27eugPoyqMnz1+/++gxMCRPH9mzdd3KhbOn9rU3VBZmxEcEByGD4BAwPzgoMDAgwM/P19vT093d1dnJ3\
+trK3NhIX0dDTVUJ5GCgi5VVVIFpSkdXT9/A0AAGQH7U1dXW1gJ5UA2E1NTUNdQ1NDTU1dXUVJQU5WQkxYT4efkFhIQE+Xm5mAHNkQH/"
+  r. 256,1,1,3,3 round.
 
 # The color palettes below have been converted from
 # 'https://stackoverflow.com/questions/33273340/matlab-set-color-map-color-range'.
 _palette_parula :
   base642img \
-"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjU2IDEgMSAzICM3MTQKeJwzNTU1gwJTUxMTYyNDfT0dLXUVRTkpMUFeLnYWZmYmJiZmZhZWNjZ2Ti\
-5uHl4+fgEBQUEhIWFhEQgQFhYWEhQU4Ofj5eHm4uLk4GAHAjYkwM7OwQHSCtQpJCwqJiktI6egpKKmqa2rb2Ribmlj5+js5untFxgSHhWbkJyWmZNfVFpeV\
-Vvf1Nre1Tth0tTps+bMW7h46fJVa9Zt2LR1+87d+w4cOnLsxKkz5y5cvnr9xq079x48evLsxas37z58+vL1+89fv//8/ffv//////79+/v3z5/fv3/9+vnj\
-x/dv374iwLdv377/+PFTS0dX38DIxNTcwsra1s7B0dnFzcPLxy8gKDQ8Mjo2PjEpJTUtPTMrOycvv6CgsKi4pLSsvKKyqrqmtq6+obGpuaW1rb2js6unt69\
-/4qTJU6ZNnzFz1uw5c+fNX7Bw0eIlS5cuW758xYqVq1atXrNm7dp169dv2Lhx06bNm7ds2bp127bt23fs2Llz167du3fvAYK9QLAPCPZjAftgAKRoDxQA9e\
-3eBQQ7EQBk2J69+/YfOHjoyNFjx0+eOnP23IWLly5fvQYMqNt37z14+BgYVC9fv33/8TMwqH6DQnjytJlzFyxetnLths3bdu49cPjYqbMXLl8Dhev9Bw8h4\
-MGDB/fv37t39+6dO7dv37p18+aNG9evX7t29eqVK1cuA8ElKLh48eKFC+fPnz937uyZM6dPnTxx/NjRI4cPHTywf9/ePbt37ti+bcvmTRvXr1u7etWK5cuW\
-Ll60YP7cObNmTp82ZfLECf29PV2d7W0tzY0NdbU11VWVFeVlpSXFRYUF+Xm5OdlZmRnpaWmpKclJiQnx8XGxMdFRkRER4WGhIcFBgQH+fr4+3l6eHm6uzo4\
-OdjbWlhZmpqDkbKCvp6ujraWpoa6mqqykqCAvJysjJSkhLiYCTLX8fAA1ipoS"
+"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KNjQgMSAxIDMgIzIwMwp4nAHAAD//NTY2NDAoHAwDAwUJDhETFBQSEAwJBwYGBggLEBYdJS44Qk1ZZX\
+F7hpGbpK22v8fP2N/n7/b8//79+/j29fX2+C0zOT9FTVZeZGlucnZ6foKGio+UmZ2hpKeprK6xs7W3ubu8vb6/v7+/v76+vby8u7q5ubm7vsLHzNLX3OLp8\
+PiMmKWyvsvX3uHh4N7c2tjW1NPS0tHPzcrGwr65tK+ppJ6Yko2HgXx4dHBsaGVhXlpXU09LRj85NDAsKCMfGhUQJK9mpg==" r. 256,1,1,3,3 round.
 
 _palette_jet :
   base642img \
-"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjU2IDEgMSAzICMzNjkKeJxjYKAlYOHgERCRlJFX0dDRN7awtnd29/YPDo+OT07Pzisqr6prauvqnT\
-h15tyFS1eu3bh1554DR06cuXDlxp0HT168+fDlx5//lIJ/v759evfq2aN7t65dOnfq2KF9u7ZvXrd6+eL5s6dP7u/uaGnA63xmdm5+YQlpeWV1bT0jc2s7J\
-zcvv6CwqLiktKy8wrKq2sbWzp4JU2bMWbBkxZoNW3bs2X/4+Onzl6/fvv/4+ev3n7//ptz5v79/fv/6+eP7t69fPn/6+OH9u3dsWb9mxZIFc2ZMmdDT2dpY\
-W1lamJuVlhgXFRbk5+XmZGdlZqSnra4sLy0uzM/NzkwwhvonT589f/Hy1es3b9+97/DxU+cuXbt179GzV+8+ffv1j2L3//nx5cObF08e3Llx5cKZE0cO7Nm\
-xZcOalUsXzp05dWJvZ1tTXVVZUV52elJcdHiwv7e7s721ubG+joaKvIyECD8PBwt1UiE+AABM93G0"
+"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KNzYgMSAxIDMgIzEzMQp4nGNgwA24JFSN7H2i0ksa+2av3Hb4wr3XP/9jgt/vH145tnPN/ImtMH1MvN\
+Iapk7+sVnlLRPnrdl57PLDd7+xaPz55t7Fw9tWzulrKkmP8rU3UpXgYoTbPWXh+j0nrz35+BeLxm8vb587sHnZzO76wpRwLxt9JVF2PL5gYAAAc+1twA=="
+  r. 256,1,1,3,3 round.
 
 _palette_hot :
   base642img \
-"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjU2IDEgMSAzICMyODEKeJzj5hMUFpWQllVQVtPQ1jUwMjW3srV3cnX39PEPCgmPiolPSknPzMkrLC\
-mrrKlvbGnr7O6bOHnazNlzFyxeumL1ug2bt+3YvffAoaMnTp29cPnqjVt37z96+vzV2/cfv3z/+ef/4AcMNAVMrBzcfAJCohJSsvJKqhpawAA2AQewCzCA/\
-QJDwiNj4hNT0jKz8wqLgQFc19jc1tHdN2HytBnAAF60dMWqtRs2b92xa+/+Q0ePAwP40tXrt+7cf/Tk+as3wAD+9vPPv0Huf5oDZnYefhEJGXlldW19Y3Nr\
-e2d3b7+gsKi4pLSsvKKyqrqm1s7eCVNnzFmwZMWaDVt27Dlw5MSZC1du3Ln/+Pnr95+///4PAFqcZIU="
+"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMTI0IDEgMSAzICMxNDEKeJzjFRKXVdLQNTK3dXb3DY6IS87IK66oa+nsmzJz3pKV67fu2n/k1IWrt+\
+4/ff3+66//1AUMpABGdl5BcRlFdZBTndx9g0BOzS2urGvuADl18cr1W3buP3LyPMipr4BO/UdNu0kEjFxC0kpaRtbO3kHRydnFNS3dk2cvXr1lz5EzV+88e\
+fP1LwA796yq" r. 256,1,1,3,3 round.
 
 _palette_cool :
   base642img \
-"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjU2IDEgMSAzICM1NTEKeJxjYGRiZmFlY+fg5OLm4eXjFxAUEhYRFROXkJSSlpGVk1dQVFJWUVVT19\
-DU0tbR1dc3MDQyNjE1M7ewtLK2sbWzd3B0cnZxdXP38PTy9vH18w8IDAoOCQ0Lj4iMio6JjYtPSExKTklNS8/IzMrOyc3LLygsKi4pLSuvqKyqrqmtq29ob\
-GpuaW1r7+js6u7p7eufMHHS5ClTp02fMXPW7Dlz581fsHDR4iVLly1fsXLV6jVr163fsHHT5i1bt23fsXPX7j179+0/cPDQ4SNHjx0/cfLU6TNnz52/cPHS\
-5StXr12/cfPW7Tt3791/8PDR4ydPnz1/8fLV6zdv373/8PHT5y9fv33/8fPX7z9///3//+/vn9+/fv74/u3rl8+fPn54/+7tm9evXr54/uzpk8ePHj64f+/\
-undu3bt64fu3qlcuXLl44f+7smdOnTp44fuzokcOHDh7Yv2/vnt27du7Yvm3rls2bNm5Yv27tmtWrVq5YvmzpksWLFi6YP2/unNmzZs6YPm3qlMmTJk7o7+\
-vt6e7q7Ghva21pbmpsqK+rramuqqwoLystKS4qLMjPy83JzsrMSE9LTUlOSkyIj4uNiY6KjAgPCw0JDgoM8Pfz9fH28vRwd3N1cXZydLC3s7WxtrK0MDczN\
-TE2MjTQ19fV0dbS1FBXU1VRVlJUkJeTlZGWkpQQFxMVERYSFODn4+Xh5uLkYGdjZWFmYmT4P8IBAKtj/hI="
+"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMzIgMSAxIDMgIzc4CnicY+ERkVHRMbFx8QmJSckpqWnpmTJnyZote46cuXLnyZsvf/58efPkzpUzR/\
+ZsWbNkzpSelpqSnJSYEB8XGxMdFRkRHpb/BAAAHuY/4Q==" r. 256,1,1,3,3 round.
 
 _palette_spring :
   base642img \
-"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjU2IDEgMSAzICM1NTIKeJz7/39kAwZGJmYWVjZ2Dk4ubh5ePn4BQSFhEVExcQlJKWkZWTl5BUUlZR\
-VVNXUNTS1tHV19fQNDI2MTUzNzC0sraxtbO3sHRydnF1c3dw9PL28fXz//gMCg4JDQsPCIyKjomNi4+ITEpOSU1LT0jMys7JzcvPyCwqLiktKy8orKquqa2\
-rr6hsam5pbWtvaOzq7unt6+/gkTJ02eMnXa9BkzZ82eM3fe/AULFy1esnTZ8hUrV61es3bd+g0bN23esnXb9h07d+3es3ff/gMHDx0+cvTY8RMnT50+c/bc\
-+QsXL12+cvXa9Rs3b92+c/fe/QcPHz1+8vTZ8xcvX71+8/bd+w8fP33+8vXb9x8/f/3+8/ff/////v75/evnj+/fvn75/Onjh/fv3r55/erli+fPnj55/Oj\
-hg/v37t65fevmjevXrl65fOnihfPnzp45ferkiePHjh45fOjggf379u7ZvWvnju3btm7ZvGnjhvXr1q5ZvWrliuXLli5ZvGjhgvnz5s6ZPWvmjOnTpk6ZPG\
-nihP6+3p7urs6O9rbWluamxob6utqa6qrKivKy0pLiosKC/LzcnOyszIz0tNSU5KTEhPi42JjoqMiI8LDQkOCgwAB/P18fby9PD3c3VxdnJ0cHeztbG2srS\
-wtzM1MTYyNDA319XR1tLU0NdTVVFWUlRQV5OVkZaSlJCXExURFhIUEBfj5eHm4uTg52NlYWZiZGBgC4VP4S"
+"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjggMSAxIDMgIzcxCnic+/8fN2DhFVPQNLJ28Q1LyCyqbumdtmDlpt1Hzl578PLT79+fXj64dvbI7k\
+0rF0zrbakuykwI83WxNtJUEONlAQDKiDfN" r. 256,1,1,3,3 round.
 
 _palette_summer :
   base642img \
-"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjU2IDEgMSAzICM1NjQKeJxjYGRiZmFlY+fg5OLm4eXjFxAUEhYRFROXkJSSlpGVk1dQVFJWUVVT19\
-DU0tbR1dc3MDQyNjE1M7ewtLK2sbWzd3B0cnZxdXP38PTy9vH18w8IDAoOCQ0Lj4iMio6JjYtPSExKTklNS8/IzMrOyc3LLygsKi4pLSuvqKyqrqmtq29ob\
-GpuaW1r7+js6u7p7eufMHHS5ClTp02fMXPW7Dlz581fsHDR4iVLly1fsXLV6jVr163fsHHT5i1bt23fsXPX7j179+0/cPDQ4SNHjx0/cfLU6TNnz52/cPHS\
-5StXr12/cfPW7Tt3791/8PDR4ydPnz1/8fLV6zdv373/8PHT5y9fv33/8fPX7z9///1vaGhsbGpqbm5paW1ta2tv7+jo7Ozq6u7u6ent7evr758wYeLESZM\
-mT54yZerUadOmT58xY+bMWbNmz54zZ+7cefPmz1+wYOHCRYsWL16yZOnSZcuWL1+xYuXKVatWrV69Zs3atevWrV+/YcPGjZs2bd68ZcvWrdu2bd++Y8fOnb\
-t27d69Z8/evfv27d9/4MDBg4cOHT585MjRo8eOHT9+4sTJk6dOnT595szZs+fOnT9/4cLFi5cuXb585cpVoLeu37hx8+atW7dv37lz9+69e/fvP3jw8OGjR\
-48fP3ny9OmzZ8+fv3jx8uWrV69fv3nz9u27d+/ff/jw8eOnT58/f/ny9eu3b9+///jx8+evX79///nz9++/f///p41wAAC7XaTl"
+"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjggMSAxIDMgIzcxCnicY+EVU9A0snbxDUvILKpu6Z22YOWm3UfOXnvw8tPvprbuCVNmzl20bPX6LT\
+v2Hjx26vyVm3cfPXv94cvPv2l4AACR+i4M" r. 256,1,1,3,3 round.
 
 _palette_autumn :
   base642img \
-"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjU2IDEgMSAzICMyODUKeJz7/39kAwZGJmYWVjZ2Dk4ubh5ePn4BQSFhEVExcQlJKWkZWTl5BUUlZR\
-VVNXUNTS1tHV19fQNDI2MTUzNzC0sraxtbO3sHRydnF1c3dw9PL28fXz//gMCg4JDQsPCIyKjomNi4+ITEpOSU1LT0jMys7JzcvPyCwqLiktKy8orKquqa2\
-rr6hsam5pbWtvaOzq7unt6+/gkTJ02eMnXa9BkzZ82eM3fe/AULFy1esnTZ8hUrV61es3bd+g0bN23esnXb9h07d+3es3ff/gMHDx0+cvTY8RMnT50+c/bc\
-+QsXL12+cvXa9Rs3b92+c/fe/QcPHz1+8vTZ8xcvX71+8/bd+w8fP33+8vXb9x8/f/3+8/fff4YRDgBeKn6R"
+"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjYgMSAxIDMgIzQyCnic+/8fF2Dhk1DSMXPwDI5NL6xu6ZuxaM22Aycv333+8TcDTgAAaHcm2w=="
+  r. 256,1,1,3,3 round.
 
 _palette_winter :
   base642img \
-"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjU2IDEgMSAzICM1NjUKeJxjYBjhgJGJmYWVjZ2Dk4ubh5ePX0BQSFhEVExcQlJKWkZWTl5BUUlZRV\
-VNXUNTS1tHV1/fwNDI2MTUzNzC0sraxtbO3sHRydnF1c3dw9PL28fXzz8gMCg4JDQsPCIyKjomNi4+ITEpOSU1LT0jMys7Jzcvv6CwqLiktKy8orKquqa2r\
-r6hsam5pbWtvaOzq7unt69/wsRJk6dMnTZ9xsxZs+fMnTd/wcJFi5csXbZ8xcpVq9esXbd+w8ZNm7ds3bZ9x85du/fs3bf/wMFDh48cPXb8xMlTp8+cPXf+\
-wsVLl69cvXb9xs1bt+/cvXf/wcNHj588ffb8xctXr9+8fff+w8dPn798/fb9x89fv//8/ff///9///7+/fPn9+9fv37+/PHj+/dv375+/fLl8+dPnz5+/PD\
-h/ft3796+ffPm9etXr16+fPHi+fNnz54+ffLk8eNHjx4+fPDg/v179+7evXPn9u1bt27evHHj+vVr165evXLl8qVLFy9euHD+/LlzZ8+eOXP69KlTJ0+eOH\
-H8+LFjR48eOXL48KFDBw8eOLB//759e/fu2bN7965dO3fu2LF9+7ZtW7du2bJ586ZNGzdu2LB+/bp1a9euWbN69apVq1auXLFi+fJly5YuXbJk8eJFixYuX\
-LBg/vx58+bOnTNn9uxZs2bOnDFj+vRp06ZOnTJl8uRJkyZOnDChv7+vr7e3p6e7u6urs7Ojo729ra21taWlubmpqbGxoQEA9Wc+6A=="
+"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMzEgMSAxIDMgIzc5CnicY2DAC1h4RGRUdU1t3fzC4tLzyxs6JsxYuHLjzkOnLt16/Prz778/v358+/\
+Lpwzs3rlw4ffzw/t3bN69bvXzxvFnTJvV1tTUBACEGJp4=" r. 256,1,1,3,3 round.
 
 _palette_bone :
   base642img \
-"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjU2IDEgMSAzICM1MDUKeJxjYGRiZmFlZWPn4OTi5uHh5eMXEBQSFhYRFROXkJSSkpaRlZNXUFBUUl\
-ZRVVNX19TU0tbR1dPTNzA0MjYxMTUzt7C0sra2sbWzd3B0cnJ2cXVz9/D09PL28fXz9w8IDAoOCQ0Lj4iMioqOiY2LT0hMTEpOSU1LT8/IzMrOyc3Lyy8oL\
-CwqLiktK6+oqKyqrqmtq29obGpqbmlta+/o7Ozq7unt658wYeKkyVOmTps2fcbMWbPnzJ07b/6ChYsWL1mydNnylavWrF2/YdPmLVu379i5e8++/QcOHj5y\
-7PjJU6fPnDt/8dLlq9eu37x1++69Bw8fPX767MXLV2/evvvw8fOXr99//Pz9599/Bhr7H+R9kOeBfk9KBvo8A+RvoK+LikF+BnkZ5GOwf0G+BXp2IsirEI8\
-C/Qn05tLlK0C+XAf35q49e0H+PATy6AmgT0+fOXvu/AWgZ69cBXr3BtC/t+/cvXf/PsjPT54+e/Yc6O3Xb4Aef//h46fPQL9/A3r+16/ff/7++w/0PsjzQL\
-+DfQ7ytyTI1/JQP2uAfAzyrzHQtyDPgr0K9agXyJugSAbHMSiGQfGbBovdAkjUQv0JjtpGSNQC4xYctSDvQuJ2+gyol6FxuxQYt0Bvrwb7e8NGkM+3bQP5f\
-feevTDfHzlKuf8BKPB7Yw=="
+"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KOTkgMSAxIDMgIzI1Mgp4nGNkZuXg4uETFBaVkJKRU1BWVdfU0TMwNjG3tLZzcHJx9/T28w8KCY+Mjk\
+tISk3PzM4rKCwpq6iqbWhqaevs7p0wccq0GbPnzl+4ZNnKtRu3bN+9/9Cxk2cuXLl+696jpy/ffPj8/dc/RmKsCI2IiU9KzcjJLyqtqK5rbGnv6ps4Zfqsu\
+QsWAw3esHnbzr37Dx09cfrM+YtXrt24fef+w8fPnr968+7j56/ff/35x8TKwcMvJCopLa+koq6lZ2hibmXnCDTZNyA4PDI2ITktE2hwSVlldV1DU2t7Z3cf\
+2N2zwO5esXrtho1btu3YvXf/wSPHcFoBAJTokrQ=" r. 256,1,1,3,3 round.
 
 _palette_copper :
   base642img \
-"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjU2IDEgMSAzICM2MzYKeJyV0oc3FAAcwPH3cM65o6zicCfjjLPOOnucw9njOM4s2w1kj8ySEtESiZ\
-IWiZIGFUpOr/Uar3r1Wq/1Gq/1Wq+lfr/7D/r+CZ/3JSgTSapkivqixRqa2jpLlupS9Q0M6UbLjE3MGOYWVkwbWzuWg6OTM9vVzd3Ty9vHl+PPDQjkBYeEh\
-kdERkXzY+ME8cLEpOTUtOUr0jOzsnPyRGKJtKBwZVFxaVl5RVX1qpra+obVa5qa161vaW3b2N6xecvWbZ1d3Tt6evt27e4f2Ltv/4HBoUPDI6NHjo6NHz9x\
-cmLy9Jmz0zPnzs/OyeYvXrp85eq16zdu3rp95+69+w8ePnr85Omz5y9evnr95u279x8+fvr85eu37z9+/vr9Z2Hh7/+nqKREUCYSVRBBTR0YwEFLCySAQle\
-Pqg8aNOAAD1NTEDG3sLS0YlpbA4udvRzG2YXtCjYeHp5eyOPrJwcKDOIFg1FYWHgEMkXH8GNRKkGYCFYpKaAFXOkZmVkglpsrN8vPBzVgKykpLQO5ykqwA7\
-y6+obGRvBrWtuMhC0bWttAsb1jk9yxc3tXN1D27OztQ83+PQNy0IODQ0A6fHhkFFXHjo0j7KmJSaSdmpqeQd3ZC3My2byCgiISEJQRQYVEUlUlkykUNaRAC\
-w1N1NDW1kEQFNGjoomBoSGNRqcbIYyxCdKYMRiogzxWTASysUUiexbLwcHR0QmdXNhspHJzRyzU8vZBLz8Ox9+fyw1AtCAenBUSim4IFxmFdDF8xIsTCOLj\
-ExKEKJiUnIyIqWnIiI4ZmSiZnYOWeSKRWCyRSKUoWlCIpkXFqIqs5RUIW1WNtDW1tXV1/wC9CEEB"
+"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMTE1IDEgMSAzICMzMzkKeJxj4+TmExQWk5SWU1RW09TRNzKxsLK1d3b18PINCA6NiI5LSE7LyM4rKC\
+6rqK5rbGnv7O2fNGX6rLnzFy1dvmrthk1bd+zee+DQ0ROnz164fO3mnXsPnzx7+eb9xy/ff/359x87YGFl5+Dm5RMQFBYVk5CSlpVXVFZRU9fU1tEzMDIxN\
+be0trG1d3R2dfP08vH1DwwKCY2Iio6NT0hKTk3PyMrJKygsLi2rqKyurW9sam1r7+zu7eufOGXa9Jmz5sybv3DxkmUrVq1Zu37Dpi1bt+/avXffgUOHjx5j\
+YgZZysnFzcPLxy8oJCwiIiYuISklLSMrp6CopKyiqqauoakFdIG+gaGRsYmpmbmFpZWNrZ29g6OTs4ubu4ent4+vn39AYFBwaFh4RGRUdExsXHxCYnJKalp\
+6RmZWdm5uXn5BUXFJaVl5RWVVTW1dPQCk5ZAs" r. 256,1,1,3,3 round.
 
 _palette_pink :
   base642img \
-"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjU2IDEgMSAzICM1OTYKeJyTU9HUMzKztHVwdvXw9g0ICg2PjI5NSEpJTc/Mzs0vLC4pK6+sqqlraG\
-xuaWvv7Oru6eufOGny1GnTZ8yaPWfu/AULFy1Zumz5ilWr16xdt37Dxs1btm7bvmPnrt179u7bf/DQoUOHDx8+cuTo0WPHjh8/ceLkyZOnTp06ffrMmbNnz\
-507d/78+QsXLl68dOny5ctXrly5evXatevXb9y4cfPmzVu3bt++fefOnbt37927d//+/QcPHgLBo0ePHj9+8uTJ06dPnz17/vz5ixcvXr589erV69ev37x5\
-+/btu3fv3r//8OHDx48fP336/PnzFyD4+vXrt2/fv3//8ePHz5+/fv36DQR//vz5+/ffv3////9n4BAQlZJVUFJV19TW1TcwMjE1t7S2sbVzcHRydnVz9/D\
-y9vH1CwgMCg4JDQsLj4iMio6JjYtPSExKSk5JTUvPyMjMys7Oyc3Lyy8oLCwqLikpLSsvr6isrKquqamtq29samlt7+jq7u2bgBZsi3EG24GDhw4fOXrs+I\
-mTp06fOXvu/IWLly5fuXoNGDI3b92+cxcYHA8ePnr8BBQEg97/9Q2NjU1NzS0trW1t7e0dncAU1N3T09vb1z9hwsSJkyZNnjxlCjBUps+YMXPmrFmzZ8+ZM\
-3fuvPnA8Fm4aNHixUuWLF26bNny5StWrFy5atWq1avXrFm7dt269es3bNi4cdOmzeBg27lrz15QmIGDDBRioAADhRc0tB48BIXV8xcvX71+8/bd+4+fPn/5\
-+u37j5+/fv/5++8/AD1c8t4="
+"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMTIxIDEgMSAzICMzMDUKeJxT1DG1cfbwC46ISUzNzC0sraiub2rr7O6bOGX6zDnzFy5ZtnL1ug2bt2\
+7fuXvvgUOHDx85euz4iZOnTp85e+7c+QsXL12+cuXqtes3bt66ffvO3Xv37j94+PDR4ydPnj57/uLFy1evX799++79hw8fP33+8uXr12/ff/z49ev37z9//\
+/37zyoso6SurW9sZmVr7+Tq7uXjHxQSFh4ZHRuflJyanpGVnZtfWFRSWl5RWV1b39Ta0d0PddLiZSvXIJx05NiJU2fOXbh89fqNW3fu3X/0BGgzFS1uaGxq\
+aW1r7+zu6e2bMHHS5CnTps+YOWv2nHnzFy5avGTpsuUrVq5avWbtuvUbNm4COmn3vgOHj504fRbonhu3795/+OTZi1dv33/68u3Hrz//AH2168E="
+  r. 256,1,1,3,3 round.
 
 _palette_vga :
   base642img \
@@ -9624,62 +9725,37 @@ jx8dXj25dOHdi2ZsGU1tIEVwbCwDWhtHXKgjXbDpy6dPvxq48/MM2Q0zF3cPcLiYpPycgtLK2saSAMai
 # The color palettes below have been converted from 'https://matplotlib.org/cmocean/'.
 _palette_algae :
   base642img \
-"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjU2IDEgMSAzICM2NjQKeJy7dvXK5YsXzp87c/rUyePHjh45dPDA/r17du/asX3b1s2bNq5ft3\
-bNqpUrli1dsnjhgvlz58yeOWP61CmTJ07o7+3p7uxoa21paqyvq6murCgrLS4qyM/NycpIT01JSoiLjY4MDw0OCvDz8XJ3dXa0t7WyMDMx0tfV1lRXVVaUl\
-5ORkhQXFREWFODn5eHm4uLk4GBnZ2cDASDNzsHBycnFxc3Nw8PLy8fHzy8gICgoJCQkLCwiIiIKBGJiYuIgIAECkvgAWIUEWLEYCIB0Aw0RFhYGmico+PPH\
-929fv3z+9PHD+/fv3r55/erli+fPnz198vjRw4cP7t+7e+f27Vs3b1y/fg0YTpcvAUPq/LmzZ04DA+vECWBwHT1y+BAoxPbv27sHGGg7d+7YDgy3rVs2b9q\
-0ccOG9euAobd69aqVK1csXw4MwiWLFy0EhuK8ucBwnDVzxozp04BBOWkSMDD7gKHZ1dXZ0Q4M0OamxsaG+rramuqqyory8rLSkuKiwoL8vLzcnOyszIz0tL\
-TUlOSkxIT4uLjYmOioyIjwsLDQkOCgwIAAfz9fH28vT08PdzdXF2dnJ0cHeztbWxtrK0sLc3MzUxNjI0NDA309XR1tbS1NDXU1VVUVUMyfPHHs6OFDB/fv2\
-7Mb6IGtW4BuX7cW6GygmxcvAroX6FqQWydPmghyKMiZIFeC3QhyIijmQQ4Eug/kPIjrgM4DuQ7kPLD7QkKCg4OAIBACAmDAHwL8QMAXBHyAwNvb2wsIPIE+\
-8fBwd3dzc3N1dXUB+sjZycnR0cHB3t7eDuQxG2trKytLSwuQ74DeMzE2NgL7UF8P6EewJzU1gN5UU1VRUVZWUlRUkJeXk5WVkZaWAqYLYHIAJgQAOco0Ig=\
-="
+"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KNTAgMSAxIDMgIzE2MQp4nAGWAGn/1M3Hwbq0raegmZKLhH11bWVcU0k+MygeFg8JBwYICg0PEhQVFx\
+gZGRkZGRkYFxYVExL38u7p5ODc19PPy8fEwLy4tbGtqqainpqWko2JhH96dnFtaGRfW1ZRTUlEQDw3My4qJczFvbavqKGak42GgHp0bmhjX1pXVFJRUFBPT\
+k1MS0lIRkRCPz07ODUyLywpJiMgHBkV1p88Lw==" r. 256,1,1,3,3 round.
 
 _palette_amp :
   base642img \
-"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjU2IDEgMSAzICM2NDkKeJz7+OHD+3fv3r598+b161evXr58+eLF8+fPnj17+vTJkyePHz969O\
-jhwwcPHty/f//evXt37965c+f27du3bt26efPmjRs3rl+/fu3atatXr165cuXy5cuXLl28ePHChQvnz58/d+7c2bNnz5w5c/r0qVOnTp48eeLEiePHjx07d\
-vTokSNHDh8+dOjQwYMHDhzYv3/fvr179+zZs3v3rl07d+7YsX37tq1bt2zZvHnTxo0b1q9ft3bNmtWrVq5YvnzZ0iWLFy1cMH/e3DmzZ82YPm3qlMkTJ/T3\
-9XZ3dba3tbY0NTbU1dZUVVaUlZYUFRbk5eZkZWakpaYkJSbExcZERUaEhYYEBwb4+/p4e3m4u7k6Ozna29navHn96uWL50+fPH708P69u3du37xx/drVK5c\
-uXjh/7uzpUydPHD925PChgwf2792ze9fOHdu2bgG6awPQUSA3QV0EdtDMGdOBDpoEdFFvD9BFHe2tLc1AJ9XX1lQD3VReWlIMcVR2VmY60FXJiQnxcbHRCG\
-f5AZ3lCXeWtZWluZmpsZGhvp6ujpamhrqqirKSooK8nIy0lKSEhLiYqIiwsJCgoICAAD8/HxTw8vLy4QS8EMADAtxAwAUEnEDwBuj9Z0/Bvr9z+9aN61evX\
-L54AeR1sM8PHti3d8+undu3bdkM9vWqlcuXLVkMjIS5c2bNnD4N6GGQf4HebWttbmqor6upBvsV7FWwT1OSk4AejYmOiggPCwkOAvrTF+JPF2dHB4hHLYA+\
-NQF61QDkVx1tLU1NDQ11NTU1VVVVFTSgCgJqIKAOBBoQoIkEwAIgOZh+ZWUlJUVFRQVg0MnJysrISAPDDxyAwBAEByEANjxrrg=="
+"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KNjEgMSAxIDMgIzE5NAp4nAG3AEj/8O3r6ejm5OLh397c29nY1tXU0tHPzszLycjGxMPBv728uri1s7\
+CtqqainpqVkIuFgHp0b2lkXlhTTkhDPurm4dzX0s3Iw765tLCrpqGcmJOOiYSAe3ZxbGdiXVhTTklDPTgyLSgjHhkWEhAODg0ODg4ODg4NDQwLCgnq5N7Y0\
+szGwLq0rqihnJWPiYN9eHJsZmBbVU9KRUA7NjIuKygmJCQkJCUmJicoKSkpKCcmJSMhHxwaGBUS64BWpQ==" r. 256,1,1,3,3 round.
 
 _palette_balance :
   base642img \
-"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjU2IDEgMSAzICM3MzgKeJwTl5CUkpaRlZNXUFRSVlZRVVNTV9fQ0NAEAg0NdXU1FWVFORkJUS\
-F+Xm4uTi5uHj4BYVEJaVkFZVUNbV0DY1MLa1sHJ1cPb9+A4LDI6LjElIzsvMKS8uq6xpb27r6JU6bPmrtg8bKVa9Zv2rpj976DR46fOnP+0tUbt+8+ePzsx\
-et3Hz68f/f2zetXL188f/7s6ZPHjx89fHD//r27d+/cvnXr5o0b169du3rlyuVLly5euHD+3NmzZ06fPnXyxInjx44ePXL40MEDB/bv27tn966dO7Zv27pl\
-88YN69euWbVi+dLFC+fPnT1z2pRJ/b1dHa1NDbVVFaVFBblZGalJCbFREaHBAb7eHm7OjnY2MrJAnyurqKlraGrr6OobGBqbmJpbWFrZ2No7ODq7uHl4Ab0\
-WFAL0W2x8UkpaRlZOXkFRSWl5ZXVtfUNTS1t7Z3dP34SJk6dOmzFr9tx5CxYtXrpsxcrVa9au37Bp89ZtO3bu2rN3/4FDh48eO3Hq9NlzFy5dvnrtxq07d+\
-8/fPzk2YtXb968fP700YN7t29eu3Lp/NnTJ44dObh/764d2zZvXL921YplII/MmjFtykSQR9paGuuBPikrLszPAXolOSEuJjI8JMjf18vD1cnB1srC1MhAV\
-1tDTVlRXlZaUlxUREhQgJ+fj4+Pl5cPGfDy8vLw8HBzc3FxcoLizi8wNAIYdakZ2flFZZW1DS0d3f2Tps2at3DpCnC87dq9Z+/effv2AsGePXt2A8EuMNiJ\
-ABCBXUApoAqQ4v37Dxw8eOjwkaNHjx0/cRLk9fMXLl66cvXa9Zu3bt+9d//hoydPn7949fr1i2ePH9y9df3qpfNnTh47fGDf7h1bN61fsxLo83mzZ0yd1N/\
-T2d7SWFcN9DUk/uJjo8JDIX52drCzsTI3NTbU19XR0tRQV1NVgQJVVXBChqVkaFoGyisrKSoqyMnKSEtJSoiJiggLAgD3W3vg"
+"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMTIxIDEgMSAzICMzNzQKeJwBawGU/hgaHB4gIiMlJigoKSkoJyQgGhMNCgoMERYcIictMzg+Q0lOVV\
+thaG51fIKJkJado6mwtrzDyc7V2+Dm7PDu7Oro5+Xj4t/e3dva2NfW1NLR0M7Ny8rIxsXDwcC+vLq4tbOwraqno56alZCLhYB6dG9pY15YU01IQj0dICImK\
+CsuMDM2OTs/QUVJTFFVW19kaGxxdHh8gISHi46SlZmcoKOmqqyvs7a5vL/CxcnMz9PW2t3h5ens6OPe2dTPysXAu7axraijnpmVkIuGgXx3cm1pY15ZVE9K\
+RD45My4oIx8aFhMQDw4NDg4ODg4ODQ0MCwoJREpRWF5lbHN7goqSmqGpsLa7vb69vby8u7u6urm5ubm5ubq6uru8vL2+v8HDxcbIys3P0dXX2t3f4ubp6+f\
+h2tXPyMK9trCqpJ6YkYuGf3l0bWhiXFZQS0ZBPDczLisoJiQkJCQlJSYnKCkpKSgnJiQiIR4cGhcVEqaTs4c=" r. 256,1,1,3,3 round.
 
 _palette_curl :
   base642img \
-"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjU2IDEgMSAzICM3NTUKeJwTERUVExMXl5CQkJSUlJKSkgYDGRAAs4BCkpIS4uJioqIiwkJCgo\
-ICAgKCgkIiouJSMvJKqpo6BiYWNvYuHj4BIREx8cnp2fnFZVV1ja0dPf2Tps2cs2DxspVrN2zetnPP/kNHT5w+d/HKtZt37j96+vzV2w+fv/74/ffv718/f\
-3z/9vXL508fP7x/9/bNm9evXr588fz5s6dPnzx+/Ojhwwf379+7e/fO7du3bt64fv3a1SuXL128cO7smdMnTxw/euTQwf179+zasX3r5o0b1q1ZtWLZkkUL\
-5s2ZNX3q5In9PV0drc2NdTWV5SVF+blZ6alJ8bFR4aFB/r5eHq5ODrbWFmbGsvKKyqrqmtq6+gZGJmYWVja29o7Oru4eXj5+AUHBoeGR0bHxCUkpaRlZOXk\
-FhcWl5ZXVtfUNTS1tHV3dvf0TJ02ZNn3mrDlz5y9YtHjpshUrV61Zu27Dxk1btm7fsXP3nr37Dxw6fOTY8ZOnzpw9f+HSlavXb9y6c/f+w0dPnr14+frt+4\
-+fv3799OHt65fPnjy8f+fW9auXLpw9feLY4YP79+zavnXThrWrVyxbvGDe7JnTpoB8097a1FBbXVFWXJifk5WRmpwYFxMVERYc6O/r7enu6uxob2tjZWFmY\
-myor6ujpamupqKsqCAvJyMNjkExUAyKiAgLA2MREo38fHy8vM4urm5A33r7+Pr5Az0cEhoWHhkVHRMbl5CYlJySmpaemZWdk5uXX1BYVFxcUlpWXl5RWVVV\
-XV1TU1tbV1dXX1/f0NDY2NTU3NzS2trW3tHZ1dPbBw2X2XPmLVi0ZNnK1WvXb9yybefufQcOA9PA2QuXr924fe/hE3Aa+Pzh7ctnj+/fuXH10rnTJ44c3Ld\
-7+5aN61avWLpo/pyZ0yZP7OvubGtpqq+triwvLS4syMvNzsrMSE9LTUlJTkpKTExMgIB4MEjAACDRuLjY2JjoqMiI8LDQ4KAAYGh5ebi5gOLf0twUAHcuf4\
-k="
+"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMTI0IDEgMSAzICMzODEKeJwTFROXkJCUkpKWlpaRARJSkuJiosJCggKCwmLSCup6Znbu/uHx6fnldW\
+29U2YtXLF+6+6DJ85duXn/6euP3/78+fn96+eP79++efXy+bOnjx89uH/3zu2b169duXT+7KkTRw/u271984Y1K5YsmDN9Ul9nS31VaUF2anxUqL+Xi72Vq\
+ZySmpaekZmVraOrp29gSERMQnJGTkFxeXV9U3tX38SpM2bPW7h0xaq1GzZv27F738Ejx0+dvXDl+q27D5+8ePPhy+d3r57cv3X1wumjB/ds37hm+UKgHb0d\
+TbUVxXmZKQnR4UF+Xq6OtlZmxvraGqpKCrJgn4kIg/wmwMfr4ubh7esfFBIWGR2bkJSSnpWTV1BUXFpeUVVdU1tXV9/Q2NTc2tbR1Tth8rRZcxcuXbVu846\
+9h0+cvQz2+cfXT+5eO3/i4O4ta5cvnD21v6u1obq8uCA3KyMtJTkpMSEhIT4+PgEG4uPjYqMjw0OD/L09nO2tzACwu7nF" r. 256,1,1,3,3 round.
 
 _palette_deep :
   base642img \
-"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjU2IDEgMSAzICM2MTcKeJz7+/vn96+fP75/+/rFsyePHty7c+vGtSuXLpw7c/L40cMH9+/dvW\
-Pblk0b1q1euXzp4gXz5syaMXXyxP7e7s721ubG+trqyvKykqLC/Lyc7MyM9LSU5KTEhPi42JiY6KjIiIjwsLDQ0JDg4KCgwMDAgAB/fz8/P19fHx8fb29vL\
-y8vT09PDw8Pd3d3Nzc3V1dXFxcXZ2dnJyBwdHR0AAJ7ELCDAFsUABEDSYPUOTgiAFQfRIeNjbW1lZWlpYWFuZmZqamJibGRkaGhgb6+nq6ujra2lqamhvrf\
-P39+//r548f3b1+/fvn86dPHDx/ev3v79s3r169evnjx/Nmzp08eP3708OGD+/fu3b1z+/atmzduXL929eqVy5cuXrxw/tzZM6dPnTp54vixo0cOHzp4YP+\
-+vXt279q5Y/u2rVs2b9q4Yf26tWtWr1q5YvmypUsWL1q4YP68ObNnzZwxfdrUKZMnTZzQ39fb093V2dHe1trS3NTY2FBfV1tTXVVZUV5WWlJcVFiQn5ebk5\
-2VmZ6WCg9bUNCGA4M1KDDA38/Xx9vLwx0YfC7OTo4O9kBf21iDfAzysImxsZGhgYG+nh7ct2pqqirKykqKCgrycrKyMtJSUmfAjsfqdpDjQa5ftXLlihXLl\
-y9btnTp0iVLliyGgkUQsJgIAFW6EAQWgMB8EJgHBHNBYA4QzAaCWSAwEwRmAMF0EJgGAlNBYAoQTAaCSZMmTZw4ccKE/v4+pMBraqyvq6murCgrKQalRmCI\
-pSYnJcTHRkdFhIUGBwX4+YLCydXFydHezsYaGD6mJsCwAQYMAGt9gJM="
+"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KNDkgMSAxIDMgIzE1OAp4nAGTAGz/+e7j2M7Dt6yhlYqAdm5mYVxYVVJPTUtKSEZEQ0FAPz49PT0+P0\
+BBQT8+Ozk2MzAsKfv38/Ds6OXh3dnV0czIw764s66po56Yk46Ig396dG9qZF5ZU05IQz46NjIvKycjHxvJw724s6+rqKWko6Kjo6Ojo6OjoqKhoJ+dnJuam\
+ZeWlZSTkY+Mh4B4b2ZeVU1FPTYvM2JJnA==" r. 256,1,1,3,3 round.
 
 _palette_delta :
   base642img \
@@ -9696,64 +9772,42 @@ Xk5WSkpSTERUWEAGwPYP8="
 
 _palette_dense :
   base642img \
-"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjU2IDEgMSAzICM1NzgKeJx79uTRg/t3b9+6ce3K5Yvnz505dfL40SOHDuzfu3vXju1bN2/asH\
-7tmlUrly9bsnjhgvlz58yaOWPa1CmTJk7o7+3p7ursaG9rbWluamyor6utqamuqqqsqCgvLysrLS0tAYJiNFACBqUgUAYG5WBQAQOVSAAuCFEDUo0wtaios\
-LCwoCA/Py8vNzcnJzs7KyszMyM9PS01NSU5OSkxISE+LjYmJjoqMiI8LDQkOCgwwN/P18fby9PD3dXF2cnRwc7WxtrSwtzsw/v3796+ef361csXz589e/rk\
-8aOHDx/cv3f3zp3bt27euH792tUrly9dvHjh/LmzZ06fOnnyxPFjR48cPnTwwP59+/bu2b1r547t27Zu2bxp44b169auWQ0KqqVLFi8CBta8ObOBoTV92pT\
-J8OAChxY4sKqBIVVeWlJcVJifl5uTDXR7GtDliWBnRyM5GupmN4ij7UGutgI529TE2MjQ0EBfT1dHW0tLU0NdTVVVRVlJSVFBXl5OVlZGRlpKSlJSQkJcXE\
-xMTFRUREREGAiEgEAQCASAgB8I+Pj4QP4HBgAoBF69fPnixfPnwGB49vTp0ycg8BgMHuEFjxHgCRYAN+IhMGAf3L8PDFtw4AJD9wYwdMHBCwtdaOACw3bvH\
-lDIggIWGK7AYF2xfCkoBc6bCwxTUJBOnNDX293V0dba3NRQDwxNYGAWFxXk5WZnZaSlAsMxDhiK4WEhQYHAEPTyBMa5k6O9HTjGTU2MgOEGCjZQoKkAAFBh\
-pGE="
+"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KNzQgMSAxIDMgIzIyNAp4nHt878alM8cO7N66YfXSBbOnT+rram9uqKmqKCstKQaBktLSsvLyioqKys\
+pKIFleDpIoLMjLyc5MS0mKj4kMC/L38XBxsDF//+bV8ycP792+ce3ShTMnjx3ev3fXts3r16xYsmDOjCkTejpaGmoqivOz05Pjo8NDAnw8XB3trMyNDfW0N\
+FSVFGSlJcXFRISFhQQF+Pnev3398sWzp0+ePH4EA48fP34CBo8fP3p4/+7tm9euXDh78tihfbu2bly7YvG8mVP6u1rqK0vyMpJjwwN93BxtzI30NFUBgy55\
+hg==" r. 256,1,1,3,3 round.
 
 _palette_diff :
   base642img \
-"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjU2IDEgMSAzICM3NDAKeJw10WVbk2EAhuFv0qNLSjqlBFFEkAaRnqO7YXQzcnSHwGgYcJCSks\
-PRIgfS3aLUYMA2we8+79T7H5z3RUNLR8/AyASDMbOwsrGxc3BycXHz8PIJCAmLikvJyCkoPVNVU9fQfKOjZ2BkYmpuaf3exs7BycXNw8vHHxkUEhYRFRMXn\
-5iMTsvMzs0vLP5QhqmqqWtobG5p7+zq6RsYGsHhJ6Zm5uYXllbWNrd3D46+/zi7IFzf3JEov+4ffoM9PNxTyKRb4jXh4uznyfHRwd7O1sbaytLiwvzc7MzU\
-BH4MNzI0+Kmvt/tjZ3trS3Mjtr6upqoSU15aUlxYkJebnZWRlpqSnJiAiouJjgwPCwkODPD39fZ0d3V2tLdFwK0szN6ZGBvq62prvX6l/uK5irKivJystKS\
-4qLCQIL+ImISUtOxTeUVlFVW1l0Cqpa2rb2D01sTUzMLSGo6wsbN3dHJxdffw8vb1C0AGBYcCcnRsXHxCUjI6NT0zKwewi0qAu6KqprYeC+StgN7d2z8wOD\
-w6hp+YnJ4F+sXl1bWNrZ09yH96fkm4Jt7ekchkCoVCJpPubohXf/GH+7vbm+ury1T79OT4Z9zoMKD3dHV2tFHltdWVFVR4fl5OVkY65I5HxcZERYSHBgchA\
-/x8vD093FydnRzsbW0QcGsrC3NTgDcy0NfT0dbS1AB+NVUVZSUF6AEpCXFREYhraAxpreAIW3sorbunl7ePr38AMjAoOCQ0LDwiMiomNg4Vn5CYnIJOTQPm\
-bIAugNSl5ZiKymrgbsA2AXhbB5D39EH0EdwYfnxyeuYLwH9bWl5dh/T7h8cngH9BuCLeAD84gEyi6i/PTwF+b2dzbWVx4evs9AQeNzLY39vV2dbShAW1MWU\
-lRQW52Rlp6KQEFNCGgsZQYhcnBztq4X+BNf73lZGSFBcTFREWfiIkKCjAz8f3mJeHh5uLk4ODnY2VhRkGY2JkoKejpXn0Bx9diU0="
+"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMTQzIDEgMSAzICM0NDAKeJwBrQFS/gcJCw0ODxESFBYWGBseIiYqLjI2Oj5CRUlNUVRYXF9jZmtvcn\
+Z5fYCEiYyQk5ebn6Onq66yt7q/wsfLz9PX3N/k5+vu8fP19fX08e/s6ebi39zZ1dLOy8jEwr67uLWyr6yppqOgnZqYlZKPjIqHhIF+fHl2c3Bua2hkYF1ZV\
+lJPS0hFQT47NzQwLSomIyAdIyYpLC8zNTk7P0JFSEtNUFNVWFteYGNmaGtucHN2eXx+gYSHioyPkpWYm56hpKeqrbC0trq+wMTHy8/R1djc3+Pm6ezu8PHx\
+8O/s6ufj4NzZ1dLOy8fDwLy5trKvq6mlop+bmJWSj4yJhoOAfXp3dHFubGhmY2BeW1hWU1FOTEpHRUI/PTs4NTIwLSooJSJAQ0dKTlFUWFteYWRmaGpsbnB\
+yc3V4enx9gIKEhoiKjY+Rk5aYmpyfoaSnqauusLO2uLu+wcTGyszP0tXY29/i5efq7O7v8PDv7Onm4t3Z1dDLxsK9ubSvq6einZqVkY2IhIB8d3Nva2djX1\
+tXU09LR0RAOzg0MS0qJyQiISAeHRsbGRgWFRQSEA4ODAoIBjEs26k=" r. 256,1,1,3,3 round.
 
 _palette_gray :
   256,1,1,1,x r. 100%,1,1,3
 
 _palette_haline :
   base642img \
-"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjU2IDEgMSAzICM3MDQKeJzT1NLS0tbW0dHRBQI9EADSOtpamhrqaqrKSorycrLSUpISYqIiwk\
-KCAvz8fLy8PDDAy8vHx88vICgkJCwiKiomLiEpJSUtIysnL6+gqKSsrKKqpq6uoQk0H2i6np6+gYGhoZGxsYmJqZmZubmFhaWllZW1tY2Nra2dnb2Dg6Ojk\
-5Ozs4urq5ubu4eHp5eXt4+vn59/QGBQcEhoWHhEZFR0TFx8QlJySlp6ZlZObn5hUUlZRVVNXUNTS1tHV2//xCnTZsyeu2DR0uWr1qzfuHnbjl179x88fPT4\
-qTPnLly6cu3Gzdt37z98/PTZi1dv3r3/+Pnrtx+/fv+VkJCQBAIpIJCWlpaRkQU6H+R6VXUNLR09A0NjU3MLK2tbOwdHJxdXN3dPsKv8kd0UGwt0VSLQWal\
-p6ekZmVnZObm5efkFhUXFxSWlZeUVlZVV1TW1dfX1DY1NzS2trW3tHZ1d3T09vX39EyZOmjxlytRp02fMnDV7ztx58+YvWLho8ZKly5avWLly1eo1a9et37\
-Bx0+bNW7Zu275j567du/fs3bf/wMGDhw4fOXrs2PETJ0+eOn3mzNlz585fuHDx0qXLl69cuXrt2vXr12/cuHnz1q3bt+/cuXv33r379x88ePjw0aPHT548f\
-frs2fMXL16+fPX69Zs3b9+9y84rKCotr6qpb2xp6+zumzB56vSZs+eC3AEBCxcuWDB//ry5c+fMnj1r5swZM6ZPmzZ16pQpkydPmjRx4oQJE/r7+/v6+np7\
-e3tAoBsEusCgEwE60EE7ArSBQSsItABBMxA0NTU1NjY0NNTX19XV1tbUVFdXVVZWVJSXlZWWFBcXFRYU5Ofl5mRnZ2VmpKelpqQkJyUmxMfHxcbGxMREgwC\
-Qjo2DxkpaekZWdm5eQWFxKTC1VNfWNzaDkktP34SJIL8CAPCjZIY="
+"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KNDYgMSAxIDMgIzE0OQp4nAGKAHX/KiwuLSgiGxQPDAwPEhcbICUpLTA0Nzo8QEJGSU5TWF9mb3mEkJ\
+6sucXR2+bw+RgaHB8mMDlBSE9VW19laW5zeHyBhouQlZqfpKmus7i9wsbLztLV2Nrd4OPm6e1xfoyZoaKfnJiVkpCOjIuKiYmIiIiHh4aFhIOBfnt4dHBrZ\
+2JeW1xgZW12gIqU7TdADQ==" r. 256,1,1,3,3 round.
 
 _palette_ice :
   base642img \
-"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjU2IDEgMSAzICM2NzUKeJxjZmFlY2Pn4OTi5uHl4xcQFBIWERUTl5CUkpaWkZWTV1BUUlJWUV\
-VTV9fQ1NLS1tHV1dM3MDA0MjI2MTE1NTM3t7CwtLSysrK2tgECWyCwIwbYA4GDg4Ojo6OTk7Ozi4urq5ubu4eHp5eXt4+Pr5+/f0BgUFBwSGhYeEREZFR0T\
-GxcfEJiUnJKalp6RmZWdm5efkFhUUlpWXllVXVtXUNjc0tbe2dXT1//xMlTp82YNWfegoWLly5fuXrt+g2btmzbsWvPvgMHDx89fvL02fMXLl25duPW7bv3\
-Hz5+8uzFK1ag5+G+h3gf7H9gAMjIggIAGALKoBBQA4aAJlIIGBubgP1vCfK7rZ090DNOzi6uQG94Aj0B9APQC0AfhEPdD3M+0PU5IOcXFYOcXwF2f31DY1N\
-zS2tbe0dnd09vX/+EiZMmT5k6bfqMmbPmzJ03f8HCRYuXLF22fMXKVavXrFu/YeOmzVu2btu+Y+eu3Xv27tt/4OChw0eOHT9x8tTp02fOnjt/4eKly1euXr\
-t+4+at23fu3r13/8HDR4+fPH32/MXLV6/fvH33/sPHT5+/fP32/cfPX7//CAmLiklISssAfaqkrKoGjGUdXX0DI2NTMwtLaxs7e0cnF1d3Dy9vX/+AoGCgb\
-6KiY+MTklJSgR7JycsvLC4pq6gERUFTc2tbR1d3b9+EiZOnAJ0+a/acuQiXg52+Zu26deuBzt+4adPmzVu2bNm6ddu27du379ixc+fOXbt27d69Z8+evXv3\
-7tu3b//+AwcOHDx48NChw4cPHzly9OjRY8eOHz9+4sTJkydPAb15+syZs2fPnjt3/vyFCxcuXrx06fLly1euXL167dr16zdu3AR6/PadO3fvgbwO8jvU88i\
-+h3n/LwAOEHZa"
+"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMTA5IDEgMSAzICMzMzgKeJwBRwG4/gQGBwoMDhETFRgaHB4gIiQmKCorLS8wMjQ1Nzg5Ojs8PD0+Pj\
+4+Pj4+Pj4+Pj4+Pj4+Pz9AQUJDREVGSEpLTE9QUlRWWFpcXmFjZWhqbXBzdnl8f4OGio6Slpqfo6essLS5vsLGy8/T2Nzg5OkGCAkMDhASFBYYGRwdHyEjJ\
+CYoKSwtLzEzNDc4Ojw+QEJER0lLTlBSVVhaXWBiZWdqbW9ydXd6fX+ChIaJjI6Rk5WYmp2goqSnqayvsbS2uLu9v8LEx8rLzdDS1NfZ293f4eTm6evt8PL0\
+9/n7ExYaHSAkJyouMTU5PEBDR0pOUlZZXWFlaW1xdHh8gISIjI+Tlpmcn6KkpqiqrK6vsLKztLW2t7i5urq7vL2+v8DAwcLDxMXGx8jJysvMzc3P0NDS09P\
+V1tfY2dvc3t/h4+Xn6evt7/L09fj6/ETzn2w=" r. 256,1,1,3,3 round.
 
 _palette_matter :
   base642img \
-"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjU2IDEgMSAzICM2MTUKeJz7+xcI/kDBbwj4BQE/weAHCHwHg29A8BUEvgDBZyD49OnTRyD48O\
-HD+/fv37179/bt2zdvXr9+/erVy5cvXrx4/vzZs6dPnzx5/OjRw4cP7t+/d/fundu3bt28cf36tatXLl+6eOHC+XNnz5w+dfLE8WNHjxw+eGD/vr17du/au\
-WPb1i2bN21cv27tmtUrVyxftnTxooUL5s2dM3vmjOlTp0yeNKG/r6e7q6O9rbW5qbG+rra6qqK8rKS4qCA/Lyc7KyM9LSU5KSE+LiY6MiI8NCQ4KMDfz8fb\
-y8PdzcXZydHeztbaytLCzNTEyNBA/+3rVy+fPwM68cF9oONu3gA67NJFoKtOnwK66cjhQwf2A120c8f2rVs2bdwAdM+qlSvAzpk/b+7sWTOnT0NyTWtLc2N\
-DfW1NdWVFWWlJUWFBXm5OVmZGWmpKUmJCfCzYNWGhwUGBAf6+QOd4At3jCnKQA9BFNiAnWZgDHWViDHSWgb6enq6OjraWlqaGhrq6mqqqioqyspKSoqKigo\
-K8vLycnJysrKwMEEgDgRQYSEKABASIQ4EYGIiCgAgQCAOBEBAICgoKCAjw8/ND/LQc5qc5s2bOmAYM4olAT/V2d3UCw7gFGMYNwECuqaoEhnIpMJgLgeGcm\
-wMM6UxgUKemAgM7EejBuLjYmJjo6KjIyIiI8PCwsNDQ0JCQkGAQCEIGYJFgoFQIUEVYWFh4eHhERERkZGRUVFR0dHRMTEwsEMTFxcUDQQIQJIJAEgQkowGI\
-KEgBUCFQPdARsRBngNwBdgbQDUGgMPf38/UBBTsk3GEBDwAMSXdJ"
+"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KNjQgMSAxIDMgIzIwMwp4nAHAAD///fz8+/v6+vn4+Pf29fTz8vHw7+3s6ujn5eLg3drX1NDNycXAvL\
+ezrqmkn5qVkIqFgHt1cGplYFpVUEpFQDs2Mevl4NrUz8nEvrmzrqijnZiSjYiCfXdybGdiXVhTTkpGQj46NzMwLSsoJiQiIB8dHBsaGhkYGBcXFhYVFBMSE\
+Q+uqKOemJOPioWBfHh0cGxpZWJfXFpYVlRTUlJSU1NUVVdYWVtcXV5fYGFiYmNjY2NiYWBfXVxaV1VST0xJRkM/PV5d6A==" r. 256,1,1,3,3 round.
 
 _palette_oxy :
   base642img \
@@ -9768,87 +9822,55 @@ yrXrN27evnP3HigAngED4DUwAD58fJSRlpIYExUe4uft4epgZ2NlYWZqYmRooK+ro6OtqamhrqaqqqKs
 
 _palette_phase :
   base642img \
-"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjU2IDEgMSAzICM3MzYKeJxbvnLVmrXrN2zavGXb9h27du/Zu+/AwUOHjxw9dvzEyVOnz5w9d/\
-7CxUuXL1+5eu3a9Rs3bt66dfv2nTt37t69ew8OgJw7d27fvnXzxo3r165euXzp4vlzZ8+cOnn82JHDBw/s27N75/atWzZtWLdm1YplSxYtmDdn5vSpkyf09\
-XS2tzTV11ZVlBYX5GZlpCbFx0aFhwT5+3i6uzjZ21pZmBob6utqa2moqSorKSrIy8nKSEtJSoiLiYmKCAsJCvDz8/Hy8HCDAA8vv4CQiJiktJyiirqWrqGJ\
-hbW9s7uXX1BYVGxiSkZ2XmFJeWVNfWNzW0dXT9/EyVOnz5g1Z96CRUuWLS8vKy0pKS4qLMjPy83JysxIT0tNSU5KTIiPjYmOiowICw0JDgzw9/Px9vJwd3V\
-xdnSws7W2sjQ3MzE2NNDX1dHW0tRQV1NTBQM1NXUNTS1tHV19AyNjUzMLK2tbe0cnFzd3T29fv4Cg4NCwiKjo2LiExOSUtPTMrOzcvILCouLSsvKKquqa2r\
-r6hsam5pbWtvaOzs6u7u6e3t6+vv7+CRMmTJw4adKkyUAwBQimAsE0IJgOAjNAYCYMzAICCAsoOn36tGlTp06ZPGnSxAn9fb29Pd1dnR3t7W2tLc1NjQ31d\
-bU11VWVFeU8fKCQE5eUlpGTV1RWUVPX1NbR0zc0NoE639nFzcPLxy8gODQ8MjouITk1Iyu3oKi0orqusaW9q3fC5Gkz5yxYvGzlmvWbtu7Yve/g4WMnT5+7\
-cOnK9Zu379x78Ojx02cvXr56/ebtu/cfPnz89OnTZyD48uULiALyPn748P7d2zevX7188ezpk0cP79+9c+vGtSuXLpw7c+rEsSOHgKkHmHg2b1y/dvXK5Us\
-XL5w/d86sGdOmTAKmnq6OtpamhtrqyvKSooLc7Iy05ITY6IhQUPpxc7K3sTA10tPWUFVSkJWWFBeFphc+XjTAwwMALchzkg=="
+"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMTA2IDEgMSAzICMzMjkKeJwBPgHB/qissLO2uby/wsTHyczO0dPU1tjZ29zd3d7e3t7d3NvZ19XSz8\
+zJxcG9ubWxrKeinpiTjYeBe3VuaGFbVE1HQTs1MCsnIyEeHBkXFRMRDw0MCwsOEhgeJS01PkdQWWJqcXh/hIqPlJidoqZ2dHJwbmtoZWNhXVtYVVJPTElFQ\
+j47NzQwLSsoJiUlJicpLC8zNjo/Q0dLT1NXW19iZmltcHN2eXx+gYOGiIqLjY6PkJGSk5OUlZWWlpeXmJiZmZmampmZmZiXlpSSkI6MioiGhIF/fXp4DhIX\
+Gx4iJiouMjY6PkNHTFFXXGJobnV8g4qSmaGor7e+xMvQ1tvf4+fq7O/w8vPz9PPz8vHv7ero5eHd2dTPysbBu7axrKejnpqVkIyHgnx3cWtlXlhRSUI5Mio\
+jHRcTEA8ODQ0NDQ0NDPDwmdk=" r. 256,1,1,3,3 round.
 
 _palette_rain :
   base642img \
-"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjU2IDEgMSAzICM2NzIKeJx79/bNm9evXr588fzZ06dPHj9+9Ojhwwf379+7d/funTu3b9++de\
-vmzRvXr1+7dvXK5UsXL5w/d/bMqZPHjx05dHD/3j27dmzfunnjhnVrVq9cvnTJogXz586eOWPalMkT+3t7ujraWpsb62trqirKSooK83OzM9NTkxPjY6Mjw\
-0ODAvx8vNxdnR3tbKwsTI0N9XW0NNRUlBTkZKQkxESFhQT4eXm4OTk42NlYWVlYmKGAhYWFlZWNnYOTk4ubh5ePX0BQSFhEVExcQkJSSlpaRlZWTk5eQUFB\
-UVFJSUlZWVkFDFQRQAUKlEFACQQUFd+CfA/0+5PHj4D+vnf3zu1bN64jefb0yRPHjx09cvjQoYMH9u/bu3fP7l27du7csX37tm1bt27ZsnnTpo0bN2xYv37\
-d2rVr1qxevWrlyhUrli9ftnTpkiWLFy9auHDBgvnz582bO2fO7NmzZs2cMWP69GnTpk6ZMnnypIkTJ0zo7+vr7enp7urq7Ghvb2ttaW5uamyor6urramuqq\
-yoKC8rLSkuKizIz8/LzcnOysxIT0tNTUlOSkyIj4uNiY6KjAgPCw0JCQ4KDPD38/Xx9vL0cHdzdXF2cnSwt7OztbG2srQwNzM1MTYyNNDX19PV0dbS1FBXU\
-1VRVlJUkJeTlZGW+vTx/bs3oBB48vjhg3t3b9+8ce3KpQvngP4+fvQwMI537wRF8fq1oBhevHD+vDmzZk4HxvCkiUC390Jc3tHeBnQ62O2NDWDX19bUVFdX\
-gX1QXlZWWlpaUlJcXFRUWFhYUAD0DNA7IJCLCfIwAFwqBwyygSALCDIzMzMy0tPT00ABkpIMDJLEBGCggEIFFCzgcAmGhAs4YMAhAwoaUNgAA8cWGDjA0LG\
-0AADLhGRy"
+"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMTE1IDEgMSAzICMzNDIKeJx7++bVy2dPHz96eP/e3Tu3b928cf3q5Yvnz5w8dmjf7u2b169evmTBnB\
+lTJvZ2tjbWVpYU5makxEeHBfq4O9taGOtpqirIiIsI8nJxsLGyMDMzs7CwcXBy8woIiYhJSEnLyikoKCopq6ioqIIAkFZRVlZSUnzz6vnTRw/u3bl57cqlC\
+2dPnzh25NCBfXt37dyxfduWzZs2rl+3ds2qlSuWL12yeOGC+fPmzJ41Y/q0qZMnTZzQ19Pd1dHW0txYX1tdWVFaXJifm52ZnpqcGB8bFREWEhTg5+Pl7urs\
+aG9rbWluYmSgr6OloaaiKC8r/fHdq+ePH9y9efXimZNHDgA9tm7V0oVzZ06bPLG/p6sTZGZTQ31dbU1VZUV5aWlJcVFhQX5+Xl4uDORBAYidk5OTnZWVmZm\
+enpaanJSYEBcTHRkRGgy23RNovZMD0H4rSwDxo6Ac" r. 256,1,1,3,3 round.
 
 _palette_solar :
   base642img \
-"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjU2IDEgMSAzICM1OTUKeJwzNjE1t7C0sra1s3dwcnZxdffw9PLx9fMPDAoOCQuPiIyOiY1LSE\
-xKTk1Lz8jKzsnNLygsKiktK6+oqq6pratvbGpuaW1r7+js6u7p7eufMHHS5ClTp02fPmPmrNlz5sydN3/BgoWLFi9ZsnTZsuUrVq5ctXr1mrVr161fv2Hjx\
-k2bN2/ZsnXbtu3bd+zcuWvX7t179uzdt2///gMHDh48dOjw4SNHjh49duz48eMnTpw8eerU6dOnz5w5e/bsuXPnz5+/cOHixYuXLl26fPnylStXrl69eu3a\
-tevXr98AgptAcAsIbgPBHRC4CwL3wOA+DDyAA2EREVFRUTExcXFxCQlJSUkpKWlpaRkZGVlZWTk5OXl5eQUFBUVFRSUlJWVlZRUVVVVVNTU1dXUNDU1NLS1\
-tbR0dXV09PX0DA0MjI2MTE1MzcwtQaNrYgMLT0ckZGKJuoCD1BoVpAChQQ0GhGgUK1nhQuKaAAjYTFLJ5+YVFxeCgrQSGbV19AzRsYUELCVlQuAKDFRSoS4\
-Ehumo1MDQ3bNwMDMjtO3ft3rNv/4GDh48cPXbi5KnTZ8+dv3Dp8pVr12/cun3n3v0Hjx4/efb8xavXb969//Dp89dv33/++vMX7GuQp8F+RvMyyM9gb2MCs\
-ARICVClIlADUJs8UDcw2IAGAYNQWkpKChickhJAAAxbcTEgEAUBEQgQRgAhKECIQJSIgiMGGjVIcQNyJtSRQBeC4gQaI9AIAcaHvoGhoZExOEIgMQKOEmCc\
-ACMFGCsuwFgBRgswXrwAsPY3cQ=="
+"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMzUgMSAxIDMgIzExNgp4nAFpAJb/N0BJUltkbXZ/h46VnKGnrLG1ur7BxcjMztHU1tja3N3f3+AVGB\
+odHyIlJysvNDpARk5VXGRrc3uDi5OcpK22v8jR2+Xu+RkcHyEjJCQkIiAeHBoYFhQTExITFBUXGh0gJCgsMDU6PkNIm9UqlA=="
+  r. 256,1,1,3,3 round.
 
 _palette_speed :
   base642img \
-"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjU2IDEgMSAzICM2OTkKeJz79+/vnz+/f/36+ePH92/fvn758vnTp48fPrx/9+7tm9evX7188e\
-L5s6dPnzx+9PDB/fv37t65fevmjevXrl65fPHC+XNnT586eeLY0cOHDu7ft2f3zh3btm7etGH92tWrVixfunjRgnlzZ8+cPm3KpIn9vd1dHW0tzY31tTVVF\
-WUlxYX5udlZGWkpSYnxsdGR4WEhQQF+Pt6e7q7OTg52NtaW5qYmRgZ6utpaGmqqykoK8rIyUpISYqIiwkKCAvx8vLw8PNzc3FxAAKS4eXh4eHn5+Pj5+QUE\
-BAWFhISFRUREREVFxcTExIFAAgwkkQFECCQpDvT7z+9Af3/+CPTz2zdADwP9C/YtyLNQv14Ce/YMyLfHjx09cgTo4QP79+3bu2f3rl07d2zfvm3r1i2bN2/\
-auHHD+vXr1q5ds3r1qlUrV6xYvnzZ0qVLlixetGjhwgXz58+bN3fOnNmzZ82cOWP69GnTpk6ZMnnSpIkTJ/T39/X29nR3d3V2drS3tbW2NDc3NTY21NfV1t\
-ZUV1VWVpSXlZaWFBcVFuTn5+XmZGdlZqSnp6WmJCclJsTHxcbEREdFRoSHhYYEBwUG+Pv5+nh7eXl6uLu5ujg7OTrY29naWFtZWpibmZqYGBsZGujr6epoa\
-2lqqKupqigrnz114tiRQwf27dm5fevmjcC4W7FsCTDm5sycPnXyxP4eULQBY626srykqCAvJys9NRkUZRGQGPPycHOBRZgxMMJ0tDU11FSUFRXkQBEmDoww\
-SHzxcHNxcrCzs7GxsUIAGxs7OwcHJycXMPJ4+UDxJgSMNFFgfElISklJy8jIysnJKygoKiopK6uoqKqqqamrq2toaGhqamppaWmDgA4WAJYAKtACqgOqBup\
-RU1NVVQF6U0lJUVFBXl4O6DAZaSlgYpIAug6UngAQezcr"
+"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KNDkgMSAxIDMgIzE1OAp4nAGTAGz//fn28+/r5+Pf2tXOyMG5samgl46FfHJpYFZNQzoxKCAZEg4LCg\
+wOEBMVFxgZGRkYF/rz7efh29bQy8bCvbm1sq6rqKWinpuYlZKOi4eDf3t3c25pZWBbVlFMSEI9ODMvKSTIvbKnnJCFeW5jWE1COS8nHxgRDAcFBQgLDxQYG\
+x8iJScpKywsLCwrKiknJCIfGxgUF7w7kA==" r. 256,1,1,3,3 round.
 
 _palette_tarn :
   base642img \
-"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjU2IDEgMSAzICM3NzkKeJwBAAP//BYYGRocHR4fISIjJCUnKCkqLC0uMDIzNjk8PkFER0lMT1\
-JUV1pcX2JlZ2ptcHJ1eHt9gIOGiYyPkZSXmp2go6aprK+ytbi7vsHDxsjKy8zNzs/Q0dLT1NXW1tfY2drb3N3e3+Dh4uLj5OXm6Onq6+zt7u/w8fP09fb3+\
-fr7+/z8/Pz7+vn39vTy8O7s6ujn5ePh39za19TRzcrHxMC9ure0sa6rqKWin5yZlpOQjYqHhYJ/fHl2c3BtamdjYF1aV1RQTUpHQ0A9Ojc0MS4rKSclIyIh\
-IB8eHh4dHRwcGxsaGRkYFxYVFBQTEhEQDw4NDAsKCgkICAkJCgsMDQ4ODw8jJSYoKiwtLzEzNDY4OTs9P0BCREVHSEpLTE1PUFFSU1RWV1hZWltcXV9gYWJ\
-jZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXp7fH1+f4CCg4WHioyOkJOVl5qcnqGjpaeqrK6xs7W4ury/wcPGyMrNz9HU1tnb3eDi5efq7O7w8vT29/f39vXz8v\
-Du7Onn5ePh393b2dfV09LQz83MysnHxcTCwb++vLq5t7a0s7GwrqyrqaimpaOioJ+dnJqZmJaVk5KQj42MiomHhoSCgX9+fHp4d3VzcW9ubGpoZmRiYV9dW\
-1lXVlRSUE5NS0lHRUNCQD48Ojg2NDIwLiwqKCYkIiAeDQ0ODg8PDw8PDxAQEA8PDw8PDg4NDAwLDA0ODxARERITFBUWFxgZGhscHR0eHyAhIiMkJCUmJygp\
-KiorLC0uLzEyMzQ1Nzg6PD5BREdLT1NWWV1gZGdrbnJ1eHx/g4aKjZGUmJufoqaprbC0t7u+wsXJzdDU19ve4uXo7O/x8/X19PLw7erm49/c2NTQzcnFwr6\
-7t7Sxr6yrqainpaSjoqGgn56dnZybmpmYl5aVlJOSkZCPjo2Mi4uKiYiHhoaFhISDgoKBgYB/f35+fX18fHt7enl4eHd2dXRzcnJxcG9ubWxsa2ppaWhnZm\
-ZlZGRjYmJhYWBfXl1cW1lXVVNRT1vRd4w="
+"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMTA1IDEgMSAzICMzMjYKeJwBOwHE/hcaHiEjJyktMDU8Q0lQV11kanF4f4aNk5uiqbG4v8XKzc/S1N\
+bY2t3f4uPm6evu8PT2+vv8+/j08Ovn4tzWzsa+t6+ooJmSioR9dm5nX1dPRz84MSolIh8eHRwaGRcUExAOCwoICQsODyQoLTE1OT5CRklMT1JVWFpdYGNlZ\
+2psb3F0dnl7fYCEiY6Ump+lq7C2vMHHzdLY3uTq7/T39vPu6eTf2tXRzcrGwr66trOvq6ekoJyZlpKOi4eDf3t3cm5qZGFcV1NOSkVBPTgzLikkIA0ODw8Q\
+Dw8ODQwNEBETFhgbHR8hIyUnKisuMTQ3O0FIUlpia3N8hI2Vnqavt8DJ0dri6/H18uzj29HJwLewq6ikop+dm5mXlJKPjYuJh4WEgoF/fnx7enh2c3JvbWt\
+paGZkYmFfXVpVUfhNmgM=" r. 256,1,1,3,3 round.
 
 _palette_tempo :
   base642img \
-"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjU2IDEgMSAzICM2OTgKeJz79/fPr5/fv339/Onj+3dvXr968fzpk8cPH9y7e+fWzevXrly+dO\
-H82TOnTh4/duTwwQP79u7etWP71i2bNq5ft2bVyuXLlixaOH/unFkzp0+dMmlCX293Z0dbS1NDfW11ZXlZSVFBXk5WZnpqcmJ8bHRkeGhwoL+vt6e7q7Ojv\
-a21pbmpsaG+no6WhpqqspKCvKyMlKSEuJioiLCwkJCgoKAAGAAZgkJCQsLCwiIiIqKiomJiYuLi4hISEpJAIAUG0jAggwDSCABRJCUJBhIgADRAXAwEgOaJ\
-inz9AvT5h/fv3r0Fev7li+fPngL9/+jhg/v3gUFw+9atmzeuX7t2FRgOly5eOH/+3NkzZ06fOnnyxPFjx44eOXz40MGDB/bv37d3z57du3bt3LFj+7ZtW7d\
-s2bxp08YNG9avW7d2zerVq1auXLF8+bKlS5csXrRo4YIF8+fNnTtn9qyZM2dMnzZ16pTJkyZOmNDf19vT3dXZ2dHe1trS3NTYUF9XW1tTXVVZUV5WWlJcVF\
-iQn5ebm5OdlZmRnpaakpyUmBAfFxcbEx0VGREeFhoSHBQYGODv5+vj7eXp4e7m5uri7OToYG9na2NjbWVpYW5mamJsZGigr6+nq6OtpamhrqaqoqykqCAvJ\
-/sFEu8vXzx7+vjRg/tAP9+8AfTvpYtAv54GxftRoCeBEb9n906g77ZuBvoMGPdAX60A+gnopYUgD8H9MwXkn4kT+oEeAvqouwvkp4729ra21tbWlpZmIGhq\
-amoEgQYQqAeBOjCoBYIaIKgGgqqqqsrKyoqKivLy8rKy0tLSkpLi4qKiosLCgoL8/DxQUORkZ2dlZQKDIz0tLTU1BRgkSYmJCeBQAQZLdFRUJDBkwsOAYRM\
-SHBwUFBgQ4O/vBwwgH29vL2AYebiDQsnVxcUZADWmb3w="
+"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMTEyIDEgMSAzICMzNDcKeJwBUAGv/v369/Tx7uvn5OHe29fU0c3Kx8PAvLm1sq+rp6OgnJiVkI2JhY\
+B9eHRwa2hjX1pVUUxIQz86NTEtKSUhHhsYFhMSEREQEBEREhMUFBUWFxcYGRkaGhsbGxscHBwcHBsbGxsbGhoaGRkZGBgXFxYWFRX08vDu7Oro5eTi4N7c2\
+tjW1dPRz87MysnHxcPCwL+9u7q4t7W0srGvrqyqqaempKKhn52cmpiWlZKQj42KiYeEgoB+fHp4dXNxb21raWZkYmBeXFpXVVNRT01LSEZFQ0A+PDo4NjQx\
+Ly4rKSclIiAe8+/s6eXi3tvY1dLOy8jFwr+9ure0sa+sqqelo6CenJqYlpSSkY+OjIuKiIeGhYSDg4KBgYGAgH9/fn5+fXx8e3t6eXh4d3Z1dHNycXBvbm1\
+samloZmVkY2FgX11cW1pYV1ZUU1JQT05MS0pIR0ZFRA7PoM4=" r. 256,1,1,3,3 round.
 
 _palette_thermal :
   base642img \
-"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjU2IDEgMSAzICM3MTgKeJxjZgEBVhBgY2NjZ+fg4OTi4ubh5eMXEBQSERWTkJKWlVdUVlXX1N\
-YzMDI1t7S2tXd0dnX39PLx8w8MDgkLj4yKiY1PSExOSUvPyMrOycsvKCouLSuvrKquratvbGpubWvv7Orp7ZswcfKUadNnzJo9d96ChYuXLFu+ctWates3b\
-Nq8dduOnbv37Nt/8NCRo8dPnDp99tz5i5euXL124+btO3fvPXj46PHTZ89fvHz1+s3bd+8/fPz46fPnL1+/fvv2/fuPHz9//vwFAr/RAVgUKPvzx48f379/\
-+/bt69cvXz5//vTp48cP79+/e/f2zevXr16+eK6srKKqpqauoaGppaWtraOjq6enr29gYGBoaAQExqgAKmBiYmpqZmZubmFpaWVtbWNra2dv7+Do5OTs7OL\
-q6ubu7uHp6eXl7ePj6+vn5x8QEBgYFBQcHBISGhoWFh4eEREZGRUVHR0TExsbGxcXH5+QkJiYmJSUnJySkpqalpaenpGRmZmVnZ2Tk5sHDMyCwqLikhJggF\
-YAQ7QGGKQNTc0tre0dnd09vf0TJoHCdOasOXPnL1y0ZOnyFZAg3bJ1+45de/aCQvTY8ZOnz5y7cPEyMDxv3b57/8GjJ0+fv3z15t2Hj5+/fvvxyxgYpVY2d\
-g5OLm6e3r7+gSFhEVGx8Ukp6Zk5eYUlZZU1dY0tbZ09fRMnTwXaM3vu3HnzoWDevLlz58yZM3v2rFkzZ86YMX36tGlTp06ZMnny5EmTJk2cOGHChP7+/j4g\
-6O3t7enp6e7u7urq6uzs6Ohob29ra21tbWlubmpqbGyor6+rramprqqsqCgvKy0pLiosyM/LzcnOzEhPS01JSkyIj42JjooIDwsNDgoM8Pfz8fby9HB3c3V\
-1cXZydHSwt7ezs7O1tbVBAkAuUBAYKw6OjrBo8fDwBEYKME78AwKDgkNAkRERGQUARdd09g=="
+"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMTA3IDEgMSAzICMzMjUKeJxjYWFhZWVj5+Ti4RcUkZBRUNUyMLWyd/HwCQiJiI5PSsvMyS8qq6ypb2\
+rr7J0wefqseQuXrlizYfP2XfsOHj155vzla7fuPnj07MXrt+8/fv7y7fuPn79+/YaAX79+/vzx/dvXL58/fXz/7s2rF8qq6hpa2jp6+gaGRkbGYACkTMzML\
+aysbe0dnJxd3T28vH39/AODgkNCwyMio6JjY+MTEpOSU1LTMjKzcnLzC4pKyiqraxua2zp7JkyeNmveoqUr127cumPPgSMnzly4cuPOgycv3nz8+tPE0tbJ\
+3ScwPCYpI6+0urGjb8qM2fPmz58/b+6c2bNmzpg2dcrkSRMn9Pf39fb2dHd1drS3tbY0NzXU11RXlpcWFeRlZ6QmJcREhgUH+nl7uLk6Odrb2dqAgK2tHdS\
+lQIcGBoeGRwIArFub1Q==" r. 256,1,1,3,3 round.
 
 _palette_topo :
   base642img \
@@ -9864,14 +9886,12 @@ evmrdxq079xw4fPzUuUtXb9558AQAVgJv5Q=="
 
 _palette_turbid :
   base642img \
-"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjU2IDEgMSAzICM1OTQKeJxl0Pk/E3Acx/E/BFuOzJhhNptNrghRUVFJ931fdN/RhQ4idLgyW0\
-JpRIbNLptdds8utskenY+u3/t8tz2kR6+/4P18ezzz8x/m5txul8vpnJ2dcTjsdpvNarVYpqfNZrPJZDQaDHq9TqfVajSaqSm1WqVSKpUKhVw+OSmTyaTSi\
-QmJRCwWiYRCgWB8nM/n8cbGRkdHuNzh4fdDQ4OD7wYG+jmct319b1739vZ0d7/qeslmszqZzI4X7W2trS3Nz589fdLU1NjwuL7uUW3Nwwf371VXV1XevXP7\
-1s2K8hvXr129cvnSxQvnz509U1Z66uSJ48eOHjl86OCB/fv27tm9a+eO7du2bikp3rRxQ1Hh+nVrC/LXrF6Vl7syJztrRWbG8vS01JTkZUkMeiKNmkAhx5P\
-iYmOI0YSoSHwELnxpWGjI718/f3z/9vXL508fPXCE2+WccdhtVsu0yWjQ67QatUqpkE/KpBKxSCgY5/PGRrjAAlQ/B4F6vBxWp9fip/wjWQxZkADldFmpD4\
-M0iIM8CAQiRAJTyeZiYIGrqBBkQCvIBxzo8nLBl5OdnQXEzAxApqcBMyUZoEkMBh2sNCpoKWTwkuJADORoAqBBHYEDN8BDQ4KDl2CxmC42i9nR3tbSDMsbG\
-+rramtgdVUlbK4oh+thr/949Lv39oXXYZ/vdf/t6Hd0/MIuGIaWpcI2GAfzUEm+GH+j/1fi4mj+qL4SUBQUGYqHSAgJzFiAxhCJYAUsIQq4kXi8V4wLR+Yw\
-pEZscGMxmKCgwMCAgD/8NVg7"
+"MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMTI2IDEgMSAzICMzNzAKeJx78fzpk8ePHj64f+/undu3bt64fu3qlcuXLl28cP7c2TOnT506cfzY0S\
+OHDx08sH/f3j27d+7Yvm3L5k0b1q9ds2rl8mVLFi2YN2fWzOlTJ0/s7+3p6mhraWqoq6mqKC0uzM/NzkxPTU6Ii4kMDw0O9Pf19nR3dXa0t7W2NDc1NtTX1\
+dZUV1X+8unD29cvnz15dP/u7RvXrlw6f/b0yWNHDh3Yu3vn9q2bNqxbvXI5xI4Z06ZMmtAHsaKxvra6sqKsBGRJTlZmelpKcmJCXGxMVGREWGhIcGCAv5+P\
+t5enh7uri5Ojg72djbWVpYW5qYmxkaG+nq6OlqaGuqqKsqKC/KrlSxbOmz1j6qT+3s72lsa6msryksL8nCyguxPjY6IiQkOCAvx8vb083N1cXZyBZgENs7O\
+1tbWxsbEGASsYsIQACyAwNzc3MzMzNTUxMQbaZ2hgoK8HtFNHW0sTaK2aqoqKshLQZjlZGWkAeF+paA=="
+  r. 256,1,1,3,3 round.
 
 # The color palettes below comes from the LoSpec palette list 'https://lospec.com/palette-list'.
 _palette_aurora :
@@ -9911,6 +9931,29 @@ _palette_uzebox :
   base642img \
 "MSB1bnNpZ25lZF9jaGFyIGxpdHRsZV9lbmRpYW4KMjU2IDEgMSAzICM1Mwp4nGNQ8ciduO3Wf4aRSkOBChR4QEEuFEyEgm1QcAsK/kPBcNFPLgilEK\
 yiEPynEAAA16V90A=="
+
+# Command that tries to compress a smooth-enough palette.
+compress_palette :
+  rm palette "$1"
+  N={w}
+  do
+    N-=1
+    +r. $N,1,1,3,2 round.
+    r. ..,3 round.
+    deltaE. ..
+    dEavg,dEmax={[ia,iM]} rm.
+    e[] "N = "$N", dEavg = "$dEavg", dEmax = "$dEmax
+  while $dEavg<0.75" && "$dEmax<1.25
+  N+=1
+  r $N,1,1,3,2 round.
+  e[] ""
+  img2base64 0,0 rm
+  str=\"${}\"
+  ('$str') s. x,-119 ('\\\n') if $!>2 a[0--3] .,x fi rm.
+  i[0] ('"  base642img \\\n"')
+  ('"\n  r. 256,1,1,3,3 round.\n"')
+  a x
+  ot pal.txt
 
 #@cli pseudogray : _max_increment>=0,_JND_threshold>=0,_bits_depth>0
 #@cli : Generate pseudogray colormap with specified increment and perceptual threshold.
@@ -16557,22 +16600,22 @@ axes3d : check "${4=23}>0 && isbool(${8=1})" skip ${1=1},${2=$1},${3=$2},"${5=X}
   e[^-1] "Input 3D axes with sizes ($1,$2,$3)."
   l[]
   m={max(abs($1),abs($2),abs($3))/40} m2={2*$m} m3={1.2*$m2}
-  if $8 _axes3d "O",$4 -3d. $m3,$m3,$m3 fi
+  if $1 line3d 0,0,0,$1,0,0 fi
+  if $2 line3d 0,0,0,0,$2,0 fi
+  if $3 line3d 0,0,0,0,0,$3 fi
   if $1
-    line3d 0,0,0,$1,0,0
     cone3d $m,{2*$m},16 r3d. 0,1,0,90 +3d. {$1-$m2},0,0
     _axes3d "$5",$4 +3d. {$1+$m3},0,0
   fi
   if $2
-    line3d 0,0,0,0,$2,0
     cone3d $m,{2*$m},16 r3d. 1,0,0,-90 +3d. 0,{$2-$m2},0
     _axes3d "$6",$4 +3d. 0,{$2+$m3},0
   fi
   if $3
-    line3d 0,0,0,0,0,$3
     cone3d $m,{2*$m},16 +3d. 0,0,{$3-$m2}
     _axes3d "$7",$4 +3d. 0,0,{$3+$m3}
   fi
+  if $8 _axes3d "O",$4 -3d. $m3,$m3,$m3 fi
   +3d nm [3d\ axes]
   endl
 
@@ -16580,6 +16623,17 @@ _axes3d :
   0 t. "$1",2,0,$2,1,1 +dilate. 3 *.. 255 r.. 100%,100%,1,3
   i... (67.5;73.5;109.5;103.5;51.5;100.5;1;1;0;0;0;1;0;-128;{w};{h};3)
   i.. (-128;{w};{h};1) y[-3,-1] a[-4--1] y
+
+#@cli boundingbox3d
+#@cli : Replace selected 3D objects by their 3D bounding boxes.
+#@cli : $ torus3d 100,30 +boundingbox3d +3d[-1] [-2]
+boundingbox3d :
+  e[^-1] "Replace 3D object$? by their 3D bounding boxes."
+  repeat $! l[$>]
+    nbv={f2ui(i[6])} rows 8,{8+3*$nbv} r. 3,$nbv,1,1,-1 s. x
+    xc,yc,zc,sx,sy,sz={"[ (im#0 + iM#0)/2, (im#1 + iM#1)/2, (im#2 + iM#2)/2, iM#0 - im#0,iM#1 - im#1, iM#2 - im#2 ]"}
+    rm box3d $sx,$sy,$sz c3d +3d $xc,$yc,$zc p3d. 1
+  endl done
 
 #@cli box3d : _size_x,_size_y,_size_z
 #@cli : Input 3D box at (0,0,0), with specified geometry.
@@ -26433,8 +26487,7 @@ x_mandelbrot : skip ${1=0},${2=0.317},${3=0.03} check_display
     $siz,$siz mandelbrot. {0,^},256,$1,{if($1,$2,0)},{if($1,$3,0)} map. [1]                 # Render fractal.
     if $1 w. $siz,$siz,0,"[G"{`39`}"MIC] Julia Set c=("{0,@0-1}")-("{0,@2-3}"), c0=($2,$3)" # Display on window.
     else w. $siz,$siz,0,"[G"{`39`}"MIC] Mandelbrot Set c=("{0,@0-1}")-("{0,@2-3}")" fi
-    w={w} h={h} round. select. 2                                                            # Get the user selection.
-
+    w={w} h={h} round. select. 2,0,0,0,1                                                    # Get the user selection.
     if i[0]>0                                                                               # If valid selection found.
       M={max(i[3]-i[0],i[4]-i[1])} # Compute max dimension of selected rectangle.
       if $M<5 _x_mandelbrot_coords $1 rm[1] _x_mandelbrot_palette mv. 1 # If selection too small, reset the view,
@@ -26447,13 +26500,13 @@ x_mandelbrot : skip ${1=0},${2=0.317},${3=0.03} check_display
     fi
     rm.                                                                     # Delete latest rendering.
     if {*,C}                                                                # If 'C' key has been pressed.
-      if $1 e[0--4] "Julia set, at c = ("{0,@0-1}")-("{0,@2-3}"), with c0 = ($2,$3)."
-      else e[0--4] "Mandelbrot set, at c = ("{0,@0-1}")-("{0,@2-3}")."
+      if $1 e[] "Julia set, at c = ("{0,@0-1}")-("{0,@2-3}"), with c0 = ($2,$3)."
+      else e[] "Mandelbrot set, at c = ("{0,@0-1}")-("{0,@2-3}")."
       fi
     fi
-    if !{*}" || "{*,ESC}" || "{*,Q} rm w 0 return fi
+    if !{*}" || "{*,ESC}" || "{*,Q} break fi
     wait -1
-  while 1
+  while 1 rm w 0
 
 _x_mandelbrot_coords :
   if $1 (-2;-2;2;2) else (-2.1;-1.5;1.2;1.5) fi
@@ -39148,9 +39201,6 @@ fx_unsharp_goldmeinel_preview:
 #@gui : "HSV [Saturation]","HSV [Value]","HSI [Intensity]","HSL [Lightness]","CMYK [Cyan]","CMYK [Magenta]",
 #@gui : "CMYK [Yellow]","CMYK [Key]","YIQ [Luma]","YIQ [Chromas]","RYB [All]","RYB [Red]","RYB [Yellow]","RYB [Blue]")
 #@gui : sep = separator()
-#@gui : Parallel Processing = choice("Auto","One Thread","Two Threads","Four Threads","Eight Threads",
-#@gui : "Sixteen Threads"), Spatial Overlap = int(24,0,256)
-#@gui : sep = separator()
 #@gui : Preview Type = choice("Full","Forward Horizontal","Forward Vertical","Backward Horizontal",
 #@gui : "Backward Vertical","Duplicate Top","Duplicate Left","Duplicate Bottom","Duplicate Right",
 #@gui : "Duplicate Horizontal","Duplicate Vertical","Checkered","Checkered Inverse")
@@ -39158,7 +39208,7 @@ fx_unsharp_goldmeinel_preview:
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2010/29/12</i>.</small>")
 fx_sharpen_inversediff :
-  ac "gui_parallel_overlap \"repeat $2 sharpen $1 c 0,255 done\",$4,$5",$3,1
+  ac "repeat $2 sharpen $1 c 0,255 done",$3,1
 
 fx_sharpen_inversediff_preview :
   gui_split_preview "fx_sharpen_inversediff $*",${-3--1}
@@ -39221,7 +39271,7 @@ _fx_sharpen_multiscale :
 #@gui : "HSV [Saturation]","HSV [Value]","HSI [Intensity]","HSL [Lightness]","CMYK [Cyan]","CMYK [Magenta]",
 #@gui : "CMYK [Yellow]","CMYK [Key]","YIQ [Luma]","YIQ [Chromas]","RYB [All]","RYB [Red]","RYB [Yellow]","RYB [Blue]")
 #@gui : sep = separator()
-#@gui : Parallel Processing = choice("Auto","One Thread","Two Threads","Four Threads","Eight Threads",
+#@gui : Parallel Processing = choice(1,"Auto","One Thread","Two Threads","Four Threads","Eight Threads",
 #@gui : "Sixteen Threads"), Spatial Overlap = int(24,0,256)
 #@gui : sep = separator()
 #@gui : Preview Type = choice("Full","Forward Horizontal","Forward Vertical","Backward Horizontal",
@@ -39270,9 +39320,6 @@ fx_unsharp_richardsonlucy_preview :
 #@gui : "HSV [Saturation]","HSV [Value]","HSI [Intensity]","HSL [Lightness]","CMYK [Cyan]","CMYK [Magenta]",
 #@gui : "CMYK [Yellow]","CMYK [Key]","YIQ [Luma]","YIQ [Chromas]","RYB [All]","RYB [Red]","RYB [Yellow]","RYB [Blue]")
 #@gui : sep = separator()
-#@gui : Parallel Processing = choice("Auto","One Thread","Two Threads","Four Threads","Eight Threads",
-#@gui : "Sixteen Threads"), Spatial Overlap = int(24,0,256)
-#@gui : sep = separator()
 #@gui : Preview Type = choice("Full","Forward Horizontal","Forward Vertical","Backward Horizontal",
 #@gui : "Backward Vertical","Duplicate Top","Duplicate Left","Duplicate Bottom","Duplicate Right",
 #@gui : "Duplicate Horizontal","Duplicate Vertical","Checkered","Checkered Inverse")
@@ -39280,7 +39327,7 @@ fx_unsharp_richardsonlucy_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2010/29/12</i>.</small>")
 fx_sharpen_shock :
-  ac "gui_parallel_overlap \"repeat $5 sharpen $1,$2,$3,$4 c 0,255 done\",$7,$8",$6,1
+  ac "repeat $5 sharpen $1,$2,$3,$4 c 0,255 done",$6,1
 
 fx_sharpen_shock_preview :
   gui_split_preview "fx_sharpen_shock $*",${-3--1}
