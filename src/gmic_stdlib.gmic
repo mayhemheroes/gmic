@@ -2674,6 +2674,7 @@ nd3d :
     (1,0,0,0;0,1,0,0;0,0,1,0) store. pose3d
     focale=800 mode=4 dmode=-1
 
+    is_fullscreen={*,f}
     is_zbuffer=1
     is_doublesided=1
     show_axes=1
@@ -2765,7 +2766,7 @@ nd3d :
           +j[render] [notification_gfx],0.99~,5,0,0,{sqrt(max(0,1-($|-$notification)))}
         else [render]
         fi
-        nm. view w. -1,-1,0,$nm" ("$nbv" vertices, "$nbp" primitives)"
+        nm. view w. -1,-1,0,$is_fullscreen,$nm" ("$nbv" vertices, "$nbp" primitives)"
       fi
 
       if $wait_event" && "!$is_motion wait else wait 20 fi
@@ -2775,27 +2776,27 @@ nd3d :
       is_CTRL={{*,CTRLLEFT}" || "{*,CTRLRIGHT}}
       if {*,-F1}
         mode,dmode={M=0;m=$mode;wasbbox=$dmode<0;[M,m!=M?(wasbbox?-1:M):(wasbbox?M:-1)]}
-        notification="Render: Dots" if $dmode<0 notification.=" + Bbox" fi
+        notification="Render: Dots" if $dmode<0 notification.=" + Box" fi
         rmn render
       elif {*,-F2}
         mode,dmode={M=1;m=$mode;wasbbox=$dmode<0;[M,m!=M?(wasbbox?-1:M):(wasbbox?M:-1)]}
-        notification="Render: Wireframe" if $dmode<0 notification.=" + Bbox" fi
+        notification="Render: Wireframe" if $dmode<0 notification.=" + Box" fi
         rmn render
       elif {*,-F3}
         mode,dmode={M=2;m=$mode;wasbbox=$dmode<0;[M,m!=M?(wasbbox?-1:M):(wasbbox?M:-1)]}
-        notification="Render: Flat" if $dmode<0 notification.=" + Bbox" fi
+        notification="Render: Flat" if $dmode<0 notification.=" + Box" fi
         rmn render
       elif {*,-F4}
         mode,dmode={M=3;m=$mode;wasbbox=$dmode<0;[M,m!=M?(wasbbox?-1:M):(wasbbox?M:-1)]}
-        notification="Render: Flat-Shaded" if $dmode<0 notification.=" + Bbox" fi
+        notification="Render: Flat-Shaded" if $dmode<0 notification.=" + Box" fi
         rmn render
       elif {*,-F5}
         mode,dmode={M=4;m=$mode;wasbbox=$dmode<0;[M,m!=M?(wasbbox?-1:M):(wasbbox?M:-1)]}
-        notification="Render: Gouraud-Shaded" if $dmode<0 notification.=" + Bbox" fi
+        notification="Render: Gouraud-Shaded" if $dmode<0 notification.=" + Box" fi
         rmn render
       elif {*,-F6}
         mode,dmode={M=5;m=$mode;wasbbox=$dmode<0;[M,m!=M?(wasbbox?-1:M):(wasbbox?M:-1)]}
-        notification="Render: Phong-Shaded" if $dmode<0 notification.=" + Bbox" fi
+        notification="Render: Phong-Shaded" if $dmode<0 notification.=" + Box" fi
         rmn render
       fi
       if $is_CTRL
@@ -2812,6 +2813,11 @@ nd3d :
           rmn background
         elif {*,-D}" && "{*,w}<0.8*{*,u}" && "{*,h}<0.8*{*,v} w[] {1.25*[{*,w,h}]}
           notification="Increase window size"
+          rmn background
+        elif {*,-F}
+          is_fullscreen={!$is_fullscreen}
+          if $is_fullscreen w[] {*,u,v} else w[] {0.75*[{*,u,v}]} fi
+          n0,n1="Off","On" notification="Fullscreen: "${n$is_fullscreen}
           rmn background
         elif {*,-Z}
           is_zbuffer={!$is_zbuffer}
