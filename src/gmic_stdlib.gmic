@@ -2777,75 +2777,82 @@ nd3d :
       # Manage user-events
       mx,my,mb={*,x,y,b}
       is_CTRL={{*,CTRLLEFT}" || "{*,CTRLRIGHT}}
-      if {*,-F1}
+      if {*,-F1} # Render: Dots
         mode_render,mode_drender={M=0;m=$mode_render;wasbbox=$mode_drender<0;[M,m!=M?(wasbbox?-1:M):(wasbbox?M:-1)]}
         notification="Render: Dots" if $mode_drender<0 notification.=" + Box" fi
         rmn render
-      elif {*,-F2}
+      elif {*,-F2} # Render: Wireframe
         mode_render,mode_drender={M=1;m=$mode_render;wasbbox=$mode_drender<0;[M,m!=M?(wasbbox?-1:M):(wasbbox?M:-1)]}
         notification="Render: Wireframe" if $mode_drender<0 notification.=" + Box" fi
         rmn render
-      elif {*,-F3}
+      elif {*,-F3} # Render: Flat
         mode_render,mode_drender={M=2;m=$mode_render;wasbbox=$mode_drender<0;[M,m!=M?(wasbbox?-1:M):(wasbbox?M:-1)]}
         notification="Render: Flat" if $mode_drender<0 notification.=" + Box" fi
         rmn render
-      elif {*,-F4}
+      elif {*,-F4} # Render: Flat-shaded
         mode_render,mode_drender={M=3;m=$mode_render;wasbbox=$mode_drender<0;[M,m!=M?(wasbbox?-1:M):(wasbbox?M:-1)]}
         notification="Render: Flat-Shaded" if $mode_drender<0 notification.=" + Box" fi
         rmn render
-      elif {*,-F5}
+      elif {*,-F5} # Render: Gouraud-shaded
         mode_render,mode_drender={M=4;m=$mode_render;wasbbox=$mode_drender<0;[M,m!=M?(wasbbox?-1:M):(wasbbox?M:-1)]}
         notification="Render: Gouraud-Shaded" if $mode_drender<0 notification.=" + Box" fi
         rmn render
-      elif {*,-F6}
+      elif {*,-F6} # Render: Phong-shaded
         mode_render,mode_drender={M=5;m=$mode_render;wasbbox=$mode_drender<0;[M,m!=M?(wasbbox?-1:M):(wasbbox?M:-1)]}
         notification="Render: Phong-Shaded" if $mode_drender<0 notification.=" + Box" fi
         rmn render
+      elif {*,-F7}" && "($focale>100" || "!$focale) # Decrease focale
+        if !$focale focale=2000 else focale-=100 fi
+        notification="Focale: "$focale
+        rmn render
+      elif {*,-F8}" && "$focale # Increase focale
+        if $focale>=2000 focale=0 notification="Focale: Inf" else focale+=100 notification="Focale: "$focale fi
+        rmn render
       fi
       if $is_CTRL
-        if {*,-B}
+        if {*,-B} # Change background
           mode_background={($mode_background+1)%4}
           n0,n1,n2,n3="Black","White","Gray","Color" notification="Background: "${n$mode_background}
           rmn background
-        elif {*,-C}" && "{*,w}>128" && "{*,h}>128 w[] {0.8*[{*,w,h}]}
+        elif {*,-C}" && "{*,w}>128" && "{*,h}>128 w[] {0.8*[{*,w,h}]} # Decrease window size
           notification="Decrease Window Size"
           rmn background
-        elif {*,-D}" && "{*,w}<0.8*{*,u}" && "{*,h}<0.8*{*,v} w[] {1.25*[{*,w,h}]}
+        elif {*,-D}" && "{*,w}<0.8*{*,u}" && "{*,h}<0.8*{*,v} w[] {1.25*[{*,w,h}]} # Increase window size
           notification="Increase Window Size"
           rmn background
-        elif {*,-F}
+        elif {*,-F} # Toggle fullscreen
           is_fullscreen={!$is_fullscreen}
           if $is_fullscreen w[] {*,u,v} else w[] {0.75*[{*,u,v}]} fi
           n0,n1="Off","On" notification="Fullscreen: "${n$is_fullscreen}
           rmn background
-        elif {*,-G}
+        elif {*,-G} # Save object as a .off file
           n=0 do filename gmic.off,$n n+=1 while isfile(['{/${}}'])
           o[0] ${}
           notification="Save Copy:\n"${}
-        elif {*,-O}
+        elif {*,-O} # Save object as a .gmz file
           n=0 do filename gmic.gmz,$n n+=1 while isfile(['{/${}}'])
           o[0] ${}
           notification="Save Copy:\n"${}
-        elif {*,-P}
+        elif {*,-P} # Print 3D pose on console
           $pose3d v 0 e[] "  > 3D Pose = [ "{^}" ]." rm.
-        elif {*,-R}
+        elif {*,-R} # Reset window
           w[] {0.7*[{*,u,v}]}
           notification="Reset Window Size"
           rmn background
-        elif {*,-S}
+        elif {*,-S} # Save screenshot
           n=0 do filename gmic.png,$n n+=1 while isfile(['{/${}}'])
           o[render] ${}
           notification="Save Screenshot:\n"${}
-        elif {*,-T}
+        elif {*,-T} # Change orientation mode
           mode_orientation={($mode_orientation+1)%3}
           n0,n1,n2="Forward","Backward","Double-Sided" notification="Orientation: "${n$mode_orientation}
           if $mode_orientation!=2 rmn object3d fi
           rmn render
-        elif {*,-X}
+        elif {*,-X} # Show/hide 3D axes
           is_axes3d={!$is_axes3d}
           n0,n1="Off","On" notification="3D Axes: "${n$is_axes3d}
           rmn render
-        elif {*,-Z}
+        elif {*,-Z} # Enable/disable Z-buffer
           is_zbuffer={!$is_zbuffer}
           n0,n1="Off","On" notification="Z-Buffer: "${n$is_zbuffer}
           rmn render
