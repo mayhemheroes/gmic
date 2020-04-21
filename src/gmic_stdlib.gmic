@@ -1225,11 +1225,12 @@ ${g}"N=24"$n").
 \n    . "${g}"(mouse)+(middle mouse button)"$n": Shift 3D object.
 \n    . "${g}"F1 ... F6"$n": Toggle between different 3D rendering modes.
 \n    . "${g}"F7/F8"$n": Decrease/increase focale.
+\n    . "${g}"CTRL+A"$n": Show/hide 3D axes.
 \n    . "${g}"CTRL+B"$n": Switch between available background.
 \n    . "${g}"CTRL+G"$n": Save 3D object, as numbered file 'gmic_xxxx.off'.
 \n    . "${g}"CTRL+P"$n": Print current 3D pose on stderr.
 \n    . "${g}"CTRL+T"$n": Switch between single/double-sided 3D modes.
-\n    . "${g}"CTRL+X"$n": Show/hide 3D axes.
+\n    . "${g}"CTRL+X"$n": Show/hide 3D bounding box.
 \n    . "${g}"CTRL+Z"$n": Enable/disable z-buffered rendering."
 
   _help_section "Adding Custom Commands"
@@ -2687,6 +2688,7 @@ _display3d :
     is_fullscreen={*,f}
     is_zbuffer=1
     is_axes3d=1
+    is_boundingbox=0
     mode_render=4
     mode_drender=-1
     mode_background=3
@@ -2719,15 +2721,17 @@ _display3d :
       if !narg($object3d)
         +c3d[0] n3d. *3d. {background,$zoomfactor*0.65*min(w,h)}
         if $mode_orientation==1 rv3d. fi
+        rmn boundingbox3d
+        if $is_boundingbox +boundingbox3d. o3d. 0.35 nm. boundingbox3d +3d.. . rv[-2,-1] fi
         nm. object3d
-        rmn boundingbox3d,render
+        rmn render
       fi
 
       # Render 3D object.
       if !narg($render)
         $pose3d p={^} rm.
         m={$is_motion?$mode_drender:$mode_render}
-        [background] nm. render
+        [background] +f. -1 nm[-2,-1] render,silhouette
         if $m<0
           if !narg($boundingbox3d) +boundingbox3d[object3d] o3d. 0.35 nm. boundingbox3d fi
           +pose3d[boundingbox3d] $p
@@ -2736,6 +2740,8 @@ _display3d :
           +pose3d[object3d] $p
           j3d[render] .,$posx%,$posy%,0,1,$m,{$mode_orientation==2},$is_zbuffer,$focale rm.
         fi
+#        rm[silhouette]
+
         if $is_axes3d
           +pose3d[axes3d] $p
           eval " # Colorize axes depending on their Z-sign
@@ -2824,7 +2830,11 @@ _display3d :
         rmn render
       fi
       if $is_CTRL
-        if {*,-B} # Change background
+        if {*,-A} # Show/hide 3D axes
+          is_axes3d={!$is_axes3d}
+          n0,n1="Off","On" notification="3D Axes: "${n$is_axes3d}
+          rmn render
+        elif {*,-B} # Change background
           mode_background={($mode_background+1)%7}
           n0,n1,n2,n3,n4,n5,n6="Black","White","Gray","Gradient \#1","Gradient \#2","Gradient \#3","Checkerboard"
           notification="Background: "${n$mode_background}
@@ -2863,10 +2873,10 @@ _display3d :
           n0,n1,n2="Forward","Backward","Double-Sided" notification="Orientation: "${n$mode_orientation}
           if $mode_orientation rv3d[object3d] fi
           rmn render
-        elif {*,-X} # Show/hide 3D axes
-          is_axes3d={!$is_axes3d}
-          n0,n1="Off","On" notification="3D Axes: "${n$is_axes3d}
-          rmn render
+        elif {*,-X} # Show/hide bounding box
+          is_boundingbox={!$is_boundingbox}
+          n0,n1="Off","On" notification="Bounding Box: "${n$is_boundingbox}
+          rmn object3d
         elif {*,-Z} # Enable/disable Z-buffer
           is_zbuffer={!$is_zbuffer}
           n0,n1="Off","On" notification="Z-Buffer: "${n$is_zbuffer}
