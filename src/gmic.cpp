@@ -4105,77 +4105,6 @@ gmic& gmic::display_plots(const CImgList<T>& images, const CImgList<char>& image
   return *this;
 }
 
-// Display selected 3D objects.
-//-----------------------------
-template<typename T>
-gmic& gmic::display_objects3d(const CImgList<T>& images, const CImgList<char>& images_names,
-                              const CImg<unsigned int>& selection,
-                              const CImg<unsigned char>& background3d,
-                              const bool exit_on_anykey) {
-  if (!images || !images_names || !selection) {
-    print(images,0,"Display 3D object [].");
-    return *this;
-  }
-  const bool is_verbose = verbosity>=1 || is_debug;
-  CImg<char> gmic_selection;
-  if (is_verbose) selection2string(selection,images_names,1,gmic_selection);
-  CImg<char> error_message(1024);
-  cimg_forY(selection,l) if (!gmic_check(images[selection[l]]).is_CImg3d(true,error_message))
-    error(true,images,0,0,
-          "Command 'display3d': Invalid 3D object [%d] in selected image%s (%s).",
-          selection[l],gmic_selection_err.data(),error_message.data());
-
-  // Check for available display.
-  if (!is_display_available) {
-    cimg::unused(background3d,exit_on_anykey);
-    print(images,0,"Display 3D object%s (skipped, no display %s).",
-          gmic_selection.data(),cimg_display?"available":"support");
-    return *this;
-  }
-
-  CImgDisplay _disp, &disp = display_window(0)?display_window(0):_disp;
-  cimg_forY(selection,l) {
-    const unsigned int uind = selection[l];
-    const CImg<T>& img = images[uind];
-    if (!disp) {
-      if (background3d) disp.assign(cimg_fitscreen(background3d.width(),background3d.height(),1),0,0);
-      else disp.assign(cimg_fitscreen(CImgDisplay::screen_width()/2,CImgDisplay::screen_height()/2,1),0,0);
-    }
-
-    CImg<unsigned char> background;
-    if (background3d) background = background3d.get_resize(disp.width(),disp.height(),1,3);
-    else background.assign(1,2,1,3).fill(32,64,32,116,64,96).resize(1,256,1,3,3).
-           resize(disp.width(),disp.height(),1,3);
-    background.display(disp);
-
-    CImgList<unsigned int> primitives;
-    CImgList<unsigned char> colors;
-    CImgList<float> opacities;
-    CImg<float> vertices(img,false), pose3d(4,4,1,1,0);
-    pose3d(0,0) = pose3d(1,1) = pose3d(2,2) = pose3d(3,3) = 1;
-    vertices.CImg3dtoobject3d(primitives,colors,opacities,false);
-    print(images,0,"Display 3D object [%u] = '%s' (%d vertices, %u primitives).",
-          uind,images_names[uind].data(),
-          vertices.width(),primitives.size());
-    disp.set_title("%s (%d vertices, %u primitives)",
-                   basename(images_names[uind]),
-                   vertices.width(),primitives.size());
-    if (light3d) colors.insert(light3d,~0U,true);
-    background.display_object3d(disp,vertices,primitives,colors,opacities,
-                                true,render3d,renderd3d,is_double3d,focale3d,
-                                light3d_x,light3d_y,light3d_z,
-                                specular_lightness3d,specular_shininess3d,
-                                true,pose3d,exit_on_anykey);
-    print(images,0,"Selected 3D pose = [ %g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g ].",
-          pose3d[0],pose3d[1],pose3d[2],pose3d[3],
-          pose3d[4],pose3d[5],pose3d[6],pose3d[7],
-          pose3d[8],pose3d[9],pose3d[10],pose3d[11],
-          pose3d[12],pose3d[13],pose3d[14],pose3d[15]);
-    if (disp.is_closed()) break;
-  }
-  return *this;
-}
-
 // Substitute '{}' and '$' expressions in a string.
 //--------------------------------------------------
 template<typename T>
@@ -7012,27 +6941,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           is_change = false; continue;
         }
 
-        // Display 3D object.
-        if (!is_get && !std::strcmp("display3d",command)) {
-          gmic_substitute_args(true);
-          exit_on_anykey = 0;
-          sep = *indices = 0;
-          ind.assign();
-          if ((cimg_sscanf(argument,"%u%c",
-                           &exit_on_anykey,&end)==1 ||
-               (cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]%c%c",
-                            indices,&sep,&end)==2 && sep==']') ||
-               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%u%c",
-                           indices,&exit_on_anykey,&end)==2) &&
-              exit_on_anykey<=1 &&
-              (*argument!='[' ||
-               (ind=selection2cimg(indices,images.size(),images_names,"display3d")).height()==1)) ++position;
-          if (ind.height()==1) g_img_uc = gmic_image_arg(*ind);
-          display_objects3d(images,images_names,selection,g_img_uc,exit_on_anykey);
-          g_img_uc.assign();
-          is_change = false; continue;
-        }
-
         goto gmic_commands_others;
 
         //-----------------------------
@@ -8506,6 +8414,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 const bool _is_get = *it=='+' || (*it=='-' && it[1]=='-');
                 it+=(*it=='+' || *it=='-') + (*it=='-' && it[1]=='-');
                 if (!std::strcmp("local",it) || !std::strcmp("l",it) ||
+                    !std::strncmp("local.",it,6) || !std::strncmp("l.",it,2) ||
                     !std::strncmp("local[",it,6) || !std::strncmp("l[",it,2)) ++nb_locals;
                 else if (!_is_get && (!std::strcmp("endlocal",it) || !std::strcmp("endl",it))) --nb_locals;
                 else if (!_is_get && nb_locals==1 && !std::strcmp("onfail",it)) break;
@@ -9373,6 +9282,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               const bool _is_get = *it=='+' || (*it=='-' && it[1]=='-');
               it+=(*it=='+' || *it=='-') + (*it=='-' && it[1]=='-');
               if (!std::strcmp("local",it) || !std::strcmp("l",it) ||
+                  !std::strncmp("local.",it,6) || !std::strncmp("l.",it,2) ||
                   !std::strncmp("local[",it,6) || !std::strncmp("l[",it,2)) ++nb_locals;
               else if (!_is_get && (!std::strcmp("endlocal",it) || !std::strcmp("endl",it))) {
                 --nb_locals; if (!nb_locals) --position;
@@ -14879,15 +14789,27 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             if (!l) is_first3d = is_3d;
             CImg<unsigned int>::vector(l).move_to(is_3d?lselection3d:lselection);
           }
+
+          // Prepare for '_run()' used for 3D interactive viewer.
+          CImgList<char> ncommands_line;
+          unsigned int nposition = 0;
+          if (lselection3d) {
+            cimg_snprintf(formula,_formula.width(),"d3d[%s]",(lselection3d>'y').value_string().data());
+            commands_line_to_CImgList(formula).move_to(ncommands_line);
+          }
+
           if (is_first3d) {
-            display_objects3d(images,images_names,lselection3d>'y',CImg<unsigned char>::empty(),false);
-            if (lselection)
-              display_images(images,images_names,lselection>'y',0,false);
+            CImg<char>::string("").move_to(callstack); // Anonymous scope
+            _run(ncommands_line,nposition,images,images_names,images,images_names,variables_sizes,0,0,0);
+            callstack.remove();
+            if (lselection) display_images(images,images_names,lselection>'y',0,false);
           } else {
-            if (lselection)
-              display_images(images,images_names,lselection>'y',0,false);
-            if (lselection3d)
-              display_objects3d(images,images_names,lselection3d>'y',CImg<unsigned char>::empty(),false);
+            if (lselection) display_images(images,images_names,lselection>'y',0,false);
+            if (lselection3d) {
+              CImg<char>::string("").move_to(callstack); // Anonymous scope
+              _run(ncommands_line,nposition,images,images_names,images,images_names,variables_sizes,0,0,0);
+              callstack.remove();
+            }
           }
         } else {
           CImg<unsigned int> seq(1,images.width());
