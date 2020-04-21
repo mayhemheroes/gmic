@@ -2658,13 +2658,15 @@ _display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
   uncommand _d2d_format,rmn v -1 d[]
 
 #@cli d3d : eq. to 'display3d'. : (+)
-d3d : display3d
+d3d : v + _display3d
 
 #@cli display3d : _[background_image],_exit_on_anykey={ 0 | 1 } : _exit_on_anykey={ 0 | 1 } : (+)
 #@cli : Display selected 3D objects in an interactive viewer (use the instant display window [0] if opened).
 #@cli : (eq. to 'd3d').
 #@cli : Default values: '[background_image]=(default)' and 'exit_on_anykey=0'.
-display3d :
+display3d : v + _$0
+
+_display3d :
   if !$! e[0--3] "Display 3D object []." return fi
   m "rmn : nmd $\"*\" rm[${}]"
   ('$?') f. "(i==_',') || (i>=_'0' && i<=_'9')?i:-1" discard. -1 indices={t} rm.
@@ -2675,7 +2677,7 @@ display3d :
     endl
 
     nm={n} nbv,nbp={f2ui(i[6,2])}
-    e[0--4] "Display 3D object ["{arg(1+$>,$indices)}"] = '"$nm"' ("$nbv" vertices, "$nbp" primitives)."
+    e[0--5] "Display 3D object ["{arg(1+$>,$indices)}"] = '"$nm"' ("$nbv" vertices, "$nbp" primitives)."
 
     # Init display window and variables.
     disp_title=$nm" ("$nbv" vertices, "$nbp" primitives)"
