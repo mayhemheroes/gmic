@@ -2686,11 +2686,12 @@ _display3d :
     if !{*} w[] {0.7*[{*,u,v}]},0,$disp_title else disp_normalization={*,n} w[] -1,-1,0,$disp_title fi
     (1,0,0,0;0,1,0,0;0,0,1,0) store. pose3d
     posx,posy,zoomfactor=50,50,1
-    is_fullscreen,is_zbuffer,is_axes3d,is_outline,is_boundingbox={*,f},1,1,1,0
+    is_fullscreen,is_zbuffer,is_axes3d,is_outline,is_boundingbox={*,f},1,1,0,0
     mode_render=4
     mode_drender={$nbp<2048?$mode_render:-1}
     mode_background=3
     mode_orientation=2
+    mode_animate=0
     focale=800
     mx0,my0,mx1,my1=
     notification= fontsize_notif=
@@ -2702,6 +2703,7 @@ _display3d :
     # Start interactive loop.
     do
       is_motion={narg($mx0)}
+      if $mode_animate rmn render fi
 
       # Init background image.
       if !narg($background)
@@ -2727,7 +2729,16 @@ _display3d :
 
       # Render 3D object.
       if !narg($render)
-        $pose3d p={^} rm.
+        $pose3d
+        if $mode_animate l.
+          if $mode_animate==1 rotation3d 1,0,0,4 rv
+          elif $mode_animate==2 rotation3d 0,1,0,4 rv
+          elif $mode_animate==3 rotation3d 0,0,1,4 rv
+          elif $mode_animate==4 rotation3d 0,1,0,1.1 rotation3d 1,0,0,1.2 rotation3d 0,0,1,1.3 rv
+          fi
+          m* 1,3,1,1 j.. .,3 rm. +store. pose3d
+        endl fi
+        p={^} rm.
         m={$is_motion?$mode_drender:$mode_render}
         [background] nm. render
         if $m<0
@@ -2795,7 +2806,7 @@ _display3d :
         nm. view w. -1,-1,0,$is_fullscreen,$disp_title
       fi
 
-      if $is_motion wait_event=0 fi
+      if $is_motion" || "$mode_animate wait_event=0 fi
       if $wait_event wait else wait 20 fi
 
       # Manage user-events
@@ -2831,6 +2842,10 @@ _display3d :
         rmn render
       elif {*,-F8}" && "$focale # Increase focale
         if $focale>=2000 focale=0 notification="Focale: Inf" else focale+=100 notification="Focale: "$focale fi
+        rmn render
+      elif {*,-F9} # Start/stop animation
+        mode_animate={($mode_animate+1)%5}
+        n0,n1,n2,n3,n4="Off","X-Axis","Y-Axis","Z-Axis","XYZ-Axes" notification="Animate: "${n$mode_animate}
         rmn render
       fi
       if $is_CTRL
