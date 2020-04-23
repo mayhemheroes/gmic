@@ -2711,6 +2711,7 @@ _display3d :
     mode_background={$is_user_background?7:3}
     mode_orientation=2
     mode_animate=1
+    speed_animate=1
     focale=800
     mx0,my0,mx1,my1=
     notification= fontsize_notif=
@@ -2751,7 +2752,7 @@ _display3d :
       if !narg($render)
         $pose3d
         if $is_animate" || "$is_outvideo l.
-          da={$is_animate?20*($|-$time_animate):1}
+          da={$speed_animate*($is_animate?20*($|-$time_animate):1)}
           if $mode_animate==0 rotation3d 1,0,0,$da rv
           elif $mode_animate==1 rotation3d 0,1,0,$da rv
           elif $mode_animate==2 rotation3d 0,0,1,$da rv
@@ -2796,13 +2797,14 @@ _display3d :
 
         if $is_outvideo
           o[render] $filename_outvideo,20,0,1
-          if $is_outvideo>=360
+          nb_frames={int(360/$speed_animate)}
+          if $is_outvideo>=$nb_frames
             o[] $filename_outvideo,20,0,0 # Close video stream
             is_outvideo=0
             notification="Output Video:\nDone!"
           else
             is_outvideo+=1
-            notification="Output Video:\nFrame "{$is_outvideo+1}"/360"
+            notification="Output Video:\nFrame "{$is_outvideo+1}/$nb_frames
           fi
         fi
       fi
@@ -2883,8 +2885,11 @@ _display3d :
         rmn render
       elif {*,-F9} # Choose animation mode
         mode_animate={($mode_animate+1)%4}
-        n0,n1,n2,n3="X-Axis","Y-Axis","Z-Axis","XYZ-Axes" notification="Animate Mode: "${n$mode_animate}
+        n0,n1,n2,n3="X-Axis","Y-Axis","Z-Axis","XYZ-Axes" notification="Animation Mode: "${n$mode_animate}
         rmn render
+      elif {*,-F10} # Choose animation speed
+        speed_animate={max(1,($speed_animate+1)%9)}
+        notification="Animation Speed: X"$speed_animate
       elif {*,-SPACE} # Start/stop animation
         is_animate,time_animate={!$is_animate},$|
         n0,n1="Off","On" notification="Animate: "${n$is_animate}
