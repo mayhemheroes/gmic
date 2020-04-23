@@ -2421,7 +2421,7 @@ const char *gmic::builtin_commands_names[] = {
   "b","bilateral","blur","boxfilter","break","bsl","bsr",
   "c","camera","channels","check","check3d","col3d","color3d","columns","command","continue","convolve","correlate",
     "cos","cosh","crop","cumulate","cursor","cut",
-  "d","d3d","db3d","debug","denoise","deriche","dijkstra","dilate","discard","displacement","display",
+  "d","db3d","debug","denoise","deriche","dijkstra","dilate","discard","displacement","display",
     "distance","div","div3d","divide","do","done","double3d",
   "e","echo","eigen","eikonal","elevation3d","elif","ellipse","else","endian","endif","endl","endlocal","eq",
     "equalize","erode","error","eval","exec","exp",
