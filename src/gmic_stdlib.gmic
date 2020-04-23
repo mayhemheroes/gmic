@@ -2663,21 +2663,24 @@ _display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
   uncommand _d2d_format,rmn v -1 d[]
 
 #@cli d3d : eq. to 'display3d'.
-d3d : skip "${1=}"
-  l[] is_args={${"is_image_arg $1"}" || isnum($1)"} onfail is_args=0 endl
-  if $is_args args=$"*" else args=0 noarg fi
-  v + _display3d $args
+d3d : skip "${1=},${2=0}"
+  l[] is_image_arg=${"is_image_arg $1"} is_arg={$is_image_arg" || isnum($1)"} onfail is_arg=0 endl
+  if $is_arg arg=$is_image_arg,$2 if $is_image_arg pass$1 1 _d3d_wh={[w,h]} store. _d3d_background fi
+  else arg=0,0 noarg fi
+  v + _display3d $arg
 
 #@cli display3d : _[background_image],_exit_on_anykey={ 0 | 1 } : _exit_on_anykey={ 0 | 1 }
 #@cli : Display selected 3D objects in an interactive viewer (use the instant display window [0] if opened).
 #@cli : (eq. to 'd3d').
 #@cli : Default values: '[background_image]=(default)' and 'exit_on_anykey=0'.
-display3d : skip "${1=}"
-  l[] is_args={${"is_image_arg $1"}" || isnum($1)"} onfail is_args=0 endl
-  if $is_args args=$"*" else args=0 noarg fi
-  v + _display3d $args
+display3d : skip "${1=},${2=0}"
+  l[] is_image_arg=${"is_image_arg $1"} is_arg={$is_image_arg" || isnum($1)"} onfail is_arg=0 endl
+  if $is_arg arg=$is_image_arg,$2 if $is_image_arg pass$1 1 _d3d_wh={[w,h]} store. _d3d_background fi
+  else arg=0,0 noarg fi
+  v + _$0 $arg
 
-_display3d : skip "${1=}"
+_display3d :
+  is_user_background,exit_on_anykey=$1,$2
   if !$! e[0--3] "Display 3D object []." return fi
   m "rmn : nmd $\"*\" rm[${}]"
   ('$?') f. "(i==_',') || (i>=_'0' && i<=_'9')?i:-1" discard. -1 indices={t} rm.
@@ -2686,19 +2689,22 @@ _display3d : skip "${1=}"
     l. check3d 0
     onfail l[] ({'${}'}) s +,{'"'check3d': "'} k. msg={t} rm endl error[] "Command 'display3d': "$msg
     endl
-
     nm={n} nbv,nbp={f2ui(i[6,2])}
     e[0--5] "Display 3D object ["{arg(1+$>,$indices)}"] = '"$nm"' ("$nbv" vertices, "$nbp" primitives)."
 
     # Init display window and variables.
     disp_title=$nm" ("$nbv" vertices, "$nbp" primitives)"
-    if !{*} w[] {0.7*[{*,u,v}]},0,$disp_title else disp_normalization={*,n} w[] -1,-1,0,$disp_title fi
+    if !{*}
+      if narg($_d3d_wh) w[] ${fitscreen\ $_d3d_wh,1},0,$disp_title
+      else w[] {0.7*[{*,u,v}]},0,$disp_title
+      fi
+    else disp_normalization={*,n} w[] -1,-1,0,$disp_title fi
     (1,0,0,0;0,1,0,0;0,0,1,0) store. pose3d
     posx,posy,zoomfactor=50,50,1
     is_fullscreen,is_zbuffer,is_axes3d,is_outline,is_boundingbox,is_animate,is_outvideo={*,f},1,1,0,0,0,0
     mode_render=4
     mode_drender={$nbp<2048?$mode_render:-1}
-    mode_background=3
+    mode_background={$is_user_background?7:3}
     mode_orientation=2
     mode_animate=1
     focale=800
@@ -2720,7 +2726,8 @@ _display3d : skip "${1=}"
         elif $mode_background==3 3,2,1,1,"32,32,64,64,116,96" permute. cyzx r. {*,w,h},1,3,3 round.
         elif $mode_background==4 3,2,1,1,"0,0,0,0,64,96" permute. cyzx r. {*,w,h},1,3,3 round.
         elif $mode_background==5 3,2,1,1,"8,0,0,160,90,0" permute. cyzx r. {*,w,h},1,3,3 round.
-        else 2,2,1,1,110,90,90,110 r. 64,64,1,3 r. {*,w,h},1,3,0,2,0.5,0.5
+        elif $mode_background==6 2,2,1,1,110,90,90,110 r. 64,64,1,3 r. {*,w,h},1,3,0,2,0.5,0.5
+        else $_d3d_background r. {*,w,h},1,3,1
         fi
         w. nm. background
         rmn object3d
@@ -2884,8 +2891,9 @@ _display3d : skip "${1=}"
           n0,n1="Off","On" notification="3D Axes: "${n$is_axes3d}
           rmn render
         elif {*,-B} # Change background
-          mode_background={($mode_background+1)%7}
-          n0,n1,n2,n3,n4,n5,n6="Black","White","Gray","Gradient \#1","Gradient \#2","Gradient \#3","Checkerboard"
+          mode_background={($mode_background+1)%($is_user_background?8:7)}
+          n0,n1,n2,n3,n4,n5,n6,n7=\
+            "Black","White","Gray","Gradient \#1","Gradient \#2","Gradient \#3","Checkerboard","User-Defined"
           notification="Background: "${n$mode_background}
           rmn background
         elif {*,-C}" && "{*,w}>128" && "{*,h}>128 w[] {0.8*[{*,w,h}]} # Decrease window size
