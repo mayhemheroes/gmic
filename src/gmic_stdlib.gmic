@@ -2699,6 +2699,8 @@ _display3d :
       else w[] {0.7*[{*,u,v}]},0,$disp_title
       fi
     else disp_normalization={*,n} w[] -1,-1,0,$disp_title fi
+    disp_size0={*,w,h}
+
     (1,0,0,0;0,1,0,0;0,0,1,0) store. pose3d
     posx,posy,zoomfactor=50,50,1
     is_fullscreen,is_zbuffer,is_axes3d,is_outline,is_boundingbox,is_animate,is_outvideo={*,f},1,1,0,0,0,0
@@ -2842,6 +2844,7 @@ _display3d :
       if $wait_event wait elif !$is_outvideo wait 20 fi
 
       # Manage user-events
+      if $exit_on_anykey" && "{*,k} break fi
       if $is_outvideo continue fi # Skip user event management
       mx,my,mb={*,x,y,b}
       is_CTRL={{*,CTRLLEFT}" || "{*,CTRLRIGHT}}
@@ -2922,7 +2925,7 @@ _display3d :
         elif {*,-P} # Print 3D pose on console
           $pose3d v 0 e[] "  > 3D Pose = [ "{^}" ]." rm.
         elif {*,-R} # Reset window
-          w[] {0.7*[{*,u,v}]}
+          w[] $disp_size0
           notification="Reset Window Size" fontsize_notif=
           rmn background
         elif {*,-S} # Save screenshot
