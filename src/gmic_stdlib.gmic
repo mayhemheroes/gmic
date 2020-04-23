@@ -2688,7 +2688,7 @@ _display3d :
     if !{*} w[] {0.7*[{*,u,v}]},0,$disp_title else disp_normalization={*,n} w[] -1,-1,0,$disp_title fi
     (1,0,0,0;0,1,0,0;0,0,1,0) store. pose3d
     posx,posy,zoomfactor=50,50,1
-    is_fullscreen,is_zbuffer,is_axes3d,is_outline,is_boundingbox,is_animate={*,f},1,1,0,0,0
+    is_fullscreen,is_zbuffer,is_axes3d,is_outline,is_boundingbox,is_animate,is_outvideo={*,f},1,1,0,0,0,0
     mode_render=4
     mode_drender={$nbp<2048?$mode_render:-1}
     mode_background=3
@@ -2705,7 +2705,7 @@ _display3d :
     # Start interactive loop.
     do
       is_motion={narg($mx0)}
-      if $is_animate rmn render fi
+      if $is_animate" || "$is_outvideo rmn render fi
 
       # Init background image.
       if !narg($background)
@@ -2732,8 +2732,8 @@ _display3d :
       # Render 3D object.
       if !narg($render)
         $pose3d
-        if $is_animate l.
-          da={20*($|-$time_animate)}
+        if $is_animate" || "$is_outvideo l.
+          da={$is_animate?20*($|-$time_animate):1}
           if $mode_animate==0 rotation3d 1,0,0,$da rv
           elif $mode_animate==1 rotation3d 0,1,0,$da rv
           elif $mode_animate==2 rotation3d 0,0,1,$da rv
@@ -2775,6 +2775,18 @@ _display3d :
           j3d[render] .,50,{-2,h-50},0,0.75,1,0,0,$focale rm.
         fi
         rmn view
+
+        if $is_outvideo
+          o[render] $filename_outvideo,20,0,1
+          if $is_outvideo>=360
+            o[] $filename_outvideo,20,0,0 # Close video stream
+            is_outvideo=0
+            notification="Output Video:\nDone!"
+          else
+            is_outvideo+=1
+            notification="Output Video:\nFrame "{$is_outvideo+1}"/360"
+          fi
+        fi
       fi
 
       # Manage notifications.
@@ -2813,9 +2825,10 @@ _display3d :
       fi
 
       if $is_motion" || "$is_animate wait_event=0 fi
-      if $wait_event wait else wait 20 fi
+      if $wait_event wait elif !$is_outvideo wait 20 fi
 
       # Manage user-events
+      if $is_outvideo continue fi # Skip user event management
       mx,my,mb={*,x,y,b}
       is_CTRL={{*,CTRLLEFT}" || "{*,CTRLRIGHT}}
       if {*,-F1} # Render: Dots
@@ -2906,6 +2919,11 @@ _display3d :
           n0,n1,n2="Forward","Backward","Double-Sided" notification="Orientation: "${n$mode_orientation}
           if $mode_orientation rv3d[object3d] fi
           rmn render
+        elif {*,-V} # Start/stop output video
+          is_outvideo={!$is_outvideo}
+          is_animate=0
+          n=0 do filename gmic.avi,$n n+=1 while isfile(['{/${}}'])
+          filename_outvideo=${}
         elif {*,-X} # Show/hide bounding box
           is_boundingbox={!$is_boundingbox}
           n0,n1="Off","On" notification="Bounding Box: "${n$is_boundingbox}
