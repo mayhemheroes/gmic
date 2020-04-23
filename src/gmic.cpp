@@ -2421,7 +2421,7 @@ const char *gmic::builtin_commands_names[] = {
   "b","bilateral","blur","boxfilter","break","bsl","bsr",
   "c","camera","channels","check","check3d","col3d","color3d","columns","command","continue","convolve","correlate",
     "cos","cosh","crop","cumulate","cursor","cut",
-  "d","d3d","db3d","debug","denoise","deriche","dijkstra","dilate","discard","displacement","display","display3d",
+  "d","d3d","db3d","debug","denoise","deriche","dijkstra","dilate","discard","displacement","display",
     "distance","div","div3d","divide","do","done","double3d",
   "e","echo","eigen","eikonal","elevation3d","elif","ellipse","else","endian","endif","endl","endlocal","eq",
     "equalize","erode","error","eval","exec","exp",
@@ -5256,7 +5256,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
         } else if (!command3 && command1=='3' && command2=='d') switch (command0) {
             // Three-chars shortcuts (ending with '3d').
-          case 'd' : if (!is_get) std::strcpy(command,"display3d"); break;
           case 'j' : std::strcpy(command,"object3d"); break;
           case '+' : std::strcpy(command,"add3d"); break;
           case '/' : std::strcpy(command,"div3d"); break;
