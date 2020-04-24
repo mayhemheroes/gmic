@@ -3657,22 +3657,18 @@ gmic& gmic::error(const bool output_header, const CImgList<T>& list,
 
 template<typename T>
 bool gmic::check_cond(const char *const expr, CImgList<T>& images, const char *const command) {
+  CImg<T> &img = images.size()?images.back():CImg<T>::empty();
   bool res = false;
   float _res = 0;
-  char end;
-  if (*expr>='0' && *expr<='9' && !expr[1]) res = (bool)(*expr - '0');
-  else if (cimg_sscanf(expr,"%f%c",&_res,&end)==1) res = (bool)_res;
-  else {
-    CImg<char> _expr(expr,(unsigned int)std::strlen(expr) + 1);
-    strreplace_fw(_expr);
-    CImg<T> &img = images.size()?images.back():CImg<T>::empty();
-    try { if (img.eval(_expr,0,0,0,0,&images,&images)) res = true; }
-    catch (CImgException &e) {
-      const char *const e_ptr = std::strstr(e.what(),": ");
-      error(true,images,0,command,
-            "Command '%s': Invalid argument '%s': %s",
-            command,cimg::strellipsize(_expr,64,false),e_ptr?e_ptr + 2:e.what());
-    }
+  if (img.__eval(expr,_res)) return (bool)_res;
+  CImg<char> _expr(expr,(unsigned int)std::strlen(expr) + 1);
+  strreplace_fw(_expr);
+  try { if (img.eval(_expr,0,0,0,0,&images,&images)) res = true; }
+  catch (CImgException &e) {
+    const char *const e_ptr = std::strstr(e.what(),": ");
+    error(true,images,0,command,
+          "Command '%s': Invalid argument '%s': %s",
+          command,cimg::strellipsize(_expr,64,false),e_ptr?e_ptr + 2:e.what());
   }
   return res;
 }
