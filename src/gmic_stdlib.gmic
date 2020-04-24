@@ -1226,6 +1226,7 @@ ${g}"N=24"$n").
 \n    . "${g}"F1 ... F6"$n": Toggle between different 3D rendering modes.
 \n    . "${g}"F7/F8"$n": Decrease/increase focale.
 \n    . "${g}"F9"$n": Select animation mode.
+\n    . "${g}"F10"$n": Select animation speed.
 \n    . "${g}"SPACE"$n": Start/stop animation.
 \n    . "${g}"CTRL+A"$n": Show/hide 3D axes.
 \n    . "${g}"CTRL+B"$n": Switch between available background.
@@ -1233,6 +1234,7 @@ ${g}"N=24"$n").
 \n    . "${g}"CTRL+L"$n": Show/hide outline.
 \n    . "${g}"CTRL+P"$n": Print current 3D pose on stderr.
 \n    . "${g}"CTRL+T"$n": Switch between single/double-sided 3D modes.
+\n    . "${g}"CTRL+V"$n": Start animation with video output.
 \n    . "${g}"CTRL+X"$n": Show/hide 3D bounding box.
 \n    . "${g}"CTRL+Z"$n": Enable/disable z-buffered rendering."
 
@@ -2662,15 +2664,26 @@ _display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
   uncommand _d2d_format,rmn v -1 d[]
 
 #@cli d3d : eq. to 'display3d'.
-d3d : v + _display3d
+d3d : skip "${1=},${2=0}"
+  l[] is_image_arg=${"is_image_arg $1"} is_arg={$is_image_arg" || isnum($1)"} onfail is_arg=0 endl
+  if $is_arg arg=$is_image_arg,$2 if $is_image_arg pass$1 1 _d3d_wh={[w,h]} store. _d3d_background fi
+  else arg=0,0 noarg fi
+  v + _display3d $arg
 
 #@cli display3d : _[background_image],_exit_on_anykey={ 0 | 1 } : _exit_on_anykey={ 0 | 1 }
 #@cli : Display selected 3D objects in an interactive viewer (use the instant display window [0] if opened).
 #@cli : (eq. to 'd3d').
 #@cli : Default values: '[background_image]=(default)' and 'exit_on_anykey=0'.
-display3d : v + _$0
+display3d : skip "${1=},${2=0}"
+  l[] is_image_arg=${"is_image_arg $1"} is_arg={$is_image_arg" || isnum($1)"} onfail is_arg=0 endl
+  if $is_arg arg=$is_image_arg,$2 if $is_image_arg pass$1 1 _d3d_wh={[w,h]} store. _d3d_background fi
+  else arg=0,0 noarg fi
+  v + _$0 $arg
 
+# $1 = is_user_background?
+# $2 = exit_on_any_key?
 _display3d :
+  is_user_background,exit_on_anykey=$1,$2
   if !$! e[0--3] "Display 3D object []." return fi
   m "rmn : nmd $\"*\" rm[${}]"
   ('$?') f. "(i==_',') || (i>=_'0' && i<=_'9')?i:-1" discard. -1 indices={t} rm.
@@ -2679,21 +2692,27 @@ _display3d :
     l. check3d 0
     onfail l[] ({'${}'}) s +,{'"'check3d': "'} k. msg={t} rm endl error[] "Command 'display3d': "$msg
     endl
-
     nm={n} nbv,nbp={f2ui(i[6,2])}
     e[0--5] "Display 3D object ["{arg(1+$>,$indices)}"] = '"$nm"' ("$nbv" vertices, "$nbp" primitives)."
 
     # Init display window and variables.
     disp_title=$nm" ("$nbv" vertices, "$nbp" primitives)"
-    if !{*} w[] {0.7*[{*,u,v}]},0,$disp_title else disp_normalization={*,n} w[] -1,-1,0,$disp_title fi
+    if !{*}
+      if narg($_d3d_wh) w[] ${fitscreen\ $_d3d_wh,1},0,$disp_title
+      else w[] {0.7*[{*,u,v}]},0,$disp_title
+      fi
+    else disp_normalization={*,n} w[] -1,-1,0,$disp_title fi
+    disp_size0={*,w,h}
+
     (1,0,0,0;0,1,0,0;0,0,1,0) store. pose3d
     posx,posy,zoomfactor=50,50,1
-    is_fullscreen,is_zbuffer,is_axes3d,is_outline,is_boundingbox,is_animate={*,f},1,1,0,0,0
+    is_fullscreen,is_zbuffer,is_axes3d,is_outline,is_boundingbox,is_animate,is_outvideo={*,f},1,1,0,0,0,0
     mode_render=4
     mode_drender={$nbp<2048?$mode_render:-1}
-    mode_background=3
+    mode_background={$is_user_background?7:3}
     mode_orientation=2
     mode_animate=1
+    speed_animate=1
     focale=800
     mx0,my0,mx1,my1=
     notification= fontsize_notif=
@@ -2705,7 +2724,7 @@ _display3d :
     # Start interactive loop.
     do
       is_motion={narg($mx0)}
-      if $is_animate rmn render fi
+      if $is_animate" || "$is_outvideo rmn render fi
 
       # Init background image.
       if !narg($background)
@@ -2713,7 +2732,8 @@ _display3d :
         elif $mode_background==3 3,2,1,1,"32,32,64,64,116,96" permute. cyzx r. {*,w,h},1,3,3 round.
         elif $mode_background==4 3,2,1,1,"0,0,0,0,64,96" permute. cyzx r. {*,w,h},1,3,3 round.
         elif $mode_background==5 3,2,1,1,"8,0,0,160,90,0" permute. cyzx r. {*,w,h},1,3,3 round.
-        else 2,2,1,1,110,90,90,110 r. 64,64,1,3 r. {*,w,h},1,3,0,2,0.5,0.5
+        elif $mode_background==6 2,2,1,1,110,90,90,110 r. 64,64,1,3 r. {*,w,h},1,3,0,2,0.5,0.5
+        else $_d3d_background r. {*,w,h},1,3,1
         fi
         w. nm. background
         rmn object3d
@@ -2732,8 +2752,8 @@ _display3d :
       # Render 3D object.
       if !narg($render)
         $pose3d
-        if $is_animate l.
-          da={20*($|-$time_animate)}
+        if $is_animate" || "$is_outvideo l.
+          da={$speed_animate*($is_animate?20*($|-$time_animate):1)}
           if $mode_animate==0 rotation3d 1,0,0,$da rv
           elif $mode_animate==1 rotation3d 0,1,0,$da rv
           elif $mode_animate==2 rotation3d 0,0,1,$da rv
@@ -2775,6 +2795,19 @@ _display3d :
           j3d[render] .,50,{-2,h-50},0,0.75,1,0,0,$focale rm.
         fi
         rmn view
+
+        if $is_outvideo
+          o[render] $filename_outvideo,20,0,1
+          nb_frames={int(360/$speed_animate)}
+          if $is_outvideo>=$nb_frames
+            o[] $filename_outvideo,20,0,0 # Close video stream
+            is_outvideo=0
+            notification="Output Video:\nDone!"
+          else
+            is_outvideo+=1
+            notification="Output Video:\nFrame "{$is_outvideo+1}/$nb_frames
+          fi
+        fi
       fi
 
       # Manage notifications.
@@ -2813,9 +2846,11 @@ _display3d :
       fi
 
       if $is_motion" || "$is_animate wait_event=0 fi
-      if $wait_event wait else wait 20 fi
+      if $wait_event wait elif !$is_outvideo wait 20 fi
 
       # Manage user-events
+      if $exit_on_anykey" && "{*,k} break fi
+      if $is_outvideo continue fi # Skip user event management
       mx,my,mb={*,x,y,b}
       is_CTRL={{*,CTRLLEFT}" || "{*,CTRLRIGHT}}
       if {*,-F1} # Render: Dots
@@ -2851,11 +2886,14 @@ _display3d :
         rmn render
       elif {*,-F9} # Choose animation mode
         mode_animate={($mode_animate+1)%4}
-        n0,n1,n2,n3="X-Axis","Y-Axis","Z-Axis","XYZ-Axes" notification="Animate Mode: "${n$mode_animate}
+        n0,n1,n2,n3="X-Axis","Y-Axis","Z-Axis","XYZ-Axes" notification="Animation Mode: "${n$mode_animate}
         rmn render
+      elif {*,-F10} # Choose animation speed
+        speed_animate={max(1,($speed_animate+1)%9)}
+        notification="Animation Speed: X"$speed_animate
       elif {*,-SPACE} # Start/stop animation
         is_animate,time_animate={!$is_animate},$|
-        n0,n1="Off","On" notification="Animate: "${n$is_animate}
+        n0,n1="Off","On" notification="Animation: "${n$is_animate}
         rmn render
       fi
       if $is_CTRL
@@ -2864,8 +2902,9 @@ _display3d :
           n0,n1="Off","On" notification="3D Axes: "${n$is_axes3d}
           rmn render
         elif {*,-B} # Change background
-          mode_background={($mode_background+1)%7}
-          n0,n1,n2,n3,n4,n5,n6="Black","White","Gray","Gradient \#1","Gradient \#2","Gradient \#3","Checkerboard"
+          mode_background={($mode_background+1)%($is_user_background?8:7)}
+          n0,n1,n2,n3,n4,n5,n6,n7=\
+            "Black","White","Gray","Gradient \#1","Gradient \#2","Gradient \#3","Checkerboard","User-Defined"
           notification="Background: "${n$mode_background}
           rmn background
         elif {*,-C}" && "{*,w}>128" && "{*,h}>128 w[] {0.8*[{*,w,h}]} # Decrease window size
@@ -2894,7 +2933,7 @@ _display3d :
         elif {*,-P} # Print 3D pose on console
           $pose3d v 0 e[] "  > 3D Pose = [ "{^}" ]." rm.
         elif {*,-R} # Reset window
-          w[] {0.7*[{*,u,v}]}
+          w[] $disp_size0
           notification="Reset Window Size" fontsize_notif=
           rmn background
         elif {*,-S} # Save screenshot
@@ -2906,6 +2945,11 @@ _display3d :
           n0,n1,n2="Forward","Backward","Double-Sided" notification="Orientation: "${n$mode_orientation}
           if $mode_orientation rv3d[object3d] fi
           rmn render
+        elif {*,-V} # Start/stop output video
+          is_outvideo={!$is_outvideo}
+          is_animate=0
+          n=0 do filename gmic.avi,$n n+=1 while isfile(['{/${}}'])
+          filename_outvideo=${}
         elif {*,-X} # Show/hide bounding box
           is_boundingbox={!$is_boundingbox}
           n0,n1="Off","On" notification="Bounding Box: "${n$is_boundingbox}
@@ -6894,9 +6938,8 @@ upload_filters :
   (290,291,$_version) store. compat
 
   # Import filters from stdlib and community.
-  files=$HOME/work/src/gmic/src/gmic_stdlib.gmic
   files $HOME/work/src/gmic-community/include/*.gmic
-  files.=,${}
+  files=${},$HOME/work/src/gmic/src/gmic_stdlib.gmic
   repeat narg($files) l[]
     file=${"arg 1+$>,"$files}
     it[] $file

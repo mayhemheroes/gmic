@@ -2421,7 +2421,7 @@ const char *gmic::builtin_commands_names[] = {
   "b","bilateral","blur","boxfilter","break","bsl","bsr",
   "c","camera","channels","check","check3d","col3d","color3d","columns","command","continue","convolve","correlate",
     "cos","cosh","crop","cumulate","cursor","cut",
-  "d","d3d","db3d","debug","denoise","deriche","dijkstra","dilate","discard","displacement","display","display3d",
+  "d","db3d","debug","denoise","deriche","dijkstra","dilate","discard","displacement","display",
     "distance","div","div3d","divide","do","done","double3d",
   "e","echo","eigen","eikonal","elevation3d","elif","ellipse","else","endian","endif","endl","endlocal","eq",
     "equalize","erode","error","eval","exec","exp",
@@ -3657,22 +3657,18 @@ gmic& gmic::error(const bool output_header, const CImgList<T>& list,
 
 template<typename T>
 bool gmic::check_cond(const char *const expr, CImgList<T>& images, const char *const command) {
+  CImg<T> &img = images.size()?images.back():CImg<T>::empty();
   bool res = false;
   float _res = 0;
-  char end;
-  if (*expr>='0' && *expr<='9' && !expr[1]) res = (bool)(*expr - '0');
-  else if (cimg_sscanf(expr,"%f%c",&_res,&end)==1) res = (bool)_res;
-  else {
-    CImg<char> _expr(expr,(unsigned int)std::strlen(expr) + 1);
-    strreplace_fw(_expr);
-    CImg<T> &img = images.size()?images.back():CImg<T>::empty();
-    try { if (img.eval(_expr,0,0,0,0,&images,&images)) res = true; }
-    catch (CImgException &e) {
-      const char *const e_ptr = std::strstr(e.what(),": ");
-      error(true,images,0,command,
-            "Command '%s': Invalid argument '%s': %s",
-            command,cimg::strellipsize(_expr,64,false),e_ptr?e_ptr + 2:e.what());
-    }
+  if (img.__eval(expr,_res)) return (bool)_res;
+  CImg<char> _expr(expr,(unsigned int)std::strlen(expr) + 1);
+  strreplace_fw(_expr);
+  try { if (img.eval(_expr,0,0,0,0,&images,&images)) res = true; }
+  catch (CImgException &e) {
+    const char *const e_ptr = std::strstr(e.what(),": ");
+    error(true,images,0,command,
+          "Command '%s': Invalid argument '%s': %s",
+          command,cimg::strellipsize(_expr,64,false),e_ptr?e_ptr + 2:e.what());
   }
   return res;
 }
@@ -5256,7 +5252,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
         } else if (!command3 && command1=='3' && command2=='d') switch (command0) {
             // Three-chars shortcuts (ending with '3d').
-          case 'd' : if (!is_get) std::strcpy(command,"display3d"); break;
           case 'j' : std::strcpy(command,"object3d"); break;
           case '+' : std::strcpy(command,"add3d"); break;
           case '/' : std::strcpy(command,"div3d"); break;
