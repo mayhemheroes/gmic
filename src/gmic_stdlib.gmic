@@ -22338,11 +22338,13 @@ register_nonrigid : check ${is_image_arg\ $1}" && ${2=0.2}>=0 && ${3=5}>0 && ${4
 register_rigid : check ${is_image_arg\ $1}" && ${2=0.1%}>=0 && isint(${3=0}) && $3>=0 && $3<=3"
   e[^-1] "Register source image$? with destination image $1, using rigid warp with smoothness $2."
   pass$1 0
+  fact=1 if {max(w,h)>=1024} fact={max(w,h)/1024} rr2d. 1024,1024,0,2 fi
   b. $2 equalize. 256 n. 0,1
   repeat $!-1
-    +b[$>] $2 equalize. 256 n. 0,1
+    if {max(w,h)>=1024} +rr2d[$>] 1024,1024,0,2 b. $2 else +b[$>] $2 fi
+    equalize. 256 n. 0,1
     phase_correlation. ..
-    shift[$>] {^},0,$3 rm.
+    shift[$>] {$fact*crop()},0,$3 rm.
   done rm.
 
 #@cli transition : [transition_shape],nb_added_frames>=0,100>=shading>=0,_single_frame_only={ -1=disabled | >=0 }
