@@ -22340,15 +22340,35 @@ register_nonrigid : check ${is_image_arg\ $1}" && ${2=0.2}>=0 && ${3=5}>0 && ${4
 #@cli : $ image.jpg +shift 30,20 +register_rigid[0] [1]
 register_rigid : check ${is_image_arg\ $1}" && ${2=0.1%}>=0 && isint(${3=0}) && $3>=0 && $3<=3"
   e[^-1] "Register source image$? with destination image $1, using rigid warp with smoothness $2."
+  m "_register_rigid : b $2 equalize 256 n 0,1"
   pass$1 0
-  f={max(1,max(w,h)/1024)} if $f>=1 rr2d. 1024,1024,0,2 fi
-  b. $2 equalize. 256 n. 0,1
-  repeat $!-1
-    if $f>1 +rr2d[$>] 1024,1024,0,2 b. $2 else +b[$>] $2 fi
-    equalize. 256 n. 0,1
-    phase_correlation. ..
-    shift[$>] {$f*crop()},0,$3 rm.
-  done rm.
+  f={max(w,h)/1024}
+  if $f<=1 # Small image: one-step registration
+    _register_rigid.
+    repeat $!-1 +_register_rigid[$>] phase_correlation. .. shift[$>] {^},0,$3 rm. done
+    rm.
+  else # Large image: two-steps registration
+    +r. {[min(w,1024),min(h,1024),min(d,1024)]},100%,0,0,0.5,0.5
+    rr2d.. 1024,1024,0,2
+    _register_rigid[-2,-1]
+    repeat $!-2
+
+      # Low scale.
+      +rr2d[$>] 1024,1024,0,2 _register_rigid.
+      phase_correlation. ...
+      s={$f*crop()} rm.
+
+      # High scale.
+      +shift[$>] $s,0,$3
+      r. {[min(w,1024),min(h,1024),min(d,1024)]},100%,0,0,0.5,0.5 _register_rigid.
+      phase_correlation. ..
+      s={[$s]+crop()} rm.
+
+      shift[$>] $s,0,$3
+    done
+    rm[-2,-1]
+  fi
+  uncommand _register_rigid
 
 #@cli transition : [transition_shape],nb_added_frames>=0,100>=shading>=0,_single_frame_only={ -1=disabled | >=0 }
 #@cli : Generate a transition sequence between selected images.
