@@ -294,7 +294,7 @@ CURL_LIBS = $(shell pkg-config --libs libcurl || echo -lcurl)
 # Enable native support of webcams and video streaming, using the OpenCV library.
 # (https://opencv.org/)
 OPENCV_CFLAGS = -Dcimg_use_opencv $(shell pkg-config opencv --cflags) -I/usr/include/opencv -I/usr/include/opencv4
-OPENCV_LIBS = $(shell pkg-config opencv --libs || echo -lopencv_core -lopencv_highgui)
+OPENCV_LIBS = $(shell pkg-config opencv --libs || echo -lopencv_core -lopencv_highgui -lopencv_videoio)
 
 # Enable support of most classical image file formats, using the GraphicsMagick++ library.
 # (http://www.graphicsmagick.org/Magick++/)
