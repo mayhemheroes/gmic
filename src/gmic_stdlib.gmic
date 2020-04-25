@@ -22341,17 +22341,25 @@ register_nonrigid : check ${is_image_arg\ $1}" && ${2=0.2}>=0 && ${3=5}>0 && ${4
 register_rigid : check ${is_image_arg\ $1}" && ${2=0.1%}>=0 && isint(${3=0}) && $3>=0 && $3<=3"
   e[^-1] "Register source image$? with destination image $1, using rigid warp with smoothness $2."
   m "_register_rigid : b $2 equalize 256 n 0,1"
-  pass$1 0
+  pass$1 0 W,H,D,S={[w,h,d,s]}
   f={max(w,h)/1024}
   if $f<=1 # Small image: one-step registration
     _register_rigid.
-    repeat $!-1 +_register_rigid[$>] phase_correlation. .. shift[$>] {^},0,$3 rm. done
+    repeat $!-1
+      if {$>,w!=$W||h!=$H||d!=$D}
+        error[0--4] "Images have incompatible sizes ("{$>,[w,h,d,s]}") and ("{[$W,$H,$D,$S]}")."
+      fi
+      +_register_rigid[$>] phase_correlation. .. shift[$>] {^},0,$3 rm.
+    done
     rm.
   else # Large image: two-steps registration
     +r. {[min(w,1024),min(h,1024),min(d,1024)]},100%,0,0,0.5,0.5
     rr2d.. 1024,1024,0,2
     _register_rigid[-2,-1]
     repeat $!-2
+      if {$>,w!=$W||h!=$H||d!=$D}
+        error[0--4] "Images have incompatible sizes ("{$>,[w,h,d,s]}") and ("{[$W,$H,$D,$S]}")."
+      fi
 
       # Low scale.
       +rr2d[$>] 1024,1024,0,2 _register_rigid.
