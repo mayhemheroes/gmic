@@ -191,10 +191,11 @@ MANDATORY_LIBS += -Wl,--stack,16777216
 endif
 
 # Enable optimizations for 'cli'.
+FLTO = -flto
 OPT_CLI_CFLAGS = -Ofast
 ifdef IS_GCC
-OPT_CLI_CFLAGS = -Ofast -mtune=generic -flto
-OPT_CLI_LIBS = -flto
+OPT_CLI_CFLAGS = -Ofast -mtune=generic $(FLTO)
+OPT_CLI_LIBS = $(FLTO)
 endif
 ifdef icpc
 OPT_CLI_CFLAGS = -fast
@@ -292,8 +293,8 @@ CURL_LIBS = $(shell pkg-config --libs libcurl || echo -lcurl)
 
 # Enable native support of webcams and video streaming, using the OpenCV library.
 # (https://opencv.org/)
-OPENCV_CFLAGS = -Dcimg_use_opencv $(shell pkg-config opencv --cflags || echo -I/usr/include/opencv) -I/usr/include/opencv
-OPENCV_LIBS = $(shell pkg-config opencv --libs || echo -lopencv_core -lopencv_highgui)
+OPENCV_CFLAGS = -Dcimg_use_opencv $(shell pkg-config opencv --cflags) -I/usr/include/opencv -I/usr/include/opencv4
+OPENCV_LIBS = $(shell pkg-config opencv --libs || echo -lopencv_core -lopencv_highgui -lopencv_videoio)
 
 # Enable support of most classical image file formats, using the GraphicsMagick++ library.
 # (http://www.graphicsmagick.org/Magick++/)
