@@ -13719,18 +13719,18 @@ peronamalik_flow : check "${1=20}>0 && ${2=5}>=0" skip ${3=5},${4=0}
 #@cli phase_correlation : [destination]
 #@cli : Estimate translation vector between selected source images and specified destination.
 #@cli : $ image.jpg +shift -30,-20 +phase_correlation[0] [1] unroll[-1] y
-phase_correlation : check ${is_image_arg\ $1}
+phase_correlation : check ${"is_image_arg $1"}
   e[^-1] "Estimate shift between source image$? and destination $1."
-  repeat $! pass$1
-    normalized_cross_correlation[$>] . rm.
-    l[$>]
-      ({[xM,yM,zM,cM]}) *. 2 s. x rm.
-      if {-3,^}>{-4,w} -... {-4,w} -... {-4,w} fi
-      if {-2,^}>{-4,h} -.. {-4,h} -.. {-4,h} fi
-      if {^}>{-4,d} -. {-4,d} -. {-4,d} fi
-      a[-3--1] c rm.. / 2 * -1
-      nm [phase\ correlation]
-  endl done
+  pass$1
+  repeat $!-1
+    normalized_cross_correlation[$>] .
+    l[$>] eval "
+      store([xM>=w/2?xM - w:xM,
+             yM>=h/2?yM - h:yM,
+             zM>=d/2?zM - d:zM]*=-1,'res',1,1,1,3)"
+    endl
+    $res nm. "[phase correlation]" rv[$>,-1] rm.
+  done rm.
 
 #@cli pde_flow : _nb_iter>=0,_dt,_velocity_command,_keep_sequence={ 0 | 1 }
 #@cli : Apply iterations of a generic PDE flow on selected images.
@@ -22340,15 +22340,43 @@ register_nonrigid : check ${is_image_arg\ $1}" && ${2=0.2}>=0 && ${3=5}>0 && ${4
 #@cli : $ image.jpg +shift 30,20 +register_rigid[0] [1]
 register_rigid : check ${is_image_arg\ $1}" && ${2=0.1%}>=0 && isint(${3=0}) && $3>=0 && $3<=3"
   e[^-1] "Register source image$? with destination image $1, using rigid warp with smoothness $2."
-  pass$1 0
-  fact=1 if {max(w,h)>=1024} fact={max(w,h)/1024} rr2d. 1024,1024,0,2 fi
-  b. $2 equalize. 256 n. 0,1
-  repeat $!-1
-    if {max(w,h)>=1024} +rr2d[$>] 1024,1024,0,2 b. $2 else +b[$>] $2 fi
-    equalize. 256 n. 0,1
-    phase_correlation. ..
-    shift[$>] {$fact*crop()},0,$3 rm.
-  done rm.
+  m "_register_rigid : b $2 equalize 256 n 0,1"
+  pass$1 0 W,H,D,S={[w,h,d,s]}
+  f={max(w,h)/1024}
+  if $f<=1 # Small image: one-step registration
+    _register_rigid.
+    repeat $!-1
+      if {$>,w!=$W||h!=$H||d!=$D}
+        error[0--4] "Images have incompatible sizes ("{$>,[w,h,d,s]}") and ("{[$W,$H,$D,$S]}")."
+      fi
+      +_register_rigid[$>] phase_correlation. .. shift[$>] {^},0,$3 rm.
+    done
+    rm.
+  else # Large image: two-steps registration
+    +r. {[min(w,1024),min(h,1024),min(d,1024)]},100%,0,0,0.5,0.5
+    rr2d.. 1024,1024,0,2
+    _register_rigid[-2,-1]
+    repeat $!-2
+      if {$>,w!=$W||h!=$H||d!=$D}
+        error[0--4] "Images have incompatible sizes ("{$>,[w,h,d,s]}") and ("{[$W,$H,$D,$S]}")."
+      fi
+
+      # Low scale.
+      +rr2d[$>] 1024,1024,0,2 _register_rigid.
+      phase_correlation. ...
+      s={$f*crop()} rm.
+
+      # High scale.
+      +shift[$>] $s,0,$3
+      r. {[min(w,1024),min(h,1024),min(d,1024)]},100%,0,0,0.5,0.5 _register_rigid.
+      phase_correlation. ..
+      s={[$s]+crop()} rm.
+
+      shift[$>] $s,0,$3
+    done
+    rm[-2,-1]
+  fi
+  uncommand _register_rigid
 
 #@cli transition : [transition_shape],nb_added_frames>=0,100>=shading>=0,_single_frame_only={ -1=disabled | >=0 }
 #@cli : Generate a transition sequence between selected images.
