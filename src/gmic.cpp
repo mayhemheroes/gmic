@@ -3177,7 +3177,7 @@ gmic& gmic::add_commands(const char *const data_commands, const char *const comm
   if (!data_commands || !*data_commands) return *this;
   cimg::mutex(23);
   CImg<char> s_body(256*1024), s_line(256*1024), s_name(256), debug_info(32);
-  unsigned int line_number = 1, pos = 0;
+  unsigned int line_number = 0, pos = 0;
   bool is_last_slash = false, _is_last_slash = false, is_newline = false;
   int hash = -1, l_debug_info = 0;
   char sep = 0;
@@ -3199,6 +3199,7 @@ gmic& gmic::add_commands(const char *const data_commands, const char *const comm
   if (count_new) *count_new = 0;
   if (count_replaced) *count_replaced = 0;
   if (is_entrypoint) *is_entrypoint = false;
+  if (*data_commands) line_number = 1;
 
   for (const char *data = data_commands; *data; is_last_slash = _is_last_slash,
          line_number+=is_newline?1:0) {
