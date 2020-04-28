@@ -13872,7 +13872,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           unsigned int l, cx = 0, cy = 0, cz = 0, cc = 0, maxcx = 0, maxcy = 0, maxcz = 0;
           const char *nargument = 0;
           CImg<char> s_value(256);
-          char separator = 0;
+          char separator = 0, unroll_axis = 0;
 
           for (nargument = arg_input.data() + 1; *nargument; ) {
             *s_value = separator = 0;
@@ -13881,7 +13881,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             for (l = 0; l<255 && au((unsigned int)*nargument); ++l) *(pd++) = *(nargument++);
             if (l<255) *pd = 0; else arg_error("input");
             if (*nargument) separator = *(nargument++);
-            if ((separator=='^' || separator=='/' || separator==';' || separator==',' || separator==')') &&
+            if ((separator=='^' || separator=='/' || separator==';' || separator==',' ||
+                 separator==')' || separator==':') &&
                 cimg_sscanf(s_value,"%lf%c",&value,&end)==1) {
               if (cx>maxcx) maxcx = cx;
               if (cy>maxcy) maxcy = cy;
@@ -13897,12 +13898,21 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               case '/' : cx = cy = 0; ++cz; break;
               case ';' : cx = 0; ++cy; break;
               case ',' : ++cx; break;
+              case ':' : {
+                const char c = *nargument;
+                if ((c=='x' || c=='y' || c=='z' || c=='c' || c==',' || c==';' || c=='/' || c=='^') &&
+                    nargument[1]==')' && !nargument[2]) { unroll_axis = c; nargument+=2; }
+                else arg_error("input");
+              } break;
               case ')' : break;
               default : arg_error("input");
               }
             } else arg_error("input");
           }
           img.resize(maxcx + 1,maxcy + 1,maxcz + 1,cc + 1,0);
+          if (unroll_axis) img.unroll(unroll_axis=='x' || unroll_axis==','?'x':
+                                      unroll_axis=='y' || unroll_axis==';'?'y':
+                                      unroll_axis=='z' || unroll_axis=='/'?'z':'v');
           print(images,0,"Input image at position%s, with values %s",
                 _gmic_selection.data(),
                 gmic_argument_text_printed());
