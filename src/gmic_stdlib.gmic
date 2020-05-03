@@ -4491,6 +4491,12 @@ function1d : check "${1=1}>=0 && $1<=1" skip ${2=0},${3=0}
 #@cli : $ image.jpg (1,2,3;4,5,6;7,8,9) (255^128^64) 400,400,1,3,'if(x>w/2,x,y)*c'
 #@cli : $$
 
+#@cli input_565 : filename,width>0,height>0
+#@cli : Insert image data from a RAW565 file, at the end of the list.
+input_565 : check "isint($2) && $2>0 && isint($3) && $3>0"
+  e[^-1] "Input RAW565 file '$1', with size $2x$3."
+  l[] raw:"$1",ushort r $2,$3,1,1,-1 +>> 5 &. 63 +&.. 31 >>... 11 *[-3,-1] 8 *.. 4 a c endl
+
 #@cli input_cube : "filename",_convert_1d_cluts_to_3d={ 0 | 1 }.
 #@cli : Insert CLUT data from a .cube filename (Adobe CLUT file format).
 #@cli : Default value: 'convert_1d_cluts_to_3d=1'.
@@ -4647,6 +4653,17 @@ merge_multiline_comments :
 #@cli : Output selected images as one or several numbered file(s).
 #@cli : (eq. to 'o').
 #@cli : Default value: 'format_options'=(undefined).
+
+#@cli output_565 : "filename"
+#@cli : Output selected images as RAW565 files.
+output_565 :
+  e[^-1] "Output image$? as RAW565 file '$1'."
+  N=$! repeat $N +l[$>]
+    s c c 0,255 /[-3,-1] 8 /.. 4 round
+    bsl... 11 bsl.. 5 + d
+    if $N>1 fn=${"filename \"$1\",$>"} else fn="$1" fi
+    o raw:$fn,ushort rm
+  endl done is_change 0
 
 #@cli output_cube : "filename"
 #@cli : Output selected CLUTs as a .cube file (Adobe CLUT format).
