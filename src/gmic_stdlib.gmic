@@ -4492,9 +4492,9 @@ function1d : check "${1=1}>=0 && $1<=1" skip ${2=0},${3=0}
 #@cli : $$
 
 #@cli input_565 : filename,width>0,height>0
-#@cli : Insert image data from a RAW565 file, at the end of the list.
+#@cli : Insert image data from a raw RGB-565 file, at the end of the list.
 input_565 : check "isint($2) && $2>0 && isint($3) && $3>0"
-  e[^-1] "Input RAW565 file '$1', with size $2x$3."
+  e[^-1] "Input raw RGB-565 file '$1', with size $2x$3."
   l[] raw:"$1",ushort r $2,$3,1,1,-1 +>> 5 &. 63 +&.. 31 >>... 11 *[-3,-1] 8 *.. 4 a c endl
 
 #@cli input_cube : "filename",_convert_1d_cluts_to_3d={ 0 | 1 }.
@@ -4655,12 +4655,12 @@ merge_multiline_comments :
 #@cli : Default value: 'format_options'=(undefined).
 
 #@cli output_565 : "filename"
-#@cli : Output selected images as RAW565 files.
+#@cli : Output selected images as raw RGB-565 files.
 output_565 :
-  e[^-1] "Output image$? as RAW565 file '$1'."
+  e[^-1] "Output image$? as raw RGB-565 file '$1'."
   N=$! repeat $N +l[$>]
     s c c 0,255 /[-3,-1] 8 /.. 4 round
-    bsl... 11 bsl.. 5 + d
+    bsl... 11 bsl.. 5 +
     if $N>1 fn=${"filename \"$1\",$>"} else fn="$1" fi
     o raw:$fn,ushort rm
   endl done is_change 0
@@ -45779,6 +45779,16 @@ fx_image_sample :
 fx_image_sample_preview :
   w={w} h={h} rm
   fx_image_sample $1,{$w>$h?$w:0},{$h>$w?$h:0}
+
+#@gui Save as RGB-565 : fx_output_565,_none_
+#@gui : Filename = fileout("out565.rgb")
+#@gui : sep = separator()
+#@gui : note = note{"<b>Note:</b> This filter saves your selected layer as a raw RGB-565 file. Keep in mind that you have to
+#@gui : remember the image dimension if you want to reload the image file afterwards!"}
+#@gui : sep = separator()
+#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2020/05/03</i>.</small>")
+fx_output_565 :
+  output_565 "$1"
 
 #@gui Solve Maze : fx_solve_maze, fx_solve_maze_preview(1)
 #@gui : Starting Point (%) = point(5,5)
