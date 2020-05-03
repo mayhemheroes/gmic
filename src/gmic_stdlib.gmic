@@ -4491,11 +4491,13 @@ function1d : check "${1=1}>=0 && $1<=1" skip ${2=0},${3=0}
 #@cli : $ image.jpg (1,2,3;4,5,6;7,8,9) (255^128^64) 400,400,1,3,'if(x>w/2,x,y)*c'
 #@cli : $$
 
-#@cli input_565 : filename,width>0,height>0
+#@cli input_565 : filename,width>0,height>0,reverse_endianness={ 0 | 1 }
 #@cli : Insert image data from a raw RGB-565 file, at the end of the list.
-input_565 : check "isint($2) && $2>0 && isint($3) && $3>0"
+#@cli : Default value: 'reverse_endianness=0'.
+input_565 : check "isint($2) && $2>0 && isint($3) && $3>0 && isbool(${4=0})"
   e[^-1] "Input raw RGB-565 file '$1', with size $2x$3."
-  l[] raw:"$1",ushort r $2,$3,1,1,-1 +>> 5 &. 63 +&.. 31 >>... 11 *[-3,-1] 8 *.. 4 a c endl
+  l[] raw:"$1",ushort if $4 endian ushort fi
+  r $2,$3,1,1,-1 +>> 5 &. 63 +&.. 31 >>... 11 *[-3,-1] 8 *.. 4 a c endl
 
 #@cli input_cube : "filename",_convert_1d_cluts_to_3d={ 0 | 1 }.
 #@cli : Insert CLUT data from a .cube filename (Adobe CLUT file format).
@@ -4654,14 +4656,16 @@ merge_multiline_comments :
 #@cli : (eq. to 'o').
 #@cli : Default value: 'format_options'=(undefined).
 
-#@cli output_565 : "filename"
+#@cli output_565 : "filename",reverse_endianness={ 0=false | 1=true }
 #@cli : Output selected images as raw RGB-565 files.
-output_565 :
+#@cli : Default value: 'reverse_endianness=0'.
+output_565 : check "isbool(${2=0})"
   e[^-1] "Output image$? as raw RGB-565 file '$1'."
   N=$! repeat $N +l[$>]
     s c c 0,255 /[-3,-1] 8 /.. 4 round
     bsl... 11 bsl.. 5 +
     if $N>1 fn=${"filename \"$1\",$>"} else fn="$1" fi
+    if $2 endian ushort fi
     o raw:$fn,ushort rm
   endl done is_change 0
 
@@ -45543,6 +45547,17 @@ fx_custom_code_preview : skip "${1=-skip ,}"
     /[^-1] 2 blend[^-1] .,alpha rm.
   fi
 
+#@gui Export RGB-565 File : fx_output_565,_none_
+#@gui : Filename = _fileout("out565.rgb")
+#@gui : Reverse endianness = _bool(0)
+#@gui : sep = separator()
+#@gui : note = note{"<b>Note:</b> This filter saves your selected layer as a raw RGB-565 file. Keep in mind that you have to
+#@gui : remember the image dimension if you want to reload the image file afterwards!"}
+#@gui : sep = separator()
+#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2020/05/03</i>.</small>")
+fx_output_565 :
+  output_565 "$1",$2
+
 #@gui Games & Demos : fx_gmic_demos, fx_gmic_demos_preview
 #@gui : Selection = choice("2048","Blobs Editor","Bouncing Balls","Connect-Four","Fire Effect","Fireworks",
 #@gui : "Fish-Eye Effect","Fourier Filtering","Hanoi Tower",
@@ -45614,6 +45629,22 @@ fx_display_histogram :
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2010/29/12</i>.</small>")
 fx_import_image : skip "${1=}"
   rm i "$1" s z if $2 n 0,255 else c 0,255 fi
+
+#@gui Import RGB-565 File : fx_input_565
+#@gui : Filename = filein()
+#@gui : Width = text("800")
+#@gui : Height = text("600")
+#@gui : Reverse endianness = bool(0)
+#@gui : sep = separator()
+#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2020/05/03</i>.</small>")
+fx_input_565 : skip "${1=}"
+  l[] check "isint($2) && $2>0 && isint($3) && $3>0"
+  onfail error "Invalid Specified Dimensions"
+  endl
+  if ['"$1"']==0 gui_warning_preview "Choose a filename"
+  elif !isfile(['"$1"']) gui_warning_preview "Filename not found!"
+  else input_565 "$1",${2-4} mv. 0
+  fi
 
 #@gui Intarsia : fx_intarsia, fx_intarsia_preview
 #@gui : note = note{"<small><b>Note:</b>
@@ -45779,16 +45810,6 @@ fx_image_sample :
 fx_image_sample_preview :
   w={w} h={h} rm
   fx_image_sample $1,{$w>$h?$w:0},{$h>$w?$h:0}
-
-#@gui Save as RGB-565 : fx_output_565,_none_
-#@gui : Filename = fileout("out565.rgb")
-#@gui : sep = separator()
-#@gui : note = note{"<b>Note:</b> This filter saves your selected layer as a raw RGB-565 file. Keep in mind that you have to
-#@gui : remember the image dimension if you want to reload the image file afterwards!"}
-#@gui : sep = separator()
-#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2020/05/03</i>.</small>")
-fx_output_565 :
-  output_565 "$1"
 
 #@gui Solve Maze : fx_solve_maze, fx_solve_maze_preview(1)
 #@gui : Starting Point (%) = point(5,5)
