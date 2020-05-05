@@ -8673,7 +8673,7 @@ noise_perlin : check "${1=16}>0 && ${2=$1}>0 && ${3=$1}>0 && isnum(${4=0}) && is
                         24,72,243,141,128,195,78,66,215,61,156,180 ];
         p = [ permutation,permutation ];
         fade(t) = (t*t*t*(t*(t*6 - 15) + 10));
-        lerp(t,a,b) = (a + t*(b - a));
+        _lerp(t,a,b) = (a + t*(b - a));
         pcmod255 = vectors(); for (k = 0, k<s, ++k, pcmod255[k] = p[k%255]);
         sx = ['$1']; is_px = sx[size(sx) - 1]==_'%';
         sy = ['$2']; is_py = sy[size(sy) - 1]==_'%';
@@ -8701,13 +8701,13 @@ noise_perlin : check "${1=16}>0 && ${2=$1}>0 && ${3=$1}>0 && isnum(${4=0}) && is
        A = p[X] + Y; AA = p[A] + Z; AB = p[A + 1] + Z;
        B = p[X + 1] + Y; BA = p[B] + Z; BB = p[B + 1] + Z;
        fx1 = fx - 1; fy1 = fy - 1; fz1 = fz - 1;
-       lerp(w,lerp(v,lerp(u,grad(p[AA],fx,fy,fz),
+       _lerp(w,_lerp(v,_lerp(u,grad(p[AA],fx,fy,fz),
                             grad(p[BA],fx1,fy,fz)),
-                      lerp(u,grad(p[AB],fx,fy1,fz),
+                      _lerp(u,grad(p[AB],fx,fy1,fz),
                              grad(p[BB],fx1,fy1,fz))),
-               lerp(v,lerp(u,grad(p[AA + 1],fx,fy,fz1),
+               _lerp(v,_lerp(u,grad(p[AA + 1],fx,fy,fz1),
                              grad(p[BA + 1],fx1,fy,fz1)),
-                      lerp(u,grad(p[AB + 1],fx,fy1,fz1),
+                      _lerp(u,grad(p[AB + 1],fx,fy1,fz1),
                              grad(p[BB+1],fx1,fy1,fz1))))"
   else # 2D version
     f[$>] "*begin("$init"
@@ -8721,9 +8721,9 @@ noise_perlin : check "${1=16}>0 && ${2=$1}>0 && ${3=$1}>0 && isnum(${4=0}) && is
        u = fade(fx); v = fade(fy);
        A = p[X] + Y; B = p[X + 1] + Y;
        fx1 = fx - 1; fy1 = fy - 1;
-       lerp(v,lerp(u,grad(p[A],fx,fy),
+       _lerp(v,_lerp(u,grad(p[A],fx,fy),
                      grad(p[B],fx1,fy)),
-              lerp(u,grad(p[A + 1],fx,fy1),
+              _lerp(u,grad(p[A + 1],fx,fy1),
                      grad(p[B + 1],fx1,fy1)))"
   fi done
 
