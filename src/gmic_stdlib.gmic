@@ -8701,14 +8701,14 @@ noise_perlin : check "${1=16}>0 && ${2=$1}>0 && ${3=$1}>0 && isnum(${4=0}) && is
        A = p[X] + Y; AA = p[A] + Z; AB = p[A + 1] + Z;
        B = p[X + 1] + Y; BA = p[B] + Z; BB = p[B + 1] + Z;
        fx1 = fx - 1; fy1 = fy - 1; fz1 = fz - 1;
-       _lerp(w,_lerp(v,_lerp(u,grad(p[AA],fx,fy,fz),
-                            grad(p[BA],fx1,fy,fz)),
-                      _lerp(u,grad(p[AB],fx,fy1,fz),
-                             grad(p[BB],fx1,fy1,fz))),
-               _lerp(v,_lerp(u,grad(p[AA + 1],fx,fy,fz1),
-                             grad(p[BA + 1],fx1,fy,fz1)),
-                      _lerp(u,grad(p[AB + 1],fx,fy1,fz1),
-                             grad(p[BB+1],fx1,fy1,fz1))))"
+       lerp(lerp(lerp(grad(p[AA],fx,fy,fz),
+                      grad(p[BA],fx1,fy,fz),u),
+                 lerp(grad(p[AB],fx,fy1,fz),
+                      grad(p[BB],fx1,fy1,fz),u),v),
+            lerp(lerp(grad(p[AA + 1],fx,fy,fz1),
+                      grad(p[BA + 1],fx1,fy,fz1,u),
+                 lerp(grad(p[AB + 1],fx,fy1,fz1),
+                      grad(p[BB+1],fx1,fy1,fz1),u),v),w)"
   else # 2D version
     f[$>] "*begin("$init"
          grad(hash,x,y) = ( gh = hash&15; gu = gh<8?x:y; gv = gh<4?y:gh==12 || gh==14?x:0;
@@ -8721,10 +8721,10 @@ noise_perlin : check "${1=16}>0 && ${2=$1}>0 && ${3=$1}>0 && isnum(${4=0}) && is
        u = fade(fx); v = fade(fy);
        A = p[X] + Y; B = p[X + 1] + Y;
        fx1 = fx - 1; fy1 = fy - 1;
-       _lerp(v,_lerp(u,grad(p[A],fx,fy),
-                     grad(p[B],fx1,fy)),
-              _lerp(u,grad(p[A + 1],fx,fy1),
-                     grad(p[B + 1],fx1,fy1)))"
+       lerp(lerp(grad(p[A],fx,fy),
+                 grad(p[B],fx1,fy),u),
+            lerp(grad(p[A + 1],fx,fy1),
+                 grad(p[B + 1],fx1,fy1),u),v)"
   fi done
 
 #@cli noise_poissondisk : _radius[%]>0,_max_sample_attempts>0
