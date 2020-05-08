@@ -4879,7 +4879,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
   // Allocate string variables, widely used afterwards
   // (prevents stack overflow on recursive calls while remaining thread-safe).
-  CImg<char> _argument_text(81), _argx(256), _argy(256), _argz(256), _argc(256),
+  CImg<char> _argument_text, _argx(256), _argy(256), _argz(256), _argc(256),
     _command(256), _s_selection(256), _title(256), _indices(256), _message(1024), _formula(4096), _color(4096);
 
 #define gmic_use_var(name,siz) (name = (_##name.data()?_##name.data():&(*_##name.assign(siz).data() = 0)))
