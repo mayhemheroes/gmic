@@ -4884,6 +4884,12 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     _argx(256), _argy(256), _argz(256), _argc(256), argument_text(81),
     _command(256), _s_selection(256);
 
+#define gmic_var(name,siz) (name = (_##name.data()?(_##name.data():&(*_##name.assign(siz).data() = 0))))
+#define gmic_argx gmic_var(argx,256)
+#define gmic_argy gmic_var(argy,256)
+#define gmic_argz gmic_var(argz,256)
+#define gmic_argc gmic_var(argc,256)
+
   char
     *const formula = _formula.data(),
     *const color = _color.data(),
