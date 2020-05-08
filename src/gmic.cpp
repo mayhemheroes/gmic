@@ -2046,14 +2046,13 @@ void gmic::_gmic_substitute_args(const char *const argument, const char *const a
   _gmic_substitute_args(argument = _argument,argument0,command,item,images); \
 }
 
-// Macro for computing a readable version of a command argument.
-inline char *_gmic_argument_text(const char *const argument, CImg<char>& argument_text, const bool is_verbose) {
+// Macros for computing a readable version of a command argument.
+inline char *_gmic_argument_text(const char *const argument, char *const argument_text, const bool is_verbose) {
   if (is_verbose) return cimg::strellipsize(argument,argument_text,80,false);
   else return &(*argument_text=0);
 }
-
-#define gmic_argument_text_printed() _gmic_argument_text(argument,_argument_text,is_verbose)
-#define gmic_argument_text() _gmic_argument_text(argument,_argument_text,true)
+#define gmic_argument_text_printed() _gmic_argument_text(argument,gmic_use_argument_text,is_verbose)
+#define gmic_argument_text() _gmic_argument_text(argument,gmic_use_argument_text,true)
 
 // Macro for having 'get' or 'non-get' versions of G'MIC commands.
 #define gmic_apply(function) { \
@@ -4883,13 +4882,14 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
   CImg<char> _argument_text(81), _argx(256), _argy(256), _argz(256), _argc(256),
     _command(256), _s_selection(256), _title(256), _indices(256), _message(1024), _formula(4096), _color(4096);
 
-#define gmic_use_var(name,siz) (name = (_##name.data()?(_##name.data():&(*_##name.assign(siz).data() = 0))))
-#define gmic_use_argx gmic_var(argx,256)
-#define gmic_use_argy gmic_var(argy,256)
-#define gmic_use_argz gmic_var(argz,256)
-#define gmic_use_argc gmic_var(argc,256)
+#define gmic_use_var(name,siz) (name = (_##name.data()?_##name.data():&(*_##name.assign(siz).data() = 0)))
+#define gmic_use_argument_text gmic_use_var(argument_text,81)
+#define gmic_use_argx gmic_use_var(argx,256)
+#define gmic_use_argy gmic_use_var(argy,256)
+#define gmic_use_argz gmic_use_var(argz,256)
+#define gmic_use_argc gmic_use_var(argc,256)
 
-  char
+  char *argument_text,
     *const argx = _argx.data(),
     *const argy = _argy.data(),
     *const argz = _argz.data(),
