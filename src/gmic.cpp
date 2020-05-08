@@ -2052,8 +2052,8 @@ inline char *_gmic_argument_text(const char *const argument, CImg<char>& argumen
   else return &(*argument_text=0);
 }
 
-#define gmic_argument_text_printed() _gmic_argument_text(argument,argument_text,is_verbose)
-#define gmic_argument_text() _gmic_argument_text(argument,argument_text,true)
+#define gmic_argument_text_printed() _gmic_argument_text(argument,_argument_text,is_verbose)
+#define gmic_argument_text() _gmic_argument_text(argument,_argument_text,true)
 
 // Macro for having 'get' or 'non-get' versions of G'MIC commands.
 #define gmic_apply(function) { \
@@ -4880,27 +4880,28 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
   // Allocate string variables, widely used afterwards
   // (prevents stack overflow on recursive calls while remaining thread-safe).
-  CImg<char> _formula(4096), _color(4096), message(1024), _title(256), _indices(256),
-    _argx(256), _argy(256), _argz(256), _argc(256), argument_text(81),
-    _command(256), _s_selection(256);
+  CImg<char> _argument_text(81), _argx(256), _argy(256), _argz(256), _argc(256),
+    _command(256), _s_selection(256), _title(256), _indices(256), _message(1024), _formula(4096), _color(4096);
 
-#define gmic_var(name,siz) (name = (_##name.data()?(_##name.data():&(*_##name.assign(siz).data() = 0))))
-#define gmic_argx gmic_var(argx,256)
-#define gmic_argy gmic_var(argy,256)
-#define gmic_argz gmic_var(argz,256)
-#define gmic_argc gmic_var(argc,256)
+#define gmic_use_var(name,siz) (name = (_##name.data()?(_##name.data():&(*_##name.assign(siz).data() = 0))))
+#define gmic_use_argx gmic_var(argx,256)
+#define gmic_use_argy gmic_var(argy,256)
+#define gmic_use_argz gmic_var(argz,256)
+#define gmic_use_argc gmic_var(argc,256)
 
   char
-    *const formula = _formula.data(),
-    *const color = _color.data(),
-    *const title = _title.data(),
-    *const indices = _indices.data(),
     *const argx = _argx.data(),
     *const argy = _argy.data(),
     *const argz = _argz.data(),
     *const argc = _argc.data(),
     *const command = _command.data(),
-    *s_selection = _s_selection.data();
+    *s_selection = _s_selection.data(),
+    *const title = _title.data(),
+    *const indices = _indices.data(),
+    *const message = _message.data(),
+    *const formula = _formula.data(),
+    *const color = _color.data();
+
   *formula = *color = *title = *indices = *argx = *argy = *argz = *argc =
     *command = *s_selection = 0;
 
@@ -5433,7 +5434,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 if (!img.is_CImg3d(true,&(*message=0)))
                   error(true,images,0,0,
                         "Command 'add3d': Invalid 3D object [%d], in selected image%s (%s).",
-                        uind,gmic_selection_err.data(),message.data());
+                        uind,gmic_selection_err.data(),message);
                 else throw;
               }
             }
@@ -5457,11 +5458,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   error(true,images,0,0,
                         "Command 'add3d': Invalid 3D object [%u], in specified "
                         "argument '%s' (%s).",
-                        *ind,gmic_argument_text(),message.data());
+                        *ind,gmic_argument_text(),message);
                 else if (!img.is_CImg3d(true,message))
                   error(true,images,0,0,
                         "Command 'add3d': Invalid 3D object [%d], in selected image%s (%s).",
-                        _ind,gmic_selection_err.data(),message.data());
+                        _ind,gmic_selection_err.data(),message);
                 else throw;
               }
               if (is_get) {
@@ -5485,7 +5486,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   if (!images[uind].is_CImg3d(true,&(*message=0)))
                     error(true,images,0,0,
                           "Command 'add3d': Invalid 3D object [%d], in selected image%s (%s).",
-                          uind,gmic_selection_err.data(),message.data());
+                          uind,gmic_selection_err.data(),message);
                 }
                 throw;
               }
@@ -5754,7 +5755,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           if (!is_cond) {
             if (is_first_item && callstack.size()>1 && callstack.back()[0]!='*')
               error(true,images,0,callstack.back(),"Command '%s': Invalid argument '%s'.",
-                    callstack.back().data(),_gmic_argument_text(parent_arguments,argument_text,true));
+                    callstack.back().data(),_gmic_argument_text(parent_arguments,_argument_text,true));
             else error(true,images,0,0,
                        "Command 'check': Expression '%s' evaluated to false.",
                        gmic_argument_text());
@@ -6183,7 +6184,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               }
               error(true,images,0,0,
                     "Command 'check3d': Invalid 3D object [%d], in selected image%s (%s).",
-                    uind,gmic_selection_err.data(),message.data());
+                    uind,gmic_selection_err.data(),message);
             }
           }
           if (is_very_verbose) {
@@ -6309,7 +6310,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   error(true,images,0,0,
                         "Command 'color3d': Invalid 3D object [%d], "
                         "in selected image%s (%s).",
-                        uind,gmic_selection_err.data(),message.data());
+                        uind,gmic_selection_err.data(),message);
                 else throw;
               }
             }
@@ -7005,14 +7006,14 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   "Command 'eval': Image selection is missing.");
           gmic_substitute_args(false);
           gmic_argument_text_printed();
-          if (*argument_text=='\'') cimg::strpare(argument_text,'\'',true,false);
+          if (*_argument_text=='\'') cimg::strpare(_argument_text,'\'',true,false);
           name.assign(argument,(unsigned int)std::strlen(argument) + 1);
           cimg::strpare(name,'\'',true,false);
           strreplace_fw(name);
 
           if (!is_selection) { // No selection -> single evaluation
             print(images,0,"Evaluate expression '%s' and assign it to status.",
-                  argument_text.data());
+                  _argument_text.data());
             CImg<T> &img = images.size()?images.back():CImg<T>::empty();
             CImg<double> output;
             img.eval(output,name,0,0,0,0,&images,&images);
@@ -7024,7 +7025,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             }
           } else { // Selection -> loop over images
             print(images,0,"Evaluate expression '%s' looped over image%s.",
-                  argument_text.data(),
+                  _argument_text.data(),
                   gmic_selection.data());
             cimg_forY(selection,l) gmic_apply(gmic_eval(name.data(),images));
             is_change = true;
@@ -7457,10 +7458,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             cimg_forY(selection,l) gmic_apply(fill(values));
           } else {
             gmic_argument_text_printed();
-            if (*argument_text=='\'') cimg::strpare(argument_text,'\'',true,false);
+            if (*_argument_text=='\'') cimg::strpare(_argument_text,'\'',true,false);
             print(images,0,"Fill image%s with expression '%s'.",
                   gmic_selection.data(),
-                  argument_text.data());
+                  _argument_text.data());
             name.assign(argument,(unsigned int)std::strlen(argument) + 1);
             cimg::strpare(name,'\'',true,false);
             strreplace_fw(name);
@@ -9389,7 +9390,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 error(true,images,0,0,
                       "Command 'object3d': Invalid 3D object [%u], specified "
                       "in argument '%s' (%s).",
-                      *ind,gmic_argument_text(),message.data());
+                      *ind,gmic_argument_text(),message);
               else throw;
             }
 
@@ -9454,7 +9455,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 error(true,images,0,0,
                       "Command 'opacity3d': Invalid 3D object [%d], "
                       "in selected image%s (%s).",
-                      uind,gmic_selection.data(),message.data());
+                      uind,gmic_selection.data(),message);
               else throw;
             }
           }
@@ -9535,7 +9536,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   error(true,images,0,0,
                         "Command 'output': 3D object file '%s', invalid 3D object [%u] "
                         "in selected image%s (%s).",
-                        formula,uind,gmic_selection.data(),message.data());
+                        formula,uind,gmic_selection.data(),message);
                 else throw;
               }
             }
@@ -11060,7 +11061,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   error(true,images,0,0,
                         "Command 'rotate3d': Invalid 3D object [%d], "
                         "in selected image%s (%s).",
-                        uind,gmic_selection_err.data(),message.data());
+                        uind,gmic_selection_err.data(),message);
                 else throw;
               }
             }
@@ -11108,7 +11109,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 error(true,images,0,0,
                       "Command 'reverse3d': Invalid 3D object [%d], "
                       "in selected image%s (%s).",
-                      uind,gmic_selection_err.data(),message.data());
+                      uind,gmic_selection_err.data(),message);
               else throw;
             }
           }
@@ -11761,7 +11762,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 if (!img.is_CImg3d(true,&(*message=0)))
                   error(true,images,0,0,
                         "Command 'sub3d': Invalid 3D object [%d], in selected image%s (%s).",
-                        uind,gmic_selection_err.data(),message.data());
+                        uind,gmic_selection_err.data(),message);
                 else throw;
               }
             }
@@ -11958,7 +11959,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               if (!img.is_CImg3d(true,&(*message=0)))
                 error(true,images,0,0,
                       "Command 'split3d': Invalid 3D object [%d], in selected image%s (%s).",
-                      uind - off,gmic_selection_err.data(),message.data());
+                      uind - off,gmic_selection_err.data(),message);
               else throw;
             }
             if (is_get) {
@@ -13269,7 +13270,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   if (!img.is_CImg3d(true,&(*message=0)))
                     error(true,images,0,0,
                           "Command '%s3d': Invalid 3D object [%d], in selected image%s (%s).",
-                          divide3d?"div":"mul",uind,gmic_selection_err.data(),message.data());
+                          divide3d?"div":"mul",uind,gmic_selection_err.data(),message);
                   else throw;
                 }
               }
@@ -13760,15 +13761,15 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   cimg::strellipsize(varnames[l],80,true);
                   switch (sep0) {
                   case '=' :
-                    cimg_snprintf(message,message.width(),"'%s=%s', ",
+                    cimg_snprintf(message,_message.width(),"'%s=%s', ",
                                   varnames[l].data(),varvalues[is_multiarg?l:0].data());
                     break;
                   case '<' : case '>' :
-                    cimg_snprintf(message,message.width(),"'%s%c%c=%s'->'%s', ",
+                    cimg_snprintf(message,_message.width(),"'%s%c%c=%s'->'%s', ",
                                   varnames[l].data(),sep0,sep0,varvalues[is_multiarg?l:0].data(),name.data());
                     break;
                   default :
-                    cimg_snprintf(message,message.width(),"'%s%c=%s'->'%s', ",
+                    cimg_snprintf(message,_message.width(),"'%s%c=%s'->'%s', ",
                                   varnames[l].data(),sep0,varvalues[is_multiarg?l:0].data(),name.data());
                   }
                   CImg<char>::string(message,false).move_to(varnames[l]);
