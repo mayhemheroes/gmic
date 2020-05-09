@@ -4881,15 +4881,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
   // (prevents stack overflow on recursive calls while remaining thread-safe).
   CImg<char> _argument_text, _argx(256), _argy(256), _argz(256), _argc(256),
     _command(256), _s_selection(256), _title(256), _indices(256), _message(1024), _formula(4096), _color(4096);
-
-#define gmic_use_var(name,siz) (name = (_##name.data()?_##name.data():&(*_##name.assign(siz).data() = 0)))
-#define gmic_use_argument_text gmic_use_var(argument_text,81)
-#define gmic_use_argx gmic_use_var(argx,256)
-#define gmic_use_argy gmic_use_var(argy,256)
-#define gmic_use_argz gmic_use_var(argz,256)
-#define gmic_use_argc gmic_use_var(argc,256)
-
-  char *argument_text,
+  char _c0 = 0,
+    *argument_text = &_c0,
     *const argx = _argx.data(),
     *const argy = _argy.data(),
     *const argz = _argz.data(),
@@ -4901,6 +4894,14 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     *const message = _message.data(),
     *const formula = _formula.data(),
     *const color = _color.data();
+
+#define gmic_use_var(name,siz) (name = (name!=&_c0?name:&(*_##name.assign(siz).data() = 0)))
+#define gmic_use_argument_text gmic_use_var(argument_text,81)
+#define gmic_use_argx gmic_use_var(argx,256)
+#define gmic_use_argy gmic_use_var(argy,256)
+#define gmic_use_argz gmic_use_var(argz,256)
+#define gmic_use_argc gmic_use_var(argc,256)
+
 
   *formula = *color = *title = *indices = *argx = *argy = *argz = *argc =
     *command = *s_selection = 0;
