@@ -10957,7 +10957,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               cimg_forY(selection,l) gmic_apply(rotate(angle,interpolation,boundary));
             }
           } else if ((cimg_sscanf(argument,"%f,%f,%f,%f,%u,%u,%255[0-9.eE%+-],%255[0-9.eE%+-],%255[0-9.eE%+-]%c",
-                                  &u,&v,&w,&angle,&interpolation,&boundary,&(*gmic_use_argx=0),&(*gmic_use_argy=0),gmic_use_argz,&end)==9 ||
+                                  &u,&v,&w,&angle,&interpolation,&boundary,
+                                  &(*gmic_use_argx=0),&(*gmic_use_argy=0),&(*gmic_use_argz=0),&end)==9 ||
                       cimg_sscanf(argument,"%f,%f,%f,%f,%u,%u%c",
                                   &u,&v,&w,&angle,&interpolation,&boundary,&end)==6) &&
                      (!*argx ||
