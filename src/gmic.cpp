@@ -4868,8 +4868,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
   CImg<float> vertices;
   CImg<T> g_img;
 
-  CImg<char> name,o_status,_argument_text, _argx, _argy, _argz, _argc, _title,
-    _command(256), _s_selection(256), _indices(256), _message(1024), _formula(4096), _color(4096);
+  CImg<char> name,o_status,_argument_text, _argx, _argy, _argz, _argc, _title, _message,
+    _command(256), _s_selection(256), _indices(256), _formula(4096), _color(4096);
   char _c0 = 0,
     *argument_text = &_c0,
     *argx = &_c0,
@@ -4877,20 +4877,12 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     *argz = &_c0,
     *argc = &_c0,
     *title = &_c0,
+    *message = &_c0,
     *const command = _command.data(),
     *s_selection = _s_selection.data(),
     *const indices = _indices.data(),
-    *const message = _message.data(),
     *const formula = _formula.data(),
     *const color = _color.data();
-
-  unsigned int next_debug_line = ~0U, next_debug_filename = ~0U, is_high_connectivity, __ind = 0,
-    boundary = 0, pattern = 0, exit_on_anykey = 0, wind = 0, interpolation = 0, hash = 0;
-  char end, sep = 0, sep0 = 0, sep1 = 0, sepx = 0, sepy = 0, sepz = 0, sepc = 0, axis = 0;
-  double vmin = 0, vmax = 0, value, value0, value1, nvalue, nvalue0, nvalue1;
-  bool is_cond, is_endlocal = false, check_elif = false, run_entrypoint = false;
-  float opacity = 0;
-  int err;
 
 #define gmic_use_var(name,siz) (name = (name!=&_c0?name:&(*_##name.assign(siz).data() = 0)))
 #define gmic_use_argument_text gmic_use_var(argument_text,81)
@@ -4899,6 +4891,15 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 #define gmic_use_argz gmic_use_var(argz,256)
 #define gmic_use_argc gmic_use_var(argc,256)
 #define gmic_use_title gmic_use_var(title,256)
+#define gmic_use_message gmic_use_var(message,1024)
+
+  unsigned int next_debug_line = ~0U, next_debug_filename = ~0U, is_high_connectivity, __ind = 0,
+    boundary = 0, pattern = 0, exit_on_anykey = 0, wind = 0, interpolation = 0, hash = 0;
+  char end, sep = 0, sep0 = 0, sep1 = 0, sepx = 0, sepy = 0, sepz = 0, sepc = 0, axis = 0;
+  double vmin = 0, vmax = 0, value, value0, value1, nvalue, nvalue0, nvalue1;
+  bool is_cond, is_endlocal = false, check_elif = false, run_entrypoint = false;
+  float opacity = 0;
+  int err;
 
   *formula = *color = *indices = *command = *s_selection = 0;
 
@@ -5428,7 +5429,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               CImg<T>& img = images[uind];
               try { gmic_apply(shift_CImg3d(tx,ty,tz)); }
               catch (CImgException&) {
-                if (!img.is_CImg3d(true,&(*message=0)))
+                if (!img.is_CImg3d(true,&(*gmic_use_message=0)))
                   error(true,images,0,0,
                         "Command 'add3d': Invalid 3D object [%d], in selected image%s (%s).",
                         uind,gmic_selection_err.data(),message);
@@ -5451,7 +5452,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               CImg<T> res;
               try { CImg<T>::append_CImg3d(g_list).move_to(res); }
               catch (CImgException&) {
-                if (!img0.is_CImg3d(true,&(*message=0)))
+                if (!img0.is_CImg3d(true,&(*gmic_use_message=0)))
                   error(true,images,0,0,
                         "Command 'add3d': Invalid 3D object [%u], in specified "
                         "argument '%s' (%s).",
@@ -5480,7 +5481,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               catch (CImgException&) {
                 cimg_forY(selection,l) {
                   const unsigned int uind = selection[l];
-                  if (!images[uind].is_CImg3d(true,&(*message=0)))
+                  if (!images[uind].is_CImg3d(true,&(*gmic_use_message=0)))
                     error(true,images,0,0,
                           "Command 'add3d': Invalid 3D object [%d], in selected image%s (%s).",
                           uind,gmic_selection_err.data(),message);
@@ -6172,7 +6173,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           cimg_forY(selection,l) {
             const unsigned int uind = selection[l];
             CImg<T>& img = gmic_check(images[uind]);
-            if (!img.is_CImg3d(is_full_check,&(*message=0))) {
+            if (!img.is_CImg3d(is_full_check,&(*gmic_use_message=0))) {
               if (is_very_verbose) {
                 cimg::mutex(29);
                 std::fprintf(cimg::output()," -> invalid.");
@@ -6311,7 +6312,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               CImg<T>& img = gmic_check(images[uind]);
               try { gmic_apply(color_CImg3d(R,G,B,opacity,true,set_opacity)); }
               catch (CImgException&) {
-                if (!img.is_CImg3d(true,&(*message=0)))
+                if (!img.is_CImg3d(true,&(*gmic_use_message=0)))
                   error(true,images,0,0,
                         "Command 'color3d': Invalid 3D object [%d], "
                         "in selected image%s (%s).",
@@ -9399,7 +9400,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 if (light3d) g_list_uc.insert(light3d,~0U,true);
               } else vertices.CImg3dtoobject3d(primitives,g_list_f,opacities,false);
             } catch (CImgException&) {
-              if (!vertices.is_CImg3d(true,&(*message=0)))
+              if (!vertices.is_CImg3d(true,&(*gmic_use_message=0)))
                 error(true,images,0,0,
                       "Command 'object3d': Invalid 3D object [%u], specified "
                       "in argument '%s' (%s).",
@@ -9464,7 +9465,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             CImg<T>& img = images[uind];
             try { gmic_apply(color_CImg3d(0,0,0,(float)value,false,true)); }
             catch (CImgException&) {
-              if (!img.is_CImg3d(true,&(*message=0)))
+              if (!img.is_CImg3d(true,&(*gmic_use_message=0)))
                 error(true,images,0,0,
                       "Command 'opacity3d': Invalid 3D object [%d], "
                       "in selected image%s (%s).",
@@ -9547,7 +9548,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 vertices.CImg3dtoobject3d(primitives,g_list_f,opacities,false).
                   save_off(primitives,g_list_f,formula);
               } catch (CImgException&) {
-                if (!vertices.is_CImg3d(true,&(*message=0)))
+                if (!vertices.is_CImg3d(true,&(*gmic_use_message=0)))
                   error(true,images,0,0,
                         "Command 'output': 3D object file '%s', invalid 3D object [%u] "
                         "in selected image%s (%s).",
@@ -10091,7 +10092,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               *message = 0;
               for (unsigned int i = 0; i!=~0U; ++i) {
                 cimg::number_filename(filename_tmp,i,6,formula);
-                cimg::number_filename(_filename,i,6,message);
+                cimg::number_filename(_filename,i,6,gmic_use_message);
                 try { CImg<unsigned char>::get_load_raw(formula).save_raw(message); }
                 catch (...) { i = ~0U - 1; if (!i) save_failure = true; }
               }
@@ -11075,7 +11076,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               CImg<T>& img = images[uind];
               try { gmic_apply(rotate_CImg3d(vertices)); }
               catch (CImgException&) {
-                if (!img.is_CImg3d(true,&(*message=0)))
+                if (!img.is_CImg3d(true,&(*gmic_use_message=0)))
                   error(true,images,0,0,
                         "Command 'rotate3d': Invalid 3D object [%d], "
                         "in selected image%s (%s).",
@@ -11123,7 +11124,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             CImg<T> &img = images[uind];
             try { gmic_apply(reverse_CImg3d()); }
             catch (CImgException&) {
-              if (!img.is_CImg3d(true,&(*message=0)))
+              if (!img.is_CImg3d(true,&(*gmic_use_message=0)))
                 error(true,images,0,0,
                       "Command 'reverse3d': Invalid 3D object [%d], "
                       "in selected image%s (%s).",
@@ -11777,7 +11778,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               CImg<T>& img = images[uind];
               try { gmic_apply(shift_CImg3d(-tx,-ty,-tz)); }
               catch (CImgException&) {
-                if (!img.is_CImg3d(true,&(*message=0)))
+                if (!img.is_CImg3d(true,&(*gmic_use_message=0)))
                   error(true,images,0,0,
                         "Command 'sub3d': Invalid 3D object [%d], in selected image%s (%s).",
                         uind,gmic_selection_err.data(),message);
@@ -11974,7 +11975,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 primitives.assign();
               } else img.get_split_CImg3d().move_to(g_list);
             } catch (CImgException&) {
-              if (!img.is_CImg3d(true,&(*message=0)))
+              if (!img.is_CImg3d(true,&(*gmic_use_message=0)))
                 error(true,images,0,0,
                       "Command 'split3d': Invalid 3D object [%d], in selected image%s (%s).",
                       uind - off,gmic_selection_err.data(),message);
@@ -13288,7 +13289,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   if (divide3d) { gmic_apply(scale_CImg3d(1/sx,1/sy,1/sz)); }
                   else gmic_apply(scale_CImg3d(sx,sy,sz));
                 } catch (CImgException&) {
-                  if (!img.is_CImg3d(true,&(*message=0)))
+                  if (!img.is_CImg3d(true,&(*gmic_use_message=0)))
                     error(true,images,0,0,
                           "Command '%s3d': Invalid 3D object [%d], in selected image%s (%s).",
                           divide3d?"div":"mul",uind,gmic_selection_err.data(),message);
@@ -13780,6 +13781,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   CImg<char>::string(new_value).move_to(name);
                   cimg::strellipsize(name,80,true);
                   cimg::strellipsize(varnames[l],80,true);
+                  gmic_use_message;
                   switch (sep0) {
                   case '=' :
                     cimg_snprintf(message,_message.width(),"'%s=%s', ",
