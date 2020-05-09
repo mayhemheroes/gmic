@@ -4881,8 +4881,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     *formula = &_c0,
     *color = &_c0,
     *const command = _command.data(),
-    *const indices = _indices.data();
-    *s_selection = _s_selection.data(),
+    *const indices = _indices.data(),
+    *s_selection = _s_selection.data();
 
   *indices = *command = *s_selection = 0;
 
