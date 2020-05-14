@@ -2080,7 +2080,7 @@ inline char *_gmic_argument_text(const char *const argument, char *const argumen
                                 description4) \
  if (!std::strcmp(command_name,command)) { \
    gmic_substitute_args(true); \
-   sep = *indices = *formula = 0; value = 0; \
+   sep = 0; value = 0; \
    if (cimg_sscanf(argument,"%lf%c",&value,&end)==1 || \
        (cimg_sscanf(argument,"%lf%c%c",&value,&sep,&end)==2 && sep=='%')) { \
      const char *const ssep = sep=='%'?"%":""; \
@@ -2098,7 +2098,7 @@ inline char *_gmic_argument_text(const char *const argument, char *const argumen
        } else img.function1((value_type1)nvalue); \
      } \
      ++position; \
-   } else if (cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]%c%c",indices,&sep,&end)==2 && sep==']' && \
+   } else if (cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]%c%c",gmic_use_indices,&sep,&end)==2 && sep==']' && \
               (ind=selection2cimg(indices,images.size(),images_names,command_name)).height()==1) { \
      print(images,0,description2 ".",arg2_1,arg2_2); \
      const CImg<T> img0 = gmic_image_arg(*ind); \
