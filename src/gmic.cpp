@@ -4933,19 +4933,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       const bool is_first_item = !position;
       *command = *s_selection = 0;
 
-      // Check image names (DEBUG).
-      cimglist_for(images_names,l) {
-        const CImg<char> &iname = images_names[l];
-        const unsigned int s = iname.size();
-        if (iname[s-1])
-          error(false,"Image name [%u] = '%s' does not end with a zero!\n",l,iname.data());
-        if (s>1 && !iname[s-2]) {
-          iname.print("DEBUG");
-          std::fprintf(stderr,"Image name [%u] = '%s' ends with a double zero!\n",l,iname.data());
-          exit(0);
-        }
-      }
-
       // Process debug info.
       if (next_debug_line!=~0U) { debug_line = next_debug_line; next_debug_line = ~0U; }
       if (next_debug_filename!=~0U) { debug_filename = next_debug_filename; next_debug_filename = ~0U; }
