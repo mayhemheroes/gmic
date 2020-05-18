@@ -11566,10 +11566,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               const unsigned int uind = selection[l];
               if (is_get) {
                 g_list[l] = images[uind].get_shared();
-                g_list_c[l] = images_names[uind].get_shared();
+//                g_list_c[l] = images_names[uind].get_shared(); // TO FIX!
+                CImg<char>::string(images_names[uind]).move_to(g_list_c[l]);
               } else {
                 images[uind].move_to(g_list[l]);
-                images_names[uind].move_to(g_list_c[l]);
+//                images_names[uind].move_to(g_list_c[l]); // TO FIX!
+                CImg<char>::string(images_names[uind]).move_to(g_list_c[l]);
+                images_names[uind].assign();
               }
             }
 
@@ -14024,12 +14027,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               if (np<pend) CImg<T>(arg.data(p),1,++np - p,1,1,true).move_to(g_list_c);
               p = np;
             }
-
             cimglist_for(g_list_c,q) g_list_c[q].resize(1,g_list_c[q].height() + 1,1,1,0).unroll('x');
             if (g_list_c.size()!=g_list.size() - 1)
               error(true,images,0,0,
                     "Command 'input': Invalid binary encoding of variable '%s' " \
-                    "(%d items, %s names)",
+                    "(%d items, %d names)",
                     argx,(int)g_list.size() - 1,(int)g_list_c.size());
             g_list.remove();
           }
