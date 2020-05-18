@@ -9058,11 +9058,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           } else CImg<char>::string(argument).move_to(g_list_c);
           print(images,0,"Set name%s of image%s to '%s'.",
                 selection.height()>1?"s":"",gmic_selection.data(),gmic_argument_text_printed());
-          cimglist_for(g_list_c,l) {
-            g_list_c[l].unroll('x');
-            if (g_list_c[l].back()) g_list_c[l].resize(g_list_c[l].width() + 1,1,1,1,0);
-            strreplace_fw(g_list_c[l]);
-          }
+          cimglist_for(g_list_c,l) { g_list_c[l].unroll('x'); strreplace_fw(g_list_c[l]); }
           cimg_forY(selection,l)
             images_names[selection[l]].assign(g_list_c[l%g_list_c.width()]);
           g_list_c.assign();
@@ -12592,8 +12588,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   if (np<pend) CImg<T>(back.data(p),1,++np - p,1,1,true).move_to(g_list_c);
                   p = np;
                 }
-                cimglist_for(g_list_c,q)
-                  g_list_c[q].resize(1,g_list_c[q].height() + 1,1,1,0).unroll('x');
+                cimglist_for(g_list_c,q) g_list_c[q].unroll('x');
                 if (g_list_c) g_list.remove();
               } else { // .cimg[z] serialization
                 g_list_c.insert(images_names[uind]);
@@ -14009,7 +14004,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             if (!zero) throw CImgArgumentException(0);
             CImgList<T>::get_unserialize(__variables[vind].get_shared_points(zero + 1 - __variables[vind].data(),
                                                                              __variables[vind].width() - 1)).
-                move_to(g_list);
+              move_to(g_list);
           } catch (CImgArgumentException&) {
             error(true,images,0,0,
                   "Command 'input': Variable '%s' has not been assigned with command 'store'.",
@@ -14027,7 +14022,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               if (np<pend) CImg<T>(arg.data(p),1,++np - p,1,1,true).move_to(g_list_c);
               p = np;
             }
-            cimglist_for(g_list_c,q) g_list_c[q].resize(1,g_list_c[q].height() + 1,1,1,0).unroll('x');
+            cimglist_for(g_list_c,q) g_list_c[q].unroll('x');
             if (g_list_c.size()!=g_list.size() - 1)
               error(true,images,0,0,
                     "Command 'input': Invalid binary encoding of variable '%s' " \
@@ -14358,10 +14353,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             }
             if (g_list_c) {
               is_gmz = true;
-              g_list_c.remove(0);
-              cimglist_for(g_list_c,l)
-                g_list_c[l].resize(1,g_list_c[l].height() + 1,1,1,0).
-                unroll('x');
+              cimglist_for(g_list_c,l) g_list_c[l].unroll('x');
               g_list.remove();
             }
           }
@@ -14727,11 +14719,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 }
                 if (g_list_c) {
                   is_gmz = true;
-                  g_list_c.remove(0);
-                  cimglist_for(g_list_c,l)
-                    g_list_c[l].resize(1,g_list_c[l].height() + 1,1,1,0).
-                    unroll('x');
-                  g_list.remove(g_list.size() - 1);
+                  cimglist_for(g_list_c,l) g_list_c[l].unroll('x');
+                  g_list.remove();
                 }
               }
 
@@ -14824,6 +14813,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           g_list_c.move_to(images_names,uind);
         }
       }
+
       g_list.assign(); g_list_c.assign();
       is_change = true;
     } // End main parsing loop of _run()
