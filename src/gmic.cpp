@@ -14028,12 +14028,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               p = np;
             }
             cimglist_for(g_list_c,q) g_list_c[q].resize(1,g_list_c[q].height() + 1,1,1,0).unroll('x');
-            if (g_list_c.size()!=g_list.size() - 1) {
+            if (g_list_c.size()!=g_list.size() - 1)
               error(true,images,0,0,
                     "Command 'input': Invalid binary encoding of variable '%s' " \
                     "(%d items, %d names)",
                     argx,(int)g_list.size() - 1,(int)g_list_c.size());
-            }
             g_list.remove();
           }
         } else error(true,images,0,0,
