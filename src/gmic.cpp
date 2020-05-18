@@ -13998,8 +13998,15 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           if (g_list.width()==1 && !g_list_c) // Empty list
             g_list.assign();
           else { // Non-empty list
-            g_list_c = g_list.back().get_split(CImg<char>::vector(0),0,false);
-            g_list_c.remove(0);
+            const CImg<T> &nlm = g_list.back();
+            g_list_c.assign();
+            for (unsigned int off = 4; off<nlm._height; ) { // Retrieve image names
+              unsigned int noff = off;
+              while (noff<nlm._height && nlm[noff]) ++noff;
+              if (noff<nlm._height) CImg<T>(nlm.data(off),1,noff++ - off + 1,1,1,true).move_to(g_list_c);
+              off = noff;
+            }
+
             cimglist_for(g_list_c,q) g_list_c[q].resize(1,g_list_c[q].height() + 1,1,1,0).unroll('x');
             if (g_list_c.size()!=g_list.size() - 1)
               error(true,images,0,0,
