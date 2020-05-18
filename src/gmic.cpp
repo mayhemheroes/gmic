@@ -9042,9 +9042,20 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Set image name.
         if (!is_get && !std::strcmp("name",command)) {
           gmic_substitute_args(false);
-          if (selection.height()>1)
-            CImg<char>::string(argument).get_split(CImg<char>::vector(','),0,false).move_to(g_list_c);
-          else CImg<char>::string(argument).move_to(g_list_c);
+          if (selection.height()>1) {
+            const CImg<T> lnm = CImg<char>::string(argument);
+            const unsigned int slnm = (unsigned int)lnm.size();
+            g_list_c.assign();
+            for (unsigned int p = 0; p<slnm; ) { // Retrieve list of image names
+              unsigned int np = p;
+              while (np<slnm && lnm[np] && lnm[np]!=',') ++np;
+              if (np<slnm) {
+                CImg<T>(lnm.data(p),1,++np - p,1,1,true).move_to(g_list_c);
+                g_list_c.back().back() = 0;
+              }
+              p = np;
+            }
+          } else CImg<char>::string(argument).move_to(g_list_c);
           print(images,0,"Set name%s of image%s to '%s'.",
                 selection.height()>1?"s":"",gmic_selection.data(),gmic_argument_text_printed());
           cimglist_for(g_list_c,l) {
@@ -12570,8 +12581,15 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               const CImg<T>& back = g_list.back();
               if (back.width()==1 && back.depth()==1 && back.spectrum()==1 &&
                   back[0]=='G' && back[1]=='M' && back[2]=='Z' && !back[3]) { // .gmz serialization
-                g_list_c = back.get_split(CImg<char>::vector(0),0,false);
-                g_list_c.remove(0);
+                const CImg<T> &lnm = g_list.back();
+                const unsigned int slnm = (unsigned int)lnm.size();
+                g_list_c.assign();
+                for (unsigned int p = 4; p<slnm; ) { // Retrieve list of image names
+                  unsigned int np = p;
+                  while (np<slnm && lnm[np]) ++np;
+                  if (np<slnm) CImg<T>(lnm.data(p),1,++np - p,1,1,true).move_to(g_list_c);
+                  p = np;
+                }
                 cimglist_for(g_list_c,q)
                   g_list_c[q].resize(1,g_list_c[q].height() + 1,1,1,0).unroll('x');
                 if (g_list_c) g_list.remove();
@@ -13998,13 +14016,14 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           if (g_list.width()==1 && !g_list_c) // Empty list
             g_list.assign();
           else { // Non-empty list
-            const CImg<T> &nlm = g_list.back();
+            const CImg<T> &lnm = g_list.back();
+            const unsigned int slnm = (unsigned int)lnm.size();
             g_list_c.assign();
-            for (unsigned int off = 4; off<nlm._height; ) { // Retrieve image names
-              unsigned int noff = off;
-              while (noff<nlm._height && nlm[noff]) ++noff;
-              if (noff<nlm._height) CImg<T>(nlm.data(off),1,noff++ - off + 1,1,1,true).move_to(g_list_c);
-              off = noff;
+            for (unsigned int p = 4; p<slnm; ) { // Retrieve list of image names
+              unsigned int np = p;
+              while (np<slnm && lnm[np]) ++np;
+              if (np<slnm) CImg<T>(lnm.data(p),1,++np - p,1,1,true).move_to(g_list_c);
+              p = np;
             }
 
             cimglist_for(g_list_c,q) g_list_c[q].resize(1,g_list_c[q].height() + 1,1,1,0).unroll('x');
@@ -14328,7 +14347,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           const CImg<char> back = g_list?CImg<char>(g_list.back()):CImg<char>::empty();
           if (back.width()==1 && back.depth()==1 && back.spectrum()==1 &&
               back[0]=='G' && back[1]=='M' && back[2]=='Z' && !back[3]) {
-            g_list_c = back.get_split(CImg<char>::vector(0),0,false);
+            g_list_c.assign();
+            for (unsigned int p = 4; p<back._height; ) { // Retrieve list of image names
+              unsigned int np = p;
+              while (np<back._height && back[np]) ++np;
+              if (np<back._height) CImg<T>(back.data(p),1,++np - p,1,1,true).move_to(g_list_c);
+              p = np;
+            }
             if (g_list_c) {
               is_gmz = true;
               g_list_c.remove(0);
@@ -14690,7 +14715,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               const CImg<char> back = g_list?CImg<char>(g_list.back()):CImg<char>::empty();
               if (back.width()==1 && back.depth()==1 && back.spectrum()==1 &&
                   back[0]=='G' && back[1]=='M' && back[2]=='Z' && !back[3]) {
-                g_list_c = back.get_split(CImg<char>::vector(0),0,false);
+                g_list_c.assign();
+                for (unsigned int p = 4; p<back._height; ) { // Retrieve list of image names
+                  unsigned int np = p;
+                  while (np<back._height && back[np]) ++np;
+                  if (np<back._height) CImg<T>(back.data(p),1,++np - p,1,1,true).move_to(g_list_c);
+                  p = np;
+                }
                 if (g_list_c) {
                   is_gmz = true;
                   g_list_c.remove(0);
