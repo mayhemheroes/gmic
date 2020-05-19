@@ -14348,7 +14348,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             for (unsigned int p = 4; p<pend; ) { // Retrieve list of image names
               unsigned int np = p;
               while (np<back._height && back[np]) ++np;
-              if (np<back._height) CImg<T>(back.data(p),1,++np - p,1,1,true).move_to(g_list_c);
+              if (np<back._height) CImg<char>(back.data(p),1,++np - p,1,1,true).move_to(g_list_c);
               p = np;
             }
             if (g_list_c) {
@@ -14714,7 +14714,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 for (unsigned int p = 4; p<pend; ) { // Retrieve list of image names
                   unsigned int np = p;
                   while (np<back._height && back[np]) ++np;
-                  if (np<back._height) CImg<T>(back.data(p),1,++np - p,1,1,true).move_to(g_list_c);
+                  if (np<back._height) CImg<char>(back.data(p),1,++np - p,1,1,true).move_to(g_list_c);
                   p = np;
                 }
                 if (g_list_c) {
