@@ -2182,12 +2182,12 @@ _display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
 
     if $is_multiview" && "!${-is_macos}
       if {d==2} if {*,u}/w>={*,v}/h wsiz0={r={*,u}*0.48;round([r,r*h/w])} else wsiz0={r={*,v}*0.40;round([r*w/h,r])} fi
-      elif {d<=4} wsiz0=${fitscreen\ .,128,45%}
-      else wsiz0=${fitscreen\ .,128,30%}
+      elif {d<=4} wsiz0=${fitscreen\ .,,45%}
+      else wsiz0=${fitscreen\ .,,30%}
       fi
-      wsiz0=${fitscreen\ $wsiz0,1,128,90%}
-
-    else wsiz0=${fitscreen\ .,128,85%} fi
+      wsiz0=${fitscreen\ $wsiz0,1,,90%}
+    else wsiz0=${fitscreen\ .}
+    fi
 
     if $is_multiview
       if narg($_d2d_names) l[] $_d2d_names repeat $! wname$>={$>,t} done rm endl fi
@@ -2353,7 +2353,7 @@ _display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
         wait_event=0
         if !isnum($notification) # Create notification gfx
           rmn notification_gfx
-          ofs,fs={narg($fontsize_notif)?0$fontsize_notif:16}
+          ofs,fs={narg($fontsize_notif)?0$fontsize_notif:32}
           do
             0 t. {``$notification},0,0,$fs,1,255
             if narg($fontsize_notif) break
@@ -2384,7 +2384,7 @@ _display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
 
           if narg($xsel0)" && "!$is_selection_a_point
             dselx,dsely={[$xsel1-$xsel0,$ysel1-$ysel0]}
-            ofs,fs={narg($fontsize)?0$fontsize:16}
+            ofs,fs={narg($fontsize)?0$fontsize:32}
             do
               0 t. " Box ( "{``{[min($xsel0,$xsel1),min($ysel0,$ysel1)]}}" ) - "\
                    "( "{``{[max($xsel0,$xsel1),max($ysel0,$ysel1)]}}" ) \n"\
@@ -2417,7 +2417,7 @@ _display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
                                    s<3?0:digit(P[2]>>4),s<3?0:digit(P[2]&15),\
                                    s<4?0:digit(P[3]>>4),s<4?0:digit(P[3]&15) ]"`}" "
                   else hexstr= fi
-                  ofs,fs={narg($fontsize)?0$fontsize:16}
+                  ofs,fs={narg($fontsize)?0$fontsize:32}
                   do
                     0 t. " Point ( "$posmx","$posmy" ) = [ "${_d2d_format\ {img,_I($posmx,$posmy,$>)}}" ] "$hexstr,\
                          1,0,$fs,1,1
@@ -2816,7 +2816,7 @@ _display3d :
         wait_event=0
         if !isnum($notification) # Create notification gfx
           rmn notification_gfx
-          ofs,fs={narg($fontsize_notif)?0$fontsize_notif:16}
+          ofs,fs={narg($fontsize_notif)?0$fontsize_notif:32}
           do
             0 t. {``$notification},0,0,$fs,1,255
             if narg($fontsize_notif) break
@@ -13398,7 +13398,7 @@ inpaint_matchpatch : check ${is_image_arg\ $1}"&& ${2=0}>=0 && isint(${3=9}) && 
     # Init variables and images.
     nm={0,n} nm img,mask
     nb_scales={max(1,round(if($2,$2,log2(min(w,h)/16)),1,1))}
-    visu_size=${fitscreen[]" "{0,w},{0,h},1,25%,50%}
+    visu_size=${fitscreen[]" "{0,[w,h,1]},25%,50%}
     slices[img] 0 r[mask] [img],[img],1,1,0 !=[mask] 0
     if !$7 inpaint_pde[img] [mask],75% fi # Quick first estimate.
     im={img,im} -[img] $im
@@ -13746,7 +13746,7 @@ percentile : check ${"is_image_arg $1"}" && inrange(${2=0},0,100) && inrange(${3
   e[^-1] "Apply percentile averaging filter to image$?, with mask $1, min percentile $2% and max percentile $3%."
 
   # Generate code for masking.
-  pass$1 0 !=. 0 N={is} 128,$N
+  pass$1 0 !=. 0 N={is} if !$N rm. return fi 128,$N
   eval.. ">
     begin(
       p = 0;
@@ -21992,7 +21992,7 @@ _apply_stream : skip "${2=},${6=}"
       fi
       if {*}
         title="[G'MIC] Frame ""#"$frame
-        if !narg($wh) wh=${fitscreen[]\ {w},{h}} w. $wh,0,$title
+        if !narg($wh) wh=${fitscreen[]\ {[w,h]}} w. $wh,0,$title
         else w. -1,-1,0,$title
         fi
         if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,D} w[] {{*,w}*1.5},{{*,h}*1.5} wait -1 fi # Increase window size.
@@ -22045,7 +22045,7 @@ _average_stream : skip "${5=}"
       if {*}
         title="[G'MIC] Frame ""#"$frame
         +n 0,255
-        if !narg($wh) wh=${fitscreen[]\ {w},{h}} w. $wh,0,$title
+        if !narg($wh) wh=${fitscreen[]\ {[w,h]}} w. $wh,0,$title
         else w. -1,-1,0,$title
         fi
         if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,D} w[] {{*,w}*1.5},{{*,h}*1.5} wait -1 fi # Increase window size.
@@ -22187,7 +22187,7 @@ _median_stream :
         imM={v=[$imM];[min(im,v[0]),max(iM,v[1])]}
         if {*}
           title="[G'MIC] Frame ""#"$frame
-          if !narg($wh) wh=${fitscreen[]\ {w},{h}} w. $wh,1,$title
+          if !narg($wh) wh=${fitscreen[]\ {[w,h]}} w. $wh,1,$title
           else w. -1,-1,1,$title
           fi
         fi
@@ -22217,7 +22217,7 @@ _median_stream :
           e[] "\r    > Frame ""#"$frame$_N"        "
           if {*}" && "!$>
             title="[G'MIC] Frame ""#"$frame
-            if !narg($wh) wh=${fitscreen[]\ {img,w},{img,h}} w[img] $wh,1,$title
+            if !narg($wh) wh=${fitscreen[]\ {img,[w,h]}} w[img] $wh,1,$title
             else w[img] -1,-1,1,$title
             fi
           fi
@@ -22250,7 +22250,7 @@ _median_stream :
             e[] "\r    > Frame ""#"$frame$_N"        "
             if {*}" && "!$>
               title="[G'MIC] Frame ""#"$frame
-              if !narg($wh) wh=${fitscreen[]\ {w},{h}} w. $wh,1,$title
+              if !narg($wh) wh=${fitscreen[]\ {[w,h]}} w. $wh,1,$title
               else w. -1,-1,1,$title
               fi
             fi
@@ -23405,9 +23405,9 @@ fitratio_wh :
 #@cli : Default values: 'depth=1', 'minimal_size=128' and 'maximal_size=85%'.
 fitscreen : skip ${2=},${3=},${4=},${5=}
   if ${"is_image_arg $1"}
-    l$1 W,H,D={[w,h,d]} endl if narg($2) m=$2 else m=128 fi if narg($3) M=$3 else M=85% fi
+    l$1 W,H,D={[w,h,d]} endl if narg($2) m=$2 else m=25% fi if narg($3) M=$3 else M=85% fi
   else
-    W,H=${1-2} if narg($3) D=$3 else D=1 fi if narg($4) m=$4 else m=128 fi if narg($5) M=$5 else M=85% fi
+    W,H=${1-2} if narg($3) D=$3 else D=1 fi if narg($4) m=$4 else m=25% fi if narg($5) M=$5 else M=85% fi
   fi
   eval "
     is_percent(str) = (unref(_is_pct); _is_pct=['#str']; _is_pct[size(_is_pct) - 1]==_'%');
@@ -25058,7 +25058,7 @@ x_color_curves : skip ${1=rgb}
   to_color repeat $! l[$>]
 
     if ['"$1"']!='last' # Open interactive windows to set color curves.
-      +r[0] ${fitscreen[]\ {0,w},{0,h},1,128,70%},1,100%,3
+      +r[0] ${fitscreen[]\ {0,[w,h,1]},128,70%},1,100%,3
       +l. # Compute additional info for each image channel (histogram and color axis).
         xcc_goto s c histogram 256,0,255 xcc_info
       endl
@@ -25257,7 +25257,7 @@ x_colorize : skip ${1=0},${3=0},${4=0},${5=0},${6=0} check "${2=1024}==0 || $2>=
   is_grabber=${"is_image_arg[] $6"}
   if $is_grabber
     pass$6 1 ('{b}') discard. {'~'} palette_grabber={t} rm.
-    thread_grabber="w[] ${\"fitscreen[] {w},{h},1,128,50%\"},0,\"Grabber: "$palette_grabber"\"
+    thread_grabber="w[] ${\"fitscreen[] {[w,h,1]},128,50%\"},0,\"Grabber: "$palette_grabber"\"
                     x_grab_color["{$!-1}"] __color"
   fi
 
@@ -26042,7 +26042,7 @@ x_grab_color : skip ${1=xgc_variable} check_display
   l[0] nm={n} nm. img
   e[^-1] "Open "${arg\ {0,s},GRAY,GRAYA,RGB,RGBA}" color grabber widget for image$?, with variable name '$1'."
 
-  if !{*} w[] ${fitscreen[]\ {w},{h},1,128,50%},0,0,-1,-1,"Grab a color" fi
+  if !{*} w[] ${fitscreen[]\ {[w,h,1]},128,50%},0,0,-1,-1,"Grab a color" fi
   _x_grab_color +dilate. 3 nm. icon_mask *.. 255 to_rgb.. nm.. icon_sprite
 
   xc=5 yc=5 o$1=$$1
@@ -26344,7 +26344,7 @@ x_hough : check_display
   n 0,255
 
   repeat $! l[$>]
-    r. ${fitscreen\ {w},{h}},1,100%,3  # Resize to fit screen if necessary.
+    r. ${fitscreen\ {[w,h]}},1,100%,3  # Resize to fit screen if necessary.
     if !narg($first_time)
       parallel 0,"+l[0] r2dy 128 frame 1,1,0 \
         alert \"[G"{`39`}"MIC Hough Transform]\",\
@@ -26870,7 +26870,7 @@ x_mask_color : check "${2=5}>=0 && ${3=5}>=0" skip ${1=all} check_display
   l[] _ac_$1 onfail error[0--3] "Command '$0' : Invalid colorspace '$*'." endl
   m _ac_forward:$_f
   repeat $! l[$>] slices 0 basename {0,n} nm=${}
-    wh=${fitscreen\ {[w,h]},1,128,1024}
+    wh=${fitscreen\ {[w,h,1]},128,1024}
     +r $wh,1,100%,2
     +_ac_forward. channels. $_s
     if {1,s>3} channels[1] 0,2 fi to_rgb[1]
@@ -26911,7 +26911,7 @@ x_mask_color : check "${2=5}>=0 && ${3=5}>=0" skip ${1=all} check_display
       if {*,r} is_resized=1
       elif $is_ctrl" && "{*,-D} w[] {1,1.25*[w,h]} is_resized=1
       elif $is_ctrl" && "{*,-C} w[] {1,0.8*[w,h]} is_resized=1
-      elif $is_ctrl" && "{*,R} w[] ${fitscreen\ {0,[w,h]},1,128,1024} is_resized=1
+      elif $is_ctrl" && "{*,R} w[] ${fitscreen\ {0,[w,h,1]},128,1024} is_resized=1
       fi
       if $is_resized rm[1,2] +r {*,d},{*,e},1,3,2 +_ac_forward. channels. $_s refresh=1 fi
 
@@ -27260,7 +27260,7 @@ x_morph : check "isint(${1=16}) && isint(${2=3}) && $2>=0 && $2<=4" check_displa
       # Generate base images.
       if !narg($imgb0)" || "!narg($imgb1)
         if {*} wdims=${"fitscreen "{*,d},{img0,{*,d}*h/w}}
-        else wdims=${"fitscreen "{img0,[w,h]},1,128,50%}
+        else wdims=${"fitscreen "{img0,[w,h,1]},128,50%}
         fi
         w[] $wdims,0,"[G'MIC] Interactive Morph"
         repeat 2 +to_color[img$>] r. $wdims,1,100%,2 n. 0,255 nm. imgb$> done
@@ -28044,7 +28044,7 @@ x_quantize_rgb : check "isint(${1=16}) && $1>1" check_display
   if $obj3d rm[obj3d] fi
   +distribution3d[centroids] circles3d. 5 col3d. 255      # Pre-compute 3D object.
   colorcube3d p3d. 1
-  +&[colors] 255 distribution3d. o3d. 0.8 +3d[-3--1]
+  +&[colors] 255 distribution3d. circles3d. 3 o3d. 0.25 +3d[-3--1]
   -3d. 128,128,128 nm. obj3d _N={i[7]}
 
 _x_quantize_rgb_text :
@@ -29302,7 +29302,7 @@ x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2 && isint(${3=0
       # Generate base image.
       if !narg($imgb)
         if {*} wdims=${"fitscreen "{*,d},{img,{*,d}*h/w}}
-        else wdims=${"fitscreen "{img,[w,h]},1,128,60%}
+        else wdims=${"fitscreen "{img,[w,h,1]},128,60%}
         fi
         w[] $wdims,0,"[G'MIC] Interactive Warp"
         +to_color[img] r. $wdims,1,100%,2 n. 0,255 nm. imgb
@@ -29817,7 +29817,7 @@ gui_print_preview : skip "${1=},${3=}" check "${2=32}>=0 && ${4=20}>=0"
   # Resize image to output resolution.
   if $! k[0] fi
   drgba
-  siz={0$_preview_width?[0$_preview_width,0$_preview_height]:[${fitscreen\ {[max(w,1),max(h,1)]},1,400}]}
+  siz={0$_preview_width?[0$_preview_width,0$_preview_height]:[${fitscreen\ {[max(w,1),max(h,1),1]},400}]}
   sizw={arg(1,$siz)-8}
   if $! rr2d $siz,2,3 drgba else $siz,1,3,128 fi
   (1;0.5^1;0.5^0;1)
@@ -41041,7 +41041,7 @@ fx_illuminate_shape2d_preview_interactive :
     to_rgba
     +_fx_illuminate_shape2d[0] $1,2,${3-6},0,1,""$9,0,${11-15},""${16-29},""0,0
     if $!>2 rm[0] elif $input_type>=2 sh[0] 0,2 f. 128 rm. fi
-    siz=${fitscreen\ {w},{h},1,256,640}
+    siz=${fitscreen\ {[w,h,1]},256,640}
     wsiz0=${fitscreen\ $siz,1,30%,100%}
     wsiz=$wsiz0
     r $siz,1,100%,3
@@ -42469,7 +42469,7 @@ fx_inpaint_matchpatch :
     +round select_color. 0,{round([$R,$G,$B,$A])}
     if $10 dilate. {1+2*$10} fi
     if $11
-      visu_size=${fitscreen[]" "{0,w},{0,h},1,25%,50%}
+      visu_size=${fitscreen[]" "{0,[w,h,1]},25%,50%}
       w1.. $visu_size,0,"[Preview] G'MIC: Inpaint [multi-scale]"
     fi
     srand 0 inpaint_matchpatch.. [1],${1-5}
