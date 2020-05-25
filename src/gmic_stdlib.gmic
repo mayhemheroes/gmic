@@ -13738,12 +13738,13 @@ normalized_cross_correlation : check ${is_image_arg\ $1}
     /... . /[-2,-1] ifft rm.
   endl done rm.
 
-#@cli percentile : [mask],0<=_min_percentile<=100,0<=_max_percentile<=100.
+#@cli percentile : [mask],0<=_min_percentile[%]<=100,0<=_max_percentile[%]<=100.
 #@cli : Apply percentile averaging filter to selected images.
 #@cli : Default values: 'min_percentile=0' and 'max_percentile=100'.
 #@cli : $ image.jpg shape_circle 11,11 +percentile[0] [1],25,75
 percentile : check ${"is_image_arg $1"}" && inrange(${2=0},0,100) && inrange(${3=100},0,100) && $2<=$3"
-  e[^-1] "Apply percentile averaging filter to image$?, with mask $1, min percentile $2% and max percentile $3%."
+  vmin,vmax={_[${"is_percent $2"}?100*$2:$2,${"is_percent $3"}?100*$3:$3]}
+  e[^-1] "Apply percentile averaging filter to image$?, with mask $1, min percentile "$vmin"% and max percentile "$vmax"%."
 
   # Generate code for masking.
   pass$1 0 !=. 0 N={is} if !$N rm. return fi 128,$N
@@ -13764,8 +13765,8 @@ percentile : check ${"is_image_arg $1"}" && inrange(${2=0},0,100) && inrange(${3
     begin( N = vector"$N"() );
     const boundary = 1;
     const sS = size(N) - 1;
-    const s0 = round(sS*$2%);
-    const s1 = round(sS*$3%);
+    const s0 = round(sS*"$vmin"%);
+    const s1 = round(sS*"$vmax"%);
     const ds = 1 + s1 - s0;
     "$code"
     S = sort(N);
