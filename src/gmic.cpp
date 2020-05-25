@@ -2494,19 +2494,6 @@ int gmic::levenshtein(const char *const s, const char *const t) {
   return _levenshtein(ns,nt,d,0,0);
 }
 
-// Return true if specified filename corresponds to an existing file or directory.
-bool gmic::check_filename(const char *const filename) {
-  bool res = false;
-#if cimg_OS==2
-  const unsigned int attr = (unsigned int)GetFileAttributesA(filename);
-  res = (attr!=~0U);
-#else // #if cimg_OS==2
-  std::FILE *const file = cimg::std_fopen(filename,"r");
-  if (file) { res = true; cimg::fclose(file); }
-#endif // #if cimg_OS==2
-  return res;
-}
-
 // Wait for threads to finish.
 template<typename T>
 void gmic::wait_threads(void *const p_gmic_threads, const bool try_abort, const T& pixel_type) {
