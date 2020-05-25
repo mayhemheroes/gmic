@@ -210,6 +210,10 @@ if(BUILD_BASH_COMPLETION)
     COMMAND LD_LIBRARY_PATH=${GMIC_BINARIES_PATH} ${GMIC_BINARIES_PATH}/gmic -v - ${CMAKE_SOURCE_DIR}/src/gmic_stdlib.gmic raw:${CMAKE_SOURCE_DIR}/src/gmic_stdlib.gmic,uchar -document_gmic bash > ${CMAKE_BINARY_DIR}/resources/gmic_bashcompletion.sh
   )
   add_custom_target(bashcompletion ALL DEPENDS ${CMAKE_BINARY_DIR}/resources/gmic_bashcompletion.sh)
+  install(FILES ${CMAKE_BINARY_DIR}/resources/gmic_bashcompletion.sh
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/bash-completion/completions
+    RENAME gmic
+  )
 endif()
 
 include(CMakePackageConfigHelpers)
