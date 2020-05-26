@@ -219,7 +219,7 @@ inline double gmic_mp_setname(const unsigned int ind, const char *const str,
 #ifndef cimg_appname
 #define cimg_appname "gmic"
 #endif
-#include "./CImg.h"
+#include "CImg.h"
 
 #if cimg_OS==2
 #include <process.h>
