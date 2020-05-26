@@ -2704,43 +2704,32 @@ const CImg<char>& gmic::decompress_stdlib() {
 
 // Gets the value of an environment variable.
 //--------------------------------------------
-static const char* gmic_getenv(const char *const varname)
-{
+static const char* gmic_getenv(const char *const varname) {
 #if cimg_OS==2
   static CImg<char> utf8Buffer(768);
-
   // Get the value of the environment variable using the wide-character
   // (UTF-16) version of the Windows API and convert it to UTF-8.
 
-  char* res = 0;
-
   // Convert the environment variable name to a wide string.
-  int wideNameLength = MultiByteToWideChar(CP_UTF8, 0, varname, -1, 0, 0);
+  const int wideNameLength = MultiByteToWideChar(CP_UTF8,0,varname,-1,0,0);
   if (wideNameLength) {
     CImg<wchar_t> wideVarName(wideNameLength);
-    if (MultiByteToWideChar(CP_UTF8, 0, varname, -1, wideVarName, wideNameLength)) {
-      const DWORD wideValueLength = GetEnvironmentVariableW(wideVarName, 0, 0);
-
+    if (MultiByteToWideChar(CP_UTF8,0,varname,-1,wideVarName,wideNameLength)) {
+      const DWORD wideValueLength = GetEnvironmentVariableW(wideVarName,0,0);
       if (wideValueLength) {
         CImg<wchar_t> wideValue(wideValueLength);
-
-        if (GetEnvironmentVariableW(wideVarName, wideValue, wideValueLength)) {
+        if (GetEnvironmentVariableW(wideVarName,wideValue,wideValueLength)) {
           // Convert the returned value from UTF-16 to UTF-8.
-          int utf8Length = WideCharToMultiByte(CP_UTF8, 0, wideValue, wideValueLength, 0, 0, 0, 0);
-
-          if (utf8Length && utf8Length < utf8Buffer.width()) {
-            if (WideCharToMultiByte(CP_UTF8, 0, wideValue, wideValueLength, utf8Buffer, utf8Length, 0, 0)) {
-              res = utf8Buffer;
-            }
+          const int utf8Length = WideCharToMultiByte(CP_UTF8,0,wideValue,wideValueLength,0,0,0,0);
+          if (utf8Length && utf8Length<utf8Buffer.width()) {
+            if (WideCharToMultiByte(CP_UTF8,0,wideValue,wideValueLength,utf8Buffer,utf8Length,0,0)) return utf8Buffer;
           }
+        }
       }
     }
   }
-
-  return res;
-#else  // cimgOS==2
-  return getenv(varname);
 #endif // cimgOS==2
+  return getenv(varname);
 }
 
 // Get path to .gmic user file.
@@ -2824,25 +2813,19 @@ bool gmic::init_rc(const char *const custom_path) {
   if (!cimg::is_directory(dirname)) {
 #if cimg_OS==2
     DeleteFileA(dirname); // In case 'dirname' is already a file
-    if (!CreateDirectoryA(dirname, 0)) {
+    if (!CreateDirectoryA(dirname,0)) {
       // The path may be UTF-8, convert it to a
       // wide-character string and try again.
-      int wideLength = MultiByteToWideChar(CP_UTF8, 0, dirname, -1, 0, 0);
-      if (!wideLength) {
-        return false;
-      }
-
+      const int wideLength = MultiByteToWideChar(CP_UTF8,0,dirname,-1,0,0);
+      if (!wideLength) return false;
       CImg<wchar_t> wpath(wideLength);
-      if (!MultiByteToWideChar(CP_UTF8, 0, dirname, -1, wpath, wideLength)) {
-        return false;
-      }
-
+      if (!MultiByteToWideChar(CP_UTF8,0,dirname,-1,wpath,wideLength)) return false;
       DeleteFileW(wpath);
-      return (bool)CreateDirectoryW(wpath, 0);
+      return (bool)CreateDirectoryW(wpath,0);
     }
 #else
     std::remove(dirname); // In case 'dirname' is already a file
-    return !(bool)mkdir(dirname, 0777);
+    return !(bool)mkdir(dirname,0777);
 #endif
   }
   return true;
