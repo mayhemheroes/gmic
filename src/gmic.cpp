@@ -2702,6 +2702,47 @@ const CImg<char>& gmic::decompress_stdlib() {
   return stdlib;
 }
 
+// Gets the value of an environment variable.
+//--------------------------------------------
+static const char* gmic_getenv(const char *const varname)
+{
+#if cimg_OS==2
+  static CImg<char> utf8Buffer(768);
+
+  // Get the value of the environment variable using the wide-character
+  // (UTF-16) version of the Windows API and convert it to UTF-8.
+
+  char* res = 0;
+
+  // Convert the environment variable name to a wide string.
+  int wideNameLength = MultiByteToWideChar(CP_UTF8, 0, varname, -1, 0, 0);
+  if (wideNameLength) {
+    CImg<wchar_t> wideVarName(wideNameLength);
+    if (MultiByteToWideChar(CP_UTF8, 0, varname, -1, wideVarName, wideNameLength)) {
+      const DWORD wideValueLength = GetEnvironmentVariableW(wideVarName, 0, 0);
+
+      if (wideValueLength) {
+        CImg<wchar_t> wideValue(wideValueLength);
+
+        if (GetEnvironmentVariableW(wideVarName, wideValue, wideValueLength)) {
+          // Convert the returned value from UTF-16 to UTF-8.
+          int utf8Length = WideCharToMultiByte(CP_UTF8, 0, wideValue, wideValueLength, 0, 0, 0, 0);
+
+          if (utf8Length && utf8Length < utf8Buffer.width()) {
+            if (WideCharToMultiByte(CP_UTF8, 0, wideValue, wideValueLength, utf8Buffer, utf8Length, 0, 0)) {
+              res = utf8Buffer;
+            }
+          }
+      }
+    }
+  }
+
+  return res;
+#else  // cimgOS==2
+  return getenv(varname);
+#endif // cimgOS==2
+}
+
 // Get path to .gmic user file.
 //-----------------------------
 const char* gmic::path_user(const char *const custom_path) {
@@ -2710,18 +2751,18 @@ const char* gmic::path_user(const char *const custom_path) {
   cimg::mutex(28);
   const char *_path_user = 0;
   if (custom_path && cimg::is_directory(custom_path)) _path_user = custom_path;
-  if (!_path_user) _path_user = getenv("GMIC_PATH");
-  if (!_path_user) _path_user = getenv("GMIC_GIMP_PATH");
+  if (!_path_user) _path_user = gmic_getenv("GMIC_PATH");
+  if (!_path_user) _path_user = gmic_getenv("GMIC_GIMP_PATH");
   if (!_path_user) {
 #if cimg_OS!=2
-    _path_user = getenv("HOME");
+    _path_user = gmic_getenv("HOME");
 #else
-    _path_user = getenv("APPDATA");
+    _path_user = gmic_getenv("APPDATA");
 #endif
   }
-  if (!_path_user) _path_user = getenv("TMP");
-  if (!_path_user) _path_user = getenv("TEMP");
-  if (!_path_user) _path_user = getenv("TMPDIR");
+  if (!_path_user) _path_user = gmic_getenv("TMP");
+  if (!_path_user) _path_user = gmic_getenv("TEMP");
+  if (!_path_user) _path_user = gmic_getenv("TMPDIR");
   if (!_path_user) _path_user = "";
   path_user.assign(1024);
 #if cimg_OS!=2
@@ -2745,24 +2786,24 @@ const char* gmic::path_rc(const char *const custom_path) {
   cimg::mutex(28);
   const char *_path_rc = 0;
   if (custom_path && cimg::is_directory(custom_path)) _path_rc = custom_path;
-  if (!_path_rc) _path_rc = getenv("GMIC_PATH");
-  if (!_path_rc) _path_rc = getenv("GMIC_GIMP_PATH");
-  if (!_path_rc) _path_rc = getenv("XDG_CONFIG_HOME");
+  if (!_path_rc) _path_rc = gmic_getenv("GMIC_PATH");
+  if (!_path_rc) _path_rc = gmic_getenv("GMIC_GIMP_PATH");
+  if (!_path_rc) _path_rc = gmic_getenv("XDG_CONFIG_HOME");
   if (!_path_rc) {
 #if cimg_OS!=2
-    _path_rc = getenv("HOME");
+    _path_rc = gmic_getenv("HOME");
     if (_path_rc) {
       path_tmp.assign(std::strlen(_path_rc) + 10);
       cimg_sprintf(path_tmp,"%s/.config",_path_rc);
       if (cimg::is_directory(path_tmp)) _path_rc = path_tmp;
     }
 #else
-    _path_rc = getenv("APPDATA");
+    _path_rc = gmic_getenv("APPDATA");
 #endif
   }
-  if (!_path_rc) _path_rc = getenv("TMP");
-  if (!_path_rc) _path_rc = getenv("TEMP");
-  if (!_path_rc) _path_rc = getenv("TMPDIR");
+  if (!_path_rc) _path_rc = gmic_getenv("TMP");
+  if (!_path_rc) _path_rc = gmic_getenv("TEMP");
+  if (!_path_rc) _path_rc = gmic_getenv("TMPDIR");
   if (!_path_rc) _path_rc = "";
   path_rc.assign(1024);
   cimg_snprintf(path_rc,path_rc.width(),"%s%cgmic%c",
@@ -2781,11 +2822,27 @@ bool gmic::init_rc(const char *const custom_path) {
     if (c=='/' || c=='\\') c = 0;
   }
   if (!cimg::is_directory(dirname)) {
-    std::remove(dirname); // In case 'dirname' is already a file
 #if cimg_OS==2
-    return (bool)CreateDirectoryA(dirname,0);
+    DeleteFileA(dirname); // In case 'dirname' is already a file
+    if (!CreateDirectoryA(dirname, 0)) {
+      // The path may be UTF-8, convert it to a
+      // wide-character string and try again.
+      int wideLength = MultiByteToWideChar(CP_UTF8, 0, dirname, -1, 0, 0);
+      if (!wideLength) {
+        return false;
+      }
+
+      CImg<wchar_t> wpath(wideLength);
+      if (!MultiByteToWideChar(CP_UTF8, 0, dirname, -1, wpath, wideLength)) {
+        return false;
+      }
+
+      DeleteFileW(wpath);
+      return (bool)CreateDirectoryW(wpath, 0);
+    }
 #else
-    return !(bool)mkdir(dirname,0777);
+    std::remove(dirname); // In case 'dirname' is already a file
+    return !(bool)mkdir(dirname, 0777);
 #endif
   }
   return true;
