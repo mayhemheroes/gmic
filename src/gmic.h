@@ -9,7 +9,7 @@
  #  Note        : Include this file in your C++ source code, if you
  #                want to use the G'MIC interpreter in your own program.
  #
- #  Copyright   : David Tschumperle
+ #  Copyright   : David Tschumperlé
  #                ( https://tschumperle.users.greyc.fr/ )
  #
  #  Licenses    : This file is 'dual-licensed', you have to choose one

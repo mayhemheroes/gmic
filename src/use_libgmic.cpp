@@ -6,7 +6,7 @@
  #  Description : Show how to call the C++ version of the G'MIC library from a C++ source code.
  #                (for a C API, see 'use_libcgmic.c' instead)
  #
- #  Copyright   : David Tschumperle
+ #  Copyright   : David Tschumperlé
  #                ( http://tschumperle.users.greyc.fr/ )
  #
  #  Licenses    : This file is 'dual-licensed', you have to choose one

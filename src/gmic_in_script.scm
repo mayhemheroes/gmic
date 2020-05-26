@@ -5,7 +5,7 @@
 ;;   Description : Show how to call G'MIC commands from a GIMP script.
 ;;                 ( https://gmic.eu )
 ;;
-;;   Copyright   : David Tschumperle
+;;   Copyright   : David Tschumperlé
 ;;                 ( https://tschumperle.users.greyc.fr/ )
 ;;
 ;;   License     : CeCILL v2.0

@@ -6,7 +6,7 @@
  #  Description : GREYC's Magic for Image Computing - G'MIC core
  #                ( https://gmic.eu )
  #
- #  Copyright   : David Tschumperle
+ #  Copyright   : David Tschumperlé
  #                ( https://tschumperle.users.greyc.fr/ )
  #
  #  Licenses    : This file is 'dual-licensed', you have to choose one

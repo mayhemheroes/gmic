@@ -6,7 +6,7 @@
  #  Description : G'MIC CLI interface - A command-line tool to allow the use
  #                of G'MIC commands from the shell.
  #
- #  Copyright   : David Tschumperle
+ #  Copyright   : David Tschumperlé
  #                ( http://tschumperle.users.greyc.fr/ )
  #
  #  Licenses    : This file is 'dual-licensed', you have to choose one

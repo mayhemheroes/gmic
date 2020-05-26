@@ -13,7 +13,7 @@
 #
 #                ( https://gmic.eu )
 #
-#  Copyright   : David Tschumperle
+#  Copyright   : David Tschumperlé
 #                ( https://tschumperle.users.greyc.fr/ )
 #
 #  Licenses    : This file is 'dual-licensed', you have to choose one
@@ -637,7 +637,7 @@ do_gmic_stdlib.h:
  #                'do_gmic_stdlib.h:', from the G'MIC source file 'gmic_stdlib.gmic'.\n\
  #                ( https://gmic.eu )\n\
  #\n\
- #  Copyright   : David Tschumperle\n\
+ #  Copyright   : David Tschumperlé\n\
  #                ( https://tschumperle.users.greyc.fr/ )\n\
  #\n\
  #  Licenses    : This file is 'dual-licensed', you have to choose one\n\
