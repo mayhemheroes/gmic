@@ -82,6 +82,7 @@ if(ENABLE_X)
 
   if(ENABLE_XSHM AND X11_XShm_FOUND)
     list(APPEND COMPILE_FLAGS "cimg_use_xshm")
+    list(APPEND EXTRA_LIBRARY_TARGETS X11::Xext)
   endif()
 endif()
 
