@@ -21,6 +21,7 @@ find_package_handle_standard_args(CImg
 # Build options
 option(ENABLE_CURL "Add support for curl" ON)
 option(ENABLE_X "Add support for X11" ON)
+option(ENABLE_XSHM "Add support for X11 Xshm extension" OFF)
 option(ENABLE_FFMPEG "Add support for FFMpeg" ON)
 option(ENABLE_FFTW "Add support for FFTW" ON)
 option(ENABLE_GRAPHICSMAGICK "Add support for GrahicsMagick" ON)
@@ -79,8 +80,9 @@ if(ENABLE_X)
     list(APPEND COMPILE_FLAGS "cimg_display=0" "cimg_appname=\"gmic\"")
   endif()
 
-  if(X11_XShm_FOUND)
+  if(ENABLE_XSHM AND X11_XShm_FOUND)
     list(APPEND COMPILE_FLAGS "cimg_use_xshm")
+    list(APPEND EXTRA_LIBRARY_TARGETS X11::Xext)
   endif()
 endif()
 
