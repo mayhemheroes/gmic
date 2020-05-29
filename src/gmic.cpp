@@ -3845,6 +3845,7 @@ void gmic::_gmic(const char *const commands_line,
   verbosity = 0;
   render3d = 4;
   renderd3d = -1;
+  network_timeout = 0;
   focale3d = 700;
   light3d.assign();
   light3d_x = light3d_y = 0;
@@ -6136,7 +6137,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   arg_command_text,
                   !add_debug_info?" without debug info":"");
             try {
-              file = cimg::std_fopen(cimg::load_network(arg_command,gmic_use_argx),"r");
+              file = cimg::std_fopen(cimg::load_network(arg_command,gmic_use_argx,network_timeout),"r");
             } catch (...) {
               file = 0;
             }
@@ -9266,15 +9267,17 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                 gmic_selection.data(),gmic_argument_text_printed(),
                                 "Compute boolean inequality between image%s");
 
-        // Manage network permissions.
+        // Manage network permission and timeout.
         if (!is_get && !std::strcmp("network",item)) {
           gmic_substitute_args(false);
-          if (cimg_sscanf(argument,"%u%c",
-                          &pattern,&end)==1 &&
-              pattern<=1) {
-            print(images,0,"%s load-from-network mode.",
-                  pattern?"Enable":"Disable");
-            cimg::network_mode((bool)pattern,true);
+          if (cimg_sscanf(argument,"%d%c",
+                          &err,&end)==1 &&
+              err>=-1) {
+            if (err==-1) print(images,0,"Disable load-from-network.");
+            else if (!err) print(images,0,"Enable load-from-network, with no timeout.");
+            else print(images,0,"Enable load-from-network, with %ds timeout.",err);
+            cimg::network_mode(err!=-1,true);
+            if (err!=-1) network_timeout = err;
           } else arg_error("network");
           ++position; continue;
         }
@@ -14194,7 +14197,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         if (!cimg::strncasecmp(_filename,"http://",7) ||
             !cimg::strncasecmp(_filename,"https://",8)) {
           try {
-            cimg::load_network(_filename,filename_tmp);
+            cimg::load_network(_filename,filename_tmp,network_timeout);
           } catch (CImgIOException&) {
             print(images,0,"Input file '%s' at position%s",
                   _filename0,
