@@ -4646,9 +4646,9 @@ merge_multiline_comments :
             for (p = 3, j[p] && j[p]<=_' ' && j[p]!=_'\n', ++p); copy(i(),-1,p,1,0))"
   discard -1
 
-#@cli network : mode={ 0=disabled | 1=enabled } : (+)
+#@cli network : mode={ -1=disabled | 0=enabled w/o timeout | >0=enabled w/ timeout } : (+)
 #@cli : Enable or disable load-from-network mode.
-#@cli : (Default mode is 'enabled').
+#@cli : (Default mode is 'enabled w/o timeout').
 
 #@cli o : eq. to 'output'. : (+)
 
@@ -18944,7 +18944,8 @@ _apply_tiles :
 #@cli apply_timeout : "command",_timeout={ 0=no timeout | >0=with specified timeout (in seconds) }
 #@cli : Apply a command with a timeout.
 #@cli : Set variable '$_is_timeout' to '1' if timeout occured, '0' otherwise.
-apply_timeout :
+#@cli : Default value: 'timeout=20'.
+apply_timeout : check "${2=20}>=0"
   if $2<=0
     e[0--3] "Apply command '$1' on image$?, with no timeout."
     $1
