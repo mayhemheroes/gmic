@@ -212,8 +212,7 @@ endif
 
 # Enable parallelization in CImg, using OpenMP.
 # (http://www.openmp.org/)
-#OPENMP_CFLAGS = -fopenmp -Dcimg_use_openmp
-OPENMP_CFLAGS = -fopenmp=libomp -Dcimg_use_openmp
+OPENMP_CFLAGS = -fopenmp -Dcimg_use_openmp
 OPENMP_LIBS = -lgomp
 
 # Enable software debugging.
