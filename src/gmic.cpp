@@ -4997,8 +4997,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       const char *argument = initial_argument;
 
       // Check if current item is a known command.
-#define _gmic_eok(i) (!item[i] || item[i]=='[' || (item[i]=='.' && (!item[i + 1] || item[i + 1]=='.')))
-
       const bool
         is_simple_hyphen = *item=='-' && item[1] &&
         item[1]!='[' && item[1]!='.' && (item[1]!='3' || item[2]!='d'),
@@ -5009,19 +5007,23 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       item+=is_double_hyphen?2:is_simple_hyphen || is_plus?1:0;
       const bool is_get = is_double_hyphen || is_plus;
 
+#define _gmic_eok(i) (!item[i] || item[i]=='[' || (item[i]=='.' && (!item[i + 1] || item[i + 1]=='.')))
       unsigned int hash_custom = ~0U, ind_custom = ~0U;
-      bool
-        is_builtin_command =
-        (*item>='a' && *item<='z' && _gmic_eok(1)) || // Alphabetical shortcut commands
-        (*item=='m' && (item[1]=='*' || item[1]=='/') && _gmic_eok(2)) || // Shortcuts 'm*' and 'm/'
-        (*item=='f' && item[1]=='i' && _gmic_eok(2)) || // Shortcuts 'fi'
-        (*item=='u' && item[1]=='m' && _gmic_eok(2)) || // Shortcut 'um'
-        (*item=='!' && item[1]=='=' && _gmic_eok(2)) || // Shortcut '!='
-        ((*item=='%' || *item=='&' || *item=='^' || *item=='|') && _gmic_eok(1)) || // Shortcuts '%','&','^' and '|'
+      const bool
+        is_eok1 = *item && _gmic_eok(1),
+        is_eok2 = !is_eok1 && item[1] && _gmic_eok(2),
+        is_eok3 = !is_eok2 && item[2] && _gmic_eok(3);
+      bool is_builtin_command =
+        (*item>='a' && *item<='z' && is_eok1) || // Alphabetical shortcut commands
+        (*item=='m' && (item[1]=='*' || item[1]=='/') && is_eok2) || // Shortcuts 'm*' and 'm/'
+        (*item=='f' && item[1]=='i' && is_eok2) || // Shortcuts 'fi'
+        (*item=='u' && item[1]=='m' && is_eok2) || // Shortcut 'um'
+        (*item=='!' && item[1]=='=' && is_eok2) || // Shortcut '!='
+        ((*item=='%' || *item=='&' || *item=='^' || *item=='|') && is_eok1) || // Shortcuts '%','&','^' and '|'
         ((*item=='*' || *item=='+' || *item=='-' || *item=='/') && // Shortcuts '*','+','-','/',
-         (_gmic_eok(1) || (item[1]=='3' && item[2]=='d' && _gmic_eok(3)))) || // '*3d','+3d','-3d' and '/3d'
+         (is_eok1 || (item[1]=='3' && item[2]=='d' && is_eok3))) || // '*3d','+3d','-3d' and '/3d'
         ((*item=='<' || *item=='=' || *item=='>') && // Shortcuts '<','=','>','<=','==' and '>='
-         (_gmic_eok(1) || ((item[1]==*item || item[1]=='=') && _gmic_eok(2)))),
+         (is_eok1 || ((item[1]==*item || item[1]=='=') && is_eok2))),
         is_command = is_builtin_command;
 
       if (!is_builtin_command) {
