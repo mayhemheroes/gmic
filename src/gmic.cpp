@@ -5015,6 +5015,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         (*item>='a' && *item<='z' && _gmic_eok(1)) || // Alphabetical shortcut commands
         (*item=='m' && (item[1]=='*' || item[1]=='/') && _gmic_eok(2)) || // Shortcuts 'm*' and 'm/'
         (*item=='f' && item[1]=='i' && _gmic_eok(2)) || // Shortcuts 'fi'
+        (*item=='u' && item[1]=='m' && _gmic_eok(2)) || // Shortcut 'um'
         (*item=='!' && item[1]=='=' && _gmic_eok(2)) || // Shortcut '!='
         ((*item=='%' || *item=='&' || *item=='^' || *item=='|') && _gmic_eok(1)) || // Shortcuts '%','&','^' and '|'
         ((*item=='*' || *item=='+' || *item=='-' || *item=='/') && // Shortcuts '*','+','-','/',
@@ -5286,6 +5287,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           else if (command0=='m' && command1=='/') std::strcpy(command,"mdiv");
           else if (command0=='m' && command1=='*') std::strcpy(command,"mmul");
           else if (command0=='!' && command1=='=') std::strcpy(command,"neq");
+          else if (command0=='u' && command1=='m') CImg<char>::string("uncommand").move_to(_item);
 
         } else if (!command3 && command1=='3' && command2=='d') switch (command0) {
             // Three-chars shortcuts (ending with '3d').
