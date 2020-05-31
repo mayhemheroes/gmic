@@ -13913,8 +13913,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       if (is_verbose) selection2string(selection,images_names,0,_gmic_selection);
 
       char *last_x = std::strrchr(arg_input,'x');
-      if (last_x && cimg_sscanf(last_x + 1,"%d%c",&nb,&end)==1 && nb>0) *last_x = 0;
-      else { last_x = 0; nb = 1; }
+      if (last_x && cimg_sscanf(last_x + 1,"%d%c",&nb,&end)==1) {
+        if (!nb) continue;
+        if (nb<0) arg_error("input");
+        *last_x = 0;
+      } else { last_x = 0; nb = 1; }
       unsigned int larg = 0;
 
       if (*arg_input=='0' && !arg_input[1]) {
@@ -13928,8 +13931,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 nb,_gmic_selection.data());
         g_list.assign(nb);
         CImg<char>::string("[empty]").move_to(g_list_c);
-        if (--nb) { g_list.insert(nb,g_list[0]); g_list_c.insert(nb,g_list_c[0]); }
-
+        if (--nb) g_list_c.insert(nb,g_list_c[0]);
       } else if (*arg_input=='(' && arg_input[(larg = (unsigned int)std::strlen(arg_input)) - 1]==')') {
         CImg<T> img;
         char delimiter = 0;
