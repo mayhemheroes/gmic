@@ -2443,7 +2443,7 @@ const char *gmic::builtin_commands_names[] = {
     "sl3d","slices","smooth","solve","sort","specl3d","specs3d","sphere3d","split","split3d","sqr","sqrt","srand",
     "ss3d","status","store","streamline3d","structuretensors","sub","sub3d","svd",
   "t","tan","tanh","text","trisolve",
-  "u","uncommand","unroll","unserialize",
+  "u","um","uncommand","unroll","unserialize",
   "v","vanvliet","verbose",
   "w","w0","w1","w2","w3","w4","w5","w6","w7","w8","w9","wait","warn","warp","watershed","while","window",
   "x","xor","y","z","^","|" };
@@ -4997,8 +4997,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       const char *argument = initial_argument;
 
       // Check if current item is a known command.
-#define _gmic_eok(i) (!item[i] || item[i]=='[' || (item[i]=='.' && (!item[i + 1] || item[i + 1]=='.')))
-
       const bool
         is_simple_hyphen = *item=='-' && item[1] &&
         item[1]!='[' && item[1]!='.' && (item[1]!='3' || item[2]!='d'),
@@ -5009,18 +5007,23 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       item+=is_double_hyphen?2:is_simple_hyphen || is_plus?1:0;
       const bool is_get = is_double_hyphen || is_plus;
 
+#define _gmic_eok(i) (!item[i] || item[i]=='[' || (item[i]=='.' && (!item[i + 1] || item[i + 1]=='.')))
       unsigned int hash_custom = ~0U, ind_custom = ~0U;
-      bool
-        is_builtin_command =
-        (*item>='a' && *item<='z' && _gmic_eok(1)) || // Alphabetical shortcut commands
-        (*item=='m' && (item[1]=='*' || item[1]=='/') && _gmic_eok(2)) || // Shortcuts 'm*' and 'm/'
-        (*item=='f' && item[1]=='i' && _gmic_eok(2)) || // Shortcuts 'fi'
-        (*item=='!' && item[1]=='=' && _gmic_eok(2)) || // Shortcut '!='
-        ((*item=='%' || *item=='&' || *item=='^' || *item=='|') && _gmic_eok(1)) || // Shortcuts '%','&','^' and '|'
+      const bool
+        is_eok1 = *item && _gmic_eok(1),
+        is_eok2 = !is_eok1 && item[1] && _gmic_eok(2),
+        is_eok3 = !is_eok2 && item[2] && _gmic_eok(3);
+      bool is_builtin_command =
+        (*item>='a' && *item<='z' && is_eok1) || // Alphabetical shortcut commands
+        (*item=='m' && (item[1]=='*' || item[1]=='/') && is_eok2) || // Shortcuts 'm*' and 'm/'
+        (*item=='f' && item[1]=='i' && is_eok2) || // Shortcuts 'fi'
+        (*item=='u' && item[1]=='m' && is_eok2) || // Shortcut 'um'
+        (*item=='!' && item[1]=='=' && is_eok2) || // Shortcut '!='
+        ((*item=='%' || *item=='&' || *item=='^' || *item=='|') && is_eok1) || // Shortcuts '%','&','^' and '|'
         ((*item=='*' || *item=='+' || *item=='-' || *item=='/') && // Shortcuts '*','+','-','/',
-         (_gmic_eok(1) || (item[1]=='3' && item[2]=='d' && _gmic_eok(3)))) || // '*3d','+3d','-3d' and '/3d'
+         (is_eok1 || (item[1]=='3' && item[2]=='d' && is_eok3))) || // '*3d','+3d','-3d' and '/3d'
         ((*item=='<' || *item=='=' || *item=='>') && // Shortcuts '<','=','>','<=','==' and '>='
-         (_gmic_eok(1) || ((item[1]==*item || item[1]=='=') && _gmic_eok(2)))),
+         (is_eok1 || ((item[1]==*item || item[1]=='=') && is_eok2))),
         is_command = is_builtin_command;
 
       if (!is_builtin_command) {
@@ -5286,6 +5289,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           else if (command0=='m' && command1=='/') std::strcpy(command,"mdiv");
           else if (command0=='m' && command1=='*') std::strcpy(command,"mmul");
           else if (command0=='!' && command1=='=') std::strcpy(command,"neq");
+          else if (command0=='u' && command1=='m') CImg<char>::string("uncommand").move_to(_item);
 
         } else if (!command3 && command1=='3' && command2=='d') switch (command0) {
             // Three-chars shortcuts (ending with '3d').

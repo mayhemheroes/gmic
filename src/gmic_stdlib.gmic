@@ -252,8 +252,8 @@ _help : skip ${1=""}
   s +,{'"#@cli "$command" :"'} s +,{'"#@cli "$command":"'} s +,{'"#@cli "$command"\n"'}
   if $!==1
     l[] m "foo : "$command # Detect command misspelling.
-      repeat 16 uncommand $command done # Be sure the specified command does not exist anymore !
-      foo uncommand foo
+      repeat 16 um $command done # Be sure the specified command does not exist anymore !
+      foo um foo
     onfail ('${}') s -,{'"; did you mean "'} if $!>1 s[1] -,39 k[1] misspelling={t} fi rm
     endl
     if narg($misspelling) misspelling="; did you mean '"$_gmic_g$misspelling$_gmic_n"' ?)" fi
@@ -2661,8 +2661,8 @@ _display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
     else
       if $is_multiview repeat d w$>[] 0 done else w[] 0 fi
     fi
-  nm $nm uncommand iskey,flushkey,isvisible,isresized,idisp endl done
-  uncommand _d2d_format,rmn v -1 d[]
+  nm $nm um iskey,flushkey,isvisible,isresized,idisp endl done
+  um _d2d_format,rmn v -1 d[]
 
 #@cli d3d : eq. to 'display3d'.
 d3d : skip "${1=},${2=0}"
@@ -3023,7 +3023,7 @@ _display3d :
     k[0]
   endl done
   if narg($disp_normalization) w[] -1,-1,$disp_normalization else w[] 0 fi
-  uncommand rmn v -1 d[]
+  um rmn v -1 d[]
 
 #@cli da : eq. to 'display_array'.
 da :
@@ -3363,7 +3363,7 @@ _display_parallel : check ${1=0}>=0
   else
     if $!<=1 v - d v + return fi
     14,$! eval. "!x?copy(i(),[[',d['],vtos(y,10,10),_']'])" =. 0 discard. 0 str={t} rm.
-    m "__dp : parallel "$str __dp uncommand __dp
+    m "__dp : parallel "$str __dp um __dp
   fi
   v -1 d[]
 
@@ -4047,7 +4047,7 @@ _document_gmic_example_html :
     if !isfile(['{/$_filename}']) # Generate picture only if the file doesn't yet exist.
        m "foo : "{/{t}}
        l[] reset foo _document_gmic o $_filename,85 rm endl
-       uncommand foo
+       um foo
     fi
     ('${-eon}"<tr><td width=\"24\" align=\"center\"><div><a href=\""$_filename"\" class=\"highslide\"
       onclick=\"return hs.expand(this)\">
@@ -4082,7 +4082,7 @@ _document_gmic_footer_html : skip $1
   fi
   +e[] ${-eoff}${-doff}"<p style=\"margin-left:50px\"><font color=\"blue\"><b>[ Total number of \
       commands: "$_command" ]</b></font>"
-  uncommand don,doff,eon,eoff
+  um don,doff,eon,eoff
 
 # Replace URL with HTML link in selected images of string.
 # $1 can be { 0=open in same window (default) | 1=open in new window }
@@ -4125,7 +4125,7 @@ _document_gmic_example_images :
     l[]
       reset etime=$| foo$_example etime={_round($|-$etime,0.01)} _document_gmic o $_filename,85 rm
     endl
-    uncommand foo$_example
+    um foo$_example
     e[] "\r    "${_gmic_c}"["$_example"]"${_gmic_n}" Command '"${_gmic_g}$_command_name${_gmic_n}"': $ "{t}\
      ${_gmic_m}" (done in "$_gmic_n${etime}"s"$_gmic_m")."$_gmic_n
   fi
@@ -4264,7 +4264,7 @@ _document_gmic_example_latex :
     if !isfile(['{/$_filename}']) # Generate picture only if the file doesn't yet exist.
        m "foo : "{/{t}}
        l[] reset foo _document_gmic o $_filename,85 rm endl
-       uncommand foo
+       um foo
     fi
     _document_gmic_replace_latex
     +e[] ${-eon}"\\includegraphics[keepaspectratio=true,height=6cm,width=\\textwidth]{"$_filename"}\\\\"
@@ -4287,7 +4287,7 @@ _document_gmic_footer_latex :
 \n~\\\\$\\square$~End of document.
 \n\n\\end{document}"
   fi
-  uncommand eon,eoff
+  um eon,eoff
 
 _document_gmic_replace_latex :
   replace_str "\\","\\\\textbackslash "  # Replace '\'
@@ -4602,7 +4602,7 @@ _input_glob :
   files 3,"$*"
   N=$!
   m "_ig : $""=arg repeat $""# i ${arg{1+$>}} done"
-  _ig ${} uncommand _ig
+  _ig ${} um _ig
   if $N==$! error[0--3] "Command 'input_glob': No matching filenames for pattern '$*'." fi
 
 #@cli input_gpl : filename
@@ -4646,8 +4646,8 @@ merge_multiline_comments :
             for (p = 3, j[p] && j[p]<=_' ' && j[p]!=_'\n', ++p); copy(i(),-1,p,1,0))"
   discard -1
 
-#@cli network : mode={ -1=disabled | 0=enabled w/o timeout | >0=enabled w/ timeout } : (+)
-#@cli : Enable or disable load-from-network mode.
+#@cli network : mode={ -1=disabled | 0=enabled w/o timeout | >0=enabled w/ specified timeout in seconds } : (+)
+#@cli : Enable/disable load-from-network and set corresponding timeout.
 #@cli : (Default mode is 'enabled w/o timeout').
 
 #@cli o : eq. to 'output'. : (+)
@@ -5253,9 +5253,14 @@ testimage2d : check "${1=512}>0 && ${2=$1}>0 && ${3=3}>0"
   j3d.. .,30%,70%,0,1,5,0,0 rm. round. 1
   nm. "[2D test image]"
 
+#@cli um : eq. to 'uncommand'.
+um :
+  v + uncommand $* v -
+
 #@cli uncommand : command_name[,_command_name2,...] : * : (+)
 #@cli : Discard definition of specified custom commands.
 #@cli : Set argument to '*' for discarding all existing custom commands.
+#@cli : (eq. to 'um').
 
 #@cli uniform_distribution : nb_levels>=1,spectrum>=1
 #@cli : Input set of uniformly distributed spectrum-d points in [0,1]^spectrum.
@@ -6951,7 +6956,7 @@ _upload_filters_move :
   move_filter "Testing/Souphead/Spiral RGB","Rendering"
   move_filter "Testing/Souphead/Kitaoka Spin Illusion","Rendering"
   move_filter "Testing/Zonderr/Spiral","Rendering"
-  uncommand move_filter
+  um move_filter
 
 upload_filters :
   e[^-1] "Upload filter definition file on G'MIC server.\n"
@@ -6984,7 +6989,7 @@ upload_filters :
     e[] "** Generate filter update file."
     m "parse_gui_trigger_update : _upload_filters_move"
     v + parse_gui. *,update v -
-    uncommand parse_gui_trigger_update
+    um parse_gui_trigger_update
 
     # Upload filter files on G'MIC server.
     e[] "** Upload filter update."
@@ -8442,7 +8447,7 @@ decompress_clut_rbf : check "isint(${1=48}) && $1>0 && isint(${2=$1}) && $2>0 &&
     if $4 ${"arg $4,rgb,lab"}2srgb fi
     nm $nm
   endl done
-  uncommand srgb2srgb
+  um srgb2srgb
 
 #@cli decompress_clut_pde : _width>0,_height>0,_depth>0,_reconstruction_colorspace={ 0=srgb | 1=rgb | 2=lab }
 #@cli : Decompress selected colored keypoints into 3D CLUTs, using multiscale diffusion PDE's.
@@ -8481,7 +8486,7 @@ decompress_clut_pde : check "isint(${1=48}) && $1>0 && isint(${2=$1}) && $2>0 &&
     if $4 ${"arg $4,rgb,lab"}2srgb fi
     nm $nm
   endl done
-  uncommand srgb2srgb
+  um srgb2srgb
 
 #@cli decompress_rle
 #@cli : Decompress selected data vectors, using RLE algorithm.
@@ -9170,7 +9175,7 @@ _apply_channels : check "isint(${3=0}) && $3>=0 && $3<=2"
     if $is_alpha s c,{1-s} fi
     _ac_backward$id[0] a c
   endl done
-  uncommand _ac_precond$id,_ac_forward$id,_ac_backward$id
+  um _ac_precond$id,_ac_forward$id,_ac_backward$id
 
 _ac_list :
   if isnum("$1")
@@ -9347,7 +9352,7 @@ deltaE : check ${"is_image_arg $1"}" && isbool(${2=1})" skip "${3=srgb2lab}"
     else 100%,100%,100%,1,${-math_lib}"deltaE00(I#0,I#1)" rv[0,-1] rm. # DeltaE_2000
     fi
   nm[0] $nm endl done
-  rm. uncommand _deltaE_to_lab
+  rm. um _deltaE_to_lab
 
 #@cli cmy2rgb
 #@cli : Convert color representation of selected images from CMY to RGB.
@@ -9469,7 +9474,7 @@ _colormap : # Implementation of the median-cut algorithm.
     __colormap $b __colormap {$!-2} # Update box variances
   done
   rm. r 1,1,1,100%,2 a x # Average value in each box and append as final colormap
-  uncommand __colormap
+  um __colormap
 
 #@cli compose_channels
 #@cli : Compose all channels of each selected image, using specified arithmetic operator (+,-,or,min,...).
@@ -11589,7 +11594,7 @@ montage : check "isnum(${2=2}) && $2>=0 && $2<=3" skip "${1=X}",${3=0},"${4=}"
       __montage[$i] ${ref$i},$xi,$yi,{max(1,$wi)},{max(1,$hi)},$ai,$mxi,$myi
       j.. [$i],$xi,$yi
     done
-    uncommand __montage
+    um __montage
     rm[0-{$N-1},-1]
 
   fi
@@ -12443,7 +12448,7 @@ blur_bloom : check "${1=1}>=0 && ${2=2}>=0 && isint(${3=5}) && $3>=0 && isint(${
     done
     n. $mM k. nm $nm
   endl done
-  uncommand _bloom0,_bloom1,_bloom2,_bloom3,_bloom4
+  um _bloom0,_bloom1,_bloom2,_bloom3,_bloom4
 
 #@cli blur_linear : amplitude1[%],_amplitude2[%],_angle,_boundary_conditions={ 0=dirichlet | 1=neumann }
 #@cli : Apply linear blur on selected images, with specified angle and amplitudes.
@@ -13823,7 +13828,7 @@ peronamalik_flow : check "${1=20}>0 && ${2=5}>=0" skip ${3=5},${4=0}
            (C+i(x,y+1,z,s-1,0,1))*(j(0,1,0,0,0,1)-i) -
            (C+i(x,y-1,z,s-1,0,1))*(i-j(0,-1,0,0,0,1)))\"'"
   pde_flow $2,$3,_peronamalik_flow,$4
-  uncommand _peronamalik_flow
+  um _peronamalik_flow
 
 #@cli phase_correlation : [destination]
 #@cli : Estimate translation vector between selected source images and specified destination.
@@ -18798,7 +18803,7 @@ _apply_parallel :
     N={min($!,$_cpus)}
     commands= sep= repeat $N commands=$commands${sep}_ap[$>--1:$N] sep=, done
     parallel $commands
-    uncommand _ap
+    um _ap
   fi
 
 #@cli apc : eq. to 'apply_parallel_channels'.
@@ -18842,7 +18847,7 @@ _apply_parallel_overlap : check "${2=0}>=0 && isint(${3=0}) && $3>=0"
   repeat $! l[$>]
     _apply_parallel_overlap$N "$1",$2
   endl done
-  uncommand _check1
+  um _check1
 
 _apply_parallel_overlap1 :
   $1
@@ -18938,7 +18943,7 @@ _apply_tiles :
       )"
     rm[-2,-1]
     s. c,-{0,s} /[-2,-1] k.
-    uncommand __at
+    um __at
   endl done
 
 #@cli apply_timeout : "command",_timeout={ 0=no timeout | >0=with specified timeout (in seconds) }
@@ -19705,7 +19710,7 @@ pack : skip ${1=0},${2=max(w,h)}
   status=
   repeat $N if narg($status) status=$status,${offsets$>} else status=${offsets$>} fi done
   nm $nm u $status
-  uncommand _pack
+  um _pack
 
 #@cli puzzle : _width>0,_height>0,_M>=1,_N>=1,_curvature,_centering,_connectors_variability,_resolution>=1
 #@cli : Input puzzle binary mask with specified size and geometry.
@@ -20858,7 +20863,7 @@ stylize :
     +warp_patch[1] .,$patchsize_synthesis_final,$patchsize_synthesis_final,1 c. 0,255
     rv[0,-1] rm[-2,-1]
   endl done rm.
-  uncommand stylize_match
+  um stylize_match
 
 #@cli tetris : _scale>0
 #@cli : Apply tetris effect on selected images.
@@ -22485,7 +22490,7 @@ register_rigid : check ${is_image_arg\ $1}" && ${2=0.1%}>=0 && isint(${3=0}) && 
     done
     rm[-2,-1]
   fi
-  uncommand _register_rigid
+  um _register_rigid
 
 #@cli transition : [transition_shape],nb_added_frames>=0,100>=shading>=0,_single_frame_only={ -1=disabled | >=0 }
 #@cli : Generate a transition sequence between selected images.
@@ -24745,7 +24750,7 @@ demo : check "isint(${1=2}) && $1>=0 && $1<=2" check_display
 
     # Manage user selection.
     if !$mb" && "$omb" && "$ind_clicked" && "$ind_clicked==$ind
-      m "com : v 1 "${arg\ $ind,$commands} parallel $parallel_mode,"l[] com rm endl" uncommand com
+      m "com : v 1 "${arg\ $ind,$commands} parallel $parallel_mode,"l[] com rm endl" um com
     elif !$mb ind_clicked=0
     fi
     omb=$mb
@@ -24855,7 +24860,7 @@ x_2048 : check_display
 
     # Manage user events.
     wait
-    is_shift=0 uncommand shift2048,ishift2048,vshift2048
+    is_shift=0 um shift2048,ishift2048,vshift2048
     if {*,ARROWLEFT}
       m "shift2048:" m "ishift2048:" m "vshift2048:"
       is_shift=1
@@ -24933,7 +24938,7 @@ x_2048 : check_display
     fi
 
   while {*}" && "!{*,ESC}" && "!{*,Q}
-  rm w 0 endl uncommand _x_2048_setrandom,_x_2048_object3d
+  rm w 0 endl um _x_2048_setrandom,_x_2048_object3d
 
 #@cli x_blobs
 #@cli : Launch the blobs editor.
@@ -25136,7 +25141,7 @@ x_color_curves : skip ${1=rgb}
     xcc_backto
 
   endl done
-  uncommand xcc_goto,xcc_backto,xcc_info
+  um xcc_goto,xcc_backto,xcc_info
 
 _x_color_curves :
   title={0,b} if narg({'{0,x}'}) title=$title.{0,x} fi ('$title') discard. {'~'} title={t} rm.
@@ -26980,7 +26985,7 @@ x_mask_color : check "${2=5}>=0 && ${3=5}>=0" skip ${1=all} check_display
     rm.. a c
 
   endl done
-  uncommand _ac_forward
+  um _ac_forward
 
 _x_mask_color : # Estimate color mask image.
   100%,100%
@@ -27421,7 +27426,7 @@ x_morph : check "isint(${1=16}) && isint(${2=3}) && $2>=0 && $2<=4" check_displa
     done
     nm. $nm1 k[-$1--1]
     offset+={$!-2}
-  endl done w0 0 w1 0 uncommand rmn
+  endl done w0 0 w1 0 um rmn
 
 #@cli x_pacman
 #@cli : Launch pacman game.
@@ -28433,7 +28438,7 @@ x_select_color : skip ${1=xsc_variable} check_display
   add_preset 0,0,0,0,0 add_preset 1,255,255,255 add_preset 2,255,0,0 add_preset 3,0,255,0
   add_preset 4,0,0,255 add_preset 5,255,255,0 add_preset 6,255,0,255 add_preset 7,0,255,255
   add_preset 8,50,50,50 add_preset 9,100,100,100 add_preset 10,150,150,150 add_preset 11,200,200,200
-  uncommand add_preset
+  um add_preset
   if !narg($_xsc_preset) _xsc_preset=11 fi
   ($R^$G^$B) c. 0,255 rgb2hsv. H={i[0]} S={i[1]} V={i[2]} rm.
 
@@ -29474,7 +29479,7 @@ x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2 && isint(${3=0
     k[img,keypoints]
     _x_warp_rbf[keypoints] {img,[w,h]} +. '[x,y]'
     warp[img] .,0,2,3 rm. nm $nm
-  endl done c 0,255 w 0 uncommand rmn
+  endl done c 0,255 w 0 um rmn
 
 # Generate 2d warping field from set of keypoints, using RBF reconstruction.
 # $1,$2 = width,height
@@ -29843,7 +29848,7 @@ gui_split_preview : check "isint(${2=0}) && $2>=0 && $2<=12 && ${5=0}>=0" skip "
       k[0]
     fi
   endl done
-  uncommand _split_preview
+  um _split_preview
 
 # Command to display text on a the G'MIC plug-in preview.
 # $1 : header message
@@ -32589,7 +32594,7 @@ fx_quadtree :
     fi
     k[0]
   endl done
-  uncommand _qt
+  um _qt
 
 fx_quadtree_preview :
   gui_split_preview "fx_quadtree $*",${-3--1}
@@ -35471,7 +35476,7 @@ fx_detect_skin :
     else _fx_detect_skin # Probability mask.
     fi
   endl done
-  uncommand _fx_detect_skin
+  um _fx_detect_skin
 
 fx_detect_skin_preview :
   gui_split_preview "fx_detect_skin $*",${-3--1}
@@ -37081,7 +37086,7 @@ _fx_morphological :
     a c
   endl done
   if $5 repeat $! l[$>] split_opacity negate[0] a c endl done fi
-  uncommand my_erode,my_dilate,my_action
+  um my_erode,my_dilate,my_action
 
 #@gui Segmentation : fx_segment_watershed, fx_segment_watershed_preview(0)
 #@gui : Edge Threshold = float(2,0,15)
@@ -37917,7 +37922,7 @@ fx_project_stereographic :
         phi = (h#0*(phi/pi + 0.5))%h#0;
         I(#0,theta,phi)"
     fi
-  k. endl done uncommand _fx_project_stereographic
+  k. endl done um _fx_project_stereographic
 
   if $_is_preview
     line $centerx%,$centery%,$radangx%,$radangy%,0.75,0xF0F0F0F0,255,255,255,255
@@ -40570,7 +40575,7 @@ fx_blend :
   elif $2==1" && "$!>1 blend[^0] [0],$mode,{$3%},0 rm[0]  # Top layer is top for all blends.
   elif $2==2" && "$!>1 blend[^-1] .,$mode,{$3%},1 rm. # Bottom layer is bottom for all blends.
   fi
-  uncommand _blend_custom_formula
+  um _blend_custom_formula
 
 fx_blend_preview :
   fx_blend $"*"
@@ -45600,7 +45605,7 @@ fx_custom_code : skip "${1=-skip ,}"
     _dim_out="" sep="" repeat $! l[$>]
       _dim_out=$_dim_out$sep"["$>"] = "{w}x{h}x{d}x{s}", in ["{_round([im,iM],0.1)}"]" sep="\n" endl done
   fi
-  uncommand _fx_custom_code_start
+  um _fx_custom_code_start
 
 fx_custom_code_preview : skip "${1=-skip ,}"
   w={w} h={h}
@@ -45664,7 +45669,7 @@ fx_gmic_demos :
        rubber3d,shadebobs,spline,starfield3d,tetris,tictactoe,waves,whirl
   com=${arg\ {1+$1},$coms}
   if $!>0 sel=0 else sel= fi
-  +l[$sel] m "foo : x_"$com foo rm uncommand foo endl
+  +l[$sel] m "foo : x_"$com foo rm um foo endl
 
 fx_gmic_demos_preview :
   rm filename=${-path_tmp}gmic_demos.cimgz
