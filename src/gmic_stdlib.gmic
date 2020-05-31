@@ -182,7 +182,7 @@ cli_noarg :
   v 0 use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r _cli_noarg=1 version
   +e[] "\n[gmic] No commands, options or data provided"
   if {*,u}>0
-    +e[] "[gmic] (type "${c}"'gmic help'"$n" to get help, "${c}"'gmic demo'"$n" to launch demos)."
+    +e[] "[gmic] (type "${c}"'gmic help'"$n" to get help, "${c}"'gmic demos'"$n" to launch demos)."
   else
     +e[] "[gmic] (type "${c}"'gmic help'"$n" to get help)."
   fi
@@ -1364,7 +1364,7 @@ _help_examples :
 \n     "${c}"gmic apply_camera \\\"+mirror x +mirror y add div 4\\\""$n"
 \n
 \n  - Launch a set of "${-GMIC}" interactive demos:
-\n     "${c}"gmic demo"$n"
+\n     "${c}"gmic demos"$n"
 \n"
 
 # Commands to output help in ascii format.
@@ -2687,14 +2687,13 @@ _display3d :
   is_user_background,exit_on_anykey=$1,$2
   if !$! e[0--3] "Display 3D object []." return fi
   m "rmn : nmd $\"*\" rm[${}]"
-  ('$?') f. "(i==_',') || (i>=_'0' && i<=_'9')?i:-1" discard. -1 indices={t} rm.
 
   repeat $! l[$>]
     l. check3d 0
     onfail l[] ({'${}'}) s +,{'"'check3d': "'} k. msg={t} rm endl error[] "Command 'display3d': "$msg
     endl
     nm={n} nbv,nbp={f2ui(i[6,2])}
-    e[0--5] "Display 3D object ["{arg(1+$>,$indices)}"] = '"$nm"' ("$nbv" vertices, "$nbp" primitives)."
+    e[0--5] "Display 3D object ["{arg(1+$>,$[])}"] = '"$nm"' ("$nbv" vertices, "$nbp" primitives)."
 
     # Init display window and variables.
     disp_title=$nm" ("$nbv" vertices, "$nbp" primitives)"
@@ -24609,9 +24608,9 @@ uchar2base64 : skip "${1=0}"
 #
 #-------------------------------------
 
-#@cli demo : _run_in_parallel={ 0=no | 1=yes | 2=auto }
+#@cli demos : _run_in_parallel={ 0=no | 1=yes | 2=auto }
 #@cli : Show a menu to select and view all G'MIC interactive demos.
-demo : check "isint(${1=2}) && $1>=0 && $1<=2" check_display
+demos : check "isint(${1=2}) && $1>=0 && $1<=2" check_display
   use_vt100 g=$_gmic_g c=$_gmic_c n=$_gmic_n r=$_gmic_r
   strver=${-strver}
   if $_prerelease strver=${strver}_pre#$_prerelease fi
@@ -30539,10 +30538,10 @@ gui_download_all_data :
   _ext_sample=png
 
   # Demo thumbnails.
-  _filenames_demo=gmic_demos
-  _url_demo=https://gmic.eu/img
-  _prefix_demo=
-  _ext_demo=cimgz
+  _filenames_demos=gmic_demos
+  _url_demos=https://gmic.eu/img
+  _prefix_demos=
+  _ext_demos=cimgz
 
   # Manage downloads.
   _n=0
@@ -30552,7 +30551,7 @@ gui_download_all_data :
   _gui_download_all_data[] lightleak,$1
   _gui_download_all_data[] logo,$1
   _gui_download_all_data[] sample,$1
-  _gui_download_all_data[] demo,$1
+  _gui_download_all_data[] demos,$1
   progress 100
 
 _gui_download_all_data :
