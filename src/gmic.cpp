@@ -5010,20 +5010,20 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 #define _gmic_eok(i) (!item[i] || item[i]=='[' || (item[i]=='.' && (!item[i + 1] || item[i + 1]=='.')))
       unsigned int hash_custom = ~0U, ind_custom = ~0U;
       const bool
-        is_eok1 = *item && _gmic_eok(1),
-        is_eok2 = *item && item[1] && _gmic_eok(2),
-        is_eok3 = *item && item[1] && item[2] && _gmic_eok(3);
+        is_com1 = *item && _gmic_eok(1),
+        is_com2 = *item && item[1] && _gmic_eok(2),
+        is_com3 = *item && item[1] && item[2] && _gmic_eok(3);
       bool is_builtin_command =
-        (*item>='a' && *item<='z' && is_eok1) || // Alphabetical shortcut commands
-        (*item=='m' && (item[1]=='*' || item[1]=='/') && is_eok2) || // Shortcuts 'm*' and 'm/'
-        (*item=='f' && item[1]=='i' && is_eok2) || // Shortcuts 'fi'
-        (*item=='u' && item[1]=='m' && is_eok2) || // Shortcut 'um'
-        (*item=='!' && item[1]=='=' && is_eok2) || // Shortcut '!='
-        ((*item=='%' || *item=='&' || *item=='^' || *item=='|') && is_eok1) || // Shortcuts '%','&','^' and '|'
+        (*item>='a' && *item<='z' && is_com1) || // Alphabetical shortcut commands
+        (*item=='m' && (item[1]=='*' || item[1]=='/') && is_com2) || // Shortcuts 'm*' and 'm/'
+        (*item=='f' && item[1]=='i' && is_com2) || // Shortcuts 'fi'
+        (*item=='u' && item[1]=='m' && is_com2) || // Shortcut 'um'
+        (*item=='!' && item[1]=='=' && is_com2) || // Shortcut '!='
+        ((*item=='%' || *item=='&' || *item=='^' || *item=='|') && is_com1) || // Shortcuts '%','&','^' and '|'
         ((*item=='*' || *item=='+' || *item=='-' || *item=='/') && // Shortcuts '*','+','-','/',
-         (is_eok1 || (item[1]=='3' && item[2]=='d' && is_eok3))) || // '*3d','+3d','-3d' and '/3d'
+         (is_com1 || (item[1]=='3' && item[2]=='d' && is_com3))) || // '*3d','+3d','-3d' and '/3d'
         ((*item=='<' || *item=='=' || *item=='>') && // Shortcuts '<','=','>','<=','==' and '>='
-         (is_eok1 || ((item[1]==*item || item[1]=='=') && is_eok2))),
+         (is_com1 || ((item[1]==*item || item[1]=='=') && is_com2))),
         is_command = is_builtin_command;
 
       if (!is_builtin_command) {
@@ -13913,8 +13913,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       if (is_verbose) selection2string(selection,images_names,0,_gmic_selection);
 
       char *last_x = std::strrchr(arg_input,'x');
-      if (last_x && cimg_sscanf(last_x + 1,"%d%c",&nb,&end)==1 && nb>0) *last_x = 0;
-      else { last_x = 0; nb = 1; }
+      if (last_x && cimg_sscanf(last_x + 1,"%d%c",&nb,&end)==1) {
+        if (!nb) continue;
+        if (nb<0) arg_error("input");
+        *last_x = 0;
+      } else { last_x = 0; nb = 1; }
       unsigned int larg = 0;
 
       if (*arg_input=='0' && !arg_input[1]) {
@@ -13928,8 +13931,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 nb,_gmic_selection.data());
         g_list.assign(nb);
         CImg<char>::string("[empty]").move_to(g_list_c);
-        if (--nb) { g_list.insert(nb,g_list[0]); g_list_c.insert(nb,g_list_c[0]); }
-
+        if (--nb) g_list_c.insert(nb,g_list_c[0]);
       } else if (*arg_input=='(' && arg_input[(larg = (unsigned int)std::strlen(arg_input)) - 1]==')') {
         CImg<T> img;
         char delimiter = 0;
