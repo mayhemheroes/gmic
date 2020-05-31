@@ -5011,8 +5011,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       unsigned int hash_custom = ~0U, ind_custom = ~0U;
       const bool
         is_eok1 = *item && _gmic_eok(1),
-        is_eok2 = !is_eok1 && item[1] && _gmic_eok(2),
-        is_eok3 = !is_eok2 && item[2] && _gmic_eok(3);
+        is_eok2 = *item && item[1] && _gmic_eok(2),
+        is_eok3 = *item && item[1] && item[2] && _gmic_eok(3);
       bool is_builtin_command =
         (*item>='a' && *item<='z' && is_eok1) || // Alphabetical shortcut commands
         (*item=='m' && (item[1]=='*' || item[1]=='/') && is_eok2) || // Shortcuts 'm*' and 'm/'
@@ -6922,7 +6922,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             nb_scales = cimg::round(nb_scales);
             nb_iterations = cimg::round(nb_iterations);
             if (nb_scales) cimg_snprintf(argx,_argx.width(),"%g ",nb_scales); else std::strcpy(argx,"auto-");
-            if (ind0) { gmic_use_argy; cimg_snprintf(argy,_argy.width()," with guide [%u]",*ind0); } else *_argy = 0;
+            if (ind0) { gmic_use_argy; cimg_snprintf(argy,_argy.width()," with guide [%u]",*ind0); } else *argy = 0;
 
             print(images,0,"Estimate displacement field from source [%u] to image%s, with "
                   "%s smoothness %g, precision %g, %sscales, %g iteration%s, in %s direction%s.",
