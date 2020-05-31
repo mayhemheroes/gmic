@@ -5010,20 +5010,20 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 #define _gmic_eok(i) (!item[i] || item[i]=='[' || (item[i]=='.' && (!item[i + 1] || item[i + 1]=='.')))
       unsigned int hash_custom = ~0U, ind_custom = ~0U;
       const bool
-        is_eok1 = *item && _gmic_eok(1),
-        is_eok2 = *item && item[1] && _gmic_eok(2),
-        is_eok3 = *item && item[1] && item[2] && _gmic_eok(3);
+        is_com1 = *item && _gmic_eok(1),
+        is_com2 = *item && item[1] && _gmic_eok(2),
+        is_com3 = *item && item[1] && item[2] && _gmic_eok(3);
       bool is_builtin_command =
-        (*item>='a' && *item<='z' && is_eok1) || // Alphabetical shortcut commands
-        (*item=='m' && (item[1]=='*' || item[1]=='/') && is_eok2) || // Shortcuts 'm*' and 'm/'
-        (*item=='f' && item[1]=='i' && is_eok2) || // Shortcuts 'fi'
-        (*item=='u' && item[1]=='m' && is_eok2) || // Shortcut 'um'
-        (*item=='!' && item[1]=='=' && is_eok2) || // Shortcut '!='
-        ((*item=='%' || *item=='&' || *item=='^' || *item=='|') && is_eok1) || // Shortcuts '%','&','^' and '|'
+        (*item>='a' && *item<='z' && is_com1) || // Alphabetical shortcut commands
+        (*item=='m' && (item[1]=='*' || item[1]=='/') && is_com2) || // Shortcuts 'm*' and 'm/'
+        (*item=='f' && item[1]=='i' && is_com2) || // Shortcuts 'fi'
+        (*item=='u' && item[1]=='m' && is_com2) || // Shortcut 'um'
+        (*item=='!' && item[1]=='=' && is_com2) || // Shortcut '!='
+        ((*item=='%' || *item=='&' || *item=='^' || *item=='|') && is_com1) || // Shortcuts '%','&','^' and '|'
         ((*item=='*' || *item=='+' || *item=='-' || *item=='/') && // Shortcuts '*','+','-','/',
-         (is_eok1 || (item[1]=='3' && item[2]=='d' && is_eok3))) || // '*3d','+3d','-3d' and '/3d'
+         (is_com1 || (item[1]=='3' && item[2]=='d' && is_com3))) || // '*3d','+3d','-3d' and '/3d'
         ((*item=='<' || *item=='=' || *item=='>') && // Shortcuts '<','=','>','<=','==' and '>='
-         (is_eok1 || ((item[1]==*item || item[1]=='=') && is_eok2))),
+         (is_com1 || ((item[1]==*item || item[1]=='=') && is_com2))),
         is_command = is_builtin_command;
 
       if (!is_builtin_command) {
