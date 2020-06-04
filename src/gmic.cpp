@@ -13913,11 +13913,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       if (is_verbose) selection2string(selection,images_names,0,_gmic_selection);
 
       char *last_x = std::strrchr(arg_input,'x');
-      if (last_x && cimg_sscanf(last_x + 1,"%d%c",&nb,&end)==1) {
-        if (!nb) continue;
-        if (nb<0) arg_error("input");
-        *last_x = 0;
-      } else { last_x = 0; nb = 1; }
+      if (last_x && cimg_sscanf(last_x + 1,"%d%c",&nb,&end)==1 && nb>0) *last_x = 0; else { last_x = 0; nb = 1; }
       unsigned int larg = 0;
 
       if (*arg_input=='0' && !arg_input[1]) {
