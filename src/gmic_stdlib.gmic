@@ -14973,14 +14973,14 @@ slic : check "${1=16}>0 && ${2=10}>=0 && ${3=10}>0"
     fi
     r. {wh},1,1,2,-1
     100%,1,1,{0,s},"I(#0,I#1)" a[-2,-1] c # Add superpixels colors
-    [0],[0],1,2 eval.. "I(#-1,i0,i1) = [ x + 1,1 ]" s. c distance. 1 *. -1 watershed.. . rm. channels. 0,1
+    [0],[0],1,2 eval.. "I(#-1,i0,i1) = [ x + 1,1 ]; I" s. c distance. 1 *. -1 watershed.. . rm. channels. 0,1
 
     # Start iteration loop.
     repeat $nb_iter
 
       # Assign best superpixel to each pixel.
       sh[2] 1 f. inf rm.
-      f[1] "
+      eval[1] "
         const m = "$m";
         const S = "$S";
         k = x;
@@ -15005,7 +15005,7 @@ slic : check "${1=16}>0 && ${2=10}>=0 && ${3=10}>0"
 
       # Update superpixels.
       f[1] 0 channels[1] 0,{-2,s}
-      f[2] "I[#1,i0]+=[ x,y,I#0,1 ];I"
+      eval[2] "I[#1,i0]+=[ x,y,I#0,1 ];I"
       s[1] c,-{1,s-1} max[2] 1 /[1,2]
 
     done
@@ -15014,7 +15014,7 @@ slic : check "${1=16}>0 && ${2=10}>=0 && ${3=10}>0"
     k[2] channels 0 label. 0,0
     +area 0,0 <. {$S^2/8}
     {0,iM+1},1,1,1,x
-    f[0] ">
+    eval[0] ">
       const boundary = 1;
       if (i[#-1,i]>=0,
         N = [ j(-1,0),j(0,-1),j(1,0),j(0,1) ];
