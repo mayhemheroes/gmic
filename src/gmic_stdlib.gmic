@@ -821,9 +821,16 @@ ${g}"v"$n"' appears
 \n       . '"${c}"inrange(value,m,M,include_boundaries)"$n"' returns "${g}"0 (false)"$n" or "${g}"1 (true)"$n" whether
 \n          the specified value lies in range "${g}"[m,M]"$n" or not (checked range is "${g}"]m,M["$n" if
 \n          '"${g}"include_boundaries=0"$n"').
-\n       . '"${c}"argmin()"$n"', '"${c}"argmax()"$n"', '"${c}"avg()"$n"', '"${c}"kth()"$n"', '"${c}"max()"$n"', '"\
-${c}"med()"$n"', '"${c}"min()"$n"', '"${c}"std()"$n"', '"${c}"sum()"$n"'
-\n          and '"${c}"var()"$n"' can be called with an arbitrary number of scalar/vector arguments.
+\n       . '"${c}"argkth()"$n"', '"${c}"argmin()"$n"', '"${c}"argmax()"$n"', '"${c}"argminabs()"$n"', \
+'"${c}"argmaxabs()"$n"', '"${c}"avg()"$n"', '"${c}"kth()"$n"', '"${c}"min()"$n"',
+\n          '"${c}"max()"$n"', '"${c}"minabs()"$n"', '"${c}"maxabs()"$n"', "${c}"med()"$n"', '"${c}"prod()"$n"', \
+'"${c}"std()"$n"', '"${c}"sum()"$n"' and '"${c}"var()"$n"'
+\n          can be called with an arbitrary number of scalar/vector arguments.
+\n       . '"${c}"vargkth()"$n"', '"${c}"vargmin()"$n"', '"${c}"vargmax()"$n"', '"${c}"vargminabs()"$n"', \
+'"${c}"vargmaxabs()"$n"', '"${c}"vavg()"$n"', '"${c}"vkth()"$n"', '"${c}"vmin()"$n"',
+\n          '"${c}"vmax()"$n"', '"${c}"vminabs()"$n"', '"${c}"vmaxabs()"$n"', '"${c}"vmed()"$n"', '"${c}"vprod()"$n"', \
+'"${c}"vstd()"$n"', '"${c}"vsum()"$n"' and '"${c}"vvar()"$n"'
+\n          are the versions of the previous function with vector-valued arguments.
 \n       . '"${c}"round(value,rounding_value,direction)"$n"' returns a rounded value. '"${g}"direction"$n"' can be
 \n          "${g}"{ -1=to-lowest | 0=to-nearest | 1=to-highest }"$n".
 \n       . '"${c}"lerp(a,b,t)"$n"' returns '"${g}"a*(1-t) + b*t"$n"'.
@@ -14973,14 +14980,14 @@ slic : check "${1=16}>0 && ${2=10}>=0 && ${3=10}>0"
     fi
     r. {wh},1,1,2,-1
     100%,1,1,{0,s},"I(#0,I#1)" a[-2,-1] c # Add superpixels colors
-    [0],[0],1,2 f.. "I(#-1,i0,i1) = [ x + 1,1 ];I" s. c distance. 1 *. -1 watershed.. . rm. channels. 0,1
+    [0],[0],1,2 eval.. "I(#-1,i0,i1) = [ x + 1,1 ]; I" s. c distance. 1 *. -1 watershed.. . rm. channels. 0,1
 
     # Start iteration loop.
     repeat $nb_iter
 
       # Assign best superpixel to each pixel.
       sh[2] 1 f. inf rm.
-      f[1] "
+      eval[1] "
         const m = "$m";
         const S = "$S";
         k = x;
@@ -15005,7 +15012,7 @@ slic : check "${1=16}>0 && ${2=10}>=0 && ${3=10}>0"
 
       # Update superpixels.
       f[1] 0 channels[1] 0,{-2,s}
-      f[2] "I[#1,i0]+=[ x,y,I#0,1 ];I"
+      eval[2] "I[#1,i0]+=[ x,y,I#0,1 ];I"
       s[1] c,-{1,s-1} max[2] 1 /[1,2]
 
     done
@@ -15014,7 +15021,7 @@ slic : check "${1=16}>0 && ${2=10}>=0 && ${3=10}>0"
     k[2] channels 0 label. 0,0
     +area 0,0 <. {$S^2/8}
     {0,iM+1},1,1,1,x
-    f[0] ">
+    eval[0] ">
       const boundary = 1;
       if (i[#-1,i]>=0,
         N = [ j(-1,0),j(0,-1),j(1,0),j(0,1) ];
@@ -25787,7 +25794,7 @@ _x_crop :
   e[0--3] "Crop image"$_gmic_s" interactively."
   repeat $! l[$>]
     w ${"fitscreen "{[w,h,d]}},1,"[G'MIC] "{n}" - Interactive crop"
-    +select 2,{round([w,h,d]/2)},0,1 u={^} z.. ${} rm.
+    +select 2,{round([w,h,d]/2)},0,1 u={^} z.. $u rm.
     w[] 0 is_change
   endl done u $u
 
