@@ -8441,30 +8441,11 @@ decompress_clut_rbf : check "isint(${1=48}) && $1>0 && isint(${2=$1}) && $2>0 &&
                             "isin(${4=0},0,1,2)"
   e[^-1] "Decompress colored keypoint$? into $1x$2x$3 CLUTs (RBF approach), using "\
          ${"s0,s1,s2=srgb,rgb,lab u $s$4"}" colorspace for reconstruction."
-  repeat $! l[$>] nm={n}
+  repeat $! l[$>]
     if $4 s c,-3 srgb2${"arg $4,rgb,lab"}. a c fi
-    $1,$2,$3,{s-3},"*
-      begin(
-        rbf(_r) = (r = _r; r^2*log(1 + r));
-        xyz(p) = (I[#0,p])[0,3]*([w,h,d] - 1)/255;
-        const N = h#0;
-        const N2 = N^2;
-        const Ns = N*s;
-        ref(vectorN2(),A);
-        ref(vectorNs(),B);
-        for (p = 0, p<N, ++p,
-          for (q = p, q<N, ++q,  A[q + N*p] = A[p + N*q] = rbf(norm(xyz(p) - xyz(q))));
-          copy(B[s*p],(I[#0,p])[3,s],s);
-        );
-        W = solve(A,B,s);
-      );
-      ref(vectors(0),res);
-      for (p = 0, p<N, ++p, res += W[s*p,s]*rbf(norm([x,y,z] - xyz(p))))"
-    rm..
+    rbf $1,$2,$3,0,0,0,255,255,255
     if $4 ${"arg $4,rgb,lab"}2srgb fi
-    nm $nm
   endl done
-  um srgb2srgb
 
 #@cli decompress_clut_pde : _width>0,_height>0,_depth>0,_reconstruction_colorspace={ 0=srgb | 1=rgb | 2=lab }
 #@cli : Decompress selected colored keypoints into 3D CLUTs, using multiscale diffusion PDE's.
@@ -13913,7 +13894,7 @@ rbf :
     check $dx>0
     e[^-1] "Reconstruct 1D image from keypoint set$?, with size "$dx", "\
      "from ("$x0") to ("$x1") and phi(r) = "$phi_r.
-    repeat $! l[$>] if !w $dx elif whd==1 channels. 1,100% r. $dx,1,1,100% else
+    repeat $! l[$>] nm={n} if !w $dx elif whd==1 channels. 1,100% r. $dx,1,1,100% else
       r 1,{whd},1,100%,-1 permute. cyzx
       $dx,1,1,{w-1},"*
         begin(
@@ -13932,7 +13913,7 @@ rbf :
         );
         ref(vectors(),res); x = (x - "$x0")*fx;
         for (k = 0, k<h#0, ++k, r = abs(x - X[k]); res+=W[s*k,s]*phi(r))"
-      k.
+      k. nm $nm
     fi endl done
 
   elif isin($#,2,6,7) # 2D reconstruction
@@ -13941,7 +13922,7 @@ rbf :
     check $dx>0" && "$dy>0
     e[^-1] "Reconstruct 2D image from keypoint set$?, with size "$dx,$dy", "\
      "from ("$x0,$y0") to ("$x1,$y1") and phi(r) = "$phi_r.
-    repeat $! l[$>] if !w $dx,$dy elif whd==1 channels 2,100% r. $dx,$dy,1,100% else
+    repeat $! l[$>] nm={n} if !w $dx,$dy elif whd==1 channels 2,100% r. $dx,$dy,1,100% else
       r 1,{whd},1,100%,-1 permute. cyzx
       $dx,$dy,1,{w-2},"*
         begin(
@@ -13962,7 +13943,7 @@ rbf :
         );
         ref(vectors(),res); x = (x - "$x0")*fx; y = (y - "$y0")*fy;
         for (k = 0, k<h#0, ++k, r = norm(x - X[k], y - Y[k]); res+=W[s*k,s]*phi(r))"
-      k.
+      k. nm $nm
     fi endl done
 
   elif isin($#,3,9,10) # 3D reconstruction
@@ -13971,7 +13952,7 @@ rbf :
     check $dx>0" && "$dy>0" && "$dz>0
     e[^-1] "Reconstruct 3D image from keypoint set$?, with size "$dx,$dy,$dz", "\
      "from ("$x0,$y0,$z0") to ("$x1,$y1,$z1") and phi(r) = "$phi_r.
-    repeat $! l[$>] if !w $dx,$dy,$dz elif whd==1 channels 3,100% r. $dx,$dy,$dz,100% else
+    repeat $! l[$>] nm={n} if !w $dx,$dy,$dz elif whd==1 channels 3,100% r. $dx,$dy,$dz,100% else
       r 1,{whd},1,100%,-1 permute. cyzx
       $dx,$dy,$dz,{w-3},"*
         begin(
@@ -13994,7 +13975,7 @@ rbf :
         );
         ref(vectors(),res); x = (x - "$x0")*fx; y = (y - "$y0")*fy; z = (z - "$z0")*fz;
         for (k = 0, k<h#0, ++k, r = norm(x - X[k], y - Y[k], z - Z[k]); res+=W[s*k,s]*phi(r))"
-      k.
+      k. nm $nm
     fi endl done
 
   else error[0--2] "Command 'rbf': invalid arguments '$*'."
