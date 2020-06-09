@@ -13913,7 +13913,7 @@ rbf :
     check $dx>0
     e[^-1] "Reconstruct 1D image from keypoint set$?, with size "$dx", "\
      "from ("$x0") to ("$x1") and phi(r) = "$phi_r.
-    repeat $! l[$>]
+    repeat $! l[$>] if !w $dx elif whd==1 channels. 1,100% else
       r 1,{whd},1,100%,-1 +channels. 1,100% channels.. 0 _rbf $phi_r
       $dx,1,1,{w},"*
         begin(
@@ -13925,7 +13925,7 @@ rbf :
         ref(vectorw#1(),res); x = (x - "$x0")*fx;
         for (k = 0, k<h#1, ++k, r = abs(x - X[k]); res+=W[s*k,s]*phi(r))"
       k.
-    endl done
+    fi endl done
 
   elif isin($#,2,6,7) # 2D reconstruction
     dx,dy,x0,y0,x1,y1=$a1,$a2,{$#>2?[$a3,$a4,$a5,$a6]:[0,0,[$a1,$a2]-1]}
@@ -13933,7 +13933,7 @@ rbf :
     check $dx>0" && "$dy>0
     e[^-1] "Reconstruct 2D image from keypoint set$?, with size "$dx,$dy", "\
      "from ("$x0,$y0") to ("$x1,$y1") and phi(r) = "$phi_r.
-    repeat $! l[$>]
+    repeat $! l[$>] if !w $dx,$dy elif whd==1 channels 2,100% else
       r 1,{whd},1,100%,-1 +channels. 2,100% channels.. 0,1 _rbf $phi_r
       $dx,$dy,1,{w},"*
         begin(
@@ -13947,7 +13947,7 @@ rbf :
         ref(vectorw#1(),res); x = (x - "$x0")*fx; y = (y - "$y0")*fy;
         for (k = 0, k<h#1, ++k, r = norm(x - X[k], y - Y[k]); res+=W[s*k,s]*phi(r))"
       k.
-    endl done
+    fi endl done
 
   elif isin($#,3,9,10) # 3D reconstruction
     dx,dy,dz,x0,y0,z0,x1,y1,z1=$a1,$a2,$a3,{$#>3?[$a4,$a5,$a6,$a7,$a8,$a9]:[0,0,0,[$a1,$a2,$a3]-1]}
@@ -13955,7 +13955,7 @@ rbf :
     check $dx>0" && "$dy>0" && "$dz>0
     e[^-1] "Reconstruct 3D image from keypoint set$?, with size "$dx,$dy,$dz", "\
      "from ("$x0,$y0,$z0") to ("$x1,$y1,$z1") and phi(r) = "$phi_r.
-    repeat $! l[$>]
+    repeat $! l[$>] if !w $dx,$dy,$dz elif whd==1 channels 3,100% else
       r 1,{whd},1,100%,-1 +channels. 3,100% channels.. 0,2 _rbf $phi_r
       $dx,$dy,$dz,{w},"*
         begin(
@@ -13971,8 +13971,7 @@ rbf :
         ref(vectorw#1(),res); x = (x - "$x0")*fx; y = (y - "$y0")*fy; z = (z - "$z0")*fz;
         for (k = 0, k<h#1, ++k, r = norm(x - X[k], y - Y[k], z - Z[k]); res+=W[s*k,s]*phi(r))"
       k.
-
-    endl done
+    fi endl done
 
   else error[0--2] "Command 'rbf': invalid arguments '$*'."
   fi
