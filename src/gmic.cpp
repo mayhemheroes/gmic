@@ -2958,12 +2958,13 @@ gmic& gmic::print(const char *format, ...) {
 
   // Display message.
   cimg::mutex(29);
-  if (*message!='\r')
-    for (unsigned int i = 0; i<nb_carriages; ++i) std::fputc('\n',cimg::output());
+  const bool is_cr = *message=='\r';
+  if (is_cr) std::fputc('\r',cimg::output());
+  else for (unsigned int i = 0; i<nb_carriages; ++i) std::fputc('\n',cimg::output());
   nb_carriages = 1;
   std::fprintf(cimg::output(),
                "[gmic]%s %s",
-               callstack2string().data(),message.data());
+               callstack2string().data(),message.data() + (is_cr?1:0));
   std::fflush(cimg::output());
   cimg::mutex(29,0);
   return *this;
@@ -3565,14 +3566,15 @@ gmic& gmic::print(const CImgList<T>& list, const CImg<unsigned int> *const calls
 
   // Display message.
   cimg::mutex(29);
-  if (*message!='\r')
-    for (unsigned int i = 0; i<nb_carriages; ++i) std::fputc('\n',cimg::output());
+  const bool is_cr = *message=='\r';
+  if (is_cr) std::fputc('\r',cimg::output());
+  else for (unsigned int i = 0; i<nb_carriages; ++i) std::fputc('\n',cimg::output());
   nb_carriages = 1;
   if (!callstack_selection || *callstack_selection)
     std::fprintf(cimg::output(),
                  "[gmic]-%u%s %s",
-                 list.size(),callstack2string(callstack_selection).data(),message.data());
-  else std::fprintf(cimg::output(),"%s",message.data());
+                 list.size(),callstack2string(callstack_selection).data(),message.data() + (is_cr?1:0));
+  else std::fprintf(cimg::output(),"%s",message.data() + (is_cr?1:0));
   std::fflush(cimg::output());
   cimg::mutex(29,0);
   return *this;
@@ -5177,7 +5179,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       const bool
         is_command_verbose = is_get?false:
           is_command && *item=='v' && (!item[1] || !std::strcmp(item,"verbose")),
-        is_command_echo = is_get || is_command_verbose?false:
+        is_command_echo = is_command_verbose?false:
           is_command && *command=='e' && (!command[1] || !std::strcmp(command,"echo")),
         is_command_error = is_get || is_command_verbose || is_command_echo?false:
           is_command && *command=='e' && !std::strcmp(command,"error"),
@@ -7085,8 +7087,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             name.assign(argument,(unsigned int)std::strlen(argument) + 1);
             cimg::strunescape(name);
             ++verbosity;
+            std::FILE *file = 0;
+            if (is_get) { file = cimg::output(); cimg::output(stdout); }
             if (is_selection) print(images,&selection,"%s",name.data());
             else print(images,0,"%s",name.data());
+            if (is_get) cimg::output(file);
             --verbosity;
           }
           ++position; continue;
