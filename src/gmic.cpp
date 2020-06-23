@@ -5177,7 +5177,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       const bool
         is_command_verbose = is_get?false:
           is_command && *item=='v' && (!item[1] || !std::strcmp(item,"verbose")),
-        is_command_echo = is_get || is_command_verbose?false:
+        is_command_echo = is_command_verbose?false:
           is_command && *command=='e' && (!command[1] || !std::strcmp(command,"echo")),
         is_command_error = is_get || is_command_verbose || is_command_echo?false:
           is_command && *command=='e' && !std::strcmp(command,"error"),
@@ -7085,8 +7085,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             name.assign(argument,(unsigned int)std::strlen(argument) + 1);
             cimg::strunescape(name);
             ++verbosity;
+            std::FILE *file = 0;
+            if (is_get) { file = cimg::output(); cimg::output(stdout); }
             if (is_selection) print(images,&selection,"%s",name.data());
             else print(images,0,"%s",name.data());
+            if (is_get) cimg::output(file);
             --verbosity;
           }
           ++position; continue;
