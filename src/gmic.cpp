@@ -2958,12 +2958,13 @@ gmic& gmic::print(const char *format, ...) {
 
   // Display message.
   cimg::mutex(29);
-  if (*message!='\r')
-    for (unsigned int i = 0; i<nb_carriages; ++i) std::fputc('\n',cimg::output());
+  const bool is_cr = *message=='\r';
+  if (is_cr) std::fputc('\r',cimg::output());
+  else for (unsigned int i = 0; i<nb_carriages; ++i) std::fputc('\n',cimg::output());
   nb_carriages = 1;
   std::fprintf(cimg::output(),
                "[gmic]%s %s",
-               callstack2string().data(),message.data());
+               callstack2string().data(),message.data() + (is_cr?1:0));
   std::fflush(cimg::output());
   cimg::mutex(29,0);
   return *this;
@@ -3565,14 +3566,15 @@ gmic& gmic::print(const CImgList<T>& list, const CImg<unsigned int> *const calls
 
   // Display message.
   cimg::mutex(29);
-  if (*message!='\r')
-    for (unsigned int i = 0; i<nb_carriages; ++i) std::fputc('\n',cimg::output());
+  const bool is_cr = *message=='\r';
+  if (is_cr) std::fputc('\r',cimg::output());
+  else for (unsigned int i = 0; i<nb_carriages; ++i) std::fputc('\n',cimg::output());
   nb_carriages = 1;
   if (!callstack_selection || *callstack_selection)
     std::fprintf(cimg::output(),
                  "[gmic]-%u%s %s",
-                 list.size(),callstack2string(callstack_selection).data(),message.data());
-  else std::fprintf(cimg::output(),"%s",message.data());
+                 list.size(),callstack2string(callstack_selection).data(),message.data() + (is_cr?1:0));
+  else std::fprintf(cimg::output(),"%s",message.data() + (is_cr?1:0));
   std::fflush(cimg::output());
   cimg::mutex(29,0);
   return *this;
