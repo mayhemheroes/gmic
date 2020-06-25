@@ -728,10 +728,9 @@ ifneq ($(OS),Darwin)
           ln -fs libcgmic.so.$(VERSION1) $(DESTDIR)$(USR)/$(LIB)/libcgmic.so; \
         fi
 endif
-	mkdir -p $(DESTDIR)$(USR)/share/man/
-	mkdir -p $(DESTDIR)$(USR)/share/man/man1/
-	mkdir -p $(DESTDIR)$(USR)/share/man/fr/man1/
 	@if [ -f ../man/gmic.1.gz ]; then \
+	  mkdir -p $(DESTDIR)$(USR)/share/man/man1/
+	  mkdir -p $(DESTDIR)$(USR)/share/man/fr/man1/
 	  cp -f ../man/gmic.1.gz $(DESTDIR)$(USR)/share/man/man1/gmic.1.gz; \
 	  cp -f ../man/gmic.1.gz $(DESTDIR)$(USR)/share/man/fr/man1/gmic.1.gz; \
 	fi
@@ -745,6 +744,23 @@ endif
             cp -f ../resources/gmic_bashcompletion.sh $(DESTDIR)/opt/local/etc/bash_completion.d/gmic; \
           fi; \
         fi
+
+	@if [ -f ../zart/zart ]; then \
+	  mkdir -p $(DESTDIR)$(USR)/share/applications/ \
+	  mkdir -p $(DESTDIR)$(USR)/share/icons/hicolor/48x48/apps/ \
+	  mkdir -p $(DESTDIR)$(USR)/share/icons/hicolor/scalable/apps/ \
+	  cp -f ../zart/zart.desktop $(DESTDIR)$(USR)/share/applications; \
+	  cp -f ../zart/icons/48-zart.png $(DESTDIR)$(USR)/share/icons/hicolor/48x48/apps/zart.png; \
+	  cp -f ../zart/icons/zart.svg $(DESTDIR)$(USR)/share/icons/hicolor/scalable/apps; \
+	fi
+	@if [ -f ../gmic-qt/gmic_qt ]; then \
+	  mkdir -p $(DESTDIR)$(USR)/share/applications/ \
+	  mkdir -p $(DESTDIR)$(USR)/share/icons/hicolor/48x48/apps/ \
+	  mkdir -p $(DESTDIR)$(USR)/share/icons/hicolor/scalable/apps/ \
+	  cp -f ../gmic-qt/gmic_qt.desktop $(DESTDIR)$(USR)/share/applications; \
+	  cp -f ../gmic-qt/icons/application/48-gmic_qt.png $(DESTDIR)$(USR)/share/icons/hicolor/48x48/apps/gmic_qt.png; \
+	  cp -f ../gmic-qt/icons/applications/gmic_qt.svg $(DESTDIR)$(USR)/share/icons/hicolor/scalable/apps; \
+	fi
 
 uninstall:
 	rm -f $(DESTDIR)$(PLUGINDIR)/gmic_gimp_qt
@@ -762,6 +778,12 @@ uninstall:
 	rm -rf $(DESTDIR)$(USR)/share/doc/gmic/
 	rm -f $(DESTDIR)$(USR)/share/man/man1/gmic.1.gz
 	rm -f $(DESTDIR)$(USR)/share/man/fr/man1/gmic.1.gz
+	rm -f $(DESTDIR)$(USR)/share/applications/zart.desktop
+	rm -f $(DESTDIR)$(USR)/share/icons/hicolor/48x48/apps/zart.png
+	rm -f $(DESTDIR)$(USR)/share/icons/hicolor/scalable/apps/zart.svg
+	rm -f $(DESTDIR)$(USR)/share/applications/gmic_qt.desktop
+	rm -f $(DESTDIR)$(USR)/share/icons/hicolor/48x48/apps/gmic_qt.png
+	rm -f $(DESTDIR)$(USR)/share/icons/hicolor/scalable/apps/gmic_qt.svg
 
 distclean: clean
 
