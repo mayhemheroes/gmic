@@ -5183,7 +5183,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           is_command && *command=='e' && (!command[1] || !std::strcmp(command,"echo")),
         is_command_error = is_get || is_command_verbose || is_command_echo?false:
           is_command && *command=='e' && !std::strcmp(command,"error"),
-        is_command_warn = is_get || is_command_verbose || is_command_echo || is_command_error?false:
+        is_command_warn = is_command_verbose || is_command_echo || is_command_error?false:
           is_command && *command=='w' && !std::strcmp(command,"warn"),
         is_command_input = is_get || is_command_verbose || is_command_echo || is_command_error ||
           is_command_warn?false:
@@ -12733,17 +12733,22 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
         // Warning.
         if (is_command_warn) {
-          gmic_substitute_args(false);
-          bool force_visible = false;
-          if ((*argument=='0' || *argument=='1') && argument[1]==',') {
-            force_visible = *argument=='1'; argument+=2;
+          if (verbosity>=0 || is_debug || is_get) {
+            gmic_substitute_args(false);
+            bool force_visible = false;
+            if ((*argument=='0' || *argument=='1') && argument[1]==',') {
+              force_visible = *argument=='1'; argument+=2;
+            }
+            name.assign(argument,(unsigned int)std::strlen(argument) + 1);
+            cimg::strunescape(name);
+            const int _verbosity = ++verbosity;
+            std::FILE *_file = 0;
+            if (is_get) { _file = cimg::output(); verbosity = 1; cimg::output(stdout); }
+            if (is_selection) warn(images,&selection,force_visible,"%s",name.data());
+            else warn(images,0,force_visible,"%s",name.data());
+            if (is_get) { verbosity = _verbosity; cimg::output(_file); }
+            --verbosity;
           }
-          name.assign(argument,(unsigned int)std::strlen(argument) + 1);
-          cimg::strunescape(name);
-          ++verbosity;
-          if (is_selection) warn(images,&selection,force_visible,"%s",name.data());
-          else warn(images,0,force_visible,"%s",name.data());
-          --verbosity;
           ++position; continue;
         }
 
