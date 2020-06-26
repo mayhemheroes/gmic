@@ -7082,16 +7082,15 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
         // Echo.
         if (is_command_echo) {
-          if (verbosity>=0 || is_debug) {
+          if (verbosity>=0 || is_debug || is_get) {
             gmic_substitute_args(false);
             name.assign(argument,(unsigned int)std::strlen(argument) + 1);
             cimg::strunescape(name);
-            ++verbosity;
-            std::FILE *file = 0;
-            if (is_get) { file = cimg::output(); cimg::output(stdout); }
-            if (is_selection) print(images,&selection,"%s",name.data());
-            else print(images,0,"%s",name.data());
-            if (is_get) cimg::output(file);
+            const int _verbosity = ++verbosity;
+            std::FILE *_file = 0;
+            if (is_get) { _file = cimg::output(); verbosity = 1; cimg::output(stdout); }
+            if (is_selection) print(images,&selection,"%s",name.data()); else print(images,0,"%s",name.data());
+            if (is_get) { verbosity = _verbosity; cimg::output(_file); }
             --verbosity;
           }
           ++position; continue;
