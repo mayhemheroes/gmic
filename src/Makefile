@@ -759,7 +759,7 @@ endif
 	  mkdir -p $(DESTDIR)$(USR)/share/icons/hicolor/scalable/apps/ \
 	  cp -f ../gmic-qt/gmic_qt.desktop $(DESTDIR)$(USR)/share/applications; \
 	  cp -f ../gmic-qt/icons/application/48-gmic_qt.png $(DESTDIR)$(USR)/share/icons/hicolor/48x48/apps/gmic_qt.png; \
-	  cp -f ../gmic-qt/icons/applications/gmic_qt.svg $(DESTDIR)$(USR)/share/icons/hicolor/scalable/apps; \
+	  cp -f ../gmic-qt/icons/application/gmic_qt.svg $(DESTDIR)$(USR)/share/icons/hicolor/scalable/apps; \
 	fi
 
 uninstall:
