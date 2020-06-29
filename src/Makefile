@@ -703,60 +703,58 @@ man:
 # Install / uninstall / clean.
 #-----------------------------
 install:
-	mkdir -p $(DESTDIR)$(PLUGINDIR)/
-	cp -f ../resources/gmic_cluts.gmz $(DESTDIR)$(PLUGINDIR)/
-	mkdir -p $(DESTDIR)$(USR)/$(BIN)/
-	cp -f gmic $(DESTDIR)$(USR)/$(BIN)/
-	mkdir -p $(DESTDIR)$(USR)/$(INCLUDE)/
-	cp -f gmic.h $(DESTDIR)$(USR)/$(INCLUDE)/
-	@if [ -f gmic_libc.h ]; then cp -f gmic_libc.h $(DESTDIR)$(USR)/$(INCLUDE)/; fi
-	@if [ -f ../zart/zart ]; then cp -f ../zart/zart $(DESTDIR)$(USR)/$(BIN)/; fi
-	@if [ -f ../gmic-qt/gmic_qt ]; then cp -f ../gmic-qt/gmic_qt $(DESTDIR)$(USR)/$(BIN)/; fi
-	@if [ -f ../gmic-qt/gmic_gimp_qt ]; then cp -f ../gmic-qt/gmic_gimp_qt $(DESTDIR)$(PLUGINDIR)/; fi
-	@if [ -f ../gmic-qt/gmic_krita_qt ]; then cp -f ../gmic-qt/gmic_krita_qt $(DESTDIR)$(USR)/$(BIN)/; fi
-
-ifneq ($(OS),Darwin)
+	mkdir -p $(DESTDIR)$(USR)/$(INCLUDE)
+	mkdir -p $(DESTDIR)$(USR)/$(BIN)
+	mkdir -p $(DESTDIR)$(PLUGINDIR)
 	mkdir -p $(DESTDIR)$(USR)/share
 	mkdir -p $(DESTDIR)$(USR)/$(LIB)
-	cp -f libgmic.so $(DESTDIR)$(USR)/$(LIB)/libgmic.so.$(VERSION)
-	ln -fs libgmic.so.$(VERSION) $(DESTDIR)$(USR)/$(LIB)/libgmic.so.$(VERSION1)
-	ln -fs libgmic.so.$(VERSION1) $(DESTDIR)$(USR)/$(LIB)/libgmic.so
+	@if [ -f gmic ]; then cp -f gmic $(DESTDIR)$(USR)/$(BIN); fi
+	@if [ -f gmic_libc.h ]; then cp -f gmic_libc.h $(DESTDIR)$(USR)/$(INCLUDE)/; fi
+	@if [ -f ../resources/gmic_cluts.gmz ]; then cp -f ../resources/gmic_cluts.gmz $(DESTDIR)$(PLUGINDIR); fi
+	@if [ -f ../zart/zart ]; then cp -f ../zart/zart $(DESTDIR)$(USR)/$(BIN); fi
+	@if [ -f ../gmic-qt/gmic_qt ]; then cp -f ../gmic-qt/gmic_qt $(DESTDIR)$(USR)/$(BIN); fi
+	@if [ -f ../gmic-qt/gmic_gimp_qt ]; then cp -f ../gmic-qt/gmic_gimp_qt $(DESTDIR)$(PLUGINDIR); fi
+	@if [ -f ../gmic-qt/gmic_krita_qt ]; then cp -f ../gmic-qt/gmic_krita_qt $(DESTDIR)$(USR)/$(BIN); fi
+	@if [ -f libgmic.so ]; then \
+	  cp -f gmic.h $(DESTDIR)$(USR)/$(INCLUDE); \
+          cp -f libgmic.so $(DESTDIR)$(USR)/$(LIB)/libgmic.so.$(VERSION); \
+	  ln -fs libgmic.so.$(VERSION) $(DESTDIR)$(USR)/$(LIB)/libgmic.so.$(VERSION1); \
+	  ln -fs libgmic.so.$(VERSION1) $(DESTDIR)$(USR)/$(LIB)/libgmic.so; \
+	fi
 	@if [ -f libcgmic.so ]; then \
-	  cp -f gmic_libc.h $(DESTDIR)$(USR)/$(INCLUDE)/; \
+	  cp -f gmic_libc.h $(DESTDIR)$(USR)/$(INCLUDE); \
 	  cp -f libcgmic.so $(DESTDIR)$(USR)/$(LIB)/libcgmic.so.$(VERSION); \
-          ln -fs libcgmic.so.$(VERSION) $(DESTDIR)$(USR)/$(LIB)/libcgmic.so.$(VERSION1) ; \
+          ln -fs libcgmic.so.$(VERSION) $(DESTDIR)$(USR)/$(LIB)/libcgmic.so.$(VERSION1); \
           ln -fs libcgmic.so.$(VERSION1) $(DESTDIR)$(USR)/$(LIB)/libcgmic.so; \
         fi
-endif
 	@if [ -f ../man/gmic.1.gz ]; then \
-	  mkdir -p $(DESTDIR)$(USR)/share/man/man1/ \
-	  mkdir -p $(DESTDIR)$(USR)/share/man/fr/man1/ \
+	  mkdir -p $(DESTDIR)$(USR)/share/man/man1; \
+	  mkdir -p $(DESTDIR)$(USR)/share/man/fr/man1; \
 	  cp -f ../man/gmic.1.gz $(DESTDIR)$(USR)/share/man/man1/gmic.1.gz; \
 	  cp -f ../man/gmic.1.gz $(DESTDIR)$(USR)/share/man/fr/man1/gmic.1.gz; \
 	fi
 	@if [ -f ../resources/gmic_bashcompletion.sh ]; then \
 	  if [ -d /usr/share/bash-completion/completions ]; then \
-	    mkdir -p $(DESTDIR)/usr/share/bash-completion/completions/; \
+	    mkdir -p $(DESTDIR)/usr/share/bash-completion/completions; \
             cp -f ../resources/gmic_bashcompletion.sh $(DESTDIR)/usr/share/bash-completion/completions/gmic; \
 	  fi; \
 	  if [ -d /opt/local/etc/bash_completion.d/ ]; then \
-            mkdir -p $(DESTDIR)/opt/local/etc/bash_completion.d/; \
+            mkdir -p $(DESTDIR)/opt/local/etc/bash_completion.d; \
             cp -f ../resources/gmic_bashcompletion.sh $(DESTDIR)/opt/local/etc/bash_completion.d/gmic; \
           fi; \
         fi
-
 	@if [ -f ../zart/zart ]; then \
-	  mkdir -p $(DESTDIR)$(USR)/share/applications/ \
-	  mkdir -p $(DESTDIR)$(USR)/share/icons/hicolor/48x48/apps/ \
-	  mkdir -p $(DESTDIR)$(USR)/share/icons/hicolor/scalable/apps/ \
+	  mkdir -p $(DESTDIR)$(USR)/share/applications; \
+	  mkdir -p $(DESTDIR)$(USR)/share/icons/hicolor/48x48/apps; \
+	  mkdir -p $(DESTDIR)$(USR)/share/icons/hicolor/scalable/apps; \
 	  cp -f ../zart/zart.desktop $(DESTDIR)$(USR)/share/applications; \
 	  cp -f ../zart/icons/48-zart.png $(DESTDIR)$(USR)/share/icons/hicolor/48x48/apps/zart.png; \
 	  cp -f ../zart/icons/zart.svg $(DESTDIR)$(USR)/share/icons/hicolor/scalable/apps; \
 	fi
 	@if [ -f ../gmic-qt/gmic_qt ]; then \
-	  mkdir -p $(DESTDIR)$(USR)/share/applications/ \
-	  mkdir -p $(DESTDIR)$(USR)/share/icons/hicolor/48x48/apps/ \
-	  mkdir -p $(DESTDIR)$(USR)/share/icons/hicolor/scalable/apps/ \
+	  mkdir -p $(DESTDIR)$(USR)/share/applications; \
+	  mkdir -p $(DESTDIR)$(USR)/share/icons/hicolor/48x48/apps; \
+	  mkdir -p $(DESTDIR)$(USR)/share/icons/hicolor/scalable/apps; \
 	  cp -f ../gmic-qt/gmic_qt.desktop $(DESTDIR)$(USR)/share/applications; \
 	  cp -f ../gmic-qt/icons/application/48-gmic_qt.png $(DESTDIR)$(USR)/share/icons/hicolor/48x48/apps/gmic_qt.png; \
 	  cp -f ../gmic-qt/icons/application/gmic_qt.svg $(DESTDIR)$(USR)/share/icons/hicolor/scalable/apps; \
