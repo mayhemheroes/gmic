@@ -10219,7 +10219,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           if ((*_arg=='0' || *_arg=='1') && (_arg[1]==',' || !_arg[1])) {
             wait_mode = (bool)(*_arg - '0'); _arg+=2; _arg_text+=2;
           }
-          CImgList<char> arguments = CImg<char>::string(_arg).unroll('y').get_split(CImg<char>::vector(','),0,false);
+          CImgList<char> arguments = CImg<char>::string(_arg).get_split(CImg<char>::vector(','),0,false);
 
           CImg<_gmic_parallel<T> >(1,arguments.width()).move_to(gmic_threads);
           CImg<_gmic_parallel<T> > &_gmic_threads = gmic_threads.back();
@@ -10297,7 +10297,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             _gmic_threads[l].is_thread_running = true;
 
             // Substitute special characters codes appearing outside strings.
-            arguments[l].resize(1,arguments[l].height() + 1,1,1,0);
+            arguments[l].resize(arguments[l].width() + 1,1,1,1,0);
             bool is_dquoted = false;
             for (char *s = arguments[l].data(); *s; ++s) {
               if (*s=='\"') is_dquoted = !is_dquoted;
