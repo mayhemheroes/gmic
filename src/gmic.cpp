@@ -4688,7 +4688,7 @@ CImg<char> gmic::substitute_item(const char *const source,
         if (search_sorted(name,commands_names[hash],commands_names[hash].size(),uind)) {
           CImgList<char> sc = CImg<char>::string(commands[hash][uind],false,true).get_split(CImg<char>::vector(' '));
           cimglist_for(sc,l) if (sc(l,0)==1) sc.remove(l--); // Discard debug info
-          (sc>'y').autocrop(' ').unroll('x').move_to(inbraces);
+          (sc>'x').autocrop(' ').move_to(inbraces);
           inbraces.append_string_to(substituted_items,ptr_sub);
         }
         nsource+=l_name;
