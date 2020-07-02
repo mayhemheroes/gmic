@@ -10219,7 +10219,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           if ((*_arg=='0' || *_arg=='1') && (_arg[1]==',' || !_arg[1])) {
             wait_mode = (bool)(*_arg - '0'); _arg+=2; _arg_text+=2;
           }
-          CImgList<char> arguments = CImg<char>::string(_arg).get_split(CImg<char>::vector(','),0,false);
+          CImgList<char> arguments = CImg<char>::string(_arg).unroll('y').get_split(CImg<char>::vector(','),0,false);
 
           CImg<_gmic_parallel<T> >(1,arguments.width()).move_to(gmic_threads);
           CImg<_gmic_parallel<T> > &_gmic_threads = gmic_threads.back();
