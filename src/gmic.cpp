@@ -4688,7 +4688,7 @@ CImg<char> gmic::substitute_item(const char *const source,
         if (search_sorted(name,commands_names[hash],commands_names[hash].size(),uind)) {
           CImgList<char> sc = CImg<char>::string(commands[hash][uind],false,true).get_split(CImg<char>::vector(' '));
           cimglist_for(sc,l) if (sc(l,0)==1) sc.remove(l--); // Discard debug info
-          (sc>'y').autocrop(' ').unroll('x').move_to(inbraces);
+          (sc>'x').autocrop(' ').move_to(inbraces);
           inbraces.append_string_to(substituted_items,ptr_sub);
         }
         nsource+=l_name;
@@ -10297,7 +10297,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             _gmic_threads[l].is_thread_running = true;
 
             // Substitute special characters codes appearing outside strings.
-            arguments[l].resize(1,arguments[l].height() + 1,1,1,0);
+            arguments[l].resize(arguments[l].width() + 1,1,1,1,0);
             bool is_dquoted = false;
             for (char *s = arguments[l].data(); *s; ++s) {
               if (*s=='\"') is_dquoted = !is_dquoted;
