@@ -9130,7 +9130,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           if (!is_single_res) ind.assign(selection.height(),1,1,1,0);
 
           cimglist_for(g_list_c,k) {
-            g_list_c[k].unroll('x');
             if (g_list_c[k].back()) g_list_c[k].resize(g_list_c[k].width() + 1,1,1,1,0);
             strreplace_fw(g_list_c[k]);
             switch (pattern) {
