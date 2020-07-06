@@ -8629,16 +8629,18 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         if (!std::strcmp("label",command)) {
           gmic_substitute_args(false);
           float tolerance = 0;
+          unsigned int is_L2_norm = 1;
           is_high_connectivity = 0;
           if ((cimg_sscanf(argument,"%f%c",&tolerance,&end)==1 ||
-               cimg_sscanf(argument,"%f,%u%c",&tolerance,&is_high_connectivity,&end)==2) &&
-              tolerance>=0) ++position;
-          else { tolerance = 0; is_high_connectivity = 0; }
+               cimg_sscanf(argument,"%f,%u%c",&tolerance,&is_high_connectivity,&end)==2 ||
+               cimg_sscanf(argument,"%f,%u,%u%c",&tolerance,&is_high_connectivity,&is_L2_norm,&end)==3) &&
+              tolerance>=0 && is_high_connectivity<=1 && is_L2_norm<=1) ++position;
+          else { tolerance = 0; is_high_connectivity = 0; is_L2_norm = 1; }
           print(images,0,
-                "Label connected components on image%s, with tolerance %g and "
+                "Label connected components on image%s, with tolerance %g (L%d-norm) and "
                 "%s connectivity.",
-                gmic_selection.data(),tolerance,is_high_connectivity?"high":"low");
-          cimg_forY(selection,l) gmic_apply(label((bool)is_high_connectivity,tolerance));
+                gmic_selection.data(),tolerance,1 + is_L2_norm,is_high_connectivity?"high":"low");
+          cimg_forY(selection,l) gmic_apply(label((bool)is_high_connectivity,tolerance,is_L2_norm));
           is_change = true; continue;
         }
 
