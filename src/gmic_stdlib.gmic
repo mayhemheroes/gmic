@@ -1707,7 +1707,7 @@ use_vt100 :
 #@cli : Display current version number on stdout.
 version :
   __help_header_ascii[]
-  if !0$_cli_noarg +e[] "" fi
+  if !0$_cli_noarg +e[] "\n" fi
 
 v : # Allow 'gmic +v' to get the version number.
   version
@@ -32102,6 +32102,58 @@ fx_cutout :
 
 fx_cutout_preview :
   gui_split_preview "fx_cutout $*",${-3--1}
+
+#@gui Doodle : fx_doodle, gui_no_preview(0)
+#@gui : Precision (%) = float(30,0,100)
+#@gui : Smoothness = float(2,0,10)
+#@gui : Coherence = float(2,0,10)
+#@gui : Contour Threshold = float(3,0,10)
+#@gui : Spacing = int(2,0,20)
+#@gui : Minimal Stroke Length = float(70,0,255)
+#@gui : Preview Progression While Running = _bool(1)
+#@gui : sep = separator()
+#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2020/07/08</i>.</small>")
+fx_doodle : skip "$*"
+   repeat $! l[$>]
+    b $2 n 0,255 structuretensors b $3
+    100%,100%,1,1,100
+    if $7 w. ${"fitscreen ."},"[G'MIC] Doodle" fi
+
+    _stopflag=0
+    eval "
+      const dt = 0.5;
+      nb_strokes = nb_consecutive_fails = 0;
+
+      while (nb_consecutive_fails<500*$1%,
+        run('+store. canvas');
+
+        P0 = u([w,h] - 1);
+        length = 0;
+
+        for (dir = 0, dir<2, ++dir,
+          P = P0;
+          oiP = iP = round(P);
+          C = I(#0,P); E = eig([ C[0], C[1], C[1], C[2] ]); oV = V = (dir?1:-1)*E[4,2];
+
+          while (E[0]>$4^2 && (i(iP)>$5 || oiP==iP),
+            i(iP) = 0;
+            oiP = iP;
+            P+=dt*V;
+            iP = round(P);
+            C = I(#0,P,1); E = eig([ C[0], C[1], C[1], C[2] ]); V = E[4,2];
+            dot(oV,V)<0?(V*=-1);
+            oV = V;
+            iP!=oiP?++length;
+          );
+        );
+        length<$6?(run('rm. $canvas'); ++nb_consecutive_fails):(
+          !(++nb_strokes%15)?run('distance. 0');
+          nb_consecutive_fails = 0;
+          $7 && !(nb_strokes%30)?(nb_consecutive_fails = run('if !{*} u inf else +neq. 0 r. {*,w,h},1,1,2 w. rm. u 0 fi'));
+        )
+      )"
+    k. != 0 * 255
+  endl done
 
 #@gui Diffusion Tensors : fx_diffusiontensors, fx_diffusiontensors_preview(0)
 #@gui : Resolution (%) = float(10,0,20)
