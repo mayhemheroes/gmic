@@ -16882,6 +16882,34 @@ yinyang :
 #@cli : Compute the inverse of the selected matrices.
 #@cli : $ (0,1,0;0,0,1;1,0,0) +invert
 
+#@cli orthogonalize : _mode = { 0=orthogonalize | 1=orthonormalize }
+#@cli : Orthogonalize or orthonormalize selected matrices, using Modified Gram-Schmidt process.
+#@cli : Default value: 'mode=0'.
+orthogonalize :
+  if isbool($1) mode=$1 else mode=0 noarg fi
+  u0,u1,v0,v1=Orthogonalize,Orthonormalize,x,ce
+  e[^-1] ${u$mode}" matri"${v{$!!=1}}"$?, using Modified Gram-Schmidt process."
+  repeat $! l[$>]
+    eval ">
+      proj(u,v) = (dot(u,v)/dot(u,u)*u);
+      for (p = 1, p<w, ++p,
+        ref(crop(p,0,1,h),v);
+        for (q = 0, q<p, ++q,
+          ref(crop(q,0,1,h),u);
+          v-=proj(u,v);
+        );
+        draw(v,p,0,0,0,1,h);
+      )"
+    if $mode
+      eval. "*!y?(
+        ref(crop(x,0,1,h),v);
+        n = norm(v);
+        v/=n?norm(v):1;
+        draw(v,x,0,0,0,1,h);
+      )"
+    fi
+  endl done
+
 #@cli solve : [image] : (+)
 #@cli : Solve linear system AX = B for selected B-matrices and specified A-matrix.
 #@cli : If the system is under- or over-determined, the least square solution is returned.
