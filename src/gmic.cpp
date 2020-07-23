@@ -5003,11 +5003,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         is_simple_hyphen = *item=='-' && item[1] &&
         item[1]!='[' && item[1]!='.' && (item[1]!='3' || item[2]!='d'),
         is_plus = *item=='+' && item[1] &&
-        item[1]!='[' && item[1]!='.' && (item[1]!='3' || item[2]!='d'),
-        is_double_hyphen = *item=='-' && item[1]=='-' &&
-        item[2] && item[2]!='[' && item[2]!='.' && (item[2]!='3' || item[3]!='d');
-      item+=is_double_hyphen?2:is_simple_hyphen || is_plus?1:0;
-      const bool is_get = is_double_hyphen || is_plus;
+        item[1]!='[' && item[1]!='.' && (item[1]!='3' || item[2]!='d');
+      item+=is_simple_hyphen || is_plus?1:0;
+      const bool is_get = is_plus;
 
 #define _gmic_eok(i) (!item[i] || item[i]=='[' || (item[i]=='.' && (!item[i + 1] || item[i + 1]=='.')))
       unsigned int hash_custom = ~0U, ind_custom = ~0U;
@@ -5329,7 +5327,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             if (!is_get && !is_selection) CImg<char>::string("specs3d").move_to(_item);
           }
         }
-        if (item!=_item.data() + (is_double_hyphen?2:is_simple_hyphen || is_plus?1:0)) item = _item;
+        if (item!=_item.data() + (is_simple_hyphen || is_plus?1:0)) item = _item;
         command0 = *command?*command:*item;
 
         // Dispatch to dedicated parsing code, regarding the first character of the command.
@@ -13904,7 +13902,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       if (is_command_input) ++position;
       else {
         std::strcpy(command,"input");
-        argument = item - (is_double_hyphen?2:is_simple_hyphen || is_plus?1:0);
+        argument = item - (is_simple_hyphen || is_plus?1:0);
         *s_selection = 0;
       }
       gmic_substitute_args(true);
