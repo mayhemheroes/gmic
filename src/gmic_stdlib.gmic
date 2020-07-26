@@ -9071,18 +9071,6 @@ threshold : check "isexpr($1) && isbool(${2=0})"
   else ge $1
   fi
 
-#@cli unrepeat
-#@cli : Remove repetition of adjacent values in selected images.
-#@cli : $ (1;1;1;1;1;2;2;2;3;4;4;4;5;5;5) +unrepeat
-unrepeat :
-  e[^-1] "Remove repetition of adjacent values in image$?."
-  repeat $! l[$>] nm={0,n}
-    y x ({{0,@-1}+1}) a x r 100%,2
-    f. '>if(y==0,i,if(i(x,0)==i(x+1,0),-1,x))'
-    z 0,{w-2} s y,2 discard[1] -1 map[1] [0]
-    rm[0] nm $nm
-  endl done
-
 #@cli vector2tensor
 #@cli : Convert selected vector fields to corresponding tensor fields.
 vector2tensor :
@@ -19135,8 +19123,8 @@ check_display :
 
 #@cli elif : condition : (+)
 #@cli : Start a 'elif...[else]...fi' block if previous 'if' was not verified
-#@cli : and test if specified condition is true, or if specified filename exists.
-#@cli : 'boolean' can be a float number standing for { 0=false | other=true }.
+#@cli : and test if specified condition holds
+#@cli : 'condition' is a mathematical expression, whose evaluation is interpreted as { 0=false | other=true }..
 
 #@cli else : (+)
 #@cli : Execute following commands if previous 'if' or 'elif' conditions failed.
@@ -19176,9 +19164,8 @@ check_display :
 #@cli : $ image.jpg resize2dy 32 400,400,1,3 x=0 for $x<400 image[1] [0],$x,$x x+=40 done
 
 #@cli if : condition : (+)
-#@cli : Start a 'if...[elif]...[else]...fi' block and test if specified condition is true,
-#@cli : or if specified filename exists.
-#@cli : 'boolean' can be a float number standing for { 0=false | other=true }.
+#@cli : Start a 'if...[elif]...[else]...fi' block and test if specified condition holds.
+#@cli : 'condition' is a mathematical expression, whose evaluation is interpreted as { 0=false | other=true }.
 #@cli : $ image.jpg if ia<64 add 50% elif ia<128 add 25% elif ia<192 sub 25% else sub 50% fi cut 0,255
 
 #@cli l : eq. to 'local'. : (+)
@@ -19232,7 +19219,8 @@ parallel : skip "${1=},${2=},${3=},${4=},${5=},${6=},${7=},${8=},${9=},${10=},${
 #@cli : (eq. to 'q').
 
 #@cli repeat : nb_iterations,_variable_name : (+)
-#@cli : Start iterations of a 'repeat...done' block.
+#@cli : Start 'nb_iterations' iterations of a 'repeat...done' block.
+#@cli : 'nb_iterations' is a mathematical expression that will be evaluated.
 #@cli : $ image.jpg split y repeat $!,n shift[$n] $<,0,0,0,2 done append y
 #@cli : $ image.jpg mode3d 2 repeat 4 imagecube3d rotate3d 1,1,0,40 snapshot3d 400,1.4 done
 #@cli : $$
@@ -19276,9 +19264,8 @@ run :
 #@cli : $ image.jpg command "foo : u0=Dark u1=Bright status ${u{ia>=128}}" text_outline ${-foo},2,2,23,2,1,255
 
 #@cli while : condition : (+)
-#@cli : End a 'do...while' block and go back to associated 'do'
-#@cli : if specified condition is true or if specified filename exists.
-#@cli : 'boolean' can be a float number standing for { 0=false | other=true }.
+#@cli : End a 'do...while' block and go back to associated 'do' if specified condition holds.
+#@cli : 'condition' is a mathematical expression, whose evaluation is interpreted as { 0=false | other=true }.
 
 #----------------------------------
 #
