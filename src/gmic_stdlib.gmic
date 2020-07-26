@@ -2186,8 +2186,8 @@ _display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
     fontsize,fontsize_notif=
 
     if $is_multiview" && "!${-is_macos}
-      if {d==2} if {*,u}/w>={*,v}/h wsiz0={r={*,u}*0.48;round([r,r*h/w])} else wsiz0={r={*,v}*0.40;round([r*w/h,r])} fi
-      elif {d<=4} wsiz0=${fitscreen\ .,,45%}
+      if d==2 if {*,u}/w>={*,v}/h wsiz0={r={*,u}*0.48;round([r,r*h/w])} else wsiz0={r={*,v}*0.40;round([r*w/h,r])} fi
+      elif d<=4 wsiz0=${fitscreen\ .,,45%}
       else wsiz0=${fitscreen\ .,,30%}
       fi
       wsiz0=${fitscreen\ $wsiz0,1,,90%}
@@ -6374,7 +6374,7 @@ parse_gui : skip "${1=*},${2=print}"
   _nbfilters=$f rm
 
   # Merge all non-gui code.
-  repeat $nbchunks if narg(${nongui$>}) ${nongui$>} if {!w} rm. fi fi done
+  repeat $nbchunks if narg(${nongui$>}) ${nongui$>} if !w rm. fi fi done
   if $! ('\n') a[^-1] .,y rm. a y else 0 fi
   store. _nongui
 
@@ -8286,7 +8286,7 @@ compress_clut : check "${1=1.25}>0 && ${2=0.75}>0 && isint(${3=2048}) && (!$3 ||
     while h<($max_keypoints?$max_keypoints:inf)
 
     # Iteratively remove keypoints.
-    if {h>8}
+    if h>8
       if $_metric max_rounding,avg_rounding=0.1,0.025
       else max_rounding,avg_rounding=1,0.25
       fi
@@ -9327,7 +9327,7 @@ deltaE : check ${"is_image_arg $1"}" && isbool(${2=1})" skip "${3=srgb2lab}"
   pass$1 1
   needs_to_lab={"s = ['$3']; s!=0 && s!=' '"}
   if $needs_to_lab m "_deltaE_to_lab : $3" +_deltaE_to_lab. rm.. fi
-  repeat {$!-1} l[$>,-1] nm={0,n}
+  repeat $!-1 l[$>,-1] nm={0,n}
     if $needs_to_lab _deltaE_to_lab[0] fi
     if !$2 -.. . norm..                                                # DeltaE_1976
     else 100%,100%,100%,1,${-math_lib}"deltaE00(I#0,I#1)" rv[0,-1] rm. # DeltaE_2000
@@ -10909,7 +10909,7 @@ transfer_pca : check ${"is_image_arg $1"} skip "${2=all}"
          "for channels '"$channels"'."
   pass$1 1 sref={s} rm.
   to_colormode[^-1] $sref
-  if {$sref==1} # Scalar case can to be solved more easily
+  if $sref==1 # Scalar case can to be solved more easily
     pass$1
     var_ref,avg_ref={[iv,ia]} rm.
     repeat $! l[$>] - {ia} * {sqrt($var_ref/iv)} + $avg_ref endl done
