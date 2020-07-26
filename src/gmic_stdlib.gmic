@@ -4368,8 +4368,8 @@ _document_gmic :
   +append_tiles 2 if w>1024 r={round(1024*100/w,0.1)} r[^-1] $r%,$r%,1,100%,2 fi rm.
   repeat $! l[$>]
     if s==1 r {w},{h},1,3 else r {w},{h},1,3,0 fi
-    if w<=h&&h<256 r2dy 256,2 elif h<=w&&w<256 r2dx 256,2 fi
-    if w<=h&&h>512 r2dy 512,2 elif h<=w&&w>512 r2dx 512,2 fi
+    if w<=h" && "h<256 r2dy 256,2 elif h<=w" && "w<256 r2dx 256,2 fi
+    if w<=h" && "h>512 r2dy 512,2 elif h<=w" && "w>512 r2dx 512,2 fi
     if h<48 r 100%,48 fi
     if w<48 r 48,100% fi
     frame 1,1,0 frame 4,4,255
@@ -4806,7 +4806,7 @@ outputx :
 _outputx :
   $=arg
   is_last_arg=0 is_same_location=0
-  if isnum($-1) is_last_arg={isint($-1)&&$-1>=0&&$-1<=1} is_same_location=$-1 fi
+  if isnum($-1) is_last_arg={isint($-1)" && "$-1>=0" && "$-1<=1} is_same_location=$-1 fi
   N={$#-$is_last_arg} s0= s1=s
   if !$N e[0--3] "Output image"$_gmic_s" at same location, with same base filename but extension ''
                       (skipped, no extension provided)." return
@@ -4890,9 +4890,9 @@ shape_circle : check "${1=512}>=0"
     {int($ir/2)+($ir%2)},{int($ir/2)+($ir%2)} =. 1,100%,100%
     distance. 1 <=. {(i+0.4)/sqrt(2)}
     +mirror. x
-    if $ir>1&&($ir%2) r. {w-1},100%,1,1,0,0,1 fi
+    if $ir>1" && "($ir%2) r. {w-1},100%,1,1,0,0,1 fi
     a[-2,-1] x +mirror. y
-    if $ir>1&&($ir%2) r. 100%,{h-1},1,1,0,0,0,1 fi
+    if $ir>1" && "($ir%2) r. 100%,{h-1},1,1,0,0,0,1 fi
     a[-2,-1] y
   fi
   nm. "[2D circle shape]"
@@ -4956,9 +4956,9 @@ shape_diamond : check "${1=512}>=0"
     {int($ir/2)+($ir%2)},{int($ir/2)+($ir%2)} =. 1,100%,100%
     distance. 1,1 <=. {i/2}
     +mirror. x
-    if $ir>1&&($ir%2) r. {w-1},100%,1,1,0,0,1 fi
+    if $ir>1" && "($ir%2) r. {w-1},100%,1,1,0,0,1 fi
     a[-2,-1] x +mirror. y
-    if $ir>1&&($ir%2) r. 100%,{h-1},1,1,0,0,0,1 fi
+    if $ir>1" && "($ir%2) r. 100%,{h-1},1,1,0,0,0,1 fi
     a[-2,-1] y
   fi
   nm. "[2D diamond shape]"
@@ -5946,8 +5946,8 @@ _gallery :
     if s==1 r {w},{h},1,3
     elif s==4 drgba
     else r {w},{h},1,3,0 fi
-    if w<=h&&h<256 r2dy 256,2 elif h<=w&&w<256 r2dx 256,2 fi
-    if w<=h&&h>620 r2dy 620,2 elif h<=w&&w>620 r2dx 620,2 fi
+    if w<=h" && "h<256 r2dy 256,2 elif h<=w" && "w<256 r2dx 256,2 fi
+    if w<=h" && "h>620 r2dy 620,2 elif h<=w" && "w>620 r2dx 620,2 fi
     if h<48 r 100%,48 fi
     if w<48 r 48,100% fi
     if $_is_animated" && "(w>480" || "h>480) rr2d 480,480,0,2 fi
@@ -7752,7 +7752,7 @@ sort_str :
   y a x
   repeat round(h/4,1,1) y={4*$>}
     repeat $! l[$<]
-      +rows $y,{$y+3} f[1] 'if(i>=97&&i<=122,i-32,i)' -. 32 c. 0,63 s. y *.. 64 *... 4096 *[-4] 262144 +[-4--1]
+      +rows $y,{$y+3} f[1] 'if(i>=97 && i<=122,i-32,i)' -. 32 c. 0,63 s. y *.. 64 *... 4096 *[-4] 262144 +[-4--1]
       rv a y sort +,x +rows 0 rows[0] 1,100% label[1] %[1] 2
       s[1] +,0 N={$!-1}
       x0=0 repeat $!-1 x1={$x0+{{1+$>},h}} +z[0] $x0,{$x1-1} x0=$x1 done
@@ -8204,12 +8204,12 @@ balance_gamma : check "isnum(${1=128})"
 cast :
   e[^-1] "Cast datatype of image buffer$? from '$1' to '$2'."
   stype="$1"
-  if s='$stype';s[0]==_'u'&&s[1]!=_'n' stype="unsigned_"{`s='$stype';s[1,size(s)-1]`}
-  elif s='$stype';s[0]==_'u'&&s[0,9]=='"unsigned "' stype="unsigned_"{`s='$stype';s[9,size(s)-9]`}
+  if s='$stype';s[0]==_'u'" && "s[1]!=_'n' stype="unsigned_"{`s='$stype';s[1,size(s)-1]`}
+  elif s='$stype';s[0]==_'u'" && "s[0,9]=='"unsigned "' stype="unsigned_"{`s='$stype';s[9,size(s)-9]`}
   fi
   dtype="$2"
-  if s='$dtype';s[0]==_'u'&&s[1]!=_'n' dtype="unsigned_"{`s='$dtype';s[1,size(s)-1]`}
-  elif s='$dtype';s[0]==_'u'&&s[0,9]=='"unsigned "' dtype="unsigned_"{`s='$dtype';s[9,size(s)-9]`}
+  if s='$dtype';s[0]==_'u'" && "s[1]!=_'n' dtype="unsigned_"{`s='$dtype';s[1,size(s)-1]`}
+  elif s='$dtype';s[0]==_'u'" && "s[0,9]=='"unsigned "' dtype="unsigned_"{`s='$dtype';s[9,size(s)-9]`}
   fi
   ssize={s='$stype';s=='"unsigned_char"'||s=='char'?1:s=='"unsigned_short"'||s=='short'?2:s=='"unsigned_int"'||\
          s=='int'||s=='float'?4:8}
@@ -32164,7 +32164,9 @@ fx_doodle : skip "$*"
         length<$6?(run('rm. $canvas'); ++nb_consecutive_fails):(
           !(++nb_strokes%15)?run('distance. 0');
           nb_consecutive_fails = 0;
-          $7 && !(nb_strokes%30)?(nb_consecutive_fails = run('if !{*} u inf else +neq. 0 r. {*,w,h},1,1,2 w. rm. u 0 fi'));
+          $7 && !(nb_strokes%30)?(
+            nb_consecutive_fails = run('if !{*} u inf else +neq. 0 r. {*,w,h},1,1,2 w. rm. u 0 fi')
+          );
         )
       )"
     k. != 0 * 255
