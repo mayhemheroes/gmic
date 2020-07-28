@@ -5003,11 +5003,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         is_simple_hyphen = *item=='-' && item[1] &&
         item[1]!='[' && item[1]!='.' && (item[1]!='3' || item[2]!='d'),
         is_plus = *item=='+' && item[1] &&
-        item[1]!='[' && item[1]!='.' && (item[1]!='3' || item[2]!='d'),
-        is_double_hyphen = *item=='-' && item[1]=='-' &&
-        item[2] && item[2]!='[' && item[2]!='.' && (item[2]!='3' || item[3]!='d');
-      item+=is_double_hyphen?2:is_simple_hyphen || is_plus?1:0;
-      const bool is_get = is_double_hyphen || is_plus;
+        item[1]!='[' && item[1]!='.' && (item[1]!='3' || item[2]!='d');
+      item+=is_simple_hyphen || is_plus?1:0;
+      const bool is_get = is_plus;
 
 #define _gmic_eok(i) (!item[i] || item[i]=='[' || (item[i]=='.' && (!item[i + 1] || item[i + 1]=='.')))
       unsigned int hash_custom = ~0U, ind_custom = ~0U;
@@ -5329,7 +5327,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             if (!is_get && !is_selection) CImg<char>::string("specs3d").move_to(_item);
           }
         }
-        if (item!=_item.data() + (is_double_hyphen?2:is_simple_hyphen || is_plus?1:0)) item = _item;
+        if (item!=_item.data() + (is_simple_hyphen || is_plus?1:0)) item = _item;
         command0 = *command?*command:*item;
 
         // Dispatch to dedicated parsing code, regarding the first character of the command.
@@ -8629,16 +8627,18 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         if (!std::strcmp("label",command)) {
           gmic_substitute_args(false);
           float tolerance = 0;
+          unsigned int is_L2_norm = 1;
           is_high_connectivity = 0;
           if ((cimg_sscanf(argument,"%f%c",&tolerance,&end)==1 ||
-               cimg_sscanf(argument,"%f,%u%c",&tolerance,&is_high_connectivity,&end)==2) &&
-              tolerance>=0) ++position;
-          else { tolerance = 0; is_high_connectivity = 0; }
+               cimg_sscanf(argument,"%f,%u%c",&tolerance,&is_high_connectivity,&end)==2 ||
+               cimg_sscanf(argument,"%f,%u,%u%c",&tolerance,&is_high_connectivity,&is_L2_norm,&end)==3) &&
+              tolerance>=0 && is_high_connectivity<=1 && is_L2_norm<=1) ++position;
+          else { tolerance = 0; is_high_connectivity = 0; is_L2_norm = 1; }
           print(images,0,
-                "Label connected components on image%s, with tolerance %g and "
+                "Label connected components on image%s, with tolerance %g (L%d-norm) and "
                 "%s connectivity.",
-                gmic_selection.data(),tolerance,is_high_connectivity?"high":"low");
-          cimg_forY(selection,l) gmic_apply(label((bool)is_high_connectivity,tolerance));
+                gmic_selection.data(),tolerance,1 + is_L2_norm,is_high_connectivity?"high":"low");
+          cimg_forY(selection,l) gmic_apply(label((bool)is_high_connectivity,tolerance,is_L2_norm));
           is_change = true; continue;
         }
 
@@ -13902,7 +13902,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       if (is_command_input) ++position;
       else {
         std::strcpy(command,"input");
-        argument = item - (is_double_hyphen?2:is_simple_hyphen || is_plus?1:0);
+        argument = item - (is_simple_hyphen || is_plus?1:0);
         *s_selection = 0;
       }
       gmic_substitute_args(true);

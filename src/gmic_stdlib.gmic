@@ -540,8 +540,7 @@ ${c}"[-1]"$n"').
 \n  - Prepending a single hyphen '"${g}"-"$n"' to a "${-GMIC}" command is allowed. This may be useful to recognize
 \n     command items more easily in a one-liner pipeline (typically invoked from a shell).
 \n
-\n  - A "${-GMIC}" command prepended with a plus sign '"${g}"+"$n"' or a double hyphen '"${g}"--"$n"' does not act
- 'in-place'
+\n  - A "${-GMIC}" command prepended with a plus sign '"${g}"+"$n"' does not act 'in-place'
 \n     but inserts its result as one or several new images at the end of the image list.
 \n
 \n  - There are two different types of commands that can be run by the "${-GMIC}" interpreter:
@@ -1707,7 +1706,7 @@ use_vt100 :
 #@cli : Display current version number on stdout.
 version :
   __help_header_ascii[]
-  if !0$_cli_noarg +e[] "" fi
+  if !0$_cli_noarg +e[] "\n" fi
 
 v : # Allow 'gmic +v' to get the version number.
   version
@@ -2187,8 +2186,8 @@ _display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
     fontsize,fontsize_notif=
 
     if $is_multiview" && "!${-is_macos}
-      if {d==2} if {*,u}/w>={*,v}/h wsiz0={r={*,u}*0.48;round([r,r*h/w])} else wsiz0={r={*,v}*0.40;round([r*w/h,r])} fi
-      elif {d<=4} wsiz0=${fitscreen\ .,,45%}
+      if d==2 if {*,u}/w>={*,v}/h wsiz0={r={*,u}*0.48;round([r,r*h/w])} else wsiz0={r={*,v}*0.40;round([r*w/h,r])} fi
+      elif d<=4 wsiz0=${fitscreen\ .,,45%}
       else wsiz0=${fitscreen\ .,,30%}
       fi
       wsiz0=${fitscreen\ $wsiz0,1,,90%}
@@ -3139,7 +3138,7 @@ __display_array :
   rectangle.. $xb,$yb,$xe,$ye,1,0xFFFFFFFF,$3,$4,$5
   repeat $2,yg
     repeat $1,xg
-      t.. {-3,i($xg,$yg)},{5+$xg*24},{5+$yg*24},13,0.8,{if(i($xg,$yg)>128,0,255)}
+      t.. {-3,i($xg,$yg)},{5+$xg*24},{5+$yg*24},13,0.8,{i($xg,$yg)>128?0:255}
     done
   done
   rm[-3,-1]
@@ -3285,7 +3284,7 @@ _display_histogram : check "${1=0}>=0 && ${2=0}>=0 && ${3=256}>0" skip ${4=0%},$
 display_parametric : check "${1=512}>0 && ${2=$1}>0 && ${4=0}>=0" skip ${3=3},${5=1},${6=1},"${7=x-axis}","${8=y-axis}"
   s0="no " s1="" o0="" o1="colored "
   e[^-1] "Render $1x$2 parametric graph plot from data of image$?, with "${o{$3>1}}"outline opacity "\
-      {if($3>1,$3-1,$3)}", vertex radius $4, "${s{$5!=0}}"antialiasing and "${s{$6!=0}}"decoration."
+      {$3>1?$3-1:$3}", vertex radius $4, "${s{$5!=0}}"antialiasing and "${s{$6!=0}}"decoration."
   repeat $! l[$>]
     nm={0,n} N={w*h*d}
     i[0] ('CImg3d') +[0] 0.5 i[1] ($N;$N)  # Header + nb of vertices/primitives.
@@ -4369,8 +4368,8 @@ _document_gmic :
   +append_tiles 2 if w>1024 r={round(1024*100/w,0.1)} r[^-1] $r%,$r%,1,100%,2 fi rm.
   repeat $! l[$>]
     if s==1 r {w},{h},1,3 else r {w},{h},1,3,0 fi
-    if w<=h&&h<256 r2dy 256,2 elif h<=w&&w<256 r2dx 256,2 fi
-    if w<=h&&h>512 r2dy 512,2 elif h<=w&&w>512 r2dx 512,2 fi
+    if w<=h" && "h<256 r2dy 256,2 elif h<=w" && "w<256 r2dx 256,2 fi
+    if w<=h" && "h>512 r2dy 512,2 elif h<=w" && "w>512 r2dx 512,2 fi
     if h<48 r 100%,48 fi
     if w<48 r 48,100% fi
     frame 1,1,0 frame 4,4,255
@@ -4807,7 +4806,7 @@ outputx :
 _outputx :
   $=arg
   is_last_arg=0 is_same_location=0
-  if isnum($-1) is_last_arg={isint($-1)&&$-1>=0&&$-1<=1} is_same_location=$-1 fi
+  if isnum($-1) is_last_arg={isint($-1)" && "$-1>=0" && "$-1<=1} is_same_location=$-1 fi
   N={$#-$is_last_arg} s0= s1=s
   if !$N e[0--3] "Output image"$_gmic_s" at same location, with same base filename but extension ''
                       (skipped, no extension provided)." return
@@ -4891,9 +4890,9 @@ shape_circle : check "${1=512}>=0"
     {int($ir/2)+($ir%2)},{int($ir/2)+($ir%2)} =. 1,100%,100%
     distance. 1 <=. {(i+0.4)/sqrt(2)}
     +mirror. x
-    if $ir>1&&($ir%2) r. {w-1},100%,1,1,0,0,1 fi
+    if $ir>1" && "($ir%2) r. {w-1},100%,1,1,0,0,1 fi
     a[-2,-1] x +mirror. y
-    if $ir>1&&($ir%2) r. 100%,{h-1},1,1,0,0,0,1 fi
+    if $ir>1" && "($ir%2) r. 100%,{h-1},1,1,0,0,0,1 fi
     a[-2,-1] y
   fi
   nm. "[2D circle shape]"
@@ -4957,9 +4956,9 @@ shape_diamond : check "${1=512}>=0"
     {int($ir/2)+($ir%2)},{int($ir/2)+($ir%2)} =. 1,100%,100%
     distance. 1,1 <=. {i/2}
     +mirror. x
-    if $ir>1&&($ir%2) r. {w-1},100%,1,1,0,0,1 fi
+    if $ir>1" && "($ir%2) r. {w-1},100%,1,1,0,0,1 fi
     a[-2,-1] x +mirror. y
-    if $ir>1&&($ir%2) r. 100%,{h-1},1,1,0,0,0,1 fi
+    if $ir>1" && "($ir%2) r. 100%,{h-1},1,1,0,0,0,1 fi
     a[-2,-1] y
   fi
   nm. "[2D diamond shape]"
@@ -5947,8 +5946,8 @@ _gallery :
     if s==1 r {w},{h},1,3
     elif s==4 drgba
     else r {w},{h},1,3,0 fi
-    if w<=h&&h<256 r2dy 256,2 elif h<=w&&w<256 r2dx 256,2 fi
-    if w<=h&&h>620 r2dy 620,2 elif h<=w&&w>620 r2dx 620,2 fi
+    if w<=h" && "h<256 r2dy 256,2 elif h<=w" && "w<256 r2dx 256,2 fi
+    if w<=h" && "h>620 r2dy 620,2 elif h<=w" && "w>620 r2dx 620,2 fi
     if h<48 r 100%,48 fi
     if w<48 r 48,100% fi
     if $_is_animated" && "(w>480" || "h>480) rr2d 480,480,0,2 fi
@@ -6375,7 +6374,7 @@ parse_gui : skip "${1=*},${2=print}"
   _nbfilters=$f rm
 
   # Merge all non-gui code.
-  repeat $nbchunks if narg(${nongui$>}) ${nongui$>} if {!w} rm. fi fi done
+  repeat $nbchunks if narg(${nongui$>}) ${nongui$>} if !w rm. fi fi done
   if $! ('\n') a[^-1] .,y rm. a y else 0 fi
   store. _nongui
 
@@ -7753,7 +7752,7 @@ sort_str :
   y a x
   repeat round(h/4,1,1) y={4*$>}
     repeat $! l[$<]
-      +rows $y,{$y+3} f[1] 'if(i>=97&&i<=122,i-32,i)' -. 32 c. 0,63 s. y *.. 64 *... 4096 *[-4] 262144 +[-4--1]
+      +rows $y,{$y+3} f[1] 'if(i>=97 && i<=122,i-32,i)' -. 32 c. 0,63 s. y *.. 64 *... 4096 *[-4] 262144 +[-4--1]
       rv a y sort +,x +rows 0 rows[0] 1,100% label[1] %[1] 2
       s[1] +,0 N={$!-1}
       x0=0 repeat $!-1 x1={$x0+{{1+$>},h}} +z[0] $x0,{$x1-1} x0=$x1 done
@@ -8205,12 +8204,12 @@ balance_gamma : check "isnum(${1=128})"
 cast :
   e[^-1] "Cast datatype of image buffer$? from '$1' to '$2'."
   stype="$1"
-  if s='$stype';s[0]==_'u'&&s[1]!=_'n' stype="unsigned_"{`s='$stype';s[1,size(s)-1]`}
-  elif s='$stype';s[0]==_'u'&&s[0,9]=='"unsigned "' stype="unsigned_"{`s='$stype';s[9,size(s)-9]`}
+  if s='$stype';s[0]==_'u'" && "s[1]!=_'n' stype="unsigned_"{`s='$stype';s[1,size(s)-1]`}
+  elif s='$stype';s[0]==_'u'" && "s[0,9]=='"unsigned "' stype="unsigned_"{`s='$stype';s[9,size(s)-9]`}
   fi
   dtype="$2"
-  if s='$dtype';s[0]==_'u'&&s[1]!=_'n' dtype="unsigned_"{`s='$dtype';s[1,size(s)-1]`}
-  elif s='$dtype';s[0]==_'u'&&s[0,9]=='"unsigned "' dtype="unsigned_"{`s='$dtype';s[9,size(s)-9]`}
+  if s='$dtype';s[0]==_'u'" && "s[1]!=_'n' dtype="unsigned_"{`s='$dtype';s[1,size(s)-1]`}
+  elif s='$dtype';s[0]==_'u'" && "s[0,9]=='"unsigned "' dtype="unsigned_"{`s='$dtype';s[9,size(s)-9]`}
   fi
   ssize={s='$stype';s=='"unsigned_char"'||s=='char'?1:s=='"unsigned_short"'||s=='short'?2:s=='"unsigned_int"'||\
          s=='int'||s=='float'?4:8}
@@ -8287,7 +8286,7 @@ compress_clut : check "${1=1.25}>0 && ${2=0.75}>0 && isint(${3=2048}) && (!$3 ||
     while h<($max_keypoints?$max_keypoints:inf)
 
     # Iteratively remove keypoints.
-    if {h>8}
+    if h>8
       if $_metric max_rounding,avg_rounding=0.1,0.025
       else max_rounding,avg_rounding=1,0.25
       fi
@@ -9072,18 +9071,6 @@ threshold : check "isexpr($1) && isbool(${2=0})"
   else ge $1
   fi
 
-#@cli unrepeat
-#@cli : Remove repetition of adjacent values in selected images.
-#@cli : $ (1;1;1;1;1;2;2;2;3;4;4;4;5;5;5) +unrepeat
-unrepeat :
-  e[^-1] "Remove repetition of adjacent values in image$?."
-  repeat $! l[$>] nm={0,n}
-    y x ({{0,@-1}+1}) a x r 100%,2
-    f. '>if(y==0,i,if(i(x,0)==i(x+1,0),-1,x))'
-    z 0,{w-2} s y,2 discard[1] -1 map[1] [0]
-    rm[0] nm $nm
-  endl done
-
 #@cli vector2tensor
 #@cli : Convert selected vector fields to corresponding tensor fields.
 vector2tensor :
@@ -9340,7 +9327,7 @@ deltaE : check ${"is_image_arg $1"}" && isbool(${2=1})" skip "${3=srgb2lab}"
   pass$1 1
   needs_to_lab={"s = ['$3']; s!=0 && s!=' '"}
   if $needs_to_lab m "_deltaE_to_lab : $3" +_deltaE_to_lab. rm.. fi
-  repeat {$!-1} l[$>,-1] nm={0,n}
+  repeat $!-1 l[$>,-1] nm={0,n}
     if $needs_to_lab _deltaE_to_lab[0] fi
     if !$2 -.. . norm..                                                # DeltaE_1976
     else 100%,100%,100%,1,${-math_lib}"deltaE00(I#0,I#1)" rv[0,-1] rm. # DeltaE_2000
@@ -9463,7 +9450,8 @@ _colormap : # Implementation of the median-cut algorithm.
   1,1,1,{s} __colormap 0 # Initialize image of box variances
   repeat $1-1
     b,a={[xM,cM]} # b = box with highest variance, a = axis with highest variance
-    shift[$b] 0,0,0,{-$a},2 sort[$b] +,x shift[$b] 0,0,0,$a,2 s[$b] x,2 # Split selected box along its median axis
+    shift[$b] 0,0,0,{-$a},2 sort[$b] +,x shift[$b] 0,0,0,$a,2
+    if {$b,w>1} s[$b] x,2 else 1 fi # Split selected box along its median axis
     mv[$b] -1 r. {w+1},1,1,100%,0
     __colormap $b __colormap {$!-2} # Update box variances
   done
@@ -10921,7 +10909,7 @@ transfer_pca : check ${"is_image_arg $1"} skip "${2=all}"
          "for channels '"$channels"'."
   pass$1 1 sref={s} rm.
   to_colormode[^-1] $sref
-  if {$sref==1} # Scalar case can to be solved more easily
+  if $sref==1 # Scalar case can to be solved more easily
     pass$1
     var_ref,avg_ref={[iv,ia]} rm.
     repeat $! l[$>] - {ia} * {sqrt($var_ref/iv)} + $avg_ref endl done
@@ -14714,9 +14702,9 @@ isophotes : skip ${1=64}
     [0],[0] j3d. ..,0,0,0,1,0,0,0 rm.. *
   endl done
 
-#@cli label : _tolerance>=0,is_high_connectivity={ 0 | 1 } : (+)
+#@cli label : _tolerance>=0,is_high_connectivity={ 0 | 1 },_is_L2_norm={ 0 | 1 } : (+)
 #@cli : Label connected components in selected images.
-#@cli : Default values: 'tolerance=0' and 'is_high_connectivity=0'.
+#@cli : Default values: 'tolerance=0', 'is_high_connectivity=0' and 'is_L2_norm=1'.
 #@cli : $ image.jpg luminance threshold 60% label normalize 0,255 map 0
 #@cli : $ 400,400 set 1,50%,50% distance 1 mod 16 threshold 8 label mod 255 map 2
 #@cli : $$
@@ -16880,6 +16868,34 @@ yinyang :
 #@cli invert : (+)
 #@cli : Compute the inverse of the selected matrices.
 #@cli : $ (0,1,0;0,0,1;1,0,0) +invert
+
+#@cli orthogonalize : _mode = { 0=orthogonalize | 1=orthonormalize }
+#@cli : Orthogonalize or orthonormalize selected matrices, using Modified Gram-Schmidt process.
+#@cli : Default value: 'mode=0'.
+orthogonalize :
+  if isbool($1) mode=$1 else mode=0 noarg fi
+  u0,u1,v0,v1=Orthogonalize,Orthonormalize,x,ce
+  e[^-1] ${u$mode}" matri"${v{$!!=1}}"$?, using Modified Gram-Schmidt process."
+  repeat $! l[$>]
+    eval ">
+      proj(u,v) = (dot(u,v)/dot(u,u)*u);
+      for (p = 1, p<w, ++p,
+        ref(crop(p,0,1,h),v);
+        for (q = 0, q<p, ++q,
+          ref(crop(q,0,1,h),u);
+          v-=proj(u,v);
+        );
+        draw(v,p,0,0,0,1,h);
+      )"
+    if $mode
+      eval. "*!y?(
+        ref(crop(x,0,1,h),v);
+        n = norm(v);
+        v/=n?norm(v):1;
+        draw(v,x,0,0,0,1,h);
+      )"
+    fi
+  endl done
 
 #@cli solve : [image] : (+)
 #@cli : Solve linear system AX = B for selected B-matrices and specified A-matrix.
@@ -19107,8 +19123,8 @@ check_display :
 
 #@cli elif : condition : (+)
 #@cli : Start a 'elif...[else]...fi' block if previous 'if' was not verified
-#@cli : and test if specified condition is true, or if specified filename exists.
-#@cli : 'boolean' can be a float number standing for { 0=false | other=true }.
+#@cli : and test if specified condition holds
+#@cli : 'condition' is a mathematical expression, whose evaluation is interpreted as { 0=false | other=true }..
 
 #@cli else : (+)
 #@cli : Execute following commands if previous 'if' or 'elif' conditions failed.
@@ -19148,9 +19164,8 @@ check_display :
 #@cli : $ image.jpg resize2dy 32 400,400,1,3 x=0 for $x<400 image[1] [0],$x,$x x+=40 done
 
 #@cli if : condition : (+)
-#@cli : Start a 'if...[elif]...[else]...fi' block and test if specified condition is true,
-#@cli : or if specified filename exists.
-#@cli : 'boolean' can be a float number standing for { 0=false | other=true }.
+#@cli : Start a 'if...[elif]...[else]...fi' block and test if specified condition holds.
+#@cli : 'condition' is a mathematical expression, whose evaluation is interpreted as { 0=false | other=true }.
 #@cli : $ image.jpg if ia<64 add 50% elif ia<128 add 25% elif ia<192 sub 25% else sub 50% fi cut 0,255
 
 #@cli l : eq. to 'local'. : (+)
@@ -19204,7 +19219,8 @@ parallel : skip "${1=},${2=},${3=},${4=},${5=},${6=},${7=},${8=},${9=},${10=},${
 #@cli : (eq. to 'q').
 
 #@cli repeat : nb_iterations,_variable_name : (+)
-#@cli : Start iterations of a 'repeat...done' block.
+#@cli : Start 'nb_iterations' iterations of a 'repeat...done' block.
+#@cli : 'nb_iterations' is a mathematical expression that will be evaluated.
 #@cli : $ image.jpg split y repeat $!,n shift[$n] $<,0,0,0,2 done append y
 #@cli : $ image.jpg mode3d 2 repeat 4 imagecube3d rotate3d 1,1,0,40 snapshot3d 400,1.4 done
 #@cli : $$
@@ -19248,9 +19264,8 @@ run :
 #@cli : $ image.jpg command "foo : u0=Dark u1=Bright status ${u{ia>=128}}" text_outline ${-foo},2,2,23,2,1,255
 
 #@cli while : condition : (+)
-#@cli : End a 'do...while' block and go back to associated 'do'
-#@cli : if specified condition is true or if specified filename exists.
-#@cli : 'boolean' can be a float number standing for { 0=false | other=true }.
+#@cli : End a 'do...while' block and go back to associated 'do' if specified condition holds.
+#@cli : 'condition' is a mathematical expression, whose evaluation is interpreted as { 0=false | other=true }.
 
 #----------------------------------
 #
@@ -23953,7 +23968,6 @@ math_lib :
     _dicho_m = xmin;
     _dicho_M = xmax;
     _dicho_sgn = 1;
-
     _dicho_autom = isnan(_dicho_m);
     _dicho_autoM = isnan(_dicho_M);
     if (_dicho_autom, _dicho_m = -1);
@@ -31452,8 +31466,8 @@ fx_extract_objects_preview :
   endl done
 
 #@gui Grid [Cartesian] : fx_imagegrid, fx_imagegrid(0)
-#@gui : X-Size = int(10,2,100)
-#@gui : Y-Size = int(10,2,100)
+#@gui : X-Size = int(10,2,512)
+#@gui : Y-Size = int(10,2,512)
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2010/29/12</i>.</small>")
 fx_imagegrid :
@@ -32102,6 +32116,60 @@ fx_cutout :
 
 fx_cutout_preview :
   gui_split_preview "fx_cutout $*",${-3--1}
+
+#@gui Doodle : fx_doodle, gui_no_preview(0)
+#@gui : Precision (%) = float(30,0,100)
+#@gui : Smoothness = float(2,0,10)
+#@gui : Coherence = float(2,0,10)
+#@gui : Contour Threshold = float(1.5,0,10)
+#@gui : Spacing = int(2,0,20)
+#@gui : Minimal Stroke Length = float(70,0,255)
+#@gui : Preview Progression While Running = _bool(1)
+#@gui : sep = separator()
+#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2020/07/08</i>.</small>")
+fx_doodle : skip "$*"
+   repeat $! l[$>]
+    b $2 n 0,255 structuretensors b $3
+    100%,100%,1,1,100
+    if $7 w. ${"fitscreen ."},"[G'MIC] Doodle" fi
+
+    _stopflag=0
+    eval "
+      const dt = 0.5;
+      nb_strokes = nb_consecutive_fails = 0;
+
+      while (nb_consecutive_fails<500*$1%,
+        run('+store. canvas');
+
+        P0 = u([w,h] - 1);
+        length = 0;
+
+        for (dir = 0, dir<2, ++dir,
+          P = P0;
+          oiP = iP = round(P);
+          C = I(#0,P); E = eig([ C[0], C[1], C[1], C[2] ]); oV = V = (dir?1:-1)*E[4,2];
+
+          while (E[0]>$4^2 && (i(iP)>$5 || oiP==iP),
+            i(iP) = 0;
+            oiP = iP;
+            P+=dt*V;
+            iP = round(P);
+            C = I(#0,P,1); E = eig([ C[0], C[1], C[1], C[2] ]); V = E[4,2];
+            dot(oV,V)<0?(V*=-1);
+            oV = V;
+            iP!=oiP?++length;
+          );
+        );
+        length<$6?(run('rm. $canvas'); ++nb_consecutive_fails):(
+          !(++nb_strokes%15)?run('distance. 0');
+          nb_consecutive_fails = 0;
+          $7 && !(nb_strokes%30)?(
+            nb_consecutive_fails = run('if !{*} u inf else +neq. 0 r. {*,w,h},1,1,2 w. rm. u 0 fi')
+          );
+        )
+      )"
+    k. != 0 * 255
+  endl done
 
 #@gui Diffusion Tensors : fx_diffusiontensors, fx_diffusiontensors_preview(0)
 #@gui : Resolution (%) = float(10,0,20)
