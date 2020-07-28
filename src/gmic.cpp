@@ -2064,6 +2064,16 @@ inline char *_gmic_argument_text(const char *const argument, char *const argumen
     } else images[__ind].function; \
   }
 
+// Same as 'gmic_apply' but force computation with double-precision images.
+#define gmic_apply_double(function) { \
+    __ind = (unsigned int)selection[l]; \
+    gmic_check(images[__ind]); \
+    if (is_get) { \
+      CImg<double>(images[__ind],false).get_##function.move_to(images); \
+      images_names[__ind].get_copymark().move_to(images_names); \
+    } else CImg<double>(images[__ind],false).function.move_to(images[__ind]); \
+  }
+
 // Macro for simple commands that has no arguments and act on images.
 #define gmic_simple_command(command_name,function,description) \
   if (!std::strcmp(command_name,command)) { \
@@ -11808,8 +11818,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               (ind=selection2cimg(indices,images.size(),images_names,"solve")).height()==1) {
             print(images,0,"Solve linear system AX = B, with B-vector%s and A-matrix [%d].",
                   gmic_selection.data(),*ind);
-            const CImg<T> A = gmic_image_arg(*ind);
-            cimg_forY(selection,l) gmic_apply(solve(A));
+            const CImg<double> A = gmic_image_arg(*ind);
+            cimg_forY(selection,l) gmic_apply_double(solve(A));
           } else arg_error("solve");
           is_change = true; ++position; continue;
         }
@@ -12520,8 +12530,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             print(images,0,"Solve tridiagonal system AX = B, with B-vector%s and tridiagonal "
                   "A-matrix [%d].",
                   gmic_selection.data(),*ind);
-            const CImg<T> A = gmic_image_arg(*ind);
-            cimg_forY(selection,l) gmic_apply(solve_tridiagonal(A));
+            const CImg<double> A = gmic_image_arg(*ind);
+            cimg_forY(selection,l) gmic_apply_double(solve_tridiagonal(A));
           } else arg_error("trisolve");
           is_change = true; ++position; continue;
         }
