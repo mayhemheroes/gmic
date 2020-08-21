@@ -17012,6 +17012,9 @@ orthogonalize :
 #@cli : Thus, the matrix product D*W is an approximation of the input matrix.
 #@cli : Default values: 'method=0', 'max_iter=0' and 'max_residual=0'.
 project_dict : check ${"is_image_arg $1"}" && isint(${2=0}) && $2>=0 && isint(${3=0}) && $3>=0 && ${4=1e-5}>=0"
+  e[^-1] "Project matrice$? onto dictionnary $1."
+  # Method; Orthogonal projection (can be done simultaneously for all images/columns).
+  if $2 pass$1 solve[^-1] . rm. return fi
 
   # Compute dictionnary norms and normalize it.
   pass$1 0 1,{w},1,1,"max(1e-8,norm(crop(#-1,y,1)))" /.. .
@@ -17021,11 +17024,7 @@ project_dict : check ${"is_image_arg $1"}" && isint(${2=0}) && $2>=0 && isint(${
 
     # Process each signal independently
     repeat $!-2 l[$>,-2]
-      if $2==0
-        # Method : Orthogonal projection.
-        +solve[0] [1]
-
-      elif $2<3
+      if $2<3
         # Method : Matching Pursuit.
         1,{1,w} # [2] = Weights to be computed
         eval "
