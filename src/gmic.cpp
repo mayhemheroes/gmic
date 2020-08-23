@@ -8895,26 +8895,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           is_change = true; ++position; continue;
         }
 
-        // Project matrix onto dictionnary.
-        if (!std::strcmp("mproj",command)) {
-          gmic_substitute_args(true);
-          int method = 0, max_iter = 0;
-          sep = *indices = 0; pattern = 0U;
-          if ((cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]%c%c",gmic_use_indices,&sep,&end)==2 ||
-               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]%c,%d%c",indices,&sep,&method,&end)==3 ||
-               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]%c,%d,%d%c",indices,&sep,&method,&max_iter,&end)==4 ||
-               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]%c,%d,%d,%lf%c",indices,&sep,&method,&max_iter,&value,&end)==5) &&
-              sep==']' && method>=0 && max_iter>=0 && value>=0 &&
-              (ind=selection2cimg(indices,images.size(),images_names,"mproj")).height()==1) {
-            print(images,0,"Project matri%s%s to dictionnary [%d].",
-                  selection.size()>1?"ce":"x",
-                  gmic_selection.data(),*ind);
-            const CImg<double> A = gmic_image_arg(*ind);
-            cimg_forY(selection,l) gmic_apply_double(project_matrix(A,method,max_iter,value));
-          } else arg_error("mproj");
-          is_change = true; ++position; continue;
-        }
-
         // Set 3D rendering modes.
         if (!is_get && !std::strcmp("mode3d",item)) {
           gmic_substitute_args(false);
@@ -9030,6 +9010,26 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                                               (bool)is_score,
                                                               initialization));
           } else arg_error("matchpatch");
+          is_change = true; ++position; continue;
+        }
+
+        // Project matrix onto dictionnary.
+        if (!std::strcmp("mproj",command)) {
+          gmic_substitute_args(true);
+          int method = 0, max_iter = 0;
+          sep = *indices = 0; pattern = 0U;
+          if ((cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]%c%c",gmic_use_indices,&sep,&end)==2 ||
+               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]%c,%d%c",indices,&sep,&method,&end)==3 ||
+               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]%c,%d,%d%c",indices,&sep,&method,&max_iter,&end)==4 ||
+               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]%c,%d,%d,%lf%c",indices,&sep,&method,&max_iter,&value,&end)==5) &&
+              sep==']' && method>=0 && max_iter>=0 && value>=0 &&
+              (ind=selection2cimg(indices,images.size(),images_names,"mproj")).height()==1) {
+            print(images,0,"Project matri%s%s to dictionnary [%d].",
+                  selection.size()>1?"ce":"x",
+                  gmic_selection.data(),*ind);
+            const CImg<double> A = gmic_image_arg(*ind);
+            cimg_forY(selection,l) gmic_apply_double(project_matrix(A,method,max_iter,value));
+          } else arg_error("mproj");
           is_change = true; ++position; continue;
         }
 
