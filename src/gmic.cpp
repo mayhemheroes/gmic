@@ -9030,17 +9030,18 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               (ind=selection2cimg(indices,images.size(),images_names,"mproj")).height()==1) {
             const CImg<double> A = gmic_image_arg(*ind);
             if (method==0)
-              print(images,0,"Project matri%s%s to dictionnary [%d] using orthogonal projection.",
+              print(images,0,"Project matri%s%s to dictionnary [%d] with orthogonal projection.",
                     selection.size()>1?"ce":"x",gmic_selection.data(),*ind);
             else if (method<4)
-              print(images,0,"Project matri%s%s to dictionnary [%d] using %s, max iterations %d and max residual %g.",
+              print(images,0,"Project matri%s%s to dictionnary [%d] with %s, "
+                    "max iterations %d and max residual %g.",
                     selection.size()>1?"ce":"x",gmic_selection.data(),*ind,
                     method==1?"matching pursuit":
                     method==2?"matching pursuit + orthogonal projection":
                     "orthogonal matching pursuit (ortho-projection every iteration)",
                     max_iter?max_iter:A.width(),value);
             else
-              print(images,0,"Project matri%s%s to dictionnary [%d] using orthogonal matching pursuit "
+              print(images,0,"Project matri%s%s to dictionnary [%d] with orthogonal matching pursuit "
                     "(ortho-projection every %d iterations), max iterations %d and max residual %g.",
                     selection.size()>1?"ce":"x",gmic_selection.data(),*ind,
                     method - 2,max_iter?max_iter:A.width(),value);
