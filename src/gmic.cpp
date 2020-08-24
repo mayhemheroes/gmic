@@ -2442,7 +2442,7 @@ const char *gmic::builtin_commands_names[] = {
   "k","keep",
   "l","l3d","label","le","light3d","line","local","log","log10","log2","lt",
   "m","m*","m/","m3d","mandelbrot","map","matchpatch","max","maxabs","md3d","mdiv","median","min","minabs","mirror",
-    "mmul","mod","mode3d","moded3d","move","mse","mul","mul3d","mutex","mv",
+    "mmul","mod","mode3d","moded3d","move","mproj","mse","mul","mul3d","mutex","mv",
   "n","name","named","neq","network","nm","nmd","noarg","noise","normalize",
   "o","o3d","object3d","onfail","opacity3d","or","output",
   "p","parallel","pass","permute","plasma","plot","point","polygon","pow","print","progress",
@@ -8741,24 +8741,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           is_change = true; ++position; continue;
         }
 
-        // Mirror.
-        if (!std::strcmp("mirror",command)) {
-          gmic_substitute_args(false);
-          bool is_valid_argument = *argument!=0;
-          if (is_valid_argument) for (const char *s = argument; *s; ++s) {
-              const char _s = *s;
-              if (_s!='x' && _s!='y' && _s!='z' && _s!='c') { is_valid_argument = false; break; }
-            }
-          if (is_valid_argument) {
-            print(images,0,"Mirror image%s along the '%s'-ax%cs.",
-                  gmic_selection.data(),
-                  gmic_argument_text_printed(),
-                  std::strlen(argument)>1?'e':'i');
-            cimg_forY(selection,l) gmic_apply(mirror(argument));
-          } else arg_error("mirror");
-          is_change = true; ++position; continue;
-        }
-
         // Multiplication.
         gmic_arithmetic_command("mul",
                                 operator*=,
@@ -8849,18 +8831,69 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                 gmic_selection.data(),gmic_argument_text_printed(),
                                 "Multiply matrix/vector%s");
 
-        // Matrix division.
-        gmic_arithmetic_command("mdiv",
-                                operator/=,
-                                "Divide matrix/vector%s by %g%s",
-                                gmic_selection.data(),value,ssep,Tfloat,
-                                operator/=,
-                                "Divide matrix/vector%s by matrix/vector image [%d]",
-                                gmic_selection.data(),ind[0],
-                                operator_diveq,
-                                "Divide matrix/vector%s by expression %s",
-                                gmic_selection.data(),gmic_argument_text_printed(),
-                                "Divide matrix/vector%s");
+        // Map LUT.
+        if (!std::strcmp("map",command)) {
+          gmic_substitute_args(true);
+          sep = *indices = 0;
+          boundary = 0;
+          if (((cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]%c%c",gmic_use_indices,&sep,&end)==2 && sep==']') ||
+               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%u%c",indices,&boundary,&end)==2) &&
+              (ind=selection2cimg(indices,images.size(),images_names,"map")).height()==1 &&
+              boundary<=3) {
+            print(images,0,"Map LUT [%u] on image%s, with %s boundary conditions.",
+                  *ind,
+                  gmic_selection.data(),
+                  boundary==0?"dirichlet":boundary==1?"neumann":boundary==2?"periodic":"mirror");
+            const CImg<T> palette = gmic_image_arg(*ind);
+            cimg_forY(selection,l) gmic_apply(map(palette,boundary));
+            is_change = true; ++position; continue;
+          }
+          // If command 'map' is invoked with different arguments, custom version in stdlib
+          // is used rather than the built-in version.
+          is_builtin_command = false;
+          goto gmic_commands_others;
+        }
+
+        // Mirror.
+        if (!std::strcmp("mirror",command)) {
+          gmic_substitute_args(false);
+          bool is_valid_argument = *argument!=0;
+          if (is_valid_argument) for (const char *s = argument; *s; ++s) {
+              const char _s = *s;
+              if (_s!='x' && _s!='y' && _s!='z' && _s!='c') { is_valid_argument = false; break; }
+            }
+          if (is_valid_argument) {
+            print(images,0,"Mirror image%s along the '%s'-ax%cs.",
+                  gmic_selection.data(),
+                  gmic_argument_text_printed(),
+                  std::strlen(argument)>1?'e':'i');
+            cimg_forY(selection,l) gmic_apply(mirror(argument));
+          } else arg_error("mirror");
+          is_change = true; ++position; continue;
+        }
+
+        // Median filter.
+        if (!std::strcmp("median",command)) {
+          gmic_substitute_args(false);
+          float fsiz = 3, threshold = 0;
+          if ((cimg_sscanf(argument,"%f%c",
+                           &fsiz,&end)==1 ||
+               cimg_sscanf(argument,"%f,%f%c",
+                           &fsiz,&threshold,&end)==2) &&
+              fsiz>=0 && threshold>=0) {
+            fsiz = cimg::round(fsiz);
+            if (threshold)
+              print(images,0,"Apply median filter of size %g with threshold %g, on image%s.",
+                    fsiz,threshold,
+                    gmic_selection.data());
+            else
+              print(images,0,"Apply median filter of size %g, on image%s.",
+                    fsiz,
+                    gmic_selection.data());
+            cimg_forY(selection,l) gmic_apply(blur_median((unsigned int)fsiz,threshold));
+          } else arg_error("median");
+          is_change = true; ++position; continue;
+        }
 
         // Set 3D rendering modes.
         if (!is_get && !std::strcmp("mode3d",item)) {
@@ -8893,52 +8926,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 renderd3d==3?"flat-shaded":renderd3d==4?"Gouraud-shaded":
                 renderd3d==5?"Phong-shaded":"none");
           continue;
-        }
-
-        // Map LUT.
-        if (!std::strcmp("map",command)) {
-          gmic_substitute_args(true);
-          sep = *indices = 0;
-          boundary = 0;
-          if (((cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]%c%c",gmic_use_indices,&sep,&end)==2 && sep==']') ||
-               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%u%c",indices,&boundary,&end)==2) &&
-              (ind=selection2cimg(indices,images.size(),images_names,"map")).height()==1 &&
-              boundary<=3) {
-            print(images,0,"Map LUT [%u] on image%s, with %s boundary conditions.",
-                  *ind,
-                  gmic_selection.data(),
-                  boundary==0?"dirichlet":boundary==1?"neumann":boundary==2?"periodic":"mirror");
-            const CImg<T> palette = gmic_image_arg(*ind);
-            cimg_forY(selection,l) gmic_apply(map(palette,boundary));
-            is_change = true; ++position; continue;
-          }
-          // If command 'map' is invoked with different arguments, custom version in stdlib
-          // is used rather than the built-in version.
-          is_builtin_command = false;
-          goto gmic_commands_others;
-        }
-
-        // Median filter.
-        if (!std::strcmp("median",command)) {
-          gmic_substitute_args(false);
-          float fsiz = 3, threshold = 0;
-          if ((cimg_sscanf(argument,"%f%c",
-                           &fsiz,&end)==1 ||
-               cimg_sscanf(argument,"%f,%f%c",
-                           &fsiz,&threshold,&end)==2) &&
-              fsiz>=0 && threshold>=0) {
-            fsiz = cimg::round(fsiz);
-            if (threshold)
-              print(images,0,"Apply median filter of size %g with threshold %g, on image%s.",
-                    fsiz,threshold,
-                    gmic_selection.data());
-            else
-              print(images,0,"Apply median filter of size %g, on image%s.",
-                    fsiz,
-                    gmic_selection.data());
-            cimg_forY(selection,l) gmic_apply(blur_median((unsigned int)fsiz,threshold));
-          } else arg_error("median");
-          is_change = true; ++position; continue;
         }
 
         // MSE.
@@ -9026,6 +9013,74 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           is_change = true; ++position; continue;
         }
 
+        // Project matrix onto dictionnary.
+        if (!std::strcmp("mproj",command)) {
+          gmic_substitute_args(true);
+          int method = 0, max_iter = 0;
+          sep = *indices = 0; value = 1e-6;
+          if ((cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]%c%c",
+                           gmic_use_indices,&sep,&end)==2 ||
+               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]%c,%d%c",
+                           indices,&sep,&method,&end)==3 ||
+               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]%c,%d,%d%c",
+                           indices,&sep,&method,&max_iter,&end)==4 ||
+               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]%c,%d,%d,%lf%c",
+                           indices,&sep,&method,&max_iter,&value,&end)==5) &&
+              sep==']' && method>=0 && max_iter>=0 && value>=0 &&
+              (ind=selection2cimg(indices,images.size(),images_names,"mproj")).height()==1) {
+            const CImg<double> A = gmic_image_arg(*ind);
+            if (method==0)
+              print(images,0,"Project matri%s%s to dictionnary [%d] with orthogonal projection.",
+                    selection.size()>1?"ce":"x",gmic_selection.data(),*ind);
+            else if (method<4)
+              print(images,0,"Project matri%s%s to dictionnary [%d] with %s, "
+                    "max iterations %d and max residual %g.",
+                    selection.size()>1?"ce":"x",gmic_selection.data(),*ind,
+                    method==1?"matching pursuit":
+                    method==2?"matching pursuit + orthogonal projection":
+                    "orthogonal matching pursuit (ortho-projection every iteration)",
+                    max_iter?max_iter:A.width(),value);
+            else
+              print(images,0,"Project matri%s%s to dictionnary [%d] with orthogonal matching pursuit "
+                    "(ortho-projection every %d iterations), max iterations %d and max residual %g.",
+                    selection.size()>1?"ce":"x",gmic_selection.data(),*ind,
+                    method - 2,max_iter?max_iter:A.width(),value);
+
+            cimg_forY(selection,l) gmic_apply_double(project_matrix(A,method,max_iter,value));
+          } else arg_error("mproj");
+          is_change = true; ++position; continue;
+        }
+
+        // Matrix division.
+        gmic_arithmetic_command("mdiv",
+                                operator/=,
+                                "Divide matrix/vector%s by %g%s",
+                                gmic_selection.data(),value,ssep,Tfloat,
+                                operator/=,
+                                "Divide matrix/vector%s by matrix/vector image [%d]",
+                                gmic_selection.data(),ind[0],
+                                operator_diveq,
+                                "Divide matrix/vector%s by expression %s",
+                                gmic_selection.data(),gmic_argument_text_printed(),
+                                "Divide matrix/vector%s");
+
+        // Manage mutexes.
+        if (!is_get && !std::strcmp("mutex",item)) {
+          gmic_substitute_args(false);
+          unsigned int number, is_lock = 1;
+          if ((cimg_sscanf(argument,"%u%c",
+                           &number,&end)==1 ||
+               cimg_sscanf(argument,"%u,%u%c",
+                           &number,&is_lock,&end)==2) &&
+              number<256 && is_lock<=1) {
+            print(images,0,"%s mutex #%u.",
+                  is_lock?"Lock":"Unlock",number);
+            if (is_lock) gmic_mutex().lock(number);
+            else gmic_mutex().unlock(number);
+          } else arg_error("mutex");
+          ++position; continue;
+        }
+
         // Draw mandelbrot/julia fractal.
         if (!std::strcmp("mandelbrot",command)) {
           gmic_substitute_args(false);
@@ -9059,23 +9114,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                                               true,(bool)is_julia,paramr,parami));
           } else arg_error("mandelbrot");
           is_change = true; ++position; continue;
-        }
-
-        // Manage mutexes.
-        if (!is_get && !std::strcmp("mutex",item)) {
-          gmic_substitute_args(false);
-          unsigned int number, is_lock = 1;
-          if ((cimg_sscanf(argument,"%u%c",
-                           &number,&end)==1 ||
-               cimg_sscanf(argument,"%u,%u%c",
-                           &number,&is_lock,&end)==2) &&
-              number<256 && is_lock<=1) {
-            print(images,0,"%s mutex #%u.",
-                  is_lock?"Lock":"Unlock",number);
-            if (is_lock) gmic_mutex().lock(number);
-            else gmic_mutex().unlock(number);
-          } else arg_error("mutex");
-          ++position; continue;
         }
 
         goto gmic_commands_others;

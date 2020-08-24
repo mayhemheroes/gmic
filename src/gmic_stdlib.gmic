@@ -847,25 +847,26 @@ ${g}"v"$n"' appears
 \n       . '"${c}"wh"$n"': shortcut for width x height.
 \n       . '"${c}"whd"$n"': shortcut for width x height x depth.
 \n       . '"${c}"whds"$n"': shortcut for width x height x depth x spectrum (i.e. number of image values).
-\n       . '"${c}"im"$n"','"${c}"iM"$n"','"${c}"ia"$n"','"${c}"iv"$n"','"${c}"is"$n"','"${c}"ip"$n"','"${c}"ic"$n"':
- Respectively the minimum, maximum, average,
-\n          variance, sum, product and median value of the associated image, if any ("${g}"0"$n" otherwise).
-\n       . '"${c}"xm"$n"','"${c}"ym"$n"','"${c}"zm"$n"','"${c}"cm"$n"': The pixel coordinates of the minimum value
+\n       . '"${c}"im"$n"', '"${c}"iM"$n"', '"${c}"ia"$n"', '"${c}"iv"$n"', '"${c}"is"$n"', '"${c}"ip"$n"',
+'"${c}"ic"$n"', '"${c}"in"$n"': Respectively the minimum, maximum, average,
+\n          variance, sum, product, median value and L2-norm of the associated image, if any
+\n          ("${g}"0"$n" otherwise).
+\n       . '"${c}"xm"$n"', '"${c}"ym"$n"', '"${c}"zm"$n"', '"${c}"cm"$n"': The pixel coordinates of the minimum value
 \n          in the associated image, if any ("${g}"0"$n" otherwise).
-\n       . '"${c}"xM"$n"','"${c}"yM"$n"','"${c}"zM"$n"','"${c}"cM"$n"': The pixel coordinates of the maximum value
+\n       . '"${c}"xM"$n"', '"${c}"yM"$n"', '"${c}"zM"$n"', '"${c}"cM"$n"': The pixel coordinates of the maximum value
 \n          in the associated image, if any ("${g}"0"$n" otherwise).
 \n       . All these variables are considered as "${g}"constant values"$n" by the math parser (for optimization
 \n          purposes) which is indeed the case most of the time. Anyway, this might not be the case,
 \n          if function '"${c}"resize(#ind,..)"$n"' is used in the math expression.
 \n          If so, it is safer to invoke functions '"${c}"l()"$n"', '"${c}"w(_#ind)"$n"', '"${c}"h(_#ind)"$n"', ...
  '"${c}"s(_#ind)"$n"'
-\n          and '"${c}"ic(_#ind)"$n"' instead of the corresponding named variables.
+\n          and '"${c}"in(_#ind)"$n"' instead of the corresponding named variables.
 \n       . '"${c}"i"$n"': current processed pixel value (i.e. value located at "${g}"(x,y,z,c)"$n") in the associated
 \n          image, if any ("${g}"0"$n" otherwise).
 \n       . '"${c}"iN"$n"': Nth channel value of current processed pixel (i.e. value located at "${g}"(x,y,z,N)"$n") in
 \n          the associated image, if any ("${g}"0"$n" otherwise). '"${g}"N"$n"' must be an integer in range "\
 ${g}"[0,9]"$n".
-\n       . '"${c}"R"$n"','"${c}"G"$n"','"${c}"B"$n"' and '"${c}"A"$n"' are equivalent to '"${c}"i0"$n"', '"\
+\n       . '"${c}"R"$n"', '"${c}"G"$n"', '"${c}"B"$n"' and '"${c}"A"$n"' are equivalent to '"${c}"i0"$n"', '"\
 ${c}"i1"$n"', '"${c}"i2"$n"' and '"${c}"i3"$n"' respectively.
 \n       . '"${c}"I"$n"': current vector-valued processed pixel in the associated image, if any ("${g}"0"$n" otherwise).
 \n          The number of vector components is equal to the number of image channels
@@ -946,10 +947,12 @@ ${g}"N"$n".
 \n          '"${c}"inv(A)"$n"' (matrix inverse), '"${c}"mul(A,B,_nb_colsB)"$n"' (matrix-matrix multiplication),
 \n          '"${c}"pseudoinv(A,_nb_colsA)"$n"', '"${c}"rot(u,v,w,angle)"$n"' (3D rotation matrix),
  '"${c}"rot(angle)"$n"' (2D
-\n          rotation matrix), '"${c}"solve(A,B,_nb_colsB)"$n"' (least-square solver of linear system A.X = B),
+\n          rotation matrix), '"${c}"solve(A,B,_nb_colsB)"$n"' (solver of linear system A.X = B),
 \n          '"${c}"svd(A,_nb_colsA)"$n"' (singular value decomposition), '"${c}"trace(A)"$n"' (matrix trace) and
 \n          '"${c}"transp(A,nb_colsA)"$n"' (matrix transpose). Argument '"${c}"nb_colsB"$n"' may be omitted if it is
 \n          equal to "${g}"1"$n".
+\n       . '"${c}"mproj(S,nb_colsS,D,nb_colsD,method,max_iter,max_residual)"$n"' projects a matrix "${g}"S"$n" onto
+\n          a dictionnary (matrix) "${g}"D"$n". Equivalent to command '"${c}"mproj"$n"' inside the math evaluator.
 \n       . Specifying a vector-valued math expression as an argument of a command that operates on
 \n          image values (e.g. '"${c}"fill"$n"') modifies the whole spectrum range of the processed image(s),
 \n          for each spatial coordinates "${g}"(x,y,z)"$n". The command does not loop over the "${g}"C"$n"-axis in this
@@ -9612,6 +9615,56 @@ int2rgb :
     +>> 8 &[1] 255 +&[0] 255 >>[0] 16 a c
   endl done
 
+#@cli jzazbz2rgb : illuminant={ 0=D50 | 1=D65 | 2=E } : (no arg)
+#@cli : Convert color representation of selected images from RGB to Jzazbz.
+#@cli : Default value: 'illuminant=2'.
+jzazbz2rgb : skip "${1=,}"
+  l[] if isnum("$1") illu={"$1>1?2:$1>0?1:0"} else if ["'$1'"]!=',' noarg fi illu=2 fi onfail noarg illu=2 endl
+  e[^-1] "Convert color representation of image$? from Jzazbz to RGB, using the "${arg\ 1+$illu,D50,D65,E}" illuminant."
+  jzazbz2xyz xyz2rgb $illu
+
+#@cli jzazbz2xyz
+#@cli : Convert color representation of selected images from RGB to XYZ.
+jzazbz2xyz :
+  e[^-1] "Convert color representation of image$? from Jzazbz to XYZ."
+  repeat $! l[$>] split_opacity
+    f[0] ${-_jzazbz_const}"
+      tmp = i0 + Jzazbz_d0;
+      Iz = tmp/(1 + Jzazbz_d - Jzazbz_d*tmp);
+      azz = i1;
+      bzz = i2;
+      Lp = Iz + 0.138605043271539*azz + 0.0580473161561189*bzz;
+      Mp = Iz - 0.138605043271539*azz - 0.0580473161561189*bzz;
+      Sp = Iz - 0.0960192420263189*azz - 0.811891896056039*bzz;
+      tmp = Lp^(1/Jzazbz_p);
+      L = peakLum*((Jzazbz_c1 - tmp)/(Jzazbz_c3*tmp-Jzazbz_c2))^(1/Jzazbz_n);
+      tmp = Mp^(1/Jzazbz_p);
+      M = peakLum*((Jzazbz_c1 - tmp)/(Jzazbz_c3*tmp-Jzazbz_c2))^(1/Jzazbz_n);
+      tmp = Sp^(1/Jzazbz_p);
+      S = peakLum*((Jzazbz_c1 - tmp)/(Jzazbz_c3*tmp-Jzazbz_c2))^(1/Jzazbz_n);
+      Xp = 1.92422643578761*L - 1.00479231259537*M + 0.037651404030618*S;
+      Yp = 0.350316762094999*L + 0.726481193931655*M - 0.065384422948085*S;
+      Zp = -0.0909828109828476*L - 0.312728290523074*M + 1.52276656130526*S;
+      X = (Xp + (Jzazbz_b - 1)*Zp)/Jzazbz_b;
+      Y = (Yp + (Jzazbz_g - 1)*X)/Jzazbz_g;
+      Z = Zp;
+      [ X,Y,Z ]/255"
+  a c endl done
+
+# The XYZ<->Jzazbz conversion code has been written by Alan Gibson,
+# and published on this page: http://im.snibgo.com/jzazbz.htm
+_jzazbz_const :
+  u "const Jzazbz_b = 1.15;
+     const Jzazbz_g = 0.66;
+     const Jzazbz_c1 = 3424/4096;
+     const Jzazbz_c2 = 2413/128;
+     const Jzazbz_c3 = 2392/128;
+     const Jzazbz_n = 2610/16384;
+     const Jzazbz_p = 1.7*2523/32;
+     const Jzazbz_d = -0.56;
+     const Jzazbz_d0 = 1.6295499532821566e-11;
+     const peakLum = 10000;"
+
 #@cli lab2lch
 #@cli : Convert color representation of selected images from Lab to Lch.
 lab2lch :
@@ -9620,39 +9673,39 @@ lab2lch :
     s c complex2polar[-2,-1] a c
   endl done
 
-#@cli lab2rgb : illuminant={ 0=D50 | 1=D65 } : (no arg)
+#@cli lab2rgb : illuminant={ 0=D50 | 1=D65 | 2=E } : (no arg)
 #@cli : Convert color representation of selected images from Lab to RGB.
-#@cli : Default value: 'illuminant=1'.
+#@cli : Default value: 'illuminant=2'.
 #@cli : $ (50,50;50,50^-3,3;-3,3^-3,-3;3,3) resize 400,400,1,3,3 lab2rgb
 lab2rgb : skip "${1=,}"
-  l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl
-  e[^-1] "Convert color representation of image$? from Lab to RGB, using the D"{arg(1+$illu,50,65)}" illuminant."
+  l[] if isnum("$1") illu={"$1>1?2:$1>0?1:0"} else if ["'$1'"]!=',' noarg fi illu=2 fi onfail noarg illu=2 endl
+  e[^-1] "Convert color representation of image$? from Lab to RGB, using the "${arg\ 1+$illu,D50,D65,E}" illuminant."
   lab2xyz $illu xyz2rgb $illu
 
-#@cli lab2srgb : illuminant={ 0=D50 | 1=D65 } : (no arg)
+#@cli lab2srgb : illuminant={ 0=D50 | 1=D65 | 2=E } : (no arg)
 #@cli : Convert color representation of selected images from Lab to sRGB.
-#@cli : Default value: 'illuminant=1'.
+#@cli : Default value: 'illuminant=2'.
 #@cli : $ (50,50;50,50^-3,3;-3,3^-3,-3;3,3) resize 400,400,1,3,3 lab2rgb
 lab2srgb : skip "${1=,}"
-  l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl
-  e[^-1] "Convert color representation of image$? from Lab to sRGB, using the D"{arg(1+$illu,50,65)}" illuminant."
+  l[] if isnum("$1") illu={"$1>1?2:$1>0?1:0"} else if ["'$1'"]!=',' noarg fi illu=2 fi onfail noarg illu=2 endl
+  e[^-1] "Convert color representation of image$? from Lab to sRGB, using the "${arg\ 1+$illu,D50,D65,E}" illuminant."
   lab2rgb $illu rgb2srgb
 
-#@cli lab82srgb : illuminant={ 0=D50 | 1=D65 } : (no arg)
+#@cli lab82srgb : illuminant={ 0=D50 | 1=D65 | 2=E } : (no arg)
 #@cli : Convert color representation of selected images from Lab8 to sRGB.
-#@cli : Default value: 'illuminant=1'.
+#@cli : Default value: 'illuminant=2'.
 #@cli : $ (50,50;50,50^-3,3;-3,3^-3,-3;3,3) resize 400,400,1,3,3 lab2rgb
 lab82srgb : skip "${1=,}"
-  l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl
-  e[^-1] "Convert color representation of image$? from Lab8 to sRGB, using the D"{arg(1+$illu,50,65)}" illuminant."
+  l[] if isnum("$1") illu={"$1>1?2:$1>0?1:0"} else if ["'$1'"]!=',' noarg fi illu=2 fi onfail noarg illu=2 endl
+  e[^-1] "Convert color representation of image$? from Lab8 to sRGB, using the "${arg\ 1+$illu,D50,D65,E}" illuminant."
   lab82rgb $illu rgb2srgb
 
-#@cli lab2xyz : illuminant={ 0=D50 | 1=D65 } : (no arg)
+#@cli lab2xyz : illuminant={ 0=D50 | 1=D65 | 2=E } : (no arg)
 #@cli : Convert color representation of selected images from Lab to XYZ.
-#@cli : Default value: 'illuminant=1'.
+#@cli : Default value: 'illuminant=2'.
 lab2xyz : skip "${1=,}"
-  l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl
-  e[^-1] "Convert color representation of image$? from Lab to XYZ, using the D"{arg(1+$illu,50,65)}" illuminant."
+  l[] if isnum("$1") illu={"$1>1?2:$1>0?1:0"} else if ["'$1'"]!=',' noarg fi illu=2 fi onfail noarg illu=2 endl
+  e[^-1] "Convert color representation of image$? from Lab to XYZ, using the "${arg\ 1+$illu,D50,D65,E}" illuminant."
   to_color
   f "
     begin(
@@ -9677,12 +9730,12 @@ lab2xyz : skip "${1=,}"
             fz3>epsilon?fz3:(116*fz - 16)/kappa ];
     XYZ*=white"
 
-#@cli lab82rgb : illuminant={ 0=D50 | 1=D65 } : (no arg)
+#@cli lab82rgb : illuminant={ 0=D50 | 1=D65 | 2=E } : (no arg)
 #@cli : Convert color representation of selected images from Lab8 to RGB.
-#@cli : Default value: 'illuminant=1'.
+#@cli : Default value: 'illuminant=2'.
 lab82rgb : skip "${1=,}"
-  l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl
-  e[^-1] "Convert color representation of image$? from Lab8 to RGB, using the D"{arg(1+$illu,50,65)}" illuminant."
+  l[] if isnum("$1") illu={"$1>1?2:$1>0?1:0"} else if ["'$1'"]!=',' noarg fi illu=2 fi onfail noarg illu=2 endl
+  e[^-1] "Convert color representation of image$? from Lab8 to RGB, using the "${arg\ 1+$illu,D50,D65,E}" illuminant."
   repeat $!
     sh[$>] 0 /. 2.55 rm.
     sh[$>] 1 /. 1.275 -. 100 rm.
@@ -9697,20 +9750,20 @@ lch2lab :
     s c polar2complex[-2,-1] a c
   endl done
 
-#@cli lch2rgb : illuminant={ 0=D50 | 1=D65 } : (no arg)
+#@cli lch2rgb : illuminant={ 0=D50 | 1=D65 | 2=E } : (no arg)
 #@cli : Convert color representation of selected images from Lch to RGB.
-#@cli : Default value: 'illuminant=1'.
+#@cli : Default value: 'illuminant=2'.
 lch2rgb : skip "${1=,}"
-  l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl
-  e[^-1] "Convert color representation of image$? from Lch to RGB, using the D"{arg(1+$illu,50,65)}" illuminant."
+  l[] if isnum("$1") illu={"$1>1?2:$1>0?1:0"} else if ["'$1'"]!=',' noarg fi illu=2 fi onfail noarg illu=2 endl
+  e[^-1] "Convert color representation of image$? from Lch to RGB, using the "${arg\ 1+$illu,D50,D65,E}" illuminant."
   lch2lab lab2rgb $illu
 
-#@cli lch82rgb : illuminant={ 0=D50 | 1=D65 } : (no arg)
+#@cli lch82rgb : illuminant={ 0=D50 | 1=D65 | 2=E } : (no arg)
 #@cli : Convert color representation of selected images from Lch8 to RGB.
-#@cli : Default value: 'illuminant=1'.
+#@cli : Default value: 'illuminant=2'.
 lch82rgb : skip "${1=,}"
-  l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl
-  e[^-1] "Convert color representation of image$? from Lch8 to RGB, using the D"{arg(1+$illu,50,65)}" illuminant."
+  l[] if isnum("$1") illu={"$1>1?2:$1>0?1:0"} else if ["'$1'"]!=',' noarg fi illu=2 fi onfail noarg illu=2 endl
+  e[^-1] "Convert color representation of image$? from Lch8 to RGB, using the "${arg\ 1+$illu,D50,D65,E}" illuminant."
   repeat $!
     sh[$>] 0 /. 2.55 rm.
     sh[$>] 1 /. 1.88889 rm.
@@ -10443,43 +10496,51 @@ rgb2int :
     s c <<[0] 16 <<[1] 8 +
   endl done
 
-#@cli rgb2lab : illuminant={ 0=D50 | 1=D65 } : (no arg)
+#@cli rgb2jzazbz : illuminant={ 0=D50 | 1=D65 | 2=E } : (no arg)
+#@cli : Convert color representation of selected images from RGB to Jzazbz.
+#@cli : Default value: 'illuminant=2'.
+rgb2jzazbz : skip "${1=,}"
+  l[] if isnum("$1") illu={"$1>1?2:$1>0?1:0"} else if ["'$1'"]!=',' noarg fi illu=2 fi onfail noarg illu=2 endl
+  e[^-1] "Convert color representation of image$? from RGB to Jzazbz, using the "${arg\ 1+$illu,D50,D65,E}" illuminant."
+  rgb2xyz $illu xyz2jzazbz
+
+#@cli rgb2lab : illuminant={ 0=D50 | 1=D65 | 2=E } : (no arg)
 #@cli : Convert color representation of selected images from RGB to Lab.
-#@cli : Default value: 'illuminant=1'.
+#@cli : Default value: 'illuminant=2'.
 rgb2lab : skip "${1=,}"
-  l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl
-  e[^-1] "Convert color representation of image$? from RGB to Lab, using the D"{arg(1+$illu,50,65)}" illuminant."
+  l[] if isnum("$1") illu={"$1>1?2:$1>0?1:0"} else if ["'$1'"]!=',' noarg fi illu=2 fi onfail noarg illu=2 endl
+  e[^-1] "Convert color representation of image$? from RGB to Lab, using the "${arg\ 1+$illu,D50,D65,E}" illuminant."
   rgb2xyz $illu xyz2lab $illu
 
-#@cli rgb2lab8 : illuminant={ 0=D50 | 1=D65 } : (no arg)
+#@cli rgb2lab8 : illuminant={ 0=D50 | 1=D65 | 2=E } : (no arg)
 #@cli : Convert color representation of selected images from RGB to Lab8.
-#@cli : Default value: 'illuminant=1'.
+#@cli : Default value: 'illuminant=2'.
 #@cli : $ image.jpg rgb2lab8 split c
 rgb2lab8 : skip "${1=,}"
-  l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl
-  e[^-1] "Convert color representation of image$? from RGB to Lab8, using the D"{arg(1+$illu,50,65)}" illuminant."
+  l[] if isnum("$1") illu={"$1>1?2:$1>0?1:0"} else if ["'$1'"]!=',' noarg fi illu=2 fi onfail noarg illu=2 endl
+  e[^-1] "Convert color representation of image$? from RGB to Lab8, using the "${arg\ 1+$illu,D50,D65,E}" illuminant."
   rgb2lab $illu repeat $!
     sh[$>] 0 *. 2.55 rm.
     sh[$>] 1 +. 100 *. 1.275 rm.
     sh[$>] 2 +. 110 *. 1.15909 rm.
   done
 
-#@cli rgb2lch : illuminant={ 0=D50 | 1=D65 } : (no arg)
+#@cli rgb2lch : illuminant={ 0=D50 | 1=D65 | 2=E } : (no arg)
 #@cli : Convert color representation of selected images from RGB to Lch.
-#@cli : Default value: 'illuminant=1'.
+#@cli : Default value: 'illuminant=2'.
 #@cli : $ image.jpg rgb2lch split c
 rgb2lch : skip "${1=,}"
-  l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl
-  e[^-1] "Convert color representation of image$? from RGB to Lch, using the D"{arg(1+$illu,50,65)}" illuminant."
+  l[] if isnum("$1") illu={"$1>1?2:$1>0?1:0"} else if ["'$1'"]!=',' noarg fi illu=2 fi onfail noarg illu=2 endl
+  e[^-1] "Convert color representation of image$? from RGB to Lch, using the "${arg\ 1+$illu,D50,D65,E}" illuminant."
   rgb2lab $illu lab2lch
 
-#@cli rgb2lch8 : illuminant={ 0=D50 | 1=D65 } : (no arg)
+#@cli rgb2lch8 : illuminant={ 0=D50 | 1=D65 | 2=E } : (no arg)
 #@cli : Convert color representation of selected images from RGB to Lch8.
-#@cli : Default value: 'illuminant=1'.
+#@cli : Default value: 'illuminant=2'.
 #@cli : $ image.jpg rgb2lch8 split c
 rgb2lch8 : skip "${1=,}"
-  l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl
-  e[^-1] "Convert color representation of image$? from RGB to Lch8, using the D"{arg(1+$illu,50,65)}" illuminant."
+  l[] if isnum("$1") illu={"$1>1?2:$1>0?1:0"} else if ["'$1'"]!=',' noarg fi illu=2 fi onfail noarg illu=2 endl
+  e[^-1] "Convert color representation of image$? from RGB to Lch8, using the "${arg\ 1+$illu,D50,D65,E}" illuminant."
   rgb2lch $illu repeat $!
     sh[$>] 0 *. 2.55 rm.
     sh[$>] 1 *. 1.88889 rm.
@@ -10537,15 +10598,18 @@ rgb2srgb :
   e[^-1] "Convert color representation of image$? from linear RGB to sRGB."
   f "val = i/255; sval = val<=0.0031308?val*12.92:1.055*val^0.416667 - 0.055; cut(255*sval,0,255)"
 
-#@cli rgb2xyz : illuminant={ 0=D50 | 1=D65 } : (no arg)
+#@cli rgb2xyz : illuminant={ 0=D50 | 1=D65 | 2=E } : (no arg)
 #@cli : Convert color representation of selected images from RGB to XYZ.
-#@cli : Default value: 'illuminant=1'.
+#@cli : Default value: 'illuminant=2'.
 #@cli : $ image.jpg rgb2xyz split c
 rgb2xyz : skip "${1=,}"
-  l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl
-  e[^-1] "Convert color representation of image$? from RGB to XYZ, using the D"{arg(1+$illu,50,65)}" illuminant."
-
-  if $illu # D65
+  l[] if isnum("$1") illu={"$1>1?2:$1>0?1:0"} else if ["'$1'"]!=',' noarg fi illu=2 fi onfail noarg illu=2 endl
+  e[^-1] "Convert color representation of image$? from RGB to XYZ, using the "${arg\ 1+$illu,D50,D65,E}" illuminant."
+  if $illu==2 # E
+     mix_rgb {[0.488718,0.3106803,0.2006017,\
+               0.1762044,0.8129847,0.0108109,\
+               0,0.0102048,0.9897952]/255}
+  elif $illu==1 # D65
     mix_rgb {[0.4124564,0.3575761,0.1804375,\
               0.2126729,0.7151522,0.0721750,\
               0.0193339,0.1191920,0.9503041]/255}
@@ -10555,13 +10619,13 @@ rgb2xyz : skip "${1=,}"
               0.01391602,0.09706116,0.71392822]/255}
   fi
 
-#@cli rgb2xyz8 : illuminant={ 0=D50 | 1=D65 } : (no arg)
+#@cli rgb2xyz8 : illuminant={ 0=D50 | 1=D65 | 2=E } : (no arg)
 #@cli : Convert color representation of selected images from RGB to XYZ8.
-#@cli : Default value: 'illuminant=1'.
+#@cli : Default value: 'illuminant=2'.
 #@cli : $ image.jpg rgb2xyz8 split c
 rgb2xyz8 : skip "${1=,}"
-  l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl
-  e[^-1] "Convert color representation of image$? from RGB to XYZ8, using the D"{arg(1+$illu,50,65)}" illuminant."
+  l[] if isnum("$1") illu={"$1>1?2:$1>0?1:0"} else if ["'$1'"]!=',' noarg fi illu=2 fi onfail noarg illu=2 endl
+  e[^-1] "Convert color representation of image$? from RGB to XYZ8, using the "${arg\ 1+$illu,D50,D65,E}" illuminant."
   rgb2xyz $illu repeat $!
     sh[$>] 0 *. 255 rm.
     sh[$>] 1 *. 255 rm.
@@ -10721,22 +10785,22 @@ split_opacity :
   e[^-1] "Split color and opacity parts of image$?."
   repeat $! l[$<] s c,{if(s==4,-3,if(s==2,-1,-s))} endl done
 
-#@cli srgb2lab : illuminant={ 0=D50 | 1=D65 } : (no arg)
+#@cli srgb2lab : illuminant={ 0=D50 | 1=D65 | 2=E } : (no arg)
 #@cli : Convert color representation of selected images from sRGB to Lab.
-#@cli : Default value: 'illuminant=1'.
+#@cli : Default value: 'illuminant=2'.
 #@cli : $ image.jpg srgb2lab split c
 #@cli : $ image.jpg srgb2lab +split c mul[-2,-1] 2.5 append[-3--1] c lab2srgb
 srgb2lab : skip "${1=,}"
-  l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl
-  e[^-1] "Convert color representation of image$? from sRGB to Lab, using the D"{arg(1+$illu,50,65)}" illuminant."
+  l[] if isnum("$1") illu={"$1>1?2:$1>0?1:0"} else if ["'$1'"]!=',' noarg fi illu=2 fi onfail noarg illu=2 endl
+  e[^-1] "Convert color representation of image$? from sRGB to Lab, using the "${arg\ 1+$illu,D50,D65,E}" illuminant."
   srgb2rgb rgb2lab $illu
 
-#@cli srgb2lab8 : illuminant={ 0=D50 | 1=D65 } : (no arg)
+#@cli srgb2lab8 : illuminant={ 0=D50 | 1=D65 | 2=E } : (no arg)
 #@cli : Convert color representation of selected images from sRGB to Lab8.
-#@cli : Default value: 'illuminant=1'.
+#@cli : Default value: 'illuminant=2'.
 srgb2lab8 : skip "${1=,}"
-  l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl
-  e[^-1] "Convert color representation of image$? from sRGB to Lab8, using the D"{arg(1+$illu,50,65)}" illuminant."
+  l[] if isnum("$1") illu={"$1>1?2:$1>0?1:0"} else if ["'$1'"]!=',' noarg fi illu=2 fi onfail noarg illu=2 endl
+  e[^-1] "Convert color representation of image$? from sRGB to Lab8, using the "${arg\ 1+$illu,D50,D65,E}" illuminant."
   srgb2rgb rgb2lab8 $illu
 
 #@cli srgb2rgb
@@ -11085,12 +11149,40 @@ _transfer_rgb : l[] check "${1=0}>=0 && ${2=1.5}>=0 && ${3=128}>0" gamma=$1 smoo
     pointcloud 1,$res,$res,$res f 'if(i,i^$gamma,0)' b $smoothness% n 0,1
   endl done
 
-#@cli xyz2lab : illuminant={ 0=D50 | 1=D65 } : (no arg)
+#@cli xyz2jzazbz
+#@cli : Convert color representation of selected images from XYZ to RGB.
+xyz2jzazbz :
+  e[^-1] "Convert color representation of image$? from XYZ to Jzazbz."
+  repeat $! l[$>] split_opacity
+    f[0] ${-_jzazbz_const}"
+      X = i0*255;
+      Y = i1*255;
+      Z = i2*255;
+      Xp = Jzazbz_b*X - (Jzazbz_b - 1)*Z;
+      Yp = Jzazbz_g*Y - (Jzazbz_g - 1)*X;
+      Zp = Z;
+      L = 0.41478972*Xp + 0.579999*Yp + 0.0146480*Zp;
+      M = -0.2015100*Xp + 1.120649*Yp + 0.0531008*Zp;
+      S = -0.0166008*Xp + 0.264800*Yp + 0.6684799*Zp;
+      tmp = (L/peakLum)^Jzazbz_n;
+      Lp = ((Jzazbz_c1 + Jzazbz_c2*tmp)/(1 + Jzazbz_c3*tmp))^Jzazbz_p;
+      tmp = (M/peakLum)^Jzazbz_n;
+      Mp = ((Jzazbz_c1 + Jzazbz_c2*tmp)/(1 + Jzazbz_c3*tmp))^Jzazbz_p;
+      tmp = (S/peakLum)^Jzazbz_n;
+      Sp = ((Jzazbz_c1 + Jzazbz_c2*tmp)/(1 + Jzazbz_c3*tmp))^Jzazbz_p;
+      Iz  = 0.5*Lp + 0.5*Mp;
+      az = 3.52400*Lp - 4.066708*Mp + 0.542708*Sp;
+      bz = 0.199076*Lp + 1.096799*Mp - 1.295875*Sp;
+      Jz = (1 + Jzazbz_d)*Iz/(1 + Jzazbz_d*Iz) - Jzazbz_d0;
+      [ Jz,az,bz ]"
+  a c endl done
+
+#@cli xyz2lab : illuminant={ 0=D50 | 1=D65 | 2=E } : (no arg)
 #@cli : Convert color representation of selected images from XYZ to Lab.
-#@cli : Default value: 'illuminant=1'.
+#@cli : Default value: 'illuminant=2'.
 xyz2lab : skip "${1=,}"
-  l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl
-  e[^-1] "Convert color representation of image$? from XYZ to Lab, using the D"{arg(1+$illu,50,65)}" illuminant."
+  l[] if isnum("$1") illu={"$1>1?2:$1>0?1:0"} else if ["'$1'"]!=',' noarg fi illu=2 fi onfail noarg illu=2 endl
+  e[^-1] "Convert color representation of image$? from XYZ to Lab, using the "${arg\ 1+$illu,D50,D65,E}" illuminant."
   to_color
   f "
     begin(
@@ -11113,13 +11205,17 @@ xyz2lab : skip "${1=,}"
     fz = lab(zr);
     [ cut(116*fy - 16,0,100), 500*(fx - fy), 200*(fy - fz) ]"
 
-#@cli xyz2rgb : illuminant={ 0=D50 | 1=D65 } : (no arg)
+#@cli xyz2rgb : illuminant={ 0=D50 | 1=D65 | 2=E } : (no arg)
 #@cli : Convert color representation of selected images from XYZ to RGB.
-#@cli : Default value: 'illuminant=1'.
+#@cli : Default value: 'illuminant=2'.
 xyz2rgb : skip "${1=,}"
-  l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl
-  e[^-1] "Convert color representation of image$? from XYZ to RGB, using the D"{arg(1+$illu,50,65)}" illuminant."
-  if $illu # D65
+  l[] if isnum("$1") illu={"$1>1?2:$1>0?1:0"} else if ["'$1'"]!=',' noarg fi illu=2 fi onfail noarg illu=2 endl
+  e[^-1] "Convert color representation of image$? from XYZ to RGB, using the "${arg\ 1+$illu,D50,D65,E}" illuminant."
+  if $illu==2 # E
+    mix_rgb {[2.3706743,-0.9000405,-0.4706338,\
+              -0.513885,1.4253036,0.0885814,\
+              0.0052982,-0.0146949,1.0093968]*255}
+  elif $illu # D65
     mix_rgb {[3.2404542,-1.5371385,-0.4985314,\
               -0.9692660,1.8760108,0.0415560,\
               0.0556434,-0.2040259,1.0572252]*255}
@@ -11130,12 +11226,12 @@ xyz2rgb : skip "${1=,}"
   fi
   c 0,255
 
-#@cli xyz82rgb : illuminant={ 0=D50 | 1=D65 } : (no arg)
+#@cli xyz82rgb : illuminant={ 0=D50 | 1=D65 | 2=E } : (no arg)
 #@cli : Convert color representation of selected images from XYZ8 to RGB.
-#@cli : Default value: 'illuminant=1'.
+#@cli : Default value: 'illuminant=2'.
 xyz82rgb : skip "${1=,}"
-  l[] if isnum("$1") illu={"$1?1:0"} else if ["'$1'"]!=',' noarg fi illu=1 fi onfail noarg illu=1 endl
-  e[^-1] "Convert color representation of image$? from XYZ8 to RGB, using the D"{arg(1+$illu,50,65)}" illuminant."
+  l[] if isnum("$1") illu={"$1>1?2:$1>0?1:0"} else if ["'$1'"]!=',' noarg fi illu=2 fi onfail noarg illu=2 endl
+  e[^-1] "Convert color representation of image$? from XYZ8 to RGB, using the "${arg\ 1+$illu,D50,D65,E}" illuminant."
   repeat $!
     sh[$>] 0 /. 255 rm.
     sh[$>] 1 /. 255 rm.
@@ -16896,6 +16992,27 @@ orthogonalize :
       )"
     fi
   endl done
+
+#@cli mproj : [dictionnary],_method,_max_iter={ 0=auto | >0 },_max_residual>=0 : (+)
+#@cli : Find best matching projection of selected matrices onto the span of an over-complete
+#@cli : dictionary D, using the orthogonal projection or Matching Pursuit algorithm.
+#@cli : Selected images are 2D-matrices in which each column represent a signal to project.
+#@cli : '[dictionnary]' is a matrix in which each column is an element of the dictionnary D.
+#@cli : 'method' tells what projection algorithm must be applied. It can be:
+#@cli : \   - 0 = orthogonal projection.
+#@cli : \   - 1 = matching pursuit.
+#@cli : \   - 2 = matching pursuit, with a single orthogonal projection step at the end.
+#@cli : \   - >=3 = orthogonal matching pursuit where an orthogonal projection step is performed
+#@cli : \           every 'method-2' iterations.
+#@cli : 'max_iter' sets the max number of iterations processed for each signal.
+#@cli : If set to '0' (default), 'max_iter' is equal to the number of columns in D.
+#@cli : (only meaningful for matching pursuit and its variants).
+#@cli : 'max_residual' gives a stopping criterion on signal reconstruction accuracy.
+#@cli : (only meaningful for matching pursuit and its variants).
+#@cli : For each selected image, the result is returned as a matrix W
+#@cli : whose columns correspond to the weights associated to each column of D,
+#@cli : such that the matrix product D*W is an approximation of the input matrix.
+#@cli : Default values: 'method=0', 'max_iter=0' and 'max_residual=1e-6'.
 
 #@cli solve : [image] : (+)
 #@cli : Solve linear system AX = B for selected B-matrices and specified A-matrix.
