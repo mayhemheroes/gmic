@@ -9016,8 +9016,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Project matrix onto dictionnary.
         if (!std::strcmp("mproj",command)) {
           gmic_substitute_args(true);
-          int method = 0, max_iter = 0;
-          sep = *indices = 0; value = 0;
+          int method = 1, max_iter = 0;
+          sep = *indices = 0; value = 1e-6;
           if ((cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]%c%c",
                            gmic_use_indices,&sep,&end)==2 ||
                cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]%c,%d%c",
