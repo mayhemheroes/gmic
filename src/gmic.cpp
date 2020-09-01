@@ -2431,7 +2431,7 @@ const char *gmic::builtin_commands_names[] = {
   "c","camera","channels","check","check3d","col3d","color3d","columns","command","continue","convolve","correlate",
     "cos","cosh","crop","cumulate","cursor","cut",
   "d","db3d","debug","denoise","deriche","dijkstra","dilate","discard","displacement","display",
-    "distance","div","div3d","divide","do","done","double3d",
+    "distance","div","div3d","do","done","double3d",
   "e","echo","eigen","eikonal","elevation3d","elif","ellipse","else","endian","endif","endl","endlocal","eq",
     "equalize","erode","error","eval","exec","exp",
   "f","f3d","fft","fi","files","fill","flood","focale3d","for",
@@ -8078,7 +8078,17 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         // Matrix inverse.
-        gmic_simple_command("invert",invert,"Invert matrix image%s.");
+        if (!std::strcmp("invert",command)) {
+          gmic_substitute_args(false);
+          if (cimg_sscanf(argument,"%u%c",
+                          &pattern,&end)==1 && pattern<=1) ++position;
+          else pattern = 1;
+          print(images,0,"Invert matrix image%s, using %s-based solver.",
+                gmic_selection.data(),pattern?"LU":"SVD");
+          cimg_forY(selection,l) gmic_apply(invert((bool)pattern));
+          is_change = true;
+          continue;
+        }
 
         // Extract 3D isoline.
         if (!std::strcmp("isoline3d",command)) {
