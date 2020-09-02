@@ -6970,7 +6970,7 @@ upload_filters :
   x "cd "$HOME"/work/src/gmic-community && git pull"
 
   # Define the list of compatible versions.
-  (292,$_version) store. compat
+  (290,291,292,$_version) store. compat
 
   # Import filters from stdlib and community.
   files $HOME/work/src/gmic-community/include/*.gmic
@@ -10994,6 +10994,7 @@ transfer_pca : check ${"is_image_arg $1"} skip "${2=all}"
 
 _transfer_pca :
   $_transfer_pca_reference
+  transpose={`ref('transpose',s);$_version<292?(s[6]=0);s`}
   f.. "*begin(
          cov = [ "${"covariance_colors[0] _avg"}" ];
          avg = [ "$_avg" ];
@@ -11005,7 +11006,7 @@ _transfer_pca :
          avg_ref = [ "$_avg_ref" ];
          eig_ref = eig(cov_ref);
          lambda_ref = sqrt(eig_ref[0,s]);
-         rot_ref = mul(transpose(eig_ref[s,s*s],s),diag(lambda_ref),s);
+         rot_ref = mul("$transpose"(eig_ref[s,s*s],s),diag(lambda_ref),s);
 
          M = mul(rot_ref,rot,s);
        );
@@ -12878,6 +12879,7 @@ denoise_haar : check "${1=1.4}>=0 && isint(${2=0}) && $2>=0 && isint(${3=10}) &&
 #@cli : $ image.jpg +noise 20 cut[-1] 0,255 +denoise_patchpca[-1] ,
 denoise_patchpca : check "${1=1.8} && $1>=0 && isint(${2=7}) && $2>0 && isint(${3=11}) && $3>0 && isint(${4=5}) && $4>0"
   e[^-1] "Denoise image$? using patch-pca, with strength $1, patch size $2, lookup size $3 and spatial sampling $4."
+  transpose={`ref('transpose',s);$_version<292?(s[6]=0);s`}
   repeat $! l[$>] nm={n}
     N2={$2*$2} M2={$3*$3} stdnoise=${-std_noise}
     100%,100%,1,100% nm. aggreg
@@ -12914,7 +12916,7 @@ denoise_patchpca : check "${1=1.8} && $1>=0 && isint(${2=7}) && $2>0 && isint(${
       # Determine number of lambdas to keep and project neighboring patches.
       for (k = 0, k<size(lambda) && lambda[k]>=$1*"$stdnoise", ++k);
       Qt = eig["$N2","{$N2*$N2}"];
-      Q = transpose(Qt,"$N2");
+      Q = "$transpose"(Qt,"$N2");
       for (q = -m1, q<=m2, ++q,
         for (p = -m1, p<=m2, ++p,
           pY = Qt*(patch(x + p,y + q) - X);
@@ -23189,11 +23191,12 @@ nn_compile_backpropagate_fullyconnected :
   activation=${_nn_$1_activation}
   previous_name=${_nn_$1_previous}
   ind=${$1}
+  transpose={`ref('transpose',s);$_version<292?(s[6]=0);s`}
   _nn_code_begin.="sumdB_$1 = vector(#size(B_$1),0);"\
                   "sumdW_$1 = vector(#size(W_$1),0);"
   _nn_code_body.="dB_$1 = dE_$1*v_apply(d_activation_"$activation",Z_$1);"\
                  "dW_$1 = mul(dB_$1,O_"$previous_name",size(O_"$previous_name"));"\
-                 "dE_"$previous_name" = mul(transpose(W_$1,w#"$ind"-1),dB_$1,1);"\
+                 "dE_"$previous_name" = mul("$transpose"(W_$1,w#"$ind"-1),dB_$1,1);"\
                  "sumdB_$1+=dB_$1; sumdW_$1+=dW_$1;"
   _nn_code_end.="merge(sumdB_$1,+); merge(sumdW_$1,+);"\
                 "store(sumdB_$1/=nb_inputs,'_nn_$1_dB');"\
@@ -23971,6 +23974,7 @@ is_windows :
 #@cli math_lib
 #@cli : Return string that defines a set of several useful macros for the embedded math evaluator.
 math_lib :
+  transpose={`ref('transpose',s);$_version<292?(s[6]=0);s`}
   u "
 
   # Return number of elements in min-heap #ind.
@@ -24180,7 +24184,7 @@ math_lib :
     _xmax = min(w#ind-1,max(_A[0],_B[0],_C[0]));
     _ymin = max(0,min(_A[1],_B[1],_C[1]));
     _ymax = min(h#ind-1,max(_A[1],_B[1],_C[1]));
-    _M = transpose([_A,1,_B,1,_C,1],3);
+    _M = "$transpose"([_A,1,_B,1,_C,1],3);
     for (_y = _ymin, _y<_ymax, ++_y,
       for (_x = _xmin, _x<_xmax, ++_x,
         _L = round(solve(_M,[_x,_y,1]),1e-5);
@@ -36114,6 +36118,7 @@ fx_mix_pca :
     endl else vmax0,vmax1,vmax2=1 fi
 
     # Modify image values.
+    transpose={`ref('transpose',s);$_version<292?(s[6]=0);s`}
     f "begin(
          do_gamma(val,vmax,gamma) = (vmax*sign(val)*(abs(val)/vmax)^gamma);
 
@@ -36128,7 +36133,7 @@ fx_mix_pca :
          eig = eig(["$C"]);
          for (k = 3, k<12, k+=3, eig[k]<0?copy(eig[k],eig[k,3]*=-1,3));
          Pt = eig[3,9];
-         P = transpose(Pt,3);
+         P = "$transpose"(Pt,3);
          T = mul(P,diag(10^[$1,$5,$9]),3);
 
          R1 = rot(eig[3,3],$3);
