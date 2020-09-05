@@ -12452,6 +12452,25 @@ warp_patch : check ${is_image_arg\ $1}" && isint(${2=3}) && $2>=1 && isint(${3=$
     s. c,-{0,s-1} /[-2,-1] k.
   endl done
 
+#@cli warp_rbf : xs0[%],ys0[%],xt0[%],yt0[%],...,xsN[%],ysN[%],xtN[%],ytN[%]
+#@cli : Warp selected images using RBF-based interpolation.
+#@cli : Each argument (xsk,ysk)-(xtk,ytk) corresponds to the coordinates of the
+#@cli : source and target points that define the overall image deformation.
+#@cli : $ image.jpg +warp_rbf 0,0,0,0,100%,0,100%,0,100%,100%,100%,100%,0,100%,0,100%,50%,50%,70%,50%,25%,25%,25%,75%
+warp_rbf :
+  e[^-1] "Warp image$? using RBF interpolation, with keypoints ($*)."
+  $=arg N={$#/4}
+  if int($N)!=$N error[0--2] "Command 'warp_rbf': Wrong number of arguments ($#)." fi
+  repeat $! l[$>]
+    # Retrieve absolute keypoints coordinates.
+    4,$N
+    repeat wh a=${arg{1+$>}} isp=${"is_percent "$a} eval i[$>]=$isp?($>%2?w#0:h#0)*$a:$a done
+    s. x,2 -. .. a[-2,-1] x permute. yzcx
+
+    # Generate warping field by RBF interpolation.
+    rbf. {0,[w,h]} warp[0] .,1,1,3 rm.
+  endl done
+
 #---------------------------------
 #
 #@cli :: Filtering
