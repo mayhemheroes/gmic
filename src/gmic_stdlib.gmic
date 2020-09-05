@@ -22611,15 +22611,16 @@ __median_stream :
 #@cli : Create morphing sequence between selected images.
 #@cli : Default values: 'smoothness=0.1' and 'precision=4'.
 #@cli : $ image.jpg +rotate 20,1,1,50%,50% morph 9
-morph : check "$1>=0 && ${2=0.1}>=0 && ${3=4}>=0"
-  e[^-1] "Create morphing sequence between image$?, with $1 inner frames, smoothness $2 and precision $3.\n"
-  if !$1 return fi
-  r[^0] [0],3 repeat $!-1 nm={$>,n} l[$<,{$<+1}]
+morph : check "$1>=0.5 && ${2=0.1}>=0 && ${3=4}>=0"
+  nbf={round($1)}
+  e[^-1] "Create morphing sequence between image$?, with "$nbf" inner frames, smoothness $2 and precision $3.\n"
+  r[^0] [0],3
+  repeat $!-1 nm={$>,n} l[$<,{$<+1}]
     e[] "\r > Morph image "$>" to image "{$>+1}".    "
     +equalize[0,1] n[-2,-1] 0,255
     +displacement[3] [2],$2,$3 +displacement[2] [3],$2,$3 rm[-4,-3]
-    repeat $1+2 if $>&&$<
-      t={$>/($1+1)} omt={1-$t}
+    repeat $nbf+2 if $>&&$<
+      t={$>/($nbf+1)} omt={1-$t}
       +*[2] $t +warp[0] .,1,1,1 rm.. *. $omt
       +*[3] {1-$t} +warp[1] .,1,1,1 rm.. *. $t
       +[-2,-1]
@@ -22640,6 +22641,46 @@ morph_files : check "isint(${2=10}) && $2>0 && ${3=0.1}>=0 && ${4=4}>=0 &&
   e[^-1] "Morph input image files '$1', with $2 inner frames, smoothness $3, precision $4, first frame $5,
           last frame $6, frame step $7 and output filename '$8'.\n"
   files 3,"$1" _N=/{narg(${})-1} arg2var _file,${} _morph_stream[] "${_file{$frame+1}}",${2-7},"$8"
+
+#@cli morph_rbf : nb_inner_frames>=1,xs0[%],ys0[%],xt0[%],yt0[%],...,xsN[%],ysN[%],xtN[%],ytN[%]
+#@cli : Create morphing sequence between selected images, using RBF-based interpolation.
+#@cli : Each argument (xsk,ysk)-(xtk,ytk) corresponds to the coordinates of a keypoint
+#@cli : respectively on the source and target images. The set of all keypoints define the overall image deformation.
+morph_rbf : check "$1>=0.5"
+  nbf={round($1)}
+  e[^-1] "Create morphing sequence between image$? using RBF interpolation, with "$nbf" inner frames and keypoints ($*)."
+  $=arg N={($#-1)/4}
+  if int($N)!=$N error[0--2] "Command 'morph_rbf': Wrong number of arguments ($#)." fi
+  r[^0] [0],3
+  repeat $!-1 nm={$>,n} l[$<,{$<+1}]
+    e[] "\r > Morph image "$>" to image "{$>+1}".    "
+
+    # Retrieve absolute keypoints coordinates.
+    4,$N
+    repeat wh a=${arg{2+$>}} isp=${"is_percent "$a} eval i[$>]=$isp?($>%2?w#0:h#0)*$a:$a done
+    permute. yzcx
+
+    # Generate forward and backward warping fields.
+    +f. "[i0,i1,i2-i0,i3-i1]"
+    f.. "[i2,i3,i0-i2,i1-i3]"
+    rbf[-2,-1] {0,[w,h]}
+
+    # Compute morphing sequence.
+    repeat $nbf+2 if $>&&$<
+      [0],[0],1,[0],"
+        const interpolation = 1;
+        const boundary = 3;
+        const t = "$>"/("$nbf"+1);
+        const omt = 1 - t;
+        begin(print([t,omt]));
+        ub = i(#2,x,y,0,0);
+        vb = i(#2,x,y,0,1);
+        uf = i(#3,x,y,0,0);
+        vf = i(#3,x,y,0,1);
+        omt*I(#0,x - t*uf,y - t*vf) + t*I(#1,x - omt*ub,y - omt*vb)"
+    fi done
+    rm[2,3] mv[2--1] 1 nm $nm
+  endl done
 
 #@cli morph_video : video_filename,_nb_inner_frames>0,_smoothness>=0,_precision>=0,\
 # _first_frame>=0,_last_frame={ >=0 | -1=last },_frame_step>=1,_output_filename
@@ -24766,7 +24807,7 @@ strcapitalize :
 #@cli strcontains : string1,string2
 #@cli : Return 1 if the first string contains the second one.
 strcontains :
-  l[] ('"$1"') s +,{'"$2"'} u {$!>1} rm endl
+  u {"find(['$1'],['$2'])>=0"}
 
 #@cli strlen : string1
 #@cli : Return the length of specified string argument.
