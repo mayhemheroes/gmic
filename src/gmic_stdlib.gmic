@@ -6051,7 +6051,7 @@ update_download_version : check "
 
 #@cli parse_gui : _filter_name,_outputmode
 #@cli : Parse selected filter definitions and generate info about filters in selected output mode.
-#@cli : 'outputmode' can be { json | list | print | update | zart }.\n
+#@cli : 'outputmode' can be { json | list | print | strings | update | zart }.\n
 #@cli : It is possible to define a custom output mode, by implementing the following commands
 #@cli : ('outputmode' must be replaced by the name of the custom user output mode):
 #@cli : . 'parse_gui_outputmode' : A command that outputs the parsing information with a custom format.
@@ -6731,6 +6731,60 @@ _parse_gui_json :
     replace_str. "</small>",""
     u {t} rm.
   onfail u "" endl
+
+#
+# Output mode 'strings'.
+# (Extract all strings from filters, for translation purpose).
+#
+
+isl=0; fo
+
+parse_gui_strings :
+  e[] "  >> Generate output, in 'strings' mode.\n"
+  m "is_str : u {\"s = ['$""1']; isl = 0; "\
+    "for (k = 0, k<size(s), ++k, inrange(lowercase(s[k]),_'a',_'z')?(isl = 1; break())); isl && size(s)>2 \"}"
+  N={$_nbfilters-1}
+  repeat $_nbfilters,f
+    e[] "\r  >> "$_gmic_c[#$f/$N]$_gmic_n" "{`copy(vector48(_'" "'),['${_f${f}_path}${_f${f}_name}'])`}
+    name=${_f${f}_name}
+    is_str $name if ${} ({'$name'}:y) nm. $name fi
+    repeat ${_f${f}_nbparams},p
+      pname=${_f${f}_p${p}_name}
+      ptype=${_f${f}_p${p}_type}
+      is_str $pname if ${} ({'$pname'}:y) nm. $pname fi
+      if '$ptype'=='choice'
+        repeat ${_f${f}_p${p}_nbargs},a
+          ({'${_f${f}_p${p}_a${a}}'}) discard. {'\"'}
+          aname={t} rm.
+          is_str $aname if ${} ({'$aname'}:y) nm. $aname fi
+        done
+      fi
+    done
+  done
+  repeat $! nm[$>] {`lowercase(['{$>,n}'])`} done
+  sort_list +,n
+  repeat $!-1 if ['{$<,n}']==['{{$<+1},n}'] rm[$<] fi done
+  um is_str
+
+strings2ts :
+  res="<?xml version=\"1.0\" encoding=\"utf-8\"?>"\n\
+    "<!DOCTYPE TS>"\n\
+    "<TS version=\"2.1\" language=\"fr\">"\n\
+    "  <context>"\n\
+    "  <name>GmicFilters</name>"\n
+  repeat $! l[$>]
+    source={t}
+    res.="  <message>"\n
+    res.="    <source>"$source"</source>"\n
+    res.="    <translation>"$source"</translation>"\n
+    res.="  </message>"\n
+  endl done
+  res.="</context>"\n\
+    "</TS>"
+  rm ('$res':y)
+
+
+# trans :fr -brief "♥ Support Us ! ♥"
 
 #
 # Output mode 'zart' (output in stdout).
