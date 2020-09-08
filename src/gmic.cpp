@@ -10836,6 +10836,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   iinterpolation==4?"grid":iinterpolation==5?"cubic":"lanczos",
                   boundary<=0?"dirichlet":boundary==1?"neumann":boundary==2?"periodic":"mirror",
                   cx,cy,cz,cc);
+
+            error(true,images,0,0,"DEPRECATED SYNTAX");
+
             cimg_forY(selection,l) gmic_apply(resize(nvalx,nvaly,nvalz,nvalc,iinterpolation,boundary,cx,cy,cz,cc));
           } else if ((cx=cy=cz=cc=0, iinterpolation=1, boundary=0, true) &&
                      (cimg_sscanf(argument,"%255[][a-zA-Z0-9_.eE%+-]%c",

@@ -3266,7 +3266,7 @@ _display_histogram : check "${1=0}>=0 && ${2=0}>=0 && ${3=256}>0" skip ${4=0%},$
         axes. $m,$M,$vM,0,14,1,255
         if $m>0 axes. 0,0,$vM,0,14,1,200 fi
         if $M<0 axes. {w-1},{w-1},$vM,0,14,1,200 fi
-        +dilate. 3 r.. ... j... ..,0,0,0,0,1,.,255 rm[-2,-1]
+        +dilate. 3 ri.. ... j... ..,0,0,0,0,1,.,255 rm[-2,-1]
       fi
     endl done
     a z nm $nm
@@ -8092,7 +8092,7 @@ med :
 #@cli : or compute the pointwise product of selected images.
 #@cli : (eq. to '*').
 #@cli : $ image.jpg +mul 2 cut 0,255
-#@cli : $ image.jpg (1,2,3,4,5,6,7,8) resize[-1] [0] mul[0] [-1]
+#@cli : $ image.jpg (1,2,3,4,5,6,7,8) ri[-1] [0] mul[0] [-1]
 #@cli : $ image.jpg mul '1-3*abs(x/w-0.5)' cut 0,255
 #@cli : $ image.jpg +luminance negate[-1] +mul
 
@@ -8282,7 +8282,7 @@ cast :
 complex2polar :
   e[^-1] "Compute complex to polar transforms of image$?."
   repeat int($!/2) l[{2*$>},{2*$>+1}]
-    r[1] [0],3 +atan2[1] [0] nm. {1,n} sqr[-3,-2] +[-3,-2] sqrt..
+    ri[1] [0],3 +atan2[1] [0] nm. {1,n} sqr[-3,-2] +[-3,-2] sqrt..
   endl done
 
 #@cli compress_clut : _max_error>0,_avg_error>0,_max_nbpoints>=8 | 0 (unlimited),\
@@ -8956,7 +8956,7 @@ otsu : check "isint(${1=256}) && $1>0"
 polar2complex :
   e[^-1] "Compute polar to complex transforms of image$?."
   repeat int($!/2) l[{2*$>},{2*$>+1}]
-    r[1] [0],3 +sin. cos.. *. ... *[-3,-2]
+    ri[1] [0],3 +sin. cos.. *. ... *[-3,-2]
   endl done
 
 #@cli quantize : nb_levels>=1,_keep_values={ 0 | 1 },_quantization_type={ -1=median-cut | 0=k-means | 1=uniform }
@@ -10360,7 +10360,7 @@ pseudogray : check "isint(${1=5}) && $1>=0 && ${2=2.3}>=0 && isint(${3=8}) && $3
   {$1+1},{$1+1},{$1+1},1,'x' +f. 'y' +f. 'z' a[-3--1] c r. {w*h*d},1,1,3,-1
   f. 'R=i(x,0,0,0);G=i(x,0,0,1);B=i(x,0,0,2);if(min(R,G,B),-1,i)'
   permute. cxyz discard. -1 r. 3,{h/3},1,1,-1 permute. yzcx
-  r.. {w*100}% r. ..,0,2 +[-2,-1]
+  r.. {w*100}% ri. ..,0,2 +[-2,-1]
   f. 'R=i(x,0,0,0);G=i(x,0,0,1);B=i(x,0,0,2);if(max(R,G,B)>2^$3-1,-1,i)'
   permute. cxyz discard. -1 r. 3,{h/3},1,1,-1 permute. yzcx
   n. 0,255
@@ -10390,10 +10390,10 @@ replace_color : check "$1>=0 && $2>=0"
   l[] (${3--1}) y c s c,2 col1={0,^} col2={1,^} rm endl
   e[^-1] "Replace color ("$col1") by color ("$col2") in image$?, with tolerance $1 and smoothness $2."
   repeat $! l[$>]
-    1,1,1,100%,$col1 r[1] [0]
+    1,1,1,100%,$col1 ri[1] [0]
     if $1 -[1] [0] norm[1] <=[1] $1 else ==[1] [0] l[1] s c & endl fi
     b[1] $2
-    1,1,1,{0,s},$col2 r[2] [0] j[0] [2],0,0,0,0,1,[1] k[0]
+    1,1,1,{0,s},$col2 ri[2] [0] j[0] [2],0,0,0,0,1,[1] k[0]
   endl done
 
 #@cli retinex : _value_offset>0,_colorspace={ hsi | hsv | lab | lrgb | rgb | ycbcr },\
@@ -10428,7 +10428,7 @@ _retinex :
 rgb2bayer : skip ${1=0},${2=0}
   e[^-1] "Transform image$? to a RGB-Bayer "${arg\ 1+!$2,color,monochrome}" grid, starting from pattern '$1'."
   to_rgb repeat $! l[$>]
-    _rgb2bayer$1 r[1] [0],0,2 * if !$2 s c + fi
+    _rgb2bayer$1 ri[1] [0],0,2 * if !$2 s c + fi
   endl done
 
 _rgb2bayer0 : (1,0;0,0^0,1;1,0^0,0;0,1)
@@ -11785,10 +11785,17 @@ _montage :
 #@cli : e.g. 'xycz', 'cxyz', ...
 #@cli : $ image.jpg permute yxzc
 
+#@cli ri : [reference],_interpolation,_boundary_conditions,_ax,_ay,_az,_ac
+#@cli : Resize selected images as specified [reference].
+#@cli : 'ri' means 'Resize as Image'.
+#@cli : Default values: 'interpolation=1', 'boundary_conditions=0' and 'ax=ay=az=ac=0'.
+ri : check ${"is_image_arg $1"}" && isint(${2=1}) && $2>=-1 && $2<=6 && "\
+   "isint(${3=0}) && $3>=0 && $3<=3 && isnum(${4=0}) && isnum(${5=0}) && isnum(${6=0}) && isnum(${7=0})"
+  pass$1 r[^-1] .,.,.,.,${2-7} rm.
+
 #@cli r : eq. to 'resize'. : (+)
 
-#@cli resize : [image],_interpolation,_boundary_conditions,_ax,_ay,_az,_ac : \
-# {[image_w] | width>0[%]},_{[image_h] | height>0[%]},_{[image_d] | depth>0[%]},\
+#@cli resize : {[image_w] | width>0[%]},_{[image_h] | height>0[%]},_{[image_d] | depth>0[%]},\
 # _{[image_s] | spectrum>0[%]},_interpolation,_boundary_conditions,_ax,_ay,_az,_ac : (+)
 #@cli : Resize selected images with specified geometry.
 #@cli : (eq. to 'r').\n
@@ -11801,7 +11808,6 @@ _montage :
 #@cli : 'ax,ay,az,ac' set the centering along each axis when 'interpolation=0 or 4'
 #@cli : (set to '0' by default, must be defined in range [0,1]).
 #@cli : Default values: 'interpolation=1', 'boundary_conditions=0' and 'ax=ay=az=ac=0'.
-#@cli : $ image.jpg (0,1;0,1^0,0;1,1^1,1;1,1) resize[-1] [-2],3 mul[-2] [-1]
 #@cli : $ image.jpg +resize[-1] 256,128,1,3,2 +resize[-1] 120%,120%,1,3,0,1,0.5,0.5 \
 # +resize[-1] 120%,120%,1,3,0,0,0.2,0.2 +resize[-1] [0],[0],1,3,4
 
@@ -12637,7 +12643,7 @@ blur_radial : skip ${2=50%},${3=50%}
 blur_selective : check "${1=5}>=0 && ${2=0.5}>=0 && isint(${3=5}) && $3>0"
   e[^-1] "Blur image$? using $3 selective gaussian scales, with sigma $1 and edges $2."
   repeat $! l[$>] nm={0,n}
-    +gradient_norm +. 1 ^. {-max(0.01,$2)} quantize. {$3+1},0,1 min. {$3-1} r. ..
+    +gradient_norm +. 1 ^. {-max(0.01,$2)} quantize. {$3+1},0,1 min. {$3-1} ri. ..
     repeat $3 +==. $> *. ... +[-2,-1] b.. {$1/($3+1)} done
   rm.. nm $nm endl done
 
@@ -12901,7 +12907,7 @@ deinterlace : skip ${1=0}
   e[^-1] "Deinterlace image$? with "${arg\ 1+!$1,motion-compensated,standard}" method."
   repeat $! l[$>]
     wh={w},{h}
-    s y a[0--1:2] y a[^0] y r.. .,0 r 100%,200%,1,100%,5
+    s y a[0--1:2] y a[^0] y ri.. .,0 r 100%,200%,1,100%,5
     if $1!=0 +displacement. ..,0.05 warp... .,1,1,1 rm. fi
     + / 2 c 0,255 r $wh
   endl done
@@ -13482,7 +13488,7 @@ inpaint_pde : check ${is_image_arg\ $1}" && ${2=75%}>=0 && isint(${3=1}) && $3>=
       if $>>0" || "$nb_scales==1
 
         # Apply diffusion iterations.
-        r... ..,3
+        ri... ..,3
         if $3==0 # Isotropic diffusion
           repeat $nb_iter j... ..,0,0,0,0,1,. b... 0.5 done
 
@@ -13813,7 +13819,7 @@ map_tones_fast : check "${1=3%}>=0 && ${2=0.3}>=0"
   repeat $! l[$>]
     +luminance b. $1 n 0,1
     +*. 2 -. 1 abs. *. {$2*log(10)} exp.
-    <=.. 0.5 r. ...
+    <=.. 0.5 ri. ...
     +*... -1 +. 1 ^. .. *. -1 +. 1 *. ...
     ^[-4,-2] ==.. 0 *[-3,-2] +
   endl done n 0,255
@@ -14267,7 +14273,7 @@ solve_poisson : check "${2=60}>=0 && ${3=5}>0 && ${4=0}>=0"
     repeat if($4,$4,int(max(log2(max(w,h))-1,1)))
       f={2^$<}
       r[1] {0,max(1,w/$f)},{0,max(1,h/$f)},1,100%,3
-      +r[0] [1],2 l. -$1 k[0] endl
+      +ri[0] [1],2 l. -$1 k[0] endl
       repeat $2 +laplacian.. -. .. *. {$3/max(1e-8,abs(im),abs(iM))} +[-3,-1] done
       rm.
     done
@@ -14916,7 +14922,7 @@ min_patch : check "isint(${1=16}) && $1>=1"
 #@cli : Compute minimal path between two points on selected potential maps.
 #@cli : Default value: 'is_high_connectivity=0'.
 #@cli : $ image.jpg +gradient_norm fill[-1] 1/(1+i) minimal_path[-1] 0,0,0,100%,100%,0 pointcloud[-1] 0 *[-1] 280 \
-# to_rgb[-1] resize[-1] [-2],0 or
+# to_rgb[-1] ri[-1] [-2],0 or
 minimal_path : check "$1>=0 && $2>=0 && $3>=0" skip ${7=0}
   e[^-1] "Compute minimal path between points ($1,$2,$3) and ($4,$5,$6) for potential map$?, with "\
          ${arg\ 1+$7,low,high}" connectivity."
@@ -14955,7 +14961,7 @@ patches : check "isint($1) && $1>0 && isint($2) && $2>0 && isint($3) && $3>0"
   (${4--1}) r. 3,{w/3},1,1,-1 permute. yzcx N={w}
   H={int(sqrt(w))} W={round(w/$H,1,1)} r. {$W*$H},1,1,3,0 r. $W,$H,1,3,-1
   r. {w*$1},{h*$2},{d*$3}
-  $1,$2,$3,1,x-{int($1/2)} +f. y-{int($2/2)} +f. z-{int($3/2)} a[-3--1] c r. ..,0,2 +[-2,-1]
+  $1,$2,$3,1,x-{int($1/2)} +f. y-{int($2/2)} +f. z-{int($3/2)} a[-3--1] c ri. ..,0,2 +[-2,-1]
   repeat $!-1 warp[$>] .,0,0,0 done rm.
   repeat $! l[$<] s y,$H s x,$W k[0-{$N-1}] endl done
 
@@ -14980,7 +14986,7 @@ plot2value :
   e[^-1] "Retrieve values from 2D graph plot$?."
   repeat $! l[$>]
     s c >= 50%
-    repeat $! l[$>] (1,{w}) r[1] [0],3 * histogram {w},1,{w} endl done
+    repeat $! l[$>] (1,{w}) ri[1] [0],3 * histogram {w},1,{w} endl done
     a c
   endl done
 
@@ -16969,7 +16975,7 @@ truchet : check "isint(${1=32}) && $1>0 && ${2=3}>=0" skip ${3=1}
     $1,$1 = 1,0,0 = 1,100%,100% distance 1,{1+$3} M={int(iM/2)} # Generate truchet pattern and its mirrored version.
     ir {$M-$2/2-($1%2)},{$M+$2/2} +mirror y a x
     {round($w/$1,1,1)},{round($h/$1,1,1)} rand. 0,1 >=. 50% r. {w*$1},{h*$1} *. $1
-    channels. 0,1 (0,{$1-1}) r. $1,$1,1,1,3 +transpose. a[-2,-1] c r. ..,0,2 +[-2,-1]
+    channels. 0,1 (0,{$1-1}) r. $1,$1,1,1,3 +transpose. a[-2,-1] c ri. ..,0,2 +[-2,-1]
     warp.. . rm. >= 50% r $w,$h,1,1,0 r 100%,100%,1,$s
   nm $nm endl done
 
@@ -17646,7 +17652,7 @@ gyroid3d : check ${1=32}>0 skip ${2=5}
 
 #@cli histogram3d
 #@cli : Get 3D color histogram of selected images.
-#@cli : $ image.jpg histogram3d colorcube3d primitives3d[-1] 1 add3d
+#@cli : $ image.jpg resize2dx 64 histogram3d colorcube3d primitives3d[-1] 1 add3d
 histogram3d :
   e[^-1] "Get 3D color histogram of image$?."
   to_rgb repeat $! l[$>]
@@ -18910,11 +18916,11 @@ text_pointcloud3d : skip "${1=text1}","${2=text2}",${3=1}
   expand_xy[-2,-1] 2,0 dilate[-2,-1] 2
   permute. zyxc r[-2,-1] ${-max_whd} &[-2,-1]
 
-  100%,100% rand. 0,{{-2,d}-1} round. r. .. f. 'if(z==i,1,0)'
+  100%,100% rand. 0,{{-2,d}-1} round. ri. .. f. 'if(z==i,1,0)'
   distance. 1 +. 1 +f. 1 rv[-2,-1] /[-2,-1] *. ..
   +dilate. 0,0,{d} ==[-2,-1] *. ..
 
-  1,100%,100% rand. 0,{{-2,w}-1} round. r. .. f. 'if(x==i,1,0)'
+  1,100%,100% rand. 0,{{-2,w}-1} round. ri. .. f. 'if(x==i,1,0)'
   distance. 1 +. 1 +f. 1 rv[-2,-1] /[-2,-1] *. ...
   +dilate. 0,0,{d} ==[-2,-1] *[-3,-1]
 
@@ -19781,7 +19787,7 @@ img2ascii : check "${2=16}>0 && ${3=20%}>=0 && ${4=16}>0"
     s[0] y,-$h s[0--3] x,-$w r[0--3] $w,$h,1,1,0,0
     repeat $!-2 l[$>,-2,-1]
       rprogress {$>*100/($!-2)}
-      r[0] [1] -[0] [1] sqr[0] r[0] 1,1,100%,1,2 y[0]
+      ri[0] [1] -[0] [1] sqr[0] r[0] 1,1,100%,1,2 y[0]
       C={0,ym} rm[0]
       +slices[1] $C mv. 0
       if narg("$5") +f[0] $C a[0,-1] c fi
@@ -19809,7 +19815,7 @@ imagegrid : skip ${2=$1}
   repeat $! l[$>]
     ({w},{h}) ($1,$2) /[-2,-1] round. 1 r.. {^},..,..,2 rm.
     ({w},{h}) ($1,$2) *[-2,-1] r.. {^},..,..,2 rm.
-    $1,$2,1,.,1 shift. 1,1 r. ..,0,2 *
+    $1,$2,1,.,1 shift. 1,1 ri. ..,0,2 *
   endl done
 
 #@cli imagegrid_hexagonal : _resolution>0,0<=_outline<=1
@@ -20228,7 +20234,7 @@ brushify : check ${"is_image_arg $1"}" &&"\         # $1: [brush]
     repeat $2-1
       ratio={v=(1+$>)/max(1,$2-1);100*((1-v)+$3*v)}%
       +r[brush,brushlight] $ratio,$ratio,100%,1,2
-      r[-2,-1] [brush],0,0,0.5,0.5
+      ri[-2,-1] [brush],0,0,0.5,0.5
     done
     a[^:2] z a[^0] z
   endl
@@ -20346,7 +20352,7 @@ cubism : check "${1=50}>=0 && ${2=10}>=0 && $2<=50 && ${5=0}>=0" skip ${3=75},${
 draw_whirl : skip ${1=100}
   e[^-1] "Apply whirl drawing effect on image$? with amplitude $1."
   repeat $! l[$>]
-    100%,100% noise. 70,2 ==. 1 *. 255 r. .. &[-1,-2] smooth. $1,0,1,2,2
+    100%,100% noise. 70,2 ==. 1 *. 255 ri. .. &[-1,-2] smooth. $1,0,1,2,2
     sqrt. n. 0,255 equalize.
   endl done
 
@@ -20379,8 +20385,8 @@ drop_shadow : check "${3=5}>=0 && ${4=0}>=0 && $4<=1" skip ${1=20},${2=$1},${5=1
     +channels. 100%
     if !$4 shift. $dx,$dy # Flat shadow.
     else # Curved shadow.
-      (0;{pi}) r. ..,3 sin. *. -$4 +. 1 *. $dx
-      (0,{pi}) r. ..,3 sin. *. -$4 +. 1 *. $dy
+      (0;{pi}) ri. ..,3 sin. *. -$4 +. 1 *. $dx
+      (0,{pi}) ri. ..,3 sin. *. -$4 +. 1 *. $dy
       a[-2,-1] c warp.. .,1,0,0 rm.
     fi
     b. $sigma,0
@@ -20497,7 +20503,7 @@ halftone : check "${1=5}>=2 && ${2=8}>=2 && ${3=8}>=2 && ${5=0}>=0" skip ${4=5}
       if $4>=3 <. {100*$</($1-1.1)}% *. {-255} +. {255-$>}
       else <. {100*$>/($1-1.1)}% *. 255 -. $>
       fi
-      r. ..,0,2 b. $5 +==.. $> *[-2,-1] +[-2,-1]
+      ri. ..,0,2 b. $5 +==.. $> *[-2,-1] +[-2,-1]
     done endl done a c
   endl done
 
@@ -20544,7 +20550,7 @@ hardsketchbw : skip ${1=300},${2=50},${3=0.1},${4=20},${5=0}
 hearts : skip ${1=10}
   e[^-1] "Apply heart filter on image$?, with density $1."
   repeat $! l[$>]
-    100%,100%,1 noise. $1,2 ==. 1 r. .. n. 0,1 *[-1,-2] _heart9x7
+    100%,100%,1 noise. $1,2 ==. 1 ri. .. n. 0,1 *[-1,-2] _heart9x7
     dilate.. . rm.
   endl done
 
@@ -20606,7 +20612,7 @@ lightrays : check "${1=50}>=0 && $1<=100 && ${4=1}>=0 && ${5=1}>=0" skip ${2=50%
     repeat log2(w) +shift. {2^$>} +[-2,-1] done
     function1d 0.5,0,1,{$4*w},1,{1+($4+1-$5)*w},0 r. {-2,w},1,1,1,0
     (1,{w}) r. {-2,w},1,1,1,3 /[-2,-1]
-    r. .. *[-2,-1] polar2euclidean $2,$3 n 0,255
+    ri. .. *[-2,-1] polar2euclidean $2,$3 n 0,255
   endl done
 
 #@cli light_relief : _ambient_light,_specular_lightness,_specular_size,_darkness,_light_smoothness,_xl,_yl,_zl,\
@@ -20977,7 +20983,7 @@ sketchbw :
 sponge : skip ${1=13}
   e[^-1] "Apply sponge filter on image$?, with brush size $1."
   repeat $! l[$>]
-    100%,100%,1,1 noise. 20,2 ==. 1 r. .. n. 0,1 *[-1,-2]
+    100%,100%,1,1 noise. 20,2 ==. 1 ri. .. n. 0,1 *[-1,-2]
     _circle $1 dilate.. . rm.
   endl done
 
@@ -21221,7 +21227,7 @@ weave : check "${1=6}>=0 && ${2=65}>=0 && $2<=100 && ${3=40}>=0 && $3<=100 && ${
     1,$h =. 1,0,50% distance. 1 ^. $p c. 50%,100% r. {max(1,round($2*$w%))},100%
     $w,1 =. 1,50% distance. 1 ^. $p c. 50%,100% *. -1 r. 100%,{max(1,round($2*$h%))}
     +*. -1 +*... -1 n[-4,-2] 0,$s n[-3,-1] $s,255
-    {w},1 1,... rand[-2,-1] 0,1 b[-2,-1] $6% n[-2,-1] -$5,$5 r. [-4] +[-5] . +[-4,-1] +[-5] . +[-2,-1]
+    {w},1 1,... rand[-2,-1] 0,1 b[-2,-1] $6% n[-2,-1] -$5,$5 ri. [-4] +[-5] . +[-4,-1] +[-5] . +[-2,-1]
     +f... 255 a[-4,-1] c +f. 255 a[-2,-1] c
 
     amp_x={$8*($w-w)/2} amp_y={$9*($w-w)/2}
@@ -21243,7 +21249,7 @@ whirls : skip ${1=3},${2=6},${3=0.5},${4=1.8}
   e[^-1] "Add random whirl texture to image$?, with texture $1, smoothness $2, darkness $3 and lightness $4."
   repeat $! l[$>]
     100%,100% noise. 0.3,2 ==. 1 repeat $1 b. $2 +. 0.1 gradient_norm. ^. 0.2 done
-    n. $3,$4 r. .. * c 0,255
+    n. $3,$4 ri. .. * c 0,255
   endl done
 
 #------------------------------------
@@ -21340,7 +21346,7 @@ flower : skip ${1=30},${2=6},${3=0},${4=0},${5=50%},${6=50%},${7=3}
 kaleidoscope : skip ${1=50%},${2=50%},${3=100},${4=30},${5=3}
   e[^-1] "Create kaleidoscope effect from image$?, with center point ($1,$2), radius $3, angle $4 deg."
   euclidean2polar $1,$2,1,$5 repeat $! l[$>]
-    +columns 0,$3% rows. 0,$4% r. ..,0,2 nm[1] {0,n} rm[0]
+    +columns 0,$3% rows. 0,$4% ri. ..,0,2 nm[1] {0,n} rm[0]
   endl done polar2euclidean $1,$2,1,$5
 
 #@cli map_sphere : _width>0,_height>0,_radius,_dilation>0,_fading>=0,_fading_power>=0
@@ -21663,7 +21669,7 @@ cracks : check "${1=25}>=0" skip ${2=0},${3=1},${4=0}
 light_patch : skip ${1=10},${2=0.9},${3=1.7}
   e[^-1] "Apply light patches to image$?, with density $1, darkness $2 and lightness $3."
   repeat $! l[$>]
-    n 0,255 $1,$1 noise. 40 r. ..,5 c. 0,255
+    n 0,255 $1,$1 noise. 40 ri. ..,5 c. 0,255
     n. $2,$3 * c 0,255
   endl done
 
@@ -21675,7 +21681,7 @@ noise_hurl : skip ${1=10}
   e[^-1] "Add hurl noise to image$?, with amplitude $1%."
   repeat $! l[$>]
     +f 0 noise. 10 n. {-2,[im,iM]} 100%,100%
-    noise. $1,2 >. 0 r. ..
+    noise. $1,2 >. 0 ri. ..
     *.. . *. -1 +. 1 *[-3,-1] +
   endl done
 
@@ -21710,7 +21716,7 @@ shade_stripes : skip ${1=5},${2=1},${3=0.8},${4=2}
   e[^-1] "Add "${arg\ 1+!$2,vertical,horizontal}" shaded stripes to image$?, with frequency $1, darkness $3 and
           lightness $4."
   n 0,255 repeat $! l[$>]
-    {max(1,w*($2!=0))},{max(1,h*($2==0))} noise. $1,2 ==. 1 distance. 1 r. .. n. $3,$4 * c 0,255
+    {max(1,w*($2!=0))},{max(1,h*($2==0))} noise. $1,2 ==. 1 distance. 1 ri. .. n. $3,$4 * c 0,255
   endl done
 
 #@cli shadow_patch : _opacity>=0
@@ -21721,7 +21727,7 @@ shadow_patch : skip ${1=0.7}
   e[^-1] "Apply shadow patches to image$?, with opacity $1."
   repeat $! l[$>]
     100%,100%,1,1 shift. -2,-2 shift. 1,1
-    plasma. 3,0.3,8 abs. b. 1 c. 3%,15% r. ..
+    plasma. 3,0.3,8 abs. b. 1 c. 3%,15% ri. ..
     n. $1,1 *
   endl done
 
@@ -21746,7 +21752,7 @@ spread : skip ${1=3},${2=$1},${3=0}
 stripes_y : skip ${1=10}
   e[^-1] "Add vertical stripes to image$?, with frequency $1."
   repeat $! l[$>]
-    100% noise. $1,2 ==. 1 *. 255 r. ..
+    100% noise. $1,2 ==. 1 *. 255 ri. ..
     *. 0.15 + c 0,255
   endl done
 
@@ -21769,7 +21775,7 @@ texturize_paper :
   e[^-1] "Add paper texture to image$?."
   repeat $! l[$>]
     . 30%,30% noise. 1,2 ==. 1 r. ..,..,..,1,0 ifft.
-    rm. shift. {round(w/2)},{round(h/2)},{round(d/2)},0,2 sharpen. 1 n. 1,1.2 r. ..
+    rm. shift. {round(w/2)},{round(h/2)},{round(d/2)},0,2 sharpen. 1 n. 1,1.2 ri. ..
     *[-2,-1] c. ..,.. rm..
   endl done
 
@@ -21781,7 +21787,7 @@ vignette : check "${1=100}>=0 && ${2=70}>=0 && $2<=100 && ${3=90}>=0 && $3<=100"
   e[^-1] "Add vignette effect to image$?, with strength $1 and size $2."
   repeat $! l[$>]
     mM={[im,iM]} d={max(w,h)}
-    $d,$d =. 1,50%,50% distance. 1 r. ..,2
+    $d,$d =. 1,50%,50% distance. 1 ri. ..,2
     c. $2%,$3% n. 0,$1 - c $mM
   endl done
 
@@ -21794,7 +21800,7 @@ watermark_visible : check "${2=0.3}>0 && $2<1 && ${3=53}>0 && ${6=0.5}>=0"
   e[^-1] ${arg\ 1+!$5,Add,Remove}" visible watermark '$1' on image$?, with opacity $2, size $3, angle $4 deg."
   repeat $! l[$>]
     0 t. "$1",0,0,$3,1,255 rotate. $4,0,0 b. $6 n. 0,255
-    r. ..,0,2 +. .. c. 0,255   # Generate opaque watermark image
+    ri. ..,0,2 +. .. c. 0,255   # Generate opaque watermark image
     if $5 *. $2 *.. {1-$2} +  # Add watermark
     else *. $2 - / {1-$2}     # Remove watermark
     fi
@@ -22055,9 +22061,9 @@ _blend_xor :
 #@cli : $ image.jpg testimage2d {w},{h} +blend_edges 0.8
 blend_edges : check {$1>=0}
   e[^-1] "Blend image$? using 'edges' mode, with smoothness $1."
-  if $!>1 to_rgb r[^0] [0],0,0,0.5,0.5 repeat $! l[$>]
+  if $!>1 to_rgb ri[^0] [0],0,0,0.5,0.5 repeat $! l[$>]
     +gradient_norm +. 1 b. $1 n. 1,10 sqr. s.. c *[-4--2] . a[-4--1] c
-  endl done r[^0] [0],0,0,0.5,0.5 + s. c /[-4--2] . rm. a[-3--1] c fi
+  endl done ri[^0] [0],0,0,0.5,0.5 + s. c /[-4--2] . rm. a[-3--1] c fi
 
 #@cli blend_fade : [fading_shape]
 #@cli : Blend selected images together using specified fading shape.
@@ -22070,7 +22076,7 @@ blend_fade :
   +
 
 _fade :
-  r.. ...,5 r. ..,3 c. $1%,$2% n. 0,1 j... ..,0,0,0,0,1,. rm[-2,-1]
+  ri.. ...,5 ri. ..,3 c. $1%,$2% n. 0,1 j... ..,0,0,0,0,1,. rm[-2,-1]
 
 #@cli blend_median
 #@cli : Blend selected images together using 'median' mode.
@@ -22663,7 +22669,7 @@ __median_stream :
 morph : check "$1>=0.5 && ${2=0.1}>=0 && ${3=4}>=0"
   nbf={round($1)}
   e[^-1] "Create morphing sequence between image$?, with "$nbf" inner frames, smoothness $2 and precision $3.\n"
-  r[^0] [0],3
+  ri[^0] [0],3
   repeat $!-1 nm={$>,n} l[$<,{$<+1}]
     e[] "\r > Morph image "$>" to image "{$>+1}".    "
     +equalize[0,1] n[-2,-1] 0,255
