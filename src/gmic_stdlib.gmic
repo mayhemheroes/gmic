@@ -6767,23 +6767,27 @@ parse_gui_strings :
 
 # string2ts : translation_fr.ts,strings_en.txt,strings_fr.txt
 # Regenerate file 'translation_fr' from new translated strings (separated by newline in files strings_*).
+# 'translation_fr' can be an empty argument ("").
 # Output result in 'stdout'.
-strings2ts :
+strings2ts : skip ${"${1=}"}
 
   # Import data and extract original/translated strings.
-  l[] it "$1" s -,10
-    N0=0
-    repeat $! l[$>]
-      autocrop {'" "'}
-      if s=crop();find(s,'<source>')>=0" && "find(s,'</source>')>=0
-        discard {'<source>'} discard {'</source>'} src$N0={t}
-      elif s=crop();find(s,'<translation>')>=0" && "find(s,'</translation>')>=0
-        discard {'<translation>'} discard {'</translation>'} dest$N0={t}
-        N0+=1
-      fi
-    endl done
-    rm
-  endl
+  if narg($1)
+    l[] it "$1" s -,10
+      N0=0
+      repeat $! l[$>]
+        autocrop {'" "'}
+        if s=crop();find(s,'<source>')>=0" && "find(s,'</source>')>=0
+          discard {'<source>'} discard {'</source>'} src$N0={t}
+        elif s=crop();find(s,'<translation>')>=0" && "find(s,'</translation>')>=0
+          discard {'<translation>'} discard {'</translation>'} dest$N0={t}
+          N0+=1
+        fi
+      endl done
+      rm
+    endl
+  else N0=0
+  fi
   l[] it "$2" s -,10 N1=$! repeat $! nsrc$>={$>,t} done rm endl
   l[] it "$3" s -,10 N2=$! repeat $! ndest$>={$>,t} done rm endl
   if $N1!=$N2 error[0--3] "Command 'strings2ts': Number of lines do not match in files '$2' and '$3'." fi
@@ -6791,7 +6795,7 @@ strings2ts :
   # Merge all strings together (set higher priority to strings that were already in the .ts file).
   l[] repeat $N1 ({'${ndest$>}'}) nm. ${nsrc$>} done y endl
   repeat $N0 rmn ${src$>} done # Discard already-translated strings in the .ts file
-  i[0] 0 l[0] rm repeat $N0 i ({'${dest$>}'}) nm. ${src$>} done y endl
+  if $N0 i[0] 0 l[0] rm repeat $N0 i ({'${dest$>}'}) nm. ${src$>} done y endl fi
   sort_list +,n
 
   # Generate .ts file.
