@@ -10804,108 +10804,68 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           int iinterpolation = 1;
           boundary = 0;
           ind.assign();
-
-          if (((cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]%c%c",
-                            gmic_use_indices,&sep,&end)==2 && sep==']') ||
-               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%d%c",
-                           indices,&iinterpolation,&end)==2 ||
-               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%d,%u%c",
-                           indices,&iinterpolation,&boundary,&end)==3 ||
-               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%d,%u,%f%c",
-                           indices,&iinterpolation,&boundary,&cx,&end)==4 ||
-               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%d,%u,%f,%f%c",
-                           indices,&iinterpolation,&boundary,&cx,&cy,&end)==5 ||
-               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%d,%u,%f,%f,%f%c",
-                           indices,&iinterpolation,&boundary,&cx,&cy,&cz,&end)==6 ||
-               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%d,%u,%f,%f,%f,%f%c",
-                           indices,&iinterpolation,&boundary,&cx,&cy,&cz,&cc,&end)==7) &&
-              (ind=selection2cimg(indices,images.size(),images_names,"resize")).height()==1 &&
+          if ((cimg_sscanf(argument,"%255[][a-zA-Z0-9_.eE%+-]%c",
+                           gmic_use_argx,&end)==1 ||
+               cimg_sscanf(argument,"%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-]%c",
+                           argx,gmic_use_argy,&end)==2 ||
+               cimg_sscanf(argument,"%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-],"
+                           "%255[][a-zA-Z0-9_.eE%+-]%c",
+                           argx,argy,gmic_use_argz,&end)==3 ||
+               cimg_sscanf(argument,"%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-],"
+                           "%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-]%c",
+                           argx,argy,argz,gmic_use_argc,&end)==4 ||
+               cimg_sscanf(argument,"%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-],"
+                           "%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-],%d%c",
+                           argx,argy,argz,argc,&iinterpolation,&end)==5 ||
+               cimg_sscanf(argument,"%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-],"
+                           "%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-],%d,%u%c",
+                           argx,argy,argz,argc,&iinterpolation,&boundary,&end)==6 ||
+               cimg_sscanf(argument,"%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-],"
+                           "%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-],%d,%u,%f%c",
+                           argx,argy,argz,argc,&iinterpolation,&boundary,&cx,&end)==7 ||
+               cimg_sscanf(argument,"%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-],"
+                           "%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-],%d,%u,%f,"
+                           "%f%c",
+                           argx,argy,argz,argc,&iinterpolation,&boundary,&cx,&cy,&end)==8||
+               cimg_sscanf(argument,"%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-],"
+                           "%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-],%d,%u,%f,"
+                           "%f,%f%c",
+                           argx,argy,argz,argc,&iinterpolation,&boundary,
+                           &cx,&cy,&cz,&end)==9 ||
+               cimg_sscanf(argument,"%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-],"
+                           "%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-],%d,%u,%f,"
+                           "%f,%f,%f%c",
+                           argx,argy,argz,argc,&iinterpolation,&boundary,
+                           &cx,&cy,&cz,&cc,&end)==10) &&
+              ((cimg_sscanf(argx,"[%255[a-zA-Z0-9_.%+-]%c%c",gmic_use_indices,&sepx,&end)==2 &&
+                sepx==']' &&
+                (indx=selection2cimg(indices,images.size(),images_names,"resize")).height()==1) ||
+               (sepx=0,cimg_sscanf(argx,"%f%c",&valx,&sepx)==1 && valx>=1) ||
+               (cimg_sscanf(argx,"%f%c%c",&valx,&sepx,&end)==2 && sepx=='%')) &&
+              (!*argy ||
+               (cimg_sscanf(argy,"[%255[a-zA-Z0-9_.%+-]%c%c",indicesy.data(),&sepy,
+                            &end)==2 &&
+                sepy==']' &&
+                (indy=selection2cimg(indicesy,images.size(),images_names,"resize")).height()==1) ||
+               (sepy=0,cimg_sscanf(argy,"%f%c",&valy,&sepy)==1 && valy>=1) ||
+               (cimg_sscanf(argy,"%f%c%c",&valy,&sepy,&end)==2 && sepy=='%')) &&
+              (!*argz ||
+               (cimg_sscanf(argz,"[%255[a-zA-Z0-9_.%+-]%c%c",indicesz.data(),&sepz,
+                            &end)==2 &&
+                sepz==']' &&
+                (indz=selection2cimg(indicesz,images.size(),images_names,"resize")).height()==1) ||
+               (sepz=0,cimg_sscanf(argz,"%f%c",&valz,&sepz)==1 && valz>=1) ||
+               (cimg_sscanf(argz,"%f%c%c",&valz,&sepz,&end)==2 && sepz=='%')) &&
+              (!*argc ||
+               (cimg_sscanf(argc,"[%255[a-zA-Z0-9_.%+-]%c%c",indicesc.data(),&sepc,
+                            &end)==2 &&
+                sepc==']' &&
+                (indc=selection2cimg(indicesc,images.size(),images_names,"resize")).height()==1) ||
+               (sepc=0,cimg_sscanf(argc,"%f%c",&valc,&sepc)==1 && valc>=1) ||
+               (cimg_sscanf(argc,"%f%c%c",&valc,&sepc,&end)==2 && sepc=='%')) &&
+              valx>0 && valy>0 && valz>0 && valc>0 &&
               iinterpolation>=-1 && iinterpolation<=6 && boundary<=3 &&
               cx>=0 && cx<=1 && cy>=0 && cy<=1 && cz>=0 && cz<=1 && cc>=0 && cc<=1) {
-            const int
-              nvalx = images[*ind].width(),
-              nvaly = images[*ind].height(),
-              nvalz = images[*ind].depth(),
-              nvalc = images[*ind].spectrum();
-            print(images,0,"Resize image%s to %dx%dx%dx%d, with %s interpolation, "
-                  "%s boundary conditions and alignment (%g,%g,%g,%g).",
-                  gmic_selection.data(),
-                  nvalx,nvaly,nvalz,nvalc,
-                  iinterpolation<=0?"no":iinterpolation==1?"nearest-neighbor":
-                  iinterpolation==2?"moving average":iinterpolation==3?"linear":
-                  iinterpolation==4?"grid":iinterpolation==5?"cubic":"lanczos",
-                  boundary<=0?"dirichlet":boundary==1?"neumann":boundary==2?"periodic":"mirror",
-                  cx,cy,cz,cc);
-
-            try { error(true,images,0,0,"DEPRECATED SYNTAX"); }
-            catch (...) {
-              std::exit(0);
-            }
-
-            cimg_forY(selection,l) gmic_apply(resize(nvalx,nvaly,nvalz,nvalc,iinterpolation,boundary,cx,cy,cz,cc));
-          } else if ((cx=cy=cz=cc=0, iinterpolation=1, boundary=0, true) &&
-                     (cimg_sscanf(argument,"%255[][a-zA-Z0-9_.eE%+-]%c",
-                                  gmic_use_argx,&end)==1 ||
-                      cimg_sscanf(argument,"%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-]%c",
-                                  argx,gmic_use_argy,&end)==2 ||
-                      cimg_sscanf(argument,"%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-],"
-                                  "%255[][a-zA-Z0-9_.eE%+-]%c",
-                                  argx,argy,gmic_use_argz,&end)==3 ||
-                      cimg_sscanf(argument,"%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-],"
-                                  "%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-]%c",
-                                  argx,argy,argz,gmic_use_argc,&end)==4 ||
-                      cimg_sscanf(argument,"%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-],"
-                                  "%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-],%d%c",
-                                  argx,argy,argz,argc,&iinterpolation,&end)==5 ||
-                      cimg_sscanf(argument,"%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-],"
-                                  "%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-],%d,%u%c",
-                                  argx,argy,argz,argc,&iinterpolation,&boundary,&end)==6 ||
-                      cimg_sscanf(argument,"%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-],"
-                                  "%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-],%d,%u,%f%c",
-                                  argx,argy,argz,argc,&iinterpolation,&boundary,&cx,&end)==7 ||
-                      cimg_sscanf(argument,"%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-],"
-                                  "%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-],%d,%u,%f,"
-                                  "%f%c",
-                                  argx,argy,argz,argc,&iinterpolation,&boundary,&cx,&cy,&end)==8||
-                      cimg_sscanf(argument,"%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-],"
-                                  "%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-],%d,%u,%f,"
-                                  "%f,%f%c",
-                                  argx,argy,argz,argc,&iinterpolation,&boundary,
-                                  &cx,&cy,&cz,&end)==9 ||
-                      cimg_sscanf(argument,"%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-],"
-                                  "%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-],%d,%u,%f,"
-                                  "%f,%f,%f%c",
-                                  argx,argy,argz,argc,&iinterpolation,&boundary,
-                                  &cx,&cy,&cz,&cc,&end)==10) &&
-                     ((cimg_sscanf(argx,"[%255[a-zA-Z0-9_.%+-]%c%c",indices,&sepx,&end)==2 &&
-                       sepx==']' &&
-                       (indx=selection2cimg(indices,images.size(),images_names,"resize")).height()==1) ||
-                      (sepx=0,cimg_sscanf(argx,"%f%c",&valx,&sepx)==1 && valx>=1) ||
-                      (cimg_sscanf(argx,"%f%c%c",&valx,&sepx,&end)==2 && sepx=='%')) &&
-                     (!*argy ||
-                      (cimg_sscanf(argy,"[%255[a-zA-Z0-9_.%+-]%c%c",indicesy.data(),&sepy,
-                                   &end)==2 &&
-                       sepy==']' &&
-                       (indy=selection2cimg(indicesy,images.size(),images_names,"resize")).height()==1) ||
-                      (sepy=0,cimg_sscanf(argy,"%f%c",&valy,&sepy)==1 && valy>=1) ||
-                      (cimg_sscanf(argy,"%f%c%c",&valy,&sepy,&end)==2 && sepy=='%')) &&
-                     (!*argz ||
-                      (cimg_sscanf(argz,"[%255[a-zA-Z0-9_.%+-]%c%c",indicesz.data(),&sepz,
-                                   &end)==2 &&
-                       sepz==']' &&
-                       (indz=selection2cimg(indicesz,images.size(),images_names,"resize")).height()==1) ||
-                      (sepz=0,cimg_sscanf(argz,"%f%c",&valz,&sepz)==1 && valz>=1) ||
-                      (cimg_sscanf(argz,"%f%c%c",&valz,&sepz,&end)==2 && sepz=='%')) &&
-                     (!*argc ||
-                      (cimg_sscanf(argc,"[%255[a-zA-Z0-9_.%+-]%c%c",indicesc.data(),&sepc,
-                                   &end)==2 &&
-                       sepc==']' &&
-                       (indc=selection2cimg(indicesc,images.size(),images_names,"resize")).height()==1) ||
-                      (sepc=0,cimg_sscanf(argc,"%f%c",&valc,&sepc)==1 && valc>=1) ||
-                      (cimg_sscanf(argc,"%f%c%c",&valc,&sepc,&end)==2 && sepc=='%')) &&
-                     valx>0 && valy>0 && valz>0 && valc>0 &&
-                     iinterpolation>=-1 && iinterpolation<=6 && boundary<=3 &&
-                     cx>=0 && cx<=1 && cy>=0 && cy<=1 && cz>=0 && cz<=1 && cc>=0 && cc<=1) {
             if (indx) { valx = (float)images[*indx].width(); sepx = 0; }
             if (indy) { valy = (float)images[*indy].height(); sepy = 0; }
             if (indz) { valz = (float)images[*indz].depth(); sepz = 0; }
