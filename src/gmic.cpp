@@ -2968,6 +2968,7 @@ gmic& gmic::print(const char *format, ...) {
 
   // Display message.
   cimg::mutex(29);
+  unsigned int &nb_carriages = cimg::output()==stdout?nb_carriages_stdout:nb_carriages_default;
   const bool is_cr = *message=='\r';
   if (is_cr) std::fputc('\r',cimg::output());
   else for (unsigned int i = 0; i<nb_carriages; ++i) std::fputc('\n',cimg::output());
@@ -2993,27 +2994,28 @@ gmic& gmic::error(const bool output_header, const char *const format, ...) {
   va_end(ap);
 
   // Display message.
+  const bool is_cr = *message=='\r';
   const CImg<char> s_callstack = callstack2string();
   if (verbosity>=1 || is_debug) {
     cimg::mutex(29);
-    if (*message!='\r')
-      for (unsigned int i = 0; i<nb_carriages; ++i) std::fputc('\n',cimg::output());
-    nb_carriages = 1;
+    if (is_cr) std::fputc('\r',cimg::output());
+    else for (unsigned int i = 0; i<nb_carriages_default; ++i) std::fputc('\n',cimg::output());
+    nb_carriages_default = 1;
     if (output_header) {
       if (is_debug_info && debug_filename<commands_files.size() && debug_line!=~0U)
         std::fprintf(cimg::output(),"[gmic]%s %s%s*** Error (file '%s', %sline #%u) *** %s%s",
                      s_callstack.data(),cimg::t_red,cimg::t_bold,
                      commands_files[debug_filename].data(),
-                     is_debug_info?"":"call from ",debug_line,message.data(),
+                     is_debug_info?"":"call from ",debug_line,message.data() + (is_cr?1:0),
                      cimg::t_normal);
       else
         std::fprintf(cimg::output(),"[gmic]%s %s%s*** Error *** %s%s",
                      s_callstack.data(),cimg::t_red,cimg::t_bold,
-                     message.data(),cimg::t_normal);
+                     message.data() + (is_cr?1:0),cimg::t_normal);
     } else
       std::fprintf(cimg::output(),"[gmic]%s %s%s%s%s",
                    s_callstack.data(),cimg::t_red,cimg::t_bold,
-                   message.data(),cimg::t_normal);
+                   message.data() + (is_cr?1:0),cimg::t_normal);
     std::fflush(cimg::output());
     cimg::mutex(29,0);
   }
@@ -3025,10 +3027,10 @@ gmic& gmic::error(const bool output_header, const char *const format, ...) {
                   "*** Error in %s (file '%s', %sline #%u) *** %s",
                   s_callstack.data(),
                   commands_files[debug_filename].data(),
-                  is_debug_info?"":"call from ",debug_line,message.data());
+                  is_debug_info?"":"call from ",debug_line,message.data() + (is_cr?1:0));
   else cimg_snprintf(full_message,full_message.width(),
                      "*** Error in %s *** %s",
-                     s_callstack.data(),message.data());
+                     s_callstack.data(),message.data() + (is_cr?1:0));
   CImg<char>::string(full_message).move_to(status);
   message.assign();
   is_running = false;
@@ -3049,9 +3051,10 @@ gmic& gmic::debug(const char *format, ...) {
 
   // Display message.
   cimg::mutex(29);
-  if (*message!='\r')
-    for (unsigned int i = 0; i<nb_carriages; ++i) std::fputc('\n',cimg::output());
-  nb_carriages = 1;
+  const bool is_cr = *message=='\r';
+  if (is_cr) std::fputc('\r',cimg::output());
+  else for (unsigned int i = 0; i<nb_carriages_default; ++i) std::fputc('\n',cimg::output());
+  nb_carriages_default = 1;
 
   if (is_debug_info && debug_filename<commands_files.size() && debug_line!=~0U)
     std::fprintf(cimg::output(),
@@ -3062,7 +3065,7 @@ gmic& gmic::debug(const char *format, ...) {
                  "%s<gmic>%s ",
                  cimg::t_green,callstack2string(true).data());
 
-  for (char *s = message; *s; ++s) {
+  for (char *s = message.data() + (is_cr?1:0); *s; ++s) {
     char c = *s;
     if (c>=gmic_dollar && c<=gmic_dquote) switch (c) {
       case gmic_dollar : std::fprintf(cimg::output(),"\\$"); break;
@@ -3576,6 +3579,7 @@ gmic& gmic::print(const CImgList<T>& list, const CImg<unsigned int> *const calls
 
   // Display message.
   cimg::mutex(29);
+  unsigned int &nb_carriages = cimg::output()==stdout?nb_carriages_stdout:nb_carriages_default;
   const bool is_cr = *message=='\r';
   if (is_cr) std::fputc('\r',cimg::output());
   else for (unsigned int i = 0; i<nb_carriages; ++i) std::fputc('\n',cimg::output());
@@ -3608,8 +3612,10 @@ gmic& gmic::warn(const CImgList<T>& list, const CImg<unsigned int> *const callst
   // Display message.
   const CImg<char> s_callstack = callstack2string(callstack_selection);
   cimg::mutex(29);
-  if (*message!='\r')
-    for (unsigned int i = 0; i<nb_carriages; ++i) std::fputc('\n',cimg::output());
+  unsigned int &nb_carriages = cimg::output()==stdout?nb_carriages_stdout:nb_carriages_default;
+  const bool is_cr = *message=='\r';
+  if (is_cr) std::fputc('\r',cimg::output());
+  else for (unsigned int i = 0; i<nb_carriages; ++i) std::fputc('\n',cimg::output());
   nb_carriages = 1;
   if (!callstack_selection || *callstack_selection) {
     if (debug_filename<commands_files.size() && debug_line!=~0U)
@@ -3617,15 +3623,15 @@ gmic& gmic::warn(const CImgList<T>& list, const CImg<unsigned int> *const callst
                    "[gmic]-%u%s %s%s*** Warning (file '%s', %sline #%u) *** %s%s",
                    list.size(),s_callstack.data(),cimg::t_magenta,cimg::t_bold,
                    commands_files[debug_filename].data(),
-                   is_debug_info?"":"call from ",debug_line,message.data(),
+                   is_debug_info?"":"call from ",debug_line,message.data() + (is_cr?1:0),
                    cimg::t_normal);
     else
       std::fprintf(cimg::output(),
                    "[gmic]-%u%s %s%s*** Warning *** %s%s",
                    list.size(),s_callstack.data(),cimg::t_magenta,cimg::t_bold,
-                   message.data(),cimg::t_normal);
+                   message.data() + (is_cr?1:0),cimg::t_normal);
   } else std::fprintf(cimg::output(),"%s%s%s%s",
-                      cimg::t_magenta,cimg::t_bold,message.data(),cimg::t_normal);
+                      cimg::t_magenta,cimg::t_bold,message.data() + (is_cr?1:0),cimg::t_normal);
   std::fflush(cimg::output());
   cimg::mutex(29,0);
   return *this;
@@ -3647,12 +3653,13 @@ gmic& gmic::error(const bool output_header, const CImgList<T>& list,
   va_end(ap);
 
   // Display message.
+  const bool is_cr = *message=='\r';
   const CImg<char> s_callstack = callstack2string(callstack_selection);
   if (verbosity>=1 || is_debug) {
     cimg::mutex(29);
-    if (*message!='\r')
-      for (unsigned int i = 0; i<nb_carriages; ++i) std::fputc('\n',cimg::output());
-    nb_carriages = 1;
+    if (is_cr) std::fputc('\r',cimg::output());
+    else for (unsigned int i = 0; i<nb_carriages_default; ++i) std::fputc('\n',cimg::output());
+    nb_carriages_default = 1;
     if (!callstack_selection || *callstack_selection) {
       if (output_header) {
         if (debug_filename<commands_files.size() && debug_line!=~0U)
@@ -3660,19 +3667,19 @@ gmic& gmic::error(const bool output_header, const CImgList<T>& list,
                        "[gmic]-%u%s %s%s*** Error (file '%s', %sline #%u) *** %s%s",
                        list.size(),s_callstack.data(),cimg::t_red,cimg::t_bold,
                        commands_files[debug_filename].data(),
-                       is_debug_info?"":"call from ",debug_line,message.data(),
+                       is_debug_info?"":"call from ",debug_line,message.data() + (is_cr?1:0),
                        cimg::t_normal);
         else
           std::fprintf(cimg::output(),
                        "[gmic]-%u%s %s%s*** Error *** %s%s",
                        list.size(),s_callstack.data(),cimg::t_red,cimg::t_bold,
-                       message.data(),cimg::t_normal);
+                       message.data() + (is_cr?1:0),cimg::t_normal);
       } else
         std::fprintf(cimg::output(),
                      "[gmic]-%u%s %s%s%s%s",
                      list.size(),s_callstack.data(),cimg::t_red,cimg::t_bold,
-                     message.data(),cimg::t_normal);
-    } else std::fprintf(cimg::output(),"%s",message.data());
+                     message.data() + (is_cr?1:0),cimg::t_normal);
+    } else std::fprintf(cimg::output(),"%s",message.data() + (is_cr?1:0));
     std::fflush(cimg::output());
     cimg::mutex(29,0);
   }
@@ -3684,10 +3691,10 @@ gmic& gmic::error(const bool output_header, const CImgList<T>& list,
                   "*** Error in %s (file '%s', %sline #%u) *** %s",
                   s_callstack.data(),
                   commands_files[debug_filename].data(),
-                  is_debug_info?"":"call from ",debug_line,message.data());
+                  is_debug_info?"":"call from ",debug_line,message.data() + (is_cr?1:0));
   else cimg_snprintf(full_message,full_message.width(),
                      "*** Error in %s *** %s",
-                     s_callstack.data(),message.data());
+                     s_callstack.data(),message.data() + (is_cr?1:0));
   CImg<char>::string(full_message).move_to(status);
   message.assign();
   is_running = false;
@@ -3730,9 +3737,10 @@ gmic& gmic::debug(const CImgList<T>& list, const char *format, ...) {
 
   // Display message.
   cimg::mutex(29);
-  if (*message!='\r')
-    for (unsigned int i = 0; i<nb_carriages; ++i) std::fputc('\n',cimg::output());
-  nb_carriages = 1;
+  const bool is_cr = *message=='\r';
+  if (is_cr) std::fputc('\r',cimg::output());
+  else for (unsigned int i = 0; i<nb_carriages_default; ++i) std::fputc('\n',cimg::output());
+  nb_carriages_default = 1;
   if (is_debug_info && debug_filename!=~0U && debug_line!=~0U)
     std::fprintf(cimg::output(),
                  "%s<gmic>-%u%s#%u ",
@@ -3741,7 +3749,7 @@ gmic& gmic::debug(const CImgList<T>& list, const char *format, ...) {
     std::fprintf(cimg::output(),
                  "%s<gmic>-%u%s ",
                  cimg::t_green,list.size(),callstack2string(true).data());
-  for (char *s = message; *s; ++s) {
+  for (char *s = message.data() + (is_cr?1:0); *s; ++s) {
     char c = *s;
     if (c>=gmic_dollar && c<=gmic_dquote) switch (c) {
       case gmic_dollar : std::fprintf(cimg::output(),"\\$"); break;
@@ -3853,7 +3861,7 @@ void gmic::_gmic(const char *const commands_line,
   allow_entrypoint = false;
   is_debug = false;
   is_double3d = true;
-  nb_carriages = 0;
+  nb_carriages_default = nb_carriages_stdout = 0;
   verbosity = 0;
   render3d = 4;
   renderd3d = -1;
@@ -3972,7 +3980,7 @@ gmic& gmic::print_images(const CImgList<T>& images, const CImgList<char>& images
       cimg::strellipsize(title,80,false);
       img.gmic_print(title,is_debug,is_valid);
     }
-    nb_carriages = 0;
+    nb_carriages_default = 0;
   }
   return *this;
 }
@@ -4043,7 +4051,7 @@ gmic& gmic::display_images(const CImgList<T>& images, const CImgList<char>& imag
     if (XYZ) std::fprintf(cimg::output(),", from point (%u,%u,%u).\n",XYZ[0],XYZ[1],XYZ[2]);
     else std::fprintf(cimg::output(),".\n");
     std::fflush(cimg::output());
-    nb_carriages = 0;
+    nb_carriages_default = 0;
     cimg::mutex(29,0);
   }
 
@@ -4135,7 +4143,7 @@ gmic& gmic::display_plots(const CImgList<T>& images, const CImgList<char>& image
                                        basename(images_names[uind]),
                                        img.width(),img.height(),img.depth(),img.spectrum()),
                         plot_type,vertex_type,0,xmin,xmax,0,ymin,ymax,exit_on_anykey);
-      if (is_verbose) nb_carriages = 0;
+      if (is_verbose) nb_carriages_default = 0;
     }
   }
   return *this;
@@ -4836,7 +4844,7 @@ gmic& gmic::_run(const gmic_list<char>& commands_line,
   fordones.assign(nb_fordones = 0U);
   repeatdones.assign(nb_repeatdones = 0U);
   status.assign(0U);
-  nb_carriages = 0;
+  nb_carriages_default = nb_carriages_stdout = 0;
   debug_filename = ~0U;
   debug_line = ~0U;
   is_change = false;
@@ -4959,7 +4967,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         debug(images,"Initial command line: '%s'.",starting_commands_line);
         commands_line_to_CImgList(starting_commands_line); // Do it twice, when debug enabled
       }
-      nb_carriages = 2;
+      nb_carriages_default = 2;
       debug(images,"%sEnter scope '%s/'.%s",
             cimg::t_bold,callstack.back().data(),cimg::t_normal);
       is_start = false;
@@ -7096,21 +7104,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             cimg::strunescape(name);
             const int _verbosity = ++verbosity;
             std::FILE *_file = 0;
-            if (is_get) {
-              _file = cimg::output();
-              verbosity = 1;
-              pattern = nb_carriages;
-              nb_carriages = 0;
-              cimg::output(stdout);
-            }
+            if (is_get) { _file = cimg::output(); verbosity = 1; cimg::output(stdout); }
             if (is_selection) print(images,&selection,"%s",name.data());
             else print(images,0,"%s",name.data());
-            if (is_get) {
-              verbosity = _verbosity;
-              nb_carriages = pattern;
-              std::fputc('\n',cimg::output());
-              cimg::output(_file);
-            }
+            if (is_get) { verbosity = _verbosity; cimg::output(_file); }
             --verbosity;
           }
           ++position; continue;
@@ -10355,7 +10352,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             gmic_instance._is_abort = _is_abort;
             gmic_instance.is_abort = is_abort;
             gmic_instance.is_abort_thread = false;
-            gmic_instance.nb_carriages = nb_carriages;
+            gmic_instance.nb_carriages_default = nb_carriages_default;
+            gmic_instance.nb_carriages_stdout = nb_carriages_stdout;
             gmic_instance.reference_time = reference_time;
             _gmic_threads[l].images = &images;
             _gmic_threads[l].images_names = &images_names;
@@ -12778,21 +12776,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             cimg::strunescape(name);
             const int _verbosity = ++verbosity;
             std::FILE *_file = 0;
-            if (is_get) {
-              _file = cimg::output();
-              verbosity = 1;
-              pattern = nb_carriages;
-              nb_carriages = 0;
-              cimg::output(stdout);
-            }
+            if (is_get) { _file = cimg::output(); verbosity = 1; cimg::output(stdout); }
             if (is_selection) warn(images,&selection,force_visible,"%s",name.data());
             else warn(images,0,force_visible,"%s",name.data());
-            if (is_get) {
-              verbosity = _verbosity;
-              nb_carriages = pattern;
-              std::fputc('\n',cimg::output());
-              cimg::output(_file);
-            }
+            if (is_get) { verbosity = _verbosity; cimg::output(_file); }
             --verbosity;
           }
           ++position; continue;

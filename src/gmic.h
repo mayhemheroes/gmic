@@ -464,7 +464,8 @@ struct gmic {
 
   float focale3d, light3d_x, light3d_y, light3d_z, specular_lightness3d, specular_shininess3d, _progress, *progress;
   gmic_uint64 reference_time;
-  unsigned int nb_dowhiles, nb_fordones, nb_repeatdones, nb_carriages, debug_filename, debug_line, cimg_exception_mode;
+  unsigned int nb_dowhiles, nb_fordones, nb_repeatdones, nb_carriages_default, nb_carriages_stdout,
+    debug_filename, debug_line, cimg_exception_mode;
   int verbosity,render3d, renderd3d, network_timeout;
   bool allow_entrypoint, is_change, is_debug, is_running, is_start, is_return, is_quit, is_double3d, is_debug_info,
     _is_abort, *is_abort, is_abort_thread;
