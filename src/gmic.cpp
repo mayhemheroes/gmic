@@ -7108,6 +7108,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             if (is_get) {
               verbosity = _verbosity;
               nb_carriages = pattern;
+              std::fputc('\n',cimg::output());
               cimg::output(_file);
             }
             --verbosity;
@@ -12789,6 +12790,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             if (is_get) {
               verbosity = _verbosity;
               nb_carriages = pattern;
+              std::fputc('\n',cimg::output());
               cimg::output(_file);
             }
             --verbosity;
