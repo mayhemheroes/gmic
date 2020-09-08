@@ -6773,13 +6773,11 @@ strings2ts :
   l[] it "$1" s -,10
     N0=0
     repeat $! l[$>]
-      f. "i<=_' '?-1:i" discard. -1
+      autocrop {'" "'}
       if s=crop();find(s,'<source>')>=0" && "find(s,'</source>')>=0
-         discard
-         d
-        src$N0={t}
+        discard {'<source>'} discard {'</source>'} src$N0={t}
       elif s=crop();find(s,'<translation>')>=0" && "find(s,'</translation>')>=0
-        dest$N0={t}
+        discard {'<translation>'} discard {'</translation>'} dest$N0={t}
         N0+=1
       fi
     endl done
@@ -6789,22 +6787,30 @@ strings2ts :
   l[] it "$3" s -,10 N2=$! repeat $! ndest$>={$>,t} done rm endl
   if $N1!=$N2 error[0--3] "Command 'strings2ts': Number of lines do not match in files '$2' and '$3'." fi
 
+  # Merge all strings together (set higher priority to strings that were already in the .ts file).
+  l[] repeat $N1 ({'${ndest$>}'}) nm. ${nsrc$>} done y endl
+  repeat $N0 rmn ${src$>} done # Discard already-translated strings in the .ts file
+  i[0] 0 l[0] rm repeat $N0 i ({'${dest$>}'}) nm. ${src$>} done y endl
+  sort_list +,n
+
+  # Generate .ts file.
   +e[] "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
   +e[] "<!DOCTYPE TS>"
   +e[] "<TS version=\"2.1\" language=\"fr\">"
   +e[] "  <context>"
   +e[] "    <name>G'MIC Filters</name>"
-  repeat $N
-    ({'${dest$>}'}) replace_str. " ;",";" dest={t} rm.
-    if lowercase(['${src$>}'])!=lowercase(['$dest'])
+  repeat $! l[$>] src={n}
+    replace_str " ;",";" dest={t}
+    if lowercase(['$src'])!=lowercase(['$dest'])
       +e[] "    <message>"
-      +e[] "      <source>"${src$>}"</source>"
+      +e[] "      <source>"$src"</source>"
       +e[] "      <translation>"$dest"</translation>"
       +e[] "    </message>\n"
     fi
-  done
+  endl done
   +e[] "  </context>"
   +e[] "</TS>"
+  rm
 
 #
 # Output mode 'zart' (output in stdout).
@@ -7822,21 +7828,6 @@ _sort_list_lexi :
        );
        lex<0?size(str1)"$3"size(str2):lex;
      "}
-
-#@cli sort_str
-#@cli : Sort selected images (viewed as a list of strings) in lexicographic order.
-sort_str :
-  e[^-1] "Sort image$? in lexicographic order."
-  y a x
-  repeat round(h/4,1,1) y={4*$>}
-    repeat $! l[$<]
-      +rows $y,{$y+3} f[1] 'if(i>=97 && i<=122,i-32,i)' -. 32 c. 0,63 s. y *.. 64 *... 4096 *[-4] 262144 +[-4--1]
-      rv a y sort +,x +rows 0 rows[0] 1,100% label[1] %[1] 2
-      s[1] +,0 N={$!-1}
-      x0=0 repeat $!-1 x1={$x0+{{1+$>},h}} +z[0] $x0,{$x1-1} x0=$x1 done
-      rm[0-$N]
-    endl done
-  done s x
 
 #---------------------------------
 #
