@@ -6763,11 +6763,31 @@ parse_gui_strings :
   sort_list +,n
   repeat $!-1 if ['{$<,n}']==['{{$<+1},n}'] rm[$<] fi done
   um is_str
-  y i[1--1] (10) a y
+  if $! y i[1--1] (10) a y else 0 fi
 
+# string2ts : translation_fr.ts,strings_en.txt,strings_fr.txt
+# Regenerate file 'translation_fr' from new translated strings (separated by newline in files strings_*).
 strings2ts :
-  l[] it toto.txt s -,10 N=$! repeat $! src$>={$>,t} done rm endl
-  l[] it totofr.txt s -,10 N=$! repeat $! dest$>={$>,t} done rm endl
+
+  # Import data and extract original/translated strings.
+  l[] it "$1" s -,10
+    N0=0
+    repeat $! l[$>]
+      f. "i<=_' '?-1:i" discard. -1
+      if s=crop();find(s,'<source>')>=0" && "find(s,'</source>')>=0
+         discard
+         d
+        src$N0={t}
+      elif s=crop();find(s,'<translation>')>=0" && "find(s,'</translation>')>=0
+        dest$N0={t}
+        N0+=1
+      fi
+    endl done
+    rm
+  endl
+  l[] it "$2" s -,10 N1=$! repeat $! nsrc$>={$>,t} done rm endl
+  l[] it "$3" s -,10 N2=$! repeat $! ndest$>={$>,t} done rm endl
+  if $N1!=$N2 error[0--3] "Command 'strings2ts': Number of lines do not match in files '$2' and '$3'." fi
 
   +e[] "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
   +e[] "<!DOCTYPE TS>"
