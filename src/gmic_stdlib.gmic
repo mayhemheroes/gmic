@@ -6741,45 +6741,50 @@ parse_gui_strings :
     "for (k = 0, k<size(s), ++k, inrange(lowercase(s[k]),_'a',_'z')?(isl = 1; break())); isl && size(s)>2 \"}"
   N={$_nbfilters-1}
   repeat $_nbfilters,f
-    e[] "\r  >> "$_gmic_c[#$f/$N]$_gmic_n" "{`copy(vector48(_'" "'),['${_f${f}_path}${_f${f}_name}'])`}
-    name=${_f${f}_name}
-    is_str $name if ${} ({'$name'}:y) nm. $name fi
-    repeat ${_f${f}_nbparams},p
-      pname=${_f${f}_p${p}_name}
-      ptype=${_f${f}_p${p}_type}
-      is_str $pname if ${} ({'$pname'}:y) nm. $pname fi
-      if ['$ptype']==['choice']
-        repeat ${_f${f}_p${p}_nbargs},a
-          ({'${_f${f}_p${p}_a${a}}'}) discard. {'\"'}
-          aname={t} rm.
-          is_str $aname if ${} ({'$aname'}:y) nm. $aname fi
-        done
-      fi
-    done
+    if !narg(${_f${f}_locale})" && "find(['${_f${f}_path}'],'Testing/')<0  # Consider only English and non-Testing filters
+      e[] "\r  >> "$_gmic_c[#$f/$N]$_gmic_n" "{`copy(vector48(_'" "'),['${_f${f}_path}${_f${f}_name}'])`}
+      name=${_f${f}_name}
+      is_str $name if ${} ({'$name'}:y) nm. $name fi
+      repeat ${_f${f}_nbparams},p
+        pname=${_f${f}_p${p}_name}
+        ptype=${_f${f}_p${p}_type}
+        is_str $pname if ${} ({'$pname'}:y) nm. $pname fi
+        if ['$ptype']==['choice']
+          repeat ${_f${f}_p${p}_nbargs},a
+            ({'${_f${f}_p${p}_a${a}}'}) discard. {'\"'}
+            aname={t} rm.
+            is_str $aname if ${} ({'$aname'}:y) nm. $aname fi
+          done
+        fi
+      done
+    fi
   done
   repeat $! nm[$>] {`lowercase(['{$>,n}'])`} done
   sort_list +,n
   repeat $!-1 if ['{$<,n}']==['{{$<+1},n}'] rm[$<] fi done
   um is_str
+  y i[1--1] (10) a y
 
 strings2ts :
-  res="<?xml version=\"1.0\" encoding=\"utf-8\"?>"\n\
-    "<!DOCTYPE TS>"\n\
-    "<TS version=\"2.1\" language=\"fr\">"\n\
-    "  <context>"\n\
-    "  <name>GmicFilters</name>"\n
-  repeat $! l[$>]
-    source={t}
-    res.="  <message>"\n
-    res.="    <source>"$source"</source>"\n
-    res.="    <translation>"$source"</translation>"\n
-    res.="  </message>"\n
-  endl done
-  res.="</context>"\n\
-    "</TS>"
-  rm ('$res':y)
+  l[] it toto.txt s -,10 N=$! repeat $! src$>={$>,t} done rm endl
+  l[] it totofr.txt s -,10 N=$! repeat $! dest$>={$>,t} done rm endl
 
-# trans :fr -brief "♥ Support Us ! ♥"
+  +e[] "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
+  +e[] "<!DOCTYPE TS>"
+  +e[] "<TS version=\"2.1\" language=\"fr\">"
+  +e[] "  <context>"
+  +e[] "    <name>G'MIC Filters</name>"
+  repeat $N
+    ({'${dest$>}'}) replace_str. " ;",";" dest={t} rm.
+    if lowercase(['${src$>}'])!=lowercase(['$dest'])
+      +e[] "    <message>"
+      +e[] "      <source>"${src$>}"</source>"
+      +e[] "      <translation>"$dest"</translation>"
+      +e[] "    </message>\n"
+    fi
+  done
+  +e[] "  </context>"
+  +e[] "</TS>"
 
 #
 # Output mode 'zart' (output in stdout).
