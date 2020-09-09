@@ -6774,7 +6774,20 @@ strings2ts : skip "${1=}"
 
   # Import data and extract original/translated strings.
   if narg($1)
-    l[] it "$1" s -,10
+    l[] it "$1"
+      lang={`"
+        lang = vector256();
+        p = find(#-1,'language=\"');
+        p>=0?(
+          q = find(#-1,'\">',p + 10);
+          print([p,q]);
+          echo('\">');
+          q>=0?copy(lang,i[p + 10],q - p);
+        )"`}
+      echo[] LANG=$lang
+      q
+
+      s -,10
       N0=0
       repeat $! l[$>]
         autocrop {'" "'}
