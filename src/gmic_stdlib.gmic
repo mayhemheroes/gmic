@@ -6779,14 +6779,11 @@ strings2ts : skip "${1=}"
         lang = vector256();
         p = find(#-1,'language=\"');
         p>=0?(
-          q = find(#-1,'\">',p + 10);
-          print([p,q]);
-          echo('\">');
-          q>=0?copy(lang,i[p + 10],q - p);
-        )"`}
-      echo[] LANG=$lang
-      q
-
+          p+=10;
+          q = find(#-1,'\">',p);
+          q>=0?copy(lang,i[p],q - p);
+        ); lang"`}
+      e[] "  > File '$1', detected language : "$lang.
       s -,10
       N0=0
       repeat $! l[$>]
@@ -6800,7 +6797,7 @@ strings2ts : skip "${1=}"
       endl done
       rm
     endl
-  else N0=0
+  else N0=0 lang=
   fi
   if $N0 e[] "  > File '$1' contains "$N0" strings." fi
   l[] it "$2" s -,10 N1=$! repeat $! nsrc$>={$>,t} done rm endl
@@ -6828,7 +6825,7 @@ strings2ts : skip "${1=}"
   endl done
   i[0] ({'"<?xml version=\"1.0\" encoding=\"utf-8\"?>"\n\
      "<!DOCTYPE TS>"\n\
-     "<TS version=\"2.1\" language=\"fr\">"\n\
+     "<TS version=\"2.1\" language=\""$lang"\">"\n\
      "  <context>"\n\
      "    <name>G\47MIC Filters</name>"\n'})
   ({'"  </context>"\n\
