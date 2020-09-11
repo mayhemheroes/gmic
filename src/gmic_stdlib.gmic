@@ -38882,6 +38882,75 @@ fx_blur_linear :
 fx_blur_linear_preview :
   gui_split_preview "fx_blur_linear $*",${-3--1}
 
+#@gui Blur [Multidirectional] : fx_blur_multidirectional, fx_blur_multidirectional_preview(0)
+#@gui : Number of Orientations = int(5,1,16)
+#@gui : Reference Angle (deg.) = float(0,0,360)
+#@gui : Angle Range (deg.) = float(360,0,360)
+#@gui : sep = separator()
+#@gui : Smoothness = float(150,0,1024)
+#@gui : Kernel type = choice(0,"Mono-Directional","Bi-Directional")
+#@gui : Boundary conditions = choice(1,"Dirichlet","Neumann","Periodic","Mirror")
+#@gui : Sharpness = float(0,0,1000)
+#@gui : Blend Mode = choice{2,"Min","Max","Average","Edges-0.5 (beware: memory-consuming!)",
+#@gui : "Edges-1 (beware: memory-consuming!)","Edges-2 (beware: memory-consuming!)",
+#@gui : "Median (beware: memory-consuming!)"}
+#@gui : Boost Contrast = float(2,0,32)
+#@gui : sep = separator()
+#@gui : Channel(s) = choice(7,"All","RGBA [All]","RGB [All]","RGB [Red]","RGB [Green]","RGB [Blue]","RGBA [Alpha]",
+#@gui : "Linear RGB [All]","Linear RGB [Red]","Linear RGB [Green]","Linear RGB [Blue]","YCbCr [Luminance]",
+#@gui : "YCbCr [Blue-Red Chrominances]","YCbCr [Blue Chrominance]","YCbCr [Red Chrominance]",
+#@gui : "YCbCr [Green Chrominance]","Lab [Lightness]","Lab [ab-Chrominances]","Lab [a-Chrominance]",
+#@gui : "Lab [b-Chrominance]","Lch [ch-Chrominances]","Lch [c-Chrominance]","Lch [h-Chrominance]","HSV [Hue]",
+#@gui : "HSV [Saturation]","HSV [Value]","HSI [Intensity]","HSL [Lightness]","CMYK [Cyan]","CMYK [Magenta]",
+#@gui : "CMYK [Yellow]","CMYK [Key]","YIQ [Luma]","YIQ [Chromas]","RYB [All]","RYB [Red]","RYB [Yellow]","RYB [Blue]")
+#@gui : sep = separator()
+#@gui : Preview Type = choice("Full","Forward Horizontal","Forward Vertical","Backward Horizontal",
+#@gui : "Backward Vertical","Duplicate Top","Duplicate Left","Duplicate Bottom","Duplicate Right",
+#@gui : "Duplicate Horizontal","Duplicate Vertical","Checkered","Checkered Inverse")
+#@gui : Preview Split = point(50,50,0,0,200,200,200,0,10)_0
+#@gui : sep = separator()
+#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2020/09/11</i>.</small>")
+_fx_blur_multidirectional :
+  nb_orientations,\
+  angle_ref,\
+  angle_range,\
+  smoothness,\
+  kernel,\
+  boundary_conditions,\
+  sharpness,\
+  blend_mode,\
+  contrast=${1-9}
+  repeat $! l[$>]
+    # If no median blend, blend step by step in an accumulator to reduce memory usage.
+    if $blend_mode<3 +f {$blend_mode?0:inf} fi
+
+    repeat $nb_orientations
+      angle={$angle_ref+$angle_range*($>/$nb_orientations-0.5)}
+
+      # Kernel definition.
+      $smoothness,1 gaussian. 20%,0.1
+      if !$kernel f. "x>w/2?i:0" fi
+      rotate. $angle,1 # /. {is}
+
+      # Blur and blend.
+      +convolve_fft[0] .,$boundary_conditions rm.. n. 0,255 sharpen. $sharpness
+      if $blend_mode<3 ${arg\ 1+$blend_mode,min,max,+}[1,-1] fi
+    done
+    rm[0]
+
+    if $blend_mode==6 blend_median
+    elif $blend_mode>2 blend_edges {arg($blend_mode-2,0.5,1,2)}
+    fi
+
+    n 0,255 ac "normalize_local "$contrast,hsl_l
+  endl done
+
+fx_blur_multidirectional :
+  ac "_fx_blur_multidirectional ${1-9}",$10
+
+fx_blur_multidirectional_preview :
+  gui_split_preview "fx_blur_multidirectional $*",${-3--1}
+
 #@gui Blur [Radial] : fx_blur_radial, fx_blur_radial_preview(1)
 #@gui : Amplitude = float(3,0,20)
 #@gui : Center (%) = point(50,50,0,1)
