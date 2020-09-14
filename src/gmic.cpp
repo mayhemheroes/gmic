@@ -2175,7 +2175,7 @@ bool gmic::get_debug_info(const char *s, unsigned int &line_number, unsigned int
   return false;
 }
 
-// Manage list of all gmic runs (for CImg math parser 'ext()').
+// Manage list of all gmic runs (for CImg math parser 'run()').
 inline gmic_list<void*>& gmic_runs() { static gmic_list<void*> val; return val; }
 
 template<typename T>
