@@ -6816,7 +6816,10 @@ strings2ts : skip "${1=}"
   e[] "  > "$!" strings remain after cleaning/merging ("{$!-$N0}" new)."
 
   # Generate .ts file.
-  repeat $! l[$>] src={n} dest={t} rm
+  repeat $! l[$>]
+    _strings2ts_src {n} src=${}
+    _strings2ts_dest {t} dest=${}
+    rm
     ({'"    <message>"\n\
        "      <source>"$src"</source>"\n\
        "      <translation>"$dest"</translation>"\n\
@@ -6831,8 +6834,16 @@ strings2ts : skip "${1=}"
      "</TS>"\n'})
   y a y
 
-_strings2ts :
+_strings2ts_src :
   ({'"$*"'})
+  replace_str. "&","&amp;"
+  u {t}
+  rm.
+
+_strings2ts_dest :
+  ({'"$*"'}) html2utf8.
+  replace_str. "&deg;","°"
+  replace_str. "&agrave;","à"
   replace_str. "&","&amp;"
   u {t}
   rm.
