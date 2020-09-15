@@ -6800,8 +6800,8 @@ strings2ts : skip "${1=}"
   else N0=0 lang=
   fi
   if $N0 e[] "  > File '$1' contains "$N0" strings." fi
-  l[] it "$2" s -,10 N1=$! repeat $! nsrc$>={$>,t} done rm endl
-  l[] it "$3" s -,10 N2=$! repeat $! ndest$>={$>,t} done rm endl
+  l[] it "$2" html2utf8 s -,10 N1=$! repeat $! nsrc$>={$>,t} done rm endl
+  l[] it "$3" replace_str " ;",";" html2utf8 s -,10 N2=$! repeat $! ndest$>={$>,t} done rm endl
   if $N1!=$N2 error[0--3] "Command 'strings2ts': Number of lines do not match in files '$2' and '$3'." fi
   e[] "  > Files '$2' and '$3' contain "$N1" strings."
 
@@ -6809,15 +6809,17 @@ strings2ts : skip "${1=}"
   l[] repeat $N1 ({'${ndest$>}'}) nm. ${nsrc$>} done y endl
   repeat $N0 rmn ${src$>} done # Discard already-translated strings in the .ts file
   if $N0 i[0] 0 l[0] rm repeat $N0 i ({'${dest$>}'}) nm. ${src$>} done y endl fi
-  repeat $! l[$<] src={n}
-    replace_str " ;",";" dest={t}
+  repeat $! l[$<] src={n} dest={t}
     if lowercase(['$src'])==lowercase(['$dest']) rm fi
   endl done
   sort_list +,n
   e[] "  > "$!" strings remain after cleaning/merging ("{$!-$N0}" new)."
 
   # Generate .ts file.
-  repeat $! l[$>] src={n} dest={t} rm
+  repeat $! l[$>]
+    src={n} _strings2ts[] $src src=${}
+    dest={t} _strings2ts[] $dest dest=${}
+    rm
     ({'"    <message>"\n\
        "      <source>"$src"</source>"\n\
        "      <translation>"$dest"</translation>"\n\
@@ -6831,6 +6833,12 @@ strings2ts : skip "${1=}"
   ({'"  </context>"\n\
      "</TS>"\n'})
   y a y
+
+_strings2ts :
+  ({'"$*"'})
+  replace_str. "&","&amp;"
+  u {t}
+  rm.
 
 #
 # Output mode 'zart' (output in stdout).
@@ -7071,7 +7079,7 @@ upload_filters :
   x "cd "$HOME"/work/src/gmic-community && git pull"
 
   # Define the list of compatible versions.
-  (290,291,292,$_version) store. compat
+  (290,291,292,293,$_version) store. compat
 
   # Import filters from stdlib and community.
   files $HOME/work/src/gmic-community/include/*.gmic
