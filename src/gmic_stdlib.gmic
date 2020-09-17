@@ -6089,8 +6089,10 @@ update_download_version : check "
 parse_gui : skip "${1=*},${2=print}"
   e[^-1] "Parse '#@gui' filters '$1' and output in '$2' mode."
 
-  # Check that specified output mode is implemented.
-  if ['$$parse_gui_$2']==0 error[0--2] "Command 'parse_gui': Invalid output mode '$2'." fi
+  # Check that specified output mode is actually implemented.
+  l[] ({'$$parse_gui_$2'}) rm
+  onfail error[0--2] "Command 'parse_gui': Invalid output mode '$2'."
+  endl
 
   # Input .gmic data.
   use_vt100
