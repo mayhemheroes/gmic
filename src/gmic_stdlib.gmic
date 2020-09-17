@@ -39581,10 +39581,10 @@ fx_shade_stripes :
 fx_shade_stripes_preview :
   gui_split_preview "fx_shade_stripes $*",${-3--1}
 
-#@gui Rebuild From Similar Blocs : fx_rebuild_from_similar_blocs, fx_rebuild_from_similar_blocs
+#@gui Rebuild From Similar Blocs : fx_rebuild_from_similar_blocs, fx_rebuild_from_similar_blocs(1)
 #@gui : Bloc Size (%) = float(5,2,50)
 #@gui : sep = separator()
-#@gui : Regularization factor = float(0,0,2)
+#@gui : Regularization factor = float(0,0,20)
 #@gui : Luminance factor = float(0.75,0,3)
 #@gui : Norm type = choice(1,"L1","L2")
 #@gui : sep = separator()
@@ -39599,7 +39599,11 @@ fx_rebuild_from_similar_blocs :
     # Split image into regular blocs.
     r {ceil([w,h]/$S)*$S},1,100%,0,3,0.5,0.5
     M,N={[w,h]/$S}
-    +l. b. $2% rgb2ycbcr sh. 0 *. $3 rm. s yx,-$S a z endl
+
+    s yx,-$S a z # Original RGB blocs
+#    +mirror x +mirror y a z # + all xy mirrors
+#    repeat 3 +rotate. 90 done a z # + all 90° rotations
+    +l b xy,$2% rgb2ycbcr sh. 0 *. $3 rm. endl # Blocs to compare, in YCbCr space
 
     # For each bloc, find most similar bloc.
     $M,$N,1,1,-1
@@ -39616,18 +39620,12 @@ fx_rebuild_from_similar_blocs :
         xt = kmin%w;
         yt = int(kmin/w);
         i(xt,yt) = ind;
-        kmin
+        kmin;
       ):i"
 
     # Reconstruct image.
     {[$M,$N]*$S},1,{0,s}
-    eval.. "
-      ind = i;
-      xs = (ind%"$M")*"$S";
-      ys = int(ind/"$M")*"$S";
-      xt = x*"$S";
-      yt = y*"$S";
-      draw(#-1,crop(#0,xs,ys,"$S","$S"),xt,yt,0,0,"$S","$S")"
+    eval.. "draw(#-1,crop(#0,0,0,i,w#0,h#0,1),x*w#0,y*h#0,0,0,w#0,h#0)"
     k. r $w0,$h0,1,100%,0,0,0.5,0.5
   endl a c endl done
 
