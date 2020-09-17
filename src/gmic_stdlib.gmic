@@ -39580,6 +39580,56 @@ fx_shade_stripes :
 fx_shade_stripes_preview :
   gui_split_preview "fx_shade_stripes $*",${-3--1}
 
+#@gui Rebuild From Similar Blocs : fx_rebuild_from_similar_blocs, fx_rebuild_from_similar_blocs
+#@gui : Bloc Size (%) = float(5,2,50)
+#@gui : sep = separator()
+#@gui : Regularization factor = float(0,0,2)
+#@gui : Luminance factor = float(0.75,0,3)
+#@gui : Norm type = choice(1,"L1","L2")
+#@gui : sep = separator()
+#@gui : note = note{"This filter subdivides the image into blocs, and replace each bloc by the most similar bloc found in the other blocs."
+#@gui : "}
+#@gui : sep = separator()
+#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2020/09/17</i>.</small>")
+fx_rebuild_from_similar_blocs :
+  repeat $! l[$>] split_opacity l[0] to_rgb
+    w0,h0,S={[w,h,round(min(w,h)*$1%)]} # S: Bloc size
+
+    # Split image into regular blocs.
+    r {ceil([w,h]/$S)*$S},1,100%,0,3,0.5,0.5
+    M,N={[w,h]/$S}
+    +l. b. $2% rgb2ycbcr sh. 0 *. $3 rm. s yx,-$S a z endl
+
+    # For each bloc, find most similar bloc.
+    $M,$N,1,1,-1
+    f. ":
+      i<0?(
+        ind = x + y*w;
+        ref(crop(#1,0,0,ind,w#1,h#1,1),S);
+        kmin = 0;
+        dmin = inf;
+        for (k = 0, k<wh, ++k, k!=ind?(
+          d = norm"{1+$4}"(S - crop(#1,0,0,k,w#1,h#1,1));
+          d<dmin?(dmin = d; kmin = k);
+        ));
+        xt = kmin%w;
+        yt = int(kmin/w);
+        i(xt,yt) = ind;
+        kmin
+      ):i"
+
+    # Reconstruct image.
+    {[$M,$N]*$S},1,{0,s}
+    eval.. "
+      ind = i;
+      xs = (ind%"$M")*"$S";
+      ys = int(ind/"$M")*"$S";
+      xt = x*"$S";
+      yt = y*"$S";
+      draw(#-1,crop(#0,xs,ys,"$S","$S"),xt,yt,0,0,"$S","$S")"
+    k. r $w0,$h0,1,100%,0,0,0.5,0.5
+  endl a c endl done
+
 #@gui Scanlines : fx_scanlines, fx_scanlines_preview(0)
 #@gui : Amplitude = float(60,0,255)
 #@gui : Bandwidth = float(2,1,300)
