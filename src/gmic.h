@@ -169,6 +169,19 @@ namespace cimg_library {
 #define cimg_verbosity 1
 #endif
 
+// Define gmic_uint64 type.
+#ifndef gmic_uint64
+#if cimg_OS==2
+#define gmic_uint64 __int64
+#else // #if cimg_OS==2
+#if UINTPTR_MAX==0xffffffff || defined(__arm__) || defined(_M_ARM) || ((ULONG_MAX)==(UINT_MAX))
+#define gmic_uint64 unsigned long long
+#else
+#define gmic_uint64 unsigned long
+#endif // #if UINTPTR_MAX==0xffffffff || defined(__arm__) || defined(_M_ARM) || ((ULONG_MAX)==(UINT_MAX))
+#endif // #if cimg_OS==2
+#endif // #ifndef gmic_uint64
+
 #ifdef _MSC_VER
 #pragma comment(linker,"/STACK:6291456")
 #pragma inline_depth(2)
@@ -194,12 +207,10 @@ inline double gmic_mp_run(char *const str,
   return ::gmic_mp_run(str,&mp.listout,(T)0)
 
 template<typename Ts, typename T>
-inline double gmic_mp_get(Ts *const ptr,
-                          const unsigned int w, const unsigned int h, const unsigned int d, const unsigned int s,
-                          const char *const str,
+inline double gmic_mp_get(Ts *const ptr, const unsigned int siz, const char *const str,
                           void *const p_list, const T& pixel_type);
-#define cimg_mp_func_get(ptr,w,h,d,s,str) \
-  return ::gmic_mp_get(ptr,w,h,d,s,str,&mp.listout,(T)0)
+#define cimg_mp_func_get(ptr,siz,str) \
+  return ::gmic_mp_get(ptr,siz,str,&mp.listout,(T)0)
 
 template<typename Ts, typename T>
 inline double gmic_mp_store(const Ts *const ptr,
@@ -246,19 +257,6 @@ const char gmic_dollar = 23, gmic_lbrace = 24, gmic_rbrace = 25, gmic_comma = 26
   gmic_store = 29; // <- this one is only used in variable names.
 
 #endif // #ifndef gmic_build
-
-// Define gmic_uint64 type.
-#ifndef gmic_uint64
-#if cimg_OS==2
-#define gmic_uint64 __int64
-#else // #if cimg_OS==2
-#if UINTPTR_MAX==0xffffffff || defined(__arm__) || defined(_M_ARM) || ((ULONG_MAX)==(UINT_MAX))
-#define gmic_uint64 unsigned long long
-#else
-#define gmic_uint64 unsigned long
-#endif // #if UINTPTR_MAX==0xffffffff || defined(__arm__) || defined(_M_ARM) || ((ULONG_MAX)==(UINT_MAX))
-#endif // #if cimg_OS==2
-#endif // #ifndef gmic_uint64
 
 // Define main libgmic class 'gmic'.
 //----------------------------------
@@ -309,9 +307,7 @@ struct gmic {
   static double mp_run(char *const str,
                        void *const p_list, const T& pixel_type);
   template<typename Ts, typename T>
-  static double mp_get(Ts *const ptr,
-                       const unsigned int w, const unsigned int h, const unsigned int d, const unsigned int s,
-                       const char *const str,
+  static double mp_get(Ts *const ptr, const unsigned int siz, const char *const str,
                        void *const p_list, const T& pixel_type);
   template<typename Ts, typename T>
   static double mp_store(const Ts *const ptr,
@@ -521,11 +517,9 @@ inline double gmic_mp_run(char *const str,
 }
 
 template<typename Ts, typename T>
-inline double gmic_mp_get(Ts *const ptr,
-                          const unsigned int w, const unsigned int h, const unsigned int d, const unsigned int s,
-                          const char *const str,
+inline double gmic_mp_get(Ts *const ptr, const unsigned int siz, const char *const str,
                           void *const p_list, const T& pixel_type) {
-  return gmic::mp_get(ptr,w,h,d,s,str,p_list,pixel_type);
+  return gmic::mp_get(ptr,siz,str,p_list,pixel_type);
 }
 
 template<typename Ts, typename T>
