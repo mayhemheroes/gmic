@@ -2254,8 +2254,40 @@ double gmic::mp_get(Ts *const ptr,
 
     if (cimg_sscanf(str,"%255[a-zA-Z0-9_]%c",&(*varname=0),&end)==1 &&
         (*varname<'0' || *varname>'9')) {
-      if (!is_scalar) std::memset(ptr,0,w*h*d*s*sizeof(Ts));
-      *ptr = (Ts)cimg::PI;
+
+      // Find variable slot.
+      const bool
+        is_global = *varname=='_',
+        is_thread_global = is_global && varname[1]=='_';
+      if (is_thread_global) cimg::mutex(30);
+      const unsigned int hash = hashcode(varname,true);
+      const int lind = is_global || !variables_sizes?0:(int)variables_sizes[hash];
+      CImgList<char>
+        &__variables = *(gmic_instance.variables[hash]),
+        &__variables_names = *(gmic_instance.variables_names[hash]);
+      bool is_name_found = false;
+      int ind = 0;
+      for (int l = __variables.width() - 1; l>=lind; --l) if (!std::strcmp(__variables_names[l],varname)) {
+        is_name_found = true; ind = l; break;
+        }
+      if (!is_name_found) {
+        cimg::mutex(30,0);
+        cimg::mutex(24,0);
+        throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
+                                    "Undefined variable '%s'.",
+                                    cimg::type<T>::string(),str);
+      }
+
+      if (is_scalar) { // Scalar result
+
+
+      } else { // Vector-valued result
+
+
+      }
+
+//      if (!is_scalar) std::memset(ptr,0,w*h*d*s*sizeof(Ts));
+//      *ptr = (Ts)cimg::PI;
 
       cimg::mutex(24,0);
     } else {
