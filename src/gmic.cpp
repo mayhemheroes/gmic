@@ -2269,7 +2269,7 @@ double gmic::mp_get(Ts *const ptr,
       char end = 0;
       int ind = 0;
       for (int l = __variables.width() - 1; l>=lind; --l) if (!std::strcmp(__variables_names[l],varname)) {
-        is_name_found = true; ind = l; break;
+          is_name_found = true; ind = l; break;
         }
       if (!is_name_found) {
         cimg::mutex(30,0);
