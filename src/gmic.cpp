@@ -2234,7 +2234,7 @@ double gmic::mp_get(Ts *const ptr,
                     const char *const str,
                     void *const p_list, const T& pixel_type) {
   cimg::unused(pixel_type);
-  const bool is_scalar = !(w*h*d*s);
+  const bool is_scalar = w*h*d*s==0;
 
   // Retrieve current gmic run.
   cimg::mutex(24);
