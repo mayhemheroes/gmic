@@ -64,6 +64,8 @@
 #      _ '#@cli command_name : arguments_format1 : arguments_format2 : ... : (qualifier)'
 #        starts a new command description.
 #      _ '#@cli : description' add a new description line to the current command description.
+#      _ '#@cli : $ command_line' defines a new example of use of the current command.
+#      _ '#@cli : $$ _pagename' tells the command has a dedicated page in the web tutorial.
 #
 #*** Specific rules for the universal plug-in 'gmic-qt':
 #
@@ -6060,7 +6062,7 @@ update_download_version : check "
 # whether parameters of matching filter must be analyzed (slower) or not.
 #@cli : . 'parse_gui_trigger_outputmode' (optional): A command that is called by the parser just before parsing \
 # the set of each matching filters.\n
-#@cli : Here is the list of variables set by the parser, accessible in command 'parse_gui_outputmode':\n
+#@cli : Here is the list of global variables set by the parser, accessible in command 'parse_gui_outputmode':\n
 #@cli : '$_nbfilters': Number of matching filters.
 #@cli : '$_nongui' (stored as an image): All merged lines in the file that do not correspond to '#@gui' lines.\n
 #@cli : For each filter \#F ('F' in range [0,$_nbfilters-1]):
@@ -6086,6 +6088,13 @@ update_download_version : check "
 #@cli : Default parameters: 'filter_name=*' and 'output_format=print'.
 parse_gui : skip "${1=*},${2=print}"
   e[^-1] "Parse '#@gui' filters '$1' and output in '$2' mode."
+
+  # Check that specified output mode is actually implemented.
+  l[] ({'$$parse_gui_$2'}) rm
+  onfail error[0--2] "Command 'parse_gui': Invalid output mode '$2'."
+  endl
+
+  # Input .gmic data.
   use_vt100
   if !$! l[] it[] ${_path_rc}update$_version.gmic onfail endl fi
   if !$! return fi
@@ -6801,7 +6810,7 @@ strings2ts : skip "${1=}"
   fi
   if $N0 e[] "  > File '$1' contains "$N0" strings." fi
   l[] it "$2" s -,10 N1=$! repeat $! nsrc$>={$>,t} done rm endl
-  l[] it "$3" s -,10 N2=$! repeat $! ndest$>={$>,t} done rm endl
+  l[] it "$3" replace_str " ;",";" s -,10 N2=$! repeat $! ndest$>={$>,t} done rm endl
   if $N1!=$N2 error[0--3] "Command 'strings2ts': Number of lines do not match in files '$2' and '$3'." fi
   e[] "  > Files '$2' and '$3' contain "$N1" strings."
 
@@ -6809,15 +6818,17 @@ strings2ts : skip "${1=}"
   l[] repeat $N1 ({'${ndest$>}'}) nm. ${nsrc$>} done y endl
   repeat $N0 rmn ${src$>} done # Discard already-translated strings in the .ts file
   if $N0 i[0] 0 l[0] rm repeat $N0 i ({'${dest$>}'}) nm. ${src$>} done y endl fi
-  repeat $! l[$<] src={n}
-    replace_str " ;",";" dest={t}
+  repeat $! l[$<] src={n} dest={t}
     if lowercase(['$src'])==lowercase(['$dest']) rm fi
   endl done
   sort_list +,n
   e[] "  > "$!" strings remain after cleaning/merging ("{$!-$N0}" new)."
 
   # Generate .ts file.
-  repeat $! l[$>] src={n} dest={t} rm
+  repeat $! l[$>]
+    _strings2ts_src {n} src=${}
+    _strings2ts_dest {t} dest=${}
+    rm
     ({'"    <message>"\n\
        "      <source>"$src"</source>"\n\
        "      <translation>"$dest"</translation>"\n\
@@ -6827,10 +6838,34 @@ strings2ts : skip "${1=}"
      "<!DOCTYPE TS>"\n\
      "<TS version=\"2.1\" language=\""$lang"\">"\n\
      "  <context>"\n\
-     "    <name>G\47MIC Filters</name>"\n'})
+     "    <name>FilterTextTranslator</name>"\n\n'})
   ({'"  </context>"\n\
      "</TS>"\n'})
   y a y
+
+_strings2ts_src :
+  ({'"$*"'})
+  replace_str. "&deg;","°"
+  replace_str. "&agrave;","à"
+  replace_str. "&","&amp;"
+  replace_str. "<","&lt;"
+  replace_str. ">","&gt;"
+  replace_str. "\"","&quot;"
+  replace_str. "'","&apos;"
+  u {t}
+  rm.
+
+_strings2ts_dest :
+  ({'"$*"'}) html2utf8.
+  replace_str. "&deg;","°"
+  replace_str. "&agrave;","à"
+  replace_str. "&","&amp;"
+  replace_str. "<","&lt;"
+  replace_str. ">","&gt;"
+  replace_str. "\"","&quot;"
+  replace_str. "'","&apos;"
+  u {t}
+  rm.
 
 #
 # Output mode 'zart' (output in stdout).
@@ -7071,7 +7106,7 @@ upload_filters :
   x "cd "$HOME"/work/src/gmic-community && git pull"
 
   # Define the list of compatible versions.
-  (290,291,292,$_version) store. compat
+  (290,291,292,293,$_version) store. compat
 
   # Import filters from stdlib and community.
   files $HOME/work/src/gmic-community/include/*.gmic
@@ -22716,6 +22751,7 @@ __median_stream :
 morph : check "$1>=0.5 && ${2=0.1}>=0 && ${3=4}>=0"
   nbf={round($1)}
   e[^-1] "Create morphing sequence between image$?, with "$nbf" inner frames, smoothness $2 and precision $3.\n"
+  nchan=${-max_s} if $nchan<=4 to_colormode $nchan else channels 0,{$nchan-1} fi
   ri[^0] [0],3
   repeat $!-1 nm={$>,n} l[$<,{$<+1}]
     e[] "\r > Morph image "$>" to image "{$>+1}".    "
@@ -24791,7 +24827,7 @@ render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2
 
       600,30,1,3,'x<$month_sum?[139,181,173]+(y>h/2?0:40):[220,230,240]' r. 500,30,1,3 c. 0,255
       shape_circle 24 s. x,2 s[-2,-1] y,2
-      r[-4] [-5],0,1,0,0 r[-3] [-5],0,1,0,1 r[-2] [-5],0,1,1,0 r[-1] [-5],0,1,1,1 min[-4--1]
+      ri[-4] [-5],0,1,0,0 ri[-3] [-5],0,1,0,1 ri[-2] [-5],0,1,1,0 ri[-1] [-5],0,1,1,1 min[-4--1]
       channels. 0  *.. . *. 255 a[-2,-1] c
       r. {[w,h]+4},1,100%,0,0,0.5,0.5
       sh. 100% dilate_circ. 3 b. 1 rm.
@@ -39544,6 +39580,54 @@ fx_shade_stripes :
 
 fx_shade_stripes_preview :
   gui_split_preview "fx_shade_stripes $*",${-3--1}
+
+#@gui Rebuild From Similar Blocs : fx_rebuild_from_similar_blocs, fx_rebuild_from_similar_blocs(1)
+#@gui : Bloc Size (%) = float(5,2,50)
+#@gui : sep = separator()
+#@gui : Regularization factor = float(10,0,20)
+#@gui : Luminance factor = float(0.75,0,3)
+#@gui : Norm type = choice(1,"L1","L2")
+#@gui : sep = separator()
+#@gui : note = note{"This filter subdivides the image into blocs, and replace each bloc by the most similar bloc
+#@gui : found in the other blocs."}
+#@gui : sep = separator()
+#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2020/09/17</i>.</small>")
+fx_rebuild_from_similar_blocs :
+  repeat $! l[$>] split_opacity l[0] to_rgb
+    w0,h0,S={[w,h,round(min(w,h)*$1%)]} # S: Bloc size
+
+    # Split image into regular blocs.
+    r {ceil([w,h]/$S)*$S},1,100%,0,3,0.5,0.5
+    M,N={[w,h]/$S}
+
+    s yx,-$S a z # Original RGB blocs
+#    +mirror x +mirror y a z # + all xy mirrors
+#    repeat 3 +rotate. 90 done a z # + all 90° rotations
+    +l b xy,$2% rgb2ycbcr sh. 0 *. $3 rm. endl # Blocs to compare, in YCbCr space
+
+    # For each bloc, find most similar bloc.
+    $M,$N,1,1,-1
+    f. ":
+      i<0?(
+        ind = x + y*w;
+        ref(crop(#1,0,0,ind,w#1,h#1,1),S);
+        kmin = 0;
+        dmin = inf;
+        for (k = 0, k<wh, ++k, k!=ind?(
+          d = norm"{1+$4}"(S - crop(#1,0,0,k,w#1,h#1,1));
+          d<dmin?(dmin = d; kmin = k);
+        ));
+        xt = kmin%w;
+        yt = int(kmin/w);
+        i(xt,yt) = ind;
+        kmin;
+      ):i"
+
+    # Reconstruct image.
+    {[$M,$N]*$S},1,{0,s}
+    eval.. "draw(#-1,crop(#0,0,0,i,w#0,h#0,1),x*w#0,y*h#0,0,0,w#0,h#0)"
+    k. r $w0,$h0,1,100%,0,0,0.5,0.5
+  endl a c endl done
 
 #@gui Scanlines : fx_scanlines, fx_scanlines_preview(0)
 #@gui : Amplitude = float(60,0,255)

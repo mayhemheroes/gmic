@@ -2229,6 +2229,117 @@ double gmic::mp_run(char *const str,
 }
 
 template<typename Ts, typename T>
+double gmic::mp_get(Ts *const ptr,
+                    const unsigned int w, const unsigned int h, const unsigned d, const unsigned int s,
+                    const char *const str,
+                    void *const p_list, const T& pixel_type) {
+  cimg::unused(pixel_type);
+  const bool is_scalar = w*h*d*s==0;
+
+  // Retrieve current gmic run.
+  cimg::mutex(24);
+  CImgList<void*> &grl = gmic_runs();
+  int p;
+  for (p = grl.width() - 1; p>=0; --p) {
+    CImg<void*> &gr = grl[p];
+    if (gr[1]==(void*)p_list) break;
+  }
+  if (p<0) cimg::mutex(24,0); // Instance not found
+  else {
+    CImg<void*> &gr = grl[p];
+    gmic &gmic_instance = *(gmic*)gr[0];
+    const unsigned int *const variables_sizes = (const unsigned int*)gr[5];
+    CImg<char> _varname(256);
+    char *const varname = _varname.data(), end;
+
+    if (cimg_sscanf(str,"%255[a-zA-Z0-9_]%c",&(*varname=0),&end)==1 &&
+        (*varname<'0' || *varname>'9')) {
+
+      // Get variable value.
+      const bool
+        is_global = *varname=='_',
+        is_thread_global = is_global && varname[1]=='_';
+      if (is_thread_global) cimg::mutex(30);
+      const unsigned int hash = hashcode(varname,true);
+      const int lind = is_global || !variables_sizes?0:(int)variables_sizes[hash];
+      CImgList<char>
+        &__variables = *(gmic_instance.variables[hash]),
+        &__variables_names = *(gmic_instance.variables_names[hash]);
+      bool is_name_found = false;
+      int ind = 0;
+      for (int l = __variables.width() - 1; l>=lind; --l) if (!std::strcmp(__variables_names[l],varname)) {
+          is_name_found = true; ind = l; break;
+        }
+      if (!is_name_found) {
+        if (is_thread_global) cimg::mutex(30,0);
+        cimg::mutex(24,0);
+        throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
+                                    "Undefined variable '%s'.",
+                                    cimg::type<T>::string(),str);
+      }
+      const char *const value = __variables[ind];
+      double dvalue = 0;
+      if (is_scalar) { // Scalar result
+        if (cimg_sscanf(value,"%lf%c",&dvalue,&end)!=1) {
+          if (is_thread_global) cimg::mutex(30,0);
+          cimg::mutex(24,0);
+          throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
+                                      "Variable '%s' has value '%s', cannot be returned as a scalar.",
+                                      cimg::type<T>::string(),str,value);
+        }
+        *ptr = dvalue;
+
+      } else { // Vector result
+        if (*value==gmic_store) { // Image-encoded variable
+          const char *const zero = (char*)::std::memchr(__variables[ind],0,__variables[ind].width());
+          CImgList<T> list = CImgList<T>::get_unserialize(__variables[ind].
+                                                          get_shared_points(zero + 1 - __variables[ind].data(),
+                                                                            __variables[ind].width() - 1));
+          if (list.size()!=2) {
+            if (is_thread_global) cimg::mutex(30,0);
+            cimg::mutex(24,0);
+            throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
+                                        "Variable '%s' stores %u images, cannot be returned as a vector.",
+                                        cimg::type<T>::string(),str,list.size());
+          }
+          if (list[0].size()<w*d*h*s) {
+            if (is_thread_global) cimg::mutex(30,0);
+            cimg::mutex(24,0);
+            throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
+                                        "Variable '%s' stores an image (%u,%u,%u,%u) of size %lu, "
+                                        "cannot be returned as a vector of size %lu.",
+                                        cimg::type<T>::string(),str,
+                                        list[0].width(),list[0].height(),list[0].depth(),list[0].spectrum(),
+                                        list[0].size(),(cimg_ulong)w*h*d*s);
+          }
+          CImg<Ts>(ptr,w,h,d,s,true) = list[0].resize(w,h,d,s,-1);
+
+        } else { // Regular string variable
+          if (cimg_sscanf(value,"%lf%c",&dvalue,&end)==1)
+            CImg<Ts>(ptr,w,h,d,s,true).fill((Ts)dvalue);
+          else try { CImg<Ts>(ptr,w,h,d,s,true).fill(value,true,false); }
+            catch (...) {
+              if (is_thread_global) cimg::mutex(30,0);
+              cimg::mutex(24,0);
+              throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
+                                          "Variable '%s' has value '%s', cannot be returned as a vector.",
+                                          cimg::type<T>::string(),str,value);
+            }
+        }
+      }
+      if (is_thread_global) cimg::mutex(30,0);
+      cimg::mutex(24,0);
+    } else {
+      cimg::mutex(24,0);
+      throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
+                                  "Invalid variable name '%s'.",
+                                  cimg::type<T>::string(),str);
+    }
+  }
+  return is_scalar?*ptr:cimg::type<double>::nan();
+}
+
+template<typename Ts, typename T>
 double gmic::mp_store(const Ts *const ptr,
                       const unsigned int w, const unsigned int h, const unsigned d, const unsigned int s,
                       const bool is_compressed, const char *const str,
@@ -2268,7 +2379,7 @@ double gmic::mp_store(const Ts *const ptr,
     } else {
       cimg::mutex(24,0);
       throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'store()': "
-                                  "Invalid variable name '%s' specified.",
+                                  "Invalid variable name '%s'.",
                                   cimg::type<T>::string(),str);
     }
   }
@@ -3146,15 +3257,21 @@ const char *gmic::set_variable(const char *const name, const char *const value,
       const char *const s_operation = operation=='+'?"+":operation=='-'?"-":operation=='*'?"*":operation=='/'?"/":
         operation=='%'?"%":operation=='&'?"&":operation=='|'?"|":operation=='^'?"^":
         operation=='<'?"<<":">>";
-      if (!is_name_found)
+      if (!is_name_found) {
+        if (is_thread_global) cimg::mutex(30,0);
         error(true,"Operation '%s=' requested on undefined variable '%s'.",
               s_operation,name);
-      if (cimg_sscanf(__variables[ind],"%lf%c",&lvalue,&end)!=1)
+      }
+      if (cimg_sscanf(__variables[ind],"%lf%c",&lvalue,&end)!=1) {
+        if (is_thread_global) cimg::mutex(30,0);
         error(true,"Operation '%s=' requested on non-numerical variable '%s=%s'.",
               s_operation,name,__variables[ind].data());
-      if (cimg_sscanf(value,"%lf%c",&rvalue,&end)!=1)
+      }
+      if (cimg_sscanf(value,"%lf%c",&rvalue,&end)!=1) {
+        if (is_thread_global) cimg::mutex(30,0);
         error(true,"Operation '%s=' requested on variable '%s', with non-numerical argument '%s'.",
               s_operation,name,value);
+      }
       *s_value = 0;
       cimg_snprintf(s_value,s_value.width(),"%.17g",
                     operation=='+'?lvalue + rvalue:
@@ -11633,11 +11750,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               const unsigned int uind = selection[l];
               if (is_get) {
                 g_list[l] = images[uind].get_shared();
-//                g_list_c[l] = images_names[uind].get_shared(); // TO FIX!
                 CImg<char>::string(images_names[uind]).move_to(g_list_c[l]);
               } else {
                 images[uind].move_to(g_list[l]);
-//                images_names[uind].move_to(g_list_c[l]); // TO FIX!
                 CImg<char>::string(images_names[uind]).move_to(g_list_c[l]);
                 images_names[uind].assign();
               }
@@ -14052,7 +14167,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                  (*argx<'0' || *argx>'9')) {
         if (last_x) *last_x = 'x'; // Restore full input argument
 
-        // Binary-stored variable.
+        // Image-encoded variable.
         print(images,0,
               "Input image from variable '%s', at position%s",
               argx,_gmic_selection.data());
