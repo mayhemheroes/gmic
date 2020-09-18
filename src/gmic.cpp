@@ -11673,11 +11673,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               const unsigned int uind = selection[l];
               if (is_get) {
                 g_list[l] = images[uind].get_shared();
-//                g_list_c[l] = images_names[uind].get_shared(); // TO FIX!
                 CImg<char>::string(images_names[uind]).move_to(g_list_c[l]);
               } else {
                 images[uind].move_to(g_list[l]);
-//                images_names[uind].move_to(g_list_c[l]); // TO FIX!
                 CImg<char>::string(images_names[uind]).move_to(g_list_c[l]);
                 images_names[uind].assign();
               }
