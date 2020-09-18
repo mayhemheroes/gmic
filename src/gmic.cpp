@@ -2229,12 +2229,9 @@ double gmic::mp_run(char *const str,
 }
 
 template<typename Ts, typename T>
-double gmic::mp_get(Ts *const ptr,
-                    const unsigned int w, const unsigned int h, const unsigned d, const unsigned int s,
-                    const char *const str,
+double gmic::mp_get(Ts *const ptr, const unsigned int siz, const char *const str,
                     void *const p_list, const T& pixel_type) {
   cimg::unused(pixel_type);
-  const bool is_scalar = w*h*d*s==0;
 
   // Retrieve current gmic run.
   cimg::mutex(24);
@@ -2279,7 +2276,7 @@ double gmic::mp_get(Ts *const ptr,
       }
       const char *const value = __variables[ind];
       double dvalue = 0;
-      if (is_scalar) { // Scalar result
+      if (!siz) { // Scalar result
         if (cimg_sscanf(value,"%lf%c",&dvalue,&end)!=1) {
           if (is_thread_global) cimg::mutex(30,0);
           cimg::mutex(24,0);
@@ -2302,7 +2299,7 @@ double gmic::mp_get(Ts *const ptr,
                                         "Variable '%s' stores %u images, cannot be returned as a vector.",
                                         cimg::type<T>::string(),str,list.size());
           }
-          if (list[0].size()<w*d*h*s) {
+          if (list[0].size()<siz) {
             if (is_thread_global) cimg::mutex(30,0);
             cimg::mutex(24,0);
             throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
@@ -2310,14 +2307,14 @@ double gmic::mp_get(Ts *const ptr,
                                         "cannot be returned as a vector of size %lu.",
                                         cimg::type<T>::string(),str,
                                         list[0].width(),list[0].height(),list[0].depth(),list[0].spectrum(),
-                                        list[0].size(),(cimg_ulong)w*h*d*s);
+                                        list[0].size(),siz);
           }
-          CImg<Ts>(ptr,w,h,d,s,true) = list[0].resize(w,h,d,s,-1);
+          CImg<Ts>(ptr,siz,1,1,1,true) = list[0].resize(siz,1,1,1,-1);
 
         } else { // Regular string variable
           if (cimg_sscanf(value,"%lf%c",&dvalue,&end)==1)
-            CImg<Ts>(ptr,w,h,d,s,true).fill((Ts)dvalue);
-          else try { CImg<Ts>(ptr,w,h,d,s,true).fill(value,true,false); }
+            CImg<Ts>(ptr,siz,1,1,1,true).fill((Ts)dvalue);
+          else try { CImg<Ts>(ptr,siz,1,1,1,true).fill(value,true,false); }
             catch (...) {
               if (is_thread_global) cimg::mutex(30,0);
               cimg::mutex(24,0);
@@ -2336,7 +2333,7 @@ double gmic::mp_get(Ts *const ptr,
                                   cimg::type<T>::string(),str);
     }
   }
-  return is_scalar?*ptr:cimg::type<double>::nan();
+  return siz?cimg::type<double>::nan():*ptr;
 }
 
 template<typename Ts, typename T>
