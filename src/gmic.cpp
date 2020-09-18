@@ -2314,10 +2314,17 @@ double gmic::mp_get(Ts *const ptr,
           }
           CImg<Ts>(ptr,w,h,d,s,true) = list[0].resize(w,h,d,s,-1);
 
-        } else { // String variable
-          if (cimg_sscanf(value,"%lf%c",&dvalue,&end)!=1) dvalue = cimg::type<double>::nan();
-          std::memset(ptr,0,w*h*d*s*sizeof(Ts));
-          *ptr = dvalue;
+        } else { // Regular string variable
+          if (cimg_sscanf(value,"%lf%c",&dvalue,&end)==1)
+            CImg<Ts>(ptr,w,h,d,s,true).fill((Ts)dvalue);
+          else try { CImg<Ts>(ptr,w,h,d,s,true).fill(value,true,false); }
+            catch (...) {
+              if (is_thread_global) cimg::mutex(30,0);
+              cimg::mutex(24,0);
+              throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
+                                          "Variable '%s' has value '%s', cannot be returned as a vector value.",
+                                          cimg::type<T>::string(),str,value);
+            }
         }
       }
       if (is_thread_global) cimg::mutex(30,0);
