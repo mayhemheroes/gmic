@@ -194,12 +194,12 @@ inline double gmic_mp_run(char *const str,
   return ::gmic_mp_run(str,&mp.listout,(T)0)
 
 template<typename Ts, typename T>
-inline double gmic_mp_get(const Ts *const ptr,
+inline double gmic_mp_get(Ts *const ptr,
                           const unsigned int w, const unsigned int h, const unsigned int d, const unsigned int s,
-                          const bool is_compressed, const char *const str,
+                          const char *const str,
                           void *const p_list, const T& pixel_type);
-#define cimg_mp_func_get(ptr,w,h,d,s,is_compressed,str) \
-  return ::gmic_mp_get(ptr,w,h,d,s,is_compressed,str,&mp.listout,(T)0)
+#define cimg_mp_func_get(ptr,w,h,d,s,str) \
+  return ::gmic_mp_get(ptr,w,h,d,s,str,&mp.listout,(T)0)
 
 template<typename Ts, typename T>
 inline double gmic_mp_store(const Ts *const ptr,
@@ -309,9 +309,9 @@ struct gmic {
   static double mp_run(char *const str,
                        void *const p_list, const T& pixel_type);
   template<typename Ts, typename T>
-  static double mp_get(const Ts *const ptr,
+  static double mp_get(Ts *const ptr,
                        const unsigned int w, const unsigned int h, const unsigned int d, const unsigned int s,
-                       const bool is_compressed, const char *const str,
+                       const char *const str,
                        void *const p_list, const T& pixel_type);
   template<typename Ts, typename T>
   static double mp_store(const Ts *const ptr,
@@ -521,11 +521,11 @@ inline double gmic_mp_run(char *const str,
 }
 
 template<typename Ts, typename T>
-inline double gmic_mp_get(const Ts *const ptr,
+inline double gmic_mp_get(Ts *const ptr,
                           const unsigned int w, const unsigned int h, const unsigned int d, const unsigned int s,
-                          const bool is_compressed, const char *const str,
+                          const char *const str,
                           void *const p_list, const T& pixel_type) {
-  return gmic::mp_get(ptr,w,h,d,s,is_compressed,str,p_list,pixel_type);
+  return gmic::mp_get(ptr,w,h,d,s,str,p_list,pixel_type);
 }
 
 template<typename Ts, typename T>
