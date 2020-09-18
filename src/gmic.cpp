@@ -2266,34 +2266,38 @@ double gmic::mp_get(Ts *const ptr,
         &__variables = *(gmic_instance.variables[hash]),
         &__variables_names = *(gmic_instance.variables_names[hash]);
       bool is_name_found = false;
-      char end = 0;
       int ind = 0;
       for (int l = __variables.width() - 1; l>=lind; --l) if (!std::strcmp(__variables_names[l],varname)) {
           is_name_found = true; ind = l; break;
         }
       if (!is_name_found) {
-        cimg::mutex(30,0);
+        if (is_thread_global) cimg::mutex(30,0);
         cimg::mutex(24,0);
         throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
                                     "Undefined variable '%s'.",
                                     cimg::type<T>::string(),str);
       }
       const char *const value = __variables[ind];
-
+      double dvalue = 0;
       if (is_scalar) { // Scalar result
-        double dvalue = 0;
         if (cimg_sscanf(value,"%lf%c",&dvalue,&end)!=1) dvalue = cimg::type<double>::nan();
         *ptr = dvalue;
 
       } else { // Vector-valued result
+        if (*value==gmic_store) { // Image-encoded variable
 
 
+        } else { // String variable
+          if (cimg_sscanf(value,"%lf%c",&dvalue,&end)!=1) dvalue = cimg::type<double>::nan();
+          std::memset(ptr,0,w*h*d*s*sizeof(Ts));
+          *ptr = dvalue;
+        }
       }
 
 //      if (!is_scalar) std::memset(ptr,0,w*h*d*s*sizeof(Ts));
 //      *ptr = (Ts)cimg::PI;
 
-      cimg::mutex(30,0);
+      if (is_thread_global) cimg::mutex(30,0);
       cimg::mutex(24,0);
     } else {
       cimg::mutex(24,0);
