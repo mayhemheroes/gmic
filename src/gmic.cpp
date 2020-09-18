@@ -2284,7 +2284,7 @@ double gmic::mp_get(Ts *const ptr,
           if (is_thread_global) cimg::mutex(30,0);
           cimg::mutex(24,0);
           throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
-                                      "Variable '%s' has value '%s', cannot be returned as a scalar value.",
+                                      "Variable '%s' has value '%s', cannot be returned as a scalar.",
                                       cimg::type<T>::string(),str,value);
         }
         *ptr = dvalue;
@@ -2299,7 +2299,7 @@ double gmic::mp_get(Ts *const ptr,
             if (is_thread_global) cimg::mutex(30,0);
             cimg::mutex(24,0);
             throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
-                                        "Variable '%s' stores %u images, cannot be returned as a single vector.",
+                                        "Variable '%s' stores %u images, cannot be returned as a vector.",
                                         cimg::type<T>::string(),str,list.size());
           }
           if (list[0].size()<w*d*h*s) {
@@ -2322,7 +2322,7 @@ double gmic::mp_get(Ts *const ptr,
               if (is_thread_global) cimg::mutex(30,0);
               cimg::mutex(24,0);
               throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
-                                          "Variable '%s' has value '%s', cannot be returned as a vector value.",
+                                          "Variable '%s' has value '%s', cannot be returned as a vector.",
                                           cimg::type<T>::string(),str,value);
             }
         }
