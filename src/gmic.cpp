@@ -2229,6 +2229,53 @@ double gmic::mp_run(char *const str,
 }
 
 template<typename Ts, typename T>
+double gmic::mp_get(const Ts *const ptr,
+                    const unsigned int w, const unsigned int h, const unsigned d, const unsigned int s,
+                    const bool is_compressed, const char *const str,
+                    void *const p_list, const T& pixel_type) {
+  cimg::unused(pixel_type);
+
+  // Retrieve current gmic run.
+  cimg::mutex(24);
+  CImgList<void*> &grl = gmic_runs();
+  int p;
+  for (p = grl.width() - 1; p>=0; --p) {
+    CImg<void*> &gr = grl[p];
+    if (gr[1]==(void*)p_list) break;
+  }
+  if (p<0) cimg::mutex(24,0); // Instance not found
+  else {
+    CImg<void*> &gr = grl[p];
+    gmic &gmic_instance = *(gmic*)gr[0];
+    const unsigned int *const variables_sizes = (const unsigned int*)gr[5];
+    CImg<char> _varname(256);
+    char *const varname = _varname.data(), end;
+
+    if (cimg_sscanf(str,"%255[a-zA-Z0-9_]%c",&(*varname=0),&end)==1 &&
+        (*varname<'0' || *varname>'9')) {
+      CImgList<T> g_list;
+      CImg<T>(ptr,w,h,d,s).move_to(g_list);
+      CImg<char> name = CImg<char>::string(varname);
+      name.resize(name.width() + 4,1,1,1,0,0,1);
+      name[0] = 'G'; name[1] = 'M'; name[2] = 'Z'; name[3] = 0;
+      name.unroll('y').move_to(g_list);
+
+      g_list.get_serialize(is_compressed).unroll('x').move_to(name);
+      name.resize(name.width() + 9 + std::strlen(varname),1,1,1,0,0,1);
+      std::sprintf(name,"%c*store/%s",gmic_store,_varname.data());
+      gmic_instance.set_variable(_varname.data(),name,variables_sizes);
+      cimg::mutex(24,0);
+    } else {
+      cimg::mutex(24,0);
+      throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
+                                  "Invalid variable name '%s' specified.",
+                                  cimg::type<T>::string(),str);
+    }
+  }
+  return cimg::type<double>::nan();
+}
+
+template<typename Ts, typename T>
 double gmic::mp_store(const Ts *const ptr,
                       const unsigned int w, const unsigned int h, const unsigned d, const unsigned int s,
                       const bool is_compressed, const char *const str,
