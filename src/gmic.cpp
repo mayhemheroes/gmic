@@ -2234,6 +2234,7 @@ double gmic::mp_get(Ts *const ptr,
                     const char *const str,
                     void *const p_list, const T& pixel_type) {
   cimg::unused(pixel_type);
+  const bool is_scalar = !(w*h*d*s);
 
   // Retrieve current gmic run.
   cimg::mutex(24);
@@ -2253,10 +2254,7 @@ double gmic::mp_get(Ts *const ptr,
 
     if (cimg_sscanf(str,"%255[a-zA-Z0-9_]%c",&(*varname=0),&end)==1 &&
         (*varname<'0' || *varname>'9')) {
-
-      if (w*h*d*s!=0) {
-        memset(ptr,0,w*h*d*s*sizeof(Ts));
-      }
+      if (!is_scalar) std::memset(ptr,0,w*h*d*s*sizeof(Ts));
       *ptr = (Ts)cimg::PI;
 
       cimg::mutex(24,0);
@@ -2267,7 +2265,7 @@ double gmic::mp_get(Ts *const ptr,
                                   cimg::type<T>::string(),str);
     }
   }
-  return cimg::type<double>::nan();
+  return is_scalar?*ptr:cimg::type<double>::nan();
 }
 
 template<typename Ts, typename T>
