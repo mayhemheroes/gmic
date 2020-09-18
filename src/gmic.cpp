@@ -3250,15 +3250,21 @@ const char *gmic::set_variable(const char *const name, const char *const value,
       const char *const s_operation = operation=='+'?"+":operation=='-'?"-":operation=='*'?"*":operation=='/'?"/":
         operation=='%'?"%":operation=='&'?"&":operation=='|'?"|":operation=='^'?"^":
         operation=='<'?"<<":">>";
-      if (!is_name_found)
+      if (!is_name_found) {
+        if (is_thread_global) cimg::mutex(30,0);
         error(true,"Operation '%s=' requested on undefined variable '%s'.",
               s_operation,name);
-      if (cimg_sscanf(__variables[ind],"%lf%c",&lvalue,&end)!=1)
+      }
+      if (cimg_sscanf(__variables[ind],"%lf%c",&lvalue,&end)!=1) {
+        if (is_thread_global) cimg::mutex(30,0);
         error(true,"Operation '%s=' requested on non-numerical variable '%s=%s'.",
               s_operation,name,__variables[ind].data());
-      if (cimg_sscanf(value,"%lf%c",&rvalue,&end)!=1)
+      }
+      if (cimg_sscanf(value,"%lf%c",&rvalue,&end)!=1) {
+        if (is_thread_global) cimg::mutex(30,0);
         error(true,"Operation '%s=' requested on variable '%s', with non-numerical argument '%s'.",
               s_operation,name,value);
+      }
       *s_value = 0;
       cimg_snprintf(s_value,s_value.width(),"%.17g",
                     operation=='+'?lvalue + rvalue:
