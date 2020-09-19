@@ -2197,7 +2197,7 @@ double gmic::mp_run(char *const str,
       }
       if (p<0) { // Instance not found!
         cimg::mutex(24,0);
-        CImg<char>::string("Cannot determine instance of the interpreter.").move_to(is_error);
+        CImg<char>::string("Cannot determine instance of the G'MIC interpreter.").move_to(is_error);
       } else {
         CImg<void*> &gr = grl[p];
         gmic &gmic_instance = *(gmic*)gr[0];
@@ -2250,8 +2250,12 @@ double gmic::mp_get(Ts *const ptr, const unsigned int siz, const char *const str
     CImg<void*> &gr = grl[p];
     if (gr[1]==(void*)p_list) break;
   }
-  if (p<0) cimg::mutex(24,0); // Instance not found
-  else {
+  if (p<0) { // Instance not found!
+    cimg::mutex(24,0);
+    throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
+                                "Cannot determine instance of the G'MIC interpreter.",
+                                cimg::type<T>::string());
+  } else {
     CImg<void*> &gr = grl[p];
     gmic &gmic_instance = *(gmic*)gr[0];
     const unsigned int *const variables_sizes = (const unsigned int*)gr[5];
