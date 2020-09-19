@@ -61,6 +61,19 @@
 #include <cstdio>
 #include <cstring>
 
+// Define gmic_uint64 type.
+#ifndef gmic_uint64
+#if cimg_OS==2
+#define gmic_uint64 __int64
+#else // #if cimg_OS==2
+#if UINTPTR_MAX==0xffffffff || defined(__arm__) || defined(_M_ARM) || ((ULONG_MAX)==(UINT_MAX))
+#define gmic_uint64 unsigned long long
+#else
+#define gmic_uint64 unsigned long
+#endif // #if UINTPTR_MAX==0xffffffff || defined(__arm__) || defined(_M_ARM) || ((ULONG_MAX)==(UINT_MAX))
+#endif // #if cimg_OS==2
+#endif // #ifndef gmic_uint64
+
 #ifndef gmic_build
 
 // Define classes 'gmic_image<T>' and 'gmic_list<T>'.
@@ -168,19 +181,6 @@ namespace cimg_library {
 #ifndef cimg_verbosity
 #define cimg_verbosity 1
 #endif
-
-// Define gmic_uint64 type.
-#ifndef gmic_uint64
-#if cimg_OS==2
-#define gmic_uint64 __int64
-#else // #if cimg_OS==2
-#if UINTPTR_MAX==0xffffffff || defined(__arm__) || defined(_M_ARM) || ((ULONG_MAX)==(UINT_MAX))
-#define gmic_uint64 unsigned long long
-#else
-#define gmic_uint64 unsigned long
-#endif // #if UINTPTR_MAX==0xffffffff || defined(__arm__) || defined(_M_ARM) || ((ULONG_MAX)==(UINT_MAX))
-#endif // #if cimg_OS==2
-#endif // #ifndef gmic_uint64
 
 #ifdef _MSC_VER
 #pragma comment(linker,"/STACK:6291456")
