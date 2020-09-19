@@ -2183,47 +2183,54 @@ double gmic::mp_run(char *const str,
                     void *const p_list, const T& pixel_type) {
   cimg::unused(pixel_type);
   double res = cimg::type<double>::nan();
+  CImg<char> is_error;
   char sep;
   cimg_pragma_openmp(critical(mp_run))
-  {
-    // Retrieve current gmic run.
-    cimg::mutex(24);
-    CImgList<void*> &grl = gmic_runs();
-    int p;
-    for (p = grl.width() - 1; p>=0; --p) {
-      CImg<void*> &gr = grl[p];
-      if (gr[1]==(void*)p_list) break;
-    }
-    if (p<0) { cimg::mutex(24,0); res = cimg::type<double>::nan(); } // Instance not found
-    else {
-      CImg<void*> &gr = grl[p];
-      gmic &gmic_instance = *(gmic*)gr[0];
-      cimg::mutex(24,0);
-
-      // Run given command line.
-      CImgList<T> &images = *(CImgList<T>*)gr[1];
-      CImgList<char> &images_names = *(CImgList<char>*)gr[2];
-      CImgList<T> &parent_images = *(CImgList<T>*)gr[3];
-      CImgList<char> &parent_images_names = *(CImgList<char>*)gr[4];
-      const unsigned int *const variables_sizes = (const unsigned int*)gr[5];
-      const CImg<unsigned int> *const command_selection = (const CImg<unsigned int>*)gr[6];
-
-      if (gmic_instance.is_debug_info && gmic_instance.debug_line!=~0U) {
-        CImg<char> title(32);
-        cimg_snprintf(title,title.width(),"*ext#%u",gmic_instance.debug_line);
-        CImg<char>::string(title).move_to(gmic_instance.callstack);
-      } else CImg<char>::string("*ext").move_to(gmic_instance.callstack);
-      unsigned int pos = 0;
-      try {
-        gmic_instance._run(gmic_instance.commands_line_to_CImgList(gmic::strreplace_fw(str)),pos,images,images_names,
-                           parent_images,parent_images_names,variables_sizes,0,0,command_selection);
-      } catch (gmic_exception&) {
-        res = cimg::type<double>::nan();
+    {
+      // Retrieve current gmic run.
+      cimg::mutex(24);
+      CImgList<void*> &grl = gmic_runs();
+      int p;
+      for (p = grl.width() - 1; p>=0; --p) {
+        CImg<void*> &gr = grl[p];
+        if (gr[1]==(void*)p_list) break;
       }
-      gmic_instance.callstack.remove();
-      if (!gmic_instance.status || !*gmic_instance.status || cimg_sscanf(gmic_instance.status,"%lf%c",&res,&sep)!=1)
-        res = cimg::type<double>::nan();
+      if (p<0) { cimg::mutex(24,0); res = cimg::type<double>::nan(); } // Instance not found
+      else {
+        CImg<void*> &gr = grl[p];
+        gmic &gmic_instance = *(gmic*)gr[0];
+        cimg::mutex(24,0);
+
+        // Run given command line.
+        CImgList<T> &images = *(CImgList<T>*)gr[1];
+        CImgList<char> &images_names = *(CImgList<char>*)gr[2];
+        CImgList<T> &parent_images = *(CImgList<T>*)gr[3];
+        CImgList<char> &parent_images_names = *(CImgList<char>*)gr[4];
+        const unsigned int *const variables_sizes = (const unsigned int*)gr[5];
+        const CImg<unsigned int> *const command_selection = (const CImg<unsigned int>*)gr[6];
+
+        if (gmic_instance.is_debug_info && gmic_instance.debug_line!=~0U) {
+          CImg<char> title(32);
+          cimg_snprintf(title,title.width(),"*ext#%u",gmic_instance.debug_line);
+          CImg<char>::string(title).move_to(gmic_instance.callstack);
+        } else CImg<char>::string("*ext").move_to(gmic_instance.callstack);
+        unsigned int pos = 0;
+        try {
+          gmic_instance._run(gmic_instance.commands_line_to_CImgList(gmic::strreplace_fw(str)),pos,images,images_names,
+                             parent_images,parent_images_names,variables_sizes,0,0,command_selection);
+        } catch (gmic_exception &e) {
+          CImg<char>::string(e.what()).move_to(is_error);
+        }
+        gmic_instance.callstack.remove();
+        if (is_error || !gmic_instance.status || !*gmic_instance.status ||
+            cimg_sscanf(gmic_instance.status,"%lf%c",&res,&sep)!=1)
+          res = cimg::type<double>::nan();
+      }
     }
+  if (is_error) {
+    cimg::mutex(24,0);
+    throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'run()': %s",
+                                cimg::type<T>::string(),is_error.data());
   }
   return res;
 }
