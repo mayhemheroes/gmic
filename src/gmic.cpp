@@ -2195,8 +2195,10 @@ double gmic::mp_run(char *const str,
         CImg<void*> &gr = grl[p];
         if (gr[1]==(void*)p_list) break;
       }
-      if (p<0) { cimg::mutex(24,0); res = cimg::type<double>::nan(); } // Instance not found
-      else {
+      if (p<0) { // Instance not found!
+        cimg::mutex(24,0);
+        CImg<char>::string("Cannot determine instance of the interpreter.").move_to(is_error);
+      } else {
         CImg<void*> &gr = grl[p];
         gmic &gmic_instance = *(gmic*)gr[0];
         cimg::mutex(24,0);
