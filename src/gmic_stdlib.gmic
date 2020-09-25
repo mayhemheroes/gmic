@@ -6779,9 +6779,9 @@ parse_gui_strings :
   um is_str
   if $! y i[1--1] (10) a y else 0 fi
 
-# string2ts : translation_fr.ts,strings_en.txt,strings_fr.txt
-# Regenerate file 'translation_fr' from new translated strings (separated by newline in files strings_*).
-# 'translation_fr' can be an empty argument ("").
+# string2ts : ts_file.ts,strings_en.txt,strings_fr.txt
+# Regenerate .ts file from new translated strings (separated by newline in files strings_*).
+# Specified .ts file can be an empty argument ("").
 strings2ts : skip "${1=}"
   e[^-1] "Regenerate translation file by merging file '$1' and source/translated strings '$2/$3'."
 
@@ -8509,7 +8509,7 @@ cluts2libclut : skip ${1=$HOME/work/src/gmic/resources/gmic_cluts.gmz}
 #@cli : Set 'maximum_sequence_length=0' to disable maximum length constraint.
 #@cli : Default values: 'is_binary_data=0' and 'maximum_sequence_length=0'.
 #@cli : $ image.jpg resize2dy 100 quantize 4 round +compress_rle , +decompress_rle[-1]
-compress_rle : skip ${1=0} check "isint(${2=0}) && $2>=0"
+compress_rle : check "isbool(${1=0}) && isint(${2=0}) && $2>=0"
   s0=" for binary data" s1=""
   if $2 s=", with maximal sequence length "$2 else s="" fi
   e[^-1] "Compress image$? using RLE algorithm"${s{!$1}}$s"."
@@ -8521,7 +8521,7 @@ compress_rle : skip ${1=0} check "isint(${2=0}) && $2>=0"
       f. '>if(x==2,i,if(x==0,if(j(0,-1)==$2,1,if(i!=1,j(0,-1)+1,1)),if(i==-1&&j(-1)==$2,y,i)))'
       mirror x transpose
     fi
-    z 0,{w-2} s y,3 discard[1] -1 warp[0,2] [1],0,0 rm[1]
+    z 0,{w-2} s y,3 discard[1] -1 y[1] warp[0,2] [1],0,0 rm[1]
     if $1 # Encode for binary data.
       !=[0] 0 *[0] 2 -[0] 1 *
     else # Encode for arbitrary data.
@@ -24764,7 +24764,7 @@ render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2
     it[] "$1" s -,{'\n'} rm[0]
 
     # Parse CSV data.
-    eur2usd=1.12 # Change rate from EUR to USD
+    eur2usd=1.25 # Change rate from EUR to USD (taking Paypal conversion fees into account).
     nb_entries=$!
     repeat $!,e l[0]
       repeat 10 l$>= done
