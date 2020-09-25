@@ -382,7 +382,7 @@ struct gmic {
   gmic_image<char> substitute_item(const char *const source,
                                    gmic_list<T>& images, gmic_list<char>& images_names,
                                    gmic_list<T>& parent_images, gmic_list<char>& parent_images_names,
-				   const unsigned int *const variables_sizes,
+                                   const unsigned int *const variables_sizes,
                                    const gmic_image<unsigned int> *const command_selection,
                                    const bool is_image_expr);
 
@@ -391,7 +391,7 @@ struct gmic {
 
   template<typename T>
   gmic& print(const gmic_list<T>& list, const gmic_image<unsigned int> *const callstack_selection,
-	      const char *format, ...);
+              const char *format, ...);
 
   template<typename T>
   gmic& warn(const gmic_list<T>& list, const gmic_image<unsigned int> *const callstack_selection,
@@ -400,7 +400,7 @@ struct gmic {
   template<typename T>
   gmic& error(const bool output_header, const gmic_list<T>& list,
               const gmic_image<unsigned int> *const callstack_selection,
-	      const char *const command, const char *format, ...);
+              const char *const command, const char *format, ...);
 
   template<typename T>
   bool check_cond(const char *const expr, gmic_list<T>& images, const char *const command);

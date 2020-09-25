@@ -14270,34 +14270,34 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   cimg_sscanf(arg_input,"%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-]%c",
                               argx,gmic_use_argy,&end)==2 ||
                   cimg_sscanf(arg_input,"%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-],"
-			      "%255[][a-zA-Z0-9_.eE%+-]%c",
+                              "%255[][a-zA-Z0-9_.eE%+-]%c",
                               argx,argy,gmic_use_argz,&end)==3 ||
                   cimg_sscanf(arg_input,"%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-],"
-			      "%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-]%c",
+                              "%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-]%c",
                               argx,argy,argz,gmic_use_argc,&end)==4 ||
                   cimg_sscanf(arg_input,"%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-],"
-			      "%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-],%c",
+                              "%255[][a-zA-Z0-9_.eE%+-],%255[][a-zA-Z0-9_.eE%+-],%c",
                               argx,argy,argz,argc,&sep)==5) &&
                  ((cimg_sscanf(argx,"[%255[a-zA-Z0-9_.%+-]%c%c",gmic_use_indices,&sepx,&end)==2 &&
-		   sepx==']' &&
+                   sepx==']' &&
                    (indx=selection2cimg(indices,images.size(),images_names,"input")).height()==1) ||
                   (cimg_sscanf(argx,"%f%c",&dx,&end)==1 && dx>=1) ||
                   (cimg_sscanf(argx,"%f%c%c",&dx,&sepx,&end)==2 && dx>0 && sepx=='%')) &&
                  (!*argy ||
                   (cimg_sscanf(argy,"[%255[a-zA-Z0-9_.%+-]%c%c",indicesy.data(),&sepy,&end)==2 &&
-		   sepy==']' &&
+                   sepy==']' &&
                    (indy=selection2cimg(indicesy,images.size(),images_names,"input")).height()==1) ||
                   (cimg_sscanf(argy,"%f%c",&dy,&end)==1 && dy>=1) ||
                   (cimg_sscanf(argy,"%f%c%c",&dy,&sepy,&end)==2 && dy>0 && sepy=='%')) &&
                  (!*argz ||
                   (cimg_sscanf(argz,"[%255[a-zA-Z0-9_.%+-]%c%c",indicesz.data(),&sepz,&end)==2 &&
-		   sepz==']' &&
+                   sepz==']' &&
                    (indz=selection2cimg(indicesz,images.size(),images_names,"input")).height()==1) ||
                   (cimg_sscanf(argz,"%f%c",&dz,&end)==1 && dz>=1) ||
                   (cimg_sscanf(argz,"%f%c%c",&dz,&sepz,&end)==2 && dz>0 && sepz=='%')) &&
                  (!*argc ||
                   (cimg_sscanf(argc,"[%255[a-zA-Z0-9_.%+-]%c%c",indicesc.data(),&sepc,&end)==2 &&
-		   sepc==']' &&
+                   sepc==']' &&
                    (indc=selection2cimg(indicesc,images.size(),images_names,"input")).height()==1) ||
                   (cimg_sscanf(argc,"%f%c",&dc,&end)==1 && dc>=1) ||
                   (cimg_sscanf(argc,"%f%c%c",&dc,&sepc,&end)==2 && dc>0 && sepc=='%'))) {
@@ -14683,7 +14683,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             if (dx<0 || dy<=0 || dz<=0 || dc<=0)
               error(true,images,0,0,
                     "Command 'input': raw file '%s', invalid specified "
-		    "dimensions %gx%gx%gx%g.",
+                    "dimensions %gx%gx%gx%g.",
                     _filename0,dx,dy,dz,dc);
 
             if (offset)
@@ -15038,7 +15038,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     if (images_names.size()!=images.size())
       error(true,images,0,0,
             "Internal error: Images (%u) and images names (%u) have different size, "
-	    "at return point.",
+            "at return point.",
             images_names.size(),images.size());
     if (!callstack)
       error(true,images,0,0,
