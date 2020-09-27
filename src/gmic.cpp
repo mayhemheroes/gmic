@@ -15047,7 +15047,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     // Post-check local environment consistency.
     if (!is_quit && !is_return) {
       const CImg<char>& s = callstack.back();
-      if (s[0]=='*' && (s[1]=='d' || s[1]=='i' || s[1]=='r' || s[1]=='f' || (s[1]=='l' && !is_endlocal))) {
+      if (s[0]=='*' && (s[1]=='d' || s[1]=='i' || (s[1]=='r' && nb_repeatdones) || s[1]=='f' || (s[1]=='l' && !is_endlocal))) {
         unsigned int reference_line = ~0U;
         if (cimg_sscanf(s,"*%*[a-z]#%u",&reference_line)==1)
           error(true,images,0,0,
