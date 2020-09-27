@@ -4301,15 +4301,12 @@ CImg<char> gmic::substitute_item(const char *const source,
   CImg<char> substituted_items(64), inbraces, substr(40), vs;
   char *ptr_sub = substituted_items.data();
   CImg<unsigned int> _ind;
-  const char
-    *const charset = is_image_expr?"${}.":"${}",
-    dot = is_image_expr?'.':0;
+  const char dot = is_image_expr?'.':0;
 
   for (const char *nsource = source; *nsource; )
     if (*nsource!='{' && *nsource!='$' && *nsource!=dot) {
 
       // If not starting with '{', '.' or '$'.
-      const char *const nsource0 = nsource;
       const char *const nsource0 = nsource;
       do { ++nsource; } while (*nsource && *nsource!='{' && *nsource!='$' && *nsource!=dot);
       CImg<char>(nsource0,(unsigned int)(nsource - nsource0),1,1,1,true).
