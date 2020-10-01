@@ -113,7 +113,7 @@ ifeq ($(OS),NetBSD)
 OS = Unix
 endif
 
-ifneq (, $(findstring MINGW,$(OS)))
+ifneq ($(OS),Windows_NT)
 OS = Windows
 USR = /mingw64
 endif
