@@ -311,7 +311,7 @@ OPENEXR_LIBS = -lIlmImf -lHalf
 FFTW_CFLAGS = -Dcimg_use_fftw3 $(shell pkg-config --cflags fftw3)
 FFTW_LIBS = $(shell pkg-config --libs fftw3 || echo -lfftw3)
 ifneq ($(OS),Windows)
-FFTW_LIBS += -lfftw3_threads
+# FFTW_LIBS += -lfftw3_threads
 endif
 
 # Enable native support of the BOARD library.
@@ -689,7 +689,8 @@ do_gmic_stdlib.h:
 #-----------------------
 bashcompletion:
 	@mkdir -p ../resources
-	@\gmic v - gmic_stdlib.gmic it gmic_stdlib.gmic nm gmic document_gmic bash > ../resources/gmic_bashcompletion.sh
+	@\gmic gmic_stdlib.gmic it $$""{_path_rc}update$$""_version.gmic nm gmic document_gmic bash > ../resources/gmic_bashcompletion.sh
+#	@\gmic gmic_stdlib.gmic it \$_path_rc/update\$_version.gmic gmic_stdlib.gmic nm gmic document_gmic bash > ../resources/gmic_bashcompletion.sh
 	@echo "Bash completion script 'gmic_bashcompletion.sh' has been successfully generated in '../resources/'."
 
 # Man pages
