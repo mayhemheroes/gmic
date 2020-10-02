@@ -2213,9 +2213,9 @@ double gmic::mp_run(char *const str,
 
         if (gmic_instance.is_debug_info && gmic_instance.debug_line!=~0U) {
           CImg<char> title(32);
-          cimg_snprintf(title,title.width(),"*ext#%u",gmic_instance.debug_line);
+          cimg_snprintf(title,title.width(),"*expr#%u",gmic_instance.debug_line);
           CImg<char>::string(title).move_to(gmic_instance.callstack);
-        } else CImg<char>::string("*ext").move_to(gmic_instance.callstack);
+        } else CImg<char>::string("*expr").move_to(gmic_instance.callstack);
         unsigned int pos = 0;
         try {
           gmic_instance._run(gmic_instance.commands_line_to_CImgList(gmic::strreplace_fw(str)),pos,images,images_names,
