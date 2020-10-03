@@ -280,17 +280,17 @@ git checkout master
 git merge develop -m "."
 git push
 git checkout develop
-cd ..
+rm -rf zart gmic-qt
+ln -fs ../zart .
+ln -fs ../gmic-qt .
 
 # Create default command file.
 #-----------------------------
 echo " - Create 'gmic_stdlib.h' file"
-cd gmic/src/
+cd src/
 cp -f gmic_stdlib.gmic ../html/
 cp -f gmic_stdlib.gmic ../html/gmic_stdlib.$VERSION
 make do_gmic_stdlib.h CImg.h
-ln -fs ../zart ..
-ln -fs ../gmic-qt ..
 ln -fs ../../gmic-community/libcgmic/gmic_libc.cpp .
 ln -fs ../../gmic-community/libcgmic/gmic_libc.h .
 ln -fs ../../gmic-community/libcgmic/use_libcgmic.c .
@@ -383,22 +383,21 @@ rm -rf $DIR
 mkdir $DIR
 cp -Lrf COPYING README CMakeLists.txt cmake $DIR
 
-mkdir $DIR/src
 cd src
+mkdir -p $DIR/src
 cp -Lrf Makefile CImg.h gmic.cpp gmic.h gmic_stdlib.h gmic_stdlib.gmic gmic_cli.cpp gmic_in_script.scm use_libgmic.cpp gmic_libc.cpp gmic_libc.h use_libcgmic.c $DIR/src
 touch $DIR/src/gmic_stdlib.h
 cd ..
 
-mkdir $DIR/man
 cd man
+mkdir -p $DIR/man
 cp -Lrf gmic.1.gz $DIR/man
 cd ..
 
-mkdir $DIR/resources
 cd resources
-cp -Lrf gmic_bashcompletion.sh $DIR/resources
-cp -Lrf gmic_cluts.gmz $DIR/resources
-mkdir $DIR/resources/samples
+mkdir -p $DIR/resources
+cp -Lrf gmic_bashcompletion.sh gmic_cluts.gmz $DIR/resources
+mkdir -p $DIR/resources/samples
 cp -Lrf samples/*.gmic $DIR/resources/samples
 cp -Lrf debian $DIR
 cd ..
@@ -406,18 +405,16 @@ cd ..
 cd zart
 qmake zart.pro
 make distclean
-mkdir $DIR/zart
+mkdir -p $DIR/zart
 cp -Lrf icons images include src ui *.xml *.html README.md zart.pro zart.desktop zart.qrc $DIR/zart
 cd ..
 
 cd gmic-qt
 qmake gmic_qt.pro
 make distclean
-mkdir $DIR/gmic-qt
+mkdir -p $DIR/gmic-qt
 cp -Lrf *.qrc translations icons images resources src ui README.md COPYING gmic_qt.pro gmic_qt.desktop check_versions.sh pkg-config-check.sh pre_version.sh CMakeLists.txt cmake $DIR/gmic-qt
 cd ..
-
-exit
 
 cd $DIR
 sed s\/_gmic_version\/$SVERSION$SUFFIX\/ README > /tmp/README
