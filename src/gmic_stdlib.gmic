@@ -4369,7 +4369,7 @@ _document_gmic_footer_man : skip $1
 
 # Generate a single image from a list of images, for the reference documentation.
 _document_gmic :
-  repeat $! l[$>] W$>={w} H$>={h} D$>={d} S$>={s} IS_3D$>=${-_is_3d} endl done
+  repeat $! l[$>] W$>,H$>,D$>,S$>={[w,h,d,s]} IS_3D$>=${-_is_3d} endl done
   repeat $! l[$>]
     if ${IS_3D$>} r3d 1,1,0,-80 r3d 0,1,0,80 snapshot3d 400
     else if w>8192 z 0,8191 elif h>8192 rows 0,8191 fi n 0,255
@@ -4377,7 +4377,7 @@ _document_gmic :
   endl done
   +append_tiles 2 if w>1024 r={round(1024*100/w,0.1)} r[^-1] $r%,$r%,1,100%,2 fi rm.
   repeat $! l[$>]
-    if s==1 r {w},{h},1,3 else r {w},{h},1,3,0 fi
+    if s==1 r 100%,100%,1,3 else r 100%,100%,1,3,0 fi
     if w<=h" && "h<256 r2dy 256,2 elif h<=w" && "w<256 r2dx 256,2 fi
     if w<=h" && "h>512 r2dy 512,2 elif h<=w" && "w>512 r2dx 512,2 fi
     if h<48 r 100%,48 fi
@@ -4862,6 +4862,96 @@ _outputx :
 #@cli print : (+)
 #@cli : Output information on selected images, on the standard error (stderr).
 #@cli : (eq. to 'p').
+
+#@cli random_pattern : _width>0,_height>0
+#@cli : Insert a new RGB image of specified size at the end of the image list, rendered with a random pattern.
+#@cli : $ repeat 6 random_pattern 256 done
+random_pattern : check "isint(${1=512}) && $1>0 && isint(${2=$1}) && $2>0"
+  e[^-1] "Generate a RGB image $1x$2, with a random pattern."
+  m "rgb2rgb:"
+  do
+    # Generate the 3 channels independently.
+    repeat 3 do
+      expr=${-_random_pattern_expr}
+      $1,$2,1,2,"*z = [ "{u(20)}"*((x+0.5)/w-0.5), "{u(20)}"*((y+0.5)/h-0.5) + 0.5/h ];"$expr
+      replace_nan. 0 replace_inf. 0
+      norm. n. 0,255 equalize. 256 c. 0,255
+      cond=${-_random_pattern_check_image.}
+      if !$cond rm. fi
+    while !$cond done
+    a[-3--1] c
+
+    # Convert result from random colorspace to RGB.
+    ${"arg "{1+int(u(6))%6}",ycbcr2rgb,hsi82rgb,hsl82rgb,hsv82rgb,lab82rgb,rgb2rgb"}.
+
+    # Local normalization in random colorspace.
+    ac. "normalize_local {[u(2,15),u(2,max(w,h)/2)]}",${"arg "{1+int(u(4))%4}",lab_l,ycbcr_y,hsl_l,rgb"}
+
+    # Random color balance.
+    ac. "*. '[{u([0.25,0.25,0.25],[2,2,2])}]'",${"arg "{1+int(u(6))%6}",lab,ycbcr,hsi,hsl,hsv,rgb"}
+
+    # Equalize
+    +equalize. 256 j.. .,0,0,0,0,{u(0.25,1)} rm. n. 0,255
+
+    cond=${-_random_pattern_check_image.}
+    if !$cond rm. fi
+  while !$cond
+  um rgb2rgb
+
+# $1 : probability of a termination node in [0,1]
+# $2 : level of recursion (avoid stack overflow due to recursivity)
+_random_pattern_expr : skip "${1=0},${2=0}"
+  nl={$2+1}
+  if (u<$1" && "$2>1)" || "$2>6 # Termination node
+    r={u}
+    if $r<0.75 u z
+    else u [{_round(u([-1,-1],[1,1]),0.1)}]
+    fi
+  else # Function or operator
+    p1,p2={[$1,$1]+u([0.2,0.2])}
+    r={u(27)}
+    if $r<1 u ccos(${$0\ $p1,$nl})
+    elif $r<2 u csin(${$0\ $p1,$nl})
+    elif $r<3 u ctan(${$0\ $p1,$nl})
+    elif $r<4 u ccosh(${$0\ $p1,$nl})
+    elif $r<5 u csinh(${$0\ $p1,$nl})
+    elif $r<6 u ctanh(${$0\ $p1,$nl})
+    elif $r<7 u cexp(${$0\ $p1,$nl})
+    elif $r<8 u clog(${$0\ $p1,$nl})
+    elif $r<9 u [cabs(${$0\ $p1,$nl}),0]
+    elif $r<10 u [0,cabs(${$0\ $p1,$nl})]
+    elif $r<11 u [carg(${$0\ $p1,$nl}),0]
+    elif $r<12 u [0,carg(${$0\ $p1,$nl})]
+    elif $r<13 u cconj(${$0\ $p1,$nl})
+    elif $r<14 u (${$0\ $p1,$nl})+(${$0\ $p2,$nl})
+    elif $r<15 u (${$0\ $p1,$nl})-(${$0\ $p2,$nl})
+    elif $r<16 u ${$0\ $p1,$nl}**${$0\ $p2,$nl}
+    elif $r<17 u ${$0\ $p1,$nl}//${$0\ $p2,$nl}
+    elif $r<18 u (${$0\ $p1,$nl})^^0.5
+    elif $r<19 u (${$0\ $p1,$nl})^^2
+    elif $r<20 u (${$0\ $p1,$nl})^^3
+    elif $r<21 u ${$0\ $p1,$nl}*${$0\ $p2,$nl}
+    elif $r<22 u ${$0\ $p1,$nl}/(0.01+cabs(${$0\ $p2,$nl}))
+    elif $r<23 u abs(${$0\ $p1,$nl})^0.5
+    elif $r<24 u (${$0\ $p1,$nl})^2
+    elif $r<25 u [(${$0\ $p1,$nl})[0],0]
+    elif $r<26 u [0,(${$0\ $p1,$nl})[1]]
+    else u (${$0\ $p1,$nl})^3
+    fi
+  fi
+
+# Check that rendered image has enough details in it.
+_random_pattern_check_image :
+  cond=1
+  +s xy,4
+  l[^0]
+    repeat $! if $cond l[$>]
+      gradient_norm.
+      if ia<0.25" || "iM<1 cond=0 fi
+    endl fi done
+    rm
+  endl
+  u $cond
 
 #@cli screen : _x0[%],_y0[%],_x1[%],_y1[%] : (+)
 #@cli : Take screenshot, optionally grabbed with specified coordinates, and insert it
@@ -11452,39 +11542,27 @@ yuv82rgb :
 #@cli : 'centering_x' and 'centering_y' tells about the centering of tiles when they have different sizes.
 #@cli : Default values: 'M=0', 'N=0', 'centering_x=centering_y=0.5'.
 #@cli : $ image.jpg split xy,4 append_tiles ,
-append_tiles : check "isint(${1=0}) && isint(${2=0}) && ${3=0.5}>=0 && $3<=1 && ${4=$3}>=0 && $4<=1"
-  if !$! e[0--3] "Append image$? as a 0x0-tiled image." return fi
-  if !$1&&!$2 # auto-mode
-    N={int(sqrt($!))} M={round($!/$N,1,1)}
+append_tiles : check "isint(${1=0}) && isint(${2=0}) && ${3=0}>=0 && $3<=1 && ${4=$3}>=0 && $4<=1"
+  if !$!
+    e[0--3] "Append image$? as a 0x0-tiled image."
+    return
+  elif !$1" && "!$2 # Auto-mode
+    N={int(sqrt($!))} M={ceil($!/$N)}
     e[0--3] "Append image$? as a "${M}x${N}"-tiled image (auto-mode)."
-    MN={$M*$N} if $!%$MN {$MN-($!%$MN)} s. x fi
-  elif !$2 # auto-rows
+  elif !$2 # Auto-rows
     M=$1 N={round($!/$1,1,1)}
     e[0--3] "Append image$? as a "${M}x${N}"-tiled image."
-    if $M>$! warn[0--3] "Missing images for having one row in a "${M}x${N}"-tiled image." return fi
-    if $!%$M {$M-($!%$M)} s. x fi
-  elif !$1 # auto-columns
+  elif !$1 # Auto-columns
     M={round($!/$2,1,1)} N=$2
     e[0--3] "Append image$? as a "${M}x${N}"-tiled image."
-    if $N>$! warn[0--3] "Missing images for having one column in a "${M}x${N}"-tiled image." return fi
-    if $!%$M {$M-($!%$M)} s. x fi
   else
     e[0--3] "Append image$?, as $1x$2-tiled images."
     M=$1 N=$2
   fi
-
-  MN={$M*$N}
-  repeat ceil($!/$MN) l[$>-{min($!-1,$>+$MN-1)}]
-
-    # Resize to best match for each column and row.
-    $M,$N,1,2,">begin(p = 0); p<l?[ w#p,h#p ]:[ 0,0 ]"
-    s. c l.. s y max endl l. s x max endl
-    repeat $!-2 r[$>] {"[ i[#-2,"$>%$M"],i["int($>/$M)"] ]"},100%,100%,0,0,$3,$4 done
-    rm[-2,-1]
-
-    # Append images together.
-    repeat int($!/$M) a[$>-{$>+$M-1}] x done
-    repeat int($!/$N) a[$>-{$>+$N-1}] y done
+  W,H=${-max_wh} rr2d $W,$H,2,1
+  MN={$M*$N} if $!%$MN 0x{$MN-($!%$MN)} fi
+  repeat $!/$MN l[$>-{$>+$MN-1}]
+    repeat $!/$M a[$>-{$>+$M-1}] x,$3 done a y,$4
   endl done
 
 #@cli apply_scales : "command",number_of_scales>0,_min_scale[%]>=0,_max_scale[%]>=0,_scale_gamma>0,_interpolation
@@ -42672,6 +42750,19 @@ fx_polka_dots :
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2010/29/12</i>.</small>")
 fx_color_ellipses :
   color_ellipses $1,$2,$3
+
+#@gui Random Pattern : fx_random_pattern, fx_random_pattern_preview(1)
+#@gui : Width = _int(1024,16,4096)
+#@gui : Height = _int(1024,16,4096)
+#@gui : sep = separator()
+#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2020/10/07</i>.</small>")
+fx_random_pattern :
+  random_pattern $1,$2
+  mv. 0
+
+fx_random_pattern_preview :
+  random_pattern {s=max($_preview_width,$_preview_height);[s,s]}
+  k.
 
 #@gui Resynthetize Texture [FFT] : syntexturize, fx_syntexturize_preview(1)
 #@gui : Width = _int(1024,32,8192)
