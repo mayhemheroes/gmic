@@ -4863,6 +4863,95 @@ _outputx :
 #@cli : Output information on selected images, on the standard error (stderr).
 #@cli : (eq. to 'p').
 
+#@cli random_pattern : _width>0,_height>0
+#@cli : Insert a new RGB image of specified size at the end of the image list, rendered with a random pattern.
+#@cli : $ repeat 6 random_pattern 256 done
+random_pattern : check "isint(${1=512}) && $1>0 && isint(${2=$1}) && $2>0"
+  e[^-1] "Generate a RGB image $1x$2, with a random pattern."
+  m "rgb2rgb:"
+  do
+    # Generate the 3 channels independently.
+    repeat 3 do
+      expr=${-_random_pattern_expr}
+      $1,$2,1,2,"*z = [ "{u(20)}"*((x+0.5)/w-0.5), "{u(20)}"*((y+0.5)/h-0.5) + 0.5/h ];"$expr
+      norm. n. 0,255 equalize. 256 c. 0,255
+      cond=${-_random_pattern_check_image.}
+      if !$cond rm. fi
+    while !$cond done
+    a[-3--1] c
+
+    # Convert result from random colorspace to RGB.
+    ${"arg "{1+int(u(6))%6}",ycbcr2rgb,hsi82rgb,hsl82rgb,hsv82rgb,lab82rgb,rgb2rgb"}.
+
+    # Local normalization in random colorspace.
+    ac. "normalize_local {[u(2,15),u(2,max(w,h)/2)]}",${"arg "{1+int(u(4))%4}",lab_l,ycbcr_y,hsl_l,rgb"}
+
+    # Random color balance.
+    ac. "*. '[{u([0.25,0.25,0.25],[2,2,2])}]'",${"arg "{1+int(u(6))%6}",lab,ycbcr,hsi,hsl,hsv,rgb"}
+
+    # Equalize
+    +equalize. 256 j.. .,0,0,0,0,{u(0.25,1)} rm. n. 0,255
+
+    cond=${-_random_pattern_check_image.}
+    if !$cond rm. fi
+  while !$cond
+  um rgb2rgb
+
+# $1 : probability of a termination node in [0,1]
+# $2 : level of recursion (avoid stack overflow due to recursivity)
+_random_pattern_expr : skip "${1=0},${2=0}"
+  nl={$2+1}
+  if (u<$1" && "$2>1)" || "$2>6 # Termination node
+    r={u}
+    if $r<0.75 u z
+    else u [{_round(u([-10,-10],[10,10]),0.1)}]
+    fi
+  else # Function or operator
+    p1,p2={[$1,$1]+u([0.2,0.2])}
+    r={u(27)}
+    if $r<1 u ccos(${$0\ $p1,$nl})
+    elif $r<2 u csin(${$0\ $p1,$nl})
+    elif $r<3 u ctan(${$0\ $p1,$nl})
+    elif $r<4 u ccosh(${$0\ $p1,$nl})
+    elif $r<5 u csinh(${$0\ $p1,$nl})
+    elif $r<6 u ctanh(${$0\ $p1,$nl})
+    elif $r<7 u cexp(${$0\ $p1,$nl})
+    elif $r<8 u clog(${$0\ $p1,$nl})
+    elif $r<9 u [cabs(${$0\ $p1,$nl}),0]
+    elif $r<10 u [0,cabs(${$0\ $p1,$nl})]
+    elif $r<11 u [carg(${$0\ $p1,$nl}),0]
+    elif $r<12 u [0,carg(${$0\ $p1,$nl})]
+    elif $r<13 u cconj(${$0\ $p1,$nl})
+    elif $r<14 u (${$0\ $p1,$nl})+(${$0\ $p2,$nl})
+    elif $r<15 u (${$0\ $p1,$nl})-(${$0\ $p2,$nl})
+    elif $r<16 u ${$0\ $p1,$nl}**${$0\ $p2,$nl}
+    elif $r<17 u ${$0\ $p1,$nl}//${$0\ $p2,$nl}
+    elif $r<18 u (${$0\ $p1,$nl})^^0.5
+    elif $r<19 u (${$0\ $p1,$nl})^^2
+    elif $r<20 u (${$0\ $p1,$nl})^^3
+    elif $r<21 u ${$0\ $p1,$nl}*${$0\ $p2,$nl}
+    elif $r<22 u ${$0\ $p1,$nl}/(0.01+cabs(${$0\ $p2,$nl}))
+    elif $r<23 u abs(${$0\ $p1,$nl})^0.5
+    elif $r<24 u (${$0\ $p1,$nl})^2
+    elif $r<25 u [(${$0\ $p1,$nl})[0],0]
+    elif $r<26 u [0,(${$0\ $p1,$nl})[1]]
+    else u (${$0\ $p1,$nl})^3
+    fi
+  fi
+
+# Check that rendered image has enough details in it.
+_random_pattern_check_image :
+  cond=1
+  +s xy,4
+  l[^0]
+    repeat $! if $cond l[$>]
+      gradient_norm.
+      if ia<0.25" || "iM<1 cond=0 fi
+    endl fi done
+    rm
+  endl
+  u $cond
+
 #@cli screen : _x0[%],_y0[%],_x1[%],_y1[%] : (+)
 #@cli : Take screenshot, optionally grabbed with specified coordinates, and insert it
 #@cli : at the end of the image list.
@@ -42672,6 +42761,19 @@ fx_polka_dots :
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2010/29/12</i>.</small>")
 fx_color_ellipses :
   color_ellipses $1,$2,$3
+
+#@gui Random Pattern : fx_random_pattern, fx_random_pattern_preview(1)
+#@gui : Width = _int(1024,16,4096)
+#@gui : Height = _int(1024,16,4096)
+#@gui : sep = separator()
+#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2020/10/07</i>.</small>")
+fx_random_pattern :
+  random_pattern $1,$2
+  mv. 0
+
+fx_random_pattern_preview :
+  random_pattern {s=max($_preview_width,$_preview_height);[s,s]}
+  k.
 
 #@gui Resynthetize Texture [FFT] : syntexturize, fx_syntexturize_preview(1)
 #@gui : Width = _int(1024,32,8192)
