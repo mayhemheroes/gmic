@@ -42765,17 +42765,21 @@ fx_color_ellipses :
 #@gui : Randomize Seed = button()
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2020/10/08</i>.</small>")
-fx_random_pattern :
+_fx_random_pattern :
   if $4 srand _seed={_round(u(65535))} else _seed=$3 fi
   srand $_seed
   random_pattern $1,$1,$2
   mv. 0
 
+fx_random_pattern :
+  if $_output_mode rm fi
+  _fx_random_pattern $*
+
 fx_random_pattern_preview :
-  fx_random_pattern {max($_preview_width,$_preview_height)},${2--1}
+  _fx_random_pattern {max($_preview_width,$_preview_height)},${2--1}
   k[0] rr2d $_preview_width,$_preview_height,2,2
   to "Seed: \#"$_seed,5,5,5%,2
-  u "{$1}{"{$3?$_seed:$2}"}{0}"
+  u "{$1}{$2}{"{$4?$_seed:$3}"}{0}"
 
 #@gui Resynthetize Texture [FFT] : syntexturize, fx_syntexturize_preview(1)
 #@gui : Width = _int(1024,32,8192)
