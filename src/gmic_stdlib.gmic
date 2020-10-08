@@ -4863,40 +4863,39 @@ _outputx :
 #@cli : Output information on selected images, on the standard error (stderr).
 #@cli : (eq. to 'p').
 
-#@cli random_pattern : _width>0,_height>0
+#@cli random_pattern : _width>0,_height>0,_min_detail_level>=0
 #@cli : Insert a new RGB image of specified size at the end of the image list, rendered with a random pattern.
+#@cli : Default values: 'width=height=512' and 'min_detail_level=5'.
 #@cli : $ repeat 6 random_pattern 256 done
-random_pattern : check "isint(${1=512}) && $1>0 && isint(${2=$1}) && $2>0"
+random_pattern : check "isint(${1=512}) && $1>0 && isint(${2=$1}) && $2>0 && ${3=5}>=0"
   e[^-1] "Generate a RGB image $1x$2, with a random pattern."
   m "rgb2rgb:"
-  do
 
-    # Generate the 3 channels independently.
-    repeat 3 do
-      expr=${-_random_pattern_expr}
-      $1,$2,1,2,"*z = [ "{u(20)}"*((x+0.5)/w-0.5), "{u(20)}"*((y+0.5)/h-0.5) + 0.5/h ];"$expr
-      replace_naninf. 0
-      norm. n. 0,255 equalize. 256 c. 0,255
-      cond=${-_random_pattern_check_image.}
+  # Generate the 3 channels independently.
+  repeat 3
+    do
+      expr="z = [ "{u(20)}"*((x+0.5)/w-0.5), "{u(20)}"*((y+0.5)/h-0.5) + 0.5/h ]; "${-_random_pattern_expr}
+      {round([$1,$2]*128/min($1,$2))},1,2,*$expr
+      replace_naninf. 0 norm. n. 0,255 equalize. 256 c. 0,255
+      cond=${-_random_pattern_check_image.\ $3}
       if !$cond rm. fi
-    while !$cond done
-    a[-3--1] c
+    while !$cond
+    rm. $1,$2,1,2,*$expr
+    replace_naninf. 0 norm. n. 0,255 equalize. 256 c. 0,255
+  done
+  a[-3--1] c
 
-    # Convert result from random colorspace to RGB.
-    ${"arg "{1+int(u(6))%6}",ycbcr2rgb,hsi82rgb,hsl82rgb,hsv82rgb,lab82rgb,rgb2rgb"}.
+  # Convert result from random colorspace to RGB.
+  ${"arg "{1+int(u(6))%6}",ycbcr2rgb,hsi82rgb,hsl82rgb,hsv82rgb,lab82rgb,rgb2rgb"}.
 
-    # Local normalization in random colorspace.
-    ac. "normalize_local {[u(2,15),u(2,max(w,h)/2)]}",${"arg "{1+int(u(4))%4}",lab_l,ycbcr_y,hsl_l,rgb"}
+  # Local normalization in random colorspace.
+  ac. "normalize_local {[u(2,15),u(2,max(w,h)/2)]}",${"arg "{1+int(u(4))%4}",lab_l,ycbcr_y,hsl_l,rgb"}
 
-    # Random color balance.
-    ac. "*. '[{u([0.25,0.25,0.25],[2,2,2])}]'",${"arg "{1+int(u(6))%6}",lab,ycbcr,hsi,hsl,hsv,rgb"}
+  # Random color balance.
+  ac. "*. '[{u([0.25,0.25,0.25],[2,2,2])}]'",${"arg "{1+int(u(6))%6}",lab,ycbcr,hsi,hsl,hsv,rgb"}
 
-    # Equalize
-    +equalize. 256 j.. .,0,0,0,0,{u(0.25,1)} rm. n. 0,255
-
-    cond=${-_random_pattern_check_image.}
-    if !$cond rm. fi
-  while !$cond
+  # Equalize
+  +equalize. 256 j.. .,0,0,0,0,{u(0.25,1)} rm. n. 0,255
   um rgb2rgb
 
 # $1 : probability of a termination node in [0,1]
@@ -4942,13 +4941,14 @@ _random_pattern_expr : skip "${1=0},${2=0}"
   fi
 
 # Check that rendered image has enough details in it.
+# $1 = Minimum detail level.
 _random_pattern_check_image :
   cond=1
-  +s xy,4
+  +s. xy,4
   l[^0]
     repeat $! if $cond l[$>]
       gradient_norm.
-      if ia<0.25" || "iM<1 cond=0 fi
+      if ic<$1 cond=0 fi
     endl fi done
     rm
   endl
@@ -42759,27 +42759,23 @@ fx_color_ellipses :
   color_ellipses $1,$2,$3
 
 #@gui Random Pattern : fx_random_pattern, fx_random_pattern_preview(1)
-#@gui : Width = int(512,16,4096)
-#@gui : Height = int(512,16,4096)
+#@gui : Size = _int(1024,16,8192)
+#@gui : Min Detail Level = float(4,0,20)
+#@gui : Seed = float(4038,0,65535)
+#@gui : Randomize Seed = button()
 #@gui : sep = separator()
-#@gui : Seed = float(20451,0,65535)
-#@gui : Randomize Seed = button();
-#@gui : sep = separator()
-#@gui : note = note{"<b>Note</b>: The randomness of the generated pattern is very high: it depends both on the chosen
-#@gui : seed <b>and</b> the specified resolution for the rendering. Same seed will not render the same pattern at
-#@gui : different resolutions."}
-#@gui : sep = separator()
-#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2020/10/07</i>.</small>")
+#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2020/10/08</i>.</small>")
 fx_random_pattern :
   if $4 srand _seed={_round(u(65535))} else _seed=$3 fi
   srand $_seed
-  random_pattern $1,$2
+  random_pattern $1,$1,$2
   mv. 0
 
 fx_random_pattern_preview :
-  fx_random_pattern $* k[0] rr2d $_preview_width,$_preview_height,2,2
+  fx_random_pattern {max($_preview_width,$_preview_height)},${2--1}
+  k[0] rr2d $_preview_width,$_preview_height,2,2
   to "Seed: \#"$_seed,5,5,5%,2
-  $4 u "{$1}{$2}{"{$4?$_seed:$3}"}{0}"
+  u "{$1}{"{$3?$_seed:$2}"}{0}"
 
 #@gui Resynthetize Texture [FFT] : syntexturize, fx_syntexturize_preview(1)
 #@gui : Width = _int(1024,32,8192)
