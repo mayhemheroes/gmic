@@ -4875,7 +4875,7 @@ random_pattern : check "isint(${1=512}) && $1>0 && isint(${2=$1}) && $2>0"
     repeat 3 do
       expr=${-_random_pattern_expr}
       $1,$2,1,2,"*z = [ "{u(20)}"*((x+0.5)/w-0.5), "{u(20)}"*((y+0.5)/h-0.5) + 0.5/h ];"$expr
-      replace_nan. 0 replace_inf. 0
+      replace_naninf. 0
       norm. n. 0,255 equalize. 256 c. 0,255
       cond=${-_random_pattern_check_image.}
       if !$cond rm. fi
@@ -9218,6 +9218,12 @@ replace_inf :
 replace_nan :
   e[^-1] "Replace all NaN values in images$? by expression '$1'."
   f "isnan(i)?$1:i"
+
+#@cli replace_naninf : _expression
+#@cli : Replace all NaN and infinite values in selected images by specified expression.
+replace_naninf :
+  e[^-1] "Replace all NaN and infinite values in images$? by expression '$1'."
+  f "isnan(i) || isinf(i)?$1:i"
 
 #@cli replace_seq : "search_seq","replace_seq"
 #@cli : Search and replace a sequence of values in selected images.
