@@ -4870,6 +4870,7 @@ random_pattern : check "isint(${1=512}) && $1>0 && isint(${2=$1}) && $2>0"
   e[^-1] "Generate a RGB image $1x$2, with a random pattern."
   m "rgb2rgb:"
   do
+
     # Generate the 3 channels independently.
     repeat 3 do
       expr=${-_random_pattern_expr}
@@ -42752,17 +42753,27 @@ fx_color_ellipses :
   color_ellipses $1,$2,$3
 
 #@gui Random Pattern : fx_random_pattern, fx_random_pattern_preview(1)
-#@gui : Width = _int(1024,16,4096)
-#@gui : Height = _int(1024,16,4096)
+#@gui : Width = int(512,16,4096)
+#@gui : Height = int(512,16,4096)
+#@gui : sep = separator()
+#@gui : Seed = float(20451,0,65535)
+#@gui : Randomize Seed = button();
+#@gui : sep = separator()
+#@gui : note = note{"<b>Note</b>: The randomness of the generated pattern is very high: it depends both on the chosen
+#@gui : seed <b>and</b> the specified resolution for the rendering. Same seed will not render the same pattern at
+#@gui : different resolutions."}
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2020/10/07</i>.</small>")
 fx_random_pattern :
+  if $4 srand _seed={_round(u(65535))} else _seed=$3 fi
+  srand $_seed
   random_pattern $1,$2
   mv. 0
 
 fx_random_pattern_preview :
-  random_pattern {s=max($_preview_width,$_preview_height);[s,s]}
-  k.
+  fx_random_pattern $* k[0] rr2d $_preview_width,$_preview_height,2,2
+  to "Seed: \#"$_seed,5,5,5%,2
+  $4 u "{$1}{$2}{"{$4?$_seed:$3}"}{0}"
 
 #@gui Resynthetize Texture [FFT] : syntexturize, fx_syntexturize_preview(1)
 #@gui : Width = _int(1024,32,8192)
