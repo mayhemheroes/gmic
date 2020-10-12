@@ -4843,9 +4843,10 @@ CImg<char> gmic::substitute_item(const char *const source,
           l_name = is_braces?l_inbraces + 4:(unsigned int)std::strlen(name) + 2;
         unsigned int uind = 0;
         if (search_sorted(name,commands_names[hash],commands_names[hash].size(),uind)) {
-          CImgList<char> sc = CImg<char>::string(commands[hash][uind],false,true).get_split(CImg<char>::vector(' '));
-          cimglist_for(sc,l) if (sc(l,0)==1) sc.remove(l--); // Discard debug info
-          (sc>'y').autocrop(' ').unroll('x').move_to(inbraces);
+          CImg<char> sc = CImg<char>::string(commands[hash][uind],false);
+          cimg_foroff(sc,p) if (sc[p]==1 && (!p || sc[p - 1]==' ')) // Discard debug info
+            while (sc[p]!=' ' && p<(cimg_ulong)sc.width()) sc[p++] = 0;
+          sc.discard(CImg<char>::vector(0)).autocrop(' ').unroll('x').move_to(inbraces);
           inbraces.append_string_to(substituted_items,ptr_sub);
         }
         nsource+=l_name;
@@ -10426,7 +10427,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             wait_mode = (bool)(*_arg - '0'); _arg+=2; _arg_text+=2;
           }
           CImgList<char> arguments = CImg<char>::string(_arg).get_split(CImg<char>::vector(','),0,false);
-
           CImg<_gmic_parallel<T> >(1,arguments.width()).move_to(gmic_threads);
           CImg<_gmic_parallel<T> > &_gmic_threads = gmic_threads.back();
 
