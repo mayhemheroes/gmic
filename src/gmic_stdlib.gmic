@@ -4377,12 +4377,24 @@ _document_gmic :
     if ${-is_3d} # 3D vector object
       label2="("{i[7]}" vert., "{i[8]}" prim.)"
       r3d 1,1,0,-80 r3d 0,1,0,80 snapshot3d {max($W,$H)}
-    else # Regular image
+    else # Regular 1D,2D or 3D image
       label2="("{w}x{h}x{d}x{s}")"
-      slices 50%
+      r 100%,100%,100%,3,{s==1?1:0}
+      if d>1 # Volumetric image
+        +z 50%,0,0,50%,100%,100% permute. zyxc
+        +z.. 0,50%,0,100%,50%,100% permute. xzyc
+        +projections3d... 50%,50%,50%,1 r3d. 1,1,0,-80 r3d. 0,1,0,80 snapshot3d. {max($W/2,$H/2)}
+        slices[-4] 50%
+        rr2d[0] {[$W,$H]/2},0,2
+        r2dy[1] {0,h}
+        r2dx[2] {0,w}
+        rr2d[3] {1,w},{2,h},0,2
+        to[0] XY to[1] XZ to[2] YZ to[3] 3D\ View
+        n 0,255
+        frame 1,1,200
+        a[0,1] x a[1,2] x a y
+      fi
     fi
-
-    r 100%,100%,1,3,{s==1?1:0}
 
     if w>5*h r $W,{$H/3},1,100%,1
     elif h>5*w r {$W/3},$H,1,100%,1
