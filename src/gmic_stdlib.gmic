@@ -4375,14 +4375,28 @@ _document_gmic :
   repeat $! l[$>] nm={n}
     label=[$>]:" "$nm
     if ${-is_3d} # 3D vector object
-      label2="("{i[7]}" vert., "{i[8]}" prim.)"
+      label2="("{i[6]}" vert., "{i[7]}" prim.)"
       r3d 1,1,0,-80 r3d 0,1,0,80 snapshot3d {max($W,$H)}
-    else # Regular image
+    else # Regular 1D,2D or 3D image
       label2="("{w}x{h}x{d}x{s}")"
-      slices 50%
+      r 100%,100%,100%,3,{s==1?1:0}
+      if d>1 # Volumetric image
+        d={d}
+        +z 50%,0,0,50%,100%,100% permute. zyxc
+        +z.. 0,50%,0,100%,50%,100% permute. xzyc
+        if $d>10 +projections3d... 50%,50%,50%,1 r3d. 1,1,0,-80 r3d. 0,1,0,80 snapshot3d. {max($W/2,$H/2)}
+        else 0
+        fi
+        slices[-4] 50%
+        rr2d[0] {[$W,$H]/2},0,2 to[0] XY,,,16
+        r2dy[1] {0,h} to[1] XZ,,,16
+        r2dx[2] {0,w} to[2] YZ,,,16
+        if $d>10 rr2d[3] {1,w},{2,h},0,2 to[3] 3D\ View,,,16 fi
+        n 0,255
+        frame[0-2] 1,1,200
+        a[0,1] x a[1,2] x a y
+      fi
     fi
-
-    r 100%,100%,1,3,{s==1?1:0}
 
     if w>5*h r $W,{$H/3},1,100%,1
     elif h>5*w r {$W/3},$H,1,100%,1
@@ -5220,8 +5234,8 @@ shape_polygon : check "${1=512}>=0 && isint(${2=5}) && $2>=3" skip ${3=0}
       a x n 0,{$ir-1} s x +.. {-2,0.5*($ir-im-iM)} +. {-1,0.5*($ir-im-iM)} a x
       $ir,$ir polygon. $2,{-2,^},1,1 rm..
     endl
+    nm. "[2D $2-polygon shape]"
   fi
-  nm "[2D $2-polygon shape]"
 
 #@cli shape_snowflake : size>=0,0<=_nb_recursions<=6
 #@cli : Input a 2D snowflake binary shape with specified size.
