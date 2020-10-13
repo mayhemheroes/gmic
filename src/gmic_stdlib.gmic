@@ -15076,11 +15076,9 @@ label_fg : check "$1>=0" skip ${2=0}
 
 #@cli laar
 #@cli : Extract the largest axis-aligned rectangle in non-zero areas of selected images.
-#@cli : Rectangle coordinates are returned in status, as a sequence x0,y0,x1,y1.
-#@cli : $ shape_cupid 256 laar normalize 0,255 to_rgb rectangle ${},0.5,0,128,0
+#@cli : Rectangle coordinates are returned in status, as a sequence of numbers x0,y0,x1,y1.
+#@cli : $ shape_cupid 256 coords=${-laar} normalize 0,255 to_rgb rectangle $coords,0.5,0,128,0
 laar :
-  _nb_tot,_nb_fs=0
-
   e[^-1] "Extract the largest axis-aligned rectangle in non-zero areas of image$?."
   res= sep=
   repeat $! l[$>]
@@ -15142,8 +15140,6 @@ laar :
     rm[shape,cumul]
   endl done u $res
 
-#  e[] "nb_tests = "$_nb_tot" ("$_nb_fs" fullsearch)."
-
 # $1,$2: Rectangle width and height.
 # $3: Attempt full-search.
 # ${4--1}: Coordinates of candidate locations.
@@ -15171,9 +15167,7 @@ _laar : skip "${4=}"
               i(#"$shape",x,y) && x1<w#"$shape" && y1<h#"$shape" && cumul(x,y,x1,y1)==$1*$2"
     if iM 100%,100%,1,2,"i(#-1)?[x,y]:[-1,-1]" discard. -1 if w s. y,2 a[-2,-1] x res={^} fi rm. fi
     rm.
-#    _nb_fs+=1
   fi
-#  _nb_tot+=1
   u $res
 
 #@cli max_patch : _patch_size>=1
