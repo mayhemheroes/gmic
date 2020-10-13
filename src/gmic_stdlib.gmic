@@ -4381,17 +4381,19 @@ _document_gmic :
       label2="("{w}x{h}x{d}x{s}")"
       r 100%,100%,100%,3,{s==1?1:0}
       if d>1 # Volumetric image
+        d={d}
         +z 50%,0,0,50%,100%,100% permute. zyxc
         +z.. 0,50%,0,100%,50%,100% permute. xzyc
-        +projections3d... 50%,50%,50%,1 r3d. 1,1,0,-80 r3d. 0,1,0,80 snapshot3d. {max($W/2,$H/2)}
+        if $d>10 +projections3d... 50%,50%,50%,1 r3d. 1,1,0,-80 r3d. 0,1,0,80 snapshot3d. {max($W/2,$H/2)}
+        else 0
+        fi
         slices[-4] 50%
-        rr2d[0] {[$W,$H]/2},0,2
-        r2dy[1] {0,h}
-        r2dx[2] {0,w}
-        rr2d[3] {1,w},{2,h},0,2
-        to[0] XY to[1] XZ to[2] YZ to[3] 3D\ View
+        rr2d[0] {[$W,$H]/2},0,2 to[0] XY,,,16
+        r2dy[1] {0,h} to[1] XZ,,,16
+        r2dx[2] {0,w} to[2] YZ,,,16
+        if $d>10 rr2d[3] {1,w},{2,h},0,2 to[3] 3D\ View,,,16 fi
         n 0,255
-        frame 1,1,200
+        frame[0-2] 1,1,200
         a[0,1] x a[1,2] x a y
       fi
     fi
