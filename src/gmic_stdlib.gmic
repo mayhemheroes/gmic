@@ -4369,36 +4369,75 @@ _document_gmic_footer_man : skip $1
 
 # Generate a single image from a list of images, for the reference documentation.
 _document_gmic :
-  repeat $! l[$>] W$>,H$>,D$>,S$>={[w,h,d,s]} IS_3D$>=${-_is_3d} endl done
-  repeat $! l[$>]
-    if ${IS_3D$>} r3d 1,1,0,-80 r3d 0,1,0,80 snapshot3d 400
-    else if w>8192 z 0,8191 elif h>8192 rows 0,8191 fi n 0,255
+  M,N={M=ceil(sqrt($!));$!<4?[$!,1]:[M,ceil($!/M)]}
+  W,H={Sw=$!<2?720:960;Sh=640;floor([Sw/$M,Sh/$N])}
+
+  repeat $! l[$>] nm={n}
+    label=[$>]:" "$nm
+    if ${-is_3d} # 3D vector object
+      label2="("{i[7]}" vert., "{i[8]}" prim.)"
+      r3d 1,1,0,-80 r3d 0,1,0,80 snapshot3d {max($W,$H)}
+    else # Regular image
+      label2="("{w}x{h}x{d}x{s}")"
+      slices 50%
     fi
+
+    r 100%,100%,1,3,{s==1?1:0}
+
+    if w>5*h r $W,{$H/3},1,100%,1
+    elif h>5*w r {$W/3},$H,1,100%,1
+    else rr2d $W,$H,0,{w<$W&&h<$H?1:2}
+    fi
+    n 0,255
+
+    r {[w,h]+2},1,100%,0,0,0.5,0.5
+    - 255 r {[w+10,h+5]},1,100%,0,0,0.5,0 r 100%,{h+1},1,100%,0,0,0,1 + 255
+
+    0 t. $label" "$label2,5,0,18,1,1
+    if w>w#0" || "h>h#0
+       rm. 0 t. $label\n$label2,5,0,18,1,1
+       if w>w#0" || "h>h#0 rr2d. {0,[w,h]},0,2 fi
+    fi
+    *. -1 n. 0,255 to_rgb.
+    rv - 255 a y,0 + 255
+
   endl done
-  +append_tiles 2 if w>1024 r={round(1024*100/w,0.1)} r[^-1] $r%,$r%,1,100%,2 fi rm.
-  repeat $! l[$>]
-    if s==1 r 100%,100%,1,3 else r 100%,100%,1,3,0 fi
-    if w<=h" && "h<256 r2dy 256,2 elif h<=w" && "w<256 r2dx 256,2 fi
-    if w<=h" && "h>512 r2dy 512,2 elif h<=w" && "w>512 r2dx 512,2 fi
-    if h<48 r 100%,48 fi
-    if w<48 r 48,100% fi
-    frame 1,1,0 frame 4,4,255
-  endl done
-  N=$! repeat $N l[$>]
-    {w},16,1,3,255
-    if w>75
-      if $N>1 if w>110 t. Image\ [$>]:,3,3,15 else t. [$>]:,3,3,15 fi fi
-      if ${IS_3D$>} 0 t. (3d\ object),0,0,13,1,255
-      else 0 t. (${W$>}x${H$>}x${D$>}x${S$>}),0,0,13,1,255
-      fi
-      negate. n. 0,255 +. 164 c. 0,255 to_rgb.
-      j.. .,{{-2,w}-w-5},{{-2,h}-h-1} rm.
-    else t. [$>]:,3,3,15 fi
-    rv[-2,-1] a[-2,-1] y
-  endl done
-  - 255 append_tiles 2 + 255
-  if w<256 - 255 r 256,100%,1,3,0,0,0.5,0.5 + 255 fi
-  if h<256 - 255 r 100%,256,1,3,0,0,0.5,0.5 + 255 fi
+  - 255
+  r ${-max_wh},1,100%,0,0,0.5
+  append_tiles $M,$N,0,0
+  + 255
+
+# _document_gmic :
+#   repeat $! l[$>] W$>,H$>,D$>,S$>={[w,h,d,s]} IS_3D$>=${-_is_3d} endl done
+#   repeat $! l[$>]
+#     if ${IS_3D$>} r3d 1,1,0,-80 r3d 0,1,0,80 snapshot3d 400
+#     else if w>8192 z 0,8191 elif h>8192 rows 0,8191 fi n 0,255
+#     fi
+#   endl done
+#   +append_tiles 2 if w>1024 r={round(1024*100/w,0.1)} r[^-1] $r%,$r%,1,100%,2 fi rm.
+#   repeat $! l[$>]
+#     if s==1 r 100%,100%,1,3 else r 100%,100%,1,3,0 fi
+#     if w<=h" && "h<256 r2dy 256,2 elif h<=w" && "w<256 r2dx 256,2 fi
+#     if w<=h" && "h>512 r2dy 512,2 elif h<=w" && "w>512 r2dx 512,2 fi
+#     if h<48 r 100%,48 fi
+#     if w<48 r 48,100% fi
+#     frame 1,1,0 frame 4,4,255
+#   endl done
+#   N=$! repeat $N l[$>]
+#     {w},16,1,3,255
+#     if w>75
+#       if $N>1 if w>110 t. Image\ [$>]:,3,3,15 else t. [$>]:,3,3,15 fi fi
+#       if ${IS_3D$>} 0 t. (3d\ object),0,0,13,1,255
+#       else 0 t. (${W$>}x${H$>}x${D$>}x${S$>}),0,0,13,1,255
+#       fi
+#       negate. n. 0,255 +. 164 c. 0,255 to_rgb.
+#       j.. .,{{-2,w}-w-5},{{-2,h}-h-1} rm.
+#     else t. [$>]:,3,3,15 fi
+#     rv[-2,-1] a[-2,-1] y
+#   endl done
+#   - 255 append_tiles 2 + 255
+#   if w<256 - 255 r 256,100%,1,3,0,0,0.5,0.5 + 255 fi
+#   if h<256 - 255 r 100%,256,1,3,0,0,0.5,0.5 + 255 fi
 
 # Sort shortcut by lexicographic order and generate new sorted variables 'sshortcut_?'.
 _document_gmic_sort_shortcuts :
@@ -4896,7 +4935,7 @@ random_pattern : check "isint(${1=512}) && $1>0 && isint(${2=$1}) && $2>0 && ${3
 
   # Equalize
   +equalize. 256 j.. .,0,0,0,0,{u(0.25,1)} rm. n. 0,255
-  um rgb2rgb
+  um rgb2rgb nm random_pattern
 
 # $1 : probability of a termination node in [0,1]
 # $2 : level of recursion (avoid stack overflow due to recursivity)
