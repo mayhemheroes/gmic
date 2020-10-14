@@ -15132,9 +15132,6 @@ label_fg : check "$1>=0" skip ${2=0}
 #@cli : Rectangle coordinates are returned in status, as a sequence of numbers x0,y0,x1,y1.
 #@cli : $ shape_cupid 256 coords=${-laar} normalize 0,255 to_rgb rectangle $coords,0.5,0,128,0
 laar :
-
-  _nb_tot,_nb_fs,_nb_tests=0
-
   e[^-1] "Extract the largest axis-aligned rectangle in non-zero areas of image$?."
   res= sep=
   repeat $! l[$>]
@@ -15163,12 +15160,13 @@ laar :
         nW={$W+1}
         Q=${_laar\ $nW,$H,$P}
         if narg($Q) W=$nW P=$Q
-        else
+        elif $H>1
           pH={$H-1}
           Q=${_laar\ $nW,$pH}
           if narg($Q) W,H=$nW,$pH P=$Q
           else H-=2 P=
           fi
+        else break
         fi
       done
 
@@ -15179,12 +15177,13 @@ laar :
         nH={$H+1}
         Q=${_laar\ $W,$nH,$P}
         if narg($Q) H=$nH P=$Q
-        else
+        elif $W>1
           pW={$W-1}
           Q=${_laar\ $pW,$nH}
           if narg($Q) W,H=$pW,$nH P=$Q
           else W-=2 P=
           fi
+        else break
         fi
       done
 
@@ -15192,10 +15191,6 @@ laar :
     fi
     rm[shape,cumul]
   endl done u $res
-
-  e[] "NB_TOT = "$_nb_tot" ("$_nb_fs" FS = "{$_nb_fs/$_nb_tot*100}"%)."
-  e[] "NB_TEST = "$_nb_tests
-
 
 # $1,$2: Rectangle width and height.
 # ${3--1}: Coordinates of candidate locations. If empty, full-search is done.
@@ -15205,7 +15200,6 @@ _laar : skip "${3=}"
   fn="cumul(x0,y0,x1,y1) = (
         _px0 = x0 - 1;
         _py0 = y0 - 1;
-        run('_nb_tests+=1');
         i(#"$cumul,"x1,y1) + i(#"$cumul",_px0,_py0) - i(#"$cumul",x1,_py0) - i(#"$cumul",_px0,y1);
       );"
   res=
@@ -15219,9 +15213,7 @@ _laar : skip "${3=}"
               i(#"$shape",x,y) && x1<w#"$shape" && y1<h#"$shape" && cumul(x,y,x1,y1)==$1*$2"
     if iM 100%,100%,1,2,"i(#-1)?[x,y]:[-1,-1]" discard. -1 if w s. y,2 a[-2,-1] x res={^} fi rm. fi
     rm.
-    _nb_fs+=1
   fi
-  _nb_tot+=1
   u $res
 
 #@cli max_patch : _patch_size>=1
