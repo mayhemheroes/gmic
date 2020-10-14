@@ -15217,7 +15217,7 @@ _laar : skip "${3=}"
        i(#"$shape",i0,i1) && x1<w#"$shape" && y1<h#"$shape" && cumul(i0,i1,x1,y1)==$1*$2?I:[-1,-1]"
     l. discard y,-1 if w s c a x res={^} fi rm endl
   else # Test all shape points
-    +f[cumul] ${fn}"x1 = x + $1 - 1; y1 = y + $2 - 1;
+    +f[cumul] *${fn}"x1 = x + $1 - 1; y1 = y + $2 - 1;
               i(#"$shape",x,y) && x1<w#"$shape" && y1<h#"$shape" && cumul(x,y,x1,y1)==$1*$2"
     if iM 100%,100%,1,2,"i(#-1)?[x,y]:[-1,-1]" discard. -1 if w s. y,2 a[-2,-1] x res={^} fi rm. fi
     rm.
@@ -19404,9 +19404,12 @@ volume3d :
   e[^-1] "Transform image$? as 3D parallelepipedic objects."
   repeat $! l[$>]
     w={w} h={h} d={d}
-    +slices 0 +slices[0] 100% mirror. y
-    +columns[0] 0 +columns[0] 100% permute[-2,-1] zyxc mirror.. x
-    +rows[0] 0 +rows[0] 100% permute[-2,-1] xzyc mirror.. y
+    +slices[0] 0
+    +columns[0] 0 permute. zyxc mirror. x
+    +slices[0] 100% mirror. x
+    +columns[0] 100% permute. zyxc
+    +rows[0] 100% permute. xzyc
+    +rows[0] 0 permute. xzyc mirror. y
     rm[0] image6cube3d *3d $w,$h,$d
   endl done
 
