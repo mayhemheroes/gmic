@@ -4369,11 +4369,15 @@ _document_gmic_footer_man : skip $1
 
 # Generate a single image from a list of images, for the reference documentation.
 _document_gmic :
-  M,N={M=ceil(sqrt($!));$!<4?[$!,1]:[M,ceil($!/M)]}
+  if !$! rm return
+  elif $!==1 M,N=1
+  elif $!<4 if ${-max_h}>=${-max_w} M,N=$!,1 else M,N=1,$! fi
+  else M,N={M=ceil(sqrt($!));$!<4?[$!,1]:[M,ceil($!/M)]}
+  fi
   W,H={Sw=$!<2?720:960;Sh=640;floor([Sw/$M,Sh/$N])}
 
   repeat $! l[$>] nm={n}
-    label=[$>]:" "$nm
+    label=[$>]:" "'$nm'
     if ${-is_3d} # 3D vector object
       label2="("{i[6]}" vert., "{i[7]}" prim.)"
       r3d 1,1,0,-80 r3d 0,1,0,80 snapshot3d {max($W,$H)}
@@ -4405,7 +4409,7 @@ _document_gmic :
     n 0,255
 
     r {[w,h]+2},1,100%,0,0,0.5,0.5
-    - 255 r {[w+10,h+5]},1,100%,0,0,0.5,0 r 100%,{h+1},1,100%,0,0,0,1 + 255
+    - 255 r {[w+10,h+5]},1,100%,0,0,0.5,0.5 r 100%,{h+1},1,100%,0,0,0,1 + 255
 
     0 t. $label" "$label2,5,0,18,1,1
     if w>w#0" || "h>h#0
@@ -4413,12 +4417,16 @@ _document_gmic :
        if w>w#0" || "h>h#0 rr2d. {0,[w,h]},0,2 fi
     fi
     *. -1 n. 0,255 to_rgb.
-    rv - 255 a y,0 + 255
+    - 255 a y,0.5 + 255
 
   endl done
   - 255
-  r ${-max_wh},1,100%,0,0,0.5
-  append_tiles $M,$N,0,0
+
+  MN={$M*$N} if $!%$MN 0x{$MN-($!%$MN)} fi
+  repeat $!/$MN l[$>-{$>+$MN-1}]
+    repeat $!/$M a[$>-{$>+$M-1}] x done a y,0.5
+  endl done
+  r 100%,{h+25},1,100%,0,0,0,0.75
   + 255
 
 # _document_gmic :
@@ -5234,8 +5242,8 @@ shape_polygon : check "${1=512}>=0 && isint(${2=5}) && $2>=3" skip ${3=0}
       a x n 0,{$ir-1} s x +.. {-2,0.5*($ir-im-iM)} +. {-1,0.5*($ir-im-iM)} a x
       $ir,$ir polygon. $2,{-2,^},1,1 rm..
     endl
-    nm. "[2D $2-polygon shape]"
   fi
+  nm. "[2D $2-polygon shape]"
 
 #@cli shape_snowflake : size>=0,0<=_nb_recursions<=6
 #@cli : Input a 2D snowflake binary shape with specified size.
@@ -15135,88 +15143,81 @@ laar :
   e[^-1] "Extract the largest axis-aligned rectangle in non-zero areas of image$?."
   res= sep=
   repeat $! l[$>]
-    +channels 0 gt. 0 nm. shape im,iM={[im,iM]}
+    +channels 0 gt. 0 nm. shape
     +cumulate[shape] xy nm. cumul
-    if !$iM res.=-1,-1,-1,-1    # All black
-    elif $im res.=0,0,{[w,h]-1} # All white
+    val={i[-1,2]}
+    if !$val res.=-1,-1,-1,-1        # All black
+    elif $val==wh res.=0,0,{[w,h]-1} # All white
     else
 
       # Step 1: Compute largest square.
       Rin,Rout=0,{min(w,h)+1}
-      coords=
+      P0,P=
       do
         Rmid={int(($Rin+$Rout)/2)}
-        coords=${_laar\ $Rmid,$Rmid,1,$coords}
-        if narg($coords) Rin=$Rmid coords0=$coords else Rout=$Rmid fi
+        Q=${_laar\ $Rmid,$Rmid,$P}
+        if narg($Q) Rin=$Rmid P0=$Q P=$Q else Rout=$Rmid P= fi
       while $Rin!=$Rout-1
+      if $Rin==1 P=${_laar\ 1,1} fi
 
       # Step 2: Compute largest rectangle, for W>H.
       maxA,maxW,maxH=0 maxcoords=
-      coords=$coords0 W,H=$Rin
-      enable_fullsearch=0
+      P=$P0 W,H=$Rin
       for $H>0
-        A={$W*$H} if $A>$maxA maxA,maxW,maxH=$A,$W,$H maxcoords={[$coords][0,2]} fi
+        A={$W*$H} if $A>$maxA maxA,maxW,maxH=$A,$W,$H maxP={[$P][0,2]} fi
         nW={$W+1}
-        ncoords=${_laar\ $nW,$H,$enable_fullsearch,$coords}
-        if narg($ncoords) W=$nW coords=$ncoords enable_fullsearch=0
-        else
+        Q=${_laar\ $nW,$H,$P}
+        if narg($Q) W=$nW P=$Q
+        elif $H>1
           pH={$H-1}
-          alt_coords=
-          if narg($coords) ($coords)x3 (-1,0) (0,1) +[-4,-2] +[-2,-1] a[-3--1] x alt_coords={^} rm. fi
-          ncoords=${_laar\ $nW,$pH,1,$alt_coords}
-          if narg($ncoords) W,H=$nW,$pH coords=$ncoords enable_fullsearch=1
-          else H-=2 enable_fullsearch=1
+          Q=${_laar\ $nW,$pH}
+          if narg($Q) W,H=$nW,$pH P=$Q
+          else H-=2 P=
           fi
+        else break
         fi
       done
 
       # Step 3: Compute largest rectangle, for H>W.
-      coords=$coords0 W,H=$Rin
-      enable_fullsearch=0
+      P=$P0 W,H=$Rin
       for $W>0
-        A={$W*$H} if $A>$maxA maxA,maxW,maxH=$A,$W,$H maxcoords={[$coords][0,2]} fi
+        A={$W*$H} if $A>$maxA maxA,maxW,maxH=$A,$W,$H maxP={[$P][0,2]} fi
         nH={$H+1}
-        ncoords=${_laar\ $W,$nH,$enable_fullsearch,$coords}
-        if narg($ncoords) H=$nH coords=$ncoords enable_fullsearch=0
-        else
+        Q=${_laar\ $W,$nH,$P}
+        if narg($Q) H=$nH P=$Q
+        elif $W>1
           pW={$W-1}
-          alt_coords=
-          if narg($coords) ($coords)x3 (0,-1) (1,0) +[-4,-2] +[-2,-1] a[-3--1] x alt_coords={^} rm. fi
-          ncoords=${_laar\ $pW,$nH,1,$alt_coords}
-          if narg($ncoords) W,H=$pW,$nH coords=$ncoords enable_fullsearch=1
-          else W-=2 enable_fullsearch=1
+          Q=${_laar\ $pW,$nH}
+          if narg($Q) W,H=$pW,$nH P=$Q
+          else W-=2 P=
           fi
+        else break
         fi
       done
-      res.=$sep$maxcoords,{[$maxcoords]+[$maxW,$maxH]-1} sep=,
+
+      res.=$sep$maxP,{[$maxP]+[$maxW,$maxH]-1} sep=,
     fi
     rm[shape,cumul]
   endl done u $res
 
 # $1,$2: Rectangle width and height.
-# $3: Attempt full-search.
-# ${4--1}: Coordinates of candidate locations.
-# Return a list of upper-left rectangle coordinates that fit.
+# ${3--1}: Coordinates of candidate locations. If empty, full-search is done.
+# Return the list of upper-left rectangle coordinates that fit.
 # Images [shape] and [cumul] must be defined.
-_laar : skip "${4=}"
+_laar : skip "${3=}"
   fn="cumul(x0,y0,x1,y1) = (
         _px0 = x0 - 1;
         _py0 = y0 - 1;
         i(#"$cumul,"x1,y1) + i(#"$cumul",_px0,_py0) - i(#"$cumul",x1,_py0) - i(#"$cumul",_px0,y1);
       );"
   res=
-
-  # Test specified coordinates.
-  if narg($4)
-    (${4--1}) r. 2,{w/2},1,1,-1 s. x a[-2,-1] c
+  if narg($3) # Test suggested locations
+    (${3--1}) r. 2,{w/2},1,1,-1 s. x a[-2,-1] c
     f. ${fn}"x1 = i0 + $1 - 1; y1 = i1 + $2 - 1;
        i(#"$shape",i0,i1) && x1<w#"$shape" && y1<h#"$shape" && cumul(i0,i1,x1,y1)==$1*$2?I:[-1,-1]"
     l. discard y,-1 if w s c a x res={^} fi rm endl
-  fi
-
-  # Test all shape points.
-  if !narg($res)" && "$3
-    +f[cumul] *${fn}"x1 = x + $1 - 1; y1 = y + $2 - 1;
+  else # Test all shape points
+    +f[cumul] ${fn}"x1 = x + $1 - 1; y1 = y + $2 - 1;
               i(#"$shape",x,y) && x1<w#"$shape" && y1<h#"$shape" && cumul(x,y,x1,y1)==$1*$2"
     if iM 100%,100%,1,2,"i(#-1)?[x,y]:[-1,-1]" discard. -1 if w s. y,2 a[-2,-1] x res={^} fi rm. fi
     rm.
@@ -17973,11 +17974,11 @@ gyroid3d : check ${1=32}>0 skip ${2=5}
 
 #@cli histogram3d
 #@cli : Get 3D color histogram of selected images.
-#@cli : $ image.jpg resize2dx 64 histogram3d colorcube3d primitives3d[-1] 1 add3d
+#@cli : $ image.jpg resize2dx 64 histogram3d circles3d 3 opacity3d. 0.75 colorcube3d primitives3d[-1] 1 add3d
 histogram3d :
   e[^-1] "Get 3D color histogram of image$?."
   to_rgb repeat $! l[$>]
-    r {w*h},3,1,1,-1 pointcloud 1 n 0,255 map 3 pointcloud3d nm "[3D histogram]"
+    r {wh},3,1,1,-1 pointcloud 1 n 0,255 palette hot point. 0,0,0,1,0 map.. . rm. pointcloud3d nm "[3D histogram]"
   endl done
 
 #@cli image6cube3d
