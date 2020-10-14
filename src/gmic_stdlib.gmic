@@ -4369,7 +4369,11 @@ _document_gmic_footer_man : skip $1
 
 # Generate a single image from a list of images, for the reference documentation.
 _document_gmic :
-  M,N={M=ceil(sqrt($!));$!<4?[$!,1]:[M,ceil($!/M)]}
+  if !$! rm return
+  elif $!==1 M,N=1
+  elif $!<4 if ${-max_h}>${-max_w} M,N=$!,1 else M,N=1,$! fi
+  else M,N={M=ceil(sqrt($!));$!<4?[$!,1]:[M,ceil($!/M)]}
+  fi
   W,H={Sw=$!<2?720:960;Sh=640;floor([Sw/$M,Sh/$N])}
 
   repeat $! l[$>] nm={n}
@@ -4417,8 +4421,12 @@ _document_gmic :
 
   endl done
   - 255
-  r ${-max_wh},1,100%,0,0,0.5
-  append_tiles $M,$N,0,0
+
+  MN={$M*$N} if $!%$MN 0x{$MN-($!%$MN)} fi
+  repeat $!/$MN l[$>-{$>+$MN-1}]
+    repeat $!/$M a[$>-{$>+$M-1}] x done a y,0.5
+  endl done
+  r 100%,{h+25},1,100%,0,0,0,0.75
   + 255
 
 # _document_gmic :
@@ -17966,11 +17974,11 @@ gyroid3d : check ${1=32}>0 skip ${2=5}
 
 #@cli histogram3d
 #@cli : Get 3D color histogram of selected images.
-#@cli : $ image.jpg resize2dx 64 histogram3d colorcube3d primitives3d[-1] 1 add3d
+#@cli : $ image.jpg resize2dx 64 histogram3d circles3d 3 opacity3d. 0.75 colorcube3d primitives3d[-1] 1 add3d
 histogram3d :
   e[^-1] "Get 3D color histogram of image$?."
   to_rgb repeat $! l[$>]
-    r {w*h},3,1,1,-1 pointcloud 1 n 0,255 map 3 pointcloud3d nm "[3D histogram]"
+    r {wh},3,1,1,-1 pointcloud 1 n 0,255 palette hot point. 0,0,0,1,0 map.. . rm. pointcloud3d nm "[3D histogram]"
   endl done
 
 #@cli image6cube3d
