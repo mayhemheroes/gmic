@@ -1871,9 +1871,9 @@ v : # Allow 'gmic +v' to get the version number.
 # warm_teal | warm_vintage | warm_yellow | well_see | whiter_whites | winterlighthouse | wipe | wooden_gold_20 | \
 # yellow_55b | yellow_film_01 | yellowstone | you_can_do_it | zed_32 | zeke_39 | zilverfx_bw_solarization | \
 # zilverfx_infrared | zilverfx_vintage_bw }
-#@cli : Default values: 'resolution=48' and 'cut_and_round=1'.
+#@cli : Default values: 'resolution=33' and 'cut_and_round=1'.
 #@cli : $ clut summer
-clut : check "isnum(${2=48}) && $2>0 && isbool(${3=1})"
+clut : check "isnum(${2=33}) && $2>0 && isbool(${3=1})"
   to_clutname "$1" name=${} l[]
   e[^-1] "Input CLUT '"$name"' with resolution $2."
     path_clut=${-path_cache}
@@ -2063,7 +2063,7 @@ clean_cluts :
   endl done
 
   doc=${doc}"\n"\
-      "#@cli : Default values: 'resolution=48' and 'cut_and_round=1'.\n"\
+      "#@cli : Default values: 'resolution=33' and 'cut_and_round=1'.\n"\
       "#@cli : $ clut summer\n"
   e[] "\n"$doc
 
@@ -4436,38 +4436,6 @@ _document_gmic :
   endl done
   r 100%,{h+25},1,100%,0,0,0,0.75
   + 255 c 0,255
-
-# _document_gmic :
-#   repeat $! l[$>] W$>,H$>,D$>,S$>={[w,h,d,s]} IS_3D$>=${-_is_3d} endl done
-#   repeat $! l[$>]
-#     if ${IS_3D$>} r3d 1,1,0,-80 r3d 0,1,0,80 snapshot3d 400
-#     else if w>8192 z 0,8191 elif h>8192 rows 0,8191 fi n 0,255
-#     fi
-#   endl done
-#   +append_tiles 2 if w>1024 r={round(1024*100/w,0.1)} r[^-1] $r%,$r%,1,100%,2 fi rm.
-#   repeat $! l[$>]
-#     if s==1 r 100%,100%,1,3 else r 100%,100%,1,3,0 fi
-#     if w<=h" && "h<256 r2dy 256,2 elif h<=w" && "w<256 r2dx 256,2 fi
-#     if w<=h" && "h>512 r2dy 512,2 elif h<=w" && "w>512 r2dx 512,2 fi
-#     if h<48 r 100%,48 fi
-#     if w<48 r 48,100% fi
-#     frame 1,1,0 frame 4,4,255
-#   endl done
-#   N=$! repeat $N l[$>]
-#     {w},16,1,3,255
-#     if w>75
-#       if $N>1 if w>110 t. Image\ [$>]:,3,3,15 else t. [$>]:,3,3,15 fi fi
-#       if ${IS_3D$>} 0 t. (3d\ object),0,0,13,1,255
-#       else 0 t. (${W$>}x${H$>}x${D$>}x${S$>}),0,0,13,1,255
-#       fi
-#       negate. n. 0,255 +. 164 c. 0,255 to_rgb.
-#       j.. .,{{-2,w}-w-5},{{-2,h}-h-1} rm.
-#     else t. [$>]:,3,3,15 fi
-#     rv[-2,-1] a[-2,-1] y
-#   endl done
-#   - 255 append_tiles 2 + 255
-#   if w<256 - 255 r 256,100%,1,3,0,0,0.5,0.5 + 255 fi
-#   if h<256 - 255 r 100%,256,1,3,0,0,0.5,0.5 + 255 fi
 
 # Sort shortcut by lexicographic order and generate new sorted variables 'sshortcut_?'.
 _document_gmic_sort_shortcuts :
@@ -8704,8 +8672,8 @@ compress_rle : check "isbool(${1=0}) && isint(${2=0}) && $2>=0"
 
 #@cli decompress_clut : _width>0,_height>0,_depth>0,_reconstruction_colorspace={ 0=srgb | 1=rgb | 2=lab }
 #@cli : Decompress selected colored keypoints into 3D CLUTs, using a mixed RBF/PDE approach.
-#@cli : Default values: 'width=height=depth=48' and 'reconstruction_colorspace=0'.
-decompress_clut : check "isint(${1=48}) && $1>0 && isint(${2=$1}) && $2>0 && isint(${3=$1}) && $3>0 && "\
+#@cli : Default values: 'width=height=depth=33' and 'reconstruction_colorspace=0'.
+decompress_clut : check "isint(${1=33}) && $1>0 && isint(${2=$1}) && $2>0 && isint(${3=$1}) && $3>0 && "\
                         "isin(${4=0},0,1,2)"
   e[^-1] "Decompress colored keypoint$? into $1x$2x$3 CLUTs, using "\
          ${"s0,s1=srgb,rgb u $s$4"}" colorspace for reconstruction."
@@ -8719,8 +8687,8 @@ decompress_clut : check "isint(${1=48}) && $1>0 && isint(${2=$1}) && $2>0 && isi
 
 #@cli decompress_clut_rbf : _width>0,_height>0,_depth>0,_reconstruction_colorspace={ 0=srgb | 1=rgb | 2=lab }
 #@cli : Decompress selected colored keypoints into 3D CLUTs, using RBF thin plate spline interpolation.
-#@cli : Default value: 'width=height=depth=48' and 'reconstruction_colorspace=0'.
-decompress_clut_rbf : check "isint(${1=48}) && $1>0 && isint(${2=$1}) && $2>0 && isint(${3=$1}) && $3>0 && "\
+#@cli : Default value: 'width=height=depth=33' and 'reconstruction_colorspace=0'.
+decompress_clut_rbf : check "isint(${1=33}) && $1>0 && isint(${2=$1}) && $2>0 && isint(${3=$1}) && $3>0 && "\
                             "isin(${4=0},0,1,2)"
   e[^-1] "Decompress colored keypoint$? into $1x$2x$3 CLUTs (RBF approach), using "\
          ${"s0,s1,s2=srgb,rgb,lab u $s$4"}" colorspace for reconstruction."
@@ -8732,8 +8700,8 @@ decompress_clut_rbf : check "isint(${1=48}) && $1>0 && isint(${2=$1}) && $2>0 &&
 
 #@cli decompress_clut_pde : _width>0,_height>0,_depth>0,_reconstruction_colorspace={ 0=srgb | 1=rgb | 2=lab }
 #@cli : Decompress selected colored keypoints into 3D CLUTs, using multiscale diffusion PDE's.
-#@cli : Default values: 'width=height=depth=48' and 'reconstruction_colorspace=0'.
-decompress_clut_pde : check "isint(${1=48}) && $1>0 && isint(${2=$1}) && $2>0 && isint(${3=$1}) && $3>0 && "\
+#@cli : Default values: 'width=height=depth=33' and 'reconstruction_colorspace=0'.
+decompress_clut_pde : check "isint(${1=33}) && $1>0 && isint(${2=$1}) && $2>0 && isint(${3=$1}) && $3>0 && "\
                             "isin(${4=0},0,1,2)"
   e[^-1] "Decompress colored keypoint$? into $1x$2x$3 CLUTs (PDE approach), using "\
          ${"s0,s1,s2=srgb,rgb,lab u $s$4"}" colorspace for reconstruction."
