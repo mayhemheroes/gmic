@@ -2007,7 +2007,7 @@ using namespace cimg_library;
 #define gmic_varslots 128
 #endif
 #ifndef gmic_comslots
-#define gmic_comslots 128
+#define gmic_comslots 1024
 #endif
 #ifndef gmic_winslots
 #define gmic_winslots 10
@@ -2667,7 +2667,7 @@ void gmic::wait_threads(void *const p_gmic_threads, const bool try_abort, const 
 // Return a hashcode from a string.
 unsigned int gmic::hashcode(const char *const str, const bool is_variable) {
   if (!str) return 0U;
-  unsigned int hash = 0U;
+  unsigned int hash = 5381U;
   if (is_variable) {
     if (*str=='_') return str[1]=='_'?(gmic_varslots - 1):(gmic_varslots - 2);
     for (const char *s = str; *s; ++s) (hash*=31)+=*s;
