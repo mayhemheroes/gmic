@@ -6188,6 +6188,62 @@ update_download_version : check "
     "
   ot $filename
 
+parse_cli :
+  if !$! it $_path_rc/update$_version.gmic fi
+  i[0] ('\n') a y
+  merge_multiline_comments
+
+  # Split commands/section into different blocs.
+  eval "
+    for (p = p0 = 0, p<h,
+
+      # Find next occurence of line starting with '#@cli'.
+      q = find(#0,'\n#@cli',p);
+      q<0?break();
+      p = ++q;
+
+      # Find end of #@cli comments bloc.
+      r = p + 5;
+      do (
+        q = find(#0,_'\n',r);
+        q<0?(q = h - 1; break());
+        crop(0,q,1,6)=='\n#@cli'?(r = q + 6):(--q; break()),
+      1);
+
+      copy(i[p0],0,p - p0,1,0); # Set values to discard
+      p0 = p = ++q;
+    )"
+  s -,0
+
+  # Isolate command blocs and name them.
+  $!,1,1,1,">
+    begin(
+      ref(vector1024(),command);
+      ref(vector1024(),category);
+    );
+    for (p = 5, i[#x,p]<=_' ', ++p);
+    i[#x,p]==_':' && i[#x,p + 1]==_':'?( # Category
+      for (p+=2, i[#x,p]<=_' ', ++p);
+      for (q = p, i[#x,q]>_'\n', ++q);
+      copy(category,i[#x,p],l = min(q - p,size(category) - 1));
+      category[l] = 0;
+      setname(#x,'to_discard');
+    ):( # Command
+      for (q = p, i[#x,q]>_'\n' && i[#x,q]!=_':', ++q);
+      copy(command,i[#x,p],l = min(q - p,size(command) - 1));
+      command[l] = 0;
+      setname(#x,string(category,'/',command));
+    );
+  "
+  rm. rm[to_discard]
+
+  # Parse each bloc and output in selected format.
+  repeat $! l[$>]
+    e[] {n}
+  endl done
+
+  rm
+
 #@cli parse_gui : _filter_name,_outputmode
 #@cli : Parse selected filter definitions and generate info about filters in selected output mode.
 #@cli : 'outputmode' can be { json | list | print | strings | update | zart }.\n
