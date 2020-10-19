@@ -6190,29 +6190,40 @@ update_download_version : check "
 
 #@cli parse_gui : _command_name,_outputmode
 wip_parse_cli : skip "${1=*},${2=print}"
+  use_vt100
   if !$! it $_path_rc/update$_version.gmic fi
   i[0] ('\n') a y
   merge_multiline_comments
 
   # Split commands/section into different blocs.
   eval "
-    for (p = p0 = 0, p<h,
+    for (p = 0, p<h,
 
       # Find next occurence of line starting with '#@cli'.
       q = find(#0,'\n#@cli',p);
-      q<0?(copy(i[p0],0,h#0 - p,1,0); break());
-      p = ++q;
+      q<0?(copy(i[p],0,h - p,1,0); break());
+      for (r = q + 6, r<h && i[r]<=_' ' && i[r]!=_'\n', ++r);
+      r>=h || i[r]=='\n'?(copy(i[p],0,r - p,1,0); p = r; continue());
 
-      # Find end of #@cli comments bloc.
-      r = p + 5;
-      do (
-        q = find(#0,_'\n',r);
-        q<0?(q = h - 1; break());
-        crop(0,q,1,6)=='\n#@cli'?(r = q + 6):(--q; break()),
-      1);
+      (i[r]==_':' && i[r + 1]==_':')?( # Category
+        r = find(#0,_'\n',r)%h;
 
-      copy(i[p0],0,p - p0,1,0); # Set values to discard
-      p0 = p = ++q;
+      ):i[r]!=_':'?do( # Command
+        r = find(#0,_'\n',r)%h;
+        crop(0,r,1,6)=='\n#@cli'?(
+          for (s = r + 6, s<h && i[s]<=_' ' && i[s]!='_\n', ++s);
+          s<h && i[s]==':' && i[s + 1]!=':'?(r = s):break();
+        ):break(),1
+
+      ):( # Warning: wrong '#@cli' line
+        r = find(#0,_'\n',r)%h;
+        ref(vector1024(),line);
+        copy(line,i[q + 1],min(size(line),r - q - 1));
+        run('warn[0--2] \"Unexpected line: \'',line,'\'.\"');
+        copy(i[p],0,r - p,1,0); p = r; continue()
+      );
+      copy(i[p],0,q - p + 1,1,0); # Set values to discard
+      p = r;
     )"
   s -,0
 
@@ -6242,7 +6253,12 @@ wip_parse_cli : skip "${1=*},${2=print}"
     if "['$1']!='*'"
       1 eval ${-math_lib}"
         ref(lowercase(['$1']),str);
-        for (k = 0, k<l - 1, ++k, find(lowercase(name(#k)),str)<0?dar_insert(#-1,k));
+        for (k = 0, k<l - 1, ++k,
+          ref(lowercase(name(#k)),nm);
+          arobace = find(nm,_'@');
+          p = find(nm,str);
+          p<0 || p>=arobace?dar_insert(#-1,k)
+        );
         resize(#-1,1,dar_size(#-1),1,1,0)"
       rm[{^},-1]
     fi
@@ -6251,10 +6267,28 @@ wip_parse_cli : skip "${1=*},${2=print}"
   rm
 
 parse_cli_print :
-  v 0 sort_list +,n
+  v 0
+  sort_list +,n
   repeat $! l[$>]
     ('{n}') l. s -,{'@'} com={0,t} rm endl
     e[] $com
+  endl done
+
+parse_cli_help :
+  v 0
+  repeat $! l[$>]
+    s -,{'\n'} discard {'#@cli'} max {'" "'} autocrop {'" "'}
+    l[0]
+      s -,{':'}
+      name={0,t} rm[0] nb_arguments=$!
+      d
+      repeat $nb_arguments
+    endl
+
+
+    e[] $name"\n"
+
+    rm 0
   endl done
 
 #@cli parse_gui : _filter_name,_outputmode
