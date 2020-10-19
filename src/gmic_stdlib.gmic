@@ -6188,7 +6188,8 @@ update_download_version : check "
     "
   ot $filename
 
-wip_parse_cli :
+#@cli parse_gui : _command_name,_outputmode
+wip_parse_cli : skip "${1=*},${2=print}"
   if !$! it $_path_rc/update$_version.gmic fi
   i[0] ('\n') a y
   merge_multiline_comments
@@ -6199,7 +6200,7 @@ wip_parse_cli :
 
       # Find next occurence of line starting with '#@cli'.
       q = find(#0,'\n#@cli',p);
-      q<0?break();
+      q<0?(copy(i[p0],0,h#0 - p,1,0); break());
       p = ++q;
 
       # Find end of #@cli comments bloc.
@@ -6215,34 +6216,46 @@ wip_parse_cli :
     )"
   s -,0
 
-  # Isolate command blocs and name them.
-  $!,1,1,1,">
-    begin(
-      ref(vector1024(),command);
-      ref(vector1024(),category);
-    );
-    for (p = 5, i[#x,p]<=_' ', ++p);
-    i[#x,p]==_':' && i[#x,p + 1]==_':'?( # Category
-      for (p+=2, i[#x,p]<=_' ', ++p);
-      for (q = p, i[#x,q]>_'\n', ++q);
-      copy(category,i[#x,p],l = min(q - p,size(category) - 1));
-      category[l] = 0;
-      setname(#x,'to_discard');
-    ):( # Command
-      for (q = p, i[#x,q]>_'\n' && i[#x,q]!=_':', ++q);
-      copy(command,i[#x,p],l = min(q - p,size(command) - 1));
-      command[l] = 0;
-      setname(#x,string(category,'/',command));
-    );
-  "
-  rm. rm[to_discard]
+  # Keep only command blocs and name them.
+  if $!
+    $!,1,1,1,">
+      begin(
+        ref(vector1024(),command);
+        ref(vector1024(),category);
+      );
+      for (p = 5, i[#x,p]<=_' ', ++p);
+      i[#x,p]==_':' && i[#x,p + 1]==_':'?( # Category
+        for (p+=2, i[#x,p]<=_' ', ++p);
+        for (q = p, i[#x,q]>_'\n', ++q);
+        copy(category,i[#x,p],l = min(q - p,size(category) - 1));
+        category[l] = 0;
+        setname(#x,'to_discard');
+      ):( # Command
+        for (q = p, i[#x,q]>_'\n' && i[#x,q]!=_':', ++q);
+        copy(command,i[#x,p],l = min(q - p,size(command) - 1));
+        command[l] = 0;
+        setname(#x,string(command,'@',category));
+      )"
+    rm. rmn to_discard
 
-  # Parse each bloc and output in selected format.
-  repeat $! l[$>]
-    e[] {n}
-  endl done
-
+    # Isolate only requested commands.
+    if "['$1']!='*'"
+      1 eval ${-math_lib}"
+        ref(lowercase(['$1']),str);
+        for (k = 0, k<l - 1, ++k, find(lowercase(name(#k)),str)<0?dar_insert(#-1,k));
+        resize(#-1,1,dar_size(#-1),1,1,0)"
+      rm[{^},-1]
+    fi
+  fi
+  parse_cli_$2
   rm
+
+parse_cli_print :
+  v 0 sort_list +,n
+  repeat $! l[$>]
+    ('{n}') l. s -,{'@'} com={0,t} rm endl
+    e[] $com
+  endl done
 
 #@cli parse_gui : _filter_name,_outputmode
 #@cli : Parse selected filter definitions and generate info about filters in selected output mode.
