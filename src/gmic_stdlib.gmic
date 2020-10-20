@@ -6282,8 +6282,11 @@ parse_cli_print :
 parse_cli_help :
   v 0 e[] ""
   repeat $! l[$>]
+
+    # Parse command declaration.
     s -,{'\n'} discard {'#@cli'} max {'" "'} autocrop {'" "'}
-    l[0]
+
+    +l[0]
       s -,{':'} autocrop {'" "'}
       name={0,t} rm[0]
       is_native,nb_syntaxes=0
@@ -6298,44 +6301,48 @@ parse_cli_help :
         strcut $str,100,"\n         " str=${}
         +e[] $str
       endl done
-      +e[] ""
       rm
     endl
+    rm[0]
 
+    # Parse command description.
+    n_example=0 nl=\n nnl=
     repeat $! if {$>,i==_':'} l[$>]
       rows 1,100% autocrop {'" "'}
-      if "find(#0,'(eq. to ')>=0"
+      if "find(#0,'(eq. to ')>=0" # Found 'Eq. to' description.
         +l s -,{'\47'} shortcut={1,t} rm onfail shortcut="(unknown)" rm endl
-        str="(equivalent to shortcut command '"$_gmic_m$_gmic_b$shortcut$_gmic_n"').\n"
-      elif "find(#0,'Default value:')>=0 || find(#0,'Default values:')>=0"
+        str="(equivalent to shortcut command '"$_gmic_m$_gmic_b$shortcut$_gmic_n"')." nnl=\n
+      elif "find(#0,'Default value:')>=0 || find(#0,'Default values:')>=0" # Found 'Default value(s):' description
         s +,{':'}
         if $!>2" && "h#1==1" && "i("#1")==_':'
           i[0] ('$_gmic_b':y) i[2] ('$_gmic_n':y)
         fi
         a y
         strcut {t},100,"\n       " rm.
-        ({'${}'}:y) _parse_cli_help_colorize. str="\n      "{t}
-      elif i==_'$'" && "i[1]!=_'$'
+        ({'${}'}:y) _parse_cli_help_colorize.
+        str="\n      "{t} nnl=\n
+      elif i==_'$'" && "i[1]!=_'$' # Found example description
         rows 1,100% autocrop {'" "'}
-        if !narg($example)
-          example_str=${_gmic_b}"Example:"$_gmic_n" "[#1]
-          example=1
+        n_example+=1
+        if $n_example==1
+          example_str=${_gmic_b}"Example:"$_gmic_n" "[#$n_example]
         else
-          example+=1
-          example_str="         "[#$example]
+          example_str="         "[#$n_example]
         fi
         str=$example_str" "$_gmic_g{t}$_gmic_n
-        strcut $str,100,"\\\\\n                 " str=${}
-      elif i==_'$'" && "i[1]==_'$'
+        strcut $str,100,"\\\\\n                 "
+        str=${} nnl=\n
+      elif i==_'$'" && "i[1]==_'$' # Found link to tutorial page
         if h==2 url=https://gmic.eu/tutorial/_$name.shtml
         else rows 2,100 autocrop {'" "'} url=https://gmic.eu/tutorial/{t}.shtml
         fi
-        str=${_gmic_b}"Tutorial: "$_gmic_r$_gmic_b$url$_gmic_n
-      else
+        str=${_gmic_b}"Tutorial: "$_gmic_r$_gmic_b$url$_gmic_n nnl=\n
+      else # Other kind of description line
         strcut {t},100,"\n       " rm.
         ({'${}'}:y) _parse_cli_help_colorize. str={t}
       fi
-      +e[] "      "$str
+      +e[] $nl"      "$str
+      nl=$nnl nnl=
     endl fi done
 
     rm 0
@@ -6347,7 +6354,7 @@ _parse_cli_help_colorize :
   eval[^] ">begin(beg = -1);
     i==_'\''?(
       beg<0?(beg = y):
-      (for (ok = 1; p = beg + 1, p<y, ++p, i[p]<=_' '?(ok = 0; break()));
+      (for (ok = 1; p = beg + 1, p<y, ++p, i[p]<=_' ' || p>beg + 32?(ok = 0; break()));
        ok?(i[beg] = 2; i[y] = 3); beg = -1))"
   replace_str "\2","'"$_gmic_c
   replace_str "\3",$_gmic_n"'"
