@@ -6270,8 +6270,7 @@ parse_cli : skip "${1=*},${2=print}"
   endl
 
 parse_cli_print :
-  v 0
-  e[] ""
+  v 0 e[] ""
   sort_list +,n
   repeat $! l[$>]
     ('{n}') l. s -,{'@'} name={0,t} rm endl
@@ -6279,18 +6278,23 @@ parse_cli_print :
   endl done
 
 parse_cli_help :
-  v 0
+  v 0 e[] ""
   repeat $! l[$>]
     s -,{'\n'} discard {'#@cli'} max {'" "'} autocrop {'" "'}
     l[0]
-      s -,{':'}
-      name={0,t} rm[0] nb_arguments=$!
-      d
-      repeat $nb_arguments
+      s -,{':'} autocrop {'" "'}
+      name={0,t} rm[0]
+      is_native,nb_syntaxes=0
+      if $!
+        is_native={"find(#-1,'(+)')>=0"}
+        if $is_native rm. fi
+        nb_syntaxes=$!
+      fi
+      +e[] "    "${_gmic_m}$name${"s1,s0=\" (+)\", u $s"$is_native}:$_gmic_n
+      repeat $! l[$>]
+        +e[] "        "${_gmic_c}{t}${"if "$<" u \" |\" else u \"\" fi"}$_gmic_n
+      endl done
     endl
-
-
-    e[] $name"\n"
 
     rm 0
   endl done
