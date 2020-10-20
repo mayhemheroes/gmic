@@ -246,10 +246,6 @@ _help : skip ${1=""}
   if {@100%}==_']'" && "i!=_'[' l. s -,{'['} k[0] endl fi
   command={t} rm.
 
-#  if $2 __help_header_ascii[] +e[] "" fi
-#  parse_cli $command,help
-#  return
-
   # Help requested for a specific command.
   ks0="0" ks1="k[0]"
   if $2 __help_header_ascii[] fi
@@ -266,6 +262,10 @@ _help : skip ${1=""}
          "Try '"${_gmic_c}"gmic -h"$_gmic_n"' for global help."
     rm u "" return
   fi
+
+#  a y parse_cli $command,help
+#  rm
+
   rm[0] a y merge_multiline_comments s -,10
   stopflag=0
   _is_example=0
@@ -6293,7 +6293,7 @@ parse_cli_help :
     # Parse command declaration.
     s -,{'\n'} discard {'#@cli'} max {'" "'} autocrop {'" "'}
     +l[0]
-      s -,{':'} autocrop {'" "'}
+      s -,{'": "'} autocrop {'" "'}
       name={0,t} rm[0]
       is_native,nb_syntaxes=0
       if $!
@@ -6303,9 +6303,15 @@ parse_cli_help :
       fi
       +e[] "    "$_gmic_m$_gmic_b$name${"s1,s0=\" (+)\", u $s"$is_native}:$_gmic_n
       repeat $! l[$>]
-        str="        "{t}
-        strcut $str${"if "$<" u \" |\" else u \"\" fi"},100,"\n         " str=${}
-        +e[] ${_gmic_c}$str$_gmic_n
+        if "!find(#0,'eq. to \'')"
+          s -,39 eqto={1,t} k[0]
+          +e[] "      Shortcut for command '"$_gmic_m$_gmic_b$eqto$_gmic_n"'."
+        else
+          eqto=
+          str="        "{t}
+          strcut $str${"if "$<" u \" |\" else u \"\" fi"},100,"\n         " str=${}
+          +e[] ${_gmic_c}$str$_gmic_n
+        fi
       endl done
       rm
     endl
@@ -6326,7 +6332,7 @@ parse_cli_help :
         a y
         strcut {t},100,"\n       " rm.
         ({'${}'}:y) _parse_cli_help_colorize.
-        str="      "{t} nnl=\n
+        str="      "{t} if !narg($nnl) nl=\n fi nnl=\n
       elif i==_'$'" && "i[1]!=_'$' # Found example description
         rows 1,100% autocrop {'" "'}
         example={t}
@@ -6352,7 +6358,7 @@ parse_cli_help :
 
     rm 0
     +e[] ""
-  endl done u ""
+  endl done u $eqto
 
 parse_cli_trigger_help :
   if "['$1']!='*'"
