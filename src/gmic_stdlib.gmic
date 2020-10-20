@@ -6191,7 +6191,10 @@ update_download_version : check "
     "
   ot $filename
 
-#@cli parse_cli : _command_name,_outputmode
+#@cli parse_cli : _{ * | command_name },_output_mode
+#@cli : Parse definition of '#@cli'-documented commands and output info about them in specified output mode.
+#@cli : 'output_mode' can be { print | help | images }.
+#@cli : Default values: 'command_name=*' and 'output_mode=print'.
 parse_cli : skip "${1=*},${2=print}"
   use_vt100
 
@@ -6260,7 +6263,7 @@ parse_cli : skip "${1=*},${2=print}"
           setname(#x,string(command,'@',category));
         )"
       rm. rmn __to_discard__
-      parse_cli_trigger_$2 $1
+      l parse_cli_trigger_$2 $1 onfail endl
     fi
     parse_cli_$2
     rm
@@ -6357,7 +6360,6 @@ parse_cli_help :
     endl fi done
 
     rm 0
-    +e[] ""
   endl done u $eqto
 
 parse_cli_trigger_help :
