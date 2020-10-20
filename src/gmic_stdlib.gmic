@@ -6260,21 +6260,7 @@ parse_cli : skip "${1=*},${2=print}"
           setname(#x,string(command,'@',category));
         )"
       rm. rmn __to_discard__
-
-      # Isolate only requested commands.
-      if "['$1']!='*'"
-        1 eval ${-math_lib}"
-          ref(lowercase([['$1'],_'@']),str);
-          for (k = 0, k<l - 1, ++k,
-            ref(lowercase(name(#k)),nm);
-            arobace = find(nm,_'@');
-            p = find(nm,str);
-            p?dar_insert(#-1,k);
-#            p<0 || p>=arobace?dar_insert(#-1,k)
-          );
-          resize(#-1,1,dar_size(#-1),1,1,0)"
-        rm[{^},-1] k.
-      fi
+      if "['$1']!='*'" parse_cli_select_$2 $1 fi
     fi
     parse_cli_$2
     rm
@@ -6288,6 +6274,14 @@ parse_cli_print :
     ('{n}') l. s -,{'@'} name={0,t} rm endl
     +e[] $name
   endl done u ""
+
+parse_cli_select_print :
+  1,$!,1,1,"
+    begin(ref(lowercase(['$1']),str));
+    ref(lowercase(name(#y)),nm);
+    arobace = find(nm,_'@');
+    inrange(find(nm,str),0,arobace - 1)?y:-1"
+  discard. -1 if h k[{^}] else rm. fi
 
 # Implements 'help' mode for command 'parse_cli'.
 parse_cli_help :
@@ -6357,6 +6351,13 @@ parse_cli_help :
     rm 0
     +e[] ""
   endl done u ""
+
+parse_cli_select_help :
+  1,$!,1,1,"
+    begin(ref([lowercase(['$1']),_'@'],str));
+    ref(lowercase(name(#y)),nm);
+    !find(nm,str)?y:-1"
+  discard. -1 if h k[{@-1}] else rm. fi
 
 # Colorize string (as images) using VT100 color codes.
 _parse_cli_help_colorize :
