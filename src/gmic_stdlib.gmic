@@ -242,10 +242,13 @@ help : skip ${1=""},${2=1}
 _help : skip ${1=""}
   v 0 use_vt100
   if !narg("$1") _is_example=0 __help ascii rm u "" return fi # Global help.
-
   ('"$1"') autocrop. {'-'}
   if {@100%}==_']'" && "i!=_'[' l. s -,{'['} k[0] endl fi
   command={t} rm.
+
+  if $2 __help_header_ascii[] +e[] "" fi
+  parse_cli $command,help
+  return
 
   # Help requested for a specific command.
   ks0="0" ks1="k[0]"
@@ -6283,7 +6286,7 @@ parse_cli_print :
   repeat $! l[$>]
     ('{n}') l. s -,{'@'} name={0,t} rm endl
     +e[] $name
-  endl done
+  endl done u ""
 
 # Implements 'help' mode for command 'parse_cli'.
 parse_cli_help :
@@ -6354,7 +6357,7 @@ parse_cli_help :
 
     rm 0
     +e[] ""
-  endl done
+  endl done u ""
 
 # Colorize string (as images) using VT100 color codes.
 _parse_cli_help_colorize :
