@@ -6260,7 +6260,7 @@ parse_cli : skip "${1=*},${2=print}"
           setname(#x,string(command,'@',category));
         )"
       rm. rmn __to_discard__
-      if "['$1']!='*'" parse_cli_select_$2 $1 fi
+      parse_cli_trigger_$2 $1
     fi
     parse_cli_$2
     rm
@@ -6275,13 +6275,15 @@ parse_cli_print :
     +e[] $name
   endl done u ""
 
-parse_cli_select_print :
-  1,$!,1,1,"
-    begin(ref(lowercase(['$1']),str));
-    ref(lowercase(name(#y)),nm);
-    arobace = find(nm,_'@');
-    inrange(find(nm,str),0,arobace - 1)?y:-1"
-  discard. -1 k[{^}]
+parse_cli_trigger_print :
+  if "['$1']!='*'"
+    1,$!,1,1,"
+      begin(ref(lowercase(['$1']),str));
+      ref(lowercase(name(#y)),nm);
+      arobace = find(nm,_'@');
+      inrange(find(nm,str),0,arobace - 1)?y:-1"
+    discard. -1 k[{^}]
+  fi
 
 # Implements 'help' mode for command 'parse_cli'.
 parse_cli_help :
@@ -6301,9 +6303,9 @@ parse_cli_help :
       fi
       +e[] "    "$_gmic_m$_gmic_b$name${"s1,s0=\" (+)\", u $s"$is_native}:$_gmic_n
       repeat $! l[$>]
-        str="        "${_gmic_c}{t}${"if "$<" u \" |\" else u \"\" fi"}$_gmic_n
-        strcut $str,100,"\n         " str=${}
-        +e[] $str
+        str="        "{t}
+        strcut $str${"if "$<" u \" |\" else u \"\" fi"},100,"\n         " str=${}
+        +e[] ${_gmic_c}$str$_gmic_n
       endl done
       rm
     endl
@@ -6352,12 +6354,14 @@ parse_cli_help :
     +e[] ""
   endl done u ""
 
-parse_cli_select_help :
-  1,$!,1,1,"
-    begin(ref([lowercase(['$1']),_'@'],str));
-    ref(lowercase(name(#y)),nm);
-    !find(nm,str)?y:-1"
-  discard. -1 if h k[{@-1}] else rm fi
+parse_cli_trigger_help :
+  if "['$1']!='*'"
+    1,$!,1,1,"
+      begin(ref([lowercase(['$1']),_'@'],str));
+      ref(lowercase(name(#y)),nm);
+      !find(nm,str)?y:-1"
+    discard. -1 if h k[{@-1}] else rm fi
+  fi
 
 # Colorize string (as images) using VT100 color codes.
 _parse_cli_help_colorize :
@@ -25375,7 +25379,7 @@ strcut : check "${2=80}>0" skip "${3=\n}"
           copy(i[#1,target],i[#0,beg],l); target+=l;
           copy(i[#1,target],cut,l_cut); target+=l_cut;
           beg = ++end;
-          lmax = $2 - l_cut;
+          l_max = $2 - l_cut;
         );
       );
       beg<h#0?(
