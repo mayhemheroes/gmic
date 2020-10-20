@@ -6188,7 +6188,7 @@ update_download_version : check "
     "
   ot $filename
 
-#@cli parse_gui : _command_name,_outputmode
+#@cli parse_cli : _command_name,_outputmode
 parse_cli : skip "${1=*},${2=print}"
   use_vt100
   +l
@@ -6269,6 +6269,7 @@ parse_cli : skip "${1=*},${2=print}"
     rm
   endl
 
+# Implements 'print' mode for command 'parse_cli'.
 parse_cli_print :
   v 0 e[] ""
   sort_list +,n
@@ -6277,10 +6278,10 @@ parse_cli_print :
     +e[] $name
   endl done
 
+# Implements 'help' mode for command 'parse_cli'.
 parse_cli_help :
   v 0 e[] ""
   repeat $! l[$>]
-#    ('{n}') l. s -,{'@'} if $!>1 category={1,t} else category= fi rm endl
     s -,{'\n'} discard {'#@cli'} max {'" "'} autocrop {'" "'}
     l[0]
       s -,{':'} autocrop {'" "'}
@@ -6314,6 +6315,18 @@ parse_cli_help :
         a y
         strcut {t},100,"\n       " rm.
         ({'${}'}:y) _parse_cli_help_colorize. str="\n      "{t}
+      elif i==_'$'" && "i[1]!=_'$'
+        rows 1,100% autocrop {'" "'}
+        if !narg($example)
+          example_str=${_gmic_b}"Example:"$_gmic_n" "[#1]
+          example=1
+        else
+          example+=1
+          example_str="         "[#$example]
+        fi
+        str=$example_str" "$_gmic_g{t}$_gmic_n
+        strcut $str,100,"\\\\\n                 " str=${}
+
       else
         strcut {t},100,"\n       " rm.
         ({'${}'}:y) _parse_cli_help_colorize. str={t}
