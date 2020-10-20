@@ -6191,6 +6191,12 @@ update_download_version : check "
 #@cli parse_cli : _command_name,_outputmode
 parse_cli : skip "${1=*},${2=print}"
   use_vt100
+
+  # Check that specified output mode is actually implemented.
+  l[] ({'$$parse_cli_$2'}) rm
+  onfail error[0--2] "Command 'parse_cli': Invalid output mode '$2'."
+  endl
+
   +l
     if !$! l[] it ${_path_rc}update$_version.gmic onfail endl fi
     if !$! return fi
