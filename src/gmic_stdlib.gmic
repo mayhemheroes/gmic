@@ -6293,7 +6293,7 @@ parse_cli_help :
       +e[] "    "$_gmic_m$_gmic_b$name${"s1,s0=\" (+)\", u $s"$is_native}:$_gmic_n
       repeat $! l[$>]
         str="        "${_gmic_c}{t}${"if "$<" u \" |\" else u \"\" fi"}$_gmic_n
-        ({'$str'}:y) _parse_cli_help_tomultiline. 80,9,0 str={t} rm.
+        strcut $str,80,"\n         " str=${}
         +e[] $str
       endl done
       +e[] ""
@@ -6311,13 +6311,12 @@ parse_cli_help :
           i[0] ('$_gmic_b':y) i[2] ('$_gmic_n':y)
         fi
         a y
-        _parse_cli_help_tomultiline. 80,7,0
-        str="\n      "{t}
+        strcut {t},80,"\n" rm.
+        ({'${}'}) _parse_cli_help_colorize. str="\n      "{t}
 
       else
-        _parse_cli_help_colorize.
-        _parse_cli_help_tomultiline. 80,7,0
-        str={t}
+        strcut {t},80,"\n      " rm.
+        ({'${}'}) _parse_cli_help_colorize. str={t}
       fi
       +e[] "      "$str
     endl fi done
@@ -6326,7 +6325,7 @@ parse_cli_help :
     +e[] ""
   endl done
 
-# Colorize string using VT100 color codes.
+# Colorize string (as images) using VT100 color codes.
 _parse_cli_help_colorize :
   eval[^] ">begin(beg = -1);
     i==_'\''?(
@@ -6337,20 +6336,6 @@ _parse_cli_help_colorize :
   replace_str "\3",$_gmic_n"'"
   replace_str "{",$_gmic_g"{"
   replace_str "}","}"$_gmic_n
-
-# Convert string (selected image) into multi-line string with specified max size ($1) and tabulation ($2).
-# $3 tells if line must end with a backslash.
-_parse_cli_help_tomultiline :
-  1,{ceil(h+($2+1+($3?2:0))*(h/$1))}
-  eval.. ">begin(l = p = 0);
-    l<80?++l:(
-      $3?(copy(i[#-1,p],'\\\\'); p+=2);
-      i[#-1,p++] = _'\n';
-      copy(i[#-1,p],_' ',$2,1,0); p+=$2;
-      l = 0;
-    );
-    i[#-1,p++] = i"
-  rm..
 
 #@cli parse_gui : _filter_name,_outputmode
 #@cli : Parse selected filter definitions and generate info about filters in selected output mode.
@@ -25335,6 +25320,35 @@ strcapitalize :
 #@cli : Return 1 if the first string contains the second one.
 strcontains :
   u {"find(['$1'],['$2'])>=0"}
+
+#@cli strcut : "string",_max_chars>0,"_cut_pattern"
+#@cli : Return string that has been cutoff in several parts, separated by specified 'cut_pattern'.
+#@cli : Each part contains at most 'max_chars' characters.
+strcut : check "${2=80}>0" skip "${3=\n}"
+  l[]
+    ({'"$1"'}:y) 1
+    eval ${-math_lib}"
+      ref(['$3'],cut);
+      const l_cut = size(cut);
+      beg = end = target = 0;
+      while (end<h#0,
+        end - beg + 1<=$2?++end:(
+          for (nend = end, nend>beg + 8 && !isin(i[#0,nend],_' ',_',',_';',_'|'), --nend);
+          nend>beg + 8?(end = nend);
+          l = end - beg + 1;
+          target + l>=h(#1)?resize(#1,1,2*h(#1) + l + l_cut,1,1,0,0);
+          copy(i[#1,target],i[#0,beg],l); target+=l;
+          copy(i[#1,target],cut,l_cut); target+=l_cut;
+          beg = ++end;
+        );
+      );
+      beg<h#0?(
+        l = h#0 - beg;
+        target + l>=h(#1)?resize(#1,1,2*h(#1) + l,1,1,0,0);
+        copy(i[#1,target],i[#0,beg],l); target+=l;
+      )"
+    u {t} rm
+  endl
 
 #@cli strlen : string1
 #@cli : Return the length of specified string argument.
