@@ -6280,6 +6280,7 @@ parse_cli_print :
 parse_cli_help :
   v 0 e[] ""
   repeat $! l[$>]
+#    ('{n}') l. s -,{'@'} if $!>1 category={1,t} else category= fi rm endl
     s -,{'\n'} discard {'#@cli'} max {'" "'} autocrop {'" "'}
     l[0]
       s -,{':'} autocrop {'" "'}
@@ -6311,12 +6312,11 @@ parse_cli_help :
           i[0] ('$_gmic_b':y) i[2] ('$_gmic_n':y)
         fi
         a y
-        strcut {t},80,"\n" rm.
-        ({'${}'}) _parse_cli_help_colorize. str="\n      "{t}
-
+        strcut {t},80,"\n       " rm.
+        ({'${}'}:y) _parse_cli_help_colorize. str="\n      "{t}
       else
         strcut {t},80,"\n      " rm.
-        ({'${}'}) _parse_cli_help_colorize. str={t}
+        ({'${}'}:y) _parse_cli_help_colorize. str={t}
       fi
       +e[] "      "$str
     endl fi done
@@ -25330,21 +25330,23 @@ strcut : check "${2=80}>0" skip "${3=\n}"
     eval ${-math_lib}"
       ref(['$3'],cut);
       const l_cut = size(cut);
+      l_max = $2;
       beg = end = target = 0;
       while (end<h#0,
-        end - beg + 1<=$2?++end:(
+        end - beg + 1<=l_max?++end:(
           for (nend = end, nend>beg + 8 && !isin(i[#0,nend],_' ',_',',_';',_'|'), --nend);
           nend>beg + 8?(end = nend);
           l = end - beg + 1;
-          target + l>=h(#1)?resize(#1,1,2*h(#1) + l + l_cut,1,1,0,0);
+          target + l + l_cut>=h(#1)?resize(#1,1,2*h(#1) + l + l_cut,1,1,0,0);
           copy(i[#1,target],i[#0,beg],l); target+=l;
           copy(i[#1,target],cut,l_cut); target+=l_cut;
           beg = ++end;
+          l_max = $2 - l_cut;
         );
       );
       beg<h#0?(
         l = h#0 - beg;
-        target + l>=h(#1)?resize(#1,1,2*h(#1) + l,1,1,0,0);
+        target + l + l_cut>=h(#1)?resize(#1,1,h(#1) + l + l_cut,1,1,0,0);
         copy(i[#1,target],i[#0,beg],l); target+=l;
       )"
     u {t} rm
