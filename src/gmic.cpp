@@ -2238,7 +2238,7 @@ double gmic::mp_run(char *const str,
 }
 
 template<typename Ts, typename T>
-double gmic::mp_get(Ts *const ptr, const unsigned int siz, const char *const str,
+double gmic::mp_get(Ts *const ptr, const unsigned int siz, const bool to_numbers, const char *const str,
                     void *const p_list, const T& pixel_type) {
   cimg::unused(pixel_type);
 
@@ -2263,57 +2263,64 @@ double gmic::mp_get(Ts *const ptr, const unsigned int siz, const char *const str
     CImg<char> _varname(256);
     char *const varname = _varname.data(), end;
 
-    if (cimg_sscanf(str,"%255[a-zA-Z0-9_]%c",&(*varname=0),&end)==1 &&
-        (*varname<'0' || *varname>'9')) {
-
+    if (cimg_sscanf(str,"%255[a-zA-Z0-9_]%c",&(*varname=0),&end)==1 && (*varname<'0' || *varname>'9')) {
       CImg<char> value = gmic_instance.get_variable(varname,variables_sizes,&images_names);
-      if (!value) {
-        cimg::mutex(24,0);
-        throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
-                                    "Undefined variable '%s'.",
-                                    cimg::type<T>::string(),str);
-      }
-      double dvalue = 0;
-      if (!siz) { // Scalar result
-        if (cimg_sscanf(value,"%lf%c",&dvalue,&end)!=1) {
+      CImg<Ts> dest(ptr,siz,1,1,1,true);
+
+      std::fprintf(stderr,"\nTO_NUMBERS = %d\n",(int)to_numbers);
+
+      if (!to_numbers) { // Return variable content as a string
+        dest.draw_image(value);
+        if (dest.width()>value.width()) dest.get_shared_points(value.width(),dest.width() - 1).fill(0);
+
+      } else { // Convert variable content as numbers
+        if (!value) {
           cimg::mutex(24,0);
           throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
-                                      "Variable '%s' has value '%s', cannot be returned as a scalar.",
-                                      cimg::type<T>::string(),str,value.data());
+                                      "Undefined variable '%s'.",
+                                      cimg::type<T>::string(),str);
         }
-        *ptr = dvalue;
-
-      } else { // Vector result
-        if (*value==gmic_store) { // Image-encoded variable
-          const char *const zero = (char*)::std::memchr(value,0,value.width());
-          CImgList<T> list = CImgList<T>::get_unserialize(value.get_shared_points(zero + 1 - value.data(),value.width() - 1));
-          if (list.size()!=2) {
+        double dvalue = 0;
+        if (!siz) { // Scalar result
+          if (cimg_sscanf(value,"%lf%c",&dvalue,&end)!=1) {
             cimg::mutex(24,0);
             throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
-                                        "Variable '%s' stores %u images, cannot be returned as a vector.",
-                                        cimg::type<T>::string(),str,list.size());
+                                        "Variable '%s' has value '%s', cannot be returned as a scalar.",
+                                        cimg::type<T>::string(),str,value.data());
           }
-          if (list[0].size()<siz) {
-            cimg::mutex(24,0);
-            throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
-                                        "Variable '%s' stores an image (%u,%u,%u,%u) of size %lu, "
-                                        "cannot be returned as a vector of size %lu.",
-                                        cimg::type<T>::string(),str,
-                                        list[0].width(),list[0].height(),list[0].depth(),list[0].spectrum(),
-                                        list[0].size(),siz);
-          }
-          CImg<Ts>(ptr,siz,1,1,1,true) = list[0].resize(siz,1,1,1,-1);
+          dest[0] = dvalue;
 
-        } else { // Regular string variable
-          if (cimg_sscanf(value,"%lf%c",&dvalue,&end)==1)
-            CImg<Ts>(ptr,siz,1,1,1,true).fill((Ts)dvalue);
-          else try { CImg<Ts>(ptr,siz,1,1,1,true).fill(value,true,false); }
-            catch (...) {
+        } else { // Vector result
+          if (*value==gmic_store) { // Image-encoded variable
+            const char *const zero = (char*)::std::memchr(value,0,value.width());
+            CImgList<T> list = CImgList<T>::get_unserialize(value.get_shared_points(zero + 1 - value.data(),value.width() - 1));
+            if (list.size()!=2) {
               cimg::mutex(24,0);
               throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
-                                          "Variable '%s' has value '%s', cannot be returned as a vector.",
-                                          cimg::type<T>::string(),str,value.data());
+                                          "Variable '%s' stores %u images, cannot be returned as a vector.",
+                                          cimg::type<T>::string(),str,list.size());
             }
+            if (list[0].size()<siz) {
+              cimg::mutex(24,0);
+              throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
+                                          "Variable '%s' stores an image (%u,%u,%u,%u) of size %lu, "
+                                          "cannot be returned as a vector of size %lu.",
+                                          cimg::type<T>::string(),str,
+                                          list[0].width(),list[0].height(),list[0].depth(),list[0].spectrum(),
+                                          list[0].size(),siz);
+            }
+            dest = list[0].resize(siz,1,1,1,-1);
+
+          } else { // Regular string variable
+            if (cimg_sscanf(value,"%lf%c",&dvalue,&end)==1) dest.fill((Ts)dvalue);
+            else try { dest.fill(value,true,false); }
+              catch (...) {
+                cimg::mutex(24,0);
+                throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
+                                            "Variable '%s' has value '%s', cannot be returned as a vector.",
+                                            cimg::type<T>::string(),str,value.data());
+              }
+          }
         }
       }
       cimg::mutex(24,0);
