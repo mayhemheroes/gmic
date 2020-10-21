@@ -1210,24 +1210,6 @@ CImg<T>& inpaint_patch(const CImg<t>& mask, const unsigned int patch_size=11,
     }
     const int l2 = (int)final_lookup_size/2, l1 = (int)final_lookup_size - l2 - 1;
 
-#ifdef gmic_debug
-    CImg<ucharT> visu(*this,false);
-    for (unsigned int C = 0; C<nb_lookup_candidates; ++C) {
-      const int
-        xl = lookup_candidates(0,C),
-        yl = lookup_candidates(1,C);
-      visu.draw_rectangle(xl - l1,yl - l1,xl + l2,yl + l2,CImg<ucharT>::vector(0,255,0).data(),0.2f);
-    }
-    visu.draw_rectangle(target_x - p1,target_y - p1,target_x + p2,target_y + p2,
-                        CImg<ucharT>::vector(255,0,0).data(),0.5f);
-    static int foo = 0;
-    if (!(foo%1)) {
-      static CImgDisplay disp_debug;
-      disp_debug.display(visu).set_title("DEBUG");
-    }
-    ++foo;
-#endif // #ifdef gmic_debug
-
     // Find best patch candidate to fill target point.
     _inpaint_patch_crop(target_x - p1,target_y - p1,target_x + p2,target_y + p2,0).move_to(pP);
     nmask._inpaint_patch_crop(target_x - ox - p1,target_y - oy - p1,target_x - ox + p2,target_y - oy + p2,0).
