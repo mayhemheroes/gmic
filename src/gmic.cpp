@@ -3216,10 +3216,10 @@ CImg<char> gmic::get_variable(const char *const name,
         }
     }
     if (is_name_found) { // Latest image index
-      int tmp = ind;
-      unsigned int l_ind = 0;
-      while (tmp) { ++l_ind; tmp/=10; }
-      res.assign(std::max(2U,l_ind + 1),1,1,1,0);
+      int tmp = std::max(1,ind);
+      unsigned int l_tmp = 0;
+      while (tmp) { ++l_tmp; tmp/=10; }
+      res.assign(l_tmp + 1,1,1,1,0);
       cimg_snprintf(res,res.width(),"%d",ind);
     } else { // Environment variable
       const char *const env = std::getenv(name);
