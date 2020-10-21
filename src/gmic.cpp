@@ -3217,38 +3217,30 @@ gmic& gmic::debug(const char *format, ...) {
   return *this;
 }
 
-// Get variable of the interpreter environment.
-//---------------------------------------------
+// Get variable value.
+//--------------------
 CImg<char> gmic::get_variable(const char *const name,
                               const unsigned int *const variables_sizes,
                               const CImgList<char>* images_names) const {
+  CImg<char> res;
   const unsigned int hash = hashcode(name,true);
   const bool
     is_global = *name=='_',
     is_thread_global = is_global && name[1]=='_';
-  const int lind = is_global || !variables_sizes?0:(int)variables_sizes[hash];
+  const int lmax = is_global || !variables_sizes?0:(int)variables_sizes[hash];
   if (is_thread_global) cimg::mutex(30);
   const CImgList<char>
     &__variables = *variables[hash],
     &__variables_names = *variables_names[hash];
-  bool is_name_found = false;
-  CImg<char> res;
 
+  bool is_name_found = false;
   int ind = -1;
-  for (int l = __variables.width() - 1; l>=lind; --l)
+  for (int l = __variables.width() - 1; l>=lmax; --l)
     if (!std::strcmp(__variables_names[l],name)) {
       is_name_found = true; ind = l; break;
     }
-  if (is_name_found) { // Regular variable
-    if (__variables[ind].size()>1) {
-      if (*(__variables[ind])==gmic_store && !std::strncmp(__variables[ind].data() + 1,"*store/",7)
-          && __variables(ind,8)) {
-        const char *const zero = (char*)std::memchr(__variables[ind].data() + 8,0,__variables[ind].width());
-        res.assign(__variables[ind].data(),zero - __variables[ind].data() + 1,1,1,1,true);
-      } else
-        res.assign(__variables[ind].data(),__variables[ind].size(),1,1,1,true);
-    }
-  } else {
+  if (is_name_found) res.assign(__variables[ind],true); // Regular variable
+  else {
     if (images_names)
       cimglist_rof(*images_names,l)
         if ((*images_names)[l] && !std::strcmp((*images_names)[l],name)) {
@@ -3258,15 +3250,14 @@ CImg<char> gmic::get_variable(const char *const name,
       res.assign(32,1,1,1,0);
       cimg_snprintf(res,res.width(),"%d",ind);
     } else // Environment variable
-      CImg<char>::string(std::getenv(name),true,true).move_to(res);
-
-    if (is_thread_global) cimg::mutex(30,0);
+      res.assign(CImg<char>::string(std::getenv(name),true,true),true);
   }
+  if (is_thread_global) cimg::mutex(30,0);
   return res;
 }
 
-// Set variable of the interpreter environment.
-//---------------------------------------------
+// Set variable value.
+//--------------------
 // 'operation' can be { 0 (add new variable), '=' (replace or add),'.','+','-','*','/','%','&','|','^','<','>' }
 // Return the variable value.
 const char *gmic::set_variable(const char *const name, const char *const value,
