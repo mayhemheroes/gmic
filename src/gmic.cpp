@@ -3220,6 +3220,7 @@ gmic& gmic::debug(const char *format, ...) {
 // Get variable value.
 //--------------------
 // May return an empty image, when requested variable is not assigned.
+// For image-encoded variables, only the string header is returned.
 CImg<char> gmic::get_variable(const char *const name,
                               const unsigned int *const variables_sizes,
                               const CImgList<char> *const images_names) const {
@@ -4908,7 +4909,7 @@ CImg<char> gmic::substitute_item(const char *const source,
         const unsigned int l_name = is_braces?l_inbraces + 3:(unsigned int)std::strlen(name) + 1;
         if (value) {
           if (*value==gmic_store && !std::strncmp(value.data() + 1,"*store/",7) && value[8])
-            CImg<char>::string(value.data() + 1,true,true).append_string_to(substituted_items,ptr_sub);
+            CImg<char>::string(value.data() + 1,false,true).append_string_to(substituted_items,ptr_sub);
           else if (--value._width) value.append_string_to(substituted_items,ptr_sub);
         }
         nsource+=l_name;
