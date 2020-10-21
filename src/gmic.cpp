@@ -14205,57 +14205,38 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         print(images,0,
               "Input image from variable '%s', at position%s",
               argx,_gmic_selection.data());
-        hash = hashcode(argx,true);
-
-        const bool
-          is_global = *argx=='_',
-          is_thread_global = is_global && argx[1]=='_';
-        const int lind = is_global || !variables_sizes?0:(int)variables_sizes[hash];
-        int vind = 0;
-        if (is_thread_global) cimg::mutex(30);
-        const CImgList<char>
-          &__variables = *variables[hash],
-          &__variables_names = *variables_names[hash];
-        bool is_name_found = false;
-        for (int l = __variables.width() - 1; l>=lind; --l)
-          if (!std::strcmp(__variables_names[l],argx)) {
-            is_name_found = true; vind = l; break;
+        const CImg<char> svalue = get_variable(argx,0,0);
+        try {
+          if (!svalue) throw CImgArgumentException(0);
+          const char *const zero = (char*)std::memchr(svalue,0,svalue.width());
+          if (!zero) throw CImgArgumentException(0);
+          CImgList<T>::get_unserialize(svalue.get_shared_points(zero + 1 - svalue.data(),svalue.width() - 1)).
+            move_to(g_list);
+        } catch (CImgArgumentException&) {
+          error(true,images,0,0,
+                "Command 'input': Variable '%s' has not been assigned with command 'store'.",
+                argx);
+        }
+        if (g_list.width()==1 && !g_list_c) // Empty list
+          g_list.assign();
+        else { // Non-empty list
+          g_list_c.assign();
+          const CImg<T> &arg = g_list.back();
+          const unsigned int pend = (unsigned int)arg.size();
+          for (unsigned int p = 4; p<pend; ) { // Retrieve list of image names
+            unsigned int np = p;
+            while (np<pend && arg[np]) ++np;
+            if (np<pend) CImg<T>(arg.data(p),1,++np - p,1,1,true).move_to(g_list_c);
+            p = np;
           }
-        if (is_name_found) {
-          try {
-            const char *const zero = (char*)std::memchr(__variables[vind],0,__variables[vind].width());
-            if (!zero) throw CImgArgumentException(0);
-            CImgList<T>::get_unserialize(__variables[vind].get_shared_points(zero + 1 - __variables[vind].data(),
-                                                                             __variables[vind].width() - 1)).
-              move_to(g_list);
-          } catch (CImgArgumentException&) {
+          cimglist_for(g_list_c,q) g_list_c[q].unroll('x');
+          if (g_list_c.size()!=g_list.size() - 1)
             error(true,images,0,0,
-                  "Command 'input': Variable '%s' has not been assigned with command 'store'.",
-                  argx);
-          }
-          if (g_list.width()==1 && !g_list_c) // Empty list
-            g_list.assign();
-          else { // Non-empty list
-            g_list_c.assign();
-            const CImg<T> &arg = g_list.back();
-            const unsigned int pend = (unsigned int)arg.size();
-            for (unsigned int p = 4; p<pend; ) { // Retrieve list of image names
-              unsigned int np = p;
-              while (np<pend && arg[np]) ++np;
-              if (np<pend) CImg<T>(arg.data(p),1,++np - p,1,1,true).move_to(g_list_c);
-              p = np;
-            }
-            cimglist_for(g_list_c,q) g_list_c[q].unroll('x');
-            if (g_list_c.size()!=g_list.size() - 1)
-              error(true,images,0,0,
-                    "Command 'input': Invalid binary encoding of variable '%s' " \
-                    "(%d items, %d names)",
-                    argx,(int)g_list.size() - 1,(int)g_list_c.size());
-            g_list.remove();
-          }
-        } else error(true,images,0,0,
-                     "Command 'input': Variable '%s' has not been assigned.",
-                     argx);
+                  "Command 'input': Invalid binary encoding of variable '%s' " \
+                  "(%d items, %d names)",
+                  argx,(int)g_list.size() - 1,(int)g_list_c.size());
+          g_list.remove();
+        }
       } else if (cimg_sscanf(arg_input,"[%255[a-zA-Z_0-9%.eE%^,:+-]%c%c",gmic_use_indices,&sep,&end)==2 && sep==']') {
 
         // Nb copies of existing image(s).
