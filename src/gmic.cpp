@@ -3219,15 +3219,16 @@ gmic& gmic::debug(const char *format, ...) {
 
 // Get variable value.
 //--------------------
+// May return an empty image, when requested variable is not assigned.
 CImg<char> gmic::get_variable(const char *const name,
                               const unsigned int *const variables_sizes,
-                              const CImgList<char>* images_names) const {
+                              const CImgList<char> *const images_names) const {
   CImg<char> res;
   const unsigned int hash = hashcode(name,true);
   const bool
     is_global = *name=='_',
     is_thread_global = is_global && name[1]=='_';
-  const int lmax = is_global || !variables_sizes?0:(int)variables_sizes[hash];
+  const int l_max = is_global || !variables_sizes?0:(int)variables_sizes[hash];
   if (is_thread_global) cimg::mutex(30);
   const CImgList<char>
     &__variables = *variables[hash],
@@ -3235,22 +3236,28 @@ CImg<char> gmic::get_variable(const char *const name,
 
   bool is_name_found = false;
   int ind = -1;
-  for (int l = __variables.width() - 1; l>=lmax; --l)
+  for (int l = __variables.width() - 1; l>=l_max; --l)
     if (!std::strcmp(__variables_names[l],name)) {
       is_name_found = true; ind = l; break;
     }
   if (is_name_found) res.assign(__variables[ind],true); // Regular variable
   else {
-    if (images_names)
-      cimglist_rof(*images_names,l)
-        if ((*images_names)[l] && !std::strcmp((*images_names)[l],name)) {
+    if (images_names) {
+      const CImgList<char> &_images_names = *images_names;
+      cimglist_rof(_images_names,l)
+        if (_images_names[l] && !std::strcmp(_images_names[l],name)) {
           is_name_found = true; ind = l; break;
         }
+    }
     if (is_name_found) { // Latest image index
-      res.assign(32,1,1,1,0);
+      int tmp = ind, l_ind = 0;
+      while (tmp) { ++l_ind; tmp/=10; }
+      res.assign(l_ind + 1,1,1,1,0);
       cimg_snprintf(res,res.width(),"%d",ind);
-    } else // Environment variable
-      res.assign(CImg<char>::string(std::getenv(name),true,true),true);
+    } else { // Environment variable
+      const char *const env = std::getenv(name);
+      if (env) res.assign(CImg<char>::string(env,true,true),true); // Otherwise, 'res' is empty
+    }
   }
   if (is_thread_global) cimg::mutex(30,0);
   return res;
@@ -4897,49 +4904,13 @@ CImg<char> gmic::substitute_item(const char *const source,
                   (cimg_sscanf(nsource + 1,"%255[a-zA-Z0-9_]",substr.assign(256).data())==1)) &&
                  (*substr<'0' || *substr>'9')) {
         const CImg<char>& name = is_braces?inbraces:substr;
-        const unsigned int
-          hash = hashcode(name,true),
-          l_name = is_braces?l_inbraces + 3:(unsigned int)std::strlen(name) + 1;
-        const bool
-          is_global = *name=='_',
-          is_thread_global = is_global && name[1]=='_';
-        const int lind = is_global || !variables_sizes?0:(int)variables_sizes[hash];
-        if (is_thread_global) cimg::mutex(30);
-        const CImgList<char>
-          &__variables = *variables[hash],
-          &__variables_names = *variables_names[hash];
-        bool is_name_found = false;
-        for (int l = __variables.width() - 1; l>=lind; --l)
-          if (!std::strcmp(__variables_names[l],name)) {
-            is_name_found = true; ind = l; break;
-          }
-        if (is_name_found) { // Regular variable
-          if (__variables[ind].size()>1) {
-            if (*(__variables[ind])==gmic_store && !std::strncmp(__variables[ind].data() + 1,"*store/",7)
-                && __variables(ind,8)) {
-              const char *const zero = (char*)std::memchr(__variables[ind].data() + 8,0,__variables[ind].width());
-              CImg<char>(__variables[ind].data(),zero - __variables[ind].data(),1,1,1,true).
-                append_string_to(substituted_items,ptr_sub);
-            } else
-              CImg<char>(__variables[ind].data(),(unsigned int)(__variables[ind].size() - 1),1,1,1,true).
-                append_string_to(substituted_items,ptr_sub);
-          }
-        } else {
-          for (int l = images.width() - 1; l>=0; --l)
-            if (images_names[l] && !std::strcmp(images_names[l],name)) {
-              is_name_found = true; ind = l; break;
-            }
-          if (is_name_found) { // Latest image index
-            cimg_snprintf(substr,substr.width(),"%d",ind);
-            CImg<char>(substr.data(),(unsigned int)std::strlen(substr),1,1,1,true).
-              append_string_to(substituted_items,ptr_sub);
-          } else { // Environment variable
-            const char *const s_env = std::getenv(name);
-            if (s_env) CImg<char>(s_env,(unsigned int)std::strlen(s_env),1,1,1,true).
-                         append_string_to(substituted_items,ptr_sub);
-          }
+        CImg<char> value = get_variable(name,variables_sizes,&images_names);
+        const unsigned int l_name = is_braces?l_inbraces + 3:(unsigned int)std::strlen(name) + 1;
+        if (value) {
+          if (*value==gmic_store && !std::strncmp(value.data() + 1,"*store/",7) && value[8])
+            CImg<char>::string(value.data() + 1,true,true).append_string_to(substituted_items,ptr_sub);
+          else if (--value._width) value.append_string_to(substituted_items,ptr_sub);
         }
-        if (is_thread_global) cimg::mutex(30,0);
         nsource+=l_name;
 
         // Substitute '${"command"}' -> Status value after command execution.
@@ -15106,7 +15077,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
     // Display or print result.
     if (verbosity>0 && is_change && !is_quit && !is_return && callstack.size()==1 && images) {
-      if (!std::strcmp(set_variable("_host","",'.',0),"cli")) {
+      if (!std::strcmp(get_variable("_host"),"cli")) {
         if (is_display_available) {
           CImgList<unsigned int> lselection, lselection3d;
           bool is_first3d = false;
