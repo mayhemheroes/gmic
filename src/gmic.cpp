@@ -2267,8 +2267,6 @@ double gmic::mp_get(Ts *const ptr, const unsigned int siz, const bool to_numbers
       CImg<char> value = gmic_instance.get_variable(varname,variables_sizes,&images_names);
       CImg<Ts> dest(ptr,siz,1,1,1,true);
 
-      std::fprintf(stderr,"\nTO_NUMBERS = %d\n",(int)to_numbers);
-
       if (!to_numbers) { // Return variable content as a string
         dest.draw_image(value);
         if (dest.width()>value.width()) dest.get_shared_points(value.width(),dest.width() - 1).fill(0);
