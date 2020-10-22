@@ -6268,7 +6268,7 @@ parse_cli : skip "${1=*},${2=print}"
 
 # Implements 'bashcompletion' mode for command 'parse_cli'.
 parse_cli_bashcompletion :
-  v 0 e[] ""
+  v 0 use_vt100 e[] ""
   sort_list +,n
   +e[] "#"\n\
 "#  Bash completion rules for 'gmic'."\n\
@@ -6299,14 +6299,19 @@ parse_cli_bashcompletion :
 "    opts=$(echo \"$coms\" | sed \"s: \\([^ ]\\+\\): \\1 -\\1 \\+\\1:g\")"\n
 
   # Duplicate list of arguments for command shortcuts.
-  repeat $! l[$>]
-    name={n}
-    nbl={"n = 1; for (p = 0, (q = find(#0,_'\n',p))>=0, ++n, p = ++q); n"}
-    if $nbl==1" && find(#0,'eq. to \'')"
-      +l s -,{'"eq. to "'} k. s -,39 eqto={0,t} rm endl
-      pass[$eqto] 0 k. nm $name
+  repeat $!
+    name={$>,n}
+    nbl={"n = 1; for (p = 0, (q = find(#"$>",_'\n',p))>=0, ++n, p = ++q); n"}
+    if $nbl==1" && find(#"$>",'eq. to \'')>0"
+      +l[$>] s -,{'"eq. to "'} k. s -,39 eqto={0,t} rm endl
+      l[$>] pass[$eqto] 0 k.
+      onfail
+        warn[] "Warning: Ignoring shortcut '"$_gmic_c$name$_gmic_m$_gmic_b"', links to unknown command '"$_gmic_c$eqto$_gmic_m$_gmic_b"'."
+        nm __to_discard__
+      endl
     fi
-  endl done
+  done
+  rmn __to_discard__
 
   # Extract list of arguments.
   +e[] "    case \"${prev}\" in"
@@ -6320,7 +6325,7 @@ parse_cli_bashcompletion :
       else
         s -,{'\n'} k[0] discard {'#@cli'} max {'" "'} autocrop {'" "'}
         s -,{':'} autocrop {'" "'} rm[0] replace {'" "'},{'_'}
-        n_args=0 args,c= repeat $! if ['{$>,t}']!='(+)' args.=$c{$>,t} c=" " n_args+=1 fi done
+        n_args=0 args,c= repeat $! if ['{/{$>,t}}']!='(+)' args.=$c{$>,t} c=" " n_args+=1 fi done
         if $n_args==1 args="> "$args fi
         if ['$args']!=0
           +e[] "        \""$name"\" | \"-"$name"\" | \"+"$name"\")"
