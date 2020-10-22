@@ -4909,9 +4909,9 @@ _outputx :
 
 #@cli random_pattern : _width>0,_height>0,_min_detail_level>=0
 #@cli : Insert a new RGB image of specified size at the end of the image list, rendered with a random pattern.
-#@cli : Default values: 'width=height=512' and 'min_detail_level=5'.
+#@cli : Default values: 'width=height=512' and 'min_detail_level=2'.
 #@cli : $ repeat 6 random_pattern 256 done
-random_pattern : check "isint(${1=512}) && $1>0 && isint(${2=$1}) && $2>0 && ${3=5}>=0"
+random_pattern : check "isint(${1=512}) && $1>0 && isint(${2=$1}) && $2>0 && ${3=2}>=0"
   e[^-1] "Generate a RGB image $1x$2, with a random pattern."
   m "rgb2rgb:"
 
@@ -6403,7 +6403,9 @@ parse_cli_images :
       filename=ex_${name}_$n_example_com.jpg
 
       +e[] $_gmic_c[$n_example]$_gmic_n" Command '"$_gmic_g$name$_gmic_n"': $ "$example
-      if !isfile(['{/$filename}']) # Generate picture only if the file doesn't yet exist
+      skip_rendering={"isfile(['"{/$filename}"']) || !find(['"$name"'],'gallery_')"}
+
+      if !$skip_rendering # Generate picture only if the file doesn't yet exist
         m "run_example : "$example
         l[]
           reset etime=$| run_example etime="done in "$_gmic_n{_round($|-$etime,0.01)}"s"$_gmic_m _document_gmic o $filename,85 rm
@@ -43161,7 +43163,7 @@ fx_color_ellipses :
 
 #@gui Random Pattern : fx_random_pattern, fx_random_pattern_preview(1)
 #@gui : Size = _int(1024,16,8192)
-#@gui : Min Detail Level = float(4,0,20)
+#@gui : Min Detail Level = float(2,0,20)
 #@gui : Seed = float(4038,0,100000)
 #@gui : Randomize Seed = button()
 #@gui : sep = separator()
