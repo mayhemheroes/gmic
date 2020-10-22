@@ -6289,18 +6289,47 @@ parse_cli_bashcompletion :
 "        prev=\"${COMP_WORDS[COMP_CWORD-1]}\""\n\
 "    fi"
   coms="    coms=\"" c=
+
+  # Extract list of available commands.
   repeat $! l[$>] if "find(['"{n}"'],'gallery')"
     ('{n}') l. s -,{'@'} name={0,t} rm endl nm $name
     coms.=$c$name c=" "
   fi endl done
   +e[] $coms"\""\n\
-"    opts=$(echo \"$coms\" | sed \"s: \\([^ ]\\+\\): \\1 -\\1 \\+\\1:g\")"\n\n\
-"    case \"${prev}\" in"
-  repeat $! l[$>] if "find(['"{n}"'],'gallery')"
+"    opts=$(echo \"$coms\" | sed \"s: \\([^ ]\\+\\): \\1 -\\1 \\+\\1:g\")"\n
+
+  # Duplicate list of arguments for command shortcuts.
+  repeat $! l[$>]
     name={n}
-    +e[] "        \""$name"\" | \"-"$name"\" | \"+"$name"\")"\n\
-"            COMPREPLY=( $(compgen -W \"$coms\" -- \"$cur\") ); return 0;;"
-  fi endl done
+    nbl={"n = 1; for (p = 0, (q = find(#0,_'\n',p))>=0, ++n, p = ++q); n"}
+    if $nbl==1" && find(#0,'eq. to \'')"
+      +l s -,{'"eq. to "'} k. s -,39 eqto={0,t} rm endl
+      pass[$eqto] 0 k. nm $name
+    fi
+  endl done
+
+  # Extract list of arguments.
+  +e[] "    case \"${prev}\" in"
+  repeat $! l[$>]
+    name={n}
+    if n=['$name'];"find(n,'gallery') && find(n,'input') && find(n,'output') && "\
+                   "n!='i' && n!='o' && n!='m' && n!='it' && n!='ot'"
+      if ['$name']=='help'
+        +e[] "        \""$name"\" | \"-"$name"\" | \"+"$name"\")"
+        +e[] "            COMPREPLY=( $(compgen -W \"$coms\" -- \"$cur\") ); return 0;;"
+      else
+        s -,{'\n'} k[0] discard {'#@cli'} max {'" "'} autocrop {'" "'}
+        s -,{':'} autocrop {'" "'} rm[0] replace {'" "'},{'_'}
+        n_args=0 args,c= repeat $! if ['{$>,t}']!='(+)' args.=$c{$>,t} c=" " n_args+=1 fi done
+        if $n_args==1 args="> "$args fi
+        if ['$args']!=0
+          +e[] "        \""$name"\" | \"-"$name"\" | \"+"$name"\")"
+          +e[] "            COMPREPLY=( $(compgen -W \""{/{/$args}}"\") ); return 0;;"
+        fi
+      fi
+      rm 0
+    fi
+  endl done
 
   +e[] "    esac"\n\n\
 "    COMPREPLY=( $(compgen -W \"$opts\" -- \"$cur\") )"\n\
