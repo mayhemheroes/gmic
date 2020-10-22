@@ -6193,7 +6193,7 @@ update_download_version : check "
 
 #@cli parse_cli : _{ * | command_name },_output_mode
 #@cli : Parse definition of '#@cli'-documented commands and output info about them in specified output mode.
-#@cli : 'output_mode' can be { print | help | images }.
+#@cli : 'output_mode' can be { bashcompletion | help | images | print }.
 #@cli : Default values: 'command_name=*' and 'output_mode=print'.
 parse_cli : skip "${1=*},${2=print}"
   e[^-1] "Parse '#@cli' command(s) '$1' and output in '$2' mode."
@@ -6265,10 +6265,9 @@ parse_cli : skip "${1=*},${2=print}"
     l parse_cli_trigger_$2 $1 onfail endl
   fi
   parse_cli_$2
-  rm
 
-# Implements 'print' mode for command 'parse_cli'.
-parse_cli_print :
+# Implements 'bashcompletion' mode for command 'parse_cli'.
+parse_cli_bashcompletion :
   v 0 e[] ""
   sort_list +,n
   repeat $! l[$>]
@@ -6276,15 +6275,8 @@ parse_cli_print :
     +e[] $name
   endl done u ""
 
-parse_cli_trigger_print :
-  if "['$1']!='*'"
-    1,$!,1,1,"
-      begin(ref(lowercase(['$1']),str));
-      ref(lowercase(name(#y)),nm);
-      arobace = find(nm,_'@');
-      inrange(find(nm,str),0,arobace - 1)?y:-1"
-    discard. -1 k[{^}]
-  fi
+parse_cli_trigger_bashcompletion :
+  parse_cli_trigger_print $*
 
 # Implements 'help' mode for command 'parse_cli'.
 parse_cli_help :
@@ -6358,7 +6350,7 @@ parse_cli_help :
     endl fi done
 
     rm 0
-  endl done u $eqto
+  endl done rm u $eqto
 
 parse_cli_trigger_help :
   if "['$1']!='*'"
@@ -6384,6 +6376,8 @@ _parse_cli_help_colorize : # Colorize string (as images) using VT100 color codes
 parse_cli_images :
   v 0 use_vt100 e[] ""
   old_category,category= n_category,n_example=0
+  if !isfile('image.jpg') l[] sp pencils,500 onfail testimage2d 500 endl o. image.jpg rm. fi
+
   repeat $! l[$>]
     ('{n}') l. s -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm endl
     if ['$category']!=['$old_category']
@@ -6416,10 +6410,29 @@ parse_cli_images :
 
     old_category=$category
     rm 0
-  endl done
+  endl done rm
 
 parse_cli_trigger_images :
   parse_cli_trigger_help $*
+
+# Implements 'print' mode for command 'parse_cli'.
+parse_cli_print :
+  v 0 e[] ""
+  sort_list +,n
+  repeat $! l[$>]
+    ('{n}') l. s -,{'@'} name={0,t} rm endl
+    +e[] $name
+  endl done rm u ""
+
+parse_cli_trigger_print :
+  if "['$1']!='*'"
+    1,$!,1,1,"
+      begin(ref(lowercase(['$1']),str));
+      ref(lowercase(name(#y)),nm);
+      arobace = find(nm,_'@');
+      inrange(find(nm,str),0,arobace - 1)?y:-1"
+    discard. -1 k[{^}]
+  fi
 
 #@cli parse_gui : _filter_name,_outputmode
 #@cli : Parse selected filter definitions and generate info about filters in selected output mode.
