@@ -6196,6 +6196,7 @@ update_download_version : check "
 #@cli : 'output_mode' can be { print | help | images }.
 #@cli : Default values: 'command_name=*' and 'output_mode=print'.
 parse_cli : skip "${1=*},${2=print}"
+  e[^-1] "Parse '#@cli' command(s) '$1' and output in '$2' mode."
 
   # Check that specified output mode is actually implemented.
   l[] ({'$$parse_cli_$2'}) rm
@@ -6387,7 +6388,7 @@ parse_cli_images :
     ('{n}') l. s -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm endl
     if ['$category']!=['$old_category']
       n_category+=1
-      +e[] $_gmic_r"\n ** Section \#"$n_category": "$category"."$_gmic_n"\n"
+      e[] $_gmic_r"\n ** Section \#"$n_category": "$category"."$_gmic_n"\n"
     fi
 
     s -,{'\n'} discard {'#@cli'} max {'" "'} autocrop {'" "'}
@@ -6402,7 +6403,7 @@ parse_cli_images :
       n_example_com+=1
       filename=ex_${name}_$n_example_com.jpg
 
-      +e[] $_gmic_c[$n_example]$_gmic_n" Command '"$_gmic_g$name$_gmic_n"': $ "$example
+      e[] $_gmic_c[$n_example]$_gmic_n" Command '"$_gmic_g$name$_gmic_n"': $ "$example
       skip_rendering={"isfile(['"{/$filename}"']) || !find(['"$name"'],'gallery_')"}
 
       if !$skip_rendering # Generate picture only if the file doesn't yet exist
@@ -6413,7 +6414,7 @@ parse_cli_images :
         um run_example
       else etime="skipped"
       fi
-      +e[] "\r"$_gmic_c[$n_example]$_gmic_n" Command '"$_gmic_g$name$_gmic_n"': $ "$example" "${_gmic_m}"("$etime")."$_gmic_n
+      e[] "\r"$_gmic_c[$n_example]$_gmic_n" Command '"$_gmic_g$name$_gmic_n"': $ "$example" "${_gmic_m}"("$etime")."$_gmic_n
     fi endl done
 
     old_category=$category
