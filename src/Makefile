@@ -689,8 +689,7 @@ do_gmic_stdlib.h:
 #-----------------------
 bashcompletion:
 	@mkdir -p ../resources
-#	@\gmic gmic_stdlib.gmic it $$""{_path_rc}update$$""_version.gmic nm gmic document_gmic bash > ../resources/gmic_bashcompletion.sh
-	@\gmic gmic_stdlib.gmic it gmic_stdlib.gmic nm gmic document_gmic bash > ../resources/gmic_bashcompletion.sh
+	@\gmic gmic_stdlib.gmic it gmic_stdlib.gmic parse_cli ,bashcompletion > ../resources/gmic_bashcompletion.sh
 	@echo "Bash completion script 'gmic_bashcompletion.sh' has been successfully generated in '../resources/'."
 
 # Man pages
