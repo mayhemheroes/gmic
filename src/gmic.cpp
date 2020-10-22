@@ -5003,15 +5003,17 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
   // Add current run to managed list of gmic runs.
   cimg::mutex(24);
   CImgList<void*> &grl = gmic_runs();
-  CImg<void*> gr(7);
-  gr[0] = (void*)this;
-  gr[1] = (void*)&images;
-  gr[2] = (void*)&images_names;
-  gr[3] = (void*)&parent_images;
-  gr[4] = (void*)&parent_images_names;
-  gr[5] = (void*)variables_sizes;
-  gr[6] = (void*)command_selection;
-  gr.move_to(grl);
+  if (!grl || grl.back()[0]!=this || grl.back()[1]!=&images) {
+    CImg<void*> gr(7);
+    gr[0] = (void*)this;
+    gr[1] = (void*)&images;
+    gr[2] = (void*)&images_names;
+    gr[3] = (void*)&parent_images;
+    gr[4] = (void*)&parent_images_names;
+    gr[5] = (void*)variables_sizes;
+    gr[6] = (void*)command_selection;
+    gr.move_to(grl);
+  }
   cimg::mutex(24,0);
 
   typedef typename cimg::superset<T,float>::type Tfloat;
