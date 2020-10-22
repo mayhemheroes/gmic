@@ -5001,9 +5001,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
   }
 
   // Add current run to managed list of gmic runs.
+  bool push_run = false;
   cimg::mutex(24);
   CImgList<void*> &grl = gmic_runs();
-  if (!grl || grl.back()[0]!=this || grl.back()[1]!=&images) {
+  const int grlwm1 = grl.width() - 1;
+  if (!grl || grl(grlwm1,0)!=this || grl(grlwm1,1)!=&images) {
     CImg<void*> gr(7);
     gr[0] = (void*)this;
     gr[1] = (void*)&images;
@@ -5013,6 +5015,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     gr[5] = (void*)variables_sizes;
     gr[6] = (void*)command_selection;
     gr.move_to(grl);
+    push_run = true;
   }
   cimg::mutex(24,0);
 
@@ -15144,20 +15147,23 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
   }
 
   // Remove current run from managed list of gmic runs.
-  cimg::mutex(24);
-  for (int k = grl.width() - 1; k>=0; --k) {
-    CImg<void*> &_gr = grl[k];
-    if (_gr[0]==(void*)this &&
-        _gr[1]==(void*)&images &&
-        _gr[2]==(void*)&images_names &&
-        _gr[3]==(void*)&parent_images &&
-        _gr[4]==(void*)&parent_images_names &&
-        _gr[5]==(void*)variables_sizes &&
-        _gr[6]==(void*)command_selection) {
-      grl.remove(k); break;
+  if (push_run) {
+    cimg::mutex(24);
+    for (int k = grl.width() - 1; k>=0; --k) {
+      CImg<void*> &_gr = grl[k];
+      if (_gr[0]==(void*)this &&
+          _gr[1]==(void*)&images &&
+          _gr[2]==(void*)&images_names &&
+          _gr[3]==(void*)&parent_images &&
+          _gr[4]==(void*)&parent_images_names &&
+          _gr[5]==(void*)variables_sizes &&
+          _gr[6]==(void*)command_selection) {
+        grl.remove(k); break;
+      }
     }
+    cimg::mutex(24,0);
   }
-  cimg::mutex(24,0);
+
   return *this;
 }
 
