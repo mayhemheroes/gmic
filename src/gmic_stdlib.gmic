@@ -6270,10 +6270,50 @@ parse_cli : skip "${1=*},${2=print}"
 parse_cli_bashcompletion :
   v 0 e[] ""
   sort_list +,n
-  repeat $! l[$>]
-    ('{n}') l. s -,{'@'} name={0,t} rm endl
-    +e[] $name
-  endl done u ""
+
+  +e[] "#"\n\
+"#  Bash completion rules for 'gmic'."\n\
+"#"\n\
+"# This file has been generated automatically."\n\
+"# Do not edit!"\n\
+"#"\n\
+"# This file should be copied/renamed in '/usr/share/bash-completion/completions/gmic'."\n\
+"#"\n\n\
+"_gmic()"\n\
+"{"\n\
+"    local cur prev opts coms"\n\
+"    if type -t _init_completion >/dev/null; then"\n\
+"        _init_completion -n = || return"\n\
+"    else"\n\
+"        COMPREPLY=()"\n\
+"        cur=\"${COMP_WORDS[COMP_CWORD]}\""\n\
+"        prev=\"${COMP_WORDS[COMP_CWORD-1]}\""\n\
+"    fi"
+  coms="    coms=\"" c=
+  repeat $! l[$>] if "find(['"{n}"'],'gallery')"
+    ('{n}') l. s -,{'@'} name={0,t} rm endl nm $name
+    coms.=$c$name c=" "
+  fi endl done
+  +e[] $coms"\""\n\
+"    opts=$(echo \"$coms\" | sed \"s: \\([^ ]\\+\\): \\1 -\\1 \\+\\1:g\")"\n\n\
+"    case \"${prev}\" in"
+  repeat $! l[$>] if "find(['"{n}"'],'gallery')"
+    name={n}
+    +e[] "        \"help\" | \"-help\" | \"+help\")"\n\
+"            COMPREPLY=( $(compgen -W \"$coms\" -- \"$cur\") ); return 0;;"
+  fi endl done
+
+  +e[] "    esac"\n\n\
+"    COMPREPLY=( $(compgen -W \"$opts\" -- \"$cur\") )"\n\
+"    if type -t _filedir >/dev/null; then"\n\
+"        _filedir"\n\
+"    else"\n\
+"        comptopt -o filenames 2>/dev/null"\n\
+"        COMPREPLY=( $(compgen -f -- ${cur}) )"\n\
+"    fi"\n\
+"}"\n\
+"complete -F _gmic -o filenames gmic"
+  rm
 
 parse_cli_trigger_bashcompletion :
   parse_cli_trigger_print $*
@@ -6422,7 +6462,7 @@ parse_cli_print :
   repeat $! l[$>]
     ('{n}') l. s -,{'@'} name={0,t} rm endl
     +e[] $name
-  endl done rm u ""
+  endl done rm
 
 parse_cli_trigger_print :
   if "['$1']!='*'"
