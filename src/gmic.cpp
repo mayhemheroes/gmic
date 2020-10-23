@@ -3157,6 +3157,21 @@ gmic& gmic::debug(const char *format, ...) {
   return *this;
 }
 
+// Pop callstack until it reaches a certain size, after exception has been caught.
+//--------------------------------------------------------------------------------
+// Used to ensure that callstack stays coherent when errors occurs in '_run()'.
+void gmic::pop_callstack_exception(const unsigned int callstack_size) {
+  while (callstack.size()>local_callstack_size) {
+    const char *const s = callstack.back();
+    if (*s=='*') switch (s[1]) {
+      case 'r' : --nb_repeatdones; break;
+      case 'd' : --nb_dowhiles; break;
+      case 'f' : --nb_fordones; break;
+      }
+    callstack.remove(k);
+  }
+}
+
 // Get variable value.
 //--------------------
 // May return an empty image, when requested variable is not assigned.
