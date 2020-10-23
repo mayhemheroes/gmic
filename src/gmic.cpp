@@ -2198,12 +2198,14 @@ double gmic::mp_run(char *const str,
           cimg_snprintf(title,title.width(),"*expr#%u",gmic_instance.debug_line);
           CImg<char>::string(title).move_to(gmic_instance.callstack);
         } else CImg<char>::string("*expr").move_to(gmic_instance.callstack);
+        const unsigned int callstack_size = callstack.size();
         unsigned int pos = 0;
         try {
           gmic_instance._run(gmic_instance.commands_line_to_CImgList(gmic::strreplace_fw(str)),pos,images,images_names,
                              parent_images,parent_images_names,variables_sizes,0,0,command_selection);
         } catch (gmic_exception &e) {
           CImg<char>::string(e.what()).move_to(is_error);
+          pop_callstack_exception(callstack_size);
         }
         gmic_instance.callstack.remove();
         if (is_error || !gmic_instance.status || !*gmic_instance.status ||
@@ -2477,6 +2479,7 @@ static DWORD WINAPI gmic_parallel(void *arg)
 #endif // #if cimg_OS!=2
 {
   _gmic_parallel<T> &st = *(_gmic_parallel<T>*)arg;
+  const unsigned int callstack_size = callstack.size();
   try {
     unsigned int pos = 0;
     st.gmic_instance.abort_ptr(st.gmic_instance.is_abort);
@@ -2489,6 +2492,7 @@ static DWORD WINAPI gmic_parallel(void *arg)
       (*st.gmic_threads)[l].gmic_instance.is_abort_thread = true;
     st.exception._command.assign(e._command);
     st.exception._message.assign(e._message);
+    pop_callstack_exception(callstack_size);
   }
 #if defined(gmic_is_parallel) && defined(_PTHREAD_H)
   pthread_exit(0);
@@ -3161,7 +3165,7 @@ gmic& gmic::debug(const char *format, ...) {
 //--------------------------------------------------------------------------------
 // Used to ensure that callstack stays coherent when errors occurs in '_run()'.
 void gmic::pop_callstack_exception(const unsigned int callstack_size) {
-  while (callstack.size()>local_callstack_size) {
+  while (callstack.size()>callstack_size) {
     const char *const s = callstack.back();
     if (*s=='*') switch (s[1]) {
       case 'r' : --nb_repeatdones; break;
@@ -4073,10 +4077,12 @@ void gmic::_gmic(const char *const commands_line,
 
   // Launch the G'MIC interpreter.
   const CImgList<char> items = commands_line?commands_line_to_CImgList(commands_line):CImgList<char>::empty();
+  const unsigned int callstack_size = callstack.size();
   try {
     _run(items,images,images_names,p_progress,p_is_abort);
   } catch (gmic_exception&) {
     print(images,0,"Abort G'MIC interpreter (caught exception).\n");
+    pop_callstack_exception(callstack_size);
     throw;
   }
 }
@@ -4880,9 +4886,15 @@ CImg<char> gmic::substitute_item(const char *const source,
           CImg<char>::string("*substitute").move_to(callstack);
           CImg<unsigned int> nvariables_sizes(gmic_varslots);
           cimg_forX(nvariables_sizes,l) nvariables_sizes[l] = variables[l]->size();
-          const unsigned int psize = images.size();
-          _run(ncommands_line,nposition,images,images_names,parent_images,parent_images_names,
-               nvariables_sizes,0,inbraces,command_selection);
+          const unsigned int
+            callstack_size = callstack.size(),
+            psize = images.size();
+          try {
+            _run(ncommands_line,nposition,images,images_names,parent_images,parent_images_names,
+                 nvariables_sizes,0,inbraces,command_selection);
+          } catch (gmic_exception &e) {
+            pop_callstack_exception(callstack_size);
+          }
           if (images.size()!=psize)
             error(true,images,0,0,
                   "Item substitution '${\"%s\"}': Expression incorrectly changes the number of images (from %u to %u).",
@@ -8595,7 +8607,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             cimg::mutex(27,0);
           }
 
-          const unsigned int local_callstack_size = callstack.size();
+          const unsigned int callstack_size = callstack.size();
           const int o_verbosity = verbosity;
           try {
             if (next_debug_line!=~0U) { debug_line = next_debug_line; next_debug_line = ~0U; }
@@ -8619,16 +8631,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 else if (!_is_get && nb_locals==1 && !std::strcmp("onfail",it)) break;
               }
             }
-            if (callstack.size()>local_callstack_size)
-              for (unsigned int k = callstack.size() - 1; k>=local_callstack_size; --k) {
-                const char *const s = callstack[k].data();
-                if (*s=='*') switch (s[1]) {
-                  case 'r' : --nb_repeatdones; break;
-                  case 'd' : --nb_dowhiles; break;
-                  case 'f' : --nb_fordones; break;
-                  }
-                callstack.remove(k);
-              }
+            pop_callstack_exception(callstack_size);
             if (nb_locals==1 && position<commands_line.size()) { // Onfail block found
               verbosity = o_verbosity; // Restore verbosity
               if (is_very_verbose) print(images,0,"Reach 'onfail' block.");
