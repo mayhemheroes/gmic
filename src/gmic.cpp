@@ -2399,33 +2399,6 @@ double gmic::mp_name(const unsigned int ind, Ts *const out_str, const unsigned i
   return cimg::type<double>::nan();
 }
 
-template<typename T>
-double gmic::mp_setname(const unsigned int ind, const char *const str,
-                        void *const p_list, const T& pixel_type) {
-  cimg::unused(pixel_type);
-
-  // Retrieve current gmic run.
-  cimg::mutex(24);
-  CImgList<void*> &grl = gmic_runs();
-  int p;
-  for (p = grl.width() - 1; p>=0; --p) {
-    CImg<void*> &gr = grl[p];
-    if (gr[1]==(void*)p_list) break;
-  }
-  if (p<0) { // Instance not found!
-    cimg::mutex(24,0);
-    throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'setname()': "
-                                "Cannot determine instance of the G'MIC interpreter.",
-                                cimg::type<T>::string());
-  } else {
-    CImg<void*> &gr = grl[p];
-    cimg::mutex(24,0);
-    CImgList<char> &images_names = *(CImgList<char>*)gr[2];
-    if (ind<images_names.size()) CImg<char>::string(str).move_to(images_names[ind]);
-  }
-  return cimg::type<double>::nan();
-}
-
 // Manage correspondence between abort pointers and thread ids.
 CImgList<void*> gmic::list_p_is_abort = CImgList<void*>();
 bool *gmic::abort_ptr(bool *const p_is_abort) {

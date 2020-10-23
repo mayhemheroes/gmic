@@ -1131,8 +1131,6 @@ ${g}"N=24"$n").
 \n          '"${g}"size"$n"' values, or as a scalar (if '"${g}"size"$n"' is zero or not specified).
 \n       . '"${c}"name(_#ind,size)"$n"' returns a vector of size "${g}"size"$n", whose values are the characters
 \n          codes of the name of image "${c}"[ind]"$n" (or default image selected if '"${c}"ind"$n"' is not specified).
-\n       . '"${c}"setname(_#ind,string)"$n"' sets the name of image "${c}"[ind]"$n" (or default image selected if
-\n          '"${c}"ind"$n"' is not specified).
 \n       . '"${c}"correlate(I,wI,hI,dI,sI,K,wK,hK,dK,sK,_boundary_conditions,_is_normalized,_channel_mode,
 \n                    _xcenter,_ycenter,_zcenter,_xstart,_ystart,_zstart,_xend,_yend,_zend,
 \n                    _xstride,_ystride,_zstride,_xdilation,_ydilation,_zdilation)"$n"'
@@ -6247,19 +6245,19 @@ parse_cli : skip "${1=*},${2=print}"
         ref(vector1024(),category);
       );
       for (p = 5, p<h#x && (c=i[#x,p])<=_' ' && c!=_'\n', ++p);
-      p>=h#x || i[#x,p]==_'\n'?(setname(#x,'__to_discard__'); break());
+      p>=h#x || i[#x,p]==_'\n'?(run('nm[',x,'] __to_discard__'); break());
 
       i[#x,p]==_':' && i[#x,p + 1]==_':'?( # Category
         for (p+=2, i[#x,p]<=_' ', ++p);
         for (q = h#x - 1, i[#x,q]<=_' ', --q);
         copy(category,i[#x,p],l = min(q - p + 1,size(category) - 1));
         category[l] = 0;
-        setname(#x,'__to_discard__');
+        run('nm[',x,'] __to_discard__');
       ):( # Command
         for (q = p, q<h#x && (c=i[#x,q])!=_':' && c>_' ', ++q);
         copy(command,i[#x,p],l = min(q - p,size(command) - 1));
         command[l] = 0;
-        setname(#x,string(command,'@',category));
+        run('nm[',x,'] \"',string(command,'@',category),'\"');
       )"
     rm. rmn __to_discard__
     l parse_cli_trigger_$2 $1 onfail endl
@@ -8256,7 +8254,7 @@ remove_duplicates :
 #@cli : Remove empty images in the selected image list.
 remove_empty :
   e[^-1] "Remove empty images in selected list of image$?."
-  $!,1,1,1,"!w#x?setname(#x,'__remove_empty__')" rm[${nmd\ __remove_empty__},-1]
+  $!,1,1,1,"!w#x?run('nm[',x,'] __remove_empty__')" rm[${nmd\ __remove_empty__},-1]
 
 #@cli rmn : eq. to 'remove_named'.
 rmn :
