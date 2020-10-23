@@ -6191,7 +6191,7 @@ update_download_version : check "
 
 #@cli parse_cli : _{ * | command_name },_output_mode
 #@cli : Parse definition of '#@cli'-documented commands and output info about them in specified output mode.
-#@cli : 'output_mode' can be { bashcompletion | help | images | print }.
+#@cli : 'output_mode' can be { bashcompletion | help | html | images | print }.
 #@cli : Default values: 'command_name=*' and 'output_mode=print'.
 parse_cli : skip "${1=*},${2=print}"
   e[^-1] "Parse '#@cli' command(s) '$1' and output in '$2' mode."
@@ -6360,11 +6360,10 @@ parse_cli_help :
     +l[0]
       s -,{'": "'} autocrop {'" "'}
       name={0,t} rm[0]
-      is_native,nb_syntaxes=0
+      is_native=0
       if $!
         is_native={"find(#-1,'(+)')>=0"}
         if $is_native rm. fi
-        nb_syntaxes=$!
       fi
       +e[] "    "$_gmic_m$_gmic_b$name${"s1,s0=\" (+)\", u $s"$is_native}:$_gmic_n
       repeat $! l[$>]
@@ -6444,46 +6443,158 @@ _parse_cli_help_colorize : # Colorize string (as images) using VT100 color codes
   replace_str "{",$_gmic_g"{"
   replace_str "}","}"$_gmic_n
 
+# Implements 'html' mode for command 'parse_cli'.
+parse_cli_html :
+  v 0 e[] ""
+  repeat $! l[$>]
+    ('{n}') l. s -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm endl
+    nbl={"n = 1; for (p = 0, (q = find(#"$>",_'\n',p))>=0, ++n, p = ++q); n"}
+    if $nbl==1" && find(#"$>",'eq. to \'')>0" rm 0 nm __to_discard__ continue fi # Skip shortcut commands
+
+    +e[] $category" / "$name
+
+    html="<!DOCTYPE html>"\n\
+"<html lang=\"en\">"\n\
+"  <head>"\n\
+"    <meta charset=\"utf-8\">"\n\
+"    <title>[G'MIC] "$name"</title>"\n\
+"  </head>"\n\
+"  <body>"\n\
+"    <h1><samp>"$name"</samp></h1>"\n
+
+    # Parse command declaration.
+    s -,{'\n'} discard {'#@cli'} max {'" "'} autocrop {'" "'}
+    +l[0]
+      s -,{'": "'} autocrop {'" "'} rm[0]
+      is_native=0
+      if $!" && find(#-1,'(+)')>=0" is_native=1 rm. fi
+
+      if $is_native html.="(native command)"\n fi
+      if $!
+        html.="<h2>Arguments</h2>\n<ul>"\n
+        repeat $! l[$>]
+          html.="<li>"{t}"</li>"\n
+        endl done
+        html.="</ul>"\n
+      else
+        html.="<h2>No arguments</h2>"\n
+      fi
+      rm
+    endl
+    rm[0]
+
+    # Parse command description.
+    html.="<h2>Description</h2>"\n
+    n_example=0
+    repeat $! if {$>,i==_':'} l[$>]
+      rows 1,100% autocrop {'" "'}
+      if "find(#0,'(eq. to ')>=0" # Found 'Eq. to' description.
+        +l s -,{'\47'} shortcut={1,t} rm onfail shortcut="(unknown)" rm endl
+        html.="<h3>(equivalent to shortcut command '"$shortcut"').</h3>"\n
+      elif "find(#0,'Default value:')>=0 || find(#0,'Default values:')>=0" # Found 'Default value(s):' description
+        s +,{':'}
+        if $!>2" && "h#1==1" && "i("#1")==_':'
+          i[0] ('<b>':y) i[2] ('</b>':y)
+        fi
+        a y
+        html.={t}
+      elif i==_'$'" && "i[1]!=_'$' # Found example description
+        rows 1,100% autocrop {'" "'}
+        example={t}
+        n_example+=1
+        if $n_example==1
+          html.="<h2>Example</h2>"\n
+        fi
+        html.=$example
+      elif i==_'$'" && "i[1]==_'$' # Found link to tutorial page
+        if h==2 url=https://gmic.eu/tutorial/_$name.shtml
+        else rows 2,100 autocrop {'" "'} url=https://gmic.eu/tutorial/{t}.shtml
+        fi
+        html.="<h2>Tutorial page</h2><a href=\""$url"\">"$url"</a>"
+      else # Other kind of description line
+        html.={t}"<br/>"\n
+      fi
+    endl fi done
+
+    # Generate page.
+    html.="</body>\n</html>"
+    rm ({'$html'}:y) nm $name.html
+
+  endl done rmn __to_discard__
+
+parse_cli_trigger_html :
+  parse_cli_trigger_print $*
+
 # Implements 'image' mode for command 'parse_cli'.
 parse_cli_images :
   v 0 use_vt100 e[] ""
   old_category,category= n_category,n_example=0
   if !isfile('image.jpg') l[] sp pencils,500 onfail testimage2d 500 endl o. image.jpg rm. fi
 
-  repeat $! l[$>]
+  repeat $! e "R0 (start) : "$> l[$>] e "R0/L0 (start)"
     ('{n}') l. s -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm endl
+
     if ['$category']!=['$old_category']
       n_category+=1
       e[] $_gmic_r"\n ** Section \#"$n_category": "$category"."$_gmic_n"\n"
     fi
     s -,{'\n'} discard {'#@cli'} max {'" "'} autocrop {'" "'}
     n_example_com=0
-    repeat $! l[$>]
+
+    repeat $!
+      e "R0/L0/R1 (start) : "$>
+      l[$>]
+        e "R0/L0/R1/L1 (start)"
+
       if "i==_':' && (
             for (p = 1, p<h && i[p]<=_' ', ++p);
             i[p]==_'$' && i[p+1]!=_'$')"
-      s +,{'$'} rm[0,1] a y autocrop {'" "'} example={/{t}}
-      n_example+=1
-      n_example_com+=1
-      if $n_example_com>1 filename=ex_${name}_$n_example_com.jpg else filename=ex_${name}.jpg fi
-      e[] $_gmic_c[$n_example]$_gmic_n" Command '"$_gmic_g$name$_gmic_n"': $ "$example
-      skip_rendering={"isfile(['"{/$filename}"']) || !find(['"$name"'],'gallery_')"}
 
-      if !$skip_rendering # Generate picture only if the file doesn't yet exist
-        m "run_example : "$example
-        l[]
-          reset etime=$| run_example etime="done in "$_gmic_n{_round($|-$etime,0.01)}"s"$_gmic_m
-          _document_gmic o $filename,85 rm
-        endl
-        um run_example
-      else etime="skipped"
+        s +,{'$'} rm[0,1] a y autocrop {'" "'} example={/{t}}
+        n_example+=1
+        n_example_com+=1
+        if $n_example_com>1 filename=ex_${name}_$n_example_com.jpg else filename=ex_${name}.jpg fi
+        e[] $_gmic_c[$n_example]$_gmic_n" Command '"$_gmic_g$name$_gmic_n"': $ "$example
+        skip_rendering={"isfile(['"{/$filename}"']) || !find(['"$name"'],'gallery_')"}
+
+        if !$skip_rendering # Generate picture only if the file doesn't yet exist
+          m "run_example : "$example
+          l[]
+            reset etime=$|
+            run_example
+            etime="done in "$_gmic_n{_round($|-$etime,0.01)}"s"$_gmic_m
+            _document_gmic o $filename,85 rm
+          onfail
+            e "R0/L0/R1/L1/IF0/IF1/L0-ONFAIL\n"
+            rm
+#          d skip 0
+#            rm gui_error_preview "Unable to generate preview image"
+            v 0 warn[] "ERROR!"
+          endl
+
+          e "R0/L0/R1/L1/IF0/IF1 (end)\n"
+
+          um run_example
+        else etime="skipped"
+        fi
+
+        e "R0/L0/R1/L1/IF0 (end)\n"
+
+        e[] "\r"$_gmic_c[$n_example]$_gmic_n" Command '"$_gmic_g$name$_gmic_n"': $ "$example" "${_gmic_m}"("$etime")."$_gmic_n
       fi
-      e[] "\r"$_gmic_c[$n_example]$_gmic_n" Command '"$_gmic_g$name$_gmic_n"': $ "$example" "${_gmic_m}"("$etime")."$_gmic_n
-    fi endl done
+
+      e "R0/L0/R1/L1 (end)"
+
+    endl
+
+    e "R0/L0/R1 (end)"
+    done
+
+    e "R0/L0 (end)"
 
     old_category=$category
     rm 0
-  endl done rm
+  endl e "R0 (end)" done rm
 
 parse_cli_trigger_images :
   parse_cli_trigger_help $*

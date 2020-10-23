@@ -6618,7 +6618,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 cimg_snprintf(argx,_argx.width(),"%u",rd[2]);
                 CImg<char>::string(argx).move_to((*variables[hash])[pos]);
               }
-              next_debug_line = debug_line; next_debug_filename = debug_filename;
+              next_debug_line = rd[5]; next_debug_filename = debug_filename;
             } else {
               if (is_very_verbose) print(images,0,"End 'repeat...done' block.");
               if (hash!=~0U) {
@@ -6629,9 +6629,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               callstack.remove();
             }
           } else { // End a 'for...done' block
-            fordones(1,nb_fordones - 1) = 1; // Mark 'for' as already visited
-            position = fordones(0,nb_fordones - 1) - 1;
-            next_debug_line = debug_line; next_debug_filename = debug_filename;
+            unsigned int *const fd = fordones.data(0,nb_fordones - 1);
+            position = fd[0] - 1;
+            fd[1] = 1; // Mark 'for' as already visited
+            next_debug_line = fd[2]; next_debug_filename = debug_filename;
           }
           continue;
         }
@@ -6644,8 +6645,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             CImg<char>::string(argx).move_to(callstack);
           } else CImg<char>::string("*do").move_to(callstack);
           if (is_very_verbose) print(images,0,"Start 'do...while' block.");
-          if (nb_dowhiles>=dowhiles._height) dowhiles.resize(1,std::max(2*dowhiles._height,8U),1,1,0);
-          dowhiles[nb_dowhiles++] = position;
+          if (nb_dowhiles>=dowhiles._height) dowhiles.resize(2,std::max(2*dowhiles._height,8U),1,1,0);
+          unsigned int *const dw = dowhiles.data(0,nb_dowhiles++);
+          dw[0] = position;
+          dw[1] = debug_line;
           continue;
         }
 
@@ -7580,9 +7583,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 cimg_snprintf(argx,_argx.width(),"*for#%u",debug_line);
                 CImg<char>::string(argx).move_to(callstack);
               } else CImg<char>::string("*for").move_to(callstack);
-              if (nb_fordones>=fordones._height) fordones.resize(2,std::max(2*fordones._height,8U),1,1,0);
-              fordones(0,nb_fordones) = position;
-              fordones(1,nb_fordones++) = 0;
+              if (nb_fordones>=fordones._height) fordones.resize(3,std::max(2*fordones._height,8U),1,1,0);
+              unsigned int *const fd = fordones.data(0,nb_fordones++);
+              fd[0] = position;
+              fd[1] = 0;
+              fd[2] = debug_line;
             }
             ++position;
           } else {
@@ -10868,7 +10873,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                          nb,nb>1?"s":"");
             }
             const unsigned int l = (unsigned int)std::strlen(varname);
-            if (nb_repeatdones>=repeatdones._height) repeatdones.resize(5,std::max(2*repeatdones._height,8U),1,1,0);
+            if (nb_repeatdones>=repeatdones._height) repeatdones.resize(6,std::max(2*repeatdones._height,8U),1,1,0);
             unsigned int *const rd = repeatdones.data(0,nb_repeatdones++);
             rd[0] = position; rd[1] = nb; rd[2] = 0;
             if (l) {
@@ -10878,6 +10883,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               CImg<char>::string(varname).move_to(*variables_names[hash]);
               CImg<char>::string("0").move_to(*variables[hash]);
             } else rd[3] = rd[4] = ~0U;
+            rd[5] = debug_line;
           } else {
             if (is_very_verbose) {
               if (*varname) print(images,0,"Skip 'repeat...done' block with variable '%s' (0 iteration).",
@@ -12847,8 +12853,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   gmic_argument_text_printed(),
                   is_cond?"holds":"does not hold");
           if (is_cond) {
-            position = dowhiles[nb_dowhiles - 1];
-            next_debug_line = debug_line; next_debug_filename = debug_filename;
+            const unsigned int *const dw = dowhiles.data(0,nb_dowhiles - 1);
+            position = dw[0];
+            next_debug_line = dw[1]; next_debug_filename = debug_filename;
             continue;
           } else {
             if (is_very_verbose) print(images,0,"End 'do...while' block.");
