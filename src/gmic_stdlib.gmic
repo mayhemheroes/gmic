@@ -6531,7 +6531,7 @@ parse_cli_images :
   old_category,category= n_category,n_example=0
   if !isfile('image.jpg') l[] sp pencils,500 onfail testimage2d 500 endl o. image.jpg rm. fi
 
-  repeat $! e "R0 (start) : "$> l[$>] e "R0/L0 (start)"
+  repeat $! l[$>]
     ('{n}') l. s -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm endl
 
     if ['$category']!=['$old_category']
@@ -6541,11 +6541,7 @@ parse_cli_images :
     s -,{'\n'} discard {'#@cli'} max {'" "'} autocrop {'" "'}
     n_example_com=0
 
-    repeat $!
-      e "R0/L0/R1 (start) : "$>
-      l[$>]
-        e "R0/L0/R1/L1 (start)"
-
+    repeat $! l[$>]
       if "i==_':' && (
             for (p = 1, p<h && i[p]<=_' ', ++p);
             i[p]==_'$' && i[p+1]!=_'$')"
@@ -6565,36 +6561,18 @@ parse_cli_images :
             etime="done in "$_gmic_n{_round($|-$etime,0.01)}"s"$_gmic_m
             _document_gmic o $filename,85 rm
           onfail
-            e "R0/L0/R1/L1/IF0/IF1/L0-ONFAIL\n"
-            rm
-#          d skip 0
-#            rm gui_error_preview "Unable to generate preview image"
+            rm gui_error_preview "Unable to generate preview image"
             v 0 warn[] "ERROR!"
           endl
-
-          e "R0/L0/R1/L1/IF0/IF1 (end)\n"
-
           um run_example
         else etime="skipped"
         fi
-
-        e "R0/L0/R1/L1/IF0 (end)\n"
-
         e[] "\r"$_gmic_c[$n_example]$_gmic_n" Command '"$_gmic_g$name$_gmic_n"': $ "$example" "${_gmic_m}"("$etime")."$_gmic_n
       fi
-
-      e "R0/L0/R1/L1 (end)"
-
-    endl
-
-    e "R0/L0/R1 (end)"
-    done
-
-    e "R0/L0 (end)"
-
+    endl done
     old_category=$category
     rm 0
-  endl e "R0 (end)" done rm
+  endl done rm
 
 parse_cli_trigger_images :
   parse_cli_trigger_help $*
