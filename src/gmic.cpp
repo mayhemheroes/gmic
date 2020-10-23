@@ -3160,7 +3160,7 @@ gmic& gmic::debug(const char *format, ...) {
 // Pop callstack until it reaches a certain size, after exception has been caught.
 //--------------------------------------------------------------------------------
 // Used to ensure that callstack stays coherent when errors occurs in '_run()'.
-void gmic::pop_callstack_exception(const unsigned int callstack_size) {
+void gmic::pop_callstack(const unsigned int callstack_size) {
   while (callstack.size()>callstack_size) {
     const char *const s = callstack.back();
     if (*s=='*') switch (s[1]) {
@@ -3168,7 +3168,7 @@ void gmic::pop_callstack_exception(const unsigned int callstack_size) {
       case 'd' : --nb_dowhiles; break;
       case 'f' : --nb_fordones; break;
       }
-    callstack.remove(k);
+    callstack.remove();
   }
 }
 
@@ -8595,7 +8595,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             cimg::mutex(27,0);
           }
 
-          const unsigned int local_callstack_size = callstack.size();
           const int o_verbosity = verbosity;
           try {
             if (next_debug_line!=~0U) { debug_line = next_debug_line; next_debug_line = ~0U; }
@@ -8619,16 +8618,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 else if (!_is_get && nb_locals==1 && !std::strcmp("onfail",it)) break;
               }
             }
-            if (callstack.size()>local_callstack_size)
-              for (unsigned int k = callstack.size() - 1; k>=local_callstack_size; --k) {
-                const char *const s = callstack[k].data();
-                if (*s=='*') switch (s[1]) {
-                  case 'r' : --nb_repeatdones; break;
-                  case 'd' : --nb_dowhiles; break;
-                  case 'f' : --nb_fordones; break;
-                  }
-                callstack.remove(k);
-              }
             if (nb_locals==1 && position<commands_line.size()) { // Onfail block found
               verbosity = o_verbosity; // Restore verbosity
               if (is_very_verbose) print(images,0,"Reach 'onfail' block.");
@@ -11047,14 +11036,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         if (!is_get && !std::strcmp("return",item)) {
           if (is_very_verbose) print(images,0,"Return.");
           position = commands_line.size();
-          while (callstack && callstack.back()[0]=='*') {
-            const char c = callstack.back()[1];
-            if (c=='d') --nb_dowhiles;
-            else if (c=='f') --nb_fordones;
-            else if (c=='r') --nb_repeatdones;
-            else if (c=='l' || c=='>' || c=='s') break;
-            callstack.remove();
-          }
           is_return = true;
           break;
         }
@@ -15004,7 +14985,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       error(true,images,0,0,
             "Internal error: Empty call stack at return point.");
 
-    // Post-check local environment consistency.
+    // Post-check call stack consistency.
     if (!is_quit && !is_return) {
       const CImg<char>& s = callstack.back();
       if (s[0]=='*' && (s[1]=='d' || s[1]=='i' || s[1]=='r' || s[1]=='f' || (s[1]=='l' && !is_endlocal))) {
@@ -15019,7 +15000,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               "A '%s' command is missing, before return point.",
               s[1]=='d'?"while":s[1]=='i'?"endif":s[1]=='r'?"done":s[1]=='f'?"for":"endlocal");
       }
-    } else if (initial_callstack_size<callstack.size()) callstack.remove(initial_callstack_size,callstack.size() - 1);
+    } else pop_callstack(initial_callstack_size);
 
     // Post-check validity of shared images.
     cimglist_for(images,l) gmic_check(images[l]);
@@ -15088,6 +15069,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
   } catch (gmic_exception&) {
     // Wait for remaining threads to finish.
     cimglist_for(gmic_threads,k) wait_threads(&gmic_threads[k],true,(T)0);
+    pop_callstack(initial_callstack_size);
     throw;
 
   } catch (CImgAbortException &) { // Special case of abort (abort from a CImg method)
