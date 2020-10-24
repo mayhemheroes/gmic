@@ -330,8 +330,6 @@ struct gmic {
              const char *const custom_commands, const bool include_stdlib,
              float *const p_progress, bool *const p_is_abort);
 
-  void pop_callstack(const unsigned int callstack_size);
-
   gmic_image<char> get_variable(const char *const name,
                                 const unsigned int *const variables_sizes=0,
                                 const gmic_list<char> *const images_names=0) const;
@@ -353,6 +351,7 @@ struct gmic {
                                     const bool _is_debug=false) const;
   gmic_image<char> callstack2string(const gmic_image<unsigned int>* callstack_selection,
                                     const bool _is_debug=false) const;
+  void pop_callstack(const unsigned int callstack_size);
 
   gmic_image<unsigned int> selection2cimg(const char *const string, const unsigned int indice_max,
                                           const gmic_list<char>& names, const char *const command,
