@@ -2247,9 +2247,9 @@ double gmic::mp_get(Ts *const ptr, const unsigned int siz, const bool to_numbers
 
     if (cimg_sscanf(str,"%255[a-zA-Z0-9_]%c",&(*varname=0),&end)==1 && (*varname<'0' || *varname>'9')) {
       CImg<char> value = gmic_instance.get_variable(varname,variables_sizes,&images_names);
-      CImg<Ts> dest(ptr,siz,1,1,1,true);
 
       if (!to_numbers) { // Return variable content as a string
+        CImg<Ts> dest(ptr,siz,1,1,1,true);
         dest.draw_image(value);
         if (dest.width()>value.width()) dest.get_shared_points(value.width(),dest.width() - 1).fill(0);
 
@@ -2262,18 +2262,20 @@ double gmic::mp_get(Ts *const ptr, const unsigned int siz, const bool to_numbers
         }
         double dvalue = 0;
         if (!siz) { // Scalar result
-          if (cimg_sscanf(value,"%lf%c",&dvalue,&end)!=1) {
+          if (cimg_sscanf(value,"%lf",&dvalue)!=1) {
             cimg::mutex(24,0);
             throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
                                         "Variable '%s' has value '%s', cannot be returned as a scalar.",
                                         cimg::type<T>::string(),str,value.data());
           }
-          dest[0] = dvalue;
+          *ptr = dvalue;
 
         } else { // Vector result
+          CImg<Ts> dest(ptr,siz,1,1,1,true);
           if (*value==gmic_store) { // Image-encoded variable
             const char *const zero = (char*)::std::memchr(value,0,value.width());
-            CImgList<T> list = CImgList<T>::get_unserialize(value.get_shared_points(zero + 1 - value.data(),value.width() - 1));
+            CImgList<T> list = CImgList<T>::get_unserialize(value.get_shared_points(zero + 1 - value.data(),
+                                                                                    value.width() - 1));
             if (list.size()!=2) {
               cimg::mutex(24,0);
               throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
@@ -2394,33 +2396,6 @@ double gmic::mp_name(const unsigned int ind, Ts *const out_str, const unsigned i
       for (k = 0; k<siz && ptrs[k]; ++k) out_str[k] = (Ts)ptrs[k];
       if (k<siz) out_str[k] = 0;
     }
-  }
-  return cimg::type<double>::nan();
-}
-
-template<typename T>
-double gmic::mp_setname(const unsigned int ind, const char *const str,
-                        void *const p_list, const T& pixel_type) {
-  cimg::unused(pixel_type);
-
-  // Retrieve current gmic run.
-  cimg::mutex(24);
-  CImgList<void*> &grl = gmic_runs();
-  int p;
-  for (p = grl.width() - 1; p>=0; --p) {
-    CImg<void*> &gr = grl[p];
-    if (gr[1]==(void*)p_list) break;
-  }
-  if (p<0) { // Instance not found!
-    cimg::mutex(24,0);
-    throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'setname()': "
-                                "Cannot determine instance of the G'MIC interpreter.",
-                                cimg::type<T>::string());
-  } else {
-    CImg<void*> &gr = grl[p];
-    cimg::mutex(24,0);
-    CImgList<char> &images_names = *(CImgList<char>*)gr[2];
-    if (ind<images_names.size()) CImg<char>::string(str).move_to(images_names[ind]);
   }
   return cimg::type<double>::nan();
 }
@@ -3180,6 +3155,21 @@ gmic& gmic::debug(const char *format, ...) {
   std::fflush(cimg::output());
   cimg::mutex(29,0);
   return *this;
+}
+
+// Pop callstack until it reaches a certain size, after exception has been caught.
+//--------------------------------------------------------------------------------
+// Used to ensure that callstack stays coherent when errors occurs in '_run()'.
+void gmic::pop_callstack(const unsigned int callstack_size) {
+  while (callstack.size()>callstack_size) {
+    const char *const s = callstack.back();
+    if (*s=='*') switch (s[1]) {
+      case 'r' : --nb_repeatdones; break;
+      case 'd' : --nb_dowhiles; break;
+      case 'f' : --nb_fordones; break;
+      }
+    callstack.remove();
+  }
 }
 
 // Get variable value.
@@ -5001,11 +4991,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
   }
 
   // Add current run to managed list of gmic runs.
-  bool push_run = false;
   cimg::mutex(24);
   CImgList<void*> &grl = gmic_runs();
-  const int grlwm1 = grl.width() - 1;
-  if (!grl || grl(grlwm1,0)!=this || grl(grlwm1,1)!=&images) {
+  const CImg<void*> &grb = grl.back();
+  const bool push_run = !grl || grb[0]!=this || grb[1]!=&images;
+  if (push_run) {
     CImg<void*> gr(7);
     gr[0] = (void*)this;
     gr[1] = (void*)&images;
@@ -5015,7 +5005,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     gr[5] = (void*)variables_sizes;
     gr[6] = (void*)command_selection;
     gr.move_to(grl);
-    push_run = true;
   }
   cimg::mutex(24,0);
 
@@ -6644,7 +6633,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 cimg_snprintf(argx,_argx.width(),"%u",rd[2]);
                 CImg<char>::string(argx).move_to((*variables[hash])[pos]);
               }
-              next_debug_line = debug_line; next_debug_filename = debug_filename;
+              next_debug_line = rd[5]; next_debug_filename = debug_filename;
             } else {
               if (is_very_verbose) print(images,0,"End 'repeat...done' block.");
               if (hash!=~0U) {
@@ -6655,9 +6644,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               callstack.remove();
             }
           } else { // End a 'for...done' block
-            fordones(1,nb_fordones - 1) = 1; // Mark 'for' as already visited
-            position = fordones(0,nb_fordones - 1) - 1;
-            next_debug_line = debug_line; next_debug_filename = debug_filename;
+            unsigned int *const fd = fordones.data(0,nb_fordones - 1);
+            position = fd[0] - 1;
+            fd[1] = 1; // Mark 'for' as already visited
+            next_debug_line = fd[2]; next_debug_filename = debug_filename;
           }
           continue;
         }
@@ -6670,8 +6660,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             CImg<char>::string(argx).move_to(callstack);
           } else CImg<char>::string("*do").move_to(callstack);
           if (is_very_verbose) print(images,0,"Start 'do...while' block.");
-          if (nb_dowhiles>=dowhiles._height) dowhiles.resize(1,std::max(2*dowhiles._height,8U),1,1,0);
-          dowhiles[nb_dowhiles++] = position;
+          if (nb_dowhiles>=dowhiles._height) dowhiles.resize(2,std::max(2*dowhiles._height,8U),1,1,0);
+          unsigned int *const dw = dowhiles.data(0,nb_dowhiles++);
+          dw[0] = position;
+          dw[1] = debug_line;
           continue;
         }
 
@@ -7606,9 +7598,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 cimg_snprintf(argx,_argx.width(),"*for#%u",debug_line);
                 CImg<char>::string(argx).move_to(callstack);
               } else CImg<char>::string("*for").move_to(callstack);
-              if (nb_fordones>=fordones._height) fordones.resize(2,std::max(2*fordones._height,8U),1,1,0);
-              fordones(0,nb_fordones) = position;
-              fordones(1,nb_fordones++) = 0;
+              if (nb_fordones>=fordones._height) fordones.resize(3,std::max(2*fordones._height,8U),1,1,0);
+              unsigned int *const fd = fordones.data(0,nb_fordones++);
+              fd[0] = position;
+              fd[1] = 0;
+              fd[2] = debug_line;
             }
             ++position;
           } else {
@@ -8601,7 +8595,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             cimg::mutex(27,0);
           }
 
-          const unsigned int local_callstack_size = callstack.size();
           const int o_verbosity = verbosity;
           try {
             if (next_debug_line!=~0U) { debug_line = next_debug_line; next_debug_line = ~0U; }
@@ -8625,16 +8618,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 else if (!_is_get && nb_locals==1 && !std::strcmp("onfail",it)) break;
               }
             }
-            if (callstack.size()>local_callstack_size)
-              for (unsigned int k = callstack.size() - 1; k>=local_callstack_size; --k) {
-                const char *const s = callstack[k].data();
-                if (*s=='*') switch (s[1]) {
-                  case 'r' : --nb_repeatdones; break;
-                  case 'd' : --nb_dowhiles; break;
-                  case 'f' : --nb_fordones; break;
-                  }
-                callstack.remove(k);
-              }
             if (nb_locals==1 && position<commands_line.size()) { // Onfail block found
               verbosity = o_verbosity; // Restore verbosity
               if (is_very_verbose) print(images,0,"Reach 'onfail' block.");
@@ -10894,7 +10877,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                          nb,nb>1?"s":"");
             }
             const unsigned int l = (unsigned int)std::strlen(varname);
-            if (nb_repeatdones>=repeatdones._height) repeatdones.resize(5,std::max(2*repeatdones._height,8U),1,1,0);
+            if (nb_repeatdones>=repeatdones._height) repeatdones.resize(6,std::max(2*repeatdones._height,8U),1,1,0);
             unsigned int *const rd = repeatdones.data(0,nb_repeatdones++);
             rd[0] = position; rd[1] = nb; rd[2] = 0;
             if (l) {
@@ -10904,6 +10887,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               CImg<char>::string(varname).move_to(*variables_names[hash]);
               CImg<char>::string("0").move_to(*variables[hash]);
             } else rd[3] = rd[4] = ~0U;
+            rd[5] = debug_line;
           } else {
             if (is_very_verbose) {
               if (*varname) print(images,0,"Skip 'repeat...done' block with variable '%s' (0 iteration).",
@@ -11052,14 +11036,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         if (!is_get && !std::strcmp("return",item)) {
           if (is_very_verbose) print(images,0,"Return.");
           position = commands_line.size();
-          while (callstack && callstack.back()[0]=='*') {
-            const char c = callstack.back()[1];
-            if (c=='d') --nb_dowhiles;
-            else if (c=='f') --nb_fordones;
-            else if (c=='r') --nb_repeatdones;
-            else if (c=='l' || c=='>' || c=='s') break;
-            callstack.remove();
-          }
           is_return = true;
           break;
         }
@@ -12873,8 +12849,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   gmic_argument_text_printed(),
                   is_cond?"holds":"does not hold");
           if (is_cond) {
-            position = dowhiles[nb_dowhiles - 1];
-            next_debug_line = debug_line; next_debug_filename = debug_filename;
+            const unsigned int *const dw = dowhiles.data(0,nb_dowhiles - 1);
+            position = dw[0];
+            next_debug_line = dw[1]; next_debug_filename = debug_filename;
             continue;
           } else {
             if (is_very_verbose) print(images,0,"End 'do...while' block.");
@@ -15008,7 +14985,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       error(true,images,0,0,
             "Internal error: Empty call stack at return point.");
 
-    // Post-check local environment consistency.
+    // Post-check call stack consistency.
     if (!is_quit && !is_return) {
       const CImg<char>& s = callstack.back();
       if (s[0]=='*' && (s[1]=='d' || s[1]=='i' || s[1]=='r' || s[1]=='f' || (s[1]=='l' && !is_endlocal))) {
@@ -15023,7 +15000,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               "A '%s' command is missing, before return point.",
               s[1]=='d'?"while":s[1]=='i'?"endif":s[1]=='r'?"done":s[1]=='f'?"for":"endlocal");
       }
-    } else if (initial_callstack_size<callstack.size()) callstack.remove(initial_callstack_size,callstack.size() - 1);
+    } else pop_callstack(initial_callstack_size);
 
     // Post-check validity of shared images.
     cimglist_for(images,l) gmic_check(images[l]);
@@ -15092,6 +15069,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
   } catch (gmic_exception&) {
     // Wait for remaining threads to finish.
     cimglist_for(gmic_threads,k) wait_threads(&gmic_threads[k],true,(T)0);
+    pop_callstack(initial_callstack_size);
     throw;
 
   } catch (CImgAbortException &) { // Special case of abort (abort from a CImg method)
