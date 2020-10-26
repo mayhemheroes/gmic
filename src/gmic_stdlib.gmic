@@ -6542,7 +6542,9 @@ parse_cli_html :
     endl fi done
 
     repeat $! l[$>]
-      if "find(#0,'(eq. to ')>=0" # Found 'Eq. to' description.
+      if "find(#0,'(eq. to ')>=0"
+
+        # Found 'Eq. to' description.
         +l s -,{'\47'}
           replace_str[1] "&","&amp;"
           replace_str[1] "<","&lt;"
@@ -6555,7 +6557,9 @@ parse_cli_html :
         endl
         html.="    <h3>(equivalent to shortcut command '"$shortcut"').</h3>"\n
 
-      elif "find(#0,'See also:')>=0" # Found 'See also:' description.
+      elif "find(#0,'See also:')>=0"
+
+        # Found 'See also:' description.
         s +,{':'} autocrop {'" "'}
         if $!>2" && "h#1==1" && "i("#1")==_':'
           html.="\n    <h2>See also:</h2>"\n
@@ -6565,7 +6569,9 @@ parse_cli_html :
         parse_cli_decorate_singlequotes_html 1
         html.="    "{t}\n
 
-      elif "find(#0,'Default value:')>=0 || find(#0,'Default values:')>=0" # Found 'Default value(s):' description
+      elif "find(#0,'Default value:')>=0 || find(#0,'Default values:')>=0"
+
+        # Found 'Default value(s):' description
         s +,{':'} autocrop {'" "'}
         if $!>2" && "h#1==1" && "i("#1")==_':'
           html.="\n    <h2>Default values:</h2>"\n
@@ -6575,7 +6581,9 @@ parse_cli_html :
         parse_cli_decorate_singlequotes_html 0
         html.="    "{t}\n
 
-      elif i==_'$'" && "i[1]!=_'$' # Found example description
+      elif i==_'$'" && "i[1]!=_'$'
+
+        # Found example description
         rows 1,100% autocrop {'" "'}
         replace_str "image.jpg","<a href=\"img/image.jpg\">image.jpg</a>"
         example={t}
@@ -6590,7 +6598,7 @@ parse_cli_html :
         if $n_example==1 html.="\n    <h2>Example"${"if "$nb_examples">1 u s else u \"\" fi"}" of use:</h2>"\n fi
 
         if $nb_examples!=1 html.="      <h3>&bull;&nbsp;Example \#"$n_example"</h3>"\n fi
-        html.="      <p style=\"background-color:#DDDDDD; width:auto; border:1px solid \#999; padding:15px\"><samp>"$example"</samp></p><br/><a href=\"img/"$filename_full"\"><img src=\"img/"$filename_thumb"\" /></a>"
+        html.="      <p style=\"background-color:#DDDDDD; width:75%; border:1px solid \#999; padding:10px\"><samp>"$example"</samp></p><br/><a href=\"img/"$filename_full"\"><img src=\"img/"$filename_thumb"\" /></a>"
 
       elif i==_'$'" && "i[1]==_'$' # Found link to tutorial page
         if h==2 url=https://gmic.eu/tutorial/_$name.shtml
@@ -6598,7 +6606,9 @@ parse_cli_html :
         fi
         html.="\n    <h2>Tutorial page:</h2><a href=\""$url"\">"$url"</a>"
 
-      else # Other kind of description line
+      else
+
+        # Other kind of description line
         if find(['{t}'],'http')>=0 # Replace URL in description by HTML links
            i[0] 1,100%
            eval "
@@ -6659,10 +6669,10 @@ parse_cli_decorate_singlequotes_html :
                 );
               ); beg = -1))"
   if $is_com
-    replace_str "\2","<a href=\""$com".html\"><samp style=\"background-color:#EAE0F5;\">"
-    replace_str "\3","</samp></a>"
+    replace_str "\2","<a href=\""$com".html\"><samp style=\"background-color:#EAE0F5; padding:2px\">"
+    replace_str "\3","</samp></a></div>"
   else
-    replace_str "\2","<samp style=\"background-color:#EAE0F5;\">"
+    replace_str "\2","<samp style=\"background-color:#EAE0F5; padding:2px\">"
     replace_str "\3","</samp>"
   fi
 
