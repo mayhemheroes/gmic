@@ -6483,12 +6483,12 @@ parse_cli_html :
       is_native={"find(#-1,'(+)')>=0"}
       if !($n%5)
         if $is_tr html.="      </tr>"\n fi
-        if $row%2 html.="      <tr style=\"background-color:#EEEEEE\">"\n
+        if $row%2 html.="      <tr style=\"background-color:#DDDDDD\">"\n
         else html.="      <tr>"\n
         fi
         is_tr=1 row+=1
       fi
-      html.="        <td style=\"max-width:150px; padding:5px; border:1px solid \#000000;\"><a href=\""$name".shtml#top\">"
+      html.="        <td style=\"max-width:170px; padding:5px; border:1px solid \#000000;\"><a href=\""$name".shtml#top\">"
       if $is_native html.="<samp><b>"$name"</b></samp>"
       else html.="<samp>"$name"</samp>"
       fi
@@ -6664,7 +6664,7 @@ parse_cli_html :
                q = p + size(http);
                i[q]==_'s'?++q;
                i[q]==_':' && i[q + 1]==_'/' && i[q + 2]==_'/'?(
-                 while (q<h && i[q]>_' ' && i[q]!=_')', ++q);
+                 while (q<h && i[q]>_' ' && i[q]!=_')' && i[q]!=39, ++q);
                  q - p<64?copy(i[#0,p],p,q - p,1,0);
                );
                p = find(n,http,q);
@@ -6726,8 +6726,8 @@ parse_cli_decorate_doublequotes_html :
               beg<0?(beg = y):
               (for (ok = 1; p = beg + 1, p<y, ++p, p>beg + 80?(ok = 0; break()));
               ok?(i[beg] = 2; i[y] = 3); beg = -1))"
-  replace_str "\2","&#8220;<i>"
-  replace_str "\3","</i>&#8221;"
+  replace_str "\2","&#8220;<em style=\"color:#2080F0\">"
+  replace_str "\3","</em>&#8221;"
 
 # Decorate strings between braces.
 parse_cli_decorate_braces_html :
@@ -6784,7 +6784,10 @@ parse_cli_images :
             rm
           onfail
             rm gui_error_preview "Unable to generate preview image"
-            v 0 warn[] "ERROR!"
+            o $filename_full,85
+            rr2d 800,400,0,2
+            o $filename_thumb,75
+            rm
             etime="failed"
           endl
           um run_example
