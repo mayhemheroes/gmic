@@ -6463,6 +6463,7 @@ parse_cli_html :
 "  </head>"\n\
 "  <body>"\n\
 "    <p><a href=\"categories.html\">Categories</a></p>"\n\
+"    <hr style=\"height:1px\"/>\n"\
 "    <h1>Categories</h1>"\n
 
   category,p_category= n,is_tr,is_table,row=0
@@ -6503,26 +6504,21 @@ parse_cli_html :
   ot. categories.html
   rm.
 
-  # Retrieve full list of commands.
-  repeat $! if s=['{$>,n}'];s[0]==_'_' continue fi l[$>]
+  # Retrieve full list of commands and discard those starting with '_'.
+  repeat $! if s=['{$<,n}'];s[0]==_'_' rm[$<] else l[$<]
     ('{n}') l. s -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm endl
     is_eqto=${parse_cli_is_eqto.}
-    if !$is_eqto _is_$name=1 fi
-  endl done
+    if !$is_eqto _is_$name=1 else rm fi
+  endl fi done
 
   # Generate HTML page for each command.
-  repeat $! if s=['{$>,n}'];s[0]==_'_' continue fi l[$>]
+  repeat $! l[$>]
     ('{n}') l. s -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm endl
-    if ${parse_cli_is_eqto.} rm 0 nm __to_discard__ continue fi # Ignore shortcut commands
     +e[] $category" / "$name
 
     # Find previous and next commands.
-    if !$> previous=
-    else pass[{$>-1}] 1 ('{n}') l. s -,{'@'} previous={0,t} rm endl rm.
-    fi
-    if !$< next=
-    else pass[{$>+1}] 1 ('{n}') l. s -,{'@'} next={0,t} rm endl rm.
-    fi
+    if !$> previous= else pass[{$>-1}] 1 ('{n}') discard. {'_c1'} previous={t} rm[-2,-1] fi
+    if !$< next= else pass[{$>+1}] 1 ('{n}') l. s -,{'@'} next={0,t} rm endl rm. fi
 
     strvar $category category_id=${}
     html="<!DOCTYPE html>"\n\
@@ -6532,17 +6528,20 @@ parse_cli_html :
 "    <title>[G'MIC] "$name"</title>"\n\
 "  </head>"\n\
 "  <body>"\n\
-"    <div style=\"text-align:left\">"\
+"    <table style=\"width:100%\"><tr><td style=\"text-align:left\">"\
 "<a href=\"categories.html\">Categories</a>&nbsp;&nbsp;&#9656;&nbsp;&nbsp;"\
 "<a href=\"categories.html#"$category_id"\">"$category"</a>&nbsp;&nbsp;&#9656;&nbsp;&nbsp;"\
-"<a href=\""$name".html\"><samp>"$name"</samp></a></div>"
+"<a href=\""$name".html\"><samp>"$name"</samp></a></td>"
 
     if narg($previous)" || "narg($next)
-      html.="<div style=\"text-align:right\">"
-      if narg($previous) html.="&#8678;Previous: <a href=\""$previous".html\"><samp>"$previous"</samp></a>" fi
-      if narg($next) html.="Next&#8679; <a href=\""$next".html\"><samp>"$next"</samp></a>" fi
-      html.="</div>"\n
+      html.="<td style=\"text-align:right\">"
+      if narg($previous) html.="<a href=\""$previous".html\">&#9664;&nbsp;&nbsp;<samp>"$previous"</samp></a>" fi
+      if narg($previous)" && "narg($next) html.="&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;" fi
+      if narg($next) html.="<a href=\""$next".html\"><samp>"$next"</samp>&nbsp;&nbsp;&#9654;</a>" fi
+      html.="</td>"\n
     fi
+    html.="    </tr></table>\n"
+    html.="    <hr style=\"height:1px\"/>\n"
     html.="    <h1 style=\"color:#FF5020\"><samp>"$name"</samp></h1>"\n
 
     # Parse command declaration.
@@ -6555,8 +6554,10 @@ parse_cli_html :
       if $is_native html.="    <em>(native command)</em>"\n fi
       if $!
         html.="\n    <h2>Arguments:</h2>\n    <ul>"\n
+        if $!>1 or="&nbsp;&nbsp;&nbsp; or" else or= fi
         repeat $! l[$>]
-          html.="      <li><samp style=\"color:#AA00AA\">"{t}"</samp></li>"\n
+          if !$< or= fi
+          html.="      <li><samp style=\"color:#AA00AA\">"{t}"</samp>"$or"</li>"\n
         endl done
         html.="    </ul>"\n
       else
@@ -6589,7 +6590,7 @@ parse_cli_html :
           shortcut="(unknown)"
           rm
         endl
-        html.="    <p>(equivalent to shortcut command <samp>"$shortcut"</samp>).</p>"\n
+        html.="    <p><em>(equivalent to shortcut command <samp style=\"background-color:#EAE0F5\">"$shortcut"</samp>)</em>.</p>"\n
 
       elif "find(#0,'See also:')>=0"
 
@@ -6633,8 +6634,8 @@ parse_cli_html :
 
         if $nb_examples!=1 html.="      <h3>&bull;&nbsp;Example \#"$n_example"</h3>"\n fi
         html.="    <p style=\"background-color:#DDDDDD; width:75%; border:1px solid \#999; padding:10px\">"\
-              "<samp>"$example"</samp></p><br/>"\
-              "<a href=\"img/"$filename_full"\"><img src=\"img/"$filename_thumb"\" /></a>"
+              "<samp>"$example"</samp></p>\n"\
+              "    <a href=\"img/"$filename_full"\"><img src=\"img/"$filename_thumb"\"/></a>"\n
 
       elif i==_'$'" && "i[1]==_'$' # Found link to tutorial page
         if h==2 url=https://gmic.eu/tutorial/_$name.shtml
@@ -6676,11 +6677,7 @@ parse_cli_html :
 
     # Generate page.
     html.="  </body>\n</html>"
-    rm ({'$html'}:y)
-
-    e[] "DEBUG : "{n}
-
-    ot {n}
+    rm ({'$html'}:y) nm $name ot {n}.html
   endl done
   rm
 
@@ -10852,7 +10849,7 @@ mix_rgb : skip ${1=1},${2=0},${3=0},${4=0},${5=1},${6=0},${7=0},${8=0},${9=1}
 # parula | spring | summer | autumn | winter | bone | copper | pink | vga | \
 # algae | amp | balance | curl | deep | delta | dense | diff | gray | haline | ice | \
 # matter | oxy | phase | rain | solar | speed | tarn | tempo | thermal | topo | turbid | aurora | hocuspocus | srb2 | \
-# uzebox | amiga7800 | amiga7800mess | fornaxvoid1
+# uzebox | amiga7800 | amiga7800mess | fornaxvoid1 }
 #@cli : $ palette hsv
 palette :
   names=${-_palette_names} N={narg($names)}
