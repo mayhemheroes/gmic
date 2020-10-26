@@ -6461,7 +6461,19 @@ parse_cli_html :
 "    <p><a href=\"categories.html\">Categories</a></p>"\n\
 "    <h1>Categories</h1>"\n
 
-    html.="  </body>\n</html>"
+    category,p_category=
+    repeat $! l[$>]
+      ('{n}') l. s -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm endl
+      if ['$category']!=['$p_category']
+        strvar $category category_id=${}
+        html.="    <h2><a id=\""$category_id"\"></a>"$category"</h2>"\n
+      fi
+      html.="<a href=\""$name".html\">"$name"</a> "
+      p_category=$category
+    endl done
+
+
+    html.="    </body>\n</html>"
     ({'$html'}:y)
     ot. categories.html
     rm.
@@ -6481,6 +6493,7 @@ parse_cli_html :
     if $nbl==1" && find(#"$>",'eq. to \'')>0" rm 0 nm __to_discard__ continue fi # Skip shortcut commands
     +e[] $category" / "$name
 
+    strvar $category category_id=${}
     html="<!DOCTYPE html>"\n\
 "<html lang=\"en\">"\n\
 "  <head>"\n\
@@ -6490,9 +6503,9 @@ parse_cli_html :
 "  <body>"\n\
 "    <p>"\
 "<a href=\"categories.html\">Categories</a>&nbsp;&#9656;&nbsp;"\
-"<a href=\"categories.html#cat\">"$category"</a>&nbsp;&#9656;&nbsp;"\
+"<a href=\"categories.html#"$category_id"\">"$category"</a>&nbsp;&#9656;&nbsp;"\
 "<a href=\""$name".html\"><samp>"$name"</samp></a></p>"\n\
-"    <h1><samp>"$name"</samp></h1>"\n
+"    <h1 style=\"color:#FF5020\"><samp>"$name"</samp></h1>"\n
 
     # Parse command declaration.
     s -,{'\n'} discard {'#@cli'} max {'" "'} autocrop {'" "'}
