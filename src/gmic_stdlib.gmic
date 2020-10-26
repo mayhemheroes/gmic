@@ -6446,9 +6446,9 @@ _parse_cli_help_colorize : # Colorize string (as images) using VT100 color codes
 # Implements 'html' mode for command 'parse_cli'.
 parse_cli_html :
   v 0 e[] ""
-  repeat $! ('{$>,n}') l. s +,{'@'} rv a y nm={t} endl rm. nm[$>] $nm done # Name as category@name
-  sort_list +,n
-  repeat $! ('{$>,n}') l. s +,{'@'} rv a y nm={t} endl rm. nm[$>] $nm done # Rename as name@category
+  repeat $! ('{$>,n}') l. s +,{'@'} rv a y nm={t} endl rm. nm[$>] $nm done # Rename as 'category@name'
+  sort_list +,n # Sort by categories
+  repeat $! ('{$>,n}') l. s +,{'@'} rv a y nm={t} endl rm. nm[$>] $nm done # Rename as 'name@category'
 
   # Generate HTML for the categories.
     html="<!DOCTYPE html>"\n\
@@ -6458,7 +6458,7 @@ parse_cli_html :
 "    <title>[G'MIC] Categories</title>"\n\
 "  </head>"\n\
 "  <body>"\n\
-"    <p style=\"color:blue;font-size:18px;\"><a href=\"categories.html\">Categories</a></p>"\n\
+"    <p><a href=\"categories.html\">Categories</a></p>"\n\
 "    <h1>Categories</h1>"\n
 
     html.="  </body>\n</html>"
@@ -6480,10 +6480,10 @@ parse_cli_html :
 "    <title>[G'MIC] "$name"</title>"\n\
 "  </head>"\n\
 "  <body>"\n\
-"    <p style=\"color:blue;font-size:18px;\">"\
+"    <p>"\
 "<a href=\"categories.html\">Categories</a>&nbsp;&#9656;&nbsp;"\
 "<a href=\"categories.html#cat\">"$category"</a>&nbsp;&#9656;&nbsp;"\
-"<a href=\""$name".html\">"$name"</a></p>"\n\
+"<a href=\""$name".html\"><samp>"$name"</samp></a></p>"\n\
 "    <h1><samp>"$name"</samp></h1>"\n
 
     # Parse command declaration.
@@ -6620,9 +6620,9 @@ parse_cli_images :
             reset etime=$|
             run_example
             etime="done in "$_gmic_n{_round($|-$etime,0.01)}"s"$_gmic_m
-            _document_gmic
+            _parse_cli_images
             o $filename_full,85
-            rr2d 500,500,0,2
+            rr2d 700,700,0,2
             o $filename_thumb,75
             rm
           onfail
@@ -6639,6 +6639,76 @@ parse_cli_images :
     old_category=$category
     rm 0
   endl done rm
+
+# Generate a single image from a list of images, for the reference documentation.
+_parse_cli_images :
+  if !$! rm return
+  elif $!==1 M,N=1
+  elif $!<4 M,N=$!,1 # if ${-max_h}>=${-max_w} M,N=$!,1 else M,N=1,$! fi
+  else M,N={M=ceil(sqrt($!));$!<4?[$!,1]:[M,ceil($!/M)]}
+  fi
+  W,H={Sw=$!<2?720:960;Sh=640;floor([Sw/$M,Sh/$N])}
+
+  repeat $! l[$>] nm={n}
+    label=[$>]:" "'$nm'
+    if ${-is_3d} # 3D vector object
+      label2="("{i[6]}" vert., "{i[7]}" prim.)"
+      r3d 1,1,0,-80 r3d 0,1,0,80 snapshot3d {max($W,$H)}
+    else # Regular 1D,2D or 3D image
+      label2="("{w}x{h}x{d}x{s}")"
+      r 100%,100%,100%,3,{s==1?1:0}
+      if d>1 # Volumetric image -> Render as a 2D image
+        +slices 50%
+        +z[0] 50%,0,0,50%,100%,100% permute. zyxc
+        +z[0] 0,50%,0,100%,50%,100% permute. xzyc
+        rr2d... $W,$H,0,2
+        r2dy.. {-3,h},1
+        r2dx. {-3,w},1
+        s={min(w#-2,h)}
+        if $s>64 projections3d[0] 50%,50%,50%,1 mv[0] $! r3d. 1,1,0,-80 r3d. 0,1,0,80 snapshot3d. $s
+        else rm[0] 0
+        fi
+
+        eW,eH={[w#0+w#1,h#0+h#2]}
+        if $eW>$W" || "$eH>$H fact={min($W/$eW,$H/$eH)*100} r $fact%,$fact%,1,100%,2 fi
+        n 0,255
+
+        fs={0,max(w,h)*7%}
+        if {0,h>1.5*$fs} to[0] XY,4,2,$fs fi
+        if {1,h>1.5*$fs} to[1] XZ,4,2,$fs fi
+        if {2,h>1.5*$fs} to[2] YZ,4,2,$fs fi
+        if w to[3] 3D,4,2,$fs frame[3] 1,1,200 fi
+        frame[0-2] 1,1,200
+        a[0,1] x a[1,2] x a y
+      fi
+    fi
+
+    if w>5*h r $W,{$H/3},1,100%,1
+    elif h>5*w r {$W/3},$H,1,100%,1
+    else rr2d $W,$H,0,{w<$W&&h<$H?1:2}
+    fi
+    n 0,255
+
+    r {[w,h]+2},1,100%,0,0,0.5,0.5
+    - 255 r {[w+10,h+5]},1,100%,0,0,0.5,0.5 r 100%,{h+1},1,100%,0,0,0,1 + 255
+
+    0 t. $label" "$label2,5,0,18,1,1
+    if w>w#0" || "h>h#0
+       rm. 0 t. $label\n$label2,5,0,18,1,1
+       if w>w#0" || "h>h#0 rr2d. {0,[w,h]},0,2 fi
+    fi
+    *. -1 n. 0,255 to_rgb.
+    - 255 a y,0.5 + 255
+
+  endl done
+  - 255
+
+  MN={$M*$N} if $!%$MN 0x{$MN-($!%$MN)} fi
+  repeat $!/$MN l[$>-{$>+$MN-1}]
+    repeat $!/$M a[$>-{$>+$M-1}] x done a y,0.5
+  endl done
+  r 100%,{h+25},1,100%,0,0,0,0.75
+  + 255 c 0,255
 
 parse_cli_trigger_images :
   parse_cli_trigger_help $*
