@@ -6489,7 +6489,7 @@ parse_cli_html :
         is_tr=1 row+=1
       fi
       html.="        <td style=\"max-width:170px; padding:5px; border:1px solid \#000000;\"><a href=\""$name".shtml#top\">"
-      if $is_native html.="<samp><b>"$name"</b></samp>"
+      if $is_native html.="<samp style=\"color:#20A000\">"$name"</samp>"
       else html.="<samp>"$name"</samp>"
       fi
       html.="</a></td>"\n
@@ -6557,13 +6557,13 @@ parse_cli_html :
       is_native=0
       if $!" && find(#-1,'(+)')>=0" is_native=1 rm. fi
 
-      if $is_native html.="    <em>(native command)</em>"\n fi
+      if $is_native html.="    <em style=\"color:#20A000\">(native command)</em>"\n fi
       if $!
         html.="\n    <h2>Arguments:</h2>\n    <ul>"\n
         if $!>1 or="&nbsp;&nbsp;&nbsp; or" else or= fi
         repeat $! l[$>]
           if !$< or= fi
-          html.="      <li><samp style=\"color:#AA00AA; word-wrap:break-word\">"{t}"</samp>"$or"</li>"\n
+          html.="      <li style=\"text-align:left\"><samp style=\"color:#AA00AA; word-wrap:break-word\">"{t}"</samp>"$or"</li>"\n
         endl done
         html.="    </ul>"\n
       else
@@ -6626,7 +6626,7 @@ parse_cli_html :
 
         # Found example description
         rows 1,100% autocrop {'" "'}
-        replace_str "image.jpg","<a href=\"img/image.jpg\">image.jpg</a>"
+        replace_str "image.jpg","<a href=\"img/image.jpg\" target=\"_blank\">image.jpg</a>"
         example={t}
         n_example+=1
         if $n_example>1
@@ -6637,11 +6637,13 @@ parse_cli_html :
           filename_thumb=t_${name}.jpg
         fi
         if $n_example==1 html.="\n    <h2>Example"${"if "$nb_examples">1 u s else u \"\" fi"}" of use:</h2>"\n fi
-
         if $nb_examples!=1 html.="      <h3>&bull;&nbsp;Example \#"$n_example"</h3>"\n fi
-        html.="    <p style=\"text-align:left; background-color:#DDDDDD; width:75%; border:1px solid \#999; word-wrap:break-word; padding:10px\">"\
+        html.="    <p style=\"text-align:left; background-color:#DDDDDD; width:95%; border:1px solid \#999; "\
+              "word-wrap:break-word; padding:10px\">"\
               "<samp>$ gmic "$example"</samp></p>\n"\
-              "    <a href=\"img/"$filename_full"\"><img src=\"img/"$filename_thumb"\" class=\"center_image\"/></a>"\n
+              "    <div><a href=\"img/"$filename_full"\" class=\"highslide\" onclick=\"return hs.expand(this)\">"\
+              "<img src=\"img/"$filename_thumb"\" class=\"center_image\"/></a>"\
+              "<div class=\"highslide-caption\">Command: <b>"$example"</b></div></div>"\n
 
       elif i==_'$'" && "i[1]==_'$' # Found link to tutorial page
         if h==2 url=https://gmic.eu/tutorial/_$name.shtml
