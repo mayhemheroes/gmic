@@ -6189,16 +6189,16 @@ update_download_version : check "
     "
   ot $filename
 
-#@cli parse_cli : _{ * | command_name },_output_mode
+#@cli parse_cli : _output_mode,_{ * | command_name }
 #@cli : Parse definition of '#@cli'-documented commands and output info about them in specified output mode.
 #@cli : 'output_mode' can be { bashcompletion | help | html | images | print }.
-#@cli : Default values: 'command_name=*' and 'output_mode=print'.
-parse_cli : skip "${1=*},${2=print}"
-  e[^-1] "Parse '#@cli' command(s) '$1' and output in '$2' mode."
+#@cli : Default values: 'output_mode=print' and 'command_name=*'.
+parse_cli : skip "${1=print},${2=*}"
+  e[^-1] "Parse '#@cli' command(s) '$2' and output in '$1' mode."
 
   # Check that specified output mode is actually implemented.
-  l[] ({'$$parse_cli_$2'}) rm
-  onfail error[0--2] "Command 'parse_cli': Invalid output mode '$2'."
+  l[] ({'$$parse_cli_$1'}) rm
+  onfail error[0--2] "Command 'parse_cli': Invalid output mode '$1'."
   endl
 
   if !$! l[] it ${_path_rc}update$_version.gmic onfail endl fi
@@ -6260,9 +6260,9 @@ parse_cli : skip "${1=*},${2=print}"
         run('nm[',x,'] \"',string(command,'@',category),'\"');
       )"
     rm. rmn __to_discard__
-    l parse_cli_trigger_$2 $1 onfail endl
+    l parse_cli_trigger_$1 $2 onfail endl
   fi
-  parse_cli_$2
+  parse_cli_$1
 
 # Implements 'bashcompletion' mode for command 'parse_cli'.
 parse_cli_bashcompletion :
@@ -6446,6 +6446,28 @@ _parse_cli_help_colorize : # Colorize string (as images) using VT100 color codes
 # Implements 'html' mode for command 'parse_cli'.
 parse_cli_html :
   v 0 e[] ""
+  repeat $! ('{$>,n}') l. s +,{'@'} rv a y nm={t} endl nm[$>] $nm done # Name as category@name
+  sort_list +,n
+
+  # Generate HTML for the categories.
+    html="<!DOCTYPE html>"\n\
+"<html lang=\"en\">"\n\
+"  <head>"\n\
+"    <meta charset=\"utf-8\">"\n\
+"    <title>[G'MIC] Categories</title>"\n\
+"  </head>"\n\
+"  <body>"\n\
+"    <p style=\"color:blue;font-size:18px;\">Reference</p>"\n\
+"    <h1>Categories</h1>"\n
+
+    html.="  </body>\n</html>"
+    ({'$html'}:y)
+    ot. categories.html
+    rm.
+
+    q
+
+  # Generate HTML page for each command.
   repeat $! l[$>]
     ('{n}') l. s -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm endl
     nbl={"n = 1; for (p = 0, (q = find(#"$>",_'\n',p))>=0, ++n, p = ++q); n"}
@@ -6547,10 +6569,9 @@ parse_cli_html :
     # Generate page.
     html.="  </body>\n</html>"
     rm ({'$html'}:y) nm $name.html
-
   endl done rmn __to_discard__
 
-  # Save HTML files.
+  # Save HTML files when all is done.
   repeat $! ot[$>] {$>,n} done
   rm
 
@@ -6639,7 +6660,7 @@ parse_cli_trigger_print :
     discard. -1 k[{^}]
   fi
 
-#@cli parse_gui : _filter_name,_outputmode
+#@cli parse_gui : _outputmode,_{ * | filter_name},
 #@cli : Parse selected filter definitions and generate info about filters in selected output mode.
 #@cli : 'outputmode' can be { json | list | print | strings | update | zart }.\n
 #@cli : It is possible to define a custom output mode, by implementing the following commands
@@ -6673,12 +6694,12 @@ parse_cli_trigger_print :
 #@cli : For each argument \#A of the parameter \#P ('A' in range [0,$_fF_pP_nbargs-1]):
 #@cli : . '$_fF_pP_aA': Argument value\n
 #@cli : Default parameters: 'filter_name=*' and 'output_format=print'.
-parse_gui : skip "${1=*},${2=print}"
+parse_gui : skip "${1=print},${2=*}"
   e[^-1] "Parse '#@gui' filters '$1' and output in '$2' mode."
 
   # Check that specified output mode is actually implemented.
-  l[] ({'$$parse_gui_$2'}) rm
-  onfail error[0--2] "Command 'parse_gui': Invalid output mode '$2'."
+  l[] ({'$$parse_gui_$1'}) rm
+  onfail error[0--2] "Command 'parse_gui': Invalid output mode '$1'."
   endl
 
   # Input .gmic data.
@@ -6797,14 +6818,14 @@ parse_gui : skip "${1=*},${2=print}"
   rm[0]
 
   # Isolate only requested filters.
-  if "['$1']!='*'"
+  if "['$2']!='*'"
     1,$!,1,1,"
-      begin(ref(lowercase(['$1']),str));
+      begin(ref(lowercase(['$2']),str));
       ref(lowercase(name(#y)),nm);
       find(nm,str)>=0?y:-1"
     discard. -1 k[{^}]
   fi
-  l parse_gui_trigger_$2 onfail endl # Allow global pre-processing before parsing each filter.
+  l parse_gui_trigger_$1 onfail endl # Allow global pre-processing before parsing each filter.
 
   # Parse each filter.
   nbchunks=$!
@@ -6979,7 +7000,7 @@ parse_gui : skip "${1=*},${2=print}"
 
   # Done!
   e[] "\r  > "${_gmic_g}{`copy(vector64(_'" "'),'"Parsing done!"')`}$_gmic_n
-  v + parse_gui_$2 # Output result of the parsing.
+  v + parse_gui_$1 # Output result of the parsing.
 
 #
 # Output mode 'print' (default output mode).
