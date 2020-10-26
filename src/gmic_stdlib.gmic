@@ -6536,9 +6536,12 @@ parse_cli_html :
           rm[0,1]
         fi
         a y
-        f ">begin(c = 3); i==39?(c = 5 - c; c):i"
-        replace_str "\2","'<samp style=\"color:#AA00AA\";>"
-        replace_str "\3","</samp>'"
+
+        parse_cli_decorate_singlequotes_html
+
+        # f ">begin(c = 3); i==39?(c = 5 - c; c):i"
+        # replace_str "\2","'<samp style=\"color:#AA00AA\";>"
+        # replace_str "\3","</samp>'"
         html.="    "{t}\n
       elif i==_'$'" && "i[1]!=_'$' # Found example description
         rows 1,100% autocrop {'" "'}
@@ -6584,15 +6587,7 @@ parse_cli_html :
            fi endl done
            a y
         fi
-
-        # Decorate strings inside single quotes and brackets.
-        eval[^] ">begin(beg = -1);
-                 i==_'\''?(
-                 beg<0?(beg = y):
-                 (for (ok = 1; p = beg + 1, p<y, ++p, i[p]<=_' ' || p>beg + 32?(ok = 0; break()));
-                 ok?(i[beg] = 2; i[y] = 3); beg = -1))"
-        replace_str "\2","<samp style=\"background-color:#EAE0F5;\">"
-        replace_str "\3","</samp>"
+        parse_cli_decorate_singlequotes_html
         html.="    "{t}"<br/>"\n
       fi
     endl done
@@ -6606,6 +6601,16 @@ parse_cli_html :
     ot {n}
   endl done
   rm
+
+# Decorate strings inside single quotes and brackets.
+parse_cli_decorate_singlequotes_html :
+  eval[^] ">begin(beg = -1);
+            i==_'\''?(
+            beg<0?(beg = y):
+            (for (ok = 1; p = beg + 1, p<y, ++p, i[p]<=_' ' || p>beg + 32?(ok = 0; break()));
+            ok?(i[beg] = 2; i[y] = 3); beg = -1))"
+  replace_str "\2","<samp style=\"background-color:#EAE0F5;\">"
+  replace_str "\3","</samp>"
 
 parse_cli_trigger_html :
   parse_cli_trigger_print $*
