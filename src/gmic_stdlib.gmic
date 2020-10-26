@@ -6466,6 +6466,14 @@ parse_cli_html :
     ot. categories.html
     rm.
 
+  # Retrieve full list of commands.
+  repeat $! if s=['{$>,n}'];s[0]==_'_' continue fi l[$>]
+    ('{n}') l. s -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm endl
+    nbl={"n = 1; for (p = 0, (q = find(#"$>",_'\n',p))>=0, ++n, p = ++q); n"}
+    if $nbl==1" && find(#"$>",'eq. to \'')>0" rm 0 nm __to_discard__ continue fi # Skip shortcut commands
+    _is_$name=1
+  endl done
+
   # Generate HTML page for each command.
   repeat $! if s=['{$>,n}'];s[0]==_'_' continue fi l[$>]
     ('{n}') l. s -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm endl
@@ -6600,13 +6608,31 @@ parse_cli_html :
 
 # Decorate strings between single quotes.
 parse_cli_decorate_singlequotes_html :
+  is_com=0
   eval[^] ">begin(beg = -1);
             i==_'\''?(
               beg<0?(beg = y):
               (for (ok = 1; p = beg + 1, p<y, ++p, i[p]<=_' ' || p>beg + 32?(ok = 0; break()));
-              ok?(i[beg] = 2; i[y] = 3); beg = -1))"
-  replace_str "\2","<samp style=\"background-color:#EAE0F5;\">"
-  replace_str "\3","</samp>"
+              ok?(
+                i[beg] = 2;
+                i[y] = 3;
+                y>beg?( # Check if what's inside quotes is an existing command
+                  c = lowercase(i[beg + 1]);
+                  is_com = (c>=_'a' && c<=_'z') || c==_'_';
+                  for (p = beg + 1, is_com && p<y, ++p,
+                    c = lowercase(i[p]);
+                    is_com = (c>=_'a' && c<=_'z') || (c>=_'0' && c<=_'9') || c==_'_'
+                  );
+                  is_com?run('+rows ',beg + 1,',',y - 1,' com={t} rm. if 0${_is_$com}==1 is_com=1 fi');
+                );
+              ); beg = -1))"
+  if $is_com
+    replace_str "\2","<a href=\""$com".html\"><samp style=\"background-color:#EAE0F5;\">"
+    replace_str "\3","</samp></a>"
+  else
+    replace_str "\2","<samp style=\"background-color:#EAE0F5;\">"
+    replace_str "\3","</samp>"
+  fi
 
 # Decorate strings between double quotes.
 parse_cli_decorate_doublequotes_html :
