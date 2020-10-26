@@ -6560,9 +6560,7 @@ parse_cli_html :
         fi
         html.="\n    <h2>Tutorial page</h2><a href=\""$url"\">"$url"</a>"
       else # Other kind of description line
-
-        # Replace URL in description by HTML links.
-        if find(['{t}'],'http')>=0
+        if find(['{t}'],'http')>=0 # Replace URL in description by HTML links
            i[0] 1,100%
            eval "
              n = ['"{t}"'];
@@ -6583,6 +6581,7 @@ parse_cli_html :
            fi endl done
            a y
         fi
+        parse_cli_decorate_doublequotes_html
         parse_cli_decorate_singlequotes_html
         parse_cli_decorate_braces_html
         html.="    "{t}"<br/>"\n
@@ -6599,17 +6598,27 @@ parse_cli_html :
   endl done
   rm
 
-# Decorate strings inside single quotes.
+# Decorate strings between single quotes.
 parse_cli_decorate_singlequotes_html :
   eval[^] ">begin(beg = -1);
             i==_'\''?(
-            beg<0?(beg = y):
-            (for (ok = 1; p = beg + 1, p<y, ++p, i[p]<=_' ' || p>beg + 32?(ok = 0; break()));
-            ok?(i[beg] = 2; i[y] = 3); beg = -1))"
+              beg<0?(beg = y):
+              (for (ok = 1; p = beg + 1, p<y, ++p, i[p]<=_' ' || p>beg + 32?(ok = 0; break()));
+              ok?(i[beg] = 2; i[y] = 3); beg = -1))"
   replace_str "\2","<samp style=\"background-color:#EAE0F5;\">"
   replace_str "\3","</samp>"
 
-# Decorate strings inside braces.
+# Decorate strings between double quotes.
+parse_cli_decorate_doublequotes_html :
+  eval[^] ">begin(beg = -1);
+            i==_'\"'?(
+              beg<0?(beg = y):
+              (for (ok = 1; p = beg + 1, p<y, ++p, p>beg + 80?(ok = 0; break()));
+              ok?(i[beg] = 2; i[y] = 3); beg = -1))"
+  replace_str "\2","&#8220;<i>"
+  replace_str "\3","</i>&#8221;"
+
+# Decorate strings between braces.
 parse_cli_decorate_braces_html :
   replace_str "{","<samp style=\"color:#990099;\">{"
   replace_str "}","}</samp>"
