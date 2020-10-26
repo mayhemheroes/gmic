@@ -6497,7 +6497,7 @@ parse_cli_html :
       if $!
         html.="\n    <h2>Arguments</h2>\n    <ul>"\n
         repeat $! l[$>]
-          html.="      <li><code>"{t}"</code></li>"\n
+          html.="      <li><samp>"{t}"</samp></li>"\n
         endl done
         html.="    </ul>"\n
       else
@@ -6537,10 +6537,8 @@ parse_cli_html :
         fi
         a y
         f ">begin(c = 3); i==39?(c = 5 - c; c):i"
-        replace_str "\2","'<code style=\"color:#AA00AA\";>"
-        replace_str "\3","</code>'"
-
-
+        replace_str "\2","'<samp style=\"color:#AA00AA\";>"
+        replace_str "\3","</samp>'"
         html.="    "{t}\n
       elif i==_'$'" && "i[1]!=_'$' # Found example description
         rows 1,100% autocrop {'" "'}
@@ -6554,7 +6552,7 @@ parse_cli_html :
           filename_thumb=t_${name}.jpg
         fi
         if $n_example==1 html.="\n    <h2>Example"${"if "$nb_examples">1 u s else u \"\" fi"}"</h2>\n    <ol>"\n fi
-        html.="      <li><code>"$example"</code><br/><a href=\"img/"$filename_full"\"><img src=\"img/"$filename_thumb"\" /></a></li>"
+        html.="      <li><samp>"$example"</samp><br/><a href=\"img/"$filename_full"\"><img src=\"img/"$filename_thumb"\" /></a></li>"
         if $n_example==$nb_examples html.="\n    </ol>"\n fi
 
       elif i==_'$'" && "i[1]==_'$' # Found link to tutorial page
@@ -6563,6 +6561,38 @@ parse_cli_html :
         fi
         html.="\n    <h2>Tutorial page</h2><a href=\""$url"\">"$url"</a>"
       else # Other kind of description line
+
+        # Replace URL in description by HTML links.
+        if find(['{t}'],'http')>=0
+           i[0] 1,100%
+           eval "
+             n = ['"{t}"'];
+             http='http';
+             p = find(n,http);
+             while (p>=0 && p<h,
+               q = p + size(http);
+               i[q]==_'s'?++q;
+               i[q]==_':' && i[q + 1]==_'/' && i[q + 2]==_'/'?(
+                 while (q<h && i[q]>_' ' && i[q]!=_')', ++q);
+                 q - p<64?copy(i[#0,p],p,q - p,1,0);
+               );
+               p = find(n,http,q);
+             )"
+           a x s y,0 z 1,1
+           repeat $! l[$>] if crop(0,0,1,4)=='http'
+             i[0] ({'"<a href=\""{t}"\" target=\"_blank\">"'}:y) ('</a>':y) a y
+           fi endl done
+           a y
+        fi
+
+        # Decorate strings inside single quotes and brackets.
+        eval[^] ">begin(beg = -1);
+                 i==_'\''?(
+                 beg<0?(beg = y):
+                 (for (ok = 1; p = beg + 1, p<y, ++p, i[p]<=_' ' || p>beg + 32?(ok = 0; break()));
+                 ok?(i[beg] = 2; i[y] = 3); beg = -1))"
+        replace_str "\2","<samp style=\"background-color:#EAE0F5;\">"
+        replace_str "\3","</samp>"
         html.="    "{t}"<br/>"\n
       fi
     endl done
