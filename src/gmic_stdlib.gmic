@@ -6487,7 +6487,7 @@ parse_cli_html :
         is_tr=1 row+=1
       fi
       html.="        <td style=\"padding:5px; border:1px solid \#000000\"><a href=\""$name".html\">"
-      if $is_native html.="<samp><i><b>"$name"</b></i></samp>"
+      if $is_native html.="<samp><b>"$name"</b></samp>"
       else html.="<samp>"$name"</samp>"
       fi
       html.="</a></td>"\n
@@ -6516,6 +6516,14 @@ parse_cli_html :
     if ${parse_cli_is_eqto.} rm 0 nm __to_discard__ continue fi # Ignore shortcut commands
     +e[] $category" / "$name
 
+    # Find previous and next commands.
+    if !$> previous=
+    else pass[{$>-1}] 1 ('{n}') l. s -,{'@'} previous={0,t} rm endl rm.
+    fi
+    if !$< next=
+    else pass[{$>+1}] 1 ('{n}') l. s -,{'@'} next={0,t} rm endl rm.
+    fi
+
     strvar $category category_id=${}
     html="<!DOCTYPE html>"\n\
 "<html lang=\"en\">"\n\
@@ -6524,11 +6532,18 @@ parse_cli_html :
 "    <title>[G'MIC] "$name"</title>"\n\
 "  </head>"\n\
 "  <body>"\n\
-"    <p>"\
+"    <div style=\"text-align:left\">"\
 "<a href=\"categories.html\">Categories</a>&nbsp;&nbsp;&#9656;&nbsp;&nbsp;"\
 "<a href=\"categories.html#"$category_id"\">"$category"</a>&nbsp;&nbsp;&#9656;&nbsp;&nbsp;"\
-"<a href=\""$name".html\"><samp>"$name"</samp></a></p>"\n\
-"    <h1 style=\"color:#FF5020\"><samp>"$name"</samp></h1>"\n
+"<a href=\""$name".html\"><samp>"$name"</samp></a></div>"
+
+    if narg($previous)" || "narg($next)
+      html.="<div style=\"text-align:right\">"
+      if narg($previous) html.="&lt;Previous: <a href=\""$previous".html\"><samp>"$previous"</samp></a>" fi
+      if narg($next) html.="&lt;Next: <a href=\""$next".html\"><samp>"$next"</samp></a>" fi
+      html.="</div>"\n
+    fi
+    html.="    <h1 style=\"color:#FF5020\"><samp>"$name"</samp></h1>"\n
 
     # Parse command declaration.
     s -,{'\n'} discard {'#@cli'} max {'" "'} autocrop {'" "'}
@@ -6574,7 +6589,7 @@ parse_cli_html :
           shortcut="(unknown)"
           rm
         endl
-        html.="    <h3>(equivalent to shortcut command '"$shortcut"').</h3>"\n
+        html.="    <p>(equivalent to shortcut command <samp>"$shortcut"</samp>).</p>"\n
 
       elif "find(#0,'See also:')>=0"
 
@@ -6661,8 +6676,7 @@ parse_cli_html :
 
     # Generate page.
     html.="  </body>\n</html>"
-    rm ({'$html'}:y) nm $name.html
-
+    rm ({'$html'}:y)
     if s=['{n}'];s[0]==_'_' +e[] {n} d q fi
 
     ot {n}
