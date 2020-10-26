@@ -6537,15 +6537,27 @@ parse_cli_html :
           rm
         endl
         html.="    <h3>(equivalent to shortcut command '"$shortcut"').</h3>"\n
-      elif "find(#0,'Default value:')>=0 || find(#0,'Default values:')>=0" # Found 'Default value(s):' description
+
+      elif "find(#0,'See also:')>=0" # Found 'See also:' description.
         s +,{':'} autocrop {'" "'}
         if $!>2" && "h#1==1" && "i("#1")==_':'
-          html.="\n    <h2>Default values:</h2>"\n
+          html.="\n    <h2>See also</h2>"\n
           rm[0,1]
         fi
         a y
-        parse_cli_decorate_singlequotes_html
+        parse_cli_decorate_singlequotes_html 1
         html.="    "{t}\n
+
+      elif "find(#0,'Default value:')>=0 || find(#0,'Default values:')>=0" # Found 'Default value(s):' description
+        s +,{':'} autocrop {'" "'}
+        if $!>2" && "h#1==1" && "i("#1")==_':'
+          html.="\n    <h2>Default values</h2>"\n
+          rm[0,1]
+        fi
+        a y
+        parse_cli_decorate_singlequotes_html 0
+        html.="    "{t}\n
+
       elif i==_'$'" && "i[1]!=_'$' # Found example description
         rows 1,100% autocrop {'" "'}
         replace_str "image.jpg","<a href=\"img/image.jpg\">image.jpg</a>"
@@ -6567,6 +6579,7 @@ parse_cli_html :
         else rows 2,100 autocrop {'" "'} url=https://gmic.eu/tutorial/{t}.shtml
         fi
         html.="\n    <h2>Tutorial page</h2><a href=\""$url"\">"$url"</a>"
+
       else # Other kind of description line
         if find(['{t}'],'http')>=0 # Replace URL in description by HTML links
            i[0] 1,100%
@@ -6590,7 +6603,7 @@ parse_cli_html :
            a y
         fi
         parse_cli_decorate_doublequotes_html
-        parse_cli_decorate_singlequotes_html
+        parse_cli_decorate_singlequotes_html 1
         parse_cli_decorate_braces_html
         html.="    "{t}"<br/>"\n
       fi
@@ -6607,6 +6620,7 @@ parse_cli_html :
   rm
 
 # Decorate strings between single quotes.
+# $1 = Try to detect and relink command names = { 0=false | 1=true }.
 parse_cli_decorate_singlequotes_html :
   is_com=0
   eval[^] ">begin(beg = -1);
@@ -6616,7 +6630,7 @@ parse_cli_decorate_singlequotes_html :
               ok?(
                 i[beg] = 2;
                 i[y] = 3;
-                y>beg?( # Check if what's inside quotes is an existing command
+                $1 && y>beg?( # Check if what's inside quotes is an existing command
                   c = lowercase(i[beg + 1]);
                   is_com = (c>=_'a' && c<=_'z') || c==_'_';
                   for (p = beg + 1, is_com && p<y, ++p,
@@ -8916,6 +8930,7 @@ med :
 #@cli : Multiply selected images by specified value, image or mathematical expression,
 #@cli : or compute the pointwise product of selected images.
 #@cli : (eq. to '*').
+#@cli : See also: 'add', 'sub', 'div'.
 #@cli : $ image.jpg +mul 2 cut 0,255
 #@cli : $ image.jpg (1,2,3,4,5,6,7,8) ri[-1] [0] mul[0] [-1]
 #@cli : $ image.jpg mul '1-3*abs(x/w-0.5)' cut 0,255
