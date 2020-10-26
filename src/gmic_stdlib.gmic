@@ -6497,7 +6497,7 @@ parse_cli_html :
       if $!
         html.="\n    <h2>Arguments</h2>\n    <ul>"\n
         repeat $! l[$>]
-          html.="      <li><samp>"{t}"</samp></li>"\n
+          html.="      <li><samp style=\"color:#AA00AA\">"{t}"</samp></li>"\n
         endl done
         html.="    </ul>"\n
       else
@@ -6536,15 +6536,11 @@ parse_cli_html :
           rm[0,1]
         fi
         a y
-
         parse_cli_decorate_singlequotes_html
-
-        # f ">begin(c = 3); i==39?(c = 5 - c; c):i"
-        # replace_str "\2","'<samp style=\"color:#AA00AA\";>"
-        # replace_str "\3","</samp>'"
         html.="    "{t}\n
       elif i==_'$'" && "i[1]!=_'$' # Found example description
         rows 1,100% autocrop {'" "'}
+        replace_str "image.jpg","<a href=\"img/image.jpg\">image.jpg</a>"
         example={t}
         n_example+=1
         if $n_example>1
@@ -6588,6 +6584,7 @@ parse_cli_html :
            a y
         fi
         parse_cli_decorate_singlequotes_html
+        parse_cli_decorate_braces_html
         html.="    "{t}"<br/>"\n
       fi
     endl done
@@ -6602,7 +6599,7 @@ parse_cli_html :
   endl done
   rm
 
-# Decorate strings inside single quotes and brackets.
+# Decorate strings inside single quotes.
 parse_cli_decorate_singlequotes_html :
   eval[^] ">begin(beg = -1);
             i==_'\''?(
@@ -6611,6 +6608,11 @@ parse_cli_decorate_singlequotes_html :
             ok?(i[beg] = 2; i[y] = 3); beg = -1))"
   replace_str "\2","<samp style=\"background-color:#EAE0F5;\">"
   replace_str "\3","</samp>"
+
+# Decorate strings inside braces.
+parse_cli_decorate_braces_html :
+  replace_str "{","<samp style=\"color:#990099;\">{"
+  replace_str "}","}</samp>"
 
 parse_cli_trigger_html :
   parse_cli_trigger_print $*
