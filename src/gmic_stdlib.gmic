@@ -5779,21 +5779,21 @@ update_gallery_html : check "isbool(${1=0})"
   # Define categories and sample pictures.
   categories=arrays,artistic,blackandwhite,colors,deformations,filtering,patterns,3dmeshes,stylization,codesamples
   nb_categories={narg($categories)}
-  commands_arrays=gallery_arrays,array,array_fade,array_mirror,frame_blur,frame_cube,frame_painting,img2ascii,\
+  commands_arrays=_gallery_arrays,array,array_fade,array_mirror,frame_blur,frame_cube,frame_painting,img2ascii,\
                   imagegrid,rotate_tiles,vignette,tunnel
-  commands_artistic=gallery_artistic,boxfitting,cartoon,cubism,draw_whirl,fractalize,halftone,sketchbw,light_relief,\
+  commands_artistic=_gallery_artistic,boxfitting,cartoon,cubism,draw_whirl,fractalize,halftone,sketchbw,light_relief,\
                     mosaic,linify,polaroid,polygonize,poster_hope,rodilius,stencil,stained_glass
-  commands_blackandwhite=gallery_blackandwhite,pencilbw,old_photo,sepia
-  commands_colors=gallery_colors,solarize,hsv2rgb,transfer_rgb
-  commands_deformations=gallery_deformations,deform,map_sphere,seamcarve,spherize,twirl,warp_perspective,water,wave
-  commands_filtering=gallery_filtering,blur_angular,blur_linear,blur_radial,glow,smooth,bilateral,dog,deriche,\
+  commands_blackandwhite=_gallery_blackandwhite,pencilbw,old_photo,sepia
+  commands_colors=_gallery_colors,solarize,hsv2rgb,transfer_rgb
+  commands_deformations=_gallery_deformations,deform,map_sphere,seamcarve,spherize,twirl,warp_perspective,water,wave
+  commands_filtering=_gallery_filtering,blur_angular,blur_linear,blur_radial,glow,smooth,bilateral,dog,deriche,\
                      distance,gradient_norm,normalize_local,sharpen,solidify
-  commands_patterns=gallery_patterns,tsp,chessboard,mandelbrot,maze_mask,plasma,shape_fern,shape_snowflake,\
+  commands_patterns=_gallery_patterns,tsp,chessboard,mandelbrot,maze_mask,plasma,shape_fern,shape_snowflake,\
                     sierpinski,syntexturize_matchpatch,truchet,turbulence,watermark_visible,weave
-  commands_3dmeshes=gallery_3dmeshes,add3d,distribution3d,elevation3d,gmic3d,imageblocks3d,imagerubik3d,\
+  commands_3dmeshes=_gallery_3dmeshes,add3d,distribution3d,elevation3d,gmic3d,imageblocks3d,imagerubik3d,\
                     skeleton3d,spherical3d,tensors3d,text3d,torus3d,weird3d
-  commands_stylization=gallery_stylization
-  commands_codesamples=gallery_codesamples
+  commands_stylization=_gallery_stylization
+  commands_codesamples=_gallery_codesamples
 
   pics=apples,bottles,butterfly,car,cat,cliff,david,dog,duck,eagle,elephant,earth,flower,fruits,greece,gummy,inside,\
        landscape,leaf,leno,lion,mandrill,monalisa,parrots,pencils,rooster,rose,square,teddy,tiger,wall,waterfall,zelda
@@ -5865,7 +5865,7 @@ update_gallery_html : check "isbool(${1=0})"
 
     repeat $nb_commands
       command=${"arg "1+$>,$commands}
-      is_stylization={['$command']=='gallery_stylization'}
+      is_stylization={['$command']=='_gallery_stylization'}
 
       e[] $_gmic_m"    - Command '"$_gmic_b$command$_gmic_n"' ["{1+$>}/$nb_commands"]."$_gmic_n
       +l # Parse command definition and examples
@@ -6289,7 +6289,7 @@ parse_cli_bashcompletion :
   coms="    coms=\"" c=
 
   # Extract list of available commands.
-  repeat $! l[$>] if "find(['"{n}"'],'gallery')"
+  repeat $! l[$>] if "s = ['"{n}"']; s[0]!=_'_'"
     ('{n}') l. s -,{'@'} name={0,t} rm endl nm $name
     coms.=$c$name c=" "
   fi endl done
@@ -6316,7 +6316,7 @@ parse_cli_bashcompletion :
   +e[] "    case \"${prev}\" in"
   repeat $! l[$>]
     name={n}
-    if n=['$name'];"find(n,'gallery') && find(n,'input') && find(n,'output') && "\
+    if n=['$name'];"n[0]!=_'_' && find(n,'input') && find(n,'output') && "\
                    "n!='i' && n!='o' && n!='m' && n!='it' && n!='ot'"
       if ['$name']=='help'
         +e[] "        \""$name"\" | \"-"$name"\" | \"+"$name"\")"
@@ -6446,7 +6446,7 @@ _parse_cli_help_colorize : # Colorize string (as images) using VT100 color codes
 # Implements 'html' mode for command 'parse_cli'.
 parse_cli_html :
   v 0 e[] ""
-  repeat $! ('{$>,n}') l. s +,{'@'} rv a y nm={t} endl nm[$>] $nm done # Name as category@name
+  repeat $! ('{$>,n}') l. s +,{'@'} rv a y nm={t} endl rm. nm[$>] $nm done # Name as category@name
   sort_list +,n
 
   # Generate HTML for the categories.
@@ -6465,11 +6465,9 @@ parse_cli_html :
     ot. categories.html
     rm.
 
-    q
-
   # Generate HTML page for each command.
   repeat $! l[$>]
-    ('{n}') l. s -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm endl
+    ('{n}') l. s -,{'@'} rv name={0,t} if $!>1 category={1,t} else category= fi rm endl
     nbl={"n = 1; for (p = 0, (q = find(#"$>",_'\n',p))>=0, ++n, p = ++q); n"}
     if $nbl==1" && find(#"$>",'eq. to \'')>0" rm 0 nm __to_discard__ continue fi # Skip shortcut commands
 
@@ -6482,7 +6480,7 @@ parse_cli_html :
 "    <title>[G'MIC] "$name"</title>"\n\
 "  </head>"\n\
 "  <body>"\n\
-"    <p style=\"color:blue;font-size:18px;\">Reference&nbsp;&gt;&nbsp;"$category"&nbsp;&gt;&nbsp;"$name"</p>"\n\
+"    <p style=\"color:blue;font-size:18px;\">Categories&nbsp;&#9654;&nbsp;"$category"&nbsp;&#9654;&nbsp;"$name"</p>"\n\
 "    <h1><samp>"$name"</samp></h1>"\n
 
     # Parse command declaration.
@@ -6610,7 +6608,7 @@ parse_cli_images :
           filename_thumb=t_${name}.jpg
         fi
         e[] $_gmic_c[$n_example]$_gmic_n" Command '"$_gmic_g$name$_gmic_n"': $ "$example
-        skip_rendering={"(isfile(['"{/$filename_full}"']) && isfile(['"{/$filename_thumb}"'])) || !find(['"$name"'],'gallery_')"}
+        skip_rendering={"(isfile(['"{/$filename_full}"']) && isfile(['"{/$filename_thumb}"'])) || ['"$name"'][0]==_'_'"}
 
         if !$skip_rendering # Generate picture only if the file doesn't yet exist
           m "run_example : "$example
@@ -47320,13 +47318,13 @@ fx_solve_maze_preview :
 #@cli :: Additional Gallery Images
 #
 #---------------------------------
-#@cli gallery_arrays
+#@cli _gallery_arrays
 #@cli : This entry defines some examples of array filters for the G'MIC gallery page.
 #@cli : $ image.jpg fx_frame_blur 30,30,0,5,0,0,128,128,128,0,5,255,255,255,2,2,1,0,0.5,0.5,0 _label="Frame~[blur]"
 #@cli : $ sample tiger,leno,monkey,duck,eagle frame 3,3,0 frame 3,3,255 montage A _label="Montage"
 #@cli : $ image.jpg fx_puzzle 5,5,0.5,0,0,0.3,100,0.2,255,100,0,0,0,0,0,0 _label="Puzzle"
 
-#@cli gallery_artistic
+#@cli _gallery_artistic
 #@cli : This entry defines some examples of artistic filters for the G'MIC gallery page.
 #@cli : $ image.jpg fx_engrave 0.5,4,0,7.68,15.2,0,0,1,10,1,0,0,0,1,0 gui_merge_layers _label="Engrave"
 #@cli : $ image.jpg fx_bokeh 3,8,0,30,8,4,0.3,0.2,210,210,80,160,0.7,30,20,20,1,2,170,130,20,110,0.15,0 _label="Bokeh"
@@ -47345,7 +47343,7 @@ fx_solve_maze_preview :
 #@cli : $ image.jpg fx_quadtree 2,1024,1.05,0,2.33,0.68,0.39,1,0 _label="Quadtree~variations"
 #@cli : $ image.jpg fx_vector_painting 9.37,0 _label="Vector~painting"
 
-#@cli gallery_blackandwhite
+#@cli _gallery_blackandwhite
 #@cli : This entry defines some examples of black-and-white filters for the G'MIC gallery page.
 #@cli : $ image.jpg fx_freaky_bw 90,20,0,0,0,0 _label="Freaky~B&amp;W"
 #@cli : $ image.jpg fx_engrave 0.5,50,0,8,40,0,0,0,10,1,0,0,0,1,0 _label="Engrave"
@@ -47353,7 +47351,7 @@ fx_solve_maze_preview :
 #@cli : $ image.jpg fx_pencil_portraitbw 30,120,1,0.5,144,79,21,0 _label="Pencil~portrait"
 #@cli : $ image.jpg fx_gcd_etch 125,153,171,185,0.1,50,80,50,10,15,12,20,0,1,0.3,1,0,0 _label="Threshold~etch"
 
-#@cli gallery_colors
+#@cli _gallery_colors
 #@cli : This entry defines some examples of color filters for the G'MIC gallery page.
 #@cli : $ image.jpg fx_color_abstraction 1,10,0.2,0 _label="Color~abstraction"
 #@cli : $ image.jpg fx_boost_chroma 90,0,0 _label="Boost~chromaticity"
@@ -47361,7 +47359,7 @@ fx_solve_maze_preview :
 #@cli : $ image.jpg fx_tk_vintage 2,0.85,0.7,80,200,5,147,26,161,0.3,235,220,176,0.4,190,181,108,0.2,\
 # 0,0,100,0,0.3,25,0,0 _label="Vintage~style"
 
-#@cli gallery_deformations
+#@cli _gallery_deformations
 #@cli : This entry defines some examples of deformation filters for the G'MIC gallery page.
 #@cli : $ image.jpg animate "flower","30,10,0,0","30,10,0,360",10 rm. _fps=6 _label="flower"
 #@cli : $ image.jpg fx_conformal_maps 8,1,0,"((1.1 + i*z/6)/(1.04 - i*z/6))^6.2",0,0,0,0,0,3,0,0,"1024","1024" \
@@ -47377,7 +47375,7 @@ fx_solve_maze_preview :
 #@cli : $ image.jpg fx_textured_glass 40,40,1,1,0,2,0,0 _label="Textured~glass"
 #@cli : $ sample lena,leno,320 morph 40 _fps=5 _label="morph"
 
-#@cli gallery_filtering
+#@cli _gallery_filtering
 #@cli : This entry defines some examples of filters for the G'MIC gallery page.
 #@cli : $ image.jpg fx_gcd_crt 1.8,1.8,0,0 equalize 256 _label="CRT~sub-pixels"
 #@cli : $ image.jpg fx_dirty 30,1,0,0,0 _label="Dirty"
@@ -47385,7 +47383,7 @@ fx_solve_maze_preview :
 #@cli : $ image.jpg jeje_normalize_local_variance 50,5,5,1,0,0 _label="Local~variance~normalization"
 #@cli : $ image.jpg fx_mighty_details 25,1,25,1,11,0 _label="Mighty~details"
 
-#@cli gallery_patterns
+#@cli _gallery_patterns
 #@cli : This entry defines some examples of pattern filters for the G'MIC gallery page.
 #@cli : $ image.jpg fx_rain 65,10,50,0.1,1,1,0 gui_merge_layers _label="Rain~&amp;~snow"
 #@cli : $ 400,400,1,3 fx_camouflage 9,12,100,30,46,33,75,90,65,179,189,117,255,246,158 _label="Camouflage"
@@ -47407,13 +47405,13 @@ fx_solve_maze_preview :
 # _label="transition"
 #@cli : $ image.jpg fx_shapeism 2,7,0.38,0,1,5,32,8,3,1,5,0.5,1,0,0,0,255 _label="Shapeism"
 
-#@cli gallery_3dmeshes
+#@cli _gallery_3dmeshes
 #@cli : This entry defines some examples of 3D rendering filters for the G'MIC gallery page.
 #@cli : $ sample leno,lion,leno resize 400,400 transition3d 20,5,5 rm. _fps=10 _label="transition3d"
 #@cli : $ 256,192 fx_text_pointcloud3d 64,"G'MIC","Rocks!",1,200,220,255,255,255,255,255,2,2,1,19 _fps=10 \
 # _label="3D~text~pointcloud"
 
-#@cli gallery_stylization
+#@cli _gallery_stylization
 #@cli : This entry defines some examples of image stylization for the G'MIC gallery page.
 #@cli : $ sample car _fx_stylize starrynight _output_mode=1 \
 # +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,3,3,0,0.7,1,0,1,0,5,5,7,1,30,10,2,1.85,0 _label="from~Van~Gogh:~Starry~Night"
@@ -47482,7 +47480,7 @@ fx_solve_maze_preview :
 # +fx_stylize 1,6,0,0,3.86,2,3,0.5,0.1,3,3,0,0.7,3.35,1,1,0,5,5,7,1,30,10,5,1.85,0 \
 # _label="from~Van~Gogh:~Wheat~Field~with~Crows"
 
-#@cli gallery_codesamples
+#@cli _gallery_codesamples
 #@cli : This entry defines some examples of coding-fun filters for the G'MIC gallery page.
 #@cli : $ https://gmic.eu/samples/lissajous.gmic go _fps=10 _label="Lissajous"
 #@cli : $ https://gmic.eu/samples/torus3d.gmic go _fps=10 _label="3D~torus"
