@@ -6289,15 +6289,15 @@ parse_cli_bashcompletion :
   coms="    coms=\"" c=
 
   # Extract list of available commands.
-  repeat $! l[$>] if "s = ['"{n}"']; s[0]!=_'_'"
+  repeat $! if s=['{$>,n}'];s[0]==_'_' continue fi l[$>]
     ('{n}') l. s -,{'@'} name={0,t} rm endl nm $name
     coms.=$c$name c=" "
-  fi endl done
+  endl done
   +e[] $coms"\""\n\
 "    opts=$(echo \"$coms\" | sed \"s: \\([^ ]\\+\\): \\1 -\\1 \\+\\1:g\")"\n
 
   # Duplicate list of arguments for command shortcuts.
-  repeat $!
+  repeat $! if s=['{$>,n}'];s[0]==_'_' continue fi
     name={$>,n}
     nbl={"n = 1; for (p = 0, (q = find(#"$>",_'\n',p))>=0, ++n, p = ++q); n"}
     if $nbl==1" && find(#"$>",'eq. to \'')>0"
@@ -6314,7 +6314,7 @@ parse_cli_bashcompletion :
 
   # Extract list of arguments.
   +e[] "    case \"${prev}\" in"
-  repeat $! l[$>]
+  repeat $! if s=['{$>,n}'];s[0]==_'_' continue fi l[$>]
     name={n}
     if n=['$name'];"n[0]!=_'_' && find(n,'input') && find(n,'output') && "\
                    "n!='i' && n!='o' && n!='m' && n!='it' && n!='ot'"
@@ -6353,7 +6353,7 @@ parse_cli_trigger_bashcompletion :
 # Implements 'help' mode for command 'parse_cli'.
 parse_cli_help :
   v 0 use_vt100 e[] ""
-  repeat $! l[$>]
+  repeat $! if s=['{$>,n}'];s[0]==_'_' continue fi l[$>]
 
     # Parse command declaration.
     s -,{'\n'} discard {'#@cli'} max {'" "'} autocrop {'" "'}
@@ -6448,6 +6448,7 @@ parse_cli_html :
   v 0 e[] ""
   repeat $! ('{$>,n}') l. s +,{'@'} rv a y nm={t} endl rm. nm[$>] $nm done # Name as category@name
   sort_list +,n
+  repeat $! ('{$>,n}') l. s +,{'@'} rv a y nm={t} endl rm. nm[$>] $nm done # Rename as name@category
 
   # Generate HTML for the categories.
     html="<!DOCTYPE html>"\n\
@@ -6457,7 +6458,7 @@ parse_cli_html :
 "    <title>[G'MIC] Categories</title>"\n\
 "  </head>"\n\
 "  <body>"\n\
-"    <p style=\"color:blue;font-size:18px;\">Reference</p>"\n\
+"    <p style=\"color:blue;font-size:18px;\"><a href=\"categories.html\">Categories</a></p>"\n\
 "    <h1>Categories</h1>"\n
 
     html.="  </body>\n</html>"
@@ -6466,11 +6467,10 @@ parse_cli_html :
     rm.
 
   # Generate HTML page for each command.
-  repeat $! l[$>]
-    ('{n}') l. s -,{'@'} rv name={0,t} if $!>1 category={1,t} else category= fi rm endl
+  repeat $! if s=['{$>,n}'];s[0]==_'_' continue fi l[$>]
+    ('{n}') l. s -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm endl
     nbl={"n = 1; for (p = 0, (q = find(#"$>",_'\n',p))>=0, ++n, p = ++q); n"}
     if $nbl==1" && find(#"$>",'eq. to \'')>0" rm 0 nm __to_discard__ continue fi # Skip shortcut commands
-
     +e[] $category" / "$name
 
     html="<!DOCTYPE html>"\n\
@@ -6480,7 +6480,10 @@ parse_cli_html :
 "    <title>[G'MIC] "$name"</title>"\n\
 "  </head>"\n\
 "  <body>"\n\
-"    <p style=\"color:blue;font-size:18px;\">Categories&nbsp;&#9654;&nbsp;"$category"&nbsp;&#9654;&nbsp;"$name"</p>"\n\
+"    <p style=\"color:blue;font-size:18px;\">"\
+"<a href=\"categories.html\">Categories</a>&nbsp;&#9656;&nbsp;"\
+"<a href=\"categories.html#cat\">"$category"</a>&nbsp;&#9656;&nbsp;"\
+"<a href=\""$name".html\">"$name"</a></p>"\n\
 "    <h1><samp>"$name"</samp></h1>"\n
 
     # Parse command declaration.
@@ -6567,10 +6570,11 @@ parse_cli_html :
     # Generate page.
     html.="  </body>\n</html>"
     rm ({'$html'}:y) nm $name.html
-  endl done rmn __to_discard__
 
-  # Save HTML files when all is done.
-  repeat $! ot[$>] {$>,n} done
+    if s=['{n}'];s[0]==_'_' +e[] {n} d q fi
+
+    ot {n}
+  endl done
   rm
 
 parse_cli_trigger_html :
@@ -6582,7 +6586,7 @@ parse_cli_images :
   old_category,category= n_category,n_example=0
   if !isfile('image.jpg') l[] sp pencils,500 onfail testimage2d 500 endl o. image.jpg rm. fi
 
-  repeat $! l[$>]
+  repeat $! if s=['{$>,n}'];s[0]==_'_' continue fi l[$>]
     ('{n}') l. s -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm endl
 
     if ['$category']!=['$old_category']
