@@ -6264,6 +6264,11 @@ parse_cli : skip "${1=print},${2=*}"
   fi
   parse_cli_$1
 
+# Return 1 if last of the selected bloc describes a shortcut command, 0 otherwise.
+parse_cli_is_eqto :
+  nbl={"n = 1; for (p = 0, (q = find(#-1,_'\n',p))>=0, ++n, p = ++q); n"}
+  u {$nbl"==1 && find(#-1,'eq. to \'')>5"}
+
 # Implements 'bashcompletion' mode for command 'parse_cli'.
 parse_cli_bashcompletion :
   v 0 use_vt100
@@ -6299,8 +6304,7 @@ parse_cli_bashcompletion :
   # Duplicate list of arguments for command shortcuts.
   repeat $! if s=['{$>,n}'];s[0]==_'_' continue fi
     name={$>,n}
-    nbl={"n = 1; for (p = 0, (q = find(#"$>",_'\n',p))>=0, ++n, p = ++q); n"}
-    if $nbl==1" && find(#"$>",'eq. to \'')>0"
+    if ${parse_cli_is_eqto.}
       +l[$>] s -,{'"eq. to "'} k. s -,39 eqto={0,t} rm endl
       l[$>] pass[$eqto] 0 k. nm $name
       onfail
@@ -6367,7 +6371,7 @@ parse_cli_help :
       fi
       +e[] "    "$_gmic_m$_gmic_b$name${"s1,s0=\" (+)\", u $s"$is_native}:$_gmic_n
       repeat $! l[$>]
-        if "!find(#0,'eq. to \'')"
+        if ${parse_cli_is_eqto.}
           s -,39 eqto={1,t} k[0]
           +e[] "      Shortcut for command '"$_gmic_m$_gmic_b$eqto$_gmic_n"'."
         else
@@ -6462,13 +6466,15 @@ parse_cli_html :
 "    <h1>Categories</h1>"\n
 
     category,p_category=
-    repeat $! l[$>]
+    repeat $! if s=['{$>,n}'];s[0]==_'_' continue fi l[$>]
       ('{n}') l. s -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm endl
       if ['$category']!=['$p_category']
         strvar $category category_id=${}
-        html.="    <h2><a id=\""$category_id"\"></a>"$category"</h2>"\n
+        html.="    <h2><a id=\""$category_id"\"></a>"$category":</h2>"\n
       fi
-      html.="<a href=\""$name".html\">"$name"</a> "
+      if !${parse_cli_is_eqto.}
+        html.="<a href=\""$name".html\">"$name"</a> "
+      fi
       p_category=$category
     endl done
 
@@ -6481,16 +6487,14 @@ parse_cli_html :
   # Retrieve full list of commands.
   repeat $! if s=['{$>,n}'];s[0]==_'_' continue fi l[$>]
     ('{n}') l. s -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm endl
-    nbl={"n = 1; for (p = 0, (q = find(#"$>",_'\n',p))>=0, ++n, p = ++q); n"}
-    if $nbl==1" && find(#"$>",'eq. to \'')>0" rm 0 nm __to_discard__ continue fi # Skip shortcut commands
-    _is_$name=1
+    is_eqto=${parse_cli_is_eqto.}
+    if !$is_eqto _is_$name=1 fi
   endl done
 
   # Generate HTML page for each command.
   repeat $! if s=['{$>,n}'];s[0]==_'_' continue fi l[$>]
     ('{n}') l. s -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm endl
-    nbl={"n = 1; for (p = 0, (q = find(#"$>",_'\n',p))>=0, ++n, p = ++q); n"}
-    if $nbl==1" && find(#"$>",'eq. to \'')>0" rm 0 nm __to_discard__ continue fi # Skip shortcut commands
+    if ${parse_cli_is_eqto.} rm 0 nm __to_discard__ continue fi # Ignore shortcut commands
     +e[] $category" / "$name
 
     strvar $category category_id=${}
@@ -6516,7 +6520,7 @@ parse_cli_html :
 
       if $is_native html.="    <em>(native command)</em>"\n fi
       if $!
-        html.="\n    <h2>Arguments</h2>\n    <ul>"\n
+        html.="\n    <h2>Arguments:</h2>\n    <ul>"\n
         repeat $! l[$>]
           html.="      <li><samp style=\"color:#AA00AA\">"{t}"</samp></li>"\n
         endl done
@@ -6529,7 +6533,7 @@ parse_cli_html :
     rm[0]
 
     # Parse command description.
-    html.="\n    <h2>Description</h2>"\n
+    html.="\n    <h2>Description:</h2>"\n
     n_example=0
     nb_examples=0
     repeat $! if {$>,i==_':'} l[$>]
@@ -6554,7 +6558,7 @@ parse_cli_html :
       elif "find(#0,'See also:')>=0" # Found 'See also:' description.
         s +,{':'} autocrop {'" "'}
         if $!>2" && "h#1==1" && "i("#1")==_':'
-          html.="\n    <h2>See also</h2>"\n
+          html.="\n    <h2>See also:</h2>"\n
           rm[0,1]
         fi
         a y
@@ -6564,7 +6568,7 @@ parse_cli_html :
       elif "find(#0,'Default value:')>=0 || find(#0,'Default values:')>=0" # Found 'Default value(s):' description
         s +,{':'} autocrop {'" "'}
         if $!>2" && "h#1==1" && "i("#1")==_':'
-          html.="\n    <h2>Default values</h2>"\n
+          html.="\n    <h2>Default values:</h2>"\n
           rm[0,1]
         fi
         a y
@@ -6583,15 +6587,16 @@ parse_cli_html :
           filename_full=f_${name}.jpg
           filename_thumb=t_${name}.jpg
         fi
-        if $n_example==1 html.="\n    <h2>Example"${"if "$nb_examples">1 u s else u \"\" fi"}"</h2>\n    <ol>"\n fi
-        html.="      <li><samp>$ "$example"</samp><br/><a href=\"img/"$filename_full"\"><img src=\"img/"$filename_thumb"\" /></a></li>"
-        if $n_example==$nb_examples html.="\n    </ol>"\n fi
+        if $n_example==1 html.="\n    <h2>Example"${"if "$nb_examples">1 u s else u \"\" fi"}" of use:</h2>"\n fi
+
+        if $nb_examples!=1 html.="      <h3>&bull;&nbsp;Example \#"$n_example"</h3>"\n fi
+        html.="      <p style=\"background-color:#DDDDDD; width:auto; border:1px solid \#999; padding:15px\"><samp>"$example"</samp></p><br/><a href=\"img/"$filename_full"\"><img src=\"img/"$filename_thumb"\" /></a>"
 
       elif i==_'$'" && "i[1]==_'$' # Found link to tutorial page
         if h==2 url=https://gmic.eu/tutorial/_$name.shtml
         else rows 2,100 autocrop {'" "'} url=https://gmic.eu/tutorial/{t}.shtml
         fi
-        html.="\n    <h2>Tutorial page</h2><a href=\""$url"\">"$url"</a>"
+        html.="\n    <h2>Tutorial page:</h2><a href=\""$url"\">"$url"</a>"
 
       else # Other kind of description line
         if find(['{t}'],'http')>=0 # Replace URL in description by HTML links
