@@ -5779,21 +5779,21 @@ update_gallery_html : check "isbool(${1=0})"
   # Define categories and sample pictures.
   categories=arrays,artistic,blackandwhite,colors,deformations,filtering,patterns,3dmeshes,stylization,codesamples
   nb_categories={narg($categories)}
-  commands_arrays=gallery_arrays,array,array_fade,array_mirror,frame_blur,frame_cube,frame_painting,img2ascii,\
+  commands_arrays=_gallery_arrays,array,array_fade,array_mirror,frame_blur,frame_cube,frame_painting,img2ascii,\
                   imagegrid,rotate_tiles,vignette,tunnel
-  commands_artistic=gallery_artistic,boxfitting,cartoon,cubism,draw_whirl,fractalize,halftone,sketchbw,light_relief,\
+  commands_artistic=_gallery_artistic,boxfitting,cartoon,cubism,draw_whirl,fractalize,halftone,sketchbw,light_relief,\
                     mosaic,linify,polaroid,polygonize,poster_hope,rodilius,stencil,stained_glass
-  commands_blackandwhite=gallery_blackandwhite,pencilbw,old_photo,sepia
-  commands_colors=gallery_colors,solarize,hsv2rgb,transfer_rgb
-  commands_deformations=gallery_deformations,deform,map_sphere,seamcarve,spherize,twirl,warp_perspective,water,wave
-  commands_filtering=gallery_filtering,blur_angular,blur_linear,blur_radial,glow,smooth,bilateral,dog,deriche,\
+  commands_blackandwhite=_gallery_blackandwhite,pencilbw,old_photo,sepia
+  commands_colors=_gallery_colors,solarize,hsv2rgb,transfer_rgb
+  commands_deformations=_gallery_deformations,deform,map_sphere,seamcarve,spherize,twirl,warp_perspective,water,wave
+  commands_filtering=_gallery_filtering,blur_angular,blur_linear,blur_radial,glow,smooth,bilateral,dog,deriche,\
                      distance,gradient_norm,normalize_local,sharpen,solidify
-  commands_patterns=gallery_patterns,tsp,chessboard,mandelbrot,maze_mask,plasma,shape_fern,shape_snowflake,\
+  commands_patterns=_gallery_patterns,tsp,chessboard,mandelbrot,maze_mask,plasma,shape_fern,shape_snowflake,\
                     sierpinski,syntexturize_matchpatch,truchet,turbulence,watermark_visible,weave
-  commands_3dmeshes=gallery_3dmeshes,add3d,distribution3d,elevation3d,gmic3d,imageblocks3d,imagerubik3d,\
+  commands_3dmeshes=_gallery_3dmeshes,add3d,distribution3d,elevation3d,gmic3d,imageblocks3d,imagerubik3d,\
                     skeleton3d,spherical3d,tensors3d,text3d,torus3d,weird3d
-  commands_stylization=gallery_stylization
-  commands_codesamples=gallery_codesamples
+  commands_stylization=_gallery_stylization
+  commands_codesamples=_gallery_codesamples
 
   pics=apples,bottles,butterfly,car,cat,cliff,david,dog,duck,eagle,elephant,earth,flower,fruits,greece,gummy,inside,\
        landscape,leaf,leno,lion,mandrill,monalisa,parrots,pencils,rooster,rose,square,teddy,tiger,wall,waterfall,zelda
@@ -5865,7 +5865,7 @@ update_gallery_html : check "isbool(${1=0})"
 
     repeat $nb_commands
       command=${"arg "1+$>,$commands}
-      is_stylization={['$command']=='gallery_stylization'}
+      is_stylization={['$command']=='_gallery_stylization'}
 
       e[] $_gmic_m"    - Command '"$_gmic_b$command$_gmic_n"' ["{1+$>}/$nb_commands"]."$_gmic_n
       +l # Parse command definition and examples
@@ -6189,16 +6189,16 @@ update_download_version : check "
     "
   ot $filename
 
-#@cli parse_cli : _{ * | command_name },_output_mode
+#@cli parse_cli : _output_mode,_{ * | command_name }
 #@cli : Parse definition of '#@cli'-documented commands and output info about them in specified output mode.
 #@cli : 'output_mode' can be { bashcompletion | help | html | images | print }.
-#@cli : Default values: 'command_name=*' and 'output_mode=print'.
-parse_cli : skip "${1=*},${2=print}"
-  e[^-1] "Parse '#@cli' command(s) '$1' and output in '$2' mode."
+#@cli : Default values: 'output_mode=print' and 'command_name=*'.
+parse_cli : skip "${1=print},${2=*}"
+  e[^-1] "Parse '#@cli' command(s) '$2' and output in '$1' mode."
 
   # Check that specified output mode is actually implemented.
-  l[] ({'$$parse_cli_$2'}) rm
-  onfail error[0--2] "Command 'parse_cli': Invalid output mode '$2'."
+  l[] ({'$$parse_cli_$1'}) rm
+  onfail error[0--2] "Command 'parse_cli': Invalid output mode '$1'."
   endl
 
   if !$! l[] it ${_path_rc}update$_version.gmic onfail endl fi
@@ -6260,9 +6260,14 @@ parse_cli : skip "${1=*},${2=print}"
         run('nm[',x,'] \"',string(command,'@',category),'\"');
       )"
     rm. rmn __to_discard__
-    l parse_cli_trigger_$2 $1 onfail endl
+    l parse_cli_trigger_$1 $2 onfail endl
   fi
-  parse_cli_$2
+  parse_cli_$1
+
+# Return 1 if last of the selected bloc describes a shortcut command, 0 otherwise.
+parse_cli_is_eqto :
+  nbl={"n = 1; for (p = 0, (q = find(#-1,_'\n',p))>=0, ++n, p = ++q); n"}
+  u {$nbl"==1 && find(#-1,'eq. to \'')>5"}
 
 # Implements 'bashcompletion' mode for command 'parse_cli'.
 parse_cli_bashcompletion :
@@ -6289,18 +6294,17 @@ parse_cli_bashcompletion :
   coms="    coms=\"" c=
 
   # Extract list of available commands.
-  repeat $! l[$>] if "find(['"{n}"'],'gallery')"
+  repeat $! if s=['{$>,n}'];s[0]==_'_' continue fi l[$>]
     ('{n}') l. s -,{'@'} name={0,t} rm endl nm $name
     coms.=$c$name c=" "
-  fi endl done
+  endl done
   +e[] $coms"\""\n\
 "    opts=$(echo \"$coms\" | sed \"s: \\([^ ]\\+\\): \\1 -\\1 \\+\\1:g\")"\n
 
   # Duplicate list of arguments for command shortcuts.
-  repeat $!
+  repeat $! if s=['{$>,n}'];s[0]==_'_' continue fi
     name={$>,n}
-    nbl={"n = 1; for (p = 0, (q = find(#"$>",_'\n',p))>=0, ++n, p = ++q); n"}
-    if $nbl==1" && find(#"$>",'eq. to \'')>0"
+    if ${parse_cli_is_eqto[$>]}
       +l[$>] s -,{'"eq. to "'} k. s -,39 eqto={0,t} rm endl
       l[$>] pass[$eqto] 0 k. nm $name
       onfail
@@ -6314,9 +6318,9 @@ parse_cli_bashcompletion :
 
   # Extract list of arguments.
   +e[] "    case \"${prev}\" in"
-  repeat $! l[$>]
+  repeat $! if s=['{$>,n}'];s[0]==_'_' continue fi l[$>]
     name={n}
-    if n=['$name'];"find(n,'gallery') && find(n,'input') && find(n,'output') && "\
+    if n=['$name'];"n[0]!=_'_' && find(n,'input') && find(n,'output') && "\
                    "n!='i' && n!='o' && n!='m' && n!='it' && n!='ot'"
       if ['$name']=='help'
         +e[] "        \""$name"\" | \"-"$name"\" | \"+"$name"\")"
@@ -6353,7 +6357,7 @@ parse_cli_trigger_bashcompletion :
 # Implements 'help' mode for command 'parse_cli'.
 parse_cli_help :
   v 0 use_vt100 e[] ""
-  repeat $! l[$>]
+  repeat $! if s=['{$>,n}'];s[0]==_'_' continue fi l[$>]
 
     # Parse command declaration.
     s -,{'\n'} discard {'#@cli'} max {'" "'} autocrop {'" "'}
@@ -6367,7 +6371,7 @@ parse_cli_help :
       fi
       +e[] "    "$_gmic_m$_gmic_b$name${"s1,s0=\" (+)\", u $s"$is_native}:$_gmic_n
       repeat $! l[$>]
-        if "!find(#0,'eq. to \'')"
+        if ${parse_cli_is_eqto.}
           s -,39 eqto={1,t} k[0]
           +e[] "      Shortcut for command '"$_gmic_m$_gmic_b$eqto$_gmic_n"'."
         else
@@ -6445,23 +6449,106 @@ _parse_cli_help_colorize : # Colorize string (as images) using VT100 color codes
 
 # Implements 'html' mode for command 'parse_cli'.
 parse_cli_html :
-  v 0 e[] ""
+  v 0
+  repeat $! ('{$>,n}') l. s +,{'@'} rv a y nm={t} endl rm. nm[$>] $nm done # Rename as 'category@name'
+  sort_list +,n # Sort by categories
+  repeat $! ('{$>,n}') l. s +,{'@'} rv a y nm={t} endl rm. nm[$>] $nm done # Rename as 'name@category'
+
+  # Generate HTML for the categories.
+  html="<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\""\n\
+"        \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">"\n\n\
+"  <head>"\n\
+"    <meta charset=\"utf-8\">"\n\
+"    <title>[G'MIC] Categories</title>"\n\
+"  </head>"\n\
+"<!--#include file=\"header.html\" -->"\n\n\
+"<div id=\"bloc_option\"><div id=\"top_vert\"><div id=\"text_top\">Reference</div></div>"\n\
+"<div id=\"center\"><div id=\"text_centre_intro\">"\n\
+"    <a id=\"top\"></a>"\n\
+"    <h1>Categories</h1>"\n
+
+  category,p_category= n,is_tr,is_table,row=0
+  repeat $! if s=['{$>,n}'];s[0]==_'_' continue fi l[$>]
+    ('{n}') l. s -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm endl
+    if ['$category']!=['$p_category']
+      strvar $category category_id=${}
+      if $is_tr html.="      </tr>"\n is_tr=0 fi
+      if $is_table html.="    </table>"\n is_table=0 fi
+      html.="\n    <h2>&bull;&nbsp;<a id=\""$category_id"\"></a>"$category":</h2>"\n\
+            "    <table cellspacing=\"0\" class=\"table_category\">"\n
+      is_table=1
+      n=0
+    fi
+    if !${parse_cli_is_eqto.}
+      is_native={"find(#-1,'(+)')>=0"}
+      if !($n%5)
+        if $is_tr html.="      </tr>"\n fi
+        if $row%2 html.="      <tr style=\"background-color:#DDDDDD\">"\n
+        else html.="      <tr>"\n
+        fi
+        is_tr=1 row+=1
+      fi
+      html.="        <td style=\"max-width:170px; padding:5px; border:1px solid \#000000;\"><a href=\""$name"#top\">"
+      if $is_native html.="<samp style=\"color:#20A000\">"$name"</samp>"
+      else html.="<samp>"$name"</samp>"
+      fi
+      html.="</a></td>"\n
+      n+=1
+    fi
+    p_category=$category
+  endl done
+  if $is_tr html.="      </tr>"\n is_tr=0 fi
+  if $is_table html.="    </table>"\n is_table=0 fi
+
+  html.="</div></div><div id=\"footer\"><img alt=\"\" src=\"images/footer.jpg\" /></div></div>"\n\n\
+"<!--#include file=\"copyright.html\" -->"\n\
+"<!--#include file=\"footer.html\" -->"\n
+  ({'$html'}:y)
+  ot. categories.shtml
+  rm.
+
+  # Retrieve full list of commands and discard those starting with '_'.
+  repeat $! if s=['{$<,n}'];s[0]==_'_' rm[$<] else l[$<]
+    ('{n}') l. s -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm endl
+    is_eqto=${parse_cli_is_eqto.}
+    if !$is_eqto _is_$name=1 else rm fi
+  endl fi done
+
+  # Generate HTML page for each command.
   repeat $! l[$>]
     ('{n}') l. s -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm endl
-    nbl={"n = 1; for (p = 0, (q = find(#"$>",_'\n',p))>=0, ++n, p = ++q); n"}
-    if $nbl==1" && find(#"$>",'eq. to \'')>0" rm 0 nm __to_discard__ continue fi # Skip shortcut commands
-
     +e[] $category" / "$name
 
-    html="<!DOCTYPE html>"\n\
-"<html lang=\"en\">"\n\
+    # Find previous and next commands.
+    if !$> previous= else pass[{$>-1}] 1 ('{n}') discard. {'_c1'} previous={t} rm[-2,-1] fi
+    if !$< next= else pass[{$>+1}] 1 ('{n}') l. s -,{'@'} next={0,t} rm endl rm. fi
+
+    strvar $category category_id=${}
+    html="<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\""\n\
+"        \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">"\n\n\
 "  <head>"\n\
 "    <meta charset=\"utf-8\">"\n\
 "    <title>[G'MIC] "$name"</title>"\n\
 "  </head>"\n\
-"  <body>"\n\
-"    <p style=\"color:blue;font-size:18px;\">"$category"&nbsp;&gt;</p>"\n\
-"    <h1><samp>"$name"</samp></h1>"\n
+"<!--#include file=\"header.html\" -->"\n\n\
+"<div id=\"bloc_option\"><div id=\"top_vert\"><div id=\"text_top\">Reference</div></div>"\n\
+"<div id=\"center\"><div id=\"text_centre_intro\">"\n\
+"    <a id=\"top\"></a>"\n\
+"    <table style=\"width:100%; font-size:smaller\"><tr><td style=\"text-align:left\">"\
+"<a href=\"categories#top\">Categories</a>&nbsp;&nbsp;&#9656;&nbsp;&nbsp;"\
+"<a href=\"categories#"$category_id"\">"$category"</a>&nbsp;&nbsp;&#9656;&nbsp;&nbsp;"\
+"<a href=\""$name"#top\"><samp>"$name"</samp></a></td>"
+
+    if narg($previous)" || "narg($next)
+      html.="<td style=\"text-align:right\">"
+      if narg($previous) html.="<a href=\""$previous"#top\">&#9664;&nbsp;&nbsp;<samp>"$previous"</samp></a>" fi
+      if narg($previous)" && "narg($next) html.="&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;" fi
+      if narg($next) html.="<a href=\""$next"#top\"><samp>"$next"</samp>&nbsp;&nbsp;&#9654;</a>" fi
+      html.="</td>"\n
+    fi
+    html.="    </tr></table>\n"
+    html.="    <hr style=\"height:1px; border:0; color:black; background-color:black\"/>\n"
+    html.="    <h1 style=\"color:#FF5020\"><samp>"$name"</samp></h1><br/>"\n
 
     # Parse command declaration.
     s -,{'\n'} discard {'#@cli'} max {'" "'} autocrop {'" "'}
@@ -6470,22 +6557,24 @@ parse_cli_html :
       is_native=0
       if $!" && find(#-1,'(+)')>=0" is_native=1 rm. fi
 
-      if $is_native html.="    <em>(native command)</em>"\n fi
+      if $is_native html.="    <em style=\"color:#20A000\">(native command)</em>"\n fi
       if $!
-        html.="\n    <h2>Arguments</h2>\n    <ul>"\n
+        html.="\n    <h2>Arguments:</h2>\n    <ul>"\n
+        if $!>1 or="&nbsp;&nbsp;&nbsp; or" else or= fi
         repeat $! l[$>]
-          html.="      <li><code>"{t}"</code></li>"\n
+          if !$< or= fi
+          html.="      <li style=\"text-align:left\"><samp style=\"color:#AA00AA; word-wrap:break-word\">"{t}"</samp>"$or"</li>"\n
         endl done
         html.="    </ul>"\n
       else
-        html.="\n    <h2>No arguments</h2>"\n
+        html.="\n    <h3>No arguments</h2>"\n
       fi
       rm
     endl
     rm[0]
 
     # Parse command description.
-    html.="\n    <h2>Description</h2>"\n
+    html.="\n    <h2>Description:</h2>"\n
     n_example=0
     nb_examples=0
     repeat $! if {$>,i==_':'} l[$>]
@@ -6494,7 +6583,9 @@ parse_cli_html :
     endl fi done
 
     repeat $! l[$>]
-      if "find(#0,'(eq. to ')>=0" # Found 'Eq. to' description.
+      if "find(#0,'(eq. to ')>=0"
+
+        # Found 'Eq. to' description.
         +l s -,{'\47'}
           replace_str[1] "&","&amp;"
           replace_str[1] "<","&lt;"
@@ -6505,22 +6596,37 @@ parse_cli_html :
           shortcut="(unknown)"
           rm
         endl
-        html.="    <h3>(equivalent to shortcut command '"$shortcut"').</h3>"\n
-      elif "find(#0,'Default value:')>=0 || find(#0,'Default values:')>=0" # Found 'Default value(s):' description
+        html.="    <p><em>(equivalent to shortcut command <samp style=\"background-color:#EAE0F5\">"$shortcut"</samp>)</em>.</p>"\n
+
+      elif "find(#0,'See also:')>=0"
+
+        # Found 'See also:' description.
+        s +,{':'} autocrop {'" "'}
+        if $!>2" && "h#1==1" && "i("#1")==_':'
+          html.="\n    <h2>See also:</h2>"\n
+          rm[0,1]
+        fi
+        a y
+        parse_cli_decorate_singlequotes_html 1
+        html.="    "{t}\n
+
+      elif "find(#0,'Default value:')>=0 || find(#0,'Default values:')>=0"
+
+        # Found 'Default value(s):' description
         s +,{':'} autocrop {'" "'}
         if $!>2" && "h#1==1" && "i("#1")==_':'
           html.="\n    <h2>Default values:</h2>"\n
           rm[0,1]
         fi
         a y
-        f ">begin(c = 3); i==39?(c = 5 - c; c):i"
-        replace_str "\2","'<code style=\"color:#AA00AA\";>"
-        replace_str "\3","</code>'"
+        parse_cli_decorate_singlequotes_html 0
+        html.="    <p style=\"word-wrap:break-word\">"{t}"</p>"\n
 
+      elif i==_'$'" && "i[1]!=_'$'
 
-        html.="    "{t}\n
-      elif i==_'$'" && "i[1]!=_'$' # Found example description
+        # Found example description
         rows 1,100% autocrop {'" "'}
+        replace_str "image.jpg","<a href=\"img/image.jpg\" target=\"_blank\">image.jpg</a>"
         example={t}
         n_example+=1
         if $n_example>1
@@ -6530,29 +6636,105 @@ parse_cli_html :
           filename_full=f_${name}.jpg
           filename_thumb=t_${name}.jpg
         fi
-        if $n_example==1 html.="\n    <h2>Example"${"if "$nb_examples">1 u s else u \"\" fi"}"</h2>\n    <ol>"\n fi
-        html.="      <li><code>"$example"</code><br/><a href=\"img/"$filename_full"\"><img src=\"img/"$filename_thumb"\" /></a></li>"
-        if $n_example==$nb_examples html.="\n    </ol>"\n fi
+        if $n_example==1 html.="\n    <h2>Example"${"if "$nb_examples">1 u s else u \"\" fi"}" of use:</h2>"\n fi
+        if $nb_examples!=1 html.="      <h3>&bull;&nbsp;Example \#"$n_example"</h3>"\n fi
+        html.="    <p style=\"text-align:left; background-color:#DDDDDD; width:95%; border:1px solid \#999; "\
+              "word-wrap:break-word; padding:10px\">"\
+              "<samp>$ gmic "$example"</samp></p>\n"\
+              "    <div><a href=\"img/"$filename_full"\" class=\"highslide\" onclick=\"return hs.expand(this)\">"\
+              "<img src=\"img/"$filename_thumb"\" class=\"center_image\"/></a>"\
+              "<div class=\"highslide-caption\">Command: <b>"$example"</b></div></div>"\n
 
       elif i==_'$'" && "i[1]==_'$' # Found link to tutorial page
         if h==2 url=https://gmic.eu/tutorial/_$name.shtml
-        else rows 2,100 autocrop {'" "'} url=https://gmic.eu/tutorial/{t}.shtml
+        else rows 2,100 autocrop {'" "'} url=https://gmic.eu/tutorial/{t}
         fi
-        html.="\n    <h2>Tutorial page</h2><a href=\""$url"\">"$url"</a>"
-      else # Other kind of description line
+        html.="\n    <h2>Tutorial page:</h2><a href=\""$url"\">"$url"</a>"
+
+      else
+
+        # Other kind of description line
+        parse_cli_decorate_doublequotes_html
+
+        if find(['{t}'],'http')>=0 # Replace URL in description by HTML links
+           i[0] 1,100%
+           eval "
+             n = ['"{t}"'];
+             http='http';
+             p = find(n,http);
+             while (p>=0 && p<h,
+               q = p + size(http);
+               i[q]==_'s'?++q;
+               i[q]==_':' && i[q + 1]==_'/' && i[q + 2]==_'/'?(
+                 while (q<h && i[q]>_' ' && i[q]!=_')' && i[q]!=39, ++q);
+                 q - p<64?copy(i[#0,p],p,q - p,1,0);
+               );
+               p = find(n,http,q);
+             )"
+           a x s y,0 z 1,1
+           repeat $! l[$>] if crop(0,0,1,4)=='http'
+             i[0] ({'"<a href=\""{t}"\" target=\"_blank\">"'}:y) ('</a>':y) a y
+           fi endl done
+           a y
+        fi
+        parse_cli_decorate_singlequotes_html 1
+        parse_cli_decorate_braces_html
         html.="    "{t}"<br/>"\n
       fi
     endl done
 
     # Generate page.
-    html.="  </body>\n</html>"
-    rm ({'$html'}:y) nm $name.html
+    html.="</div></div><div id=\"footer\"><img alt=\"\" src=\"images/footer.jpg\" /></div></div>"\n\n\
+"<!--#include file=\"copyright.html\" -->"\n\
+"<!--#include file=\"footer.html\" -->"\n
 
-  endl done rmn __to_discard__
-
-  # Save HTML files.
-  repeat $! ot[$>] {$>,n} done
+    rm ({'$html'}:y) nm $name ot {n}.shtml
+  endl done
   rm
+
+# Decorate strings between single quotes.
+# $1 = Try to detect and relink command names = { 0=false | 1=true }.
+parse_cli_decorate_singlequotes_html :
+  is_com=0
+  eval[^] ">begin(beg = -1);
+            i==_'\''?(
+              beg<0?(beg = y):
+              (for (ok = 1; p = beg + 1, p<y, ++p, i[p]<=_' ' || p>beg + 64?(ok = 0; break()));
+              ok?(
+                i[beg] = 2;
+                i[y] = 3;
+                $1 && y>beg?( # Check if what's inside quotes is an existing command
+                  c = lowercase(i[beg + 1]);
+                  is_com = (c>=_'a' && c<=_'z') || c==_'_';
+                  for (p = beg + 1, is_com && p<y, ++p,
+                    c = lowercase(i[p]);
+                    is_com = (c>=_'a' && c<=_'z') || (c>=_'0' && c<=_'9') || c==_'_'
+                  );
+                  is_com?run('+rows ',beg + 1,',',y - 1,' com={t} rm. if 0${_is_$com}==1 is_com=1 fi');
+                );
+              ); beg = -1))"
+  if $is_com
+    replace_str "\2","<a href=\""$com"#top\"><samp style=\"background-color:#EAE0F5; padding:2px\">"
+    replace_str "\3","</samp></a>"
+  else
+    replace_str "\2","<samp style=\"background-color:#EAE0F5; padding:2px\">"
+    replace_str "\3","</samp>"
+  fi
+
+# Decorate strings between double quotes.
+parse_cli_decorate_doublequotes_html :
+  eval[^] ">begin(beg = -1);
+            i==_'\"'?(
+              beg<0?(beg = y):
+              (for (ok = 1; p = beg + 1, p<y, ++p, p>beg + 80?(ok = 0; break()));
+              ok?(i[beg] = 2; i[y] = 3); beg = -1))"
+  replace_str "\2","&#8220;<em style=\"color:#2080F0\">"
+  replace_str "\3","</em>&#8221;"
+
+# Decorate strings between braces.
+parse_cli_decorate_braces_html :
+  replace_str "{","<samp style=\"color:#990099;\">{"
+  replace_str "}","}</samp>"
 
 parse_cli_trigger_html :
   parse_cli_trigger_print $*
@@ -6563,7 +6745,7 @@ parse_cli_images :
   old_category,category= n_category,n_example=0
   if !isfile('image.jpg') l[] sp pencils,500 onfail testimage2d 500 endl o. image.jpg rm. fi
 
-  repeat $! l[$>]
+  repeat $! if s=['{$>,n}'];s[0]==_'_' continue fi l[$>]
     ('{n}') l. s -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm endl
 
     if ['$category']!=['$old_category']
@@ -6589,7 +6771,7 @@ parse_cli_images :
           filename_thumb=t_${name}.jpg
         fi
         e[] $_gmic_c[$n_example]$_gmic_n" Command '"$_gmic_g$name$_gmic_n"': $ "$example
-        skip_rendering={"(isfile(['"{/$filename_full}"']) && isfile(['"{/$filename_thumb}"'])) || !find(['"$name"'],'gallery_')"}
+        skip_rendering={"(isfile(['"{/$filename_full}"']) && isfile(['"{/$filename_thumb}"'])) || ['"$name"'][0]==_'_'"}
 
         if !$skip_rendering # Generate picture only if the file doesn't yet exist
           m "run_example : "$example
@@ -6597,25 +6779,99 @@ parse_cli_images :
             reset etime=$|
             run_example
             etime="done in "$_gmic_n{_round($|-$etime,0.01)}"s"$_gmic_m
-            _document_gmic
+            _parse_cli_images
             o $filename_full,85
-            r2dy 120
+            rr2d 800,400,0,2
             o $filename_thumb,75
             rm
           onfail
             rm gui_error_preview "Unable to generate preview image"
-            v 0 warn[] "ERROR!"
+            o $filename_full,85
+            rr2d 800,400,0,2
+            o $filename_thumb,75
+            rm
             etime="failed"
           endl
           um run_example
         else etime="skipped"
         fi
-        e[] "\r"$_gmic_c[$n_example]$_gmic_n" Command '"$_gmic_g$name$_gmic_n"': $ "$example" "${_gmic_m}"("$etime")."$_gmic_n
+        e[] "\r"$_gmic_c[$n_example]$_gmic_n" Command '"$_gmic_g$name$_gmic_n"': $ "\
+            $example" "${_gmic_m}"("$etime")."$_gmic_n
       fi
     endl done
     old_category=$category
     rm 0
   endl done rm
+
+# Generate a single image from a list of images, for the reference documentation.
+_parse_cli_images :
+  if !$! rm return
+  elif $!==1 M,N=1
+  elif $!<4 M,N=$!,1 # if ${-max_h}>=${-max_w} M,N=$!,1 else M,N=1,$! fi
+  else M,N={M=ceil(sqrt($!));$!<4?[$!,1]:[M,ceil($!/M)]}
+  fi
+  W,H={Sw=$!<2?720:960;Sh=640;floor([Sw/$M,Sh/$N])}
+
+  repeat $! l[$>] nm={n}
+    label=[$>]:" "'$nm'
+    if ${-is_3d} # 3D vector object
+      label2="("{i[6]}" vert., "{i[7]}" prim.)"
+      r3d 1,1,0,-80 r3d 0,1,0,80 snapshot3d {max($W,$H)}
+    else # Regular 1D,2D or 3D image
+      label2="("{w}x{h}x{d}x{s}")"
+      r 100%,100%,100%,3,{s==1?1:0}
+      if d>1 # Volumetric image -> Render as a 2D image
+        +slices 50%
+        +z[0] 50%,0,0,50%,100%,100% permute. zyxc
+        +z[0] 0,50%,0,100%,50%,100% permute. xzyc
+        rr2d... $W,$H,0,2
+        r2dy.. {-3,h},1
+        r2dx. {-3,w},1
+        s={min(w#-2,h)}
+        if $s>64 projections3d[0] 50%,50%,50%,1 mv[0] $! r3d. 1,1,0,-80 r3d. 0,1,0,80 snapshot3d. $s
+        else rm[0] 0
+        fi
+
+        eW,eH={[w#0+w#1,h#0+h#2]}
+        if $eW>$W" || "$eH>$H fact={min($W/$eW,$H/$eH)*100} r $fact%,$fact%,1,100%,2 fi
+        n 0,255
+
+        fs={0,max(w,h)*7%}
+        if {0,h>1.5*$fs} to[0] XY,4,2,$fs fi
+        if {1,h>1.5*$fs} to[1] XZ,4,2,$fs fi
+        if {2,h>1.5*$fs} to[2] YZ,4,2,$fs fi
+        if w to[3] 3D,4,2,$fs frame[3] 1,1,200 fi
+        frame[0-2] 1,1,200
+        a[0,1] x a[1,2] x a y
+      fi
+    fi
+
+    if w>5*h r $W,{$H/3},1,100%,1
+    elif h>5*w r {$W/3},$H,1,100%,1
+    else rr2d $W,$H,0,{w<$W&&h<$H?1:2}
+    fi
+    n 0,255
+
+    r {[w,h]+2},1,100%,0,0,0.5,0.5
+    - 255 r {[w+10,h+5]},1,100%,0,0,0.5,0.5 r 100%,{h+1},1,100%,0,0,0,1 + 255
+
+    0 t. $label" "$label2,5,0,18,1,1
+    if w>w#0" || "h>h#0
+       rm. 0 t. $label\n$label2,5,0,18,1,1
+       if w>w#0" || "h>h#0 rr2d. {0,[w,h]},0,2 fi
+    fi
+    *. -1 n. 0,255 to_rgb.
+    - 255 a y,0.5 + 255
+
+  endl done
+  - 255
+
+  MN={$M*$N} if $!%$MN 0x{$MN-($!%$MN)} fi
+  repeat $!/$MN l[$>-{$>+$MN-1}]
+    repeat $!/$M a[$>-{$>+$M-1}] x done a y,0.5
+  endl done
+  r 100%,{h+25},1,100%,0,0,0,0.75
+  + 255 c 0,255
 
 parse_cli_trigger_images :
   parse_cli_trigger_help $*
@@ -6639,7 +6895,7 @@ parse_cli_trigger_print :
     discard. -1 k[{^}]
   fi
 
-#@cli parse_gui : _filter_name,_outputmode
+#@cli parse_gui : _outputmode,_{ * | filter_name},
 #@cli : Parse selected filter definitions and generate info about filters in selected output mode.
 #@cli : 'outputmode' can be { json | list | print | strings | update | zart }.\n
 #@cli : It is possible to define a custom output mode, by implementing the following commands
@@ -6673,12 +6929,12 @@ parse_cli_trigger_print :
 #@cli : For each argument \#A of the parameter \#P ('A' in range [0,$_fF_pP_nbargs-1]):
 #@cli : . '$_fF_pP_aA': Argument value\n
 #@cli : Default parameters: 'filter_name=*' and 'output_format=print'.
-parse_gui : skip "${1=*},${2=print}"
+parse_gui : skip "${1=print},${2=*}"
   e[^-1] "Parse '#@gui' filters '$1' and output in '$2' mode."
 
   # Check that specified output mode is actually implemented.
-  l[] ({'$$parse_gui_$2'}) rm
-  onfail error[0--2] "Command 'parse_gui': Invalid output mode '$2'."
+  l[] ({'$$parse_gui_$1'}) rm
+  onfail error[0--2] "Command 'parse_gui': Invalid output mode '$1'."
   endl
 
   # Input .gmic data.
@@ -6797,14 +7053,14 @@ parse_gui : skip "${1=*},${2=print}"
   rm[0]
 
   # Isolate only requested filters.
-  if "['$1']!='*'"
+  if "['$2']!='*'"
     1,$!,1,1,"
-      begin(ref(lowercase(['$1']),str));
+      begin(ref(lowercase(['$2']),str));
       ref(lowercase(name(#y)),nm);
       find(nm,str)>=0?y:-1"
     discard. -1 k[{^}]
   fi
-  l parse_gui_trigger_$2 onfail endl # Allow global pre-processing before parsing each filter.
+  l parse_gui_trigger_$1 onfail endl # Allow global pre-processing before parsing each filter.
 
   # Parse each filter.
   nbchunks=$!
@@ -6979,7 +7235,7 @@ parse_gui : skip "${1=*},${2=print}"
 
   # Done!
   e[] "\r  > "${_gmic_g}{`copy(vector64(_'" "'),'"Parsing done!"')`}$_gmic_n
-  v + parse_gui_$2 # Output result of the parsing.
+  v + parse_gui_$1 # Output result of the parsing.
 
 #
 # Output mode 'print' (default output mode).
@@ -7714,7 +7970,7 @@ upload_filters :
   +l.
     e[] "** Generate filter update file."
     m "parse_gui_trigger_update : _upload_filters_move"
-    v + parse_gui. *,update v -
+    v + parse_gui. update v -
     um parse_gui_trigger_update
 
     # Upload filter files on G'MIC server.
@@ -7738,7 +7994,7 @@ upload_filters :
   # Create JSON file.
   +l.
     e[] "** Generate JSON filters file."
-    v + parse_gui. *,json v -
+    v + parse_gui. json v -
 
     # Upload filter files on G'MIC server.
     e[] "** Upload JSON filters."
@@ -7755,7 +8011,7 @@ upload_filters :
   # Create filter listing.
   +l.
     e[] "** Generate filter listing."
-    v + parse_gui. *,list v -
+    v + parse_gui. list v -
     ot /tmp/gui_filters.txt
     rm
   endl
@@ -8751,6 +9007,7 @@ med :
 #@cli : Multiply selected images by specified value, image or mathematical expression,
 #@cli : or compute the pointwise product of selected images.
 #@cli : (eq. to '*').
+#@cli : See also: 'add', 'sub', 'div'.
 #@cli : $ image.jpg +mul 2 cut 0,255
 #@cli : $ image.jpg (1,2,3,4,5,6,7,8) ri[-1] [0] mul[0] [-1]
 #@cli : $ image.jpg mul '1-3*abs(x/w-0.5)' cut 0,255
@@ -10606,7 +10863,7 @@ mix_rgb : skip ${1=1},${2=0},${3=0},${4=0},${5=1},${6=0},${7=0},${8=0},${9=1}
 # parula | spring | summer | autumn | winter | bone | copper | pink | vga | \
 # algae | amp | balance | curl | deep | delta | dense | diff | gray | haline | ice | \
 # matter | oxy | phase | rain | solar | speed | tarn | tempo | thermal | topo | turbid | aurora | hocuspocus | srb2 | \
-# uzebox | amiga7800 | amiga7800mess | fornaxvoid1
+# uzebox | amiga7800 | amiga7800mess | fornaxvoid1 }
 #@cli : $ palette hsv
 palette :
   names=${-_palette_names} N={narg($names)}
@@ -34124,7 +34381,7 @@ fx_stylize :
     fi
     if $4 wsiz=${"fitscreen "{0,[w,h]}} w[0] $wsiz is_window={*} fi
     stylize[0] .,${5-9},$15,$init_resolution,${17-22},$patch_penalization,${24-26},$match_colors
-    k[0,1] nm[0] $nm0
+    k[0,1] nm[0] $nm
     if $is_window" && "!{*} break fi
   endl done
   rm. # Remove style image
@@ -47299,13 +47556,13 @@ fx_solve_maze_preview :
 #@cli :: Additional Gallery Images
 #
 #---------------------------------
-#@cli gallery_arrays
+#@cli _gallery_arrays
 #@cli : This entry defines some examples of array filters for the G'MIC gallery page.
 #@cli : $ image.jpg fx_frame_blur 30,30,0,5,0,0,128,128,128,0,5,255,255,255,2,2,1,0,0.5,0.5,0 _label="Frame~[blur]"
 #@cli : $ sample tiger,leno,monkey,duck,eagle frame 3,3,0 frame 3,3,255 montage A _label="Montage"
 #@cli : $ image.jpg fx_puzzle 5,5,0.5,0,0,0.3,100,0.2,255,100,0,0,0,0,0,0 _label="Puzzle"
 
-#@cli gallery_artistic
+#@cli _gallery_artistic
 #@cli : This entry defines some examples of artistic filters for the G'MIC gallery page.
 #@cli : $ image.jpg fx_engrave 0.5,4,0,7.68,15.2,0,0,1,10,1,0,0,0,1,0 gui_merge_layers _label="Engrave"
 #@cli : $ image.jpg fx_bokeh 3,8,0,30,8,4,0.3,0.2,210,210,80,160,0.7,30,20,20,1,2,170,130,20,110,0.15,0 _label="Bokeh"
@@ -47324,7 +47581,7 @@ fx_solve_maze_preview :
 #@cli : $ image.jpg fx_quadtree 2,1024,1.05,0,2.33,0.68,0.39,1,0 _label="Quadtree~variations"
 #@cli : $ image.jpg fx_vector_painting 9.37,0 _label="Vector~painting"
 
-#@cli gallery_blackandwhite
+#@cli _gallery_blackandwhite
 #@cli : This entry defines some examples of black-and-white filters for the G'MIC gallery page.
 #@cli : $ image.jpg fx_freaky_bw 90,20,0,0,0,0 _label="Freaky~B&amp;W"
 #@cli : $ image.jpg fx_engrave 0.5,50,0,8,40,0,0,0,10,1,0,0,0,1,0 _label="Engrave"
@@ -47332,7 +47589,7 @@ fx_solve_maze_preview :
 #@cli : $ image.jpg fx_pencil_portraitbw 30,120,1,0.5,144,79,21,0 _label="Pencil~portrait"
 #@cli : $ image.jpg fx_gcd_etch 125,153,171,185,0.1,50,80,50,10,15,12,20,0,1,0.3,1,0,0 _label="Threshold~etch"
 
-#@cli gallery_colors
+#@cli _gallery_colors
 #@cli : This entry defines some examples of color filters for the G'MIC gallery page.
 #@cli : $ image.jpg fx_color_abstraction 1,10,0.2,0 _label="Color~abstraction"
 #@cli : $ image.jpg fx_boost_chroma 90,0,0 _label="Boost~chromaticity"
@@ -47340,7 +47597,7 @@ fx_solve_maze_preview :
 #@cli : $ image.jpg fx_tk_vintage 2,0.85,0.7,80,200,5,147,26,161,0.3,235,220,176,0.4,190,181,108,0.2,\
 # 0,0,100,0,0.3,25,0,0 _label="Vintage~style"
 
-#@cli gallery_deformations
+#@cli _gallery_deformations
 #@cli : This entry defines some examples of deformation filters for the G'MIC gallery page.
 #@cli : $ image.jpg animate "flower","30,10,0,0","30,10,0,360",10 rm. _fps=6 _label="flower"
 #@cli : $ image.jpg fx_conformal_maps 8,1,0,"((1.1 + i*z/6)/(1.04 - i*z/6))^6.2",0,0,0,0,0,3,0,0,"1024","1024" \
@@ -47356,7 +47613,7 @@ fx_solve_maze_preview :
 #@cli : $ image.jpg fx_textured_glass 40,40,1,1,0,2,0,0 _label="Textured~glass"
 #@cli : $ sample lena,leno,320 morph 40 _fps=5 _label="morph"
 
-#@cli gallery_filtering
+#@cli _gallery_filtering
 #@cli : This entry defines some examples of filters for the G'MIC gallery page.
 #@cli : $ image.jpg fx_gcd_crt 1.8,1.8,0,0 equalize 256 _label="CRT~sub-pixels"
 #@cli : $ image.jpg fx_dirty 30,1,0,0,0 _label="Dirty"
@@ -47364,7 +47621,7 @@ fx_solve_maze_preview :
 #@cli : $ image.jpg jeje_normalize_local_variance 50,5,5,1,0,0 _label="Local~variance~normalization"
 #@cli : $ image.jpg fx_mighty_details 25,1,25,1,11,0 _label="Mighty~details"
 
-#@cli gallery_patterns
+#@cli _gallery_patterns
 #@cli : This entry defines some examples of pattern filters for the G'MIC gallery page.
 #@cli : $ image.jpg fx_rain 65,10,50,0.1,1,1,0 gui_merge_layers _label="Rain~&amp;~snow"
 #@cli : $ 400,400,1,3 fx_camouflage 9,12,100,30,46,33,75,90,65,179,189,117,255,246,158 _label="Camouflage"
@@ -47386,13 +47643,13 @@ fx_solve_maze_preview :
 # _label="transition"
 #@cli : $ image.jpg fx_shapeism 2,7,0.38,0,1,5,32,8,3,1,5,0.5,1,0,0,0,255 _label="Shapeism"
 
-#@cli gallery_3dmeshes
+#@cli _gallery_3dmeshes
 #@cli : This entry defines some examples of 3D rendering filters for the G'MIC gallery page.
 #@cli : $ sample leno,lion,leno resize 400,400 transition3d 20,5,5 rm. _fps=10 _label="transition3d"
 #@cli : $ 256,192 fx_text_pointcloud3d 64,"G'MIC","Rocks!",1,200,220,255,255,255,255,255,2,2,1,19 _fps=10 \
 # _label="3D~text~pointcloud"
 
-#@cli gallery_stylization
+#@cli _gallery_stylization
 #@cli : This entry defines some examples of image stylization for the G'MIC gallery page.
 #@cli : $ sample car _fx_stylize starrynight _output_mode=1 \
 # +fx_stylize 1,6,0,0,0.5,2,3,0.5,0.1,3,3,0,0.7,1,0,1,0,5,5,7,1,30,10,2,1.85,0 _label="from~Van~Gogh:~Starry~Night"
@@ -47461,7 +47718,7 @@ fx_solve_maze_preview :
 # +fx_stylize 1,6,0,0,3.86,2,3,0.5,0.1,3,3,0,0.7,3.35,1,1,0,5,5,7,1,30,10,5,1.85,0 \
 # _label="from~Van~Gogh:~Wheat~Field~with~Crows"
 
-#@cli gallery_codesamples
+#@cli _gallery_codesamples
 #@cli : This entry defines some examples of coding-fun filters for the G'MIC gallery page.
 #@cli : $ https://gmic.eu/samples/lissajous.gmic go _fps=10 _label="Lissajous"
 #@cli : $ https://gmic.eu/samples/torus3d.gmic go _fps=10 _label="3D~torus"
