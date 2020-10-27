@@ -6506,6 +6506,30 @@ parse_cli_html :
   if $is_tr html.="      </tr>"\n is_tr=0 fi
   if $is_table html.="    </table>"\n is_table=0 fi
 
+  # Add 'Shortcuts' category.
+  html.="\n    <h2>&bull;&nbsp;<a id=\"shortcuts\"></a>Shortcut commands:</h2>"\n\
+        "    <table cellspacing=\"0\" class=\"table_category\">"\n
+  n,is_tr,row=0
+  repeat $! if s=['{$>,n}'];s[0]==_'_' continue fi l[$>]
+    ('{n}') l. s -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm endl
+    if ${parse_cli_is_eqto.}
+      is_native={"find(#-1,'(+)')>=0"}
+      if !($n%5)
+        if $is_tr html.="      </tr>"\n fi
+        if $row%2 html.="      <tr style=\"background-color:#DDDDDD\">"\n
+        else html.="      <tr>"\n
+        fi
+        is_tr=1 row+=1
+      fi
+      html.="        <td style=\"max-width:170px; padding:5px; border:1px solid \#000000;\"><a href=\""$name"#top\">"
+      if $is_native html.="<samp style=\"color:#20A000\">"$name"</samp>"
+      else html.="<samp>"$name"</samp>"
+      fi
+      html.="</a></td>"\n
+      n+=1
+    fi
+  endl done
+
   html.="</div></div><div id=\"footer\"><img alt=\"\" src=\"images/footer.jpg\" /></div></div>"\n\n\
 "<!--#include file=\"copyright.html\" -->"\n\
 "<!--#include file=\"footer.html\" -->"\n
@@ -19042,9 +19066,9 @@ _normalize3d :
 #@cli parametric3d : _x(a,b),_y(a,b),_z(a,b),_amin,_amax,_bmin,_bmax,_res_a>0,_res_b>0,_res_x>0,_res_y>0,_res_z>0,\
 # _smoothness>=0,_isovalue>=0
 #@cli : Input 3D object from specified parametric surface `(a,b) ⟶ (x(a,b),y(a,b),z(a,b))`.
-#@cli : Default values: 'x=(2+cos(b))*sin(a)', 'y=(2+cos(b))*cos(a)', 'c=sin(b)', 'amin=-pi', 'amax='pi', \
-# 'bmin=-pi' and 'bmax='pi',
-#@cli : 'res_a=512', 'res_b=res_a', 'res_x=64', 'res_y=res_x', 'res_z=res_y', 'smoothness=2%' and 'isovalue=10%'.
+#@cli : Default values: 'x=(2+cos(b))*sin(a)', 'y=(2+cos(b))*cos(a)', 'c=sin(b)', 'amin=-pi', 'amax=pi', \
+# 'bmin=-pi', 'bmax=pi', \
+# 'res_a=512', 'res_b=res_a', 'res_x=64', 'res_y=res_x', 'res_z=res_y', 'smoothness=2%' and 'isovalue=10%'.
 #@cli : $ parametric3d ,
 parametric3d : skip "${1=(2+cos(b))*sin(a)}","${2=(2+cos(b))*cos(a)}","${3=sin(b)}"
                skip ${4={-pi}},${5={pi}},${6={-pi}},${7={pi}}
