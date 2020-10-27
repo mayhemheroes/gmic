@@ -6611,7 +6611,7 @@ parse_cli_html :
     html.="\n      <h2>Description:</h2>"\n
     n_example=0
     nb_examples=0
-    is_first_line=1
+    line=0
     repeat $! if {$>,i==_':'} l[$>]
       rows 1,100% autocrop {'" "'}
       if i==_'$'" && "i[1]!=_'$' nb_examples+=1 fi
@@ -6717,8 +6717,9 @@ parse_cli_html :
         parse_cli_decorate_singlequotes_html 1
         parse_cli_decorate_braces_html
         parse_cli_decorate_backquotes_html
+        if $line==1 html.="      <br/>"\n fi
         html.="      "{t}"<br/>"\n
-        if $is_first_line html.="      <br/>"\n is_first_line=0 fi
+        line+=1
       fi
     endl done
 
@@ -21874,7 +21875,7 @@ _pixelsort :
 #@cli polaroid : _size1>=0,_size2>=0
 #@cli : Create polaroid effect in selected images.
 #@cli : Default values: 'size1=10' and 'size2=20'.
-#@cli : $ image.jpg to_rgba polaroid 5,30 rotate 20 drop_shadow ,
+#@cli : $ image.jpg to_rgba polaroid 5,30 rotate 20 drop_shadow , drgba
 polaroid : check "${1=10}>=0 && ${2=20}>=0"
   e[^-1] "Create polaroid effect in image$?, with borders sizes $1 and $2."
   - 255 r {100+$1}%,{100+$1}%,1,100%,0,0,0.5,0.5 r 100%,{100+$2}%,1,100%,0,0,0 + 255
