@@ -6503,8 +6503,8 @@ parse_cli_html :
     fi
     p_category=$category
   endl done
-  if $is_tr html.="      </tr>"\n is_tr=0 fi
-  if $is_table html.="    </table>"\n is_table=0 fi
+  if $is_tr html.="      </tr>"\n fi
+  if $is_table html.="    </table>"\n fi
 
   # Add 'Shortcuts' category.
   html.="\n    <h2>&bull;&nbsp;<a id=\"shortcuts\"></a>Shortcut commands:</h2>"\n\
@@ -6514,14 +6514,15 @@ parse_cli_html :
     ('{n}') l. s -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm endl
     if ${parse_cli_is_eqto.}
       is_native={"find(#-1,'(+)')>=0"}
-      if !($n%5)
+      +l s -,{'"eq. to \47"'} k. s -,{'\47'} k[0] autocrop {'" "'} eqto={t} rm endl
+      if !($n%10)
         if $is_tr html.="      </tr>"\n fi
         if $row%2 html.="      <tr style=\"background-color:#DDDDDD\">"\n
         else html.="      <tr>"\n
         fi
         is_tr=1 row+=1
       fi
-      html.="        <td style=\"max-width:170px; padding:5px; border:1px solid \#000000;\"><a href=\""$name"#top\">"
+      html.="        <td style=\"max-width:170px; padding:5px; border:1px solid \#000000;\"><a href=\""$eqto"#top\">"
       if $is_native html.="<samp style=\"color:#20A000\">"$name"</samp>"
       else html.="<samp>"$name"</samp>"
       fi
@@ -6529,6 +6530,8 @@ parse_cli_html :
       n+=1
     fi
   endl done
+  if $is_tr html.="      </tr>"\n fi
+  if $is_table html.="    </table>"\n fi
 
   html.="</div></div><div id=\"footer\"><img alt=\"\" src=\"images/footer.jpg\" /></div></div>"\n\n\
 "<!--#include file=\"copyright.html\" -->"\n\
