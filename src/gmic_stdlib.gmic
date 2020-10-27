@@ -6610,6 +6610,7 @@ parse_cli_html :
     html.="\n      <h2>Description:</h2>"\n
     n_example=0
     nb_examples=0
+    is_first_line=1
     repeat $! if {$>,i==_':'} l[$>]
       rows 1,100% autocrop {'" "'}
       if i==_'$'" && "i[1]!=_'$' nb_examples+=1 fi
@@ -6659,7 +6660,7 @@ parse_cli_html :
 
         # Found example description
         rows 1,100% autocrop {'" "'}
-        replace_str "image.jpg","<a href=\"img/image.jpg\" target=\"_blank\">image.jpg</a>"
+        replace_str "image.jpg","<a href=\"img/image.jpg\" class=\"highslide\" onclick=\"return hs.expand(this)\">image.jpg</a>"
         example={t}
         n_example+=1
         if $n_example>1
@@ -6714,6 +6715,7 @@ parse_cli_html :
         parse_cli_decorate_braces_html
         parse_cli_decorate_backquotes_html
         html.="      "{t}"<br/>"\n
+        if $is_first_line html.="      <br/>"\n is_first_line=0 fi
       fi
     endl done
 
