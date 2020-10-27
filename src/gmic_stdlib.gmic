@@ -6685,6 +6685,7 @@ parse_cli_html :
         fi
         parse_cli_decorate_singlequotes_html 1
         parse_cli_decorate_braces_html
+        parse_cli_decorate_backquotes_html
         html.="      "{t}"<br/>"\n
       fi
     endl done
@@ -6736,6 +6737,17 @@ parse_cli_decorate_doublequotes_html :
               ok?(i[beg] = 2; i[y] = 3); beg = -1))"
   replace_str "\2","&#8220;<em style=\"color:#2080F0\">"
   replace_str "\3","</em>&#8221;"
+
+# Decorate strings between back-quotes.
+parse_cli_decorate_backquotes_html :
+  eval[^] ">begin(beg = -1);
+            i==_'`'?(
+              beg<0?(beg = y):
+              (for (ok = 1; p = beg + 1, p<y, ++p, p>beg + 80?(ok = 0; break()));
+              ok?(i[beg] = 2; i[y] = 3); beg = -1))"
+  replace_str "\2","<samp style=\"color:#40A0FF\">"
+  replace_str "\3","</samp>"
+
 
 # Decorate strings between braces.
 parse_cli_decorate_braces_html :
@@ -19029,7 +19041,7 @@ _normalize3d :
 
 #@cli parametric3d : _x(a,b),_y(a,b),_z(a,b),_amin,_amax,_bmin,_bmax,_res_a>0,_res_b>0,_res_x>0,_res_y>0,_res_z>0,\
 # _smoothness>=0,_isovalue>=0
-#@cli : Input 3D object from specified parametric surface (x(a,b),y(a,b),z(a,b)).
+#@cli : Input 3D object from specified parametric surface `(a,b) ⟶ (x(a,b),y(a,b),z(a,b))`.
 #@cli : Default values: 'x=(2+cos(b))*sin(a)', 'y=(2+cos(b))*cos(a)', 'c=sin(b)', 'amin=-pi', 'amax='pi', \
 # 'bmin=-pi' and 'bmax='pi',
 #@cli : 'res_a=512', 'res_b=res_a', 'res_x=64', 'res_y=res_x', 'res_z=res_y', 'smoothness=2%' and 'isovalue=10%'.
