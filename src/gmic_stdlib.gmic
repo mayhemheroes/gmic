@@ -6456,11 +6456,11 @@ parse_cli_html :
 
   # Generate HTML for the categories.
   html="<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\""\n\
-"        \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">"\n\n\
-"  <head>"\n\
-"    <meta charset=\"utf-8\">"\n\
-"    <title>[G'MIC] Categories</title>"\n\
-"  </head>"\n\
+" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">"\n\n\
+"<head>"\n\
+"  <meta charset=\"utf-8\"/>"\n\
+"  <title>[G'MIC] Categories</title>"\n\
+"</head>"\n\
 "<!--#include file=\"header.html\" -->"\n\n\
 "<div id=\"bloc_option\"><div id=\"top_vert\"><div id=\"text_top\">Reference</div></div>"\n\
 "<div id=\"center\"><div id=\"text_centre_intro\">"\n\
@@ -6525,16 +6525,16 @@ parse_cli_html :
 
     strvar $category category_id=${}
     html="<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\""\n\
-"        \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">"\n\n\
-"  <head>"\n\
-"    <meta charset=\"utf-8\">"\n\
-"    <title>[G'MIC] "$name"</title>"\n\
-"  </head>"\n\
+" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">"\n\n\
+"<head>"\n\
+"  <meta charset=\"utf-8\"/>"\n\
+"  <title>[G'MIC] "$name"</title>"\n\
+"</head>"\n\
 "<!--#include file=\"header.html\" -->"\n\n\
 "<div id=\"bloc_option\"><div id=\"top_vert\"><div id=\"text_top\">Reference</div></div>"\n\
-"<div id=\"center\"><div id=\"text_centre_intro\">"\n\
-"    <a id=\"top\"></a>"\n\
-"    <table style=\"width:100%; font-size:smaller\"><tr><td style=\"text-align:left\">"\
+"  <div id=\"center\"><div id=\"text_centre_intro\">"\n\
+"      <a id=\"top\"></a>"\n\
+"      <table style=\"width:100%; font-size:smaller\"><tr><td style=\"text-align:left\">"\
 "<a href=\"categories#top\">Categories</a>&nbsp;&nbsp;&#9656;&nbsp;&nbsp;"\
 "<a href=\"categories#"$category_id"\">"$category"</a>&nbsp;&nbsp;&#9656;&nbsp;&nbsp;"\
 "<a href=\""$name"#top\"><samp>"$name"</samp></a></td>"
@@ -6546,9 +6546,9 @@ parse_cli_html :
       if narg($next) html.="<a href=\""$next"#top\"><samp>"$next"</samp>&nbsp;&nbsp;&#9654;</a>" fi
       html.="</td>"\n
     fi
-    html.="    </tr></table>\n"
-    html.="    <hr style=\"height:1px; border:0; color:black; background-color:black\"/>\n"
-    html.="    <h1 style=\"color:#FF5020\"><samp>"$name"</samp></h1><br/>"\n
+    html.="</tr></table>\n"
+    html.="      <hr style=\"height:1px; border:0; color:black; background-color:black\"/>\n"
+    html.="      <h1 style=\"color:#FF5020\"><samp>"$name"</samp></h1><br/>"\n
 
     # Parse command declaration.
     s -,{'\n'} discard {'#@cli'} max {'" "'} autocrop {'" "'}
@@ -6557,24 +6557,24 @@ parse_cli_html :
       is_native=0
       if $!" && find(#-1,'(+)')>=0" is_native=1 rm. fi
 
-      if $is_native html.="    <em style=\"color:#20A000\">(native command)</em>"\n fi
+      if $is_native html.="      <em style=\"color:#20A000\">(native command)</em>"\n fi
       if $!
-        html.="\n    <h2>Arguments:</h2>\n    <ul>"\n
+        html.="\n      <h2>Arguments:</h2>\n      <ul>"\n
         if $!>1 or="&nbsp;&nbsp;&nbsp; or" else or= fi
         repeat $! l[$>]
           if !$< or= fi
-          html.="      <li style=\"text-align:left\"><samp style=\"color:#AA00AA; word-wrap:break-word\">"{t}"</samp>"$or"</li>"\n
+          html.="        <li style=\"text-align:left\"><samp style=\"color:#AA00AA; word-wrap:break-word\">"{t}"</samp>"$or"</li>"\n
         endl done
-        html.="    </ul>"\n
+        html.="      </ul>"\n
       else
-        html.="\n    <h3>No arguments</h2>"\n
+        html.="\n      <h3>No arguments</h2>"\n
       fi
       rm
     endl
     rm[0]
 
     # Parse command description.
-    html.="\n    <h2>Description:</h2>"\n
+    html.="\n      <h2>Description:</h2>"\n
     n_example=0
     nb_examples=0
     repeat $! if {$>,i==_':'} l[$>]
@@ -6596,14 +6596,14 @@ parse_cli_html :
           shortcut="(unknown)"
           rm
         endl
-        html.="    <p><em>(equivalent to shortcut command <samp style=\"background-color:#EAE0F5\">"$shortcut"</samp>)</em>.</p>"\n
+        html.="      <p><em>(equivalent to shortcut command <samp style=\"background-color:#EAE0F5\">"$shortcut"</samp>)</em>.</p>"\n
 
       elif "find(#0,'See also:')>=0"
 
         # Found 'See also:' description.
         s +,{':'} autocrop {'" "'}
         if $!>2" && "h#1==1" && "i("#1")==_':'
-          html.="\n    <h2>See also:</h2>"\n
+          html.="\n      <h2>See also:</h2>"\n
           rm[0,1]
         fi
         a y
@@ -6615,12 +6615,12 @@ parse_cli_html :
         # Found 'Default value(s):' description
         s +,{':'} autocrop {'" "'}
         if $!>2" && "h#1==1" && "i("#1")==_':'
-          html.="\n    <h2>Default values:</h2>"\n
+          html.="\n      <h2>Default values:</h2>"\n
           rm[0,1]
         fi
         a y
         parse_cli_decorate_singlequotes_html 0
-        html.="    <p style=\"word-wrap:break-word\">"{t}"</p>"\n
+        html.="      <p style=\"word-wrap:break-word\">"{t}"</p>"\n
 
       elif i==_'$'" && "i[1]!=_'$'
 
@@ -6636,12 +6636,12 @@ parse_cli_html :
           filename_full=f_${name}.jpg
           filename_thumb=t_${name}.jpg
         fi
-        if $n_example==1 html.="\n    <h2>Example"${"if "$nb_examples">1 u s else u \"\" fi"}" of use:</h2>"\n fi
-        if $nb_examples!=1 html.="      <h3>&bull;&nbsp;Example \#"$n_example"</h3>"\n fi
-        html.="    <p style=\"text-align:left; background-color:#DDDDDD; width:95%; border:1px solid \#999; "\
+        if $n_example==1 html.="\n      <h2>Example"${"if "$nb_examples">1 u s else u \"\" fi"}" of use:</h2>"\n fi
+        if $nb_examples!=1 html.="        <h3>&bull;&nbsp;Example \#"$n_example"</h3>"\n fi
+        html.="      <p style=\"text-align:left; background-color:#DDDDDD; width:95%; border:1px solid \#999; "\
               "word-wrap:break-word; padding:10px\">"\
               "<samp>$ gmic "$example"</samp></p>\n"\
-              "    <div><a href=\"img/"$filename_full"\" class=\"highslide\" onclick=\"return hs.expand(this)\">"\
+              "      <div><a href=\"img/"$filename_full"\" class=\"highslide\" onclick=\"return hs.expand(this)\">"\
               "<img src=\"img/"$filename_thumb"\" class=\"center_image\"/></a>"\
               "<div class=\"highslide-caption\">Command: <b>"$example"</b></div></div>"\n
 
@@ -6649,7 +6649,7 @@ parse_cli_html :
         if h==2 url=https://gmic.eu/tutorial/_$name.shtml
         else rows 2,100 autocrop {'" "'} url=https://gmic.eu/tutorial/{t}
         fi
-        html.="\n    <h2>Tutorial page:</h2><a href=\""$url"\">"$url"</a>"
+        html.="\n      <h2>Tutorial page:</h2><a href=\""$url"\">"$url"</a>"
 
       else
 
@@ -6679,12 +6679,12 @@ parse_cli_html :
         fi
         parse_cli_decorate_singlequotes_html 1
         parse_cli_decorate_braces_html
-        html.="    "{t}"<br/>"\n
+        html.="      "{t}"<br/>"\n
       fi
     endl done
 
     # Generate page.
-    html.="</div></div><div id=\"footer\"><img alt=\"\" src=\"images/footer.jpg\" /></div></div>"\n\n\
+    html.="  </div></div><div id=\"footer\"><img alt=\"\" src=\"images/footer.jpg\" /></div></div>"\n\n\
 "<!--#include file=\"copyright.html\" -->"\n\
 "<!--#include file=\"footer.html\" -->"\n
 
