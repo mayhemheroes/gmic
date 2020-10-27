@@ -6455,7 +6455,7 @@ _parse_cli_help_colorize : # Colorize string (as images) using VT100 color codes
 # Implements 'html' mode for command 'parse_cli'.
 #
 parse_cli_html :
-  v 0
+  v 0 use_vt100 e[] ""
   repeat $! ('{$>,n}') l. s +,{'@'} rv a y nm={t} endl rm. nm[$>] $nm done # Rename as 'category@name'
   sort_list +,n # Sort by categories
   repeat $! ('{$>,n}') l. s +,{'@'} rv a y nm={t} endl rm. nm[$>] $nm done # Rename as 'name@category'
@@ -6482,7 +6482,7 @@ parse_cli_html :
       html.="\n    <h2><a id=\""$category_id"\"></a>"$category":</h2>"\n\
             "    <table cellspacing=\"0\" class=\"table_category\">"\n
       is_table=1
-      n=0
+      n,row=0
     fi
     if !${parse_cli_is_eqto.}
       is_native={"find(#-1,'(+)')>=0"}
@@ -6549,7 +6549,7 @@ parse_cli_html :
   # Generate HTML page for each command.
   repeat $! l[$>]
     ('{n}') l. s -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm endl
-    +e[] $category" / "$name
+    e[] "\r  > "$_gmic_c[#{1+$>}]$_gmic_n" "{`copy(vector48(_'" "'),['$category" / "$name'])`}
 
     # Find previous and next commands.
     if !$> previous= else pass[{$>-1}] 1 ('{n}') discard. {'_c1'} previous={t} rm[-2,-1] fi
@@ -6681,7 +6681,9 @@ parse_cli_html :
               "<img src=\"img/"$filename_thumb"\" class=\"center_image\"/></a>"\
               "<div class=\"highslide-caption\">Command: <b>"$example"</b></div></div>"\n
 
-      elif i==_'$'" && "i[1]==_'$' # Found link to tutorial page
+      elif i==_'$'" && "i[1]==_'$'
+
+        # Found link to tutorial page.
         if h==2 url=https://gmic.eu/tutorial/_$name.shtml
         else rows 2,100 autocrop {'" "'} url=https://gmic.eu/tutorial/{t}
         fi
@@ -6730,6 +6732,7 @@ parse_cli_html :
     rm ({'$html'}:y) nm $name ot {n}.shtml
   endl done
   rm
+  e[] "\r  > "${_gmic_g}{`copy(vector64(_'" "'),'"Parsing done!"')`}$_gmic_n
 
 # Decorate strings between single quotes.
 # $1 = Try to detect and relink command names = { 0=false | 1=true }.
@@ -14718,7 +14721,7 @@ _inpaint_warping2d :
 
 #@cli kuwahara : size>0
 #@cli : Apply Kuwahara filter of specified size on selected images.
-#@cli : $ image.jpg +kuwahara 5
+#@cli : $ image.jpg kuwahara 9
 kuwahara : check $1>0
   e[^-1] "Apply Kuwahara filter of size $1 on image$?."
   repeat $! l[$>]
@@ -14813,10 +14816,10 @@ meancurvature_flow : skip ${1=10},${2=30},${3=0}
 #@cli nlmeans : [guide],_patch_radius>0,_spatial_bandwidth>0,_tonal_bandwidth>0,_patch_measure_command : \
 # _patch_radius>0,_spatial_bandwidth>0,_tonal_bandwidth>0,_patch_measure_command
 #@cli : Apply non local means denoising of Buades et al, 2005. on selected images.
-#@cli : The patch is a gaussian function of 'std _patch_radius'.
+#@cli : The patch is a gaussian function of 'std_patch_radius'.
 #@cli : The spatial kernel is a rectangle of radius 'spatial_bandwidth'.
-#@cli : The tonal kernel is exponential (exp(-d^2/_tonal_bandwidth^2))
-#@cli : with d the euclidiean distance between image patches.
+#@cli : The tonal kernel is exponential (`exp(-d^2/_tonal_bandwidth^2)`)
+#@cli : with `d` the euclidean distance between image patches.
 #@cli : Default values: 'patch_radius=4', 'spatial_bandwidth=4', 'tonal_bandwidth=10' and 'patch_measure_command=-norm'.
 #@cli : $ image.jpg +noise 10 nlmeans[-1] 4,4,{0.6*${-std_noise}}
 nlmeans:
@@ -15574,7 +15577,7 @@ area_fg : check "$1>=0" skip ${2=0}
 
 #@cli at_line : x0[%],y0[%],z0[%],x1[%],y1[%],z1[%]
 #@cli : Retrieve pixels of the selected images belonging to the specified line (x0,y0,z0)-(x1,y1,z1).
-#@cli : $ image.jpg +at_line 0,0,0,100%,100%,0
+#@cli : $ image.jpg +at_line 0,0,0,100%,100%,0 line[0] 0,0,100%,100%,1,0xFF00FF00,255,0,0
 at_line : check ${7=100%}>=0
   e[^-1] "Retrieve pixels of image$?, belonging to line ($1,$2,$3)-($4,$5,$6)."
   repeat $! l[$>]
