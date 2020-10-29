@@ -3163,7 +3163,7 @@ dc :
   v + display_camera
 
 #@cli display_camera
-#@cli : Open interactive camera viewer.
+#@cli : Open camera viewer.
 display_camera :
   v + _$0
 
@@ -3171,27 +3171,38 @@ _display_camera :
   e[0--4] "Open interactive camera viewer."
 
   # Initialize camera and get resolution.
-  camera
+  l[] camera
+  onfail
+    use_vt100
+    e[0--5] ${_gmic_r}${_gmic_b}"Command 'display_camera': Unable to read camera stream. Exiting."$_gmic_n
+    return
+  endl
+
   wc,hc={[w,h]}
 
   # Open interactive window.
   w ${"fitscreen "$wc,$hc},0,"G'MIC Camera Display"
   wnfs,hnfs={*,w,h}
-  angle,fullscreen=0
+  angle,fullscreen,brightness,contrast=0
   do
 
     # Display frame from camera.
     ww,wh={*,w,h}
     camera
     if $angle rotate. {90*$angle} fi
+
+    if $brightness +. {10*$brightness} c. 0,255 fi
+
     rr2d. $ww,$wh,2,3 w.
     rm
     wait 30
 
     # Manage user events.
-    if {*,r} w[] {*,d,e} fi
-    if {*,-R}" || "{*,-SPACE} angle={($angle+1)%4} fi
-    if {*,-F}" || "{*,-ENTER}
+    if {*,r} w[] {*,d,e}
+    elif {*,-R}" || "{*,-SPACE} angle={($angle+1)%4}
+    elif {*,-ARROWUP} brightness+=1
+    elif {*,-ARROWDOWN} brightness-=1
+    elif {*,-F}" || "{*,-ENTER}" || "{*,-F5}
        fullscreen={1-$fullscreen}
        if $fullscreen
          wwnfs,whnfs={*,w,h}
