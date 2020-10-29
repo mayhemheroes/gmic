@@ -340,18 +340,26 @@ cd ..
 #------------------------------------------
 echo " - Create HTML reference page."
 cd html
-rm -f img/gmic_stdlib*.jpg image.jpg gimp.shtml
+rm -f img/gmic_stdlib*.jpg image.jpg gimp.shtml reference
 ln -s download.shtml gimp.shtml
-gmic sp pencils r2dy 320 o image.jpg
-gmic v - ../src/gmic_stdlib.gmic raw:../src/gmic_stdlib.gmic,uchar document_gmic images,img/
+
+mkdir -p reference/img
+cd reference
+gmic sp bottles,640 o image.jpg
+gmic v - ../../src/gmic_stdlib.gmic raw:../../src/gmic_stdlib.gmic,uchar document_gmic images,img/
 if [ "$1" == "final" ]; then
-    gmic ../src/gmic_stdlib.gmic raw:../src/gmic_stdlib.gmic,uchar _prerelease= __help html > reference.shtml;
+    gmic ../../src/gmic_stdlib.gmic raw:../../src/gmic_stdlib.gmic,uchar _prerelease= __help html > index.html;
 else
-    gmic ../src/gmic_stdlib.gmic raw:../src/gmic_stdlib.gmic,uchar _prerelease=`date +%y%m%d` __help html > reference.shtml;
+    gmic ../../src/gmic_stdlib.gmic raw:../../src/gmic_stdlib.gmic,uchar _prerelease=`date +%y%m%d` __help html > index.html;
 fi
 rm -f image.jpg
+cd ..
 
-rm -rf gallery && mkdir gallery && cd gallery && gmic ../../src/gmic_stdlib.gmic update_gallery_html 1 && cd ..
+rm -rf gallery
+mkdir -p gallery
+cd gallery
+gmic ../../src/gmic_stdlib.gmic update_gallery_html 1
+cd ..
 cd ..
 
 # Create .pdf handbook.
