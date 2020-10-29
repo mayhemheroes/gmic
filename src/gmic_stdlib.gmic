@@ -3168,7 +3168,7 @@ display_camera :
   v + _$0
 
 _display_camera :
-  e[0--4] "Open interactive camera viewer."
+  e[0--4] "Open camera stream viewer."
 
   # Initialize camera and get resolution.
   l[] camera
@@ -3181,7 +3181,7 @@ _display_camera :
   wc,hc={[w,h]}
 
   # Open interactive window.
-  w ${"fitscreen "$wc,$hc},0,"G'MIC Camera Display"
+  w ${"fitscreen "$wc,$hc},0,"G'MIC Camera Stream Viewer"
   wnfs,hnfs={*,w,h}
   angle,fullscreen,brightness,contrast=0
   do
@@ -3190,18 +3190,19 @@ _display_camera :
     ww,wh={*,w,h}
     camera
     if $angle rotate. {90*$angle} fi
-
     if $brightness +. {10*$brightness} c. 0,255 fi
-
-    rr2d. $ww,$wh,2,3 w.
+    if $contrast /. 255 *. {1.2^$contrast} *. 255 c. 0,255 fi
+    rr2d. $ww,$wh,2,1 w.
     rm
     wait 30
 
     # Manage user events.
     if {*,r} w[] {*,d,e}
     elif {*,-R}" || "{*,-SPACE} angle={($angle+1)%4}
-    elif {*,-ARROWUP} brightness+=1
-    elif {*,-ARROWDOWN} brightness-=1
+    elif {*,-ARROWUP} brightness={min(5,$brightness+1)}
+    elif {*,-ARROWDOWN} brightness={max(-5,$brightness-1)}
+    elif {*,-ARROWRIGHT} contrast={min(5,$contrast+1)}
+    elif {*,-ARROWLEFT} contrast={max(-5,$contrast-1)}
     elif {*,-F}" || "{*,-ENTER}" || "{*,-F5}
        fullscreen={1-$fullscreen}
        if $fullscreen
