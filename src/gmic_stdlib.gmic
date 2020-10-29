@@ -5752,29 +5752,7 @@ onmouseout=\"javascript:this.src='original/"$basename".jpg';\" />\n
 update_gallery_html : check "isbool(${1=0})"
   e[^-1] "Generate gallery pages for the G'MIC website."
   use_vt100
-
-  # Check directory and clean in case of upload.
-  if narg(${"files *"})
-    if narg(${"files *_full_*.jpg"})" && "\
-       narg(${"files *_thumb_*.jpg"})" && "\
-       narg(${"files *_original_*.jpg"})
-       if $1 x 0,"rm -f *" fi
-    else error[0--4] "Current folder should be empty!"
-    fi
-  fi
-
-  # Prepare folder structure.
-  HTML=$HOME/work/src/gmic/html
-  e[] "  * Prepare folder structure."
-  x "ln -fs "$HTML"/copyright.html ."
-  x "ln -fs "$HTML"/favicon.ico ."
-  x "ln -fs "$HTML"/favicon.png ."
-  x "ln -fs "$HTML"/footer.html ."
-  x "ln -fs "$HTML"/header.html ."
-  x "ln -fs "$HTML"/jquery-1.11.0.min.js ."
-  x "ln -fs "$HTML"/style.css ."
-  x "ln -fs "$HTML"/images ."
-  x "ln -fs "$HTML"/highslide ."
+  x "mkdir -p img"
 
   # Define categories and sample pictures.
   categories=arrays,artistic,blackandwhite,colors,deformations,filtering,patterns,3dmeshes,stylization,codesamples
@@ -5819,44 +5797,62 @@ update_gallery_html : check "isbool(${1=0})"
       fi
     done
 
-    html="<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\"\n"\
-         "  \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n\n"\
-         "<!--#include file=\"header.html\" -->\n\n"\
-         "<link rel=\"stylesheet\" href=\"//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css\">\n"\
-         "<script src=\"https://code.jquery.com/jquery-1.12.4.js\"></script>\n"\
-         "<script src=\"https://code.jquery.com/ui/1.12.1/jquery-ui.js\"></script>\n\n"\
-         "<div id=\"bloc_option\"><div id=\"top_vert\"><div id=\"text_top\">Image gallery</div></div>\n"\
-         "<div id=\"center\"><div id=\"text_centre_intro\">\n"\
-         "<p>This gallery gives a quick overview of the kind of features and generic filters available in the "\
-         "<b><font color=\"#000066\">G\47MIC</font></b> open-source image processing framework.</p>\n"\
-         "<p>All the images below have been processed by the CLI interface "\
-         "<tt><a href=\"documentation.shtml\">gmic</a></tt>\n"\
-         "  of <b><font color=\"#000066\">G\47MIC</font></b>, from a set of initial 2D color images.\n"\
-         "Click on an image to enlarge it and display the <b><font color=\"#000066\">G\47MIC</font></b> command-line "\
-         "used for the processing (<i>note: to reproduce this, you may have to escape some characters, "\
-         "according to the type of shell you use!</i>).</p>\n"\
-         "<p>Remember, <b><font color=\"#000066\">G\47MIC</font></b> lets you define your own image pipelines "\
-         "through\n"\
-         "custom <a href=\"https://gmic.eu/gmic_stdlib.gmic\">command files</a>.\n"\
-         "Your custom filters can be easily added afterwards in the plug-in for "\
-         "<a href=\"http://www.gimp.org\">GIMP</a> or "\
-         "<a href=\"http://www.krita.org\">Krita</a>.</p>\n\n"\
-         "<p>For more details, visit the <a href=\"https://gmic.eu/tutorial\">tutorial pages</a> as well as the "\
-         "<a href=\"https://gmic.eu/reference.shtml\">technical reference</a> to get a full documentation on this "\
-         "software.\n"\
-         "</p>\n<div id=\"menu\">\n"
+  html="<!DOCTYPE html>"\n\
+"<html lang=\"en\">"\n\
+"  <head>"\n\
+"    <meta charset=\"utf-8\">"\n\
+"    <link rel=\"stylesheet\" href=\"../style.css\">"\n\
+"    <link rel=\"stylesheet\" href=\"../highslide/highslide.css\"/>"\n\n\
+"    <script src=\"../jquery-3.5.1.min.js\"></script>"\n\
+"    <script>"\n\
+"      $(function(){"\n\
+"          $(\"#header_content\").load(\"../header1.html\");"\n\
+"      });"\n\
+"    </script>"\n\
+"    <script>"\n\
+"      $(function(){"\n\
+"          $(\"#footer_content\").load(\"../footer.html\");"\n\
+"      });"\n\
+"    </script>"\n\
+"    <script type=\"text/javascript\" src=\"../highslide/highslide-full.js\"></script>"\n\
+"    <script type=\"text/javascript\">"\n\
+"      hs.graphicsDir = '../highslide/graphics/';"\n\
+"      hs.wrapperClassName = 'wide-border';"\n\
+"      hs.showCredits = 'false';"\n\
+"    </script>"\n\
+"  </head>"\n\n\
+"  <body>"\n\
+"    <div id=\"header_content\"></div>"\n\n\
+"    <div class=\"section_title\"><p>Image Gallery</p></div><div class=\"section_content\">"\n\
+"<p>This gallery gives a quick overview of the kind of features and generic filters available in the "\
+"<span class=\"gmic\"/> open-source image processing framework.</p>"\n\
+"<p>All the images below have been processed by the CLI interface "\
+"<tt><a href=\"documentation.shtml\">gmic</a></tt>"\n\
+"  of <span class=\"gmic\"/>, from a set of initial 2D color images."\n\
+"Click on an image to enlarge it and display the <span class=\"gmic\"/> command-line "\
+"used for the processing (<i>note: to reproduce this, you may have to escape some characters, "\
+"according to the type of shell you use!</i>).</p>"\n\
+"<p>Remember, <span class=\"gmic\"/> lets you define your own image pipelines through"\n\
+"custom <a href=\"https://gmic.eu/gmic_stdlib.gmic\">command files</a>."\n\
+"Your custom filters can be easily added afterwards in the plug-in for "\
+"<a href=\"http://www.gimp.org\">GIMP</a> or "\
+"<a href=\"http://www.krita.org\">Krita</a>.</p>"\n\n\
+"<p>For more details, visit the <a href=\"https://gmic.eu/tutorial\">tutorial pages</a> as well as the "\
+"<a href=\"https://gmic.eu/reference.shtml\">technical reference</a> to get a full documentation on this "\
+"software."\n\
+"</p>\n<div id=\"menu\">"\n
 
     html_menu="<font size=\"-1\"><table cellspacing=\"0\" cellpadding=\"4\" border=\"1\" align=\"center\"><tr>\n"\
-         $td_arrays"<a href=\"arrays.shtml#menu\">Arrays &amp; Frames</a></td>"\
-         $td_artistic"<a href=\"artistic.shtml#menu\">Artistic</a></td>"\
-         $td_blackandwhite"<a href=\"blackandwhite.shtml#menu\">B&amp;W</a></td>"\
-         $td_colors"<a href=\"colors.shtml#menu\">Colors</a></td>"\
-         $td_deformations"<a href=\"deformations.shtml#menu\">Deformations</a></td>"\
-         $td_filtering"<a href=\"filtering.shtml#menu\">Filtering</a></td>"\
-         $td_patterns"<a href=\"patterns.shtml#menu\">Patterns</a></td>"\
-         $td_3dmeshes"<a href=\"3dmeshes.shtml#menu\">3D Meshes</a></td>"\
-         $td_stylization"<a href=\"stylization.shtml#menu\">Stylization</a></td>"\
-         $td_codesamples"<a href=\"codesamples.shtml#menu\">Code samples</a></td>"\
+         $td_arrays"<a href=\"arrays.html#menu\">Arrays &amp; Frames</a></td>"\
+         $td_artistic"<a href=\"artistic.html#menu\">Artistic</a></td>"\
+         $td_blackandwhite"<a href=\"blackandwhite.html#menu\">B&amp;W</a></td>"\
+         $td_colors"<a href=\"colors.html#menu\">Colors</a></td>"\
+         $td_deformations"<a href=\"deformations.html#menu\">Deformations</a></td>"\
+         $td_filtering"<a href=\"filtering.html#menu\">Filtering</a></td>"\
+         $td_patterns"<a href=\"patterns.html#menu\">Patterns</a></td>"\
+         $td_3dmeshes"<a href=\"3dmeshes.html#menu\">3D Meshes</a></td>"\
+         $td_stylization"<a href=\"stylization.html#menu\">Stylization</a></td>"\
+         $td_codesamples"<a href=\"codesamples.html#menu\">Code samples</a></td>"\
          "</tr></table></font>\n"
 
     html=${html}${html_menu}\
@@ -5938,15 +5934,15 @@ update_gallery_html : check "isbool(${1=0})"
             m "_run : _preview_width,_preview_height=450,300 "${example$nex}
 
             if $is_input sample_=${sample}_ else sample_= fi
-            filename_original=${category}_${sample_}original_$nex.jpg
-            filename_thumb_original=${category}_${sample_}thumb_original_$nex.jpg
+            filename_original=img/${category}_${sample_}original_$nex.jpg
+            filename_thumb_original=img/${category}_${sample_}thumb_original_$nex.jpg
             if "find(['"${example$nex}"'],' _fps=')>=0"
-              filename_full=${category}_${sample_}full_$nex.gif
-              filename_thumb=${category}_${sample_}thumb_$nex.gif
+              filename_full=img/${category}_${sample_}full_$nex.gif
+              filename_thumb=img/${category}_${sample_}thumb_$nex.gif
               _is_animated=1
             else
-              filename_full=${category}_${sample_}full_$nex.jpg
-              filename_thumb=${category}_${sample_}thumb_$nex.jpg
+              filename_full=img/${category}_${sample_}full_$nex.jpg
+              filename_thumb=img/${category}_${sample_}thumb_$nex.jpg
               _is_animated=0
             fi
 
@@ -6056,15 +6052,13 @@ update_gallery_html : check "isbool(${1=0})"
     if $col html=${html}"</tr>\n" fi
     html=${html}"</table><br/>\n"\
          ${html_menu}\
-         "</div></div><div id=\"footer\"><img alt=\"\" src=\"images/footer.jpg\" /></div></div>\n\n"\
-         "<!--#include file=\"copyright.html\" -->\n"\
-         "<!--#include file=\"footer.html\" -->\n"
-    ('$html') ot. $category.shtml rm.
+         "</div><div class=\"section_end\"></div>"\n"    <div id=\"footer_content\"></div>"\n"  </body>"
+    ('$html') ot. $category.html rm.
   done
   rm
 
   # Transfer on G'MIC server
-  x "ln -fs artistic.shtml index.shtml"
+  x "ln -fs artistic.html index.html"
   if $1
     e[] "\n  * Transfer gallery on G'MIC server.\n"
     x "lftp ftp://"$GMIC_LOGIN":"$GMIC_PASSWD"@"$GMIC_FTP" -e \"mirror -eRL . /www/gmic/gallery ; quit\""
