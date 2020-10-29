@@ -3158,6 +3158,52 @@ __display_array :
   done
   rm[-3,-1]
 
+#@cli dc : eq. to 'display_camera'.
+dc :
+  v + display_camera
+
+#@cli display_camera
+#@cli : Open interactive camera viewer.
+display_camera :
+  v + _$0
+
+_display_camera :
+  e[0--4] "Open interactive camera viewer."
+
+  # Initialize camera and get resolution.
+  camera
+  wc,hc={[w,h]}
+
+  # Open interactive window.
+  w ${"fitscreen "$wc,$hc},0,"G'MIC Camera Display"
+  wnfs,hnfs={*,w,h}
+  angle,fullscreen=0
+  do
+
+    # Display frame from camera.
+    ww,wh={*,w,h}
+    camera
+    if $angle rotate. {90*$angle} fi
+    rr2d. $ww,$wh,2,3 w.
+    rm
+    wait 30
+
+    # Manage user events.
+    if {*,r} w[] {*,d,e} fi
+    if {*,-R}" || "{*,-SPACE} angle={($angle+1)%4} fi
+    if {*,-F}" || "{*,-ENTER}
+       fullscreen={1-$fullscreen}
+       if $fullscreen
+         wwnfs,whnfs={*,w,h}
+         w[] {*,u,v},0,1
+       else
+         w[] $wwnfs,$whnfs,0,0
+       fi
+    fi
+
+  while {*}" && "!{*,ESC}
+  camera 0,0 w[] 0
+
 #@cli dfft : eq. to 'display_fft'.
 dfft :
   v + _display_fft
