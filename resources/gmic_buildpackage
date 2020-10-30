@@ -327,7 +327,7 @@ if [ "$size" != "0" ]; then
 fi
 update_filename=$HOME/.config/gmic/update${VERSION}.gmic
 update_filenamez=$HOME/.config/gmic/update${VERSION}.gmicz
-gmic raw:$update_filename,uchar o cimgz:$update_filenamez,uchar
+gmic it $update_filename o cimgz:$update_filenamez,uchar
 
 # Create man page and bash autocompletion script.
 #-------------------------------------------------
@@ -345,11 +345,11 @@ ln -s download.shtml gimp.shtml
 
 mkdir -p reference/img
 cd reference
-gmic v - ../../src/gmic_stdlib.gmic raw:../../src/gmic_stdlib.gmic,uchar document_gmic images,img/
+gmic v - ../../src/gmic_stdlib.gmic it ../../src/gmic_stdlib.gmic document_gmic images,img/
 if [ "$1" == "final" ]; then
-    gmic ../../src/gmic_stdlib.gmic raw:../../src/gmic_stdlib.gmic,uchar _prerelease= __help html > index.html
+    gmic ../../src/gmic_stdlib.gmic it ../../src/gmic_stdlib.gmic _prerelease= __help html > index.html
 else
-    gmic ../../src/gmic_stdlib.gmic raw:../../src/gmic_stdlib.gmic,uchar _prerelease=`date +%y%m%d` __help html > index.html
+    gmic ../../src/gmic_stdlib.gmic it ../../src/gmic_stdlib.gmic _prerelease=`date +%y%m%d` __help html > index.html
 fi
 rm -f image.jpg
 cd ..
@@ -364,18 +364,18 @@ cd ..
 # Create .pdf handbook.
 #----------------------
 echo " - Create PDF reference handbook."
-cd html
+cd html/reference
 if [ "$1" == "final" ]; then
-    gmic ../src/gmic_stdlib.gmic raw:../src/gmic_stdlib.gmic,uchar _version=$VERSION _prerelease= __help latex > reference.tex;
+    gmic ../src/gmic_stdlib.gmic it ../src/gmic_stdlib.gmic _version=$VERSION _prerelease= __help latex > reference.tex
 else
-    gmic ../src/gmic_stdlib.gmic raw:../src/gmic_stdlib.gmic,uchar _version=$VERSION _prerelease=`date +%y%m%d` __help latex > reference.tex;
+    gmic ../../src/gmic_stdlib.gmic it ../../src/gmic_stdlib.gmic _version=$VERSION _prerelease=`date +%y%m%d` __help latex > reference.tex
 fi
 pdflatex reference.tex
 makeindex reference
 pdflatex reference.tex
 gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=gmic_reference.pdf reference.pdf
 rm -f reference.aux reference.idx reference.ind reference.out reference.ilg reference.log reference.pdf
-cd ..
+cd ../..
 
 # Upload web page.
 #-----------------
