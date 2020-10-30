@@ -2949,6 +2949,21 @@ CImg<char> gmic::callstack2string(const CImg<unsigned int>& callstack_selection,
   return callstack2string(&callstack_selection,_is_debug);
 }
 
+// Pop callstack until it reaches a certain size.
+//-----------------------------------------------
+// Used to ensure that callstack stays coherent when errors occurs in '_run()'.
+void gmic::pop_callstack(const unsigned int callstack_size) {
+  while (callstack.size()>callstack_size) {
+    const char *const s = callstack.back();
+    if (*s=='*') switch (s[1]) {
+      case 'r' : --nb_repeatdones; break;
+      case 'd' : --nb_dowhiles; break;
+      case 'f' : --nb_fordones; break;
+      }
+    callstack.remove();
+  }
+}
+
 // Parse items from a G'MIC command line.
 //---------------------------------------
 CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) {
@@ -3155,21 +3170,6 @@ gmic& gmic::debug(const char *format, ...) {
   std::fflush(cimg::output());
   cimg::mutex(29,0);
   return *this;
-}
-
-// Pop callstack until it reaches a certain size, after exception has been caught.
-//--------------------------------------------------------------------------------
-// Used to ensure that callstack stays coherent when errors occurs in '_run()'.
-void gmic::pop_callstack(const unsigned int callstack_size) {
-  while (callstack.size()>callstack_size) {
-    const char *const s = callstack.back();
-    if (*s=='*') switch (s[1]) {
-      case 'r' : --nb_repeatdones; break;
-      case 'd' : --nb_dowhiles; break;
-      case 'f' : --nb_fordones; break;
-      }
-    callstack.remove();
-  }
 }
 
 // Get variable value.
@@ -14988,7 +14988,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     // Post-check call stack consistency.
     if (!is_quit && !is_return) {
       const CImg<char>& s = callstack.back();
-      if (s[0]=='*' && (s[1]=='d' || s[1]=='i' || s[1]=='r' || s[1]=='f' || (s[1]=='l' && !is_endlocal))) {
+      if (s[0]=='*' && (s[1]=='d' || s[1]=='f' || s[1]=='i' || (s[1]=='l' && !is_endlocal) || s[1]=='r')) {
         unsigned int reference_line = ~0U;
         if (cimg_sscanf(s,"*%*[a-z]#%u",&reference_line)==1)
           error(true,images,0,0,
