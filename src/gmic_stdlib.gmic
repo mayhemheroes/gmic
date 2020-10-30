@@ -8618,18 +8618,16 @@ _update_tutorial_html :
 # $1 = filename
 # $2 = version number
 # $3 = is_prerelease = { 0 | 1 }
-_update_header_html : check "${2=0}>=0 && isbool(${3=0})"
-  if !$2 return fi
-  filename=$1
+_update_header_html : check "narg(${1=}) && ${2=0}>0 && isbool(${3=0})"
+  filename="$1"
   l[]
     it[] $filename
     s +,{'\n'}
     repeat $! if {$>,h>=64} l[$>]
       +autocrop {'" "'} autocrop. {'\t'}
-      if "s = ['Latest stable version: ']; crop(0,0,1,size(s))==s"
-
-        is_gmic={find(#-1,'gmic.eu')>=0}
-        is_cimg={find(#-1,'cimg.eu')>=0}
+      if "find(#0,['Latest stable version: '])>=0"
+        is_gmic={"find(#-1,'gmic.eu')>=0"}
+        is_cimg={"find(#-1,'cimg.eu')>=0"}
         if !$is_gmic" && "!$is_cimg return fi
 
         # Retrieve latest stable version specified in the header file.
@@ -8640,18 +8638,21 @@ _update_header_html : check "${2=0}>=0 && isbool(${3=0})"
           fi
           if $3 pre=${strver\ $2} else sta=${strver\ $2} fi
         rm endl
-
         rm[0]
         if $is_gmic
-          i[0] ('"                Latest stable version:
-                  <b><a href=\"https://gmic.eu/download.shtml\">"$sta"</a></b>"')
-          if $3 i[1] ('" &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Current pre-release:
-                        <b><a href=\"https://gmic.eu/files/prerelease\">"$pre"</a></b>"') fi
+          i[0] ('"        Latest stable version: <b>"\
+                 "<a href=\"https://gmic/eu/download.html\">"$sta"</a></b>"')
+          if $3
+            i[1] ('" &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; "\
+                   "Current pre-release: <b><a href=\"https://gmic.eu/files/prerelease\">"$pre"</a></b>"')
+          fi
         else
-          i[0] ('"                Latest stable version:
-                  <b><a href=\"http://cimg.eu/files/CImg_"$sta".zip\">"$sta"</a></b>"')
-          if $3 i[1] ('" &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Current pre-release:
-                        <b><a href=\"http://cimg.eu/files/CImg_latest.zip\">"$pre"</a></b>"') fi
+          i[0] ('"        Latest stable version: "\
+                 "<b><a href=\"http://cimg.eu/files/CImg_"$sta".zip\">"$sta"</a></b>"')
+          if $3
+            i[1] ('" &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; "\
+                   "Current pre-release: <b><a href=\"http://cimg.eu/files/CImg_latest.zip\">"$pre"</a></b>"')
+          fi
         fi
         y
       fi
@@ -8659,6 +8660,7 @@ _update_header_html : check "${2=0}>=0 && isbool(${3=0})"
     endl fi done
     a y
     ot $filename
+    rm
   endl
 
 #@cli v : eq. to 'verbose'. : (+)
