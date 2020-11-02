@@ -5752,7 +5752,8 @@ update_color_presets_html : check "isbool(${1=0})"
         fi
 
         if ['$_category']==['$category']
-          ('"              <li><span style=\"color: \#cc7700\"><b>"$_category_name"</b> "$_category_author"</span></li>\n"')
+          ('"              <li><span style=\"color: \#cc7700\"><b>"$_category_name"</b> "\
+            $_category_author"</span></li>"\n')
         else
           ('"              <li><a href=\""${_category}_$basename.html"#browse\">"$_category_name"</a> "\
             $_category_author"</li>\n"')
@@ -5765,7 +5766,8 @@ update_color_presets_html : check "isbool(${1=0})"
       repeat $nb_samples
         _basename=${basename$>}
         if ['$_basename']==['$basename']
-          ('"            <a href=\""${category}_$_basename.html"#browse\"><img alt=\"\" style=\"border: 3px solid \#cc7700\" "\
+          ('"            <a href=\""${category}_$_basename.html"#browse\">"\
+            "<img alt=\"\" style=\"border: 3px solid \#cc7700\" "\
             "src=\""original/minithumb_$_basename.jpg"\"/></a>\n"')
         else
           ('"            <a href=\""${category}_$_basename.html"#browse\"><img alt=\"\" "\
@@ -6102,7 +6104,8 @@ update_gallery_html : check "isbool(${1=0})"
                   onclick=\"hs.close()\" onmouseover=\"javascript:this.src='"$filename_full"';\"
                   onmouseout=\"javascript:this.src='"$filename_original"';\"/>\n"\
                   "              </div>\n"\
-                  "              <div class=\"highslide-caption\">Command: <samp>$ gmic "${replaced_example$nex}"</samp>"\
+                  "              <div class=\"highslide-caption\">Command: "\
+                  "<samp>$ gmic "${replaced_example$nex}"</samp>"\
                   ${html_etime}"</div></div></td>\n"
             else
               html=${html}\
@@ -6115,7 +6118,8 @@ update_gallery_html : check "isbool(${1=0})"
                   "                <img alt=\""gallery_$command$nex"\" width=\""$width"\" "\
                   "src=\""$filename_full"\" onclick=\"hs.close()\" />\n"\
                   "              </div>\n"\
-                  "              <div class=\"highslide-caption\">Command: <samp>$ gmic "${replaced_example$nex}"</samp>"\
+                  "              <div class=\"highslide-caption\">Command: "\
+                  "<samp>$ gmic "${replaced_example$nex}"</samp>"\
                   ${html_etime}"</div></div></td>\n"
             fi
             nex+=1
@@ -6573,8 +6577,10 @@ parse_cli_html :
         is_tr=1 row+=1
       fi
       if ['$name']=='index' url_name=_index.html else url_name=$name.html fi
-      if $is_native html.="        <td><a href=\""$url_name"#top\"><span class=\"native_command\">"$name"</span></a></td>"\n
-      else html.="        <td><a href=\""$url_name"#top\">"$name"</a></td>"\n
+      if $is_native
+        html.="        <td><a href=\""$url_name"#top\"><span class=\"native_command\">"$name"</span></a></td>"\n
+      else
+        html.="        <td><a href=\""$url_name"#top\">"$name"</a></td>"\n
       fi
       n+=1
     fi
@@ -6585,26 +6591,23 @@ parse_cli_html :
 
   # Add 'Shortcuts' category.
   html.="\n    <h2><a id=\"shortcuts\"></a>Shortcut commands:</h2>"\n\
-        "    <table cellspacing=\"0\" class=\"table_category\">"\n
+        "    <table class=\"table_category\">"\n
   n,is_tr,row=0
   repeat $! if s=['{$>,n}'];s[0]==_'_' continue fi l[$>]
     ('{n}') l. s -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm endl
     if ${parse_cli_is_eqto.}
       is_native={"find(#-1,'(+)')>=0"}
       +l s -,{'"eq. to \47"'} k. s -,{'\47'} k[0] autocrop {'" "'} eqto={t} rm endl
-      if !($n%5)
+      if !($n%4)
         if $is_tr html.="      </tr>"\n fi
-        if $row%2 html.="      <tr style=\"background-color:#DDDDDD\">"\n
-        else html.="      <tr>"\n
-        fi
+        html.="      <tr>"\n
         is_tr=1 row+=1
       fi
-      html.="        <td style=\"max-width:170px; padding:5px; border:1px solid \#000000;\">"\
-            "<a href=\""$eqto.html"#top\">"
-      if $is_native html.="<samp style=\"color:#2080F0\">"$name"</samp>"
-      else html.="<samp>"$name"</samp>"
+      if $is_native
+        html.="        <td><a href=\""$eqto.html"#top\"><span class=\"native_command\">"$name"</span></a></td>"\n
+      else
+        html.="        <td><a href=\""$eqto.html"#top\">"$name"</a></td>"\n
       fi
-      html.="</a></td>"\n
       n+=1
     fi
   endl done
@@ -6693,8 +6696,11 @@ parse_cli_html :
       s -,{'": "'} autocrop {'" "'} rm[0]
       is_native=0
       if $!" && find(#-1,'(+)')>=0" is_native=1 rm. fi
-      if $is_native html.="      <table class=\"h1_native\"><tr><td><h1 class=\"h1_reference\" style=\"margin-bottom: 0;\">"$name"</h1></td><td><span class=\"native_command\">Native command</span></td></tr></table>"\n
-      else html.="      <h1 class=\"h1_reference\">"$name"</h1>"\n
+      if $is_native
+        html.="      <table class=\"h1_native\"><tr><td><h1 class=\"h1_reference\" style=\"margin-bottom: 0;\">"\
+              $name"</h1></td><td><span class=\"native_command\">Native command</span></td></tr></table>"\n
+      else
+        html.="      <h1 class=\"h1_reference\">"$name"</h1>"\n
       fi
       if $!
         html.="\n      <h2>Arguments:</h2>\n      <ul>"\n
