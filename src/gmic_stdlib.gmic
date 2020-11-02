@@ -6565,7 +6565,9 @@ parse_cli_html :
       if $is_table html.="    </table><br/>"\n is_table=0 fi
       html.="\n    <h1 class=\"h1_reference\"><a id=\""$category_id"\"></a>"$category":</h1>"\n\
             "    <table class=\"table_category\">"\n
-      list_categories.=$c$category c=,
+
+      ('$category') replace_str. ",","&#44;" lcategory={t} rm.
+      list_categories.=$c$lcategory c=,
       is_table=1
       n,row=0
     fi
@@ -6618,7 +6620,9 @@ parse_cli_html :
   # Insert TOC for categories.
   toc_html="    <h1 class=\"h1_reference\" style=\"margin-top: 0;\">Categories:</h1><ul>"\n
   repeat narg({/$list_categories})
-    arg 1+$>,{/$list_categories} category=${} strvar $category category_id=${}
+    arg 1+$>,{/$list_categories} category=${}
+    ('$category') replace_str. "&#44;","," category={t} rm.
+    strvar $category category_id=${}
     toc_html.="      <li><a href=\"#"$category_id"\">"$category"</a></li>"\n
   done
   toc_html.="      <li><a href=\"#shortcuts\">Command Shortcuts</a></li>"\n
