@@ -6549,8 +6549,9 @@ parse_cli_html :
 "  <body>"\n\
 "    <div id=\"include_header\"></div>"\n\n\
 "    <div class=\"section_title\"><p>Categories</p></div><div class=\"section_content\">"\n\n\
-"    <a id=\"top\"></a>"\n
+"    <a id=\"top\"></a>"\n"<toc_categories>"\n
 
+  list_categories,c=
   category,p_category= n,is_tr,is_table,row=0
   repeat $! if s=['{$>,n}'];s[0]==_'_' continue fi l[$>]
     ('{n}') l. s -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm endl
@@ -6560,6 +6561,7 @@ parse_cli_html :
       if $is_table html.="    </table><br/>"\n is_table=0 fi
       html.="\n    <h1 class=\"h1_reference\"><a id=\""$category_id"\"></a>"$category":</h1>"\n\
             "    <table class=\"table_category\">"\n
+      list_categories.=$c$category c=,
       is_table=1
       n,row=0
     fi
@@ -6613,6 +6615,16 @@ parse_cli_html :
 "    <div id=\"include_footer\"></div>"\n\
 "  </body>"
   ({'$html'}:y)
+
+  # Insert TOC for categories.
+  toc_html="    <h1 class=\"h1_reference\" style=\"margin-top: 0;\">Table of Contents:</h1><ul>"\n
+  repeat narg({/$list_categories})
+    arg 1+$>,{/$list_categories} category=${} strvar $category category_id=${}
+    toc_html.="      <li><a href=\"#"$category_id"\">"$category"</a></li>"\n
+  done
+  toc_html.="    </ul>"
+
+  replace_str. "<toc_categories>",$toc_html
   ot. index.html
   rm.
 
@@ -6681,7 +6693,7 @@ parse_cli_html :
       s -,{'": "'} autocrop {'" "'} rm[0]
       is_native=0
       if $!" && find(#-1,'(+)')>=0" is_native=1 rm. fi
-      if $is_native html.="      <table class=\"h1_native\"><tr><td><h1 class=\"h1_reference\">"$name"</h1></td><td><span class=\"native_command\">Native command</span></td></tr></table>"\n
+      if $is_native html.="      <table class=\"h1_native\"><tr><td><h1 class=\"h1_reference\" style=\"margin-bottom: 0;\">"$name"</h1></td><td><span class=\"native_command\">Native command</span></td></tr></table>"\n
       else html.="      <h1 class=\"h1_reference\">"$name"</h1>"\n
       fi
       if $!
