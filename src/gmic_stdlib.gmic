@@ -1544,7 +1544,7 @@ _help_footer_html :
   +e[] "
 \n<br/><b><font color=\"brown\">** G\47MIC comes with ABSOLUTELY NO WARRANTY; for details visit:
  <a href=\"https://gmic.eu\">https://gmic.eu **</a></font></b>
-\n</tt>"\n\
+\n</samp>"\n\
 "    </div><div class=\"section_end\"></div>"\n\
 "    <div id=\"include_footer\"></div>"\n\
 "  </body>"
@@ -3981,13 +3981,13 @@ _document_gmic_desc_on_html :
   if $_is_desc
     u "<br/>"
   else
-    u "<p style=\"margin-left:50px; text-align:left\"><tt>"
+    u "<p style=\"margin-left:50px; text-align:left\"><samp>"
     _is_desc=1
   fi
 
 _document_gmic_desc_off_html :
   if $_is_desc
-    u "</tt></p>"
+    u "</samp></p>"
     _is_desc=0
   else u ""
   fi
@@ -5885,6 +5885,8 @@ update_gallery_html : check "isbool(${1=0})"
 "    <link rel=\"stylesheet\" href=\"../style.css\">"\n\
 "    <link rel=\"stylesheet\" href=\"../highslide/highslide.css\"/>"\n\
 "    <link rel=\"stylesheet\" href=\"https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css\">"\n\n\
+"    <title>G'MIC - GREYC's Magic for Image Computing: A Full-Featured Open-Source Framework for Image Processing "\
+"- Gallery</title>"\n\
 "    <script src=\"../jquery-3.5.1.min.js\"></script>"\n\
 "    <script>var jQuery_3_5_1 = $.noConflict(true);</script>"\n\
 "    <script>jQuery_3_5_1(function(){ jQuery_3_5_1(\"#include_header\").load(\"../header1.html\"); });</script>"\n\
@@ -5904,7 +5906,7 @@ update_gallery_html : check "isbool(${1=0})"
 "      <p>This gallery gives a quick overview of the kind of features and generic filters available in the "\
 "<span class=\"gmic\"></span> open-source image processing framework.</p>"\n\
 "      <p>All the images below have been processed by the CLI interface "\
-"<tt><a href=\"reference/\">gmic</a></tt>"\
+"<samp><a href=\"reference/\">gmic</a></samp>"\
 "  of <span class=\"gmic\"></span>, from a set of initial 2D color images."\n\
 "        Click on an image to enlarge it and display the <span class=\"gmic\"></span> command-line "\
 "used for the processing (<i>note: to reproduce this, you may have to escape some characters, "\
@@ -6100,7 +6102,7 @@ update_gallery_html : check "isbool(${1=0})"
                   onclick=\"hs.close()\" onmouseover=\"javascript:this.src='"$filename_full"';\"
                   onmouseout=\"javascript:this.src='"$filename_original"';\"/>\n"\
                   "              </div>\n"\
-                  "              <div class=\"highslide-caption\">Command: <tt>$ gmic "${replaced_example$nex}"</tt>"\
+                  "              <div class=\"highslide-caption\">Command: <samp>$ gmic "${replaced_example$nex}"</samp>"\
                   ${html_etime}"</div></div></td>\n"
             else
               html=${html}\
@@ -6113,7 +6115,7 @@ update_gallery_html : check "isbool(${1=0})"
                   "                <img alt=\""gallery_$command$nex"\" width=\""$width"\" "\
                   "src=\""$filename_full"\" onclick=\"hs.close()\" />\n"\
                   "              </div>\n"\
-                  "              <div class=\"highslide-caption\">Command: <tt>$ gmic "${replaced_example$nex}"</tt>"\
+                  "              <div class=\"highslide-caption\">Command: <samp>$ gmic "${replaced_example$nex}"</samp>"\
                   ${html_etime}"</div></div></td>\n"
             fi
             nex+=1
@@ -6124,7 +6126,7 @@ update_gallery_html : check "isbool(${1=0})"
         rm
       endl
     done
-    if $col html=${html}"        </tr>\n" fi
+    if $col html=${html}"          <td colspan=\""{$nb_cols-$col}"\"></td></tr>\n" fi
     html=${html}"      </table><br/>\n"\
          ${html_menu}\
          "    </div><div class=\"section_end\"></div>"\n"    <div id=\"include_footer\"></div>"\n"  </body>"
@@ -6568,8 +6570,9 @@ parse_cli_html :
         fi
         is_tr=1 row+=1
       fi
+      if ['$name']=='index' url_name=_index.html else url_name=$name.html fi
       html.="        <td style=\"max-width:170px; padding:5px; border:1px solid \#000000;\">"\
-            "<a href=\""$name.html"#top\">"
+            "<a href=\""$url_name.html"#top\">"
       if $is_native html.="<samp style=\"color:#2080F0\">"$name"</samp>"
       else html.="<samp>"$name"</samp>"
       fi
@@ -6631,6 +6634,9 @@ parse_cli_html :
     # Find previous and next commands.
     if !$> previous= else pass[{$>-1}] 1 ('{n}') discard. {'_c1'} previous={t} rm[-2,-1] fi
     if !$< next= else pass[{$>+1}] 1 ('{n}') l. s -,{'@'} next={0,t} rm endl rm. fi
+    if ['$name']=='index' url_name=_index.html else url_name=$name.html fi
+    if ['$previous']=='index' url_previous=_index.html else url_previous=$previous.html fi
+    if ['$next']=='index' url_next=_index.html else url_next=$next.html fi
 
     strvar $category category_id=${}
   html="<!DOCTYPE html>"\n\
@@ -6658,13 +6664,13 @@ parse_cli_html :
 "      <table style=\"width:100%; font-size:smaller\"><tr style=\"color:#AAAAAA\"><td style=\"text-align:left\">"\
 "<a href=\"categories.html#top\">Categories</a>&nbsp;&nbsp;&#9656;&nbsp;&nbsp;"\
 "<a href=\"categories.html#"$category_id"\">"$category"</a>&nbsp;&nbsp;&#9656;&nbsp;&nbsp;"\
-"<a href=\""$name.html"#top\"><samp>"$name"</samp></a></td>"
+"<a href=\""$url_name"#top\"><samp>"$name"</samp></a></td>"
 
     if narg($previous)" || "narg($next)
       html.="<td style=\"text-align:right\">"
-      if narg($previous) html.="<a href=\""$previous.html"#top\">&#9664;&nbsp;&nbsp;<samp>"$previous"</samp></a>" fi
+      if narg($previous) html.="<a href=\""$url_previous"#top\">&#9664;&nbsp;&nbsp;<samp>"$previous"</samp></a>" fi
       if narg($previous)" && "narg($next) html.="&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;" fi
-      if narg($next) html.="<a href=\""$next.html"#top\"><samp>"$next"</samp>&nbsp;&nbsp;&#9654;</a>" fi
+      if narg($next) html.="<a href=\""$url_next"#top\"><samp>"$next"</samp>&nbsp;&nbsp;&#9654;</a>" fi
       html.="</td>"\n
     fi
     html.="      </tr></table>\n"
@@ -6817,7 +6823,7 @@ parse_cli_html :
     html.="    </div><div class=\"section_end\"></div>"\n\
 "    <div id=\"include_footer\"></div>"\n\
 "  </body>"
-    rm ({'$html'}:y) nm $name ot {n}.html
+    rm ({'$html'}:y) nm $name ot $url_name
   endl done
   rm
   e[] "\r  > "${_gmic_g}{`copy(vector64(_'" "'),'"Parsing done!"')`}$_gmic_n
@@ -31987,8 +31993,8 @@ fx_support_us :
 # p://cimg.eu</a></center>)
 #@gui : note = note{"\n
 #@gui : If you appreciate <b>G'MIC</b>, you are welcome to send us a nice postcard from your place, at:\n\n
-#@gui : <small><tt>David Tschumperlé,\n Laboratoire GREYC (CNRS UMR 6072), Equipe Image,\n
-#@gui : 6 Bd du Maréchal Juin,\n 14050 Caen Cedex / France.</tt></small>"}
+#@gui : <small><samp>David Tschumperlé,\n Laboratoire GREYC (CNRS UMR 6072), Equipe Image,\n
+#@gui : 6 Bd du Maréchal Juin,\n 14050 Caen Cedex / France.</samp></small>"}
 #@gui : note = note{"Postcards senders automatically enter the <i>Friends Hall of Fame</i> :) !\n\
 # You may also consider <a href="https://libreart.info/en/projects/gmic">making a donation</a>!"}
 
@@ -32066,8 +32072,8 @@ fx_support_us :
 #@gui : those data files manually (as a single .zip file) at this address :"}
 #@gui : url = link{"https://gmic.eu/gmic_all_data.zip"}
 #@gui : note = note{"You must then decompress all files contained in this archive at the following location:\n
-#@gui : - for <b>Unix</b>-like systems : <span color="blue"><tt>$HOME/.cache/gmic/</tt></span>\n
-#@gui : - for <b>Windows</b> systems : <span color="blue"><tt>%APPDATA/gmic/</tt></span>
+#@gui : - for <b>Unix</b>-like systems : <span color="blue"><samp>$HOME/.cache/gmic/</samp></span>\n
+#@gui : - for <b>Windows</b> systems : <span color="blue"><samp>%APPDATA/gmic/</samp></span>
 #@gui : "}
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2014/16/04</i>.</small>")
@@ -32137,9 +32143,9 @@ _gui_download_all_data :
 #@gui : Writing a filter from scratch in <b>G'MIC</b> requires some skills, but
 #@gui : can be generally done in very few lines.\n\n
 #@gui : <span foreground="purple" underline="single">Example of a valid <i>.gmic</i> entry :</span>"}
-#@gui : note = note{"<tt>#@gui My effect : my_effect, my_effect</tt>"}
-#@gui : note = note{"<tt>#@gui : Sigma = float(2,0,10)</tt>"}
-#@gui : note = note{"<tt>my_effect :\n     +blur $1 n 0,255 xor</tt>"}
+#@gui : note = note{"<samp>#@gui My effect : my_effect, my_effect</samp>"}
+#@gui : note = note{"<samp>#@gui : Sigma = float(2,0,10)</samp>"}
+#@gui : note = note{"<samp>my_effect :\n     +blur $1 n 0,255 xor</samp>"}
 #@gui : note = note{"
 #@gui : Look at the reference documentation and the tutorial whose links are given below, to learn more.
 #@gui : By the way, you are encouraged to share your nice custom filters with us on our forums,
@@ -42283,7 +42289,7 @@ fx_blend_seamless_preview :
 #@gui : Preview All Outputs = bool(1)
 #@gui : sep = separator()
 #@gui : Custom Formula = text{"1/2 - 1/4*cos(pi*a) - 1/4*cos(pi*b)"}
-#@gui : note = note{"<small><b>Note:</b> In custom formulas, <tt>a</tt> and <tt>b</tt> respectively stand for
+#@gui : note = note{"<small><b>Note:</b> In custom formulas, <samp>a</samp> and <samp>b</samp> respectively stand for
 #@gui : the values of the <i>base layer<i> and the <i>blend layer</i>,
 #@gui : and are defined in value range [0,1].</small>"}
 #@gui : sep = separator()
