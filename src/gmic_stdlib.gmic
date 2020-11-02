@@ -6539,6 +6539,8 @@ parse_cli_html :
 "    <link rel=\"stylesheet\" href=\"../style.css\">"\n\
 "    <link rel=\"stylesheet\" href=\"../highslide/highslide.css\"/>"\n\
 "    <link rel=\"stylesheet\" href=\"https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css\">"\n\n\
+"    <title>G'MIC - GREYC's Magic for Image Computing: A Full-Featured Open-Source Framework for Image Processing "\
+"- Reference Documentation</title>"\n\
 "    <script src=\"../jquery-3.5.1.min.js\"></script>"\n\
 "    <script>var jQuery_3_5_1 = $.noConflict(true);</script>"\n\
 "    <script>jQuery_3_5_1(function(){ jQuery_3_5_1(\"#include_header\").load(\"../header1.html\"); });</script>"\n\
@@ -6556,8 +6558,8 @@ parse_cli_html :
       strvar $category category_id=${}
       if $is_tr html.="      </tr>"\n is_tr=0 fi
       if $is_table html.="    </table><br/>"\n is_table=0 fi
-      html.="\n    <h2><a id=\""$category_id"\"></a>"$category":</h2>"\n\
-            "    <table cellspacing=\"0\" class=\"table_category\">"\n
+      html.="\n    <h1 class=\"h1_reference\"><a id=\""$category_id"\"></a>"$category":</h1>"\n\
+            "    <table class=\"table_category\">"\n
       is_table=1
       n,row=0
     fi
@@ -6565,18 +6567,13 @@ parse_cli_html :
       is_native={"find(#-1,'(+)')>=0"}
       if !($n%5)
         if $is_tr html.="      </tr>"\n fi
-        if $row%2 html.="      <tr style=\"background-color:#DDDDDD\">"\n
-        else html.="      <tr>"\n
-        fi
+        html.="      <tr>"\n
         is_tr=1 row+=1
       fi
       if ['$name']=='index' url_name=_index.html else url_name=$name.html fi
-      html.="        <td style=\"max-width:170px; padding:5px; border:1px solid \#000000;\">"\
-            "<a href=\""$url_name.html"#top\">"
-      if $is_native html.="<samp style=\"color:#2080F0\">"$name"</samp>"
-      else html.="<samp>"$name"</samp>"
+      if $is_native html.="        <td><a class=\"native_command\" href=\""$url_name"#top\">"$name"</a></td>"\n
+      else html.="        <td><a href=\""$url_name"#top\">"$name"</a></td>"\n
       fi
-      html.="</a></td>"\n
       n+=1
     fi
     p_category=$category
@@ -6616,7 +6613,7 @@ parse_cli_html :
 "    <div id=\"include_footer\"></div>"\n\
 "  </body>"
   ({'$html'}:y)
-  ot. categories.html
+  ot. index.html
   rm.
 
   # Retrieve full list of commands and discard those starting with '_'.
@@ -6646,6 +6643,8 @@ parse_cli_html :
 "    <link rel=\"stylesheet\" href=\"../style.css\">"\n\
 "    <link rel=\"stylesheet\" href=\"../highslide/highslide.css\"/>"\n\
 "    <link rel=\"stylesheet\" href=\"https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css\">"\n\n\
+"    <title>G'MIC - GREYC's Magic for Image Computing: A Full-Featured Open-Source Framework for Image Processing "\
+"- Reference Documentation - "$name"</title>"\n\
 "    <script src=\"../jquery-3.5.1.min.js\"></script>"\n\
 "    <script>var jQuery_3_5_1 = $.noConflict(true);</script>"\n\
 "    <script>jQuery_3_5_1(function(){ jQuery_3_5_1(\"#include_header\").load(\"../header1.html\"); });</script>"\n\
@@ -6659,23 +6658,23 @@ parse_cli_html :
 "  </head>"\n\n\
 "  <body>"\n\
 "    <div id=\"include_header\"></div>"\n\n\
-"    <div class=\"section_title\"><p>Reference</p></div><div class=\"section_content\">"\n\n\
+"    <div class=\"section_title\"><p>Reference</p></div><div class=\"section_content\" style=\"padding-top: 0;\">"\n\n\
 "      <a id=\"top\"></a>"\n\
-"      <table style=\"width:100%; font-size:smaller\"><tr style=\"color:#AAAAAA\"><td style=\"text-align:left\">"\
-"<a href=\"categories.html#top\">Categories</a>&nbsp;&nbsp;&#9656;&nbsp;&nbsp;"\
-"<a href=\"categories.html#"$category_id"\">"$category"</a>&nbsp;&nbsp;&#9656;&nbsp;&nbsp;"\
+"      <table class=\"menu_reference\"><tr><td>"\
+"<a href=\"index.html#top\">Categories</a>&nbsp;&nbsp;&#9656;&nbsp;&nbsp;"\
+"<a href=\"index.html#"$category_id"\">"$category"</a>&nbsp;&nbsp;&#9656;&nbsp;&nbsp;"\
 "<a href=\""$url_name"#top\"><samp>"$name"</samp></a></td>"
 
     if narg($previous)" || "narg($next)
-      html.="<td style=\"text-align:right\">"
+      html.="<td>"
       if narg($previous) html.="<a href=\""$url_previous"#top\">&#9664;&nbsp;&nbsp;<samp>"$previous"</samp></a>" fi
       if narg($previous)" && "narg($next) html.="&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;" fi
       if narg($next) html.="<a href=\""$url_next"#top\"><samp>"$next"</samp>&nbsp;&nbsp;&#9654;</a>" fi
       html.="</td>"\n
     fi
     html.="      </tr></table>\n"
-    html.="      <hr style=\"height:1px; border:0; color:black; background-color:black\"/>\n"
-    html.="      <h1 style=\"color:#FF5020\"><samp>"$name"</samp></h1><br/>"\n
+    html.="      <hr/>\n"
+    html.="      <h1 class=\"h1_reference\">"$name"</h1>"\n
 
     # Parse command declaration.
     s -,{'\n'} discard {'#@cli'} max {'" "'} autocrop {'" "'}
@@ -6684,7 +6683,7 @@ parse_cli_html :
       is_native=0
       if $!" && find(#-1,'(+)')>=0" is_native=1 rm. fi
 
-      if $is_native html.="      <em style=\"color:#2080F0\">(native command)</em>"\n fi
+      if $is_native html.="      <p class=\"native_command\">Native command</p>"\n fi
       if $!
         html.="\n      <h2>Arguments:</h2>\n      <ul>"\n
         if $!>1 or="&nbsp;&nbsp;&nbsp; or" else or= fi
