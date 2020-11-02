@@ -6571,7 +6571,7 @@ parse_cli_html :
         is_tr=1 row+=1
       fi
       if ['$name']=='index' url_name=_index.html else url_name=$name.html fi
-      if $is_native html.="        <td><a class=\"native_command\" href=\""$url_name"#top\">"$name"</a></td>"\n
+      if $is_native html.="        <td><a href=\""$url_name"#top\"><span class=\"native_command\">"$name"</span></a></td>"\n
       else html.="        <td><a href=\""$url_name"#top\">"$name"</a></td>"\n
       fi
       n+=1
@@ -6674,7 +6674,6 @@ parse_cli_html :
     fi
     html.="      </tr></table>\n"
     html.="      <hr/>\n"
-    html.="      <h1 class=\"h1_reference\">"$name"</h1>"\n
 
     # Parse command declaration.
     s -,{'\n'} discard {'#@cli'} max {'" "'} autocrop {'" "'}
@@ -6682,8 +6681,9 @@ parse_cli_html :
       s -,{'": "'} autocrop {'" "'} rm[0]
       is_native=0
       if $!" && find(#-1,'(+)')>=0" is_native=1 rm. fi
-
-      if $is_native html.="      <p class=\"native_command\">Native command</p>"\n fi
+      if $is_native html.="      <table class=\"h1_native\"><tr><td><h1 class=\"h1_reference\">"$name"</h1></td><td><span class=\"native_command\">Native command</span></td></tr></table>"\n
+      else html.="      <h1 class=\"h1_reference\">"$name"</h1>"\n
+      fi
       if $!
         html.="\n      <h2>Arguments:</h2>\n      <ul>"\n
         if $!>1 or="&nbsp;&nbsp;&nbsp; or" else or= fi
