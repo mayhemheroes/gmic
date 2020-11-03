@@ -6561,7 +6561,10 @@ parse_cli_html :
     ('{n}') l. s -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm endl
     if ['$category']!=['$p_category']
       strvar $category category_id=${}
-      if $is_tr html.="      </tr>"\n is_tr=0 fi
+      if $is_tr
+        if $n%5" && "$row>1 html.="        <td colspan=\""{5-$n%5}"\"></td>"\n fi
+        html.="      </tr>"\n is_tr=0
+      fi
       if $is_table html.="    </table><br/>"\n is_table=0 fi
       html.="\n    <h1 class=\"h1_reference\"><a id=\""$category_id"\"></a>"$category":</h1>"\n\
             "    <table class=\"table_category\">"\n
@@ -6588,25 +6591,35 @@ parse_cli_html :
     fi
     p_category=$category
   endl done
-  if $is_tr html.="      </tr>"\n fi
+  if $is_tr
+    if $n%5" && "$row>1 html.="        <td colspan=\""{5-$n%5}"\"></td>"\n fi
+    html.="      </tr>"\n
+  fi
   if $is_table html.="    </table>"\n fi
 
   # Add 'Shortcuts' category.
   html.="\n    <h1 class=\"h1_reference\"><a id=\"shortcuts\"></a>Command Shortcuts:</h1>"\n\
         "    <table class=\"table_shortcuts\">"\n\
-        "      <tr><td><b>Shortcut name</b></td><td><b>Equivalent command name</b></td></tr>"\n
+        "      <tr style=\"background-color: \#B0C0D0;\"><td><b>Shortcut name</b></td><td>"\
+        "<b>Equivalent command name</b></td></tr>"\n
   repeat $! if s=['{$>,n}'];s[0]==_'_' continue fi l[$>]
     ('{n}') l. s -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm endl
     if ${parse_cli_is_eqto.}
       is_native={"find(#-1,'(+)')>=0"}
       +l s -,{'"eq. to \47"'} k. s -,{'\47'} k[0] autocrop {'" "'} eqto={t} rm endl
-      html.="      <tr><td><a href=\""$eqto.html"#top\"><b>"$name"</b></a></td>"
+
+      ('$name')
+      replace_str. ">","&gt;"
+      replace_str. "<","&lt;"
+      html_name={t} rm.
+
+      html.="      <tr><td><a href=\""$eqto.html"#top\"><b>"$html_name"</b></a></td>"
       if $is_native
         html.="<td><a href=\""$eqto.html"#top\"><span class=\"native_command\">"$eqto"</span></a></td>"
       else
         html.="<td><a href=\""$eqto.html"#top\">"$eqto"</a></td>"
       fi
-      html.="<tr/>"\n
+      html.="</tr>"\n
       n+=1
     fi
   endl done
