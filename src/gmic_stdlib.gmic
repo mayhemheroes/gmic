@@ -6728,9 +6728,12 @@ parse_cli_html :
 
     # Parse command description.
     html.="\n      <h2>Description:</h2>"\n
+    line=0
     n_example=0
     nb_examples=0
-    line=0
+    is_tutorial_tag=0
+    tutorial_html=
+
     repeat $! if {$>,i==_':'} l[$>]
       rows 1,100% autocrop {'" "'}
       if i==_'$'" && "i[1]!=_'$' nb_examples+=1 fi
@@ -6786,7 +6789,9 @@ parse_cli_html :
         example={t}
         n_example+=1
         if $n_example>1 basename=${name}_$n_example.jpg else basename=${name}.jpg fi
-        if $n_example==1 html.="\n      <h2>Example"${"if "$nb_examples">1 u s else u \"\" fi"}" of use:</h2>"\n fi
+        if $n_example==1
+           if !$is_tutorial_tag html.="<tutorial_tag>" is_tutorial_tag=1 fi
+           html.="\n      <h2>Example"${"if "$nb_examples">1 u s else u \"\" fi"}" of use:</h2>"\n fi
         if $nb_examples!=1 html.="      <h3>&bull;&nbsp;Example \#"$n_example"</h3>"\n fi
         html.="      <p style=\"text-align:left; background-color:#DDDDDD; width:95%; border:1px solid \#999; "\
               "word-wrap:break-word; padding:10px\">"\
@@ -6811,11 +6816,12 @@ parse_cli_html :
       elif i==_'$'" && "i[1]==_'$'
 
         # Found link to tutorial page.
+        if !$is_tutorial_tag html.="<tutorial_tag>" is_tutorial_tag=1 fi
         if h==2 url=https://gmic.eu/tutorial/_$name.shtml
         else rows 2,100 autocrop {'" "'} url=https://gmic.eu/tutorial/{t}
         fi
-        html.="\n      <p class=\"tutorial_button\"><a href=\""$url"\">Tutorial page available</a></p>"\n
-
+        tutorial_html.="      <p class=\"tutorial_button\"><a href=\""$url"\">"\
+                       "A tutorial page is available for this command.</a></p>"
       else
 
         # Other kind of description line
@@ -6858,7 +6864,9 @@ parse_cli_html :
     html.="    </div><div class=\"section_end\"></div>"\n\
 "    <div id=\"include_footer\"></div>"\n\
 "  </body>"
-    rm ({'$html'}:y) nm $name ot $url_name
+    rm ({'$html'}:y)
+    replace_str. "<tutorial_tag>",$tutorial_html # Insert tutorial button
+    nm $name ot $url_name
   endl done
   rm
   e[] "\r  > "${_gmic_g}{`copy(vector64(_'" "'),'"Parsing done!"')`}$_gmic_n
