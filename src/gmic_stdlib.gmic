@@ -9726,20 +9726,22 @@ index : check "${2=0}>=0 && $2<=1 && isbool(${3=0})"
   palette $1 index[^-1] .,$2,$3 rm.
 
 #@cli ir : eq. to 'inrange'.
-ir : check "isbool(${3=1})"
+ir : check "isbool(${3=1}) && isbool(${4=$3})"
   _gmic_s="$?" v + _inrange $*
 
-#@cli inrange : min[%],max[%],_include_boundaries={ 0=no | 1=yes }
-#@cli : Detect pixels whose values are in specified range [min,max], in selected images.
+#@cli inrange : min[%],max[%],_include_min_boundary={ 0=no | 1=yes },_include_max_boundary={ 0=no | 1=yes }
+#@cli : Detect pixels whose values are in specified range `[min,max]`, in selected images.
 #@cli : (eq. to 'ir').
-#@cli : Default value: 'include_boundaries=1'.
+#@cli : Default value: 'include_min_boundary=include_max_boundary=1'.
 #@cli : $ image.jpg +inrange 25%,75%
-inrange : check "isbool(${3=1})"
+inrange : check "isbool(${3=1}) && isbool(${4=$3})"
   _gmic_s="$?" v + _$0 $*
 
-_inrange : skip "${3=1}"
-  s0="out" s1=""
-  e[0--3] "Detect pixel values in range [$1,$2] in image"$_gmic_s", with"${s$3}" boundaries included."
+_inrange : skip "${3=1},${4=$3}"
+  v={$3+2*$4}
+  s=${"arg 1+"$v",out,\" min\",\" max\",\" min and max\""}
+  if $v%3 b="y" else b="ies" fi
+  e[0--3] "Extract pixel values in range [$1,$2] in image"$_gmic_s", with"$s" boundar"$b" included."
   repeat $! l[$>]
     m=$1 M=$2
     if ${is_percent\ $1} m={im+(iM-im)*$1} fi
