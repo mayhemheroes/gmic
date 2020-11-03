@@ -6926,6 +6926,7 @@ parse_cli_images :
   old_category,category= n_category,n_example=0
   if !isfile('image.jpg') l[] sp bottles,640 onfail testimage2d 500 endl o. image.jpg rm. fi
 
+  n_global=0
   repeat $! if s=['{$>,n}'];s[0]==_'_' continue fi l[$>]
     ('{n}') l. s -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm endl
 
@@ -6943,12 +6944,13 @@ parse_cli_images :
 
         s +,{'$'} rm[0,1] a y autocrop {'" "'} example={/{t}}
         n_example+=1
+        n_global+=1
         if $n_example>1
           basename=${name}_$n_example.jpg
         else
           basename=${name}.jpg
         fi
-        e[] $_gmic_c[$n_example]$_gmic_n" Command '"$_gmic_g$name$_gmic_n"': $ "$example
+        e[] $_gmic_c[$n_global]$_gmic_n" Command '"$_gmic_g$name$_gmic_n"': $ "$example
         skip_rendering={"['"$name"'][0]==_'_' || "\
                         "(isfile(['"{/f_$basename}"']) && isfile(['"{/t_$basename}"'])) || "\
                         "(isfile(['"{/f0_$basename}"']) && isfile(['"{/t0_$basename}"']))"}
