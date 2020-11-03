@@ -6716,8 +6716,7 @@ parse_cli_html :
         if $!>1 or="&nbsp;&nbsp;&nbsp; or" else or= fi
         repeat $! l[$>]
           if !$< or= fi
-          html.="        <li style=\"text-align:left\"><samp style=\"color:#AA00AA; word-wrap:break-word\">"{t}\
-                "</samp>"$or"</li>"\n
+          html.="        <li><samp class=\"arguments\">"{t}"</samp>"$or"</li>"\n
         endl done
         html.="      </ul>"\n
       else
@@ -6751,7 +6750,7 @@ parse_cli_html :
           shortcut="(unknown)"
           rm
         endl
-        html.="      <p><em>(equivalent to shortcut command <samp style=\"background-color:#EAE0F5\">"$shortcut\
+        html.="      <p><em>(equivalent to shortcut command <samp class=\"eqto\">"$shortcut\
               "</samp>)</em>.</p>"\n
 
       elif "find(#0,'See also:')>=0"
@@ -6820,6 +6819,7 @@ parse_cli_html :
       else
 
         # Other kind of description line
+        is_bullet={find(crop(),'"can be {"')>=0}
         parse_cli_decorate_doublequotes_html
 
         if find(['{t}'],'http')>=0 # Replace URL in description by HTML links
@@ -6847,7 +6847,9 @@ parse_cli_html :
         parse_cli_decorate_braces_html
         parse_cli_decorate_backquotes_html
         if $line==1 html.="      <br/>"\n fi
-        html.="      "{t}"<br/>"\n
+        html.="      "
+        if $is_bullet html.="&#9679;&nbsp;&nbsp;" fi
+        html.={t}"<br/>"\n
         line+=1
       fi
     endl done
@@ -6883,10 +6885,10 @@ parse_cli_decorate_singlequotes_html :
                 );
               ); beg = -1))"
   if $is_com
-    replace_str "\2","<a href=\""$com.html"#top\"><samp style=\"background-color:#EAE0F5; padding:2px\">"
+    replace_str "\2","<a href=\""$com.html"#top\"><samp class=\"samp_color\">"
     replace_str "\3","</samp></a>"
   else
-    replace_str "\2","<samp style=\"background-color:#EAE0F5; padding:2px\">"
+    replace_str "\2","<samp class=\"samp_color\">"
     replace_str "\3","</samp>"
   fi
 
@@ -6912,7 +6914,7 @@ parse_cli_decorate_backquotes_html :
 
 # Decorate strings between braces.
 parse_cli_decorate_braces_html :
-  replace_str "{","<samp style=\"color:#990099;\">{"
+  replace_str "{","<samp class=\"samp_braces\">{"
   replace_str "}","}</samp>"
 
 parse_cli_trigger_html :
@@ -10519,7 +10521,7 @@ colorblind : check "isint($1) && $1>=0 && $1<=7"
 #@cli colormap : nb_levels>=0,_method={ 0=median-cut | 1=k-means },_sort_vectors
 #@cli : Estimate best-fitting colormap with 'nb_colors' entries, to index selected images.
 #@cli : Set 'nb_levels==0' to extract all existing colors of an image.
-#@cli : 'sort_vectors' can be '{ 0=unsorted | 1=by increasing norm | 2=by decreasing occurrence }'
+#@cli : 'sort_vectors' can be { 0=unsorted | 1=by increasing norm | 2=by decreasing occurrence }.
 #@cli : Default value: 'method=1' and 'sort_vectors=1'.
 #@cli : $ image.jpg +colormap[0] 4 +colormap[0] 8 +colormap[0] 16
 #@cli : $$
@@ -11477,8 +11479,8 @@ pseudogray : check "isint(${1=5}) && $1>=0 && ${2=2.3}>=0 && isint(${3=8}) && $3
       *. 'y+1' discard. 0 -. 1 map. .. rm..
     done
     transpose.
-
   fi
+  nm. pseudogray$1
 
 #@cli replace_color : tolerance[%]>=0,smoothness[%]>=0,src1,src2,...,dest1,dest2,...
 #@cli : Replace pixels from/to specified colors in selected images.
