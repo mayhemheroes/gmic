@@ -6791,21 +6791,28 @@ parse_cli_html :
                     "image.jpg</a>"
         example={t}
         n_example+=1
-        if $n_example>1
-          filename_full=f_${name}_$n_example.jpg
-          filename_thumb=t_${name}_$n_example.jpg
-        else
-          filename_full=f_${name}.jpg
-          filename_thumb=t_${name}.jpg
-        fi
+        if $n_example>1 basename=${name}_$n_example.jpg else basename=${name}.jpg fi
         if $n_example==1 html.="\n      <h2>Example"${"if "$nb_examples">1 u s else u \"\" fi"}" of use:</h2>"\n fi
         if $nb_examples!=1 html.="      <h3>&bull;&nbsp;Example \#"$n_example"</h3>"\n fi
         html.="      <p style=\"text-align:left; background-color:#DDDDDD; width:95%; border:1px solid \#999; "\
               "word-wrap:break-word; padding:10px\">"\
-              "<samp>$ gmic "$example"</samp></p>\n"\
-              "      <div><a href=\"img/"$filename_full"\" class=\"highslide\" onclick=\"return hs.expand(this)\">"\
-              "<img src=\"img/"$filename_thumb"\" class=\"center_image\"/></a>"\
-              "<div class=\"highslide-caption\">Command: <b>"$example"</b></div></div>"\n
+              "<samp>$ gmic "$example"</samp></p>"\n
+
+        if isfile('img/f_$basename') # Single output image
+          html.="      <span><a href=\"img/"f_$basename"\" class=\"highslide\" onclick=\"return hs.expand(this)\">"\
+                "<img class=\"center_image\" src=\"img/"t_$basename"\"/></a>"\
+                "<div class=\"highslide-caption\">Command: <b>"$example"</b></div></span>"\n
+        else # Multiple output images
+          i=0
+          html.="        <div class=\"center\">"\n
+          for isfile('img/f${i}_$basename')
+            html.="        <span><a href=\"img/"f${i}_$basename"\" class=\"highslide\" onclick=\"return hs.expand(this)\">"\
+                  "<img src=\"img/"t${i}_$basename"\"/></a>"\
+                  "<div class=\"highslide-caption\">Command: <b>"$example"</b></div></span>"\n
+            i+=1
+          done
+          html.="        </div>"\n
+        fi
 
       elif i==_'$'" && "i[1]==_'$'
 
@@ -6932,7 +6939,7 @@ parse_cli_images :
       e[] $_gmic_r"\n ** Section \#"$n_category": "$category"."$_gmic_n"\n"
     fi
     s -,{'\n'} discard {'#@cli'} max {'" "'} autocrop {'" "'}
-    n_example_com=0
+    n_example=0
 
     repeat $! l[$>]
       if "i==_':' && (
@@ -6941,16 +6948,15 @@ parse_cli_images :
 
         s +,{'$'} rm[0,1] a y autocrop {'" "'} example={/{t}}
         n_example+=1
-        n_example_com+=1
-        if $n_example_com>1
-          filename_full=f_${name}_$n_example_com.jpg
-          filename_thumb=t_${name}_$n_example_com.jpg
+        if $n_example>1
+          basename=${name}_$n_example.jpg
         else
-          filename_full=f_${name}.jpg
-          filename_thumb=t_${name}.jpg
+          basename=${name}.jpg
         fi
         e[] $_gmic_c[$n_example]$_gmic_n" Command '"$_gmic_g$name$_gmic_n"': $ "$example
-        skip_rendering={"(isfile(['"{/$filename_full}"']) && isfile(['"{/$filename_thumb}"'])) || ['"$name"'][0]==_'_'"}
+        skip_rendering={"['"$name"'][0]==_'_' || "\
+                        "(isfile(['"{/f_$basename}"']) && isfile(['"{/t_$basename}"'])) || "\
+                        "(isfile(['"{/f0_$basename}"']) && isfile(['"{/t0_$basename}"']))"}
 
         if !$skip_rendering # Generate picture only if the file doesn't yet exist
           m "run_example : "$example
@@ -6959,15 +6965,15 @@ parse_cli_images :
             run_example
             etime="done in "$_gmic_n{_round($|-$etime,0.01)}"s"$_gmic_m
             _parse_cli_images
-            o $filename_full,85
-            rr2d 800,400,0,2
-            o $filename_thumb,75
+            if $!>1 repeat $! o[$>] f$>_$basename,85 done else o f_$basename,85 fi
+            rr2d 320,240,0,2
+            if $!>1 repeat $! o[$>] t$>_$basename,75 done else o t_$basename,75 fi
             rm
           onfail
             rm gui_error_preview "Unable to generate preview image"
-            o $filename_full,85
-            rr2d 800,400,0,2
-            o $filename_thumb,75
+            o f_$basename,85
+            rr2d 300,300,0,2
+            o t_$basename,75
             rm
             etime="failed"
           endl
@@ -6984,12 +6990,8 @@ parse_cli_images :
 
 # Generate a single image from a list of images, for the reference documentation.
 _parse_cli_images :
-  if !$! rm return
-  elif $!==1 M,N=1
-  elif $!<4 M,N=$!,1 # if ${-max_h}>=${-max_w} M,N=$!,1 else M,N=1,$! fi
-  else M,N={M=ceil(sqrt($!));$!<4?[$!,1]:[M,ceil($!/M)]}
-  fi
-  W,H={Sw=$!<2?720:960;Sh=640;floor([Sw/$M,Sh/$N])}
+  if !$! rm return fi
+  W,H={[640,480]}
 
   repeat $! l[$>] nm={n}
     label=[$>]:" "'$nm'
@@ -7034,26 +7036,19 @@ _parse_cli_images :
     r {[w,h]+2},1,100%,0,0,0.5,0.5
     - 255 r {[w+10,h+5]},1,100%,0,0,0.5,0.5 r 100%,{h+1},1,100%,0,0,0,1 + 255
 
-    0 t. $label" "$label2,5,0,18,1,1
+    0 t. $label" "$label2,5,0,32,1,1
     if w>w#0" || "h>h#0
-       rm. 0 t. $label\n$label2,5,0,18,1,1
+       rm. 0 t. $label\n$label2,5,0,32,1,1
        if w>w#0" || "h>h#0 rr2d. {0,[w,h]},0,2 fi
     fi
     *. -1 n. 0,255 to_rgb.
     - 255 a y,0.5 + 255
 
   endl done
-  - 255
-
-  MN={$M*$N} if $!%$MN 0x{$MN-($!%$MN)} fi
-  repeat $!/$MN l[$>-{$>+$MN-1}]
-    repeat $!/$M a[$>-{$>+$M-1}] x done a y,0.5
-  endl done
-  r 100%,{h+25},1,100%,0,0,0,0.75
-  + 255 c 0,255
+  c 0,255
 
 parse_cli_trigger_images :
-  parse_cli_trigger_help $*
+  parse_cli_trigger_print $*
 
 #
 # Implements 'print' mode for command 'parse_cli'.
@@ -22529,7 +22524,7 @@ fisheye : skip ${1=50},${2=50},${3=50},${4=1.2}
 #@cli : Apply flower deformation on selected images.
 #@cli : Default values: 'amplitude=30', 'frequency=6', 'offset_r=0', 'angle=0', 'center_x=center_y=50%' \
 # and 'boundary_conditions=3'.
-#@cli : $ image.jpg flower ,
+#@cli : $ image.jpg +flower ,
 flower : skip ${1=30},${2=6},${3=0},${4=0},${5=50%},${6=50%},${7=3}
   e[^-1] "Apply flower deformation on image$?, with amplitude $1, frequency $2, offset $3, angle $4 deg. and
           center point ($1,$2)."
