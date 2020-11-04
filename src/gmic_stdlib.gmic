@@ -7657,7 +7657,7 @@ parse_gui_json :
     if narg(${_f${f}_locale}) locale=${_f${f}_locale} fi
 
     ('"    {\n      \"name\": \""$fname"\", \"lang\": \""$locale"\", \"command\": \""${_f${f}_command}"\", "\
-       "\"parameters\": [\n"')
+      "\"command_preview\": \""${_f${f}_commandpreview}"\", \"parameters\": [\n"')
 
     sepf={`$<?_',':0`}
     ppos=1
@@ -7667,10 +7667,11 @@ parse_gui_json :
       nbargs=${_f${f}_p{$p}_nbargs}
       arg0= repeat $nbargs ('${_f${f}_p${p}_a$>}') autocrop. {'\"'} _parse_gui_json {t} arg$>=${} rm. done
       sepp={`$<?_',':0`}
+      if narg(${_f${f}_p{$p}_visibility}) visibility=", \"visibility\": \""${_f${f}_p{$p}_visibility}"\"" else visibility= fi
 
       if ['$type']=='bool'
         if lowercase(['$arg0'])=='false' arg0=0 elif lowercase(['$arg0'])=='true' arg0=1 elif !isnum($arg0) arg0=0 fi
-        ('"      { \"type\": \"bool\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"pos\": \""$ppos"\" }"\
+        ('"      { \"type\": \"bool\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"pos\": \""$ppos"\""$visibility" }"\
          $sepp\n')
         ppos+=1
 
@@ -7679,32 +7680,32 @@ parse_gui_json :
         l[] if isint($arg0) default=$arg0 n+=1 fi onfail endl
         c= repeat $nbargs-$n,a choices.=${c}"\""$>"\": \""${arg{$n+$a}}"\"" c=", " done
         ('"      { \"type\": \"choice\", \"name\": \""$name"\", \"default\": \""$default"\", \"pos\": \""$ppos"\", "\
-          "\"choices\": { "$choices" } }"$sepp\n')
+          "\"choices\": { "$choices" }"$visibility" }"$sepp\n')
         ppos+=1
 
       elif ['$type']=='color'
         args= c= repeat $nbargs,a args.=$c${arg$a} c="," done
-        ('"      { \"type\": \"color\", \"name\": \""$name"\", \"default\": \""$args"\", \"pos\": \""$ppos"\" }"\
+        ('"      { \"type\": \"color\", \"name\": \""$name"\", \"default\": \""$args"\", \"pos\": \""$ppos"\""$visibility" }"\
          $sepp\n')
         ppos+=$nbargs
 
       elif s=['$type'];s=='int'
         ('"      { \"type\": \"int\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"min\": \""$arg1"\", "\
-          "\"max\": \""$arg2"\", \"pos\": \""$ppos"\" }"$sepp\n')
+          "\"max\": \""$arg2"\", \"pos\": \""$ppos"\""$visibility" }"$sepp\n')
         ppos+=1
 
       elif s=['$type'];s=='float'
          ('"      { \"type\": \"float\", \"name\": \""$name"\", \"default\": \""$arg0"\", \"min\": \""$arg1"\", "\
-           "\"max\": \""$arg2"\", \"pos\": \""$ppos"\" }"$sepp\n')
+           "\"max\": \""$arg2"\", \"pos\": \""$ppos"\""$visibility" }"$sepp\n')
         ppos+=1
 
       elif ['$type']=='file'" || "['$type']=='filein'" || "['$type']=='fileout'
-        ('"      { \"type\": \"file\", \"name\": \""$name"\", \"default\": \""{/$arg0}"\", \"pos\": \""$ppos"\" }"\
+        ('"      { \"type\": \"file\", \"name\": \""$name"\", \"default\": \""{/$arg0}"\", \"pos\": \""$ppos"\""$visibility" }"\
          $sepp\n')
         ppos+=1
 
       elif ['$type']=='folder'
-        ('"      { \"type\": \"folder\", \"name\": \""$name"\", \"default\": \""{/$arg0}"\", \"pos\": \""$ppos"\"}"\
+        ('"      { \"type\": \"folder\", \"name\": \""$name"\", \"default\": \""{/$arg0}"\", \"pos\": \""$ppos"\""$visibility" }"\
          $sepp\n')
         ppos+=1
 
@@ -7715,31 +7716,31 @@ parse_gui_json :
         else url,name=${arg$n}
         fi
         if $align==0 align=left elif $align==1 align=right else align=center fi
-        ('"      { \"type\": \"link\", \"name\": \""$name"\", \"url\": \""{/$url}"\", \"align\": \""$align"\" }"\
+        ('"      { \"type\": \"link\", \"name\": \""$name"\", \"url\": \""{/$url}"\", \"align\": \""$align"\""$visibility" }"\
          $sepp\n')
 
       elif ['$type']=='note'
-        ('"      { \"type\": \"note\", \"text\": \""{/$arg0}"\"}"$sepp\n')
+        ('"      { \"type\": \"note\", \"text\": \""{/$arg0}"\""$visibility" }"$sepp\n')
 
       elif ['$type']=='point'
         ('"      { \"type\": \"point\", \"name\": \""$name"\", \"position\": \""$arg0,$arg1"\", \"pos\": "\
-          "\""$ppos"\" }"$sepp\n')
+          "\""$ppos"\""$visibility" }"$sepp\n')
         ppos+=2
 
       elif ['$type']=='separator'
-        ('"      { \"type\": \"separator\" }"$sepp\n')
+        ('"      { \"type\": \"separator\""$visibility" }"$sepp\n')
 
       elif ['$type']=='text'
-        ('"      { \"type\": \"text\", \"name\": \""$name"\", \"default\": \""{/$arg0}"\", \"pos\": \""$ppos"\" }"\
+        ('"      { \"type\": \"text\", \"name\": \""$name"\", \"default\": \""{/$arg0}"\", \"pos\": \""$ppos"\""$visibility" }"\
          $sepp\n')
         ppos+=1
 
       elif ['$type']=='value'
-        ('"      { \"type\": \"value\", \"value\": \""{/$arg0}"\", \"pos\": \""$ppos"\" }"$sepp\n')
+        ('"      { \"type\": \"value\", \"value\": \""{/$arg0}"\", \"pos\": \""$ppos"\""$visibility" }"$sepp\n')
         ppos+=1
 
       else # Unknown parameter
-        ('"      { \"type\": \"unknown\", \"name\": \""$name"\" }"$sepp\n')
+        ('"      { \"type\": \"unknown\", \"name\": \""$name"\""$visibility" }"$sepp\n')
       fi
 
     done
@@ -8182,12 +8183,12 @@ upload_filters :
 
     # Upload filter files on G'MIC server.
     e[] "** Upload JSON filters."
-    ot ${_path_rc}/filters$_version.json
+    ot ${_path_rc}/update$_version.json
 
     $compat
     repeat w
       v={i[$>]}
-      _upload[] ${_path_rc}/filters$_version.json,filters$v.json,1
+      _upload[] ${_path_rc}/update$_version.json,update$v.json,1
     done
     rm
   endl
