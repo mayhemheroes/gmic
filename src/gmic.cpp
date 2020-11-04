@@ -15160,8 +15160,8 @@ template gmic& gmic::run(const char *const commands_line, \
 template gmic& gmic::run(const char *const commands_line, \
                          gmic_list<pt> &images, gmic_list<char> &images_names, \
                          float *const p_progress, bool *const p_is_abort); \
-template CImg<pt>& CImg<pt>::assign(const unsigned int size_x, const unsigned int size_y=1, \
-                                    const unsigned int size_z=1, const unsigned int size_c=1); \
+template CImg<pt>& CImg<pt>::assign(const unsigned int size_x, const unsigned int size_y, \
+                                    const unsigned int size_z, const unsigned int size_c); \
 template CImgList<pt>& CImgList<pt>::assign(const unsigned int n)
 
 #ifdef gmic_pixel_type
