@@ -13903,9 +13903,10 @@ curvature :
   endl done
 
 #@cli dct : _{ x | y | z }...{ x | y | z } : (no arg)
-#@cli : Compute the discrete cosine transform of selected images,
-#@cli : optionally along the specified axes only.
+#@cli : Compute the discrete cosine transform of selected images, optionally along the specified axes only.
+#@cli : Output images are always evenly sized, so this command may change the size of the selected images.
 #@cli : Default values: (no arg)
+#@cli : See also: 'idct'.
 #@cli : $ image.jpg +dct +idct[-1] abs[-2] +[-2] 1 log[-2]
 #@cli : $$ _dct-and-idct
 dct : skip ${1=0}
@@ -13934,14 +13935,12 @@ dct : skip ${1=0}
 
 # 1D direct transform (DCT-II) along the x-axis, for a single image.
 _dct :
-  is_odd={w%2}
-  if $is_odd r {w+1},100%,100%,100%,0,1 fi
+  if w%2 r {w+1},100%,100%,100%,0,1 fi
   s x l[1--1:2] a x mirror x endl mv[1] $! a x
   fft x
   100%,1,1,1,2*cos(-x*pi/(2*w)) *[0,2]
   100%,1,1,1,2*sin(-x*pi/(2*w)) *[1,2]
   -
-  if $is_odd r {w-1},100%,100%,100%,0 fi
   +z[0] 0,0 /. {sqrt(2)} j.. .,0,0,0 rm. * {sqrt(2/w)}  # Make the transform orthogonal.
 
 #@cli deblur : amplitude[%]>=0,_nb_iter>=0,_dt>=0,_regul>=0,_regul_type={ 0=Tikhonov | 1=meancurv. | 2=TV }
@@ -14394,9 +14393,11 @@ heat_flow : skip ${1=10},${2=30},${3=0}
 #@cli : $ image.jpg hessian
 
 #@cli idct : _{ x | y | z }...{ x | y | z } : (no arg)
-#@cli : Compute the inverse discrete cosine transform of selected images,
-#@cli : optionally along the specified axes only.
+#@cli : Compute the inverse discrete cosine transform of selected images, optionally along the specified axes only.
+#@cli : Output images are always evenly sized, so this command may change the size of the selected images.
+#@cli : (dct images obtained with the 'dct' command are evenly sized anyway).
 #@cli : Default values: (no arg)
+#@cli : See also: 'dct'.
 #@cli : $$ _dct-and-idct
 idct : skip ${1=0}
   ('"$1"')
@@ -14424,9 +14425,8 @@ idct : skip ${1=0}
 
 # 1D inverse transform (DCT-III) along the x-axis, for a single image.
 _idct :
-  is_odd={w%2}
+  if w%2 r {w+1},100%,100%,100%,0,0 fi
   / {sqrt(2/w)} +z[0] 0,0 *. {sqrt(2)} j.. .,0,0,0 rm. # Make the transform orthogonal.
-  if $is_odd r {w+1},100%,100%,100%,0,0 fi
   +mirror x shift. 1 *. -1
   100%,1,1,1,cos(x*pi/(2*w))
   100%,1,1,1,sin(x*pi/(2*w))
@@ -14437,7 +14437,6 @@ _idct :
   r[0] 200%,100%,100%,100%,4,0,0
   r[1] 200%,100%,100%,100%,4,0,1
   +
-  if $is_odd r {w-1},100%,100%,100%,0 fi
 
 #@cli iee
 #@cli : Compute gradient-orthogonal-directed 2nd derivative of image(s).
