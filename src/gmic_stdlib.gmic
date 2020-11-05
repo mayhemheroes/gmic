@@ -330,7 +330,7 @@ __help :
 # Reference documentation (as well as command documentation) uses a 'light' markdown-like syntax,
 # with the following patterns recognized:
 # - __sentence in italic__
-# - *_sentence in bold _*
+# - **sentence in bold**
 # - \n- Item of a list.
 # - \n. Item of a sub-list.
 # - 'word' : write single word with monospace 'style 1'.
@@ -665,123 +665,108 @@ ${-_gmic}" interpreter source code and recompile it)."
 
   _section "Substitution Rules"
 
-  _text "  - "${-_gmic}" items containing '"${_g.}"$"${_n.}"' or '"${_g.}"{}"${_n.}"' are substituted before being
- interpreted. Use these
-\n     substituting expressions to access various data from the interpreter environment.
-\n
-\n  - `$name` and `${name}` are both substituted by the value of the specified named "\
-${_g.}"variable"${_n.}"
-\n     (set previously by the item '"${_c.}"name=value"${_n.}"'). If this variable has not been already set, the
-\n     expression is substituted by the highest positive "${_g.}"index"${_n.}" of the named image '"${_g.}"[name]"${_n.}"'. If no
-\n     image has this name, the expression is substituted by the value of the "${_g.}"OS environment variable"${_n.}"
-\n     with same name (it may be thus an empty string).
-\n     The following reserved variables are predefined by the "${-_gmic}" interpreter:
-\n
-\n       . '"${_c.}"$!"${_n.}"': The current number of images in the list.
-\n       . '"${_c.}"$>"${_n.}"' and '"${_c.}"$<"${_n.}"': The increasing/decreasing index of the latest (currently running)
-\n          '"${_c.}"repeat...done"${_n.}"' loop. '"${_c.}"$>"${_n.}"' goes from '"${_g.}"0"${_n.}"' (first loop iteration) to
-\n          '"${_g.}"nb_iterations - 1"${_n.}"' (last iteration). '"${_c.}"$<"${_n.}"' does the opposite.
-\n       . '"${_c.}"$/"${_n.}"': The current call stack. Stack items are separated by slashes '"${_g.}"/"${_n.}"'.
-\n       . '"${_c.}"$|"${_n.}"': The current value (expressed in seconds) of a millisecond precision timer.
-\n       . '"${_c.}"$^"${_n.}"': The current verbosity level.
-\n       . '"${_c.}"$_cpus"${_n.}"': The number of computation cores available on your machine.
-\n       . '"${_c.}"$_pid"${_n.}"': The current process identifier, as an integer.
-\n       . '"${_c.}"$_prerelease"${_n.}"': For pre-releases, the date of the pre-release as '"${_g.}"yymmdd"${_n.}"'.
-\n          For stable releases, this variable is set to 0.
-\n       . '"${_c.}"$_version"${_n.}"': A 3-digits number telling about the current version of the "${-_gmic}" interpreter
-\n          (e.g. '"$g$_version${_n.}"').
-\n       . '"${_c.}"$_host"${_n.}"': A string telling about the host running the "${-_gmic}" interpreter
-\n          (e.g. '"${_g.}"cli"${_n.}"' or '"${_g.}"gimp"${_n.}"').
-\n       . '"${_c.}"$_vt100"${_n.}"': Set to "${_g.}"1"${_n.}" if colored text output is allowed on the console.
-\n          Otherwise, set to "${_g.}"0"${_n.}"
-\n       . '"${_c.}"$_path_rc"${_n.}"': The path to the "${-_gmic}" folder used to store configuration files
-\n         (its value is OS-dependent).
-\n       . '"${_c.}"$_path_user"${_n.}"': The path to the "${-_gmic}" user file "${_g.}".gmic"${_n.}" or "${_g.}"user.gmic"${_n.}"
-\n          (its value is OS-dependent).
-\n       . '"${_c.}"$_path_commands"${_n.}"': A list of all imported command files (stored as a list-valued variable).
-\n
-\n  - '"${_c.}"$${_n.}ame"${_n.}"' and '"${_c.}"$${name}"${_n.}"' are both substituted by the G'MIC script code of the specified named
-\n     "${_g.}"custom command"${_n.}", or by an empty string if no custom command with specified name exists.
-\n
-\n  - '"${_c.}"${\"-pipeline\"}"${_n.}"' is substituted by the "${_g.}"status value"${_n.}" after the execution of the specified
-\n     "${-_gmic}" pipeline (see command '"${_c.}"status"${_n.}"'). Expression '"${_c.}"${}"${_n.}"' thus stands for the
-\n     "${_g.}"current status value"${_n.}".
-\n
-\n  - '"${_c.}"{``string}"${_n.}"' (starting with two backquotes) is substituted by a "${_g.}"double-quoted version"${_n.}" of the
-\n     specified string.
-\n
-\n  - '"${_c.}"{/string}"${_n.}"' is substituted by the "${_g.}"escaped version"${_n.}" of the specified string.
-\n
-\n  - '"${_c.}"{'string'[:delimiter]}"${_n.}"' (between single quotes) is substituted by the "${_g.}"sequence of character
- codes"${_n.}"
-\n     that composes the specified string, separated by specified delimiter. Possible delimiters are
-\n     '"${_g.}","${_n.}"' (default), '"${_g.}";"${_n.}"', '"${_g.}"/"${_n.}"', '"${_g.}"^"${_n.}"' or ' '.
-\n     For instance, item '"${_c.}"{'foo'}"${_n.}"' is substituted by '"${_c.}"102,111,111"${_n.}"' and '"${_c.}"{'foo':;}"${_n.}"'
- by '"${_c.}"102;111;111"${_n.}"'.
-\n
-\n  - '"${_c.}"{image,feature[:delimiter]}"${_n.}"' is substituted by a specific feature of the image "${_c.}"[image]"${_n.}".
-\n     '"${_g.}"image"${_n.}"' can be either an image number or an image name. It can be also eluded, in which case,
-\n     the last image '"${_c.}"[-1]"${_n.}"' of the list is considered for the requested feature.
-\n     Specified '"${_g.}"feature"${_n.}"' can be one of:
-\n
-\n       . '"${_c.}"b"${_n.}"': The image basename (i.e. filename without the folder path nor extension).
-\n       . '"${_c.}"f"${_n.}"': The image folder name.
-\n       . '"${_c.}"n"${_n.}"': The image name or filename (if the image has been read from a file).
-\n       . '"${_c.}"t"${_n.}"': The text string from the image values regarded as character codes.
-\n       . '"${_c.}"x"${_n.}"': The image extension (i.e the characters after the last '.' in the image name).
-\n       . '"${_c.}"^"${_n.}" : The sequence of all image values, separated by commas ','.
-\n       . '"${_c.}"@subset"${_n.}"': The sequence of image values corresponding to the specified subset, and
-\n          separated by commas ','.
-\n       . Any other '"${_c.}"feature"${_n.}"' is considered as a "${_g.}"mathematical expression"${_n.}" associated to the image
-\n          "${_c.}"[image]"${_n.}" and is substituted by the result of its evaluation (float value). For instance,
-\n          expression '"${_c.}"{0,w+h}"${_n.}"' is substituted by the sum of the width and height of the first image
-\n          (see section '"${_m.}"Mathematical Expressions"${_n.}"' for more details). If a mathematical expression
-\n          starts with an underscore '"${_g.}"_"${_n.}"', the resulting value is truncated to a readable format.
-\n          For instance, item '"${_c.}"{_pi}"${_n.}"' is substituted by '"${_g.}"3.14159"${_n.}"' (while '"${_c.}"{pi}"${_n.}"'
-\n           is substituted by '"${_g.}"3.141592653589793"${_n.}"').
-\n       . A '"${_c.}"feature"${_n.}"' delimited by backquotes is replaced by a string whose character codes correspond
-\n          to the list of values resulting from the evaluation of the specified mathematical
-\n          expression. For instance, item '"${_c.}"{`[102,111,111]`}"${_n.}"' is substituted by '"${_c.}"foo"${_n.}"' and item
-\n          '"${_c.}"{`vector8(65)`}"${_n.}"' by '"${_c.}"AAAAAAAA"${_n.}"'.
-\n
-\n  - '"${_c.}"{*}"${_n.}"' is substituted by the "${_g.}"visibility state"${_n.}" of the instant display window "${_c.}"[0]"${_n.}"
-\n     (can be "${_g.}"{ 0=closed | 1=visible }"${_n.}").
-\n
-\n  - '"${_c.}"{*[index],feature1,...,featureN[:delimiter]}"${_n.}"' is substituted by
-\n      a specific set of features of the instant display window "${_c.}"#0"${_n.}" (or "${_c.}"#index"${_n.}", if specified).
-\n      Requested '"${_g.}"features"${_n.}"' can be:
-\n
-\n       . '"${_c.}"w"${_n.}"': display width (i.e. width of the display area managed by the window).
-\n       . '"${_c.}"h"${_n.}"': display height (i.e. height of the display area managed by the window).
-\n       . '"${_c.}"wh"${_n.}"': display width x display height.
-\n       . '"${_c.}"d"${_n.}"': window width (i.e. width of the window widget).
-\n       . '"${_c.}"e"${_n.}"': window height (i.e. height of the window widget).
-\n       . '"${_c.}"de"${_n.}"': window width x window height.
-\n       . '"${_c.}"u"${_n.}"': screen width (actually independent on the window size).
-\n       . '"${_c.}"v"${_n.}"': screen height (actually independent on the window size).
-\n       . '"${_c.}"uv"${_n.}"': screen width x screen height.
-\n       . '"${_c.}"n"${_n.}"': current normalization type of the instant display.
-\n       . '"${_c.}"t"${_n.}"': window title of the instant display.
-\n       . '"${_c.}"x"${_n.}"': X-coordinate of the mouse position (or -1, if outside the display area).
-\n       . '"${_c.}"y"${_n.}"': Y-coordinate of the mouse position (or -1, if outside the display area).
-\n       . '"${_c.}"b"${_n.}"': state of the mouse buttons { 1=left-but. | 2=right-but. | 4=middle-but. }.
-\n       . '"${_c.}"o"${_n.}"': state of the mouse wheel.
-\n       . '"${_c.}"k"${_n.}"': decimal code of the pressed key if any, 0 otherwise.
-\n       . '"${_c.}"c"${_n.}"': boolean (0 or 1) telling if the instant display has been closed recently.
-\n       . '"${_c.}"r"${_n.}"': boolean telling if the instant display has been resized recently.
-\n       . '"${_c.}"m"${_n.}"': boolean telling if the instant display has been moved recently.
-\n       . Any other '"${_c.}"feature"${_n.}"' stands for a "${_g.}"keycode name"${_n.}" (in capital letters), and is substituted
-\n          by a boolean describing the current key state "${_g.}"{ 0=pressed | 1=released }"${_n.}".
-\n       . You can also prepend a hyphen '"${_c.}"-"${_n.}"' to a '"${_g.}"feature"${_n.}"' (that supports it) to flush the
-\n          corresponding event immediately after reading its state (works for keys, mouse and
-\n          window events).
-\n
-\n  - Item substitution is "${_g.}"never performed in items between double quotes"${_n.}". One must break the quotes
-\n    to enable substitution if needed, as in '"${_c.}"\"3+8 kg = \"{3+8}\" kg\""${_n.}"'. Using double quotes is then
-\n    a convenient way to disable the substitutions mechanism in items, when necessary.
-\n
-\n  - One can also disable the substitution mechanism on items outside double quotes, by escaping the
-\n     '"${_g.}"{"${_n.}"','"${_g.}"}"${_n.}"' or '"${_g.}"$"${_n.}"' characters, as in '"${_c.}"\\{3+4\\}\\ doesn\47t\\ evaluate"${_n.}"'."
+  _text "- "${-_gmic}" items containing '$' or '{}' are substituted before being interpreted. Use these "\
+"substituting expressions to access various data from the interpreter environment."\n\
+\n\
+"- '$name' and '${name}' are both substituted by the value of the specified named variable "\
+"(set previously by the item 'name=value'). If this variable has not been already set, the "\
+"expression is substituted by the highest positive index of the named image '[name]'. If no "\
+"image has this name, the expression is substituted by the value of the OS environment variable "\
+"with same name (it may be thus an empty string if it is not defined). "\n\
+\n\
+"The following reserved variables are predefined by the "${-_gmic}" interpreter: "\n\
+\n\
+". '$!': The current number of images in the list."\n\
+". '$>' and '$<': The increasing/decreasing index of the latest (currently running) "\
+"'repeat...done' loop. '$>' goes from `0` (first loop iteration) to `nb_iterations - 1` (last iteration). "\
+"'$<' does the opposite. "\n\
+". '$/': The current call stack. Stack items are separated by slashes '/'."\n\
+". '$|': The current value (expressed in seconds) of a millisecond precision timer."\n\
+". '$^': The current verbosity level."\n\
+". '$_cpus': The number of computation cores available on your machine."\n\
+". '$_pid': The current process identifier, as an integer."\n\
+". '$_prerelease': For pre-releases, the date of the pre-release as `yymmdd`. "\
+"For stable releases, this variable is set to `0`."\n\
+". '$_version': A 3-digits number telling about the current version of the "${-_gmic}" interpreter "\
+" (e.g. '"$_version"'). "\n\
+". '$_host': A string telling about the host running the "${-_gmic}" interpreter (e.g. `cli` or `gimp`)."\n\
+". '$_vt100': Set to `1` if colored text output is allowed on the console. Otherwise, set to `0`."\n\
+". '$_path_rc': The path to the "${-_gmic}" folder used to store configuration files (its value is OS-dependent)."\n\
+". '$_path_user': The path to the "${-_gmic}" user file `.gmic` or `user.gmic` (its value is OS-dependent)."\n\
+". '$_path_commands': A list of all imported command files (stored as a list-valued variable)."\n\
+\n\
+"- '$$name' and '$${name}' are both substituted by the G'MIC script code of the specified named "\
+"`custom command`, or by an empty string if no custom command with specified name exists. "\n\
+\n\
+"- '${\"-pipeline\"}' is substituted by the __status value__ after the execution of the specified "\
+${-_gmic}" pipeline (see command 'status'). Expression '${}' thus stands for the current status value."\n\
+\n\
+"- '{``string}' (starting with two backquotes) is substituted by a double-quoted version of the specified string."\n\
+\n\
+"- '{/string}' is substituted by the escaped version of the specified string."\n\
+\n\
+"- '{'string'[:delimiter]}' (between single quotes) is substituted by the sequence of character codes "\
+"that composes the specified string, separated by specified delimiter. Possible delimiters are "\
+"',' (default), ';', '/', '^' or ' '. For instance, item '{'foo'}' is substituted by '102,111,111' and "\
+"'{'foo':;}' by '102;111;111'."\n\
+\n\
+"- '{image,feature[:delimiter]}' is substituted by a specific feature of the image '[image]'. "\
+"'image' can be either an image number or an image name. It can be also eluded, in which case, "\
+"the last image '[-1]' of the list is considered for the requested feature. "\
+"Specified 'feature' can be one of:"\n\
+\n\
+". 'b': The image basename (i.e. filename without the folder path nor extension)."\n\
+". 'f': The image folder name."\n\
+". 'n': The image name or filename (if the image has been read from a file)."\n\
+". 't': The text string from the image values regarded as character codes."\n\
+". 'x': The image extension (i.e the characters after the last `.` in the image name)."\n\
+". '^': The sequence of all image values, separated by commas `,`."\n\
+". '@subset': The sequence of image values corresponding to the specified subset, and separated by commas `,`. "\n\
+". Any other 'feature' is considered as a __mathematical expression__ associated to the image '[image]' and is "\
+"substituted by the result of its evaluation (float value). For instance, expression '{0,w+h}' is substituted by "\
+"the sum of the width and height of the first image (see section __Mathematical Expressions__ for more details). "\
+"If a mathematical expression starts with an underscore `_`, the resulting value is truncated to a readable format. "\
+"For instance, item '{_pi}' is substituted by '3.14159' (while '{pi}' is substituted by '3.141592653589793')."\n\
+". A 'feature' delimited by backquotes is replaced by a string whose character codes correspond to the list of values "\
+"resulting from the evaluation of the specified mathematical expression. For instance, item '{`[102,111,111]`}' is "\
+"substituted by 'foo' and item '{`vector8(65)`}' by 'AAAAAAAA'."\n\
+\n\
+"- '{*}' is substituted by the visibility state of the instant display window '#0]' "\
+"(can be { 0=closed | 1=visible }."\n\
+\n\
+"- '{*[index],feature1,...,featureN[:delimiter]}' is substituted by a specific set of features of the instant display "\
+"window '#0' (or '#index', if specified). Requested 'features' can be:"\n\
+\n\
+". 'w': display width (i.e. width of the display area managed by the window)."\n\
+". 'h': display height (i.e. height of the display area managed by the window)."\n\
+". 'wh': display width x display height."\n\
+". 'd': window width (i.e. width of the window widget)."\n\
+". 'e': window height (i.e. height of the window widget)."\n\
+". 'de': window width x window height."\n\
+". 'u': screen width (actually independent on the window size)."\n\
+". 'v': screen height (actually independent on the window size)."\n\
+". 'uv': screen width x screen height."\n\
+". 'n': current normalization type of the instant display."\n\
+". 't': window title of the instant display."\n\
+". 'x': X-coordinate of the mouse position (or -1, if outside the display area)."\n\
+". 'y': Y-coordinate of the mouse position (or -1, if outside the display area)."\n\
+". 'b': state of the mouse buttons { 1=left-but. | 2=right-but. | 4=middle-but. }."\n\
+". 'o': state of the mouse wheel."\n\
+". 'k': decimal code of the pressed key if any, 0 otherwise."\n\
+". 'c': boolean (0 or 1) telling if the instant display has been closed recently."\n\
+". 'r': boolean telling if the instant display has been resized recently."\n\
+". 'm': boolean telling if the instant display has been moved recently."\n\
+". Any other 'feature' stands for a keycode name (in capital letters), and is substituted "\
+"by a boolean describing the current key state { 0=pressed | 1=released }."\n\
+". You can also prepend a hyphen '-' to a 'feature' (that supports it) to flush the "\
+"corresponding event immediately after reading its state (works for keys, mouse and window events)."\n\
+\n\
+"- Item substitution is **never** performed in items between double quotes. One must break the quotes "\
+"to enable substitution if needed, as in '\"3+8 kg = \"{3+8}\" kg\"'. Using double quotes is then "\
+"a convenient way to disable the substitutions mechanism in items, when necessary."\n\
+\n\
+"- One can also disable the substitution mechanism on items outside double quotes, by escaping the "\
+"`{`, `}` or `$` characters, as in '\\{3+4\\}\\ doesn\47t\\ evaluate'."
 
   _section "Mathematical Expressions"
 
