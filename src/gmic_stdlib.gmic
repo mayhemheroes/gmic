@@ -407,22 +407,23 @@ reference :
 "- Considering `float`-valued pixels ensure to keep the numerical precision when executing image processing "\
 "pipelines. For image input/output operations, you may want to prescribe the image datatype to be different than "\
 "`float` (like `bool`, `char`, `int`, etc.). This is possible by specifying it as a file option when using I/O commands. "\
-"(see section '"${_b.}"Input/Output Properties"${_n.}"' to learn more about file options)."
+"(see section __Input/Output Properties__ to learn more about file options)."
 
   _section "Items of a Processing Pipeline"
 
-  _text "\n- In "${-_gmic}", an image processing pipeline is described as a sequence of items separated by the
-space character ' '. Such items are interpreted and executed from the left to the right. For instance, the expression:\n\n
-`filename.jpg blur 3,0 sharpen 10 resize 200%,200% output file_out.jpg`
-\n
-\n     defines a valid pipeline composed of nine "${-_gmic}" items.
-\n
-\n - Each "${-_gmic}" item is a string that is either a "${_g.}"command"${_n.}", a list of command "${_g.}"arguments"${_n.}",
-\n     a "${_g.}"filename"${_n.}", or a special "${_g.}"input string"${_n.}".
-\n
-\n  - Escape characters '"${_g.}"\\"${_n.}"' and double quotes '"${_g.}"\""${_n.}"' can be used to define items containing spaces or
-\n     other special characters. For instance, the two strings '"${_c.}"single\\ item"${_n.}"' and '"${_c.}"\"single item\""${_n.}"'
-\n     both define the same single item, with a space in it."
+  _text "- In "${-_gmic}", an image processing pipeline is described as a sequence of items separated by the "\
+"space character ' '. Such items are interpreted and executed from the left to the right. For instance, the expression:"\n\
+\n\
+"`filename.jpg blur 3,0 sharpen 10 resize 200%,200% output file_out.jpg`"\n\
+\n\
+"defines a valid pipeline composed of nine "${-_gmic}" items."\n\
+\n\
+"- Each "${-_gmic}" item is a string that is either a __command__, a list of command __arguments__, "\
+"a __filename__ or a special __input string__."\n\
+\n\
+"- Escape characters '\\' and double quotes '\"' can be used to define items containing spaces or "\
+"other special characters. For instance, the two strings `single\\ item` and `\"single item\"` "\
+"both define the same single item, with a space in it."
 
   _section "Input Data Items"
 
@@ -1436,6 +1437,7 @@ reference_text_html : skip "$*"
   f. "i==_'-' && j[1]==_' ' && (!y || j[-1]==_'\n')?2:i" replace_str "\2 ","&bull;&nbsp;"
   f. "i==_'.' && j[1]==_' ' && (!y || j[-1]==_'\n')?2:i" replace_str "\2 ","&nbsp;&nbsp;&nbsp;&nbsp;&bull;&nbsp;"
 
+  parse_cli_decorate_doubleunderscore_html.
   parse_cli_decorate_singlequotes_html. 1
   parse_cli_decorate_braces_html.
   parse_cli_decorate_backquotes_html.
@@ -6861,6 +6863,16 @@ parse_cli_decorate_braces_html :
 
 parse_cli_trigger_html :
   parse_cli_trigger_print $*
+
+# Decorate strings between double-underscore.
+parse_cli_decorate_doubleunderscore_html :
+  eval[^] ">begin(beg = -1);
+            i==_'_' && j[1]==_'_'?(
+              beg<0?(beg = y):
+              (for (ok = 1; p = beg + 2, p<y, ++p, p>beg + 80?(ok = 0; break()));
+              ok?(i[beg] = 2; i[y] = 3); beg = -1))"
+  replace_str "\2_","<b>"
+  replace_str "\3_","</b>"
 
 #
 # Implements 'image' mode for command 'parse_cli'.
