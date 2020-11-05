@@ -490,74 +490,81 @@ reference :
 
   _section "Command Items and Selections"
 
-  _text "  - A "${-_gmic}" item that is not a filename nor a special input string designates a "\
-${_g.}"command"${_n.}",
-\n     most of the time. Generally, commands perform image processing operations on one or several
-\n     available images of the list.
-\n
-\n  - Reccurent commands have two equivalent names ("${_g.}"regular"${_n.}" and "${_g.}"short"${_n.}"). For instance, command names
-\n     '"${_c.}"resize"${_n.}"' and '"${_c.}"r"${_n.}"' refer to the same image resizing action.
-\n
-\n  - A "${-_gmic}" command may have mandatory or optional "${_g.}"arguments"${_n.}". Command arguments must be specified
-\n     in the next item on the command line. Commas '"${_g.}","${_n.}"' are used to separate multiple arguments of a
-\n     single command, when required.
-\n
-\n  - The execution of a "${-_gmic}" command may be restricted only to a "${_g.}"subset"${_n.}" of the image list, by
-\n     appending '"${_c.}"[selection]"${_n.}"' to the command name. Examples of valid syntaxes for '"${_g.}"selection"${_n.}"' are:
-\n
-\n    . '"${_c.}"command[-2]"${_n.}"': Apply command only on the penultimate image "${_g.}"[-2]"${_n.}" of the list.
-\n    . '"${_c.}"command[0,1,3]"${_n.}"': Apply command only on images "${_g.}"[0],[1]"${_n.}" and "${_g.}"[3]"${_n.}".
-\n    . '"${_c.}"command[3-6]"${_n.}"': Apply command only on images "${_g.}"[3]"${_n.}" to "${_g.}"[6]"${_n.}" (i.e, "${_g.}"[3],[4],[5]"\
-${_n.}" and "${_g.}"[6]"${_n.}").
-\n    . '"${_c.}"command[50%-100%]"${_n.}"': Apply command only on the second half of the image list.
-\n    . '"${_c.}"command[0,-4--1]"${_n.}"': Apply command only on the first image and the last four images.
-\n    . '"${_c.}"command[0-9:3]"${_n.}"': Apply command only on images "${_g.}"[0]"${_n.}" to "${_g.}"[9]"${_n.}", with a step of 3
-\n                          (i.e. on images "${_g.}"[0], [3], [6]"${_n.}" and "${_g.}"[9]"${_n.}").
-\n    . '"${_c.}"command[0-9:25%]"${_n.}"': Apply command only on images "${_g.}"[0]"${_n.}" to "${_g.}"[9]"${_n.}", with a step of 25%
-\n                          (i.e. on images "${_g.}"[0], [3], [6]"${_n.}" and "${_g.}"[9]"${_n.}").
-\n    . '"${_c.}"command[0--1:2]"${_n.}"': Apply command only on images of the list with even indices.
-\n    . '"${_c.}"command[0,2-4,50%--1]"${_n.}"': Apply command on images "${_g.}"[0],[2],[3],[4]"${_n.}" and on the second half of
-\n                                 the image list.
-\n    . '"${_c.}"command[^0,1]"${_n.}"': Apply command on all images except the first two.
-\n    . '"${_c.}"command[name1,name2]"${_n.}"': Apply command on named images '"${_g.}"name1"${_n.}"' and '"${_g.}"name2"${_n.}"'.
-\n
-\n  - indices in selections are always sorted in increasing order, and duplicate indices are
-\n     discarded. For instance, selections '"${_c.}"[3-1,1-3]"${_n.}"' and '"${_c.}"[1,1,1,3,2]"${_n.}"' are both equivalent to
-\n     '"${_c.}"[1-3]"${_n.}"'. If you want to repeat a single command multiple times on an image, use a
-\n     '"${_c.}"repeat..done"${_n.}"' loop instead. Inverting the order of images for a command is achieved by
-\n     explicitly inverting the order of the images in the list, with command '"${_c.}"reverse[selection]"${_n.}"'.
-\n
-\n  - Command selections '"${_c.}"[-1]"${_n.}"','"${_c.}"[-2]"${_n.}"' and '"${_c.}"[-3]"${_n.}"' are so often used they have their own
-\n     shortcuts, respectively '"${_c.}"."${_n.}"', '"${_c.}".."${_n.}"' and '"${_c.}"..."${_n.}"'. For instance, command '"\
-${_c.}"blur.."${_n.}"' (or '"${_c.}"blur[..]"${_n.}"')
-\n     is equivalent to '"${_c.}"blur[-2]"${_n.}"'. These shortcuts work also when specifying command arguments.
-\n
-\n  - "${-_gmic}" commands invoked without '"${_c.}"[selection]"${_n.}"' are applied on all images of the list, i.e. the
-\n     default selection is '"${_c.}"[0--1]"${_n.}"' (except for command '"${_c.}"input"${_n.}"' whose default selection is '"\
-${_c.}"[-1]"${_n.}"').
-\n
-\n  - Prepending a single hyphen '"${_g.}"-"${_n.}"' to a "${-_gmic}" command is allowed. This may be useful to recognize
-\n     command items more easily in a one-liner pipeline (typically invoked from a shell).
-\n
-\n  - A "${-_gmic}" command prepended with a plus sign '"${_g.}"+"${_n.}"' does not act 'in-place'
-\n     but inserts its result as one or several new images at the end of the image list.
-\n
-\n  - There are two different types of commands that can be run by the "${-_gmic}" interpreter:
-\n
-\n    . "${_g.}"Built-in commands"${_n.}", are the hard-coded functionalities in the interpreter core. They are thus
-\n       compiled as binary code and run fast, most of the time. Omitting an argument when invoking a
-\n       built-in command is not permitted, except if all following arguments are also omitted.
-\n       For instance, invoking '"${_c.}"plasma 10,,5"${_n.}"' is invalid but '"${_c.}"plasma 10"${_n.}"' is correct.
-\n    . "${_g.}"Custom commands"${_n.}", are defined as "${-_gmic}" pipelines of built-in or other custom commands.
-\n       They are parsed by the "${-_gmic}" interpreter, and thus run a bit slower than built-in commands.
-\n       Omitting arguments when invoking a custom command is permitted. For instance, expressions
-\n       '"${_c.}"flower ,,,100,,2"${_n.}"' or '"${_c.}"flower ,"${_n.}"' are correct.
-\n
-\n  - Most of the existing commands in "${-_gmic}" are actually defined as "${_g.}"custom commands"${_n.}".
-\n
-\n  - A user can easily add its own custom commands to the "${-_gmic}" interpreter (see section
-\n     '"${_m.}"Adding Custom Commands"${_n.}"' for more details). New built-in commands cannot be added
-\n     (unless you modify the "${-_gmic}" interpreter source code and recompile it)."
+  _text "- A "${-_gmic}" item that is not a filename nor a special input string designates a 'command' "\
+"most of the time. Generally, commands perform image processing operations on one or several available images "\
+"of the list."\n\
+\n\
+"- Reccurent commands have two equivalent names ('regular' and 'short'). For instance, command names "\
+"'resize' and 'r' refer to the same image resizing action."\n\
+\n\
+"- A "${-_gmic}" command may have mandatory or optional __arguments__. Command arguments must be specified "\
+"in the next item on the command line. Commas ',' are used to separate multiple arguments of a single command, "\
+"when required."\n\
+\n\
+"- The execution of a "${-_gmic}" command may be restricted only to a __subset__ of the image list, by "\
+"appending '[selection]' to the command name. Examples of valid syntaxes for 'selection' are: "\n\
+\n\
+". 'command[-2]': Apply command only on the penultimate image '[-2]' of the list."\n\
+\n\
+". 'command[0,1,3]': Apply command only on images '[0]','[1]' and '[3]'."\n\
+\n\
+". 'command[3-6]': Apply command only on images '[3]' to '[6]' (i.e, '[3]','[4]','[5]' and '[6]')."\n\
+\n\
+". 'command[50%-100%]': Apply command only on the second half of the image list."\n\
+\n\
+". 'command[0,-4--1]': Apply command only on the first image and the last four images."\n\
+\n\
+". 'command[0-9:3]': Apply command only on images '[0]' to '[9]', with a step of 3 "\
+"(i.e. on images '[0]', '[3]', '[6]' and '[9]')."\n\
+\n\
+". 'command[0-9:25%]': Apply command only on images '[0]' to '[9]', with a step of 25% "\
+"(i.e. on images '[0]', '[3]', '[6]' and '[9]')."\n\
+\n\
+". 'command[0--1:2]': Apply command only on images of the list with even indices. "\n\
+\n\
+". 'command[0,2-4,50%--1]': Apply command on images '[0]', '[2]', '[3]', '[4]' and on the second half of "\
+"the image list."\n\
+\n\
+". 'command[^0,1]': Apply command on all images except the first two."\n\
+\n\
+". 'command[name1,name2]': Apply command on named images 'name1' and 'name2'."\n\
+\n\
+"- Indices in selections are always sorted in increasing order, and duplicate indices are "\
+"discarded. For instance, selections '[3-1,1-3]' and '[1,1,1,3,2]' are both equivalent to "\
+"'[1-3]'. If you want to repeat a single command multiple times on an image, use a "\
+"'repeat..done' loop instead. Inverting the order of images for a command is achieved by "\
+"explicitly inverting the order of the images in the list, with command 'reverse[selection]'."\n\
+\n\
+"- Command selections '[-1]','[-2]' and '[-3]' are so often used they have their own shortcuts, respectively "\
+"'.', '..' and '...'. For instance, command 'blur..' is equivalent to 'blur[-2]'. "\
+"These shortcuts work also when specifying command arguments."\n\
+\n\
+"- "${-_gmic}" commands invoked without '[selection]' are applied on all images of the list, i.e. the "\
+"default selection is '[0--1]' (except for command 'input' whose default selection is '[-1]'')."\n\
+\n\
+"- Prepending a single hyphen '-' to a "${-_gmic}" command is allowed. This may be useful to recognize "\
+"command items more easily in a one-liner pipeline (typically invoked from a shell). "\n\
+\n\
+"- A "${-_gmic}" command prepended with a plus sign '+' does not act __in-place__ but inserts its result as one or "\
+"several new images at the end of the image list."\n\
+\n\
+"- There are two different types of commands that can be run by the "${-_gmic}" interpreter:"\n\
+\n\
+". __Built-in commands__ are the hard-coded functionalities in the interpreter core. They are thus compiled as "\
+"binary code and run fast, most of the time. Omitting an argument when invoking a built-in command is not permitted, "\
+"except if all following arguments are also omitted. "\
+"For instance, invoking 'plasma 10,,5' is invalid but 'plasma 10' is correct. "\n\
+\n\
+". __Custom commands__, are defined as "${-_gmic}" pipelines of built-in or other custom commands. "\
+"They are parsed by the "${-_gmic}" interpreter, and thus run a bit slower than built-in commands. "\
+"Omitting arguments when invoking a custom command is permitted. For instance, expressions "\
+"`"${_c.}"flower ,,,100,,2"${_n.}"` or `"${_c.}"flower ,"${_n.}"` are correct. "\n\
+\n\
+"- Most of the existing commands in "${-_gmic}" are actually defined as __custom commands__. "\n\
+\n\
+"- A user can easily add its own custom commands to the "${-_gmic}" interpreter (see section "\
+" __Adding Custom Commands__ for more details). New built-in commands cannot be added (unless you modify the "\
+${-_gmic}" interpreter source code and recompile it)."
 
   _section "Input/Output Properties"
 
