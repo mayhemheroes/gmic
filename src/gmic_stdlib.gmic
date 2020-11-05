@@ -1408,8 +1408,6 @@ reference_start_html :
 reference_section_html :
   name="$*"
   reference_end_section_html
-
-  # Start new section.
   ('"<!DOCTYPE html>"\n\
 "<html lang=\"en\">"\n\
 "  <head>"\n\
@@ -1427,7 +1425,6 @@ reference_section_html :
 "    <div class=\"section_title\"><p>Reference</p></div><div class=\"section_content\">"\n\n\
 "      <reference_navigation_bar/>"\n\
 "      <h1 class=\"h1_reference\">"$name"</h1>"\n':y)
-  _section$!=$name
   nm. $name
 
 reference_end_section_html :
@@ -1506,14 +1503,15 @@ reference_end_html :
 
   # Insert top navigation bar on each page.
   repeat $!
-    previous,next=
-    if $> previous={{$>-1},n} strvar[] $previous url_previous=${}.html fi
-    if $< next={{$>+1},n} strvar[] $next url_next=${}.html fi
+    current={$>,n} strvar[] $current url_current=${}.html
+    if $>>1 previous={{$>-1},n} strvar[] $previous url_previous=${}.html else previous= fi
+    if $< next={{$>+1},n} strvar[] $next url_next=${}.html else next= fi
     html="<a id=\"top\"></a><table class=\"menu_reference\"><tr><td>"\
-         "<a href=\"index.html#top\">Table of Contents</a>&nbsp;&nbsp;&#9656;&nbsp;&nbsp;"\
-         "<a href=\""{$>,n}"#top\">"${_section$>}"</a></td><td>"
+         "<a href=\"index.html#top\">Table of Contents</a>"
+    if $> html.="&nbsp;&nbsp;&#9656;&nbsp;&nbsp;<a href=\""$url_current"#top\">"$current"</a>" fi
+    html.="</td><td>"
     if narg($previous) html.="<a href=\""$url_previous"#top\">&#9664;&nbsp;&nbsp;"$previous"</a>" fi
-    if $>" && "$< html.="&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;" fi
+    if narg($previous)" && "narg($next) html.="&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;" fi
     if narg($next) html.="<a href=\""$url_next"#top\">"$next"&nbsp;&nbsp;&#9654;</a>" fi
     html.="</td></tr></table><hr/>"
     replace_str[$>] "<reference_navigation_bar/>",$html
@@ -1522,6 +1520,16 @@ reference_end_html :
   # Save HTML pages.
   repeat $! l[$>] strvar {n} ot ${}.html endl done
   rm
+
+
+
+
+
+
+
+
+
+
 
 # Command to write general usage (used by all types of output).
 _help_usage :
@@ -8070,7 +8078,6 @@ parse_cli_decorate_urls :
               p = find(n,http,q);
             )"
       a x s y,0 z 1,1
-      d
       repeat $! l[$>] if crop(0,0,1,4)=='http'
         i[0] ({'"<a href=\""{t}"\" target=\"_blank\">"'}:y) ('</a>':y) a y
       fi endl done
