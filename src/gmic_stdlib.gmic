@@ -442,61 +442,51 @@ reference :
 \n\
 ". 'width[%],_height[%],_depth[%],_spectrum[%],_values[xN]': Insert one or N images with specified "\
 "size and values (adding '%' to a dimension means *_percentage of the size along the same axis_*, "\
-"taken from the last image '"${_g.}"[-1]"${_n.}"''). Any specified dimension can be also written as
-\n       '"${_c.}"[image]"${_n.}"', and is then set to the size (along the same axis) of the existing specified image
-\n       "${_g.}"[image]"${_n.}". '"${_g.}"values"${_n.}"' can be either a sequence of numbers separated by commas '"${_g.}","${_n.}"',
-\n       or a mathematical expression, as e.g. in input item '"${_c.}"256,256,1,3,[x,y,128]"${_n.}"' which
-\n       creates a 256x256 RGB color image with a spatial shading on the red and green channels.
-\n       (see section '"${_m.}"Mathematical Expressions"${_n.}"' to learn more about mathematical expressions).
-\n
-\n    . '"${_c.}"(v1,v2,..)[xN]"${_n.}"': Insert one or N new images from specified prescribed values. Value separator
-\n       inside parentheses can be '"${_g.}","${_n.}"' (column separator), '"${_g.}";"${_n.}"' (row separator), '"${_g.}"/"${_n.}"'
- (slice separator) or
-\n       '"${_g.}"^"${_n.}"' (channel separator). For instance, expression '"${_c.}"(1,2,3;4,5,6;7,8,9)"${_n.}"' creates a
-\n        3x3 matrix (scalar image), with values running from 1 to 9.
-\n
-\n    . '"${_c.}"('string'[:delimiter])[xN]"${_n.}"': Insert one or N new images from specified string, by filling
-\n       the images with the character codes composing the string. When specified, '"${_g.}"delimiter"${_n.}"' tells about
-\n       the main orientation of the image. Delimiter can be '"${_g.}"x"${_n.}"' (eq. to '"${_g.}","${_n.}"' which is the default),
-\n       '"${_g.}"y"${_n.}"' (eq. to '"${_g.}";"${_n.}"'), '"${_g.}"z"${_n.}"' (eq. to '"${_g.}"/"${_n.}"') or '"${_g.}"c"${_n.}"'
- (eq. to '"${_g.}"^"${_n.}"').
-\n       When specified delimiter is '"${_g.}","${_n.}"', '"${_g.}";"${_n.}"', '"${_g.}"/"${_n.}"' or '"${_g.}"^"${_n.}"', the expression is
-\n       actually equivalent to '"${_c.}"({'string'[:delimiter]})[xN]"${_n.}"' (see section '"${_m.}"Substitution Rules"${_n.}"'
-\n       for more information on the syntax).
-\n
-\n    . '"${_c.}"0[xN]"${_n.}"': Insert one or N new '"${_g.}"empty"${_n.}"' images, containing no pixel data.
-\n       Empty images are used only in rare occasions.
-\n
-\n  - Input item '"${_c.}"name=value"${_n.}"' declares a new variable '"${_g.}"name"${_n.}"', or assign a new string value
-\n     to an existing variable. Variable names must use the character set "${_g.}"[a-zA-Z0-9_]"${_n.}" and cannot
-\n     start with a number.
-\n
-\n  - A variable definition is always local to the current command except when it starts by the
-\n     underscore character '"${_g.}"_"${_n.}"'. In that case, it becomes also accessible by any command invoked
-\n     outside the current command scope (global variable).
-\n
-\n  - If a variable name starts with two underscores '"${_g.}"__"${_n.}"', the global variable is also shared among
-\n     different threads and can be read/set by commands running in parallel (see command '"${_c.}"parallel"${_n.}"'
-\n     for this purpose). Otherwise, it remains local to the thread that defined it.
-\n
-\n  - Numerical variables can be updated with the use of these special operators:
-\n     '"${_g.}"+="${_n.}"' (addition), '"${_g.}"-="${_n.}"' (subtraction), '"${_g.}"*="${_n.}"' (multiplication), '"${_g.}"/="${_n.}"'
- (division), '"${_g.}"%="${_n.}"' (modulo),
-\n     '"${_g.}"&="${_n.}"' (bitwise and), '"${_g.}"|="${_n.}"' (bitwise or), '"${_g.}"^="${_n.}"' (power), '"${_g.}"<<="${_n.}"' and '"\
-${_g.}">>="${_n.}"' (bitwise left and right
-\n     shifts). For instance, '"${_c.}"foo=1 foo+=3"${_n.}"'.
-\n
-\n  - Input item '"${_c.}"name.=string"${_n.}"' concatenates specified '"${_g.}"string"${_n.}"' to the end of variable '"\
-${_g.}"name"${_n.}"'.
-\n
-\n  - Multiple variable assignments and updates are allowed, with expressions:
-\n     '"${_c.}"name1,name2,...,nameN=value"${_n.}"' or '"${_c.}"name1,name2,...,nameN=value1,value2,...,valueN"${_n.}"'
-\n     where assignment operator '"${_g.}"="${_n.}"' can be replaced by one of the allowed operators
-\n     (e.g. '"${_g.}"+="${_n.}"').
-\n
-\n  - Variables usually store numbers or strings. Use command 'store' to assign variables from image
-\n     data (and command 'input $variable' to bring them back on the image list afterwards).
-"
+"taken from the last image '[-1]'). Any specified dimension can be also written as "\
+"'[image]', and is then set to the size (along the same axis) of the existing specified image "\
+"'[image]'. 'values' can be either a sequence of numbers separated by commas ',', "\
+"or a mathematical expression, as e.g. in input item '256,256,1,3,[x,y,128]' which "\
+"creates a `256x256` RGB color image with a spatial shading on the red and green channels. "\
+"(see section __Mathematical Expressions__ to learn more about mathematical expressions). "\n\
+\n\
+". '(v1,v2,..)[xN]': Insert one or `N` new images from specified prescribed values. Value separator "\
+"inside parentheses can be ',' (column separator), ';' (row separator), '/' (slice separator) or "\
+"'^' (channel separator). For instance, expression '(1,2,3;4,5,6;7,8,9)' creates a 3x3 matrix (scalar image), "\
+"with values running from 1 to 9. "\n\
+\n\
+". '('string'[:delimiter])[xN]': Insert one or N new images from specified string, by filling "\
+"the images with the character codes composing the string. When specified, 'delimiter' tells about "\
+"the main orientation of the image. Delimiter can be 'x' (eq. to ',' which is the default), "\
+"'y' (eq. to ';'), 'z' (eq. to '/') or 'c' (eq. to '^'). "\
+"When specified delimiter is ',', ';', '/' or '^', the expression is actually equivalent to "\
+"'({'string'[:delimiter]})[xN]' (see section __Substitution Rules__ for more information on the syntax)."\n\
+\n\
+". '0[xN]': Insert one or N new `empty` images, containing no pixel data. "\
+"Empty images are used only in rare occasions."\n\
+\n\
+"- Input item 'name=value' declares a new variable 'name', or assign a new string value to an existing variable. "\
+"Variable names must use the character set `[a-zA-Z0-9_]` and cannot start with a number. "\n\
+\n\
+"- A variable definition is always local to the current command except when it starts by the underscore "\
+"character '_'. In that case, it becomes also accessible by any command invoked outside the current command "\
+"scope (global variable)."\n\
+\n\
+"- If a variable name starts with two underscores `__`, the global variable is also shared among different threads "\
+"and can be read/set by commands running in parallel (see command 'parallel' for this purpose). "\
+"Otherwise, it remains local to the thread that defined it."\n\
+\n\
+"- Numerical variables can be updated with the use of these special operators: "\
+"'+=' (addition), '-=' (subtraction), '*=' (multiplication), '/=' (division), '%=' (modulo), '&=' (bitwise and), "\
+"'|=' (bitwise or), '^=' (power), '<<=' and '>>' (bitwise left and right shifts). For instance, 'foo=1' 'foo+=3'."\n\
+\n\
+"- Input item 'name.=string' concatenates specified `string` to the end of variable 'name'."\n\
+\n\
+"- Multiple variable assignments and updates are allowed, with expressions: 'name1,name2,...,nameN=value' or "\
+"'name1,name2,...,nameN=value1,value2,...,valueN' where assignment operator '=' can be replaced by one of the "\
+"allowed operators (e.g. '+=')."\n\
+\n\
+"- Variables usually store numbers or strings. Use command 'store' to assign variables from image data "\
+"(and syntax `input $variable` to bring them back on the image list afterwards)."
 
   _section "Command Items and Selections"
 
@@ -1431,12 +1421,12 @@ reference_end_section_html :
 
 reference_text_html : skip "$*"
   ('"$*"':y)
-  _decorate_urls.
+  _decorate_urls_html.
   replace_str. "\n","<br/>\n"
   f. "i==_'-' && j[1]==_' ' && (!y || j[-1]==_'\n')?2:i" replace_str "\2 ","&bull;&nbsp;"
   f. "i==_'.' && j[1]==_' ' && (!y || j[-1]==_'\n')?2:i" replace_str "\2 ","&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&bull;&nbsp;"
 
-  _decorate_doubleunderscore_html.
+  _decorate_doubleunderscores_html.
   _decorate_starunderscore_html.
   _decorate_singlequotes_html. 1
   _decorate_braces_html.
@@ -1545,8 +1535,8 @@ reference_end_html :
   x "ln -fs table_of_contents.html index.html"
   rm
 
-# Detect URLs and transforms them to HTML links in selected strings.
-_decorate_urls :
+# Decorate URLs in selected strings.
+_decorate_urls_html :
   repeat $! l[$>]
     if find(crop(),'http')>=0 # Replace URL in description by HTML links
       i[0] 1,100%
@@ -1624,8 +1614,8 @@ _decorate_braces_html :
   replace_str "{","<samp class=\"samp_braces\">{"
   replace_str "}","}</samp>"
 
-# Decorate strings between double-underscore in selected strings.
-_decorate_doubleunderscore_html :
+# Decorate strings between double-underscores in selected strings.
+_decorate_doubleunderscores_html :
   eval[^] ">begin(beg = -1);
             i==_'_' && j[1]==_'_'?(
               beg<0?(beg = y):
@@ -1634,7 +1624,7 @@ _decorate_doubleunderscore_html :
   replace_str "\2_","<b>"
   replace_str "\3_","</b>"
 
-# Decorate strings between double-underscore in selected strings.
+# Decorate strings between star-underscore in selected strings.
 _decorate_starunderscore_html :
   eval[^] ">begin(beg = -1);
             i==_'_' && j[1]==_'_'?(
@@ -1643,13 +1633,6 @@ _decorate_starunderscore_html :
               ok?(i[beg] = 2; i[y] = 3); beg = -1))"
   replace_str "\2_","<b>"
   replace_str "\3_","</b>"
-
-
-
-
-
-
-
 
 
 # Commands to output help in ascii format.
@@ -5793,7 +5776,7 @@ parse_cli_html :
         # Other kind of description line
         is_bullet={find(crop(),'"can be {"')>=0}
         _decorate_doublequotes_html
-        _decorate_urls
+        _decorate_urls_html
         _decorate_singlequotes_html 1
         _decorate_braces_html
         _decorate_backquotes_html
