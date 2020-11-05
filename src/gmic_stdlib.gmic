@@ -329,18 +329,22 @@ __help :
 #
 # Reference documentation (as well as command documentation) uses a 'light' markdown-like syntax,
 # with the following patterns recognized:
-# - __sentence in italic__
-# - **sentence in bold**
+# - __sentence with spaces in italic__
+# - **sentence with spaces in bold**
+# - ''sentence with spaces highlighted''
+# - `sentence with spaces` : write sentence with monospace 'style 1'.
+# - 'word' : write single word with monospace 'style 2' (for variables and commands).
+# - { list of possible values } : write { list of possible values } in color.
 # - \n- Item of a list.
-# - \n. Item of a sub-list.
-# - 'word' : write single word with monospace 'style 1'.
-# - `one small sentence` : write sentence with monospace 'style 2'.
-# - { arguments } : write { arguments } in color.
+# - \n_ Item of a sub-list (level 1).
+# - \n. Item of a sub-list (level 2).
 reference :
   m "_start : reference_start_$1"
   m "_section : reference_section_$1 \"$""*\""
   m "_text : reference_text_$1 \"$""*\""
   m "_end : reference_end_$1"
+
+  # To remove in the future:
   m "_b : reference_b_$1"
   m "_c : reference_c_$1"
   m "_g : reference_g_$1"
@@ -770,197 +774,147 @@ ${-_gmic}" pipeline (see command 'status'). Expression '${}' thus stands for the
 
   _section "Mathematical Expressions"
 
-  _text "  - "${-_gmic}" has an embedded "${_g.}"mathematical parser"${_n.}", used to evaluate
- (possibly complex) expressions
-\n     inside braces '"${_g.}"{}"${_n.}"', or formulas in commands that may take one as an argument (e.g. '"${_c.}"fill"${_n.}"').
-\n
-\n  - When the context allows it, a formula is evaluated "${_g.}"for each pixel"${_n.}" of the selected images
-\n     (e.g. '"${_c.}"fill"${_n.}"').
-\n
-\n  - A math expression may return a "${_g.}"scalar"${_n.}" or "${_g.}"vector"${_n.}"-valued result (with a fixed number of
-\n     components).
-\n
-\n  - The mathematical parser understands the following set of functions, operators and variables:
-\n
-\n    _ "${_g.}"Usual operators:"${_n.}" "${_c.}"||"${_n.}" (logical or), "${_c.}"&&"${_n.}" (logical and), "${_c.}"|"${_n.}" (bitwise or), "\
-${_c.}"&"${_n.}" (bitwise and),
-\n       "${_c.}"!=, ==, <=, >=, <, >, <<"${_n.}" (left bitwise shift), "${_c.}">>"${_n.}" (right bitwise shift), "${_c.}"-, +, *, /,
-\n       %"${_n.}" (modulo), "${_c.}"^"${_n.}" (power), "${_c.}"!"${_n.}" (logical not), "${_c.}"~"${_n.}" (bitwise not),
-\n       "${_c.}"++"${_n.}", "${_c.}"--"${_n.}", "${_c.}"+="${_n.}", "${_c.}"-="${_n.}", "${_c.}"*="${_n.}", "${_c.}"/="${_n.}", "${_c.}"%="${_n.}", "\
-${_c.}"&="${_n.}", "${_c.}"|="${_n.}", "${_c.}"^="${_n.}", "${_c.}">>="${_n.}", "${_c.}"<<="${_n.}" (in-place operators).
-\n
-\n    _ "${_g.}"Usual math functions:"${_n.}" "${_c.}"abs(), acos(), acosh(), arg(), arg0(), argkth(), argmax(), argmaxabs(),
-\n       argmin(), argminabs(), asin(), asinh(), atan(), atan2(), atanh(), avg(), bool(), cbrt(), ceil(),
-\n       cos(), cosh(), cut(), exp(), fact(), fibo(), floor(), gauss(), gcd(), int(), isnan(), isnum(), isinf(),
-\n       isint(), isbool(), isexpr(), isfile(), isdir(), isin(), kth(), log(), log2(), log10(), max(),
-\n       maxabs(), med(), min(), minabs(), narg(), prod(), rol()"${_n.}" (left bit rotation),
-\n       "${_c.}"ror()"${_n.}" (right bit rotation)"${_c.}", round(), sign(), sin(), sinc(), sinh(), sqrt(), std(),
-\n       srand(_seed), sum(), tan(), tanh(), var(), xor()"${_n.}".
-\n
-\n       . '"${_c.}"atan2(y,x)"${_n.}"' is the version of '"${_c.}"atan()"${_n.}"' with two arguments '"${_g.}"y"${_n.}"' and '"\
-${_g.}"x"${_n.}"' (as in C/C++).
-\n       . '"${_c.}"permut(k,n,with_order)"${_n.}"' computes the number of permutations of "${_g.}"k"${_n.}" objects from a set of
-\n          "${_g.}"n"${_n.}" objects.
-\n       . '"${_c.}"gauss(x,_sigma,_is_normalized)"${_n.}"' returns
-\n          '"${_g.}"exp(-x^2/(2*s^2))/(is_normalized?sqrt(2*pi*sigma^2):1)"${_n.}"'.
-\n       . '"${_c.}"cut(value,min,max)"${_n.}"' returns value if it is in range "${_g.}"[min,max]"${_n.}", or "${_g.}"min"${_n.}" or "\
-${_g.}"max"${_n.}" otherwise.
-\n       . '"${_c.}"narg(a_1,...,a_N)"${_n.}"' returns the number of specified arguments (here, "${_g.}"N"${_n.}").
-\n       . '"${_c.}"arg(i,a_1,..,a_N)"${_n.}"' returns the "${_g.}"ith"${_n.}" argument "${_g.}"a_i"${_n.}".
-\n       . '"${_c.}"isnum()"${_n.}"', '"${_c.}"isnan()"${_n.}"', '"${_c.}"isinf()"${_n.}"', '"${_c.}"isint()"${_n.}"', '"\
-${_c.}"isbool()"${_n.}"' test the type of the given
-\n          number or expression, and return "${_g.}"0 (false)"${_n.}" or "${_g.}"1 (true)"${_n.}".
-\n       . '"${_c.}"isfile('path')"${_n.}"' (resp. '"${_c.}"isdir('path')"${_n.}"') returns "${_g.}"0 (false)"${_n.}" or "\
-${_g.}"1 (true)"${_n.}" whether its string
-\n          argument is a path to an existing file (resp. to a directory) or not.
-\n       . '"${_c.}"isin(v,a_1,...,a_n)"${_n.}"' returns "${_g.}"0 (false)"${_n.}" or "${_g.}"1 (true)"${_n.}" whether the first value '"\
-${_g.}"v"${_n.}"' appears
-\n          in the set of other values 'a_i'.
-\n       . '"${_c.}"inrange(value,m,M,include_boundaries)"${_n.}"' returns "${_g.}"0 (false)"${_n.}" or "${_g.}"1 (true)"${_n.}" whether
-\n          the specified value lies in range "${_g.}"[m,M]"${_n.}" or not (checked range is "${_g.}"]m,M["${_n.}" if
-\n          '"${_g.}"include_boundaries=0"${_n.}"').
-\n       . '"${_c.}"argkth()"${_n.}"', '"${_c.}"argmin()"${_n.}"', '"${_c.}"argmax()"${_n.}"', '"${_c.}"argminabs()"${_n.}"', \
-'"${_c.}"argmaxabs()"${_n.}"', '"${_c.}"avg()"${_n.}"', '"${_c.}"kth()"${_n.}"', '"${_c.}"min()"${_n.}"',
-\n          '"${_c.}"max()"${_n.}"', '"${_c.}"minabs()"${_n.}"', '"${_c.}"maxabs()"${_n.}"', "${_c.}"med()"${_n.}"', '"${_c.}"prod()"${_n.}"', \
-'"${_c.}"std()"${_n.}"', '"${_c.}"sum()"${_n.}"' and '"${_c.}"var()"${_n.}"'
-\n          can be called with an arbitrary number of scalar/vector arguments.
-\n       . '"${_c.}"vargkth()"${_n.}"', '"${_c.}"vargmin()"${_n.}"', '"${_c.}"vargmax()"${_n.}"', '"${_c.}"vargminabs()"${_n.}"', \
-'"${_c.}"vargmaxabs()"${_n.}"', '"${_c.}"vavg()"${_n.}"', '"${_c.}"vkth()"${_n.}"', '"${_c.}"vmin()"${_n.}"',
-\n          '"${_c.}"vmax()"${_n.}"', '"${_c.}"vminabs()"${_n.}"', '"${_c.}"vmaxabs()"${_n.}"', '"${_c.}"vmed()"${_n.}"', '"${_c.}"vprod()"${_n.}"', \
-'"${_c.}"vstd()"${_n.}"', '"${_c.}"vsum()"${_n.}"' and '"${_c.}"vvar()"${_n.}"'
-\n          are the versions of the previous function with vector-valued arguments.
-\n       . '"${_c.}"round(value,rounding_value,direction)"${_n.}"' returns a rounded value. '"${_g.}"direction"${_n.}"' can be
-\n          "${_g.}"{ -1=to-lowest | 0=to-nearest | 1=to-highest }"${_n.}".
-\n       . '"${_c.}"lerp(a,b,t)"${_n.}"' returns '"${_g.}"a*(1-t) + b*t"${_n.}"'.
-\n       . '"${_c.}"swap(a,b)"${_n.}" swaps the values of the given arguments.
-\n
-\n    _ "${_g.}"Variable names"${_n.}" below are pre-defined. They can be overridden.
-\n
-\n       . '"${_c.}"l"${_n.}"': length of the associated list of images.
-\n       . '"${_c.}"k"${_n.}"': index of the associated image, in "${_g.}"[0,l-1]"${_n.}".
-\n       . '"${_c.}"w"${_n.}"': width of the associated image, if any ("${_g.}"0"${_n.}" otherwise).
-\n       . '"${_c.}"h"${_n.}"': height of the associated image, if any ("${_g.}"0"${_n.}" otherwise).
-\n       . '"${_c.}"d"${_n.}"': depth of the associated image, if any ("${_g.}"0"${_n.}" otherwise).
-\n       . '"${_c.}"s"${_n.}"': spectrum of the associated image, if any ("${_g.}"0"${_n.}" otherwise).
-\n       . '"${_c.}"r"${_n.}"': shared state of the associated image, if any ("${_g.}"0"${_n.}" otherwise).
-\n       . '"${_c.}"wh"${_n.}"': shortcut for width x height.
-\n       . '"${_c.}"whd"${_n.}"': shortcut for width x height x depth.
-\n       . '"${_c.}"whds"${_n.}"': shortcut for width x height x depth x spectrum (i.e. number of image values).
-\n       . '"${_c.}"im"${_n.}"', '"${_c.}"iM"${_n.}"', '"${_c.}"ia"${_n.}"', '"${_c.}"iv"${_n.}"', '"${_c.}"is"${_n.}"', '"${_c.}"ip"${_n.}"',
-'"${_c.}"ic"${_n.}"', '"${_c.}"in"${_n.}"': Respectively the minimum, maximum, average,
-\n          variance, sum, product, median value and L2-norm of the associated image, if any
-\n          ("${_g.}"0"${_n.}" otherwise).
-\n       . '"${_c.}"xm"${_n.}"', '"${_c.}"ym"${_n.}"', '"${_c.}"zm"${_n.}"', '"${_c.}"cm"${_n.}"': The pixel coordinates of the minimum value
-\n          in the associated image, if any ("${_g.}"0"${_n.}" otherwise).
-\n       . '"${_c.}"xM"${_n.}"', '"${_c.}"yM"${_n.}"', '"${_c.}"zM"${_n.}"', '"${_c.}"cM"${_n.}"': The pixel coordinates of the maximum value
-\n          in the associated image, if any ("${_g.}"0"${_n.}" otherwise).
-\n       . All these variables are considered as "${_g.}"constant values"${_n.}" by the math parser (for optimization
-\n          purposes) which is indeed the case most of the time. Anyway, this might not be the case,
-\n          if function '"${_c.}"resize(#ind,..)"${_n.}"' is used in the math expression.
-\n          If so, it is safer to invoke functions '"${_c.}"l()"${_n.}"', '"${_c.}"w(_#ind)"${_n.}"', '"${_c.}"h(_#ind)"${_n.}"', ...
- '"${_c.}"s(_#ind)"${_n.}"'
-\n          and '"${_c.}"in(_#ind)"${_n.}"' instead of the corresponding named variables.
-\n       . '"${_c.}"i"${_n.}"': current processed pixel value (i.e. value located at "${_g.}"(x,y,z,c)"${_n.}") in the associated
-\n          image, if any ("${_g.}"0"${_n.}" otherwise).
-\n       . '"${_c.}"iN"${_n.}"': Nth channel value of current processed pixel (i.e. value located at "${_g.}"(x,y,z,N)"${_n.}") in
-\n          the associated image, if any ("${_g.}"0"${_n.}" otherwise). '"${_g.}"N"${_n.}"' must be an integer in range "\
-${_g.}"[0,9]"${_n.}".
-\n       . '"${_c.}"R"${_n.}"', '"${_c.}"G"${_n.}"', '"${_c.}"B"${_n.}"' and '"${_c.}"A"${_n.}"' are equivalent to '"${_c.}"i0"${_n.}"', '"\
-${_c.}"i1"${_n.}"', '"${_c.}"i2"${_n.}"' and '"${_c.}"i3"${_n.}"' respectively.
-\n       . '"${_c.}"I"${_n.}"': current vector-valued processed pixel in the associated image, if any ("${_g.}"0"${_n.}" otherwise).
-\n          The number of vector components is equal to the number of image channels
-\n          (e.g. "${_g.}"I = [ R,G,B ]"${_n.}" for a "${_g.}"RGB"${_n.}" image).
-\n       . You may add '"${_c.}"#ind"${_n.}"' to any of the variable name above to retrieve the information for any
-\n          numbered image "${_g.}"[ind]"${_n.}" of the list (when this makes sense). For instance '"${_c.}"ia#0"${_n.}"' denotes
-\n          the average value of the first image of the list).
-\n       . '"${_c.}"x"${_n.}"': current processed column of the associated image, if any ("${_g.}"0"${_n.}" otherwise).
-\n       . '"${_c.}"y"${_n.}"': current processed row of the associated image, if any ("${_g.}"0"${_n.}" otherwise).
-\n       . '"${_c.}"z"${_n.}"': current processed slice of the associated image, if any ("${_g.}"0"${_n.}" otherwise).
-\n       . '"${_c.}"c"${_n.}"': current processed channel of the associated image, if any ("${_g.}"0"${_n.}" otherwise).
-\n       . '"${_c.}"t"${_n.}"': thread id when an expression is evaluated with multiple threads ("${_g.}"0"${_n.}" means
-\n          'master thread').
-\n       . '"${_c.}"e"${_n.}"': value of e, i.e. "${_g.}"2.71828..."${_n.}"
-\n       . '"${_c.}"pi"${_n.}"': value of pi, i.e. "${_g.}"3.1415926..."${_n.}"
-\n       . '"${_c.}"u"${_n.}"': a random value between "${_g.}"[0,1]"${_n.}", following a uniform distribution.
-\n       . '"${_c.}"g"${_n.}"': a random value, following a gaussian distribution of variance 1
-\n          (roughly in "${_g.}"[-6,6]"${_n.}").
-\n       . '"${_c.}"interpolation"${_n.}"': value of the default interpolation mode used when reading pixel values
-\n           with the pixel access operators (i.e. when the interpolation argument is not explicitly
-\n           specified, see below for more details on pixel access operators). Its initial default
-\n           value is "${_g.}"0"${_n.}".
-\n       . '"${_c.}"boundary"${_n.}"': value of the default boundary conditions used when reading pixel values with
-\n           the pixel access operators (i.e. when the boundary condition argument is not explicitly
-\n           specified, see below for more details on pixel access operators). Its initial default
-\n           value is "${_g.}"0"${_n.}".
-\n
-\n    _ "${_g.}"Vector calculus:"${_n.}" Most operators are also able to work with vector-valued elements.
-\n
-\n       . '"${_c.}"[ a0,a1,...,aN-1 ]"${_n.}"' defines a "${_g.}"N"${_n.}"-dimensional vector with scalar coefficients "\
-${_g.}"ak"${_n.}".
-\n       . '"${_c.}"vectorN(a0,a1,,...,aN-1)"${_n.}"' does the same, with the "${_g.}"ak"${_n.}" being repeated periodically if
-\n          only a few are specified.
-\n       . '"${_c.}"vector(#N,a0,a1,,...,aN-1)"${_n.}"' does the same, and can be used for any constant expression "\
-${_g.}"N"${_n.}".
-\n       . In previous expressions, the "${_g.}"ak"${_n.}" can be vectors themselves, to be concatenated into a
-\n          single vector.
-\n       . The scalar element "${_g.}"ak"${_n.}" of a vector "${_g.}"X"${_n.}" is retrieved by '"${_c.}"X[k]"${_n.}"'.
-\n       . The sub-vector "${_g.}"[ X[p],X[p+s]...X[p+s*(q-1)] ]"${_n.}" (of size "${_g.}"q"${_n.}") of a vector "${_g.}"X"${_n.}"
-\n          is retrieved by '"${_c.}"X[p,q,s]"${_n.}"'.
-\n       . '"${_c.}"expr('formula',_w,_h,_d,_s)"${_n.}"' outputs a vector of size "${_g.}"w*h*d*s"${_n.}" with values generated from
-\n          the specified formula, as if one were filling an image with dimensions "${_g.}"(w,h,d,s)"${_n.}".
-\n       . Equality/inequality comparisons between two vectors is done with operators '"${_c.}"=="${_n.}"' and '"${_c.}"!="${_n.}"'.
-\n       . Some vector-specific functions can be used on vector values:
-\n         '"${_c.}"cross(X,Y)"${_n.}"' (cross product), '"${_c.}"dot(X,Y)"${_n.}"' (dot product), '"${_c.}"size(X)"${_n.}"'
- (vector dimension),
-\n         '"${_c.}"sort(X,_is_increasing,_chunk_size)"${_n.}"' (sorting values), '"${_c.}"reverse(A)"${_n.}"' (reverse order of
-\n         components), '"${_c.}"shift(A,_length,_boundary_conditions)"${_n.}"' and
-\n         '"${_c.}"same(A,B,_nb_vals,_is_case_sensitive)"${_n.}"' (vector equality test).
-\n       . Function '"${_c.}"normP(u1,...,un)"${_n.}"' computes the LP-norm of the specified vector
-\n          ("${_c.}"P"${_n.}" being an "${_g.}"unsigned integer"${_n.}" constant or '"${_g.}"inf"${_n.}"'). If "${_c.}"P"${_n.}" is omitted,
- the L2 norm is used.
-\n       . Function '"${_c.}"resize(A,size,_interpolation,_boundary_conditions)"${_n.}"' returns a resized version of
-\n          a vector '"${_g.}"A"${_n.}"' with specified interpolation mode. '"${_g.}"interpolation'"${_n.}" can be "${_g.}"{ -1=none
-\n          (memory content) | 0=none | 1=nearest | 2=average | 3=linear | 4=grid | 5=bicubic |
-\n          6=lanczos }"${_n.}", and '"${_g.}"boundary_conditions'"${_n.}" can be "${_g.}"{ 0=dirichlet | 1=neumann | 2=periodic |
-\n          3=mirror }"${_n.}".
-\n       . Function '"${_c.}"find(A,B,_starting_index,_search_step)"${_n.}"' returns the index where
-\n          sub-vector "${_g.}"B"${_n.}" appears in vector "${_g.}"A"${_n.}", (or "${_g.}"-1"${_n.}" if "${_g.}"B"${_n.}" is not
-  found in "${_g.}"A"${_n.}").
-\n          Argument "${_g.}"A"${_n.}" can be also replaced by an image index "${_g.}"#ind"${_n.}".
-\n       . A "${_g.}"2"${_n.}"-dimensional vector may be seen as a complex number and used in those particular
-\n          functions/operators:
-\n          '"${_c.}"**"${_n.}"' (complex multiplication), '"${_c.}"//"${_n.}"' (complex division), '"${_c.}"^^"${_n.}"'
- (complex exponentiation),
-\n          '"${_c.}"**="${_n.}"' (complex self-multiplication), '"${_c.}"//="${_n.}"' (complex self-division), '"${_c.}"^^="${_n.}"'
- (complex
-\n          self-exponentiation), '"${_c.}"cabs()"${_n.}"' (complex modulus), '"${_c.}"carg()"${_n.}"' (complex argument),
- '"${_c.}"cconj()"${_n.}"'
-\n          (complex conjugate), '"${_c.}"cexp()"${_n.}"' (complex exponential), '"${_c.}"clog()"${_n.}"' (complex logarithm)
-\n          '"${_c.}"ccos()"${_n.}"' (complex cosine), '"${_c.}"csin()"${_n.}"' (complex sine), '"${_c.}"ctan()"${_n.}"' \
-(complex tangent),
-\n          '"${_c.}"ccosh()"${_n.}"' (complex hyperpolic cosine), '"${_c.}"csinh()"${_n.}"' (complex hyperbolic sine)
-\n          and '"${_c.}"ctanh()"${_n.}"' (complex hyperbolic tangent).
-\n       . A "${_g.}"MN"${_n.}"-dimensional vector may be seen as a "${_g.}"M"${_n.}" x "${_g.}"N"${_n.}" matrix and used in those
-\n          particular functions/operators:
-\n          '"${_c.}"*"${_n.}"' (matrix-vector multiplication), '"${_c.}"det(A)"${_n.}"' (determinant), '"${_c.}"diag(V)"${_n.}"'
- (diagonal matrix
-\n          from a vector), '"${_c.}"eig(A)"${_n.}"' (eigenvalues/eigenvectors), '"${_c.}"eye(n)"${_n.}"' (n x n identity matrix),
-\n          '"${_c.}"invert(A,_solver)"${_n.}"' (matrix inverse), '"${_c.}"mul(A,B,_nb_colsB)"${_n.}"' "\
-"(matrix-matrix multiplication),
-\n          '"${_c.}"pseudoinvert(A,_nb_colsA,_solver)"${_n.}"', '"${_c.}"rot(u,v,w,angle)"${_n.}"' (3D rotation matrix),
- '"${_c.}"rot(angle)"${_n.}"' (2D
-\n          rotation matrix), '"${_c.}"solve(A,B,_nb_colsB)"${_n.}"' (solver of linear system A.X = B),
-\n          '"${_c.}"svd(A,_nb_colsA)"${_n.}"' (singular value decomposition), '"${_c.}"trace(A)"${_n.}"' (matrix trace) and
-\n          '"${_c.}"transpose(A,nb_colsA)"${_n.}"' (matrix transpose). Argument '"${_c.}"nb_colsB"${_n.}"' may be omitted if it is
-\n          equal to "${_g.}"1"${_n.}".
-\n       . '"${_c.}"mproj(S,nb_colsS,D,nb_colsD,method,max_iter,max_residual)"${_n.}"' projects a matrix "${_g.}"S"${_n.}" onto
-\n          a dictionary (matrix) "${_g.}"D"${_n.}". Equivalent to command '"${_c.}"mproj"${_n.}"' but inside the math evaluator.
-\n       . Specifying a vector-valued math expression as an argument of a command that operates on
-\n          image values (e.g. '"${_c.}"fill"${_n.}"') modifies the whole spectrum range of the processed image(s),
-\n          for each spatial coordinates "${_g.}"(x,y,z)"${_n.}". The command does not loop over the "${_g.}"C"${_n.}"-axis in this
-\n          case.
-\n
-\n    _ "${_g.}"String manipulation:"${_n.}" Character strings are defined and managed as vectors objects.
+  _text "- "${-_gmic}" has an embedded __mathematical parser__, used to evaluate (possibly complex) math expressions "\
+"specified inside braces '{}', or formulas in commands that may take one as an argument (e.g. 'fill')."\n\
+\n\
+"- When the context allows it, a formula is evaluated __for each pixel__ of the selected images "\
+"(e.g. 'fill')."\n\
+\n\
+"- A math expression may return a __scalar__ or a __vector-valued__ result (with a fixed number of components)."\n\
+\n\
+"- The mathematical parser understands the following set of functions, operators and variables:"\n\
+\n\
+"_ **Usual operators:** '||' (logical or), '&&' (logical and), '|' (bitwise or), '&' (bitwise and), "\
+"'!=', '==', '<=', '>=', '<', '>', '<<' (left bitwise shift), '>>' (right bitwise shift), '-', '+', '*', '/', "\
+"'%' (modulo), '^' (power), '!' (logical not), '~' (bitwise not), '++', '--', '+=', '-=', '*=', '/=', '%=', "\
+"'&=', '|=', '^=', '>>', '<<=' (in-place operators)."\n\
+\n\
+"_ **Usual math functions:** 'abs()', 'acos()', 'acosh()', 'arg()', 'arg0()', 'argkth()', 'argmax()', 'argmaxabs()', "\
+"'argmin()', 'argminabs()', 'asin()', 'asinh()', 'atan()', 'atan2()', 'atanh()', 'avg()', 'bool()', 'cbrt()', 'ceil()', "\
+"'cos()', 'cosh()', 'cut()', 'exp()', 'fact()', 'fibo()', 'floor()', 'gauss()', 'gcd()', 'int()', 'isnan()', 'isnum()', 'isinf()', "\
+"'isint()', 'isbool()', 'isexpr()', 'isfile()', 'isdir()', 'isin()', 'kth()', 'log()', 'log2()', 'log10()', 'max()', "\
+"'maxabs()', 'med()', 'min()', 'minabs()', 'narg()', 'prod()', 'rol()' (left bit rotation), 'ror()' (right bit rotation), "\
+"'round()', 'sign()', 'sin()', 'sinc()', 'sinh()', 'sqrt()', 'std()', 'srand(_seed)', 'sum()', 'tan()', "\
+"'tanh()', 'var()', 'xor()'."\n\
+\n\
+". 'atan2(y,x)' is the version of 'atan()' with two arguments 'y' and 'x' (as in C/C++)."\n\
+". 'permut(k,n,with_order)' computes the number of permutations of 'k' objects from a set of 'n' objects."\n\
+". 'gauss(x,_sigma,_is_normalized)' returns `exp(-x^2/(2*s^2))/(is_normalized?sqrt(2*pi*sigma^2):1)`."\n\
+". 'cut(value,min,max)' returns 'value' if it is in range '[min,max]', or 'min' or 'max' otherwise."\n\
+". 'narg(a_1,...,a_N)' returns the number of specified arguments (here, 'N')."\n\
+". 'arg(i,a_1,..,a_N)' returns the `i`-th argument 'a_i'."\n\
+". 'isnum()', 'isnan()', 'isinf()', 'isint()', 'isbool()' test the type of the given number or expression, "\
+"and return '0' (false) or '1' (true)."\n\
+". 'isfile(' path ')' (resp. 'isdir(' path ')') returns '0' (false) or '1' (true) whether its string argument is a "\
+"path to an existing file (resp. to a directory) or not."\n\
+". 'isin(v,a_1,...,a_n)' returns '0' (false) or '1' (true) whether the first value 'v' appears in the set of other "\
+"values 'a_i'."\n\
+". 'inrange(value,m,M,include_boundaries)' returns '0' (false) or '1' (true) whether the specified value lies in "\
+"range '[m,M]' or not (checked range is ']m,M[ if 'include_boundaries=0')."\n\
+". 'argkth()', 'argmin()', 'argmax()', 'argminabs()', 'argmaxabs()'', 'avg()', 'kth()', 'min()', 'max()', 'minabs()', "\
+"'maxabs()', 'med()', 'prod()', 'std()', 'sum()' and 'var()' can be called with an arbitrary number of scalar/vector "\
+"arguments."\n\
+". 'vargkth()', 'vargmin()', 'vargmax()', 'vargminabs()', 'vargmaxabs()', 'vavg()', 'vkth()', 'vmin()', "\
+"'vmax()', 'vminabs()', 'vmaxabs()', 'vmed()', 'vprod()', 'vstd()', 'vsum()' and 'vvar()' are the versions of the "\
+"previous function with vector-valued arguments."\n\
+". 'round(value,rounding_value,direction)' returns a rounded value. 'direction' can be "\
+"{ -1=to-lowest | 0=to-nearest | 1=to-highest }."\n\
+". 'lerp(a,b,t)' returns 'a*(1-t) + b*t'."\n\
+". 'swap(a,b)' swaps the values of the given arguments."\n\
+\n\
+"_ **Variable names** below are pre-defined. They can be overridden."\n\
+\n\
+". 'l': length of the associated list of images."\n\
+". 'k': index of the associated image, in '[0,l-1]'."\n\
+". 'w': width of the associated image, if any ('0' otherwise)."\n\
+". 'h': height of the associated image, if any ('0' otherwise)."\n\
+". 'd': depth of the associated image, if any ('0' otherwise)."\n\
+". 's': spectrum of the associated image, if any ('0' otherwise)."\n\
+". 'r': shared state of the associated image, if any ('0' otherwise)."\n\
+". 'wh': shortcut for width x height."\n\
+". 'whd': shortcut for width x height x depth."\n\
+". 'whds': shortcut for width x height x depth x spectrum (i.e. number of image values)."\n\
+". 'im', 'iM', 'ia', 'iv', 'is', 'ip', 'ic', 'in': Respectively the minimum, maximum, average, variance, sum, "\
+"product, median value and L2-norm of the associated image, if any ('0' otherwise)."\n\
+". 'xm', 'ym', 'zm', 'cm': The pixel coordinates of the minimum value in the associated image, "\
+"if any ('0' otherwise)."\n\
+". 'xM', 'yM', 'zM', 'cM': The pixel coordinates of the maximum value in the associated image, "\
+"if any ('0' otherwise)."\n\
+". All these variables are considered as **constant values** by the math parser (for optimization purposes) "\
+"which is indeed the case most of the time. Anyway, this might not be the case, if function 'resize(#ind,..)' "\
+"is used in the math expression. If so, it is safer to invoke functions 'l()', 'w(_#ind)', 'h(_#ind)', ... 's(_#ind)' "\
+"and 'in(_#ind)' instead of the corresponding named variables."\n\
+". 'i': current processed pixel value (i.e. value located at `(x,y,z,c)`) in the associated image, "\
+"if any ('0' otherwise)."\n\
+". 'iN': N-th channel value of current processed pixel (i.e. value located at `(x,y,z,N)` in the associated image, "\
+"if any ('0' otherwise). 'N' must be an integer in range '[0,9]'."\n\
+". 'R', 'G', 'B' and 'A' are equivalent to 'i0', 'i1', 'i2' and 'i3' respectively."\n\
+". 'I': current vector-valued processed pixel in the associated image, if any ('0' otherwise). "\
+"The number of vector components is equal to the number of image channels (e.g. 'I' = `[ R,G,B ]` for a `RGB` image)."\n\
+". You may add '#ind' to any of the variable name above to retrieve the information for any "\
+"numbered image '[ind]' of the list (when this makes sense). For instance 'ia#0' denotes the average value of the "\
+"first image of the list)."\n\
+". 'x': current processed column of the associated image, if any ('0' otherwise)."\n\
+". 'y': current processed row of the associated image, if any ('0' otherwise)."\n\
+". 'z': current processed slice of the associated image, if any ('0' otherwise)."\n\
+". 'c': current processed channel of the associated image, if any ('0' otherwise)."\n\
+". 't': thread id when an expression is evaluated with multiple threads ('0' means ''master thread'')."\n\
+". 'e': value of e, i.e. `2.71828...`."\n\
+". 'pi': value of pi, i.e. `3.1415926...`."\n\
+". 'u': a random value between '[0,1]', following a uniform distribution."\n\
+". 'g': a random value, following a gaussian distribution of variance 1 (roughly in '[-6,6]')."\n\
+". 'interpolation': value of the default interpolation mode used when reading pixel values with the pixel access "\
+"operators (i.e. when the interpolation argument is not explicitly specified, see below for more details on pixel "\
+"access operators). Its initial default value is '0'."\n\
+". 'boundary': value of the default boundary conditions used when reading pixel values with the pixel access "\
+"operators (i.e. when the boundary condition argument is not explicitly specified, see below for more details "\
+"on pixel access operators). Its initial default value is '0'."\n\
+\n\
+"_ **Vector calculus:** Most operators are also able to work with vector-valued elements."\n\
+\n\
+". '[a0,a1,...,aN-1]' defines a 'N'-dimensional vector with scalar coefficients 'ak'."\n\
+". 'vectorN(a0,a1,,...,aN-1)' does the same, with the 'ak' being repeated periodically if only a few are specified."\n\
+". 'vector(#N,a0,a1,,...,aN-1)' does the same, and can be used for any constant expression 'N'."\n\
+". In previous expressions, the 'ak' can be vectors themselves, to be concatenated into a single vector."\n\
+". The scalar element 'ak' of a vector 'X' is retrieved by 'X[k]'."\n\
+". The sub-vector '[X[p],X[p+s]...X[p+s*(q-1)]]' (of size 'q') of a vector 'X' is retrieved by 'X[p,q,s]'."\n\
+". 'expr('formula',_w,_h,_d,_s)' outputs a vector of size 'w*h*d*s' with values generated from "\
+"the specified formula, as if one were filling an image with dimensions '(w,h,d,s)'."\n\
+". Equality/inequality comparisons between two vectors is done with operators '==' and '!='."\n\
+". Some vector-specific functions can be used on vector values: "\
+"'cross(X,Y)' (cross product), 'dot(X,Y)' (dot product), 'size(X)' (vector dimension), "\
+"'sort(X,_is_increasing,_chunk_size)' (sorted values), 'reverse(A)' (reverse order of components), "\
+"'shift(A,_length,_boundary_conditions)' and 'same(A,B,_nb_vals,_is_case_sensitive)' (vector equality test)."\n\
+". Function 'normP(u1,...,un)' computes the LP-norm of the specified vector ('P' being an `unsigned integer` constant "\
+"or 'inf'). If 'P' is omitted, the L2 norm is calculated."\n\
+". Function 'resize(A,size,_interpolation,_boundary_conditions)' returns a resized version of a vector 'A' with "\
+"specified interpolation mode. 'interpolation' can be "\
+"{ -1=none (memory content) | 0=none | 1=nearest | 2=average | 3=linear | 4=grid | 5=bicubic | 6=lanczos }, and "\
+"'boundary_conditions' can be { 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }."\n\
+". Function 'find(A,B,_starting_index,_search_step)' returns the index where sub-vector 'B' appears in vector 'A', "\
+"(or '-1' if 'B' is not contained in 'A'). Argument 'A' can be also replaced by an image index '#ind'."\n\
+". A `2`-dimensional vector may be seen as a complex number and used in those particular functions/operators: "\
+"'**' (complex multiplication), '//' (complex division), '^^' (complex exponentiation), "\
+"'**=' (complex self-multiplication), '//=' (complex self-division), '^^=' (complex self-exponentiation), "\
+"'cabs()' (complex modulus), 'carg()' (complex argument), 'cconj()' (complex conjugate), "\
+"'cexp()' (complex exponential), 'clog()' (complex logarithm),  'ccos()' (complex cosine), "\
+"'csin()' (complex sine), 'ctan()' (complex tangent), 'ccosh()' (complex hyperpolic cosine), "\
+"'csinh()' (complex hyperbolic sine) and 'ctanh()' (complex hyperbolic tangent)."\n\
+". A `MN`-dimensional vector may be seen as a `M` x `N` matrix and used in those particular functions/operators: "\
+"'*' (matrix-vector multiplication), 'det(A)' (determinant), 'diag(V)' (diagonal matrix from a vector), "\
+"'eig(A)' (eigenvalues/eigenvectors), 'eye(n)' (n x n identity matrix), 'invert(A,_solver)' (matrix inverse), "\
+"'mul(A,B,_nb_colsB)' (matrix-matrix multiplication), 'pseudoinvert(A,_nb_colsA,_solver)', "\
+"'rot(u,v,w,angle)' (3D rotation matrix), 'rot(angle)' (2D rotation matrix), "\
+"'solve(A,B,_nb_colsB)' (solver of linear system A.X = B), 'svd(A,_nb_colsA)' (singular value decomposition), "\
+"'trace(A)' (matrix trace) and 'transpose(A,nb_colsA)' (matrix transpose). Argument 'nb_colsB' may be omitted if "\
+"it is equal to `1`".\n\
+". 'mproj(S,nb_colsS,D,nb_colsD,method,max_iter,max_residual)' projects a matrix 'S' onto a dictionary (matrix) "\
+"'D'. Equivalent to command 'mproj' but inside the math evaluator."\n\
+". Specifying a vector-valued math expression as an argument of a command that operates on image values "\
+"(e.g. 'fill') modifies the whole spectrum range of the processed image(s), for each spatial coordinates `(x,y,z)`. "\
+"The command does not loop over the `c`-axis in this case."\n\
+\n\
+"_ "${_g.}"String manipulation:"${_n.}" Character strings are defined and managed as vectors objects.
 \n       Dedicated functions and initializers to manage strings are
 \n
 \n       . "${_c.}"[ 'string' ]"${_n.}" and "${_c.}"'string'"${_n.}" define a vector whose values are the character codes of the
