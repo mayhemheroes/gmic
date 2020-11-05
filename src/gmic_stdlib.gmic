@@ -1444,6 +1444,7 @@ reference_text_html : skip "$*"
   replace_str. "  -","\n&#9899;&nbsp;"
   replace_str. "\n       .","\n&nbsp;&nbsp;&nbsp;&nbsp;&#149;&nbsp;"
   replace_str. "\n    .","\n&nbsp;&nbsp;&nbsp;&nbsp;&#149;&nbsp;"
+  parse_cli_decorate_urls.
   parse_cli_decorate_singlequotes_html. 1
   parse_cli_decorate_braces_html.
   parse_cli_decorate_backquotes_html.
@@ -8028,28 +8029,7 @@ parse_cli_html :
         # Other kind of description line
         is_bullet={find(crop(),'"can be {"')>=0}
         parse_cli_decorate_doublequotes_html
-
-        if find(['{t}'],'http')>=0 # Replace URL in description by HTML links
-           i[0] 1,100%
-           eval "
-             n = ['"{t}"'];
-             http='http';
-             p = find(n,http);
-             while (p>=0 && p<h,
-               q = p + size(http);
-               i[q]==_'s'?++q;
-               i[q]==_':' && i[q + 1]==_'/' && i[q + 2]==_'/'?(
-                 while (q<h && i[q]>_' ' && i[q]!=_')' && i[q]!=39, ++q);
-                 q - p<64?copy(i[#0,p],p,q - p,1,0);
-               );
-               p = find(n,http,q);
-             )"
-           a x s y,0 z 1,1
-           repeat $! l[$>] if crop(0,0,1,4)=='http'
-             i[0] ({'"<a href=\""{t}"\" target=\"_blank\">"'}:y) ('</a>':y) a y
-           fi endl done
-           a y
-        fi
+        parse_cli_decorate_urls
         parse_cli_decorate_singlequotes_html 1
         parse_cli_decorate_braces_html
         parse_cli_decorate_backquotes_html
@@ -8071,6 +8051,32 @@ parse_cli_html :
   endl done
   rm
   e[] "\r  > "${_gmic_g}{`copy(vector64(_'" "'),'"Parsing done!"')`}$_gmic_n
+
+# Detect URLs and trasnforms them to HTML links.
+parse_cli_decorate_urls :
+  repeat $! l[$>]
+    if find(crop(),'http')>=0 # Replace URL in description by HTML links
+      i[0] 1,100%
+      eval "n = ['"{t}"'];
+            http='http';
+            p = find(n,http);
+            while (p>=0 && p<h,
+              q = p + size(http);
+              i[q]==_'s'?++q;
+              i[q]==_':' && i[q + 1]==_'/' && i[q + 2]==_'/'?(
+                while (q<h && i[q]>_' ' && i[q]!=_')' && i[q]!=39, ++q);
+                q - p<64?copy(i[#0,p],p,q - p,1,0);
+              );
+              p = find(n,http,q);
+            )"
+      a x s y,0 z 1,1
+      d
+      repeat $! l[$>] if crop(0,0,1,4)=='http'
+        i[0] ({'"<a href=\""{t}"\" target=\"_blank\">"'}:y) ('</a>':y) a y
+      fi endl done
+      a y
+    fi
+  endl done
 
 # Decorate strings between single quotes.
 # $1 = Try to detect and relink command names = { 0=false | 1=true }.
