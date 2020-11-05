@@ -427,23 +427,22 @@ reference :
 
   _section "Input Data Items"
 
-  _text "  - If a specified "${-_gmic}" item appears to be an existing filename, the corresponding image data
-\n     are loaded and inserted at the end of the image list (which is equivalent to the use of
-\n     '"${_c.}"input filename"${_n.}"').
-\n
-\n  - Special filenames '"${_c.}"-"${_n.}"' and '"${_c.}"-.ext"${_n.}"' stand for the standard input/output streams, optionally
-\n     forced to be in a specific '"${_g.}"ext"${_n.}"' file format (e.g. '"${_c.}"-.jpg"${_n.}"' or '"${_c.}"-.png"${_n.}"').
-\n
-\n  - The following special input strings may be used as "${-_gmic}" items to create and insert new
-\n     images with prescribed values, at the end of the image list:
-\n
-\n    . '"${_c.}"[selection]"${_n.}"' or '"${_c.}"[selection]xN"${_n.}"': Insert 1 or N copies of already existing images.
-\n       '"${_g.}"selection"${_n.}"' may represent one or several images
-\n       (see section '"${_m.}"Command Items and Selections"${_n.}"' to learn more about selections).
-\n
-\n    . '"${_c.}"width[%],_height[%],_depth[%],_spectrum[%],_values[xN]"${_n.}"': Insert one or N images with specified
-\n       size and values (adding '"${_g.}"%"${_n.}"' to a dimension means 'percentage of the size along the same
-\n       axis, taken from the last image '"${_g.}"[-1]"${_n.}"''). Any specified dimension can be also written as
+  _text "- If a specified "${-_gmic}" item appears to be an existing filename, the corresponding image data "\
+"are loaded and inserted at the end of the image list (which is equivalent to the use of `input filename`). "\n\
+\n\
+"- Special filenames `-` and `-.ext` stand for the standard input/output streams, optionally "\
+"forced to be in a specific 'ext' file format (e.g. `-.jpg` or `-.png`). "\n\
+\n\
+"- The following special input strings may be used as "${-_gmic}" items to create and insert new "\
+"images with prescribed values, at the end of the image list:"\n\
+\n\
+". '[selection]' or '[selection]xN': Insert 1 or N copies of already existing images. "\
+"'selection' may represent one or several images (see section __Command Items and Selections__ to learn more "\
+"about selections)."\n\
+\n\
+". 'width[%],_height[%],_depth[%],_spectrum[%],_values[xN]': Insert one or N images with specified "\
+"size and values (adding '%' to a dimension means *_percentage of the size along the same axis_*, "\
+"taken from the last image '"${_g.}"[-1]"${_n.}"''). Any specified dimension can be also written as
 \n       '"${_c.}"[image]"${_n.}"', and is then set to the size (along the same axis) of the existing specified image
 \n       "${_g.}"[image]"${_n.}". '"${_g.}"values"${_n.}"' can be either a sequence of numbers separated by commas '"${_g.}","${_n.}"',
 \n       or a mathematical expression, as e.g. in input item '"${_c.}"256,256,1,3,[x,y,128]"${_n.}"' which
@@ -1435,9 +1434,10 @@ reference_text_html : skip "$*"
   parse_cli_decorate_urls.
   replace_str. "\n","<br/>\n"
   f. "i==_'-' && j[1]==_' ' && (!y || j[-1]==_'\n')?2:i" replace_str "\2 ","&bull;&nbsp;"
-  f. "i==_'.' && j[1]==_' ' && (!y || j[-1]==_'\n')?2:i" replace_str "\2 ","&nbsp;&nbsp;&nbsp;&nbsp;&bull;&nbsp;"
+  f. "i==_'.' && j[1]==_' ' && (!y || j[-1]==_'\n')?2:i" replace_str "\2 ","&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&bull;&nbsp;"
 
   parse_cli_decorate_doubleunderscore_html.
+  parse_cli_decorate_starunderscore_html.
   parse_cli_decorate_singlequotes_html. 1
   parse_cli_decorate_braces_html.
   parse_cli_decorate_backquotes_html.
@@ -6874,6 +6874,16 @@ parse_cli_decorate_doubleunderscore_html :
   replace_str "\2_","<b>"
   replace_str "\3_","</b>"
 
+# Decorate strings between double-underscore.
+parse_cli_decorate_starunderscore_html :
+  eval[^] ">begin(beg = -1);
+            i==_'_' && j[1]==_'_'?(
+              beg<0?(beg = y):
+              (for (ok = 1; p = beg + 2, p<y, ++p, p>beg + 80?(ok = 0; break()));
+              ok?(i[beg] = 2; i[y] = 3); beg = -1))"
+  replace_str "\2_","<b>"
+  replace_str "\3_","</b>"
+
 #
 # Implements 'image' mode for command 'parse_cli'.
 #
@@ -7367,7 +7377,7 @@ parse_gui : skip "${1=print},${2=*}"
   v + parse_gui_$1 # Output result of the parsing.
 
 #
-# Output mode 'print' (default output mode).
+# Implements 'print' mode for command 'parse_gui' (default output mode).
 #
 parse_gui_parseparams_print : u 0 # Tell parser to not parse filter parameters
 parse_gui_trigger_print : sort_list +,n
@@ -7379,7 +7389,7 @@ parse_gui_print :
   done
 
 #
-# Output mode 'list'.
+# Implements 'list' mode for command 'parse_gui'.
 #
 parse_gui_parseparams_list : u 0 # Tell parser to not parse filter parameters
 parse_gui_list :
@@ -7417,7 +7427,7 @@ parse_gui_list :
   e[] "\r  >> "${_gmic_g}{`copy(vector64(_'" "'),'"Output done!"')`}$_gmic_n
 
 #
-# Output mode 'update'.
+# Implements 'update' mode for command 'parse_gui'.
 #
 parse_gui_parseparams_update : u 1 # Tell parser to parse filter parameters
 parse_gui_update :
@@ -7565,7 +7575,7 @@ straprilfool : skip "${1=}"
   u {t} rm endl
 
 #
-# Output mode 'json'.
+# Implements 'json' mode for command 'parse_gui'.
 #
 parse_gui_parseparams_json : u 1 # Tell parser to not parse filter parameters
 parse_gui_trigger_json :
@@ -7721,7 +7731,7 @@ _parse_gui_json :
   onfail u "" endl
 
 #
-# Output mode 'strings'.
+# Implements 'strings' mode for command 'parse_gui'.
 # (Extract all strings from filters, for translation purpose).
 #
 parse_gui_strings :
