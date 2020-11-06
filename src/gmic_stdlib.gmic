@@ -342,23 +342,23 @@ __help :
 
 # Convert a 'gmd' string to HTML.
 gmd_html :
-  gmd_list_html
   gmd_gmic_html
   gmd_bold_html
   gmd_italic_html
   gmd_citation_html
   gmd_braces_html
-  gmd_backquotes_html
   gmd_quotes_html
-  gmd_url_html
+  gmd_backquotes_html
   gmd_code_html
   gmd_image_html
+  gmd_list_html
+  gmd_url_html
 
 gmd_backquotes_html : # `words in monospace`
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>80?(beg = -1);
     i==96?(
-      beg<0 && isin(j[-1],_' ',_'\n')?(beg = y):
+      beg<0 && (!y || isin(j[-1],_' ',_'\n'))?(beg = y):
       beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
     )"
   replace_str "\2","<span class=\"gmd_bq\">"
@@ -368,7 +368,7 @@ gmd_bold_html : # **words in bold face**
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>80?(beg = -1);
     i==_'*' && j[1]==_'*'?(
-      beg<0 && isin(j[-1],_' ',_'\n')?(beg = y):
+      beg<0 && (!y || isin(j[-1],_' ',_'\n'))?(beg = y):
       beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
     )"
   replace_str "\2*","<span class=\"gmd_b\">"
@@ -377,7 +377,7 @@ gmd_bold_html : # **words in bold face**
 gmd_braces_html : # { list of values }
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>80?(beg = -1);
-    i==_'{' && beg<0 && isin(j[-1],_' ',_'\n')?(beg = y):
+    i==_'{' && beg<0 && (!y || isin(j[-1],_' ',_'\n'))?(beg = y):
     i==_'}' && beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)"
   replace_str "\2","<span class=\"gmd_br\">{"
   replace_str "\3","}</span>"
@@ -386,7 +386,7 @@ gmd_citation_html : # ''citation highlighted''
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>80?(beg = -1);
     i==_'\'' && j[1]==_'\''?(
-      beg<0 && isin(j[-1],_' ',_'\n')?(beg = y):
+      beg<0 && (!y || isin(j[-1],_' ',_'\n'))?(beg = y):
       beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
     )"
   replace_str "\2'","<span class=\"gmd_c\">&ldquo;"
@@ -396,11 +396,11 @@ gmd_code_html : # ~~code block~~
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>512?(beg = -1);
     i==_'~' && j[1]==_'~'?(
-      beg<0 && isin(j[-1],_' ',_'\n')?(beg = y):
+      beg<0 && (!y || isin(j[-1],_' ',_'\n'))?(beg = y):
       beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
     )"
-  replace_str "\2*","<div class=\"gmd_cb\">"
-  replace_str "\3*","</div>"
+  replace_str "\2~","<div class=\"gmd_cb\">"
+  replace_str "\3~","</div>"
 
 gmd_gmic_html : # G'MIC
   replace_str "G'MIC","<span class=\"gmic\"></span>"
@@ -411,7 +411,7 @@ gmd_italic_html : # __words in italic__
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>80?(beg = -1);
     i==_'_' && j[1]==_'_'?(
-      beg<0 && isin(j[-1],_' ',_'\n')?(beg = y):
+      beg<0 && (!y || isin(j[-1],_' ',_'\n'))?(beg = y):
       beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
     )"
   replace_str "\2_","<span class=\"gmd_i\">"
@@ -427,7 +427,7 @@ gmd_quotes_html : # 'single_word_in_monospace`
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>80?(beg = -1);
     i==_'\''?(
-      beg<0 && isin(j[-1],_' ',_'\n')?(beg = y):
+      beg<0 && (!y || isin(j[-1],_' ',_'\n'))?(beg = y):
       beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
     )"
   replace_str "\2","<span class=\"gmd_q\">"
@@ -478,9 +478,9 @@ reference :
 
   _section "Usage"
 
-  _text "`gmic [command1 [arg1_1,arg1_2,..]] .. [commandN [argN_1,argN_2,..]]`"\n\
+  _text "~~gmic [command1 [arg1_1,arg1_2,..]] .. [commandN [argN_1,argN_2,..]]~~"\n\
 \n\
-"`"${_g.}"gmic"${_n.}"` is the open-source interpreter of the G'MIC language, a script-based programming "\
+"`gmic` is the open-source interpreter of the G'MIC language, a script-based programming "\
 "language dedicated to the design of possibly complex image processing pipelines and operators."\n\
 "It can be used to convert, manipulate, filter and visualize image datasets made of one or "\
 "several 1D/2D or 3D multi-spectral images."\n\
@@ -549,7 +549,7 @@ reference :
   _text "- In G'MIC, an image processing pipeline is described as a sequence of items separated by the "\
 "space character ' '. Such items are interpreted and executed from the left to the right. For instance, the expression:"\n\
 \n\
-"`filename.jpg blur 3,0 sharpen 10 resize 200%,200% output file_out.jpg`"\n\
+"~~filename.jpg blur 3,0 sharpen 10 resize 200%,200% output file_out.jpg~~"\n\
 \n\
 "defines a valid pipeline composed of nine G'MIC items."\n\
 \n\
@@ -1496,9 +1496,8 @@ reference_end_section_html :
 
 reference_text_html : skip "$*"
   ('"$*"':y)
-  _decorate_urls_html.
-  replace_str. "\n","<br/>\n"
   gmd_html.
+  replace_str. "\n","<br/>\n"
   if $!>1 a[-2,-1] y fi
 
 reference_b_html :
@@ -1603,31 +1602,6 @@ reference_end_html :
   x "ln -fs table_of_contents.html index.html"
   rm
 
-# Decorate URLs in selected strings.
-_decorate_urls_html :
-  repeat $! l[$>]
-    if find(crop(),'http')>=0 # Replace URL in description by HTML links
-      i[0] 1,100%
-      eval "n = ['"{t}"'];
-            http='http';
-            p = find(n,http);
-            while (p>=0 && p<h,
-              q = p + size(http);
-              i[q]==_'s'?++q;
-              i[q]==_':' && i[q + 1]==_'/' && i[q + 2]==_'/'?(
-                while (q<h && i[q]>_' ' && i[q]!=_')' && i[q]!=39, ++q);
-                q - p<64?copy(i[#0,p],p,q - p,1,0);
-              );
-              p = find(n,http,q);
-            )"
-      a x s y,0 z 1,1
-      repeat $! l[$>] if crop(0,0,1,4)=='http'
-        i[0] ({'"<a href=\""{t}"\" target=\"_blank\">"'}:y) ('</a>':y) a y
-      fi endl done
-      a y
-    fi
-  endl done
-
 # Decorate strings between single quotes in selected strings.
 # $1 = Try to detect and relink command names = { 0=false | 1=true }.
 _decorate_singlequotes_html :
@@ -1656,52 +1630,6 @@ _decorate_singlequotes_html :
     replace_str "\2","<samp class=\"samp_color\">"
     replace_str "\3","</samp>"
   fi
-
-# Decorate strings between double quotes in selected strings.
-_decorate_doublequotes_html :
-  eval[^] ">begin(beg = -1);
-            i==_'\"'?(
-              beg<0?(beg = y):
-              (for (ok = 1; p = beg + 1, p<y, ++p, p>beg + 80?(ok = 0; break()));
-              ok?(i[beg] = 2; i[y] = 3); beg = -1))"
-  replace_str "\2","&#8220;<em style=\"color:#2080F0\">"
-  replace_str "\3","</em>&#8221;"
-
-# Decorate strings between back-quotes in selected strings.
-_decorate_backquotes_html :
-  eval[^] ">begin(beg = -1);
-            i==96?(
-              beg<0?(beg = y):
-              (for (ok = 1; p = beg + 1, p<y, ++p, p>beg + 512?(ok = 0; break()));
-              ok?(i[beg] = 2; i[y] = 3); beg = -1))"
-  replace_str "\2","<samp style=\"color:#2080F0\">"
-  replace_str "\3","</samp>"
-
-# Decorate strings between braces in selected strings.
-_decorate_braces_html :
-  replace_str "{","<samp class=\"samp_braces\">{"
-  replace_str "}","}</samp>"
-
-# Decorate strings between double-underscores in selected strings.
-_decorate_doubleunderscores_html :
-  eval[^] ">begin(beg = -1);
-            i==_'_' && j[1]==_'_'?(
-              beg<0?(beg = y):
-              (for (ok = 1; p = beg + 2, p<y, ++p, p>beg + 80?(ok = 0; break()));
-              ok?(i[beg] = 2; i[y] = 3); beg = -1))"
-  replace_str "\2_","<b>"
-  replace_str "\3_","</b>"
-
-# Decorate strings between star-underscore in selected strings.
-_decorate_starunderscore_html :
-  eval[^] ">begin(beg = -1);
-            i==_'_' && j[1]==_'_'?(
-              beg<0?(beg = y):
-              (for (ok = 1; p = beg + 2, p<y, ++p, p>beg + 80?(ok = 0; break()));
-              ok?(i[beg] = 2; i[y] = 3); beg = -1))"
-  replace_str "\2_","<b>"
-  replace_str "\3_","</b>"
-
 
 # Commands to output help in ascii format.
 _help_header_ascii :
@@ -5843,11 +5771,7 @@ parse_cli_html :
 
         # Other kind of description line
         is_bullet={find(crop(),'"can be {"')>=0}
-        _decorate_doublequotes_html
-        _decorate_urls_html
-        _decorate_singlequotes_html 1
-        _decorate_braces_html
-        _decorate_backquotes_html
+        gmd_html
         if $line==1 html.="      <br/>"\n fi
         html.="      "
         if $is_bullet html.="&#9679;&nbsp;&nbsp;" fi
