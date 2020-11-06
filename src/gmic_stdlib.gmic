@@ -5727,7 +5727,6 @@ parse_cli_images :
   v 0 use_vt100 e[] ""
   old_category,category= n_category,n_example=0
   if !isfile('image.jpg') l[] sp bottles,640 onfail testimage2d 500 endl o. image.jpg rm. fi
-
   n_global=0
   repeat $! if s=['{$>,n}'];s[0]==_'_' continue fi l[$>]
     ('{n}') l. s -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm endl
@@ -5754,8 +5753,10 @@ parse_cli_images :
         fi
         e[] $_gmic_c[$n_global]$_gmic_n" Command '"$_gmic_g$name$_gmic_n"': $ "$example
         skip_rendering={"['"$name"'][0]==_'_' || "\
-                        "(isfile(['"{/f_$basename}"']) && isfile(['"{/t_$basename}"'])) || "\
-                        "(isfile(['"{/f0_$basename}"']) && isfile(['"{/t0_$basename}"']))"}
+                        "(isfile(['"{/${_parse_cli_images_path}f_$basename}"']) &&"\
+                        " isfile(['"{/${_parse_cli_images_path}t_$basename}"'])) || "\
+                        "(isfile(['"{/${_parse_cli_images_path}f0_$basename}"']) && "\
+                        "isfile(['"{/${_parse_cli_images_path}t0_$basename}"']))"}
 
         if !$skip_rendering # Generate picture only if the file doesn't yet exist
           m "run_example : "$example
@@ -5764,15 +5765,17 @@ parse_cli_images :
             run_example
             etime="done in "$_gmic_n{_round($|-$etime,0.01)}"s"$_gmic_m
             _parse_cli_images
-            if $!>1 repeat $! o[$>] f$>_$basename,85 done else o f_$basename,85 fi
+            if $!>1 repeat $! o[$>] ${_parse_cli_images_path}f$>_$basename,85 done
+            else o ${_parse_cli_images_path}f_$basename,85 fi
             rr2d 320,240,0,2
-            if $!>1 repeat $! o[$>] t$>_$basename,75 done else o t_$basename,75 fi
+            if $!>1 repeat $! o[$>] ${_parse_cli_images_path}t$>_$basename,75 done
+            else o ${_parse_cli_images_path}t_$basename,75 fi
             rm
           onfail
             rm gui_error_preview "Unable to generate preview image"
-            o f_$basename,85
+            o ${_parse_cli_images_path}f_$basename,85
             rr2d 300,300,0,2
-            o t_$basename,75
+            o ${_parse_cli_images_path}t_$basename,75
             rm
             etime="failed"
           endl
@@ -7937,8 +7940,9 @@ update_reference_html : check "isbool(${1=0})"
 
   # Generate image of examples.
   x "mkdir -p img"
-  it ../../src/gmic_stdlib.gmic parse_cli images
-  x "mv *.jpg img/"
+  it ../../src/gmic_stdlib.gmic
+  _parse_cli_images_path="img/"
+  parse_cli images
 
   # Generate reference pages in HTML.
   rm
