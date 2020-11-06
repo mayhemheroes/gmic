@@ -343,8 +343,8 @@ __help :
 # - \n_ Item of a sub-list (level 1)
 # - \n. Item of a sub-list (level 2)
 
-# Convert a 'gmd' string to HTML.
-# $1 = output mode. Can be { html | ascii }.
+# Convert a 'gmd' string to an output format.
+# $1 = output format. Can be { html | ascii }.
 gmd :
   gmd_gmic_$1
   gmd_bold_$1
@@ -359,117 +359,162 @@ gmd :
   gmd_url_$1
   gmd_section_$1
 
-gmd_bold_html : # **words in bold face**
+#
+# Commands that detect 'gmd' patterns and insert starting and closing tags '\2' and '\3'.
+#
+gmd_bold : # **words in bold face**
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>80?(beg = -1);
     i==_'*' && j[1]==_'*'?(
       beg<0 && (!y || isin(j[-1],_' ',_'\n',_'('))?(beg = y):
       beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
     )"
-  replace_str "\2*","<span class=\"gmd_bold\">"
-  replace_str "\3*","</span>"
 
-gmd_braces_html : # { list of values }
+gmd_braces : # { list of values }
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>80?(beg = -1);
     beg<0 && i==_'{' && (!y || isin(j[-1],_' ',_'\n',_'('))?(beg = y):
     beg>=0 && i==_'}'?(i[y] = 3; i[beg] = 2; beg = -1)"
-  replace_str "\2","<span class=\"gmd_braces\">{"
-  replace_str "\3","}</span>"
 
-gmd_cite_html : # ''citation highlighted''
+gmd_cite : # ''citation highlighted''
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>80?(beg = -1);
     i==_'\'' && j[1]==_'\''?(
       beg<0 && (!y || isin(j[-1],_' ',_'\n',_'('))?(beg = y):
       beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
     )"
-  replace_str "\2'","<span class=\"gmd_cite\">&ldquo;"
-  replace_str "\3'","&rdquo;</span>"
 
-gmd_code_html : # ~~code block~~
+gmd_code : # ~~code block~~
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>512?(beg = -1);
     i==_'~' && j[1]==_'~'?(
       beg<0 && (!y || isin(j[-1],_' ',_'\n',_'('))?(beg = y):
       beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
     )"
-  replace_str "\2~","<div class=\"gmd_code\">"
-  replace_str "\3~","</div>"
 
-gmd_gmic_html : # G'MIC
-  replace_str "G'MIC","<span class=\"gmd_gmic\"></span>"
-
-gmd_image_html : # ^^image_URL^^
+gmd_image : # ^^image_URL^^
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>512?(beg = -1);
     i==_'^' && j[1]==_'^'?(
       beg<0 && (!y || isin(j[-1],_' ',_'\n',_'('))?(beg = y):
       beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
     )"
-  replace_str "\2^","<img class=\"gmd_image\" alt=\"[image]\" src=\""
-  replace_str "\3^","\"/>"
 
-gmd_italic_html : # __words in italic__
+gmd_italic : # __words in italic__
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>80?(beg = -1);
     i==_'_' && j[1]==_'_'?(
       beg<0 && (!y || isin(j[-1],_' ',_'\n',_'('))?(beg = y):
       beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
     )"
-  replace_str "\2_","<span class=\"gmd_italic\">"
-  replace_str "\3_","</span>"
 
-gmd_list_html : # List items
+gmd_list1 : # \n- List item 1
   1 a[^-1] [-1],y rm.
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>1024?(beg = -1);
     beg<0 && i==_'-' && j[1]==_' ' && (!y || isin(j[-1],_'\n',3))?(beg = y):
     beg>=0 && (i==_'\n' || y==h - 1)?(i[y] = 3; i[beg] = 2; beg = -1)"
-  replace_str "\2 ","<div class=\"gmd_list1\"> "
-  replace_str "\3","</div>"
+  repeat $! if {$>,!i[-1,2]} rows[$>] 0,{$>,h-2} fi done
 
+gmd_list2 : # \n_ List item 2
+  1 a[^-1] [-1],y rm.
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>1024?(beg = -1);
     beg<0 && i==_'_' && j[1]==_' ' && (!y || isin(j[-1],_'\n',3))?(beg = y):
     beg>=0 && (i==_'\n' || y==h - 1)?(i[y] = 3; i[beg] = 2; beg = -1)"
-  replace_str "\2 ","<div class=\"gmd_list2\"> "
-  replace_str "\3","</div>"
+  repeat $! if {$>,!i[-1,2]} rows[$>] 0,{$>,h-2} fi done
 
+gmd_list3 : # \n. List item 3
+  1 a[^-1] [-1],y rm.
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>1024?(beg = -1);
     beg<0 && i==_'.' && j[1]==_' ' && (!y || isin(j[-1],_'\n',3))?(beg = y):
     beg>=0 && (i==_'\n' || y==h-1)?(i[y] = 3; i[beg] = 2; beg = -1)"
-  replace_str "\2 ","<div class=\"gmd_list3\"> "
-  replace_str "\3","</div>"
   repeat $! if {$>,!i[-1,2]} rows[$>] 0,{$>,h-2} fi done
 
-gmd_mono_html : # 'single_word_in_monospace`
+gmd_mono : # 'single_word_in_monospace'
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>80?(beg = -1);
     i==_'\''?(
       beg<0 && (!y || isin(j[-1],_' ',_'\n',_'('))?(beg = y):
       beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
     )"
-  replace_str "\2","<span class=\"gmd_mono\">"
-  replace_str "\3","</span>"
 
-gmd_monobold_html : # `words in monospace`
+gmd_monobold : # `words in monospace`
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>80?(beg = -1);
     i==96?(
       beg<0?(beg = y):
       beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
     )"
-  replace_str "\2","<span class=\"gmd_monobold\">"
-  replace_str "\3","</span>"
 
-gmd_section_html : # # Section
+gmd_section1 :
   1 a[^-1] [-1],y rm.
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>1024?(beg = -1);
     beg<0 && i==_'#' && j[1]==_' ' && (!y || isin(j[-1],_'\n',3))?(beg = y):
     beg>=0 && (i==_'\n' || y==h - 1)?(i[y] = 3; i[beg] = 2; beg = -1)"
+  repeat $! if {$>,!i[-1,2]} rows[$>] 0,{$>,h-2} fi done
+
+#
+# Commands that convert starting and closing tags '\2' and '\3' into HTML.
+#
+gmd_bold_html :
+  gmd_bold
+  replace_str "\2*","<span class=\"gmd_bold\">"
+  replace_str "\3*","</span>"
+
+gmd_braces_html :
+  gmd_braces
+  replace_str "\2","<span class=\"gmd_braces\">{"
+  replace_str "\3","}</span>"
+
+gmd_cite_html :
+  gmd_cite
+  replace_str "\2'","<span class=\"gmd_cite\">&ldquo;"
+  replace_str "\3'","&rdquo;</span>"
+
+gmd_code_html :
+  gmd_code
+  replace_str "\2~","<div class=\"gmd_code\">"
+  replace_str "\3~","</div>"
+
+gmd_gmic_html :
+  replace_str "G'MIC","<span class=\"gmd_gmic\"></span>"
+
+gmd_image_html :
+  gmd_image
+  replace_str "\2^","<img class=\"gmd_image\" alt=\"[image]\" src=\""
+  replace_str "\3^","\"/>"
+
+gmd_italic_html :
+  gmd_italic
+  replace_str "\2_","<span class=\"gmd_italic\">"
+  replace_str "\3_","</span>"
+
+gmd_list_html :
+  gmd_list1
+  replace_str "\2 ","<div class=\"gmd_list1\"> "
+  replace_str "\3","</div>"
+  gmd_list2
+  replace_str "\2 ","<div class=\"gmd_list2\"> "
+  replace_str "\3","</div>"
+  gmd_list3
+  replace_str "\2 ","<div class=\"gmd_list3\"> "
+  replace_str "\3","</div>"
+
+gmd_mono_html :
+  gmd_mono
+  replace_str "\2","<span class=\"gmd_mono\">"
+  replace_str "\3","</span>"
+
+gmd_monobold_html :
+  gmd_monobold
+  replace_str "\2","<span class=\"gmd_monobold\">"
+  replace_str "\3","</span>"
+
+gmd_section_html : # # Section
+  gmd_section1
   replace_str "\2 ","<div class=\"gmd_section1\">"
   replace_str "\3","</div>\n"
 
