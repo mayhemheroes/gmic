@@ -420,12 +420,19 @@ gmd_italic_html : # __words in italic__
   replace_str "\3_","</span>"
 
 gmd_list_html : # List items
-  eval[^] ">begin(beg = -1);
-    beg>=0 && y - beg>1024?(beg = -1);
-    beg<0 && i==_'-' && j[1]==_' ' && (!y || isin(j[-1],_'\n',3))?(beg = y):
-    beg>=0 && (i==_'\n' || y==h-1)?(i[y] = 3; i[beg] = 2; beg = -1)"
-  replace_str "\2 ","<div class=\"gmd_list\"> "
-  replace_str "\3","</div>"
+  repeat $! l[$>]
+    close_div=0
+    eval[^] ">begin(beg = -1);
+      beg>=0 && y - beg>1024?(beg = -1);
+      beg<0 && i==_'-' && j[1]==_' ' && (!y || isin(j[-1],_'\n',3))?(beg = y):
+      beg>=0 && (i==_'\n' || y==h-1)?(
+        y==h-1?run('close_div=1'):(i[y] = 3);
+        i[beg] = 2; beg = -1)"
+    replace_str "\2 ","<div class=\"gmd_list\"> "
+    replace_str "\3","</div>"
+    if $close_div ('</div>':y) a y fi
+  endl done
+
 
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>1024?(beg = -1);
@@ -1397,6 +1404,7 @@ reference :
 " ^^../img/example_vase.png^^"\n\
 "- Display filtered webcam stream: "\
 "~~$ gmic apply_camera \\\"+mirror x +mirror y add div 4\\\"~~"\n\
+" ^^../img/example_camera.png^^"\n\
 "- Launch a set of G'MIC interactive demos: "\
 "~~$ gmic demos~~"
 
