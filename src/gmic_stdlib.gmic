@@ -414,7 +414,7 @@ gmd_list1 : # \n- List item 1
     beg>=0 && y - beg>1024?(beg = -1);
     beg<0 && i==_'-' && j[1]==_' ' && (!y || isin(j[-1],_'\n',3))?(beg = y):
     beg>=0 && (i==_'\n' || y==h - 1)?(i[y] = 3; i[beg] = 2; beg = -1)"
-  repeat $! if {$>,!i[-1,2]} rows[$>] 0,{$>,h-2} fi done
+  autocrop 0
 
 gmd_list2 : # \n_ List item 2
   1 a[^-1] [-1],y rm.
@@ -422,7 +422,7 @@ gmd_list2 : # \n_ List item 2
     beg>=0 && y - beg>1024?(beg = -1);
     beg<0 && i==_'_' && j[1]==_' ' && (!y || isin(j[-1],_'\n',3))?(beg = y):
     beg>=0 && (i==_'\n' || y==h - 1)?(i[y] = 3; i[beg] = 2; beg = -1)"
-  repeat $! if {$>,!i[-1,2]} rows[$>] 0,{$>,h-2} fi done
+  autocrop 0
 
 gmd_list3 : # \n. List item 3
   1 a[^-1] [-1],y rm.
@@ -430,7 +430,7 @@ gmd_list3 : # \n. List item 3
     beg>=0 && y - beg>1024?(beg = -1);
     beg<0 && i==_'.' && j[1]==_' ' && (!y || isin(j[-1],_'\n',3))?(beg = y):
     beg>=0 && (i==_'\n' || y==h-1)?(i[y] = 3; i[beg] = 2; beg = -1)"
-  repeat $! if {$>,!i[-1,2]} rows[$>] 0,{$>,h-2} fi done
+  autocrop 0
 
 gmd_mono : # 'single_word_in_monospace'
   eval[^] ">begin(beg = -1);
@@ -448,13 +448,29 @@ gmd_monobold : # `words in monospace`
       beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
     )"
 
-gmd_section1 :
+gmd_section1 : # # Section
   1 a[^-1] [-1],y rm.
   eval[^] ">begin(beg = -1);
-    beg>=0 && y - beg>1024?(beg = -1);
+    beg>=0 && y - beg>80?(beg = -1);
     beg<0 && i==_'#' && j[1]==_' ' && (!y || isin(j[-1],_'\n',3))?(beg = y):
     beg>=0 && (i==_'\n' || y==h - 1)?(i[y] = 3; i[beg] = 2; beg = -1)"
-  repeat $! if {$>,!i[-1,2]} rows[$>] 0,{$>,h-2} fi done
+  autocrop 0
+
+gmd_section2 : # ## Section
+  1 a[^-1] [-1],y rm.
+  eval[^] ">begin(beg = -1);
+    beg>=0 && y - beg>80?(beg = -1);
+    beg<0 && i==_'#' && j[1]==_'#' && j[2]==_' ' && (!y || isin(j[-1],_'\n',3))?(beg = y):
+    beg>=0 && (i==_'\n' || y==h - 1)?(i[y] = 3; i[beg] = 2; beg = -1)"
+  autocrop 0
+
+gmd_section3 : # ### Section
+  1 a[^-1] [-1],y rm.
+  eval[^] ">begin(beg = -1);
+    beg>=0 && y - beg>80?(beg = -1);
+    beg<0 && i==_'#' && j[1]==_'#' && j[2]==_'#' && j[3]==_' ' && (!y || isin(j[-1],_'\n',3))?(beg = y):
+    beg>=0 && (i==_'\n' || y==h - 1)?(i[y] = 3; i[beg] = 2; beg = -1)"
+  autocrop 0
 
 #
 # Commands that convert starting and closing tags '\2' and '\3' into HTML.
@@ -494,13 +510,11 @@ gmd_italic_html :
 
 gmd_list_html :
   gmd_list1
-  replace_str "\2 ","<div class=\"gmd_list1\"> "
-  replace_str "\3","</div>"
+  replace_str "\2","<div class=\"gmd_list1\">"
   gmd_list2
-  replace_str "\2 ","<div class=\"gmd_list2\"> "
-  replace_str "\3","</div>"
+  replace_str "\2","<div class=\"gmd_list2\">"
   gmd_list3
-  replace_str "\2 ","<div class=\"gmd_list3\"> "
+  replace_str "\2","<div class=\"gmd_list3\">"
   replace_str "\3","</div>"
 
 gmd_mono_html :
@@ -516,6 +530,12 @@ gmd_monobold_html :
 gmd_section_html : # # Section
   gmd_section1
   replace_str "\2 ","<div class=\"gmd_section1\">"
+  replace_str "\3","</div>\n"
+  gmd_section2
+  replace_str "\2# ","<div class=\"gmd_section2\">"
+  replace_str "\3","</div>\n"
+  gmd_section3
+  replace_str "\2## ","<div class=\"gmd_section3\">"
   replace_str "\3","</div>\n"
 
 gmd_url_html : # http[s]://address.url
@@ -1411,9 +1431,9 @@ reference :
 \n\
 "# • View a list of images: "\n\
 "~~$ gmic file1.bmp file2.jpeg~~"\n\
-"# • Convert an image file: "\n\
+"## • Convert an image file: "\n\
 "~~$ gmic input.bmp output output.jpg~~"\n\
-"# • Create a volumetric image from a movie sequence: "\n\
+"### • Create a volumetric image from a movie sequence: "\n\
 "~~$ gmic input.mpg append z output output.hdr~~"\n\
 "# • Compute image gradient norm: "\n\
 "~~$ gmic input.bmp gradient_norm~~"\n\
