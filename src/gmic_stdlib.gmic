@@ -426,21 +426,21 @@ gmd_list_html : # List items
     beg>=0 && y - beg>1024?(beg = -1);
     beg<0 && i==_'-' && j[1]==_' ' && (!y || isin(j[-1],_'\n',3))?(beg = y):
     beg>=0 && (i==_'\n' || y==h - 1)?(i[y] = 3; i[beg] = 2; beg = -1)"
-  replace_str "\2 ","<div class=\"gmd_list\"> "
+  replace_str "\2 ","<div class=\"gmd_list1\"> "
   replace_str "\3","</div>"
 
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>1024?(beg = -1);
     beg<0 && i==_'_' && j[1]==_' ' && (!y || isin(j[-1],_'\n',3))?(beg = y):
     beg>=0 && (i==_'\n' || y==h - 1)?(i[y] = 3; i[beg] = 2; beg = -1)"
-  replace_str "\2 ","<div class=\"gmd_list1\"> "
+  replace_str "\2 ","<div class=\"gmd_list2\"> "
   replace_str "\3","</div>"
 
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>1024?(beg = -1);
     beg<0 && i==_'.' && j[1]==_' ' && (!y || isin(j[-1],_'\n',3))?(beg = y):
     beg>=0 && (i==_'\n' || y==h-1)?(i[y] = 3; i[beg] = 2; beg = -1)"
-  replace_str "\2 ","<div class=\"gmd_list2\"> "
+  replace_str "\2 ","<div class=\"gmd_list3\"> "
   replace_str "\3","</div>"
   repeat $! if {$>,!i[-1,2]} rows[$>] 0,{$>,h-2} fi done
 
@@ -465,6 +465,13 @@ gmd_monobold_html : # `words in monospace`
   replace_str "\3","</span>"
 
 gmd_section_html : # # Section
+  1 a[^-1] [-1],y rm.
+  eval[^] ">begin(beg = -1);
+    beg>=0 && y - beg>1024?(beg = -1);
+    beg<0 && i==_'#' && j[1]==_' ' && (!y || isin(j[-1],_'\n',3))?(beg = y):
+    beg>=0 && (i==_'\n' || y==h - 1)?(i[y] = 3; i[beg] = 2; beg = -1)"
+  replace_str "\2 ","<div class=\"gmd_section1\">"
+  replace_str "\3","</div>\n"
 
 gmd_url_html : # http[s]://address.url
   repeat $! l[$>]
@@ -1357,47 +1364,47 @@ reference :
   _text "`gmic` is a generic image processing tool which can be used in a wide variety of situations. "\
 "The few examples below illustrate possible uses of this tool:"\n\
 \n\
-"- View a list of images: "\
+"# • View a list of images: "\n\
 "~~$ gmic file1.bmp file2.jpeg~~"\n\
-"- Convert an image file: "\
+"# • Convert an image file: "\n\
 "~~$ gmic input.bmp output output.jpg~~"\n\
-"- Create a volumetric image from a movie sequence: "\
+"# • Create a volumetric image from a movie sequence: "\n\
 "~~$ gmic input.mpg append z output output.hdr~~"\n\
-"- Compute image gradient norm: "\
+"# • Compute image gradient norm: "\n\
 "~~$ gmic input.bmp gradient_norm~~"\n\
-"- Denoise a color image: "\
+"# • Denoise a color image: "\n\
 "~~$ gmic image.jpg denoise 30,10 output denoised.jpg~~"\n\
-"- Compose two images using overlay layer blending: "\
+"# • Compose two images using overlay layer blending: "\n\
 "~~$ gmic image1.jpg image2.jpg blend overlay output blended.jpg~~"\n\
-"- Evaluate a mathematical expression: "\
+"# • Evaluate a mathematical expression: "\n\
 "~~$ gmic echo \"cos(pi/4)^2+sin(pi/4)^2={cos(pi/4)^2+sin(pi/4)^2}\"~~"\n\
-"- Plot a 2D function: "\
+"# • Plot a 2D function: "\n\
 "~~$ gmic 1000,1,1,2 fill \"X=3*(x-500)/500;X^2*sin(3*X^2)+if(c==0,u(0,-1),cos(X*10))\" plot~~"\
 " ^^../img/example_plot.png^^"\n\
-"- Plot a 3D elevated function in random colors: "\
+"# • Plot a 3D elevated function in random colors: "\n\
 "~~$ gmic 128,128,1,3,\"u(0,255)\" plasma 10,3 blur 4 sharpen 10000 "\
 "elevation3d[-1] \"'X=(x-64)/6;Y=(y-64)/6;100*exp(-(X^2+Y^2)/30)*abs(cos(X)*sin(Y))'\"~~"\
 " ^^../img/example_elevation3d.png^^"\n\
-"- Plot the isosurface of a 3D volume: "\
+"# • Plot the isosurface of a 3D volume: "\n\
 "~~$ gmic mode3d 5 moded3d 5 double3d 0 isosurface3d \"'x^2+y^2+abs(z)^abs(4*cos(x*y*z*3))'\",3~~"\
 " ^^../img/example_isosurface3d.png^^"\n\
-"- Render a G'MIC 3D logo: "\
+"# • Render a G'MIC 3D logo: "\n\
 "~~$ gmic 0 text G\\\47MIC,0,0,53,1,1,1,1 expand_xy 10,0 blur 1 normalize 0,100 +plasma 0.4 add blur 1 "\
 "elevation3d -0.1 moded3d 4~~"\
 " ^^../img/example_logo.png^^"\n\
-"- Generate a 3D ring of torii: "\
+"# • Generate a 3D ring of torii: "\n\
 "~~$ gmic repeat 20 torus3d 15,2 color3d[-1] \"{u(60,255)},{u(60,255)},{u(60,255)}\" *3d[-1] 0.5,1 if \"{$>%2}\" "\
 "rotate3d[-1] 0,1,0,90 fi add3d[-1] 70 add3d rotate3d 0,0,1,18 done moded3d 3 mode3d 5 double3d 0~~"\
 " ^^../img/example_torii.png^^"\n\
-"- Create a vase from a 3D isosurface: "\
+"# • Create a vase from a 3D isosurface: "\n\
 "~~$ gmic moded3d 4 isosurface3d \"'x^2+2*abs(y/2)*sin(2*y)^2+z^2-3',0\" sphere3d 1.5 sub3d[-1] 0,5 plane3d 15,15 "\
 "rotate3d[-1] 1,0,0,90 center3d[-1] add3d[-1] 0,3.2 color3d[-1] 180,150,255 color3d[-2] 128,255,0 "\
 "color3d[-3] 255,128,0 add3d~~"\
 " ^^../img/example_vase.png^^"\n\
-"- Display filtered webcam stream: "\
+"# • Display filtered webcam stream: "\n\
 "~~$ gmic apply_camera \\\"+mirror x +mirror y add div 4\\\"~~"\n\
 " ^^../img/example_camera.png^^"\n\
-"- Launch a set of G'MIC interactive demos: "\
+"# • Launch a set of G'MIC interactive demos: "\n\
 "~~$ gmic demos~~"
 
   _end um _section,_text,_end
@@ -1496,7 +1503,6 @@ reference_end_html :
 "      <ul>\n"\
 "        <li>This document is distributed under the "\
 "<a href=\"http://www.gnu.org/licenses/fdl-1.3.txt\">GNU Free Documentation License</a>, version 1.3.</li>"\n\
-"        <li> A <a href=\"gmic_reference.pdf\">.pdf version</a> of this document is available.</li>"\n\
 "        <li>Interested in a concrete introduction to <span=\"gmic\"></span> programming ? "\
 "Then visit our <a href=\"../bouncing_balls3d/\">3D Bouncing Balls Tutorial</a> first!</li>"\n\
 "        <li> We also suggest you read the more complete <a href=\"../tutorial/\">tutorial pages</a> by "\
