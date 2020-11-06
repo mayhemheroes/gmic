@@ -357,6 +357,7 @@ gmd :
   gmd_image_$1
   gmd_braces_$1
   gmd_url_$1
+  gmd_section_$1
 
 gmd_bold_html : # **words in bold face**
   eval[^] ">begin(beg = -1);
@@ -420,24 +421,18 @@ gmd_italic_html : # __words in italic__
   replace_str "\3_","</span>"
 
 gmd_list_html : # List items
-  repeat $! l[$>]
-    close_div=0
-    eval[^] ">begin(beg = -1);
-      beg>=0 && y - beg>1024?(beg = -1);
-      beg<0 && i==_'-' && j[1]==_' ' && (!y || isin(j[-1],_'\n',3))?(beg = y):
-      beg>=0 && (i==_'\n' || y==h-1)?(
-        y==h-1?run('close_div=1'):(i[y] = 3);
-        i[beg] = 2; beg = -1)"
-    replace_str "\2 ","<div class=\"gmd_list\"> "
-    replace_str "\3","</div>"
-    if $close_div ('</div>':y) a y fi
-  endl done
-
+  1 a[^-1] [-1],y rm.
+  eval[^] ">begin(beg = -1);
+    beg>=0 && y - beg>1024?(beg = -1);
+    beg<0 && i==_'-' && j[1]==_' ' && (!y || isin(j[-1],_'\n',3))?(beg = y):
+    beg>=0 && (i==_'\n' || y==h - 1)?(i[y] = 3; i[beg] = 2; beg = -1)"
+  replace_str "\2 ","<div class=\"gmd_list\"> "
+  replace_str "\3","</div>"
 
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>1024?(beg = -1);
     beg<0 && i==_'_' && j[1]==_' ' && (!y || isin(j[-1],_'\n',3))?(beg = y):
-    beg>=0 && (i==_'\n' || y==h-1)?(i[y] = 3; i[beg] = 2; beg = -1)"
+    beg>=0 && (i==_'\n' || y==h - 1)?(i[y] = 3; i[beg] = 2; beg = -1)"
   replace_str "\2 ","<div class=\"gmd_list1\"> "
   replace_str "\3","</div>"
 
@@ -447,12 +442,7 @@ gmd_list_html : # List items
     beg>=0 && (i==_'\n' || y==h-1)?(i[y] = 3; i[beg] = 2; beg = -1)"
   replace_str "\2 ","<div class=\"gmd_list2\"> "
   replace_str "\3","</div>"
-
-
-#  f "i==_'-' && j[1]==_' ' && (!y || j[-1]==_'\n')?2:i"
-#  replace_str "\2 ","&bull;&nbsp;"
-#  f "i==_'.' && j[1]==_' ' && (!y || j[-1]==_'\n')?2:i"
-#  replace_str "\2 ","&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&bull;&nbsp;"
+  repeat $! if {$>,!i[-1,2]} rows[$>] 0,{$>,h-2} fi done
 
 gmd_mono_html : # 'single_word_in_monospace`
   eval[^] ">begin(beg = -1);
@@ -473,6 +463,8 @@ gmd_monobold_html : # `words in monospace`
     )"
   replace_str "\2","<span class=\"gmd_monobold\">"
   replace_str "\3","</span>"
+
+gmd_section_html : # # Section
 
 gmd_url_html : # http[s]://address.url
   repeat $! l[$>]
