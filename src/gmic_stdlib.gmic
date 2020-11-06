@@ -324,20 +324,139 @@ __help :
   _help_examples[]
   _help_footer_$1[]
 
+# Convert a string written in 'gmd' format (G'MIC-markdown).
+# 'gmd' defines the following patterns:
+# - __words in italic__
+# - **words in bold face**
+# - ''citation highlighted''
+# - `words in monospace`
+# - 'single_word_in_monospace'
+# - ~~code block~~
+# - ^^image_URL^^
+# - { list of values }
+# - http[s]://address.url
+# - \n- Item of a list
+# - \n_ Item of a sub-list (level 1)
+# - \n. Item of a sub-list (level 2)
+gmd_html :
+  gmd_list_html
+  gmd_gmic_html
+  gmd_bold_html
+  gmd_italic_html
+  gmd_citation_html
+  gmd_braces_html
+  gmd_backquotes_html
+  gmd_quotes_html
+  gmd_url_html
+  gmd_code_html
+  gmd_image_html
+
+gmd_backquotes_html : # `words in monospace`
+  eval[^] ">begin(beg = -1);
+    beg>=0 && y - beg>80?(beg = -1);
+    i==96?(
+      beg<0 && isin(j[-1],_' ',_'\n')?(beg = y):
+      beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
+    )"
+  replace_str "\2","<span class=\"gmd_bq\">"
+  replace_str "\3","</span>"
+
+gmd_bold_html : # **words in bold face**
+  eval[^] ">begin(beg = -1);
+    beg>=0 && y - beg>80?(beg = -1);
+    i==_'*' && j[1]==_'*'?(
+      beg<0 && isin(j[-1],_' ',_'\n')?(beg = y):
+      beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
+    )"
+  replace_str "\2*","<span class=\"gmd_b\">"
+  replace_str "\3*","</span>"
+
+gmd_braces_html : # { list of values }
+  eval[^] ">begin(beg = -1);
+    beg>=0 && y - beg>80?(beg = -1);
+    i==_'{' && beg<0 && isin(j[-1],_' ',_'\n')?(beg = y):
+    i==_'}' && beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)"
+  replace_str "\2","<span class=\"gmd_br\">{"
+  replace_str "\3","}</span>"
+
+gmd_citation_html : # ''citation highlighted''
+  eval[^] ">begin(beg = -1);
+    beg>=0 && y - beg>80?(beg = -1);
+    i==_'\'' && j[1]==_'\''?(
+      beg<0 && isin(j[-1],_' ',_'\n')?(beg = y):
+      beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
+    )"
+  replace_str "\2'","<span class=\"gmd_c\">&ldquo;"
+  replace_str "\3'","&rdquo;</span>"
+
+gmd_code_html : # ~~code block~~
+  eval[^] ">begin(beg = -1);
+    beg>=0 && y - beg>512?(beg = -1);
+    i==_'~' && j[1]==_'~'?(
+      beg<0 && isin(j[-1],_' ',_'\n')?(beg = y):
+      beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
+    )"
+  replace_str "\2*","<div class=\"gmd_cb\">"
+  replace_str "\3*","</div>"
+
+gmd_gmic_html : # G'MIC
+  replace_str "G'MIC","<span class=\"gmic\"></span>"
+
+gmd_image_html : # ^^image_URL^^
+
+gmd_italic_html : # __words in italic__
+  eval[^] ">begin(beg = -1);
+    beg>=0 && y - beg>80?(beg = -1);
+    i==_'_' && j[1]==_'_'?(
+      beg<0 && isin(j[-1],_' ',_'\n')?(beg = y):
+      beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
+    )"
+  replace_str "\2_","<span class=\"gmd_i\">"
+  replace_str "\3_","</span>"
+
+gmd_list_html : # List items
+  f "i==_'-' && j[1]==_' ' && (!y || j[-1]==_'\n')?2:i"
+  replace_str "\2 ","&bull;&nbsp;"
+  f "i==_'.' && j[1]==_' ' && (!y || j[-1]==_'\n')?2:i"
+  replace_str "\2 ","&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&bull;&nbsp;"
+
+gmd_quotes_html : # 'single_word_in_monospace`
+  eval[^] ">begin(beg = -1);
+    beg>=0 && y - beg>80?(beg = -1);
+    i==_'\''?(
+      beg<0 && isin(j[-1],_' ',_'\n')?(beg = y):
+      beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
+    )"
+  replace_str "\2","<span class=\"gmd_q\">"
+  replace_str "\3","</span>"
+
+gmd_url_html : # http[s]://address.url
+  repeat $! l[$>]
+    if find(crop(),'http')>=0 # Replace URL in description by HTML links
+      i[0] 1,100%
+      eval "n = ['"{t}"'];
+            http='http';
+            p = find(n,http);
+            while (p>=0 && p<h,
+              q = p + size(http);
+              i[q]==_'s'?++q;
+              i[q]==_':' && i[q + 1]==_'/' && i[q + 2]==_'/'?(
+                while (q<h && i[q]>_' ' && i[q]!=_')' && i[q]!=39, ++q);
+                q - p<64?copy(i[#0,p],p,q - p,1,0);
+              );
+              p = find(n,http,q);
+            )"
+      a x s y,0 z 1,1
+      repeat $! l[$>] if crop(0,0,1,4)=='http'
+        i[0] ({'"<a href=\""{t}"\" target=\"_blank\">"'}:y) ('</a>':y) a y
+      fi endl done
+      a y
+    fi
+  endl done
+
 # Command to write reference documentation with various output modes.
 # $1 = output mode, can be { ascii | html | latex }.
-#
-# Reference documentation (as well as command documentation) uses a 'light' markdown-like syntax,
-# with the following patterns recognized:
-# - __sentence with spaces in italic__
-# - **sentence with spaces in bold**
-# - ''sentence with spaces highlighted''
-# - `sentence with spaces` : write sentence with monospace 'style 1'.
-# - 'word' : write single word with monospace 'style 2' (for variables and commands).
-# - { list of possible values } : write { list of possible values } in color.
-# - \n- Item of a list.
-# - \n_ Item of a sub-list (level 1).
-# - \n. Item of a sub-list (level 2).
+# Reference and command documentation is written using the G'MIC-markdown syntax.
 reference :
   m "_start : reference_start_$1"
   m "_section : reference_section_$1 \"$""*\""
@@ -351,7 +470,6 @@ reference :
   m "_m : reference_m_$1"
   m "_n : reference_n_$1"
   m "_r : reference_r_$1"
-  m "_gmic : reference_gmic_$1"
 
   _start
 
@@ -359,18 +477,18 @@ reference :
 
   _text "`gmic [command1 [arg1_1,arg1_2,..]] .. [commandN [argN_1,argN_2,..]]`"\n\
 \n\
-"`"${_g.}"gmic"${_n.}"` is the open-source interpreter of the "${-_gmic}" language, a script-based programming "\
+"`"${_g.}"gmic"${_n.}"` is the open-source interpreter of the G'MIC language, a script-based programming "\
 "language dedicated to the design of possibly complex image processing pipelines and operators."\n\
 "It can be used to convert, manipulate, filter and visualize image datasets made of one or "\
 "several 1D/2D or 3D multi-spectral images."\n\
 \n\
-"This reference documentation describes all the technical aspects of the "${-_gmic}" language."\n\
+"This reference documentation describes all the technical aspects of the G'MIC language."\n\
 \n\
 "As a starting point, you may want to visit our detailed tutorial pages, at: https://gmic.eu/tutorial/"
 
   _section "Overall Context"
 
-  _text "- At any time, "${-_gmic}" manages one list of numbered (and optionally named) pixel-based images, "\
+  _text "- At any time, G'MIC manages one list of numbered (and optionally named) pixel-based images, "\
 "entirely stored in computer memory (uncompressed)."\n\
 \n\
 "- The first image of the list has index '0' and is denoted by '[0]'. The second image of the "\
@@ -383,17 +501,17 @@ reference :
 "start with a number. Image names can be set or reassigned at any moment during the processing pipeline "\
 "(see command 'name' for this purpose)."\n\
 \n\
-"- "${-_gmic}" defines a set of various commands and substitution mechanisms to allow the design of complex "\
+"- G'MIC defines a set of various commands and substitution mechanisms to allow the design of complex "\
 "pipelines and operators managing this list of images, in a very flexible way: You can insert or remove images "\
 "in the list, rearrange image order, process images (individually or grouped), merge image data together, "\
 "display and output image files, etc."\n\
 \n\
-"- Such a pipeline can define a new custom "${-_gmic}" command (stored in a user command file), and re-used "\
+"- Such a pipeline can define a new custom G'MIC command (stored in a user command file), and re-used "\
 "afterwards as a regular command, in a larger pipeline if necessary."
 
   _section "Image Definition and Terminology"
 
-  _text "- In "${-_gmic}", each image is modeled as a 1D, 2D, 3D or 4D array of scalar values, uniformly "\
+  _text "- In G'MIC, each image is modeled as a 1D, 2D, 3D or 4D array of scalar values, uniformly "\
 "discretized on a rectangular/parallelepipedic domain."\n\
 \n\
 "- The four dimensions of this array are respectively denoted by:"\n\
@@ -409,11 +527,11 @@ reference :
 "slices or channels can be of arbitrary size within the limits of the available memory."\n\
 \n\
 "- The `width`, `height` and `depth` of an image are considered as spatial dimensions, while the `spectrum` has a "\
-"multi-spectral meaning. Thus, a 4D image in "${-_gmic}" should be most often regarded as a 3D dataset of multi-spectral "\
-"voxels. Most of the "${-_gmic}" commands will stick with this idea (e.g. command 'blur' blurs images only along the "\
+"multi-spectral meaning. Thus, a 4D image in G'MIC should be most often regarded as a 3D dataset of multi-spectral "\
+"voxels. Most of the G'MIC commands will stick with this idea (e.g. command 'blur' blurs images only along the "\
 "spatial `xyz`-axes)."\n\
 \n\
-"- "${-_gmic}" stores all the image data as buffers of `float` values (32 bits, value range '[-3.4E38,+3.4E38]'. "\
+"- G'MIC stores all the image data as buffers of `float` values (32 bits, value range '[-3.4E38,+3.4E38]'. "\
 "It performs all its image processing operations with floating point numbers. Each image pixel takes then 32bits/channel "\
 "(except if double-precision buffers have been enabled during the compilation of the software, in which case "\
 "64bits/channel can be the default)."\n\
@@ -425,14 +543,14 @@ reference :
 
   _section "Items of a Processing Pipeline"
 
-  _text "- In "${-_gmic}", an image processing pipeline is described as a sequence of items separated by the "\
+  _text "- In G'MIC, an image processing pipeline is described as a sequence of items separated by the "\
 "space character ' '. Such items are interpreted and executed from the left to the right. For instance, the expression:"\n\
 \n\
 "`filename.jpg blur 3,0 sharpen 10 resize 200%,200% output file_out.jpg`"\n\
 \n\
-"defines a valid pipeline composed of nine "${-_gmic}" items."\n\
+"defines a valid pipeline composed of nine G'MIC items."\n\
 \n\
-"- Each "${-_gmic}" item is a string that is either a __command__, a list of command __arguments__, "\
+"- Each G'MIC item is a string that is either a __command__, a list of command __arguments__, "\
 "a __filename__ or a special __input string__."\n\
 \n\
 "- Escape characters '\\' and double quotes '\"' can be used to define items containing spaces or "\
@@ -441,13 +559,13 @@ reference :
 
   _section "Input Data Items"
 
-  _text "- If a specified "${-_gmic}" item appears to be an existing filename, the corresponding image data "\
+  _text "- If a specified G'MIC item appears to be an existing filename, the corresponding image data "\
 "are loaded and inserted at the end of the image list (which is equivalent to the use of `input filename`). "\n\
 \n\
 "- Special filenames `-` and `-.ext` stand for the standard input/output streams, optionally "\
 "forced to be in a specific 'ext' file format (e.g. `-.jpg` or `-.png`). "\n\
 \n\
-"- The following special input strings may be used as "${-_gmic}" items to create and insert new "\
+"- The following special input strings may be used as G'MIC items to create and insert new "\
 "images with prescribed values, at the end of the image list:"\n\
 \n\
 ". '[selection]' or '[selection]xN': Insert 1 or N copies of already existing images. "\
@@ -504,18 +622,18 @@ reference :
 
   _section "Command Items and Selections"
 
-  _text "- A "${-_gmic}" item that is not a filename nor a special input string designates a 'command' "\
+  _text "- A G'MIC item that is not a filename nor a special input string designates a 'command' "\
 "most of the time. Generally, commands perform image processing operations on one or several available images "\
 "of the list."\n\
 \n\
 "- Reccurent commands have two equivalent names ('regular' and 'short'). For instance, command names "\
 "'resize' and 'r' refer to the same image resizing action."\n\
 \n\
-"- A "${-_gmic}" command may have mandatory or optional __arguments__. Command arguments must be specified "\
+"- A G'MIC command may have mandatory or optional __arguments__. Command arguments must be specified "\
 "in the next item on the command line. Commas ',' are used to separate multiple arguments of a single command, "\
 "when required."\n\
 \n\
-"- The execution of a "${-_gmic}" command may be restricted only to a __subset__ of the image list, by "\
+"- The execution of a G'MIC command may be restricted only to a __subset__ of the image list, by "\
 "appending '[selection]' to the command name. Examples of valid syntaxes for 'selection' are: "\n\
 \n\
 ". 'command[-2]': Apply command only on the penultimate image '[-2]' of the list."\n\
@@ -553,36 +671,36 @@ reference :
 "'.', '..' and '...'. For instance, command 'blur..' is equivalent to 'blur[-2]'. "\
 "These shortcuts work also when specifying command arguments."\n\
 \n\
-"- "${-_gmic}" commands invoked without '[selection]' are applied on all images of the list, i.e. the "\
+"- G'MIC commands invoked without '[selection]' are applied on all images of the list, i.e. the "\
 "default selection is '[0--1]' (except for command 'input' whose default selection is '[-1]'')."\n\
 \n\
-"- Prepending a single hyphen '-' to a "${-_gmic}" command is allowed. This may be useful to recognize "\
+"- Prepending a single hyphen '-' to a G'MIC command is allowed. This may be useful to recognize "\
 "command items more easily in a one-liner pipeline (typically invoked from a shell). "\n\
 \n\
-"- A "${-_gmic}" command prepended with a plus sign '+' does not act __in-place__ but inserts its result as one or "\
+"- A G'MIC command prepended with a plus sign '+' does not act __in-place__ but inserts its result as one or "\
 "several new images at the end of the image list."\n\
 \n\
-"- There are two different types of commands that can be run by the "${-_gmic}" interpreter:"\n\
+"- There are two different types of commands that can be run by the G'MIC interpreter:"\n\
 \n\
 ". __Built-in commands__ are the hard-coded functionalities in the interpreter core. They are thus compiled as "\
 "binary code and run fast, most of the time. Omitting an argument when invoking a built-in command is not permitted, "\
 "except if all following arguments are also omitted. "\
 "For instance, invoking 'plasma 10,,5' is invalid but 'plasma 10' is correct. "\n\
 \n\
-". __Custom commands__, are defined as "${-_gmic}" pipelines of built-in or other custom commands. "\
-"They are parsed by the "${-_gmic}" interpreter, and thus run a bit slower than built-in commands. "\
+". __Custom commands__, are defined as G'MIC pipelines of built-in or other custom commands. "\
+"They are parsed by the G'MIC interpreter, and thus run a bit slower than built-in commands. "\
 "Omitting arguments when invoking a custom command is permitted. For instance, expressions "\
 "`"${_c.}"flower ,,,100,,2"${_n.}"` or `"${_c.}"flower ,"${_n.}"` are correct. "\n\
 \n\
-"- Most of the existing commands in "${-_gmic}" are actually defined as __custom commands__. "\n\
+"- Most of the existing commands in G'MIC are actually defined as __custom commands__. "\n\
 \n\
-"- A user can easily add its own custom commands to the "${-_gmic}" interpreter (see section "\
+"- A user can easily add its own custom commands to the G'MIC interpreter (see section "\
 " __Adding Custom Commands__ for more details). New built-in commands cannot be added (unless you modify the "\
-${-_gmic}" interpreter source code and recompile it)."
+"G'MIC interpreter source code and recompile it)."
 
   _section "Input/Output Properties"
 
-  _text "- "${-_gmic}" is able to read/write most of the classical image file formats, including:"\n\
+  _text "- G'MIC is able to read/write most of the classical image file formats, including:"\n\
 \n\
 ". 2D grayscale/color files: `.png`, `.jpeg`, `.gif`, `.pnm`, `.tif`, `.bmp`, ..."\n\
 ". 3D volumetric files: `.dcm`, `.hdr`, `.nii`, `.pan`, `.inr`, `.pnk`, ..."\n\
@@ -590,19 +708,19 @@ ${-_gmic}" interpreter source code and recompile it)."
 ". Generic text or binary data files: `.gmz`, `.cimg`, `.cimgz`, `.dlm`, `.asc`, `.pfm`, `.raw`, `.txt`, `.h`."\n\
 ". 3D object files: `.off`"\n\
 \n\
-"- When dealing with color images, "${-_gmic}" generally reads, writes and displays data using the usual "\
+"- When dealing with color images, G'MIC generally reads, writes and displays data using the usual "\
 "sRGB color space."\n\
 \n\
-"- "${-_gmic}" is able to manage __3D objects__ that may be read from files or generated by "${-_gmic}" commands. "\
+"- G'MIC is able to manage __3D objects__ that may be read from files or generated by G'MIC commands. "\
 "A 3D object is stored as a one-column scalar image containing the object data, in the "\
 "following order: `{ magic_number; sizes; vertices; primitives; colors; opacities }`. "\
 "These 3D representations can be then processed as regular images (see command 'split3d' for accessing each of these "\
 "3D object data separately)."\n\
 \n\
 "- Be aware that usual file formats may be sometimes not adapted to store all the available image "\
-"data, since "${-_gmic}" uses float-valued image buffers. For instance, saving an image that was "\
+"data, since G'MIC uses float-valued image buffers. For instance, saving an image that was "\
 "initially loaded as a 16bits/channel image, as a `.jpg` file will result in a loss of "\
-"information. Use the "${-_gmic}"-specific file extension `.gmz` to ensure that all data "\
+"information. Use the G'MIC-specific file extension `.gmz` to ensure that all data "\
 "precision is preserved when saving images."\n\
 \n\
 "- Sometimes, file options may/must be set for file formats:"\n\
@@ -657,19 +775,19 @@ ${-_gmic}" interpreter source code and recompile it)."
 ". __`.pan`, `.cpp`, `.hpp`, `.c` and `.h` files:__ The output datatype can be selected with output expression "\
 "'filename[,datatype]'. 'datatype' can be the same as for `.cimg[z]` files."\n\
 \n\
-". __`.gmic` files:__ These filenames are assumed to be "${-_gmic}" custom commands files. Loading such a "\
+". __`.gmic` files:__ These filenames are assumed to be G'MIC custom commands files. Loading such a "\
 "file will add the commands it defines to the interpreter. Debug information can be "\
 "enabled/disabled by the input expression 'filename.gmic[,add_debug_info' where 'debug_info' can be { 0=false | 1=true }. "\n\
 \n\
-". Inserting 'ext:' on the beginning of a filename (e.g. 'jpg:filename') forces "${-_gmic}" to "\
+". Inserting 'ext:' on the beginning of a filename (e.g. 'jpg:filename') forces G'MIC to "\
 "read/write the file as it would have been done if it had the specified extension `.ext`."\n\
 \n\
 "- Some input/output formats and options may not be supported, depending on the configuration "\
-"flags that have been set during the build of the "${-_gmic}" software."
+"flags that have been set during the build of the G'MIC software."
 
   _section "Substitution Rules"
 
-  _text "- "${-_gmic}" items containing '$' or '{}' are substituted before being interpreted. Use these "\
+  _text "- G'MIC items containing '$' or '{}' are substituted before being interpreted. Use these "\
 "substituting expressions to access various data from the interpreter environment."\n\
 \n\
 "- '$name' and '${name}' are both substituted by the value of the specified named variable "\
@@ -678,7 +796,7 @@ ${-_gmic}" interpreter source code and recompile it)."
 "image has this name, the expression is substituted by the value of the OS environment variable "\
 "with same name (it may be thus an empty string if it is not defined). "\n\
 \n\
-"The following reserved variables are predefined by the "${-_gmic}" interpreter: "\n\
+"The following reserved variables are predefined by the G'MIC interpreter: "\n\
 \n\
 ". '$!': The current number of images in the list."\n\
 ". '$>' and '$<': The increasing/decreasing index of the latest (currently running) "\
@@ -691,19 +809,19 @@ ${-_gmic}" interpreter source code and recompile it)."
 ". '$_pid': The current process identifier, as an integer."\n\
 ". '$_prerelease': For pre-releases, the date of the pre-release as `yymmdd`. "\
 "For stable releases, this variable is set to `0`."\n\
-". '$_version': A 3-digits number telling about the current version of the "${-_gmic}" interpreter "\
+". '$_version': A 3-digits number telling about the current version of the G'MIC interpreter "\
 " (e.g. '"$_version"'). "\n\
-". '$_host': A string telling about the host running the "${-_gmic}" interpreter (e.g. `cli` or `gimp`)."\n\
+". '$_host': A string telling about the host running the G'MIC interpreter (e.g. `cli` or `gimp`)."\n\
 ". '$_vt100': Set to `1` if colored text output is allowed on the console. Otherwise, set to `0`."\n\
-". '$_path_rc': The path to the "${-_gmic}" folder used to store configuration files (its value is OS-dependent)."\n\
-". '$_path_user': The path to the "${-_gmic}" user file `.gmic` or `user.gmic` (its value is OS-dependent)."\n\
+". '$_path_rc': The path to the G'MIC folder used to store configuration files (its value is OS-dependent)."\n\
+". '$_path_user': The path to the G'MIC user file `.gmic` or `user.gmic` (its value is OS-dependent)."\n\
 ". '$_path_commands': A list of all imported command files (stored as a list-valued variable)."\n\
 \n\
 "- '$$name' and '$${name}' are both substituted by the G'MIC script code of the specified named "\
 "`custom command`, or by an empty string if no custom command with specified name exists. "\n\
 \n\
 "- '${\"-pipeline\"}' is substituted by the __status value__ after the execution of the specified "\
-${-_gmic}" pipeline (see command 'status'). Expression '${}' thus stands for the current status value."\n\
+"G'MIC pipeline (see command 'status'). Expression '${}' thus stands for the current status value."\n\
 \n\
 "- '{``string}' (starting with two backquotes) is substituted by a double-quoted version of the specified string."\n\
 \n\
@@ -774,7 +892,7 @@ ${-_gmic}" pipeline (see command 'status'). Expression '${}' thus stands for the
 
   _section "Mathematical Expressions"
 
-  _text "- "${-_gmic}" has an embedded __mathematical parser__, used to evaluate (possibly complex) math expressions "\
+  _text "- G'MIC has an embedded __mathematical parser__, used to evaluate (possibly complex) math expressions "\
 "specified inside braces '{}', or formulas in commands that may take one as an argument (e.g. 'fill')."\n\
 \n\
 "- When the context allows it, a formula is evaluated __for each pixel__ of the selected images "\
@@ -1018,7 +1136,7 @@ ${_c.}"expr_else"${_n.}"',
  can be omitted
 \n          in which case "${_g.}"0"${_n.}" is returned if the condition does not hold. Using the ternary operator
 \n          '"${_c.}"condition?expr_then[:expr_else]"${_n.}"' gives an equivalent expression.
-\n          For instance, "${-_gmic}" commands '"${_c.}"fill if(x%10==0,255,i)"${_n.}"' and '"${_c.}"fill x%10?i:255"${_n.}"'
+\n          For instance, G'MIC commands '"${_c.}"fill if(x%10==0,255,i)"${_n.}"' and '"${_c.}"fill x%10?i:255"${_n.}"'
 \n          both draw blank vertical lines on every 10th column of an image.
 \n       . '"${_c.}"do(expression,_condition)"${_n.}"' repeats the evaluation of '"${_c.}"expression"${_n.}"' until '"\
 ${_c.}"condition"${_n.}"'
@@ -1069,10 +1187,10 @@ ${_g.}"N=24"${_n.}").
 \n       . '"${_c.}"unref(a,b,...)"${_n.}"' destroys references to the named variable given as arguments.
 \n       . '"${_c.}"breakpoint()"${_n.}"' inserts a possible computation breakpoint (useless with the cli interface).
 \n       . '"${_c.}"_(expr)"${_n.}"' just ignores its arguments (mainly useful for debugging).
-\n       . '"${_c.}"run('pipeline')"${_n.}"' executes the specified "${-_gmic}" pipeline as if it was called outside
+\n       . '"${_c.}"run('pipeline')"${_n.}"' executes the specified G'MIC pipeline as if it was called outside
 \n          the currently evaluated expression.
 \n       . '"${_c.}"store(A,'varname',_w,_h,_d,_s,_is_compressed)"${_n.}"' transfers the data of vector '"${_g.}"A"${_n.}"' as a
-\n          '"${_g.}"w x h x d x s"${_n.}"' image to the "${-_gmic}" variable '"${_g.}"$varname"${_n.}"'. Thus, the data becomes
+\n          '"${_g.}"w x h x d x s"${_n.}"' image to the G'MIC variable '"${_g.}"$varname"${_n.}"'. Thus, the data becomes
 \n          available outside the math expression (that is equivalent to using the regular command
 \n          '"${_c.}"store"${_n.}"', but directly in the math expression).
 \n       . '"${_c.}"get('variable_name',_size,_to_numbers)"${_n.}"' returns the value of the specified variable, as a vector
@@ -1142,11 +1260,11 @@ ${_g.}"N=24"${_n.}").
  return '"${_c.}"value"${_n.}"'.
 \n
 \n  - The last image of the list is always associated to the evaluations of '"${_c.}"{expressions}"${_n.}"',
-\n     e.g. "${-_gmic}" sequence '"${_c.}"256,128 fill {w}"${_n.}"' will create a 256x128 image filled with value 256."
+\n     e.g. G'MIC sequence '"${_c.}"256,128 fill {w}"${_n.}"' will create a 256x128 image filled with value 256."
 
   _section "Image and Data Viewers"
 
-  _text "  - "${-_gmic}" has some very handy embedded "${_g.}"visualization modules"${_n.}", for 1D signals
+  _text "  - G'MIC has some very handy embedded "${_g.}"visualization modules"${_n.}", for 1D signals
  (command '"${_c.}"plot"${_n.}"'),
 \n     1D/2D/3D images (command '"${_c.}"display"${_n.}"') and 3D objects (command '"${_c.}"display3d"${_n.}"'). It manages
 \n     interactive views of the selected image data.
@@ -1206,19 +1324,19 @@ ${_g.}"N=24"${_n.}").
 
   _section "Adding Custom Commands"
 
-  _text "  - New custom commands can be added by the user, through the use of "${-_gmic}" "\
+  _text "  - New custom commands can be added by the user, through the use of G'MIC "\
 ${_g.}"custom commands files"${_n.}".
 \n
 \n  - A command file is a simple text file, where each line starts either by
 \n     '"${_c.}"command_name: command_definition"${_n.}"' or '"${_c.}"command_definition (continuation)"${_n.}"'.
 \n
-\n  - At startup, "${-_gmic}" automatically includes user's command file "${_g.}"$HOME/.gmic"${_n.}" (on Unix) or
+\n  - At startup, G'MIC automatically includes user's command file "${_g.}"$HOME/.gmic"${_n.}" (on Unix) or
 \n     "${_g.}"%APPDATA%/user.gmic"${_n.}" (on Windows). The CLI tool '"${_g.}"gmic"${_n.}"' automatically runs the command
 \n     '"${_c.}"cli_start"${_n.}"' if defined.
 \n
 \n  - Custom command names must use character set "${_g.}"[a-zA-Z0-9_]"${_n.}" and cannot start with a number.
 \n
-\n  - Any '"${_c.}" ""# comment"${_n.}"' expression found in a custom commands file is discarded by the "${-_gmic}" parser,
+\n  - Any '"${_c.}" ""# comment"${_n.}"' expression found in a custom commands file is discarded by the G'MIC parser,
 \n     wherever it is located in a line.
 \n
 \n  - In a custom command, the following "${_g.}"$-expressions"${_n.}" are recognized and substituted:
@@ -1257,11 +1375,11 @@ ${_g.}"custom commands files"${_n.}".
 \n     default argument expressions as '"${_c.}"$""{1=default}"${_n.}"').
 \n
 \n  - If one numbered argument required by a custom command misses a value, an error is thrown by the
-\n     "${-_gmic}" interpreter."
+\n     G'MIC interpreter."
 
   _section "List of Commands"
 
-  _text "   All available "${-_gmic}" commands are listed below, classified by themes. When several choices of
+  _text "   All available G'MIC commands are listed below, classified by themes. When several choices of
 \n   command arguments are possible, they appear separated by '"${_g.}"|"${_n.}"'. An argument specified inside '"${_g.}"[]"${_n.}"'
 \n   or starting by '"${_g.}"_"${_n.}"' is optional except when standing for an existing image "${_c.}"[image]"${_n.}", where '"\
 ${_g.}"image"${_n.}"'
@@ -1309,7 +1427,7 @@ ${_g.}"image"${_n.}"'
 \n  - Plot the isosurface of a 3D volume:
 \n     `$ gmic mode3d 5 moded3d 5 double3d 0 isosurface3d \"'x^2+y^2+abs(z)^abs(4*cos(x*y*z*3))'\",3`
 \n
-\n  - Render a "${-_gmic}" 3D logo:
+\n  - Render a G'MIC 3D logo:
 \n     `$ gmic 0 text G\\\47MIC,0,0,53,1,1,1,1 expand_xy 10,0 blur 1 normalize 0,100 +plasma 0.4 add \\\
 \n      blur 1 elevation3d -0.1 moded3d 4`
 \n
@@ -1326,7 +1444,7 @@ ${_g.}"image"${_n.}"'
 \n  - Display filtered webcam stream:
 \n     `$ gmic apply_camera \\\"+mirror x +mirror y add div 4\\\"`
 \n
-\n  - Launch a set of "${-_gmic}" interactive demos:
+\n  - Launch a set of G'MIC interactive demos:
 \n     `$ gmic demos`
 \n"
   _end
@@ -1377,14 +1495,7 @@ reference_text_html : skip "$*"
   ('"$*"':y)
   _decorate_urls_html.
   replace_str. "\n","<br/>\n"
-  f. "i==_'-' && j[1]==_' ' && (!y || j[-1]==_'\n')?2:i" replace_str "\2 ","&bull;&nbsp;"
-  f. "i==_'.' && j[1]==_' ' && (!y || j[-1]==_'\n')?2:i" replace_str "\2 ","&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&bull;&nbsp;"
-
-  _decorate_doubleunderscores_html.
-  _decorate_starunderscore_html.
-  _decorate_singlequotes_html. 1
-  _decorate_braces_html.
-  _decorate_backquotes_html.
+  gmd_html.
   if $!>1 a[-2,-1] y fi
 
 reference_b_html :
