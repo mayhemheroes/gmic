@@ -339,7 +339,6 @@ __help :
 # - \n- Item of a list
 # - \n_ Item of a sub-list (level 1)
 # - \n. Item of a sub-list (level 2)
-
 # Convert a 'gmd' string to HTML.
 gmd_html :
   gmd_gmic_html
@@ -422,21 +421,21 @@ gmd_list_html : # List items
     beg>=0 && y - beg>1024?(beg = -1);
     beg<0 && i==_'-' && j[1]==_' ' && (!y || isin(j[-1],_'\n',3))?(beg = y):
     beg>=0 && (i==_'\n' || y==h-1)?(i[y] = 3; i[beg] = 2; beg = -1)"
-  replace_str "\2 ","<div class=\"gmd_li\">"
+  replace_str "\2 ","<div class=\"gmd_li\"> "
   replace_str "\3","</div>"
 
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>1024?(beg = -1);
     beg<0 && i==_'_' && j[1]==_' ' && (!y || isin(j[-1],_'\n',3))?(beg = y):
     beg>=0 && (i==_'\n' || y==h-1)?(i[y] = 3; i[beg] = 2; beg = -1)"
-  replace_str "\2 ","<div class=\"gmd_li1\">"
+  replace_str "\2 ","<div class=\"gmd_li1\"> "
   replace_str "\3","</div>"
 
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>1024?(beg = -1);
     beg<0 && i==_'.' && j[1]==_' ' && (!y || isin(j[-1],_'\n',3))?(beg = y):
     beg>=0 && (i==_'\n' || y==h-1)?(i[y] = 3; i[beg] = 2; beg = -1)"
-  replace_str "\2 ","<div class=\"gmd_li2\">"
+  replace_str "\2 ","<div class=\"gmd_li2\"> "
   replace_str "\3","</div>"
 
 
@@ -1057,235 +1056,183 @@ reference :
 "(e.g. 'fill') modifies the whole spectrum range of the processed image(s), for each spatial coordinates `(x,y,z)`. "\
 "The command does not loop over the `c`-axis in this case."\n\
 \n\
-"_ "${_g.}"String manipulation:"${_n.}" Character strings are defined and managed as vectors objects.
-\n       Dedicated functions and initializers to manage strings are
-\n
-\n       . "${_c.}"[ 'string' ]"${_n.}" and "${_c.}"'string'"${_n.}" define a vector whose values are the character codes of the
-\n          specified "${_g.}"character string"${_n.}" (e.g. "${_c.}"'foo'"${_n.}" is equal to "${_g.}"[ 102,111,111 ]"${_n.}").
-\n       . "${_c.}"_'character'"${_n.}" returns the (scalar) byte code of the specified character (e.g. "${_c.}"_'A'"${_n.}" is
-\n          equal to "${_g.}"65"${_n.}").
-\n       . A special case happens for "${_g.}"empty"${_n.}" strings: Values of both expressions "${_c.}"[ '' ]"${_n.}" and "\
-${_c.}"''"${_n.}" are "${_g.}"0"${_n.}".
-\n       . Functions '"${_c.}"lowercase()"${_n.}"' and '"${_c.}"uppercase()"${_n.}"' return string with all string characters
-\n          lowercased or uppercased.
-\n       . Function '"${_c.}"stov(str,_starting_index,_is_strict)"${_n.}"' parses specified string '"${_c.}"str"${_n.}"' and
-\n          returns the value contained in it.
-\n       . Function '"${_c.}"vtos(expr,_nb_digits,_siz)"${_n.}"' returns a vector of size '"${_c.}"siz"${_n.}"' which contains
-\n          the character representation of values described by expression '"${_c.}"expr"${_n.}"'.
-\n          '"${_c.}"nb_digits"${_n.}"' can be "${_g.}"{ -1=auto-reduced | 0=all | >0=max number of digits }"${_n.}".
-\n       . Function '"${_c.}"echo(str1,str2,...,strN)"${_n.}"' prints the concatenation of given string arguments
-\n          on the console.
-\n       . Function '"${_c.}"string(_#siz,str1,str2,...,strN)"${_n.}"' generates a vector corresponding to the
-\n          concatenation of given string/number arguments.
-\n
-\n    _ "${_g.}"Special operators"${_n.}" can be used:
-\n
-\n       . '"${_c.}";"${_n.}"': expression separator. The returned value is always the last encountered expression.
-\n          For instance expression '"${_c.}"1;2;pi"${_n.}"' is evaluated as '"${_c.}"pi"${_n.}"'.
-\n       . '"${_c.}"="${_n.}"': variable assignment. Variables in mathematical parser can only refer to numerical
-\n          values (vectors or scalars). Variable names are case-sensitive. Use this operator in
-\n          conjunction with '"${_c.}";"${_n.}"' to define more complex evaluable expressions, such as
-\n          '"${_c.}"t=cos(x);3*t^2+2*t+1"${_n.}"'.
-\n          These variables remain "${_g.}"local"${_n.}" to the mathematical parser and cannot be accessed outside
-\n           the evaluated expression.
-\n       . Variables defined in math parser may have a "${_g.}"constant"${_n.}" property, by specifying keyword
-\n          '"${_c.}"const"${_n.}"' before the variable name (e.g. '"${_c.}"const foo = pi/4;"${_n.}"').
-\n          The value set to such a variable must be indeed a "${_c.}"constant scalar"${_n.}".
-\n          Constant variables allows certain types of optimizations in the math JIT compiler.
-\n
-\n    _ The following "${_g.}"specific functions"${_n.}" are also defined:
-\n
-\n       . '"${_c.}"u(max)"${_n.}"' or '"${_c.}"u(min,max)"${_n.}"': return a random value between "${_g.}"[0,max]"${_n.}" or "\
-${_g.}"[min,max]"${_n.}", following
-\n          a uniform distribution.
-\n       . '"${_c.}"f2ui(value)"${_n.}"' and '"${_c.}"ui2f(value)"${_n.}"': Convert a large unsigned integer as a negative
-\n          floating point value (and vice-versa), so that 32bits floats can be used to store large
-\n          integers while keeping a unitary precision.
-\n       . '"${_c.}"i(_a,_b,_c,_d,_interpolation_type,_boundary_conditions)"${_n.}"': return the value of the pixel
-\n          located at position "${_g.}"(a,b,c,d)"${_n.}" in the associated image, if any ("${_g.}"0"${_n.}" otherwise).
-\n          '"${_g.}"interpolation_type"${_n.}"' can be "${_g.}"{ 0=nearest neighbor | 1=linear | 2=cubic }"${_n.}".
-\n          '"${_g.}"boundary_conditions"${_n.}"' can be "${_g.}"{ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }"${_n.}".
-\n          Omitted coordinates are replaced by their default values which are respectively
-\n          "${_c.}"x, y, z, c, interpolation"${_n.}" and "${_c.}"boundary"${_n.}".
-\n          For instance command '"${_c.}"fill 0.5*(i(x+1)-i(x-1))"${_n.}"' will estimate the X-derivative of an
-\n          image with a classical finite difference scheme.
-\n       . '"${_c.}"j(_dx,_dy,_dz,_dc,_interpolation_type,_boundary_conditions)"${_n.}"' does the same for the pixel
-\n          located at position "${_g.}"(x+dx,y+dy,z+dz,c+dc)"${_n.}" (pixel access relative to the current
-\n          coordinates).
-\n       . '"${_c.}"i[offset,_boundary_conditions]"${_n.}"' returns the value of the pixel located at specified
-\n          '"${_g.}"offset"${_n.}"' in the associated image buffer (or "${_g.}"0"${_n.}" if offset is out-of-bounds).
-\n       . '"${_c.}"j[offset,_boundary_conditions]"${_n.}"' does the same for an offset relative to the current pixel
-\n          coordinates "${_g.}"(x,y,z,c)"${_n.}".
-\n       . '"${_c.}"i(#ind,_x,_y,_z,_c,_interpolation,_boundary_conditions)"${_n.}"',
-\n          '"${_c.}"j(#ind,_dx,_dy,_dz,_dc,_interpolation,_boundary_conditions)"${_n.}"',
-\n          '"${_c.}"i[#ind,offset,_boundary_conditions]"${_n.}"' and '"${_c.}"i[offset,_boundary_conditions]"${_n.}"' are similar
-\n          expressions used to access pixel values for any numbered image "${_g.}"[ind]"${_n.}" of the list.
-\n       . '"${_c.}"I/J[offset,_boundary_conditions]"${_n.}"' and
-\n         '"${_c.}"I/J(#ind,_x,_y,_z,_interpolation,_boundary_conditions)"${_n.}"' do the same as
-\n         '"${_c.}"i/j[offset,_boundary_conditions]"${_n.}"' and
-\n         '"${_c.}"i/j(#ind,_x,_y,_z,_c,_interpolation,_boundary_conditions)"${_n.}"' but return a vector instead
-\n          of a scalar (e.g. a vector "${_g.}"[ R,G,B ]"${_n.}" for a pixel at "${_g.}"(a,b,c)"${_n.}" in a color image).
-\n       . '"${_c.}"sort(#ind,_is_increasing,_axis)"${_n.}"' sorts the values in the specified image "${_g.}"[ind]"${_n.}".
-\n       . '"${_c.}"crop(_#ind,_x,_y,_z,_c,_dx,_dy,_dz,_dc,_boundary_conditions)"${_n.}"' returns a vector whose
-\n          values come from the cropped region of image "${_g.}"[ind]"${_n.}" (or from default image selected if
-\n          '"${_c.}"ind"${_n.}"' is not specified). Cropped region starts from point "${_g.}"(x,y,z,c)"${_n.}" and has a size of
-\n          "${_g.}"dx x dy x dz x dc"${_n.}". Arguments for coordinates and sizes can be omitted if they are not
-\n          ambiguous (e.g. '"${_c.}"crop(#ind,x,y,dx,dy)"${_n.}"' is a valid invocation of this function).
-\n       . '"${_c.}"draw(_#ind,S,x,y,z,c,dx,_dy,_dz,_dc,_opacity,_M,_max_M)"${_n.}"' draws a sprite "${_g.}"S"${_n.}" in image "\
-${_g.}"[ind]"${_n.}"
-\n          (or in default image selected if '"${_c.}"ind"${_n.}"' is not specified) at coordinates "${_g.}"(x,y,z,c)"${_n.}".
-\n          The size of the sprite "${_g.}"dx x dy x dz x dc"${_n.}" must be specified. You can also specify a
-\n          corresponding opacity mask "${_g.}"M"${_n.}" if its size matches "${_g.}"S"${_n.}".
-\n       . '"${_c.}"polygon(_#ind,nb_vertices,coords,_opacity,_color)"${_n.}"' draws a filled polygon
-\n          in image "${_g.}"[ind]"${_n.}" (or in default image selected if '"${_c.}"ind"${_n.}"' is not specified)
-\n          at specified coordinates. It draws a single line if '"${_c.}"nb_vertices"${_n.}"' is set to 2.
-\n       . '"${_c.}"polygon(_#ind,-nb_vertices,coords,_opacity,_pattern,_color)"${_n.}"' draws a outlined polygon
-\n          in image "${_g.}"[ind]"${_n.}" (or in default image selected if '"${_c.}"ind"${_n.}"' is not specified)
-\n          at specified coordinates and with specified line pattern.
-\n          It draws a single line if '"${_c.}"nb_vertices"${_n.}"' is set to 2.
-\n       . '"${_c.}"ellipse(_#ind,xc,yc,radius1,_radius2,_angle,_opacity,_color)"${_n.}"' draws a filled ellipse
-\n          in image "${_g.}"[ind]"${_n.}" (or in default image selected if '"${_c.}"ind"${_n.}"' is not specified)
-\n          with specified coordinates.
-\n       . '"${_c.}"ellipse(_#ind,xc,yc,-radius1,-_radius2,_angle,_opacity,_pattern,_color)"${_n.}"' draws an
-\n          outlined ellipse in image "${_g.}"[ind]"${_n.}" (or in default image selected if '"${_c.}"ind"${_n.}"' is not \
-specified).
-\n       . '"${_c.}"resize(#ind,w,_h,_d,_s,_interp,_boundary_conditions,_cx,_cy,_cz,_cc)"${_n.}"' resizes an image
-\n          of the associated list with specified dimension and interpolation method. When using this
-\n          function, you should consider retrieving the (non-constant) image dimensions using the
-\n          dynamic functions '"${_c.}"w(_#ind)"${_n.}"', '"${_c.}"h(_#ind)"${_n.}"', '"${_c.}"d(_#ind)"${_n.}"', '"${_c.}"s(_#ind)"${_n.}"',
- '"${_c.}"wh(_#ind)"${_n.}"',
-\n          '"${_c.}"whd(_#ind)"${_n.}"' and '"${_c.}"whds(_#ind)"${_n.}"' instead of the corresponding constant variables.
-\n       . '"${_c.}"if(condition,expr_then,_expr_else)"${_n.}"': return value of '"${_c.}"expr_then"${_n.}"' or '"\
-${_c.}"expr_else"${_n.}"',
-\n          depending on the value of '"${_c.}"condition"${_n.}"' "${_g.}"(0=false, other=true)"${_n.}". '"${_c.}"expr_else"${_n.}"'
- can be omitted
-\n          in which case "${_g.}"0"${_n.}" is returned if the condition does not hold. Using the ternary operator
-\n          '"${_c.}"condition?expr_then[:expr_else]"${_n.}"' gives an equivalent expression.
-\n          For instance, G'MIC commands '"${_c.}"fill if(x%10==0,255,i)"${_n.}"' and '"${_c.}"fill x%10?i:255"${_n.}"'
-\n          both draw blank vertical lines on every 10th column of an image.
-\n       . '"${_c.}"do(expression,_condition)"${_n.}"' repeats the evaluation of '"${_c.}"expression"${_n.}"' until '"\
-${_c.}"condition"${_n.}"'
-\n          vanishes (or until '"${_c.}"expression"${_n.}"' vanishes if no '"${_c.}"condition"${_n.}"' is specified). For instance,
-\n          the expression: '"${_c.}"if(N<2,N,n=N-1;F0=0;F1=1;do(F2=F0+F1;F0=F1;F1=F2,n=n-1))"${_n.}"' returns
-\n          the Nth value of the Fibonacci sequence, for "${_g.}"N>=0"${_n.}" (e.g., "${_g.}"46368"${_n.}" for "${_g.}"N=24"${_n.}").
-\n          '"${_c.}"do(expression,condition)"${_n.}"' always evaluates the specified expression at least once,
-\n          then check for the loop condition. When done, it returns the last value of '"${_c.}"expression"${_n.}"'.
-\n       . '"${_c.}"for(init,condition,_procedure,body)"${_n.}"' first evaluates the expression '"${_c.}"init"${_n.}"', then
-\n          iteratively evaluates '"${_c.}"body"${_n.}"' (followed by '"${_c.}"procedure"${_n.}"' if specified) while
- '"${_c.}"condition"${_n.}"'
-\n          is verified (i.e. not zero). It may happen that no iteration is done, in which case the
-\n          function returns "${_g.}"nan"${_n.}". Otherwise, it returns the last value of '"${_c.}"body"${_n.}"'.
-\n          For instance, the expression: '"${_c.}"if(N<2,N,for(n=N;F0=0;F1=1,n=n-1,F2=F0+F1;F0=F1;F1=F2))"${_n.}"'
-\n          returns the "${_g.}"Nth"${_n.}" value of the Fibonacci sequence, for "${_g.}"N>=0"${_n.}" (e.g., "${_g.}"46368"${_n.}" for "\
-${_g.}"N=24"${_n.}").
-\n       . '"${_c.}"while(condition,expression)"${_n.}"' is exactly the same as '"${_c.}"for(init,condition,expression)"${_n.}"'
-\n          without the specification of an initializing expression.
-\n       . '"${_c.}"break()"${_n.}"' and '"${_c.}"continue()"${_n.}"' respectively breaks and continues the current running bloc
-\n          (loop, init or main environment).
-\n       . '"${_c.}"fsize('filename')"${_n.}"' returns the size of the specified 'filename'
-\n          (or '-1' if file does not exist).
-\n       . '"${_c.}"date(attr,'path')"${_n.}"' returns the date attribute for the given 'path' (file or directory),
-\n          with '"${_g.}"attr"${_n.}"' being "${_g.}"{ 0=year | 1=month | 2=day | 3=day of week | 4=hour | 5=minute |
-\n          6=second }"${_n.}", or a vector of those values.
-\n       . '"${_c.}"date(_attr)"${_n.}"' returns the specified attribute for the current (locale) date
-\n           (attributes being "$g"{ 0...6=same meaning as above | 7=milliseconds }"${_n.}").
-\n       . '"${_c.}"print(expr1,expr2,...)"${_n.}"' or '"${_c.}"print(#ind)"${_n.}"' prints the value of the specified expressions
-\n          (or image information) on the console, and returns the value of the last expression
-\n          (or "${_g.}"nan"${_n.}" in case of an image). Function '"${_c.}"prints(expr)"${_n.}"' also prints the string composed
-\n          of the character codes defined by the vector-valued expression (e.g. '"${_c.}"prints('Hello')"${_n.}"').
-\n       . '"${_c.}"debug(expression)"${_n.}"' prints detailed debug info about the sequence of operations done
-\n          by the math parser to evaluate the expression (and returns its value).
-\n       . '"${_c.}"display(_X,_w,_h,_d,_s)"${_n.}"' or '"${_c.}"display(#ind)"${_n.}"' display the contents of the vector
- '"${_c.}"X"${_n.}"'
-\n          (or specified image) and wait for user events. if no arguments are provided, a memory
-\n          snapshot of the math parser environment is displayed instead.
-\n       . '"${_c.}"begin(expression)"${_n.}"' and '"${_c.}"end(expression)"${_n.}"' evaluates the specified expressions only once,
-\n          respectively at the beginning and end of the evaluation procedure, and this,
-\n          even when multiple evaluations are required (e.g. in '"${_c.}"fill \">begin(foo = 0); ++foo\""${_n.}"').
-\n       . '"${_c.}"copy(dest,src,_nb_elts,_inc_d,_inc_s,_opacity)"${_n.}"' copies an entire memory block of
-\n          '"${_c.}"nb_elts"${_n.}"' elements starting from a source value '"${_c.}"src"${_n.}"' to a specified destination
-\n          '"${_c.}"dest"${_n.}"', with increments defined by '"${_c.}"inc_d"${_n.}"' and '"${_c.}"inc_s"${_n.}"' respectively for
-\n          the destination and source pointers.
-\n       . '"${_c.}"stats(_#ind)"${_n.}"' returns the statistics vector of the running image '"${_c.}"[ind]"${_n.}"', i.e the vector
-\n          "${_g.}"[ im,iM,ia,iv,xm,ym,zm,cm,xM,yM,zM,cM,is,ip ]"${_n.}" (14 values).
-\n       . '"${_c.}"ref(expr,a)"${_n.}"' references specified expression '"${_g.}"expr"${_n.}"' as variable name '"${_g.}"a"${_n.}"'.
-\n       . '"${_c.}"unref(a,b,...)"${_n.}"' destroys references to the named variable given as arguments.
-\n       . '"${_c.}"breakpoint()"${_n.}"' inserts a possible computation breakpoint (useless with the cli interface).
-\n       . '"${_c.}"_(expr)"${_n.}"' just ignores its arguments (mainly useful for debugging).
-\n       . '"${_c.}"run('pipeline')"${_n.}"' executes the specified G'MIC pipeline as if it was called outside
-\n          the currently evaluated expression.
-\n       . '"${_c.}"store(A,'varname',_w,_h,_d,_s,_is_compressed)"${_n.}"' transfers the data of vector '"${_g.}"A"${_n.}"' as a
-\n          '"${_g.}"w x h x d x s"${_n.}"' image to the G'MIC variable '"${_g.}"$varname"${_n.}"'. Thus, the data becomes
-\n          available outside the math expression (that is equivalent to using the regular command
-\n          '"${_c.}"store"${_n.}"', but directly in the math expression).
-\n       . '"${_c.}"get('variable_name',_size,_to_numbers)"${_n.}"' returns the value of the specified variable, as a vector
-\n          of '"${_g.}"size"${_n.}"' values, or as a scalar (if '"${_g.}"size"${_n.}"' is zero or not specified).
-\n       . '"${_c.}"name(_#ind,size)"${_n.}"' returns a vector of size "${_g.}"size"${_n.}", whose values are the characters
-\n          codes of the name of image "${_c.}"[ind]"${_n.}" (or default image selected if '"${_c.}"ind"${_n.}"' is not specified).
-\n       . '"${_c.}"correlate(I,wI,hI,dI,sI,K,wK,hK,dK,sK,_boundary_conditions,_is_normalized,_channel_mode,
-\n                    _xcenter,_ycenter,_zcenter,_xstart,_ystart,_zstart,_xend,_yend,_zend,
-\n                    _xstride,_ystride,_zstride,_xdilation,_ydilation,_zdilation)"${_n.}"'
-\n           returns the correlation, unrolled as a vector, of the \
-             "${_g.}"wI"${_n.}" x "${_g.}"hI"${_n.}" x "${_g.}"dI"${_n.}" x "${_g.}"sI"${_n.}"-sized image "${_g.}"I"${_n.}"
-\n           with the "${_g.}"wK"${_n.}" x "${_g.}"hK"${_n.}" x "${_g.}"dK"${_n.}" x "${_g.}"sK"${_n.}"-sized kernel "${_g.}"K"${_n.}"
-             (the meaning of the other arguments are the
-\n           same as in command '"${_c.}"correlate"${_n.}"'). Similar function '"${_c.}"convolve(...)"${_n.}"' is also defined for
-\n           computing the convolution between "${_g.}"I"${_n.}" and "${_g.}"K"${_n.}".
-\n
-\n    - "${_g.}"User-defined macros:"${_n.}"
-\n
-\n       . Custom macro functions can be defined in a math expression, using the assignment operator
-\n          '"${_c.}"="${_n.}"', e.g. '"${_c.}"foo(x,y) = cos(x + y); result = foo(1,2) + foo(2,3)"${_n.}"'.
-\n       . Trying to override a built-in function (e.g. '"${_c.}"abs()"${_n.}"') has no effect.
-\n       . Overloading macros with different number of arguments is possible. Re-defining a
-\n          previously defined macro with the same number of arguments discards its previous
-\n          definition.
-\n       . Macro functions are indeed processed as "${_g.}"macros"${_n.}" by the mathematical evaluator. You should
-\n          avoid invoking them with arguments that are themselves results of assignments or
-\n          self-operations. For instance, '"${_c.}"foo(x) = x + x; z = 0; foo(++z)"${_n.}"' returns '"${_g.}"4"${_n.}"' rather
-\n          than expected value '"${_g.}"2"${_n.}"'.
-\n       . When substituted, macro arguments are placed inside parentheses, except if a number sign
-\n          '"${_c.}"#"${_n.}"' is located just before or after the argument name. For instance, expression
-\n          '"${_c.}"foo(x,y) = x*y; foo(1+2,3)"${_n.}"' returns '"${_g.}"9"${_n.}"' (being substituted as
- '"${_c.}"(1+2)*(3)"${_n.}"'), while
-\n          expression '"${_c.}"foo(x,y) = x#*y#; foo(1+2,3)"${_n.}"' returns '"${_g.}"7"${_n.}"' (being substituted as
- '"${_c.}"1+2*3"${_n.}"').
-\n       . Number signs appearing between macro arguments function actually count for '"${_c.}"empty"${_n.}"'
-\n          separators. They may be used to force the substitution of macro arguments in unusual
-\n          places, e.g. as in '"${_c.}"str(N) = ['I like N#'];"${_n.}"'.
-\n
-\n    - "${_g.}"Multi-threaded"${_n.}" and "${_g.}"in-place"${_n.}" evaluation:
-\n
-\n       . If your image data are large enough and you have several CPUs available, it is likely that
-\n          the math expression passed to a '"${_c.}"fill"${_n.}"' or '"${_c.}"input"${_n.}"' command is evaluated in parallel,
-\n          using multiple computation threads.
-\n       . Starting an expression with '"${_c.}":"${_n.}"' or '"${_c.}"*"${_n.}"' forces the evaluations required for an image to be
-\n          run in parallel, even if the amount of data to process is small (beware, it may be slower
-\n          to evaluate in this case!). Specify '"${_c.}":"${_n.}"' (instead of '"${_c.}"*"${_n.}"') to avoid possible image copy
-\n          done before evaluating the expression (this saves memory, but do this only if you are
-\n          sure this step is not required!)
-\n       . If the specified expression starts with '"${_c.}">"${_n.}"' or '"${_c.}"<"${_n.}"', the pixel access operators
-\n          '"${_c.}"i(), i[], j()"${_n.}"' and '"${_c.}"j[]"${_n.}"' return values of the image being currently modified,
-\n          in forward ('"${_c.}">"${_n.}"') or backward ('"${_c.}"<"${_n.}"') order. The multi-threading evaluation of the
-\n          expression is also disabled in this case.
-\n       . Function '"${_c.}"critical(operands)"${_n.}"' forces the execution of the given operands in a single
-\n          thread at a time.
-\n       . '"${_c.}"begin_t(expression)"${_n.}"' and '"${_c.}"end_t(expression)"${_n.}"' evaluates the specified expressions once
-\n          for each running thread (so possibly several times) at the beginning and the end of the
-\n          evaluation procedure.
-\n       . '"${_c.}"merge(variable,operator)"${_n.}"' tells to merge the local variable value computed by threads,
-\n          with the specified operator, when all threads have finished computing.
-\n
-\n    _ Expressions '"${_c.}"i(_#ind,x,_y,_z,_c)=value"${_n.}"', '"${_c.}"j(_#ind,x,_y,_z,_c)=value"${_n.}"',
- '"${_c.}"i[_#ind,offset]=value"${_n.}"'
-\n       and '"${_c.}"j[_#ind,offset]=value"${_n.}"' set a pixel value at a different location than the running one
-\n       in the image "${_g.}"[ind]"${_n.}" (or in the associated image if argument '"${_c.}"#ind"${_n.}"' is omitted), either with
-\n       global coordinates/offsets (with '"${_c.}"i(...)"${_n.}"' and '"${_c.}"i[...]"${_n.}"'), or relatively to the current
-\n       position "${_g.}"(x,y,z,c)"${_n.}" (with '"${_c.}"j(...)"${_n.}"' and '"${_c.}"j[...]"${_n.}"'). These expressions always
- return '"${_c.}"value"${_n.}"'.
-\n
-\n  - The last image of the list is always associated to the evaluations of '"${_c.}"{expressions}"${_n.}"',
-\n     e.g. G'MIC sequence '"${_c.}"256,128 fill {w}"${_n.}"' will create a 256x128 image filled with value 256."
+"_ **String manipulation:** Character strings are defined and managed as vectors objects. "\
+"Dedicated functions and initializers to manage strings are:"\n\
+\n\
+". `['string']` and `'string'` define a vector whose values are the character codes of the "\
+"specified `character string` (e.g. `'foo'` is equal to `[ 102,111,111 ]`)."\n\
+". `_'character'` returns the (scalar) byte code of the specified character (e.g. `_'A'` is equal to '65')."\n\
+". A special case happens for __empty__ strings: Values of both expressions `['']` and `''` are '0'."\n\
+". Functions 'lowercase()' and 'uppercase()' return string with all string characters lowercased or uppercased."\n\
+". Function 'stov(str,_starting_index,_is_strict)' parses specified string 'str' and returns the value contained in it."\n\
+". Function 'vtos(expr,_nb_digits,_siz)' returns a vector of size 'siz' which contains the character representation "\
+"of values described by expression 'expr'. "\
+"'nb_digits' can be { -1=auto-reduced | 0=all | >0=max number of digits }."\n\
+". Function 'echo(str1,str2,...,strN)' prints the concatenation of given string arguments on the console."\n\
+". Function 'string(_#siz,str1,str2,...,strN)' generates a vector corresponding to the concatenation of given "\
+"string/number arguments."\n\
+\n\
+"_ **Special operators** can be used:"\n\
+\n\
+". ';': expression separator. The returned value is always the last encountered expression. "\
+"For instance expression '1;2;pi' is evaluated as 'pi'."\n\
+". '=': variable assignment. Variables in mathematical parser can only refer to numerical "\
+"values (vectors or scalars). Variable names are case-sensitive. Use this operator in conjunction with ';' to define "\
+"more complex evaluable expressions, such as ~~t = cos(x); 3*t^2 + 2*t + 1~~. "\
+"These variables remain __local__ to the mathematical parser and cannot be accessed outside the evaluated expression."\n\
+". Variables defined in math parser may have a __constant__ property, by specifying keyword 'const' before the "\
+"variable name (e.g. 'const foo = pi/4;'). The value set to such a variable must be indeed a __constant scalar__. "\
+"Constant variables allows certain types of optimizations in the math JIT compiler."\n\
+\n\
+"_ The following "${_g.}"specific functions"${_n.}" are also defined:"\n\
+\n\
+". 'u(max)' or 'u(min,max)': return a random value between '[0,max]' or '[min,max]', following a uniform distribution."\n\
+". 'f2ui(value)' and 'ui2f(value)': Convert a large unsigned integer as a negative floating point value "\
+"(and vice-versa), so that 32bits floats can be used to store large integers while keeping a unitary precision."\n\
+". 'i(_a,_b,_c,_d,_interpolation_type,_boundary_conditions)': return the value of the pixel located at position "\
+"`(a,b,c,d)` in the associated image, if any ('0' otherwise). "\
+"'interpolation_type' can be { 0=nearest neighbor | 1=linear | 2=cubic }. "\
+"'boundary_conditions' can be { 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }. "\
+"Omitted coordinates are replaced by their default values which are respectively 'x', 'y', 'z', 'c', 'interpolation' "\
+"and 'boundary'. For instance command ~~fill 0.5*(i(x+1)-i(x-1))~~ will estimate the X-derivative of an image with "\
+"a classical finite difference scheme."\n\
+". 'j(_dx,_dy,_dz,_dc,_interpolation_type,_boundary_conditions)' does the same for the pixel located at position "\
+"`(x+dx,y+dy,z+dz,c+dc)` (pixel access relative to the current coordinates)."\n\
+". 'i[offset,_boundary_conditions]' returns the value of the pixel located at specified 'offset' in the associated "\
+"image buffer (or '0' if offset is out-of-bounds)."\n\
+". 'j[offset,_boundary_conditions]' does the same for an offset relative to the current pixel coordinates `(x,y,z,c)`."\n\
+". 'i(#ind,_x,_y,_z,_c,_interpolation,_boundary_conditions)', "\
+"'j(#ind,_dx,_dy,_dz,_dc,_interpolation,_boundary_conditions)', 'i[#ind,offset,_boundary_conditions]' and "\
+"'i[offset,_boundary_conditions]' are similar expressions used to access pixel values for any numbered image '[ind]' "\
+"of the list."\n\
+". 'I/J[offset,_boundary_conditions]' and 'I/J(#ind,_x,_y,_z,_interpolation,_boundary_conditions)' do the same as "\
+"'i/j[offset,_boundary_conditions]' and 'i/j(#ind,_x,_y,_z,_c,_interpolation,_boundary_conditions)' but return a "\
+"vector instead of a scalar (e.g. a vector `[ R,G,B ]` for a pixel at `(a,b,c)` in a color image)."\n\
+". 'sort(#ind,_is_increasing,_axis)' sorts the values in the specified image '[ind]'."\n\
+". 'crop(_#ind,_x,_y,_z,_c,_dx,_dy,_dz,_dc,_boundary_conditions)' returns a vector whose values come from the "\
+"cropped region of image '[ind]' (or from default image selected if 'ind' is not specified). Cropped region starts "\
+"from point `(x,y,z,c)` and has a size of `dx x dy x dz x dc`. Arguments for coordinates and sizes can be omitted "\
+"if they are not ambiguous (e.g. 'crop(#ind,x,y,dx,dy)' is a valid invocation of this function)."\n\
+". 'draw(_#ind,S,x,y,z,c,dx,_dy,_dz,_dc,_opacity,_M,_max_M)' draws a sprite 'S' in image '[ind]' "\
+"(or in default image selected if 'ind' is not specified) at coordinates `(x,y,z,c)`. "\
+"The size of the sprite `dx x dy x dz x dc` must be specified. You can also specify a corresponding opacity mask "\
+"'M' if its size matches 'S'."\n\
+". 'polygon(_#ind,nb_vertices,coords,_opacity,_color)' draws a filled polygon in image '[ind]' (or in default image "\
+"selected if 'ind' is not specified) at specified coordinates. It draws a single line if 'nb_vertices' is set to 2."\n\
+". 'polygon(_#ind,-nb_vertices,coords,_opacity,_pattern,_color)' draws a outlined polygon in image '[ind]' (or in "\
+"default image selected if 'ind' is not specified) at specified coordinates and with specified line pattern. "\
+"It draws a single line if 'nb_vertices' is set to 2."\n\
+". 'ellipse(_#ind,xc,yc,radius1,_radius2,_angle,_opacity,_color)' draws a filled ellipse in image '[ind]' "\
+"(or in default image selected if 'ind' is not specified) with specified coordinates."\n\
+". 'ellipse(_#ind,xc,yc,-radius1,-_radius2,_angle,_opacity,_pattern,_color)' draws an outlined ellipse in image '[ind]' "\
+"(or in default image selected if 'ind' is not specified)."\n\
+". 'resize(#ind,w,_h,_d,_s,_interp,_boundary_conditions,_cx,_cy,_cz,_cc)' resizes an image of the associated list with "\
+"specified dimension and interpolation method. When using this function, you should consider retrieving the "\
+"(non-constant) image dimensions using the dynamic functions 'w(_#ind)', 'h(_#ind)', 'd(_#ind)', 's(_#ind)', "\
+"'wh(_#ind)', 'whd(_#ind)' and 'whds(_#ind)' instead of the corresponding constant variables."\n\
+". 'if(condition,expr_then,_expr_else)': return value of 'expr_then' or 'expr_else', depending on the value of "\
+"'condition' { 0=false | other=true }. 'expr_else' can be omitted in which case '0' is returned if the condition "\
+"does not hold. Using the ternary operator 'condition?expr_then[:expr_else]' gives an equivalent expression. "\
+"For instance, G'MIC commands ~~fill if(x%10==0,255,i)~~ and ~~fill x%10?i:255~~ both draw blank vertical lines "\
+"on every 10th column of an image."\n\
+". 'do(expression,_condition)' repeats the evaluation of 'expression' until 'condition' vanishes "\
+"(or until 'expression' vanishes if no 'condition' is specified). For instance, the expression: "\
+"~~if(N<2,N,n=N-1;F0=0;F1=1;do(F2=F0+F1;F0=F1;F1=F2,n=n-1))~~ returns the N-th value of the Fibonacci sequence, "\
+"for 'N>=0' (e.g., '46368' for 'N=24'). 'do(expression,condition)' always evaluates the specified expression at least "\
+"once, then check for the loop condition. When done, it returns the last value of 'expression'."\n\
+". 'for(init,condition,_procedure,body)' first evaluates the expression 'init', then iteratively evaluates 'body' "\
+"(followed by 'procedure' if specified) while 'condition' holds (i.e. not zero). It may happen that no iterations are "\
+"done, in which case the function returns 'nan'. Otherwise, it returns the last value of 'body'. "\
+"For instance, the expression: ~~if(N<2,N,for(n=N;F0=0;F1=1,n=n-1,F2=F0+F1;F0=F1;F1=F2))~~ returns the 'N'-th value of "\
+"the Fibonacci sequence, for 'N>=0' (e.g., '46368' for 'N=24')."\n\
+". 'while(condition,expression)' is exactly the same as 'for(init,condition,expression)' without the specification of "\
+"an initializing expression."\n\
+". 'break()' and 'continue()' respectively breaks and continues the current running bloc "\
+"(loop, init or main environment)."\n\
+". 'fsize(ʼfilenameʼ)' returns the size of the specified 'filename' (or '-1' if file does not exist)."\n\
+". 'date(attr,'path')' returns the date attribute for the given 'path' (file or directory), "\
+"with 'attr' being { 0=year | 1=month | 2=day | 3=day of week | 4=hour | 5=minute | 6=second }, or a vector "\
+"of those values."\n\
+". 'date(_attr)' returns the specified attribute for the current (locale) date (attributes being "\
+"{ 0...6=same meaning as above | 7=milliseconds })."\n\
+". 'print(expr1,expr2,...)' or 'print(#ind)' prints the value of the specified expressions (or image information) "\
+"on the console, and returns the value of the last expression (or 'nan' in case of an image). "\
+"Function 'prints(expr)' also prints the string composed of the character codes defined by the vector-valued "\
+"expression (e.g. 'prints(ʼHelloʼ)')."\n\
+". 'debug(expression)' prints detailed debug info about the sequence of operations done by the math parser to "\
+"evaluate the expression (and returns its value)."\n\
+". 'display(_X,_w,_h,_d,_s)' or 'display(#ind)' display the contents of the vector 'X' (or specified image) and "\
+"wait for user events. if no arguments are provided, a memory snapshot of the math parser environment is displayed "\
+"instead."\n\
+". 'begin(expression)' and 'end(expression)' evaluates the specified expressions only once, respectively at the "\
+"beginning and end of the evaluation procedure, and this, even when multiple evaluations are required "\
+"(e.g. in 'fill \">begin(foo = 0); ++foo\"')."\n\
+". 'copy(dest,src,_nb_elts,_inc_d,_inc_s,_opacity)' copies an entire memory block of 'nb_elts' elements starting "\
+"from a source value 'src' to a specified destination 'dest', with increments defined by 'inc_d' and 'inc_s' "\
+"respectively for the destination and source pointers."\n\
+". 'stats(_#ind)' returns the statistics vector of the running image '[ind]', i.e the vector "\
+"`[ im,iM,ia,iv,xm,ym,zm,cm,xM,yM,zM,cM,is,ip ]` (14 values)."\n\
+". 'ref(expr,a)' references specified expression 'expr' as variable name 'a'."\n\
+". 'unref(a,b,...)' destroys references to the named variable given as arguments."\n\
+". 'breakpoint()' inserts a possible computation breakpoint (useless with the cli interface)."\n\
+". '_(expr)' just ignores its arguments (useful for inserting inline comments in math expressions)."\n\
+". 'run('pipeline')' executes the specified G'MIC pipeline as if it was called outside the currently evaluated "\
+"expression."\n\
+". 'store(A,'varname',_w,_h,_d,_s,_is_compressed)' transfers the data of vector 'A' as a "\
+"`w x h x d x s` image to the G'MIC variable '$varname'. Thus, the data becomes available outside the math expression "\
+"(that is equivalent to using the regular command 'store', but directly in the math expression)."\n\
+". 'get('variable_name',_size,_to_numbers)' returns the value of the specified variable, as a vector of 'size' values, "\
+"or as a scalar (if 'size' is zero or not specified)."\n\
+". 'name(_#ind,size)' returns a vector of size 'size', whose values are the characters codes of the name of image "\
+"'[ind]' (or default image selected if 'ind' is not specified)."\n\
+". 'correlate(I,wI,hI,dI,sI,K,wK,hK,dK,sK,_boundary_conditions,_is_normalized,_channel_mode,_xcenter,_ycenter,"\
+"_zcenter,_xstart,_ystart,_zstart,_xend,_yend,_zend,_xstride,_ystride,_zstride,_xdilation,_ydilation,_zdilation)' "\
+"returns the correlation, unrolled as a vector, of the `wI x hI x dI x sI`-sized image 'I' with the "\
+"`wK x hK x dK x sK`-sized kernel 'K' (the meaning of the other arguments are the same as in command "\
+"'correlate'). Similar function 'convolve(...)' is also defined for computing the convolution between 'I' and 'K'."\n\
+\n\
+"- **User-defined macros:**"\n\
+\n\
+". Custom macro functions can be defined in a math expression, using the assignment operator "\
+"'=', e.g. ~~foo(x,y) = cos(x + y); result = foo(1,2) + foo(2,3)~~"\n\
+". Trying to override a built-in function (e.g. 'abs()') has no effect."\n\
+". Overloading macros with different number of arguments is possible. Re-defining a previously defined macro with "\
+"the same number of arguments discards its previous definition."\n\
+". Macro functions are indeed processed as **macros** by the mathematical evaluator. You should avoid invoking them "\
+"with arguments that are themselves results of assignments or self-operations. "\
+"For instance, ~~foo(x) = x + x; z = 0; foo(++z)~~ returns '4' rather than expected value '2'."\n\
+". When substituted, macro arguments are placed inside parentheses, except if a number sign "\
+"'#' is located just before or after the argument name. For instance, expression ~~foo(x,y) = x*y; foo(1+2,3)~~ "\
+"returns '9' (being substituted as '(1+2)*(3)'), while expression ~~foo(x,y) = x#*y#; foo(1+2,3)~~ returns '7' "\
+"(being substituted as '1+2*3')."\n\
+". Number signs appearing between macro arguments function actually count for __empty__ separators. They may be used "\
+"to force the substitution of macro arguments in unusual places, e.g. as in ~~str(N) = ['I like N#'];~~."\n\
+\n\
+"- **Multi-threaded and in-place evaluation:**"\n\
+\n\
+". If your image data are large enough and you have several CPUs available, it is likely that the math expression "\
+"passed to a 'fill', 'eval' or 'input' commands is evaluated in parallel, using multiple computation threads."\n\
+". Starting an expression with ':' or '*' forces the evaluations required for an image to be run in parallel, "\
+"even if the amount of data to process is small (beware, it may be slower to evaluate in this case!). "\
+"Specify ':' (rather than '*') to avoid possible image copy done before evaluating the expression "\
+"(this saves memory, but do this only if you are sure this step is not required!)"\n\
+". If the specified expression starts with '>' or '<', the pixel access operators 'i()', 'i[]', 'j()' and 'j[]' "\
+"return values of the image being currently modified, in forward ('>') or backward ('<') order. "\
+"The multi-threading evaluation of the expression is disabled in this case."\n\
+". Function 'critical(expr)' forces the execution of the given expression in a single thread at a time."\n\
+". 'begin_t(expr)' and 'end_t(expr)' evaluates the specified expression once for each running thread "\
+"(so possibly several times) at the beginning and the end of the evaluation procedure."\n\
+". 'merge(variable,operator)' tells to merge the local variable value computed by threads, with the specified "\
+"operator, when all threads have finished computing."\n\
+\n\
+"- Expressions 'i(_#ind,x,_y,_z,_c)=value', 'j(_#ind,x,_y,_z,_c)=value', 'i[_#ind,offset]=value' and "\
+"'j[_#ind,offset]=value' set a pixel value at a different location than the running one in the image '[ind]' "\
+"(or in the associated image if argument '#ind' is omitted), either with global coordinates/offsets "\
+"(with 'i(...)' and 'i[...]'), or relatively to the current position `(x,y,z,c)` (with 'j(...)' and 'j[...]'). "\
+"These expressions always return 'value'."\n\
+\n\
+"- The last image of the list is always associated to the evaluations of 'expressions', e.g. G'MIC sequence "\
+"~~256,128 fill {w}~~ will create a 256x128 image filled with value 256."
 
   _section "Image and Data Viewers"
 
