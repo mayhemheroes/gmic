@@ -344,24 +344,15 @@ gmd_html :
   gmd_gmic_html
   gmd_bold_html
   gmd_italic_html
-  gmd_citation_html
+  gmd_cite_html
   gmd_list_html
-  gmd_monospace_html
-  gmd_boldmonospace_html
+  gmd_mono_html
+  gmd_monobold_html
   gmd_code_html
   gmd_image_html
   gmd_braces_html
   gmd_url_html
 
-gmd_boldmonospace_html : # `words in monospace`
-  eval[^] ">begin(beg = -1);
-    beg>=0 && y - beg>80?(beg = -1);
-    i==96?(
-      beg<0?(beg = y):
-      beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
-    )"
-  replace_str "\2","<span class=\"gmd_mb\">"
-  replace_str "\3","</span>"
 
 gmd_bold_html : # **words in bold face**
   eval[^] ">begin(beg = -1);
@@ -370,7 +361,7 @@ gmd_bold_html : # **words in bold face**
       beg<0 && (!y || isin(j[-1],_' ',_'\n',_'('))?(beg = y):
       beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
     )"
-  replace_str "\2*","<span class=\"gmd_b\">"
+  replace_str "\2*","<span class=\"gmd_bold\">"
   replace_str "\3*","</span>"
 
 gmd_braces_html : # { list of values }
@@ -378,17 +369,17 @@ gmd_braces_html : # { list of values }
     beg>=0 && y - beg>80?(beg = -1);
     beg<0 && i==_'{' && (!y || isin(j[-1],_' ',_'\n',_'('))?(beg = y):
     beg>=0 && i==_'}'?(i[y] = 3; i[beg] = 2; beg = -1)"
-  replace_str "\2","<span class=\"gmd_br\">{"
+  replace_str "\2","<span class=\"gmd_braces\">{"
   replace_str "\3","}</span>"
 
-gmd_citation_html : # ''citation highlighted''
+gmd_cite_html : # ''citation highlighted''
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>80?(beg = -1);
     i==_'\'' && j[1]==_'\''?(
       beg<0 && (!y || isin(j[-1],_' ',_'\n',_'('))?(beg = y):
       beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
     )"
-  replace_str "\2'","<span class=\"gmd_c\">&ldquo;"
+  replace_str "\2'","<span class=\"gmd_cite\">&ldquo;"
   replace_str "\3'","&rdquo;</span>"
 
 gmd_code_html : # ~~code block~~
@@ -398,7 +389,7 @@ gmd_code_html : # ~~code block~~
       beg<0 && (!y || isin(j[-1],_' ',_'\n',_'('))?(beg = y):
       beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
     )"
-  replace_str "\2~","<div class=\"gmd_cb\">"
+  replace_str "\2~","<div class=\"gmd_code\">"
   replace_str "\3~","</div>"
 
 gmd_gmic_html : # G'MIC
@@ -413,7 +404,7 @@ gmd_italic_html : # __words in italic__
       beg<0 && (!y || isin(j[-1],_' ',_'\n',_'('))?(beg = y):
       beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
     )"
-  replace_str "\2_","<span class=\"gmd_i\">"
+  replace_str "\2_","<span class=\"gmd_italic\">"
   replace_str "\3_","</span>"
 
 gmd_list_html : # List items
@@ -421,21 +412,21 @@ gmd_list_html : # List items
     beg>=0 && y - beg>1024?(beg = -1);
     beg<0 && i==_'-' && j[1]==_' ' && (!y || isin(j[-1],_'\n',3))?(beg = y):
     beg>=0 && (i==_'\n' || y==h-1)?(i[y] = 3; i[beg] = 2; beg = -1)"
-  replace_str "\2 ","<div class=\"gmd_li\"> "
+  replace_str "\2 ","<div class=\"gmd_list\"> "
   replace_str "\3","</div>"
 
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>1024?(beg = -1);
     beg<0 && i==_'_' && j[1]==_' ' && (!y || isin(j[-1],_'\n',3))?(beg = y):
     beg>=0 && (i==_'\n' || y==h-1)?(i[y] = 3; i[beg] = 2; beg = -1)"
-  replace_str "\2 ","<div class=\"gmd_li1\"> "
+  replace_str "\2 ","<div class=\"gmd_list1\"> "
   replace_str "\3","</div>"
 
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>1024?(beg = -1);
     beg<0 && i==_'.' && j[1]==_' ' && (!y || isin(j[-1],_'\n',3))?(beg = y):
     beg>=0 && (i==_'\n' || y==h-1)?(i[y] = 3; i[beg] = 2; beg = -1)"
-  replace_str "\2 ","<div class=\"gmd_li2\"> "
+  replace_str "\2 ","<div class=\"gmd_list2\"> "
   replace_str "\3","</div>"
 
 
@@ -444,14 +435,24 @@ gmd_list_html : # List items
 #  f "i==_'.' && j[1]==_' ' && (!y || j[-1]==_'\n')?2:i"
 #  replace_str "\2 ","&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&bull;&nbsp;"
 
-gmd_monospace_html : # 'single_word_in_monospace`
+gmd_mono_html : # 'single_word_in_monospace`
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>80?(beg = -1);
     i==_'\''?(
       beg<0 && (!y || isin(j[-1],_' ',_'\n',_'('))?(beg = y):
       beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
     )"
-  replace_str "\2","<span class=\"gmd_m\">"
+  replace_str "\2","<span class=\"gmd_mono\">"
+  replace_str "\3","</span>"
+
+gmd_monobold_html : # `words in monospace`
+  eval[^] ">begin(beg = -1);
+    beg>=0 && y - beg>80?(beg = -1);
+    i==96?(
+      beg<0?(beg = y):
+      beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
+    )"
+  replace_str "\2","<span class=\"gmd_monobold\">"
   replace_str "\3","</span>"
 
 gmd_url_html : # http[s]://address.url
