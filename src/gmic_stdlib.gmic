@@ -947,7 +947,7 @@ reference :
 ". 'arg(i,a_1,..,a_N)' returns the `i`-th argument 'a_i'."\n\
 ". 'isnum()', 'isnan()', 'isinf()', 'isint()', 'isbool()' test the type of the given number or expression, "\
 "and return '0' (false) or '1' (true)."\n\
-". 'isfile(' path ')' (resp. 'isdir(' path ')') returns '0' (false) or '1' (true) whether its string argument is a "\
+". 'isfile(ʼpathʼ)' (resp. 'isdir(ʼpathʼ)') returns '0' (false) or '1' (true) whether its string argument is a "\
 "path to an existing file (resp. to a directory) or not."\n\
 ". 'isin(v,a_1,...,a_n)' returns '0' (false) or '1' (true) whether the first value 'v' appears in the set of other "\
 "values 'a_i'."\n\
@@ -1295,58 +1295,49 @@ reference :
 
   _section "Adding Custom Commands"
 
-  _text "  - New custom commands can be added by the user, through the use of G'MIC "\
-${_g.}"custom commands files"${_n.}".
-\n
-\n  - A command file is a simple text file, where each line starts either by
-\n     '"${_c.}"command_name: command_definition"${_n.}"' or '"${_c.}"command_definition (continuation)"${_n.}"'.
-\n
-\n  - At startup, G'MIC automatically includes user's command file "${_g.}"$HOME/.gmic"${_n.}" (on Unix) or
-\n     "${_g.}"%APPDATA%/user.gmic"${_n.}" (on Windows). The CLI tool '"${_g.}"gmic"${_n.}"' automatically runs the command
-\n     '"${_c.}"cli_start"${_n.}"' if defined.
-\n
-\n  - Custom command names must use character set "${_g.}"[a-zA-Z0-9_]"${_n.}" and cannot start with a number.
-\n
-\n  - Any '"${_c.}" ""# comment"${_n.}"' expression found in a custom commands file is discarded by the G'MIC parser,
-\n     wherever it is located in a line.
-\n
-\n  - In a custom command, the following "${_g.}"$-expressions"${_n.}" are recognized and substituted:
-\n
-\n    . '"${_c.}"$""\*"${_n.}"' is substituted by a copy of the specified string of arguments.
-\n    . '"${_c.}"$\"*\""${_n.}"' is substituted by a copy of the specified string of arguments, each being
-\n       double-quoted.
-\n    . '"${_c.}"$""#"${_n.}"' is substituted by the maximum index of known arguments (either specified by the user
-\n       or set to a default value in the custom command).
-\n    . '"${_c.}"$""[]"${_n.}"' is substituted by the list of selected image indices that have been specified in the
-\n       command invocation.
-\n    . '"${_c.}"$""?"${_n.}"' is substituted by a printable version of '"${_c.}"$""[]"${_n.}"' to be used in command descriptions.
-\n    . '"${_c.}"$i"${_n.}"' and '"${_c.}"${i}"${_n.}"' are both substituted by the "${_g.}"i^th"${_n.}" specified argument.
- Negative indices such as
-\n       '"${_c.}"${-j}"${_n.}"' are allowed and refer to the "${_g.}"j^th"${_n.}" latest argument. '"${_c.}"$""0"${_n.}"' is substituted
-\n       by the custom command name.
-\n    . '"${_c.}"${i=default}"${_n.}"' is substituted by the value of "${_c.}"$i"${_n.}" (if defined) or by its new value set to
-\n        '"${_g.}"default"${_n.}"' otherwise ('"${_g.}"default"${_n.}"' may be a $-expression as well).
-\n    . '"${_c.}"${subset}"${_n.}"' is substituted by the argument values (separated by commas '"${_g.}","${_n.}"') of a specified
-\n       argument subset. For instance expression '"${_c.}"$""{2--2}"${_n.}"' is substitued by all specified command
-\n       arguments except the first and the last one. Expression '"${_c.}"$""{^0}"${_n.}"' is then substituted by all
-\n       arguments of the invoked command (eq. to '"${_c.}"$""*"${_n.}"' if all specified arguments have indeed a
-\n       value).
-\n    . '"${_c.}"$""=var"${_n.}"' is substituted by the set of instructions that will assign each argument "${_c.}"$i"${_n.}" to the
-\n       named variable '"${_c.}"var$i"${_n.}"' (for i in "${_g.}"[0...$""#]"${_n.}"). This is particularly useful when a custom
-\n       command want to manage variable numbers of arguments. Variables names must use character set
-\n       "${_g.}"[a-zA-Z0-9_]"${_n.}" and cannot start with a number.
-\n
-\n  - These particular "${_g.}"$-expressions"${_n.}" for custom commands are "${_g.}"always substituted"${_n.}", even in
-\n     double-quoted items or when the dollar sign '"${_g.}"$"${_n.}"' is escaped with a backslash '"${_g.}"\\"${_n.}"'. To avoid
-\n     substitution, place an empty double quoted string just after the '"${_g.}"$"${_n.}"' (as in '"${_c.}"$\"\"1"${_n.}"').
-\n
-\n  - Specifying arguments may be skipped when invoking a custom command, by replacing them by commas
-\n     '"${_g.}","${_n.}"' as in expression '"${_c.}"flower ,,3"${_n.}"'. Omitted arguments are set to their default values, which
-\n     must be thus explicitly defined in the code of the corresponding custom command (using
-\n     default argument expressions as '"${_c.}"$""{1=default}"${_n.}"').
-\n
-\n  - If one numbered argument required by a custom command misses a value, an error is thrown by the
-\n     G'MIC interpreter."
+  _text "- New custom commands can be added by the user, through the use of G'MIC **custom commands files**."\n\
+\n\
+"- A command file is a simple text file, where each line starts either by "\
+"~~command_name: command_definition~~ or ~~command_definition (continuation)~~"\n\
+\n\
+"- At startup, G'MIC automatically includes user's command file '$HOME/.gmic' (on __Unix__) or "\
+"'%APPDATA%/user.gmic' (on __Windows__). The CLI tool 'gmic' automatically runs the command "\
+"'cli_start' if defined."\n\
+\n\
+"- Custom command names must use character set `[a-zA-Z0-9_]` and cannot start with a number."\n\
+\n\
+"- Any '# comment' expression found in a custom commands file is discarded by the G'MIC parser, "\
+"wherever it is located in a line."\n\
+\n\
+"- In a custom command, the following '$-expressions' are recognized and substituted:"\n\
+\n\
+". '$""\*' is substituted by a copy of the specified string of arguments."\n\
+". '$\"*\"' is substituted by a copy of the specified string of arguments, each being double-quoted."\n\
+". '$""#' is substituted by the maximum index of known arguments (either specified by the user or set to a default "\
+"value in the custom command)."\n\
+". '$""[]' is substituted by the list of selected image indices that have been specified in the command invocation."\n\
+". '$""?' is substituted by a printable version of '$""[]' to be used in command descriptions."\n\
+". '$i' and '${i}' are both substituted by the `i`-th specified argument. Negative indices such as '${-j}' are "\
+"allowed and refer to the `j`-th latest argument. '$""0' is substituted by the custom command name."\n\
+". '${i=default}' is substituted by the value of '$i' (if defined) or by its new value set to 'default' otherwise "\
+"('default' may be a `$-expression` as well)."\n\
+". '${subset}' is substituted by the argument values (separated by commas ',') of a specified argument subset. "\
+"For instance expression '$""{2--2}' is substitued by all specified command arguments except the first and the last "\
+"one. Expression '$""{^0}' is then substituted by all arguments of the invoked command (eq. to '$""*' if all "\
+"arguments have been indeed specified)."\n\
+". '$""=var' is substituted by the set of instructions that will assign each argument '$i' to the named variable "\
+"'var$i' (for i in '[0...$""#]'. This is particularly useful when a custom command want to manage variable numbers "\
+"of arguments. Variables names must use character set `[a-zA-Z0-9_]` and cannot start with a number."\n\
+\n\
+"- These particular `$-expressions` for custom commands are **always substituted**, even in "\
+"double-quoted items or when the dollar sign '$' is escaped with a backslash '\\$'. To avoid substitution, place an "\
+"empty double quoted string just after the '$' (as in '$\"\"1')."\n\
+\n\
+"- Specifying arguments may be skipped when invoking a custom command, by replacing them by commas ',' as in "\
+"expression ~~flower ,,3~~ Omitted arguments are set to their default values, which must be thus explicitly "\
+"defined in the code of the corresponding custom command (using default argument expressions as '$""{1=default}')."\n\
+\n\
+"- If one numbered argument required by a custom command misses a value, an error is thrown by the G'MIC interpreter."
 
   _section "List of Commands"
 
