@@ -343,20 +343,20 @@ __help :
 # - \n  - Item of a sub-list (level 1)
 # - \n    . Item of a sub-list (level 2)
 
-# Convert a 'gmd' string to an output format.
+# Convert selected 'gmd' strings to specified output format.
 # $1 = output format. Can be { html | ascii }.
 gmd :
   gmd_gmic_$1
   gmd_bold_$1
   gmd_italic_$1
   gmd_cite_$1
-  gmd_list_$1
   gmd_mono_$1
   gmd_monobold_$1
   gmd_code_$1
   gmd_image_$1
   gmd_braces_$1
   gmd_url_$1
+  gmd_list_$1
   gmd_section_$1
   gmd_newline_$1
 
@@ -389,7 +389,7 @@ gmd_code : # ~~code block~~
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>512?(beg = -1);
     i==_'~' && j[1]==_'~'?(
-      beg<0 && (!y || isin(j[-1],_' ',_'\n',_'('))?(beg = y):
+      beg<0 && (!y || isin(j[-1],_' ',_'\n'))?(beg = y):
       beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
     )"
 
@@ -512,11 +512,11 @@ gmd_italic_html :
 
 gmd_list_html :
   gmd_list1
-  replace_str "\2","<div class=\"gmd_list1\">"
+  replace_str "\2 ","<div class=\"gmd_list1\">"
   gmd_list2
-  replace_str "\2","<div class=\"gmd_list2\">"
+  replace_str "\2 ","<div class=\"gmd_list2\">"
   gmd_list3
-  replace_str "\2","<div class=\"gmd_list3\">"
+  replace_str "\2 ","<div class=\"gmd_list3\">"
   replace_str "\3","</div>"
 
 gmd_mono_html :
@@ -539,7 +539,7 @@ gmd_section_html : # # Section
   replace_str "\2# ","<div class=\"gmd_section2\">"
   gmd_section3
   replace_str "\2## ","<div class=\"gmd_section3\">"
-  replace_str "\3","</div>\n"
+  replace_str "\3","</div>"
 
 gmd_url_html : # http[s]://address.url
   repeat $! l[$>]
@@ -576,8 +576,8 @@ reference :
   _begin
 
   _section "Usage"
-
-  _text "~~gmic [command1 [arg1_1,arg1_2,..]] .. [commandN [argN_1,argN_2,..]]~~"\n\
+  _text \
+"~~gmic [command1 [arg1_1,arg1_2,..]] .. [commandN [argN_1,argN_2,..]]~~"\n\
 "`gmic` is the open-source interpreter of the G'MIC language, a script-based programming "\
 "language dedicated to the design of possibly complex image processing pipelines and operators."\n\
 "It can be used to convert, manipulate, filter and visualize image datasets made of one or "\
@@ -588,7 +588,6 @@ reference :
 "As a starting point, you may want to visit our detailed tutorial pages, at: https://gmic.eu/tutorial/"
 
   _section "Overall Context"
-
   _text \
 "* At any time, G'MIC manages one list of numbered (and optionally named) pixel-based images, "\
 "entirely stored in computer memory (uncompressed)."\n\
@@ -607,7 +606,6 @@ reference :
 "afterwards as a regular command, in a larger pipeline if necessary."
 
   _section "Image Definition and Terminology"
-
   _text \
 "* In G'MIC, each image is modeled as a 1D, 2D, 3D or 4D array of scalar values, uniformly "\
 "discretized on a rectangular/parallelepipedic domain."\n\
@@ -635,11 +633,10 @@ reference :
 "(see section __Input/Output Properties__ to learn more about file options)."
 
   _section "Items of a Processing Pipeline"
-
   _text \
 "* In G'MIC, an image processing pipeline is described as a sequence of items separated by the "\
-"space character ' '. Such items are interpreted and executed from the left to the right. For instance, the expression:"\n\
-"~~filename.jpg blur 3,0 sharpen 10 resize 200%,200% output file_out.jpg~~"\n\
+"space character. Such items are interpreted and executed from the left to the right. For instance, the expression:"\n\
+"~~filename.jpg blur 3,0 sharpen 10 resize 200%,200% output file_out.jpg~~"\
 "defines a valid pipeline composed of nine G'MIC items."\n\n\
 "* Each G'MIC item is a string that is either a __command__, a list of command __arguments__, "\
 "a __filename__ or a special __input string__."\n\
@@ -648,21 +645,16 @@ reference :
 "both define the same single item, with a space in it."
 
   _section "Input Data Items"
-
   _text \
 "* If a specified G'MIC item appears to be an existing filename, the corresponding image data "\
 "are loaded and inserted at the end of the image list (which is equivalent to the use of `input filename`). "\n\
-\n\
 "* Special filenames `-` and `-.ext` stand for the standard input/output streams, optionally "\
 "forced to be in a specific 'ext' file format (e.g. `-.jpg` or `-.png`). "\n\
-\n\
 "* The following special input strings may be used as G'MIC items to create and insert new "\
 "images with prescribed values, at the end of the image list:"\n\
-\n\
 "  - '[selection]' or '[selection]xN': Insert 1 or N copies of already existing images. "\
 "'selection' may represent one or several images (see section __Command Items and Selections__ to learn more "\
 "about selections)."\n\
-\n\
 "  - 'width[%],_height[%],_depth[%],_spectrum[%],_values[xN]': Insert one or N images with specified "\
 "size and values (adding '%' to a dimension means *_percentage of the size along the same axis_*, "\
 "taken from the last image '[-1]'). Any specified dimension can be also written as "\
@@ -671,86 +663,62 @@ reference :
 "or a mathematical expression, as e.g. in input item '256,256,1,3,[x,y,128]' which "\
 "creates a `256x256` RGB color image with a spatial shading on the red and green channels. "\
 "(see section __Mathematical Expressions__ to learn more about mathematical expressions). "\n\
-\n\
 "  - '(v1,v2,..)[xN]': Insert one or `N` new images from specified prescribed values. Value separator "\
 "inside parentheses can be ',' (column separator), ';' (row separator), '/' (slice separator) or "\
 "'^' (channel separator). For instance, expression '(1,2,3;4,5,6;7,8,9)' creates a 3x3 matrix (scalar image), "\
 "with values running from 1 to 9. "\n\
-\n\
 "  - '('string'[:delimiter])[xN]': Insert one or N new images from specified string, by filling "\
 "the images with the character codes composing the string. When specified, 'delimiter' tells about "\
 "the main orientation of the image. Delimiter can be 'x' (eq. to ',' which is the default), "\
 "'y' (eq. to ';'), 'z' (eq. to '/') or 'c' (eq. to '^'). "\
 "When specified delimiter is ',', ';', '/' or '^', the expression is actually equivalent to "\
 "'({'string'[:delimiter]})[xN]' (see section __Substitution Rules__ for more information on the syntax)."\n\
-\n\
 "  - '0[xN]': Insert one or N new `empty` images, containing no pixel data. "\
 "Empty images are used only in rare occasions."\n\
 \n\
 "* Input item 'name=value' declares a new variable 'name', or assign a new string value to an existing variable. "\
 "Variable names must use the character set `[a-zA-Z0-9_]` and cannot start with a number. "\n\
-\n\
 "* A variable definition is always local to the current command except when it starts by the underscore "\
 "character '_'. In that case, it becomes also accessible by any command invoked outside the current command "\
 "scope (global variable)."\n\
-\n\
 "* If a variable name starts with two underscores `__`, the global variable is also shared among different threads "\
 "and can be read/set by commands running in parallel (see command 'parallel' for this purpose). "\
 "Otherwise, it remains local to the thread that defined it."\n\
-\n\
 "* Numerical variables can be updated with the use of these special operators: "\
 "'+=' (addition), '-=' (subtraction), '*=' (multiplication), '/=' (division), '%=' (modulo), '&=' (bitwise and), "\
 "'|=' (bitwise or), '^=' (power), '<<=' and '>>' (bitwise left and right shifts). For instance, 'foo=1' 'foo+=3'."\n\
-\n\
 "* Input item 'name.=string' concatenates specified `string` to the end of variable 'name'."\n\
-\n\
 "* Multiple variable assignments and updates are allowed, with expressions: 'name1,name2,...,nameN=value' or "\
 "'name1,name2,...,nameN=value1,value2,...,valueN' where assignment operator '=' can be replaced by one of the "\
 "allowed operators (e.g. '+=')."\n\
-\n\
 "* Variables usually store numbers or strings. Use command 'store' to assign variables from image data "\
 "(and syntax `input $variable` to bring them back on the image list afterwards)."
 
   _section "Command Items and Selections"
-
   _text \
 "* A G'MIC item that is not a filename nor a special input string designates a 'command' "\
 "most of the time. Generally, commands perform image processing operations on one or several available images "\
 "of the list."\n\
-\n\
 "* Reccurent commands have two equivalent names ('regular' and 'short'). For instance, command names "\
 "'resize' and 'r' refer to the same image resizing action."\n\
-\n\
 "* A G'MIC command may have mandatory or optional __arguments__. Command arguments must be specified "\
 "in the next item on the command line. Commas ',' are used to separate multiple arguments of a single command, "\
 "when required."\n\
-\n\
 "* The execution of a G'MIC command may be restricted only to a __subset__ of the image list, by "\
 "appending '[selection]' to the command name. Examples of valid syntaxes for 'selection' are: "\n\
-\n\
 "  - 'command[-2]': Apply command only on the penultimate image '[-2]' of the list."\n\
-\n\
 "  - 'command[0,1,3]': Apply command only on images '[0]','[1]' and '[3]'."\n\
-\n\
 "  - 'command[3-6]': Apply command only on images '[3]' to '[6]' (i.e, '[3]','[4]','[5]' and '[6]')."\n\
-\n\
 "  - 'command[50%-100%]': Apply command only on the second half of the image list."\n\
-\n\
 "  - 'command[0,-4--1]': Apply command only on the first image and the last four images."\n\
-\n\
 "  - 'command[0-9:3]': Apply command only on images '[0]' to '[9]', with a step of 3 "\
 "(i.e. on images '[0]', '[3]', '[6]' and '[9]')."\n\
-\n\
 "  - 'command[0-9:25%]': Apply command only on images '[0]' to '[9]', with a step of 25% "\
 "(i.e. on images '[0]', '[3]', '[6]' and '[9]')."\n\
-\n\
 "  - 'command[0--1:2]': Apply command only on images of the list with even indices. "\n\
-\n\
 "  - 'command[0,2-4,50%--1]': Apply command on images '[0]', '[2]', '[3]', '[4]' and on the second half of "\
 "the image list."\n\
-\n\
 "  - 'command[^0,1]': Apply command on all images except the first two."\n\
-\n\
 "  - 'command[name1,name2]': Apply command on named images 'name1' and 'name2'."\n\
 \n\
 "* Indices in selections are always sorted in increasing order, and duplicate indices are "\
@@ -758,40 +726,31 @@ reference :
 "'[1-3]'. If you want to repeat a single command multiple times on an image, use a "\
 "'repeat..done' loop instead. Inverting the order of images for a command is achieved by "\
 "explicitly inverting the order of the images in the list, with command 'reverse[selection]'."\n\
-\n\
 "* Command selections '[-1]','[-2]' and '[-3]' are so often used they have their own shortcuts, respectively "\
 "'.', '..' and '...'. For instance, command 'blur..' is equivalent to 'blur[-2]'. "\
 "These shortcuts work also when specifying command arguments."\n\
-\n\
 "* G'MIC commands invoked without '[selection]' are applied on all images of the list, i.e. the "\
 "default selection is '[0--1]' (except for command 'input' whose default selection is '[-1]'')."\n\
-\n\
 "* Prepending a single hyphen '-' to a G'MIC command is allowed. This may be useful to recognize "\
 "command items more easily in a one-liner pipeline (typically invoked from a shell). "\n\
-\n\
 "* A G'MIC command prepended with a plus sign '+' does not act __in-place__ but inserts its result as one or "\
 "several new images at the end of the image list."\n\
-\n\
 "* There are two different types of commands that can be run by the G'MIC interpreter:"\n\
-\n\
-"  - __Built-in commands__ are the hard-coded functionalities in the interpreter core. They are thus compiled as "\
+"  - **Built-in commands** are the hard-coded functionalities in the interpreter core. They are thus compiled as "\
 "binary code and run fast, most of the time. Omitting an argument when invoking a built-in command is not permitted, "\
 "except if all following arguments are also omitted. "\
 "For instance, invoking 'plasma 10,,5' is invalid but 'plasma 10' is correct. "\n\
-\n\
-"  - __Custom commands__, are defined as G'MIC pipelines of built-in or other custom commands. "\
+"  - **Custom commands**, are defined as G'MIC pipelines of built-in or other custom commands. "\
 "They are parsed by the G'MIC interpreter, and thus run a bit slower than built-in commands. "\
 "Omitting arguments when invoking a custom command is permitted. For instance, expressions "\
 "`flower ,,,100,,2` or `flower ,` are correct. "\n\
 \n\
 "* Most of the existing commands in G'MIC are actually defined as __custom commands__. "\n\
-\n\
 "* A user can easily add its own custom commands to the G'MIC interpreter (see section "\
 " __Adding Custom Commands__ for more details). New built-in commands cannot be added (unless you modify the "\
 "G'MIC interpreter source code and recompile it)."
 
   _section "Input/Output Properties"
-
   _text \
 "* G'MIC is able to read/write most of the classical image file formats, including:"\n\
 \n\
@@ -879,7 +838,6 @@ reference :
 "flags that have been set during the build of the G'MIC software."
 
   _section "Substitution Rules"
-
   _text \
 "* G'MIC items containing '$' or '{}' are substituted before being interpreted. Use these "\
 "substituting expressions to access various data from the interpreter environment."\n\
@@ -985,7 +943,6 @@ reference :
 "`{`, `}` or `$` characters, as in '\\{3+4\\}\\ doesn\47t\\ evaluate'."
 
   _section "Mathematical Expressions"
-
   _text \
 "* G'MIC has an embedded __mathematical parser__, used to evaluate (possibly complex) math expressions "\
 "specified inside braces '{}', or formulas in commands that may take one as an argument (e.g. 'fill')."\n\
@@ -1308,115 +1265,100 @@ reference :
 "~~256,128 fill {w}~~ will create a 256x128 image filled with value 256."
 
   _section "Image and Data Viewers"
-
   _text \
 "* G'MIC has some very handy embedded __visualization modules__, for 1D signals (command 'plot'), "\
 "1D/2D/3D images (command 'display') and 3D vector objects (command 'display3d'). It manages interactive views "\
 "of the selected image data."\n\
-\n\
 "* The following actions are available in the interactive viewers:"\n\
-\n\
-". `(mousewheel)`: Zoom in/out."\n\
-". `ESC`: Close window."\n\
-". `CTRL+D`: Increase window size."\n\
-". `CTRL+C`: Decrease window size."\n\
-". `CTRL+R`: Reset window size."\n\
-". `CTRL+F`: Toggle fullscreen mode."\n\
-". `CTRL+S`: Save current view as a numbered file 'gmic_xxxx.ext'."\n\
-". `CTRL+O`: Save copy of the viewed data, as a numbered file 'gmic_xxxx.ext'."\n\
+"  - `(mousewheel)`: Zoom in/out."\n\
+"  - `ESC`: Close window."\n\
+"  - `CTRL+D`: Increase window size."\n\
+"  - `CTRL+C`: Decrease window size."\n\
+"  - `CTRL+R`: Reset window size."\n\
+"  - `CTRL+F`: Toggle fullscreen mode."\n\
+"  - `CTRL+S`: Save current view as a numbered file 'gmic_xxxx.ext'."\n\
+"  - `CTRL+O`: Save copy of the viewed data, as a numbered file 'gmic_xxxx.ext'."\n\
 \n\
 "* Actions specific to the **1D/2D image viewer** (command 'display') are:"\n\
-\n\
-". `Left mouse button`: Create an image selection and zoom into it."\n\
-". `Middle mouse button`, or `CTRL+left mouse button`: Move image."\n\
-". `Mouse wheel` or `PADD+/-`: Zoom in/out."\n\
-". `Arrow keys`: Move image left/right/up/down."\n\
-". `CTRL+A`: Enable/disable transparency (show alpha channel)."\n\
-". `CTRL+N`: Change normalization mode (can be { none | normal | channel-by-channel})."\n\
-". `CTRL+SPACE`: Reset view."\n\
-". `CTRL+X`: Show/hide axes."\n\
-". `CTRL+Z`: Hold/release aspect ratio."\n\
+"  - `Left mouse button`: Create an image selection and zoom into it."\n\
+"  - `Middle mouse button`, or `CTRL+left mouse button`: Move image."\n\
+"  - `Mouse wheel` or `PADD+/-`: Zoom in/out."\n\
+"  - `Arrow keys`: Move image left/right/up/down."\n\
+"  - `CTRL+A`: Enable/disable transparency (show alpha channel)."\n\
+"  - `CTRL+N`: Change normalization mode (can be { none | normal | channel-by-channel})."\n\
+"  - `CTRL+SPACE`: Reset view."\n\
+"  - `CTRL+X`: Show/hide axes."\n\
+"  - `CTRL+Z`: Hold/release aspect ratio."\n\
 \n\
 "* Actions specific to the **3D volumetric image viewer** (command 'display') are:"\n\
-\n\
-". `CTRL+P`: Play z-stack of frames as a movie."\n\
-". `CTRL+V`: Show/hide 3D view on bottom right zone."\n\
-". `CTRL+X`: Show/hide axes."\n\
-". `CTRL+(mousewheel)`: Go up/down."\n\
-". `SHIFT+(mousewheel)`: Go left/right."\n\
-". `Numeric PAD`: Zoom in/out (`+`/`-`) and move through zoomed image (digits)."\n\
-". `BACKSPACE`: Reset zoom scale."\n\
+"  - `CTRL+P`: Play z-stack of frames as a movie."\n\
+"  - `CTRL+V`: Show/hide 3D view on bottom right zone."\n\
+"  - `CTRL+X`: Show/hide axes."\n\
+"  - `CTRL+(mousewheel)`: Go up/down."\n\
+"  - `SHIFT+(mousewheel)`: Go left/right."\n\
+"  - `Numeric PAD`: Zoom in/out (`+`/`-`) and move through zoomed image (digits)."\n\
+"  - `BACKSPACE`: Reset zoom scale."\n\
 \n\
 "* Actions specific to the **3D object viewer** (command 'display3d') are:"\n\
-\n\
-". `(mouse)+(left mouse button)`: Rotate 3D object."\n\
-". `(mouse)+(right mouse button)`: Zoom 3D object."\n\
-". `(mouse)+(middle mouse button)`: Shift 3D object."\n\
-". `F1 ... F6`: Toggle between different 3D rendering modes."\n\
-". `F7/F8`: Decrease/increase focale."\n\
-". `F9`: Select animation mode."\n\
-". `F10`: Select animation speed."\n\
-". `SPACE`: Start/stop animation."\n\
-". `CTRL+A`: Show/hide 3D axes."\n\
-". `CTRL+B`: Switch between available background."\n\
-". `CTRL+G`: Save 3D object, as numbered file 'gmic_xxxx.off'."\n\
-". `CTRL+L`: Show/hide outline."\n\
-". `CTRL+P`: Print current 3D pose on stderr."\n\
-". `CTRL+T`: Switch between single/double-sided 3D modes."\n\
-". `CTRL+V`: Start animation with video output."\n\
-". `CTRL+X`: Show/hide 3D bounding box."\n\
-". `CTRL+Z`: Enable/disable z-buffered rendering."
+"  - `(mouse)+(left mouse button)`: Rotate 3D object."\n\
+"  - `(mouse)+(right mouse button)`: Zoom 3D object."\n\
+"  - `(mouse)+(middle mouse button)`: Shift 3D object."\n\
+"  - `F1 ... F6`: Toggle between different 3D rendering modes."\n\
+"  - `F7/F8`: Decrease/increase focale."\n\
+"  - `F9`: Select animation mode."\n\
+"  - `F10`: Select animation speed."\n\
+"  - `SPACE`: Start/stop animation."\n\
+"  - `CTRL+A`: Show/hide 3D axes."\n\
+"  - `CTRL+B`: Switch between available background."\n\
+"  - `CTRL+G`: Save 3D object, as numbered file 'gmic_xxxx.off'."\n\
+"  - `CTRL+L`: Show/hide outline."\n\
+"  - `CTRL+P`: Print current 3D pose on stderr."\n\
+"  - `CTRL+T`: Switch between single/double-sided 3D modes."\n\
+"  - `CTRL+V`: Start animation with video output."\n\
+"  - `CTRL+X`: Show/hide 3D bounding box."\n\
+"  - `CTRL+Z`: Enable/disable z-buffered rendering."
 
   _section "Adding Custom Commands"
-
   _text \
 "* New custom commands can be added by the user, through the use of G'MIC **custom commands files**."\n\
-\n\
 "* A command file is a simple text file, where each line starts either by "\
 "~~command_name: command_definition~~ or ~~command_definition (continuation)~~"\n\
-\n\
 "* At startup, G'MIC automatically includes user's command file '$HOME/.gmic' (on __Unix__) or "\
 "'%APPDATA%/user.gmic' (on __Windows__). The CLI tool 'gmic' automatically runs the command "\
 "'cli_start' if defined."\n\
-\n\
 "* Custom command names must use character set `[a-zA-Z0-9_]` and cannot start with a number."\n\
-\n\
 "* Any '# comment' expression found in a custom commands file is discarded by the G'MIC parser, "\
 "wherever it is located in a line."\n\
-\n\
 "* In a custom command, the following '$-expressions' are recognized and substituted:"\n\
-\n\
-". '$""\*' is substituted by a copy of the specified string of arguments."\n\
-". '$\"*\"' is substituted by a copy of the specified string of arguments, each being double-quoted."\n\
-". '$""#' is substituted by the maximum index of known arguments (either specified by the user or set to a default "\
+"  - '$""\*' is substituted by a copy of the specified string of arguments."\n\
+"  - '$\"*\"' is substituted by a copy of the specified string of arguments, each being double-quoted."\n\
+"  - '$""#' is substituted by the maximum index of known arguments (either specified by the user or set to a default "\
 "value in the custom command)."\n\
-". '$""[]' is substituted by the list of selected image indices that have been specified in the command invocation."\n\
-". '$""?' is substituted by a printable version of '$""[]' to be used in command descriptions."\n\
-". '$i' and '${i}' are both substituted by the `i`-th specified argument. Negative indices such as '${-j}' are "\
+"  - '$""[]' is substituted by the list of selected image indices that have been specified in the command invocation."\n\
+"  - '$""?' is substituted by a printable version of '$""[]' to be used in command descriptions."\n\
+"  - '$i' and '${i}' are both substituted by the `i`-th specified argument. Negative indices such as '${-j}' are "\
 "allowed and refer to the `j`-th latest argument. '$""0' is substituted by the custom command name."\n\
-". '${i=default}' is substituted by the value of '$i' (if defined) or by its new value set to 'default' otherwise "\
+"  - '${i=default}' is substituted by the value of '$i' (if defined) or by its new value set to 'default' otherwise "\
 "('default' may be a `$-expression` as well)."\n\
-". '${subset}' is substituted by the argument values (separated by commas ',') of a specified argument subset. "\
+"  - '${subset}' is substituted by the argument values (separated by commas ',') of a specified argument subset. "\
 "For instance expression '$""{2--2}' is substitued by all specified command arguments except the first and the last "\
 "one. Expression '$""{^0}' is then substituted by all arguments of the invoked command (eq. to '$""*' if all "\
 "arguments have been indeed specified)."\n\
-". '$""=var' is substituted by the set of instructions that will assign each argument '$i' to the named variable "\
+"  - '$""=var' is substituted by the set of instructions that will assign each argument '$i' to the named variable "\
 "'var$i' (for i in '[0...$""#]'. This is particularly useful when a custom command want to manage variable numbers "\
 "of arguments. Variables names must use character set `[a-zA-Z0-9_]` and cannot start with a number."\n\
 \n\
 "* These particular `$-expressions` for custom commands are **always substituted**, even in "\
 "double-quoted items or when the dollar sign '$' is escaped with a backslash '\\$'. To avoid substitution, place an "\
 "empty double quoted string just after the '$' (as in '$\"\"1')."\n\
-\n\
 "* Specifying arguments may be skipped when invoking a custom command, by replacing them by commas ',' as in "\
 "expression ~~flower ,,3~~ Omitted arguments are set to their default values, which must be thus explicitly "\
 "defined in the code of the corresponding custom command (using default argument expressions as '$""{1=default}')."\n\
-\n\
 "* If one numbered argument required by a custom command misses a value, an error is thrown by the G'MIC interpreter."
 
   _section "List of Commands"
-
-  _text "All available G'MIC commands are listed below, by categories. An argument specified inside '[]' "\
+  _text \
+"All available G'MIC commands are listed below, by categories. An argument specified inside '[]' "\
 "or starting by '_' is optional except when standing for an existing image '[image]', where 'image' "\
 "can be either an index number or an image name. In this case, the '[]' characters are mandatory when writing the "\
 "item. A command marked with '(+)' is one of the **built-in** commands. Note also "\
@@ -1425,51 +1367,50 @@ reference :
 "to save and view images with the same aspect than those illustrated in the example codes."
 
   _section "Examples of Use"
-
-  _text "`gmic` is a generic image processing tool which can be used in a wide variety of situations. "\
-"The few examples below illustrate possible uses of this tool:"\n\
-\n\
-"### • View a list of images: "\n\
+  _text \
+"`gmic` is a generic image processing tool which can be used in a wide variety of situations. "\
+"The few examples below illustrate possible uses of this tool:"\n\n\
+"### View a list of images: "\n\
 "~~$ gmic file1.bmp file2.jpeg~~"\n\
-"### • Convert an image file: "\n\
+"### Convert an image file: "\n\
 "~~$ gmic input.bmp output output.jpg~~"\n\
-"### • Create a volumetric image from a movie sequence: "\n\
+"### Create a volumetric image from a movie sequence: "\n\
 "~~$ gmic input.mpg append z output output.hdr~~"\n\
-"### • Compute image gradient norm: "\n\
+"### Compute image gradient norm: "\n\
 "~~$ gmic input.bmp gradient_norm~~"\n\
-"### • Denoise a color image: "\n\
+"### Denoise a color image: "\n\
 "~~$ gmic image.jpg denoise 30,10 output denoised.jpg~~"\n\
-"### • Compose two images using overlay layer blending: "\n\
+"### Compose two images using overlay layer blending: "\n\
 "~~$ gmic image1.jpg image2.jpg blend overlay output blended.jpg~~"\n\
-"### • Evaluate a mathematical expression: "\n\
+"### Evaluate a mathematical expression: "\n\
 "~~$ gmic echo \"cos(pi/4)^2+sin(pi/4)^2={cos(pi/4)^2+sin(pi/4)^2}\"~~"\n\
-"### • Plot a 2D function: "\n\
+"### Plot a 2D function: "\n\
 "~~$ gmic 1000,1,1,2 fill \"X=3*(x-500)/500;X^2*sin(3*X^2)+if(c==0,u(0,-1),cos(X*10))\" plot~~"\
 " ^^../img/example_plot.png^^"\n\
-"### • Plot a 3D elevated function in random colors: "\n\
+"### Plot a 3D elevated function in random colors: "\n\
 "~~$ gmic 128,128,1,3,\"u(0,255)\" plasma 10,3 blur 4 sharpen 10000 "\
 "elevation3d[-1] \"'X=(x-64)/6;Y=(y-64)/6;100*exp(-(X^2+Y^2)/30)*abs(cos(X)*sin(Y))'\"~~"\
 " ^^../img/example_elevation3d.png^^"\n\
-"### • Plot the isosurface of a 3D volume: "\n\
+"### Plot the isosurface of a 3D volume: "\n\
 "~~$ gmic mode3d 5 moded3d 5 double3d 0 isosurface3d \"'x^2+y^2+abs(z)^abs(4*cos(x*y*z*3))'\",3~~"\
 " ^^../img/example_isosurface3d.png^^"\n\
-"### • Render a G'MIC 3D logo: "\n\
+"### Render a G'MIC 3D logo: "\n\
 "~~$ gmic 0 text G\\\47MIC,0,0,53,1,1,1,1 expand_xy 10,0 blur 1 normalize 0,100 +plasma 0.4 add blur 1 "\
 "elevation3d -0.1 moded3d 4~~"\
 " ^^../img/example_logo.png^^"\n\
-"### • Generate a 3D ring of torii: "\n\
+"### Generate a 3D ring of torii: "\n\
 "~~$ gmic repeat 20 torus3d 15,2 color3d[-1] \"{u(60,255)},{u(60,255)},{u(60,255)}\" *3d[-1] 0.5,1 if \"{$>%2}\" "\
 "rotate3d[-1] 0,1,0,90 fi add3d[-1] 70 add3d rotate3d 0,0,1,18 done moded3d 3 mode3d 5 double3d 0~~"\
 " ^^../img/example_torii.png^^"\n\
-"### • Create a vase from a 3D isosurface: "\n\
+"### Create a vase from a 3D isosurface: "\n\
 "~~$ gmic moded3d 4 isosurface3d \"'x^2+2*abs(y/2)*sin(2*y)^2+z^2-3',0\" sphere3d 1.5 sub3d[-1] 0,5 plane3d 15,15 "\
 "rotate3d[-1] 1,0,0,90 center3d[-1] add3d[-1] 0,3.2 color3d[-1] 180,150,255 color3d[-2] 128,255,0 "\
 "color3d[-3] 255,128,0 add3d~~"\
 " ^^../img/example_vase.png^^"\n\
-"### • Display filtered webcam stream: "\n\
+"### Display filtered webcam stream: "\n\
 "~~$ gmic apply_camera \\\"+mirror x +mirror y add div 4\\\"~~"\n\
 " ^^../img/example_camera.png^^"\n\
-"### • Launch a set of G'MIC interactive demos: "\n\
+"### Launch a set of G'MIC interactive demos: "\n\
 "~~$ gmic demos~~"
 
   _end um _section,_text,_end
@@ -1507,7 +1448,7 @@ reference_section_html :
 
 reference_end_section_html :
   if $!   # End previous section
-    ('"    <br/><br/>"\n\
+    ('"    <br/>"\n\
       "<!-- end_content -->"\n\
       "    </div><div class=\"section_end\"></div>"\n\
       "    <div id=\"include_footer\"></div>"\n\
@@ -1582,7 +1523,7 @@ reference_end_html :
     html.="<li><a href=\""$url"#top\">"$name"</a></li>"
   endl done
 
-  html.="    <ul/><br/>"\n\
+  html.="    <ul/>"\n\
         "<!-- end_content -->"\n\
         "    </div><div class=\"section_end\"></div>"\n\
         "    <div id=\"include_footer\"></div>"\n\
