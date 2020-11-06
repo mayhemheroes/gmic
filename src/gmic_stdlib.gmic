@@ -348,17 +348,17 @@ __help :
 gmd :
   replace {'\n'},4 # '\4' = original newlines
   gmd_gmic_$1
+  gmd_section_$1
+  gmd_list_$1
+  gmd_image_$1
   gmd_bold_$1
   gmd_italic_$1
   gmd_cite_$1
   gmd_mono_$1
   gmd_monobold_$1
   gmd_code_$1
-  gmd_image_$1
   gmd_braces_$1
   gmd_url_$1
-  gmd_list_$1
-  gmd_section_$1
   gmd_newline_$1
 
 #
@@ -368,21 +368,21 @@ gmd_bold : # **words in bold face**
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>80?(beg = -1);
     i==_'*' && j[1]==_'*'?(
-      beg<0 && (!y || isin(j[-1],_' ',_'(',4))?(beg = y):
+      beg<0 && (!y || isin(j[-1],_' ',_'(',_'\n',4))?(beg = y):
       beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
     )"
 
 gmd_braces : # { list of values }
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>80?(beg = -1);
-    beg<0 && i==_'{' && (!y || isin(j[-1],_' ',_'(',4))?(beg = y):
+    beg<0 && i==_'{' && (!y || isin(j[-1],_' ',_'(',_'\n',4))?(beg = y):
     beg>=0 && i==_'}'?(i[y] = 3; i[beg] = 2; beg = -1)"
 
 gmd_cite : # ''citation highlighted''
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>80?(beg = -1);
     i==_'\'' && j[1]==_'\''?(
-      beg<0 && (!y || isin(j[-1],_' ',_'(',4))?(beg = y):
+      beg<0 && (!y || isin(j[-1],_' ',_'(',_'\n',4))?(beg = y):
       beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
     )"
 
@@ -390,7 +390,7 @@ gmd_code : # ~~code block~~
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>512?(beg = -1);
     i==_'~' && j[1]==_'~'?(
-      beg<0 && (!y || isin(j[-1],_' ',4))?(beg = y):
+      beg<0 && (!y || isin(j[-1],_' ',_'\n',4))?(beg = y):
       beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
     )"
 
@@ -398,7 +398,7 @@ gmd_image : # ^^image_URL^^
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>512?(beg = -1);
     i==_'^' && j[1]==_'^'?(
-      beg<0 && (!y || isin(j[-1],_' ',_'(',4))?(beg = y):
+      beg<0 && (!y || isin(j[-1],_' ',_'(',_'\n',4))?(beg = y):
       beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
     )"
 
@@ -406,7 +406,7 @@ gmd_italic : # __words in italic__
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>80?(beg = -1);
     i==_'_' && j[1]==_'_'?(
-      beg<0 && (!y || isin(j[-1],_' ',_'(',4))?(beg = y):
+      beg<0 && (!y || isin(j[-1],_' ',_'(',_'\n',4))?(beg = y):
       beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
     )"
 
@@ -414,16 +414,16 @@ gmd_list1 : # \n* List item level-1
   1 a[^-1] [-1],y rm.
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>1024?(beg = -1);
-    beg<0 && i==_'*' && j[1]==_' ' && (!y || isin(j[-1],3,4))?(beg = y):
-    beg>=0 && (i==4 || y==h - 1)?(i[y] = 3; i[beg] = 2; beg = -1)"
+    beg<0 && i==_'*' && j[1]==_' ' && (!y || isin(j[-1],_'\n',3,4))?(beg = y):
+    beg>=0 && (isin(i,4,_'\n') || y==h - 1)?(i[y] = 3; i[beg] = 2; beg = -1)"
   autocrop 0
 
 gmd_list2 : # \n  - List item level-2
   1 a[^-1] [-1],y rm.
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>1024?(beg = -1);
-    beg<0 && i==_'-' && j[1]==_' ' && j[-1]==_' ' && j[-2]==_' ' && (!y || isin(j[-3],3,4))?(beg = y):
-    beg>=0 && (i==4 || y==h - 1)?(i[y] = 3; i[beg] = 2; beg = -1)"
+    beg<0 && i==_'-' && j[1]==_' ' && j[-1]==_' ' && j[-2]==_' ' && (!y || isin(j[-3],_'\n',3,4))?(beg = y):
+    beg>=0 && (isin(i,4,_'\n') || y==h - 1)?(i[y] = 3; i[beg] = 2; beg = -1)"
   autocrop 0
 
 gmd_list3 : # \n    . List item level-3
@@ -431,15 +431,15 @@ gmd_list3 : # \n    . List item level-3
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>1024?(beg = -1);
     beg<0 && i==_'.' && j[1]==_' ' && j[-1]==_' ' && j[-2]==_' ' && j[-3]==_' ' && j[-4]==_' ' &&
-      (!y || isin(j[-5],3,4))?(beg = y):
-    beg>=0 && (i==4 || y==h-1)?(i[y] = 3; i[beg] = 2; beg = -1)"
+      (!y || isin(j[-5],_'\n',3,4))?(beg = y):
+    beg>=0 && (isin(i,4,_'\n') || y==h-1)?(i[y] = 3; i[beg] = 2; beg = -1)"
   autocrop 0
 
 gmd_mono : # 'single_word_in_monospace'
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>80?(beg = -1);
     i==_'\''?(
-      beg<0 && (!y || isin(j[-1],_' ',_'(',4))?(beg = y):
+      beg<0 && (!y || isin(j[-1],_' ',_'(',_'\n',4))?(beg = y):
       beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
     )"
 
@@ -456,7 +456,7 @@ gmd_section1 : # # Section
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>80?(beg = -1);
     beg<0 && i==_'#' && j[1]==_' ' && (!y || isin(j[-1],_'\n',3,4))?(beg = y):
-    beg>=0 && (i==4 || y==h - 1)?(i[y] = 3; i[beg] = 2; beg = -1)"
+    beg>=0 && (isin(i,_'\n',4) || y==h - 1)?(i[y] = 3; i[beg] = 2; beg = -1)"
   autocrop 0
 
 gmd_section2 : # ## Section
@@ -464,7 +464,7 @@ gmd_section2 : # ## Section
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>80?(beg = -1);
     beg<0 && i==_'#' && j[1]==_'#' && j[2]==_' ' && (!y || isin(j[-1],_'\n',3,4))?(beg = y):
-    beg>=0 && (i==4 || y==h - 1)?(i[y] = 3; i[beg] = 2; beg = -1)"
+    beg>=0 && (isin(i,_'\n',4) || y==h - 1)?(i[y] = 3; i[beg] = 2; beg = -1)"
   autocrop 0
 
 gmd_section3 : # ### Section
@@ -472,7 +472,7 @@ gmd_section3 : # ### Section
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>80?(beg = -1);
     beg<0 && i==_'#' && j[1]==_'#' && j[2]==_'#' && j[3]==_' ' && (!y || isin(j[-1],_'\n',3,4))?(beg = y):
-    beg>=0 && (i==4 || y==h - 1)?(i[y] = 3; i[beg] = 2; beg = -1)"
+    beg>=0 && (isin(i,_'\n',4) || y==h - 1)?(i[y] = 3; i[beg] = 2; beg = -1)"
   autocrop 0
 
 #
