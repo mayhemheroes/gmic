@@ -331,7 +331,7 @@ __help :
 # - **words in bold face**
 # - `words in bold monospace`
 # - 'single_word_in_monospace'
-# - ''auto-link to section or command''
+# - ''reference to section or command''
 # - ~~code block~~
 # - ^^image_URL^^
 # - { list of values }
@@ -352,7 +352,7 @@ gmd :
   gmd_italic_$1
   gmd_mono_$1
   gmd_mono_bold_$1
-  gmd_auto_url_$1
+  gmd_reference_$1
   gmd_braces_$1
   gmd_code_$1
   gmd_image_$1
@@ -364,13 +364,6 @@ gmd :
 #
 # Commands that detect 'gmd' patterns and insert starting and closing tags '\2' and '\3'.
 #
-gmd_auto_url : # ''auto-link to section/command''
-  eval[^] ">begin(beg = -1);
-    beg>=0 && y - beg>80?(beg = -1);
-    i==_'\'' && j[1]==_'\''?(
-      beg<0 && (!y || isin(j[-1],_' ',_'(',_'\n',4))?(beg = y):
-      beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
-    )"
 
 gmd_bold : # **words in bold face**
   eval[^] ">begin(beg = -1);
@@ -451,6 +444,14 @@ gmd_mono_bold : # `words in monospace`
       beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
     )"
 
+gmd_reference : # ''reference to section/command''
+  eval[^] ">begin(beg = -1);
+    beg>=0 && y - beg>80?(beg = -1);
+    i==_'\'' && j[1]==_'\''?(
+      beg<0 && (!y || isin(j[-1],_' ',_'(',_'\n',4))?(beg = y):
+      beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
+    )"
+
 gmd_section1 : # # Section
   1 a[^-1] [-1],y rm.
   eval[^] ">begin(beg = -1);
@@ -478,16 +479,6 @@ gmd_section3 : # ### Section
 #
 # Commands that convert starting and closing tags into HTML.
 #
-gmd_auto_url_html :
-  gmd_auto_url
-  repeat $! l[$>]
-    s +,2,39 s +,3,39
-    if $!>1 repeat $! if "crop(#"$>"-1)==[2,39] && crop(#"$>"+1)==[3,39]" l[$>]
-       name={t} strvar $name url=${}.html rm
-       ('"<a class=\"gmd_auto_url\" href=\""$url"\">"$name"</a>"':y)
-    endl fi done fi
-    a y discard 2,39 discard 3,39
-  endl done
 
 gmd_bold_html :
   gmd_bold
@@ -539,7 +530,18 @@ gmd_mono_bold_html :
 gmd_newline_html :
   replace_str. "\4","<br/>\n"
 
-gmd_section_html : # # Section
+gmd_reference_html :
+  gmd_reference
+  repeat $! l[$>]
+    s +,2,39 s +,3,39
+    if $!>1 repeat $! if "crop(#"$>"-1)==[2,39] && crop(#"$>"+1)==[3,39]" l[$>]
+       name={t} strvar $name url=${}.html rm
+       ('"<a class=\"gmd_reference\" href=\""$url"\">"$name"</a>"':y)
+    endl fi done fi
+    a y discard 2,39 discard 3,39
+  endl done
+
+gmd_section_html :
   gmd_section1
   replace_str "\2 ","\n<div class=\"gmd_section1\">"
   gmd_section2
@@ -5429,7 +5431,7 @@ parse_cli_html :
       fi
       if ['$name']=='index' url_name=_index.html else url_name=$name.html fi
       if $is_builtin
-        html.="        <td><a href=\""$url_name"#top\"><span class=\"gmd_auto_url\" >"$name"</span></a></td>"\n
+        html.="        <td><a href=\""$url_name"#top\"><span class=\"gmd_reference\" >"$name"</span></a></td>"\n
       else
         html.="        <td><a href=\""$url_name"#top\">"$name"</a></td>"\n
       fi
@@ -5446,7 +5448,7 @@ parse_cli_html :
   # Add 'Shortcuts' category.
   html.="\n    <h1 class=\"h1_reference\"><a id=\"shortcuts\"></a>Command Shortcuts:</h1>"\n\
         "    <table class=\"table_shortcuts\">"\n\
-        "      <tr style=\"background-color: salmon;\"><td><b>Shortcut name</b></td><td>"\
+        "      <tr style=\"background-color: lightsalmon;\"><td><b>Shortcut name</b></td><td>"\
         "<b>Equivalent command name</b></td></tr>"\n
   repeat $! if s=['{$>,n}'];s[0]==_'_' continue fi l[$>]
     ('{n}') l. s -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm endl
@@ -5456,7 +5458,7 @@ parse_cli_html :
       ('$name') replace_str. ">","&gt;" replace_str. "<","&lt;" html_name={t} rm.
       html.="      <tr><td><a href=\""$eqto.html"#top\"><b>"$html_name"</b></a></td>"
       if $is_builtin
-        html.="<td><a href=\""$eqto.html"#top\"><span class=\"builtin_command\">"$eqto"</span></a></td>"
+        html.="<td><a href=\""$eqto.html"#top\"><span class=\"gmd_reference\">"$eqto"</span></a></td>"
       else
         html.="<td><a href=\""$eqto.html"#top\">"$eqto"</a></td>"
       fi
@@ -5466,7 +5468,8 @@ parse_cli_html :
   endl done
   if $is_table html.="    </table>"\n fi
 
-  html.="<!-- end_content -->"\n\
+  html.="<br/><hr/><!-- reference_navigation_bar -->"\n\
+"<!-- end_content -->"\n\
 "    </div><div class=\"section_end\"></div>"\n\
 "    <div id=\"include_footer\"></div>"\n\
 "  </body>"
