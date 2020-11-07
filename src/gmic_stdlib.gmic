@@ -351,8 +351,8 @@ gmd :
   gmd_bold_$1
   gmd_italic_$1
   gmd_mono_$1
-  gmd_mono_bold_$1
-  gmd_reference_$1
+  gmd_monobold_$1
+  gmd_link_$1
   gmd_braces_$1
   gmd_code_$1
   gmd_image_$1
@@ -403,6 +403,14 @@ gmd_italic : # __words in italic__
       beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
     )"
 
+gmd_link : # ''link to referenced section/command''
+  eval[^] ">begin(beg = -1);
+    beg>=0 && y - beg>80?(beg = -1);
+    i==_'\'' && j[1]==_'\''?(
+      beg<0 && (!y || isin(j[-1],_' ',_'(',_'\n',4))?(beg = y):
+      beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
+    )"
+
 gmd_list1 : # \n* List item level-1
   1 a[^-1] [-1],y rm.
   eval[^] ">begin(beg = -1);
@@ -436,19 +444,11 @@ gmd_mono : # 'single_word_in_monospace'
       beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
     )"
 
-gmd_mono_bold : # `words in monospace`
+gmd_monobold : # `words in monospace`
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>80?(beg = -1);
     i==96?(
       beg<0?(beg = y):
-      beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
-    )"
-
-gmd_reference : # ''reference to section/command''
-  eval[^] ">begin(beg = -1);
-    beg>=0 && y - beg>80?(beg = -1);
-    i==_'\'' && j[1]==_'\''?(
-      beg<0 && (!y || isin(j[-1],_' ',_'(',_'\n',4))?(beg = y):
       beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
     )"
 
@@ -508,6 +508,17 @@ gmd_italic_html :
   replace_str "\2_","<span class=\"gmd_italic\">"
   replace_str "\3_","</span>"
 
+gmd_link_html :
+  gmd_link
+  repeat $! l[$>]
+    s +,2,39 s +,3,39
+    if $!>1 repeat $! if "crop(#"$>"-1)==[2,39] && crop(#"$>"+1)==[3,39]" l[$>]
+       name={t} strvar $name url=${}.html rm
+       ('"<a class=\"gmd_link\" href=\""$url"\">"$name"</a>"':y)
+    endl fi done fi
+    a y discard 2,39 discard 3,39
+  endl done
+
 gmd_list_html :
   gmd_list1
   replace_str "\2 ","\n<div class=\"gmd_list1\">"
@@ -522,24 +533,13 @@ gmd_mono_html :
   replace_str "\2","<span class=\"gmd_mono\">"
   replace_str "\3","</span>"
 
-gmd_mono_bold_html :
-  gmd_mono_bold
-  replace_str "\2","<span class=\"gmd_mono_bold\">"
+gmd_monobold_html :
+  gmd_monobold
+  replace_str "\2","<span class=\"gmd_monobold\">"
   replace_str "\3","</span>"
 
 gmd_newline_html :
   replace_str. "\4","<br/>\n"
-
-gmd_reference_html :
-  gmd_reference
-  repeat $! l[$>]
-    s +,2,39 s +,3,39
-    if $!>1 repeat $! if "crop(#"$>"-1)==[2,39] && crop(#"$>"+1)==[3,39]" l[$>]
-       name={t} strvar $name url=${}.html rm
-       ('"<a class=\"gmd_reference\" href=\""$url"\">"$name"</a>"':y)
-    endl fi done fi
-    a y discard 2,39 discard 3,39
-  endl done
 
 gmd_section_html :
   gmd_section1
@@ -1415,16 +1415,16 @@ reference_section_html :
 "    <div id=\"include_header\"></div>"\n\n\
 "    <div class=\"section_title\"><p>Reference</p></div><div class=\"section_content\">"\n\
 "    <a id=\"top\"></a>"\n\
-"<!-- reference_navigation_top -->"\n\
+"<!-- ref_navigation_top -->"\n\
 "<!-- begin_content -->"\n\
-"      <h1 class=\"h1_reference\">"$name"</h1>"\n':y)
+"      <h1 class=\"ref_h1\">"$name"</h1>"\n':y)
   nm. $name
 
 reference_end_section_html :
   if $!   # End previous section
     ('"    <br/>"\n\
       "<!-- end_content -->"\n\
-      "<!-- reference_navigation_bottom -->"\n\
+      "<!-- ref_navigation_bottom -->"\n\
       "    </div><div class=\"section_end\"></div>"\n\
       "    <div id=\"include_footer\"></div>"\n\
       "  </body>"':y)
@@ -1435,24 +1435,6 @@ reference_text_html : skip "$*"
   ('"$*"':y)
   gmd. html
   if $!>1 a[-2,-1] y fi
-
-reference_b_html :
-  _end_tag.="</b>" u "<b>"
-
-reference_c_html :
-  _end_tag.="</span>" u "<span class=\"ref_c\">"
-
-reference_g_html :
-  _end_tag.="</span>" u "<span class=\"ref_g\">"
-
-reference_r_html :
-  _end_tag.="</span>" u "<span class=\"ref_r\">"
-
-reference_m_html :
-  _end_tag.="</span>" u "<span class=\"ref_m\">"
-
-reference_n_html :
-  u $_end_tag _end_tag=
 
 reference_gmic_html :
   u "<span class=\"gmd_gmic\"></span>"
@@ -1477,9 +1459,9 @@ reference_end_html :
 "    <div id=\"include_header\"></div>"\n\n\
 "    <div class=\"section_title\"><p>Reference</p></div><div class=\"section_content\">"\n\n\
 "    <a id=\"top\"></a>"\n\
-"<!-- reference_navigation_top -->"\n\
+"<!-- ref_navigation_top -->"\n\
 "<!-- begin_content -->"\n\
-"      <h1 class=\"h1_reference\">Preamble</h1>"\n\
+"      <h1 class=\"ref_h1\">Preamble</h1>"\n\
 "      <ul>\n"\
 "        <li>This document is distributed under the "\
 "<a href=\"http://www.gnu.org/licenses/fdl-1.3.txt\">GNU Free Documentation License</a>, version 1.3.</li>"\n\
@@ -1489,10 +1471,10 @@ reference_end_html :
 "<a target=\"_blank\" href=\"http://particularart.com/\">Garry Osgood</a>, which provide a user-friendly explanation "\
 "of most of the G'MIC basics (a bit outdated but mostly valid).</li>"\n\
 "      </ul>"\n\
-"      <h1 class=\"h1_reference\">Version</h1>"\n\
+"      <h1 class=\"ref_h1\">Version</h1>"\n\
 "      <p>This documentation covers the features of latest <span class=\"gmd_gmic\"></span> version: <b>"\
 ${-strver}"</b>.</p>"\n\
-"      <h1 class=\"h1_reference\">Table of Contents</h1>"\n\
+"      <h1 class=\"ref_h1\">Table of Contents</h1>"\n\
 "      <ul>"\n
   repeat $! l[$>]
     name={n} strvar $name url=${}.html
@@ -1501,7 +1483,7 @@ ${-strver}"</b>.</p>"\n\
 
   html.="\n    </ul>"\n\
         "<!-- end_content -->"\n\
-        "<!-- reference_navigation_bottom -->"\n\
+        "<!-- ref_navigation_bottom -->"\n\
         "    </div><div class=\"section_end\"></div>"\n\
         "    <div id=\"include_footer\"></div>"\n\
         "  </body>"
@@ -1523,7 +1505,7 @@ ${-strver}"</b>.</p>"\n\
     current={$>,n} strvar[] $current url_current=${}.html
     if $>>1 previous={{$>-1},n} strvar[] $previous url_previous=${}.html else previous= fi
     if $< next={{$>+1},n} strvar[] $next url_next=${}.html else next= fi
-    html_top="    <table class=\"reference_navigation_bar\"><tr><td>"\
+    html_top="    <table class=\"ref_navigation_top\"><tr><td>"\
               "<a href=\"index.html\">Table of Contents</a>"
     if $> html_top.="&nbsp;&nbsp;&#9656;&nbsp;&nbsp;<a href=\""$url_current"#top\">"$current"</a>" fi
     html_top.="</td><td>"
@@ -1532,14 +1514,14 @@ ${-strver}"</b>.</p>"\n\
     if narg($next) html_top.="<a href=\""$url_next"#top\">"$next"&nbsp;&nbsp;&#9654;</a>" fi
     html_top.="</td></tr></table>"
 
-    html_bottom="<div class=\"reference_navigation_bar_bottom\">"
+    html_bottom="<div class=\"ref_navigation_bottom\">"
     if narg($previous) html_bottom.="<a href=\""$url_previous"#top\">&#9664;&nbsp;&nbsp;"$previous"</a>" fi
     if narg($previous)" && "narg($next) html_bottom.="&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;" fi
     if narg($next) html_bottom.="<a href=\""$url_next"#top\">"$next"&nbsp;&nbsp;&#9654;</a>" fi
     html_bottom.="</div>"
 
-    replace_str[$>] "<!-- reference_navigation_top -->",$html_top
-    replace_str[$>] "<!-- reference_navigation_bottom -->",$html_bottom
+    replace_str[$>] "<!-- ref_navigation_top -->",$html_top
+    replace_str[$>] "<!-- ref_navigation_bottom -->",$html_bottom
   done
 
   # Save HTML pages.
@@ -4630,8 +4612,8 @@ parse_cli_html :
         html.="      </tr>"\n is_tr=0
       fi
       if $is_table html.="    </table><br/>"\n is_table=0 fi
-      html.="\n    <h1 class=\"h1_reference\"><a id=\""$category_id"\"></a>"$category":</h1>"\n\
-            "    <table class=\"table_category\">"\n
+      html.="\n    <h1 class=\"ref_h1\"><a id=\""$category_id"\"></a>"$category":</h1>"\n\
+            "    <table class=\"ref_table_category\">"\n
 
       ('$category') replace_str. ",","&#44;" lcategory={t} rm.
       list_categories.=$c$lcategory c=,
@@ -4647,7 +4629,7 @@ parse_cli_html :
       fi
       if ['$name']=='index' url_name=_index.html else url_name=$name.html fi
       if $is_builtin
-        html.="        <td><a href=\""$url_name"#top\"><span class=\"gmd_reference\" >"$name"</span></a></td>"\n
+        html.="        <td><a href=\""$url_name"#top\"><span class=\"gmd_link\" >"$name"</span></a></td>"\n
       else
         html.="        <td><a href=\""$url_name"#top\">"$name"</a></td>"\n
       fi
@@ -4662,8 +4644,8 @@ parse_cli_html :
   if $is_table html.="    </table>"\n fi
 
   # Add 'Shortcuts' category.
-  html.="\n    <h1 class=\"h1_reference\"><a id=\"shortcuts\"></a>Command Shortcuts:</h1>"\n\
-        "    <table class=\"table_shortcuts\">"\n\
+  html.="\n    <h1 class=\"ref_h1\"><a id=\"shortcuts\"></a>Command Shortcuts:</h1>"\n\
+        "    <table class=\"ref_table_shortcuts\">"\n\
         "      <tr style=\"background-color: lightsalmon;\"><td><b>Shortcut name</b></td><td>"\
         "<b>Equivalent command name</b></td></tr>"\n
   repeat $! if s=['{$>,n}'];s[0]==_'_' continue fi l[$>]
@@ -4674,7 +4656,7 @@ parse_cli_html :
       ('$name') replace_str. ">","&gt;" replace_str. "<","&lt;" html_name={t} rm.
       html.="      <tr><td><a href=\""$eqto.html"#top\"><b>"$html_name"</b></a></td>"
       if $is_builtin
-        html.="<td><a href=\""$eqto.html"#top\"><span class=\"gmd_reference\">"$eqto"</span></a></td>"
+        html.="<td><a href=\""$eqto.html"#top\"><span class=\"gmd_link\">"$eqto"</span></a></td>"
       else
         html.="<td><a href=\""$eqto.html"#top\">"$eqto"</a></td>"
       fi
@@ -4685,14 +4667,14 @@ parse_cli_html :
   if $is_table html.="    </table>"\n fi
 
   html.="<!-- end_content -->"\n\
-"<!-- reference_navigation_bottom -->"\n\
+"<!-- ref_navigation_bottom -->"\n\
 "    </div><div class=\"section_end\"></div>"\n\
 "    <div id=\"include_footer\"></div>"\n\
 "  </body>"
   ({'$html'}:y)
 
   # Insert TOC for categories.
-  toc_html="    <h1 class=\"h1_reference\" style=\"margin-top: 0;\">Categories:</h1><ul>"\n
+  toc_html="    <h1 class=\"ref_h1\" style=\"margin-top: 0;\">Categories:</h1><ul>"\n
   repeat narg({/$list_categories})
     arg 1+$>,{/$list_categories} category=${}
     ('$category') replace_str. "&#44;","," category={t} rm.
@@ -4752,7 +4734,7 @@ parse_cli_html :
 "    <div class=\"section_title\"><p>Reference</p></div><div class=\"section_content\" style=\"padding-top: 0;\">"\n\n\
 "      <a id=\"top\"></a>"\n\
 "<!-- begin_content -->"\n\
-"      <table class=\"reference_navigation_bar\"><tr><td>"\
+"      <table class=\"ref_navigation_top\"><tr><td>"\
 "<a href=\"index.html\">Table of Contents</a>&nbsp;&nbsp;&#9656;&nbsp;&nbsp;"\
 "<a href=\"list_of_commands.html#top\">List of Commands</a>&nbsp;&nbsp;&#9656;&nbsp;&nbsp;"\
 "<a href=\"list_of_commands.html#"$category_id"\">"$category"</a>&nbsp;&nbsp;&#9656;&nbsp;&nbsp;"\
@@ -4774,17 +4756,17 @@ parse_cli_html :
       is_builtin=0
       if $!" && find(#-1,'(+)')>=0" is_builtin=1 rm. fi
       if $is_builtin
-        html.="      <table class=\"h1_builtin\"><tr><td><h1 class=\"h1_reference\" style=\"margin-bottom: 0;\">"\
+        html.="      <table class=\"h1_builtin\"><tr><td><h1 class=\"ref_h1\" style=\"margin-bottom: 0;\">"\
               $name"</h1></td><td><span class=\"builtin_command_border\">Built-in command</span></td></tr></table>"\n
       else
-        html.="      <h1 class=\"h1_reference\">"$name"</h1>"\n
+        html.="      <h1 class=\"ref_h1\">"$name"</h1>"\n
       fi
       if $!
         html.="\n      <h2>Arguments:</h2>\n      <ul>"\n
         if $!>1 or="&nbsp;&nbsp;&nbsp; or" else or= fi
         repeat $! l[$>]
           if !$< or= fi
-          html.="        <li><span class=\"gmd_mono_bold\">"{t}"</span>"$or"</li>"\n
+          html.="        <li><span class=\"gmd_monobold\">"{t}"</span>"$or"</li>"\n
         endl done
         html.="      </ul>"\n
       else
@@ -4821,7 +4803,7 @@ parse_cli_html :
           shortcut="(unknown)"
           rm
         endl
-        html.="      <p><em>(equivalent to shortcut command <span class=\"gmd_mono_bold\">"$shortcut\
+        html.="      <p><em>(equivalent to shortcut command <span class=\"gmd_monobold\">"$shortcut\
               "</samp>)</em>.</p>"\n
 
       elif "find(#0,'See also:')>=0"
@@ -4904,7 +4886,7 @@ parse_cli_html :
 
     # Generate page.
     html.="<!-- end_content -->"\n\
-"<!-- reference_navigation_bottom -->"\n\
+"<!-- ref_navigation_bottom -->"\n\
 "    </div><div class=\"section_end\"></div>"\n\
 "    <div id=\"include_footer\"></div>"\n\
 "  </body>"
