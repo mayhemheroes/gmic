@@ -329,9 +329,9 @@ __help :
 # 'gmd' defines the following patterns:
 # - __words in italic__
 # - **words in bold face**
-# - ''highlighted citation''
 # - `words in bold monospace`
 # - 'single_word_in_monospace'
+# - ''auto-link to section or command''
 # - ~~code block~~
 # - ^^image_URL^^
 # - { list of values }
@@ -350,9 +350,9 @@ gmd :
   gmd_gmic_$1
   gmd_bold_$1
   gmd_italic_$1
-  gmd_cite_$1
   gmd_mono_$1
   gmd_monobold_$1
+  gmd_url_$1
   gmd_braces_$1
   gmd_code_$1
   gmd_image_$1
@@ -378,7 +378,7 @@ gmd_braces : # { list of values }
     beg<0 && i==_'{' && (!y || isin(j[-1],_' ',_'(',_'\n',4))?(beg = y):
     beg>=0 && i==_'}'?(i[y] = 3; i[beg] = 2; beg = -1)"
 
-gmd_cite : # ''citation highlighted''
+gmd_url : # ''auto-link to section/command''
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>80?(beg = -1);
     i==_'\'' && j[1]==_'\''?(
@@ -488,9 +488,9 @@ gmd_braces_html :
   replace_str "\2","<span class=\"gmd_braces\">{"
   replace_str "\3","}</span>"
 
-gmd_cite_html :
-  gmd_cite
-  replace_str "\2'","<span class=\"gmd_cite\">&ldquo;"
+gmd_url_html :
+  gmd_url
+  replace_str "\2'","<span class=\"gmd_url\">&ldquo;"
   replace_str "\3'","&rdquo;</span>"
 
 gmd_code_html :
@@ -1250,7 +1250,7 @@ reference :
 "  - `Mouse wheel` or `PADD+/-`: Zoom in/out."\n\
 "  - `Arrow keys`: Move image left/right/up/down."\n\
 "  - `CTRL+A`: Enable/disable transparency (show alpha channel)."\n\
-"  - `CTRL+N`: Change normalization mode (can be { none | normal | channel-by-channel})."\n\
+"  - `CTRL+N`: Change normalization mode (can be { none | normal | channel-by-channel })."\n\
 "  - `CTRL+SPACE`: Reset view."\n\
 "  - `CTRL+X`: Show/hide axes."\n\
 "  - `CTRL+Z`: Hold/release aspect ratio."\n\
@@ -9348,7 +9348,7 @@ med :
 #@cli : Multiply selected images by specified value, image or mathematical expression, \
 # or compute the pointwise product of selected images.
 #@cli : (eq. to '*').
-#@cli : See also: 'add', 'sub', 'div'.
+#@cli : See also: ''add'', ''sub'', ''div''.
 #@cli : $ image.jpg +mul 2 cut 0,255
 #@cli : $ image.jpg (1,2,3,4,5,6,7,8) ri[-1] [0] mul[0] [-1]
 #@cli : $ image.jpg mul '1-3*abs(x/w-0.5)' cut 0,255
@@ -14054,7 +14054,7 @@ curvature :
 #@cli : Compute the discrete cosine transform of selected images, optionally along the specified axes only.
 #@cli : Output images are always evenly sized, so this command may change the size of the selected images.
 #@cli : Default values: (no arg)
-#@cli : See also: 'idct'.
+#@cli : See also: ''idct''.
 #@cli : $ image.jpg +dct +idct[-1] abs[-2] +[-2] 1 log[-2]
 #@cli : $$ _dct-and-idct
 dct : skip ${1=0}
@@ -14447,6 +14447,7 @@ erode_threshold : check "isint($1) && $1>=1 && isint(${2=$1}) && $2>=1 && isint(
 #@cli fft : _{ x | y | z }...{ x | y | z } : (+)
 #@cli : Compute the direct fourier transform (real and imaginary parts) of selected images,
 #@cli : optionally along the specified axes only.
+#@cli : See also: ''ifft''.
 #@cli : $ image.jpg luminance +fft append[-2,-1] c norm[-1] log[-1] shift[-1] 50%,50%,0,0,2
 #@cli : $ image.jpg w2={int(w/2)} h2={int(h/2)} fft shift $w2,$h2,0,0,2 ellipse $w2,$h2,30,30,0,1,0 \
 # shift -$w2,-$h2,0,0,2 ifft remove[-1]
@@ -14545,7 +14546,7 @@ heat_flow : skip ${1=10},${2=30},${3=0}
 #@cli : Output images are always evenly sized, so this command may change the size of the selected images.
 #@cli : (dct images obtained with the 'dct' command are evenly sized anyway).
 #@cli : Default values: (no arg)
-#@cli : See also: 'dct'.
+#@cli : See also: ''dct''.
 #@cli : $$ _dct-and-idct
 idct : skip ${1=0}
   ('"$1"')
@@ -14606,6 +14607,7 @@ iee :
 #@cli ifft : _{ x | y | z }...{ x | y | z } : (+)
 #@cli : Compute the inverse fourier transform (real and imaginary parts) of selected images.
 #@cli : optionally along the specified axes only.
+#@cli : See also: ''fft''.
 #@cli : $$ _fft
 
 #@cli ihaar : scale>0
