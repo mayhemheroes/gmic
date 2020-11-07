@@ -1518,20 +1518,28 @@ ${-strver}"</b>.</p>"\n\
     endl else nm. "List of Commands" rv[$ind,-1] rm. fi
   fi
 
-  # Insert top navigation bar on each page.
+  # Insert top and bottom navigation bar into pages.
   repeat $!
     current={$>,n} strvar[] $current url_current=${}.html
     if $>>1 previous={{$>-1},n} strvar[] $previous url_previous=${}.html else previous= fi
     if $< next={{$>+1},n} strvar[] $next url_next=${}.html else next= fi
-    html="    <table class=\"reference_navigation_bar\"><tr><td>"\
-         "<a href=\"index.html\">Table of Contents</a>"
-    if $> html.="&nbsp;&nbsp;&#9656;&nbsp;&nbsp;<a href=\""$url_current"#top\">"$current"</a>" fi
-    html.="</td><td>"
-    if narg($previous) html.="<a href=\""$url_previous"#top\">&#9664;&nbsp;&nbsp;"$previous"</a>" fi
-    if narg($previous)" && "narg($next) html.="&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;" fi
-    if narg($next) html.="<a href=\""$url_next"#top\">"$next"&nbsp;&nbsp;&#9654;</a>" fi
-    html.="</td></tr></table>"
-    replace_str[$>] "<!-- reference_navigation_top -->",$html
+    html_top="    <table class=\"reference_navigation_bar\"><tr><td>"\
+              "<a href=\"index.html\">Table of Contents</a>"
+    if $> html_top.="&nbsp;&nbsp;&#9656;&nbsp;&nbsp;<a href=\""$url_current"#top\">"$current"</a>" fi
+    html_top.="</td><td>"
+    if narg($previous) html_top.="<a href=\""$url_previous"#top\">&#9664;&nbsp;&nbsp;"$previous"</a>" fi
+    if narg($previous)" && "narg($next) html_top.="&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;" fi
+    if narg($next) html_top.="<a href=\""$url_next"#top\">"$next"&nbsp;&nbsp;&#9654;</a>" fi
+    html_top.="</td></tr></table>"
+
+    html_bottom="<div class=\"reference_navigation_bar_bottom\">"
+    if narg($previous) html_bottom.="<a href=\""$url_previous"#top\">&#9664;&nbsp;&nbsp;"$previous"</a>" fi
+    if narg($previous)" && "narg($next) html_bottom.="&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;" fi
+    if narg($next) html_bottom.="<a href=\""$url_next"#top\">"$next"&nbsp;&nbsp;&#9654;</a>" fi
+    html_bottom.="</div>"
+
+    replace_str[$>] "<!-- reference_navigation_top -->",$html_top
+    replace_str[$>] "<!-- reference_navigation_bottom -->",$html_bottom
   done
 
   # Save HTML pages.
