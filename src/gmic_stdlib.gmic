@@ -1535,35 +1535,6 @@ ${-strver}"</b>.</p>"\n\
   x "ln -fs table_of_contents.html index.html"
   rm
 
-# Decorate strings between single quotes in selected strings.
-# $1 = Try to detect and relink command names = { 0=false | 1=true }.
-_decorate_singlequotes_html :
-  is_com=0
-  eval[^] ">begin(beg = -1);
-            i==_'\''?(
-              beg<0?(beg = y):
-              (for (ok = 1; p = beg + 1, p<y, ++p, i[p]<=_' ' || p>beg + 64?(ok = 0; break()));
-              ok?(
-                i[beg] = 2;
-                i[y] = 3;
-                $1 && y>beg?( # Check if what's inside quotes is an existing command
-                  c = lowercase(i[beg + 1]);
-                  is_com = (c>=_'a' && c<=_'z') || c==_'_';
-                  for (p = beg + 1, is_com && p<y, ++p,
-                    c = lowercase(i[p]);
-                    is_com = (c>=_'a' && c<=_'z') || (c>=_'0' && c<=_'9') || c==_'_'
-                  );
-                  is_com?run('+rows ',beg + 1,',',y - 1,' com={t} rm. if 0${_is_$com}==1 is_com=1 fi');
-                );
-              ); beg = -1))"
-  if $is_com
-    replace_str "\2","<a href=\""$com.html"#top\"><samp class=\"samp_color\">"
-    replace_str "\3","</samp></a>"
-  else
-    replace_str "\2","<samp class=\"samp_color\">"
-    replace_str "\3","</samp>"
-  fi
-
 # Commands to output help in ascii format.
 _help_header_ascii :
   __help_header_ascii
@@ -5642,7 +5613,7 @@ parse_cli_html :
           rm[0,1]
         fi
         a y
-        _decorate_singlequotes_html 1
+        gmd html
         html.="      "{t}\n
 
       elif "find(#0,'Default value:')>=0 || find(#0,'Default values:')>=0"
