@@ -157,7 +157,7 @@
 #
 #   Use '_none_' as a special command or preview_command to tell the plug-in that the entry requires no G'MIC call.
 #
-#   A G'MIC command can set new values for each filter parameter, through the status (see command 'status').
+#   A G'MIC command can set new values for each filter parameter, through the status (see command ''status'').
 #   To do so, the returned status must follow the syntax :
 #   '{params1}{params2}{..}{paramsN}' where N must be exactly equal to the number of parameters
 #   for the current filter. Optionnally, you can append to each {param} its visibility state suffix ( e.g: {param}_1 ).
@@ -351,8 +351,8 @@ gmd :
   gmd_bold_$1
   gmd_italic_$1
   gmd_mono_$1
-  gmd_monobold_$1
-  gmd_autourl_$1
+  gmd_mono_bold_$1
+  gmd_auto_url_$1
   gmd_braces_$1
   gmd_code_$1
   gmd_image_$1
@@ -364,7 +364,7 @@ gmd :
 #
 # Commands that detect 'gmd' patterns and insert starting and closing tags '\2' and '\3'.
 #
-gmd_autourl : # ''auto-link to section/command''
+gmd_auto_url : # ''auto-link to section/command''
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>80?(beg = -1);
     i==_'\'' && j[1]==_'\''?(
@@ -439,11 +439,11 @@ gmd_mono : # 'single_word_in_monospace'
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>80?(beg = -1);
     i==_'\''?(
-      beg<0 && (!y || isin(j[-1],_' ',_'(',_'\n',4))?(beg = y):
+      beg<0 && j[1]!=_'\'' && (!y || isin(j[-1],_' ',_'(',_'\n',4))?(beg = y):
       beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
     )"
 
-gmd_monobold : # `words in monospace`
+gmd_mono_bold : # `words in monospace`
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>80?(beg = -1);
     i==96?(
@@ -478,10 +478,10 @@ gmd_section3 : # ### Section
 #
 # Commands that convert starting and closing tags into HTML.
 #
-gmd_autourl_html :
-  gmd_autourl
-  replace_str "\2'","<span class=\"gmd_autourl\">&ldquo;"
-  replace_str "\3'","&rdquo;</span>"
+gmd_auto_url_html :
+  gmd_auto_url
+  replace_str "\2'","<a href=\"index.html\" class=\"gmd_auto_url\">"
+  replace_str "\3'","</a>"
 
 gmd_bold_html :
   gmd_bold
@@ -525,9 +525,9 @@ gmd_mono_html :
   replace_str "\2","<span class=\"gmd_mono\">"
   replace_str "\3","</span>"
 
-gmd_monobold_html :
-  gmd_monobold
-  replace_str "\2","<span class=\"gmd_monobold\">"
+gmd_mono_bold_html :
+  gmd_mono_bold
+  replace_str "\2","<span class=\"gmd_mono_bold\">"
   replace_str "\3","</span>"
 
 gmd_newline_html :
@@ -598,7 +598,7 @@ reference :
 "penultimate one, etc. Thus, if the list has 4 images, '[1]' and '[-3]' both designate the second image of the list."\n\
 "* A named image may be also indicated by '[name]', if 'name' uses the character set `[a-zA-Z0-9_]` and does not "\
 "start with a number. Image names can be set or reassigned at any moment during the processing pipeline "\
-"(see command 'name' for this purpose)."\n\
+"(see command ''name'' for this purpose)."\n\
 "* G'MIC defines a set of various commands and substitution mechanisms to allow the design of complex "\
 "pipelines and operators managing this list of images, in a very flexible way: You can insert or remove images "\
 "in the list, rearrange image order, process images (individually or grouped), merge image data together, "\
@@ -631,7 +631,7 @@ reference :
 "* Considering `float`-valued pixels ensure to keep the numerical precision when executing image processing "\
 "pipelines. For image input/output operations, you may want to prescribe the image datatype to be different than "\
 "`float` (like `bool`, `char`, `int`, etc.). This is possible by specifying it as a file option when using "\
-"I/O commands. (see section __Input/Output Properties__ to learn more about file options)."
+"I/O commands. (see section ''Input/Output Properties'' to learn more about file options)."
 
   _section "Items of a Processing Pipeline"
   _text \
@@ -654,7 +654,7 @@ reference :
 "* The following special input strings may be used as G'MIC items to create and insert new "\
 "images with prescribed values, at the end of the image list:"\n\
 "  - '[selection]' or '[selection]xN': Insert 1 or N copies of already existing images. "\
-"'selection' may represent one or several images (see section __Command Items and Selections__ to learn more "\
+"'selection' may represent one or several images (see section ''Command Items and Selections'' to learn more "\
 "about selections)."\n\
 "  - 'width[%],_height[%],_depth[%],_spectrum[%],_values[xN]': Insert one or N images with specified "\
 "size and values (adding '%' to a dimension means *_percentage of the size along the same axis_*, "\
@@ -663,7 +663,7 @@ reference :
 "'[image]'. 'values' can be either a sequence of numbers separated by commas ',', "\
 "or a mathematical expression, as e.g. in input item '256,256,1,3,[x,y,128]' which "\
 "creates a `256x256` RGB color image with a spatial shading on the red and green channels. "\
-"(see section __Mathematical Expressions__ to learn more about mathematical expressions). "\n\
+"(see section ''Mathematical Expressions'' to learn more about mathematical expressions). "\n\
 "  - '(v1,v2,..)[xN]': Insert one or `N` new images from specified prescribed values. Value separator "\
 "inside parentheses can be ',' (column separator), ';' (row separator), '/' (slice separator) or "\
 "'^' (channel separator). For instance, expression '(1,2,3;4,5,6;7,8,9)' creates a 3x3 matrix (scalar image), "\
@@ -673,7 +673,7 @@ reference :
 "the main orientation of the image. Delimiter can be 'x' (eq. to ',' which is the default), "\
 "'y' (eq. to ';'), 'z' (eq. to '/') or 'c' (eq. to '^'). "\
 "When specified delimiter is ',', ';', '/' or '^', the expression is actually equivalent to "\
-"'({'string'[:delimiter]})[xN]' (see section __Substitution Rules__ for more information on the syntax)."\n\
+"'({'string'[:delimiter]})[xN]' (see section ''Substitution Rules'' for more information on the syntax)."\n\
 "  - '0[xN]': Insert one or N new `empty` images, containing no pixel data. "\
 "Empty images are used only in rare occasions."\n\
 \n\
@@ -683,7 +683,7 @@ reference :
 "character '_'. In that case, it becomes also accessible by any command invoked outside the current command "\
 "scope (global variable)."\n\
 "* If a variable name starts with two underscores `__`, the global variable is also shared among different threads "\
-"and can be read/set by commands running in parallel (see command 'parallel' for this purpose). "\
+"and can be read/set by commands running in parallel (see command ''parallel'' for this purpose). "\
 "Otherwise, it remains local to the thread that defined it."\n\
 "* Numerical variables can be updated with the use of these special operators: "\
 "'+=' (addition), '-=' (subtraction), '*=' (multiplication), '/=' (division), '%=' (modulo), '&=' (bitwise and), "\
@@ -748,7 +748,7 @@ reference :
 \n\
 "* Most of the existing commands in G'MIC are actually defined as __custom commands__. "\n\
 "* A user can easily add its own custom commands to the G'MIC interpreter (see section "\
-" __Adding Custom Commands__ for more details). New built-in commands cannot be added (unless you modify the "\
+" ''Adding Custom Commands'' for more details). New built-in commands cannot be added (unless you modify the "\
 "G'MIC interpreter source code and recompile it)."
 
   _section "Input/Output Properties"
@@ -765,7 +765,7 @@ reference :
 "* G'MIC is able to manage __3D objects__ that may be read from files or generated by G'MIC commands. "\
 "A 3D object is stored as a one-column scalar image containing the object data, in the "\
 "following order: { magic_number; sizes; vertices; primitives; colors; opacities }. "\
-"These 3D representations can be then processed as regular images (see command 'split3d' for accessing each of these "\
+"These 3D representations can be then processed as regular images (see command ''split3d'' for accessing each of these "\
 "3D object data separately)."\n\
 "* Be aware that usual file formats may be sometimes not adapted to store all the available image "\
 "data, since G'MIC uses float-valued image buffers. For instance, saving an image that was "\
@@ -856,7 +856,7 @@ reference :
 "* '$$name' and '$${name}' are both substituted by the G'MIC script code of the specified named "\
 "`custom command`, or by an empty string if no custom command with specified name exists. "\n\
 "* '${\"-pipeline\"}' is substituted by the __status value__ after the execution of the specified "\
-"G'MIC pipeline (see command 'status'). Expression '${}' thus stands for the current status value."\n\
+"G'MIC pipeline (see command ''status''). Expression '${}' thus stands for the current status value."\n\
 "* '{``string}' (starting with two backquotes) is substituted by a double-quoted version of the specified string."\n\
 "* '{/string}' is substituted by the escaped version of the specified string."\n\
 "* '{'string'[:delimiter]}' (between single quotes) is substituted by the sequence of character codes "\
@@ -876,7 +876,7 @@ reference :
 "  - '@subset': The sequence of image values corresponding to the specified subset, and separated by commas `,`. "\n\
 "  - Any other 'feature' is considered as a __mathematical expression__ associated to the image '[image]' and is "\
 "substituted by the result of its evaluation (float value). For instance, expression '{0,w+h}' is substituted by "\
-"the sum of the width and height of the first image (see section __Mathematical Expressions__ for more details). "\
+"the sum of the width and height of the first image (see section ''Mathematical Expressions'' for more details). "\
 "If a mathematical expression starts with an underscore `_`, the resulting value is truncated to a readable format. "\
 "For instance, item '{_pi}' is substituted by '3.14159' (while '{pi}' is substituted by '3.141592653589793')."\n\
 "  - A 'feature' delimited by backquotes is replaced by a string whose character codes correspond to the list of "\
@@ -5587,7 +5587,7 @@ parse_cli_html :
         if $!>1 or="&nbsp;&nbsp;&nbsp; or" else or= fi
         repeat $! l[$>]
           if !$< or= fi
-          html.="        <li><span class=\"gmd_monobold\">"{t}"</span>"$or"</li>"\n
+          html.="        <li><span class=\"gmd_mono_bold\">"{t}"</span>"$or"</li>"\n
         endl done
         html.="      </ul>"\n
       else
@@ -5624,7 +5624,7 @@ parse_cli_html :
           shortcut="(unknown)"
           rm
         endl
-        html.="      <p><em>(equivalent to shortcut command <span class=\"gmd_monobold\">"$shortcut\
+        html.="      <p><em>(equivalent to shortcut command <span class=\"gmd_mono_bold\">"$shortcut\
               "</samp>)</em>.</p>"\n
 
       elif "find(#0,'See also:')>=0"
