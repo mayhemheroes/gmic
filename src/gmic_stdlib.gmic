@@ -480,8 +480,14 @@ gmd_section3 : # ### Section
 #
 gmd_auto_url_html :
   gmd_auto_url
-  replace_str "\2'","<a href=\"index.html\" class=\"gmd_auto_url\">"
-  replace_str "\3'","</a>"
+  repeat $! l[$>]
+    s +,2,39 s +,3,39
+    if $!>1 repeat $! if "crop(#"$>"-1)==[2,39] && crop(#"$>"+1)==[3,39]" l[$>]
+       name={t} strvar $name url=${}.html rm
+       ('"<a class=\"gmd_auto_url\" href=\""$url"\">"$name"</a>"':y)
+    endl fi done fi
+    a y discard 2,39 discard 3,39
+  endl done
 
 gmd_bold_html :
   gmd_bold
