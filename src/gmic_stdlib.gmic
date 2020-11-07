@@ -352,7 +352,7 @@ gmd :
   gmd_italic_$1
   gmd_mono_$1
   gmd_monobold_$1
-  gmd_url_$1
+  gmd_autourl_$1
   gmd_braces_$1
   gmd_code_$1
   gmd_image_$1
@@ -364,6 +364,14 @@ gmd :
 #
 # Commands that detect 'gmd' patterns and insert starting and closing tags '\2' and '\3'.
 #
+gmd_autourl : # ''auto-link to section/command''
+  eval[^] ">begin(beg = -1);
+    beg>=0 && y - beg>80?(beg = -1);
+    i==_'\'' && j[1]==_'\''?(
+      beg<0 && (!y || isin(j[-1],_' ',_'(',_'\n',4))?(beg = y):
+      beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
+    )"
+
 gmd_bold : # **words in bold face**
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>80?(beg = -1);
@@ -377,14 +385,6 @@ gmd_braces : # { list of values }
     beg>=0 && y - beg>80?(beg = -1);
     beg<0 && i==_'{' && (!y || isin(j[-1],_' ',_'(',_'\n',4))?(beg = y):
     beg>=0 && i==_'}'?(i[y] = 3; i[beg] = 2; beg = -1)"
-
-gmd_url : # ''auto-link to section/command''
-  eval[^] ">begin(beg = -1);
-    beg>=0 && y - beg>80?(beg = -1);
-    i==_'\'' && j[1]==_'\''?(
-      beg<0 && (!y || isin(j[-1],_' ',_'(',_'\n',4))?(beg = y):
-      beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
-    )"
 
 gmd_code : # ~~code block~~
   eval[^] ">begin(beg = -1);
@@ -478,6 +478,11 @@ gmd_section3 : # ### Section
 #
 # Commands that convert starting and closing tags into HTML.
 #
+gmd_autourl_html :
+  gmd_autourl
+  replace_str "\2'","<span class=\"gmd_autourl\">&ldquo;"
+  replace_str "\3'","&rdquo;</span>"
+
 gmd_bold_html :
   gmd_bold
   replace_str "\2*","<span class=\"gmd_bold\">"
@@ -487,11 +492,6 @@ gmd_braces_html :
   gmd_braces
   replace_str "\2","<span class=\"gmd_braces\">{"
   replace_str "\3","}</span>"
-
-gmd_url_html :
-  gmd_url
-  replace_str "\2'","<span class=\"gmd_url\">&ldquo;"
-  replace_str "\3'","&rdquo;</span>"
 
 gmd_code_html :
   gmd_code
