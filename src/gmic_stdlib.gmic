@@ -492,8 +492,8 @@ gmd_braces_html :
 
 gmd_code_html :
   gmd_code
-  replace_str "\2~","\n<div class=\"gmd_code\">"
-  replace_str "\3~","</div>\n"
+  replace_str "\2~","\n<pre class=\"gmd_code\">"
+  replace_str "\3~","</pre>\n"
 
 gmd_gmic_html :
   replace_str "G'MIC","<span class=\"gmd_gmic\"></span>"
@@ -4832,7 +4832,7 @@ parse_cli_html :
 
       elif i==_'$'" && "i[1]!=_'$'
 
-        # Found example description
+        # Found 'Example of use' description.
         rows 1,100% autocrop {'" "'}
         replace_str "image.jpg","<a href=\"img/image.jpg\" class=\"highslide\" onclick=\"return hs.expand(this)\">"\
                     "image.jpg</a>"
@@ -4843,15 +4843,15 @@ parse_cli_html :
            if !$is_tutorial_tag html.="<tutorial_tag>" is_tutorial_tag=1 fi
            html.="\n      <h2>Example"${"if "$nb_examples">1 u s else u \"\" fi"}" of use:</h2>"\n fi
         if $nb_examples!=1 html.="      <h3>&bull;&nbsp;Example \#"$n_example"</h3>"\n fi
-        html.="      <div class=\"gmd_code\">$ gmic "$example"</div>"\n
+        html.="      <pre class=\"gmd_code\">$ gmic "$example"</pre>"
 
         if isfile('img/f_$basename') # Single output image
           html.="      <span><a href=\"img/"f_$basename"\" class=\"highslide\" onclick=\"return hs.expand(this)\">"\
                 "<img class=\"center_image\" src=\"img/"t_$basename"\"/></a>"\
                 "<div class=\"highslide-caption\">Command: <b>"$example"</b></div></span>"\n
-        else # Multiple output images
+        elif isfile('img/f0_$basename') # Multiple output images
           i=0
-          html.="        <div class=\"center\">"\n
+          html.="        <div class=\"center\">"
           for isfile('img/f${i}_$basename')
             html.="        <span><a href=\"img/"f${i}_$basename"\" class=\"highslide\" "\
                   "onclick=\"return hs.expand(this)\">"\
@@ -4859,7 +4859,7 @@ parse_cli_html :
                   "<div class=\"highslide-caption\">Command: <b>"$example"</b></div></span>"\n
             i+=1
           done
-          html.="        </div>"\n
+          html.="        </div>"
         fi
 
       elif i==_'$'" && "i[1]==_'$'
@@ -24298,6 +24298,8 @@ fact : check isint($1)
 
 #@cli fibonacci : N>=0
 #@cli : Return the Nth number of the Fibonacci sequence.
+#@cli : $ echo ${"fibonacci 10"}
+#@cli : ~~[gmic]-0./ Start G'MIC interpreter.\n[gmic]-0./ 55\n[gmic]-0./ End G'MIC interpreter.~~
 fibonacci : check "$1>=0"
   u {N=$1;if(N<2,N,for(n=N;F0=0;F1=1,n=n-1,F2=F0+F1;F0=F1;F1=F2))}
 
