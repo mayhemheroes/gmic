@@ -1,4 +1,4 @@
-cd#@gmic
+#@gmic
 #
 #  File        : gmic_stdlib.gmic
 #                ( G'MIC command file )
@@ -484,6 +484,9 @@ gmd_bold_ascii :
   replace_str "\3*",$_gmic_n
 
 gmd_braces_ascii :
+  gmd_braces
+  replace_str "\2",$_gmic_c
+  replace_str "\3",$_gmic_n
 
 gmd_code_ascii :
   gmd_code
@@ -494,7 +497,7 @@ gmd_gmic_ascii :
 
 gmd_image_ascii :
   gmd_image
-  replace_str "\2^","[image]"
+  replace_str "\2^","\n[image]"
   replace_str "\3^","\n"
 
 gmd_italic_ascii :
@@ -538,12 +541,12 @@ gmd_newline_ascii :
 
 gmd_section_ascii :
   gmd_section1
-  replace_str "\2 ",\n$_gmic_c$_gmic_b"# "
+  replace_str "\2 ","\n"$_gmic_c$_gmic_b"# "
   gmd_section2
-  replace_str "\2# ",\n$_gmic_c$_gmic_b"## "
+  replace_str "\2# ","\n"$_gmic_c$_gmic_b"## "
   gmd_section3
-  replace_str "\2## ",\n$_gmic_c$_gmic_b"### "
-  replace_str "\3",$_gmic_n\n
+  replace_str "\2## ","\n"$_gmic_c$_gmic_b"### "
+  replace_str "\3",$_gmic_n"\n"
 
 gmd_url_ascii :
 
@@ -1477,7 +1480,14 @@ reference_section_ascii :
 
 reference_text_ascii :
   strcut[] "$*",100 ('${}')
-  gmd. ascii autocrop. {'\n'}
+#  ('"$*"':y) autocrop. {'\n'}
+  l.
+    s +,{'\n'}
+    if $!>1 -[1--2:2] {'" "'} r[1--2:2] 1,3,1,1,0 +[1--2:2] {'" "'} fi
+    a y
+  endl
+
+  gmd. ascii
   +e[] \n"    "{t}
   rm.
 
@@ -25531,7 +25541,9 @@ strcut : check "${2=80}>0" skip "${3=\n}"
       l_max = $2;
       beg = end = target = 0;
       while (end<h#0,
-        end - beg + 1<=l_max?++end:(
+        end - beg + 1<=l_max?(
+          ++end
+        ):(
           for (nend = end, nend>beg + 8 && !(isin(c=i[#0,nend],_' ',_',',_'|' ||
             (c==_';' && i[#0,nend-1]!=27))), --nend);
           nend>beg + 8?(end = nend);
