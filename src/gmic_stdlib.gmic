@@ -364,7 +364,6 @@ gmd :
 #
 # Commands that detect 'gmd' patterns and insert starting and closing tags '\2' and '\3'.
 #
-
 gmd_bold : # **words in bold face**
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>80?(beg = -1);
@@ -479,7 +478,6 @@ gmd_section3 : # ### Section
 #
 # Commands that convert starting and closing tags into HTML.
 #
-
 gmd_bold_html :
   gmd_bold
   replace_str "\2*","<span class=\"gmd_bold\">"
@@ -574,8 +572,83 @@ gmd_url_html : # Replace 'http[s]://address.url' by HTML link.
     fi
   endl done
 
+#
+# Commands that convert starting and closing tags into Markdown.
+#
+gmd_bold_markdown :
+  gmd_bold
+  replace_str "\2*","**"
+  replace_str "\3*","**"
+
+gmd_braces_markdown :
+  gmd_braces
+  replace_str "\2","**{"
+  replace_str "\3","}**"
+
+gmd_code_markdown :
+  gmd_code
+  replace_str "\2~","\n~~~~\n>"
+  replace_str "\3~","\n~~~~\n"
+
+gmd_gmic_markdown :
+  replace_str "G'MIC","**G'MIC**"
+
+gmd_image_markdown :
+  gmd_image
+  replace_str "\2^","![image]("
+  replace_str "\3^",")\n"
+
+gmd_italic_markdown :
+  gmd_italic
+  replace_str "\2_","*"
+  replace_str "\3_","*"
+
+gmd_link_markdown :
+  gmd_link
+  repeat $! l[$>]
+    s +,2,39 s +,3,39
+    if $!>1 repeat $! if "crop(#"$>"-1)==[2,39] && crop(#"$>"+1)==[3,39]" l[$>]
+       name={t} strvar $name url=${}.html rm
+       ('"["$name"]("$url")"':y)
+    endl fi done fi
+    a y discard 2,39 discard 3,39
+  endl done
+
+gmd_list_markdown :
+  gmd_list1
+  replace_str "\2 ","* "
+  gmd_list2
+  replace_str "\2 ","- "
+  gmd_list3
+  replace_str "\2 ","- "
+  replace_str "\3","\n"
+
+gmd_mono_markdown :
+  gmd_mono
+  replace_str "\2","`"
+  replace_str "\3","`"
+
+gmd_monobold_markdown :
+  gmd_monobold
+  replace_str "\2","**`"
+  replace_str "\3","`**"
+
+gmd_newline_markdown :
+  replace_str. "\4","\n"
+
+gmd_section_markdown :
+  gmd_section1
+  replace_str "\2 ","\n# "
+  gmd_section2
+  replace_str "\2# ","\n## "
+  gmd_section3
+  replace_str "\2## ","\n### "
+  replace_str "\3","\n"
+
+gmd_url_markdown : # Replace 'http[s]://address.url' by HTML link.
+
 # Command to write reference documentation with various output modes.
-# $1 = output mode, can be { ascii | html | latex }.
+# $1 = output mode, can be { ascii | html | markdown }.
 # Reference and command documentation is written using the G'MIC-markdown syntax.
 reference :
   m "_begin : reference_begin_$1"
@@ -1390,6 +1463,21 @@ reference :
   _end um _section,_text,_end
 
 #
+# Implement output mode 'markdown' for command 'reference'.
+#
+reference_begin_markdown :
+
+reference_section_markdown :
+  ('"# $*\n"':y)
+
+reference_text_markdown :
+  ('"$*\n"':y)
+  gmd. markdown
+
+reference_end_markdown :
+  a y ot out.md
+
+#
 # Implement output mode 'html' for command 'reference'.
 #
 reference_begin_html :
@@ -1435,9 +1523,6 @@ reference_text_html : skip "$*"
   ('"$*"':y)
   gmd. html
   if $!>1 a[-2,-1] y fi
-
-reference_gmic_html :
-  u "<span class=\"gmd_gmic\"></span>"
 
 reference_end_html :
   reference_end_section_html
@@ -18469,7 +18554,7 @@ line3d :
   1,21,1,1,67.5,73.5,109.5,103.5,51.5,100.5,2,1,${1-6},2,0,1,200,200,200,1 nm. [3D\ line]
 
 #@cli lissajous3d : resolution>1,a,A,b,B,c,C
-#@cli : Input 3D lissajous curves (x(t)=sin(a*t+A*2*pi),y(t)=sin(b*t+B*2*pi),z(t)=sin(c*t+C*2*pi)).
+#@cli : Input 3D lissajous curves __(x(t)=sin(a*t+A*2*pi), y(t)=sin(b*t+B*2*pi), z(t)=sin(c*t+C*2*pi))__.
 #@cli : Default values: 'resolution=1024', 'a=2', 'A=0', 'b=1', 'B=0', 'c=0' and 'C=0'.
 #@cli : $ lissajous3d ,
 lissajous3d : check ${1=1024}>1 skip ${2=2},${3=0},${4=1},${5=0},${6=0},${7=0}
