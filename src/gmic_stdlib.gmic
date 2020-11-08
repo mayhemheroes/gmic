@@ -486,9 +486,11 @@ gmd_bold_ascii :
 gmd_braces_ascii :
 
 gmd_code_ascii :
+  gmd_code
+  replace_str "\2~","\n"$_gmic_b"    "
+  replace_str "\3~",$_gmic_n"\n"
 
 gmd_gmic_ascii :
-  replace_str "G'MIC",$_gmic_b"G'MIC"$_gmic_n
 
 gmd_image_ascii :
   gmd_image
@@ -506,19 +508,20 @@ gmd_link_ascii :
     s +,2,39 s +,3,39
     if $!>1 repeat $! if "crop(#"$>"-1)==[2,39] && crop(#"$>"+1)==[3,39]" l[$>]
        name={t} strvar $name url=${}.html rm
-       ('${_gmic_b}"$name"':y)
+       ('${_gmic_u}$name$_gmic_n':y)
     endl fi done fi
     a y discard 2,39 discard 3,39
   endl done
 
 gmd_list_ascii :
   gmd_list1
-  replace_str "\2 ","\n* "
-  gmd_list2
-  replace_str "\2 ","\n  - "
-  gmd_list3
-  replace_str "\2 ","\n    . "
+  replace_str "\2 ","\n  * "
   replace_str "\3","\n"
+  gmd_list2
+  replace_str "\2 ","\n    - "
+  gmd_list3
+  replace_str "\2 ","\n      . "
+  replace_str "\3",""
 
 gmd_mono_ascii :
   gmd_mono
@@ -535,14 +538,14 @@ gmd_newline_ascii :
 
 gmd_section_ascii :
   gmd_section1
-  replace_str "\2 ","# "
+  replace_str "\2 ",\n$_gmic_c$_gmic_b"# "
   gmd_section2
-  replace_str "\2# ","## "
+  replace_str "\2# ",\n$_gmic_c$_gmic_b"## "
   gmd_section3
-  replace_str "\2## ","### "
-  replace_str "\3","\n"
+  replace_str "\2## ",\n$_gmic_c$_gmic_b"### "
+  replace_str "\3",$_gmic_n\n
 
-gmd_url_ascii : # Replace 'http[s]://address.url' by HTML link.
+gmd_url_ascii :
 
 
 #
@@ -1468,13 +1471,14 @@ reference_section_ascii :
   if $_section +e[] "" fi
   _section+=1
   ('$_section." "') ('"$*"') +f.. {'" "'} +f.. {'-'} a[-4,-3] x a[-2,-1] x
-  +e[] $_gmic_m{-2,t}$_gmic_m
-  +e[] $_gmic_m{t}$_gmic_n\n
+  +e[] "  "$_gmic_r$_gmic_b{-2,t}$_gmic_n
+  +e[] "  "$_gmic_r{t}$_gmic_n
   rm[-2,-1]
 
 reference_text_ascii :
-  ('"$*"') gmd. ascii
-  +e[] {t}
+  strcut[] "$*",100 ('${}')
+  gmd. ascii autocrop. {'\n'}
+  +e[] \n"    "{t}
   rm.
 
 reference_end_ascii :
@@ -1703,6 +1707,7 @@ use_vt100 :
     _gmic_m="\33[0;35;59m"
     _gmic_c="\33[0;36;59m"
     _gmic_b="\33[1m"
+    _gmic_u="\33[4m"
   fi
 
 #@cli version
@@ -4561,9 +4566,9 @@ parse_cli_trigger_bashcompletion :
   parse_cli_trigger_print $*
 
 #
-# Implements 'help' mode for command 'parse_cli'.
+# Implements 'ascii' mode for command 'parse_cli'.
 #
-parse_cli_help :
+parse_cli_ascii :
   v 0 use_vt100 e[] ""
   repeat $! if s=['{$>,n}'];s[0]==_'_' continue fi l[$>]
 
@@ -4607,7 +4612,7 @@ parse_cli_help :
         fi
         a y
         strcut {t},100,"\n       " rm.
-        ({'${}'}:y) _parse_cli_help_colorize.
+        ({'${}'}:y) _parse_cli_ascii_colorize.
         str="      "{t} if !narg($nnl) nl=\n fi nnl=\n
       elif i==_'$'" && "i[1]!=_'$' # Found example description
         rows 1,100% autocrop {'" "'}
@@ -4626,7 +4631,7 @@ parse_cli_help :
         str="      "${_gmic_b}"Tutorial: "$_gmic_r$_gmic_b$url$_gmic_n nnl=\n
       else # Other kind of description line
         strcut "      "{t},100,"\n       " rm.
-        ({'${}'}:y) _parse_cli_help_colorize. str={t}
+        ({'${}'}:y) _parse_cli_ascii_colorize. str={t}
       fi
       +e[] $nl$str
       nl=$nnl nnl=
@@ -4635,7 +4640,7 @@ parse_cli_help :
     rm 0
   endl done rm u $eqto
 
-parse_cli_trigger_help :
+parse_cli_trigger_ascii :
   if "['$1']!='*'"
     1,$!,1,1,"
       begin(ref([lowercase(['$1']),_'@'],str));
@@ -4644,7 +4649,7 @@ parse_cli_trigger_help :
     discard. -1 if h k[{@-1}] else rm fi
   fi
 
-_parse_cli_help_colorize : # Colorize string (as images) using VT100 color codes
+_parse_cli_ascii_colorize : # Colorize string (as images) using VT100 color codes
   eval[^] ">begin(beg = -1);
     i==_'\''?(
       beg<0?(beg = y):
