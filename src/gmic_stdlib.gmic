@@ -533,6 +533,28 @@ gmd_section_ascii :
   replace_str "\3",$_gmic_n"\n"
 
 gmd_url_ascii :
+  repeat $! l[$>]
+    if find(crop(),'http')>=0 # Replace URL in description
+      i[0] 1,100%
+      eval "n = ['"{t}"'];
+            http='http';
+            p = find(n,http);
+            while (p>=0 && p<h,
+              q = p + size(http);
+              i[q]==_'s'?++q;
+              i[q]==_':' && i[q + 1]==_'/' && i[q + 2]==_'/'?(
+                while (q<h && i[q]>_' ' && i[q]!=_')' && i[q]!=39, ++q);
+                q - p<64?copy(i[#0,p],p,q - p,1,0);
+              );
+              p = find(n,http,q);
+            )"
+      a x s y,0 z 1,1
+      repeat $! l[$>] if crop(0,0,1,4)=='http'
+        i[0] ({'$_gmic_u{t}'}:y) ('$_gmic_n':y) a y
+      fi endl done
+      a y
+    fi
+  endl done
 
 gmd_strcut_ascii : # Cut long sentences into blocs of size<$1.
   repeat $! l[$<]
@@ -1512,6 +1534,7 @@ reference_text_ascii :
     gmd_monobold_ascii
     gmd_braces_ascii
     gmd_link_ascii
+    gmd_url_ascii
     gmd_image_ascii
     gmd_section_ascii
     i[^] ({'\n'})
