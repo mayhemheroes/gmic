@@ -4625,7 +4625,7 @@ parse_cli : skip "${1=print},${2=*}"
 # Return 1 if last of the selected bloc describes a shortcut command, 0 otherwise.
 parse_cli_is_eqto :
   nbl={"n = 1; for (p = 0, (q = find(#-1,_'\n',p))>=0, ++n, p = ++q); n"}
-  u {$nbl"==1 && find(#-1,'eq. to \'')>5"}
+  u {$nbl"==1 && find(#-1,'eq. to \'')>=0"}
 
 #
 # Implements 'bashcompletion' mode for command 'parse_cli'.
@@ -4735,7 +4735,7 @@ parse_cli_ascii :
       repeat $! l[$>]
         if ${parse_cli_is_eqto.}
           s -,39 eqto={1,t} k[0]
-          +e[] "      Shortcut for command '"$_vt100_m$_vt100_b$eqto$_vt100_n"'."
+          +e[] "      "${_vt100_i}"Shortcut for command '"$_vt100_m$_vt100_b$eqto$_vt100_n"'."
         else
           eqto=
           l. gmd_strcut_ascii 100 if $!>1 i[1--2] ('"\\\\\n       "':y) a y fi endl
@@ -4824,17 +4824,6 @@ parse_cli_trigger_ascii :
       !find(nm,str)?y:-1"
     discard. -1 if h k[{@-1}] else rm fi
   fi
-
-_parse_cli_ascii_colorize : # Colorize string (as images) using VT100 color codes
-  eval[^] ">begin(beg = -1);
-    i==_'\''?(
-      beg<0?(beg = y):
-      (for (ok = 1; p = beg + 1, p<y, ++p, i[p]<=_' ' || p>beg + 32?(ok = 0; break()));
-       ok?(i[beg] = 2; i[y] = 3); beg = -1))"
-  replace_str "\2","'"$_vt100_c
-  replace_str "\3",$_vt100_n"'"
-  replace_str "{",$_vt100_g"{"
-  replace_str "}","}"$_vt100_n
 
 #
 # Implements 'html' mode for command 'parse_cli'.
