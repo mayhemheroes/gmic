@@ -558,7 +558,9 @@ gmd_url_ascii :
     fi
   endl done
 
-gmd_strcut_ascii : # Cut long sentences into blocs of size<$1.
+# Cut long sentences into blocs of size<$1.
+# $2 tells if the comma is a possible separator. can be { 0 | 1 }
+gmd_strcut_ascii :
   repeat $! l[$<]
     i[0] 1,100%
     eval "p = q = r = 0; # p = pos of bloc start, q = pos of latest endable (>=p).
@@ -568,7 +570,7 @@ gmd_strcut_ascii : # Cut long sentences into blocs of size<$1.
           copy(i[#0,p],p,q - p + 1,1,0);
           p = r = ++q;
         ):(
-          isin(i[r],_' ',_',')?(q = r);
+          isin(i[r],_' ',$2?_',':_' ')?(q = r);
         );
         ++r;
       );
@@ -1501,7 +1503,7 @@ reference :
 "## Display filtered webcam stream: "\n\
 "~~$ gmic apply_camera \\\"+mirror x +mirror y add div 4\\\"~~"\
 "^^../img/example_camera.png^^"\
-"## Launch a set of G'MIC interactive demos: "\n\
+"## Launch a set of interactive demos: "\n\
 "~~$ gmic demos~~"
 
   l reference_footer_$1 reference_end_$1 onfail endl
@@ -1542,7 +1544,7 @@ reference_text_ascii :
     gmd_code_ascii
     gmd_image_ascii
     s +,{'\n'}
-    gmd_strcut_ascii 100
+    gmd_strcut_ascii 100,0
     gmd_gmic_ascii
     gmd_bold_ascii
     gmd_italic_ascii
@@ -4739,7 +4741,7 @@ parse_cli_ascii :
           +e[] "      "${_vt100_i}"Shortcut for command '"$_vt100_m$_vt100_b$eqto$_vt100_n"'."
         else
           eqto=
-          l. gmd_strcut_ascii 100 if $!>1 i[1--2] ('"\\\\\n       "':y) a y fi endl
+          l. gmd_strcut_ascii 100,1 if $!>1 i[1--2] ('"\\\\\n       "':y) a y fi endl
           str="      "{t}${"if "$<" u \" |\" else u \"\" fi"}
           +e[] ${_vt100_c}$str$_vt100_n
         fi
@@ -4761,12 +4763,12 @@ parse_cli_ascii :
           i[0] ('$_vt100_b':y) i[2] ('$_vt100_n':y)
         fi
         a y
-        gmd_strcut_ascii 100 gmd_mono_ascii
+        gmd_strcut_ascii 100,1 gmd_mono_ascii
         if $!>1 i[1--2] ('"\n      "':y) a y fi autocrop {'\n'}
         +e[] "\n    "{t} nl=
       elif i==_'$'" && "i[1]!=_'$' # Found example description
         rows 1,100% autocrop {'" "'}
-        gmd_strcut_ascii 90
+        gmd_strcut_ascii 90,1
         if $!>1 i[1--2] ('"\\\\\n      "':y) a y fi autocrop {'\n'}
         example={t}
         n_example+=1
@@ -4795,7 +4797,7 @@ parse_cli_text_ascii :
   gmd_code_ascii
   gmd_image_ascii
   s +,{'\n'}
-  gmd_strcut_ascii 100
+  gmd_strcut_ascii 100,0
   gmd_gmic_ascii
   gmd_bold_ascii
   gmd_italic_ascii
