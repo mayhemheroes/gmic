@@ -567,7 +567,7 @@ gmd_strcut_ascii : # Cut long sentences into blocs of size<$1.
           copy(i[#0,p],p,q - p + 1,1,0);
           p = r = ++q;
         ):(
-          isin(i[r],_' ')?(q = r);
+          isin(i[r],_' ',_',')?(q = r);
         );
         ++r;
       );
@@ -696,8 +696,7 @@ gmd_url_html : # Replace 'http[s]://address.url' by HTML link.
 reference :
   m "_section : reference_section_$1 \"$""*\""
   m "_text : reference_text_$1 \"$""*\""
-  reference_begin_$1
-  reference_header_$1
+  l reference_begin_$1 reference_header_$1 onfail endl
   _section "Usage"
   _text \
 "~~gmic [command1 [arg1_1,arg1_2,..]] .. [commandN [argN_1,argN_2,..]]~~"\n\
@@ -1455,6 +1454,8 @@ reference :
 "range `[0,255]` before being displayed. You may need to do this explicitly (command 'normalize 0,255') if you want "\
 "to save and view images with the same aspect than those illustrated in the example codes.\n"
 
+  l reference_list_of_commands_$1 onfail endl
+
   _section "Examples of Use"
   _text \
 "`gmic` is a generic image processing tool which can be used in a wide variety of situations. "\
@@ -1502,8 +1503,7 @@ reference :
 "## Launch a set of G'MIC interactive demos: "\n\
 "~~$ gmic demos~~"
 
-  reference_footer_$1
-  reference_end_$1
+  l reference_footer_$1 reference_end_$1 onfail endl
   um _section,_text
 
 #
@@ -1566,23 +1566,22 @@ reference_text_ascii :
     rm
   endl
 
+reference_list_of_commands_ascii :
+  l[]
+    it $_path_rc/update$_version.gmic
+    +e[] ""
+    parse_cli ascii
+  onfail
+    rm
+  endl
+
 reference_footer_ascii :
   +e[] \n"  "$_vt100_r$_vt100_b"** G\47MIC comes with ABSOLUTELY NO WARRANTY; "\
        "for details visit: https://gmic.eu **"$_vt100_n
 
-reference_end_ascii :
-
 #
 # Implement output mode 'html' for command 'reference'.
 #
-reference_begin_html :
-
-
-reference_header_html :
-
-
-
-
 reference_section_html :
   name="$*"
   reference_end_section_html
@@ -2275,17 +2274,17 @@ _d2d_core :
 #@cli : - Middle mouse button, or CTRL+left mouse button: Move image.
 #@cli : - Mouse wheel or PADD+/-: Zoom in/out.
 #@cli : - Arrow keys: Move image left/right/up/down.
-#@cli : - CTRL + A: Enable/disable transparency (show/hide alpha channel).
-#@cli : - CTRL + C: Decrease window size.
-#@cli : - CTRL + D: Increase window size.
-#@cli : - CTRL + F: Toggle fullscreen mode.
-#@cli : - CTRL + N: Change normalization mode (can be 'none' | 'normal' | 'channel-by-channel').
-#@cli : - CTRL + O: Save a copy of the input image, as a numbered file 'gmic_xxxxxx.gmz'.
-#@cli : - CTRL + R: Reset both window size and view.
-#@cli : - CTRL + S: Save a screenshot of the current view, as a numbered file 'gmic_xxxxxx.png'.
-#@cli : - CTRL + SPACE: Reset view.
-#@cli : - CTRL + X: Show/hide axes.
-#@cli : - CTRL + Z: Hold/release aspect ratio.
+#@cli : - `CTRL + A`: Enable/disable transparency (show/hide alpha channel).
+#@cli : - `CTRL + C`: Decrease window size.
+#@cli : - `CTRL + D`: Increase window size.
+#@cli : - `CTRL + F`: Toggle fullscreen mode.
+#@cli : - `CTRL + N`: Change normalization mode (can be 'none' | 'normal' | 'channel-by-channel').
+#@cli : - `CTRL + O`: Save a copy of the input image, as a numbered file 'gmic_xxxxxx.gmz'.
+#@cli : - `CTRL + R`: Reset both window size and view.
+#@cli : - `CTRL + S`: Save a screenshot of the current view, as a numbered file 'gmic_xxxxxx.png'.
+#@cli : - `CTRL + SPACE`: Reset view.
+#@cli : - `CTRL + X`: Show/hide axes.
+#@cli : - `CTRL + Z`: Hold/release aspect ratio.
 display2d :
   _gmic_s="$?" v + _$0 0,1
 
@@ -4719,7 +4718,7 @@ parse_cli_trigger_bashcompletion :
 # Implements 'ascii' mode for command 'parse_cli'.
 #
 parse_cli_ascii :
-  v 0 use_vt100 e[] ""
+  use_vt100
   repeat $! if s=['{$>,n}'];s[0]==_'_' continue fi l[$>]
 
     # Parse command declaration.
@@ -4732,15 +4731,15 @@ parse_cli_ascii :
         is_builtin={"find(#-1,'(+)')>=0"}
         if $is_builtin rm. fi
       fi
-      +e[] "    "$_vt100_m$_vt100_b$name${"s1,s0=\" (+)\", u $s"$is_builtin}:$_vt100_n
+      +e[] "\n  "$_vt100_m$_vt100_b$name${"s1,s0=\" (+)\", u $s"$is_builtin}:$_vt100_n
       repeat $! l[$>]
         if ${parse_cli_is_eqto.}
           s -,39 eqto={1,t} k[0]
           +e[] "      Shortcut for command '"$_vt100_m$_vt100_b$eqto$_vt100_n"'."
         else
           eqto=
-          str="        "{t}
-          strcut $str${"if "$<" u \" |\" else u \"\" fi"},100,"\n         " str=${}
+          l. gmd_strcut_ascii. 100 if $!>1 i[1--2] ('"\\\\\n       "':y) a y fi endl
+          str="      "{t}${"if "$<" u \" |\" else u \"\" fi"}
           +e[] ${_vt100_c}$str$_vt100_n
         fi
       endl done
@@ -4761,8 +4760,6 @@ parse_cli_ascii :
           i[0] ('$_vt100_b':y) i[2] ('$_vt100_n':y)
         fi
         a y
-        strcut {t},100,"\n       " rm.
-        ({'${}'}:y) _parse_cli_ascii_colorize.
         str="      "{t} if !narg($nnl) nl=\n fi nnl=\n
       elif i==_'$'" && "i[1]!=_'$' # Found example description
         rows 1,100% autocrop {'" "'}
@@ -4772,16 +4769,14 @@ parse_cli_ascii :
         else example_str="         "[#$n_example]
         fi
         str="      "$example_str" "$_vt100_g$example$_vt100_n
-        strcut $str,100,"\\\\\n                     "
-        str=${} nnl=\n
+        nnl=\n
       elif i==_'$'" && "i[1]==_'$' # Found link to tutorial page
         if h==2 url=https://gmic.eu/tutorial/_$name.shtml
         else rows 2,100 autocrop {'" "'} url=https://gmic.eu/tutorial/{t}.shtml
         fi
-        str="      "${_vt100_b}"Tutorial: "$_vt100_r$_vt100_b$url$_vt100_n nnl=\n
+        str="      "${_vt100_b}"Tutorial: "$_vt100_n$_vt100_u$url$_vt100_n nnl=\n
       else # Other kind of description line
-        strcut "      "{t},100,"\n       " rm.
-        ({'${}'}:y) _parse_cli_ascii_colorize. str={t}
+        str={t}
       fi
       +e[] $nl$str
       nl=$nnl nnl=
@@ -25671,38 +25666,6 @@ strcapitalize :
 #@cli : Return 1 if the first string contains the second one.
 strcontains :
   u {"find(['$1'],['$2'])>=0"}
-
-#@cli strcut : "string",_max_chars>0,"_cut_pattern"
-#@cli : Return string that has been cutoff in several parts, separated by specified 'cut_pattern'.
-#@cli : Each part contains at most 'max_chars' characters.
-strcut : check "${2=80}>0" skip "${3=\n}"
-  l[]
-    ({'"$1"'}:y) 1
-    eval ${-math_lib}"
-      ref(['$3'],cut);
-      const l_cut = size(cut);
-      l_max = $2;
-      beg = end = target = 0;
-      while (end<h#0,
-        end - beg + 1<=l_max?++end:(
-          for (nend = end, nend>beg + 8 && !(isin(c=i[#0,nend],_' ',_',',_'|' ||
-            (c==_';' && i[#0,nend-1]!=27))), --nend);
-          nend>beg + 8?(end = nend);
-          l = end - beg + 1;
-          target + l + l_cut>=h(#1)?resize(#1,1,2*h(#1) + l + l_cut,1,1,0,0);
-          copy(i[#1,target],i[#0,beg],l); target+=l;
-          copy(i[#1,target],cut,l_cut); target+=l_cut;
-          beg = ++end;
-          l_max = $2 - l_cut;
-        );
-      );
-      beg<h#0?(
-        l = h#0 - beg;
-        target + l + l_cut>=h(#1)?resize(#1,1,h(#1) + l + l_cut,1,1,0,0);
-        copy(i[#1,target],i[#0,beg],l); target+=l;
-      )"
-    u {t} rm
-  endl
 
 #@cli strlen : string1
 #@cli : Return the length of specified string argument.
