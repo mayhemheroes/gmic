@@ -241,7 +241,12 @@ help : skip ${1=""},${2=1}
 
 _help : skip ${1=""}
   v 0 use_vt100
-  if !narg("$1") _is_example=0 __help ascii rm u "" return fi # Global help.
+  if !narg("$1") # Global help
+    _is_example=0
+#    __help ascii
+    reference ascii
+    rm u "" return
+  fi
   ('"$1"') autocrop. {'-'}
   if {@100%}==_']'" && "i!=_'[' l. s -,{'['} k[0] endl fi
   command={t} rm.
@@ -1580,7 +1585,7 @@ reference_list_of_commands_ascii :
 
 reference_footer_ascii :
   +e[] \n"  "$_vt100_r$_vt100_b"** G\47MIC comes with ABSOLUTELY NO WARRANTY; "\
-       "for details visit: https://gmic.eu **"$_vt100_n\n
+       "for details visit: https://gmic.eu **"$_vt100_n
 
 #
 # Implement output mode 'html' for command 'reference'.
@@ -5082,12 +5087,12 @@ parse_cli_html :
         # Found 'Default value(s):' description
         s +,{':'} autocrop {'" "'}
         if $!>2" && "h#1==1" && "i("#1")==_':'
-          html.="\n      <h2>Default values:</h2>"\n
+          html.="\n<h2>Default values:</h2>"\n
           rm[0,1]
         fi
         a y
         gmd_mono_html
-        html.="      <p style=\"word-wrap:break-word\">"{t}"</p>"\n
+        html.="<p style=\"word-wrap:break-word\">"{t}"</p>"\n
 
       elif i==_'$'" && "i[1]!=_'$'
 
@@ -5136,6 +5141,7 @@ parse_cli_html :
         gmd2html
         if $line==1 html.="      <br/>"\n fi
         html.={t}
+        if i[-1,2]!=_'\n' html.="\n" fi
         line+=1
       fi
     endl done
