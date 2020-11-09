@@ -242,7 +242,7 @@ help : skip ${1=""},${2=1}
 _help : skip ${1=""}
   v 0 use_vt100
   if !narg("$1") # Global help
-    _no_examples=1
+    _no_examples,_no_default_values,_no_tutorial_link=1
     reference ascii
     rm u "" return
   fi
@@ -476,7 +476,7 @@ gmd_braces_ascii :
 
 gmd_code_ascii :
   gmd_code
-  replace_str "\2~","\n\n"$_vt100_b"    "
+  replace_str "\2~","\n\n"$_vt100_b"  "
   replace_str "\3~",$_vt100_n"\n\n"
 
 gmd_gmic_ascii :
@@ -4760,14 +4760,16 @@ parse_cli_ascii :
         +l s -,{'\47'} shortcut={1,t} rm onfail shortcut="(unknown)" rm endl
         +e[] $nl"    ("${_vt100_i}"equivalent to shortcut command '"$_vt100_m$_vt100_b$shortcut$_vt100_n"')." nl="\n"
       elif "find(#0,'Default value:')>=0 || find(#0,'Default values:')>=0" # Found 'Default value(s):' description
-        s +,{':'}
-        if $!>2" && "h#1==1" && "i("#1")==_':'
-          i[0] ('$_vt100_b':y) i[2] ('$_vt100_n':y)
+        if !0$_no_default_values
+          s +,{':'}
+          if $!>2" && "h#1==1" && "i("#1")==_':'
+            i[0] ('$_vt100_b':y) i[2] ('$_vt100_n':y)
+          fi
+          a y
+          gmd_strcut_ascii 100,1 gmd_mono_ascii
+          if $!>1 i[1--2] ('"\n      "':y) a y fi autocrop {'\n'}
+          +e[] "\n    "{t} nl=
         fi
-        a y
-        gmd_strcut_ascii 100,1 gmd_mono_ascii
-        if $!>1 i[1--2] ('"\n      "':y) a y fi autocrop {'\n'}
-        +e[] "\n    "{t} nl=
       elif i==_'$'" && "i[1]!=_'$' # Found example description
         if !0$_no_examples
           rows 1,100% autocrop {'" "'}
@@ -4781,10 +4783,12 @@ parse_cli_ascii :
           +e[] $nl"    "$example_str" "$_vt100_c$example$_vt100_n nl=
         fi
       elif i==_'$'" && "i[1]==_'$' # Found link to tutorial page
-        if h==2 url=https://gmic.eu/tutorial/_$name.shtml
-        else rows 2,100 autocrop {'" "'} url=https://gmic.eu/tutorial/{t}.shtml
+        if !0$_no_tutorial_link
+          if h==2 url=https://gmic.eu/tutorial/_$name.shtml
+          else rows 2,100 autocrop {'" "'} url=https://gmic.eu/tutorial/{t}.shtml
+          fi
+          +e[] "\n    "${_vt100_b}"Tutorial: "$_vt100_n$_vt100_u$url$_vt100_n nl=
         fi
-        +e[] "\n    "${_vt100_b}"Tutorial: "$_vt100_n$_vt100_u$url$_vt100_n nl=
       else # Other kind of description line
         parse_cli_text_ascii.
         +e[] $nl{t} nl=
