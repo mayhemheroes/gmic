@@ -516,8 +516,8 @@ gmd_mono_ascii :
 
 gmd_monobold_ascii :
   gmd_monobold
-  replace_str "\2","'"$_vt100_c
-  replace_str "\3",$_vt100_n"'"
+  replace_str "\2",$_vt100_c
+  replace_str "\3",$_vt100_n
 
 gmd_newline_ascii :
   replace_str. "\4","\n"
@@ -1172,7 +1172,7 @@ reference :
 "'trace(A)' (matrix trace) and 'transpose(A,nb_colsA)' (matrix transpose). Argument 'nb_colsB' may be omitted if "\
 "it is equal to `1`".\n\
 "* 'mproj(S,nb_colsS,D,nb_colsD,method,max_iter,max_residual)' projects a matrix 'S' onto a dictionary (matrix) "\
-"'D'. Equivalent to command 'mproj' but inside the math evaluator."\n\
+"'D'. Equivalent to command ''mproj'' but inside the math evaluator."\n\
 "* Specifying a vector-valued math expression as an argument of a command that operates on image values "\
 "(e.g. 'fill') modifies the whole spectrum range of the processed image(s), for each spatial coordinates `(x,y,z)`. "\
 "The command does not loop over the `c`-axis in this case."\n\
@@ -2270,21 +2270,21 @@ _d2d_core :
 #@cli : If selected image is a volumetric image, each slice is displayed on a separate display
 #@cli : window (up to 10 images can be displayed simultaneously this way), with synchronized moves.
 #@cli : When interactive window is opened, the following actions are possible:\n
-#@cli : - Left mouse button: Create an image selection and zoom into it.
-#@cli : - Middle mouse button, or CTRL+left mouse button: Move image.
-#@cli : - Mouse wheel or PADD+/-: Zoom in/out.
-#@cli : - Arrow keys: Move image left/right/up/down.
-#@cli : - `CTRL + A`: Enable/disable transparency (show/hide alpha channel).
-#@cli : - `CTRL + C`: Decrease window size.
-#@cli : - `CTRL + D`: Increase window size.
-#@cli : - `CTRL + F`: Toggle fullscreen mode.
-#@cli : - `CTRL + N`: Change normalization mode (can be 'none' | 'normal' | 'channel-by-channel').
-#@cli : - `CTRL + O`: Save a copy of the input image, as a numbered file 'gmic_xxxxxx.gmz'.
-#@cli : - `CTRL + R`: Reset both window size and view.
-#@cli : - `CTRL + S`: Save a screenshot of the current view, as a numbered file 'gmic_xxxxxx.png'.
-#@cli : - `CTRL + SPACE`: Reset view.
-#@cli : - `CTRL + X`: Show/hide axes.
-#@cli : - `CTRL + Z`: Hold/release aspect ratio.
+#@cli : * Left mouse button: Create an image selection and zoom into it.
+#@cli : * Middle mouse button, or CTRL+left mouse button: Move image.
+#@cli : * Mouse wheel or PADD+/-: Zoom in/out.
+#@cli : * Arrow keys: Move image left/right/up/down.
+#@cli : * `CTRL + A`: Enable/disable transparency (show/hide alpha channel).
+#@cli : * `CTRL + C`: Decrease window size.
+#@cli : * `CTRL + D`: Increase window size.
+#@cli : * `CTRL + F`: Toggle fullscreen mode.
+#@cli : * `CTRL + N`: Change normalization mode (can be { none | normal | channel-by-channel }).
+#@cli : * `CTRL + O`: Save a copy of the input image, as a numbered file 'gmic_xxxxxx.gmz'.
+#@cli : * `CTRL + R`: Reset both window size and view.
+#@cli : * `CTRL + S`: Save a screenshot of the current view, as a numbered file 'gmic_xxxxxx.png'.
+#@cli : * `CTRL + SPACE`: Reset view.
+#@cli : * `CTRL + X`: Show/hide axes.
+#@cli : * `CTRL + Z`: Hold/release aspect ratio.
 display2d :
   _gmic_s="$?" v + _$0 0,1
 
@@ -4753,16 +4753,16 @@ parse_cli_ascii :
       rows 1,100% autocrop {'" "'}
       if "find(#0,'(eq. to ')>=0" # Found 'Eq. to' description.
         +l s -,{'\47'} shortcut={1,t} rm onfail shortcut="(unknown)" rm endl
-        +e[] $nl"    ("${_vt100_i}"equivalent to shortcut command '"$_vt100_m$_vt100_b$shortcut$_vt100_n"')." nl=
+        +e[] $nl"    ("${_vt100_i}"equivalent to shortcut command '"$_vt100_m$_vt100_b$shortcut$_vt100_n"')." nl="\n"
       elif "find(#0,'Default value:')>=0 || find(#0,'Default values:')>=0" # Found 'Default value(s):' description
-        s +,{':'} nl="\n"
+        s +,{':'}
         if $!>2" && "h#1==1" && "i("#1")==_':'
           i[0] ('$_vt100_b':y) i[2] ('$_vt100_n':y)
         fi
         a y
         gmd_strcut_ascii 100 gmd_mono_ascii
         if $!>1 i[1--2] ('"\n      "':y) a y fi autocrop {'\n'}
-        +e[] $nl"    "{t} nl=
+        +e[] "\n    "{t} nl=
       elif i==_'$'" && "i[1]!=_'$' # Found example description
         rows 1,100% autocrop {'" "'}
         gmd_strcut_ascii 90
@@ -4772,12 +4772,12 @@ parse_cli_ascii :
         if $n_example==1 example_str=${_vt100_b}"Example:"$_vt100_n" "[#$n_example] nl="\n"
         else example_str="         "[#$n_example]
         fi
-        +e[] $nl"    "$example_str" "$_vt100_g$example$_vt100_n nl=
+        +e[] $nl"    "$example_str" "$_vt100_c$example$_vt100_n nl=
       elif i==_'$'" && "i[1]==_'$' # Found link to tutorial page
         if h==2 url=https://gmic.eu/tutorial/_$name.shtml
         else rows 2,100 autocrop {'" "'} url=https://gmic.eu/tutorial/{t}.shtml
         fi
-        +e[] $nl"      "${_vt100_b}"Tutorial: "$_vt100_n$_vt100_u$url$_vt100_n nl=
+        +e[] "\n    "${_vt100_b}"Tutorial: "$_vt100_n$_vt100_u$url$_vt100_n nl=
       else # Other kind of description line
         parse_cli_text_ascii.
         +e[] $nl{t} nl=
