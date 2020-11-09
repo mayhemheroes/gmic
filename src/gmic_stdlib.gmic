@@ -221,39 +221,43 @@ h :
 #@cli help : command : (no arg)
 #@cli : Display help (optionally for specified command only) and exit.
 #@cli : (eq. to 'h').
-help : skip ${1=""},${2=1}
-  if narg("$1")" && "isfile(['{/$_path_user}'])
-    l[] it[] $_path_user onfail endl
+help : skip ${1=""}
+  if ['$1']==0
+
+    # Display global help.
+    _no_examples,_no_default_values,_no_tutorial_link=1
+    reference ascii
+
+  else
+
+    # Display help for a single command.
+    if narg("$1")" && "isfile(['{/$_path_user}'])
+      l[] it[] $_path_user onfail endl
+    fi
+    if isfile(['{/$_path_rc/update$_version.gmic}'])
+      l[] cimgz:$_path_rc/update$_version.gmic
+      onfail l[] it[] $_path_rc/update$_version.gmic onfail endl
+      endl
+    fi
+    if narg("$1")" && "narg($_path_commands) l[]
+      $_path_commands repeat $! l[$>] it[] {n} k. onfail rm 0 endl done onfail
+    endl fi
+    if !$! return fi
+    y a y
+    +_help $1 k[0]
+    if narg(${}) _help[0] ${},0 fi # In case of shortcut, display also help for shortcut command.
+
   fi
-  if isfile(['{/$_path_rc/update$_version.gmic}'])
-    l[] cimgz:$_path_rc/update$_version.gmic
-    onfail l[] it[] $_path_rc/update$_version.gmic onfail endl
-    endl
-  fi
-  if narg("$1")" && "narg($_path_commands) l[]
-    $_path_commands repeat $! l[$>] it[] {n} k. onfail rm 0 endl done onfail
-  endl fi
-  if !$! return fi
-  y a y
-  +_help $1,$2 k[0]
-  if narg(${}) _help[0] ${},0 fi # In case of shortcut, display also help for shortcut command.
   +e[] "\n" rm q
 
 _help : skip ${1=""}
   v 0 use_vt100
-  if !narg("$1") # Global help
-    _no_examples,_no_default_values,_no_tutorial_link=1
-    reference ascii
-    rm u "" return
-  fi
   ('"$1"') autocrop. {'-'}
   if {i[-1,2]}==_']'" && "i!=_'[' l. s -,{'['} k[0] endl fi
   command={t} rm.
 
   # Help requested for a specific command.
-  ks0="0" ks1="k[0]"
-  if $2 reference_header_ascii[] fi
-  r 1,{h+1},1,1,0,0,0,1
+  reference_header_ascii[]
   s +,{'"#@cli "$command" :"'} s +,{'"#@cli "$command":"'} s +,{'"#@cli "$command"\n"'}
   if $!==1
     l[] m "foo : "$command # Detect command misspelling.
@@ -261,7 +265,7 @@ _help : skip ${1=""}
       foo um foo
     onfail ('${}') s -,{'"; did you mean "'} if $!>1 s[1] -,39 k[1] misspelling={t} fi rm
     endl
-    if narg($misspelling) misspelling="; did you mean '"$_vt100_g$misspelling$_vt100_n"' ?)" fi
+    if narg($misspelling) misspelling=" (did you mean '"$_vt100_g$misspelling$_vt100_n"' ?)" fi
     +e[] "\n[gmic] Command '"$_vt100_r$command$_vt100_n"' has no description"$misspelling". "\
          "Try '"${_vt100_c}"gmic -h"$_vt100_n"' for global help."
     rm u "" return
