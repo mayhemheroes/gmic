@@ -466,6 +466,8 @@ gmd2ascii :
   gmd_italic_ascii
   gmd_mono_ascii
   gmd_monobold_ascii
+  gmd_braces_ascii
+  gmd_link_ascii
   gmd_code_ascii
   gmd_image_ascii
 
@@ -485,6 +487,7 @@ gmd_code_ascii :
   replace_str "\3~",$_gmic_n"\n\n"
 
 gmd_gmic_ascii :
+  replace_str "G'MIC",${_gmic_b}"G'MIC"$_gmic_n
 
 gmd_image_ascii :
   gmd_image
@@ -1511,15 +1514,13 @@ reference_text_ascii :
     gmd2ascii
     i[^] ({'\n'}) a y autocrop {'\n'}
 
-    # Ensure output contains no more than two consecutive newlines.
+    # Ensure output text contains no more than two consecutive newlines.
+    # Also add a 2-chars left margin on each line.
     s +,{'\n'}
     eval "for (p = 0, p<l, ++p,
             i(#p)==_'\n' && h(#p)>2?resize(#p,1,2,1,1,0):
-            (0);
-          )"
-
+            (resize(#p,1,h#p + 2,1,1,0,0,0,1); i[#p,0] = i[#p,1] = _' '))"
     a y
-
     +e[] {t}
     rm
   endl
