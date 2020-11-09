@@ -243,7 +243,6 @@ _help : skip ${1=""}
   v 0 use_vt100
   if !narg("$1") # Global help
     _is_example=0
-#    __help ascii
     reference ascii
     rm u "" return
   fi
@@ -427,14 +426,14 @@ gmd_mono : # 'single_word_in_monospace'
     beg>=0 && y - beg>80?(beg = -1);
     i==_'\''?(
       beg<0 && j[1]!=_'\'' && (!y || isin(j[-1],_' ',_'(',_'\n',4))?(beg = y):
-      beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
+      beg>=0 && !isin(j[-1],_'{',_'[') && !isin(j[1],_'[',_'}',_':')?(i[y] = 3; i[beg] = 2; beg = -1)
     )"
 
 gmd_monobold : # `words in monospace`
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>80?(beg = -1);
     i==96?(
-      beg<0?(beg = y):
+      beg<0 && j[1]!=96 && j[-1]!=96?(beg = y):
       beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
     )"
 
@@ -783,10 +782,10 @@ reference :
 "forced to be in a specific 'ext' file format (e.g. `-.jpg` or `-.png`). "\n\
 "* The following special input strings may be used as G'MIC items to create and insert new "\
 "images with prescribed values, at the end of the image list:"\n\
-"  - '[selection]' or '[selection]xN': Insert 1 or N copies of already existing images. "\
+"  - '[selection]' or '[selection]xN' : Insert 1 or N copies of already existing images. "\
 "'selection' may represent one or several images (see section ''Command Items and Selections'' to learn more "\
 "about selections)."\n\
-"  - 'width[%],_height[%],_depth[%],_spectrum[%],_values[xN]': Insert one or N images with specified "\
+"  - 'width[%],_height[%],_depth[%],_spectrum[%],_values[xN]' : Insert one or N images with specified "\
 "size and values (adding '%' to a dimension means __\"percentage of the size along the same axis\"__, "\
 "taken from the last image '[-1]'). Any specified dimension can be also written as "\
 "'[image]', and is then set to the size (along the same axis) of the existing specified image "\
@@ -794,17 +793,17 @@ reference :
 "or a mathematical expression, as e.g. in input item '256,256,1,3,[x,y,128]' which "\
 "creates a `256x256` RGB color image with a spatial shading on the red and green channels. "\
 "(see section ''Mathematical Expressions'' to learn more about mathematical expressions). "\n\
-"  - '(v1,v2,..)[xN]': Insert one or `N` new images from specified prescribed values. Value separator "\
+"  - '(v1,v2,..)[xN]' : Insert one or `N` new images from specified prescribed values. Value separator "\
 "inside parentheses can be ',' (column separator), ';' (row separator), '/' (slice separator) or "\
 "'^' (channel separator). For instance, expression '(1,2,3;4,5,6;7,8,9)' creates a 3x3 matrix (scalar image), "\
 "with values running from 1 to 9. "\n\
-"  - '('string'[:delimiter])[xN]': Insert one or N new images from specified string, by filling "\
+"  - '('string'[:delimiter])[xN]' : Insert one or N new images from specified string, by filling "\
 "the images with the character codes composing the string. When specified, 'delimiter' tells about "\
 "the main orientation of the image. Delimiter can be 'x' (eq. to ',' which is the default), "\
 "'y' (eq. to ';'), 'z' (eq. to '/') or 'c' (eq. to '^'). "\
 "When specified delimiter is ',', ';', '/' or '^', the expression is actually equivalent to "\
 "'({'string'[:delimiter]})[xN]' (see section ''Substitution Rules'' for more information on the syntax)."\n\
-"  - '0[xN]': Insert one or N new `empty` images, containing no pixel data. "\
+"  - '0[xN]' : Insert one or N new `empty` images, containing no pixel data. "\
 "Empty images are used only in rare occasions."\n\
 \n\
 "* Input item 'name=value' declares a new variable 'name', or assign a new string value to an existing variable. "\
@@ -837,20 +836,20 @@ reference :
 "when required."\n\
 "* The execution of a G'MIC command may be restricted only to a __subset__ of the image list, by "\
 "appending '[selection]' to the command name. Examples of valid syntaxes for 'selection' are: "\n\
-"  - 'command[-2]': Apply command only on the penultimate image '[-2]' of the list."\n\
-"  - 'command[0,1,3]': Apply command only on images '[0]', '[1]' and '[3]'."\n\
-"  - 'command[3-6]': Apply command only on images '[3]' to '[6]' (i.e, '[3]', '[4]', '[5]' and '[6]')."\n\
-"  - 'command[50%-100%]': Apply command only on the second half of the image list."\n\
-"  - 'command[0,-4--1]': Apply command only on the first image and the last four images."\n\
-"  - 'command[0-9:3]': Apply command only on images '[0]' to '[9]', with a step of 3 "\
+"  - 'command[-2]' : Apply command only on the penultimate image '[-2]' of the list."\n\
+"  - 'command[0,1,3]' : Apply command only on images '[0]', '[1]' and '[3]'."\n\
+"  - 'command[3-6]' : Apply command only on images '[3]' to '[6]' (i.e, '[3]', '[4]', '[5]' and '[6]')."\n\
+"  - 'command[50%-100%]' : Apply command only on the second half of the image list."\n\
+"  - 'command[0,-4--1]' : Apply command only on the first image and the last four images."\n\
+"  - 'command[0-9:3]' : Apply command only on images '[0]' to '[9]', with a step of 3 "\
 "(i.e. on images '[0]', '[3]', '[6]' and '[9]')."\n\
-"  - 'command[0-9:25%]': Apply command only on images '[0]' to '[9]', with a step of 25% "\
+"  - 'command[0-9:25%]' : Apply command only on images '[0]' to '[9]', with a step of 25% "\
 "(i.e. on images '[0]', '[3]', '[6]' and '[9]')."\n\
-"  - 'command[0--1:2]': Apply command only on images of the list with even indices. "\n\
+"  - 'command[0--1:2]' : Apply command only on images of the list with even indices. "\n\
 "  - 'command[0,2-4,50%--1]': Apply command on images '[0]', '[2]', '[3]', '[4]' and on the second half of "\
 "the image list."\n\
-"  - 'command[^0,1]': Apply command on all images except the first two."\n\
-"  - 'command[name1,name2]': Apply command on named images 'name1' and 'name2'."\n\
+"  - 'command[^0,1]' : Apply command on all images except the first two."\n\
+"  - 'command[name1,name2]' : Apply command on named images 'name1' and 'name2'."\n\
 \n\
 "* Indices in selections are always sorted in increasing order, and duplicate indices are "\
 "discarded. For instance, selections '[3-1,1-3]' and '[1,1,1,3,2]' are both equivalent to "\
@@ -964,24 +963,24 @@ reference :
 "image has this name, the expression is substituted by the value of the OS environment variable "\
 "with same name (it may be thus an empty string if it is not defined). "\n\
 "* The following reserved variables are predefined by the G'MIC interpreter: "\n\
-"  - '$!': The current number of images in the list."\n\
-"  - '$>' and '$<': The increasing/decreasing index of the latest (currently running) "\
+"  - '$!' : The current number of images in the list."\n\
+"  - '$>' and '$<' : The increasing/decreasing index of the latest (currently running) "\
 "'repeat...done' loop. '$>' goes from `0` (first loop iteration) to `nb_iterations - 1` (last iteration). "\
 "'$<' does the opposite. "\n\
-"  - '$/': The current call stack. Stack items are separated by slashes '/'."\n\
-"  - '$|': The current value (expressed in seconds) of a millisecond precision timer."\n\
-"  - '$^': The current verbosity level."\n\
-"  - '$_cpus': The number of computation cores available on your machine."\n\
-"  - '$_pid': The current process identifier, as an integer."\n\
-"  - '$_prerelease': For pre-releases, the date of the pre-release as `yymmdd`. "\
+"  - '$/' : The current call stack. Stack items are separated by slashes '/'."\n\
+"  - '$|' : The current value (expressed in seconds) of a millisecond precision timer."\n\
+"  - '$^' : The current verbosity level."\n\
+"  - '$_cpus' : The number of computation cores available on your machine."\n\
+"  - '$_pid' : The current process identifier, as an integer."\n\
+"  - '$_prerelease' : For pre-releases, the date of the pre-release as `yymmdd`. "\
 "For stable releases, this variable is set to `0`."\n\
-"  - '$_version': A 3-digits number telling about the current version of the G'MIC interpreter "\
+"  - '$_version' : A 3-digits number telling about the current version of the G'MIC interpreter "\
 " (e.g. '"$_version"'). "\n\
-"  - '$_host': A string telling about the host running the G'MIC interpreter (e.g. `cli` or `gimp`)."\n\
-"  - '$_vt100': Set to `1` if colored text output is allowed on the console. Otherwise, set to `0`."\n\
-"  - '$_path_rc': The path to the G'MIC folder used to store configuration files (its value is OS-dependent)."\n\
-"  - '$_path_user': The path to the G'MIC user file `.gmic` or `user.gmic` (its value is OS-dependent)."\n\
-"  - '$_path_commands': A list of all imported command files (stored as a list-valued variable)."\n\
+"  - '$_host' : A string telling about the host running the G'MIC interpreter (e.g. `cli` or `gimp`)."\n\
+"  - '$_vt100' : Set to `1` if colored text output is allowed on the console. Otherwise, set to `0`."\n\
+"  - '$_path_rc' : The path to the G'MIC folder used to store configuration files (its value is OS-dependent)."\n\
+"  - '$_path_user' : The path to the G'MIC user file `.gmic` or `user.gmic` (its value is OS-dependent)."\n\
+"  - '$_path_commands' : A list of all imported command files (stored as a list-valued variable)."\n\
 \n\
 "* '$$name' and '$${name}' are both substituted by the G'MIC script code of the specified named "\
 "`custom command`, or by an empty string if no custom command with specified name exists. "\n\
@@ -997,13 +996,13 @@ reference :
 "'image' can be either an image number or an image name. It can be also eluded, in which case, "\
 "the last image '[-1]' of the list is considered for the requested feature. "\
 "Specified 'feature' can be one of:"\n\
-"  - 'b': The image basename (i.e. filename without the folder path nor extension)."\n\
-"  - 'f': The image folder name."\n\
-"  - 'n': The image name or filename (if the image has been read from a file)."\n\
-"  - 't': The text string from the image values regarded as character codes."\n\
-"  - 'x': The image extension (i.e the characters after the last `.` in the image name)."\n\
-"  - '^': The sequence of all image values, separated by commas `,`."\n\
-"  - '@subset': The sequence of image values corresponding to the specified subset, and separated by commas `,`. "\n\
+"  - 'b' : The image basename (i.e. filename without the folder path nor extension)."\n\
+"  - 'f' : The image folder name."\n\
+"  - 'n' : The image name or filename (if the image has been read from a file)."\n\
+"  - 't' : The text string from the image values regarded as character codes."\n\
+"  - 'x' : The image extension (i.e the characters after the last `.` in the image name)."\n\
+"  - '^' : The sequence of all image values, separated by commas `,`."\n\
+"  - '@subset' : The sequence of image values corresponding to the specified subset, and separated by commas `,`. "\n\
 "  - Any other 'feature' is considered as a __mathematical expression__ associated to the image '[image]' and is "\
 "substituted by the result of its evaluation (float value). For instance, expression '{0,w+h}' is substituted by "\
 "the sum of the width and height of the first image (see section ''Mathematical Expressions'' for more details). "\
@@ -1017,25 +1016,25 @@ reference :
 "(can be { 0=closed | 1=visible }."\n\
 "* '{*[index],feature1,...,featureN[:delimiter]}' is substituted by a specific set of features of the instant display "\
 "window '#0' (or '#index', if specified). Requested 'features' can be:"\n\
-"  - 'w': display width (i.e. width of the display area managed by the window)."\n\
-"  - 'h': display height (i.e. height of the display area managed by the window)."\n\
-"  - 'wh': display width x display height."\n\
-"  - 'd': window width (i.e. width of the window widget)."\n\
-"  - 'e': window height (i.e. height of the window widget)."\n\
-"  - 'de': window width x window height."\n\
-"  - 'u': screen width (actually independent on the window size)."\n\
-"  - 'v': screen height (actually independent on the window size)."\n\
-"  - 'uv': screen width x screen height."\n\
-"  - 'n': current normalization type of the instant display."\n\
-"  - 't': window title of the instant display."\n\
-"  - 'x': X-coordinate of the mouse position (or -1, if outside the display area)."\n\
-"  - 'y': Y-coordinate of the mouse position (or -1, if outside the display area)."\n\
-"  - 'b': state of the mouse buttons { 1=left-but. | 2=right-but. | 4=middle-but. }."\n\
-"  - 'o': state of the mouse wheel."\n\
-"  - 'k': decimal code of the pressed key if any, 0 otherwise."\n\
-"  - 'c': boolean (0 or 1) telling if the instant display has been closed recently."\n\
-"  - 'r': boolean telling if the instant display has been resized recently."\n\
-"  - 'm': boolean telling if the instant display has been moved recently."\n\
+"  - 'w' : display width (i.e. width of the display area managed by the window)."\n\
+"  - 'h' : display height (i.e. height of the display area managed by the window)."\n\
+"  - 'wh' : display width x display height."\n\
+"  - 'd' : window width (i.e. width of the window widget)."\n\
+"  - 'e' : window height (i.e. height of the window widget)."\n\
+"  - 'de' : window width x window height."\n\
+"  - 'u' : screen width (actually independent on the window size)."\n\
+"  - 'v' : screen height (actually independent on the window size)."\n\
+"  - 'uv' : screen width x screen height."\n\
+"  - 'n' : current normalization type of the instant display."\n\
+"  - 't' : window title of the instant display."\n\
+"  - 'x' : X-coordinate of the mouse position (or -1, if outside the display area)."\n\
+"  - 'y' : Y-coordinate of the mouse position (or -1, if outside the display area)."\n\
+"  - 'b' : state of the mouse buttons { 1=left-but. | 2=right-but. | 4=middle-but. }."\n\
+"  - 'o' : state of the mouse wheel."\n\
+"  - 'k' : decimal code of the pressed key if any, 0 otherwise."\n\
+"  - 'c' : boolean (0 or 1) telling if the instant display has been closed recently."\n\
+"  - 'r' : boolean telling if the instant display has been resized recently."\n\
+"  - 'm' : boolean telling if the instant display has been moved recently."\n\
 "  - Any other 'feature' stands for a keycode name (in capital letters), and is substituted "\
 "by a boolean describing the current key state { 0=pressed | 1=released }."\n\
 "  - You can also prepend a hyphen '-' to a 'feature' (that supports it) to flush the "\
@@ -1095,50 +1094,50 @@ reference :
 "* 'swap(a,b)' swaps the values of the given arguments."\n\
 "# Variable names:"\n\
 "Variable names below are pre-defined. They can be overridden."\n\
-"* 'l': length of the associated list of images."\n\
-"* 'k': index of the associated image, in '[0,l-1]'."\n\
-"* 'w': width of the associated image, if any ('0' otherwise)."\n\
-"* 'h': height of the associated image, if any ('0' otherwise)."\n\
-"* 'd': depth of the associated image, if any ('0' otherwise)."\n\
-"* 's': spectrum of the associated image, if any ('0' otherwise)."\n\
-"* 'r': shared state of the associated image, if any ('0' otherwise)."\n\
-"* 'wh': shortcut for width x height."\n\
-"* 'whd': shortcut for width x height x depth."\n\
-"* 'whds': shortcut for width x height x depth x spectrum (i.e. number of image values)."\n\
-"* 'im', 'iM', 'ia', 'iv', 'is', 'ip', 'ic', 'in': Respectively the minimum, maximum, average, variance, sum, "\
+"* 'l' : length of the associated list of images."\n\
+"* 'k' : index of the associated image, in '[0,l-1]'."\n\
+"* 'w' : width of the associated image, if any ('0' otherwise)."\n\
+"* 'h' : height of the associated image, if any ('0' otherwise)."\n\
+"* 'd' : depth of the associated image, if any ('0' otherwise)."\n\
+"* 's' : spectrum of the associated image, if any ('0' otherwise)."\n\
+"* 'r' : shared state of the associated image, if any ('0' otherwise)."\n\
+"* 'wh' : shortcut for width x height."\n\
+"* 'whd' : shortcut for width x height x depth."\n\
+"* 'whds' : shortcut for width x height x depth x spectrum (i.e. number of image values)."\n\
+"* 'im', 'iM', 'ia', 'iv', 'is', 'ip', 'ic', 'in' : Respectively the minimum, maximum, average, variance, sum, "\
 "product, median value and L2-norm of the associated image, if any ('0' otherwise)."\n\
-"* 'xm', 'ym', 'zm', 'cm': The pixel coordinates of the minimum value in the associated image, "\
+"* 'xm', 'ym', 'zm', 'cm' : The pixel coordinates of the minimum value in the associated image, "\
 "if any ('0' otherwise)."\n\
-"* 'xM', 'yM', 'zM', 'cM': The pixel coordinates of the maximum value in the associated image, "\
+"* 'xM', 'yM', 'zM', 'cM' : The pixel coordinates of the maximum value in the associated image, "\
 "if any ('0' otherwise)."\n\
 "* All these variables are considered as **constant values** by the math parser (for optimization purposes) "\
 "which is indeed the case most of the time. Anyway, this might not be the case, if function 'resize(#ind,..)' "\
 "is used in the math expression. If so, it is safer to invoke functions 'l()', 'w(_#ind)', 'h(_#ind)', ... 's(_#ind)' "\
 "and 'in(_#ind)' instead of the corresponding named variables."\n\
-"* 'i': current processed pixel value (i.e. value located at `(x,y,z,c)`) in the associated image, "\
+"* 'i' : current processed pixel value (i.e. value located at `(x,y,z,c)`) in the associated image, "\
 "if any ('0' otherwise)."\n\
-"* 'iN': N-th channel value of current processed pixel (i.e. value located at `(x,y,z,N)` in the associated image, "\
+"* 'iN' : N-th channel value of current processed pixel (i.e. value located at `(x,y,z,N)` in the associated image, "\
 "if any ('0' otherwise). 'N' must be an integer in range '[0,9]'."\n\
 "* 'R', 'G', 'B' and 'A' are equivalent to 'i0', 'i1', 'i2' and 'i3' respectively."\n\
-"* 'I': current vector-valued processed pixel in the associated image, if any ('0' otherwise). "\
+"* 'I' : current vector-valued processed pixel in the associated image, if any ('0' otherwise). "\
 "The number of vector components is equal to the number of image channels (e.g. 'I' = `[ R,G,B ]` for a "\
 "`RGB` image)."\n\
 "* You may add '#ind' to any of the variable name above to retrieve the information for any "\
 "numbered image '[ind]' of the list (when this makes sense). For instance 'ia#0' denotes the average value of the "\
 "first image of the list)."\n\
-"* 'x': current processed column of the associated image, if any ('0' otherwise)."\n\
-"* 'y': current processed row of the associated image, if any ('0' otherwise)."\n\
-"* 'z': current processed slice of the associated image, if any ('0' otherwise)."\n\
-"* 'c': current processed channel of the associated image, if any ('0' otherwise)."\n\
-"* 't': thread id when an expression is evaluated with multiple threads ('0' means __master thread__)."\n\
-"* 'e': value of e, i.e. `2.71828...`."\n\
-"* 'pi': value of pi, i.e. `3.1415926...`."\n\
-"* 'u': a random value between '[0,1]', following a uniform distribution."\n\
-"* 'g': a random value, following a gaussian distribution of variance 1 (roughly in '[-6,6]')."\n\
-"* 'interpolation': value of the default interpolation mode used when reading pixel values with the pixel access "\
+"* 'x' : current processed column of the associated image, if any ('0' otherwise)."\n\
+"* 'y' : current processed row of the associated image, if any ('0' otherwise)."\n\
+"* 'z' : current processed slice of the associated image, if any ('0' otherwise)."\n\
+"* 'c' : current processed channel of the associated image, if any ('0' otherwise)."\n\
+"* 't' : thread id when an expression is evaluated with multiple threads ('0' means __master thread__)."\n\
+"* 'e' : value of e, i.e. `2.71828...`."\n\
+"* 'pi' : value of pi, i.e. `3.1415926...`."\n\
+"* 'u' : a random value between '[0,1]', following a uniform distribution."\n\
+"* 'g' : a random value, following a gaussian distribution of variance 1 (roughly in '[-6,6]')."\n\
+"* 'interpolation' : value of the default interpolation mode used when reading pixel values with the pixel access "\
 "operators (i.e. when the interpolation argument is not explicitly specified, see below for more details on pixel "\
 "access operators). Its initial default value is '0'."\n\
-"* 'boundary': value of the default boundary conditions used when reading pixel values with the pixel access "\
+"* 'boundary' : value of the default boundary conditions used when reading pixel values with the pixel access "\
 "operators (i.e. when the boundary condition argument is not explicitly specified, see below for more details "\
 "on pixel access operators). Its initial default value is '0'."\n\
 "# Vector calculus:"\n\
@@ -1201,9 +1200,9 @@ reference :
 "* Function 'string(_#siz,str1,str2,...,strN)' generates a vector corresponding to the concatenation of given "\
 "string/number arguments."\n\
 "# Special operators:"\n\
-"* ';': expression separator. The returned value is always the last encountered expression. "\
+"* ';' : expression separator. The returned value is always the last encountered expression. "\
 "For instance expression '1;2;pi' is evaluated as 'pi'."\n\
-"* '=': variable assignment. Variables in mathematical parser can only refer to numerical "\
+"* '=' : variable assignment. Variables in mathematical parser can only refer to numerical "\
 "values (vectors or scalars). Variable names are case-sensitive. Use this operator in conjunction with ';' to define "\
 "more complex evaluable expressions, such as ~~t = cos(x); 3*t^2 + 2*t + 1~~"\
 "These variables remain __local__ to the mathematical parser and cannot be accessed outside the evaluated "\
@@ -1213,11 +1212,11 @@ reference :
 "Constant variables allows certain types of optimizations in the math JIT compiler."\n\
 \
 "# Specific functions:"\n\
-"* 'u(max)' or 'u(min,max)': return a random value between '[0,max]' or '[min,max]', following a uniform "\
+"* 'u(max)' or 'u(min,max)' : return a random value between '[0,max]' or '[min,max]', following a uniform "\
 "distribution."\n\
-"* 'f2ui(value)' and 'ui2f(value)': Convert a large unsigned integer as a negative floating point value "\
+"* 'f2ui(value)' and 'ui2f(value)' : Convert a large unsigned integer as a negative floating point value "\
 "(and vice-versa), so that 32bits floats can be used to store large integers while keeping a unitary precision."\n\
-"* 'i(_a,_b,_c,_d,_interpolation_type,_boundary_conditions)': return the value of the pixel located at position "\
+"* 'i(_a,_b,_c,_d,_interpolation_type,_boundary_conditions)' : return the value of the pixel located at position "\
 "`(a,b,c,d)` in the associated image, if any ('0' otherwise). "\
 "'interpolation_type' can be { 0=nearest neighbor | 1=linear | 2=cubic }. "\
 "'boundary_conditions' can be { 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }. "\
@@ -1259,7 +1258,7 @@ reference :
 "with specified dimension and interpolation method. When using this function, you should consider retrieving the "\
 "(non-constant) image dimensions using the dynamic functions 'w(_#ind)', 'h(_#ind)', 'd(_#ind)', 's(_#ind)', "\
 "'wh(_#ind)', 'whd(_#ind)' and 'whds(_#ind)' instead of the corresponding constant variables."\n\
-"* 'if(condition,expr_then,_expr_else)': return value of 'expr_then' or 'expr_else', depending on the value of "\
+"* 'if(condition,expr_then,_expr_else)' : return value of 'expr_then' or 'expr_else', depending on the value of "\
 "'condition' { 0=false | other=true }. 'expr_else' can be omitted in which case '0' is returned if the condition "\
 "does not hold. Using the ternary operator 'condition?expr_then[:expr_else]' gives an equivalent expression. "\
 "For instance, G'MIC commands ~~fill if(x%10==0,255,i)~~ and ~~fill x%10?i:255~~ both draw blank vertical lines "\
