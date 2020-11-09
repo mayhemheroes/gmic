@@ -252,7 +252,7 @@ _help : skip ${1=""}
 
   # Help requested for a specific command.
   ks0="0" ks1="k[0]"
-  if $2 __help_header_ascii[] fi
+  if $2 reference_header_ascii[] fi
   r 1,{h+1},1,1,0,0,0,1
   s +,{'"#@cli "$command" :"'} s +,{'"#@cli "$command":"'} s +,{'"#@cli "$command"\n"'}
   if $!==1
@@ -1470,12 +1470,12 @@ reference_header_ascii :
       "        "$_vt100_g"(https://gmic.eu)"$_vt100_n\n\
       \n\
       "        Copyright (c) 2008-"{date(0)}", David Tschumperlé / GREYC / CNRS."\n\
-      "        "$_vt100_g$_vt100_u"(https://www.greyc.fr)"$_vt100_n\n
+      "        "$_vt100_g$_vt100_u"(https://www.greyc.fr)"$_vt100_n
   +e[] $str
 
 reference_section_ascii :
-  if $_section +e[] "" fi
   _section+=1
+  +e[] ""
   ('$_section." "') ('"$*"') +f.. {'" "'} +f.. {'-'} a[-4,-3] x a[-2,-1] x
   +e[] "  "$_vt100_r$_vt100_b{-2,t}$_vt100_n
   +e[] "  "$_vt100_r{t}$_vt100_n"\n"
@@ -1669,53 +1669,6 @@ reference_end_html :
   x "ln -fs table_of_contents.html index.html"
   rm
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-# Commands to output help in ascii format.
-_help_header_ascii :
-  __help_header_ascii
-  _section=0 _space1="" _space2=" "
-  _help_section "Usage"
-
-__help_header_ascii :
-  v 0
-  if $_prerelease strprerelease=" (pre-release ""#"$_prerelease")" else strprerelease="" fi
-  str="\n  "${_vt100_b}"gmic: GREYC\'s Magic for Image Computing:"$_vt100_n" command-line interface
-\n        "$_vt100_u"(https://gmic.eu)"$_vt100_n"
-\n        "${_vt100_r}${_vt100_b}"Version "${-strver}$strprerelease$_vt100_n"
-\n
-\n        Copyright (c) 2008-"{date(0)}", David Tschumperlé / GREYC / CNRS.
-\n        "$_vt100_g"(https://www.greyc.fr)"$_vt100_n
-  +e[] $str
-
-_help_section_ascii :
-  v 0
-  _section+=1
-  {narg({'"$1"'})},1,1,1,{'-'}
-  +e[] "\n "$_vt100_m$_vt100_b$_section". $1"
-  +e[] "    "${_space{narg({'$_section'})}}{t}$_vt100_n"\n"
-  rm.
-
-_help_content_ascii :
-  v 0
-  +e[] "$*"
-
-_help_footer_ascii :
-  v 0
-  +e[] "  "$_vt100_r$_vt100_b"** G\47MIC comes with ABSOLUTELY NO WARRANTY; "\
-       "for details visit: https://gmic.eu **"$_vt100_n
-
 # Commands to output help in man page format.
 _help_header_man :
   v 0
@@ -1731,7 +1684,7 @@ _help_header_man :
   _vt100_c="\\fI"
   _vt100_m=""
   _prerelease=
-  __help_header_ascii
+  reference_header_ascii[]
   _vt100_n="__N"
   _vt100_b="__B"
   _vt100_r="__B"
@@ -1778,7 +1731,8 @@ use_vt100 :
 #@cli version
 #@cli : Display current version number on stdout.
 version :
-  __help_header_ascii[]
+  use_vt100
+  reference_header_ascii[]
   if !0$_cli_noarg +e[] "\n" fi
 
 v : # Allow 'gmic +v' to get the version number.
@@ -30835,7 +30789,6 @@ x_whirl : check "${1=0.2}>=0" check_display
 # the G'MIC plug-in
 #
 #-------------------------------------
-__help_end : #  <-- don't remove me, used as a end marker for command 'help' !
 
 # Function that returns the list of external sources to be included in the plug-in.
 # This command can be superseded on the user '.gmic' file to add sources for the plug-in.
