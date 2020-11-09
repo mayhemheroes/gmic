@@ -693,12 +693,10 @@ gmd_url_html : # Replace 'http[s]://address.url' by HTML link.
 # $1 = output mode, can be { ascii | html | man }.
 # Reference and command documentation is written using the G'MIC-markdown syntax.
 reference :
-  m "_begin : reference_begin_$1"
   m "_section : reference_section_$1 \"$""*\""
   m "_text : reference_text_$1 \"$""*\""
-  m "_end : reference_end_$1"
-  _begin
-
+  reference_begin_$1
+  reference_header_$1
   _section "Usage"
   _text \
 "~~gmic [command1 [arg1_1,arg1_2,..]] .. [commandN [argN_1,argN_2,..]]~~"\n\
@@ -707,7 +705,8 @@ reference :
 "It can be used to convert, manipulate, filter and visualize image datasets made of one or "\
 "several 1D/2D or 3D multi-spectral images."\n\
 \n\
-"This reference documentation describes all the technical aspects of the G'MIC language."\n\
+"This reference documentation describes all the technical aspects of the G'MIC framework, "\
+"in its current version "${-strver}"."\n\
 \n\
 "As a starting point, you may want to visit our detailed tutorial pages, at: https://gmic.eu/tutorial/"
 
@@ -1502,7 +1501,8 @@ reference :
 "## Launch a set of G'MIC interactive demos: "\n\
 "~~$ gmic demos~~"
 
-  _end um _section,_text,_end
+  reference_end_$1
+  um _section,_text
 
 #
 # Implement output mode 'ascii' for command 'reference'.
@@ -1510,6 +1510,17 @@ reference :
 reference_begin_ascii :
   use_vt100
   _section=0
+
+reference_header_ascii :
+  if $_prerelease strprerelease=" (pre-release ""#"$_prerelease")" else strprerelease="" fi
+  str=\n\
+      "  "${_vt100_b}"gmic: GREYC\'s Magic for Image Computing:"$_vt100_n" command-line interface"\n\
+      "        "$_vt100_u"(https://gmic.eu)"$_vt100_n\n\
+      "        "${_vt100_c}${_vt100_b}"Version "${-strver}$strprerelease$_vt100_n\n\
+      \n\
+      "        Copyright (c) 2008-2020, David Tschumperlé / GREYC / CNRS."\n\
+      "        "$_vt100_g"(https://www.greyc.fr)"$_vt100_n\n
+  +e[] $str
 
 reference_section_ascii :
   if $_section +e[] "" fi
