@@ -357,7 +357,7 @@ gmd_bold : # **words in bold face**
 gmd_braces : # { list of values }
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>512?(beg = -1);
-    beg<0 && i==_'{' && (!y || isin(j[-1],_' ',_'(',_'\n',4))?(beg = y):
+    beg<0 && i==_'{' && j[1]==_' ' && (!y || isin(j[-1],_' ',_'(',_'\n',4))?(beg = y):
     beg>=0 && i==_'}'?(i[y] = 3; i[beg] = 2; beg = -1)"
 
 gmd_code : # ~~code block~~
@@ -460,18 +460,6 @@ gmd_section3 : # ### Section
 #
 # Conversion from 'gmd' to 'ascii'.
 #
-gmd2ascii :
-  gmd_gmic_ascii
-  gmd_bold_ascii
-  gmd_italic_ascii
-  gmd_mono_ascii
-  gmd_monobold_ascii
-  gmd_braces_ascii
-  gmd_link_ascii
-  gmd_code_ascii
-  gmd_image_ascii
-  gmd_section_ascii
-
 gmd_bold_ascii :
   gmd_bold
   replace_str "\2*",$_gmic_b
@@ -479,8 +467,8 @@ gmd_bold_ascii :
 
 gmd_braces_ascii :
   gmd_braces
-  replace_str "\2",$_gmic_c
-  replace_str "\3",$_gmic_n
+  replace_str "\2",$_gmic_m$_gmic_b"{"
+  replace_str "\3","} "$_gmic_n
 
 gmd_code_ascii :
   gmd_code
