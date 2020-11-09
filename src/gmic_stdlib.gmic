@@ -553,14 +553,17 @@ gmd_url_ascii :
 gmd_strcut_ascii : # Cut long sentences into blocs of size<$1.
   s -,{'\n'} repeat $! l[$<]
     i[0] 1,100%
-    eval. ">begin(n = 0; p = q = 0); # n = bloc number, p = pos of bloc start, q = pos of latest endable (>=p).
-      y - p>=$1?(
-        copy(i[#0,p],n++,q - p + 1,1,0);
-        p = q + 1;
-        q = p;
-      ):(
-        isin(i,_' ')?(q = y);
+    eval "n = p = q = r = 0; # n = bloc number, p = pos of bloc start, q = pos of latest endable (>=p).
+      while (r<h,
+        r - p>=$1?(
+          copy(i[#0,p],n++,q - p + 1,1,0);
+          p = r = ++q;
+        ):(
+          isin(i,_' ')?(q = r);
+        );
+        ++r;
       )"
+    d
     a x s y,0 z 1,1
   endl done
 
