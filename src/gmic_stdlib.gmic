@@ -395,7 +395,7 @@ gmd_link : # ''link to referenced section/command''
 gmd_list1 : # \n* List item level-1
   1 a[^-1] [-1],y rm.
   eval[^] ">begin(beg = -1);
-    beg>=0 && y - beg>1024?(beg = -1);
+    beg>=0 && y - beg>2048?(beg = -1);
     beg<0 && i==_'*' && j[1]==_' ' && (!y || isin(j[-1],_'\n',3,4))?(beg = y):
     beg>=0 && (isin(i,4,_'\n') || y==h - 1)?(i[y] = 3; i[beg] = 2; beg = -1)"
   autocrop 0
@@ -403,7 +403,7 @@ gmd_list1 : # \n* List item level-1
 gmd_list2 : # \n  - List item level-2
   1 a[^-1] [-1],y rm.
   eval[^] ">begin(beg = -1);
-    beg>=0 && y - beg>1024?(beg = -1);
+    beg>=0 && y - beg>2048?(beg = -1);
     beg<0 && i==_'-' && j[1]==_' ' && j[-1]==_' ' && j[-2]==_' ' && (!y || isin(j[-3],_'\n',3,4))?(beg = y):
     beg>=0 && (isin(i,4,_'\n') || y==h - 1)?(i[y] = 3; i[beg] = 2; beg = -1)"
   autocrop 0
@@ -411,7 +411,7 @@ gmd_list2 : # \n  - List item level-2
 gmd_list3 : # \n    . List item level-3
   1 a[^-1] [-1],y rm.
   eval[^] ">begin(beg = -1);
-    beg>=0 && y - beg>1024?(beg = -1);
+    beg>=0 && y - beg>2048?(beg = -1);
     beg<0 && i==_'.' && j[1]==_' ' && j[-1]==_' ' && j[-2]==_' ' && j[-3]==_' ' && j[-4]==_' ' &&
       (!y || isin(j[-5],_'\n',3,4))?(beg = y):
     beg>=0 && (isin(i,4,_'\n') || y==h-1)?(i[y] = 3; i[beg] = 2; beg = -1)"
@@ -638,14 +638,14 @@ gmd_link_html :
 
 gmd_list_html :
   gmd_list1
-  replace_str "\2 ","\n<div class=\"gmd_list1\">"
-  replace_str "\3","</div>\n"
+  replace_str "\2 ","<div class=\"gmd_list1\">"
+  replace_str "\3","</div>"\n
   gmd_list2
-  replace_str "  \2 ","\n<div class=\"gmd_list2\">"
-  replace_str "  \3","</div>\n"
+  replace_str "  \2 ","<div class=\"gmd_list2\">"
+  replace_str "  \3","</div>"\n
   gmd_list3
-  replace_str "    \2 ","\n<div class=\"gmd_list3\">"
-  replace_str "    \3","</div>\n"
+  replace_str "    \2 ","<div class=\"gmd_list3\">"
+  replace_str "    \3","</div>"\n
 
 gmd_mono_html :
   gmd_mono
@@ -5133,12 +5133,9 @@ parse_cli_html :
       else
 
         # Other kind of description line
-        is_bullet={find(crop(),'"can be {"')>=0}
         gmd2html
         if $line==1 html.="      <br/>"\n fi
-        html.="      "
-        if $is_bullet html.="&#9679;&nbsp;&nbsp;" fi
-        html.={t}"<br/>"\n
+        html.={t}
         line+=1
       fi
     endl done
