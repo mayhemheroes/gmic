@@ -550,6 +550,19 @@ gmd_section_ascii :
 
 gmd_url_ascii :
 
+gmd_strcut_ascii : # Cut long sentences into blocs of size<$1.
+  s -,{'\n'} repeat $! l[$<]
+    i[0] 1,100%
+    eval. ">begin(n = 0; p = q = 0); # n = bloc number, p = pos of bloc start, q = pos of latest endable (>=p).
+      y - p>=$1?(
+        copy(i[#0,p],n++,q - p + 1,1,0);
+        p = q + 1;
+        q = p;
+      ):(
+        isin(i,_' ')?(q = y);
+      )"
+    a x s y,0 z 1,1
+  endl done
 
 #
 # Conversion from gmd to html.
@@ -1481,10 +1494,11 @@ reference_section_ascii :
 reference_text_ascii :
   l[]
     ('"$*"') gmd. ascii
-    s +,{'\n'}
-    repeat $! l[$>] strcut[] {t},100,"\n  " rm ('${}':y) endl done
+    s -,{'\n'}
+    gmd_strcut_ascii 80
+    i[^0] ('\n')
     a y
-    +e[] "  "{t}"\n"
+    +e[] {t}
     rm
   endl
 
