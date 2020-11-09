@@ -537,7 +537,7 @@ gmd_section_ascii :
   replace_str "\3",$_vt100_n"\n"
 
 gmd_url_ascii :
-  if !narg($_gmic_vt100_u) return fi
+  if ['$_vt100_u']==0 return fi
   repeat $! l[$>]
     if find(crop(),'http')>=0 # Replace URL in description
       i[0] 1,100%
@@ -1524,11 +1524,11 @@ reference_header_ascii :
   if $_prerelease strprerelease=" (pre-release ""#"$_prerelease")" else strprerelease="" fi
   str=\n\
       "  "${_vt100_b}"gmic: GREYC\'s Magic for Image Computing:"$_vt100_n" command-line interface"\n\
-      "        "$_vt100_u"(https://gmic.eu)"$_vt100_n\n\
       "        "${_vt100_c}${_vt100_b}"Version "${-strver}$strprerelease$_vt100_n\n\
+      "        "$_vt100_g"(https://gmic.eu)"$_vt100_n\n\
       \n\
       "        Copyright (c) 2008-"{date(0)}", David Tschumperlé / GREYC / CNRS."\n\
-      "        "$_vt100_g"(https://www.greyc.fr)"$_vt100_n\n
+      "        "$_vt100_g$_vt100_u"(https://www.greyc.fr)"$_vt100_n\n
   +e[] $str
 
 reference_section_ascii :
@@ -4723,7 +4723,21 @@ parse_cli_trigger_bashcompletion :
 #
 parse_cli_ascii :
   use_vt100
+  category=
+  if !narg($_section) _section=0 fi
+
   repeat $! if s=['{$>,n}'];s[0]==_'_' continue fi l[$>]
+
+    # Detect and display new section.
+    ('{n}') l. s -,{'@'} if $!>1 cat={t} fi rm endl
+    if ['$cat']!=['$category']
+      _section+=1
+      category=$cat
+      ('$_section." "') ('$category') +f.. {'" "'} +f.. {'-'} a[-4,-3] x a[-2,-1] x
+      +e[] \n"  "$_vt100_r$_vt100_b{-2,t}$_vt100_n
+      +e[] "  "$_vt100_r{t}$_vt100_n
+      rm[-2,-1]
+    fi
 
     # Parse command declaration.
     s -,{'\n'} discard {'#@cli'} max {'" "'} autocrop {'" "'}
@@ -4752,7 +4766,7 @@ parse_cli_ascii :
     rm[0]
 
     # Parse command description.
-    n_example=0 nl=
+    n_example=0 nl="\n"
     repeat $! if {$>,i==_':'} l[$>]
       rows 1,100% autocrop {'" "'}
       if "find(#0,'(eq. to ')>=0" # Found 'Eq. to' description.
@@ -4794,7 +4808,6 @@ parse_cli_ascii :
       fi
 
     endl fi done
-
     rm 0
   endl done rm u $eqto
 
@@ -5317,7 +5330,7 @@ parse_cli_trigger_print :
     discard. -1 k[{^}]
   fi
 
-#@cli parse_gui : _outputmode,_{ * | filter_name},
+#@cli parse_gui : _outputmode,_{ * | filter_name}
 #@cli : Parse selected filter definitions and generate info about filters in selected output mode.
 #@cli : 'outputmode' can be { json | list | print | strings | update | zart }.\n
 #@cli : It is possible to define a custom output mode, by implementing the following commands
@@ -5330,26 +5343,26 @@ parse_cli_trigger_print :
 #@cli : Here is the list of global variables set by the parser, accessible in command 'parse_gui_outputmode':\n
 #@cli : '$_nbfilters': Number of matching filters.
 #@cli : '$_nongui' (stored as an image): All merged lines in the file that do not correspond to '#@gui' lines.\n
-#@cli : For each filter \#F ('F' in range [0,$_nbfilters-1]):
-#@cli : . '$_fF_name': Filter name.
-#@cli : . '$_fF_path': Full path.
-#@cli : . '$_fF_locale': Filter locale (empty, if not specified).
-#@cli : . '$_fF_command': Filter command.
-#@cli : . '$_fF_commandpreview': Filter preview command (empty, if not specified).
-#@cli : . '$_fF_zoomfactor': Default zoom factor (empty, if not specified).
-#@cli : . '$_fF_zoomaccurate': Is preview accurate when zoom changes ? (can be { 0=false | 1=true }).
-#@cli : . '$_fF_inputmode': Default preferred input mode (empty, if not specified).
-#@cli : . '$_fF_hide': Path of filter hid by current filter (for localized filters, empty if not specified).
-#@cli : . '$_fF_nbparams': Number of parameters.\n
-#@cli : For each parameter \#P of the filter \#F ('P' in range [0,$_fF_nbparams-1]):
-#@cli : . '$_fF_pP_name': Parameter name.
-#@cli : . '$_fF_pP_type': Parameter type.
-#@cli : . '$_fF_pP_responsivity': Parameter responsivity (can be { 0 | 1 }).
-#@cli : . '$_fF_pP_visibility': Parameter visibility.
-#@cli : . '$_fF_pP_propagation': Propagation of the parameter visibility.
-#@cli : . '$_fF_pP_nbargs': Number of parameter arguments.\n
-#@cli : For each argument \#A of the parameter \#P ('A' in range [0,$_fF_pP_nbargs-1]):
-#@cli : . '$_fF_pP_aA': Argument value\n
+#@cli : For each filter `\#F` ('F' in range `[0,$_nbfilters-1]`):
+#@cli : * '$_fF_name' : Filter name.
+#@cli : * '$_fF_path' : Full path.
+#@cli : * '$_fF_locale' : Filter locale (empty, if not specified).
+#@cli : * '$_fF_command' : Filter command.
+#@cli : * '$_fF_commandpreview' : Filter preview command (empty, if not specified).
+#@cli : * '$_fF_zoomfactor' : Default zoom factor (empty, if not specified).
+#@cli : * '$_fF_zoomaccurate' : Is preview accurate when zoom changes ? (can be { 0=false | 1=true }).
+#@cli : * '$_fF_inputmode' : Default preferred input mode (empty, if not specified).
+#@cli : * '$_fF_hide' : Path of filter hid by current filter (for localized filters, empty if not specified).
+#@cli : * '$_fF_nbparams' : Number of parameters.\n
+#@cli : For each parameter `\#P` of the filter \#F ('P' in range `[0,$_fF_nbparams-1]`):
+#@cli : * '$_fF_pP_name' : Parameter name.
+#@cli : * '$_fF_pP_type' : Parameter type.
+#@cli : * '$_fF_pP_responsivity' : Parameter responsivity (can be { 0 | 1 }).
+#@cli : * '$_fF_pP_visibility' : Parameter visibility.
+#@cli : * '$_fF_pP_propagation' : Propagation of the parameter visibility.
+#@cli : * '$_fF_pP_nbargs' : Number of parameter arguments.\n
+#@cli : For each argument `\#A` of the parameter \#P ('A' in range `[0,$_fF_pP_nbargs-1]`):
+#@cli : * '$_fF_pP_aA' : Argument value\n
 #@cli : Default parameters: 'filter_name=*' and 'output_format=print'.
 parse_gui : skip "${1=print},${2=*}"
   e[^-1] "Parse '#@gui' filters '$2' and output in '$1' mode."
