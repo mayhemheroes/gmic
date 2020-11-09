@@ -324,7 +324,7 @@ __help :
   _help_examples[]
   _help_footer_$1[]
 
-# Commands to manage the G'MIC-markdown format (gmd).
+# Commands to manage the G'MIC-markdown format ('gmd').
 #
 # 'gmd' defines the following patterns:
 # - __words in italic__
@@ -343,26 +343,8 @@ __help :
 # - \n  - Item of a sub-list (level 1)
 # - \n    . Item of a sub-list (level 2)
 
-# Convert selected 'gmd' strings to specified output format.
-# $1 = output format. Can be { html | ascii }.
-gmd :
-  replace {'\n'},4 # '\4' = original newlines
-  gmd_gmic_$1
-  gmd_bold_$1
-  gmd_italic_$1
-  gmd_mono_$1
-  gmd_monobold_$1
-  gmd_link_$1
-  gmd_braces_$1
-  gmd_code_$1
-  gmd_image_$1
-  gmd_list_$1
-  gmd_section_$1
-  gmd_url_$1
-  gmd_newline_$1
-
 #
-# Commands that detect 'gmd' patterns and insert starting and closing tags '\2' and '\3'.
+# The commands below detect the valid 'gmd' patterns and insert starting and closing tags '\2' and '\3'.
 #
 gmd_bold : # **words in bold face**
   eval[^] ">begin(beg = -1);
@@ -476,8 +458,17 @@ gmd_section3 : # ### Section
   autocrop 0
 
 #
-# Conversion from gmd to ascii.
+# Conversion from 'gmd' to 'ascii'.
 #
+gmd2ascii :
+  gmd_gmic_ascii
+  gmd_bold_ascii
+  gmd_italic_ascii
+  gmd_mono_ascii
+  gmd_monobold_ascii
+  gmd_code_ascii
+  gmd_image_ascii
+
 gmd_bold_ascii :
   gmd_bold
   replace_str "\2*",$_gmic_b
@@ -491,7 +482,7 @@ gmd_braces_ascii :
 gmd_code_ascii :
   gmd_code
   replace_str "\2~","\n"$_gmic_b"    "
-  replace_str "\3~",$_gmic_n"\n"
+  replace_str "\3~",$_gmic_n"\n\n"
 
 gmd_gmic_ascii :
 
@@ -502,8 +493,8 @@ gmd_image_ascii :
 
 gmd_italic_ascii :
   gmd_italic
-  replace_str "\2_",""
-  replace_str "\3_",""
+  replace_str "\2_",$_gmic_i
+  replace_str "\3_",$_gmic_n
 
 gmd_link_ascii :
   gmd_link
@@ -551,33 +542,44 @@ gmd_section_ascii :
 gmd_url_ascii :
 
 gmd_strcut_ascii : # Cut long sentences into blocs of size<$1.
-  s -,{'\n'} repeat $! l[$<]
+  repeat $! l[$<]
     i[0] 1,100%
     eval "n = p = q = r = 0; # n = bloc number, p = pos of bloc start, q = pos of latest endable (>=p).
       while (r<h,
+#        print(r);
         r - p>=$1?(
 #          print([p,q,r]);
-          q - p<$1/2?(q = r - 1);
+          q - p<2*$1/3?(q = r - 1);
           copy(i[#0,p],n++,q - p + 1,1,0);
           p = r = ++q;
         ):(
           isin(i[r],_' ')?(q = r);
         );
         ++r;
-      )"
+      );
+      p<h?copy(i[#0,p],n,h - p,1,0)"
     a x s y,0 z 1,1
   endl done
 
-foo :
-  ('"'correlate(I,wI,hI,dI,sI,K,wK,hK,dK,sK,_boundary_conditions,_is_normalized,_channel_mode,_xcenter,_ycenter,_zcenter,_xstart,_ystart,_zstart,_xend,_yend,_zend,_xstride,_ystride,_zstride,_xdilation,_ydilation,_zdilation)' returns the correlation, unrolled as a vector, of the wI x hI x dI x sI-sized image I with the wK x hK x dK x sK-sized kernel K (the meaning of the other arguments are the same as in command correlate). Similar function convolve(...) is also defined for computing the convolution between I and K."')
-  gmd_strcut_ascii 80
-  repeat $!
-    e[] {$>,t}
-  done
+#
+# Conversion from 'gmd' to 'html'.
+#
+gmd2html :
+  replace {'\n'},4 # '\4' = original newlines
+  gmd_gmic_html
+  gmd_bold_html
+  gmd_italic_html
+  gmd_mono_html
+  gmd_monobold_html
+  gmd_link_html
+  gmd_braces_html
+  gmd_code_html
+  gmd_image_html
+  gmd_list_html
+  gmd_section_html
+  gmd_url_html
+  gmd_newline_html
 
-#
-# Conversion from gmd to html.
-#
 gmd_bold_html :
   gmd_bold
   replace_str "\2*","<span class=\"gmd_bold\">"
@@ -1499,16 +1501,25 @@ reference_section_ascii :
   _section+=1
   ('$_section." "') ('"$*"') +f.. {'" "'} +f.. {'-'} a[-4,-3] x a[-2,-1] x
   +e[] "  "$_gmic_r$_gmic_b{-2,t}$_gmic_n
-  +e[] "  "$_gmic_r{t}$_gmic_n
+  +e[] "  "$_gmic_r{t}$_gmic_n"\n"
   rm[-2,-1]
 
 reference_text_ascii :
   l[]
-    ('"$*"') gmd. ascii
-    s -,{'\n'}
-    gmd_strcut_ascii 80
-    i[^0] ('\n')
+    ('"$*"')
+    s -,{'\n'} gmd_strcut_ascii 100
+    gmd2ascii
+    i[^] ({'\n'}) a y autocrop {'\n'}
+
+    # Ensure output contains no more than two consecutive newlines.
+    s +,{'\n'}
+    eval "for (p = 0, p<l, ++p,
+            i(#p)==_'\n' && h(#p)>2?resize(#p,1,2,1,1,0):
+            (0);
+          )"
+
     a y
+
     +e[] {t}
     rm
   endl
@@ -1557,7 +1568,7 @@ reference_end_section_html :
 
 reference_text_html : skip "$*"
   ('"$*"':y)
-  gmd. html
+  gmd2html.
   if $!>1 a[-2,-1] y fi
 
 reference_end_html :
@@ -1736,6 +1747,7 @@ use_vt100 :
     _gmic_n="\33[0;0;0m"
     _gmic_r="\33[0;31;59m"
     _gmic_g="\33[0;32;59m"
+    _gmic_i="\33[3m"
     _gmic_m="\33[0;35;59m"
     _gmic_c="\33[0;36;59m"
     _gmic_b="\33[1m"
@@ -4967,7 +4979,7 @@ parse_cli_html :
           rm[0,1]
         fi
         a y
-        gmd html
+        gmd2html
         html.="      "{t}\n
 
       elif "find(#0,'Default value:')>=0 || find(#0,'Default values:')>=0"
@@ -5027,7 +5039,7 @@ parse_cli_html :
 
         # Other kind of description line
         is_bullet={find(crop(),'"can be {"')>=0}
-        gmd html
+        gmd2html
         if $line==1 html.="      <br/>"\n fi
         html.="      "
         if $is_bullet html.="&#9679;&nbsp;&nbsp;" fi
