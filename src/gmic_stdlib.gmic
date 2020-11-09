@@ -1560,7 +1560,7 @@ reference_text_ascii :
     s +,{'\n'}
     eval "for (p = 0, p<l, ++p,
             i(#p)==_'\n' && h(#p)>2?resize(#p,1,2,1,1,0):
-            (resize(#p,1,h#p + 2,1,1,0,0,0,1); i[#p,0] = i[#p,1] = _' '))"
+            (resize(#p,1,h#p + 2,1,1,0,0,0,1); copy(i[#p,0],_' ',2,1,0)))"
     a y
     +e[] {t}
     rm
@@ -4738,7 +4738,7 @@ parse_cli_ascii :
           +e[] "      Shortcut for command '"$_vt100_m$_vt100_b$eqto$_vt100_n"'."
         else
           eqto=
-          l. gmd_strcut_ascii. 90 if $!>1 i[1--2] ('"\\\\\n       "':y) a y fi endl
+          l. gmd_strcut_ascii 100 if $!>1 i[1--2] ('"\\\\\n       "':y) a y fi endl
           str="      "{t}${"if "$<" u \" |\" else u \"\" fi"}
           +e[] ${_vt100_c}$str$_vt100_n
         fi
@@ -4748,42 +4748,69 @@ parse_cli_ascii :
     rm[0]
 
     # Parse command description.
-    n_example=0 nl=\n nnl=
+    n_example=0
     repeat $! if {$>,i==_':'} l[$>]
       rows 1,100% autocrop {'" "'}
       if "find(#0,'(eq. to ')>=0" # Found 'Eq. to' description.
         +l s -,{'\47'} shortcut={1,t} rm onfail shortcut="(unknown)" rm endl
-        str="      (equivalent to shortcut command '"$_vt100_m$_vt100_b$shortcut$_vt100_n"')." nnl=\n
+        +e[] "  (equivalent to shortcut command '"$_vt100_m$_vt100_b$shortcut$_vt100_n"')."
       elif "find(#0,'Default value:')>=0 || find(#0,'Default values:')>=0" # Found 'Default value(s):' description
         s +,{':'}
         if $!>2" && "h#1==1" && "i("#1")==_':'
           i[0] ('$_vt100_b':y) i[2] ('$_vt100_n':y)
         fi
         a y
-        str="      "{t} if !narg($nnl) nl=\n fi nnl=\n
+        +e[] "    "{t}
       elif i==_'$'" && "i[1]!=_'$' # Found example description
         rows 1,100% autocrop {'" "'}
         example={t}
         n_example+=1
-        if $n_example==1 example_str=${_vt100_b}"Example:"$_vt100_n" "[#$n_example] nl=\n
+        if $n_example==1 example_str=${_vt100_b}"Example:"$_vt100_n" "[#$n_example]
         else example_str="         "[#$n_example]
         fi
-        str="      "$example_str" "$_vt100_g$example$_vt100_n
-        nnl=\n
+        +e[] "      "$example_str" "$_vt100_g$example$_vt100_n
       elif i==_'$'" && "i[1]==_'$' # Found link to tutorial page
         if h==2 url=https://gmic.eu/tutorial/_$name.shtml
         else rows 2,100 autocrop {'" "'} url=https://gmic.eu/tutorial/{t}.shtml
         fi
-        str="      "${_vt100_b}"Tutorial: "$_vt100_n$_vt100_u$url$_vt100_n nnl=\n
+        +e[] "      "${_vt100_b}"Tutorial: "$_vt100_n$_vt100_u$url$_vt100_n
       else # Other kind of description line
-        str={t}
+        parse_cli_text_ascii.
+        +e[] {t}
       fi
-      +e[] $nl$str
-      nl=$nnl nnl=
+
     endl fi done
 
     rm 0
   endl done rm u $eqto
+
+parse_cli_text_ascii :
+  s -,{'\n'}
+  gmd_list_ascii
+  gmd_code_ascii
+  gmd_image_ascii
+  s +,{'\n'}
+  gmd_strcut_ascii 100
+  gmd_gmic_ascii
+  gmd_bold_ascii
+  gmd_italic_ascii
+  gmd_mono_ascii
+  gmd_monobold_ascii
+  gmd_braces_ascii
+  gmd_link_ascii
+  gmd_url_ascii
+  gmd_image_ascii
+  gmd_section_ascii
+  i[^] ({'\n'})
+  a y autocrop {'\n'}
+
+  # Ensure output text contains no more than two consecutive newlines.
+  # Also add a 4-chars left margin on each line.
+  s +,{'\n'}
+  eval "for (p = 0, p<l, ++p,
+          i(#p)==_'\n' && h(#p)>2?resize(#p,1,2,1,1,0):
+          (resize(#p,1,h#p + 4,1,1,0,0,0,1); copy(i[#p,0],_' ',4,1,0)))"
+  a y
 
 parse_cli_trigger_ascii :
   if "['$1']!='*'"
