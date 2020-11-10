@@ -7352,16 +7352,18 @@ update_reference_html : check "isbool(${1=0})"
   fi
   rm
   e[^-1] "Generate reference documentation pages for the G'MIC website."
+  it $HOME/work/src/gmic/src/gmic_stdlib.gmic
+  it $HOME/work/src/gmic-community/include/jerome_boulanger.gmic
+  a y
 
   # Generate image of examples.
   x "mkdir -p img"
-  it ../../src/gmic_stdlib.gmic
   _parse_cli_images_path="img/"
-  parse_cli images
+  +parse_cli images
+  parse_cli html
 
   # Generate reference pages in HTML.
   rm
-  it ../../src/gmic_stdlib.gmic parse_cli html
   reference html
 
   # Upload to G'MIC server.
@@ -7370,7 +7372,6 @@ update_reference_html : check "isbool(${1=0})"
     x "lftp ftp://"$GMIC_LOGIN":"$GMIC_PASSWD"@"$GMIC_FTP" -e \"mirror -eRL . /www/gmic/reference ; quit\""
   fi
   e[] "\n > All done.\n"
-
 
 # string2ts : ts_file.ts,strings_en.txt,strings_fr.txt
 # Regenerate .ts file from new translated strings (separated by newline in files strings_*).
