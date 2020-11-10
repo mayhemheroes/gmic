@@ -20664,7 +20664,7 @@ boxfitting : check "isint(${1=3}) && $1>=1 && isint(${2=0}) && $2>=0 && ${3=0.1}
 # 'brush_light_type=0', 'brush_light_strength=0.25', 'brush_opacity=0.8', 'painting_density=20%', \
 # 'painting_contours_coherence=0.9', 'painting_orientation_coherence=0.9', 'painting_coherence_alpha=1', \
 # 'painting_coherence_sigma=1', 'painting_primary_angle=0', 'painting_angle_dispersion=0.2'
-#@cli : $ image.jpg 40,40 gaussian[-1] 10,4 spread[-1] 4,0 brushify[0] [1]
+#@cli : $ image.jpg 40,40 gaussian[-1] 10,4 spread[-1] 10,0 brushify[0] [1],1
 brushify : check ${"is_image_arg $1"}" &&"\         # $1: [brush]
                     "isint(${2=4}) && $2>=1 &&"\      # $2: brush_nb_sizes
                     "${3=0.25}>=0 && $3<=1 &&"\       # $3: brush_min_size_factor
@@ -20746,7 +20746,7 @@ brushify : check ${"is_image_arg $1"}" &&"\         # $1: [brush]
 #@cli : Apply cartoon effect on selected images.
 #@cli : Default values: 'smoothness=3', 'sharpening=150', 'threshold=20', 'thickness=0.25', 'color=1.5' \
 # and 'quantization=8'.
-#@cli : $ image.jpg cartoon 3,80,15
+#@cli : $ image.jpg cartoon 3,50,10,0.25,3,16
 cartoon : skip ${1=3},${2=150},${3=20},${4=0.25},${5=1.5},${6=8}
   e[^-1] "Apply cartoon effect on image$?, with smoothness $1, sharpening $2, threshold $3, thickness $4, color $5
           and quantization $6."
@@ -21025,9 +21025,9 @@ _heart9x7 :
 
 #@cli houghsketchbw : _density>=0,_radius>0,0<=_threshold<=100,0<=_opacity<=1,_votesize[%]>0
 #@cli : Apply hough B&W sketch effect on selected images.
-#@cli : Default values: 'density=8', 'radius=5', 'threshold=80', 'opacity=0.1' and 'votesize=100%'.
+#@cli : Default values: 'density=100', 'radius=3', 'threshold=100', 'opacity=0.1' and 'votesize=100%'.
 #@cli : $ image.jpg +houghsketchbw ,
-houghsketchbw : check "${1=8}>=0 && ${2=5}>=0 && ${3=80}>=0 && $3<=100 && ${4=0.1}>=0 && $4<=1 && ${5=100%}>0"
+houghsketchbw : check "${1=100}>=0 && ${2=3}>=0 && ${3=100}>=0 && $3<=100 && ${4=0.1}>=0 && $4<=1 && ${5=100%}>0"
   e[^-1] "Apply hough B&W sketch effect on image$?, with density $1, radius $2, threshold $3, opacity $4
           and votesize $5."
   luminance repeat $! l[$>] nm={0,n}
@@ -21106,7 +21106,7 @@ light_relief : skip ${1=0.3},${2=0.5},${3=0.2},${4=0},${5=0.2},${6=0.5},${7=0.5}
 #@cli : The algorithm is inspired from the one described on the webpage 'http://linify.me/about'.
 #@cli : Default values: 'density=50', 'spreading=2', 'resolution=40%', 'line_opacity=10', 'line_precision=24' \
 # and 'mode=0'.
-#@cli : $ image.jpg linify 40
+#@cli : $ image.jpg linify 60
 linify : check "${1=40}>=0 && $1<=100 && ${2=2}>=0 && ${3=40%}>0 && ${4=10}>=0 && isint(${5=24}) && $5>0 &&
                 isbool(${6=0})"
   e[^-1] "Apply linify effect on image$?, with density $1, spreading $2, resolution $3, line opacity $4,
@@ -21167,7 +21167,7 @@ linify : check "${1=40}>=0 && $1<=100 && ${2=2}>=0 && ${3=40%}>0 && ${4=10}>=0 &
 #@cli mosaic : 0<=_density<=100
 #@cli : Create random mosaic from selected images.
 #@cli : Default values: 'density=30'.
-#@cli : $ image.jpg mosaic ,
+#@cli : $ image.jpg mosaic , +fill "I!=J(1) || I!=J(0,1)?[0,0,0]:I"
 mosaic : check "${1=30}>=0"
   e[^-1] "Apply mosaic effect on image$?, with density $1."
   repeat $! l[$>]
@@ -21281,7 +21281,7 @@ polaroid : check "${1=10}>=0 && ${2=20}>=0"
 #@cli polygonize : _warp_amplitude>=0,_smoothness[%]>=0,_min_area[%]>=0,_resolution_x[%]>0,_resolution_y[%]>0
 #@cli : Apply polygon effect on selected images.
 #@cli : Default values: 'warp_amplitude=300', 'smoothness=2%', 'min_area=0.1%', 'resolution_x=resolution_y=10%'.
-#@cli : $ image.jpg polygonize 300,1%,0.1%,3%,3%
+#@cli : $ image.jpg image.jpg polygonize 100,10 +fill "I!=J(1) || I!=J(0,1)?[0,0,0]:I"
 polygonize : check "${1=300}>=0 && ${2=2%}>=0 && ${3=0.1%}>=0 && ${4=10%}>0 && ${5=$4}>0"
   e[^-1] "Polygonize image$? with warp amplitude $1, smoothness $2, minimal area $3 and resolutions ($4,$5)."
    repeat $! l[$>]
@@ -21306,7 +21306,7 @@ polygonize : check "${1=300}>=0 && ${2=2%}>=0 && ${3=0.1%}>=0 && ${4=10%}>0 && $
 #@cli : Apply poster edges effect on selected images.
 #@cli : Default values: 'edge_threshold=40', 'edge_shade=5', 'edge_thickness=0.5', 'edge_antialiasing=10', \
 # 'posterization_level=12' and 'posterization_antialiasing=0'.
-#@cli : $ image.jpg +poster_edges ,
+#@cli : $ image.jpg poster_edges ,
 poster_edges : check "${1=40}>=0 && $1<=100 && ${2=5}>=0 && $2<=100 && ${3=0.5}>=0 && ${4=10}>=0 &&
                       ${5=12}>=0 && $5<=15 && ${6=0}>=0"
   e[^-1] "Apply poster edge on image$?, with edge threshold $1, edge shade $2, edge thickness $3,
@@ -21444,7 +21444,7 @@ sketchbw :
 #@cli sponge : _size>0
 #@cli : Apply sponge effect on selected images.
 #@cli : Default value: 'size=13'.
-#@cli : $ image.jpg +sponge ,
+#@cli : $ image.jpg sponge ,
 sponge : skip ${1=13}
   e[^-1] "Apply sponge filter on image$?, with brush size $1."
   repeat $! l[$>]
@@ -21459,7 +21459,7 @@ _circle :
 #@cli stained_glass : _edges[%]>=0, shading>=0, is_thin_separators={ 0 | 1 }
 #@cli : Generate stained glass from selected images.
 #@cli : Default values: 'edges=40%', 'shading=0.2' and 'is_precise=0'.
-#@cli : $ image.jpg stained_glass 20%,0.1
+#@cli : $ image.jpg stained_glass 20%,1 cut 0,20
 stained_glass : check "${1=40%}>=0 && ${2=0.2}>=0" skip ${3=0}
   e[^-1] "Apply stained glass effect on image$?, with edges $1, shading $2 and thin-separators "\
          ${arg\ 1+!$3,enabled,disabled}"."
@@ -21505,7 +21505,7 @@ stars : check "${1=10%}>=0 && ${2=1}>=0 && ${3=32}>0 && ${4=5}>=1 && ${5=0.38}>=
 #@cli stencil : _radius[%]>=0,_smoothness>=0,_iterations>=0
 #@cli : Apply stencil filter on selected images.
 #@cli : Default values: 'radius=3', 'smoothness=1' and 'iterations=8'.
-#@cli : $ image.jpg stencil 1,10,3
+#@cli : $ image.jpg +norm stencil. 2,1,4 +mul rm[0]
 stencil : check "${1=3}>=0 && ${2=1}>=0 && ${3=8}>=0"
   e[^-1] "Apply stencil filter on image$?, with radius $1, smoothness $2 and $3 iterations."
   n 0,1 repeat $3 b $1 unsharp {$1+$2},1000 c 0,255 done
