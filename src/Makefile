@@ -696,7 +696,7 @@ bashcompletion:
 #----------
 man:
 	@mkdir -p ../man
-	@\gmic gmic_stdlib.gmic it gmic_stdlib.gmic __help man > ../man/gmic.1
+	@\gmic gmic_stdlib.gmic it gmic_stdlib.gmic reference man > ../man/gmic.1
 	@gzip -f ../man/gmic.1
 	@echo "Man file 'gmic.1.gz' has been successfully generated in '../man/'."
 
