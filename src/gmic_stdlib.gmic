@@ -4746,7 +4746,7 @@ parse_cli_ascii :
         fi
       else # Other kind of description line
         parse_cli_text_ascii.
-        +e[] $nl{t} nl=
+        if w +e[] $nl{t} nl= fi
       fi
 
     endl fi done
@@ -4774,11 +4774,13 @@ parse_cli_text_ascii :
 
   # Ensure output text contains no more than two consecutive newlines.
   # Also add a 4-chars left margin on each line.
-  s +,{'\n'}
-  eval "for (p = 0, p<l, ++p,
-          i(#p)==_'\n' && h(#p)>2?resize(#p,1,2,1,1,0):
-          (resize(#p,1,h#p + 4,1,1,0,0,0,1); copy(i[#p,0],_' ',4,1,0)))"
-  a y
+  if w
+    s +,{'\n'}
+    eval "for (p = 0, p<l, ++p,
+            i(#p)==_'\n' && h(#p)>2?resize(#p,1,2,1,1,0):
+            (resize(#p,1,h#p + 4,1,1,0,0,0,1); copy(i[#p,0],_' ',4,1,0)))"
+    a y
+  fi
 
 parse_cli_trigger_ascii :
   if "['$1']!='*'"
