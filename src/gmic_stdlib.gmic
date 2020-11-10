@@ -353,7 +353,7 @@ gmd_list2 : # \n  - List item level-2
   1 a[^-1] [-1],y rm.
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>2048?(beg = -1);
-    beg<0 && i==_'-' && j[1]==_' ' && j[-1]==_' ' && j[-2]==_' ' && (!y || isin(j[-3],_'\n',3,4))?(beg = y):
+    beg<0 && i==_'-' && j[1]==_' ' && j[-1]==_' ' && j[-2]==_' ' && (y==2 || isin(j[-3],_'\n',3,4))?(beg = y):
     beg>=0 && (isin(i,4,_'\n') || y==h - 1)?(i[y] = 3; i[beg] = 2; beg = -1)"
   autocrop 0
 
@@ -362,7 +362,7 @@ gmd_list3 : # \n    . List item level-3
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>2048?(beg = -1);
     beg<0 && i==_'.' && j[1]==_' ' && j[-1]==_' ' && j[-2]==_' ' && j[-3]==_' ' && j[-4]==_' ' &&
-      (!y || isin(j[-5],_'\n',3,4))?(beg = y):
+      (y==4 || isin(j[-5],_'\n',3,4))?(beg = y):
     beg>=0 && (isin(i,4,_'\n') || y==h-1)?(i[y] = 3; i[beg] = 2; beg = -1)"
   autocrop 0
 
@@ -4709,7 +4709,7 @@ parse_cli_ascii :
     # Parse command description.
     n_example=0 nl="\n"
     repeat $! if {$>,i==_':'} l[$>]
-      rows 1,100% autocrop {'" "'}
+      rows {1+(i[1]==_'" "')},100%
       if "find(#0,'(eq. to ')>=0" # Found 'Eq. to' description.
         +l s -,{'\47'} shortcut={1,t} rm onfail shortcut="(unknown)" rm endl
         +e[] $nl"    ("${_vt100_i}"equivalent to shortcut command '"$_vt100_m$_vt100_b$shortcut$_vt100_n"')." nl="\n"
@@ -5006,7 +5006,7 @@ parse_cli_html :
     tutorial_html=
 
     repeat $! if {$>,i==_':'} l[$>]
-      rows 1,100% autocrop {'" "'}
+      rows {1+(i[1]==_'" "')},100%
       if i==_'$'" && "i[1]!=_'$' nb_examples+=1 fi
     endl fi done
 
@@ -5095,8 +5095,9 @@ parse_cli_html :
       else
 
         # Other kind of description line
+        +autocrop {"' '"} is_list={isin(i,_'*',_'-',_'.')} rm.
         gmd2html
-        if $line==1 html.="      <br/>"\n fi
+        if $line==1" && "!$is_list html.="      <br/>"\n fi
         html.={t}
         if i[-1,2]!=_'\n' html.="\n" fi
         line+=1
