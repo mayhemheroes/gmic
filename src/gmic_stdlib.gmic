@@ -1608,7 +1608,7 @@ reference_finalize_html :
 "        <p>This document is distributed under the "\
 "<a target=\"_blank\" href=\"http://www.gnu.org/licenses/fdl-1.3.txt\">GNU Free Documentation License</a>, "\
 "version 1.3.</p>"\n\
-"        <p>A <a href=\"reference.pdf\">.pdf version</a> of this document is available.</p>"\n\
+"        <p>A <a href=\"gmic_reference.pdf\">.pdf version</a> of this document is available.</p>"\n\
 "      <h1 class=\"ref_h1\">Version</h1>"\n\
 "      <div class=\"ref_header\">"\n\
 "        <span class=\"gmd_gmic\"></span>: "\
@@ -1646,7 +1646,7 @@ reference_finalize_html :
   fi
 
   # Insert top and bottom navigation bar into pages.
-  if !0$_no_navigation_bar repeat $!
+  if !0$_no_navigation repeat $!
     current={$>,n} strvar[] $current url_current=${}.html
     if $>>1 previous={{$>-1},n} strvar[] $previous url_previous=${}.html else previous= fi
     if $< next={{$>+1},n} strvar[] $next url_next=${}.html else next= fi
@@ -1720,7 +1720,7 @@ reference_footer_man :
 # (It is based on the 'html' output with some tricks to generate a pdf file with 'wkhtmltopdf').
 #
 reference_begin_pdf :
-  _no_navigation_bar=1
+  _no_navigation=1
 
 reference_section_pdf :
   reference_section_html "$*"
@@ -1733,6 +1733,17 @@ reference_footer_pdf :
 
 reference_end_pdf :
   reference_finalize_html
+
+  # Load existing html page for each command.
+  l[]
+    it ../../src/gmic_stdlib.gmic +parse_cli. list loc=${}
+    parse_cli html
+    repeat narg($loc)
+      command=${"arg "1+$>","$loc}
+      l[] if ['$command'][0]!=_'_' it $command.html fi onfail endl
+    done
+    sort_list +,n
+  endl
   s +,{'"<!-- begin_content -->"'}
   s +,{'"<!-- end_content -->"'}
   k[2--1:5]
@@ -1764,8 +1775,8 @@ reference_end_pdf :
     "--margin-top 1cm --margin-right 1cm --margin-left 1cm reference_pdf.html reference_pdf.pdf"
 
   # Compress .pdf.
-  x "gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=reference.pdf reference_pdf.pdf"
-  x "rm -f style.css reference_pdf.html reference_pdf.pdf"
+#  x "gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=gmic_reference.pdf reference_pdf.pdf"
+# x "rm -f style.css reference_pdf.html reference_pdf.pdf"
 
 # use_vt100
 # This command defines some global variables used to output colored text on VT100 terminals.
@@ -4623,7 +4634,7 @@ parse_cli_html :
 
     strvar[] $category category_id=${}
 
-  html="<!DOCTYPE html>"\n\
+    html="<!DOCTYPE html>"\n\
 "<html lang=\"en\">"\n\
 "  <head>"\n\
 "    <meta charset=\"utf-8\">"\n\
@@ -4648,21 +4659,23 @@ parse_cli_html :
 "    <div class=\"section_title\"><a href=\"index.html\"><p>Reference</p></a></div>"\
 "<div class=\"section_content\" style=\"padding-top: 0;\">"\n\n\
 "      <a id=\"top\"></a>"\n\
-"<!-- begin_content -->"\n\
-"      <table class=\"ref_navigation_top\"><tr><td>"\
+"<!-- begin_content -->"\n
+
+    if !0$_no_navigation
+      html.="      <table class=\"ref_navigation_top\"><tr><td>"\
 "<a href=\"index.html\">Table of Contents</a>&nbsp;&nbsp;&#9656;&nbsp;&nbsp;"\
 "<a href=\"list_of_commands.html#top\">List of Commands</a>&nbsp;&nbsp;&#9656;&nbsp;&nbsp;"\
 "<a href=\"list_of_commands.html#"$category_id"\">"$category"</a>&nbsp;&nbsp;&#9656;&nbsp;&nbsp;"\
 "<a href=\""$url_name"#top\"><samp>"$name"</samp></a></td>"
-
-    if narg($previous)" || "narg($next)
-      html.="<td>"
-      if narg($previous) html.="<a href=\""$url_previous"#top\">&#9664;&nbsp;&nbsp;<samp>"$previous"</samp></a>" fi
-      if narg($previous)" && "narg($next) html.="&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;" fi
-      if narg($next) html.="<a href=\""$url_next"#top\"><samp>"$next"</samp>&nbsp;&nbsp;&#9654;</a>" fi
-      html.="</td>"\n
+      if narg($previous)" || "narg($next)
+        html.="<td>"
+        if narg($previous) html.="<a href=\""$url_previous"#top\">&#9664;&nbsp;&nbsp;<samp>"$previous"</samp></a>" fi
+        if narg($previous)" && "narg($next) html.="&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;" fi
+        if narg($next) html.="<a href=\""$url_next"#top\"><samp>"$next"</samp>&nbsp;&nbsp;&#9654;</a>" fi
+        html.="</td>"\n
+      fi
+      html.="      </tr></table>\n"
     fi
-    html.="      </tr></table>\n"
 
     # Parse command declaration.
     s -,{'\n'} discard {'#@cli'} max {'" "'} autocrop {'" "'}
@@ -4750,7 +4763,7 @@ parse_cli_html :
 
         # Found 'Example of use' description.
         rows 1,100% autocrop {'" "'}
-        replace_str "image.jpg","<a href=\"../img/ref_image.jpg\" class=\"highslide\" onclick=\"return hs.expand(this)\">"\
+        replace_str "image.jpg","<a href=\"img/image.jpg\" class=\"highslide\" onclick=\"return hs.expand(this)\">"\
                     "image.jpg</a>"
         example={t}
         n_example+=1
@@ -4949,6 +4962,15 @@ _parse_cli_images :
 
 parse_cli_trigger_images :
   parse_cli_trigger_print $*
+
+#
+# Implements 'list' mode for command 'parse_cli'.
+# (return a list of all commands, separated by commas).
+#
+parse_cli_list :
+  res=
+  repeat $! ('{$>,n}') l. s -,{'@'} res.=$c{0,t} c=, rm endl done
+  rm u $res
 
 #
 # Implements 'print' mode for command 'parse_cli'.
@@ -7050,9 +7072,6 @@ update_reference_html : check "isbool(${1=0})"
   # Generate reference pages in html.
   rm
   reference html
-
-  # Generate reference documentation in pdf.
-  reference pdf
 
   # Upload to G'MIC server.
   if $1
