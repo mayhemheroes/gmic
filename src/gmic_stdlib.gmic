@@ -4925,7 +4925,8 @@ parse_cli_html :
     if ['$previous']=='index' url_previous=_index.html else url_previous=$previous.html fi
     if ['$next']=='index' url_next=_index.html else url_next=$next.html fi
 
-    strvar $category category_id=${}
+    strvar[] $category category_id=${}
+
   html="<!DOCTYPE html>"\n\
 "<html lang=\"en\">"\n\
 "  <head>"\n\
@@ -9720,7 +9721,7 @@ replace_naninf :
 replace_seq : skip "${2=}"
   e[^-1] "Replace value sequence '$1' by value sequence '${2--1}' in image$?."
   ns,nd={[narg($1),narg(${2--1})]}
-  repeat $! l[$>]
+  repeat $! l[$>] if w
     s +,$1 y ind={"w#0 && crop(#0,0,0,0,0,1,min("$ns",h#0),1,1)!=[$1]"}
     if $ind<$!
       if $nd
@@ -9731,7 +9732,7 @@ replace_seq : skip "${2=}"
       fi
       a y
     fi
-  endl done
+  fi endl done
 
 #@cli replace_str : "search_str","replace_str"
 #@cli : Search and replace a string in selected images (viewed as strings, i.e. sequences of character codes).
@@ -25678,13 +25679,15 @@ struppercase :
 #@cli strvar : string
 #@cli : Return a simplified version of the specified string, that can be used as a variable name.
 strvar :
-  ('"$*"') f. "
-   (i>=_'0' && i<=_'9') || (i>=_'a' && i<=_'z') || i==_'_'?i:
-   (i>=_'A' && i<=_'Z')?i - _'A' + _'a':
-   _'_'"
-   if "i>=_'0' && i<=_'9'" r. {w+1},1,1,1,0,0,1 =. {_'_'} fi
-   y. do h={h} replace_str. "__","_" while h!=$h
-   u {t} rm.
+  l[]
+    ('"$*"') f. "
+    (i>=_'0' && i<=_'9') || (i>=_'a' && i<=_'z') || i==_'_'?i:
+    (i>=_'A' && i<=_'Z')?i - _'A' + _'a':
+    _'_'"
+    if "i>=_'0' && i<=_'9'" r. {w+1},1,1,1,0,0,1 =. {_'_'} fi
+     y. do h={h} replace_str. "__","_" while h!=$h
+     u {t} rm
+  endl
 
 #@cli strver : _version
 #@cli : Return the specified version number of the G'MIC interpreter, as a string.
