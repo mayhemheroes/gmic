@@ -248,7 +248,7 @@ int main(int argc, char **argv) {
         try {
           gmic(tmp_line,images,images_names);
         } catch (...) { // Fallback in case overloaded version of 'help' crashed
-          cimg_snprintf(tmp_line,tmp_line.width(),"help \"%s\",1",e.command());
+          cimg_snprintf(tmp_line,tmp_line.width(),"help \"%s\"",e.command());
           images.assign().insert(gmic::stdlib);
           images_names.assign();
           gmic(tmp_line,images,images_names);
