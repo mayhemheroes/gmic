@@ -1646,28 +1646,30 @@ reference_finalize_html :
   fi
 
   # Insert top and bottom navigation bar into pages.
-  if !0$_no_navigation repeat $!
-    current={$>,n} strvar[] $current url_current=${}.html
-    if $>>1 previous={{$>-1},n} strvar[] $previous url_previous=${}.html else previous= fi
-    if $< next={{$>+1},n} strvar[] $next url_next=${}.html else next= fi
-    html_top="    <table class=\"ref_navigation_top\"><tr><td>"\
-              "<a href=\"index.html\">Table of Contents</a>"
-    if $> html_top.="&nbsp;&nbsp;&#9656;&nbsp;&nbsp;<a href=\""$url_current"#top\">"$current"</a>" fi
-    html_top.="</td><td>"
-    if narg($previous) html_top.="<a href=\""$url_previous"#top\">&#9664;&nbsp;&nbsp;"$previous"</a>" fi
-    if narg($previous)" && "narg($next) html_top.="&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;" fi
-    if narg($next) html_top.="<a href=\""$url_next"#top\">"$next"&nbsp;&nbsp;&#9654;</a>" fi
-    html_top.="</td></tr></table>"
+  if !0$_pdf_output
+    repeat $!
+      current={$>,n} strvar[] $current url_current=${}.html
+      if $>>1 previous={{$>-1},n} strvar[] $previous url_previous=${}.html else previous= fi
+      if $< next={{$>+1},n} strvar[] $next url_next=${}.html else next= fi
+      html_top="    <table class=\"ref_navigation_top\"><tr><td>"\
+                "<a href=\"index.html\">Table of Contents</a>"
+      if $> html_top.="&nbsp;&nbsp;&#9656;&nbsp;&nbsp;<a href=\""$url_current"#top\">"$current"</a>" fi
+      html_top.="</td><td>"
+      if narg($previous) html_top.="<a href=\""$url_previous"#top\">&#9664;&nbsp;&nbsp;"$previous"</a>" fi
+      if narg($previous)" && "narg($next) html_top.="&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;" fi
+      if narg($next) html_top.="<a href=\""$url_next"#top\">"$next"&nbsp;&nbsp;&#9654;</a>" fi
+      html_top.="</td></tr></table>"
 
-    html_bottom="<div class=\"ref_navigation_bottom\">"
-    if narg($previous) html_bottom.="<a href=\""$url_previous"#top\">&#9664;&nbsp;&nbsp;"$previous"</a>" fi
-    if narg($previous)" && "narg($next) html_bottom.="&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;" fi
-    if narg($next) html_bottom.="<a href=\""$url_next"#top\">"$next"&nbsp;&nbsp;&#9654;</a>" fi
-    html_bottom.="</div>"
+      html_bottom="<div class=\"ref_navigation_bottom\">"
+      if narg($previous) html_bottom.="<a href=\""$url_previous"#top\">&#9664;&nbsp;&nbsp;"$previous"</a>" fi
+      if narg($previous)" && "narg($next) html_bottom.="&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;" fi
+      if narg($next) html_bottom.="<a href=\""$url_next"#top\">"$next"&nbsp;&nbsp;&#9654;</a>" fi
+      html_bottom.="</div>"
 
-    replace_str[$>] "<!-- ref_navigation_top -->",$html_top
-    replace_str[$>] "<!-- ref_navigation_bottom -->",$html_bottom
-  done fi
+      replace_str[$>] "<!-- ref_navigation_top -->",$html_top
+      replace_str[$>] "<!-- ref_navigation_bottom -->",$html_bottom
+    done
+  fi
 
 reference_end_html :
   reference_finalize_html
@@ -1720,7 +1722,7 @@ reference_footer_man :
 # (It is based on the 'html' output with some tricks to generate a pdf file with 'wkhtmltopdf').
 #
 reference_begin_pdf :
-  _no_navigation=1
+  _pdf_output=1
 
 reference_section_pdf :
   reference_section_html "$*"
@@ -1771,12 +1773,13 @@ reference_end_pdf :
   it ../style.css ot. style.css rm
 
   # Use 'wkhtmltopdf' to convert html to a pdf file.
-  x "wkhtmltopdf --background --enable-local-file-access --encoding UTF-8 --page-size A4 --margin-bottom 1cm "\
-    "--margin-top 1cm --margin-right 1cm --margin-left 1cm reference_pdf.html reference_pdf.pdf"
+  # (There is a bug in wkhtmltopdf that prevents all images to appear in the generated document!
+  #  I have to print the .pdf manually 'in a file').
 
-  # Compress .pdf.
+#  x "wkhtmltopdf --background --enable-local-file-access --encoding UTF-8 --page-size A4 --margin-bottom 1cm "\
+#    "--wait-for-network-idle --margin-top 1cm --margin-right 1cm --margin-left 1cm reference_pdf.html reference_pdf.pdf"
 #  x "gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=gmic_reference.pdf reference_pdf.pdf"
-# x "rm -f style.css reference_pdf.html reference_pdf.pdf"
+  x "rm -f style.css reference_pdf.html " # reference_pdf.pdf"
 
 # use_vt100
 # This command defines some global variables used to output colored text on VT100 terminals.
@@ -4661,7 +4664,7 @@ parse_cli_html :
 "      <a id=\"top\"></a>"\n\
 "<!-- begin_content -->"\n
 
-    if !0$_no_navigation
+    if !0$_pdf_output
       html.="      <table class=\"ref_navigation_top\"><tr><td>"\
 "<a href=\"index.html\">Table of Contents</a>&nbsp;&nbsp;&#9656;&nbsp;&nbsp;"\
 "<a href=\"list_of_commands.html#top\">List of Commands</a>&nbsp;&nbsp;&#9656;&nbsp;&nbsp;"\
@@ -4675,6 +4678,9 @@ parse_cli_html :
         html.="</td>"\n
       fi
       html.="      </tr></table>\n"
+
+    else
+      html.="<br/><hr/>"\n
     fi
 
     # Parse command declaration.
