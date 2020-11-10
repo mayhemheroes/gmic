@@ -4710,6 +4710,7 @@ parse_cli_ascii :
     # Parse command description.
     n_example=0 nl="\n"
     repeat $! if {$>,i==_':'} l[$>]
+      if "h==1 || (h==2 && i[-1,2]==_' ')" rm ('":  "':y) fi # Empty description lines
       rows {1+(i[1]==_'" "')},100%
       if "find(#0,'(eq. to ')>=0" # Found 'Eq. to' description.
         +l s -,{'\47'} shortcut={1,t} rm onfail shortcut="(unknown)" rm endl
@@ -4746,7 +4747,10 @@ parse_cli_ascii :
         fi
       else # Other kind of description line
         parse_cli_text_ascii.
-        if w +e[] $nl{t} nl= fi
+        if w
+#           v 0 p
+           +e[] $nl{t} nl=
+        fi
       fi
 
     endl fi done
@@ -5008,6 +5012,7 @@ parse_cli_html :
     tutorial_html=
 
     repeat $! if {$>,i==_':'} l[$>]
+      if "h==1 || (h==2 && i[-1,2]==_' ')" rm ('":  "':y) fi # Empty description lines
       rows {1+(i[1]==_'" "')},100%
       if i==_'$'" && "i[1]!=_'$' nb_examples+=1 fi
     endl fi done
