@@ -1573,7 +1573,7 @@ reference_end_section_html :
     a[-2,-1] y
   fi
 
-reference_text_html : skip "$*"
+reference_text_html :
   ('"$*"':y)
   gmd2html.
   if $!>1 a[-2,-1] y fi
@@ -1581,7 +1581,7 @@ reference_text_html : skip "$*"
 reference_footer_html :
   reference_end_section_html
 
-reference_end_html :
+reference_finalize_html :
 
   # Generate table of contents.
   if $_prerelease strprerelease=" (pre-release ""#"$_prerelease")" else strprerelease="" fi
@@ -1651,7 +1651,7 @@ reference_end_html :
   fi
 
   # Insert top and bottom navigation bar into pages.
-  repeat $!
+  if !0$_no_navigation_bar repeat $!
     current={$>,n} strvar[] $current url_current=${}.html
     if $>>1 previous={{$>-1},n} strvar[] $previous url_previous=${}.html else previous= fi
     if $< next={{$>+1},n} strvar[] $next url_next=${}.html else next= fi
@@ -1672,7 +1672,10 @@ reference_end_html :
 
     replace_str[$>] "<!-- ref_navigation_top -->",$html_top
     replace_str[$>] "<!-- ref_navigation_bottom -->",$html_bottom
-  done
+  done fi
+
+reference_end_html :
+  reference_finalize_html
 
   # Save HTML pages.
   repeat $! l[$>] strvar {n} ot ${}.html endl done
@@ -1722,10 +1725,45 @@ reference_footer_man :
 # (It is based on the 'html' output with some tricks to generate a pdf file with 'wkhtmltopdf').
 #
 reference_begin_pdf :
-
-reference_text_pdf :
+  _no_navigation_bar=1
 
 reference_section_pdf :
+  reference_section_html "$*"
+
+reference_text_pdf :
+  reference_text_html "$*"
+
+reference_footer_pdf :
+  reference_end_section_html
+
+reference_end_pdf :
+  reference_finalize_html
+  mv[${"nmd \"List of Commands\""}] $!
+  s +,{'"<!-- begin_content -->"'}
+  s +,{'"<!-- end_content -->"'}
+  k[2--1:5]
+  i[0] ('"<!DOCTYPE html>"\n\
+"<html lang=\"en\">"\n\
+"  <head>"\n\
+"    <meta charset=\"utf-8\">"\n\
+"    <link rel=\"stylesheet\" href=\"style.css\">"\n\
+"    <title>G'MIC - GREYC's Magic for Image Computing: A Full-Featured Open-Source Framework for Image Processing "\
+"- Reference Documentation</title>"\n\
+"  </head>"\n\n\
+"  <body>"':y)
+  a y
+  ot reference.html
+  rm
+
+  # Generate specific css.
+  it ../style.css
+  replace_str "background-color: \#707090;","font-size: 25px;"
+  ot. style.css
+  rm
+
+  # Use 'wkhtmltopdf' to convert html to a pdf file.
+  x "wkhtmltopdf --background --enable-local-file-access --encoding UTF-8 --page-size A4 --margin-bottom 1cm "\
+    "--margin-top 1cm --margin-right 1cm --margin-left 1cm reference.html reference.pdf"
 
 # use_vt100
 # This command defines some global variables used to output colored text on VT100 terminals.
