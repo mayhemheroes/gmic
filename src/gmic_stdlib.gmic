@@ -1717,51 +1717,6 @@ reference_list_of_commands_man :
 reference_footer_man :
   reference_footer_ascii "$*"
 
-# Commands to output help in man page format.
-_help_header_man :
-  v 0
-  +e[] ".TH G\47MIC 1\n\
-        .SH NAME\n\
-        gmic \\- Perform image processing operations using the G\47MIC framework.\n\
-        \n\
-        .SH HELP\n"
-  _vt100_n="\\fR"
-  _vt100_b="\\fB"
-  _vt100_r=""
-  _vt100_g=""
-  _vt100_c="\\fI"
-  _vt100_m=""
-  _prerelease=
-  reference_header_ascii[]
-  _vt100_n="__N"
-  _vt100_b="__B"
-  _vt100_r="__B"
-  _vt100_c="__B"
-  _section=0 _space1="" _space2=" "
-
-_help_section_man :
-  v 0
-  _section+=1
-  {narg({'"$1"'})},1,1,1,{'-'}
-  +e[] "\n \\fI"$_section". $1\\fR\n"
-  rm.
-
-_help_content_man :
-  v 0
-  l[] ('"$*"')
-  replace_str "\\fR","__N"
-  replace_str "\\fB","__B"
-  replace_str "\\fI","__I"
-  replace_str "\\","\\\\\\\\"
-  replace_str "__N","\\\\fR"
-  replace_str "__B","\\\\fB"
-  replace_str "__I","\\\\fI"
-  +e[] {0,t}
-  rm endl
-
-_help_footer_man :
-  _help_footer_ascii $"*"
-
 # use_vt100
 # This command defines some global variables used to output colored text on VT100 terminals.
 use_vt100 :
@@ -3902,58 +3857,6 @@ _document_gmic_split_ascii :
     +z. {$i+1},100% z.. 0,$i
   fi while w>$1
   if $!>1" && "w<10 a[-2,-1] x fi
-
-# Define document_gmic commands for man page output.
-_document_gmic_header_man : skip $1
-  _vt100_n="\\fR"
-  _vt100_b="\\fB"
-  _vt100_r=""
-  _vt100_g=""
-  _vt100_c="\\fB"
-  _vt100_m=""
-  _document_gmic_header_ascii $"*"
-
-_document_gmic_subsection_man :
-  v 0
-  +e[] "\n ** \\fI"{0,t}":\\fR"
-
-_document_gmic_declaration_man :
-  v 0
-  if [{^}]=='(+)' qualifier=" "{t} rm. else qualifier="" fi
-  if $!>1" && "same([{^}],'"eq. to "',7)  # Declaration of a shortcut command.
-    rows. 7,100% autocrop. {'.'} autocrop. {'" "'} autocrop. 39
-    _shortcut$_shortcut={0,t}
-    _shortcutlink$_shortcut={t}
-    _shortcutqualifier$_shortcut=$qualifier
-    _shortcut+=1
-  else                                         # Declaration of a regular command.
-    +e[] "\n    "${_vt100_b}{0,t}${qualifier}":"$_vt100_n rm[0]
-    if $!
-      s="        "
-      y x
-      repeat $!-1 ('" |"') a[$>,-1] x done  # Insert ' |'.
-      repeat $! l[$>] _document_gmic_split_ascii 80
-        repeat $!-1 ('\n$s"  "') a[$>,-1] x done
-        a x +e[] $s{0,t}
-      endl done
-    fi
-    +e[] ""
-  fi
-
-_document_gmic_description_man :
-  v 0
-  s="        " bs0="\n" bs1="\\\\\n         "
-  y x if !narg($_is_tutorial) _document_gmic_split_ascii 96 fi
-  repeat $!-1 ('${bs$_is_example}$s"  "') a[$>,-1] x done a x
-  replace_str "Default values:",${bs0}${s}"\\fIDefault values:\\fR"
-  replace_str "Default value:",${bs0}${s}"\\fIDefault value:\\fR"
-  replace_str "\\","\\\\"
-  repeat $! +e[] $s{$>,t} done
-
-_document_gmic_example_man :
-
-_document_gmic_footer_man : skip $1
-  _document_gmic_footer_ascii $"*"
 
 # Generate a single image from a list of images, for the reference documentation.
 _document_gmic :
