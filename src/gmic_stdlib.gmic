@@ -1760,7 +1760,11 @@ reference_end_pdf :
 
   # Use 'wkhtmltopdf' to convert html to a pdf file.
   x "wkhtmltopdf --background --enable-local-file-access --encoding UTF-8 --page-size A4 --margin-bottom 1cm "\
-    "--margin-top 1cm --margin-right 1cm --margin-left 1cm reference_pdf.html reference.pdf"
+    "--margin-top 1cm --margin-right 1cm --margin-left 1cm reference_pdf.html reference_pdf.pdf"
+
+  # Compress .pdf.
+  x "gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=reference.pdf reference_pdf.pdf"
+  x "rm -f reference_pdf.html reference_pdf.pdf"
 
 # use_vt100
 # This command defines some global variables used to output colored text on VT100 terminals.
@@ -7044,9 +7048,8 @@ update_reference_html : check "isbool(${1=0})"
   rm
   reference html
 
-  # Generate reference documentation is .pdf.
+  # Generate reference documentation in pdf.
   reference pdf
-  x "rm -f reference_pdf.html"
 
   # Upload to G'MIC server.
   if $1
