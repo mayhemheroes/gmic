@@ -313,6 +313,7 @@ if [ "$1" == "final" ]; then
     wget -O /dev/null --timeout=10 "${GMIC_FOUREY_URL}?version=v.${SVERSION}&commit=${COMMIT}"
 else
     gmic _update_header_html ../html/header.html,${VERSION},1
+    gmic _update_header_html ../html/header1.html,${VERSION},1
     gmic_commit "Auto-commit for release "${SVERSION}${SUFFIX}
 fi
 
@@ -336,43 +337,14 @@ make man
 make bashcompletion
 cd ..
 
-# Create HTML reference and gallery pages.
-#------------------------------------------
-echo " - Create HTML reference page."
+# Generate reference documentation in HTML and .pdf
+#---------------------------------------------------
+echo " - Generate reference documentation."
 cd html
-rm -f img/gmic_stdlib*.jpg image.jpg reference
-
+rm -f reference
 mkdir -p reference/img
 cd reference
-gmic v - ../../src/gmic_stdlib.gmic it ../../src/gmic_stdlib.gmic document_gmic images,img/
-if [ "$1" == "final" ]; then
-    gmic ../../src/gmic_stdlib.gmic it ../../src/gmic_stdlib.gmic _prerelease= __help html > index.html
-else
-    gmic ../../src/gmic_stdlib.gmic it ../../src/gmic_stdlib.gmic _prerelease=`date +%y%m%d` __help html > index.html
-fi
-rm -f image.jpg
-cd ..
-
-rm -rf gallery
-mkdir -p gallery
-cd gallery
-gmic ../../src/gmic_stdlib.gmic update_gallery_html 1
-cd ../..
-
-# Create .pdf handbook.
-#----------------------
-echo " - Create PDF reference handbook."
-cd html/reference
-if [ "$1" == "final" ]; then
-    gmic ../src/gmic_stdlib.gmic it ../src/gmic_stdlib.gmic _version=$VERSION _prerelease= __help latex > reference.tex
-else
-    gmic ../../src/gmic_stdlib.gmic it ../../src/gmic_stdlib.gmic _version=$VERSION _prerelease=`date +%y%m%d` __help latex > reference.tex
-fi
-pdflatex reference.tex
-makeindex reference
-pdflatex reference.tex
-gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=gmic_reference.pdf reference.pdf
-rm -f reference.aux reference.idx reference.ind reference.out reference.ilg reference.log reference.pdf
+gmic ../../src/gmic_stdlib.gmic it ../../src/gmic_stdlib.gmic update_reference_html 1
 cd ../..
 
 # Upload web page.
@@ -380,8 +352,6 @@ cd ../..
 echo " - Upload G'MIC web page."
 cd html
 lftp ftp://$GMIC_LOGIN:$GMIC_PASSWD@$GMIC_FTP -e "mirror -RL . /www/gmic/ ; quit"
-lftp ftp://$GMIC_LOGIN:$GMIC_PASSWD@$GMIC_FTP -e "put -O \"/www/gmic/tutorial\" header.html; quit"
-lftp ftp://$GMIC_LOGIN:$GMIC_PASSWD@$GMIC_FTP -e "put -O \"/www/gmic/color_presets\" header.html; quit"
 rm -f gmic_stdlib.gmic gmic_stdlib.$VERSION
 cd ..
 cd resources/samples
