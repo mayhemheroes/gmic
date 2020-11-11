@@ -1737,34 +1737,40 @@ reference_end_pdf :
   reference_finalize_html
 
   # Load existing html page for each command.
-  l[]
-    it ../../src/gmic_stdlib.gmic +parse_cli. list loc=${}
-    parse_cli html
-    repeat narg($loc)
-      command=${"arg "1+$>","$loc}
-      l[] if ['$command'][0]!=_'_' it $command.html fi onfail endl
-    done
-    sort_list +,n
-  endl
+  # l[]
+  #   it ../../src/gmic_stdlib.gmic +parse_cli. list loc=${}
+  #   parse_cli html
+  #   repeat narg($loc)
+  #     command=${"arg "1+$>","$loc}
+  #     l[] if ['$command'][0]!=_'_' it $command.html fi onfail endl
+  #   done
+  #   sort_list +,n
+  # endl
   s +,{'"<!-- begin_content -->"'}
   s +,{'"<!-- end_content -->"'}
   k[2--1:5]
 
   # Add specific header and footer.
+  if $_prerelease strprerelease=" (pre-release ""#"$_prerelease")" else strprerelease="" fi
   i[0] ('"<!DOCTYPE html>"\n\
 "<html lang=\"en\">"\n\
 "  <head>"\n\
 "    <meta charset=\"utf-8\">"\n\
 "    <link rel=\"stylesheet\" href=\"style.css\">"\n\
-"    <title>G'MIC - GREYC's Magic for Image Computing: A Full-Featured Open-Source Framework for Image Processing "\
-"- Reference Documentation</title>"\n\
+"    <title>gmic_reference</title>"\n\
 "  <style>"\n\
 "    body { background-color: white; font-size: 22px; }"\n\
 "    .gmd_code { font-size: 1em; }"\n\
 "  </style>"\n\
 "  </head>"\n\n\
-"  <body>"':y)
-
+"  <body>"\n\
+"    <div style=\"border: 3px solid black; text-align: center; width: 80%; margin-left: auto; margin-right: auto; margin-top: 10cm; break-after: page\">"\n\
+"      <img style=\"width: 80%\" src=\"../img/gmic_banner.jpg\" />"\n\
+"      <h1 class=\"ref_h1\">The Handbook</h1>"\n\
+"      <h3>Version "${strver[]}$strprerelease"</h3>"\n\
+"      <p>&copy; David Tschumperlé / GREYC / CNRS</p>"\n\
+"      <p>"{date(0)}"/"{date(1)}"/"{date(2)}"</p>"\n\
+"    </div>"':y)
   ('\n</body>':y) a y
   ot reference_pdf.html
   rm
@@ -1776,10 +1782,10 @@ reference_end_pdf :
   # (There is a bug in wkhtmltopdf that prevents all images to appear in the generated document!
   #  I have to print the .pdf manually 'in a file').
 
-#  x "wkhtmltopdf --background --enable-local-file-access --encoding UTF-8 --page-size A4 --margin-bottom 1cm "\
-#    "--wait-for-network-idle --margin-top 1cm --margin-right 1cm --margin-left 1cm reference_pdf.html reference_pdf.pdf"
+ x "wkhtmltopdf --background --enable-local-file-access --encoding UTF-8 --page-size A4 --margin-bottom 1cm "\
+   "--margin-top 1cm --margin-right 1cm --margin-left 1cm reference_pdf.html reference_pdf.pdf"
 #  x "gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=gmic_reference.pdf reference_pdf.pdf"
-  x "rm -f style.css reference_pdf.html " # reference_pdf.pdf"
+#  x "rm -f style.css reference_pdf.html " # reference_pdf.pdf"
 
 # use_vt100
 # This command defines some global variables used to output colored text on VT100 terminals.
