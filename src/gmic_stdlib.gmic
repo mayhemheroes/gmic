@@ -4786,8 +4786,10 @@ parse_cli_html :
 
         # Found 'Example of use' description.
         rows 1,100% autocrop {'" "'}
-        replace_str "image.jpg","<a href=\"img/image.jpg\" class=\"highslide\" onclick=\"return hs.expand(this)\">"\
-                    "image.jpg</a>"
+        if !0$_pdf_output
+          replace_str "image.jpg","<a href=\"img/image.jpg\" class=\"highslide\" onclick=\"return hs.expand(this)\">"\
+                      "image.jpg</a>"
+        fi
         example={t}
         n_example+=1
         if $n_example>1 basename=${name}_$n_example.jpg else basename=${name}.jpg fi
@@ -4795,24 +4797,34 @@ parse_cli_html :
            if !$is_tutorial_tag html.="<tutorial_tag>" is_tutorial_tag=1 fi
            html.="\n      <h2>Example"${"if "$nb_examples">1 u s else u \"\" fi"}" of use:</h2>"\n fi
         if $nb_examples!=1 html.="      <h3>&bull;&nbsp;Example \#"$n_example"</h3>"\n fi
-        html.="      <div class=\"gmd_code\">$ gmic "$example"</div>"
+        html.="      <div class=\"gmd_code\">$ gmic "$example"</div>"\n
 
+        if 0$_pdf_output html.="<div style=\"text-align: center;\">"\n fi
         if isfile('img/f_$basename') # Single output image
-          html.="      <span><a href=\"img/"f_$basename"\" class=\"highslide\" onclick=\"return hs.expand(this)\">"\
-                "<img class=\"center_image\" src=\"img/"t_$basename"\"/></a>"\
-                "<div class=\"highslide-caption\">Command: <b>"$example"</b></div></span>"\n
+          if !0$_pdf_output
+            html.="      <span><a href=\"img/"f_$basename"\" class=\"highslide\" onclick=\"return hs.expand(this)\">"\
+                  "<img class=\"center_image\" src=\"img/"t_$basename"\"/></a>"\
+                  "<div class=\"highslide-caption\">Command: <b>"$example"</b></div></span>"\n
+          else
+            html.="<img style=\"max-width:45%\" src=\"img/"t_$basename"\"/>"\n
+          fi
         elif isfile('img/f0_$basename') # Multiple output images
           i=0
           html.="        <div class=\"center\">"
           for isfile('img/f${i}_$basename')
-            html.="        <span><a href=\"img/"f${i}_$basename"\" class=\"highslide\" "\
-                  "onclick=\"return hs.expand(this)\">"\
-                  "<img src=\"img/"t${i}_$basename"\"/></a>"\
-                  "<div class=\"highslide-caption\">Command: <b>"$example"</b></div></span>"\n
+            if !0$_pdf_output
+              html.="        <span><a href=\"img/"f${i}_$basename"\" class=\"highslide\" "\
+                    "onclick=\"return hs.expand(this)\">"\
+                    "<img src=\"img/"t${i}_$basename"\"/></a>"\
+                    "<div class=\"highslide-caption\">Command: <b>"$example"</b></div></span>"\n
+            else
+              html.="<img style=\"max-width:45%\" src=\"img/"t${i}_$basename"\"/>"\n
+            fi
             i+=1
           done
           html.="        </div>"
         fi
+        if 0$_pdf_output html.="</div>"\n fi
 
       elif i==_'$'" && "i[1]==_'$'
 
