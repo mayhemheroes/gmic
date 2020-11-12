@@ -1605,10 +1605,10 @@ reference_finalize_html :
 "<!-- ref_navigation_top -->"\n\
 "<!-- begin_content -->"\n\
 "      <h1 class=\"ref_h1\">Documentation License</h1>"\n\
-"        <p>This document is distributed under the "\
+"        <ul><li>This document is distributed under the "\
 "<a target=\"_blank\" href=\"http://www.gnu.org/licenses/fdl-1.3.txt\">GNU Free Documentation License</a>, "\
-"version 1.3.</p>"\n\
-"        <p>A <a href=\"gmic_reference.pdf\">.pdf version</a> of this document is available.</p>"\n\
+"version 1.3.</li>"\n\
+"        <li>A <a href=\"gmic_reference.pdf\">.pdf version</a> of this document is available.</li></ul>"\n\
 "      <h1 class=\"ref_h1\">Version</h1>"\n\
 "      <div class=\"ref_header\">"\n\
 "        <span class=\"gmd_gmic\"></span>: "\
@@ -1616,14 +1616,22 @@ reference_finalize_html :
 "        <a href=\"https://gmic.eu\">https://gmic.eu</a><br/>"\n\
 "        Version <b>"${-strver}"</b>"$strprerelease"<br/><br/>"\n\
 "        Copyright &copy; 2008-"{date(0)}", "\
-"<a target=\"_blank\" href=\"https://tschumperle.users.greyc.fr/\">David Tschumperlé</a> / GREYC / CNRS<br/>"\n\
+"<a target=\"_blank\" href=\"https://tschumperle.users.greyc.fr/\">David Tschumperlé</a> / "\
+"<a target=\"_blank\" href=\"https://www.greyc.fr\">GREYC</a> / "\
+"<a target=\"_blank\" href=\"http://www.cnrs.fr/en\">CNRS</a><br/>"\n\
 "        <a target=\"_blank\" href=\"https://www.greyc.fr\">https://www.greyc.fr</a><br/>"\n\
 "      </div>"\n\
 "      <h1 class=\"ref_h1\">Table of Contents</h1>"\n\
 "      <ul>"\n
+
+  ind_loc=${"-nmd 1,\"List of Commands\""}
   repeat $! l[$>]
     name={n} strvar $name url=${}.html
-    html.="<li><a href=\""$url"#top\">"$name"</a></li>"
+    if $>==$ind_loc
+       html.="<li><a class=\"ref_loc\" href=\""$url"#top\">"$name"</a></li>"
+    else
+      html.="<li><a href=\""$url"#top\">"$name"</a></li>"
+    fi
   endl done
 
   html.="\n    </ul>"\n\
@@ -1634,15 +1642,15 @@ reference_finalize_html :
         "  </body>"
 
   i[0] ({'$html'}:y) nm[0] "Table of Contents"
-  ind=${"-nmd 1,\"List of Commands\""}
-  if narg($ind)" && "isfile('list_of_commands.html') # Merge with existing 'List of commands' page if it already exists
+  ind_loc+=1
+  if narg($ind_loc)" && "isfile('list_of_commands.html') # Merge with existing 'List of commands' page if it already exists
     it list_of_commands.html
-    if find(crop(),'"<!-- merged_content -->"')<0 l[$ind,-1]
+    if find(crop(),'"<!-- merged_content -->"')<0 l[$ind_loc,-1]
       s[0] -,{'"<!-- end_content -->"'}
       s. -,{'"<!-- begin_content -->"'}
       i[1] ('"<!-- merged_content -->"':y)
       k[0,1,-1] a y
-    endl else nm. "List of Commands" rv[$ind,-1] rm. fi
+    endl else nm. "List of Commands" rv[$ind_loc,-1] rm. fi
   fi
 
   # Insert top and bottom navigation bar into pages.
