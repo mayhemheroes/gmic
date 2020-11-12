@@ -25758,16 +25758,17 @@ tixy : skip "${1=sin(t-sqrt((x-8)^2+(y-8)^2))}" check_display
 ---- . "${c}"carg(c)"$n" in "${g}"[-pi,pi]"$n" determine the color of each dot at "${c}"(x,y)"$n".\n
 ----\n
 ---- Key '"${c}"SPACE"$n"' starts/stops recording animation as video file '"${c}"out.avi"$n"'.\n
+---- Key '"${c}"ENTER"$n"' takes a screenshot of current image.\n
 ---- Key '"${c}"A"$n"' enables/disables anti-aliasing.\n
----- Key '"${c}"R"$n"' resets time.\n
 ---- Key '"${c}"F"$n"' displays formula on the image.\n
+---- Key '"${c}"R"$n"' resets time.\n
 ---- Keys '"${c}"CTRL+D"$n"' increase window size.\n
 ---- Keys '"${c}"CTRL+C"$n"' decrease window size.\n
 ---- Keys '"${c}"CTRL+R"$n"' reset window size.\n
 ---- Keys '"${c}"ESC"$n"', '"${c}"Q"$n"' or '"${c}"ENTER"$n"' close the current window.\n
 ------------------------------------------------------------------------------------------------"
   w[] 400,400,0,"[G'MIC] tixy: ${1--1}"
-  t0=$| is_recording=0 is_antialias=1 is_formula=0 nb_frames=0
+  t0=$| is_recording=0 is_antialias=1 is_screenshot=0 is_formula=0 nb_frames=0
   360,1,1,3,[x,abs(cos(x/w*pi))^0.5,1] hsv2rgb. nm. cmap
   strvar ${1--1} basename=${}
 
@@ -25784,6 +25785,7 @@ tixy : skip "${1=sin(t-sqrt((x-8)^2+(y-8)^2))}" check_display
     elif {*,-SPACE}
       if $is_recording o[] $basename.avi,15,0,0 nb_frames=0 fi
       is_recording={1-$is_recording}
+    elif {*,-ENTER} is_screenshot=1
     fi
 
     # Render animation frame.
@@ -25814,6 +25816,7 @@ tixy : skip "${1=sin(t-sqrt((x-8)^2+(y-8)^2))}" check_display
       fi
       j. [formula],0.5~,1~,0,0,1,[mformula],255
     fi
+    if $is_screenshot o. $basename.png is_screenshot=0 fi
     if $is_recording o. $basename.avi,15,0,1 nb_frames+=1 to. "Recording video\n[Frame \#"$nb_frames"]",0,0,5% fi
     w. rm. wait 40
   while {*}" && "!{*,ESC}" && "!{*,Q}
