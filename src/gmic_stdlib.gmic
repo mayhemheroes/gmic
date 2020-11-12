@@ -25760,14 +25760,16 @@ tixy : skip "${1=sin(t-sqrt((x-8.5)^2+(y-8.5)^2))}" check_display
 ---- Key '"${c}"SPACE"$n"' starts/stops recording animation as video file '"${c}"out.avi"$n"'.\n
 ---- Key '"${c}"A"$n"' enables/disables anti-aliasing.\n
 ---- Key '"${c}"R"$n"' resets time.\n
+---- Key '"${c}"F"$n"' displays formula on the image.\n
 ---- Keys '"${c}"CTRL+D"$n"' increase window size.\n
 ---- Keys '"${c}"CTRL+C"$n"' decrease window size.\n
 ---- Keys '"${c}"CTRL+R"$n"' reset window size.\n
 ---- Keys '"${c}"ESC"$n"', '"${c}"Q"$n"' or '"${c}"ENTER"$n"' close the current window.\n
 ------------------------------------------------------------------------------------------------"
   w[] 400,400,0,"[G'MIC] tixy: ${1--1}"
-  t0=$| is_recording=0 is_antialias=1 nb_frames=0
+  t0=$| is_recording=0 is_antialias=1 is_formula=0 nb_frames=0
   360,1,1,3,[x,abs(cos(x/w*pi))^0.5,1] hsv2rgb. nm. cmap
+  0 t. "${1--1}",0,0,24,1,1 dilate. 5 if w>{*,w} r2dx. {*,w} fi nm. formula
 
   do
 
@@ -25776,7 +25778,8 @@ tixy : skip "${1=sin(t-sqrt((x-8.5)^2+(y-8.5)^2))}" check_display
     if $is_ctrl" && "{*,-D} w[] {1.25*[{*,w,h}]}
     elif $is_ctrl" && "{*,-C} w[] {0.8*[{*,w,h}]}
     elif $is_ctrl" && "{*,R} w[] 400,400
-    elif {*,-A} is_antialias={1-$is_antialias}
+    elif {*,-A} is_antialias={!$is_antialias}
+    elif {*,-F} is_formula={!$is_formula}
     elif {*,R} t0=$|
     elif {*,-SPACE}
       if $is_recording o[] out.avi,15,0,0 nb_frames=0 fi
@@ -25791,10 +25794,9 @@ tixy : skip "${1=sin(t-sqrt((x-8.5)^2+(y-8.5)^2))}" check_display
       const b = w#-1/16;
       const t = "$|-$t0";
       i = x + 16*y;
-      z = [ x,y ];
+      ref([ x,y ],z);
       val = (${1--1});
       n = cabs(val);
-
       r = floor(0.48*b*cut(n,0,1));
       a = (carg(-val)*180/pi)%360;
       c = I[#"$cmap",a];
@@ -25804,10 +25806,11 @@ tixy : skip "${1=sin(t-sqrt((x-8.5)^2+(y-8.5)^2))}" check_display
 
     if $_is_antialias r. 50%,50%,1,3,2 fi
     if {*,w}!={*,h} -. 128 r. {*,w,h},1,3,0,0,0.5,0.5 +. 128 fi
+    if $is_formula [formula],[formula],1,3,255 j.. .,0,0,0,0,1,[formula] rm. fi
     if $is_recording o. out.avi,15,0,1 nb_frames+=1 to. "Recording video\n[Frame \#"$nb_frames"]",0,0,5% fi
     w. rm. wait 40
   while {*}" && "!{*,ESC}" && "!{*,Q}
-  rm[cmap]
+  rm[cmap,formula]
   w[] 0
 
 #@cli x_2048
