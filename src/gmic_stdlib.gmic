@@ -1623,9 +1623,15 @@ reference_finalize_html :
 "      </div>"\n\
 "      <h1 class=\"ref_h1\">Table of Contents</h1>"\n\
 "      <ul>"\n
+
+  ind_loc=${"-nmd 1,\"List of Commands\""}
   repeat $! l[$>]
     name={n} strvar $name url=${}.html
-    html.="<li><a href=\""$url"#top\">"$name"</a></li>"
+    if $>==$ind_loc
+       html.="<li><a class=\"ref_loc\" href=\""$url"#top\">"$name"</a></li>"
+    else
+      html.="<li><a href=\""$url"#top\">"$name"</a></li>"
+    fi
   endl done
 
   html.="\n    </ul>"\n\
@@ -1636,15 +1642,15 @@ reference_finalize_html :
         "  </body>"
 
   i[0] ({'$html'}:y) nm[0] "Table of Contents"
-  ind=${"-nmd 1,\"List of Commands\""}
-  if narg($ind)" && "isfile('list_of_commands.html') # Merge with existing 'List of commands' page if it already exists
+  ind_loc+=1
+  if narg($ind_loc)" && "isfile('list_of_commands.html') # Merge with existing 'List of commands' page if it already exists
     it list_of_commands.html
-    if find(crop(),'"<!-- merged_content -->"')<0 l[$ind,-1]
+    if find(crop(),'"<!-- merged_content -->"')<0 l[$ind_loc,-1]
       s[0] -,{'"<!-- end_content -->"'}
       s. -,{'"<!-- begin_content -->"'}
       i[1] ('"<!-- merged_content -->"':y)
       k[0,1,-1] a y
-    endl else nm. "List of Commands" rv[$ind,-1] rm. fi
+    endl else nm. "List of Commands" rv[$ind_loc,-1] rm. fi
   fi
 
   # Insert top and bottom navigation bar into pages.
