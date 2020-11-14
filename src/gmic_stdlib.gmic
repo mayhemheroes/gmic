@@ -1030,8 +1030,8 @@ reference :
 "path to an existing file (resp. to a directory) or not."\n\
 "* 'isin(v,a_1,...,a_n)' returns '0' (false) or '1' (true) whether the first value 'v' appears in the set of other "\
 "values 'a_i'."\n\
-"* 'inrange(value,m,M,include_boundaries)' returns '0' (false) or '1' (true) whether the specified value lies in "\
-"range '[m,M]' or not (checked range is ']m,M[ if 'include_boundaries=0')."\n\
+"* 'inrange(value,m,M,include_m,include_M)' returns '0' (false) or '1' (true) whether the specified value lies in "\
+"range '[m,M]' or not ('include_m' and 'includeM' tells how boundaries 'm' and 'M' are considered)."\n\
 "* 'argkth()', 'argmin()', 'argmax()', 'argminabs()', 'argmaxabs()'', 'avg()', 'kth()', 'min()', 'max()', 'minabs()', "\
 "'maxabs()', 'med()', 'prod()', 'std()', 'sum()' and 'var()' can be called with an arbitrary number of scalar/vector "\
 "arguments."\n\
@@ -1604,11 +1604,18 @@ reference_finalize_html :
 "    <a id=\"top\"></a>"\n\
 "<!-- ref_navigation_top -->"\n\
 "<!-- begin_content -->"\n\
-"      <h1 class=\"ref_h1\">Documentation License</h1>"\n\
-"        <p>This document is distributed under the "\
+"      <h1 class=\"ref_h1\">Preamble</h1>"\n\
+"        <ul><li>This document is distributed under the "\
 "<a target=\"_blank\" href=\"http://www.gnu.org/licenses/fdl-1.3.txt\">GNU Free Documentation License</a>, "\
-"version 1.3.</p>"\n\
-"        <p>A <a href=\"gmic_reference.pdf\">.pdf version</a> of this document is available.</p>"\n\
+"version 1.3.</li>"\n\
+"        <li>A <a href=\"gmic_reference.pdf\">.pdf version</a> of this document is available.</li>"\n
+
+  if !0$_pdf_output
+     html.="        <li>Quick access to the <a class=\"ref_loc\" href=\"https://gmic.eu/reference/list_of_commands.html\">"\
+           "List of Commands</a>.</li>"\n
+  fi
+
+  html.="</ul>"\n\
 "      <h1 class=\"ref_h1\">Version</h1>"\n\
 "      <div class=\"ref_header\">"\n\
 "        <span class=\"gmd_gmic\"></span>: "\
@@ -1616,14 +1623,22 @@ reference_finalize_html :
 "        <a href=\"https://gmic.eu\">https://gmic.eu</a><br/>"\n\
 "        Version <b>"${-strver}"</b>"$strprerelease"<br/><br/>"\n\
 "        Copyright &copy; 2008-"{date(0)}", "\
-"<a target=\"_blank\" href=\"https://tschumperle.users.greyc.fr/\">David Tschumperlé</a> / GREYC / CNRS<br/>"\n\
+"<a target=\"_blank\" href=\"https://tschumperle.users.greyc.fr/\">David Tschumperlé</a> / "\
+"<a target=\"_blank\" href=\"https://www.greyc.fr\">GREYC</a> / "\
+"<a target=\"_blank\" href=\"http://www.cnrs.fr/en\">CNRS</a><br/>"\n\
 "        <a target=\"_blank\" href=\"https://www.greyc.fr\">https://www.greyc.fr</a><br/>"\n\
 "      </div>"\n\
 "      <h1 class=\"ref_h1\">Table of Contents</h1>"\n\
 "      <ul>"\n
+
+  ind_loc=${"-nmd 1,\"List of Commands\""}
   repeat $! l[$>]
     name={n} strvar $name url=${}.html
-    html.="<li><a href=\""$url"#top\">"$name"</a></li>"
+    if $>==$ind_loc
+       html.="<li><a class=\"ref_loc\" href=\""$url"#top\">"$name"</a></li>"
+    else
+      html.="<li><a href=\""$url"#top\">"$name"</a></li>"
+    fi
   endl done
 
   html.="\n    </ul>"\n\
@@ -1634,15 +1649,15 @@ reference_finalize_html :
         "  </body>"
 
   i[0] ({'$html'}:y) nm[0] "Table of Contents"
-  ind=${"-nmd 1,\"List of Commands\""}
-  if narg($ind)" && "isfile('list_of_commands.html') # Merge with existing 'List of commands' page if it already exists
+  ind_loc+=1
+  if narg($ind_loc)" && "isfile('list_of_commands.html') # Merge with existing 'List of commands' page if it already exists
     it list_of_commands.html
-    if find(crop(),'"<!-- merged_content -->"')<0 l[$ind,-1]
+    if find(crop(),'"<!-- merged_content -->"')<0 l[$ind_loc,-1]
       s[0] -,{'"<!-- end_content -->"'}
       s. -,{'"<!-- begin_content -->"'}
       i[1] ('"<!-- merged_content -->"':y)
       k[0,1,-1] a y
-    endl else nm. "List of Commands" rv[$ind,-1] rm. fi
+    endl else nm. "List of Commands" rv[$ind_loc,-1] rm. fi
   fi
 
   # Insert top and bottom navigation bar into pages.
@@ -1791,8 +1806,10 @@ reference_end_pdf :
 
   v 0 e[] "  > Waiting for file 'reference_pdf.pdf'."
   for !isfile('reference_pdf.pdf') wait 5000 done
+  e[] "  > Removing links in file 'reference_pdf.pdf'."
+  x "pdfjam reference_pdf.pdf"
   e[] "  > Compressing file 'reference_pdf.pdf' to 'gmic_reference.pdf'."
-  x "gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=gmic_reference.pdf reference_pdf.pdf"
+  x "gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=gmic_reference.pdf reference_pdf-pdfjam.pdf"
   e[] "  > Clean temporary files."
   x "rm -f style.css reference_pdf.html reference_pdf.png reference_pdf.pdf"
   e[] "  > Upload file 'gmic_reference.pdf' to G'MIC server."
@@ -24083,6 +24100,11 @@ alert : skip "${1=[G"{`39`}"MIC Alert]},${2=This is an alert box.},${3=OK}"
 arg : check "isint($1) && ($1)>0"
   $=arg u ${arg{1+($1)}}
 
+#@cli arg0 : n>=0,_arg0,...,_argN
+#@cli : Return the n-th argument of the specified argument list (where 'n' starts from '0').
+arg0 : check "isint($1) && ($1)>=0"
+  $=arg u ${arg{2+($1)}}
+
 #@cli arg2var : variable_name,argument_1,...,argument_N
 #@cli : For each i in [1...N], set 'variable_name$i=argument_i'.
 #@cli : The variable name should be global to make this command useful (i.e. starts by an underscore).
@@ -25697,9 +25719,10 @@ _demo_color_curves :
 #@cli tixy : "expression"
 #@cli : Animate specified mathematical expression with a 16x16 grid of circles, \
 # using the rules described at https://tixy.land
-tixy : skip "${1=sin(t-sqrt((x-8.5)^2+(y-8.5)^2))}" check_display
+tixy : skip "${1=sin(t-sqrt((x-8)^2+(y-8)^2))}" check_display
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r b=$_vt100_b
-  l[] ('"$*"')
+  if narg("$*") expr="$*" else expr="$1" fi
+  l[] ('$expr')
     replace_str "%","%25"
     replace_str "&","%26"
     replace_str "(","%28"
@@ -25730,53 +25753,79 @@ tixy : skip "${1=sin(t-sqrt((x-8.5)^2+(y-8.5)^2))}" check_display
 ---- . Variables "${g}"x"$n" and "${g}"y"$n", in range "${c}"[0,15]"$n", are the spatial position of each dot.\n
 ---- . Variable "${g}"i"$n", in range "${c}"[0,255]"$n", is the dot index, i.e. "${c}"i = x + 16*y"$n".\n
 ---- . Variable "${g}"t>=0"$n" is the (decimal) number of elapsed seconds.\n
----- . Specified expression "${g}"r(t,i,x,y)"$n" must return a float value "${g}"r"$n"\n
----- . "${c}"abs(r)"$n" in "${g}"[0,1]"$n" determines the radius of each dot at "${c}"(x,y)"$n".\n
----- . If "${c}"r>=0"$n", the dot at "${c}"(x,y)"$n" is colored in white (in red, otherwise).\n
+---- . Specified expression "${g}"func(t,i,x,y)"$n" must return a complex value "${c}"c"$n".\n
+---- . Variable "${g}"z"$n" can be used as a shortcut for "${g}"[ x,y ]"$n".\n
+---- . Variable "${g}"j"$n" is the complex imaginary number "${g}"[ 0,1 ]"$n".\n
+---- . "${c}"cabs(c)"$n" in "${g}"[0,1]"$n" determines the radius of each dot at "${c}"(x,y)"$n".\n
+---- . "${c}"carg(c)"$n" in "${g}"[-pi,pi]"$n" determine the color of each dot at "${c}"(x,y)"$n".\n
 ----\n
 ---- Key '"${c}"SPACE"$n"' starts/stops recording animation as video file '"${c}"out.avi"$n"'.\n
+---- Key '"${c}"ENTER"$n"' takes a screenshot of current image.\n
 ---- Key '"${c}"A"$n"' enables/disables anti-aliasing.\n
+---- Key '"${c}"F"$n"' displays formula on the image.\n
 ---- Key '"${c}"R"$n"' resets time.\n
 ---- Keys '"${c}"CTRL+D"$n"' increase window size.\n
 ---- Keys '"${c}"CTRL+C"$n"' decrease window size.\n
 ---- Keys '"${c}"CTRL+R"$n"' reset window size.\n
 ---- Keys '"${c}"ESC"$n"', '"${c}"Q"$n"' or '"${c}"ENTER"$n"' close the current window.\n
 ------------------------------------------------------------------------------------------------"
-  w[] 400,400,0,"[G'MIC] tixy: ${1--1}"
-  t0=$| is_recording=0 is_antialias=1 nb_frames=0
+  w[] 400,400,0,"[G'MIC] tixy: "$expr
+  t0=$| is_recording=0 is_antialias=1 is_screenshot=0 is_formula=0 nb_frames=0
+  360,1,1,3,[x,abs(cos(x/w*pi))^0.5,1] hsv2rgb. shift. -180,0,0,0,2 nm. cmap
+  strvar $expr basename=${}
+
   do
 
     # Manage user-events.
     is_ctrl={{*,CTRLLEFT}" || "{*,CTRLRIGHT}}
-    if $is_ctrl" && "{*,-D} w[] {1.25*[{*,w,h}]}
-    elif $is_ctrl" && "{*,-C} w[] {0.8*[{*,w,h}]}
-    elif $is_ctrl" && "{*,R} w[] 400,400
-    elif {*,-A} is_antialias={1-$is_antialias}
+    if $is_ctrl" && "{*,-D} w[] {1.25*[{*,w,h}]} rmn formula,mformula
+    elif $is_ctrl" && "{*,-C} w[] {0.8*[{*,w,h}]} rmn formula,mformula
+    elif $is_ctrl" && "{*,R} w[] 400,400 rmn formula,mformula
+    elif {*,-A} is_antialias={!$is_antialias}
+    elif {*,-F} is_formula={!$is_formula}
     elif {*,R} t0=$|
     elif {*,-SPACE}
-      if $is_recording o[] out.avi,15,0,0 nb_frames=0 fi
-      is_recording={1-$is_recording}
+      if $is_recording o[] $basename.avi,15,0,0 nb_frames=0
+      else t0=$| fi
+      is_recording={!$is_recording}
+    elif {*,-ENTER} is_screenshot=1
     fi
 
     # Render animation frame.
     m={min({*,w,h})} _is_antialias={$is_antialias" && "$m<512}
     {m=$m*($_is_antialias?2:1);[m,m]},1,3
-    16,16,1,1,">
-      const b = w#-2/16;
-      const t = "$|-$t0";
+
+    16,16,1,1,">begin(
+        const b = w#-1/16;
+        const t = "$|-$t0";
+        j = [ 0,1 ];
+      );
       i = x + 16*y;
-      val = (${1--1});
-      r = floor(0.48*b*cut(abs(val),0,1));
-      c = val<0?0:255;
-      r>1?ellipse(#-1,b*(x + 0.5),b*(y + 0.5),r,r,0,1,255,c,c):
-      r>0?ellipse(#-1,b*(x + 0.5),b*(y + 0.5),1,1,0,0.5,255,c,c)"
+      ref([ x,y ],z);
+      val = ("$expr");
+      n = cabs(val);
+      r = floor(0.48*b*cut(n,0,1));
+      a = (360+carg(val)*180/pi)%360;
+      c = I[#"$cmap",a];
+      r>1?ellipse(#-1,b*(x + 0.5),b*(y + 0.5),r,r,0,1,c):
+      r>0?ellipse(#-1,b*(x + 0.5),b*(y + 0.5),1,1,0,0.5,c)"
     rm.
 
     if $_is_antialias r. 50%,50%,1,3,2 fi
     if {*,w}!={*,h} -. 128 r. {*,w,h},1,3,0,0,0.5,0.5 +. 128 fi
-    if $is_recording o. out.avi,15,0,1 nb_frames+=1 to. "Recording video\n[Frame \#"$nb_frames"]",0,0,5% fi
+    if $is_formula
+      if !narg($formula)
+        0 t. {``$expr},0,0,48,1,255 frame. 5,5,0 +dilate. 11 max. 128 to_rgb..
+        if w>0.75*{*,w} r2dx[-2,-1] {0.75*{*,w}} fi
+        mv[-2,-1] 0 nm[0,1] formula,mformula
+      fi
+      j. [formula],0.5~,1~,0,0,1,[mformula],255
+    fi
+    if $is_screenshot o. $basename.png is_screenshot=0 fi
+    if $is_recording o. $basename.avi,15,0,1 nb_frames+=1 to. "Recording video\n[Frame \#"$nb_frames"]",0,0,5% fi
     w. rm. wait 40
   while {*}" && "!{*,ESC}" && "!{*,Q}
+  rmn cmap,formula,mformula
   w[] 0
 
 #@cli x_2048
