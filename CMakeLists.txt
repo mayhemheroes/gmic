@@ -196,7 +196,7 @@ if(BUILD_MAN)
   add_custom_command(
     OUTPUT ${CMAKE_BINARY_DIR}/man/gmic.1
     DEPENDS gmic
-    COMMAND LD_LIBRARY_PATH=${GMIC_BINARIES_PATH} ${GMIC_BINARIES_PATH}/gmic -v - ${CMAKE_SOURCE_DIR}/src/gmic_stdlib.gmic raw:${CMAKE_SOURCE_DIR}/src/gmic_stdlib.gmic,uchar -__help man > ${CMAKE_BINARY_DIR}/man/gmic.1
+    COMMAND LD_LIBRARY_PATH=${GMIC_BINARIES_PATH} ${GMIC_BINARIES_PATH}/gmic ${CMAKE_SOURCE_DIR}/src/gmic_stdlib.gmic it ${CMAKE_SOURCE_DIR}/src/gmic_stdlib.gmic reference man > ${CMAKE_BINARY_DIR}/man/gmic.1
   )
   add_custom_target(man ALL DEPENDS ${CMAKE_BINARY_DIR}/man/gmic.1)
   install(FILES ${CMAKE_BINARY_DIR}/man/gmic.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1/)
