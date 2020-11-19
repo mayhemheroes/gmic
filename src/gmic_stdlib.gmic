@@ -1103,7 +1103,7 @@ reference :
 "* Equality/inequality comparisons between two vectors is done with operators '==' and '!='."\n\
 "* Some vector-specific functions can be used on vector values: "\
 "'cross(X,Y)' (cross product), 'dot(X,Y)' (dot product), 'size(X)' (vector dimension), "\
-"'sort(X,_is_increasing,_chunk_size)' (sorted values), 'reverse(A)' (reverse order of components), "\
+"'sort(X,_is_increasing,_nb_elts,_size_elt)' (sorted values), 'reverse(A)' (reverse order of components), "\
 "'shift(A,_length,_boundary_conditions)' and 'same(A,B,_nb_vals,_is_case_sensitive)' (vector equality test)."\n\
 "* Function 'normP(u1,...,un)' computes the LP-norm of the specified vector ('P' being an `unsigned integer` constant "\
 "or 'inf'). If 'P' is omitted, the L2 norm is calculated."\n\
@@ -1186,7 +1186,6 @@ reference :
 "* 'I/J[offset,_boundary_conditions]' and 'I/J(#ind,_x,_y,_z,_interpolation,_boundary_conditions)' do the same as "\
 "'i/j[offset,_boundary_conditions]' and 'i/j(#ind,_x,_y,_z,_c,_interpolation,_boundary_conditions)' but return a "\
 "vector instead of a scalar (e.g. a vector `[ R,G,B ]` for a pixel at `(a,b,c)` in a color image)."\n\
-"* 'sort(#ind,_is_increasing,_axis)' sorts the values in the specified image '[ind]'."\n\
 "* 'crop(_#ind,_x,_y,_z,_c,_dx,_dy,_dz,_dc,_boundary_conditions)' returns a vector whose values come from the "\
 "cropped region of image '[ind]' (or from default image selected if 'ind' is not specified). Cropped region starts "\
 "from point `(x,y,z,c)` and has a size of `dx x dy x dz x dc`. Arguments for coordinates and sizes can be omitted "\
@@ -1812,7 +1811,7 @@ reference_end_pdf :
   e[] "  > Compressing file 'reference_pdf.pdf' to 'gmic_reference.pdf'."
   x "gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=gmic_reference.pdf reference_pdf-pdfjam.pdf"
   e[] "  > Clean temporary files."
-  x "rm -f style.css reference_pdf.html reference_pdf.png reference_pdf.pdf"
+  x "rm -f style.css reference_pdf.html reference_pdf.png reference_pdf.pdf reference_pdf-pdfjam.pdf"
   e[] "  > Upload file 'gmic_reference.pdf' to G'MIC server."
   x "lftp ftp://"$GMIC_LOGIN":"$GMIC_PASSWD"@"$GMIC_FTP" -e \"put -O /www/gmic/reference gmic_reference.pdf; "\
     "quit\" >/dev/null"
@@ -4232,7 +4231,7 @@ _outputx :
 
 #@cli parse_cli : _output_mode,_{ * | command_name }
 #@cli : Parse definition of '#@cli'-documented commands and output info about them in specified output mode.
-#@cli : 'output_mode' can be { bashcompletion | help | html | images | print }.
+#@cli : 'output_mode' can be { ascii | bashcompletion | html | images | print }.
 #@cli : Default values: 'output_mode=print' and 'command_name=*'.
 parse_cli : skip "${1=print},${2=*}"
   e[^-1] "Parse '#@cli' command(s) '$2' and output in '$1' mode."
@@ -5985,7 +5984,7 @@ shape_cupid : check "${1=512}>=0"
 "u5GVv4foPOEnDEgMjAgMSAxICMzOQp4nHNn8GWIYmBgSGfIZchkSGaIZzCAQj0gLxMoms5QBZQHAHyqBfY="
     decompress_rle. r. $ir,$ir,1,1,5 if $ir>480 b. 0.2% fi >=. 40%
   fi
-  nm "[2D cupid shape]"
+  nm. "[2D cupid shape]"
 
 #@cli shape_diamond : _size>=0
 #@cli : Input a 2D diamond binary shape with specified size.
@@ -6022,6 +6021,7 @@ shape_dragon : check "${1=512}>=0 && ${2=18}>=0" skip "${3=0}"
     angle={$3-atan2(i1,i0)*180/pi} f. "begin(R = rot("$angle")); R*I"
     n 0,{$1-1} round $1,$1,1,1 eval.. "!x?polygon(#1,2,I(0,y),I(1,y),1,1); I" k.
   endl fi
+  nm. "[2D dragon shape]"
 
 #@cli shape_fern : _size>=0,_density[%]>=0,_angle,0<=_opacity<=1,\
 # _type={ 0=Asplenium adiantum-nigrum | 1=Thelypteridaceae }
@@ -6062,7 +6062,7 @@ shape_fern : check "${1=512}>=0 && ${2=50%}>=0 && isnum(${3=30}) && ${4=0.3}>=0 
     repeat 2 sh. $>,$>,0,0 -. {im} rm. done n 0,{$ir-1}
     pointcloud -$4 r $ir,$ir,1,1,0,0,0.5,0.5
   endl fi
-  nm "[2D Barnsley fern]"
+  nm. "[2D Barnsley fern]"
 
 #@cli shape_gear : _size>=0,_nb_teeth>0,0<=_height_teeth<=100,0<=_offset_teeth<=100,0<=_inner_radius<=100
 #@cli : Input a 2D gear binary shape with specified size.
@@ -6090,7 +6090,7 @@ shape_gear : check "${1=512}>=0 && isint(${2=12}) && $2>0 && ${3=20}>=0 && $3<=1
     "},1,1
     if $5 circle. 50%,50%,{0.5*w*$5%},1,0 fi
   endl fi
-  nm "[2D gear shape]"
+  nm. "[2D gear shape]"
 
 #@cli shape_heart : _size>=0
 #@cli : Input a 2D heart binary shape with specified size.
@@ -6107,7 +6107,7 @@ shape_heart : check "${1=512}>=0"
       flood 50%,50%,0,0,0,1,0 ==. 0
     endl
   fi
-  nm "[2D heart shape]"
+  nm. "[2D heart shape]"
 
 #@cli shape_polygon : _size>=0,_nb_vertices>=3,_angle
 #@cli : Input a 2D polygonal binary shape with specified geometry.
@@ -6154,7 +6154,7 @@ shape_snowflake : check "${1=512}>=0 && isint(${2=5}) && $2>=0 && $2<=6"
     done
     *. {0.5*$1} +. {$1/2} permute. cyzx polygon.. {h},{^},1,1 rm.
   endl fi
-  nm "[2D snowflake shape]"
+  nm. "[2D snowflake shape]"
 
 #@cli shape_star : _size>=0,_nb_branches>0,0<=_thickness<=1
 #@cli : Input a 2D star binary shape with specified size.
@@ -6169,7 +6169,7 @@ shape_star : check "${1=512}>=0 && ${2=5}>0 && ${3=0.5}>=0 && $3<=1"
       $1,$1 j3d. ..,50%,50%,0,1,2 rm..
     endl
   fi
-  nm "[2D star shape]"
+  nm. "[2D star shape]"
 
 #@cli sh : eq. to 'shared'. : (+)
 
@@ -7111,6 +7111,8 @@ update_reference_html : check "isbool(${1=0})"
     error[0--3] "Command 'update_color_presets_html: Command run from wrong path: '"$path_current"', "\
                 "should be '"$path_ok"'."
   fi
+  x "rm -f *.pdf"
+
   rm
   e[^-1] "Generate reference documentation pages for the G'MIC website."
   it $HOME/work/src/gmic/src/gmic_stdlib.gmic
@@ -7130,7 +7132,7 @@ update_reference_html : check "isbool(${1=0})"
   # Upload to G'MIC server.
   if $1
     e[] "\n > Transfer reference documentation on G'MIC server.\n"
-    x "lftp ftp://"$GMIC_LOGIN":"$GMIC_PASSWD"@"$GMIC_FTP" -e \"mirror -eRL . /www/gmic/reference ; quit\""
+    x "lftp ftp://"$GMIC_LOGIN":"$GMIC_PASSWD"@"$GMIC_FTP" -e \"mirror -RL . /www/gmic/reference ; quit\""
   fi
   e[] "\n > All done.\n"
 
