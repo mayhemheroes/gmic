@@ -6747,7 +6747,7 @@ update_gallery_html : check "isbool(${1=0})"
   use_vt100
   path_current=${-path_current} path_ok=$HOME/work/src/gmic/html/gallery/
   if ['$path_current']!=['$path_ok']
-    error[0--3] "Command 'update_color_presets_html: Command run from wrong path: '"$path_current"', "\
+    error[0--3] "Command 'update_gallery_html: Command run from wrong path: '"$path_current"', "\
                 "should be '"$path_ok"'."
   fi
   x "rm -rf img && mkdir -p img"
@@ -7108,7 +7108,7 @@ __gallery :
 update_reference_html : check "isbool(${1=0})"
   path_current=${-path_current} path_ok=$HOME/work/src/gmic/html/reference/
   if ['$path_current']!=['$path_ok']
-    error[0--3] "Command 'update_color_presets_html: Command run from wrong path: '"$path_current"', "\
+    error[0--3] "Command 'update_reference_html: Command run from wrong path: '"$path_current"', "\
                 "should be '"$path_ok"'."
   fi
   x "rm -f *.pdf"
@@ -21685,13 +21685,15 @@ stylize :
         # Smart upscale of displacement field.
         if s>2
           r. ...,...,1,100%,1
-        else for im<0
-          f. "const boundary = 1;
-              i>=0 || c>1?i:(
-                px = j(-1); nx = j(1); py = j(0,-1); ny = j(0,1);
-                !c?(px>=0?px + 1:nx>0?nx - 1:py>=0?py:ny>=0?ny:i):
-                   (py>=0?py + 1:ny>0?ny - 1:px>=0?px:nx>=0?nx:i)
-              )"
+        else
+          r. ...,...,1,100%,4
+          for im<0
+            f. "const boundary = 1;
+                i>=0 || c>1?i:(
+                  px = j(-1); nx = j(1); py = j(0,-1); ny = j(0,1);
+                  !c?(px>=0?px + 1:nx>0?nx - 1:py>=0?py:ny>=0?ny:i):
+                     (py>=0?py + 1:ny>0?ny - 1:px>=0?px:nx>=0?nx:i)
+                )"
         done fi
 
         ws,hs={-2,[w,h]}
