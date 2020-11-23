@@ -3407,7 +3407,7 @@ gmic& gmic::add_commands(const char *const data_commands, const char *const comm
 
     // Check if last character is a '\'...
     _is_last_slash = false;
-    for (_line = linee; *_line=='\\' && _line>=lines; --_line) _is_last_slash = !_is_last_slash;
+    for (_line = linee; _line>=lines && *_line=='\\'; --_line) _is_last_slash = !_is_last_slash;
     if (_is_last_slash) *(linee--) = 0; // ... and remove it if necessary
     if (!*lines) continue; // Empty line found
     *s_name = *s_body = 0;
