@@ -15007,7 +15007,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
     // Display or print result.
     if (verbosity>0 && is_change && !is_quit && !is_return && callstack.size()==1 && images) {
-      if (!std::strcmp(get_variable("_host"),"cli")) {
+      const CImg<char> host = get_variable("_host");
+      if (host && !std::strcmp(host,"cli")) {
         if (is_display_available) {
           CImgList<unsigned int> lselection, lselection3d;
           bool is_first3d = false;
