@@ -3407,7 +3407,7 @@ gmic& gmic::add_commands(const char *const data_commands, const char *const comm
 
     // Check if last character is a '\'...
     _is_last_slash = false;
-    for (_line = linee; *_line=='\\' && _line>=lines; --_line) _is_last_slash = !_is_last_slash;
+    for (_line = linee; _line>=lines && *_line=='\\'; --_line) _is_last_slash = !_is_last_slash;
     if (_is_last_slash) *(linee--) = 0; // ... and remove it if necessary
     if (!*lines) continue; // Empty line found
     *s_name = *s_body = 0;
@@ -12707,7 +12707,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             unsigned int nb_removed = 0;
             cimglist_for(g_list_c,l) {
               CImg<char>& arg_command = g_list_c[l];
-              arg_command.resize(1,arg_command.height() + 1,1,1,1,0);
+              arg_command.resize(1,arg_command.height() + 1,1,1,0);
               strreplace_fw(arg_command);
               if (*arg_command) {
                 hash = hashcode(arg_command,false);
