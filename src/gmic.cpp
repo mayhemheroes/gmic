@@ -12707,7 +12707,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             unsigned int nb_removed = 0;
             cimglist_for(g_list_c,l) {
               CImg<char>& arg_command = g_list_c[l];
-              arg_command.resize(1,arg_command.height() + 1,1,1,1,0);
+              arg_command.resize(1,arg_command.height() + 1,1,1,0);
               strreplace_fw(arg_command);
               if (*arg_command) {
                 hash = hashcode(arg_command,false);
