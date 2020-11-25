@@ -4041,6 +4041,21 @@ void gmic::_gmic(const char *const commands_line,
   // Set pre-defined global variables.
   CImg<char> str(8);
 
+#if defined(_MSC_VER) || defined(WIN32) || defined(_WIN32) || defined(__WIN32__) \
+ || defined(WIN64) || defined(_WIN64) || defined(__WIN64__)
+  const char *s_os = "windows";
+#elif defined(linux) || defined(__linux) || defined(__linux__)
+  const char *s_os = "linux";
+#elif defined(__OSX__) || defined(__MACOSX__) || defined(__APPLE__)
+  const char *s_os = "osx";
+#elif defined(BSD) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__FreeBSD__) || defined (__DragonFly__)
+  const char *s_os = "bsd";
+#else
+  const char *s_os = "unknown";
+#endif
+  set_variable("_os",s_os);
+  set_variable("_ostype",cimg_OS==1?"unix":cimg_OS==2?"windows":"unknown");
+
   set_variable("_path_rc",gmic::path_rc(),0);
   set_variable("_path_user",gmic::path_user(),0);
 
