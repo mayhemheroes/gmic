@@ -4471,7 +4471,7 @@ parse_cli_ascii :
           rows 1,100% autocrop {'" "'}
           gmd_strcut_ascii 90,1
           if $!>1 i[1--2] ('"\\\\\n      "':y) a y fi autocrop {'\n'}
-          example={t}
+          example={/{t}}
           n_example+=1
           if $n_example==1 example_str=${_vt100_b}"Example:"$_vt100_n" "[#$n_example] nl="\n"
           else example_str="         "[#$n_example]
@@ -4810,7 +4810,7 @@ parse_cli_html :
           replace_str "image.jpg","<a href=\"img/image.jpg\" class=\"highslide\" onclick=\"return hs.expand(this)\">"\
                       "image.jpg</a>"
         fi
-        example={t}
+        example={/{t}}
         n_example+=1
         if $n_example>1 basename=${name}_$n_example.jpg else basename=${name}.jpg fi
         if $n_example==1
@@ -24504,6 +24504,7 @@ hex2img :
 
 #@cli hex2str : hexadecimal_string
 #@cli : Convert specified hexadecimal string into a string.
+#@cli : See also: ''str2hex''.
 hex2str : skip ${1=""}
   if !narg("$1") u "" return fi
   ('$*') if w<2 rm. u "" return fi
@@ -25420,8 +25421,12 @@ str : skip $1
   e[^-1] "Convert string '$*' to binary '"${dec2bin\ $dec}"', octal '"${dec2oct\ $dec}"', decimal '"$dec"' and
            hexadecimal '"${dec2hex\ $dec}"'."
 
-#@cli str2hex : string
-#@cli : Convert specified string into a sequence of hexadecimal values.
+#@cli str2hex : "string"
+#@cli : Convert specified string argument into a sequence of hexadecimal values (returned as a string).
+#@cli : See also: ''hex2str''.
+#@cli : $ hex=${"str2hex \"Hello my friends\""} echo $hex
+#@cli : ~~[gmic]-0./ Start G'MIC interpreter.\n[gmic]-0./ 48656c6c6f206d7920667269656e6473\n\
+# [gmic]-0./ End G'MIC interpreter.~~
 str2hex :
   ('"$*"') y. r. 2,100% f. 'v=if(x,i%16,int(i/16));if(v<=9,48+v,87+v)' u {t} rm.
 
