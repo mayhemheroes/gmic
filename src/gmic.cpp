@@ -4097,6 +4097,9 @@ void gmic::_gmic(const char *const commands_line,
 #ifdef cimg_use_fftw3
     ",fftw3"
 #endif
+#if cimg_display==2
+    ",gdi32"
+#endif
 #ifdef cimg_use_jpeg
     ",jpeg"
 #endif
@@ -4115,6 +4118,9 @@ void gmic::_gmic(const char *const commands_line,
 #ifdef cimg_use_openmp
     ",openmp"
 #endif
+#ifdef gmic_is_parallel
+    ",parallel"
+#endif
 #ifdef cimg_use_png
     ",png"
 #endif
@@ -4123,6 +4129,9 @@ void gmic::_gmic(const char *const commands_line,
 #endif
 #ifdef cimg_use_vt100
     ",vt100"
+#endif
+#if cimg_display==1
+    ",x11"
 #endif
 #ifdef cimg_use_xrandr
     ",xrandr"
