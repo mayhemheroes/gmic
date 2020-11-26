@@ -4063,8 +4063,7 @@ void gmic::_gmic(const char *const commands_line,
   cimg_snprintf(str,str.width(),"%u",cimg::nb_cpus());
   set_variable("_cpus",str.data(),0);
 
-  cimg_snprintf(str,str.width(),"%u",gmic_version);
-  set_variable("_version",str.data(),0);
+  set_variable("_version",cimg_str2(gmic_version),0);
 
 #if cimg_OS==1
   cimg_snprintf(str,str.width(),"%u",(unsigned int)getpid());
