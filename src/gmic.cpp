@@ -4041,14 +4041,29 @@ void gmic::_gmic(const char *const commands_line,
   // Set pre-defined global variables.
   CImg<char> str(8);
 
+#if defined(_MSC_VER) || defined(WIN32) || defined(_WIN32) || defined(__WIN32__) \
+ || defined(WIN64) || defined(_WIN64) || defined(__WIN64__)
+  const char *s_os = "windows";
+#elif defined(linux) || defined(__linux) || defined(__linux__)
+  const char *s_os = "linux";
+#elif defined(__OSX__) || defined(__MACOSX__) || defined(__APPLE__)
+  const char *s_os = "osx";
+#elif defined(BSD) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__FreeBSD__) || defined (__DragonFly__)
+  const char *s_os = "bsd";
+#elif defined(unix) || defined(__unix) || defined(__unix__)
+  const char *s_os = "unix";
+#else
+  const char *s_os = "unknown";
+#endif
+  set_variable("_os",s_os);
+
   set_variable("_path_rc",gmic::path_rc(),0);
   set_variable("_path_user",gmic::path_user(),0);
 
   cimg_snprintf(str,str.width(),"%u",cimg::nb_cpus());
   set_variable("_cpus",str.data(),0);
 
-  cimg_snprintf(str,str.width(),"%u",gmic_version);
-  set_variable("_version",str.data(),0);
+  set_variable("_version",cimg_str2(gmic_version),0);
 
 #if cimg_OS==1
   cimg_snprintf(str,str.width(),"%u",(unsigned int)getpid());
@@ -4070,6 +4085,65 @@ void gmic::_gmic(const char *const commands_line,
 #else
   set_variable("_prerelease","0",0);
 #endif // #ifdef gmic_prerelease
+
+  const char *const s_flags =
+#ifdef cimg_use_board
+    ",board"
+#endif
+#ifdef cimg_use_curl
+    ",curl"
+#endif
+#ifdef cimg_use_fftw3
+    ",fftw3"
+#endif
+#if cimg_display==2
+    ",gdi32"
+#endif
+#ifdef cimg_use_jpeg
+    ",jpeg"
+#endif
+#ifdef cimg_use_minc2
+    ",minc2"
+#endif
+#ifdef cimg_use_magick
+    ",magick"
+#endif
+#ifdef cimg_use_opencv
+    ",opencv"
+#endif
+#ifdef cimg_use_openexr
+    ",openexr"
+#endif
+#ifdef cimg_use_openmp
+    ",openmp"
+#endif
+#ifdef gmic_is_parallel
+    ",parallel"
+#endif
+#ifdef cimg_use_png
+    ",png"
+#endif
+#ifdef cimg_use_tiff
+    ",tiff"
+#endif
+#ifdef cimg_use_vt100
+    ",vt100"
+#endif
+#if cimg_display==1
+    ",x11"
+#endif
+#ifdef cimg_use_xrandr
+    ",xrandr"
+#endif
+#ifdef cimg_use_xshm
+    ",xshm"
+#endif
+#ifdef cimg_use_zlib
+    ",zlib"
+#endif
+    "";
+  set_variable("_flags",s_flags + 1,0);
+  set_variable("_pixeltype",cimg_str2(gmic_pixel_type),0);
 
   // Launch the G'MIC interpreter.
   const CImgList<char> items = commands_line?commands_line_to_CImgList(commands_line):CImgList<char>::empty();

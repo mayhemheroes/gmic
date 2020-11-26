@@ -425,8 +425,9 @@ gmd_braces_ascii :
 
 gmd_code_ascii :
   gmd_code
-  replace_str "\2~","\n\n"$_vt100_b"  "
-  replace_str "\3~",$_vt100_n"\n\n"
+  replace_str "\2~","\n"$_vt100_b"\n"
+  replace_str "\3~",$_vt100_n"\n"
+  replace_str "\\n","\n"
 
 gmd_gmic_ascii :
   replace_str "G'MIC",${_vt100_b}"G'MIC"$_vt100_n
@@ -921,16 +922,19 @@ reference :
 "  - '$|': The current value (expressed in seconds) of a millisecond precision timer."\n\
 "  - '$^': The current verbosity level."\n\
 "  - '$_cpus': The number of computation cores available on your machine."\n\
+"  - '$_flags': The list of enabled flags when G'MIC interpreter has been compiled."\n\
+"  - '$_host': A string telling about the host running the G'MIC interpreter (e.g. `cli` or `gimp`)."\n\
+"  - '$_os': A string describing the running operating system."\n\
+"  - '$_path_rc': The path to the G'MIC folder used to store configuration files (its value is OS-dependent)."\n\
+"  - '$_path_user': The path to the G'MIC user file `.gmic` or `user.gmic` (its value is OS-dependent)."\n\
+"  - '$_path_commands': A list of all imported command files (stored as a list-valued variable)."\n\
 "  - '$_pid': The current process identifier, as an integer."\n\
+"  - '$_pixeltype': The type of image pixels (default: 'float')."\n\
 "  - '$_prerelease': For pre-releases, the date of the pre-release as `yymmdd`. "\
 "For stable releases, this variable is set to `0`."\n\
 "  - '$_version': A 3-digits number telling about the current version of the G'MIC interpreter "\
 " (e.g. '"$_version"'). "\n\
-"  - '$_host': A string telling about the host running the G'MIC interpreter (e.g. `cli` or `gimp`)."\n\
 "  - '$_vt100': Set to `1` if colored text output is allowed on the console. Otherwise, set to `0`."\n\
-"  - '$_path_rc': The path to the G'MIC folder used to store configuration files (its value is OS-dependent)."\n\
-"  - '$_path_user': The path to the G'MIC user file `.gmic` or `user.gmic` (its value is OS-dependent)."\n\
-"  - '$_path_commands': A list of all imported command files (stored as a list-valued variable)."\n\
 \n\
 "* '$$name' and '$${name}' are both substituted by the G'MIC script code of the specified named "\
 "`custom command`, or by an empty string if no custom command with specified name exists. "\n\
@@ -4384,7 +4388,7 @@ parse_cli_ascii :
           rows 1,100% autocrop {'" "'}
           gmd_strcut_ascii 90,1
           if $!>1 i[1--2] ('"\\\\\n      "':y) a y fi autocrop {'\n'}
-          example={t}
+          example={/{t}}
           n_example+=1
           if $n_example==1 example_str=${_vt100_b}"Example:"$_vt100_n" "[#$n_example] nl="\n"
           else example_str="         "[#$n_example]
@@ -4410,9 +4414,9 @@ parse_cli_ascii :
 parse_cli_text_ascii :
   s -,{'\n'}
   gmd_list_ascii
-  gmd_code_ascii
   gmd_image_ascii
   s +,{'\n'}
+  gmd_code_ascii
   gmd_strcut_ascii 100,0
   gmd_gmic_ascii
   gmd_bold_ascii
@@ -4423,6 +4427,7 @@ parse_cli_text_ascii :
   gmd_link_ascii
   gmd_url_ascii
   gmd_section_ascii
+#  gmd_newline_ascii
   i[^] ({'\n'})
   a y autocrop {'\n'}
 
@@ -4810,7 +4815,7 @@ parse_cli_html :
           replace_str "image.jpg","<a href=\"img/image.jpg\" class=\"highslide\" onclick=\"return hs.expand(this)\">"\
                       "image.jpg</a>"
         fi
-        example={t}
+        example={/{t}}
         n_example+=1
         if $n_example>1 basename=${name}_$n_example.jpg else basename=${name}.jpg fi
         if $n_example==1
@@ -7469,7 +7474,7 @@ upload_filters :
   x "cd "$HOME"/work/src/gmic-community && git pull"
 
   # Define the list of compatible versions.
-  (290,291,292,293,$_version) store. compat
+  (290,291,292,293,294,295,$_version) store. compat
 
   # Import filters from stdlib and community.
   files $HOME/work/src/gmic-community/include/*.gmic
@@ -8102,7 +8107,7 @@ _update_header_html : check "narg(${1=}) && ${2=0}>0 && isbool(${3=0})"
 #@cli : 'fullscreen' can be { -1=keep same | 0=no | 1=yes }.
 #@cli : You can manage up to 10 different instant display windows by using the numbered variants
 #@cli : 'w0' (default, eq. to 'w'),'w1',...,'w9' of the command 'w'.
-#@cli : Invoke 'window' with no selection to make the window visible, if is has been closed by the user.
+#@cli : Invoke 'window' with no selection to make the window visible, if it has been closed by the user.
 #@cli : Default values: 'width=height=normalization=fullscreen=-1' and 'title=(undefined)'.
 
 #---------------------------------
@@ -9500,27 +9505,33 @@ replace_naninf :
 #@cli replace_seq : "search_seq","replace_seq"
 #@cli : Search and replace a sequence of values in selected images.
 #@cli : $ (1;2;3;4;5) +replace_seq "2,3,4","7,8"
-replace_seq : skip "${2=}"
+replace_seq : skip "${2=''}"
   e[^-1] "Replace value sequence '$1' by value sequence '${2--1}' in image$?."
-  ns,nd={[narg($1),narg(${2--1})]}
-  repeat $! l[$>] if w
-    s +,$1 y ind={"w#0 && crop(#0,0,0,0,0,1,min("$ns",h#0),1,1)!=[$1]"}
-    if $ind<$!
-      if $nd
-        eval "for (t = "$ind", t<l, t+=2, resize(#t,1,round(h#t*"$nd/$ns"),1,1,0))"
-        f[$ind--1:2] ${2--1}
-      else
-        rm[$ind--1:2]
-      fi
-      a y
-    fi
-  fi endl done
+  y repeat $! l[$>]
+    1,100%
+    eval "ref([ $1 ],str1);
+          ref([ ${2--1} ],str2);
+          copy_bloc(pd,src,len) = (
+            l = len;
+            pd + l>=h#1?resize(#1,1,h(#1) + 3*l,1,1,0);
+            copy(i[pd],src,l);
+            pd+=l;
+          );
+          for (ps = pd = 0, ps<h#0 && (qs = find(#0,str1,ps))>=0,
+            qs>ps?copy_bloc(pd,i[#0,ps],qs - ps);
+            copy_bloc(pd,str2,size(str2));
+            ps = qs + size(str1);
+          );
+          ps<h#0?copy_bloc(pd,i[#0,ps],h#0 - ps);
+          resize(#1,1,pd,1,1,0)"
+    k.
+  endl done
 
 #@cli replace_str : "search_str","replace_str"
 #@cli : Search and replace a string in selected images (viewed as strings, i.e. sequences of character codes).
 #@cli : $ ('"Hello there, how are you ?"') +replace_str "Hello there","Hi David"
 replace_str : skip "${2=}"
-  e[^-1] "Replace string '$1' by string '${2--1}' in image$? (viewed as string$?)."
+  e[^-1] "Replace string '$1' by string '${2--1}' in image$?."
   replace_seq {``{'"$1"'}},{'"${2--1}"'}
 
 #@cli round : rounding_value>=0,_rounding_type : (no arg) : (+)
@@ -24504,6 +24515,7 @@ hex2img :
 
 #@cli hex2str : hexadecimal_string
 #@cli : Convert specified hexadecimal string into a string.
+#@cli : See also: ''str2hex''.
 hex2str : skip ${1=""}
   if !narg("$1") u "" return fi
   ('$*') if w<2 rm. u "" return fi
@@ -25420,8 +25432,12 @@ str : skip $1
   e[^-1] "Convert string '$*' to binary '"${dec2bin\ $dec}"', octal '"${dec2oct\ $dec}"', decimal '"$dec"' and
            hexadecimal '"${dec2hex\ $dec}"'."
 
-#@cli str2hex : string
-#@cli : Convert specified string into a sequence of hexadecimal values.
+#@cli str2hex : "string"
+#@cli : Convert specified string argument into a sequence of hexadecimal values (returned as a string).
+#@cli : See also: ''hex2str''.
+#@cli : $ hex=${"str2hex \"Hello my friends\""} echo $hex
+#@cli : ~~[gmic]-0./ Start G'MIC interpreter.\n[gmic]-0./ 48656c6c6f206d7920667269656e6473\n\
+# [gmic]-0./ End G'MIC interpreter.~~
 str2hex :
   ('"$*"') y. r. 2,100% f. 'v=if(x,i%16,int(i/16));if(v<=9,48+v,87+v)' u {t} rm.
 
