@@ -282,6 +282,7 @@ help : skip ${1=""}
 # - `words in bold monospace`
 # - 'single_word_in_monospace'
 # - ''reference to section or command''
+# - !!G'MIC command!!
 # - ~~code block~~
 # - { list of values }
 # - http[s]://address.url
@@ -315,6 +316,14 @@ gmd_code : # ~~code block~~
     beg>=0 && y - beg>512?(beg = -1);
     i==_'~' && j[1]==_'~'?(
       beg<0 && (!y || isin(j[-1],_' ',_'\n',4))?(beg = y):
+      beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
+    )"
+
+gmd_command : # !!G'MIC command!!
+  eval[^] ">begin(beg = -1);
+    beg>=0 && y - beg>256?(beg = -1);
+    i==_'!' && j[1]==_'!'?(
+      beg<0 && (!y || isin(j[-1],_' ',_'(',_'\n',4))?(beg = y):
       beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
     )"
 
@@ -428,6 +437,11 @@ gmd_code_ascii :
   replace_str "\2~","\n"$_vt100_b"\n"
   replace_str "\3~",$_vt100_n"\n"
   replace_str "\\n","\n"
+
+gmd_command_ascii :
+  gmd_command
+  f ">begin(on = 0); i==2?(on = 1):i==3?(copy(i[y],-1,2,1,0); on = 0); on?-1:i"
+  discard -1
 
 gmd_gmic_ascii :
   replace_str "G'MIC",${_vt100_b}"G'MIC"$_vt100_n
@@ -545,6 +559,7 @@ gmd2html :
   gmd_link_html
   gmd_braces_html
   gmd_code_html
+  gmd_command_html
   gmd_image_html
   gmd_list_html
   gmd_section_html
@@ -565,6 +580,22 @@ gmd_code_html :
   gmd_code
   replace_str "\2~","\n<div class=\"gmd_code\">"
   replace_str "\3~","</div>\n"
+
+gmd_command_html :
+  gmd_command
+  repeat $! l[$>]
+    s +,2,33 s +,3,33
+    if $!>1 repeat $! if "crop(#"$>"-1)==[2,33] && crop(#"$>"+1)==[3,33]" l[$>]
+       command={t} strvar $command file=img/${}.png rm
+       if !isfile(['$file'])
+         run $command
+         if $! a x else 12,12,1,4,"!x || !y || x==w-1 || y==h-1?[0,0,0,255]:x==y || x==w-1-y?[255,0,0,255]:[0,0,0,0]" fi
+         o $file rm
+       fi
+       ('"<img class=\"gmd_inlineimage\" alt=\"[image]\" src=\""$file"\"/>"':y)
+    endl fi done fi
+    a y discard 2,33 discard 3,33
+  endl done
 
 gmd_gmic_html :
   replace_str "G'MIC","<span class=\"gmd_gmic\"></span>"
@@ -1499,6 +1530,7 @@ reference_text_ascii :
     s -,{'\n'}
     gmd_list_ascii
     gmd_code_ascii
+    gmd_command_ascii
     gmd_image_ascii
     s +,{'\n'}
     gmd_strcut_ascii 100,0
@@ -4504,6 +4536,7 @@ parse_cli_text_ascii :
   gmd_image_ascii
   s +,{'\n'}
   gmd_code_ascii
+  gmd_command_ascii
   gmd_strcut_ascii 100,0
   gmd_gmic_ascii
   gmd_bold_ascii
@@ -11016,6 +11049,7 @@ rgb2jzazbz : skip "${1=,}"
 
 #@cli rgb2lab : illuminant={ 0=D50 | 1=D65 | 2=E } : (no arg)
 #@cli : Convert color representation of selected images from RGB to Lab.
+#@cli : Attention les yeux : !! rm !!
 #@cli : Default value: 'illuminant=2'.
 rgb2lab : skip "${1=,}"
   l[] if isnum("$1") illu={"$1>1?2:$1>0?1:0"} else if ["'$1'"]!=',' noarg fi illu=2 fi onfail noarg illu=2 endl
