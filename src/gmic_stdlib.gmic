@@ -589,7 +589,8 @@ gmd_command_html :
        command={t} strvar $command file=img/${}.png rm
        if !isfile(['$file'])
          run $command
-         if $! a x o $file rm fi
+         if $! a x else 12,12,1,4,"!x || !y || x==w-1 || y==h-1?[0,0,0,255]:x==y || x==w-1-y?[255,0,0,255]:[0,0,0,0]" fi
+         o $file rm
        fi
        ('"<img class=\"gmd_inlineimage\" alt=\"[image]\" src=\""$file"\"/>"':y)
     endl fi done fi
@@ -11048,6 +11049,7 @@ rgb2jzazbz : skip "${1=,}"
 
 #@cli rgb2lab : illuminant={ 0=D50 | 1=D65 | 2=E } : (no arg)
 #@cli : Convert color representation of selected images from RGB to Lab.
+#@cli : Attention les yeux : !! rm !!
 #@cli : Default value: 'illuminant=2'.
 rgb2lab : skip "${1=,}"
   l[] if isnum("$1") illu={"$1>1?2:$1>0?1:0"} else if ["'$1'"]!=',' noarg fi illu=2 fi onfail noarg illu=2 endl
