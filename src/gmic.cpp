@@ -10170,24 +10170,25 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 } \
               }
             if (!std::strcmp(stype,"auto")) stype = CImg<T>::storage_type(g_list);
-            gmic_save_raw(unsigned char,"uchar")
-            else gmic_save_raw(unsigned char,"unsigned char")
-              else gmic_save_raw(char,"char")
-                else gmic_save_raw(unsigned short,"ushort")
-                  else gmic_save_raw(unsigned short,"unsigned short")
-                    else gmic_save_raw(short,"short")
-                      else gmic_save_raw(unsigned int,"uint")
-                        else gmic_save_raw(unsigned int,"unsigned int")
-                          else gmic_save_raw(int,"int")
-                            else gmic_save_raw(uint64T,"uint64")
-                              else gmic_save_raw(uint64T,"unsigned int64")
-                                else gmic_save_raw(int64T,"int64")
-                                  else gmic_save_raw(float,"float")
-                                    else gmic_save_raw(double,"double")
-                                      else error(true,images,0,0,
-                                                 "Command 'output': File '%s', invalid "
-                                                 "specified pixel type '%s'.",
-                                                 _filename.data(),stype);
+            gmic_save_raw(bool,"bool")
+            else gmic_save_raw(unsigned char,"uchar")
+              else gmic_save_raw(unsigned char,"unsigned char")
+                else gmic_save_raw(char,"char")
+                  else gmic_save_raw(unsigned short,"ushort")
+                    else gmic_save_raw(unsigned short,"unsigned short")
+                      else gmic_save_raw(short,"short")
+                        else gmic_save_raw(unsigned int,"uint")
+                          else gmic_save_raw(unsigned int,"unsigned int")
+                            else gmic_save_raw(int,"int")
+                              else gmic_save_raw(uint64T,"uint64")
+                                else gmic_save_raw(uint64T,"unsigned int64")
+                                  else gmic_save_raw(int64T,"int64")
+                                    else gmic_save_raw(float,"float")
+                                      else gmic_save_raw(double,"double")
+                                        else error(true,images,0,0,
+                                                   "Command 'output': File '%s', invalid "
+                                                   "specified pixel type '%s'.",
+                                                   _filename.data(),stype);
           } else if (!std::strcmp(uext,"yuv")) {
 
             // YUV sequence.
