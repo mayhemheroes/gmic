@@ -14717,24 +14717,25 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                              (unsigned int)dx,(unsigned int)dy, \
                                              (unsigned int)dz,(unsigned int)dc,false,false,\
                                              (cimg_ulong)offset).move_to(g_list);
-            gmic_load_raw(unsigned char,"uchar")
-            else gmic_load_raw(unsigned char,"unsigned char")
-              else gmic_load_raw(char,"char")
-                else gmic_load_raw(unsigned short,"ushort")
-                  else gmic_load_raw(unsigned short,"unsigned short")
-                    else gmic_load_raw(short,"short")
-                      else gmic_load_raw(unsigned int,"uint")
-                        else gmic_load_raw(unsigned int,"unsigned int")
-                          else gmic_load_raw(int,"int")
-                            else gmic_load_raw(uint64T,"uint64")
-                              else gmic_load_raw(uint64T,"unsigned int64")
-                                else gmic_load_raw(int64T,"int64")
-                                  else gmic_load_raw(float,"float")
-                                    else gmic_load_raw(double,"double")
-                                      else error(true,images,0,0,
-                                                 "Command 'input': raw file '%s', "
-                                                 "invalid specified pixel type '%s'.\n",
-                                                 _filename0,stype);
+            gmic_load_raw(bool,"bool")
+            else gmic_load_raw(unsigned char,"uchar")
+              else gmic_load_raw(unsigned char,"unsigned char")
+                else gmic_load_raw(char,"char")
+                  else gmic_load_raw(unsigned short,"ushort")
+                    else gmic_load_raw(unsigned short,"unsigned short")
+                      else gmic_load_raw(short,"short")
+                        else gmic_load_raw(unsigned int,"uint")
+                          else gmic_load_raw(unsigned int,"unsigned int")
+                            else gmic_load_raw(int,"int")
+                              else gmic_load_raw(uint64T,"uint64")
+                                else gmic_load_raw(uint64T,"unsigned int64")
+                                  else gmic_load_raw(int64T,"int64")
+                                    else gmic_load_raw(float,"float")
+                                      else gmic_load_raw(double,"double")
+                                        else error(true,images,0,0,
+                                                   "Command 'input': raw file '%s', "
+                                                   "invalid specified pixel type '%s'.\n",
+                                                   _filename0,stype);
             g_list_c.insert(__filename0);
           } else
             error(true,images,0,0,
