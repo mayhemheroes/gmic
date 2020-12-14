@@ -77,7 +77,8 @@ static const char *storage_type(const CImgList<T>& images) {
     }
   }
   if (is_int) {
-    if (im>=0) {
+    if (im==0 && iM==1) return "bool";
+    else if (im>=0) {
       if (iM<(1U<<8)) return "uchar";
       else if (iM<(1U<<16)) return "ushort";
       else if (iM<((cimg_uint64)1<<32)) return "uint";
