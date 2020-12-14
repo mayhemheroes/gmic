@@ -88,7 +88,7 @@ static const char *storage_type(const CImgList<T>& images) {
       else if (im>=-((cimg_int64)1<<31) && iM<((cimg_int64)1<<31)) return "int";
     }
   }
-  return cimg::type<T>::string();
+  return pixel_type();
 }
 
 static CImg<T> append_CImg3d(const CImgList<T>& images) {
@@ -507,23 +507,24 @@ CImg<T>& gmic_invert_endianness(const char *const stype) {
 
 #define _gmic_invert_endianness(value_type,svalue_type) \
   if (!std::strcmp(stype,svalue_type)) \
-    if (cimg::type<T>::string()==cimg::type<value_type>::string()) invert_endianness(); \
+    if (pixel_type()==cimg::type<value_type>::string()) invert_endianness(); \
     else CImg<value_type>(*this).invert_endianness().move_to(*this);
-  _gmic_invert_endianness(unsigned char,"uchar")
-  else _gmic_invert_endianness(unsigned char,"unsigned char")
-    else _gmic_invert_endianness(char,"char")
-      else _gmic_invert_endianness(unsigned short,"ushort")
-        else _gmic_invert_endianness(unsigned short,"unsigned short")
-          else _gmic_invert_endianness(short,"short")
-            else _gmic_invert_endianness(unsigned int,"uint")
-              else _gmic_invert_endianness(unsigned int,"unsigned int")
-                else _gmic_invert_endianness(int,"int")
-                  else _gmic_invert_endianness(uint64T,"uint64")
-                    else _gmic_invert_endianness(uint64T,"unsigned int64")
-                      else _gmic_invert_endianness(int64T,"int64")
-                        else _gmic_invert_endianness(float,"float")
-                          else _gmic_invert_endianness(double,"double")
-                            else invert_endianness();
+  if (!std::strcmp(stype,"bool") ||
+      !std::strcmp(stype,"uchar") ||
+      !std::strcmp(stype,"unsigned char") ||
+      !std::strcmp(stype,"char")) return *this;
+  _gmic_invert_endianness(unsigned short,"ushort")
+  else _gmic_invert_endianness(unsigned short,"unsigned short")
+    else _gmic_invert_endianness(short,"short")
+      else _gmic_invert_endianness(unsigned int,"uint")
+        else _gmic_invert_endianness(unsigned int,"unsigned int")
+          else _gmic_invert_endianness(int,"int")
+            else _gmic_invert_endianness(uint64T,"uint64")
+              else _gmic_invert_endianness(uint64T,"unsigned int64")
+                else _gmic_invert_endianness(int64T,"int64")
+                  else _gmic_invert_endianness(float,"float")
+                    else _gmic_invert_endianness(double,"double")
+                      else invert_endianness();
   return *this;
 }
 
@@ -579,7 +580,7 @@ const CImg<T>& gmic_print(const char *const title, const bool is_debug,
                (unsigned long)(mdisp==0?msiz:(mdisp==1?(msiz>>10):(msiz>>20))),
                mdisp==0?"b":(mdisp==1?"Kio":"Mio"),
                _is_shared?"shared ":"",
-               cimg::type<T>::string(),
+               pixel_type(),
                cimg::t_bold,cimg::t_normal,
                is_debug?"":"(");
   if (is_debug) std::fprintf(cimg::output(),"%p = (",(void*)_data);
@@ -7349,7 +7350,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Invert endianness.
         if (!std::strcmp("endian",command)) {
           gmic_substitute_args(false);
-          if (!std::strcmp(argument,"uchar") ||
+          if (!std::strcmp(argument,"bool") || !std::strcmp(argument,"uchar") ||
               !std::strcmp(argument,"unsigned char") || !std::strcmp(argument,"char") ||
               !std::strcmp(argument,"ushort") || !std::strcmp(argument,"unsigned short") ||
               !std::strcmp(argument,"short") || !std::strcmp(argument,"uint") ||
