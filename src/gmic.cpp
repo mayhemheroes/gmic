@@ -10225,24 +10225,25 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 CImgList<value_type>::copy_rounded(g_list).save(filename);
 
             if (!std::strcmp(stype,"auto")) stype = CImg<T>::storage_type(g_list);
-            gmic_save_cimg(unsigned char,"uchar")
-            else gmic_save_cimg(unsigned char,"unsigned char")
-              else gmic_save_cimg(char,"char")
-                else gmic_save_cimg(unsigned short,"ushort")
-                  else gmic_save_cimg(unsigned short,"unsigned short")
-                    else gmic_save_cimg(short,"short")
-                      else gmic_save_cimg(unsigned int,"uint")
-                        else gmic_save_cimg(unsigned int,"unsigned int")
-                          else gmic_save_cimg(int,"int")
-                            else gmic_save_cimg(uint64T,"uint64")
-                              else gmic_save_cimg(uint64T,"unsigned int64")
-                                else gmic_save_cimg(int64T,"int64")
-                                  else gmic_save_cimg(float,"float")
-                                    else gmic_save_cimg(double,"double")
-                                      else error(true,images,0,0,
-                                                 "Command 'output': File '%s', invalid "
-                                                 "specified pixel type '%s'.",
-                                                 _filename.data(),stype);
+            gmic_save_cimg(bool,"bool")
+            else gmic_save_cimg(unsigned char,"uchar")
+              else gmic_save_cimg(unsigned char,"unsigned char")
+                else gmic_save_cimg(char,"char")
+                  else gmic_save_cimg(unsigned short,"ushort")
+                    else gmic_save_cimg(unsigned short,"unsigned short")
+                      else gmic_save_cimg(short,"short")
+                        else gmic_save_cimg(unsigned int,"uint")
+                          else gmic_save_cimg(unsigned int,"unsigned int")
+                            else gmic_save_cimg(int,"int")
+                              else gmic_save_cimg(uint64T,"uint64")
+                                else gmic_save_cimg(uint64T,"unsigned int64")
+                                  else gmic_save_cimg(int64T,"int64")
+                                    else gmic_save_cimg(float,"float")
+                                      else gmic_save_cimg(double,"double")
+                                        else error(true,images,0,0,
+                                                   "Command 'output': File '%s', invalid "
+                                                   "specified pixel type '%s'.",
+                                                   _filename.data(),stype);
           } else if (!std::strcmp(uext,"gmz") || !*ext) {
 
             // GMZ file.
