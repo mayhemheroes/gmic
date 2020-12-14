@@ -65,7 +65,7 @@ static CImg<T> copy_rounded(const CImg<T>& img) {
   return CImg<T>(img,true);
 }
 
-static const char *storage_type(const CImgList<T>& images) {
+static const char *storage_type(const CImgList<T>& images, const bool allow_bool) {
   T im = cimg::type<T>::max(), iM = cimg::type<T>::min();
   bool is_int = true;
   for (unsigned int l = 0; l<images.size() && is_int; ++l) {
@@ -77,7 +77,7 @@ static const char *storage_type(const CImgList<T>& images) {
     }
   }
   if (is_int) {
-    if (im==0 && iM==1) return "bool";
+    if (allow_bool && im==0 && iM==1) return "bool";
     else if (im>=0) {
       if (iM<(1U<<8)) return "uchar";
       else if (iM<(1U<<16)) return "ushort";
@@ -9908,7 +9908,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   } \
                 } \
               }
-            if (!std::strcmp(stype,"auto")) stype = CImg<T>::storage_type(g_list);
+            if (!std::strcmp(stype,"auto")) stype = CImg<T>::storage_type(g_list,false);
             gmic_save_multitype(unsigned char,"uchar")
             else gmic_save_multitype(unsigned char,"unsigned char")
               else gmic_save_multitype(char,"char")
@@ -9992,7 +9992,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   } \
                 } \
               }
-            if (!std::strcmp(stype,"auto")) stype = CImg<T>::storage_type(g_list);
+            if (!std::strcmp(stype,"auto")) stype = CImg<T>::storage_type(g_list,false);
             gmic_save_tiff(unsigned char,"uchar")
             else gmic_save_tiff(unsigned char,"unsigned char")
               else gmic_save_tiff(char,"char")
@@ -10171,7 +10171,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   } \
                 } \
               }
-            if (!std::strcmp(stype,"auto")) stype = CImg<T>::storage_type(g_list);
+            if (!std::strcmp(stype,"auto")) stype = CImg<T>::storage_type(g_list,true);
             gmic_save_raw(bool,"bool")
             else gmic_save_raw(unsigned char,"uchar")
               else gmic_save_raw(unsigned char,"unsigned char")
@@ -10226,7 +10226,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               if (!std::strcmp(stype,svalue_type)) \
                 CImgList<value_type>::copy_rounded(g_list).save(filename);
 
-            if (!std::strcmp(stype,"auto")) stype = CImg<T>::storage_type(g_list);
+            if (!std::strcmp(stype,"auto")) stype = CImg<T>::storage_type(g_list,true);
             gmic_save_cimg(bool,"bool")
             else gmic_save_cimg(unsigned char,"uchar")
               else gmic_save_cimg(unsigned char,"unsigned char")
@@ -10264,8 +10264,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 #define gmic_save_gmz(value_type,svalue_type) \
               if (!std::strcmp(stype,svalue_type)) \
                 CImg<value_type>::save_gmz(filename,CImgList<value_type>::copy_rounded(g_list),g_list_c);
-
-            if (!std::strcmp(stype,"auto")) stype = CImg<T>::storage_type(g_list);
+            if (!std::strcmp(stype,"auto")) stype = CImg<T>::storage_type(g_list,false);
             gmic_save_gmz(unsigned char,"uchar")
             else gmic_save_gmz(unsigned char,"unsigned char")
               else gmic_save_gmz(char,"char")
@@ -12620,7 +12619,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               if (is_gmz) CImg<char>::string(images_names[uind]).move_to(gmz_info[1 + l]);
             }
             if (is_gmz) (gmz_info>'x').unroll('y').move_to(g_list);
-            if (!std::strcmp(argx,"auto")) std::strcpy(argx,CImg<T>::storage_type(g_list));
+            if (!std::strcmp(argx,"auto")) std::strcpy(argx,CImg<T>::storage_type(g_list,false));
 
             CImg<T> serialized;
             gmic_serialize(unsigned char,"uchar")
