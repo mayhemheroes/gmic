@@ -37893,10 +37893,13 @@ _fx_tune_hsv :
         a y permute yzcx
         s c,-3 srgb2rgb[0,1] rgb2hsv[0,1] /. 100
         f.. "
-          Hs = i(#0,x,0,0,0)*pi/180; Ss = i(#0,x,0,0,1); Vs = i(#0,x,0,0,2); Us = [ cos(Hs),sin(Hs) ];
-          Hd = i0*pi/180;            Sd = i1;            Vd = i2;            Ud = [ cos(Hd),sin(Hd) ];
-          U = lerp(Us,Ud,i(#2,x,0,0,0));
-          H = atan2(U[1],U[0])*180/pi;
+          Hs = i(#0,x,0,0,0); Ss = i(#0,x,0,0,1); Vs = i(#0,x,0,0,2);
+          Hd = i0; Sd = i1; Vd = i2;
+          DeltaH = Hd - Hs;
+          alphaH = i(#2,x,0,0,0);
+          H = abs(DeltaH)<abs(DeltaH - 360)?
+            lerp(Hs,Hd,alphaH):
+            lerp(Hs,Hd - 360,alphaH)%360;
           S = lerp(Ss,Sd,i(#2,x,0,0,1));
           V = lerp(Vs,Vd,i(#2,x,0,0,2));
           [ H,S,V ]"
