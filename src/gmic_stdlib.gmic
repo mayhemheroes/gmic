@@ -37768,55 +37768,55 @@ fx_transfer_pca_preview :
   endl done
 
 #@gui Tune HSV Colors : fx_tune_hsv, fx_tune_hsv_preview(1)
-#@gui : Dark = bool(1)
+#@gui : Dark = choice(2,"Ignore","Lock","Remap")
 #@gui : Dark Color = color(0,0,0)
 #@gui : Target Hue (%) = float(100,0,100)
 #@gui : Target Saturation (%) = float(100,0,100)
 #@gui : Target Value (%) = float(100,0,100)
 #@gui : sep = separator()
-#@gui : Light = bool(1)
+#@gui : Light = choice(2,"Ignore","Lock","Remap")
 #@gui : Light Color = color(255,255,255)
 #@gui : Target Hue (%) = float(100,0,100)
 #@gui : Target Saturation (%) = float(100,0,100)
 #@gui : Target Value (%) = float(100,0,100)
 #@gui : sep = separator()
-#@gui : Average = bool(0)
+#@gui : Average = choice("Ignore","Lock","Remap")
 #@gui : Average Color = color(128,128,128)_0
 #@gui : Target Hue (%) = float(0,0,100)_0
 #@gui : Target Saturation (%) = float(50,0,100)_0
 #@gui : Target Value (%) = float(100,0,100)_0
 #@gui : sep = separator()
-#@gui : Red = bool(0)
+#@gui : Red = choice("Ignore","Lock","Remap")
 #@gui : Red Color = color(255,0,0)_0
 #@gui : Target Hue (%) = float(100,0,100)_0
 #@gui : Target Saturation (%) = float(12.5,0,100)_0
 #@gui : Target Value (%) = float(0,0,100)_0
 #@gui : sep = separator()
-#@gui : Yellow = bool(0)
+#@gui : Yellow = choice("Ignore","Lock","Remap")
 #@gui : Yellow Color = color(255,255,0)_0
 #@gui : Target Hue (%) = float(100,0,100)_0
 #@gui : Target Saturation (%) = float(12.5,0,100)_0
 #@gui : Target Value (%) = float(0,0,100)_0
 #@gui : sep = separator()
-#@gui : Green = bool(0)
+#@gui : Green = choice("Ignore","Lock","Remap")
 #@gui : Green Color = color(0,255,0)_0
 #@gui : Target Hue (%) = float(100,0,100)_0
 #@gui : Target Saturation (%) = float(12.5,0,100)_0
 #@gui : Target Value (%) = float(0,0,100)_0
 #@gui : sep = separator()
-#@gui : Cyan = bool(0)
+#@gui : Cyan = choice("Ignore","Lock","Remap")
 #@gui : Cyan Color = color(0,255,255)_0
 #@gui : Target Hue (%) = float(100,0,100)_0
 #@gui : Target Saturation (%) = float(12.5,0,100)_0
 #@gui : Target Value (%) = float(0,0,100)_0
 #@gui : sep = separator()
-#@gui : Blue = bool(0)
+#@gui : Blue = choice("Ignore","Lock","Remap")
 #@gui : Blue Color = color(0,0,255)_0
 #@gui : Target Hue (%) = float(100,0,100)_0
 #@gui : Target Saturation (%) = float(12.5,0,100)_0
 #@gui : Target Value (%) = float(0,0,100)_0
 #@gui : sep = separator()
-#@gui : Magenta = bool(0)
+#@gui : Magenta = choice("Ignore","Lock","Remap")
 #@gui : Magenta Color = color(255,0,255)_0
 #@gui : Target Hue (%) = float(100,0,100)_0
 #@gui : Target Saturation (%) = float(12.5,0,100)_0
@@ -37830,22 +37830,28 @@ fx_transfer_pca_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2020/12/16</i>.</small>")
 _fx_tune_hsv :
-  is_dark,Rdark,Gdark,Bdark,Hdark,Sdark,Vdark,\
-  is_light,Rlight,Glight,Blight,Hlight,Slight,Vlight,\
-  is_avg,Ravg,Gavg,Bavg,Havg,Savg,Vavg,\
-  is_red,Rred,Gred,Bred,Hred,Sred,Vred,\
-  is_yellow,Ryellow,Gyellow,Byellow,Hyellow,Syellow,Vyellow,\
-  is_green,Rgreen,Ggreen,Bgreen,Hgreen,Sgreen,Vgreen,\
-  is_cyan,Rcyan,Gcyan,Bcyan,Hcyan,Scyan,Vcyan,\
-  is_blue,Rblue,Gblue,Bblue,Hblue,Sblue,Vblue,\
-  is_magenta,Rmagenta,Gmagenta,Bmagenta,Hmagenta,Smagenta,Vmagenta,\
+  mode_dark,Rdark,Gdark,Bdark,Hdark,Sdark,Vdark,\
+  mode_light,Rlight,Glight,Blight,Hlight,Slight,Vlight,\
+  mode_avg,Ravg,Gavg,Bavg,Havg,Savg,Vavg,\
+  mode_red,Rred,Gred,Bred,Hred,Sred,Vred,\
+  mode_yellow,Ryellow,Gyellow,Byellow,Hyellow,Syellow,Vyellow,\
+  mode_green,Rgreen,Ggreen,Bgreen,Hgreen,Sgreen,Vgreen,\
+  mode_cyan,Rcyan,Gcyan,Bcyan,Hcyan,Scyan,Vcyan,\
+  mode_blue,Rblue,Gblue,Bblue,Hblue,Sblue,Vblue,\
+  mode_magenta,Rmagenta,Gmagenta,Bmagenta,Hmagenta,Smagenta,Vmagenta,\
   preview_mapping=${1-64}
+  all_colors=dark,light,avg,red,yellow,green,cyan,blue,magenta
 
   repeat $! l[$>] split_opacity l[0]
     to_rgb
 
+    # Define list of considered colors.
+    colors,sep=
+    repeat narg($all_colors) color=${arg\ 1+$>,$all_colors} if ${mode_$color} colors.=$sep$color sep=, fi done
+
     # Find darkest, lightest and average colors.
-    +srgb2lab channels. 0 darklight={"[I(#-2,xm,ym),I(#-2,xM,yM)]"} rm. dark={[$darklight][0,3]} light={[$darklight][3,3]}
+    +srgb2lab channels. 0 darklight={"[I(#-2,xm,ym),I(#-2,xM,yM)]"} rm.
+    dark={[$darklight][0,3]} light={[$darklight][3,3]}
     +r. 1,1,1,3,2 avg={^} rm.
 
     # Find the nearest existing colors to "pure" colors.
@@ -37874,19 +37880,16 @@ _fx_tune_hsv :
       ); I"
 
     # Compute color mapping.
-    l[]
+    if narg($colors)
+      l[]
 
-      # Define color correspondences.
-      if $is_dark ($dark,$Rdark,$Gdark,$Bdark,$Hdark,$Sdark,$Vdark) fi
-      if $is_light ($light,$Rlight,$Glight,$Blight,$Hlight,$Slight,$Vlight) fi
-      if $is_avg ($avg,$Ravg,$Gavg,$Bavg,$Havg,$Savg,$Vavg) fi
-      if $is_red ($red,$Rred,$Gred,$Bred,$Hred,$Sred,$Vred) fi
-      if $is_yellow ($yellow,$Ryellow,$Gyellow,$Byellow,$Hyellow,$Syellow,$Vyellow) fi
-      if $is_green ($green,$Rgreen,$Ggreen,$Bgreen,$Hgreen,$Sgreen,$Vgreen) fi
-      if $is_cyan ($cyan,$Rcyan,$Gcyan,$Bcyan,$Hcyan,$Scyan,$Vcyan) fi
-      if $is_blue ($blue,$Rblue,$Gblue,$Bblue,$Hblue,$Sblue,$Vblue) fi
-      if $is_magenta ($magenta,$Rmagenta,$Gmagenta,$Bmagenta,$Hmagenta,$Smagenta,$Vmagenta) fi
-      if $!
+        # Define color correspondences.
+        repeat narg($colors)
+          color=${arg\ 1+$>,$colors}
+          if ${mode_$color}==2 (${$color},${R$color},${G$color},${B$color},${H$color},${S$color},${V$color})
+          else (${$color},${$color},0,0,0)
+          fi
+        done
         a y permute yzcx
         s c,-3 srgb2rgb[0,1] rgb2hsv[0,1] /. 100
         f.. "
@@ -37899,18 +37902,7 @@ _fx_tune_hsv :
           [ H,S,V ]"
         rm.
         hsv2rgb rgb2srgb
-        +l.
-          s x
-          if $is_dark t_dark={0,^} rm[0] fi
-          if $is_light t_light={0,^} rm[0] fi
-          if $is_avg t_avg={0,^} rm[0] fi
-          if $is_red t_red={0,^} rm[0] fi
-          if $is_yellow t_yellow={0,^} rm[0] fi
-          if $is_green t_green={0,^} rm[0] fi
-          if $is_cyan t_cyan={0,^} rm[0] fi
-          if $is_blue t_blue={0,^} rm[0] fi
-          if $is_magenta t_magenta={0,^} rm[0] fi
-        endl
+        repeat w color=${arg\ 1+$>,$colors} t_$color={I[$>]} done
         -. .. a c
 
         # Create CLUT.
@@ -37920,31 +37912,29 @@ _fx_tune_hsv :
         inpaint_pde.. . rm[-3,-1]
         2,2,2,3,"[x,y,z]*255" ri. ..,3 +[-2,-1]
         nm clut
-      fi
-    endl
+      endl
 
-    # Apply CLUT.
-    if $clut map_clut.. . rm. c 0,255 fi
+      # Apply CLUT.
+      if $clut map_clut.. . rm. c 0,255 fi
+    fi
 
     if $preview_mapping # Generate view of color mapping
-      __px,__py,__ps={s=min(w,h);p=$preview_mapping;p==1?[0.5,0.5,s/4]:p==2?[0,0,64]:p==3?[1,0,64]:p==4?[0,1,64]:[1,1,64]}
+      __px,__py,__ps={s=min(w,h);p=$preview_mapping;p==1?[0.5,0.5,s/4]:p==2?[0,0,48]:p==3?[1,0,48]:p==4?[0,1,64]:[1,1,64]}
       l[]
-        ($dark;$light;$avg;$red;$yellow;$green;$cyan;$blue;$magenta)
-        permute yzcx
+        repeat narg($all_colors) color=${arg\ 1+$>,$all_colors} (${$color}) done a y permute. yzcx
         s x r {s=round(max($__ps,16));[s,s]}
-        if $is_dark polygon[0] 3,0,100%,100%,100%,100%,0,1,$t_dark line[0] 0,100%,100%,0,0.5,255 fi
-        if $is_light polygon[1] 3,0,100%,100%,100%,100%,0,1,$t_light line[1] 0,100%,100%,0,0.5,255 fi
-        if $is_avg polygon[2] 3,0,100%,100%,100%,100%,0,1,$t_avg line[2] 0,100%,100%,0,0.5,255 fi
-        if $is_red polygon[3] 3,0,100%,100%,100%,100%,0,1,$t_red line[3] 0,100%,100%,0,0.5,255 fi
-        if $is_yellow polygon[4] 3,0,100%,100%,100%,100%,0,1,$t_yellow line[4] 0,100%,100%,0,0.5,255 fi
-        if $is_green polygon[5] 3,0,100%,100%,100%,100%,0,1,$t_green line[5] 0,100%,100%,0,0.5,255 fi
-        if $is_cyan polygon[6] 3,0,100%,100%,100%,100%,0,1,$t_cyan line[6] 0,100%,100%,0,0.5,255 fi
-        if $is_blue polygon[7] 3,0,100%,100%,100%,100%,0,1,$t_blue line[7] 0,100%,100%,0,0.5,255 fi
-        if $is_magenta polygon[8] 3,0,100%,100%,100%,100%,0,1,$t_magenta line[8] 0,100%,100%,0,0.5,255 fi
-        to[0] "D",0.5~,0.5~,50%,2,0.5 to[1] "L",0.5~,0.5~,50%,2,0.5 to[2] "A",0.5~,0.5~,50%,2,0.5
-        to[3] "R",0.5~,0.5~,50%,2,0.5 to[4] "Y",0.5~,0.5~,50%,2,0.5 to[5] "G",0.5~,0.5~,50%,2,0.5
-        to[6] "C",0.5~,0.5~,50%,2,0.5 to[7] "B",0.5~,0.5~,50%,2,0.5 to[8] "M",0.5~,0.5~,50%,2,0.5
-        frame 1,1,255 frame 1,1,0 to_rgba frame 1,1,0,0,0,32 append_tiles 3,3
+        repeat narg($all_colors) l[$>]
+          color=${arg\ 1+$>,$all_colors}
+          mode=${mode_$color}
+          if $mode==2
+            polygon 3,0,100%,100%,100%,100%,0,1,${t_$color}
+            line 0,100%,100%,0,0.5,0xAAAAAAAA,255 line 0,100%,100%,0,0.5,0x55555555,0
+          fi
+          to {`uppercase(['$color'][0])`},0.5~,0.5~,50%,2,0.5
+          to_rgba
+          if $mode frame 1,1,0,0,0,255 frame 2,2,255 else frame 3,3,0,0,0,64 fi
+        endl done
+        append_tiles 3,3
         store. __preview_mapping
       endl
     fi
@@ -37966,7 +37956,7 @@ fx_tune_hsv_preview :
     fi
   endl done
 
-  d,l,a,r,y,g,c,b,m={[$1?2:0,$8?2:0,$15?2:0,$22?2:0,$29?2:0,$36?2:0,$43?2:0,$50?2:0,$57?2:0]}
+  d,l,a,r,y,g,c,b,m={[$1==2?2:0,$8==2?2:0,$15==2?2:0,$22==2?2:0,$29==2?2:0,$36==2?2:0,$43==2?2:0,$50==2?2:0,$57==2?2:0]}
   u "{$1}{$2,$3,$4}_"$d"{$5}_"$d"{$6}_"$d"{$7}_"$d\
     "{$8}{$9,$10,$11}_"$l"{$12}_"$l"{$13}_"$l"{$14}_"$l\
     "{$15}{$16,$17,$18}_"$a"{$19}_"$a"{$20}_"$a"{$21}_"$a\
