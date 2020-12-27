@@ -10426,12 +10426,12 @@ mix_rgb : skip ${1=1},${2=0},${3=0},${4=0},${5=1},${6=0},${7=0},${8=0},${9=1}
   e[^-1] "Apply matrix [ $1 $2 $3 ; $4 $5 $6 ; $7 $8 $9 ] to RGB colors of image$?."
   to_color repeat $! sh[$>] 0,2 mix_channels. (${1-3};${4-6};${7-9}) rm. done
 
-#@cli oklab2srgb
-#@cli : Convert color representation of selected images from OKlab to sRGB.
+#@cli oklab2rgb
+#@cli : Convert color representation of selected images from OKlab to RGB.
 #@cli : (see colorspace definition at: https://bottosson.github.io/posts/oklab/ ).
-#@cli : See also: ''srgb2oklab''.
-oklab2srgb :
-  e[^-1] "Convert color representation of image$? from Oklab to sRGB."
+#@cli : See also: ''rgb2oklab''.
+oklab2rgb :
+  e[^-1] "Convert color representation of image$? from Oklab to RGB."
   repeat $! l[$>] split_opacity to_rgb[0]
     f[0] "
      l = (i0 + 0.3963377774*i1 + 0.2158037573*i2)^3;
@@ -11121,6 +11121,22 @@ rgb2luv :
     +*... 13 *... . *[-2,-1] a c
   endl done
 
+#@cli rgb2oklab
+#@cli : Convert color representation of selected images from RGB to Oklab.
+#@cli : (see colorspace definition at: https://bottosson.github.io/posts/oklab/ ).
+#@cli : See also: ''oklab2rgb''.
+rgb2oklab :
+  e[^-1] "Convert color representation of image$? from RGB to Oklab."
+  repeat $! l[$>] split_opacity to_rgb[0] /[0] 255
+    f[0] "
+      l = cbrt(0.4121656120*R + 0.5362752080*G + 0.0514575653*B);
+      m = cbrt(0.2118591070*R + 0.6807189584*G + 0.1074065790*B);
+      s = cbrt(0.0883097947*R + 0.2818474174*G + 0.6302613616*B);
+      [ 0.2104542553*l + 0.7936177850*m - 0.0040720468*s,
+        1.9779984951*l - 2.4285922050*m + 0.4505937099*s,
+        0.0259040371*l + 0.7827717662*m - 0.8086757660*s ]"
+  a c endl done
+
 #@cli rgb2ryb
 #@cli : Convert color representation of selected images from RGB to RYB.
 #@cli : $ image.jpg rgb2ryb split c
@@ -11363,22 +11379,6 @@ srgb2lab8 : skip "${1=,}"
   l[] if isnum("$1") illu={"$1>1?2:$1>0?1:0"} else if ["'$1'"]!=',' noarg fi illu=2 fi onfail noarg illu=2 endl
   e[^-1] "Convert color representation of image$? from sRGB to Lab8, using the "${arg\ 1+$illu,D50,D65,E}" illuminant."
   srgb2rgb rgb2lab8 $illu
-
-#@cli srgb2oklab
-#@cli : Convert color representation of selected images from sRGB to Oklab.
-#@cli : (see colorspace definition at: https://bottosson.github.io/posts/oklab/ ).
-#@cli : See also: ''oklab2srgb''.
-srgb2oklab :
-  e[^-1] "Convert color representation of image$? from sRGB to Oklab."
-  repeat $! l[$>] split_opacity to_rgb[0] /[0] 255
-    f[0] "
-      l = cbrt(0.4121656120*R + 0.5362752080*G + 0.0514575653*B);
-      m = cbrt(0.2118591070*R + 0.6807189584*G + 0.1074065790*B);
-      s = cbrt(0.0883097947*R + 0.2818474174*G + 0.6302613616*B);
-      [ 0.2104542553*l + 0.7936177850*m - 0.0040720468*s,
-        1.9779984951*l - 2.4285922050*m + 0.4505937099*s,
-        0.0259040371*l + 0.7827717662*m - 0.8086757660*s ]"
-  a c endl done
 
 #@cli srgb2rgb
 #@cli : Convert color representation of selected images from sRGB to linear RGB.
