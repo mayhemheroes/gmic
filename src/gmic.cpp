@@ -10344,8 +10344,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             cimg_snprintf(formula,_formula.width(),"output_%s",uext.data());
             hash = hashcode(formula,false);
             if (search_sorted(formula,commands_names[hash],commands_names[hash].size(),pattern)) { // Command found
-              cimg_snprintf(formula,_formula.width(),"output_%s[%s] \"%s\"",
-                            uext.data(),*s_selection?s_selection:"^",filename);
+              cimg_snprintf(formula,_formula.width(),"output_%s[%s] \"%s\",%s",
+                            uext.data(),*s_selection?s_selection:"^",filename,options.data());
               const CImgList<char> ncommands_line = commands_line_to_CImgList(formula);
               unsigned int nposition = 0;
               CImg<char>::string("").move_to(callstack); // Anonymous scope
@@ -14906,7 +14906,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           cimg_snprintf(formula,_formula.width(),"input_%s",uext.data());
           hash = hashcode(formula,false);
           if (search_sorted(formula,commands_names[hash],commands_names[hash].size(),pattern)) { // Command found
-            cimg_snprintf(formula,_formula.width(),"input_%s[] \"%s\"",uext.data(),_filename0);
+            cimg_snprintf(formula,_formula.width(),"input_%s[] \"%s\",%s",uext.data(),_filename0,options.data());
             const CImgList<char> ncommands_line = commands_line_to_CImgList(formula);
             unsigned int nposition = 0;
             CImg<char>::string("").move_to(callstack); // Anonymous scope
