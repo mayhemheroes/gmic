@@ -4179,8 +4179,9 @@ output_obj : check "isbool(${2=0})" check3d 0
       r 3,{h/3},1,1,-1 permute yzcx
       i[0] 0
       eval. ">begin(out = 0);
+        tos(x) = vtos(x,6);
         P = I;
-        str = string('v ',P[0],' ',P[1],' ',P[2],'\n');
+        str = string('v ',tos(P[0]),' ',tos(P[1]),' ',tos(P[2]),'\n');
         l_str = find(str,0);
         out + l_str>=h(#0)?resize(#0,1,2*h(#0) + l_str,1,1,0);
         copy(i[#0,out],str,l_str);
@@ -4194,29 +4195,39 @@ output_obj : check "isbool(${2=0})" check3d 0
     l[1--1]
       0x2 nm[-2,-1] primitives,materials
       eval "
+        tos(x) = vtos(x,6);
         strp = vector1024();
         strm = vector1024();
-        for (src = outp = outm = P = 0, src<h#0,
-          N = i[#0,src++];
-          N==1?( # Point
-            i0 = i[#0,src++];
+        for (srcp = srcc = outp = outm = P = 0, srcp<h#0,
+          strp[0] = strm[0] = 0;
+          N = i[#0,srcp++];
+          N==1?( # Colored point
+            i0 = i[#0,srcp++];
             copy(strp,string('p ',++i0,'\n'));
             ++P;
           ):
-          N==2?( # Segment
-            i0 = i[#0,src++]; i1 = i[#0,src++];
+          N==2?( # Colored segment
+            i0 = i[#0,srcp++]; i1 = i[#0,srcp++];
             copy(strp,string('l ',++i0,' ',++i1,'\n'));
             ++P;
-          ):N==3?( # Triangle
-            i0 = i[#0,src++]; i1 = i[#0,src++]; i2 = i[#0,src++];
-            copy(strp,string('f ',++i0,' ',++i1,' ',++i2,'\n'));
+          ):N==3?( # Colored triangle
+            i0 = i[#0,srcp++]; i1 = i[#0,srcp++]; i2 = i[#0,srcp++];
+            r = i[#1,srcc++]/255; g = i[#1,srcc++]/255; b = i[#1,srcc++]/255;
+            $2?(
+              copy(strp,string('usemtl m',P,'\nf ',++i0,' ',++i1,' ',++i2,'\n'));
+              copy(strm,string('\nnewmtl m',P,'\nKd ',tos(r),' ',tos(g),' ',tos(b)));
+            ):copy(strp,string('f ',++i0,' ',++i1,' ',++i2,'\n'));
             ++P;
-          ):N==4?( # Quadrangle
-            i0 = i[#0,src++]; i1 = i[#0,src++]; i2 = i[#0,src++]; i3 = i[#0,src++];
-            copy(strp,string('f ',++i0,' ',++i1,' ',++i2,' ',++i3,'\n'));
+          ):N==4?( # Colored quadrangle
+            i0 = i[#0,srcp++]; i1 = i[#0,srcp++]; i2 = i[#0,srcp++]; i3 = i[#0,srcp++];
+            r = i[#1,srcc++]/255; g = i[#1,srcc++]/255; b = i[#1,srcc++]/255;
+            $2?(
+              copy(strp,string('usemtl m',P,'\nf ',++i0,' ',++i1,' ',++i2,' ',++i3,'\n'));
+              copy(strm,string('\nnewmtl m',P,'\nKd ',tos(r),' ',tos(g),' ',tos(b)));
+            ):copy(strp,string('f ',++i0,' ',++i1,' ',++i2,' ',++i3,'\n'));
             ++P;
           ):( # Unsupported
-            src+=N;
+            srcp+=N;
           );
 
           # Output primitives.
@@ -4228,9 +4239,11 @@ output_obj : check "isbool(${2=0})" check3d 0
           # Output materials.
           $2?(
             l_strm = find(strm,0);
-            outm + l_strm>=h(#"$materials")?resize(#"$materials",1,2*h(#"$materials") + l_strm,1,1,0);
-            copy(i[#"$materials",outm],strm,l_strm);
-            outm+=l_strm;
+            l_strm?(
+              outm + l_strm>=h(#"$materials")?resize(#"$materials",1,2*h(#"$materials") + l_strm,1,1,0);
+              copy(i[#"$materials",outm],strm,l_strm);
+              outm+=l_strm;
+            );
           );
         );
         resize(#"$primitives",1,outp,1,1,0);
