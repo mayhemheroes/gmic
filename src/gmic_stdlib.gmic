@@ -4198,6 +4198,8 @@ output_obj : check "isbool(${2=0})" check3d 0
         tos(x) = vtos(x,6);
         strp = vector1024();
         strm = vector1024();
+        p_rgb = vector3(-1);
+        M = 0;
         for (srcp = srcc = outp = outm = P = 0, srcp<h#0,
           strp[0] = strm[0] = 0;
           N = i[#0,srcp++];
@@ -4206,26 +4208,34 @@ output_obj : check "isbool(${2=0})" check3d 0
             copy(strp,string('p ',++i0,'\n'));
             ++P;
           ):
+
           N==2?( # Colored segment
             i0 = i[#0,srcp++]; i1 = i[#0,srcp++];
             copy(strp,string('l ',++i0,' ',++i1,'\n'));
             ++P;
+
           ):N==3?( # Colored triangle
             i0 = i[#0,srcp++]; i1 = i[#0,srcp++]; i2 = i[#0,srcp++];
-            r = i[#1,srcc++]/255; g = i[#1,srcc++]/255; b = i[#1,srcc++]/255;
-            $2?(
-              copy(strp,string('usemtl m',P,'\nf ',++i0,' ',++i1,' ',++i2,'\n'));
-              copy(strm,string('\nnewmtl m',P,'\nKd ',tos(r),' ',tos(g),' ',tos(b)));
-            ):copy(strp,string('f ',++i0,' ',++i1,' ',++i2,'\n'));
+            r = i[#1,srcc++]; g = i[#1,srcc++]; b = i[#1,srcc++]; rgb = [ r,g,b ];
+            $2 && rgb!=p_rgb?(
+              copy(strm,string('newmtl m',M,'\nKd ',tos(r/255),' ',tos(g/255),' ',tos(b/255),'\n'));
+              copy(strp,string('usemtl m',M,'\nf ',++i0,' ',++i1,' ',++i2,'\n'));
+              p_rgb = rgb;
+              ++M;
+            ):(copy(strp,string('f ',++i0,' ',++i1,' ',++i2,'\n')); 0);
             ++P;
+
           ):N==4?( # Colored quadrangle
             i0 = i[#0,srcp++]; i1 = i[#0,srcp++]; i2 = i[#0,srcp++]; i3 = i[#0,srcp++];
-            r = i[#1,srcc++]/255; g = i[#1,srcc++]/255; b = i[#1,srcc++]/255;
-            $2?(
-              copy(strp,string('usemtl m',P,'\nf ',++i0,' ',++i1,' ',++i2,' ',++i3,'\n'));
-              copy(strm,string('\nnewmtl m',P,'\nKd ',tos(r),' ',tos(g),' ',tos(b)));
-            ):copy(strp,string('f ',++i0,' ',++i1,' ',++i2,' ',++i3,'\n'));
+            r = i[#1,srcc++]; g = i[#1,srcc++]; b = i[#1,srcc++]; rgb = [ r,g,b ];
+            $2 && rgb!=p_rgb?(
+              copy(strm,string('newmtl m',M,'\nKd ',tos(r/255),' ',tos(g/255),' ',tos(b/255),'\n'));
+              copy(strp,string('usemtl m',M,'\nf ',++i0,' ',++i1,' ',++i2,' ',++i3,'\n'));
+              p_rgb = rgb;
+              ++M;
+            ):(copy(strp,string('f ',++i0,' ',++i1,' ',++i2,' ',++i3,'\n')); 0);
             ++P;
+
           ):( # Unsupported
             srcp+=N;
           );
@@ -4277,7 +4287,7 @@ output_obj : check "isbool(${2=0})" check3d 0
                "# Object name: "$nm\n\
                "# Vertices: "$nbv\n\
                "# Primitives: "$nbp\n\
-               $strgen':y)
+               $strgen\n':y)
         a y
         o raw:$fn.mtl,uchar rm
       endl
