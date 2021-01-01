@@ -4171,8 +4171,7 @@ output_ggr : skip "${2=}"
 output_obj : check3d 0
   e[^-1] "Output 3D object$? as Wavefront 3D object file '$1'."
   N=$! repeat $N nm={$>,n} +l[$>]
-    s3d
-    rm[0,1]
+    s3d 1 nbv={1,@0} rm[0,1]
 
     # Process vertices.
     l[0]
@@ -4194,21 +4193,25 @@ output_obj : check3d 0
       i[0] 0
       eval "
         str = vector1024();
-        for (ps = pd = 0, ps<h,
+        for (ps = pd = P = 0, ps<h,
           N = i[ps++];
           N==1?( # Point
             i0 = i[ps++];
-            copy(str,string('p ',++i0,'\n')); 0;
+            copy(str,string('p ',++i0,'\n'));
+            ++P;
           ):
           N==2?( # Segment
             i0 = i[ps++]; i1 = i[ps++];
-            copy(str,string('l ',++i0,' ',++i1,'\n')); 0;
+            copy(str,string('l ',++i0,' ',++i1,'\n'));
+            ++P;
           ):N==3?( # Triangle
             i0 = i[ps++]; i1 = i[ps++]; i2 = i[ps++];
-            copy(str,string('f ',++i0,' ',++i1,' ',++i2,'\n')); 0;
+            copy(str,string('f ',++i0,' ',++i1,' ',++i2,'\n'));
+            ++P;
           ):N==4?( # Quadrangle
             i0 = i[ps++]; i1 = i[ps++]; i2 = i[ps++]; i3 = i[ps++];
-            copy(str,string('f ',++i0,' ',++i1,' ',++i2,' ',++i3,'\n')); 0;
+            copy(str,string('f ',++i0,' ',++i1,' ',++i2,' ',++i3,'\n'));
+            ++P;
           ):( # Unsupported
             ps+=N;
           );
@@ -4217,11 +4220,16 @@ output_obj : check3d 0
           copy(i[#0,pd],str,l_str);
           pd+=l_str;
         );
-        resize(#0,1,pd,1,1,0)"
+        resize(#0,1,pd,1,1,0);
+        run('nbp=',P)"
       k[0] i[0] ('"\n# Primitives.\n"':y) a y
     endl
     k[0,1]
-    i[0] ('"# File: $1\n# Object name: "$nm"\n# Generated on "{date(0)}"/"{date(1)}"/"{date(2)}" "\
+    i[0] ('"# File: $1"\n\
+           "# Object name: "$nm\n\
+           "# Vertices: "$nbv\n\
+           "# Primitives: "$nbp\n\
+           "# Generated on "{date(0)}"/"{date(1)}"/"{date(2)}" "\
            "at "{date(4)}":"{date(5)}":"{date(6)}", by G\47MIC (https://gmic.eu).\n"':y)
     a y
     if $N>1 fn=${"filename \"$1\",$>"} else fn="$1" fi
