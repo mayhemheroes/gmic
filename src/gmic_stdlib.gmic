@@ -4173,73 +4173,78 @@ output_obj : check "isbool(${2=0})" check3d 0
   e[^-1] "Output 3D object$? as Wavefront 3D object file '$1' (with"${s$2}" materials)."
   N=$! repeat $N nm={$>,n} +l[$>]
     s3d 1 nbv={1,@0} rm[0,1]
-    nm vertices,primitives,colors,opacities
 
     # Process vertices.
-    l[vertices]
+    l[0]
       r 3,{h/3},1,1,-1 permute yzcx
       i[0] 0
-      eval. ">begin(pd = 0);
+      eval. ">begin(out = 0);
         P = I;
         str = string('v ',P[0],' ',P[1],' ',P[2],'\n');
         l_str = find(str,0);
-        pd + l_str>=h(#0)?resize(#0,1,2*h(#0) + l_str,1,1,0);
-        copy(i[#0,pd],str,l_str);
-        pd+=l_str;
-        end(resize(#0,1,pd,1,1,0))"
+        out + l_str>=h(#0)?resize(#0,1,2*h(#0) + l_str,1,1,0);
+        copy(i[#0,out],str,l_str);
+        out+=l_str;
+        end(resize(#0,1,out,1,1,0))"
       k[0] i[0] ('"\n# Vertices.\n"':y) a y
       nm vertices
     endl
 
-    # Process primitives.
-    l[primitives]
-      i[0] 0x2
+    # Process primitives / materials.
+    l[1--1]
+      0x2 nm[-2,-1] primitives,materials
       eval "
-        str = vector1024();
-        for (ps = pd = P = 0, ps<h,
-          N = i[ps++];
+        strp = vector1024();
+        strm = vector1024();
+        for (src = outp = outm = P = 0, src<h#0,
+          N = i[#0,src++];
           N==1?( # Point
-            i0 = i[ps++];
-            copy(str,string('p ',++i0,'\n'));
+            i0 = i[#0,src++];
+            copy(strp,string('p ',++i0,'\n'));
             ++P;
           ):
           N==2?( # Segment
-            i0 = i[ps++]; i1 = i[ps++];
-            copy(str,string('l ',++i0,' ',++i1,'\n'));
+            i0 = i[#0,src++]; i1 = i[#0,src++];
+            copy(strp,string('l ',++i0,' ',++i1,'\n'));
             ++P;
           ):N==3?( # Triangle
-            i0 = i[ps++]; i1 = i[ps++]; i2 = i[ps++];
-            copy(str,string('f ',++i0,' ',++i1,' ',++i2,'\n'));
+            i0 = i[#0,src++]; i1 = i[#0,src++]; i2 = i[#0,src++];
+            copy(strp,string('f ',++i0,' ',++i1,' ',++i2,'\n'));
             ++P;
           ):N==4?( # Quadrangle
-            i0 = i[ps++]; i1 = i[ps++]; i2 = i[ps++]; i3 = i[ps++];
-            copy(str,string('f ',++i0,' ',++i1,' ',++i2,' ',++i3,'\n'));
+            i0 = i[#0,src++]; i1 = i[#0,src++]; i2 = i[#0,src++]; i3 = i[#0,src++];
+            copy(strp,string('f ',++i0,' ',++i1,' ',++i2,' ',++i3,'\n'));
             ++P;
           ):( # Unsupported
-            ps+=N;
+            src+=N;
           );
-          l_str = find(str,0);
-          pd + l_str>=h(#0)?resize(#0,1,2*h(#0) + l_str,1,1,0);
-          copy(i[#0,pd],str,l_str);
-          pd+=l_str;
-        );
-        resize(#0,1,pd,1,1,0);
-        run('nbp=',P)"
-      k[0] i[0] ('"\n# Primitives.\n"':y) a y
-      nm primitives
-    endl
 
-    # Process colors/opacities.
-    if !$2 rm[colors,opacities]
-    else l[colors,opacities]
-      rm 0
-      nm materials
-    endl fi
+          # Output primitives.
+          l_strp = find(strp,0);
+          outp + l_strp>=h(#"$primitives")?resize(#"$primitives",1,2*h(#"$primitives") + l_strp,1,1,0);
+          copy(i[#"$primitives",outp],strp,l_strp);
+          outp+=l_strp;
+
+          # Output materials.
+          $2?(
+            l_strm = find(strm,0);
+            outm + l_strm>=h(#"$materials")?resize(#"$materials",1,2*h(#"$materials") + l_strm,1,1,0);
+            copy(i[#"$materials",outm],strm,l_strm);
+            outm+=l_strm;
+          );
+        );
+        resize(#"$primitives",1,outp,1,1,0);
+        resize(#"$materials",1,outm,1,1,0);
+        run('nbp=',P)"
+      k[primitives,materials]
+      i[0] ('"\n# Primitives.\n"':y) a[0,primitives] y nm[0] primitives
+    endl
 
     # Save object geometry (.obj file).
     if $N>1 fn=${"filename \"$1\",$>"} else fn="$1" fi
-    strgen="# Generated on "{date(0)}"/"{date(1)}"/"{date(2)}" "\
-           "at "{date(4)}":"{date(5)}":"{date(6)}", by G\47MIC (https://gmic.eu).\n"
+    strgen={`"d2(x) = (s = date(x); s>9?vtos(s,-1,2):[0,s]+_'0');
+              string('# Generated on ',d2(0),'/',d2(1),'/',d2(2),' at ',d2(4),':',d2(5),':',d2(6),
+                     ' by G\47MIC (https://gmic.eu).\n')"`}
     l[vertices,primitives]
       i[0] ('"# File: "$fn\n\
              "# Object name: "$nm\n\
