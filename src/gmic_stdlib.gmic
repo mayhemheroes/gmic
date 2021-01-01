@@ -4166,15 +4166,16 @@ output_ggr : skip "${2=}"
     rm
   endl done is_change 0
 
-#@cli output_obj : filename
+#@cli output_obj : filename,_save_materials={ 0=no | 1=yes }
 #@cli : Output selected 3D objects as Wavefront 3D object files.
-output_obj : check3d 0
+output_obj : check "isbool(${2=0})" check3d 0
   e[^-1] "Output 3D object$? as Wavefront 3D object file '$1'."
   N=$! repeat $N nm={$>,n} +l[$>]
     s3d 1 nbv={1,@0} rm[0,1]
+    nm vertices,primitives,colors,opacities
 
     # Process vertices.
-    l[0]
+    l[vertices]
       r 3,{h/3},1,1,-1 permute yzcx
       i[0] 0
       eval. ">begin(pd = 0);
@@ -4186,10 +4187,11 @@ output_obj : check3d 0
         pd+=l_str;
         end(resize(#0,1,pd,1,1,0))"
       k[0] i[0] ('"\n# Vertices.\n"':y) a y
+      nm vertices
     endl
 
     # Process primitives.
-    l[1]
+    l[primitives]
       i[0] 0
       eval "
         str = vector1024();
@@ -4223,17 +4225,50 @@ output_obj : check3d 0
         resize(#0,1,pd,1,1,0);
         run('nbp=',P)"
       k[0] i[0] ('"\n# Primitives.\n"':y) a y
+      nm primitives
     endl
-    k[0,1]
-    i[0] ('"# File: $1"\n\
-           "# Object name: "$nm\n\
-           "# Vertices: "$nbv\n\
-           "# Primitives: "$nbp\n\
-           "# Generated on "{date(0)}"/"{date(1)}"/"{date(2)}" "\
-           "at "{date(4)}":"{date(5)}":"{date(6)}", by G\47MIC (https://gmic.eu).\n"':y)
-    a y
+
+    # Process colors/opacities.
+    if !$2 rm[colors,opacities]
+    else l[colors,opacities]
+      rm 0
+      nm materials
+    endl fi
+
+    # Save object geometry (.obj file).
     if $N>1 fn=${"filename \"$1\",$>"} else fn="$1" fi
-    o raw:$fn,uchar rm
+    strgen="# Generated on "{date(0)}"/"{date(1)}"/"{date(2)}" "\
+           "at "{date(4)}":"{date(5)}":"{date(6)}", by G\47MIC (https://gmic.eu).\n"
+    l[vertices,primitives]
+      i[0] ('"# File: "$fn\n\
+             "# Object name: "$nm\n\
+             "# Vertices: "$nbv\n\
+             "# Primitives: "$nbp\n\
+             $strgen':y)
+      if $2 i[1] ('"\n# Materials.\nmtllib ./"$fn".mtl\n"':y) fi
+      a y
+      if $N>1 fn=${"filename \"$1\",$>"} else fn="$1" fi
+      o raw:$fn,uchar rm
+    endl
+
+    # Save object materials (.mtl file).
+    if $2
+      l[materials]
+        i[0] ('"# File: "$fn".mtl"\n\
+               "# Object name: "$nm\n\
+               "# Vertices: "$nbv\n\
+               "# Primitives: "$nbp\n\
+               $strgen':y)
+        a y
+        o raw:$fn.mtl,uchar rm
+      endl
+
+      # Save additional textures, if any.
+      repeat $! l[$>]
+
+      endl done
+    fi
+
   endl done is_change 0
 
 #@cli ot : eq. to 'output_text'.
