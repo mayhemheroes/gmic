@@ -282,6 +282,7 @@ help : skip ${1=""}
 # - `words in bold monospace`
 # - 'single_word_in_monospace'
 # - ''reference to section or command''
+# - !!G'MIC command!!
 # - ~~code block~~
 # - { list of values }
 # - http[s]://address.url
@@ -315,6 +316,14 @@ gmd_code : # ~~code block~~
     beg>=0 && y - beg>512?(beg = -1);
     i==_'~' && j[1]==_'~'?(
       beg<0 && (!y || isin(j[-1],_' ',_'\n',4))?(beg = y):
+      beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
+    )"
+
+gmd_command : # !!G'MIC command!!
+  eval[^] ">begin(beg = -1);
+    beg>=0 && y - beg>256?(beg = -1);
+    i==_'!' && j[1]==_'!'?(
+      beg<0 && (!y || isin(j[-1],_' ',_'(',_'\n',4))?(beg = y):
       beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
     )"
 
@@ -428,6 +437,11 @@ gmd_code_ascii :
   replace_str "\2~","\n"$_vt100_b"\n"
   replace_str "\3~",$_vt100_n"\n"
   replace_str "\\n","\n"
+
+gmd_command_ascii :
+  gmd_command
+  f ">begin(on = 0); i==2?(on = 1):i==3?(copy(i[y],-1,2,1,0); on = 0); on?-1:i"
+  discard -1
 
 gmd_gmic_ascii :
   replace_str "G'MIC",${_vt100_b}"G'MIC"$_vt100_n
@@ -545,6 +559,7 @@ gmd2html :
   gmd_link_html
   gmd_braces_html
   gmd_code_html
+  gmd_command_html
   gmd_image_html
   gmd_list_html
   gmd_section_html
@@ -565,6 +580,22 @@ gmd_code_html :
   gmd_code
   replace_str "\2~","\n<div class=\"gmd_code\">"
   replace_str "\3~","</div>\n"
+
+gmd_command_html :
+  gmd_command
+  repeat $! l[$>]
+    s +,2,33 s +,3,33
+    if $!>1 repeat $! if "crop(#"$>"-1)==[2,33] && crop(#"$>"+1)==[3,33]" l[$>]
+       command={t} strvar $command file=img/${}.png rm
+       if !isfile(['$file'])
+         run $command
+         if $! a x else 12,12,1,4,"!x || !y || x==w-1 || y==h-1?[0,0,0,255]:x==y || x==w-1-y?[255,0,0,255]:[0,0,0,0]" fi
+         o $file rm
+       fi
+       ('"<img class=\"gmd_inlineimage\" alt=\"[image]\" src=\""$file"\"/>"':y)
+    endl fi done fi
+    a y discard 2,33 discard 3,33
+  endl done
 
 gmd_gmic_html :
   replace_str "G'MIC","<span class=\"gmd_gmic\"></span>"
@@ -866,7 +897,7 @@ reference :
 "'filename.cimg,N0,N1,x0,y0,z0,c0,x1,y1,z1,c1'. "\
 "Specifying '-1' for one coordinates stands for the maximum possible value. Output expression "\
 "'filename.cimg[z][,datatype]' can be used to force the output pixel type. 'datatype' can be "\
-"{ auto | uchar | char | ushort | short | uint | int | uint64 | int64 | float | double }. "\n\
+"{ auto | bool | uchar | char | ushort | short | uint | int | uint64 | int64 | float | double }. "\n\
 "  - `.raw` **binary files:** Image dimensions and input pixel type may be specified when loading `.raw` "\
 "files with input expression 'filename.raw[,datatype][,width][,height[,depth[,dim[,offset]]]]]'. If no dimensions are "\
 "specified, the resulting image is a one-column vector with maximum possible height. Pixel "\
@@ -1499,6 +1530,7 @@ reference_text_ascii :
     s -,{'\n'}
     gmd_list_ascii
     gmd_code_ascii
+    gmd_command_ascii
     gmd_image_ascii
     s +,{'\n'}
     gmd_strcut_ascii 100,0
@@ -4134,6 +4166,158 @@ output_ggr : skip "${2=}"
     rm
   endl done is_change 0
 
+#@cli output_obj : filename,_save_materials={ 0=no | 1=yes }
+#@cli : Output selected 3D objects as Wavefront 3D object files.
+output_obj : check "isbool(${2=0})" check3d 0
+  s0,s1=out,
+  e[^-1] "Output 3D object$? as Wavefront 3D object file '$1' (with"${s$2}" materials)."
+  N=$! repeat $N nm={$>,n} +l[$>]
+    s3d 1 nbv={1,@0} rm[0,1]
+
+    # Process vertices.
+    l[0]
+      r 3,{h/3},1,1,-1 permute yzcx
+      i[0] 0
+      eval. ">begin(out = 0);
+        tos(x) = vtos(x,6);
+        P = I;
+        str = string('v ',tos(P[0]),' ',tos(P[1]),' ',tos(P[2]),'\n');
+        l_str = find(str,0);
+        out + l_str>=h(#0)?resize(#0,1,2*h(#0) + l_str,1,1,0);
+        copy(i[#0,out],str,l_str);
+        out+=l_str;
+        end(resize(#0,1,out,1,1,0))"
+      k[0] i[0] ('"\n# Vertices.\n"':y) a y
+      nm vertices
+    endl
+
+    # Process primitives / materials.
+    l[1--1]
+      0x2 nm[-2,-1] primitives,materials
+      eval "
+        tos(x) = vtos(x,6);
+        strp = vector1024();
+        strm = vector1024();
+        p_rgb = vector3(-1);
+        M = 0;
+        for (srcp = srcc = outp = outm = P = 0, srcp<h#0,
+          strp[0] = strm[0] = 0;
+          N = i[#0,srcp++];
+          N==1?( # Colored point
+            i0 = i[#0,srcp++];
+            copy(strp,string('p ',++i0,'\n'));
+            ++P;
+          ):
+
+          N==2?( # Colored segment
+            i0 = i[#0,srcp++]; i1 = i[#0,srcp++];
+            copy(strp,string('l ',++i0,' ',++i1,'\n'));
+            ++P;
+
+          ):N==3?( # Colored triangle
+            i0 = i[#0,srcp++]; i1 = i[#0,srcp++]; i2 = i[#0,srcp++];
+            $2?(r = i[#1,srcc++]; g = i[#1,srcc++]; b = i[#1,srcc++]; rgb = [ r,g,b ]);
+            $2 && rgb!=p_rgb?(
+              copy(strm,string('newmtl m',M,'\nKd ',tos(r/255),' ',tos(g/255),' ',tos(b/255),'\n'));
+              copy(strp,string('usemtl m',M,'\nf ',++i0,' ',++i1,' ',++i2,'\n'));
+              p_rgb = rgb;
+              ++M;
+            ):(copy(strp,string('f ',++i0,' ',++i1,' ',++i2,'\n')); 0);
+            ++P;
+
+          ):N==4?( # Colored quadrangle
+            i0 = i[#0,srcp++]; i1 = i[#0,srcp++]; i2 = i[#0,srcp++]; i3 = i[#0,srcp++];
+            $2?(r = i[#1,srcc++]; g = i[#1,srcc++]; b = i[#1,srcc++]; rgb = [ r,g,b ]);
+            $2 && rgb!=p_rgb?(
+              copy(strm,string('newmtl m',M,'\nKd ',tos(r/255),' ',tos(g/255),' ',tos(b/255),'\n'));
+              copy(strp,string('usemtl m',M,'\nf ',++i0,' ',++i1,' ',++i2,' ',++i3,'\n'));
+              p_rgb = rgb;
+              ++M;
+            ):(copy(strp,string('f ',++i0,' ',++i1,' ',++i2,' ',++i3,'\n')); 0);
+            ++P;
+
+          ):N==6?( # Textured segment
+            i0 = i[#0,srcp++]; i1 = i[#0,srcp++]; srcp+=4;
+            copy(strp,string('l ',++i0,' ',++i1,'\n'));
+            ++P;
+
+          ):N==9?( # Textured triangle
+            i0 = i[#0,srcp++]; i1 = i[#0,srcp++]; i2 = i[#0,srcp++]; srcp+=6;
+            copy(strp,string('f ',++i0,' ',++i1,' ',++i2,'\n'));
+            ++P;
+
+          ):N==12?( # Textured triangle
+            i0 = i[#0,srcp++]; i1 = i[#0,srcp++]; i2 = i[#0,srcp++]; i3 = i[#0,srcp++]; srcp+=8;
+            copy(strp,string('f ',++i0,' ',++i1,' ',++i2,' ',++i3,'\n'));
+            ++P;
+
+          ):( # Unsupported
+            srcp+=N;
+          );
+
+          # Output primitives.
+          l_strp = find(strp,0);
+          outp + l_strp>=h(#"$primitives")?resize(#"$primitives",1,2*h(#"$primitives") + l_strp,1,1,0);
+          copy(i[#"$primitives",outp],strp,l_strp);
+          outp+=l_strp;
+
+          # Output materials.
+          $2?(
+            l_strm = find(strm,0);
+            l_strm?(
+              outm + l_strm>=h(#"$materials")?resize(#"$materials",1,2*h(#"$materials") + l_strm,1,1,0);
+              copy(i[#"$materials",outm],strm,l_strm);
+              outm+=l_strm;
+            );
+          );
+        );
+        resize(#"$primitives",1,outp,1,1,0);
+        resize(#"$materials",1,outm,1,1,0);
+        run('nbp=',P)"
+      k[primitives,materials]
+      i[0] ('"\n# Primitives.\n"':y) a[0,primitives] y nm[0] primitives
+    endl
+
+    # Save object geometry (.obj file).
+    if $N>1 fn=${"filename \"$1\",$>"} else fn="$1" fi
+    strgen={`"d2(x) = (s = date(x); s>9?vtos(s,-1,2):[0,s]+_'0');
+              string('# Generated on ',d2(0),'/',d2(1),'/',d2(2),' at ',d2(4),':',d2(5),':',d2(6),
+                     ' by G\47MIC (https://gmic.eu).\n')"`}
+    l[vertices,primitives]
+      i[0] ('"# File: "$fn\n\
+             "# Object name: "$nm\n\
+             "# Vertices: "$nbv\n\
+             "# Primitives: "$nbp\n\
+             $strgen':y)
+      if $2
+        basename $fn bfn=${}
+        i[1] ('"\n# Materials.\nmtllib ./"$bfn".mtl\n"':y)
+      fi
+      a y
+      if $N>1 fn=${"filename \"$1\",$>"} else fn="$1" fi
+      o raw:$fn,uchar rm
+    endl
+
+    # Save object materials (.mtl file).
+    if $2
+      l[materials]
+        i[0] ('"# File: "$fn".mtl"\n\
+               "# Object name: "$nm\n\
+               "# Vertices: "$nbv\n\
+               "# Primitives: "$nbp\n\
+               $strgen\n':y)
+        a y
+        o raw:$fn.mtl,uchar rm
+      endl
+
+      # Save additional textures, if any.
+      repeat $! l[$>]
+
+      endl done
+    fi
+
+  endl done is_change 0
+
 #@cli ot : eq. to 'output_text'.
 ot :
   _gmic_s="$?" v + _output_text "$*"
@@ -4417,6 +4601,7 @@ parse_cli_text_ascii :
   gmd_image_ascii
   s +,{'\n'}
   gmd_code_ascii
+  gmd_command_ascii
   gmd_strcut_ascii 100,0
   gmd_gmic_ascii
   gmd_bold_ascii
@@ -7489,7 +7674,7 @@ upload_filters :
       rm 0
     fi
   endl done
-  i[1--2] ('"#@gui ________________\n"') y a y
+  i[1--2] ('"#@gui _________________\n"') y a y
 
   # Create update file.
   +l.
@@ -9048,7 +9233,8 @@ eigen2tensor :
 
 #@cli endian : _datatype : (+)
 #@cli : Reverse data endianness of selected images, eventually considering the pixel being of the specified datatype.
-#@cli : 'datatype' can be { uchar | char | ushort | short | uint | int | uint64 | int64 | float | double }.
+#@cli : 'datatype' can be { bool | uchar | char | ushort | short | uint | int | uint64 | int64 | float | double }.
+#@cli : This command does nothing for 'bool', 'uchar' and 'char' datatypes.
 
 #@cli equalize : _nb_levels>0[%],_value_min[%],_value_max[%] : (+)
 #@cli : Equalize histograms of selected images.
@@ -10392,6 +10578,23 @@ mix_rgb : skip ${1=1},${2=0},${3=0},${4=0},${5=1},${6=0},${7=0},${8=0},${9=1}
   e[^-1] "Apply matrix [ $1 $2 $3 ; $4 $5 $6 ; $7 $8 $9 ] to RGB colors of image$?."
   to_color repeat $! sh[$>] 0,2 mix_channels. (${1-3};${4-6};${7-9}) rm. done
 
+#@cli oklab2rgb
+#@cli : Convert color representation of selected images from OKlab to RGB.
+#@cli : (see colorspace definition at: https://bottosson.github.io/posts/oklab/ ).
+#@cli : See also: ''rgb2oklab''.
+oklab2rgb :
+  e[^-1] "Convert color representation of image$? from Oklab to RGB."
+  repeat $! l[$>] split_opacity to_rgb[0]
+    f[0] "
+     l = (i0 + 0.3963377774*i1 + 0.2158037573*i2)^3;
+     m = (i0 - 0.1055613458*i1 - 0.0638541728*i2)^3;
+     s = (i0 - 0.0894841775*i1 - 1.2914855480*i2)^3;
+     [ 4.0767245293*l - 3.3072168827*m + 0.2307590544*s,
+       -1.2681437731*l + 2.6093323231*m - 0.3411344290*s,
+       -0.0041119885*l - 0.7034763098*m + 1.7068625689*s ]"
+    * 255
+  a c endl done
+
 #@cli palette : palette_name | palette_number
 #@cli : Input specified color palette at the end of the image list.
 #@cli : 'palette_name' can be { default | hsv | lines | hot | cool | jet | flag | cube | rainbow | \
@@ -11069,6 +11272,22 @@ rgb2luv :
     -.. 0.2009 -. 0.4610
     +*... 13 *... . *[-2,-1] a c
   endl done
+
+#@cli rgb2oklab
+#@cli : Convert color representation of selected images from RGB to Oklab.
+#@cli : (see colorspace definition at: https://bottosson.github.io/posts/oklab/ ).
+#@cli : See also: ''oklab2rgb''.
+rgb2oklab :
+  e[^-1] "Convert color representation of image$? from RGB to Oklab."
+  repeat $! l[$>] split_opacity to_rgb[0] /[0] 255
+    f[0] "
+      l = cbrt(0.4121656120*R + 0.5362752080*G + 0.0514575653*B);
+      m = cbrt(0.2118591070*R + 0.6807189584*G + 0.1074065790*B);
+      s = cbrt(0.0883097947*R + 0.2818474174*G + 0.6302613616*B);
+      [ 0.2104542553*l + 0.7936177850*m - 0.0040720468*s,
+        1.9779984951*l - 2.4285922050*m + 0.4505937099*s,
+        0.0259040371*l + 0.7827717662*m - 0.8086757660*s ]"
+  a c endl done
 
 #@cli rgb2ryb
 #@cli : Convert color representation of selected images from RGB to RYB.
@@ -14592,9 +14811,9 @@ rbf :
             )
           );
           ref(solve(M,F,s),W);
-          const fx = ("$x1-$x0")/(w-1);
-          const fy = ("$y1-$y0")/(h-1);
-          const fz = ("$z1-$z0")/(d-1);
+          const fx = ("$x1-$x0")/(w - 1);
+          const fy = ("$y1-$y0")/(h - 1);
+          const fz = ("$z1-$z0")/(d - 1);
         );
         ref(vectors(),res); x = (x - "$x0")*fx; y = (y - "$y0")*fy; z = (z - "$z0")*fz;
         for (k = 0, k<h#0, ++k, r = norm(x - X[k], y - Y[k], z - Z[k]); res+=W[s*k,s]*phi(r))"
@@ -17472,7 +17691,7 @@ text_outline : skip "${1=}",${2=0.01~},${3=0.01~}
 _text_outline : skip "${1=}"
   e[0--3] "Draw outlined text '$1' at position ($2,$3) on image$?, with font height $4, outline $5, opacity $6 and
            color ${7--1}."
-  if !narg("$1") return fi
+  if ['"$1"']==0 return fi
   sepx,sepy={"sx=['$2']; sy=['$3']; [sx[size(sx)-1], sy[size(sy)-1]]"}
   is_fontpercent=${"is_percent $4"}
   xpos={`s=['"$2"'];$sepx==_'~'||$sepx==_'%'?s[0,size(s)-1]:s`}
@@ -37732,6 +37951,213 @@ fx_transfer_pca_preview :
     rm.
   endl done
 
+#@gui Tune HSV Colors : fx_tune_hsv, fx_tune_hsv_preview(1)
+#@gui : Dark = choice(2,"Ignore","Lock","Remap")
+#@gui : Dark Color = color(0,0,0)
+#@gui : Target Hue (%) = float(100,0,100)
+#@gui : Target Saturation (%) = float(100,0,100)
+#@gui : Target Value (%) = float(100,0,100)
+#@gui : sep = separator()
+#@gui : Light = choice(2,"Ignore","Lock","Remap")
+#@gui : Light Color = color(255,255,255)
+#@gui : Target Hue (%) = float(100,0,100)
+#@gui : Target Saturation (%) = float(100,0,100)
+#@gui : Target Value (%) = float(100,0,100)
+#@gui : sep = separator()
+#@gui : Average = choice(1,"Ignore","Lock","Remap")
+#@gui : Average Color = color(128,128,128)_0
+#@gui : Target Hue (%) = float(0,0,100)_0
+#@gui : Target Saturation (%) = float(50,0,100)_0
+#@gui : Target Value (%) = float(100,0,100)_0
+#@gui : sep = separator()
+#@gui : Red = choice("Ignore","Lock","Remap")
+#@gui : Red Color = color(255,0,0)_0
+#@gui : Target Hue (%) = float(100,0,100)_0
+#@gui : Target Saturation (%) = float(12.5,0,100)_0
+#@gui : Target Value (%) = float(0,0,100)_0
+#@gui : sep = separator()
+#@gui : Yellow = choice("Ignore","Lock","Remap")
+#@gui : Yellow Color = color(255,255,0)_0
+#@gui : Target Hue (%) = float(100,0,100)_0
+#@gui : Target Saturation (%) = float(12.5,0,100)_0
+#@gui : Target Value (%) = float(0,0,100)_0
+#@gui : sep = separator()
+#@gui : Green = choice("Ignore","Lock","Remap")
+#@gui : Green Color = color(0,255,0)_0
+#@gui : Target Hue (%) = float(100,0,100)_0
+#@gui : Target Saturation (%) = float(12.5,0,100)_0
+#@gui : Target Value (%) = float(0,0,100)_0
+#@gui : sep = separator()
+#@gui : Cyan = choice("Ignore","Lock","Remap")
+#@gui : Cyan Color = color(0,255,255)_0
+#@gui : Target Hue (%) = float(100,0,100)_0
+#@gui : Target Saturation (%) = float(12.5,0,100)_0
+#@gui : Target Value (%) = float(0,0,100)_0
+#@gui : sep = separator()
+#@gui : Blue = choice("Ignore","Lock","Remap")
+#@gui : Blue Color = color(0,0,255)_0
+#@gui : Target Hue (%) = float(100,0,100)_0
+#@gui : Target Saturation (%) = float(12.5,0,100)_0
+#@gui : Target Value (%) = float(0,0,100)_0
+#@gui : sep = separator()
+#@gui : Magenta = choice("Ignore","Lock","Remap")
+#@gui : Magenta Color = color(255,0,255)_0
+#@gui : Target Hue (%) = float(100,0,100)_0
+#@gui : Target Saturation (%) = float(12.5,0,100)_0
+#@gui : Target Value (%) = float(0,0,100)_0
+#@gui : sep = separator()
+#@gui : Preview color mapping = choice(2,"None","Center","Top Left","Top Right","Bottom Left","Bottom Right")
+#@gui : Preview Type = choice("Full","Forward Horizontal","Forward Vertical","Backward Horizontal",
+#@gui : "Backward Vertical","Duplicate Top","Duplicate Left","Duplicate Bottom","Duplicate Right",
+#@gui : "Duplicate Horizontal","Duplicate Vertical","Checkered","Checkered Inverse")
+#@gui : Preview Split = point(50,50,0,0,200,200,200,0,10)_0
+#@gui : sep = separator()
+#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2020/12/17</i>.</small>")
+_fx_tune_hsv :
+  mode_dark,Rdark,Gdark,Bdark,Hdark,Sdark,Vdark,\
+  mode_light,Rlight,Glight,Blight,Hlight,Slight,Vlight,\
+  mode_avg,Ravg,Gavg,Bavg,Havg,Savg,Vavg,\
+  mode_red,Rred,Gred,Bred,Hred,Sred,Vred,\
+  mode_yellow,Ryellow,Gyellow,Byellow,Hyellow,Syellow,Vyellow,\
+  mode_green,Rgreen,Ggreen,Bgreen,Hgreen,Sgreen,Vgreen,\
+  mode_cyan,Rcyan,Gcyan,Bcyan,Hcyan,Scyan,Vcyan,\
+  mode_blue,Rblue,Gblue,Bblue,Hblue,Sblue,Vblue,\
+  mode_magenta,Rmagenta,Gmagenta,Bmagenta,Hmagenta,Smagenta,Vmagenta,\
+  preview_mapping=${1-64}
+  all_colors=dark,light,avg,red,yellow,green,cyan,blue,magenta
+
+  repeat $! l[$>] split_opacity l[0]
+    to_rgb
+
+    # Define list of considered colors.
+    colors,sep=
+    repeat narg($all_colors) color=${arg\ 1+$>,$all_colors} if ${mode_$color} colors.=$sep$color sep=, fi done
+
+    # Find darkest, lightest and average colors.
+    +srgb2lab channels. 0 darklight={"[I(#-2,xm,ym),I(#-2,xM,yM)]"} rm.
+    dark={[$darklight][0,3]} light={[$darklight][3,3]}
+    +r. 1,1,1,3,2 avg={^} rm.
+
+    # Find the nearest existing colors to "pure" colors.
+    eval. ">
+      begin(
+        red = yellow = green = cyan = blue = magenta = [0,0,0];
+        best_red = best_yellow = best_green = best_cyan = best_blue = best_magenta = inf;
+        test_color(color,tR,tG,tB) = (
+          val = norm([tR,tG,tB]-[R,G,B]);
+          val<best_#color?(best_#color = val; color# = I(#-2));
+        );
+      );
+      test_color(red,255,0,0);
+      test_color(yellow,255,255,0);
+      test_color(green,0,255,0);
+      test_color(cyan,0,255,255);
+      test_color(blue,0,0,255);
+      test_color(magenta,255,0,255);
+      end(
+        run(' red=',vtos(red),
+            ' yellow=',vtos(yellow),
+            ' green=',vtos(green),
+            ' cyan=',vtos(cyan),
+            ' blue=',vtos(blue),
+            ' magenta=',vtos(magenta))
+      ); I"
+
+    # Compute color mapping.
+    if narg($colors)
+      l[]
+
+        # Define color correspondences.
+        repeat narg($colors)
+          color=${arg\ 1+$>,$colors}
+          if ${mode_$color}==2 (${$color},${R$color},${G$color},${B$color},${H$color},${S$color},${V$color})
+          else (${$color},${$color},0,0,0)
+          fi
+        done
+        a y permute yzcx
+        s c,-3 srgb2rgb[0,1] rgb2hsv[0,1] /. 100
+        f.. "
+          Hs = i(#0,x,0,0,0); Ss = i(#0,x,0,0,1); Vs = i(#0,x,0,0,2);
+          Hd = i0; Sd = i1; Vd = i2;
+          DeltaH = Hd - Hs;
+          alphaH = i(#2,x,0,0,0);
+          H = abs(DeltaH)<abs(DeltaH - 360)?
+            lerp(Hs,Hd,alphaH):
+            lerp(Hs,Hd - 360,alphaH)%360;
+          S = lerp(Ss,Sd,i(#2,x,0,0,1));
+          V = lerp(Vs,Vd,i(#2,x,0,0,2));
+          [ H,S,V ]"
+        rm.
+        hsv2rgb rgb2srgb
+        repeat w color=${arg\ 1+$>,$colors} t_$color={I[$>]} done
+        -. .. a c
+
+        # Create CLUT.
+        if $_is_preview 33,33,33,4 else 63,63,63,4 fi
+        f.. "I(#-1,round([i0,i1,i2]*w#-1/255))+=[i3,i4,i5,1];"
+        s. c,-3 +max. 1 /[-3,-1] eq. 0
+        inpaint_pde.. . rm[-3,-1]
+        2,2,2,3,"[x,y,z]*255" ri. ..,3 +[-2,-1]
+        nm clut
+      endl
+
+      # Apply CLUT.
+      if $clut map_clut.. . rm. c 0,255 fi
+    fi
+
+    if $preview_mapping # Generate view of color mapping
+      __px,__py,__ps={s=min(w,h);p=$preview_mapping;p==1?[0.5,0.5,80]:\
+                                                    p==2?[0,0,48]:\
+                                                    p==3?[1,0,48]:\
+                                                    p==4?[0,1,64]:[1,1,64]}
+      l[]
+        repeat narg($all_colors) color=${arg\ 1+$>,$all_colors} (${$color}) done a y permute. yzcx
+        s x r {s=round(max($__ps,16));[s,s]}
+        repeat narg($all_colors) l[$>]
+          color=${arg\ 1+$>,$all_colors}
+          mode=${mode_$color}
+          if $mode==2
+            polygon 3,0,100%,100%,100%,100%,0,1,${t_$color}
+            line 0,100%,100%,0,0.5,0xAAAAAAAA,255 line 0,100%,100%,0,0.5,0x55555555,0
+          fi
+          to {`uppercase(['$color'][0])`},0.5~,0.5~,50%,2,0.5
+          to_rgba
+          if $mode frame 1,1,0,0,0,255 frame 2,2,255 else frame 3,3,0,0,0,64 fi
+        endl done
+        append_tiles 3,3
+        store __preview_mapping
+      endl
+    fi
+
+  endl a c endl done
+
+fx_tune_hsv :
+  _fx_tune_hsv ${1-63},0
+
+fx_tune_hsv_preview :
+  preview_mapping=$64
+  repeat $! l[$>]
+    gui_split_preview "_is_preview=1 _fx_tune_hsv $*",${-3--1}
+    if $preview_mapping
+      $__preview_mapping
+      if narg($_preview_width) rr2d[0] $_preview_width,$_preview_height,0,2 fi
+      s. c,-3 to_colormode.. {-3,s}
+      j... ..,$__px~,$__py~,0,0,1,.,255 rm[-2,-1]
+    fi
+  endl done
+
+  d,l,a,r,y,g,c,b,m={[$1==2?2:0,$8==2?2:0,$15==2?2:0,$22==2?2:0,$29==2?2:0,$36==2?2:0,$43==2?2:0,$50==2?2:0,$57==2?2:0]}
+  u "{$1}{$2,$3,$4}_"$d"{$5}_"$d"{$6}_"$d"{$7}_"$d\
+    "{$8}{$9,$10,$11}_"$l"{$12}_"$l"{$13}_"$l"{$14}_"$l\
+    "{$15}{$16,$17,$18}_"$a"{$19}_"$a"{$20}_"$a"{$21}_"$a\
+    "{$22}{$23,$24,$25}_"$r"{$26}_"$r"{$27}_"$r"{$28}_"$r\
+    "{$29}{$30,$31,$32}_"$y"{$33}_"$y"{$34}_"$y"{$35}_"$y\
+    "{$36}{$37,$38,$39}_"$g"{$40}_"$g"{$41}_"$g"{$42}_"$g\
+    "{$43}{$44,$45,$46}_"$c"{$47}_"$c"{$48}_"$c"{$49}_"$c\
+    "{$50}{$51,$52,$53}_"$b"{$54}_"$b"{$55}_"$b"{$56}_"$b\
+    "{$57}{$58,$59,$60}_"$m"{$61}_"$m"{$62}_"$m"{$63}_"$m\
+    "{$64}{$65}{$66,$67}"
+
 #@gui User-Defined : fx_custom_transform, fx_custom_transform
 #@gui : Red - Green - Blue - Alpha = text{"i"}
 #@gui : Red - Green - Blue = text{"i + 90*(x/w)*cos(i/10)"}
@@ -37752,7 +38178,6 @@ fx_custom_transform :
     else a[-4--1] c n. 0,255
     fi
   mv. 0 done
-
 
 #@gui ____<b>Contours</b>
 #------------------------
@@ -46576,7 +47001,7 @@ fx_animate_glow_preview : skip "${4=}"
 #@gui : Shading (%) = float(0,0,100)
 #@gui : Transition Shape = choice(7,"Bottom Layer","Top Layer","Custom Formula","Horizontal","Vertical",
 #@gui : "Angular","Radial","Plasma")
-#@gui : Custom Formula = text{"cos(x*y/(16+32*A))"}
+#@gui : Custom Formula = text{"cos(x*y/(16+32*A))"}_1
 #@gui : A-Value = float(0,0,1)
 #@gui : sep = separator()
 #@gui : Preview Type = choice(1,"Transition Map","Timed Image","Sequence x4","Sequence x6","Sequence x8")
@@ -46613,7 +47038,7 @@ fx_spatial_transition :
     rm.
   fi
   nm name(transition),pos(0,0)
-  if narg($formula) u "{$1}{$2}{$3}{\""$formula"\"}{$5}{$6}{$7}{0}" fi
+  if narg($formula) u "{$1}{$2}{$3}{"$formula"}_"{$3==2?2:1}"{$5}{$6}{$7}{0}" fi
 
 fx_spatial_transition_preview :
   if ($3<=1" && "$!<3)" || "($3>1" && "$!<2)

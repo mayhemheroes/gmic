@@ -65,7 +65,7 @@ static CImg<T> copy_rounded(const CImg<T>& img) {
   return CImg<T>(img,true);
 }
 
-static const char *storage_type(const CImgList<T>& images) {
+static const char *storage_type(const CImgList<T>& images, const bool allow_bool) {
   T im = cimg::type<T>::max(), iM = cimg::type<T>::min();
   bool is_int = true;
   for (unsigned int l = 0; l<images.size() && is_int; ++l) {
@@ -77,7 +77,8 @@ static const char *storage_type(const CImgList<T>& images) {
     }
   }
   if (is_int) {
-    if (im>=0) {
+    if (allow_bool && im==0 && iM==1) return "bool";
+    else if (im>=0) {
       if (iM<(1U<<8)) return "uchar";
       else if (iM<(1U<<16)) return "ushort";
       else if (iM<((cimg_uint64)1<<32)) return "uint";
@@ -87,7 +88,7 @@ static const char *storage_type(const CImgList<T>& images) {
       else if (im>=-((cimg_int64)1<<31) && iM<((cimg_int64)1<<31)) return "int";
     }
   }
-  return cimg::type<T>::string();
+  return pixel_type();
 }
 
 static CImg<T> append_CImg3d(const CImgList<T>& images) {
@@ -506,23 +507,24 @@ CImg<T>& gmic_invert_endianness(const char *const stype) {
 
 #define _gmic_invert_endianness(value_type,svalue_type) \
   if (!std::strcmp(stype,svalue_type)) \
-    if (cimg::type<T>::string()==cimg::type<value_type>::string()) invert_endianness(); \
+    if (pixel_type()==cimg::type<value_type>::string()) invert_endianness(); \
     else CImg<value_type>(*this).invert_endianness().move_to(*this);
-  _gmic_invert_endianness(unsigned char,"uchar")
-  else _gmic_invert_endianness(unsigned char,"unsigned char")
-    else _gmic_invert_endianness(char,"char")
-      else _gmic_invert_endianness(unsigned short,"ushort")
-        else _gmic_invert_endianness(unsigned short,"unsigned short")
-          else _gmic_invert_endianness(short,"short")
-            else _gmic_invert_endianness(unsigned int,"uint")
-              else _gmic_invert_endianness(unsigned int,"unsigned int")
-                else _gmic_invert_endianness(int,"int")
-                  else _gmic_invert_endianness(uint64T,"uint64")
-                    else _gmic_invert_endianness(uint64T,"unsigned int64")
-                      else _gmic_invert_endianness(int64T,"int64")
-                        else _gmic_invert_endianness(float,"float")
-                          else _gmic_invert_endianness(double,"double")
-                            else invert_endianness();
+  if (!std::strcmp(stype,"bool") ||
+      !std::strcmp(stype,"uchar") ||
+      !std::strcmp(stype,"unsigned char") ||
+      !std::strcmp(stype,"char")) return *this;
+  _gmic_invert_endianness(unsigned short,"ushort")
+  else _gmic_invert_endianness(unsigned short,"unsigned short")
+    else _gmic_invert_endianness(short,"short")
+      else _gmic_invert_endianness(unsigned int,"uint")
+        else _gmic_invert_endianness(unsigned int,"unsigned int")
+          else _gmic_invert_endianness(int,"int")
+            else _gmic_invert_endianness(uint64T,"uint64")
+              else _gmic_invert_endianness(uint64T,"unsigned int64")
+                else _gmic_invert_endianness(int64T,"int64")
+                  else _gmic_invert_endianness(float,"float")
+                    else _gmic_invert_endianness(double,"double")
+                      else invert_endianness();
   return *this;
 }
 
@@ -578,7 +580,7 @@ const CImg<T>& gmic_print(const char *const title, const bool is_debug,
                (unsigned long)(mdisp==0?msiz:(mdisp==1?(msiz>>10):(msiz>>20))),
                mdisp==0?"b":(mdisp==1?"Kio":"Mio"),
                _is_shared?"shared ":"",
-               cimg::type<T>::string(),
+               pixel_type(),
                cimg::t_bold,cimg::t_normal,
                is_debug?"":"(");
   if (is_debug) std::fprintf(cimg::output(),"%p = (",(void*)_data);
@@ -7348,7 +7350,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Invert endianness.
         if (!std::strcmp("endian",command)) {
           gmic_substitute_args(false);
-          if (!std::strcmp(argument,"uchar") ||
+          if (!std::strcmp(argument,"bool") || !std::strcmp(argument,"uchar") ||
               !std::strcmp(argument,"unsigned char") || !std::strcmp(argument,"char") ||
               !std::strcmp(argument,"ushort") || !std::strcmp(argument,"unsigned short") ||
               !std::strcmp(argument,"short") || !std::strcmp(argument,"uint") ||
@@ -9906,7 +9908,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   } \
                 } \
               }
-            if (!std::strcmp(stype,"auto")) stype = CImg<T>::storage_type(g_list);
+            if (!std::strcmp(stype,"auto")) stype = CImg<T>::storage_type(g_list,false);
             gmic_save_multitype(unsigned char,"uchar")
             else gmic_save_multitype(unsigned char,"unsigned char")
               else gmic_save_multitype(char,"char")
@@ -9990,7 +9992,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   } \
                 } \
               }
-            if (!std::strcmp(stype,"auto")) stype = CImg<T>::storage_type(g_list);
+            if (!std::strcmp(stype,"auto")) stype = CImg<T>::storage_type(g_list,false);
             gmic_save_tiff(unsigned char,"uchar")
             else gmic_save_tiff(unsigned char,"unsigned char")
               else gmic_save_tiff(char,"char")
@@ -10169,25 +10171,26 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   } \
                 } \
               }
-            if (!std::strcmp(stype,"auto")) stype = CImg<T>::storage_type(g_list);
-            gmic_save_raw(unsigned char,"uchar")
-            else gmic_save_raw(unsigned char,"unsigned char")
-              else gmic_save_raw(char,"char")
-                else gmic_save_raw(unsigned short,"ushort")
-                  else gmic_save_raw(unsigned short,"unsigned short")
-                    else gmic_save_raw(short,"short")
-                      else gmic_save_raw(unsigned int,"uint")
-                        else gmic_save_raw(unsigned int,"unsigned int")
-                          else gmic_save_raw(int,"int")
-                            else gmic_save_raw(uint64T,"uint64")
-                              else gmic_save_raw(uint64T,"unsigned int64")
-                                else gmic_save_raw(int64T,"int64")
-                                  else gmic_save_raw(float,"float")
-                                    else gmic_save_raw(double,"double")
-                                      else error(true,images,0,0,
-                                                 "Command 'output': File '%s', invalid "
-                                                 "specified pixel type '%s'.",
-                                                 _filename.data(),stype);
+            if (!std::strcmp(stype,"auto")) stype = CImg<T>::storage_type(g_list,true);
+            gmic_save_raw(bool,"bool")
+            else gmic_save_raw(unsigned char,"uchar")
+              else gmic_save_raw(unsigned char,"unsigned char")
+                else gmic_save_raw(char,"char")
+                  else gmic_save_raw(unsigned short,"ushort")
+                    else gmic_save_raw(unsigned short,"unsigned short")
+                      else gmic_save_raw(short,"short")
+                        else gmic_save_raw(unsigned int,"uint")
+                          else gmic_save_raw(unsigned int,"unsigned int")
+                            else gmic_save_raw(int,"int")
+                              else gmic_save_raw(uint64T,"uint64")
+                                else gmic_save_raw(uint64T,"unsigned int64")
+                                  else gmic_save_raw(int64T,"int64")
+                                    else gmic_save_raw(float,"float")
+                                      else gmic_save_raw(double,"double")
+                                        else error(true,images,0,0,
+                                                   "Command 'output': File '%s', invalid "
+                                                   "specified pixel type '%s'.",
+                                                   _filename.data(),stype);
           } else if (!std::strcmp(uext,"yuv")) {
 
             // YUV sequence.
@@ -10223,25 +10226,26 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               if (!std::strcmp(stype,svalue_type)) \
                 CImgList<value_type>::copy_rounded(g_list).save(filename);
 
-            if (!std::strcmp(stype,"auto")) stype = CImg<T>::storage_type(g_list);
-            gmic_save_cimg(unsigned char,"uchar")
-            else gmic_save_cimg(unsigned char,"unsigned char")
-              else gmic_save_cimg(char,"char")
-                else gmic_save_cimg(unsigned short,"ushort")
-                  else gmic_save_cimg(unsigned short,"unsigned short")
-                    else gmic_save_cimg(short,"short")
-                      else gmic_save_cimg(unsigned int,"uint")
-                        else gmic_save_cimg(unsigned int,"unsigned int")
-                          else gmic_save_cimg(int,"int")
-                            else gmic_save_cimg(uint64T,"uint64")
-                              else gmic_save_cimg(uint64T,"unsigned int64")
-                                else gmic_save_cimg(int64T,"int64")
-                                  else gmic_save_cimg(float,"float")
-                                    else gmic_save_cimg(double,"double")
-                                      else error(true,images,0,0,
-                                                 "Command 'output': File '%s', invalid "
-                                                 "specified pixel type '%s'.",
-                                                 _filename.data(),stype);
+            if (!std::strcmp(stype,"auto")) stype = CImg<T>::storage_type(g_list,true);
+            gmic_save_cimg(bool,"bool")
+            else gmic_save_cimg(unsigned char,"uchar")
+              else gmic_save_cimg(unsigned char,"unsigned char")
+                else gmic_save_cimg(char,"char")
+                  else gmic_save_cimg(unsigned short,"ushort")
+                    else gmic_save_cimg(unsigned short,"unsigned short")
+                      else gmic_save_cimg(short,"short")
+                        else gmic_save_cimg(unsigned int,"uint")
+                          else gmic_save_cimg(unsigned int,"unsigned int")
+                            else gmic_save_cimg(int,"int")
+                              else gmic_save_cimg(uint64T,"uint64")
+                                else gmic_save_cimg(uint64T,"unsigned int64")
+                                  else gmic_save_cimg(int64T,"int64")
+                                    else gmic_save_cimg(float,"float")
+                                      else gmic_save_cimg(double,"double")
+                                        else error(true,images,0,0,
+                                                   "Command 'output': File '%s', invalid "
+                                                   "specified pixel type '%s'.",
+                                                   _filename.data(),stype);
           } else if (!std::strcmp(uext,"gmz") || !*ext) {
 
             // GMZ file.
@@ -10260,8 +10264,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 #define gmic_save_gmz(value_type,svalue_type) \
               if (!std::strcmp(stype,svalue_type)) \
                 CImg<value_type>::save_gmz(filename,CImgList<value_type>::copy_rounded(g_list),g_list_c);
-
-            if (!std::strcmp(stype,"auto")) stype = CImg<T>::storage_type(g_list);
+            if (!std::strcmp(stype,"auto")) stype = CImg<T>::storage_type(g_list,false);
             gmic_save_gmz(unsigned char,"uchar")
             else gmic_save_gmz(unsigned char,"unsigned char")
               else gmic_save_gmz(char,"char")
@@ -10341,8 +10344,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             cimg_snprintf(formula,_formula.width(),"output_%s",uext.data());
             hash = hashcode(formula,false);
             if (search_sorted(formula,commands_names[hash],commands_names[hash].size(),pattern)) { // Command found
-              cimg_snprintf(formula,_formula.width(),"output_%s[%s] \"%s\"",
-                            uext.data(),*s_selection?s_selection:"^",filename);
+              cimg_snprintf(formula,_formula.width(),"output_%s[%s] \"%s\"%s%s",
+                            uext.data(),*s_selection?s_selection:"^",filename,
+                            *options?",":"",options.data());
               const CImgList<char> ncommands_line = commands_line_to_CImgList(formula);
               unsigned int nposition = 0;
               CImg<char>::string("").move_to(callstack); // Anonymous scope
@@ -12616,7 +12620,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               if (is_gmz) CImg<char>::string(images_names[uind]).move_to(gmz_info[1 + l]);
             }
             if (is_gmz) (gmz_info>'x').unroll('y').move_to(g_list);
-            if (!std::strcmp(argx,"auto")) std::strcpy(argx,CImg<T>::storage_type(g_list));
+            if (!std::strcmp(argx,"auto")) std::strcpy(argx,CImg<T>::storage_type(g_list,false));
 
             CImg<T> serialized;
             gmic_serialize(unsigned char,"uchar")
@@ -14716,24 +14720,25 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                              (unsigned int)dx,(unsigned int)dy, \
                                              (unsigned int)dz,(unsigned int)dc,false,false,\
                                              (cimg_ulong)offset).move_to(g_list);
-            gmic_load_raw(unsigned char,"uchar")
-            else gmic_load_raw(unsigned char,"unsigned char")
-              else gmic_load_raw(char,"char")
-                else gmic_load_raw(unsigned short,"ushort")
-                  else gmic_load_raw(unsigned short,"unsigned short")
-                    else gmic_load_raw(short,"short")
-                      else gmic_load_raw(unsigned int,"uint")
-                        else gmic_load_raw(unsigned int,"unsigned int")
-                          else gmic_load_raw(int,"int")
-                            else gmic_load_raw(uint64T,"uint64")
-                              else gmic_load_raw(uint64T,"unsigned int64")
-                                else gmic_load_raw(int64T,"int64")
-                                  else gmic_load_raw(float,"float")
-                                    else gmic_load_raw(double,"double")
-                                      else error(true,images,0,0,
-                                                 "Command 'input': raw file '%s', "
-                                                 "invalid specified pixel type '%s'.\n",
-                                                 _filename0,stype);
+            gmic_load_raw(bool,"bool")
+            else gmic_load_raw(unsigned char,"uchar")
+              else gmic_load_raw(unsigned char,"unsigned char")
+                else gmic_load_raw(char,"char")
+                  else gmic_load_raw(unsigned short,"ushort")
+                    else gmic_load_raw(unsigned short,"unsigned short")
+                      else gmic_load_raw(short,"short")
+                        else gmic_load_raw(unsigned int,"uint")
+                          else gmic_load_raw(unsigned int,"unsigned int")
+                            else gmic_load_raw(int,"int")
+                              else gmic_load_raw(uint64T,"uint64")
+                                else gmic_load_raw(uint64T,"unsigned int64")
+                                  else gmic_load_raw(int64T,"int64")
+                                    else gmic_load_raw(float,"float")
+                                      else gmic_load_raw(double,"double")
+                                        else error(true,images,0,0,
+                                                   "Command 'input': raw file '%s', "
+                                                   "invalid specified pixel type '%s'.\n",
+                                                   _filename0,stype);
             g_list_c.insert(__filename0);
           } else
             error(true,images,0,0,
@@ -14902,7 +14907,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           cimg_snprintf(formula,_formula.width(),"input_%s",uext.data());
           hash = hashcode(formula,false);
           if (search_sorted(formula,commands_names[hash],commands_names[hash].size(),pattern)) { // Command found
-            cimg_snprintf(formula,_formula.width(),"input_%s[] \"%s\"",uext.data(),_filename0);
+            cimg_snprintf(formula,_formula.width(),"input_%s[] \"%s\"%s%s",uext.data(),_filename0,
+                          *options?",":"",options.data());
             const CImgList<char> ncommands_line = commands_line_to_CImgList(formula);
             unsigned int nposition = 0;
             CImg<char>::string("").move_to(callstack); // Anonymous scope
