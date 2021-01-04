@@ -4194,12 +4194,13 @@ output_obj : check "isbool(${2=0})" check3d 0
     # Process primitives / materials.
     l[1--1]
       0x2 nm[-2,-1] primitives,materials
+      3,1024 nm. textures
       eval "
         tos(x) = vtos(x,6);
         strp = vector1024();
         strm = vector1024();
         p_rgb = vector3(-1);
-        M = 0;
+        M = T = 0;
         for (srcp = srcc = outp = outm = P = 0, srcp<h#0,
           strp[0] = strm[0] = 0;
           N = i[#0,srcp++];
@@ -4243,6 +4244,14 @@ output_obj : check "isbool(${2=0})" check3d 0
 
           ):N==9?( # Textured triangle
             i0 = i[#0,srcp++]; i1 = i[#0,srcp++]; i2 = i[#0,srcp++]; srcp+=6;
+            $2?(
+              mn = i[#1,srcc++]; tw = i[#1,srcc++]; th = i[#1,srcc++]; ts = i[#1,srcc++];
+              mn==128?(
+                copy(i(#"$textures",0,T),[ tw,th,ts ]);
+              );
+              ++T;
+            );
+
             copy(strp,string('f ',++i0,' ',++i1,' ',++i2,'\n'));
             ++P;
 
