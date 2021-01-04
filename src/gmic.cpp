@@ -1780,7 +1780,7 @@ CImg<T> get_shift_CImg3d(const float tx, const float ty, const float tz) const {
   return (+*this).shift_CImg3d(tx,ty,tz);
 }
 
-CImgList<T> get_split_CImg3d() const {
+CImgList<T> get_split_CImg3d(const bool full_split=false) const {
   CImg<charT> error_message(1024);
   if (!is_CImg3d(false,error_message))
     throw CImgInstanceException(_cimg_instance
@@ -1796,9 +1796,20 @@ CImgList<T> get_split_CImg3d() const {
   CImg<T>(ptr0,1,(unsigned int)(ptr - ptr0),1,1).move_to(res); // Nb vertices and primitives
   ptr0 = ptr; ptr+=3*nbv;
   CImg<T>(ptr0,1,(unsigned int)(ptr - ptr0),1,1).move_to(res); // Vertices
-  ptr0 = ptr;
-  for (unsigned int i = 0; i<nbp; ++i) ptr+=(unsigned int)(*ptr) + 1;
-  CImg<T>(ptr0,1,(unsigned int)(ptr - ptr0),1,1).move_to(res); // Primitives
+
+  // Primitives.
+  if (full_split) for (unsigned int i = 0; i<nbp; ++i) {
+      ptr0 = ptr;
+      ptr+=(unsigned int)(*ptr) + 1;
+      CImg<T>(ptr0,1,(unsigned int)(ptr - ptr0),1,1).move_to(res);
+    }
+  else {
+    ptr0 = ptr;
+    for (unsigned int i = 0; i<nbp; ++i) ptr+=(unsigned int)(*ptr) + 1;
+    CImg<T>(ptr0,1,(unsigned int)(ptr - ptr0),1,1).move_to(res);
+  }
+
+  // Colors/Textures.
   ptr0 = ptr;
   for (unsigned int i = 0; i<nbp; ++i) {
     const T val = *(ptr++);
@@ -1812,7 +1823,9 @@ CImgList<T> get_split_CImg3d() const {
       if (w*h*s!=0) ptr+=w*h*s;
     }
   }
-  CImg<T>(ptr0,1,(unsigned int)(ptr - ptr0),1,1).move_to(res); // Colors/Textures
+  CImg<T>(ptr0,1,(unsigned int)(ptr - ptr0),1,1).move_to(res);
+
+  // Opacities.
   ptr0 = ptr;
   for (unsigned int i = 0; i<nbp; ++i) {
     const T val = *(ptr++);
@@ -1825,7 +1838,7 @@ CImgList<T> get_split_CImg3d() const {
       if (w*h*s!=0) ptr+=w*h*s;
     }
   }
-  CImg<T>(ptr0,1,(unsigned int)(ptr - ptr0),1,1).move_to(res); // Opacities
+  CImg<T>(ptr0,1,(unsigned int)(ptr - ptr0),1,1).move_to(res);
   return res;
 }
 
@@ -12210,32 +12223,37 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Split 3D objects, into 6 vector images
         // { header,N,vertices,primitives,colors,opacities }
         if (!std::strcmp("split3d",command)) {
-          bool keep_shared = true;
+          bool full_split = false;
           gmic_substitute_args(false);
           if ((*argument=='0' || *argument=='1') && !argument[1]) {
-            keep_shared = *argument=='1';
+            full_split = *argument=='1';
             ++position;
           }
-          print(images,0,"Split 3D object%s into 6 property vectors%s.",
+          print(images,0,"Split 3D object%s into property vectors%s.",
                 gmic_selection.data(),
-                keep_shared?"":" and clone shared data");
+                full_split?"":" (full split)");
           unsigned int off = 0;
           cimg_forY(selection,l) {
             const unsigned int uind = selection[l] + off;
             const CImg<T> &img = gmic_check(images[uind]);
             name = images_names[uind];
             try {
-              if (!keep_shared) {
-                CImg<T> _vertices;
-                CImgList<T> Tcolors, opacities;
-                img.get_CImg3dtoobject3d(primitives,Tcolors,opacities,false).move_to(_vertices);
-                CImgList<T> _colors(Tcolors,false), _opacities(opacities,false);
-                _colors.move_to(Tcolors.assign());
-                _opacities.move_to(opacities.assign());
-                _vertices.object3dtoCImg3d(primitives,Tcolors,opacities,false).get_split_CImg3d().
-                  move_to(g_list);
-                primitives.assign();
-              } else img.get_split_CImg3d().move_to(g_list);
+              img.get_split_CImg3d(full_split).move_to(g_list);
+
+/*
+  if (!keep_shared) {
+  CImg<T> _vertices;
+  CImgList<T> Tcolors, opacities;
+  img.get_CImg3dtoobject3d(primitives,Tcolors,opacities,false).move_to(_vertices);
+  CImgList<T> _colors(Tcolors,false), _opacities(opacities,false);
+  _colors.move_to(Tcolors.assign());
+  _opacities.move_to(opacities.assign());
+  _vertices.object3dtoCImg3d(primitives,Tcolors,opacities,false).get_split_CImg3d().
+  move_to(g_list);
+  primitives.assign();
+  } else img.get_split_CImg3d().move_to(g_list);
+*/
+
             } catch (CImgException&) {
               if (!img.is_CImg3d(true,&(*gmic_use_message=0)))
                 error(true,images,0,0,
