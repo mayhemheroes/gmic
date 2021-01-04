@@ -1842,19 +1842,34 @@ CImgList<T> get_split_CImg3d(const bool full_split=false) const {
   }
 
   // Opacities.
-  ptr0 = ptr;
-  for (unsigned int i = 0; i<nbp; ++i) {
-    const T val = *(ptr++);
-    if (val==-128) {
-      const unsigned int
-        w = cimg::float2uint(ptr[0]),
-        h = cimg::float2uint(ptr[1]),
-        s = cimg::float2uint(ptr[2]);
-      ptr+=3;
-      if (w*h*s!=0) ptr+=w*h*s;
+  if (full_split) for (unsigned int i = 0; i<nbp; ++i) {
+      ptr0 = ptr;
+      const T val = *(ptr++);
+      if (val==-128) {
+        const unsigned int
+          w = cimg::float2uint(ptr[0]),
+          h = cimg::float2uint(ptr[1]),
+          s = cimg::float2uint(ptr[2]);
+        ptr+=3;
+        if (w*h*s!=0) ptr+=w*h*s;
+      }
+      CImg<T>(ptr0,1,(unsigned int)(ptr - ptr0),1,1).move_to(res);
     }
+  else {
+    ptr0 = ptr;
+    for (unsigned int i = 0; i<nbp; ++i) {
+      const T val = *(ptr++);
+      if (val==-128) {
+        const unsigned int
+          w = cimg::float2uint(ptr[0]),
+          h = cimg::float2uint(ptr[1]),
+          s = cimg::float2uint(ptr[2]);
+        ptr+=3;
+        if (w*h*s!=0) ptr+=w*h*s;
+      }
+    }
+    CImg<T>(ptr0,1,(unsigned int)(ptr - ptr0),1,1).move_to(res);
   }
-  CImg<T>(ptr0,1,(unsigned int)(ptr - ptr0),1,1).move_to(res);
   return res;
 }
 
