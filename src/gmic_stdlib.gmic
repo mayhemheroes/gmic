@@ -4172,7 +4172,7 @@ output_obj : check "isbool(${2=0})" check3d 0
   s0,s1=out,
   e[^-1] "Output 3D object$? as Wavefront 3D object file '$1' (with"${s$2}" materials)."
   N=$! repeat $N nm={$>,n} +l[$>]
-    s3d 0 nbv={1,@0} rm[0,1]
+    s3d 1 nbv,nbp={1,@0-1} rm[0,1]
 
     # Process vertices.
     l[0]
@@ -4194,30 +4194,31 @@ output_obj : check "isbool(${2=0})" check3d 0
     # Process primitives / materials.
     l[1--1]
       0x2 nm[-2,-1] primitives,materials
-      3,1024 nm. textures
       eval "
+        const nbp = "$nbp";
         tos(x) = vtos(x,6);
         strp = vector1024();
         strm = vector1024();
         p_rgb = vector3(-1);
         M = T = 0;
-        for (srcp = srcc = outp = outm = P = 0, srcp<h#0,
+
+        for ((p = outp = outm = P = 0; c = nbp; o = 2*nbp), p<nbp, (++p; ++c; ++o),
           strp[0] = strm[0] = 0;
-          N = i[#0,srcp++];
+          N = i[#p,0];
           N==1?( # Colored point
-            i0 = i[#0,srcp++];
+            i0 = i[#p,1];
             copy(strp,string('p ',++i0,'\n'));
             ++P;
           ):
 
           N==2?( # Colored segment
-            i0 = i[#0,srcp++]; i1 = i[#0,srcp++];
+            i0 = i[#p,1]; i1 = i[#p,2];
             copy(strp,string('l ',++i0,' ',++i1,'\n'));
             ++P;
 
           ):N==3?( # Colored triangle
-            i0 = i[#0,srcp++]; i1 = i[#0,srcp++]; i2 = i[#0,srcp++];
-            $2?(r = i[#1,srcc++]; g = i[#1,srcc++]; b = i[#1,srcc++]; rgb = [ r,g,b ]);
+            i0 = i[#p,1]; i1 = i[#p,2]; i2 = i[#p,3];
+            $2?(r = i[#c,0]; g = i[#c,1]; b = i[#c,2]; rgb = [ r,g,b ]);
             $2 && rgb!=p_rgb?(
               copy(strm,string('newmtl m',M,'\nKd ',tos(r/255),' ',tos(g/255),' ',tos(b/255),'\n'));
               copy(strp,string('usemtl m',M,'\nf ',++i0,' ',++i1,' ',++i2,'\n'));
@@ -4227,8 +4228,8 @@ output_obj : check "isbool(${2=0})" check3d 0
             ++P;
 
           ):N==4?( # Colored quadrangle
-            i0 = i[#0,srcp++]; i1 = i[#0,srcp++]; i2 = i[#0,srcp++]; i3 = i[#0,srcp++];
-            $2?(r = i[#1,srcc++]; g = i[#1,srcc++]; b = i[#1,srcc++]; rgb = [ r,g,b ]);
+            i0 = i[#p,1]; i1 = i[#p,2]; i2 = i[#p,3]; i3 = i[#p,4];
+            $2?(r = i[#c,0]; g = i[#c,1]; b = i[#c,2]; rgb = [ r,g,b ]);
             $2 && rgb!=p_rgb?(
               copy(strm,string('newmtl m',M,'\nKd ',tos(r/255),' ',tos(g/255),' ',tos(b/255),'\n'));
               copy(strp,string('usemtl m',M,'\nf ',++i0,' ',++i1,' ',++i2,' ',++i3,'\n'));
@@ -4238,30 +4239,17 @@ output_obj : check "isbool(${2=0})" check3d 0
             ++P;
 
           ):N==6?( # Textured segment
-            i0 = i[#0,srcp++]; i1 = i[#0,srcp++]; srcp+=4;
-            copy(strp,string('l ',++i0,' ',++i1,'\n'));
-            ++P;
+            0;
 
           ):N==9?( # Textured triangle
-            i0 = i[#0,srcp++]; i1 = i[#0,srcp++]; i2 = i[#0,srcp++]; srcp+=6;
-            $2?(
-              mn = i[#1,srcc++]; tw = i[#1,srcc++]; th = i[#1,srcc++]; ts = i[#1,srcc++];
-              mn==128?(
-                copy(i(#"$textures",0,T),[ tw,th,ts ]);
-              );
-              ++T;
-            );
-
-            copy(strp,string('f ',++i0,' ',++i1,' ',++i2,'\n'));
-            ++P;
+            0;
 
           ):N==12?( # Textured triangle
-            i0 = i[#0,srcp++]; i1 = i[#0,srcp++]; i2 = i[#0,srcp++]; i3 = i[#0,srcp++]; srcp+=8;
-            copy(strp,string('f ',++i0,' ',++i1,' ',++i2,' ',++i3,'\n'));
-            ++P;
+            0;
 
           ):( # Unsupported
-            srcp+=N;
+            0;
+
           );
 
           # Output primitives.
