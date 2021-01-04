@@ -4172,7 +4172,7 @@ output_obj : check "isbool(${2=0})" check3d 0
   s0,s1=out,
   e[^-1] "Output 3D object$? as Wavefront 3D object file '$1' (with"${s$2}" materials)."
   N=$! repeat $N nm={$>,n} +l[$>]
-    s3d 1 nbv={1,@0} rm[0,1]
+    s3d 0 nbv={1,@0} rm[0,1]
 
     # Process vertices.
     l[0]
@@ -19374,7 +19374,7 @@ skeleton3d : check "isint(${1=2}) && $1>=0 && $1<=2 && isint(${2=3}) && $2>=0 &&
     *[0-2] pointcloud3d[0]
 
     # Construct bones from skeleton.
-    if $4 l[0] s3d 1
+    if $4 l[0] s3d 0
       n={1,@0}
       if $n
         r[2] 3,$n,1,1,-1 r[3] 2,$n,1,1,-1 r[4] 3,$n,1,1,-1
@@ -19509,12 +19509,13 @@ spline3d : check ${13=128}>=2
 
 #@cli s3d : eq. to 'split3d'. : (+)
 
-#@cli split3d : _keep_shared_data={ 0 | 1 } : (+)
-#@cli : Split selected 3D objects into 6 feature vectors :
-#@cli : { header, sizes, vertices, primitives, colors, opacities }.
+#@cli split3d : _full_split={ 0 | 1 } : (+)
+#@cli : Split selected 3D objects into feature vectors :
+#@cli : * If 'full_split==0', { header, sizes, vertices, primitives, colors, opacities }.
+#@cli : * If 'full_split==1', { header, sizes, vertices, p0,...,pP, c0,...,cP, o0,...,oP }.
 #@cli : (eq. to 's3d').\n
-#@cli : To recreate the 3D object, append these 6 images along the y-axis.
-#@cli : Default value: 'keep_shared_data=1'.
+#@cli : To recreate the 3D object, append all produced images along the y-axis.
+#@cli : Default value: 'full_split=0'.
 #@cli : $ box3d 100 +split3d
 
 #@cli sprite3d
