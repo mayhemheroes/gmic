@@ -4208,117 +4208,117 @@ output_obj : check "isbool(${2=0})" check3d 0
         tind={$ind,@1} sh[{1+$nbp+$tind}] rv[$ind,-1] rm. nm[$ind] $folder${basename}_t$T.png
       fi
     done fi
+    mv[0] $!
 
     # Process primitives / materials.
-    l[1--1]
-      0x2 nm[-2,-1] primitives,materials
-      eval "
-        const nbp = "$nbp";
-        tos(x) = vtos(x,6);
-        strp = vector1024();
-        strm = vector1024();
-        p_rgb = vector3(-1);
-        p_texture = vector1024();
-        M = T = 0;
+    0x2 nm[-2,-1] primitives,materials
+    eval "
+      const nbp = "$nbp";
+      tos(x) = vtos(x,6);
+      strp = vector1024();
+      strm = vector1024();
+      p_rgb = vector3(-1);
+      p_texture = vector1024();
+      M = T = 0;
 
-        for ((p = outp = outm = P = 0; c = nbp), p<nbp, (++p; ++c),
-          strp[0] = strm[0] = 0;
-          N = i[#p,0];
-          N==1?( # Colored point
-            i0 = i[#p,1];
-            copy(strp,string('p ',++i0,'\n'));
-            ++P;
-          ):
+      for ((p = outp = outm = P = 0; c = nbp), p<nbp, (++p; ++c),
+        strp[0] = strm[0] = 0;
+        N = i[#p,0];
+        N==1?( # Colored point
+          i0 = i[#p,1];
+          copy(strp,string('p ',++i0,'\n'));
+          ++P;
+        ):
 
-          isin(N,2,6)?( # Colored or textured segment
-            i0 = i[#p,1]; i1 = i[#p,2];
-            copy(strp,string('l ',++i0,' ',++i1,'\n'));
-            ++P;
+        isin(N,2,6)?( # Colored or textured segment
+          i0 = i[#p,1]; i1 = i[#p,2];
+          copy(strp,string('l ',++i0,' ',++i1,'\n'));
+          ++P;
 
-          ):N==3 || (N==9 && !$2)?( # Colored triangle
-            i0 = i[#p,1]; i1 = i[#p,2]; i2 = i[#p,3];
-            $2?(r = i[#c,0]; g = i[#c,1]; b = i[#c,2]; rgb = [ r,g,b ]);
-            $2 && rgb!=p_rgb?(
-              copy(strm,string('newmtl m',M,'\n',
-                               'Kd ',tos(r/255),' ',tos(g/255),' ',tos(b/255),'\n'));
-              copy(strp,string('usemtl m',M,'\n',
-                               'f ',++i0,' ',++i1,' ',++i2,'\n'));
-              p_rgb = rgb;
-              ++M;
-            ):(copy(strp,string('f ',++i0,' ',++i1,' ',++i2,'\n')); 0);
-            ++P;
-
-          ):N==4 || (N==12 && !$2)?( # Colored quadrangle
-            i0 = i[#p,1]; i1 = i[#p,2]; i2 = i[#p,3]; i3 = i[#p,4];
-            $2?(r = i[#c,0]; g = i[#c,1]; b = i[#c,2]; rgb = [ r,g,b ]);
-            $2 && rgb!=p_rgb?(
-              copy(strm,string('newmtl m',M,'\n',
-                               'Kd ',tos(r/255),' ',tos(g/255),' ',tos(b/255),'\n'));
-              copy(strp,string('usemtl m',M,'\n',
-                               'f ',++i0,' ',++i1,' ',++i2,' ',++i3,'\n'));
-              p_rgb = rgb;
-              ++M;
-            ):(copy(strp,string('f ',++i0,' ',++i1,' ',++i2,' ',++i3,'\n')); 0);
-            ++P;
-
-          ):N==9?( # Textured triangle
-            i0 = i[#p,1]; i1 = i[#p,2]; i2 = i[#p,3];
-            wt = w#c; ht = h#c;
-            x0 = i[#p,4]/wt; y0 = 1 - i[#p,5]/ht;
-            x1 = i[#p,6]/wt; y1 = 1 - i[#p,7]/ht;
-            x2 = i[#p,8]/wt; y2 = 1 - i[#p,9]/ht;
+        ):N==3 || (N==9 && !$2)?( # Colored triangle
+          i0 = i[#p,1]; i1 = i[#p,2]; i2 = i[#p,3];
+          $2?(r = i[#c,0]; g = i[#c,1]; b = i[#c,2]; rgb = [ r,g,b ]);
+          $2 && rgb!=p_rgb?(
             copy(strm,string('newmtl m',M,'\n',
-                             'map_Kd img.png\n'));
-            copy(strp,string('vt ',tos(x0),' ',tos(y0),'\n',
-                             'vt ',tos(x1),' ',tos(y1),'\n',
-                             'vt ',tos(x2),' ',tos(y2),'\n',
-                             'f ',++i0,'/',T+1,' ',++i1,'/',T+2,' ',++i2,'/',T+3,'\n'));
-            T+=4;
-            ++M; ++P;
+                             'Kd ',tos(r/255),' ',tos(g/255),' ',tos(b/255),'\n'));
+            copy(strp,string('usemtl m',M,'\n',
+                             'f ',++i0,' ',++i1,' ',++i2,'\n'));
+            p_rgb = rgb;
+            ++M;
+          ):(copy(strp,string('f ',++i0,' ',++i1,' ',++i2,'\n')); 0);
+          ++P;
 
-          ):N==12?( # Textured quadrangle
-            i0 = i[#p,1]; i1 = i[#p,2]; i2 = i[#p,3]; i3 = i[#p,4];
-            wt = w#c; ht = h#c;
-            x0 = i[#p,5]/wt; y0 = 1 - i[#p,6]/ht;
-            x1 = i[#p,7]/wt; y1 = 1 - i[#p,8]/ht;
-            x2 = i[#p,9]/wt; y2 = 1 - i[#p,10]/ht;
-            x3 = i[#p,11]/wt; y3 = 1 - i[#p,12]/ht;
+        ):N==4 || (N==12 && !$2)?( # Colored quadrangle
+          i0 = i[#p,1]; i1 = i[#p,2]; i2 = i[#p,3]; i3 = i[#p,4];
+          $2?(r = i[#c,0]; g = i[#c,1]; b = i[#c,2]; rgb = [ r,g,b ]);
+          $2 && rgb!=p_rgb?(
             copy(strm,string('newmtl m',M,'\n',
-                             'map_Kd img.png\n'));
-            copy(strp,string('vt ',tos(x0),' ',tos(y0),'\n',
-                             'vt ',tos(x1),' ',tos(y1),'\n',
-                             'vt ',tos(x2),' ',tos(y2),'\n',
-                             'vt ',tos(x3),' ',tos(y3),'\n',
-                             'f ',++i0,'/',T+1,' ',++i1,'/',T+2,' ',++i2,'/',T+3,' ',++i3,'/',T+4,'\n'));
-            T+=4;
-            ++M; ++P;
+                             'Kd ',tos(r/255),' ',tos(g/255),' ',tos(b/255),'\n'));
+            copy(strp,string('usemtl m',M,'\n',
+                             'f ',++i0,' ',++i1,' ',++i2,' ',++i3,'\n'));
+            p_rgb = rgb;
+            ++M;
+          ):(copy(strp,string('f ',++i0,' ',++i1,' ',++i2,' ',++i3,'\n')); 0);
+          ++P;
 
-          ):( # Unsupported
-            0;
-          );
+        ):N==9?( # Textured triangle
+          i0 = i[#p,1]; i1 = i[#p,2]; i2 = i[#p,3];
+          wt = w#c; ht = h#c;
+          x0 = i[#p,4]/wt; y0 = 1 - i[#p,5]/ht;
+          x1 = i[#p,6]/wt; y1 = 1 - i[#p,7]/ht;
+          x2 = i[#p,8]/wt; y2 = 1 - i[#p,9]/ht;
+          copy(strm,string('newmtl m',M,'\n',
+                           'map_Kd img.png\n'));
+          copy(strp,string('vt ',tos(x0),' ',tos(y0),'\n',
+                           'vt ',tos(x1),' ',tos(y1),'\n',
+                           'vt ',tos(x2),' ',tos(y2),'\n',
+                           'f ',++i0,'/',T+1,' ',++i1,'/',T+2,' ',++i2,'/',T+3,'\n'));
+          T+=4;
+          ++M; ++P;
 
-          # Output primitives.
-          l_strp = find(strp,0);
-          outp + l_strp>=h(#"$primitives")?resize(#"$primitives",1,2*h(#"$primitives") + l_strp,1,1,0);
-          copy(i[#"$primitives",outp],strp,l_strp);
-          outp+=l_strp;
+        ):N==12?( # Textured quadrangle
+          i0 = i[#p,1]; i1 = i[#p,2]; i2 = i[#p,3]; i3 = i[#p,4];
+          wt = w#c; ht = h#c;
+          x0 = i[#p,5]/wt; y0 = 1 - i[#p,6]/ht;
+          x1 = i[#p,7]/wt; y1 = 1 - i[#p,8]/ht;
+          x2 = i[#p,9]/wt; y2 = 1 - i[#p,10]/ht;
+          x3 = i[#p,11]/wt; y3 = 1 - i[#p,12]/ht;
+          copy(strm,string('newmtl m',M,'\n',
+                           'map_Kd img.png\n'));
+          copy(strp,string('vt ',tos(x0),' ',tos(y0),'\n',
+                           'vt ',tos(x1),' ',tos(y1),'\n',
+                           'vt ',tos(x2),' ',tos(y2),'\n',
+                           'vt ',tos(x3),' ',tos(y3),'\n',
+                           'f ',++i0,'/',T+1,' ',++i1,'/',T+2,' ',++i2,'/',T+3,' ',++i3,'/',T+4,'\n'));
+          T+=4;
+          ++M; ++P;
 
-          # Output materials.
-          $2?(
-            l_strm = find(strm,0);
-            l_strm?(
-              outm + l_strm>=h(#"$materials")?resize(#"$materials",1,2*h(#"$materials") + l_strm,1,1,0);
-              copy(i[#"$materials",outm],strm,l_strm);
-              outm+=l_strm;
-            );
+        ):( # Unsupported
+          0;
+        );
+
+        # Output primitives.
+        l_strp = find(strp,0);
+        outp + l_strp>=h(#"$primitives")?resize(#"$primitives",1,2*h(#"$primitives") + l_strp,1,1,0);
+        copy(i[#"$primitives",outp],strp,l_strp);
+        outp+=l_strp;
+
+        # Output materials.
+        $2?(
+          l_strm = find(strm,0);
+          l_strm?(
+            outm + l_strm>=h(#"$materials")?resize(#"$materials",1,2*h(#"$materials") + l_strm,1,1,0);
+            copy(i[#"$materials",outm],strm,l_strm);
+            outm+=l_strm;
           );
         );
-        resize(#"$primitives",1,outp,1,1,0);
-        resize(#"$materials",1,outm,1,1,0);
-        run('nbp=',P)"
-      k[primitives,materials]
-      i[0] ('"\n# Primitives.\n"':y) a[0,primitives] y nm[0] primitives
-    endl
+      );
+      resize(#"$primitives",1,outp,1,1,0);
+      resize(#"$materials",1,outm,1,1,0);
+      run('nbp=',P)"
+
+    k[vertices,primitives,materials]
+    i[1] ('"\n# Primitives.\n"':y) a[1,primitives] y nm[1] primitives
 
     # Generate file header.
     header="# Object name: "$nm\n\
