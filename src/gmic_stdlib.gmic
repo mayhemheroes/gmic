@@ -4174,8 +4174,8 @@ output_obj : check "isbool(${2=0})" check3d 0
   N=$! repeat $N nm={$>,n} +l[$>]
 
     # Generate basename and file header.
-    if $N>1 fn=${"filename \"$1\",$>"} else fn="$1" fi
-    basename $fn bfn=${}
+    if $N>1 filename=${"filename \"$1\",$>"} else filename="$1" fi
+    0 nm. $filename basename={b} folder={f} ext={x} rm.
 
     # Decompose and keep only vertices, primitives and colors.
     s3d 1 nbv,nbp={1,@0-1} rm[0,1,-$nbp--1]
@@ -4198,11 +4198,14 @@ output_obj : check "isbool(${2=0})" check3d 0
     endl
 
     # Extract colors and textures.
-    if $2 repeat $nbp
+    if $2 T=0 repeat $nbp
       ind={1+$nbp+$>}
-      if {$ind,i!=-128} r[$ind] 1,1,1,3,-1 # RGB color
-      elif {$ind,i[2]} wt,ht,st={$ind,@1-3} rows[$ind] 4,100% r[$ind] $wt,$ht,1,$st,-1 # Non-shared texture
-      else tind={$ind,@1} sh[{1+$nbp+$tind}] rv[$ind,-1] rm. # Shared texture
+      if {$ind,i!=-128} # RGB color
+        r[$ind] 1,1,1,3,-1
+      elif {$ind,i[2]} wt,ht,st={$ind,@1-3} # Non-shared texture
+        rows[$ind] 4,100% r[$ind] $wt,$ht,1,$st,-1 nm[$ind] $folder${basename}_t$T.png ow[$ind]
+      else # Shared texture
+        tind={$ind,@1} sh[{1+$nbp+$tind}] rv[$ind,-1] rm.
       fi
     done fi
 
@@ -4326,18 +4329,18 @@ output_obj : check "isbool(${2=0})" check3d 0
 
     # Save object geometry (.obj file).
     l[vertices,primitives]
-      i[0] ('"# File: "$fn\n$header':y)
+      i[0] ('"# File: "$folder$basename.$ext\n$header':y)
       if $2 i[1] ('"\n# Materials.\nmtllib ./"$bfn".mtl\n"':y) fi
       a y
-      o raw:$fn,uchar rm
+      o raw:$folder$basename.$ext,uchar rm
     endl
 
     # Save object materials (.mtl file).
     if $2
       l[materials]
-        i[0] ('"# File: "$fn.mtl\n$header\n':y)
+        i[0] ('"# File: "$folder$basename.$ext.mtl\n$header\n':y)
         a y
-        o raw:$fn.mtl,uchar rm
+        o raw:$folder$basename.$ext.mtl,uchar rm
       endl
     fi
 
