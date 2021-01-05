@@ -4182,18 +4182,11 @@ output_obj : check "isbool(${2=0})" check3d 0
     s3d 1 nbv,nbp={1,f2ui([i[0],i[1]])} rm[0,1,-$nbp--1]
 
     # Generate vertex output.
-    ('"\n# Vertices.\n"':y) nm. out_obj
-    r[0] 3,{0,h/3},1,1,-1 permute[0] zycx
-    eval[0] ">begin(out = h#"$out_obj");
-      tos(x) = vtos(x,6);
-      P = I;
-      str = string('v ',tos(P[0]),' ',tos(P[1]),' ',tos(P[2]),'\n');
-      l_str = find(str,0);
-      out + l_str>=h(#"$out_obj")?resize(#"$out_obj",1,2*h(#"$out_obj") + l_str,1,1,0);
-      copy(i[#"$out_obj",out],str,l_str);
-      out+=l_str;
-      end(resize(#"$out_obj",1,out,1,1,0))"
-    rm[0]
+    l[0]
+      r 3,{h/3},1,1,-1
+      repeat h ('"v "{0,_i(0,$>)/255}" "{0,_i(1,$>)/255}" "{0,_i(2,$>)/255}\n':y) done
+      a[1--1] y rm[0] i[0] ('"\n# Vertices.\n"':y) a y nm out_obj
+    endl
 
     # Generate material output (merge object colors/textures into unique materials).
     0 nm. out_mtl
@@ -4230,8 +4223,8 @@ output_obj : check "isbool(${2=0})" check3d 0
             wt = i[#q,1]; ht = i[#q,2]; st = i[#q,3];
             run('tfn=$folder${basename}_t',++nb_textures,'.png');
             copy(str,string('newmtl m',++nb_materials,'\n',
-                            'map_Kd ',get('tfn',1024,0),'\n'));
-#                            'map_Kd img.png\n'));
+#                            'map_Kd ',get('tfn',1024,0),'\n'));
+                            'map_Kd img.png\n'));
             run('l[',q,'] rows 4,100% r ',wt,',',ht,',1,',st,',-1 o $tfn endl');
             ind_material = nb_materials;
 
