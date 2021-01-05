@@ -4181,144 +4181,125 @@ output_obj : check "isbool(${2=0})" check3d 0
     # Decompose and keep only vertices, primitives and colors.
     s3d 1 nbv,nbp={1,@0-1} rm[0,1,-$nbp--1]
 
-    # Process vertices.
-    l[0]
-      r 3,{h/3},1,1,-1 permute yzcx
-      i[0] 0
-      eval. ">begin(out = 0);
-        tos(x) = vtos(x,6);
-        P = I;
-        str = string('v ',tos(P[0]),' ',tos(P[1]),' ',tos(P[2]),'\n');
-        l_str = find(str,0);
-        out + l_str>=h(#0)?resize(#0,1,2*h(#0) + l_str,1,1,0);
-        copy(i[#0,out],str,l_str);
-        out+=l_str;
-        end(resize(#0,1,out,1,1,0))"
-      k[0] i[0] ('"\n# Vertices.\n"':y) a y
-      nm vertices
-    endl
-
-    # Extract colors and textures.
-    if $2 T=0 repeat $nbp
-      ind={1+$nbp+$>}
-      if {$ind,i!=-128} # RGB color
-        r[$ind] 1,1,1,3,-1
-      elif {$ind,i[2]} wt,ht,st={$ind,@1-3} # Non-shared texture
-        rows[$ind] 4,100% r[$ind] $wt,$ht,1,$st,-1 nm[$ind] $folder${basename}_t$T.png ow[$ind]
-      else # Shared texture
-        tind={$ind,@1} sh[{1+$nbp+$tind}] rv[$ind,-1] rm. nm[$ind] $folder${basename}_t$T.png
-      fi
-    done fi
-    mv[0] $!
-
-    # Process primitives / materials.
-    0x2 nm[-2,-1] primitives,materials
-    eval "
-      const nbp = "$nbp";
+    # Generate vertex output.
+    ('"\n# Vertices.\n"':y) nm. out_obj
+    r[0] 3,{0,h/3},1,1,-1 permute[0] zycx
+    eval[0] ">begin(out = h#"$out_obj");
       tos(x) = vtos(x,6);
-      strp = vector1024();
-      strm = vector1024();
-      p_rgb = vector3(-1);
-      p_texture = vector1024();
-      M = T = 0;
+      P = I;
+      str = string('v ',tos(P[0]),' ',tos(P[1]),' ',tos(P[2]),'\n');
+      l_str = find(str,0);
+      out + l_str>=h(#"$out_obj")?resize(#"$out_obj",1,2*h(#"$out_obj") + l_str,1,1,0);
+      copy(i[#"$out_obj",out],str,l_str);
+      out+=l_str;
+      end(resize(#"$out_obj",1,out,1,1,0))"
+    rm[0]
 
-      for ((p = outp = outm = P = 0; c = nbp), p<nbp, (++p; ++c),
-        strp[0] = strm[0] = 0;
-        N = i[#p,0];
-        N==1?( # Colored point
-          i0 = i[#p,1];
-          copy(strp,string('p ',++i0,'\n'));
-          ++P;
-        ):
+    # Generate material output (merge object colors/textures into unique materials).
+    0 nm. out_mtl
+    if $2
+      eval "
+        digit(x) = (x<10?_'0' + x:_'A' + x - 10);
+        rgb2hex(rgb) = [ digit(rgb[0]>>4),digit(rgb[0]&15),
+                        s<2?0:digit(rgb[1]>>4),s<2?0:digit(rgb[1]&15),
+                        s<3?0:digit(rgb[2]>>4),s<3?0:digit(rgb[2]&15),
+                        s<4?0:digit(rgb[3]>>4),s<4?0:digit(rgb[3]&15) ];
+        out = h#"$out_mtl";
+        const nbp = "$nbp";
+        ind_material = ind_texture = 0;
 
-        isin(N,2,6)?( # Colored or textured segment
-          i0 = i[#p,1]; i1 = i[#p,2];
-          copy(strp,string('l ',++i0,' ',++i1,'\n'));
-          ++P;
+        for (p = 0, p<nbp, ++p,
+          i[#p,0]!=-128?( # RGB color
+            rgb = crop(#p,0,1,1,3);
+            hex = rgb2hex(rgb);
+            varname = string('mat_',hex);
+            get(varname
 
-        ):N==3 || (N==9 && !$2)?( # Colored triangle
-          i0 = i[#p,1]; i1 = i[#p,2]; i2 = i[#p,3];
-          $2?(r = i[#c,0]; g = i[#c,1]; b = i[#c,2]; rgb = [ r,g,b ]);
-          $2 && rgb!=p_rgb?(
-            copy(strm,string('newmtl m',M,'\n',
-                             'Kd ',tos(r/255),' ',tos(g/255),' ',tos(b/255),'\n'));
-            copy(strp,string('usemtl m',M,'\n',
-                             'f ',++i0,' ',++i1,' ',++i2,'\n'));
-            p_rgb = rgb;
-            ++M;
-          ):(copy(strp,string('f ',++i0,' ',++i1,' ',++i2,'\n')); 0);
-          ++P;
+            get(string('mat_',
 
-        ):N==4 || (N==12 && !$2)?( # Colored quadrangle
-          i0 = i[#p,1]; i1 = i[#p,2]; i2 = i[#p,3]; i3 = i[#p,4];
-          $2?(r = i[#c,0]; g = i[#c,1]; b = i[#c,2]; rgb = [ r,g,b ]);
-          $2 && rgb!=p_rgb?(
-            copy(strm,string('newmtl m',M,'\n',
-                             'Kd ',tos(r/255),' ',tos(g/255),' ',tos(b/255),'\n'));
-            copy(strp,string('usemtl m',M,'\n',
-                             'f ',++i0,' ',++i1,' ',++i2,' ',++i3,'\n'));
-            p_rgb = rgb;
-            ++M;
-          ):(copy(strp,string('f ',++i0,' ',++i1,' ',++i2,' ',++i3,'\n')); 0);
-          ++P;
+          ):i[#p,2]?( # Non-shared texture
 
-        ):N==9?( # Textured triangle
-          i0 = i[#p,1]; i1 = i[#p,2]; i2 = i[#p,3];
-          wt = w#c; ht = h#c;
-          x0 = i[#p,4]/wt; y0 = 1 - i[#p,5]/ht;
-          x1 = i[#p,6]/wt; y1 = 1 - i[#p,7]/ht;
-          x2 = i[#p,8]/wt; y2 = 1 - i[#p,9]/ht;
-          copy(strm,string('newmtl m',M,'\n',
-                           'map_Kd ',name(#c),'\n'));
-          copy(strp,string('vt ',tos(x0),' ',tos(y0),'\n',
-                           'vt ',tos(x1),' ',tos(y1),'\n',
-                           'vt ',tos(x2),' ',tos(y2),'\n',
-                           'f ',++i0,'/',T+1,' ',++i1,'/',T+2,' ',++i2,'/',T+3,'\n'));
-          T+=4;
-          ++M; ++P;
+          ):( # Shared texture
 
-        ):N==12?( # Textured quadrangle
-          i0 = i[#p,1]; i1 = i[#p,2]; i2 = i[#p,3]; i3 = i[#p,4];
-          wt = w#c; ht = h#c;
-          x0 = i[#p,5]/wt; y0 = 1 - i[#p,6]/ht;
-          x1 = i[#p,7]/wt; y1 = 1 - i[#p,8]/ht;
-          x2 = i[#p,9]/wt; y2 = 1 - i[#p,10]/ht;
-          x3 = i[#p,11]/wt; y3 = 1 - i[#p,12]/ht;
-          copy(strm,string('newmtl m',M,'\n',
-                           'map_Kd img.png\n'));
-          copy(strp,string('vt ',tos(x0),' ',tos(y0),'\n',
-                           'vt ',tos(x1),' ',tos(y1),'\n',
-                           'vt ',tos(x2),' ',tos(y2),'\n',
-                           'vt ',tos(x3),' ',tos(y3),'\n',
-                           'f ',++i0,'/',T+1,' ',++i1,'/',T+2,' ',++i2,'/',T+3,' ',++i3,'/',T+4,'\n'));
-          T+=4;
-          ++M; ++P;
-
-        ):( # Unsupported
-          0;
-        );
-
-        # Output primitives.
-        l_strp = find(strp,0);
-        outp + l_strp>=h(#"$primitives")?resize(#"$primitives",1,2*h(#"$primitives") + l_strp,1,1,0);
-        copy(i[#"$primitives",outp],strp,l_strp);
-        outp+=l_strp;
-
-        # Output materials.
-        $2?(
-          l_strm = find(strm,0);
-          l_strm?(
-            outm + l_strm>=h(#"$materials")?resize(#"$materials",1,2*h(#"$materials") + l_strm,1,1,0);
-            copy(i[#"$materials",outm],strm,l_strm);
-            outm+=l_strm;
           );
-        );
-      );
-      resize(#"$primitives",1,outp,1,1,0);
-      resize(#"$materials",1,outm,1,1,0);
-      run('nbp=',P)"
+        )"
 
-    k[vertices,primitives,materials]
+      ind_material,ind_texture=0
+      repeat $nbp
+        e[] $>
+        ind={$nbp+$>}
+        if {$ind,i!=-128} # RGB color
+          round[$ind] r[$ind] 1,1,1,3,-1
+          hex={$ind,`"digit(x) = (x<10?_'0' + x:_'A' + x - 10);\
+                      P = I;\
+                      [ digit(P[0]>>4),digit(P[0]&15),\
+                        s<2?0:digit(P[1]>>4),s<2?0:digit(P[1]&15),\
+                        s<3?0:digit(P[2]>>4),s<3?0:digit(P[2]&15),\
+                        s<4?0:digit(P[3]>>4),s<4?0:digit(P[3]&15) ]"`}
+          if !narg(${material_$hex})
+            ind_material+=1
+            ('"newmtl m"$ind_material\n\
+              "Kd "{$ind,_R/255}" "{$ind,_G/255}" "{$ind,_B/255}\n':y)
+            a[$out_mtl,-1] y
+            material_$hex=m$M
+          fi
+          nm[$ind] m${ind_material}
+
+        elif {$ind,i[2]} wt,ht,st={$ind,@1-3} # Non-shared texture
+          rows[$ind] 4,100% r[$ind] $wt,$ht,1,$st,-1
+          ind_material+=1
+          ind_texture+=1
+          tfn=$folder${basename}_t$ind_texture.png
+          ('"newmtl m"$ind_material\n\
+            "map_Kd "$tfn\n':y)
+          a[$out_mtl,-1] y
+          nm[$ind] m${ind_material}
+          o[$ind] $tfn
+
+        else # Shared texture
+          tind={$ind,$nbp+i[1]} sh[$tind] rv[$ind,-1] rm. nm[$ind] {$tind,n}
+        fi
+      done
+    fi
+
+    q
+
+    # Generate primitives output.
+    P=0
+    repeat $nbp
+      +e[] $>
+      ptype={$>,i}
+
+      if $ptype==1 # Colored point
+        i0={$>,i[1]+1}
+        ('"p "$i0\n':y) a[out_obj,-1] y P+=1
+
+      elif isin($ptype,2,6) # Colored or textured segment
+        i0,i1={$>,crop(0,1,1,2)+1}
+        ('"l "$i0" "$i1\n':y) a[out_obj,-1] y P+=1
+
+      elif $ptype==3" || "($ptype==9" && "!$2) # Colored triangle
+        i0,i1,i2={$>,crop(0,1,1,3)+1}
+        ('"f "$i0" "$i1" "$i2\n':y) a[out_obj,-1] y P+=1
+
+      elif $ptype==4" || "($ptype==12" && "!$2) # Colored quadrangle
+        i0,i1,i2,i3={$>,crop(0,1,1,4)+1}
+        ('"f "$i0" "$i1" "$i2" "$i3\n':y) a[out_obj,-1] y P+=1
+
+      elif $ptype==9 # Textured triangle
+
+      elif $ptype==12 # Textured quadrangle
+
+      else # Unsupported primitive
+
+      fi
+
+    done
+    nbp=P
+
+    k[out_obj,out_mtl]
+    d
+
     i[1] ('"\n# Primitives.\n"':y) a[1,primitives] y nm[1] primitives
 
     # Generate file header.
