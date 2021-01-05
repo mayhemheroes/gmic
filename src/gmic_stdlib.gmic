@@ -4173,16 +4173,9 @@ output_obj : check "isbool(${2=0})" check3d 0
   e[^-1] "Output 3D object$? as Wavefront 3D object file '$1' (with"${s$2}" materials)."
   N=$! repeat $N nm={$>,n} +l[$>]
 
-    # Retrieve basename and header string.
+    # Generate basename and file header.
     if $N>1 fn=${"filename \"$1\",$>"} else fn="$1" fi
     basename $fn bfn=${}
-    header="# File: "$fn\n\
-           "# Object name: "$nm\n\
-           "# Vertices: "$nbv\n\
-           "# Primitives: "$nbp\n\
-           {`"d2(x) = (s = date(x); s>9?vtos(s,-1,2):[0,s]+_'0');
-              string('# Generated on ',d2(0),'/',d2(1),'/',d2(2),' at ',d2(4),':',d2(5),':',d2(6),
-                     ' by G\47MIC (https://gmic.eu).\n')"`}
 
     # Decompose and keep only vertices, primitives and colors.
     s3d 1 nbv,nbp={1,@0-1} rm[0,1,-$nbp--1]
@@ -4323,9 +4316,17 @@ output_obj : check "isbool(${2=0})" check3d 0
       i[0] ('"\n# Primitives.\n"':y) a[0,primitives] y nm[0] primitives
     endl
 
+    # Generate file header.
+    header="# Object name: "$nm\n\
+           "# Vertices: "$nbv\n\
+           "# Primitives: "$nbp\n\
+           {`"d2(x) = (s = date(x); s>9?vtos(s,-1,2):[0,s]+_'0');
+              string('# Generated on ',d2(0),'/',d2(1),'/',d2(2),' at ',d2(4),':',d2(5),':',d2(6),
+                     ' by G\47MIC (https://gmic.eu).\n')"`}
+
     # Save object geometry (.obj file).
     l[vertices,primitives]
-      i[0] ('$header':y)
+      i[0] ('"# File: "$fn\n$header':y)
       if $2 i[1] ('"\n# Materials.\nmtllib ./"$bfn".mtl\n"':y) fi
       a y
       o raw:$fn,uchar rm
@@ -4334,7 +4335,7 @@ output_obj : check "isbool(${2=0})" check3d 0
     # Save object materials (.mtl file).
     if $2
       l[materials]
-        i[0] ('$header\n':y)
+        i[0] ('"# File: "$fn.mtl\n$header\n':y)
         a y
         o raw:$fn.mtl,uchar rm
       endl
