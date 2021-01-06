@@ -4191,63 +4191,6 @@ output_obj : check "isbool(${2=0})" check3d 0
     # Generate material output (merge object colors/textures into unique materials).
     0 nm. out_mtl
     if $2
-      eval "
-        tos(x) = vtos(x,6);
-        digit(x) = (x<10?_'0' + x:_'A' + x - 10);
-        rgb2hex(rgb) = [ digit(rgb[0]>>4),digit(rgb[0]&15),
-                         digit(rgb[1]>>4),digit(rgb[1]&15),
-                         digit(rgb[2]>>4),digit(rgb[2]&15) ];
-        const nbp = "$nbp";
-        out = h#"$out_mtl";
-        ref(vector1024(),str);
-        ref(vector3(),rgb);
-        ref(vector16(),name);
-        ind_material = nb_materials = nb_textures = 0;
-
-        for (p = 0, p<nbp, ++p,
-          q = p + nbp;
-          str[0] = 0;
-
-          i[#q,0]!=-128?( # RGB color
-            copy(rgb,i[#q,0],3);
-            varname = string('m_',rgb2hex(rgb));
-            is_varname = run('u {narg($',varname,')}');
-            !is_varname?(
-              copy(str,string('newmtl m',++nb_materials,'\n',
-                              'Kd ',tos(rgb[0]/255),' ',tos(rgb[1]/255),' ',tos(rgb[2]/255),'\n'));
-              run(varname,'=',nb_materials);
-            );
-            ind_material = get(varname);
-
-          ):i[#q,2]?( # Non-shared texture
-            wt = i[#q,1]; ht = i[#q,2]; st = i[#q,3];
-            run('tfn=$folder${basename}_t',++nb_textures,'.png');
-            copy(str,string('newmtl m',++nb_materials,'\n',
-#                            'map_Kd ',get('tfn',1024,0),'\n'));
-                            'map_Kd img.png\n'));
-            run('l[',q,'] rows 4,100% r ',wt,',',ht,',1,',st,',-1 o $tfn endl');
-            ind_material = nb_materials;
-
-          ):( # Shared texture
-            tind = i[#q,1] + nbp;
-            ind_material = run('sh[',tind,'] rv[',q,',-1] rm. u {',tind,',n}');
-          );
-
-          run('nm[',q,'] ',ind_material);
-          str[0]?(
-            l_str = find(str,0);
-            out + l_str>=h(#"$out_mtl")?resize(#"$out_mtl",1,2*h(#"$out_mtl") + l_str,1,1,0);
-            copy(i[#"$out_mtl",out],str,l_str);
-            out+=l_str;
-          );
-        );
-        resize(#"$out_mtl",1,out,1,1,0)"
-
-#      ot[out_mtl] toto.txt
-#      d
-      rm
-      q
-
       ind_material,ind_texture=0
       repeat $nbp
         e[] $>
@@ -4284,8 +4227,6 @@ output_obj : check "isbool(${2=0})" check3d 0
         fi
       done
     fi
-
-    q
 
     # Generate primitives output.
     P=0
