@@ -2864,7 +2864,7 @@ _display3d :
     l. check3d 0
     onfail l[] ({'${}'}) s +,{'"'check3d': "'} k. msg={t} rm endl error[] "Command 'display3d': "$msg
     endl
-    nm={n} nbv,nbp={f2ui(i[6,2])}
+    nm={n} nbv,nbp={f2ui([i[6],i[7]])}
     e[0--5] "Display 3D object ["{arg(1+$>,$[])}"] = '"$nm"' ("$nbv" vertices, "$nbp" primitives)."
 
     # Init display window and variables.
@@ -4168,154 +4168,196 @@ output_ggr : skip "${2=}"
 
 #@cli output_obj : filename,_save_materials={ 0=no | 1=yes }
 #@cli : Output selected 3D objects as Wavefront 3D object files.
+#@cli : Set 'save_materials' to '1' to produce a corresponding material file (`.mtl`) and eventually texture files.
+#@cli : Beware, the export to `.obj` files may be quite slow for large 3D objects.
 output_obj : check "isbool(${2=0})" check3d 0
   s0,s1=out,
   e[^-1] "Output 3D object$? as Wavefront 3D object file '$1' (with"${s$2}" materials)."
   N=$! repeat $N nm={$>,n} +l[$>]
-    s3d 1 nbv={1,@0} rm[0,1]
+    nb_materials,nb_primitives,nb_textures,nb_tcoords=0
 
-    # Process vertices.
+    # Generate basename, file header and eval macros.
+    if $N>1 filename=${"filename \"$1\",$>"} else filename="$1" fi
+    0 nm. $filename basename={b} folder={f} ext={x} if narg($ext) ext=.$ext fi rm.
+    fnobj="begin(out = 0);
+           tos(x) = vtos(x,6);
+           write(ind,s) = (
+             l_s = find(s,0);
+             l_s<=0?(l_s = size(s));
+             out + l_s>h(#ind)?resize(#ind,1,2*h(#ind) + l_s,1,1,0);
+             copy(i[#ind,out],s,l_s);
+             out+=l_s)"
+
+    # Decompose into vertices, primitives and colors.
+    s3d 1 nb_vertices,nbp={1,f2ui([i[0],i[1]])} rm[0,1,-$nbp--1]
+    e[] "  > File '"$folder$basename$ext"'."
+
+    # Generate vertex output.
     l[0]
-      r 3,{h/3},1,1,-1 permute yzcx
-      i[0] 0
-      eval. ">begin(out = 0);
-        tos(x) = vtos(x,6);
-        P = I;
-        str = string('v ',tos(P[0]),' ',tos(P[1]),' ',tos(P[2]),'\n');
-        l_str = find(str,0);
-        out + l_str>=h(#0)?resize(#0,1,2*h(#0) + l_str,1,1,0);
-        copy(i[#0,out],str,l_str);
-        out+=l_str;
-        end(resize(#0,1,out,1,1,0))"
-      k[0] i[0] ('"\n# Vertices.\n"':y) a y
-      nm vertices
+      e[] "    - Export vertices."
+      r 3,{h/3},1,1,-1 permute zycx
+      0 nm. out_obj
+      eval.. ">"$fnobj";
+        !(y%10000)?run('e[] \"\r    - Export vertices: ',round(100*y/h),' %  \"');
+        ref(string('v ',tos(i0),' ',tos(i1),' ',tos(i2),'\n'),str);
+        write(#"$out_obj",str); I;
+        end(resize(#"$out_obj",1,out,1,1,0))"
+      rm[0] i[0] ('"\n# Vertices.\n"':y) a y nm out_obj
+      e[] "\r    - Export vertices: Done."
     endl
+    mv[out_obj] $!
 
-    # Process primitives / materials.
-    l[1--1]
-      0x2 nm[-2,-1] primitives,materials
-      eval "
-        tos(x) = vtos(x,6);
-        strp = vector1024();
-        strm = vector1024();
-        p_rgb = vector3(-1);
-        M = 0;
-        for (srcp = srcc = outp = outm = P = 0, srcp<h#0,
-          strp[0] = strm[0] = 0;
-          N = i[#0,srcp++];
-          N==1?( # Colored point
-            i0 = i[#0,srcp++];
-            copy(strp,string('p ',++i0,'\n'));
-            ++P;
-          ):
+    # Generate material output (merge object colors/textures into unique materials).
+    if $2 l[$nbp--2]
+      e[] "    - Export materials."
+      256,256,256 nm. materials_rgb
+      1,$nbp nm. materials
+      0 nm. out_mtl
+      eval $fnobj";
+        const nbp = "$nbp";
+        rgb = vector3();
+        for (p = nb_materials = nb_textures = 0, p<nbp, ++p,
+          !(p%10000)?run('e[] \"\r    - Export materials: ',round(100*p/nbp),' %  \"');
 
-          N==2?( # Colored segment
-            i0 = i[#0,srcp++]; i1 = i[#0,srcp++];
-            copy(strp,string('l ',++i0,' ',++i1,'\n'));
-            ++P;
-
-          ):N==3?( # Colored triangle
-            i0 = i[#0,srcp++]; i1 = i[#0,srcp++]; i2 = i[#0,srcp++];
-            $2?(r = i[#1,srcc++]; g = i[#1,srcc++]; b = i[#1,srcc++]; rgb = [ r,g,b ]);
-            $2 && rgb!=p_rgb?(
-              copy(strm,string('newmtl m',M,'\nKd ',tos(r/255),' ',tos(g/255),' ',tos(b/255),'\n'));
-              copy(strp,string('usemtl m',M,'\nf ',++i0,' ',++i1,' ',++i2,'\n'));
-              p_rgb = rgb;
-              ++M;
-            ):(copy(strp,string('f ',++i0,' ',++i1,' ',++i2,'\n')); 0);
-            ++P;
-
-          ):N==4?( # Colored quadrangle
-            i0 = i[#0,srcp++]; i1 = i[#0,srcp++]; i2 = i[#0,srcp++]; i3 = i[#0,srcp++];
-            $2?(r = i[#1,srcc++]; g = i[#1,srcc++]; b = i[#1,srcc++]; rgb = [ r,g,b ]);
-            $2 && rgb!=p_rgb?(
-              copy(strm,string('newmtl m',M,'\nKd ',tos(r/255),' ',tos(g/255),' ',tos(b/255),'\n'));
-              copy(strp,string('usemtl m',M,'\nf ',++i0,' ',++i1,' ',++i2,' ',++i3,'\n'));
-              p_rgb = rgb;
-              ++M;
-            ):(copy(strp,string('f ',++i0,' ',++i1,' ',++i2,' ',++i3,'\n')); 0);
-            ++P;
-
-          ):N==6?( # Textured segment
-            i0 = i[#0,srcp++]; i1 = i[#0,srcp++]; srcp+=4;
-            copy(strp,string('l ',++i0,' ',++i1,'\n'));
-            ++P;
-
-          ):N==9?( # Textured triangle
-            i0 = i[#0,srcp++]; i1 = i[#0,srcp++]; i2 = i[#0,srcp++]; srcp+=6;
-            copy(strp,string('f ',++i0,' ',++i1,' ',++i2,'\n'));
-            ++P;
-
-          ):N==12?( # Textured triangle
-            i0 = i[#0,srcp++]; i1 = i[#0,srcp++]; i2 = i[#0,srcp++]; i3 = i[#0,srcp++]; srcp+=8;
-            copy(strp,string('f ',++i0,' ',++i1,' ',++i2,' ',++i3,'\n'));
-            ++P;
-
-          ):( # Unsupported
-            srcp+=N;
-          );
-
-          # Output primitives.
-          l_strp = find(strp,0);
-          outp + l_strp>=h(#"$primitives")?resize(#"$primitives",1,2*h(#"$primitives") + l_strp,1,1,0);
-          copy(i[#"$primitives",outp],strp,l_strp);
-          outp+=l_strp;
-
-          # Output materials.
-          $2?(
-            l_strm = find(strm,0);
-            l_strm?(
-              outm + l_strm>=h(#"$materials")?resize(#"$materials",1,2*h(#"$materials") + l_strm,1,1,0);
-              copy(i[#"$materials",outm],strm,l_strm);
-              outm+=l_strm;
+          i[#p,0]!=-128?( # RGB color
+            copy(rgb,i[#p,0],3);
+            rgb = cut(round(rgb),0,255);
+            m = i(#"$materials_rgb",rgb);
+            !m?(
+              ++nb_materials;
+              ref(string('newmtl m',nb_materials,'\n',
+                         'Kd ',tos(rgb[0]/255),' ',tos(rgb[1]/255),' ',tos(rgb[2]/255),'\n'),str1);
+              write(#"$out_mtl",str1);
+              m = i(#"$materials_rgb",rgb) = nb_materials;
             );
+            i[#"$materials",p] = m;
+
+          ):i[#p,2]?( # Non-shared texture
+            ++nb_materials;
+            ++nb_textures;
+            wt = i[#p,1]; ht = i[#p,2]; st = i[#p,3];
+            run('l[',p,'] +rows 4,100% r. ',wt,',',ht,',1,',st,',-1 tfn=$folder${basename}_t',nb_textures,
+                 '.png o. $tfn rm. endl');
+            tfile = get('tfn',1024,0);
+            ref(string('newmtl m',nb_materials,'\n',
+                       'map_Kd ',get('tfn',1024,0),'\n'),str2);
+            write(#"$out_mtl",str2);
+            i[#"$materials",p] = nb_materials;
+
+          ):( # Shared texture
+            tind = i[#p,1];
+            copy(i[#p,1],i[#tind,1],3);
+            i[#"$materials",p] = i[#"$materials",tind];
+
           );
         );
-        resize(#"$primitives",1,outp,1,1,0);
-        resize(#"$materials",1,outm,1,1,0);
-        run('nbp=',P)"
-      k[primitives,materials]
-      i[0] ('"\n# Primitives.\n"':y) a[0,primitives] y nm[0] primitives
-    endl
+        resize(#"$out_mtl",1,out,1,1,0);
+        run('nb_materials,nb_textures=',nb_materials,',',nb_textures)"
+      e[] "\r    - Export materials: Done."
+      rm[materials_rgb]
+    endl fi
 
-    # Save object geometry (.obj file).
-    if $N>1 fn=${"filename \"$1\",$>"} else fn="$1" fi
-    strgen={`"d2(x) = (s = date(x); s>9?vtos(s,-1,2):[0,s]+_'0');
+    # Generate primitives output.
+    e[] "    - Export primitives."
+    0 nm. out_prim
+    eval $fnobj";
+      const nbp = "$nbp";
+      for (p = p_material = material = nb_primitives = nb_tcoords = 0, p<nbp, ++p,
+        !(p%10000)?run('e[] \"\r    - Export primitives: ',round(100*p/nbp),' %  \"');
+
+        type = i[#p,0];
+        $2?material = i[#"$materials",p];
+        material!=p_material?ref(string('usemtl m',material,'\n'),str_mtl);
+
+        type==1?( # Colored point
+          ref(string('p ',f2ui(i[#p,1] + 1),'\n'),str);
+          write(#"$out_prim",str);
+          ++nb_primitives;
+
+        ):type==2?( # Colored or textured segment
+          ref(string('l ',f2ui(i[#p,1]) + 1,' ',f2ui(i[#p,2]) + 1,'\n'),str);
+          write(#"$out_prim",str);
+          ++nb_primitives;
+
+        ):type==3 || (type==9 && !$2)?( # Colored triangle
+          $2 && material!=p_material?write(#"$out_prim",str_mtl);
+          ref(string('f ',f2ui(i[#p,1]) + 1,' ',f2ui(i[#p,2]) + 1,' ',f2ui(i[#p,3]) + 1,'\n'),str);
+          write(#"$out_prim",str);
+          ++nb_primitives;
+
+        ):type==4 || (type==12 && !$2)?( # Colored quadrangle
+          $2 && material!=p_material?write(#"$out_prim",str_mtl);
+          ref(string('f ',f2ui(i[#p,1]) + 1,' ',f2ui(i[#p,2]) + 1,' ',
+                     f2ui(i[#p,3]) + 1,' ',f2ui(i[#p,4]) + 1,'\n'),str);
+          write(#"$out_prim",str);
+          ++nb_primitives;
+
+        ):type==9?( # Textured triangle
+          material!=p_material?write(#"$out_prim",str_mtl);
+          wt = i[#p + nbp,1]; ht = i[#p + nbp,2];
+          ref(string('vt ',tos(i[#p,4]/wt),' ',tos(1 - i[#p,5]/ht),'\n',
+                     'vt ',tos(i[#p,6]/wt),' ',tos(1 - i[#p,7]/ht),'\n',
+                     'vt ',tos(i[#p,8]/wt),' ',tos(1 - i[#p,9]/ht),'\n',
+                     'f ',f2ui(i[#p,1]) + 1,'/',nb_tcoords + 1,' ',f2ui(i[#p,2]) + 1,'/',nb_tcoords + 2,
+                     ' ',f2ui(i[#p,3]) + 1,'/',nb_tcoords + 3,'\n'),str);
+          write(#"$out_prim",str);
+          nb_tcoords+=3;
+          ++nb_primitives;
+
+        ):type==12?( # Textured quadrangle
+          material!=p_material?write(#"$out_prim",str_mtl);
+          wt = i[#p + nbp,1]; ht = i[#p + nbp,2];
+          ref(string('vt ',tos(i[#p,5]/wt),' ',tos(1 - i[#p,6]/ht),'\n',
+                     'vt ',tos(i[#p,7]/wt),' ',tos(1 - i[#p,8]/ht),'\n',
+                     'vt ',tos(i[#p,9]/wt),' ',tos(1 - i[#p,10]/ht),'\n',
+                     'vt ',tos(i[#p,11]/wt),' ',tos(1 - i[#p,12]/ht),'\n',
+                     'f ',f2ui(i[#p,1]) + 1,'/',nb_tcoords + 1,' ',f2ui(i[#p,2]) + 1,'/',nb_tcoords + 2,
+                     ' ',f2ui(i[#p,3]) + 1,'/',nb_tcoords + 3,' ',f2ui(i[#p,4]) + 1,'/',nb_tcoords + 4,'\n'),str);
+          write(#"$out_prim",str);
+          nb_tcoords+=4;
+          ++nb_primitives;
+
+        ):( # Unsupported primitive
+          run(['warn[] \"Command 'output_obj': Cannot convert primitive \#'],p,'/',nbp - 1,
+               ' (size ',type,'). Ignoring it.\"');
+        );
+
+        p_material = material;
+      );
+      resize(#"$out_prim",1,out,1,1,0);
+      run('nb_primitives=',nb_primitives)"
+    e[] "\r    - Export primitives: Done."
+
+    l. i[0] ('"\n# Primitives.\n"':y) a y endl a[out_obj,-1] y
+    if $2 k[out_mtl,out_obj] else k[out_obj] fi
+
+    # Generate file header.
+    header="# Object name: "$nm\n\
+           "# Vertices: "$nb_vertices\n\
+           "# Primitives: "$nb_primitives\n\
+           "# Materials: "$nb_materials\n\
+           "# Textures: "$nb_textures\n\
+           {`"d2(x) = (s = date(x); s>9?vtos(s,-1,2):[0,s]+_'0');
               string('# Generated on ',d2(0),'/',d2(1),'/',d2(2),' at ',d2(4),':',d2(5),':',d2(6),
                      ' by G\47MIC (https://gmic.eu).\n')"`}
-    l[vertices,primitives]
-      i[0] ('"# File: "$fn\n\
-             "# Object name: "$nm\n\
-             "# Vertices: "$nbv\n\
-             "# Primitives: "$nbp\n\
-             $strgen':y)
-      if $2
-        basename $fn bfn=${}
-        i[1] ('"\n# Materials.\nmtllib ./"$bfn".mtl\n"':y)
-      fi
+
+    # Save object geometry (.obj file).
+    l[out_obj]
+      i[0] ('"# File: "$folder$basename$ext\n$header':y)
+      if $2 i[1] ('"\n# Materials.\n\
+                      mtllib "$folder$basename$ext".mtl\n"':y) fi
       a y
-      if $N>1 fn=${"filename \"$1\",$>"} else fn="$1" fi
-      o raw:$fn,uchar rm
+      o raw:$folder$basename$ext,uchar
     endl
 
     # Save object materials (.mtl file).
-    if $2
-      l[materials]
-        i[0] ('"# File: "$fn".mtl"\n\
-               "# Object name: "$nm\n\
-               "# Vertices: "$nbv\n\
-               "# Primitives: "$nbp\n\
-               $strgen\n':y)
-        a y
-        o raw:$fn.mtl,uchar rm
-      endl
+    if $2 l[out_mtl]
+      i[0] ('"# File: "$folder$basename$ext.mtl\n$header\n':y)
+      a y
+      o raw:$folder$basename$ext.mtl,uchar
+    endl fi
 
-      # Save additional textures, if any.
-      repeat $! l[$>]
-
-      endl done
-    fi
-
+    rm
   endl done is_change 0
 
 #@cli ot : eq. to 'output_text'.
@@ -19365,7 +19407,7 @@ skeleton3d : check "isint(${1=2}) && $1>=0 && $1<=2 && isint(${2=3}) && $2>=0 &&
     *[0-2] pointcloud3d[0]
 
     # Construct bones from skeleton.
-    if $4 l[0] s3d 1
+    if $4 l[0] s3d 0
       n={1,@0}
       if $n
         r[2] 3,$n,1,1,-1 r[3] 2,$n,1,1,-1 r[4] 3,$n,1,1,-1
@@ -19500,12 +19542,13 @@ spline3d : check ${13=128}>=2
 
 #@cli s3d : eq. to 'split3d'. : (+)
 
-#@cli split3d : _keep_shared_data={ 0 | 1 } : (+)
-#@cli : Split selected 3D objects into 6 feature vectors :
-#@cli : { header, sizes, vertices, primitives, colors, opacities }.
+#@cli split3d : _full_split={ 0 | 1 } : (+)
+#@cli : Split selected 3D objects into feature vectors :
+#@cli : * If 'full_split==0', { header, sizes, vertices, primitives, colors, opacities }.
+#@cli : * If 'full_split==1', { header, sizes, vertices, p0,...,pP, c0,...,cP, o0,...,oP }.
 #@cli : (eq. to 's3d').\n
-#@cli : To recreate the 3D object, append these 6 images along the y-axis.
-#@cli : Default value: 'keep_shared_data=1'.
+#@cli : To recreate the 3D object, append all produced images along the y-axis.
+#@cli : Default value: 'full_split=0'.
 #@cli : $ box3d 100 +split3d
 
 #@cli sprite3d
