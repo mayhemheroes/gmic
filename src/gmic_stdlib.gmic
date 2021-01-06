@@ -4236,7 +4236,8 @@ output_obj : check "isbool(${2=0})" check3d 0
             ++nb_materials;
             ++nb_textures;
             wt = i[#p,1]; ht = i[#p,2]; st = i[#p,3];
-            run('l[',p,'] +rows 4,100% r. ',wt,',',ht,',1,',st,',-1 tfn=$folder${basename}_t',nb_textures,'.png o. $tfn rm. endl');
+            run('l[',p,'] +rows 4,100% r. ',wt,',',ht,',1,',st,',-1 tfn=$folder${basename}_t',nb_textures,
+                 '.png o. $tfn rm. endl');
             tfile = get('tfn',1024,0);
             ref(string('newmtl m',nb_materials,'\n',
                        'map_Kd ',get('tfn',1024,0),'\n'),str2);
@@ -4269,25 +4270,25 @@ output_obj : check "isbool(${2=0})" check3d 0
         material!=p_material?ref(string('usemtl m',material,'\n'),str_mtl);
 
         type==1?( # Colored point
-          ref(string('p ',i[#p,1] + 1,'\n'),str);
+          ref(string('p ',f2ui(i[#p,1] + 1),'\n'),str);
           write(#"$out_prim",str);
           ++nb_primitives;
 
         ):type==2?( # Colored or textured segment
-          ref(string('l ',i[#p,1] + 1,' ',i[#p,2] + 1,'\n'),str);
+          ref(string('l ',f2ui(i[#p,1]) + 1,' ',f2ui(i[#p,2]) + 1,'\n'),str);
           write(#"$out_prim",str);
           ++nb_primitives;
 
         ):type==3 || (type==9 && !$2)?( # Colored triangle
           $2 && material!=p_material?write(#"$out_prim",str_mtl);
-          ref(string('f ',i[#p,1] + 1,' ',i[#p,2] + 1,' ',i[#p,3] + 1,'\n'),str);
+          ref(string('f ',f2ui(i[#p,1]) + 1,' ',f2ui(i[#p,2]) + 1,' ',f2ui(i[#p,3]) + 1,'\n'),str);
           write(#"$out_prim",str);
           ++nb_primitives;
 
         ):type==4 || (type==12 && !$2)?( # Colored quadrangle
           $2 && material!=p_material?write(#"$out_prim",str_mtl);
-          ref(string('f ',i[#p,1] + 1,' ',i[#p,2] + 1,' ',
-                     i[#p,3] + 1,' ',i[#p,4] + 1,'\n'),str);
+          ref(string('f ',f2ui(i[#p,1]) + 1,' ',f2ui(i[#p,2]) + 1,' ',
+                     f2ui(i[#p,3]) + 1,' ',f2ui(i[#p,4]) + 1,'\n'),str);
           write(#"$out_prim",str);
           ++nb_primitives;
 
@@ -4297,8 +4298,8 @@ output_obj : check "isbool(${2=0})" check3d 0
           ref(string('vt ',tos(i[#p,4]/wt),' ',tos(1 - i[#p,5]/ht),'\n',
                      'vt ',tos(i[#p,6]/wt),' ',tos(1 - i[#p,7]/ht),'\n',
                      'vt ',tos(i[#p,8]/wt),' ',tos(1 - i[#p,9]/ht),'\n',
-                     'f ',i[#p,1] + 1,'/',nb_tcoords + 1,' ',i[#p,2] + 1,'/',nb_tcoords + 2,
-                     ' ',i[#p,3] + 1,'/',nb_tcoords + 3,'\n'),str);
+                     'f ',f2ui(i[#p,1]) + 1,'/',nb_tcoords + 1,' ',f2ui(i[#p,2]) + 1,'/',nb_tcoords + 2,
+                     ' ',f2ui(i[#p,3]) + 1,'/',nb_tcoords + 3,'\n'),str);
           write(#"$out_prim",str);
           nb_tcoords+=3;
           ++nb_primitives;
@@ -4310,14 +4311,15 @@ output_obj : check "isbool(${2=0})" check3d 0
                      'vt ',tos(i[#p,7]/wt),' ',tos(1 - i[#p,8]/ht),'\n',
                      'vt ',tos(i[#p,9]/wt),' ',tos(1 - i[#p,10]/ht),'\n',
                      'vt ',tos(i[#p,11]/wt),' ',tos(1 - i[#p,12]/ht),'\n',
-                     'f ',i[#p,1] + 1,'/',nb_tcoords + 1,' ',i[#p,2] + 1,'/',nb_tcoords + 2,
-                     ' ',i[#p,3] + 1,'/',nb_tcoords + 3,' ',i[#p,4] + 1,'/',nb_tcoords + 4,'\n'),str);
+                     'f ',f2ui(i[#p,1]) + 1,'/',nb_tcoords + 1,' ',f2ui(i[#p,2]) + 1,'/',nb_tcoords + 2,
+                     ' ',f2ui(i[#p,3]) + 1,'/',nb_tcoords + 3,' ',f2ui(i[#p,4]) + 1,'/',nb_tcoords + 4,'\n'),str);
           write(#"$out_prim",str);
           nb_tcoords+=4;
           ++nb_primitives;
 
         ):( # Unsupported primitive
-          run(['warn[] \"Command 'output_obj': Cannot convert primitive \#'],p,'/',nbp - 1,' (size ',type,'). Ignoring it.\"');
+          run(['warn[] \"Command 'output_obj': Cannot convert primitive \#'],p,'/',nbp - 1,
+               ' (size ',type,'). Ignoring it.\"');
         );
 
         p_material = material;
