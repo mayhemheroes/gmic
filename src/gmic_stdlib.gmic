@@ -4262,6 +4262,7 @@ output_obj : check "isbool(${2=0})" check3d 0
       for (p = p_material = material = nb_primitives = nb_tcoords = 0, p<nbp, ++p,
         type = i[#p,0];
         $2?material = stov(name(#p + nbp));
+        material!=p_material?ref(string('usemtl m',material,'\n'),str_mtl);
 
         type==1?( # Colored point
           ref(string('p ',i[#p,1] + 1,'\n'),str);
@@ -4274,30 +4275,24 @@ output_obj : check "isbool(${2=0})" check3d 0
           ++nb_primitives;
 
         ):type==3 || (type==9 && !$2)?( # Colored triangle
-          $2 && material!=p_material?(
-            ref(string('usemtl m',material,'\n'),str);
-            write(#"$out_prim",str);
-          );
+          $2 && material!=p_material?write(#"$out_prim",str_mtl);
           ref(string('f ',i[#p,1] + 1,' ',i[#p,2] + 1,' ',i[#p,3] + 1,'\n'),str);
           write(#"$out_prim",str);
           ++nb_primitives;
 
         ):type==4 || (type==12 && !$2)?( # Colored quadrangle
-          $2 && material!=p_material?(
-            ref(string('usemtl m',material,'\n'),str);
-            write(#"$out_prim",str);
-          );
+          $2 && material!=p_material?write(#"$out_prim",str_mtl);
           ref(string('f ',i[#p,1] + 1,' ',i[#p,2] + 1,' ',
                      i[#p,3] + 1,' ',i[#p,4] + 1,'\n'),str);
           write(#"$out_prim",str);
           ++nb_primitives;
 
         ):type==9?( # Textured triangle
-
+          material!=p_material?write(#"$out_prim",str_mtl);
           ++nb_primitives;
 
         ):type==12?( # Textured quadrangle
-
+          material!=p_material?write(#"$out_prim",str_mtl);
           ++nb_primitives;
 
         ):( # Unsupported primitive
