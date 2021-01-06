@@ -4226,71 +4226,68 @@ output_obj : check "isbool(${2=0})" check3d 0
       a[$out_mtl--1] y
     endl fi
 
-    q
-
     # Generate primitives output.
-    P=0
+    0 nm. out_prim
+    nb_primitives,p_material=0
     repeat $nbp
-      +e[] $>
-      ptype={$>,i}
+      type={$>,i}
+      material={{$>+$nbp},n}
 
-      if $ptype==1 # Colored point
+      if $type==1 # Colored point
         i0={$>,i[1]+1}
-        ('"p "$i0\n':y) a[out_obj,-1] y P+=1
+        ('"p "$i0\n':y) nb_primitives+=1
 
-      elif isin($ptype,2,6) # Colored or textured segment
+      elif isin($type,2,6) # Colored or textured segment
         i0,i1={$>,crop(0,1,1,2)+1}
-        ('"l "$i0" "$i1\n':y) a[out_obj,-1] y P+=1
+        ('"l "$i0" "$i1\n':y) nb_primitives+=1
 
-      elif $ptype==3" || "($ptype==9" && "!$2) # Colored triangle
+      elif $type==3" || "($type==9" && "!$2) # Colored triangle
         i0,i1,i2={$>,crop(0,1,1,3)+1}
-        ('"f "$i0" "$i1" "$i2\n':y) a[out_obj,-1] y P+=1
+        ('"f "$i0" "$i1" "$i2\n':y) nb_primitives+=1
 
-      elif $ptype==4" || "($ptype==12" && "!$2) # Colored quadrangle
+      elif $type==4" || "($type==12" && "!$2) # Colored quadrangle
         i0,i1,i2,i3={$>,crop(0,1,1,4)+1}
-        ('"f "$i0" "$i1" "$i2" "$i3\n':y) a[out_obj,-1] y P+=1
+        if $2" && "$material!=$p_material ('"usemtl m"$material\n':y) fi
+        ('"f "$i0" "$i1" "$i2" "$i3\n':y) y nb_primitives+=1
 
-      elif $ptype==9 # Textured triangle
+      elif $type==9 # Textured triangle
 
-      elif $ptype==12 # Textured quadrangle
+      elif $type==12 # Textured quadrangle
 
       else # Unsupported primitive
 
       fi
 
+      p_material=$material
     done
-    nbp=P
-
-    k[out_obj,out_mtl]
-    d
-
-    i[1] ('"\n# Primitives.\n"':y) a[1,primitives] y nm[1] primitives
+    l[$out_prim--1] i[0] ('"\n# Primitives.\n"':y) a y endl a[out_obj,-1] y
+    k[out_mtl,out_obj]
 
     # Generate file header.
     header="# Object name: "$nm\n\
            "# Vertices: "$nbv\n\
-           "# Primitives: "$nbp\n\
+           "# Primitives: "$nb_primitives\n\
+           "# Texture: "$nb_textures\n\
            {`"d2(x) = (s = date(x); s>9?vtos(s,-1,2):[0,s]+_'0');
               string('# Generated on ',d2(0),'/',d2(1),'/',d2(2),' at ',d2(4),':',d2(5),':',d2(6),
                      ' by G\47MIC (https://gmic.eu).\n')"`}
 
     # Save object geometry (.obj file).
-    l[vertices,primitives]
+    l[out_obj]
       i[0] ('"# File: "$folder$basename$ext\n$header':y)
       if $2 i[1] ('"\n# Materials.\nmtllib "$folder$basename$ext".mtl\n"':y) fi
       a y
-      o raw:$folder$basename$ext,uchar rm
+      o raw:$folder$basename$ext,uchar
     endl
 
     # Save object materials (.mtl file).
-    if $2
-      l[materials]
-        i[0] ('"# File: "$folder$basename$ext.mtl\n$header\n':y)
-        a y
-        o raw:$folder$basename$ext.mtl,uchar rm
-      endl
-    fi
+    if $2 l[out_mtl]
+      i[0] ('"# File: "$folder$basename$ext.mtl\n$header\n':y)
+      a y
+      o raw:$folder$basename$ext.mtl,uchar
+    endl fi
 
+    rm
   endl done is_change 0
 
 #@cli ot : eq. to 'output_text'.
