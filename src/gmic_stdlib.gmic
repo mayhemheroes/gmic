@@ -4184,16 +4184,23 @@ output_obj : check "isbool(${2=0})" check3d 0
     # Generate vertex output.
     l[0]
       r 3,{h/3},1,1,-1
-      repeat h ('"v "{0,_i(0,$>)/255}" "{0,_i(1,$>)/255}" "{0,_i(2,$>)/255}\n':y) done
+      repeat h ('"v "{0,_crop(0,$>,3,1)/255:" "}\n':y) done
       a[1--1] y rm[0] i[0] ('"\n# Vertices.\n"':y) a y nm out_obj
+      ot toto.txt
     endl
 
+
+
+    q
+
     # Generate material output (merge object colors/textures into unique materials).
-    0 nm. out_mtl
     if $2
-      ind_material,ind_texture=0
+      l[{$nbp+1}
+      0 nm. out_mtl
+      d
+
+      nb_materials,nb_textures=0
       repeat $nbp
-        e[] $>
         ind={$nbp+$>}
         if {$ind,i!=-128} # RGB color
           round[$ind] r[$ind] 1,1,1,3,-1
@@ -4202,9 +4209,9 @@ output_obj : check "isbool(${2=0})" check3d 0
                       [ digit(P[0]>>4),digit(P[0]&15),\
                         digit(P[1]>>4),digit(P[1]&15),\
                         digit(P[2]>>4),digit(P[2]&15) ]"`}
-          if !narg(${material_$hex})
-            ind_material+=1
-            ('"newmtl m"$ind_material\n\
+          if !narg(${m_$hex})
+            nb_materials+=1
+            ('"newmtl m"$nb_materials\n\
               "Kd "{$ind,_R/255}" "{$ind,_G/255}" "{$ind,_B/255}\n':y)
             a[$out_mtl,-1] y
             material_$hex=m$M
