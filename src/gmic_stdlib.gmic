@@ -4176,13 +4176,14 @@ output_obj : check "isbool(${2=0})" check3d 0
   N=$! repeat $N nm={$>,n} +l[$>]
     nb_materials,nb_primitives,nb_textures,nb_tcoords=0
 
-    # Generate basename, file header and useful macros.
+    # Generate basename, file header and eval macros.
     if $N>1 filename=${"filename \"$1\",$>"} else filename="$1" fi
     0 nm. $filename basename={b} folder={f} ext={x} if narg($ext) ext=.$ext fi rm.
     fnobj="begin(out = 0);
            tos(x) = vtos(x,7);
            write(ind,s) = (
              l_s = find(s,0);
+             l_s<=0?(l_s = size(s));
              out + l_s>h(#ind)?resize(#ind,1,2*h(#ind) + l_s,1,1,0);
              copy(i[#ind,out],s,l_s);
              out+=l_s)"
@@ -4201,48 +4202,57 @@ output_obj : check "isbool(${2=0})" check3d 0
         write(#"$out_obj",str);
         end(resize(#"$out_obj",1,out,1,1,0))"
       rm[0] i[0] ('"\n# Vertices.\n"':y) a y nm out_obj
+      e[] "\r    - Export vertices: Done."
     endl
     mv[out_obj] $!
 
     # Generate material output (merge object colors/textures into unique materials).
     if $2 l[$nbp--2]
-      e[] ""
+      e[] "    - Export materials."
+      256,256,256 nm. mat_rgb
       0 nm. out_mtl
-      repeat $nbp
-        if !($>%1000) e[] "\r    - Export materials: "{_round($>/($nbp-1)*100)}"%  " fi
 
-        if {$>,i!=-128} # RGB color
-          round[$>] r[$>] 1,1,1,3,-1
-          hex={$>,`"digit(x) = (x<10?_'0' + x:_'A' + x - 10);\
-                    P = I;\
-                    [ digit(P[0]>>4),digit(P[0]&15),\
-                      digit(P[1]>>4),digit(P[1]&15),\
-                      digit(P[2]>>4),digit(P[2]&15) ]"`}
-          if !narg(${m_$hex})
-            nb_materials+=1
-            ('"newmtl m"$nb_materials\n\
-              "Kd "{$>,_I/255:" "}\n':y)
-            m_$hex=$nb_materials
-          fi
-          nm[$>] ${m_$hex}
+      eval $fnobj";
+        const nbp = "$nbp";
+        rgb = vector3();
+        for (p = nb_materials = nb_textures = 0, p<nbp, ++p,
 
-        elif {$>,@2} # Non-shared texture
-          nb_materials,nb_textures+=1
-          tfn=$folder${basename}_t$nb_textures.png
-          wt,ht,st={$>,@1-3} +rows[$>] 4,100% r. $wt,$ht,1,$st,-1 o. $tfn r. 1,1,1,3,2 round. avg_color={^} rm.
-          ('"newmtl m"$nb_materials\n\
-            "map_Kd "$tfn\n':y)
-          nm[$>] ${nb_materials}
+          !(p%1000)?run('e[] \"\r    - Export materials: ',round(100*p/nbp),' %  \"');
+          i[#p,0]!=-128?( # RGB color
+            copy(rgb,i(#p),3);
+            rgb = cut(round(rgb),0,255);
+            m = i(#"$mat_rgb",rgb);
+            !m?(
+              ++nb_materials;
+              ref(string('newmtl m',nb_materials,'\n',
+                         'Kd ',tos(rgb[0]/255),' ',tos(rgb[1]/255),' ',tos(rgb[2]/255),'\n'),str1);
+              write(#"$out_mtl",str1);
+              m = i(#"$mat_rgb",rgb) = nb_materials;
+            );
+            run('nm[',p,'] ',m);
 
-        else # Shared texture
-          tind={$>,@1}
-          f[$>] {$tind,[-128,i[1],i[2],i[3]]}
-          nm[$>] {$tind,n}
-        fi
-      done
+          ):i[#p,2]?( # Non-shared texture
+            ++nb_materials;
+            ++nb_textures;
+            wt = i[#p,1]; ht = i[#p,2]; st = i[#p,3];
+            run('l[',p,'] +rows 4,100% r. ',wt,',',ht,',1,',st,',-1 tfn=$folder${basename}_t',nb_textures,'.png o. $tfn rm. endl');
+            tfile = get('tfn',1024,0);
+            ref(string('newmtl m',nb_materials,'\n',
+                       'map_Kd ',get('tfn',1024,0),'\n'),str2);
+            write(#"$out_mtl",str2);
+            run('nm[',p,'] ',nb_materials);
 
-      a[$out_mtl--1] y
+          ):( # Shared texture
+            tind = i[#p,1];
+            copy(i[#p,1],i[#tind,1],3);
+            run('nm[',p,'] {',tind,',n}');
+          );
+
+        );
+        resize(#"$out_mtl",1,out,1,1,0);
+        run('nb_materials,nb_textures=',nb_materials,',',nb_textures)"
       e[] "\r    - Export materials: Done."
+      rm[mat_rgb]
     endl fi
 
     # Generate primitives output.
