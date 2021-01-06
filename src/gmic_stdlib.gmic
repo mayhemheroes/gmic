@@ -4186,9 +4186,10 @@ output_obj : check "isbool(${2=0})" check3d 0
       repeat h ('"v "{0,_crop(0,$>,3,1)/255:" "}\n':y) done
       a[1--1] y rm[0] i[0] ('"\n# Vertices.\n"':y) a y nm out_obj
     endl
+    mv[out_obj] $!
 
     # Generate material output (merge object colors/textures into unique materials).
-    if $2 l[{$nbp+1}--1]
+    if $2 l[$nbp--2]
       0 nm. out_mtl
       nb_materials,nb_textures=0
       repeat $nbp
@@ -4217,15 +4218,15 @@ output_obj : check "isbool(${2=0})" check3d 0
 
         else # Shared texture
           tind={$>,@1}
-          nm[$>] {$tind,n}
           f[$>] {$tind,[-128,i[1],i[2],i[3]]}
+          nm[$>] {$tind,n}
         fi
       done
 
       a[$out_mtl--1] y
     endl fi
-    q
 
+    q
 
     # Generate primitives output.
     P=0
