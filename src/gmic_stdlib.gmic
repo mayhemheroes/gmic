@@ -4175,10 +4175,9 @@ output_obj : check "isbool(${2=0})" check3d 0
 
     # Generate basename and file header.
     if $N>1 filename=${"filename \"$1\",$>"} else filename="$1" fi
-    0 nm. $filename basename={b} folder={f} ext={x} if narg($ext) ext=.$ext fi
-    rm.
+    0 nm. $filename basename={b} folder={f} ext={x} if narg($ext) ext=.$ext fi rm.
 
-    # Decompose and keep only vertices, primitives and colors.
+    # Decompose into vertices, primitives and colors.
     s3d 1 nbv,nbp={1,f2ui([i[0],i[1]])} rm[0,1,-$nbp--1]
 
     # Generate vertex output.
@@ -4186,54 +4185,47 @@ output_obj : check "isbool(${2=0})" check3d 0
       r 3,{h/3},1,1,-1
       repeat h ('"v "{0,_crop(0,$>,3,1)/255:" "}\n':y) done
       a[1--1] y rm[0] i[0] ('"\n# Vertices.\n"':y) a y nm out_obj
-      ot toto.txt
     endl
 
-
-
-    q
-
     # Generate material output (merge object colors/textures into unique materials).
-    if $2
-      l[{$nbp+1}
+    if $2 l[{$nbp+1}--1]
       0 nm. out_mtl
-      d
-
       nb_materials,nb_textures=0
       repeat $nbp
-        ind={$nbp+$>}
-        if {$ind,i!=-128} # RGB color
-          round[$ind] r[$ind] 1,1,1,3,-1
-          hex={$ind,`"digit(x) = (x<10?_'0' + x:_'A' + x - 10);\
-                      P = I;\
-                      [ digit(P[0]>>4),digit(P[0]&15),\
-                        digit(P[1]>>4),digit(P[1]&15),\
-                        digit(P[2]>>4),digit(P[2]&15) ]"`}
+        if {$>,i!=-128} # RGB color
+          round[$>] r[$>] 1,1,1,3,-1
+          hex={$>,`"digit(x) = (x<10?_'0' + x:_'A' + x - 10);\
+                    P = I;\
+                    [ digit(P[0]>>4),digit(P[0]&15),\
+                      digit(P[1]>>4),digit(P[1]&15),\
+                      digit(P[2]>>4),digit(P[2]&15) ]"`}
           if !narg(${m_$hex})
             nb_materials+=1
             ('"newmtl m"$nb_materials\n\
-              "Kd "{$ind,_R/255}" "{$ind,_G/255}" "{$ind,_B/255}\n':y)
-            a[$out_mtl,-1] y
-            material_$hex=m$M
+              "Kd "{$>,_I/255:" "}\n':y)
+            m_$hex=$nb_materials
           fi
-          nm[$ind] m${ind_material}
+          nm[$>] ${m_$hex}
 
-        elif {$ind,i[2]} wt,ht,st={$ind,@1-3} # Non-shared texture
-          rows[$ind] 4,100% r[$ind] $wt,$ht,1,$st,-1
-          ind_material+=1
-          ind_texture+=1
-          tfn=$folder${basename}_t$ind_texture.png
-          ('"newmtl m"$ind_material\n\
+        elif {$>,@2} # Non-shared texture
+          nb_materials,nb_textures+=1
+          tfn=$folder${basename}_t$nb_textures.png
+          wt,ht,st={$>,@1-3} +rows[$>] 4,100% r. $wt,$ht,1,$st,-1 o. $tfn rm.
+          ('"newmtl m"$nb_materials\n\
             "map_Kd "$tfn\n':y)
-          a[$out_mtl,-1] y
-          nm[$ind] m${ind_material}
-          o[$ind] $tfn
+          nm[$>] ${nb_materials}
 
         else # Shared texture
-          tind={$ind,$nbp+i[1]} sh[$tind] rv[$ind,-1] rm. nm[$ind] {$tind,n}
+          tind={$>,@1}
+          nm[$>] {$tind,n}
+          f[$>] {$tind,[-128,i[1],i[2],i[3]]}
         fi
       done
-    fi
+
+      a[$out_mtl--1] y
+    endl fi
+    q
+
 
     # Generate primitives output.
     P=0
