@@ -4172,13 +4172,14 @@ output_obj : check "isbool(${2=0})" check3d 0
   s0,s1=out,
   e[^-1] "Output 3D object$? as Wavefront 3D object file '$1' (with"${s$2}" materials)."
   N=$! repeat $N nm={$>,n} +l[$>]
+    nb_materials,nb_primitives,nb_textures,nb_tcoords=0
 
     # Generate basename and file header.
     if $N>1 filename=${"filename \"$1\",$>"} else filename="$1" fi
     0 nm. $filename basename={b} folder={f} ext={x} if narg($ext) ext=.$ext fi rm.
 
     # Decompose into vertices, primitives and colors.
-    s3d 1 nbv,nbp={1,f2ui([i[0],i[1]])} rm[0,1,-$nbp--1]
+    s3d 1 nb_vertices,nbp={1,f2ui([i[0],i[1]])} rm[0,1,-$nbp--1]
 
     # Generate vertex output.
     l[0]
@@ -4191,7 +4192,6 @@ output_obj : check "isbool(${2=0})" check3d 0
     # Generate material output (merge object colors/textures into unique materials).
     if $2 l[$nbp--2]
       0 nm. out_mtl
-      nb_materials,nb_textures=0
       repeat $nbp
         if {$>,i!=-128} # RGB color
           round[$>] r[$>] 1,1,1,3,-1
@@ -4228,7 +4228,6 @@ output_obj : check "isbool(${2=0})" check3d 0
 
     # Generate primitives output.
     0 nm. out_prim
-    nb_primitives,nb_tcoords,p_material=0
     repeat $nbp
       type={$>,i}
       material={{$>+$nbp},n}
@@ -4279,12 +4278,13 @@ output_obj : check "isbool(${2=0})" check3d 0
       p_material=$material
     done
     l[$out_prim--1] i[0] ('"\n# Primitives.\n"':y) a y endl a[out_obj,-1] y
-    k[out_mtl,out_obj]
+    if $2 k[out_mtl,out_obj] else k[out_obj] fi
 
     # Generate file header.
     header="# Object name: "$nm\n\
-           "# Vertices: "$nbv\n\
+           "# Vertices: "$nb_vertices\n\
            "# Primitives: "$nb_primitives\n\
+           "# Materials: "$nb_materials\n\
            "# Textures: "$nb_textures\n\
            {`"d2(x) = (s = date(x); s>9?vtos(s,-1,2):[0,s]+_'0');
               string('# Generated on ',d2(0),'/',d2(1),'/',d2(2),' at ',d2(4),':',d2(5),':',d2(6),
