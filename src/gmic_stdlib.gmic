@@ -4180,19 +4180,25 @@ output_obj : check "isbool(${2=0})" check3d 0
 
     # Decompose into vertices, primitives and colors.
     s3d 1 nb_vertices,nbp={1,f2ui([i[0],i[1]])} rm[0,1,-$nbp--1]
+    e[] "  > File '"$folder$basename$ext"'."
 
     # Generate vertex output.
     l[0]
+      e[] "    - Export vertices."
       r 3,{h/3},1,1,-1
       repeat h ('"v "{0,_crop(0,$>,3,1):" "}\n':y) done
       a[1--1] y rm[0] i[0] ('"\n# Vertices.\n"':y) a y nm out_obj
+      e[] "\r    - Export vertices: Done."
     endl
     mv[out_obj] $!
 
     # Generate material output (merge object colors/textures into unique materials).
     if $2 l[$nbp--2]
+      e[] ""
       0 nm. out_mtl
       repeat $nbp
+        if !($>%100) e[] "\r    - Export materials: "{_round($>/($nbp-1)*100,0.1)}% fi
+
         if {$>,i!=-128} # RGB color
           round[$>] r[$>] 1,1,1,3,-1
           hex={$>,`"digit(x) = (x<10?_'0' + x:_'A' + x - 10);\
@@ -4224,12 +4230,15 @@ output_obj : check "isbool(${2=0})" check3d 0
       done
 
       a[$out_mtl--1] y
+      e[] "\r    - Export materials: Done."
     endl fi
 
     # Generate primitives output.
+    e[] ""
     0 nm. out_prim
     p_material=-1
     repeat $nbp
+      if !($>%100) e[] "\r    - Export primitives: "{_round($>/($nbp-1)*100,0.1)}% fi
       type={$>,i}
       material={{$>+$nbp},n}
 
@@ -4278,6 +4287,8 @@ output_obj : check "isbool(${2=0})" check3d 0
 
       p_material=$material
     done
+    e[] "\r    - Export primitives: Done."
+
     l[$out_prim--1] i[0] ('"\n# Primitives.\n"':y) a y endl a[out_obj,-1] y
     if $2 k[out_mtl,out_obj] else k[out_obj] fi
 
