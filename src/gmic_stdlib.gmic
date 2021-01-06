@@ -4179,11 +4179,13 @@ output_obj : check "isbool(${2=0})" check3d 0
     # Generate basename, file header and useful macros.
     if $N>1 filename=${"filename \"$1\",$>"} else filename="$1" fi
     0 nm. $filename basename={b} folder={f} ext={x} if narg($ext) ext=.$ext fi rm.
-    fn_write="write(ind,s) = (
-                l_s = find(s,0);
-                out + l_s>h(#ind)?resize(#ind,1,2*h(#ind) + l_s,1,1,0);
-                copy(i[#ind,out],s,l_s);
-                out+=l_s)"
+    fnobj="begin(out = 0);
+           tos(x) = vtos(x,7);
+           write(ind,s) = (
+             l_s = find(s,0);
+             out + l_s>h(#ind)?resize(#ind,1,2*h(#ind) + l_s,1,1,0);
+             copy(i[#ind,out],s,l_s);
+             out+=l_s)"
 
     # Decompose into vertices, primitives and colors.
     s3d 1 nb_vertices,nbp={1,f2ui([i[0],i[1]])} rm[0,1,-$nbp--1]
@@ -4194,8 +4196,7 @@ output_obj : check "isbool(${2=0})" check3d 0
       e[] "    - Export vertices."
       r 3,{h/3},1,1,-1 permute zycx
       0 nm. out_obj
-      eval.. ">begin(out = 0);"$fn_write";
-        tos(x) = vtos(x,6);
+      eval.. ">"$fnobj";
         ref(string('v ',tos(i0),' ',tos(i1),' ',tos(i2),'\n'),str);
         write(#"$out_obj",str);
         end(resize(#"$out_obj",1,out,1,1,0))"
