@@ -4211,7 +4211,7 @@ output_obj : check "isbool(${2=0})" check3d 0
     if $2 l[$nbp--2]
       e[] "    - Export materials."
       256,256,256 nm. materials_rgb
-      1,$nbp nm. materials
+      1,$nbp,1,4 nm. materials
       0 nm. out_mtl
       eval $fnobj";
         const nbp = "$nbp";
@@ -4230,7 +4230,7 @@ output_obj : check "isbool(${2=0})" check3d 0
               write(#"$out_mtl",str1);
               m = i(#"$materials_rgb",rgb) = nb_materials;
             );
-            i[#"$materials",p] = m;
+            I[#"$materials",p] = [ m,0,0,0 ];
 
           ):i[#p,2]?( # Non-shared texture
             ++nb_materials;
@@ -4242,12 +4242,12 @@ output_obj : check "isbool(${2=0})" check3d 0
             ref(string('newmtl m',nb_materials,'\n',
                        'map_Kd ',get('tfn',1024,0),'\n'),str2);
             write(#"$out_mtl",str2);
-            i[#"$materials",p] = nb_materials;
+            I[#"$materials",p] = [ nb_materials,wt,ht,st ];
 
           ):( # Shared texture
             tind = i[#p,1];
             copy(i[#p,1],i[#tind,1],3);
-            i[#"$materials",p] = i[#"$materials",tind];
+            I[#"$materials",p] = I[#"$materials",tind];
 
           );
         );
