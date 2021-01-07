@@ -866,10 +866,11 @@ reference :
   _text \
 "* G'MIC is able to read/write most of the classical image file formats, including:"\n\
 "  - 2D grayscale/color files: `.png`, `.jpeg`, `.gif`, `.pnm`, `.tif`, `.bmp`, ..."\n\
-"  - 3D volumetric files: `.dcm`, `.hdr`, `.nii`, `.pan`, `.inr`, `.pnk`, ..."\n\
+"  - 3D volumetric files: `.dcm`, `.hdr`, `.nii`, `.cube`, `.pan`, `.inr`, `.pnk`, ..."\n\
 "  - Video files: `.mpeg`, `.avi`, `.mov`, `.ogg`, `.flv`, ..."\n\
-"  - Generic text or binary data files: `.gmz`, `.cimg`, `.cimgz`, `.dlm`, `.asc`, `.pfm`, `.raw`, `.txt`, `.h`."\n\
-"  - 3D object files: `.off`"\n\
+"  - Generic text or binary data files: `.gmz`, `.cimg`, `.cimgz`, `flo`, `ggr`, `gpl`, `.dlm`, `.asc`, "\
+"`.pfm`, `.raw`, `.txt`, `.h`."\n\
+"  - 3D mesh files: `.off`, `.obj` (output only)"\n\
 \n\
 "* When dealing with color images, G'MIC generally reads, writes and displays data using the usual "\
 "sRGB color space."\n\
@@ -1388,7 +1389,7 @@ reference :
 "  - `SPACE`: Start/stop animation."\n\
 "  - `CTRL+A`: Show/hide 3D axes."\n\
 "  - `CTRL+B`: Switch between available background."\n\
-"  - `CTRL+G`: Save 3D object, as numbered file 'gmic_xxxx.off'."\n\
+"  - `CTRL+G`: Save 3D object, as numbered file 'gmic_xxxx.obj'."\n\
 "  - `CTRL+L`: Show/hide outline."\n\
 "  - `CTRL+P`: Print current 3D pose on stderr."\n\
 "  - `CTRL+T`: Switch between single/double-sided 3D modes."\n\
@@ -2961,8 +2962,8 @@ _display3d :
             const off = "$off_axes";
             ref([ 255,0,0 ],col);
             i[13]>0?copy(i[off],col,3);
-            i[19]>0?copy(i[off+3],col,3);
-            i[25]>0?copy(i[off+6],col,3);
+            i[19]>0?copy(i[off + 3],col,3);
+            i[25]>0?copy(i[off + 6],col,3);
           "
           j3d[render] .,50,{-2,h-50},0,0.75,1,0,0,$focale rm.
         fi
@@ -3090,10 +3091,10 @@ _display3d :
           if $is_fullscreen w[] {*,u,v} else w[] {0.75*[{*,u,v}]} fi
           n0,n1="Off","On" notification="Fullscreen: "${n$is_fullscreen} fontsize_notif=
           rmn background
-        elif {*,-G} # Save object as a .off file
-          n=0 do filename gmic.off,$n n+=1 while isfile(['{/${}}'])
-          o[0] ${}
+        elif {*,-G} # Save object as a .obj file
+          n=0 do filename gmic.obj,$n n+=1 while isfile(['{/${}}'])
           notification="Save Copy:\n"${}
+          o[0] ${}
         elif {*,-L} # Show/hide outline
           is_outline={!$is_outline}
           n0,n1="Off","On" notification="Outline: "${n$is_outline}
@@ -24774,7 +24775,7 @@ hex2img :
   f. "*
     from_char(x) = x>=48 && x<=57?x - 48:x-87;
     off = 2*y;
-    from_char(i[#-2,off])*16 + from_char(i[#-2,off+1])"
+    from_char(i[#-2,off])*16 + from_char(i[#-2,off + 1])"
   rm..
 
 #@cli hex2str : hexadecimal_string
