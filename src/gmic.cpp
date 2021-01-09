@@ -2551,7 +2551,7 @@ const char *gmic::builtin_commands_names[] = {
     "cos","cosh","crop","cumulate","cursor","cut",
   "d","db3d","debug","denoise","deriche","dijkstra","dilate","discard","displacement","display",
     "distance","div","div3d","do","done","double3d",
-  "e","echo","eigen","eikonal","elevation3d","elif","ellipse","else","endian","endif","endl","endlocal","eq",
+  "e","echo","eigen","eikonal","elif","ellipse","else","endian","endif","endl","endlocal","eq",
     "equalize","erode","error","eval","exec","exp",
   "f","f3d","fft","fi","files","fill","flood","focale3d","for",
   "g","ge","gradient","graph","gt","guided",
@@ -7603,67 +7603,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             cimg_forY(selection,l) gmic_apply(erode((unsigned int)sx,(unsigned int)sy,(unsigned int)sz));
           } else arg_error("erode");
           is_change = true; ++position; continue;
-        }
-
-        // Build 3d elevation.
-        if (!std::strcmp("elevation3d",command)) {
-          gmic_substitute_args(true);
-          sep = *formula = *indices = 0;
-          float fact = 1;
-          if (cimg_sscanf(argument,"'%4095[^']'%c",gmic_use_formula,&end)==1) {
-            print(images,0,"Build 3D elevation of image%s, with elevation formula '%s'.",
-                  gmic_selection.data(),
-                  formula);
-            cimg_forY(selection,l) {
-              CImg<T>& img = gmic_check(images[selection[l]]);
-              CImg<typename CImg<T>::Tfloat> elev(img.width(),img.height(),1,1,formula,true);
-              img.get_elevation3d(primitives,g_list_f,elev).move_to(vertices);
-              vertices.object3dtoCImg3d(primitives,g_list_f,false);
-              gmic_apply(replace(vertices));
-              primitives.assign();
-            }
-            ++position;
-          } else if (cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]%c%c",gmic_use_indices,&sep,&end)==2 &&
-                     sep==']' &&
-                     (ind=selection2cimg(indices,images.size(),images_names,"elevation3d")).height()==1) {
-            print(images,0,"Build 3D elevation of image%s, with elevation map [%u].",
-                  gmic_selection.data(),
-                  *ind);
-            CImg<typename CImg<T>::Tfloat> elev;
-            if (images[*ind].spectrum()>1) images[*ind].get_norm().move_to(elev);
-            else elev = gmic_image_arg(*ind);
-            cimg_forY(selection,l) {
-              CImg<T>& img = gmic_check(images[selection[l]]);
-              img.get_elevation3d(primitives,g_list_f,elev).move_to(vertices);
-              vertices.object3dtoCImg3d(primitives,g_list_f,false);
-              gmic_apply(replace(vertices));
-              primitives.assign();
-            }
-            ++position;
-          } else {
-            if (cimg_sscanf(argument,"%f%c",
-                            &fact,&end)==1) {
-              print(images,0,"Build 3D elevation of image%s, with elevation factor %g.",
-                    gmic_selection.data(),
-                    fact);
-              ++position;
-            } else
-              print(images,0,"Build 3D elevation of image%s.",
-                    gmic_selection.data());
-            cimg_forY(selection,l) {
-              CImg<T>& img = gmic_check(images[selection[l]]);
-              CImg<typename CImg<T>::Tfloat> elev;
-              if (fact==1 && img.spectrum()==1) elev = img.get_shared();
-              else if (img.spectrum()>1) (img.get_norm().move_to(elev))*=fact;
-              else (elev = img)*=fact;
-              img.get_elevation3d(primitives,g_list_f,elev).move_to(vertices);
-              vertices.object3dtoCImg3d(primitives,g_list_f,false);
-              gmic_apply(replace(vertices));
-              primitives.assign();
-            }
-          }
-          g_list_f.assign();
-          is_change = true; continue;
         }
 
         // Eigenvalues/eigenvectors.
