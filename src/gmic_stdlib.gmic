@@ -18365,13 +18365,74 @@ distribution3d :
 #@cli : Default value: 'is_double_sided=1'.
 #@cli : $ mode3d 1 repeat 2 torus3d 100,30 rotate3d[-1] 1,1,0,60 double3d $> snapshot3d[-1] 400 done
 
-#@cli elevation3d : z-factor : [elevation_map] : 'formula' : (no arg) : (+)
-#@cli : Build 3D elevation of selected images, with a specified elevation map.
+#@cli elevation3d : { z-factor | [elevation_map] | 'formula' },base_height={ -1 | >=0 } : (no arg) : (+)
+#@cli : Generate 3D elevation of selected images, opt. with a specified elevation map.
 #@cli : When invoked with (no arg) or 'z-factor', the elevation map is computed as the pointwise L2 norm of the
 #@cli : pixel values. Otherwise, the elevation map is taken from the specified image or formula.
 #@cli : $ image.jpg +blur 5 elevation3d. 0.75
 #@cli : $ 128,128,1,3,u(255) plasma 10,3 blur 4 sharpen 10000 \
 # elevation3d[-1] 'X=(x-64)/6;Y=(y-64)/6;-100*exp(-(X^2+Y^2)/30)*abs(cos(X)*sin(Y))'
+_elevation3d : skip "${1=_noarg}" check "${2=-1}==-1 || $2>=0"
+  if $2>=0 base_str=" and base height $2" else base_str= fi
+  if isnum($1)
+    e[^-1] "Generate 3D elevation of image$?, with z-factor $1"$base_str. argtype,zfactor=0,$1
+  elif ${"is_image_arg $1"}
+    e[^-1] "Generate 3D elevation of image$?, from elevation $1"$base_str. argtype=2
+  elif isexpr($1)
+    e[^-1] "Generate 3D elevation of image$?, with formula '$1'"$base_str. argtype=1
+  else
+    e[^-1] "Generate 3D elevation of image$?." argtype,zfactor=0,1
+  fi
+  is_base={$2>=0}
+
+  repeat $! l[$>]
+    to_rgb M,N={[w,h]}
+
+    # Generate vertices.
+    100%,100%,1,2,[x,y]
+    if !$argtype +norm[0] *. $zfactor # with z-factor
+    elif $argtype==1 [0],[0],1,1,"$1" # with formula
+    else pass$1 0 if s>1 norm. fi # from [image]
+    fi
+    a[-2,-1] c
+
+    if $is_base . sh. 100% f. -$2 rm. a[-2,-1] y fi
+    r. {wh},1,1,3,-1 permute. cxyz nbv={h}
+
+    # Generate primitives.
+    header="const M = "$M"; const N = "$N"; const MN = M*N"
+    {[$M,$N]-1},1,5,$header"; # Rear
+      i0 = M*y + x; i1 = i0 + MN;
+      [ 4,ui2f(i0),ui2f(i0 + M),ui2f(i0 + 1 + M),ui2f(i0 + 1) ]"
+    r. 1,{wh},1,100%,-1 nbp={h}
+
+    if $is_base # Add base primitives if necessary
+      {[$M,$N]-1},1,5,$header"; # Front
+        i0 = M*y + x; i1 = i0 + MN;
+        [ 4,ui2f(i1),ui2f(i1 + 1),ui2f(i1 + 1 + M),ui2f(i1 + M) ]"
+      r. 1,{wh},1,100%,-1 nbp+={h}
+      {$M-1},1,1,10,$header" ; # Top and bottom
+        i0 = x; i1 = i0 + MN; i2 = i0 + M*(N - 1); i3 = i2 + MN;
+        [ 4,ui2f(i0),ui2f(i0 + 1),ui2f(i1 + 1),ui2f(i1),
+          4,ui2f(i2),ui2f(i3),ui2f(i3 + 1),ui2f(i2 + 1) ]"
+      r. 1,{wh},1,100%,-1 s. c,2 nbp+={2*h}
+      {$N-1},1,1,10,$header"; # Left and right
+        i0 = M*x; i1 = i0 + MN; i2 = i0 + M - 1; i3 = i2 + MN;
+        [ 4,ui2f(i0),ui2f(i1),ui2f(i1 + M),ui2f(i0 + M),
+          4,ui2f(i2),ui2f(i2 + M),ui2f(i3 + M),ui2f(i3) ]"
+      r. 1,{wh},1,100%,-1 s. c,2 nbp+={2*h}
+      permute[-6--1] cyxz -a[-6--1] y
+    else permute. cyxz
+    fi
+
+    # Generate colors / opacities.
+    mv[0] $! r. {[w,h]-1},1,3,0 r. {wh},1,1,3,-1 permute. cxyz
+    if $is_base 3,{$nbp-h},1,1,200 fi
+    1,$nbp,1,1,1
+
+    # Add header and merge object.
+    i[0] ('CImg3d':y) +[0] 0.5 i[1] ({ui2f([$nbv,$nbp]):;}) y a y
+  endl done
 
 #@cli empty3d
 #@cli : Input empty 3D object.
