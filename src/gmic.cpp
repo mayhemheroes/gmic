@@ -2069,9 +2069,12 @@ void gmic::_gmic_substitute_args(const char *const argument, const char *const a
 
 #define gmic_substitute_args(is_image_expr) { \
   const char *const argument0 = argument; \
-  substitute_item(argument,images,images_names,parent_images,parent_images_names,variables_sizes,\
-                  command_selection,is_image_expr).move_to(_argument); \
-  _gmic_substitute_args(argument = _argument,argument0,command,item,images); \
+  if (*argument!=',' || argument[1]) { \
+    substitute_item(argument,images,images_names,parent_images,parent_images_names,variables_sizes,\
+                    command_selection,is_image_expr).move_to(_argument); \
+    argument = _argument; \
+  } \
+  _gmic_substitute_args(argument,argument0,command,item,images); \
 }
 
 // Macros for computing a readable version of a command argument.
@@ -6581,32 +6584,32 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               cimg_sscanf(argument,"%f,%f,%f%c",
                           &R,&G,&B,&end)==3 ||
               cimg_sscanf(argument,"%f,%f,%f,%f%c",
-                          &R,&G,&B,&opacity,&end)==4) {
-            const bool set_opacity = (opacity>=0);
-            if (set_opacity)
-              print(images,0,"Set colors of 3D object%s to (%g,%g,%g), with opacity %g.",
-                    gmic_selection.data(),
-                    R,G,B,
-                    opacity);
-            else
-              print(images,0,"Set color of 3D object%s to (%g,%g,%g).",
-                    gmic_selection.data(),
-                    R,G,B);
-            cimg_forY(selection,l) {
-              const unsigned int uind = selection[l];
-              CImg<T>& img = gmic_check(images[uind]);
-              try { gmic_apply(color_CImg3d(R,G,B,opacity,true,set_opacity)); }
-              catch (CImgException&) {
-                if (!img.is_CImg3d(true,&(*gmic_use_message=0)))
-                  error(true,images,0,0,
-                        "Command 'color3d': Invalid 3D object [%d], "
-                        "in selected image%s (%s).",
-                        uind,gmic_selection_err.data(),message);
-                else throw;
-              }
+                          &R,&G,&B,&opacity,&end)==4) ++position;
+          else R = G = B = 200;
+          const bool set_opacity = (opacity>=0);
+          if (set_opacity)
+            print(images,0,"Set colors of 3D object%s to (%g,%g,%g), with opacity %g.",
+                  gmic_selection.data(),
+                  R,G,B,
+                  opacity);
+          else
+            print(images,0,"Set color of 3D object%s to (%g,%g,%g).",
+                  gmic_selection.data(),
+                  R,G,B);
+          cimg_forY(selection,l) {
+            const unsigned int uind = selection[l];
+            CImg<T>& img = gmic_check(images[uind]);
+            try { gmic_apply(color_CImg3d(R,G,B,opacity,true,set_opacity)); }
+            catch (CImgException&) {
+              if (!img.is_CImg3d(true,&(*gmic_use_message=0)))
+                error(true,images,0,0,
+                      "Command 'color3d': Invalid 3D object [%d], "
+                      "in selected image%s (%s).",
+                      uind,gmic_selection_err.data(),message);
+              else throw;
             }
-          } else arg_error("color3d");
-          is_change = true; ++position; continue;
+          }
+          is_change = true; continue;
         }
 
         // Cumulate.
