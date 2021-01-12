@@ -5235,6 +5235,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         *const initial_item = run_entrypoint?"_main_":commands_line[position].data(),
         *const empty_argument = "",
         *initial_argument = empty_argument;
+      if (*initial_item==',' && !initial_item[1]) { ++position; continue; }
 
       unsigned int position_argument = position + 1;
       while (position_argument<commands_line.size() && *(commands_line[position_argument])==1)
