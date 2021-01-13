@@ -2069,9 +2069,12 @@ void gmic::_gmic_substitute_args(const char *const argument, const char *const a
 
 #define gmic_substitute_args(is_image_expr) { \
   const char *const argument0 = argument; \
-  substitute_item(argument,images,images_names,parent_images,parent_images_names,variables_sizes,\
-                  command_selection,is_image_expr).move_to(_argument); \
-  _gmic_substitute_args(argument = _argument,argument0,command,item,images); \
+  if (is_subst_arg) { \
+    substitute_item(argument,images,images_names,parent_images,parent_images_names,variables_sizes,\
+                    command_selection,is_image_expr).move_to(_argument); \
+    argument = _argument; \
+  } \
+  _gmic_substitute_args(argument,argument0,command,item,images); \
 }
 
 // Macros for computing a readable version of a command argument.
@@ -2551,7 +2554,7 @@ const char *gmic::builtin_commands_names[] = {
     "cos","cosh","crop","cumulate","cursor","cut",
   "d","db3d","debug","denoise","deriche","dijkstra","dilate","discard","displacement","display",
     "distance","div","div3d","do","done","double3d",
-  "e","echo","eigen","eikonal","elevation3d","elif","ellipse","else","endian","endif","endl","endlocal","eq",
+  "e","echo","eigen","eikonal","elif","ellipse","else","endian","endif","endl","endlocal","eq",
     "equalize","erode","error","eval","exec","exp",
   "f","f3d","fft","fi","files","fill","flood","focale3d","for",
   "g","ge","gradient","graph","gt","guided",
@@ -3014,7 +3017,7 @@ void gmic::pop_callstack(const unsigned int callstack_size) {
 //---------------------------------------
 CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) {
   if (!commands_line || !*commands_line) return CImgList<char>();
-  bool is_dquoted = false;
+  bool is_dquoted = false, is_subst = false;
   const char *ptrs0 = commands_line;
   while (is_blank(*ptrs0)) ++ptrs0; // Remove leading spaces to first item
   CImg<char> item((unsigned int)std::strlen(ptrs0) + 1);
@@ -3049,10 +3052,16 @@ CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) 
     } else { // Non-escaped character outside string
       if (c=='\"') is_dquoted = true;
       else if (is_blank(c)) {
-        *ptrd = 0; CImg<char>(item.data(),(unsigned int)(ptrd - item.data() + 1)).move_to(items);
+        *ptrd = 0;
+        if (is_subst) *(++ptrd) = 1; // Item has to be substituted
+        CImg<char>(item.data(),(unsigned int)(ptrd - item.data() + 1)).move_to(items);
         ptrd = item.data();
         ++ptrs; while (is_blank(*ptrs)) ++ptrs; ptrs0 = ptrs--; // Remove trailing spaces to next item
-      } else *(ptrd++) = c;
+        is_subst = false;
+      } else {
+        if (c=='$' || c=='{' || c=='}' || c=='.') is_subst = true;
+        *(ptrd++) = c;
+      }
     }
   }
   if (is_dquoted) {
@@ -3072,7 +3081,9 @@ CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) 
           str.data());
   }
   if (ptrd!=item.data() && !is_blank(c)) {
-    *ptrd = 0; CImg<char>(item.data(),(unsigned int)(ptrd - item.data() + 1)).move_to(items);
+    *ptrd = 0;
+    if (is_subst) *(++ptrd) = 1;  // Item has to be substituted
+    CImg<char>(item.data(),(unsigned int)(ptrd - item.data() + 1)).move_to(items);
   }
   if (is_debug) {
     debug("Decompose command line into %u items: ",items.size());
@@ -3083,7 +3094,6 @@ CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) 
       } else debug("  item[%u] = '%s'",l,items[l].data());
     }
   }
-
   return items;
 }
 
@@ -5235,6 +5245,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         *const initial_item = run_entrypoint?"_main_":commands_line[position].data(),
         *const empty_argument = "",
         *initial_argument = empty_argument;
+      if (*initial_item==',' && !initial_item[1]) { ++position; continue; }
 
       unsigned int position_argument = position + 1;
       while (position_argument<commands_line.size() && *(commands_line[position_argument])==1)
@@ -5242,8 +5253,12 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       if (position_argument<commands_line.size()) initial_argument = commands_line[position_argument];
 
       CImg<char> _item, _argument;
-      substitute_item(initial_item,images,images_names,parent_images,parent_images_names,
-                      variables_sizes,command_selection,false).move_to(_item);
+      const bool is_subst_item = (bool)commands_line[position].back();
+      if (is_subst_item)
+        substitute_item(initial_item,images,images_names,parent_images,parent_images_names,
+                        variables_sizes,command_selection,false).move_to(_item);
+      else
+        CImg<char>::string(initial_item).move_to(_item);
       char *item = _item;
       const char *argument = initial_argument;
 
@@ -5440,7 +5455,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           is_command && *command=='c' && !std::strcmp(item,"check"),
         is_command_skip = is_get || is_command_verbose || is_command_echo || is_command_error ||
           is_command_warn || is_command_input || is_command_check?false:
-          is_command && *command=='s' && !std::strcmp(item,"skip");
+        is_command && *command=='s' && !std::strcmp(item,"skip");
+      bool is_subst_arg = position_argument<commands_line.size()?(bool)commands_line[position_argument].back():false;
 
       // Check for verbosity command, prior to the first output of a log message.
       bool is_verbose = verbosity>=1 || is_debug, is_verbose_argument = false;
@@ -6580,32 +6596,32 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               cimg_sscanf(argument,"%f,%f,%f%c",
                           &R,&G,&B,&end)==3 ||
               cimg_sscanf(argument,"%f,%f,%f,%f%c",
-                          &R,&G,&B,&opacity,&end)==4) {
-            const bool set_opacity = (opacity>=0);
-            if (set_opacity)
-              print(images,0,"Set colors of 3D object%s to (%g,%g,%g), with opacity %g.",
-                    gmic_selection.data(),
-                    R,G,B,
-                    opacity);
-            else
-              print(images,0,"Set color of 3D object%s to (%g,%g,%g).",
-                    gmic_selection.data(),
-                    R,G,B);
-            cimg_forY(selection,l) {
-              const unsigned int uind = selection[l];
-              CImg<T>& img = gmic_check(images[uind]);
-              try { gmic_apply(color_CImg3d(R,G,B,opacity,true,set_opacity)); }
-              catch (CImgException&) {
-                if (!img.is_CImg3d(true,&(*gmic_use_message=0)))
-                  error(true,images,0,0,
-                        "Command 'color3d': Invalid 3D object [%d], "
-                        "in selected image%s (%s).",
-                        uind,gmic_selection_err.data(),message);
-                else throw;
-              }
+                          &R,&G,&B,&opacity,&end)==4) ++position;
+          else R = G = B = 200;
+          const bool set_opacity = (opacity>=0);
+          if (set_opacity)
+            print(images,0,"Set colors of 3D object%s to (%g,%g,%g), with opacity %g.",
+                  gmic_selection.data(),
+                  R,G,B,
+                  opacity);
+          else
+            print(images,0,"Set color of 3D object%s to (%g,%g,%g).",
+                  gmic_selection.data(),
+                  R,G,B);
+          cimg_forY(selection,l) {
+            const unsigned int uind = selection[l];
+            CImg<T>& img = gmic_check(images[uind]);
+            try { gmic_apply(color_CImg3d(R,G,B,opacity,true,set_opacity)); }
+            catch (CImgException&) {
+              if (!img.is_CImg3d(true,&(*gmic_use_message=0)))
+                error(true,images,0,0,
+                      "Command 'color3d': Invalid 3D object [%d], "
+                      "in selected image%s (%s).",
+                      uind,gmic_selection_err.data(),message);
+              else throw;
             }
-          } else arg_error("color3d");
-          is_change = true; ++position; continue;
+          }
+          is_change = true; continue;
         }
 
         // Cumulate.
@@ -7603,67 +7619,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             cimg_forY(selection,l) gmic_apply(erode((unsigned int)sx,(unsigned int)sy,(unsigned int)sz));
           } else arg_error("erode");
           is_change = true; ++position; continue;
-        }
-
-        // Build 3d elevation.
-        if (!std::strcmp("elevation3d",command)) {
-          gmic_substitute_args(true);
-          sep = *formula = *indices = 0;
-          float fact = 1;
-          if (cimg_sscanf(argument,"'%4095[^']'%c",gmic_use_formula,&end)==1) {
-            print(images,0,"Build 3D elevation of image%s, with elevation formula '%s'.",
-                  gmic_selection.data(),
-                  formula);
-            cimg_forY(selection,l) {
-              CImg<T>& img = gmic_check(images[selection[l]]);
-              CImg<typename CImg<T>::Tfloat> elev(img.width(),img.height(),1,1,formula,true);
-              img.get_elevation3d(primitives,g_list_f,elev).move_to(vertices);
-              vertices.object3dtoCImg3d(primitives,g_list_f,false);
-              gmic_apply(replace(vertices));
-              primitives.assign();
-            }
-            ++position;
-          } else if (cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]%c%c",gmic_use_indices,&sep,&end)==2 &&
-                     sep==']' &&
-                     (ind=selection2cimg(indices,images.size(),images_names,"elevation3d")).height()==1) {
-            print(images,0,"Build 3D elevation of image%s, with elevation map [%u].",
-                  gmic_selection.data(),
-                  *ind);
-            CImg<typename CImg<T>::Tfloat> elev;
-            if (images[*ind].spectrum()>1) images[*ind].get_norm().move_to(elev);
-            else elev = gmic_image_arg(*ind);
-            cimg_forY(selection,l) {
-              CImg<T>& img = gmic_check(images[selection[l]]);
-              img.get_elevation3d(primitives,g_list_f,elev).move_to(vertices);
-              vertices.object3dtoCImg3d(primitives,g_list_f,false);
-              gmic_apply(replace(vertices));
-              primitives.assign();
-            }
-            ++position;
-          } else {
-            if (cimg_sscanf(argument,"%f%c",
-                            &fact,&end)==1) {
-              print(images,0,"Build 3D elevation of image%s, with elevation factor %g.",
-                    gmic_selection.data(),
-                    fact);
-              ++position;
-            } else
-              print(images,0,"Build 3D elevation of image%s.",
-                    gmic_selection.data());
-            cimg_forY(selection,l) {
-              CImg<T>& img = gmic_check(images[selection[l]]);
-              CImg<typename CImg<T>::Tfloat> elev;
-              if (fact==1 && img.spectrum()==1) elev = img.get_shared();
-              else if (img.spectrum()>1) (img.get_norm().move_to(elev))*=fact;
-              else (elev = img)*=fact;
-              img.get_elevation3d(primitives,g_list_f,elev).move_to(vertices);
-              vertices.object3dtoCImg3d(primitives,g_list_f,false);
-              gmic_apply(replace(vertices));
-              primitives.assign();
-            }
-          }
-          g_list_f.assign();
-          is_change = true; continue;
         }
 
         // Eigenvalues/eigenvectors.
@@ -14146,6 +14101,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       else {
         std::strcpy(command,"input");
         argument = item - (is_simple_hyphen || is_plus?1:0);
+        is_subst_arg = is_subst_item;
         *s_selection = 0;
       }
       gmic_substitute_args(true);
