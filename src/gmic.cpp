@@ -2702,11 +2702,12 @@ const char* gmic::basename(const char *const str)  {
 
 // Return true if specified character is considered as 'blank'.
 inline bool is_blank(const char x) {
-  return (x>1 && x<gmic_dollar) || (x>gmic_store && x<=' ');
+  return (x>1 && x<gmic_dot) || (x>gmic_store && x<=' ');
 }
 
 inline void _strreplace_fw(char &c) {
   switch (c) {
+  case gmic_dot : c = '.'; break;
   case gmic_dollar : c = '$'; break;
   case gmic_lbrace : c = '{'; break;
   case gmic_rbrace : c = '}'; break;
@@ -2717,6 +2718,7 @@ inline void _strreplace_fw(char &c) {
 
 inline void _strreplace_bw(char &c) {
   switch (c) {
+  case '.' : c = gmic_dot; break;
   case '$' : c = gmic_dollar; break;
   case '{' : c = gmic_lbrace; break;
   case '}' : c = gmic_rbrace; break;
@@ -2746,7 +2748,7 @@ unsigned int gmic::strescape(const char *const str, char *const res) {
     if (c=='\\' || c=='\'' || c=='\"') { *(ptrd++) = '\\'; *(ptrd++) = c; }
     else if (c>='\a' && c<='\r') { *(ptrd++) = '\\'; *(ptrd++) = esc[c - 7]; }
     else if (c>=' ' && c<='~') *(ptrd++) = c;
-    else if (c<gmic_dollar || c>gmic_dquote) {
+    else if (c<gmic_dot || c>gmic_dquote) {
       *(ptrd++) = '\\';
       *(ptrd++) = (char)('0' + (c>>6));
       *(ptrd++) = (char)('0' + ((c>>3)&7));
@@ -3020,7 +3022,7 @@ CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) 
   bool is_dquoted = false, is_subst = false;
   const char *ptrs0 = commands_line;
   while (is_blank(*ptrs0)) ++ptrs0; // Remove leading spaces to first item
-  CImg<char> item((unsigned int)std::strlen(ptrs0) + 1);
+  CImg<char> item((unsigned int)std::strlen(ptrs0) + 2);
   CImgList<char> items;
   char *ptrd = item.data(), c = 0;
 
@@ -3030,6 +3032,7 @@ CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) 
       c = *(++ptrs);
       switch (c) {
       case 0 : c = '\\'; --ptrs; break;
+      case '.' : c = gmic_dot; break;
       case '$' : c = gmic_dollar; break;
       case '{' : c = gmic_lbrace; break;
       case '}' : c = gmic_rbrace; break;
@@ -3042,7 +3045,8 @@ CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) 
     } else if (is_dquoted) { // If non-escaped character inside string
       if (c==1) { while (c && c!=' ') c = *(++ptrs); if (!c) break; } // Discard debug info inside string
       else switch (c) {
-        case '\"': is_dquoted = false; break;
+        case '\"' : is_dquoted = false; break;
+        case '.' : *(ptrd++) = gmic_dot; break;
         case '$' : *(ptrd++) = ptrs[1]=='?'?'$':gmic_dollar; break;
         case '{' : *(ptrd++) = gmic_lbrace; break;
         case '}' : *(ptrd++) = gmic_rbrace; break;
@@ -3211,7 +3215,8 @@ gmic& gmic::debug(const char *format, ...) {
 
   for (char *s = message.data() + (is_cr?1:0); *s; ++s) {
     char c = *s;
-    if (c>=gmic_dollar && c<=gmic_dquote) switch (c) {
+    if (c>=gmic_dot && c<=gmic_dquote) switch (c) {
+      case gmic_dot : std::fprintf(cimg::output(),"\\."); break;
       case gmic_dollar : std::fprintf(cimg::output(),"\\$"); break;
       case gmic_lbrace : std::fprintf(cimg::output(),"\\{"); break;
       case gmic_rbrace : std::fprintf(cimg::output(),"\\}"); break;
@@ -3949,7 +3954,8 @@ gmic& gmic::debug(const CImgList<T>& list, const char *format, ...) {
                  cimg::t_green,list.size(),callstack2string(true).data());
   for (char *s = message.data() + (is_cr?1:0); *s; ++s) {
     char c = *s;
-    if (c>=gmic_dollar && c<=gmic_dquote) switch (c) {
+    if (c>=gmic_dot && c<=gmic_dquote) switch (c) {
+      case gmic_dot : std::fprintf(cimg::output(),"\\."); break;
       case gmic_dollar : std::fprintf(cimg::output(),"\\$"); break;
       case gmic_lbrace : std::fprintf(cimg::output(),"\\{"); break;
       case gmic_rbrace : std::fprintf(cimg::output(),"\\}"); break;
