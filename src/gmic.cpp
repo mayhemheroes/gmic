@@ -2069,7 +2069,7 @@ void gmic::_gmic_substitute_args(const char *const argument, const char *const a
 
 #define gmic_substitute_args(is_image_expr) { \
   const char *const argument0 = argument; \
-  if (is_subst_arg && (*argument!=',' || argument[1])) { \
+  if (is_subst_arg) { \
     substitute_item(argument,images,images_names,parent_images,parent_images_names,variables_sizes,\
                     command_selection,is_image_expr).move_to(_argument); \
     argument = _argument; \
@@ -3036,7 +3036,6 @@ CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) 
       case ',' : c = gmic_comma; break;
       case '\"' : c = gmic_dquote; break;
       case ' ' : c = ' '; break;
-      case '.' : is_subst = true; break;
       default : *(ptrd++) = '\\';
       }
       *(ptrd++) = c;
@@ -3048,14 +3047,13 @@ CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) 
         case '{' : *(ptrd++) = gmic_lbrace; break;
         case '}' : *(ptrd++) = gmic_rbrace; break;
         case ',' : *(ptrd++) = gmic_comma; break;
-        case '.' : *(ptrd++) = '.'; is_subst = true; break;
         default : *(ptrd++) = c;
         }
     } else { // Non-escaped character outside string
       if (c=='\"') is_dquoted = true;
       else if (is_blank(c)) {
         *ptrd = 0;
-        if (is_subst) *(++ptrd) = 1;
+        if (is_subst) *(++ptrd) = 1; // Item has to be substituted
         CImg<char>(item.data(),(unsigned int)(ptrd - item.data() + 1)).move_to(items);
         ptrd = item.data();
         ++ptrs; while (is_blank(*ptrs)) ++ptrs; ptrs0 = ptrs--; // Remove trailing spaces to next item
@@ -3084,7 +3082,7 @@ CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) 
   }
   if (ptrd!=item.data() && !is_blank(c)) {
     *ptrd = 0;
-    if (is_subst) *(++ptrd) = 1;
+    if (is_subst) *(++ptrd) = 1;  // Item has to be substituted
     CImg<char>(item.data(),(unsigned int)(ptrd - item.data() + 1)).move_to(items);
   }
   if (is_debug) {
