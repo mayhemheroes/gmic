@@ -3094,7 +3094,6 @@ CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) 
       } else debug("  item[%u] = '%s'",l,items[l].data());
     }
   }
-
   return items;
 }
 
@@ -5254,8 +5253,15 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       if (position_argument<commands_line.size()) initial_argument = commands_line[position_argument];
 
       CImg<char> _item, _argument;
-      substitute_item(initial_item,images,images_names,parent_images,parent_images_names,
-                      variables_sizes,command_selection,false).move_to(_item);
+      const bool
+        is_subst_item = (bool)commands_line[position].back(),
+        is_subst_arg = position_argument<commands_line.size()?(bool)commands_line[position_argument].back():false;
+
+      if (is_subst_item)
+        substitute_item(initial_item,images,images_names,parent_images,parent_images_names,
+                        variables_sizes,command_selection,false).move_to(_item);
+      else
+        CImg<char>::string(initial_item).move_to(_item);
       char *item = _item;
       const char *argument = initial_argument;
 
