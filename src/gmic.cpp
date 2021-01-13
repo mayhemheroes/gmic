@@ -3047,7 +3047,10 @@ CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) 
       else switch (c) {
         case '\"' : is_dquoted = false; break;
         case '.' : *(ptrd++) = gmic_dot; break;
-        case '$' : *(ptrd++) = ptrs[1]=='?'?'$':gmic_dollar; break;
+        case '$' :
+          if (ptrs[1]=='?') { *(ptrd++) = '$'; is_subst = true; }
+          else *(ptrd++) = gmic_dollar;
+          break;
         case '{' : *(ptrd++) = gmic_lbrace; break;
         case '}' : *(ptrd++) = gmic_rbrace; break;
         case ',' : *(ptrd++) = gmic_comma; break;
@@ -5236,15 +5239,17 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       if (position>=commands_line.size()) break;
 
       // Check consistency of the interpreter environment.
-      if (images_names.size()!=images.size())
-        error(true,"G'MIC encountered a fatal error (images (%u) and images names (%u) have different size). "
-               "Please submit a bug report, at: https://github.com/dtschump/gmic/issues",
-              images_names.size(),images.size());
-      if (!callstack)
-        error(true,"G'MIC encountered a fatal error (empty call stack). "
-              "Please submit a bug report, at: https://github.com/dtschump/gmic/issues");
-      if (callstack.size()>=64)
-        error(true,"Call stack overflow (infinite recursion?).");
+      if (is_debug) {
+        if (images_names.size()!=images.size())
+          error(true,"G'MIC encountered a fatal error (images (%u) and images names (%u) have different size). "
+                "Please submit a bug report, at: https://github.com/dtschump/gmic/issues",
+                images_names.size(),images.size());
+        if (!callstack)
+          error(true,"G'MIC encountered a fatal error (empty call stack). "
+                "Please submit a bug report, at: https://github.com/dtschump/gmic/issues");
+        if (callstack.size()>=64)
+          error(true,"Call stack overflow (infinite recursion?).");
+      }
 
       // Substitute expressions in current item.
       const char
@@ -6392,7 +6397,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           char *arg_command = name;
           strreplace_fw(arg_command);
 
-          bool add_debug_info = true;
+          bool add_debug_info = is_debug;
           if ((*arg_command=='0' || *arg_command=='1') && arg_command[1]==',') {
             add_debug_info = (*arg_command=='1');
             arg_command+=2; arg_command_text+=2; offset_argument_text = 2;
@@ -6402,15 +6407,15 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           if (file) {
             print(images,0,"Import commands from file '%s'%s",
                   arg_command_text,
-                  !add_debug_info?" without debug info":"");
-            add_commands(file,arg_command,&count_new,&count_replaced);
+                  add_debug_info?" with debug info":"");
+            add_commands(file,add_debug_info?arg_command:0,&count_new,&count_replaced);
             cimg::fclose(file);
 
           } else if (!cimg::strncasecmp(arg_command,"http://",7) ||
                      !cimg::strncasecmp(arg_command,"https://",8)) { // Try to read from network
             print(images,0,"Import commands from URL '%s'%s",
                   arg_command_text,
-                  !add_debug_info?" without debug info":"");
+                  add_debug_info?" with debug info":"");
             try {
               file = cimg::std_fopen(cimg::load_network(arg_command,gmic_use_argx,network_timeout),"r");
             } catch (...) {
@@ -6423,7 +6428,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               verbosity = 0;
               is_debug = false;
               try {
-                add_commands(file,arg_command,&count_new,&count_replaced);
+                add_commands(file,add_debug_info?arg_command:0,&count_new,&count_replaced);
                 cimg::fclose(file);
               } catch (...) {
                 cimg::fclose(file);
@@ -14854,7 +14859,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           verbosity = 0;
           is_debug = false;
           try {
-            add_commands(gfile,filename,&count_new,&count_replaced,
+            add_commands(gfile,o_is_debug?filename:0,&count_new,&count_replaced,
                          allow_entrypoint && callstack.size()==1 && !is_command_input?&is_entrypoint:0);
           } catch (...) {
             is_add_error = true; is_entrypoint = false;
