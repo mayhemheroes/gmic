@@ -2069,7 +2069,7 @@ void gmic::_gmic_substitute_args(const char *const argument, const char *const a
 
 #define gmic_substitute_args(is_image_expr) { \
   const char *const argument0 = argument; \
-  if (*argument!=',' || argument[1]) { \
+  if (is_subst_arg && (*argument!=',' || argument[1])) { \
     substitute_item(argument,images,images_names,parent_images,parent_images_names,variables_sizes,\
                     command_selection,is_image_expr).move_to(_argument); \
     argument = _argument; \
@@ -3036,6 +3036,7 @@ CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) 
       case ',' : c = gmic_comma; break;
       case '\"' : c = gmic_dquote; break;
       case ' ' : c = ' '; break;
+      case '.' : is_subst = true; break;
       default : *(ptrd++) = '\\';
       }
       *(ptrd++) = c;
@@ -3047,6 +3048,7 @@ CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) 
         case '{' : *(ptrd++) = gmic_lbrace; break;
         case '}' : *(ptrd++) = gmic_rbrace; break;
         case ',' : *(ptrd++) = gmic_comma; break;
+        case '.' : *(ptrd++) = '.'; is_subst = true; break;
         default : *(ptrd++) = c;
         }
     } else { // Non-escaped character outside string
@@ -3059,7 +3061,7 @@ CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) 
         ++ptrs; while (is_blank(*ptrs)) ++ptrs; ptrs0 = ptrs--; // Remove trailing spaces to next item
         is_subst = false;
       } else {
-        if (c=='$' || c=='{' || c=='}') is_subst = true;
+        if (c=='$' || c=='{' || c=='}' || c=='.') is_subst = true;
         *(ptrd++) = c;
       }
     }
@@ -5253,10 +5255,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       if (position_argument<commands_line.size()) initial_argument = commands_line[position_argument];
 
       CImg<char> _item, _argument;
-      const bool
-        is_subst_item = (bool)commands_line[position].back(),
-        is_subst_arg = position_argument<commands_line.size()?(bool)commands_line[position_argument].back():false;
-
+      const bool is_subst_item = (bool)commands_line[position].back();
       if (is_subst_item)
         substitute_item(initial_item,images,images_names,parent_images,parent_images_names,
                         variables_sizes,command_selection,false).move_to(_item);
@@ -5458,7 +5457,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           is_command && *command=='c' && !std::strcmp(item,"check"),
         is_command_skip = is_get || is_command_verbose || is_command_echo || is_command_error ||
           is_command_warn || is_command_input || is_command_check?false:
-          is_command && *command=='s' && !std::strcmp(item,"skip");
+        is_command && *command=='s' && !std::strcmp(item,"skip");
+      bool is_subst_arg = position_argument<commands_line.size()?(bool)commands_line[position_argument].back():false;
 
       // Check for verbosity command, prior to the first output of a log message.
       bool is_verbose = verbosity>=1 || is_debug, is_verbose_argument = false;
@@ -14103,6 +14103,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       else {
         std::strcpy(command,"input");
         argument = item - (is_simple_hyphen || is_plus?1:0);
+        is_subst_arg = is_subst_item;
         *s_selection = 0;
       }
       gmic_substitute_args(true);
