@@ -3017,7 +3017,7 @@ void gmic::pop_callstack(const unsigned int callstack_size) {
 //---------------------------------------
 CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) {
   if (!commands_line || !*commands_line) return CImgList<char>();
-  bool is_dquoted = false;
+  bool is_dquoted = false, is_subst = false;
   const char *ptrs0 = commands_line;
   while (is_blank(*ptrs0)) ++ptrs0; // Remove leading spaces to first item
   CImg<char> item((unsigned int)std::strlen(ptrs0) + 1);
@@ -3052,10 +3052,16 @@ CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) 
     } else { // Non-escaped character outside string
       if (c=='\"') is_dquoted = true;
       else if (is_blank(c)) {
-        *ptrd = 0; CImg<char>(item.data(),(unsigned int)(ptrd - item.data() + 1)).move_to(items);
+        *ptrd = 0;
+        if (is_subst) *(++ptrd) = 1;
+        CImg<char>(item.data(),(unsigned int)(ptrd - item.data() + 1)).move_to(items);
         ptrd = item.data();
         ++ptrs; while (is_blank(*ptrs)) ++ptrs; ptrs0 = ptrs--; // Remove trailing spaces to next item
-      } else *(ptrd++) = c;
+        is_subst = false;
+      } else {
+        if (c=='$' || c=='{' || c=='}') is_subst = true;
+        *(ptrd++) = c;
+      }
     }
   }
   if (is_dquoted) {
@@ -3075,7 +3081,9 @@ CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) 
           str.data());
   }
   if (ptrd!=item.data() && !is_blank(c)) {
-    *ptrd = 0; CImg<char>(item.data(),(unsigned int)(ptrd - item.data() + 1)).move_to(items);
+    *ptrd = 0;
+    if (is_subst) *(++ptrd) = 1;
+    CImg<char>(item.data(),(unsigned int)(ptrd - item.data() + 1)).move_to(items);
   }
   if (is_debug) {
     debug("Decompose command line into %u items: ",items.size());
