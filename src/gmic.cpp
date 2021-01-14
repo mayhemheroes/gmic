@@ -3067,6 +3067,7 @@ CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) 
         is_subst = false;
       } else {
         if (c=='$' || c=='{' || c=='}' || c=='.') is_subst = true;
+        is_subst|=(bool)subst_chars[c];
         *(ptrd++) = c;
       }
     }
