@@ -5256,7 +5256,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         *const initial_item = run_entrypoint?"_main_":commands_line[position].data(),
         *const empty_argument = "",
         *initial_argument = empty_argument;
-      if (*initial_item==',' && !initial_item[1]) { ++position; continue; }
 
       unsigned int position_argument = position + 1;
       while (position_argument<commands_line.size() && *(commands_line[position_argument])==1)
@@ -5270,8 +5269,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                         variables_sizes,command_selection,false).move_to(_item);
       else
         CImg<char>::string(initial_item).move_to(_item);
+
       char *item = _item;
       const char *argument = initial_argument;
+      if (*item==',' && !item[1]) { ++position; continue; }
 
       // Check if current item is a known command.
       const bool
