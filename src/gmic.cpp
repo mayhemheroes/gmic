@@ -2032,7 +2032,7 @@ using namespace cimg_library;
 
 // Define number of hash slots to store variables and commands.
 #ifndef gmic_varslots
-#define gmic_varslots 512
+#define gmic_varslots 1024
 #endif
 #ifndef gmic_comslots
 #define gmic_comslots 1024
