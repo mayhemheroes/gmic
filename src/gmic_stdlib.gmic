@@ -32312,6 +32312,63 @@ fx_gmicky_preview :
 #@gui : url = link{"View latest minor changelog (2.9)","https://discuss.pixls.us/t/release-of-gmic-2-9"}
 #@gui : url = link{"View latest major changelog (2.0)","https://discuss.pixls.us/t/release-of-gmic-2-0-0"}
 
+#@gui What's New? : _none_,fx_whatsnew_preview
+#@gui : note = note("Here you'll find a list of filter additions and deletions in the plug-in, since your last visit.
+#@gui : When you have seen what's new, press the <b>Got It!</b> button to reset the list of changes.")
+#@gui : sep = separator()
+#@gui : nochange = value(0)_0+
+#@gui : note = note("\nThere have been no changes since your last visit.\n\n")
+#@gui : New Filters = text(1,"")_0
+#@gui : Removed Filters = text(1,"")_0
+#@gui : Got it! = button(0.5)_0+
+#@gui : sep = separator()
+#@gui : note = note("<small>Authors: <i>David Tschumperlé</i>.
+#@gui :       Latest Update: <i>2021/01/18</i>.</small>")
+fx_whatsnew_preview : skip "$*"
+  file=${_path_rc}whatsnew.gmz
+  l[]
+    parse_gui whatsnew
+    if isfile(['{/$file}']) $file date={date([0,1,2],['{/$file}']):/} else 0 date={date([0,1,2]):/} fi
+    html2utf8.. html2utf8.
+
+    # Check for changes.
+    newfilters,delfilters=
+    +- is_changes={max(abs(im),abs(iM))!=0} rm.
+    if !w # First call to the filter
+      rm. s -,10
+      repeat $! newfilters.=" - "{$>,t}{`10`} done
+
+    elif $is_changes # Estimate changes
+      eval "
+        ref(vector256(),str0);
+        ref(vector256(),str1);
+        for (s0 = s1 = 0, s0<h#0 && s1<h#1,
+          e0 = find(#0,_'\n',s0)%h#0;
+          e1 = find(#1,_'\n',s1)%h#1;
+          str0 = 0; copy(str0,i[#0,s0],e0 - s0);
+          str1 = 0; copy(str1,i[#1,s1],e1 - s1);
+          ref(lowercase(str0) - lowercase(str1),diff);
+          for (l = 0, l<size(diff) && !diff[l], ++l);
+          cmp = diff[l];
+          !cmp?( # Same strings
+            s0 = e0 + 1;
+            s1 = e1 + 1;
+          ):cmp<0?( # Added filter
+            run('newfilters.=\" - ',str0,'\"{`10`}');
+            s0 = e0 + 1;
+          ):( # Deleted filter
+            run('delfilters.=\" - ',str1,'\"{`10`}');
+            s1 = e1 + 1;
+          );
+        )"
+    fi
+    if $4 o[0] $file newfilters,delfilters= is_changes=0 fi
+    rm
+  endl
+  u "{0}"_{$is_changes?0:2}\
+    "{"{``$newfilters}"}"_{['$newfilters']!=0?2:0}\
+    "{"{``$delfilters}"}"_{['$delfilters']!=0?2:0}\
+    "{0}_2"
 
 #@gui ____<b>Arrays & Tiles</b>
 #-------------------------------
