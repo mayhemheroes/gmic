@@ -5638,6 +5638,22 @@ parse_gui_print :
   done
 
 #
+# Implements 'whatsnew' mode for command 'parse_gui'.
+#
+parse_gui_parseparams_whatsnew : u 0 # Tell parser to not parse filter parameters
+parse_gui_whatsnew :
+  e[] "  >> Generate output, in 'whatsnew' mode.\n"
+  l[]
+    1,1,1,1x$_nbfilters
+    repeat $! nm[$>] -${_f$>_path}${_f$>_name} f[$>] $> done
+    sort_list +,n a x
+    repeat w n={0,i[$>]} ('${_f${n}_path}" "${_f${n}_name}\n') done
+    rm[0]
+  endl
+  y a y
+  e[] "\r  >> "${_vt100_g}{`copy(vector64(_'" "'),'"Output done!"')`}$_vt100_n
+
+#
 # Implements 'list' mode for command 'parse_gui'.
 #
 parse_gui_parseparams_list : u 0 # Tell parser to not parse filter parameters
@@ -25637,14 +25653,12 @@ render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2
     all_amounts,all_sep=
 
     repeat $2
-      edate={y=date(0);m=date(1)-1-$>;m<=0?(--y;m+=12);100*y+m}
+      edate={y=date(0);m=date(1)-1-$>;while(m<=0,--y;m+=12);100*y+m}
       s_month=${"arg "$edate%100",January,February,March,April,May,June,July,August,\
                                   September,October,November,December"}
       s_year={int($edate/100)}
-
       month_amounts=
       sep=
-
       repeat $nb_entries,e if $edate==int(${edate_$e}/100)
         val=${donation_eur_$e}
         charged_val=${donation_charged_eur_$e}
@@ -25746,6 +25760,12 @@ rgba :
   u {round(u(255))},{round(u(255))},{round(u(255))},{round(u(255))}
 
 RGBA : rgba
+
+#@cli size_value
+#@cli : Return the size (in bytes) of an image value.
+size_value :
+  u {str=['$_pixeltype'];echo(str);str=='float'?4:str=='double'?8:0}
+
 
 #@cli std_noise
 #@cli : Return the estimated noise standard deviation of the last selected image.
@@ -32290,6 +32310,63 @@ fx_gmicky_preview :
 #@gui : url = link{"View latest minor changelog (2.9)","https://discuss.pixls.us/t/release-of-gmic-2-9"}
 #@gui : url = link{"View latest major changelog (2.0)","https://discuss.pixls.us/t/release-of-gmic-2-0-0"}
 
+#@gui What's New? : _none_,fx_whatsnew_preview
+#@gui : note = note("Here you'll find a list of filter additions and deletions in the plug-in, since your last visit.
+#@gui : When you have seen what's new, press the <b>Got It!</b> button to reset the list of changes.")
+#@gui : sep = separator()
+#@gui : nochange = value(0)_0+
+#@gui : note = note("\nThere have been no changes since your last visit.\n\n")
+#@gui : New Filters = text(1,"")_0
+#@gui : Removed Filters = text(1,"")_0
+#@gui : Got it! = button(0.5)_0+
+#@gui : sep = separator()
+#@gui : note = note("<small>Authors: <i>David Tschumperlé</i>.
+#@gui :       Latest Update: <i>2021/01/18</i>.</small>")
+fx_whatsnew_preview : skip "$*"
+  file=${_path_rc}whatsnew.gmz
+  l[]
+    parse_gui whatsnew
+    if isfile(['{/$file}']) $file date={date([0,1,2],['{/$file}']):/} else 0 date={date([0,1,2]):/} fi
+    html2utf8.. html2utf8.
+
+    # Check for changes.
+    newfilters,delfilters=
+    +- is_changes={max(abs(im),abs(iM))!=0} rm.
+    if !w # First call to the filter
+      rm. s -,10
+      repeat $! newfilters.=" - "{$>,t}{`10`} done
+
+    elif $is_changes # Estimate changes
+      eval "
+        ref(vector256(),str0);
+        ref(vector256(),str1);
+        for (s0 = s1 = 0, s0<h#0 && s1<h#1,
+          e0 = find(#0,_'\n',s0)%h#0;
+          e1 = find(#1,_'\n',s1)%h#1;
+          str0 = 0; copy(str0,i[#0,s0],e0 - s0);
+          str1 = 0; copy(str1,i[#1,s1],e1 - s1);
+          ref(lowercase(str0) - lowercase(str1),diff);
+          for (l = 0, l<size(diff) && !diff[l], ++l);
+          cmp = diff[l];
+          !cmp?( # Same strings
+            s0 = e0 + 1;
+            s1 = e1 + 1;
+          ):cmp<0?( # Added filter
+            run('newfilters.=\" - ',str0,'\"{`10`}');
+            s0 = e0 + 1;
+          ):( # Deleted filter
+            run('delfilters.=\" - ',str1,'\"{`10`}');
+            s1 = e1 + 1;
+          );
+        )"
+    fi
+    if $4 o[0] $file newfilters,delfilters= is_changes=0 fi
+    rm
+  endl
+  u "{0}"_{$is_changes?0:2}\
+    "{"{``$newfilters}"}"_{['$newfilters']!=0?2:0}\
+    "{"{``$delfilters}"}"_{['$delfilters']!=0?2:0}\
+    "{0}_2"
 
 #@gui ____<b>Arrays & Tiles</b>
 #-------------------------------
@@ -33446,8 +33523,8 @@ fx_diffusiontensors :
   repeat $! l[$>]
     wh={[w,h]}
     +diffusiontensors ${5-8}
-    r2dx. $1%
-    dt. {round(125/$1)},$2,{$3<3?$3:0},$4
+    r2dx. {max(1,w*$1%)}
+    dt. {round(125/max(1,$1))},$2,{$3<3?$3:0},$4
     if $3==3
       remove_opacity.. r.. .,.,1,100%,3 blend[0] [1],shapeaverage0 dilate. {1+2*$4} a c
     else k. fi
@@ -44170,10 +44247,10 @@ fx_voronoi :
     if $11" && "$15
       1,{iM+1},1,3 eval.. "I[#-1,i]+=[x,y,1]" s. c,-2 /[-2,-1] rm..
       eval. "const r = ($11-1)*arg(1+$16,1,1.5,2,2.5); ellipse(#0,i0,i1,r,r,0,$15/255,[${12-14},255])"
-    else rm.
     fi
-
+    rm.
     r $wh,1,100%,2
+
   endl done
 
 fx_voronoi_preview :
