@@ -3047,6 +3047,10 @@ CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) 
           if (ptrs[1]=='?') { *(ptrd++) = '$'; is_subst = true; }
           else *(ptrd++) = gmic_dollar;
           break;
+        case '.' :
+          *(ptrd++) = '.';
+          is_subst = true;
+          break;
         case '{' : *(ptrd++) = gmic_lbrace; break;
         case '}' : *(ptrd++) = gmic_rbrace; break;
         case ',' : *(ptrd++) = gmic_comma; break;
@@ -3062,7 +3066,8 @@ CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) 
         ++ptrs; while (is_blank(*ptrs)) ++ptrs; ptrs0 = ptrs--; // Remove trailing spaces to next item
         is_subst = false;
       } else {
-        if (c=='$' || c=='{' || c=='}' || c=='.') is_subst = true;
+        if (c=='$' || c=='{' || c=='}' ||
+            c=='.') is_subst = true;
         *(ptrd++) = c;
       }
     }
