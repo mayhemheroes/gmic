@@ -3049,7 +3049,7 @@ CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) 
           break;
         case '.' :
           *(ptrd++) = '.';
-          if ((is_blank(ptrs[-1]) || ptrs[-1]==',' || ptrs[-1]=='\"') &&
+          if ((ptrs==ptrs0 || is_blank(ptrs[-1]) || ptrs[-1]==',' || ptrs[-1]=='\"') &&
               (!ptrs[1] || is_blank(ptrs[1]) || ptrs[1]==',' || ptrs[1]=='\"' ||
                (ptrs[1]=='x' && ptrs[2]>='0' && ptrs[2]<='9') ||
                (ptrs[1]=='.' &&
@@ -3078,14 +3078,14 @@ CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) 
       } else {
         if (c=='$' || c=='{' || c=='}' ||
             (c=='.' &&
-             (is_blank(ptrs[-1]) || ptrs[-1]==',') &&
-             (!ptrs[1] || is_blank(ptrs[1]) || ptrs[1]==',' ||
+             (ptrs==ptrs0 || is_blank(ptrs[-1]) || ptrs[-1]==',') &&
+             (!ptrs[1] || is_blank(ptrs[1]) || ptrs[1]==',' || ptrs[1]=='\"' ||
               (ptrs[1]=='x' && ptrs[2]>='0' && ptrs[2]<='9') ||
               (ptrs[1]=='.' &&
-               (!ptrs[2] || is_blank(ptrs[2]) || ptrs[2]==',' ||
+               (!ptrs[2] || is_blank(ptrs[2]) || ptrs[2]==',' || ptrs[2]=='\"' ||
                 (ptrs[2]=='x' && ptrs[3]>='0' && ptrs[3]<='9') ||
                 (ptrs[2]=='.' &&
-                 (!ptrs[3] || is_blank(ptrs[3]) || ptrs[3]==',' ||
+                 (!ptrs[3] || is_blank(ptrs[3]) || ptrs[3]==',' || ptrs[3]=='\"' ||
                   (ptrs[3]=='x' && ptrs[4]>='0' && ptrs[4]<='9') ||
                   (ptrs[3]=='.'))))))))
           is_subst = true;
