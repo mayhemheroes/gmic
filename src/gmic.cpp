@@ -3049,7 +3049,17 @@ CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) 
           break;
         case '.' :
           *(ptrd++) = '.';
-          is_subst = true;
+          if ((is_blank(ptrs[-1]) || ptrs[-1]==',' || ptrs[-1]=='\"') &&
+              (!ptrs[1] || is_blank(ptrs[1]) || ptrs[1]==',' || ptrs[1]=='\"' ||
+               (ptrs[1]=='x' && ptrs[2]>='0' && ptrs[2]<='9') ||
+               (ptrs[1]=='.' &&
+                (!ptrs[2] || is_blank(ptrs[2]) || ptrs[2]==',' || ptrs[2]=='\"' ||
+                 (ptrs[2]=='x' && ptrs[3]>='0' && ptrs[3]<='9') ||
+                 (ptrs[2]=='.' &&
+                  (!ptrs[3] || is_blank(ptrs[3]) || ptrs[3]==',' || ptrs[3]=='\"' ||
+                   (ptrs[3]=='x' && ptrs[4]>='0' && ptrs[4]<='9') ||
+                   (ptrs[3]=='.')))))))
+            is_subst = true;
           break;
         case '{' : *(ptrd++) = gmic_lbrace; break;
         case '}' : *(ptrd++) = gmic_rbrace; break;
@@ -3063,11 +3073,22 @@ CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) 
         if (is_subst) *(++ptrd) = 1; // Item has to be substituted
         CImg<char>(item.data(),(unsigned int)(ptrd - item.data() + 1)).move_to(items);
         ptrd = item.data();
-        ++ptrs; while (is_blank(*ptrs)) ++ptrs; ptrs0 = ptrs--; // Remove trailing spaces to next item
+        while (is_blank(*++ptrs)) {} --ptrs; // Remove trailing spaces to next item
         is_subst = false;
       } else {
         if (c=='$' || c=='{' || c=='}' ||
-            c=='.') is_subst = true;
+            (c=='.' &&
+             (is_blank(ptrs[-1]) || ptrs[-1]==',') &&
+             (!ptrs[1] || is_blank(ptrs[1]) || ptrs[1]==',' ||
+              (ptrs[1]=='x' && ptrs[2]>='0' && ptrs[2]<='9') ||
+              (ptrs[1]=='.' &&
+               (!ptrs[2] || is_blank(ptrs[2]) || ptrs[2]==',' ||
+                (ptrs[2]=='x' && ptrs[3]>='0' && ptrs[3]<='9') ||
+                (ptrs[2]=='.' &&
+                 (!ptrs[3] || is_blank(ptrs[3]) || ptrs[3]==',' ||
+                  (ptrs[3]=='x' && ptrs[4]>='0' && ptrs[4]<='9') ||
+                  (ptrs[3]=='.'))))))))
+          is_subst = true;
         *(ptrd++) = c;
       }
     }
