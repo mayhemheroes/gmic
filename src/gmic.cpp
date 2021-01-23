@@ -3047,20 +3047,6 @@ CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) 
           if (ptrs[1]=='?') { *(ptrd++) = '$'; is_subst = true; }
           else *(ptrd++) = gmic_dollar;
           break;
-        case '.' :
-          *(ptrd++) = '.';
-          if ((ptrs==ptrs0 || is_blank(ptrs[-1]) || ptrs[-1]==',' || ptrs[-1]=='\"') &&
-              (!ptrs[1] || is_blank(ptrs[1]) || ptrs[1]==',' || ptrs[1]=='\"' ||
-               (ptrs[1]=='x' && ptrs[2]>='0' && ptrs[2]<='9') ||
-               (ptrs[1]=='.' &&
-                (!ptrs[2] || is_blank(ptrs[2]) || ptrs[2]==',' || ptrs[2]=='\"' ||
-                 (ptrs[2]=='x' && ptrs[3]>='0' && ptrs[3]<='9') ||
-                 (ptrs[2]=='.' &&
-                  (!ptrs[3] || is_blank(ptrs[3]) || ptrs[3]==',' || ptrs[3]=='\"' ||
-                   (ptrs[3]=='x' && ptrs[4]>='0' && ptrs[4]<='9') ||
-                   (ptrs[3]=='.')))))))
-            is_subst = true;
-          break;
         case '{' : *(ptrd++) = gmic_lbrace; break;
         case '}' : *(ptrd++) = gmic_rbrace; break;
         case ',' : *(ptrd++) = gmic_comma; break;
@@ -3079,13 +3065,13 @@ CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) 
         if (c=='$' || c=='{' || c=='}' ||
             (c=='.' &&
              (ptrs==ptrs0 || is_blank(ptrs[-1]) || ptrs[-1]==',') &&
-             (!ptrs[1] || is_blank(ptrs[1]) || ptrs[1]==',' || ptrs[1]=='\"' ||
+             (!ptrs[1] || is_blank(ptrs[1]) || ptrs[1]==',' ||
               (ptrs[1]=='x' && ptrs[2]>='0' && ptrs[2]<='9') ||
               (ptrs[1]=='.' &&
-               (!ptrs[2] || is_blank(ptrs[2]) || ptrs[2]==',' || ptrs[2]=='\"' ||
+               (!ptrs[2] || is_blank(ptrs[2]) || ptrs[2]==',' ||
                 (ptrs[2]=='x' && ptrs[3]>='0' && ptrs[3]<='9') ||
                 (ptrs[2]=='.' &&
-                 (!ptrs[3] || is_blank(ptrs[3]) || ptrs[3]==',' || ptrs[3]=='\"' ||
+                 (!ptrs[3] || is_blank(ptrs[3]) || ptrs[3]==',' ||
                   (ptrs[3]=='x' && ptrs[4]>='0' && ptrs[4]<='9') ||
                   (ptrs[3]=='.'))))))))
           is_subst = true;
