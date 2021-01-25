@@ -57,7 +57,7 @@
 #
 #*** Specific rules for the command-line interface 'gmic':
 #
-# - A comment line starting with '#@cli' will be parsed by 'gmic' to display help for
+# - A comment line starting with '#@cli' will be parsed by 'gmic' to print help for
 #    G'MIC custom commands (when invoked with option 'h'). More precisely :
 #
 #      _ '#@cli :: subsection' defines a new command subsection in the displayed help.
@@ -184,9 +184,9 @@ cli_noarg :
   v 0 use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r _cli_noarg=1 version
   +e[] "\n[gmic] No commands, options or data provided."
   if {*,u}>0
-    +e[] "[gmic] (type "${c}"'gmic help'"$n" to display help, "${c}"'gmic demos'"$n" to launch demos)."
+    +e[] "[gmic] (type "${c}"'gmic help'"$n" to print help, "${c}"'gmic demos'"$n" to launch demos)."
   else
-    +e[] "[gmic] (type "${c}"'gmic help'"$n" to display help)."
+    +e[] "[gmic] (type "${c}"'gmic help'"$n" to print help)."
   fi
   file_update=${_path_rc}update$_version.gmic
   need_update={"Y = date(0); M = date(1); D = date(2); date_current = Y*365 + M*31 + D;
@@ -32327,11 +32327,12 @@ fx_whatsnew_preview : skip "$*"
   l[]
     parse_gui whatsnew
     if isfile(['{/$file}']) $file date={date([0,1,2],['{/$file}']):/} else 0 date={date([0,1,2]):/} fi
-    html2utf8.. html2utf8.
+    utf82html.. utf82html.
 
     # Check for changes.
     newfilters,delfilters=
     +- is_changes={max(abs(im),abs(iM))!=0} rm.
+
     if !w # First call to the filter
       rm. s -,10
       repeat $! newfilters.=" - "{$>,t}{`10`} done
@@ -32352,10 +32353,10 @@ fx_whatsnew_preview : skip "$*"
             s0 = e0 + 1;
             s1 = e1 + 1;
           ):cmp<0?( # Added filter
-            run('newfilters.=\" - ',str0,'\"{`10`}');
+            run('(\'\"',str0,'\"\') html2utf8. newfilters.=\" - \"{t}{`10`} rm.');
             s0 = e0 + 1;
           ):( # Deleted filter
-            run('delfilters.=\" - ',str1,'\"{`10`}');
+            run('(\'\"',str1,'\"\') html2utf8. delfilters.=\" - \"{t}{`10`} rm.');
             s1 = e1 + 1;
           );
         )"
@@ -45820,6 +45821,46 @@ fx_random_gradient :
     b $3% n 0,255
     sh 0,2 rgb2srgb. balance_gamma. ${4-6} rm.
   endl done
+
+#@gui Hypotrochoid : fx_hypotrochoid, fx_hypotrochoid(1)
+#@gui : Periods = int(37,1,100)
+#@gui : Outer Radius (%) = float(100,0,300)
+#@gui : Inner Radius (%) = float(74,0,300)
+#@gui : Distance to center (%) = float(80,0,300)
+#@gui : Thickness (%) = float(0.5,0,5)
+#@gui : Color = color(255,255,255,255)
+#@gui : Anti-aliasing = bool(1)
+#@gui : sep = separator()
+#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2021/01/25</i>.</small>")
+fx_hypotrochoid :
+  {0,[w,h]*($10?1.5:1)}
+  eval "
+    const M = min(w,h)/2;
+    const A = M*$2%;
+    const B = A*$3%;
+    const H = B*$4%;
+    const S = M*$5%;
+    const F = (A - B)/max(1e-5,B);
+    const AmB = A - B;
+    hypotrochoid(t) = (_t = t; round([ w/2 + AmB*cos(_t) + H*cos(F*_t), h/2 + AmB*sin(_t) - H*sin(F*_t) ]));
+
+    oX = hypotrochoid(t);
+    dt = 1;
+    for (t = 0, t<$1*2*pi,
+      do (
+        X = hypotrochoid(t + dt);
+        dist = abs(X[0] - oX[0]) | abs(X[1] - oX[1]);
+        !dist?(dt*=2):
+        dist>1?(dt/=1.25):
+        (t+=dt),
+        dist!=1;
+      );
+      S<1?(I(X) = $9):ellipse(X,S,S,0,1,$9);
+      oX = X;
+    )"
+  r. [0],[0],1,1,2
+  channels. -3,0 sh. 0,2 fc. ${6-8} rm.
+  blend[0,-1] alpha
 
 #@gui Lightning : fx_lightning, fx_lightning_preview
 #@gui : note = note{"<small><b>Global parameters:</b></small>"}
