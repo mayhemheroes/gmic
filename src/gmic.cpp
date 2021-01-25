@@ -5884,7 +5884,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Blur.
         if (!std::strcmp("blur",command)) {
           gmic_substitute_args(false);
-          unsigned int is_gaussian = 0;
+          unsigned int is_gaussian = 1;
           float sigma = -1;
           sep = *argx = 0;
           boundary = 1;
