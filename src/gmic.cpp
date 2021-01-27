@@ -14221,7 +14221,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                       unroll_axis=='y' || unroll_axis==';'?'y':
                                       unroll_axis=='z' || unroll_axis=='/'?'z':'v');
           else if (*permute_axes) img.permute_axes(permute_axes);
-          print(images,0,"Input image at position%s, with values %s%s%s",
+          print(images,0,"Input image at position%s, with values %s",
                 _gmic_selection.data(),
                 gmic_argument_text_printed());
         }
