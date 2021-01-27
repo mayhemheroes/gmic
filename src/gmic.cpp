@@ -14174,7 +14174,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         } else {
 
           // New IxJxKxL image specified as array.
-          unsigned int l, bx = 0, by = 0, bz = 0, bc = 0, cx = 0, cy = 0, cz = 0, cc = 0, sx = 0, sy = 0, sz = 0, sc = 0;
+          unsigned int l,
+            bx = 0, by = 0, bz = 0, bc = 0,
+            cx = 0, cy = 0, cz = 0, cc = 0,
+            sx = 0, sy = 0, sz = 0, sc = 0;
           const char *nargument = 0;
           CImg<char> s_value(256);
           char o_separator = 0, separator = 0, unroll_axis = 0, c;
@@ -14226,7 +14229,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 }
                 o_separator = separator;
               }
-
             } else arg_error("input");
           }
           img.resize(sx + 1,sy + 1,sz + 1,sc + 1,0);
