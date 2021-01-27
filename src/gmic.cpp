@@ -2044,6 +2044,10 @@ using namespace cimg_library;
 // Macro to force stringifying selection for error messages.
 #define gmic_selection_err selection2string(selection,images_names,1,gmic_selection)
 
+inline bool is_xyzc(const char c) {
+  return c=='x' || c=='y' || c=='z' || c=='c';
+}
+
 // Return image argument as a shared or non-shared copy of one existing image.
 inline bool _gmic_image_arg(const unsigned int ind, const CImg<unsigned int>& selection) {
   cimg_forY(selection,l) if (selection[l]==ind) return true;
@@ -5657,7 +5661,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                            &axis,&end)==1 ||
                cimg_sscanf(argument,"%c,%f%c",
                            &axis,&align,&end)==2) &&
-              (axis=='x' || axis=='y' || axis=='z' || axis=='c')) {
+              is_xyzc(axis)) {
             print(images,0,"Append image%s along the '%c'-axis, with alignment %g.",
                   gmic_selection.data(),
                   axis,align);
@@ -5680,8 +5684,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                   &(*gmic_use_indices=0),&sep,&axis,&end)==3 ||
                       cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]%c,%c,%f%c",
                                   indices,&sep,&axis,&(align=0),&end)==4) &&
-                     (axis=='x' || axis=='y' || axis=='z' || axis=='c') &&
-                     sep==']' &&
+                     is_xyzc(axis) && sep==']' &&
                      (ind=selection2cimg(indices,images.size(),images_names,"append")).height()==1) {
             print(images,0,"Append image [%u] to image%s, along the '%c'-axis, with alignment %g.",
                   *ind,gmic_selection.data(),axis,align);
@@ -7130,8 +7133,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                cimg_sscanf(argument,"%f,%u,%c,%u%c",&sigma,&order,&axis,&boundary,&end)==4 ||
                (cimg_sscanf(argument,"%f%c,%u,%c,%u%c",
                             &sigma,&sep,&order,&axis,&boundary,&end)==5 && sep=='%')) &&
-              sigma>=0 && order<=2 && (axis=='x' || axis=='y' || axis=='z' || axis=='c') &&
-              boundary<=1) {
+              sigma>=0 && order<=2 && is_xyzc(axis) && boundary<=1) {
             print(images,0,"Apply %u-order Deriche filter on image%s, along axis '%c' with standard "
                   "deviation %g%s and %s boundary conditions.",
                   order,gmic_selection.data(),axis,
@@ -12013,8 +12015,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           axis = 0;
           if ((cimg_sscanf(argument,"%c%c",&order,&end)==1 ||
                (cimg_sscanf(argument,"%c,%c%c",&order,&axis,&end)==2 &&
-                (axis=='x' || axis=='y' || axis=='z' || axis=='c'))) &&
-              (order=='+' || order=='-')) ++position;
+                is_xyzc(axis))) && (order=='+' || order=='-')) ++position;
           else { order = '+'; axis = 0; }
           if (axis) print(images,0,"Sort values of image%s in %s order, according to axis '%c'.",
                           gmic_selection.data(),order=='+'?"ascending":"descending",axis);
@@ -12755,11 +12756,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         if (!std::strcmp("unroll",command)) {
           gmic_substitute_args(false);
           axis = 'y';
-          if ((*argument=='x' || *argument=='y' ||
-               *argument=='z' || *argument=='c') && !argument[1]) {
-            axis = *argument;
-            ++position;
-          }
+          if (is_xyzc(*argument) && !argument[1]) { axis = *argument; ++position; }
           print(images,0,"Unroll image%s along the '%c'-axis.",
                 gmic_selection.data(),
                 axis);
@@ -12901,8 +12898,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                cimg_sscanf(argument,"%f,%u,%c,%u%c",&sigma,&order,&axis,&boundary,&end)==4 ||
                (cimg_sscanf(argument,"%f%c,%u,%c,%u%c",
                             &sigma,&sep,&order,&axis,&boundary,&end)==5 && sep=='%')) &&
-              sigma>=0 && order<=3 && (axis=='x' || axis=='y' || axis=='z' || axis=='c') &&
-              boundary<=1) {
+              sigma>=0 && order<=3 && is_xyzc(axis) && boundary<=1) {
             print(images,0,"Apply %u-order Vanvliet filter on image%s, along axis '%c' with standard "
                   "deviation %g%s and %s boundary conditions.",
                   order,gmic_selection.data(),axis,
@@ -14161,7 +14157,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             ((larg>3 && arg_input[larg - 2]=='\'') ||
              (larg>5 && arg_input[larg - 3]==':' && arg_input[larg - 4]=='\'' &&
               ((delimiter = arg_input[larg-2])==',' || delimiter==';' || delimiter=='/' || delimiter=='^' ||
-               delimiter=='x' || delimiter=='y' || delimiter=='z' || delimiter=='c')))) {
+               is_xyzc(delimiter))))) {
 
           // String encoded as an image.
           CImg<char> str(arg_input.data() + 2,larg - (delimiter?5:3));
@@ -14177,7 +14173,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           unsigned int l, cx = 0, cy = 0, cz = 0, cc = 0, maxcx = 0, maxcy = 0, maxcz = 0;
           const char *nargument = 0;
           CImg<char> s_value(256);
-          char separator = 0, unroll_axis = 0, c;
+          char separator = 0, unroll_axis = 0, permute_axes[5] = { 0 }, c;
 
           for (nargument = arg_input.data() + 1; *nargument; ) {
             *s_value = separator = 0;
@@ -14206,8 +14202,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               case ',' : ++cx; break;
               case ':' : {
                 c = *nargument;
-                if ((c=='x' || c=='y' || c=='z' || c=='c' || c==',' || c==';' || c=='/' || c=='^') &&
+                if ((is_xyzc(c) || c==',' || c==';' || c=='/' || c=='^') &&
                     nargument[1]==')' && !nargument[2]) { unroll_axis = c; nargument+=2; }
+                else if (is_xyzc(c) && is_xyzc(nargument[1]) && is_xyzc(nargument[2]) && is_xyzc(nargument[3]) &&
+                         nargument[4]==')' && !nargument[5]) {
+                  std::memcpy(permute_axes,nargument,4);
+                  nargument+=5;
+                }
                 else arg_error("input");
               } break;
               case ')' : break;
@@ -14219,7 +14220,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           if (unroll_axis) img.unroll(unroll_axis=='x' || unroll_axis==','?'x':
                                       unroll_axis=='y' || unroll_axis==';'?'y':
                                       unroll_axis=='z' || unroll_axis=='/'?'z':'v');
-          print(images,0,"Input image at position%s, with values %s",
+          else if (*permute_axes) img.permute_axes(permute_axes);
+          print(images,0,"Input image at position%s, with values %s%s%s",
                 _gmic_selection.data(),
                 gmic_argument_text_printed());
         }
