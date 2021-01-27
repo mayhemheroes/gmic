@@ -14174,20 +14174,17 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         } else {
 
           // New IxJxKxL image specified as array.
-          CImg<bool> au(256,1,1,1,false);
-          au[(int)'0'] = au[(int)'1'] = au[(int)'2'] = au[(int)'3'] = au[(int)'4'] = au[(int)'5'] = au[(int)'6'] =
-            au[(int)'7'] = au[(int)'8'] = au[(int)'9'] = au[(int)'.'] = au[(int)'e'] = au[(int)'E'] = au[(int)'i'] =
-            au[(int)'n'] = au[(int)'f'] = au[(int)'a'] = au[(int)'+'] = au[(int)'-'] = true;
           unsigned int l, bx = 0, by = 0, bz = 0, bc = 0, cx = 0, cy = 0, cz = 0, cc = 0, sx = 0, sy = 0, sz = 0, sc = 0;
           const char *nargument = 0;
           CImg<char> s_value(256);
-          char o_separator = 0, separator = 0, unroll_axis = 0;
+          char o_separator = 0, separator = 0, unroll_axis = 0, c;
 
           for (nargument = arg_input.data() + 1; *nargument; ) {
             *s_value = separator = 0;
             char *pd = s_value;
             // Do something faster than 'scanf("%255[0-9.eEinfa+-]")'.
-            for (l = 0; l<255 && au((unsigned int)*nargument); ++l) *(pd++) = *(nargument++);
+            for (l = 0; l<255 && (((c=*nargument)>='0' && c<='9') || c=='.' || c=='e' || c=='E' || c=='i' || c=='n'
+                                  || c=='f' || c=='a' || c=='+' || c=='-'); ++l) *(pd++) = *(nargument++);
             if (l<255) *pd = 0; else arg_error("input");
             if (*nargument) separator = *(nargument++);
             if ((separator=='^' || separator=='/' || separator==';' || separator==',' ||
@@ -14211,7 +14208,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 case '/' : cx = bx; cy = by; cz = ++bz; cc = bc; break;
                 case '^' : cx = bx; cy = by; cz = bz; cc = ++bc; break;
                 case ':' : {
-                  const char c = *nargument;
+                  c = *nargument;
                   if ((c=='x' || c=='y' || c=='z' || c=='c' || c==',' || c==';' || c=='/' || c=='^') &&
                       nargument[1]==')' && !nargument[2]) { unroll_axis = c; nargument+=2; }
                   else arg_error("input");
