@@ -14219,14 +14219,16 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 case ')' : break;
                 default : arg_error("input");
                 }
-                o_separator = separator;
-              } else switch (separator) {
+                o_separator = 0;
+              } else {
+                switch (separator) {
                 case ',' : ++cx; break;
                 case ';' : ++cy; break;
                 case '/' : ++cz; break;
                 case '^' : ++cc; break;
                 }
-              o_separator = separator;
+                o_separator = separator;
+              }
 
             } else arg_error("input");
           }
