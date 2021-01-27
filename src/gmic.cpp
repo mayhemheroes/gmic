@@ -14174,13 +14174,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         } else {
 
           // New IxJxKxL image specified as array.
-          unsigned int l,
-            bx = 0, by = 0, bz = 0, bc = 0,
-            cx = 0, cy = 0, cz = 0, cc = 0,
-            sx = 0, sy = 0, sz = 0, sc = 0;
+          unsigned int l, cx = 0, cy = 0, cz = 0, cc = 0, maxcx = 0, maxcy = 0, maxcz = 0;
           const char *nargument = 0;
           CImg<char> s_value(256);
-          char o_separator = 0, separator = 0, unroll_axis = 0, c;
+          char separator = 0, unroll_axis = 0, c;
 
           for (nargument = arg_input.data() + 1; *nargument; ) {
             *s_value = separator = 0;
@@ -14193,45 +14190,32 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             if ((separator=='^' || separator=='/' || separator==';' || separator==',' ||
                  separator==')' || separator==':') &&
                 cimg_sscanf(s_value,"%lf%c",&value,&end)==1) {
-              if (cx>sx) sx = cx;
-              if (cy>sy) sy = cy;
-              if (cz>sz) sz = cz;
-              if (cc>sc) sc = cc;
+              if (cx>maxcx) maxcx = cx;
+              if (cy>maxcy) maxcy = cy;
+              if (cz>maxcz) maxcz = cz;
               if (cx>=img._width || cy>=img._height || cz>=img._depth || cc>=img._spectrum)
                 img.resize(cx>=img._width?7*cx/4 + 1:std::max(1U,img._width),
                            cy>=img._height?7*cy/4 + 1:std::max(1U,img._height),
                            cz>=img._depth?7*cz/4 + 1:std::max(1U,img._depth),
                            cc>=img._spectrum?7*cc/4 + 1:std::max(1U,img._spectrum),0);
               img(cx,cy,cz,cc) = (T)value;
-
-              if (o_separator && separator!=o_separator) {
-                switch (separator) {
-                case ',' : cx = ++bx; cy = by; cz = bz; cc = bc; break;
-                case ';' : cx = bx; cy = ++by; cz = bz; cc = bc; break;
-                case '/' : cx = bx; cy = by; cz = ++bz; cc = bc; break;
-                case '^' : cx = bx; cy = by; cz = bz; cc = ++bc; break;
-                case ':' : {
-                  c = *nargument;
-                  if ((c=='x' || c=='y' || c=='z' || c=='c' || c==',' || c==';' || c=='/' || c=='^') &&
-                      nargument[1]==')' && !nargument[2]) { unroll_axis = c; nargument+=2; }
-                  else arg_error("input");
-                } break;
-                case ')' : break;
-                default : arg_error("input");
-                }
-                o_separator = 0;
-              } else {
-                switch (separator) {
-                case ',' : ++cx; break;
-                case ';' : ++cy; break;
-                case '/' : ++cz; break;
-                case '^' : ++cc; break;
-                }
-                o_separator = separator;
+              switch (separator) {
+              case '^' : cx = cy = cz = 0; ++cc; break;
+              case '/' : cx = cy = 0; ++cz; break;
+              case ';' : cx = 0; ++cy; break;
+              case ',' : ++cx; break;
+              case ':' : {
+                c = *nargument;
+                if ((c=='x' || c=='y' || c=='z' || c=='c' || c==',' || c==';' || c=='/' || c=='^') &&
+                    nargument[1]==')' && !nargument[2]) { unroll_axis = c; nargument+=2; }
+                else arg_error("input");
+              } break;
+              case ')' : break;
+              default : arg_error("input");
               }
             } else arg_error("input");
           }
-          img.resize(sx + 1,sy + 1,sz + 1,sc + 1,0);
+          img.resize(maxcx + 1,maxcy + 1,maxcz + 1,cc + 1,0);
           if (unroll_axis) img.unroll(unroll_axis=='x' || unroll_axis==','?'x':
                                       unroll_axis=='y' || unroll_axis==';'?'y':
                                       unroll_axis=='z' || unroll_axis=='/'?'z':'v');
