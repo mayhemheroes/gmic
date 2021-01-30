@@ -33596,6 +33596,44 @@ fx_feltpen_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2014/25/04</i>.</small>")
 
+#@gui Ghost : fx_ghost, fx_ghost_preview(0)
+#@gui : note = note("<small><b>Ghost Effect:</b></small>")
+#@gui : Amplitude = float(200,0,1000)
+#@gui : Smoothness = float(2,0,10)
+#@gui : Coherence = float(2,0,10)
+#@gui : Gamma = float(1,-3,3)
+#@gui : sep = separator()
+#@gui : note = note("<small><b>Normalization:</b></small>")
+#@gui : Amplitude = float(3,0,10)
+#@gui : Radius = float(16,1,64)
+#@gui : Invert = bool(0)
+#@gui : sep = separator()
+#@gui : Preview Type = choice("Full","Forward Horizontal","Forward Vertical","Backward Horizontal",
+#@gui : "Backward Vertical","Duplicate Top","Duplicate Left","Duplicate Bottom","Duplicate Right",
+#@gui : "Duplicate Horizontal","Duplicate Vertical","Checkered","Checkered Inverse")
+#@gui : Preview Split = point(50,50,0,0,200,200,200,0,10)_0
+#@gui : sep = separator()
+#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2021/01/30</i>.</small>")
+fx_ghost :
+  repeat $! l[$>]
+    diffusiontensors. 1,1,$2,$3 eigen. compose_channels.. + sqrt.. n.. 1,100 pow.. $4 n.. 0,$1
+    100%,100%
+    eval.. "*
+      ca = i(x,y,0,0);
+      sa = i(x,y,0,1);
+      N = i(#-3,x,y);
+      x0 = x + N*ca;
+      y0 = y + N*sa;
+      x1 = x - N*ca;
+      y1 = y - N*sa;
+      polygon(#-1,2,x0,y0,x1,y1,-1,1);
+      I"
+    k. normalize_local $5,$6
+  endl done n 0,255 if $7 negate fi
+
+fx_ghost_preview :
+  gui_split_preview "fx_ghost $*",${-3--1}
+
 #@gui Hard Sketch : fx_hardsketchbw, fx_hardsketchbw_preview(0)
 #@gui : Amplitude = float(300,0,4000)
 #@gui : Density = float(50,0,100)
