@@ -25025,7 +25025,21 @@ is_windows :
 #@cli : Return string that defines a set of several useful macros for the embedded math evaluator.
 math_lib :
   u "
-  transpose(A,nA) = transp(A,nA); # For <v.2.9.2
+
+  # Apply a function 'fn' to all component of a vector 'V'.
+  # (optimization is done for <=vector16() by unrolling loop).
+  apply(V,fn) = (
+    size(V#)>16?for (_apply = 0, _apply<=size(V#), ++_apply, V#[_apply] = fn#(V#[_apply])):
+    _apply(V#,0,fn#);
+    V;
+  );
+  _apply(V,k,fn) = (
+    V#[k#] = fn#(V[k#]);
+    k# + 1<size(V#)?_apply(V#,k#+1,fn#);
+  );
+
+  # Compatibility bridge for <v.2.9.2.
+  transpose(A,nA) = transp(A,nA);
 
   # Return number of elements in min-heap #ind.
   heap_size(ind) = i[#ind,whd(#ind)-1];
@@ -25298,12 +25312,6 @@ math_lib :
       );
     );
     _l
-  );
-
-  map(V,x,fnx) = ( # Apply a function x->fnx on a vector variable V
-    unref(x#,_#x);
-    for (_#x = 0, _#x<size(V#), ++_#x, x# = V#[_#x]; V#[_#x] = fnx#);
-    V#;
   );
 
   pexp(x) = ( # Good polynomial approximation of 'exp(-x^2)' for |x|<2
