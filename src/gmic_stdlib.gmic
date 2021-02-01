@@ -1198,6 +1198,7 @@ reference :
 "Constant variables allows certain types of optimizations in the math JIT compiler."\n\
 \
 "# Specific functions:"\n\
+"* 'addr(expr)': return the pointer address to the specified expression 'expr'. "\
 "* 'u(max)' or 'u(min,max)': return a random value between '[0,max]' or '[min,max]', following a uniform "\
 "distribution."\n\
 "* 'f2ui(value)' and 'ui2f(value)': Convert a large unsigned integer as a negative floating point value "\
@@ -25024,7 +25025,21 @@ is_windows :
 #@cli : Return string that defines a set of several useful macros for the embedded math evaluator.
 math_lib :
   u "
-  transpose(A,nA) = transp(A,nA); # For <v.2.9.2
+
+  # Apply a function 'fn' to all component of a vector 'V'.
+  # (optimization is done for <=vector16() by unrolling loop).
+  apply(V,fn) = (
+    size(V#)>16?for (_apply = 0, _apply<size(V#), ++_apply, V#[_apply] = fn#(V#[_apply])):
+    _apply(V#,0,fn#);
+    V;
+  );
+  _apply(V,k,fn) = (
+    V#[k#] = fn#(V[k#]);
+    k# + 1<size(V#)?_apply(V#,k#+1,fn#);
+  );
+
+  # Compatibility bridge for <v.2.9.2.
+  transpose(A,nA) = transp(A,nA);
 
   # Return number of elements in min-heap #ind.
   heap_size(ind) = i[#ind,whd(#ind)-1];
@@ -25297,12 +25312,6 @@ math_lib :
       );
     );
     _l
-  );
-
-  map(V,x,fnx) = ( # Apply a function x->fnx on a vector variable V
-    unref(x#,_#x);
-    for (_#x = 0, _#x<size(V#), ++_#x, x# = V#[_#x]; V#[_#x] = fnx#);
-    V#;
   );
 
   pexp(x) = ( # Good polynomial approximation of 'exp(-x^2)' for |x|<2
@@ -33595,6 +33604,44 @@ fx_feltpen_preview :
 # "http://www.gimpchat.com/viewtopic.php?f=28&t=10036")
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2014/25/04</i>.</small>")
+
+#@gui Ghost : fx_ghost, fx_ghost_preview(0)
+#@gui : note = note("<small><b>Ghost Effect:</b></small>")
+#@gui : Amplitude = float(200,0,1000)
+#@gui : Smoothness = float(2,0,10)
+#@gui : Coherence = float(2,0,10)
+#@gui : Gamma = float(1,-3,3)
+#@gui : sep = separator()
+#@gui : note = note("<small><b>Normalization:</b></small>")
+#@gui : Amplitude = float(3,0,10)
+#@gui : Radius = float(16,1,64)
+#@gui : Invert = bool(0)
+#@gui : sep = separator()
+#@gui : Preview Type = choice("Full","Forward Horizontal","Forward Vertical","Backward Horizontal",
+#@gui : "Backward Vertical","Duplicate Top","Duplicate Left","Duplicate Bottom","Duplicate Right",
+#@gui : "Duplicate Horizontal","Duplicate Vertical","Checkered","Checkered Inverse")
+#@gui : Preview Split = point(50,50,0,0,200,200,200,0,10)_0
+#@gui : sep = separator()
+#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2021/01/30</i>.</small>")
+fx_ghost :
+  repeat $! l[$>]
+    diffusiontensors. 1,1,$2,$3 eigen. compose_channels.. + sqrt.. n.. 1,100 pow.. $4 n.. 0,$1
+    100%,100%
+    eval.. "*
+      ca = i(x,y,0,0);
+      sa = i(x,y,0,1);
+      N = i(#-3,x,y);
+      x0 = x + N*ca;
+      y0 = y + N*sa;
+      x1 = x - N*ca;
+      y1 = y - N*sa;
+      polygon(#-1,2,x0,y0,x1,y1,-1,1);
+      I"
+    k. normalize_local $5,$6
+  endl done n 0,255 if $7 negate fi
+
+fx_ghost_preview :
+  gui_split_preview "fx_ghost $*",${-3--1}
 
 #@gui Hard Sketch : fx_hardsketchbw, fx_hardsketchbw_preview(0)
 #@gui : Amplitude = float(300,0,4000)
