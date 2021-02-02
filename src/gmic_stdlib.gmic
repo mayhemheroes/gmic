@@ -2447,7 +2447,7 @@ _display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
     for ${-isvisible}" && "!${"iskey ESC"}" && "!((${"iskey CTRLLEFT"}" || "${"iskey CTRLRIGHT"})" && "${"iskey W"})
 
       # Correct aspect ratio while centering image.
-      if $ratio_mode
+      if $ratio_mode" && "$sizx>16" && "$sizy>16
         nposx,nposy,nsizx,nsizy=$posx,$posy,$sizx,$sizy
         repeat 2
           if {*,w}/$sizx<{*,h}/$sizy
@@ -25623,7 +25623,7 @@ remove_copymark :
 # render_donations: Parse the PayPal .CSV file and generate 'latest-months' donation gfx.
 # $1 = filename.csv
 # $2 = number of latest months.
-render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2=5}
+render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2=4}
   l[]
     it[] "$1" s -,{'\n'}
     rm[0] # Discard labels
@@ -25750,7 +25750,7 @@ render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2
     *. 200 i[-2] 100%,100%,1,3 a[-2,-1] c
 
     rows -5,100% a y,0.5 r2dx 480
-    if $2==5 o $HOME/work/src/gmic/html/img/donations_latest_months.png fi
+    if $2==4 o $HOME/work/src/gmic/html/img/donations_latest_months.png fi
   endl
 
   total_eur={$all_sum_eur+$all_sum_usd/$eur2usd}
@@ -25758,7 +25758,7 @@ render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2
   e[] "\n==> TOTAL : "{_floor($total_eur)}" eur (charged : "{_floor($total_charged_eur)}" eur)"\
       " = "{_floor($all_sum_eur)}" eur (charged: "{_floor($all_sum_charged_eur)}" eur)"\
       " + "{_floor($all_sum_usd)}" usd (charged: "{_floor($all_sum_charged_usd)}" usd)\n"
-  if $2!=5 rm return fi
+  if $2!=4 rm return fi
 
   # Generate report for twitter/framasphere.
   sp gmicky,{h}
