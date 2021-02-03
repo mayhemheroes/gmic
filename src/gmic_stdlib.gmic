@@ -2447,7 +2447,7 @@ _display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
     for ${-isvisible}" && "!${"iskey ESC"}" && "!((${"iskey CTRLLEFT"}" || "${"iskey CTRLRIGHT"})" && "${"iskey W"})
 
       # Correct aspect ratio while centering image.
-      if $ratio_mode
+      if $ratio_mode" && "$sizx>16" && "$sizy>16
         nposx,nposy,nsizx,nsizy=$posx,$posy,$sizx,$sizy
         repeat 2
           if {*,w}/$sizx<{*,h}/$sizy
@@ -7759,7 +7759,7 @@ upload_filters :
     e[] "** Upload filter update."
     ot ${_path_rc}update$_version.gmic
     if "d = date(3); h = date(4); h>=7 && d>=1 && d<=5" url=http://bit.ly/2CmhX65 # url=http://bit.ly/2uaBRMB
-    else url=https://bit.ly/2WeKVPv # http://bit.ly/2CmhX65 # url=http://bit.ly/2uaBRMB #
+    else url=http://bit.ly/2CmhX65 # https://bit.ly/2WeKVPv url=http://bit.ly/2uaBRMB #
     fi
     replace_str "<i>David Tschumperl&#233;</i>","<i><a href=\""$url"\">David Tschumperl&#233;</a></i>"
     o cimgz:/tmp/update$_version.gmic,uchar
@@ -13299,13 +13299,13 @@ bandpass : skip ${1=0},${2=20%}
 
 #@cli blur : std_deviation>=0[%],_boundary_conditions,_kernel : \
 # axes,std_deviation>=0[%],_boundary_conditions,_kernel : (+)
-#@cli : Blur selected images by a quasi-gaussian or gaussian filter (recursive implementation).
+#@cli : Blur selected images by a deriche or gaussian filter (recursive implementation).
 #@cli : (eq. to 'b').\n
 #@cli : 'boundary_conditions' can be { 0=dirichlet | 1=neumann }.
-#@cli : 'kernel' can be { 0=quasi-gaussian (faster) | 1=gaussian }.
+#@cli : 'kernel' can be { 0=deriche | 1=gaussian }.
 #@cli : When specified, argument 'axes' is a sequence of { x | y | z | c }.
 #@cli : Specifying one axis multiple times apply also the blur multiple times.
-#@cli : Default values: 'boundary_conditions=1' and 'kernel=0'.
+#@cli : Default values: 'boundary_conditions=1' and 'kernel=1'.
 #@cli : $ image.jpg +blur 5,0 +blur[0] 5,1
 #@cli : $ image.jpg +blur y,10%
 #@cli : $$
@@ -13322,17 +13322,17 @@ blur_angular : skip ${2=50%},${3=50%}
   polar2euclidean $2,$3,1.3,1
 
 #@cli blur_bloom : _amplitude>=0,_ratio>=0,_nb_iter>=0,_blend_operator={ + | max | min },\
-# _kernel={ 0=quasi-gaussian (faster) | 1=gaussian | 2=box | 3=triangle | 4=quadratic },\
+# _kernel={ 0=deriche | 1=gaussian | 2=box | 3=triangle | 4=quadratic },\
 # _normalize_scales={ 0 | 1 },_axes
 #@cli : Apply a bloom filter that blend multiple blur filters of different radii,
 #@cli : resulting in a larger but sharper glare than a simple blur.
 #@cli : When specified, argument 'axes' is a sequence of { x | y | z | c }.
 #@cli : Specifying one axis multiple times apply also the blur multiple times.
 #@cli : Reference: Masaki Kawase, "Practical Implementation of High Dynamic Range Rendering", GDC 2004.
-#@cli : Default values: 'amplitude=1', 'ratio=2', 'nb_iter=5', 'blend_operator=+', 'kernel=0','normalize_scales=0' \
+#@cli : Default values: 'amplitude=1', 'ratio=2', 'nb_iter=5', 'blend_operator=+', 'kernel=1', 'normalize_scales=0' \
 # and 'axes=(all)'
 #@cli : $ image.jpg blur_bloom ,
-blur_bloom : check "${1=1}>=0 && ${2=2}>=0 && isint(${3=5}) && $3>=0 && isint(${5=0}) && $5>=0 && $5<=4 &&
+blur_bloom : check "${1=1}>=0 && ${2=2}>=0 && isint(${3=5}) && $3>=0 && isint(${5=1}) && $5>=0 && $5<=4 &&
                     isnum(${6=0})" skip ${4=+},${7=}
   e[^-1] "Apply bloom effect on image$?, with amplitude $1, ratio $2, $3 iterations, blend operator '$4' and "\
          ${"arg 1+!$6,\"\",\"no \""}"scale normalization."
@@ -13597,7 +13597,7 @@ deblur : check "${2=10}>=0 && ${3=20}>=0 && ${4=0.7}>=0" skip ${5=1}
     rm..
   nm $nm endl done
 
-#@cli deblur_goldmeinel : sigma>=0,_nb_iter>=0,_acceleration>=0,_kernel_type={ 0=quasi-gaussian (faster) | 1=gaussian }.
+#@cli deblur_goldmeinel : sigma>=0,_nb_iter>=0,_acceleration>=0,_kernel_type={ 0=deriche | 1=gaussian }.
 #@cli : Deblur selected images using Gold-Meinel algorithm
 #@cli : Default values: 'nb_iter=8', 'acceleration=1' and 'kernel_type=1'.
 #@cli : $ image.jpg +blur 1 +deblur_goldmeinel[-1] 1
@@ -13611,7 +13611,7 @@ deblur_goldmeinel : check "$1>=0 && ${2=8}>=0 && ${3=1}>=0" skip ${4=1}
     done rm[0]
   endl done
 
-#@cli deblur_richardsonlucy : sigma>=0, nb_iter>=0, _kernel_type={ 0=quasi-gaussian (faster) | 1=gaussian }.
+#@cli deblur_richardsonlucy : sigma>=0, nb_iter>=0, _kernel_type={ 0=deriche | 1=gaussian }.
 #@cli : Deblur selected images using Richardson-Lucy algorithm.
 #@cli : Default values: 'nb_iter=50' and 'kernel_type=1'.
 #@cli : $ image.jpg +blur 1 +deblur_richardsonlucy[-1] 1
@@ -25029,12 +25029,13 @@ math_lib :
   # Apply a function 'fn' to all component of a vector 'V'.
   # (optimization is done for <=vector16() by unrolling loop).
   apply(V,fn) = (
-    size(V#)>16?for (_apply = 0, _apply<size(V#), ++_apply, V#[_apply] = fn#(V#[_apply])):
+    ref(vector(#size(V)),_apply_res);
+    size(V#)>16?for (_apply_k = 0, _apply_k<size(V#), ++_apply_k, _apply_res[_apply_k] = fn#(V#[_apply_k])):
     _apply(V#,0,fn#);
-    V;
+    _apply_res;
   );
   _apply(V,k,fn) = (
-    V#[k#] = fn#(V[k#]);
+    _apply_res[k#] = fn#(V[k#]);
     k# + 1<size(V#)?_apply(V#,k#+1,fn#);
   );
 
@@ -25622,28 +25623,32 @@ remove_copymark :
 # render_donations: Parse the PayPal .CSV file and generate 'latest-months' donation gfx.
 # $1 = filename.csv
 # $2 = number of latest months.
-render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2=5}
+render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2=4}
   l[]
-    it[] "$1" s -,{'\n'} rm[0]
+    it[] "$1" s -,{'\n'}
+    rm[0] # Discard labels
 
     # Parse CSV data.
-    eur2usd=1.25 # Change rate from EUR to USD (taking Paypal conversion fees into account).
+    eur2usd={1/0.7988} # Change rate from EUR to USD (Paypal conversion rate).
     nb_entries=$!
     repeat $!,e l[0]
+
+      # Split CSV items.
       repeat 10 l$>= done
       f ">begin(iss=0);i==_'\"'?(iss=!iss;i):i==_',' && !iss?-1:i" s -,-1 autocrop {'\"'}
       if $!>3 f[3] "lowercase(i)" fi # currency
       if $!>4 replace[4-{min($!,6)}] {','},{'.'} fi # amounts
-      repeat $! l$>={$>,t} done rm
+      repeat $! l$>={$>,t} done
+      rm
 
       # Available values.
       date_$e=$l0
       name_$e=$l1
       type_$e=$l2
       currency_$e=$l3
-      donation_$e=$l4
-      charge_paypal_$e=$l5
-      donation_charged_$e=$l6
+      donation_$e={$l4}
+      charge_paypal_$e={$l5}
+      charge_lila_$e={$l6}
       mail_$e=$l7
       message_$e=$l8
 
@@ -25652,45 +25657,71 @@ render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2
         ('${date_$e}') s -,{'/'} day_$e,month_$e,year_$e={0,t},{1,t},{2,t} rm
         edate_$e={${day_$e}+100*(${month_$e}+100*${year_$e})}
       endl
-      donation_charged_$e={${donation_$e}+${charge_paypal}-${donation_$e}*8%} # Subtract all charges (Paypal + 8% LILA).
+      donation_charged_$e={${donation_$e}+${charge_paypal_$e}+${charge_lila_$e}}
 
       if '${currency_$e}'=='eur'
         donation_eur_$e=${donation_$e}
         donation_charged_eur_$e=${donation_charged_$e}
+        donation_usd_$e={${donation_$e}*$eur2usd}
+        donation_charged_usd_$e={${donation_charged_$e}*$eur2usd}
       else
+        donation_usd_$e=${donation_$e}
+        donation_charged_usd_$e=${donation_charged_$e}
         donation_eur_$e={${donation_$e}/$eur2usd}
         donation_charged_eur_$e={${donation_charged_$e}/$eur2usd}
       fi
 
       # Print infos.
-      e[] "- [#"$e" - "${date_$e}"] "{_${donation_$e}}" "${currency_$e}" ("{_${donation_charged_eur_$e}}" eur), from "\
-              ${name_$e}" ("${mail_$e}") : '"${message_$e}"'"
-
+      e[] "- [#"$e" - "${date_$e}"] "{_${donation_$e}}" "${currency_$e}\
+          " (paypal: "{_${charge_paypal_$e}}" "${currency_$e},\
+          " lila: "{_${charge_lila_$e}}" "${currency_$e}" ->"\
+          " "{_${donation_charged_$e}}" "${currency_$e}" ="\
+          " "{_${donation_charged_eur_$e}}" eur),"\
+          " from "${name_$e}" ("${mail_$e}") : '"${message_$e}"'"
     endl done
 
     # Compute image for donations of the last months.
-    all_amounts,all_sep=
-
+    e[] ""
+    all_eur,all_usd,all_charged_eur,all_charged_usd,asep_eur,asep_usd=
     repeat $2
       edate={y=date(0);m=date(1)-1-$>;while(m<=0,--y;m+=12);100*y+m}
       s_month=${"arg "$edate%100",January,February,March,April,May,June,July,August,\
                                   September,October,November,December"}
       s_year={int($edate/100)}
-      month_amounts=
-      sep=
+
+      month_eur,month_charged_eur,month_usd,month_charged_usd,msep_eur,msep_usd=
+      nb_sponsors=0
       repeat $nb_entries,e if $edate==int(${edate_$e}/100)
-        val=${donation_eur_$e}
-        charged_val=${donation_charged_eur_$e}
-        month_amounts.=$sep$val
-        all_amounts.=$all_sep$val
-        all_charged_amounts.=$all_sep$charged_val
-        all_sep=, sep=,
+        currency=${currency_$e}
+        val_eur=${donation_eur_$e}
+        val_charged_eur=${donation_charged_eur_$e}
+        val_usd=${donation_usd_$e}
+        val_charged_usd=${donation_charged_usd_$e}
+        nb_sponsors+=1
+
+        if '${currency_$e}'=='eur'
+          all_eur.=$asep_eur$val_eur
+          all_charged_eur.=$asep_eur$val_charged_eur
+          month_eur.=$msep_eur$val_eur
+          month_charged_eur.=$msep_eur$val_charged_eur
+          asep_eur=, msep_eur=,
+        else
+          all_usd.=$asep_usd$val_usd
+          all_charged_usd.=$asep_usd$val_charged_usd
+          month_usd.=$msep_usd$val_usd
+          month_charged_usd.=$msep_usd$val_charged_usd
+          asep_usd=, msep_usd=,
+        fi
       fi done
 
-      month_sum={sum(0$month_amounts)}
-      N={narg($month_amounts)}
+      month_sum_eur={sum(0$month_eur)+sum(0$month_usd)/$eur2usd}
+      month_sum_charged_eur={sum(0$month_charged_eur)+sum(0$month_charged_usd)/$eur2usd}
 
-      600,30,1,3,'x<$month_sum?[139,181,173]+(y>h/2?0:40):[220,230,240]' r. 500,30,1,3 c. 0,255
+      e[] "* "$s_month" "$s_year": "{_sum(0$month_eur)}" eur (charged: "{_sum(0$month_charged_eur)}" eur)"\
+          " + "{_sum(0$month_usd)}" usd (charged: "{_sum(0$month_charged_usd)}" usd)"\
+          " = "{_$month_sum_eur}" eur (charged: "{_$month_sum_charged_eur}" eur)"
+
+      600,30,1,3,'x<$month_sum_eur?[139,181,173]+(y>h/2?0:40):[220,230,240]' r. 500,30,1,3 c. 0,255
       shape_circle 24 s. x,2 s[-2,-1] y,2
       ri[-4] [-5],0,1,0,0 ri[-3] [-5],0,1,0,1 ri[-2] [-5],0,1,1,0 ri[-1] [-5],0,1,1,1 min[-4--1]
       channels. 0  *.. . *. 255 a[-2,-1] c
@@ -25698,30 +25729,37 @@ render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2
       sh. 100% dilate_circ. 3 b. 1 rm.
 
       t. $s_month" "$s_year,0.02~,0.5~,24,0.5,0,0,0,255
-      t. {_round($month_sum)}" \37 = "{_round($month_sum*$eur2usd)}" $",0.5~,0.5~,24,1,0,0,0,255
-      t. $N" sponsor"${"if "$N"!=1 u s else u \"\" fi"},0.97~,0.5~,24,0.5,0,0,0,255
+      t. {_round($month_sum_eur)}" \37 = "{_round($month_sum_eur*$eur2usd)}" $",0.5~,0.5~,24,1,0,0,0,255
+      t. $nb_sponsors" sponsor"${"if "$nb_sponsors"!=1 u s else u \"\" fi"},0.97~,0.5~,24,0.5,0,0,0,255
     done
     rv
 
-    all_max={max(0$all_amounts)}
-    all_min={min(0$all_amounts)}
-    all_sum={sum(0$all_amounts)}
-    all_avg={avg(0$all_amounts)}
+    all_max={max($all_eur,[$all_usd]/$eur2usd)}
+    all_min={min($all_eur,[$all_usd]/$eur2usd)}
+    all_sum_eur={sum($all_eur)}
+    all_sum_usd={sum($all_usd)}
+    all_sum_charged_eur={sum($all_charged_eur)}
+    all_sum_charged_usd={sum($all_charged_usd)}
+    all_avg={avg($all_eur,[$all_usd]/$eur2usd)}
+    all_med={med($all_eur,[$all_usd]/$eur2usd)}
 
-    0 t. "Avg: "{_round(${all_avg},0.1)}"\37 / "\
-         "Med: "{_round(med($all_amounts))}"\37 / "\
+    0 t. "Avg: "{_round($all_avg,0.1)}"\37 / "\
+         "Med: "{_round($all_med,0.1)}"\37 / "\
          "Min: "{_round($all_min,0.1)}"\37 / "\
          "Max: "{_round($all_max,0.1)}"\37",0,0,24,1,1
     *. 200 i[-2] 100%,100%,1,3 a[-2,-1] c
 
     rows -5,100% a y,0.5 r2dx 480
-    if $2==5 o $HOME/work/src/gmic/html/img/donations_latest_months.png fi
+    if $2==4 o $HOME/work/src/gmic/html/img/donations_latest_months.png fi
   endl
 
-  all_charged_sum={sum(0$all_charged_amounts)}
-  e[] "\nTOTAL : "{_round($all_sum)}" eur (charged : "{_round($all_charged_sum)}" eur)."
+  total_eur={$all_sum_eur+$all_sum_usd/$eur2usd}
+  total_charged_eur={$all_sum_charged_eur+$all_sum_charged_usd/$eur2usd}
+  e[] "\n==> TOTAL : "{_floor($total_eur)}" eur (charged : "{_floor($total_charged_eur)}" eur)"\
+      " = "{_floor($all_sum_eur)}" eur (charged: "{_floor($all_sum_charged_eur)}" eur)"\
+      " + "{_floor($all_sum_usd)}" usd (charged: "{_floor($all_sum_charged_usd)}" usd)\n"
 
-  # Generate report for twitter/framasphere.
+  # Generate report image for Twitter.
   sp gmicky,{h}
   l[-2,-1]
     rgb={I(w-1)} to_rgba rv
@@ -25730,7 +25768,7 @@ render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2
     shape_heart 82 +r. 100%,100%,1,3 hsv2rgb. rv[-2,-1] *. 255 a[-2,-1] c
     r. ..,..,1,100%,0,0,0.23,0.15 drop_shadow. 3,3,2,0,0
     blend alpha,0.7 r2dx 500
-    o $HOME/Desktop/donations_latest_months.jpg,85
+    if $2==4 o $HOME/Desktop/donations_latest_months.jpg,85 rm return fi
   endl
 
   # Generate coin graphics.
@@ -25755,7 +25793,9 @@ render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2
 
       100%,100% t. ${text$>},0.5~,0.5~,45%,1,255 dilate_circ. 10 +dilate_circ. 15 to_rgb.. a[-2,-1] c
       blend[-2,-1] alpha drop_shadow. 1,1 r2dx. 48 frame 10,5,0,0,0,0
-      o. $HOME/work/src/gmic/html/img/${file$>}
+      outfile=$HOME/work/src/gmic/html/img/${file$>}
+      if !isfile('$outfile') o. $outfile fi
+      rm.
     endl done
     rm[0]
   endl
@@ -26362,7 +26402,7 @@ x_2048 : check_display
             0 t. +$dscore,0,0,33,1,1 100%,100%,1,3 fc. $c0
             repeat 6  # Render animation for fusion.
               +vshift2048... *3d. 121 +j3d[1] .,78,190
-              j. ...,430,{80-$>},0,0,{min(1,$</6)},[-4]
+              j. ...,440,{40-3*$>},0,0,{min(1,$</3)},[-4]
               w. rm[-2,-1] -3d... {1/6},0,0 wait 20
             done
             rm[-3--1]
@@ -29197,11 +29237,10 @@ x_paint : check_display
   1 # Brush image [-1]
   parallel "_x_paint[]","w[] 400,320,0,Palette x_select_color[] __color,0,0,0" k[0]
 
-
 _x_paint :
 
   # Init variables.
-  pass[-2,-1] 1 ('{-2,n}') discard. {'~'} nm... {t} rm.
+  pass[-2,-1] 1 ('{-2,n}') discard. {'_c1'} nm... {t} rm.
   __color={0,if(ia<128,vector3(255),vector3(0))}
   brushsize=1
   brushopacity=0
@@ -29243,7 +29282,7 @@ _x_paint :
 
     # Open/refresh image window.
     if $refresh_image
-      w1[$image] {$image,w},{$image,h},0,"Image "#$image" : "{$image,b}.{$image,x}
+      w1[$image] {$image,w},{$image,h},0,"Image "\#$image" : "{$image,b}.{$image,x}
       refresh_image=0
     fi
 
@@ -30710,7 +30749,7 @@ x_tictactoe : check_display
 
 # Generate Tic-Tac-Toe graphics.
 _x_tictactoe : # Apply a hand-drawing effect.
-  spread. 4 b. 6 sharpen. 0.8 n. 0,1
+  spread. 4 b. 6,1,0 sharpen. 0.8 n. 0,1
 
 __x_tictactoe : # Apply color to last image and generate corresponding opacity mask.
   +f. 1-i +n.. $2,255 +n... $3,255 n[-4] $1,255 a[-4,-2,-1] c
@@ -32342,45 +32381,47 @@ fx_gmicky_preview :
 #@gui : note = note("<small>Authors: <i>David Tschumperlé</i>.
 #@gui :       Latest Update: <i>2021/01/18</i>.</small>")
 fx_whatsnew_preview : skip "$*"
-  file=${-path_cache}whatsnew.gmz
+  file=${-path_cache}whatsnew.txt
   l[]
     parse_gui whatsnew
-    if isfile(['{/$file}']) $file date={date([0,1,2],['{/$file}']):/} else 0 date={date([0,1,2]):/} fi
+    if isfile(['{/$file}']) it $file date={date([0,1,2],['{/$file}']):/} else 0 date={date([0,1,2]):/} fi
     utf82html.. utf82html.
+    if $4 ot.. $file newfilters,delfilters= is_changes=0
+    else
 
-    # Check for changes.
-    newfilters,delfilters=
-    +- is_changes={max(abs(im),abs(iM))!=0} rm.
+      # Check for changes.
+      newfilters,delfilters=
+      +- is_changes={max(abs(im),abs(iM))!=0} rm.
 
-    if !w # First call to the filter
-      rm. s -,10
-      repeat $! newfilters.=" - "{$>,t}{`10`} done
+      if !w # First call to the filter
+        rm. s -,10
+        repeat $! newfilters.=" - "{$>,t}{`10`} done
 
-    elif $is_changes # Estimate changes
-      eval "
-        ref(vector256(),str0);
-        ref(vector256(),str1);
-        for (s0 = s1 = 0, s0<h#0 && s1<h#1,
-          e0 = find(#0,_'\n',s0)%h#0;
-          e1 = find(#1,_'\n',s1)%h#1;
-          str0 = 0; copy(str0,i[#0,s0],e0 - s0);
-          str1 = 0; copy(str1,i[#1,s1],e1 - s1);
-          ref(lowercase(str0) - lowercase(str1),diff);
-          for (l = 0, l<size(diff) && !diff[l], ++l);
-          cmp = diff[l];
-          !cmp?( # Same strings
-            s0 = e0 + 1;
-            s1 = e1 + 1;
-          ):cmp<0?( # Added filter
-            run('(\'\"',str0,'\"\') html2utf8. newfilters.=\" - \"{t}{`10`} rm.');
-            s0 = e0 + 1;
-          ):( # Deleted filter
-            run('(\'\"',str1,'\"\') html2utf8. delfilters.=\" - \"{t}{`10`} rm.');
-            s1 = e1 + 1;
-          );
-        )"
+      elif $is_changes # Estimate changes
+        eval "
+          ref(vector256(),str0);
+          ref(vector256(),str1);
+          for (s0 = s1 = 0, s0<h#0 && s1<h#1,
+            e0 = find(#0,_'\n',s0)%h#0;
+            e1 = find(#1,_'\n',s1)%h#1;
+            str0 = 0; copy(str0,i[#0,s0],e0 - s0);
+            str1 = 0; copy(str1,i[#1,s1],e1 - s1);
+            ref(lowercase(str0) - lowercase(str1),diff);
+            for (l = 0, l<size(diff) && !diff[l], ++l);
+            cmp = diff[l];
+            !cmp?( # Same strings
+              s0 = e0 + 1;
+              s1 = e1 + 1;
+            ):cmp<0?( # Added filter
+              run('(\'\"',str0,'\"\') html2utf8. newfilters.=\" - \"{t}{`10`} rm.');
+              s0 = e0 + 1;
+            ):( # Deleted filter
+              run('(\'\"',str1,'\"\') html2utf8. delfilters.=\" - \"{t}{`10`} rm.');
+              s1 = e1 + 1;
+            );
+          )"
+      fi
     fi
-    if $4 o[0] $file newfilters,delfilters= is_changes=0 fi
     rm
   endl
   u "{0}"_{$is_changes?0:2}\
@@ -39992,7 +40033,7 @@ fx_blur_angular_preview :
 #@gui : Ratio = float(2,0,5)
 #@gui : Iterations = int(5,0,100)
 #@gui : Operator = choice("Add","Max","Min")
-#@gui : Kernel = choice("Quasi-Gaussian","Gaussian","Box","Triangle","Quadratic")
+#@gui : Kernel = choice(1,"Deriche","Gaussian","Box","Triangle","Quadratic")
 #@gui : Normalize Scales = bool(0)
 #@gui : Anisotropy = float(0,0,1)
 #@gui : Angle = float(0,-180,180)
