@@ -13299,13 +13299,13 @@ bandpass : skip ${1=0},${2=20%}
 
 #@cli blur : std_deviation>=0[%],_boundary_conditions,_kernel : \
 # axes,std_deviation>=0[%],_boundary_conditions,_kernel : (+)
-#@cli : Blur selected images by a quasi-gaussian or gaussian filter (recursive implementation).
+#@cli : Blur selected images by a deriche or gaussian filter (recursive implementation).
 #@cli : (eq. to 'b').\n
 #@cli : 'boundary_conditions' can be { 0=dirichlet | 1=neumann }.
-#@cli : 'kernel' can be { 0=quasi-gaussian (faster) | 1=gaussian }.
+#@cli : 'kernel' can be { 0=deriche | 1=gaussian }.
 #@cli : When specified, argument 'axes' is a sequence of { x | y | z | c }.
 #@cli : Specifying one axis multiple times apply also the blur multiple times.
-#@cli : Default values: 'boundary_conditions=1' and 'kernel=0'.
+#@cli : Default values: 'boundary_conditions=1' and 'kernel=1'.
 #@cli : $ image.jpg +blur 5,0 +blur[0] 5,1
 #@cli : $ image.jpg +blur y,10%
 #@cli : $$
@@ -13322,17 +13322,17 @@ blur_angular : skip ${2=50%},${3=50%}
   polar2euclidean $2,$3,1.3,1
 
 #@cli blur_bloom : _amplitude>=0,_ratio>=0,_nb_iter>=0,_blend_operator={ + | max | min },\
-# _kernel={ 0=quasi-gaussian (faster) | 1=gaussian | 2=box | 3=triangle | 4=quadratic },\
+# _kernel={ 0=deriche | 1=gaussian | 2=box | 3=triangle | 4=quadratic },\
 # _normalize_scales={ 0 | 1 },_axes
 #@cli : Apply a bloom filter that blend multiple blur filters of different radii,
 #@cli : resulting in a larger but sharper glare than a simple blur.
 #@cli : When specified, argument 'axes' is a sequence of { x | y | z | c }.
 #@cli : Specifying one axis multiple times apply also the blur multiple times.
 #@cli : Reference: Masaki Kawase, "Practical Implementation of High Dynamic Range Rendering", GDC 2004.
-#@cli : Default values: 'amplitude=1', 'ratio=2', 'nb_iter=5', 'blend_operator=+', 'kernel=0','normalize_scales=0' \
+#@cli : Default values: 'amplitude=1', 'ratio=2', 'nb_iter=5', 'blend_operator=+', 'kernel=1', 'normalize_scales=0' \
 # and 'axes=(all)'
 #@cli : $ image.jpg blur_bloom ,
-blur_bloom : check "${1=1}>=0 && ${2=2}>=0 && isint(${3=5}) && $3>=0 && isint(${5=0}) && $5>=0 && $5<=4 &&
+blur_bloom : check "${1=1}>=0 && ${2=2}>=0 && isint(${3=5}) && $3>=0 && isint(${5=1}) && $5>=0 && $5<=4 &&
                     isnum(${6=0})" skip ${4=+},${7=}
   e[^-1] "Apply bloom effect on image$?, with amplitude $1, ratio $2, $3 iterations, blend operator '$4' and "\
          ${"arg 1+!$6,\"\",\"no \""}"scale normalization."
@@ -13597,7 +13597,7 @@ deblur : check "${2=10}>=0 && ${3=20}>=0 && ${4=0.7}>=0" skip ${5=1}
     rm..
   nm $nm endl done
 
-#@cli deblur_goldmeinel : sigma>=0,_nb_iter>=0,_acceleration>=0,_kernel_type={ 0=quasi-gaussian (faster) | 1=gaussian }.
+#@cli deblur_goldmeinel : sigma>=0,_nb_iter>=0,_acceleration>=0,_kernel_type={ 0=deriche | 1=gaussian }.
 #@cli : Deblur selected images using Gold-Meinel algorithm
 #@cli : Default values: 'nb_iter=8', 'acceleration=1' and 'kernel_type=1'.
 #@cli : $ image.jpg +blur 1 +deblur_goldmeinel[-1] 1
@@ -13611,7 +13611,7 @@ deblur_goldmeinel : check "$1>=0 && ${2=8}>=0 && ${3=1}>=0" skip ${4=1}
     done rm[0]
   endl done
 
-#@cli deblur_richardsonlucy : sigma>=0, nb_iter>=0, _kernel_type={ 0=quasi-gaussian (faster) | 1=gaussian }.
+#@cli deblur_richardsonlucy : sigma>=0, nb_iter>=0, _kernel_type={ 0=deriche | 1=gaussian }.
 #@cli : Deblur selected images using Richardson-Lucy algorithm.
 #@cli : Default values: 'nb_iter=50' and 'kernel_type=1'.
 #@cli : $ image.jpg +blur 1 +deblur_richardsonlucy[-1] 1
@@ -30749,7 +30749,7 @@ x_tictactoe : check_display
 
 # Generate Tic-Tac-Toe graphics.
 _x_tictactoe : # Apply a hand-drawing effect.
-  spread. 4 b. 6 sharpen. 0.8 n. 0,1
+  spread. 4 b. 6,1,0 sharpen. 0.8 n. 0,1
 
 __x_tictactoe : # Apply color to last image and generate corresponding opacity mask.
   +f. 1-i +n.. $2,255 +n... $3,255 n[-4] $1,255 a[-4,-2,-1] c
@@ -40033,7 +40033,7 @@ fx_blur_angular_preview :
 #@gui : Ratio = float(2,0,5)
 #@gui : Iterations = int(5,0,100)
 #@gui : Operator = choice("Add","Max","Min")
-#@gui : Kernel = choice("Quasi-Gaussian","Gaussian","Box","Triangle","Quadratic")
+#@gui : Kernel = choice(1,"Deriche","Gaussian","Box","Triangle","Quadratic")
 #@gui : Normalize Scales = bool(0)
 #@gui : Anisotropy = float(0,0,1)
 #@gui : Angle = float(0,-180,180)
