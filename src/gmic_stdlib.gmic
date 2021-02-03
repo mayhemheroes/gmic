@@ -25758,9 +25758,8 @@ render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2
   e[] "\n==> TOTAL : "{_floor($total_eur)}" eur (charged : "{_floor($total_charged_eur)}" eur)"\
       " = "{_floor($all_sum_eur)}" eur (charged: "{_floor($all_sum_charged_eur)}" eur)"\
       " + "{_floor($all_sum_usd)}" usd (charged: "{_floor($all_sum_charged_usd)}" usd)\n"
-  if $2!=4 rm return fi
 
-  # Generate report for twitter/framasphere.
+  # Generate report image for Twitter.
   sp gmicky,{h}
   l[-2,-1]
     rgb={I(w-1)} to_rgba rv
@@ -25769,7 +25768,7 @@ render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2
     shape_heart 82 +r. 100%,100%,1,3 hsv2rgb. rv[-2,-1] *. 255 a[-2,-1] c
     r. ..,..,1,100%,0,0,0.23,0.15 drop_shadow. 3,3,2,0,0
     blend alpha,0.7 r2dx 500
-    o $HOME/Desktop/donations_latest_months.jpg,85
+    if $2==4 o $HOME/Desktop/donations_latest_months.jpg,85 rm return fi
   endl
 
   # Generate coin graphics.
@@ -25794,7 +25793,9 @@ render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2
 
       100%,100% t. ${text$>},0.5~,0.5~,45%,1,255 dilate_circ. 10 +dilate_circ. 15 to_rgb.. a[-2,-1] c
       blend[-2,-1] alpha drop_shadow. 1,1 r2dx. 48 frame 10,5,0,0,0,0
-      o. $HOME/work/src/gmic/html/img/${file$>}
+      outfile=$HOME/work/src/gmic/html/img/${file$>}
+      if !isfile('$outfile') o. $outfile fi
+      rm.
     endl done
     rm[0]
   endl
