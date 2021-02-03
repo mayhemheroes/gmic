@@ -32382,45 +32382,47 @@ fx_gmicky_preview :
 #@gui : note = note("<small>Authors: <i>David Tschumperlé</i>.
 #@gui :       Latest Update: <i>2021/01/18</i>.</small>")
 fx_whatsnew_preview : skip "$*"
-  file=${-path_cache}whatsnew.gmz
+  file=${-path_cache}whatsnew.txt
   l[]
     parse_gui whatsnew
-    if isfile(['{/$file}']) $file date={date([0,1,2],['{/$file}']):/} else 0 date={date([0,1,2]):/} fi
+    if isfile(['{/$file}']) it $file date={date([0,1,2],['{/$file}']):/} else 0 date={date([0,1,2]):/} fi
     utf82html.. utf82html.
+    if $4 ot.. $file newfilters,delfilters= is_changes=0
+    else
 
-    # Check for changes.
-    newfilters,delfilters=
-    +- is_changes={max(abs(im),abs(iM))!=0} rm.
+      # Check for changes.
+      newfilters,delfilters=
+      +- is_changes={max(abs(im),abs(iM))!=0} rm.
 
-    if !w # First call to the filter
-      rm. s -,10
-      repeat $! newfilters.=" - "{$>,t}{`10`} done
+      if !w # First call to the filter
+        rm. s -,10
+        repeat $! newfilters.=" - "{$>,t}{`10`} done
 
-    elif $is_changes # Estimate changes
-      eval "
-        ref(vector256(),str0);
-        ref(vector256(),str1);
-        for (s0 = s1 = 0, s0<h#0 && s1<h#1,
-          e0 = find(#0,_'\n',s0)%h#0;
-          e1 = find(#1,_'\n',s1)%h#1;
-          str0 = 0; copy(str0,i[#0,s0],e0 - s0);
-          str1 = 0; copy(str1,i[#1,s1],e1 - s1);
-          ref(lowercase(str0) - lowercase(str1),diff);
-          for (l = 0, l<size(diff) && !diff[l], ++l);
-          cmp = diff[l];
-          !cmp?( # Same strings
-            s0 = e0 + 1;
-            s1 = e1 + 1;
-          ):cmp<0?( # Added filter
-            run('(\'\"',str0,'\"\') html2utf8. newfilters.=\" - \"{t}{`10`} rm.');
-            s0 = e0 + 1;
-          ):( # Deleted filter
-            run('(\'\"',str1,'\"\') html2utf8. delfilters.=\" - \"{t}{`10`} rm.');
-            s1 = e1 + 1;
-          );
-        )"
+      elif $is_changes # Estimate changes
+        eval "
+          ref(vector256(),str0);
+          ref(vector256(),str1);
+          for (s0 = s1 = 0, s0<h#0 && s1<h#1,
+            e0 = find(#0,_'\n',s0)%h#0;
+            e1 = find(#1,_'\n',s1)%h#1;
+            str0 = 0; copy(str0,i[#0,s0],e0 - s0);
+            str1 = 0; copy(str1,i[#1,s1],e1 - s1);
+            ref(lowercase(str0) - lowercase(str1),diff);
+            for (l = 0, l<size(diff) && !diff[l], ++l);
+            cmp = diff[l];
+            !cmp?( # Same strings
+              s0 = e0 + 1;
+              s1 = e1 + 1;
+            ):cmp<0?( # Added filter
+              run('(\'\"',str0,'\"\') html2utf8. newfilters.=\" - \"{t}{`10`} rm.');
+              s0 = e0 + 1;
+            ):( # Deleted filter
+              run('(\'\"',str1,'\"\') html2utf8. delfilters.=\" - \"{t}{`10`} rm.');
+              s1 = e1 + 1;
+            );
+          )"
+      fi
     fi
-    if $4 o[0] $file newfilters,delfilters= is_changes=0 fi
     rm
   endl
   u "{0}"_{$is_changes?0:2}\
