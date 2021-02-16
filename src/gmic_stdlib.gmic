@@ -14150,7 +14150,7 @@ ilaplacian : check "${1=0}>=0 && ${2=10}>0" skip "${3=}"
       fft 100%,100%,1,1,"2*(cos(x*2*pi/w) + cos(y*2*pi/h)) - 4" =. 1
       /[-3,-2] . rm.
       = 0 ifft rm.
-    endl done + 'begin(S=resize([$ia],s,0));S'
+    endl done + 'begin(S = resize([$ia],s,0));S'
 
   else # Inversion with PDE-flow
     if $is_estimate
@@ -25096,6 +25096,10 @@ math_lib :
   # Return number of elements in dynamic array #ind.
   dar_size(ind) = i[#ind,whd(#ind)-1];
 
+  # Return last element of a dynamic array
+  dar_Back(ind) = I[#ind,dar_size(#ind)-1];
+  dar_back(ind) = i[#ind,dar_size(#ind)-1];
+
   # Inserts new element 'elt' into dynamic array #ind, at index [pos] ('pos' must be in [0,dar_size(#ind)]).
   dar_insert(ind,elt,pos) = (
     _dar_pos = pos;
@@ -25124,7 +25128,6 @@ math_lib :
   dar_remove(ind,pos) = (
     _dar_pos = pos;
     _dar_siz = dar_size(#ind);
-
     if (_dar_pos<_dar_siz,
       _dar_siz = --dar_size(#ind);
       for (_dar_c = 0, _dar_c<s(#ind), ++_dar_c,
@@ -25136,7 +25139,7 @@ math_lib :
   # Remove last element from dynamic array #ind.
   dar_remove(ind) = (
     _dar_siz = dar_size(#ind);
-    _dar_size>0?dar_size(#ind) = --_dar_size;
+    _dar_siz>0?--dar_size(#ind);
   );
 
   # Distance from point A to point B
