@@ -14135,19 +14135,19 @@ _ihaar_z : # Inverse haar transform along the z-axis.
   if d%2 error "Command 'ihaar': Invalid image depth="{h}" (is not even)." fi
   s z,2 r 100%,100%,200% (-1/1) r. {-2,w},{-2,h} *[-2,-1] + / {sqrt(2)}
 
-#@cli ilaplacian : { nb_iterations>0 | 0 },_time_step>0,_[initial_estimate]
+#@cli ilaplacian : { nb_iterations>0 | 0 },_[initial_estimate]
 #@cli : Invert selected Laplacian images.
 #@cli : If given 'nb_iterations' is '0', inversion is done in Fourier space (single iteration),
-#@cli : otherwise, by applying 'nb_iterations' of a Laplacian-inversion PDE flow (with specified 'time_step').
+#@cli : otherwise, by applying 'nb_iterations' of a Laplacian-inversion PDE flow.
 #@cli : Note that the resulting inversions are just estimation of possible/approximated solutions.
-#@cli : Default values: 'nb_iterations=0','time_step=10' and '[initial_estimated]=(undefined)'.
+#@cli : Default values: 'nb_iterations=0' and '[initial_estimated]=(undefined)'.
 #@cli : $ image.jpg +laplacian +ilaplacian[-1] 0
-ilaplacian : check "${1=0}>=0 && ${2=10}>0" skip "${3=}"
-  is_estimate=${"is_image_arg $3"} nb_iter={round($1)}
+ilaplacian : check "${1=0}>=0" skip "${2=}"
+  is_estimate=${"is_image_arg $2"} nb_iter={round($1)}
   if !$nb_iter # Inversion in Fourier space
     if $is_estimate
-      e[0--4] "Invert Laplacian image$? in Fourier space, with initial estimate $3."
-      pass$3 1 ia=${-average_colors} rm.
+      e[0--4] "Invert Laplacian image$? in Fourier space, with initial estimate $2."
+      pass$2 1 ia=${-average_colors} rm.
     else
       e[0--4] "Invert Laplacian image$? in Fourier space."
       ia=0
@@ -14160,15 +14160,17 @@ ilaplacian : check "${1=0}>=0 && ${2=10}>0" skip "${3=}"
 
   else # Inversion with PDE-flow
     if $is_estimate
-      e[0--4] "Invert Laplacian image$? using $1 iterations of PDE flow, with time step $2 and
-                   initial estimate $3."
-      repeat $! pass$3 0 l[$>,-1]
-        repeat $1 +laplacian. -. ... *. {$2/max(abs(im),abs(iM))} +[^0] done k.
+      e[0--4] "Invert Laplacian image$? using $1 iterations of PDE flow and
+                   initial estimate $2."
+      repeat $! pass$2 0 l[$>,-1]
+        *[0] 5 i[1] (0,5,0;5,0,5;0,5,0)
+        repeat $1 +convolve. [1] -. [0] +[-2,-1] /. 21 done k. # Optimized semi-implicit scheme, with dt=5
       endl done
     else
-      e[0--4] "Invert Laplacian image$? using $1 iterations of PDE flow, with time step $2."
-      repeat $! l[$>] +f 0
-        repeat $1 +laplacian. -. ... *. {$2/max(abs(im),abs(iM))} +[^0] done k.
+      e[0--4] "Invert Laplacian image$? using $1 iterations of PDE flow."
+      repeat $! l[$>]
+        * 5 (0,5,0;5,0,5;0,5,0) +f.. 0
+        repeat $1 +convolve. [1] -. [0] +[-2,-1] /. 21 done k. # Optimized semi-implicit scheme, with dt=5
       endl done
     fi
   fi
