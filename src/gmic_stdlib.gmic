@@ -515,7 +515,7 @@ gmd_url_ascii :
                 i[q]==_':' && i[q + 1]==_'/' && i[q + 2]==_'/'?(
                   while (q<h && (inrange(lowercase(c=i[q]),_'a',_'z') || inrange(c,_'0',_'9') ||
                                  isin(c,['-._~:/?#[]@!$&'()*+,;%='])), ++q);
-                  q - p<64?copy(i[#0,p],p + 1,q - p,1,0);
+                  q - p<128?copy(i[#0,p],p + 1,q - p,1,0);
                 );
               ):(q=++p);
               p = find(n,http,q);
@@ -553,7 +553,6 @@ gmd_strcut_ascii :
 #
 gmd2html :
   replace {'\n'},4 # '\4' = original newlines
-  gmd_gmic_html
   gmd_bold_html
   gmd_italic_html
   gmd_mono_html
@@ -567,6 +566,7 @@ gmd2html :
   gmd_section_html
   gmd_url_html
   gmd_newline_html
+  gmd_gmic_html
 
 gmd_bold_html :
   gmd_bold
@@ -671,7 +671,7 @@ gmd_url_html : # Replace 'http[s]://address.url' by html link.
                 i[q]==_'s'?++q;
                 i[q]==_':' && i[q + 1]==_'/' && i[q + 2]==_'/'?(
                   while (q<h && i[q]>_' ' && i[q]!=_')' && i[q]!=39, ++q);
-                  q - p<64?copy(i[#0,p],p,q - p,1,0);
+                  q - p<128?copy(i[#0,p],p,q - p,1,0);
                 );
               ):(q=++p);
               p = find(n,http,q);
@@ -1455,8 +1455,8 @@ reference : skip "${2=}"
   # Insert list of commands.
   l reference_list_of_commands_$1 onfail endl
 
-  # Insert additional HTML pages.
-  if "['$1']=='html' && ['$2']!=0" "$2" ref_all fi
+  # Insert additional sections if specified.
+  if "['$2']!=0" "$2" ref_all fi
 
   _section "Examples of Use"
   _text \
@@ -1546,7 +1546,6 @@ reference_text_ascii :
     gmd_image_ascii
     s +,{'\n'}
     gmd_strcut_ascii 100,0
-    gmd_gmic_ascii
     gmd_bold_ascii
     gmd_italic_ascii
     gmd_mono_ascii
@@ -1555,6 +1554,7 @@ reference_text_ascii :
     gmd_link_ascii
     gmd_url_ascii
     gmd_section_ascii
+    gmd_gmic_ascii
     i[^] ({'\n'})
     a y autocrop {'\n'}
 
