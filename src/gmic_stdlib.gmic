@@ -1457,7 +1457,7 @@ reference :
   # Insert additional HTML pages.
   if ['$1']=='html'
     file=$HOME/work/src/gmic-community/include/reference_html.gmic
-    if isfile(['{/$file}']) $file ref_all fi
+    if isfile(['{/$file}']) $file sec_all fi
   fi
 
   _section "Examples of Use"
@@ -1682,32 +1682,33 @@ reference_finalize_html :
 "      <ul>"\n
 
   ind_loc=${"-nmd 1,\"List of Commands\""}
-  repeat $! l[$>]
-    name={n} strvar $name url=${}.html
-    if $>==$ind_loc
-       html.="<li><a class=\"ref_loc\" href=\""$url"#top\">"$name"</a></li>"
-    else
-      html.="<li><a href=\""$url"#top\">"$name"</a></li>"
+  if narg($ind_loc)
+    repeat $! l[$>]
+      name={n} strvar $name url=${}.html
+      if $>==$ind_loc
+         html.="<li><a class=\"ref_loc\" href=\""$url"#top\">"$name"</a></li>"
+      else
+        html.="<li><a href=\""$url"#top\">"$name"</a></li>"
+      fi
+    endl done
+    html.="\n    </ul>"\n\
+          "<!-- end_content -->"\n\
+          "<!-- ref_navigation_bottom -->"\n\
+          "    </div><div class=\"section_end\"></div>"\n\
+          "    <div id=\"include_footer\"></div>"\n\
+          "  </body>"
+
+    i[0] ({'$html'}:y) nm[0] "Table of Contents"
+    ind_loc+=1
+    if narg($ind_loc)" && "isfile('list_of_commands.html') # Merge with existing 'List of commands' page if it exists
+      it list_of_commands.html
+      if find(crop(),'"<!-- merged_content -->"')<0 l[$ind_loc,-1]
+        s[0] -,{'"<!-- end_content -->"'}
+        s. -,{'"<!-- begin_content -->"'}
+        i[1] ('"<!-- merged_content -->"':y)
+        k[0,1,-1] a y
+      endl else nm. "List of Commands" rv[$ind_loc,-1] rm. fi
     fi
-  endl done
-
-  html.="\n    </ul>"\n\
-        "<!-- end_content -->"\n\
-        "<!-- ref_navigation_bottom -->"\n\
-        "    </div><div class=\"section_end\"></div>"\n\
-        "    <div id=\"include_footer\"></div>"\n\
-        "  </body>"
-
-  i[0] ({'$html'}:y) nm[0] "Table of Contents"
-  ind_loc+=1
-  if narg($ind_loc)" && "isfile('list_of_commands.html') # Merge with existing 'List of commands' page if it exists
-    it list_of_commands.html
-    if find(crop(),'"<!-- merged_content -->"')<0 l[$ind_loc,-1]
-      s[0] -,{'"<!-- end_content -->"'}
-      s. -,{'"<!-- begin_content -->"'}
-      i[1] ('"<!-- merged_content -->"':y)
-      k[0,1,-1] a y
-    endl else nm. "List of Commands" rv[$ind_loc,-1] rm. fi
   fi
 
   # Insert top and bottom navigation bar into pages.
@@ -1741,7 +1742,7 @@ reference_end_html :
 
   # Save html pages.
   repeat $! l[$>] strvar {n} ot ${}.html endl done
-  x "ln -fs table_of_contents.html index.html"
+  if isfile('table_of_contents.html') x "ln -fs table_of_contents.html index.html" fi
   rm
 
 #
