@@ -556,11 +556,11 @@ gmd2html :
   gmd_italic_html
   gmd_mono_html
   gmd_monobold_html
+  gmd_image_html
   gmd_link_html
   gmd_braces_html
   gmd_code_html
   gmd_command_html
-  gmd_image_html
   gmd_list_html
   gmd_section_html
   gmd_url_html
@@ -663,12 +663,14 @@ gmd_url_html : # Replace 'http[s]://address.url' by html link.
             http='http';
             p = find(n,http);
             while (p>=0 && p<h,
-              q = p + size(http);
-              i[q]==_'s'?++q;
-              i[q]==_':' && i[q + 1]==_'/' && i[q + 2]==_'/'?(
-                while (q<h && i[q]>_' ' && i[q]!=_')' && i[q]!=39, ++q);
-                q - p<64?copy(i[#0,p],p,q - p,1,0);
-              );
+              !p || i[p-1]==_' '?(
+                q = p + size(http);
+                i[q]==_'s'?++q;
+                i[q]==_':' && i[q + 1]==_'/' && i[q + 2]==_'/'?(
+                  while (q<h && i[q]>_' ' && i[q]!=_')' && i[q]!=39, ++q);
+                  q - p<64?copy(i[#0,p],p,q - p,1,0);
+                );
+              ):(q=++p);
               p = find(n,http,q);
             )"
       a x s y,0 z 1,1
@@ -1521,6 +1523,7 @@ reference :
 "~~{ 0=dirichlet | 1=neuman | 2=periodic | 3=mirror }~~ is rendered as: { 0=dirichlet | 1=neuman | 2=periodic | 3=mirror }"\n\n\
 "* A G'MIC command between two consecutives exclamation marks is evaluated and rendered as an image:"\n\
 "~~!!sp colorful,200 blur 5!!~~ is rendered as: !!sp colorful,200 blur 5!!"\n\n\
+"* Put a '\\n'"\n\
 "* A line starting with '*', '-' or '.' denotes a list item. The number of whitespaces before the bullet character "\
 "sets the list indentation:"\n\
 "For instance, ~~  * This is a list item.~~ is rendered as:"\n\
