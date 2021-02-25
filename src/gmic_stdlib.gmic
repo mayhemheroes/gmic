@@ -509,13 +509,15 @@ gmd_url_ascii :
             http = 'http';
             p = find(n,http);
             while (p>=0 && p<h,
-              q = p + size(http);
-              i[q]==_'s'?++q;
-              i[q]==_':' && i[q + 1]==_'/' && i[q + 2]==_'/'?(
-                while (q<h && (inrange(lowercase(c=i[q]),_'a',_'z') || inrange(c,_'0',_'9') ||
-                               isin(c,['-._~:/?#[]@!$&'()*+,;%='])), ++q);
-                q - p<64?copy(i[#0,p],p + 1,q - p,1,0);
-              );
+              !p || i[p-1]==_' '?(
+                q = p + size(http);
+                i[q]==_'s'?++q;
+                i[q]==_':' && i[q + 1]==_'/' && i[q + 2]==_'/'?(
+                  while (q<h && (inrange(lowercase(c=i[q]),_'a',_'z') || inrange(c,_'0',_'9') ||
+                                 isin(c,['-._~:/?#[]@!$&'()*+,;%='])), ++q);
+                  q - p<64?copy(i[#0,p],p + 1,q - p,1,0);
+                );
+              ):(q=++p);
               p = find(n,http,q);
             )"
       a x s y,0 z 1,1
@@ -1515,13 +1517,13 @@ reference :
 "* A single word (without whitespaces) between single quotes appears as 'highlighted':"\n\
 "~~'Hello!'~~ is rendered as: 'Hello!'."\n\n\
 "* A URL in the text automatically becomes clickable, as: https://gmic.eu/reference/ "\n\
-"* Inserting an image can be done with:"\n\
+"* Inserting a centered image can be done with:"\n\
 "~~^^https://gmic.eu/img/gmicky_deevad220.jpg^^~~ is rendered as: ^^https://gmic.eu/img/gmicky_deevad220.jpg^^"\n\n\
 "* A phrase between two consecutive tildes '~' denotes a block of code:"\n\
 "~~ This is a block of code ~~"\n\
 "* A phrase between opening/closing braces denotes a list of values:"\n\
 "~~{ 0=dirichlet | 1=neuman | 2=periodic | 3=mirror }~~ is rendered as: { 0=dirichlet | 1=neuman | 2=periodic | 3=mirror }"\n\n\
-"* A G'MIC command between two consecutives exclamation marks is evaluated and rendered as an image:"\n\
+"* A G'MIC command between two consecutives exclamation marks is evaluated and rendered as an inlined image:"\n\
 "~~!!sp colorful,200 blur 5!!~~ is rendered as: !!sp colorful,200 blur 5!!"\n\n\
 "* Put a '\\n'"\n\
 "* A line starting with '*', '-' or '.' denotes a list item. The number of whitespaces before the bullet character "\
