@@ -282,11 +282,11 @@ help : skip ${1=""}
 # - `words in bold monospace`
 # - 'single_word_in_monospace'
 # - ''reference to section or command''
-# - !!G'MIC command!!
-# - ~~code block~~
-# - { list of values }
 # - http[s]://address.url
 # - \n^^image_URL^^
+# - ~~code block~~
+# - { list of values }
+# - !!G'MIC command!!
 # - \n# Section
 # - \n## Subsection
 # - \n### Subsubsection
@@ -391,7 +391,7 @@ gmd_monobold : # `words in monospace`
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>80?(beg = -1);
     i==96?(
-      beg<0 && j[1]!=96 && j[-1]!=96 && j[-1]!=_'{'?(beg = y):
+      beg<0 && j[1]!=96 && j[-1]!=96 && j[-1]!=_'{' && j[-1]!='~' && j[1]!='~'?(beg = y):
       beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
     )"
 
@@ -434,7 +434,7 @@ gmd_braces_ascii :
 
 gmd_code_ascii :
   gmd_code
-  replace_str "\2~","\n"$_vt100_b"\n"
+  replace_str "\2~","\n"$_vt100_b
   replace_str "\3~",$_vt100_n"\n"
   replace_str "\\n","\n"
 
@@ -509,13 +509,15 @@ gmd_url_ascii :
             http = 'http';
             p = find(n,http);
             while (p>=0 && p<h,
-              q = p + size(http);
-              i[q]==_'s'?++q;
-              i[q]==_':' && i[q + 1]==_'/' && i[q + 2]==_'/'?(
-                while (q<h && (inrange(lowercase(c=i[q]),_'a',_'z') || inrange(c,_'0',_'9') ||
-                               isin(c,['-._~:/?#[]@!$&'()*+,;%='])), ++q);
-                q - p<64?copy(i[#0,p],p + 1,q - p,1,0);
-              );
+              !p || i[p-1]==_' '?(
+                q = p + size(http);
+                i[q]==_'s'?++q;
+                i[q]==_':' && i[q + 1]==_'/' && i[q + 2]==_'/'?(
+                  while (q<h && (inrange(lowercase(c=i[q]),_'a',_'z') || inrange(c,_'0',_'9') ||
+                                 isin(c,['-._~:/?#[]@!$&'()*+,;%='])), ++q);
+                  q - p<128?copy(i[#0,p],p + 1,q - p,1,0);
+                );
+              ):(q=++p);
               p = find(n,http,q);
             )"
       a x s y,0 z 1,1
@@ -551,20 +553,20 @@ gmd_strcut_ascii :
 #
 gmd2html :
   replace {'\n'},4 # '\4' = original newlines
-  gmd_gmic_html
   gmd_bold_html
   gmd_italic_html
   gmd_mono_html
   gmd_monobold_html
+  gmd_image_html
   gmd_link_html
   gmd_braces_html
   gmd_code_html
   gmd_command_html
-  gmd_image_html
   gmd_list_html
   gmd_section_html
   gmd_url_html
   gmd_newline_html
+  gmd_gmic_html
 
 gmd_bold_html :
   gmd_bold
@@ -588,6 +590,7 @@ gmd_command_html :
     if $!>1 repeat $! if "crop(#"$>"-1)==[2,33] && crop(#"$>"+1)==[3,33]" l[$>]
        command={t} strvar $command file=img/${}.png rm
        if !isfile(['$file'])
+         if !isdir('img') x "mkdir -p img" fi
          run $command
          if $! a x else 12,12,1,4,"!x || !y || x==w-1 || y==h-1?[0,0,0,255]:x==y || x==w-1-y?[255,0,0,255]:[0,0,0,0]" fi
          o $file rm
@@ -663,12 +666,14 @@ gmd_url_html : # Replace 'http[s]://address.url' by html link.
             http='http';
             p = find(n,http);
             while (p>=0 && p<h,
-              q = p + size(http);
-              i[q]==_'s'?++q;
-              i[q]==_':' && i[q + 1]==_'/' && i[q + 2]==_'/'?(
-                while (q<h && i[q]>_' ' && i[q]!=_')' && i[q]!=39, ++q);
-                q - p<64?copy(i[#0,p],p,q - p,1,0);
-              );
+              !p || i[p-1]==_' '?(
+                q = p + size(http);
+                i[q]==_'s'?++q;
+                i[q]==_':' && i[q + 1]==_'/' && i[q + 2]==_'/'?(
+                  while (q<h && i[q]>_' ' && i[q]!=_')' && i[q]!=39, ++q);
+                  q - p<128?copy(i[#0,p],p,q - p,1,0);
+                );
+              ):(q=++p);
               p = find(n,http,q);
             )"
       a x s y,0 z 1,1
@@ -681,8 +686,9 @@ gmd_url_html : # Replace 'http[s]://address.url' by html link.
 
 # Command to write reference documentation with various output modes.
 # $1 = output mode, can be { ascii | html | man }.
+# $2 = filename of the file containing additional HTML sections (optional).
 # Reference and command documentation is written using the G'MIC-markdown syntax.
-reference :
+reference : skip "${2=}"
   m "_section : reference_section_$1 \"$""*\""
   m "_text : reference_text_$1 \"$""*\""
   l reference_begin_$1 reference_header_$1 onfail endl
@@ -1446,7 +1452,11 @@ reference :
 "range `[0,255]` before being displayed. You may need to do this explicitly (command 'normalize 0,255') if you want "\
 "to save and view images with the same aspect than those illustrated in the example codes."
 
+  # Insert list of commands.
   l reference_list_of_commands_$1 onfail endl
+
+  # Insert additional sections if specified.
+  if "['$2']!=0" "$2" ref_all fi
 
   _section "Examples of Use"
   _text \
@@ -1536,7 +1546,6 @@ reference_text_ascii :
     gmd_image_ascii
     s +,{'\n'}
     gmd_strcut_ascii 100,0
-    gmd_gmic_ascii
     gmd_bold_ascii
     gmd_italic_ascii
     gmd_mono_ascii
@@ -1545,6 +1554,7 @@ reference_text_ascii :
     gmd_link_ascii
     gmd_url_ascii
     gmd_section_ascii
+    gmd_gmic_ascii
     i[^] ({'\n'})
     a y autocrop {'\n'}
 
@@ -1670,32 +1680,33 @@ reference_finalize_html :
 "      <ul>"\n
 
   ind_loc=${"-nmd 1,\"List of Commands\""}
-  repeat $! l[$>]
-    name={n} strvar $name url=${}.html
-    if $>==$ind_loc
-       html.="<li><a class=\"ref_loc\" href=\""$url"#top\">"$name"</a></li>"
-    else
-      html.="<li><a href=\""$url"#top\">"$name"</a></li>"
+  if narg($ind_loc)
+    repeat $! l[$>]
+      name={n} strvar $name url=${}.html
+      if $>==$ind_loc
+         html.="<li><a class=\"ref_loc\" href=\""$url"#top\">"$name"</a></li>"
+      else
+        html.="<li><a href=\""$url"#top\">"$name"</a></li>"
+      fi
+    endl done
+    html.="\n    </ul>"\n\
+          "<!-- end_content -->"\n\
+          "<!-- ref_navigation_bottom -->"\n\
+          "    </div><div class=\"section_end\"></div>"\n\
+          "    <div id=\"include_footer\"></div>"\n\
+          "  </body>"
+
+    i[0] ({'$html'}:y) nm[0] "Table of Contents"
+    ind_loc+=1
+    if narg($ind_loc)" && "isfile('list_of_commands.html') # Merge with existing 'List of commands' page if it exists
+      it list_of_commands.html
+      if find(crop(),'"<!-- merged_content -->"')<0 l[$ind_loc,-1]
+        s[0] -,{'"<!-- end_content -->"'}
+        s. -,{'"<!-- begin_content -->"'}
+        i[1] ('"<!-- merged_content -->"':y)
+        k[0,1,-1] a y
+      endl else nm. "List of Commands" rv[$ind_loc,-1] rm. fi
     fi
-  endl done
-
-  html.="\n    </ul>"\n\
-        "<!-- end_content -->"\n\
-        "<!-- ref_navigation_bottom -->"\n\
-        "    </div><div class=\"section_end\"></div>"\n\
-        "    <div id=\"include_footer\"></div>"\n\
-        "  </body>"
-
-  i[0] ({'$html'}:y) nm[0] "Table of Contents"
-  ind_loc+=1
-  if narg($ind_loc)" && "isfile('list_of_commands.html') # Merge with existing 'List of commands' page if it exists
-    it list_of_commands.html
-    if find(crop(),'"<!-- merged_content -->"')<0 l[$ind_loc,-1]
-      s[0] -,{'"<!-- end_content -->"'}
-      s. -,{'"<!-- begin_content -->"'}
-      i[1] ('"<!-- merged_content -->"':y)
-      k[0,1,-1] a y
-    endl else nm. "List of Commands" rv[$ind_loc,-1] rm. fi
   fi
 
   # Insert top and bottom navigation bar into pages.
@@ -1708,15 +1719,15 @@ reference_finalize_html :
                 "<a href=\"index.html\">Table of Contents</a>"
       if $> html_top.="&nbsp;&nbsp;&#9656;&nbsp;&nbsp;<a href=\""$url_current"#top\">"$current"</a>" fi
       html_top.="</td><td>"
-      if narg($previous) html_top.="<a href=\""$url_previous"#top\">&#9664;&nbsp;&nbsp;"$previous"</a>" fi
-      if narg($previous)" && "narg($next) html_top.="&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;" fi
-      if narg($next) html_top.="<a href=\""$url_next"#top\">"$next"&nbsp;&nbsp;&#9654;</a>" fi
+      if ['$previous']!=0 html_top.="<a href=\""$url_previous"#top\">&#9664;&nbsp;&nbsp;"$previous"</a>" fi
+      if ['$previous']!=0" && "['$next']!=0 html_top.="&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;" fi
+      if ['$next']!=0 html_top.="<a href=\""$url_next"#top\">"$next"&nbsp;&nbsp;&#9654;</a>" fi
       html_top.="</td></tr></table>"
 
       html_bottom="<div class=\"ref_navigation_bottom\">"
-      if narg($previous) html_bottom.="<a href=\""$url_previous"#top\">&#9664;&nbsp;&nbsp;"$previous"</a>" fi
-      if narg($previous)" && "narg($next) html_bottom.="&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;" fi
-      if narg($next) html_bottom.="<a href=\""$url_next"#top\">"$next"&nbsp;&nbsp;&#9654;</a>" fi
+      if ['$previous']!=0 html_bottom.="<a href=\""$url_previous"#top\">&#9664;&nbsp;&nbsp;"$previous"</a>" fi
+      if ['$previous']!=0" && "['$next']!=0 html_bottom.="&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;" fi
+      if ['$next']!=0 html_bottom.="<a href=\""$url_next"#top\">"$next"&nbsp;&nbsp;&#9654;</a>" fi
       html_bottom.="</div>"
 
       replace_str[$>] "<!-- ref_navigation_top -->",$html_top
@@ -1729,7 +1740,7 @@ reference_end_html :
 
   # Save html pages.
   repeat $! l[$>] strvar {n} ot ${}.html endl done
-  x "ln -fs table_of_contents.html index.html"
+  if isfile('table_of_contents.html') x "ln -fs table_of_contents.html index.html" fi
   rm
 
 #
@@ -7388,7 +7399,7 @@ update_reference_html : check "isbool(${1=0})"
 
   # Generate reference pages in html.
   rm
-  reference html
+  reference html,$HOME/work/src/gmic-community/include/reference_html.gmic
 
   # Upload to G'MIC server.
   if $1
@@ -7750,7 +7761,7 @@ upload_filters :
     basename $file basename=${}
     if ['$basename']=='sylvie_alexandre.gmic'
       s +,{'"#@gui <b>"'} i[1--2:2] ('"#@gui ________<b>Testing<b>\n#@gui <i>Samj</i>\n"') y a y
-    elif ['$basename']=='template.gmic'
+    elif s=['$basename'];s=='template.gmic'" || "s=='reference_html.gmic'
       rm 0
     fi
   endl done
