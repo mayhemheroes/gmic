@@ -686,8 +686,9 @@ gmd_url_html : # Replace 'http[s]://address.url' by html link.
 
 # Command to write reference documentation with various output modes.
 # $1 = output mode, can be { ascii | html | man }.
+# $2 = filename of the file containing additional HTML sections (optional).
 # Reference and command documentation is written using the G'MIC-markdown syntax.
-reference :
+reference : skip "${2=}"
   m "_section : reference_section_$1 \"$""*\""
   m "_text : reference_text_$1 \"$""*\""
   l reference_begin_$1 reference_header_$1 onfail endl
@@ -1455,10 +1456,7 @@ reference :
   l reference_list_of_commands_$1 onfail endl
 
   # Insert additional HTML pages.
-  if ['$1']=='html'
-    file=$HOME/work/src/gmic-community/include/reference_html.gmic
-    if isfile(['{/$file}']) $file sec_all fi
-  fi
+  if "['$1']=='html' && ['$2']!=0" "$2" ref_all fi
 
   _section "Examples of Use"
   _text \
