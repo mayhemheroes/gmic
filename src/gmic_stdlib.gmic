@@ -48321,6 +48321,12 @@ parse_gmd :
       res[y + 4] = e_gmic;
     ):
 
+    # Horizontal rule.
+    linestart && isin(c,_'-','_','*') && nc==c && ac==c && (j[3]==_'\n' || !c)?(
+      res[y] = s_hrule;
+      copy(res[y + 1],0,3,1,0);
+    ):
+
     # Image : ![alt caption](URL).
     non_escaped && c==_'!' && nc==_'[' && img1<0 && img2<0?( # Opening
       img1 = y;
@@ -48515,21 +48521,22 @@ _gmd_constants :
      const s_subbullet = -11;        const e_subbullet = -12;
      const s_subsubbullet = -13;     const e_subsubbullet = -14;
      const s_gmic = -15;             const e_gmic = -16;
-     const s_img = -17;              const m_img = -18;          const e_img = -19;
-     const s_italic_a = -20;         const e_italic_a = -21;
-     const s_italic_u = -22;         const e_italic_u = -23;
-     const s_link = -24;             const m_link = -25;         const e_link = -26;
-     const s_monospace = -27;        const e_monospace = -28;
-     const s_pagelink = -29;         const e_pagelink = -30;
-     const s_section = -31;          const e_section = -32;
-     const s_subsection = -33;       const e_subsection = -34;
-     const s_subsubsection = -35;    const e_subsubsection = -36;
-     const s_subsubsubsection = -37; const e_subsubsubsection = -38;
-     const s_url = -39;              const e_url = -40;
-     const s_value_set = -41;        const e_value_set = -42;
-     const s_whitespace = -43;
-     const s_word_highlight = -44;   const e_word_highlight = -45;"
-
+     const s_hrule = -17;
+     const s_img = -18;              const m_img = -19;          const e_img = -20;
+     const s_italic_a = -21;         const e_italic_a = -22;
+     const s_italic_u = -23;         const e_italic_u = -24;
+     const s_link = -25;             const m_link = -26;         const e_link = -27;
+     const s_monospace = -28;        const e_monospace = -29;
+     const s_pagelink = -30;         const e_pagelink = -31;
+     const s_section = -32;          const e_section = -33;
+     const s_separator = -34;
+     const s_subsection = -35;       const e_subsection = -36;
+     const s_subsubsection = -37;    const e_subsubsection = -38;
+     const s_subsubsubsection = -39; const e_subsubsubsection = -40;
+     const s_url = -41;              const e_url = -42;
+     const s_value_set = -43;        const e_value_set = -44;
+     const s_whitespace = -45;
+     const s_word_highlight = -46;   const e_word_highlight = -47;"
 
 #@cli gmd2html
 #@cli : Convert selected gmd-formatted text images to HTML format.
@@ -48578,6 +48585,7 @@ gmd2html :
         c==s_subbullet ? write('<span class=\"gmd_subbullet\">');
         c==s_subsubbullet ? write('<span class=\"gmd_subsubbullet\">');
         c==s_gmic ? write('<span class=\"gmd_gmic\"></span>'):
+        c==s_hrule ? write('\n<hr/>\n'):
         c==s_img ? (
           ref(vector256(),url_img);
           ind_m = find(#1,m_img,y);
