@@ -48220,9 +48220,9 @@ parse_gmd :
   replace_str "\t","    " r. 1,{h+1},1,1,0
   eval[^] ">"${-_gmd_constants}"
     begin(
-      bold_a = bold_u = bold_italic_a = bold_italic_u = bullet = subbullet = subsubbullet =
-        img1 = img2 = italic_a = italic_u = link1 = link2 = monospace = pagelink = section =
-        strikethrough = subsection = subsubsection = subsubsubsection = url = value_set = word_highlight = -1;
+      bold_a = bold_u = bold_italic_a = bold_italic_u = bullet = code_block = img1 = img2 = italic_a = italic_u =
+        link1 = link2 = monospace = pagelink = section = strikethrough = subbullet = subsubbullet = subsection =
+        subsubsection = subsubsubsection = url = value_set = word_highlight = -1;
 
       blank(c) = isin(c,_' ',_'\n',0);
       semiblank(c) = isin(c,_' ',_'\n',_'.',_',',_';',_':',_'!',_'?',0);
@@ -48314,6 +48314,19 @@ parse_gmd :
       reset(subsubbullet);
     ):
 
+    # Code block : ~~~\n Code block\n~~~.
+    linestart && isin(c,_'~','`') && nc==c && ac==c && (j[3]==_'\n' || !c)?(
+      code_block<0?(
+        code_block = y;
+      ):
+      code_block>=0 && y>code_block + 3?(
+        res[code_block++] = s_code_block; copy(res[code_block],0,3,1,0); code_block+=3;
+        copy(res[code_block],i[code_block],y - code_block); # Discard potential tokens found between separators
+        res[y - 1] = e_code_block; copy(res[y],0,4,1,0);
+        reset(code_block);
+      );
+    ):
+
     # G'MIC word.
     (linestart || semiblank(pc)) && c==_'G' && nc==_'\'' && ac==_'M' && j[3]==_'I' && j[4]==_'C' && semiblank(j[5])?(
       res[y] = s_gmic;
@@ -48347,7 +48360,6 @@ parse_gmd :
     non_escaped && c==_'*' && pc!=_'*'?(
       italic_a<0?(
         italic_a = y;
-        print(italic_a);
       ):
       italic_a>=0 && y>italic_a + 1 && ac!=_'*'?(
         res[italic_a] = s_italic_a;
@@ -48454,7 +48466,7 @@ parse_gmd :
     ):
 
     # Strikethrough.
-    non_escaped && c==_'~' && nc==_'~'?(
+    non_escaped && c==_'~' && nc==_'~' && pc!=_'~' && code_block<0?(
       strikethrough<0?(
         strikethrough = y;
       ):
@@ -48532,24 +48544,25 @@ _gmd_constants :
      const s_bullet = -9;            const e_bullet = -10;
      const s_subbullet = -11;        const e_subbullet = -12;
      const s_subsubbullet = -13;     const e_subsubbullet = -14;
-     const s_gmic = -15;             const e_gmic = -16;
-     const s_hrule = -17;
-     const s_img = -18;              const m_img = -19;          const e_img = -20;
-     const s_italic_a = -21;         const e_italic_a = -22;
-     const s_italic_u = -23;         const e_italic_u = -24;
-     const s_link = -25;             const m_link = -26;         const e_link = -27;
-     const s_monospace = -28;        const e_monospace = -29;
-     const s_pagelink = -30;         const e_pagelink = -31;
-     const s_section = -32;          const e_section = -33;
-     const s_separator = -34;
-     const s_strikethrough = -35;    const e_strikethrough = -36;
-     const s_subsection = -37;       const e_subsection = -38;
-     const s_subsubsection = -39;    const e_subsubsection = -40;
-     const s_subsubsubsection = -41; const e_subsubsubsection = -42;
-     const s_url = -43;              const e_url = -44;
-     const s_value_set = -45;        const e_value_set = -46;
-     const s_whitespace = -47;
-     const s_word_highlight = -48;   const e_word_highlight = -49;"
+     const s_code_block = -15;       const e_code_block = -16;
+     const s_gmic = -17;             const e_gmic = -18;
+     const s_hrule = -19;
+     const s_img = -20;              const m_img = -21;          const e_img = -22;
+     const s_italic_a = -23;         const e_italic_a = -24;
+     const s_italic_u = -25;         const e_italic_u = -26;
+     const s_link = -27;             const m_link = -28;         const e_link = -29;
+     const s_monospace = -30;        const e_monospace = -31;
+     const s_pagelink = -32;         const e_pagelink = -33;
+     const s_section = -34;          const e_section = -35;
+     const s_separator = -36;
+     const s_strikethrough = -37;    const e_strikethrough = -38;
+     const s_subsection = -39;       const e_subsection = -40;
+     const s_subsubsection = -41;    const e_subsubsection = -42;
+     const s_subsubsubsection = -43; const e_subsubsubsection = -44;
+     const s_url = -45;              const e_url = -46;
+     const s_value_set = -47;        const e_value_set = -48;
+     const s_whitespace = -49;
+     const s_word_highlight = -50;   const e_word_highlight = -51;"
 
 #@cli gmd2html
 #@cli : Convert selected gmd-formatted text images to HTML format.
@@ -48588,8 +48601,8 @@ gmd2html :
       ):(
         isin(c,e_bold_a,e_bold_u,e_bold_italic_a,e_bold_italic_u,e_italic_a,e_italic_u,
              e_monospace,e_strikethrough,e_word_highlight) ? write('</span>'):
-        isin(c,e_section,e_subsection,e_subsubsection,e_subsubsubsection) ? write('</div>\n'):
-        isin(c,e_bullet,e_subbullet,e_subsubbullet) ? write('</span><br/>'):
+        isin(c,e_bullet,e_subbullet,e_subsubbullet) ? write('</span><br/>\n'):
+        isin(c,e_code_block,e_section,e_subsection,e_subsubsection,e_subsubsubsection) ? write('</div>\n'):
         c==s_bold_a ? write('<span class=\"gmd_bold_a\">'):
         c==s_bold_u ? write('<span class=\"gmd_bold_u\">'):
         c==s_bold_italic_a ? write('<span class=\"gmd_bold_italic_a\">'):
@@ -48597,6 +48610,7 @@ gmd2html :
         c==s_bullet ? write('<span class=\"gmd_bullet\">');
         c==s_subbullet ? write('<span class=\"gmd_subbullet\">');
         c==s_subsubbullet ? write('<span class=\"gmd_subsubbullet\">');
+        c==s_code_block ? write('<div class=\"gmd_code_block\">');
         c==s_gmic ? write('<span class=\"gmd_gmic\"></span>'):
         c==s_hrule ? write('\n<hr/>\n'):
         c==s_img ? (
