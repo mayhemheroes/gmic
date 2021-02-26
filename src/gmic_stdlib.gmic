@@ -48451,11 +48451,6 @@ parse_gmd :
 
     # Blank character.
     blank(c)?(
-      c==_'\n' && res[y]?( # Newline
-        res[y] = s_newline;
-      );
-
-      # Cancel detection for tokens that are not supposed to contain blank characters.
       reset(word_highlight);
       link2>=0?(reset(link1); reset(link2));
       img2>=0?(reset(img1); reset(img2));
@@ -48477,7 +48472,6 @@ _gmd_constants :
      const s_italic_u = -16;         const e_italic_u = -17;
      const s_link = -18;             const m_link = -19;         const e_link = -20;
      const s_monospace = -21;        const e_monospace = -22;
-     const s_newline = -23;
      const s_pagelink = -24;         const e_pagelink = -25;
      const s_section = -26;          const e_section = -27;
      const s_subsection = -28;       const e_subsection = -29;
@@ -48512,7 +48506,16 @@ gmd2html :
       );
 
       c = i;
-      c>0?write(c):(
+
+      c>0?(
+        c==_'\n' ? write('<br/>\n'):
+        c==_'<' ? write('&lt;'):
+        c==_'>' ? write('&gt;'):
+        c==_'\"' ? write('&quot;'):
+        c==_'\'' ? write('&apos;'):
+        c==_'&' ? write('&amp;'):
+        write(c);
+      ):(
         isin(c,e_bold_a,e_bold_u,e_bold_italic_a,e_bold_italic_u,e_italic_a,e_italic_u,e_monospace,e_word_highlight) ? write('</span>'):
         isin(c,e_section,e_subsection,e_subsubsection,e_subsubsubsection) ? write('</div>\n'):
         c==s_bold_a ? write('<span class=\"gmd_bold_a\">'):
@@ -48554,7 +48557,6 @@ gmd2html :
           write('</a>');
         );
         c==s_monospace ? write('<span class=\"gmd_mono\">'):
-        c==s_newline ? write('<br/>\n'):
         c==s_pagelink ? (
           ind = find(#1,e_pagelink,y);
           run('+rows. ',y + 1,',',ind - 1,' strvar {t} rm. varname=${}');
