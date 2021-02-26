@@ -48294,6 +48294,26 @@ parse_gmd :
       reset(bullet);
     ):
 
+    # Sub-Bullet (list) :   * Sub-list item.
+    non_escaped && linestart && c==_' ' && nc==_' ' && isin(ac,_'-',_'*',_'+') && j[3]==_' ' && subbullet<0?( # Opening
+      subbullet = y;
+    ):
+    subbullet>=0 && (c==_'\n' || y==h - 1)?( # Closing
+      res[subbullet++] = s_subbullet; copy(res[subbullet],0,2,1,0);
+      res[y] = e_subbullet;
+      reset(subbullet);
+    ):
+
+    # Subsub-Bullet (list) :   * Subsub-list item.
+    non_escaped && linestart && c==_' ' && nc==_' ' && ac==_' ' && j[3]==_' ' && isin(j[4],_'-',_'*',_'+') && j[5]==_' ' && subsubbullet<0?( # Opening
+      subsubbullet = y;
+    ):
+    subsubbullet>=0 && (c==_'\n' || y==h - 1)?( # Closing
+      res[subsubbullet++] = s_subsubbullet; copy(res[subsubbullet],0,4,1,0);
+      res[y] = e_subsubbullet;
+      reset(subsubbullet);
+    ):
+
     # G'MIC word.
     (linestart || semiblank(pc)) && c==_'G' && nc==_'\'' && ac==_'M' && j[3]==_'I' && j[4]==_'C' && semiblank(j[5])?(
       res[y] = s_gmic;
@@ -48537,14 +48557,17 @@ gmd2html :
         c==_'<' ? write('&lt;'):
         write(c);
       ):(
-        isin(c,e_bold_a,e_bold_u,e_bold_italic_a,e_bold_italic_u,e_bullet,e_italic_a,e_italic_u,
+        isin(c,e_bold_a,e_bold_u,e_bold_italic_a,e_bold_italic_u,e_italic_a,e_italic_u,
              e_monospace,e_word_highlight) ? write('</span>'):
         isin(c,e_section,e_subsection,e_subsubsection,e_subsubsubsection) ? write('</div>\n'):
+        isin(c,e_bullet,e_subbullet,e_subsubbullet) ? write('</span><br/>'):
         c==s_bold_a ? write('<span class=\"gmd_bold_a\">'):
         c==s_bold_u ? write('<span class=\"gmd_bold_u\">'):
         c==s_bold_italic_a ? write('<span class=\"gmd_bold_italic_a\">'):
         c==s_bold_italic_u ? write('<span class=\"gmd_bold_italic_u\">'):
         c==s_bullet ? write('<span class=\"gmd_bullet\">');
+        c==s_subbullet ? write('<span class=\"gmd_subbullet\">');
+        c==s_subsubbullet ? write('<span class=\"gmd_subsubbullet\">');
         c==s_gmic ? write('<span class=\"gmd_gmic\"></span>'):
         c==s_img ? (
           ref(vector256(),url_img);
