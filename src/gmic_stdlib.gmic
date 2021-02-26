@@ -48346,10 +48346,10 @@ parse_gmd :
     c==_'[' && link1<0 && link2<0 && img1<0?( # Opening
       link1 = y;
     ):
-    c==_']' && nc==_'(' && link1>=0 && link2<0?( # Middle
+    c==_']' && nc==_'(' && link1>=0 && link2<0 && img1<0?( # Middle
       link2 = y;
     ):
-    c==_')' && link2>=0?( # Closing
+    c==_')' && link2>=0 && img1<0?( # Closing
       res[link1] = s_link;
       res[link2++] = m_link; res[link2++] = 0;
       copy(res[link2],i[link2],y - link2); # Discard potential tokens found inside URL
@@ -48495,7 +48495,6 @@ gmd2html :
     . # [0] = Output, [1] = Input
     eval. ">
       begin("${-_gmd_constants}"
-        ref(vector256(),url);
         write(str) = write(str,0);
         write(str,len) = (
           ref(str,_str); unref(_siz); const _siz = size(_str); ref(len,_len);
@@ -48522,13 +48521,13 @@ gmd2html :
         c==s_bold_italic_u ? write('<span class=\"gmd_bold_italic_u\">'):
         c==s_gmic ? write('<span class=\"gmd_gmic\"></span>'):
         c==s_img ? (
-          url = 0;
+          ref(vector256(),url_img);
           ind_m = find(#1,m_img,y);
           ind_e = find(#1,e_img,ind_m);
-          copy(url,i[ind_m + 1],ind_e - ind_m - 1);
+          copy(url_img,i[ind_m + 1],ind_e - ind_m - 1);
           write('<img src=\"');
-          len = find(url,0);
-          write(url,len);
+          len = find(url_img,0);
+          write(url_img,len);
           write('\" alt=\"');
         ):
         c==m_img ? (
@@ -48539,13 +48538,14 @@ gmd2html :
         c==s_italic_a ? write('<span class=\"gmd_italic_a\">'):
         c==s_italic_u ? write('<span class=\"gmd_italic_u\">'):
         c==s_link ? (
-          url = 0;
+          ref(vector256(),url_link);
           ind_m = find(#1,m_link,y);
           ind_e = find(#1,e_link,ind_m);
-          copy(url,i[ind_m + 1],ind_e - ind_m - 1);
+          copy(url_link,i[ind_m + 1],ind_e - ind_m - 1);
+
           write('<a href=\"');
-          len = find(url,0);
-          write(url,len);
+          len = find(url_link,0);
+          write(url_link,len);
           write('\">');
         ):
         c==m_link ? (
@@ -48570,12 +48570,12 @@ gmd2html :
         c==s_subsubsection ? write('<div class=\"gmd_subsubsection\">'):
         c==s_subsubsubsection ? write('<div class=\"gmd_subsubsubsection\">'):
         c==s_url ? (
-          url = 0;
+          ref(vector256(),url_url);
           ind = find(#1,e_url,y);
-          copy(url,i[y + 1],ind - y - 1);
+          copy(url_url,i[y + 1],ind - y - 1);
           write('<a href=\"');
-          len = find(url,0);
-          write(url,len);
+          len = find(url_url,0);
+          write(url_url,len);
           write('\">');
         ):
         c==e_url ? write('</a>'):
