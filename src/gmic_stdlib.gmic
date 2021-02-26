@@ -48222,7 +48222,7 @@ parse_gmd :
     begin(
       bold_a = bold_u = bold_italic_a = bold_italic_u = bullet = subbullet = subsubbullet =
         img1 = img2 = italic_a = italic_u = link1 = link2 = monospace = pagelink = section =
-        subsection = subsubsection = subsubsubsection = url = value_set = word_highlight = -1;
+        strikethrough = subsection = subsubsection = subsubsubsection = url = value_set = word_highlight = -1;
 
       blank(c) = isin(c,_' ',_'\n',0);
       semiblank(c) = isin(c,_' ',_'\n',_'.',_',',_';',_':',_'!',_'?',0);
@@ -48453,6 +48453,18 @@ parse_gmd :
       reset(section);
     ):
 
+    # Strikethrough.
+    non_escaped && c==_'~' && nc==_'~'?(
+      strikethrough<0?(
+        strikethrough = y;
+      ):
+      strikethrough>=0 && y>strikethrough + 2?(
+        res[strikethrough++] = s_strikethrough; res[strikethrough] = 0;
+        res[y] = e_strikethrough; res[y1] = 0;
+        reset(strikethrough);
+      );
+    ):
+
     # URL : <URL>.
     non_escaped && c==_'<' && url<0 && crop(0,y1,1,4)=='http'?( # Opening
       url = y;
@@ -48530,13 +48542,14 @@ _gmd_constants :
      const s_pagelink = -30;         const e_pagelink = -31;
      const s_section = -32;          const e_section = -33;
      const s_separator = -34;
-     const s_subsection = -35;       const e_subsection = -36;
-     const s_subsubsection = -37;    const e_subsubsection = -38;
-     const s_subsubsubsection = -39; const e_subsubsubsection = -40;
-     const s_url = -41;              const e_url = -42;
-     const s_value_set = -43;        const e_value_set = -44;
-     const s_whitespace = -45;
-     const s_word_highlight = -46;   const e_word_highlight = -47;"
+     const s_strikethrough = -35;    const e_strikethrough = -36;
+     const s_subsection = -37;       const e_subsection = -38;
+     const s_subsubsection = -39;    const e_subsubsection = -40;
+     const s_subsubsubsection = -41; const e_subsubsubsection = -42;
+     const s_url = -43;              const e_url = -44;
+     const s_value_set = -45;        const e_value_set = -46;
+     const s_whitespace = -47;
+     const s_word_highlight = -48;   const e_word_highlight = -49;"
 
 #@cli gmd2html
 #@cli : Convert selected gmd-formatted text images to HTML format.
@@ -48574,7 +48587,7 @@ gmd2html :
         write(c);
       ):(
         isin(c,e_bold_a,e_bold_u,e_bold_italic_a,e_bold_italic_u,e_italic_a,e_italic_u,
-             e_monospace,e_word_highlight) ? write('</span>'):
+             e_monospace,e_strikethrough,e_word_highlight) ? write('</span>'):
         isin(c,e_section,e_subsection,e_subsubsection,e_subsubsubsection) ? write('</div>\n'):
         isin(c,e_bullet,e_subbullet,e_subsubbullet) ? write('</span><br/>'):
         c==s_bold_a ? write('<span class=\"gmd_bold_a\">'):
@@ -48631,6 +48644,7 @@ gmd2html :
         );
         c==e_pagelink ? write('</a></span>');
         c==s_section ? write('<div class=\"gmd_section\">'):
+        c==s_strikethrough? write('<span class=\"gmd_strikethrough\">'):
         c==s_subsection ? write('<div class=\"gmd_subsection\">'):
         c==s_subsubsection ? write('<div class=\"gmd_subsubsection\">'):
         c==s_subsubsubsection ? write('<div class=\"gmd_subsubsubsection\">'):
