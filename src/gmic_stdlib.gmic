@@ -48244,26 +48244,15 @@ parse_gmd :
     # Manage document layout.
     #------------------------
 
-    #### Subsubsubsection.
-    linestart && c==_'#' && nc==_'#' && ac==_'#' && j[3]==_'#' && j[4]==_' '?( # Opening
-      subsubsubsection = y;
+    # Section.
+    linestart && c==_'#' && nc==_' '?( # Opening
+      section = y;
     ):
-    subsubsubsection>=0 && (c==_'\n' || !c)?( # Closing
-      res[subsubsubsection++] = s_subsubsubsection; copy(res[subsubsubsection],0,4,1,0);
-      res[y] = e_subsubsubsection;
+    section>=0 && (c==_'\n' || !c)?( # Closing
+      res[section++] = s_section; res[section] = 0;
+      res[y] = e_section;
       for (p = y1, p<size(res) && res[p]==_'\n', res[p] = 0);
-      reset(subsubsubsection);
-    ):
-
-    ### Subsubsection.
-    linestart && c==_'#' && nc==_'#' && ac==_'#' && j[3]==_' '?( # Opening
-      subsubsection = y;
-    ):
-    subsubsection>=0 && (c==_'\n' || !c)?( # Closing
-      res[subsubsection++] = s_subsubsection; copy(res[subsubsection],0,3,1,0);
-      res[y] = e_subsubsection;
-      for (p = y1, p<size(res) && res[p]==_'\n', res[p] = 0);
-      reset(subsubsection);
+      reset(section);
     ):
 
     ## Subsection.
@@ -48277,15 +48266,26 @@ parse_gmd :
       reset(subsection);
     ):
 
-    # Section.
-    linestart && c==_'#' && nc==_' '?( # Opening
-      section = y;
+    ### Subsubsection.
+    linestart && c==_'#' && nc==_'#' && ac==_'#' && j[3]==_' '?( # Opening
+      subsubsection = y;
     ):
-    section>=0 && (c==_'\n' || !c)?( # Closing
-      res[section++] = s_section; res[section] = 0;
-      res[y] = e_section;
+    subsubsection>=0 && (c==_'\n' || !c)?( # Closing
+      res[subsubsection++] = s_subsubsection; copy(res[subsubsection],0,3,1,0);
+      res[y] = e_subsubsection;
       for (p = y1, p<size(res) && res[p]==_'\n', res[p] = 0);
-      reset(section);
+      reset(subsubsection);
+    ):
+
+    #### Subsubsubsection.
+    linestart && c==_'#' && nc==_'#' && ac==_'#' && j[3]==_'#' && j[4]==_' '?( # Opening
+      subsubsubsection = y;
+    ):
+    subsubsubsection>=0 && (c==_'\n' || !c)?( # Closing
+      res[subsubsubsection++] = s_subsubsubsection; copy(res[subsubsubsection],0,4,1,0);
+      res[y] = e_subsubsubsection;
+      for (p = y1, p<size(res) && res[p]==_'\n', res[p] = 0);
+      reset(subsubsubsection);
     ):
 
     # Bullet (list) : * List item.
