@@ -48289,7 +48289,7 @@ parse_gmd :
       res[y + 4] = e_gmic;
     ):
 
-    # Image : ![image caption](URL).
+    # Image : ![alt caption](URL).
     c==_'!' && nc==_'[' && img1<0 && img2<0?( # Opening
       img1 = y;
     ):
@@ -48297,9 +48297,10 @@ parse_gmd :
       img2 = y;
     ):
     c==_')' && img2>=0?( # Closing
-      res[img1++] = s_img; res[img1] = 0;
+      res[img1++] = s_img; res[img1++] = 0;
       res[img2++] = m_img; res[img2++] = 0;
-      copy(res[img2],i[img2],y - img2); # Discard possible tokens detected in image URL
+      copy(res[img1],i[img1],img2 - img1 - 2); # Discard potential tokens found in caption
+      copy(res[img2],i[img2],y - img2); # Discard potential tokens found in URL
       res[y] = e_img;
       reset(img1); reset(img2);
     );
@@ -48335,7 +48336,7 @@ parse_gmd :
       ):
       monospace>=0 && y>monospace + 1 && semiblank(nc)?(
         res[monospace++] = s_monospace;
-        copy(res[monospace],i[monospace],y - monospace); # Discard possible tokens detected inside
+        copy(res[monospace],i[monospace],y - monospace); # Discard potential tokens found between
         res[y] = e_monospace;
         reset(monospace);
       );
@@ -48351,7 +48352,7 @@ parse_gmd :
     c==_')' && link2>=0?( # Closing
       res[link1] = s_link;
       res[link2++] = m_link; res[link2++] = 0;
-      copy(res[link2],i[link2],y - link2); # Discard possible tokens detected in URL
+      copy(res[link2],i[link2],y - link2); # Discard potential tokens found inside URL
       res[y] = e_link;
       reset(link1); reset(link2);
     );
@@ -48363,7 +48364,7 @@ parse_gmd :
       ):
       pagelink>=0 && y>pagelink + 2 && semiblank(ac)?(
         res[pagelink++] = s_pagelink; res[pagelink++] = 0;
-        copy(res[pagelink],i[pagelink],y - pagelink); # Discard possible tokens detected inside
+        copy(res[pagelink],i[pagelink],y - pagelink); # Discard potential tokens found between
         res[y] = e_pagelink; res[y1] = 0;
         reset(pagelink);
       );
@@ -48419,7 +48420,7 @@ parse_gmd :
     ):
     c==_'>' && url>=0 && y>url + 1?( # Closing
       res[url++] = s_url;
-      copy(res[url],i[url],y - url); # Discard possible tokens detected inside
+      copy(res[url],i[url],y - url); # Discard potential tokens found between
       res[y] = e_url;
       reset(url);
     ):
@@ -48430,7 +48431,7 @@ parse_gmd :
     ):
     c==_'}' && value_set>=0 && y>value_set + 1 && semiblank(nc)?( # Closing
       res[value_set++] = s_value_set;
-      copy(res[value_set],i[value_set],y - value_set); # Discard possible tokens detected inside
+      copy(res[value_set],i[value_set],y - value_set); # Discard potential tokens found between
       res[y] = e_value_set;
       reset(value_set);
     ):
@@ -48442,7 +48443,7 @@ parse_gmd :
       ):
       word_highlight>=0 && y>word_highlight + 1 && semiblank(nc)?(
         res[word_highlight++] = s_word_highlight;
-        copy(res[word_highlight],i[word_highlight],y - word_highlight); # Discard possible tokens detected inside
+        copy(res[word_highlight],i[word_highlight],y - word_highlight); # Discard potential tokens found between
         res[y] = e_word_highlight;
         reset(word_highlight);
       );
@@ -48454,7 +48455,7 @@ parse_gmd :
         res[y] = s_newline;
       );
 
-      # Discard tokens that are not supposed to contain blanks.
+      # Cancel detection for tokens that are not supposed to contain blank characters.
       reset(word_highlight);
       link2>=0?(reset(link1); reset(link2));
       img2>=0?(reset(img1); reset(img2));
