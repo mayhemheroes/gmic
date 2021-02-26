@@ -48220,8 +48220,8 @@ parse_gmd :
   eval[^] ">"${-_gmd_constants}"
     begin(
       bold_a = bold_u = bold_italic_a = bold_italic_u = word_highlight = italic_a = italic_u =
-        link1 = link2 = monospace = pagelink = section = set = subsection = subsubsection = subsubsubsection =
-        url = -1;
+        link1 = link2 = monospace = pagelink = section = subsection = subsubsection = subsubsubsection =
+        url = value_set = -1;
 
       blank(c) = isin(c,_' ',_'\n',0);
       semiblank(c) = isin(c,_' ',_'\n',_'.',_',',_';',_':',_'!',_'?',0);
@@ -48320,13 +48320,25 @@ parse_gmd :
     ):
 
     # Link : [link text](URL).
-    # TODO
+    c==_'[' && link1<0 && link2<0?( # Opening
+      link1 = y;
+    ):
+    c==_']' && nc==_'(' && link1>=0 && link2<0?( # Middle
+      link2 = y;
+    ):
+    c==_')' && link2>=0?( # Closing
+      res[link1] = s_link;
+      res[link2++] = m_link; res[link2++] = 0;
+      copy(res[link2],i[link2],y - link2); # Discard possible tokens detected in URL
+      res[y] = e_link;
+      reset(link1); reset(link2);
+    );
 
     # URL : <URL>.
-    c==_'<' && url<0 && (linestart || blank(pc))?( # Opening
+    c==_'<' && url<0 && crop(0,y1,1,4)=='http'?( # Opening
       url = y;
     ):
-    c==_'>' && url>=0 && y>url + 1 && semiblank(nc)?( # Closing
+    c==_'>' && url>=0 && y>url + 1?( # Closing
       res[url++] = s_url;
       copy(res[url],i[url],y - url); # Discard possible tokens detected inside
       res[y] = e_url;
@@ -48359,15 +48371,15 @@ parse_gmd :
       );
     ):
 
-    # Set : { value1 | value2 | value3 }.
-    c==_'{' && set<0 && (linestart || blank(pc))?( # Opening
-      set = y;
+    # Value Set : { value1 | value2 | value3 }.
+    c==_'{' && value_set<0 && (linestart || blank(pc))?( # Opening
+      value_set = y;
     ):
-    c==_'}' && set>=0 && y>set + 1 && semiblank(nc)?( # Closing
-      res[set++] = s_set;
-      copy(res[set],i[set],y - set); # Discard possible tokens detected inside
-      res[y] = e_set;
-      reset(set);
+    c==_'}' && value_set>=0 && y>value_set + 1 && semiblank(nc)?( # Closing
+      res[value_set++] = s_value_set;
+      copy(res[value_set],i[value_set],y - value_set); # Discard possible tokens detected inside
+      res[y] = e_value_set;
+      reset(value_set);
     ):
 
     # G'MIC word.
@@ -48429,6 +48441,7 @@ parse_gmd :
 
       # Discard tokens that are not supposed to contain blanks.
       reset(word_highlight);
+      link2>=0?(reset(link1); reset(link2));
     );
 
     end(
@@ -48444,16 +48457,17 @@ _gmd_constants :
      const s_gmic = -9;              const e_gmic = -10;
      const s_italic_a = -11;         const e_italic_a = -12;
      const s_italic_u = -13;         const e_italic_u = -14;
-     const s_monospace = -17;        const e_monospace = -18;
-     const s_newline = -19;
-     const s_pagelink = -20;         const e_pagelink = -21;
-     const s_section = -22;          const e_section = -23;
-     const s_set = -15;              const e_set = -16;
-     const s_subsection = -24;       const e_subsection = -25;
-     const s_subsubsection = -26;    const e_subsubsection = -27;
-     const s_subsubsubsection = -28; const e_subsubsubsection = -29;
-     const s_url = -30;              const e_url = -31;
-     const s_word_highlight = -32;   const e_word_highlight = -33;"
+     const s_link = -15;             const m_link = -16;         const e_link = -17;
+     const s_monospace = -18;        const e_monospace = -19;
+     const s_newline = -20;
+     const s_pagelink = -21;         const e_pagelink = -22;
+     const s_section = -23;          const e_section = -24;
+     const s_subsection = -25;       const e_subsection = -26;
+     const s_subsubsection = -27;    const e_subsubsection = -28;
+     const s_subsubsubsection = -29; const e_subsubsubsection = -30;
+     const s_url = -31;              const e_url = -32;
+     const s_value_set = -33;        const e_value_set = -34;
+     const s_word_highlight = -35;   const e_word_highlight = -36;"
 
 #@cli gmd2html
 #@cli : Convert selected gmd-formatted text images to HTML format.
@@ -48463,23 +48477,25 @@ gmd2html :
     . # [0] = Output, [1] = Input
     eval. ">
       begin("${-_gmd_constants}"
-        write(s) = write(s,0);
-        write(s,l) = (
-          ref(s,str); unref(siz); const siz = size(str); _l = l;
-          siz?( # String
-            len = _l?_l:siz;
-            q + len>h(#0)?resize(#0,1,8 + len + 5*h(#0)/3,1,1,0);
-            copy(i[#0,q],str,len);
-            q+=len;
+        ref(vector256(),url);
+        write(str) = write(str,0);
+        write(str,len) = (
+          ref(str,_str); unref(_siz); const _siz = size(_str); ref(len,_len);
+          _siz?( # String
+            l = _len?_len:_siz;
+            q + l>h(#0)?resize(#0,1,8 + l + 5*h(#0)/3,1,1,0);
+            copy(i[#0,q],_str,l);
+            q+=l;
           ):( # Character
             q>=h(#0)?resize(#0,1,8 + 5*h(#0)/3,1,1,0);
-            i[#0,q++] = s;
+            i[#0,q++] = _str;
           )
         );
         q = 0;
       );
+
       c = i;
-      c>=0?write(c):(
+      c>0?write(c):(
         isin(c,e_bold_a,e_bold_u,e_bold_italic_a,e_bold_italic_u,e_italic_a,e_italic_u,e_monospace,e_word_highlight) ? write('</span>'):
         isin(c,e_section,e_subsection,e_subsubsection,e_subsubsubsection) ? write('</div>\n'):
         c==s_bold_a ? write('<span class=\"gmd_bold_a\">'):
@@ -48489,34 +48505,49 @@ gmd2html :
         c==s_gmic ? write('<span class=\"gmd_gmic\"></span>'):
         c==s_italic_a ? write('<span class=\"gmd_italic_a\">'):
         c==s_italic_u ? write('<span class=\"gmd_italic_u\">'):
+        c==s_link ? (
+          url = 0;
+          ind_m = find(#1,m_link,y);
+          ind_e = find(#1,e_link,ind_m);
+          copy(url,i[ind_m + 1],ind_e - ind_m - 1);
+          write('<a href=\"');
+          len = find(url,0);
+          write(url,len);
+          write('\">');
+        ):
+        c==m_link ? (
+          ind = find(#1,e_link,y);
+          copy(i[y],0,ind - y + 1,1,0);
+          write('</a>');
+        );
+        c==s_monospace ? write('<span class=\"gmd_mono\">'):
+        c==s_newline ? write('<br/>\n'):
         c==s_pagelink ? (
           ind = find(#1,e_pagelink,y);
           run('+rows. ',y + 1,',',ind - 1,' strvar {t} rm. varname=${}');
-          ref(get('varname',256,0),url);
+          ref(get('varname',256,0),varname);
           write('<span class=\"gmd_pagelink\"><a href=\"');
-          ind = find(url,0);
-          write(url,ind);
+          len = find(varname,0);
+          write(varname,len);
           write('.html\">');
         );
         c==e_pagelink ? write('</a></span>');
-        c==s_monospace ? write('<span class=\"gmd_mono\">'):
-        c==s_newline ? write('<br/>\n'):
         c==s_section ? write('<div class=\"gmd_section\">'):
-        c==s_set ? write('<span class=\"gmd_set\">{'):
-        c==e_set ? write('}</span>'):
         c==s_subsection ? write('<div class=\"gmd_subsection\">'):
         c==s_subsubsection ? write('<div class=\"gmd_subsubsection\">'):
         c==s_subsubsubsection ? write('<div class=\"gmd_subsubsubsection\">'):
         c==s_url ? (
+          url = 0;
           ind = find(#1,e_url,y);
-          ref(vector256(),url);
           copy(url,i[y + 1],ind - y - 1);
           write('<a href=\"');
-          ind = find(url,0);
-          write(url,ind);
+          len = find(url,0);
+          write(url,len);
           write('\">');
         ):
         c==e_url ? write('</a>'):
+        c==s_value_set ? write('<span class=\"gmd_value_set\">{'):
+        c==e_value_set ? write('}</span>'):
         c==s_word_highlight ? write('<span class=\"gmd_word_highlight\">');
       )"
     k[0] autocrop 0
