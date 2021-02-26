@@ -290,6 +290,7 @@ help : skip ${1=""}
 # - \n# Section
 # - \n## Subsection
 # - \n### Subsubsection
+# - \n#### Subsubsubsection
 # - \n* Item of a list
 # - \n  - Item of a sub-list (level 1)
 # - \n    . Item of a sub-list (level 2)
@@ -342,6 +343,9 @@ gmd_italic : # __words in italic__
       beg<0 && (!y || isin(j[-1],_' ',_'(',_'\n',4))?(beg = y):
       beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
     )"
+
+gmd_line : # --- : horizontal separator line
+  eval[^] ">(!y || isin(j[-1],_'\n',4)) && i==_'-' && j[1]==_'-' && j[2]==_'-' && (y==h-3 || isin(j[3],_'\n',4))?(i[y] = 2)"
 
 gmd_link : # ''link to referenced section/command''
   eval[^] ">begin(beg = -1);
@@ -403,7 +407,7 @@ gmd_section1 : # # Section
     beg>=0 && (isin(i,_'\n',4) || y==h - 1)?(i[y] = 3; i[beg] = 2; beg = -1)"
   autocrop 0
 
-gmd_section2 : # ## Section
+gmd_section2 : # ## Subsection
   1 a[^-1] [-1],y rm.
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>80?(beg = -1);
@@ -411,11 +415,19 @@ gmd_section2 : # ## Section
     beg>=0 && (isin(i,_'\n',4) || y==h - 1)?(i[y] = 3; i[beg] = 2; beg = -1)"
   autocrop 0
 
-gmd_section3 : # ### Section
+gmd_section3 : # ### Subsubsection
   1 a[^-1] [-1],y rm.
   eval[^] ">begin(beg = -1);
     beg>=0 && y - beg>80?(beg = -1);
     beg<0 && i==_'#' && j[1]==_'#' && j[2]==_'#' && j[3]==_' ' && (!y || isin(j[-1],_'\n',3,4))?(beg = y):
+    beg>=0 && (isin(i,_'\n',4) || y==h - 1)?(i[y] = 3; i[beg] = 2; beg = -1)"
+  autocrop 0
+
+gmd_section4 : # #### Subsubsubsection
+  1 a[^-1] [-1],y rm.
+  eval[^] ">begin(beg = -1);
+    beg>=0 && y - beg>80?(beg = -1);
+    beg<0 && i==_'#' && j[1]==_'#' && j[2]==_'#' && j[3]==_'#' && j[4]==_' ' && (!y || isin(j[-1],_'\n',3,4))?(beg = y):
     beg>=0 && (isin(i,_'\n',4) || y==h - 1)?(i[y] = 3; i[beg] = 2; beg = -1)"
   autocrop 0
 
@@ -455,6 +467,10 @@ gmd_italic_ascii :
   gmd_italic
   replace_str "\2_",$_vt100_i
   replace_str "\3_",$_vt100_n
+
+gmd_line_ascii :
+  gmd_line
+  replace_str "\2--",""
 
 gmd_link_ascii :
   gmd_link
@@ -498,6 +514,8 @@ gmd_section_ascii :
   replace_str "\2# ","\n"$_vt100_m$_vt100_b"## "
   gmd_section3
   replace_str "\2## ","\n"$_vt100_m$_vt100_b"### "
+  gmd_section4
+  replace_str "\2### ","\n"$_vt100_m$_vt100_b"#### "
   replace_str "\3",$_vt100_n"\n"
 
 gmd_url_ascii :
@@ -565,6 +583,7 @@ gmd2html :
   gmd_list_html
   gmd_section_html
   gmd_url_html
+  gmd_line_html
   gmd_newline_html
   gmd_gmic_html
 
@@ -613,6 +632,10 @@ gmd_italic_html :
   replace_str "\2_","<span class=\"gmd_italic\">"
   replace_str "\3_","</span>"
 
+gmd_line_html :
+  gmd_line
+  replace_str "\2--","<hr/>"
+
 gmd_link_html :
   gmd_link
   repeat $! l[$>]
@@ -656,6 +679,8 @@ gmd_section_html :
   replace_str "\2# ","\n<div class=\"gmd_section2\">"
   gmd_section3
   replace_str "\2## ","\n<div class=\"gmd_section3\">"
+  gmd_section4
+  replace_str "\2### ","\n<div class=\"gmd_section4\">"
   replace_str "\3","</div>\n"
 
 gmd_url_html : # Replace 'http[s]://address.url' by html link.
@@ -686,7 +711,7 @@ gmd_url_html : # Replace 'http[s]://address.url' by html link.
 
 # Command to write reference documentation with various output modes.
 # $1 = output mode, can be { ascii | html | man }.
-# $2 = filename of the file containing additional HTML sections (optional).
+# $2 = name of the folder containing additional .gmd pages (optional).
 # Reference and command documentation is written using the G'MIC-markdown syntax.
 reference : skip "${2=}"
   m "_section : reference_section_$1 \"$""*\""
@@ -1456,7 +1481,15 @@ reference : skip "${2=}"
   l reference_list_of_commands_$1 onfail endl
 
   # Insert additional sections if specified.
-  if "['$2']!=0" "$2" ref_all fi
+  if "['$2']!=0"
+    files "$2/*.gmd" files=${}
+    repeat narg({/$files})
+      arg 1+$>,$files file=${}
+      l[] it $file s={b} t={t} rm endl
+      _section $s
+      _text $t
+    done
+  fi
 
   _section "Examples of Use"
   _text \
@@ -1553,6 +1586,7 @@ reference_text_ascii :
     gmd_braces_ascii
     gmd_link_ascii
     gmd_url_ascii
+    gmd_line_ascii
     gmd_section_ascii
     gmd_gmic_ascii
     i[^] ({'\n'})
@@ -4731,6 +4765,7 @@ parse_cli_text_ascii :
   gmd_braces_ascii
   gmd_link_ascii
   gmd_url_ascii
+  gmd_line_ascii
   gmd_section_ascii
 #  gmd_newline_ascii
   i[^] ({'\n'})
@@ -7367,7 +7402,7 @@ update_reference_html : check "isbool(${1=0})"
 
   # Generate reference pages in html.
   rm
-  reference html,$HOME/work/src/gmic-community/include/reference_html.gmic
+  reference html,$HOME/work/src/gmic-community/reference_html
 
   # Upload to G'MIC server.
   if $1
@@ -7729,7 +7764,7 @@ upload_filters :
     basename $file basename=${}
     if ['$basename']=='sylvie_alexandre.gmic'
       s +,{'"#@gui <b>"'} i[1--2:2] ('"#@gui ________<b>Testing<b>\n#@gui <i>Samj</i>\n"') y a y
-    elif s=['$basename'];s=='template.gmic'" || "s=='reference_html.gmic'
+    elif s=['$basename'];s=='template.gmic'
       rm 0
     fi
   endl done
