@@ -48217,7 +48217,7 @@ fx_solve_maze_preview :
 parse_gmd :
   e[^-1] "Parse and tokenize images$? viewed as text strings formatted with the G'MIC markdown syntax."
   y
-  replace_str "\t","    "
+  replace_str "\t","    " r. 1,{h+1},1,1,0
   eval[^] ">"${-_gmd_constants}"
     begin(
       bold_a = bold_u = bold_italic_a = bold_italic_u = bullet = subbullet = subsubbullet =
@@ -48288,7 +48288,7 @@ parse_gmd :
     non_escaped && linestart && isin(c,_'-',_'*',_'+') && nc==_' ' && bullet<0?( # Opening
       bullet = y;
     ):
-    bullet>=0 && (c==_'\n' || y==h - 1)?( # Closing
+    bullet>=0 && (c==_'\n' || !c)?( # Closing
       res[bullet++] = s_bullet; res[bullet] = 0;
       res[y] = e_bullet;
       reset(bullet);
@@ -48298,7 +48298,7 @@ parse_gmd :
     non_escaped && linestart && c==_' ' && nc==_' ' && isin(ac,_'-',_'*',_'+') && j[3]==_' ' && subbullet<0?( # Opening
       subbullet = y;
     ):
-    subbullet>=0 && (c==_'\n' || y==h - 1)?( # Closing
+    subbullet>=0 && (c==_'\n' || !c)?( # Closing
       res[subbullet++] = s_subbullet; copy(res[subbullet],0,2,1,0);
       res[y] = e_subbullet;
       reset(subbullet);
@@ -48308,7 +48308,7 @@ parse_gmd :
     non_escaped && linestart && c==_' ' && nc==_' ' && ac==_' ' && j[3]==_' ' && isin(j[4],_'-',_'*',_'+') && j[5]==_' ' && subsubbullet<0?( # Opening
       subsubbullet = y;
     ):
-    subsubbullet>=0 && (c==_'\n' || y==h - 1)?( # Closing
+    subsubbullet>=0 && (c==_'\n' || !c)?( # Closing
       res[subsubbullet++] = s_subsubbullet; copy(res[subsubbullet],0,4,1,0);
       res[y] = e_subsubbullet;
       reset(subsubbullet);
@@ -48407,7 +48407,7 @@ parse_gmd :
     linestart && c==_'#' && nc==_'#' && ac==_'#' && j[3]==_'#' && j[4]==_' '?( # Opening
       subsubsubsection = y;
     ):
-    subsubsubsection>=0 && (c==_'\n' || y==h - 1)?( # Closing
+    subsubsubsection>=0 && (c==_'\n' || !c)?( # Closing
       res[subsubsubsection++] = s_subsubsubsection; copy(res[subsubsubsection],0,4,1,0);
       res[y] = e_subsubsubsection;
       for (p = y1, p<size(res) && res[p]==_'\n', res[p] = 0);
@@ -48418,7 +48418,7 @@ parse_gmd :
     linestart && c==_'#' && nc==_'#' && ac==_'#' && j[3]==_' '?( # Opening
       subsubsection = y;
     ):
-    subsubsection>=0 && (c==_'\n' || y==h - 1)?( # Closing
+    subsubsection>=0 && (c==_'\n' || !c)?( # Closing
       res[subsubsection++] = s_subsubsection; copy(res[subsubsection],0,3,1,0);
       res[y] = e_subsubsection;
       for (p = y1, p<size(res) && res[p]==_'\n', res[p] = 0);
@@ -48429,7 +48429,7 @@ parse_gmd :
     linestart && c==_'#' && nc==_'#' && ac==_' '?( # Opening
       subsection = y;
     ):
-    subsection>=0 && (c==_'\n' || y==h - 1)?( # Closing
+    subsection>=0 && (c==_'\n' || !c)?( # Closing
       res[subsection++] = s_subsection; copy(res[subsection],0,2,1,0);
       res[y] = e_subsection;
       for (p = y1, p<size(res) && res[p]==_'\n', res[p] = 0);
@@ -48440,7 +48440,7 @@ parse_gmd :
     linestart && c==_'#' && nc==_' '?( # Opening
       section = y;
     ):
-    section>=0 && (c==_'\n' || y==h - 1)?( # Closing
+    section>=0 && (c==_'\n' || !c)?( # Closing
       res[section++] = s_section; res[section] = 0;
       res[y] = e_section;
       for (p = y1, p<size(res) && res[p]==_'\n', res[p] = 0);
