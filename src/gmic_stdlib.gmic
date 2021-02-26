@@ -48225,7 +48225,7 @@ parse_gmd :
       );
       reset_style() = (
         bold_a = bold_u = bold_italic_a = bold_italic_u = img1 = img2 = italic_a = italic_u =
-        link1 = link2 = monospace = pagelink = strikethrough = url = value_set = word_highlight = -1;
+        link1 = link2 = monospace = pagelink = pipeline = strikethrough = url = value_set = word_highlight = -1;
       );
       reset(c) = (#c = -1);
       blank(c) = isin(c,_' ',_'\n',0);
@@ -48439,68 +48439,6 @@ parse_gmd :
       );
     ):
 
-    # G'MIC word.
-    (linestart || semiblank(pc)) && c==_'G' && nc==_'\'' && ac==_'M' && j[3]==_'I' && j[4]==_'C' && semiblank(j[5])?(
-      res[y] = s_gmic;
-      copy(res[y + 1],0,3,1,0);
-      res[y + 4] = e_gmic;
-    ):
-
-    # Image : ![alt caption](URL).
-    non_escaped && c==_'!' && nc==_'[' && img1<0 && img2<0?( # Opening
-      img1 = y;
-    ):
-    non_escaped && c==_']' && nc==_'(' && img1>=0 && img2<0?( # Middle
-      img2 = y;
-    ):
-    non_escaped && c==_')' && img2>=0?( # Closing
-      res[img1++] = s_img; res[img1++] = 0;
-      res[img2++] = m_img; res[img2++] = 0;
-      copy(res[img1],i[img1],img2 - img1 - 2); # Discard potential tokens found in caption
-      copy(res[img2],i[img2],y - img2); # Discard potential tokens found in URL
-      res[y] = e_img;
-      reset_style();
-    ):
-
-    # Link : [link text](URL).
-    non_escaped && c==_'[' && link1<0 && link2<0 && img1<0?( # Opening
-      link1 = y;
-    ):
-    non_escaped && c==_']' && nc==_'(' && link1>=0 && link2<0 && img1<0?( # Middle
-      link2 = y;
-    ):
-    non_escaped && c==_')' && link2>=0 && img1<0?( # Closing
-      res[link1] = s_link;
-      res[link2++] = m_link; res[link2++] = 0;
-      copy(res[link2],i[link2],y - link2); # Discard potential tokens found inside URL
-      res[y] = e_link;
-      reset_style();
-    ):
-
-    # Link to command or reference page : ''command or page name'' (not a URL!).
-    non_escaped && c==_'\'' && nc==_'\''?(
-      pagelink<0 && (linestart || semiblank(pc))?(
-        pagelink = y;
-      ):
-      pagelink>=0 && y>pagelink + 2 && semiblank(ac)?(
-        res[pagelink++] = s_pagelink; res[pagelink++] = 0;
-        copy(res[pagelink],i[pagelink],y - pagelink); # Discard potential tokens found between
-        res[y] = e_pagelink; res[y1] = 0;
-        reset_style();
-      );
-    ):
-
-    # URL : <URL>.
-    non_escaped && c==_'<' && url<0 && crop(0,y1,1,4)=='http'?( # Opening
-      url = y;
-    ):
-    non_escaped && c==_'>' && url>=0 && y>url + 1?( # Closing
-      res[url++] = s_url;
-      copy(res[url],i[url],y - url); # Discard potential tokens found between
-      res[y] = e_url;
-      reset_style();
-    ):
-
     # Value Set : { value1 | value2 | value3 }.
     non_escaped && c==_'{' && value_set<0 && (linestart || semiblank(pc))?( # Opening
       value_set = y;
@@ -48523,6 +48461,81 @@ parse_gmd :
         res[y] = e_word_highlight;
         reset_style();
       );
+    ):
+
+    # URL : <URL>.
+    non_escaped && c==_'<' && url<0 && crop(0,y1,1,4)=='http'?( # Opening
+      url = y;
+    ):
+    non_escaped && c==_'>' && url>=0 && y>url + 1?( # Closing
+      res[url++] = s_url;
+      copy(res[url],i[url],y - url); # Discard potential tokens found between
+      res[y] = e_url;
+      reset_style();
+    ):
+
+    # Link to command or reference page : ''command or page name'' (not a URL!).
+    non_escaped && c==_'\'' && nc==_'\''?(
+      pagelink<0 && (linestart || semiblank(pc))?(
+        pagelink = y;
+      ):
+      pagelink>=0 && y>pagelink + 2 && semiblank(ac)?(
+        res[pagelink++] = s_pagelink; res[pagelink++] = 0;
+        copy(res[pagelink],i[pagelink],y - pagelink); # Discard potential tokens found between
+        res[y] = e_pagelink; res[y1] = 0;
+        reset_style();
+      );
+    ):
+
+    # Link : [link text](URL).
+    non_escaped && c==_'[' && link1<0 && link2<0 && img1<0?( # Opening
+      link1 = y;
+    ):
+    non_escaped && c==_']' && nc==_'(' && link1>=0 && link2<0 && img1<0?( # Middle
+      link2 = y;
+    ):
+    non_escaped && c==_')' && link2>=0 && img1<0?( # Closing
+      res[link1] = s_link;
+      res[link2++] = m_link; res[link2++] = 0;
+      copy(res[link2],i[link2],y - link2); # Discard potential tokens found inside URL
+      res[y] = e_link;
+      reset_style();
+    ):
+
+    # Image : ![alt caption](URL).
+    non_escaped && c==_'!' && nc==_'[' && img1<0 && img2<0?( # Opening
+      img1 = y;
+    ):
+    non_escaped && c==_']' && nc==_'(' && img1>=0 && img2<0?( # Middle
+      img2 = y;
+    ):
+    non_escaped && c==_')' && img2>=0?( # Closing
+      res[img1++] = s_img; res[img1++] = 0;
+      res[img2++] = m_img; res[img2++] = 0;
+      copy(res[img1],i[img1],img2 - img1 - 2); # Discard potential tokens found in caption
+      copy(res[img2],i[img2],y - img2); # Discard potential tokens found in URL
+      res[y] = e_img;
+      reset_style();
+    ):
+
+    # G'MIC pipeline (image) : %% G'MIC pipeline %%.
+    non_escaped && c==_'%' && nc==_'%'?(
+      pipeline<0 && (linestart || semiblank(pc))?(
+        pipeline = y;
+      ):
+      pipeline>=0 && y>pipeline + 3 && ac!=_'%'?(
+        res[pipeline++] = s_pipeline; res[pipeline++] = 0;
+        copy(res[pipeline],i[pipeline],y - pipeline); # Discard potential tokens found inside pipeline
+        res[y] = e_pipeline; res[y + 1] = 0;
+        reset_style();
+      );
+    ):
+
+    # G'MIC word.
+    (linestart || semiblank(pc)) && c==_'G' && nc==_'\'' && ac==_'M' && j[3]==_'I' && j[4]==_'C' && semiblank(j[5])?(
+      res[y] = s_gmic;
+      copy(res[y + 1],0,3,1,0);
+      res[y + 4] = e_gmic;
     ):
 
     # Escaped character.
@@ -48566,16 +48579,17 @@ _gmd_constants :
      const s_link = -27;             const m_link = -28;         const e_link = -29;
      const s_monospace = -30;        const e_monospace = -31;
      const s_pagelink = -32;         const e_pagelink = -33;
-     const s_section = -34;          const e_section = -35;
-     const s_separator = -36;
-     const s_strikethrough = -37;    const e_strikethrough = -38;
-     const s_subsection = -39;       const e_subsection = -40;
-     const s_subsubsection = -41;    const e_subsubsection = -42;
-     const s_subsubsubsection = -43; const e_subsubsubsection = -44;
-     const s_url = -45;              const e_url = -46;
-     const s_value_set = -47;        const e_value_set = -48;
-     const s_whitespace = -49;
-     const s_word_highlight = -50;   const e_word_highlight = -51;"
+     const s_pipeline = -34;         const e_pipeline = -35;
+     const s_section = -36;          const e_section = -37;
+     const s_separator = -38;
+     const s_strikethrough = -39;    const e_strikethrough = -40;
+     const s_subsection = -41;       const e_subsection = -42;
+     const s_subsubsection = -43;    const e_subsubsection = -44;
+     const s_subsubsubsection = -45; const e_subsubsubsection = -46;
+     const s_url = -47;              const e_url = -48;
+     const s_value_set = -49;        const e_value_set = -50;
+     const s_whitespace = -51;
+     const s_word_highlight = -52;   const e_word_highlight = -53;"
 
 #@cli gmd2html
 #@cli : Convert selected gmd-formatted text images to HTML format.
@@ -48620,10 +48634,10 @@ gmd2html :
         c==s_bold_u ? write('<span class=\"gmd_bold_u\">'):
         c==s_bold_italic_a ? write('<span class=\"gmd_bold_italic_a\">'):
         c==s_bold_italic_u ? write('<span class=\"gmd_bold_italic_u\">'):
-        c==s_bullet ? write('<span class=\"gmd_bullet\">');
-        c==s_subbullet ? write('<span class=\"gmd_subbullet\">');
-        c==s_subsubbullet ? write('<span class=\"gmd_subsubbullet\">');
-        c==s_code_block ? write('<div class=\"gmd_code_block\">');
+        c==s_bullet ? write('<span class=\"gmd_bullet\">'):
+        c==s_subbullet ? write('<span class=\"gmd_subbullet\">'):
+        c==s_subsubbullet ? write('<span class=\"gmd_subsubbullet\">'):
+        c==s_code_block ? write('<div class=\"gmd_code_block\">'):
         c==s_gmic ? write('<span class=\"gmd_gmic\"></span>'):
         c==s_hrule ? write('\n<hr/>\n'):
         c==s_img ? (
@@ -48640,7 +48654,7 @@ gmd2html :
           ind = find(#1,e_img,y);
           copy(i[y],0,ind - y + 1,1,0);
           write('\"/>');
-        );
+        ):
         c==s_italic_a ? write('<span class=\"gmd_italic_a\">'):
         c==s_italic_u ? write('<span class=\"gmd_italic_u\">'):
         c==s_link ? (
@@ -48648,7 +48662,6 @@ gmd2html :
           ind_m = find(#1,m_link,y);
           ind_e = find(#1,e_link,ind_m);
           copy(url_link,i[ind_m + 1],ind_e - ind_m - 1);
-
           write('<a href=\"');
           len = find(url_link,0);
           write(url_link,len);
@@ -48658,7 +48671,7 @@ gmd2html :
           ind = find(#1,e_link,y);
           copy(i[y],0,ind - y + 1,1,0);
           write('</a>');
-        );
+        ):
         c==s_monospace ? write('<span class=\"gmd_mono\">'):
         c==s_pagelink ? (
           ind = find(#1,e_pagelink,y);
@@ -48668,8 +48681,13 @@ gmd2html :
           len = find(varname,0);
           write(varname,len);
           write('.html\">');
-        );
+        ):
         c==e_pagelink ? write('</a></span>');
+
+        # TO DO:
+        c==s_pipeline ? write('<div class=\"gmd_code_block\">'):
+        c==e_pipeline ? write('</div>'):
+
         c==s_section ? write('<div class=\"gmd_section\">'):
         c==s_strikethrough? write('<span class=\"gmd_strikethrough\">'):
         c==s_subsection ? write('<div class=\"gmd_subsection\">'):
@@ -48687,7 +48705,7 @@ gmd2html :
         c==e_url ? write('</a>'):
         c==s_value_set ? write('<span class=\"gmd_value_set\">{'):
         c==e_value_set ? write('}</span>'):
-        c==s_whitespace ? write('&nbsp;');
+        c==s_whitespace ? write('&nbsp;'):
         c==s_word_highlight ? write('<span class=\"gmd_word_highlight\">');
       )"
     k[0] autocrop 0
