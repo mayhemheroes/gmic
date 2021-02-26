@@ -48220,9 +48220,9 @@ parse_gmd :
   replace_str "\t","    "
   eval[^] ">"${-_gmd_constants}"
     begin(
-      bold_a = bold_u = bold_italic_a = bold_italic_u = word_highlight = img1 = img2 = italic_a = italic_u =
-        link1 = link2 = monospace = pagelink = section = subsection = subsubsection = subsubsubsection =
-        url = value_set = -1;
+      bold_a = bold_u = bold_italic_a = bold_italic_u = bullet = subbullet = subsubbullet =
+        img1 = img2 = italic_a = italic_u = link1 = link2 = monospace = pagelink = section =
+        subsection = subsubsection = subsubsubsection = url = value_set = word_highlight = -1;
 
       blank(c) = isin(c,_' ',_'\n',0);
       semiblank(c) = isin(c,_' ',_'\n',_'.',_',',_';',_':',_'!',_'?',0);
@@ -48284,6 +48284,16 @@ parse_gmd :
       );
     ):
 
+    # Bullet (list) : * List item.
+    non_escaped && linestart && isin(c,_'-',_'*',_'+') && nc==_' ' && bullet<0?( # Opening
+      bullet = y;
+    ):
+    bullet>=0 && (c==_'\n' || y==h - 1)?( # Closing
+      res[bullet++] = s_bullet; res[bullet] = 0;
+      res[y] = e_bullet;
+      reset(bullet);
+    ):
+
     # G'MIC word.
     (linestart || semiblank(pc)) && c==_'G' && nc==_'\'' && ac==_'M' && j[3]==_'I' && j[4]==_'C' && semiblank(j[5])?(
       res[y] = s_gmic;
@@ -48305,12 +48315,13 @@ parse_gmd :
       copy(res[img2],i[img2],y - img2); # Discard potential tokens found in URL
       res[y] = e_img;
       reset(img1); reset(img2);
-    );
+    ):
 
     # Italic (asterisk) : *italic text*.
     non_escaped && c==_'*' && pc!=_'*'?(
       italic_a<0?(
         italic_a = y;
+        print(italic_a);
       ):
       italic_a>=0 && y>italic_a + 1 && ac!=_'*'?(
         res[italic_a] = s_italic_a;
@@ -48473,20 +48484,23 @@ _gmd_constants :
      const s_bold_u = -3;            const e_bold_u = -4;
      const s_bold_italic_a = -5;     const e_bold_italic_a = -6;
      const s_bold_italic_u = -7;     const e_bold_italic_u = -8;
-     const s_gmic = -9;              const e_gmic = -10;
-     const s_img = -11;              const m_img = -12;         const e_img = -13;
-     const s_italic_a = -14;         const e_italic_a = -15;
-     const s_italic_u = -16;         const e_italic_u = -17;
-     const s_link = -18;             const m_link = -19;         const e_link = -20;
-     const s_monospace = -21;        const e_monospace = -22;
-     const s_pagelink = -24;         const e_pagelink = -25;
-     const s_section = -26;          const e_section = -27;
-     const s_subsection = -28;       const e_subsection = -29;
-     const s_subsubsection = -30;    const e_subsubsection = -31;
-     const s_subsubsubsection = -32; const e_subsubsubsection = -33;
-     const s_url = -34;              const e_url = -35;
-     const s_value_set = -36;        const e_value_set = -37;
-     const s_word_highlight = -38;   const e_word_highlight = -39;"
+     const s_bullet = -9;            const e_bullet = -10;
+     const s_subbullet = -11;        const e_subbullet = -12;
+     const s_subsubbullet = -13;     const e_subsubbullet = -14;
+     const s_gmic = -15;             const e_gmic = -16;
+     const s_img = -17;              const m_img = -18;          const e_img = -19;
+     const s_italic_a = -20;         const e_italic_a = -21;
+     const s_italic_u = -22;         const e_italic_u = -23;
+     const s_link = -24;             const m_link = -25;         const e_link = -26;
+     const s_monospace = -27;        const e_monospace = -28;
+     const s_pagelink = -29;         const e_pagelink = -30;
+     const s_section = -31;          const e_section = -32;
+     const s_subsection = -33;       const e_subsection = -34;
+     const s_subsubsection = -35;    const e_subsubsection = -36;
+     const s_subsubsubsection = -37; const e_subsubsubsection = -38;
+     const s_url = -39;              const e_url = -40;
+     const s_value_set = -41;        const e_value_set = -42;
+     const s_word_highlight = -43;   const e_word_highlight = -44;"
 
 #@cli gmd2html
 #@cli : Convert selected gmd-formatted text images to HTML format.
@@ -48523,13 +48537,14 @@ gmd2html :
         c==_'<' ? write('&lt;'):
         write(c);
       ):(
-        isin(c,e_bold_a,e_bold_u,e_bold_italic_a,e_bold_italic_u,e_italic_a,e_italic_u,
+        isin(c,e_bold_a,e_bold_u,e_bold_italic_a,e_bold_italic_u,e_bullet,e_italic_a,e_italic_u,
              e_monospace,e_word_highlight) ? write('</span>'):
         isin(c,e_section,e_subsection,e_subsubsection,e_subsubsubsection) ? write('</div>\n'):
         c==s_bold_a ? write('<span class=\"gmd_bold_a\">'):
         c==s_bold_u ? write('<span class=\"gmd_bold_u\">'):
         c==s_bold_italic_a ? write('<span class=\"gmd_bold_italic_a\">'):
         c==s_bold_italic_u ? write('<span class=\"gmd_bold_italic_u\">'):
+        c==s_bullet ? write('<span class=\"gmd_bullet\">');
         c==s_gmic ? write('<span class=\"gmd_gmic\"></span>'):
         c==s_img ? (
           ref(vector256(),url_img);
