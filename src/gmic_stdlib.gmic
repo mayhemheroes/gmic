@@ -345,7 +345,8 @@ gmd_italic : # __words in italic__
     )"
 
 gmd_line : # --- : horizontal separator line
-  eval[^] ">(!y || isin(j[-1],_'\n',4)) && i==_'-' && j[1]==_'-' && j[2]==_'-' && (y==h-3 || isin(j[3],_'\n',4))?(i[y] = 2)"
+  eval[^] ">(!y || isin(j[-1],_'\n',4)) && i==_'-' && j[1]==_'-' && j[2]==_'-' && (y==h-3 || isin(j[3],_'\n',4))?"\
+      "(i[y] = 2)"
 
 gmd_link : # ''link to referenced section/command''
   eval[^] ">begin(beg = -1);
@@ -48233,9 +48234,10 @@ parse_gmd :
     pc = j[-1]; c = i; nc = j[1]; ac = j[2];
     y1 = y + 1; y2 = y + 2; y3 = y + 3;
     linestart = !y || pc==_'\n';
+    non_escaped = (pc!=_'\\');
 
     # Bold italic (asterisk) : ***bold italic text***.
-    c==_'*' && nc==_'*' && ac==_'*'?(
+    non_escaped && c==_'*' && nc==_'*' && ac==_'*'?(
       bold_italic_a<0?(
         bold_italic_a = y;
       ):
@@ -48247,7 +48249,7 @@ parse_gmd :
     ):
 
     # Bold italic (underscore) : ___bold italic text___.
-    c==_'_' && nc==_'_' && ac==_'_'?(
+    non_escaped && c==_'_' && nc==_'_' && ac==_'_'?(
       bold_italic_u<0 && (linestart || semiblank(pc))?(
         bold_italic_u = y;
       ):
@@ -48259,7 +48261,7 @@ parse_gmd :
     ):
 
     # Bold (asterisk) : **bold text**.
-    c==_'*' && nc==_'*'?(
+    non_escaped && c==_'*' && nc==_'*'?(
       bold_a<0?(
         bold_a = y;
       ):
@@ -48271,7 +48273,7 @@ parse_gmd :
     ):
 
     # Bold (underscore) : __bold text__.
-    c==_'_' && nc==_'_'?(
+    non_escaped && c==_'_' && nc==_'_'?(
       bold_u<0 && (linestart || semiblank(pc))?(
         bold_u = y;
       ):
@@ -48290,13 +48292,13 @@ parse_gmd :
     ):
 
     # Image : ![alt caption](URL).
-    c==_'!' && nc==_'[' && img1<0 && img2<0?( # Opening
+    non_escaped && c==_'!' && nc==_'[' && img1<0 && img2<0?( # Opening
       img1 = y;
     ):
-    c==_']' && nc==_'(' && img1>=0 && img2<0?( # Middle
+    non_escaped && c==_']' && nc==_'(' && img1>=0 && img2<0?( # Middle
       img2 = y;
     ):
-    c==_')' && img2>=0?( # Closing
+    non_escaped && c==_')' && img2>=0?( # Closing
       res[img1++] = s_img; res[img1++] = 0;
       res[img2++] = m_img; res[img2++] = 0;
       copy(res[img1],i[img1],img2 - img1 - 2); # Discard potential tokens found in caption
@@ -48306,7 +48308,7 @@ parse_gmd :
     );
 
     # Italic (asterisk) : *italic text*.
-    c==_'*' && pc!=_'*'?(
+    non_escaped && c==_'*' && pc!=_'*'?(
       italic_a<0?(
         italic_a = y;
       ):
@@ -48318,7 +48320,7 @@ parse_gmd :
     ):
 
     # Italic (underscore) : _italic text_.
-    c==_'_' && pc!=_'_'?(
+    non_escaped && c==_'_' && pc!=_'_'?(
       italic_u<0 && (linestart || semiblank(pc))?(
         italic_u = y
       ):
@@ -48330,7 +48332,7 @@ parse_gmd :
     ):
 
     # Monospace : `text in monospace font`.
-    c==_'`'?(
+    non_escaped && c==_'`'?(
       monospace<0 && (linestart || semiblank(pc))?(
         monospace = y;
       ):
@@ -48343,13 +48345,13 @@ parse_gmd :
     ):
 
     # Link : [link text](URL).
-    c==_'[' && link1<0 && link2<0 && img1<0?( # Opening
+    non_escaped && c==_'[' && link1<0 && link2<0 && img1<0?( # Opening
       link1 = y;
     ):
-    c==_']' && nc==_'(' && link1>=0 && link2<0 && img1<0?( # Middle
+    non_escaped && c==_']' && nc==_'(' && link1>=0 && link2<0 && img1<0?( # Middle
       link2 = y;
     ):
-    c==_')' && link2>=0 && img1<0?( # Closing
+    non_escaped && c==_')' && link2>=0 && img1<0?( # Closing
       res[link1] = s_link;
       res[link2++] = m_link; res[link2++] = 0;
       copy(res[link2],i[link2],y - link2); # Discard potential tokens found inside URL
@@ -48358,7 +48360,7 @@ parse_gmd :
     );
 
     # Link to command or reference page : ''command or page name'' (not a URL!).
-    c==_'\'' && nc==_'\''?(
+    non_escaped && c==_'\'' && nc==_'\''?(
       pagelink<0 && (linestart || semiblank(pc))?(
         pagelink = y;
       ):
@@ -48415,10 +48417,10 @@ parse_gmd :
     ):
 
     # URL : <URL>.
-    c==_'<' && url<0 && crop(0,y1,1,4)=='http'?( # Opening
+    non_escaped && c==_'<' && url<0 && crop(0,y1,1,4)=='http'?( # Opening
       url = y;
     ):
-    c==_'>' && url>=0 && y>url + 1?( # Closing
+    non_escaped && c==_'>' && url>=0 && y>url + 1?( # Closing
       res[url++] = s_url;
       copy(res[url],i[url],y - url); # Discard potential tokens found between
       res[y] = e_url;
@@ -48426,10 +48428,10 @@ parse_gmd :
     ):
 
     # Value Set : { value1 | value2 | value3 }.
-    c==_'{' && value_set<0 && (linestart || blank(pc))?( # Opening
+    non_escaped && c==_'{' && value_set<0 && (linestart || blank(pc))?( # Opening
       value_set = y;
     ):
-    c==_'}' && value_set>=0 && y>value_set + 1 && semiblank(nc)?( # Closing
+    non_escaped && c==_'}' && value_set>=0 && y>value_set + 1 && semiblank(nc)?( # Closing
       res[value_set++] = s_value_set;
       copy(res[value_set],i[value_set],y - value_set); # Discard potential tokens found between
       res[y] = e_value_set;
@@ -48437,7 +48439,7 @@ parse_gmd :
     ):
 
     # Word highlight : 'word_highlight'.
-    c=='\''?(
+    non_escaped && c=='\''?(
       word_highlight<0 && (linestart || semiblank(pc))?(
         word_highlight = y;
       ):
@@ -48447,6 +48449,11 @@ parse_gmd :
         res[y] = e_word_highlight;
         reset(word_highlight);
       );
+    ):
+
+    # Escaped character.
+    !non_escaped && isin(c,_'\\',_'`',_'*',_'_',_'{',_'}',_'[',_']',_'<',_'>',_'(',_')',_'#',_'+',_'-',_'.',_'!')?(
+      res[y - 1] = 0;
     ):
 
     # Blank character.
@@ -48516,7 +48523,8 @@ gmd2html :
         c==_'<' ? write('&lt;'):
         write(c);
       ):(
-        isin(c,e_bold_a,e_bold_u,e_bold_italic_a,e_bold_italic_u,e_italic_a,e_italic_u,e_monospace,e_word_highlight) ? write('</span>'):
+        isin(c,e_bold_a,e_bold_u,e_bold_italic_a,e_bold_italic_u,e_italic_a,e_italic_u,
+             e_monospace,e_word_highlight) ? write('</span>'):
         isin(c,e_section,e_subsection,e_subsubsection,e_subsubsubsection) ? write('</div>\n'):
         c==s_bold_a ? write('<span class=\"gmd_bold_a\">'):
         c==s_bold_u ? write('<span class=\"gmd_bold_u\">'):
