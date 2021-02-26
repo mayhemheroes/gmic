@@ -48489,6 +48489,13 @@ parse_gmd :
 
     # Blank character.
     blank(c)?(
+
+      # Keep leading whitespaces.
+      linestart && c==_' '?(
+        q = y; do (res[q++] = s_whitespace; c = i[q], c==_' ');
+      );
+
+      # Ignore tokens that do not accept whitespaces in arguments.
       reset(word_highlight);
       link2>=0?(reset(link1); reset(link2));
       img2>=0?(reset(img1); reset(img2));
@@ -48520,7 +48527,8 @@ _gmd_constants :
      const s_subsubsubsection = -37; const e_subsubsubsection = -38;
      const s_url = -39;              const e_url = -40;
      const s_value_set = -41;        const e_value_set = -42;
-     const s_word_highlight = -43;   const e_word_highlight = -44;"
+     const s_word_highlight = -43;   const e_word_highlight = -44;
+     const s_whitespace = -45;"
 
 #@cli gmd2html
 #@cli : Convert selected gmd-formatted text images to HTML format.
@@ -48629,6 +48637,7 @@ gmd2html :
         c==e_url ? write('</a>'):
         c==s_value_set ? write('<span class=\"gmd_value_set\">{'):
         c==e_value_set ? write('}</span>'):
+        c==s_whitespace ? write('&nbsp;');
         c==s_word_highlight ? write('<span class=\"gmd_word_highlight\">');
       )"
     k[0] autocrop 0
