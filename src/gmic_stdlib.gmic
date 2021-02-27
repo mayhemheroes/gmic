@@ -48265,7 +48265,7 @@ parse_gmd :
     # Manage document layout.
     #------------------------
 
-    # Section.
+    # Section: '# Section name'.
     linestart && c==_'#' && nc==_' '?( # Opening
       section = y;
     ):
@@ -48276,7 +48276,7 @@ parse_gmd :
       reset_tokens_after(section);
     ):
 
-    ## Subsection.
+    # Subsection: '## Subsection name'.
     linestart && c==_'#' && nc==_'#' && ac==_' '?( # Opening
       subsection = y;
     ):
@@ -48287,7 +48287,7 @@ parse_gmd :
       reset_tokens_after(subsection);
     ):
 
-    ### Subsubsection.
+    # Subsubsection: '### Subsubsection name'.
     linestart && c==_'#' && nc==_'#' && ac==_'#' && j[3]==_' '?( # Opening
       subsubsection = y;
     ):
@@ -48298,7 +48298,7 @@ parse_gmd :
       reset_tokens_after(subsubsection);
     ):
 
-    #### Subsubsubsection.
+    # Subsubsubsection: '#### Subsubsubsection name'.
     linestart && c==_'#' && nc==_'#' && ac==_'#' && j[3]==_'#' && j[4]==_' '?( # Opening
       subsubsubsection = y;
     ):
@@ -48309,7 +48309,7 @@ parse_gmd :
       reset_tokens_after(subsubsubsection);
     ):
 
-    # Bullet (list) : * List item.
+    # List bullet: '* List item'.
     linestart && isin(c,_'-',_'*',_'+') && nc==_' ' && bullet<0?( # Opening
       bullet = y;
     ):
@@ -48319,7 +48319,7 @@ parse_gmd :
       reset_tokens_after(bullet);
     ):
 
-    # Sub-Bullet (list) :   * Sub-list item.
+    # Sublist bullet: '  * Sub-list item'.
     linestart && c==_' ' && nc==_' ' && isin(ac,_'-',_'*',_'+') && j[3]==_' ' && subbullet<0?( # Opening
       subbullet = y;
     ):
@@ -48329,7 +48329,7 @@ parse_gmd :
       reset_tokens_after(subbullet);
     ):
 
-    # Subsub-Bullet (list) :   * Subsub-list item.
+    # Subsublist bullet: '    * Subsub-list item'.
     linestart && c==_' ' && nc==_' ' && ac==_' ' && j[3]==_' ' && isin(j[4],_'-',_'*',_'+') && j[5]==_' ' && subsubbullet<0?( # Opening
       subsubbullet = y;
     ):
@@ -48339,7 +48339,7 @@ parse_gmd :
       reset_tokens_after(subsubbullet);
     ):
 
-    # Code block : ~~~\n Code block\n~~~.
+    # Code block: '\n~~~\n Code block\n~~~\n'.
     linestart && isin(c,_'~','`') && nc==c && ac==c && (j[3]==_'\n' || !c)?(
       code_block<0?(
         code_block = y;
@@ -48352,7 +48352,7 @@ parse_gmd :
       );
     ):
 
-    # Horizontal rule.
+    # Horizontal rule: '---'.
     linestart && isin(c,_'-','_','*') && nc==c && ac==c && (j[3]==_'\n' || !c)?(
       res[y] = s_hrule;
       copy(res[y + 1],0,3,1,0);
