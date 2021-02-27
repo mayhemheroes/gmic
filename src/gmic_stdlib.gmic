@@ -48224,36 +48224,11 @@ parse_gmd :
       bullet = subbullet = subsubbullet =
       bold_italic_a = bold_italic_u = bold_a = bold_u = italic_a = italic_u = strikethrough = monospace =
       value_set = word_highlight = code_block = url = page_link = link1 = link2 = img1 = img2 = pipeline = -1;
+      pos = -1;
 
       blank(c) = isin(c,_' ',_'\n',0);
       semiblank(c) = isin(c,_' ',_'\n',_'.',_',',_';',_':',_'!',_'?',_')',_'(',0);
       reset(c) = (#c = -1);
-      reset_tokens_after(pos) = ( # Reset all not-ended tokens that start after offset 'pos'.
-        _pos = pos;
-        section>=_pos ? reset(section);
-        subsection>=_pos ? reset(subsection);
-        subsubsection>=_pos ? reset(subsubsection);
-        subsubsubsection>=_pos ? reset(subsubsubsection);
-        bullet>=_pos ? reset(bullet);
-        subbullet>=_pos ? reset(subbullet);
-        subsubbullet>=_pos ? reset(subsubbullet);
-        bold_italic_a>=_pos ? reset(bold_italic_a);
-        bold_italic_u>=_pos ? reset(bold_italic_u);
-        bold_a>=_pos ? reset(bold_a);
-        bold_u>=_pos ? reset(bold_u);
-        italic_a>=_pos ? reset(italic_a);
-        italic_u>=_pos ? reset(italic_u);
-        strikethrough>=_pos ? reset(strikethrough);
-        monospace>=_pos ? reset(monospace);
-        value_set>=_pos ? reset(value_set);
-        word_highlight>=_pos ? reset(word_highlight);
-        code_block>=_pos? reset(code_block);
-        url>=_pos ? reset(url);
-        page_link>=_pos ? reset(page_link);
-        link1>=_pos || link2>=_pos ? (reset(link1); reset(link2));
-        img1>=_pos || img2>=_pos ? (reset(img1); reset(img2));
-        pipeline>=_pos ? reset(pipeline);
-      );
       res = crop();
     );
 
@@ -48270,10 +48245,10 @@ parse_gmd :
       section = y;
     ):
     section>=0 && (c==_'\n' || !c)?( # Closing
+      pos = section;
       res[section++] = s_section; res[section] = 0;
       res[y] = e_section;
       for (p = y1, p<size(res) && res[p]==_'\n', res[p] = 0);
-      reset_tokens_after(section);
     ):
 
     # Subsection: '## Subsection name'.
@@ -48281,10 +48256,10 @@ parse_gmd :
       subsection = y;
     ):
     subsection>=0 && (c==_'\n' || !c)?( # Closing
+      pos = subsection;
       res[subsection++] = s_subsection; copy(res[subsection],0,2,1,0);
       res[y] = e_subsection;
       for (p = y1, p<size(res) && res[p]==_'\n', res[p] = 0);
-      reset_tokens_after(subsection);
     ):
 
     # Subsubsection: '### Subsubsection name'.
@@ -48292,10 +48267,10 @@ parse_gmd :
       subsubsection = y;
     ):
     subsubsection>=0 && (c==_'\n' || !c)?( # Closing
+      pos = subsubsection;
       res[subsubsection++] = s_subsubsection; copy(res[subsubsection],0,3,1,0);
       res[y] = e_subsubsection;
       for (p = y1, p<size(res) && res[p]==_'\n', res[p] = 0);
-      reset_tokens_after(subsubsection);
     ):
 
     # Subsubsubsection: '#### Subsubsubsection name'.
@@ -48303,10 +48278,10 @@ parse_gmd :
       subsubsubsection = y;
     ):
     subsubsubsection>=0 && (c==_'\n' || !c)?( # Closing
+      pos = subsubsubsection;
       res[subsubsubsection++] = s_subsubsubsection; copy(res[subsubsubsection],0,4,1,0);
       res[y] = e_subsubsubsection;
       for (p = y1, p<size(res) && res[p]==_'\n', res[p] = 0);
-      reset_tokens_after(subsubsubsection);
     ):
 
     # List bullet: '* List item'.
@@ -48314,9 +48289,9 @@ parse_gmd :
       bullet = y;
     ):
     bullet>=0 && (c==_'\n' || !c)?( # Closing
+      pos = bullet;
       res[bullet++] = s_bullet; res[bullet] = 0;
       res[y] = e_bullet;
-      reset_tokens_after(bullet);
     ):
 
     # Sublist bullet: '  * Sub-list item'.
@@ -48324,9 +48299,9 @@ parse_gmd :
       subbullet = y;
     ):
     subbullet>=0 && (c==_'\n' || !c)?( # Closing
+      pos = subbullet;
       res[subbullet++] = s_subbullet; copy(res[subbullet],0,2,1,0);
       res[y] = e_subbullet;
-      reset_tokens_after(subbullet);
     ):
 
     # Subsublist bullet: '    * Subsub-list item'.
@@ -48334,9 +48309,9 @@ parse_gmd :
       subsubbullet = y;
     ):
     subsubbullet>=0 && (c==_'\n' || !c)?( # Closing
+      pos = subsubbullet;
       res[subsubbullet++] = s_subsubbullet; copy(res[subsubbullet],0,4,1,0);
       res[y] = e_subsubbullet;
-      reset_tokens_after(subsubbullet);
     ):
 
     # Code block: '\n~~~\n Code block\n~~~\n'.
@@ -48345,10 +48320,10 @@ parse_gmd :
         code_block = y;
       ):
       code_block>=0 && y>code_block + 3?(
+        pos = code_block;
         res[code_block++] = s_code_block; copy(res[code_block],0,3,1,0); code_block+=3;
         copy(res[code_block],i[code_block],y - code_block); # Discard potential tokens found between separators
         res[y - 1] = e_code_block; copy(res[y],0,4,1,0);
-        reset_tokens_after(code_block);
       );
     ):
 
@@ -48367,9 +48342,9 @@ parse_gmd :
         bold_italic_a = y;
       ):
       bold_italic_a>=0 && y>bold_italic_a + 3 && j[3]!=_'*'?(
+        pos = bold_italic_a;
         res[bold_italic_a++] = s_bold_italic_a; res[bold_italic_a++] = 0; res[bold_italic_a] = 0;
         res[y] = e_bold_italic_a; res[y1] = res[y2] = 0;
-        reset_tokens_after(bold_italic_a);
       );
     ):
 
@@ -48379,9 +48354,9 @@ parse_gmd :
         bold_italic_u = y;
       ):
       bold_italic_u>=0 && y>bold_italic_u + 3 && semiblank(j[3])?(
+        pos = bold_italic_u;
         res[bold_italic_u++] = s_bold_italic_u; res[bold_italic_u++] = 0; res[bold_italic_u] = 0;
         res[y] = e_bold_italic_u; res[y1] = res[y2] = 0;
-        reset_tokens_after(bold_italic_u);
       );
     ):
 
@@ -48391,9 +48366,9 @@ parse_gmd :
         bold_a = y;
       ):
       bold_a>=0 && y>bold_a + 2 && ac!=_'*'?(
+        pos = bold_a;
         res[bold_a++] = s_bold_a; res[bold_a] = 0;
         res[y] = e_bold_a; res[y1] = 0;
-        reset_tokens_after(bold_a);
       );
     ):
 
@@ -48403,9 +48378,9 @@ parse_gmd :
         bold_u = y;
       ):
       bold_u>=0 && y>bold_u + 2 && semiblank(ac)?(
+        pos = bold_u;
         res[bold_u++] = s_bold_u; res[bold_u] = 0;
         res[y] = e_bold_u; res[y1] = 0;
-        reset_tokens_after(bold_u);
       );
     ):
 
@@ -48415,9 +48390,9 @@ parse_gmd :
         italic_a = y;
       ):
       italic_a>=0 && y>italic_a + 1 && ac!=_'*'?(
+        pos = italic_a;
         res[italic_a] = s_italic_a;
         res[y] = e_italic_a;
-        reset_tokens_after(italic_a);
       );
     ):
 
@@ -48427,9 +48402,9 @@ parse_gmd :
         italic_u = y
       ):
       italic_u>=0 && y>italic_u + 1 && semiblank(nc)?(
+        pos = italic_u;
         res[italic_u] = s_italic_u;
         res[y] = e_italic_u;
-        reset_tokens_after(italic_u);
       );
     ):
 
@@ -48439,9 +48414,9 @@ parse_gmd :
         strikethrough = y;
       ):
       strikethrough>=0 && y>strikethrough + 2?(
+        pos = strikethrough;
         res[strikethrough++] = s_strikethrough; res[strikethrough] = 0;
         res[y] = e_strikethrough; res[y1] = 0;
-        reset_tokens_after(strikethrough);
       );
     ):
 
@@ -48451,10 +48426,10 @@ parse_gmd :
         monospace = y;
       ):
       monospace>=0 && y>monospace + 1 && semiblank(nc)?(
+        pos = monospace;
         res[monospace++] = s_monospace;
         copy(res[monospace],i[monospace],y - monospace); # Discard potential tokens found between
         res[y] = e_monospace;
-        reset_tokens_after(monospace);
       );
     ):
 
@@ -48463,10 +48438,10 @@ parse_gmd :
       value_set = y;
     ):
     non_escaped && c==_'}' && value_set>=0 && y>value_set + 1 && semiblank(nc)?( # Closing
+      pos = value_set;
       res[value_set++] = s_value_set;
       copy(res[value_set],i[value_set],y - value_set); # Discard potential tokens found between
       res[y] = e_value_set;
-      reset_tokens_after(value_set);
     ):
 
     # Word highlight: ' 'word_highlight' '.
@@ -48475,10 +48450,10 @@ parse_gmd :
         word_highlight = y;
       ):
       word_highlight>=0 && y>word_highlight + 1 && semiblank(nc)?(
+        pos = word_highlight;
         res[word_highlight++] = s_word_highlight;
         copy(res[word_highlight],i[word_highlight],y - word_highlight); # Discard potential tokens found between
         res[y] = e_word_highlight;
-        reset_tokens_after(word_highlight);
       );
     ):
 
@@ -48487,10 +48462,10 @@ parse_gmd :
       url = y;
     ):
     non_escaped && c==_'>' && url>=0 && y>url + 1?( # Closing
+      pos = url;
       res[url++] = s_url;
       copy(res[url],i[url],y - url); # Discard potential tokens found between
       res[y] = e_url;
-      reset_tokens_after(url);
     ):
 
     # Page link (command or reference): ' ''command or page name'' ' (not a URL!).
@@ -48499,10 +48474,10 @@ parse_gmd :
         page_link = y;
       ):
       page_link>=0 && y>page_link + 2 && semiblank(ac)?(
+        pos = page_link;
         res[page_link++] = s_page_link; res[page_link++] = 0;
         copy(res[page_link],i[page_link],y - page_link); # Discard potential tokens found between
         res[y] = e_page_link; res[y1] = 0;
-        reset_tokens_after(page_link);
       );
     ):
 
@@ -48514,11 +48489,11 @@ parse_gmd :
       link2 = y;
     ):
     non_escaped && c==_')' && link2>=0 && img1<0?( # Closing
+      pos = link1;
       res[link1] = s_link;
       res[link2++] = m_link; res[link2++] = 0;
       copy(res[link2],i[link2],y - link2); # Discard potential tokens found inside URL
       res[y] = e_link;
-      reset_tokens_after(link1);
     ):
 
     # Image: '![alt caption](https://url.com/image.png)'.
@@ -48529,12 +48504,12 @@ parse_gmd :
       img2 = y;
     ):
     non_escaped && c==_')' && img2>=0?( # Closing
+      pos = img1;
       res[img1++] = s_img; res[img1++] = 0;
       res[img2++] = m_img; res[img2++] = 0;
       copy(res[img1],i[img1],img2 - img1 - 2); # Discard potential tokens found in caption
       copy(res[img2],i[img2],y - img2); # Discard potential tokens found in URL
       res[y] = e_img;
-      reset_tokens_after(img1);
     ):
 
     # G'MIC pipeline (image): '%% G'MIC pipeline %%'.
@@ -48543,10 +48518,10 @@ parse_gmd :
         pipeline = y;
       ):
       pipeline>=0 && y>pipeline + 3 && ac!=_'%'?(
+        pos = pipeline;
         res[pipeline++] = s_pipeline; res[pipeline++] = 0;
         copy(res[pipeline],i[pipeline],y - pipeline); # Discard potential tokens found inside pipeline
         res[y] = e_pipeline; res[y + 1] = 0;
-        reset_tokens_after(pipeline);
       );
     ):
 
@@ -48589,6 +48564,34 @@ parse_gmd :
       reset(word_highlight);
       link2>=0?(reset(link1); reset(link2));
       img2>=0?(reset(img1); reset(img2));
+    );
+
+    # Reset all not-ended tokens that start after offset 'pos'.
+    pos>=0?(
+      section>=pos ? reset(section);
+      subsection>=pos ? reset(subsection);
+      subsubsection>=pos ? reset(subsubsection);
+      subsubsubsection>=pos ? reset(subsubsubsection);
+      bullet>=pos ? reset(bullet);
+      subbullet>=pos ? reset(subbullet);
+      subsubbullet>=pos ? reset(subsubbullet);
+      bold_italic_a>=pos ? reset(bold_italic_a);
+      bold_italic_u>=pos ? reset(bold_italic_u);
+      bold_a>=pos ? reset(bold_a);
+      bold_u>=pos ? reset(bold_u);
+      italic_a>=pos ? reset(italic_a);
+      italic_u>=pos ? reset(italic_u);
+      strikethrough>=pos ? reset(strikethrough);
+      monospace>=pos ? reset(monospace);
+      value_set>=pos ? reset(value_set);
+      word_highlight>=pos ? reset(word_highlight);
+      code_block>=pos? reset(code_block);
+      url>=pos ? reset(url);
+      page_link>=pos ? reset(page_link);
+      link1>=pos || link2>=pos ? (reset(link1); reset(link2));
+      img1>=pos || img2>=pos ? (reset(img1); reset(img2));
+      pipeline>=pos ? reset(pipeline);
+      pos = -1;
     );
 
     end(
