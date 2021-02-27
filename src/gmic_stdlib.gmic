@@ -48624,13 +48624,13 @@ gmd2html :
         c==s_pipeline ? (
           ref(vector1024(),command);
           ind = find(#1,e_pipeline);
-          run('+rows. ',y + 1,',',ind - 1,' com={t} rm. strvar $com nam=${}');
-          ref(get('com',256,0),com);
-          ref(get('nam',256,0),nam);
+          run('_gmd_pipeline. ',y + 1,',',ind -  1);
+          ref(get('_gmd_command',256,0),com);
+          ref(get('_gmd_filename',256,0),nam);
           write('<img class=\"gmd_image\" src=\"');
           len = find(nam,0);
           write(nam,len);
-          write('.png\" alt=\"');
+          write('\" alt=\"');
           len = find(com,0);
           write(com,len);
           write('\"/>');
@@ -48642,6 +48642,18 @@ gmd2html :
     k[0] autocrop 0
   endl done
 
+# Manage G'MIC pipeline execution and result saving.
+_gmd_pipeline :
+  +rows. $1,$2 _gmd_command={t} rm.
+  strvar $_gmd_command
+  _gmd_filename=img/${}.png
+  l[]
+    run $_gmd_command a x
+  onfail
+    rm v 1 warn[] "Command '"$_gmd_command"': "${}
+    gui_error_preview ${}
+  endl
+  o. $_gmd_filename rm.
 
 
 # Local Variables:
