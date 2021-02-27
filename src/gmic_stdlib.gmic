@@ -48361,7 +48361,7 @@ parse_gmd :
     # Manage text style.
     #-------------------
 
-    # Bold italic (asterisk) : ***bold italic text***.
+    # Bold italic (asterisk): '***bold italic text***'.
     non_escaped && c==_'*' && nc==_'*' && ac==_'*'?(
       bold_italic_a<0?(
         bold_italic_a = y;
@@ -48373,7 +48373,7 @@ parse_gmd :
       );
     ):
 
-    # Bold italic (underscore) : ___bold italic text___.
+    # Bold italic (underscore): '___bold italic text___'.
     non_escaped && c==_'_' && nc==_'_' && ac==_'_'?(
       bold_italic_u<0 && (linestart || semiblank(pc))?(
         bold_italic_u = y;
@@ -48385,7 +48385,7 @@ parse_gmd :
       );
     ):
 
-    # Bold (asterisk) : **bold text**.
+    # Bold (asterisk): '**bold text**'.
     non_escaped && c==_'*' && nc==_'*'?(
       bold_a<0?(
         bold_a = y;
@@ -48397,7 +48397,7 @@ parse_gmd :
       );
     ):
 
-    # Bold (underscore) : __bold text__.
+    # Bold (underscore): '__bold text__'.
     non_escaped && c==_'_' && nc==_'_'?(
       bold_u<0 && (linestart || semiblank(pc))?(
         bold_u = y;
@@ -48409,7 +48409,7 @@ parse_gmd :
       );
     ):
 
-    # Italic (asterisk) : *italic text*.
+    # Italic (asterisk): '*italic text*'.
     non_escaped && c==_'*' && pc!=_'*'?(
       italic_a<0?(
         italic_a = y;
@@ -48421,7 +48421,7 @@ parse_gmd :
       );
     ):
 
-    # Italic (underscore) : _italic text_.
+    # Italic (underscore): '_italic text_'.
     non_escaped && c==_'_' && pc!=_'_'?(
       italic_u<0 && (linestart || semiblank(pc))?(
         italic_u = y
@@ -48433,7 +48433,7 @@ parse_gmd :
       );
     ):
 
-    # Strikethrough.
+    # Strikethrough: '~~strikethrough text~~'.
     non_escaped && c==_'~' && nc==_'~' && pc!=_'~' && code_block<0?(
       strikethrough<0?(
         strikethrough = y;
@@ -48446,7 +48446,7 @@ parse_gmd :
       );
     ):
 
-    # Monospace : `text in monospace font`.
+    # Monospace: '`monospace text`'.
     non_escaped && c==_'`'?(
       monospace<0 && (linestart || semiblank(pc))?(
         monospace = y;
@@ -48459,7 +48459,7 @@ parse_gmd :
       );
     ):
 
-    # Value Set : { value1 | value2 | value3 }.
+    # Value Set: '{ value1 | value2 | value3 }'.
     non_escaped && c==_'{' && value_set<0 && (linestart || semiblank(pc))?( # Opening
       value_set = y;
     ):
@@ -48470,7 +48470,7 @@ parse_gmd :
       reset_tokens_after(value_set);
     ):
 
-    # Word highlight : 'word_highlight'.
+    # Word highlight: ' 'word_highlight' '.
     non_escaped && c=='\''?(
       word_highlight<0 && (linestart || semiblank(pc))?(
         word_highlight = y;
@@ -48483,7 +48483,7 @@ parse_gmd :
       );
     ):
 
-    # URL : <URL>.
+    # URL: '<https://url.com>'.
     non_escaped && c==_'<' && url<0 && crop(0,y1,1,4)=='http'?( # Opening
       url = y;
     ):
@@ -48494,7 +48494,7 @@ parse_gmd :
       reset_tokens_after(url);
     ):
 
-    # Link to command or reference page : ''command or page name'' (not a URL!).
+    # Page link (command or reference): ' ''command or page name'' ' (not a URL!).
     non_escaped && c==_'\'' && nc==_'\''?(
       pagelink<0 && (linestart || semiblank(pc))?(
         pagelink = y;
@@ -48507,7 +48507,7 @@ parse_gmd :
       );
     ):
 
-    # Link : [link text](URL).
+    # Text link: '[link text](https://url.com)'.
     non_escaped && c==_'[' && link1<0 && link2<0 && img1<0?( # Opening
       link1 = y;
     ):
@@ -48522,7 +48522,7 @@ parse_gmd :
       reset_tokens_after(link1);
     ):
 
-    # Image : ![alt caption](URL).
+    # Image: '![alt caption](https://url.com/image.png)'.
     non_escaped && c==_'!' && nc==_'[' && img1<0 && img2<0?( # Opening
       img1 = y;
     ):
@@ -48538,7 +48538,7 @@ parse_gmd :
       reset_tokens_after(img1);
     ):
 
-    # G'MIC pipeline (image) : %% G'MIC pipeline %%.
+    # G'MIC pipeline (image): '%% G'MIC pipeline %%'.
     non_escaped && c==_'%' && nc==_'%'?(
       pipeline<0 && (linestart || semiblank(pc))?(
         pipeline = y;
@@ -48551,7 +48551,7 @@ parse_gmd :
       );
     ):
 
-    # G'MIC word.
+    # G'MIC word: 'G'MIC'.
     (linestart || semiblank(pc)) && c==_'G' && nc==_'\'' && ac==_'M' && j[3]==_'I' && j[4]==_'C' && semiblank(j[5])?(
       res[y] = s_gmic;
       copy(res[y + 1],0,3,1,0);
