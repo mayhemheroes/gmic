@@ -48711,34 +48711,50 @@ gmd2html :
              e_monospace,e_strikethrough,e_word_highlight) ? write('</span>'):
         isin(c,e_bullet,e_subbullet,e_subsubbullet) ? write('</span><br/>\n'):
         isin(c,e_center,e_code_block,e_section,e_subsection,e_subsubsection,e_subsubsubsection) ? write('</div>\n'):
-        c==s_bold_a ? write('<span class=\"gmd_bold_a\">'):
-        c==s_bold_u ? write('<span class=\"gmd_bold_u\">'):
-        c==s_bold_italic_a ? write('<span class=\"gmd_bold_italic_a\">'):
-        c==s_bold_italic_u ? write('<span class=\"gmd_bold_italic_u\">'):
+
+        c==s_section ? write('<div class=\"gmd_section\">'):
+        c==s_subsection ? write('<div class=\"gmd_subsection\">'):
+        c==s_subsubsection ? write('<div class=\"gmd_subsubsection\">'):
+        c==s_subsubsubsection ? write('<div class=\"gmd_subsubsubsection\">'):
         c==s_bullet ? write('<span class=\"gmd_bullet\">'):
         c==s_subbullet ? write('<span class=\"gmd_subbullet\">'):
         c==s_subsubbullet ? write('<span class=\"gmd_subsubbullet\">'):
-        c==s_center ? write('<div class=\"gmd_center\">'):
-        c==s_code_block ? write('<div class=\"gmd_code_block\">'):
-        c==s_gmic ? write('<span class=\"gmd_gmic\"></span>'):
         c==s_hrule ? write('\n<hr/>\n'):
-        c==s_img ? (
-          ref(vector256(),url_img);
-          ind_m = find(#1,m_img,y);
-          ind_e = find(#1,e_img,ind_m);
-          copy(url_img,i[ind_m + 1],ind_e - ind_m - 1);
-          write('<img class=\"gmd_image\" src=\"');
-          len = find(url_img,0);
-          write(url_img,len);
-          write('\" alt=\"');
-        ):
-        c==m_img ? (
-          ind = find(#1,e_img,y);
-          copy(i[y],0,ind - y + 1,1,0);
-          write('\"/>');
-        ):
+
+        c==s_bold_italic_a ? write('<span class=\"gmd_bold_italic_a\">'):
+        c==s_bold_italic_u ? write('<span class=\"gmd_bold_italic_u\">'):
+        c==s_bold_a ? write('<span class=\"gmd_bold_a\">'):
+        c==s_bold_u ? write('<span class=\"gmd_bold_u\">'):
         c==s_italic_a ? write('<span class=\"gmd_italic_a\">'):
         c==s_italic_u ? write('<span class=\"gmd_italic_u\">'):
+        c==s_strikethrough? write('<span class=\"gmd_strikethrough\">'):
+        c==s_monospace ? write('<span class=\"gmd_monospace\">'):
+        c==s_value_set ? write('<span class=\"gmd_value_set\">{'):
+        c==e_value_set ? write('}</span>'):
+        c==s_word_highlight ? write('<span class=\"gmd_word_highlight\">'):
+
+        c==s_center ? write('<div class=\"gmd_center\">'):
+        c==s_code_block ? write('<div class=\"gmd_code_block\">'):
+        c==s_url ? (
+          ref(vector256(),url_url);
+          ind = find(#1,e_url,y);
+          copy(url_url,i[y + 1],ind - y - 1);
+          write('<a href=\"');
+          len = find(url_url,0);
+          write(url_url,len);
+          write('\" target=\"_blank\">');
+        ):
+        c==e_url ? write('</a>'):
+        c==s_page_link ? (
+          ind = find(#1,e_page_link,y);
+          run('+rows. ',y + 1,',',ind - 1,' strvar {t} rm. varname=${}');
+          ref(get('varname',256,0),varname);
+          write('<span class=\"gmd_page_link\"><a href=\"');
+          len = find(varname,0);
+          write(varname,len);
+          write('.html\">');
+        ):
+        c==e_page_link ? write('</a></span>');
         c==s_link ? (
           ref(vector256(),url_link);
           ind_m = find(#1,m_link,y);
@@ -48754,41 +48770,25 @@ gmd2html :
           copy(i[y],0,ind - y + 1,1,0);
           write('</a>');
         ):
-        c==s_monospace ? write('<span class=\"gmd_monospace\">'):
-        c==s_page_link ? (
-          ind = find(#1,e_page_link,y);
-          run('+rows. ',y + 1,',',ind - 1,' strvar {t} rm. varname=${}');
-          ref(get('varname',256,0),varname);
-          write('<span class=\"gmd_page_link\"><a href=\"');
-          len = find(varname,0);
-          write(varname,len);
-          write('.html\">');
+        c==s_img ? (
+          ref(vector256(),url_img);
+          ind_m = find(#1,m_img,y);
+          ind_e = find(#1,e_img,ind_m);
+          copy(url_img,i[ind_m + 1],ind_e - ind_m - 1);
+          write('<img class=\"gmd_image\" src=\"');
+          len = find(url_img,0);
+          write(url_img,len);
+          write('\" alt=\"');
         ):
-        c==e_page_link ? write('</a></span>');
-
-        # TO DO:
+        c==m_img ? (
+          ind = find(#1,e_img,y);
+          copy(i[y],0,ind - y + 1,1,0);
+          write('\"/>');
+        ):
         c==s_pipeline ? write('<div class=\"gmd_code_block\">'):
         c==e_pipeline ? write('</div>'):
-
-        c==s_section ? write('<div class=\"gmd_section\">'):
-        c==s_strikethrough? write('<span class=\"gmd_strikethrough\">'):
-        c==s_subsection ? write('<div class=\"gmd_subsection\">'):
-        c==s_subsubsection ? write('<div class=\"gmd_subsubsection\">'):
-        c==s_subsubsubsection ? write('<div class=\"gmd_subsubsubsection\">'):
-        c==s_url ? (
-          ref(vector256(),url_url);
-          ind = find(#1,e_url,y);
-          copy(url_url,i[y + 1],ind - y - 1);
-          write('<a href=\"');
-          len = find(url_url,0);
-          write(url_url,len);
-          write('\" target=\"_blank\">');
-        ):
-        c==e_url ? write('</a>'):
-        c==s_value_set ? write('<span class=\"gmd_value_set\">{'):
-        c==e_value_set ? write('}</span>'):
-        c==s_whitespace ? write('&nbsp;'):
-        c==s_word_highlight ? write('<span class=\"gmd_word_highlight\">');
+        c==s_gmic ? write('<span class=\"gmd_gmic\"></span>'):
+        c==s_whitespace ? write('&nbsp;');
       )"
     k[0] autocrop 0
   endl done
