@@ -48229,31 +48229,31 @@ parse_gmd :
       semiblank(c) = isin(c,_' ',_'\n',_'.',_',',_';',_':',_'!',_'?',_')',_'(',0);
       reset(c) = (#c = -1);
       reset_tokens_after(pos) = ( # Reset all not-ended tokens that start after offset 'pos'.
-        bold_a>=pos ? reset(bold_a);
-        bold_u>=pos ? reset(bold_u);
-        bold_italic_a>=pos ? reset(bold_italic_a);
-        bold_italic_u>=pos ? reset(bold_italic_u);
-        bullet>=pos ? reset(bullet);
-        code_block>=pos? reset(code_block);
-        img1>=pos || img2>=pos ? (reset(img1); reset(img2));
-        italic_a>=pos ? reset(italic_a);
-        italic_u>=pos ? reset(italic_u);
-        link1>=pos || link2>=pos ? (reset(link1); reset(link2));
-        monospace>=pos ? reset(monospace);
-        pagelink>=pos ? reset(pagelink);
-        pipeline>=pos ? reset(pipeline);
-        section>=pos ? reset(section);
-        strikethrough>=pos ? reset(strikethrough);
-        subbullet>=pos ? reset(subbullet);
-        subsubbullet>=pos ? reset(subsubbullet);
-        subsection>=pos ? reset(subsection);
-        subsubsection>=pos ? reset(subsubsection);
-        subsubsubsection>=pos ? reset(subsubsubsection);
-        url>=pos ? reset(url);
-        value_set>=pos ? reset(value_set);
-        word_highlight>=pos ? reset(word_highlight);
+        _pos = pos;
+        section>=_pos ? reset(section);
+        subsection>=_pos ? reset(subsection);
+        subsubsection>=_pos ? reset(subsubsection);
+        subsubsubsection>=_pos ? reset(subsubsubsection);
+        bullet>=_pos ? reset(bullet);
+        subbullet>=_pos ? reset(subbullet);
+        subsubbullet>=_pos ? reset(subsubbullet);
+        bold_italic_a>=_pos ? reset(bold_italic_a);
+        bold_italic_u>=_pos ? reset(bold_italic_u);
+        bold_a>=_pos ? reset(bold_a);
+        bold_u>=_pos ? reset(bold_u);
+        italic_a>=_pos ? reset(italic_a);
+        italic_u>=_pos ? reset(italic_u);
+        strikethrough>=_pos ? reset(strikethrough);
+        monospace>=_pos ? reset(monospace);
+        value_set>=_pos ? reset(value_set);
+        word_highlight>=_pos ? reset(word_highlight);
+        code_block>=_pos? reset(code_block);
+        url>=_pos ? reset(url);
+        pagelink>=_pos ? reset(pagelink);
+        link1>=_pos || link2>=_pos ? (reset(link1); reset(link2));
+        img1>=_pos || img2>=_pos ? (reset(img1); reset(img2));
+        pipeline>=_pos ? reset(pipeline);
       );
-
       res = crop();
     );
 
@@ -48312,9 +48312,13 @@ parse_gmd :
     # List bullet: '* List item'.
     linestart && isin(c,_'-',_'*',_'+') && nc==_' ' && bullet<0?( # Opening
       bullet = y;
+
       print(bullet);
     ):
     bullet>=0 && (c==_'\n' || !c)?( # Closing
+
+      print([bullet],y);
+
       res[bullet++] = s_bullet; res[bullet] = 0;
       res[y] = e_bullet;
       reset_tokens_after(bullet);
