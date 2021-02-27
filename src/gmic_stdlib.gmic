@@ -48248,40 +48248,40 @@ parse_gmd :
       opening_offset = section;
       res[section++] = s_section; res[section] = 0;
       res[y] = e_section;
-      for (p = y1, p<size(res) && res[p]==_'\n', res[p] = 0);
+      for (p = y1, p<size(res) && res[p]==_'\n', res[p] = 0); # Discard newlines following
     ):
 
     # Subsection: '## Subsection name'.
-    linestart && c==_'#' && nc==_'#' && ac==_' '?( # Opening
+    linestart && c==_'#' && nc==c && ac==_' '?( # Opening
       subsection = y;
     ):
     subsection>=0 && (c==_'\n' || !c)?( # Closing
       opening_offset = subsection;
       res[subsection++] = s_subsection; copy(res[subsection],0,2,1,0);
       res[y] = e_subsection;
-      for (p = y1, p<size(res) && res[p]==_'\n', res[p] = 0);
+      for (p = y1, p<size(res) && res[p]==_'\n', res[p] = 0); # Discard newlines following
     ):
 
     # Subsubsection: '### Subsubsection name'.
-    linestart && c==_'#' && nc==_'#' && ac==_'#' && j[3]==_' '?( # Opening
+    linestart && c==_'#' && nc==c && ac==c && j[3]==_' '?( # Opening
       subsubsection = y;
     ):
     subsubsection>=0 && (c==_'\n' || !c)?( # Closing
       opening_offset = subsubsection;
       res[subsubsection++] = s_subsubsection; copy(res[subsubsection],0,3,1,0);
       res[y] = e_subsubsection;
-      for (p = y1, p<size(res) && res[p]==_'\n', res[p] = 0);
+      for (p = y1, p<size(res) && res[p]==_'\n', res[p] = 0); # Discard newlines following
     ):
 
     # Subsubsubsection: '#### Subsubsubsection name'.
-    linestart && c==_'#' && nc==_'#' && ac==_'#' && j[3]==_'#' && j[4]==_' '?( # Opening
+    linestart && c==_'#' && nc==c && ac==c && j[3]==c && j[4]==_' '?( # Opening
       subsubsubsection = y;
     ):
     subsubsubsection>=0 && (c==_'\n' || !c)?( # Closing
       opening_offset = subsubsubsection;
       res[subsubsubsection++] = s_subsubsubsection; copy(res[subsubsubsection],0,4,1,0);
       res[y] = e_subsubsubsection;
-      for (p = y1, p<size(res) && res[p]==_'\n', res[p] = 0);
+      for (p = y1, p<size(res) && res[p]==_'\n', res[p] = 0); # Discard newlines following
     ):
 
     # List bullet: '* List item'.
@@ -48305,7 +48305,8 @@ parse_gmd :
     ):
 
     # Subsublist bullet: '    * Subsub-list item'.
-    linestart && c==_' ' && nc==_' ' && ac==_' ' && j[3]==_' ' && isin(j[4],_'-',_'*',_'+') && j[5]==_' ' && subsubbullet<0?( # Opening
+    linestart && c==_' ' && nc==_' ' && ac==_' ' && j[3]==_' ' && isin(j[4],_'-',_'*',_'+') && j[5]==_' ' &&
+      subsubbullet<0?( # Opening
       subsubbullet = y;
     ):
     subsubbullet>=0 && (c==_'\n' || !c)?( # Closing
@@ -48334,7 +48335,7 @@ parse_gmd :
       code_block>=0 && y>code_block + 3?( # Closing
         opening_offset = code_block;
         res[code_block++] = s_code_block; copy(res[code_block],0,3,1,0); code_block+=3;
-        copy(res[code_block],i[code_block],y - code_block); # Discard potential tokens found between separators
+        copy(res[code_block],i[code_block],y - code_block); # Cancel tokens found inside
         res[y - 1] = e_code_block; copy(res[y],0,4,1,0);
       );
     ):
@@ -48349,11 +48350,11 @@ parse_gmd :
     #-------------------
 
     # Bold italic (asterisk): '***bold italic text***'.
-    non_escaped && c==_'*' && nc==_'*' && ac==_'*'?(
+    non_escaped && c==_'*' && nc==c && ac==c?( # Opening
       bold_italic_a<0?(
         bold_italic_a = y;
       ):
-      bold_italic_a>=0 && y>bold_italic_a + 3 && j[3]!=_'*'?(
+      bold_italic_a>=0 && y>bold_italic_a + 3 && j[3]!=_'*'?( # Closing
         opening_offset = bold_italic_a;
         res[bold_italic_a++] = s_bold_italic_a; res[bold_italic_a++] = 0; res[bold_italic_a] = 0;
         res[y] = e_bold_italic_a; res[y1] = res[y2] = 0;
@@ -48361,11 +48362,11 @@ parse_gmd :
     ):
 
     # Bold italic (underscore): '___bold italic text___'.
-    non_escaped && c==_'_' && nc==_'_' && ac==_'_'?(
-      bold_italic_u<0 && (linestart || semiblank(pc))?(
+    non_escaped && c==_'_' && nc==c && ac==c?(
+      bold_italic_u<0 && (linestart || semiblank(pc))?( # Opening
         bold_italic_u = y;
       ):
-      bold_italic_u>=0 && y>bold_italic_u + 3 && semiblank(j[3])?(
+      bold_italic_u>=0 && y>bold_italic_u + 3 && semiblank(j[3])?( # Closing
         opening_offset = bold_italic_u;
         res[bold_italic_u++] = s_bold_italic_u; res[bold_italic_u++] = 0; res[bold_italic_u] = 0;
         res[y] = e_bold_italic_u; res[y1] = res[y2] = 0;
@@ -48373,11 +48374,11 @@ parse_gmd :
     ):
 
     # Bold (asterisk): '**bold text**'.
-    non_escaped && c==_'*' && nc==_'*'?(
+    non_escaped && c==_'*' && nc==c?( # Opening
       bold_a<0?(
         bold_a = y;
       ):
-      bold_a>=0 && y>bold_a + 2 && ac!=_'*'?(
+      bold_a>=0 && y>bold_a + 2 && ac!=_'*'?( # Closing
         opening_offset = bold_a;
         res[bold_a++] = s_bold_a; res[bold_a] = 0;
         res[y] = e_bold_a; res[y1] = 0;
@@ -48385,11 +48386,11 @@ parse_gmd :
     ):
 
     # Bold (underscore): '__bold text__'.
-    non_escaped && c==_'_' && nc==_'_'?(
-      bold_u<0 && (linestart || semiblank(pc))?(
+    non_escaped && c==_'_' && nc==c?(
+      bold_u<0 && (linestart || semiblank(pc))?( # Opening
         bold_u = y;
       ):
-      bold_u>=0 && y>bold_u + 2 && semiblank(ac)?(
+      bold_u>=0 && y>bold_u + 2 && semiblank(ac)?( # Closing
         opening_offset = bold_u;
         res[bold_u++] = s_bold_u; res[bold_u] = 0;
         res[y] = e_bold_u; res[y1] = 0;
@@ -48397,11 +48398,11 @@ parse_gmd :
     ):
 
     # Italic (asterisk): '*italic text*'.
-    non_escaped && c==_'*' && pc!=_'*'?(
+    non_escaped && c==_'*' && pc!=c?( # Opening
       italic_a<0?(
         italic_a = y;
       ):
-      italic_a>=0 && y>italic_a + 1 && ac!=_'*'?(
+      italic_a>=0 && y>italic_a + 1 && ac!=_'*'?( # Closing
         opening_offset = italic_a;
         res[italic_a] = s_italic_a;
         res[y] = e_italic_a;
@@ -48409,11 +48410,11 @@ parse_gmd :
     ):
 
     # Italic (underscore): '_italic text_'.
-    non_escaped && c==_'_' && pc!=_'_'?(
-      italic_u<0 && (linestart || semiblank(pc))?(
+    non_escaped && c==_'_' && pc!=c?(
+      italic_u<0 && (linestart || semiblank(pc))?( # Opening
         italic_u = y
       ):
-      italic_u>=0 && y>italic_u + 1 && semiblank(nc)?(
+      italic_u>=0 && y>italic_u + 1 && semiblank(nc)?( # Closing
         opening_offset = italic_u;
         res[italic_u] = s_italic_u;
         res[y] = e_italic_u;
@@ -48421,11 +48422,11 @@ parse_gmd :
     ):
 
     # Strikethrough: '~~strikethrough text~~'.
-    non_escaped && c==_'~' && nc==_'~' && pc!=_'~' && code_block<0?(
+    non_escaped && c==_'~' && nc==c && pc!=c && code_block<0?( # Opening
       strikethrough<0?(
         strikethrough = y;
       ):
-      strikethrough>=0 && y>strikethrough + 2?(
+      strikethrough>=0 && y>strikethrough + 2?( # Closing
         opening_offset = strikethrough;
         res[strikethrough++] = s_strikethrough; res[strikethrough] = 0;
         res[y] = e_strikethrough; res[y1] = 0;
@@ -48434,13 +48435,13 @@ parse_gmd :
 
     # Monospace: '`monospace text`'.
     non_escaped && c==_'`'?(
-      monospace<0 && (linestart || semiblank(pc))?(
+      monospace<0 && (linestart || semiblank(pc))?( # Opening
         monospace = y;
       ):
-      monospace>=0 && y>monospace + 1 && semiblank(nc)?(
+      monospace>=0 && y>monospace + 1 && semiblank(nc)?( # Closing
         opening_offset = monospace;
         res[monospace++] = s_monospace;
-        copy(res[monospace],i[monospace],y - monospace); # Discard potential tokens found between
+        copy(res[monospace],i[monospace],y - monospace); # Cancel tokens found inside
         res[y] = e_monospace;
       );
     ):
@@ -48452,19 +48453,19 @@ parse_gmd :
     non_escaped && c==_'}' && value_set>=0 && y>value_set + 1 && semiblank(nc)?( # Closing
       opening_offset = value_set;
       res[value_set++] = s_value_set;
-      copy(res[value_set],i[value_set],y - value_set); # Discard potential tokens found between
+      copy(res[value_set],i[value_set],y - value_set); # Cancel tokens found inside
       res[y] = e_value_set;
     ):
 
     # Word highlight: ' 'word_highlight' '.
     non_escaped && c=='\''?(
-      word_highlight<0 && (linestart || semiblank(pc))?(
+      word_highlight<0 && (linestart || semiblank(pc))?( # Opening
         word_highlight = y;
       ):
-      word_highlight>=0 && y>word_highlight + 1 && semiblank(nc)?(
+      word_highlight>=0 && y>word_highlight + 1 && semiblank(nc)?( # Closing
         opening_offset = word_highlight;
         res[word_highlight++] = s_word_highlight;
-        copy(res[word_highlight],i[word_highlight],y - word_highlight); # Discard potential tokens found between
+        copy(res[word_highlight],i[word_highlight],y - word_highlight); # Cancel tokens found inside
         res[y] = e_word_highlight;
       );
     ):
@@ -48476,19 +48477,19 @@ parse_gmd :
     non_escaped && c==_'>' && url>=0 && y>url + 1?( # Closing
       opening_offset = url;
       res[url++] = s_url;
-      copy(res[url],i[url],y - url); # Discard potential tokens found between
+      copy(res[url],i[url],y - url); # Cancel tokens found inside
       res[y] = e_url;
     ):
 
     # Page link (command or reference): ' ''command or page name'' ' (not a URL!).
-    non_escaped && c==_'\'' && nc==_'\''?(
-      page_link<0 && (linestart || semiblank(pc))?(
+    non_escaped && c==_'\'' && nc==c?(
+      page_link<0 && (linestart || semiblank(pc))?( # Opening
         page_link = y;
       ):
-      page_link>=0 && y>page_link + 2 && semiblank(ac)?(
+      page_link>=0 && y>page_link + 2 && semiblank(ac)?( # Closing
         opening_offset = page_link;
         res[page_link++] = s_page_link; res[page_link++] = 0;
-        copy(res[page_link],i[page_link],y - page_link); # Discard potential tokens found between
+        copy(res[page_link],i[page_link],y - page_link); # Cancel tokens found inside
         res[y] = e_page_link; res[y1] = 0;
       );
     ):
@@ -48504,7 +48505,7 @@ parse_gmd :
       opening_offset = link1;
       res[link1] = s_link;
       res[link2++] = m_link; res[link2++] = 0;
-      copy(res[link2],i[link2],y - link2); # Discard potential tokens found inside URL
+      copy(res[link2],i[link2],y - link2); # Cancel tokens found inside
       res[y] = e_link;
     ):
 
@@ -48519,20 +48520,19 @@ parse_gmd :
       opening_offset = img1;
       res[img1++] = s_img; res[img1++] = 0;
       res[img2++] = m_img; res[img2++] = 0;
-      copy(res[img1],i[img1],img2 - img1 - 2); # Discard potential tokens found in caption
-      copy(res[img2],i[img2],y - img2); # Discard potential tokens found in URL
+      copy(res[img1],i[img1],img2 - img1 - 2); copy(res[img2],i[img2],y - img2); # Cancel tokens found inside
       res[y] = e_img;
     ):
 
     # G'MIC pipeline (image): '%% G'MIC pipeline %%'.
-    non_escaped && c==_'%' && nc==_'%'?(
-      pipeline<0 && (linestart || semiblank(pc))?(
+    non_escaped && c==_'%' && nc==c?(
+      pipeline<0 && (linestart || semiblank(pc))?( # Opening
         pipeline = y;
       ):
-      pipeline>=0 && y>pipeline + 3 && ac!=_'%'?(
+      pipeline>=0 && y>pipeline + 3 && ac!=_'%'?( # Closing
         opening_offset = pipeline;
         res[pipeline++] = s_pipeline; res[pipeline++] = 0;
-        copy(res[pipeline],i[pipeline],y - pipeline); # Discard potential tokens found inside pipeline
+        copy(res[pipeline],i[pipeline],y - pipeline); # Cancel tokens found inside
         res[y] = e_pipeline; res[y + 1] = 0;
       );
     ):
@@ -48608,9 +48608,7 @@ parse_gmd :
       opening_offset = -1;
     );
 
-    end(
-      copy(i[0],res);
-    )"
+    end(copy(i[0],res))"
   discard 0
 
 _gmd_constants :
