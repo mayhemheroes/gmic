@@ -48224,7 +48224,7 @@ parse_gmd :
       bullet = subbullet = subsubbullet =
       bold_italic_a = bold_italic_u = bold_a = bold_u = italic_a = italic_u = strikethrough = monospace =
       value_set = word_highlight = code_block = url = page_link = link1 = link2 = img1 = img2 = pipeline = -1;
-      pos = -1;
+      opening_offset = -1;
 
       blank(c) = isin(c,_' ',_'\n',0);
       semiblank(c) = isin(c,_' ',_'\n',_'.',_',',_';',_':',_'!',_'?',_')',_'(',0);
@@ -48245,7 +48245,7 @@ parse_gmd :
       section = y;
     ):
     section>=0 && (c==_'\n' || !c)?( # Closing
-      pos = section;
+      opening_offset = section;
       res[section++] = s_section; res[section] = 0;
       res[y] = e_section;
       for (p = y1, p<size(res) && res[p]==_'\n', res[p] = 0);
@@ -48256,7 +48256,7 @@ parse_gmd :
       subsection = y;
     ):
     subsection>=0 && (c==_'\n' || !c)?( # Closing
-      pos = subsection;
+      opening_offset = subsection;
       res[subsection++] = s_subsection; copy(res[subsection],0,2,1,0);
       res[y] = e_subsection;
       for (p = y1, p<size(res) && res[p]==_'\n', res[p] = 0);
@@ -48267,7 +48267,7 @@ parse_gmd :
       subsubsection = y;
     ):
     subsubsection>=0 && (c==_'\n' || !c)?( # Closing
-      pos = subsubsection;
+      opening_offset = subsubsection;
       res[subsubsection++] = s_subsubsection; copy(res[subsubsection],0,3,1,0);
       res[y] = e_subsubsection;
       for (p = y1, p<size(res) && res[p]==_'\n', res[p] = 0);
@@ -48278,7 +48278,7 @@ parse_gmd :
       subsubsubsection = y;
     ):
     subsubsubsection>=0 && (c==_'\n' || !c)?( # Closing
-      pos = subsubsubsection;
+      opening_offset = subsubsubsection;
       res[subsubsubsection++] = s_subsubsubsection; copy(res[subsubsubsection],0,4,1,0);
       res[y] = e_subsubsubsection;
       for (p = y1, p<size(res) && res[p]==_'\n', res[p] = 0);
@@ -48289,7 +48289,7 @@ parse_gmd :
       bullet = y;
     ):
     bullet>=0 && (c==_'\n' || !c)?( # Closing
-      pos = bullet;
+      opening_offset = bullet;
       res[bullet++] = s_bullet; res[bullet] = 0;
       res[y] = e_bullet;
     ):
@@ -48299,7 +48299,7 @@ parse_gmd :
       subbullet = y;
     ):
     subbullet>=0 && (c==_'\n' || !c)?( # Closing
-      pos = subbullet;
+      opening_offset = subbullet;
       res[subbullet++] = s_subbullet; copy(res[subbullet],0,2,1,0);
       res[y] = e_subbullet;
     ):
@@ -48309,7 +48309,7 @@ parse_gmd :
       subsubbullet = y;
     ):
     subsubbullet>=0 && (c==_'\n' || !c)?( # Closing
-      pos = subsubbullet;
+      opening_offset = subsubbullet;
       res[subsubbullet++] = s_subsubbullet; copy(res[subsubbullet],0,4,1,0);
       res[y] = e_subsubbullet;
     ):
@@ -48320,7 +48320,7 @@ parse_gmd :
         code_block = y;
       ):
       code_block>=0 && y>code_block + 3?(
-        pos = code_block;
+        opening_offset = code_block;
         res[code_block++] = s_code_block; copy(res[code_block],0,3,1,0); code_block+=3;
         copy(res[code_block],i[code_block],y - code_block); # Discard potential tokens found between separators
         res[y - 1] = e_code_block; copy(res[y],0,4,1,0);
@@ -48342,7 +48342,7 @@ parse_gmd :
         bold_italic_a = y;
       ):
       bold_italic_a>=0 && y>bold_italic_a + 3 && j[3]!=_'*'?(
-        pos = bold_italic_a;
+        opening_offset = bold_italic_a;
         res[bold_italic_a++] = s_bold_italic_a; res[bold_italic_a++] = 0; res[bold_italic_a] = 0;
         res[y] = e_bold_italic_a; res[y1] = res[y2] = 0;
       );
@@ -48354,7 +48354,7 @@ parse_gmd :
         bold_italic_u = y;
       ):
       bold_italic_u>=0 && y>bold_italic_u + 3 && semiblank(j[3])?(
-        pos = bold_italic_u;
+        opening_offset = bold_italic_u;
         res[bold_italic_u++] = s_bold_italic_u; res[bold_italic_u++] = 0; res[bold_italic_u] = 0;
         res[y] = e_bold_italic_u; res[y1] = res[y2] = 0;
       );
@@ -48366,7 +48366,7 @@ parse_gmd :
         bold_a = y;
       ):
       bold_a>=0 && y>bold_a + 2 && ac!=_'*'?(
-        pos = bold_a;
+        opening_offset = bold_a;
         res[bold_a++] = s_bold_a; res[bold_a] = 0;
         res[y] = e_bold_a; res[y1] = 0;
       );
@@ -48378,7 +48378,7 @@ parse_gmd :
         bold_u = y;
       ):
       bold_u>=0 && y>bold_u + 2 && semiblank(ac)?(
-        pos = bold_u;
+        opening_offset = bold_u;
         res[bold_u++] = s_bold_u; res[bold_u] = 0;
         res[y] = e_bold_u; res[y1] = 0;
       );
@@ -48390,7 +48390,7 @@ parse_gmd :
         italic_a = y;
       ):
       italic_a>=0 && y>italic_a + 1 && ac!=_'*'?(
-        pos = italic_a;
+        opening_offset = italic_a;
         res[italic_a] = s_italic_a;
         res[y] = e_italic_a;
       );
@@ -48402,7 +48402,7 @@ parse_gmd :
         italic_u = y
       ):
       italic_u>=0 && y>italic_u + 1 && semiblank(nc)?(
-        pos = italic_u;
+        opening_offset = italic_u;
         res[italic_u] = s_italic_u;
         res[y] = e_italic_u;
       );
@@ -48414,7 +48414,7 @@ parse_gmd :
         strikethrough = y;
       ):
       strikethrough>=0 && y>strikethrough + 2?(
-        pos = strikethrough;
+        opening_offset = strikethrough;
         res[strikethrough++] = s_strikethrough; res[strikethrough] = 0;
         res[y] = e_strikethrough; res[y1] = 0;
       );
@@ -48426,7 +48426,7 @@ parse_gmd :
         monospace = y;
       ):
       monospace>=0 && y>monospace + 1 && semiblank(nc)?(
-        pos = monospace;
+        opening_offset = monospace;
         res[monospace++] = s_monospace;
         copy(res[monospace],i[monospace],y - monospace); # Discard potential tokens found between
         res[y] = e_monospace;
@@ -48438,7 +48438,7 @@ parse_gmd :
       value_set = y;
     ):
     non_escaped && c==_'}' && value_set>=0 && y>value_set + 1 && semiblank(nc)?( # Closing
-      pos = value_set;
+      opening_offset = value_set;
       res[value_set++] = s_value_set;
       copy(res[value_set],i[value_set],y - value_set); # Discard potential tokens found between
       res[y] = e_value_set;
@@ -48450,7 +48450,7 @@ parse_gmd :
         word_highlight = y;
       ):
       word_highlight>=0 && y>word_highlight + 1 && semiblank(nc)?(
-        pos = word_highlight;
+        opening_offset = word_highlight;
         res[word_highlight++] = s_word_highlight;
         copy(res[word_highlight],i[word_highlight],y - word_highlight); # Discard potential tokens found between
         res[y] = e_word_highlight;
@@ -48462,7 +48462,7 @@ parse_gmd :
       url = y;
     ):
     non_escaped && c==_'>' && url>=0 && y>url + 1?( # Closing
-      pos = url;
+      opening_offset = url;
       res[url++] = s_url;
       copy(res[url],i[url],y - url); # Discard potential tokens found between
       res[y] = e_url;
@@ -48474,7 +48474,7 @@ parse_gmd :
         page_link = y;
       ):
       page_link>=0 && y>page_link + 2 && semiblank(ac)?(
-        pos = page_link;
+        opening_offset = page_link;
         res[page_link++] = s_page_link; res[page_link++] = 0;
         copy(res[page_link],i[page_link],y - page_link); # Discard potential tokens found between
         res[y] = e_page_link; res[y1] = 0;
@@ -48489,7 +48489,7 @@ parse_gmd :
       link2 = y;
     ):
     non_escaped && c==_')' && link2>=0 && img1<0?( # Closing
-      pos = link1;
+      opening_offset = link1;
       res[link1] = s_link;
       res[link2++] = m_link; res[link2++] = 0;
       copy(res[link2],i[link2],y - link2); # Discard potential tokens found inside URL
@@ -48504,7 +48504,7 @@ parse_gmd :
       img2 = y;
     ):
     non_escaped && c==_')' && img2>=0?( # Closing
-      pos = img1;
+      opening_offset = img1;
       res[img1++] = s_img; res[img1++] = 0;
       res[img2++] = m_img; res[img2++] = 0;
       copy(res[img1],i[img1],img2 - img1 - 2); # Discard potential tokens found in caption
@@ -48518,7 +48518,7 @@ parse_gmd :
         pipeline = y;
       ):
       pipeline>=0 && y>pipeline + 3 && ac!=_'%'?(
-        pos = pipeline;
+        opening_offset = pipeline;
         res[pipeline++] = s_pipeline; res[pipeline++] = 0;
         copy(res[pipeline],i[pipeline],y - pipeline); # Discard potential tokens found inside pipeline
         res[y] = e_pipeline; res[y + 1] = 0;
@@ -48566,33 +48566,33 @@ parse_gmd :
       img2>=0?(reset(img1); reset(img2));
     );
 
-    # Reset all opened tokens that start after the open offset 'off' of the latest closed token.
-    #-------------------------------------------------------------------------------------------
-    pos>=0?(
-      section>=pos ? reset(section);
-      subsection>=pos ? reset(subsection);
-      subsubsection>=pos ? reset(subsubsection);
-      subsubsubsection>=pos ? reset(subsubsubsection);
-      bullet>=pos ? reset(bullet);
-      subbullet>=pos ? reset(subbullet);
-      subsubbullet>=pos ? reset(subsubbullet);
-      bold_italic_a>=pos ? reset(bold_italic_a);
-      bold_italic_u>=pos ? reset(bold_italic_u);
-      bold_a>=pos ? reset(bold_a);
-      bold_u>=pos ? reset(bold_u);
-      italic_a>=pos ? reset(italic_a);
-      italic_u>=pos ? reset(italic_u);
-      strikethrough>=pos ? reset(strikethrough);
-      monospace>=pos ? reset(monospace);
-      value_set>=pos ? reset(value_set);
-      word_highlight>=pos ? reset(word_highlight);
-      code_block>=pos? reset(code_block);
-      url>=pos ? reset(url);
-      page_link>=pos ? reset(page_link);
-      link1>=pos || link2>=pos ? (reset(link1); reset(link2));
-      img1>=pos || img2>=pos ? (reset(img1); reset(img2));
-      pipeline>=pos ? reset(pipeline);
-      pos = -1;
+    # Cancel opened tokens starting after the opening offset of the latest closed token.
+    #------------------------------------------------------------------------------------
+    opening_offset>=0?(
+      section>=opening_offset ? reset(section);
+      subsection>=opening_offset ? reset(subsection);
+      subsubsection>=opening_offset ? reset(subsubsection);
+      subsubsubsection>=opening_offset ? reset(subsubsubsection);
+      bullet>=opening_offset ? reset(bullet);
+      subbullet>=opening_offset ? reset(subbullet);
+      subsubbullet>=opening_offset ? reset(subsubbullet);
+      bold_italic_a>=opening_offset ? reset(bold_italic_a);
+      bold_italic_u>=opening_offset ? reset(bold_italic_u);
+      bold_a>=opening_offset ? reset(bold_a);
+      bold_u>=opening_offset ? reset(bold_u);
+      italic_a>=opening_offset ? reset(italic_a);
+      italic_u>=opening_offset ? reset(italic_u);
+      strikethrough>=opening_offset ? reset(strikethrough);
+      monospace>=opening_offset ? reset(monospace);
+      value_set>=opening_offset ? reset(value_set);
+      word_highlight>=opening_offset ? reset(word_highlight);
+      code_block>=opening_offset? reset(code_block);
+      url>=opening_offset ? reset(url);
+      page_link>=opening_offset ? reset(page_link);
+      link1>=opening_offset || link2>=opening_offset ? (reset(link1); reset(link2));
+      img1>=opening_offset || img2>=opening_offset ? (reset(img1); reset(img2));
+      pipeline>=opening_offset ? reset(pipeline);
+      opening_offset = -1;
     );
 
     end(
