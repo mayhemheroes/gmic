@@ -48678,14 +48678,25 @@ _gmd_pipeline :
   +rows. $1,$2 _gmd_command={t} rm.
   strvar $_gmd_command
   _gmd_filename=img/${}.png
-  l[]
-    run $_gmd_command a x
-  onfail
-    rm v 1 warn[] "Command '"$_gmd_command"': "${}
-    gui_error_preview ${}
-  endl
-  if !isdir('img') x "mkdir -p img" fi
-  o. $_gmd_filename rm.
+  if !isfile(['{/$_gmd_filename}'])
+    l[]
+      run $_gmd_command a x
+    onfail
+      rm v 1 warn[] "Command '"$_gmd_command"': "${}
+      gui_error_preview ${}
+    endl
+    if !isdir('img') x "mkdir -p img" fi
+    o. $_gmd_filename rm.
+  fi
+
+  # Replace reserved HTML characters in $_gmd_command.
+  ({'$_gmd_command'})
+  replace_str. "\"","&quot;"
+  replace_str. "\'","&apos;"
+  replace_str. "&","&amp;"
+  replace_str. "<","&lt;"
+  replace_str. ">","&gt;"
+  _gmd_command={t} rm.
 
 
 # Local Variables:
