@@ -48057,7 +48057,7 @@ parse_gmd :
     begin(
       section = subsection = subsubsection = subsubsubsection =
       bullet = subbullet = subsubbullet = center = code_block =
-      bold_italic_a = bold_italic_u = bold_a = bold_u = italic_a = italic_u = strikethrough = monospace =
+      bold_italic_a = bold_italic_u = bold_a = bold_u = italic_a = italic_u = strikethrough = underline = monospace =
       value_set = word_highlight = url = page_link = link1 = link2 = img1 = img2 = pipeline = -1;
       opening_offset = -1;
 
@@ -48268,6 +48268,18 @@ parse_gmd :
       );
     ):
 
+    # Underline: '==strikethrough text=='.
+    non_escaped && c==_'=' && nc==c && pc!=c?( # Opening
+      underline<0?(
+        underline = y;
+      ):
+      underline>=0 && y>underline + 2?( # Closing
+        opening_offset = underline;
+        res[underline++] = s_underline; res[underline] = 0;
+        res[y] = e_underline; res[y1] = 0;
+      );
+    ):
+
     # Monospace: '`monospace text`'.
     non_escaped && c==_'`'?(
       monospace<0 && semiblank(pc)?( # Opening
@@ -48435,6 +48447,7 @@ parse_gmd :
       italic_a>=opening_offset ? reset(italic_a);
       italic_u>=opening_offset ? reset(italic_u);
       strikethrough>=opening_offset ? reset(strikethrough);
+      underline>=opening_offset ? reset(underline);
       monospace>=opening_offset ? reset(monospace);
       value_set>=opening_offset ? reset(value_set);
       word_highlight>=opening_offset ? reset(word_highlight);
@@ -48484,29 +48497,31 @@ _gmd_constants :
      const e_italic_u = -31;
      const s_strikethrough = -32;
      const e_strikethrough = -33;
-     const s_monospace = -34;
-     const e_monospace = -35;
-     const s_value_set = -36;
-     const e_value_set = -37;
-     const s_word_highlight = -38;
-     const e_word_highlight = -39;
+     const s_underline = -34;
+     const e_underline = -35;
+     const s_monospace = -36;
+     const e_monospace = -37;
+     const s_value_set = -38;
+     const e_value_set = -39;
+     const s_word_highlight = -40;
+     const e_word_highlight = -41;
 
-     const s_url = -40;
-     const e_url = -41;
-     const s_page_link = -42;
-     const e_page_link = -43;
-     const s_link = -44;
-     const m_link = -45;
-     const e_link = -46;
-     const s_img = -47;
-     const m_img = -48;
-     const e_img = -49;
-     const s_pipeline = -50;
-     const e_pipeline = -51;
+     const s_url = -42;
+     const e_url = -43;
+     const s_page_link = -44;
+     const e_page_link = -45;
+     const s_link = -46;
+     const m_link = -47;
+     const e_link = -48;
+     const s_img = -49;
+     const m_img = -50;
+     const e_img = -51;
+     const s_pipeline = -52;
+     const e_pipeline = -53;
 
-     const s_gmic = -52;
-     const e_gmic = -53;
-     const s_whitespace = -54;"
+     const s_gmic = -54;
+     const e_gmic = -55;
+     const s_whitespace = -56;"
 
 #@cli gmd2html : _include_default_header_footer={ 0 | 1 }
 #@cli : Convert selected gmd-formatted text images to HTML format.
@@ -48549,7 +48564,7 @@ gmd2html : skip "${1=}"
         write(c);
       ):(
         isin(c,e_bold_a,e_bold_u,e_bold_italic_a,e_bold_italic_u,e_italic_a,e_italic_u,
-             e_monospace,e_strikethrough,e_word_highlight) ? write('</span>'):
+             e_monospace,e_strikethrough,e_underline,e_word_highlight) ? write('</span>'):
         isin(c,e_bullet,e_subbullet,e_subsubbullet) ? write('</div>\n'):
         isin(c,e_center,e_code_block,e_section,e_subsection,e_subsubsection,e_subsubsubsection) ? write('</div>\n'):
 
@@ -48571,6 +48586,7 @@ gmd2html : skip "${1=}"
         c==s_italic_a ? write('<span class=\"gmd_italic_a\">'):
         c==s_italic_u ? write('<span class=\"gmd_italic_u\">'):
         c==s_strikethrough? write('<span class=\"gmd_strikethrough\">'):
+        c==s_underline? write('<span class=\"gmd_underline\">'):
         c==s_monospace ? write('<span class=\"gmd_monospace\">'):
         c==s_value_set ? write('<span class=\"gmd_value_set\">{'):
         c==e_value_set ? write('}</span>'):
