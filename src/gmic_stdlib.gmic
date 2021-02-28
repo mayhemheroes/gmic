@@ -48063,13 +48063,14 @@ parse_gmd :
 
       blank(c) = isin(c,_' ',_'\n',0);
       semiblank(c) = isin(c,_' ',_'\n',_'.',_',',_';',_':',_'!',_'?',_')',_'(',0);
+      newline(c) = isin(c,_'\n',0);
       reset(c) = (#c = -1);
       res = crop();
     );
 
     pc = j[-1]; c = i; nc = j[1]; ac = j[2];
     y1 = y + 1; y2 = y + 2; y3 = y + 3;
-    linestart = !y || pc==_'\n';
+    linestart = newline(pc);
     non_escaped = (pc!=_'\\');
 
     # Manage document layout.
@@ -48079,7 +48080,7 @@ parse_gmd :
     linestart && c==_'#' && nc==_' '?( # Opening
       section = y;
     ):
-    section>=0 && (c==_'\n' || !c)?( # Closing
+    section>=0 && newline(c)?( # Closing
       opening_offset = section;
       res[section++] = s_section; res[section] = 0;
       res[y] = e_section;
@@ -48090,7 +48091,7 @@ parse_gmd :
     linestart && c==_'#' && nc==c && ac==_' '?( # Opening
       subsection = y;
     ):
-    subsection>=0 && (c==_'\n' || !c)?( # Closing
+    subsection>=0 && newline(c)?( # Closing
       opening_offset = subsection;
       res[subsection++] = s_subsection; copy(res[subsection],0,2,1,0);
       res[y] = e_subsection;
@@ -48101,7 +48102,7 @@ parse_gmd :
     linestart && c==_'#' && nc==c && ac==c && j[3]==_' '?( # Opening
       subsubsection = y;
     ):
-    subsubsection>=0 && (c==_'\n' || !c)?( # Closing
+    subsubsection>=0 && newline(c)?( # Closing
       opening_offset = subsubsection;
       res[subsubsection++] = s_subsubsection; copy(res[subsubsection],0,3,1,0);
       res[y] = e_subsubsection;
@@ -48112,7 +48113,7 @@ parse_gmd :
     linestart && c==_'#' && nc==c && ac==c && j[3]==c && j[4]==_' '?( # Opening
       subsubsubsection = y;
     ):
-    subsubsubsection>=0 && (c==_'\n' || !c)?( # Closing
+    subsubsubsection>=0 && newline(c)?( # Closing
       opening_offset = subsubsubsection;
       res[subsubsubsection++] = s_subsubsubsection; copy(res[subsubsubsection],0,4,1,0);
       res[y] = e_subsubsubsection;
@@ -48123,7 +48124,7 @@ parse_gmd :
     linestart && isin(c,_'-',_'*',_'+') && nc==_' ' && bullet<0?( # Opening
       bullet = y;
     ):
-    bullet>=0 && (c==_'\n' || !c)?( # Closing
+    bullet>=0 && newline(c)?( # Closing
       opening_offset = bullet;
       res[bullet++] = s_bullet; res[bullet] = 0;
       res[y] = e_bullet;
@@ -48133,7 +48134,7 @@ parse_gmd :
     linestart && c==_' ' && nc==_' ' && isin(ac,_'-',_'*',_'+') && j[3]==_' ' && subbullet<0?( # Opening
       subbullet = y;
     ):
-    subbullet>=0 && (c==_'\n' || !c)?( # Closing
+    subbullet>=0 && newline(c)?( # Closing
       opening_offset = subbullet;
       res[subbullet++] = s_subbullet; copy(res[subbullet],0,2,1,0);
       res[y] = e_subbullet;
@@ -48144,14 +48145,14 @@ parse_gmd :
       subsubbullet<0?( # Opening
       subsubbullet = y;
     ):
-    subsubbullet>=0 && (c==_'\n' || !c)?( # Closing
+    subsubbullet>=0 && newline(c)?( # Closing
       opening_offset = subsubbullet;
       res[subsubbullet++] = s_subsubbullet; copy(res[subsubbullet],0,4,1,0);
       res[y] = e_subsubbullet;
     ):
 
     # Center: '\n===\n Centered text\n===\n'.
-    linestart && c==_'=' && nc==c && ac==c && (j[3]==_'\n' || !c)?(
+    linestart && c==_'=' && nc==c && ac==c && newline(j[3])?(
       center<0?( # Opening
         center = y;
       ):
@@ -48163,7 +48164,7 @@ parse_gmd :
     ):
 
     # Code block: '\n~~~\n Code block\n~~~\n'.
-    linestart && isin(c,_'~','`') && nc==c && ac==c && (j[3]==_'\n' || !c)?(
+    linestart && isin(c,_'~','`') && nc==c && ac==c && newline(j[3])?(
       code_block<0?( # Opening
         code_block = y;
       ):
@@ -48177,7 +48178,7 @@ parse_gmd :
     ):
 
     # Horizontal rule: '---'.
-    linestart && isin(c,_'-','_','*') && nc==c && ac==c && (j[3]==_'\n' || !c)?(
+    linestart && isin(c,_'-','_','*') && nc==c && ac==c && newline(j[3])?(
       res[y] = s_hrule;
       copy(res[y + 1],0,3,1,0);
     ):
