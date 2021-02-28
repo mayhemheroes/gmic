@@ -48058,7 +48058,7 @@ parse_gmd :
       section = subsection = subsubsection = subsubsubsection =
       bullet = subbullet = subsubbullet = center = code_block =
       bold_italic_a = bold_italic_u = bold_a = bold_u = italic_a = italic_u = strikethrough = underline = monospace =
-      value_set = word_highlight = url = page_link = link1 = link2 = img1 = img2 = pipeline = -1;
+      value_set = word_highlight = url = page_link = text_link1 = text_link2 = img1 = img2 = pipeline = -1;
       opening_offset = -1;
 
       blank(c) = isin(c,_' ',_'\n',0);
@@ -48344,18 +48344,18 @@ parse_gmd :
     ):
 
     # Text link: '[link text](https://url.com)'.
-    non_escaped && c==_'[' && link1<0 && link2<0 && img1<0?( # Opening
-      link1 = y;
+    non_escaped && c==_'[' && text_link1<0 && text_link2<0 && img1<0?( # Opening
+      text_link1 = y;
     ):
-    non_escaped && c==_']' && nc==_'(' && link1>=0 && link2<0 && img1<0?( # Middle
-      link2 = y;
+    non_escaped && c==_']' && nc==_'(' && text_link1>=0 && text_link2<0 && img1<0?( # Middle
+      text_link2 = y;
     ):
-    non_escaped && c==_')' && link2>=0 && img1<0?( # Closing
-      opening_offset = link1;
-      res[link1] = s_link;
-      res[link2++] = m_link; res[link2++] = 0;
-      copy(res[link2],i[link2],y - link2); # Cancel tokens found inside
-      res[y] = e_link;
+    non_escaped && c==_')' && text_link2>=0 && img1<0?( # Closing
+      opening_offset = text_link1;
+      res[text_link1] = s_text_link;
+      res[text_link2++] = m_text_link; res[text_link2++] = 0;
+      copy(res[text_link2],i[text_link2],y - text_link2); # Cancel tokens found inside
+      res[y] = e_text_link;
     ):
 
     # Image: '![alt caption](https://url.com/image.png)'.
@@ -48410,7 +48410,8 @@ parse_gmd :
 
       # Reset tokens that cannot contain whitespace.
       reset(word_highlight);
-      link2>=0?(reset(link1); reset(link2));
+      reset(url);
+      text_link2>=0?(reset(text_link1); reset(text_link2));
       img2>=0?(reset(img1); reset(img2));
     ):
 
@@ -48426,7 +48427,8 @@ parse_gmd :
       reset(italic_u);
       reset(monospace);
       reset(word_highlight);
-      link2>=0?(reset(link1); reset(link2));
+      reset(url);
+      text_link2>=0?(reset(text_link1); reset(text_link2));
       img2>=0?(reset(img1); reset(img2));
     );
 
@@ -48455,7 +48457,7 @@ parse_gmd :
       word_highlight>=opening_offset ? reset(word_highlight);
       url>=opening_offset ? reset(url);
       page_link>=opening_offset ? reset(page_link);
-      link1>=opening_offset || link2>=opening_offset ? (reset(link1); reset(link2));
+      text_link1>=opening_offset || text_link2>=opening_offset ? (reset(text_link1); reset(text_link2));
       img1>=opening_offset || img2>=opening_offset ? (reset(img1); reset(img2));
       pipeline>=opening_offset ? reset(pipeline);
       opening_offset = -1;
@@ -48512,9 +48514,9 @@ _gmd_constants :
      const e_url = -43;
      const s_page_link = -44;
      const e_page_link = -45;
-     const s_link = -46;
-     const m_link = -47;
-     const e_link = -48;
+     const s_text_link = -46;
+     const m_text_link = -47;
+     const e_text_link = -48;
      const s_img = -49;
      const m_img = -50;
      const e_img = -51;
@@ -48616,18 +48618,18 @@ gmd2html : skip "${1=}"
         ):
         c==e_page_link ? write('</a></span>');
 
-        c==s_link ? (
+        c==s_text_link ? (
           tmp = 0;
-          ind_m = find(#1,m_link,y);
-          ind_e = find(#1,e_link,ind_m);
+          ind_m = find(#1,m_text_link,y);
+          ind_e = find(#1,e_text_link,ind_m);
           copy(tmp,i[ind_m + 1],ind_e - ind_m - 1);
           write('<a href=\"');
           len = find(tmp,0);
           write(tmp,len);
-          write('\">');
+          write('\" target=\"_blank\">');
         ):
-        c==m_link ? (
-          ind = find(#1,e_link,y);
+        c==m_text_link ? (
+          ind = find(#1,e_text_link,y);
           copy(i[y],0,ind - y + 1,1,0);
           write('</a>');
         ):
