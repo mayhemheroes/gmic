@@ -48056,9 +48056,9 @@ parse_gmd :
   eval[^] ">"${-_gmd_constants}"
     begin(
       section = subsection = subsubsection = subsubsubsection =
-      bullet = subbullet = subsubbullet = center =
+      bullet = subbullet = subsubbullet = center = code_block =
       bold_italic_a = bold_italic_u = bold_a = bold_u = italic_a = italic_u = strikethrough = monospace =
-      value_set = word_highlight = code_block = url = page_link = link1 = link2 = img1 = img2 = pipeline = -1;
+      value_set = word_highlight = url = page_link = link1 = link2 = img1 = img2 = pipeline = -1;
       opening_offset = -1;
 
       blank(c) = isin(c,_' ',_'\n',0);
@@ -48150,7 +48150,7 @@ parse_gmd :
       res[y] = e_subsubbullet;
     ):
 
-    # Center: '\n===\n Code block\n===\n'.
+    # Center: '\n===\n Centered text\n===\n'.
     linestart && c==_'=' && nc==c && ac==c && (j[3]==_'\n' || !c)?(
       center<0?( # Opening
         center = y;
@@ -48159,6 +48159,19 @@ parse_gmd :
         opening_offset = center;
         res[center++] = s_center; copy(res[center],0,3,1,0); center+=3;
         res[y - 1] = e_center; copy(res[y],0,4,1,0);
+      );
+    ):
+
+    # Code block: '\n~~~\n Code block\n~~~\n'.
+    linestart && isin(c,_'~','`') && nc==c && ac==c && (j[3]==_'\n' || !c)?(
+      code_block<0?( # Opening
+        code_block = y;
+      ):
+      code_block>=0 && y>code_block + 3?( # Closing
+        opening_offset = code_block;
+        res[code_block++] = s_code_block; copy(res[code_block],0,3,1,0); code_block+=3;
+        copy(res[code_block],i[code_block],y - code_block); # Cancel tokens found inside
+        res[y - 1] = e_code_block; copy(res[y],0,4,1,0);
       );
     ):
 
@@ -48244,7 +48257,7 @@ parse_gmd :
     ):
 
     # Strikethrough: '~~strikethrough text~~'.
-    non_escaped && c==_'~' && nc==c && pc!=c && ac!=c && code_block<0?( # Opening
+    non_escaped && c==_'~' && nc==c && pc!=c?( # Opening
       strikethrough<0?(
         strikethrough = y;
       ):
@@ -48289,19 +48302,6 @@ parse_gmd :
         res[word_highlight++] = s_word_highlight;
         copy(res[word_highlight],i[word_highlight],y - word_highlight); # Cancel tokens found inside
         res[y] = e_word_highlight;
-      );
-    ):
-
-    # Code block: '\n~~~\n Code block\n~~~\n'.
-    linestart && isin(c,_'~','`') && nc==c && ac==c && (j[3]==_'\n' || !c)?(
-      code_block<0?( # Opening
-        code_block = y;
-      ):
-      code_block>=0 && y>code_block + 3?( # Closing
-        opening_offset = code_block;
-        res[code_block++] = s_code_block; copy(res[code_block],0,3,1,0); code_block+=3;
-        copy(res[code_block],i[code_block],y - code_block); # Cancel tokens found inside
-        res[y - 1] = e_code_block; copy(res[y],0,4,1,0);
       );
     ):
 
@@ -48427,6 +48427,7 @@ parse_gmd :
       subbullet>=opening_offset ? reset(subbullet);
       subsubbullet>=opening_offset ? reset(subsubbullet);
       center>=opening_offset ? reset(center);
+      code_block>=opening_offset? reset(code_block);
       bold_italic_a>=opening_offset ? reset(bold_italic_a);
       bold_italic_u>=opening_offset ? reset(bold_italic_u);
       bold_a>=opening_offset ? reset(bold_a);
@@ -48437,7 +48438,6 @@ parse_gmd :
       monospace>=opening_offset ? reset(monospace);
       value_set>=opening_offset ? reset(value_set);
       word_highlight>=opening_offset ? reset(word_highlight);
-      code_block>=opening_offset? reset(code_block);
       url>=opening_offset ? reset(url);
       page_link>=opening_offset ? reset(page_link);
       link1>=opening_offset || link2>=opening_offset ? (reset(link1); reset(link2));
@@ -48466,31 +48466,31 @@ _gmd_constants :
      const e_subsubbullet = -14;
      const s_center = -15;
      const e_center = -16;
-     const s_hrule = -17;
+     const s_code_block = -17;
+     const e_code_block = -18;
+     const s_hrule = -19;
 
-     const s_bold_italic_a = -18;
-     const e_bold_italic_a = -19;
-     const s_bold_italic_u = -20;
-     const e_bold_italic_u = -21;
-     const s_bold_a = -22;
-     const e_bold_a = -23;
-     const s_bold_u = -24;
-     const e_bold_u = -25;
-     const s_italic_a = -26;
-     const e_italic_a = -27;
-     const s_italic_u = -28;
-     const e_italic_u = -29;
-     const s_strikethrough = -30;
-     const e_strikethrough = -31;
-     const s_monospace = -32;
-     const e_monospace = -33;
-     const s_value_set = -34;
-     const e_value_set = -35;
-     const s_word_highlight = -36;
-     const e_word_highlight = -37;
+     const s_bold_italic_a = -20;
+     const e_bold_italic_a = -21;
+     const s_bold_italic_u = -22;
+     const e_bold_italic_u = -23;
+     const s_bold_a = -24;
+     const e_bold_a = -25;
+     const s_bold_u = -26;
+     const e_bold_u = -27;
+     const s_italic_a = -28;
+     const e_italic_a = -29;
+     const s_italic_u = -30;
+     const e_italic_u = -31;
+     const s_strikethrough = -32;
+     const e_strikethrough = -33;
+     const s_monospace = -34;
+     const e_monospace = -35;
+     const s_value_set = -36;
+     const e_value_set = -37;
+     const s_word_highlight = -38;
+     const e_word_highlight = -39;
 
-     const s_code_block = -38;
-     const e_code_block = -39;
      const s_url = -40;
      const e_url = -41;
      const s_page_link = -42;
@@ -48556,6 +48556,8 @@ gmd2html :
         c==s_bullet ? write('<div class=\"gmd_bullet\">'):
         c==s_subbullet ? write('<div class=\"gmd_subbullet\">'):
         c==s_subsubbullet ? write('<div class=\"gmd_subsubbullet\">'):
+        c==s_center ? write('<div class=\"gmd_center\">\n'):
+        c==s_code_block ? write('<div class=\"gmd_code_block\">'):
         c==s_hrule ? write('\n<hr/>\n'):
 
         c==s_bold_italic_a ? write('<span class=\"gmd_bold_italic_a\">'):
@@ -48570,8 +48572,6 @@ gmd2html :
         c==e_value_set ? write('}</span>'):
         c==s_word_highlight ? write('<span class=\"gmd_word_highlight\">'):
 
-        c==s_center ? write('<div class=\"gmd_center\">\n'):
-        c==s_code_block ? write('<div class=\"gmd_code_block\">'):
         c==s_url ? (
           tmp = 0;
           ind = find(#1,e_url,y);
@@ -48657,6 +48657,7 @@ _gmd_pipeline :
     rm v 1 warn[] "Command '"$_gmd_command"': "${}
     gui_error_preview ${}
   endl
+  if !isdir('img') x "mkdir -p img" fi
   o. $_gmd_filename rm.
 
 
