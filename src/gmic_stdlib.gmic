@@ -48508,9 +48508,13 @@ _gmd_constants :
      const e_gmic = -53;
      const s_whitespace = -54;"
 
-#@cli gmd2html
+#@cli gmd2html : _include_default_header_footer={ 0 | 1 }
 #@cli : Convert selected gmd-formatted text images to HTML format.
+#@cli : Default values: 'include_default_header_footer=1'.
 gmd2html :
+  l[] is_arg=isbool("$1") onfail is_arg=0 endl
+  if $is_arg embed_html=$1 else embed_html=1 noarg fi
+
   parse_gmd
   repeat $! l[$>]
     . # [0] = Output, [1] = Input
@@ -48645,6 +48649,28 @@ gmd2html :
       )"
     k[0] autocrop 0
   endl done
+
+  # Embed with header and footer if needed.
+  if $embed_html repeat $! l[$>]
+    i[0] ('\
+"<!DOCTYPE html>"\n\
+"<html lang=\"en\">"\n\
+"  <head>"\n\
+"    <meta charset=\"utf-8\">"\n\
+"    <link rel=\"stylesheet\" href=\"https://gmic.eu/style.css\">"\n\
+"    <title>"{n}"</title>"\n\
+"  </head>"\n\n\
+"  <body>"\n\
+"    <div class=\"section_title\"><p>Reference</p></div><div class=\"section_content\">"\n\
+"<!-- begin_content -->"\n\n\
+   ':y)
+    ('\
+\n\n"<!-- end_content -->"\n\
+"    </div><div class=\"section_end\"></div>"\n\
+"  </body>"\
+   ':y)
+    a y
+  endl done fi
 
 # Manage G'MIC pipeline execution and result saving.
 _gmd_pipeline :
