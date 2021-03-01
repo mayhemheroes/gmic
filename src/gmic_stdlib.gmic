@@ -535,6 +535,10 @@ reference : skip "${2="$HOME"/work/src/gmic-community/doc}"
   m "_text : reference_text_$1 \"$""*\""
   l reference_begin_$1 reference_header_$1 onfail endl
   _section "Usage"
+
+#   _text "\
+# ~~~\ntoto\n~~~\n"
+
   _text \
 "~~~\ngmic [command1 [arg1_1,arg1_2,..]] .. [commandN [argN_1,argN_2,..]]\n~~~"\n\n\
 "`gmic` is the open-source interpreter of the G'MIC language, a script-based programming "\
@@ -1391,27 +1395,30 @@ reference_text_ascii :
   l[]
     ('"$*"')
 
-#    gmd2ascii
-
     s -,{'\n'}
-    gmd_list_ascii
-    gmd_code_ascii
-    gmd_command_ascii
-    gmd_image_ascii
-    s +,{'\n'}
-    _gmd_ascii 100,0
-    gmd_bold_ascii
-    gmd_italic_ascii
-    gmd_mono_ascii
-    gmd_monobold_ascii
-    gmd_braces_ascii
-    gmd_link_ascii
-    gmd_url_ascii
-    gmd_line_ascii
-    gmd_section_ascii
-    gmd_gmic_ascii
+    gmd2ascii
     i[^] ({'\n'})
     a y autocrop {'\n'}
+
+
+
+
+    # gmd_list_ascii
+    # gmd_code_ascii
+    # gmd_command_ascii
+    # gmd_image_ascii
+    # s +,{'\n'}
+    # _gmd_ascii 100,0
+    # gmd_bold_ascii
+    # gmd_italic_ascii
+    # gmd_mono_ascii
+    # gmd_monobold_ascii
+    # gmd_braces_ascii
+    # gmd_link_ascii
+    # gmd_url_ascii
+    # gmd_line_ascii
+    # gmd_section_ascii
+    # gmd_gmic_ascii
 
     # Ensure output text contains no more than two consecutive newlines.
     # Also add a 2-chars left margin on each line.
@@ -4539,7 +4546,7 @@ parse_cli_ascii :
             i[0] ('$_vt100_b':y) i[2] ('$_vt100_n':y)
           fi
           a y
-          _gmd_ascii 100,1 gmd2ascii
+          gmd2ascii # _gmd_ascii 100,1
           if $!>1 i[1--2] ('"\n      "':y) a y fi autocrop {'\n'}
           +e[] "\n    "{/{t}} nl=
         fi
@@ -5719,7 +5726,7 @@ _gmd_html :
 #@cli gmd2ascii
 #@cli : Convert selected gmd-formatted text images to ascii format.
 gmd2ascii :
-  use_vt100 parse_gmd
+  use_vt100 parse_gmd _gmd_ascii 100,0
   repeat $! l[$>] nm={b}
     . # [0] = Output, [1] = Input
     eval. ">
@@ -5772,7 +5779,7 @@ gmd2ascii :
         c==s_word_highlight ? write([_'\'',vt100_g]):
         c==e_word_highlight ? write([vt100_n,_'\'']):
 
-        c==s_url || s_page_link || c==s_text_link? write(vt100_u):
+        c==s_url || c==s_page_link || c==s_text_link? write(vt100_u):
         c==m_text_link ? (
           ind = find(#1,e_text_link,y);
           copy(i[y],0,ind - y + 1,1,0);
@@ -5799,7 +5806,9 @@ gmd2ascii :
           copy(i[y],0,ind - y + 1,1,0);
         ):
 
-        c==s_gmic ? write([vt100_b,'G\'MIC',vt100_n]):
+        c==s_gmic ? (
+          write([vt100_b,'G\'MIC',vt100_n]);
+        ):
         c==s_whitespace ? write(_' '):
         c==s_tab ? write('    ');
       )"
