@@ -48629,7 +48629,7 @@ gmd2html : skip "${1=}"
           write(varname,len);
           write('.html\">');
         ):
-        c==e_page_link ? write('</a></span>');
+        c==e_page_link ? write('</a></span>'):
 
         c==s_text_link ? (
           tmp = 0;
@@ -48665,7 +48665,7 @@ gmd2html : skip "${1=}"
 
         c==s_pipeline ? (
           ind = find(#1,e_pipeline);
-          run('gmd_pipeline_html. ',y + 1,',',ind -  1);
+          run('_gmd_html. ',y + 1,',',ind -  1);
           ref(get('_gmd_command',1024,0),com);
           ref(get('_gmd_filename',1024,0),nam);
           write('<img class=\"gmd_image\" src=\"');
@@ -48681,7 +48681,7 @@ gmd2html : skip "${1=}"
         c==s_whitespace ? write('&nbsp;'):
         c==s_tab ? write('&nbsp;&nbsp;&nbsp;&nbsp;');
       )"
-    k[0] autocrop 0 nm $nm.gmd
+    k[0] autocrop 0 nm $nm.html
   endl done
 
   # Embed with header and footer if needed.
@@ -48708,7 +48708,7 @@ gmd2html : skip "${1=}"
   endl done fi
 
 # Manage G'MIC pipeline execution and result saving.
-gmd_pipeline_html :
+_gmd_html :
   +rows. $1,$2 _gmd_command={t} rm.
   strvar $_gmd_command
   _gmd_filename=img/${}.png
@@ -48731,6 +48731,134 @@ gmd_pipeline_html :
   replace_str. "<","&lt;"
   replace_str. ">","&gt;"
   _gmd_command={t} rm.
+
+
+#@cli gmd2ascii
+#@cli : Convert selected gmd-formatted text images to ascii format.
+gmd2ascii :
+  use_vt100
+  parse_gmd
+  repeat $! l[$>] nm={b}
+    . # [0] = Output, [1] = Input
+    eval. ">
+      begin("${-_gmd_constants}"
+        vt100_b = '"$_vt100_b"';
+        vt100_c = '"$_vt100_c"';
+        vt100_g = '"$_vt100_g"';
+        vt100_i = '"$_vt100_i"';
+        vt100_m = '"$_vt100_m"';
+        vt100_n = '"$_vt100_n"';
+        vt100_r = '"$_vt100_r"';
+        vt100_u = '"$_vt100_u"';
+
+        ref(vector1024(),tmp);
+        write(str) = write(str,0);
+        write(str,len) = (
+          ref(str,_str); unref(_siz); const _siz = size(_str); ref(len,_len);
+          _siz?( # String
+            l = _len?_len:_siz;
+            q + l>h(#0)?resize(#0,1,8 + l + 5*h(#0)/3,1,1,0);
+            copy(i[#0,q],_str,l);
+            q+=l;
+          ):( # Character
+            q>=h(#0)?resize(#0,1,8 + 5*h(#0)/3,1,1,0);
+            i[#0,q++] = _str;
+          )
+        );
+        q = 0;
+      );
+
+      c = i;
+
+      c>0?write(c):
+      (
+        isin(c,e_bold_a,e_bold_u,e_bold_italic_a,e_bold_italic_u,e_italic_a,e_italic_u,
+             e_strikethrough,e_underline,e_page_link) ? write(vt100_n):
+        isin(c,e_bullet,e_subbullet,e_subsubbullet) ? write('\n'):
+        isin(c,e_section,e_subsection,e_subsubsection,e_subsubsubsection) ? write([vt100_n,'\n\n']):
+
+        c==s_section ? write([_'\n',vt100_r,vt100_b,'# ']);
+
+        c==s_subsection ? write('<div class=\"gmd_subsection\">'):
+        c==s_subsubsection ? write('<div class=\"gmd_subsubsection\">'):
+        c==s_subsubsubsection ? write('<div class=\"gmd_subsubsubsection\">'):
+        c==s_bullet ? write('* '):
+        c==s_subbullet ? write('  - '):
+        c==s_subsubbullet ? write('    . '):
+        c==s_center ? write('    '):
+        c==e_center ? write('\n'):
+        c==s_code_block ? write([_'\n',vt100_c]):
+        c==e_code_block ? write([vt100_n,'\n\n']):
+        c==s_hrule ? write('\n+------------------------------+\n'):
+
+        c==s_bold_italic_a ? (write(vt100_b); write(vt100_i)):
+        c==s_bold_italic_u ? (write(vt100_b); write(vt100_i)):
+        c==s_bold_a ? write(vt100_b):
+        c==s_bold_u ? write(vt100_b):
+        c==s_italic_a ? write(vt100_i):
+        c==s_italic_u ? write(vt100_i):
+        c==s_strikethrough? write('<span class=\"gmd_strikethrough\">'):
+        c==s_underline? write('<span class=\"gmd_underline\">'):
+        c==s_monospace ? write([_'\'',vt100_c]):
+        c==e_monospace ? write([vt100_n,_'\'']):
+
+        c==s_value_set ? write('<span class=\"gmd_value_set\">{'):
+        c==e_value_set ? write('}</span>'):
+
+        c==s_word_highlight ? write([_'\'',vt100_g]):
+        c==e_word_highlight ? write([vt100_n,_'\'']):
+
+
+        c==s_url ? write(vt100_u);
+        c==e_url ? write(vt100_n);
+
+        c==s_page_link ? write(vt100_u):
+
+        # c==s_text_link ? (
+        #   tmp = 0;
+        #   ind_m = find(#1,m_text_link,y);
+        #   ind_e = find(#1,e_text_link,ind_m);
+        #   copy(tmp,i[ind_m + 1],ind_e - ind_m - 1);
+        #   write('<a href=\"');
+        #   len = find(tmp,0);
+        #   write(tmp,len);
+        #   write('\" target=\"_blank\">');
+        # ):
+        c==m_text_link ? (
+          ind = find(#1,e_text_link,y);
+          copy(i[y],0,ind - y + 1,1,0);
+        ):
+
+        c==s_img ? (
+          tmp = 0;
+          ind_m = find(#1,m_img,y);
+          ind_e = find(#1,e_img,ind_m);
+          copy(tmp,i[ind_m + 1],ind_e - ind_m - 1);
+          write(vt100_u);
+          len = find(tmp,0);
+          write(tmp,len);
+          write([vt100_n,' (image \'']);
+        ):
+        c==m_img ? (
+          ind = find(#1,e_img,y);
+          copy(i[y],0,ind - y + 1,1,0);
+          write('\')');
+        ):
+
+        c==s_pipeline ? (
+          ind = find(#1,e_pipeline);
+          write([vt100_i,'[image]',vt100_n]);
+          copy(i[y],0,ind - y + 1,1,0);
+        ):
+
+        c==s_gmic ? write([vt100_b,'G\'MIC',vt100_n]);
+        c==s_whitespace ? write(' '):
+        c==s_tab ? write('&nbsp;&nbsp;&nbsp;&nbsp;');
+      )"
+    k[0] autocrop 0 nm $nm.asc
+  endl done
+
+
 
 
 # Local Variables:
