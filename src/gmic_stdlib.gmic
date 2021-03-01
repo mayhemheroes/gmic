@@ -530,7 +530,7 @@ gmd_url_ascii :
 # $1 = output mode, can be { ascii | html | man }.
 # $2 = name of the folder containing additional .gmd pages (optional).
 # Reference and command documentation is written using the G'MIC-markdown syntax.
-reference : skip "${2="$HOME"/work/src/gmic-community/doc}"
+reference : skip "${2=}"
   m "_section : reference_section_$1 \"$""*\""
   m "_text : reference_text_$1 \"$""*\""
   l reference_begin_$1 reference_header_$1 onfail endl
@@ -1299,7 +1299,9 @@ reference : skip "${2="$HOME"/work/src/gmic-community/doc}"
   l reference_list_of_commands_$1 onfail endl
 
   # Insert additional sections if specified.
-  if "['$2']!=0"
+  xfolder="$2"
+  if "['$1']=='html' && ['$2']==0" xfolder="$HOME"/work/src/gmic-community/doc fi
+  if ['$xfolder']!=0
     files "$2/*.gmd" files=${}
     repeat narg({/$files})
       arg 1+$>,$files file=${}
