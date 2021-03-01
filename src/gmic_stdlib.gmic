@@ -274,430 +274,26 @@ help : skip ${1=""}
   fi
   +e[] "\n" rm q
 
-# Commands to manage the G'MIC-markdown format ('gmd').
-#
-# 'gmd' defines the following patterns:
-# - __words in italic__
-# - **words in bold face**
-# - `words in bold monospace`
-# - 'single_word_in_monospace'
-# - ''reference to section or command''
-# - !!G'MIC command!!
-# - ~~code block~~
-# - { list of values }
-# - http[s]://address.url
-# - \n^^image_URL^^
-# - \n# Section
-# - \n## Subsection
-# - \n### Subsubsection
-# - \n* Item of a list
-# - \n  - Item of a sub-list (level 1)
-# - \n    . Item of a sub-list (level 2)
-
-#
-# The commands below detect the valid 'gmd' patterns and insert starting and closing tags '\2' and '\3'.
-#
-gmd_bold : # **words in bold face**
-  eval[^] ">begin(beg = -1);
-    beg>=0 && y - beg>80?(beg = -1);
-    i==_'*' && j[1]==_'*'?(
-      beg<0 && (!y || isin(j[-1],_' ',_'(',_'\n',4))?(beg = y):
-      beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
-    )"
-
-gmd_braces : # { list of values }
-  eval[^] ">begin(beg = -1);
-    beg>=0 && y - beg>512?(beg = -1);
-    beg<0 && i==_'{' && j[1]==_' ' && (!y || isin(j[-1],_' ',_'(',_'\n',4))?(beg = y):
-    beg>=0 && i==_'}'?(i[y] = 3; i[beg] = 2; beg = -1)"
-
-gmd_code : # ~~code block~~
-  eval[^] ">begin(beg = -1);
-    beg>=0 && y - beg>512?(beg = -1);
-    i==_'~' && j[1]==_'~'?(
-      beg<0 && (!y || isin(j[-1],_' ',_'\n',4))?(beg = y):
-      beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
-    )"
-
-gmd_command : # !!G'MIC command!!
-  eval[^] ">begin(beg = -1);
-    beg>=0 && y - beg>256?(beg = -1);
-    i==_'!' && j[1]==_'!'?(
-      beg<0 && (!y || isin(j[-1],_' ',_'(',_'\n',4))?(beg = y):
-      beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
-    )"
-
-gmd_image : # \n^^image_URL^^
-  eval[^] ">begin(beg = -1);
-    beg>=0 && y - beg>512?(beg = -1);
-    i==_'^' && j[1]==_'^'?(
-      beg<0 && (!y || isin(j[-1],_' ',_'(',_'\n',4))?(beg = y):
-      beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
-    )"
-
-gmd_italic : # __words in italic__
-  eval[^] ">begin(beg = -1);
-    beg>=0 && y - beg>80?(beg = -1);
-    i==_'_' && j[1]==_'_'?(
-      beg<0 && (!y || isin(j[-1],_' ',_'(',_'\n',4))?(beg = y):
-      beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
-    )"
-
-gmd_link : # ''link to referenced section/command''
-  eval[^] ">begin(beg = -1);
-    beg>=0 && y - beg>80?(beg = -1);
-    i==_'\'' && j[1]==_'\''?(
-      beg<0 && (!y || isin(j[-1],_' ',_'(',_'\n',4))?(beg = y):
-      beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
-    )"
-
-gmd_list1 : # \n* List item level-1
-  1 a[^-1] [-1],y rm.
-  eval[^] ">begin(beg = -1);
-    beg>=0 && y - beg>2048?(beg = -1);
-    beg<0 && isin(i,_'*',_'-',_'.') && j[1]==_' ' && (!y || isin(j[-1],_'\n',3,4))?(beg = y):
-    beg>=0 && (isin(i,4,_'\n') || y==h - 1)?(i[y] = 3; i[beg] = 2; beg = -1)"
-  autocrop 0
-
-gmd_list2 : # \n  - List item level-2
-  1 a[^-1] [-1],y rm.
-  eval[^] ">begin(beg = -1);
-    beg>=0 && y - beg>2048?(beg = -1);
-    beg<0 && isin(i,_'*',_'-',_'.') && j[1]==_' ' && j[-1]==_' ' && j[-2]==_' ' &&
-      (y==2 || isin(j[-3],_'\n',3,4))?(beg = y):
-    beg>=0 && (isin(i,4,_'\n') || y==h - 1)?(i[y] = 3; i[beg] = 2; beg = -1)"
-  autocrop 0
-
-gmd_list3 : # \n    . List item level-3
-  1 a[^-1] [-1],y rm.
-  eval[^] ">begin(beg = -1);
-    beg>=0 && y - beg>2048?(beg = -1);
-    beg<0 && isin(i,_'*',_'-',_'.') && j[1]==_' ' && j[-1]==_' ' && j[-2]==_' ' && j[-3]==_' ' && j[-4]==_' ' &&
-      (y==4 || isin(j[-5],_'\n',3,4))?(beg = y):
-    beg>=0 && (isin(i,4,_'\n') || y==h-1)?(i[y] = 3; i[beg] = 2; beg = -1)"
-  autocrop 0
-
-gmd_mono : # 'single_word_in_monospace'
-  eval[^] ">begin(beg = -1);
-    beg>=0 && y - beg>80?(beg = -1);
-    i==_'\''?(
-      beg<0 && j[1]!=_'\'' && (!y || isin(j[-1],_' ',_'(',_'\n',4))?(beg = y):
-      beg>=0 && !isin(j[-1],_'{',_'[') && (!isin(j[1],_'[',_'}',_':') || isin(j[2],_' ',_'\n',4))?(
-        i[y] = 3; i[beg] = 2; beg = -1
-      )
-    )"
-
-gmd_monobold : # `words in monospace`
-  eval[^] ">begin(beg = -1);
-    beg>=0 && y - beg>80?(beg = -1);
-    i==96?(
-      beg<0 && j[1]!=96 && j[-1]!=96?(beg = y):
-      beg>=0?(i[y] = 3; i[beg] = 2; beg = -1)
-    )"
-
-gmd_section1 : # # Section
-  1 a[^-1] [-1],y rm.
-  eval[^] ">begin(beg = -1);
-    beg>=0 && y - beg>80?(beg = -1);
-    beg<0 && i==_'#' && j[1]==_' ' && (!y || isin(j[-1],_'\n',3,4))?(beg = y):
-    beg>=0 && (isin(i,_'\n',4) || y==h - 1)?(i[y] = 3; i[beg] = 2; beg = -1)"
-  autocrop 0
-
-gmd_section2 : # ## Section
-  1 a[^-1] [-1],y rm.
-  eval[^] ">begin(beg = -1);
-    beg>=0 && y - beg>80?(beg = -1);
-    beg<0 && i==_'#' && j[1]==_'#' && j[2]==_' ' && (!y || isin(j[-1],_'\n',3,4))?(beg = y):
-    beg>=0 && (isin(i,_'\n',4) || y==h - 1)?(i[y] = 3; i[beg] = 2; beg = -1)"
-  autocrop 0
-
-gmd_section3 : # ### Section
-  1 a[^-1] [-1],y rm.
-  eval[^] ">begin(beg = -1);
-    beg>=0 && y - beg>80?(beg = -1);
-    beg<0 && i==_'#' && j[1]==_'#' && j[2]==_'#' && j[3]==_' ' && (!y || isin(j[-1],_'\n',3,4))?(beg = y):
-    beg>=0 && (isin(i,_'\n',4) || y==h - 1)?(i[y] = 3; i[beg] = 2; beg = -1)"
-  autocrop 0
-
-#
-# Conversion from 'gmd' to 'ascii'.
-#
-gmd_bold_ascii :
-  gmd_bold
-  replace_str "\2*",$_vt100_b
-  replace_str "\3*",$_vt100_n
-
-gmd_braces_ascii :
-  gmd_braces
-  replace_str "\2",$_vt100_g$_vt100_b"{"
-  replace_str "\3","}"$_vt100_n
-
-gmd_code_ascii :
-  gmd_code
-  replace_str "\2~","\n"$_vt100_b"\n"
-  replace_str "\3~",$_vt100_n"\n"
-  replace_str "\\n","\n"
-
-gmd_command_ascii :
-  gmd_command
-  f ">begin(on = 0); i==2?(on = 1):i==3?(copy(i[y],-1,2,1,0); on = 0); on?-1:i"
-  discard -1
-
-gmd_gmic_ascii :
-  replace_str "G'MIC",${_vt100_b}"G'MIC"$_vt100_n
-
-gmd_image_ascii :
-  gmd_image
-  f ">begin(on = 0); i==2?(on = 1):i==3?(copy(i[y],-1,2,1,0); on = 0); on?-1:i"
-  discard -1
-
-gmd_italic_ascii :
-  gmd_italic
-  replace_str "\2_",$_vt100_i
-  replace_str "\3_",$_vt100_n
-
-gmd_link_ascii :
-  gmd_link
-  repeat $! l[$>]
-    s +,2,39 s +,3,39
-    if $!>1 repeat $! if "crop(#"$>"-1)==[2,39] && crop(#"$>"+1)==[3,39]" l[$>]
-       name={t} strvar $name url=${}.html rm
-       ('${_vt100_u}$name$_vt100_n':y)
-    endl fi done fi
-    a y discard 2,39 discard 3,39
-  endl done
-
-gmd_list_ascii :
-  gmd_list1
-  replace_str "\2 ","* "
-  replace_str "\3","\n"
-  gmd_list2
-  replace_str "  \2 ","  - "
-  replace_str "\3",""
-  gmd_list3
-  replace_str "    \2 ","    . "
-  replace_str "\3",""
-
-gmd_mono_ascii :
-  gmd_mono
-  replace_str "\2","'"$_vt100_g
-  replace_str "\3",$_vt100_n"'"
-
-gmd_monobold_ascii :
-  gmd_monobold
-  replace_str "\2",$_vt100_c
-  replace_str "\3",$_vt100_n
-
-gmd_newline_ascii :
-  replace_str. "\4","\n"
-
-gmd_section_ascii :
-  gmd_section1
-  replace_str "\2 ","\n"$_vt100_m$_vt100_b"# "
-  gmd_section2
-  replace_str "\2# ","\n"$_vt100_m$_vt100_b"## "
-  gmd_section3
-  replace_str "\2## ","\n"$_vt100_m$_vt100_b"### "
-  replace_str "\3",$_vt100_n"\n"
-
-gmd_url_ascii :
-  if ['$_vt100_u']==0 return fi
-  repeat $! l[$>]
-    if find(crop(),'http')>=0 # Replace URL in description
-      i[0] 1,100%
-      eval "n = ['"{t}"'];
-            http = 'http';
-            p = find(n,http);
-            while (p>=0 && p<h,
-              q = p + size(http);
-              i[q]==_'s'?++q;
-              i[q]==_':' && i[q + 1]==_'/' && i[q + 2]==_'/'?(
-                while (q<h && (inrange(lowercase(c=i[q]),_'a',_'z') || inrange(c,_'0',_'9') ||
-                               isin(c,['-._~:/?#[]@!$&'()*+,;%='])), ++q);
-                q - p<64?copy(i[#0,p],p + 1,q - p,1,0);
-              );
-              p = find(n,http,q);
-            )"
-      a x s y,0 z 1,1
-      repeat $! l[$>] if crop(0,0,1,4)=='http'
-        i[0] ({'$_vt100_u'}:y) ('$_vt100_n':y) a y
-      fi endl done
-      a y
-    fi
-  endl done
-
-# Cut long sentences into blocs of size<$1.
-# $2 tells if the comma is a possible separator. can be { 0 | 1 }
-gmd_strcut_ascii :
-  repeat $! l[$<]
-    i[0] 1,100%
-    eval "p = q = r = 0; # p = pos of bloc start, q = pos of latest endable (>=p).
-      while (r<h,
-        r - p>=$1?(
-          q - p<0.6*$1?(q = r - 1);
-          copy(i[#0,p],p,q - p + 1,1,0);
-          p = r = ++q;
-        ):(
-          isin(i[r],_' ',$2?_',':_' ')?(q = r);
-        );
-        ++r;
-      );
-      p<h?copy(i[#0,p],p,h - p,1,0)"
-    a x s y,0 z 1,1
-  endl done
-
-#
-# Conversion from 'gmd' to 'html'.
-#
-gmd2html :
-  replace {'\n'},4 # '\4' = original newlines
-  gmd_gmic_html
-  gmd_bold_html
-  gmd_italic_html
-  gmd_mono_html
-  gmd_monobold_html
-  gmd_link_html
-  gmd_braces_html
-  gmd_code_html
-  gmd_command_html
-  gmd_image_html
-  gmd_list_html
-  gmd_section_html
-  gmd_url_html
-  gmd_newline_html
-
-gmd_bold_html :
-  gmd_bold
-  replace_str "\2*","<span class=\"gmd_bold\">"
-  replace_str "\3*","</span>"
-
-gmd_braces_html :
-  gmd_braces
-  replace_str "\2","<span class=\"gmd_braces\">{"
-  replace_str "\3","}</span>"
-
-gmd_code_html :
-  gmd_code
-  replace_str "\2~","\n<div class=\"gmd_code\">"
-  replace_str "\3~","</div>\n"
-
-gmd_command_html :
-  gmd_command
-  repeat $! l[$>]
-    s +,2,33 s +,3,33
-    if $!>1 repeat $! if "crop(#"$>"-1)==[2,33] && crop(#"$>"+1)==[3,33]" l[$>]
-       command={t} strvar $command file=img/${}.png rm
-       if !isfile(['$file'])
-         run $command
-         if $! a x else 12,12,1,4,"!x || !y || x==w-1 || y==h-1?[0,0,0,255]:x==y || x==w-1-y?[255,0,0,255]:[0,0,0,0]" fi
-         o $file rm
-       fi
-       ('"<img class=\"gmd_inlineimage\" alt=\"[image]\" src=\""$file"\"/>"':y)
-    endl fi done fi
-    a y discard 2,33 discard 3,33
-  endl done
-
-gmd_gmic_html :
-  replace_str "G'MIC","<span class=\"gmd_gmic\"></span>"
-
-gmd_image_html :
-  gmd_image
-  replace_str "\2^","\n<img class=\"gmd_image\" alt=\"[image]\" src=\""
-  replace_str "\3^","\"/>\n"
-
-gmd_italic_html :
-  gmd_italic
-  replace_str "\2_","<span class=\"gmd_italic\">"
-  replace_str "\3_","</span>"
-
-gmd_link_html :
-  gmd_link
-  repeat $! l[$>]
-    s +,2,39 s +,3,39
-    if $!>1 repeat $! if "crop(#"$>"-1)==[2,39] && crop(#"$>"+1)==[3,39]" l[$>]
-       name={t} strvar $name url=${}.html rm
-       ('"<a class=\"gmd_link\" href=\""$url"\">"$name"</a>"':y)
-    endl fi done fi
-    a y discard 2,39 discard 3,39
-  endl done
-
-gmd_list_html :
-  gmd_list1
-  replace_str "\2 ","<div class=\"gmd_list1\">"
-  replace_str "\3","</div>"\n
-  gmd_list2
-  replace_str "  \2 ","<div class=\"gmd_list2\">"
-  replace_str "\3","</div>"\n
-  gmd_list3
-  replace_str "    \2 ","<div class=\"gmd_list3\">"
-  replace_str "\3","</div>"\n
-
-gmd_mono_html :
-  gmd_mono
-  replace_str "\2","<span class=\"gmd_mono\">"
-  replace_str "\3","</span>"
-
-gmd_monobold_html :
-  gmd_monobold
-  replace_str "\2","<span class=\"gmd_monobold\">"
-  replace_str "\3","</span>"
-
-gmd_newline_html :
-  replace_str "\\n","<br/>\n"
-  replace_str "\4","<br/>\n"
-
-gmd_section_html :
-  gmd_section1
-  replace_str "\2 ","\n<div class=\"gmd_section1\">"
-  gmd_section2
-  replace_str "\2# ","\n<div class=\"gmd_section2\">"
-  gmd_section3
-  replace_str "\2## ","\n<div class=\"gmd_section3\">"
-  replace_str "\3","</div>\n"
-
-gmd_url_html : # Replace 'http[s]://address.url' by html link.
-  repeat $! l[$>]
-    if find(crop(),'http')>=0 # Replace URL in description by html links
-      i[0] 1,100%
-      eval "n = ['"{t}"'];
-            http='http';
-            p = find(n,http);
-            while (p>=0 && p<h,
-              q = p + size(http);
-              i[q]==_'s'?++q;
-              i[q]==_':' && i[q + 1]==_'/' && i[q + 2]==_'/'?(
-                while (q<h && i[q]>_' ' && i[q]!=_')' && i[q]!=39, ++q);
-                q - p<64?copy(i[#0,p],p,q - p,1,0);
-              );
-              p = find(n,http,q);
-            )"
-      a x s y,0 z 1,1
-      repeat $! l[$>] if crop(0,0,1,4)=='http'
-        i[0] ({'"<a href=\""{t}"\" target=\"_blank\">"'}:y) ('</a>':y) a y
-      fi endl done
-      a y
-    fi
-  endl done
-
 # Command to write reference documentation with various output modes.
 # $1 = output mode, can be { ascii | html | man }.
+# $2 = name of the folder containing additional .gmd pages (optional).
 # Reference and command documentation is written using the G'MIC-markdown syntax.
-reference :
+reference : skip "${2=}"
   m "_section : reference_section_$1 \"$""*\""
   m "_text : reference_text_$1 \"$""*\""
   l reference_begin_$1 reference_header_$1 onfail endl
   _section "Usage"
   _text \
-"~~gmic [command1 [arg1_1,arg1_2,..]] .. [commandN [argN_1,argN_2,..]]~~"\n\
+"~~~\ngmic [command1 [arg1_1,arg1_2,..]] .. [commandN [argN_1,argN_2,..]]\n~~~"\n\n\
 "`gmic` is the open-source interpreter of the G'MIC language, a script-based programming "\
 "language dedicated to the design of possibly complex image processing pipelines and operators."\n\
 "It can be used to convert, manipulate, filter and visualize image datasets made of one or "\
 "several 1D/2D or 3D multi-spectral images."\n\
 \n\
 "This reference documentation describes all the technical aspects of the G'MIC framework, "\
-"in its current version "${-strver}"."\n\
+"in its current version ___"${-strver}"___."\n\
 \n\
-"As a starting point, you may want to visit our detailed tutorial pages, at: https://gmic.eu/tutorial/"
+"As a starting point, you may want to visit our detailed tutorial pages, at: <https://gmic.eu/tutorial/>"
 
   _section "Overall Context"
   _text \
@@ -748,7 +344,7 @@ reference :
   _text \
 "* In G'MIC, an image processing pipeline is described as a sequence of items separated by the "\
 "space character. Such items are interpreted and executed from the left to the right. For instance, the expression:"\n\
-"~~filename.jpg blur 3,0 sharpen 10 resize 200%,200% output file_out.jpg~~"\
+"~~~\nfilename.jpg blur 3,0 sharpen 10 resize 200%,200% output file_out.jpg\n~~~\n"\
 "defines a valid pipeline composed of nine G'MIC items."\n\n\
 "* Each G'MIC item is a string that is either a __command__, a list of command __arguments__, "\
 "a __filename__ or a special __input string__."\n\
@@ -803,7 +399,7 @@ reference :
 "* Multiple variable assignments and updates are allowed, with expressions: 'name1,name2,...,nameN=value' or "\
 "'name1,name2,...,nameN=value1,value2,...,valueN' where assignment operator '=' can be replaced by one of the "\
 "allowed operators (e.g. '+=')."\n\
-"* Variables usually store numbers or strings. Use command 'store' to assign variables from image data "\
+"* Variables usually store numbers or strings. Use command ''store'' to assign variables from image data "\
 "(and syntax `input $variable` to bring them back on the image list afterwards)."
 
   _section "Command Items and Selections"
@@ -842,7 +438,7 @@ reference :
 "'.', '..' and '...'. For instance, command 'blur..' is equivalent to 'blur[-2]'. "\
 "These shortcuts work also when specifying command arguments."\n\
 "* G'MIC commands invoked without '[selection]' are applied on all images of the list, i.e. the "\
-"default selection is '[0--1]' (except for command 'input' whose default selection is '[-1]'')."\n\
+"default selection is '[0--1]' (except for command ''input'' whose default selection is '[-1]'')."\n\
 "* Prepending a single hyphen '-' to a G'MIC command is allowed. This may be useful to recognize "\
 "command items more easily in a one-liner pipeline (typically invoked from a shell). "\n\
 "* A G'MIC command prepended with a plus sign '+' does not act __in-place__ but inserts its result as one or "\
@@ -998,7 +594,7 @@ reference :
 "values resulting from the evaluation of the specified mathematical expression. For instance, item "\
 "'{`[102,111,111]`}' is substituted by 'foo' and item '{`vector8(65)`}' by 'AAAAAAAA'."\n\
 \n\
-"* '{*}' is substituted by the visibility state of the instant display window '#0]' "\
+"* '{*}' is substituted by the visibility state of the instant display window '#0' "\
 "(can be { 0=closed | 1=visible }."\n\
 "* '{*[index],feature1,...,featureN[:delimiter]}' is substituted by a specific set of features of the instant display "\
 "window '#0' (or '#index', if specified). Requested 'features' can be:"\n\
@@ -1035,9 +631,9 @@ reference :
   _section "Mathematical Expressions"
   _text \
 "* G'MIC has an embedded __mathematical parser__, used to evaluate (possibly complex) math expressions "\
-"specified inside braces '{}', or formulas in commands that may take one as an argument (e.g. 'fill')."\n\
+"specified inside braces '{}', or formulas in commands that may take one as an argument (e.g. ''fill'' or ''eval'')."\n\
 "* When the context allows it, a formula is evaluated __for each pixel__ of the selected images "\
-"(e.g. 'fill')."\n\
+"(e.g. ''fill'' or ''eval'')."\n\
 "* A math expression may return a __scalar__ or a __vector-valued__ result (with a fixed number of components)."\n\
 "The mathematical parser understands the following set of functions, operators and variables:"\n\
 "# Usual operators:"\n\
@@ -1190,7 +786,7 @@ reference :
 "For instance expression '1;2;pi' is evaluated as 'pi'."\n\
 "* '=': variable assignment. Variables in mathematical parser can only refer to numerical "\
 "values (vectors or scalars). Variable names are case-sensitive. Use this operator in conjunction with ';' to define "\
-"more complex evaluable expressions, such as ~~t = cos(x); 3*t^2 + 2*t + 1~~"\
+"more complex evaluable expressions, such as \n~~~\nt = cos(x); 3*t^2 + 2*t + 1\n~~~\n"\
 "These variables remain __local__ to the mathematical parser and cannot be accessed outside the evaluated "\
 "expression."\n\
 "* Variables defined in math parser may have a __constant__ property, by specifying keyword 'const' before the "\
@@ -1208,8 +804,8 @@ reference :
 "'interpolation_type' can be { 0=nearest neighbor | 1=linear | 2=cubic }. "\
 "'boundary_conditions' can be { 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }. "\
 "Omitted coordinates are replaced by their default values which are respectively 'x', 'y', 'z', 'c', 'interpolation' "\
-"and 'boundary'. For instance command ~~fill 0.5*(i(x+1)-i(x-1))~~ will estimate the X-derivative of an image with "\
-"a classical finite difference scheme."\n\
+"and 'boundary'. For instance command \n~~~\nfill 0.5*(i(x+1)-i(x-1))\n~~~\n will estimate the X-derivative of an "\
+"image with a classical finite difference scheme."\n\
 "* 'j(_dx,_dy,_dz,_dc,_interpolation_type,_boundary_conditions)' does the same for the pixel located at position "\
 "`(x+dx,y+dy,z+dz,c+dc)` (pixel access relative to the current coordinates)."\n\
 "* 'i[offset,_boundary_conditions]' returns the value of the pixel located at specified 'offset' in the associated "\
@@ -1247,18 +843,18 @@ reference :
 "* 'if(condition,expr_then,_expr_else)': return value of 'expr_then' or 'expr_else', depending on the value of "\
 "'condition' { 0=false | other=true }. 'expr_else' can be omitted in which case '0' is returned if the condition "\
 "does not hold. Using the ternary operator 'condition?expr_then[:expr_else]' gives an equivalent expression. "\
-"For instance, G'MIC commands ~~fill if(x%10==0,255,i)~~ and ~~fill x%10?i:255~~ both draw blank vertical lines "\
-"on every 10th column of an image."\n\
+"For instance, G'MIC commands \n~~~\nfill if(x%10==0,255,i)\n~~~\n and \n~~~\nfill x%10?i:255\n~~~\n both draw blank "\
+"vertical lines on every 10th column of an image."\n\
 "* 'do(expression,_condition)' repeats the evaluation of 'expression' until 'condition' vanishes "\
 "(or until 'expression' vanishes if no 'condition' is specified). For instance, the expression: "\
-"~~if(N<2,N,n=N-1;F0=0;F1=1;do(F2=F0+F1;F0=F1;F1=F2,n=n-1))~~ returns the N-th value of the Fibonacci sequence, "\
-"for 'N>=0' (e.g., '46368' for 'N=24'). 'do(expression,condition)' always evaluates the specified expression at least "\
-"once, then check for the loop condition. When done, it returns the last value of 'expression'."\n\
+"\n~~~\nif(N<2,N,n=N-1;F0=0;F1=1;do(F2=F0+F1;F0=F1;F1=F2,n=n-1))\n~~~\n returns the N-th value of the Fibonacci "\
+"sequence, for 'N>=0' (e.g., '46368' for 'N=24'). 'do(expression,condition)' always evaluates the specified "\
+"expression at least once, then check for the loop condition. When done, it returns the last value of 'expression'."\n\
 "* 'for(init,condition,_procedure,body)' first evaluates the expression 'init', then iteratively evaluates 'body' "\
 "(followed by 'procedure' if specified) while 'condition' holds (i.e. not zero). It may happen that no iterations are "\
 "done, in which case the function returns 'nan'. Otherwise, it returns the last value of 'body'. "\
-"For instance, the expression: ~~if(N<2,N,for(n=N;F0=0;F1=1,n=n-1,F2=F0+F1;F0=F1;F1=F2))~~ returns the 'N'-th value "\
-"of the Fibonacci sequence, for 'N>=0' (e.g., '46368' for 'N=24')."\n\
+"For instance, the expression: \n~~~\nif(N<2,N,for(n=N;F0=0;F1=1,n=n-1,F2=F0+F1;F0=F1;F1=F2))\n~~~\n "\
+"returns the 'N'-th value of the Fibonacci sequence, for 'N>=0' (e.g., '46368' for 'N=24')."\n\
 "* 'while(condition,expression)' is exactly the same as 'for(init,condition,expression)' without the specification of "\
 "an initializing expression."\n\
 "* 'break()' and 'continue()' respectively breaks and continues the current running bloc "\
@@ -1294,7 +890,7 @@ reference :
 "expression."\n\
 "* 'store(A,'varname',_w,_h,_d,_s,_is_compressed)' transfers the data of vector 'A' as a "\
 "`w x h x d x s` image to the G'MIC variable '$varname'. Thus, the data becomes available outside the math expression "\
-"(that is equivalent to using the regular command 'store', but directly in the math expression)."\n\
+"(that is equivalent to using the regular command ''store'', but directly in the math expression)."\n\
 "* 'get('variable_name',_size,_to_numbers)' returns the value of the specified variable, as a vector of 'size' "\
 "values, or as a scalar (if 'size' is zero or not specified)."\n\
 "* 'name(_#ind,size)' returns a vector of size 'size', whose values are the characters codes of the name of image "\
@@ -1307,19 +903,20 @@ reference :
 \
 "# User-defined macros:"\n\
 "* Custom macro functions can be defined in a math expression, using the assignment operator "\
-"'=', e.g. ~~foo(x,y) = cos(x + y); result = foo(1,2) + foo(2,3)~~"\n\
+"'=', e.g. \n~~~\nfoo(x,y) = cos(x + y); result = foo(1,2) + foo(2,3)\n~~~\n"\n\
 "* Trying to override a built-in function (e.g. 'abs()') has no effect."\n\
 "* Overloading macros with different number of arguments is possible. Re-defining a previously defined macro with "\
 "the same number of arguments discards its previous definition."\n\
 "* Macro functions are indeed processed as **macros** by the mathematical evaluator. You should avoid invoking them "\
 "with arguments that are themselves results of assignments or self-operations. "\
-"For instance, ~~foo(x) = x + x; z = 0; foo(++z)~~ returns '4' rather than expected value '2'."\n\
+"For instance, \n~~~\nfoo(x) = x + x; z = 0; foo(++z)\n~~~\n returns '4' rather than expected value '2'."\n\
 "* When substituted, macro arguments are placed inside parentheses, except if a number sign "\
-"'#' is located just before or after the argument name. For instance, expression ~~foo(x,y) = x*y; foo(1+2,3)~~ "\
-"returns '9' (being substituted as '(1+2)*(3)'), while expression ~~foo(x,y) = x#*y#; foo(1+2,3)~~ returns '7' "\
-"(being substituted as '1+2*3')."\n\
+"'#' is located just before or after the argument name. For instance, expression \n"\
+"~~~\nfoo(x,y) = x*y; foo(1+2,3)\n~~~\n "\
+"returns '9' (being substituted as '(1+2)*(3)'), while expression \n~~~\nfoo(x,y) = x#*y#; foo(1+2,3)\n~~~\n "\
+"returns '7' (being substituted as '1+2*3')."\n\
 "* Number signs appearing between macro arguments function actually count for __empty__ separators. They may be used "\
-"to force the substitution of macro arguments in unusual places, e.g. as in ~~str(N) = ['I like N#'];~~"\
+"to force the substitution of macro arguments in unusual places, e.g. as in \n~~~\nstr(N) = ['I like N#'];\n~~~\n"\
 \
 "# Multi-threaded and in-place evaluation:"\n\
 "* If your image data are large enough and you have several CPUs available, it is likely that the math expression "\
@@ -1342,12 +939,12 @@ reference :
 "(with 'i(...)' and 'i[...]'), or relatively to the current position `(x,y,z,c)` (with 'j(...)' and 'j[...]'). "\
 "These expressions always return 'value'."\n\
 "* The last image of the list is always associated to the evaluations of 'expressions', e.g. G'MIC sequence "\
-"~~256,128 fill {w}~~ will create a 256x128 image filled with value 256."
+"\n~~~\n256,128 fill {w}\n~~~\n will create a 256x128 image filled with value 256."
 
   _section "Image and Data Viewers"
   _text \
-"* G'MIC has some very handy embedded __visualization modules__, for 1D signals (command 'plot'), "\
-"1D/2D/3D images (command 'display') and 3D vector objects (command 'display3d'). It manages interactive views "\
+"* G'MIC has some very handy embedded __visualization modules__, for 1D signals (command ''plot''), "\
+"1D/2D/3D images (command ''display'') and 3D vector objects (command ''display3d''). It manages interactive views "\
 "of the selected image data."\n\
 "* The following actions are available in the interactive viewers:"\n\
 "  - `(mousewheel)`: Zoom in/out."\n\
@@ -1359,7 +956,7 @@ reference :
 "  - `CTRL+S`: Save current view as a numbered file 'gmic_xxxx.ext'."\n\
 "  - `CTRL+O`: Save copy of the viewed data, as a numbered file 'gmic_xxxx.ext'."\n\
 \n\
-"* Actions specific to the **1D/2D image viewer** (command 'display') are:"\n\
+"* Actions specific to the **1D/2D image viewer** (command ''display'') are:"\n\
 "  - `Left mouse button`: Create an image selection and zoom into it."\n\
 "  - `Middle mouse button`, or `CTRL+left mouse button`: Move image."\n\
 "  - `Mouse wheel` or `PADD+/-`: Zoom in/out."\n\
@@ -1370,7 +967,7 @@ reference :
 "  - `CTRL+X`: Show/hide axes."\n\
 "  - `CTRL+Z`: Hold/release aspect ratio."\n\
 \n\
-"* Actions specific to the **3D volumetric image viewer** (command 'display') are:"\n\
+"* Actions specific to the **3D volumetric image viewer** (command ''display'') are:"\n\
 "  - `CTRL+P`: Play z-stack of frames as a movie."\n\
 "  - `CTRL+V`: Show/hide 3D view on bottom right zone."\n\
 "  - `CTRL+X`: Show/hide axes."\n\
@@ -1379,7 +976,7 @@ reference :
 "  - `Numeric PAD`: Zoom in/out (`+`/`-`) and move through zoomed image (digits)."\n\
 "  - `BACKSPACE`: Reset zoom scale."\n\
 \n\
-"* Actions specific to the **3D object viewer** (command 'display3d') are:"\n\
+"* Actions specific to the **3D object viewer** (command ''display3d'') are:"\n\
 "  - `(mouse)+(left mouse button)`: Rotate 3D object."\n\
 "  - `(mouse)+(right mouse button)`: Zoom 3D object."\n\
 "  - `(mouse)+(middle mouse button)`: Shift 3D object."\n\
@@ -1402,12 +999,12 @@ reference :
   _text \
 "* New custom commands can be added by the user, through the use of G'MIC **custom commands files**."\n\
 "* A command file is a simple text file, where each line starts either by "\
-"~~command_name: command_definition~~ or ~~command_definition (continuation)~~"\n\
+"\n~~~\ncommand_name: command_definition\n~~~\n or \n~~~\ncommand_definition (continuation)\n~~~\n"\n\
 "* At startup, G'MIC automatically includes user's command file '$HOME/.gmic' (on __Unix__) or "\
 "'%APPDATA%/user.gmic' (on __Windows__). The CLI tool 'gmic' automatically runs the command "\
 "'cli_start' if defined."\n\
 "* Custom command names must use character set `[a-zA-Z0-9_]` and cannot start with a number."\n\
-"* Any '# comment' expression found in a custom commands file is discarded by the G'MIC parser, "\
+"* Any `# comment` expression found in a custom commands file is discarded by the G'MIC parser, "\
 "wherever it is located in a line."\n\
 "* In a custom command, the following '$-expressions' are recognized and substituted:"\n\
 "  - '$""\*' is substituted by a copy of the specified string of arguments."\n\
@@ -1433,7 +1030,7 @@ reference :
 "double-quoted items or when the dollar sign '$' is escaped with a backslash '\\$'. To avoid substitution, place an "\
 "empty double quoted string just after the '$' (as in '$\"\"1')."\n\
 "* Specifying arguments may be skipped when invoking a custom command, by replacing them by commas ',' as in "\
-"expression ~~flower ,,3~~ Omitted arguments are set to their default values, which must be thus explicitly "\
+"expression \n~~~\nflower ,,3\n~~~\n Omitted arguments are set to their default values, which must be thus explicitly "\
 "defined in the code of the corresponding custom command (using default argument expressions as '$""{1=default}')."\n\
 "* If one numbered argument required by a custom command misses a value, an error is thrown by the G'MIC interpreter."
 
@@ -1446,54 +1043,68 @@ reference :
 "range `[0,255]` before being displayed. You may need to do this explicitly (command 'normalize 0,255') if you want "\
 "to save and view images with the same aspect than those illustrated in the example codes."
 
+  # Insert list of commands.
   l reference_list_of_commands_$1 onfail endl
+
+  # Insert additional sections if specified.
+  xfolder="$2"
+  if "['$1']=='html' && ['$2']==0" xfolder="$HOME"/work/src/gmic-community/doc fi
+  if ['$xfolder']!=0
+    files "$2/*.gmd" files=${}
+    repeat narg({/$files})
+      arg 1+$>,$files file=${}
+      l[] it $file s={b} t={t} rm endl
+      _section $s
+      _text $t
+    done
+  fi
 
   _section "Examples of Use"
   _text \
 "`gmic` is a generic image processing tool which can be used in a wide variety of situations. "\
 "The few examples below illustrate possible uses of this tool:"\n\
 "## View a list of images: "\n\
-"~~$ gmic file1.bmp file2.jpeg~~"\
+"\n~~~\n$ gmic file1.bmp file2.jpeg\n~~~"\n\n\
 "## Convert an image file: "\n\
-"~~$ gmic input.bmp output output.jpg~~"\
+"\n~~~\n$ gmic input.bmp output output.jpg\n~~~"\n\n\
 "## Create a volumetric image from a movie sequence: "\n\
-"~~$ gmic input.mpg append z output output.hdr~~"\
+"\n~~~\n$ gmic input.mpg append z output output.hdr\n~~~"\n\n\
 "## Compute image gradient norm: "\n\
-"~~$ gmic input.bmp gradient_norm~~"\
+"\n~~~\n$ gmic input.bmp gradient_norm\n~~~"\n\n\
 "## Denoise a color image: "\n\
-"~~$ gmic image.jpg denoise 30,10 output denoised.jpg~~"\
+"\n~~~\n$ gmic image.jpg denoise 30,10 output denoised.jpg\n~~~"\n\n\
 "## Compose two images using overlay layer blending: "\n\
-"~~$ gmic image1.jpg image2.jpg blend overlay output blended.jpg~~"\
+"\n~~~\n$ gmic image1.jpg image2.jpg blend overlay output blended.jpg\n~~~"\n\n\
 "## Evaluate a mathematical expression: "\n\
-"~~$ gmic echo \"cos(pi/4)^2+sin(pi/4)^2={cos(pi/4)^2+sin(pi/4)^2}\"~~"\
+"\n~~~\n$ gmic echo \"cos(pi/4)^2+sin(pi/4)^2={cos(pi/4)^2+sin(pi/4)^2}\"\n~~~"\n\n\
 "## Plot a 2D function: "\n\
-"~~$ gmic 1000,1,1,2 fill \"X=3*(x-500)/500;X^2*sin(3*X^2)+if(c==0,u(0,-1),cos(X*10))\" plot~~"\
-"^^../img/example_plot.png^^"\
+"\n~~~\n$ gmic 1000,1,1,2 fill \"X=3*(x-500)/500;X^2*sin(3*X^2)+if(c==0,u(0,-1),cos(X*10))\" plot\n~~~"\n\
+"===\n![](../img/example_plot.png)\n==="\n\n\
 "## Plot a 3D elevated function in random colors: "\n\
-"~~$ gmic 128,128,1,3,\"u(0,255)\" plasma 10,3 blur 4 sharpen 10000 n 0,255 "\
-"elevation3d[-1] \"'X=(x-64)/6;Y=(y-64)/6;100*exp(-(X^2+Y^2)/30)*abs(cos(X)*sin(Y))'\"~~"\
-"^^../img/example_elevation3d.png^^"\
+"\n~~~\n$ gmic 128,128,1,3,\"u(0,255)\" plasma 10,3 blur 4 sharpen 10000 n 0,255 "\
+"elevation3d[-1] \"'X=(x-64)/6;Y=(y-64)/6;100*exp(-(X^2+Y^2)/30)*abs(cos(X)*sin(Y))'\"\n~~~"\n\n\
+"===\n![](../img/example_elevation3d.png)\n==="\n\n\
 "## Plot the isosurface of a 3D volume: "\n\
-"~~$ gmic mode3d 5 moded3d 5 double3d 0 isosurface3d \"'x^2+y^2+abs(z)^abs(4*cos(x*y*z*3))'\",3~~"\
-"^^../img/example_isosurface3d.png^^"\
+"\n~~~\n$ gmic mode3d 5 moded3d 5 double3d 0 isosurface3d \"'x^2+y^2+abs(z)^abs(4*cos(x*y*z*3))'\",3\n~~~"\n\
+"===\n![](../img/example_isosurface3d.png)\n==="\n\n\
 "## Render a G'MIC 3D logo: "\n\
-"~~$ gmic 0 text G\\\47MIC,0,0,53,1,1,1,1 expand_xy 10,0 blur 1 normalize 0,100 +plasma 0.4 add blur 1 "\
-"elevation3d -0.1 moded3d 4~~"\
-"^^../img/example_logo.png^^"\
+"\n~~~\n$ gmic 0 text G\\\47MIC,0,0,53,1,1,1,1 expand_xy 10,0 blur 1 normalize 0,100 +plasma 0.4 add blur 1 "\
+"elevation3d -0.1 moded3d 4\n~~~"\n\
+"===\n![](../img/example_logo.png)\n==="\n\n\
 "## Generate a 3D ring of torii: "\n\
-"~~$ gmic repeat 20 torus3d 15,2 color3d[-1] \"{u(60,255)},{u(60,255)},{u(60,255)}\" *3d[-1] 0.5,1 if \"{$>%2}\" "\
-"rotate3d[-1] 0,1,0,90 fi add3d[-1] 70 add3d rotate3d 0,0,1,18 done moded3d 3 mode3d 5 double3d 0~~"\
-"^^../img/example_torii.png^^"\
+"\n~~~\n$ gmic repeat 20 torus3d 15,2 color3d[-1] \"{u(60,255)},{u(60,255)},{u(60,255)}\" *3d[-1] 0.5,1 if \"{$>%2}\" "\
+"rotate3d[-1] 0,1,0,90 fi add3d[-1] 70 add3d rotate3d 0,0,1,18 done moded3d 3 mode3d 5 double3d 0\n~~~"\n\
+"===\n![](../img/example_torii.png)\n==="\n\n\
 "## Create a vase from a 3D isosurface: "\n\
-"~~$ gmic moded3d 4 isosurface3d \"'x^2+2*abs(y/2)*sin(2*y)^2+z^2-3',0\" sphere3d 1.5 sub3d[-1] 0,5 plane3d 15,15 "\
-"rotate3d[-1] 1,0,0,90 center3d[-1] add3d[-1] 0,3.2 color3d[-1] 180,150,255 color3d[-2] 128,255,0 "\
-"color3d[-3] 255,128,0 add3d~~"\
-"^^../img/example_vase.png^^"\
+"\n~~~\n$ gmic moded3d 4 isosurface3d \"'x^2+2*abs(y/2)*sin(2*y)^2+z^2-3',0\" sphere3d 1.5 sub3d[-1] 0,5 "\
+"plane3d 15,15 rotate3d[-1] 1,0,0,90 center3d[-1] add3d[-1] 0,3.2 color3d[-1] 180,150,255 color3d[-2] 128,255,0 "\
+"color3d[-3] 255,128,0 add3d\n~~~"\n\
+"===\n![](../img/example_vase.png)\n==="\n\n\
 "## Display filtered webcam stream: "\n\
-"~~$ gmic apply_camera \\\"+mirror x +mirror y add div 4\\\"~~"\
-"^^../img/example_camera.png^^"\
+"\n~~~\n$ gmic apply_camera \\\"+mirror x +mirror y add div 4\\\"\n~~~"\n\
+"===\n![](../img/example_camera.png)\n==="\n\n\
 "## Launch a set of interactive demos: "\n\
-"~~$ gmic demos~~"
+"\n~~~\n$ gmic demos\n~~~\n"
 
   l reference_footer_$1 reference_end_$1 onfail endl
   um _section,_text
@@ -1514,7 +1125,7 @@ reference_header_ascii :
       "        "${_vt100_c}${_vt100_b}"Version "${-strver}$strprerelease$_vt100_n\n\
       "        "$_vt100_g$_vt100_u"(https://gmic.eu)"$_vt100_n\n\
       \n\
-      "        Copyright (c) 2008-"{date(0)}", David Tschumperlé / GREYC / CNRS."\n\
+      "        Copyright (c) Since 2008, David Tschumperlé / GREYC / CNRS."\n\
       "        "$_vt100_g$_vt100_u"(https://www.greyc.fr)"$_vt100_n
   +e[] $str
 
@@ -1523,30 +1134,13 @@ reference_section_ascii :
   +e[] ""
   ('$_section." "') ('"$*"') +f.. {'" "'} +f.. {'-'} a[-4,-3] x a[-2,-1] x
   +e[] "  "$_vt100_r$_vt100_b{-2,t}$_vt100_n
-  +e[] "  "$_vt100_r{t}$_vt100_n"\n"
+  +e[] "  "$_vt100_r{t}$_vt100_n
   rm[-2,-1]
 
 reference_text_ascii :
   l[]
     ('"$*"')
-    s -,{'\n'}
-    gmd_list_ascii
-    gmd_code_ascii
-    gmd_command_ascii
-    gmd_image_ascii
-    s +,{'\n'}
-    gmd_strcut_ascii 100,0
-    gmd_gmic_ascii
-    gmd_bold_ascii
-    gmd_italic_ascii
-    gmd_mono_ascii
-    gmd_monobold_ascii
-    gmd_braces_ascii
-    gmd_link_ascii
-    gmd_url_ascii
-    gmd_section_ascii
-    i[^] ({'\n'})
-    a y autocrop {'\n'}
+    gmd2ascii
 
     # Ensure output text contains no more than two consecutive newlines.
     # Also add a 2-chars left margin on each line.
@@ -1613,7 +1207,7 @@ reference_end_section_html :
 
 reference_text_html :
   ('"$*"':y)
-  gmd2html.
+  gmd2html. 0
   if $!>1 a[-2,-1] y fi
 
 reference_footer_html :
@@ -1657,10 +1251,10 @@ reference_finalize_html :
 "      <h1 class=\"ref_h1\">Version</h1>"\n\
 "      <div class=\"ref_header\">"\n\
 "        <span class=\"gmd_gmic\"></span>: "\
-"<span class=\"gmd_monobold\">GREYC's Magic for Image Computing</span><br/>"\n\
+"<span class=\"gmd_monospace\">GREYC's Magic for Image Computing</span><br/>"\n\
 "        <a href=\"https://gmic.eu\">https://gmic.eu</a><br/>"\n\
 "        Version <b>"${-strver}"</b>"$strprerelease"<br/><br/>"\n\
-"        Copyright &copy; 2008-"{date(0)}", "\
+"        Copyright &copy; Since 2008, "\
 "<a target=\"_blank\" href=\"https://tschumperle.users.greyc.fr/\">David Tschumperlé</a> / "\
 "<a target=\"_blank\" href=\"https://www.greyc.fr\">GREYC</a> / "\
 "<a target=\"_blank\" href=\"http://www.cnrs.fr/en\">CNRS</a><br/>"\n\
@@ -1670,32 +1264,33 @@ reference_finalize_html :
 "      <ul>"\n
 
   ind_loc=${"-nmd 1,\"List of Commands\""}
-  repeat $! l[$>]
-    name={n} strvar $name url=${}.html
-    if $>==$ind_loc
-       html.="<li><a class=\"ref_loc\" href=\""$url"#top\">"$name"</a></li>"
-    else
-      html.="<li><a href=\""$url"#top\">"$name"</a></li>"
+  if narg($ind_loc)
+    repeat $! l[$>]
+      name={n} strvar $name url=${}.html
+      if $>==$ind_loc
+         html.="<li><a class=\"ref_loc\" href=\""$url"#top\">"$name"</a></li>"
+      else
+        html.="<li><a href=\""$url"#top\">"$name"</a></li>"
+      fi
+    endl done
+    html.="\n    </ul>"\n\
+          "<!-- end_content -->"\n\
+          "<!-- ref_navigation_bottom -->"\n\
+          "    </div><div class=\"section_end\"></div>"\n\
+          "    <div id=\"include_footer\"></div>"\n\
+          "  </body>"
+
+    i[0] ({'$html'}:y) nm[0] "Table of Contents"
+    ind_loc+=1
+    if narg($ind_loc)" && "isfile('list_of_commands.html') # Merge with existing 'List of commands' page if it exists
+      it list_of_commands.html
+      if find(crop(),'"<!-- merged_content -->"')<0 l[$ind_loc,-1]
+        s[0] -,{'"<!-- end_content -->"'}
+        s. -,{'"<!-- begin_content -->"'}
+        i[1] ('"<!-- merged_content -->"':y)
+        k[0,1,-1] a y
+      endl else nm. "List of Commands" rv[$ind_loc,-1] rm. fi
     fi
-  endl done
-
-  html.="\n    </ul>"\n\
-        "<!-- end_content -->"\n\
-        "<!-- ref_navigation_bottom -->"\n\
-        "    </div><div class=\"section_end\"></div>"\n\
-        "    <div id=\"include_footer\"></div>"\n\
-        "  </body>"
-
-  i[0] ({'$html'}:y) nm[0] "Table of Contents"
-  ind_loc+=1
-  if narg($ind_loc)" && "isfile('list_of_commands.html') # Merge with existing 'List of commands' page if it exists
-    it list_of_commands.html
-    if find(crop(),'"<!-- merged_content -->"')<0 l[$ind_loc,-1]
-      s[0] -,{'"<!-- end_content -->"'}
-      s. -,{'"<!-- begin_content -->"'}
-      i[1] ('"<!-- merged_content -->"':y)
-      k[0,1,-1] a y
-    endl else nm. "List of Commands" rv[$ind_loc,-1] rm. fi
   fi
 
   # Insert top and bottom navigation bar into pages.
@@ -1708,15 +1303,15 @@ reference_finalize_html :
                 "<a href=\"index.html\">Table of Contents</a>"
       if $> html_top.="&nbsp;&nbsp;&#9656;&nbsp;&nbsp;<a href=\""$url_current"#top\">"$current"</a>" fi
       html_top.="</td><td>"
-      if narg($previous) html_top.="<a href=\""$url_previous"#top\">&#9664;&nbsp;&nbsp;"$previous"</a>" fi
-      if narg($previous)" && "narg($next) html_top.="&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;" fi
-      if narg($next) html_top.="<a href=\""$url_next"#top\">"$next"&nbsp;&nbsp;&#9654;</a>" fi
+      if ['$previous']!=0 html_top.="<a href=\""$url_previous"#top\">&#9664;&nbsp;&nbsp;"$previous"</a>" fi
+      if ['$previous']!=0" && "['$next']!=0 html_top.="&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;" fi
+      if ['$next']!=0 html_top.="<a href=\""$url_next"#top\">"$next"&nbsp;&nbsp;&#9654;</a>" fi
       html_top.="</td></tr></table>"
 
       html_bottom="<div class=\"ref_navigation_bottom\">"
-      if narg($previous) html_bottom.="<a href=\""$url_previous"#top\">&#9664;&nbsp;&nbsp;"$previous"</a>" fi
-      if narg($previous)" && "narg($next) html_bottom.="&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;" fi
-      if narg($next) html_bottom.="<a href=\""$url_next"#top\">"$next"&nbsp;&nbsp;&#9654;</a>" fi
+      if ['$previous']!=0 html_bottom.="<a href=\""$url_previous"#top\">&#9664;&nbsp;&nbsp;"$previous"</a>" fi
+      if ['$previous']!=0" && "['$next']!=0 html_bottom.="&nbsp;&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;" fi
+      if ['$next']!=0 html_bottom.="<a href=\""$url_next"#top\">"$next"&nbsp;&nbsp;&#9654;</a>" fi
       html_bottom.="</div>"
 
       replace_str[$>] "<!-- ref_navigation_top -->",$html_top
@@ -1729,7 +1324,7 @@ reference_end_html :
 
   # Save html pages.
   repeat $! l[$>] strvar {n} ot ${}.html endl done
-  x "ln -fs table_of_contents.html index.html"
+  if isfile('table_of_contents.html') x "ln -fs table_of_contents.html index.html" fi
   rm
 
 #
@@ -1814,7 +1409,7 @@ reference_end_pdf :
 "    <title>reference_pdf</title>"\n\
 "  <style>"\n\
 "    body { background-color: white; font-size: 22px; }"\n\
-"    .gmd_code { font-size: 1em; }"\n\
+"    .gmd_code_block { font-size: 1em; }"\n\
 "  </style>"\n\
 "  </head>"\n\n\
 "  <body>"\n\
@@ -1865,6 +1460,7 @@ use_vt100 :
   _vt100_m="\33[0;35;59m"   # Magenta
   _vt100_n="\33[0;0;0m"     # Normal
   _vt100_r="\33[0;31;59m"   # Red
+  _vt100_s="\33[9m"         # Strikethrough
   _vt100_u="\33[4m"         # Underline
 
 #@cli version
@@ -1886,41 +1482,43 @@ v : # Allow 'gmic +v' to get the version number.
 #@cli camera : _camera_index>=0,_nb_frames>0,_skip_frames>=0,_capture_width>=0,_capture_height>=0 : (+)
 #@cli : Insert one or several frames from specified camera.
 #@cli : When 'nb_frames==0', the camera stream is released instead of capturing new images.
+#@cli : This command works only for G'MIC versions that have been compiled with OpenCV support.
 #@cli : Default values: 'camera_index=0' (default camera), 'nb_frames=1', 'skip_frames=0' and \
 # 'capture_width=capture_height=0' (default size).
 
 #@cli clut : "clut_name",_resolution>0,_cut_and_round={ 0=no | 1=yes }
-#@cli : Insert one of the 862 pre-defined CLUTs at the end of the image list.\n
-#@cli : 'clut_name' can be { 2-strip-process | 60s | 60s_faded | 60s_faded_alt | action_magenta_01 | action_red_01 | \
-# adventure_1453 | agfa_apx_100 | agfa_apx_25 | agfa_precisa_100 | agfa_ultra_color_100 | agfa_vista_200 | \
-# agressive_highligjtes_recovery_5 | alberto_street | alien_green | amstragram | amstragram+ | \
+#@cli : Insert one of the 889 pre-defined CLUTs at the end of the image list.\n
+#@cli : 'clut_name' can be { 2-strip-process | 60s | 60s_faded | 60s_faded_alt | 7drk_21 | action_magenta_01 | \
+# action_red_01 | adventure_1453 | agfa_apx_100 | agfa_apx_25 | agfa_precisa_100 | agfa_ultra_color_100 | \
+# agfa_vista_200 | agressive_highligjtes_recovery_5 | alberto_street | alien_green | amstragram | amstragram+ | \
 # analogfx_anno_1870_color | analogfx_old_style_i | analogfx_old_style_ii | analogfx_old_style_iii | \
 # analogfx_sepia_color | analogfx_soft_sepia_i | analogfx_soft_sepia_ii | anime | apocalypse_this_very_moment | \
-# aqua | aqua_and_orange_dark | arabica_12 | autumn | ava_614 | avalanche | azrael_93 | bboyz_2 | berlin_sky | \
-# black_and_white | black_star | blade_runner | bleach_bypass | bleachbypass_1 | bleachbypass_2 | bleachbypass_3 | \
-# bleachbypass_4 | bleech_bypass_green | bleech_bypass_yellow_01 | blue_cold_fade | blue_dark | blue_house | \
-# blue_ice | blue_mono | blue_shadows_01 | blues | bob_ford | bourbon_64 | bright_green_01 | bright_teal_orange | \
-# bright_warm | brightgreen | brownish | bw_1 | bw_10 | bw_2 | bw_3 | bw_4 | bw_5 | bw_6 | bw_7 | bw_8 | bw_9 | \
-# byers_11 | candlelight | caribe | chemical_168 | chrome_01 | cinema | cinema_2 | cinema_3 | cinema_4 | cinema_5 | \
-# cinema_noir | cinematic-1 | cinematic-10 | cinematic-2 | cinematic-3 | cinematic-4 | cinematic-5 | cinematic-6 | \
-# cinematic-7 | cinematic-8 | cinematic-9 | cinematic_01 | cinematic_02 | cinematic_03 | cinematic_for_flog | \
-# cinematic_lady_bird | cinematic_mexico | city_7 | classic_teal_and_orange | clayton_33 | clear_teal_fade | \
-# clouseau_54 | cobi_3 | coffee_44 | cold_clear_blue | cold_clear_blue_1 | cold_simplicity_2 | color_rich | \
-# colorful_0209 | colornegative | conflict_01 | contrail_35 | contrast_with_highlights_protection | \
-# contrasty_afternoon | contrasty_green | crispromance | crispwarm | crispwinter | cross_process_cp_130 | \
-# cross_process_cp_14 | cross_process_cp_15 | cross_process_cp_16 | cross_process_cp_18 | cross_process_cp_3 | \
-# cross_process_cp_4 | cross_process_cp_6 | crushin | cubicle_99 | d_o_1 | dark_blues_in_sunlight | dark_green_02 | \
-# dark_green_1 | dark_place_01 | date_39 | day_4nite | day_for_night | deep | deep_blue | deep_dark_warm | \
-# deep_high_contrast | deep_teal_fade | deep_warm_fade | delicatessen | denoiser_simple_40 | desert_gold_37 | \
-# dimension | directions_23 | django_25 | domingo_145 | dream_1 | dream_85 | drop_green_tint_14 | dropblues | \
-# earth_tone_boost | edgyember | elegance_38 | enchanted | eterna_for_flog | expired_69 | expired_fade | \
-# expired_polaroid | extreme | fade | fade_to_green | faded | faded_47 | faded_alt | faded_analog | faded_extreme | \
-# faded_green | faded_print | faded_retro_01 | faded_retro_02 | faded_vivid | fadedlook | fallcolors | \
-# faux_infrared | faux_infrared_bw_1 | faux_infrared_color_p_2 | faux_infrared_color_p_3 | faux_infrared_color_r_0a | \
-# faux_infrared_color_r_0b | faux_infrared_color_yp_1 | fgcinebasic | fgcinebright | fgcinecold | fgcinedrama | \
-# fgcinetealorange_1 | fgcinetealorange_2 | fgcinevibrant | fgcinewarm | film_0987 | film_9879 | film_high_contrast | \
-# film_print_01 | film_print_02 | filmic | flat_30 | flavin | foggynight | folger_50 | french_comedy | frosted | \
-# frostedbeachpicnic | fuji_160c | fuji_160c_+ | fuji_160c_++ | fuji_160c_- | fuji_3510_constlclip | \
+# aqua | aqua_and_orange_dark | arabica_12 | autumn | ava_614 | avalanche | azrael_93 | bboyz_2 | bc_darkum | \
+# berlin_sky | black_and_white | black_star | blade_runner | bleach_bypass | bleachbypass_1 | bleachbypass_2 | \
+# bleachbypass_3 | bleachbypass_4 | bleech_bypass_green | bleech_bypass_yellow_01 | blue_cold_fade | blue_dark | \
+# blue_house | blue_ice | blue_mono | blue_shadows_01 | blues | bob_ford | bourbon_64 | bright_green_01 | \
+# bright_teal_orange | bright_warm | brightgreen | brown_mobster | brownbm | brownish | bw_1 | bw_10 | bw_2 | bw_3 | \
+# bw_4 | bw_5 | bw_6 | bw_7 | bw_8 | bw_9 | byers_11 | candlelight | caribe | chemical_168 | chrome_01 | cineblue | \
+# cinebm_4k | cinema | cinema_2 | cinema_3 | cinema_4 | cinema_5 | cinema_noir | cinematic-1 | cinematic-10 | \
+# cinematic-2 | cinematic-3 | cinematic-4 | cinematic-5 | cinematic-6 | cinematic-7 | cinematic-8 | cinematic-9 | \
+# cinematic_01 | cinematic_02 | cinematic_03 | cinematic_for_flog | cinematic_lady_bird | cinematic_mexico | city_7 | \
+# classic_teal_and_orange | clayton_33 | clear_teal_fade | clouseau_54 | cobi_3 | coffee_44 | cold_clear_blue | \
+# cold_clear_blue_1 | cold_ice | cold_simplicity_2 | color_rich | colorful_0209 | colornegative | conflict_01 | \
+# contrail_35 | contrast_with_highlights_protection | contrasty_afternoon | contrasty_green | crispromance | \
+# crispwarm | crispwinter | cross_process_cp_130 | cross_process_cp_14 | cross_process_cp_15 | cross_process_cp_16 | \
+# cross_process_cp_18 | cross_process_cp_3 | cross_process_cp_4 | cross_process_cp_6 | crushin | cubicle_99 | d_o_1 | \
+# dark_blues_in_sunlight | dark_green_02 | dark_green_1 | dark_man_x | dark_place_01 | date_39 | day_4nite | \
+# day_for_night | deep | deep_blue | deep_dark_warm | deep_high_contrast | deep_teal_fade | deep_warm_fade | \
+# deepskintones_2 | deepskintones_3 | delicatessen | denoiser_simple_40 | desert_gold_37 | dimension | \
+# directions_23 | django_25 | domingo_145 | dream_1 | dream_85 | drop_green_tint_14 | dropblues | earth_tone_boost | \
+# edgyember | elegance_38 | enchanted | eterna_for_flog | expired_69 | expired_fade | expired_polaroid | extreme | \
+# fade | fade_to_green | faded | faded_47 | faded_alt | faded_analog | faded_extreme | faded_green | faded_print | \
+# faded_retro_01 | faded_retro_02 | faded_vivid | fadedlook | fallcolors | faux_infrared | faux_infrared_bw_1 | \
+# faux_infrared_color_p_2 | faux_infrared_color_p_3 | faux_infrared_color_r_0a | faux_infrared_color_r_0b | \
+# faux_infrared_color_yp_1 | fgcinebasic | fgcinebright | fgcinecold | fgcinedrama | fgcinetealorange_1 | \
+# fgcinetealorange_2 | fgcinevibrant | fgcinewarm | film_0987 | film_9879 | film_gb-19 | film_high_contrast | \
+# film_print_01 | film_print_02 | filmic | flat_30 | flavin | foggynight | folger_50 | formula_b | french_comedy | \
+# frosted | frostedbeachpicnic | fuji_160c | fuji_160c_+ | fuji_160c_++ | fuji_160c_- | fuji_3510_constlclip | \
 # fuji_3510_constlmap | fuji_3510_cuspclip | fuji_3513_constlclip | fuji_3513_constlmap | fuji_3513_cuspclip | \
 # fuji_400h | fuji_400h_+ | fuji_400h_++ | fuji_400h_- | fuji_800z | fuji_800z_+ | fuji_800z_++ | fuji_800z_- | \
 # fuji_astia_100_generic | fuji_astia_100f | fuji_fp-100c | fuji_fp-100c_+ | fuji_fp-100c_++ | fuji_fp-100c_+++ | \
@@ -1943,91 +1541,93 @@ v : # Allow 'gmic +v' to get the version number.
 # fuji_xtrans_iii_pro_neg_hi | fuji_xtrans_iii_pro_neg_std | fuji_xtrans_iii_provia | fuji_xtrans_iii_sepia | \
 # fuji_xtrans_iii_velvia | fusion_88 | futuristicbleak_1 | futuristicbleak_2 | futuristicbleak_3 | \
 # futuristicbleak_4 | going_for_a_walk | golden | golden_bright | golden_fade | golden_mono | \
-# golden_night_softner_43 | golden_sony_37 | golden_vibrant | goldengate | goldfx_bright_spring_breeze | \
+# golden_night_softner_43 | golden_sony_37 | golden_vibrant | goldengate | goldentime | goldfx_bright_spring_breeze | \
 # goldfx_bright_summer_heat | goldfx_hot_summer_heat | goldfx_perfect_sunset_01min | goldfx_perfect_sunset_05min | \
 # goldfx_perfect_sunset_10min | goldfx_spring_breeze | goldfx_summer_heat | good_morning | green_15 | green_2025 | \
-# green_action | green_afternoon | green_blues | green_conflict | green_day_01 | green_day_02 | green_g_09 | \
-# green_indoor | green_light | green_mono | green_yellow | greenish_contrasty | greenish_fade | greenish_fade_1 | \
-# hackmanite | happyness_133 | hard_teal_orange | harsh_day | harsh_sunset | helios | herderite | heulandite | \
-# hiddenite | highlights_protection | hilutite | hlg_1_1 | hong_kong | horrorblue | howlite | hydracore | hyla_68 | \
-# hypersthene | hypnosis | hypressen | ilford_delta_100 | ilford_delta_3200 | ilford_delta_3200_+ | \
-# ilford_delta_3200_++ | ilford_delta_3200_- | ilford_delta_400 | ilford_fp_4_plus_125 | ilford_hp_5 | \
-# ilford_hp_5_+ | ilford_hp_5_++ | ilford_hp_5_- | ilford_hp_5_plus_400 | ilford_hps_800 | ilford_pan_f_plus_50 | \
-# ilford_xp_2 | indoor_blue | industrial_33 | instantc | justpeachy | k_tone_vintage_kodachrome | kh_1 | kh_10 | \
-# kh_2 | kh_3 | kh_4 | kh_5 | kh_6 | kh_7 | kh_8 | kh_9 | killstreak | kodak_2383_constlclip | kodak_2383_constlmap | \
-# kodak_2383_cuspclip | kodak_2393_constlclip | kodak_2393_constlmap | kodak_2393_cuspclip | kodak_bw_400_cn | \
-# kodak_e-100_gx_ektachrome_100 | kodak_ektachrome_100_vs | kodak_ektachrome_100_vs_generic | kodak_ektar_100 | \
-# kodak_elite_100_xpro | kodak_elite_chrome_200 | kodak_elite_chrome_400 | kodak_elite_color_200 | \
-# kodak_elite_color_400 | kodak_elite_extracolor_100 | kodak_hie_hs_infra | kodak_kodachrome_200 | \
-# kodak_kodachrome_25 | kodak_kodachrome_64 | kodak_kodachrome_64_generic | kodak_portra_160 | kodak_portra_160_+ | \
-# kodak_portra_160_++ | kodak_portra_160_- | kodak_portra_160_nc | kodak_portra_160_nc_+ | kodak_portra_160_nc_++ | \
-# kodak_portra_160_nc_- | kodak_portra_160_vc | kodak_portra_160_vc_+ | kodak_portra_160_vc_++ | \
-# kodak_portra_160_vc_- | kodak_portra_400 | kodak_portra_400_+ | kodak_portra_400_++ | kodak_portra_400_- | \
-# kodak_portra_400_nc | kodak_portra_400_nc_+ | kodak_portra_400_nc_++ | kodak_portra_400_nc_- | \
-# kodak_portra_400_uc | kodak_portra_400_uc_+ | kodak_portra_400_uc_++ | kodak_portra_400_uc_- | \
-# kodak_portra_400_vc | kodak_portra_400_vc_+ | kodak_portra_400_vc_++ | kodak_portra_400_vc_- | kodak_portra_800 | \
-# kodak_portra_800_+ | kodak_portra_800_++ | kodak_portra_800_- | kodak_portra_800_hc | kodak_t-max_100 | \
-# kodak_t-max_3200 | kodak_t-max_400 | kodak_tmax_3200 | kodak_tmax_3200_+ | kodak_tmax_3200_++ | kodak_tmax_3200_- | \
-# kodak_tmax_3200_alt | kodak_tri-x_400 | kodak_tri-x_400_+ | kodak_tri-x_400_++ | kodak_tri-x_400_- | \
-# kodak_tri-x_400_alt | korben_214 | landscape_1 | landscape_10 | landscape_2 | landscape_3 | landscape_4 | \
-# landscape_5 | landscape_6 | landscape_7 | landscape_8 | landscape_9 | lateafternoonwanderlust | latesunset | lc_1 | \
-# lc_10 | lc_2 | lc_3 | lc_4 | lc_5 | lc_6 | lc_7 | lc_8 | lc_9 | lenox_340 | life_giving_tree | light_blown | lomo | \
-# lomography_redscale_100 | lomography_x-pro_slide_200 | low_contrast_blue | low_key_01 | lucky_64 | \
+# green_action | green_afternoon | green_and_orange | green_blues | green_conflict | green_day_01 | green_day_02 | \
+# green_g_09 | green_indoor | green_light | green_mono | green_yellow | greenish_contrasty | greenish_fade | \
+# greenish_fade_1 | gremerta | hackmanite | happyness_133 | hard_teal_orange | harsh_day | harsh_sunset | helios | \
+# herderite | heulandite | hiddenite | highlights_protection | hilutite | hitman | hlg_1_1 | hong_kong | horrorblue | \
+# howlite | hydracore | hyla_68 | hypersthene | hypnosis | hypressen | ilford_delta_100 | ilford_delta_3200 | \
+# ilford_delta_3200_+ | ilford_delta_3200_++ | ilford_delta_3200_- | ilford_delta_400 | ilford_fp_4_plus_125 | \
+# ilford_hp_5 | ilford_hp_5_+ | ilford_hp_5_++ | ilford_hp_5_- | ilford_hp_5_plus_400 | ilford_hps_800 | \
+# ilford_pan_f_plus_50 | ilford_xp_2 | indoor_blue | industrial_33 | instantc | justpeachy | jwick_21 | \
+# k_tone_vintage_kodachrome | kh_1 | kh_10 | kh_2 | kh_3 | kh_4 | kh_5 | kh_6 | kh_7 | kh_8 | kh_9 | killstreak | \
+# kodak_2383_constlclip | kodak_2383_constlmap | kodak_2383_cuspclip | kodak_2393_constlclip | kodak_2393_constlmap | \
+# kodak_2393_cuspclip | kodak_bw_400_cn | kodak_e-100_gx_ektachrome_100 | kodak_ektachrome_100_vs | \
+# kodak_ektachrome_100_vs_generic | kodak_ektar_100 | kodak_elite_100_xpro | kodak_elite_chrome_200 | \
+# kodak_elite_chrome_400 | kodak_elite_color_200 | kodak_elite_color_400 | kodak_elite_extracolor_100 | \
+# kodak_hie_hs_infra | kodak_kodachrome_200 | kodak_kodachrome_25 | kodak_kodachrome_64 | \
+# kodak_kodachrome_64_generic | kodak_portra_160 | kodak_portra_160_+ | kodak_portra_160_++ | kodak_portra_160_- | \
+# kodak_portra_160_nc | kodak_portra_160_nc_+ | kodak_portra_160_nc_++ | kodak_portra_160_nc_- | \
+# kodak_portra_160_vc | kodak_portra_160_vc_+ | kodak_portra_160_vc_++ | kodak_portra_160_vc_- | kodak_portra_400 | \
+# kodak_portra_400_+ | kodak_portra_400_++ | kodak_portra_400_- | kodak_portra_400_nc | kodak_portra_400_nc_+ | \
+# kodak_portra_400_nc_++ | kodak_portra_400_nc_- | kodak_portra_400_uc | kodak_portra_400_uc_+ | \
+# kodak_portra_400_uc_++ | kodak_portra_400_uc_- | kodak_portra_400_vc | kodak_portra_400_vc_+ | \
+# kodak_portra_400_vc_++ | kodak_portra_400_vc_- | kodak_portra_800 | kodak_portra_800_+ | kodak_portra_800_++ | \
+# kodak_portra_800_- | kodak_portra_800_hc | kodak_t-max_100 | kodak_t-max_3200 | kodak_t-max_400 | kodak_tmax_3200 | \
+# kodak_tmax_3200_+ | kodak_tmax_3200_++ | kodak_tmax_3200_- | kodak_tmax_3200_alt | kodak_tri-x_400 | \
+# kodak_tri-x_400_+ | kodak_tri-x_400_++ | kodak_tri-x_400_- | kodak_tri-x_400_alt | korben_214 | landscape_1 | \
+# landscape_10 | landscape_2 | landscape_3 | landscape_4 | landscape_5 | landscape_6 | landscape_7 | landscape_8 | \
+# landscape_9 | lateafternoonwanderlust | latesunset | lc_1 | lc_10 | lc_2 | lc_3 | lc_4 | lc_5 | lc_6 | lc_7 | \
+# lc_8 | lc_9 | lenox_340 | life_giving_tree | light_blown | lomo | lomography_redscale_100 | \
+# lomography_x-pro_slide_200 | london_nights | louetta | low_contrast_blue | low_key_01 | lucky_64 | \
 # lushgreensummer | magenta_day | magenta_day_01 | magenta_dream | magenta_yellow | magentacoffee | matrix | \
-# mckinnon_75 | memories | metropolis | milo_5 | minimalistcaffeination | modern_film | mono_tinted | monochrome_1 | \
-# monochrome_2 | moody_1 | moody_10 | moody_2 | moody_3 | moody_4 | moody_5 | moody_6 | moody_7 | moody_8 | moody_9 | \
-# moonlight | moonlight_01 | moonrise | morning_6 | morroco_16 | mostly_blue | moviz_1 | moviz_10 | moviz_11 | \
-# moviz_12 | moviz_13 | moviz_14 | moviz_15 | moviz_16 | moviz_17 | moviz_18 | moviz_19 | moviz_2 | moviz_20 | \
-# moviz_21 | moviz_22 | moviz_23 | moviz_24 | moviz_25 | moviz_26 | moviz_27 | moviz_28 | moviz_29 | moviz_3 | \
-# moviz_30 | moviz_31 | moviz_32 | moviz_33 | moviz_34 | moviz_35 | moviz_36 | moviz_37 | moviz_38 | moviz_39 | \
-# moviz_4 | moviz_40 | moviz_41 | moviz_42 | moviz_43 | moviz_44 | moviz_45 | moviz_46 | moviz_47 | moviz_48 | \
-# moviz_5 | moviz_6 | moviz_7 | moviz_8 | moviz_9 | mute_shift | muted_01 | muted_fade | mysticpurplesunset | nah | \
-# natural_vivid | nemesis | neon_770 | neutral_teal_orange | neutral_warm_fade | newspaper | night_01 | \
-# night_blade_4 | night_king_141 | night_spy | nightfromday | nostalgiahoney | nostalgic | nw-1 | nw-10 | nw-2 | \
-# nw-3 | nw-4 | nw-5 | nw-6 | nw-7 | nw-8 | nw-9 | old_west | once_upon_a_time | only_red | only_red_and_blue | \
-# operation_yellow | orange_dark_4 | orange_dark_7 | orange_dark_look | orange_tone | orange_underexposed | oranges | \
-# paladin | paladin_1875 | pasadena_21 | passing_by | pink_fade | pitaya_15 | polaroid_664 | polaroid_665 | \
-# polaroid_665_+ | polaroid_665_++ | polaroid_665_- | polaroid_665_-- | polaroid_665_negative | \
-# polaroid_665_negative_+ | polaroid_665_negative_- | polaroid_665_negative_hc | polaroid_667 | polaroid_669 | \
-# polaroid_669_+ | polaroid_669_++ | polaroid_669_+++ | polaroid_669_- | polaroid_669_-- | polaroid_669_cold | \
-# polaroid_669_cold_+ | polaroid_669_cold_- | polaroid_669_cold_-- | polaroid_672 | polaroid_690 | polaroid_690_+ | \
-# polaroid_690_++ | polaroid_690_- | polaroid_690_-- | polaroid_690_cold | polaroid_690_cold_+ | \
-# polaroid_690_cold_++ | polaroid_690_cold_- | polaroid_690_cold_-- | polaroid_690_warm | polaroid_690_warm_+ | \
-# polaroid_690_warm_++ | polaroid_690_warm_- | polaroid_690_warm_-- | polaroid_polachrome | polaroid_px-100uv+_cold | \
-# polaroid_px-100uv+_cold_+ | polaroid_px-100uv+_cold_++ | polaroid_px-100uv+_cold_+++ | polaroid_px-100uv+_cold_- | \
-# polaroid_px-100uv+_cold_-- | polaroid_px-100uv+_warm | polaroid_px-100uv+_warm_+ | polaroid_px-100uv+_warm_++ | \
-# polaroid_px-100uv+_warm_+++ | polaroid_px-100uv+_warm_- | polaroid_px-100uv+_warm_-- | polaroid_px-680 | \
-# polaroid_px-680_+ | polaroid_px-680_++ | polaroid_px-680_- | polaroid_px-680_-- | polaroid_px-680_cold | \
-# polaroid_px-680_cold_+ | polaroid_px-680_cold_++ | polaroid_px-680_cold_++_alt | polaroid_px-680_cold_- | \
-# polaroid_px-680_cold_-- | polaroid_px-680_warm | polaroid_px-680_warm_+ | polaroid_px-680_warm_++ | \
-# polaroid_px-680_warm_- | polaroid_px-680_warm_-- | polaroid_px-70 | polaroid_px-70_+ | polaroid_px-70_++ | \
-# polaroid_px-70_+++ | polaroid_px-70_- | polaroid_px-70_-- | polaroid_px-70_cold | polaroid_px-70_cold_+ | \
-# polaroid_px-70_cold_++ | polaroid_px-70_cold_- | polaroid_px-70_cold_-- | polaroid_px-70_warm | \
-# polaroid_px-70_warm_+ | polaroid_px-70_warm_++ | polaroid_px-70_warm_- | polaroid_px-70_warm_-- | \
-# polaroid_time_zero_expired | polaroid_time_zero_expired_+ | polaroid_time_zero_expired_++ | \
-# polaroid_time_zero_expired_- | polaroid_time_zero_expired_-- | polaroid_time_zero_expired_--- | \
-# polaroid_time_zero_expired_cold | polaroid_time_zero_expired_cold_- | polaroid_time_zero_expired_cold_-- | \
-# polaroid_time_zero_expired_cold_--- | portrait_1 | portrait_10 | portrait_2 | portrait_3 | portrait_4 | \
-# portrait_5 | portrait_6 | portrait_7 | portrait_8 | portrait_9 | progressen | protect_highlights_01 | \
-# prussian_blue | pseudogrey | purple | purple_2 | red_afternoon_01 | red_day_01 | red_dream_01 | redblueyellow | \
-# reds | reds_oranges_yellows | reeve_38 | remy_24 | rest_33 | retro | retro_brown_01 | retro_magenta_01 | \
-# retro_summer_3 | retro_yellow_01 | rollei_ir_400 | rollei_ortho_25 | rollei_retro_100_tonal | rollei_retro_80s | \
-# rotate_muted | rotate_vibrant | rotated | rotated_crush | saturated_blue | saving_private_damon | science_fiction | \
-# serenity | seringe_4 | serpent | seventies_magazine | shadow_king_39 | shine | skin_tones | smart_contrast | \
-# smokey | smooth_clear | smooth_cromeish | smooth_fade | smooth_green_orange | smooth_sailing | smooth_teal_orange | \
-# soft_fade | softwarming | solarized_color | solarized_color_2 | springmorning | sprocket_231 | spy_29 | street | \
-# studio_skin_tone_shaper | subtle_blue | subtle_green | subtle_yellow | summer | summer_alt | sunny | sunny_alt | \
-# sunny_rich | sunny_warm | super_warm | super_warm_rich | sutro_fx | sweet_bubblegum | sweet_gelatto | taiga | \
-# tarraco | teal_fade | teal_moonlight | tealmagentagold | tealorange | tealorange_1 | tealorange_2 | tealorange_3 | \
+# mckinnon_75 | memories | metropolis | milo_5 | minimalistcaffeination | modern_film | mono_tinted | monochrome | \
+# monochrome_1 | monochrome_2 | moody_1 | moody_10 | moody_2 | moody_3 | moody_4 | moody_5 | moody_6 | moody_7 | \
+# moody_8 | moody_9 | moonlight | moonlight_01 | moonrise | morning_6 | morroco_16 | mostly_blue | moviz_1 | \
+# moviz_10 | moviz_11 | moviz_12 | moviz_13 | moviz_14 | moviz_15 | moviz_16 | moviz_17 | moviz_18 | moviz_19 | \
+# moviz_2 | moviz_20 | moviz_21 | moviz_22 | moviz_23 | moviz_24 | moviz_25 | moviz_26 | moviz_27 | moviz_28 | \
+# moviz_29 | moviz_3 | moviz_30 | moviz_31 | moviz_32 | moviz_33 | moviz_34 | moviz_35 | moviz_36 | moviz_37 | \
+# moviz_38 | moviz_39 | moviz_4 | moviz_40 | moviz_41 | moviz_42 | moviz_43 | moviz_44 | moviz_45 | moviz_46 | \
+# moviz_47 | moviz_48 | moviz_5 | moviz_6 | moviz_7 | moviz_8 | moviz_9 | mute_shift | muted_01 | muted_fade | \
+# mysticpurplesunset | nah | natural_vivid | nemesis | neon_770 | neutral_teal_orange | neutral_warm_fade | \
+# newspaper | night_01 | night_blade_4 | night_king_141 | night_spy | nightfromday | nightlife | nostalgiahoney | \
+# nostalgic | nw-1 | nw-10 | nw-2 | nw-3 | nw-4 | nw-5 | nw-6 | nw-7 | nw-8 | nw-9 | old_west | once_upon_a_time | \
+# only_red | only_red_and_blue | operation_yellow | orange_dark_4 | orange_dark_7 | orange_dark_look | orange_tone | \
+# orange_underexposed | oranges | paladin | paladin_1875 | pasadena_21 | passing_by | pink_fade | pitaya_15 | \
+# polaroid_664 | polaroid_665 | polaroid_665_+ | polaroid_665_++ | polaroid_665_- | polaroid_665_-- | \
+# polaroid_665_negative | polaroid_665_negative_+ | polaroid_665_negative_- | polaroid_665_negative_hc | \
+# polaroid_667 | polaroid_669 | polaroid_669_+ | polaroid_669_++ | polaroid_669_+++ | polaroid_669_- | \
+# polaroid_669_-- | polaroid_669_cold | polaroid_669_cold_+ | polaroid_669_cold_- | polaroid_669_cold_-- | \
+# polaroid_672 | polaroid_690 | polaroid_690_+ | polaroid_690_++ | polaroid_690_- | polaroid_690_-- | \
+# polaroid_690_cold | polaroid_690_cold_+ | polaroid_690_cold_++ | polaroid_690_cold_- | polaroid_690_cold_-- | \
+# polaroid_690_warm | polaroid_690_warm_+ | polaroid_690_warm_++ | polaroid_690_warm_- | polaroid_690_warm_-- | \
+# polaroid_polachrome | polaroid_px-100uv+_cold | polaroid_px-100uv+_cold_+ | polaroid_px-100uv+_cold_++ | \
+# polaroid_px-100uv+_cold_+++ | polaroid_px-100uv+_cold_- | polaroid_px-100uv+_cold_-- | polaroid_px-100uv+_warm | \
+# polaroid_px-100uv+_warm_+ | polaroid_px-100uv+_warm_++ | polaroid_px-100uv+_warm_+++ | polaroid_px-100uv+_warm_- | \
+# polaroid_px-100uv+_warm_-- | polaroid_px-680 | polaroid_px-680_+ | polaroid_px-680_++ | polaroid_px-680_- | \
+# polaroid_px-680_-- | polaroid_px-680_cold | polaroid_px-680_cold_+ | polaroid_px-680_cold_++ | \
+# polaroid_px-680_cold_++_alt | polaroid_px-680_cold_- | polaroid_px-680_cold_-- | polaroid_px-680_warm | \
+# polaroid_px-680_warm_+ | polaroid_px-680_warm_++ | polaroid_px-680_warm_- | polaroid_px-680_warm_-- | \
+# polaroid_px-70 | polaroid_px-70_+ | polaroid_px-70_++ | polaroid_px-70_+++ | polaroid_px-70_- | polaroid_px-70_-- | \
+# polaroid_px-70_cold | polaroid_px-70_cold_+ | polaroid_px-70_cold_++ | polaroid_px-70_cold_- | \
+# polaroid_px-70_cold_-- | polaroid_px-70_warm | polaroid_px-70_warm_+ | polaroid_px-70_warm_++ | \
+# polaroid_px-70_warm_- | polaroid_px-70_warm_-- | polaroid_time_zero_expired | polaroid_time_zero_expired_+ | \
+# polaroid_time_zero_expired_++ | polaroid_time_zero_expired_- | polaroid_time_zero_expired_-- | \
+# polaroid_time_zero_expired_--- | polaroid_time_zero_expired_cold | polaroid_time_zero_expired_cold_- | \
+# polaroid_time_zero_expired_cold_-- | polaroid_time_zero_expired_cold_--- | portrait_1 | portrait_10 | portrait_2 | \
+# portrait_3 | portrait_4 | portrait_5 | portrait_6 | portrait_7 | portrait_8 | portrait_9 | progressen | \
+# protect_highlights_01 | prussian_blue | pseudogrey | purple | purple_2 | red_afternoon_01 | red_day_01 | \
+# red_dream_01 | redblueyellow | reds | reds_oranges_yellows | reeve_38 | remy_24 | rest_33 | retro | \
+# retro_brown_01 | retro_magenta_01 | retro_summer_3 | retro_yellow_01 | rollei_ir_400 | rollei_ortho_25 | \
+# rollei_retro_100_tonal | rollei_retro_80s | rotate_muted | rotate_vibrant | rotated | rotated_crush | \
+# saturated_blue | saving_private_damon | science_fiction | serenity | seringe_4 | serpent | seventies_magazine | \
+# sevsuz | shadow_king_39 | shine | skin_tones | smart_contrast | smokey | smooth_clear | smooth_cromeish | \
+# smooth_fade | smooth_green_orange | smooth_sailing | smooth_teal_orange | soft_fade | softwarming | \
+# solarized_color | solarized_color_2 | springmorning | sprocket_231 | spy_29 | street | studio_skin_tone_shaper | \
+# subtle_blue | subtle_green | subtle_yellow | summer | summer_alt | sunlightlove | sunny | sunny_alt | sunny_rich | \
+# sunny_warm | super_warm | super_warm_rich | sutro_fx | sweet_bubblegum | sweet_gelatto | taiga | tarraco | \
+# teal_fade | teal_moonlight | tealmagentagold | tealorange | tealorange_1 | tealorange_2 | tealorange_3 | \
 # technicalfx_backlight_filter | teigen_28 | tensiongreen_1 | tensiongreen_2 | tensiongreen_3 | tensiongreen_4 | \
 # terra_4 | the_matrices | thriller_2 | toastedgarden | trent_18 | true_colors_8 | turkiest_42 | tweed_71 | \
 # ultra_water | undeniable | undeniable_2 | unknown | urban_cowboy | uzbek_bukhara | uzbek_marriage | \
-# uzbek_samarcande | velvetia | very_warm_greenish | vibrant | vibrant_alien | vibrant_contrast | vibrant_cromeish | \
-# victory | vintage | vintage_163 | vintage_alt | vintage_brighter | vintage_chrome | vintage_warmth_1 | vireo_37 | \
-# warm | warm_dark_contrasty | warm_fade | warm_fade_1 | warm_highlight | warm_neutral | warm_sunset_red | \
-# warm_teal | warm_vintage | warm_yellow | well_see | whiter_whites | winterlighthouse | wipe | wooden_gold_20 | \
-# yellow_55b | yellow_film_01 | yellowstone | you_can_do_it | zed_32 | zeke_39 | zilverfx_bw_solarization | \
-# zilverfx_infrared | zilverfx_vintage_bw }
+# uzbek_samarcande | velvetia | very_warm_greenish | vfb_21 | vibrant | vibrant_alien | vibrant_contrast | \
+# vibrant_cromeish | victory | vintage | vintage_163 | vintage_alt | vintage_brighter | vintage_chrome | \
+# vintage_mob | vintage_warmth_1 | vireo_37 | warm | warm_dark_contrasty | warm_fade | warm_fade_1 | warm_highlight | \
+# warm_neutral | warm_sunset_red | warm_teal | warm_vintage | warm_yellow | well_see | western | westernlut_2 | \
+# whiter_whites | winterlighthouse | wipe | wooden_gold_20 | yellow_55b | yellow_film_01 | yellowstone | \
+# you_can_do_it | zed_32 | zeke_39 | zilverfx_bw_solarization | zilverfx_infrared | zilverfx_vintage_bw }
 #@cli : Default values: 'resolution=33' and 'cut_and_round=1'.
 #@cli : $ clut summer clut alien_green,17 clut orange_dark4,48
 clut : check "isnum(${2=33}) && $2>0 && isbool(${3=1})"
@@ -2224,7 +1824,7 @@ clean_cluts :
 
   doc=${doc}"\n"\
       "#@cli : Default values: 'resolution=33' and 'cut_and_round=1'.\n"\
-      "#@cli : $ clut summer\n"
+      "#@cli : $ clut summer clut alien_green,17 clut orange_dark4,48\n"
   e[] "\n"$doc
 
 #@cli m : eq. to 'command'. : (+)
@@ -2728,7 +2328,10 @@ _display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
         rmn view
       elif !($mb&1)
         if narg($xsel0)
-          if [$xsel0,$ysel0]==[$xsel1,$ysel1] # One px selection -> reset view or exit.
+
+          if "p0 = ["$xsel0,$ysel0]"; p1 = ["$xsel1,$ysel1"];  # One px selection -> reset view or exit.
+              siz = max("$sizx,$sizy");
+              p0==p1 || (siz>128 && norm1(p1-p0)<=siz/100)"
             if $1" && "$nsizx>=w#0" && "$nsizy>=h#0 break fi
             nposx,nposy,nsizx,nsizy={0,[0,0,w,h]}
           else # Otherwise, zoom in
@@ -3319,6 +2922,7 @@ dc :
 
 #@cli display_camera
 #@cli : Open camera viewer.
+#@cli : This command works only for G'MIC versions that have been compiled with OpenCV support.
 display_camera :
   v + _$0
 
@@ -3878,38 +3482,6 @@ function1d : check "${1=1}>=0 && $1<=1" skip ${2=0},${3=0}
   100%,1,1,1,1
   (0,{w-1}) r. {-2,w},1,1,1,3 round.
   +sqr. +*[-2,-1] a[-4--1] c *[-2,-1] s. c +[-4--1] rm..
-  endl
-
-#@cli funny_oneliners
-#@cli : This commands shows examples of funny oneliners that produce cool results!
-#@cli : $ 729,729,1,3,"c(x,y,l) = (S = round(w/3^l); (int(x/S)%3)*(int(y/S)%3)==1?255:l<6?c(x,y,l + 1):0); c(x,y,1)" \
-# nm "Sierpinski Carpet"
-#@cli : $ 1024,1024,1,1,">x>y?0:y<2?1:xor(j(0,-1),j(-1,-1))" f. "255*j(-w/2+y/2,0)" nm "Sierpinksi Triangle"
-#@cli : $ 500,500 repeat 10 +noise_poissondisk[0] {3+$>} done rm[0] a z \
-# f "!z?(R=cut(norm(x-w/2,y-h/2)/20,0,d-1);i(x,y,R)):0" slices 0 to_rgb f "max(I)?u([255,255,255]):I" blur_radial 0.6% \
-# equalize n 0,255 nm "Light Speed"
-#@cli : $ 100000,1,1,1,0.6180339887498948482*x round f i-j[-1] (1,-1) * cumulate mod 4 + 1 +f arg(i,1,1,-1,-1) \
-# f.. arg(i,-1,1,1,-1) cumulate -[0] {0,im} -[1] {1,im} a y pointcloud 0 b 1 nm "Fibonacci Word, by James Prichard"
-#@cli : $ 1000,1000,1,1,f(x,y,l)=l?f(max(x,y)%3,abs(min(x,y))*3,l-1):x;f(x/w-.7,y/w,6) \
-# nm "Recursive macro, by James Prichard"
-funny_oneliners :
-  l[]
-    729,729,1,3,"c(x,y,l) = (S = round(w/3^l); (int(x/S)%3)*(int(y/S)%3)==1?255:l<6?c(x,y,l + 1):0); c(x,y,1)"
-    nm "Sierpinski Carpet"
-  endl
-  l[]
-    1024,1024,1,1,">x>y?0:y<2?1:xor(j(0,-1),j(-1,-1))" f. "255*j(-w/2+y/2,0)"
-    nm "Sierpinksi Triangle"
-  endl
-  l[]
-    500,500 repeat 10 +noise_poissondisk[0] {3+$>} done rm[0] a z f "!z?(R=cut(norm(x-w/2,y-h/2)/20,0,d-1);i(x,y,R)):0"
-    slices 0 to_rgb f "max(I)?u([255,255,255]):I" blur_radial 0.6% equalize n 0,255
-    nm "Light Speed"
-  endl
-  l[]
-    100000,1,1,1,0.6180339887498948482*x round f i-j[-1] (1,-1) * cumulate mod 4 + 1 +f arg(i,1,1,-1,-1)
-    f.. arg(i,-1,1,1,-1) cumulate -[0] {0,im} -[1] {1,im} a y pointcloud 0 b 1
-    nm "Fibonacci Word, by James Prichard"
   endl
 
 #@cli i : eq. to 'input'. : (+)
@@ -4585,7 +4157,7 @@ parse_cli_ascii :
           +e[] "      "${_vt100_i}"Shortcut for command '"$_vt100_m$_vt100_b$eqto$_vt100_n"'."
         else
           eqto=
-          l. gmd_strcut_ascii 100,1 if $!>1 i[1--2] ('"\\\\\n       "':y) a y fi endl
+          l. _gmd_ascii 90,1 if $!>1 i[1--2] ('"\\\\\n       "':y) a y fi endl
           str="      "{t}${"if "$<" u \" |\" else u \"\" fi"}
           +e[] ${_vt100_c}$str$_vt100_n
         fi
@@ -4609,14 +4181,14 @@ parse_cli_ascii :
             i[0] ('$_vt100_b':y) i[2] ('$_vt100_n':y)
           fi
           a y
-          gmd_strcut_ascii 100,1 gmd_mono_ascii
+          gmd2ascii
           if $!>1 i[1--2] ('"\n      "':y) a y fi autocrop {'\n'}
           +e[] "\n    "{/{t}} nl=
         fi
       elif i==_'$'" && "i[1]!=_'$' # Found example description
         if !0$_no_examples
           rows 1,100% autocrop {'" "'}
-          gmd_strcut_ascii 90,1
+          _gmd_ascii 90,1
           if $!>1 i[1--2] ('"\\\\\n      "':y) a y fi autocrop {'\n'}
           example={/{t}}
           n_example+=1
@@ -4642,25 +4214,7 @@ parse_cli_ascii :
   endl done rm u $eqto
 
 parse_cli_text_ascii :
-  s -,{'\n'}
-  gmd_list_ascii
-  gmd_image_ascii
-  s +,{'\n'}
-  gmd_code_ascii
-  gmd_command_ascii
-  gmd_strcut_ascii 100,0
-  gmd_gmic_ascii
-  gmd_bold_ascii
-  gmd_italic_ascii
-  gmd_mono_ascii
-  gmd_monobold_ascii
-  gmd_braces_ascii
-  gmd_link_ascii
-  gmd_url_ascii
-  gmd_section_ascii
-#  gmd_newline_ascii
-  i[^] ({'\n'})
-  a y autocrop {'\n'}
+  gmd2ascii
 
   # Ensure output text contains no more than two consecutive newlines.
   # Also add a 4-chars left margin on each line.
@@ -4829,7 +4383,7 @@ parse_cli_html :
       fi
       if ['$name']=='index' url_name=_index.html else url_name=$name.html fi
       if $is_builtin
-        html.="        <td><a href=\""$url_name"#top\"><span class=\"gmd_monobold\" >"$name"</span></a></td>"\n
+        html.="        <td><a href=\""$url_name"#top\"><span class=\"gmd_monospace\" >"$name"</span></a></td>"\n
       else
         html.="        <td><a href=\""$url_name"#top\">"$name"</a></td>"\n
       fi
@@ -4846,8 +4400,9 @@ parse_cli_html :
   # Add 'Shortcuts' category.
   html.="\n    <h1 class=\"ref_h1\"><a id=\"shortcuts\"></a>Command Shortcuts:</h1>"\n\
         "    <table class=\"ref_table_shortcuts\">"\n\
-        "      <tr style=\"background-color: lightsalmon;\"><td><b>Shortcut name</b></td><td>"\
+        "      <tr style=\"background-color: \#d8dcea;\"><td><b>Shortcut name</b></td><td>"\
         "<b>Equivalent command name</b></td></tr>"\n
+
   repeat $! if s=['{$>,n}'];s[0]==_'_' continue fi l[$>]
     ('{n}') l. s -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm endl
     if ${parse_cli_is_eqto.}
@@ -4856,7 +4411,7 @@ parse_cli_html :
       ('$name') replace_str. ">","&gt;" replace_str. "<","&lt;" html_name={t} rm.
       html.="      <tr><td><a href=\""$eqto.html"#top\"><b>"$html_name"</b></a></td>"
       if $is_builtin
-        html.="<td><a href=\""$eqto.html"#top\"><span class=\"gmd_monobold\">"$eqto"</span></a></td>"
+        html.="<td><a href=\""$eqto.html"#top\"><span class=\"gmd_monospace\">"$eqto"</span></a></td>"
       else
         html.="<td><a href=\""$eqto.html"#top\">"$eqto"</a></td>"
       fi
@@ -4973,7 +4528,7 @@ parse_cli_html :
         if $!>1 or="&nbsp;&nbsp;&nbsp; or" else or= fi
         repeat $! l[$>]
           if !$< or= fi
-          html.="        <li><span class=\"gmd_monobold\">"{t}"</span>"$or"</li>"\n
+          html.="        <li><span class=\"gmd_monospace\">"{t}"</span>"$or"</li>"\n
         endl done
         html.="      </ul>"\n
       else
@@ -5011,7 +4566,7 @@ parse_cli_html :
           shortcut="(unknown)"
           rm
         endl
-        html.="      <p>(<em>equivalent to shortcut command</em> <span class=\"gmd_monobold\">"$shortcut\
+        html.="      <p>(<em>equivalent to shortcut command</em> <span class=\"gmd_monospace\">"$shortcut\
               "</span>).</p>"\n
 
       elif "find(#0,'See also:')>=0"
@@ -5023,7 +4578,7 @@ parse_cli_html :
           rm[0,1]
         fi
         a y
-        gmd2html
+        gmd2html 0
         html.="      "{t}\n
 
       elif "find(#0,'Default value:')>=0 || find(#0,'Default values:')>=0"
@@ -5035,7 +4590,7 @@ parse_cli_html :
           rm[0,1]
         fi
         a y
-        gmd_mono_html
+        gmd2html 0
         html.="<p style=\"word-wrap:break-word\">"{t}"</p>"\n
 
       elif i==_'$'" && "i[1]!=_'$'
@@ -5053,7 +4608,7 @@ parse_cli_html :
            if !$is_tutorial_tag html.="<tutorial_tag>" is_tutorial_tag=1 fi
            html.="\n      <h2>Example"${"if "$nb_examples">1 u s else u \"\" fi"}" of use:</h2>"\n fi
         if $nb_examples!=1 html.="      <h3>&bull;&nbsp;Example \#"$n_example"</h3>"\n fi
-        html.="      <div class=\"gmd_code\">$ gmic "$example"</div>"\n
+        html.="      <div class=\"gmd_code_block\">$ gmic "$example"</div>"\n
 
         if 0$_pdf_output html.="<div style=\"text-align: center;\">"\n fi
         if isfile('img/f_$basename') # Single output image
@@ -5096,7 +4651,7 @@ parse_cli_html :
         # Other kind of description line
         +autocrop {"' '"} is_list={isin(i,_'*',_'-',_'.')} rm.
         ('\n') a y
-        gmd2html
+        gmd2html 0
         if $line==1" && "!$is_list html.="      <br/>"\n fi
         html.={t}
         if i[-1,2]!=_'\n' html.="\n" fi
@@ -5283,6 +4838,814 @@ parse_cli_trigger_print :
       inrange(find(nm,str),0,arobace - 1)?y:-1"
     discard. -1 k[{^}]
   fi
+
+#@cli parse_gmd
+#@cli : Parse and tokenize selected images, viewed as text strings formatted with the G'MIC markdown syntax.
+parse_gmd :
+  e[^-1] "Parse and tokenize images$? viewed as text strings formatted with the G\47MIC markdown syntax."
+  y 1 a[^-1] .,y rm.
+  eval[^] ">"${-_gmd_tokens}"
+    begin(
+      section = subsection = subsubsection = subsubsubsection =
+      bullet = subbullet = subsubbullet = center = code_block =
+      bold_italic_a = bold_italic_u = bold_a = bold_u = italic_a = italic_u = strikethrough = underline = monospace =
+      value_set = word_highlight = url = page_link = text_link1 = text_link2 = img1 = img2 = pipeline = -1;
+      opening_offset = -1;
+
+      blank(c) = isin(c,_' ',_'\n',0);
+      semiblank(c) = isin(c,_' ',_'\n',_'.',_',',_';',_':',_'!',_'?',_')',_'(',0);
+      newline(c) = isin(c,_'\n',0);
+      reset(c) = (#c = -1);
+      res = crop();
+    );
+
+    pc = j[-1]; c = i; nc = j[1]; ac = j[2];
+    ym1 = y - 1; y1 = y + 1; y2 = y + 2;
+    linestart = newline(pc);
+    non_escaped = (pc!=_'\\');
+
+    # Manage document layout.
+    #------------------------
+
+    # Section: '# Section name'.
+    linestart && c==_'#' && nc==_' '?( # Opening
+      section = y;
+    ):
+    section>=0 && newline(c)?( # Closing
+      opening_offset = section;
+      res[section++] = s_section; res[section] = 0;
+      res[y] = e_section;
+      for (p = opening_offset - 1, p>=0 && res[p]==_'\n', res[p--] = 0); # Discard newlines preceding
+      for (p = y1, p<size(res) && res[p]==_'\n', res[p++] = 0); # Discard newlines following
+    ):
+
+    # Subsection: '## Subsection name'.
+    linestart && c==_'#' && nc==c && ac==_' '?( # Opening
+      subsection = y;
+    ):
+    subsection>=0 && newline(c)?( # Closing
+      opening_offset = subsection;
+      res[subsection++] = s_subsection; copy(res[subsection],0,2,1,0);
+      res[y] = e_subsection;
+      for (p = opening_offset - 1, p>=0 && res[p]==_'\n', res[p--] = 0); # Discard newlines preceding
+      for (p = y1, p<size(res) && res[p]==_'\n', res[p] = 0); # Discard newlines following
+    ):
+
+    # Subsubsection: '### Subsubsection name'.
+    linestart && c==_'#' && nc==c && ac==c && j[3]==_' '?( # Opening
+      subsubsection = y;
+    ):
+    subsubsection>=0 && newline(c)?( # Closing
+      opening_offset = subsubsection;
+      res[subsubsection++] = s_subsubsection; copy(res[subsubsection],0,3,1,0);
+      res[y] = e_subsubsection;
+      for (p = opening_offset - 1, p>=0 && res[p]==_'\n', res[p--] = 0); # Discard newlines preceding
+      for (p = y1, p<size(res) && res[p]==_'\n', res[p] = 0); # Discard newlines following
+    ):
+
+    # Subsubsubsection: '#### Subsubsubsection name'.
+    linestart && c==_'#' && nc==c && ac==c && j[3]==c && j[4]==_' '?( # Opening
+      subsubsubsection = y;
+    ):
+    subsubsubsection>=0 && newline(c)?( # Closing
+      opening_offset = subsubsubsection;
+      res[subsubsubsection++] = s_subsubsubsection; copy(res[subsubsubsection],0,4,1,0);
+      res[y] = e_subsubsubsection;
+      for (p = opening_offset - 1, p>=0 && res[p]==_'\n', res[p--] = 0); # Discard newlines preceding
+      for (p = y1, p<size(res) && res[p]==_'\n', res[p] = 0); # Discard newlines following
+    ):
+
+    # List bullet: '* List item'.
+    linestart && isin(c,_'-',_'*',_'+') && nc==_' ' && bullet<0?( # Opening
+      bullet = y;
+    ):
+    bullet>=0 && newline(c)?( # Closing
+      opening_offset = bullet;
+      res[bullet++] = s_bullet; res[bullet] = 0;
+      res[y] = e_bullet;
+    ):
+
+    # Sublist bullet: '  * Sub-list item'.
+    linestart && c==_' ' && nc==_' ' && isin(ac,_'-',_'*',_'+') && j[3]==_' ' && subbullet<0?( # Opening
+      subbullet = y;
+    ):
+    subbullet>=0 && newline(c)?( # Closing
+      opening_offset = subbullet;
+      res[subbullet++] = s_subbullet; copy(res[subbullet],0,2,1,0);
+      res[y] = e_subbullet;
+    ):
+
+    # Subsublist bullet: '    * Subsub-list item'.
+    linestart && c==_' ' && nc==_' ' && ac==_' ' && j[3]==_' ' && isin(j[4],_'-',_'*',_'+') && j[5]==_' ' &&
+      subsubbullet<0?( # Opening
+      subsubbullet = y;
+    ):
+    subsubbullet>=0 && newline(c)?( # Closing
+      opening_offset = subsubbullet;
+      res[subsubbullet++] = s_subsubbullet; copy(res[subsubbullet],0,4,1,0);
+      res[y] = e_subsubbullet;
+    ):
+
+    # Center: '\n===\n Centered text\n===\n'.
+    linestart && c==_'=' && nc==c && ac==c && newline(j[3])?(
+      center<0?( # Opening
+        center = y;
+      ):
+      center>=0 && y>center + 3?( # Closing
+        opening_offset = center;
+        res[center++] = s_center; copy(res[center],0,3,1,0); center+=3;
+        res[ym1] = e_center; copy(res[y],0,4,1,0);
+      );
+    ):
+
+    # Code block: '\n~~~\n Code block\n~~~\n'.
+    linestart && isin(c,_'~','`') && nc==c && ac==c && newline(j[3])?(
+      code_block<0?( # Opening
+        code_block = y;
+      ):
+      code_block>=0 && y>code_block + 3?( # Closing
+        opening_offset = code_block;
+        res[code_block++] = s_code_block; copy(res[code_block],0,3,1,0); code_block+=3;
+        copy(res[code_block],i[code_block],y - code_block); # Cancel tokens found inside
+        for (p = code_block, p<y, ++p, res[p]==_' '?(res[p] = s_whitespace)); # Keep leading whitespaces.
+        res[ym1] = e_code_block; copy(res[y],0,4,1,0);
+      );
+    ):
+
+    # Horizontal rule: '---'.
+    linestart && isin(c,_'-','_','*') && nc==c && ac==c && newline(j[3])?(
+      res[y] = s_hrule;
+      copy(res[y1],0,3,1,0);
+    ):
+
+    # Manage text style.
+    #-------------------
+
+    # Bold italic (asterisk): '***bold italic text***'.
+    non_escaped && c==_'*' && nc==c && ac==c?( # Opening
+      bold_italic_a<0?(
+        bold_italic_a = y;
+      ):
+      bold_italic_a>=0 && y>bold_italic_a + 3 && j[3]!=_'*'?( # Closing
+        opening_offset = bold_italic_a;
+        res[bold_italic_a++] = s_bold_italic_a; res[bold_italic_a++] = 0; res[bold_italic_a] = 0;
+        res[y] = e_bold_italic_a; res[y1] = res[y2] = 0;
+      );
+    ):
+
+    # Bold italic (underscore): '___bold italic text___'.
+    non_escaped && c==_'_' && nc==c && ac==c?(
+      bold_italic_u<0 && semiblank(pc)?( # Opening
+        bold_italic_u = y;
+      ):
+      bold_italic_u>=0 && y>bold_italic_u + 3 && semiblank(j[3])?( # Closing
+        opening_offset = bold_italic_u;
+        res[bold_italic_u++] = s_bold_italic_u; res[bold_italic_u++] = 0; res[bold_italic_u] = 0;
+        res[y] = e_bold_italic_u; res[y1] = res[y2] = 0;
+      );
+    ):
+
+    # Bold (asterisk): '**bold text**'.
+    non_escaped && c==_'*' && nc==c?( # Opening
+      bold_a<0?(
+        bold_a = y;
+      ):
+      bold_a>=0 && y>bold_a + 2 && ac!=_'*'?( # Closing
+        opening_offset = bold_a;
+        res[bold_a++] = s_bold_a; res[bold_a] = 0;
+        res[y] = e_bold_a; res[y1] = 0;
+      );
+    ):
+
+    # Bold (underscore): '__bold text__'.
+    non_escaped && c==_'_' && nc==c?(
+      bold_u<0 && semiblank(pc)?( # Opening
+        bold_u = y;
+      ):
+      bold_u>=0 && y>bold_u + 2 && semiblank(ac)?( # Closing
+        opening_offset = bold_u;
+        res[bold_u++] = s_bold_u; res[bold_u] = 0;
+        res[y] = e_bold_u; res[y1] = 0;
+      );
+    ):
+
+    # Italic (asterisk): '*italic text*'.
+    non_escaped && c==_'*' && pc!=c?( # Opening
+      italic_a<0?(
+        italic_a = y;
+      ):
+      italic_a>=0 && y>italic_a + 1 && ac!=_'*'?( # Closing
+        opening_offset = italic_a;
+        res[italic_a] = s_italic_a;
+        res[y] = e_italic_a;
+      );
+    ):
+
+    # Italic (underscore): '_italic text_'.
+    non_escaped && c==_'_' && pc!=c?(
+      italic_u<0 && semiblank(pc)?( # Opening
+        italic_u = y
+      ):
+      italic_u>=0 && y>italic_u + 1 && semiblank(nc)?( # Closing
+        opening_offset = italic_u;
+        res[italic_u] = s_italic_u;
+        res[y] = e_italic_u;
+      );
+    ):
+
+    # Strikethrough: '~~strikethrough text~~'.
+    non_escaped && c==_'~' && nc==c && pc!=c?( # Opening
+      strikethrough<0?(
+        strikethrough = y;
+      ):
+      strikethrough>=0 && y>strikethrough + 2?( # Closing
+        opening_offset = strikethrough;
+        res[strikethrough++] = s_strikethrough; res[strikethrough] = 0;
+        res[y] = e_strikethrough; res[y1] = 0;
+      );
+    ):
+
+    # Underline: '==strikethrough text=='.
+    non_escaped && c==_'=' && nc==c && pc!=c?( # Opening
+      underline<0?(
+        underline = y;
+      ):
+      underline>=0 && y>underline + 2?( # Closing
+        opening_offset = underline;
+        res[underline++] = s_underline; res[underline] = 0;
+        res[y] = e_underline; res[y1] = 0;
+      );
+    ):
+
+    # Monospace: '`monospace text`'.
+    non_escaped && c==_'`'?(
+      monospace<0?( # Opening
+        monospace = y;
+      ):
+      monospace>=0 && y>monospace + 1?( # Closing
+        opening_offset = monospace;
+        res[monospace++] = s_monospace;
+        copy(res[monospace],i[monospace],y - monospace); # Cancel tokens found inside
+        for (p = monospace, p<y, ++p, res[p]==_' '?(res[p] = s_whitespace)); # Keep leading whitespaces.
+        res[y] = e_monospace;
+      );
+    ):
+
+    # Value Set: '{ value1 | value2 | value3 }'.
+    non_escaped && c==_'{' && value_set<0 && semiblank(pc)?( # Opening
+      value_set = y;
+    ):
+    non_escaped && c==_'}' && value_set>=0 && y>value_set + 1 && semiblank(nc)?( # Closing
+      opening_offset = value_set;
+      res[value_set++] = s_value_set;
+      copy(res[value_set],i[value_set],y - value_set); # Cancel tokens found inside
+      res[y] = e_value_set;
+    ):
+
+    # Word highlight: ' 'word_highlight' '.
+    non_escaped && c=='\'' && nc!=c?(
+      word_highlight<0 && semiblank(pc)?( # Opening
+        word_highlight = y;
+      ):
+      word_highlight>=0 && y>word_highlight + 1 && semiblank(nc)?( # Closing
+        opening_offset = word_highlight;
+        res[word_highlight++] = s_word_highlight;
+        copy(res[word_highlight],i[word_highlight],y - word_highlight); # Cancel tokens found inside
+        res[y] = e_word_highlight;
+      );
+    ):
+
+    # URL: '<https://url.com>'.
+    non_escaped && c==_'<' && url<0 && crop(0,y1,1,4)=='http'?( # Opening
+      url = y;
+    ):
+    non_escaped && c==_'>' && url>=0 && y>url + 1?( # Closing
+      opening_offset = url;
+      res[url++] = s_url;
+      copy(res[url],i[url],y - url); # Cancel tokens found inside
+      res[y] = e_url;
+    ):
+
+    # Page link (command or reference): ' ''command or page name'' ' (not a URL!).
+    non_escaped && c==_'\'' && nc==c?(
+      page_link<0 && semiblank(pc)?( # Opening
+        page_link = y;
+      ):
+      page_link>=0 && y>page_link + 2 && semiblank(ac)?( # Closing
+        opening_offset = page_link;
+        res[page_link++] = s_page_link; res[page_link++] = 0;
+        copy(res[page_link],i[page_link],y - page_link); # Cancel tokens found inside
+        res[y] = e_page_link; res[y1] = 0;
+      );
+    ):
+
+    # Text link: '[link text](https://url.com)'.
+    non_escaped && c==_'[' && text_link1<0 && text_link2<0 && img1<0?( # Opening
+      text_link1 = y;
+    ):
+    non_escaped && c==_']' && nc==_'(' && text_link1>=0 && text_link2<0 && img1<0?( # Middle
+      text_link2 = y;
+    ):
+    non_escaped && c==_')' && text_link2>=0 && img1<0?( # Closing
+      opening_offset = text_link1;
+      res[text_link1] = s_text_link;
+      res[text_link2++] = m_text_link; res[text_link2++] = 0;
+      copy(res[text_link2],i[text_link2],y - text_link2); # Cancel tokens found inside
+      res[y] = e_text_link;
+    ):
+
+    # Image: '![alt caption](https://url.com/image.png)'.
+    non_escaped && c==_'!' && nc==_'[' && img1<0 && img2<0?( # Opening
+      img1 = y;
+    ):
+    non_escaped && c==_']' && nc==_'(' && img1>=0 && img2<0?( # Middle
+      img2 = y;
+    ):
+    non_escaped && c==_')' && img2>=0?( # Closing
+      opening_offset = img1;
+      res[img1++] = s_img; res[img1++] = 0;
+      res[img2++] = m_img; res[img2++] = 0;
+      copy(res[img1],i[img1],img2 - img1 - 2); copy(res[img2],i[img2],y - img2); # Cancel tokens found inside
+      res[y] = e_img;
+    ):
+
+    # G'MIC pipeline (image): '%% G'MIC pipeline %%'.
+    non_escaped && c==_'%' && nc==c?(
+      pipeline<0 && semiblank(pc)?( # Opening
+        pipeline = y;
+      ):
+      pipeline>=0 && y>pipeline + 3 && semiblank(ac)?( # Closing
+        opening_offset = pipeline;
+        res[pipeline++] = s_pipeline; res[pipeline++] = 0;
+        copy(res[pipeline],i[pipeline],y - pipeline); # Cancel tokens found inside
+        while (blank(i[pipeline]), res[pipeline++] = 0); # Discard leading blanks
+        for (p = ym1, blank(res[p]), res[p--] = 0); # Discard trailing blanks
+        res[y] = e_pipeline; res[y1] = 0;
+      );
+    ):
+
+    # G'MIC word: 'G'MIC'.
+    semiblank(pc) && c==_'G' && nc==_'\'' && ac==_'M' && j[3]==_'I' && j[4]==_'C' && semiblank(j[5])?(
+      res[y] = s_gmic;
+      copy(res[y1],0,3,1,0);
+      res[y + 4] = e_gmic;
+    ):
+
+    # Escaped character.
+    !non_escaped && isin(c,_'\\',_'`',_'*',_'_',_'{',_'}',_'[',_']',_'<',_'>',_'(',_')',_'#',_'+',_'-',_'.',_'!')?(
+      res[ym1] = 0;
+    ):
+
+    # Whitespaces.
+    c==_' '?(
+
+      # Keep consecutive whitespaces.
+      c==_' ' && (linestart || pc==c)?(
+        res[y] = s_whitespace;
+      );
+
+      # Reset tokens that cannot contain whitespace.
+      reset(word_highlight);
+      reset(url);
+      text_link2>=0?(reset(text_link1); reset(text_link2));
+      img2>=0?(reset(img1); reset(img2));
+    ):
+
+    c==_'\t'?(
+      res[y] = s_tab;
+    ):
+
+    # Newline.
+    c==_'\n'?(
+
+      # Reset tokens that cannot contain newlines.
+      reset(bold_italic_a);
+      reset(bold_italic_u);
+      reset(bold_u);
+      reset(bold_a);
+      reset(italic_a);
+      reset(italic_u);
+      reset(strikethrough);
+      reset(underline);
+      reset(monospace);
+      reset(word_highlight);
+      reset(url);
+      text_link2>=0?(reset(text_link1); reset(text_link2));
+      img2>=0?(reset(img1); reset(img2));
+    );
+
+    # Cancel opened tokens starting after the opening offset of the latest closed token.
+    #------------------------------------------------------------------------------------
+    opening_offset>=0?(
+      section>=opening_offset ? reset(section);
+      subsection>=opening_offset ? reset(subsection);
+      subsubsection>=opening_offset ? reset(subsubsection);
+      subsubsubsection>=opening_offset ? reset(subsubsubsection);
+      bullet>=opening_offset ? reset(bullet);
+      subbullet>=opening_offset ? reset(subbullet);
+      subsubbullet>=opening_offset ? reset(subsubbullet);
+      center>=opening_offset ? reset(center);
+      code_block>=opening_offset? reset(code_block);
+      bold_italic_a>=opening_offset ? reset(bold_italic_a);
+      bold_italic_u>=opening_offset ? reset(bold_italic_u);
+      bold_a>=opening_offset ? reset(bold_a);
+      bold_u>=opening_offset ? reset(bold_u);
+      italic_a>=opening_offset ? reset(italic_a);
+      italic_u>=opening_offset ? reset(italic_u);
+      strikethrough>=opening_offset ? reset(strikethrough);
+      underline>=opening_offset ? reset(underline);
+      monospace>=opening_offset ? reset(monospace);
+      value_set>=opening_offset ? reset(value_set);
+      word_highlight>=opening_offset ? reset(word_highlight);
+      url>=opening_offset ? reset(url);
+      page_link>=opening_offset ? reset(page_link);
+      text_link1>=opening_offset || text_link2>=opening_offset ? (reset(text_link1); reset(text_link2));
+      img1>=opening_offset || img2>=opening_offset ? (reset(img1); reset(img2));
+      pipeline>=opening_offset ? reset(pipeline);
+      opening_offset = -1;
+    );
+
+    end(copy(i[0],res))"
+  discard 0
+
+#@cli gmd2html : _include_default_header_footer={ 0 | 1 }
+#@cli : Convert selected gmd-formatted text images to HTML format.
+#@cli : Default values: 'include_default_header_footer=1'.
+gmd2html : skip "${1=}"
+  l[] is_arg={isbool("$1")} onfail is_arg=0 endl
+  if $is_arg embed_html=$1 else embed_html=1 noarg fi
+
+  parse_gmd
+  repeat $! l[$>] nm={b}
+    . # [0] = Output, [1] = Input
+    eval. ">
+      begin("${-_gmd_tokens}${-_gmd_write}"
+        ref(vector1024(),tmp);
+      );
+
+      c = i;
+      c>0?(
+        c==_'\n' ? write('<br/>\n'):
+        c==_'&' ? write('&amp;'):
+        c==_'\'' ? write('&apos;'):
+        c==_'>' ? write('&gt;'):
+        c==_'\"' ? write('&quot;'):
+        c==_'<' ? write('&lt;'):
+        write(c);
+      ):(
+        isin(c,e_bold_a,e_bold_u,e_bold_italic_a,e_bold_italic_u,e_italic_a,e_italic_u,
+             e_monospace,e_strikethrough,e_underline,e_word_highlight) ? write('</span>'):
+        isin(c,e_bullet,e_subbullet,e_subsubbullet) ? write('</div>\n'):
+        isin(c,e_center,e_code_block,e_section,e_subsection,e_subsubsection,e_subsubsubsection) ? write('</div>\n'):
+
+        c==s_section ? write('<div class=\"gmd_section\">'):
+        c==s_subsection ? write('<div class=\"gmd_subsection\">'):
+        c==s_subsubsection ? write('<div class=\"gmd_subsubsection\">'):
+        c==s_subsubsubsection ? write('<div class=\"gmd_subsubsubsection\">'):
+        c==s_bullet ? write('<div class=\"gmd_bullet\">'):
+        c==s_subbullet ? write('<div class=\"gmd_subbullet\">'):
+        c==s_subsubbullet ? write('<div class=\"gmd_subsubbullet\">'):
+        c==s_center ? write('<div class=\"gmd_center\">\n'):
+        c==s_code_block ? write('<div class=\"gmd_code_block\">'):
+        c==s_hrule ? write('\n<hr/>\n'):
+
+        c==s_bold_italic_a ? write('<span class=\"gmd_bold_italic_a\">'):
+        c==s_bold_italic_u ? write('<span class=\"gmd_bold_italic_u\">'):
+        c==s_bold_a ? write('<span class=\"gmd_bold_a\">'):
+        c==s_bold_u ? write('<span class=\"gmd_bold_u\">'):
+        c==s_italic_a ? write('<span class=\"gmd_italic_a\">'):
+        c==s_italic_u ? write('<span class=\"gmd_italic_u\">'):
+        c==s_strikethrough? write('<span class=\"gmd_strikethrough\">'):
+        c==s_underline? write('<span class=\"gmd_underline\">'):
+        c==s_monospace ? write('<span class=\"gmd_monospace\">'):
+        c==s_value_set ? write('<span class=\"gmd_value_set\">{'):
+        c==e_value_set ? write('}</span>'):
+        c==s_word_highlight ? write('<span class=\"gmd_word_highlight\">'):
+
+        c==s_url ? (
+          tmp = 0;
+          ind = find(#1,e_url,y);
+          copy(tmp,i[y + 1],ind - y - 1);
+          write('<a href=\"');
+          len = find(tmp,0);
+          write(tmp,len);
+          write('\" target=\"_blank\">');
+        ):
+        c==e_url ? write('</a>'):
+
+        c==s_page_link ? (
+          ind = find(#1,e_page_link,y);
+          run('+rows. ',y + 1,',',ind - 1,' strvar {t} rm. varname=${}');
+          ref(get('varname',256,0),varname);
+          write('<span class=\"gmd_page_link\"><a href=\"');
+          len = find(varname,0);
+          write(varname,len);
+          write('.html\">');
+        ):
+        c==e_page_link ? write('</a></span>'):
+
+        c==s_text_link ? (
+          tmp = 0;
+          ind_m = find(#1,m_text_link,y);
+          ind_e = find(#1,e_text_link,ind_m);
+          copy(tmp,i[ind_m + 1],ind_e - ind_m - 1);
+          write('<a href=\"');
+          len = find(tmp,0);
+          write(tmp,len);
+          write('\" target=\"_blank\">');
+        ):
+        c==m_text_link ? (
+          ind = find(#1,e_text_link,y);
+          copy(i[y],0,ind - y + 1,1,0);
+          write('</a>');
+        ):
+
+        c==s_img ? (
+          tmp = 0;
+          ind_m = find(#1,m_img,y);
+          ind_e = find(#1,e_img,ind_m);
+          copy(tmp,i[ind_m + 1],ind_e - ind_m - 1);
+          write('<img class=\"gmd_image\" src=\"');
+          len = find(tmp,0);
+          write(tmp,len);
+          write('\" alt=\"');
+        ):
+        c==m_img ? (
+          ind = find(#1,e_img,y);
+          copy(i[y],0,ind - y + 1,1,0);
+          write('\"/>');
+        ):
+
+        c==s_pipeline ? (
+          ind = find(#1,e_pipeline);
+          run('_gmd_html. ',y + 1,',',ind -  1);
+          ref(get('_gmd_command',1024,0),com);
+          ref(get('_gmd_filename',1024,0),nam);
+          write('<img class=\"gmd_image\" src=\"');
+          len = find(nam,0);
+          write(nam,len);
+          write('\" alt=\"');
+          len = find(com,0);
+          write(com,len);
+          write('\"/>');
+          copy(i[y],0,ind - y + 1,1,0);
+        ):
+        c==s_gmic ? write('<span class=\"gmd_gmic\"></span>'):
+        c==s_whitespace ? write('&nbsp;'):
+        c==s_tab ? write('&nbsp;&nbsp;&nbsp;&nbsp;');
+      )"
+    k[0] autocrop 0 nm $nm.html
+  endl done
+
+  # Embed with header and footer if needed.
+  if $embed_html repeat $! l[$>] nm={n} bn={b}
+    if isfile('../style.css') style="../style.css" else style="https://gmic.eu/style.css" fi
+    i[0] ('"<!DOCTYPE html>"\n\
+"<html lang=\"en\">"\n\
+"  <head>"\n\
+"    <meta charset=\"utf-8\">"\n\
+"    <link rel=\"stylesheet\" href=\""$style"\">"\n\
+"    <title>"$bn"</title>"\n\
+"  </head>"\n\n\
+"  <body>"\n\
+"    <div class=\"section_title\"></div><div class=\"section_content\">"\n\
+"<!-- begin_content -->"\n\n':y)
+    ('\n\n\
+"<!-- end_content -->"\n\
+"    </div><div class=\"section_end\"></div>"\n\
+"  </body>"':y)
+    a y nm $nm
+  endl done fi
+
+# Manage pipeline execution and result saving.
+_gmd_html :
+  +rows. $1,$2 _gmd_command={t} rm.
+  strvar $_gmd_command
+  _gmd_filename=img/${}.png
+  if !isfile(['{/$_gmd_filename}'])
+    l[]
+      run $_gmd_command a x
+    onfail
+      rm v 1 warn[] "Command '"$_gmd_command"': "${}
+      gui_error_preview ${}
+    endl
+    if !isdir('img') x "mkdir -p img" fi
+    o. $_gmd_filename rm.
+  fi
+
+  # Replace reserved HTML characters in $_gmd_command.
+  ({'$_gmd_command'})
+  replace_str. "\"","&quot;"
+  replace_str. "\'","&apos;"
+  replace_str. "&","&amp;"
+  replace_str. "<","&lt;"
+  replace_str. ">","&gt;"
+  _gmd_command={t} rm.
+
+#@cli gmd2ascii
+#@cli : Convert selected gmd-formatted text images to ascii format.
+gmd2ascii :
+  use_vt100 parse_gmd
+  repeat $! l[$>] nm={b}
+    . # [0] = Output, [1] = Input
+    eval. ">
+      begin("${-_gmd_tokens}${-_gmd_write}"
+        vt100_b = '"$_vt100_b"';
+        vt100_c = '"$_vt100_c"';
+        vt100_g = '"$_vt100_g"';
+        vt100_i = '"$_vt100_i"';
+        vt100_m = '"$_vt100_m"';
+        vt100_n = '"$_vt100_n"';
+        vt100_r = '"$_vt100_r"';
+        vt100_s = '"$_vt100_s"';
+        vt100_u = '"$_vt100_u"';
+        ref(vector1024(),tmp);
+      );
+
+      c = i;
+      c>0?write(c):
+      (
+        isin(c,e_bold_a,e_bold_u,e_bold_italic_a,e_bold_italic_u,e_italic_a,e_italic_u,
+             e_strikethrough,e_underline,e_url,e_page_link) ? write(vt100_n):
+        isin(c,e_bullet,e_subbullet,e_subsubbullet,e_center) ? write('\n'):
+        isin(c,e_section,e_subsection,e_subsubsection,e_subsubsubsection) ? write([vt100_n,'\n\n']):
+
+        c==s_section ? write([_'\n',_'\n',vt100_r,vt100_b,'# ']):
+        c==s_subsection ? write([_'\n',_'\n',vt100_r,vt100_b,'## ']):
+        c==s_subsubsection ? write([_'\n',_'\n',vt100_r,vt100_b,'### ']):
+        c==s_subsubsubsection ? write([_'\n',_'\n',vt100_r,vt100_b,'#### ']):
+        c==s_bullet ? write('\n* '):
+        c==s_subbullet ? write('  - '):
+        c==s_subsubbullet ? write('    + '):
+        isin(c,s_center,s_tab) ? write('    '):
+        c==s_code_block ? write([_'\n',vt100_c]):
+        c==e_code_block ? write([vt100_n,'\n\n']):
+        c==s_hrule ? write('+------------------------------+\n'):
+
+        c==s_bold_italic_a ? write([vt100_b,vt100_i]):
+        c==s_bold_italic_u ? write([vt100_m,vt100_b,vt100_i]):
+        c==s_bold_a ? write(vt100_b):
+        c==s_bold_u ? write([vt100_m,vt100_b]):
+        c==s_italic_a ? write(vt100_i):
+        c==s_italic_u ? write([vt100_m,vt100_i]):
+        c==s_strikethrough? write(vt100_s):
+        c==s_underline? write(vt100_u):
+        c==s_monospace ? write([_'\47',vt100_c]):
+        c==e_monospace ? write([vt100_n,_'\47']):
+        c==s_value_set ? write([vt100_g,vt100_b,_'{']):
+        c==e_value_set ? write([_'}',vt100_n]):
+        c==s_word_highlight ? write([_'\47',vt100_g]):
+        c==e_word_highlight ? write([vt100_n,_'\47']):
+
+        isin(c,s_url,s_page_link,s_text_link) ? write(vt100_u):
+        c==m_text_link ? (
+          ind = find(#1,e_text_link,y);
+          copy(i[y],0,ind - y + 1,1,0);
+          write(vt100_n);
+        ):
+        c==s_img ? (
+          tmp = 0;
+          ind_m = find(#1,m_img,y);
+          ind_e = find(#1,e_img,ind_m);
+          copy(tmp,i[ind_m + 1],ind_e - ind_m - 1);
+          write(vt100_u);
+          len = find(tmp,0);
+          write(tmp,len);
+          write([vt100_n,' (image: \47']);
+        ):
+        c==m_img ? (
+          ind = find(#1,e_img,y);
+          copy(i[y],0,ind - y + 1,1,0);
+          write('\47)');
+        ):
+        c==s_pipeline ? (
+          ind = find(#1,e_pipeline);
+          write([vt100_i,'[image]',vt100_n]);
+          copy(i[y],0,ind - y + 1,1,0);
+        ):
+
+        c==s_gmic ? (
+          write([vt100_b,'G\47MIC',vt100_n]);
+        ):
+        c==s_whitespace ? write(_' ');
+      )"
+    k[0] discard 0 _gmd_ascii 100,1
+    nm $nm.asc
+
+  endl done
+
+# Cut long lines (more than $1 characters) in selected text images.
+# $2 tells if the comma is a possible separator. can be { 0 | 1 }
+_gmd_ascii :
+  repeat $! l[$>]
+    . # [0] = Output, [1] = Input
+    eval ${-_gmd_write}"
+      ref(vector(#$1 + 1),tmp);
+      p = q = r = 0; # p = pos of bloc start, q = pos of latest endable (>=p).
+      while (r<h,
+        i[r]==_'\n'?(
+          len = r - p + 1;
+           copy(tmp,i[p],len);
+          write(tmp,len);
+          p = q = r + 1;
+        ):r - p>=$1?(
+          q - p<0.6*$1?(q = r - 1);
+          len = q - p + 1;
+          copy(tmp,i[p],len);
+          tmp[len++] = _'\n';
+          write(tmp,len);
+          p = r = ++q;
+        ):(
+          isin(i[r],_' ',$2?_',':_' ')?(q = r);
+        );
+        ++r;
+      );
+      p<h?(
+        len = h - p;
+        copy(tmp,i[p],len);
+        write(tmp,len);
+      )"
+    k[0] autocrop 0
+  endl done
+
+# Write strings and characters in generated output.
+_gmd_write :
+  u "write(str) = write(str,0);
+     write(str,len) = (
+       ref(str,_str); unref(_siz); const _siz = size(_str); ref(len,_len);
+       _siz?( # String
+         l = _len?_len:_siz;
+         _write_off + l>h(#0)?resize(#0,1,8 + l + 5*h(#0)/3,1,1,0);
+         copy(i[#0,_write_off],_str,l);
+         _write_off+=l;
+       ):( # Character
+         _write_off>=h(#0)?resize(#0,1,8 + 5*h(#0)/3,1,1,0);
+         i[#0,_write_off++] = _str;
+       )
+     );
+     _write_off = 0;"
+
+# Define set of token labels.
+_gmd_tokens :
+  u "const s_section = -1;
+     const e_section = -2;
+     const s_subsection = -3;
+     const e_subsection = -4;
+     const s_subsubsection = -5;
+     const e_subsubsection = -6;
+     const s_subsubsubsection = -7; const e_subsubsubsection = -8;
+     const s_bullet = -9;
+     const e_bullet = -10;
+     const s_subbullet = -11;
+     const e_subbullet = -12;
+     const s_subsubbullet = -13;
+     const e_subsubbullet = -14;
+     const s_center = -15;
+     const e_center = -16;
+     const s_code_block = -17;
+     const e_code_block = -18;
+     const s_hrule = -19;
+
+     const s_bold_italic_a = -20;
+     const e_bold_italic_a = -21;
+     const s_bold_italic_u = -22;
+     const e_bold_italic_u = -23;
+     const s_bold_a = -24;
+     const e_bold_a = -25;
+     const s_bold_u = -26;
+     const e_bold_u = -27;
+     const s_italic_a = -28;
+     const e_italic_a = -29;
+     const s_italic_u = -30;
+     const e_italic_u = -31;
+     const s_strikethrough = -32;
+     const e_strikethrough = -33;
+     const s_underline = -34;
+     const e_underline = -35;
+     const s_monospace = -36;
+     const e_monospace = -37;
+     const s_value_set = -38;
+     const e_value_set = -39;
+     const s_word_highlight = -40;
+     const e_word_highlight = -41;
+
+     const s_url = -42;
+     const e_url = -43;
+     const s_page_link = -44;
+     const e_page_link = -45;
+     const s_text_link = -46;
+     const m_text_link = -47;
+     const e_text_link = -48;
+     const s_img = -49;
+     const m_img = -50;
+     const e_img = -51;
+     const s_pipeline = -52;
+     const e_pipeline = -53;
+
+     const s_gmic = -54;
+     const e_gmic = -55;
+     const s_whitespace = -56;
+     const s_tab = -57;"
 
 #@cli parse_gui : _outputmode,_{ * | filter_name}
 #@cli : Parse selected filter definitions and generate info about filters in selected output mode.
@@ -6635,7 +6998,7 @@ update_deprecate : check "isint($1) && $1>0 && $1<999"
 
 # update_download_version.
 # Update file versions on G'MIC download page, with specified version number.
-# $1 = version number (e.g. '2.9.6').
+# $1 = version number (e.g. '2.9.7').
 update_download_version : check "
     is_digit(c)=(c>=_'0' && c<=_'9');
     ver = ['${1=undefined}'];
@@ -7380,7 +7743,7 @@ update_reference_html : check "isbool(${1=0})"
 
   # Generate reference pages in html.
   rm
-  reference html
+  reference html,$HOME/work/src/gmic-community/doc
 
   # Upload to G'MIC server.
   if $1
@@ -7731,7 +8094,7 @@ upload_filters :
   x "cd "$HOME"/work/src/gmic-community && git pull"
 
   # Define the list of compatible versions.
-  (290,291,292,293,294,295,296,$_version) store. compat
+  (294,295,296,297,$_version) store. compat
 
   # Import filters from stdlib and community.
   files $HOME/work/src/gmic-community/include/*.gmic
@@ -7742,7 +8105,7 @@ upload_filters :
     basename $file basename=${}
     if ['$basename']=='sylvie_alexandre.gmic'
       s +,{'"#@gui <b>"'} i[1--2:2] ('"#@gui ________<b>Testing<b>\n#@gui <i>Samj</i>\n"') y a y
-    elif ['$basename']=='template.gmic'
+    elif s=['$basename'];s=='template.gmic'
       rm 0
     fi
   endl done
@@ -14127,19 +14490,19 @@ _ihaar_z : # Inverse haar transform along the z-axis.
   if d%2 error "Command 'ihaar': Invalid image depth="{h}" (is not even)." fi
   s z,2 r 100%,100%,200% (-1/1) r. {-2,w},{-2,h} *[-2,-1] + / {sqrt(2)}
 
-#@cli ilaplacian : { nb_iterations>0 | 0 },_time_step>0,_[initial_estimate]
+#@cli ilaplacian : { nb_iterations>0 | 0 },_[initial_estimate]
 #@cli : Invert selected Laplacian images.
 #@cli : If given 'nb_iterations' is '0', inversion is done in Fourier space (single iteration),
-#@cli : otherwise, by applying 'nb_iterations' of a Laplacian-inversion PDE flow (with specified 'time_step').
+#@cli : otherwise, by applying 'nb_iterations' of a Laplacian-inversion PDE flow.
 #@cli : Note that the resulting inversions are just estimation of possible/approximated solutions.
-#@cli : Default values: 'nb_iterations=0','time_step=10' and '[initial_estimated]=(undefined)'.
+#@cli : Default values: 'nb_iterations=0' and '[initial_estimated]=(undefined)'.
 #@cli : $ image.jpg +laplacian +ilaplacian[-1] 0
-ilaplacian : check "${1=0}>=0 && ${2=10}>0" skip "${3=}"
-  is_estimate=${"is_image_arg $3"} nb_iter={round($1)}
+ilaplacian : check "${1=0}>=0" skip "${2=}"
+  is_estimate=${"is_image_arg $2"} nb_iter={round($1)}
   if !$nb_iter # Inversion in Fourier space
     if $is_estimate
-      e[0--4] "Invert Laplacian image$? in Fourier space, with initial estimate $3."
-      pass$3 1 ia=${-average_colors} rm.
+      e[0--4] "Invert Laplacian image$? in Fourier space, with initial estimate $2."
+      pass$2 1 ia=${-average_colors} rm.
     else
       e[0--4] "Invert Laplacian image$? in Fourier space."
       ia=0
@@ -14148,19 +14511,21 @@ ilaplacian : check "${1=0}>=0 && ${2=10}>0" skip "${3=}"
       fft 100%,100%,1,1,"2*(cos(x*2*pi/w) + cos(y*2*pi/h)) - 4" =. 1
       /[-3,-2] . rm.
       = 0 ifft rm.
-    endl done + 'begin(S=resize([$ia],s,0));S'
+    endl done + '"begin(S = resize(["$ia"],s,0)); S"'
 
   else # Inversion with PDE-flow
     if $is_estimate
-      e[0--4] "Invert Laplacian image$? using $1 iterations of PDE flow, with time step $2 and
-                   initial estimate $3."
-      repeat $! pass$3 0 l[$>,-1]
-        repeat $1 +laplacian. -. ... *. {$2/max(abs(im),abs(iM))} +[^0] done k.
+      e[0--4] "Invert Laplacian image$? using $1 iterations of PDE flow and
+                   initial estimate $2."
+      repeat $! pass$2 0 l[$>,-1]
+        *[0] 5 i[1] (0,5,0;5,0,5;0,5,0)
+        repeat $1 +convolve. [1] -. [0] +[-2,-1] /. 21 done k. # Optimized semi-implicit scheme, with dt=5
       endl done
     else
-      e[0--4] "Invert Laplacian image$? using $1 iterations of PDE flow, with time step $2."
-      repeat $! l[$>] +f 0
-        repeat $1 +laplacian. -. ... *. {$2/max(abs(im),abs(iM))} +[^0] done k.
+      e[0--4] "Invert Laplacian image$? using $1 iterations of PDE flow."
+      repeat $! l[$>]
+        * 5 (0,5,0;5,0,5;0,5,0) +f.. 0
+        repeat $1 +convolve. [1] -. [0] +[-2,-1] /. 21 done k. # Optimized semi-implicit scheme, with dt=5
       endl done
     fi
   fi
@@ -23224,6 +23589,7 @@ animate : skip ${1=30},${2=0},${3=""},${4=10},${5=1},"${6=}"
 
 #@cli apply_camera : _"command",_camera_index>=0,_skip_frames>=0,_output_filename
 #@cli : Apply specified command on live camera stream, and display it on display window [0].
+#@cli : This command works only for G'MIC versions that have been compiled with OpenCV support.
 #@cli : Default values: 'command=""', 'camera_index=0' (default camera), 'skip_frames=0' and 'output_filename=""'.
 apply_camera : skip "${1=},${4=}" check "${2=0}>=0 && ${3=0}>=0"
   e[^-1] "Apply command '$1' on camera stream ""#$2, with $3 frames skip and output filename '$4'."
@@ -24681,7 +25047,7 @@ fact : check isint($1)
 #@cli fibonacci : N>=0
 #@cli : Return the Nth number of the Fibonacci sequence.
 #@cli : $ echo ${"fibonacci 10"}
-#@cli : ~~[gmic]-0./ Start G'MIC interpreter.\n[gmic]-0./ 55\n[gmic]-0./ End G'MIC interpreter.~~
+#@cli : \n~~~\n[gmic]-0./ Start G'MIC interpreter.\n[gmic]-0./ 55\n[gmic]-0./ End G'MIC interpreter.\n~~~\n
 fibonacci : check "$1>=0"
   u {N=$1;if(N<2,N,for(n=N;F0=0;F1=1,n=n-1,F2=F0+F1;F0=F1;F1=F2))}
 
@@ -25020,7 +25386,7 @@ is_macos :
 #@cli is_windows
 #@cli : Return 1 if current computer OS is Windows, 0 otherwise.
 is_windows :
-  u {narg($OS)==1" && "narg($WINDIR)==1}
+  u {['$OS']!=0" && "['$WINDIR']!=0}
 
 #@cli math_lib
 #@cli : Return string that defines a set of several useful macros for the embedded math evaluator.
@@ -25093,6 +25459,10 @@ math_lib :
   # Return number of elements in dynamic array #ind.
   dar_size(ind) = i[#ind,whd(#ind)-1];
 
+  # Return last element of a dynamic array
+  dar_Back(ind) = I[#ind,dar_size(#ind)-1];
+  dar_back(ind) = i[#ind,dar_size(#ind)-1];
+
   # Inserts new element 'elt' into dynamic array #ind, at index [pos] ('pos' must be in [0,dar_size(#ind)]).
   dar_insert(ind,elt,pos) = (
     _dar_pos = pos;
@@ -25121,7 +25491,6 @@ math_lib :
   dar_remove(ind,pos) = (
     _dar_pos = pos;
     _dar_siz = dar_size(#ind);
-
     if (_dar_pos<_dar_siz,
       _dar_siz = --dar_size(#ind);
       for (_dar_c = 0, _dar_c<s(#ind), ++_dar_c,
@@ -25133,7 +25502,7 @@ math_lib :
   # Remove last element from dynamic array #ind.
   dar_remove(ind) = (
     _dar_siz = dar_size(#ind);
-    _dar_size>0?dar_size(#ind) = --_dar_size;
+    _dar_siz>0?--dar_size(#ind);
   );
 
   # Distance from point A to point B
@@ -25843,8 +26212,8 @@ str : skip $1
 #@cli : Convert specified string argument into a sequence of hexadecimal values (returned as a string).
 #@cli : See also: ''hex2str''.
 #@cli : $ hex=${"str2hex \"Hello my friends\""} echo $hex
-#@cli : ~~[gmic]-0./ Start G'MIC interpreter.\n[gmic]-0./ 48656c6c6f206d7920667269656e6473\n\
-# [gmic]-0./ End G'MIC interpreter.~~
+#@cli : \n~~~\n[gmic]-0./ Start G'MIC interpreter.\n[gmic]-0./ 48656c6c6f206d7920667269656e6473\n\
+# [gmic]-0./ End G'MIC interpreter.\n~~~\n
 str2hex :
   ('"$*"') y. r. 2,100% f. 'v=if(x,i%16,int(i/16));if(v<=9,48+v,87+v)' u {t} rm.
 
@@ -32362,7 +32731,7 @@ fx_gmicky_preview :
 #@gui : - <b>2019/12/04</b> : version <i>2.8.0</i>.\n
 #@gui : - <b>2020/03/28</b> : version <i>2.9.0</i>.\n
 #@gui : - <span foreground="purple"><b>2021/02/09</b> : version <i>2.9.6</i> (Current stable).</span>\n
-##@gui : - <b>2021/xx/xx</b> : version <i>2.9.6</i> (Current pre-release).\n
+#@gui : - <b>2021/03/28</b> : version <i>2.9.7</i> (Current pre-release).\n
 #@gui : "}
 #@gui : sep = separator()
 #@gui : url = link{"View changelog to upcoming major version (3.0)","https://discuss.pixls.us/t/on-the-road-to-3-0"}
@@ -35760,10 +36129,12 @@ fx_colorblind_preview :
   gui_split_preview "colorblind $*",${-3--1}
 
 #@gui Color Presets : fx_color_presets, fx_color_presets_preview(1)+
-#@gui : LUTs Pack = choice{14,"Abigail Gonzalez (21)","Alex Jordan (81)","Cinematic (8)","Cinematic Travel (29)",
-#@gui : "Creative Pack (33)","Eric Ellerbrock (14)","FilterGrade Cinematic (8)","J.T. Semple (14)",
-#@gui : "Kyler Holland (10)","Lutify.Me (7)","Moviz (48)","Ohad Peretz (7)","ON1 Photography (90)","PictureFX (25)",
-#@gui : "PIXLS.US (31)","Purple11 (12)","RocketStock (35)","Shamoon Abbasi (25)","SmallHD Movie Look (7)","Others (69)"}
+#@gui : LUTs Pack = choice{17,"Abigail Gonzalez (21)","Alex Jordan (81)","Berat (10)","Cinematic (8)",
+#@gui : "Cinematic Travel (29)","Creative Pack (33)","Eric Ellerbrock (14)","FilterGrade Cinematic (8)",
+#@gui : "InAvision (15)","J.T. Semple (14)","Kyler Holland (10)","Lutify.Me (7)","Michael Ezra (2)","Moviz (48)",
+#@gui : "Ohad Peretz (7)","ON1 Photography (90)","PictureFX (25)","PIXLS.US (31)","Purple11 (12)",
+#@gui : "RocketStock (35)","Shamoon Abbasi (25)","SmallHD Movie Look (7)",
+#@gui : "Others (69)"}
 
 ##### Abigail Gonzales
 #@gui : Preset = choice{1,"All [Collage]","None",
@@ -35789,9 +36160,14 @@ fx_colorblind_preview :
 #@gui : "Retro Magenta 01","Retro Yellow 01","Saturated Blue","Smart Contrast","Subtle Blue",
 #@gui : "Subtle Green","Yellow 55B","Yellow Film 01"}_0
 
+##### Berat
+#@gui : Preset = choice{1,"All [Collage]","None",
+#@gui : "Brown BM","Cine Blue","Cine BM4k","Golden Time","Green and Orange","Monochrome","Sevsuz","Sunlight Love",
+#@gui : "Western","Western Lut 2"}_0
+
 ##### Cinematic
 #@gui : Preset = choice{1,"All [Collage]","None",
-#@gui : "Deep","Dimension","Enchanted","Flavin","Frosted","Shine","Ultra Water",Wipe"}_0
+#@gui : "Deep","Dimension","Enchanted","Flavin","Frosted","Shine","Ultra Water","Wipe"}_0
 
 ##### Cinematic Travel
 #@gui : Preset = choice{1,"All [Collage]","None",
@@ -35817,8 +36193,13 @@ fx_colorblind_preview :
 
 ##### FilterGrade Cinematic
 #@gui : Preset = choice{1,"All [Collage]","None",
-#@gui : "Cine Basic", "Cine Bright", "Cine Cold", "Cine Drama", "Cine Teal Orange 1", "Cine Teal Orange 2",
-#@gui : "Cine Vibrant", "Cine Warm"}_0
+#@gui : "Cine Basic","Cine Bright","Cine Cold","Cine Drama","Cine Teal Orange 1","Cine Teal Orange 2",
+#@gui : "Cine Vibrant","Cine Warm"}_0
+
+##### InAvision
+#@gui : Preset = choice{1,"All [Collage]","None",
+#@gui : "7Drk21","BC Darkum","Brown Mobster","Cold Ice","Dark Man X","Film GB-19","Formula B","Gremerta",
+#@gui : "Hitman","J. Wick 21","London Nights","Louetta","Nightlife","VFB 21","Vintage Mob"}_0
 
 ##### J.T. Semple
 #@gui : Preset = choice{1,"All [Collage]","None",
@@ -35833,6 +36214,10 @@ fx_colorblind_preview :
 ##### Lutify.Me
 #@gui : Preset = choice{1,"All [Collage]","None",
 #@gui : "Hackmanite","Herderite","Heulandite","Hiddenite","Hilutite","Howlite","Hypersthene"}_0
+
+##### Michael Ezra
+#@gui : Preset = choice{1,"All [Collage]","None",
+#@gui : "Deep Skin Tones 2","Deep Skin Tones 3"}_0
 
 ##### Moviz
 #@gui : Preset = choice{1,"All [Collage]","None",
@@ -35869,8 +36254,8 @@ fx_colorblind_preview :
 #@gui : Preset = choice{1,"All [Collage]","None",
 #@gui : "AnalogFX - Anno 1870 Color","AnalogFX - Old Style I","AnalogFX - Old Style II","AnalogFX - Old Style III",
 #@gui : "AnalogFX - Sepia Color","AnalogFX - Soft Sepia I","AnalogFX - Soft Sepia II",
-#@gui : "PictureFX - Faux Infrared B&W1", "PictureFX - Faux Infrared Color P2", "PictureFX - Faux Infrared Color P3",
-#@gui : "PictureFX - Faux Infrared R0a", "PictureFX - Faux Infrared R0b", "PictureFX - Faux Infrared YP1",
+#@gui : "PictureFX - Faux Infrared B&W1","PictureFX - Faux Infrared Color P2","PictureFX - Faux Infrared Color P3",
+#@gui : "PictureFX - Faux Infrared R0a","PictureFX - Faux Infrared R0b","PictureFX - Faux Infrared YP1",
 #@gui : "GoldFX - Bright Spring Breeze","GoldFX - Bright Summer Heat","GoldFX - Hot Summer Heat",
 #@gui : "GoldFX - Perfect Sunset 01min","GoldFX - Perfect Sunset 05min","GoldFX - Perfect Sunset 10min",
 #@gui : "GoldFX - Spring Breeze","GoldFX - Summer Heat",
@@ -35892,7 +36277,7 @@ fx_colorblind_preview :
 
 ##### RocketStock
 #@gui : Preset = choice{1,"All [Collage]","None",
-#@gui : "Arabica 12", "Ava 614","Azrael 93","Bourbon 64","Byers 11","Chemical 168","Clayton 33","Clouseau 54",
+#@gui : "Arabica 12","Ava 614","Azrael 93","Bourbon 64","Byers 11","Chemical 168","Clayton 33","Clouseau 54",
 #@gui : "Cobi 3","Contrail 35","Cubicle 99","Django 25","Domingo 145","Faded 47","Folger 50","Fusion 88",
 #@gui : "Hyla 68","Korben 214","Lenox 340","Lucky 64","McKinnon 75","Milo 5","Neon 770","Paladin 1875","Pasadena 21",
 #@gui : "Pitaya 15","Reeve 38","Remy 24","Sprocket 231","Teigen 28","Trent 18","Tweed 71","Vireo 37","Zed 32",
@@ -35990,6 +36375,9 @@ fx_colorblind_preview :
 # aUB+V2lhX++voSANGh2iQSuVwWjqycymBj8V+JHooZS2l44Eo4PKystDNJqQkBB0j192VkZWtm+7Ag0GW+okSppcTqfTg1TqCnSFWqVSlwxKzp3z8xP1\
 # aDR/AFuiV5UIiV63AAAAAElFTkSuQmCC"/>  \
 # <a href="https://freshluts.com/users/1">Alex Jordan - FreshLUTs</a></center>"}
+
+#@gui : sep = value(0)_0+
+#@gui : note = note{"<center><a href="https://freshluts.com/users/10185">Berat - FreshLUTs</a></center>"}
 
 #@gui : sep = value(0)_0+
 #@gui : note = note{"<center><a href="http://fixthephoto.com/free-cinematic-luts">Free Cinematic LUTs</a></center>"}
@@ -36090,6 +36478,42 @@ fx_colorblind_preview :
 
 #@gui : sep = value(0)_0+
 #@gui : note = note{"<center><img src="data:image/png;base64,\
+# iVBORw0KGgoAAAANSUhEUgAAACIAAAApCAIAAADf4mxWAAAKkklEQVRYhV1XTYxdR1b+zqmq+959P91td7fdjp3EsZOZJNaAEjEjmAi2CCFAGjQLZsVi\
+# diPEAokFYsNqtiCEGFhPpAFpAEUIxI8gIghBEqE4E0JiO7GdxG33z3vd/d677/5U1flYvG6PmaPSlUqnqr7zW/cruXh+jSQhpIiICmOM6nqwTGQAqmoZ\
+# oiRJEwpWQmYBeDYxCqAGKEBmwAAAutJ7MSTLFBicJTiaiApSNjrniWRmFIAEBGJnO01ESAIQkVOdnc3FAQLAzEQEgDeB88HMet6VI2dSqLHtFlE0G0GC\
+# TpSnZlMhICmiK3tXp5y6JCLQMwsAQIiV2huZjJLsucvbX3vlyxvPvlyqvvPOWzd/9MnJrA7e5aQZ5igAZOUWV7YqQNIewzgRAwU/Bn4smkGngaRaWh/o\
+# 9vZ2v6eSUuGVzEwGmMA9uUdEACVPvyRBPqHCWWJAAcUopk4ASaIUp73B0Lte7JqubYXmnRM4YSZJMSJzVScigJ2N0zwLAZiQjzEAiJzCqxDCRGEoB2ub\
+# F4eD9a5uLJqqmpkZnNPH2YYYxER/fJaIKOQM+9QPgcHI09pEBhWidIHJMS6HozVfhNQem2TAU+h9Z3DeOhV5HJOcsxr11FYznFaz8HTQnJytV4KkCiAE\
+# SfFhMBg5J03T5JxVIVBAieycO2uPswpWWU1NTn2i4GwYlCRXASOphBcz5xyZvSsG4/NJbFkvVF3wCgDiBBRR587idgYGqqpmJlGQRiPIU7zHFQEQEBG/\
+# QgPgQlGO1xcns6ZpiqLo91eNqaKSDHYa9Cd8AgAEURgBoRBnGcog1JkaqSBJ6mq9iPhQDIbnEOt62Ybgt86vJcIEOWcz2BNCgCuwbKvIqMA77TlXhlAE\
+# 3/M+eA3qgrrgvXfOq6qqA6DBF/1h7qqmSf1B2e+NLUMKJMtBC4o4QgmqOOcIWKIKDAYhIA50KipUwKAEM5lXuQU8xRmFFFXvQ1kvj9smPvXsJbFeSkYx\
+# gVKMJCAkxUAlAYWtGkNFvKBQUcFKQwglGySZJRCi3gwilixDJBT9ZTWLZufPbxxPmpSSGbzvp5RWoQdgZkwEoISHd6IK9FQLFUcIIeLESWeg2spbFXgn\
+# KRtgor4sZLactYxy8cL2wwe3Vb1naDWH4MycqQR1UUh0AwhQWO6cFN5b4VhCvXphciKWQ0/YJBqdeN9Y9CbiCBFCnNAmR7u9EltbG/PZTFUz1dq4rBdG\
+# Z5oVaAmV0FlUQc+HHpLz6Pl1r64Y2rpfK3WwkKqqsplBXRW7wqtPmYUKmZ0LTHW1aPuDwXh8rlrUIYiBX3v1xa+/+qU0ui6aNFbLRbVc5Gpx3DWT9mh6\
+# 0rmQm3UUIetgbbh1eaev5f7ew8n+0d7kcFZXA6+VZW+r+xw5hF5THU+my9HautMiNtkHzTk+f3XzV3/5Z6/+zG90kTTnNGWaifm4m/Zu3b93a/LFybIj\
+# jGuDzfXLLxVr5+689+6bf/XG8bH2QxG7xtG8emdMJIog86ODRTV78YWnhblqaqW1WdB13vUXi4g0hxslOLMmSZFwqXfh0uWNy888+8X0we5sEU2KcqM3\
+# 3Dp346uvHtz68PbdT51zJFW8V6GZgBIkV7Np23U7l7abpk6pA1TMeiFsX77uR6Ucvt1V2a+/EEZb4gqhNS1l+NMcP/fMU/vN4afLWZVyk/bvpKb66s/d\
+# +Pe33757/7Do9eu69jlHQRBxqV0cTQ/axi7vPH00mbrgVSGA9zLcerqpln/9gzfe/Z9bt+/ONst+Ebh15crvffd7IVg53Pnh9/7y337wF+vr66/90qs3\
+# vvLMYlaPzunLN57/6M6u82Vi8kKDqIhrFkdHh5PQKy5evPjfn30izq3+jCGE0eZTszvv3/70k7sPjm5+dM8lXTT1jRvTjdJ1Ohr0yzv37r35Xzevbl37\
+# +Nbd7/7Rbz17bbxc1Jvb52KM5j1WlIdi6tzJcbN7OOv39Pzm8OH+pO8D0Weue+UaZG1+MrHsRr2B9EIYluNhOR6Pp/f+AbwHMy/FYKypxO7e9ESu7Lzy\
+# 81deulquh3lCQk6EFxFVOEXXtccnJ1tbO2UxnB8dlz1HpAz0hwNBrGaTxWK5vbkBQ7IULSfjP/7TW1fPf/Dar/xa0xzGLMSxcD4eXkDxU8Xlq9h4r7LY\
+# Z5HR82ZGJrNUNfXJfH5p5+kU25PJxPtCNGeBK88Jw3TvQU649qWnCgmUlBPVhf29+Wd3duvuZPeTj2r0Z11hZeE3lAJwnLDWCqL6SPOqzkG1KGhaLXnt\
+# y9cXTZsRisGIKTqouJEAB3uPIO7K0xcLCcmiKAEs5vXB8cnN/x09mlUs0LRdQzIEoBMU0VynoYpdZ+aVSogZDg6PF9Vs/+hvf/g3/zo/qdt4NCiL2NSu\
+# cJB4cHBQjobjjXHbtiEYU3LKxbJqq3S0OKqPzayrgsfMtQ9v8ivPd3KhJUl6DZ0mLyJCEe/rmJuufTS5HxOchixxY9RnRq8XECcPH00uXNgO6qpqvrk9\
+# UtXgpE3N0aJmr0ySiCKbpJ57+63/7IfFy699s8+lGQwZSB5GY3JeRJV0DuiXvdgmXxRmJlBIaBfTw4Pj69dfqKsGUIorfBFCuP7SC58+fGd+dHgcq2nK\
+# A8tlP9z//ODNf36/OV4+uPMeIBEZTB4AkUU8YRmE0xQbBbMpnO9I7/3+g0/qqt3eOncyXxRlH+q6yF45/O3f/Z3ndr7/xt+9GRv21StjJOYp3nqwF3O6\
+# ffc2NFmC076KiPfeCMsk1cxM1RB8Uue8CDU2+3uPmjZubG/vHU2UKtHlvs5n8fDzz7/x7d/8/T/4zvnNdabsvF8rtK4Ws1ne3T+cL0JpqhQi62OysxIv\
+# KkZVBcCUlGjr+e7nDyjh/Lmdw4MT8c7gveuT6U//5M++/8d/eHFnsHVlPdGyCcIgEfP5o8N5dTSfaJE1uJyz/0nqbsxmlAzSNKn4anH0MKXhqPTeT6ez\
+# 0PMiatkVXg/2Zx9+cPdHH955eHffeUZGy7Hw5d78OGubDckgKUoWPSPVBCCWBc57f8q1AKo7OHy4t3dwfms95a6qKjjrUlS48XAQG8zgPv74sDpuxSwm\
+# QNpvffMXvv7KtVzXdd264MUVIk6fQMHqdAKGTEFMJqqH08n+3vTS5Uuz2axtojqSKcUaaNrYsF5Gyx068Y4SoDJaC9/59q9/6xu/uDEqSUU2E9OfCJqZ\
+# pZRMICIxw3mZz6rp0ezSzpXDvalFQzZ1yWknmlJeSpKubjKRjYzLcbn2+uv/8uev//2LLz5z+cqF1HWCrI5P5EYIQhyQ4VUsw7FnqOezhk53dnbufPwR\
+# SOdC19Q5x6IY9PvhcNH46JlU1TufBr3e/rR+6/3/uH3/7he7E69wznVd/H/eiAhWfI60lL0WzNY0yWkYrJXH08nG2jjHzEiFu/XR/b39+fG02z1Y1BZF\
+# LYs8ms2alHx0736wd/+zaRFKy6JSyPZoDA9VTTmvnkunTNwHiwlAEVxZ9EbjUuBi200mU6gIXJdTjFGUKt45pw5Q5JxzzE57BkJqVW/ZZetkc22oqhAx\
+# swyG1VPs9C2mZGY2VWWOJL33q3YmmWgASJNVuYpAGHNWSuqyCwXRkGLZmaX/A0GLBDxi5LN0AAAAAElFTkSuQmCC"/>  \
+# <a href="https://freshluts.com/users/64078">InAvision - FreshLUTs</a></center>"}
+
+#@gui : sep = value(0)_0+
+#@gui : note = note{"<center><img src="data:image/png;base64,\
 # iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAC/VBMVEUEAwju6+4FBAnv7O8FBgoIDxju5+oPERcICQ8HCA0GBwwLEBkRFR/u6e05SFU6\
 # PkYzO0YSFx8MEx0HDRYOCQ1aXmcpOEcgLToJCxFHT1lFTFUtPUwsOUUhMD0YHCcTGCEKERvt5OdrcHZdYmpUX2dSWmNKVWBQVl9EVF4/T1o9S1c3RVEz\
 # RFEzPkomNUMlM0AqMTwdIysKDhUGCxPu6evDtLh0eH1ta25XXWVOXGVNVF1JUVtMUFo/R1ExQE0vPEkqNkIyOUEfKzgjKzYqKzIiKTIgJS0SFhwdFxsQ\
@@ -36149,6 +36573,10 @@ fx_colorblind_preview :
 # Sn60yMlTsKEOcGVJWhkZQwtAWBmXMnbjLcou1gEqtCcNDNjA0bJmB3UGsi1vDyrymnas1HTydwzGAsk/UrX164Dh2Lurkg1rGrGDj81QaqdrWM8mYHpSL\
 # ayobMwVfAVSz+arDgwrt5wDlbgjnCaqAY0EvUwLo+bAaK/fYPzbBi89MLkUDAAAAAElFTkSuQmCC"/>  <a href="https://lutify.me\
 # /free-luts/">Lutify.Me Free LUTs</a></center>"}
+
+#@gui : sep = value(0)_0+
+#@gui : note = note{"<center><a href="https://michaelezra.com">Michael Ezra</a>\
+# </center>"}
 
 #@gui : sep = value(0)_0+
 #@gui : note = note{"<center>Moviz LUTs</center>"}
@@ -36275,12 +36703,12 @@ fx_colorblind_preview :
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.
 #@gui :         Latest Update: <i>2019/10/11</i>.</small>")
 fx_color_presets :
-  category=${arg\ 1+$1,abigailgonzalez,alexjordan,cinematic,cinematic_travel,creative,ericellerbrock,filtergrade,\
-                       jtsemple,kyler_holland,lutifyme,moviz,ohadperetz,on1,picturefx,pixlsus,purple11,rocketstock,\
-                       shamoonabbasi,smallhd,others}
+  category=${arg\ 1+$1,abigailgonzalez,alexjordan,berat,cinematic,cinematic_travel,creative,ericellerbrock,filtergrade,\
+                       inavision,jtsemple,kyler_holland,lutifyme,michaelezra,moviz,ohadperetz,on1,picturefx,pixlsus,\
+                       purple11,rocketstock,shamoonabbasi,smallhd,others}
   presets=${-_fx_cluts_$category}
-  index={arg(1+$1,${2-21})}
-  thumbsize,strength,brightness,contrast,gamma,hue,saturation,normalize=${22-29}
+  index={arg(1+$1,${2-24})}
+  thumbsize,strength,brightness,contrast,gamma,hue,saturation,normalize=${25-32}
 
   if $normalize==1" || "$normalize==3 # Pre-normalization
     repeat $! l[$>] split_opacity balance_gamma[0] , a c endl done
@@ -36319,9 +36747,9 @@ fx_color_presets :
 
 fx_color_presets_preview :
   _is_preview=1
-  index={arg(1+$1,${2-21})}
+  index={arg(1+$1,${2-24})}
   if !$index gui_warning_preview "Preview disabled in 'Collage' mode"
-  else gui_split_preview "fx_color_presets $*",${30-32}
+  else gui_split_preview "fx_color_presets $*",${32-34}
   fi
   u "{$1}{$2}_"{2*($1==0)}\
         "{$3}_"{2*($1==1)}\
@@ -36343,9 +36771,12 @@ fx_color_presets_preview :
         "{$19}_"{2*($1==17)}\
         "{$20}_"{2*($1==18)}\
         "{$21}_"{2*($1==19)}\
-        "{$22}_"{1+!$index}\
-        "{$23}{$24}{$25}{$26}{$27}{$28}{$29}{$30}{$31,$32}"\
-        "{0}_"{2*($1!=19)}\
+        "{$22}_"{2*($1==20)}\
+        "{$23}_"{2*($1==21)}\
+        "{$24}_"{2*($1==22)}\
+        "{$25}_"{1+!$index}\
+        "{$26}{$27}{$28}{$29}{$30}{$31}{$32}{$33}{$34,$35}"\
+        "{0}_"{2*($1!=20)}\
         "{0}_"{2*($1==0)}\
         "{0}_"{2*($1==1)}\
         "{0}_"{2*($1==2)}\
@@ -36365,6 +36796,9 @@ fx_color_presets_preview :
         "{0}_"{2*($1==16)}\
         "{0}_"{2*($1==17)}\
         "{0}_"{2*($1==18)}\
+        "{0}_"{2*($1==19)}\
+        "{0}_"{2*($1==20)}\
+        "{0}_"{2*($1==21)}\
         "{0}"
 
 _fx_cluts_abigailgonzalez :
@@ -36385,6 +36819,9 @@ _fx_cluts_alexjordan :
     orange_dark_7,orange_dark_look,orange_underexposed,protect_highlights_01,red_afternoon_01,red_day_01,red_dream_01,\
     retro_brown_01,retro_magenta_01,retro_yellow_01,saturated_blue,smart_contrast,subtle_blue,subtle_green,yellow_55b,\
     yellow_film_01
+
+_fx_cluts_berat :
+  u brownbm,cineblue,cinebm4k,goldentime,green_and_orange,monochrome,sevsuz,sunlightlove,western,westernlut2
 
 _fx_cluts_cinematic :
   u deep,dimension,enchanted,flavin,frosted,shine,ultra_water,wipe
@@ -36409,6 +36846,10 @@ _fx_cluts_ericellerbrock :
 _fx_cluts_filtergrade :
   u fgcinebasic,fgcinebright,fgcinecold,fgcinedrama,fgcinetealorange_1,fgcinetealorange_2,fgcinevibrant,fgcinewarm
 
+_fx_cluts_inavision :
+  u 7drk_21,bc_darkum,brown_mobster,cold_ice,dark_man_x,film_gb-19,formula_b,gremerta,hitman,jwick_21,london_nights,\
+    louetta,nightlife,vfb_21,vintage_mob
+
 _fx_cluts_jtsemple :
   u brightgreen,crispromance,crushin,frostedbeachpicnic,justpeachy,lateafternoonwanderlust,lushgreensummer,\
     magentacoffee,minimalistcaffeination,mysticpurplesunset,nostalgiahoney,springmorning,toastedgarden,\
@@ -36419,6 +36860,9 @@ _fx_cluts_kyler_holland :
 
 _fx_cluts_lutifyme :
   u hackmanite,herderite,heulandite,hiddenite,hilutite,howlite,hypersthene
+
+_fx_cluts_michaelezra :
+  u deepskintones2,deepskintones3
 
 _fx_cluts_moviz :
   u moviz_1,moviz_2,moviz_3,moviz_4,moviz_5,moviz_6,moviz_7,moviz_8,moviz_9,moviz_10,\
