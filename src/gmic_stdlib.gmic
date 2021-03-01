@@ -48053,9 +48053,7 @@ fx_solve_maze_preview :
 #@cli : Parse and tokenize selected images, viewed as text strings formatted with the G'MIC markdown syntax.
 parse_gmd :
   e[^-1] "Parse and tokenize images$? viewed as text strings formatted with the G'MIC markdown syntax."
-  y
-  replace_str "\t","    " r. 1,{h+1},1,1,0
-  eval[^] ">"${-_gmd_constants}"
+  y eval[^] ">"${-_gmd_constants}"
     begin(
       section = subsection = subsubsection = subsubsubsection =
       bullet = subbullet = subsubbullet = center = code_block =
@@ -48407,7 +48405,7 @@ parse_gmd :
       res[ym1] = 0;
     ):
 
-    # Whitespace.
+    # Whitespaces.
     c==_' '?(
 
       # Keep consecutive whitespaces.
@@ -48420,6 +48418,10 @@ parse_gmd :
       reset(url);
       text_link2>=0?(reset(text_link1); reset(text_link2));
       img2>=0?(reset(img1); reset(img2));
+    ):
+
+    c==_'\t'?(
+      res[y] = s_tab;
     ):
 
     # Newline.
@@ -48534,7 +48536,8 @@ _gmd_constants :
 
      const s_gmic = -54;
      const e_gmic = -55;
-     const s_whitespace = -56;"
+     const s_whitespace = -56;
+     const s_tab = -57;"
 
 #@cli gmd2html : _include_default_header_footer={ 0 | 1 }
 #@cli : Convert selected gmd-formatted text images to HTML format.
