@@ -48071,7 +48071,7 @@ parse_gmd :
     );
 
     pc = j[-1]; c = i; nc = j[1]; ac = j[2];
-    y1 = y + 1; y2 = y + 2; y3 = y + 3;
+    ym1 = y - 1; y1 = y + 1; y2 = y + 2;
     linestart = newline(pc);
     non_escaped = (pc!=_'\\');
 
@@ -48086,7 +48086,8 @@ parse_gmd :
       opening_offset = section;
       res[section++] = s_section; res[section] = 0;
       res[y] = e_section;
-      for (p = y1, p<size(res) && res[p]==_'\n', res[p] = 0); # Discard newlines following
+      for (p = opening_offset - 1, p>=0 && res[p]==_'\n', res[p--] = 0); # Discard newlines preceding
+      for (p = y1, p<size(res) && res[p]==_'\n', res[p++] = 0); # Discard newlines following
     ):
 
     # Subsection: '## Subsection name'.
@@ -48097,6 +48098,7 @@ parse_gmd :
       opening_offset = subsection;
       res[subsection++] = s_subsection; copy(res[subsection],0,2,1,0);
       res[y] = e_subsection;
+      for (p = opening_offset - 1, p>=0 && res[p]==_'\n', res[p--] = 0); # Discard newlines preceding
       for (p = y1, p<size(res) && res[p]==_'\n', res[p] = 0); # Discard newlines following
     ):
 
@@ -48108,6 +48110,7 @@ parse_gmd :
       opening_offset = subsubsection;
       res[subsubsection++] = s_subsubsection; copy(res[subsubsection],0,3,1,0);
       res[y] = e_subsubsection;
+      for (p = opening_offset - 1, p>=0 && res[p]==_'\n', res[p--] = 0); # Discard newlines preceding
       for (p = y1, p<size(res) && res[p]==_'\n', res[p] = 0); # Discard newlines following
     ):
 
@@ -48119,6 +48122,7 @@ parse_gmd :
       opening_offset = subsubsubsection;
       res[subsubsubsection++] = s_subsubsubsection; copy(res[subsubsubsection],0,4,1,0);
       res[y] = e_subsubsubsection;
+      for (p = opening_offset - 1, p>=0 && res[p]==_'\n', res[p--] = 0); # Discard newlines preceding
       for (p = y1, p<size(res) && res[p]==_'\n', res[p] = 0); # Discard newlines following
     ):
 
@@ -48161,7 +48165,7 @@ parse_gmd :
       center>=0 && y>center + 3?( # Closing
         opening_offset = center;
         res[center++] = s_center; copy(res[center],0,3,1,0); center+=3;
-        res[y - 1] = e_center; copy(res[y],0,4,1,0);
+        res[ym1] = e_center; copy(res[y],0,4,1,0);
       );
     ):
 
@@ -48174,15 +48178,15 @@ parse_gmd :
         opening_offset = code_block;
         res[code_block++] = s_code_block; copy(res[code_block],0,3,1,0); code_block+=3;
         copy(res[code_block],i[code_block],y - code_block); # Cancel tokens found inside
-        for (q = code_block, q<y, ++q, res[q]==_' '?(res[q] = s_whitespace)); # Keep leading whitespaces.
-        res[y - 1] = e_code_block; copy(res[y],0,4,1,0);
+        for (p = code_block, p<y, ++p, res[p]==_' '?(res[p] = s_whitespace)); # Keep leading whitespaces.
+        res[ym1] = e_code_block; copy(res[y],0,4,1,0);
       );
     ):
 
     # Horizontal rule: '---'.
     linestart && isin(c,_'-','_','*') && nc==c && ac==c && newline(j[3])?(
       res[y] = s_hrule;
-      copy(res[y + 1],0,3,1,0);
+      copy(res[y1],0,3,1,0);
     ):
 
     # Manage text style.
@@ -48293,7 +48297,7 @@ parse_gmd :
         opening_offset = monospace;
         res[monospace++] = s_monospace;
         copy(res[monospace],i[monospace],y - monospace); # Cancel tokens found inside
-        for (q = monospace, q<y, ++q, res[q]==_' '?(res[q] = s_whitespace)); # Keep leading whitespaces.
+        for (p = monospace, p<y, ++p, res[p]==_' '?(res[p] = s_whitespace)); # Keep leading whitespaces.
         res[y] = e_monospace;
       );
     ):
@@ -48386,21 +48390,21 @@ parse_gmd :
         res[pipeline++] = s_pipeline; res[pipeline++] = 0;
         copy(res[pipeline],i[pipeline],y - pipeline); # Cancel tokens found inside
         while (blank(i[pipeline]), res[pipeline++] = 0); # Discard leading blanks
-        for (q = y - 1, blank(res[q]), res[q--] = 0); # Discard trailing blanks
-        res[y] = e_pipeline; res[y + 1] = 0;
+        for (p = ym1, blank(res[p]), res[p--] = 0); # Discard trailing blanks
+        res[y] = e_pipeline; res[y1] = 0;
       );
     ):
 
     # G'MIC word: 'G'MIC'.
     semiblank(pc) && c==_'G' && nc==_'\'' && ac==_'M' && j[3]==_'I' && j[4]==_'C' && semiblank(j[5])?(
       res[y] = s_gmic;
-      copy(res[y + 1],0,3,1,0);
+      copy(res[y1],0,3,1,0);
       res[y + 4] = e_gmic;
     ):
 
     # Escaped character.
     !non_escaped && isin(c,_'\\',_'`',_'*',_'_',_'{',_'}',_'[',_']',_'<',_'>',_'(',_')',_'#',_'+',_'-',_'.',_'!')?(
-      res[y - 1] = 0;
+      res[ym1] = 0;
     ):
 
     # Whitespace.
@@ -48540,7 +48544,7 @@ gmd2html : skip "${1=}"
   if $is_arg embed_html=$1 else embed_html=1 noarg fi
 
   parse_gmd
-  repeat $! l[$>]
+  repeat $! l[$>] nm={b}
     . # [0] = Output, [1] = Input
     eval. ">
       begin("${-_gmd_constants}"
@@ -48672,12 +48676,11 @@ gmd2html : skip "${1=}"
         c==s_gmic ? write('<span class=\"gmd_gmic\"></span>'):
         c==s_whitespace ? write('&nbsp;');
       )"
-    k[0] autocrop 0
+    k[0] autocrop 0 nm $nm.gmd
   endl done
 
   # Embed with header and footer if needed.
-  if $embed_html repeat $! l[$>]
-    title={b}
+  if $embed_html repeat $! l[$>] nm={n}
     if isfile('../style.css') style="../style.css" else style="https://gmic.eu/style.css" fi
     i[0] ('\
 "<!DOCTYPE html>"\n\
@@ -48685,10 +48688,10 @@ gmd2html : skip "${1=}"
 "  <head>"\n\
 "    <meta charset=\"utf-8\">"\n\
 "    <link rel=\"stylesheet\" href=\""$style"\">"\n\
-"    <title>"$title"</title>"\n\
+"    <title>"$nm"</title>"\n\
 "  </head>"\n\n\
 "  <body>"\n\
-"    <div class=\"section_title\"><p>"$title"</p></div><div class=\"section_content\">"\n\
+"    <div class=\"section_title\"></div><div class=\"section_content\">"\n\
 "<!-- begin_content -->"\n\n\
    ':y)
     ('\
@@ -48696,7 +48699,7 @@ gmd2html : skip "${1=}"
 "    </div><div class=\"section_end\"></div>"\n\
 "  </body>"\
    ':y)
-    a y
+    a y nm $nm
   endl done fi
 
 # Manage G'MIC pipeline execution and result saving.
