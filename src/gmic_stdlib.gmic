@@ -5773,13 +5773,13 @@ gmd2ascii :
       );
 
       c = i;
-
       c>0?write(c):
       (
         isin(c,e_bold_a,e_bold_u,e_bold_italic_a,e_bold_italic_u,e_italic_a,e_italic_u,
-             e_strikethrough,e_underline,e_page_link) ? write(vt100_n):
+             e_strikethrough,e_underline,e_url,e_page_link) ? write(vt100_n):
         isin(c,e_bullet,e_subbullet,e_subsubbullet) ? write('\n'):
         isin(c,e_section,e_subsection,e_subsubsection,e_subsubsubsection) ? write([vt100_n,'\n\n']):
+
         c==s_section ? write([_'\n',vt100_r,vt100_b,'# ']):
         c==s_subsection ? write([_'\n',vt100_r,vt100_b,'## ']):
         c==s_subsubsection ? write([_'\n',vt100_r,vt100_b,'### ']):
@@ -5803,34 +5803,17 @@ gmd2ascii :
         c==s_underline? write(vt100_u):
         c==s_monospace ? write([_'\'',vt100_c]):
         c==e_monospace ? write([vt100_n,_'\'']):
-
         c==s_value_set ? write([vt100_g,vt100_b,_'{']):
         c==e_value_set ? write([_'}',vt100_n]):
-
         c==s_word_highlight ? write([_'\'',vt100_g]):
         c==e_word_highlight ? write([vt100_n,_'\'']):
 
-
-        c==s_url ? write(vt100_u);
-        c==e_url ? write(vt100_n);
-
-        c==s_page_link ? write(vt100_u):
-
-        # c==s_text_link ? (
-        #   tmp = 0;
-        #   ind_m = find(#1,m_text_link,y);
-        #   ind_e = find(#1,e_text_link,ind_m);
-        #   copy(tmp,i[ind_m + 1],ind_e - ind_m - 1);
-        #   write('<a href=\"');
-        #   len = find(tmp,0);
-        #   write(tmp,len);
-        #   write('\" target=\"_blank\">');
-        # ):
+        c==s_url || s_page_link || c==s_text_link? write(vt100_u):
         c==m_text_link ? (
           ind = find(#1,e_text_link,y);
           copy(i[y],0,ind - y + 1,1,0);
+          write(vt100_n);
         ):
-
         c==s_img ? (
           tmp = 0;
           ind_m = find(#1,m_img,y);
@@ -5846,7 +5829,6 @@ gmd2ascii :
           copy(i[y],0,ind - y + 1,1,0);
           write('\')');
         ):
-
         c==s_pipeline ? (
           ind = find(#1,e_pipeline);
           write([vt100_i,'[image]',vt100_n]);
@@ -5855,7 +5837,7 @@ gmd2ascii :
 
         c==s_gmic ? write([vt100_b,'G\'MIC',vt100_n]);
         c==s_whitespace ? write(' '):
-        c==s_tab ? write('&nbsp;&nbsp;&nbsp;&nbsp;');
+        c==s_tab ? write('    ');
       )"
     k[0] autocrop 0 nm $nm.asc
   endl done
