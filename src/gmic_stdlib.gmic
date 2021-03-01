@@ -4244,7 +4244,7 @@ parse_cli_ascii :
           +e[] "      "${_vt100_i}"Shortcut for command '"$_vt100_m$_vt100_b$eqto$_vt100_n"'."
         else
           eqto=
-          l. _gmd_ascii 100,1 if $!>1 i[1--2] ('"\\\\\n       "':y) a y fi endl
+          l. _gmd_ascii 90,1 if $!>1 i[1--2] ('"\\\\\n       "':y) a y fi endl
           str="      "{t}${"if "$<" u \" |\" else u \"\" fi"}
           +e[] ${_vt100_c}$str$_vt100_n
         fi
@@ -5400,8 +5400,7 @@ gmd2html : skip "${1=}"
   # Embed with header and footer if needed.
   if $embed_html repeat $! l[$>] nm={n} bn={b}
     if isfile('../style.css') style="../style.css" else style="https://gmic.eu/style.css" fi
-    i[0] ('\
-"<!DOCTYPE html>"\n\
+    i[0] ('"<!DOCTYPE html>"\n\
 "<html lang=\"en\">"\n\
 "  <head>"\n\
 "    <meta charset=\"utf-8\">"\n\
@@ -5491,12 +5490,12 @@ gmd2ascii :
         c==s_italic_u ? write([vt100_m,vt100_i]):
         c==s_strikethrough? write(vt100_s):
         c==s_underline? write(vt100_u):
-        c==s_monospace ? write([_'\'',vt100_c]):
-        c==e_monospace ? write([vt100_n,_'\'']):
+        c==s_monospace ? write([_'\47',vt100_c]):
+        c==e_monospace ? write([vt100_n,_'\47']):
         c==s_value_set ? write([vt100_g,vt100_b,_'{']):
         c==e_value_set ? write([_'}',vt100_n]):
-        c==s_word_highlight ? write([_'\'',vt100_g]):
-        c==e_word_highlight ? write([vt100_n,_'\'']):
+        c==s_word_highlight ? write([_'\47',vt100_g]):
+        c==e_word_highlight ? write([vt100_n,_'\47']):
 
         isin(c,s_url,s_page_link,s_text_link) ? write(vt100_u):
         c==m_text_link ? (
@@ -5512,12 +5511,12 @@ gmd2ascii :
           write(vt100_u);
           len = find(tmp,0);
           write(tmp,len);
-          write([vt100_n,' (image: \'']);
+          write([vt100_n,' (image: \47']);
         ):
         c==m_img ? (
           ind = find(#1,e_img,y);
           copy(i[y],0,ind - y + 1,1,0);
-          write('\')');
+          write('\47)');
         ):
         c==s_pipeline ? (
           ind = find(#1,e_pipeline);
@@ -5530,32 +5529,43 @@ gmd2ascii :
         ):
         c==s_whitespace ? write(_' ');
       )"
-    k[0] discard 0
-
-#    s -,{'\n'} _gmd_ascii 100,1 i[^] ({'\n'}) a y autocrop {'\n'}
-
+    k[0] discard 0 _gmd_ascii 100,1
     nm $nm.asc
 
   endl done
 
-# Cut long sentences into blocs of size<$1.
+# Cut long lines (more than $1 characters) in selected text images.
 # $2 tells if the comma is a possible separator. can be { 0 | 1 }
 _gmd_ascii :
-  repeat $! l[$<]
-    i[0] 1,100%
-    eval "p = q = r = 0; # p = pos of bloc start, q = pos of latest endable (>=p).
+  repeat $! l[$>]
+    . # [0] = Output, [1] = Input
+    eval ${-_gmd_write}"
+      ref(vector(#$1 + 1),tmp);
+      p = q = r = 0; # p = pos of bloc start, q = pos of latest endable (>=p).
       while (r<h,
-        r - p>=$1?(
+        i[r]==_'\n'?(
+          len = r - p + 1;
+           copy(tmp,i[p],len);
+          write(tmp,len);
+          p = q = r + 1;
+        ):r - p>=$1?(
           q - p<0.6*$1?(q = r - 1);
-          copy(i[#0,p],p,q - p + 1,1,0);
+          len = q - p + 1;
+          copy(tmp,i[p],len);
+          tmp[len++] = _'\n';
+          write(tmp,len);
           p = r = ++q;
         ):(
           isin(i[r],_' ',$2?_',':_' ')?(q = r);
         );
         ++r;
       );
-      p<h?copy(i[#0,p],p,h - p,1,0)"
-    a x s y,0 z 1,1
+      p<h?(
+        len = h - p;
+        copy(tmp,i[p],len);
+        write(tmp,len);
+      )"
+    k[0] autocrop 0
   endl done
 
 # Write strings and characters in generated output.
