@@ -5145,6 +5145,800 @@ parse_cli_trigger_print :
     discard. -1 k[{^}]
   fi
 
+#@cli parse_gmd
+#@cli : Parse and tokenize selected images, viewed as text strings formatted with the G'MIC markdown syntax.
+parse_gmd :
+  e[^-1] "Parse and tokenize images$? viewed as text strings formatted with the G'MIC markdown syntax."
+  y 1 a[^-1] .,y rm.
+  eval[^] ">"${-_gmd_tokens}"
+    begin(
+      section = subsection = subsubsection = subsubsubsection =
+      bullet = subbullet = subsubbullet = center = code_block =
+      bold_italic_a = bold_italic_u = bold_a = bold_u = italic_a = italic_u = strikethrough = underline = monospace =
+      value_set = word_highlight = url = page_link = text_link1 = text_link2 = img1 = img2 = pipeline = -1;
+      opening_offset = -1;
+
+      blank(c) = isin(c,_' ',_'\n',0);
+      semiblank(c) = isin(c,_' ',_'\n',_'.',_',',_';',_':',_'!',_'?',_')',_'(',0);
+      newline(c) = isin(c,_'\n',0);
+      reset(c) = (#c = -1);
+      res = crop();
+    );
+
+    pc = j[-1]; c = i; nc = j[1]; ac = j[2];
+    ym1 = y - 1; y1 = y + 1; y2 = y + 2;
+    linestart = newline(pc);
+    non_escaped = (pc!=_'\\');
+
+    # Manage document layout.
+    #------------------------
+
+    # Section: '# Section name'.
+    linestart && c==_'#' && nc==_' '?( # Opening
+      section = y;
+    ):
+    section>=0 && newline(c)?( # Closing
+      opening_offset = section;
+      res[section++] = s_section; res[section] = 0;
+      res[y] = e_section;
+      for (p = opening_offset - 1, p>=0 && res[p]==_'\n', res[p--] = 0); # Discard newlines preceding
+      for (p = y1, p<size(res) && res[p]==_'\n', res[p++] = 0); # Discard newlines following
+    ):
+
+    # Subsection: '## Subsection name'.
+    linestart && c==_'#' && nc==c && ac==_' '?( # Opening
+      subsection = y;
+    ):
+    subsection>=0 && newline(c)?( # Closing
+      opening_offset = subsection;
+      res[subsection++] = s_subsection; copy(res[subsection],0,2,1,0);
+      res[y] = e_subsection;
+      for (p = opening_offset - 1, p>=0 && res[p]==_'\n', res[p--] = 0); # Discard newlines preceding
+      for (p = y1, p<size(res) && res[p]==_'\n', res[p] = 0); # Discard newlines following
+    ):
+
+    # Subsubsection: '### Subsubsection name'.
+    linestart && c==_'#' && nc==c && ac==c && j[3]==_' '?( # Opening
+      subsubsection = y;
+    ):
+    subsubsection>=0 && newline(c)?( # Closing
+      opening_offset = subsubsection;
+      res[subsubsection++] = s_subsubsection; copy(res[subsubsection],0,3,1,0);
+      res[y] = e_subsubsection;
+      for (p = opening_offset - 1, p>=0 && res[p]==_'\n', res[p--] = 0); # Discard newlines preceding
+      for (p = y1, p<size(res) && res[p]==_'\n', res[p] = 0); # Discard newlines following
+    ):
+
+    # Subsubsubsection: '#### Subsubsubsection name'.
+    linestart && c==_'#' && nc==c && ac==c && j[3]==c && j[4]==_' '?( # Opening
+      subsubsubsection = y;
+    ):
+    subsubsubsection>=0 && newline(c)?( # Closing
+      opening_offset = subsubsubsection;
+      res[subsubsubsection++] = s_subsubsubsection; copy(res[subsubsubsection],0,4,1,0);
+      res[y] = e_subsubsubsection;
+      for (p = opening_offset - 1, p>=0 && res[p]==_'\n', res[p--] = 0); # Discard newlines preceding
+      for (p = y1, p<size(res) && res[p]==_'\n', res[p] = 0); # Discard newlines following
+    ):
+
+    # List bullet: '* List item'.
+    linestart && isin(c,_'-',_'*',_'+') && nc==_' ' && bullet<0?( # Opening
+      bullet = y;
+    ):
+    bullet>=0 && newline(c)?( # Closing
+      opening_offset = bullet;
+      res[bullet++] = s_bullet; res[bullet] = 0;
+      res[y] = e_bullet;
+    ):
+
+    # Sublist bullet: '  * Sub-list item'.
+    linestart && c==_' ' && nc==_' ' && isin(ac,_'-',_'*',_'+') && j[3]==_' ' && subbullet<0?( # Opening
+      subbullet = y;
+    ):
+    subbullet>=0 && newline(c)?( # Closing
+      opening_offset = subbullet;
+      res[subbullet++] = s_subbullet; copy(res[subbullet],0,2,1,0);
+      res[y] = e_subbullet;
+    ):
+
+    # Subsublist bullet: '    * Subsub-list item'.
+    linestart && c==_' ' && nc==_' ' && ac==_' ' && j[3]==_' ' && isin(j[4],_'-',_'*',_'+') && j[5]==_' ' &&
+      subsubbullet<0?( # Opening
+      subsubbullet = y;
+    ):
+    subsubbullet>=0 && newline(c)?( # Closing
+      opening_offset = subsubbullet;
+      res[subsubbullet++] = s_subsubbullet; copy(res[subsubbullet],0,4,1,0);
+      res[y] = e_subsubbullet;
+    ):
+
+    # Center: '\n===\n Centered text\n===\n'.
+    linestart && c==_'=' && nc==c && ac==c && newline(j[3])?(
+      center<0?( # Opening
+        center = y;
+      ):
+      center>=0 && y>center + 3?( # Closing
+        opening_offset = center;
+        res[center++] = s_center; copy(res[center],0,3,1,0); center+=3;
+        res[ym1] = e_center; copy(res[y],0,4,1,0);
+      );
+    ):
+
+    # Code block: '\n~~~\n Code block\n~~~\n'.
+    linestart && isin(c,_'~','`') && nc==c && ac==c && newline(j[3])?(
+      code_block<0?( # Opening
+        code_block = y;
+      ):
+      code_block>=0 && y>code_block + 3?( # Closing
+        opening_offset = code_block;
+        res[code_block++] = s_code_block; copy(res[code_block],0,3,1,0); code_block+=3;
+        copy(res[code_block],i[code_block],y - code_block); # Cancel tokens found inside
+        for (p = code_block, p<y, ++p, res[p]==_' '?(res[p] = s_whitespace)); # Keep leading whitespaces.
+        res[ym1] = e_code_block; copy(res[y],0,4,1,0);
+      );
+    ):
+
+    # Horizontal rule: '---'.
+    linestart && isin(c,_'-','_','*') && nc==c && ac==c && newline(j[3])?(
+      res[y] = s_hrule;
+      copy(res[y1],0,3,1,0);
+    ):
+
+    # Manage text style.
+    #-------------------
+
+    # Bold italic (asterisk): '***bold italic text***'.
+    non_escaped && c==_'*' && nc==c && ac==c?( # Opening
+      bold_italic_a<0?(
+        bold_italic_a = y;
+      ):
+      bold_italic_a>=0 && y>bold_italic_a + 3 && j[3]!=_'*'?( # Closing
+        opening_offset = bold_italic_a;
+        res[bold_italic_a++] = s_bold_italic_a; res[bold_italic_a++] = 0; res[bold_italic_a] = 0;
+        res[y] = e_bold_italic_a; res[y1] = res[y2] = 0;
+      );
+    ):
+
+    # Bold italic (underscore): '___bold italic text___'.
+    non_escaped && c==_'_' && nc==c && ac==c?(
+      bold_italic_u<0 && semiblank(pc)?( # Opening
+        bold_italic_u = y;
+      ):
+      bold_italic_u>=0 && y>bold_italic_u + 3 && semiblank(j[3])?( # Closing
+        opening_offset = bold_italic_u;
+        res[bold_italic_u++] = s_bold_italic_u; res[bold_italic_u++] = 0; res[bold_italic_u] = 0;
+        res[y] = e_bold_italic_u; res[y1] = res[y2] = 0;
+      );
+    ):
+
+    # Bold (asterisk): '**bold text**'.
+    non_escaped && c==_'*' && nc==c?( # Opening
+      bold_a<0?(
+        bold_a = y;
+      ):
+      bold_a>=0 && y>bold_a + 2 && ac!=_'*'?( # Closing
+        opening_offset = bold_a;
+        res[bold_a++] = s_bold_a; res[bold_a] = 0;
+        res[y] = e_bold_a; res[y1] = 0;
+      );
+    ):
+
+    # Bold (underscore): '__bold text__'.
+    non_escaped && c==_'_' && nc==c?(
+      bold_u<0 && semiblank(pc)?( # Opening
+        bold_u = y;
+      ):
+      bold_u>=0 && y>bold_u + 2 && semiblank(ac)?( # Closing
+        opening_offset = bold_u;
+        res[bold_u++] = s_bold_u; res[bold_u] = 0;
+        res[y] = e_bold_u; res[y1] = 0;
+      );
+    ):
+
+    # Italic (asterisk): '*italic text*'.
+    non_escaped && c==_'*' && pc!=c?( # Opening
+      italic_a<0?(
+        italic_a = y;
+      ):
+      italic_a>=0 && y>italic_a + 1 && ac!=_'*'?( # Closing
+        opening_offset = italic_a;
+        res[italic_a] = s_italic_a;
+        res[y] = e_italic_a;
+      );
+    ):
+
+    # Italic (underscore): '_italic text_'.
+    non_escaped && c==_'_' && pc!=c?(
+      italic_u<0 && semiblank(pc)?( # Opening
+        italic_u = y
+      ):
+      italic_u>=0 && y>italic_u + 1 && semiblank(nc)?( # Closing
+        opening_offset = italic_u;
+        res[italic_u] = s_italic_u;
+        res[y] = e_italic_u;
+      );
+    ):
+
+    # Strikethrough: '~~strikethrough text~~'.
+    non_escaped && c==_'~' && nc==c && pc!=c?( # Opening
+      strikethrough<0?(
+        strikethrough = y;
+      ):
+      strikethrough>=0 && y>strikethrough + 2?( # Closing
+        opening_offset = strikethrough;
+        res[strikethrough++] = s_strikethrough; res[strikethrough] = 0;
+        res[y] = e_strikethrough; res[y1] = 0;
+      );
+    ):
+
+    # Underline: '==strikethrough text=='.
+    non_escaped && c==_'=' && nc==c && pc!=c?( # Opening
+      underline<0?(
+        underline = y;
+      ):
+      underline>=0 && y>underline + 2?( # Closing
+        opening_offset = underline;
+        res[underline++] = s_underline; res[underline] = 0;
+        res[y] = e_underline; res[y1] = 0;
+      );
+    ):
+
+    # Monospace: '`monospace text`'.
+    non_escaped && c==_'`'?(
+      monospace<0?( # Opening
+        monospace = y;
+      ):
+      monospace>=0 && y>monospace + 1?( # Closing
+        opening_offset = monospace;
+        res[monospace++] = s_monospace;
+        copy(res[monospace],i[monospace],y - monospace); # Cancel tokens found inside
+        for (p = monospace, p<y, ++p, res[p]==_' '?(res[p] = s_whitespace)); # Keep leading whitespaces.
+        res[y] = e_monospace;
+      );
+    ):
+
+    # Value Set: '{ value1 | value2 | value3 }'.
+    non_escaped && c==_'{' && value_set<0 && semiblank(pc)?( # Opening
+      value_set = y;
+    ):
+    non_escaped && c==_'}' && value_set>=0 && y>value_set + 1 && semiblank(nc)?( # Closing
+      opening_offset = value_set;
+      res[value_set++] = s_value_set;
+      copy(res[value_set],i[value_set],y - value_set); # Cancel tokens found inside
+      res[y] = e_value_set;
+    ):
+
+    # Word highlight: ' 'word_highlight' '.
+    non_escaped && c=='\'' && nc!=c?(
+      word_highlight<0 && semiblank(pc)?( # Opening
+        word_highlight = y;
+      ):
+      word_highlight>=0 && y>word_highlight + 1 && semiblank(nc)?( # Closing
+        opening_offset = word_highlight;
+        res[word_highlight++] = s_word_highlight;
+        copy(res[word_highlight],i[word_highlight],y - word_highlight); # Cancel tokens found inside
+        res[y] = e_word_highlight;
+      );
+    ):
+
+    # URL: '<https://url.com>'.
+    non_escaped && c==_'<' && url<0 && crop(0,y1,1,4)=='http'?( # Opening
+      url = y;
+    ):
+    non_escaped && c==_'>' && url>=0 && y>url + 1?( # Closing
+      opening_offset = url;
+      res[url++] = s_url;
+      copy(res[url],i[url],y - url); # Cancel tokens found inside
+      res[y] = e_url;
+    ):
+
+    # Page link (command or reference): ' ''command or page name'' ' (not a URL!).
+    non_escaped && c==_'\'' && nc==c?(
+      page_link<0 && semiblank(pc)?( # Opening
+        page_link = y;
+      ):
+      page_link>=0 && y>page_link + 2 && semiblank(ac)?( # Closing
+        opening_offset = page_link;
+        res[page_link++] = s_page_link; res[page_link++] = 0;
+        copy(res[page_link],i[page_link],y - page_link); # Cancel tokens found inside
+        res[y] = e_page_link; res[y1] = 0;
+      );
+    ):
+
+    # Text link: '[link text](https://url.com)'.
+    non_escaped && c==_'[' && text_link1<0 && text_link2<0 && img1<0?( # Opening
+      text_link1 = y;
+    ):
+    non_escaped && c==_']' && nc==_'(' && text_link1>=0 && text_link2<0 && img1<0?( # Middle
+      text_link2 = y;
+    ):
+    non_escaped && c==_')' && text_link2>=0 && img1<0?( # Closing
+      opening_offset = text_link1;
+      res[text_link1] = s_text_link;
+      res[text_link2++] = m_text_link; res[text_link2++] = 0;
+      copy(res[text_link2],i[text_link2],y - text_link2); # Cancel tokens found inside
+      res[y] = e_text_link;
+    ):
+
+    # Image: '![alt caption](https://url.com/image.png)'.
+    non_escaped && c==_'!' && nc==_'[' && img1<0 && img2<0?( # Opening
+      img1 = y;
+    ):
+    non_escaped && c==_']' && nc==_'(' && img1>=0 && img2<0?( # Middle
+      img2 = y;
+    ):
+    non_escaped && c==_')' && img2>=0?( # Closing
+      opening_offset = img1;
+      res[img1++] = s_img; res[img1++] = 0;
+      res[img2++] = m_img; res[img2++] = 0;
+      copy(res[img1],i[img1],img2 - img1 - 2); copy(res[img2],i[img2],y - img2); # Cancel tokens found inside
+      res[y] = e_img;
+    ):
+
+    # G'MIC pipeline (image): '%% G'MIC pipeline %%'.
+    non_escaped && c==_'%' && nc==c?(
+      pipeline<0 && semiblank(pc)?( # Opening
+        pipeline = y;
+      ):
+      pipeline>=0 && y>pipeline + 3 && semiblank(ac)?( # Closing
+        opening_offset = pipeline;
+        res[pipeline++] = s_pipeline; res[pipeline++] = 0;
+        copy(res[pipeline],i[pipeline],y - pipeline); # Cancel tokens found inside
+        while (blank(i[pipeline]), res[pipeline++] = 0); # Discard leading blanks
+        for (p = ym1, blank(res[p]), res[p--] = 0); # Discard trailing blanks
+        res[y] = e_pipeline; res[y1] = 0;
+      );
+    ):
+
+    # G'MIC word: 'G'MIC'.
+    semiblank(pc) && c==_'G' && nc==_'\'' && ac==_'M' && j[3]==_'I' && j[4]==_'C' && semiblank(j[5])?(
+      res[y] = s_gmic;
+      copy(res[y1],0,3,1,0);
+      res[y + 4] = e_gmic;
+    ):
+
+    # Escaped character.
+    !non_escaped && isin(c,_'\\',_'`',_'*',_'_',_'{',_'}',_'[',_']',_'<',_'>',_'(',_')',_'#',_'+',_'-',_'.',_'!')?(
+      res[ym1] = 0;
+    ):
+
+    # Whitespaces.
+    c==_' '?(
+
+      # Keep consecutive whitespaces.
+      c==_' ' && (linestart || pc==c)?(
+        res[y] = s_whitespace;
+      );
+
+      # Reset tokens that cannot contain whitespace.
+      reset(word_highlight);
+      reset(url);
+      text_link2>=0?(reset(text_link1); reset(text_link2));
+      img2>=0?(reset(img1); reset(img2));
+    ):
+
+    c==_'\t'?(
+      res[y] = s_tab;
+    ):
+
+    # Newline.
+    c==_'\n'?(
+
+      # Reset tokens that cannot contain newlines.
+      reset(bold_italic_a);
+      reset(bold_italic_u);
+      reset(bold_u);
+      reset(bold_a);
+      reset(italic_a);
+      reset(italic_u);
+      reset(strikethrough);
+      reset(underline);
+      reset(monospace);
+      reset(word_highlight);
+      reset(url);
+      text_link2>=0?(reset(text_link1); reset(text_link2));
+      img2>=0?(reset(img1); reset(img2));
+    );
+
+    # Cancel opened tokens starting after the opening offset of the latest closed token.
+    #------------------------------------------------------------------------------------
+    opening_offset>=0?(
+      section>=opening_offset ? reset(section);
+      subsection>=opening_offset ? reset(subsection);
+      subsubsection>=opening_offset ? reset(subsubsection);
+      subsubsubsection>=opening_offset ? reset(subsubsubsection);
+      bullet>=opening_offset ? reset(bullet);
+      subbullet>=opening_offset ? reset(subbullet);
+      subsubbullet>=opening_offset ? reset(subsubbullet);
+      center>=opening_offset ? reset(center);
+      code_block>=opening_offset? reset(code_block);
+      bold_italic_a>=opening_offset ? reset(bold_italic_a);
+      bold_italic_u>=opening_offset ? reset(bold_italic_u);
+      bold_a>=opening_offset ? reset(bold_a);
+      bold_u>=opening_offset ? reset(bold_u);
+      italic_a>=opening_offset ? reset(italic_a);
+      italic_u>=opening_offset ? reset(italic_u);
+      strikethrough>=opening_offset ? reset(strikethrough);
+      underline>=opening_offset ? reset(underline);
+      monospace>=opening_offset ? reset(monospace);
+      value_set>=opening_offset ? reset(value_set);
+      word_highlight>=opening_offset ? reset(word_highlight);
+      url>=opening_offset ? reset(url);
+      page_link>=opening_offset ? reset(page_link);
+      text_link1>=opening_offset || text_link2>=opening_offset ? (reset(text_link1); reset(text_link2));
+      img1>=opening_offset || img2>=opening_offset ? (reset(img1); reset(img2));
+      pipeline>=opening_offset ? reset(pipeline);
+      opening_offset = -1;
+    );
+
+    end(copy(i[0],res))"
+  discard 0
+
+#@cli gmd2html : _include_default_header_footer={ 0 | 1 }
+#@cli : Convert selected gmd-formatted text images to HTML format.
+#@cli : Default values: 'include_default_header_footer=1'.
+gmd2html : skip "${1=}"
+  l[] is_arg={isbool("$1")} onfail is_arg=0 endl
+  if $is_arg embed_html=$1 else embed_html=1 noarg fi
+
+  parse_gmd
+  repeat $! l[$>] nm={b}
+    . # [0] = Output, [1] = Input
+    eval. ">
+      begin("${-_gmd_tokens}${-_gmd_write}"
+        ref(vector1024(),tmp);
+      );
+
+      c = i;
+      c>0?(
+        c==_'\n' ? write('<br/>\n'):
+        c==_'&' ? write('&amp;'):
+        c==_'\'' ? write('&apos;'):
+        c==_'>' ? write('&gt;'):
+        c==_'\"' ? write('&quot;'):
+        c==_'<' ? write('&lt;'):
+        write(c);
+      ):(
+        isin(c,e_bold_a,e_bold_u,e_bold_italic_a,e_bold_italic_u,e_italic_a,e_italic_u,
+             e_monospace,e_strikethrough,e_underline,e_word_highlight) ? write('</span>'):
+        isin(c,e_bullet,e_subbullet,e_subsubbullet) ? write('</div>\n'):
+        isin(c,e_center,e_code_block,e_section,e_subsection,e_subsubsection,e_subsubsubsection) ? write('</div>\n'):
+
+        c==s_section ? write('<div class=\"gmd_section\">'):
+        c==s_subsection ? write('<div class=\"gmd_subsection\">'):
+        c==s_subsubsection ? write('<div class=\"gmd_subsubsection\">'):
+        c==s_subsubsubsection ? write('<div class=\"gmd_subsubsubsection\">'):
+        c==s_bullet ? write('<div class=\"gmd_bullet\">'):
+        c==s_subbullet ? write('<div class=\"gmd_subbullet\">'):
+        c==s_subsubbullet ? write('<div class=\"gmd_subsubbullet\">'):
+        c==s_center ? write('<div class=\"gmd_center\">\n'):
+        c==s_code_block ? write('<div class=\"gmd_code_block\">'):
+        c==s_hrule ? write('\n<hr/>\n'):
+
+        c==s_bold_italic_a ? write('<span class=\"gmd_bold_italic_a\">'):
+        c==s_bold_italic_u ? write('<span class=\"gmd_bold_italic_u\">'):
+        c==s_bold_a ? write('<span class=\"gmd_bold_a\">'):
+        c==s_bold_u ? write('<span class=\"gmd_bold_u\">'):
+        c==s_italic_a ? write('<span class=\"gmd_italic_a\">'):
+        c==s_italic_u ? write('<span class=\"gmd_italic_u\">'):
+        c==s_strikethrough? write('<span class=\"gmd_strikethrough\">'):
+        c==s_underline? write('<span class=\"gmd_underline\">'):
+        c==s_monospace ? write('<span class=\"gmd_monospace\">'):
+        c==s_value_set ? write('<span class=\"gmd_value_set\">{'):
+        c==e_value_set ? write('}</span>'):
+        c==s_word_highlight ? write('<span class=\"gmd_word_highlight\">'):
+
+        c==s_url ? (
+          tmp = 0;
+          ind = find(#1,e_url,y);
+          copy(tmp,i[y + 1],ind - y - 1);
+          write('<a href=\"');
+          len = find(tmp,0);
+          write(tmp,len);
+          write('\" target=\"_blank\">');
+        ):
+        c==e_url ? write('</a>'):
+
+        c==s_page_link ? (
+          ind = find(#1,e_page_link,y);
+          run('+rows. ',y + 1,',',ind - 1,' strvar {t} rm. varname=${}');
+          ref(get('varname',256,0),varname);
+          write('<span class=\"gmd_page_link\"><a href=\"');
+          len = find(varname,0);
+          write(varname,len);
+          write('.html\">');
+        ):
+        c==e_page_link ? write('</a></span>'):
+
+        c==s_text_link ? (
+          tmp = 0;
+          ind_m = find(#1,m_text_link,y);
+          ind_e = find(#1,e_text_link,ind_m);
+          copy(tmp,i[ind_m + 1],ind_e - ind_m - 1);
+          write('<a href=\"');
+          len = find(tmp,0);
+          write(tmp,len);
+          write('\" target=\"_blank\">');
+        ):
+        c==m_text_link ? (
+          ind = find(#1,e_text_link,y);
+          copy(i[y],0,ind - y + 1,1,0);
+          write('</a>');
+        ):
+
+        c==s_img ? (
+          tmp = 0;
+          ind_m = find(#1,m_img,y);
+          ind_e = find(#1,e_img,ind_m);
+          copy(tmp,i[ind_m + 1],ind_e - ind_m - 1);
+          write('<img class=\"gmd_image\" src=\"');
+          len = find(tmp,0);
+          write(tmp,len);
+          write('\" alt=\"');
+        ):
+        c==m_img ? (
+          ind = find(#1,e_img,y);
+          copy(i[y],0,ind - y + 1,1,0);
+          write('\"/>');
+        ):
+
+        c==s_pipeline ? (
+          ind = find(#1,e_pipeline);
+          run('_gmd_html. ',y + 1,',',ind -  1);
+          ref(get('_gmd_command',1024,0),com);
+          ref(get('_gmd_filename',1024,0),nam);
+          write('<img class=\"gmd_image\" src=\"');
+          len = find(nam,0);
+          write(nam,len);
+          write('\" alt=\"');
+          len = find(com,0);
+          write(com,len);
+          write('\"/>');
+          copy(i[y],0,ind - y + 1,1,0);
+        ):
+        c==s_gmic ? write('<span class=\"gmd_gmic\"></span>'):
+        c==s_whitespace ? write('&nbsp;'):
+        c==s_tab ? write('&nbsp;&nbsp;&nbsp;&nbsp;');
+      )"
+    k[0] autocrop 0 nm $nm.html
+  endl done
+
+  # Embed with header and footer if needed.
+  if $embed_html repeat $! l[$>] nm={n} bn={b}
+    if isfile('../style.css') style="../style.css" else style="https://gmic.eu/style.css" fi
+    i[0] ('\
+"<!DOCTYPE html>"\n\
+"<html lang=\"en\">"\n\
+"  <head>"\n\
+"    <meta charset=\"utf-8\">"\n\
+"    <link rel=\"stylesheet\" href=\""$style"\">"\n\
+"    <title>"$bn"</title>"\n\
+"  </head>"\n\n\
+"  <body>"\n\
+"    <div class=\"section_title\"></div><div class=\"section_content\">"\n\
+"<!-- begin_content -->"\n\n\
+   ':y)
+    ('\
+\n\n"<!-- end_content -->"\n\
+"    </div><div class=\"section_end\"></div>"\n\
+"  </body>"\
+   ':y)
+    a y nm $nm
+  endl done fi
+
+# Manage pipeline execution and result saving.
+_gmd_html :
+  +rows. $1,$2 _gmd_command={t} rm.
+  strvar $_gmd_command
+  _gmd_filename=img/${}.png
+  if !isfile(['{/$_gmd_filename}'])
+    l[]
+      run $_gmd_command a x
+    onfail
+      rm v 1 warn[] "Command '"$_gmd_command"': "${}
+      gui_error_preview ${}
+    endl
+    if !isdir('img') x "mkdir -p img" fi
+    o. $_gmd_filename rm.
+  fi
+
+  # Replace reserved HTML characters in $_gmd_command.
+  ({'$_gmd_command'})
+  replace_str. "\"","&quot;"
+  replace_str. "\'","&apos;"
+  replace_str. "&","&amp;"
+  replace_str. "<","&lt;"
+  replace_str. ">","&gt;"
+  _gmd_command={t} rm.
+
+#@cli gmd2ascii
+#@cli : Convert selected gmd-formatted text images to ascii format.
+gmd2ascii :
+  use_vt100 parse_gmd
+  repeat $! l[$>] nm={b}
+    . # [0] = Output, [1] = Input
+    eval. ">
+      begin("${-_gmd_tokens}${-_gmd_write}"
+        vt100_b = '"$_vt100_b"';
+        vt100_c = '"$_vt100_c"';
+        vt100_g = '"$_vt100_g"';
+        vt100_i = '"$_vt100_i"';
+        vt100_m = '"$_vt100_m"';
+        vt100_n = '"$_vt100_n"';
+        vt100_r = '"$_vt100_r"';
+        vt100_u = '"$_vt100_u"';
+        ref(vector1024(),tmp);
+      );
+
+      c = i;
+
+      c>0?write(c):
+      (
+        isin(c,e_bold_a,e_bold_u,e_bold_italic_a,e_bold_italic_u,e_italic_a,e_italic_u,
+             e_strikethrough,e_underline,e_page_link) ? write(vt100_n):
+        isin(c,e_bullet,e_subbullet,e_subsubbullet) ? write('\n'):
+        isin(c,e_section,e_subsection,e_subsubsection,e_subsubsubsection) ? write([vt100_n,'\n\n']):
+
+        c==s_section ? write([_'\n',vt100_r,vt100_b,'# ']);
+
+        c==s_subsection ? write('<div class=\"gmd_subsection\">'):
+        c==s_subsubsection ? write('<div class=\"gmd_subsubsection\">'):
+        c==s_subsubsubsection ? write('<div class=\"gmd_subsubsubsection\">'):
+        c==s_bullet ? write('* '):
+        c==s_subbullet ? write('  - '):
+        c==s_subsubbullet ? write('    . '):
+        c==s_center ? write('    '):
+        c==e_center ? write('\n'):
+        c==s_code_block ? write([_'\n',vt100_c]):
+        c==e_code_block ? write([vt100_n,'\n\n']):
+        c==s_hrule ? write('\n+------------------------------+\n'):
+
+        c==s_bold_italic_a ? (write(vt100_b); write(vt100_i)):
+        c==s_bold_italic_u ? (write(vt100_b); write(vt100_i)):
+        c==s_bold_a ? write(vt100_b):
+        c==s_bold_u ? write(vt100_b):
+        c==s_italic_a ? write(vt100_i):
+        c==s_italic_u ? write(vt100_i):
+        c==s_strikethrough? write('<span class=\"gmd_strikethrough\">'):
+        c==s_underline? write('<span class=\"gmd_underline\">'):
+        c==s_monospace ? write([_'\'',vt100_c]):
+        c==e_monospace ? write([vt100_n,_'\'']):
+
+        c==s_value_set ? write('<span class=\"gmd_value_set\">{'):
+        c==e_value_set ? write('}</span>'):
+
+        c==s_word_highlight ? write([_'\'',vt100_g]):
+        c==e_word_highlight ? write([vt100_n,_'\'']):
+
+
+        c==s_url ? write(vt100_u);
+        c==e_url ? write(vt100_n);
+
+        c==s_page_link ? write(vt100_u):
+
+        # c==s_text_link ? (
+        #   tmp = 0;
+        #   ind_m = find(#1,m_text_link,y);
+        #   ind_e = find(#1,e_text_link,ind_m);
+        #   copy(tmp,i[ind_m + 1],ind_e - ind_m - 1);
+        #   write('<a href=\"');
+        #   len = find(tmp,0);
+        #   write(tmp,len);
+        #   write('\" target=\"_blank\">');
+        # ):
+        c==m_text_link ? (
+          ind = find(#1,e_text_link,y);
+          copy(i[y],0,ind - y + 1,1,0);
+        ):
+
+        c==s_img ? (
+          tmp = 0;
+          ind_m = find(#1,m_img,y);
+          ind_e = find(#1,e_img,ind_m);
+          copy(tmp,i[ind_m + 1],ind_e - ind_m - 1);
+          write(vt100_u);
+          len = find(tmp,0);
+          write(tmp,len);
+          write([vt100_n,' (image \'']);
+        ):
+        c==m_img ? (
+          ind = find(#1,e_img,y);
+          copy(i[y],0,ind - y + 1,1,0);
+          write('\')');
+        ):
+
+        c==s_pipeline ? (
+          ind = find(#1,e_pipeline);
+          write([vt100_i,'[image]',vt100_n]);
+          copy(i[y],0,ind - y + 1,1,0);
+        ):
+
+        c==s_gmic ? write([vt100_b,'G\'MIC',vt100_n]);
+        c==s_whitespace ? write(' '):
+        c==s_tab ? write('&nbsp;&nbsp;&nbsp;&nbsp;');
+      )"
+    k[0] autocrop 0 nm $nm.asc
+  endl done
+
+# Write strings and characters in generated output.
+_gmd_write :
+  u "write(str) = write(str,0);
+     write(str,len) = (
+       ref(str,_str); unref(_siz); const _siz = size(_str); ref(len,_len);
+       _siz?( # String
+         l = _len?_len:_siz;
+         _write_off + l>h(#0)?resize(#0,1,8 + l + 5*h(#0)/3,1,1,0);
+         copy(i[#0,_write_off],_str,l);
+         _write_off+=l;
+       ):( # Character
+         _write_off>=h(#0)?resize(#0,1,8 + 5*h(#0)/3,1,1,0);
+         i[#0,_write_off++] = _str;
+       )
+     );
+     _write_off = 0;"
+
+# Define set of token labels.
+_gmd_tokens :
+  u "const s_section = -1;
+     const e_section = -2;
+     const s_subsection = -3;
+     const e_subsection = -4;
+     const s_subsubsection = -5;
+     const e_subsubsection = -6;
+     const s_subsubsubsection = -7; const e_subsubsubsection = -8;
+     const s_bullet = -9;
+     const e_bullet = -10;
+     const s_subbullet = -11;
+     const e_subbullet = -12;
+     const s_subsubbullet = -13;
+     const e_subsubbullet = -14;
+     const s_center = -15;
+     const e_center = -16;
+     const s_code_block = -17;
+     const e_code_block = -18;
+     const s_hrule = -19;
+
+     const s_bold_italic_a = -20;
+     const e_bold_italic_a = -21;
+     const s_bold_italic_u = -22;
+     const e_bold_italic_u = -23;
+     const s_bold_a = -24;
+     const e_bold_a = -25;
+     const s_bold_u = -26;
+     const e_bold_u = -27;
+     const s_italic_a = -28;
+     const e_italic_a = -29;
+     const s_italic_u = -30;
+     const e_italic_u = -31;
+     const s_strikethrough = -32;
+     const e_strikethrough = -33;
+     const s_underline = -34;
+     const e_underline = -35;
+     const s_monospace = -36;
+     const e_monospace = -37;
+     const s_value_set = -38;
+     const e_value_set = -39;
+     const s_word_highlight = -40;
+     const e_word_highlight = -41;
+
+     const s_url = -42;
+     const e_url = -43;
+     const s_page_link = -44;
+     const e_page_link = -45;
+     const s_text_link = -46;
+     const m_text_link = -47;
+     const e_text_link = -48;
+     const s_img = -49;
+     const m_img = -50;
+     const e_img = -51;
+     const s_pipeline = -52;
+     const e_pipeline = -53;
+
+     const s_gmic = -54;
+     const e_gmic = -55;
+     const s_whitespace = -56;
+     const s_tab = -57;"
+
 #@cli parse_gui : _outputmode,_{ * | filter_name}
 #@cli : Parse selected filter definitions and generate info about filters in selected output mode.
 #@cli : 'outputmode' can be { json | list | print | strings | update | zart }.\n
@@ -48048,818 +48842,6 @@ fx_solve_maze_preview :
 #@cli : $ https://gmic.eu/samples/heart.gmic go _fps=15 _label="Heart"
 #@cli : $ https://gmic.eu/samples/distortion.gmic go _fps=20 _label="Distortion"
 #@cli : $ https://gmic.eu/samples/rotozoom.gmic go _fps=15 _label="Rotozoom"
-
-#@cli parse_gmd
-#@cli : Parse and tokenize selected images, viewed as text strings formatted with the G'MIC markdown syntax.
-parse_gmd :
-  e[^-1] "Parse and tokenize images$? viewed as text strings formatted with the G'MIC markdown syntax."
-  y 1 a[^-1] .,y rm.
-  eval[^] ">"${-_gmd_constants}"
-    begin(
-      section = subsection = subsubsection = subsubsubsection =
-      bullet = subbullet = subsubbullet = center = code_block =
-      bold_italic_a = bold_italic_u = bold_a = bold_u = italic_a = italic_u = strikethrough = underline = monospace =
-      value_set = word_highlight = url = page_link = text_link1 = text_link2 = img1 = img2 = pipeline = -1;
-      opening_offset = -1;
-
-      blank(c) = isin(c,_' ',_'\n',0);
-      semiblank(c) = isin(c,_' ',_'\n',_'.',_',',_';',_':',_'!',_'?',_')',_'(',0);
-      newline(c) = isin(c,_'\n',0);
-      reset(c) = (#c = -1);
-      res = crop();
-    );
-
-    pc = j[-1]; c = i; nc = j[1]; ac = j[2];
-    ym1 = y - 1; y1 = y + 1; y2 = y + 2;
-    linestart = newline(pc);
-    non_escaped = (pc!=_'\\');
-
-    # Manage document layout.
-    #------------------------
-
-    # Section: '# Section name'.
-    linestart && c==_'#' && nc==_' '?( # Opening
-      section = y;
-    ):
-    section>=0 && newline(c)?( # Closing
-      opening_offset = section;
-      res[section++] = s_section; res[section] = 0;
-      res[y] = e_section;
-      for (p = opening_offset - 1, p>=0 && res[p]==_'\n', res[p--] = 0); # Discard newlines preceding
-      for (p = y1, p<size(res) && res[p]==_'\n', res[p++] = 0); # Discard newlines following
-    ):
-
-    # Subsection: '## Subsection name'.
-    linestart && c==_'#' && nc==c && ac==_' '?( # Opening
-      subsection = y;
-    ):
-    subsection>=0 && newline(c)?( # Closing
-      opening_offset = subsection;
-      res[subsection++] = s_subsection; copy(res[subsection],0,2,1,0);
-      res[y] = e_subsection;
-      for (p = opening_offset - 1, p>=0 && res[p]==_'\n', res[p--] = 0); # Discard newlines preceding
-      for (p = y1, p<size(res) && res[p]==_'\n', res[p] = 0); # Discard newlines following
-    ):
-
-    # Subsubsection: '### Subsubsection name'.
-    linestart && c==_'#' && nc==c && ac==c && j[3]==_' '?( # Opening
-      subsubsection = y;
-    ):
-    subsubsection>=0 && newline(c)?( # Closing
-      opening_offset = subsubsection;
-      res[subsubsection++] = s_subsubsection; copy(res[subsubsection],0,3,1,0);
-      res[y] = e_subsubsection;
-      for (p = opening_offset - 1, p>=0 && res[p]==_'\n', res[p--] = 0); # Discard newlines preceding
-      for (p = y1, p<size(res) && res[p]==_'\n', res[p] = 0); # Discard newlines following
-    ):
-
-    # Subsubsubsection: '#### Subsubsubsection name'.
-    linestart && c==_'#' && nc==c && ac==c && j[3]==c && j[4]==_' '?( # Opening
-      subsubsubsection = y;
-    ):
-    subsubsubsection>=0 && newline(c)?( # Closing
-      opening_offset = subsubsubsection;
-      res[subsubsubsection++] = s_subsubsubsection; copy(res[subsubsubsection],0,4,1,0);
-      res[y] = e_subsubsubsection;
-      for (p = opening_offset - 1, p>=0 && res[p]==_'\n', res[p--] = 0); # Discard newlines preceding
-      for (p = y1, p<size(res) && res[p]==_'\n', res[p] = 0); # Discard newlines following
-    ):
-
-    # List bullet: '* List item'.
-    linestart && isin(c,_'-',_'*',_'+') && nc==_' ' && bullet<0?( # Opening
-      bullet = y;
-    ):
-    bullet>=0 && newline(c)?( # Closing
-      opening_offset = bullet;
-      res[bullet++] = s_bullet; res[bullet] = 0;
-      res[y] = e_bullet;
-    ):
-
-    # Sublist bullet: '  * Sub-list item'.
-    linestart && c==_' ' && nc==_' ' && isin(ac,_'-',_'*',_'+') && j[3]==_' ' && subbullet<0?( # Opening
-      subbullet = y;
-    ):
-    subbullet>=0 && newline(c)?( # Closing
-      opening_offset = subbullet;
-      res[subbullet++] = s_subbullet; copy(res[subbullet],0,2,1,0);
-      res[y] = e_subbullet;
-    ):
-
-    # Subsublist bullet: '    * Subsub-list item'.
-    linestart && c==_' ' && nc==_' ' && ac==_' ' && j[3]==_' ' && isin(j[4],_'-',_'*',_'+') && j[5]==_' ' &&
-      subsubbullet<0?( # Opening
-      subsubbullet = y;
-    ):
-    subsubbullet>=0 && newline(c)?( # Closing
-      opening_offset = subsubbullet;
-      res[subsubbullet++] = s_subsubbullet; copy(res[subsubbullet],0,4,1,0);
-      res[y] = e_subsubbullet;
-    ):
-
-    # Center: '\n===\n Centered text\n===\n'.
-    linestart && c==_'=' && nc==c && ac==c && newline(j[3])?(
-      center<0?( # Opening
-        center = y;
-      ):
-      center>=0 && y>center + 3?( # Closing
-        opening_offset = center;
-        res[center++] = s_center; copy(res[center],0,3,1,0); center+=3;
-        res[ym1] = e_center; copy(res[y],0,4,1,0);
-      );
-    ):
-
-    # Code block: '\n~~~\n Code block\n~~~\n'.
-    linestart && isin(c,_'~','`') && nc==c && ac==c && newline(j[3])?(
-      code_block<0?( # Opening
-        code_block = y;
-      ):
-      code_block>=0 && y>code_block + 3?( # Closing
-        opening_offset = code_block;
-        res[code_block++] = s_code_block; copy(res[code_block],0,3,1,0); code_block+=3;
-        copy(res[code_block],i[code_block],y - code_block); # Cancel tokens found inside
-        for (p = code_block, p<y, ++p, res[p]==_' '?(res[p] = s_whitespace)); # Keep leading whitespaces.
-        res[ym1] = e_code_block; copy(res[y],0,4,1,0);
-      );
-    ):
-
-    # Horizontal rule: '---'.
-    linestart && isin(c,_'-','_','*') && nc==c && ac==c && newline(j[3])?(
-      res[y] = s_hrule;
-      copy(res[y1],0,3,1,0);
-    ):
-
-    # Manage text style.
-    #-------------------
-
-    # Bold italic (asterisk): '***bold italic text***'.
-    non_escaped && c==_'*' && nc==c && ac==c?( # Opening
-      bold_italic_a<0?(
-        bold_italic_a = y;
-      ):
-      bold_italic_a>=0 && y>bold_italic_a + 3 && j[3]!=_'*'?( # Closing
-        opening_offset = bold_italic_a;
-        res[bold_italic_a++] = s_bold_italic_a; res[bold_italic_a++] = 0; res[bold_italic_a] = 0;
-        res[y] = e_bold_italic_a; res[y1] = res[y2] = 0;
-      );
-    ):
-
-    # Bold italic (underscore): '___bold italic text___'.
-    non_escaped && c==_'_' && nc==c && ac==c?(
-      bold_italic_u<0 && semiblank(pc)?( # Opening
-        bold_italic_u = y;
-      ):
-      bold_italic_u>=0 && y>bold_italic_u + 3 && semiblank(j[3])?( # Closing
-        opening_offset = bold_italic_u;
-        res[bold_italic_u++] = s_bold_italic_u; res[bold_italic_u++] = 0; res[bold_italic_u] = 0;
-        res[y] = e_bold_italic_u; res[y1] = res[y2] = 0;
-      );
-    ):
-
-    # Bold (asterisk): '**bold text**'.
-    non_escaped && c==_'*' && nc==c?( # Opening
-      bold_a<0?(
-        bold_a = y;
-      ):
-      bold_a>=0 && y>bold_a + 2 && ac!=_'*'?( # Closing
-        opening_offset = bold_a;
-        res[bold_a++] = s_bold_a; res[bold_a] = 0;
-        res[y] = e_bold_a; res[y1] = 0;
-      );
-    ):
-
-    # Bold (underscore): '__bold text__'.
-    non_escaped && c==_'_' && nc==c?(
-      bold_u<0 && semiblank(pc)?( # Opening
-        bold_u = y;
-      ):
-      bold_u>=0 && y>bold_u + 2 && semiblank(ac)?( # Closing
-        opening_offset = bold_u;
-        res[bold_u++] = s_bold_u; res[bold_u] = 0;
-        res[y] = e_bold_u; res[y1] = 0;
-      );
-    ):
-
-    # Italic (asterisk): '*italic text*'.
-    non_escaped && c==_'*' && pc!=c?( # Opening
-      italic_a<0?(
-        italic_a = y;
-      ):
-      italic_a>=0 && y>italic_a + 1 && ac!=_'*'?( # Closing
-        opening_offset = italic_a;
-        res[italic_a] = s_italic_a;
-        res[y] = e_italic_a;
-      );
-    ):
-
-    # Italic (underscore): '_italic text_'.
-    non_escaped && c==_'_' && pc!=c?(
-      italic_u<0 && semiblank(pc)?( # Opening
-        italic_u = y
-      ):
-      italic_u>=0 && y>italic_u + 1 && semiblank(nc)?( # Closing
-        opening_offset = italic_u;
-        res[italic_u] = s_italic_u;
-        res[y] = e_italic_u;
-      );
-    ):
-
-    # Strikethrough: '~~strikethrough text~~'.
-    non_escaped && c==_'~' && nc==c && pc!=c?( # Opening
-      strikethrough<0?(
-        strikethrough = y;
-      ):
-      strikethrough>=0 && y>strikethrough + 2?( # Closing
-        opening_offset = strikethrough;
-        res[strikethrough++] = s_strikethrough; res[strikethrough] = 0;
-        res[y] = e_strikethrough; res[y1] = 0;
-      );
-    ):
-
-    # Underline: '==strikethrough text=='.
-    non_escaped && c==_'=' && nc==c && pc!=c?( # Opening
-      underline<0?(
-        underline = y;
-      ):
-      underline>=0 && y>underline + 2?( # Closing
-        opening_offset = underline;
-        res[underline++] = s_underline; res[underline] = 0;
-        res[y] = e_underline; res[y1] = 0;
-      );
-    ):
-
-    # Monospace: '`monospace text`'.
-    non_escaped && c==_'`'?(
-      monospace<0?( # Opening
-        monospace = y;
-      ):
-      monospace>=0 && y>monospace + 1?( # Closing
-        opening_offset = monospace;
-        res[monospace++] = s_monospace;
-        copy(res[monospace],i[monospace],y - monospace); # Cancel tokens found inside
-        for (p = monospace, p<y, ++p, res[p]==_' '?(res[p] = s_whitespace)); # Keep leading whitespaces.
-        res[y] = e_monospace;
-      );
-    ):
-
-    # Value Set: '{ value1 | value2 | value3 }'.
-    non_escaped && c==_'{' && value_set<0 && semiblank(pc)?( # Opening
-      value_set = y;
-    ):
-    non_escaped && c==_'}' && value_set>=0 && y>value_set + 1 && semiblank(nc)?( # Closing
-      opening_offset = value_set;
-      res[value_set++] = s_value_set;
-      copy(res[value_set],i[value_set],y - value_set); # Cancel tokens found inside
-      res[y] = e_value_set;
-    ):
-
-    # Word highlight: ' 'word_highlight' '.
-    non_escaped && c=='\'' && nc!=c?(
-      word_highlight<0 && semiblank(pc)?( # Opening
-        word_highlight = y;
-      ):
-      word_highlight>=0 && y>word_highlight + 1 && semiblank(nc)?( # Closing
-        opening_offset = word_highlight;
-        res[word_highlight++] = s_word_highlight;
-        copy(res[word_highlight],i[word_highlight],y - word_highlight); # Cancel tokens found inside
-        res[y] = e_word_highlight;
-      );
-    ):
-
-    # URL: '<https://url.com>'.
-    non_escaped && c==_'<' && url<0 && crop(0,y1,1,4)=='http'?( # Opening
-      url = y;
-    ):
-    non_escaped && c==_'>' && url>=0 && y>url + 1?( # Closing
-      opening_offset = url;
-      res[url++] = s_url;
-      copy(res[url],i[url],y - url); # Cancel tokens found inside
-      res[y] = e_url;
-    ):
-
-    # Page link (command or reference): ' ''command or page name'' ' (not a URL!).
-    non_escaped && c==_'\'' && nc==c?(
-      page_link<0 && semiblank(pc)?( # Opening
-        page_link = y;
-      ):
-      page_link>=0 && y>page_link + 2 && semiblank(ac)?( # Closing
-        opening_offset = page_link;
-        res[page_link++] = s_page_link; res[page_link++] = 0;
-        copy(res[page_link],i[page_link],y - page_link); # Cancel tokens found inside
-        res[y] = e_page_link; res[y1] = 0;
-      );
-    ):
-
-    # Text link: '[link text](https://url.com)'.
-    non_escaped && c==_'[' && text_link1<0 && text_link2<0 && img1<0?( # Opening
-      text_link1 = y;
-    ):
-    non_escaped && c==_']' && nc==_'(' && text_link1>=0 && text_link2<0 && img1<0?( # Middle
-      text_link2 = y;
-    ):
-    non_escaped && c==_')' && text_link2>=0 && img1<0?( # Closing
-      opening_offset = text_link1;
-      res[text_link1] = s_text_link;
-      res[text_link2++] = m_text_link; res[text_link2++] = 0;
-      copy(res[text_link2],i[text_link2],y - text_link2); # Cancel tokens found inside
-      res[y] = e_text_link;
-    ):
-
-    # Image: '![alt caption](https://url.com/image.png)'.
-    non_escaped && c==_'!' && nc==_'[' && img1<0 && img2<0?( # Opening
-      img1 = y;
-    ):
-    non_escaped && c==_']' && nc==_'(' && img1>=0 && img2<0?( # Middle
-      img2 = y;
-    ):
-    non_escaped && c==_')' && img2>=0?( # Closing
-      opening_offset = img1;
-      res[img1++] = s_img; res[img1++] = 0;
-      res[img2++] = m_img; res[img2++] = 0;
-      copy(res[img1],i[img1],img2 - img1 - 2); copy(res[img2],i[img2],y - img2); # Cancel tokens found inside
-      res[y] = e_img;
-    ):
-
-    # G'MIC pipeline (image): '%% G'MIC pipeline %%'.
-    non_escaped && c==_'%' && nc==c?(
-      pipeline<0 && semiblank(pc)?( # Opening
-        pipeline = y;
-      ):
-      pipeline>=0 && y>pipeline + 3 && semiblank(ac)?( # Closing
-        opening_offset = pipeline;
-        res[pipeline++] = s_pipeline; res[pipeline++] = 0;
-        copy(res[pipeline],i[pipeline],y - pipeline); # Cancel tokens found inside
-        while (blank(i[pipeline]), res[pipeline++] = 0); # Discard leading blanks
-        for (p = ym1, blank(res[p]), res[p--] = 0); # Discard trailing blanks
-        res[y] = e_pipeline; res[y1] = 0;
-      );
-    ):
-
-    # G'MIC word: 'G'MIC'.
-    semiblank(pc) && c==_'G' && nc==_'\'' && ac==_'M' && j[3]==_'I' && j[4]==_'C' && semiblank(j[5])?(
-      res[y] = s_gmic;
-      copy(res[y1],0,3,1,0);
-      res[y + 4] = e_gmic;
-    ):
-
-    # Escaped character.
-    !non_escaped && isin(c,_'\\',_'`',_'*',_'_',_'{',_'}',_'[',_']',_'<',_'>',_'(',_')',_'#',_'+',_'-',_'.',_'!')?(
-      res[ym1] = 0;
-    ):
-
-    # Whitespaces.
-    c==_' '?(
-
-      # Keep consecutive whitespaces.
-      c==_' ' && (linestart || pc==c)?(
-        res[y] = s_whitespace;
-      );
-
-      # Reset tokens that cannot contain whitespace.
-      reset(word_highlight);
-      reset(url);
-      text_link2>=0?(reset(text_link1); reset(text_link2));
-      img2>=0?(reset(img1); reset(img2));
-    ):
-
-    c==_'\t'?(
-      res[y] = s_tab;
-    ):
-
-    # Newline.
-    c==_'\n'?(
-
-      # Reset tokens that cannot contain newlines.
-      reset(bold_italic_a);
-      reset(bold_italic_u);
-      reset(bold_u);
-      reset(bold_a);
-      reset(italic_a);
-      reset(italic_u);
-      reset(strikethrough);
-      reset(underline);
-      reset(monospace);
-      reset(word_highlight);
-      reset(url);
-      text_link2>=0?(reset(text_link1); reset(text_link2));
-      img2>=0?(reset(img1); reset(img2));
-    );
-
-    # Cancel opened tokens starting after the opening offset of the latest closed token.
-    #------------------------------------------------------------------------------------
-    opening_offset>=0?(
-      section>=opening_offset ? reset(section);
-      subsection>=opening_offset ? reset(subsection);
-      subsubsection>=opening_offset ? reset(subsubsection);
-      subsubsubsection>=opening_offset ? reset(subsubsubsection);
-      bullet>=opening_offset ? reset(bullet);
-      subbullet>=opening_offset ? reset(subbullet);
-      subsubbullet>=opening_offset ? reset(subsubbullet);
-      center>=opening_offset ? reset(center);
-      code_block>=opening_offset? reset(code_block);
-      bold_italic_a>=opening_offset ? reset(bold_italic_a);
-      bold_italic_u>=opening_offset ? reset(bold_italic_u);
-      bold_a>=opening_offset ? reset(bold_a);
-      bold_u>=opening_offset ? reset(bold_u);
-      italic_a>=opening_offset ? reset(italic_a);
-      italic_u>=opening_offset ? reset(italic_u);
-      strikethrough>=opening_offset ? reset(strikethrough);
-      underline>=opening_offset ? reset(underline);
-      monospace>=opening_offset ? reset(monospace);
-      value_set>=opening_offset ? reset(value_set);
-      word_highlight>=opening_offset ? reset(word_highlight);
-      url>=opening_offset ? reset(url);
-      page_link>=opening_offset ? reset(page_link);
-      text_link1>=opening_offset || text_link2>=opening_offset ? (reset(text_link1); reset(text_link2));
-      img1>=opening_offset || img2>=opening_offset ? (reset(img1); reset(img2));
-      pipeline>=opening_offset ? reset(pipeline);
-      opening_offset = -1;
-    );
-
-    end(copy(i[0],res))"
-  discard 0
-
-_gmd_constants :
-  u "
-     const s_section = -1;
-     const e_section = -2;
-     const s_subsection = -3;
-     const e_subsection = -4;
-     const s_subsubsection = -5;
-     const e_subsubsection = -6;
-     const s_subsubsubsection = -7; const e_subsubsubsection = -8;
-     const s_bullet = -9;
-     const e_bullet = -10;
-     const s_subbullet = -11;
-     const e_subbullet = -12;
-     const s_subsubbullet = -13;
-     const e_subsubbullet = -14;
-     const s_center = -15;
-     const e_center = -16;
-     const s_code_block = -17;
-     const e_code_block = -18;
-     const s_hrule = -19;
-
-     const s_bold_italic_a = -20;
-     const e_bold_italic_a = -21;
-     const s_bold_italic_u = -22;
-     const e_bold_italic_u = -23;
-     const s_bold_a = -24;
-     const e_bold_a = -25;
-     const s_bold_u = -26;
-     const e_bold_u = -27;
-     const s_italic_a = -28;
-     const e_italic_a = -29;
-     const s_italic_u = -30;
-     const e_italic_u = -31;
-     const s_strikethrough = -32;
-     const e_strikethrough = -33;
-     const s_underline = -34;
-     const e_underline = -35;
-     const s_monospace = -36;
-     const e_monospace = -37;
-     const s_value_set = -38;
-     const e_value_set = -39;
-     const s_word_highlight = -40;
-     const e_word_highlight = -41;
-
-     const s_url = -42;
-     const e_url = -43;
-     const s_page_link = -44;
-     const e_page_link = -45;
-     const s_text_link = -46;
-     const m_text_link = -47;
-     const e_text_link = -48;
-     const s_img = -49;
-     const m_img = -50;
-     const e_img = -51;
-     const s_pipeline = -52;
-     const e_pipeline = -53;
-
-     const s_gmic = -54;
-     const e_gmic = -55;
-     const s_whitespace = -56;
-     const s_tab = -57;"
-
-#@cli gmd2html : _include_default_header_footer={ 0 | 1 }
-#@cli : Convert selected gmd-formatted text images to HTML format.
-#@cli : Default values: 'include_default_header_footer=1'.
-gmd2html : skip "${1=}"
-  l[] is_arg={isbool("$1")} onfail is_arg=0 endl
-  if $is_arg embed_html=$1 else embed_html=1 noarg fi
-
-  parse_gmd
-  repeat $! l[$>] nm={b}
-    . # [0] = Output, [1] = Input
-    eval. ">
-      begin("${-_gmd_constants}"
-        ref(vector1024(),tmp);
-        write(str) = write(str,0);
-        write(str,len) = (
-          ref(str,_str); unref(_siz); const _siz = size(_str); ref(len,_len);
-          _siz?( # String
-            l = _len?_len:_siz;
-            q + l>h(#0)?resize(#0,1,8 + l + 5*h(#0)/3,1,1,0);
-            copy(i[#0,q],_str,l);
-            q+=l;
-          ):( # Character
-            q>=h(#0)?resize(#0,1,8 + 5*h(#0)/3,1,1,0);
-            i[#0,q++] = _str;
-          )
-        );
-        q = 0;
-      );
-
-      c = i;
-
-      c>0?(
-        c==_'\n' ? write('<br/>\n'):
-        c==_'&' ? write('&amp;'):
-        c==_'\'' ? write('&apos;'):
-        c==_'>' ? write('&gt;'):
-        c==_'\"' ? write('&quot;'):
-        c==_'<' ? write('&lt;'):
-        write(c);
-      ):(
-        isin(c,e_bold_a,e_bold_u,e_bold_italic_a,e_bold_italic_u,e_italic_a,e_italic_u,
-             e_monospace,e_strikethrough,e_underline,e_word_highlight) ? write('</span>'):
-        isin(c,e_bullet,e_subbullet,e_subsubbullet) ? write('</div>\n'):
-        isin(c,e_center,e_code_block,e_section,e_subsection,e_subsubsection,e_subsubsubsection) ? write('</div>\n'):
-
-        c==s_section ? write('<div class=\"gmd_section\">'):
-        c==s_subsection ? write('<div class=\"gmd_subsection\">'):
-        c==s_subsubsection ? write('<div class=\"gmd_subsubsection\">'):
-        c==s_subsubsubsection ? write('<div class=\"gmd_subsubsubsection\">'):
-        c==s_bullet ? write('<div class=\"gmd_bullet\">'):
-        c==s_subbullet ? write('<div class=\"gmd_subbullet\">'):
-        c==s_subsubbullet ? write('<div class=\"gmd_subsubbullet\">'):
-        c==s_center ? write('<div class=\"gmd_center\">\n'):
-        c==s_code_block ? write('<div class=\"gmd_code_block\">'):
-        c==s_hrule ? write('\n<hr/>\n'):
-
-        c==s_bold_italic_a ? write('<span class=\"gmd_bold_italic_a\">'):
-        c==s_bold_italic_u ? write('<span class=\"gmd_bold_italic_u\">'):
-        c==s_bold_a ? write('<span class=\"gmd_bold_a\">'):
-        c==s_bold_u ? write('<span class=\"gmd_bold_u\">'):
-        c==s_italic_a ? write('<span class=\"gmd_italic_a\">'):
-        c==s_italic_u ? write('<span class=\"gmd_italic_u\">'):
-        c==s_strikethrough? write('<span class=\"gmd_strikethrough\">'):
-        c==s_underline? write('<span class=\"gmd_underline\">'):
-        c==s_monospace ? write('<span class=\"gmd_monospace\">'):
-        c==s_value_set ? write('<span class=\"gmd_value_set\">{'):
-        c==e_value_set ? write('}</span>'):
-        c==s_word_highlight ? write('<span class=\"gmd_word_highlight\">'):
-
-        c==s_url ? (
-          tmp = 0;
-          ind = find(#1,e_url,y);
-          copy(tmp,i[y + 1],ind - y - 1);
-          write('<a href=\"');
-          len = find(tmp,0);
-          write(tmp,len);
-          write('\" target=\"_blank\">');
-        ):
-        c==e_url ? write('</a>'):
-
-        c==s_page_link ? (
-          ind = find(#1,e_page_link,y);
-          run('+rows. ',y + 1,',',ind - 1,' strvar {t} rm. varname=${}');
-          ref(get('varname',256,0),varname);
-          write('<span class=\"gmd_page_link\"><a href=\"');
-          len = find(varname,0);
-          write(varname,len);
-          write('.html\">');
-        ):
-        c==e_page_link ? write('</a></span>'):
-
-        c==s_text_link ? (
-          tmp = 0;
-          ind_m = find(#1,m_text_link,y);
-          ind_e = find(#1,e_text_link,ind_m);
-          copy(tmp,i[ind_m + 1],ind_e - ind_m - 1);
-          write('<a href=\"');
-          len = find(tmp,0);
-          write(tmp,len);
-          write('\" target=\"_blank\">');
-        ):
-        c==m_text_link ? (
-          ind = find(#1,e_text_link,y);
-          copy(i[y],0,ind - y + 1,1,0);
-          write('</a>');
-        ):
-
-        c==s_img ? (
-          tmp = 0;
-          ind_m = find(#1,m_img,y);
-          ind_e = find(#1,e_img,ind_m);
-          copy(tmp,i[ind_m + 1],ind_e - ind_m - 1);
-          write('<img class=\"gmd_image\" src=\"');
-          len = find(tmp,0);
-          write(tmp,len);
-          write('\" alt=\"');
-        ):
-        c==m_img ? (
-          ind = find(#1,e_img,y);
-          copy(i[y],0,ind - y + 1,1,0);
-          write('\"/>');
-        ):
-
-        c==s_pipeline ? (
-          ind = find(#1,e_pipeline);
-          run('_gmd_html. ',y + 1,',',ind -  1);
-          ref(get('_gmd_command',1024,0),com);
-          ref(get('_gmd_filename',1024,0),nam);
-          write('<img class=\"gmd_image\" src=\"');
-          len = find(nam,0);
-          write(nam,len);
-          write('\" alt=\"');
-          len = find(com,0);
-          write(com,len);
-          write('\"/>');
-          copy(i[y],0,ind - y + 1,1,0);
-        ):
-        c==s_gmic ? write('<span class=\"gmd_gmic\"></span>'):
-        c==s_whitespace ? write('&nbsp;'):
-        c==s_tab ? write('&nbsp;&nbsp;&nbsp;&nbsp;');
-      )"
-    k[0] autocrop 0 nm $nm.html
-  endl done
-
-  # Embed with header and footer if needed.
-  if $embed_html repeat $! l[$>] nm={n} bn={b}
-    if isfile('../style.css') style="../style.css" else style="https://gmic.eu/style.css" fi
-    i[0] ('\
-"<!DOCTYPE html>"\n\
-"<html lang=\"en\">"\n\
-"  <head>"\n\
-"    <meta charset=\"utf-8\">"\n\
-"    <link rel=\"stylesheet\" href=\""$style"\">"\n\
-"    <title>"$bn"</title>"\n\
-"  </head>"\n\n\
-"  <body>"\n\
-"    <div class=\"section_title\"></div><div class=\"section_content\">"\n\
-"<!-- begin_content -->"\n\n\
-   ':y)
-    ('\
-\n\n"<!-- end_content -->"\n\
-"    </div><div class=\"section_end\"></div>"\n\
-"  </body>"\
-   ':y)
-    a y nm $nm
-  endl done fi
-
-# Manage G'MIC pipeline execution and result saving.
-_gmd_html :
-  +rows. $1,$2 _gmd_command={t} rm.
-  strvar $_gmd_command
-  _gmd_filename=img/${}.png
-  if !isfile(['{/$_gmd_filename}'])
-    l[]
-      run $_gmd_command a x
-    onfail
-      rm v 1 warn[] "Command '"$_gmd_command"': "${}
-      gui_error_preview ${}
-    endl
-    if !isdir('img') x "mkdir -p img" fi
-    o. $_gmd_filename rm.
-  fi
-
-  # Replace reserved HTML characters in $_gmd_command.
-  ({'$_gmd_command'})
-  replace_str. "\"","&quot;"
-  replace_str. "\'","&apos;"
-  replace_str. "&","&amp;"
-  replace_str. "<","&lt;"
-  replace_str. ">","&gt;"
-  _gmd_command={t} rm.
-
-
-#@cli gmd2ascii
-#@cli : Convert selected gmd-formatted text images to ascii format.
-gmd2ascii :
-  use_vt100
-  parse_gmd
-  repeat $! l[$>] nm={b}
-    . # [0] = Output, [1] = Input
-    eval. ">
-      begin("${-_gmd_constants}"
-        vt100_b = '"$_vt100_b"';
-        vt100_c = '"$_vt100_c"';
-        vt100_g = '"$_vt100_g"';
-        vt100_i = '"$_vt100_i"';
-        vt100_m = '"$_vt100_m"';
-        vt100_n = '"$_vt100_n"';
-        vt100_r = '"$_vt100_r"';
-        vt100_u = '"$_vt100_u"';
-
-        ref(vector1024(),tmp);
-        write(str) = write(str,0);
-        write(str,len) = (
-          ref(str,_str); unref(_siz); const _siz = size(_str); ref(len,_len);
-          _siz?( # String
-            l = _len?_len:_siz;
-            q + l>h(#0)?resize(#0,1,8 + l + 5*h(#0)/3,1,1,0);
-            copy(i[#0,q],_str,l);
-            q+=l;
-          ):( # Character
-            q>=h(#0)?resize(#0,1,8 + 5*h(#0)/3,1,1,0);
-            i[#0,q++] = _str;
-          )
-        );
-        q = 0;
-      );
-
-      c = i;
-
-      c>0?write(c):
-      (
-        isin(c,e_bold_a,e_bold_u,e_bold_italic_a,e_bold_italic_u,e_italic_a,e_italic_u,
-             e_strikethrough,e_underline,e_page_link) ? write(vt100_n):
-        isin(c,e_bullet,e_subbullet,e_subsubbullet) ? write('\n'):
-        isin(c,e_section,e_subsection,e_subsubsection,e_subsubsubsection) ? write([vt100_n,'\n\n']):
-
-        c==s_section ? write([_'\n',vt100_r,vt100_b,'# ']);
-
-        c==s_subsection ? write('<div class=\"gmd_subsection\">'):
-        c==s_subsubsection ? write('<div class=\"gmd_subsubsection\">'):
-        c==s_subsubsubsection ? write('<div class=\"gmd_subsubsubsection\">'):
-        c==s_bullet ? write('* '):
-        c==s_subbullet ? write('  - '):
-        c==s_subsubbullet ? write('    . '):
-        c==s_center ? write('    '):
-        c==e_center ? write('\n'):
-        c==s_code_block ? write([_'\n',vt100_c]):
-        c==e_code_block ? write([vt100_n,'\n\n']):
-        c==s_hrule ? write('\n+------------------------------+\n'):
-
-        c==s_bold_italic_a ? (write(vt100_b); write(vt100_i)):
-        c==s_bold_italic_u ? (write(vt100_b); write(vt100_i)):
-        c==s_bold_a ? write(vt100_b):
-        c==s_bold_u ? write(vt100_b):
-        c==s_italic_a ? write(vt100_i):
-        c==s_italic_u ? write(vt100_i):
-        c==s_strikethrough? write('<span class=\"gmd_strikethrough\">'):
-        c==s_underline? write('<span class=\"gmd_underline\">'):
-        c==s_monospace ? write([_'\'',vt100_c]):
-        c==e_monospace ? write([vt100_n,_'\'']):
-
-        c==s_value_set ? write('<span class=\"gmd_value_set\">{'):
-        c==e_value_set ? write('}</span>'):
-
-        c==s_word_highlight ? write([_'\'',vt100_g]):
-        c==e_word_highlight ? write([vt100_n,_'\'']):
-
-
-        c==s_url ? write(vt100_u);
-        c==e_url ? write(vt100_n);
-
-        c==s_page_link ? write(vt100_u):
-
-        # c==s_text_link ? (
-        #   tmp = 0;
-        #   ind_m = find(#1,m_text_link,y);
-        #   ind_e = find(#1,e_text_link,ind_m);
-        #   copy(tmp,i[ind_m + 1],ind_e - ind_m - 1);
-        #   write('<a href=\"');
-        #   len = find(tmp,0);
-        #   write(tmp,len);
-        #   write('\" target=\"_blank\">');
-        # ):
-        c==m_text_link ? (
-          ind = find(#1,e_text_link,y);
-          copy(i[y],0,ind - y + 1,1,0);
-        ):
-
-        c==s_img ? (
-          tmp = 0;
-          ind_m = find(#1,m_img,y);
-          ind_e = find(#1,e_img,ind_m);
-          copy(tmp,i[ind_m + 1],ind_e - ind_m - 1);
-          write(vt100_u);
-          len = find(tmp,0);
-          write(tmp,len);
-          write([vt100_n,' (image \'']);
-        ):
-        c==m_img ? (
-          ind = find(#1,e_img,y);
-          copy(i[y],0,ind - y + 1,1,0);
-          write('\')');
-        ):
-
-        c==s_pipeline ? (
-          ind = find(#1,e_pipeline);
-          write([vt100_i,'[image]',vt100_n]);
-          copy(i[y],0,ind - y + 1,1,0);
-        ):
-
-        c==s_gmic ? write([vt100_b,'G\'MIC',vt100_n]);
-        c==s_whitespace ? write(' '):
-        c==s_tab ? write('&nbsp;&nbsp;&nbsp;&nbsp;');
-      )"
-    k[0] autocrop 0 nm $nm.asc
-  endl done
-
-
-
 
 # Local Variables:
 # mode: sh
