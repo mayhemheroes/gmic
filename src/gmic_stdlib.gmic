@@ -535,10 +535,6 @@ reference : skip "${2="$HOME"/work/src/gmic-community/doc}"
   m "_text : reference_text_$1 \"$""*\""
   l reference_begin_$1 reference_header_$1 onfail endl
   _section "Usage"
-
-#   _text "\
-# ~~~\ntoto\n~~~\n"
-
   _text \
 "~~~\ngmic [command1 [arg1_1,arg1_2,..]] .. [commandN [argN_1,argN_2,..]]\n~~~"\n\n\
 "`gmic` is the open-source interpreter of the G'MIC language, a script-based programming "\
@@ -1388,21 +1384,15 @@ reference_section_ascii :
   +e[] ""
   ('$_section." "') ('"$*"') +f.. {'" "'} +f.. {'-'} a[-4,-3] x a[-2,-1] x
   +e[] "  "$_vt100_r$_vt100_b{-2,t}$_vt100_n
-  +e[] "  "$_vt100_r{t}$_vt100_n"\n"
+  +e[] "  "$_vt100_r{t}$_vt100_n
   rm[-2,-1]
 
 reference_text_ascii :
   l[]
     ('"$*"')
-
-    s -,{'\n'}
     gmd2ascii
-    i[^] ({'\n'})
-    a y autocrop {'\n'}
 
-
-
-
+#    s -,{'\n'}
     # gmd_list_ascii
     # gmd_code_ascii
     # gmd_command_ascii
@@ -1419,6 +1409,8 @@ reference_text_ascii :
     # gmd_line_ascii
     # gmd_section_ascii
     # gmd_gmic_ascii
+#    i[^] ({'\n'})
+#    a y autocrop {'\n'}
 
     # Ensure output text contains no more than two consecutive newlines.
     # Also add a 2-chars left margin on each line.
@@ -5120,7 +5112,7 @@ parse_cli_trigger_print :
 #@cli parse_gmd
 #@cli : Parse and tokenize selected images, viewed as text strings formatted with the G'MIC markdown syntax.
 parse_gmd :
-  e[^-1] "Parse and tokenize images$? viewed as text strings formatted with the G'MIC markdown syntax."
+  e[^-1] "Parse and tokenize images$? viewed as text strings formatted with the G\47MIC markdown syntax."
   y 1 a[^-1] .,y rm.
   eval[^] ">"${-_gmd_tokens}"
     begin(
@@ -5726,7 +5718,7 @@ _gmd_html :
 #@cli gmd2ascii
 #@cli : Convert selected gmd-formatted text images to ascii format.
 gmd2ascii :
-  use_vt100 parse_gmd _gmd_ascii 100,0
+  use_vt100 parse_gmd
   repeat $! l[$>] nm={b}
     . # [0] = Output, [1] = Input
     eval. ">
@@ -5748,18 +5740,17 @@ gmd2ascii :
       (
         isin(c,e_bold_a,e_bold_u,e_bold_italic_a,e_bold_italic_u,e_italic_a,e_italic_u,
              e_strikethrough,e_underline,e_url,e_page_link) ? write(vt100_n):
-        isin(c,e_bullet,e_subbullet,e_subsubbullet) ? write('\n'):
+        isin(c,e_bullet,e_subbullet,e_subsubbullet,e_center) ? write('\n'):
         isin(c,e_section,e_subsection,e_subsubsection,e_subsubsubsection) ? write([vt100_n,'\n\n']):
 
-        c==s_section ? write([_'\n',vt100_r,vt100_b,'# ']):
-        c==s_subsection ? write([_'\n',vt100_r,vt100_b,'## ']):
-        c==s_subsubsection ? write([_'\n',vt100_r,vt100_b,'### ']):
-        c==s_subsubsubsection ? write([_'\n',vt100_r,vt100_b,'#### ']):
-        c==s_bullet ? write('* '):
+        c==s_section ? write([_'\n',_'\n',vt100_r,vt100_b,'# ']):
+        c==s_subsection ? write([_'\n',_'\n',vt100_r,vt100_b,'## ']):
+        c==s_subsubsection ? write([_'\n',_'\n',vt100_r,vt100_b,'### ']):
+        c==s_subsubsubsection ? write([_'\n',_'\n',vt100_r,vt100_b,'#### ']):
+        c==s_bullet ? write('\n* '):
         c==s_subbullet ? write('  - '):
         c==s_subsubbullet ? write('    + '):
-        c==s_center ? write('    '):
-        c==e_center ? write('\n'):
+        isin(c,s_center,s_tab) ? write('    '):
         c==s_code_block ? write([_'\n',vt100_c]):
         c==e_code_block ? write([vt100_n,'\n\n']):
         c==s_hrule ? write('+------------------------------+\n'):
@@ -5779,7 +5770,7 @@ gmd2ascii :
         c==s_word_highlight ? write([_'\'',vt100_g]):
         c==e_word_highlight ? write([vt100_n,_'\'']):
 
-        c==s_url || c==s_page_link || c==s_text_link? write(vt100_u):
+        isin(c,s_url,s_page_link,s_text_link) ? write(vt100_u):
         c==m_text_link ? (
           ind = find(#1,e_text_link,y);
           copy(i[y],0,ind - y + 1,1,0);
@@ -5810,9 +5801,11 @@ gmd2ascii :
           write([vt100_b,'G\'MIC',vt100_n]);
         ):
         c==s_whitespace ? write(_' '):
-        c==s_tab ? write('    ');
       )"
     k[0] autocrop 0 nm $nm.asc
+
+#    _gmd_ascii 100,0 i[^] ({'\n'}) a y autocrop {'\n'}
+
   endl done
 
 # Cut long sentences into blocs of size<$1.
