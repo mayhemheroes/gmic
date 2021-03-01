@@ -1748,6 +1748,7 @@ use_vt100 :
   _vt100_m="\33[0;35;59m"   # Magenta
   _vt100_n="\33[0;0;0m"     # Normal
   _vt100_r="\33[0;31;59m"   # Red
+  _vt100_s="\33[9m"         # Strikethrough
   _vt100_u="\33[4m"         # Underline
 
 #@cli version
@@ -5766,6 +5767,7 @@ gmd2ascii :
         vt100_m = '"$_vt100_m"';
         vt100_n = '"$_vt100_n"';
         vt100_r = '"$_vt100_r"';
+        vt100_s = '"$_vt100_s"';
         vt100_u = '"$_vt100_u"';
         ref(vector1024(),tmp);
       );
@@ -5778,34 +5780,32 @@ gmd2ascii :
              e_strikethrough,e_underline,e_page_link) ? write(vt100_n):
         isin(c,e_bullet,e_subbullet,e_subsubbullet) ? write('\n'):
         isin(c,e_section,e_subsection,e_subsubsection,e_subsubsubsection) ? write([vt100_n,'\n\n']):
-
-        c==s_section ? write([_'\n',vt100_r,vt100_b,'# ']);
-
-        c==s_subsection ? write('<div class=\"gmd_subsection\">'):
-        c==s_subsubsection ? write('<div class=\"gmd_subsubsection\">'):
-        c==s_subsubsubsection ? write('<div class=\"gmd_subsubsubsection\">'):
+        c==s_section ? write([_'\n',vt100_r,vt100_b,'# ']):
+        c==s_subsection ? write([_'\n',vt100_r,vt100_b,'## ']):
+        c==s_subsubsection ? write([_'\n',vt100_r,vt100_b,'### ']):
+        c==s_subsubsubsection ? write([_'\n',vt100_r,vt100_b,'#### ']):
         c==s_bullet ? write('* '):
         c==s_subbullet ? write('  - '):
-        c==s_subsubbullet ? write('    . '):
+        c==s_subsubbullet ? write('    + '):
         c==s_center ? write('    '):
         c==e_center ? write('\n'):
         c==s_code_block ? write([_'\n',vt100_c]):
         c==e_code_block ? write([vt100_n,'\n\n']):
-        c==s_hrule ? write('\n+------------------------------+\n'):
+        c==s_hrule ? write('+------------------------------+\n'):
 
-        c==s_bold_italic_a ? (write(vt100_b); write(vt100_i)):
-        c==s_bold_italic_u ? (write(vt100_b); write(vt100_i)):
+        c==s_bold_italic_a ? write([vt100_b,vt100_i]):
+        c==s_bold_italic_u ? write([vt100_m,vt100_b,vt100_i]):
         c==s_bold_a ? write(vt100_b):
-        c==s_bold_u ? write(vt100_b):
+        c==s_bold_u ? write([vt100_m,vt100_b]):
         c==s_italic_a ? write(vt100_i):
-        c==s_italic_u ? write(vt100_i):
-        c==s_strikethrough? write('<span class=\"gmd_strikethrough\">'):
-        c==s_underline? write('<span class=\"gmd_underline\">'):
+        c==s_italic_u ? write([vt100_m,vt100_i]):
+        c==s_strikethrough? write(vt100_s);
+        c==s_underline? write(vt100_u):
         c==s_monospace ? write([_'\'',vt100_c]):
         c==e_monospace ? write([vt100_n,_'\'']):
 
-        c==s_value_set ? write('<span class=\"gmd_value_set\">{'):
-        c==e_value_set ? write('}</span>'):
+        c==s_value_set ? write([vt100_g,vt100_b,_'{']):
+        c==e_value_set ? write([_'}',vt100_n]):
 
         c==s_word_highlight ? write([_'\'',vt100_g]):
         c==e_word_highlight ? write([vt100_n,_'\'']):
@@ -5839,7 +5839,7 @@ gmd2ascii :
           write(vt100_u);
           len = find(tmp,0);
           write(tmp,len);
-          write([vt100_n,' (image \'']);
+          write([vt100_n,' (image: \'']);
         ):
         c==m_img ? (
           ind = find(#1,e_img,y);
