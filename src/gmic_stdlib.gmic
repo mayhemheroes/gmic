@@ -4975,6 +4975,8 @@ parse_gmd :
     linestart && isin(c,_'-','_','*') && nc==c && ac==c && newline(j[3])?(
       res[y] = s_hrule;
       copy(res[y1],0,3,1,0);
+      for (p = y - 1, p>=0 && res[p]==_'\n', res[p--] = 0); # Discard newlines preceding
+      for (p = y + 4, p<size(res) && res[p]==_'\n', res[p++] = 0); # Discard newlines following
     ):
 
     # Manage text style.
@@ -5398,7 +5400,8 @@ gmd2html : skip "${1=}"
         c==s_gmic ? write('<span class=\"gmd_gmic\"></span>'):
         c==s_whitespace ? write('&nbsp;'):
         c==s_tab ? write('&nbsp;&nbsp;&nbsp;&nbsp;');
-      )"
+      );
+      end(resize(#0,1,_write_off,1,1,0))"
     k[0] autocrop 0 nm $nm.html
   endl done
 
@@ -5490,7 +5493,7 @@ gmd2ascii :
         isin(c,s_center,s_tab) ? write('    '):
         c==s_code_block ? write([['\n    '],vt100_c]):
         c==e_code_block ? write([vt100_n,'\n\n']):
-        c==s_hrule ? write('+------------------------------+\n'):
+        c==s_hrule ? write('\n+------------------------------+\n'):
 
         c==s_bold_italic_a ? write([vt100_b,vt100_i]):
         c==s_bold_italic_u ? write([vt100_m,vt100_b,vt100_i]):
@@ -5538,7 +5541,8 @@ gmd2ascii :
           write([vt100_b,'G\47MIC',vt100_n]);
         ):
         c==s_whitespace ? write(_' ');
-      )"
+      );
+      end(resize(#0,1,_write_off,1,1,0))"
     k[0] discard 0
     _gmd2ascii_cut $max_line_length,$indent_forced_newline
     nm $nm.asc
