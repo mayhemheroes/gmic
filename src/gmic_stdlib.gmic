@@ -1206,8 +1206,7 @@ reference_end_section_html :
   fi
 
 reference_text_html :
-  ('"$*"':y)
-  gmd2html. 0
+  ('"$*"':y) gmd2html. 0
   if $!>1 a[-2,-1] y fi
 
 reference_footer_html :
@@ -1908,7 +1907,7 @@ _d2d_core :
 #@cli : This command is used by default by command 'display' when displaying 2d images.
 #@cli : If selected image is a volumetric image, each slice is displayed on a separate display
 #@cli : window (up to 10 images can be displayed simultaneously this way), with synchronized moves.
-#@cli : When interactive window is opened, the following actions are possible:\n
+#@cli : When interactive window is opened, the following actions are possible:
 #@cli : * Left mouse button: Create an image selection and zoom into it.
 #@cli : * Middle mouse button, or CTRL+left mouse button: Move image.
 #@cli : * Mouse wheel or PADD+/-: Zoom in/out.
@@ -4220,8 +4219,9 @@ parse_cli_text_ascii :
   # Also add a 4-chars left margin on each line.
   if w
     s +,{'\n'}
+    if {i==_'\n'} rm. fi # Remove last newline.
     eval "for (p = 0, p<l, ++p,
-            i(#p)==_'\n' && h(#p)>2?resize(#p,1,2,1,1,0):
+            i(#p)==_'\n' && h(#p)>2?resize(#p,1,1,1,1,0):
             (resize(#p,1,h#p + 4,1,1,0,0,0,1); copy(i[#p,0],_' ',4,1,0)))"
     a y
   fi
@@ -4976,6 +4976,8 @@ parse_gmd :
     linestart && isin(c,_'-','_','*') && nc==c && ac==c && newline(j[3])?(
       res[y] = s_hrule;
       copy(res[y1],0,3,1,0);
+      for (p = y - 1, p>=0 && res[p]==_'\n', res[p--] = 0); # Discard newlines preceding
+      for (p = y + 4, p<size(res) && res[p]==_'\n', res[p++] = 0); # Discard newlines following
     ):
 
     # Manage text style.
@@ -5274,7 +5276,7 @@ parse_gmd :
     end(copy(i[0],res))"
   discard 0
 
-#@cli gmd2html : _include_default_header_footer={ 0 | 1 }
+#@cli gmd2html : _include_default_header_footer={ 0 | 1 } : (no arg)
 #@cli : Convert selected gmd-formatted text images to HTML format.
 #@cli : Default values: 'include_default_header_footer=1'.
 gmd2html : skip "${1=}"
@@ -5293,7 +5295,7 @@ gmd2html : skip "${1=}"
       c>0?(
         c==_'\n' ? write('<br/>\n'):
         c==_'&' ? write('&amp;'):
-        c==_'\'' ? write('&apos;'):
+        c==_'\47' ? write('&apos;'):
         c==_'>' ? write('&gt;'):
         c==_'\"' ? write('&quot;'):
         c==_'<' ? write('&lt;'):
@@ -5399,7 +5401,8 @@ gmd2html : skip "${1=}"
         c==s_gmic ? write('<span class=\"gmd_gmic\"></span>'):
         c==s_whitespace ? write('&nbsp;'):
         c==s_tab ? write('&nbsp;&nbsp;&nbsp;&nbsp;');
-      )"
+      );
+      end(resize(#0,1,_write_off,1,1,0))"
     k[0] autocrop 0 nm $nm.html
   endl done
 
@@ -5448,9 +5451,14 @@ _gmd_html :
   replace_str. ">","&gt;"
   _gmd_command={t} rm.
 
-#@cli gmd2ascii : max_line_length>0,indent_forced_newlines>=0
+#@cli gmd2ascii : _max_line_length>0,_indent_forced_newlines>=0 : (no arg)
 #@cli : Convert selected gmd-formatted text images to ascii format.
-gmd2ascii : check "${1=80}>0 && ${2=0}>=0"
+#@cli : Default values: 'max_line_length=80' and 'indent_forced_newline=0'.
+gmd2ascii :
+  is_arg=1 l[] check "isint(${1=80}) && $1>0 && isint(${2=0}) && $2>=0" onfail is_arg=0 endl
+  max_line_length,indent_forced_newline=${1-2}
+  if !$is_arg max_line_length,indent_newline=80,0 noarg fi
+
   use_vt100 parse_gmd
   repeat $! l[$>] nm={b}
     . # [0] = Output, [1] = Input
@@ -5486,7 +5494,7 @@ gmd2ascii : check "${1=80}>0 && ${2=0}>=0"
         isin(c,s_center,s_tab) ? write('    '):
         c==s_code_block ? write([['\n    '],vt100_c]):
         c==e_code_block ? write([vt100_n,'\n\n']):
-        c==s_hrule ? write('+------------------------------+\n'):
+        c==s_hrule ? write('\n+------------------------------+\n'):
 
         c==s_bold_italic_a ? write([vt100_b,vt100_i]):
         c==s_bold_italic_u ? write([vt100_m,vt100_b,vt100_i]):
@@ -5534,15 +5542,16 @@ gmd2ascii : check "${1=80}>0 && ${2=0}>=0"
           write([vt100_b,'G\47MIC',vt100_n]);
         ):
         c==s_whitespace ? write(_' ');
-      )"
+      );
+      end(resize(#0,1,_write_off,1,1,0))"
     k[0] discard 0
-    _gmd2ascii_cut $1,$2
+    _gmd2ascii_cut $max_line_length,$indent_forced_newline
     nm $nm.asc
 
   endl done
 
 # Cut long ascii lines in selected text images (ignoring the VT100 codes for the length).
-# $1: Max length of each line
+# $1: Max length of each line.
 # $2: Indentation put after each forced newline.
 _gmd2ascii_cut :
   repeat $! l[$>]
