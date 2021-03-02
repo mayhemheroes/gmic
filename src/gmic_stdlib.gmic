@@ -5273,7 +5273,7 @@ parse_gmd :
     end(copy(i[0],res))"
   discard 0
 
-#@cli gmd2html : _include_default_header_footer={ 0 | 1 }
+#@cli gmd2html : _include_default_header_footer={ 0 | 1 } : (no arg)
 #@cli : Convert selected gmd-formatted text images to HTML format.
 #@cli : Default values: 'include_default_header_footer=1'.
 gmd2html : skip "${1=}"
@@ -5292,7 +5292,7 @@ gmd2html : skip "${1=}"
       c>0?(
         c==_'\n' ? write('<br/>\n'):
         c==_'&' ? write('&amp;'):
-        c==_'\'' ? write('&apos;'):
+        c==_'\47' ? write('&apos;'):
         c==_'>' ? write('&gt;'):
         c==_'\"' ? write('&quot;'):
         c==_'<' ? write('&lt;'):
@@ -5447,9 +5447,14 @@ _gmd_html :
   replace_str. ">","&gt;"
   _gmd_command={t} rm.
 
-#@cli gmd2ascii : max_line_length>0,indent_forced_newlines>=0
+#@cli gmd2ascii : _max_line_length>0,_indent_forced_newlines>=0 : (no arg)
 #@cli : Convert selected gmd-formatted text images to ascii format.
-gmd2ascii : check "${1=80}>0 && ${2=0}>=0"
+#@cli : Default values: 'max_line_length=80' and 'indent_forced_newline=0'.
+gmd2ascii :
+  is_arg=1 l[] check "isint(${1=80}) && $1>0 && isint(${2=0}) && $2>=0" onfail is_arg=0 endl
+  max_line_length,indent_forced_newline=${1-2}
+  if !$is_arg max_line_length,indent_newline=80,0 noarg fi
+
   use_vt100 parse_gmd
   repeat $! l[$>] nm={b}
     . # [0] = Output, [1] = Input
@@ -5535,13 +5540,13 @@ gmd2ascii : check "${1=80}>0 && ${2=0}>=0"
         c==s_whitespace ? write(_' ');
       )"
     k[0] discard 0
-    _gmd2ascii_cut $1,$2
+    _gmd2ascii_cut $max_line_length,$indent_forced_newline
     nm $nm.asc
 
   endl done
 
 # Cut long ascii lines in selected text images (ignoring the VT100 codes for the length).
-# $1: Max length of each line
+# $1: Max length of each line.
 # $2: Indentation put after each forced newline.
 _gmd2ascii_cut :
   repeat $! l[$>]
