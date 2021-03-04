@@ -47023,10 +47023,14 @@ fx_sine_curve :
 
   if !narg($_is_preview) _is_preview=0 fi
   if [$prev_xc,$prev_yc]!=[$xc,$yc] xr,yr,xa,ya+={d=[$xc,$yc]-[$prev_xc,$prev_yc];[d,d]} fi
-
   if [$prev_xa,$prev_ya]!=[$xa,$ya]
-#    xr,yr=}
-  fi
+    delta_a={"
+      a = [ "$xa" - "$xc", "$ya" - "$yc" ];
+      b = [ "$prev_xa" - "$xc", "$prev_ya" - "$yc" ];
+      (atan2(a[1],a[0]) - atan2(b[1],b[0]))*180/pi;
+    "}
+    xr,yr={[$xc,$yc]+rot($delta_a)*[$xr-$xc,$yr-$yc]}
+  else delta_a=0 fi
   if [$colR,$colG,$colB]==[0,0,0]" && "$preview_background==1 colR,colG,colB=255
   elif [$colR,$colG,$colB]==[255,255,255]" && "$preview_background==2 colR,colG,colB=0
   fi
@@ -47125,8 +47129,20 @@ fx_sine_curve :
         ref(rot(0,1,0,"$roty"),Ry);
         ref(rot(0,0,1,"$rotz"),Rz);
         R = mul(Rz,mul(Ry,Rx,3),3); # 3D rotation
-        const ang = atan2("$ya-$yc","$xa-$xc")*180/pi;
-        ref(rot(ang),rho); # 2D rotation
+
+        # Variables to manage 2D rotation.
+        const ang = atan2("$ya-$yc","$xa-$xc");
+        const cosa = cos(ang);
+        const sina = sin(ang);
+
+        # Variables to manage aspect ratio.
+        const c = 35;
+        const dxr0 = "$xr" - "$xc";
+        const dyr0 = "$yr" - "$yc";
+        const dxr = cosa*dxr0 + sina*dyr0;
+        const dyr = -sina*dxr0 + cosa*dyr0;
+        const _dx = abs(dxr)/c; const dx = 2.5*c*(_dx<1?_dx:_dx^3);
+        const _dy = abs(dyr)/c; const dy = 2.5*c*(_dy<1?_dy:_dy^3);
       );
 
       cpow(x,p,s) = (
@@ -47146,9 +47162,6 @@ fx_sine_curve :
                "$ratz");
 
       # Set aspect ratio and rotate.
-      const c = 35;
-      const _dx = abs("$xr-$xc")/c; const dx = 2.5*c*(_dx<1?_dx:_dx^3);
-      const _dy = abs("$yr-$yc")/c; const dy = 2.5*c*(_dy<1?_dy:_dy^3);
       X*=dx%;
       Y*=dy%;
       is_rot?(P = R*[ X,Y,Z ]; X = P[0]; Y = P[1]; Z = P[2]);
@@ -47161,7 +47174,7 @@ fx_sine_curve :
       pY = -Y/Z;
 
       # Normalize and get display coordinates.
-      ang?(X = rho[0]*pX + rho[1]*pY; pY = rho[2]*pX + rho[3]*pY; pX = X);
+      ang?(X = cosa*pX - sina*pY; pY = sina*pX + cosa*pY; pX = X);
 
       const ax = "$zoom*$rW"; const bx = "$rW*$xc"%;
       const ay = "$zoom*$rH"; const by = "$rH*$yc"%;
