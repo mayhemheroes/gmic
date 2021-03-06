@@ -4849,7 +4849,7 @@ parse_gmd :
   eval[^] ">"${-_gmd_tokens}"
     begin(
       section = subsection = subsubsection = subsubsubsection =
-      bullet = subbullet = subsubbullet = center = code_block =
+      bullet = subbullet = subsubbullet = center = code_block = shell =
       bold_italic_a = bold_italic_u = bold_a = bold_u = italic_a = italic_u = strikethrough = underline = monospace =
       value_set = word_highlight = url = page_link = text_link1 = text_link2 = img1 = img2 = pipeline = -1;
       opening_offset = -1;
@@ -4971,6 +4971,19 @@ parse_gmd :
         copy(res[code_block],i[code_block],y - code_block); # Cancel tokens found inside
         for (p = code_block, p<y, ++p, res[p]==_' '?(res[p] = s_whitespace)); # Keep leading whitespaces.
         res[ym1] = e_code_block; copy(res[y],0,4,1,0);
+      );
+    ):
+
+    # Shell command: '\n"""\n Shell command\n"""\n'.
+    linestart && c==_'\"' && nc==c && ac==c && newline(j[3])?(
+      shell<0?( # Opening
+        shell = y;
+      ):
+      shell>=0 && y>shell + 3?( # Closing
+        opening_offset = shell;
+        res[shell++] = s_shell; copy(res[shell],0,3,1,0); shell+=3;
+        copy(res[shell],i[shell],y - shell); # Cancel tokens found inside
+        res[ym1] = e_shell; copy(res[y],0,4,1,0);
       );
     ):
 
@@ -5256,6 +5269,7 @@ parse_gmd :
       subsubbullet>=opening_offset ? reset(subsubbullet);
       center>=opening_offset ? reset(center);
       code_block>=opening_offset? reset(code_block);
+      shell>=opening_offset? reset(shell);
       bold_italic_a>=opening_offset ? reset(bold_italic_a);
       bold_italic_u>=opening_offset ? reset(bold_italic_u);
       bold_a>=opening_offset ? reset(bold_a);
@@ -5318,6 +5332,22 @@ gmd2html : skip "${1=}"
         c==s_center ? write('<div class=\"gmd_center\">\n'):
         c==s_code_block ? write('<div class=\"gmd_code_block\">'):
         c==e_code_block ? write('</div><br/>'):
+
+        c==s_shell ? (
+          ind = find(#1,e_shell);
+          run('_gmd_html_shell. ',y + 1,',',ind -  1);
+          ref(get('_gmd_command',1024,0),com);
+          ref(get('_gmd_filename',1024,0),nam);
+          write('<div class=\"gmd_code_block\">$ ');
+          len = find(com,0);
+          write(com,len);
+          write('<br/><br/>\n');
+          write(#-1,0,h(#-1));
+          run('rm.');
+          write('</div>');
+          copy(i[y],0,ind - y + 1,1,0);
+        ):
+
         c==s_hrule ? write('\n<hr/>\n'):
 
         c==s_bold_italic_a ? write('<span class=\"gmd_bold_italic_a\">'):
@@ -5389,7 +5419,7 @@ gmd2html : skip "${1=}"
 
         c==s_pipeline ? (
           ind = find(#1,e_pipeline);
-          run('_gmd_html. ',y + 1,',',ind -  1);
+          run('_gmd_html_pipeline. ',y + 1,',',ind -  1);
           ref(get('_gmd_command',1024,0),com);
           ref(get('_gmd_filename',1024,0),nam);
           write('<img class=\"gmd_image\" src=\"');
@@ -5431,7 +5461,7 @@ gmd2html : skip "${1=}"
   endl done fi
 
 # Manage pipeline execution and result saving.
-_gmd_html :
+_gmd_html_pipeline :
   +rows. $1,$2 _gmd_command={t} rm.
   strvar $_gmd_command
   _gmd_filename=img/${}.png
@@ -5454,6 +5484,22 @@ _gmd_html :
   replace_str. "<","&lt;"
   replace_str. ">","&gt;"
   _gmd_command={t} rm.
+
+# Manage shell execution.
+_gmd_html_shell :
+  +rows. $1,$2 _gmd_command={t} rm.
+  path_tmp=${-path_tmp}
+  strvar $_gmd_command
+  _gmd_filename=$path_tmp${}.log
+  x $_gmd_command" > "$_gmd_filename" 2>&1"
+  if isfile(['$_gmd_filename']) it $_gmd_filename else 0 fi
+  autocrop. {'\n'}
+  # replace_str. "\"","&quot;"
+  # replace_str. "\'","&apos;"
+  # replace_str. "&","&amp;"
+  # replace_str. "<","&lt;"
+  # replace_str. ">","&gt;"
+  replace_str. "\n","<br/>\n"
 
 #@cli gmd2ascii : _max_line_length>0,_indent_forced_newlines>=0 : (no arg)
 #@cli : Convert selected gmd-formatted text images to ascii format.
@@ -5621,7 +5667,8 @@ _gmd_tokens :
      const e_subsection = -4;
      const s_subsubsection = -5;
      const e_subsubsection = -6;
-     const s_subsubsubsection = -7; const e_subsubsubsection = -8;
+     const s_subsubsubsection = -7;
+     const e_subsubsubsection = -8;
      const s_bullet = -9;
      const e_bullet = -10;
      const s_subbullet = -11;
@@ -5632,48 +5679,50 @@ _gmd_tokens :
      const e_center = -16;
      const s_code_block = -17;
      const e_code_block = -18;
-     const s_hrule = -19;
+     const s_shell = -19;
+     const e_shell = -20;
+     const s_hrule = -21;
 
-     const s_bold_italic_a = -20;
-     const e_bold_italic_a = -21;
-     const s_bold_italic_u = -22;
-     const e_bold_italic_u = -23;
-     const s_bold_a = -24;
-     const e_bold_a = -25;
-     const s_bold_u = -26;
-     const e_bold_u = -27;
-     const s_italic_a = -28;
-     const e_italic_a = -29;
-     const s_italic_u = -30;
-     const e_italic_u = -31;
-     const s_strikethrough = -32;
-     const e_strikethrough = -33;
-     const s_underline = -34;
-     const e_underline = -35;
-     const s_monospace = -36;
-     const e_monospace = -37;
-     const s_value_set = -38;
-     const e_value_set = -39;
-     const s_word_highlight = -40;
-     const e_word_highlight = -41;
+     const s_bold_italic_a = -22;
+     const e_bold_italic_a = -23;
+     const s_bold_italic_u = -24;
+     const e_bold_italic_u = -25;
+     const s_bold_a = -26;
+     const e_bold_a = -27;
+     const s_bold_u = -28;
+     const e_bold_u = -29;
+     const s_italic_a = -30;
+     const e_italic_a = -31;
+     const s_italic_u = -32;
+     const e_italic_u = -33;
+     const s_strikethrough = -34;
+     const e_strikethrough = -35;
+     const s_underline = -36;
+     const e_underline = -37;
+     const s_monospace = -38;
+     const e_monospace = -39;
+     const s_value_set = -40;
+     const e_value_set = -41;
+     const s_word_highlight = -42;
+     const e_word_highlight = -43;
 
-     const s_url = -42;
-     const e_url = -43;
-     const s_page_link = -44;
-     const e_page_link = -45;
-     const s_text_link = -46;
-     const m_text_link = -47;
-     const e_text_link = -48;
-     const s_img = -49;
-     const m_img = -50;
-     const e_img = -51;
-     const s_pipeline = -52;
-     const e_pipeline = -53;
+     const s_url = -44;
+     const e_url = -45;
+     const s_page_link = -46;
+     const e_page_link = -47;
+     const s_text_link = -48;
+     const m_text_link = -49;
+     const e_text_link = -50;
+     const s_img = -51;
+     const m_img = -52;
+     const e_img = -53;
+     const s_pipeline = -54;
+     const e_pipeline = -55;
 
-     const s_gmic = -54;
-     const e_gmic = -55;
-     const s_whitespace = -56;
-     const s_tab = -57;"
+     const s_gmic = -56;
+     const e_gmic = -57;
+     const s_whitespace = -58;
+     const s_tab = -59;"
 
 #@cli parse_gui : _outputmode,_{ * | filter_name}
 #@cli : Parse selected filter definitions and generate info about filters in selected output mode.
