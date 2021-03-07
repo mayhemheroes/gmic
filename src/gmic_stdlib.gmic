@@ -5511,7 +5511,7 @@ _gmd_ascii2html :
   repeat $! l[$>]
     . # [0] = Output, [1] = Input
     eval. ">
-      begin("${-_gmd_write}${-_gmd_vt100}");
+      begin("${-_gmd_write}${-_gmd_vt100}" spans = 0);
       c = i;
       c==_'&'?write('&amp;'):
       c==_'\"'?write('&quot;'):
@@ -5519,7 +5519,54 @@ _gmd_ascii2html :
       c==_'<'?write('&lt;'):
       c==_'>'?write('&gt;'):
       c==_'\n'?write('<br/>\n'):
-      write(c);
+      c==_'\33' && j[1]==_'['?( # VT100 sequence
+        ref(crop(0,y,1,8),C);
+        same(C,vt100_b,size(vt100_b))?(
+          write('<span class=\"gmd_bold_a\">');
+          copy(i[y],0,size(vt100_b),1,0);
+          ++spans
+        ):same(C,vt100_c,size(vt100_c))?(
+          write('<span style=\"color: darkcyan\">');
+          copy(i[y],0,size(vt100_c),1,0);
+          ++spans
+        ):
+        same(C,vt100_g,size(vt100_g))?(
+          write('<span style=\"color: darkgreen\">');
+          copy(i[y],0,size(vt100_g),1,0);
+          ++spans
+        ):
+        same(C,vt100_i,size(vt100_i))?(
+          write('<span class=\"gmd_italic_a\">');
+          copy(i[y],0,size(vt100_i),1,0);
+          ++spans
+        ):
+        same(C,vt100_m,size(vt100_m))?(
+          write('<span style=\"color: darkmagenta\">');
+          copy(i[y],0,size(vt100_m),1,0);
+          ++spans
+        ):
+        same(C,vt100_n,size(vt100_n))?(
+          for (n = 0, n<spans, ++n, write('</span>'));
+          copy(i[y],0,size(vt100_n),1,0);
+          spans = 0
+        ):
+        same(C,vt100_r,size(vt100_r))?(
+          write('<span style=\"color: darkred\">');
+          copy(i[y],0,size(vt100_r),1,0);
+          ++spans
+        ):
+        same(C,vt100_s,size(vt100_s))?(
+          write('<span class=\"gmd_strikethrough\">');
+          copy(i[y],0,size(vt100_s),1,0);
+          ++spans
+        ):
+        same(C,vt100_u,size(vt100_u))?(
+          write('<span class=\"gmd_underline\">');
+          copy(i[y],0,size(vt100_u),1,0);
+          ++spans
+        ):
+        write(c)
+      ):write(c);
     "
     k[0] discard 0
   endl done
