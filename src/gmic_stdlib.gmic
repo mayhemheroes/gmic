@@ -5335,7 +5335,7 @@ gmd2html : skip "${1=}"
 
         c==s_shell ? (
           ind = find(#1,e_shell);
-          run('_gmd_html_shell. ',y + 1,',',ind -  1);
+          run('_gmd2html_shell. ',y + 1,',',ind -  1);
           ref(get('_gmd_command',1024,0),com);
           ref(get('_gmd_filename',1024,0),nam);
           write('<div class=\"gmd_code_block\">$ ');
@@ -5419,7 +5419,7 @@ gmd2html : skip "${1=}"
 
         c==s_pipeline ? (
           ind = find(#1,e_pipeline);
-          run('_gmd_html_pipeline. ',y + 1,',',ind -  1);
+          run('_gmd2html_pipeline. ',y + 1,',',ind -  1);
           ref(get('_gmd_command',1024,0),com);
           ref(get('_gmd_filename',1024,0),nam);
           write('<img class=\"gmd_image\" src=\"');
@@ -5463,7 +5463,7 @@ gmd2html : skip "${1=}"
   endl done fi
 
 # Manage pipeline execution and result saving.
-_gmd_html_pipeline :
+_gmd2html_pipeline :
   +rows. $1,$2 _gmd_command={t} rm.
   strvar $_gmd_command
   _gmd_filename=img/${}.png
@@ -5480,15 +5480,15 @@ _gmd_html_pipeline :
 
   # Replace reserved HTML characters in $_gmd_command.
   ({'$_gmd_command'})
+  replace_str. "&","&amp;"
   replace_str. "\"","&quot;"
   replace_str. "\'","&apos;"
-  replace_str. "&","&amp;"
   replace_str. "<","&lt;"
   replace_str. ">","&gt;"
   _gmd_command={t} rm.
 
 # Manage shell execution.
-_gmd_html_shell :
+_gmd2html_shell :
   +rows. $1,$2 _gmd_command={t} rm.
   path_tmp=${-path_tmp}
   strvar $_gmd_command
@@ -5496,11 +5496,11 @@ _gmd_html_shell :
   x $_gmd_command" > "$_gmd_filename" 2>&1"
   if isfile(['$_gmd_filename']) it $_gmd_filename else 0 fi
   autocrop. {'\n'}
-  # replace_str. "\"","&quot;"
-  # replace_str. "\'","&apos;"
-  # replace_str. "&","&amp;"
-  # replace_str. "<","&lt;"
-  # replace_str. ">","&gt;"
+  replace_str. "&","&amp;"
+  replace_str. "\"","&quot;"
+  replace_str. "\'","&apos;"
+  replace_str. "<","&lt;"
+  replace_str. ">","&gt;"
   replace_str. "\n","<br/>\n"
 
 #@cli gmd2ascii : _max_line_length>0,_indent_forced_newlines>=0 : (no arg)
@@ -5725,6 +5725,16 @@ _gmd_tokens :
      const e_gmic = -57;
      const s_whitespace = -58;
      const s_tab = -59;"
+
+# batch_gmd : output_format={ ascii | html }
+# Batch convert .gmd files in current folder to specified file format.
+batch_gmd :
+  rm files *.gmd files=${}
+  repeat narg({/$files})
+    arg0 $>,$files file=${}
+    e[] "  > Convert '"$file"' to $1."
+    it $file gmd2$1 ot {n} rm.
+  done
 
 #@cli parse_gui : _outputmode,_{ * | filter_name}
 #@cli : Parse selected filter definitions and generate info about filters in selected output mode.
