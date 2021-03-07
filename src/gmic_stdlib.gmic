@@ -5300,7 +5300,7 @@ gmd2html : skip "${1=}"
   if $is_arg embed_html=$1 else embed_html=1 noarg fi
 
   parse_gmd
-  repeat $! l[$>] nm={b} strvar $nm fnm=${}
+  repeat $! l[$>] nm$>={b} strvar ${nm$>} fnm=${}
     . # [0] = Output, [1] = Input
     eval. ">
       begin("${-_gmd_tokens}${-_gmd_write}" ref(vector1024(),tmp));
@@ -5439,24 +5439,24 @@ gmd2html : skip "${1=}"
   # Embed with header and footer if needed.
   if $embed_html
     title=${"arg "$embed_html",Reference,Tutorial"}
-    repeat $! l[$>] nm={n} bn={b}
+    repeat $! l[$>] nm={b} nm0=${nm$>}
     if isfile('../style.css') style="../style.css" else style="https://gmic.eu/style.css" fi
     i[0] ('"<!DOCTYPE html>"\n\
 "<html lang=\"en\">"\n\
 "  <head>"\n\
 "    <meta charset=\"utf-8\">"\n\
 "    <link rel=\"stylesheet\" href=\""$style"\">"\n\
-"    <title>"$bn"</title>"\n\
+"    <title>"$nm0"</title>"\n\
 "  </head>"\n\n\
 "  <body>"\n\
 "    <div class=\"section_title\"><p>"$title"</p></div><div class=\"section_content\">"\n\
 "<!-- begin_content -->"\n\n\
-"<h1 class=\"ref_h1\">"$bn"</h1>"':y)
+"<h1 class=\"ref_h1\">"$nm0"</h1>"':y)
     ('\n\n\
 "<!-- end_content -->"\n\
 "    </div><div class=\"section_end\"></div>"\n\
 "  </body>"':y)
-    a y nm $nm
+    a y nm $nm.html
   endl done fi
 
 # Manage pipeline execution and result saving.
@@ -5521,7 +5521,7 @@ _gmd_ascii2html :
       c==_'\n'?write('<br/>\n'):
       write(c);
     "
-    k[0]
+    k[0] discard 0
   endl done
 
 #@cli gmd2ascii : _max_line_length>0,_indent_forced_newlines>=0 : (no arg)
