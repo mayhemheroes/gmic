@@ -4846,7 +4846,7 @@ parse_gmd :
   eval[^] ">"${-_gmd_tokens}"
     begin(
       section = subsection = subsubsection = subsubsubsection =
-      bullet = subbullet = subsubbullet = center = code_block = shell =
+      bullet = subbullet = subsubbullet = center = detail_block = code_block = shell =
       bold_italic_a = bold_italic_u = bold_a = bold_u = italic_a = italic_u = strikethrough = underline = monospace =
       value_set = word_highlight = url = page_link = text_link1 = text_link2 = img1 = img2 = pipeline = -1;
       opening_offset = -1;
@@ -4954,6 +4954,18 @@ parse_gmd :
         opening_offset = center;
         res[center++] = s_center; copy(res[center],0,3,1,0); center+=3;
         res[ym1] = e_center; copy(res[y],0,4,1,0);
+      );
+    ):
+
+    # Detail block: '\n???\n Detail block\n???\n'.
+    linestart && c==_'?' && nc==c && ac==c && newline(j[3])?(
+      detail_block<0?( # Opening
+        detail_block = y;
+      ):
+      detail_block>=0 && y>detail_block + 3?( # Closing
+        opening_offset = detail_block;
+        res[detail_block++] = s_detail_block; copy(res[detail_block],0,3,1,0); detail_block+=3;
+        res[ym1] = e_detail_block; copy(res[y],0,4,1,0);
       );
     ):
 
@@ -5265,6 +5277,7 @@ parse_gmd :
       subbullet>=opening_offset ? reset(subbullet);
       subsubbullet>=opening_offset ? reset(subsubbullet);
       center>=opening_offset ? reset(center);
+      detail_block>=opening_offset? reset(detail_block);
       code_block>=opening_offset? reset(code_block);
       shell>=opening_offset? reset(shell);
       bold_italic_a>=opening_offset ? reset(bold_italic_a);
@@ -5705,52 +5718,54 @@ _gmd_tokens :
      const e_subsubbullet = -14;
      const s_center = -15;
      const e_center = -16;
-     const s_code_block = -17;
-     const e_code_block = -18;
-     const s_shell = -19;
-     const e_shell = -20;
-     const s_hrule = -21;
+     const s_detail_block = -17;
+     const e_detail_block = -18;
+     const s_code_block = -19;
+     const e_code_block = -20;
+     const s_shell = -21;
+     const e_shell = -22;
+     const s_hrule = -23;
 
-     const s_bold_italic_a = -22;
-     const e_bold_italic_a = -23;
-     const s_bold_italic_u = -24;
-     const e_bold_italic_u = -25;
-     const s_bold_a = -26;
-     const e_bold_a = -27;
-     const s_bold_u = -28;
-     const e_bold_u = -29;
-     const s_italic_a = -30;
-     const e_italic_a = -31;
-     const s_italic_u = -32;
-     const e_italic_u = -33;
-     const s_strikethrough = -34;
-     const e_strikethrough = -35;
-     const s_underline = -36;
-     const e_underline = -37;
-     const s_monospace = -38;
-     const e_monospace = -39;
-     const s_value_set = -40;
-     const e_value_set = -41;
-     const s_word_highlight = -42;
-     const e_word_highlight = -43;
+     const s_bold_italic_a = -24;
+     const e_bold_italic_a = -25;
+     const s_bold_italic_u = -26;
+     const e_bold_italic_u = -27;
+     const s_bold_a = -28;
+     const e_bold_a = -29;
+     const s_bold_u = -30;
+     const e_bold_u = -31;
+     const s_italic_a = -32;
+     const e_italic_a = -33;
+     const s_italic_u = -34;
+     const e_italic_u = -35;
+     const s_strikethrough = -36;
+     const e_strikethrough = -37;
+     const s_underline = -38;
+     const e_underline = -39;
+     const s_monospace = -40;
+     const e_monospace = -41;
+     const s_value_set = -42;
+     const e_value_set = -43;
+     const s_word_highlight = -44;
+     const e_word_highlight = -45;
 
-     const s_url = -44;
-     const e_url = -45;
-     const s_page_link = -46;
-     const e_page_link = -47;
-     const s_text_link = -48;
-     const m_text_link = -49;
-     const e_text_link = -50;
-     const s_img = -51;
-     const m_img = -52;
-     const e_img = -53;
-     const s_pipeline = -54;
-     const e_pipeline = -55;
+     const s_url = -46;
+     const e_url = -47;
+     const s_page_link = -48;
+     const e_page_link = -49;
+     const s_text_link = -50;
+     const m_text_link = -51;
+     const e_text_link = -52;
+     const s_img = -53;
+     const m_img = -54;
+     const e_img = -55;
+     const s_pipeline = -56;
+     const e_pipeline = -57;
 
-     const s_gmic = -56;
-     const e_gmic = -57;
-     const s_whitespace = -58;
-     const s_tab = -59;"
+     const s_gmic = -58;
+     const e_gmic = -59;
+     const s_whitespace = -60;
+     const s_tab = -61;"
 
 # Define variables corresponding to VT100 sequences, for the math parser.
 _gmd_vt100 :
