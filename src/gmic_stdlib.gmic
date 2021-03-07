@@ -4959,13 +4959,14 @@ parse_gmd :
 
     # Detail block: '\n???\n Detail block\n???\n'.
     linestart && c==_'?' && nc==c && ac==c?(
-      detail_block<0?( # Opening
+      detail_block<0 && newline(j[3]) || j[3]==_' '?( # Opening
         detail_block = y;
       ):
       detail_block>=0 && y>detail_block + 3 && newline(j[3])?( # Closing
         opening_offset = detail_block;
         res[detail_block++] = s_detail_block; copy(res[detail_block],0,2,1,0);
-        res[ym1] = e_detail_block; copy(res[y],0,4,1,0);
+        res[ym1] = e_detail_block; copy(res[y],0,3,1,0);
+        for (p = y + 3, p<size(res) && res[p]==_'\n', res[p++] = 0); # Discard newlines following
       );
     ):
 
@@ -5337,13 +5338,31 @@ gmd2html : skip "${1=}"
         c==s_subbullet ? write('<div class=\"gmd_subbullet\">'):
         c==s_subsubbullet ? write('<div class=\"gmd_subsubbullet\">'):
         c==s_center ? write('<div class=\"gmd_center\">\n'):
-        c==s_detail_block ? write('<details>'):
-        c==e_detail_block ? write('</details><br/>'):
+        c==s_detail_block ? (
+          write('<details>');
+          ny = y + 1;
+          nc = j[1];
+          nc!=e_detail_block?(
+            write(_'\n');
+            j[1] = 0;
+            ind_e = find(#1,e_detail_block,ny);
+            nc==_' '?( # Has a title
+              ind_nl = find(#1,_'\n',ny);
+              ind_nl<0 || ind_nl>ind_e?(ind_nl = ind_e);
+              write('<summary>');
+              write(#1,y + 2,ind_nl - y - 2);
+              copy(i[ny],0,ind_nl - y - 1,1,0);
+              i[ind_nl]!=e_detail_block?(i[ind_nl] = 0);
+              write('</summary>\n');
+            )
+          )
+        ):
+        c==e_detail_block ? (j[-1]?write(_'\n'); write('</details>\n')):
         c==s_code_block ? write('<div class=\"gmd_code_block\">'):
         c==e_code_block ? write('</div><br/>'):
 
         c==s_shell ? (
-          ind = find(#1,e_shell);
+          ind = find(#1,e_shell,y);
           run('_gmd2html_shell. ',y + 1,',',ind -  1);
           ref(get('_gmd_command',1024,0),com);
           ref(get('_gmd_filename',1024,0),nam);
@@ -5427,7 +5446,7 @@ gmd2html : skip "${1=}"
         ):
 
         c==s_pipeline ? (
-          ind = find(#1,e_pipeline);
+          ind = find(#1,e_pipeline,y);
           run('_gmd2html_pipeline. ',y + 1,',',ind -  1);
           ref(get('_gmd_command',1024,0),com);
           ref(get('_gmd_filename',1024,0),nam);
