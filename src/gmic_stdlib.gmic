@@ -5827,11 +5827,16 @@ _gmd_write :
 # batch_gmd : output_format={ ascii | html }
 # Batch convert all .gmd files in current folder to specified file format.
 batch_gmd :
-  rm files *.gmd files=${}
-  repeat narg({/$files})
-    arg0 $>,$files file=${}
-    e[] "  > Convert '"$file"' to $1."
-    it $file gmd2$1 ot {n} rm.
+  rm
+  files 1,* folders=.,${}
+  repeat narg({/$folders}),f
+    arg0 $f,$folders folder=${}
+    files $folder/*.gmd files=${}
+    repeat narg({/$files})
+      arg0 $>,$files file=${}
+      e[] "  > Convert '"$file"' to $1."
+      it $file gmd2$1 ot {n} rm.
+    done
   done
 
 #@cli parse_gui : _outputmode,_{ * | filter_name}
