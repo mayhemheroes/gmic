@@ -4958,13 +4958,13 @@ parse_gmd :
     ):
 
     # Detail block: '\n???\n Detail block\n???\n'.
-    linestart && c==_'?' && nc==c && ac==c && newline(j[3])?(
+    linestart && c==_'?' && nc==c && ac==c?(
       detail_block<0?( # Opening
         detail_block = y;
       ):
-      detail_block>=0 && y>detail_block + 3?( # Closing
+      detail_block>=0 && y>detail_block + 3 && newline(j[3])?( # Closing
         opening_offset = detail_block;
-        res[detail_block++] = s_detail_block; copy(res[detail_block],0,3,1,0); detail_block+=3;
+        res[detail_block++] = s_detail_block; copy(res[detail_block],_'A',2,1,0);
         res[ym1] = e_detail_block; copy(res[y],0,4,1,0);
       );
     ):
@@ -5461,11 +5461,11 @@ gmd2html : skip "${1=}"
 "    <title>"$nm0"</title>"\n\
 "  </head>"\n\n\
 "  <body>"\n\
-"    <div class=\"section_title\"><p>"$title"</p></div><div class=\"section_content\">"\n\
-"<!-- begin_content -->"\n\n\
-"<h1 class=\"ref_h1\">"$nm0"</h1>"':y)
+"    <div class=\"section_title\"><p>"$title"</p></div><div class=\"section_content\">"\n\n\
+"<!-- begin_content -->"\n\
+"<h1 class=\"ref_h1\">"$nm0"</h1>\n\n"':y)
     ('\n\n\
-"<!-- end_content -->"\n\
+"<!-- end_content -->"\n\n\
 "    </div><div class=\"section_end\"></div>"\n\
 "  </body>"':y)
     a y nm $nm.html
