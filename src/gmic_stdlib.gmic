@@ -26553,19 +26553,18 @@ struppercase :
 #@cli : Return a simplified version of the specified string, that can be used as a variable name.
 #@cli : (version that creates a lowercase result).
 strvar :
-  l[]
-    ('"$*"':y) f. "c = i; inrange(c,_'0',_'9') || inrange(c,_'a',_'z') || inrange(c,_'A',_'Z') || c==_'_'?lowercase(c):_'_'"
-    if inrange(i,_'0',_'9') i.. ('_') a[-2,-1] y fi
-     do h={h} replace_str. "__","_" while h!=$h
-     u {t} rm
-  endl
+  _strvar_fn="lowercase(c)" _strvar "$*"
 
 #@cli strcasevar : "string"
 #@cli : Return a simplified version of the specified string, that can be used as a variable name.
 #@cli : (version that keeps original case of specified string).
 strcasevar :
+  _strvar_fn="c" _strvar "$*"
+
+_strvar :
   l[]
-    ('"$*"':y) f. "c = i; inrange(c,_'0',_'9') || inrange(c,_'a',_'z') || inrange(c,_'A',_'Z') || c==_'_'?c:_'_'"
+    ('"$*"':y) f. "c = i; inrange(c,_'0',_'9') || inrange(c,_'a',_'z') ||
+                          inrange(c,_'A',_'Z') || c==_'_'?"$_strvar_fn":_'_'"
     if inrange(i,_'0',_'9') i.. ('_') a[-2,-1] y fi
      do h={h} replace_str. "__","_" while h!=$h
      u {t} rm
