@@ -5534,14 +5534,16 @@ _gmd2html_pipeline :
   _gmd_command={t} rm.
   strvar $_gmd_command
   _gmd_filename=img/${}.png
-  l[]
-    run $_gmd_command a x
-  onfail
-    rm v 1 warn[] "Command '"$_gmd_command"': "${}
-    gui_error_preview ${}
-  endl
-  if !isdir('img') x "mkdir -p img" fi
-  o. $_gmd_filename rm.
+  if !isfile(['$_gmd_filename'])
+    l[]
+      run $_gmd_command a x
+    onfail
+      rm v 1 warn[] "Command '"$_gmd_command"': "${}
+      gui_error_preview ${}
+    endl
+    if !isdir('img') x "mkdir -p img" fi
+    o. $_gmd_filename rm.
+  fi
   ({'$_gmd_command'})
   _gmd_ascii2html.
   _gmd_command={t} rm.
@@ -5552,27 +5554,25 @@ _gmd2html_formula :
   _gmd_formula={/{t}} rm.
   strvar $_gmd_formula varname=${}
   _gmd_filename=img/$varname.png
-  if !isfile(['$_gmd_filename'])
-    l[]
-      ({'"\\documentclass[preview]{standalone}"\n\
-         "\\usepackage{amsmath}"\n\
-         "\\pagestyle{empty}"\n\
-         "\\begin{document}"\n\
-         "\\begin{align*}"\n\
-         $_gmd_formula\n\
-         "\\end{align*}"\n\
-         "\\end{document}"'})
-      path_tmp=${-path_tmp}
-      ot. ${path_tmp}$varname.tex rm.
-      x "cd "$path_tmp"; rm -f "$varname".pdf; pdflatex -interaction=nonstopmode "$varname".tex >/dev/null"
-      if isfile(['${path_tmp}$varname.pdf'])
-        i ${path_tmp}$varname.pdf
-        autocrop. r2dy. 33% frame. 2,2,255 negate. n. 0,255 channels. -3,0
-        o. $_gmd_filename
-      fi
-      rm
-    endl
-  fi
+  if !isfile(['$_gmd_filename']) l[]
+    ({'"\\documentclass[preview]{standalone}"\n\
+       "\\usepackage{amsmath}"\n\
+       "\\pagestyle{empty}"\n\
+       "\\begin{document}"\n\
+       "\\begin{align*}"\n\
+       $_gmd_formula\n\
+       "\\end{align*}"\n\
+       "\\end{document}"'})
+    path_tmp=${-path_tmp}
+    ot. ${path_tmp}$varname.tex rm.
+    x "cd "$path_tmp"; rm -f "$varname".pdf; pdflatex -interaction=nonstopmode "$varname".tex >/dev/null"
+    if isfile(['${path_tmp}$varname.pdf'])
+      i ${path_tmp}$varname.pdf
+      autocrop. lt. 128 r2dy. 33% n. 0,255 channels. -3,0
+      o. $_gmd_filename
+    fi
+    rm
+  endl fi
 
 # Manage shell execution.
 _gmd2html_shell :
