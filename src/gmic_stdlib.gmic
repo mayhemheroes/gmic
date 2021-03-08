@@ -5546,32 +5546,33 @@ _gmd2html_pipeline :
   _gmd_ascii2html.
   _gmd_command={t} rm.
 
-# Convert formula to image, using LaTeX.
+# Convert formula to image (using LaTeX).
 _gmd2html_formula :
   +rows. $1,$2
   _gmd_formula={/{t}} rm.
-  strvar $_gmd_formula
-  _gmd_filename=${}
-  l[]
-    ({'"\\documentclass[preview]{standalone}"\n\
-       "\\usepackage{amsmath}"\n\
-       "\\pagestyle{empty}"\n\
-       "\\begin{document}"\n\
-       "\\begin{align*}"\n\
-       $_gmd_formula\n\
-       "\\end{align*}"\n\
-       "\\end{document}"'})
-    path_tmp=${-path_tmp}
-    ot. ${path_tmp}$_gmd_filename.tex rm.
-    x "cd "$path_tmp"; rm -f "$_gmd_filename".pdf; pdflatex -interaction=nonstopmode "$_gmd_filename".tex"
-    if isfile(['${path_tmp}$_gmd_filename.pdf'])
-      i ${path_tmp}$_gmd_filename.pdf
-      autocrop. r2dy. 33% frame. 2,2,255 negate. n. 0,255 channels. -3,0
-      o. img/$_gmd_filename.png
-    fi
-    rm
-  endl
-  _gmd_filename=img/$_gmd_filename.png
+  strvar $_gmd_formula varname=${}
+  _gmd_filename=img/$varname.png
+  if !isfile(['$_gmd_filename'])
+    l[]
+      ({'"\\documentclass[preview]{standalone}"\n\
+         "\\usepackage{amsmath}"\n\
+         "\\pagestyle{empty}"\n\
+         "\\begin{document}"\n\
+         "\\begin{align*}"\n\
+         $_gmd_formula\n\
+         "\\end{align*}"\n\
+         "\\end{document}"'})
+      path_tmp=${-path_tmp}
+      ot. ${path_tmp}$varname.tex rm.
+      x "cd "$path_tmp"; rm -f "$varname".pdf; pdflatex -interaction=nonstopmode "$varname".tex >/dev/null"
+      if isfile(['${path_tmp}$varname.pdf'])
+        i ${path_tmp}$varname.pdf
+        autocrop. r2dy. 33% frame. 2,2,255 negate. n. 0,255 channels. -3,0
+        o. $_gmd_filename
+      fi
+      rm
+    endl
+  fi
 
 # Manage shell execution.
 _gmd2html_shell :
