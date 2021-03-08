@@ -5218,9 +5218,11 @@ parse_gmd :
       ):
       formula>=0 && y>formula + 2 && semiblank(nc)?( # Closing
         opening_offset = formula;
-        res[formula++] = s_formula; res[formula++] = 0;
+        res[formula++] = s_formula;
         copy(res[formula],i[formula],y - formula); # Cancel tokens found inside
-        res[y] = e_formula; res[y1] = 0;
+        while (blank(i[formula]), res[formula++] = 0); # Discard leading blanks
+        for (p = ym1, blank(res[p]), res[p--] = 0); # Discard trailing blanks
+        res[y] = e_formula;
       );
     ):
 
@@ -5473,6 +5475,22 @@ gmd2html : skip "${1=}"
           write('\"/>');
           copy(i[y],0,ind - y + 1,1,0);
         ):
+
+        c==s_formula ? (
+          ind = find(#1,e_formula,y);
+          run('_gmd2html_formula. ',y + 1,',',ind - 1);
+          ref(get('_gmd_formula',1024,0),fla);
+          ref(get('_gmd_filename',1024,0),nam);
+          write('<img class=\"gmd_image\" src=\"');
+          len = find(nam,0);
+          write(nam,len);
+          write('\" alt=\"');
+          len = find(fla,0);
+          write(fla,len);
+          write('\"/>');
+          copy(i[y],0,ind - y + 1,1,0);
+        ):
+
         c==s_gmic ? write('<span class=\"gmd_gmic\"></span>'):
         c==s_whitespace ? write('&nbsp;'):
         c==s_tab ? write('&nbsp;&nbsp;&nbsp;&nbsp;');
@@ -5516,19 +5534,44 @@ _gmd2html_pipeline :
   _gmd_command={t} rm.
   strvar $_gmd_command
   _gmd_filename=img/${}.png
-#  if !isfile(['{/$_gmd_filename}'])
-    l[]
-      run $_gmd_command a x
-    onfail
-      rm v 1 warn[] "Command '"$_gmd_command"': "${}
-      gui_error_preview ${}
-    endl
-    if !isdir('img') x "mkdir -p img" fi
-    o. $_gmd_filename rm.
-#  fi
+  l[]
+    run $_gmd_command a x
+  onfail
+    rm v 1 warn[] "Command '"$_gmd_command"': "${}
+    gui_error_preview ${}
+  endl
+  if !isdir('img') x "mkdir -p img" fi
+  o. $_gmd_filename rm.
   ({'$_gmd_command'})
   _gmd_ascii2html.
   _gmd_command={t} rm.
+
+# Convert formula to image, using LaTeX.
+_gmd2html_formula :
+  +rows. $1,$2
+  _gmd_formula={/{t}} rm.
+  strvar $_gmd_formula
+  _gmd_filename=${}
+  l[]
+    ({'"\\documentclass[preview]{standalone}"\n\
+       "\\usepackage{amsmath}"\n\
+       "\\pagestyle{empty}"\n\
+       "\\begin{document}"\n\
+       "\\begin{align*}"\n\
+       $_gmd_formula\n\
+       "\\end{align*}"\n\
+       "\\end{document}"'})
+    path_tmp=${-path_tmp}
+    ot. ${path_tmp}$_gmd_filename.tex rm.
+    x "cd "$path_tmp"; rm -f "$_gmd_filename".pdf; pdflatex -interaction=nonstopmode "$_gmd_filename".tex"
+    if isfile(['${path_tmp}$_gmd_filename.pdf'])
+      i ${path_tmp}$_gmd_filename.pdf
+      autocrop. r2dy. 40% frame. 2,2,255 negate. n. 0,255 channels. -3,0
+      o. img/$_gmd_filename.png
+    fi
+    rm
+  endl
+  _gmd_filename=img/$_gmd_filename.png
 
 # Manage shell execution.
 _gmd2html_shell :
