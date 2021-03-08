@@ -5213,18 +5213,18 @@ parse_gmd :
       );
     ):
 
-    # Formula in LaTeX: '$x = cos(x + 2)$`'.
-    non_escaped && c==_'$'?(
+    # Formula in LaTeX: '$$ x = cos(x + 2) $$`'.
+    non_escaped && c==_'$' && nc==c?(
       formula<0 && semiblank(pc)?( # Opening
         formula = y;
       ):
-      formula>=0 && y>formula + 2 && semiblank(nc)?( # Closing
+      formula>=0 && y>formula + 2 && semiblank(ac)?( # Closing
         opening_offset = formula;
-        res[formula++] = s_formula;
+        res[formula++] = s_formula; res[formula++] = 0;
         copy(res[formula],i[formula],y - formula); # Cancel tokens found inside
         while (blank(i[formula]), res[formula++] = 0); # Discard leading blanks
         for (p = ym1, blank(res[p]), res[p--] = 0); # Discard trailing blanks
-        res[y] = e_formula;
+        res[y] = e_formula; res[y1] = 0;
       );
     ):
 
@@ -8021,7 +8021,6 @@ update_tutorial_html : check "isbool(${1=0})"
       it $file gmd2html 2 ot {n} rm.
     done
   done
-  x "rm -f original"
 
   # Upload to G'MIC server.
   if $1
