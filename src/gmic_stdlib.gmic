@@ -5368,18 +5368,40 @@ gmd2html : skip "${1=}"
         isin(c,e_section,e_subsection,e_subsubsection,e_subsubsubsection) ? write('</div>\n'):
 
         c==s_section ? (
-#          ind_e = find(#1,e_section,y);
-#          run('_gmd2html_section. ',y + 1,',',ind_e - 1);
-          write('<div class=\"gmd_section\">')
+          ind_e = find(#1,e_section,y);
+          run('_gmd2html_section. ',y + 1,',',ind_e - 1);
+          ref(get('_gmd_name',1024,0),str_nam);
+          write('\n<a id=\"');
+          len = find(str_nam,0);
+          write(str_nam,len);
+          write('\"></a><div class=\"gmd_section\">');
         ):
         c==s_subsection ? (
-          write('<div class=\"gmd_subsection\">')
+          ind_e = find(#1,e_subsection,y);
+          run('_gmd2html_section. ',y + 1,',',ind_e - 1);
+          ref(get('_gmd_name',1024,0),str_nam);
+          write('\n<a id=\"');
+          len = find(str_nam,0);
+          write(str_nam,len);
+          write('\"></a><div class=\"gmd_subsection\">');
         ):
         c==s_subsubsection ? (
-          write('<div class=\"gmd_subsubsection\">')
+          ind_e = find(#1,e_subsubsection,y);
+          run('_gmd2html_section. ',y + 1,',',ind_e - 1);
+          ref(get('_gmd_name',1024,0),str_nam);
+          write('\n<a id=\"');
+          len = find(str_nam,0);
+          write(str_nam,len);
+          write('\"></a><div class=\"gmd_subsubsection\">');
         ):
         c==s_subsubsubsection ? (
-          write('<div class=\"gmd_subsubsubsection\">')
+          ind_e = find(#1,e_subsubsubsection,y);
+          run('_gmd2html_section. ',y + 1,',',ind_e - 1);
+          ref(get('_gmd_name',1024,0),str_nam);
+          write('\n<a id=\"');
+          len = find(str_nam,0);
+          write(str_nam,len);
+          write('\"></a><div class=\"gmd_subsubsubsection\">');
         ):
         c==s_bullet ? write('<div class=\"gmd_bullet\">'):
         c==s_subbullet ? write('<div class=\"gmd_subbullet\">'):
@@ -5549,6 +5571,10 @@ gmd2html : skip "${1=}"
 "  </body>"':y)
     a y nm $nm.html
   endl done fi
+
+# Manage sections / subsections / subsubsections / subsubsubsections.
+_gmd2html_section : 
+  +rows. $1,$2 strvar {t} _gmd_name=${} rm.
 
 # Manage page links.
 _gmd2html_page_link :
