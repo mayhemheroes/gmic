@@ -5423,14 +5423,18 @@ gmd2html : skip "${1=}"
 
         c==s_page_link ? (
           ind_e = find(#1,e_page_link,y);
-          run('+rows. ',y + 1,',',ind_e - 1,' strvar {t} rm. varname=${}');
-          ref(get('varname',256,0),varname);
+          run('_gmd2html_page_link. ',y + 1,',',ind_e - 1);
+          ref(get('_gmd_link',1024,0),str_link);
+          ref(get('_gmd_text',1024,0),str_text);
           write('<span class=\"gmd_page_link\"><a href=\"');
-          len = find(varname,0);
-          write(varname,len);
-          write('.html\">');
+          len = find(str_link,0);
+          write(str_link,len);
+          write('\">');
+          len = find(str_text,0);
+          write(str_text,len);
+          write('</a></span>');
+          copy(i[y],0,ind_e - y + 1,1,0);
         ):
-        c==e_page_link ? write('</a></span>'):
 
         c==s_text_link ? (
           ind_m = find(#1,m_text_link,y);
@@ -5521,6 +5525,16 @@ gmd2html : skip "${1=}"
     a y nm $nm.html
   endl done fi
 
+# Manage page links.
+_gmd2html_page_link :
+  +rows. $1,$2
+  if i==_'-' # Force link to a G'MIC reference page
+    rows. 1,100% _gmd_text={t} strvar {t} _gmd_link=https://gmic.eu/reference/${}.html
+  else
+    basename {t} _gmd_text=${} _gmd_link={t}.html
+  fi
+  rm.
+
 # Manage pipeline execution and result saving.
 _gmd2html_pipeline :
   +rows. $1,$2
@@ -5562,6 +5576,7 @@ _gmd2html_formula :
     if isfile(['${path_tmp}$varname.pdf'])
       i ${path_tmp}$varname.pdf,800
       autocrop. lt. 128 r2dy. 20% n. 0,255 channels. -3,0
+      if !isdir('img') x "mkdir -p img" fi
       o. $_gmd_filename
     fi
     rm
