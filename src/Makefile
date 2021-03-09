@@ -281,6 +281,11 @@ JPEG_LIBS = -ljpeg
 TIFF_CFLAGS = -Dcimg_use_tiff $(shell pkg-config --cflags libtiff-4)
 TIFF_LIBS = $(shell pkg-config --libs libtiff-4 || echo -ltiff)
 
+# Enable native support for loading HEIC/AVIF image files, using the libheif library.
+# ( https://github.com/strukturag/libheif )
+HEIF_CFLAGS = -Dcimg_use_heif
+HEIF_LIBS = -lheif
+
 # Enable native support of MINC2 image files, using the MINC2 library.
 # ( http://en.wikibooks.org/wiki/MINC/Reference/MINC2.0_Users_Guide )
 MINC2_CFLAGS = -Dcimg_use_minc2 -I${HOME}/local/include

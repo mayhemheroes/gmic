@@ -14850,6 +14850,20 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             if (g_list.size()>1)
               g_list_c.insert(g_list.size() - 1,__filename0.copymark());
           }
+        } else if (!std::strcmp(uext,"pdf")) {
+          float resolution = 400;
+          if (!*options || cimg_sscanf(options,"%f%c",&resolution,&end)==1) {
+            const unsigned int _resolution = (int)cimg::round(std::max(resolution,20.0f));
+            print(images,0,"Input file '%s' at position%s, with resolution %u",
+                  _filename0,_gmic_selection.data(),_resolution);
+            g_list_c.insert(__filename0);
+            CImg<T>::get_load_pdf_external(filename,_resolution).move_to(g_list);
+          } else
+            error(true,images,0,0,
+                  "Command 'input': File '%s', "
+                  "invalid file options '%s'.",
+                  _filename0,options.data());
+
         } else if ((allow_entrypoint && !*uext) || !std::strcmp(uext,"gmic")) {
 
           // G'MIC command file.
