@@ -5147,7 +5147,8 @@ parse_gmd :
     ):
 
     # URL: '<https://url.com>'.
-    non_escaped && c==_'<' && url<0 && crop(0,y1,1,4)=='http'?( # Opening
+    non_escaped && c==_'<' && url<0 &&
+     (crop(0,y1,1,8)=='https://' || crop(0,y1,1,7)=='http://' || crop(0,y1,1,6)=='ftp://')?( # Opening
       url = y;
     ):
     non_escaped && c==_'>' && url>=0 && y>url + 1?( # Closing
@@ -5335,7 +5336,7 @@ gmd2html : skip "${1=}"
   repeat $! l[$>] nm$>={b} strvar ${nm$>} fnm=${}
     . # [0] = Output, [1] = Input
     eval. ">
-      begin("${-_gmd_tokens}${-_gmd_write}" ref(vector1024(),tmp));
+      begin("${-_gmd_tokens}${-_gmd_write}");
       c = i;
       c>0?(
         c==_'\n' ? write('<br/>\n'):
@@ -5384,18 +5385,17 @@ gmd2html : skip "${1=}"
         c==e_code_block ? write('</div><br/>'):
 
         c==s_shell ? (
-          ind = find(#1,e_shell,y);
-          run('_gmd2html_shell. ',y + 1,',',ind -  1);
-          ref(get('_gmd_command',1024,0),com);
-          ref(get('_gmd_filename',1024,0),nam);
+          ind_e = find(#1,e_shell,y);
+          run('_gmd2html_shell. ',y + 1,',',ind_e -  1);
+          ref(get('_gmd_command',1024,0),str_com);
           write('<div class=\"gmd_code_block\">$ ');
-          len = find(com,0);
-          write(com,len);
+          len = find(str_com,0);
+          write(str_com,len);
           write('<br/><br/>\n');
           write(#-1,0,h(#-1));
           run('rm.');
           write('</div>');
-          copy(i[y],0,ind - y + 1,1,0);
+          copy(i[y],0,ind_e - y + 1,1,0);
         ):
 
         c==s_hrule ? write('\n<hr/>\n'):
@@ -5414,19 +5414,16 @@ gmd2html : skip "${1=}"
         c==s_word_highlight ? write('<span class=\"gmd_word_highlight\">'):
 
         c==s_url ? (
-          tmp = 0;
-          ind = find(#1,e_url,y);
-          copy(tmp,i[y + 1],ind - y - 1);
+          ind_e = find(#1,e_url,y);
           write('<a href=\"');
-          len = find(tmp,0);
-          write(tmp,len);
+          write(#1,y + 1,ind_e - y - 1);
           write('\" target=\"_blank\">');
         ):
         c==e_url ? write('</a>'):
 
         c==s_page_link ? (
-          ind = find(#1,e_page_link,y);
-          run('+rows. ',y + 1,',',ind - 1,' strvar {t} rm. varname=${}');
+          ind_e = find(#1,e_page_link,y);
+          run('+rows. ',y + 1,',',ind_e - 1,' strvar {t} rm. varname=${}');
           ref(get('varname',256,0),varname);
           write('<span class=\"gmd_page_link\"><a href=\"');
           len = find(varname,0);
@@ -5436,59 +5433,53 @@ gmd2html : skip "${1=}"
         c==e_page_link ? write('</a></span>'):
 
         c==s_text_link ? (
-          tmp = 0;
           ind_m = find(#1,m_text_link,y);
           ind_e = find(#1,e_text_link,ind_m);
-          copy(tmp,i[ind_m + 1],ind_e - ind_m - 1);
           write('<a href=\"');
-          len = find(tmp,0);
-          write(tmp,len);
+          write(#1,ind_m + 1,ind_e - ind_m - 1);
           write('\" target=\"_blank\">');
         ):
         c==m_text_link ? (
-          ind = find(#1,e_text_link,y);
-          copy(i[y],0,ind - y + 1,1,0);
+          ind_e = find(#1,e_text_link,y);
+          copy(i[y],0,ind_e - y + 1,1,0);
           write('</a>');
         ):
 
         c==s_img ? (
-          tmp = 0;
           ind_m = find(#1,m_img,y);
           ind_e = find(#1,e_img,ind_m);
-          copy(tmp,i[ind_m + 1],ind_e - ind_m - 1);
           write('<img class=\"gmd_image\" src=\"');
-          len = find(tmp,0);
-          write(tmp,len);
+          write(#1,ind_m + 1,ind_e - ind_m - 1);
           write('\" alt=\"');
         ):
         c==m_img ? (
-          ind = find(#1,e_img,y);
-          copy(i[y],0,ind - y + 1,1,0);
+          ind_e = find(#1,e_img,y);
+          copy(i[y],0,ind_e - y + 1,1,0);
           write('\"/>');
         ):
 
         c==s_pipeline ? (
-          ind = find(#1,e_pipeline,y);
-          run('_gmd2html_pipeline. ',y + 1,',',ind -  1);
-          ref(get('_gmd_command',1024,0),com);
-          ref(get('_gmd_filename',1024,0),nam);
+          ind_e = find(#1,e_pipeline,y);
+          run('_gmd2html_pipeline. ',y + 1,',',ind_e -  1);
+          ref(get('_gmd_command',1024,0),str_com);
+          ref(get('_gmd_filename',1024,0),str_fil);
           write('<img class=\"gmd_image\" src=\"');
-          len = find(nam,0);
-          write(nam,len);
+          len = find(str_fil,0);
+          write(str_fil,len);
           write('\" alt=\"');
-          len = find(com,0);
-          write(com,len);
+          len = find(str_com,0);
+          write(str_com,len);
           write('\"/>');
-          copy(i[y],0,ind - y + 1,1,0);
+          copy(i[y],0,ind_e - y + 1,1,0);
         ):
 
         c==s_formula ? (
-          ind = find(#1,e_formula,y);
-          run('_gmd2html_formula. ',y + 1,',',ind - 1);
-          ref(get('_gmd_filename',1024,0),nam);
+          ind_e = find(#1,e_formula,y);
+          run('_gmd2html_formula. ',y + 1,',',ind_e - 1);
+          ref(get('_gmd_filename',1024,0),str_fil);
           write('<img class=\"gmd_formula\" src=\"');
-          len = find(nam,0);
-          write(nam,len);
+          len = find(str_fil,0);
+          write(str_fil,len);
           write('\" alt=\"');
         ):
         c==e_formula ? write('\"/>'):
@@ -5581,9 +5572,9 @@ _gmd2html_shell :
   +rows. $1,$2 _gmd_command={t} rm.
   path_tmp=${-path_tmp}
   strcasevar $_gmd_command
-  _gmd_filename=$path_tmp${}.log
-  x $_gmd_command" > "$_gmd_filename" 2>&1"
-  if isfile(['$_gmd_filename']) it $_gmd_filename else 0 fi
+  filename=$path_tmp${}.log
+  x $_gmd_command" > "$filename" 2>&1"
+  if isfile(['$filename']) it $filename else 0 fi
   autocrop. {'\n'}
   _gmd_ascii2html.
 
