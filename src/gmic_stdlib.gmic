@@ -5531,7 +5531,7 @@ _gmd2html_page_link :
   if i==_'-' # Force link to a G'MIC reference page
     rows. 1,100% _gmd_text={t} strvar {t} _gmd_link=https://gmic.eu/reference/${}.html
   else
-    basename {t} _gmd_text=${} _gmd_link={t}.html
+    basename {t} _gmd_text=${} strvar $_gmd_text _gmd_link=${}.html
   fi
   rm.
 
@@ -8020,17 +8020,35 @@ update_tutorial_html : check "isbool(${1=0})"
   rm
   e[^-1] "Generate tutorial pages for the G'MIC website."
   path_tutorial=$HOME/work/src/gmic-community/tutorial
-  x "ln -fs "$path_tutorial/original" ."
-  files 4,$path_tutorial/* folders=$path_tutorial,${}
-  repeat narg({/$folders}),f
-    arg0 $f,$folders folder=${}
-    files $folder/*.gmd files=${}
-    repeat narg({/$files})
-      arg0 $>,$files file=${}
-      e[] "  > Generate '"$file"'."
-      it $file gmd2html 2 ot {n} rm.
+
+  # Unroll original folder structure.
+  x "mkdir -p original"
+  files 5,$path_tutorial/*
+  l[]
+    ({'${}'}:y) s -,{','}
+    for $!
+      file={0,t} rm[0]
+      basename $file basename=${} 0 nm. $basename ext={`lowercase(['{x}'])`} rm.
+      if ['$basename']!='img'
+        if isdir(['$file']) files 5,$file/* ({'${}'}:y) s. -,{','} # Folder -> Recursively add files
+        elif s=['$ext'];s=='png'||s=='jpg'||s=='jpeg' # Image -> Copy to sub-folder 'original/'
+          x "cp -f \""$file"\" original/"
+        elif s=['$ext'];s=='gmd' # G'MIC Markdown -> Copy to current folder './'
+          it[] $file replace_str. "image/","original/" ot. $basename rm.
+        fi
+      fi
     done
+  endl
+
+  # Generate html pages.
+  files 0,*.gmd files=${}
+  repeat narg({/$files})
+    arg0 $>,$files file=${}
+    e[] "  > Generate '"$file"'."
+    it $file gmd2html 2
+    ot {n} rm.
   done
+  x "rm -f *.gmd"
 
   # Upload to G'MIC server.
   if $1
