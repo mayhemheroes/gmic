@@ -4879,9 +4879,9 @@ parse_gmd :
       res[section++] = s_section;
       while (blank(res[section]), res[section++] = 0); # Remove leading whitespaces
       res[y] = e_section;
-      for (p = opening_offset - 1, p>=0 && res[p]==_'\n', res[p--] = 0); # Discard newlines preceding
-      for (p = ym1, p>opening_offset && blank(res[p]), res[p--] = 0); # Discard trailing blanks
-      for (p = y1, p<size(res) && blank(res[p]), res[p++] = 0); # Discard newlines following
+      for (p = opening_offset - 1, p>=0 && res[p]==_'\n', res[p--] = 0); # Remove newlines preceding
+      for (p = ym1, p>opening_offset && blank(res[p]), res[p--] = 0); # Remove trailing blanks
+      for (p = y1, p<size(res) && blank(res[p]), res[p++] = 0); # Remove newlines following
     ):
 
     # Subsection: '## Subsection name'.
@@ -4893,9 +4893,8 @@ parse_gmd :
       res[subsection++] = s_subsection; res[subsection++] = 0;
       while (blank(res[subsection]), res[subsection++] = 0); # Remove leading whitespaces
       res[y] = e_subsection;
-      for (p = opening_offset - 1, p>=0 && res[p]==_'\n', res[p--] = 0); # Discard newlines preceding
-      for (p = ym1, p>opening_offset && blank(res[p]), res[p--] = 0); # Discard trailing blanks
-      for (p = y1, p<size(res) && res[p] && blank(res[p]), res[p] = 0); # Discard newlines following
+      for (p = ym1, p>opening_offset && blank(res[p]), res[p--] = 0); # Remove trailing blanks
+      for (p = y1, p<size(res) && res[p] && blank(res[p]), res[p] = 0); # Remove newlines following
     ):
 
     # Subsubsection: '### Subsubsection name'.
@@ -4907,9 +4906,8 @@ parse_gmd :
       res[subsubsection++] = s_subsubsection; copy(res[subsubsection],0,2,1,0); subsubsection+=2;
       while (blank(res[subsubsection]), res[subsubsection++] = 0); # Remove leading whitespaces
       res[y] = e_subsubsection;
-      for (p = opening_offset - 1, p>=0 && res[p]==_'\n', res[p--] = 0); # Discard newlines preceding
-      for (p = ym1, p>opening_offset && blank(res[p]), res[p--] = 0); # Discard trailing blanks
-      for (p = y1, p<size(res) && res[p] && blank(res[p]), res[p] = 0); # Discard newlines following
+      for (p = ym1, p>opening_offset && blank(res[p]), res[p--] = 0); # Remove trailing blanks
+      for (p = y1, p<size(res) && res[p] && blank(res[p]), res[p] = 0); # Remove newlines following
     ):
 
     # Subsubsubsection: '#### Subsubsubsection name'.
@@ -4921,17 +4919,22 @@ parse_gmd :
       res[subsubsubsection++] = s_subsubsubsection; copy(res[subsubsubsection],0,3,1,0); subsubsubsection+=3;
       while (blank(res[subsubsubsection]), res[subsubsubsection++] = 0); # Remove leading whitespaces
       res[y] = e_subsubsubsection;
-      for (p = opening_offset - 1, p>=0 && res[p]==_'\n', res[p--] = 0); # Discard newlines preceding
-      for (p = ym1, p>opening_offset && blank(res[p]), res[p--] = 0); # Discard trailing blanks
-      for (p = y1, p<size(res) && res[p] && blank(res[p]), res[p] = 0); # Discard blanks following
+      for (p = ym1, p>opening_offset && blank(res[p]), res[p--] = 0); # Remove trailing blanks
+      for (p = y1, p<size(res) && res[p] && blank(res[p]), res[p] = 0); # Remove blanks following
     ):
 
-    # # Anchor: '= anchor name'.
-    # linestart && c==_'=' && nc==_' '?( # Opening
-    #   opening_offset = anchor;
-    #   res[anchor++] = s_anchor;
-
-    # ):
+    # Anchor: '= Anchor name'.
+    linestart && c==_'=' && nc==_' '?( # Opening
+      anchor = y;
+    ):
+    anchor>=0 && newline(c)?( # Closing
+      opening_offset = anchor;
+      res[anchor++] = s_anchor;
+      while (blank(res[anchor]), res[anchor++] = 0); # Remove leading whitespaces
+      res[y] = e_anchor;
+      res[y1]==_'\n'?(res[y1] = 0);
+      for (p = ym1, p>opening_offset && blank(res[p]), res[p--] = 0); # Remove trailing blanks
+    ):
 
     # List bullet: '* List item'.
     linestart && isin(c,_'-',_'*',_'+') && nc==_' ' && bullet<0?( # Opening
@@ -4985,7 +4988,7 @@ parse_gmd :
         opening_offset = detail_block;
         res[detail_block++] = s_detail_block; copy(res[detail_block],0,2,1,0);
         res[ym1] = e_detail_block; copy(res[y],0,3,1,0);
-        for (p = y + 3, p<size(res) && res[p]==_'\n', res[p++] = 0); # Discard newlines following
+        for (p = y + 3, p<size(res) && res[p]==_'\n', res[p++] = 0); # Remove newlines following
       );
     ):
 
@@ -5020,8 +5023,8 @@ parse_gmd :
     linestart && isin(c,_'-','_','*') && nc==c && ac==c && newline(j[3])?(
       res[y] = s_hrule;
       copy(res[y1],0,3,1,0);
-      for (p = y - 1, p>=0 && res[p]==_'\n', res[p--] = 0); # Discard newlines preceding
-      for (p = y + 4, p<size(res) && res[p]==_'\n', res[p++] = 0); # Discard newlines following
+      for (p = y - 1, p>=0 && res[p]==_'\n', res[p--] = 0); # Remove newlines preceding
+      for (p = y + 4, p<size(res) && res[p]==_'\n', res[p++] = 0); # Remove newlines following
     ):
 
     # Manage text style.
@@ -5225,8 +5228,8 @@ parse_gmd :
         opening_offset = pipeline;
         res[pipeline++] = s_pipeline; res[pipeline++] = 0;
         copy(res[pipeline],i[pipeline],y - pipeline); # Cancel tokens found inside
-        while (blank(i[pipeline]), res[pipeline++] = 0); # Discard leading blanks
-        for (p = ym1, blank(res[p]), res[p--] = 0); # Discard trailing blanks
+        while (blank(i[pipeline]), res[pipeline++] = 0); # Remove leading blanks
+        for (p = ym1, blank(res[p]), res[p--] = 0); # Remove trailing blanks
         res[y] = e_pipeline; res[y1] = 0;
       );
     ):
@@ -5240,8 +5243,8 @@ parse_gmd :
         opening_offset = formula;
         res[formula++] = s_formula; res[formula++] = 0;
         copy(res[formula],i[formula],y - formula); # Cancel tokens found inside
-        while (blank(i[formula]), res[formula++] = 0); # Discard leading blanks
-        for (p = ym1, blank(res[p]), res[p--] = 0); # Discard trailing blanks
+        while (blank(i[formula]), res[formula++] = 0); # Remove leading blanks
+        for (p = ym1, blank(res[p]), res[p--] = 0); # Remove trailing blanks
         res[y] = e_formula; res[y1] = 0;
       );
     ):
@@ -5310,6 +5313,7 @@ parse_gmd :
       subsection>=opening_offset ? reset(subsection);
       subsubsection>=opening_offset ? reset(subsubsection);
       subsubsubsection>=opening_offset ? reset(subsubsubsection);
+      anchor>=opening_offset ? reset(anchor);
       bullet>=opening_offset ? reset(bullet);
       subbullet>=opening_offset ? reset(subbullet);
       subsubbullet>=opening_offset ? reset(subsubbullet);
@@ -5403,6 +5407,16 @@ gmd2html : skip "${1=}"
           write(str_nam,len);
           write('\"></a><div class=\"gmd_subsubsubsection\">');
         ):
+        c==s_anchor ? (
+          ind_e = find(#1,e_anchor,y);
+          run('_gmd2html_section. ',y + 1,',',ind_e - 1);
+          ref(get('_gmd_name',1024,0),str_nam);
+          write('<a id=\"');
+          len = find(str_nam,0);
+          write(str_nam,len);
+          write('\"></a>\n');
+          copy(i[y],0,ind_e - y + 1,1,0);
+        ):
         c==s_bullet ? write('<div class=\"gmd_bullet\">'):
         c==s_subbullet ? write('<div class=\"gmd_subbullet\">'):
         c==s_subsubbullet ? write('<div class=\"gmd_subsubbullet\">'):
@@ -5488,7 +5502,7 @@ gmd2html : skip "${1=}"
           ind_e = find(#1,e_text_link,ind_m);
           write('<a href=\"');
           write(#1,ind_m + 1,ind_e - ind_m - 1);
-          write('\" target=\"_blank\">');
+          i[ind_m + 1]==_'#'?write('\">'):write('\" target=\"_blank\">'); # Anchor -> local link
         ):
         c==m_text_link ? (
           ind_e = find(#1,e_text_link,y);
@@ -5847,64 +5861,65 @@ _gmd_tokens :
      const s_subsubsubsection = -7;
      const e_subsubsubsection = -8;
      const s_anchor = -9;
-     const s_bullet = -10;
-     const e_bullet = -11;
-     const s_subbullet = -12;
-     const e_subbullet = -13;
-     const s_subsubbullet = -14;
-     const e_subsubbullet = -15;
-     const s_center = -16;
-     const e_center = -17;
-     const s_detail_block = -18;
-     const e_detail_block = -19;
-     const s_code_block = -20;
-     const e_code_block = -21;
-     const s_shell = -22;
-     const e_shell = -23;
-     const s_hrule = -24;
+     const e_anchor = -10;
+     const s_bullet = -11;
+     const e_bullet = -12;
+     const s_subbullet = -13;
+     const e_subbullet = -14;
+     const s_subsubbullet = -15;
+     const e_subsubbullet = -16;
+     const s_center = -17;
+     const e_center = -18;
+     const s_detail_block = -19;
+     const e_detail_block = -20;
+     const s_code_block = -21;
+     const e_code_block = -22;
+     const s_shell = -23;
+     const e_shell = -24;
+     const s_hrule = -25;
 
-     const s_bold_italic_a = -25;
-     const e_bold_italic_a = -26;
-     const s_bold_italic_u = -27;
-     const e_bold_italic_u = -28;
-     const s_bold_a = -29;
-     const e_bold_a = -30;
-     const s_bold_u = -31;
-     const e_bold_u = -32;
-     const s_italic_a = -33;
-     const e_italic_a = -34;
-     const s_italic_u = -35;
-     const e_italic_u = -36;
-     const s_strikethrough = -37;
-     const e_strikethrough = -38;
-     const s_underline = -39;
-     const e_underline = -40;
-     const s_monospace = -41;
-     const e_monospace = -42;
-     const s_value_set = -43;
-     const e_value_set = -44;
-     const s_word_highlight = -45;
-     const e_word_highlight = -46;
+     const s_bold_italic_a = -26;
+     const e_bold_italic_a = -27;
+     const s_bold_italic_u = -28;
+     const e_bold_italic_u = -29;
+     const s_bold_a = -30;
+     const e_bold_a = -31;
+     const s_bold_u = -32;
+     const e_bold_u = -33;
+     const s_italic_a = -34;
+     const e_italic_a = -35;
+     const s_italic_u = -36;
+     const e_italic_u = -37;
+     const s_strikethrough = -38;
+     const e_strikethrough = -39;
+     const s_underline = -40;
+     const e_underline = -41;
+     const s_monospace = -42;
+     const e_monospace = -43;
+     const s_value_set = -44;
+     const e_value_set = -45;
+     const s_word_highlight = -46;
+     const e_word_highlight = -47;
 
-     const s_url = -47;
-     const e_url = -48;
-     const s_page_link = -49;
-     const e_page_link = -50;
-     const s_text_link = -51;
-     const m_text_link = -52;
-     const e_text_link = -53;
-     const s_img = -54;
-     const m_img = -55;
-     const e_img = -56;
-     const s_pipeline = -57;
-     const e_pipeline = -58;
-     const s_formula = -59;
-     const e_formula = -60;
+     const s_url = -48;
+     const e_url = -49;
+     const s_page_link = -50;
+     const e_page_link = -51;
+     const s_text_link = -52;
+     const m_text_link = -53;
+     const e_text_link = -54;
+     const s_img = -55;
+     const m_img = -56;
+     const e_img = -57;
+     const s_pipeline = -58;
+     const e_pipeline = -59;
+     const s_formula = -60;
+     const e_formula = -61;
 
-     const s_gmic = -61;
-     const e_gmic = -62;
-     const s_whitespace = -63;
-     const s_tab = -64;"
+     const s_gmic = -62;
+     const e_gmic = -63;
+     const s_whitespace = -64;
+     const s_tab = -65;"
 
 # Define variables corresponding to VT100 sequences, for the math parser.
 _gmd_vt100 :
