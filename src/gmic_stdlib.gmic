@@ -5754,9 +5754,16 @@ gmd2ascii :
     . # [0] = Output, [1] = Input
     eval. ">
       begin("${-_gmd_tokens}${-_gmd_write}${-_gmd_vt100}"
+        is_blockquote = is_code_block = 0;
         ref(vector1024(),tmp);
       );
       c = i;
+
+      c==_'\n'?(
+        is_blockquote?write([vt100_n,'\n  > ',vt100_m]):
+        is_code_block?write('\n  '):
+        write(c);
+      ):
       c>0?write(c):
       (
         isin(c,e_bold_a,e_bold_u,e_bold_italic_a,e_bold_italic_u,e_italic_a,e_italic_u,
@@ -5768,12 +5775,16 @@ gmd2ascii :
         c==s_subsection ? (write_nl(); write([_'\n',vt100_r,vt100_b,'## '])):
         c==s_subsubsection ? (write_nl(); write([_'\n',vt100_r,vt100_b,'### '])):
         c==s_subsubsubsection ? (write_nl(); write([_'\n',vt100_r,vt100_b,'#### '])):
+        c==s_anchor ? (
+          ind_e = find(#1,e_anchor,y);
+          copy(i[y],0,ind_e - y + 1,1,0);
+        ):
         c==s_bullet ? write(' * '):
         c==s_subbullet ? write('   - '):
         c==s_subsubbullet ? write('     + '):
         isin(c,s_center,s_tab) ? write('    '):
-        c==s_blockquote ? write(vt100_m):
-        c==e_blockquote ? write([vt100_n,'\n']):
+        c==s_blockquote ? (write([['  > '],vt100_m]); is_blockquote = 1):
+        c==e_blockquote ? (write([vt100_n,'\n']); is_blockquote = 0):
         c==s_detail_block ? (
           ny = y + 1;
           nc = j[1];
@@ -5792,8 +5803,8 @@ gmd2ascii :
           )
         ):
         c==e_detail_block ? write([vt100_n,'\n']):
-        c==s_code_block ? (_write_off?write(_'\n'); write(vt100_c)):
-        c==e_code_block ? write([vt100_n,'\n\n']):
+        c==s_code_block ? (_write_off?write(_'\n'); write([['  '],vt100_c]); is_code_block = 1):
+        c==e_code_block ? (write([vt100_n,'\n\n']); is_code_block = 0):
         c==s_hrule ? (write_nl(); write('+------------------------------+\n')):
 
         c==s_bold_italic_a ? write([vt100_b,vt100_i]):
