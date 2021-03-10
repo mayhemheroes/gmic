@@ -5013,7 +5013,7 @@ parse_gmd :
         res[code_block++] = s_code_block; copy(res[code_block],0,3,1,0); code_block+=3;
         copy(res[code_block],i[code_block],y - code_block); # Cancel tokens found inside
         for (p = code_block, p<y, ++p, res[p]==_' '?(res[p] = s_whitespace)); # Keep leading whitespaces.
-        res[ym1] = e_code_block; copy(res[y],0,4,1,0);
+        res[ym1] = e_code_block; copy(res[y],0,3,1,0);
       );
     ):
 
@@ -5764,13 +5764,13 @@ gmd2ascii :
         isin(c,e_bullet,e_subbullet,e_subsubbullet,e_center) ? write('\n'):
         isin(c,e_section,e_subsection,e_subsubsection,e_subsubsubsection) ? write([vt100_n,'\n\n']):
 
-        c==s_section ? write([_'\n',_'\n',vt100_r,vt100_b,'# ']):
-        c==s_subsection ? write([_'\n',_'\n',vt100_r,vt100_b,'## ']):
-        c==s_subsubsection ? write([_'\n',_'\n',vt100_r,vt100_b,'### ']):
-        c==s_subsubsubsection ? write([_'\n',_'\n',vt100_r,vt100_b,'#### ']):
-        c==s_bullet ? write('\n* '):
-        c==s_subbullet ? write('  - '):
-        c==s_subsubbullet ? write('    + '):
+        c==s_section ? (write_nl(); write([_'\n',vt100_r,vt100_b,'# '])):
+        c==s_subsection ? (write_nl(); write([_'\n',vt100_r,vt100_b,'## '])):
+        c==s_subsubsection ? (write_nl(); write([_'\n',vt100_r,vt100_b,'### '])):
+        c==s_subsubsubsection ? (write_nl(); write([_'\n',vt100_r,vt100_b,'#### '])):
+        c==s_bullet ? write(' * '):
+        c==s_subbullet ? write('   - '):
+        c==s_subsubbullet ? write('     + '):
         isin(c,s_center,s_tab) ? write('    '):
         c==s_blockquote ? write(vt100_m):
         c==e_blockquote ? write([vt100_n,'\n']):
@@ -5792,9 +5792,12 @@ gmd2ascii :
           )
         ):
         c==e_detail_block ? write([vt100_n,'\n']):
-        c==s_code_block ? write([['\n    '],vt100_c]):
-        c==e_code_block ? write([vt100_n,'\n\n']):
-        c==s_hrule ? write('\n+------------------------------+\n'):
+        c==s_code_block ? write(vt100_c):
+        c==e_code_block ? write(vt100_n):
+        c==s_hrule ? (
+          write_nl();
+          write('+------------------------------+\n')
+        ):
 
         c==s_bold_italic_a ? write([vt100_b,vt100_i]):
         c==s_bold_italic_u ? write([vt100_m,vt100_b,vt100_i]):
@@ -5992,6 +5995,9 @@ _gmd_write :
        _write_off + _len>h(#0)?resize(#0,1,8 + _len + 5*h(#0)/3,1,1,0);
        copy(i[#0,_write_off],i[#ind,start],_len);
        _write_off+=_len;
+     );
+     write_nl() = ( # Force newline
+       i[#0,_write_off -1 ]!=_'\n'?write(_'\n');
      );
      _write_off = 0;"
 
