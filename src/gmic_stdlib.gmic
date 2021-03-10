@@ -1115,6 +1115,7 @@ reference : skip "${2=}"
 #
 reference_begin_ascii :
   use_vt100
+  if !narg($_shell_cols) _shell_cols=${-shell_cols} fi
   _section=0
   +e[] ""
 
@@ -1140,7 +1141,7 @@ reference_section_ascii :
 reference_text_ascii :
   l[]
     ('"$*"')
-    gmd2ascii 80,1
+    gmd2ascii $_shell_cols,1
 
     # Ensure output text contains no more than two consecutive newlines.
     # Also add a 2-chars left margin on each line.
@@ -4209,6 +4210,7 @@ parse_cli_trigger_bashcompletion :
 #
 parse_cli_ascii :
   use_vt100
+  if !narg($_shell_cols) _shell_cols=${-shell_cols} fi
   category= n_category=0
   if !narg($_section) _section=1 fi
 
@@ -4244,7 +4246,7 @@ parse_cli_ascii :
           +e[] "      "${_vt100_i}"Shortcut for command '"$_vt100_m$_vt100_b$eqto$_vt100_n"'."
         else
           eqto=
-          l. _gmd2ascii_cut 80,8 if $!>1 i[1--2] ('"\\\\\n       "':y) a y fi endl
+          l. _gmd2ascii_cut $_shell_cols,8 if $!>1 i[1--2] ('"\\\\\n       "':y) a y fi endl
           str="      "{t}${"if "$<" u \" |\" else u \"\" fi"}
           +e[] ${_vt100_c}$str$_vt100_n
         fi
@@ -4275,7 +4277,7 @@ parse_cli_ascii :
       elif i==_'$'" && "i[1]!=_'$' # Found example description
         if !0$_no_examples
           rows 1,100% autocrop {'" "'}
-          _gmd2ascii_cut 80,18
+          _gmd2ascii_cut $_shell_cols,18
           if $!>1 i[1--2] ('"\\\\\n      "':y) a y fi autocrop {'\n'}
           example={/{t}}
           n_example+=1
@@ -5755,7 +5757,10 @@ _gmd_ascii2html :
 gmd2ascii :
   is_arg=1 l[] check "isint(${1=80}) && $1>0 && isint(${2=0}) && $2>=0" onfail is_arg=0 endl
   max_line_length,indent_forced_newline=${1-2}
-  if !$is_arg max_line_length,indent_newline=80,0 noarg fi
+  if !$is_arg
+    if !arg($_shell_cols) _shell_cols=${-shell_cols} fi
+    max_line_length,indent_newline=$_shell_cols,0 noarg
+  fi
 
   use_vt100 parse_gmd
   repeat $! l[$>] nm={b} strvar $nm fnm=${}
@@ -26265,6 +26270,14 @@ rgba :
   u {round(u(255))},{round(u(255))},{round(u(255))},{round(u(255))}
 
 RGBA : rgba
+
+#@cli: shell_cols
+#@cli : Return the estimated number of columns of the current shell.
+shell_cols :
+  file_rand filename=${}
+  x "tput cols > "$filename
+  cols=80 l[] it $filename if isint({t}) cols={{t}} fi rm. onfail cols=80 endl
+  u {$cols-1}
 
 #@cli size_value
 #@cli : Return the size (in bytes) of an image value.
