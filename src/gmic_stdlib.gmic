@@ -5544,16 +5544,17 @@ gmd2html : skip "${1=}"
 
         c==s_pipeline ? (
           ind_e = find(#1,e_pipeline,y);
-          run('_gmd2html_pipeline. ',y + 1,',',ind_e -  1);
-          ref(get('_gmd_command',1024,0),str_com);
-          ref(get('_gmd_filename',1024,0),str_fil);
-          write('<img class=\"gmd_image\" src=\"');
-          len = find(str_fil,0);
-          write(str_fil,len);
-          write('\" alt=\"');
-          len = find(str_com,0);
-          write(str_com,len);
-          write('\"/>');
+          run('_gmd2html_pipeline. ',y + 1,',',ind_e -  1)?( # If output images
+            ref(get('_gmd_command',1024,0),str_com);
+            ref(get('_gmd_filename',1024,0),str_fil);
+            write('<img class=\"gmd_image\" src=\"');
+            len = find(str_fil,0);
+            write(str_fil,len);
+            write('\" alt=\"');
+            len = find(str_com,0);
+            write(str_com,len);
+            write('\"/>');
+          );
           copy(i[y],0,ind_e - y + 1,1,0);
         ):
 
@@ -5629,19 +5630,24 @@ _gmd2html_pipeline :
   _gmd_command={t} rm.
   strcasevar $_gmd_command
   _gmd_filename=img/${}.png
-  if !isfile(['$_gmd_filename'])
+  is_output=1
+  if !isfile(['$_gmd_filename']) l[]
     l[]
       run $_gmd_command a x
+      if !$!" || "($!==1" && "!h) is_output=0 fi
     onfail
       rm v 1 warn[] "Command '"$_gmd_command"': "${}
       gui_error_preview ${}
     endl
-    if !isdir('img') x "mkdir -p img" fi
-    o. $_gmd_filename rm.
-  fi
+    if $!
+      if !isdir('img') x "mkdir -p img" fi
+      o. $_gmd_filename rm.
+    fi
+  endl fi
   ({'$_gmd_command'})
   _gmd_ascii2html.
   _gmd_command={t} rm.
+  u $is_output
 
 # Convert formula to image (using LaTeX).
 _gmd2html_formula :
