@@ -26291,13 +26291,13 @@ struppercase :
 
 #@cli strvar : "string"
 #@cli : Return a simplified version of the specified string, that can be used as a variable name.
-#@cli : (version that creates a lowercase result).
+#@cli : (version that creates a lowercase result, no longer than 128 chars).
 strvar :
   _strvar_fn="lowercase(c)" _strvar "$*"
 
 #@cli strcasevar : "string"
 #@cli : Return a simplified version of the specified string, that can be used as a variable name.
-#@cli : (version that keeps original case of specified string).
+#@cli : (version that keeps original case of specified string, no longer than 128 chars).
 strcasevar :
   _strvar_fn="c" _strvar "$*"
 
@@ -26305,9 +26305,10 @@ _strvar :
   l[]
     ('"$*"':y) f. "c = i; inrange(c,_'0',_'9') || inrange(c,_'a',_'z') ||
                           inrange(c,_'A',_'Z') || c==_'_'?"$_strvar_fn":_'_'"
+    rows. 0,{min(h,128)-1}
     if inrange(i,_'0',_'9') i.. ('_') a[-2,-1] y fi
-     do h={h} replace_str. "__","_" while h!=$h
-     u {t} rm
+    do h={h} replace_str. "__","_" while h!=$h
+    u {t} rm
   endl
 
 #@cli strver : _version
