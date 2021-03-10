@@ -5667,6 +5667,13 @@ _gmd2html_formula :
 
 # Manage shell execution.
 _gmd2html_shell :
+  _gmd_shell. $*
+  _gmd_ascii2html.
+
+_gmd2ascii_shell :
+  _gmd_shell. $*
+
+_gmd_shell :
   +rows. $1,$2 _gmd_command={t} rm.
   path_tmp=${-path_tmp}
   strcasevar $_gmd_command
@@ -5674,7 +5681,6 @@ _gmd2html_shell :
   x $_gmd_command" > "$filename" 2>&1"
   if isfile(['$filename']) it $filename else 0 fi
   autocrop. {'\n'}
-  _gmd_ascii2html.
 
 # Convert an ascii buffer into html.
 _gmd_ascii2html :
@@ -5805,6 +5811,19 @@ gmd2ascii :
         c==e_detail_block ? write([vt100_n,'\n']):
         c==s_code_block ? (_write_off?write(_'\n'); write([['  '],vt100_c]); is_code_block = 1):
         c==e_code_block ? (write([vt100_n,'\n\n']); is_code_block = 0):
+        c==s_shell ? (
+          ind_e = find(#1,e_shell,y);
+          run('_gmd2ascii_shell. ',y + 1,',',ind_e -  1);
+          ref(get('_gmd_command',1024,0),str_com);
+          write('$ ');
+          len = find(str_com,0);
+          write(str_com,len);
+          write('\n\n');
+          write(#-1,0,h(#-1));
+          run('rm.');
+          write(_'\n');
+          copy(i[y],0,ind_e - y + 1,1,0);
+        ):
         c==s_hrule ? (write_nl(); write('+------------------------------+\n')):
 
         c==s_bold_italic_a ? write([vt100_b,vt100_i]):
