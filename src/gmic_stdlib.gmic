@@ -5386,7 +5386,8 @@ gmd2html : skip "${1=}"
           ind_e = find(#1,e_section,y);
           run('_gmd2html_section. ',y + 1,',',ind_e - 1);
           ref(get('_gmd_name',1024,0),str_nam);
-          write('\n<a id=\"');
+          write_nl();
+          write('<a id=\"');
           len = find(str_nam,0);
           write(str_nam,len);
           write('\"></a><div class=\"gmd_section\">');
@@ -5395,7 +5396,8 @@ gmd2html : skip "${1=}"
           ind_e = find(#1,e_subsection,y);
           run('_gmd2html_section. ',y + 1,',',ind_e - 1);
           ref(get('_gmd_name',1024,0),str_nam);
-          write('\n<a id=\"');
+          write_nl();
+          write('<a id=\"');
           len = find(str_nam,0);
           write(str_nam,len);
           write('\"></a><div class=\"gmd_subsection\">');
@@ -5404,7 +5406,8 @@ gmd2html : skip "${1=}"
           ind_e = find(#1,e_subsubsection,y);
           run('_gmd2html_section. ',y + 1,',',ind_e - 1);
           ref(get('_gmd_name',1024,0),str_nam);
-          write('\n<a id=\"');
+          write_nl();
+          write('<a id=\"');
           len = find(str_nam,0);
           write(str_nam,len);
           write('\"></a><div class=\"gmd_subsubsection\">');
@@ -5413,7 +5416,8 @@ gmd2html : skip "${1=}"
           ind_e = find(#1,e_subsubsubsection,y);
           run('_gmd2html_section. ',y + 1,',',ind_e - 1);
           ref(get('_gmd_name',1024,0),str_nam);
-          write('\n<a id=\"');
+          write_nl();
+          write('<a id=\"');
           len = find(str_nam,0);
           write(str_nam,len);
           write('\"></a><div class=\"gmd_subsubsubsection\">');
@@ -5432,15 +5436,15 @@ gmd2html : skip "${1=}"
         c==s_subbullet ? write('<div class=\"gmd_subbullet\">'):
         c==s_subsubbullet ? write('<div class=\"gmd_subsubbullet\">'):
         c==s_center ? write('<div class=\"gmd_center\">\n'):
-        c==e_center ? write('\n</div>'):
-        c==s_blockquote ? write('\n<blockquote class=\"gmd_blockquote\">\n'):
-        c==e_blockquote ? write('\n</blockquote>\n'):
+        c==e_center ? (write_nl(); write('</div>')):
+        c==s_blockquote ? (write_nl(); write('<blockquote class=\"gmd_blockquote\">\n')):
+        c==e_blockquote ? (write_nl(); write('</blockquote>\n')):
         c==s_detail_block ? (
-          write('<details class=\"gmd_details\">');
+          write_nl();
+          write('<details class=\"gmd_details\">\n');
           ny = y + 1;
           nc = j[1];
           nc!=e_detail_block?(
-            write(_'\n');
             j[1] = 0;
             ind_e = find(#1,e_detail_block,ny);
             nc==_' '?( # Has a title
@@ -5454,7 +5458,7 @@ gmd2html : skip "${1=}"
             )
           )
         ):
-        c==e_detail_block ? (j[-1]?write(_'\n'); write('</details>\n')):
+        c==e_detail_block ? (write_nl(); write('</details>\n')):
         c==s_code_block ? write('<div class=\"gmd_code_block\">'):
         c==e_code_block ? write('</div><br/>\n'):
 
@@ -5472,7 +5476,7 @@ gmd2html : skip "${1=}"
           copy(i[y],0,ind_e - y + 1,1,0);
         ):
 
-        c==s_hrule ? write('\n<hr/>\n'):
+        c==s_hrule ? (write_nl(); write('<hr/>\n')):
 
         c==s_bold_italic_a ? write('<span class=\"gmd_bold_italic_a\">'):
         c==s_bold_italic_u ? write('<span class=\"gmd_bold_italic_u\">'):
