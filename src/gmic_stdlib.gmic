@@ -5013,7 +5013,7 @@ parse_gmd :
         res[code_block++] = s_code_block; copy(res[code_block],0,3,1,0); code_block+=3;
         copy(res[code_block],i[code_block],y - code_block); # Cancel tokens found inside
         for (p = code_block, p<y, ++p, res[p]==_' '?(res[p] = s_whitespace)); # Keep leading whitespaces.
-        res[ym1] = e_code_block; copy(res[y],0,3,1,0);
+        res[ym1] = e_code_block; copy(res[y],0,4,1,0);
       );
     ):
 
@@ -5760,7 +5760,7 @@ gmd2ascii :
       c>0?write(c):
       (
         isin(c,e_bold_a,e_bold_u,e_bold_italic_a,e_bold_italic_u,e_italic_a,e_italic_u,
-             e_strikethrough,e_underline,e_url,e_page_link) ? write(vt100_n):
+             e_strikethrough,e_underline,e_url,e_page_link,e_formula) ? write(vt100_n):
         isin(c,e_bullet,e_subbullet,e_subsubbullet,e_center) ? write('\n'):
         isin(c,e_section,e_subsection,e_subsubsection,e_subsubsubsection) ? write([vt100_n,'\n\n']):
 
@@ -5792,12 +5792,9 @@ gmd2ascii :
           )
         ):
         c==e_detail_block ? write([vt100_n,'\n']):
-        c==s_code_block ? write(vt100_c):
-        c==e_code_block ? write(vt100_n):
-        c==s_hrule ? (
-          write_nl();
-          write('+------------------------------+\n')
-        ):
+        c==s_code_block ? (_write_off?write(_'\n'); write(vt100_c)):
+        c==e_code_block ? write([vt100_n,'\n\n']):
+        c==s_hrule ? (write_nl(); write('+------------------------------+\n')):
 
         c==s_bold_italic_a ? write([vt100_b,vt100_i]):
         c==s_bold_italic_u ? write([vt100_m,vt100_b,vt100_i]):
@@ -5840,6 +5837,7 @@ gmd2ascii :
           write([vt100_i,'[image]',vt100_n]);
           copy(i[y],0,ind - y + 1,1,0);
         ):
+        c==s_formula ? write(vt100_g);
 
         c==s_gmic ? (
           write([vt100_b,'G\47MIC',vt100_n]);
