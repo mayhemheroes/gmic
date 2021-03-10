@@ -4983,12 +4983,12 @@ parse_gmd :
     code_block<0 && blockquote<0 && linestart && c==_'>' && blank(nc)?( # Opening
       blockquote = y;
     ):
-    blockquote>=0 && linestart && (c!=_'>' || !blank(nc))?( # Closing
+    blockquote>=0 && newline(c) && (nc!=_'>' || !blank(ac))?( # Closing
       opening_offset = blockquote;
       res[blockquote++] = s_blockquote; res[blockquote] = 0;
       # Remove leading '>' when multi-lines:
-      for (p = blockquote, p<ym1, ++p, newline(res[p - 1]) && res[p]==_'>'?copy(res[p],0,res[p + 1]==_' '?2:1,1,0));
-      res[ym1] = e_blockquote;
+      for (p = blockquote, p<y, ++p, newline(res[p - 1]) && res[p]==_'>'?copy(res[p],0,res[p + 1]==_' '?2:1,1,0));
+      res[y] = e_blockquote;
     ):
 
     # Detail block: '\n???\n Detail block\n???\n'.
@@ -5031,7 +5031,7 @@ parse_gmd :
       );
     ):
 
-    # Horizontal rule: '---'.
+    # Horizontal rule: '---', '___' or '***'.
     linestart && isin(c,_'-','_','*') && nc==c && ac==c && newline(j[3])?(
       res[y] = s_hrule;
       copy(res[y1],0,3,1,0);
