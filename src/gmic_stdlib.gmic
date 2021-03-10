@@ -4270,7 +4270,7 @@ parse_cli_ascii :
             i[0] ('$_vt100_b':y) i[2] ('$_vt100_n':y)
           fi
           a y
-          gmd2ascii 80,5
+          gmd2ascii $_shell_cols,5
           if $!>1 i[1--2] ('"\n      "':y) a y fi autocrop {'\n'}
           +e[] "\n    "{/{t}} nl=
         fi
@@ -4303,7 +4303,8 @@ parse_cli_ascii :
   endl done rm u $eqto
 
 parse_cli_text_ascii :
-  gmd2ascii 80,0
+  if !narg($_shell_cols) _shell_cols={${-shell_cols}-5} fi
+  gmd2ascii $_shell_cols,0
 
   # Ensure output text contains no more than two consecutive newlines.
   # Also add a 4-chars left margin on each line.
@@ -26275,8 +26276,7 @@ RGBA : rgba
 #@cli : Return the estimated number of columns of the current shell.
 shell_cols :
   file_rand filename=${}
-  x "tput cols > "$filename
-  cols=80 l[] it $filename if isint({t}) cols={{t}} fi rm. onfail cols=80 endl
+  l[] cols=80 x "tput cols > "$filename it $filename if isint({t}) cols={{t}} fi rm onfail cols=80 rm endl
   u $cols
 
 #@cli size_value
