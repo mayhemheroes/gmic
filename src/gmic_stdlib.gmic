@@ -5574,13 +5574,15 @@ gmd2html : skip "${1=}"
             is_video = ext3=='mp4' || ext3=='ogg' || ext4=='webm'
           );
           is_video?(
-            write('<video controls src=\"');
+            write('<video controls loop autoplay muted src=\"');
             write(#1,ind_m + 1,ind_e - ind_m - 1);
             write('\">');
           ):(
             write('<img class=\"gmd_image\" src=\"');
             write(#1,ind_m + 1,ind_e - ind_m - 1);
             write('\" alt=\"');
+            write(#1,y + 1,ind_m - y - 1);
+            write('\" title=\"');
           );
         ):
         c==m_img ? (
@@ -20771,6 +20773,27 @@ check_display :
 #@cli : If 'is_verbose=1', the executed command is allowed to output on stdout/stderr.
 #@cli : (eq. to 'x').
 #@cli : Default value: 'is_verbose=1'.
+
+#@cli xo : eq. to 'exec_out'.
+xo :
+  v + _exec_out $"*"
+
+#@cli exec_out : _mode,"command"
+#@cli : Execute external command using a system call, and return resulting `stdout` and/or `stderr`.
+#@cli : 'mode' can be { 0=stdout | 1=stderr | 2=stdout+stderr }.
+exec_out :
+  v + _exec_out $"*"
+
+_exec_out :
+  l[] if "isint($1) && isin($1,0,1,2)" mode=$1 command="${2--1}" else mode=0 command="$*" fi onfail mode=0 command="$*" endl
+  s0,s1,s2=stdout,stderr,stdout+stderr
+  e[0--3] "Execute external command '"$command"', and return "${s$mode}" output."
+  file_rand filename=${}
+  if $mode==0 x $command" > "$filename
+  elif $mode==1 x $command" >& "$filename
+  else x $command"  >"$filename" 2>&1"
+  fi
+  it $filename u {t} rm. delete $filename
 
 #@cli for : condition : (+)
 #@cli : Start a 'for...done' block.
