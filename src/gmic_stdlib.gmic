@@ -4859,10 +4859,10 @@ parse_gmd :
   eval[^] ">"${-_gmd_tokens}"
     begin(
       section = subsection = subsubsection = subsubsubsection = anchor =
-      bullet = subbullet = subsubbullet = center = table = blockquote = detail_block = code_block = shell =
-      bold_italic_a = bold_italic_u = bold_a = bold_u = italic_a = italic_u = strikethrough = underline = monospace =
-      value_set = word_highlight = url = page_link = text_link1 = text_link2 = img1 = img2 = pipeline = formula = -1;
-      opening_offset = -1;
+      bullet = subbullet = subsubbullet = center = table = blockquote = detail_block = code_block =
+      shell = bold_italic_a = bold_italic_u = bold_a = bold_u = italic_a = italic_u = strikethrough = underline =
+      monospace = value_set = word_highlight = url = page_link = text_link1 = text_link2 = img1 = img2 = pipeline =
+      formula = opening_offset = -1;
 
       blank(c) = isin(c,_' ',_'\n',s_whitespace,s_tab,0);
       semiblank(c) = isin(c,_' ',_'\n',_'.',_',',_';',_':',_'!',_'?',_')',_'(',s_whitespace,s_tab,0);
@@ -4988,7 +4988,7 @@ parse_gmd :
       );
     ):
 
-    # Table : '\n| foo | bar\n'.
+    # Table : '\n| foo | bar\n' (without borders).
     table<0 && linestart && c==_'|'?( # Opening
       table = y;
     ):
@@ -4996,11 +4996,11 @@ parse_gmd :
       opening_offset = table;
       res[table++] = s_table;
       for (p = table, p<y, ++p, # Find column / line separators
-        i[p]==_'|'?(res[p] = newline(i[p - 1])?0:m_table):
+        i[p]==_'|'?(res[p] = newline(i[p - 1]) || newline(i[p + 1])?0:m_table):
         newline(i[p])?(res[p] = n_table);
       );
       res[y] = e_table;
-    );
+    ):
 
     # Blockquote : '\n> line1\n> line2'.
     code_block<0 && blockquote<0 && linestart && c==_'>' && blank(nc)?( # Opening
