@@ -4996,7 +4996,7 @@ parse_gmd :
       opening_offset = table;
       res[table++] = s_table;
       for (p = table, p<y, ++p, # Find column / line separators
-        i[p]==_'|'?(res[p] = m_table);
+        i[p]==_'|'?(res[p] = newline(i[p - 1])?0:m_table):
         newline(i[p])?(res[p] = n_table);
       );
       res[y] = e_table;
@@ -5463,10 +5463,10 @@ gmd2html : skip "${1=}"
         c==s_center ? write('<div class=\"gmd_center\">\n'):
         c==e_center ? (write_nl(); write('</div>')):
 
-        c==s_table ? write('\n<table class=\"gmd_table\"><tr><td>'):
+        c==s_table ? write('\n<table class=\"gmd_table\">\n<tr><td>'):
         c==m_table ? write('</td><td>'):
-        c==n_table ? write('</td></tr><tr><td>'):
-        c==e_table ? write('</td></tr></table>'):
+        c==n_table ? write('</td></tr>\n<tr><td>'):
+        c==e_table ? write('</td></tr></table>\n'):
 
         c==s_blockquote ? (write_nl(); write('<blockquote class=\"gmd_blockquote\">\n')):
         c==e_blockquote ? (write_nl(); write('</blockquote>\n')):
