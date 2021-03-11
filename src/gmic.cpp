@@ -9385,7 +9385,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           } else CImg<char>::string(argument).move_to(g_list_c);
           print(images,0,"Set name%s of image%s to '%s'.",
                 selection.height()>1?"s":"",gmic_selection.data(),gmic_argument_text_printed());
-          cimglist_for(g_list_c,l) { g_list_c[l].unroll('x'); strreplace_fw(g_list_c[l]); }
+          cimglist_for(g_list_c,l) strreplace_fw(g_list_c[l]);
           cimg_forY(selection,l)
             images_names[selection[l]].assign(g_list_c[l%g_list_c.width()]);
           g_list_c.assign();
@@ -10346,6 +10346,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                      !std::strcmp(uext,"qt") ||
                      !std::strcmp(uext,"rm") ||
                      !std::strcmp(uext,"vob") ||
+                     !std::strcmp(uext,"webm") ||
                      !std::strcmp(uext,"wmv") ||
                      !std::strcmp(uext,"xvid") ||
                      !std::strcmp(uext,"mpeg")) {
@@ -14656,6 +14657,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                    !std::strcmp(uext,"qt") ||
                    !std::strcmp(uext,"rm") ||
                    !std::strcmp(uext,"vob") ||
+                   !std::strcmp(uext,"webm") ||
                    !std::strcmp(uext,"wmv") ||
                    !std::strcmp(uext,"xvid") ||
                    !std::strcmp(uext,"mpeg")) {
