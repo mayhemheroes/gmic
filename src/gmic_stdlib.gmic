@@ -4990,7 +4990,8 @@ parse_gmd :
       center>=0 && y>center + 3?( # Closing
         opening_offset = center;
         res[center++] = s_center; copy(res[center],0,3,1,0); center+=3;
-        res[ym1] = e_center; copy(res[y],0,4,1,0);
+        newline(res[ym1])?(res[ym1] = 0);
+        res[y] = e_center; copy(res[y + 1],0,3,1,0);
       );
     ):
 
@@ -5466,17 +5467,15 @@ gmd2html : skip "${1=}"
         c==s_subsubbullet ? write('<div class=\"gmd_subsubbullet\">'):
         c==s_center ? write('<div class=\"gmd_center\">\n'):
         c==e_center ? (write_nl(); write('</div>')):
-
-        c==s_table ? write('\n<table class=\"gmd_table\">\n<tr><td>'):
-        c==s_htable ? write('\n<table class=\"gmd_htable\">\n<tr><td>'):
-        c==s_vtable ? write('\n<table class=\"gmd_vtable\">\n<tr><td>'):
-        c==s_hvtable ? write('\n<table class=\"gmd_hvtable\">\n<tr><td>'):
+        c==s_table ? (write_nl(); write('<table class=\"gmd_table\">\n<tr><td>')):
+        c==s_htable ? (write_nl(); write('<table class=\"gmd_htable\">\n<tr><td>')):
+        c==s_vtable ? (write_nl(); write('<table class=\"gmd_vtable\">\n<tr><td>')):
+        c==s_hvtable ? (write_nl(); write('<table class=\"gmd_hvtable\">\n<tr><td>')):
         c==m_table ? write('</td><td>'):
         c==n_table ? write('</td></tr>\n<tr><td>'):
         c==e_table ? write('</td></tr></table>\n'):
-
         c==s_blockquote ? (write_nl(); write('<blockquote class=\"gmd_blockquote\">\n')):
-        c==e_blockquote ? (write_nl(); write('</blockquote>\n')):
+        c==e_blockquote ? (write('\n</blockquote>\n')):
         c==s_detail_block ? (
           write_nl();
           write('<details class=\"gmd_details\">\n');
