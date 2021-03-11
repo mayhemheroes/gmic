@@ -7247,12 +7247,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             }
             p = np;
           }
-          print(images,0,"Delete file%s '%s'.",
-                g_list_c.size()>1?"s":"",gmic_argument_text_printed());
-          cimglist_for(g_list_c,l) {
-            strreplace_fw(g_list_c[l]);
-            std::remove(g_list_c[l]);
-          }
+          print(images,0,"Delete file%s '%s' (%u file%s).",
+                g_list_c.size()!=1?"s":"",gmic_argument_text_printed(),
+                g_list_c.size(),g_list_c.size()!=1?"s":"");
+          cimglist_for(g_list_c,l) { strreplace_fw(g_list_c[l]); std::remove(g_list_c[l]); }
           g_list_c.assign();
           ++position; continue;
         }

@@ -1433,10 +1433,7 @@ reference_end_pdf :
   # Use 'wkhtmltopdf' to convert html to a pdf file.
   # (There is a bug in wkhtmltopdf that prevents all images to appear in the generated document!
   #  I have to print the .pdf manually 'in a file' first).
-  x "rm -f reference_pdf.pdf"
-# x "wkhtmltopdf --background --enable-local-file-access --encoding UTF-8 --page-size A4 --margin-bottom 1cm "\
-#   "--margin-top 1cm --margin-right 1cm --margin-left 1cm reference_pdf.html reference_pdf.pdf"
-
+  delete reference_pdf.pdf
   v 0 e[] "  > Waiting for file 'reference_pdf.pdf'."
   for !isfile('reference_pdf.pdf') wait 5000 done
   e[] "  > Removing links in file 'reference_pdf.pdf'."
@@ -1444,7 +1441,7 @@ reference_end_pdf :
   e[] "  > Compressing file 'reference_pdf.pdf' to 'gmic_reference.pdf'."
   x "gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=gmic_reference.pdf reference_pdf-pdfjam.pdf"
   e[] "  > Clean temporary files."
-  x "rm -f style.css reference_pdf.html reference_pdf.png reference_pdf.pdf reference_pdf-pdfjam.pdf"
+  delete style.css,reference_pdf.html,reference_pdf.png,reference_pdf.pdf,reference_pdf-pdfjam.pdf
   e[] "  > Upload file 'gmic_reference.pdf' to G'MIC server."
   x "lftp ftp://"$GMIC_LOGIN":"$GMIC_PASSWD"@"$GMIC_FTP" -e \"put -O /www/gmic/reference gmic_reference.pdf; "\
     "quit\" >/dev/null"
@@ -1879,7 +1876,7 @@ compress_gmic :
 #@cli delete : filename1[,filename2,...] : (+)
 #@cli : Delete specified filenames on disk. Multiple filenames must be separated by commas.
 delete : # Custom version for G'MIC < 2.9.7
-  e[^-1] "Delete file(s) '$*'."
+  e[^-1] "Delete file(s) '$*' ($# file(s))."
   $=arg
   if !${-is_windows} repeat $# x "rm -f \""${arg{$>+1}}"\"" done
   else repeat $# x "del /f \""${arg{$>+1}}"\"" done
@@ -25157,19 +25154,6 @@ file_rand :
   do filename=${-path_tmp}gmic$_pid{`round(u(vector6(_'0'),vector6(_'9')))`}
   while isfile(['{/$filename}'])
   u $filename
-
-#@cli file_rm : filename
-#@cli : Delete a file.
-file_rm :
-  e[^-1] "Remove file '$1'."
-  if ${-is_windows}
-    1 nm. "$1" dir={/{f}} base={/{b}} ext={/{x}} rm. com=""
-    if narg($dir) com="cd \""$dir"\\\" && " fi
-    if narg($ext) com=${com}"del \""$base.$ext"\"" else com=${com}"del \""$base"\"" fi
-    x $com
-  else
-    x "rm -f \"$1\""
-  fi
 
 #@cli filename : filename,_number1,_number2,...,_numberN
 #@cli : Return a filename numbered with specified indices.
