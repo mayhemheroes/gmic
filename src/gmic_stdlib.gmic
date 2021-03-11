@@ -4988,14 +4988,18 @@ parse_gmd :
       );
     ):
 
-    # Table : '\n| foo | bar\n' (without borders).
+    # Table : '\n| foo | bar\n' (with first delimiter '||', '|+' or '|-').
     table<0 && linestart && c==_'|'?( # Opening
       table = y;
     ):
     table>=0 && newline(c) && nc!=_'|'?( # Closing
       opening_offset = table;
-      res[table++] = s_table;
-      for (p = table, p<y, ++p, # Find column / line separators
+      d = i[table + 1];
+      d==_'|'?(res[table++] = s_htable; res[table++] = 0):
+      d==_'-'?(res[table++] = s_vtable; res[table++] = 0):
+      d==_'+'?(res[table++] = s_hvtable; res[table++] = 0):(res[table++] = s_table);
+      newline(i[table]) && i[table + 1]==_'|'?(copy(res[table],0,2,1,0); table+=2);
+      for (p = table, p<y, ++p, # Find column / line separators inside table
         i[p]==_'|'?(res[p] = newline(i[p - 1]) || newline(i[p + 1])?0:m_table):
         newline(i[p])?(res[p] = n_table);
       );
@@ -5464,6 +5468,9 @@ gmd2html : skip "${1=}"
         c==e_center ? (write_nl(); write('</div>')):
 
         c==s_table ? write('\n<table class=\"gmd_table\">\n<tr><td>'):
+        c==s_htable ? write('\n<table class=\"gmd_htable\">\n<tr><td>'):
+        c==s_vtable ? write('\n<table class=\"gmd_vtable\">\n<tr><td>'):
+        c==s_hvtable ? write('\n<table class=\"gmd_hvtable\">\n<tr><td>'):
         c==m_table ? write('</td><td>'):
         c==n_table ? write('</td></tr>\n<tr><td>'):
         c==e_table ? write('</td></tr></table>\n'):
@@ -5976,61 +5983,64 @@ _gmd_tokens :
      const s_center = -17;
      const e_center = -18;
      const s_table = -19;
-     const m_table = -20;
-     const n_table = -21;
-     const e_table = -22;
-     const s_blockquote = -23;
-     const e_blockquote = -24;
-     const s_detail_block = -25;
-     const e_detail_block = -26;
-     const s_code_block = -27;
-     const e_code_block = -28;
-     const s_shell = -29;
-     const e_shell = -30;
-     const s_hrule = -31;
+     const s_htable = -20;
+     const s_vtable = -21;
+     const s_hvtable = -22;
+     const m_table = -23;
+     const n_table = -24;
+     const e_table = -25;
+     const s_blockquote = -26;
+     const e_blockquote = -27;
+     const s_detail_block = -28;
+     const e_detail_block = -29;
+     const s_code_block = -30;
+     const e_code_block = -31;
+     const s_shell = -32;
+     const e_shell = -33;
+     const s_hrule = -34;
 
-     const s_bold_italic_a = -32;
-     const e_bold_italic_a = -33;
-     const s_bold_italic_u = -34;
-     const e_bold_italic_u = -35;
-     const s_bold_a = -36;
-     const e_bold_a = -37;
-     const s_bold_u = -38;
-     const e_bold_u = -39;
-     const s_italic_a = -40;
-     const e_italic_a = -41;
-     const s_italic_u = -42;
-     const e_italic_u = -43;
-     const s_strikethrough = -44;
-     const e_strikethrough = -45;
-     const s_underline = -46;
-     const e_underline = -47;
-     const s_monospace = -48;
-     const e_monospace = -49;
-     const s_value_set = -50;
-     const e_value_set = -51;
-     const s_word_highlight = -52;
-     const e_word_highlight = -53;
+     const s_bold_italic_a = -35;
+     const e_bold_italic_a = -36;
+     const s_bold_italic_u = -37;
+     const e_bold_italic_u = -38;
+     const s_bold_a = -39;
+     const e_bold_a = -40;
+     const s_bold_u = -41;
+     const e_bold_u = -42;
+     const s_italic_a = -43;
+     const e_italic_a = -44;
+     const s_italic_u = -45;
+     const e_italic_u = -46;
+     const s_strikethrough = -47;
+     const e_strikethrough = -48;
+     const s_underline = -49;
+     const e_underline = -50;
+     const s_monospace = -51;
+     const e_monospace = -52;
+     const s_value_set = -53;
+     const e_value_set = -54;
+     const s_word_highlight = -55;
+     const e_word_highlight = -56;
 
-     const s_url = -54;
-     const e_url = -55;
-     const s_page_link = -56;
-     const e_page_link = -57;
-     const s_text_link = -58;
-     const m_text_link = -59;
-     const e_text_link = -60;
-     const s_img = -61;
-     const m_img = -62;
-     const e_img = -63;
-     const s_pipeline = -64;
-     const e_pipeline = -65;
-     const s_formula = -66;
-     const e_formula = -67;
+     const s_url = -57;
+     const e_url = -58;
+     const s_page_link = -59;
+     const e_page_link = -60;
+     const s_text_link = -61;
+     const m_text_link = -62;
+     const e_text_link = -63;
+     const s_img = -64;
+     const m_img = -65;
+     const e_img = -66;
+     const s_pipeline = -67;
+     const e_pipeline = -68;
+     const s_formula = -69;
+     const e_formula = -70;
 
-     const s_gmic = -68;
-     const e_gmic = -69;
-     const s_whitespace = -70;
-     const s_tab = -71;"
+     const s_gmic = -71;
+     const e_gmic = -72;
+     const s_whitespace = -73;
+     const s_tab = -74;"
 
 # Define variables corresponding to VT100 sequences, for the math parser.
 _gmd_vt100 :
