@@ -20788,6 +20788,12 @@ _exec_out :
   l[] if "isint($1) && isin($1,0,1,2)" mode=$1 command="${2--1}" else mode=0 command="$*" fi onfail mode=0 command="$*" endl
   s0,s1,s2=stdout,stderr,stdout+stderr
   e[0--3] "Execute external command '"$command"', and return "${s$mode}" output."
+  file_rand filename=${}
+  if $mode==0 x $command" > "$filename
+  elif $mode==1 x $command" >& "$filename
+  else x $command"  >"$filename" 2>&1"
+  fi
+  it $filename u {t} rm. delete $filename
 
 #@cli for : condition : (+)
 #@cli : Start a 'for...done' block.
