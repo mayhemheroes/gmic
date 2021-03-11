@@ -2557,7 +2557,7 @@ const char *gmic::builtin_commands_names[] = {
   "b","bilateral","blur","boxfilter","break","bsl","bsr",
   "c","camera","channels","check","check3d","col3d","color3d","columns","command","continue","convolve","correlate",
     "cos","cosh","crop","cumulate","cursor","cut",
-  "d","db3d","debug","denoise","deriche","dijkstra","dilate","discard","displacement","display",
+  "d","db3d","debug","delete","denoise","deriche","dijkstra","dilate","discard","displacement","display",
     "distance","div","div3d","do","done","double3d",
   "e","echo","eigen","eikonal","elif","ellipse","else","endian","endif","endl","endlocal","eq",
     "equalize","erode","error","eval","exec","exp",
@@ -7230,6 +7230,31 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                                            constraints));
           } else arg_error("displacement");
           is_change = true; ++position; continue;
+        }
+
+        // Delete file(s).
+        if (!is_get && !std::strcmp("delete",item)) {
+          gmic_substitute_args(false);
+          const CImg<T> arg = CImg<char>::string(argument);
+          const unsigned int pend = (unsigned int)arg.size();
+          g_list_c.assign();
+          for (unsigned int p = 0; p<pend; ) { // Retrieve list of filenames
+            unsigned int np = p;
+            while (np<pend && arg[np] && arg[np]!=',') ++np;
+            if (np<pend) {
+              CImg<T>(arg.data(p),1,++np - p,1,1,true).move_to(g_list_c);
+              g_list_c.back().back() = 0;
+            }
+            p = np;
+          }
+          print(images,0,"Delete file%s '%s'.",
+                g_list_c.size()>1?"s":"",gmic_argument_text_printed());
+          cimglist_for(g_list_c,l) {
+            strreplace_fw(g_list_c[l]);
+            std::remove(g_list_c[l]);
+          }
+          g_list_c.assign();
+          ++position; continue;
         }
 
         // Display.
