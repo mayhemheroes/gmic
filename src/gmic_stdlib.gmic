@@ -4874,7 +4874,9 @@ parse_gmd :
     pc = j[-1]; c = i; nc = j[1]; ac = j[2];
     ym1 = y - 1; y1 = y + 1; y2 = y + 2;
     linestart = newline(pc);
-    non_escaped = (pc!=_'\\');
+
+    is_raw = max(blockquote,code_block,shell,monospace,url,page_link,text_link2,img2,pipeline,formula)>=0;
+    non_escaped = is_raw || (pc!=_'\\');
 
     # Manage document layout.
     #------------------------
@@ -8229,7 +8231,7 @@ update_tutorial_html : check "isbool(${1=0})"
   path_tutorial=$HOME/work/src/gmic-community/tutorial
 
   # Unroll original folder structure.
-  x "mkdir -p original"
+  x "mkdir -p images"
   files 5,$path_tutorial/*
   l[]
     ({'${}'}:y) s -,{','}
@@ -8238,10 +8240,11 @@ update_tutorial_html : check "isbool(${1=0})"
       basename $file basename=${} 0 nm. $basename ext={`lowercase(['{x}'])`} rm.
       if ['$basename']!='img'
         if isdir(['$file']) files 5,$file/* ({'${}'}:y) s. -,{','} # Folder -> Recursively add files
-        elif s=['$ext'];s=='png'||s=='jpg'||s=='jpeg' # Image -> Copy to sub-folder 'original/'
-          x "cp -f \""$file"\" original/"
+        elif s=['$ext'];s=='png'||s=='jpg'||s=='jpeg' # Image -> Copy to sub-folder 'images/'
+          x "cp -f \""$file"\" images/"
         elif s=['$ext'];s=='gmd' # G'MIC Markdown -> Copy to current folder './'
-          it[] $file replace_str. "image/","original/" ot. $basename rm.
+          it[] $file
+          ot. $basename rm.
         fi
       fi
     done
