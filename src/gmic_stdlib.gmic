@@ -4805,7 +4805,7 @@ _parse_cli_images :
     n 0,255
 
     r {[w,h]+2},1,100%,0,0,0.5,0.5
-    - 255 r {[w+10,h+5]},1,100%,0,0,0.5,0.5 r 100%,{h+1},1,100%,0,0,0,1 + 255
+    - 245 r {[w+10,h+5]},1,100%,0,0,0.5,0.5 r 100%,{h+1},1,100%,0,0,0,1 + 245
 
     0 t. $label" "$label2,5,0,32,1,1
     if w>w#0" || "h>h#0
@@ -4813,7 +4813,7 @@ _parse_cli_images :
        if w>w#0" || "h>h#0 rr2d. {0,[w,h]},0,2 fi
     fi
     *. -1 n. 0,255 to_rgb.
-    - 255 a y,0.5 + 255
+    - 245 a y,0.5 + 245
 
   endl done
   c 0,255
@@ -4874,7 +4874,9 @@ parse_gmd :
     pc = j[-1]; c = i; nc = j[1]; ac = j[2];
     ym1 = y - 1; y1 = y + 1; y2 = y + 2;
     linestart = newline(pc);
-    non_escaped = (pc!=_'\\');
+
+    is_raw = max(blockquote,code_block,shell,monospace,url,page_link,text_link2,img2,pipeline,formula)>=0;
+    non_escaped = is_raw || (pc!=_'\\');
 
     # Manage document layout.
     #------------------------
@@ -5813,7 +5815,7 @@ gmd2ascii :
   is_arg=1 l[] check "isint(${1=80}) && $1>0 && isint(${2=0}) && $2>=0" onfail is_arg=0 endl
   max_line_length,indent_forced_newline=${1-2}
   if !$is_arg
-    if !arg($_shell_cols) _shell_cols={${-shell_cols}-5} fi
+    if !narg($_shell_cols) _shell_cols={${-shell_cols}-5} fi
     max_line_length,indent_newline=$_shell_cols,0 noarg
   fi
 
@@ -5851,6 +5853,8 @@ gmd2ascii :
         c==s_subbullet ? write('   - '):
         c==s_subsubbullet ? write('     + '):
         isin(c,s_center,s_tab) ? write('    '):
+        isin(c,s_table,s_htable,s_vtable,s_hvtable,n_table) ? (write_nl(); write([vt100_r,' | ',vt100_n])):
+        c==m_table ? write([vt100_r,' | ',vt100_n]):
         c==s_blockquote ? (write([['  > '],vt100_m]); is_blockquote = 1):
         c==e_blockquote ? (write([vt100_n,'\n']); is_blockquote = 0):
         c==s_detail_block ? (
@@ -8229,7 +8233,7 @@ update_tutorial_html : check "isbool(${1=0})"
   path_tutorial=$HOME/work/src/gmic-community/tutorial
 
   # Unroll original folder structure.
-  x "mkdir -p original"
+  x "mkdir -p images"
   files 5,$path_tutorial/*
   l[]
     ({'${}'}:y) s -,{','}
@@ -8238,10 +8242,11 @@ update_tutorial_html : check "isbool(${1=0})"
       basename $file basename=${} 0 nm. $basename ext={`lowercase(['{x}'])`} rm.
       if ['$basename']!='img'
         if isdir(['$file']) files 5,$file/* ({'${}'}:y) s. -,{','} # Folder -> Recursively add files
-        elif s=['$ext'];s=='png'||s=='jpg'||s=='jpeg' # Image -> Copy to sub-folder 'original/'
-          x "cp -f \""$file"\" original/"
+        elif s=['$ext'];s=='png'||s=='jpg'||s=='jpeg' # Image -> Copy to sub-folder 'images/'
+          x "cp -f \""$file"\" images/"
         elif s=['$ext'];s=='gmd' # G'MIC Markdown -> Copy to current folder './'
-          it[] $file replace_str. "image/","original/" ot. $basename rm.
+          it[] $file
+          ot. $basename rm.
         fi
       fi
     done
@@ -20794,7 +20799,7 @@ _exec_out :
   e[0--3] "Execute external command '"$command"', and return "${s$mode}" output."
   file_rand filename=${}
   if $mode==0 x $command" > "$filename
-  elif $mode==1 x $command" >& "$filename
+  elif $mode==1 x $command" 2> "$filename
   else x $command"  >"$filename" 2>&1"
   fi
   it $filename u {t} rm. delete $filename
