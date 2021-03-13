@@ -4272,8 +4272,7 @@ parse_cli_ascii :
           if $!>2" && "h#1==1" && "i("#1")==_':'
             i[0] ('$_vt100_b':y) i[2] ('$_vt100_n':y)
           fi
-          a y
-          gmd2ascii $_shell_cols,5
+          a y gmd2ascii $_shell_cols,5
           if $!>1 i[1--2] ('"\n      "':y) a y fi autocrop {'\n'}
           +e[] "\n    "{/{t}} nl=
         fi
@@ -4307,7 +4306,7 @@ parse_cli_ascii :
 
 parse_cli_text_ascii :
   if !narg($_shell_cols) _shell_cols={${-shell_cols}-5} fi
-  gmd2ascii $_shell_cols,0
+  replace_str "\\n","\n" gmd2ascii $_shell_cols,0
 
   # Ensure output text contains no more than two consecutive newlines.
   # Also add a 4-chars left margin on each line.
@@ -4659,7 +4658,7 @@ parse_cli_html :
         # Other kind of description line
         +autocrop {"' '"} is_list={isin(i,_'*',_'-',_'.')} rm.
         ('\n') a y
-        gmd2html 0
+        replace_str "\\n","\n" gmd2html 0
         if $line==1" && "!$is_list html.="      <br/>"\n fi
         html.={t}
         if i[-1,2]!=_'\n' html.="\n" fi
@@ -6094,21 +6093,6 @@ _gmd_write :
        i[#0,_write_off -1 ]!=_'\n'?write(_'\n');
      );
      _write_off = 0;"
-
-# batch_gmd2html :
-# Batch convert all .gmd files in current folder to html files.
-batch_gmd2html :
-  rm
-  files 1,* folders=.,${}
-  repeat narg({/$folders}),f
-    arg0 $f,$folders folder=${}
-    files $folder/*.gmd files=${}
-    repeat narg({/$files})
-      arg0 $>,$files file=${}
-      e[] "  > Generate '"$file"'."
-      it $file gmd2html 2 ot {n} rm.
-    done
-  done
 
 #@cli parse_gui : _outputmode,_{ * | filter_name}
 #@cli : Parse selected filter definitions and generate info about filters in selected output mode.
@@ -22780,6 +22764,7 @@ fisheye : skip ${1=50},${2=50},${3=50},${4=1.2}
 
 #@cli flower : _amplitude,_frequency,_offset_r[%],_angle,_center_x[%],_center_y[%],\
 # _boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror}
+#@cli : ~~~\ntoto\n~~~
 #@cli : Apply flower deformation on selected images.
 #@cli : Default values: 'amplitude=30', 'frequency=6', 'offset_r=0', 'angle=0', 'center_x=center_y=50%' \
 # and 'boundary_conditions=3'.
@@ -26346,7 +26331,7 @@ rgba :
 
 RGBA : rgba
 
-#@cli: shell_cols
+#@cli shell_cols
 #@cli : Return the estimated number of columns of the current shell.
 shell_cols :
   file_rand filename=${}
