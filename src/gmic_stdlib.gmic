@@ -5390,6 +5390,7 @@ gmd2html : skip "${1=}"
 
   parse_gmd
   repeat $! l[$>] nm$>={b} strvar ${nm$>} fnm=${}
+    if "i==-1" +l. s -,-2 k[0] autocrop -1 title$>={t} rm endl else title$>= fi
     . # [0] = Output, [1] = Input
     eval. ">
       begin("${-_gmd_tokens}${-_gmd_write}");
@@ -5623,15 +5624,16 @@ gmd2html : skip "${1=}"
 
   # Embed with header and footer if needed.
   if $embed_html
-    title=${"arg "$embed_html",Reference,Tutorial"}
+    section_title=${"arg "$embed_html",Reference,Tutorial"}
     repeat $! l[$>] nm={b} nm0=${nm$>}
-    if isfile('../style.css') style="../style.css" else style="https://gmic.eu/style.css" fi
-    i[0] ('"<!DOCTYPE html>"\n\
+      if ['${title$>}']!=0 title=${title$>} else title=$nm0 fi
+      if isfile('../style.css') style="../style.css" else style="https://gmic.eu/style.css" fi
+      i[0] ('"<!DOCTYPE html>"\n\
 "<html lang=\"en\">"\n\
 "  <head>"\n\
 "    <meta charset=\"utf-8\">"\n\
 "    <link rel=\"stylesheet\" href=\""$style"\">"\n\
-"    <title>"$nm0"</title>"\n\
+"    <title>"$title"</title>"\n\
 "    <script src=\"../jquery-3.5.1.min.js\"></script>"\n\
 "    <script>var jQuery_3_5_1 = $.noConflict(true);</script>"\n\
 "    <script>jQuery_3_5_1(function(){ jQuery_3_5_1(\"#include_header\").load(\"../header1.html\"); });</script>"\n\
@@ -5639,15 +5641,16 @@ gmd2html : skip "${1=}"
 "  </head>"\n\n\
 "  <body>"\n\
 "    <div id=\"include_header\"></div>"\n\n\
-"    <div class=\"section_title\"><p>"$title"</p></div><div class=\"section_content\">"\n\n\
+"    <div class=\"section_title\"><p>"$section_title"</p></div><div class=\"section_content\">"\n\n\
 "<!-- begin_content -->"\n\n':y)
     ('\n\n\
 "<!-- end_content -->"\n\n\
 "    </div><div class=\"section_end\"></div>"\n\n\
 " <div id=\"include_footer\"></div>"\n\
 "  </body>"':y)
-    a y nm $nm.html
-  endl done fi
+      a y nm $nm.html
+    endl done
+  fi
 
 # Manage sections / subsections / subsubsections / subsubsubsections.
 _gmd2html_section :
