@@ -3640,6 +3640,7 @@ it :
   e[^-1] "Input text-data file '$*'."
   i raw:"$*",uchar
   if i[0]==239" && "i[1]==187" && "i[2]==191 rows 3,100% fi # Remove possible BOM
+  discard {'\r'} # Remove CR
 
 #@cli input_text : filename
 #@cli : Input specified text-data filename as a new image.
@@ -3648,17 +3649,16 @@ input_text :
   e[^-1] "Input text-data file '$*'."
   i raw:"$*",uchar
   if i[0]==239" && "i[1]==187" && "i[2]==191 rows 3,100% fi # Remove possible BOM
+  discard {'\r'} # Remove CR
 
 # Merge multi-lines (lines continued by backslash before NL) in a string image.
 merge_multiline :
-  discard {'\r'}
   eval[^] "*i==_'\\' && j[-1]!=_'\\' && j[+1]==_'\n'?(
             for (p = 2, j[p] && j[p]<=_' ' && j[p]!=_'\n', ++p); copy(i(),-1,p,1,0))"
   discard -1
 
 # Merge multi-line comments in a string image.
 merge_multiline_comments :
-  discard {'\r'}
   eval[^] "*i==_'\\' && j[-1]!=_'\\' && j[+1]==_'\n' && j[+2]==_'#'?(
             for (p = 3, j[p] && j[p]<=_' ' && j[p]!=_'\n', ++p); copy(i(),-1,p,1,0))"
   discard -1
