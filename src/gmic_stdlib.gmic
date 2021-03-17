@@ -5004,10 +5004,17 @@ parse_gmd :
       d==_'|'?(res[table++] = s_htable; res[table++] = 0):
       d==_'-'?(res[table++] = s_vtable; res[table++] = 0):
       d==_'+'?(res[table++] = s_hvtable; res[table++] = 0):(res[table++] = s_table);
+
+      i[table]==_' '?(res[table++] = 0);
       newline(i[table]) && i[table + 1]==_'|'?(copy(res[table],0,2,1,0); table+=2);
       for (p = table, p<y, ++p, # Find column / line separators inside table
-        i[p]==_'|'?(res[p] = newline(i[p - 1]) || newline(i[p + 1])?0:m_table):
-        newline(i[p])?(res[p] = n_table);
+        i[p]==_'|'?(
+          res[p] = newline(i[p - 1]) || newline(i[p + 1])?0:m_table;
+          i[p - 1]==_' '?(res[p - 1] = 0);
+          i[p + 1]==_' '?(res[p + 1] = 0);
+        ):newline(i[p])?(
+          res[p] = n_table;
+        );
       );
       res[y] = e_table;
     ):
