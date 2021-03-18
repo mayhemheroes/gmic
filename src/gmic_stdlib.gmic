@@ -26345,9 +26345,12 @@ RGBA : rgba
 #@cli shell_cols
 #@cli : Return the estimated number of columns of the current shell.
 shell_cols :
-  file_rand filename=${}
-  l[] cols=80 x "tput cols > "$filename it $filename if isint({t}) cols={{t}} fi rm onfail cols=80 rm endl
-  u $cols
+  if ${-is_windows} u 80
+  else
+    file_rand filename=${}
+    l[] cols=80 x "tput cols > "$filename it $filename if isint({t}) cols={{t}} fi rm onfail cols=80 rm endl
+    u $cols
+  fi
 
 #@cli size_value
 #@cli : Return the size (in bytes) of an image value.
