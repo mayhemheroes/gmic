@@ -3085,18 +3085,18 @@ CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) 
     }
   }
   if (is_dquoted) {
-    CImg<char> str; CImg<char>::string(commands_line).move_to(str); // Discard debug info inside string
-    ptrd = str;
-    c = 0;
+    CImg<char> str = CImg<char>::string(commands_line); // Discard debug info inside string
     bool _is_debug_info = false;
-    cimg_for(str,ptrs,char) {
+    ptrd = str;
+    for (const char *ptrs = str; *ptrs; ++ptrs) {
       c = *ptrs;
-      if (c && c!=1) *(ptrd++) = c;
-      else { // Try to retrieve first debug line when discarding debug info
+      if (c!=1) *(ptrd++) = c;
+      else {
         if (!_is_debug_info) is_debug_info|=(_is_debug_info=get_debug_info(ptrs,debug_line,debug_filename));
         while (c && c!=' ') c = *(++ptrs);
       }
-    } *ptrd = 0;
+    }
+    *ptrd = 0;
     error(true,"Invalid command line: Double quotes are not closed, in expression '%s'.",
           str.data());
   }
