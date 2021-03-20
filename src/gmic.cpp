@@ -2333,17 +2333,8 @@ double gmic::mp_get(Ts *const ptr, const unsigned int siz, const bool to_string,
             if (list.size()!=2) {
               cimg::mutex(24,0);
               throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
-                                          "Variable '%s' stores %u images, cannot be returned as a vector.",
+                                          "Variable '%s' stores %u images, cannot be returned as a single vector.",
                                           cimg::type<T>::string(),str,list.size());
-            }
-            if (list[0].size()<siz) {
-              cimg::mutex(24,0);
-              throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
-                                          "Variable '%s' stores an image (%u,%u,%u,%u) of size %lu, "
-                                          "cannot be returned as a vector of size %lu.",
-                                          cimg::type<T>::string(),str,
-                                          list[0].width(),list[0].height(),list[0].depth(),list[0].spectrum(),
-                                          list[0].size(),siz);
             }
             dest = list[0].resize(siz,1,1,1,-1);
 
