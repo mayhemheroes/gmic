@@ -890,7 +890,7 @@ reference : skip "${2=}"
 "* 'store(A,'varname',_w,_h,_d,_s,_is_compressed)' transfers the data of vector 'A' as a "\
 "`w x h x d x s` image to the G'MIC variable '$varname'. Thus, the data becomes available outside the math expression "\
 "(that is equivalent to using the regular command ''store'', but directly in the math expression)."\n\
-"* 'get('variable_name',_size,_to_numbers)' returns the value of the specified variable, as a vector of 'size' "\
+"* 'get('variable_name',_size,_return_as_string)' returns the value of the specified variable, as a vector of 'size' "\
 "values, or as a scalar (if 'size' is zero or not specified)."\n\
 "* 'name(_#ind,size)' returns a vector of size 'size', whose values are the characters codes of the name of image "\
 "'[ind]' (or default image selected if 'ind' is not specified)."\n\
@@ -3816,9 +3816,9 @@ output_obj : check "isbool(${2=1})" check3d 0
             wt = i[off + 1]; ht = i[off + 2]; st = i[off + 3];
             run('+rows. ',off + 4,',',off + 3 + wt*ht*st,' r. ',wt,',',ht,',1,',st,',-1 tfn=$folder${basename}_t',
                 nb_textures,'.png o. $tfn rm.');
-            tfile = get('tfn',1024,0);
+            tfile = get('tfn',1024,1);
             ref(string('newmtl m',nb_materials,'\n',
-                       'map_Kd ',get('tfn',1024,0),'\n'),str);
+                       'map_Kd ',get('tfn',1024,1),'\n'),str);
             write(#"$out_mtl",str);
             I[#"$materials",p] = [ nb_materials,wt,ht ];
             off+=4 + wt*ht*st;
@@ -5421,7 +5421,7 @@ gmd2html : skip "${1=}"
         c==s_section ? (
           ind_e = find(#1,e_section,y);
           run('_gmd2html_section. ',y + 1,',',ind_e - 1);
-          ref(get('_gmd_name',1024,0),str_nam);
+          ref(get('_gmd_name',1024,1),str_nam);
           write_nl();
           write('<a name=\"');
           len = find(str_nam,0);
@@ -5431,7 +5431,7 @@ gmd2html : skip "${1=}"
         c==s_subsection ? (
           ind_e = find(#1,e_subsection,y);
           run('_gmd2html_section. ',y + 1,',',ind_e - 1);
-          ref(get('_gmd_name',1024,0),str_nam);
+          ref(get('_gmd_name',1024,1),str_nam);
           write_nl();
           write('<a name=\"');
           len = find(str_nam,0);
@@ -5441,7 +5441,7 @@ gmd2html : skip "${1=}"
         c==s_subsubsection ? (
           ind_e = find(#1,e_subsubsection,y);
           run('_gmd2html_section. ',y + 1,',',ind_e - 1);
-          ref(get('_gmd_name',1024,0),str_nam);
+          ref(get('_gmd_name',1024,1),str_nam);
           write_nl();
           write('<a name=\"');
           len = find(str_nam,0);
@@ -5451,7 +5451,7 @@ gmd2html : skip "${1=}"
         c==s_subsubsubsection ? (
           ind_e = find(#1,e_subsubsubsection,y);
           run('_gmd2html_section. ',y + 1,',',ind_e - 1);
-          ref(get('_gmd_name',1024,0),str_nam);
+          ref(get('_gmd_name',1024,1),str_nam);
           write_nl();
           write('<a name=\"');
           len = find(str_nam,0);
@@ -5461,7 +5461,7 @@ gmd2html : skip "${1=}"
         c==s_anchor ? (
           ind_e = find(#1,e_anchor,y);
           run('_gmd2html_section. ',y + 1,',',ind_e - 1);
-          ref(get('_gmd_name',1024,0),str_nam);
+          ref(get('_gmd_name',1024,1),str_nam);
           write('<a name=\"');
           len = find(str_nam,0);
           write(str_nam,len);
@@ -5507,7 +5507,7 @@ gmd2html : skip "${1=}"
         c==s_shell ? (
           ind_e = find(#1,e_shell,y);
           run('_gmd2html_shell. ',y + 1,',',ind_e -  1);
-          ref(get('_gmd_command',1024,0),str_com);
+          ref(get('_gmd_command',1024,1),str_com);
           write('<div class=\"gmd_code_block\">$ ');
           len = find(str_com,0);
           write(str_com,len);
@@ -5543,8 +5543,8 @@ gmd2html : skip "${1=}"
         c==s_page_link ? (
           ind_e = find(#1,e_page_link,y);
           run('_gmd2html_page_link. ',y + 1,',',ind_e - 1);
-          ref(get('_gmd_link',1024,0),str_link);
-          ref(get('_gmd_text',1024,0),str_text);
+          ref(get('_gmd_link',1024,1),str_link);
+          ref(get('_gmd_text',1024,1),str_text);
           write('<span class=\"gmd_page_link\"><a href=\"');
           len = find(str_link,0);
           write(str_link,len);
@@ -5599,8 +5599,8 @@ gmd2html : skip "${1=}"
         c==s_pipeline ? (
           ind_e = find(#1,e_pipeline,y);
           run('_gmd2html_pipeline. ',y + 1,',',ind_e -  1)?( # If output images
-            ref(get('_gmd_command',1024,0),str_com);
-            ref(get('_gmd_filename',1024,0),str_fil);
+            ref(get('_gmd_command',1024,1),str_com);
+            ref(get('_gmd_filename',1024,1),str_fil);
             write('<img class=\"gmd_image\" src=\"');
             len = find(str_fil,0);
             write(str_fil,len);
@@ -5615,7 +5615,7 @@ gmd2html : skip "${1=}"
         c==s_formula ? (
           ind_e = find(#1,e_formula,y);
           run('_gmd2html_formula. ',y + 1,',',ind_e - 1);
-          ref(get('_gmd_filename',1024,0),str_fil);
+          ref(get('_gmd_filename',1024,1),str_fil);
           write('<img class=\"gmd_formula\" src=\"');
           len = find(str_fil,0);
           write(str_fil,len);
@@ -5884,7 +5884,7 @@ gmd2ascii :
         c==s_shell ? (
           ind_e = find(#1,e_shell,y);
           run('_gmd2ascii_shell. ',y + 1,',',ind_e -  1);
-          ref(get('_gmd_command',1024,0),str_com);
+          ref(get('_gmd_command',1024,1),str_com);
           write('$ ');
           len = find(str_com,0);
           write(str_com,len);
@@ -8603,7 +8603,7 @@ upload_filters :
   x "cd "$HOME"/work/src/gmic-community && git pull"
 
   # Define the list of compatible versions.
-  (294,295,296,297,$_version) store. compat
+  (297,$_version) store. compat
 
   # Import filters from stdlib and community.
   files $HOME/work/src/gmic-community/include/*.gmic
