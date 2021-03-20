@@ -2339,9 +2339,13 @@ double gmic::mp_get(Ts *const ptr, const unsigned int siz, const bool to_string,
             dest = list[0].resize(siz,1,1,1,-1);
 
           } else { // Regular string variable
-            if (cimg_sscanf(value,"%lf%c",&dvalue,&end)==1) dest.fill((Ts)dvalue);
-            else try { dest.fill(value,true,false); }
-              catch (...) {
+            if (cimg_sscanf(value,"%lf%c",&dvalue,&end)==1) {
+              dest[0] = (Ts)dvalue;
+              dest.get_shared_points(1,dest._width - 1).fill(0);
+            } else try {
+                dest.fill(0);
+                dest.fill(value,false,false);
+              } catch (...) {
                 cimg::mutex(24,0);
                 throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
                                             "Variable '%s' has value '%s', cannot be returned as a vector.",
