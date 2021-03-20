@@ -2273,7 +2273,7 @@ double gmic::mp_run(char *const str,
 }
 
 template<typename Ts, typename T>
-double gmic::mp_get(Ts *const ptr, const unsigned int siz, const bool to_numbers, const char *const str,
+double gmic::mp_get(Ts *const ptr, const unsigned int siz, const bool to_string, const char *const str,
                     void *const p_list, const T& pixel_type) {
   cimg::unused(pixel_type);
 
@@ -2301,7 +2301,7 @@ double gmic::mp_get(Ts *const ptr, const unsigned int siz, const bool to_numbers
     if (cimg_sscanf(str,"%255[a-zA-Z0-9_]%c",&(*varname=0),&end)==1 && (*varname<'0' || *varname>'9')) {
       CImg<char> value = gmic_instance.get_variable(varname,variables_sizes,&images_names);
 
-      if (!to_numbers) { // Return variable content as a string
+      if (to_string) { // Return variable content as a string
         CImg<Ts> dest(ptr,siz,1,1,1,true);
         strreplace_fw(value);
         dest.draw_image(value);
