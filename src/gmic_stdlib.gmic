@@ -460,7 +460,7 @@ reference : skip "${2=}"
 "* \\G'MIC is able to read/write most of the classical image file formats, including:"\n\
 "  - 2D grayscale/color files: `.png`, `.jpeg`, `.gif`, `.pnm`, `.tif`, `.bmp`, ..."\n\
 "  - 3D volumetric files: `.dcm`, `.hdr`, `.nii`, `.cube`, `.pan`, `.inr`, `.pnk`, ..."\n\
-"  - Video files: `.mpeg`, `.avi`, `.mov`, `.ogg`, `.flv`, ..."\n\
+"  - Video files: `.mpeg`, `.avi`, `.mp4`, `.mov`, `.ogg`, `.flv`, ..."\n\
 "  - Generic text or binary data files: `.gmz`, `.cimg`, `.cimgz`, `flo`, `ggr`, `gpl`, `.dlm`, `.asc`, "\
 "`.pfm`, `.raw`, `.txt`, `.h`."\n\
 "  - 3D mesh files: `.off`, `.obj` (output only)"\n\
@@ -2722,7 +2722,7 @@ _display3d :
         elif {*,-V} # Start/stop output video
           is_outvideo={!$is_outvideo}
           is_animate=0
-          n=0 do filename gmic.avi,$n n+=1 while isfile(['{/${}}'])
+          n=0 do filename gmic.mp4,$n n+=1 while isfile(['{/${}}'])
           filename_outvideo=${}
         elif {*,-X} # Show/hide bounding box
           is_boundingbox={!$is_boundingbox}
@@ -12383,7 +12383,7 @@ transfer_rgb : check "${2=0.3}>=0 && ${3=8}>=0 && ${4=0.15}>=0 && ${5=64}>=0 && 
     #     append[^0] [0],x rm[0]
     #     r2dx 1024
     #     [-1]x20
-    #     o videos/video_${nm_source}_to_${nm_target}.avi,10
+    #     o videos/video_${nm_source}_to_${nm_target}.mp4,10
     #     rm
     #   endl
     # fi
@@ -23758,9 +23758,10 @@ animate : skip ${1=30},${2=0},${3=""},${4=10},${5=1},"${6=}"
 apply_camera : check_opencv $0 skip "${1=},${4=}" check "${2=0}>=0 && ${3=0}>=0"
   e[^-1] "Apply command '$1' on camera stream ""#$2, with $3 frames skip and output filename '$4'."
   is_ext "$4",avi is_outavi=${}
+  is_ext "$4",mp4 is_outmp4=${}
   l[] i=0 do
     camera $2,1,$3 $1 w. -1,-1,"[G'MIC] Camera ""#$2 ("{w}x{h}")"
-    if narg("$4") if $is_outavi z. 0,{w-(w%8)-1} o. "$4",25,mp4v,1 else o. ${filename\ "$4",$i} i+=1 fi fi
+    if narg("$4") if $is_outavi||$is_outmp4 z. 0,{w-(w%8)-1} o. "$4",25,mp4v,1 else o. ${filename\ "$4",$i} i+=1 fi fi
     if {*,S} o. gmic_camera.png fi
     if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,D} w[] {{*,w}*1.5},{{*,h}*1.5} wait -1 fi # Increase window size.
     if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,C} w[] {{*,w}/1.5},{{*,h}/1.5} wait -1 fi # Decrease window size.
@@ -23772,7 +23773,7 @@ apply_camera : check_opencv $0 skip "${1=},${4=}" check "${2=0}>=0 && ${3=0}>=0"
 # _output_filename
 #@cli : Apply a G'MIC command on specified input image files, in a streamed way.
 #@cli : If a display window is opened, rendered frames are displayed in it during processing.
-#@cli : The output filename may have extension '.avi' (saved as a video), or any other usual image file
+#@cli : The output filename may have extension '.avi' or '.mp4' (saved as a video), or any other usual image file
 #@cli : extension (saved as a sequence of images).
 #@cli : Default values: 'command=(undefined)', 'first_frame=0', 'last_frame=-1', 'frame_step=1' \
 # and 'output_filename=(undefined)'.
@@ -23785,7 +23786,7 @@ apply_files : check "isint(${3=0}) && $3>=0 && isint(${4=-1}) && ($4>=0 || $4==-
 # _output_filename
 #@cli : Apply a G'MIC command on all frames of the specified input video file, in a streamed way.
 #@cli : If a display window is opened, rendered frames are displayed in it during processing.
-#@cli : The output filename may have extension '.avi' (saved as a video), or any other usual image
+#@cli : The output filename may have extension '.avi' or '.mp4' (saved as a video), or any other usual image
 #@cli : file extension (saved as a sequence of images).
 #@cli : This command requires features from the OpenCV library (not enabled in G'MIC by default).
 #@cli : Default values: 'first_frame=0', 'last_frame=-1', 'frame_step=1' and 'output_filename=(undefined)'.
@@ -23797,6 +23798,7 @@ apply_video : check_opencv $0 check "isint(${3=0}) && $3>=0 && isint(${4=-1}) &&
 
 _apply_stream : skip "${2=},${6=}"
   is_ext "$6",avi is_outavi=${}
+  is_ext "$6",mp4 is_outmp4=${}
   frame=$3 i=0 go_on=1
   do
     l[] $1 onfail go_on=0 endl
@@ -23806,7 +23808,7 @@ _apply_stream : skip "${2=},${6=}"
       l $2 onfail error[0--5] "Command 'apply_stream': Specified command errored: "${} endl
       if !$! continue fi
       if narg("$6")
-        if $is_outavi z. 0,{w-(w%8)-1} o. "$6",25,mp4v,1 else o. ${filename\ "$6",$i} i+=1 fi
+        if $is_outavi||$is_outmp4 z. 0,{w-(w%8)-1} o. "$6",25,mp4v,1 else o. ${filename\ "$6",$i} i+=1 fi
       fi
       if {*}
         title="[G'MIC] Frame ""#"$frame
@@ -23820,12 +23822,12 @@ _apply_stream : skip "${2=},${6=}"
       rm.
     fi
   while $go_on" && "($4==-1" || "$frame<=$4)
-  if $is_outavi o[] "$6",25,mp4v,0 fi
+  if $is_outavi||$is_outmp4 o[] "$6",25,mp4v,0 fi
 
 #@cli average_files : "filename_pattern",_first_frame>=0,_last_frame={ >=0 | -1=last },_frame_step>=1,_output_filename
 #@cli : Average specified input image files, in a streamed way.
 #@cli : If a display window is opened, rendered frames are displayed in it during processing.
-#@cli : The output filename may have extension '.avi' (saved as a video), or any other usual image
+#@cli : The output filename may have extension '.avi' or '.mp4' (saved as a video), or any other usual image
 #@cli : file extension (saved as a sequence of images).
 #@cli : Default values: 'first_frame=0', 'last_frame=-1', 'frame_step=1' and 'output_filename=(undefined)'.
 average_files : check "isint(${2=0}) && $2>=0 && isint(${3=-1}) && ($3>=0 || $3==-1) && ${4=1}>=1" skip "${5=}"
@@ -23836,7 +23838,7 @@ average_files : check "isint(${2=0}) && $2>=0 && isint(${3=-1}) && ($3>=0 || $3=
 #@cli average_video : video_filename,_first_frame>=0,_last_frame={ >=0 | -1=last },_frame_step>=1,_output_filename
 #@cli : Average frames of specified input video file, in a streamed way.
 #@cli : If a display window is opened, rendered frames are displayed in it during processing.
-#@cli : The output filename may have extension '.avi' (saved as a video), or any other usual image
+#@cli : The output filename may have extension '.avi' or '.mp4' (saved as a video), or any other usual image
 #@cli : file extension (saved as a sequence of images).
 #@cli : This command requires features from the OpenCV library (not enabled in G'MIC by default).
 #@cli : Default values: 'first_frame=0', 'last_frame=-1', 'frame_step=1' and 'output_filename=(undefined)'.
@@ -23848,6 +23850,7 @@ average_video : check_opencv $0 check "isint(${2=0}) && $2>=0 && isint(${3=-1}) 
 
 _average_stream : skip "${5=}"
   is_ext "$5",avi is_outavi=${}
+  is_ext "$5",mp4 is_outmp4=${}
   frame=$2 i=0 go_on=1 N=0
   imM=inf,-inf
   do
@@ -23859,7 +23862,7 @@ _average_stream : skip "${5=}"
       if $!>1 r ${-max_whds} + fi
       if narg("$5")
         +/. $N c. $imM
-        if $is_outavi z. 0,{w-(w%8)-1} o. "$5",25,mp4v,1 else o. ${filename\ "$5",$i} i+=1 fi
+        if $is_outavi||$is_outmp4 z. 0,{w-(w%8)-1} o. "$5",25,mp4v,1 else o. ${filename\ "$5",$i} i+=1 fi
         rm.
       fi
       if {*}
@@ -23877,13 +23880,13 @@ _average_stream : skip "${5=}"
     fi
   while $go_on" && "($3==-1" || "$frame<=$3)
   / $N c $imM
-  if $is_outavi o[] "$5",25,mp4v,0 fi
+  if $is_outavi||$is_outmp4 o[] "$5",25,mp4v,0 fi
 
 #@cli fade_files : "filename_pattern",_nb_inner_frames>0,_first_frame>=0,_last_frame={ >=0 | -1=last },\
 # _frame_step>=1,_output_filename
 #@cli : Generate a temporal fading from specified input image files, in a streamed way.
 #@cli : If a display window is opened, rendered frames are displayed in it during processing.
-#@cli : The output filename may have extension 'avi' (saved as a video), or any other usual image
+#@cli : The output filename may have extension 'avi' or 'mp4' (saved as a video), or any other usual image
 #@cli : file extension (saved as a sequence of images).
 #@cli : Default values: 'nb_inner_frames=10', 'first_frame=0', 'last_frame=-1', 'frame_step=1' \
 # and 'output_filename=(undefined)'.
@@ -23908,6 +23911,7 @@ fade_video : check_opencv $0 check "isint(${2=10}) && $2>0 && isint(${3=0}) && $
 
 _fade_stream : skip "${6=}"
   is_ext "$6",avi is_outavi=${}
+  is_ext "$6",mp4 is_outmp4=${}
   frame=$3 i=0 go_on=1
 
   l $1 onfail go_on=0 endl # Load first image.
@@ -23924,7 +23928,7 @@ _fade_stream : skip "${6=}"
       e[] "\r  - "$title
       +j[0] [1],0,0,0,0,{$>/($2+1)}
       if narg("$6")
-        if $is_outavi z. 0,{w-(w%8)-1} o. "$6",25,mp4v,1 else filename "$6",$i i+=1 o. ${} fi
+        if $is_outavi||$is_outmp4 z. 0,{w-(w%8)-1} o. "$6",25,mp4v,1 else filename "$6",$i i+=1 o. ${} fi
       fi
       if {*}
         w. -1,-1,0,$title
@@ -23939,14 +23943,14 @@ _fade_stream : skip "${6=}"
 
   # Output last frame.
   if narg("$6")
-    if $is_outavi z. 0,{w-(w%8)-1} o[] "$6",25,mp4v,0 else filename "$6",$i o. ${} fi
+    if $is_outavi||$is_outmp4 z. 0,{w-(w%8)-1} o[] "$6",25,mp4v,0 else filename "$6",$i o. ${} fi
   fi
   rm
 
 #@cli files2video : "filename_pattern",_output_filename,_fps>0,_codec
 #@cli : Convert several files into a single video file.
-#@cli : Default values: 'output_filename=output.avi', 'fps=25' and 'codec=mp4v'.
-files2video : check "isint(${3=25}) && $3>0" skip "${2=output.avi}",${4=mp4v}
+#@cli : Default values: 'output_filename=output.mp4', 'fps=25' and 'codec=mp4v'.
+files2video : check "isint(${3=25}) && $3>0" skip "${2=output.mp4}",${4=mp4v}
   files=${"files \"$1\""} arg2var _file,$files nb_files=${}
   ('$files') if w>128 z. 0,127 s_files={t}... else s_files=$files fi rm.
   e[^-1] "Convert image files '"$s_files"' into frames of output video '$2', with $3 fps and $4 codec.\n"
@@ -24148,7 +24152,7 @@ morph : check "$1>=0.5 && ${2=0.1}>=0 && ${3=4}>=0"
 # _first_frame>=0,_last_frame={ >=0 | -1=last },_frame_step>=1,_output_filename
 #@cli : Generate a temporal morphing from specified input image files, in a streamed way.
 #@cli : If a display window is opened, rendered frames are displayed in it during processing.
-#@cli : The output filename may have extension '.avi' (saved as a video), or any other usual image
+#@cli : The output filename may have extension '.avi' or '.mp4' (saved as a video), or any other usual image
 #@cli : file extension (saved as a sequence of images).
 #@cli : Default values: 'nb_inner_frames=10', 'smoothness=0.1', 'precision=4', 'first_frame=0', 'last_frame=-1', \
 # 'frame_step=1' and 'output_filename=(undefined)'.
@@ -24203,7 +24207,7 @@ morph_rbf : check "$1>=0.5"
 # _first_frame>=0,_last_frame={ >=0 | -1=last },_frame_step>=1,_output_filename
 #@cli : Generate a temporal morphing from specified input video file, in a streamed way.
 #@cli : If a display window is opened, rendered frames are displayed in it during processing.
-#@cli : The output filename may have extension '.avi' (saved as a video), or any other usual image
+#@cli : The output filename may have extension '.avi' or '.mp4' (saved as a video), or any other usual image
 #@cli : file extension (saved as a sequence of images).
 #@cli : This command requires features from the OpenCV library (not enabled in G'MIC by default).
 #@cli : Default values: 'nb_inner_frames=10', 'smoothness=0.1', 'precision=4', 'first_frame=0', 'last_frame=-1', \
@@ -24216,6 +24220,7 @@ morph_video : check_opencv $0 check "isint(${2=10}) && $2>0 && ${3=0.1}>=0 && ${
 
 _morph_stream : skip "${8=}"
   is_ext "$8",avi is_outavi=${}
+  is_ext "$8",mp4 is_outmp4=${}
   frame=$5 i=0 go_on=1
 
   l $1 onfail go_on=0 endl # Load first image.
@@ -24239,7 +24244,7 @@ _morph_stream : skip "${8=}"
       +*[3] {1-$t} +warp[1] .,1,1,1 rm.. *. $t
       +[-2,-1] c. $cutvals
       if narg("$8")
-        if $is_outavi z. 0,{w-(w%8)-1} o. "$8",25,mp4v,1 else filename "$8",$i i+=1 o. ${} fi
+        if $is_outavi||$is_outmp4 z. 0,{w-(w%8)-1} o. "$8",25,mp4v,1 else filename "$8",$i i+=1 o. ${} fi
       fi
       if {*}
         w. -1,-1,0,$title
@@ -24254,7 +24259,7 @@ _morph_stream : skip "${8=}"
 
   # Output last frame.
   if narg("$8")
-    if $is_outavi z. 0,{w-(w%8)-1} o[] "$8",25,mp4v,0 else filename "$8",$i o. ${} fi
+    if $is_outavi||$is_outmp4 z. 0,{w-(w%8)-1} o[] "$8",25,mp4v,0 else filename "$8",$i o. ${} fi
   fi
   rm
 
@@ -26746,7 +26751,7 @@ tixy : skip "${1=sin(t-sqrt((x-8)^2+(y-8)^2))}" check_display $0
 ---- . "${c}"cabs(c)"$n" in "${g}"[0,1]"$n" determines the radius of each dot at "${c}"(x,y)"$n".\n
 ---- . "${c}"carg(c)"$n" in "${g}"[-pi,pi]"$n" determine the color of each dot at "${c}"(x,y)"$n".\n
 ----\n
----- Key '"${c}"SPACE"$n"' starts/stops recording animation as video file '"${c}"out.avi"$n"'.\n
+---- Key '"${c}"SPACE"$n"' starts/stops recording animation as video file '"${c}"out.mp4"$n"'.\n
 ---- Key '"${c}"ENTER"$n"' takes a screenshot of current image.\n
 ---- Key '"${c}"A"$n"' enables/disables anti-aliasing.\n
 ---- Key '"${c}"F"$n"' displays formula on the image.\n
@@ -26772,7 +26777,7 @@ tixy : skip "${1=sin(t-sqrt((x-8)^2+(y-8)^2))}" check_display $0
     elif {*,-F} is_formula={!$is_formula}
     elif {*,R} t0=$|
     elif {*,-SPACE}
-      if $is_recording o[] $basename.avi,15,0,0 nb_frames=0
+      if $is_recording o[] $basename.mp4,15,0,0 nb_frames=0
       else t0=$| fi
       is_recording={!$is_recording}
     elif {*,-ENTER} is_screenshot=1
@@ -26809,7 +26814,7 @@ tixy : skip "${1=sin(t-sqrt((x-8)^2+(y-8)^2))}" check_display $0
       j. [formula],0.5~,1~,0,0,1,[mformula],255
     fi
     if $is_screenshot o. $basename.png is_screenshot=0 fi
-    if $is_recording o. $basename.avi,15,0,1 nb_frames+=1 to. "Recording video\n[Frame \#"$nb_frames"]",0,0,5% fi
+    if $is_recording o. $basename.mp4,15,0,1 nb_frames+=1 to. "Recording video\n[Frame \#"$nb_frames"]",0,0,5% fi
     w. rm. wait 40
   while {*}" && "!{*,ESC}" && "!{*,Q}
   rmn cmap,formula,mformula
