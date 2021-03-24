@@ -8215,8 +8215,10 @@ update_tutorial_html : check "isbool(${1=0})"
   rm
   e[^-1] "Generate tutorial pages for the G'MIC website."
   path_tutorial=$HOME/work/src/gmic-community/tutorial
+  use_vt100
 
-  # Unroll original folder structure.
+  # Build directory structure.
+  e[] "  > Build directory structure."
   x "mkdir -p images"
   files 5,$path_tutorial/*
   l[]
@@ -8240,9 +8242,10 @@ update_tutorial_html : check "isbool(${1=0})"
   files 0,*.gmd files=${}
   repeat narg({/$files})
     arg0 $>,$files file=${}
-    e[] "  > Generate '"$file"'."
+    e[] "  > Generate '"$_vt100_c$file$_vt100_n"'."
     it $file gmd2html 2
     ot {n} rm.
+    e[] "\r  > Generate '"$_vt100_c$file$_vt100_n"'.  "$_vt100_g[OK]$_vt100_n
   done
   x "rm -f *.gmd"
   x "mv -f index.html _index.html"
