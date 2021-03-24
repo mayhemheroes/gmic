@@ -460,7 +460,7 @@ reference : skip "${2=}"
 "* \\G'MIC is able to read/write most of the classical image file formats, including:"\n\
 "  - 2D grayscale/color files: `.png`, `.jpeg`, `.gif`, `.pnm`, `.tif`, `.bmp`, ..."\n\
 "  - 3D volumetric files: `.dcm`, `.hdr`, `.nii`, `.cube`, `.pan`, `.inr`, `.pnk`, ..."\n\
-"  - Video files: `.mpeg`, `.avi`, `.mov`, `.ogg`, `.flv`, ..."\n\
+"  - Video files: `.mpeg`, `.avi`, `.mp4`, `.mov`, `.ogg`, `.flv`, ..."\n\
 "  - Generic text or binary data files: `.gmz`, `.cimg`, `.cimgz`, `flo`, `ggr`, `gpl`, `.dlm`, `.asc`, "\
 "`.pfm`, `.raw`, `.txt`, `.h`."\n\
 "  - 3D mesh files: `.off`, `.obj` (output only)"\n\
@@ -1476,7 +1476,7 @@ v : # Allow 'gmic +v' to get the version number.
 #@cli camera : _camera_index>=0,_nb_frames>0,_skip_frames>=0,_capture_width>=0,_capture_height>=0 : (+)
 #@cli : Insert one or several frames from specified camera.
 #@cli : When 'nb_frames==0', the camera stream is released instead of capturing new images.
-#@cli : This command works only for G'MIC versions that have been compiled with OpenCV support.
+#@cli : This command requires features from the OpenCV library (not enabled in G'MIC by default).
 #@cli : Default values: 'camera_index=0' (default camera), 'nb_frames=1', 'skip_frames=0' and \
 # 'capture_width=capture_height=0' (default size).
 
@@ -2722,7 +2722,7 @@ _display3d :
         elif {*,-V} # Start/stop output video
           is_outvideo={!$is_outvideo}
           is_animate=0
-          n=0 do filename gmic.avi,$n n+=1 while isfile(['{/${}}'])
+          n=0 do filename gmic.mp4,$n n+=1 while isfile(['{/${}}'])
           filename_outvideo=${}
         elif {*,-X} # Show/hide bounding box
           is_boundingbox={!$is_boundingbox}
@@ -2914,13 +2914,13 @@ __display_array :
   rm[-3,-1]
 
 #@cli dc : eq. to 'display_camera'.
-dc :
+dc : check_opencv $0
   v + _display_camera
 
 #@cli display_camera
 #@cli : Open camera viewer.
-#@cli : This command works only for G'MIC versions that have been compiled with OpenCV support.
-display_camera :
+#@cli : This command requires features from the OpenCV library (not enabled in G'MIC by default).
+display_camera : check_opencv $0
   v + _$0
 
 _display_camera :
@@ -4198,8 +4198,8 @@ parse_cli_ascii :
         fi
       elif i==_'$'" && "i[1]==_'$' # Found link to tutorial page
         if !0$_no_tutorial_link
-          if h==2 url=https://gmic.eu/tutorial/_$name.shtml
-          else rows 2,100 autocrop {'" "'} url=https://gmic.eu/tutorial/{t}.shtml
+          if h==2 url=https://gmic.eu/oldtutorial/_$name.shtml
+          else rows 2,100 autocrop {'" "'} url=https://gmic.eu/oldtutorial/{t}.shtml
           fi
           +e[] "\n    "${_vt100_b}"Tutorial: "$_vt100_n$_vt100_u$url$_vt100_n nl=
         fi
@@ -4643,8 +4643,8 @@ parse_cli_html :
 
         # Found link to tutorial page.
         if !$is_tutorial_tag html.="<tutorial_tag>" is_tutorial_tag=1 fi
-        if h==2 url=https://gmic.eu/tutorial/_$name.shtml
-        else rows 2,100 autocrop {'" "'} url=https://gmic.eu/tutorial/{t}
+        if h==2 url=https://gmic.eu/oldtutorial/_$name.shtml
+        else rows 2,100 autocrop {'" "'} url=https://gmic.eu/oldtutorial/{t}
         fi
         tutorial_html.="      <p>This command has a <span class=\"ref_tutorial_button\"><a href=\""$url"\">"\
                        "tutorial page</a></span>.</p>"
@@ -8206,7 +8206,7 @@ update_reference_html : check "isbool(${1=0})"
 # Generate tutorial pages for the G'MIC website.
 # $1 = upload to G'MIC server, can be { 0 | 1 }.
 update_tutorial_html : check "isbool(${1=0})"
-  path_current=${-path_current} path_ok=$HOME/work/src/gmic/html/newtutorial/
+  path_current=${-path_current} path_ok=$HOME/work/src/gmic/html/tutorial/
   if ['$path_current']!=['$path_ok']
     error[0--3] "Command 'update_tutorial_html: Command run from wrong path: '"$path_current"', "\
                 "should be '"$path_ok"'."
@@ -8215,8 +8215,10 @@ update_tutorial_html : check "isbool(${1=0})"
   rm
   e[^-1] "Generate tutorial pages for the G'MIC website."
   path_tutorial=$HOME/work/src/gmic-community/tutorial
+  use_vt100
 
-  # Unroll original folder structure.
+  # Build directory structure.
+  e[] " > Build directory structure."
   x "mkdir -p images"
   files 5,$path_tutorial/*
   l[]
@@ -8240,9 +8242,12 @@ update_tutorial_html : check "isbool(${1=0})"
   files 0,*.gmd files=${}
   repeat narg({/$files})
     arg0 $>,$files file=${}
-    e[] "  > Generate '"$file"'."
+    e[] " > Generate '"$_vt100_c$file$_vt100_n"'."
+    t0=$|
     it $file gmd2html 2
     ot {n} rm.
+    t1=$|
+    e[] "\r > Generate '"$_vt100_c$file$_vt100_n"' (done in "$_vt100_g{_round($t1-$t0,0.1)}"s"$_vt100_n")."
   done
   x "rm -f *.gmd"
   x "mv -f index.html _index.html"
@@ -8251,7 +8256,7 @@ update_tutorial_html : check "isbool(${1=0})"
   # Upload to G'MIC server.
   if $1
     e[] "\n > Transfer tutorial pages on G'MIC server.\n"
-    x "lftp ftp://"$GMIC_LOGIN":"$GMIC_PASSWD"@"$GMIC_FTP" -e \"mirror -RL . /www/gmic/newtutorial ; quit\""
+    x "lftp ftp://"$GMIC_LOGIN":"$GMIC_PASSWD"@"$GMIC_FTP" -e \"mirror -RL . /www/gmic/tutorial ; quit\""
   fi
   e[] "\n > All done.\n"
 
@@ -12378,7 +12383,7 @@ transfer_rgb : check "${2=0.3}>=0 && ${3=8}>=0 && ${4=0.15}>=0 && ${5=64}>=0 && 
     #     append[^0] [0],x rm[0]
     #     r2dx 1024
     #     [-1]x20
-    #     o videos/video_${nm_source}_to_${nm_target}.avi,10
+    #     o videos/video_${nm_source}_to_${nm_target}.mp4,10
     #     rm
     #   endl
     # fi
@@ -20699,10 +20704,20 @@ apply_timeout : check "${2=20}>=0"
 #@cli : Full 3D object check is slower but more precise.
 #@cli : Default value: 'is_full_check=1'.
 
-#@cli check_display
-#@cli : Check if a display is available, and throw an error otherwise.
-check_display :
-  if !{*,u} error[0--3] "Command '$0': No display available." fi
+# check_display : calling_command_name
+# Check if a display is available, and throw an error otherwise.
+check_display : skip "${1=check_display}"
+  if !{*,u} error[0--3] "Command '$1': No display available. "\
+                        "Your G'MIC interpreter has not been compiled with display support." fi
+
+# check_opencv : calling_command_name
+# Check is OpenCV features are available, and throw an error otherwise.
+check_opencv : skip "${1=check_opencv}"
+  l[] check_opencv.mp4,0,0,1 rm
+  onfail if find(['${}'],'-Dcimg_use_opencv')>0
+    error[0--4] "Command '$1': No OpenCV features available. "\
+                "Your G'MIC interpreter has not been compiled with OpenCV support."
+  fi rm endl
 
 #@cli continue : (+)
 #@cli : Go to end of current 'repeat...done', 'do...while' or 'local...endlocal' block.
@@ -23738,14 +23753,15 @@ animate : skip ${1=30},${2=0},${3=""},${4=10},${5=1},"${6=}"
 
 #@cli apply_camera : _"command",_camera_index>=0,_skip_frames>=0,_output_filename
 #@cli : Apply specified command on live camera stream, and display it on display window [0].
-#@cli : This command works only for G'MIC versions that have been compiled with OpenCV support.
+#@cli : This command requires features from the OpenCV library (not enabled in G'MIC by default).
 #@cli : Default values: 'command=""', 'camera_index=0' (default camera), 'skip_frames=0' and 'output_filename=""'.
-apply_camera : skip "${1=},${4=}" check "${2=0}>=0 && ${3=0}>=0"
+apply_camera : check_opencv $0 skip "${1=},${4=}" check "${2=0}>=0 && ${3=0}>=0"
   e[^-1] "Apply command '$1' on camera stream ""#$2, with $3 frames skip and output filename '$4'."
   is_ext "$4",avi is_outavi=${}
+  is_ext "$4",mp4 is_outmp4=${}
   l[] i=0 do
     camera $2,1,$3 $1 w. -1,-1,"[G'MIC] Camera ""#$2 ("{w}x{h}")"
-    if narg("$4") if $is_outavi z. 0,{w-(w%8)-1} o. "$4",25,mp4v,1 else o. ${filename\ "$4",$i} i+=1 fi fi
+    if narg("$4") if $is_outavi||$is_outmp4 z. 0,{w-(w%8)-1} o. "$4",25,mp4v,1 else o. ${filename\ "$4",$i} i+=1 fi fi
     if {*,S} o. gmic_camera.png fi
     if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,D} w[] {{*,w}*1.5},{{*,h}*1.5} wait -1 fi # Increase window size.
     if ({*,CTRLLEFT}" || "{*,CTRLRIGHT})" && "{*,C} w[] {{*,w}/1.5},{{*,h}/1.5} wait -1 fi # Decrease window size.
@@ -23757,7 +23773,7 @@ apply_camera : skip "${1=},${4=}" check "${2=0}>=0 && ${3=0}>=0"
 # _output_filename
 #@cli : Apply a G'MIC command on specified input image files, in a streamed way.
 #@cli : If a display window is opened, rendered frames are displayed in it during processing.
-#@cli : The output filename may have extension '.avi' (saved as a video), or any other usual image file
+#@cli : The output filename may have extension '.avi' or '.mp4' (saved as a video), or any other usual image file
 #@cli : extension (saved as a sequence of images).
 #@cli : Default values: 'command=(undefined)', 'first_frame=0', 'last_frame=-1', 'frame_step=1' \
 # and 'output_filename=(undefined)'.
@@ -23770,16 +23786,19 @@ apply_files : check "isint(${3=0}) && $3>=0 && isint(${4=-1}) && ($4>=0 || $4==-
 # _output_filename
 #@cli : Apply a G'MIC command on all frames of the specified input video file, in a streamed way.
 #@cli : If a display window is opened, rendered frames are displayed in it during processing.
-#@cli : The output filename may have extension '.avi' (saved as a video), or any other usual image
+#@cli : The output filename may have extension '.avi' or '.mp4' (saved as a video), or any other usual image
 #@cli : file extension (saved as a sequence of images).
+#@cli : This command requires features from the OpenCV library (not enabled in G'MIC by default).
 #@cli : Default values: 'first_frame=0', 'last_frame=-1', 'frame_step=1' and 'output_filename=(undefined)'.
-apply_video : check "isint(${3=0}) && $3>=0 && isint(${4=-1}) && ($4>=0 || $4==-1) && ${5=1}>=1" skip "${2=},${6=}"
+apply_video : check_opencv $0 check "isint(${3=0}) && $3>=0 && isint(${4=-1}) && ($4>=0 || $4==-1) && ${5=1}>=1"
+              skip "${2=},${6=}"
   e[^-1] "Apply command '$2' on input video file '$1', with first frame $3, last frame $4, frame step $5 and
           output filename '$6'.\n"
   _N= v + _apply_stream[] "\"$1\",$frame","$2",${3-5},"$6"
 
 _apply_stream : skip "${2=},${6=}"
   is_ext "$6",avi is_outavi=${}
+  is_ext "$6",mp4 is_outmp4=${}
   frame=$3 i=0 go_on=1
   do
     l[] $1 onfail go_on=0 endl
@@ -23789,7 +23808,7 @@ _apply_stream : skip "${2=},${6=}"
       l $2 onfail error[0--5] "Command 'apply_stream': Specified command errored: "${} endl
       if !$! continue fi
       if narg("$6")
-        if $is_outavi z. 0,{w-(w%8)-1} o. "$6",25,mp4v,1 else o. ${filename\ "$6",$i} i+=1 fi
+        if $is_outavi||$is_outmp4 z. 0,{w-(w%8)-1} o. "$6",25,mp4v,1 else o. ${filename\ "$6",$i} i+=1 fi
       fi
       if {*}
         title="[G'MIC] Frame ""#"$frame
@@ -23803,12 +23822,12 @@ _apply_stream : skip "${2=},${6=}"
       rm.
     fi
   while $go_on" && "($4==-1" || "$frame<=$4)
-  if $is_outavi o[] "$6",25,mp4v,0 fi
+  if $is_outavi||$is_outmp4 o[] "$6",25,mp4v,0 fi
 
 #@cli average_files : "filename_pattern",_first_frame>=0,_last_frame={ >=0 | -1=last },_frame_step>=1,_output_filename
 #@cli : Average specified input image files, in a streamed way.
 #@cli : If a display window is opened, rendered frames are displayed in it during processing.
-#@cli : The output filename may have extension '.avi' (saved as a video), or any other usual image
+#@cli : The output filename may have extension '.avi' or '.mp4' (saved as a video), or any other usual image
 #@cli : file extension (saved as a sequence of images).
 #@cli : Default values: 'first_frame=0', 'last_frame=-1', 'frame_step=1' and 'output_filename=(undefined)'.
 average_files : check "isint(${2=0}) && $2>=0 && isint(${3=-1}) && ($3>=0 || $3==-1) && ${4=1}>=1" skip "${5=}"
@@ -23819,16 +23838,19 @@ average_files : check "isint(${2=0}) && $2>=0 && isint(${3=-1}) && ($3>=0 || $3=
 #@cli average_video : video_filename,_first_frame>=0,_last_frame={ >=0 | -1=last },_frame_step>=1,_output_filename
 #@cli : Average frames of specified input video file, in a streamed way.
 #@cli : If a display window is opened, rendered frames are displayed in it during processing.
-#@cli : The output filename may have extension '.avi' (saved as a video), or any other usual image
+#@cli : The output filename may have extension '.avi' or '.mp4' (saved as a video), or any other usual image
 #@cli : file extension (saved as a sequence of images).
+#@cli : This command requires features from the OpenCV library (not enabled in G'MIC by default).
 #@cli : Default values: 'first_frame=0', 'last_frame=-1', 'frame_step=1' and 'output_filename=(undefined)'.
-average_video : check "isint(${2=0}) && $2>=0 && isint(${3=-1}) && ($3>=0 || $3==-1) && ${4=1}>=1" skip "${5=}"
+average_video : check_opencv $0 check "isint(${2=0}) && $2>=0 && isint(${3=-1}) && ($3>=0 || $3==-1) && ${4=1}>=1"
+                skip "${5=}"
   e[^-1] "Average frames of input video file '$1', with first frame $2, last frame $3, frame step $4 and
           output filename '$5'.\n"
   _N= v + _average_stream[] "\"$1\",$frame",${2-4},"$5"
 
 _average_stream : skip "${5=}"
   is_ext "$5",avi is_outavi=${}
+  is_ext "$5",mp4 is_outmp4=${}
   frame=$2 i=0 go_on=1 N=0
   imM=inf,-inf
   do
@@ -23840,7 +23862,7 @@ _average_stream : skip "${5=}"
       if $!>1 r ${-max_whds} + fi
       if narg("$5")
         +/. $N c. $imM
-        if $is_outavi z. 0,{w-(w%8)-1} o. "$5",25,mp4v,1 else o. ${filename\ "$5",$i} i+=1 fi
+        if $is_outavi||$is_outmp4 z. 0,{w-(w%8)-1} o. "$5",25,mp4v,1 else o. ${filename\ "$5",$i} i+=1 fi
         rm.
       fi
       if {*}
@@ -23858,13 +23880,13 @@ _average_stream : skip "${5=}"
     fi
   while $go_on" && "($3==-1" || "$frame<=$3)
   / $N c $imM
-  if $is_outavi o[] "$5",25,mp4v,0 fi
+  if $is_outavi||$is_outmp4 o[] "$5",25,mp4v,0 fi
 
 #@cli fade_files : "filename_pattern",_nb_inner_frames>0,_first_frame>=0,_last_frame={ >=0 | -1=last },\
 # _frame_step>=1,_output_filename
 #@cli : Generate a temporal fading from specified input image files, in a streamed way.
 #@cli : If a display window is opened, rendered frames are displayed in it during processing.
-#@cli : The output filename may have extension 'avi' (saved as a video), or any other usual image
+#@cli : The output filename may have extension 'avi' or 'mp4' (saved as a video), or any other usual image
 #@cli : file extension (saved as a sequence of images).
 #@cli : Default values: 'nb_inner_frames=10', 'first_frame=0', 'last_frame=-1', 'frame_step=1' \
 # and 'output_filename=(undefined)'.
@@ -23878,16 +23900,18 @@ fade_files : check "isint(${2=10}) && $2>0 && isint(${3=0}) && $3>=0 &&
 # _frame_step>=1,_output_filename
 #@cli : Create a temporal fading sequence from specified input video file, in a streamed way.
 #@cli : If a display window is opened, rendered frames are displayed in it during processing.
+#@cli : This command requires features from the OpenCV library (not enabled in G'MIC by default).
 #@cli : Default values: 'nb_inner_frames=10', 'first_frame=0', 'last_frame=-1', 'frame_step=1' \
 # and 'output_filename=(undefined)'.
-fade_video : check "isint(${2=10}) && $2>0 && isint(${3=0}) && $3>=0 &&
-                    isint(${4=-1}) && ($4>=0 || $4==-1) && ${5=1}>=1" skip "${6=}"
+fade_video : check_opencv $0 check "isint(${2=10}) && $2>0 && isint(${3=0}) && $3>=0 &&
+             isint(${4=-1}) && ($4>=0 || $4==-1) && ${5=1}>=1" skip "${6=}"
   e[^-1] "Fade frames of input video file '$1', with $2 inner frames, first frame $3, last frame $4, frame step $5 and
           output filename '$6'.\n"
   _N= v + _fade_stream[] "\"$1\",$frame",${2-5},"$6"
 
 _fade_stream : skip "${6=}"
   is_ext "$6",avi is_outavi=${}
+  is_ext "$6",mp4 is_outmp4=${}
   frame=$3 i=0 go_on=1
 
   l $1 onfail go_on=0 endl # Load first image.
@@ -23904,7 +23928,7 @@ _fade_stream : skip "${6=}"
       e[] "\r  - "$title
       +j[0] [1],0,0,0,0,{$>/($2+1)}
       if narg("$6")
-        if $is_outavi z. 0,{w-(w%8)-1} o. "$6",25,mp4v,1 else filename "$6",$i i+=1 o. ${} fi
+        if $is_outavi||$is_outmp4 z. 0,{w-(w%8)-1} o. "$6",25,mp4v,1 else filename "$6",$i i+=1 o. ${} fi
       fi
       if {*}
         w. -1,-1,0,$title
@@ -23919,14 +23943,14 @@ _fade_stream : skip "${6=}"
 
   # Output last frame.
   if narg("$6")
-    if $is_outavi z. 0,{w-(w%8)-1} o[] "$6",25,mp4v,0 else filename "$6",$i o. ${} fi
+    if $is_outavi||$is_outmp4 z. 0,{w-(w%8)-1} o[] "$6",25,mp4v,0 else filename "$6",$i o. ${} fi
   fi
   rm
 
 #@cli files2video : "filename_pattern",_output_filename,_fps>0,_codec
 #@cli : Convert several files into a single video file.
-#@cli : Default values: 'output_filename=output.avi', 'fps=25' and 'codec=mp4v'.
-files2video : check "isint(${3=25}) && $3>0" skip "${2=output.avi}",${4=mp4v}
+#@cli : Default values: 'output_filename=output.mp4', 'fps=25' and 'codec=mp4v'.
+files2video : check "isint(${3=25}) && $3>0" skip "${2=output.mp4}",${4=mp4v}
   files=${"files \"$1\""} arg2var _file,$files nb_files=${}
   ('$files') if w>128 z. 0,127 s_files={t}... else s_files=$files fi rm.
   e[^-1] "Convert image files '"$s_files"' into frames of output video '$2', with $3 fps and $4 codec.\n"
@@ -23961,10 +23985,11 @@ median_files : check "isint(${2=0}) && $2>=0 && isint(${3=-1}) && ($3>=0 || $3==
 # _frame_rows[%]>=1,_is_fast_approximation={ 0 | 1 }
 #@cli : Compute the median of all frames of an input video file, in a streamed way.
 #@cli : If a display window is opened, rendered frame is displayed in it during processing.
+#@cli : This command requires features from the OpenCV library (not enabled in G'MIC by default).
 #@cli : Default values: 'first_frame=0', 'last_frame=-1', 'frame_step=1', 'frame_rows=100%' \
 # and 'is_fast_approximation=1'.
-median_video : check "isint(${2=0}) && $2>=0 && isint(${3=-1}) && ($3>=0 || $3==-1) &&
-                      ${4=1}>=1 && ${5=100%}>0 && isnum(${6=1})"
+median_video : check_opencv $0 check "isint(${2=0}) && $2>=0 && isint(${3=-1}) && ($3>=0 || $3==-1) &&
+               ${4=1}>=1 && ${5=100%}>0 && isnum(${6=1})"
   s0="fast" s1="precise"
   e[^-1] "Compute median frame of input video file '$1', with first frame $2, last frame $3, frame step $4,
               frame rows $5, using "${s{!$6}}" algorithm."
@@ -24127,7 +24152,7 @@ morph : check "$1>=0.5 && ${2=0.1}>=0 && ${3=4}>=0"
 # _first_frame>=0,_last_frame={ >=0 | -1=last },_frame_step>=1,_output_filename
 #@cli : Generate a temporal morphing from specified input image files, in a streamed way.
 #@cli : If a display window is opened, rendered frames are displayed in it during processing.
-#@cli : The output filename may have extension '.avi' (saved as a video), or any other usual image
+#@cli : The output filename may have extension '.avi' or '.mp4' (saved as a video), or any other usual image
 #@cli : file extension (saved as a sequence of images).
 #@cli : Default values: 'nb_inner_frames=10', 'smoothness=0.1', 'precision=4', 'first_frame=0', 'last_frame=-1', \
 # 'frame_step=1' and 'output_filename=(undefined)'.
@@ -24182,18 +24207,20 @@ morph_rbf : check "$1>=0.5"
 # _first_frame>=0,_last_frame={ >=0 | -1=last },_frame_step>=1,_output_filename
 #@cli : Generate a temporal morphing from specified input video file, in a streamed way.
 #@cli : If a display window is opened, rendered frames are displayed in it during processing.
-#@cli : The output filename may have extension '.avi' (saved as a video), or any other usual image
+#@cli : The output filename may have extension '.avi' or '.mp4' (saved as a video), or any other usual image
 #@cli : file extension (saved as a sequence of images).
+#@cli : This command requires features from the OpenCV library (not enabled in G'MIC by default).
 #@cli : Default values: 'nb_inner_frames=10', 'smoothness=0.1', 'precision=4', 'first_frame=0', 'last_frame=-1', \
 # 'frame_step=1' and 'output_filename=(undefined)'.
-morph_video : check "isint(${2=10}) && $2>0 && ${3=0.1}>=0 && ${4=4}>=0 &&
-                     isint(${5=0}) && $5>=0 && isint(${6=-1}) && ($6>=0 || $6==-1) && ${7=1}>=1" skip "${8=}"
+morph_video : check_opencv $0 check "isint(${2=10}) && $2>0 && ${3=0.1}>=0 && ${4=4}>=0 &&
+              isint(${5=0}) && $5>=0 && isint(${6=-1}) && ($6>=0 || $6==-1) && ${7=1}>=1" skip "${8=}"
   e[^-1] "Morph frames of input video file '$1', with $2 fading frames, smoothness $3, precision $4, first frame $5,
           last frame $6, frame step $7 and output filename '$8'.\n"
   _N= v + _morph_stream[] "\"$1\",$frame",${2-7},"$8"
 
 _morph_stream : skip "${8=}"
   is_ext "$8",avi is_outavi=${}
+  is_ext "$8",mp4 is_outmp4=${}
   frame=$5 i=0 go_on=1
 
   l $1 onfail go_on=0 endl # Load first image.
@@ -24217,7 +24244,7 @@ _morph_stream : skip "${8=}"
       +*[3] {1-$t} +warp[1] .,1,1,1 rm.. *. $t
       +[-2,-1] c. $cutvals
       if narg("$8")
-        if $is_outavi z. 0,{w-(w%8)-1} o. "$8",25,mp4v,1 else filename "$8",$i i+=1 o. ${} fi
+        if $is_outavi||$is_outmp4 z. 0,{w-(w%8)-1} o. "$8",25,mp4v,1 else filename "$8",$i i+=1 o. ${} fi
       fi
       if {*}
         w. -1,-1,0,$title
@@ -24232,7 +24259,7 @@ _morph_stream : skip "${8=}"
 
   # Output last frame.
   if narg("$8")
-    if $is_outavi z. 0,{w-(w%8)-1} o[] "$8",25,mp4v,0 else filename "$8",$i o. ${} fi
+    if $is_outavi||$is_outmp4 z. 0,{w-(w%8)-1} o[] "$8",25,mp4v,0 else filename "$8",$i o. ${} fi
   fi
   rm
 
@@ -26506,7 +26533,7 @@ uchar2base64 : skip "${1=0}"
 
 #@cli demos : _run_in_parallel={ 0=no | 1=yes | 2=auto }
 #@cli : Show a menu to select and view all G'MIC interactive demos.
-demos : check "isint(${1=2}) && $1>=0 && $1<=2" check_display
+demos : check "isint(${1=2}) && $1>=0 && $1<=2" check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
   strver=${-strver}
   if $_prerelease strver=${strver}_pre#$_prerelease fi
@@ -26684,7 +26711,7 @@ _demo_color_curves :
 #@cli tixy : "expression"
 #@cli : Animate specified mathematical expression with a 16x16 grid of circles, \
 # using the rules described at <https://tixy.land>.
-tixy : skip "${1=sin(t-sqrt((x-8)^2+(y-8)^2))}" check_display
+tixy : skip "${1=sin(t-sqrt((x-8)^2+(y-8)^2))}" check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r b=$_vt100_b
   if narg("$*") expr="$*" else expr="$1" fi
   l[] ('$expr')
@@ -26724,7 +26751,7 @@ tixy : skip "${1=sin(t-sqrt((x-8)^2+(y-8)^2))}" check_display
 ---- . "${c}"cabs(c)"$n" in "${g}"[0,1]"$n" determines the radius of each dot at "${c}"(x,y)"$n".\n
 ---- . "${c}"carg(c)"$n" in "${g}"[-pi,pi]"$n" determine the color of each dot at "${c}"(x,y)"$n".\n
 ----\n
----- Key '"${c}"SPACE"$n"' starts/stops recording animation as video file '"${c}"out.avi"$n"'.\n
+---- Key '"${c}"SPACE"$n"' starts/stops recording animation as video file '"${c}"out.mp4"$n"'.\n
 ---- Key '"${c}"ENTER"$n"' takes a screenshot of current image.\n
 ---- Key '"${c}"A"$n"' enables/disables anti-aliasing.\n
 ---- Key '"${c}"F"$n"' displays formula on the image.\n
@@ -26750,7 +26777,7 @@ tixy : skip "${1=sin(t-sqrt((x-8)^2+(y-8)^2))}" check_display
     elif {*,-F} is_formula={!$is_formula}
     elif {*,R} t0=$|
     elif {*,-SPACE}
-      if $is_recording o[] $basename.avi,15,0,0 nb_frames=0
+      if $is_recording o[] $basename.mp4,15,0,0 nb_frames=0
       else t0=$| fi
       is_recording={!$is_recording}
     elif {*,-ENTER} is_screenshot=1
@@ -26787,7 +26814,7 @@ tixy : skip "${1=sin(t-sqrt((x-8)^2+(y-8)^2))}" check_display
       j. [formula],0.5~,1~,0,0,1,[mformula],255
     fi
     if $is_screenshot o. $basename.png is_screenshot=0 fi
-    if $is_recording o. $basename.avi,15,0,1 nb_frames+=1 to. "Recording video\n[Frame \#"$nb_frames"]",0,0,5% fi
+    if $is_recording o. $basename.mp4,15,0,1 nb_frames+=1 to. "Recording video\n[Frame \#"$nb_frames"]",0,0,5% fi
     w. rm. wait 40
   while {*}" && "!{*,ESC}" && "!{*,Q}
   rmn cmap,formula,mformula
@@ -26795,7 +26822,7 @@ tixy : skip "${1=sin(t-sqrt((x-8)^2+(y-8)^2))}" check_display
 
 #@cli x_2048
 #@cli : Launch the 2048 game.
-x_2048 : check_display
+x_2048 : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
   e[] "\n
 ------ "${g}"2048"$n" -----------------------------------------------\n
@@ -26950,7 +26977,7 @@ x_2048 : check_display
 #@cli x_blobs
 #@cli : Launch the blobs editor.
 #@cli : ![x_blobs](../img/x_blobs.jpg)
-x_blobs : check_display
+x_blobs : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
   e[] "\n
 ------ "${g}"Blobs editor"$n" --------------------------\n
@@ -27027,7 +27054,7 @@ x_blobs : check_display
 
 #@cli x_bouncing
 #@cli : Launch the bouncing balls demo.
-x_bouncing : check_display
+x_bouncing : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
   e[] "\n
 ------ "${g}"Bouncing balls"$n" ------------------------------\n
@@ -27266,7 +27293,7 @@ __x_color_curves :
 #@cli : Colorized selected B&W images, using an interactive window.
 #@cli : When >0, argument 'max_resolution' defines the maximal image resolution used in the interactive window.
 #@cli : Default values: 'is_lineart=1', 'max_resolution=1024' and 'multichannels_output=0'.
-x_colorize : skip ${1=0},${3=0},${4=0},${5=0},${6=0} check "${2=1024}==0 || $2>=128" check_display
+x_colorize : skip ${1=0},${3=0},${4=0},${5=0},${6=0} check "${2=1024}==0 || $2>=128" check_display $0
   s0="image" s1="lineart" s2="multichannel" s3="merged" use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
   e[^-1] "Colorize selected B&W "${s{!$1}}"$? interactively, with maximum resolution $2 and "${s{2+!$3}}" output."
   e[] "\n
@@ -27590,7 +27617,7 @@ __x_colorize :
 
 #@cli x_connect4
 #@cli : Launch the Connect Four game.
-x_connect4 : check_display
+x_connect4 : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
   e[] "\n
 ------ "${g}"Connect Four"$n" --------------------------------------------\n
@@ -27840,7 +27867,7 @@ x_cut :
 
 #@cli x_fire
 #@cli : Launch the fire effect demo.
-x_fire : skip "${1=G\47MIC}" check_display
+x_fire : skip "${1=G\47MIC}" check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
   e[] "\n
 ------ "${g}"Fire effect"$n" ------------------------\n
@@ -27882,7 +27909,7 @@ x_fire : skip "${1=G\47MIC}" check_display
 
 #@cli x_fireworks
 #@cli : Launch the fireworks demo.
-x_fireworks : check_display
+x_fireworks : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
   e[] "\n
 ------ "${g}"Fireworks"$n" --------------------------\n
@@ -27938,7 +27965,7 @@ x_fireworks : check_display
 
 #@cli x_fisheye
 #@cli : Launch the fish-eye effect demo.
-x_fisheye : check_display
+x_fisheye : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
   e[] "\n
 ------ "${g}"Fish-eye effect"$n" --------------------\n
@@ -27976,7 +28003,7 @@ x_fisheye : check_display
 
 #@cli x_fourier
 #@cli : Launch the fourier filtering demo.
-x_fourier : check_display
+x_fourier : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
   e[] "\n
 ------ "${g}"Fourier-filtering"$n" ----------------------------------------\n
@@ -28088,7 +28115,7 @@ x_fourier : check_display
 #@cli : Argument 'variable_name' specifies the variable that contains the selected color values at any time.
 #@cli : Assigning '-1' to it forces the interactive window to close.
 #@cli : Default values: 'variable_name=xgc_variable'.
-x_grab_color : skip ${1=xgc_variable} check_display
+x_grab_color : skip ${1=xgc_variable} check_display $0
   if !$! error[0--3] "Command '$0': Missing specified input image." fi
   l[0] nm={n} nm. img
   e[^-1] "Open "${arg\ {0,s},GRAY,GRAYA,RGB,RGBA}" color grabber widget for image$?, with variable name '$1'."
@@ -28157,7 +28184,7 @@ _x_grab_color :
 
 #@cli x_hanoi
 #@cli : Launch the Tower of Hanoi game.
-x_hanoi : check_display
+x_hanoi : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
   e[] "\n
 ------ "${g}"Tower of Hanoï"$n" ---------------------\n
@@ -28274,7 +28301,7 @@ x_hanoi : check_display
 
 #@cli x_histogram
 #@cli : Launch the histogram demo.
-x_histogram : check_display
+x_histogram : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
   e[] "\n
 ------ "${g}"Histogram demo"$n" -------------------------------\n
@@ -28378,7 +28405,7 @@ _x_histogram :
 
 #@cli x_hough
 #@cli : Launch the hough transform demo.
-x_hough : check_display
+x_hough : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
   e[] "\n
 ------ "${g}"Hough-transform"$n" -----------------------------------------\n
@@ -28463,7 +28490,7 @@ x_hough : check_display
 
 #@cli x_jawbreaker : 0<_width<20,0<_height<20,0<_balls<=8
 #@cli : Launch the Jawbreaker game.
-x_jawbreaker : check "${1=12}>0 && $1<20 && ${2=13}>0 && $2<20 && ${3=5}>0 && $3<=8" check_display
+x_jawbreaker : check "${1=12}>0 && $1<20 && ${2=13}>0 && $2<20 && ${3=5}>0 && $3<=8" check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
   e[] "\n
 ------ "${g}"Jawbreaker"$n" --------------------------------------------\n
@@ -28606,7 +28633,7 @@ _x_jawbreaker_ball :
 
 #@cli x_landscape
 #@cli : Launch the virtual landscape demo.
-x_landscape : check_display
+x_landscape : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
   e[] "\n
 ------ "${g}"Virtual landscape"$n" -------------------------------------\n
@@ -28699,7 +28726,7 @@ x_landscape : check_display
 
 #@cli x_life
 #@cli : Launch the game of life.
-x_life : check_display
+x_life : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
   e[] "\n
 ------ "${g}"The game of life"$n" --------------------------------------\n
@@ -28788,7 +28815,7 @@ x_life : check_display
 
 #@cli x_light
 #@cli : Launch the light effect demo.
-x_light : check_display
+x_light : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
   e[] "\n
 ------ "${g}"Light effect"$n" ------------------------\n
@@ -28845,7 +28872,7 @@ x_light : check_display
 
 #@cli x_mandelbrot : _julia={ 0 | 1 },_c0r,_c0i
 #@cli : Launch Mandelbrot/Julia explorer.
-x_mandelbrot : skip ${1=0},${2=0.317},${3=0.03} check_display
+x_mandelbrot : skip ${1=0},${2=0.317},${3=0.03} check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
   e[] "\n
 ------ "${g}"Mandelbrot/Julia explorer"$n" -----------------\n
@@ -28901,7 +28928,7 @@ _x_mandelbrot_palette :
 #@cli : You can also select one one particular channel of this colorspace, by setting 'colorspace' as
 #@cli : 'colorspace_channel' (e.g. 'hsv_h' for the hue).
 #@cli : Default values: 'colorspace=all', 'spatial_tolerance=5' and 'color_tolerance=5'.
-x_mask_color : check "${2=5}>=0 && ${3=5}>=0" skip ${1=all} check_display
+x_mask_color : check "${2=5}>=0 && ${3=5}>=0" skip ${1=all} check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
   e[^-1] "Interactively create color mask for image$?, with color space $1, spatial tolerance $2 and
           color tolerance $3."
@@ -29050,7 +29077,7 @@ _x_mask_color : # Estimate color mask image.
 
 #@cli x_metaballs3d
 #@cli : Launch the 3D metaballs demo.
-x_metaballs3d : check_display
+x_metaballs3d : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
   e[] "\n
 ------ "${g}"3D metaballs"$n" ---------------------------------------\n
@@ -29096,7 +29123,7 @@ x_metaballs3d : check_display
 
 #@cli x_minesweeper : 8<=_width=<20,8<=_height<=20
 #@cli : Launch the Minesweeper game.
-x_minesweeper : check "${1=20}>=8 && $1<=30 && ${2=$1}>=8 && $2<=30" check_display
+x_minesweeper : check "${1=20}>=8 && $1<=30 && ${2=$1}>=8 && $2<=30" check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
   e[] "\n
 ------ "${g}"Minesweeper"$n" -------------------------------------------\n
@@ -29193,7 +29220,7 @@ x_minesweeper : check "${1=20}>=8 && $1<=30 && ${2=$1}>=8 && $2<=30" check_displ
 
 #@cli x_minimal_path
 #@cli : Launch the minimal path demo.
-x_minimal_path : check_display
+x_minimal_path : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
   e[] "\n
 ------ "${g}"Minimal path"$n" ------------------------------------------\n
@@ -29258,7 +29285,7 @@ x_minimal_path : check_display
 #@cli x_morph : _nb_frames>=2,_preview_fidelity={ 0=coarsest | 1=coarse | 2=normal | 3=fine | 4=finest }
 #@cli : Launch the interactive image morpher.
 #@cli : Default values: 'nb_frames=16' and 'preview_fidelity=3'.
-x_morph : check "isint(${1=16}) && isint(${2=3}) && $2>=0 && $2<=4" check_display
+x_morph : check "isint(${1=16}) && isint(${2=3}) && $2>=0 && $2<=4" check_display $0
   if $!<2 error[0--3] "Command '$0': Requires at least two input images!" return fi
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r b=$_vt100_b
   e[] "\n
@@ -29438,7 +29465,7 @@ x_morph : check "isint(${1=16}) && isint(${2=3}) && $2>=0 && $2<=4" check_displa
 
 #@cli x_pacman
 #@cli : Launch pacman game.
-x_pacman : check_display
+x_pacman : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
   e[] "\n
 ------ "${g}"Pacman"$n" -----------------------------------------------\n
@@ -29747,7 +29774,7 @@ _pacman_map_level6 :
 
 #@cli x_paint
 #@cli : Launch the interactive painter.
-x_paint : check_display
+x_paint : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
   e[] "\n
 ------ "${g}"Interactive painter"$n" -----------------------\n
@@ -29871,7 +29898,7 @@ _x_paint :
 
 #@cli x_plasma
 #@cli : Launch the plasma effect demo.
-x_plasma : check_display
+x_plasma : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
   e[] "\n
 ------ "${g}"Plasma effect"$n" ----------------------\n
@@ -29936,7 +29963,7 @@ x_plasma : check_display
 
 #@cli x_quantize_rgb : _nbcolors>=2
 #@cli : Launch the RGB color quantization demo.
-x_quantize_rgb : check "isint(${1=16}) && $1>1" check_display
+x_quantize_rgb : check "isint(${1=16}) && $1>1" check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
   e[] "\n
 ------ "${g}"RGB Quantization"$n" --------------------------------------\n
@@ -30102,7 +30129,7 @@ _x_quantize_rgb_text :
 
 #@cli x_reflection3d
 #@cli : Launch the 3D reflection demo.
-x_reflection3d : check_display
+x_reflection3d : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
   e[] "\n
 ------ "${g}"3D reflection"$n" ----------------------\n
@@ -30165,7 +30192,7 @@ x_reflection3d : check_display
 
 #@cli x_rubber3d
 #@cli : Launch the 3D rubber object demo.
-x_rubber3d : check_display
+x_rubber3d : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
   e[] "\n
 ------ "${g}"3D rubber object"$n" -------------------\n
@@ -30202,7 +30229,7 @@ x_rubber3d : check_display
 #@cli : Segment foreground from background in selected opaque RGB images, interactively.
 #@cli : Return RGBA images with binary alpha-channels.
 #@cli : Default value: 'max_resolution=1024'.
-x_segment : check "${1=1024}==0 || $1>=128" check_display
+x_segment : check "${1=1024}==0 || $1>=128" check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
   e[^-1] "Extract foreground from background in image$? interactively, with maximum resolution $1."
   e[] "\n
@@ -30430,7 +30457,7 @@ _x_segment :
 #@cli : at any time.
 #@cli : Its value specifies the initial selected color. Assigning '-1' to it forces the interactive window to close.
 #@cli : Default value: 'variable_name=xsc_variable'.
-x_select_color : skip ${1=xsc_variable} check_display
+x_select_color : skip ${1=xsc_variable} check_display $0
   rm
   n={narg($$1)} if !$n $1=0,0,0 fi
   rgba_mode={$n>=4} R={arg(1,$$1)} G={arg(2,$$1)} B={arg(3,$$1)} A={if($rgba_mode,arg(4,$$1),255)}
@@ -30590,7 +30617,7 @@ x_select_color : skip ${1=xsc_variable} check_display
 #@cli : Assigning '-1' to it forces the interactive window to close.
 #@cli : Default values: 'variable_name=xsf_variable', 'background_curve_R=220', \
 # 'background_curve_G=background_curve_B=background_curve_T'.
-x_select_function1d : skip ${1=xsf_variable},${2=220},${3=$2},${4=$2} check_display
+x_select_function1d : skip ${1=xsf_variable},${2=220},${3=$2},${4=$2} check_display $0
   e[^-1] "Open 1D function widget, with variable name '$1'."
   if $! k[0] fi
   is_additional_data=$!
@@ -30711,7 +30738,7 @@ x_select_function1d : skip ${1=xsf_variable},${2=220},${3=$2},${4=$2} check_disp
 #@cli : at any time.
 #@cli : Assigning '-1' to it forces the interactive window to close.
 #@cli : Default values: 'variable_name=xsp_variable' and 'number_of_columns=2'.
-x_select_palette : skip ${1=xsp_variable},${2=0} check_display
+x_select_palette : skip ${1=xsp_variable},${2=0} check_display $0
   if !$! error[0--3] "Command '$0': Missing specified palette image." fi
   k[0] +r {w*h*d},1,1,{s},-1 to_color. rgba_mode={s==4} to_rgba. nm. palette
   e[^-1] "Open "${arg\ 1+$rgba_mode,RGB,RGBA}" color selector widget for palette$?, with variable name '$1'."
@@ -30808,7 +30835,7 @@ x_select_palette : skip ${1=xsp_variable},${2=0} check_display
 
 #@cli x_shadebobs
 #@cli : Launch the shade bobs demo.
-x_shadebobs : check_display
+x_shadebobs : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
   e[] "\n
 ------ "${g}"Shade bobs"$n" -------------------------------\n
@@ -30852,7 +30879,7 @@ x_shadebobs : check_display
 
 #@cli x_spline
 #@cli : Launch spline curve editor.
-x_spline : check_display
+x_spline : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
   e[] "\n
 ------ "${g}"Spline curve editor"$n" --------------------------\n
@@ -30970,7 +30997,7 @@ x_spline : check_display
 
 #@cli x_starfield3d
 #@cli : Launch the 3D starfield demo.
-x_starfield3d : check_display
+x_starfield3d : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
   e[] "\n
 ------ "${g}"3D starfield"$n" ---------------------------------------\n
@@ -31030,7 +31057,7 @@ x_starfield3d : check_display
 
 #@cli x_tetris
 #@cli : Launch tetris game.
-x_tetris : check_display
+x_tetris : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
   e[] "\n
 ------ "${g}"Tetris"$n" --------------------------------------------\n
@@ -31194,7 +31221,7 @@ x_threshold :
 
 #@cli x_tictactoe
 #@cli : Launch tic-tac-toe game.
-x_tictactoe : check_display
+x_tictactoe : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
   e[] "\n
 ------ "${g}"Tic-Tac-Toe game"$n" -----------------\n
@@ -31319,7 +31346,7 @@ _x_tictactoe6 : # Generate a +- diagonal stroke and his mask.
 #@cli : Launch the interactive image warper.
 #@cli : Default values: 'nb_keypoints_xgrid=nb_keypoints_ygrid=2', 'nb_keypoints_contours=0' and 'preview_fidelity=1'.
 x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2 && isint(${3=0}) && $3>=0 &&
-                isint(${4=1}) && $4>=0 && $4<=4 && ${6=0.5}>=0 && $6<=1" skip ${5=} check_display
+                isint(${4=1}) && $4>=0 && $4<=4 && ${6=0.5}>=0 && $6<=1" skip ${5=} check_display $0
   if !$! error[0--3] "Command '$0': Requires at least one input image!" return fi
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
   e[] "\n
@@ -31509,7 +31536,7 @@ _x_warp_rbf :
 
 #@cli x_waves
 #@cli : Launch the image waves demo.
-x_waves : check_display
+x_waves : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
   e[] "\n
 ------ "${g}"Image waves"$n" --------------------------\n
@@ -31576,7 +31603,7 @@ x_waves : check_display
 #@cli x_whirl : _opacity>=0
 #@cli : Launch the fractal whirls demo.
 #@cli : Default values: 'opacity=0.2'.
-x_whirl : check "${1=0.2}>=0" check_display
+x_whirl : check "${1=0.2}>=0" check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
   e[] "\n
 ------ "${g}"Fractal whirls"$n" ----------------------------\n
@@ -32889,8 +32916,8 @@ fx_gmicky_preview :
 #@gui : - <b>2019/08/14</b> : version <i>2.7.0</i>.\n
 #@gui : - <b>2019/12/04</b> : version <i>2.8.0</i>.\n
 #@gui : - <b>2020/03/28</b> : version <i>2.9.0</i>.\n
-#@gui : - <span foreground="purple"><b>2021/02/09</b> : version <i>2.9.6</i> (Current stable).</span>\n
-#@gui : - <b>2021/03/08</b> : version <i>2.9.7</i> (Current pre-release).\n
+#@gui : - <span foreground="purple"><b>2021/03/23</b> : version <i>2.9.7</i> (Current stable).</span>\n
+##@gui : - <b>2021/03/08</b> : version <i>2.9.7</i> (Current pre-release).\n
 #@gui : "}
 #@gui : sep = separator()
 #@gui : url = link{"View changelog to upcoming major version (3.0)","https://discuss.pixls.us/t/on-the-road-to-3-0"}
@@ -34937,6 +34964,12 @@ fx_smooth_abstract_preview :
 #@gui : "Braque: Le Viaduc &agrave; l'Estaque",
 #@gui : "Braque: Little Bay at La Ciotat",
 #@gui : "Braque: The Mandola",
+#@gui : "Christine Garner: Black Colour Pencil",
+#@gui : "Christine Garner: Colour Pencil Sepia",
+#@gui : "Christine Garner: Dark Coloured Pencil",
+#@gui : "Christine Garner: Pencil",
+#@gui : "Christine Garner: Sketching Pastel",
+#@gui : "Christine Garner: Willow Charcoal",
 #@gui : "Delaunay: Windows Open Simultaneously",
 #@gui : "Delaunay: Portrait de Metzinger",
 #@gui : "Hokusai: The Great Wave",
@@ -34997,7 +35030,7 @@ fx_smooth_abstract_preview :
 #@gui : Scale Factor = float(1.85,1.1,4)
 #@gui : Skip Finest Scales = int(0,0,3)
 #@gui : sep = separator()
-#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2019/01/10</i>.</small>")
+#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2021/03/23</i>.</small>")
 fx_stylize :
   init_resolution={arg(1+$16,8,16,32,64,128,256)}
 
@@ -35071,11 +35104,14 @@ fx_stylize_preview :
 
 _fx_stylize : # Download pre-defined style image
   if isnum($1)
-    name=${"arg 1+$1,landscapenearantwerp,leviaducalestaque,littlebayatlaciotat,themandola,windowsopensimultaneously,\
-      portraitdemetzinger,greatwave,squareswithconcentriccircles,yellowredblue,deathandfire,inthestyleofkairouan,\
-      orientalpleasuregardenanagoria,polyphony2,redwaistcoat,thekiss,compositionredyellowblue,redtree,graytree,\
-      sangiorgiomaggioreatdusk,waterlilypond,wheatstacksendofsummer,scream,udnie,lesdemoisellesdavignon,seatedwoman,\
-      reservoirhortadeebro,convergence,summertime9a,almondblossom,irises,starrynight,wheatfieldwithcrows"}
+    name=${"arg 1+$1",\
+           "landscapenearantwerp,leviaducalestaque,littlebayatlaciotat,themandola",\
+            "blackcolourpencil,colourpencilsepia,darkcolouredpencil,pencil,sketchingpastel,willowcharcoal",\
+            "windowsopensimultaneously,portraitdemetzinger,greatwave,squareswithconcentriccircles,yellowredblue",\
+            "deathandfire,inthestyleofkairouan,orientalpleasuregardenanagoria,polyphony2,redwaistcoat,thekiss",\
+            "compositionredyellowblue,redtree,graytree,sangiorgiomaggioreatdusk,waterlilypond,wheatstacksendofsummer",\
+            "scream,udnie,lesdemoisellesdavignon,seatedwoman,reservoirhortadeebro,convergence,summertime9a",\
+            "almondblossom,irises,starrynight,wheatfieldwithcrows"}
   else name="$1"
   fi
   filename=${-path_cache}style_$name.png
@@ -36292,7 +36328,7 @@ fx_colorblind_preview :
 #@gui : "Cinematic Travel (29)","Creative Pack (33)","Eric Ellerbrock (14)","FilterGrade Cinematic (8)",
 #@gui : "InAvision (15)","J.T. Semple (14)","Kyler Holland (10)","Lutify.Me (7)","Michael Ezra (2)","Moviz (48)",
 #@gui : "Ohad Peretz (7)","ON1 Photography (90)","PictureFX (25)","PIXLS.US (31)","Purple11 (12)",
-#@gui : "RocketStock (35)","Shamoon Abbasi (25)","SmallHD Movie Look (7)",
+#@gui : "RocketStock (35)","Shamoon Abbasi (25)","SmallHD Movie Look (7)","Youssef Hossam (5)",
 #@gui : "Others (69)"}
 
 ##### Abigail Gonzales
@@ -36453,6 +36489,10 @@ fx_colorblind_preview :
 #@gui : Preset = choice{1,"All [Collage]","None",
 #@gui : "Apocalypse This Very Moment","B-Boyz 2","Bob Ford","Life Giving Tree","Moonrise","Saving Private Damon",
 #@gui : "The Matrices"}_0
+
+##### Youssef Hossam
+#@gui : Preset = choice{1,"All [Collage]","None",
+#@gui : "Cinematic Forest","City","Darkness","Hallowen Dark","Sea"}_0
 
 ##### Others
 #@gui : Preset = choice{1,"All [Collage]","None",
@@ -36857,6 +36897,9 @@ fx_colorblind_preview :
 # zRd3ZU8AAAAASUVORK5CYII="/>  <a href="https://www.smallhd.com/community/movie-looks-download">SmallHD Free \
 # Movie Look Pack</a></center>"}
 
+#@gui : sep = value(0)_0+
+#@gui : note = note{"<center><a href="https://freshluts.com/users/52679">Youssef Hossam</a></center>"}
+
 #@gui : sep = value(0)_2+
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.
@@ -36864,10 +36907,10 @@ fx_colorblind_preview :
 fx_color_presets :
   category=${arg\ 1+$1,abigailgonzalez,alexjordan,berat,cinematic,cinematic_travel,creative,ericellerbrock,filtergrade,\
                        inavision,jtsemple,kyler_holland,lutifyme,michaelezra,moviz,ohadperetz,on1,picturefx,pixlsus,\
-                       purple11,rocketstock,shamoonabbasi,smallhd,others}
+                       purple11,rocketstock,shamoonabbasi,smallhd,youssefhossam,others}
   presets=${-_fx_cluts_$category}
-  index={arg(1+$1,${2-24})}
-  thumbsize,strength,brightness,contrast,gamma,hue,saturation,normalize=${25-32}
+  index={arg(1+$1,${2-25})}
+  thumbsize,strength,brightness,contrast,gamma,hue,saturation,normalize=${26-33}
 
   if $normalize==1" || "$normalize==3 # Pre-normalization
     repeat $! l[$>] split_opacity balance_gamma[0] , a c endl done
@@ -36906,9 +36949,9 @@ fx_color_presets :
 
 fx_color_presets_preview :
   _is_preview=1
-  index={arg(1+$1,${2-24})}
+  index={arg(1+$1,${2-25})}
   if !$index gui_warning_preview "Preview disabled in 'Collage' mode"
-  else gui_split_preview "fx_color_presets $*",${32-34}
+  else gui_split_preview "fx_color_presets $*",${33-35}
   fi
   u "{$1}{$2}_"{2*($1==0)}\
         "{$3}_"{2*($1==1)}\
@@ -36933,9 +36976,10 @@ fx_color_presets_preview :
         "{$22}_"{2*($1==20)}\
         "{$23}_"{2*($1==21)}\
         "{$24}_"{2*($1==22)}\
-        "{$25}_"{1+!$index}\
-        "{$26}{$27}{$28}{$29}{$30}{$31}{$32}{$33}{$34,$35}"\
-        "{0}_"{2*($1!=20)}\
+        "{$25}_"{2*($1==23)}\
+        "{$26}_"{1+!$index}\
+        "{$27}{$28}{$29}{$30}{$31}{$32}{$33}{$34}{$35,$36}"\
+        "{0}_"{2*($1!=23)}\
         "{0}_"{2*($1==0)}\
         "{0}_"{2*($1==1)}\
         "{0}_"{2*($1==2)}\
@@ -36958,6 +37002,7 @@ fx_color_presets_preview :
         "{0}_"{2*($1==19)}\
         "{0}_"{2*($1==20)}\
         "{0}_"{2*($1==21)}\
+        "{0}_"{2*($1==22)}\
         "{0}"
 
 _fx_cluts_abigailgonzalez :
@@ -37094,6 +37139,9 @@ _fx_cluts_others :
     sunny_warm,\
     sunny_rich,super_warm,super_warm_rich,sutro_fx,vibrant,vibrant_alien,vibrant_contrast,vibrant_cromeish,\
     vintage,vintage_alt,vintage_brighter,warm,warm_highlight,warm_yellow
+
+_fx_cluts_youssefhossam :
+  u cinematic_forest,city,darkness,hallowen_dark,sea
 
 #@gui Colorful Blobs : fx_colorful_blobs, fx_colorful_blobs_preview
 #@gui : Colorspace = choice(1,"sRGB","Linear RGB","Lab")
@@ -43491,6 +43539,36 @@ _fx_drop_shadow3d :
   a[-2,-1] c warp[0] .,0,1,0 rm.
   b $8% n 0,$12 i.. ($9^$10^$11) r.. .,.,1,3 a[-2,-1] c
 
+#@gui Equalize Light : fx_equalize_light, fx_equalize_light_preview(1)
+#@gui : Amount (%) = float(75,0,100)
+#@gui : Mode = choice("Preserve range","Preserve covariance")
+#@gui : Channel(s) = choice(11,"All","RGBA [All]","RGB [All]","RGB [Red]","RGB [Green]","RGB [Blue]","RGBA [Alpha]",
+#@gui : "Linear RGB [All]","Linear RGB [Red]","Linear RGB [Green]","Linear RGB [Blue]","YCbCr [Luminance]",
+#@gui : "YCbCr [Blue-Red Chrominances]","YCbCr [Blue Chrominance]","YCbCr [Red Chrominance]",
+#@gui : "YCbCr [Green Chrominance]","Lab [Lightness]","Lab [ab-Chrominances]","Lab [a-Chrominance]",
+#@gui : "Lab [b-Chrominance]","Lch [ch-Chrominances]","Lch [c-Chrominance]","Lch [h-Chrominance]","HSV [Hue]",
+#@gui : "HSV [Saturation]","HSV [Value]","HSI [Intensity]","HSL [Lightness]","CMYK [Cyan]","CMYK [Magenta]",
+#@gui : "CMYK [Yellow]","CMYK [Key]","YIQ [Luma]","YIQ [Chromas]","RYB [All]","RYB [Red]","RYB [Yellow]","RYB [Blue]")
+#@gui : sep = separator()
+#@gui : Preview Type = choice("Full","Forward Horizontal","Forward Vertical","Backward Horizontal",
+#@gui : "Backward Vertical","Duplicate Top","Duplicate Left","Duplicate Bottom","Duplicate Right",
+#@gui : "Duplicate Horizontal","Duplicate Vertical","Checkered","Checkered Inverse")
+#@gui : Preview Split = point(50,50,0,0,200,200,200,0,10)_0
+#@gui : sep = separator()
+#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2021/03/23</i>.</small>")
+fx_equalize_light :
+  ac "_fx_equalize_light $1,$2",$3,1
+
+_fx_equalize_light :
+  repeat $! l[$>] split_opacity l[0]
+    . +b. {max(0.1,100-$1)}% -[-2,-1]
+    if $2 transfer_pca. .. else n. ..,.. fi
+    rm..
+  endl a c endl done
+
+fx_equalize_light_preview :
+  gui_split_preview "fx_equalize_light $*",${-3--1}
+
 #@gui Equalize Shadow : fx_equalize_shadow, fx_equalize_shadow_preview(1)
 #@gui : Amplitude = float(1,0,1)
 #@gui : sep = separator()
@@ -43500,7 +43578,7 @@ _fx_drop_shadow3d :
 #@gui : Preview Split = point(50,50,0,0,200,200,200,0,10)_0
 #@gui : sep = separator()
 #@gui : note = note("<small>Authors: <i>Francois Grassard</i> and <i>David Tschumperlé</i>.
-#@gui :       Latest Update: <i>2012/24/11</i>.</small>")
+#@gui :       Latest Update: <i>2021/03/23</i>.</small>")
 fx_equalize_shadow :
   repeat $! l[$>] +negate blend softlight,$1 endl done
 

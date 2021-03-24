@@ -10368,15 +10368,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   gmic_selection.data(),
                   uext.data(),_filename.data(),
                   fps,*name?name.data():"(default)");
-            try {
-              g_list.save_video(filename,(unsigned int)fps,name,(bool)keep_open);
-              if (!cimg::fsize(filename)) throw CImgException("Output file is empty");
-            } catch (CImgException &e) {
-              warn(images,0,false,
-                   "Command 'output': Cannot encode file '%s' natively (%s). Trying fallback function.",
-                   filename,e.what());
-              g_list.save_ffmpeg_external(filename,(unsigned int)fps);
-            }
+            g_list.save_video(filename,(unsigned int)fps,name,(bool)keep_open);
+            if (!cimg::fsize(filename)) throw CImgException("Output file is empty");
           } else { // Any other extension
 
             // Check if a custom command handling requested file format exists.
