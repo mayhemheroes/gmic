@@ -4643,9 +4643,14 @@ parse_cli_html :
 
         # Found link to tutorial page.
         if !$is_tutorial_tag html.="<tutorial_tag>" is_tutorial_tag=1 fi
-        if h==2 url=https://gmic.eu/oldtutorial/_$name.shtml
-        else rows 2,100 autocrop {'" "'} url=https://gmic.eu/oldtutorial/{t}
+        if h==2
+          url=https://gmic.eu/tutorial/$name.html
+          l[] it $url if "find(#-1,'404 Not Found')>=0" url=https://gmic.eu/oldtutorial/_$name.shtml fi rm endl
+        else
+          rows 2,100 autocrop {'" "'}
+          url=https://gmic.eu/oldtutorial/{t}
         fi
+
         tutorial_html.="      <p>This command has a <span class=\"ref_tutorial_button\"><a href=\""$url"\">"\
                        "tutorial page</a></span>.</p>"
       else
