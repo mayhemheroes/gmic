@@ -10369,7 +10369,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   uext.data(),_filename.data(),
                   fps,*name?name.data():"(default)");
             g_list.save_video(filename,(unsigned int)fps,name,(bool)keep_open);
-            if (!cimg::fsize(filename)) throw CImgException("Output file is empty");
+            if (!cimg::fsize(filename)) throw CImgException("Output file '%s' is empty. Something went wrong!",
+                                                            _filename.data());
           } else { // Any other extension
 
             // Check if a custom command handling requested file format exists.

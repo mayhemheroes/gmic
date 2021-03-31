@@ -4861,7 +4861,8 @@ parse_gmd :
       formula = opening_offset = -1;
 
       blank(c) = isin(c,_' ',_'\n',s_whitespace,s_tab,0);
-      semiblank(c) = isin(c,_' ',_'\n',_'.',_',',_';',_':',_'!',_'?',_')',_'(',_'|',s_whitespace,s_tab,0);
+      semiblank(c) = isin(c,_' ',_'\n',_'.',_',',_';',_':',_'!',_'?',
+                            _')',_'(',_'[',_']',_'|',_'-',s_whitespace,s_tab,0);
       newline(c) = isin(c,_'\n',0);
       reset(c) = (#c = -1);
       res = crop();
@@ -5389,7 +5390,7 @@ parse_gmd :
     end(copy(i[0],res))"
   discard 0
 
-#@cli gmd2html : _include_default_header_footer={ 0=none | 1=Reference | 2=Tutorial } : (no arg)
+#@cli gmd2html : _include_default_header_footer={ 0=none | 1=Reference | 2=Tutorial | 3=News } : (no arg)
 #@cli : Convert selected gmd-formatted text images to html format.
 #@cli : Default values: 'include_default_header_footer=1'.
 gmd2html : skip "${1=}"
@@ -5632,7 +5633,7 @@ gmd2html : skip "${1=}"
 
   # Embed with header and footer if needed.
   if $embed_html
-    section_title=${"arg "$embed_html",Reference,Tutorial"}
+    section_title=${"arg "$embed_html",Reference,Tutorial,News"}
     repeat $! l[$>] nm={b} nm0=${nm$>}
       if ['${title$>}']!=0 title=${title$>} else title=$nm0 fi
       if isfile('../style.css') style="../style.css" else style="https://gmic.eu/style.css" fi
@@ -13829,7 +13830,7 @@ blur_angular : skip ${2=50%},${3=50%}
 # and 'axes=(all)'
 #@cli : $ image.jpg blur_bloom ,
 blur_bloom : check "${1=1}>=0 && ${2=2}>=0 && isint(${3=5}) && $3>=0 && isint(${5=1}) && $5>=0 && $5<=4 &&
-                    isnum(${6=0})" skip ${4=+},${7=}
+                    isnum(${6=0})" skip "${4=+},${7=}"
   e[^-1] "Apply bloom effect on image$?, with amplitude $1, ratio $2, $3 iterations, blend operator '$4' and "\
          ${"arg 1+!$6,\"\",\"no \""}"scale normalization."
   if narg("$7") axes=$7, fi
@@ -21088,7 +21089,7 @@ _frame_painting : # Add color + texture to each frame part.
 #@cli : Insert selected pattern frame in selected images.
 #@cli : Default values: 'pattern=0' and 'constrain_size=0'.
 #@cli : $ image.jpg frame_pattern 8
-frame_pattern : check $1>=3 skip ${2=0},${3=}
+frame_pattern : check $1>=3 skip "${2=0},${3=}"
   to_colormode 0
   if ${"is_image_arg $2"} # Frame from specified image.
     e[^-1] "Insert $1x$1 pattern frame on image$?, using frame image$2."
@@ -25274,7 +25275,7 @@ fitratio_wh :
 #@cli fitscreen : width,height,_depth,_minimal_size[%],_maximal_size[%] : [image],_minimal_size[%],_maximal_size[%]
 #@cli : Return the 'ideal' size WxH for a window intended to display an image of specified size on screen.
 #@cli : Default values: 'depth=1', 'minimal_size=128' and 'maximal_size=85%'.
-fitscreen : skip ${2=},${3=},${4=},${5=}
+fitscreen : skip "${2=},${3=},${4=},${5=}"
   if ${"is_image_arg $1"}
     l$1 W,H,D={[w,h,d]} endl if narg($2) m=$2 else m=25% fi if narg($3) M=$3 else M=85% fi
   else
@@ -31351,7 +31352,7 @@ _x_tictactoe6 : # Generate a +- diagonal stroke and his mask.
 #@cli : Launch the interactive image warper.
 #@cli : Default values: 'nb_keypoints_xgrid=nb_keypoints_ygrid=2', 'nb_keypoints_contours=0' and 'preview_fidelity=1'.
 x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2 && isint(${3=0}) && $3>=0 &&
-                isint(${4=1}) && $4>=0 && $4<=4 && ${6=0.5}>=0 && $6<=1" skip ${5=} check_display $0
+                isint(${4=1}) && $4>=0 && $4<=4 && ${6=0.5}>=0 && $6<=1" skip "${5=}" check_display $0
   if !$! error[0--3] "Command '$0': Requires at least one input image!" return fi
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
   e[] "\n
@@ -33100,7 +33101,7 @@ fx_array_preview :
 # "http://www.gimpchat.com/viewtopic.php?f=28&t=10047")
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2014/27/03</i>.</small>")
-fx_asciiart : skip ${10=},"${11=}","${12=}"
+fx_asciiart : skip "${10=},${11=},${12=}"
   repeat $! l[$>] to_rgb
     apply_gamma {10^$7} b $8% n 0,255
     if $1==0 dict="$2"
