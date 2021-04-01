@@ -62,9 +62,9 @@ Source: build64-gimp\libfftw3-3.dll; DestDir: {app}
 Source: build64-gimp\libpng16-16.dll; DestDir: {app}
 Source: build64-gimp\Qt5Core.dll; DestDir: {app}
 Source: build64-gimp\libdouble-conversion.dll; DestDir: {app}
-Source: build64-gimp\libicuin67.dll; DestDir: {app}
-Source: build64-gimp\libicuuc67.dll; DestDir: {app}
-Source: build64-gimp\libicudt67.dll; DestDir: {app}
+Source: build64-gimp\libicuin68.dll; DestDir: {app}
+Source: build64-gimp\libicuuc68.dll; DestDir: {app}
+Source: build64-gimp\libicudt68.dll; DestDir: {app}
 Source: build64-gimp\libpcre2-16-0.dll; DestDir: {app}
 Source: build64-gimp\Qt5Gui.dll; DestDir: {app}
 Source: build64-gimp\libharfbuzz-0.dll; DestDir: {app}
