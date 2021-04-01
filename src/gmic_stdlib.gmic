@@ -5848,21 +5848,25 @@ gmd2ascii :
     . # [0] = Output, [1] = Input
     eval. ">
       begin("${-_gmd_tokens}${-_gmd_write}${-_gmd_vt100}"
-        is_blockquote = is_code_block = 0;
+        is_blockquote = is_code_block = is_center = is_right = 0;
         ref(vector1024(),tmp);
+        const nbcols = "${-shell_cols}";
+        ref(vector(#nbcols,_' '),whiteline);
       );
       c = i;
 
       c==_'\n'?(
-        is_blockquote?write([vt100_n,'\n  > ',vt100_m]):
-        is_code_block?write('\n  '):
+        is_blockquote ? write([vt100_n,'\n  > ',vt100_m]):
+        is_code_block ? write('\n  '):
         write(c);
+        is_center ? write(whiteline,nbcols/4):
+        is_right ? write(whiteline,nbcols/2);
       ):
       c>0?write(c):
       (
         isin(c,e_bold_a,e_bold_u,e_bold_italic_a,e_bold_italic_u,e_italic_a,e_italic_u,
              e_strikethrough,e_underline,e_url,e_page_link,e_formula) ? write(vt100_n):
-        isin(c,e_bullet,e_subbullet,e_subsubbullet,e_center,e_right) ? write('\n'):
+        isin(c,e_bullet,e_subbullet,e_subsubbullet) ? write(_'\n'):
         isin(c,e_section,e_subsection,e_subsubsection,e_subsubsubsection) ? write([vt100_n,'\n\n']):
 
         c==s_section ? (write_nl(); write([_'\n',vt100_r,vt100_b,'# '])):
@@ -5876,8 +5880,11 @@ gmd2ascii :
         c==s_bullet ? write(' * '):
         c==s_subbullet ? write('   - '):
         c==s_subsubbullet ? write('     + '):
-        isin(c,s_center,s_tab) ? write('    '):
-        isin(c,s_right,s_tab) ? write('            '):
+        c==s_center ? (write(whiteline,nbcols/4); is_center = 1):
+        c==e_center ? (write(_'\n'); is_center = 0):
+        c==s_right ? (write(whiteline,nbcols/2); is_right = 1):
+        c==e_right ? (write(_'\n'); is_right = 0):
+        c==s_tab ? write(whiteline,4):
         isin(c,s_table,s_htable,s_vtable,s_hvtable,n_table) ? (write_nl(); write([vt100_r,' | ',vt100_n])):
         c==m_table ? write([vt100_r,' | ',vt100_n]):
         c==s_blockquote ? (write([['  > '],vt100_m]); is_blockquote = 1):
