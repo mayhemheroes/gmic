@@ -40,39 +40,14 @@ Source: build64-gimp\platforms\qwebgl.dll; DestDir: {app}\platforms
 Source: build64-gimp\platforms\qwindows.dll; DestDir: {app}\platforms
 Source: build64-gimp\updatexxx.gmic; DestDir: {userappdata}\gmic; Flags: ignoreversion
 Source: build64-gimp\gmic_cluts.gmz; DestDir: {userappdata}\gmic; Flags: ignoreversion
-Source: build64-gimp\libgcc_s_seh-1.dll; DestDir: {app}
-Source: build64-gimp\libwinpthread-1.dll; DestDir: {app}
-Source: build64-gimp\libgomp-1.dll; DestDir: {app}
-Source: build64-gimp\libstdc++-6.dll; DestDir: {app}
-Source: build64-gimp\libcurl-4.dll; DestDir: {app}
-Source: build64-gimp\libbrotlidec.dll; DestDir: {app}
-Source: build64-gimp\libbrotlicommon.dll; DestDir: {app}
-Source: build64-gimp\libcrypto-1_1-x64.dll; DestDir: {app}
-Source: build64-gimp\libidn2-0.dll; DestDir: {app}
-Source: build64-gimp\libiconv-2.dll; DestDir: {app}
-Source: build64-gimp\libintl-8.dll; DestDir: {app}
-Source: build64-gimp\libunistring-2.dll; DestDir: {app}
-Source: build64-gimp\libnghttp2-14.dll; DestDir: {app}
-Source: build64-gimp\libpsl-5.dll; DestDir: {app}
-Source: build64-gimp\libssh2-1.dll; DestDir: {app}
-Source: build64-gimp\zlib1.dll; DestDir: {app}
-Source: build64-gimp\libssl-1_1-x64.dll; DestDir: {app}
-Source: build64-gimp\libzstd.dll; DestDir: {app}
-Source: build64-gimp\libfftw3-3.dll; DestDir: {app}
-Source: build64-gimp\libpng16-16.dll; DestDir: {app}
-Source: build64-gimp\Qt5Core.dll; DestDir: {app}
+
 Source: build64-gimp\libdouble-conversion.dll; DestDir: {app}
-Source: build64-gimp\libicuin68.dll; DestDir: {app}
-Source: build64-gimp\libicuuc68.dll; DestDir: {app}
-Source: build64-gimp\libicudt68.dll; DestDir: {app}
-Source: build64-gimp\libpcre2-16-0.dll; DestDir: {app}
-Source: build64-gimp\Qt5Gui.dll; DestDir: {app}
+Source: build64-gimp\libfftw3-3.dll; DestDir: {app}
 Source: build64-gimp\libharfbuzz-0.dll; DestDir: {app}
-Source: build64-gimp\libgraphite2.dll; DestDir: {app}
-Source: build64-gimp\libfreetype-6.dll; DestDir: {app}
-Source: build64-gimp\libbz2-1.dll; DestDir: {app}
-Source: build64-gimp\libglib-2.0-0.dll; DestDir: {app}
 Source: build64-gimp\libpcre-1.dll; DestDir: {app}
+Source: build64-gimp\libpcre2-16-0.dll; DestDir: {app}
+Source: build64-gimp\Qt5Core.dll; DestDir: {app}
+Source: build64-gimp\Qt5Gui.dll; DestDir: {app}
 Source: build64-gimp\Qt5Network.dll; DestDir: {app}
 Source: build64-gimp\Qt5Widgets.dll; DestDir: {app}
 
