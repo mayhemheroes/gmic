@@ -43,7 +43,6 @@ Source: build64-gimp\gmic_cluts.gmz; DestDir: {userappdata}\gmic; Flags: ignorev
 
 Source: build64-gimp\libdouble-conversion.dll; DestDir: {app}
 Source: build64-gimp\libfftw3-3.dll; DestDir: {app}
-Source: build64-gimp\libharfbuzz-0.dll; DestDir: {app}
 Source: build64-gimp\libpcre-1.dll; DestDir: {app}
 Source: build64-gimp\libpcre2-16-0.dll; DestDir: {app}
 Source: build64-gimp\Qt5Core.dll; DestDir: {app}
