@@ -38,7 +38,7 @@ Source: build64-gimp\platforms\qminimal.dll; DestDir: {app}\platforms
 Source: build64-gimp\platforms\qoffscreen.dll; DestDir: {app}\platforms
 Source: build64-gimp\platforms\qwebgl.dll; DestDir: {app}\platforms
 Source: build64-gimp\platforms\qwindows.dll; DestDir: {app}\platforms
-Source: build64-gimp\styles\qwindowsvistastyle.dll; DestDir: {app}\platforms
+Source: build64-gimp\styles\qwindowsvistastyle.dll; DestDir: {app}\styles
 Source: build64-gimp\updatexxx.gmic; DestDir: {userappdata}\gmic; Flags: ignoreversion
 Source: build64-gimp\gmic_cluts.gmz; DestDir: {userappdata}\gmic; Flags: ignoreversion
 
