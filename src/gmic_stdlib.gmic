@@ -43648,18 +43648,54 @@ fx_guided_lightrays :
     # Draw lightrays.
     100%,100%
     eval.. "*
+     area(x0,y0,x1,y1,x2,y2) = (
+       d01 = norm(x1 - x0, y1 - y0);
+       d02 = norm(x2 - x0, y2 - y0);
+       d12 = norm(x2 - x1, y2 - y1);
+       p = 0.5*(d01 + d02 + d12);
+       sqrt(p*(p-d01)*(p-d02)*(p-d12));
+     );
+
       const L = $2<1?$2:$2^5;
       const Xl = $7<0?3*$7:$7>100?100+3*($7-100):$7;
       const Yl = $8<0?3*$8:$8>100?100+3*($8-100):$8;
       const xl = Xl*(w - 1)/100;
       const yl = Yl*(h - 1)/100;
       "$cond" && u<=$4%?(
-        v0 = y - 0.5 - yl;
-        v1 = y + 0.5 - yl;
-        (x - xl)*(y - yl)>0?(
-          u0 = x + 0.5 - xl; u1 = x - 0.5 - xl):(
-          u0 = x - 0.5 - xl; u1 = x + 0.5 - xl);
-        polygon(#-1,3,xl,yl,xl + L*u0,yl + L*v0,xl + L*u1,yl + L*v1,-1,255))"
+        # v0 = y - 0.5 - yl;
+        # v1 = y + 0.5 - yl;
+        # (x - xl)*(y - yl)>0?(
+        #   u0 = x + 0.5 - xl; u1 = x - 0.5 - xl):(
+        #   u0 = x - 0.5 - xl; u1 = x + 0.5 - xl);
+        # polygon(#-1,3,xl,yl,xl + L*u0,yl + L*v0,xl + L*u1,yl + L*v1,-1,255))
+
+      xp = x - 0.5;
+      yp = y - 0.5;
+      xn = x + 0.5;
+      yn = y + 0.5;
+
+      y==yl?(
+        y0 = yp; y1 = yn;
+        x<xl?(x0 = x1 = xp): # West
+             (x0 = x1 = yn)  # East
+      ):x==xl?(
+        x0 = xp; x1 = xn;
+        y<yl?(y0 = y1 = yp): # North
+             (y0 = y1 = yn)  # South
+      ):(x - xl)*(y - yl)>0?( # N-W and S-E
+        x0 = xp; y0 = yn;
+        x1 = xn; y1 = yp;
+      ):( # N-E and S-W
+        x0 = xp; y0 = yp;
+        x1 = xn; y1 = yn;
+      );
+      u = x - xl; v = y - yl;
+      u0 = x0 - xl; v0 = y0 - yl;
+      u1 = x1 - xl; v1 = y1 - yl;
+      polygon(#-1,3,xl,yl,xl + L*u0,yl + L*v0,xl + L*u1,yl + L*v1,-1,255);
+      polygon(#-1,2,xl,yl,xl + L*u,yl + L*v,-1,255);
+     )"
+
     equalize. {iM},1,{iM} n. 0,1 power={10^(-$1)} pow. {max(1e-2,$power)} b. $5% n. 0,255
     i[-2] (${9-11}:cyzx) r.. .,.,1,3 a[-2,-1] c
     k. gui_set_layer_mode $bmode gui_set_layer_opacity $13
