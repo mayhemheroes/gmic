@@ -43621,9 +43621,9 @@ fx_equalize_shadow_preview :
 
 #@gui Guided Light Rays : fx_guided_lightrays,fx_guided_lightrays_preview(1) : +
 #@gui : Amplitude = float(0,-5,5)
-#@gui : Ray Length = float(3,0,10)
+#@gui : Ray Length = float(2,0,2)
 #@gui : Mode = choice("Dense","Boundary")
-#@gui : Density (%) = float(50,0,100)
+#@gui : Density (%) = float(80,0,100)
 #@gui : Smoothness (%) = float(0.1,0,5)
 #@gui : Threshold (%) = float(50,0,100)
 #@gui : Light Position = point(50,50,0,1,255,255,0,-128,1%)
@@ -43632,7 +43632,7 @@ fx_equalize_shadow_preview :
 #@gui : "Luminance","Overlay","Soft Light","Value")
 #@gui : Opacity (%) = float(100,0,100)
 #@gui : sep = separator()
-#@gui : Preview Light Shape = bool(0)
+#@gui : Preview Light Shape = bool(1)
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2021/04/06</i>.</small>")
 fx_guided_lightrays :
@@ -43648,17 +43648,18 @@ fx_guided_lightrays :
     # Draw lightrays.
     100%,100%
     eval.. "*
+      const L = $2<1?$2:$2^5;
       const Xl = $7<0?3*$7:$7>100?100+3*($7-100):$7;
       const Yl = $8<0?3*$8:$8>100?100+3*($8-100):$8;
       const xl = Xl*(w - 1)/100;
       const yl = Yl*(h - 1)/100;
-      "$cond" && u<=4%?(
+      "$cond" && u<=$4%?(
         v0 = y - 0.5 - yl;
         v1 = y + 0.5 - yl;
         (x - xl)*(y - yl)>0?(
           u0 = x + 0.5 - xl; u1 = x - 0.5 - xl):(
           u0 = x - 0.5 - xl; u1 = x + 0.5 - xl);
-        polygon(#-1,3,xl,yl,xl + $2*u0,yl + $2*v0,xl + $2*u1,yl + $2*v1,-1,255))"
+        polygon(#-1,3,xl,yl,xl + L*u0,yl + L*v0,xl + L*u1,yl + L*v1,-1,255))"
     equalize. {iM},1,{iM} n. 0,1 power={10^(-$1)} pow. {max(1e-2,$power)} b. $5% n. 0,255
     i[-2] (${9-11}:cyzx) r.. .,.,1,3 a[-2,-1] c
     k. gui_set_layer_mode $bmode gui_set_layer_opacity $13
