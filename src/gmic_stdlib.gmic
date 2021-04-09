@@ -7481,7 +7481,7 @@ update_deprecate : check "isint($1) && $1>0 && $1<999"
 
 # update_download_version.
 # Update file versions on G'MIC download page, with specified version number.
-# $1 = version number (e.g. '2.9.7').
+# $1 = version number (e.g. '2.9.8').
 update_download_version : check "
     is_digit(c)=(c>=_'0' && c<=_'9');
     ver = ['${1=undefined}'];
@@ -8226,6 +8226,7 @@ update_reference_html : check "isbool(${1=0})"
 
   # Generate reference pages in html.
   rm
+  x "cp -rf "$HOME/work/src/gmic-community/reference/images" ."
   reference html,$HOME/work/src/gmic-community/reference
 
   # Upload to G'MIC server.
@@ -10119,11 +10120,17 @@ norm :
 #@cli : $ image.jpg split x,2 normalize[-1] 64,196 append x
 #@cli : $$
 
+#@cli normalize_l2
+#@cli : Normalize selected images such that they have a unit L2 norm.
+normalize_l2 :
+  e[^-1] "Normalize image$?, s.t they have a unit L2 norm."
+  repeat $! /[$>] {norm={$>,in};if(norm!=0,norm,1)} done
+
 #@cli normalize_sum
-#@cli : Normalize selected images with a unitary sum.
+#@cli : Normalize selected images such that they have a unit sum.
 #@cli : $ image.jpg +histogram normalize_sum[-1] display_graph[-1] 400,300
 normalize_sum :
-  e[^-1] "Normalize image$? with a unitary sum."
+  e[^-1] "Normalize image$?, s.t they have a unit sum."
   repeat $! /[$>] {sum={$>,is};if(sum!=0,sum,1)} done
 
 #@cli not
@@ -32951,7 +32958,7 @@ fx_gmicky_preview :
 #@gui : - <b>2019/12/04</b> : version <i>2.8.0</i>.\n
 #@gui : - <b>2020/03/28</b> : version <i>2.9.0</i>.\n
 #@gui : - <span foreground="purple"><b>2021/04/07</b> : version <i>2.9.7</i> (Current stable).</span>\n
-##@gui : - <b>2021/03/08</b> : version <i>2.9.8</i> (Current pre-release).\n
+#@gui : - <b>2021/04/09</b> : version <i>2.9.8</i> (Current pre-release).\n
 #@gui : "}
 #@gui : sep = separator()
 #@gui : url = link{"View changelog to upcoming major version (3.0)","https://discuss.pixls.us/t/on-the-road-to-3-0"}
