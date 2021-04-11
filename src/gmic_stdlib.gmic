@@ -18450,6 +18450,19 @@ orthogonalize :
     fi
   endl done
 
+#@cli meigen : m>=1
+#@cli : Compute an approximation of the 'm' largest eigenvalues and eigenvectors of selected symmetric matrices,
+#@cli : using the Arnoldi iteration method (https://en.wikipedia.org/wiki/Arnoldi_iteration).
+#@cli : A larger 'm' goes with better numerical precision.
+#@cli : $ (1,0,0;0,2,0;0,0,3) +meigen 3
+meigen : check "isint($1) && $1>0"
+  if $!!=1 s="ce" else s="x" fi
+  e[^-1] "Compute $1 largest eigen-values of matri"$s"$?."
+  repeat $! l[$>] nm={n}
+    if w!=h" || "d!=1" || "s!=1 v 1 error[0--5] "Command 'meigen': Image '"$nm"' is not a square matrix." fi
+    eval ${-math_lib}" store(meig(crop(),$1,h),'val',1,min($1,h))" $val k. nm $nm
+  endl done
+
 #@cli mproj : [dictionary],_method,_max_iter={ 0=auto | >0 },_max_residual>=0 : (+)
 #@cli : Find best matching projection of selected matrices onto the span of an over-complete
 #@cli : dictionary D, using the orthogonal projection or Matching Pursuit algorithm.
@@ -25727,6 +25740,37 @@ math_lib :
   # Distance from segment [A,B] to segment [C,D]
   dist(A,B,C,D) = (
     min(dist(A,C,D),dist(B,C,D),dist(C,A,B),dist(D,A,B));
+  );
+
+  # Return the 'm' largest eigenvalues of a (large) square matrix A,
+  # using the Arnoldi iteration method (https://en.wikipedia.org/wiki/Arnoldi_iteration).
+  # A larger 'm' goes with better numerical precision.
+  meig(A,m,n) = (
+    unref(meig_m,meig_n);
+    const meig_n = n;
+    const meig_m = min(m,meig_n);
+
+    # Initialize data.
+    ref(vector(#meig_m*meig_n),meig_V);
+    ref(vector(#meig_m^2),meig_H);
+    ref(expr('u(-1,1)',1,meig_n),meig_vj); meig_vj/=norm(meig_vj);
+
+    # Iteration loop.
+    for (meig_j = 0, meig_j<meig_m, ++meig_j,
+      copy(meig_V[meig_j*meig_n],meig_vj,meig_n);
+      meig_vj = A*meig_vj;
+      for (meig_i = 0, meig_i<=meig_j, ++meig_i,
+        ref(meig_V[meig_i*meig_n,meig_n],meig_vi);
+        meig_d = dot(meig_vj,meig_vi);
+        meig_H[meig_j*meig_m + meig_i] = meig_d;
+        meig_vj-=meig_d*meig_vi;
+      );
+      meig_nvj = norm(meig_vj);
+      meig_H[meig_j*meig_m + meig_j + 1] = meig_nvj;
+      meig_nvj<1e-12?break();
+      meig_vj/=meig_nvj;
+    );
+    eig(meig_H)[0,m];
   );
 
   # Dichotomic search : Find x in [xmin,xmax] s.a f(x) = target, with a epsilon-precision
