@@ -11035,9 +11035,9 @@ lab82rgb : skip "${1=,}"
   e[^-1] "Convert color representation of image$? from Lab8 to RGB, using the "${arg\ 1+$illu,D50,D65,E}" illuminant."
   repeat $!
     sh[$>] 0 /. 2.55 rm.
-    sh[$>] 1 /. 1.275 -. 100 rm.
-    sh[$>] 2 /. 1.15909 -. 110 rm.
-  done lab2rgb $illu
+    sh[$>] 1 /. 0.85 -. 127 rm.
+    sh[$>] 2 /. 0.836 -. 149 rm.
+  done lab2rgb $illu c 0,255
 
 #@cli lch2lab
 #@cli : Convert color representation of selected images from Lch to Lab.
@@ -11061,11 +11061,12 @@ lch2rgb : skip "${1=,}"
 lch82rgb : skip "${1=,}"
   l[] if isnum("$1") illu={"$1>1?2:$1>0?1:0"} else if ["'$1'"]!=',' noarg fi illu=2 fi onfail noarg illu=2 endl
   e[^-1] "Convert color representation of image$? from Lch8 to RGB, using the "${arg\ 1+$illu,D50,D65,E}" illuminant."
+  pi,facth={[pi,255/(2*pi)]}
   repeat $!
     sh[$>] 0 /. 2.55 rm.
-    sh[$>] 1 /. 1.88889 rm.
-    sh[$>] 2 /. 40.5845 -. 3.14159 rm.
-  done lch2rgb $illu
+    sh[$>] 1 /. 1.1086 rm.
+    sh[$>] 2 /. $facth -. $pi rm.
+  done lch2rgb $illu c 0,255
 
 #@cli luminance
 #@cli : Compute luminance of selected sRGB images.
@@ -11836,9 +11837,9 @@ rgb2lab8 : skip "${1=,}"
   e[^-1] "Convert color representation of image$? from RGB to Lab8, using the "${arg\ 1+$illu,D50,D65,E}" illuminant."
   rgb2lab $illu repeat $!
     sh[$>] 0 *. 2.55 rm.
-    sh[$>] 1 +. 100 *. 1.275 rm.
-    sh[$>] 2 +. 110 *. 1.15909 rm.
-  done
+    sh[$>] 1 +. 127 *. 0.85 rm.
+    sh[$>] 2 +. 149 *. 0.836 rm.
+  done c 0,255
 
 #@cli rgb2lch : illuminant={ 0=D50 | 1=D65 | 2=E } : (no arg)
 #@cli : Convert color representation of selected images from RGB to Lch.
@@ -11856,11 +11857,12 @@ rgb2lch : skip "${1=,}"
 rgb2lch8 : skip "${1=,}"
   l[] if isnum("$1") illu={"$1>1?2:$1>0?1:0"} else if ["'$1'"]!=',' noarg fi illu=2 fi onfail noarg illu=2 endl
   e[^-1] "Convert color representation of image$? from RGB to Lch8, using the "${arg\ 1+$illu,D50,D65,E}" illuminant."
+  pi,facth={[pi,255/(2*pi)]}
   rgb2lch $illu repeat $!
     sh[$>] 0 *. 2.55 rm.
-    sh[$>] 1 *. 1.88889 rm.
-    sh[$>] 2 +. 3.14159 *. 40.5845 rm.
-  done
+    sh[$>] 1 *. 1.1086 rm.
+    sh[$>] 2 +. $pi *. $facth rm.
+  done c 0,255
 
 #@cli rgb2luv
 #@cli : Convert color representation of selected images from RGB to LUV.
