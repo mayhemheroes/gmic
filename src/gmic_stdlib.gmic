@@ -372,12 +372,12 @@ reference : skip "${2=}"
 "inside parentheses can be ',' (column separator), ';' (row separator), '/' (slice separator) or "\
 "'^' (channel separator). For instance, expression '(1,2,3;4,5,6;7,8,9)' creates a 3x3 matrix (scalar image), "\
 "with values running from 1 to 9. "\n\
-"  - '('string'[:delimiter])[xN]': Insert one or N new images from specified string, by filling "\
+"  - '(\\'string\\'[:delimiter])[xN]': Insert one or N new images from specified string, by filling "\
 "the images with the character codes composing the string. When specified, 'delimiter' tells about "\
 "the main orientation of the image. Delimiter can be 'x' (eq. to ',' which is the default), "\
 "'y' (eq. to ';'), 'z' (eq. to '/') or 'c' (eq. to '^'). "\
 "When specified delimiter is ',', ';', '/' or '^', the expression is actually equivalent to "\
-"'({'string'[:delimiter]})[xN]' (see section ''Substitution Rules'' for more information on the syntax)."\n\
+"'({\\'string\\'[:delimiter]})[xN]' (see section ''Substitution Rules'' for more information on the syntax)."\n\
 "  - '0[xN]': Insert one or N new `empty` images, containing no pixel data. "\
 "Empty images are used only in rare occasions."\n\
 \n\
@@ -569,7 +569,7 @@ reference : skip "${2=}"
 "G'MIC pipeline (see command ''status''). Expression '${}' thus stands for the current status value."\n\
 "* '{``string}' (starting with two backquotes) is substituted by a double-quoted version of the specified string."\n\
 "* '{/string}' is substituted by the escaped version of the specified string."\n\
-"* '{'string'[:delimiter]}' (between single quotes) is substituted by the sequence of character codes "\
+"* '{\\'string\\'[:delimiter]}' (between single quotes) is substituted by the sequence of character codes "\
 "that composes the specified string, separated by specified delimiter. Possible delimiters are "\
 "',' (default), ';', '/', '^' or ' '. For instance, item '{'foo'}' is substituted by '102,111,111' and "\
 "'{'foo':;}' by '102;111;111'."\n\
@@ -4229,7 +4229,7 @@ parse_cli_trigger_ascii :
       begin(ref([lowercase(['$1']),_'@'],str));
       ref(lowercase(name(#y)),nm);
       !find(nm,str)?y:-1"
-    discard. -1 if h k[{@-1}] else rm fi
+    discard. -1 if h k[{i}] else rm fi
   fi
 
 #
@@ -7376,7 +7376,7 @@ _sample :
 #@cli : If a single variable name is specified, all images of the selection are assigned
 #@cli : to the named variable. Otherwise, there must be as many variable names as images
 #@cli : in the selection, and each selected image is assigned to each specified named variable.
-#@cli : Use command 'input $variable' to bring the stored images back in the list.
+#@cli : Use command `input $variable_name` to bring the stored images back in the list.
 #@cli : Default value: 'is_compressed=0'.
 #@cli : $ sample eagle,earth store img1,img2 input $img2 $img1
 
@@ -8635,7 +8635,7 @@ upload_filters :
   x "cd "$HOME"/work/src/gmic-community && git pull"
 
   # Define the list of compatible versions.
-  (297,$_version) store. compat
+  (297,298,$_version) store. compat
 
   # Import filters from stdlib and community.
   files $HOME/work/src/gmic-community/include/*.gmic
@@ -9451,8 +9451,12 @@ mul_complex :
 #@cli : $ image.jpg +apply_curve 1,0,0,128,255,255,0
 apply_curve : check "${1=1}>=0 && $1<=1" skip ${2=0},${3=100}
   e[^-1] "Apply intensity curve with smoothness $1 and keypoints (${2--1}) on image$?."
-  function1d ${^0}
-  repeat $!-1 l[$>,-1] s.. c map[^-1] .,1 rm. a c endl done
+
+  # Determine value mapping.
+  (${^0,1}) r. 2,{w/2},1,1,-1 +z. 0,0 vm,vM={[im,iM]} n. 0,8191 j.. . function1d[] $1,{-2,^} rm[-3,-2]
+
+  # Apply value mapping.
+  -[^-1] $vm *[^-1] {8191/($vM-$vm)} map[^-1] .,1 rm.
 
 #@cli apply_gamma : gamma>=0
 #@cli : Apply gamma correction to selected images.
@@ -11035,9 +11039,9 @@ lab82rgb : skip "${1=,}"
   e[^-1] "Convert color representation of image$? from Lab8 to RGB, using the "${arg\ 1+$illu,D50,D65,E}" illuminant."
   repeat $!
     sh[$>] 0 /. 2.55 rm.
-    sh[$>] 1 /. 1.275 -. 100 rm.
-    sh[$>] 2 /. 1.15909 -. 110 rm.
-  done lab2rgb $illu
+    sh[$>] 1 /. 0.85 -. 127 rm.
+    sh[$>] 2 /. 0.836 -. 149 rm.
+  done lab2rgb $illu c 0,255
 
 #@cli lch2lab
 #@cli : Convert color representation of selected images from Lch to Lab.
@@ -11061,11 +11065,12 @@ lch2rgb : skip "${1=,}"
 lch82rgb : skip "${1=,}"
   l[] if isnum("$1") illu={"$1>1?2:$1>0?1:0"} else if ["'$1'"]!=',' noarg fi illu=2 fi onfail noarg illu=2 endl
   e[^-1] "Convert color representation of image$? from Lch8 to RGB, using the "${arg\ 1+$illu,D50,D65,E}" illuminant."
+  pi,facth={[pi,255/(2*pi)]}
   repeat $!
     sh[$>] 0 /. 2.55 rm.
-    sh[$>] 1 /. 1.88889 rm.
-    sh[$>] 2 /. 40.5845 -. 3.14159 rm.
-  done lch2rgb $illu
+    sh[$>] 1 /. 1.1086 rm.
+    sh[$>] 2 /. $facth -. $pi rm.
+  done lch2rgb $illu c 0,255
 
 #@cli luminance
 #@cli : Compute luminance of selected sRGB images.
@@ -11836,9 +11841,9 @@ rgb2lab8 : skip "${1=,}"
   e[^-1] "Convert color representation of image$? from RGB to Lab8, using the "${arg\ 1+$illu,D50,D65,E}" illuminant."
   rgb2lab $illu repeat $!
     sh[$>] 0 *. 2.55 rm.
-    sh[$>] 1 +. 100 *. 1.275 rm.
-    sh[$>] 2 +. 110 *. 1.15909 rm.
-  done
+    sh[$>] 1 +. 127 *. 0.85 rm.
+    sh[$>] 2 +. 149 *. 0.836 rm.
+  done c 0,255
 
 #@cli rgb2lch : illuminant={ 0=D50 | 1=D65 | 2=E } : (no arg)
 #@cli : Convert color representation of selected images from RGB to Lch.
@@ -11856,11 +11861,12 @@ rgb2lch : skip "${1=,}"
 rgb2lch8 : skip "${1=,}"
   l[] if isnum("$1") illu={"$1>1?2:$1>0?1:0"} else if ["'$1'"]!=',' noarg fi illu=2 fi onfail noarg illu=2 endl
   e[^-1] "Convert color representation of image$? from RGB to Lch8, using the "${arg\ 1+$illu,D50,D65,E}" illuminant."
+  pi,facth={[pi,255/(2*pi)]}
   rgb2lch $illu repeat $!
     sh[$>] 0 *. 2.55 rm.
-    sh[$>] 1 *. 1.88889 rm.
-    sh[$>] 2 +. 3.14159 *. 40.5845 rm.
-  done
+    sh[$>] 1 *. 1.1086 rm.
+    sh[$>] 2 +. $pi *. $facth rm.
+  done c 0,255
 
 #@cli rgb2luv
 #@cli : Convert color representation of selected images from RGB to LUV.
@@ -18450,6 +18456,19 @@ orthogonalize :
     fi
   endl done
 
+#@cli meigen : m>=1
+#@cli : Compute an approximation of the 'm' largest eigenvalues and eigenvectors of selected symmetric matrices,
+#@cli : using the Arnoldi iteration method (https://en.wikipedia.org/wiki/Arnoldi_iteration).
+#@cli : A larger 'm' goes with better numerical precision.
+#@cli : $ (1,0,0;0,2,0;0,0,3) +meigen 3
+meigen : check "isint($1) && $1>0"
+  if $!!=1 s="ce" else s="x" fi
+  e[^-1] "Compute $1 largest eigen-values of matri"$s"$?."
+  repeat $! l[$>] nm={n}
+    if w!=h" || "d!=1" || "s!=1 v 1 error[0--5] "Command 'meigen': Image '"$nm"' is not a square matrix." fi
+    eval ${-math_lib}" store(meig(crop(),$1,h),'val',1,min($1,h))" $val k. nm $nm
+  endl done
+
 #@cli mproj : [dictionary],_method,_max_iter={ 0=auto | >0 },_max_residual>=0 : (+)
 #@cli : Find best matching projection of selected matrices onto the span of an over-complete
 #@cli : dictionary D, using the orthogonal projection or Matching Pursuit algorithm.
@@ -24213,7 +24232,7 @@ morph_rbf : check "$1>=0.5"
     "with "$nbf" inner frames and keypoints ($*)."
   $=arg N={($#-1)/4}
   if int($N)!=$N error[0--2] "Command 'morph_rbf': Wrong number of arguments ($#)." fi
-  r[^0] [0],3
+  ri[^0] [0],3
   repeat $!-1 nm={$>,n} l[$<,{$<+1}]
     e[] "\r > Morph image "$>" to image "{$>+1}".    "
 
@@ -25729,6 +25748,37 @@ math_lib :
     min(dist(A,C,D),dist(B,C,D),dist(C,A,B),dist(D,A,B));
   );
 
+  # Return the 'm' largest eigenvalues of a (large) square matrix A,
+  # using the Arnoldi iteration method (https://en.wikipedia.org/wiki/Arnoldi_iteration).
+  # A larger 'm' goes with better numerical precision.
+  meig(A,m,n) = (
+    unref(meig_m,meig_n);
+    const meig_n = n;
+    const meig_m = min(m,meig_n);
+
+    # Initialize data.
+    ref(vector(#meig_m*meig_n),meig_V);
+    ref(vector(#meig_m^2),meig_H);
+    ref(expr('u(-1,1)',1,meig_n),meig_vj); meig_vj/=norm(meig_vj);
+
+    # Iteration loop.
+    for (meig_j = 0, meig_j<meig_m, ++meig_j,
+      copy(meig_V[meig_j*meig_n],meig_vj,meig_n);
+      meig_vj = A*meig_vj;
+      for (meig_i = 0, meig_i<=meig_j, ++meig_i,
+        ref(meig_V[meig_i*meig_n,meig_n],meig_vi);
+        meig_d = dot(meig_vj,meig_vi);
+        meig_H[meig_j*meig_m + meig_i] = meig_d;
+        meig_vj-=meig_d*meig_vi;
+      );
+      meig_nvj = norm(meig_vj);
+      meig_H[meig_j*meig_m + meig_j + 1] = meig_nvj;
+      meig_nvj<1e-12?break();
+      meig_vj/=meig_nvj;
+    );
+    eig(meig_H)[0,m];
+  );
+
   # Dichotomic search : Find x in [xmin,xmax] s.a f(x) = target, with a epsilon-precision
   search_dichotomic(fn_x,target,epsilon,xmin,xmax) = (
     # fn_x must be a strictly monotonic function !
@@ -26036,7 +26086,7 @@ max_whds :
 #@cli median_color
 #@cli : Return the median color value of the last selected image.
 median_color :
-  u "" s="" repeat s +channels. $> u ${}$s${med.} s=, rm. done
+  u {"expr('med(crop(#-1,0,0,0,y,w#-1,h#-1,d#-1,1))',1,3)"}
 
 #@cli min_w
 #@cli : Return the minimal width between selected images.
