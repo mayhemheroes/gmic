@@ -2039,7 +2039,7 @@ using namespace cimg_library;
 // [ int(6*gmic_varslots/7) -> gmic_varslots-1 ] : Slots for inter-thread global variables.
 #endif
 #ifndef gmic_comslots
-#define gmic_comslots 2048
+#define gmic_comslots 1024
 #endif
 #ifndef gmic_winslots
 #define gmic_winslots 10
