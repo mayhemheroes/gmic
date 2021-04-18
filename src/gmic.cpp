@@ -2035,8 +2035,8 @@ using namespace cimg_library;
 #define gmic_varslots 2048
 // gmic_varslots are divided in three parts:
 // [ 0 -> gmic_varslots/2 [ : Slots for regular variables.
-// [ gmic_varslots/2 -> 5*gmic_varslots/6 [ : Slots for global variables.
-// [ 5*gmic_varslots/6 -> gmic_varslots - 1 [ : Slots for inter-thread global variables.
+// [ gmic_varslots/2 -> int(5*gmic_varslots/6) - 1 ] : Slots for global variables.
+// [ int(5*gmic_varslots/6) -> gmic_varslots - 1 ] : Slots for inter-thread global variables.
 #endif
 #ifndef gmic_comslots
 #define gmic_comslots 1024
@@ -10300,7 +10300,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             g_list_c.assign(selection.height());
             cimg_forY(selection,l) {
               g_list[l].assign(images[selection[l]],images[selection[l]]?true:false);
-              g_list_c[l].assign(images_names[selection[l]],true);
+              CImg<char>::string(images_names[selection[l]]).move_to(g_list_c[l]);
             }
             print(images,0,"Output image%s as %s file '%s', with pixel type '%s'.",
                   gmic_selection.data(),
