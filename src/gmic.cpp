@@ -2034,9 +2034,9 @@ using namespace cimg_library;
 #ifndef gmic_varslots
 #define gmic_varslots 2048
 // gmic_varslots are divided in three parts:
-// [ 0 -> gmic_varslots/2 [ : Slots for regular variables.
-// [ gmic_varslots/2 -> 5*gmic_varslots/6 [ : Slots for global variables.
-// [ 5*gmic_varslots/6 -> gmic_varslots - 1 [ : Slots for inter-thread global variables.
+// [ 0 -> int(gmic_varslots/2) ] : Slots for regular variables.
+// [ int(gmic_varslots/2) -> int(6*gmic_varslots/7)-1 ] : Slots for global variables.
+// [ int(6*gmic_varslots/7) -> gmic_varslots-1 ] : Slots for inter-thread global variables.
 #endif
 #ifndef gmic_comslots
 #define gmic_comslots 1024
@@ -2664,8 +2664,8 @@ unsigned int gmic::hashcode(const char *const str, const bool is_variable) {
   if (is_variable) {
     for (const char *s = str; *s; ++s) (hash*=31)+=*s;
     if (*str=='_') {
-      if (str[1]=='_') return 5*gmic_varslots/6 + (hash%(gmic_varslots/6));
-      return gmic_varslots/2 + (hash%(2*gmic_varslots/6));
+      if (str[1]=='_') return 6*gmic_varslots/7 + (hash%(gmic_varslots - 6*gmic_varslots/7));
+      return gmic_varslots/2 + (hash%(6*gmic_varslots/7 - gmic_varslots/2));
     }
     return hash%(gmic_varslots/2);
   }
@@ -10300,7 +10300,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             g_list_c.assign(selection.height());
             cimg_forY(selection,l) {
               g_list[l].assign(images[selection[l]],images[selection[l]]?true:false);
-              g_list_c[l].assign(images_names[selection[l]],true);
+              CImg<char>::string(images_names[selection[l]]).move_to(g_list_c[l]);
             }
             print(images,0,"Output image%s as %s file '%s', with pixel type '%s'.",
                   gmic_selection.data(),
@@ -10535,7 +10535,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               gmic_instance.commands_has_arguments[i].assign(commands_has_arguments[i],true);
             }
             for (unsigned int i = 0; i<gmic_varslots; ++i) {
-              if (i>=5*gmic_varslots/6) { // Share inter-thread global variables
+              if (i>=6*gmic_varslots/7) { // Share inter-thread global variables
                 gmic_instance.variables[i] = variables[i];
                 gmic_instance.variables_names[i] = variables_names[i];
               } else {
