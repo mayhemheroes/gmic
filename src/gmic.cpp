@@ -2034,9 +2034,9 @@ using namespace cimg_library;
 #ifndef gmic_varslots
 #define gmic_varslots 2048
 // gmic_varslots are divided in three parts:
-// [ 0 -> gmic_varslots/2 [ : Slots for regular variables.
-// [ gmic_varslots/2 -> int(5*gmic_varslots/6) - 1 ] : Slots for global variables.
-// [ int(5*gmic_varslots/6) -> gmic_varslots - 1 ] : Slots for inter-thread global variables.
+// [ 0 -> int(gmic_varslots/2) ] : Slots for regular variables.
+// [ int(gmic_varslots/2) -> int(6*gmic_varslots/7)-1 ] : Slots for global variables.
+// [ int(6*gmic_varslots/7) -> gmic_varslots-1 ] : Slots for inter-thread global variables.
 #endif
 #ifndef gmic_comslots
 #define gmic_comslots 1024
@@ -2664,8 +2664,8 @@ unsigned int gmic::hashcode(const char *const str, const bool is_variable) {
   if (is_variable) {
     for (const char *s = str; *s; ++s) (hash*=31)+=*s;
     if (*str=='_') {
-      if (str[1]=='_') return 5*gmic_varslots/6 + (hash%(gmic_varslots/6));
-      return gmic_varslots/2 + (hash%(2*gmic_varslots/6));
+      if (str[1]=='_') return 6*gmic_varslots/7 + (hash%(gmic_varslots - 6*gmic_varslots/7));
+      return gmic_varslots/2 + (hash%(6*gmic_varslots/7 - gmic_varslots/2));
     }
     return hash%(gmic_varslots/2);
   }
@@ -10535,7 +10535,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               gmic_instance.commands_has_arguments[i].assign(commands_has_arguments[i],true);
             }
             for (unsigned int i = 0; i<gmic_varslots; ++i) {
-              if (i>=5*gmic_varslots/6) { // Share inter-thread global variables
+              if (i>=6*gmic_varslots/7) { // Share inter-thread global variables
                 gmic_instance.variables[i] = variables[i];
                 gmic_instance.variables_names[i] = variables_names[i];
               } else {
