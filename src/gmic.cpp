@@ -9380,7 +9380,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               unsigned int np = p;
               while (np<pend && arg[np] && arg[np]!=',') ++np;
               if (np<pend) {
-                CImg<T>(arg.data(p),1,++np - p,1,1,true).move_to(g_list_c);
+                CImg<T>(arg.data(p),++np - p,1,1,1,true).move_to(g_list_c);
                 g_list_c.back().back() = 0;
               }
               p = np;
