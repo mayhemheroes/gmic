@@ -14408,7 +14408,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         CImg<char> _filename(4096), filename_tmp(256), options(256);
         *cext = *_filename = *filename_tmp = *options = 0;
         bool is_network_file = false;
-        if (cimg_sscanf(argument,"%11[a-zA-Z]:%4095[^,],%255s",
+        if (cimg_sscanf(argument,"%11[a-zA-Z0-9]:%4095[^,],%255s",
                         cext,_filename.data(),options.data())<2 ||
             !cext[1] || // Length of 'ext' must be >=2 (avoid case 'C:\\...' on Windows)
             !cimg::strcasecmp(cext,"http") || !cimg::strcasecmp(cext,"https")) {
