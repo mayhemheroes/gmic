@@ -9380,7 +9380,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               unsigned int np = p;
               while (np<pend && arg[np] && arg[np]!=',') ++np;
               if (np<pend) {
-                CImg<T>(arg.data(p),1,++np - p,1,1,true).move_to(g_list_c);
+                CImg<T>(arg.data(p),++np - p,1,1,1,true).move_to(g_list_c);
                 g_list_c.back().back() = 0;
               }
               p = np;
@@ -9833,7 +9833,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           CImgList<unsigned int> empty_indices;
           CImg<char> eselec;
 
-          if (cimg_sscanf(argument,"%11[a-zA-Z]:%4095[^,],%255s", // Detect forced file format
+          if (cimg_sscanf(argument,"%11[a-zA-Z0-9]:%4095[^,],%255s", // Detect forced file format
                           cext,_filename.data(),options.data())<2 ||
               !cext[1]) { // Length of preprend 'ext' must be >=2 (avoid case 'C:\\...' on Windows)
             *cext = *_filename = *options = 0;
@@ -14408,7 +14408,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         CImg<char> _filename(4096), filename_tmp(256), options(256);
         *cext = *_filename = *filename_tmp = *options = 0;
         bool is_network_file = false;
-        if (cimg_sscanf(argument,"%11[a-zA-Z]:%4095[^,],%255s",
+        if (cimg_sscanf(argument,"%11[a-zA-Z0-9]:%4095[^,],%255s",
                         cext,_filename.data(),options.data())<2 ||
             !cext[1] || // Length of 'ext' must be >=2 (avoid case 'C:\\...' on Windows)
             !cimg::strcasecmp(cext,"http") || !cimg::strcasecmp(cext,"https")) {
