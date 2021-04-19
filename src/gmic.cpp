@@ -9925,7 +9925,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                    eselec.data(),empty_indices.size()>1?"are":"is");
             }
             cimg_forY(selection,l)
-              g_list[l].assign(images[selection[l]],images[selection[l]]?true:false);
+              g_list[l].assign(images[selection[l]],true);
             if (g_list.size()==1)
               print(images,0,
                     "Output image%s as %s file '%s', with pixel type '%s' (1 image %dx%dx%dx%d).",
@@ -10003,7 +10003,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                    eselec.data(),empty_indices.size()>1?"are":"is");
             }
             cimg_forY(selection,l)
-              g_list[l].assign(images[selection[l]],g_list[l]?true:false);
+              g_list[l].assign(images[selection[l]],true);
             if (g_list.size()==1)
               print(images,0,"Output image%s as %s file '%s', with pixel type '%s', %s compression "
                     "and %sbigtiff support (1 image %dx%dx%dx%d).",
@@ -10072,7 +10072,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                    eselec.data(),empty_indices.size()>1?"are":"is");
             }
             cimg_forY(selection,l)
-              g_list[l].assign(images[selection[l]],g_list[l]?true:false);
+              g_list[l].assign(images[selection[l]],true);
             if (g_list.size()>1 && cimg_sscanf(options,"%f,%f",&fps,&_nb_loops)>=1 && fps>0) {
               // Save animated .gif file.
               const unsigned int nb_loops = (unsigned int)cimg::round(_nb_loops);
@@ -10112,7 +10112,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                    eselec.data(),empty_indices.size()>1?"are":"is");
             }
             cimg_forY(selection,l)
-              g_list[l].assign(images[selection[l]],g_list[l]?true:false);
+              g_list[l].assign(images[selection[l]],true);
             if (g_list.size()==1)
               print(images,0,
                     "Output image%s as %s file '%s', with quality %g%% (1 image %dx%dx%dx%d).",
@@ -10150,7 +10150,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                    eselec.data(),empty_indices.size()>1?"are":"is");
             }
             cimg_forY(selection,l)
-              g_list[l].assign(images[selection[l]],g_list[l]?true:false);
+              g_list[l].assign(images[selection[l]],true);
             if (g_list.size()==1)
               print(images,0,
                     "Output image%s as %s file '%s', with header get from file '%s' "
@@ -10188,7 +10188,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                    eselec.data(),empty_indices.size()>1?"are":"is");
             }
             cimg_forY(selection,l)
-              g_list[l].assign(images[selection[l]],images[selection[l]]?true:false);
+              g_list[l].assign(images[selection[l]],true);
             if (g_list.size()==1)
               print(images,0,
                     "Output image%s as %s file '%s', with pixel type '%s' (1 image %dx%dx%dx%d).",
@@ -10249,7 +10249,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                     _filename.data(),opacity);
             g_list.assign(selection.height());
             cimg_forY(selection,l)
-              g_list[l].assign(images[selection[l]],images[selection[l]]?true:false);
+              g_list[l].assign(images[selection[l]],true);
             print(images,0,"Output image%s as YUV-%u:%u:%u file '%s'.",
                   gmic_selection.data(),
                   ich/100,(ich/10)%10,ich%10,
@@ -10262,7 +10262,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             const char *stype = cimg_sscanf(options,"%255[a-z64]%c",gmic_use_argx,&end)==1?argx:"auto";
             g_list.assign(selection.height());
             cimg_forY(selection,l)
-              g_list[l].assign(images[selection[l]],images[selection[l]]?true:false);
+              g_list[l].assign(images[selection[l]],true);
             print(images,0,"Output image%s as %s file '%s', with pixel type '%s'.",
                   gmic_selection.data(),
                   uext.data(),_filename.data(),
@@ -10371,7 +10371,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                    eselec.data(),empty_indices.size()>1?"are":"is");
             }
             cimg_forY(selection,l)
-              g_list[l].assign(images[selection[l]],g_list[l]?true:false);
+              g_list[l].assign(images[selection[l]],true);
             print(images,0,"Output image%s as %s file '%s', with %g fps and %s codec.",
                   gmic_selection.data(),
                   uext.data(),_filename.data(),
@@ -10407,7 +10407,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                      eselec.data(),empty_indices.size()>1?"are":"is");
               }
               cimg_forY(selection,l)
-                g_list[l].assign(images[selection[l]],g_list[l]?true:false);
+                g_list[l].assign(images[selection[l]],true);
               if (g_list.size()==1)
                 print(images,0,"Output image%s as %s file '%s' (1 image %dx%dx%dx%d).",
                       gmic_selection.data(),
@@ -12647,7 +12647,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             }
             cimg_forY(selection,l) {
               const unsigned int uind = selection[l];
-              g_list[l].assign(images[uind],images[uind]?true:false);
+              g_list[l].assign(images[uind],true);
               if (is_gmz) CImg<char>::string(images_names[uind]).move_to(gmz_info[1 + l]);
             }
             if (is_gmz) (gmz_info>'x').unroll('y').move_to(g_list);
