@@ -10299,8 +10299,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             g_list.assign(selection.height());
             g_list_c.assign(selection.height());
             cimg_forY(selection,l) {
-              g_list[l].assign(images[selection[l]],images[selection[l]]?true:false);
-              CImg<char>::string(images_names[selection[l]]).move_to(g_list_c[l]);
+              g_list[l].assign(images[selection[l]],true);
+              g_list_c[l].assign(images_names[selection[l]],true);
             }
             print(images,0,"Output image%s as %s file '%s', with pixel type '%s'.",
                   gmic_selection.data(),
