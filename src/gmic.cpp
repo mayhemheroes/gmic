@@ -2370,7 +2370,7 @@ double gmic::mp_get(Ts *const ptr, const unsigned int siz, const bool to_string,
 }
 
 template<typename Ts, typename T>
-double gmic::mp_store(const Ts *const ptr,
+double gmic::mp_store(const Ts *const ptr, const unsigned int siz,
                       const unsigned int w, const unsigned int h, const unsigned d, const unsigned int s,
                       const bool is_compressed, const char *const str,
                       void *const p_list, const T& pixel_type) {
@@ -2399,7 +2399,10 @@ double gmic::mp_store(const Ts *const ptr,
     if (cimg_sscanf(str,"%255[a-zA-Z0-9_]%c",&(*varname=0),&end)==1 &&
         (*varname<'0' || *varname>'9')) {
       CImgList<T> g_list;
-      CImg<T>(ptr,w,h,d,s).move_to(g_list);
+      const unsigned int rsiz = w*h*d*s;
+      if (rsiz<=siz) CImg<T>(ptr,w,h,d,s).move_to(g_list);
+      else CImg<T>(ptr,siz,1,1,1).resize(w,h,d,s,-1).move_to(g_list);
+
       CImg<char> name = CImg<char>::string(varname);
       name.resize(name.width() + 4,1,1,1,0,0,1);
       name[0] = 'G'; name[1] = 'M'; name[2] = 'Z'; name[3] = 0;
