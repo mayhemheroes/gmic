@@ -1224,8 +1224,8 @@ CImg<T>& inpaint_patch(const CImg<t>& mask, const unsigned int patch_size=11,
     int best_x = -1, best_y = -1;
     for (unsigned int C = 0; C<nb_lookup_candidates; ++C) {
       const int
-        xl = (int)lookup_candidates(0,C),
-        yl = (int)lookup_candidates(1,C),
+        xl = (int)lookup_candidates(0U,C),
+        yl = (int)lookup_candidates(1U,C),
         xl0 = std::max(p1,xl - l1), yl0 = std::max(p1,yl - l1),
         xl1 = std::min(width() - 1 - p2,xl + l2), yl1 = std::min(height() - 1 - p2,yl + l2);
       for (int y = yl0; y<=yl1; y+=_lookup_increment)
@@ -1321,8 +1321,8 @@ CImg<T>& inpaint_patch(const CImg<t>& mask, const unsigned int patch_size=11,
           for (int k = -p1; k<=p2; ++k) {
             const int xdk = (int)xd + k, ydl = (int)yd + l;
             if (xdk>=0 && xdk<=width() - 1 && ydl>=0 && ydl<=height() - 1 && mask(xd + k,yd + l)) {
-              offsets(xd - ox + k,yd - oy + l,0) = xs + k;
-              offsets(xd - ox + k,yd - oy + l,1) = ys + l;
+              offsets((int)xd - ox + k,(int)yd - oy + l,0) = xs + k;
+              offsets((int)xd - ox + k,(int)yd - oy + l,1) = ys + l;
             }
           }
       }
@@ -1925,7 +1925,7 @@ const CImgList<T>& _gmic_display(CImgDisplay &disp, const char *const title, con
         sum_width+=w;
         if (h>max_height) max_height = h;
       }
-      disp.assign(cimg_fitscreen(sum_width,max_height,1),title?title:titles?titles->__display()._data:0,1);
+      disp.assign(cimg_fitscreen(sum_width,max_height,1U),title?title:titles?titles->__display()._data:0,1);
     } else {
       unsigned int max_width = 0, sum_height = 0;
       cimglist_for(*this,l) {
@@ -1936,7 +1936,7 @@ const CImgList<T>& _gmic_display(CImgDisplay &disp, const char *const title, con
         if (w>max_width) max_width = w;
         sum_height+=h;
       }
-      disp.assign(cimg_fitscreen(max_width,sum_height,1),title?title:titles?titles->__display()._data:0,1);
+      disp.assign(cimg_fitscreen(max_width,sum_height,1U),title?title:titles?titles->__display()._data:0,1);
     }
     if (!title && !titles) disp.set_title("CImgList<%s> (%u)",pixel_type(),_width);
   } else if (title) disp.set_title("%s",title);
@@ -1972,7 +1972,7 @@ const CImgList<T>& _gmic_display(CImgDisplay &disp, const char *const title, con
       if (is_exception) throw CImgDisplayException("");
     } else _data[0]._display(disp,0,false,XYZ,exit_on_anykey,!is_first_call); // Otherwise, use standard display()
     if (disp.key()) is_exit = true;
-    disp.resize(cimg_fitscreen(dw,dh,1),false).set_title("%s",dtitle.data());
+    disp.resize(cimg_fitscreen(dw,dh,1U),false).set_title("%s",dtitle.data());
   } else {
     bool disp_resize = !is_first_call;
     while (!disp.is_closed() && !is_exit) {
@@ -5349,7 +5349,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           if (!is_builtin_command) { // Search for known built-in command name
             const int
               _ind0 = builtin_commands_inds[(unsigned int)*command],
-              _ind1 = builtin_commands_inds((unsigned int)*command,1);
+              _ind1 = builtin_commands_inds((unsigned int)*command,1U);
             if (_ind0>=0)
               is_builtin_command = search_sorted(command,builtin_commands_names + _ind0,
                                                  _ind1 - _ind0 + 1U,__ind);
@@ -7709,7 +7709,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         if (!is_get && !std::strcmp("for",item)) {
           gmic_substitute_args(false);
           is_cond = check_cond(argument,images,"for");
-          const bool is_first = !nb_fordones || fordones(0,nb_fordones - 1)!=position;
+          const bool is_first = !nb_fordones || fordones(0U,nb_fordones - 1)!=position;
           if (is_very_verbose)
             print(images,0,"%s %s -> condition '%s' %s.",
                   !is_first?"Reach":is_cond?"Start":"Skip",
@@ -10772,8 +10772,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                      (cimg_sscanf(argx,"%f%c%c",&x0,&sepx,&end)==2 && sepx=='%')) &&
                     (cimg_sscanf(argy,"%f%c",&y0,&end)==1 ||
                      (cimg_sscanf(argy,"%f%c%c",&y0,&sepy,&end)==2 && sepy=='%'))) {
-                  vertices(n,0) = x0; percents(n,0) = (sepx=='%');
-                  vertices(n,1) = y0; percents(n,1) = (sepy=='%');
+                  vertices(n,0U) = x0; percents(n,0U) = (sepx=='%');
+                  vertices(n,1U) = y0; percents(n,1U) = (sepy=='%');
                   nargument+=std::strlen(argx) + std::strlen(argy) + 2;
                 } else arg_error("polygon");
               } else arg_error("polygon");
