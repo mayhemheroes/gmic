@@ -212,7 +212,7 @@ int main(int argc, char **argv) {
     CImgList<char> images_names;
     gmic_instance.run(commands_line.data(),images,images_names);
   } catch (gmic_exception &e) {
-    int error_code;
+    int error_code = 0;
     bool is_error_code = false;
 
     const char
