@@ -26255,9 +26255,10 @@ ovh2stats : skip "${1=gmic.eu-*-*-*.log.gz}"
     # Discard IP duplicates.
     eval "
       to_keep = vectorl();
-      for (k = p = 0, k<l, ++k, name(#k,256)!=name(#k + 1,256)?(to_keep[p++] = k));
+      for (k = p = 0, k<l, ++k, name(#k,64)!=name(#k + 1,64)?(to_keep[p++] = k));
       store(to_keep,'to_keep',p);
       run('$to_keep k[{^}]')"
+    +store ips$>
 
     # Analyze G'MIC version, host software and OS.
     eval "
@@ -26277,7 +26278,7 @@ ovh2stats : skip "${1=gmic.eu-*-*-*.log.gz}"
         find(str,'linux')>=0?++linux:
         find(str,'mac os')>=0?++macos:
         find(str,'bsd')>=0?++bsd:
-        (echo(str); ++unknown);
+        ++unknown;
 
         ++ips;
       );
@@ -26285,7 +26286,7 @@ ovh2stats : skip "${1=gmic.eu-*-*-*.log.gz}"
     rm $features
     ips,gimp,krita,_8bf,paintdotnet,digikam,standalone,windows,linux,macos,bsd,unknown={^}
 
-    e[] "  > "$date": "${_vt100_b}"IPs"${_vt100_n}" = "$ips" (100%), "\
+    e[] "  > "$date": "${_vt100_b}"Unique IPs"${_vt100_n}" = "$ips" (100%), "\
         ${_vt100_m}${_vt100_b}"GIMP"${_vt100_n}" = "$gimp" ("{_round($gimp/$ips*100,0.1)}"%), "\
         ${_vt100_c}${_vt100_b}"Krita"${_vt100_n}" = "$krita" ("{_round($krita/$ips*100,0.1)}"%), "\
         ${_vt100_g}${_vt100_b}"8bf"${_vt100_n}" = "$_8bf" ("{_round($_8bf/$ips*100,0.1)}"%), "\
@@ -26300,9 +26301,25 @@ ovh2stats : skip "${1=gmic.eu-*-*-*.log.gz}"
         ${_vt100_c}${_vt100_b}"Unknown"${_vt100_n}" = "$unknown" ("{_round($unknown/$ips*100,0.1)}"%).\n"
   endl done
 
+  # Display global stats as a summary.
   e[] "* Summary."
+
+  # Retrieve number of unique IPs for the whole logfiles.
+  N=$! l[]
+    repeat $N ${ips$>} done
+    sort_list +,n # Sort by lexicographic order.
+
+    # Discard IP duplicates (globally).
+    eval "
+      to_keep = vectorl();
+      for (k = p = 0, k<l, ++k, name(#k,64)!=name(#k + 1,64)?(to_keep[p++] = k));
+      store(to_keep,'to_keep',p);
+      run('$to_keep k[{^}]')"
+    all_ips=$!
+  rm endl
+
   + ips,gimp,krita,_8bf,paintdotnet,digikam,standalone,windows,linux,macos,bsd,unknown={^} rm
-    e[] "  > "${_vt100_b}"IPs"${_vt100_n}" = "$ips" (100%), "\
+    e[] "  > "${_vt100_b}"Unique IPs"${_vt100_n}" = "$all_ips" [global], "$ips" [day by day] (100%), "\
         ${_vt100_m}${_vt100_b}"GIMP"${_vt100_n}" = "$gimp" ("{_round($gimp/$ips*100,0.1)}"%), "\
         ${_vt100_c}${_vt100_b}"Krita"${_vt100_n}" = "$krita" ("{_round($krita/$ips*100,0.1)}"%), "\
         ${_vt100_g}${_vt100_b}"8bf"${_vt100_n}" = "$_8bf" ("{_round($_8bf/$ips*100,0.1)}"%), "\
