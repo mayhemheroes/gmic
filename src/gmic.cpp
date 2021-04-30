@@ -2409,7 +2409,7 @@ double gmic::mp_store(const Ts *const ptr, const unsigned int siz,
       name.unroll('y').move_to(g_list);
 
       g_list.get_serialize(is_compressed).unroll('x').move_to(name);
-      name.resize(name.width() + 9 + std::strlen(varname),1,1,1,0,0,1);
+      name.resize((unsigned int)(name.width() + 9 + std::strlen(varname)),1,1,1,0,0,1);
       std::sprintf(name,"%c*store/%s",gmic_store,_varname.data());
       gmic_instance.set_variable(_varname.data(),name,variables_sizes);
       cimg::mutex(24,0);
@@ -3338,12 +3338,13 @@ const char *gmic::set_variable(const char *const name, const char *const value,
         is_name_found = true; ind = l; break;
       }
     if (is_name_found) {
-      __cvariables[ind].get_resize(__cvariables[ind].width() + std::strlen(name) - std::strlen(cname),1,1,1,0,0,1).
-        move_to(s_value);
+      __cvariables[ind].get_resize((unsigned int)(__cvariables[ind].width() + std::strlen(name) - std::strlen(cname)),
+                                   1,1,1,0,0,1).move_to(s_value);
       std::sprintf(s_value,"%c*store/%s",gmic_store,name);
     } else s_value.assign(1,1,1,1,0);
     is_name_found = false;
-  } else if (!operation || operation=='=' || operation=='.') s_value.assign(value,std::strlen(value) + 1,1,1,1,true);
+  } else if (!operation || operation=='=' || operation=='.')
+    s_value.assign(value,(unsigned int)(std::strlen(value) + 1),1,1,1,true);
   else s_value.assign(24);
 
   if (operation) {
@@ -3456,7 +3457,7 @@ gmic& gmic::add_commands(const char *const data_commands, const char *const comm
     tmp.unroll('y').move_to(ltmp);
     ltmp.get_serialize(false).unroll('x').move_to(tmp);
     const char *const _command_files = "_path_commands";
-    tmp.resize(tmp.width() + 9 + std::strlen(_command_files),1,1,1,0,0,1);
+    tmp.resize((unsigned int)(tmp.width() + 9 + std::strlen(_command_files)),1,1,1,0,0,1);
     std::sprintf((char*)tmp.data(),"%c*store/%s",gmic_store,_command_files);
     set_variable(_command_files,tmp,0);
   }
@@ -11868,7 +11869,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               name[0] = 'G'; name[1] = 'M'; name[2] = 'Z'; name[3] = 0;
               name.unroll('y').move_to(g_list);
               g_list.get_serialize((bool)is_compressed).unroll('x').move_to(name);
-              name.resize(name.width() + 9 + std::strlen(formula),1,1,1,0,0,1);
+              name.resize((unsigned int)(name.width() + 9 + std::strlen(formula)),1,1,1,0,0,1);
               std::sprintf(name,"%c*store/%s",gmic_store,_formula.data());
               set_variable(formula,name,variables_sizes);
             } else for (unsigned int n = 0; n<pattern; ++n) { // Assignment to multiple variables
@@ -11886,11 +11887,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               name.unroll('y').move_to(tmp[1]);
               g_list[n].move_to(tmp[0]);
               tmp.get_serialize((bool)is_compressed).unroll('x').move_to(name);
-              name.resize(name.width() + 9 + std::strlen(current),1,1,1,0,0,1);
+              name.resize((unsigned int)(name.width() + 9 + std::strlen(current)),1,1,1,0,0,1);
               std::sprintf(name,"%c*store/%s",gmic_store,current);
               set_variable(current,name,variables_sizes);
 
-              if (saved) { // other variables names follow
+              if (saved) { // Other variables names follow
                 *next = saved;
                 current = next + 1;
                 next = std::strchr(next + 1,',');
