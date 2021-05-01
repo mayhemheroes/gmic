@@ -26228,6 +26228,18 @@ ovh2stats : skip "${1=gmic.eu-*-*-*.log.gz}"
     nm. ${year}_${month}_${day}
   done
 
+  # Keep only lines containing 'G'MIC-Qt'.
+  repeat $! nm={$>,n} l[$>] s -,{'\n'}
+    eval "
+      str = ['G'MIC-Qt'];
+      to_keep = vectorl();
+      for (k = p = 0, k<l, ++k, find(#k,str)>=0?(to_keep[p++] = k));
+      store(to_keep,'to_keep',p);
+      run('$to_keep k[{^}]')"
+    if $!>1 i[1--2] ('\n') fi
+  a y nm $nm endl done
+
+  # Analyze log files.
   e[] "\n* Analyze log files (day by day)."
   +_ovh2stats    # Display stats, day by day.
 
@@ -26236,19 +26248,11 @@ ovh2stats : skip "${1=gmic.eu-*-*-*.log.gz}"
 
 
 _ovh2stats :
-  v +
-
-  # Analyze log files.
-  repeat $! l[$>] ('{n}') replace. {'_'},{'/'} date={t} rm.
+  v + repeat $! l[$>] ('{n}') replace. {'_'},{'/'} date={t} rm.
     s -,{'\n'}
 
-    # Keep only lines containing 'G'MIC-Qt', and name remaining image with IP address.
+    # Name each image by the IP address.
     eval "
-      str = ['G'MIC-Qt'];
-      to_keep = vectorl();
-      for (k = p = 0, k<l, ++k, find(#k,str)>=0?(to_keep[p++] = k));
-      store(to_keep,'to_keep',p);
-      run('$to_keep k[{^}]');
       name = vector256();
       for (k = 0, k<l(), ++k,
         p = find(#k,_' ');
@@ -26264,7 +26268,6 @@ _ovh2stats :
       for (k = p = 0, k<l, ++k, name(#k,64)!=name(#k + 1,64)?(to_keep[p++] = k));
       store(to_keep,'to_keep',p);
       run('$to_keep k[{^}]')"
-    +store ips$>
 
     # Analyze G'MIC version, host software and OS.
     eval "
