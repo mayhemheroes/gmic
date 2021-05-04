@@ -36369,7 +36369,7 @@ fx_apply_haldclut : skip "${2=}"
     onfail gui_warning_preview "Specified HaldCLUT filename not found" return
     endl
   fi
-  if {$ind_clut,iM>255} /[$ind_clut] 255 fi # Possibly a 16bits HaldCLUT.
+  if {$ind_clut,iM>512} /[$ind_clut] 255 fi # Possibly a 16bits HaldCLUT.
 
   if $normalize==1" || "$normalize==3 # Pre-normalization
     repeat $! if $>!=$ind_clut l[$>] split_opacity balance_gamma[0] , a c endl fi done
@@ -38508,6 +38508,7 @@ fx_clut_from_ab :
       s c,-3 +max. 1 /[-3,-1] ==. 0 inpaint_pde.. .,75%,1 distance. 0 *. {-1/(1+$5)} exp.
       f.. "f = i(#-1); f*I + (1-f)*[x,y,z]*255/(w-1)" rm.
       S={arg(1+$2,16,25,36,49,64,81,100,121,144,169,225,256)} if $S!=w r. $S,$S,$S,3,3 fi
+      c 0,255
     endl
 
     if $1==2 # Output as a file
