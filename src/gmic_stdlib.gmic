@@ -26260,9 +26260,17 @@ _ovh2stats :
         name[p] = 0;
         run('name[',k,'] ',name);
       )"
-    sort_list +,n # Sort by lexicographic order.
 
-    # Discard IP duplicates.
+    # Discard IP duplicates (two pass, to make things faster).
+    eval " # First pass to remove as many IP duplicates as possible.
+      to_rm = vectorl();
+      for (k = p = 0, k<l, ++k,
+        ref(name(#k,64),nam);
+        for (i = k + 1, i<l && i<k + 10, ++i, nam==name(#i,64)?(to_rm[p++] = k; break()));
+      );
+      store(to_rm,'to_rm',p);
+      run('$to_rm rm[{^}] rm.')"
+    sort_list +,n # Sort by lexicographic order.
     eval "
       to_keep = vectorl();
       for (k = p = 0, k<l, ++k, name(#k,64)!=name(#k + 1,64)?(to_keep[p++] = k));
