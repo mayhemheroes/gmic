@@ -26261,21 +26261,20 @@ _ovh2stats :
         run('name[',k,'] ',name);
       )"
 
-    # Discard IP duplicates (two pass, to make things faster).
-    eval " # First pass to remove as many IP duplicates as possible.
-      to_rm = vectorl();
-      for (k = p = 0, k<l, ++k,
-        ref(name(#k,64),nam);
-        for (i = k + 1, i<l && i<k + 10, ++i, nam==name(#i,64)?(to_rm[p++] = k; break()));
-      );
-      store(to_rm,'to_rm',p);
-      run('$to_rm rm[{^}] rm.')"
-    sort_list +,n # Sort by lexicographic order.
+    # Discard IP duplicates.
     eval "
-      to_keep = vectorl();
-      for (k = p = 0, k<l, ++k, name(#k,64)!=name(#k + 1,64)?(to_keep[p++] = k));
-      store(to_keep,'to_keep',p);
-      run('$to_keep k[{^}]')"
+      const N = "$!";
+      ref(vector(#2*N),tab);
+      for (k = 0, k<N, ++k,
+        ref(name(#k,256),nam);
+        for (i = j = 0, i<size(nam) && nam[i], ++i, nam[i]!=_'.'?(nam[j++] = nam[i])); nam[j] = 0;
+        tab[2*k] = stov(nam);
+        tab[2*k + 1] = k;
+      );
+      tab = sort(tab,1,N,2);
+      for (i = 0, i<size(tab) - 1, ++i, tab[2*i]==tab[2*i + 2]?tab[2*i] = tab[2*i + 1] = -1);
+      store(tab,'tab')"
+    $tab discard. -1 r. 2,{h/2},1,1,-1 z. 1,1 k[{^}]
 
     # Analyze G'MIC version, host software and OS.
     eval "
