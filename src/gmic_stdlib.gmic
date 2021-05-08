@@ -28007,7 +28007,7 @@ x_connect4 : check_display $0
           yM1={i("#"$ymax,$move1)}
           if $yM1>=0
             +=[board] {1+$turn},$move1,$yM1 nm. board1
-            {board,w},1,1,1,"y=-1; for (k = 0, k<h#"$board1", ++k, if(!i(#"$board1",x,k),y = k)); y" nm. ymax1
+            {board,w},1,1,1,"y = -1; for (k = 0, k<h#"$board1", ++k, if(!i(#"$board1",x,k),y = k)); y" nm. ymax1
             opp_max_score=-inf opp_max_board={board,^}
             opp_turn={($turn+1)%2}
             repeat w#$board,move2
@@ -29299,11 +29299,11 @@ _x_mask_color : # Estimate color mask image.
   if $is_add" || "$is_sub
     if $is_add
       ($3) r. {2+s#0},{w/(2+s#0)},1,1,-1
-      N_add={h} M_add={"M = vectorw(); for (k = 0, k<w, ++k, M[k] = med(crop(k,1)));M"} rm.
+      N_add={h} M_add={"M = vectorw(); fill(M,k,med(crop(k,1)));M"} rm.
     fi
     if $is_sub
       ($4) r. {2+s#0},{w/(2+s#0)},1,1,-1
-      N_sub={h} M_sub={"M = vectorw(); for (k = 0, k<w, ++k, M[k] = med(crop(k,1)));M"} rm.
+      N_sub={h} M_sub={"M = vectorw(); fill(M,k,med(crop(k,1)));M"} rm.
     fi
     f. "begin(
           invert(A,nA) = inv(A,nA); # For <v.2.9.2
@@ -29662,7 +29662,7 @@ x_morph : check "isint(${1=16}) && isint(${2=3}) && $2>=0 && $2<=4" check_displa
 
         # Determine selected keypoint.
         selected_keypoint={keypoints,"dmin = inf; kmin = -1; fact = ([w#"$imgr",h#"$imgr"]-1)%;
-          for (k = 0, k<h, ++k,
+          repeat (h,k,
             dist = norm(((I[k])[2*"$frame",2] - ["$mxy"])*fact);
             dist<dmin?(dmin = dist; kmin = k)
           );
@@ -31734,7 +31734,7 @@ x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2 && isint(${3=0
 
       if $mouse_over" && "$mb" && "$selected_keypoint<0" && "h#$keypoints>0 # Determine selected keypoint
         selected_keypoint={keypoints,"dmin = inf; kmin = -1; fact = ([w#"$imgr",h#"$imgr"]-1)%;
-          for (k = 0, k<h, ++k,
+          repeat (h,k,
             dist = norm(((I[k])[0,2] - ["$mxy"])*fact);
             dist<dmin?(dmin = dist; kmin = k)
           );
@@ -31800,7 +31800,7 @@ _x_warp_rbf :
       W = solve(A,B,2);
     );
     res = [ 0,0 ];
-    for (p = 0, p<N, ++p, res += W[2*p,2]*(norm([x,y] - xy(p))));"
+    repeat (N,p,res += W[2*p,2]*(norm([x,y] - xy(p))));"
   k.
 
 #@cli x_waves
@@ -33531,7 +33531,7 @@ _fx_drawn_montage :
   to_rgb[0] to_rgba[^0] $nb_layers,1,1,4,[inf,inf,-inf,-inf] [0],[0]
   f[0] "
     begin(colors = [ "$cols" ]);
-    for (l = 0, l<"$nb_layers", ++l,
+    repeat ("$nb_layers",l,
       I==colors[3*l,3]?(
         if (x<i(#-2,l,0,0,0), i(#-2,l,0,0,0) = x);
         if (y<i(#-2,l,0,0,1), i(#-2,l,0,0,1) = y);
@@ -34361,7 +34361,7 @@ fx_doodle : skip "$*"
         P0 = u([w,h] - 1);
         length = 0;
 
-        for (dir = 0, dir<2, ++dir,
+        repeat (2,dir,
           P = P0;
           oiP = iP = round(P);
           C = I(#0,P); E = eig([ C[0], C[1], C[1], C[2] ]); oV = V = (dir?1:-1)*E[4,2];
@@ -38148,7 +38148,7 @@ fx_equalize_hsv :
     {"V = [${6-30:3}]*pi/180; [cos(V),sin(V)]"},${7-31:3},\
     {"V = [${8-32:3}];
       const sV = size(V);
-      for (k = 0, k<sV, ++k,
+      repeat (sV,k,
         v0 = k/sV;
         v1 = (k+1)/sV;
         V[k]*=(V[k]>0?(1 - v0):v1);
@@ -41458,7 +41458,7 @@ fx_jpeg_artefacts :
       f[$>] "begin(boundary = 2; ref(vector64(),res));
         if (!(x%8) && !(y%8),
           ref(crop(x,y,8,8),src);
-          for (l = 0, l<8, ++l, for (k = 0, k<8, ++k, off = k + 8*l; res[off] = sum(src*crop(#"$dct",0,0,off,8,8,1))));
+          repeat (8,l, repeat (8,k, off = k + 8*l; res[off] = sum(src*crop(#"$dct",0,0,off,8,8,1))));
           draw(#-1,res,x,y,0,0,8,8);
         ); i"
       round.
@@ -41470,7 +41470,7 @@ fx_jpeg_artefacts :
       f. "begin(boundary = 2; ref(vector64(),res));
         if (!(x%8) && !(y%8),
           ref(crop(x,y,8,8),src);
-          for (l = 0, l<8, ++l, for (k = 0, k<8, ++k, off = k + 8*l; res[off] = sum(src*crop(#"$idct",0,0,off,8,8,1))));
+          repeat (8,l, repeat (8,k, off = k + 8*l; res[off] = sum(src*crop(#"$idct",0,0,off,8,8,1))));
           draw(#"$>",res,x,y,0,0,8,8);
         ); i"
       rm.
@@ -41846,7 +41846,7 @@ fx_rebuild_from_similar_blocs :
         ref(crop(#1,0,0,ind,w#1,h#1,1),S);
         kmin = 0;
         dmin = inf;
-        for (k = 0, k<wh, ++k, k!=ind?(
+        repeat (wh,k, k!=ind?(
           d = norm"{1+$4}"(S - crop(#1,0,0,k,w#1,h#1,1));
           d<dmin?(dmin = d; kmin = k);
         ));
@@ -42132,16 +42132,16 @@ _fx_equalize_local_histograms :
       const N = $3;
       const sigma = ($6?1:-1)*(0.1+$4);
       ref(vector512(),weights);
-      for (k = 0, k<size(weights), ++k, # Pre-compute exponentials
+      repeat (size(weights),k, # Pre-compute exponentials
         weights[k] = sigma>=0?exp(-sqr(k/sigma)):1 - exp(-sqr(k/sigma))
       );
     );
 
     ref(vector512(0),bins);
 
-    for (c = 0, c<s, ++c,
+    repeat (s,c,
       ref(crop(x - N,y - N,0,c,2*N + 1,2*N + 1,1,1),V);
-      for (k = 0, k<size(V), ++k, # Compute local weighted histogram
+      repeat (size(V),k, # Compute local weighted histogram
         val = V[k];
         diff = abs(val - V[size(V)/2]);
         bins[val]+=weights[diff];
@@ -42149,7 +42149,7 @@ _fx_equalize_local_histograms :
     );
 
     sum = 0;
-    for (k = 0, k<size(bins), ++k,
+    repeat (size(bins),k,
       sum+=bins[k];
       bins[k] = sum;
     );
@@ -46902,7 +46902,7 @@ fx_radial_gradient : skip ${14=0}
 fx_random_gradient :
   repeat $! l[$>]
     to_rgba 100%,100% srand $2
-    eval "for (n=0, n<$1, ++n,
+    eval "repeat ($1,n,
             x = round(u(w-1));
             y = round(u(h-1));
             i(x,y) = 1;
@@ -47868,7 +47868,7 @@ fx_symmetric_shape2d_preview :
     rv blend alpha
     eval "
       t0 = atan2($7 - $3,$6 - $2);
-      for (k = 0, k<$1, ++k,
+      repeat ($1,k,
         const pi2 = 2*pi;
         const xc = $2*(w-1)%;
         const yc = $3*(h-1)%;
