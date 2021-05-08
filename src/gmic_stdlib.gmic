@@ -10092,7 +10092,7 @@ noise_poissondisk : check "${1=8}>0 && ${2=30}>0"
         P = i[#4,R];                      # get the index of that sample
         T = I[#3,P];                      # position vector of that sample
 
-        repeat(max_sample_attempts,attempts,
+        repeat (max_sample_attempts,attempts,
           do (S = 4*(u(vectorN(1)) - 0.5); M = mag2(S), M <= 1 || M > 4);
 
           X = T + radius * S;             # potential sample from annulus around T
@@ -10196,8 +10196,8 @@ otsu : check "isint(${1=256}) && $1>0"
     imM={[im,iM]} +histogram $1,$imM
     otsu={"
       sum = sumB = wB = best_variance = best_t = 0;
-      for (t = 0, t<w, ++t, sum+=t*i[t]);
-      for (t = 0, t<w, ++t,
+      repeat (w,t,sum+=t*i[t]);
+      repeat (w,t,
         wB+=i[t];
         if (!wB, continue());
         wF = whds#-2 - wB;
@@ -10268,7 +10268,7 @@ quantize_area : check "${1=10}>0"
           col0 = I(#0);
           kmin = -1;
           distmin = inf;
-          for (k = 0, k<nb_offs, ++k,
+          repeat (nb_offs,k,
             p = offx[k];
             q = offy[k];
             r = offz[k];
@@ -10721,13 +10721,14 @@ colormap : check "isint($1) && $1>=0" skip ${2=1},${3=1}
             eval "
               ref(vector(#w*s#0),csum);
               ref(vector(#w,0),cocc);
-              for (k = 0, k<w#2, ++k,
+              repeat (w#2,k,
                 val = i[#2,k];
-                for (c = 0, c<s#0, ++c, csum[val + c*w]+=i(#0,k,0,0,c));
+                repeat (s#0,c,csum[val + c*w]+=i(#0,k,0,0,c));
                 ++cocc[val];
               );
-              for (c = off = 0, c<s#0, ++c,
-                for (k = 0, k<w, ++k, occ = cocc[k]; occ?(csum[off++]/=occ));
+              off = 0;
+              repeat (s#0,c,
+                repeat (w,k,occ = cocc[k]; occ?(csum[off++]/=occ));
               );
               draw(#3,csum,0,0,0,0)"
             rm..
@@ -10747,7 +10748,7 @@ colormap : check "isint($1) && $1>=0" skip ${2=1},${3=1}
     else # Extract full colormap.
 
       # Compute map of hashcodes.
-      +n. 0,255 f. "ret = vectors(); H = 0; for (p = 0, p<s, ++p, (H*=31)+=j(0,0,0,p)); ret[0] = H%2048; ret"
+      +n. 0,255 f. "ret = vectors(); H = 0; repeat (s,p,(H*=31)+=j(0,0,0,p)); ret[0] = H%2048; ret"
       channels. 0 equalize. 2048 n. 0,2047 round.
 
       # Find single occurrence of each color/vector.
@@ -10758,13 +10759,13 @@ colormap : check "isint($1) && $1>=0" skip ${2=1},${3=1}
         H = 2 + i#1;
         sH = dar_size(#H);
         is_found = 0;
-        for (p = 0, p<sH, ++p,
+        repeat (sH,p,
           copy(col_r,i[#H,p],s#0,1,h(#H));
           col_r==col_s?(is_found = 1; break());
         );
         !is_found?dar_insert(#H,col_s);
         ret;
-        end(for (p = 0, p<l - 2, ++p, resize(#2 + p,1,dar_size(#2 + p),1,s#0,0)))"
+        end(repeat (l - 2,p, resize(#2 + p,1,dar_size(#2 + p),1,s#0,0)))"
       a[2--1] y transpose. k.
     fi
 
@@ -11128,7 +11129,7 @@ lut_contrast : check "isint(${1=256}) && $1>=1 && isnum(${2=48})"
   l[]
 
     # Initialization by farthest point sampling of the RGB cube.
-    64,64,64,1 eval "for (k = 0, k<8, ++k, x = !!(k&1); y = !!(k&2); z = !!(k&4); i([x,y,z]*(w-1)) = 1)"
+    64,64,64,1 eval "repeat (8,k, x = !!(k&1); y = !!(k&2); z = !!(k&4); i([x,y,z]*(w-1)) = 1)"
     N={is}
     e[] ""
     do
@@ -12925,12 +12926,12 @@ extract_region : check ${"is_image_arg $1"}" && isnum(${2=0})"
         const N = iM + 1;  # Number of labels
         R = [ ${3--1} ];   # Requested labels
         hash = vectorN(0); # Correspondence table
-        for (k = 0, k<size(R), ++k, hash[R[k]] = k + 2);
+        repeat (size(R),k, hash[R[k]] = k + 2);
       );
       (ind = hash[i])>0?(
         $2?dar_insert(#ind,[ I(#1),x,y,z ]):dar_insert(#ind,I(#1));
       ); i;
-      end(for (k = 2, k<l, ++k, resize(#k,1,dar_size(#k),1,-100,0)))"
+      end(repeat(l,k, resize(#k,1,dar_size(#k),1,-100,0)))"
     rm[1] nm $nm
   endl done rm[0]
 
@@ -15378,7 +15379,7 @@ rbf :
           ref(crop(#0,0,0,0,0,1,h#0,1,1),X);
           ref(crop(#0,1,0,0,0,s,h#0,1,1,1),F);
           ref(vector(#h#0^2),M);
-          for (k = 0, k<h#0, ++k,
+          repeat (h#0,k,
             for (l = 0, l<=k, ++l,
               r = abs(X[k] - X[l]);
               M[k*h#0 + l] = M[l*h#0 + k] = phi(r);
@@ -15388,7 +15389,7 @@ rbf :
           const fx = ("$x1-$x0")/(w-1);
         );
         ref(vectors(),res); x = (x - "$x0")*fx;
-        for (k = 0, k<h#0, ++k, r = abs(x - X[k]); res+=W[s*k,s]*phi(r))"
+        repeat (h#0,k, r = abs(x - X[k]); res+=W[s*k,s]*phi(r))"
       k. nm $nm
     fi endl done
 
@@ -15407,7 +15408,7 @@ rbf :
           ref(crop(#0,1,0,0,0,1,h#0,1,1),Y);
           ref(crop(#0,2,0,0,0,s,h#0,1,1,1),F);
           ref(vector(#h#0^2),M);
-          for (k = 0, k<h#0, ++k,
+          repeat (h#0,k,
             for (l = 0, l<=k, ++l,
               r = norm(X[k] - X[l],Y[k] - Y[l]);
               M[k*h#0 + l] = M[l*h#0 + k] = phi(r);
@@ -15418,7 +15419,7 @@ rbf :
           const fy = ("$y1-$y0")/(h-1);
         );
         ref(vectors(),res); x = (x - "$x0")*fx; y = (y - "$y0")*fy;
-        for (k = 0, k<h#0, ++k, r = norm(x - X[k], y - Y[k]); res+=W[s*k,s]*phi(r))"
+        repeat (h#0,k, r = norm(x - X[k], y - Y[k]); res+=W[s*k,s]*phi(r))"
       k. nm $nm
     fi endl done
 
@@ -15438,7 +15439,7 @@ rbf :
           ref(crop(#0,2,0,0,0,1,h#0,1,1),Z);
           ref(crop(#0,3,0,0,0,s,h#0,1,1,1),F);
           ref(vector(#h#0^2),M);
-          for (k = 0, k<h#0, ++k,
+          repeat (h#0,k,
             for (l = 0, l<=k, ++l,
               r = norm(X[k] - X[l],Y[k] - Y[l],Z[k] - Z[l]);
               M[k*h#0 + l] = M[l*h#0 + k] = phi(r);
@@ -15450,7 +15451,7 @@ rbf :
           const fz = ("$z1-$z0")/(d - 1);
         );
         ref(vectors(),res); x = (x - "$x0")*fx; y = (y - "$y0")*fy; z = (z - "$z0")*fz;
-        for (k = 0, k<h#0, ++k, r = norm(x - X[k], y - Y[k], z - Z[k]); res+=W[s*k,s]*phi(r))"
+        repeat(h#0,k, r = norm(x - X[k], y - Y[k], z - Z[k]); res+=W[s*k,s]*phi(r))"
       k. nm $nm
     fi endl done
 
@@ -16576,7 +16577,7 @@ skeleton : check "!isnum(${1=1}) || ($1>=0 && $1<=1)"
       while (is_removed,
         is_removed = 0;
         N = dar_size(#1);
-        for (n = 0, n<N, ++n,
+        repeat (N,n,
           xc = i(#1,0,n,0,0);
           yc = i(#1,0,n,0,1);
           icc = i(#0,xc,yc);
@@ -16680,7 +16681,7 @@ slic : check "${1=16}>0 && ${2=10}>=0 && ${3=10}>0"
       const boundary = 1;
       if (i[#-1,i]>=0,
         N = [ j(-1,0),j(0,-1),j(1,0),j(0,1) ];
-        for (k = 0, k<size(N), ++k,
+        repeat (size(N),k,
           if (N[k]!=i,
             i[#-1,i] = i[#-1,i]==i || i[#-1,i]==N[k]?N[k]:-1
           );
@@ -16756,7 +16757,7 @@ thinning : check "!isnum(${1=1}) || ($1>=0 && $1<=1)"
         is_removed[it8] = 0;
 
         # Find removable contour points.
-        for (n = 0, n<N, ++n,
+        repeat (N,n,
           xc = i(#ind,0,n,0,0);
           yc = i(#ind,0,n,0,1);
           icc = i(#0,xc,yc);
@@ -16778,13 +16779,13 @@ thinning : check "!isnum(${1=1}) || ($1>=0 && $1<=1)"
 
         # Re-assign value '1' to contour points.
         N = dar_size(#nind);
-        for (n = 0, n<N, ++n, i(#0,i[#nind,n],i[#nind,n + h(#nind)]) = 1);
+        repeat (N,n, i(#0,i[#nind,n],i[#nind,n + h(#nind)]) = 1);
         _tmp = ind; ind = nind; nind = _tmp;
         i[#nind,h(#nind)-1] = 0;
 
         # Remove matching contour points.
         N = dar_size(#2);
-        for (n = 0, n<N, ++n, i(#0,I[#2,n]) = 0);
+        repeat (N,n, i(#0,I[#2,n]) = 0);
         i[#2,h(#2)-1] = 0;
         ++it;
         _(while), max(is_removed)
@@ -16832,7 +16833,7 @@ tsp : check "${1=256}>=0"
         is_used[n_current] = 1;
         P_current = I[n_current];
         n_next = -1; dmin = inf;
-        for (n = 0, n<w, ++n,
+        repeat (w,n,
           if (!is_used[n],
             d = norm(I[n] - P_current);
             if (d<dmin, dmin = d; n_next = n);
@@ -16853,7 +16854,7 @@ tsp : check "${1=256}>=0"
       while (is_improved,
         is_improved = 0;
         nb_try = $1*w;
-        for (try = 0, try<nb_try, ++try,
+        repeat (nb_try,try,
           r = round(max(8,0.5*w*(try/nb_try)^0.25));
           i = round(u(0,w-1));
           ni = (i+1)%w;
@@ -16874,7 +16875,7 @@ tsp : check "${1=256}>=0"
             oi = min(mi,mj);
             oj = max(mi,mj);
             delta = oj - oi + 1;
-            for (c = 0, c<s, ++c, copy(i(oi,0,0,c),i(oj,0,0,c),delta,1,-1));  # Reverse path between nodes.
+            repeat (s,c, copy(i(oi,0,0,c),i(oj,0,0,c),delta,1,-1));  # Reverse path between nodes.
             is_improved = 1;
           );
         );
@@ -17357,7 +17358,7 @@ close_binary :
         P = (I)[0,2];
         angles = I(#"$e_normals",P);
         U = [ 0,0 ];
-        for (k = 0, k<size(angles), ++k,
+        repeat (size(angles),k,
           if (angles[k]>=0,
             w = max(1e-8,i(#"$e_curvatures",P[0],P[1],0,k))^2;
             ang = angles[k]*pi/180;
@@ -17701,7 +17702,7 @@ grid : check "$1>=0 && $2>=0" skip ${3=0},${4=0},${5=1},${6=0},${7=$6}
   fi
   eval "
     is_percent(str) = (unref(_is_pct); _is_pct=['#str']; _is_pct[size(_is_pct) - 1]==_'%');
-    for (k = 0, k<l, ++k,
+    repeat (l,k,
 
       # Horizontal lines.
       size = is_percent($1)?max(1,w#k*$1):$1;
@@ -17885,7 +17886,7 @@ newton_fractal : check "isin(${6=1},0,1,2) && ${7=200}>=0 && ${8=0.01}>0"
     angle?(zn = (R*(zn-=zc)+=zc));
 
     !method?(znm1 = zn + [ precision,0 ]);
-    for (iter = 0, iter<itermax, ++iter,
+    repeat (itermax,iter,
       pzn = p(zn);
       method==0?(
         znp1 = zn - pzn**(zn - znm1)//(pzn - p(znm1)); # secant
@@ -21931,7 +21932,7 @@ ellipsionism : check "${1=10}>0 && ${2=3}>0 && ${5=8}>0 && ${6=0.6}>0" skip ${3=
     eval "
       const interpolation = 1;
       const N = $6*wh/max($1,$2);
-      for (n = 0, n<N, ++n,
+      repeat (N,n,
         x = round(u(w-1)); y = round(u(h-1));
         ellipse(x,y,$1,$2,i(#-2,x,y),$4,I(#0,x,y),255);
         ellipse(x,y,-$1,-$2,i(#-2,x,y),$4,0xFFFFFFFF,I(#0,x,y)/$5,255);
@@ -22188,7 +22189,7 @@ linify : check "${1=40}>=0 && $1<=100 && ${2=2}>=0 && ${3=40%}>0 && ${4=10}>=0 &
         P0 = add?[ S[8],S[9],0,S[11] ]:[ S[4],S[5],0,S[7] ]; # coords of min or max intensity
         ref = S[add];
         best_ang = best_avg = add?0:inf;
-        for (k = 0, k<precision, ++k,
+        repeat (precision,k,
           ang = u(360)*pi/180;
           dP = [ cos(ang), sin(ang),0,0 ];
           dP/=max(abs(dP));
@@ -22450,7 +22451,7 @@ sketchbw :
           op = "$opacity" * (i(#0,xf,yf,0,3)<"$threshold"?"$bgfactor":1);
           omop = 1 - op;
 
-          if (op>0, for (dl = 0, dl<"$length", ++dl,
+          if (op>0, repeat("$length",dl,
 
             # Forward
             ixf = round(xf);
@@ -23536,7 +23537,7 @@ _blend_shapemedian :
     hk3 = h(#k3);
     copy(i[#k3,siz[k]++],I(#0),s#0,hk3,whd#0);
     if (siz[k]>=hk3,resize(#k3,1,round(1.5*hk3+1),1,s#0,0,0));
-    end(for (k = 0, k<size(siz), ++k, resize(#k+3,1,siz[k],1,s#0,0,0)));
+    end(repeat(size(siz),k, resize(#k+3,1,siz[k],1,s#0,0,0)));
     i"
   repeat s#0 sh[3--1] $> $N,1,1,1,"ic(#"$N"+3+x)" j[2] .,0,0,0,$> rm[-{$N+1}--1] done
   map[1] [2] k[0,1]
@@ -23553,7 +23554,7 @@ _blend_shapemedian0 :
       copy(i[#k2,siz[k1]++],I(#0),s#0,hk2,whd#0);
       if (siz[k1]>=hk2,resize(#k2,1,round(1.5*hk2+1),1,s#0,0,0));
     );
-    end(for (k = 0, k<size(siz), ++k, resize(#k+3,1,siz[k],1,s#0,0,0)));
+    end(repeat(size(siz),k, resize(#k+3,1,siz[k],1,s#0,0,0)));
     i"
   repeat s#0 sh[3--1] $> $N,1,1,1,"ic(#"$N"+3+x)" j[2] .,1,0,0,$> rm[-{$N+1}--1] done
   map[1] [2] k[0,1]
@@ -25169,7 +25170,7 @@ base642uchar :
     ss>=2?(
       resize(#-1,1,ss*3/4 - (s[ss-1]==_'=') - (s[ss-2]==_'='),1,1);
       od = 0;
-      for (os = 0, os<size(s),
+      repeat (size(s),os,
         c1 = hash[s[os++]];
         c2 = hash[s[os++]];
         c3 = hash[s[os++]];
@@ -25861,9 +25862,7 @@ math_lib :
     _P0P1-=_P0;
     if (length<0, _P0P1*=-length/100, _P0P1*=length/norm2(_P0P1));
     coords = [ _P0,_P1,_P1,_P1 - rot(angle)*_P0P1,_P1,_P1 - rot(-angle)*_P0P1 ];
-    for (_k = 0, _k<3, ++_k,
-      polygon(#ind,2,coords[4*_k,2],coords[4*_k+2,2],_opacity,_da_color);
-   );
+    repeat (3,_k, polygon(#ind,2,coords[4*_k,2],coords[4*_k+2,2],_opacity,_da_color));
   );
 
   spline(ind,P0,T0,P1,T1,opacity,color) = ( # Draw spline P0-P1 with tangents T0,T1 on image #ind
@@ -26152,7 +26151,7 @@ min_whds :
 _minmax_whds :
   u {"
     mw = w; mh = h; md = d; ms = s;
-    for (k = 0, k<l, ++k,
+    repeat (l,k,
       mw = $1(mw,w#k);
       mh = $1(mh,h#k);
       md = $1(md,d#k);
@@ -26280,7 +26279,7 @@ _ovh2stats :
       gimp = krita = _8bf = paintdotnet = digikam = standalone = 0;
       linux = windows = macos = bsd = unknown = 0;
       ips = 0;
-      for (k = 0, k<l, ++k,
+      repeat (l,k,
         ref(lowercase(crop(#k,0,0,0,0,1,256,1,1)),str);
         find(str,'gimp')>=0?++gimp:
         find(str,'krita')>=0?++krita:
