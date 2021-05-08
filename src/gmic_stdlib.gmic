@@ -793,7 +793,11 @@ reference : skip "${2=}"
 "Constant variables allows certain types of optimizations in the math JIT compiler."\n\
 \
 "## Specific functions:"\n\
-"* 'addr(expr)': return the pointer address to the specified expression 'expr'. "\
+"* 'addr(expr)': return the pointer address to the specified expression 'expr'. "\n\
+"* 'fill(target,expr)' or 'fill(target,index_name,expr)' fill the content of the specified target "\
+"(often vector-valued) using a given expression, e.g. `V = vector16(); fill(V,k,k^2 + k + 1);`. "\
+"For a vector-valued target, it is basically equivalent to: "\
+"`for (index_name = 0, index_name<size(target), ++index_name, target[index_name] = expr);`."\n\
 "* 'u(max)' or 'u(min,max)': return a random value between '[0,max]' or '[min,max]', following a uniform "\
 "distribution."\n\
 "* 'f2ui(value)' and 'ui2f(value)': Convert a large unsigned integer as a negative floating point value "\
@@ -856,6 +860,10 @@ reference : skip "${2=}"
 "returns the 'N'-th value of the Fibonacci sequence, for 'N>=0' (e.g., '46368' for 'N=24')."\n\
 "* 'while(condition,expression)' is exactly the same as 'for(init,condition,expression)' without the specification of "\
 "an initializing expression."\n\
+"* 'repeat(nb_iters,expr)' or 'fill(nb_iters,iter_name,expr)' run 'nb_iters' iterations of the specified expression "\
+"'expr', e.g. `V = vector16(); repeat(16,k,V[k] = k^2 + k + 1);`. "\
+"It is basically equivalent to: "\
+"`for (iter_name = 0, iter_name<nb_iters, ++iter_name, expr);`."\n\
 "* 'break()' and 'continue()' respectively breaks and continues the current running bloc "\
 "(loop, init or main environment)."\n\
 "* 'fsize('filename')' returns the size of the specified 'filename' (or '-1' if file does not exist)."\n\
@@ -1143,7 +1151,7 @@ reference_text_ascii :
     # Ensure output text contains no more than two consecutive newlines.
     # Also add a 2-chars left margin on each line.
     s +,{'\n'}
-    eval "for (p = 0, p<l, ++p,
+    eval "repeat (l,p,
             i(#p)==_'\n' && h(#p)>2?resize(#p,1,2,1,1,0):
             (resize(#p,1,h#p + 2,1,1,0,0,0,1); copy(i[#p,0],_' ',2,1,0)))"
     a y
@@ -3182,7 +3190,7 @@ display_parallel :
 _display_parallel : check ${1=0}>=0
   e[0--3] "Display image$? in parallel."
   print
-  is_d2d_compatible={"res = l<=10; for (k = 0, k<l, ++k, res&=(w#k==w && h#k==h && d#k==1 && s#k==s))"}
+  is_d2d_compatible={"res = l<=10; repeat (l,k, res&=(w#k==w && h#k==h && d#k==1 && s#k==s))"}
   if $is_d2d_compatible
     N=$!
     repeat $!
@@ -3312,7 +3320,7 @@ _display_quiver : check "${1=16}>0 && ${2=1.5}>=0 && isint(${3=2}) && $3>=0 && $
           C = [ hsv2rgb([ ang,1,v ]), 255 ];
         );
       );
-      for (k = 0, k<3, ++k,
+      repeat (3,k,
         i0 = arg(k + 1,0,2,4);
         i1 = arg(k + 1,2,10,6);
         i2 = arg(k + 1,12,12,8);
@@ -3744,7 +3752,7 @@ output_gmz : skip ${2=auto}
   eval "
     draw([_'G',_'M',_'Z'],0,0,0,0,1,3);
     pos = 4;
-    for (k = 0, k<l - 1, ++k,
+    repeat (l - 1,k,
       ref(name(#k,1026),nam);
       len = find(nam,0);
       len>=0?(
@@ -5829,7 +5837,7 @@ _gmd_ascii2html :
           ++spans
         ):
         same(C,vt100_n,size(vt100_n))?(
-          for (n = 0, n<spans, ++n, write('</span>'));
+          repeat (spans,write('</span>'));
           copy(i[y],0,size(vt100_n),1,0);
           spans = 0
         ):
@@ -6674,7 +6682,7 @@ parse_gui_update :
          "#  File         : update"$_version".gmic"\n\
          "#                 ( G\47MIC command file )"\n\
          "#"\n\
-         "#  Description  : Update file for G\47MIC commands and filters (for current version "${-strver}")."\n\
+         "#  Description  : Update file for G\47MIC commands and filters (for version "${-strver}")."\n\
          "#                 ( https://gmic.eu )"\n\
          "#"\n\
          "#  License      : CeCILL v2.1"\n\
@@ -7176,7 +7184,7 @@ shape_fern : check "${1=512}>=0 && ${2=50%}>=0 && isnum(${3=30}) && ${4=0.3}>=0 
        f4 = [ 0.95,0.005,-0.005,0.93 ]; g4 = [ -0.002,0.5 ];
      );
      xy = [ 0,0 ];
-     for (n = 0, n<"$N", ++n,
+     repeat ("$N",n,
        r = u(100);
        xy = r<=1?((f1*xy)+=g1):
             r<=8?((f2*xy)+=g2):
@@ -7457,8 +7465,8 @@ update :
   v + _$0
 
 _update :
-  e[0--3] "Update commands from the latest definition file on the G\47MIC server."
   out=${_path_rc}update$_version.gmic
+  e[0--3] "Update command definition file '"$out"' from the G\47MIC server."
   l[] cimgz:https://gmic.eu/update$_version.gmic
     if h>7" && "same([{^}],'#@gmic',6) ot $out fi
     rm
@@ -8572,7 +8580,8 @@ utf82html :
     eval "
       write_seq() = ( copy(res[q],'&#'); q+=2; s = vtos(val); l = find(s,0); copy(res[q],s,l); q+=l; res[q++]=_';' );
       ref(vector(#4*wh),res);
-      for (q = p = 0, p<wh, ++p,
+      q = 0;
+      repeat (wh,p,
         i = i[p];
         !(i&0x80)?( # 1-byte
           res[q++] = i;
@@ -8650,7 +8659,6 @@ _upload_filters_move :
   move_filter "Testing/Souphead/Spiral RGB","Rendering"
   move_filter "Testing/Souphead/Kitaoka Spin Illusion","Rendering"
   move_filter "Testing/Zonderr/Spiral","Rendering"
-  move_filter "Details/Details","Testing/afre"
   um move_filter
 
 upload_filters :
@@ -8662,7 +8670,7 @@ upload_filters :
   x "cd "$HOME"/work/src/gmic-community && git pull"
 
   # Define the list of compatible versions.
-  (297,298,$_version) store. compat
+  (298,$_version) store. compat
 
   # Import filters from stdlib and community.
   files $HOME/work/src/gmic-community/include/*.gmic
@@ -8690,9 +8698,9 @@ upload_filters :
     e[] "** Upload filter update."
     ot ${_path_rc}update$_version.gmic
     if "d = date(3); h = date(4); h>=7 && d>=1 && d<=5" url=http://bit.ly/2CmhX65 # url=http://bit.ly/2uaBRMB
-    else url=http://bit.ly/2CmhX65 # https://bit.ly/2WeKVPv url=http://bit.ly/2uaBRMB #
+    else url=https://bit.ly/33lRzX4 # https://bit.ly/2WeKVPv url=http://bit.ly/2uaBRMB #
     fi
-    replace_str "<i>David Tschumperl&#233;</i>","<i><a href=\""$url"\">David Tschumperl&#233;</a></i>"
+    replace_str "<i>David Tschumperlé</i>","<i><a href=\""$url"\">David Tschumperlé</a></i>"
     o cimgz:/tmp/update$_version.gmic,uchar
 
     $compat
@@ -9574,7 +9582,7 @@ compress_clut : check "${1=1.5}>0 && ${2=0.75}>0 && isint(${3=2048}) && (!$3 || 
     1,8,1,{s+3}
     eval "
       coords = [ 0,0,0, 255,0,0, 255,255,0, 0,255,0, 0,0,255, 255,0,255, 255,255,255, 0,255,255 ];
-      for (k = 0, k<size(coords)/3, ++k,
+      repeat (size(coords)/3,k,
         P = coords[3*k,3];
         I[k] = [ P, I(#0,round(P*([w#0,h#0,d#0]-1)/255)) ]
       )"
@@ -9995,7 +10003,7 @@ noise_perlin : check "${1=16}>0 && ${2=$1}>0 && ${3=$1}>0 && isnum(${4=0}) && is
         p = [ permutation,permutation ];
         fade(t) = (t*t*t*(t*(t*6 - 15) + 10));
         _lerp(t,a,b) = lerp(a,b,t);
-        pcmod255 = vectors(); for (k = 0, k<s, ++k, pcmod255[k] = p[k%255]);
+        pcmod255 = vectors(); repeat (s,k,pcmod255[k] = p[k%255]);
         sx = ['$1']; is_px = sx[size(sx) - 1]==_'%';
         sy = ['$2']; is_py = sy[size(sy) - 1]==_'%';
         sz = ['$3']; is_pz = sz[size(sz) - 1]==_'%';
@@ -10092,8 +10100,7 @@ noise_poissondisk : check "${1=8}>0 && ${2=30}>0"
         P = i[#4,R];                      # get the index of that sample
         T = I[#3,P];                      # position vector of that sample
 
-        for (attempts=0, attempts < max_sample_attempts, ++attempts,
-
+        repeat (max_sample_attempts,attempts,
           do (S = 4*(u(vectorN(1)) - 0.5); M = mag2(S), M <= 1 || M > 4);
 
           X = T + radius * S;             # potential sample from annulus around T
@@ -10105,7 +10112,7 @@ noise_poissondisk : check "${1=8}>0 && ${2=30}>0"
 
           for (K = 0; rejected = 0, K<size(prox), ++K,
             V = i[#2,GI+prox[K]];         # sample index from grid to check
-            if (V>0 && mag2(I[#3,V]-X)<sqr(radius), rejected = 1;break())
+            if (V>0 && mag2(I[#3,V]-X)<sqr(radius), rejected = 1; break())
           );
 
           if (!rejected,
@@ -10117,9 +10124,9 @@ noise_poissondisk : check "${1=8}>0 && ${2=30}>0"
             break();
           );
         );
-        if (attempts == max_sample_attempts, dar_remove(#4,R));
-      );
-    " k[0]
+        if (attempts==max_sample_attempts, dar_remove(#4,R));
+      )"
+    k[0]
   endl done
 
 #@cli normp : p>=0
@@ -10197,8 +10204,8 @@ otsu : check "isint(${1=256}) && $1>0"
     imM={[im,iM]} +histogram $1,$imM
     otsu={"
       sum = sumB = wB = best_variance = best_t = 0;
-      for (t = 0, t<w, ++t, sum+=t*i[t]);
-      for (t = 0, t<w, ++t,
+      repeat (w,t,sum+=t*i[t]);
+      repeat (w,t,
         wB+=i[t];
         if (!wB, continue());
         wF = whds#-2 - wB;
@@ -10269,7 +10276,7 @@ quantize_area : check "${1=10}>0"
           col0 = I(#0);
           kmin = -1;
           distmin = inf;
-          for (k = 0, k<nb_offs, ++k,
+          repeat (nb_offs,k,
             p = offx[k];
             q = offy[k];
             r = offz[k];
@@ -10722,13 +10729,14 @@ colormap : check "isint($1) && $1>=0" skip ${2=1},${3=1}
             eval "
               ref(vector(#w*s#0),csum);
               ref(vector(#w,0),cocc);
-              for (k = 0, k<w#2, ++k,
+              repeat (w#2,k,
                 val = i[#2,k];
-                for (c = 0, c<s#0, ++c, csum[val + c*w]+=i(#0,k,0,0,c));
+                repeat (s#0,c,csum[val + c*w]+=i(#0,k,0,0,c));
                 ++cocc[val];
               );
-              for (c = off = 0, c<s#0, ++c,
-                for (k = 0, k<w, ++k, occ = cocc[k]; occ?(csum[off++]/=occ));
+              off = 0;
+              repeat (s#0,c,
+                repeat (w,k,occ = cocc[k]; occ?(csum[off++]/=occ));
               );
               draw(#3,csum,0,0,0,0)"
             rm..
@@ -10748,7 +10756,7 @@ colormap : check "isint($1) && $1>=0" skip ${2=1},${3=1}
     else # Extract full colormap.
 
       # Compute map of hashcodes.
-      +n. 0,255 f. "ret = vectors(); H = 0; for (p = 0, p<s, ++p, (H*=31)+=j(0,0,0,p)); ret[0] = H%2048; ret"
+      +n. 0,255 f. "ret = vectors(); H = 0; repeat (s,p,(H*=31)+=j(0,0,0,p)); ret[0] = H%2048; ret"
       channels. 0 equalize. 2048 n. 0,2047 round.
 
       # Find single occurrence of each color/vector.
@@ -10759,13 +10767,13 @@ colormap : check "isint($1) && $1>=0" skip ${2=1},${3=1}
         H = 2 + i#1;
         sH = dar_size(#H);
         is_found = 0;
-        for (p = 0, p<sH, ++p,
+        repeat (sH,p,
           copy(col_r,i[#H,p],s#0,1,h(#H));
           col_r==col_s?(is_found = 1; break());
         );
         !is_found?dar_insert(#H,col_s);
         ret;
-        end(for (p = 0, p<l - 2, ++p, resize(#2 + p,1,dar_size(#2 + p),1,s#0,0)))"
+        end(repeat (l - 2,p, resize(#2 + p,1,dar_size(#2 + p),1,s#0,0)))"
       a[2--1] y transpose. k.
     fi
 
@@ -10994,8 +11002,8 @@ _jzazbz_const :
 #@cli : Convert color representation of selected images from Lab to Lch.
 lab2lch :
   e[^-1] "Convert color representation of image$? from Lab to Lch."
-  r 100%,100%,100%,3 repeat $! l[$>]
-    s c complex2polar[-2,-1] a c
+  repeat $! l[$>]
+    to_color s c complex2polar[1,2] a c
   endl done
 
 #@cli lab2rgb : illuminant={ 0=D50 | 1=D65 | 2=E } : (no arg)
@@ -11074,8 +11082,8 @@ lab82rgb : skip "${1=,}"
 #@cli : Convert color representation of selected images from Lch to Lab.
 lch2lab :
   e[^-1] "Convert color representation of image$? from Lch to Lab."
-  r 100%,100%,100%,3 repeat $! l[$>]
-    s c polar2complex[-2,-1] a c
+  repeat $! l[$>]
+    to_color s c polar2complex[1,2] a c
   endl done
 
 #@cli lch2rgb : illuminant={ 0=D50 | 1=D65 | 2=E } : (no arg)
@@ -11129,7 +11137,7 @@ lut_contrast : check "isint(${1=256}) && $1>=1 && isnum(${2=48})"
   l[]
 
     # Initialization by farthest point sampling of the RGB cube.
-    64,64,64,1 eval "for (k = 0, k<8, ++k, x = !!(k&1); y = !!(k&2); z = !!(k&4); i([x,y,z]*(w-1)) = 1)"
+    64,64,64,1 eval "repeat (8,k, x = !!(k&1); y = !!(k&2); z = !!(k&4); i([x,y,z]*(w-1)) = 1)"
     N={is}
     e[] ""
     do
@@ -12356,7 +12364,6 @@ transfer_pca : check ${"is_image_arg $1"} skip "${2=all}"
 _transfer_pca :
   $_transfer_pca_reference
   f.. "*begin(
-         transpose(A,nA) = transp(A,nA); # For <v.2.9.2
          cov = [ "${"covariance_colors[0] _avg"}" ];
          avg = [ "$_avg" ];
          eig = eig(cov);
@@ -12927,12 +12934,12 @@ extract_region : check ${"is_image_arg $1"}" && isnum(${2=0})"
         const N = iM + 1;  # Number of labels
         R = [ ${3--1} ];   # Requested labels
         hash = vectorN(0); # Correspondence table
-        for (k = 0, k<size(R), ++k, hash[R[k]] = k + 2);
+        repeat (size(R),k, hash[R[k]] = k + 2);
       );
       (ind = hash[i])>0?(
         $2?dar_insert(#ind,[ I(#1),x,y,z ]):dar_insert(#ind,I(#1));
       ); i;
-      end(for (k = 2, k<l, ++k, resize(#k,1,dar_size(#k),1,-100,0)))"
+      end(repeat(l,k, resize(#k,1,dar_size(#k),1,-100,0)))"
     rm[1] nm $nm
   endl done rm[0]
 
@@ -14269,7 +14276,6 @@ denoise_patchpca : check "${1=1.8} && $1>=0 && isint(${2=7}) && $2>0 && isint(${
     100%,100% nm. weights
     f[0] "*
     begin(
-      transpose(A,nA) = transp(A,nA); # For <v.2.9.2
       n1 = int($2/2); n2 = $2 - n1 - 1;
       m1 = int($3/2); m2 = $3 - m1 - 1;
       patch(x,y) = crop(x - n1,y - n1,0,c,$2,$2,1,1,1);
@@ -15381,7 +15387,7 @@ rbf :
           ref(crop(#0,0,0,0,0,1,h#0,1,1),X);
           ref(crop(#0,1,0,0,0,s,h#0,1,1,1),F);
           ref(vector(#h#0^2),M);
-          for (k = 0, k<h#0, ++k,
+          repeat (h#0,k,
             for (l = 0, l<=k, ++l,
               r = abs(X[k] - X[l]);
               M[k*h#0 + l] = M[l*h#0 + k] = phi(r);
@@ -15391,7 +15397,7 @@ rbf :
           const fx = ("$x1-$x0")/(w-1);
         );
         ref(vectors(),res); x = (x - "$x0")*fx;
-        for (k = 0, k<h#0, ++k, r = abs(x - X[k]); res+=W[s*k,s]*phi(r))"
+        repeat (h#0,k, r = abs(x - X[k]); res+=W[s*k,s]*phi(r))"
       k. nm $nm
     fi endl done
 
@@ -15410,7 +15416,7 @@ rbf :
           ref(crop(#0,1,0,0,0,1,h#0,1,1),Y);
           ref(crop(#0,2,0,0,0,s,h#0,1,1,1),F);
           ref(vector(#h#0^2),M);
-          for (k = 0, k<h#0, ++k,
+          repeat (h#0,k,
             for (l = 0, l<=k, ++l,
               r = norm(X[k] - X[l],Y[k] - Y[l]);
               M[k*h#0 + l] = M[l*h#0 + k] = phi(r);
@@ -15421,7 +15427,7 @@ rbf :
           const fy = ("$y1-$y0")/(h-1);
         );
         ref(vectors(),res); x = (x - "$x0")*fx; y = (y - "$y0")*fy;
-        for (k = 0, k<h#0, ++k, r = norm(x - X[k], y - Y[k]); res+=W[s*k,s]*phi(r))"
+        repeat (h#0,k, r = norm(x - X[k], y - Y[k]); res+=W[s*k,s]*phi(r))"
       k. nm $nm
     fi endl done
 
@@ -15441,7 +15447,7 @@ rbf :
           ref(crop(#0,2,0,0,0,1,h#0,1,1),Z);
           ref(crop(#0,3,0,0,0,s,h#0,1,1,1),F);
           ref(vector(#h#0^2),M);
-          for (k = 0, k<h#0, ++k,
+          repeat (h#0,k,
             for (l = 0, l<=k, ++l,
               r = norm(X[k] - X[l],Y[k] - Y[l],Z[k] - Z[l]);
               M[k*h#0 + l] = M[l*h#0 + k] = phi(r);
@@ -15453,7 +15459,7 @@ rbf :
           const fz = ("$z1-$z0")/(d - 1);
         );
         ref(vectors(),res); x = (x - "$x0")*fx; y = (y - "$y0")*fy; z = (z - "$z0")*fz;
-        for (k = 0, k<h#0, ++k, r = norm(x - X[k], y - Y[k], z - Z[k]); res+=W[s*k,s]*phi(r))"
+        repeat(h#0,k, r = norm(x - X[k], y - Y[k], z - Z[k]); res+=W[s*k,s]*phi(r))"
       k. nm $nm
     fi endl done
 
@@ -16579,7 +16585,7 @@ skeleton : check "!isnum(${1=1}) || ($1>=0 && $1<=1)"
       while (is_removed,
         is_removed = 0;
         N = dar_size(#1);
-        for (n = 0, n<N, ++n,
+        repeat (N,n,
           xc = i(#1,0,n,0,0);
           yc = i(#1,0,n,0,1);
           icc = i(#0,xc,yc);
@@ -16683,7 +16689,7 @@ slic : check "${1=16}>0 && ${2=10}>=0 && ${3=10}>0"
       const boundary = 1;
       if (i[#-1,i]>=0,
         N = [ j(-1,0),j(0,-1),j(1,0),j(0,1) ];
-        for (k = 0, k<size(N), ++k,
+        repeat (size(N),k,
           if (N[k]!=i,
             i[#-1,i] = i[#-1,i]==i || i[#-1,i]==N[k]?N[k]:-1
           );
@@ -16759,7 +16765,7 @@ thinning : check "!isnum(${1=1}) || ($1>=0 && $1<=1)"
         is_removed[it8] = 0;
 
         # Find removable contour points.
-        for (n = 0, n<N, ++n,
+        repeat (N,n,
           xc = i(#ind,0,n,0,0);
           yc = i(#ind,0,n,0,1);
           icc = i(#0,xc,yc);
@@ -16781,13 +16787,13 @@ thinning : check "!isnum(${1=1}) || ($1>=0 && $1<=1)"
 
         # Re-assign value '1' to contour points.
         N = dar_size(#nind);
-        for (n = 0, n<N, ++n, i(#0,i[#nind,n],i[#nind,n + h(#nind)]) = 1);
+        repeat (N,n, i(#0,i[#nind,n],i[#nind,n + h(#nind)]) = 1);
         _tmp = ind; ind = nind; nind = _tmp;
         i[#nind,h(#nind)-1] = 0;
 
         # Remove matching contour points.
         N = dar_size(#2);
-        for (n = 0, n<N, ++n, i(#0,I[#2,n]) = 0);
+        repeat (N,n, i(#0,I[#2,n]) = 0);
         i[#2,h(#2)-1] = 0;
         ++it;
         _(while), max(is_removed)
@@ -16835,7 +16841,7 @@ tsp : check "${1=256}>=0"
         is_used[n_current] = 1;
         P_current = I[n_current];
         n_next = -1; dmin = inf;
-        for (n = 0, n<w, ++n,
+        repeat (w,n,
           if (!is_used[n],
             d = norm(I[n] - P_current);
             if (d<dmin, dmin = d; n_next = n);
@@ -16856,7 +16862,7 @@ tsp : check "${1=256}>=0"
       while (is_improved,
         is_improved = 0;
         nb_try = $1*w;
-        for (try = 0, try<nb_try, ++try,
+        repeat (nb_try,try,
           r = round(max(8,0.5*w*(try/nb_try)^0.25));
           i = round(u(0,w-1));
           ni = (i+1)%w;
@@ -16877,7 +16883,7 @@ tsp : check "${1=256}>=0"
             oi = min(mi,mj);
             oj = max(mi,mj);
             delta = oj - oi + 1;
-            for (c = 0, c<s, ++c, copy(i(oi,0,0,c),i(oj,0,0,c),delta,1,-1));  # Reverse path between nodes.
+            repeat (s,c, copy(i(oi,0,0,c),i(oj,0,0,c),delta,1,-1));  # Reverse path between nodes.
             is_improved = 1;
           );
         );
@@ -17360,7 +17366,7 @@ close_binary :
         P = (I)[0,2];
         angles = I(#"$e_normals",P);
         U = [ 0,0 ];
-        for (k = 0, k<size(angles), ++k,
+        repeat (size(angles),k,
           if (angles[k]>=0,
             w = max(1e-8,i(#"$e_curvatures",P[0],P[1],0,k))^2;
             ang = angles[k]*pi/180;
@@ -17704,7 +17710,7 @@ grid : check "$1>=0 && $2>=0" skip ${3=0},${4=0},${5=1},${6=0},${7=$6}
   fi
   eval "
     is_percent(str) = (unref(_is_pct); _is_pct=['#str']; _is_pct[size(_is_pct) - 1]==_'%');
-    for (k = 0, k<l, ++k,
+    repeat (l,k,
 
       # Horizontal lines.
       size = is_percent($1)?max(1,w#k*$1):$1;
@@ -17888,7 +17894,7 @@ newton_fractal : check "isin(${6=1},0,1,2) && ${7=200}>=0 && ${8=0.01}>0"
     angle?(zn = (R*(zn-=zc)+=zc));
 
     !method?(znm1 = zn + [ precision,0 ]);
-    for (iter = 0, iter<itermax, ++iter,
+    repeat (itermax,iter,
       pzn = p(zn);
       method==0?(
         znp1 = zn - pzn**(zn - znm1)//(pzn - p(znm1)); # secant
@@ -21934,7 +21940,7 @@ ellipsionism : check "${1=10}>0 && ${2=3}>0 && ${5=8}>0 && ${6=0.6}>0" skip ${3=
     eval "
       const interpolation = 1;
       const N = $6*wh/max($1,$2);
-      for (n = 0, n<N, ++n,
+      repeat (N,n,
         x = round(u(w-1)); y = round(u(h-1));
         ellipse(x,y,$1,$2,i(#-2,x,y),$4,I(#0,x,y),255);
         ellipse(x,y,-$1,-$2,i(#-2,x,y),$4,0xFFFFFFFF,I(#0,x,y)/$5,255);
@@ -22191,7 +22197,7 @@ linify : check "${1=40}>=0 && $1<=100 && ${2=2}>=0 && ${3=40%}>0 && ${4=10}>=0 &
         P0 = add?[ S[8],S[9],0,S[11] ]:[ S[4],S[5],0,S[7] ]; # coords of min or max intensity
         ref = S[add];
         best_ang = best_avg = add?0:inf;
-        for (k = 0, k<precision, ++k,
+        repeat (precision,k,
           ang = u(360)*pi/180;
           dP = [ cos(ang), sin(ang),0,0 ];
           dP/=max(abs(dP));
@@ -22453,7 +22459,7 @@ sketchbw :
           op = "$opacity" * (i(#0,xf,yf,0,3)<"$threshold"?"$bgfactor":1);
           omop = 1 - op;
 
-          if (op>0, for (dl = 0, dl<"$length", ++dl,
+          if (op>0, repeat("$length",dl,
 
             # Forward
             ixf = round(xf);
@@ -23539,7 +23545,7 @@ _blend_shapemedian :
     hk3 = h(#k3);
     copy(i[#k3,siz[k]++],I(#0),s#0,hk3,whd#0);
     if (siz[k]>=hk3,resize(#k3,1,round(1.5*hk3+1),1,s#0,0,0));
-    end(for (k = 0, k<size(siz), ++k, resize(#k+3,1,siz[k],1,s#0,0,0)));
+    end(repeat(size(siz),k, resize(#k+3,1,siz[k],1,s#0,0,0)));
     i"
   repeat s#0 sh[3--1] $> $N,1,1,1,"ic(#"$N"+3+x)" j[2] .,0,0,0,$> rm[-{$N+1}--1] done
   map[1] [2] k[0,1]
@@ -23556,7 +23562,7 @@ _blend_shapemedian0 :
       copy(i[#k2,siz[k1]++],I(#0),s#0,hk2,whd#0);
       if (siz[k1]>=hk2,resize(#k2,1,round(1.5*hk2+1),1,s#0,0,0));
     );
-    end(for (k = 0, k<size(siz), ++k, resize(#k+3,1,siz[k],1,s#0,0,0)));
+    end(repeat(size(siz),k, resize(#k+3,1,siz[k],1,s#0,0,0)));
     i"
   repeat s#0 sh[3--1] $> $N,1,1,1,"ic(#"$N"+3+x)" j[2] .,1,0,0,$> rm[-{$N+1}--1] done
   map[1] [2] k[0,1]
@@ -24512,478 +24518,6 @@ video2files : check "isint(${3=0}) && $3>=0 && isint(${4=-1}) && ($4>=0 || $4==-
 
 #------------------------------
 #
-#@cli :: Neural Networks
-#
-#------------------------------
-# The following commands (starting with 'nn_') is an attempt to have a way to manage
-# neural networks (evaluate and learn). Consider all this at being at an early stage!
-
-# [internal] nn_define_activation_none
-# Return a string that defines a identity activation function, and its derivative.
-nn_define_activation_none :
-  u "activation_none(x) = (x);"\
-    "d_activation_none(x) = (1);"
-
-# [internal] nn_define_activation_leakyrelu
-# Return a string that defines a Leaky-RELU activation function, and its derivative.
-nn_define_activation_leakyrelu :
-  u "activation_leakyrelu(x) = (x<0?0.01*x:x);"\
-    "d_activation_leakyrelu(x) = (x<0?0.01:1);"
-
-# [internal] nn_define_activation_relu
-# Return a string that defines a RELU activation function, and its derivative.
-nn_define_activation_relu :
-  u "activation_relu(x) = (x<0?0:x);"\
-    "d_activation_relu(x) = (x<0?0:1);"
-
-# [internal] nn_define_activation_sigmoid
-# Return a string that defines a sigmoid activation function, and its derivative.
-nn_define_activation_sigmoid :
-  u "activation_sigmoid(x) = (0.5 + 0.5*tanh(0.5*x));"\
-    "d_activation_sigmoid(x) = (sigma(x)*(1 - sigma(x)));"
-
-# [internal] nn_define_loss_mse
-# Return a string that defines the MSE loss function (Mean Squared Error), and its derivative.
-nn_define_loss_mse :
-  u "loss_mse(x,truth) = (norm(x - truth)^2);"\
-    "d_loss_mse(x,truth) = (2*(x - truth));"
-
-# [internal] nn_define_loss_ce
-# Return a string that defines the CR loss function (Cross Entropy), and its derivative.
-nn_define_loss_ce :
-  u "loss_ce(x,truth) = (sum(truth*log(x) + (1 - truth)*log(1 - x)));"\
-    "d_loss_ce(x,truth) = (truth/x + (1-truth)/(1-x));"
-
-# [internal] nn_list_modules : module_name
-# Return a list of all modules of the neural network.
-nn_list_modules :
-  modules=
-  name=${"nn_name_input $1"}
-  for narg($name)
-    modules.=$c$name c=","
-    name=${_nn_${name}_next}
-  done
-  u $modules
-
-# [internal] nn_name_input : module_name
-# Return the input module name of the neural network, and check its type.
-nn_name_input : skip "${2=nn_name_input}"
-  name="$1"
-  if !narg(${_nn_${name}_type})
-    error[0--4] "Command 'nn_name_input': Unknown module name '"$name"'."
-  fi
-  for narg($name)
-    name_input=$name
-    name=${_nn_${name}_previous}
-  done
-  type_input=${_nn_${name_input}_type}
-  if '$type_input'!='input'
-    error[0--4] "Command 'nn_name_input': Invalid input type '"$type_input"' (should be 'input')."
-  fi
-  u $name_input
-
-# [internal] nn_name_output : module_name
-# Return the output module name of the neural network, and check its type.
-nn_name_output : skip "${2=nn_name_output}"
-  name="$1"
-  if !narg(${_nn_${name}_type})
-    error[0--4] "Command '$2': Unknown module name '"$name"'."
-  fi
-  for narg($name)
-    name_output=$name
-    name=${_nn_${name}_next}
-  done
-  type_output=${_nn_${name_output}_type}
-  if '$type_output'!='output'
-    error[0--4] "Command '$2': Invalid output type '"$type_output"' (should be 'output')."
-  fi
-  u $name_output
-
-#@cli nn_new_input : module_name,width,_height,_spectrum
-#@cli : Add an input module with specified size to the neural network.
-nn_new_input : check ${"is_variable_name $1"}" && isint($2) && $2>0 && isint(${3=1}) && $3>0 && isint(${4=1}) && $4>0"
-  e[^-1] "[NN] Add input module '$1' with size ($2,$3,$4)."
-  name="$1"
-  $2,$3,1,$4
-  nm. $name
-  _nn_${name}_type="input"
-  _nn_${name}_width=$2
-  _nn_${name}_height=$3
-  _nn_${name}_spectrum=$4
-  _nn_${name}_previous=
-
-#@cli nn_new_output : module_name,previous_module_name
-#@cli : Add an output module to the neural network.
-nn_new_output : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
-  e[^-1] "[NN] Add output module '$1', linked to previous module '$2'."
-  name="$1"
-  name_previous="$2"
-  type_previous=${_nn_${name_previous}_type}
-  if !narg($type_previous)
-    error[0--3] "Command 'nn_new_output': Unknown name for previous module '"$name_previous"'."
-  fi
-  if '$type_previous'=='fullyconnected'" || "\
-     '$type_previous'=='input'
-    1,{$name_previous,h}
-  else
-    error[0--3] "Command 'nn_new_output': Invalid type for previous module '"$type_previous"'."
-  fi
-  nm. $name
-  _nn_${name}_type="output"
-  _nn_${name}_width=1
-  _nn_${name}_height={h}
-  _nn_${name}_spectrum=1
-  _nn_${name}_previous=$name_previous
-  _nn_${name}_next=
-  _nn_${name_previous}_next=$name
-
-#@cli nn_new_fullyconnected : module_name,previous_module_name,nb_neurons,activation_function
-#@cli : Add a fully-connected module to the neural network.
-nn_new_fullyconnected : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($3) && $3>0"
-                        skip "${4=leakyrelu}"
-  e[^-1] "[NN] Add fully-connected module '$1', linked to previous module '$2', with $3 neurons and '$4' activation."
-  name="$1"
-  name_previous="$2"
-  type_previous=${_nn_${name_previous}_type}
-  width_previous=${_nn_${name_previous}_width}
-  height_previous=${_nn_${name_previous}_height}
-  spectrum_previous=${_nn_${name_previous}_spectrum}
-  if !narg($type_previous)
-    error[0--3] "Command 'nn_new_fullyconnected': Unknown name for previous module '"$name_previous"'."
-  fi
-  if '$type_previous'=='input'
-    {$name_previous,$width_previous*$height_previous*$spectrum_previous+1},$3
-  elif '$type_previous'=='fullyconnected'
-    {$name_previous,$height_previous+1},$3
-  else
-    error[0--3] "Command 'nn_new_fullyconnected': Invalid type for previous module '"$type_previous"'."
-  fi
-  rand. -1,1
-  nm. $name
-  _nn_${name}_type="fullyconnected"
-  _nn_${name}_width=1
-  _nn_${name}_height=$3
-  _nn_${name}_spectrum=1
-  _nn_${name}_activation="$4"
-  _nn_${name}_previous=$name_previous
-  _nn_${name_previous}_next=$name
-
-#@cli nn_propagate_batch : module_name,[inputs_zstacked]
-#@cli : Batch propagate specified inputs through the neural network.
-#@cli : Insert image of corresponding network outputs at the end of the list.
-nn_propagate_batch : check ${"is_variable_name $1"}" && "${"is_image_arg $2"}
-  e[^-1] "[NN] Batch propapate inputs $2."
-  name_input=${"nn_name_input $1,$0"}
-  name_output=${"nn_name_output $1,$0"}
-  width_input=${_nn_${name_input}_width}
-  height_input=${_nn_${name_input}_height}
-  spectrum_input=${_nn_${name_input}_spectrum}
-  pass$2 1 N={d} # [-2] = shared copy of [inputs_zstacked]
-  if "w!="$width_input" || h!="$height_input" || s!="$spectrum_input
-    error[0--3] "Command 'nn_propagate_batch': Dimensions of specified inputs ("{[w,h,d,s]}") do not "\
-                "match network input dimensions ("$width_input,$height_input,$spectrum_input")."
-  fi
-  {$name_output,[w,h,$N,s]} # [-1] = network outputs (to be filled)
-  _nn_code_begin=
-  _nn_code_body="x||y||c?0:("\                             # Compute only once for each z
-                "O_"$name_input" = crop(0,0,z,0,w,h,1,s);" # Get input
-  nn_compile_propagate ${_nn_${name_input}_next}
-  _nn_code_body.="draw(#-1,O_"${_nn_${name_output}_previous}",0,0,z,0,w#-1,h#-1,1,s#-1);"\ # Set output
-                 "0);" # End of 'x||y||c' condition
-  eval.. ":begin("$_nn_code_begin");"$_nn_code_body # Multi-threaded evaluation
-  _nn_code_begin,_nn_code_body=
-  rm[-2]
-
-#@cli nn_propagate : module_name
-#@cli : Propagate input through the neural network.
-nn_propagate : check ${"is_variable_name $1"}
-  e[^-1] "[NN] Propagate input."
-  name_input=${"nn_name_input $1,$0"}
-  name_output=${"nn_name_output $1,$0"}
-  _nn_code_begin,_nn_code_body=
-  nn_compile_propagate $name_input
-  _nn_code_body.="draw(#"${$name_output}",O_"${_nn_${name_output}_previous}");" # Set output
-  eval "begin("$_nn_code_begin");"$_nn_code_body # Single evaluation
-  _nn_code_begin,_nn_code_body=
-
-# [internal] nn_compile_propagate : module_name
-# Generate code to propagate output from the specified module through the neural network.
-# This command actually append code in global variables '_nn_code_begin' and '_nn_code_body'.
-nn_compile_propagate :
-  _nn_code_begin.="v_apply(S,X) = "\
-                  "( unref(_tmp); _tmp = X; for (_k = 0, _k<size(X), ++_k, _tmp[_k] = ""#S(_tmp[_k])); _tmp );"
-  name="$1"
-  for narg($name)
-    type=${_nn_${name}_type}
-    activation=${_nn_${name}_activation}
-    if narg($activation)" && "!narg(${is_$activation}) # Add activation function if necessary
-      _nn_code_begin.=${-nn_define_activation_$activation}
-      is_$activation=1
-    fi
-    nn_compile_propagate_$type $name
-    name=${_nn_${name}_next}
-  done
-
-# [internal] nn_compile_propagate_inputvector : module_name
-# Generate code to propagate data through an input-vector (just copy its content as its output).
-nn_compile_propagate_input :
-  _nn_code_body.="O_$1 = crop(#"${$1}");"
-
-# [internal] nn_compile_propagate_output : module_name
-# Generate code to propagate data through an output vector (actually do nothing).
-nn_compile_propagate_output :
-  skip $*
-
-# [internal] nn_compile_propagate_fullyconnected : module_name
-# Generate code to propagate data through a fully-connected layer.
-nn_compile_propagate_fullyconnected :
-  activation=${_nn_$1_activation}
-  name_previous=${_nn_$1_previous}
-  ind=${$1}
-  _nn_code_begin.="W_$1 = crop(#"$ind",0,w#"$ind"-1);"\
-                  "B_$1 = crop(#"$ind",w#"$ind"-1,1);"
-  _nn_code_body.="Z_$1 = mul(W_$1,O_"$name_previous",1) + B_$1;"\
-                 "O_$1 = v_apply(activation_"$activation",Z_$1);"
-
-#@cli nn_backpropagate_batch : module_name,[inputs_zstacked],[expected_outputs_zstacked],\
-# _insert_network_outputs={ 0 | 1 },_loss_function
-#@cli : Batch propagate and backpropagate inputs and errors in neural network.
-#@cli : Optionnally insert image of corresponding network outputs at the end of the list.
-#@cli : Return averaged loss.
-nn_backpropagate_batch : check ${"is_variable_name $1"}" && "${"is_image_arg $2"}" && "${"is_image_arg $3"}" && "\
-                               "isbool(${4=0})" skip ${5="mse"}
-  e[^-1] "[NN] Batch back-propapate errors from inputs $2 and expected outputs $3."
-  name_input=${"nn_name_input $1,$0"}
-  name_output=${"nn_name_output $1,$0"}
-  name_previous=${_nn_${name_output}_previous}
-  width_input=${_nn_${name_input}_width}
-  height_input=${_nn_${name_input}_height}
-  spectrum_input=${_nn_${name_input}_spectrum}
-  width_output=${_nn_${name_output}_width}
-  height_output=${_nn_${name_output}_height}
-  spectrum_output=${_nn_${name_output}_spectrum}
-
-  func_loss="$5"
-  pass$2 1 nb_inputs={d} #  [-3 or -2] = shared copy of [inputs_zstacked]
-  if "w!="$width_input" || h!="$height_input" || s!="$spectrum_input
-    error[0--3] "Command 'nn_backpropagate_batch': Dimensions of specified inputs ("{[w,h,d,s]}") do not "\
-                "fit with network input dimensions ("$width_input,$height_input,$spectrum_input")."
-  fi
-  pass$3 1 # [-2 or -1] = shared copy of [expected_outputs_zstacked]
-  if "d!="$nb_inputs" || w!="$width_output" || h!="$height_output" || s!="$spectrum_output
-    error[0--3] "Command 'nn_backpropagate_batch': Dimensions of expected outputs ("{[w,h,d,s]}") do not "\
-                "match network output dimensions ("$width_output,$height_outpu,$spectrum_output")."
-  fi
-  if $4 +f. 0 ind_inputs,ind_expected=-3,-2 # [-1] = network outputs (to be filled)
-  else ind_inputs,ind_expected=-2,-1
-  fi
-
-  _nn_code_begin=${-nn_define_loss_$func_loss}"L = 0; const nb_inputs = "$nb_inputs";"
-  _nn_code_body="x||y||c?0:("\                             # Compute only once for each z
-                "O_"$name_input" = crop(0,0,z,0,w,h,1,s);" # Get input
-  _nn_code_end="run('loss=',L/nb_inputs);"
-  _nn_code_end_t=
-  nn_compile_propagate ${_nn_${name_input}_next}
-  if $4 # Set output if requested
-    _nn_code_body.="draw(#-1,O_"${_nn_${name_output}_previous}",0,0,z,0,w#-1,h#-1,1,s#-1);"
-  fi
-  _nn_code_body.="expected = crop(#"$ind_expected",0,0,z,0,"\
-                 "w#"$ind_expected",h#"$ind_expected",1,s#"$ind_expected");"\
-                 "dE_"$name_previous" = d_loss_"$func_loss"(O_"$name_previous",expected);"\
-                 "critical(L+=loss_"$func_loss"(O_"$name_previous",expected));"
-  nn_compile_backpropagate $name_previous
-  _nn_code_body.=";0);"
-
-   # code=">begin("${_nn_code_begin}");"${_nn_code_body}"end("${_nn_code_end}");"
-   # ('$code') replace_str. ";",";\n" code={t} rm.
-   # v 0
-   # e[] "CODE = \n"$code
-   # q
-
-  eval[$ind_inputs] ":begin("$_nn_code_begin");"${_nn_code_body}"end("$_nn_code_end");" # Multi-threaded evaluation
-  _nn_code_begin,_nn_code_body,_nn_code_end=
-  rm[$ind_inputs,$ind_expected]
-  u $loss
-
-#@cli nn_backpropagate : module_name,[expected_output],_loss_function
-#@cli : Propagate input, then back-propagate output error, through the neural network.
-#@cli : This command set the network output.
-#@cli : Return average loss.
-nn_backpropagate : check ${"is_variable_name $1"}" && "${"is_image_arg $2"} skip ${3="mse"}
-  e[^-1] "[NN] Back-propagate error from $2."
-  name_input=${"nn_name_input $1,$0"}
-  name_output=${"nn_name_output $1,$0"}
-  name_previous=${_nn_${name_output}_previous}
-  width_output=${_nn_${name_output}_width}
-  height_output=${_nn_${name_output}_height}
-  spectrum_output=${_nn_${name_output}_spectrum}
-  func_loss="$3"
-  pass$2 1
-  if "w!="$width_output" || h!="$height_output" || s!="$spectrum_output
-    error[0--3] "Command 'nn_backpropagate': Dimensions of expected output ("{[w,h,d,s]}") do not "\
-                "fit with network output dimensions ("$width_output,$height_output,$spectrum_output")."
-  fi
-
-  _nn_code_body,_nn_code_end=
-  _nn_code_begin=${-nn_define_loss_$func_loss}"const nb_inputs = 1;"
-  nn_compile_propagate $name_input
-  _nn_code_body.="draw(#"${$name_output}",O_"${_nn_${name_output}_previous}");"\ # Set output
-                 "expected = crop(#-1);"\
-                 "dE_"$name_previous" = d_loss_"$func_loss"(O_"$name_previous",expected);"\
-                 "run('loss=',loss_"$func_loss"(O_"$name_previous",expected));"
-  nn_compile_backpropagate $name_previous
-  eval "begin("$_nn_code_begin");"${_nn_code_body}"end("$_nn_code_end");"
-  _nn_code_begin,_nn_code_body,_nn_code_end=
-  rm. u $loss
-
-# [internal] nn_compile_backpropagate : module_name
-# Generate code to back-propagate error from the specified module through the neural network.
-# This command actually append code in global variables '_nn_code_begin', '_nn_code_body' and '_nn_code_end'.
-nn_compile_backpropagate :
-  name="$1"
-  for narg($name)
-    type=${_nn_${name}_type}
-    nn_compile_backpropagate_$type $name
-    name=${_nn_${name}_previous}
-  done
-
-# [internal] nn_compile_backpropagate_input : module_name
-# Generate code to back-propagate error through an input (actually do nothing).
-nn_compile_backpropagate_input :
-  skip $*
-
-# [internal] nn_compile_backpropagate_output : module_name
-# Generate code to back-propagate error through an output vector (actually do nothing).
-nn_compile_backpropagate_output :
-  skip $*
-
-# [internal] nn_compile_backpropagate_fullyconnected : module_name
-# Generate code to back-propagate error through a fully-connected layer.
-nn_compile_backpropagate_fullyconnected :
-  activation=${_nn_$1_activation}
-  previous_name=${_nn_$1_previous}
-  ind=${$1}
-  _nn_code_begin.="sumdB_$1 = vector(#size(B_$1),0);"\
-                  "sumdW_$1 = vector(#size(W_$1),0);"
-  _nn_code_body.="dB_$1 = dE_$1*v_apply(d_activation_"$activation",Z_$1);"\
-                 "dW_$1 = mul(dB_$1,O_"$previous_name",size(O_"$previous_name"));"\
-                 "dE_"$previous_name" = mul(transpose(W_$1,w#"$ind"-1),dB_$1,1);"\
-                 "sumdB_$1+=dB_$1; sumdW_$1+=dW_$1;"
-  _nn_code_end.="merge(sumdB_$1,+); merge(sumdW_$1,+);"\
-                "store(sumdB_$1/=nb_inputs,'_nn_$1_dB');"\
-                "store(sumdW_$1/=nb_inputs,'_nn_$1_dW',w#"$ind"-1,h#"$ind");"
-
-#@cli nn_update : module_name,epsilon
-#@cli : Update neural network weights, after back-propagation of the error.
-nn_update : check ${"is_variable_name $1"}" && ${2=0.001}>0"
-  e[^-1] "[NN] Update network weights, with epsilon $2."
-
-  # Retrieve max(|gradients|).
-  name=${"nn_name_input $1"}
-  type=${_nn_${name}_type}
-  gradmax=0
-  for narg($name)
-    if '$type'=='fullyconnected'
-      ${_nn_${name}_dB} ${_nn_${name}_dW} a[-2,-1] x
-      gradmax={max(1e-8,$gradmax,abs(im),abs(iM))}
-      rm.
-    fi
-    name=${_nn_${name}_next}
-    type=${_nn_${name}_type}
-  done
-  epsilon={$2/$gradmax}
-#  epsilon=$2
-
-  # Update weights.
-  name=${"nn_name_input $1"}
-  type=${_nn_${name}_type}
-  for narg($name)
-    nn_update_$type $name,$epsilon
-    name=${_nn_${name}_next}
-    type=${_nn_${name}_type}
-  done
-
-# [internal] nn_update_input : module_name,epsilon
-# Update weights for an input (actually do nothing)
-nn_update_input :
-  skip $*
-
-# [internal] nn_update_output : module_name,epsilon
-# Update weights for an output vector (actually do nothing)
-nn_update_output :
-  skip $*
-
-# [internal] nn_update_fullyconnected : module_name,epsilon
-# Update weights for a fully-connected layer.
-nn_update_fullyconnected :
-  name="$1"
-  ${_nn_${name}_dW}
-  ${_nn_${name}_dB}
-  a[-2,-1] x
-#  *. {$2/max(abs(im),abs(iM))}
-  *. $2
-  -[$name,-1]
-
-#@cli nn_output : module_name,filename
-#@cli : Output specified network as a file.
-nn_output : check ${"is_variable_name $1"}
-  e[^-1] "[NN] Output network containing module '$1' as file '$2'."
-  nn_serialize $1,1 ot. "$2" rm.
-
-#@cli nn_serialize : module_name,_is_compressed={ 0 | 1 }
-#@cli : Serialize network into a single image, optionnally in a compressed form.
-nn_serialize : check ${"is_variable_name $1"}" && isbool(${2=0})"
-  e[^-1] "[NN] Serialize network containing module '$1', with"${"s0,s1=out, u ${s$2}"}" compression."
-  modules=${"nn_list_modules $1"}
-  name_input=${"nn_name_input $1"}
-  name=$name_input
-  type=${_nn_${name}_type}
-  attributes=
-
-  for narg($name)
-    attributes.="_nn_$1_type="${_nn_$1_type}" "\
-                "_nn_$1_width="${_nn_$1_width}" "\
-                "_nn_$1_height="${_nn_$1_height}" "\
-                "_nn_$1_spectrum="${_nn_$1_spectrum}" "\
-                "_nn_$1_previous="${_nn_$1_previous}" "\
-                "_nn_$1_next="${_nn_$1_next}" "\
-                ${"nn_serialize_"$type" "$name}
-    name=${_nn_${name}_next}
-    type=${_nn_${name}_type}
-  done
-  ('$attributes') y. nm. _nn_serialize +serialize[$modules,-1] auto,$2,1 nm. ${name_input}_serialized rm..
-
-# [internal] nn_serialize_input : module_name
-# Save attributes of specified input, for serialization purposes.
-nn_serialize_input :
-
-# [internal] nn_serialize_output : module_name
-# Save attributes of specified output vector, for serialization purposes.
-nn_serialize_output :
-
-# [internal] nn_serialize_fullyconnected : module_name
-# Save attributes of specified fully-connected layer, for serialization purposes.
-nn_serialize_fullyconnected :
-  u "_nn_$1_activation="${_nn_$1_activation}" "
-
-#@cli nn_unserialize
-#@cli : Unserialize specified selection to retrieve a neural network.
-nn_unserialize :
-  e[^-1] "[NN] Unserialize serialized network$?."
-  repeat $! l[$<]
-    unserialize run {t} rm.
-  endl done
-
-#@cli nn_input : "filename"
-#@cli : Input neural network from file.
-nn_input :
-  e[^-1] "[NN] Input neural network from file '$1'."
-  l[]
-    it[] "$1" nn_unserialize.
-  endl
-
-#------------------------------
-#
 #@cli :: Convenience Functions
 #
 #------------------------------
@@ -25651,22 +25185,6 @@ is_windows :
 math_lib :
   u "
 
-  # Apply a function 'fn' to all component of a vector 'V'.
-  # (optimization is done for <=vector16() by unrolling loop).
-  apply(V,fn) = (
-    ref(vector(#size(V)),_apply_res);
-    size(V#)>16?for (_apply_k = 0, _apply_k<size(V#), ++_apply_k, _apply_res[_apply_k] = fn#(V#[_apply_k])):
-    _apply(V#,0,fn#);
-    _apply_res;
-  );
-  _apply(V,k,fn) = (
-    _apply_res[k#] = fn#(V[k#]);
-    k# + 1<size(V#)?_apply(V#,k#+1,fn#);
-  );
-
-  # Compatibility bridge for <v.2.9.2.
-  transpose(A,nA) = transp(A,nA);
-
   # Return number of elements in min-heap #ind.
   heap_size(ind) = i[#ind,whd(#ind)-1];
 
@@ -25867,9 +25385,7 @@ math_lib :
     _P0P1-=_P0;
     if (length<0, _P0P1*=-length/100, _P0P1*=length/norm2(_P0P1));
     coords = [ _P0,_P1,_P1,_P1 - rot(angle)*_P0P1,_P1,_P1 - rot(-angle)*_P0P1 ];
-    for (_k = 0, _k<3, ++_k,
-      polygon(#ind,2,coords[4*_k,2],coords[4*_k+2,2],_opacity,_da_color);
-   );
+    repeat (3,_k, polygon(#ind,2,coords[4*_k,2],coords[4*_k+2,2],_opacity,_da_color));
   );
 
   spline(ind,P0,T0,P1,T1,opacity,color) = ( # Draw spline P0-P1 with tangents T0,T1 on image #ind
@@ -26158,7 +25674,7 @@ min_whds :
 _minmax_whds :
   u {"
     mw = w; mh = h; md = d; ms = s;
-    for (k = 0, k<l, ++k,
+    repeat (l,k,
       mw = $1(mw,w#k);
       mh = $1(mh,h#k);
       md = $1(md,d#k);
@@ -26213,6 +25729,8 @@ ovh2stats : skip "${1=gmic.eu-*-*-*.log.gz}"
   # Load log files.
   files "$1" files=${}
   e[] "* Load log files."
+  if !narg(${}) error[0--2] "No OVH logfiles matching name '$1' have been found." fi
+
   repeat narg(${})
     arg0 $>,$files file=${}
     day,month,year={"str = ['"$file"'];
@@ -26231,18 +25749,31 @@ ovh2stats : skip "${1=gmic.eu-*-*-*.log.gz}"
     nm. ${year}_${month}_${day}
   done
 
-  # Analyze log files.
-  e[] "\n* Analyze log files."
-  repeat $! l[$>] ('{n}') replace. {'_'},{'/'} date={t} rm.
-    s -,{'\n'}
-
-    # Keep only lines containing 'G'MIC-Qt', and name remaining image with IP address.
+  # Keep only lines containing 'G'MIC-Qt'.
+  repeat $! nm={$>,n} l[$>] s -,{'\n'}
     eval "
       str = ['G'MIC-Qt'];
       to_keep = vectorl();
       for (k = p = 0, k<l, ++k, find(#k,str)>=0?(to_keep[p++] = k));
       store(to_keep,'to_keep',p);
-      run('$to_keep k[{^}]');
+      run('$to_keep k[{^}]')"
+    if $!>1 i[1--2] ('\n') fi
+  a y nm $nm endl done
+
+  # Analyze log files.
+  e[] "\n* Analyze log files (day by day)."
+  +_ovh2stats    # Display stats, day by day.
+
+  e[] "\n* Analyze log files (all days)."
+  a y _ovh2stats # Display stats, all days.
+
+
+_ovh2stats :
+  v + N=$! repeat $! l[$>] ('{n}') replace. {'_'},{'/'} date={t} rm.
+    s -,{'\n'}
+
+    # Name each image by the IP address.
+    eval "
       name = vector256();
       for (k = 0, k<l(), ++k,
         p = find(#k,_' ');
@@ -26250,22 +25781,28 @@ ovh2stats : skip "${1=gmic.eu-*-*-*.log.gz}"
         name[p] = 0;
         run('name[',k,'] ',name);
       )"
-    sort_list +,n # Sort by lexicographic order.
 
     # Discard IP duplicates.
     eval "
-      to_keep = vectorl();
-      for (k = p = 0, k<l, ++k, name(#k,64)!=name(#k + 1,64)?(to_keep[p++] = k));
-      store(to_keep,'to_keep',p);
-      run('$to_keep k[{^}]')"
-    +store ips$>
+      const N = "$!";
+      ref(vector(#2*N),tab);
+      for (k = 0, k<N, ++k,
+        ref(name(#k,256),nam);
+        for (i = j = 0, i<size(nam) && nam[i], ++i, nam[i]!=_'.'?(nam[j++] = nam[i])); nam[j] = 0;
+        tab[2*k] = stov(nam);
+        tab[2*k + 1] = k;
+      );
+      tab = sort(tab,1,N,2);
+      for (i = 0, i<size(tab) - 1, ++i, tab[2*i]==tab[2*i + 2]?tab[2*i] = tab[2*i + 1] = -1);
+      store(tab,'tab')"
+    $tab discard. -1 r. 2,{h/2},1,1,-1 z. 1,1 k[{^}]
 
     # Analyze G'MIC version, host software and OS.
     eval "
       gimp = krita = _8bf = paintdotnet = digikam = standalone = 0;
       linux = windows = macos = bsd = unknown = 0;
       ips = 0;
-      for (k = 0, k<l, ++k,
+      repeat (l,k,
         ref(lowercase(crop(#k,0,0,0,0,1,256,1,1)),str);
         find(str,'gimp')>=0?++gimp:
         find(str,'krita')>=0?++krita:
@@ -26286,55 +25823,44 @@ ovh2stats : skip "${1=gmic.eu-*-*-*.log.gz}"
     rm $features
     ips,gimp,krita,_8bf,paintdotnet,digikam,standalone,windows,linux,macos,bsd,unknown={^}
 
-    e[] "  > "$date": "\
-        ${_vt100_b}"Unique IPs"${_vt100_n}" = "$ips" (100%), "\
-        ${_vt100_m}${_vt100_b}"GIMP"${_vt100_n}" = "$gimp" ("{_round($gimp/$ips*100,0.1)}"%), "\
-        ${_vt100_c}${_vt100_b}"Krita"${_vt100_n}" = "$krita" ("{_round($krita/$ips*100,0.1)}"%), "\
-        ${_vt100_g}${_vt100_b}"8bf"${_vt100_n}" = "$_8bf" ("{_round($_8bf/$ips*100,0.1)}"%), "\
-        ${_vt100_r}${_vt100_b}"Paint.NET"${_vt100_n}" = "$paintdotnet" ("{_round($paintdotnet/$ips*100,0.1)}"%), "\
-        ${_vt100_m}${_vt100_b}"Digikam"${_vt100_n}" = "$digikam" ("{_round($digikam/$ips*100,0.1)}"%), "\
-        ${_vt100_c}${_vt100_b}"Standalone"${_vt100_n}" = "$standalone" ("{_round($standalone/$ips*100,0.1)}"%)."
+    if $N>1
+      e[] "  > "$date": "\
+          ${_vt100_b}"Unique IPs"${_vt100_n}" = "$ips" (100%), "\
+          ${_vt100_m}${_vt100_b}"GIMP"${_vt100_n}" = "$gimp" ("{_round($gimp/$ips*100,0.1)}"%), "\
+          ${_vt100_c}${_vt100_b}"Krita"${_vt100_n}" = "$krita" ("{_round($krita/$ips*100,0.1)}"%), "\
+          ${_vt100_g}${_vt100_b}"8bf"${_vt100_n}" = "$_8bf" ("{_round($_8bf/$ips*100,0.1)}"%), "\
+          ${_vt100_r}${_vt100_b}"Paint.NET"${_vt100_n}" = "$paintdotnet" ("{_round($paintdotnet/$ips*100,0.1)}"%), "\
+          ${_vt100_m}${_vt100_b}"Digikam"${_vt100_n}" = "$digikam" ("{_round($digikam/$ips*100,0.1)}"%), "\
+          ${_vt100_c}${_vt100_b}"Standalone"${_vt100_n}" = "$standalone" ("{_round($standalone/$ips*100,0.1)}"%)."
 
-    e[] "                "\
-        ${_vt100_r}${_vt100_b}"Windows"${_vt100_n}" = "$windows" ("{_round($windows/$ips*100,0.1)}"%), "\
-        ${_vt100_g}${_vt100_b}"Linux"${_vt100_n}" = "$linux" ("{_round($linux/$ips*100,0.1)}"%), "\
-        ${_vt100_m}${_vt100_b}"Mac OS"${_vt100_n}" = "$macos" ("{_round($macos/$ips*100,0.1)}"%), "\
-        ${_vt100_c}${_vt100_b}"BSD"${_vt100_n}" = "$bsd" ("{_round($bsd/$ips*100,0.1)}"%), "\
-        ${_vt100_c}${_vt100_b}"Unknown"${_vt100_n}" = "$unknown" ("{_round($unknown/$ips*100,0.1)}"%).\n"
+      e[] "                "\
+          ${_vt100_r}${_vt100_b}"Windows"${_vt100_n}" = "$windows" ("{_round($windows/$ips*100,0.1)}"%), "\
+          ${_vt100_g}${_vt100_b}"Linux"${_vt100_n}" = "$linux" ("{_round($linux/$ips*100,0.1)}"%), "\
+          ${_vt100_m}${_vt100_b}"Mac OS"${_vt100_n}" = "$macos" ("{_round($macos/$ips*100,0.1)}"%), "\
+          ${_vt100_c}${_vt100_b}"BSD"${_vt100_n}" = "$bsd" ("{_round($bsd/$ips*100,0.1)}"%), "\
+          ${_vt100_c}${_vt100_b}"Unknown"${_vt100_n}" = "$unknown" ("{_round($unknown/$ips*100,0.1)}"%).\n"
+    fi
+
   endl done
+  + / $N round.
+  ips,gimp,krita,_8bf,paintdotnet,digikam,standalone,windows,linux,macos,bsd,unknown={^}
+  summary0,summary1=Total,Average
+  e[] "  > "${summary{$N>1}}" : "\
+      ${_vt100_b}"Unique IPs"${_vt100_n}" = "$ips" (100%), "\
+      ${_vt100_m}${_vt100_b}"GIMP"${_vt100_n}" = "$gimp" ("{_round($gimp/$ips*100,0.1)}"%), "\
+      ${_vt100_c}${_vt100_b}"Krita"${_vt100_n}" = "$krita" ("{_round($krita/$ips*100,0.1)}"%), "\
+      ${_vt100_g}${_vt100_b}"8bf"${_vt100_n}" = "$_8bf" ("{_round($_8bf/$ips*100,0.1)}"%), "\
+      ${_vt100_r}${_vt100_b}"Paint.NET"${_vt100_n}" = "$paintdotnet" ("{_round($paintdotnet/$ips*100,0.1)}"%), "\
+      ${_vt100_m}${_vt100_b}"Digikam"${_vt100_n}" = "$digikam" ("{_round($digikam/$ips*100,0.1)}"%), "\
+      ${_vt100_c}${_vt100_b}"Standalone"${_vt100_n}" = "$standalone" ("{_round($standalone/$ips*100,0.1)}"%)."
 
-  # Display global stats as a summary.
-  e[] "* Summary."
-
-  # Retrieve number of unique IPs for the whole logfiles.
-  N=$! l[]
-    repeat $N ${ips$>} done
-    sort_list +,n # Sort by lexicographic order.
-
-    # Discard IP duplicates (globally).
-    eval "
-      to_keep = vectorl();
-      for (k = p = 0, k<l, ++k, name(#k,64)!=name(#k + 1,64)?(to_keep[p++] = k));
-      store(to_keep,'to_keep',p);
-      run('$to_keep k[{^}]')"
-    all_ips=$!
-  rm endl
-
-  + ips,gimp,krita,_8bf,paintdotnet,digikam,standalone,windows,linux,macos,bsd,unknown={^} rm
-    e[] "  > "\
-        ${_vt100_b}"Unique IPs"${_vt100_n}" = "$all_ips" [global], "$ips" [day by day] (100%), "\
-        ${_vt100_m}${_vt100_b}"GIMP"${_vt100_n}" = "$gimp" ("{_round($gimp/$ips*100,0.1)}"%), "\
-        ${_vt100_c}${_vt100_b}"Krita"${_vt100_n}" = "$krita" ("{_round($krita/$ips*100,0.1)}"%), "\
-        ${_vt100_g}${_vt100_b}"8bf"${_vt100_n}" = "$_8bf" ("{_round($_8bf/$ips*100,0.1)}"%), "\
-        ${_vt100_r}${_vt100_b}"Paint.NET"${_vt100_n}" = "$paintdotnet" ("{_round($paintdotnet/$ips*100,0.1)}"%), "\
-        ${_vt100_m}${_vt100_b}"Digikam"${_vt100_n}" = "$digikam" ("{_round($digikam/$ips*100,0.1)}"%), "\
-        ${_vt100_c}${_vt100_b}"Standalone"${_vt100_n}" = "$standalone" ("{_round($standalone/$ips*100,0.1)}"%)."
-    e[] "    "\
-        ${_vt100_r}${_vt100_b}"Windows"${_vt100_n}" = "$windows" ("{_round($windows/$ips*100,0.1)}"%), "\
-        ${_vt100_g}${_vt100_b}"Linux"${_vt100_n}" = "$linux" ("{_round($linux/$ips*100,0.1)}"%), "\
-        ${_vt100_m}${_vt100_b}"Mac OS"${_vt100_n}" = "$macos" ("{_round($macos/$ips*100,0.1)}"%), "\
-        ${_vt100_c}${_vt100_b}"BSD"${_vt100_n}" = "$bsd" ("{_round($bsd/$ips*100,0.1)}"%), "\
-        ${_vt100_c}${_vt100_b}"Unknown"${_vt100_n}" = "$unknown" ("{_round($unknown/$ips*100,0.1)}"%).\n"
+  e[] "                "\
+      ${_vt100_r}${_vt100_b}"Windows"${_vt100_n}" = "$windows" ("{_round($windows/$ips*100,0.1)}"%), "\
+      ${_vt100_g}${_vt100_b}"Linux"${_vt100_n}" = "$linux" ("{_round($linux/$ips*100,0.1)}"%), "\
+      ${_vt100_m}${_vt100_b}"Mac OS"${_vt100_n}" = "$macos" ("{_round($macos/$ips*100,0.1)}"%), "\
+      ${_vt100_c}${_vt100_b}"BSD"${_vt100_n}" = "$bsd" ("{_round($bsd/$ips*100,0.1)}"%), "\
+      ${_vt100_c}${_vt100_b}"Unknown"${_vt100_n}" = "$unknown" ("{_round($unknown/$ips*100,0.1)}"%).\n"
+  rm
 
 #@cli padint : number,_size>0
 #@cli : Return a integer with 'size' digits (eventually left-padded with '0').
@@ -26620,6 +26146,7 @@ shell_cols :
   else
     file_rand filename=${}
     l[] cols=80 x "tput cols > "$filename it $filename if isint({t}) cols={{t}} fi rm onfail cols=80 rm endl
+    delete $filename
     u $cols
   fi
 
@@ -27995,7 +27522,7 @@ x_connect4 : check_display $0
           yM1={i("#"$ymax,$move1)}
           if $yM1>=0
             +=[board] {1+$turn},$move1,$yM1 nm. board1
-            {board,w},1,1,1,"y=-1; for (k = 0, k<h#"$board1", ++k, if(!i(#"$board1",x,k),y = k)); y" nm. ymax1
+            {board,w},1,1,1,"y = -1; for (k = 0, k<h#"$board1", ++k, if(!i(#"$board1",x,k),y = k)); y" nm. ymax1
             opp_max_score=-inf opp_max_board={board,^}
             opp_turn={($turn+1)%2}
             repeat w#$board,move2
@@ -29287,11 +28814,11 @@ _x_mask_color : # Estimate color mask image.
   if $is_add" || "$is_sub
     if $is_add
       ($3) r. {2+s#0},{w/(2+s#0)},1,1,-1
-      N_add={h} M_add={"M = vectorw(); for (k = 0, k<w, ++k, M[k] = med(crop(k,1)));M"} rm.
+      N_add={h} M_add={"M = vectorw(); fill(M,k,med(crop(k,1)));M"} rm.
     fi
     if $is_sub
       ($4) r. {2+s#0},{w/(2+s#0)},1,1,-1
-      N_sub={h} M_sub={"M = vectorw(); for (k = 0, k<w, ++k, M[k] = med(crop(k,1)));M"} rm.
+      N_sub={h} M_sub={"M = vectorw(); fill(M,k,med(crop(k,1)));M"} rm.
     fi
     f. "begin(
           invert(A,nA) = inv(A,nA); # For <v.2.9.2
@@ -29650,7 +29177,7 @@ x_morph : check "isint(${1=16}) && isint(${2=3}) && $2>=0 && $2<=4" check_displa
 
         # Determine selected keypoint.
         selected_keypoint={keypoints,"dmin = inf; kmin = -1; fact = ([w#"$imgr",h#"$imgr"]-1)%;
-          for (k = 0, k<h, ++k,
+          repeat (h,k,
             dist = norm(((I[k])[2*"$frame",2] - ["$mxy"])*fact);
             dist<dmin?(dmin = dist; kmin = k)
           );
@@ -31722,7 +31249,7 @@ x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2 && isint(${3=0
 
       if $mouse_over" && "$mb" && "$selected_keypoint<0" && "h#$keypoints>0 # Determine selected keypoint
         selected_keypoint={keypoints,"dmin = inf; kmin = -1; fact = ([w#"$imgr",h#"$imgr"]-1)%;
-          for (k = 0, k<h, ++k,
+          repeat (h,k,
             dist = norm(((I[k])[0,2] - ["$mxy"])*fact);
             dist<dmin?(dmin = dist; kmin = k)
           );
@@ -31788,7 +31315,7 @@ _x_warp_rbf :
       W = solve(A,B,2);
     );
     res = [ 0,0 ];
-    for (p = 0, p<N, ++p, res += W[2*p,2]*(norm([x,y] - xy(p))));"
+    repeat (N,p,res += W[2*p,2]*(norm([x,y] - xy(p))));"
   k.
 
 #@cli x_waves
@@ -33519,7 +33046,7 @@ _fx_drawn_montage :
   to_rgb[0] to_rgba[^0] $nb_layers,1,1,4,[inf,inf,-inf,-inf] [0],[0]
   f[0] "
     begin(colors = [ "$cols" ]);
-    for (l = 0, l<"$nb_layers", ++l,
+    repeat ("$nb_layers",l,
       I==colors[3*l,3]?(
         if (x<i(#-2,l,0,0,0), i(#-2,l,0,0,0) = x);
         if (y<i(#-2,l,0,0,1), i(#-2,l,0,0,1) = y);
@@ -34349,7 +33876,7 @@ fx_doodle : skip "$*"
         P0 = u([w,h] - 1);
         length = 0;
 
-        for (dir = 0, dir<2, ++dir,
+        repeat (2,dir,
           P = P0;
           oiP = iP = round(P);
           C = I(#0,P); E = eig([ C[0], C[1], C[1], C[2] ]); oV = V = (dir?1:-1)*E[4,2];
@@ -36371,7 +35898,7 @@ fx_apply_haldclut : skip "${2=}"
     onfail gui_warning_preview "Specified HaldCLUT filename not found" return
     endl
   fi
-  if {$ind_clut,iM>255} /[$ind_clut] 255 fi # Possibly a 16bits HaldCLUT.
+  if {$ind_clut,iM>512} /[$ind_clut] 255 fi # Possibly a 16bits HaldCLUT.
 
   if $normalize==1" || "$normalize==3 # Pre-normalization
     repeat $! if $>!=$ind_clut l[$>] split_opacity balance_gamma[0] , a c endl fi done
@@ -38136,7 +37663,7 @@ fx_equalize_hsv :
     {"V = [${6-30:3}]*pi/180; [cos(V),sin(V)]"},${7-31:3},\
     {"V = [${8-32:3}];
       const sV = size(V);
-      for (k = 0, k<sV, ++k,
+      repeat (sV,k,
         v0 = k/sV;
         v1 = (k+1)/sV;
         V[k]*=(V[k]>0?(1 - v0):v1);
@@ -38335,7 +37862,6 @@ fx_mix_pca :
 
     # Modify image values.
     f "begin(
-         transpose(A,nA) = transp(A,nA); # For <v.2.9.2
          do_gamma(val,vmax,gamma) = (vmax*sign(val)*(abs(val)/vmax)^gamma);
 
          const gamma0 = 10^-($4%);
@@ -38511,6 +38037,7 @@ fx_clut_from_ab :
       s c,-3 +max. 1 /[-3,-1] ==. 0 inpaint_pde.. .,75%,1 distance. 0 *. {-1/(1+$5)} exp.
       f.. "f = i(#-1); f*I + (1-f)*[x,y,z]*255/(w-1)" rm.
       S={arg(1+$2,16,25,36,49,64,81,100,121,144,169,225,256)} if $S!=w r. $S,$S,$S,3,3 fi
+      c 0,255
     endl
 
     if $1==2 # Output as a file
@@ -41446,7 +40973,7 @@ fx_jpeg_artefacts :
       f[$>] "begin(boundary = 2; ref(vector64(),res));
         if (!(x%8) && !(y%8),
           ref(crop(x,y,8,8),src);
-          for (l = 0, l<8, ++l, for (k = 0, k<8, ++k, off = k + 8*l; res[off] = sum(src*crop(#"$dct",0,0,off,8,8,1))));
+          repeat (8,l, repeat (8,k, off = k + 8*l; res[off] = sum(src*crop(#"$dct",0,0,off,8,8,1))));
           draw(#-1,res,x,y,0,0,8,8);
         ); i"
       round.
@@ -41458,7 +40985,7 @@ fx_jpeg_artefacts :
       f. "begin(boundary = 2; ref(vector64(),res));
         if (!(x%8) && !(y%8),
           ref(crop(x,y,8,8),src);
-          for (l = 0, l<8, ++l, for (k = 0, k<8, ++k, off = k + 8*l; res[off] = sum(src*crop(#"$idct",0,0,off,8,8,1))));
+          repeat (8,l, repeat (8,k, off = k + 8*l; res[off] = sum(src*crop(#"$idct",0,0,off,8,8,1))));
           draw(#"$>",res,x,y,0,0,8,8);
         ); i"
       rm.
@@ -41834,7 +41361,7 @@ fx_rebuild_from_similar_blocs :
         ref(crop(#1,0,0,ind,w#1,h#1,1),S);
         kmin = 0;
         dmin = inf;
-        for (k = 0, k<wh, ++k, k!=ind?(
+        repeat (wh,k, k!=ind?(
           d = norm"{1+$4}"(S - crop(#1,0,0,k,w#1,h#1,1));
           d<dmin?(dmin = d; kmin = k);
         ));
@@ -42120,16 +41647,16 @@ _fx_equalize_local_histograms :
       const N = $3;
       const sigma = ($6?1:-1)*(0.1+$4);
       ref(vector512(),weights);
-      for (k = 0, k<size(weights), ++k, # Pre-compute exponentials
+      repeat (size(weights),k, # Pre-compute exponentials
         weights[k] = sigma>=0?exp(-sqr(k/sigma)):1 - exp(-sqr(k/sigma))
       );
     );
 
     ref(vector512(0),bins);
 
-    for (c = 0, c<s, ++c,
+    repeat (s,c,
       ref(crop(x - N,y - N,0,c,2*N + 1,2*N + 1,1,1),V);
-      for (k = 0, k<size(V), ++k, # Compute local weighted histogram
+      repeat (size(V),k, # Compute local weighted histogram
         val = V[k];
         diff = abs(val - V[size(V)/2]);
         bins[val]+=weights[diff];
@@ -42137,7 +41664,7 @@ _fx_equalize_local_histograms :
     );
 
     sum = 0;
-    for (k = 0, k<size(bins), ++k,
+    repeat (size(bins),k,
       sum+=bins[k];
       bins[k] = sum;
     );
@@ -46890,7 +46417,7 @@ fx_radial_gradient : skip ${14=0}
 fx_random_gradient :
   repeat $! l[$>]
     to_rgba 100%,100% srand $2
-    eval "for (n=0, n<$1, ++n,
+    eval "repeat ($1,n,
             x = round(u(w-1));
             y = round(u(h-1));
             i(x,y) = 1;
@@ -47856,7 +47383,7 @@ fx_symmetric_shape2d_preview :
     rv blend alpha
     eval "
       t0 = atan2($7 - $3,$6 - $2);
-      for (k = 0, k<$1, ++k,
+      repeat ($1,k,
         const pi2 = 2*pi;
         const xc = $2*(w-1)%;
         const yc = $3*(h-1)%;
@@ -47955,7 +47482,7 @@ _fx_tree:
         N = round(cut("$avg_branching" + u(-1,1)*"$std_branching",1,6));
         Nm1 = N<=1?1:N - 1;
 
-        for (n = 0, n<N, ++n,
+        repeat (N,n,
           ang = cut("$avg_leftangle" + dangle*n/Nm1 + u(-1,1)*"$std_angle",-90,90);
           len = cut("$avg_length" + u(-1,-1)*"$std_length",0,200);
           rot = rot(ang);
