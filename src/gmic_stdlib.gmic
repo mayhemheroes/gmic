@@ -1143,7 +1143,7 @@ reference_text_ascii :
     # Ensure output text contains no more than two consecutive newlines.
     # Also add a 2-chars left margin on each line.
     s +,{'\n'}
-    eval "for (p = 0, p<l, ++p,
+    eval "repeat (l,p,
             i(#p)==_'\n' && h(#p)>2?resize(#p,1,2,1,1,0):
             (resize(#p,1,h#p + 2,1,1,0,0,0,1); copy(i[#p,0],_' ',2,1,0)))"
     a y
@@ -3182,7 +3182,7 @@ display_parallel :
 _display_parallel : check ${1=0}>=0
   e[0--3] "Display image$? in parallel."
   print
-  is_d2d_compatible={"res = l<=10; for (k = 0, k<l, ++k, res&=(w#k==w && h#k==h && d#k==1 && s#k==s))"}
+  is_d2d_compatible={"res = l<=10; repeat (l,k, res&=(w#k==w && h#k==h && d#k==1 && s#k==s))"}
   if $is_d2d_compatible
     N=$!
     repeat $!
@@ -3312,7 +3312,7 @@ _display_quiver : check "${1=16}>0 && ${2=1.5}>=0 && isint(${3=2}) && $3>=0 && $
           C = [ hsv2rgb([ ang,1,v ]), 255 ];
         );
       );
-      for (k = 0, k<3, ++k,
+      repeat (3,k,
         i0 = arg(k + 1,0,2,4);
         i1 = arg(k + 1,2,10,6);
         i2 = arg(k + 1,12,12,8);
@@ -3744,7 +3744,7 @@ output_gmz : skip ${2=auto}
   eval "
     draw([_'G',_'M',_'Z'],0,0,0,0,1,3);
     pos = 4;
-    for (k = 0, k<l - 1, ++k,
+    repeat (l - 1,k,
       ref(name(#k,1026),nam);
       len = find(nam,0);
       len>=0?(
@@ -5829,7 +5829,7 @@ _gmd_ascii2html :
           ++spans
         ):
         same(C,vt100_n,size(vt100_n))?(
-          for (n = 0, n<spans, ++n, write('</span>'));
+          repeat (spans,write('</span>'));
           copy(i[y],0,size(vt100_n),1,0);
           spans = 0
         ):
@@ -7176,7 +7176,7 @@ shape_fern : check "${1=512}>=0 && ${2=50%}>=0 && isnum(${3=30}) && ${4=0.3}>=0 
        f4 = [ 0.95,0.005,-0.005,0.93 ]; g4 = [ -0.002,0.5 ];
      );
      xy = [ 0,0 ];
-     for (n = 0, n<"$N", ++n,
+     repeat ("$N",n,
        r = u(100);
        xy = r<=1?((f1*xy)+=g1):
             r<=8?((f2*xy)+=g2):
@@ -8572,7 +8572,8 @@ utf82html :
     eval "
       write_seq() = ( copy(res[q],'&#'); q+=2; s = vtos(val); l = find(s,0); copy(res[q],s,l); q+=l; res[q++]=_';' );
       ref(vector(#4*wh),res);
-      for (q = p = 0, p<wh, ++p,
+      q = 0;
+      repeat (wh,p,
         i = i[p];
         !(i&0x80)?( # 1-byte
           res[q++] = i;
@@ -9573,7 +9574,7 @@ compress_clut : check "${1=1.5}>0 && ${2=0.75}>0 && isint(${3=2048}) && (!$3 || 
     1,8,1,{s+3}
     eval "
       coords = [ 0,0,0, 255,0,0, 255,255,0, 0,255,0, 0,0,255, 255,0,255, 255,255,255, 0,255,255 ];
-      for (k = 0, k<size(coords)/3, ++k,
+      repeat (size(coords)/3,k,
         P = coords[3*k,3];
         I[k] = [ P, I(#0,round(P*([w#0,h#0,d#0]-1)/255)) ]
       )"
@@ -9994,7 +9995,7 @@ noise_perlin : check "${1=16}>0 && ${2=$1}>0 && ${3=$1}>0 && isnum(${4=0}) && is
         p = [ permutation,permutation ];
         fade(t) = (t*t*t*(t*(t*6 - 15) + 10));
         _lerp(t,a,b) = lerp(a,b,t);
-        pcmod255 = vectors(); for (k = 0, k<s, ++k, pcmod255[k] = p[k%255]);
+        pcmod255 = vectors(); repeat (s,k,pcmod255[k] = p[k%255]);
         sx = ['$1']; is_px = sx[size(sx) - 1]==_'%';
         sy = ['$2']; is_py = sy[size(sy) - 1]==_'%';
         sz = ['$3']; is_pz = sz[size(sz) - 1]==_'%';
@@ -10091,6 +10092,7 @@ noise_poissondisk : check "${1=8}>0 && ${2=30}>0"
         P = i[#4,R];                      # get the index of that sample
         T = I[#3,P];                      # position vector of that sample
 
+#        repeat(max_sample_attempts,attempts,
         for (attempts=0, attempts < max_sample_attempts, ++attempts,
 
           do (S = 4*(u(vectorN(1)) - 0.5); M = mag2(S), M <= 1 || M > 4);
