@@ -12701,22 +12701,32 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Draw text.
         if (!std::strcmp("text",command)) {
           gmic_substitute_args(false);
+
+          const char *p_argument = argument;
+          is_cond = *argument==','; // is_cond = is_empty_string?
+          if (is_cond) {
+            CImg<char>(std::strlen(argument) + 2,1,1,1).move_to(g_list_c);
+            g_list_c(0,0) = ' ';
+            std::strcpy(&g_list_c(0,1),argument);
+            p_argument = g_list_c[0];
+          }
+
           name.assign(4096);
           *argx = *argy = *argz = *name = *color = 0;
           float x = 0, y = 0, height = 16;
           sep = sepx = sepy = sep0 = 0;
           opacity = 1;
-          if ((cimg_sscanf(argument,"%4095[^,]%c",
+          if ((cimg_sscanf(p_argument,"%4095[^,]%c",
                            name.data(),&end)==1 ||
-               cimg_sscanf(argument,"%4095[^,],%255[0-9.eE%~+-]%c",
+               cimg_sscanf(p_argument,"%4095[^,],%255[0-9.eE%~+-]%c",
                            name.data(),gmic_use_argx,&end)==2 ||
-               cimg_sscanf(argument,"%4095[^,],%255[0-9.eE%~+-],%255[0-9.eE%~+-]%c",
+               cimg_sscanf(p_argument,"%4095[^,],%255[0-9.eE%~+-],%255[0-9.eE%~+-]%c",
                            name.data(),argx,gmic_use_argy,&end)==3 ||
-               cimg_sscanf(argument,"%4095[^,],%255[0-9.eE%~+-],%255[0-9.eE%~+-],%255[0-9.eE%+-]%c",
+               cimg_sscanf(p_argument,"%4095[^,],%255[0-9.eE%~+-],%255[0-9.eE%~+-],%255[0-9.eE%+-]%c",
                            name.data(),argx,argy,gmic_use_argz,&end)==4 ||
-               cimg_sscanf(argument,"%4095[^,],%255[0-9.eE%~+-],%255[0-9.eE%~+-],%255[0-9.eE%+-],%f%c",
+               cimg_sscanf(p_argument,"%4095[^,],%255[0-9.eE%~+-],%255[0-9.eE%~+-],%255[0-9.eE%+-],%f%c",
                            name.data(),argx,argy,argz,&opacity,&end)==5 ||
-               cimg_sscanf(argument,"%4095[^,],%255[0-9.eE%~+-],%255[0-9.eE%~+-],%255[0-9.eE%+-],%f,"
+               cimg_sscanf(p_argument,"%4095[^,],%255[0-9.eE%~+-],%255[0-9.eE%~+-],%255[0-9.eE%+-],%f,"
                            "%4095[0-9.eEinfa,+-]%c",
                            name.data(),argx,argy,argz,&opacity,gmic_use_color,&end)==6) &&
               (!*argx ||
@@ -12732,24 +12742,27 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             strreplace_fw(name);
             print(images,0,"Draw text '%s' at position (%g%s,%g%s) on image%s, with font "
                   "height %s, opacity %g and color (%s).",
-                  name.data(),
+                  is_cond?"":name.data(),
                   x,sepx=='%'?"%":sepx=='~'?"~":"",
                   y,sepy=='%'?"%":sepy=='~'?"~":"",
                   gmic_selection.data(),
                   argz,opacity,
                   *color?color:"default");
-            cimg::strunescape(name);
-            unsigned int nb_cols = 1;
-            for (const char *s = color; *s; ++s) if (*s==',') ++nb_cols;
-            cimg_forY(selection,l) {
-              CImg<T> &img = images[selection[l]];
-              const unsigned int font_height = (unsigned int)cimg::round(sep=='%'?
-                                                                         height*img.height()/100:height);
-              g_img.assign(std::max(img.spectrum(),(int)nb_cols),1,1,1,(T)0).fill(color,true,false);
-              gmic_apply(gmic_draw_text(x,y,sepx,sepy,name,g_img,0,opacity,font_height,nb_cols));
+            if (!is_cond) {
+              cimg::strunescape(name);
+              unsigned int nb_cols = 1;
+              for (const char *s = color; *s; ++s) if (*s==',') ++nb_cols;
+              cimg_forY(selection,l) {
+                CImg<T> &img = images[selection[l]];
+                const unsigned int font_height = (unsigned int)cimg::round(sep=='%'?
+                                                                           height*img.height()/100:height);
+                g_img.assign(std::max(img.spectrum(),(int)nb_cols),1,1,1,(T)0).fill(color,true,false);
+                gmic_apply(gmic_draw_text(x,y,sepx,sepy,name,g_img,0,opacity,font_height,nb_cols));
+              }
             }
           } else arg_error("text");
           g_img.assign();
+          g_list_c.assign();
           is_change = true; ++position; continue;
         }
 
