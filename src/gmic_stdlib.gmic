@@ -3815,7 +3815,8 @@ output_obj : check "isbool(${2=1})" check3d 0
       mv[0] $!
       eval $fnobj";
         const nbp = "$nbp";
-        for (off = p = nb_materials = nb_textures = 0, p<nbp, ++p,
+        off = nb_materials = nb_textures = 0;
+        repeat (nbp,p,
           !(p%10000)?run('e[] \"\r    - Export materials: ',round(100*p/nbp),' %  \"');
 
           i[off]!=-128?( # RGB color
@@ -3863,7 +3864,8 @@ output_obj : check "isbool(${2=1})" check3d 0
     eval $fnobj";
       const materials = 0"$materials";
       const nbp = "$nbp";
-      for (off = p = p_material = material = nb_primitives = nb_tcoords = 0, p<nbp, ++p,
+      off = p_material = material = nb_primitives = nb_tcoords = 0;
+      repeat (nbp,p,
         !(p%10000)?run('e[] \"\r    - Export primitives: ',round(100*p/nbp),' %  \"');
 
         type = i[off];
@@ -4247,7 +4249,7 @@ parse_cli_text_ascii :
   if w
     s +,{'\n'}
     if {i==_'\n'} rm. fi # Remove last newline.
-    eval "for (p = 0, p<l, ++p,
+    eval "repeat(l,p,
             i(#p)==_'\n'?(
               h(#p)>2?resize(#p,1,1,1,1,0)
             ):(
@@ -6888,7 +6890,7 @@ _parse_gui_json :
 parse_gui_strings :
   e[] "  >> Generate output, in 'strings' mode.\n"
   m "is_str : u {\"s = ['$""1']; isl = 0; "\
-    "for (k = 0, k<size(s), ++k, inrange(lowercase(s[k]),_'a',_'z')?(isl = 1; break())); isl && size(s)>2 \"}"
+    "repeat(size(s),k, inrange(lowercase(s[k]),_'a',_'z')?(isl = 1; break())); isl && size(s)>2 \"}"
   N={$_nbfilters-1}
   repeat $_nbfilters,f
     if !narg(${_f${f}_locale})" && "find(['${_f${f}_path}'],'Testing/')<0  # Consider only English, non-Testing filters
@@ -18473,7 +18475,7 @@ orthogonalize :
       proj(u,v) = (dot(u,v)/dot(u,u)*u);
       for (p = 1, p<w, ++p,
         ref(crop(p,0,1,h),v);
-        for (q = 0, q<p, ++q,
+        repeat (p,q,
           ref(crop(q,0,1,h),u);
           v-=proj(u,v);
         );
@@ -19711,7 +19713,7 @@ _primitives3d :
         R = i[#4,pc++]; G = i[#4,pc++]; B = i[#4,pc++];
         R!=-128?( # RGB color
           unref(data); data = [ R,G,B ];
-          for (k = 0, k<nb, ++k, copy(i[#-2,qc],data,3); qc+=3);
+          repeat(nb, copy(i[#-2,qc],data,3); qc+=3);
         ):(
           W = G; H = B; S = i[#4,pc++]; WHS = W*H*S;
           WHS?( # Non-shared texture
@@ -19722,13 +19724,13 @@ _primitives3d :
             for (k = 1, k<nb, ++k, copy(i[#-2,qc],data,4); qc+=4);
           ):( # Shared texture
             unref(data); data = [-128,pref[W],0,0];
-            for (k = 0, k<nb, ++k, copy(i[#-2,qc],data,4); qc+=4);
+            repeat(nb, copy(i[#-2,qc],data,4); qc+=4);
           );
         );
 
         A = i[#5,po++];
         A!=-128?( # Opacity value
-          for (k = 0, k<nb, ++k, i[#-1,qo++] = A);
+          repeat (nb, i[#-1,qo++] = A);
         ):( # Texture
           W = i[#5,po++]; H = i[#5,po++]; S = i[#5,po++]; WHS = W*H*S;
           WHS?( # Non-shared texture
@@ -19739,7 +19741,7 @@ _primitives3d :
             for (k = 1, k<nb, ++k, copy(i[#-1,qo],data,4); qo+=4);
           ):( # Shared texture
             unref(data); data = [ -128,pref[W],0,0 ];
-            for (k = 0, k<nb, ++k, copy(i[#-1,qo],data,4); qo+=4);
+            repeat (nb, copy(i[#-1,qo],data,4); qo+=4);
           );
         );
       );
@@ -22323,7 +22325,7 @@ _pixelsort :
       )
     );
     s1 = s#0 - 1;
-    for (x0 = 0, x0<w#0, ++x0,
+    repeat (w#0,x0,
       if (i(#0,x0,y,z,s1),
         for (x1 = x0, x1<w#0 && i(#0,x1,y,z,s1)==1, ++x1);
         quicksort(x0,min(x1,w#0-1),y,z);
@@ -25312,7 +25314,7 @@ math_lib :
     ref(expr('u(-1,1)',1,meig_n),meig_vj); meig_vj/=norm(meig_vj);
 
     # Iteration loop.
-    for (meig_j = 0, meig_j<meig_m, ++meig_j,
+    repeat (meig_m,meig_j,
       copy(meig_V[meig_j*meig_n],meig_vj,meig_n);
       meig_vj = A*meig_vj;
       for (meig_i = 0, meig_i<=meig_j, ++meig_i,
@@ -25754,7 +25756,8 @@ ovh2stats : skip "${1=gmic.eu-*-*-*.log.gz}"
     eval "
       str = ['G'MIC-Qt'];
       to_keep = vectorl();
-      for (k = p = 0, k<l, ++k, find(#k,str)>=0?(to_keep[p++] = k));
+      p = 0;
+      repeat (l,k, find(#k,str)>=0?(to_keep[p++] = k));
       store(to_keep,'to_keep',p);
       run('$to_keep k[{^}]')"
     if $!>1 i[1--2] ('\n') fi
@@ -25775,7 +25778,7 @@ _ovh2stats :
     # Name each image by the IP address.
     eval "
       name = vector256();
-      for (k = 0, k<l(), ++k,
+      repeat (l,k,
         p = find(#k,_' ');
         copy(name,i[#k,0],p);
         name[p] = 0;
@@ -25786,7 +25789,7 @@ _ovh2stats :
     eval "
       const N = "$!";
       ref(vector(#2*N),tab);
-      for (k = 0, k<N, ++k,
+      repeat (N,k,
         ref(name(#k,256),nam);
         for (i = j = 0, i<size(nam) && nam[i], ++i, nam[i]!=_'.'?(nam[j++] = nam[i])); nam[j] = 0;
         tab[2*k] = stov(nam);
@@ -27472,7 +27475,7 @@ x_connect4 : check_display $0
 
     # Estimate ymax for each column.
     if !narg($ymax)
-      {board,w},1,1,1,"y=-1; for (k = 0, k<h#"$board", ++k, if(!i(#"$board",x,k),y = k)); y" nm. ymax
+      {board,w},1,1,1,"y = -1; repeat(h#"$board",k, if(!i(#"$board",x,k),y = k)); y" nm. ymax
       if iM<0 winner=-1,-1,-1 fi # Draw game
     fi
 
@@ -27522,7 +27525,7 @@ x_connect4 : check_display $0
           yM1={i("#"$ymax,$move1)}
           if $yM1>=0
             +=[board] {1+$turn},$move1,$yM1 nm. board1
-            {board,w},1,1,1,"y = -1; for (k = 0, k<h#"$board1", ++k, if(!i(#"$board1",x,k),y = k)); y" nm. ymax1
+            {board,w},1,1,1,"y = -1; repeat (h#"$board1",k, if(!i(#"$board1",x,k),y = k)); y" nm. ymax1
             opp_max_score=-inf opp_max_board={board,^}
             opp_turn={($turn+1)%2}
             repeat w#$board,move2
@@ -31308,8 +31311,8 @@ _x_warp_rbf :
       const N = h#0;
       ref(vector(#N*N),A);
       ref(vector(#N*2),B);
-      for (p = 0, p<N, ++p,
-        for (q = p, q<N, ++q,  A[q + N*p] = A[p + N*q] = norm(xy(p) - xy(q)));
+      repeat (N,p,
+        repeat (N,q,  A[q + N*p] = A[p + N*q] = norm(xy(p) - xy(q)));
         copy(B[2*p],(I[#0,p])[2,2]*fact - xy(p),2);
       );
       W = solve(A,B,2);
