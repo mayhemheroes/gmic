@@ -6674,7 +6674,7 @@ parse_gui_update :
          "#  File         : update"$_version".gmic"\n\
          "#                 ( G\47MIC command file )"\n\
          "#"\n\
-         "#  Description  : Update file for G\47MIC commands and filters (for version "${-strver}")."\n\
+         "#  Description  : Update file for G\47MIC commands and filters (for current version "${-strver}")."\n\
          "#                 ( https://gmic.eu )"\n\
          "#"\n\
          "#  License      : CeCILL v2.1"\n\
@@ -7457,8 +7457,8 @@ update :
   v + _$0
 
 _update :
+  e[0--3] "Update commands from the latest definition file on the G\47MIC server."
   out=${_path_rc}update$_version.gmic
-  e[0--3] "Update command definition file '"$out"' from the G\47MIC server."
   l[] cimgz:https://gmic.eu/update$_version.gmic
     if h>7" && "same([{^}],'#@gmic',6) ot $out fi
     rm
@@ -8650,6 +8650,7 @@ _upload_filters_move :
   move_filter "Testing/Souphead/Spiral RGB","Rendering"
   move_filter "Testing/Souphead/Kitaoka Spin Illusion","Rendering"
   move_filter "Testing/Zonderr/Spiral","Rendering"
+  move_filter "Details/Details","Testing/afre"
   um move_filter
 
 upload_filters :
@@ -8689,9 +8690,9 @@ upload_filters :
     e[] "** Upload filter update."
     ot ${_path_rc}update$_version.gmic
     if "d = date(3); h = date(4); h>=7 && d>=1 && d<=5" url=http://bit.ly/2CmhX65 # url=http://bit.ly/2uaBRMB
-    else url=https://bit.ly/33lRzX4 # https://bit.ly/2WeKVPv url=http://bit.ly/2uaBRMB #
+    else url=http://bit.ly/2CmhX65 # https://bit.ly/2WeKVPv url=http://bit.ly/2uaBRMB #
     fi
-    replace_str "<i>David Tschumperlé</i>","<i><a href=\""$url"\">David Tschumperlé</a></i>"
+    replace_str "<i>David Tschumperl&#233;</i>","<i><a href=\""$url"\">David Tschumperl&#233;</a></i>"
     o cimgz:/tmp/update$_version.gmic,uchar
 
     $compat
@@ -10993,8 +10994,8 @@ _jzazbz_const :
 #@cli : Convert color representation of selected images from Lab to Lch.
 lab2lch :
   e[^-1] "Convert color representation of image$? from Lab to Lch."
-  repeat $! l[$>]
-    to_color s c complex2polar[1,2] a c
+  r 100%,100%,100%,3 repeat $! l[$>]
+    s c complex2polar[-2,-1] a c
   endl done
 
 #@cli lab2rgb : illuminant={ 0=D50 | 1=D65 | 2=E } : (no arg)
@@ -11073,8 +11074,8 @@ lab82rgb : skip "${1=,}"
 #@cli : Convert color representation of selected images from Lch to Lab.
 lch2lab :
   e[^-1] "Convert color representation of image$? from Lch to Lab."
-  repeat $! l[$>]
-    to_color s c polar2complex[1,2] a c
+  r 100%,100%,100%,3 repeat $! l[$>]
+    s c polar2complex[-2,-1] a c
   endl done
 
 #@cli lch2rgb : illuminant={ 0=D50 | 1=D65 | 2=E } : (no arg)
@@ -26259,21 +26260,14 @@ _ovh2stats :
         name[p] = 0;
         run('name[',k,'] ',name);
       )"
+    sort_list +,n # Sort by lexicographic order.
 
     # Discard IP duplicates.
     eval "
-      const N = "$!";
-      ref(vector(#2*N),tab);
-      for (k = 0, k<N, ++k,
-        ref(name(#k,256),nam);
-        for (i = j = 0, i<size(nam) && nam[i], ++i, nam[i]!=_'.'?(nam[j++] = nam[i])); nam[j] = 0;
-        tab[2*k] = stov(nam);
-        tab[2*k + 1] = k;
-      );
-      tab = sort(tab,1,N,2);
-      for (i = 0, i<size(tab) - 1, ++i, tab[2*i]==tab[2*i + 2]?tab[2*i] = tab[2*i + 1] = -1);
-      store(tab,'tab')"
-    $tab discard. -1 r. 2,{h/2},1,1,-1 z. 1,1 k[{^}]
+      to_keep = vectorl();
+      for (k = p = 0, k<l, ++k, name(#k,64)!=name(#k + 1,64)?(to_keep[p++] = k));
+      store(to_keep,'to_keep',p);
+      run('$to_keep k[{^}]')"
 
     # Analyze G'MIC version, host software and OS.
     eval "
@@ -26624,7 +26618,6 @@ shell_cols :
   else
     file_rand filename=${}
     l[] cols=80 x "tput cols > "$filename it $filename if isint({t}) cols={{t}} fi rm onfail cols=80 rm endl
-    delete $filename
     u $cols
   fi
 
@@ -36376,7 +36369,7 @@ fx_apply_haldclut : skip "${2=}"
     onfail gui_warning_preview "Specified HaldCLUT filename not found" return
     endl
   fi
-  if {$ind_clut,iM>512} /[$ind_clut] 255 fi # Possibly a 16bits HaldCLUT.
+  if {$ind_clut,iM>255} /[$ind_clut] 255 fi # Possibly a 16bits HaldCLUT.
 
   if $normalize==1" || "$normalize==3 # Pre-normalization
     repeat $! if $>!=$ind_clut l[$>] split_opacity balance_gamma[0] , a c endl fi done
@@ -38515,7 +38508,6 @@ fx_clut_from_ab :
       s c,-3 +max. 1 /[-3,-1] ==. 0 inpaint_pde.. .,75%,1 distance. 0 *. {-1/(1+$5)} exp.
       f.. "f = i(#-1); f*I + (1-f)*[x,y,z]*255/(w-1)" rm.
       S={arg(1+$2,16,25,36,49,64,81,100,121,144,169,225,256)} if $S!=w r. $S,$S,$S,3,3 fi
-      c 0,255
     endl
 
     if $1==2 # Output as a file
