@@ -7685,7 +7685,7 @@ update_color_presets_html : check "isbool(${1=0})"
   x "mkdir -p img"
 
   # Generate thumbnails.
-  e[] $_vt100_g"\n  * Generate thumbnails from samples."$_vt100_n
+  e[] $_vt100_g"\n  * Generate thumbnails from samples.\n"$_vt100_n
   x "mkdir -p original"
   nb_samples=$!
   to_rgb repeat $nb_samples l[$<]
@@ -7706,7 +7706,7 @@ update_color_presets_html : check "isbool(${1=0})"
     category=${arg\ {1+$>},$categories}
     presets=${-_fx_cluts_$category}
 
-    e[] $_vt100_g"\n  * Category ""#"{1+$>}": "$category"\n"$_vt100_n
+    e[] $_vt100_g"\n  * Category ""#"{1+$>}": "$_vt100_b$category"\n"$_vt100_n
     x "mkdir -p "$category
     x "mkdir -p "$category/clut
 
@@ -7742,8 +7742,8 @@ update_color_presets_html : check "isbool(${1=0})"
 
       ind_preset+=1
     done
-    x 0,"zip -rj9 "$category/${category}_CLUT_pack_cube.zip" "$category/clut/*.cube
-    x 0,"zip -rj9 "$category/${category}_CLUT_pack_png.zip" "$category/clut/*.png
+    x 0,"zip -rj9 "$category/${category}_cube.zip" "$category/clut/*.cube
+    x 0,"zip -rj9 "$category/${category}_haldclut.zip" "$category/clut/*.png
   done
 
   rm[1--1:2]  # Remove thumbnails.
@@ -7880,13 +7880,13 @@ update_color_presets_html : check "isbool(${1=0})"
           "{ width: "$width", height: "$height" })\">"\n\
           "                      <img alt=\"\" src=\""$category/$basename/thumb_$preset".jpg\" /></a>"\n\
           "                    <div class=\"highslide-maincontent\">"\n\
-          "                      <img alt=\"\" src=\""$category/$basename/$preset.jpg"\" "\
+          "                      <center><img alt=\"\" src=\""$category/$basename/$preset.jpg"\" "\
           "onclick=\"hs.close()\" "\
           "onmouseover=\"javascript:this.src='"$category/$basename/$preset_esc.jpg"';\" "\
-          "onmouseout=\"javascript:this.src='original/"$basename".jpg';\" /></div>"\n\
+          "onmouseout=\"javascript:this.src='original/"$basename".jpg';\" /></center></div>"\n\
           "                    <div class=\"highslide-caption\"><b>Preset:</b> <i>"$title"</i> "\
-          "&nbsp;&nbsp; [<a href=\""$category/clut/$preset.png"\">Download HaldCLUT</a>]"\
-          "&nbsp;&nbsp; [<a href=\""$category/clut/$preset.zip"\">Download .cube</a>]"\
+          "[<a href=\""$category/clut/$preset.png"\">Download .png HaldCLUT</a>] "\
+          "or [<a href=\""$category/clut/$preset.zip"\">Download .cube</a>]"\
           "</div></div>"\n\
           "              </td></tr>"\n\
           "              <tr><td><span class=\"smaller\">"$title"</span></td></tr>"\n\
@@ -7895,12 +7895,19 @@ update_color_presets_html : check "isbool(${1=0})"
       r={narg({/$presets})%4}
       if $r%4 ('"          <td colspan=\""{4-$r}"\"></td>\n"') fi
       ('"      </tr></table>"\n\n\
+        "    <hr/>"\n\
+        "    <p><ul>"\n\
+        "    <li>Complete <b>"${category}"</b> CLUT Pack: "\
+        "<a href=\""$category/${category}_haldclut.zip"\">[<b>Download .png HaldCLUT</b>]</a> "\
+        "or <a href=\""$category/${category}_cube.zip"\">[<b>Download .cube</b>]</a>.</li>"\n\
+        "    </ul></p>"\n\
         "<!-- end_content -->"\n\n\
         "    </div><div class=\"section_end\"></div>"\n\
         "    <div id=\"include_footer\"></div>"\n\
         "  </body>"')
       a[$nb_samples--1] x ot. ${category}_$basename.html rm.
     done
+
   done
 
   # All done, exiting.
