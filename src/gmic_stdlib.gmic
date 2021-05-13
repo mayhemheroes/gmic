@@ -7599,7 +7599,6 @@ update_color_presets_html : check "isbool(${1=0})"
   categories=creative,lutifyme,picturefx,pixlsus,others,\
              bw,instant_consumer,instant_pro,fujixtransiii,negative_color,negative_new,negative_old,print,colorslide
   category_names="Creative: Creative Pack",\
-                 "Creative: Lutify.Me",\
                  "Creative: PictureFX",\
                  "Creative: PIXLS.US",\
                  "Creative: Others",\
@@ -7613,7 +7612,6 @@ update_color_presets_html : check "isbool(${1=0})"
                  "Films: Print Films",\
                  "Films: Slide [Color]"
   category_authors="RawTherapee",\
-                   "Lutify.Me",\
                    "Marc Roovers",\
                    "PIXLS.US contributors",\
                    0,\
@@ -7627,7 +7625,6 @@ update_color_presets_html : check "isbool(${1=0})"
                    "Juan Melara",\
                    "Pat David"
   category_authors_url="https://rawpedia.rawtherapee.com/Film_Simulation",\
-                       "https://lutify.me/free-luts/",\
                        "https://marcrphoto.wordpress.com/specials/698-2/",\
                        "https://discuss.pixls.us/t/help-to-create-a-set-of-pixls-us-color-luts",\
                        0,\
@@ -7690,7 +7687,12 @@ update_color_presets_html : check "isbool(${1=0})"
       clut $preset,64 to_rgb.
       s={sqrt(w*h*d)} +r. $s,$s,1,3,-1
       if iM<=255 *. 257 fi  # Force PNG to be saved in 16bits.
-      o. $category/clut/$preset.png
+      o. $category/clut/$preset.png # Save as HaldCLUT
+      rm.
+
+      +r3dx. 13
+      o. $category/clut/$preset.cube # Save as .cube
+      x 0,"zip -9 "$category/clut/$preset.zip" "$category/clut/$preset.cube
       rm.
 
       repeat $nb_samples l[{2*$>},{2*$>+1},-1]
@@ -7851,7 +7853,9 @@ update_color_presets_html : check "isbool(${1=0})"
           "onmouseover=\"javascript:this.src='"$category/$basename/$preset_esc.jpg"';\" "\
           "onmouseout=\"javascript:this.src='original/"$basename".jpg';\" /></div>"\n\
           "                    <div class=\"highslide-caption\"><b>Preset:</b> <i>"$title"</i> "\
-          "[<a href=\""$category/clut/$preset.png"\">Download HaldCLUT</a>]</div></div>"\n\
+          "[<a href=\""$category/clut/$preset.png"\">Download HaldCLUT</a>] "\
+          "[<a href=\""$category/clut/$preset.zip"\">Download .cube</a>] "\
+          "</div></div>"\n\
           "              </td></tr>"\n\
           "              <tr><td><span class=\"smaller\">"$title"</span></td></tr>"\n\
           "          </table></td>\n\n"')
