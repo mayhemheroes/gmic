@@ -7580,6 +7580,7 @@ update_instimg :
 # Input images : samples you want to generate
 # $1 = upload to G'MIC server, can be { 0 | 1 }.
 update_color_presets_html : check "isbool(${1=0})"
+  use_vt100
   path_current=${-path_current} path_ok=$HOME/work/src/gmic/html/color_presets/
   if ['$path_current']!=['$path_ok']
     error[0--3] "Command 'update_color_presets_html: Command run from wrong path: '"$path_current"', "\
@@ -7680,11 +7681,11 @@ update_color_presets_html : check "isbool(${1=0})"
   e[] "\n > Update 'Color Presets' pages, for "$!" image samples and "$nb_presets" presets."
 
   # Prepare folder structure.
-  e[] "\n  * Prepare folder structure."
+  e[] $_vt100_g"\n  * Prepare folder structure."$_vt100_n
   x "mkdir -p img"
 
   # Generate thumbnails.
-  e[] "\n  * Generate thumbnails from samples."
+  e[] $_vt100_g"\n  * Generate thumbnails from samples."$_vt100_n
   x "mkdir -p original"
   nb_samples=$!
   to_rgb repeat $nb_samples l[$<]
@@ -7705,7 +7706,7 @@ update_color_presets_html : check "isbool(${1=0})"
     category=${arg\ {1+$>},$categories}
     presets=${-_fx_cluts_$category}
 
-    e[] "\n  * Category ""#"{1+$>}": "$category"\n"
+    e[] $_vt100_g"\n  * Category ""#"{1+$>}": "$category"\n"$_vt100_n
     x "mkdir -p "$category
     x "mkdir -p "$category/clut
 
@@ -7720,9 +7721,8 @@ update_color_presets_html : check "isbool(${1=0})"
 
       +r3dx. 13
       o. $category/clut/$preset.cube # Save as .cube
-      x 0,"rm -f "$category/clut/$preset.zip"; "\
-          "zip -j -9 "$category/clut/$preset.zip" "$category/clut/$preset.cube"; "\
-          "rm -f "$category/clut/$preset.cube
+      x 0,"rm -f "$category/clut/$preset.zip
+      x 0,"zip -j -9 "$category/clut/$preset.zip" "$category/clut/$preset.cube
       rm.
 
       repeat $nb_samples l[{2*$>},{2*$>+1},-1]
@@ -7742,8 +7742,10 @@ update_color_presets_html : check "isbool(${1=0})"
 
       ind_preset+=1
     done
-
+    x 0,"zip -rj9 "$category/${category}_CLUT_pack_cube.zip" "$category/clut/*.cube
+    x 0,"zip -rj9 "$category/${category}_CLUT_pack_png.zip" "$category/clut/*.png
   done
+
 
   rm[1--1:2]  # Remove thumbnails.
 
@@ -7755,6 +7757,7 @@ update_color_presets_html : check "isbool(${1=0})"
     arg {1+$>},$category_names
     category_name=${}
     presets=${-_fx_cluts_$category}
+    x 0,"rm -f "$category/clut/"*.cube"
 
     repeat $nb_samples
       width={$>,64+w} height={$>,64+h}
