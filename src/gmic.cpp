@@ -2496,7 +2496,7 @@ struct _gmic_mutex {
   _gmic_mutex() { for (unsigned int i = 0; i<256; ++i) mutex[i] = CreateMutex(0,FALSE,0); }
   void lock(const unsigned int n) { WaitForSingleObject(mutex[n],INFINITE); }
   void unlock(const unsigned int n) { ReleaseMutex(mutex[n]); }
-#else // #ifdef _PTHREAD_H
+#else // #if cimg_OS==1 && (defined(cimg_use_pthread) || cimg_display==1)
   _gmic_mutex() {}
   void lock(const unsigned int) {}
   void unlock(const unsigned int) {}
@@ -2516,11 +2516,11 @@ struct _gmic_parallel {
   gmic_exception exception;
   gmic gmic_instance;
 #ifdef gmic_is_parallel
-#ifdef _PTHREAD_H
+#if defined(_PTHREAD_H) || defined(PTHREAD_THREADS_MAX)
   pthread_t thread_id;
 #elif cimg_OS==2
   HANDLE thread_id;
-#endif // #ifdef _PTHREAD_H
+#endif // #if defined(_PTHREAD_H) || defined(PTHREAD_THREADS_MAX)
 #endif // #ifdef gmic_is_parallel
   _gmic_parallel() { variables_sizes.assign(gmic_varslots); }
 };
@@ -2546,9 +2546,9 @@ static DWORD WINAPI gmic_parallel(void *arg)
     st.exception._command.assign(e._command);
     st.exception._message.assign(e._message);
   }
-#if defined(gmic_is_parallel) && defined(_PTHREAD_H)
+#if defined(gmic_is_parallel) && (defined(_PTHREAD_H)|| defined(PTHREAD_THREADS_MAX))
   pthread_exit(0);
-#endif // #if defined(gmic_is_parallel) && defined(_PTHREAD_H)
+#endif // #if defined(gmic_is_parallel) && (defined(_PTHREAD_H) || defined(PTHREAD_THREADS_MAX))
   return 0;
 }
 
@@ -2647,12 +2647,12 @@ void gmic::wait_threads(void *const p_gmic_threads, const bool try_abort, const 
     if (gmic_threads[l].is_thread_running) {
       gmic_threads[l].is_thread_running = false;
       cimg::mutex(25,0);
-#ifdef _PTHREAD_H
+#if defined(_PTHREAD_H) || defined(PTHREAD_THREADS_MAX)
       pthread_join(gmic_threads[l].thread_id,0);
-#elif cimg_OS==2 // #ifdef _PTHREAD_H
+#elif cimg_OS==2 // #if defined(_PTHREAD_H) || defined(PTHREAD_THREADS_MAX)
       WaitForSingleObject(gmic_threads[l].thread_id,INFINITE);
       CloseHandle(gmic_threads[l].thread_id);
-#endif // #ifdef _PTHREAD_H
+#endif // #if defined(_PTHREAD_H) || defined(PTHREAD_THREADS_MAX)
     } else cimg::mutex(25,0);
 
     is_change|=gmic_threads[l].gmic_instance.is_change;
@@ -10606,7 +10606,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           // Run threads.
           cimg_forY(_gmic_threads,l) {
 #ifdef gmic_is_parallel
-#ifdef _PTHREAD_H
+#if defined(_PTHREAD_H) || defined(PTHREAD_THREADS_MAX)
 
 #if defined(__MACOSX__) || defined(__APPLE__)
             const uint64T stacksize = (uint64T)8*1024*1024;
@@ -10618,10 +10618,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 #endif // #if defined(__MACOSX__) || defined(__APPLE__)
               pthread_create(&_gmic_threads[l].thread_id,0,gmic_parallel<T>,(void*)&_gmic_threads[l]);
 
-#elif cimg_OS==2 // #ifdef _PTHREAD_H
+#elif cimg_OS==2 // #if defined(_PTHREAD_H) || defined(PTHREAD_THREADS_MAX)
             _gmic_threads[l].thread_id = CreateThread(0,0,gmic_parallel<T>,
                                                       (void*)&_gmic_threads[l],0,0);
-#endif // #ifdef _PTHREAD_H
+#endif // #if defined(_PTHREAD_H) || defined(PTHREAD_THREADS_MAX)
 #else // #ifdef gmic_is_parallel
             gmic_parallel<T>((void*)&_gmic_threads[l]);
 #endif // #ifdef gmic_is_parallel
