@@ -226,6 +226,10 @@ inline double gmic_mp_name(const unsigned int ind, Ts *const out_str, const unsi
 #define cimg_mp_func_name(ind,out_str,siz) \
   return ::gmic_mp_name(ind,out_str,siz,&mp.listout,(T)0)
 
+inline double gmic_mp_dollar(const char *const ptr);
+#define cimg_mp_operator_dollar(str) \
+  return ::gmic_mp_dollar(str)
+
 #ifndef cimg_display
 #define cimg_display 0
 #endif
