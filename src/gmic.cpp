@@ -2345,7 +2345,7 @@ double gmic::mp_get(Ts *const ptr, const unsigned int siz, const bool to_string,
           } else { // Regular string variable
             if (cimg_sscanf(value,"%lf%c",&dvalue,&end)==1) {
               dest[0] = (Ts)dvalue;
-              dest.get_shared_points(1,dest._width - 1).fill(0);
+              if (dest._width>1) dest.get_shared_points(1,dest._width - 1).fill(0);
             } else try {
                 dest.fill(0);
                 dest.fill(value,false,false);
