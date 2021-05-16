@@ -2218,60 +2218,33 @@ bool gmic::get_debug_info(const char *s, unsigned int &line_number, unsigned int
 inline gmic_list<void*>& gmic_runs() { static gmic_list<void*> val; return val; }
 
 template<typename T>
-double gmic::mp_run(char *const str,
-                    void *const p_list, const T& pixel_type) {
+double gmic::mp_dollar(const char *const str,
+                       void *const p_list, const T& pixel_type) {
   cimg::unused(pixel_type);
   double res = cimg::type<double>::nan();
-  CImg<char> is_error;
-  char sep;
-  cimg_pragma_openmp(critical(mp_run))
-    {
-      // Retrieve current gmic run.
-      cimg::mutex(24);
-      CImgList<void*> &grl = gmic_runs();
-      int p;
-      for (p = grl.width() - 1; p>=0; --p) {
-        CImg<void*> &gr = grl[p];
-        if (gr[1]==(void*)p_list) break;
-      }
-      if (p<0) { // Instance not found!
-        cimg::mutex(24,0);
-        CImg<char>::string("Cannot determine instance of the G'MIC interpreter.").move_to(is_error);
-      } else {
-        CImg<void*> &gr = grl[p];
-        gmic &gmic_instance = *(gmic*)gr[0];
-        cimg::mutex(24,0);
 
-        // Run given command line.
-        CImgList<T> &images = *(CImgList<T>*)gr[1];
-        CImgList<char> &images_names = *(CImgList<char>*)gr[2];
-        CImgList<T> &parent_images = *(CImgList<T>*)gr[3];
-        CImgList<char> &parent_images_names = *(CImgList<char>*)gr[4];
-        const unsigned int *const variables_sizes = (const unsigned int*)gr[5];
-        const CImg<unsigned int> *const command_selection = (const CImg<unsigned int>*)gr[6];
-
-        if (gmic_instance.is_debug_info && gmic_instance.debug_line!=~0U) {
-          CImg<char> title(32);
-          cimg_snprintf(title,title.width(),"*expr#%u",gmic_instance.debug_line);
-          CImg<char>::string(title).move_to(gmic_instance.callstack);
-        } else CImg<char>::string("*expr").move_to(gmic_instance.callstack);
-        unsigned int pos = 0;
-        try {
-          gmic_instance._run(gmic_instance.commands_line_to_CImgList(gmic::strreplace_fw(str)),pos,images,images_names,
-                             parent_images,parent_images_names,variables_sizes,0,0,command_selection);
-        } catch (gmic_exception &e) {
-          CImg<char>::string(e.what()).move_to(is_error);
-        }
-        gmic_instance.callstack.remove();
-        if (is_error || !gmic_instance.status || !*gmic_instance.status ||
-            cimg_sscanf(gmic_instance.status,"%lf%c",&res,&sep)!=1)
-          res = cimg::type<double>::nan();
-      }
-    }
-  if (is_error) {
+  // Retrieve current gmic run.
+  cimg::mutex(24);
+  CImgList<void*> &grl = gmic_runs();
+  int p;
+  for (p = grl.width() - 1; p>=0; --p) {
+    CImg<void*> &gr = grl[p];
+    if (gr[1]==(void*)p_list) break;
+  }
+  if (p<0) { // Instance not found!
     cimg::mutex(24,0);
-    throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'run()': %s",
-                                cimg::type<T>::string(),is_error.data());
+    throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Operator '$': "
+                                "Cannot determine instance of the G'MIC interpreter.",
+                                cimg::type<T>::string());
+  } else {
+    CImg<void*> &gr = grl[p];
+    gmic &gmic_instance = *(gmic*)gr[0];
+    CImgList<char> &images_names = *(CImgList<char>*)gr[2];
+    const unsigned int *const variables_sizes = (const unsigned int*)gr[5];
+    CImg<char> value = gmic_instance.get_variable(str,variables_sizes,&images_names);
+    char end;
+    if (std::sscanf(value,"%lf%c",&res,&end)!=1) res = cimg::type<double>::nan();
+    cimg::mutex(24,0);
   }
   return res;
 }
@@ -2369,6 +2342,98 @@ double gmic::mp_get(Ts *const ptr, const unsigned int siz, const bool to_string,
   return siz?cimg::type<double>::nan():*ptr;
 }
 
+template<typename T, typename Ts>
+double gmic::mp_name(const unsigned int ind, Ts *const out_str, const unsigned int siz,
+                     void *const p_list, const T& pixel_type) {
+  cimg::unused(pixel_type);
+  std::memset(out_str,0,siz*sizeof(Ts));
+
+  // Retrieve current gmic run.
+  cimg::mutex(24);
+  CImgList<void*> &grl = gmic_runs();
+  int p;
+  for (p = grl.width() - 1; p>=0; --p) {
+    CImg<void*> &gr = grl[p];
+    if (gr[1]==(void*)p_list) break;
+  }
+  if (p<0) { // Instance not found!
+    cimg::mutex(24,0);
+    throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'name()': "
+                                "Cannot determine instance of the G'MIC interpreter.",
+                                cimg::type<T>::string());
+  } else {
+    CImg<void*> &gr = grl[p];
+    cimg::mutex(24,0);
+    CImgList<char> &images_names = *(CImgList<char>*)gr[2];
+    if (ind<images_names.size()) { // #ind specified
+      const char *ptrs = images_names[ind];
+      unsigned int k;
+      for (k = 0; k<siz && ptrs[k]; ++k) out_str[k] = (Ts)ptrs[k];
+      if (k<siz) out_str[k] = 0;
+    }
+  }
+  return cimg::type<double>::nan();
+}
+
+template<typename T>
+double gmic::mp_run(char *const str,
+                    void *const p_list, const T& pixel_type) {
+  cimg::unused(pixel_type);
+  double res = cimg::type<double>::nan();
+  CImg<char> is_error;
+  char sep;
+  cimg_pragma_openmp(critical(mp_run))
+    {
+      // Retrieve current gmic run.
+      cimg::mutex(24);
+      CImgList<void*> &grl = gmic_runs();
+      int p;
+      for (p = grl.width() - 1; p>=0; --p) {
+        CImg<void*> &gr = grl[p];
+        if (gr[1]==(void*)p_list) break;
+      }
+      if (p<0) { // Instance not found!
+        cimg::mutex(24,0);
+        CImg<char>::string("Cannot determine instance of the G'MIC interpreter.").move_to(is_error);
+      } else {
+        CImg<void*> &gr = grl[p];
+        gmic &gmic_instance = *(gmic*)gr[0];
+        cimg::mutex(24,0);
+
+        // Run given command line.
+        CImgList<T> &images = *(CImgList<T>*)gr[1];
+        CImgList<char> &images_names = *(CImgList<char>*)gr[2];
+        CImgList<T> &parent_images = *(CImgList<T>*)gr[3];
+        CImgList<char> &parent_images_names = *(CImgList<char>*)gr[4];
+        const unsigned int *const variables_sizes = (const unsigned int*)gr[5];
+        const CImg<unsigned int> *const command_selection = (const CImg<unsigned int>*)gr[6];
+
+        if (gmic_instance.is_debug_info && gmic_instance.debug_line!=~0U) {
+          CImg<char> title(32);
+          cimg_snprintf(title,title.width(),"*expr#%u",gmic_instance.debug_line);
+          CImg<char>::string(title).move_to(gmic_instance.callstack);
+        } else CImg<char>::string("*expr").move_to(gmic_instance.callstack);
+        unsigned int pos = 0;
+        try {
+          gmic_instance._run(gmic_instance.commands_line_to_CImgList(gmic::strreplace_fw(str)),pos,images,images_names,
+                             parent_images,parent_images_names,variables_sizes,0,0,command_selection);
+        } catch (gmic_exception &e) {
+          CImg<char>::string(e.what()).move_to(is_error);
+        }
+        gmic_instance.callstack.remove();
+        if (is_error || !gmic_instance.status || !*gmic_instance.status ||
+            cimg_sscanf(gmic_instance.status,"%lf%c",&res,&sep)!=1)
+          res = cimg::type<double>::nan();
+      }
+    }
+  if (is_error) {
+    cimg::mutex(24,0);
+    throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'run()': %s",
+                                cimg::type<T>::string(),is_error.data());
+  }
+  return res;
+}
+
 template<typename Ts, typename T>
 double gmic::mp_store(const Ts *const ptr, const unsigned int siz,
                       const unsigned int w, const unsigned int h, const unsigned d, const unsigned int s,
@@ -2418,39 +2483,6 @@ double gmic::mp_store(const Ts *const ptr, const unsigned int siz,
       throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'store()': "
                                   "Invalid variable name '%s'.",
                                   cimg::type<T>::string(),str);
-    }
-  }
-  return cimg::type<double>::nan();
-}
-
-template<typename T, typename Ts>
-double gmic::mp_name(const unsigned int ind, Ts *const out_str, const unsigned int siz,
-                     void *const p_list, const T& pixel_type) {
-  cimg::unused(pixel_type);
-  std::memset(out_str,0,siz*sizeof(Ts));
-
-  // Retrieve current gmic run.
-  cimg::mutex(24);
-  CImgList<void*> &grl = gmic_runs();
-  int p;
-  for (p = grl.width() - 1; p>=0; --p) {
-    CImg<void*> &gr = grl[p];
-    if (gr[1]==(void*)p_list) break;
-  }
-  if (p<0) { // Instance not found!
-    cimg::mutex(24,0);
-    throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'name()': "
-                                "Cannot determine instance of the G'MIC interpreter.",
-                                cimg::type<T>::string());
-  } else {
-    CImg<void*> &gr = grl[p];
-    cimg::mutex(24,0);
-    CImgList<char> &images_names = *(CImgList<char>*)gr[2];
-    if (ind<images_names.size()) { // #ind specified
-      const char *ptrs = images_names[ind];
-      unsigned int k;
-      for (k = 0; k<siz && ptrs[k]; ++k) out_str[k] = (Ts)ptrs[k];
-      if (k<siz) out_str[k] = 0;
     }
   }
   return cimg::type<double>::nan();
