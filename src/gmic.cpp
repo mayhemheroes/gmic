@@ -2380,11 +2380,10 @@ double gmic::mp_store(const Ts *const ptr, const unsigned int siz,
                       const bool is_compressed, const char *const str,
                       void *const p_list, const T& pixel_type) {
   const CImg<void*> gr = get_current_run("Function 'store()'",p_list,pixel_type);
-  cimg_pragma_openmp(critical(mp_run))
+  cimg_pragma_openmp(critical(mp_store))
   {
     gmic &gmic_instance = *(gmic*)gr[0];
     const unsigned int *const variables_sizes = (const unsigned int*)gr[5];
-
     CImg<char> _varname(256);
     char *const varname = _varname.data(), end;
 
