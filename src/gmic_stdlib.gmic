@@ -49013,7 +49013,8 @@ nn_lib :
 
     # Module: FC (Fully Connected layer).
     #-------------------------------------
-    nn_fc_fwd_begin(name,ind) = (
+    nn_fc_fwd_begin(name) = (
+      unref(ind); const ind = $name#;
       name#_weights = crop(#ind,0,0,w#ind - 1,h#ind);
       name#_biases = crop(#ind,w#ind - 1,0,1,h#ind);
       name#_out = vector(#h#ind);
@@ -49045,7 +49046,8 @@ nn_lib :
       name#_sum_deriv_biases+=name#_deriv_biases;
     );
 
-    nn_fc_bwd_end(name,ind) = (
+    nn_fc_bwd_end(name) = (
+      unref(ind); const ind = $name#;
       merge(name#_sum_deriv_weights,+);
       merge(name#_sum_deriv_biases,+);
       epsilon = 1e-2/abs(maxabs(1e-5,name#_sum_deriv_weights,name#_sum_deriv_biases));
@@ -49085,11 +49087,11 @@ nn_fc : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($
   _nn_$1_in_size=1,{prod($_nn_$2_out_size)},1,1
   _nn_$1_out_size=1,$3,1,1
   if !isint($1) {[$_nn_$1_in_size][1]+1},$3 nm. $1 fi
-  _nn_code_fwd_begin.="nn_fc_fwd_begin("$1,#$$1");"
+  _nn_code_fwd_begin.="nn_fc_fwd_begin($1);"
   _nn_code_fwd.="nn_fc_fwd($1,$2,$4);"
   _nn_code_bwd_begin="nn_fc_bwd_begin($1);"$_nn_code_bwd_begin
   _nn_code_bwd="nn_fc_bwd($1,$2,$4);"$_nn_code_bwd
-  _nn_code_bwd_end="nn_fc_bwd_end("$1,#$$1");"$_nn_code_bwd_end
+  _nn_code_bwd_end="nn_fc_bwd_end($1);"$_nn_code_bwd_end
 
 #@gmic nn_loss : name,in,type={ mse }
 #@gmic : Add a loss module to the network.
