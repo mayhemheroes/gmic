@@ -2218,26 +2218,28 @@ bool gmic::get_debug_info(const char *s, unsigned int &line_number, unsigned int
 inline gmic_list<void*>& gmic_runs() { static gmic_list<void*> val; return val; }
 
 template<typename T>
-CImg<void*>& get_current_run(const char *const func_name,void *const p_list, const T& pixel_type) {
+const CImg<void*> get_current_run(const char *const func_name,void *const p_list, const T& pixel_type) {
   cimg::unused(pixel_type);
+  cimg::mutex(24);
   CImgList<void*> &grl = gmic_runs();
   int p;
   for (p = grl.width() - 1; p>=0; --p) {
     CImg<void*> &gr = grl[p];
     if (gr[1]==(void*)p_list) break;
   }
-  if (p<0) { // Instance not found!
+  const CImg<void*> gr = grl[p].get_shared(); // Return shared image
+  cimg::mutex(24,0);
+  if (p<0) // Instance not found!
     throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function '%s': "
                                 "Cannot determine instance of the G'MIC interpreter.",
                                 cimg::type<T>::string(),func_name);
-  }
-  return grl[p];
+  return gr;
 }
 
 template<typename T>
 double gmic::mp_dollar(const char *const str,
                        void *const p_list, const T& pixel_type) {
-  const CImg<void*> &gr = get_current_run("Operator '$'",p_list,pixel_type);
+  const CImg<void*> gr = get_current_run("Operator '$'",p_list,pixel_type);
   gmic &gmic_instance = *(gmic*)gr[0];
   CImgList<char> &images_names = *(CImgList<char>*)gr[2];
   const unsigned int *const variables_sizes = (const unsigned int*)gr[5];
@@ -2252,7 +2254,7 @@ double gmic::mp_dollar(const char *const str,
 template<typename Ts, typename T>
 double gmic::mp_get(Ts *const ptr, const unsigned int siz, const bool to_string, const char *const str,
                     void *const p_list, const T& pixel_type) {
-  const CImg<void*> &gr = get_current_run("Function 'get()'",p_list,pixel_type);
+  const CImg<void*> gr = get_current_run("Function 'get()'",p_list,pixel_type);
   gmic &gmic_instance = *(gmic*)gr[0];
   CImgList<char>& images_names = *(CImgList<char>*)gr[2];
   const unsigned int *const variables_sizes = (const unsigned int*)gr[5];
@@ -2269,20 +2271,16 @@ double gmic::mp_get(Ts *const ptr, const unsigned int siz, const bool to_string,
       if (dest.width()>value.width()) dest.get_shared_points(value.width(),dest.width() - 1).fill(0);
 
     } else { // Convert variable content as numbers
-      if (!value) {
-        cimg::mutex(24,0);
+      if (!value)
         throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
                                     "Undefined variable '%s'.",
                                     cimg::type<T>::string(),str);
-      }
       double dvalue = 0;
       if (!siz) { // Scalar result
-        if (cimg_sscanf(value,"%lf",&dvalue)!=1) {
-          cimg::mutex(24,0);
+        if (cimg_sscanf(value,"%lf",&dvalue)!=1)
           throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
                                       "Variable '%s' has value '%s', cannot be returned as a scalar.",
                                       cimg::type<T>::string(),str,value.data());
-        }
         *ptr = dvalue;
 
       } else { // Vector result
@@ -2291,12 +2289,10 @@ double gmic::mp_get(Ts *const ptr, const unsigned int siz, const bool to_string,
           const char *const zero = (char*)::std::memchr(value,0,value.width());
           CImgList<T> list = CImgList<T>::get_unserialize(value.get_shared_points(zero + 1 - value.data(),
                                                                                   value.width() - 1));
-          if (list.size()!=2) {
-            cimg::mutex(24,0);
+          if (list.size()!=2)
             throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
                                         "Variable '%s' stores %u images, cannot be returned as a single vector.",
                                         cimg::type<T>::string(),str,list.size());
-          }
           dest = list[0].resize(siz,1,1,1,-1);
 
         } else { // Regular string variable
@@ -2307,7 +2303,6 @@ double gmic::mp_get(Ts *const ptr, const unsigned int siz, const bool to_string,
               dest.fill(0);
               dest.fill(value,false,false);
             } catch (...) {
-              cimg::mutex(24,0);
               throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
                                           "Variable '%s' has value '%s', cannot be returned as a vector.",
                                           cimg::type<T>::string(),str,value.data());
@@ -2325,7 +2320,7 @@ double gmic::mp_get(Ts *const ptr, const unsigned int siz, const bool to_string,
 template<typename T, typename Ts>
 double gmic::mp_name(const unsigned int ind, Ts *const out_str, const unsigned int siz,
                      void *const p_list, const T& pixel_type) {
-  const CImg<void*> &gr = get_current_run("Function 'name()'",p_list,pixel_type);
+  const CImg<void*> gr = get_current_run("Function 'name()'",p_list,pixel_type);
   CImgList<char> &images_names = *(CImgList<char>*)gr[2];
 
   std::memset(out_str,0,siz*sizeof(Ts));
@@ -2341,12 +2336,11 @@ double gmic::mp_name(const unsigned int ind, Ts *const out_str, const unsigned i
 template<typename T>
 double gmic::mp_run(char *const str,
                     void *const p_list, const T& pixel_type) {
-  const CImg<void*> &gr = get_current_run("Function 'run()'",p_list,pixel_type);
+  const CImg<void*> gr = get_current_run("Function 'run()'",p_list,pixel_type);
   double res = cimg::type<double>::nan();
 
   cimg_pragma_openmp(critical(mp_run))
   {
-    cimg::mutex(24);
     gmic &gmic_instance = *(gmic*)gr[0];
     CImgList<T> &images = *(CImgList<T>*)gr[1];
     CImgList<char> &images_names = *(CImgList<char>*)gr[2];
@@ -2373,7 +2367,6 @@ double gmic::mp_run(char *const str,
     if (is_error || !gmic_instance.status || !*gmic_instance.status ||
         cimg_sscanf(gmic_instance.status,"%lf%c",&res,&sep)!=1)
       res = cimg::type<double>::nan();
-    cimg::mutex(24,0);
     if (is_error)
       throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'run()': %s",
                                   cimg::type<T>::string(),is_error.data());
@@ -2386,10 +2379,9 @@ double gmic::mp_store(const Ts *const ptr, const unsigned int siz,
                       const unsigned int w, const unsigned int h, const unsigned d, const unsigned int s,
                       const bool is_compressed, const char *const str,
                       void *const p_list, const T& pixel_type) {
-  CImg<void*> &gr = get_current_run("Function 'store()'",p_list,pixel_type);
+  const CImg<void*> gr = get_current_run("Function 'store()'",p_list,pixel_type);
   cimg_pragma_openmp(critical(mp_run))
   {
-    cimg::mutex(24);
     gmic &gmic_instance = *(gmic*)gr[0];
     const unsigned int *const variables_sizes = (const unsigned int*)gr[5];
 
@@ -2412,13 +2404,10 @@ double gmic::mp_store(const Ts *const ptr, const unsigned int siz,
       name.resize((unsigned int)(name.width() + 9 + std::strlen(varname)),1,1,1,0,0,1);
       std::sprintf(name,"%c*store/%s",gmic_store,_varname.data());
       gmic_instance.set_variable(_varname.data(),name,variables_sizes);
-      cimg::mutex(24,0);
-    } else {
-      cimg::mutex(24,0);
+    } else
       throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'store()': "
                                   "Invalid variable name '%s'.",
                                   cimg::type<T>::string(),str);
-    }
   }
   return cimg::type<double>::nan();
 }
@@ -3224,6 +3213,7 @@ gmic& gmic::debug(const char *format, ...) {
 //--------------------
 // May return an empty image, when requested variable is not assigned.
 // For image-encoded variables, only the string header is returned.
+// Returned image is a shared image, when possible.
 CImg<char> gmic::get_variable(const char *const name,
                               const unsigned int *const variables_sizes,
                               const CImgList<char> *const images_names) const {
