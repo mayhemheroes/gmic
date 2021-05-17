@@ -5612,7 +5612,9 @@ gmd2html : skip "${1=}"
           ind_e = find(#1,e_text_link,ind_m);
           write('<a href=\"');
           write(#1,ind_m + 1,ind_e - ind_m - 1);
-          i[ind_m + 1]==_'#'?write('\">'):write('\" target=\"_blank\">'); # Anchor -> local link
+          i[ind_m + 1]==_'#' || crop(#1,0,ind_m + 1,1,15)=='https://gmic.eu'?
+            write('\">'): # Local link
+            write('\" target=\"_blank\">');
         ):
         c==m_text_link ? (
           ind_e = find(#1,e_text_link,y);
@@ -7580,6 +7582,7 @@ update_instimg :
 # Input images : samples you want to generate
 # $1 = upload to G'MIC server, can be { 0 | 1 }.
 update_color_presets_html : check "isbool(${1=0})"
+  use_vt100
   path_current=${-path_current} path_ok=$HOME/work/src/gmic/html/color_presets/
   if ['$path_current']!=['$path_ok']
     error[0--3] "Command 'update_color_presets_html: Command run from wrong path: '"$path_current"', "\
@@ -7596,13 +7599,23 @@ update_color_presets_html : check "isbool(${1=0})"
   jpeg_quality=70   # Set JPEG quality of output images.
   thumb_width=180   # Set thumbnail width.
   thumb_height=90   # Set mini thumbnail height.
-  categories=creative,lutifyme,picturefx,pixlsus,others,\
+  categories=creative,picturefx,pixlsus,abigailgonzalez,alexjordan,berat,ericellerbrock,inavision,jtsemple,\
+             kylerholland,ohadperetz,shamoonabbasi,youssefhossam,others,\
              bw,instant_consumer,instant_pro,fujixtransiii,negative_color,negative_new,negative_old,print,colorslide
-  category_names="Creative: Creative Pack",\
-                 "Creative: Lutify.Me",\
-                 "Creative: PictureFX",\
-                 "Creative: PIXLS.US",\
-                 "Creative: Others",\
+  category_names="Creative Pack",\
+                 "PictureFX",\
+                 "PIXLS.US",\
+                 "Abigail Gonzalez's CLUTs",\
+                 "Alex Jordan's CLUTs",\
+                 "Berat's CLUTs",\
+                 "Eric Ellerbrock's CLUTs",\
+                 "InAvision's CLUTs",\
+                 "J.T. Semple's CLUTs",\
+                 "Kyler Holland's CLUTs",\
+                 "Ohad Peretz's CLUTs",\
+                 "Shamoon Abbasi's CLUTs",\
+                 "Youssef Hossam's CLUTs",\
+                 "Others",\
                  "Films: Black and White",\
                  "Films: Instant [Consumer]",\
                  "Films: Instant [Pro]",\
@@ -7613,9 +7626,18 @@ update_color_presets_html : check "isbool(${1=0})"
                  "Films: Print Films",\
                  "Films: Slide [Color]"
   category_authors="RawTherapee",\
-                   "Lutify.Me",\
                    "Marc Roovers",\
                    "PIXLS.US contributors",\
+                   "Abigail Gonzalez",\
+                   "Alex Jordan",\
+                   "Berat",\
+                   "Eric Ellerbrock",\
+                   "InAvision",\
+                   "J.T. Semple",\
+                   "Kyler Holland",\
+                   "Ohad Peretz",\
+                   "Shamoon Abbasi",\
+                   "Youssef Hossam",\
                    0,\
                    "Pat David",\
                    "Pat David",\
@@ -7627,9 +7649,18 @@ update_color_presets_html : check "isbool(${1=0})"
                    "Juan Melara",\
                    "Pat David"
   category_authors_url="https://rawpedia.rawtherapee.com/Film_Simulation",\
-                       "https://lutify.me/free-luts/",\
                        "https://marcrphoto.wordpress.com/specials/698-2/",\
                        "https://discuss.pixls.us/t/help-to-create-a-set-of-pixls-us-color-luts",\
+                       "https://www.abigailgonzalez.com/",\
+                       "https://freshluts.com/users/1",\
+                       "https://freshluts.com/users/10185",\
+                       "https://www.facebook.com/eric.ellerbrockom",\
+                       "https://freshluts.com/users/64078",\
+                       "https://freshluts.com/users/120",\
+                       "https://sellfy.com/p/SGnG/",\
+                       "https://freshluts.com/users/992",\
+                       "https://www.facebook.com/shamoon",\
+                       "https://freshluts.com/users/52679",\
                        0,\
                        "http://blog.patdavid.net/2013/08/film-emulation-presets-in-gmic-gimp.html",\
                        "http://blog.patdavid.net/2013/08/film-emulation-presets-in-gmic-gimp.html",\
@@ -7655,11 +7686,11 @@ update_color_presets_html : check "isbool(${1=0})"
   e[] "\n > Update 'Color Presets' pages, for "$!" image samples and "$nb_presets" presets."
 
   # Prepare folder structure.
-  e[] "\n  * Prepare folder structure."
+  e[] $_vt100_g"\n  * Prepare folder structure."$_vt100_n
   x "mkdir -p img"
 
   # Generate thumbnails.
-  e[] "\n  * Generate thumbnails from samples."
+  e[] $_vt100_g"\n  * Generate thumbnails from samples.\n"$_vt100_n
   x "mkdir -p original"
   nb_samples=$!
   to_rgb repeat $nb_samples l[$<]
@@ -7680,7 +7711,7 @@ update_color_presets_html : check "isbool(${1=0})"
     category=${arg\ {1+$>},$categories}
     presets=${-_fx_cluts_$category}
 
-    e[] "\n  * Category ""#"{1+$>}": "$category"\n"
+    e[] $_vt100_g"\n  * Category ""#"{1+$>}": "$_vt100_b$category"\n"$_vt100_n
     x "mkdir -p "$category
     x "mkdir -p "$category/clut
 
@@ -7690,7 +7721,13 @@ update_color_presets_html : check "isbool(${1=0})"
       clut $preset,64 to_rgb.
       s={sqrt(w*h*d)} +r. $s,$s,1,3,-1
       if iM<=255 *. 257 fi  # Force PNG to be saved in 16bits.
-      o. $category/clut/$preset.png
+      o. $category/clut/$preset.png # Save as HaldCLUT
+      rm.
+
+      +r3dx. 13
+      o. $category/clut/$preset.cube # Save as .cube
+      x 0,"rm -f "$category/clut/$preset.zip
+      x 0,"zip -j -9 "$category/clut/$preset.zip" "$category/clut/$preset.cube
       rm.
 
       repeat $nb_samples l[{2*$>},{2*$>+1},-1]
@@ -7710,7 +7747,8 @@ update_color_presets_html : check "isbool(${1=0})"
 
       ind_preset+=1
     done
-
+    x 0,"zip -rj9 "$category/${category}_cube.zip" "$category/clut/*.cube
+    x 0,"zip -rj9 "$category/${category}_haldclut.zip" "$category/clut/*.png
   done
 
   rm[1--1:2]  # Remove thumbnails.
@@ -7723,6 +7761,7 @@ update_color_presets_html : check "isbool(${1=0})"
     arg {1+$>},$category_names
     category_name=${}
     presets=${-_fx_cluts_$category}
+    x 0,"rm -f "$category/clut/"*.cube"
 
     repeat $nb_samples
       width={$>,64+w} height={$>,64+h}
@@ -7753,7 +7792,7 @@ update_color_presets_html : check "isbool(${1=0})"
 "    <div class=\"section_title\"><p>Color Presets</p></div><div class=\"section_content\">"\n\n\
 "      <p>Among all features available in <span class=\"gmd_gmic\">G&apos;MIC</span>, our <b>Color Presets</b> and "\
 "<b>Simulate Film</b> filters are able to apply various pre-defined <b>color CLUTs</b> on your images "\
-"(<b>550+</b> color CLUTs available).</p>"\n\
+"(<b>600+</b> color CLUTs available).</p>"\n\
 "      <p>Below, you can navigate through the different proposed presets and see how they modify the colors "\
 "of some sample images."\n\
 "        You can also download each color preset separately as its corresponding "\
@@ -7774,7 +7813,7 @@ update_color_presets_html : check "isbool(${1=0})"
 "        with or endorsed by the companies that own the trademarks.</p>"\n\n\
 "<!-- end_content -->"\n\n\
 "    </div><div class=\"section_end\"></div>"\n\n\
-"    <div class=\"section_title\"><p>Browse</p></div><div class=\"section_content\">"\n\n\
+"    <a name="browse"></a><div class=\"section_title\"><p>Browse</p></div><div class=\"section_content\">"\n\n\
 "      <table><tr>"\n\
 "          <td style=\"width: 400px\">Select category:"\n\
 "            <ul>\n"')
@@ -7798,7 +7837,7 @@ update_color_presets_html : check "isbool(${1=0})"
         fi
 
         if ['$_category']==['$category']
-          ('"              <li><span style=\"color: \#cc7700\"><b>"$_category_name"</b> "\
+          ('"              <li><span class=\"gmd_bold_a\"><b>"$_category_name"</b> "\
             $_category_author"</span></li>"\n')
         else
           ('"              <li><a href=\""${_category}_$basename.html"#browse\">"$_category_name"</a> "\
@@ -7845,13 +7884,15 @@ update_color_presets_html : check "isbool(${1=0})"
           "                  <div><a href=\"#\" onclick=\"return hs.htmlExpand(this, "\
           "{ width: "$width", height: "$height" })\">"\n\
           "                      <img alt=\"\" src=\""$category/$basename/thumb_$preset".jpg\" /></a>"\n\
-          "                    <div class=\"highslide-maincontent\">"\n\
+          "                    <div class=\"highslide-maincontent\" style=\"text-align: center\">"\n\
           "                      <img alt=\"\" src=\""$category/$basename/$preset.jpg"\" "\
           "onclick=\"hs.close()\" "\
           "onmouseover=\"javascript:this.src='"$category/$basename/$preset_esc.jpg"';\" "\
           "onmouseout=\"javascript:this.src='original/"$basename".jpg';\" /></div>"\n\
           "                    <div class=\"highslide-caption\"><b>Preset:</b> <i>"$title"</i> "\
-          "[<a href=\""$category/clut/$preset.png"\">Download HaldCLUT</a>]</div></div>"\n\
+          "[<a href=\""$category/clut/$preset.png"\">Download .png HaldCLUT</a>] "\
+          "or [<a href=\""$category/clut/$preset.zip"\">Download .cube</a>]"\
+          "</div></div>"\n\
           "              </td></tr>"\n\
           "              <tr><td><span class=\"smaller\">"$title"</span></td></tr>"\n\
           "          </table></td>\n\n"')
@@ -7859,12 +7900,20 @@ update_color_presets_html : check "isbool(${1=0})"
       r={narg({/$presets})%4}
       if $r%4 ('"          <td colspan=\""{4-$r}"\"></td>\n"') fi
       ('"      </tr></table>"\n\n\
+        "      <hr/><p style=\"text-align: center\">"\n\
+        "        <a href=\""$category/${category}_cube.zip"\"><img src=\"../img/menu_download.png\" /></a>&nbsp; "\
+        "<span class=\"gmd_bold_a\">Get the Full Pack &quot;<i>"${category_name}"</i>&quot;:</span> "\
+        "[<b><a href=\""$category/${category}_haldclut.zip"\">Download .png HaldCLUT</a></b>] "\
+        "or [<b><a href=\""$category/${category}_cube.zip"\">Download .cube</a></b>]"\
+        "&nbsp; <a href=\""$category/${category}_cube.zip"\"><img src=\"../img/menu_download.png\" /></a>"\n\
+        "      </p><hr/>"\n\
         "<!-- end_content -->"\n\n\
         "    </div><div class=\"section_end\"></div>"\n\
         "    <div id=\"include_footer\"></div>"\n\
         "  </body>"')
       a[$nb_samples--1] x ot. ${category}_$basename.html rm.
     done
+
   done
 
   # All done, exiting.
@@ -36693,7 +36742,7 @@ fx_colorblind_preview :
 #@gui :         Latest Update: <i>2019/10/11</i>.</small>")
 fx_color_presets :
   category=${arg\ 1+$1,abigailgonzalez,alexjordan,berat,cinematic,cinematic_travel,creative,ericellerbrock,filtergrade,\
-                       inavision,jtsemple,kyler_holland,lutifyme,michaelezra,moviz,ohadperetz,on1,picturefx,pixlsus,\
+                       inavision,jtsemple,kylerholland,lutifyme,michaelezra,moviz,ohadperetz,on1,picturefx,pixlsus,\
                        purple11,rocketstock,shamoonabbasi,smallhd,youssefhossam,others}
   presets=${-_fx_cluts_$category}
   index={arg(1+$1,${2-25})}
@@ -36846,7 +36895,7 @@ _fx_cluts_jtsemple :
     magentacoffee,minimalistcaffeination,mysticpurplesunset,nostalgiahoney,springmorning,toastedgarden,\
     winterlighthouse
 
-_fx_cluts_kyler_holland :
+_fx_cluts_kylerholland :
   u kh1,kh2,kh3,kh4,kh5,kh6,kh7,kh8,kh9,kh10
 
 _fx_cluts_lutifyme :
@@ -45984,7 +46033,7 @@ fx_imageobject3d_preview :
 _fx_imageobject3d_0 : imageplane3d
 _fx_imageobject3d_1 : imagecube3d
 _fx_imageobject3d_2 : imagepyramid3d
-_fx_imageobject3d_3 : imagesphere3d 64,32
+_fx_imageobject3d_3 : imagesphere3d 128,64
 _fx_imageobject3d_4 : torus3d 100,30,100,50 t3d. .. rm..
 _fx_imageobject3d_5 : gyroid3d 24 t3d. .. rm..
 _fx_imageobject3d_6 : weird3d 32 t3d. .. rm..
@@ -45993,7 +46042,7 @@ _fx_imageobject3d_8 : imagerubik3d 5,5
 _fx_imageobject3d_preview_0 : imageplane3d
 _fx_imageobject3d_preview_1 : imagecube3d
 _fx_imageobject3d_preview_2 : imagepyramid3d
-_fx_imageobject3d_preview_3 : imagesphere3d 16,8
+_fx_imageobject3d_preview_3 : imagesphere3d 64,32
 _fx_imageobject3d_preview_4 : torus3d 100,30,100,50 t3d. .. rm..
 _fx_imageobject3d_preview_5 : gyroid3d 8 c3d. n3d. t3d. .. rm..
 _fx_imageobject3d_preview_6 : weird3d 12 t3d. .. rm..
@@ -48932,6 +48981,183 @@ fx_solve_maze_preview :
 #@cli : $ https://gmic.eu/samples/heart.gmic go _fps=15 _label="Heart"
 #@cli : $ https://gmic.eu/samples/distortion.gmic go _fps=20 _label="Distortion"
 #@cli : $ https://gmic.eu/samples/rotozoom.gmic go _fps=15 _label="Rotozoom"
+
+#-----------------------------------------------------------------
+#
+# Work-in-progress : Implement a neural-network library for G'MIC
+#
+#-----------------------------------------------------------------
+
+#@gmic nn_lib : Define functions to evaluate and optimize neural networks.
+nn_lib :
+  u "
+    # Definition of activation functions and their derivatives.
+    #----------------------------------------------------------
+    nn_activation_relu(x) = (x<0?0:x);
+    nn_activation_deriv_relu(x) = (x<0?0:1);
+    nn_activation_leakyrelu(x) = (x<0?0.1*x:x);
+    nn_activation_deriv_leakyrelu(x) = (x<0?0.1:1);
+    nn_activation_sigmoid(x) = (0.5 + 0.5*tanh(x/2));
+    nn_activation_deriv_sigmoid(x) = (_nn_sig = nn_sigmoid(x); _nn_sig*(1-_nn_sig));
+
+    # Module: Input.
+    #---------------
+    nn_input_fwd_begin(name,w,h,d,s) = (
+      name#_out = vector(##w*h*d*s);
+      ref(name#_out,#name);
+      const name#_out_width = w;
+      const name#_out_height = h;
+      const name#_out_depth = d;
+      const name#_out_spectrum = s;
+    );
+
+    # Module: FC (Fully Connected layer).
+    #-------------------------------------
+    nn_fc_fwd_begin(name,ind) = (
+      name#_weights = crop(#ind,0,0,w#ind - 1,h#ind);
+      name#_biases = crop(#ind,w#ind - 1,0,1,h#ind);
+      name#_out = vector(#h#ind);
+      const name#_out_width = 1;
+      const name#_out_height = h#ind;
+      const name#_out_depth = 1;
+      const name#_out_spectrum = 1;
+    );
+
+    nn_fc_fwd(name,in,activation) = (
+      name#_z = mul(name#_weights,in#_out);
+      name#_z+=name#_biases;
+      name#_out = name#_z;
+      fill(name#_out,k,nn_activation_#activation(name#_out[k]));
+    );
+
+    nn_fc_bwd_begin(name) = (
+      name#_sum_deriv_weights = vector(#size(name#_weights));
+      name#_sum_deriv_biases = vector(#size(name#_biases));
+      name#_sum_deriv_out = vector(#size(name#_out));
+    );
+
+    nn_fc_bwd(name,in,activation) = (
+      name#_deriv_biases = vector(#size(name#_biases));
+      fill(name#_deriv_biases,k,name#_deriv_out[k]*nn_activation_deriv_#activation(name#_z[k]));
+      name#_deriv_weights = mul(name#_deriv_biases,in#_out,size(in#_out));
+      in#_deriv_out = mul(transpose(name#_weights,in#_out_height),name#_deriv_biases);
+      name#_sum_deriv_weights+=name#_deriv_weights;
+      name#_sum_deriv_biases+=name#_deriv_biases;
+    );
+
+    nn_fc_bwd_end(name,ind) = (
+      merge(name#_sum_deriv_weights,+);
+      merge(name#_sum_deriv_biases,+);
+      epsilon = 1e-2/abs(maxabs(1e-5,name#_sum_deriv_weights,name#_sum_deriv_biases));
+      name#_weights-=epsilon*name#_sum_deriv_weights;
+      name#_biases-=epsilon*name#_sum_deriv_biases;
+      draw(#ind,name#_weights,0,0,0,0,w#ind - 1,h#ind);
+      draw(#ind,name#_biases,w#ind - 1,0,0,0,1,h#ind);
+    );
+
+    # Loss: MSE (Mean-Squared Error).
+    #--------------------------------
+    nn_loss_mse_bwd_begin(name) = (
+      name#_sum_out = 0;
+    );
+
+    nn_loss_mse_bwd(name,in,truth) = (
+      in#_deriv_out = 2*(in#_out - truth);
+      name#_out = norm(in#_deriv_out)^2/size(in#_deriv_out);
+      name#_sum_out+=name#_out;
+    );
+
+    nn_loss_mse_bwd_end(name) = (
+      merge(name#_sum_out,+);
+    );
+  "
+
+#@gmic nn_input : name,width,_height,_depth,_spectrum
+#@gmic : Add an input module to the network.
+nn_input : check ${"is_variable_name $1"}" && isint($2) && $2>0 && isint(${3=1}) && $3>0 && "\
+                   "isint(${4=1}) && $4>0 && isint(${5=1}) && $5>0"
+  _nn_$1_out_size=$2,$3,$4,$5
+  _nn_code_fwd_begin.="nn_input_fwd_begin("$1,$_nn_$1_out_size");"
+
+#@gmic nn_fc : name,in,nb_neurons,activation_function={ relu | leakyrelu | sigmoid }
+#@gmic : Add an fully connected layer to the network.
+nn_fc : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($3) && $3>0" skip ${4=leakyrelu}
+  _nn_$1_in_size=1,{prod($_nn_$2_out_size)},1,1
+  _nn_$1_out_size=1,$3,1,1
+  if !isint($1) {[$_nn_$1_in_size][1]+1},$3 nm. $1 fi
+  _nn_code_fwd_begin.="nn_fc_fwd_begin("$1,#$$1");"
+  _nn_code_fwd.="nn_fc_fwd($1,$2,$4);"
+  _nn_code_bwd_begin="nn_fc_bwd_begin($1);"$_nn_code_bwd_begin
+  _nn_code_bwd="nn_fc_bwd($1,$2,$4);"$_nn_code_bwd
+  _nn_code_bwd_end="nn_fc_bwd_end("$1,#$$1");"$_nn_code_bwd_end
+
+#@gmic nn_loss : name,in,type={ mse }
+#@gmic : Add a loss module to the network.
+nn_loss : check ${"is_variable_name $1"}" && "${"is_variable_name $2"} skip ${3=mse}
+  _nn_$1_in_size=1,{prod($_nn_$2_out_size)},1,1
+  _nn_code_bwd_begin="nn_loss_mse_bwd_begin($1);"$_nn_code_bwd_begin
+  _nn_code_bwd="nn_loss_mse_bwd($1,$2,$3);"$_nn_code_bwd
+  _nn_code_bwd_end="nn_loss_mse_bwd_end($1);"$_nn_code_bwd_end
+
+# Test program.
+nn_test :
+
+  # Build neural network.
+  #----------------------
+  nn_input X,1,2
+  nn_fc FC1,X,3
+  nn_fc FC2,FC1,10
+  nn_fc FC3,FC2,10
+  nn_fc FC4,FC3,10
+  nn_fc FC5,FC4,10
+  nn_fc FC6,FC5,10
+  nn_fc FC7,FC6,10
+  nn_fc FC8,FC7,3
+  nn_loss L,FC8,Y
+
+  sp lena,128 nm. img
+
+  # Optimize network.
+  #-------------------
+  size_batch=2000
+  repeat inf,epoch
+    e[] "EPOCH = "$epoch
+
+    # Build mini-batch.
+    $size_batch,1,1,5,"
+      px = u(-1,1);
+      py = u(-1,1);
+      pX = 0.5*(px + 1)*(w#"$img" - 1);
+      pY = 0.5*(py + 1)*(h#"$img" - 1);
+      val = I(#"$img",pX,pY,0,0,1)/255;
+      [ px,py,val ]"
+    nm. batch
+
+    # Mini-batch gradient descent.
+    repeat 400
+      eval[batch] "*"${-nn_lib}"
+        begin("$_nn_code_fwd_begin$_nn_code_bwd_begin");
+        batch = I;
+        X = batch[0,2]; # Input
+        Y = batch[2,3]; # Ground-truth
+        "$_nn_code_fwd$_nn_code_bwd"
+        end(
+          "$_nn_code_fwd_end$_nn_code_bwd_end"
+          print(L_sum_out);
+        ); I"
+    done
+
+    # Render image from network.
+    128,128,1,3,"*"${-nn_lib}"
+      begin("$_nn_code_fwd_begin");
+      X[0] = 2*x/w - 1;
+      X[1] = 2*y/h - 1;
+      "$_nn_code_fwd"
+      FC5_out"
+    c. 0,255 w. rm.
+
+  done
+
 
 # Local Variables:
 # mode: sh
