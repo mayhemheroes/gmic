@@ -49002,7 +49002,7 @@ nn_lib :
 
     # Module: Input.
     #---------------
-    nn_input_fwd_begin(name,w,h,d,s) = (
+    nn_input_forward_begin(name,w,h,d,s) = (
       name#_out = vector(##w*h*d*s);
       ref(name#_out,#name);
       const name#_out_width = w;
@@ -49013,7 +49013,7 @@ nn_lib :
 
     # Module: FC (Fully Connected layer).
     #-------------------------------------
-    nn_fc_fwd_begin(name) = (
+    nn_fc_forward_begin(name) = (
       unref(ind); const ind = $name#;
       name#_weights = crop(#ind,0,0,w#ind - 1,h#ind);
       name#_biases = crop(#ind,w#ind - 1,0,1,h#ind);
@@ -49024,20 +49024,20 @@ nn_lib :
       const name#_out_spectrum = 1;
     );
 
-    nn_fc_fwd(name,in,activation) = (
+    nn_fc_forward(name,in,activation) = (
       name#_z = mul(name#_weights,in#_out);
       name#_z+=name#_biases;
       name#_out = name#_z;
       fill(name#_out,k,nn_activation_#activation(name#_out[k]));
     );
 
-    nn_fc_bwd_begin(name) = (
+    nn_fc_backward_begin(name) = (
       name#_sum_deriv_weights = vector(#size(name#_weights));
       name#_sum_deriv_biases = vector(#size(name#_biases));
       name#_sum_deriv_out = vector(#size(name#_out));
     );
 
-    nn_fc_bwd(name,in,activation) = (
+    nn_fc_backward(name,in,activation) = (
       name#_deriv_biases = vector(#size(name#_biases));
       fill(name#_deriv_biases,k,name#_deriv_out[k]*nn_activation_deriv_#activation(name#_z[k]));
       name#_deriv_weights = mul(name#_deriv_biases,in#_out,size(in#_out));
@@ -49046,10 +49046,14 @@ nn_lib :
       name#_sum_deriv_biases+=name#_deriv_biases;
     );
 
-    nn_fc_bwd_end(name) = (
+    nn_fc_backward_end(name) = (
       unref(ind); const ind = $name#;
       merge(name#_sum_deriv_weights,+);
       merge(name#_sum_deriv_biases,+);
+    );
+
+    nn_fc_update_weights(name) = (
+      unref(ind); const ind = $name#;
       epsilon = 1e-4/abs(maxabs(1e-5,name#_sum_deriv_weights,name#_sum_deriv_biases));
       name#_weights-=epsilon*name#_sum_deriv_weights;
       name#_biases-=epsilon*name#_sum_deriv_biases;
@@ -49059,17 +49063,17 @@ nn_lib :
 
     # Loss: MSE (Mean-Squared Error).
     #--------------------------------
-    nn_loss_mse_bwd_begin(name) = (
+    nn_loss_mse_backward_begin(name) = (
       name#_sum_out = 0;
     );
 
-    nn_loss_mse_bwd(name,in,truth) = (
+    nn_loss_mse_backward(name,in,truth) = (
       in#_deriv_out = 2*(in#_out - truth);
       name#_out = norm(in#_deriv_out)^2/size(in#_deriv_out);
       name#_sum_out+=name#_out;
     );
 
-    nn_loss_mse_bwd_end(name) = (
+    nn_loss_mse_backward_end(name) = (
       merge(name#_sum_out,+);
     );
   "
@@ -49079,7 +49083,7 @@ nn_lib :
 nn_input : check ${"is_variable_name $1"}" && isint($2) && $2>0 && isint(${3=1}) && $3>0 && "\
                    "isint(${4=1}) && $4>0 && isint(${5=1}) && $5>0"
   _nn_$1_out_size=$2,$3,$4,$5
-  _nn_code_fwd_begin.="nn_input_fwd_begin("$1,$_nn_$1_out_size");"
+  _nn_code_forward_begin.="nn_input_forward_begin("$1,$_nn_$1_out_size");"
 
 #@gmic nn_fc : name,in,nb_neurons,activation_function={ relu | leakyrelu | sigmoid }
 #@gmic : Add an fully connected layer to the network.
@@ -49087,19 +49091,20 @@ nn_fc : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($
   _nn_$1_in_size=1,{prod($_nn_$2_out_size)},1,1
   _nn_$1_out_size=1,$3,1,1
   if !isint($1) {[$_nn_$1_in_size][1]+1},$3 nm. $1 fi
-  _nn_code_fwd_begin.="nn_fc_fwd_begin($1);"
-  _nn_code_fwd.="nn_fc_fwd($1,$2,$4);"
-  _nn_code_bwd_begin="nn_fc_bwd_begin($1);"$_nn_code_bwd_begin
-  _nn_code_bwd="nn_fc_bwd($1,$2,$4);"$_nn_code_bwd
-  _nn_code_bwd_end="nn_fc_bwd_end($1);"$_nn_code_bwd_end
+  _nn_code_forward_begin.="nn_fc_forward_begin($1);"
+  _nn_code_forward.="nn_fc_forward($1,$2,$4);"
+  _nn_code_backward_begin="nn_fc_backward_begin($1);"$_nn_code_backward_begin
+  _nn_code_backward="nn_fc_backward($1,$2,$4);"$_nn_code_backward
+  _nn_code_backward_end="nn_fc_backward_end($1);"$_nn_code_backward_end
+  _nn_code_update_weights="nn_fc_update_weights($1);"$_nn_code_update_weights
 
 #@gmic nn_loss : name,in,type={ mse }
 #@gmic : Add a loss module to the network.
 nn_loss : check ${"is_variable_name $1"}" && "${"is_variable_name $2"} skip ${3=mse}
   _nn_$1_in_size=1,{prod($_nn_$2_out_size)},1,1
-  _nn_code_bwd_begin="nn_loss_mse_bwd_begin($1);"$_nn_code_bwd_begin
-  _nn_code_bwd="nn_loss_mse_bwd($1,$2,$3);"$_nn_code_bwd
-  _nn_code_bwd_end="nn_loss_mse_bwd_end($1);"$_nn_code_bwd_end
+  _nn_code_backward_begin="nn_loss_mse_backward_begin($1);"$_nn_code_backward_begin
+  _nn_code_backward="nn_loss_mse_backward($1,$2,$3);"$_nn_code_backward
+  _nn_code_backward_end="nn_loss_mse_backward_end($1);"$_nn_code_backward_end
 
 # Test program.
 nn_test :
@@ -49138,23 +49143,25 @@ nn_test :
     # Mini-batch gradient descent.
     repeat 400
       eval[batch] "*"${-nn_lib}"
-        begin("$_nn_code_fwd_begin$_nn_code_bwd_begin");
+        begin("$_nn_code_forward_begin$_nn_code_backward_begin");
         batch = I;
         X = batch[0,2]; # Input
         Y = batch[2,3]; # Ground-truth
-        "$_nn_code_fwd$_nn_code_bwd"
-        end(
-          "$_nn_code_fwd_end$_nn_code_bwd_end"
+        "$_nn_code_forward$_nn_code_backward"
+        end("\
+          $_nn_code_forward_end\
+          $_nn_code_backward_end\
+          $_nn_code_update_weights"
           print(L_sum_out);
         ); I"
     done
 
     # Render image from network.
     128,128,1,3,"*"${-nn_lib}"
-      begin("$_nn_code_fwd_begin");
+      begin("$_nn_code_forward_begin");
       X[0] = 2*x/(w-1) - 1;
       X[1] = 2*y/(h-1) - 1;
-      "$_nn_code_fwd"
+      "$_nn_code_forward"
       255*FC8_out"
     c. 0,255 w. rm.
 
