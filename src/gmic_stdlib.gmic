@@ -49059,21 +49059,20 @@ nn_lib :
 
     # Update weights.
 
-    nn_fc_begin_update_weights(name) = (
-      learning_rate = 1e-4;
-    );
-
     nn_fc_end_update_weights(name) = (
       unref(ind); const ind = $name#;
-      l_learning_rate = learning_rate/abs(maxabs(1e-5,name#_sum_deriv_weights,name#_sum_deriv_biases));
-      name#_weights-=learning_rate*name#_sum_deriv_weights;
-      name#_biases-=learning_rate*name#_sum_deriv_biases;
+      local_learning_rate = learning_rate/abs(maxabs(1e-5,name#_sum_deriv_weights,name#_sum_deriv_biases));
+      name#_weights-=local_learning_rate*name#_sum_deriv_weights;
+      name#_biases-=local_learning_rate*name#_sum_deriv_biases;
       draw(#ind,name#_weights,0,0,0,0,w#ind - 1,h#ind);
       draw(#ind,name#_biases,w#ind - 1,0,0,0,1,h#ind);
     );
 
     # Loss: MSE (Mean-Squared Error).
     #--------------------------------
+
+    # Backward pass.
+
     nn_mse_begin_backward(name) = (
       name#_sum_out = 0;
     );
@@ -49086,6 +49085,24 @@ nn_lib :
 
     nn_mse_end_backward(name) = (
       merge(name#_sum_out,+);
+    );
+
+    # Update weights.
+
+    nn_mse_end_update_weights(name) = (
+      learning_rate = $_nn_#name#_learning_rate;
+      name#_previous_sum_out = $_nn_#name#_previous_sum_out;
+      !isinf(name#_previous_sum_out)?(
+        name#_sum_out>name#_previous_sum_out?(
+          learning_rate = max(1e-10,learning_rate/2);
+        ):(
+          learning_rate = min(1,learning_rate*1.1);
+        );
+      );
+
+#      print(new_learning_rate = learning_rate);
+
+      run('_nn_#name#_previous_sum_out,_nn_#name#_learning_rate=',name#_sum_out,',',learning_rate);
     );
   "
 
@@ -49101,22 +49118,24 @@ nn_input : check ${"is_variable_name $1"}" && isint($2) && $2>0 && isint(${3=1})
 nn_fc : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($3) && $3>0" skip ${4=leakyrelu}
   _nn_$1_in_size=1,{prod($_nn_$2_out_size)},1,1
   _nn_$1_out_size=1,$3,1,1
-  if !isint($1) {[$_nn_$1_in_size][1]+1},$3 nm. $1 fi
+  if !isint($1) {[$_nn_$1_in_size][1]+1},$3 rand. -1,1 nm. $1 fi
   _nn_begin_forward.="nn_fc_begin_forward($1);"
   _nn_main_forward.="nn_fc_main_forward($1,$2,$4);"
   _nn_begin_backward="nn_fc_begin_backward($1);"$_nn_begin_backward
   _nn_main_backward="nn_fc_main_backward($1,$2,$4);"$_nn_main_backward
   _nn_end_backward="nn_fc_end_backward($1);"$_nn_end_backward
-  _nn_begin_update_weights="nn_fc_begin_update_weights($1);"$_nn_begin_update_weights
   _nn_end_update_weights="nn_fc_end_update_weights($1);"$_nn_end_update_weights
 
-#@gmic nn_loss : name,in,type={ mse }
-#@gmic : Add a loss module to the network.
-nn_loss : check ${"is_variable_name $1"}" && "${"is_variable_name $2"} skip ${3=mse}
+#@gmic nn_mse : name,in,truth
+#@gmic : Add a MSE loss to the network.
+nn_mse : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
   _nn_$1_in_size=1,{prod($_nn_$2_out_size)},1,1
   _nn_begin_backward="nn_mse_begin_backward($1);"$_nn_begin_backward
   _nn_main_backward="nn_mse_main_backward($1,$2,$3);"$_nn_main_backward
   _nn_end_backward="nn_mse_end_backward($1);"$_nn_end_backward
+  _nn_end_update_weights="nn_mse_end_update_weights($1);"$_nn_end_update_weights
+  _nn_$1_previous_sum_out=inf
+  _nn_$1_learning_rate=1
 
 # Test program.
 nn_test :
@@ -49128,7 +49147,7 @@ nn_test :
   nn_fc FC2,FC1,10
   nn_fc FC3,FC2,10
   nn_fc FC4,FC3,3
-  nn_loss L,FC4,Y
+  nn_mse L,FC4,Y
 
   sp lena,128 nm. img
 
@@ -49175,8 +49194,12 @@ nn_test :
       X[0] = 2*x/(w - 1) - 1;
       X[1] = 2*y/(h - 1) - 1;
       "$_nn_main_forward"
-      255*FC4_out"
-    c. 0,255 w. rm.
+      255*FC4_out;"
+
+    w. rm.
+
+
+#    c. 0,255 w. rm.
 
   done
 
