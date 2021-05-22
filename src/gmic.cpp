@@ -14845,6 +14845,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           std::sprintf(gmic_use_argx,"%d",bits_per_value);
           CImg<char>::string(argx).move_to(status);
 
+        } else if (!std::strcmp(uext,"png")) {
+          unsigned int bits_per_value = 0;
+          CImg<T>::get_load_png(filename,&bits_per_value).move_to(g_list);
+          g_list_c.insert(__filename0);
+          std::sprintf(gmic_use_argx,"%d",bits_per_value);
+          CImg<char>::string(argx).move_to(status);
+
         } else if (!std::strcmp(uext,"pdf")) {
           float resolution = 400;
           if (!*options || cimg_sscanf(options,"%f%c",&resolution,&end)==1) {
