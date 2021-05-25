@@ -48994,20 +48994,26 @@ nn_lib :
   u "
     # Definition of activation functions and their derivatives.
     #----------------------------------------------------------
-    nn_activation_id(x) = (x);
-    nn_activation_deriv_id(x) = (1);
+    nn_activation_id(z) = (z);
+    nn_activation_deriv_id(z) = (1);
 
-    nn_activation_gelu(x) = (0.5*x*(1 + erf(x/sqrt(2))));
-    nn_activation_deriv_gelu(x) = (0.5 + 0.5*erf(x/sqrt(2)) + x*exp(-x^2/2)/sqrt(2*pi));
+    nn_activation_elu(z) = (z>0?z:0.5*exp(z) - 0.5);
+    nn_activation_deriv_elu(z) = (z>0?1:0.5*exp(z));
 
-    nn_activation_leakyrelu(x) = (x<0?0.005*x:x);
-    nn_activation_deriv_leakyrelu(x) = (x<0?0.005:1);
+    nn_activation_gelu(z) = (0.5*z*(1 + erf(z/sqrt(2))));
+    nn_activation_deriv_gelu(z) = (0.5 + 0.5*erf(z/sqrt(2)) + z*exp(-z^2/2)/sqrt(2*pi));
 
-    nn_activation_relu(x) = (x<0?0:x);
-    nn_activation_deriv_relu(x) = (x<0?0:1);
+    nn_activation_leakyrelu(z) = (z<0?0.005*z:z);
+    nn_activation_deriv_leakyrelu(z) = (z<0?0.005:1);
 
-    nn_activation_sigmoid(x) = (0.5 + 0.5*tanh(x/2));
-    nn_activation_deriv_sigmoid(x) = (_nn_sig = nn_activation_sigmoid(x); _nn_sig*(1-_nn_sig));
+    nn_activation_relu(z) = (z<0?0:z);
+    nn_activation_deriv_relu(z) = (z<0?0:1);
+
+    nn_activation_sigmoid(z) = (0.5 + 0.5*tanh(z/2));
+    nn_activation_deriv_sigmoid(z) = (_nn_sig = nn_activation_sigmoid(z); _nn_sig*(1-_nn_sig));
+
+    nn_activation_tanh(z) = (tanh(z));
+    nn_activation_deriv_sigmoid(z) = (1 - tanh(z));
 
     # Module: Input.
     #---------------
