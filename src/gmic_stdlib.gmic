@@ -48994,11 +48994,11 @@ nn_lib :
   u "
     # Definition of activation functions and their derivatives.
     #----------------------------------------------------------
-    nn_activation_id(z) = (z);
-    nn_activation_deriv_id(z) = (1);
+    nn_activation_linear(z) = (z);
+    nn_activation_deriv_linear(z) = (1);
 
-    nn_activation_elu(z) = (z>0?z:0.5*exp(z) - 0.5);
-    nn_activation_deriv_elu(z) = (z>0?1:0.5*exp(z));
+    nn_activation_elu(z) = (z<0?exp(z) - 1:z);
+    nn_activation_deriv_elu(z) = (z<0?exp(z):1);
 
     nn_activation_gelu(z) = (0.5*z*(1 + erf(z/sqrt(2))));
     nn_activation_deriv_gelu(z) = (0.5 + 0.5*erf(z/sqrt(2)) + z*exp(-z^2/2)/sqrt(2*pi));
@@ -49013,7 +49013,7 @@ nn_lib :
     nn_activation_deriv_sigmoid(z) = (_nn_sig = nn_activation_sigmoid(z); _nn_sig*(1-_nn_sig));
 
     nn_activation_tanh(z) = (tanh(z));
-    nn_activation_deriv_tanh(z) = (1 - tanh(z));
+    nn_activation_deriv_tanh(z) = (1 - tanh(z)^2);
 
     # Module: Input.
     #---------------
