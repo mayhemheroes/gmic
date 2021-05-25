@@ -48996,24 +48996,38 @@ nn_lib :
     #----------------------------------------------------------
     nn_activation_linear(z) = (z);
     nn_activation_deriv_linear(z) = (1);
+    nn_activate_linear(z) = ();
+    nn_activate_deriv_linear(z) = (#z = 1);
 
     nn_activation_elu(z) = (z<0?exp(z) - 1:z);
     nn_activation_deriv_elu(z) = (z<0?exp(z):1);
+    nn_activate_elu(z) = (fill(#z,k,nn_activation_elu(z[k])));
+    nn_activate_deriv_elu(z) = (fill(#z,k,nn_activation_deriv_elu(z[k])));
 
     nn_activation_gelu(z) = (0.5*z*(1 + erf(z/sqrt(2))));
     nn_activation_deriv_gelu(z) = (0.5 + 0.5*erf(z/sqrt(2)) + z*exp(-z^2/2)/sqrt(2*pi));
+    nn_activate_gelu(z) = (fill(#z,k,nn_activation_gelu(z[k])));
+    nn_activate_deriv_gelu(z) = (fill(#z,k,nn_activation_deriv_gelu(z[k])));
 
     nn_activation_leakyrelu(z) = (z<0?0.005*z:z);
     nn_activation_deriv_leakyrelu(z) = (z<0?0.005:1);
+    nn_activate_leakyrelu(z) = (fill(#z,k,nn_activation_leakyrelu(z[k])));
+    nn_activate_deriv_leakyrelu(z) = (fill(#z,k,nn_activation_deriv_leakyrelu(z[k])));
 
     nn_activation_relu(z) = (z<0?0:z);
     nn_activation_deriv_relu(z) = (z<0?0:1);
+    nn_activate_relu(z) = (fill(#z,k,nn_activation_relu(z[k])));
+    nn_activate_deriv_relu(z) = (fill(#z,k,nn_activation_deriv_relu(z[k])));
 
     nn_activation_sigmoid(z) = (0.5 + 0.5*tanh(z/2));
     nn_activation_deriv_sigmoid(z) = (_nn_sig = nn_activation_sigmoid(z); _nn_sig*(1-_nn_sig));
+    nn_activate_sigmoid(z) = (fill(#z,k,nn_activation_sigmoid(z[k])));
+    nn_activate_deriv_sigmoid(z) = (fill(#z,k,nn_activation_deriv_sigmoid(z[k])));
 
     nn_activation_tanh(z) = (tanh(z));
     nn_activation_deriv_tanh(z) = (1 - tanh(z)^2);
+    nn_activate_tanh(z) = (fill(#z,k,nn_activation_tanh(z[k])));
+    nn_activate_deriv_tanh(z) = (fill(#z,k,nn_activation_deriv_tanh(z[k])));
 
     # Module: Input.
     #---------------
@@ -49046,7 +49060,7 @@ nn_lib :
       name#_z = mul(name#_weights,in#_out);
       name#_z+=name#_biases;
       name#_out = name#_z;
-      fill(name#_out,k,nn_activation_#activation(name#_out[k]));
+      nn_activate_#activation(name_#out);
     );
 
     # Backward pass.
@@ -49058,8 +49072,13 @@ nn_lib :
     );
 
     nn_fc_main_backward(name,in,activation) = (
-      name#_deriv_biases = vector(#size(name#_biases));
-      fill(name#_deriv_biases,k,name#_deriv_out[k]*nn_activation_deriv_#activation(name#_z[k]));
+      name#_deriv_biases = name#_z;
+      nn_activate_deriv_#activation(name#_deriv_biases);
+      name#_deriv_biases*=name#_deriv_out;
+
+#      name#_deriv_biases = vector(#size(name#_biases));
+#      fill(name#_deriv_biases,k,name#_deriv_out[k]*nn_activation_deriv_#activation(name#_z[k]));
+
       name#_deriv_weights = mul(name#_deriv_biases,in#_out,size(in#_out));
       in#_deriv_out = mul(transpose(name#_weights,in#_out_height),name#_deriv_biases);
       name#_sum_deriv_weights+=name#_deriv_weights;
@@ -49192,7 +49211,7 @@ nn_test :
 
   # Optimize network.
   #-------------------
-  size_batch=1500
+  size_batch=128
   repeat inf,epoch
     e[] "EPOCH = "$epoch
 
@@ -49207,7 +49226,7 @@ nn_test :
     nm. batch
 
     # Mini-batch gradient descent.
-    repeat 40,it
+    repeat 100,it
       eval[batch] *${-nn_lib}"
         begin("\
           $_nn_begin_forward\
