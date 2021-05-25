@@ -2481,12 +2481,7 @@ struct _gmic_parallel {
 };
 
 template<typename T>
-#if cimg_OS!=2
-static void *gmic_parallel(void *arg)
-#else // #if cimg_OS!=2
-static DWORD WINAPI gmic_parallel(void *arg)
-#endif // #if cimg_OS!=2
-{
+static void *gmic_parallel(void *arg) {
   _gmic_parallel<T> &st = *(_gmic_parallel<T>*)arg;
   try {
     unsigned int pos = 0;
@@ -14808,6 +14803,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
           // TIFF file.
           float first_frame = 0, last_frame = 0, step = 1;
+          unsigned int bits_per_value = 0;
 #ifdef cimg_use_tiff
           static const TIFFErrorHandler default_handler = TIFFSetWarningHandler(0);
           if (is_very_verbose) TIFFSetWarningHandler(default_handler);
@@ -14823,13 +14819,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                     _filename0,
                     _gmic_selection.data());
               g_list.load_tiff(filename,(unsigned int)first_frame,(unsigned int)last_frame,
-                               (unsigned int)step);
+                               (unsigned int)step,&bits_per_value);
             } else if (err==1) { // Load a single frame
               print(images,0,"Input frames %g of TIFF file '%s' at position%s",
                     first_frame,
                     _filename0,
                     _gmic_selection.data());
-              g_list.load_tiff(filename,(unsigned int)first_frame,(unsigned int)first_frame);
+              g_list.load_tiff(filename,(unsigned int)first_frame,(unsigned int)first_frame,1,&bits_per_value);
             }
           } else { // Load all frames
             if (*options) error(true,images,0,0,
@@ -14839,13 +14835,23 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             print(images,0,"Input all frames of TIFF file '%s' at position%s",
                   _filename0,
                   _gmic_selection.data());
-            g_list.load_tiff(filename);
+            g_list.load_tiff(filename,0,~0U,1,&bits_per_value);
           }
           if (g_list) {
             g_list_c.insert(__filename0);
             if (g_list.size()>1)
               g_list_c.insert(g_list.size() - 1,__filename0.copymark());
           }
+          std::sprintf(gmic_use_argx,"%d",bits_per_value);
+          CImg<char>::string(argx).move_to(status);
+
+        } else if (!std::strcmp(uext,"png")) {
+          unsigned int bits_per_value = 0;
+          CImg<T>::get_load_png(filename,&bits_per_value).move_to(g_list);
+          g_list_c.insert(__filename0);
+          std::sprintf(gmic_use_argx,"%d",bits_per_value);
+          CImg<char>::string(argx).move_to(status);
+
         } else if (!std::strcmp(uext,"pdf")) {
           float resolution = 400;
           if (!*options || cimg_sscanf(options,"%f%c",&resolution,&end)==1) {
