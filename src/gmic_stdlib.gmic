@@ -644,11 +644,11 @@ reference : skip "${2=}"
 "## Usual math functions:"\n\
 "'abs()', 'acos()', 'acosh()', 'arg()', 'arg0()', 'argkth()', 'argmax()', 'argmaxabs()', "\
 "'argmin()', 'argminabs()', 'asin()', 'asinh()', 'atan()', 'atan2()', 'atanh()', 'avg()', 'bool()', 'cbrt()', "\
-"'ceil()', 'cos()', 'cosh()', 'cut()', 'exp()', 'fact()', 'fibo()', 'floor()', 'gauss()', 'gcd()', 'int()', "\
-"'isnan()', 'isnum()', 'isinf()', 'isint()', 'isbool()', 'isexpr()', 'isfile()', 'isdir()', 'isin()', 'kth()', "\
-"'log()', 'log2()', 'log10()', 'max()', 'maxabs()', 'med()', 'min()', 'minabs()', 'narg()', 'prod()', 'rol()' "\
-"(left bit rotation), 'ror()' (right bit rotation), 'round()', 'sign()', 'sin()', 'sinc()', 'sinh()', 'sqrt()', "\
-"'std()', 'srand(_seed)', 'sum()', 'tan()', 'tanh()', 'var()', 'xor()'."\n\
+"'ceil()', 'cos()', 'cosh()', 'cut()', 'erf()', 'erfinv()', 'exp()', 'fact()', 'fibo()', 'floor()', 'gauss()', "\
+"'gcd()', 'int()', 'isnan()', 'isnum()', 'isinf()', 'isint()', 'isbool()', 'isexpr()', 'isfile()', 'isdir()', "\
+"'isin()', 'kth()', log()', 'log2()', 'log10()', 'max()', 'maxabs()', 'med()', 'min()', 'minabs()', 'narg()', "\
+"'prod()', 'rol()' (left bit rotation), 'ror()' (right bit rotation), 'round()', 'sign()', 'sin()', 'sinc()', "\
+"'sinh()', 'sqrt()', 'std()', 'srand(_seed)', 'sum()', 'tan()', 'tanh()', 'var()', 'xor()'."\n\
 \n\
 "* 'atan2(y,x)' is the version of 'atan()' with two arguments 'y' and 'x' (as in C/C++)."\n\
 "* 'permut(k,n,with_order)' computes the number of permutations of 'k' objects from a set of 'n' objects."\n\
@@ -48972,7 +48972,7 @@ fx_solve_maze_preview :
 # _label="from~Van~Gogh:~Wheat~Field~with~Crows"
 
 #@cli _gallery_codesamples
-#@cli : This entry defines some examples of coding-fun filters for the G'MIC gallery page.
+#@cli : This entry defines some examples of coding fun filters for the G'MIC gallery page.
 #@cli : $ https://gmic.eu/samples/lissajous.gmic go _fps=10 _label="Lissajous"
 #@cli : $ https://gmic.eu/samples/torus3d.gmic go _fps=10 _label="3D~torus"
 #@cli : $ https://gmic.eu/samples/pacman.gmic go _fps=25 _label="Pacman"
@@ -48996,12 +48996,18 @@ nn_lib :
     #----------------------------------------------------------
     nn_activation_id(x) = (x);
     nn_activation_deriv_id(x) = (1);
+
+#    nn_activation_gelu(x) = (0.5*x*(1 + tanh(sqrt(2/pi)*(x + 0.044715*x^3))));
+#    nn_activation_deriv_gelu(x) = ();
+
+    nn_activation_leakyrelu(x) = (x<0?0.005*x:x);
+    nn_activation_deriv_leakyrelu(x) = (x<0?0.005:1);
+
     nn_activation_relu(x) = (x<0?0:x);
     nn_activation_deriv_relu(x) = (x<0?0:1);
-    nn_activation_leakyrelu(x) = (x<0?0.01*x:x);
-    nn_activation_deriv_leakyrelu(x) = (x<0?0.01:1);
+
     nn_activation_sigmoid(x) = (0.5 + 0.5*tanh(x/2));
-    nn_activation_deriv_sigmoid(x) = (_nn_sig = nn_sigmoid(x); _nn_sig*(1-_nn_sig));
+    nn_activation_deriv_sigmoid(x) = (_nn_sig = nn_activation_sigmoid(x); _nn_sig*(1-_nn_sig));
 
     # Module: Input.
     #---------------
@@ -49104,17 +49110,18 @@ nn_lib :
         name#_sum_out>name#_previous_sum_out?(
           ++name#_nb_increases;
           name#_nb_decreases = 0;
-          name#_nb_increases>=1?(
-            learning_rate = max(1e-7,learning_rate/2);
+          name#_nb_increases>=2?(
+            learning_rate = max(1e-13,learning_rate/2);
             name#_nb_increases = 0;
           );
           no_update = 1;
         ):(
           ++name#_nb_decreases;
           name#_nb_increases = 0;
-          name#_nb_decreases>=5?(
+          name#_nb_decreases>=10?(
             learning_rate = min(1,learning_rate*1.25);
             name#_nb_decreases = 0;
+            echo('increase dt = ',learning_rate);
           );
         );
       );
@@ -49169,18 +49176,17 @@ nn_test :
   # Build neural network.
   #----------------------
   nn_input X,1,2
-  nn_fc FC1,X,10
-  nn_fc FC2,FC1,100
-  nn_fc FC3,FC2,100
-  nn_fc FC4,FC3,100
-  nn_fc FC5,FC4,100
-  nn_fc FC6,FC5,3
-  nn_mse L,FC6,Y
+  nn_fc FC1,X,300,leakyrelu
+  nn_fc FC2,FC1,100,leakyrelu
+  nn_fc FC3,FC2,30,leakyrelu
+  nn_fc FC4,FC3,10,leakyrelu
+  nn_fc FC5,FC4,3,leakyrelu
+  nn_mse L,FC5,Y
   sp lena,128 nm. img
 
   # Optimize network.
   #-------------------
-  size_batch=3000
+  size_batch=1500
   repeat inf,epoch
     e[] "EPOCH = "$epoch
 
@@ -49222,7 +49228,7 @@ nn_test :
       X[0] = 2*x/(w - 1) - 1;
       X[1] = 2*y/(h - 1) - 1;
       "$_nn_main_forward"
-      FC6_out;"
+      FC5_out;"
     c. 0,1 w. rm.
 
   done
