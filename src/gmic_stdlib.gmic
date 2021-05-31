@@ -35191,7 +35191,7 @@ fx_colorize_interactive : skip "${4=},${5=},${6=}"
   N=$! nm={n}
   resolution={arg(1+$3,512,1024,2048,0)}
   nm "[G"{`39`}"MIC] Colorize"
-  if [$9][0]==-1" || "[$8]!=[w,h] _gui_control_points= else _gui_control_points=${"u $9"} fi
+  if [$9][0]==-1" || "[$8]!=[w,h] _gui_control_points= else _gui_control_points=$9 fi
   N=$!
 
   arg_palette1=0 l[]
@@ -37178,7 +37178,7 @@ fx_colorful_blobs :
   x9,y9,rx9,ry9,R9,G9,B9,p_x9,p_y9,p_rx9,p_ry9,\
   x10,y10,rx10,ry10,R10,G10,B10,p_x10,p_y10,p_rx10,p_ry10,\
   x11,y11,rx11,ry11,R11,G11,B11,p_x11,p_y11,p_rx11,p_ry11,\
-  =${"u $"*""}
+  =$*
   if !0$_is_preview display_controls=0 fi
   if $1==1 srgb2cs=srgb2rgb cs2srgb=rgb2srgb
   elif $1==2 srgb2cs=srgb2lab cs2srgb=lab2srgb
@@ -37369,7 +37369,7 @@ fx_mask_color :
 fx_curves_interactive :
   nm "Color curves"
   repeat 4 __xcc_C$>=0,0,100,100 done
-  if $4==$1 l[] (${5--1}) s -,-1 repeat $! __xcc_C$>={$>,^} done rm endl fi
+  if $4==$1 l[] ($5) s -,-1 repeat $! __xcc_C$>={$>,^} done rm endl fi
   if $3 # Apply transformation from previously defined curves
     _xcc_colorbase=${arg\ {$4+1},rgb,cmy,cmyk,hsi,hsl,hsv,lab,lch,ycbcr} x_color_curves last
   else # Run interactive curve builder
@@ -37385,7 +37385,7 @@ fx_curves_interactive :
   fi
 
 fx_curves_interactive_preview :
-  fx_curves_interactive $1,0,1,${4--1}
+  fx_curves_interactive $1,0,1,$4,"$5"
 
 #@gui Customize CLUT : fx_customize_clut,fx_customize_clut_preview(1)+
 #@gui : Keypoint Influence (%) = float(100,0,100)
@@ -39285,7 +39285,7 @@ fx_extract_foreground :
   repeat $! l[$<]
     nm=${-gui_layer_name}
     nm "[G"{`39`}"MIC] Interactive Foreground Extraction"
-    if [$6][0]==-1" || "[$5]!=[w,h] _gui_control_points= else _gui_control_points=${"u $6"} fi
+    if [$6][0]==-1" || "[$5]!=[w,h] _gui_control_points= else _gui_control_points=$6 fi
     status=${x_segment\ $resolution}
     sh 3 b. $1% if $2>0 dilate. {1+2*$2} elif $2<0 erode. {1-2*$2} fi
     rm.
@@ -39976,7 +39976,7 @@ fx_symmetrizoscope :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2019/04/16</i>.</small>")
 fx_morph_interactive :
-  if [$3][0]!=-1 __x_morph_keypoints=${"u $3"} fi
+  if [$3][0]!=-1 __x_morph_keypoints=$3 fi
   rv
   x_morph $1,$2
   repeat $! gui_set_layer_name[$>] "Morphing ""#"$> gui_set_layer_pos[$>] 0,0 done
@@ -40439,12 +40439,12 @@ fx_twirl :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2019/04/08</i>.</small>")
 fx_warp_interactive :
-  if [$4][0]!=-1 __x_warp_keypoints=${"u $4"} fi
+  if [$4][0]!=-1 __x_warp_keypoints=$4 fi
   x_warp $2,$2,$3,$1
   u "{$1}{$2}{$3}{"$__x_warp_keypoints"}"
 
 fx_warp_interactive_preview :
-  if [$4][0]!=-1 __x_warp_keypoints=${"u $4"} fi
+  if [$4][0]!=-1 __x_warp_keypoints=$4 fi
   repeat $! l[$>]
     rr2d $_preview_width,$_preview_height,0,3 to_color drgba
     if narg($__x_warp_keypoints) ($__x_warp_keypoints) r. 1,{w/4},1,4,-1
