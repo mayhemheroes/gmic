@@ -3323,7 +3323,7 @@ _display_quiver : check "${1=16}>0 && ${2=1.5}>=0 && isint(${3=2}) && $3>=0 && $
       P = [ -0.5,-0.05, 0.3,-0.05, 0.2,-0.25, 0.5,0, 0.2,0.25, 0.3,0.05, -0.5,0.05 ];
       P*=$1*$2*len;
       X = resize([(x+0.5)*w#1/w,(y+0.5)*h#1/h],size(P),0,2);
-      X+=mul(P,rot(-ang),2);
+      X+=mul(P,rot(-ang°),2);
       if ($3,
         v = min(1,max(0.5,3*len));
         if ($3==1,
@@ -7165,9 +7165,9 @@ shape_dragon : check "${1=512}>=0 && ${2=18}>=0" skip "${3=0}"
   if !$ir 0
   else l[]
     (0,1^0,0) ind=1
-    repeat $2 +f "begin(C = I["$ind"]; R = rot(90)); R*(I - C) + C" ind={2*h} a y done
+    repeat $2 +f "begin(C = I["$ind"]; R = rot(90°)); R*(I - C) + C" ind={2*h} a y done
     s c -.. {-2,ia} -. {ia} a c / {max(abs(im),abs(iM))}
-    angle={$3-atan2(i1,i0)*180/pi} f. "begin(R = rot("$angle")); R*I"
+    angle={$3-atan2(i1,i0)*180/pi} f. "begin(R = rot("$angle"°)); R*I"
     n 0,{$1-1} round $1,$1,1,1 eval.. "!x?polygon(#1,2,I(0,y),I(1,y),1,1); I" k.
   endl fi
   nm. "[2D dragon shape]"
@@ -7207,7 +7207,7 @@ shape_fern : check "${1=512}>=0 && ${2=50%}>=0 && isnum(${3=30}) && ${4=0.3}>=0 
        I[n] = xy
     )"
     permute xczy
-    i.. 2,2,1,1,{"R=rot(-$3); R[2] = -R[2]; R[3] = -R[3]; R"} m*
+    i.. 2,2,1,1,{"R=rot(-$3°); R[2] = -R[2]; R[3] = -R[3]; R"} m*
     repeat 2 sh. $>,$>,0,0 -. {im} rm. done n 0,{$ir-1}
     pointcloud -$4 r $ir,$ir,1,1,0,0,0.5,0.5
   endl fi
@@ -16998,7 +16998,7 @@ arrow : check "${5=1%}>=0 && ${6=10%}>=0 && ${7=3%}" skip ${8=1}
       hl = "${"is_percent $6"}"?l*$6:$6;  # head length
       ht = "${"is_percent $7"}"?l*$7:$7;  # head thickness
       lmhl = l - hl;
-      X = mul([0,-t,lmhl,-t,lmhl,-ht,l,0,lmhl,ht,lmhl,t,0,t],rot(-180*atan2(dp[1],dp[0])/pi),2);
+      X = mul([0,-t,lmhl,-t,lmhl,-ht,l,0,lmhl,ht,lmhl,t,0,t],rot(-180*atan2(dp[1],dp[0])/pi°),2);
       X+=[p0,p0,p0,p0,p0,p0,p0]"},${8--1}
   endl done
 
@@ -17947,7 +17947,7 @@ newton_fractal : check "isin(${6=1},0,1,2) && ${7=200}>=0 && ${8=0.01}>0"
       const precision = $8;
 
       zc = [ $1 + $3, $2 + $4 ]/2;
-      R = rot(-angle);
+      R = rot(-angle°);
     );
 
     p(z) = ($9);
@@ -18675,7 +18675,7 @@ _cross3d :
 
 #@cli apply_matrix3d : a11,a12,a13,...,a31,a32,a33
 #@cli : Apply specified 3D rotation matrix to selected 3D objects.
-#@cli : $ torus3d 10,1 +apply_matrix3d {mul(rot(1,0,1,-15),[1,0,0,0,2,0,0,0,8],3)} double3d 0
+#@cli : $ torus3d 10,1 +apply_matrix3d {mul(rot(1,0,1,-15°),[1,0,0,0,2,0,0,0,8],3)} double3d 0
 apply_matrix3d :
   e[^-1] "Apply 3x3 matrix (${1-3};${4-6};${7-9}) to 3D object$?."
   repeat $! l[$>]
@@ -20062,7 +20062,7 @@ random3d : check "$1>=0"
 #@cli : $ rotation3d 1,0,0,0 rotation3d 1,0,0,90 rotation3d 1,0,0,180
 rotation3d :
   e[^-1] "Input 3D rotation matrix around axis ($1,$2,$3) with angle $4 deg."
-  3,3,1,1,{"rot(${1-4})"} nm. [3D\ rotation]
+  3,3,1,1,{"rot(${1-4}°)"} nm. [3D\ rotation]
 
 #@cli sierpinski3d : _recursion_level>=0,_width,_height
 #@cli : Input 3d Sierpinski pyramid.
@@ -23097,8 +23097,8 @@ spherize : check "${1=50%}>=0 && ${3=0}>=0 && ${6=1}>0 && isint(${8=1}) && $8>=0
         rmax = "$rmax"/m2wh1;
         const f = 1/"$strength";
         const ratio = $6;
-        rotf = rot($7);
-        rotb = rot(-$7);
+        rotf = rot($7°);
+        rotb = rot(-$7°);
       );
       xy = ([x,y] - center)/m2wh1;
       xy = rotf*xy;
@@ -25448,7 +25448,7 @@ math_lib :
     _P0P1 = _P1;
     _P0P1-=_P0;
     if (length<0, _P0P1*=-length/100, _P0P1*=length/norm2(_P0P1));
-    coords = [ _P0,_P1,_P1,_P1 - rot(angle)*_P0P1,_P1,_P1 - rot(-angle)*_P0P1 ];
+    coords = [ _P0,_P1,_P1,_P1 - rot(angle°)*_P0P1,_P1,_P1 - rot(-angle°)*_P0P1 ];
     repeat (3,_k, polygon(#ind,2,coords[4*_k,2],coords[4*_k+2,2],_opacity,_da_color));
   );
 
@@ -31467,7 +31467,7 @@ x_whirl : check "${1=0.2}>=0" check_display $0
   tangle=0 tzoom=0 xc={(w-{-3,w})/2} yc={(h-{-3,h})/2}
   do
     rand... 0,255 j.. [-3],$xc,$yc,0,0
-    f.. "*begin(R = rot(8*sin(-"$tangle"))/(1.03+0.02*sin("$tzoom")); C=[w,h]/2); I((R*([x,y]-=C))+=C,0,0)"
+    f.. "*begin(R = rot(8*sin(-"$tangle")°)/(1.03+0.02*sin("$tzoom")); C=[w,h]/2); I((R*([x,y]-=C))+=C,0,0)"
     tangle+=0.001
     tzoom+=0.02
     j. [-2],0,0,0,0,$1 w.
@@ -38043,9 +38043,9 @@ fx_mix_pca :
          P = transpose(Pt,3);
          T = mul(P,diag(10^[$1,$5,$9]),3);
 
-         R1 = rot(eig[3,3],$3);
-         R2 = rot(eig[6,3],$7);
-         R3 = rot(eig[9,3],$11);
+         R1 = rot(eig[3,3],$3°);
+         R2 = rot(eig[6,3],$7°);
+         R3 = rot(eig[9,3],$11°);
          T = mul(R1,mul(R2,mul(R3,T,3),3),3);
          avg_shift = avg + $2*eig[3,3] + $6*eig[6,3] + $10*eig[9,3];
 
@@ -39713,12 +39713,12 @@ fx_conformal_maps :
           i = [0,1];
         );
         z = (2*[ x,y ] - [ w,h ])/f;
-        z = rot(-$6)*z;
+        z = rot(-$6°)*z;
         z-= [ $8, $9 ];
         z/=[ 10^($5 + $7), 10^$5 ];
         z = ("$expr");
         if ($1, z = z^^[$2,$3]);
-        z = rot($6)*z;
+        z = rot($6°)*z;
         z = 0.5*(f0*z + [w#0,h#0]);
         I(#0,z)"
       r. $wh,1,100%,2
@@ -40288,7 +40288,7 @@ fx_project_stereographic :
          \{$dilation\}\{$mirror\}\{$boundary\}\{$centerx,$centery\}
 
   # So that preview line does not hide left/right frontier:
-  nradangx,nradangy={[$centerx,$centery]+rot(-90)*([$radangx,$radangy]-[$centerx,$centery])}
+  nradangx,nradangy={[$centerx,$centery]+rot(-90°)*([$radangx,$radangy]-[$centerx,$centery])}
   init="const boundary = "$is_inverse?$boundary:2";
         const interpolation = 1;
         const dilation = 2^"$dilation";
@@ -46865,7 +46865,7 @@ fx_neon_lightning :
 #@gui : Y1 = value(2)
 #@gui : note = note{"<span color="#EE5500"><b>Fractal Type:</b></span>"}
 #@gui : Expression = choice(2,"Custom","z^^2 - 1","z^^3 - 1","z^^5 - 1","z^^6 + z^^3 - 1","z^^8 + 15*z^^4 - 1")
-#@gui : p(z) = text{"rot(35)*z^^3 - z^^2 + 1"}_1
+#@gui : p(z) = text{"rot(35°)*z^^3 - z^^2 + 1"}_1
 #@gui : p'(z) = text{"3*z^^2 - 2*z"}_1
 #@gui : p''(z) = text{"6*z - 2"}_1
 #@gui : Descent method = choice(1,"Secant","Newton","Householder")
@@ -47012,7 +47012,7 @@ fx_newton_fractal_preview : skip "${6=},${7=},${8=},${22=},${25=},${28=}"
                   dP = [${3,4}] - P0;
                   M = P0 + 0.5*dP;
                   C = P0 + [${35,36}]%*dP;
-                  C = M + rot(-$38)*(C - M);
+                  C = M + rot(-$38°)*(C - M);
                   zfact = $37*($39?1:$40?0:-2);
                   dC = 0.5*dP*(1 - 0.98*zfact);
                   [ C - dC, C + dC ]"}
@@ -47243,7 +47243,7 @@ fx_sine_curve :
       b = [ "$prev_xa" - "$xc", "$prev_ya" - "$yc" ];
       (atan2(a[1],a[0]) - atan2(b[1],b[0]))*180/pi;
     "}
-    xr,yr={[$xc,$yc]+rot($delta_a)*[$xr-$xc,$yr-$yc]}
+    xr,yr={[$xc,$yc]+rot($delta_a°)*[$xr-$xc,$yr-$yc]}
   else delta_a=0 fi
   if [$colR,$colG,$colB]==[0,0,0]" && "$preview_background==1 colR,colG,colB=255
   elif [$colR,$colG,$colB]==[255,255,255]" && "$preview_background==2 colR,colG,colB=0
@@ -47339,9 +47339,9 @@ fx_sine_curve :
     $nresolution,1,1,2,"*
       begin(
         const is_rot = "$rotx" || "$roty" || "$rotz";
-        ref(rot(1,0,0,"$rotx"),Rx);
-        ref(rot(0,1,0,"$roty"),Ry);
-        ref(rot(0,0,1,"$rotz"),Rz);
+        ref(rot(1,0,0,"$rotx"°),Rx);
+        ref(rot(0,1,0,"$roty"°),Ry);
+        ref(rot(0,0,1,"$rotz"°),Rz);
         R = mul(Rz,mul(Ry,Rx,3),3); # 3D rotation
 
         # Variables to manage 2D rotation.
@@ -47540,7 +47540,7 @@ _fx_symmetric_shape2d_preview :
         const cy = "${cy$i}";
         dang = atan2($7 - $3,$6 - $2) - atan2($9 - $3,$8 - $2);
         dsca = norm($6 - $2,$7 - $3)/norm($9 - $3,$8 - $2);
-        [ $2,$3 ] + dsca*rot(dang*180/pi)*[ cx - $4, cy - $5 ]"}
+        [ $2,$3 ] + dsca*rot(dang*180/pi°)*[ cx - $4, cy - $5 ]"}
     done
     angx,angy={[$6+$2-$4,$7+$3-$5]}
   fi
@@ -47621,7 +47621,7 @@ _fx_tree:
     1,1,1,9,"
       const h_thickness = "$trunk_thickness"%/2;
       const hb_thickness = h_thickness*"$base_thickness"%;
-      R = rot("$trunk_angle");
+      R = rot("$trunk_angle"°);
       C = [ 0.5,0 ];
       P0 = C + R*[ -hb_thickness,0 ];
       P1 = C + R*[ hb_thickness,0 ];
@@ -47653,7 +47653,7 @@ _fx_tree:
         repeat (N,n,
           ang = cut("$avg_leftangle" + dangle*n/Nm1 + u(-1,1)*"$std_angle",-90,90);
           len = cut("$avg_length" + u(-1,-1)*"$std_length",0,200);
-          rot = rot(ang);
+          rot = rot(ang°);
           nB = B + len%*rot*AB;
           orth = (nB - B);
           orth/=norm(orth);
