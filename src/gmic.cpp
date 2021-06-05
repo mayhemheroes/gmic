@@ -2512,7 +2512,7 @@ const char *gmic::builtin_commands_names[] = {
   "d","db3d","debug","delete","denoise","deriche","dijkstra","dilate","discard","displacement","display",
     "distance","div","div3d","do","done","double3d",
   "e","echo","eigen","eikonal","elif","ellipse","else","endian","endif","endl","endlocal","eq",
-    "equalize","erode","error","eval","exec","exp",
+    "equalize","erf","erode","error","eval","exec","exp",
   "f","f3d","fft","fi","files","fill","flood","focale3d","for",
   "g","ge","gradient","graph","gt","guided",
   "h","hessian","histogram",
@@ -7431,6 +7431,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
         // Exponential.
         gmic_simple_command("exp",exp,"Compute pointwise exponential of image%s.");
+
+        // Error function.
+        gmic_simple_command("erf",erf,"Compute pointwise error function of image%s.");
 
         // Test equality.
         gmic_arithmetic_command("eq",
