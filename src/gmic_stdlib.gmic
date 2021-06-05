@@ -49171,12 +49171,12 @@ nn_lib :
       const name#_out_spectrum = s;
     );
 
-    # Module: FC (Fully Connected layer).
-    #-------------------------------------
+    # Module: FCNL (Fully Connected layer + Non Linearity).
+    #------------------------------------------------------
 
     # Forward pass.
 
-    nn_fc_begin_forward(name) = (
+    nn_fcnl_begin_forward(name) = (
       unref(ind); const ind = $name#;
       name#_weights = crop(#ind,0,0,w#ind - 1,h#ind);
       name#_biases = crop(#ind,w#ind - 1,0,1,h#ind);
@@ -49187,7 +49187,7 @@ nn_lib :
       const name#_out_spectrum = 1;
     );
 
-    nn_fc_main_forward(name,in,activation) = (
+    nn_fcnl_main_forward(name,in,activation) = (
       name#_z = mul(name#_weights,in#_out);
       name#_z+=name#_biases;
       name#_out = name#_z;
@@ -49196,13 +49196,13 @@ nn_lib :
 
     # Backward pass.
 
-    nn_fc_begin_backward(name) = (
+    nn_fcnl_begin_backward(name) = (
       name#_sum_deriv_weights = vector(#size(name#_weights));
       name#_sum_deriv_biases = vector(#size(name#_biases));
       name#_sum_deriv_out = vector(#size(name#_out));
     );
 
-    nn_fc_main_backward(name,in,activation) = (
+    nn_fcnl_main_backward(name,in,activation) = (
       name#_deriv_biases = name#_z;
       nn_activate_deriv_#activation(name#_deriv_biases);
       name#_deriv_biases*=name#_deriv_out;
@@ -49212,7 +49212,7 @@ nn_lib :
       name#_sum_deriv_biases+=name#_deriv_biases;
     );
 
-    nn_fc_end_backward(name) = (
+    nn_fcnl_end_backward(name) = (
       unref(ind); const ind = $name#;
       merge(name#_sum_deriv_weights,+);
       merge(name#_sum_deriv_biases,+);
@@ -49220,7 +49220,7 @@ nn_lib :
 
     # Update weights.
 
-    nn_fc_end_update_weights(name) = (
+    nn_fcnl_end_update_weights(name) = (
       unref(ind); const ind = $name#;
       !no_update?(
         name#_dt_weights = learning_rate/abs(maxabs(1e-5,name#_sum_deriv_weights));
@@ -49291,18 +49291,18 @@ nn_input : check ${"is_variable_name $1"}" && isint($2) && $2>0 && isint(${3=1})
   _nn_$1_out_size=$2,$3,$4,$5
   _nn_begin_forward.="nn_input_begin_forward("$1,$_nn_$1_out_size");"
 
-#@gmic nn_fc : name,in,nb_neurons,activation_function={ relu | leakyrelu | sigmoid }
+#@gmic nn_fcnl : name,in,nb_neurons,activation_function={ relu | leakyrelu | sigmoid }
 #@gmic : Add an fully connected layer to the network.
-nn_fc : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($3) && $3>0" skip ${4=leakyrelu}
+nn_fcnl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($3) && $3>0" skip ${4=leakyrelu}
   _nn_$1_in_size=1,{prod($_nn_$2_out_size)},1,1
   _nn_$1_out_size=1,$3,1,1
   if !isint($1) {[$_nn_$1_in_size][1]+1},$3 f. g nm. $1 fi
-  _nn_begin_forward.="nn_fc_begin_forward($1);"
-  _nn_main_forward.="nn_fc_main_forward($1,$2,$4);"
-  _nn_begin_backward="nn_fc_begin_backward($1);"$_nn_begin_backward
-  _nn_main_backward="nn_fc_main_backward($1,$2,$4);"$_nn_main_backward
-  _nn_end_backward="nn_fc_end_backward($1);"$_nn_end_backward
-  _nn_end_update_weights="nn_fc_end_update_weights($1);"$_nn_end_update_weights
+  _nn_begin_forward.="nn_fcnl_begin_forward($1);"
+  _nn_main_forward.="nn_fcnl_main_forward($1,$2,$4);"
+  _nn_begin_backward="nn_fcnl_begin_backward($1);"$_nn_begin_backward
+  _nn_main_backward="nn_fcnl_main_backward($1,$2,$4);"$_nn_main_backward
+  _nn_end_backward="nn_fcnl_end_backward($1);"$_nn_end_backward
+  _nn_end_update_weights="nn_fcnl_end_update_weights($1);"$_nn_end_update_weights
 
 #@gmic nn_mse : name,in,truth
 #@gmic : Add a MSE loss to the network.
@@ -49325,11 +49325,11 @@ nn_test :
   # Build neural network.
   #----------------------
   nn_input X,1,2
-  nn_fc FC1,X,300,leakyrelu
-  nn_fc FC2,FC1,100,leakyrelu
-  nn_fc FC3,FC2,30,leakyrelu
-  nn_fc FC4,FC3,10,leakyrelu
-  nn_fc FC5,FC4,3,leakyrelu
+  nn_fcnl FC1,X,300,leakyrelu
+  nn_fcnl FC2,FC1,100,leakyrelu
+  nn_fcnl FC3,FC2,30,leakyrelu
+  nn_fcnl FC4,FC3,10,leakyrelu
+  nn_fcnl FC5,FC4,3,leakyrelu
   nn_mse L,FC5,Y
   sp lena,128 nm. img
 
