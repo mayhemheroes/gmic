@@ -49126,40 +49126,51 @@ nn_lib :
   u "
     # Definition of activation functions and their derivatives.
     #----------------------------------------------------------
+    _nn_activate(Z,activation) = (fill (#Z,k,nn_activation_#activation(#Z[k])));
+    nn_activate(Z,activation) = nn_activate_#activation(#Z);
+    nn_activate_deriv(Z,activation) = nn_activate_deriv_#activation(#Z);
+
+    # Linear.
     nn_activation_linear(z) = (z);
     nn_activation_deriv_linear(z) = (1);
-    nn_activate_linear(z) = ();
-    nn_activate_deriv_linear(z) = (#z = 1);
+    nn_activate_linear(Z) = ();
+    nn_activate_deriv_linear(Z) = (#Z = 1);
 
+    # ELU: Exponential Linear Unit.
     nn_activation_elu(z) = (z<0?exp(z) - 1:z);
     nn_activation_deriv_elu(z) = (z<0?exp(z):1);
-    nn_activate_elu(z) = (fill(#z,k,nn_activation_elu(z[k])));
-    nn_activate_deriv_elu(z) = (fill(#z,k,nn_activation_deriv_elu(z[k])));
+    nn_activate_elu(Z) = _nn_activate(Z,elu);
+    nn_activate_deriv_elu(Z) = _nn_activate(Z,deriv_elu);
 
+    # GELU: Gaussian Error Linear Unit.
     nn_activation_gelu(z) = (0.5*z*(1 + erf(z/sqrt(2))));
     nn_activation_deriv_gelu(z) = (0.5 + 0.5*erf(z/sqrt(2)) + z*exp(-z^2/2)/sqrt(2*pi));
-    nn_activate_gelu(z) = (fill(#z,k,nn_activation_gelu(z[k])));
-    nn_activate_deriv_gelu(z) = (fill(#z,k,nn_activation_deriv_gelu(z[k])));
+    nn_activate_gelu(Z) = _nn_activate(Z,gelu);
+    nn_activate_deriv_gelu(Z) = _nn_activate(Z,deriv_gelu);
 
-    nn_activation_leakyrelu(z) = (z<0?0.005*z:z);
-    nn_activation_deriv_leakyrelu(z) = (z<0?0.005:1);
-    nn_activate_leakyrelu(z) = (fill(#z,k,nn_activation_leakyrelu(z[k])));
-    nn_activate_deriv_leakyrelu(z) = (fill(#z,k,nn_activation_deriv_leakyrelu(z[k])));
+    # LeakyRELU: Leaky Rectified Linear Unit.
+    nn_activation_leakyrelu(z) = (z<0?0.05*z:z);
+    nn_activation_deriv_leakyrelu(z) = (z<0?0.05:1);
+    nn_activate_leakyrelu(Z) = _nn_activate(Z,leakyrelu);
+    nn_activate_deriv_leakyrelu(Z) = _nn_activate(Z,deriv_leakyrelu);
 
+    # RELU: Rectified Linear Unit.
     nn_activation_relu(z) = (z<0?0:z);
     nn_activation_deriv_relu(z) = (z<0?0:1);
-    nn_activate_relu(z) = (fill(#z,k,nn_activation_relu(z[k])));
-    nn_activate_deriv_relu(z) = (fill(#z,k,nn_activation_deriv_relu(z[k])));
+    nn_activate_relu(Z) = _nn_activate(Z,relu);
+    nn_activate_deriv_relu(Z) = _nn_activate(Z,deriv_relu);
 
+    # Sigmoid.
     nn_activation_sigmoid(z) = (0.5 + 0.5*tanh(z/2));
     nn_activation_deriv_sigmoid(z) = (_nn_sig = nn_activation_sigmoid(z); _nn_sig*(1-_nn_sig));
-    nn_activate_sigmoid(z) = (fill(#z,k,nn_activation_sigmoid(z[k])));
-    nn_activate_deriv_sigmoid(z) = (fill(#z,k,nn_activation_deriv_sigmoid(z[k])));
+    nn_activate_sigmoid(Z) = _nn_activate(Z,sigmoid);
+    nn_activate_deriv_sigmoid(Z) = _nn_activate(Z,deriv_sigmoid);
 
+    # Tanh.
     nn_activation_tanh(z) = (tanh(z));
     nn_activation_deriv_tanh(z) = (1 - tanh(z)^2);
-    nn_activate_tanh(z) = (fill(#z,k,nn_activation_tanh(z[k])));
-    nn_activate_deriv_tanh(z) = (fill(#z,k,nn_activation_deriv_tanh(z[k])));
+    nn_activate_tanh(Z) = _nn_activate(Z,tanh);
+    nn_activate_deriv_tanh(Z) = _nn_activate(Z,deriv_tanh);
 
     # Module: Input.
     #---------------
@@ -49230,6 +49241,23 @@ nn_lib :
       );
     );
 
+    # Module: NL (Non Linearity).
+    #-----------------------------
+
+    nn_nl_init_forward(name,activation) = (
+      name#_activation(x) = activation#(x);
+    );
+
+    nn_nl_forward(name,in) = (
+      name#_out = in;
+      nn_activate(name#_out,name#_out_activation);
+    );
+
+    nn_nl_init_backward(name) = ();
+    nn_nl_backward(name,in) = ();
+    nn_nl_end_backward(name) = ();
+
+
     # Module: FCNL (Fully Connected layer + Non Linearity).
     #------------------------------------------------------
 
@@ -49241,7 +49269,7 @@ nn_lib :
       name#_z = mul(name#_weights,in#_out);
       name#_z+=name#_biases;
       name#_out = name#_z;
-      nn_activate_#activation(name#_out);
+      nn_activate(name#_out,#activation);
     );
 
     nn_fcnl_init_backward(name) = (
