@@ -49164,7 +49164,7 @@ nn_lib :
     # Module: Input.
     #---------------
 
-    nn_input_begin_forward(name,w,h,d,s) = (
+    nn_input_init_forward(name,w,h,d,s) = (
       name#_out = vector(##w*h*d*s);
       ref(name#_out,#name);
       const name#_out_width = w;
@@ -49174,7 +49174,7 @@ nn_lib :
     );
 
     nn_input_forward(name,in) = 0;
-    nn_input_begin_backward(name) = 0;
+    nn_input_init_backward(name) = 0;
     nn_input_backward(name,in) = 0;
     nn_input_end_backward(name) = 0;
     nn_input_end_update_weights(name) = 0;
@@ -49182,7 +49182,7 @@ nn_lib :
     # Module: FC (Fully Connected Layer).
     #------------------------------------
 
-    nn_fc_begin_forward(name) = (
+    nn_fc_init_forward(name) = (
       unref(ind); const ind = $name#;
       name#_weights = crop(#ind,0,0,w#ind - 1,h#ind);
       name#_biases = crop(#ind,w#ind - 1,0,1,h#ind);
@@ -49198,7 +49198,7 @@ nn_lib :
       name#_out+=name#_biases;
     );
 
-    nn_fc_begin_backward(name) = (
+    nn_fc_init_backward(name) = (
       name#_sum_deriv_weights = vector(#size(name#_weights));
       name#_sum_deriv_biases = vector(#size(name#_biases));
       name#_sum_deriv_out = vector(#size(name#_out));
@@ -49233,8 +49233,8 @@ nn_lib :
     # Module: FCNL (Fully Connected layer + Non Linearity).
     #------------------------------------------------------
 
-    nn_fcnl_begin_forward(name) = (
-      nn_fc_begin_forward(#name);
+    nn_fcnl_init_forward(name) = (
+      nn_fc_init_forward(#name);
     );
 
     nn_fcnl_forward(name,in,activation) = (
@@ -49244,8 +49244,8 @@ nn_lib :
       nn_activate_#activation(name#_out);
     );
 
-    nn_fcnl_begin_backward(name) = (
-      nn_fc_begin_backward(#name);
+    nn_fcnl_init_backward(name) = (
+      nn_fc_init_backward(#name);
     );
 
     nn_fcnl_backward(name,in,activation) = (
@@ -49266,10 +49266,10 @@ nn_lib :
 
     # Loss: MSE (Mean-Squared Error).
     #--------------------------------
-    nn_mse_begin_forward(name) = 0;
+    nn_mse_init_forward(name) = 0;
     nn_mse_forward(name) = 0;
 
-    nn_mse_begin_backward(name) = (
+    nn_mse_init_backward(name) = (
       name#_sum_out = 0;
     );
 
@@ -49320,7 +49320,7 @@ nn_lib :
 nn_input : check ${"is_variable_name $1"}" && isint($2) && $2>0 && isint(${3=1}) && $3>0 && "\
                    "isint(${4=1}) && $4>0 && isint(${5=1}) && $5>0"
   _nn_$1_out_size=$2,$3,$4,$5
-  _nn_begin_forward.="nn_input_begin_forward("$1,$_nn_$1_out_size");"
+  _nn_init_forward.="nn_input_init_forward("$1,$_nn_$1_out_size");"
 
 #@gmic nn_fcnl : name,in,nb_neurons,activation_function={ relu | leakyrelu | sigmoid }
 #@gmic : Add an fully connected layer to the network.
@@ -49328,9 +49328,9 @@ nn_fcnl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint
   _nn_$1_in_size=1,{prod($_nn_$2_out_size)},1,1
   _nn_$1_out_size=1,$3,1,1
   if !isint($1) {[$_nn_$1_in_size][1]+1},$3 f. g nm. $1 fi
-  _nn_begin_forward.="nn_fcnl_begin_forward($1);"
+  _nn_init_forward.="nn_fcnl_init_forward($1);"
   _nn_forward.="nn_fcnl_forward($1,$2,$4);"
-  _nn_begin_backward="nn_fcnl_begin_backward($1);"$_nn_begin_backward
+  _nn_init_backward="nn_fcnl_init_backward($1);"$_nn_init_backward
   _nn_backward="nn_fcnl_backward($1,$2,$4);"$_nn_backward
   _nn_end_backward="nn_fcnl_end_backward($1);"$_nn_end_backward
   _nn_end_update_weights="nn_fcnl_end_update_weights($1);"$_nn_end_update_weights
@@ -49339,7 +49339,7 @@ nn_fcnl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint
 #@gmic : Add a MSE loss to the network.
 nn_mse : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
   _nn_$1_in_size=1,{prod($_nn_$2_out_size)},1,1
-  _nn_begin_backward="nn_mse_begin_backward($1);"$_nn_begin_backward
+  _nn_init_backward="nn_mse_init_backward($1);"$_nn_init_backward
   _nn_backward="nn_mse_backward($1,$2,$3);"$_nn_backward
   _nn_end_backward="nn_mse_end_backward($1);"$_nn_end_backward
   _nn_end_update_weights="nn_mse_end_update_weights($1);"$_nn_end_update_weights
@@ -49384,8 +49384,8 @@ nn_test :
     repeat 100,sub_iter
       eval[batch] *${-nn_lib}"
         begin("\
-          $_nn_begin_forward\
-          $_nn_begin_backward"
+          $_nn_init_forward\
+          $_nn_init_backward"
         );
         batch = I;
         X = batch[0,2]; # Input
@@ -49402,7 +49402,7 @@ nn_test :
 
     # Render image from network.
     128,128,1,3,"*"${-nn_lib}"
-      begin("$_nn_begin_forward");
+      begin("$_nn_init_forward");
       X[0] = lerp(-1,1,x/(w - 1));
       X[1] = lerp(-1,1,y/(h - 1));
       "$_nn_forward"
