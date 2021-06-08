@@ -4073,7 +4073,7 @@ void gmic::_gmic(const char *const commands_line,
   add_commands(custom_commands);
 
   // Set pre-defined global variables.
-  CImg<char> str(8);
+  CImg<char> str(16);
 
 #if defined(_MSC_VER) || defined(WIN32) || defined(_WIN32) || defined(__WIN32__) \
  || defined(WIN64) || defined(_WIN64) || defined(__WIN64__)
