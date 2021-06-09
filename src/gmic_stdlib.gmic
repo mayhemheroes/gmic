@@ -49132,9 +49132,8 @@ nn_lib :
   u "
     # Definition of activation functions and their derivatives.
     #----------------------------------------------------------
-    _nn_activate(Z,activation) = (fill (#Z,k,nn_activation_#activation(#Z[k])));
+    _nn_activate_pointwise(Z,activation) = (fill (#Z,k,nn_activation_#activation(#Z[k])));
     nn_activate(Z,activation) = nn_activate_#activation(#Z);
-    nn_activate_deriv(Z,activation) = nn_activate_deriv_#activation(#Z);
 
     # Linear.
     nn_activation_linear(z) = (z);
@@ -49145,38 +49144,38 @@ nn_lib :
     # ELU: Exponential Linear Unit.
     nn_activation_elu(z) = (z<0?exp(z) - 1:z);
     nn_activation_deriv_elu(z) = (z<0?exp(z):1);
-    nn_activate_elu(Z) = _nn_activate(Z,elu);
-    nn_activate_deriv_elu(Z) = _nn_activate(Z,deriv_elu);
+    nn_activate_elu(Z) = _nn_activate_pointwise(Z,elu);
+    nn_activate_deriv_elu(Z) = _nn_activate_pointwise(Z,deriv_elu);
 
     # GELU: Gaussian Error Linear Unit.
     nn_activation_gelu(z) = (0.5*z*(1 + erf(z/sqrt(2))));
     nn_activation_deriv_gelu(z) = (0.5 + 0.5*erf(z/sqrt(2)) + z*exp(-z^2/2)/sqrt(2*pi));
-    nn_activate_gelu(Z) = _nn_activate(Z,gelu);
-    nn_activate_deriv_gelu(Z) = _nn_activate(Z,deriv_gelu);
+    nn_activate_gelu(Z) = _nn_activate_pointwise(Z,gelu);
+    nn_activate_deriv_gelu(Z) = _nn_activate_pointwise(Z,deriv_gelu);
 
     # LeakyRELU: Leaky Rectified Linear Unit.
     nn_activation_leakyrelu(z) = (z<0?0.05*z:z);
     nn_activation_deriv_leakyrelu(z) = (z<0?0.05:1);
-    nn_activate_leakyrelu(Z) = _nn_activate(Z,leakyrelu);
-    nn_activate_deriv_leakyrelu(Z) = _nn_activate(Z,deriv_leakyrelu);
+    nn_activate_leakyrelu(Z) = _nn_activate_pointwise(Z,leakyrelu);
+    nn_activate_deriv_leakyrelu(Z) = _nn_activate_pointwise(Z,deriv_leakyrelu);
 
     # RELU: Rectified Linear Unit.
     nn_activation_relu(z) = (z<0?0:z);
     nn_activation_deriv_relu(z) = (z<0?0:1);
-    nn_activate_relu(Z) = _nn_activate(Z,relu);
-    nn_activate_deriv_relu(Z) = _nn_activate(Z,deriv_relu);
+    nn_activate_relu(Z) = _nn_activate_pointwise(Z,relu);
+    nn_activate_deriv_relu(Z) = _nn_activate_pointwise(Z,deriv_relu);
 
     # Sigmoid.
     nn_activation_sigmoid(z) = (0.5 + 0.5*tanh(z/2));
     nn_activation_deriv_sigmoid(z) = (_nn_sig = nn_activation_sigmoid(z); _nn_sig*(1-_nn_sig));
-    nn_activate_sigmoid(Z) = _nn_activate(Z,sigmoid);
-    nn_activate_deriv_sigmoid(Z) = _nn_activate(Z,deriv_sigmoid);
+    nn_activate_sigmoid(Z) = _nn_activate_pointwise(Z,sigmoid);
+    nn_activate_deriv_sigmoid(Z) = _nn_activate_pointwise(Z,deriv_sigmoid);
 
     # Tanh.
     nn_activation_tanh(z) = (tanh(z));
     nn_activation_deriv_tanh(z) = (1 - tanh(z)^2);
-    nn_activate_tanh(Z) = _nn_activate(Z,tanh);
-    nn_activate_deriv_tanh(Z) = _nn_activate(Z,deriv_tanh);
+    nn_activate_tanh(Z) = _nn_activate_pointwise(Z,tanh);
+    nn_activate_deriv_tanh(Z) = _nn_activate_pointwise(Z,deriv_tanh);
 
     # Module: Input.
     #---------------
@@ -49284,7 +49283,7 @@ nn_lib :
 
     nn_fcnl_backward(name,in,activation) = (
       name#_deriv_biases = name#_z;
-      nn_activate_deriv_#activation(name#_deriv_biases);
+      nn_activate(name#_deriv_biases,deriv_#activation);
       name#_deriv_biases*=name#_deriv_out;
       name#_deriv_weights = mul(name#_deriv_biases,in#_out,size(in#_out));
       in#_deriv_out = mul(transpose(name#_weights,in#_out_height),name#_deriv_biases);
