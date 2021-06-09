@@ -49255,13 +49255,20 @@ nn_lib :
 
     nn_nl_forward(name,in) = (
       name#_out = in;
-      nn_activate(name#_out,name#_out_activation);
+      nn_activate(name#_out,name#_activation);
     );
 
     nn_nl_init_backward(name) = ();
-    nn_nl_backward(name,in) = ();
+
+    nn_nl_backward(name,in) = (
+      in#_deriv_out = in;
+      nn_activate(in#_deriv_out,name#_activation);
+      in#_deriv_out*=name#_deriv_out;
+    );
+
     nn_nl_end_backward(name) = ();
 
+    nn_nl_end_update_weights(name) = ();
 
     # Module: FCNL (Fully Connected layer + Non Linearity).
     #------------------------------------------------------
