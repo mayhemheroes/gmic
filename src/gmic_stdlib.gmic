@@ -49215,7 +49215,7 @@ nn_lib :
     );
 
     nn_fc_backward(name,in) = (
-      name#_deriv_biases = name#_out*name#_deriv_out;
+      name#_deriv_biases = name#_deriv_out;
       name#_deriv_weights = mul(name#_deriv_biases,in#_out,size(in#_out));
       in#_deriv_out = mul(transpose(name#_weights,in#_out_height),name#_deriv_biases);
       name#_sum_deriv_weights+=name#_deriv_weights;
@@ -49223,7 +49223,6 @@ nn_lib :
     );
 
     nn_fc_end_backward(name) = (
-      unref(ind); const ind = $name#;
       merge(name#_sum_deriv_weights,+);
       merge(name#_sum_deriv_biases,+);
     );
@@ -49242,14 +49241,22 @@ nn_lib :
 
     # Module: NL (Non Linearity).
     #-----------------------------
+    nn_nl_init_forward(name,in) = (
+      name#_out = vector(#size(in#_out));
+      const name#_out_width = in#_out_width;
+      const name#_out_height = in#_out_height;
+      const name#_out_depth = in#_out_depth;
+      const name#_out_spectrum = in#_out_spectrum;
+    );
+
     nn_nl_forward(name,in,activation) = (
-      name#_out = in;
+      name#_out = in#_out;
       nn_activate(name#_out,#activation);
     );
 
     nn_nl_backward(name,in,activation) = (
-      in#_deriv_out = in;
-      nn_activate(in#_deriv_out,#activation);
+      in#_deriv_out = in#_out;
+      nn_activate(in#_deriv_out,deriv_#activation);
       in#_deriv_out*=name#_deriv_out;
     );
 
@@ -49338,7 +49345,7 @@ nn_input : check ${"is_variable_name $1"}" && isint($2) && $2>0 && isint(${3=1})
   _nn_init_forward.="nn_input_init_forward("$1,$_nn_$1_out_size");"
 
 #@gmic nn_fc : name,in,nb_neurons
-#@gmic : Add an fully connected layer to the network.
+#@gmic : Add an fully connected module to the network.
 nn_fc : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($3) && $3>0"
   _nn_$1_in_size=1,{prod($_nn_$2_out_size)},1,1
   _nn_$1_out_size=1,$3,1,1
@@ -49350,8 +49357,17 @@ nn_fc : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($
   _nn_end_backward="nn_fc_end_backward($1);"$_nn_end_backward
   _nn_end_update_weights="nn_fc_end_update_weights($1);"$_nn_end_update_weights
 
+#@gmic nn_nl : name,in,activation
+#@gmic : Add a non-linearity module to the network.
+nn_nl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"} skip ${3=leakyrelu}
+  _nn_$1_in_size=$_nn_$2_out_size
+  _nn_$1_out_size=$_nn_$1_in_size
+  _nn_init_forward.="nn_nl_init_forward($1,$2);"
+  _nn_forward.="nn_nl_forward($1,$2,$3);"
+  _nn_backward="nn_nl_backward($1,$2,$3);"$_nn_backward
+
 #@gmic nn_fcnl : name,in,nb_neurons,activation
-#@gmic : Add an fully connected layer to the network.
+#@gmic : Add an fully connected + non-linearity module to the network.
 nn_fcnl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($3) && $3>0" skip ${4=leakyrelu}
   _nn_$1_in_size=1,{prod($_nn_$2_out_size)},1,1
   _nn_$1_out_size=1,$3,1,1
@@ -49384,19 +49400,24 @@ nn_test :
   # Build neural network.
   #----------------------
   nn_input X,1,2
-  nn_fcnl FC1,X,3,linear
-  nn_mse L,FC1,Y
+  # nn_fc FC1,X,300   nn_nl NL1,FC1,leakyrelu
+  # nn_fc FC2,NL1,100 nn_nl NL2,FC2,leakyrelu
+  # nn_fc FC3,NL2,30  nn_nl NL3,FC3,leakyrelu
+  # nn_fc FC4,NL3,10  nn_nl NL4,FC4,leakyrelu
+  # nn_fc FC5,NL4,3   nn_nl NL5,FC5,leakyrelu
+  # nn_mse L,NL5,Y
 
-#  nn_fcnl FC2,FC1,100,leakyrelu
-#  nn_fcnl FC3,FC2,30,leakyrelu
-#  nn_fcnl FC4,FC3,10,leakyrelu
-#  nn_fcnl FC5,FC4,3,leakyrelu
-#  nn_mse L,FC5,Y
+  nn_fcnl FC1,X,300
+  nn_fcnl FC2,FC1,100,leakyrelu
+  nn_fcnl FC3,FC2,30,leakyrelu
+  nn_fcnl FC4,FC3,10,leakyrelu
+  nn_fcnl FC5,FC4,3,leakyrelu
+  nn_mse L,FC5,Y
   sp lena,128 nm. img
 
   # Optimize network.
   #-------------------
-  size_batch=128
+  size_batch=512
   repeat inf,iter
     e[] "ITER = "$iter
 
@@ -49411,7 +49432,7 @@ nn_test :
     nm. batch
 
     # Mini-batch gradient descent.
-    repeat 100,sub_iter
+    repeat 20,sub_iter
       eval[batch] *${-nn_lib}"
         begin("\
           $_nn_init_forward\
@@ -49436,7 +49457,7 @@ nn_test :
       X[0] = lerp(-1,1,x/(w - 1));
       X[1] = lerp(-1,1,y/(h - 1));
       "$_nn_forward"
-      cut(FC1_out,0,1);"
+      cut(FC5_out,0,1);"
     w. rm.
 
   done
