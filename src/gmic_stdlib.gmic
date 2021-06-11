@@ -49212,17 +49212,20 @@ nn_lib :
     );
 
     nn_bn_end_t_backward(name) = (
+      name#_variance_in/=name#_nb_samples;
       copy(name#_thread_nb_samples[t],name#_nb_samples);
-      copy(name#_thread_average_in[t],name#_average_in);
-      copy(name#_thread_variance_in[t],name#_variance_in);
+      copy(name#_thread_average_in[t*size(name#_average_in)],name#_average_in);
+      copy(name#_thread_variance_in[t*size(name#_variance_in)],name#_variance_in);
       name#_average_in*=name#_nb_samples;
     );
 
     nn_bn_end_backward(name) = (
       merge(name#_nb_samples,+);
       merge(name#_average_in,+);
+      merge(name#_thread_nb_samples,+);
+      merge(name#_thread_average_in,+);
+      merge(name#_thread_variance_in,+);
       name#_average_in/=name#_nb_samples;
-
       name#_variance_in = 0;
       for (k = 0, k<T, ++k,
         name#_variance_in+=name#_thread_nb_samples[k]*(name#_thread_variance_in[k] + (name#_thread_average_in[k] - name#_average_in)^2);
@@ -49497,7 +49500,7 @@ nn_test :
     sh. 0 xavg={iv} rm.
     sh. 1 yavg={iv} rm.
 
-    echo[] "AVG = ("$xavg,$yavg")"
+    echo[] "FEAT = ("$xavg,$yavg")"
 
     # Mini-batch gradient descent.
     repeat 30,sub_iter
