@@ -49181,32 +49181,41 @@ nn_lib :
     #------------------------
 
     nn_bn_init_forward(name,in) = (
-      name#_nb_samples = 0;
-      name#_mean_in = name#_variance_in = vector(#size(in#_out));
-      ref(in#_out,name#_out);
+      unref(ind); const ind = $name#;
+      name#_beta = crop(#ind,2,0,1,h#ind);
+      name#_alpha = crop(#ind,3,0,1,h#ind);
+      name#_out = vector(#size(in#_out));
+      const name#_out_width = in#_out_width;
+      const name#_out_height = in#_out_height;
+      const name#_out_depth = in#_out_depth;
+      const name#_out_spectrum = in#_out_spectrum;
     );
 
     nn_bn_forward(name,in) = (
+      name#_out = name#_alpha*in#_out + name#_beta;
+    );
+
+    nn_bn_init_backward(name,in) = (
+      name#_nb_samples = 0;
+      name#_mean_in = name#_variance_in = vector(#size(in#_out));
+    );
+
+    nn_bn_backward(name,in) = (
       ++name#_nb_samples;
       name#_previous_mean_in = name#_mean_in;
       name#_mean_in+=(in#_out - name#_mean_in)/name#_nb_samples;
       name#_variance_in+=(in#_out - name#_mean_in)*(in#_out - name#_previous_mean_in);
     );
 
-    nn_bn_end_forward(name,in) = (
-      merge(name#_nb_samples,+);
-    );
-
-    nn_bn_init_backward(name) = (
-      0;
-    );
-
-    nn_bn_backward(name,in) = (
-      0;
+    nn_bn_end_t_backward(name) = (
+      name#_mean_in*=name#_nb_samples;
     );
 
     nn_bn_end_backward(name) = (
-      0;
+      merge(name#_nb_samples,+);
+      merge(name#_mean_in,+);
+      name#_mean_in/=name#_nb_samples;
+      print(name#_mean_in);
     );
 
     nn_bn_update_weights(name) = (
@@ -49381,9 +49390,9 @@ nn_bn : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
   if !isint($$1) 4,{prod($_nn_$1_in_size)} f. 0,1 nm. $1 fi
   _nn_init_forward.="nn_bn_init_forward($1,$2);"
   _nn_forward.="nn_bn_forward($1,$2);"
-  _nn_end_forward.="nn_bn_end_forward($1,$2);"
-  _nn_init_backward.="nn_bn_init_backward($1);"
+  _nn_init_backward.="nn_bn_init_backward($1,$2);"
   _nn_backward="nn_bn_backward($1,$2);"$_nn_backward
+  _nn_end_t_backward="nn_bn_end_t_backward($1);"$_nn_end_t_backward
   _nn_end_backward="nn_bn_end_backward($1);"$_nn_end_backward
   _nn_update_weights="nn_bn_update_weights($1);"$_nn_update_weights
 
@@ -49451,8 +49460,8 @@ nn_test :
   #----------------------
   nn_input X,1,2
   nn_bn BN,X
-  nn_fcnl FC1,X,300,leakyrelu
-  nn_fcnl FC2,FC1,300,leakyrelu
+  nn_fcnl FC1,X,100,leakyrelu
+  nn_fcnl FC2,FC1,100,leakyrelu
   nn_fc FC3,FC2,3
   nn_mse L,FC3,Y
   sp lena,128 nm. img
@@ -49473,6 +49482,11 @@ nn_test :
       [ px,py,val ]"
     nm. batch
 
+    sh. 0 xavg={ia} rm.
+    sh. 1 yavg={ia} rm.
+
+    echo[] "AVG = ("$xavg,$yavg")"
+
     # Mini-batch gradient descent.
     repeat 30,sub_iter
       eval[batch] *${-nn_lib}"
@@ -49485,8 +49499,10 @@ nn_test :
         Y = batch[2,3]; "\ # Ground-truth
         $_nn_forward\
         $_nn_backward"
+        end_t("\
+          $_nn_end_t_backward"
+        );
         end("\
-          $_nn_end_forward\
           $_nn_end_backward\
           $_nn_update_weights"
           !($sub_iter%100)?print(L_sum_out);
