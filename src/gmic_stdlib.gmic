@@ -49198,9 +49198,10 @@ nn_lib :
     );
 
     nn_bn_init_backward(name,in) = (
+      name#_thread_nb_samples = vectorT();
+      name#_thread_average_in = name#_thread_variance_in = vector(#T*size(in#_out));
       name#_nb_samples = 0;
       name#_average_in = name#_variance_in = vector(#size(in#_out));
-      name#_average_t_in = name#_variance_t_in = vector(#size(in#_out)*$_cpus);
     );
 
     nn_bn_backward(name,in) = (
@@ -49211,21 +49212,26 @@ nn_lib :
     );
 
     nn_bn_end_t_backward(name) = (
+      copy(name#_thread_nb_samples[t],name#_nb_samples);
+      copy(name#_thread_average_in[t],name#_average_in);
+      copy(name#_thread_variance_in[t],name#_variance_in);
       name#_average_in*=name#_nb_samples;
-      name#_variance_in*=name#_nb_samples;
     );
 
     nn_bn_end_backward(name) = (
       merge(name#_nb_samples,+);
       merge(name#_average_in,+);
-      merge(name#_variance_in,+);
-
-
       name#_average_in/=name#_nb_samples;
+
+      name#_variance_in = 0;
+      for (k = 0, k<T, ++k,
+        name#_variance_in+=name#_thread_nb_samples[k]*(name#_thread_variance_in[k] + (name#_thread_average_in[k] - name#_average_in)^2);
+      );
+      name#_variance_in/=name#_nb_samples;
     );
 
     nn_bn_update_weights(name) = (
-      0;
+      print(name#_variance_in);
     );
 
     # Fully-Connected Module (FC).
@@ -49488,8 +49494,8 @@ nn_test :
       [ px,py,val ]"
     nm. batch
 
-    sh. 0 xavg={ia} rm.
-    sh. 1 yavg={ia} rm.
+    sh. 0 xavg={iv} rm.
+    sh. 1 yavg={iv} rm.
 
     echo[] "AVG = ("$xavg,$yavg")"
 
