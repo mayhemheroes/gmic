@@ -49185,6 +49185,9 @@ nn_lib :
 
     nn_bn_init_forward(name,in) = (
       unref(ind); const ind = $name#;
+      name#_avg = crop(#ind,0,0,1,h#ind);
+      name#_std = sqrt(crop(#ind,1,0,1,h#ind));
+
       name#_beta = crop(#ind,2,0,1,h#ind);
       name#_alpha = crop(#ind,3,0,1,h#ind);
       name#_out = vector(#size(in#_out));
@@ -49195,8 +49198,13 @@ nn_lib :
     );
 
     nn_bn_forward(name,in) = (
-      name#_out = name#_alpha*in#_out;
-      name#_out+=name#_beta;
+#      name#_out = name#_alpha*in#_out;
+#      name#_out+=name#_beta;
+
+
+       name#_out = in#_out;
+       name#_out-=name#_avg;
+       name#_out/=1e-5 + name#_std;
     );
 
     nn_bn_init_backward(name,in) = (
@@ -49237,7 +49245,10 @@ nn_lib :
     );
 
     nn_bn_update_weights(name) = (
-      print(name#_variance_in);
+      unref(ind); const ind = $name#;
+      draw(#ind,name#_average_in,0,0,0,0,1,h#ind,1,1,0.01);
+      draw(#ind,name#_variance_in,1,0,0,0,1,h#ind,1,1,0.01);
+      run('w2[',ind,'] 400,400');
     );
 
     # Fully-Connected Module (FC).
