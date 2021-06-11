@@ -712,6 +712,7 @@ reference : skip "${2=}"
 "* 'z': current processed slice of the associated image, if any ('0' otherwise)."\n\
 "* 'c': current processed channel of the associated image, if any ('0' otherwise)."\n\
 "* 't': thread id when an expression is evaluated with multiple threads ('0' means __master thread__)."\n\
+"* 'n': maximum number of threads when expression is evaluated in parallel (so that 't' goes from '0' to 'n-1')."\n\
 "* 'e': value of e, i.e. `2.71828...`."\n\
 "* 'pi': value of pi, i.e. `3.1415926...`."\n\
 "* 'u': a random value between '[0,1]', following a uniform distribution."\n\
@@ -1899,7 +1900,7 @@ compress_gmic :
 #@cli : (eq. to 'd').\n
 #@cli : Arguments 'X','Y','Z' determine the initial selection view, for 3D volumetric images.
 #@cli : Default value: 'X=Y=Z=0' and 'exit_on_anykey=0'.
-#@cli : $$ https://gmic.eu/oldtutorial/_display.shtml
+#@cli : $$ https://gmic.eu/oldtutorial/_display
 
 #@cli d0 : eq. to 'display0'.
 d0 :
@@ -3376,7 +3377,7 @@ dt :
 #@cli : (eq. to 'dt').
 #@cli : Default values: 'size_factor=16', 'ellipse_size=1.5', 'color_mode=2' and 'outline=2'.
 #@cli : $ image.jpg +diffusiontensors 0.1,0.9 resize2dx. 32 +display_tensors. 64,2
-#@cli : $$ https://gmic.eu/oldtutorial/_display_tensors.shtml
+#@cli : $$ https://gmic.eu/oldtutorial/_display_tensors
 display_tensors :
   _gmic_s="$?" v + _$0 $*
 
@@ -4238,7 +4239,7 @@ parse_cli_ascii :
       elif i==_'$'" && "i[1]==_'$' # Found link to tutorial page
         if !0$_no_tutorial_link
           if h==2
-            url=https://gmic.eu/tutorial/$name.html
+            url=https://gmic.eu/tutorial/$name
           else
             rows 2,100 autocrop {'" "'} url={t}
           fi
@@ -4689,8 +4690,8 @@ parse_cli_html :
         # Found link to tutorial page.
         if !$is_tutorial_tag html.="<tutorial_tag>" is_tutorial_tag=1 fi
         if h==2
-          url=https://gmic.eu/tutorial/$name.html
-          l[] it $url if "find(#-1,'404 Not Found')>=0" url=https://gmic.eu/oldtutorial/_$name.shtml fi rm endl
+          url=https://gmic.eu/tutorial/$name
+          l[] it $url if "find(#-1,'404 Not Found')>=0" url=https://gmic.eu/oldtutorial/_$name fi rm endl
         else
           rows 2,100 autocrop {'" "'} url={t}
         fi
@@ -7330,7 +7331,7 @@ shape_star : check "${1=512}>=0 && ${2=5}>0 && ${3=0.5}>=0 && $3<=1"
 #@cli : (eq. to 'sh').
 #@cli : $ image.jpg shared 1 blur[-1] 3 remove[-1]
 #@cli : $ image.jpg repeat s shared 25%,75%,0,$> mirror[-1] x remove[-1] done
-#@cli : $$ https://gmic.eu/oldtutorial/_shared.shtml
+#@cli : $$ https://gmic.eu/oldtutorial/_shared
 
 #@cli sp : eq. to 'sample'.
 sp : skip "${1=?}",${2=0}
@@ -8375,14 +8376,14 @@ update_tutorial_html : check "isbool(${1=0})"
     arg0 $>,$files file=${}
     e[] " > Generate '"$_vt100_c$file$_vt100_n"'."
     t0=$|
-    it $file gmd2html 2
+    it $file
+    replace_str. "../listmanip/",""
+    gmd2html 2
     ot {n} rm.
     t1=$|
     e[] "\r > Generate '"$_vt100_c$file$_vt100_n"' (done in "$_vt100_g{_round($t1-$t0,0.1)}"s"$_vt100_n")."
   done
   x "rm -f *.gmd"
-  x "mv -f index.html _index.html"
-  x "cp -f introduction.html index.html"
 
   # Upload to G'MIC server.
   if $1
@@ -9149,7 +9150,7 @@ _sort_list_lexi :
 #@cli : Compute the pointwise arccosine of selected images.
 #@cli : $ image.jpg +normalize -1,1 acos[-1]
 #@cli : $ 300,1,1,1,'cut(x/w+0.1*u,0,1)' +acos display_graph 400,300
-#@cli : $$ https://gmic.eu/oldtutorial/trigometric-and-inverse-trigometric-commands.shtml
+#@cli : $$ https://gmic.eu/oldtutorial/trigometric-and-inverse-trigometric-commands
 
 #@cli acosh : (+)
 #@cli : Compute the pointwise hyperbolic arccosine of selected images.
@@ -9216,7 +9217,7 @@ argminabs :
 #@cli : Compute the pointwise arcsine of selected images.
 #@cli : $ image.jpg +normalize -1,1 asin[-1]
 #@cli : $ 300,1,1,1,'cut(x/w+0.1*u,0,1)' +asin display_graph 400,300
-#@cli : $$ https://gmic.eu/oldtutorial/trigometric-and-inverse-trigometric-commands.shtml
+#@cli : $$ https://gmic.eu/oldtutorial/trigometric-and-inverse-trigometric-commands
 
 #@cli asinh : (+)
 #@cli : Compute the pointwise hyperbolic arcsine of selected images.
@@ -9225,14 +9226,14 @@ argminabs :
 #@cli : Compute the pointwise arctangent of selected images.
 #@cli : $ image.jpg +normalize 0,8 atan[-1]
 #@cli : $ 300,1,1,1,'4*x/w+u' +atan display_graph 400,300
-#@cli : $$ https://gmic.eu/oldtutorial/trigometric-and-inverse-trigometric-commands.shtml
+#@cli : $$ https://gmic.eu/oldtutorial/trigometric-and-inverse-trigometric-commands
 
 #@cli atan2 : [x_argument] : (+)
 #@cli : Compute the pointwise oriented arctangent of selected images.
 #@cli : Each selected image is regarded as the y-argument of the arctangent function, while the
 #@cli : specified image gives the corresponding x-argument.
 #@cli : $ (-1,1) (-1;1) resize 400,400,1,1,3 atan2[1] [0] keep[1] mod {pi/8}
-#@cli : $$ https://gmic.eu/oldtutorial/trigometric-and-inverse-trigometric-commands.shtml
+#@cli : $$ https://gmic.eu/oldtutorial/trigometric-and-inverse-trigometric-commands
 
 #@cli atanh : (+)
 #@cli : Compute the pointwise hyperbolic arctangent of selected images.
@@ -9259,7 +9260,7 @@ argminabs :
 #@cli : Compute the pointwise cosine of selected images.
 #@cli : $ image.jpg +normalize 0,{2*pi} cos[-1]
 #@cli : $ 300,1,1,1,'20*x/w+u' +cos display_graph 400,300
-#@cli : $$ https://gmic.eu/oldtutorial/trigometric-and-inverse-trigometric-commands.shtml
+#@cli : $$ https://gmic.eu/oldtutorial/trigometric-and-inverse-trigometric-commands
 
 #@cli cosh : (+)
 #@cli : Compute the pointwise hyperbolic cosine of selected images.
@@ -9504,7 +9505,7 @@ rad2deg :
 #@cli : Compute the pointwise sine of selected images.
 #@cli : $ image.jpg +normalize 0,{2*pi} sin[-1]
 #@cli : $ 300,1,1,1,'20*x/w+u' +sin display_graph 400,300
-#@cli : $$ https://gmic.eu/oldtutorial/trigometric-and-inverse-trigometric-commands.shtml
+#@cli : $$ https://gmic.eu/oldtutorial/trigometric-and-inverse-trigometric-commands
 
 #@cli sinc : (+)
 #@cli : Compute the pointwise sinc function of selected images.
@@ -9541,7 +9542,7 @@ rad2deg :
 #@cli : Compute the pointwise tangent of selected images.
 #@cli : $ image.jpg +normalize {-0.47*pi},{0.47*pi} tan[-1]
 #@cli : $ 300,1,1,1,'20*x/w+u' +tan display_graph 400,300
-#@cli : $$ https://gmic.eu/oldtutorial/trigometric-and-inverse-trigometric-commands.shtml
+#@cli : $$ https://gmic.eu/oldtutorial/trigometric-and-inverse-trigometric-commands
 
 #@cli tanh : (+)
 #@cli : Compute the pointwise hyperbolic tangent of selected images.
@@ -9979,7 +9980,7 @@ eigen2tensor :
 #@cli : Default values: 'dithering=0' and 'map_palette=0'.
 #@cli : $ image.jpg +index 1,1,1
 #@cli : $ image.jpg (0;255;255^0;128;255^0;0;255) +index[-2] [-1],1,1
-#@cli : $$ https://gmic.eu/tutorial/gindex.html
+#@cli : $$ https://gmic.eu/tutorial/gindex
 index : check "${2=0}>=0 && $2<=1 && isbool(${3=0})"
   names=${-_palette_names} N={narg($names)}
   l[] if isint("$1") name=${"arg 1+($1%"$N"),"$names} else name="$1" fi onfail name="$1" endl
@@ -10789,7 +10790,7 @@ colorblind : check "isint($1) && $1>=0 && $1<=7"
 #@cli : 'sort_vectors' can be { 0=unsorted | 1=by increasing norm | 2=by decreasing occurrence }.
 #@cli : Default value: 'method=1' and 'sort_vectors=1'.
 #@cli : $ image.jpg +colormap[0] 4 +colormap[0] 8 +colormap[0] 16
-#@cli : $$ https://gmic.eu/oldtutorial/_colormap.shtml
+#@cli : $$ https://gmic.eu/oldtutorial/_colormap
 colormap : check "isint($1) && $1>=0" skip ${2=1},${3=1}
   if $1 e[0--3] "Estimate colormap with $1 entries for image$?, by "${arg\ 1+!$2,k-means,median-cut}" method."
   else e[0--3] "Estimate full colormap for image$?."
@@ -10916,7 +10917,7 @@ fc :
 #@cli : Fill selected images with specified color.
 #@cli : (eq. to 'fc').
 #@cli : $ image.jpg +fill_color 255,0,255
-#@cli : $$ https://gmic.eu/oldtutorial/_fill_color.shtml
+#@cli : $$ https://gmic.eu/oldtutorial/_fill_color
 fill_color :
   _gmic_s="$?" v + _$0 $*
 
@@ -11190,6 +11191,7 @@ lch82rgb : skip "${1=,}"
 #@cli luminance
 #@cli : Compute luminance of selected sRGB images.
 #@cli : $ image.jpg +luminance
+#@cli : $$
 luminance :
   e[^-1] "Compute luminance of image$?."
   remove_opacity srgb2rgb
@@ -12180,7 +12182,7 @@ ryb2rgb :
 #@cli select_color : tolerance[%]>=0,col1,...,colN
 #@cli : Select pixels with specified color in selected images.
 #@cli : $ image.jpg +select_color 40,204,153,110
-#@cli : $$ https://gmic.eu/oldtutorial/_select_color.shtml
+#@cli : $$ https://gmic.eu/oldtutorial/_select_color
 select_color : skip ${1=0}
   e[^-1] "Select color (${2--1}) in image$?, with tolerance $1."
   repeat $! l[$>]
@@ -13809,7 +13811,7 @@ upscale_smart : skip ${2=100%},${3=100%} check "${4=2}>=0 && ${5=0.4}>=0 && $5<=
 #@cli : Default values: 'mode=0', 'interpolation=1', 'boundary_conditions=1' and 'nb_frames=1'.
 #@cli : $ image.jpg 100%,100%,1,2,'X=x/w-0.5;Y=y/h-0.5;R=(X*X+Y*Y)^0.5;A=atan2(Y,X);130*R*if(c==0,cos(4*A),sin(8*A))' \
 # warp[-2] [-1],1,1,0 quiver[-1] [-1],10,1,1,1,100
-#@cli : $$ https://gmic.eu/oldtutorial/_warp.shtml
+#@cli : $$ https://gmic.eu/oldtutorial/_warp
 
 #@cli warp_patch : [warping_field],patch_width>=1,_patch_height>=1,_patch_depth>=1,_std_factor>0,_boundary_conditions.
 #@cli : Patch-warp selected images, with specified 2D or 3D displacement field (in backward-absolute mode).
@@ -13930,7 +13932,7 @@ warp_rbf :
 #@cli : Apply bandpass filter to selected images.
 #@cli : Default values: 'min_freq=0' and 'max_freq=20%'.
 #@cli : $ image.jpg bandpass 1%,3%
-#@cli : $$ https://gmic.eu/oldtutorial/_bandpass.shtml
+#@cli : $$ https://gmic.eu/oldtutorial/_bandpass
 bandpass : skip ${1=0},${2=20%}
   e[^-1] "Apply bandpass filter [$1,$2] to image$?."
   repeat $! l[$>]
@@ -13960,13 +13962,13 @@ bandpass : skip ${1=0},${2=20%}
 #@cli : Default values: 'boundary_conditions=1' and 'kernel=1'.
 #@cli : $ image.jpg +blur 5,0 +blur[0] 5,1
 #@cli : $ image.jpg +blur y,10%
-#@cli : $$ https://gmic.eu/oldtutorial/_blur.shtml
+#@cli : $$ https://gmic.eu/oldtutorial/_blur
 
 #@cli blur_angular : amplitude[%],_center_x[%],_center_y[%]
 #@cli : Apply angular blur on selected images.
 #@cli : Default values: 'center_x=center_y=50%'.
 #@cli : $ image.jpg blur_angular 2%
-#@cli : $$ https://gmic.eu/oldtutorial/_blur_angular.shtml
+#@cli : $$ https://gmic.eu/oldtutorial/_blur_angular
 blur_angular : skip ${2=50%},${3=50%}
   e[^-1] "Apply angular blur on image$?, with amplitude $1 and center point ($2,$3)."
   euclidean2polar $2,$3,1.3,1
@@ -14007,7 +14009,7 @@ blur_bloom : check "${1=1}>=0 && ${2=2}>=0 && isint(${3=5}) && $3>=0 && isint(${
 #@cli : Apply linear blur on selected images, with specified angle and amplitudes.
 #@cli : Default values: 'amplitude2=0', 'angle=0' and 'boundary_conditions=1'.
 #@cli : $ image.jpg blur_linear 10,0,45
-#@cli : $$ https://gmic.eu/oldtutorial/_blur_linear.shtml
+#@cli : $$ https://gmic.eu/oldtutorial/_blur_linear
 blur_linear : skip ${2=0},${3=0},${4=1}
   e[^-1] "Apply linear blur on image$?, with angle $3 deg. and amplitudes ($1,$2)."
   std1={if(${is_percent\ $1},$1*max(w,h),$1)}
@@ -14024,7 +14026,7 @@ blur_linear : skip ${2=0},${3=0},${4=1}
 #@cli : Apply radial blur on selected images.
 #@cli : Default values: 'center_x=center_y=50%'.
 #@cli : $ image.jpg blur_radial 2%
-#@cli : $$ https://gmic.eu/oldtutorial/_blur_radial.shtml
+#@cli : $$ https://gmic.eu/oldtutorial/_blur_radial
 blur_radial : skip ${2=50%},${3=50%}
   e[^-1] "Apply radial blur on image$?, with amplitude $1 and center point ($2,$3)."
   euclidean2polar $2,$3,5,1 blur_x $1 polar2euclidean $2,$3,5,1
@@ -14033,7 +14035,7 @@ blur_radial : skip ${2=50%},${3=50%}
 #@cli : Blur selected images using selective gaussian scales.
 #@cli : Default values: 'sigma=5', 'edges=0.5' and 'nb_scales=5'.
 #@cli : $ image.jpg noise 20 cut 0,255 +local[-1] repeat 4 blur_selective , done endlocal
-#@cli : $$ https://gmic.eu/oldtutorial/_blur_selective.shtml
+#@cli : $$ https://gmic.eu/oldtutorial/_blur_selective
 blur_selective : check "${1=5}>=0 && ${2=0.5}>=0 && isint(${3=5}) && $3>0"
   e[^-1] "Blur image$? using $3 selective gaussian scales, with sigma $1 and edges $2."
   repeat $! l[$>] nm={0,n}
@@ -14045,7 +14047,7 @@ blur_selective : check "${1=5}>=0 && ${2=0.5}>=0 && isint(${3=5}) && $3>0"
 #@cli : Blur selected images along the x-axis.
 #@cli : Default value: 'boundary_conditions=1'.
 #@cli : $ image.jpg +blur_x 6
-#@cli : $$ https://gmic.eu/oldtutorial/_blur_x.shtml
+#@cli : $$ https://gmic.eu/oldtutorial/_blur_x
 blur_x : skip ${2=1}
   e[^-1] "Blur image$? along the x-axis, with sigma $1 and "${arg\ 1+!$2,neumann,dirichlet}" boundary conditions."
   deriche $1,0,x,$2
@@ -14054,7 +14056,7 @@ blur_x : skip ${2=1}
 #@cli : Blur selected images along the X and Y axes.
 #@cli : Default value: 'boundary_conditions=1'.
 #@cli : $ image.jpg +blur_xy 6
-#@cli : $$ https://gmic.eu/oldtutorial/_blur_y.shtml
+#@cli : $$ https://gmic.eu/oldtutorial/_blur_y
 blur_xy : skip ${2=$1},${3=1}
   e[^-1] "Blur image$? along the xy-axes, with sigma $1 and "${arg\ 1+!$2,neumann,dirichlet}" boundary conditions."
   deriche $1,0,x,$3 deriche $2,0,y,$3
@@ -14062,7 +14064,7 @@ blur_xy : skip ${2=$1},${3=1}
 #@cli blur_xyz : amplitude_x[%],amplitude_y[%],amplitude_z,_boundary_conditions={ 0=dirichlet | 1=neumann }
 #@cli : Blur selected images along the X, Y and Z axes.
 #@cli : Default value: 'boundary_conditions=1'.
-#@cli : $$ https://gmic.eu/oldtutorial/_blur_xyz.shtml
+#@cli : $$ https://gmic.eu/oldtutorial/_blur_xyz
 blur_xyz : skip ${4=1}
   e[^-1] "Blur image$? along the xyz-axes, with sigma $1 and "${arg\ 1+!$2,neumann,dirichlet}" boundary conditions."
   deriche $1,0,x,$4 deriche $2,0,y,$4 deriche $3,0,z,$4
@@ -14071,7 +14073,7 @@ blur_xyz : skip ${4=1}
 #@cli : Blur selected images along the y-axis.
 #@cli : Default value: 'boundary_conditions=1'.
 #@cli : $ image.jpg +blur_y 6
-#@cli : $$ https://gmic.eu/oldtutorial/_blur_y.shtml
+#@cli : $$ https://gmic.eu/oldtutorial/_blur_y
 blur_y : skip ${2=1}
   e[^-1] "Blur image$? along the y-axis, with sigma $1 and "${arg\ 1+!$2,neumann,dirichlet}" boundary conditions."
   deriche $1,0,y,$2
@@ -14079,7 +14081,7 @@ blur_y : skip ${2=1}
 #@cli blur_z : amplitude[%]>=0,_boundary_conditions={ 0=dirichlet | 1=neumann }
 #@cli : Blur selected images along the z-axis.
 #@cli : Default value: 'boundary_conditions=1'.
-#@cli : $$ https://gmic.eu/oldtutorial/_blur_z.shtml
+#@cli : $$ https://gmic.eu/oldtutorial/_blur_z
 blur_z : skip ${2=1}
   e[^-1] "Blur image$? along the z-axis, with sigma $1 and "${arg\ 1+!$2,neumann,dirichlet}" boundary conditions."
   deriche $1,0,z,$2
@@ -14123,7 +14125,7 @@ compose_freq :
 # 'xstride=ystride=zstride=1' and 'xdilation=ydilation=zdilation=1'.
 #@cli : $ image.jpg (0,1,0;1,-4,1;0,1,0) convolve[-2] [-1] keep[-2]
 #@cli : $ image.jpg (0,1,0) resize[-1] 130,1,1,1,3 +convolve[0] [1]
-#@cli : $$ https://gmic.eu/oldtutorial/_convolve.shtml
+#@cli : $$ https://gmic.eu/oldtutorial/_convolve
 
 #@cli convolve_fft : [mask],_boundary_conditions
 #@cli : Convolve selected images with specified mask, in the fourier domain.
@@ -14191,7 +14193,7 @@ curvature :
 #@cli : Default values: (no arg)
 #@cli : See also: ''idct''.
 #@cli : $ image.jpg +dct +idct[-1] abs[-2] +[-2] 1 log[-2]
-#@cli : $$ https://gmic.eu/oldtutorial/_dct-and-idct.shtml
+#@cli : $$ https://gmic.eu/oldtutorial/_dct-and-idct
 dct : skip ${1=0}
   ('"$1"')
   is_axes={im>=_'x'" && "iM<=_'z'}
@@ -14409,7 +14411,7 @@ denoise_patchpca : check "${1=1.8} && $1>=0 && isint(${2=7}) && $2>0 && isint(${
 #@cli : Default value: 'boundary_conditions=1'.
 #@cli : $ image.jpg deriche 3,1,x
 #@cli : $ image.jpg +deriche 30,0,x deriche[-2] 30,0,y add
-#@cli : $$ https://gmic.eu/oldtutorial/_deriche.shtml
+#@cli : $$ https://gmic.eu/oldtutorial/_deriche
 
 #@cli dilate : size>=0 : size_x>=0,size_y>=0,size_z>=0 : \
 # [kernel],_boundary_conditions,_is_real={ 0=binary-mode | 1=real-mode } : (+)
@@ -14506,7 +14508,7 @@ dog : check "${1=2%}>=0 && ${2=3%}>=0"
 #@cli : Compute the diffusion tensors of selected images for edge-preserving smoothing algorithms.
 #@cli : Default values: 'sharpness=0.7', 'anisotropy=0.3', 'alpha=0.6', 'sigma=1.1' and 'is_sqrt=0'.
 #@cli : $ image.jpg diffusiontensors 0.8 abs pow 0.2
-#@cli : $$ https://gmic.eu/oldtutorial/_diffusiontensors.shtml
+#@cli : $$ https://gmic.eu/oldtutorial/_diffusiontensors
 diffusiontensors : check "${1=0.7}>=0 && ${2=0.3}>=0 && $2<=1" skip ${3=0.6},${4=1.1},${5=0}
   e[^-1] "Compute diffusion tensors for image$?, with sharpness $1, anisotropy $2, alpha $3 and sigma $4."
   p1={if($5,0.5,1)*max($1,1e-2)}
@@ -14585,7 +14587,7 @@ erode_threshold : check "isint($1) && $1>=1 && isint(${2=$1}) && $2>=1 && isint(
 #@cli : $ image.jpg luminance +fft append[-2,-1] c norm[-1] log[-1] shift[-1] 50%,50%,0,0,2
 #@cli : $ image.jpg w2={int(w/2)} h2={int(h/2)} fft shift $w2,$h2,0,0,2 ellipse $w2,$h2,30,30,0,1,0 \
 # shift -$w2,-$h2,0,0,2 ifft remove[-1]
-#@cli : $$ https://gmic.eu/oldtutorial/_fft.shtml
+#@cli : $$ https://gmic.eu/oldtutorial/_fft
 
 #@cli g : eq. to 'gradient'. : (+)
 
@@ -14597,12 +14599,12 @@ erode_threshold : check "isint($1) && $1>=1 && isint(${2=$1}) && $2>=1 && isint(
 #@cli : (no arg) compute all significant components.
 #@cli : Default value: 'scheme=0'.
 #@cli : $ image.jpg gradient
-#@cli : $$ https://gmic.eu/oldtutorial/_gradient.shtml
+#@cli : $$ https://gmic.eu/oldtutorial/_gradient
 
 #@cli gradient_norm
 #@cli : Compute gradient norm of selected images.
 #@cli : $ image.jpg gradient_norm equalize
-#@cli : $$ https://gmic.eu/oldtutorial/_gradient_norm.shtml
+#@cli : $$ https://gmic.eu/oldtutorial/_gradient_norm
 gradient_norm :
   e[^-1] "Compute gradient norm of image$?."
   repeat $! l[$>] g sqr s c + sqrt endl done
@@ -14632,7 +14634,7 @@ gradient_orientation : check "${1=3}==1 || $1==2 || $1==3"
 #@cli haar : scale>0
 #@cli : Compute the direct haar multiscale wavelet transform of selected images.
 #@cli : See also: ''ihaar''.
-#@cli : $$ https://gmic.eu/oldtutorial/_haar.shtml
+#@cli : $$ https://gmic.eu/oldtutorial/_haar
 haar : check "isint(${1=1}) && $1>=0"
   e[^-1] "Compute haar transform of image$? with $1 scales."
   repeat $! l[$>]
@@ -14682,7 +14684,7 @@ heat_flow : skip ${1=10},${2=30},${3=0}
 #@cli : (dct images obtained with the 'dct' command are evenly sized anyway).
 #@cli : Default values: (no arg)
 #@cli : See also: ''dct''.
-#@cli : $$ https://gmic.eu/oldtutorial/_dct-and-idct.shtml
+#@cli : $$ https://gmic.eu/oldtutorial/_dct-and-idct
 idct : skip ${1=0}
   ('"$1"')
   is_axes={im>=_'x'" && "iM<=_'z'}
@@ -14743,11 +14745,12 @@ iee :
 #@cli : Compute the inverse fourier transform (real and imaginary parts) of selected images.
 #@cli : optionally along the specified axes only.
 #@cli : See also: ''fft''.
-#@cli : $$ https://gmic.eu/oldtutorial/_fft.shtml
+#@cli : $$ https://gmic.eu/oldtutorial/_fft
 
 #@cli ihaar : scale>0
 #@cli : Compute the inverse haar multiscale wavelet transform of selected images.
 #@cli : See also: ''haar''.
+#@cli : $$ https://gmic.eu/oldtutorial/_haar
 ihaar : check "isint(${1=1}) && $1>=0"
   e[^-1] "Compute inverse haar transform of image$? with $1 scales."
   repeat $! l[$>]
@@ -15655,7 +15658,7 @@ rolling_guidance : check "${1=4}>=0 && ${2=10}>=0 && ${3=0.5}>=0"
 # 'precision=2', 'interpolation=0' and 'fast_approx=1'.
 #@cli : $ image.jpg repeat 3 smooth 40,0,1,1,2 done
 #@cli : $ image.jpg 100%,100%,1,2 rand[-1] -100,100 repeat 2 smooth[-1] 100,0.2,1,4,4 done warp[0] [-1],1,1
-#@cli : $$ https://gmic.eu/oldtutorial/_smooth.shtml
+#@cli : $$ https://gmic.eu/oldtutorial/_smooth
 
 #@cli split_freq : smoothness>0[%]
 #@cli : Split selected images into low and high frequency parts.
@@ -15726,7 +15729,7 @@ split_details : check "isint(${1=4}) && $1>0 && ${2=0}>=0 && ${3=0}>=0"
 #@cli : Compute the structure tensor field of selected images.
 #@cli : Default value: 'scheme=1'.
 #@cli : $ image.jpg structuretensors abs pow 0.2
-#@cli : $$ https://gmic.eu/oldtutorial/_structuretensors.shtml
+#@cli : $$ https://gmic.eu/oldtutorial/_structuretensors
 
 #@cli solidify : _smoothness[%]>=0,_diffusion_type={ 0=isotropic | 1=delaunay-oriented | 2=edge-oriented },\
 # _diffusion_iter>=0
@@ -15983,7 +15986,7 @@ watermark_fourier : check ${2=33}>0
 #@cli : Compute area of connected components in selected images.
 #@cli : Default values: 'is_high_connectivity=0'.
 #@cli : $ image.jpg luminance stencil[-1] 1 +area 0
-#@cli : $$ https://gmic.eu/oldtutorial/_area.shtml
+#@cli : $$ https://gmic.eu/oldtutorial/_area
 area : check "$1>=0" skip ${2=0}
   e[^-1] "Compute area of connected components in image$?, with tolerance $1 and "\
          ${arg\ 1+!$2,high,low}" connectivity."
@@ -16176,7 +16179,7 @@ detect_skin : check "${1=0.5}>=0 && $1<=1" skip ${2=-1},${3=-1},${4=-1}
 #@cli : Default value: 'metric=2' and 'method=0'.
 #@cli : $ image.jpg threshold 20% distance 0 pow 0.3
 #@cli : $ 400,400 set 1,50%,50% +distance[0] 1,2 +distance[0] 1,1 distance[0] 1,0 mod 32 threshold 16 append c
-#@cli : $$ https://gmic.eu/oldtutorial/_distance.shtml
+#@cli : $$ https://gmic.eu/oldtutorial/_distance
 
 #@cli fftpolar
 #@cli : Compute fourier transform of selected images, as centered magnitude/phase images.
@@ -16290,7 +16293,7 @@ isophotes : skip ${1=64}
 #@cli : Default values: 'tolerance=0', 'is_high_connectivity=0' and 'is_L2_norm=1'.
 #@cli : $ image.jpg luminance threshold 60% label normalize 0,255 map 0
 #@cli : $ 400,400 set 1,50%,50% distance 1 mod 16 threshold 8 label mod 255 map 2
-#@cli : $$ https://gmic.eu/oldtutorial/_label.shtml
+#@cli : $$ https://gmic.eu/oldtutorial/_label
 
 #@cli label_fg : tolerance>=0,is_high_connectivity={ 0 | 1 }
 #@cli : Label connected components for non-zero values (foreground) in selected images.
@@ -17744,7 +17747,7 @@ close_binary :
 #@cli : Draw a centered gaussian on selected images, with specified standard deviations and orientation.
 #@cli : Default values: 'sigma1=3', 'sigma2=sigma1' and 'angle=0'.
 #@cli : $ 400,400 gaussian 100,30,45
-#@cli : $$ https://gmic.eu/oldtutorial/_gaussian.shtml
+#@cli : $$ https://gmic.eu/oldtutorial/_gaussian
 gaussian : skip ${1=3},${2=$1},${3=0}
   e[^-1] "Draw centered gaussian on image$? with standard deviations ($1,$2) and angle $3 deg."
   u={cos($3*pi/180)}
@@ -18168,7 +18171,7 @@ piechart : check $1>=0
 #@cli : This command implements the so-called 'Diamond-Square' algorithm.
 #@cli : Default values: 'alpha=1', 'beta=1' and 'scale=8'.
 #@cli : $ 400,400,1,3 plasma
-#@cli : $$ https://gmic.eu/oldtutorial/_plasma.shtml
+#@cli : $$ https://gmic.eu/oldtutorial/_plasma
 
 #@cli point : x[%],y[%],_z[%],_opacity,_color1,... : (+)
 #@cli : Set specified colored pixel on selected images.
@@ -18477,7 +18480,7 @@ truchet : check "isint(${1=32}) && $1>0 && ${2=3}>=0" skip ${3=1}
 #@cli : Render fractal noise or turbulence on selected images.
 #@cli : Default values: 'radius=32', 'octaves=6', 'alpha=3', 'difference=0' and 'mode=0'.
 #@cli : $ 400,400,1,3 turbulence 16
-#@cli : $$ https://gmic.eu/oldtutorial/_turbulence.shtml
+#@cli : $$ https://gmic.eu/oldtutorial/_turbulence
 turbulence : check "${1=32}>0 && ${2=6}>0" skip ${3=3},${4=0},${5=0}
   e[^-1] "Render fractal noise or turbulence on image$?, with radius $1, octaves $2, damping per octave $3,
           difference $4 and mode $5."
@@ -18535,7 +18538,7 @@ yinyang :
 #@cli : whose eigen elements are computed at each point of the field.
 #@cli : $ (1,0,0;0,2,0;0,0,3) +eigen
 #@cli : $ image.jpg structuretensors blur 2 eigen split[0] c
-#@cli : $$ https://gmic.eu/oldtutorial/_eigen.shtml
+#@cli : $$ https://gmic.eu/oldtutorial/_eigen
 
 #@cli invert : solver={ 0=SVD | 1=LU } : (+)
 #@cli : Compute the inverse of the selected matrices.
@@ -20910,13 +20913,16 @@ check_opencv : skip "${1=check_opencv}"
 #@cli : Start a 'elif...[else]...fi' block if previous 'if' was not verified
 #@cli : and test if specified condition holds
 #@cli : 'condition' is a mathematical expression, whose evaluation is interpreted as { 0=false | other=true }..
+#@cli : $$ https://gmic.eu/tutorial/iffi
 
 #@cli else : (+)
 #@cli : Execute following commands if previous 'if' or 'elif' conditions failed.
+#@cli : $$ https://gmic.eu/tutorial/iffi
 
 #@cli fi : (+)
 #@cli : End a 'if...[elif]...[else]...fi' block.
 #@cli : (eq. to 'fi').\n
+#@cli : $$ https://gmic.eu/tutorial/iffi
 
 #@cli endl : eq. to 'endlocal'. : (+)
 
@@ -20977,6 +20983,7 @@ _exec_out :
 #@cli : Start a 'if...[elif]...[else]...fi' block and test if specified condition holds.
 #@cli : 'condition' is a mathematical expression, whose evaluation is interpreted as { 0=false | other=true }.
 #@cli : $ image.jpg if ia<64 add 50% elif ia<128 add 25% elif ia<192 sub 25% else sub 50% fi cut 0,255
+#@cli : $$ https://gmic.eu/tutorial/iffi
 
 #@cli l : eq. to 'local'. : (+)
 
@@ -20985,7 +20992,7 @@ _exec_out :
 #@cli : (eq. to 'l').
 #@cli : $ image.jpg local[] 300,300,1,3 rand[0] 0,255 blur 4 sharpen 1000 endlocal
 #@cli : $ image.jpg +local repeat 3 deform 20 done endlocal
-#@cli : $$ https://gmic.eu/oldtutorial/_local.shtml
+#@cli : $$ https://gmic.eu/oldtutorial/_local
 
 #@cli mutex : index,_action={ 0=unlock | 1=lock } : (+)
 #@cli : Lock or unlock specified mutex for multi-threaded programming.
@@ -21033,7 +21040,7 @@ parallel : skip "${1=},${2=},${3=},${4=},${5=},${6=},${7=},${8=},${9=},${10=},${
 #@cli : 'nb_iterations' is a mathematical expression that will be evaluated.
 #@cli : $ image.jpg split y repeat $!,n shift[$n] $<,0,0,0,2 done append y
 #@cli : $ image.jpg mode3d 2 repeat 4 imagecube3d rotate3d 1,1,0,40 snapshot3d 400,1.4 done
-#@cli : $$ https://gmic.eu/oldtutorial/_repeat.shtml
+#@cli : $$ https://gmic.eu/oldtutorial/_repeat
 
 #@cli return : (+)
 #@cli : Return from current custom command.
@@ -49124,60 +49131,130 @@ fx_solve_maze_preview :
 #@gmic nn_lib : Define functions to evaluate and optimize neural networks.
 nn_lib :
   u "
+    const nb_threads = n;
+
     # Definition of activation functions and their derivatives.
     #----------------------------------------------------------
+    _nn_activate_pointwise(Z,activation) = (fill (#Z,k,nn_activation_#activation(#Z[k])));
+    nn_activate(Z,activation) = nn_activate_#activation(#Z);
+
+    # Linear.
     nn_activation_linear(z) = (z);
     nn_activation_deriv_linear(z) = (1);
-    nn_activate_linear(z) = ();
-    nn_activate_deriv_linear(z) = (#z = 1);
+    nn_activate_linear(Z) = (0);
+    nn_activate_deriv_linear(Z) = (#Z = 1);
 
+    # ELU: Exponential Linear Unit.
     nn_activation_elu(z) = (z<0?exp(z) - 1:z);
     nn_activation_deriv_elu(z) = (z<0?exp(z):1);
-    nn_activate_elu(z) = (fill(#z,k,nn_activation_elu(z[k])));
-    nn_activate_deriv_elu(z) = (fill(#z,k,nn_activation_deriv_elu(z[k])));
+    nn_activate_elu(Z) = _nn_activate_pointwise(Z,elu);
+    nn_activate_deriv_elu(Z) = _nn_activate_pointwise(Z,deriv_elu);
 
+    # GELU: Gaussian Error Linear Unit.
     nn_activation_gelu(z) = (0.5*z*(1 + erf(z/sqrt(2))));
     nn_activation_deriv_gelu(z) = (0.5 + 0.5*erf(z/sqrt(2)) + z*exp(-z^2/2)/sqrt(2*pi));
-    nn_activate_gelu(z) = (fill(#z,k,nn_activation_gelu(z[k])));
-    nn_activate_deriv_gelu(z) = (fill(#z,k,nn_activation_deriv_gelu(z[k])));
+    nn_activate_gelu(Z) = _nn_activate_pointwise(Z,gelu);
+    nn_activate_deriv_gelu(Z) = _nn_activate_pointwise(Z,deriv_gelu);
 
-    nn_activation_leakyrelu(z) = (z<0?0.005*z:z);
-    nn_activation_deriv_leakyrelu(z) = (z<0?0.005:1);
-    nn_activate_leakyrelu(z) = (fill(#z,k,nn_activation_leakyrelu(z[k])));
-    nn_activate_deriv_leakyrelu(z) = (fill(#z,k,nn_activation_deriv_leakyrelu(z[k])));
+    # LeakyRELU: Leaky Rectified Linear Unit.
+    nn_activation_leakyrelu(z) = (z<0?0.05*z:z);
+    nn_activation_deriv_leakyrelu(z) = (z<0?0.05:1);
+    nn_activate_leakyrelu(Z) = _nn_activate_pointwise(Z,leakyrelu);
+    nn_activate_deriv_leakyrelu(Z) = _nn_activate_pointwise(Z,deriv_leakyrelu);
 
+    # RELU: Rectified Linear Unit.
     nn_activation_relu(z) = (z<0?0:z);
     nn_activation_deriv_relu(z) = (z<0?0:1);
-    nn_activate_relu(z) = (fill(#z,k,nn_activation_relu(z[k])));
-    nn_activate_deriv_relu(z) = (fill(#z,k,nn_activation_deriv_relu(z[k])));
+    nn_activate_relu(Z) = _nn_activate_pointwise(Z,relu);
+    nn_activate_deriv_relu(Z) = _nn_activate_pointwise(Z,deriv_relu);
 
+    # Sigmoid.
     nn_activation_sigmoid(z) = (0.5 + 0.5*tanh(z/2));
     nn_activation_deriv_sigmoid(z) = (_nn_sig = nn_activation_sigmoid(z); _nn_sig*(1-_nn_sig));
-    nn_activate_sigmoid(z) = (fill(#z,k,nn_activation_sigmoid(z[k])));
-    nn_activate_deriv_sigmoid(z) = (fill(#z,k,nn_activation_deriv_sigmoid(z[k])));
+    nn_activate_sigmoid(Z) = _nn_activate_pointwise(Z,sigmoid);
+    nn_activate_deriv_sigmoid(Z) = _nn_activate_pointwise(Z,deriv_sigmoid);
 
+    # Tanh.
     nn_activation_tanh(z) = (tanh(z));
     nn_activation_deriv_tanh(z) = (1 - tanh(z)^2);
-    nn_activate_tanh(z) = (fill(#z,k,nn_activation_tanh(z[k])));
-    nn_activate_deriv_tanh(z) = (fill(#z,k,nn_activation_deriv_tanh(z[k])));
+    nn_activate_tanh(Z) = _nn_activate_pointwise(Z,tanh);
+    nn_activate_deriv_tanh(Z) = _nn_activate_pointwise(Z,deriv_tanh);
 
-    # Module: Input.
-    #---------------
-    nn_input_begin_forward(name,w,h,d,s) = (
-      name#_out = vector(##w*h*d*s);
-      ref(name#_out,#name);
-      const name#_out_width = w;
-      const name#_out_height = h;
-      const name#_out_depth = d;
-      const name#_out_spectrum = s;
+    # Batch-norm Module (BN).
+    #------------------------
+
+    nn_bn_init_forward(name,in) = (
+      unref(ind); const ind = $name#;
+
+      name#_avg = crop(#ind,0,0,1,h#ind);
+      name#_std = sqrt(crop(#ind,1,0,1,h#ind));
+
+      name#_beta = crop(#ind,2,0,1,h#ind);
+      name#_alpha = crop(#ind,3,0,1,h#ind);
+      name#_out = vector(#size(in#_out));
+      const name#_out_width = in#_out_width;
+      const name#_out_height = in#_out_height;
+      const name#_out_depth = in#_out_depth;
+      const name#_out_spectrum = in#_out_spectrum;
     );
 
-    # Module: FC (Fully Connected Layer).
-    #------------------------------------
+    nn_bn_forward(name,in) = (
+#      name#_out = name#_alpha*in#_out;
+#      name#_out+=name#_beta;
 
-    # Forward pass.
+       name#_out = in#_out;
+       name#_out-=name#_avg;
+       name#_out/=1e-5 + name#_std;
+    );
 
-    nn_fc_begin_forward(name) = (
+    nn_bn_init_backward(name,in) = (
+      name#_thread_nb_samples = vector(#nb_threads);
+      name#_thread_average_in = name#_thread_variance_in = vector(#nb_threads*size(in#_out));
+      name#_nb_samples = 0;
+      name#_average_in = name#_variance_in = vector(#size(in#_out));
+    );
+
+    nn_bn_backward(name,in) = (
+      ++name#_nb_samples;
+      name#_previous_average_in = name#_average_in;
+      name#_average_in+=(in#_out - name#_average_in)/name#_nb_samples;
+      name#_variance_in+=(in#_out - name#_average_in)*(in#_out - name#_previous_average_in);
+    );
+
+    nn_bn_end_t_backward(name) = (
+      name#_variance_in/=name#_nb_samples;
+      copy(name#_thread_nb_samples[t],name#_nb_samples);
+      copy(name#_thread_average_in[t*size(name#_average_in)],name#_average_in);
+      copy(name#_thread_variance_in[t*size(name#_variance_in)],name#_variance_in);
+      name#_average_in*=name#_nb_samples;
+    );
+
+    nn_bn_end_backward(name) = (
+      merge(name#_nb_samples,+);
+      merge(name#_average_in,+);
+      merge(name#_thread_nb_samples,+);
+      merge(name#_thread_average_in,+);
+      merge(name#_thread_variance_in,+);
+      name#_average_in/=name#_nb_samples;
+      name#_variance_in = 0;
+      for (k = 0, k<nb_threads, ++k,
+        name#_variance_in+=name#_thread_nb_samples[k]*
+          (name#_thread_variance_in[k] + (name#_thread_average_in[k] - name#_average_in)^2);
+      );
+      name#_variance_in/=name#_nb_samples;
+    );
+
+    nn_bn_update_weights(name) = (
+      unref(ind); const ind = $name#;
+      draw(#ind,name#_average_in,0,0,0,0,1,h#ind,1,1,0.01);
+      draw(#ind,name#_variance_in,1,0,0,0,1,h#ind,1,1,0.01);
+      run('w2[',ind,'] 400,400');
+    );
+
+    # Fully-Connected Module (FC).
+    #-----------------------------
+
+    nn_fc_init_forward(name) = (
       unref(ind); const ind = $name#;
       name#_weights = crop(#ind,0,0,w#ind - 1,h#ind);
       name#_biases = crop(#ind,w#ind - 1,0,1,h#ind);
@@ -49188,21 +49265,19 @@ nn_lib :
       const name#_out_spectrum = 1;
     );
 
-    nn_fc_main_forward(name,in) = (
+    nn_fc_forward(name,in) = (
       name#_out = mul(name#_weights,in#_out);
       name#_out+=name#_biases;
     );
 
-    # Backward pass.
-
-    nn_fc_begin_backward(name) = (
+    nn_fc_init_backward(name) = (
       name#_sum_deriv_weights = vector(#size(name#_weights));
       name#_sum_deriv_biases = vector(#size(name#_biases));
       name#_sum_deriv_out = vector(#size(name#_out));
     );
 
-    nn_fc_main_backward(name,in) = (
-      name#_deriv_biases = name#_out*name#_deriv_out;
+    nn_fc_backward(name,in) = (
+      name#_deriv_biases = name#_deriv_out;
       name#_deriv_weights = mul(name#_deriv_biases,in#_out,size(in#_out));
       in#_deriv_out = mul(transpose(name#_weights,in#_out_height),name#_deriv_biases);
       name#_sum_deriv_weights+=name#_deriv_weights;
@@ -49210,14 +49285,11 @@ nn_lib :
     );
 
     nn_fc_end_backward(name) = (
-      unref(ind); const ind = $name#;
       merge(name#_sum_deriv_weights,+);
       merge(name#_sum_deriv_biases,+);
     );
 
-    # Update weights.
-
-    nn_fc_end_update_weights(name) = (
+    nn_fc_update_weights(name) = (
       unref(ind); const ind = $name#;
       !no_update?(
         name#_dt_weights = learning_rate/abs(maxabs(1e-5,name#_sum_deriv_weights));
@@ -49229,27 +49301,23 @@ nn_lib :
       );
     );
 
-    # Module: FCNL (Fully Connected layer + Non Linearity).
+    # Fully Connected layer + Non Linearity Module (FCNL).
     #------------------------------------------------------
 
-    # Forward pass.
+    nn_fcnl_init_forward(name) = nn_fc_init_forward(#name);
 
-    nn_fcnl_begin_forward(name) = nn_fc_begin_forward(#name);
-
-    nn_fcnl_main_forward(name,in,activation) = (
+    nn_fcnl_forward(name,in,activation) = (
       name#_z = mul(name#_weights,in#_out);
       name#_z+=name#_biases;
       name#_out = name#_z;
-      nn_activate_#activation(name#_out);
+      nn_activate(name#_out,#activation);
     );
 
-    # Backward pass.
+    nn_fcnl_init_backward(name) = nn_fc_init_backward(#name);
 
-    nn_fcnl_begin_backward(name) = nn_fc_begin_backward(#name);
-
-    nn_fcnl_main_backward(name,in,activation) = (
+    nn_fcnl_backward(name,in,activation) = (
       name#_deriv_biases = name#_z;
-      nn_activate_deriv_#activation(name#_deriv_biases);
+      nn_activate(name#_deriv_biases,deriv_#activation);
       name#_deriv_biases*=name#_deriv_out;
       name#_deriv_weights = mul(name#_deriv_biases,in#_out,size(in#_out));
       in#_deriv_out = mul(transpose(name#_weights,in#_out_height),name#_deriv_biases);
@@ -49259,20 +49327,28 @@ nn_lib :
 
     nn_fcnl_end_backward(name) = nn_fc_end_backward(#name);
 
-    # Update weights.
+    nn_fcnl_update_weights(name) = nn_fc_update_weights(#name);
 
-    nn_fcnl_end_update_weights(name) = nn_fc_end_update_weights(#name);
+    # Input Module.
+    #--------------
 
-    # Loss: MSE (Mean-Squared Error).
-    #--------------------------------
+    nn_input_init_forward(name,w,h,d,s) = (
+      name#_out = vector(##w*h*d*s);
+      ref(name#_out,#name);
+      const name#_out_width = w;
+      const name#_out_height = h;
+      const name#_out_depth = d;
+      const name#_out_spectrum = s;
+    );
 
-    # Backward pass.
+    # Mean-Squared Error Loss (MSE).
+    #-------------------------------
 
-    nn_mse_begin_backward(name) = (
+    nn_mse_init_backward(name) = (
       name#_sum_out = 0;
     );
 
-    nn_mse_main_backward(name,in,truth) = (
+    nn_mse_backward(name,in,truth) = (
       in#_deriv_out = 2*(in#_out - truth);
       name#_out = norm(in#_deriv_out/2)^2/size(in#_deriv_out);
       name#_sum_out+=name#_out;
@@ -49282,8 +49358,7 @@ nn_lib :
       merge(name#_sum_out,+);
     );
 
-    # Update weights.
-    nn_mse_end_update_weights(name) = (
+    nn_mse_update_weights(name) = (
       no_update = 0;
       learning_rate = $_nn_#name#_learning_rate;
       name#_previous_sum_out = $_nn_#name#_previous_sum_out;
@@ -49313,40 +49388,97 @@ nn_lib :
            _nn_#name#_nb_increases,\
            _nn_#name#_nb_decreases=',name#_sum_out,',',learning_rate,',',name#_nb_increases,',',name#_nb_decreases);
     );
-  "
+
+    # Non-Linearity Module (NL).
+    #---------------------------
+    nn_nl_init_forward(name,in) = (
+      name#_out = vector(#size(in#_out));
+      const name#_out_width = in#_out_width;
+      const name#_out_height = in#_out_height;
+      const name#_out_depth = in#_out_depth;
+      const name#_out_spectrum = in#_out_spectrum;
+    );
+
+    nn_nl_forward(name,in,activation) = (
+      name#_out = in#_out;
+      nn_activate(name#_out,#activation);
+    );
+
+    nn_nl_backward(name,in,activation) = (
+      in#_deriv_out = in#_out;
+      nn_activate(in#_deriv_out,deriv_#activation);
+      in#_deriv_out*=name#_deriv_out;
+    );
+"
+
+#@gmic nn_bn : name,in
+#@gmic : Add a batch-norm module to the network.
+nn_bn : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
+  _nn_$1_in_size=$_nn_$2_out_size
+  _nn_$1_out_size=$_nn_$1_in_size
+  if !isint($$1) 4,{prod($_nn_$1_in_size)} f. 0,1 nm. $1 fi
+  _nn_init_forward.="nn_bn_init_forward($1,$2);"
+  _nn_forward.="nn_bn_forward($1,$2);"
+  _nn_init_backward.="nn_bn_init_backward($1,$2);"
+  _nn_backward="nn_bn_backward($1,$2);"$_nn_backward
+  _nn_end_t_backward="nn_bn_end_t_backward($1);"$_nn_end_t_backward
+  _nn_end_backward="nn_bn_end_backward($1);"$_nn_end_backward
+  _nn_update_weights="nn_bn_update_weights($1);"$_nn_update_weights
+
+#@gmic nn_fc : name,in,nb_neurons
+#@gmic : Add an fully connected module to the network.
+nn_fc : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($3) && $3>0"
+  _nn_$1_in_size=1,{prod($_nn_$2_out_size)},1,1
+  _nn_$1_out_size=1,$3,1,1
+  if !isint($$1) {[$_nn_$1_in_size][1]+1},$3 f. g nm. $1 fi
+  _nn_init_forward.="nn_fc_init_forward($1);"
+  _nn_forward.="nn_fc_forward($1,$2);"
+  _nn_init_backward="nn_fc_init_backward($1);"$_nn_init_backward
+  _nn_backward="nn_fc_backward($1,$2);"$_nn_backward
+  _nn_end_backward="nn_fc_end_backward($1);"$_nn_end_backward
+  _nn_update_weights="nn_fc_update_weights($1);"$_nn_update_weights
+
+#@gmic nn_fcnl : name,in,nb_neurons,activation
+#@gmic : Add an fully connected + non-linearity module to the network.
+nn_fcnl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($3) && $3>0" skip ${4=leakyrelu}
+  _nn_$1_in_size=1,{prod($_nn_$2_out_size)},1,1
+  _nn_$1_out_size=1,$3,1,1
+  if !isint($$1) {[$_nn_$1_in_size][1]+1},$3 f. g nm. $1 fi
+  _nn_init_forward.="nn_fcnl_init_forward($1);"
+  _nn_forward.="nn_fcnl_forward($1,$2,$4);"
+  _nn_init_backward="nn_fcnl_init_backward($1);"$_nn_init_backward
+  _nn_backward="nn_fcnl_backward($1,$2,$4);"$_nn_backward
+  _nn_end_backward="nn_fcnl_end_backward($1);"$_nn_end_backward
+  _nn_update_weights="nn_fcnl_update_weights($1);"$_nn_update_weights
 
 #@gmic nn_input : name,width,_height,_depth,_spectrum
 #@gmic : Add an input module to the network.
 nn_input : check ${"is_variable_name $1"}" && isint($2) && $2>0 && isint(${3=1}) && $3>0 && "\
                    "isint(${4=1}) && $4>0 && isint(${5=1}) && $5>0"
   _nn_$1_out_size=$2,$3,$4,$5
-  _nn_begin_forward.="nn_input_begin_forward("$1,$_nn_$1_out_size");"
-
-#@gmic nn_fcnl : name,in,nb_neurons,activation_function={ relu | leakyrelu | sigmoid }
-#@gmic : Add an fully connected layer to the network.
-nn_fcnl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($3) && $3>0" skip ${4=leakyrelu}
-  _nn_$1_in_size=1,{prod($_nn_$2_out_size)},1,1
-  _nn_$1_out_size=1,$3,1,1
-  if !isint($1) {[$_nn_$1_in_size][1]+1},$3 f. g nm. $1 fi
-  _nn_begin_forward.="nn_fcnl_begin_forward($1);"
-  _nn_main_forward.="nn_fcnl_main_forward($1,$2,$4);"
-  _nn_begin_backward="nn_fcnl_begin_backward($1);"$_nn_begin_backward
-  _nn_main_backward="nn_fcnl_main_backward($1,$2,$4);"$_nn_main_backward
-  _nn_end_backward="nn_fcnl_end_backward($1);"$_nn_end_backward
-  _nn_end_update_weights="nn_fcnl_end_update_weights($1);"$_nn_end_update_weights
+  _nn_init_forward.="nn_input_init_forward("$1,$_nn_$1_out_size");"
 
 #@gmic nn_mse : name,in,truth
 #@gmic : Add a MSE loss to the network.
 nn_mse : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
   _nn_$1_in_size=1,{prod($_nn_$2_out_size)},1,1
-  _nn_begin_backward="nn_mse_begin_backward($1);"$_nn_begin_backward
-  _nn_main_backward="nn_mse_main_backward($1,$2,$3);"$_nn_main_backward
+  _nn_init_backward="nn_mse_init_backward($1);"$_nn_init_backward
+  _nn_backward="nn_mse_backward($1,$2,$3);"$_nn_backward
   _nn_end_backward="nn_mse_end_backward($1);"$_nn_end_backward
-  _nn_end_update_weights="nn_mse_end_update_weights($1);"$_nn_end_update_weights
+  _nn_update_weights="nn_mse_update_weights($1);"$_nn_update_weights
   _nn_$1_previous_sum_out=inf
   _nn_$1_learning_rate=1
   _nn_$1_nb_increases=0
   _nn_$1_nb_decreases=0
+
+#@gmic nn_nl : name,in,activation
+#@gmic : Add a non-linearity module to the network.
+nn_nl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"} skip ${3=leakyrelu}
+  _nn_$1_in_size=$_nn_$2_out_size
+  _nn_$1_out_size=$_nn_$1_in_size
+  _nn_init_forward.="nn_nl_init_forward($1,$2);"
+  _nn_forward.="nn_nl_forward($1,$2,$3);"
+  _nn_backward="nn_nl_backward($1,$2,$3);"$_nn_backward
 
 #---------------
 # Test program.
@@ -49356,18 +49488,17 @@ nn_test :
   # Build neural network.
   #----------------------
   nn_input X,1,2
-  nn_fcnl FC1,X,300,leakyrelu
+  nn_bn BN,X
+  nn_fcnl FC1,X,100,leakyrelu
   nn_fcnl FC2,FC1,100,leakyrelu
-  nn_fcnl FC3,FC2,30,leakyrelu
-  nn_fcnl FC4,FC3,10,leakyrelu
-  nn_fcnl FC5,FC4,3,leakyrelu
-  nn_mse L,FC5,Y
+  nn_fc FC3,FC2,3
+  nn_mse L,FC3,Y
   sp lena,128 nm. img
 
   # Optimize network.
   #-------------------
   size_batch=128
-  repeat inf,iter
+  repeat 4096,iter
     e[] "ITER = "$iter
 
     # Build mini-batch.
@@ -49380,35 +49511,42 @@ nn_test :
       [ px,py,val ]"
     nm. batch
 
+    sh. 0 xavg={iv} rm.
+    sh. 1 yavg={iv} rm.
+
+    echo[] "FEAT = ("$xavg,$yavg")"
+
     # Mini-batch gradient descent.
-    repeat 100,sub_iter
+    repeat 30,sub_iter
       eval[batch] *${-nn_lib}"
         begin("\
-          $_nn_begin_forward\
-          $_nn_begin_backward\
-          $_nn_begin_update_weights"
+          $_nn_init_forward\
+          $_nn_init_backward"
         );
         batch = I;
         X = batch[0,2]; # Input
         Y = batch[2,3]; "\ # Ground-truth
-        $_nn_main_forward\
-        $_nn_main_backward"
+        $_nn_forward\
+        $_nn_backward"
+        end_t("\
+          $_nn_end_t_backward"
+        );
         end("\
-          $_nn_end_forward\
           $_nn_end_backward\
-          $_nn_end_update_weights"
+          $_nn_update_weights"
           !($sub_iter%100)?print(L_sum_out);
         ); I"
     done
     rm[batch]
 
     # Render image from network.
-    128,128,1,3,"*"${-nn_lib}"
-      begin("$_nn_begin_forward");
+    {img,[w,h]},1,3,*${-nn_lib}"
+      begin("$_nn_init_forward");
       X[0] = lerp(-1,1,x/(w - 1));
       X[1] = lerp(-1,1,y/(h - 1));
-      "$_nn_main_forward"
-      cut(FC5_out,0,1);"
+      "$_nn_forward"
+      255*cut(FC3_out,0,1);"
+    on. frame.png,$iter
     w. rm.
 
   done
