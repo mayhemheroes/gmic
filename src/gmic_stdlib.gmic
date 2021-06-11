@@ -49181,16 +49181,20 @@ nn_lib :
     #------------------------
 
     nn_bn_init_forward(name,in) = (
-      name#_sum_in = vector(#size(in#_out));
+      name#_nb_samples = 0;
+      name#_mean_in = name#_variance_in = vector(#size(in#_out));
       ref(in#_out,name#_out);
     );
 
     nn_bn_forward(name,in) = (
-      name#_sum_in+=in#_out;
+      ++name#_nb_samples;
+      name#_previous_mean_in = name#_mean_in;
+      name#_mean_in+=(in#_out - name#_mean_in)/name#_nb_samples;
+      name#_variance_in+=(in#_out - name#_mean_in)*(in#_out - name#_previous_mean_in);
     );
 
     nn_bn_end_forward(name,in) = (
-      merge(name#_sum_in,+);
+      merge(name#_nb_samples,+);
     );
 
     nn_bn_init_backward(name) = (
@@ -49455,7 +49459,7 @@ nn_test :
 
   # Optimize network.
   #-------------------
-  size_batch=64
+  size_batch=128
   repeat 4096,iter
     e[] "ITER = "$iter
 
