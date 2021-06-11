@@ -712,6 +712,7 @@ reference : skip "${2=}"
 "* 'z': current processed slice of the associated image, if any ('0' otherwise)."\n\
 "* 'c': current processed channel of the associated image, if any ('0' otherwise)."\n\
 "* 't': thread id when an expression is evaluated with multiple threads ('0' means __master thread__)."\n\
+"* 'T': maximum number of threads when expression is evaluated in parallel (so that 't' goes from '0' to 'T-1')."\n\
 "* 'e': value of e, i.e. `2.71828...`."\n\
 "* 'pi': value of pi, i.e. `3.1415926...`."\n\
 "* 'u': a random value between '[0,1]', following a uniform distribution."\n\
@@ -49198,24 +49199,29 @@ nn_lib :
 
     nn_bn_init_backward(name,in) = (
       name#_nb_samples = 0;
-      name#_mean_in = name#_variance_in = vector(#size(in#_out));
+      name#_average_in = name#_variance_in = vector(#size(in#_out));
+      name#_average_t_in = name#_variance_t_in = vector(#size(in#_out)*$_cpus);
     );
 
     nn_bn_backward(name,in) = (
       ++name#_nb_samples;
-      name#_previous_mean_in = name#_mean_in;
-      name#_mean_in+=(in#_out - name#_mean_in)/name#_nb_samples;
-      name#_variance_in+=(in#_out - name#_mean_in)*(in#_out - name#_previous_mean_in);
+      name#_previous_average_in = name#_average_in;
+      name#_average_in+=(in#_out - name#_average_in)/name#_nb_samples;
+      name#_variance_in+=(in#_out - name#_average_in)*(in#_out - name#_previous_average_in);
     );
 
     nn_bn_end_t_backward(name) = (
-      name#_mean_in*=name#_nb_samples;
+      name#_average_in*=name#_nb_samples;
+      name#_variance_in*=name#_nb_samples;
     );
 
     nn_bn_end_backward(name) = (
       merge(name#_nb_samples,+);
-      merge(name#_mean_in,+);
-      name#_mean_in/=name#_nb_samples;
+      merge(name#_average_in,+);
+      merge(name#_variance_in,+);
+
+
+      name#_average_in/=name#_nb_samples;
     );
 
     nn_bn_update_weights(name) = (
