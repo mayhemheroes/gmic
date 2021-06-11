@@ -49177,20 +49177,40 @@ nn_lib :
     nn_activate_tanh(Z) = _nn_activate_pointwise(Z,tanh);
     nn_activate_deriv_tanh(Z) = _nn_activate_pointwise(Z,deriv_tanh);
 
-    # Module: Input.
-    #---------------
+    # Batch-norm Module (BN).
+    #------------------------
 
-    nn_input_init_forward(name,w,h,d,s) = (
-      name#_out = vector(##w*h*d*s);
-      ref(name#_out,#name);
-      const name#_out_width = w;
-      const name#_out_height = h;
-      const name#_out_depth = d;
-      const name#_out_spectrum = s;
+    nn_bn_init_forward(name,in) = (
+      name#_sum_in = vector(#size(in#_out));
+      ref(in#_out,name#_out);
     );
 
-    # Module: FC (Fully Connected Layer).
-    #------------------------------------
+    nn_bn_forward(name,in) = (
+      name#_sum_in+=in#_out;
+    );
+
+    nn_bn_end_forward(name,in) = (
+      merge(name#_sum_in,+);
+    );
+
+    nn_bn_init_backward(name) = (
+      0;
+    );
+
+    nn_bn_backward(name,in) = (
+      0;
+    );
+
+    nn_bn_end_backward(name) = (
+      0;
+    );
+
+    nn_bn_update_weights(name) = (
+      0;
+    );
+
+    # Fully-Connected Module (FC).
+    #-----------------------------
 
     nn_fc_init_forward(name) = (
       unref(ind); const ind = $name#;
@@ -49227,7 +49247,7 @@ nn_lib :
       merge(name#_sum_deriv_biases,+);
     );
 
-    nn_fc_end_update_weights(name) = (
+    nn_fc_update_weights(name) = (
       unref(ind); const ind = $name#;
       !no_update?(
         name#_dt_weights = learning_rate/abs(maxabs(1e-5,name#_sum_deriv_weights));
@@ -49239,28 +49259,7 @@ nn_lib :
       );
     );
 
-    # Module: NL (Non Linearity).
-    #-----------------------------
-    nn_nl_init_forward(name,in) = (
-      name#_out = vector(#size(in#_out));
-      const name#_out_width = in#_out_width;
-      const name#_out_height = in#_out_height;
-      const name#_out_depth = in#_out_depth;
-      const name#_out_spectrum = in#_out_spectrum;
-    );
-
-    nn_nl_forward(name,in,activation) = (
-      name#_out = in#_out;
-      nn_activate(name#_out,#activation);
-    );
-
-    nn_nl_backward(name,in,activation) = (
-      in#_deriv_out = in#_out;
-      nn_activate(in#_deriv_out,deriv_#activation);
-      in#_deriv_out*=name#_deriv_out;
-    );
-
-    # Module: FCNL (Fully Connected layer + Non Linearity).
+    # Fully Connected layer + Non Linearity Module (FCNL).
     #------------------------------------------------------
 
     nn_fcnl_init_forward(name) = nn_fc_init_forward(#name);
@@ -49286,10 +49285,22 @@ nn_lib :
 
     nn_fcnl_end_backward(name) = nn_fc_end_backward(#name);
 
-    nn_fcnl_end_update_weights(name) = nn_fc_end_update_weights(#name);
+    nn_fcnl_update_weights(name) = nn_fc_update_weights(#name);
 
-    # Loss: MSE (Mean-Squared Error).
-    #--------------------------------
+    # Input Module.
+    #--------------
+
+    nn_input_init_forward(name,w,h,d,s) = (
+      name#_out = vector(##w*h*d*s);
+      ref(name#_out,#name);
+      const name#_out_width = w;
+      const name#_out_height = h;
+      const name#_out_depth = d;
+      const name#_out_spectrum = s;
+    );
+
+    # Mean-Squared Error Loss (MSE).
+    #-------------------------------
 
     nn_mse_init_backward(name) = (
       name#_sum_out = 0;
@@ -49305,7 +49316,7 @@ nn_lib :
       merge(name#_sum_out,+);
     );
 
-    nn_mse_end_update_weights(name) = (
+    nn_mse_update_weights(name) = (
       no_update = 0;
       learning_rate = $_nn_#name#_learning_rate;
       name#_previous_sum_out = $_nn_#name#_previous_sum_out;
@@ -49335,14 +49346,42 @@ nn_lib :
            _nn_#name#_nb_increases,\
            _nn_#name#_nb_decreases=',name#_sum_out,',',learning_rate,',',name#_nb_increases,',',name#_nb_decreases);
     );
-  "
 
-#@gmic nn_input : name,width,_height,_depth,_spectrum
-#@gmic : Add an input module to the network.
-nn_input : check ${"is_variable_name $1"}" && isint($2) && $2>0 && isint(${3=1}) && $3>0 && "\
-                   "isint(${4=1}) && $4>0 && isint(${5=1}) && $5>0"
-  _nn_$1_out_size=$2,$3,$4,$5
-  _nn_init_forward.="nn_input_init_forward("$1,$_nn_$1_out_size");"
+    # Non-Linearity Module (NL).
+    #---------------------------
+    nn_nl_init_forward(name,in) = (
+      name#_out = vector(#size(in#_out));
+      const name#_out_width = in#_out_width;
+      const name#_out_height = in#_out_height;
+      const name#_out_depth = in#_out_depth;
+      const name#_out_spectrum = in#_out_spectrum;
+    );
+
+    nn_nl_forward(name,in,activation) = (
+      name#_out = in#_out;
+      nn_activate(name#_out,#activation);
+    );
+
+    nn_nl_backward(name,in,activation) = (
+      in#_deriv_out = in#_out;
+      nn_activate(in#_deriv_out,deriv_#activation);
+      in#_deriv_out*=name#_deriv_out;
+    );
+"
+
+#@gmic nn_bn : name,in
+#@gmic : Add a batch-norm module to the network.
+nn_bn : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
+  _nn_$1_in_size=$_nn_$2_out_size
+  _nn_$1_out_size=$_nn_$1_in_size
+  if !isint($$1) 4,{prod($_nn_$1_in_size)} f. 0,1 nm. $1 fi
+  _nn_init_forward.="nn_bn_init_forward($1,$2);"
+  _nn_forward.="nn_bn_forward($1,$2);"
+  _nn_end_forward.="nn_bn_end_forward($1,$2);"
+  _nn_init_backward.="nn_bn_init_backward($1);"
+  _nn_backward="nn_bn_backward($1,$2);"$_nn_backward
+  _nn_end_backward="nn_bn_end_backward($1);"$_nn_end_backward
+  _nn_update_weights="nn_bn_update_weights($1);"$_nn_update_weights
 
 #@gmic nn_fc : name,in,nb_neurons
 #@gmic : Add an fully connected module to the network.
@@ -49355,16 +49394,7 @@ nn_fc : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($
   _nn_init_backward="nn_fc_init_backward($1);"$_nn_init_backward
   _nn_backward="nn_fc_backward($1,$2);"$_nn_backward
   _nn_end_backward="nn_fc_end_backward($1);"$_nn_end_backward
-  _nn_end_update_weights="nn_fc_end_update_weights($1);"$_nn_end_update_weights
-
-#@gmic nn_nl : name,in,activation
-#@gmic : Add a non-linearity module to the network.
-nn_nl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"} skip ${3=leakyrelu}
-  _nn_$1_in_size=$_nn_$2_out_size
-  _nn_$1_out_size=$_nn_$1_in_size
-  _nn_init_forward.="nn_nl_init_forward($1,$2);"
-  _nn_forward.="nn_nl_forward($1,$2,$3);"
-  _nn_backward="nn_nl_backward($1,$2,$3);"$_nn_backward
+  _nn_update_weights="nn_fc_update_weights($1);"$_nn_update_weights
 
 #@gmic nn_fcnl : name,in,nb_neurons,activation
 #@gmic : Add an fully connected + non-linearity module to the network.
@@ -49377,7 +49407,14 @@ nn_fcnl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint
   _nn_init_backward="nn_fcnl_init_backward($1);"$_nn_init_backward
   _nn_backward="nn_fcnl_backward($1,$2,$4);"$_nn_backward
   _nn_end_backward="nn_fcnl_end_backward($1);"$_nn_end_backward
-  _nn_end_update_weights="nn_fcnl_end_update_weights($1);"$_nn_end_update_weights
+  _nn_update_weights="nn_fcnl_update_weights($1);"$_nn_update_weights
+
+#@gmic nn_input : name,width,_height,_depth,_spectrum
+#@gmic : Add an input module to the network.
+nn_input : check ${"is_variable_name $1"}" && isint($2) && $2>0 && isint(${3=1}) && $3>0 && "\
+                   "isint(${4=1}) && $4>0 && isint(${5=1}) && $5>0"
+  _nn_$1_out_size=$2,$3,$4,$5
+  _nn_init_forward.="nn_input_init_forward("$1,$_nn_$1_out_size");"
 
 #@gmic nn_mse : name,in,truth
 #@gmic : Add a MSE loss to the network.
@@ -49386,11 +49423,20 @@ nn_mse : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
   _nn_init_backward="nn_mse_init_backward($1);"$_nn_init_backward
   _nn_backward="nn_mse_backward($1,$2,$3);"$_nn_backward
   _nn_end_backward="nn_mse_end_backward($1);"$_nn_end_backward
-  _nn_end_update_weights="nn_mse_end_update_weights($1);"$_nn_end_update_weights
+  _nn_update_weights="nn_mse_update_weights($1);"$_nn_update_weights
   _nn_$1_previous_sum_out=inf
   _nn_$1_learning_rate=1
   _nn_$1_nb_increases=0
   _nn_$1_nb_decreases=0
+
+#@gmic nn_nl : name,in,activation
+#@gmic : Add a non-linearity module to the network.
+nn_nl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"} skip ${3=leakyrelu}
+  _nn_$1_in_size=$_nn_$2_out_size
+  _nn_$1_out_size=$_nn_$1_in_size
+  _nn_init_forward.="nn_nl_init_forward($1,$2);"
+  _nn_forward.="nn_nl_forward($1,$2,$3);"
+  _nn_backward="nn_nl_backward($1,$2,$3);"$_nn_backward
 
 #---------------
 # Test program.
@@ -49400,26 +49446,16 @@ nn_test :
   # Build neural network.
   #----------------------
   nn_input X,1,2
-  # nn_fc FC1,X,300   nn_nl NL1,FC1,leakyrelu
-  # nn_fc FC2,NL1,100 nn_nl NL2,FC2,leakyrelu
-  # nn_fc FC3,NL2,30  nn_nl NL3,FC3,leakyrelu
-  # nn_fc FC4,NL3,10  nn_nl NL4,FC4,leakyrelu
-  # nn_fc FC5,NL4,3   nn_nl NL5,FC5,leakyrelu
-  # nn_mse L,NL5,Y
-
-  nn_fcnl FC1,X,500
+  nn_bn BN,X
+  nn_fcnl FC1,X,300,leakyrelu
   nn_fcnl FC2,FC1,300,leakyrelu
-  nn_fcnl FC3,FC2,100,leakyrelu
-  nn_fcnl FC4,FC3,30,leakyrelu
-  nn_fcnl FC5,FC4,10,leakyrelu
-  nn_fcnl FC6,FC5,3
-  nn_mse L,FC6,Y
-#  sp car,256 b. 1 nm. img
-  david.png r2dx. 320 nm. img
+  nn_fc FC3,FC2,3
+  nn_mse L,FC3,Y
+  sp lena,128 nm. img
 
   # Optimize network.
   #-------------------
-  size_batch=512
+  size_batch=64
   repeat 4096,iter
     e[] "ITER = "$iter
 
@@ -49434,7 +49470,7 @@ nn_test :
     nm. batch
 
     # Mini-batch gradient descent.
-    repeat 120,sub_iter
+    repeat 30,sub_iter
       eval[batch] *${-nn_lib}"
         begin("\
           $_nn_init_forward\
@@ -49446,8 +49482,9 @@ nn_test :
         $_nn_forward\
         $_nn_backward"
         end("\
+          $_nn_end_forward\
           $_nn_end_backward\
-          $_nn_end_update_weights"
+          $_nn_update_weights"
           !($sub_iter%100)?print(L_sum_out);
         ); I"
     done
@@ -49459,7 +49496,7 @@ nn_test :
       X[0] = lerp(-1,1,x/(w - 1));
       X[1] = lerp(-1,1,y/(h - 1));
       "$_nn_forward"
-      255*cut(FC6_out,0,1);"
+      255*cut(FC3_out,0,1);"
     on. frame.png,$iter
     w. rm.
 
