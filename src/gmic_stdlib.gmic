@@ -712,7 +712,7 @@ reference : skip "${2=}"
 "* 'z': current processed slice of the associated image, if any ('0' otherwise)."\n\
 "* 'c': current processed channel of the associated image, if any ('0' otherwise)."\n\
 "* 't': thread id when an expression is evaluated with multiple threads ('0' means __master thread__)."\n\
-"* 'T': maximum number of threads when expression is evaluated in parallel (so that 't' goes from '0' to 'T-1')."\n\
+"* 'n': maximum number of threads when expression is evaluated in parallel (so that 't' goes from '0' to 'n-1')."\n\
 "* 'e': value of e, i.e. `2.71828...`."\n\
 "* 'pi': value of pi, i.e. `3.1415926...`."\n\
 "* 'u': a random value between '[0,1]', following a uniform distribution."\n\
@@ -49131,6 +49131,8 @@ fx_solve_maze_preview :
 #@gmic nn_lib : Define functions to evaluate and optimize neural networks.
 nn_lib :
   u "
+    const nb_threads = n;
+
     # Definition of activation functions and their derivatives.
     #----------------------------------------------------------
     _nn_activate_pointwise(Z,activation) = (fill (#Z,k,nn_activation_#activation(#Z[k])));
@@ -49198,8 +49200,8 @@ nn_lib :
     );
 
     nn_bn_init_backward(name,in) = (
-      name#_thread_nb_samples = vectorT();
-      name#_thread_average_in = name#_thread_variance_in = vector(#T*size(in#_out));
+      name#_thread_nb_samples = vector(#nb_threads);
+      name#_thread_average_in = name#_thread_variance_in = vector(#nb_threads*size(in#_out));
       name#_nb_samples = 0;
       name#_average_in = name#_variance_in = vector(#size(in#_out));
     );
@@ -49227,8 +49229,9 @@ nn_lib :
       merge(name#_thread_variance_in,+);
       name#_average_in/=name#_nb_samples;
       name#_variance_in = 0;
-      for (k = 0, k<T, ++k,
-        name#_variance_in+=name#_thread_nb_samples[k]*(name#_thread_variance_in[k] + (name#_thread_average_in[k] - name#_average_in)^2);
+      for (k = 0, k<nb_threads, ++k,
+        name#_variance_in+=name#_thread_nb_samples[k]*
+          (name#_thread_variance_in[k] + (name#_thread_average_in[k] - name#_average_in)^2);
       );
       name#_variance_in/=name#_nb_samples;
     );
