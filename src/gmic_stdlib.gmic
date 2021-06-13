@@ -49185,10 +49185,8 @@ nn_lib :
 
     nn_bn_init_forward(name,in) = (
       unref(ind); const ind = $name#;
-
-      name#_avg = crop(#ind,0,0,1,h#ind);
-      name#_std = sqrt(crop(#ind,1,0,1,h#ind));
-
+      name#_avg = vector(#h#ind,0);
+      name#_std = vector(#h#ind,1);
       name#_beta = crop(#ind,2,0,1,h#ind);
       name#_alpha = crop(#ind,3,0,1,h#ind);
       name#_out = vector(#size(in#_out));
@@ -49246,9 +49244,9 @@ nn_lib :
 
     nn_bn_update_weights(name) = (
       unref(ind); const ind = $name#;
-      draw(#ind,name#_average_in,0,0,0,0,1,h#ind,1,1,0.01);
-      draw(#ind,name#_variance_in,1,0,0,0,1,h#ind,1,1,0.01);
-      run('w2[',ind,'] 400,400');
+      momentum = isnan(i[#ind,0])?1:0.01;
+      draw(#ind,name#_average_in,0,0,0,0,1,h#ind,1,1,momentum);
+      draw(#ind,name#_variance_in,1,0,0,0,1,h#ind,1,1,momentum);
     );
 
     # Fully-Connected Module (FC).
@@ -49379,7 +49377,7 @@ nn_lib :
           name#_nb_decreases>=10?(
             learning_rate = min(1,learning_rate*1.25);
             name#_nb_decreases = 0;
-            echo('increase dt = ',learning_rate);
+#            echo('increase dt = ',learning_rate);
           );
         );
       );
@@ -49416,7 +49414,7 @@ nn_lib :
 nn_bn : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
   _nn_$1_in_size=$_nn_$2_out_size
   _nn_$1_out_size=$_nn_$1_in_size
-  if !isint($$1) 4,{prod($_nn_$1_in_size)} f. 0,1 nm. $1 fi
+  if !isint($$1) 4,{prod($_nn_$1_in_size)} f. nan,nan,0,1 nm. $1 fi
   _nn_init_forward.="nn_bn_init_forward($1,$2);"
   _nn_forward.="nn_bn_forward($1,$2);"
   _nn_init_backward.="nn_bn_init_backward($1,$2);"
@@ -49510,11 +49508,6 @@ nn_test :
       val = I(#$img,pX,pY,0,0,1)/255;
       [ px,py,val ]"
     nm. batch
-
-    sh. 0 xavg={iv} rm.
-    sh. 1 yavg={iv} rm.
-
-    echo[] "FEAT = ("$xavg,$yavg")"
 
     # Mini-batch gradient descent.
     repeat 30,sub_iter
