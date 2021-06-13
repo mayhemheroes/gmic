@@ -49185,8 +49185,9 @@ nn_lib :
 
     nn_bn_init_forward(name,in) = (
       unref(ind); const ind = $name#;
-      name#_avg = vector(#h#ind,0);
-      name#_std = vector(#h#ind,1);
+      name#_avg = crop(#ind,0,0,1,h#ind);
+      name#_std = crop(#ind,1,0,1,h#ind);
+      isnan(i[#ind,0])?(name#_avg = 0; name#_std = 1);
       name#_beta = crop(#ind,2,0,1,h#ind);
       name#_alpha = crop(#ind,3,0,1,h#ind);
       name#_out = vector(#size(in#_out));
@@ -49197,12 +49198,11 @@ nn_lib :
     );
 
     nn_bn_forward(name,in) = (
-#      name#_out = name#_alpha*in#_out;
-#      name#_out+=name#_beta;
-
-       name#_out = in#_out;
-       name#_out-=name#_avg;
-       name#_out/=1e-5 + name#_std;
+      name#_out = in#_out;
+      name#_out-=name#_avg;
+      name#_out/=1e-5 + name#_std;
+      name#_out*=name#_alpha;
+      name#_out+=name#_beta;
     );
 
     nn_bn_init_backward(name,in) = (
@@ -49537,6 +49537,10 @@ nn_test :
       begin("$_nn_init_forward");
       X[0] = lerp(-1,1,x/(w - 1));
       X[1] = lerp(-1,1,y/(h - 1));
+
+#      X[0] = x;
+#      X[1] = y;
+
       "$_nn_forward"
       255*cut(FC3_out,0,1);"
     on. frame.png,$iter
