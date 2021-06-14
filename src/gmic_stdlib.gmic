@@ -49191,9 +49191,9 @@ nn_lib :
 
     nn_bn_init_forward(name,in) = (
       unref(ind); const ind = $name#;
-      name#_avg = crop(#ind,0,0,1,h#ind);
-      name#_std = crop(#ind,1,0,1,h#ind);
-      isnan(i[#ind,0])?(name#_avg = 0; name#_std = 1);
+      name#_mu = crop(#ind,0,0,1,h#ind);
+      name#_sigma = crop(#ind,1,0,1,h#ind);
+      isnan(i[#ind,0])?(name#_mu = 0; name#_sigma = 1);
       name#_beta = crop(#ind,2,0,1,h#ind);
       name#_alpha = crop(#ind,3,0,1,h#ind);
       name#_out = vector(#size(in#_out));
@@ -49205,8 +49205,8 @@ nn_lib :
 
     nn_bn_forward(name,in) = (
       name#_out = in#_out;
-      name#_out-=name#_avg;
-      name#_out/=1e-5 + name#_std;
+      name#_out-=name#_mu;
+      name#_out/=1e-5 + name#_sigma;
       name#_out*=name#_alpha;
       name#_out+=name#_beta;
     );
@@ -49496,7 +49496,7 @@ nn_test :
   #----------------------
   nn_input X,1,2
   nn_bn BN,X
-  nn_fcnl FC1,BN,100,leakyrelu
+  nn_fcnl FC1,X,100,leakyrelu
   nn_fcnl FC2,FC1,100,leakyrelu
   nn_fc FC3,FC2,3
   nn_mse L,FC3,Y
@@ -49519,9 +49519,9 @@ nn_test :
     nm. batch
 
     # Mini-batch gradient descent.
-    repeat 130,grad_iter
+    repeat 30,grad_iter
       eval[batch] *${-nn_lib}"
-        begin("\
+        begin(0;"\
           $_nn_init_forward\
           $_nn_init_backward"
         );
@@ -49530,13 +49530,13 @@ nn_test :
         Y = batch[2,3]; "\ # Ground-truth
         $_nn_forward\
         $_nn_backward"
-        end_t("\
-          $_nn_end_t_backward"
+        end_t(0;"\
+          $_nn_end_t_backward";
         );
-        end("\
+        end(0;"\
           $_nn_end_backward\
           $_nn_update_weights"
-          !($grad_iter%100)?print(L_sum_out);
+          !($grad_iter%20)?print(L_sum_out);
         ); I"
     done
     rm[batch]
