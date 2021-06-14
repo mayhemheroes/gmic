@@ -26032,6 +26032,7 @@ remove_copymark :
 # $1 = filename.csv
 # $2 = number of latest months.
 render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2=4}
+  use_vt100
   l[]
     it[] "$1" s -,{'\n'}
     rm[0] # Discard labels
@@ -26080,12 +26081,14 @@ render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2
       fi
 
       # Print infos.
-      e[] "- [#"$e" - "${date_$e}"] "{_${donation_$e}}" "${currency_$e}\
+      if ${donation_$e}>=15 col=$_vt100_r else col= fi
+      e[] "- ["$_vt100_c$_vt100_b"#"$e$_vt100_n" - "$_vt100_c${date_$e}$_vt100_n"] "\
+          $col$_vt100_b{_${donation_$e}}" "${currency_$e}$_vt100_n\
           " (paypal: "{_${charge_paypal_$e}}" "${currency_$e},\
           " lila: "{_${charge_lila_$e}}" "${currency_$e}" ->"\
           " "{_${donation_charged_$e}}" "${currency_$e}" ="\
           " "{_${donation_charged_eur_$e}}" eur),"\
-          " from "${name_$e}" ("${mail_$e}") : '"${message_$e}"'"
+          " from "${name_$e}" ("${mail_$e}") : '"$_vt100_b${message_$e}$_vt100_n"'"
     endl done
 
     # Compute image for donations of the last months.
@@ -26125,9 +26128,10 @@ render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2
       month_sum_eur={sum(0$month_eur)+sum(0$month_usd)/$eur2usd}
       month_sum_charged_eur={sum(0$month_charged_eur)+sum(0$month_charged_usd)/$eur2usd}
 
-      e[] "* "$s_month" "$s_year": "{_sum(0$month_eur)}" eur (charged: "{_sum(0$month_charged_eur)}" eur)"\
-          " + "{_sum(0$month_usd)}" usd (charged: "{_sum(0$month_charged_usd)}" usd)"\
-          " = "{_$month_sum_eur}" eur (charged: "{_$month_sum_charged_eur}" eur)"
+      e[] "* "$_vt100_c$_vt100_b$s_month" "$s_year": "$_vt100_n\
+          $_vt100_b{_$month_sum_eur}" eur"$_vt100_n" (charged: "{_$month_sum_charged_eur}" eur)"\
+          " = "{_sum(0$month_eur)}" eur"$_vt100_n" (charged: "{_sum(0$month_charged_eur)}" eur)"\
+          " + "{_sum(0$month_usd)}" usd (charged: "{_sum(0$month_charged_usd)}" usd)"
 
       600,30,1,3,'x<$month_sum_eur?[139,181,173]+(y>h/2?0:40):[220,230,240]' r. 500,30,1,3 c. 0,255
       shape_circle 24 s. x,2 s[-2,-1] y,2
@@ -26163,7 +26167,8 @@ render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2
 
   total_eur={$all_sum_eur+$all_sum_usd/$eur2usd}
   total_charged_eur={$all_sum_charged_eur+$all_sum_charged_usd/$eur2usd}
-  e[] "\n==> TOTAL : "{_floor($total_eur)}" eur (charged : "{_floor($total_charged_eur)}" eur)"\
+  e[] "\n==> "$_vt100_c${_vt100_b}"TOTAL : "$_vt100_n\
+      $_vt100_b{_floor($total_eur)}" eur"$_vt100_n" (charged : "{_floor($total_charged_eur)}" eur)"\
       " = "{_floor($all_sum_eur)}" eur (charged: "{_floor($all_sum_charged_eur)}" eur)"\
       " + "{_floor($all_sum_usd)}" usd (charged: "{_floor($all_sum_charged_usd)}" usd)\n"
 
