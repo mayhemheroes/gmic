@@ -49192,10 +49192,10 @@ nn_lib :
     nn_bn_init_forward(name,in) = (
       unref(ind); const ind = $name#;
 
-#      const base_col = $_nn_is_training==1?0:2;
-      const base_col = 2;
-      name#_mu = crop(#ind,base_col,0,1,h#ind);
-      name#_sigma = sqrt(crop(#ind,base_col + 1,0,1,h#ind));
+#      const name#_base_col = $_nn_is_training==1?0:2;
+      const name#_base_col = 2;
+      name#_mu = crop(#ind,name#_base_col,0,1,h#ind);
+      name#_sigma = sqrt(crop(#ind,name#_base_col + 1,0,1,h#ind));
       isnan(name#_mu[0])?(name#_mu = 0; name#_sigma = 1);
       name#_alpha = crop(#ind,4,0,1,h#ind);
       name#_beta = crop(#ind,5,0,1,h#ind);
@@ -49276,8 +49276,8 @@ nn_lib :
 
         name#_alpha-=name#_dt_alpha*name#_sum_deriv_alpha;
         name#_beta-=name#_dt_beta*name#_sum_deriv_beta;
-        draw(#ind,name#_alpha,4,0,0,0,1,h#ind);
-        draw(#ind,name#_beta,5,0,0,0,1,h#ind);
+#        draw(#ind,name#_alpha,4,0,0,0,1,h#ind);
+#        draw(#ind,name#_beta,5,0,0,0,1,h#ind);
       );
 
     );
@@ -49519,9 +49519,13 @@ nn_test :
   # Build neural network.
   #----------------------
   nn_input X,1,2
-  nn_bn BN,X
-  nn_fcnl FC1,BN,100,leakyrelu
-  nn_fcnl FC2,FC1,100,leakyrelu
+  nn_bn BN0,X
+
+  nn_fc FC1,BN0,100
+  nn_bn BN1,FC1
+  nn_nl NL1,BN1,leakyrelu
+
+  nn_fcnl FC2,NL1,100,leakyrelu
   nn_fc FC3,FC2,3
   nn_mse L,FC3,Y
   sp lena,128 nm. img
