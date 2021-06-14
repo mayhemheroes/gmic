@@ -49230,6 +49230,8 @@ nn_lib :
       name#_mean_in+=(in#_out - name#_mean_in)/name#_nb_samples;
       name#_variance_in+=(in#_out - name#_mean_in)*(in#_out - name#_previous_mean_in);
 
+      name#_sum_deriv_alpha+=name#_deriv_out*name#_z;
+      name#_sum_deriv_beta+=name#_deriv_out;
       in#_deriv_out = name#_deriv_out/(1e-8 + name#_sigma);
     );
 
@@ -49247,6 +49249,8 @@ nn_lib :
       merge(name#_allthreads_nb_samples,+);
       merge(name#_allthreads_mean_in,+);
       merge(name#_allthreads_variance_in,+);
+      merge(name#_sum_deriv_alpha,+);
+      merge(name#_sum_deriv_beta,+);
       name#_mean_in/=name#_nb_samples;
       name#_variance_in = 0;
       for (k = 0, k<nb_threads, ++k,
@@ -49265,6 +49269,16 @@ nn_lib :
         draw(#ind,name#_mean_in,2,0,0,0,1,h#ind,1,1,momentum); # Global mean and variance
         draw(#ind,name#_variance_in,3,0,0,0,1,h#ind,1,1,momentum);
       );
+
+      !no_update?(
+        name#_dt_alpha = learning_rate/abs(maxabs(1e-5,name#_sum_deriv_alpha));
+        name#_dt_beta = learning_rate/abs(maxabs(1e-5,name#_sum_deriv_beta));
+        name#_alpha-=name#_dt_alpha*name#_sum_deriv_alpha;
+        name#_beta-=name#_dt_beta*name#_sum_deriv_beta;
+#       draw(#ind,name#_alpha,4,0,0,0,1,h#ind);
+#        draw(#ind,name#_beta,5,0,0,0,1,h#ind);
+      );
+
     );
 
     # Fully-Connected Module (FC).
