@@ -49251,7 +49251,7 @@ nn_lib :
     nn_bn_update_weights(name) = (
       unref(ind); const ind = $name#;
 
-      !$grad_iter?(
+      !$gd_iter?(
         momentum = isnan(i[#ind,0])?1:0.01;
         draw(#ind,name#_average_in,0,0,0,0,1,h#ind,1,1,momentum);
         draw(#ind,name#_variance_in,1,0,0,0,1,h#ind,1,1,momentum);
@@ -49505,7 +49505,7 @@ nn_test :
   # Optimize network.
   #-------------------
   size_batch=128
-  repeat 4096,iter
+  repeat 8192,iter
     e[] "ITER = "$iter
 
     # Build mini-batch.
@@ -49515,11 +49515,11 @@ nn_test :
       pX = lerp(0,w#$img - 1,(1 + px)/2);
       pY = lerp(0,h#$img - 1,(1 + py)/2);
       val = I(#$img,pX,pY,0,0,1)/255;
-      [ px,py,val ]"
+      [ pX,pY,val ]"
     nm. batch
 
     # Mini-batch gradient descent.
-    repeat 30,grad_iter
+    repeat 30,gd_iter
       eval[batch] *${-nn_lib}"
         begin(0;"\
           $_nn_init_forward\
@@ -49536,7 +49536,7 @@ nn_test :
         end(0;"\
           $_nn_end_backward\
           $_nn_update_weights"
-          !($grad_iter%20)?print(L_sum_out);
+          !($gd_iter%20)?print(L_sum_out);
         ); I"
     done
     rm[batch]
@@ -49544,11 +49544,11 @@ nn_test :
     # Render image from network.
     {img,[w,h]},1,3,*${-nn_lib}"
       begin("$_nn_init_forward");
-      X[0] = lerp(-1,1,x/(w - 1));
-      X[1] = lerp(-1,1,y/(h - 1));
+#      X[0] = lerp(-1,1,x/(w - 1));
+#      X[1] = lerp(-1,1,y/(h - 1));
 
-#      X[0] = x;
-#      X[1] = y;
+      X[0] = x;
+      X[1] = y;
 
       "$_nn_forward"
       255*cut(FC3_out,0,1);"
