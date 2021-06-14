@@ -49213,49 +49213,48 @@ nn_lib :
 
     nn_bn_init_backward(name,in) = (
       name#_allthreads_nb_samples = vector(#nb_threads);
-      name#_allthreads_average_in = name#_allthreads_variance_in = vector(#nb_threads*size(in#_out));
+      name#_allthreads_mean_in = name#_allthreads_variance_in = vector(#nb_threads*size(in#_out));
       name#_nb_samples = 0;
-      name#_average_in = name#_variance_in = vector(#size(in#_out));
+      name#_mean_in = name#_variance_in = vector(#size(in#_out));
     );
 
     nn_bn_backward(name,in) = (
       ++name#_nb_samples;
-      name#_previous_average_in = name#_average_in;
-      name#_average_in+=(in#_out - name#_average_in)/name#_nb_samples;
-      name#_variance_in+=(in#_out - name#_average_in)*(in#_out - name#_previous_average_in);
+      name#_previous_mean_in = name#_mean_in;
+      name#_mean_in+=(in#_out - name#_mean_in)/name#_nb_samples;
+      name#_variance_in+=(in#_out - name#_mean_in)*(in#_out - name#_previous_mean_in);
     );
 
     nn_bn_end_t_backward(name) = (
       name#_variance_in/=name#_nb_samples;
       copy(name#_allthreads_nb_samples[t],name#_nb_samples);
-      copy(name#_allthreads_average_in[t*size(name#_average_in)],name#_average_in);
+      copy(name#_allthreads_mean_in[t*size(name#_mean_in)],name#_mean_in);
       copy(name#_allthreads_variance_in[t*size(name#_variance_in)],name#_variance_in);
-      name#_average_in*=name#_nb_samples;
+      name#_mean_in*=name#_nb_samples;
     );
 
     nn_bn_end_backward(name) = (
-      unref(ind); const ind = $name#;
       merge(name#_nb_samples,+);
-      merge(name#_average_in,+);
+      merge(name#_mean_in,+);
       merge(name#_allthreads_nb_samples,+);
-      merge(name#_allthreads_average_in,+);
+      merge(name#_allthreads_mean_in,+);
       merge(name#_allthreads_variance_in,+);
-      name#_average_in/=name#_nb_samples;
+      name#_mean_in/=name#_nb_samples;
       name#_variance_in = 0;
       for (k = 0, k<nb_threads, ++k,
         name#_variance_in+=name#_allthreads_nb_samples[k]*
-          (name#_allthreads_variance_in[k] + (name#_allthreads_average_in[k] - name#_average_in)^2);
+          (name#_allthreads_variance_in[k] + (name#_allthreads_mean_in[k] - name#_mean_in)^2);
       );
       name#_variance_in/=name#_nb_samples;
-      draw(#ind,name#_average_in,0,0,0,0,1,h#ind,1,1);
-      draw(#ind,name#_variance_in,1,0,0,0,1,h#ind,1,1);
     );
 
     nn_bn_update_weights(name) = (
       unref(ind); const ind = $name#;
+      draw(#ind,name#_mean_in,0,0,0,0,1,h#ind,1,1); # Update batch mean and batch variance
+      draw(#ind,name#_variance_in,1,0,0,0,1,h#ind,1,1);
       !$_nn_sgd_iter?(
         momentum = isnan(i[#ind,2])?1:0.01;
-        draw(#ind,name#_average_in,2,0,0,0,1,h#ind,1,1,momentum);
+        draw(#ind,name#_mean_in,2,0,0,0,1,h#ind,1,1,momentum); # Global mean and variance
         draw(#ind,name#_variance_in,3,0,0,0,1,h#ind,1,1,momentum);
       );
     );
