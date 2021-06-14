@@ -49209,7 +49209,7 @@ nn_lib :
     nn_bn_forward(name,in) = (
       name#_out = in#_out;
       name#_out-=name#_mu;
-      name#_out/=1e-5 + name#_sigma;
+      name#_out/=1e-8 + name#_sigma;
       name#_out*=name#_alpha;
       name#_out+=name#_beta;
     );
@@ -49219,6 +49219,9 @@ nn_lib :
       name#_allthreads_mean_in = name#_allthreads_variance_in = vector(#nb_threads*size(in#_out));
       name#_nb_samples = 0;
       name#_mean_in = name#_variance_in = vector(#size(in#_out));
+
+      name#_sum_deriv_alpha = vector(#size(name#_alpha));
+      name#_sum_deriv_beta = vector(#size(name#_beta));
     );
 
     nn_bn_backward(name,in) = (
@@ -49226,6 +49229,8 @@ nn_lib :
       name#_previous_mean_in = name#_mean_in;
       name#_mean_in+=(in#_out - name#_mean_in)/name#_nb_samples;
       name#_variance_in+=(in#_out - name#_mean_in)*(in#_out - name#_previous_mean_in);
+
+      in#_deriv_out = name#_deriv_out/(1e-8 + name#_sigma);
     );
 
     nn_bn_end_t_backward(name) = (
