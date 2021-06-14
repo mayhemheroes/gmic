@@ -49212,8 +49212,8 @@ nn_lib :
     );
 
     nn_bn_init_backward(name,in) = (
-      name#_thread_nb_samples = vector(#nb_threads);
-      name#_thread_average_in = name#_thread_variance_in = vector(#nb_threads*size(in#_out));
+      name#_allthreads_nb_samples = vector(#nb_threads);
+      name#_allthreads_average_in = name#_allthreads_variance_in = vector(#nb_threads*size(in#_out));
       name#_nb_samples = 0;
       name#_average_in = name#_variance_in = vector(#size(in#_out));
     );
@@ -49227,32 +49227,35 @@ nn_lib :
 
     nn_bn_end_t_backward(name) = (
       name#_variance_in/=name#_nb_samples;
-      copy(name#_thread_nb_samples[t],name#_nb_samples);
-      copy(name#_thread_average_in[t*size(name#_average_in)],name#_average_in);
-      copy(name#_thread_variance_in[t*size(name#_variance_in)],name#_variance_in);
+      copy(name#_allthreads_nb_samples[t],name#_nb_samples);
+      copy(name#_allthreads_average_in[t*size(name#_average_in)],name#_average_in);
+      copy(name#_allthreads_variance_in[t*size(name#_variance_in)],name#_variance_in);
       name#_average_in*=name#_nb_samples;
     );
 
     nn_bn_end_backward(name) = (
       merge(name#_nb_samples,+);
       merge(name#_average_in,+);
-      merge(name#_thread_nb_samples,+);
-      merge(name#_thread_average_in,+);
-      merge(name#_thread_variance_in,+);
+      merge(name#_allthreads_nb_samples,+);
+      merge(name#_allthreads_average_in,+);
+      merge(name#_allthreads_variance_in,+);
       name#_average_in/=name#_nb_samples;
       name#_variance_in = 0;
       for (k = 0, k<nb_threads, ++k,
-        name#_variance_in+=name#_thread_nb_samples[k]*
-          (name#_thread_variance_in[k] + (name#_thread_average_in[k] - name#_average_in)^2);
+        name#_variance_in+=name#_allthreads_nb_samples[k]*
+          (name#_allthreads_variance_in[k] + (name#_allthreads_average_in[k] - name#_average_in)^2);
       );
       name#_variance_in/=name#_nb_samples;
     );
 
     nn_bn_update_weights(name) = (
       unref(ind); const ind = $name#;
-      momentum = isnan(i[#ind,0])?1:0.01;
-      draw(#ind,name#_average_in,0,0,0,0,1,h#ind,1,1,momentum);
-      draw(#ind,name#_variance_in,1,0,0,0,1,h#ind,1,1,momentum);
+
+      !$grad_iter?(
+        momentum = isnan(i[#ind,0])?1:0.01;
+        draw(#ind,name#_average_in,0,0,0,0,1,h#ind,1,1,momentum);
+        draw(#ind,name#_variance_in,1,0,0,0,1,h#ind,1,1,momentum);
+      );
     );
 
     # Fully-Connected Module (FC).
@@ -49493,7 +49496,7 @@ nn_test :
   #----------------------
   nn_input X,1,2
   nn_bn BN,X
-  nn_fcnl FC1,X,100,leakyrelu
+  nn_fcnl FC1,BN,100,leakyrelu
   nn_fcnl FC2,FC1,100,leakyrelu
   nn_fc FC3,FC2,3
   nn_mse L,FC3,Y
@@ -49516,7 +49519,7 @@ nn_test :
     nm. batch
 
     # Mini-batch gradient descent.
-    repeat 30,sub_iter
+    repeat 130,grad_iter
       eval[batch] *${-nn_lib}"
         begin("\
           $_nn_init_forward\
@@ -49533,7 +49536,7 @@ nn_test :
         end("\
           $_nn_end_backward\
           $_nn_update_weights"
-          !($sub_iter%100)?print(L_sum_out);
+          !($grad_iter%100)?print(L_sum_out);
         ); I"
     done
     rm[batch]
