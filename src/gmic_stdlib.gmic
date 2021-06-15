@@ -49445,9 +49445,8 @@ nn_lib :
 #@gmic nn_bn : name,in
 #@gmic : Add a batch-norm module to the network.
 nn_bn : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
-  _nn_$1_in_size=$_nn_$2_out_size
-  _nn_$1_out_size=$_nn_$1_in_size
-  if !isint($$1) 6,{prod($_nn_$1_in_size)} f. nan,nan,nan,nan,1,0 nm. $1 fi
+  _nn_$1_out_size=$_nn_$2_out_size
+  if !isint($$1) 6,{prod($_nn_$2_out_size)} f. nan,nan,nan,nan,1,0 nm. $1 fi
   _nn_init_forward.="nn_bn_init_forward($1,$2);"
   _nn_forward.="nn_bn_forward($1,$2);"
   _nn_init_backward.="nn_bn_init_backward($1,$2);"
@@ -49459,9 +49458,8 @@ nn_bn : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
 #@gmic nn_fc : name,in,nb_neurons
 #@gmic : Add an fully connected module to the network.
 nn_fc : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($3) && $3>0"
-  _nn_$1_in_size=1,{prod($_nn_$2_out_size)},1,1
-  _nn_$1_out_size=1,$3,1,1
-  if !isint($$1) {[$_nn_$1_in_size][1]+1},$3 f. g nm. $1 fi
+  _nn_$1_out_size=1,1,1,$3
+  if !isint($$1) {prod($_nn_$2_out_size)+1},$3 f. g nm. $1 fi
   _nn_init_forward.="nn_fc_init_forward($1);"
   _nn_forward.="nn_fc_forward($1,$2);"
   _nn_init_backward="nn_fc_init_backward($1);"$_nn_init_backward
@@ -49472,9 +49470,8 @@ nn_fc : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($
 #@gmic nn_fcnl : name,in,nb_neurons,activation
 #@gmic : Add an fully connected + non-linearity module to the network.
 nn_fcnl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($3) && $3>0" skip ${4=leakyrelu}
-  _nn_$1_in_size=1,{prod($_nn_$2_out_size)},1,1
-  _nn_$1_out_size=1,$3,1,1
-  if !isint($$1) {[$_nn_$1_in_size][1]+1},$3 f. g nm. $1 fi
+  _nn_$1_out_size=1,1,1,$3
+  if !isint($$1) {prod($_nn_$2_out_size)+1},$3 f. g nm. $1 fi
   _nn_init_forward.="nn_fcnl_init_forward($1);"
   _nn_forward.="nn_fcnl_forward($1,$2,$4);"
   _nn_init_backward="nn_fcnl_init_backward($1);"$_nn_init_backward
@@ -49487,12 +49484,12 @@ nn_fcnl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint
 nn_input : check ${"is_variable_name $1"}" && isint($2) && $2>0 && isint(${3=1}) && $3>0 && "\
                    "isint(${4=1}) && $4>0 && isint(${5=1}) && $5>0"
   _nn_$1_out_size=$2,$3,$4,$5
-  _nn_init_forward.="nn_input_init_forward("$1,$_nn_$1_out_size");"
+  _nn_init_forward.="nn_input_init_forward($1,$2,$3,$4,$5);"
 
 #@gmic nn_mse : name,in,truth
 #@gmic : Add a MSE loss to the network.
 nn_mse : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
-  _nn_$1_in_size=1,{prod($_nn_$2_out_size)},1,1
+  _nn_$1_out_size=1,1,1,1
   _nn_init_backward="nn_mse_init_backward($1);"$_nn_init_backward
   _nn_backward="nn_mse_backward($1,$2,$3);"$_nn_backward
   _nn_end_backward="nn_mse_end_backward($1);"$_nn_end_backward
@@ -49505,8 +49502,7 @@ nn_mse : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
 #@gmic nn_nl : name,in,activation
 #@gmic : Add a non-linearity module to the network.
 nn_nl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"} skip ${3=leakyrelu}
-  _nn_$1_in_size=$_nn_$2_out_size
-  _nn_$1_out_size=$_nn_$1_in_size
+  _nn_$1_out_size=$_nn_$2_out_size
   _nn_init_forward.="nn_nl_init_forward($1,$2);"
   _nn_forward.="nn_nl_forward($1,$2,$3);"
   _nn_backward="nn_nl_backward($1,$2,$3);"$_nn_backward
@@ -49522,8 +49518,8 @@ nn_test :
   nn_bn BN0,X
 
   nn_fc FC1,BN0,100
-  nn_bn BN1,FC1
-  nn_nl NL1,BN1,leakyrelu
+#  nn_bn BN1,FC1
+  nn_nl NL1,FC1,leakyrelu
 
   nn_fcnl FC2,NL1,100,leakyrelu
   nn_fc FC3,FC2,3
