@@ -49190,13 +49190,19 @@ nn_lib :
 
     const nb_threads_max = n;
 
+    nn_init_forward() = (
+      nb_samples = 0;
+    );
+
     nn_forward() = (
       thread = t;
       nb_threads_used = thread + 1;
+      ++nb_samples;
     );
 
     nn_end_backward() = (
       merge(nb_threads_used,max);
+      merge(nb_samples,+);
     );
 
     # Batch-norm Module (BN).
@@ -49327,6 +49333,8 @@ nn_lib :
     nn_fc_end_backward(name) = (
       merge(name#_sum_deriv_weights,+);
       merge(name#_sum_deriv_biases,+);
+      name#_sum_deriv_weights/=nb_samples;
+      name#_sum_deriv_biases/=nb_samples;
     );
 
     nn_fc_update_weights(name) = (
@@ -49396,7 +49404,7 @@ nn_lib :
 
     nn_mse_end_backward(name) = (
       merge(name#_sum_out,+);
-      name#_out = name#_sum_out;
+      name#_out = name#_sum_out/nb_samples;
     );
 
     nn_mse_update_weights(name) = (
@@ -49492,6 +49500,7 @@ nn_fcnl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint
 #@gmic nn_init
 #@gmic : Initialize new neural network.
 nn_init :
+  _nn_init_forward.="nn_init_forward();"
   _nn_forward.="nn_forward();"
   _nn_end_backward="nn_end_backward();"$_nn_end_backward
 
@@ -49533,13 +49542,10 @@ nn_test :
   nn_init
   nn_input X,1,2
   nn_bn BN0,X
-
   nn_fc FC1,BN0,100
-#  nn_bn BN1,FC1
   nn_nl NL1,FC1,leakyrelu
-
   nn_fcnl FC2,NL1,100,leakyrelu
-  nn_fc FC3,FC2,3
+  nn_fcnl FC3,FC2,3,leakyrelu
   nn_mse L,FC3,Y
   sp lena,128 nm. img
 
