@@ -49137,8 +49137,6 @@ fx_solve_maze_preview :
 #@gmic nn_lib : Define functions to evaluate and optimize neural networks.
 nn_lib :
   u "
-    const nb_threads = n;
-    thread = t;
 
     # Definition of activation functions and their derivatives.
     #----------------------------------------------------------
@@ -49191,15 +49189,15 @@ nn_lib :
     #------------------------------
 
     nn_init_backward() = (
-      batch_nb_samples = 0;
-    );
-
-    nn_backward() = (
-      ++batch_nb_samples;
+      const nb_threads = n;
+      thread = t;
+      batch_nb_samples = whd;
+      batch_nb_threads = thread;
     );
 
     nn_end_backward() = (
       merge(batch_nb_samples,+);
+      merge(batch_nb_threads,max);
     );
 
     # Batch-norm Module (BN).
@@ -49251,7 +49249,7 @@ nn_lib :
 
     nn_bn_end_t_backward(name) = (
       name#_in_variance/=name#_nb_samples;
-      copy(name#_threads_nb_samples[t],name#_nb_samples);
+      copy(name#_threads_nb_samples[thread],name#_nb_samples);
       copy(name#_threads_in_mean[thread*size(name#_in_mean)],name#_in_mean);
       copy(name#_threads_in_variance[thread*size(name#_in_variance)],name#_in_variance);
       name#_in_mean*=name#_nb_samples;
@@ -49265,13 +49263,20 @@ nn_lib :
       merge(name#_threads_in_variance,+);
       merge(name#_sum_deriv_gamma,+);
       merge(name#_sum_deriv_beta,+);
+
       name#_in_mean/=name#_nb_samples;
+
+      print(name#_threads_in_mean);
+      print(name#_in_mean);
+
       name#_in_variance = 0;
       for (k = 0, k<nb_threads, ++k,
         name#_in_variance+=name#_threads_nb_samples[k]*
           (name#_threads_in_variance[k] + (name#_threads_in_mean[k] - name#_in_mean)^2);
       );
       name#_in_variance/=name#_nb_samples;
+
+      print(name#_threads_in_variance);
 
       print(name#_in_variance);
       run('q');
@@ -49504,7 +49509,6 @@ nn_fcnl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint
 #@gmic : Initialize new neural network.
 nn_init :
   _nn_init_backward="nn_init_backward();"$_nn_init_backward
-  _nn_backward="nn_backward();"$_nn_backward
   _nn_end_backward="nn_end_backward();"$_nn_end_backward
 
 #@gmic nn_input : name,width,_height,_depth,_spectrum
