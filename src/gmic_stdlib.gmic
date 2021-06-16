@@ -49263,15 +49263,7 @@ nn_lib :
       merge(name#_threads_in_variance,+);
       merge(name#_sum_deriv_gamma,+);
       merge(name#_sum_deriv_beta,+);
-
       name#_in_mean/=name#_nb_samples;
-
-      print(name#_threads_nb_samples);
-      print(name#_threads_in_mean);
-      print(name#_in_mean);
-
-      print(nb_threads);
-
       name#_in_variance = 0;
       for (k = 0, k<nb_threads, ++k,
         name#_in_variance+=name#_threads_nb_samples[k]*
@@ -49279,12 +49271,6 @@ nn_lib :
           (name#_threads_in_mean[k*size(name#_in_mean),size(name#_in_variance)] - name#_in_mean)^2);
       );
       name#_in_variance/=name#_nb_samples;
-
-      print(name#_threads_in_variance);
-
-      print(name#_in_variance);
-      run('q');
-
     );
 
     nn_bn_update_weights(name) = (
@@ -49576,18 +49562,9 @@ nn_test :
       [ px,py,val ]"
     nm. batch
 
-    repeat 2 sh. $>
-      e[] "Var1 = "{iv*(w-1)/w}
-      e[] "Var2 = "{"v = 0; for (k = 0, k<w, ++k, v+=(i[k] - ia)^2); v/w"}
-      e[] "Var3 = "{"v = 0; for (k = 0, k<w, ++k, v+=i[k]^2); v/w - ia^2"}
-      e[] "Var4 = "{"m = S = n = 0; for (k = 0, k<w, ++k, pm = i[k] - m; ++n; m+=pm/n; S+=(i[k] - m)*pm); S/w"}
-      e[] ""
-      rm.
-    done
-
     # Mini-batch stochastic gradient descent.
     _nn_is_training=1
-    repeat 50,batch_iter
+    repeat 30,batch_iter
       eval[batch] *${-nn_lib}"
         begin(0;"\
           $_nn_init_forward\
