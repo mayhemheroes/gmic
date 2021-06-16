@@ -672,7 +672,7 @@ reference : skip "${2=}"
 "previous function with vector-valued arguments."\n\
 "* 'round(value,rounding_value,direction)' returns a rounded value. 'direction' can be "\
 "{ -1=to-lowest | 0=to-nearest | 1=to-highest }."\n\
-"* 'lerp(a,b,t)' returns 'a*(1-t) + b*t'."\n\
+"* 'lerp(a,b,t)' returns 'a*(1-t)+b*t'."\n\
 "* 'swap(a,b)' swaps the values of the given arguments."\n\
 "## Variable names:"\n\
 "Variable names below are pre-defined. They can be overridden."\n\
@@ -26031,7 +26031,9 @@ remove_copymark :
 # render_donations: Parse the PayPal .CSV file and generate 'latest-months' donation gfx.
 # $1 = filename.csv
 # $2 = number of latest months.
-render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2=4}
+render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2=0}
+  use_vt100
+  nb_months={$2?$2:4}
   l[]
     it[] "$1" s -,{'\n'}
     rm[0] # Discard labels
@@ -26080,18 +26082,20 @@ render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2
       fi
 
       # Print infos.
-      e[] "- [#"$e" - "${date_$e}"] "{_${donation_$e}}" "${currency_$e}\
+      if ${donation_$e}>=15 col=$_vt100_r else col= fi
+      e[] "- ["$_vt100_c$_vt100_b"#"$e$_vt100_n" - "$_vt100_c${date_$e}$_vt100_n"] "\
+          $col$_vt100_b{_${donation_$e}}" "${currency_$e}$_vt100_n\
           " (paypal: "{_${charge_paypal_$e}}" "${currency_$e},\
           " lila: "{_${charge_lila_$e}}" "${currency_$e}" ->"\
           " "{_${donation_charged_$e}}" "${currency_$e}" ="\
           " "{_${donation_charged_eur_$e}}" eur),"\
-          " from "${name_$e}" ("${mail_$e}") : '"${message_$e}"'"
+          " from "${name_$e}" ("${mail_$e}") : '"$_vt100_b${message_$e}$_vt100_n"'"
     endl done
 
     # Compute image for donations of the last months.
     e[] ""
     all_eur,all_usd,all_charged_eur,all_charged_usd,asep_eur,asep_usd=
-    repeat $2
+    repeat $nb_months
       edate={y=date(0);m=date(1)-1-$>;while(m<=0,--y;m+=12);100*y+m}
       s_month=${"arg "$edate%100",January,February,March,April,May,June,July,August,\
                                   September,October,November,December"}
@@ -26125,9 +26129,10 @@ render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2
       month_sum_eur={sum(0$month_eur)+sum(0$month_usd)/$eur2usd}
       month_sum_charged_eur={sum(0$month_charged_eur)+sum(0$month_charged_usd)/$eur2usd}
 
-      e[] "* "$s_month" "$s_year": "{_sum(0$month_eur)}" eur (charged: "{_sum(0$month_charged_eur)}" eur)"\
-          " + "{_sum(0$month_usd)}" usd (charged: "{_sum(0$month_charged_usd)}" usd)"\
-          " = "{_$month_sum_eur}" eur (charged: "{_$month_sum_charged_eur}" eur)"
+      e[] "* "$_vt100_c$_vt100_b$s_month" "$s_year": "$_vt100_n\
+          $_vt100_b{_$month_sum_eur}" eur"$_vt100_n" (charged: "{_$month_sum_charged_eur}" eur)"\
+          " = "{_sum(0$month_eur)}" eur"$_vt100_n" (charged: "{_sum(0$month_charged_eur)}" eur)"\
+          " + "{_sum(0$month_usd)}" usd (charged: "{_sum(0$month_charged_usd)}" usd)"
 
       600,30,1,3,'x<$month_sum_eur?[139,181,173]+(y>h/2?0:40):[220,230,240]' r. 500,30,1,3 c. 0,255
       shape_circle 24 s. x,2 s[-2,-1] y,2
@@ -26158,12 +26163,13 @@ render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2
     *. 200 i[-2] 100%,100%,1,3 a[-2,-1] c
 
     rows -5,100% a y,0.5 r2dx 480
-    if $2==4 o $HOME/work/src/gmic/html/img/donations_latest_months.png fi
+    if $2==0 o $HOME/work/src/gmic/html/img/donations_latest_months.png fi
   endl
 
   total_eur={$all_sum_eur+$all_sum_usd/$eur2usd}
   total_charged_eur={$all_sum_charged_eur+$all_sum_charged_usd/$eur2usd}
-  e[] "\n==> TOTAL : "{_floor($total_eur)}" eur (charged : "{_floor($total_charged_eur)}" eur)"\
+  e[] "\n==> "$_vt100_c${_vt100_b}"TOTAL : "$_vt100_n\
+      $_vt100_b{_floor($total_eur)}" eur"$_vt100_n" (charged : "{_floor($total_charged_eur)}" eur)"\
       " = "{_floor($all_sum_eur)}" eur (charged: "{_floor($all_sum_charged_eur)}" eur)"\
       " + "{_floor($all_sum_usd)}" usd (charged: "{_floor($all_sum_charged_usd)}" usd)\n"
 
@@ -26176,7 +26182,7 @@ render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2
     shape_heart 82 +r. 100%,100%,1,3 hsv2rgb. rv[-2,-1] *. 255 a[-2,-1] c
     r. ..,..,1,100%,0,0,0.23,0.15 drop_shadow. 3,3,2,0,0
     blend alpha,0.7 r2dx 500
-    if $2==4 o $HOME/Desktop/donations_latest_months.jpg,85 rm return fi
+    if $2==0 o $HOME/Desktop/donations_latest_months.jpg,85 rm return fi
   endl
 
   # Generate coin graphics.
@@ -49131,7 +49137,6 @@ fx_solve_maze_preview :
 #@gmic nn_lib : Define functions to evaluate and optimize neural networks.
 nn_lib :
   u "
-    const nb_threads = n;
 
     # Definition of activation functions and their derivatives.
     #----------------------------------------------------------
@@ -49180,17 +49185,37 @@ nn_lib :
     nn_activate_tanh(Z) = _nn_activate_pointwise(Z,tanh);
     nn_activate_deriv_tanh(Z) = _nn_activate_pointwise(Z,deriv_tanh);
 
+    # Mandatory library constants and functions.
+    #-------------------------------------------
+
+    const nb_threads_max = n;
+
+    nn_init_forward() = (
+      nb_samples = 0;
+    );
+
+    nn_forward() = (
+      thread = t;
+      nb_threads_used = thread + 1;
+      ++nb_samples;
+    );
+
+    nn_end_backward() = (
+      merge(nb_threads_used,max);
+      merge(nb_samples,+);
+    );
+
     # Batch-norm Module (BN).
     #------------------------
 
     nn_bn_init_forward(name,in) = (
       unref(ind); const ind = $name#;
-
-      name#_avg = crop(#ind,0,0,1,h#ind);
-      name#_std = sqrt(crop(#ind,1,0,1,h#ind));
-
-      name#_beta = crop(#ind,2,0,1,h#ind);
-      name#_alpha = crop(#ind,3,0,1,h#ind);
+      const name#_base_col = $_nn_is_training==1?0:2;
+      name#_mu = crop(#ind,name#_base_col,0,1,h#ind);
+      name#_sigma = sqrt(crop(#ind,name#_base_col + 1,0,1,h#ind));
+      isnan(name#_mu[0])?(name#_mu = 0; name#_sigma = 1);
+      name#_gamma = crop(#ind,4,0,1,h#ind);
+      name#_beta = crop(#ind,5,0,1,h#ind);
       name#_out = vector(#size(in#_out));
       const name#_out_width = in#_out_width;
       const name#_out_height = in#_out_height;
@@ -49199,56 +49224,84 @@ nn_lib :
     );
 
     nn_bn_forward(name,in) = (
-#      name#_out = name#_alpha*in#_out;
-#      name#_out+=name#_beta;
-
-       name#_out = in#_out;
-       name#_out-=name#_avg;
-       name#_out/=1e-5 + name#_std;
+      name#_z = in#_out;
+      name#_z-=name#_mu;
+      name#_z/=1e-9 + name#_sigma;
+      name#_out = name#_gamma*name#_z;
+      name#_out+=name#_beta;
     );
 
     nn_bn_init_backward(name,in) = (
-      name#_thread_nb_samples = vector(#nb_threads);
-      name#_thread_average_in = name#_thread_variance_in = vector(#nb_threads*size(in#_out));
+      name#_threads_nb_samples = vector(#nb_threads_max);
+      name#_threads_in_mean = name#_threads_in_variance = vector(#nb_threads_max*size(in#_out));
       name#_nb_samples = 0;
-      name#_average_in = name#_variance_in = vector(#size(in#_out));
+      name#_in_mean = name#_in_variance = vector(#size(in#_out));
+      name#_batch_deriv_gamma = vector(#size(name#_gamma));
+      name#_batch_deriv_beta = vector(#size(name#_beta));
     );
 
-    nn_bn_backward(name,in) = (
+    nn_bn_backward(name,in,learning_mode) = (
       ++name#_nb_samples;
-      name#_previous_average_in = name#_average_in;
-      name#_average_in+=(in#_out - name#_average_in)/name#_nb_samples;
-      name#_variance_in+=(in#_out - name#_average_in)*(in#_out - name#_previous_average_in);
+      name#_pim = in#_out - name#_in_mean;
+      name#_in_mean+=name#_pim/name#_nb_samples;
+      name#_in_variance+=(in#_out - name#_in_mean)*name#_pim;
+      learning_mode&1?(
+        name#_batch_deriv_gamma+=name#_deriv_out*name#_z;
+      );
+      learning_mode&2?(
+        name#_batch_deriv_beta+=name#_deriv_out;
+      );
+      in#_deriv_out = name#_deriv_out*name#_gamma/(1e-9 + name#_sigma);
     );
 
     nn_bn_end_t_backward(name) = (
-      name#_variance_in/=name#_nb_samples;
-      copy(name#_thread_nb_samples[t],name#_nb_samples);
-      copy(name#_thread_average_in[t*size(name#_average_in)],name#_average_in);
-      copy(name#_thread_variance_in[t*size(name#_variance_in)],name#_variance_in);
-      name#_average_in*=name#_nb_samples;
+      name#_in_variance/=name#_nb_samples;
+      copy(name#_threads_nb_samples[thread],name#_nb_samples);
+      copy(name#_threads_in_mean[thread*size(name#_in_mean)],name#_in_mean);
+      copy(name#_threads_in_variance[thread*size(name#_in_variance)],name#_in_variance);
+      name#_in_mean*=name#_nb_samples;
     );
 
     nn_bn_end_backward(name) = (
       merge(name#_nb_samples,+);
-      merge(name#_average_in,+);
-      merge(name#_thread_nb_samples,+);
-      merge(name#_thread_average_in,+);
-      merge(name#_thread_variance_in,+);
-      name#_average_in/=name#_nb_samples;
-      name#_variance_in = 0;
-      for (k = 0, k<nb_threads, ++k,
-        name#_variance_in+=name#_thread_nb_samples[k]*
-          (name#_thread_variance_in[k] + (name#_thread_average_in[k] - name#_average_in)^2);
+      merge(name#_in_mean,+);
+      merge(name#_threads_nb_samples,+);
+      merge(name#_threads_in_mean,+);
+      merge(name#_threads_in_variance,+);
+      merge(name#_batch_deriv_gamma,+);
+      merge(name#_batch_deriv_beta,+);
+      name#_in_mean/=name#_nb_samples;
+      name#_in_variance = 0;
+      for (k = 0, k<nb_threads_used, ++k,
+        name#_in_variance+=name#_threads_nb_samples[k]*
+          (name#_threads_in_variance[k*size(name#_in_variance),size(name#_in_variance)] +
+          (name#_threads_in_mean[k*size(name#_in_mean),size(name#_in_variance)] - name#_in_mean)^2);
       );
-      name#_variance_in/=name#_nb_samples;
+      name#_in_variance/=name#_nb_samples;
     );
 
-    nn_bn_update_weights(name) = (
+    nn_bn_update(name,learning_mode) = (
       unref(ind); const ind = $name#;
-      draw(#ind,name#_average_in,0,0,0,0,1,h#ind,1,1,0.01);
-      draw(#ind,name#_variance_in,1,0,0,0,1,h#ind,1,1,0.01);
-      run('w2[',ind,'] 400,400');
+      draw(#ind,name#_in_mean,0,0,0,0,1,h#ind,1,1); # Update batch mean and batch variance
+      draw(#ind,name#_in_variance,1,0,0,0,1,h#ind,1,1);
+      !$batch_iter?(
+        momentum = isnan(i[#ind,2])?1:0.01;
+        draw(#ind,name#_in_mean,2,0,0,0,1,h#ind,1,1,momentum); # Global mean and variance
+        draw(#ind,name#_in_variance,3,0,0,0,1,h#ind,1,1,momentum);
+      );
+
+      !no_update?(
+        learning_mode&1?(
+          name#_dt_gamma = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_gamma));
+          name#_gamma-=name#_dt_gamma*name#_batch_deriv_gamma;
+          draw(#ind,name#_gamma,4,0,0,0,1,h#ind);
+        );
+        learning_mode&2?(
+          name#_dt_beta = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_beta));
+          name#_beta-=name#_dt_beta*name#_batch_deriv_beta;
+          draw(#ind,name#_beta,5,0,0,0,1,h#ind);
+        );
+      );
     );
 
     # Fully-Connected Module (FC).
@@ -49271,31 +49324,33 @@ nn_lib :
     );
 
     nn_fc_init_backward(name) = (
-      name#_sum_deriv_weights = vector(#size(name#_weights));
-      name#_sum_deriv_biases = vector(#size(name#_biases));
-      name#_sum_deriv_out = vector(#size(name#_out));
+      name#_batch_deriv_weights = vector(#size(name#_weights));
+      name#_batch_deriv_biases = vector(#size(name#_biases));
+      name#_batch_deriv_out = vector(#size(name#_out));
     );
 
     nn_fc_backward(name,in) = (
       name#_deriv_biases = name#_deriv_out;
       name#_deriv_weights = mul(name#_deriv_biases,in#_out,size(in#_out));
       in#_deriv_out = mul(transpose(name#_weights,in#_out_height),name#_deriv_biases);
-      name#_sum_deriv_weights+=name#_deriv_weights;
-      name#_sum_deriv_biases+=name#_deriv_biases;
+      name#_batch_deriv_weights+=name#_deriv_weights;
+      name#_batch_deriv_biases+=name#_deriv_biases;
     );
 
     nn_fc_end_backward(name) = (
-      merge(name#_sum_deriv_weights,+);
-      merge(name#_sum_deriv_biases,+);
+      merge(name#_batch_deriv_weights,+);
+      merge(name#_batch_deriv_biases,+);
+      name#_batch_deriv_weights/=nb_samples;
+      name#_batch_deriv_biases/=nb_samples;
     );
 
-    nn_fc_update_weights(name) = (
+    nn_fc_update(name) = (
       unref(ind); const ind = $name#;
       !no_update?(
-        name#_dt_weights = learning_rate/abs(maxabs(1e-5,name#_sum_deriv_weights));
-        name#_dt_biases = learning_rate/abs(maxabs(1e-5,name#_sum_deriv_biases));
-        name#_weights-=name#_dt_weights*name#_sum_deriv_weights;
-        name#_biases-=name#_dt_biases*name#_sum_deriv_biases;
+        name#_dt_weights = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_weights));
+        name#_dt_biases = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_biases));
+        name#_weights-=name#_dt_weights*name#_batch_deriv_weights;
+        name#_biases-=name#_dt_biases*name#_batch_deriv_biases;
         draw(#ind,name#_weights,0,0,0,0,w#ind - 1,h#ind);
         draw(#ind,name#_biases,w#ind - 1,0,0,0,1,h#ind);
       );
@@ -49321,13 +49376,13 @@ nn_lib :
       name#_deriv_biases*=name#_deriv_out;
       name#_deriv_weights = mul(name#_deriv_biases,in#_out,size(in#_out));
       in#_deriv_out = mul(transpose(name#_weights,in#_out_height),name#_deriv_biases);
-      name#_sum_deriv_weights+=name#_deriv_weights;
-      name#_sum_deriv_biases+=name#_deriv_biases;
+      name#_batch_deriv_weights+=name#_deriv_weights;
+      name#_batch_deriv_biases+=name#_deriv_biases;
     );
 
     nn_fcnl_end_backward(name) = nn_fc_end_backward(#name);
 
-    nn_fcnl_update_weights(name) = nn_fc_update_weights(#name);
+    nn_fcnl_update(name) = nn_fc_update(#name);
 
     # Input Module.
     #--------------
@@ -49345,27 +49400,28 @@ nn_lib :
     #-------------------------------
 
     nn_mse_init_backward(name) = (
-      name#_sum_out = 0;
+      name#_batch_out = 0;
     );
 
     nn_mse_backward(name,in,truth) = (
       in#_deriv_out = 2*(in#_out - truth);
       name#_out = norm(in#_deriv_out/2)^2/size(in#_deriv_out);
-      name#_sum_out+=name#_out;
+      name#_batch_out+=name#_out;
     );
 
     nn_mse_end_backward(name) = (
-      merge(name#_sum_out,+);
+      merge(name#_batch_out,+);
+      name#_out = name#_batch_out/nb_samples;
     );
 
-    nn_mse_update_weights(name) = (
+    nn_mse_update(name) = (
       no_update = 0;
       learning_rate = $_nn_#name#_learning_rate;
-      name#_previous_sum_out = $_nn_#name#_previous_sum_out;
+      name#_previous_batch_out = $_nn_#name#_previous_batch_out;
       name#_nb_increases = $_nn_#name#_nb_increases;
       name#_nb_decreases = $_nn_#name#_nb_decreases;
-      !isinf(name#_previous_sum_out)?(
-        name#_sum_out>name#_previous_sum_out?(
+      !isinf(name#_previous_batch_out)?(
+        name#_batch_out>name#_previous_batch_out?(
           ++name#_nb_increases;
           name#_nb_decreases = 0;
           name#_nb_increases>=2?(
@@ -49379,14 +49435,14 @@ nn_lib :
           name#_nb_decreases>=10?(
             learning_rate = min(1,learning_rate*1.25);
             name#_nb_decreases = 0;
-            echo('increase dt = ',learning_rate);
+#            echo('increase dt = ',learning_rate);
           );
         );
       );
-      run('_nn_#name#_previous_sum_out,\
+      run('_nn_#name#_previous_batch_out,\
            _nn_#name#_learning_rate,\
            _nn_#name#_nb_increases,\
-           _nn_#name#_nb_decreases=',name#_sum_out,',',learning_rate,',',name#_nb_increases,',',name#_nb_decreases);
+           _nn_#name#_nb_decreases=',name#_batch_out,',',learning_rate,',',name#_nb_increases,',',name#_nb_decreases);
     );
 
     # Non-Linearity Module (NL).
@@ -49411,62 +49467,66 @@ nn_lib :
     );
 "
 
-#@gmic nn_bn : name,in
+#@gmic nn_bn : name,in,learning_mode={ 0=no parameters learnt | 1=gamma-only | 2=beta-only | 3=gamma & beta}
 #@gmic : Add a batch-norm module to the network.
-nn_bn : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
-  _nn_$1_in_size=$_nn_$2_out_size
-  _nn_$1_out_size=$_nn_$1_in_size
-  if !isint($$1) 4,{prod($_nn_$1_in_size)} f. 0,1 nm. $1 fi
+nn_bn : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint(${3=0}) && inrange($3,0,3)"
+  _nn_$1_out_size=$_nn_$2_out_size
+  if !isint($$1) 6,{prod($_nn_$2_out_size)} f. nan,nan,nan,nan,1,0 nm. $1 fi
   _nn_init_forward.="nn_bn_init_forward($1,$2);"
   _nn_forward.="nn_bn_forward($1,$2);"
   _nn_init_backward.="nn_bn_init_backward($1,$2);"
-  _nn_backward="nn_bn_backward($1,$2);"$_nn_backward
+  _nn_backward="nn_bn_backward($1,$2,$3);"$_nn_backward
   _nn_end_t_backward="nn_bn_end_t_backward($1);"$_nn_end_t_backward
   _nn_end_backward="nn_bn_end_backward($1);"$_nn_end_backward
-  _nn_update_weights="nn_bn_update_weights($1);"$_nn_update_weights
+  _nn_update="nn_bn_update($1,$3);"$_nn_update
 
 #@gmic nn_fc : name,in,nb_neurons
 #@gmic : Add an fully connected module to the network.
 nn_fc : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($3) && $3>0"
-  _nn_$1_in_size=1,{prod($_nn_$2_out_size)},1,1
-  _nn_$1_out_size=1,$3,1,1
-  if !isint($$1) {[$_nn_$1_in_size][1]+1},$3 f. g nm. $1 fi
+  _nn_$1_out_size=1,1,1,$3
+  if !isint($$1) {prod($_nn_$2_out_size)+1},$3 f. g nm. $1 fi
   _nn_init_forward.="nn_fc_init_forward($1);"
   _nn_forward.="nn_fc_forward($1,$2);"
   _nn_init_backward="nn_fc_init_backward($1);"$_nn_init_backward
   _nn_backward="nn_fc_backward($1,$2);"$_nn_backward
   _nn_end_backward="nn_fc_end_backward($1);"$_nn_end_backward
-  _nn_update_weights="nn_fc_update_weights($1);"$_nn_update_weights
+  _nn_update="nn_fc_update($1);"$_nn_update
 
 #@gmic nn_fcnl : name,in,nb_neurons,activation
 #@gmic : Add an fully connected + non-linearity module to the network.
 nn_fcnl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($3) && $3>0" skip ${4=leakyrelu}
-  _nn_$1_in_size=1,{prod($_nn_$2_out_size)},1,1
-  _nn_$1_out_size=1,$3,1,1
-  if !isint($$1) {[$_nn_$1_in_size][1]+1},$3 f. g nm. $1 fi
+  _nn_$1_out_size=1,1,1,$3
+  if !isint($$1) {prod($_nn_$2_out_size)+1},$3 f. g nm. $1 fi
   _nn_init_forward.="nn_fcnl_init_forward($1);"
   _nn_forward.="nn_fcnl_forward($1,$2,$4);"
   _nn_init_backward="nn_fcnl_init_backward($1);"$_nn_init_backward
   _nn_backward="nn_fcnl_backward($1,$2,$4);"$_nn_backward
   _nn_end_backward="nn_fcnl_end_backward($1);"$_nn_end_backward
-  _nn_update_weights="nn_fcnl_update_weights($1);"$_nn_update_weights
+  _nn_update="nn_fcnl_update($1);"$_nn_update
+
+#@gmic nn_init
+#@gmic : Initialize new neural network.
+nn_init :
+  _nn_init_forward.="nn_init_forward();"
+  _nn_forward.="nn_forward();"
+  _nn_end_backward="nn_end_backward();"$_nn_end_backward
 
 #@gmic nn_input : name,width,_height,_depth,_spectrum
 #@gmic : Add an input module to the network.
 nn_input : check ${"is_variable_name $1"}" && isint($2) && $2>0 && isint(${3=1}) && $3>0 && "\
                    "isint(${4=1}) && $4>0 && isint(${5=1}) && $5>0"
   _nn_$1_out_size=$2,$3,$4,$5
-  _nn_init_forward.="nn_input_init_forward("$1,$_nn_$1_out_size");"
+  _nn_init_forward.="nn_input_init_forward($1,$2,$3,$4,$5);"
 
 #@gmic nn_mse : name,in,truth
 #@gmic : Add a MSE loss to the network.
 nn_mse : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
-  _nn_$1_in_size=1,{prod($_nn_$2_out_size)},1,1
+  _nn_$1_out_size=1,1,1,1
   _nn_init_backward="nn_mse_init_backward($1);"$_nn_init_backward
   _nn_backward="nn_mse_backward($1,$2,$3);"$_nn_backward
   _nn_end_backward="nn_mse_end_backward($1);"$_nn_end_backward
-  _nn_update_weights="nn_mse_update_weights($1);"$_nn_update_weights
-  _nn_$1_previous_sum_out=inf
+  _nn_update="nn_mse_update($1);"$_nn_update
+  _nn_$1_previous_batch_out=inf
   _nn_$1_learning_rate=1
   _nn_$1_nb_increases=0
   _nn_$1_nb_decreases=0
@@ -49474,8 +49534,7 @@ nn_mse : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
 #@gmic nn_nl : name,in,activation
 #@gmic : Add a non-linearity module to the network.
 nn_nl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"} skip ${3=leakyrelu}
-  _nn_$1_in_size=$_nn_$2_out_size
-  _nn_$1_out_size=$_nn_$1_in_size
+  _nn_$1_out_size=$_nn_$2_out_size
   _nn_init_forward.="nn_nl_init_forward($1,$2);"
   _nn_forward.="nn_nl_forward($1,$2,$3);"
   _nn_backward="nn_nl_backward($1,$2,$3);"$_nn_backward
@@ -49487,39 +49546,40 @@ nn_test :
 
   # Build neural network.
   #----------------------
+  nn_init
   nn_input X,1,2
-  nn_bn BN,X
-  nn_fcnl FC1,X,100,leakyrelu
-  nn_fcnl FC2,FC1,100,leakyrelu
-  nn_fc FC3,FC2,3
+  nn_bn BN0,X
+  nn_fc FC1,BN0,100
+  nn_nl NL1,FC1,leakyrelu
+  nn_fcnl FC2,NL1,50,leakyrelu
+  nn_fcnl FC3,FC2,3,leakyrelu
+
+#  nn_bn BN3,FC3
+
+
   nn_mse L,FC3,Y
   sp lena,128 nm. img
 
   # Optimize network.
   #-------------------
-  size_batch=128
-  repeat 4096,iter
+  size_batch=256
+  repeat 8192,iter
     e[] "ITER = "$iter
 
     # Build mini-batch.
     $size_batch,1,1,5,"
-      px = u(-1,1);
-      py = u(-1,1);
-      pX = lerp(0,w#$img - 1,(1 + px)/2);
-      pY = lerp(0,h#$img - 1,(1 + py)/2);
-      val = I(#$img,pX,pY,0,0,1)/255;
+      const ind = $img;
+      px = u(0,w#ind)%w#ind;
+      py = u(0,h#ind)%h#ind;
+      val = I(#$img,px,py,0,0,1);
       [ px,py,val ]"
     nm. batch
 
-    sh. 0 xavg={iv} rm.
-    sh. 1 yavg={iv} rm.
-
-    echo[] "FEAT = ("$xavg,$yavg")"
-
-    # Mini-batch gradient descent.
-    repeat 30,sub_iter
+    # Mini-batch stochastic gradient descent.
+    _nn_is_training=1
+    repeat 256,batch_iter
       eval[batch] *${-nn_lib}"
-        begin("\
+        begin(0;"\
           $_nn_init_forward\
           $_nn_init_backward"
         );
@@ -49528,24 +49588,25 @@ nn_test :
         Y = batch[2,3]; "\ # Ground-truth
         $_nn_forward\
         $_nn_backward"
-        end_t("\
-          $_nn_end_t_backward"
+        end_t(0;"\
+          $_nn_end_t_backward";
         );
-        end("\
+        end(0;"\
           $_nn_end_backward\
-          $_nn_update_weights"
-          !($sub_iter%100)?print(L_sum_out);
+          $_nn_update"
+          !($batch_iter%20)?print(L_out);
         ); I"
     done
     rm[batch]
 
     # Render image from network.
+    _nn_is_training=0
     {img,[w,h]},1,3,*${-nn_lib}"
       begin("$_nn_init_forward");
-      X[0] = lerp(-1,1,x/(w - 1));
-      X[1] = lerp(-1,1,y/(h - 1));
+      X[0] = x;
+      X[1] = y;
       "$_nn_forward"
-      255*cut(FC3_out,0,1);"
+      FC3_out"
     on. frame.png,$iter
     w. rm.
 
