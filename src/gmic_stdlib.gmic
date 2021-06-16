@@ -49226,7 +49226,7 @@ nn_lib :
     nn_bn_forward(name,in) = (
       name#_z = in#_out;
       name#_z-=name#_mu;
-      name#_z/=1e-8 + name#_sigma;
+      name#_z/=1e-9 + name#_sigma;
       name#_out = name#_gamma*name#_z;
       name#_out+=name#_beta;
     );
@@ -49245,9 +49245,10 @@ nn_lib :
       name#_pim = in#_out - name#_in_mean;
       name#_in_mean+=name#_pim/name#_nb_samples;
       name#_in_variance+=(in#_out - name#_in_mean)*name#_pim;
+
       name#_batch_deriv_gamma+=name#_deriv_out*name#_z;
       name#_batch_deriv_beta+=name#_deriv_out;
-      in#_deriv_out = name#_deriv_out/(1e-8 + name#_sigma);
+      in#_deriv_out = name#_deriv_out*name#_gamma/(1e-9 + name#_sigma);
     );
 
     nn_bn_end_t_backward(name) = (
@@ -49276,7 +49277,7 @@ nn_lib :
       name#_in_variance/=name#_nb_samples;
     );
 
-    nn_bn_update_weights(name) = (
+    nn_bn_update(name) = (
       unref(ind); const ind = $name#;
       draw(#ind,name#_in_mean,0,0,0,0,1,h#ind,1,1); # Update batch mean and batch variance
       draw(#ind,name#_in_variance,1,0,0,0,1,h#ind,1,1);
@@ -49287,8 +49288,8 @@ nn_lib :
       );
 
       !no_update?(
-        name#_dt_gamma = 1e-5/abs(maxabs(1e-5,name#_batch_deriv_gamma));
-        name#_dt_beta = 1e-5/abs(maxabs(1e-5,name#_batch_deriv_beta));
+        name#_dt_gamma = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_gamma));
+        name#_dt_beta = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_beta));
         name#_gamma-=name#_dt_gamma*name#_batch_deriv_gamma;
         name#_beta-=name#_dt_beta*name#_batch_deriv_beta;
         draw(#ind,name#_gamma,4,0,0,0,1,h#ind);
@@ -49337,7 +49338,7 @@ nn_lib :
       name#_batch_deriv_biases/=nb_samples;
     );
 
-    nn_fc_update_weights(name) = (
+    nn_fc_update(name) = (
       unref(ind); const ind = $name#;
       !no_update?(
         name#_dt_weights = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_weights));
@@ -49375,7 +49376,7 @@ nn_lib :
 
     nn_fcnl_end_backward(name) = nn_fc_end_backward(#name);
 
-    nn_fcnl_update_weights(name) = nn_fc_update_weights(#name);
+    nn_fcnl_update(name) = nn_fc_update(#name);
 
     # Input Module.
     #--------------
@@ -49407,7 +49408,7 @@ nn_lib :
       name#_out = name#_batch_out/nb_samples;
     );
 
-    nn_mse_update_weights(name) = (
+    nn_mse_update(name) = (
       no_update = 0;
       learning_rate = $_nn_#name#_learning_rate;
       name#_previous_batch_out = $_nn_#name#_previous_batch_out;
@@ -49471,7 +49472,7 @@ nn_bn : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
   _nn_backward="nn_bn_backward($1,$2);"$_nn_backward
   _nn_end_t_backward="nn_bn_end_t_backward($1);"$_nn_end_t_backward
   _nn_end_backward="nn_bn_end_backward($1);"$_nn_end_backward
-  _nn_update_weights="nn_bn_update_weights($1);"$_nn_update_weights
+  _nn_update="nn_bn_update($1);"$_nn_update
 
 #@gmic nn_fc : name,in,nb_neurons
 #@gmic : Add an fully connected module to the network.
@@ -49483,7 +49484,7 @@ nn_fc : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($
   _nn_init_backward="nn_fc_init_backward($1);"$_nn_init_backward
   _nn_backward="nn_fc_backward($1,$2);"$_nn_backward
   _nn_end_backward="nn_fc_end_backward($1);"$_nn_end_backward
-  _nn_update_weights="nn_fc_update_weights($1);"$_nn_update_weights
+  _nn_update="nn_fc_update($1);"$_nn_update
 
 #@gmic nn_fcnl : name,in,nb_neurons,activation
 #@gmic : Add an fully connected + non-linearity module to the network.
@@ -49495,7 +49496,7 @@ nn_fcnl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint
   _nn_init_backward="nn_fcnl_init_backward($1);"$_nn_init_backward
   _nn_backward="nn_fcnl_backward($1,$2,$4);"$_nn_backward
   _nn_end_backward="nn_fcnl_end_backward($1);"$_nn_end_backward
-  _nn_update_weights="nn_fcnl_update_weights($1);"$_nn_update_weights
+  _nn_update="nn_fcnl_update($1);"$_nn_update
 
 #@gmic nn_init
 #@gmic : Initialize new neural network.
@@ -49518,7 +49519,7 @@ nn_mse : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
   _nn_init_backward="nn_mse_init_backward($1);"$_nn_init_backward
   _nn_backward="nn_mse_backward($1,$2,$3);"$_nn_backward
   _nn_end_backward="nn_mse_end_backward($1);"$_nn_end_backward
-  _nn_update_weights="nn_mse_update_weights($1);"$_nn_update_weights
+  _nn_update="nn_mse_update($1);"$_nn_update
   _nn_$1_previous_batch_out=inf
   _nn_$1_learning_rate=1
   _nn_$1_nb_increases=0
@@ -49542,16 +49543,20 @@ nn_test :
   nn_init
   nn_input X,1,2
   nn_bn BN0,X
-  nn_fc FC1,BN0,200
-  nn_nl NL1,FC1,gelu
-  nn_fcnl FC2,NL1,20,leakyrelu
+  nn_fc FC1,BN0,100
+  nn_nl NL1,FC1,leakyrelu
+  nn_fcnl FC2,NL1,50,leakyrelu
   nn_fcnl FC3,FC2,3,leakyrelu
+
+#  nn_bn BN3,FC3
+
+
   nn_mse L,FC3,Y
   sp lena,128 nm. img
 
   # Optimize network.
   #-------------------
-  size_batch=128
+  size_batch=256
   repeat 8192,iter
     e[] "ITER = "$iter
 
@@ -49566,7 +49571,7 @@ nn_test :
 
     # Mini-batch stochastic gradient descent.
     _nn_is_training=1
-    repeat 130,batch_iter
+    repeat 256,batch_iter
       eval[batch] *${-nn_lib}"
         begin(0;"\
           $_nn_init_forward\
@@ -49582,7 +49587,7 @@ nn_test :
         );
         end(0;"\
           $_nn_end_backward\
-          $_nn_update_weights"
+          $_nn_update"
           !($batch_iter%20)?print(L_out);
         ); I"
     done
