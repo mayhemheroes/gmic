@@ -49197,7 +49197,7 @@ nn_lib :
       name#_mu = crop(#ind,name#_base_col,0,1,h#ind);
       name#_sigma = sqrt(crop(#ind,name#_base_col + 1,0,1,h#ind));
       isnan(name#_mu[0])?(name#_mu = 0; name#_sigma = 1);
-      name#_alpha = crop(#ind,4,0,1,h#ind);
+      name#_gamma = crop(#ind,4,0,1,h#ind);
       name#_beta = crop(#ind,5,0,1,h#ind);
       name#_out = vector(#size(in#_out));
       const name#_out_width = in#_out_width;
@@ -49210,7 +49210,7 @@ nn_lib :
       name#_z = in#_out;
       name#_z-=name#_mu;
       name#_z/=1e-8 + name#_sigma;
-      name#_out = name#_alpha*name#_z;
+      name#_out = name#_gamma*name#_z;
       name#_out+=name#_beta;
     );
 
@@ -49220,7 +49220,7 @@ nn_lib :
       name#_nb_samples = 0;
       name#_mean_in = name#_variance_in = vector(#size(in#_out));
 
-      name#_sum_deriv_alpha = vector(#size(name#_alpha));
+      name#_sum_deriv_gamma = vector(#size(name#_gamma));
       name#_sum_deriv_beta = vector(#size(name#_beta));
     );
 
@@ -49230,7 +49230,7 @@ nn_lib :
       name#_mean_in+=(in#_out - name#_mean_in)/name#_nb_samples;
       name#_variance_in+=(in#_out - name#_mean_in)*(in#_out - name#_previous_mean_in);
 
-      name#_sum_deriv_alpha+=name#_deriv_out*name#_z;
+      name#_sum_deriv_gamma+=name#_deriv_out*name#_z;
       name#_sum_deriv_beta+=name#_deriv_out;
       in#_deriv_out = name#_deriv_out/(1e-8 + name#_sigma);
     );
@@ -49271,12 +49271,12 @@ nn_lib :
       );
 
       !no_update?(
-        name#_dt_alpha = 1e-5/abs(maxabs(1e-5,name#_sum_deriv_alpha));
+        name#_dt_gamma = 1e-5/abs(maxabs(1e-5,name#_sum_deriv_gamma));
         name#_dt_beta = 1e-5/abs(maxabs(1e-5,name#_sum_deriv_beta));
 
-        name#_alpha-=name#_dt_alpha*name#_sum_deriv_alpha;
+        name#_gamma-=name#_dt_gamma*name#_sum_deriv_gamma;
         name#_beta-=name#_dt_beta*name#_sum_deriv_beta;
-#        draw(#ind,name#_alpha,4,0,0,0,1,h#ind);
+#        draw(#ind,name#_gamma,4,0,0,0,1,h#ind);
 #        draw(#ind,name#_beta,5,0,0,0,1,h#ind);
       );
 
