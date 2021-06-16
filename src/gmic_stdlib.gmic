@@ -49236,8 +49236,8 @@ nn_lib :
       name#_threads_in_mean = name#_threads_in_variance = vector(#nb_threads_max*size(in#_out));
       name#_nb_samples = 0;
       name#_in_mean = name#_in_variance = vector(#size(in#_out));
-      name#_sum_deriv_gamma = vector(#size(name#_gamma));
-      name#_sum_deriv_beta = vector(#size(name#_beta));
+      name#_batch_deriv_gamma = vector(#size(name#_gamma));
+      name#_batch_deriv_beta = vector(#size(name#_beta));
     );
 
     nn_bn_backward(name,in) = (
@@ -49245,8 +49245,8 @@ nn_lib :
       name#_pim = in#_out - name#_in_mean;
       name#_in_mean+=name#_pim/name#_nb_samples;
       name#_in_variance+=(in#_out - name#_in_mean)*name#_pim;
-      name#_sum_deriv_gamma+=name#_deriv_out*name#_z;
-      name#_sum_deriv_beta+=name#_deriv_out;
+      name#_batch_deriv_gamma+=name#_deriv_out*name#_z;
+      name#_batch_deriv_beta+=name#_deriv_out;
       in#_deriv_out = name#_deriv_out/(1e-8 + name#_sigma);
     );
 
@@ -49264,8 +49264,8 @@ nn_lib :
       merge(name#_threads_nb_samples,+);
       merge(name#_threads_in_mean,+);
       merge(name#_threads_in_variance,+);
-      merge(name#_sum_deriv_gamma,+);
-      merge(name#_sum_deriv_beta,+);
+      merge(name#_batch_deriv_gamma,+);
+      merge(name#_batch_deriv_beta,+);
       name#_in_mean/=name#_nb_samples;
       name#_in_variance = 0;
       for (k = 0, k<nb_threads_used, ++k,
@@ -49287,10 +49287,10 @@ nn_lib :
       );
 
       !no_update?(
-        name#_dt_gamma = 1e-5/abs(maxabs(1e-5,name#_sum_deriv_gamma));
-        name#_dt_beta = 1e-5/abs(maxabs(1e-5,name#_sum_deriv_beta));
-        name#_gamma-=name#_dt_gamma*name#_sum_deriv_gamma;
-        name#_beta-=name#_dt_beta*name#_sum_deriv_beta;
+        name#_dt_gamma = 1e-5/abs(maxabs(1e-5,name#_batch_deriv_gamma));
+        name#_dt_beta = 1e-5/abs(maxabs(1e-5,name#_batch_deriv_beta));
+        name#_gamma-=name#_dt_gamma*name#_batch_deriv_gamma;
+        name#_beta-=name#_dt_beta*name#_batch_deriv_beta;
         draw(#ind,name#_gamma,4,0,0,0,1,h#ind);
         draw(#ind,name#_beta,5,0,0,0,1,h#ind);
       );
@@ -49317,33 +49317,33 @@ nn_lib :
     );
 
     nn_fc_init_backward(name) = (
-      name#_sum_deriv_weights = vector(#size(name#_weights));
-      name#_sum_deriv_biases = vector(#size(name#_biases));
-      name#_sum_deriv_out = vector(#size(name#_out));
+      name#_batch_deriv_weights = vector(#size(name#_weights));
+      name#_batch_deriv_biases = vector(#size(name#_biases));
+      name#_batch_deriv_out = vector(#size(name#_out));
     );
 
     nn_fc_backward(name,in) = (
       name#_deriv_biases = name#_deriv_out;
       name#_deriv_weights = mul(name#_deriv_biases,in#_out,size(in#_out));
       in#_deriv_out = mul(transpose(name#_weights,in#_out_height),name#_deriv_biases);
-      name#_sum_deriv_weights+=name#_deriv_weights;
-      name#_sum_deriv_biases+=name#_deriv_biases;
+      name#_batch_deriv_weights+=name#_deriv_weights;
+      name#_batch_deriv_biases+=name#_deriv_biases;
     );
 
     nn_fc_end_backward(name) = (
-      merge(name#_sum_deriv_weights,+);
-      merge(name#_sum_deriv_biases,+);
-      name#_sum_deriv_weights/=nb_samples;
-      name#_sum_deriv_biases/=nb_samples;
+      merge(name#_batch_deriv_weights,+);
+      merge(name#_batch_deriv_biases,+);
+      name#_batch_deriv_weights/=nb_samples;
+      name#_batch_deriv_biases/=nb_samples;
     );
 
     nn_fc_update_weights(name) = (
       unref(ind); const ind = $name#;
       !no_update?(
-        name#_dt_weights = learning_rate/abs(maxabs(1e-9,name#_sum_deriv_weights));
-        name#_dt_biases = learning_rate/abs(maxabs(1e-9,name#_sum_deriv_biases));
-        name#_weights-=name#_dt_weights*name#_sum_deriv_weights;
-        name#_biases-=name#_dt_biases*name#_sum_deriv_biases;
+        name#_dt_weights = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_weights));
+        name#_dt_biases = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_biases));
+        name#_weights-=name#_dt_weights*name#_batch_deriv_weights;
+        name#_biases-=name#_dt_biases*name#_batch_deriv_biases;
         draw(#ind,name#_weights,0,0,0,0,w#ind - 1,h#ind);
         draw(#ind,name#_biases,w#ind - 1,0,0,0,1,h#ind);
       );
@@ -49369,8 +49369,8 @@ nn_lib :
       name#_deriv_biases*=name#_deriv_out;
       name#_deriv_weights = mul(name#_deriv_biases,in#_out,size(in#_out));
       in#_deriv_out = mul(transpose(name#_weights,in#_out_height),name#_deriv_biases);
-      name#_sum_deriv_weights+=name#_deriv_weights;
-      name#_sum_deriv_biases+=name#_deriv_biases;
+      name#_batch_deriv_weights+=name#_deriv_weights;
+      name#_batch_deriv_biases+=name#_deriv_biases;
     );
 
     nn_fcnl_end_backward(name) = nn_fc_end_backward(#name);
@@ -49393,28 +49393,28 @@ nn_lib :
     #-------------------------------
 
     nn_mse_init_backward(name) = (
-      name#_sum_out = 0;
+      name#_batch_out = 0;
     );
 
     nn_mse_backward(name,in,truth) = (
       in#_deriv_out = 2*(in#_out - truth);
       name#_out = norm(in#_deriv_out/2)^2/size(in#_deriv_out);
-      name#_sum_out+=name#_out;
+      name#_batch_out+=name#_out;
     );
 
     nn_mse_end_backward(name) = (
-      merge(name#_sum_out,+);
-      name#_out = name#_sum_out/nb_samples;
+      merge(name#_batch_out,+);
+      name#_out = name#_batch_out/nb_samples;
     );
 
     nn_mse_update_weights(name) = (
       no_update = 0;
       learning_rate = $_nn_#name#_learning_rate;
-      name#_previous_sum_out = $_nn_#name#_previous_sum_out;
+      name#_previous_batch_out = $_nn_#name#_previous_batch_out;
       name#_nb_increases = $_nn_#name#_nb_increases;
       name#_nb_decreases = $_nn_#name#_nb_decreases;
-      !isinf(name#_previous_sum_out)?(
-        name#_sum_out>name#_previous_sum_out?(
+      !isinf(name#_previous_batch_out)?(
+        name#_batch_out>name#_previous_batch_out?(
           ++name#_nb_increases;
           name#_nb_decreases = 0;
           name#_nb_increases>=2?(
@@ -49432,10 +49432,10 @@ nn_lib :
           );
         );
       );
-      run('_nn_#name#_previous_sum_out,\
+      run('_nn_#name#_previous_batch_out,\
            _nn_#name#_learning_rate,\
            _nn_#name#_nb_increases,\
-           _nn_#name#_nb_decreases=',name#_sum_out,',',learning_rate,',',name#_nb_increases,',',name#_nb_decreases);
+           _nn_#name#_nb_decreases=',name#_batch_out,',',learning_rate,',',name#_nb_increases,',',name#_nb_decreases);
     );
 
     # Non-Linearity Module (NL).
@@ -49519,7 +49519,7 @@ nn_mse : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
   _nn_backward="nn_mse_backward($1,$2,$3);"$_nn_backward
   _nn_end_backward="nn_mse_end_backward($1);"$_nn_end_backward
   _nn_update_weights="nn_mse_update_weights($1);"$_nn_update_weights
-  _nn_$1_previous_sum_out=inf
+  _nn_$1_previous_batch_out=inf
   _nn_$1_learning_rate=1
   _nn_$1_nb_increases=0
   _nn_$1_nb_decreases=0
@@ -49542,9 +49542,9 @@ nn_test :
   nn_init
   nn_input X,1,2
   nn_bn BN0,X
-  nn_fc FC1,BN0,100
-  nn_nl NL1,FC1,leakyrelu
-  nn_fcnl FC2,NL1,100,leakyrelu
+  nn_fc FC1,BN0,200
+  nn_nl NL1,FC1,gelu
+  nn_fcnl FC2,NL1,20,leakyrelu
   nn_fcnl FC3,FC2,3,leakyrelu
   nn_mse L,FC3,Y
   sp lena,128 nm. img
