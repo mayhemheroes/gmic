@@ -49273,6 +49273,10 @@ nn_lib :
           (name#_threads_variance_in[k] + (name#_threads_mean_in[k] - name#_mean_in)^2);
       );
       name#_variance_in/=name#_nb_samples;
+
+      print(name#_variance_in);
+      run('q');
+
     );
 
     nn_bn_update_weights(name) = (
@@ -49567,10 +49571,18 @@ nn_test :
       [ px,py,val ]"
     nm. batch
 
+    repeat 2 sh. $>
+      e[] "Var1 = "{iv}
+      e[] "Var2 = "{"v = 0; for (k = 0, k<w, ++k, v+=(i[k] - ia)^2); v/w"}
+      e[] "Var3 = "{"v = 0; for (k = 0, k<w, ++k, v+=i[k]^2); v/w - ia^2"}
+      e[] ""
+      rm.
+    done
+
     # Mini-batch stochastic gradient descent.
     _nn_is_training=1
     repeat 50,batch_iter
-      eval[batch] *${-nn_lib}"
+      eval[batch] >${-nn_lib}"
         begin(0;"\
           $_nn_init_forward\
           $_nn_init_backward"
