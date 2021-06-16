@@ -49279,7 +49279,7 @@ nn_lib :
       unref(ind); const ind = $name#;
       draw(#ind,name#_mean_in,0,0,0,0,1,h#ind,1,1); # Update batch mean and batch variance
       draw(#ind,name#_variance_in,1,0,0,0,1,h#ind,1,1);
-      !$_nn_sgd_iter?(
+      !$batch_iter?(
         momentum = isnan(i[#ind,2])?1:0.01;
         draw(#ind,name#_mean_in,2,0,0,0,1,h#ind,1,1,momentum); # Global mean and variance
         draw(#ind,name#_variance_in,3,0,0,0,1,h#ind,1,1,momentum);
@@ -49569,7 +49569,7 @@ nn_test :
 
     # Mini-batch stochastic gradient descent.
     _nn_is_training=1
-    repeat 100,_nn_sgd_iter
+    repeat 50,batch_iter
       eval[batch] *${-nn_lib}"
         begin(0;"\
           $_nn_init_forward\
@@ -49586,7 +49586,7 @@ nn_test :
         end(0;"\
           $_nn_end_backward\
           $_nn_update_weights"
-          !($_nn_sgd_iter%20)?print(L_out);
+          !($batch_iter%20)?print(L_out);
         ); I"
     done
     rm[batch]
