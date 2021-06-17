@@ -49516,14 +49516,24 @@ nn_test :
   nn_bn BN0,X
   nn_fcnl FC1,BN0,100
   nn_fcnl FC2,FC1,50,leakyrelu
-  nn_fcnl FC3,FC2,3,leakyrelu
-  nn_mse L,FC3,Y
+  nn_fcnl FC3,FC2,30,leakyrelu
+  nn_fcnl FC4,FC3,30,leakyrelu
+  nn_fcnl FC5,FC4,30,leakyrelu
+  nn_fcnl FC6,FC5,30,leakyrelu
+  nn_fcnl FC7,FC6,30,leakyrelu
+  nn_fcnl FC8,FC7,30,leakyrelu
+  nn_fcnl FC9,FC8,30,leakyrelu
+  nn_fcnl FC10,FC9,30,leakyrelu
+  nn_fcnl FC11,FC10,30,leakyrelu
+  nn_fcnl FC12,FC11,30,leakyrelu
+  nn_fc FC13,FC12,3
+  nn_mse L,FC13,Y
   sp lena,128 nm. img
 
   # Optimize network.
   #-------------------
-  size_batch=256
-  repeat 8192,iter
+  size_batch=512
+  repeat 65535,iter
     e[] "ITER = "$iter
 
     # Build mini-batch.
@@ -49537,7 +49547,7 @@ nn_test :
 
     # Mini-batch stochastic gradient descent.
     _nn_is_training=1
-    repeat 256,batch_iter
+    repeat 128,batch_iter
       eval[batch] *${-nn_lib}${_nn_init_forward}${_nn_init_backward}"
         batch = I;
         X = batch[0,2]; # Input
@@ -49555,7 +49565,7 @@ nn_test :
       X[0] = x;
       X[1] = y;
       "${_nn_forward}"
-      FC3_out"
+      cut(FC13_out,0,255)"
     on. frame.png,$iter
     w. rm.
 
