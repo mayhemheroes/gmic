@@ -49451,7 +49451,13 @@ nn_bn : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($
   _nn_end_backward="end_t(nn_bn_end_t_backward($1)); end(nn_bn_end_backward($1));"$_nn_end_backward
   _nn_update="end(nn_bn_update($1,$3));"$_nn_update
 
-#@gmic nn_fc : name,in,nb_neurons
+#@gmic nn_conv : name,in,nb_neurons>0,kernel_size>0
+#@gmic : Add a convolutional layer to the network.
+nn_conv : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($3) && $3>0 && isint($4) && $4>0"
+  _nn_$1_out_size={[$_nn_$2_out_size][0,3]},$3
+  if !isint($$1) {[$_nn_$2_out_size][3]*$4^2+1},$3 f. g nm. $1 fi
+
+#@gmic nn_fc : name,in,nb_neurons>0
 #@gmic : Add an fully connected module to the network.
 nn_fc : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($3) && $3>0"
   _nn_$1_out_size=1,1,1,$3
@@ -49463,7 +49469,7 @@ nn_fc : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($
   _nn_end_backward="end(nn_fc_end_backward($1));"$_nn_end_backward
   _nn_update="end(nn_fc_update($1));"$_nn_update
 
-#@gmic nn_fcnl : name,in,nb_neurons,activation
+#@gmic nn_fcnl : name,in,nb_neurons>0,activation
 #@gmic : Add an fully connected + non-linearity module to the network.
 nn_fcnl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($3) && $3>0" skip ${4=leakyrelu}
   nn_fc $1_z,$2,$3
@@ -49512,7 +49518,11 @@ nn_test :
   # Build neural network.
   #----------------------
   nn_init
-  nn_input X,1,2
+  nn_input X,16,16,1,2
+  nn_conv CONV1,X,10,2
+  d q
+
+
   nn_bn BN0,X
   nn_fcnl FC1,BN0,100
   nn_fcnl FC2,FC1,50,leakyrelu
