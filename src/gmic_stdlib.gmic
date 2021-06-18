@@ -49315,14 +49315,23 @@ nn_lib :
       const name#_out_height = in#_out_height;
       const name#_out_depth = in#_out_depth;
       const name#_out_spectrum = h#_ind;
+      const name#_out_whd = name#_out_width*name#_out_height*name#_out_depth;
 
       name#_weights = crop(#_ind,0,0,w#_ind - 1,h#_ind);
       name#_biases = crop(#_ind,w#_ind - 1,0,1,h#_ind);
       name#_out = vector(##in#_out_width*in#_out_height*in#_out_depth*h#_ind);
+      name#_yl = vector(##name#_out_whd);
     );
 
     nn_conv_forward(name,in) = (
-      0;
+      name#_out = 0;
+      for (_l = 0, _l<name#_out_spectrum, ++_l,
+        name#_yl = 0;
+        copy(name#_out[_l*name#_out_whd],name#_yl);
+      );
+
+      print(name#_out);
+
 #      name#_out+=name#_biases;
     );
 
