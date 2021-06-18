@@ -49274,7 +49274,7 @@ nn_lib :
       merge(name#_batch_deriv_beta,+);
       name#_in_mean/=name#_nb_samples;
       name#_in_variance = 0;
-      for (_k = 0, _k<nb_threads_used, ++_k,
+      repeat (nb_threads_used,_k,
         name#_in_variance+=name#_threads_nb_samples[_k]*
           (name#_threads_in_variance[_k*size(name#_in_variance),size(name#_in_variance)] +
           (name#_threads_in_mean[_k*size(name#_in_mean),size(name#_in_variance)] - name#_in_mean)^2);
@@ -49327,7 +49327,7 @@ nn_lib :
     nn_conv2d_forward(name,in) = (
       unref(_ind); const _ind = $name#;
       name#_out = 0;
-      for (_l = 0, _l<name#_out_spectrum, ++_l,
+      repeat (name#_out_spectrum,_l,
         name#_yl = convolve(in#_out,in#_out_width,in#_out_height,in#_out_depth,in#_out_spectrum,
                             name#_weights[_l*(w#_ind - 1),w#_ind - 1],
                             name#_kernel_size,name#_kernel_size,1,in#_out_spectrum,
@@ -49343,7 +49343,8 @@ nn_lib :
     );
 
     nn_conv2d_backward(name,in) = (
-      name#_batch_deriv_out = 0;
+#      in#_deriv_out = convolve(name#_out,name#_out_width,name#_out_height,name#_out_depth,name#_out_spectrum,
+       0;
     );
 
     nn_conv2d_end_backward(name) = (
