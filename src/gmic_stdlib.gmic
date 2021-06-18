@@ -392,7 +392,8 @@ reference : skip "${2=}"
 "* Numerical variables can be updated with the use of these special operators: "\
 "'+=' (addition), '-=' (subtraction), '*=' (multiplication), '/=' (division), '%=' (modulo), '&=' (bitwise and), "\
 "'|=' (bitwise or), '^=' (power), '<<=' and '>>' (bitwise left and right shifts). For instance, 'foo=1' 'foo+=3'."\n\
-"* Input item 'name.=string' concatenates specified `string` to the end of variable 'name'."\n\
+"* Input item 'name.=string' appends specified `string` at the end of variable 'name'."\n\
+"* Input item 'name..=string' prepends specified `string` at the beginning of variable 'name'."\n\
 "* Multiple variable assignments and updates are allowed, with expressions: 'name1,name2,...,nameN=value' or "\
 "'name1,name2,...,nameN=value1,value2,...,valueN' where assignment operator '=' can be replaced by one of the "\
 "allowed operators (e.g. '+=')."\n\
@@ -49304,6 +49305,25 @@ nn_lib :
       );
     );
 
+    # Convolutional Layer (CONV).
+    #-----------------------------
+
+    nn_conv_init_forward(name) = (
+      unref(ind); const ind = $name#;
+      name#_weights = crop(#ind,0,0,w#ind - 1,h#ind);
+      name#_biases = crop(#ind,w#ind - 1,0,1,h#ind);
+      name#_out = vector(#h#ind);
+      const name#_out_width = 1;
+      const name#_out_height = h#ind;
+      const name#_out_depth = 1;
+      const name#_out_spectrum = 1;
+    );
+
+    nn_conv_forward(name,in) = (
+      0;
+      name#_out+=name#_biases;
+    );
+
     # Fully-Connected Module (FC).
     #-----------------------------
 
@@ -49313,9 +49333,9 @@ nn_lib :
       name#_biases = crop(#ind,w#ind - 1,0,1,h#ind);
       name#_out = vector(#h#ind);
       const name#_out_width = 1;
-      const name#_out_height = h#ind;
+      const name#_out_height = 1;
       const name#_out_depth = 1;
-      const name#_out_spectrum = 1;
+      const name#_out_spectrum = h#ind;
     );
 
     nn_fc_forward(name,in) = (
@@ -49332,7 +49352,7 @@ nn_lib :
     nn_fc_backward(name,in) = (
       name#_deriv_biases = name#_deriv_out;
       name#_deriv_weights = mul(name#_deriv_biases,in#_out,size(in#_out));
-      in#_deriv_out = mul(transpose(name#_weights,in#_out_height),name#_deriv_biases);
+      in#_deriv_out = mul(transpose(name#_weights,in#_out_spectrum),name#_deriv_biases);
       name#_batch_deriv_weights+=name#_deriv_weights;
       name#_batch_deriv_biases+=name#_deriv_biases;
     );
@@ -49356,40 +49376,11 @@ nn_lib :
       );
     );
 
-    # Fully Connected layer + Non Linearity Module (FCNL).
-    #------------------------------------------------------
-
-    nn_fcnl_init_forward(name) = nn_fc_init_forward(#name);
-
-    nn_fcnl_forward(name,in,activation) = (
-      name#_z = mul(name#_weights,in#_out);
-      name#_z+=name#_biases;
-      name#_out = name#_z;
-      nn_activate(name#_out,#activation);
-    );
-
-    nn_fcnl_init_backward(name) = nn_fc_init_backward(#name);
-
-    nn_fcnl_backward(name,in,activation) = (
-      name#_deriv_biases = name#_z;
-      nn_activate(name#_deriv_biases,deriv_#activation);
-      name#_deriv_biases*=name#_deriv_out;
-      name#_deriv_weights = mul(name#_deriv_biases,in#_out,size(in#_out));
-      in#_deriv_out = mul(transpose(name#_weights,in#_out_height),name#_deriv_biases);
-      name#_batch_deriv_weights+=name#_deriv_weights;
-      name#_batch_deriv_biases+=name#_deriv_biases;
-    );
-
-    nn_fcnl_end_backward(name) = nn_fc_end_backward(#name);
-
-    nn_fcnl_update(name) = nn_fc_update(#name);
-
     # Input Module.
     #--------------
 
     nn_input_init_forward(name,w,h,d,s) = (
-      name#_out = vector(##w*h*d*s);
-      ref(name#_out,#name);
+      ref(#name,name#_out);
       const name#_out_width = w;
       const name#_out_height = h;
       const name#_out_depth = d;
@@ -49472,60 +49463,59 @@ nn_lib :
 nn_bn : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint(${3=0}) && inrange($3,0,3)"
   _nn_$1_out_size=$_nn_$2_out_size
   if !isint($$1) 6,{prod($_nn_$2_out_size)} f. nan,nan,nan,nan,1,0 nm. $1 fi
-  _nn_init_forward.="nn_bn_init_forward($1,$2);"
-  _nn_forward.="nn_bn_forward($1,$2);"
-  _nn_init_backward.="nn_bn_init_backward($1,$2);"
-  _nn_backward="nn_bn_backward($1,$2,$3);"$_nn_backward
-  _nn_end_t_backward="nn_bn_end_t_backward($1);"$_nn_end_t_backward
-  _nn_end_backward="nn_bn_end_backward($1);"$_nn_end_backward
-  _nn_update="nn_bn_update($1,$3);"$_nn_update
+  _nn_forward.="begin(nn_bn_init_forward($1,$2));"\
+               "nn_bn_forward($1,$2);"
+  _nn_backward..="begin(nn_bn_init_backward($1,$2));"\
+                 "nn_bn_backward($1,$2,$3);"\
+                 "end_t(nn_bn_end_t_backward($1)); end(nn_bn_end_backward($1));"
+  _nn_update..="end(nn_bn_update($1,$3));"
 
-#@gmic nn_fc : name,in,nb_neurons
+#@gmic nn_conv : name,in,nb_neurons>0,kernel_size>0
+#@gmic : Add a convolutional layer to the network.
+nn_conv : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($3) && $3>0 && isint($4) && $4>0"
+  _nn_$1_out_size={[$_nn_$2_out_size][0,3]},$3
+  if !isint($$1) {[$_nn_$2_out_size][3]*$4^2+1},$3 f. g nm. $1 fi
+
+#@gmic nn_fc : name,in,nb_neurons>0
 #@gmic : Add an fully connected module to the network.
 nn_fc : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($3) && $3>0"
   _nn_$1_out_size=1,1,1,$3
   if !isint($$1) {prod($_nn_$2_out_size)+1},$3 f. g nm. $1 fi
-  _nn_init_forward.="nn_fc_init_forward($1);"
-  _nn_forward.="nn_fc_forward($1,$2);"
-  _nn_init_backward="nn_fc_init_backward($1);"$_nn_init_backward
-  _nn_backward="nn_fc_backward($1,$2);"$_nn_backward
-  _nn_end_backward="nn_fc_end_backward($1);"$_nn_end_backward
-  _nn_update="nn_fc_update($1);"$_nn_update
+  _nn_forward.="begin(nn_fc_init_forward($1));"\
+               "nn_fc_forward($1,$2);"
+  _nn_backward..="begin(nn_fc_init_backward($1));"\
+                 "nn_fc_backward($1,$2);"\
+                 "end(nn_fc_end_backward($1));"
+  _nn_update..="end(nn_fc_update($1));"
 
-#@gmic nn_fcnl : name,in,nb_neurons,activation
+#@gmic nn_fcnl : name,in,nb_neurons>0,activation
 #@gmic : Add an fully connected + non-linearity module to the network.
 nn_fcnl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($3) && $3>0" skip ${4=leakyrelu}
-  _nn_$1_out_size=1,1,1,$3
-  if !isint($$1) {prod($_nn_$2_out_size)+1},$3 f. g nm. $1 fi
-  _nn_init_forward.="nn_fcnl_init_forward($1);"
-  _nn_forward.="nn_fcnl_forward($1,$2,$4);"
-  _nn_init_backward="nn_fcnl_init_backward($1);"$_nn_init_backward
-  _nn_backward="nn_fcnl_backward($1,$2,$4);"$_nn_backward
-  _nn_end_backward="nn_fcnl_end_backward($1);"$_nn_end_backward
-  _nn_update="nn_fcnl_update($1);"$_nn_update
+  nn_fc $1_z,$2,$3
+  nn_nl $1,$1_z,$4
 
 #@gmic nn_init
 #@gmic : Initialize new neural network.
 nn_init :
-  _nn_init_forward.="nn_init_forward();"
-  _nn_forward.="nn_forward();"
-  _nn_end_backward="nn_end_backward();"$_nn_end_backward
+  _nn_forward.="begin(nn_init_forward());"\
+               "nn_forward();"
+  _nn_backward..="end(nn_end_backward());"
 
 #@gmic nn_input : name,width,_height,_depth,_spectrum
 #@gmic : Add an input module to the network.
 nn_input : check ${"is_variable_name $1"}" && isint($2) && $2>0 && isint(${3=1}) && $3>0 && "\
                    "isint(${4=1}) && $4>0 && isint(${5=1}) && $5>0"
   _nn_$1_out_size=$2,$3,$4,$5
-  _nn_init_forward.="nn_input_init_forward($1,$2,$3,$4,$5);"
+  _nn_forward.="begin(nn_input_init_forward($1,$2,$3,$4,$5));"
 
 #@gmic nn_mse : name,in,truth
 #@gmic : Add a MSE loss to the network.
 nn_mse : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
   _nn_$1_out_size=1,1,1,1
-  _nn_init_backward="nn_mse_init_backward($1);"$_nn_init_backward
-  _nn_backward="nn_mse_backward($1,$2,$3);"$_nn_backward
-  _nn_end_backward="nn_mse_end_backward($1);"$_nn_end_backward
-  _nn_update="nn_mse_update($1);"$_nn_update
+  _nn_backward..="begin(nn_mse_init_backward($1));"\
+                 "nn_mse_backward($1,$2,$3);"\
+                 "end(nn_mse_end_backward($1));"
+  _nn_update..="end(nn_mse_update($1));"
   _nn_$1_previous_batch_out=inf
   _nn_$1_learning_rate=1
   _nn_$1_nb_increases=0
@@ -49535,35 +49525,32 @@ nn_mse : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
 #@gmic : Add a non-linearity module to the network.
 nn_nl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"} skip ${3=leakyrelu}
   _nn_$1_out_size=$_nn_$2_out_size
-  _nn_init_forward.="nn_nl_init_forward($1,$2);"
-  _nn_forward.="nn_nl_forward($1,$2,$3);"
-  _nn_backward="nn_nl_backward($1,$2,$3);"$_nn_backward
+  _nn_forward.="begin(nn_nl_init_forward($1,$2));"\
+               "nn_nl_forward($1,$2,$3);"
+  _nn_backward..="nn_nl_backward($1,$2,$3);"
 
-#---------------
-# Test program.
-#---------------
-nn_test :
+#------------------------------
+# Test program for FC networks.
+#------------------------------
+nn_test_fc :
 
   # Build neural network.
   #----------------------
   nn_init
-  nn_input X,1,2
+  nn_input X,2
   nn_bn BN0,X
-  nn_fc FC1,BN0,100
-  nn_nl NL1,FC1,leakyrelu
-  nn_fcnl FC2,NL1,50,leakyrelu
-  nn_fcnl FC3,FC2,3,leakyrelu
-
-#  nn_bn BN3,FC3
-
-
-  nn_mse L,FC3,Y
+  nn_fcnl FC1,BN0,100
+  nn_fcnl FC2,FC1,50,leakyrelu
+  nn_fcnl FC3,FC2,30,leakyrelu
+  nn_fcnl FC4,FC3,30,leakyrelu
+  nn_fc FC5,FC4,3
+  nn_mse L,FC5,Y
   sp lena,128 nm. img
 
   # Optimize network.
   #-------------------
-  size_batch=256
-  repeat 8192,iter
+  size_batch=512
+  repeat 65535,iter
     e[] "ITER = "$iter
 
     # Build mini-batch.
@@ -49577,23 +49564,13 @@ nn_test :
 
     # Mini-batch stochastic gradient descent.
     _nn_is_training=1
-    repeat 256,batch_iter
+    repeat 128,batch_iter
       eval[batch] *${-nn_lib}"
-        begin(0;"\
-          $_nn_init_forward\
-          $_nn_init_backward"
-        );
         batch = I;
         X = batch[0,2]; # Input
         Y = batch[2,3]; "\ # Ground-truth
-        $_nn_forward\
-        $_nn_backward"
-        end_t(0;"\
-          $_nn_end_t_backward";
-        );
-        end(0;"\
-          $_nn_end_backward\
-          $_nn_update"
+        ${_nn_forward}${_nn_backward}${_nn_update}"
+        end(
           !($batch_iter%20)?print(L_out);
         ); I"
     done
@@ -49602,15 +49579,62 @@ nn_test :
     # Render image from network.
     _nn_is_training=0
     {img,[w,h]},1,3,*${-nn_lib}"
-      begin("$_nn_init_forward");
-      X[0] = x;
-      X[1] = y;
-      "$_nn_forward"
-      FC3_out"
-    on. frame.png,$iter
+      X = [ x,y ];
+      "${_nn_forward}"
+      cut(FC5_out,0,255)"
+#    on. frame.png,$iter
     w. rm.
 
   done
+
+
+#----------------------------------
+# Test program for CONV networks.
+#----------------------------------
+nn_test :
+
+  # Build neural network.
+  #----------------------
+  nn_init
+  nn_input X,32,32,1,3
+  nn_conv CONV,X,3,3
+  nn_mse L,CONV,X
+  l[] sp lena,car,duck,earth r 32,32,1,3,2 a z nm img endl
+
+  # Optimize network.
+  #------------------
+  size_batch=4
+  repeat 65535,iter
+    e[] "ITER = "$iter
+
+    # Build mini-batch.
+    $size_batch nm. batch
+
+    # Mini-batch stochastic gradient.
+    _nn_is_training=1
+    repeat 1,batch_iter
+      eval[batch] *${-nn_lib}${_nn_init_forward}${_nn_init_backward}"
+        const ind = $img;
+        X = crop(#ind,0,0,x,0,w#ind,h#ind,1,s#ind);
+        Y = X; "\ # Ground-truth
+        ${_nn_forward}${_nn_backward}${_nn_update}"
+        end(
+          print(L_out);
+        ); I"
+    done
+    rm[batch]
+
+    # Visualize convolution kernels.
+    repeat 3,y repeat 3,x
+      +z[CONV] {[9*$x,$y,9*$x+8,$y]}
+    done done
+    l[-9--1]
+      r 3,3,1,1,-1 n 0,255 r2dx 128,1 frame 1,1,0 frame 2,2,200 append_tiles ,
+      w. rm
+    endl
+
+  done
+
 
 
 # Local Variables:
