@@ -49335,7 +49335,22 @@ nn_lib :
         name#_yl += name#_biases[_l];
         copy(name#_out[_l*name#_out_whd],name#_yl);
       );
-#      display(name#_out,name#_out_width,name#_out_height,name#_out_depth,name#_out_spectrum);
+    );
+
+    nn_conv2d_init_backward(name,in) = (
+      name#_batch_deriv_weights = vector(#size(name#_weights));
+      name#_batch_deriv_biases = vector(#size(name#_biases));
+    );
+
+    nn_conv2d_backward(name,in) = (
+      name#_batch_deriv_out = 0;
+    );
+
+    nn_conv2d_end_backward(name) = (
+      merge(name#_batch_deriv_weights,+);
+      merge(name#_batch_deriv_biases,+);
+      name#_batch_deriv_weights/=nb_samples;
+      name#_batch_deriv_biases/=nb_samples;
     );
 
     # Fully-Connected Module (FC).
@@ -49361,7 +49376,6 @@ nn_lib :
     nn_fc_init_backward(name) = (
       name#_batch_deriv_weights = vector(#size(name#_weights));
       name#_batch_deriv_biases = vector(#size(name#_biases));
-      name#_batch_deriv_out = vector(#size(name#_out));
     );
 
     nn_fc_backward(name,in) = (
@@ -49484,7 +49498,8 @@ nn_bn : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($
                "nn_bn_forward($1,$2);"
   _nn_backward..="begin(nn_bn_init_backward($1,$2));"\
                  "nn_bn_backward($1,$2,$3);"\
-                 "end_t(nn_bn_end_t_backward($1)); end(nn_bn_end_backward($1));"
+                 "end_t(nn_bn_end_t_backward($1));"\
+                 "end(nn_bn_end_backward($1));"
   _nn_update..="end(nn_bn_update($1,$3));"
 
 #@gmic nn_conv2d : name,in,nb_neurons>0,kernel_size>0
@@ -49494,6 +49509,9 @@ nn_conv2d : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isi
   if !isint($$1) {[$_nn_$2_out_size][3]*$4^2+1},$3 f. g nm. $1 fi
   _nn_forward.="begin(nn_conv2d_init_forward($1,$2));"\
                "nn_conv2d_forward($1,$2);"
+  _nn_backward..="begin(nn_conv2d_init_backward($1,$2));"\
+                 "nn_conv2d_backward($1,$2);"\
+                 "end(nn_conv2d_end_backward($1));"
 
 #@gmic nn_fc : name,in,nb_neurons>0
 #@gmic : Add an fully connected module to the network.
