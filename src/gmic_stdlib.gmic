@@ -49327,12 +49327,14 @@ nn_lib :
       name#_out = 0;
       for (_l = 0, _l<name#_out_spectrum, ++_l,
         name#_yl = 0;
+        for (_k = 0, _k<in#_out_spectrum, ++_k,
+          name#_xk = in#_out[_k*name#_out_whd,name#_out_whd];
+          name#_yl+=convolve(name#_xk,in#_out_width,in#_out_height,in#_out_depth,1,
+                             name#_weights[_k*9,9],3,3,1,1);
+        );
+        name#_yl += name#_biases[_l];
         copy(name#_out[_l*name#_out_whd],name#_yl);
       );
-
-      print(name#_out);
-
-#      name#_out+=name#_biases;
     );
 
     # Fully-Connected Module (FC).
