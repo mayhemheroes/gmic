@@ -49307,21 +49307,21 @@ nn_lib :
     # Convolutional Layer (CONV).
     #-----------------------------
 
-    # nn_conv_init_forward(name) = (
-    #   unref(ind); const ind = $name#;
-    #   name#_weights = crop(#ind,0,0,w#ind - 1,h#ind);
-    #   name#_biases = crop(#ind,w#ind - 1,0,1,h#ind);
-    #   name#_out = vector(#h#ind);
-    #   const name#_out_width = 1;
-    #   const name#_out_height = h#ind;
-    #   const name#_out_depth = 1;
-    #   const name#_out_spectrum = 1;
-    # );
+    nn_conv_init_forward(name) = (
+      unref(ind); const ind = $name#;
+      name#_weights = crop(#ind,0,0,w#ind - 1,h#ind);
+      name#_biases = crop(#ind,w#ind - 1,0,1,h#ind);
+      name#_out = vector(#h#ind);
+      const name#_out_width = 1;
+      const name#_out_height = h#ind;
+      const name#_out_depth = 1;
+      const name#_out_spectrum = 1;
+    );
 
-    # nn_conv_forward(name,in) = (
-    #   name#_out = mul(name#_weights,in#_out);
-    #   name#_out+=name#_biases;
-    # );
+    nn_conv_forward(name,in) = (
+      0;
+      name#_out+=name#_biases;
+    );
 
     # Fully-Connected Module (FC).
     #-----------------------------
@@ -49332,9 +49332,9 @@ nn_lib :
       name#_biases = crop(#ind,w#ind - 1,0,1,h#ind);
       name#_out = vector(#h#ind);
       const name#_out_width = 1;
-      const name#_out_height = h#ind;
+      const name#_out_height = 1;
       const name#_out_depth = 1;
-      const name#_out_spectrum = 1;
+      const name#_out_spectrum = h#ind;
     );
 
     nn_fc_forward(name,in) = (
@@ -49351,7 +49351,7 @@ nn_lib :
     nn_fc_backward(name,in) = (
       name#_deriv_biases = name#_deriv_out;
       name#_deriv_weights = mul(name#_deriv_biases,in#_out,size(in#_out));
-      in#_deriv_out = mul(transpose(name#_weights,in#_out_height),name#_deriv_biases);
+      in#_deriv_out = mul(transpose(name#_weights,in#_out_spectrum),name#_deriv_biases);
       name#_batch_deriv_weights+=name#_deriv_weights;
       name#_batch_deriv_biases+=name#_deriv_biases;
     );
