@@ -49211,6 +49211,11 @@ nn_lib :
 
     nn_bn_init_forward(name,in) = (
       unref(ind); const ind = $name#;
+      const name#_out_width = in#_out_width;
+      const name#_out_height = in#_out_height;
+      const name#_out_depth = in#_out_depth;
+      const name#_out_spectrum = in#_out_spectrum;
+
       const name#_base_col = $_nn_is_training==1?0:2;
       name#_mu = crop(#ind,name#_base_col,0,1,h#ind);
       name#_sigma = sqrt(crop(#ind,name#_base_col + 1,0,1,h#ind));
@@ -49218,10 +49223,6 @@ nn_lib :
       name#_gamma = crop(#ind,4,0,1,h#ind);
       name#_beta = crop(#ind,5,0,1,h#ind);
       name#_out = vector(#size(in#_out));
-      const name#_out_width = in#_out_width;
-      const name#_out_height = in#_out_height;
-      const name#_out_depth = in#_out_depth;
-      const name#_out_spectrum = in#_out_spectrum;
     );
 
     nn_bn_forward(name,in) = (
@@ -49310,13 +49311,14 @@ nn_lib :
 
     nn_conv_init_forward(name) = (
       unref(ind); const ind = $name#;
-      name#_weights = crop(#ind,0,0,w#ind - 1,h#ind);
-      name#_biases = crop(#ind,w#ind - 1,0,1,h#ind);
-      name#_out = vector(#h#ind);
       const name#_out_width = 1;
       const name#_out_height = h#ind;
       const name#_out_depth = 1;
       const name#_out_spectrum = 1;
+
+      name#_weights = crop(#ind,0,0,w#ind - 1,h#ind);
+      name#_biases = crop(#ind,w#ind - 1,0,1,h#ind);
+      name#_out = vector(#h#ind);
     );
 
     nn_conv_forward(name,in) = (
@@ -49329,13 +49331,14 @@ nn_lib :
 
     nn_fc_init_forward(name) = (
       unref(ind); const ind = $name#;
-      name#_weights = crop(#ind,0,0,w#ind - 1,h#ind);
-      name#_biases = crop(#ind,w#ind - 1,0,1,h#ind);
-      name#_out = vector(#h#ind);
       const name#_out_width = 1;
       const name#_out_height = 1;
       const name#_out_depth = 1;
       const name#_out_spectrum = h#ind;
+
+      name#_weights = crop(#ind,0,0,w#ind - 1,h#ind);
+      name#_biases = crop(#ind,w#ind - 1,0,1,h#ind);
+      name#_out = vector(#h#ind);
     );
 
     nn_fc_forward(name,in) = (
@@ -49380,11 +49383,12 @@ nn_lib :
     #--------------
 
     nn_input_init_forward(name,w,h,d,s) = (
-      ref(#name,name#_out);
       const name#_out_width = w;
       const name#_out_height = h;
       const name#_out_depth = d;
       const name#_out_spectrum = s;
+
+      ref(#name,name#_out);
     );
 
     # Mean-Squared Error Loss (MSE).
@@ -49439,11 +49443,12 @@ nn_lib :
     # Non-Linearity Module (NL).
     #---------------------------
     nn_nl_init_forward(name,in) = (
-      name#_out = vector(#size(in#_out));
       const name#_out_width = in#_out_width;
       const name#_out_height = in#_out_height;
       const name#_out_depth = in#_out_depth;
       const name#_out_spectrum = in#_out_spectrum;
+
+      name#_out = vector(#size(in#_out));
     );
 
     nn_nl_forward(name,in,activation) = (
