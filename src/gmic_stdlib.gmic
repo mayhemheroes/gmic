@@ -49316,6 +49316,8 @@ nn_lib :
       const name#_out_depth = in#_out_depth;
       const name#_out_spectrum = h#_ind;
       const name#_out_whd = name#_out_width*name#_out_height*name#_out_depth;
+      const name#_kernel_size2 = (w#_ind - 1)/in#_out_spectrum;
+      const name#_kernel_size = round(sqrt(name#_kernel_size2));
 
       name#_weights = crop(#_ind,0,0,w#_ind - 1,h#_ind);
       name#_biases = crop(#_ind,w#_ind - 1,0,1,h#_ind);
@@ -49329,8 +49331,10 @@ nn_lib :
         name#_yl = 0;
         for (_k = 0, _k<in#_out_spectrum, ++_k,
           name#_xk = in#_out[_k*name#_out_whd,name#_out_whd];
-          name#_yl+=convolve(name#_xk,in#_out_width,in#_out_height,in#_out_depth,1,
-                             name#_weights[_k*9,9],3,3,1,1);
+          name#_yl+=convolve(name#_xk,
+                             in#_out_width,in#_out_height,in#_out_depth,1,
+                             name#_weights[_k*name#_kernel_size2,name#_kernel_size2],
+                             name#_kernel_size,name#_kernel_size,1,1);
         );
         name#_yl += name#_biases[_l];
         copy(name#_out[_l*name#_out_whd],name#_yl);
