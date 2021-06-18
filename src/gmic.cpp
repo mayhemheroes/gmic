@@ -3255,7 +3255,8 @@ CImg<char> gmic::get_variable(const char *const name,
 
 // Set variable value.
 //--------------------
-// 'operation' can be { 0 (add new variable), '=' (replace or add),'.','+','-','*','/','%','&','|','^','<','>' }
+// 'operation' can be { 0 (add new variable), '=' (replace or add), '.' (append), ':' (prepend),
+//                      '+', '-', '*', '/', '%', '&', '|', '^', '<', '>' }
 // Return the variable value.
 const char *gmic::set_variable(const char *const name, const char *const value,
                                const char operation,
@@ -3294,7 +3295,7 @@ const char *gmic::set_variable(const char *const name, const char *const value,
       std::sprintf(s_value,"%c*store/%s",gmic_store,name);
     } else s_value.assign(1,1,1,1,0);
     is_name_found = false;
-  } else if (!operation || operation=='=' || operation=='.')
+  } else if (!operation || operation=='=' || operation=='.' || operation==':')
     s_value.assign(value,(unsigned int)(std::strlen(value) + 1),1,1,1,true);
   else s_value.assign(24);
 
@@ -3312,6 +3313,10 @@ const char *gmic::set_variable(const char *const name, const char *const value,
         --__variables[ind]._width;
         __variables[ind].append(CImg<char>::string(value,true,true),'x');
       }
+    } else if (operation==':') {
+      if (!is_name_found) _operation = 0; // New variable
+      else if (*value)
+        CImg<char>::string(value,false,false).append(__variables[ind],'x').move_to(__variables[ind]);
     } else {
       const char *const s_operation = operation=='+'?"+":operation=='-'?"-":operation=='*'?"*":operation=='/'?"/":
         operation=='%'?"%":operation=='&'?"&":operation=='|'?"|":operation=='^'?"^":
@@ -13990,13 +13995,16 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           const char *s_op_left = s_op_right;
           sep0 = s_op_right>item?*(s_op_right - 1):0;
           sep1 = s_op_right>item + 1?*(s_op_right - 2):0;
-          if ((sep1=='>' || sep1=='<') && sep0==sep1) s_op_left = s_op_right - 2;
-          else {
-            sep1 = 0;
-            if (sep0=='+' || sep0=='-' || sep0=='*' || sep0=='/' || sep0=='.' ||
-                sep0=='%' || sep0=='&' || sep0=='|' || sep0=='^') s_op_left = s_op_right - 1;
-            else sep0 = '=';
-          }
+          if (sep1=='.' && sep0==sep1) {
+            s_op_left = s_op_right - 2;
+            sep0 = ':';
+          } else if ((sep1=='>' || sep1=='<') && sep0==sep1)
+            s_op_left = s_op_right - 2;
+          else if (sep0=='+' || sep0=='-' || sep0=='*' || sep0=='/' || sep0=='.' ||
+                   sep0=='%' || sep0=='&' || sep0=='|' || sep0=='^')
+            s_op_left = s_op_right - 1;
+          else
+            sep0 = '=';
 
           // Check validity of variable name(s).
           CImgList<char> varnames, varvalues;
