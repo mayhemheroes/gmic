@@ -49379,8 +49379,7 @@ nn_lib :
     #--------------
 
     nn_input_init_forward(name,w,h,d,s) = (
-      name#_out = vector(##w*h*d*s);
-      ref(name#_out,#name);
+      ref(#name,name#_out);
       const name#_out_width = w;
       const name#_out_height = h;
       const name#_out_depth = d;
@@ -49463,10 +49462,8 @@ nn_lib :
 nn_bn : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint(${3=0}) && inrange($3,0,3)"
   _nn_$1_out_size=$_nn_$2_out_size
   if !isint($$1) 6,{prod($_nn_$2_out_size)} f. nan,nan,nan,nan,1,0 nm. $1 fi
-  _nn_init_forward.="begin(nn_bn_init_forward($1,$2));"
-  _nn_forward.="nn_bn_forward($1,$2);"
-  _nn_init_backward="begin(nn_bn_init_backward($1,$2));"$_nn_init_backward
-  _nn_backward="nn_bn_backward($1,$2,$3); end_t(nn_bn_end_t_backward($1)); end(nn_bn_end_backward($1));"$_nn_backward
+  _nn_forward.="begin(nn_bn_init_forward($1,$2)); nn_bn_forward($1,$2);"
+  _nn_backward="begin(nn_bn_init_backward($1,$2)); nn_bn_backward($1,$2,$3); end_t(nn_bn_end_t_backward($1)); end(nn_bn_end_backward($1));"$_nn_backward
   _nn_update="end(nn_bn_update($1,$3));"$_nn_update
 
 #@gmic nn_conv : name,in,nb_neurons>0,kernel_size>0
@@ -49474,17 +49471,14 @@ nn_bn : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($
 nn_conv : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($3) && $3>0 && isint($4) && $4>0"
   _nn_$1_out_size={[$_nn_$2_out_size][0,3]},$3
   if !isint($$1) {[$_nn_$2_out_size][3]*$4^2+1},$3 f. g nm. $1 fi
-#  _nn_init_forward.="begin(nn_conv_init_forward($1));"
 
 #@gmic nn_fc : name,in,nb_neurons>0
 #@gmic : Add an fully connected module to the network.
 nn_fc : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($3) && $3>0"
   _nn_$1_out_size=1,1,1,$3
   if !isint($$1) {prod($_nn_$2_out_size)+1},$3 f. g nm. $1 fi
-  _nn_init_forward.="begin(nn_fc_init_forward($1));"
-  _nn_forward.="nn_fc_forward($1,$2);"
-  _nn_init_backward="begin(nn_fc_init_backward($1));"$_nn_init_backward
-  _nn_backward="nn_fc_backward($1,$2); end(nn_fc_end_backward($1));"$_nn_backward
+  _nn_forward.="begin(nn_fc_init_forward($1)); nn_fc_forward($1,$2);"
+  _nn_backward="begin(nn_fc_init_backward($1)); nn_fc_backward($1,$2); end(nn_fc_end_backward($1));"$_nn_backward
   _nn_update="end(nn_fc_update($1));"$_nn_update
 
 #@gmic nn_fcnl : name,in,nb_neurons>0,activation
@@ -49496,8 +49490,7 @@ nn_fcnl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint
 #@gmic nn_init
 #@gmic : Initialize new neural network.
 nn_init :
-  _nn_init_forward.="begin(nn_init_forward());"
-  _nn_forward.="nn_forward();"
+  _nn_forward.="begin(nn_init_forward()); nn_forward();"
   _nn_backward="end(nn_end_backward());"$_nn_backward
 
 #@gmic nn_input : name,width,_height,_depth,_spectrum
@@ -49505,14 +49498,13 @@ nn_init :
 nn_input : check ${"is_variable_name $1"}" && isint($2) && $2>0 && isint(${3=1}) && $3>0 && "\
                    "isint(${4=1}) && $4>0 && isint(${5=1}) && $5>0"
   _nn_$1_out_size=$2,$3,$4,$5
-  _nn_init_forward.="begin(nn_input_init_forward($1,$2,$3,$4,$5));"
+  _nn_forward.="begin(nn_input_init_forward($1,$2,$3,$4,$5));"
 
 #@gmic nn_mse : name,in,truth
 #@gmic : Add a MSE loss to the network.
 nn_mse : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
   _nn_$1_out_size=1,1,1,1
-  _nn_init_backward="begin(nn_mse_init_backward($1));"$_nn_init_backward
-  _nn_backward="nn_mse_backward($1,$2,$3); end(nn_mse_end_backward($1));"$_nn_backward
+  _nn_backward="begin(nn_mse_init_backward($1)); nn_mse_backward($1,$2,$3); end(nn_mse_end_backward($1));"$_nn_backward
   _nn_update="end(nn_mse_update($1));"$_nn_update
   _nn_$1_previous_batch_out=inf
   _nn_$1_learning_rate=1
@@ -49523,8 +49515,7 @@ nn_mse : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
 #@gmic : Add a non-linearity module to the network.
 nn_nl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"} skip ${3=leakyrelu}
   _nn_$1_out_size=$_nn_$2_out_size
-  _nn_init_forward.="begin(nn_nl_init_forward($1,$2));"
-  _nn_forward.="nn_nl_forward($1,$2,$3);"
+  _nn_forward.="begin(nn_nl_init_forward($1,$2)); nn_nl_forward($1,$2,$3);"
   _nn_backward="nn_nl_backward($1,$2,$3);"$_nn_backward
 
 #------------------------------
@@ -49563,7 +49554,7 @@ nn_test_fc :
     # Mini-batch stochastic gradient descent.
     _nn_is_training=1
     repeat 128,batch_iter
-      eval[batch] *${-nn_lib}${_nn_init_forward}${_nn_init_backward}"
+      eval[batch] *${-nn_lib}"
         batch = I;
         X = batch[0,2]; # Input
         Y = batch[2,3]; "\ # Ground-truth
@@ -49576,9 +49567,8 @@ nn_test_fc :
 
     # Render image from network.
     _nn_is_training=0
-    {img,[w,h]},1,3,*${-nn_lib}${_nn_init_forward}"
-      X[0] = x;
-      X[1] = y;
+    {img,[w,h]},1,3,*${-nn_lib}"
+      X = [ x,y ];
       "${_nn_forward}"
       cut(FC5_out,0,255)"
 #    on. frame.png,$iter
@@ -49616,7 +49606,7 @@ nn_test :
         const ind = $img;
         X = crop(#ind,0,0,x,0,w#ind,h#ind,1,s#ind);
         Y = X; "\ # Ground-truth
-        ${_nn_forward}${_nn_backward}${_nn_end_backward}${_nn_update}"
+        ${_nn_forward}${_nn_backward}${_nn_update}"
         end(
           print(L_out);
         ); I"
