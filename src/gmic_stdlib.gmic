@@ -49350,11 +49350,16 @@ nn_lib :
       name#_dxk = vector(#_sizk);
       name#_wlk = vector(#_sizw);
 
-#      repeat (name#_out_spectrum,_l,
-#        repeat (in#_out_spectrum,_k,
-#          name#_dwlk = convolve(name#_deriv_out[_l*_sizl]);
-#        );
-#      );
+      repeat (name#_out_spectrum,_l,
+        repeat (in#_out_spectrum,_k,
+          name#_dwlk = convolve(name#_deriv_out[_l*_sizl,_sizl],
+                                name#_out_width,name#_out_height,name#_out_depth,1,
+                                in#_out[_k*_sizk,_sizk],
+                                in#_out_width,in#_out_height,in#_out_depth,1,
+                                1);
+
+        );
+      );
 
       repeat (in#_out_spectrum,_k,
         name#_dxk = 0;
@@ -49364,7 +49369,7 @@ nn_lib :
                               name#_out_width,name#_out_height,name#_out_depth,1,
                               name#_wlk,
                               name#_kernel_size,name#_kernel_size,1,1,
-                              1,0,0);
+                              1);
         );
         copy(in#_deriv_out[_k*_sizk],_sizk);
       );
