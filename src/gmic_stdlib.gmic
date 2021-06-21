@@ -49141,7 +49141,7 @@ nn_lib :
 
     # Definition of activation functions and their derivatives.
     #----------------------------------------------------------
-    _nn_activate_pointwise(Z,activation) = (fill (#Z,k,nn_activation_#activation(#Z[k])));
+    _nn_activate_pointwise(Z,activation) = (fill(#Z,k,nn_activation_#activation(#Z[k])));
     nn_activate(Z,activation) = nn_activate_#activation(#Z);
 
     # Linear.
@@ -49210,18 +49210,18 @@ nn_lib :
     #------------------------
 
     nn_bn_init_forward(name,in) = (
-      unref(_ind); const _ind = $name#;
+      const name#_ind = $name#;
       const name#_out_width = in#_out_width;
       const name#_out_height = in#_out_height;
       const name#_out_depth = in#_out_depth;
       const name#_out_spectrum = in#_out_spectrum;
 
       const name#_base_col = $_nn_is_training==1?0:2;
-      name#_mu = crop(#_ind,name#_base_col,0,1,h#_ind);
-      name#_sigma = sqrt(crop(#_ind,name#_base_col + 1,0,1,h#_ind));
+      name#_mu = crop(##name#_ind,name#_base_col,0,1,h##name#_ind);
+      name#_sigma = sqrt(crop(##name#_ind,name#_base_col + 1,0,1,h##name#_ind));
       isnan(name#_mu[0])?(name#_mu = 0; name#_sigma = 1);
-      name#_gamma = crop(#_ind,4,0,1,h#_ind);
-      name#_beta = crop(#_ind,5,0,1,h#_ind);
+      name#_gamma = crop(##name#_ind,4,0,1,h##name#_ind);
+      name#_beta = crop(##name#_ind,5,0,1,h##name#_ind);
       name#_out = vector(#size(in#_out));
     );
 
@@ -49274,7 +49274,7 @@ nn_lib :
       merge(name#_batch_deriv_beta,+);
       name#_in_mean/=name#_nb_samples;
       name#_in_variance = 0;
-      for (_k = 0, _k<nb_threads_used, ++_k,
+      repeat (nb_threads_used,_k,
         name#_in_variance+=name#_threads_nb_samples[_k]*
           (name#_threads_in_variance[_k*size(name#_in_variance),size(name#_in_variance)] +
           (name#_threads_in_mean[_k*size(name#_in_mean),size(name#_in_variance)] - name#_in_mean)^2);
@@ -49283,78 +49283,110 @@ nn_lib :
     );
 
     nn_bn_update(name,learning_mode) = (
-      unref(_ind); const _ind = $name#;
-      draw(#_ind,name#_in_mean,0,0,0,0,1,h#_ind,1,1); # Update batch mean and batch variance
-      draw(#_ind,name#_in_variance,1,0,0,0,1,h#_ind,1,1);
+      draw(##name#_ind,name#_in_mean,0,0,0,0,1,h##name#_ind,1,1); # Update batch mean and batch variance
+      draw(##name#_ind,name#_in_variance,1,0,0,0,1,h##name#_ind,1,1);
       !$batch_iter?(
-        momentum = isnan(i[#_ind,2])?1:0.01;
-        draw(#_ind,name#_in_mean,2,0,0,0,1,h#_ind,1,1,momentum); # Global mean and variance
-        draw(#_ind,name#_in_variance,3,0,0,0,1,h#_ind,1,1,momentum);
+        momentum = isnan(i[##name#_ind,2])?1:0.01;
+        draw(##name#_ind,name#_in_mean,2,0,0,0,1,h##name#_ind,1,1,momentum); # Global mean and variance
+        draw(##name#_ind,name#_in_variance,3,0,0,0,1,h##name#_ind,1,1,momentum);
       );
 
       !no_update?(
         learning_mode&1?(
           name#_dt_gamma = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_gamma));
           name#_gamma-=name#_dt_gamma*name#_batch_deriv_gamma;
-          draw(#_ind,name#_gamma,4,0,0,0,1,h#_ind);
+          draw(##name#_ind,name#_gamma,4,0,0,0,1,h##name#_ind);
         );
         learning_mode&2?(
           name#_dt_beta = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_beta));
           name#_beta-=name#_dt_beta*name#_batch_deriv_beta;
-          draw(#_ind,name#_beta,5,0,0,0,1,h#_ind);
+          draw(##name#_ind,name#_beta,5,0,0,0,1,h##name#_ind);
         );
       );
     );
 
-    # Convolutional Layer (CONV).
-    #-----------------------------
+    # 2D Convolutional Layer (CONV2D).
+    #----------------------------------
 
-    nn_conv_init_forward(name,in) = (
-      unref(_ind); const _ind = $name#;
+    nn_conv2d_init_forward(name,in) = (
+      const name#_ind = $name#;
       const name#_out_width = in#_out_width;
       const name#_out_height = in#_out_height;
       const name#_out_depth = in#_out_depth;
-      const name#_out_spectrum = h#_ind;
-      const name#_out_whd = name#_out_width*name#_out_height*name#_out_depth;
-      const name#_kernel_size2 = (w#_ind - 1)/in#_out_spectrum;
-      const name#_kernel_size = round(sqrt(name#_kernel_size2));
+      const name#_out_spectrum = h##name#_ind;
+      const name#_kernel_size = sqrt((w##name#_ind - 1)/in#_out_spectrum);
 
-      name#_weights = crop(#_ind,0,0,w#_ind - 1,h#_ind);
-      name#_biases = crop(#_ind,w#_ind - 1,0,1,h#_ind);
-      name#_out = vector(##in#_out_width*in#_out_height*in#_out_depth*h#_ind);
-      name#_yl = vector(##name#_out_whd);
+      name#_weights = crop(##name#_ind,0,0,w##name#_ind - 1,h##name#_ind);
+      name#_biases = crop(##name#_ind,w##name#_ind - 1,0,1,h##name#_ind);
+      name#_out = vector(##in#_out_width*in#_out_height*in#_out_depth*h##name#_ind);
     );
 
-    nn_conv_forward(name,in) = (
-      unref(_ind); const _ind = $name#;
+    nn_conv2d_forward(name,in) = (
       name#_out = 0;
-      for (_l = 0, _l<name#_out_spectrum, ++_l,
-        name#_yl = 0;
-        for (_k = 0, _k<in#_out_spectrum, ++_k,
-          name#_xk = in#_out[_k*name#_out_whd,name#_out_whd];
-          name#_yl+=convolve(name#_xk,
-                             in#_out_width,in#_out_height,in#_out_depth,1,
-                             name#_weights[_k*name#_kernel_size2,name#_kernel_size2],
-                             name#_kernel_size,name#_kernel_size,1,1);
-        );
-        name#_yl += name#_biases[_l];
-        copy(name#_out[_l*name#_out_whd],name#_yl);
+      repeat (name#_out_spectrum,_l,
+        name#_yl = convolve(in#_out,in#_out_width,in#_out_height,in#_out_depth,in#_out_spectrum,
+                            name#_weights[_l*(w##name#_ind - 1),w##name#_ind - 1],
+                            name#_kernel_size,name#_kernel_size,1,in#_out_spectrum,
+                            1,0,0);
+        name#_yl+=name#_biases[_l];
+        copy(name#_out[_l*size(name#_out)/name#_out_spectrum],name#_yl);
       );
+    );
+
+    nn_conv2d_init_backward(name,in) = (
+      name#_batch_deriv_weights = vector(#size(name#_weights));
+      name#_batch_deriv_biases = vector(#size(name#_biases));
+    );
+
+    nn_conv2d_backward(name,in) = (
+      in#_deriv_out = vector(#size(in#_out));
+      unref(_sizk,_sizl,_sizw);
+      const _sizk = size(in#_out)/in#_out_spectrum;     # Size of input plane
+      const _sizl = size(name#_out)/name#_out_spectrum; # Size of output plane
+      const _sizw = name#_kernel_size^2;                # Size of kernel^2
+      name#_dxk = vector(#_sizk);
+      name#_wlk = vector(#_sizw);
+
+#      repeat (name#_out_spectrum,_l,
+#        repeat (in#_out_spectrum,_k,
+#          name#_dwlk = convolve(name#_deriv_out[_l*_sizl]);
+#        );
+#      );
+
+      repeat (in#_out_spectrum,_k,
+        name#_dxk = 0;
+        repeat (name#_out_spectrum,_l,
+          copy(name#_wlk[_sizw - 1],name#_weights[_l*(w##name#_ind - 1) + _k*_sizw],_sizw,-1,1); # Mirror kernel
+          name#_dxk+=convolve(name#_deriv_out[_l*_sizl,_sizl],
+                              name#_out_width,name#_out_height,name#_out_depth,1,
+                              name#_wlk,
+                              name#_kernel_size,name#_kernel_size,1,1,
+                              1,0,0);
+        );
+        copy(in#_deriv_out[_k*_sizk],_sizk);
+      );
+    );
+
+    nn_conv2d_end_backward(name) = (
+      merge(name#_batch_deriv_weights,+);
+      merge(name#_batch_deriv_biases,+);
+      name#_batch_deriv_weights/=nb_samples;
+      name#_batch_deriv_biases/=nb_samples;
     );
 
     # Fully-Connected Module (FC).
     #-----------------------------
 
     nn_fc_init_forward(name) = (
-      unref(_ind); const _ind = $name#;
+      const name#_ind = $name#;
       const name#_out_width = 1;
       const name#_out_height = 1;
       const name#_out_depth = 1;
-      const name#_out_spectrum = h#_ind;
+      const name#_out_spectrum = h##name#_ind;
 
-      name#_weights = crop(#_ind,0,0,w#_ind - 1,h#_ind);
-      name#_biases = crop(#_ind,w#_ind - 1,0,1,h#_ind);
-      name#_out = vector(#h#_ind);
+      name#_weights = crop(##name#_ind,0,0,w##name#_ind - 1,h##name#_ind);
+      name#_biases = crop(##name#_ind,w##name#_ind - 1,0,1,h##name#_ind);
+      name#_out = vector(#h##name#_ind);
     );
 
     nn_fc_forward(name,in) = (
@@ -49365,13 +49397,12 @@ nn_lib :
     nn_fc_init_backward(name) = (
       name#_batch_deriv_weights = vector(#size(name#_weights));
       name#_batch_deriv_biases = vector(#size(name#_biases));
-      name#_batch_deriv_out = vector(#size(name#_out));
     );
 
     nn_fc_backward(name,in) = (
       name#_deriv_biases = name#_deriv_out;
-      name#_deriv_weights = mul(name#_deriv_biases,in#_out,size(in#_out));
-      in#_deriv_out = mul(transpose(name#_weights,in#_out_spectrum),name#_deriv_biases);
+      name#_deriv_weights = mul(name#_deriv_out,in#_out,size(in#_out));
+      in#_deriv_out = mul(transpose(name#_weights,size(in#_out)),name#_deriv_biases);
       name#_batch_deriv_weights+=name#_deriv_weights;
       name#_batch_deriv_biases+=name#_deriv_biases;
     );
@@ -49384,14 +49415,13 @@ nn_lib :
     );
 
     nn_fc_update(name) = (
-      unref(_ind); const _ind = $name#;
       !no_update?(
         name#_dt_weights = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_weights));
         name#_dt_biases = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_biases));
         name#_weights-=name#_dt_weights*name#_batch_deriv_weights;
         name#_biases-=name#_dt_biases*name#_batch_deriv_biases;
-        draw(#_ind,name#_weights,0,0,0,0,w#_ind - 1,h#_ind);
-        draw(#_ind,name#_biases,w#_ind - 1,0,0,0,1,h#_ind);
+        draw(##name#_ind,name#_weights,0,0,0,0,w##name#_ind - 1,h##name#_ind);
+        draw(##name#_ind,name#_biases,w##name#_ind - 1,0,0,0,1,h##name#_ind);
       );
     );
 
@@ -49488,16 +49518,20 @@ nn_bn : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($
                "nn_bn_forward($1,$2);"
   _nn_backward..="begin(nn_bn_init_backward($1,$2));"\
                  "nn_bn_backward($1,$2,$3);"\
-                 "end_t(nn_bn_end_t_backward($1)); end(nn_bn_end_backward($1));"
+                 "end_t(nn_bn_end_t_backward($1));"\
+                 "end(nn_bn_end_backward($1));"
   _nn_update..="end(nn_bn_update($1,$3));"
 
-#@gmic nn_conv : name,in,nb_neurons>0,kernel_size>0
-#@gmic : Add a convolutional layer to the network.
-nn_conv : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($3) && $3>0 && isint($4) && $4>0"
+#@gmic nn_conv2d : name,in,nb_neurons>0,kernel_size>0
+#@gmic : Add a convolutional layer with 2D kernels to the network.
+nn_conv2d : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($3) && $3>0 && isint($4) && $4>0"
   _nn_$1_out_size={[$_nn_$2_out_size][0,3]},$3
   if !isint($$1) {[$_nn_$2_out_size][3]*$4^2+1},$3 f. g nm. $1 fi
-  _nn_forward.="begin(nn_conv_init_forward($1,$2));"\
-               "nn_conv_forward($1,$2);"
+  _nn_forward.="begin(nn_conv2d_init_forward($1,$2));"\
+               "nn_conv2d_forward($1,$2);"
+  _nn_backward..="begin(nn_conv2d_init_backward($1,$2));"\
+                 "nn_conv2d_backward($1,$2);"\
+                 "end(nn_conv2d_end_backward($1));"
 
 #@gmic nn_fc : name,in,nb_neurons>0
 #@gmic : Add an fully connected module to the network.
@@ -49620,7 +49654,7 @@ nn_test :
   #----------------------
   nn_init
   nn_input X,32,32,1,3
-  nn_conv CONV,X,3,3
+  nn_conv2d CONV,X,3,3
   nn_mse L,CONV,X
   l[] sp lena,car,duck,earth r 32,32,1,3,2 a z nm img endl
 
