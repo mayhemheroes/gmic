@@ -49314,9 +49314,7 @@ nn_lib :
       const name#_out_height = in#_out_height;
       const name#_out_depth = in#_out_depth;
       const name#_out_spectrum = h##name#_ind;
-
-      const name#_kernel_size2 = (w##name#_ind - 1)/in#_out_spectrum;
-      const name#_kernel_size = round(sqrt(name#_kernel_size2));
+      const name#_kernel_size = sqrt((w##name#_ind - 1)/in#_out_spectrum);
 
       name#_weights = crop(##name#_ind,0,0,w##name#_ind - 1,h##name#_ind);
       name#_biases = crop(##name#_ind,w##name#_ind - 1,0,1,h##name#_ind);
@@ -49348,7 +49346,7 @@ nn_lib :
 
     nn_conv2d_backward(name,in) = (
       in#_deriv_out = vector(#size(in#_out));
-      name#_wlk = vector(##name#_kernel_size2);
+      name#_wlk = vector(##name#_kernel_size^2);
       name#_dxk = vector(#size(in#_out)/in#_out_spectrum);
 
       # repeat (name#_out_spectrum,_l,
@@ -49360,7 +49358,7 @@ nn_lib :
       repeat (in#_out_spectrum,_k,
         name#_dxk = 0;
         repeat (name#_out_spectrum,_l,
-          copy(name#_wlk[name#_kernel_size2 - 1],name#_weights[_l*(w##name#_ind - 1) + _k*name#_kernel_size2],name#_kernel_size2,-1,1);
+          copy(name#_wlk[name#_kernel_size^2 - 1],name#_weights[_l*(w##name#_ind - 1) + _k*name#_kernel_size^2],name#_kernel_size^2,-1,1);
           name#_dxk+=convolve(name#_deriv_out,name#_out_width,name#_out_height,name#_out_depth,name#_out_spectrum,
                               name#_wlk,
                               name#_kernel_size,name#_kernel_size,1,1,
