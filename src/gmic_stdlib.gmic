@@ -49330,7 +49330,7 @@ nn_lib :
         name#_yl = convolve(in#_out,in#_out_width,in#_out_height,in#_out_depth,in#_out_spectrum,
                             name#_weights[_l*(w##name#_ind - 1),w##name#_ind - 1],
                             name#_kernel_size,name#_kernel_size,1,in#_out_spectrum,
-                            1,0,0);
+                            0,0,0);
         name#_yl+=name#_biases[_l];
         copy(name#_out[_l*size(name#_out)/name#_out_spectrum],name#_yl);
       );
@@ -49359,7 +49359,7 @@ nn_lib :
                               name#_out_width,name#_out_height,name#_out_depth,1,
                               name#_wlk,
                               name#_kernel_size,name#_kernel_size,1,1,
-                              1);
+                              0);
         );
         copy(in#_deriv_out[_k*_sizk],name#_dxk,_sizk);
       );
@@ -49378,9 +49378,9 @@ nn_lib :
                                 name#_out_width,name#_out_height,name#_out_depth,1,
                                 name#_dxk,
                                 in#_out_width,in#_out_height,in#_out_depth,1,
-                                1,0,0,
-                                1,1,0,
-                                0,0,0,name#_kernel_size - 1,name#_kernel_size - 1,0);
+                                0,0,0,
+                                1,1,0);
+#                                0,0,0,name#_kernel_size - 1,name#_kernel_size - 1,0);
           copy(name#_deriv_weights[_l*_sizl + _k*_sizk],name#_dwlk,_sizw);
         );
       );
@@ -49685,10 +49685,10 @@ nn_test :
   # Build neural network.
   #----------------------
   nn_init
-  nn_input X,32,32,1,3
-  nn_conv2d CONV,X,3,3
+  nn_input X,32,32,1,1
+  nn_conv2d CONV,X,1,3
   nn_mse L,CONV,X
-  l[] sp lena,car,duck,earth r 32,32,1,3,2 a z nm img endl
+  l[] sp lena,car,duck,earth luminance r 32,32,1,100%,2 n 0,255 a z nm img endl
 
   # Optimize network.
   #------------------
@@ -49706,18 +49706,20 @@ nn_test :
         const ind = $img;
         X = crop(#ind,0,0,x,0,w#ind,h#ind,1,s#ind);
         Y = X; "\ # Ground-truth
-        ${_nn_forward}${_nn_backward}${_nn_update}"
-        end(
+        ${_nn_forward}\
+        ${_nn_backward}\
+        ${_nn_update}\
+        "end(
           print(L_out);
         ); I"
     done
     rm[batch]
 
     # Visualize convolution kernels.
-    repeat 3,y repeat 3,x
+    repeat 1,y repeat 1,x
       +z[CONV] {[9*$x,$y,9*$x+8,$y]}
     done done
-    l[-9--1]
+    l[-1--1]
       r 3,3,1,1,-1 n 0,255 r2dx 128,1 frame 1,1,0 frame 2,2,200 append_tiles ,
       w. rm
     endl
