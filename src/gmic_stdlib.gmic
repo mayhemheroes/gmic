@@ -49350,6 +49350,8 @@ nn_lib :
       name#_dxk = vector(#_sizk);
       name#_wlk = vector(#_sizw);
 
+      name#_deriv_weights = vector(#size(name#_weights));
+      name#_deriv_biases = vector(#size(name#_biases));
       repeat (name#_out_spectrum,_l,
         repeat (in#_out_spectrum,_k,
           name#_dwlk = convolve(name#_deriv_out[_l*_sizl,_sizl],
@@ -49357,9 +49359,11 @@ nn_lib :
                                 in#_out[_k*_sizk,_sizk],
                                 in#_out_width,in#_out_height,in#_out_depth,1,
                                 1);
-
+          copy(name#_deriv_weights[_l*_sizl + _k*_sizk],name#_dwlk,_sizk);
         );
       );
+      name#_batch_deriv_weights+=name#_deriv_weights;
+      name#_batch_deriv_biases+=name#_deriv_biases;
 
       repeat (in#_out_spectrum,_k,
         name#_dxk = 0;
