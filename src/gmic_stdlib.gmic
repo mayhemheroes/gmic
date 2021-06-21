@@ -49390,18 +49390,17 @@ nn_lib :
           #                       0,0,0,name#_kernel_size - 1,name#_kernel_size - 1,0);
 
           name#_dwlk = vector(#_sizw);
-          for (_Q = -1, _Q<=1, ++_Q,
-            for (_P = -1, _P<=1, ++_P,
+          for (_Q = 0, _Q<3, ++_Q,
+            for (_P = 0, _P<3, ++_P,
               _foo = 0;
               repeat (name#_out_height,_Y,
                 repeat (name#_out_width,_X,
-                  inrange(_Y - _Q,0,name#_out_height - 1) && inrange(_X - _P,0,name#_out_width - 1)?(
-                    _foo+=name#_deriv_out[_l*_sizl + _Y*name#_out_width + _X] * name#_dxk[(_Y - _Q)*in#_out_width + (_X - _P)];
+                  inrange(_Y - _Q + 1,0,name#_out_height - 1) && inrange(_X - _P + 1,0,name#_out_width - 1)?(
+                    _foo+=name#_deriv_out[_l*_sizl + _Y*name#_out_width + _X] * name#_dxk[(_Y - _Q + 1)*in#_out_width + (_X - _P + 1)];
                   );
                 );
               );
-              off = (_Q + 1)*3 + _P + 1;
-              name#_dwlk[3*(_Q + 1) + _P + 1] = _foo;
+              name#_dwlk[3*_Q + _P] = _foo;
             );
           );
 
