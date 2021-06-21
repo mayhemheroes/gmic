@@ -49210,18 +49210,18 @@ nn_lib :
     #------------------------
 
     nn_bn_init_forward(name,in) = (
-      unref(_ind); const _ind = $name#;
+      const name#_ind = $name#;
       const name#_out_width = in#_out_width;
       const name#_out_height = in#_out_height;
       const name#_out_depth = in#_out_depth;
       const name#_out_spectrum = in#_out_spectrum;
 
       const name#_base_col = $_nn_is_training==1?0:2;
-      name#_mu = crop(#_ind,name#_base_col,0,1,h#_ind);
-      name#_sigma = sqrt(crop(#_ind,name#_base_col + 1,0,1,h#_ind));
+      name#_mu = crop(##name#_ind,name#_base_col,0,1,h##name#_ind);
+      name#_sigma = sqrt(crop(##name#_ind,name#_base_col + 1,0,1,h##name#_ind));
       isnan(name#_mu[0])?(name#_mu = 0; name#_sigma = 1);
-      name#_gamma = crop(#_ind,4,0,1,h#_ind);
-      name#_beta = crop(#_ind,5,0,1,h#_ind);
+      name#_gamma = crop(##name#_ind,4,0,1,h##name#_ind);
+      name#_beta = crop(##name#_ind,5,0,1,h##name#_ind);
       name#_out = vector(#size(in#_out));
     );
 
@@ -49283,25 +49283,24 @@ nn_lib :
     );
 
     nn_bn_update(name,learning_mode) = (
-      unref(_ind); const _ind = $name#;
-      draw(#_ind,name#_in_mean,0,0,0,0,1,h#_ind,1,1); # Update batch mean and batch variance
-      draw(#_ind,name#_in_variance,1,0,0,0,1,h#_ind,1,1);
+      draw(##name#_ind,name#_in_mean,0,0,0,0,1,h##name#_ind,1,1); # Update batch mean and batch variance
+      draw(##name#_ind,name#_in_variance,1,0,0,0,1,h##name#_ind,1,1);
       !$batch_iter?(
-        momentum = isnan(i[#_ind,2])?1:0.01;
-        draw(#_ind,name#_in_mean,2,0,0,0,1,h#_ind,1,1,momentum); # Global mean and variance
-        draw(#_ind,name#_in_variance,3,0,0,0,1,h#_ind,1,1,momentum);
+        momentum = isnan(i[##name#_ind,2])?1:0.01;
+        draw(##name#_ind,name#_in_mean,2,0,0,0,1,h##name#_ind,1,1,momentum); # Global mean and variance
+        draw(##name#_ind,name#_in_variance,3,0,0,0,1,h##name#_ind,1,1,momentum);
       );
 
       !no_update?(
         learning_mode&1?(
           name#_dt_gamma = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_gamma));
           name#_gamma-=name#_dt_gamma*name#_batch_deriv_gamma;
-          draw(#_ind,name#_gamma,4,0,0,0,1,h#_ind);
+          draw(##name#_ind,name#_gamma,4,0,0,0,1,h##name#_ind);
         );
         learning_mode&2?(
           name#_dt_beta = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_beta));
           name#_beta-=name#_dt_beta*name#_batch_deriv_beta;
-          draw(#_ind,name#_beta,5,0,0,0,1,h#_ind);
+          draw(##name#_ind,name#_beta,5,0,0,0,1,h##name#_ind);
         );
       );
     );
