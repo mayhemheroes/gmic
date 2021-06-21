@@ -49309,30 +49309,29 @@ nn_lib :
     #----------------------------------
 
     nn_conv2d_init_forward(name,in) = (
-      unref(_ind); const _ind = $name#;
+      const name#_ind = $name#;
       const name#_out_width = in#_out_width;
       const name#_out_height = in#_out_height;
       const name#_out_depth = in#_out_depth;
-      const name#_out_spectrum = h#_ind;
+      const name#_out_spectrum = h##name#_ind;
 
-      const name#_kernel_size2 = (w#_ind - 1)/in#_out_spectrum;
+      const name#_kernel_size2 = (w##name#_ind - 1)/in#_out_spectrum;
       const name#_kernel_size = round(sqrt(name#_kernel_size2));
 
-      name#_weights = crop(#_ind,0,0,w#_ind - 1,h#_ind);
-      name#_biases = crop(#_ind,w#_ind - 1,0,1,h#_ind);
-      name#_out = vector(##in#_out_width*in#_out_height*in#_out_depth*h#_ind);
+      name#_weights = crop(##name#_ind,0,0,w##name#_ind - 1,h##name#_ind);
+      name#_biases = crop(##name#_ind,w##name#_ind - 1,0,1,h##name#_ind);
+      name#_out = vector(##in#_out_width*in#_out_height*in#_out_depth*h##name#_ind);
     );
 
     nn_conv2d_forward(name,in) = (
-      unref(_ind); const _ind = $name#;
       name#_out = 0;
       repeat (name#_out_spectrum,_l,
         name#_yl = convolve(in#_out,in#_out_width,in#_out_height,in#_out_depth,in#_out_spectrum,
-                            name#_weights[_l*(w#_ind - 1),w#_ind - 1],
+                            name#_weights[_l*(w##name#_ind - 1),w##name#_ind - 1],
                             name#_kernel_size,name#_kernel_size,1,in#_out_spectrum,
                             1,0,0);
         name#_yl += name#_biases[_l];
-        copy(name#_out[_l*size(name#_out)/h#_ind],name#_yl);
+        copy(name#_out[_l*size(name#_out)/h##name#_ind],name#_yl);
       );
     );
 
@@ -49348,7 +49347,6 @@ nn_lib :
     );
 
     nn_conv2d_backward(name,in) = (
-      unref(_ind); const _ind = $name#;
       in#_deriv_out = vector(#size(in#_out));
       name#_wlk = vector(##name#_kernel_size2);
       name#_dxk = vector(#size(in#_out)/in#_out_spectrum);
@@ -49362,7 +49360,7 @@ nn_lib :
       repeat (in#_out_spectrum,_k,
         name#_dxk = 0;
         repeat (name#_out_spectrum,_l,
-          copy(name#_wlk[name#_kernel_size2 - 1],name#_weights[_l*(w#_ind - 1) + _k*name#_kernel_size2],name#_kernel_size2,-1,1);
+          copy(name#_wlk[name#_kernel_size2 - 1],name#_weights[_l*(w##name#_ind - 1) + _k*name#_kernel_size2],name#_kernel_size2,-1,1);
           name#_dxk+=convolve(name#_deriv_out,name#_out_width,name#_out_height,name#_out_depth,name#_out_spectrum,
                               name#_wlk,
                               name#_kernel_size,name#_kernel_size,1,1,
