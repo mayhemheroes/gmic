@@ -49311,7 +49311,7 @@ nn_lib :
     # 2D Convolutional Layer (CONV2D).
     #----------------------------------
 
-    nn_conv2d_init_forward(name,in) = (
+    nn_conv2d_init_forward(name,in,stride) = (
       const name#_ind = $name#;
       const name#_out_width = in#_out_width;
       const name#_out_height = in#_out_height;
@@ -49432,11 +49432,10 @@ nn_lib :
     );
 
     nn_fc_backward(name,in) = (
-      in#_deriv_out = mul(transpose(name#_weights,size(in#_out)),name#_deriv_biases);
-      name#_deriv_biases = name#_deriv_out;
+      in#_deriv_out = mul(transpose(name#_weights,size(in#_out)),name#_deriv_out);
       name#_deriv_weights = mul(name#_deriv_out,in#_out,size(in#_out));
       name#_batch_deriv_weights+=name#_deriv_weights;
-      name#_batch_deriv_biases+=name#_deriv_biases;
+      name#_batch_deriv_biases+=name#_deriv_out;
     );
 
     nn_fc_end_backward(name) = (
@@ -49554,12 +49553,14 @@ nn_bn : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($
                  "end(nn_bn_end_backward($1));"
   _nn_update..="end(nn_bn_update($1,$3));"
 
-#@gmic nn_conv2d : name,in,nb_neurons>0,kernel_size>0
+#@gmic nn_conv2d : name,in,nb_neurons>0,_kernel_size>0,_stride>0
 #@gmic : Add a convolutional layer with 2D kernels to the network.
-nn_conv2d : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($3) && $3>0 && isint($4) && $4>0"
+#@gmic : Default values: 'kernel_size=3' and 'stride=1'.
+nn_conv2d : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "
+                  "isint($3) && $3>0 && isint(${4=3}) && $4>0 && isint(${5=1}) && $5>0"
   _nn_$1_out_size={[$_nn_$2_out_size][0,3]},$3
   if !isint($$1) {[$_nn_$2_out_size][3]*$4^2+1},$3 f. g nm. $1 fi
-  _nn_forward.="begin(nn_conv2d_init_forward($1,$2));"\
+  _nn_forward.="begin(nn_conv2d_init_forward($1,$2,$5));"\
                "nn_conv2d_forward($1,$2);"
   _nn_backward..="begin(nn_conv2d_init_backward($1,$2));"\
                  "nn_conv2d_backward($1,$2);"\
@@ -49578,8 +49579,9 @@ nn_fc : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($
                  "end(nn_fc_end_backward($1));"
   _nn_update..="end(nn_fc_update($1));"
 
-#@gmic nn_fcnl : name,in,nb_neurons>0,activation
+#@gmic nn_fcnl : name,in,nb_neurons>0,_activation
 #@gmic : Add an fully connected + non-linearity module to the network.
+#@gmic : Default value: 'activation=leakyrelu'.
 nn_fcnl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($3) && $3>0" skip ${4=leakyrelu}
   nn_fc $1_z,$2,$3
   nn_nl $1,$1_z,$4
@@ -49593,6 +49595,7 @@ nn_init :
 
 #@gmic nn_input : name,width,_height,_depth,_spectrum
 #@gmic : Add an input module to the network.
+#@gmic : Default values: 'height=1', 'depth=1' and 'spectrum=1'.
 nn_input : check ${"is_variable_name $1"}" && isint($2) && $2>0 && isint(${3=1}) && $3>0 && "\
                    "isint(${4=1}) && $4>0 && isint(${5=1}) && $5>0"
   _nn_$1_out_size=$2,$3,$4,$5
@@ -49613,6 +49616,7 @@ nn_mse : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
 
 #@gmic nn_nl : name,in,activation
 #@gmic : Add a non-linearity module to the network.
+#@gmic : Default value: 'activation=leakyrelu'.
 nn_nl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"} skip ${3=leakyrelu}
   _nn_$1_out_size=$_nn_$2_out_size
   _nn_forward.="begin(nn_nl_init_forward($1,$2));"\
@@ -49686,10 +49690,10 @@ nn_test :
   # Build neural network.
   #----------------------
   nn_init
-  nn_input X,32,32,1,3
-  nn_conv2d CONV,X,3,2
-  nn_mse L,CONV,Y
-  l[] sp lena,car,duck,earth r 32,32,1,100%,2 n 0,255 a z nm img endl
+  nn_input X,64,64,1,3
+  nn_conv2d CONV1,X,3,3
+  nn_mse L,CONV1,Y
+  l[] sp lena,car,duck,earth r 64,64,1,100%,2 n 0,255 a z nm img endl
 #  +b[img] xy,1 mirror. c nm. res
   +b[img] xy,0 nm. res
 
@@ -49704,7 +49708,7 @@ nn_test :
 
     # Mini-batch stochastic gradient.
     _nn_is_training=1
-    repeat 1,batch_iter
+    repeat 1000,batch_iter
       eval[batch] *${-nn_lib}${_nn_init_forward}${_nn_init_backward}"
         const img = $img;
         const res = $res;
@@ -49713,9 +49717,12 @@ nn_test :
         ${_nn_forward}\
         ${_nn_backward}\
         ${_nn_update}"
-        var = string('OUT',t);
-        store(CONV_out,var,w#img,h#img,1,s#img);
-        run('l[] $OUT',t,' w',t+1,'. 400,400 rm endl');
+        !("$batch_iter"%100)?(
+          print("$batch_iter");
+          var = string('OUT',t);
+          store(CONV1_out,var,w#res,h#res,1,s#res);
+          run('l[] $OUT',t,' w',t+1,'. 400,400 rm endl');
+        );
         end(
           print(L_out);
         ); I"
@@ -49723,9 +49730,7 @@ nn_test :
     rm[batch]
 
     # Visualize convolution kernels.
-    +z[CONV] 0,{CONV,w-2}
-    l. s y n 0,255 repeat $! l[$>] s x,3 r {v=sqrt(w);[v,v]},1,1,-1 r2dx 128,1 frame 1,1,0 frame 2,2,200 append_tiles , endl done a y w. rm endl
-
+    +z[CONV1] 0,{CONV1,w-2} l. s y n 0,255 repeat $! l[$>] s x,3 r {v=sqrt(w);[v,v]},1,1,-1 r2dx 128,1 frame 1,1,0 frame 2,2,200 append_tiles , endl done a y w7. rm endl
 
   done
 
