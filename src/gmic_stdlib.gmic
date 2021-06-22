@@ -49209,9 +49209,30 @@ nn_lib :
       merge(nb_samples,+);
     );
 
+    # 2D Average-Pooling Module (AVGPOOL2D)
+    #--------------------------------------
+    nn_avgpool2d_init_forward(name,in) = (
+      const name#_out_width = int(in#_out_width/2);
+      const name#_out_height = int(in#_out_height/2);
+      const name#_out_depth = in#_out_depth;
+      const name#_out_spectrum = in#_out_spectrum;
+    );
+
+    nn_avgpool_forward(name,in) = (
+      name#_mask = vector4(0.25);
+      name#_out = convolve(in#_out,
+                           in#_out_width,in#_out_height,in#_out_depth,in#_out_spectrum,
+                           name#_mask,2,2,1,1,
+                           0,0,1,
+                           0,0,0,
+                           0,0,0,
+                           in#_out_width - 1,in#_out_height - 1,in#_out_depth - 1,in#_out_spectrum - 1,
+                           2,2,1);
+    );
+
+
     # Batch-norm Module (BN).
     #------------------------
-
     nn_bn_init_forward(name,in) = (
       const name#_ind = $name#;
       const name#_out_width = in#_out_width;
@@ -49310,7 +49331,6 @@ nn_lib :
 
     # 2D Convolutional Layer (CONV2D).
     #----------------------------------
-
     nn_conv2d_init_forward(name,in,stride) = (
       const name#_ind = $name#;
       const name#_out_width = in#_out_width;
@@ -49408,7 +49428,6 @@ nn_lib :
 
     # Fully-Connected Module (FC).
     #-----------------------------
-
     nn_fc_init_forward(name) = (
       const name#_ind = $name#;
       const name#_out_width = 1;
@@ -49458,7 +49477,6 @@ nn_lib :
 
     # Input Module.
     #--------------
-
     nn_input_init_forward(name,w,h,d,s) = (
       const name#_out_width = w;
       const name#_out_height = h;
@@ -49470,7 +49488,6 @@ nn_lib :
 
     # Mean-Squared Error Loss (MSE).
     #-------------------------------
-
     nn_mse_init_backward(name) = (
       name#_batch_out = 0;
     );
