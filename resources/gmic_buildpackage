@@ -224,10 +224,10 @@ if [ "$HOSTNAME" != "elara" ] ; then
 
     cd $OUTDIR/src
     if [ -f $HOME/is_qt5 ]; then
-        sed "s/\$(MAKE) cli lib gmic krita gmic_qt libc zart/\$(MAKE) cli lib gimp_qt krita_qt gmic_qt libc zart/g" Makefile > /tmp/Makefile && mv /tmp/Makefile Makefile;
+        sed "s/\$(MAKE) cli lib gmic krita gmic_qt libc zart/\$(MAKE) cli lib gimp_qt krita_qt gmic_qt libc/g" Makefile > /tmp/Makefile && mv /tmp/Makefile Makefile;
 #        sed "s/\$(MAKE) cli lib gmic krita gmic_qt libc zart/\$(MAKE) cli lib gimp_qt krita_qt gmic_qt libc/g" Makefile > /tmp/Makefile && mv /tmp/Makefile Makefile;
     else
-        sed "s/\$(MAKE) cli lib gimp krita gmic_qt libc zart/\$(MAKE) cli lib libc zart/g" Makefile > /tmp/Makefile && mv /tmp/Makefile Makefile
+        sed "s/\$(MAKE) cli lib gimp krita gmic_qt libc zart/\$(MAKE) cli lib libc/g" Makefile > /tmp/Makefile && mv /tmp/Makefile Makefile
 #        sed "s/\$(MAKE) cli lib gimp krita gmic_qt libc zart/\$(MAKE) cli lib libc/g" Makefile > /tmp/Makefile && mv /tmp/Makefile Makefile
     fi
     sed "s/\&\& \$(MAKE) clean//g" Makefile > /tmp/Makefile && mv /tmp/Makefile Makefile;  # Prevent 'qmake not found' bug when using dpkg-buildpackage, still don't know why.
@@ -252,7 +252,7 @@ fi
 cd ${HOME}/work/src
 rm -rf gmic-qt zart
 git clone https://github.com/c-koi/gmic-qt.git
-git clone https://github.com/c-koi/zart.git
+#git clone https://github.com/c-koi/zart.git
 RELEASE0=`grep "#define gmic_version" gmic/src/gmic.h | tail -c5`
 RELEASE1=`echo $RELEASE0 | head -c1`
 RELEASE2=`echo $RELEASE0 | head -c2 | tail -c1`
@@ -285,8 +285,8 @@ git checkout master
 git merge develop -m "."
 git push
 git checkout develop
-rm -rf zart gmic-qt
-ln -fs ../zart .
+rm -rf gmic-qt # zart
+# ln -fs ../zart .
 ln -fs ../gmic-qt .
 
 # Create default command file.
@@ -390,12 +390,12 @@ cp -Lrf samples/*.gmic $DIR/resources/samples
 cp -Lrf debian $DIR
 cd ..
 
-cd zart
-qmake zart.pro
-make distclean
-mkdir -p $DIR/zart
-cp -Lrf icons images include src ui *.xml *.html README.md zart.pro zart.desktop zart.qrc $DIR/zart
-cd ..
+# cd zart
+# qmake zart.pro
+# make distclean
+# mkdir -p $DIR/zart
+# cp -Lrf icons images include src ui *.xml *.html README.md zart.pro zart.desktop zart.qrc $DIR/zart
+# cd ..
 
 cd gmic-qt
 qmake gmic_qt.pro
@@ -434,8 +434,8 @@ rm -f `find . -name "*~"`
 rm -r `find . -name "\#*"`
 rm -r `find . -name "CVS"`
 rm -r `find . -name ".git"`
-cd zart
-qmake CONFIG+=release GMIC_PATH=../src zart.pro
+# cd zart
+# qmake CONFIG+=release GMIC_PATH=../src zart.pro
 
 # Create .tar.gz source archives.
 #--------------------------------
@@ -480,7 +480,7 @@ cp ${HOME}/work/src/deb_${TARFILE}.gz /tmp/ &&
     tar zxvf deb_${TARFILE}.gz &&
     find gmic-${SVERSION}${SUFFIX} -exec touch {} \; &&
     cd $OUTDIR/src &&
-    sed "s/\$(MAKE) cli lib gimp krita gmic_qt libc zart/\$(MAKE) cli lib gimp krita gmic_qt libc zart/g" Makefile > /tmp/Makefile &&
+    sed "s/\$(MAKE) cli lib gimp krita gmic_qt libc zart/\$(MAKE) cli lib gimp krita gmic_qt libc/g" Makefile > /tmp/Makefile &&
     mv /tmp/Makefile Makefile && cd ../..
 cd $OUTDIR &&
     dpkg-buildpackage -d -j3 -rfakeroot;
