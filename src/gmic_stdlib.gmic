@@ -49335,10 +49335,6 @@ nn_lib :
         name#_yl+=name#_biases[_l];
         copy(name#_out[_l*size(name#_out)/name#_out_spectrum],name#_yl);
       );
-
-      var = string('OUT',t);
-      store(CONV_out,var,33,33,1,3);
-      run('l[] $OUT',t,' w',t+1,'. 400,400 rm endl');
     );
 
     nn_conv2d_init_backward(name,in) = (
@@ -49692,8 +49688,9 @@ nn_test :
   nn_init
   nn_input X,33,33,1,3
   nn_conv2d CONV,X,3,3
-  nn_mse L,CONV,X
+  nn_mse L,CONV,Y
   l[] sp lena,car,duck,earth r 33,33,1,100%,2 n 0,255 a z nm img endl
+  +b[img] xy,1 mirror. c nm. res
 
   # Optimize network.
   #------------------
@@ -49708,26 +49705,26 @@ nn_test :
     _nn_is_training=1
     repeat 1,batch_iter
       eval[batch] *${-nn_lib}${_nn_init_forward}${_nn_init_backward}"
-        const ind = $img;
-        X = crop(#ind,0,0,x,0,w#ind,h#ind,1,s#ind);
-        Y = X; "\ # Ground-truth
+        const img = $img;
+        const res = $res;
+        X = crop(#img,0,0,x,0,w#img,h#img,1,s#img);
+        Y = crop(#res,0,0,x,0,w#res,h#res,1,s#res); "\ # Ground-truth
         ${_nn_forward}\
         ${_nn_backward}\
-        ${_nn_update}\
-        "end(
+        ${_nn_update}"
+        var = string('OUT',t);
+        store(CONV_out,var,w#img,h#img,1,s#img);
+        run('l[] $OUT',t,' w',t+1,'. 400,400 rm endl');
+        end(
           print(L_out);
         ); I"
     done
     rm[batch]
 
     # Visualize convolution kernels.
-    repeat 3,y repeat 3,x
-      +z[CONV] {[9*$x,$y,9*$x+8,$y]}
-    done done
-    l[-9--1]
-      r 3,3,1,1,-1 n 0,255 r2dx 128,1 frame 1,1,0 frame 2,2,200 append_tiles ,
-      w. rm
-    endl
+    +z[CONV] 0,{CONV,w-2}
+    l. s y n 0,255 repeat $! l[$>] s x,3 r 3,3,1,1,-1 r2dx 128,1 frame 1,1,0 frame 2,2,200 append_tiles , endl done a y w. rm endl
+
 
   done
 
