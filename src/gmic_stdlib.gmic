@@ -49318,7 +49318,7 @@ nn_lib :
       const name#_out_depth = in#_out_depth;
       const name#_out_spectrum = h##name#_ind;
       const name#_kernel_size = sqrt((w##name#_ind - 1)/in#_out_spectrum);
-      const name#_kernel_center = int(name#_kernel_size/2);
+      const name#_kernel_center = name#_kernel_size - 1 - int(name#_kernel_size/2);
 
       name#_weights = crop(##name#_ind,0,0,w##name#_ind - 1,h##name#_ind);
       name#_biases = crop(##name#_ind,w##name#_ind - 1,0,1,h##name#_ind);
@@ -49687,15 +49687,16 @@ nn_test :
   #----------------------
   nn_init
   nn_input X,32,32,1,3
-  nn_conv2d CONV,X,3,3
+  nn_conv2d CONV,X,3,2
   nn_mse L,CONV,Y
   l[] sp lena,car,duck,earth r 32,32,1,100%,2 n 0,255 a z nm img endl
-  +b[img] xy,1 mirror. c nm. res
+#  +b[img] xy,1 mirror. c nm. res
+  +b[img] xy,0 nm. res
 
   # Optimize network.
   #------------------
   size_batch=4
-  repeat 65535,iter
+  repeat inf,iter
     e[] "ITER = "$iter
 
     # Build mini-batch.
@@ -49723,7 +49724,7 @@ nn_test :
 
     # Visualize convolution kernels.
     +z[CONV] 0,{CONV,w-2}
-    l. s y n 0,255 repeat $! l[$>] s x,3 r 3,3,1,1,-1 r2dx 128,1 frame 1,1,0 frame 2,2,200 append_tiles , endl done a y w. rm endl
+    l. s y n 0,255 repeat $! l[$>] s x,3 r {v=sqrt(w);[v,v]},1,1,-1 r2dx 128,1 frame 1,1,0 frame 2,2,200 append_tiles , endl done a y w. rm endl
 
 
   done
