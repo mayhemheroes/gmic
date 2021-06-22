@@ -49336,7 +49336,7 @@ nn_lib :
       );
 
       var = string('OUT',t);
-      store(CONV_out,var,32,32,1,3);
+      store(CONV_out,var,33,33,1,3);
       run('l[] $OUT',t,' w',t+1,'. 400,400 rm endl');
 
 
@@ -49382,24 +49382,12 @@ nn_lib :
           copy(name#_dxk[_sizk - 1],in#_out[_k*_sizk],_sizk,-1,1); # now, dxk = xk mirrored
 
           name#_dwlk2 = convolve(name#_deriv_out[_l*_sizl,_sizl],
-                                name#_out_width,name#_out_height,1,1,
-                                name#_dxk,
-                                in#_out_width,in#_out_height,1,1,
-                                0,0,1,
-                                int(name#_kernel_size/2),int(name#_kernel_size/2),0,
-                                0,0,0,name#_kernel_size-1,name#_kernel_size-1,0);
-
-          # name#_dwlk3 = convolve(name#_deriv_out[_l*_sizl,_sizl],
-          #                       name#_out_width,name#_out_height,1,1,
-          #                       name#_dxk,
-          #                       in#_out_width,in#_out_height,1,1,
-          #                       0,0,1,
-          #                       1,1,1);
-          # foo = vector9();
-          # fill(foo,_i,_x = _i%3; _y = int(_i/3); name#_dwlk3[_x + _y*name#_out_width]);
-          # print(name#_dwlk2);
-          # print(foo);
-
+                                 name#_out_width,name#_out_height,name#_out_depth,1,
+                                 name#_dxk,
+                                 in#_out_width,in#_out_height,1,1,
+                                 0,0,1,
+                                 int(name#_kernel_size/2),int(name#_kernel_size/2),0,
+                                 0,0,0,name#_kernel_size-1,name#_kernel_size-1,0);
 
           name#_dwlk = vector(#_sizw);
           for (_Y = 0, _Y<name#_kernel_size, ++_Y,
@@ -49409,8 +49397,14 @@ nn_lib :
                 repeat (in#_out_width,_P,
                   inrange(_Q - _Y + int(name#_kernel_size/2),0,name#_out_height - 1) &&
                   inrange(_P - _X + int(name#_kernel_size/2),0,name#_out_width - 1)?(
-                    _foo+=name#_deriv_out[_l*_sizl + _Q*name#_out_width + _P] *
-                          name#_dxk[(_Q - _Y + int(name#_kernel_size/2))*in#_out_width + (_P - _X + int(name#_kernel_size/2))];
+                    _foo+=name#_dxk[(_Q - _Y + int(name#_kernel_size/2))*in#_out_width + (_P - _X + int(name#_kernel_size/2))] *
+                          name#_deriv_out[_l*_sizl + _Q*name#_out_width + _P];
+
+                  # inrange(_Y - _Q + int(name#_kernel_size/2),0,name#_out_height - 1) &&
+                  # inrange(_X - _P + int(name#_kernel_size/2),0,name#_out_width - 1)?(
+                  #   _foo+=name#_deriv_out[_l*_sizl + (_X - _P + int(name#_kernel_size/2)) + (_Y - _Q + int(name#_kernel_size/2))*name#_out_width] *
+                  #         name#_dxk[_P + _Q*in#_out_width];
+
                   );
                 );
               );
@@ -49725,10 +49719,10 @@ nn_test :
   # Build neural network.
   #----------------------
   nn_init
-  nn_input X,32,32,1,3
+  nn_input X,33,33,1,3
   nn_conv2d CONV,X,3,3
   nn_mse L,CONV,X
-  l[] sp lena,car,duck,earth r 32,32,1,100%,2 n 0,255 a z nm img endl
+  l[] sp lena,car,duck,earth r 33,33,1,100%,2 n 0,255 a z nm img endl
 
   # Optimize network.
   #------------------
