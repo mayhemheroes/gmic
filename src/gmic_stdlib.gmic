@@ -49351,7 +49351,8 @@ nn_lib :
         name#_yl = convolve(in#_out,in#_out_width,in#_out_height,in#_out_depth,in#_out_spectrum,
                             name#_weights[_l*(w##name#_ind - 1),w##name#_ind - 1],
                             name#_kernel_size,name#_kernel_size,1,in#_out_spectrum,
-                            1,0,0);
+                            1,0,0,
+                            name#_kernel_center,name#_kernel_center,0);
         name#_yl+=name#_biases[_l];
         copy(name#_out[_l*size(name#_out)/name#_out_spectrum],name#_yl);
       );
@@ -49380,7 +49381,9 @@ nn_lib :
                               name#_out_width,name#_out_height,name#_out_depth,1,
                               name#_wlk,
                               name#_kernel_size,name#_kernel_size,1,1,
-                              0);
+                              0,0,1,
+                              name#_kernel_size - 1 - name#_kernel_center,name#_kernel_size - 1 - name#_kernel_center,0
+                              );
         );
         copy(in#_deriv_out[_k*_sizk],name#_dxk,_sizk);
       );
@@ -49708,13 +49711,13 @@ nn_test :
   #----------------------
   nn_init
   nn_input X,64,64,1,3
-  nn_conv2d CONV1,X,3,3
-  nn_nl NL1,CONV1,leakyrelu
-  nn_conv2d CONV2,NL1,3,3
-  nn_mse L,CONV2,Y
+  nn_conv2d CONV1,X,3,4
+#  nn_nl NL1,CONV1,leakyrelu
+#  nn_conv2d CONV2,NL1,3,3
+  nn_mse L,CONV1,Y
   l[] sp lena,car,duck,earth r 64,64,1,100%,2 n 0,255 a z nm img endl
 #  +b[img] xy,1 mirror. c nm. res
-  +b[img] xy,0 l. s z negate[0,2] a z d endl nm. res
+  +b[img] xy,0 l. s z a z endl nm. res
 
   # Optimize network.
   #------------------
@@ -49727,7 +49730,7 @@ nn_test :
 
     # Mini-batch stochastic gradient.
     _nn_is_training=1
-    repeat 100,batch_iter
+    repeat 20,batch_iter
       eval[batch] *${-nn_lib}${_nn_init_forward}${_nn_init_backward}"
         const img = $img;
         const res = $res;
@@ -49736,10 +49739,9 @@ nn_test :
         ${_nn_forward}\
         ${_nn_backward}\
         ${_nn_update}"
-        !("$batch_iter"%100)?(
-          print("$batch_iter");
+        !("$batch_iter"%20)?(
           var = string('OUT',t);
-          store(CONV2_out,var,w#res,h#res,1,s#res);
+          store(CONV1_out,var,w#res,h#res,1,s#res);
           run('l[] $OUT',t,' w',t+1,'. 400,400 rm endl');
         );
         end(
@@ -49750,7 +49752,7 @@ nn_test :
 
     # Visualize convolution kernels.
     +z[CONV1] 0,{CONV1,w-2} l. s y n 0,255 repeat $! l[$>] s x,3 r {v=sqrt(w);[v,v]},1,1,-1 r2dx 128,1 frame 1,1,0 frame 2,2,200 append_tiles , endl done a y w7. rm endl
-    +z[CONV2] 0,{CONV2,w-2} l. s y n 0,255 repeat $! l[$>] s x,3 r {v=sqrt(w);[v,v]},1,1,-1 r2dx 128,1 frame 1,1,0 frame 2,2,200 append_tiles , endl done a y w8. rm endl
+
 
   done
 
