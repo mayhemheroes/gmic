@@ -49331,7 +49331,7 @@ nn_lib :
 
     # 2D Convolutional Layer (CONV2D).
     #----------------------------------
-    nn_conv2d_init_forward(name,in,stride) = (
+    nn_conv2d_init_forward(name,in,stride,dilation) = (
       const name#_ind = $name#;
       const name#_out_width = in#_out_width;
       const name#_out_height = in#_out_height;
@@ -49339,6 +49339,8 @@ nn_lib :
       const name#_out_spectrum = h##name#_ind;
       const name#_kernel_size = sqrt((w##name#_ind - 1)/in#_out_spectrum);
       const name#_kernel_center = name#_kernel_size - 1 - int(name#_kernel_size/2);
+      const name#_stride = stride;
+      const name#_dilation = dilation;
 
       name#_weights = crop(##name#_ind,0,0,w##name#_ind - 1,h##name#_ind);
       name#_biases = crop(##name#_ind,w##name#_ind - 1,0,1,h##name#_ind);
@@ -49573,14 +49575,14 @@ nn_bn : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($
                  "end(nn_bn_end_backward($1));"
   _nn_update..="end(nn_bn_update($1,$3));"
 
-#@gmic nn_conv2d : name,in,nb_neurons>0,_kernel_size>0,_stride>0
+#@gmic nn_conv2d : name,in,nb_neurons>0,_kernel_size>0,_stride>0,_dilation>0
 #@gmic : Add a convolutional layer with 2D kernels to the network.
 #@gmic : Default values: 'kernel_size=3' and 'stride=1'.
 nn_conv2d : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "\
-                  "isint($3) && $3>0 && isint(${4=3}) && $4>0 && isint(${5=1}) && $5>0"
+                  "isint($3) && $3>0 && isint(${4=3}) && $4>0 && ${5=1}>0" check "${6=1}"
   _nn_$1_out_size={[$_nn_$2_out_size][0,3]},$3
   if !isint($$1) {[$_nn_$2_out_size][3]*$4^2+1},$3 f. g nm. $1 fi
-  _nn_forward.="begin(nn_conv2d_init_forward($1,$2,$5));"\
+  _nn_forward.="begin(nn_conv2d_init_forward($1,$2,$5,$6));"\
                "nn_conv2d_forward($1,$2);"
   _nn_backward..="begin(nn_conv2d_init_backward($1,$2));"\
                  "nn_conv2d_backward($1,$2);"\
@@ -49711,10 +49713,10 @@ nn_test :
   #----------------------
   nn_init
   nn_input X,64,64,1,3
-  nn_conv2d CONV1,X,2,3
-  nn_nl NL1,CONV1,leakyrelu
-  nn_conv2d CONV2,NL1,3,3
-  nn_mse L,CONV2,Y
+  nn_conv2d CONV1,X,3,3
+#  nn_nl NL1,CONV1,leakyrelu
+#  nn_conv2d CONV2,NL1,3,3
+  nn_mse L,CONV1,Y
   l[] sp lena,car,duck,earth r 64,64,1,100%,2 n 0,255 a z nm img endl
 #  +b[img] xy,1 mirror. c nm. res
   +b[img] xy,0 l. s z a z endl nm. res
@@ -49730,7 +49732,7 @@ nn_test :
 
     # Mini-batch stochastic gradient.
     _nn_is_training=1
-    repeat 20,batch_iter
+    repeat 40,batch_iter
       eval[batch] *${-nn_lib}${_nn_init_forward}${_nn_init_backward}"
         const img = $img;
         const res = $res;
@@ -49741,7 +49743,7 @@ nn_test :
         ${_nn_update}"
         !("$batch_iter"%20)?(
           var = string('OUT',t);
-          store(CONV2_out,var,w#res,h#res,1,s#res);
+          store(CONV1_out,var,w#res,h#res,1,s#res);
           run('l[] $OUT',t,' w',t+1,'. 400,400 rm endl');
         );
         end(
@@ -49752,7 +49754,6 @@ nn_test :
 
     # Visualize convolution kernels.
     +z[CONV1] 0,{CONV1,w-2} l. s y n 0,255 repeat $! l[$>] s x,3 r {v=sqrt(w);[v,v]},1,1,-1 r2dx 128,1 frame 1,1,0 frame 2,2,200 append_tiles , endl done a y w7. rm endl
-    +z[CONV2] 0,{CONV2,w-2} l. s y n 0,255 repeat $! l[$>] s x,3 r {v=sqrt(w);[v,v]},1,1,-1 r2dx 128,1 frame 1,1,0 frame 2,2,200 append_tiles , endl done a y w8. rm endl
 
 
   done
