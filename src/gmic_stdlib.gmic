@@ -49350,13 +49350,16 @@ nn_lib :
     nn_conv2d_forward(name,in) = (
       name#_out = 0;
       repeat (name#_out_spectrum,_l,
-        name#_yl = convolve(in#_out,in#_out_width,in#_out_height,in#_out_depth,in#_out_spectrum,
+        name#_yl = convolve(in#_out,
+                            in#_out_width,in#_out_height,in#_out_depth,in#_out_spectrum,
                             name#_weights[_l*(w##name#_ind - 1),w##name#_ind - 1],
                             name#_kernel_size,name#_kernel_size,1,in#_out_spectrum,
                             1,0,0,
                             name#_kernel_center,name#_kernel_center,0,
-                            0,0,0,in#_out_width - 1,in#_out_height - 1,in#_out_depth - 1,
-                            name#_stride,name#_stride,1);
+                            0,0,0,
+                            in#_out_width - 1,in#_out_height - 1,in#_out_depth - 1,
+                            name#_stride,name#_stride,1,
+                            name#_dilation,name#_dilation,1);
         name#_yl+=name#_biases[_l];
         copy(name#_out[_l*size(name#_out)/name#_out_spectrum],name#_yl);
       );
@@ -49388,7 +49391,8 @@ nn_lib :
                               0,0,1,
                               name#_kernel_size - 1 - name#_kernel_center,name#_kernel_size - 1 - name#_kernel_center,0,
                               0,0,0,name#_out_width - 1,name#_out_height - 1,name#_out_depth - 1,
-                              1/name#_stride,1/name#_stride,1);
+                              1/name#_stride,1/name#_stride,1,
+                              name#_dilation/name#_stride,name#_dilation/name#_stride,1);
         );
         copy(in#_deriv_out[_k*_sizk],name#_dxk,_sizk);
       );
