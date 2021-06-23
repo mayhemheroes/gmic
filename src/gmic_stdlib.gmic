@@ -49569,6 +49569,21 @@ nn_lib :
       nn_activate(in#_deriv_out,deriv_#activation);
       in#_deriv_out*=name#_deriv_out;
     );
+
+    # Reshape Module (RESHAPE).
+    #--------------------------
+    nn_reshape_init_forward(name,in,w,h,d,s) = (
+      const name#_out_width = w;
+      const name#_out_height = h;
+      const name#_out_depth = d;
+      const name#_out_spectrum = s;
+
+      ref(in#_out,name#_out);
+    );
+
+    nn_reshape_init_backward(name,in) = (
+      ref(name#_deriv_out,in#_deriv_out);
+    );
 "
 
 #@gmic nn_bn : name,in,learning_mode={ 0=no parameters learnt | 1=gamma-only | 2=beta-only | 3=gamma & beta}
@@ -49654,6 +49669,17 @@ nn_nl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"} skip ${3=le
                "nn_nl_forward($1,$2,$3);"
   _nn_backward..="nn_nl_backward($1,$2,$3);"
 
+#@gmic nn_reshape : name,in,width>0,_height>0,_depth>0,_spectrum>0
+#@gmic : Add a reshape module to the network.
+#@gmic : Default values: 'height=1', 'depth=1' and 'spectrum=1'.
+nn_reshape :
+  _nn_$1_out_size=$3,$4,$5,$6
+  if prod($_nn_$1_out_size)!=prod($_nn_$2_out_size)
+    error "nn_reshape: Cannot reshape input ("$_nn_$2_out_size") to output ("$_nn_$1_out_size")."
+  fi
+  _nn_forward.="begin(nn_reshape_init_forward($1,$2,$3,$4,$5,$6));"
+  _nn_backward..="begin(nn_reshape_init_backward($1,$2));"
+
 #------------------------------
 # Test program for FC networks.
 #------------------------------
@@ -49721,50 +49747,42 @@ nn_test :
   # Build neural network.
   #----------------------
   nn_init
-  nn_input X,64,64,1,3
-  nn_conv2d CONV1,X,3,3
-#  nn_nl NL1,CONV1,leakyrelu
-#  nn_conv2d CONV2,NL1,3,3
-  nn_mse L,CONV1,Y
-  l[] sp lena,car,duck,earth r 64,64,1,100%,2 n 0,255 a z nm img endl
-#  +b[img] xy,1 mirror. c nm. res
-  +b[img] xy,0 l. s z a z endl nm. res
-  d
+  nn_input X,1,1,1,16
+  nn_fcnl FC1,X,512
+  nn_reshape RS1,FC1,4,4,1,32
+  nn_conv2d CONV1,RS1,16,3,0.5 # 8x8x1x16 = 1024
+  nn_nl NL1,CONV1,leakyrelu
+  nn_conv2d CONV2,NL1,8,3,0.5  # 16x16x1x8 = 2048
+  nn_nl NL2,CONV2,leakyrelu
+  nn_conv2d CONV3,NL2,8,3,0.5  # 32x32x1x8 = 8192
+  nn_nl NL3,CONV3,leakyrelu
+  nn_conv2d CONV4,NL3,3,3,0.5  # 64x64x1x3 = 12288
+  nn_mse L,CONV4,Y
+  sp lena,64 nm. img
+
+  1,1,1,16,u store. IN
 
   # Optimize network.
   #------------------
-  size_batch=4
+  size_batch=1
   repeat inf,iter
     e[] "ITER = "$iter
 
     # Build mini-batch.
-    $size_batch nm. batch
+    $IN nm. batch
 
     # Mini-batch stochastic gradient.
     _nn_is_training=1
-    repeat 40,batch_iter
+    repeat 1,batch_iter
       eval[batch] *${-nn_lib}${_nn_init_forward}${_nn_init_backward}"
         const img = $img;
-        const res = $res;
-        X = crop(#img,0,0,x,0,w#img,h#img,1,s#img);
-        Y = crop(#res,0,0,x,0,w#res,h#res,1,s#res); "\ # Ground-truth
-        ${_nn_forward}\
-        ${_nn_backward}\
-        ${_nn_update}"
-        !("$batch_iter"%20)?(
-          var = string('OUT',t);
-          store(CONV1_out,var,w#res,h#res,1,s#res);
-          run('l[] $OUT',t,' w',t+1,'. 400,400 rm endl');
-        );
-        end(
-          print(L_out);
-        ); I"
+        X = get('IN',16);
+        Y = crop(#img,0,0,x,0,w#img,h#img,1,s#img); "\ # Ground-truth
+        ${_nn_forward}${_nn_backward}${_nn_update}"
+        print(L_out);
+        I"
     done
     rm[batch]
-
-    # Visualize convolution kernels.
-    +z[CONV1] 0,{CONV1,w-2} l. s y n 0,255 repeat $! l[$>] s x,3 r {v=sqrt(w);[v,v]},1,1,-1 r2dx 128,1 frame 1,1,0 frame 2,2,200 append_tiles , endl done a y w7. rm endl
-
 
   done
 
