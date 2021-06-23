@@ -49601,9 +49601,9 @@ nn_bn : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($
 
 #@gmic nn_conv2d : name,in,nb_neurons>0,_kernel_size>0,_stride>0,_dilation>0
 #@gmic : Add a convolutional layer with 2D kernels to the network.
-#@gmic : Default values: 'kernel_size=3' and 'stride=1'.
+#@gmic : Default values: 'kernel_size=3', 'stride=1' and 'dilation=1'.
 nn_conv2d : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "\
-                  "isint($3) && $3>0 && isint(${4=3}) && $4>0 && ${5=1}>0" check "${6=1}"
+                  "isint($3) && $3>0 && isint(${4=3}) && $4>0 && ${5=1}>0" skip "${6=1}"
   _nn_$1_out_size={[$_nn_$2_out_size][0,3]},$3
   if !isint($$1) {[$_nn_$2_out_size][3]*$4^2+1},$3 f. g nm. $1 fi
   _nn_forward.="begin(nn_conv2d_init_forward($1,$2,$5,$6));"\
@@ -49612,6 +49612,14 @@ nn_conv2d : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "\
                  "nn_conv2d_backward($1,$2);"\
                  "end(nn_conv2d_end_backward($1));"
   _nn_update..="end(nn_conv2d_update($1));"
+
+#@gmic nn_conv2dnl : name,in,nb_neurons>0,_kernel_size>0,_stride>0,_dilation>0,_activation
+#@gmic : Add a convolutional layer with 2D kernels + non-linearity module to the network.
+#@gmic : Default values: 'kernel_size=3', 'stride=1', 'dilation=1' and 'activation=leakyrelu'.
+nn_conv2dnl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "\
+                  "isint($3) && $3>0 && isint(${4=3}) && $4>0 && ${5=1}>0" skip "${6=1}","${7=leakyrelu}"
+  nn_conv2d $1_z,$2,$3,$4,$5,$6
+  nn_nl $1,$1_z,$7
 
 #@gmic nn_fc : name,in,nb_neurons>0
 #@gmic : Add an fully connected module to the network.
@@ -49747,20 +49755,15 @@ nn_test :
   # Build neural network.
   #----------------------
   nn_init
-  nn_input X,1,1,1,16
-  nn_fcnl FC1,X,512
-  nn_reshape RS1,FC1,4,4,1,32
-  nn_conv2d CONV1,RS1,16,3,0.5 # 8x8x1x16 = 1024
-  nn_nl NL1,CONV1,leakyrelu
-  nn_conv2d CONV2,NL1,8,3,0.5  # 16x16x1x8 = 2048
-  nn_nl NL2,CONV2,leakyrelu
-  nn_conv2d CONV3,NL2,8,3,0.5  # 32x32x1x8 = 8192
-  nn_nl NL3,CONV3,leakyrelu
-  nn_conv2d CONV4,NL3,3,3,0.5  # 64x64x1x3 = 12288
+  nn_input X,4,4,1,32
+  nn_conv2dnl CONV1,X,16,3,0.5,1,leakyrelu # 8x8x1x16 = 1024
+  nn_conv2dnl CONV2,CONV1,8,3,0.5,1,leakyrelu  # 16x16x1x8 = 2048
+  nn_conv2dnl CONV3,CONV2,8,3,0.5,1,leakyrelu  # 32x32x1x8 = 8192
+  nn_conv2dnl CONV4,CONV3,3,3,0.5,1,leakyrelu  # 64x64x1x3 = 12288
   nn_mse L,CONV4,Y
-  sp lena,64 nm. img
+  sp lena,64 n. 0,1 nm. img
 
-  1,1,1,16,u store. IN
+  4,4,1,32,u store. IN
 
   # Optimize network.
   #------------------
@@ -49776,7 +49779,7 @@ nn_test :
     repeat 1,batch_iter
       eval[batch] *${-nn_lib}${_nn_init_forward}${_nn_init_backward}"
         const img = $img;
-        X = get('IN',16);
+        X = get('IN',512);
         Y = crop(#img,0,0,x,0,w#img,h#img,1,s#img); "\ # Ground-truth
         ${_nn_forward}${_nn_backward}${_nn_update}"
         print(L_out);
