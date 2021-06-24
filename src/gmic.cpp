@@ -14590,7 +14590,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               if (np<back._height) CImg<char>(back.data(p),1,++np - p,1,1,true).move_to(g_list_c);
               p = np;
             }
-            if (g_list_c) {
+            if (g_list_c.size()==g_list.size()-1) {
               is_gmz = true;
               cimglist_for(g_list_c,l) g_list_c[l].unroll('x');
               g_list.remove();
