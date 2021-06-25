@@ -49315,17 +49315,15 @@ nn_lib :
         draw(##name#_ind,name#_in_variance,3,0,0,0,1,h##name#_ind,1,1,momentum);
       );
 
-      !no_update?(
-        learning_mode&1?(
-          name#_dt_gamma = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_gamma));
-          name#_gamma-=name#_dt_gamma*name#_batch_deriv_gamma;
-          draw(##name#_ind,name#_gamma,4,0,0,0,1,h##name#_ind);
-        );
-        learning_mode&2?(
-          name#_dt_beta = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_beta));
-          name#_beta-=name#_dt_beta*name#_batch_deriv_beta;
-          draw(##name#_ind,name#_beta,5,0,0,0,1,h##name#_ind);
-        );
+      learning_mode&1?(
+        name#_dt_gamma = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_gamma));
+        name#_gamma-=name#_dt_gamma*name#_batch_deriv_gamma;
+        draw(##name#_ind,name#_gamma,4,0,0,0,1,h##name#_ind);
+      );
+      learning_mode&2?(
+        name#_dt_beta = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_beta));
+        name#_beta-=name#_dt_beta*name#_batch_deriv_beta;
+        draw(##name#_ind,name#_beta,5,0,0,0,1,h##name#_ind);
       );
     );
 
@@ -49430,14 +49428,12 @@ nn_lib :
     );
 
     nn_conv2d_update(name) = (
-      !no_update?(
-        name#_dt_weights = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_weights));
-        name#_dt_biases = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_biases));
-        name#_weights-=name#_dt_weights*name#_batch_deriv_weights;
-        name#_biases-=name#_dt_biases*name#_batch_deriv_biases;
-        draw(##name#_ind,name#_weights,0,0,0,0,w##name#_ind - 1,h##name#_ind);
-        draw(##name#_ind,name#_biases,w##name#_ind - 1,0,0,0,1,h##name#_ind);
-      );
+      name#_dt_weights = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_weights));
+      name#_dt_biases = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_biases));
+      name#_weights-=name#_dt_weights*name#_batch_deriv_weights;
+      name#_biases-=name#_dt_biases*name#_batch_deriv_biases;
+      draw(##name#_ind,name#_weights,0,0,0,0,w##name#_ind - 1,h##name#_ind);
+      draw(##name#_ind,name#_biases,w##name#_ind - 1,0,0,0,1,h##name#_ind);
     );
 
     # Fully-Connected Module (FC).
@@ -49479,14 +49475,12 @@ nn_lib :
     );
 
     nn_fc_update(name) = (
-      !no_update?(
-        name#_dt_weights = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_weights));
-        name#_dt_biases = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_biases));
-        name#_weights-=name#_dt_weights*name#_batch_deriv_weights;
-        name#_biases-=name#_dt_biases*name#_batch_deriv_biases;
-        draw(##name#_ind,name#_weights,0,0,0,0,w##name#_ind - 1,h##name#_ind);
-        draw(##name#_ind,name#_biases,w##name#_ind - 1,0,0,0,1,h##name#_ind);
-      );
+      name#_dt_weights = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_weights));
+      name#_dt_biases = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_biases));
+      name#_weights-=name#_dt_weights*name#_batch_deriv_weights;
+      name#_biases-=name#_dt_biases*name#_batch_deriv_biases;
+      draw(##name#_ind,name#_weights,0,0,0,0,w##name#_ind - 1,h##name#_ind);
+      draw(##name#_ind,name#_biases,w##name#_ind - 1,0,0,0,1,h##name#_ind);
     );
 
     # Input Module.
@@ -49518,24 +49512,21 @@ nn_lib :
     );
 
     nn_mse_update(name) = (
-      no_update = 0;
       learning_rate = $_nn_#name#_learning_rate;
       name#_previous_batch_out = $_nn_#name#_previous_batch_out;
       name#_nb_decreases = $_nn_#name#_nb_decreases;
-      !isinf(name#_previous_batch_out)?(
-        name#_batch_out>name#_previous_batch_out?(
+
+      name#_batch_out>=name#_previous_batch_out?(
+        name#_nb_decreases = 0;
+        learning_rate = max(1e-9,0.75*learning_rate);
+      ):(
+        ++name#_nb_decreases;
+        name#_nb_decreases>=4?(
+          learning_rate = min(1,2*learning_rate);
           name#_nb_decreases = 0;
-          learning_rate = max(1e-13,learning_rate/2);
-#          no_update = 1;
-        ):(
-          ++name#_nb_decreases;
-          name#_nb_decreases>=8?(
-            learning_rate = min(1,learning_rate*2);
-            name#_nb_decreases = 0;
-#            echo('increase dt = ',learning_rate);
-          );
         );
       );
+
       run('_nn_#name#_previous_batch_out,\
            _nn_#name#_learning_rate,\
            _nn_#name#_nb_decreases=',name#_batch_out,',',learning_rate,',',name#_nb_decreases);
@@ -49598,7 +49589,7 @@ nn_bn : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($
 nn_conv2d : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "\
                   "isint($3) && $3>0 && isint(${4=3}) && $4>0 && ${5=1}>0" skip "${6=1}"
   _nn_$1_out_size={[$_nn_$2_out_size][0,3]},$3
-  if !isint($$1) {[$_nn_$2_out_size][3]*$4^2+1},$3 f. g nm. $1 fi
+  if !isint($$1) {[$_nn_$2_out_size][3]*$4^2+1},$3 f. 4*g/(w-1) nm. $1 fi
   _nn_forward.="begin(nn_conv2d_init_forward($1,$2,$5,$6));"\
                "nn_conv2d_forward($1,$2);"
   _nn_backward..="begin(nn_conv2d_init_backward($1,$2));"\
@@ -49618,7 +49609,7 @@ nn_conv2dnl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "
 #@gmic : Add an fully connected module to the network.
 nn_fc : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($3) && $3>0"
   _nn_$1_out_size=1,1,1,$3
-  if !isint($$1) {prod($_nn_$2_out_size)+1},$3 f. g nm. $1 fi
+  if !isint($$1) {prod($_nn_$2_out_size)+1},$3 f. 4*g/(w-1) nm. $1 fi
   _nn_forward.="begin(nn_fc_init_forward($1));"\
                "nn_fc_forward($1,$2);"
   _nn_backward..="begin(nn_fc_init_backward($1));"\
@@ -49657,7 +49648,7 @@ nn_mse : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
                  "end(nn_mse_end_backward($1));"
   _nn_update..="end(nn_mse_update($1));"
   _nn_$1_previous_batch_out=inf
-  _nn_$1_learning_rate=1
+  _nn_$1_learning_rate=1e-2
   _nn_$1_nb_decreases=0
 
 #@gmic nn_nl : name,in,activation
@@ -49722,7 +49713,7 @@ nn_test_fc :
         Y = batch[2,3]; "\ # Ground-truth
         ${_nn_forward}${_nn_backward}${_nn_update}"
         end(
-          !($batch_iter%20)?print(L_out);
+          !($batch_iter%20)?print([L_out,learning_rate]);
         ); I"
     done
     rm[batch]
@@ -49738,58 +49729,62 @@ nn_test_fc :
 
   done
 
-
 #----------------------------------
 # Test program for CONV networks.
 #----------------------------------
-nn_test :
+nn_test_conv :
 
   # Build neural network.
   #----------------------
   nn_init
-  nn_input X,1,1,1,768
-  nn_reshape nX,X,16,16,1,3
-  nn_conv2dnl CONV1,nX,32,3,1,1,leakyrelu
-  nn_conv2dnl CONV2,CONV1,32,3,1,1,leakyrelu
-  nn_conv2dnl CONV3,CONV2,32,3,1,1,leakyrelu
-  nn_conv2dnl CONV4,CONV3,16,3,1,1,leakyrelu
-  nn_conv2dnl CONV5,CONV4,16,3,1,1,leakyrelu
-  nn_conv2dnl CONV6,CONV5,8,3,1,1,leakyrelu
-  nn_conv2dnl CONV7,CONV6,8,3,1,1,leakyrelu
-  nn_conv2dnl CONV8,CONV7,3,3,1,1,leakyrelu
-  nn_mse L,CONV8,Y
-  sp lena,16 nm. img
-
-  16,16,1,3,u store. IN
+  nn_input X,64,64,1,1
+#  nn_bn BN,X
+  nn_conv2dnl CONV1,X,512
+  nn_conv2dnl CONV2,CONV1,128
+  nn_conv2dnl CONV3,CONV2,32
+  nn_conv2dnl CONV4,CONV3,8
+  nn_conv2dnl CONV5,CONV4,1
+  nn_mse L,CONV5,Y
+  l[] sp lena,car,duck,earth luminance r 64,64,1,100%,2 n 0,255 a z nm img endl
+  +b[img] xy,0 l. s z rolling_guidance 4,4 n 0,255 a z endl nm. res
+  noise[img] 990 n[img] 0,255
 
   # Optimize network.
   #------------------
-  size_batch=1
+  size_batch=4
   repeat inf,iter
     e[] "ITER = "$iter
 
     # Build mini-batch.
-    $IN nm. batch
+    $size_batch nm. batch
 
     # Mini-batch stochastic gradient.
     _nn_is_training=1
-    repeat 1,batch_iter
+    repeat 10,batch_iter
       eval[batch] *${-nn_lib}${_nn_init_forward}${_nn_init_backward}"
         const img = $img;
-        X = get('IN',768);
-        Y = crop(#img,0,0,x,0,w#img,h#img,1,s#img); "\ # Ground-truth
-        ${_nn_forward}${_nn_backward}${_nn_update}"
-        end(
-          print(L_out,learning_rate);
-          store(CONV8_out,'Y',16,16,1,3);
-          run('l[] $Y w. 400,400 rm endl');
+        const res = $res;
+        X = crop(#img,0,0,x,0,w#img,h#img,1,s#img);
+        Y = crop(#res,0,0,x,0,w#res,h#res,1,s#res); "\ # Ground-truth
+        ${_nn_forward}\
+        ${_nn_backward}\
+        ${_nn_update}"
+        !("$batch_iter"%20)?(
+          var = string('OUT',t);
+          store(CONV5_out,var,w#res,h#res,1,s#res);
+          run('l[] $OUT',t,' w',t+1,'. 400,400 rm endl');
         );
-
-        I"
+        end(
+          print([L_out,learning_rate]);
+        ); I"
     done
     rm[batch]
 
+    # Visualize convolution kernels.
+#    +z[CONV1] 0,{CONV1,w-2} l. s y n 0,255 repeat $! l[$>] s x,3 r {v=sqrt(w);[v,v]},1,1,-1 r2dx 128,1 frame 1,1,0 frame 2,2,200 append_tiles 3 endl done a y w7. rm endl
+
   done
+
 
 
 
