@@ -49529,10 +49529,9 @@ nn_lib :
           no_update = 1;
         ):(
           ++name#_nb_decreases;
-          name#_nb_decreases>=8?(
-            learning_rate = min(1,learning_rate*2);
+          name#_nb_decreases>=4?(
+            learning_rate = min(1,learning_rate*1.25);
             name#_nb_decreases = 0;
-#            echo('increase dt = ',learning_rate);
           );
         );
       );
@@ -49722,7 +49721,7 @@ nn_test_fc :
         Y = batch[2,3]; "\ # Ground-truth
         ${_nn_forward}${_nn_backward}${_nn_update}"
         end(
-          !($batch_iter%20)?print(L_out);
+          !($batch_iter%20)?print([L_out,learning_rate]);
         ); I"
     done
     rm[batch]
