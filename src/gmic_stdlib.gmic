@@ -49315,17 +49315,15 @@ nn_lib :
         draw(##name#_ind,name#_in_variance,3,0,0,0,1,h##name#_ind,1,1,momentum);
       );
 
-      !no_update?(
-        learning_mode&1?(
-          name#_dt_gamma = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_gamma));
-          name#_gamma-=name#_dt_gamma*name#_batch_deriv_gamma;
-          draw(##name#_ind,name#_gamma,4,0,0,0,1,h##name#_ind);
-        );
-        learning_mode&2?(
-          name#_dt_beta = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_beta));
-          name#_beta-=name#_dt_beta*name#_batch_deriv_beta;
-          draw(##name#_ind,name#_beta,5,0,0,0,1,h##name#_ind);
-        );
+      learning_mode&1?(
+        name#_dt_gamma = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_gamma));
+        name#_gamma-=name#_dt_gamma*name#_batch_deriv_gamma;
+        draw(##name#_ind,name#_gamma,4,0,0,0,1,h##name#_ind);
+      );
+      learning_mode&2?(
+        name#_dt_beta = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_beta));
+        name#_beta-=name#_dt_beta*name#_batch_deriv_beta;
+        draw(##name#_ind,name#_beta,5,0,0,0,1,h##name#_ind);
       );
     );
 
@@ -49430,14 +49428,12 @@ nn_lib :
     );
 
     nn_conv2d_update(name) = (
-      !no_update?(
-        name#_dt_weights = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_weights));
-        name#_dt_biases = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_biases));
-        name#_weights-=name#_dt_weights*name#_batch_deriv_weights;
-        name#_biases-=name#_dt_biases*name#_batch_deriv_biases;
-        draw(##name#_ind,name#_weights,0,0,0,0,w##name#_ind - 1,h##name#_ind);
-        draw(##name#_ind,name#_biases,w##name#_ind - 1,0,0,0,1,h##name#_ind);
-      );
+      name#_dt_weights = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_weights));
+      name#_dt_biases = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_biases));
+      name#_weights-=name#_dt_weights*name#_batch_deriv_weights;
+      name#_biases-=name#_dt_biases*name#_batch_deriv_biases;
+      draw(##name#_ind,name#_weights,0,0,0,0,w##name#_ind - 1,h##name#_ind);
+      draw(##name#_ind,name#_biases,w##name#_ind - 1,0,0,0,1,h##name#_ind);
     );
 
     # Fully-Connected Module (FC).
@@ -49479,14 +49475,12 @@ nn_lib :
     );
 
     nn_fc_update(name) = (
-      !no_update?(
-        name#_dt_weights = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_weights));
-        name#_dt_biases = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_biases));
-        name#_weights-=name#_dt_weights*name#_batch_deriv_weights;
-        name#_biases-=name#_dt_biases*name#_batch_deriv_biases;
-        draw(##name#_ind,name#_weights,0,0,0,0,w##name#_ind - 1,h##name#_ind);
-        draw(##name#_ind,name#_biases,w##name#_ind - 1,0,0,0,1,h##name#_ind);
-      );
+      name#_dt_weights = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_weights));
+      name#_dt_biases = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_biases));
+      name#_weights-=name#_dt_weights*name#_batch_deriv_weights;
+      name#_biases-=name#_dt_biases*name#_batch_deriv_biases;
+      draw(##name#_ind,name#_weights,0,0,0,0,w##name#_ind - 1,h##name#_ind);
+      draw(##name#_ind,name#_biases,w##name#_ind - 1,0,0,0,1,h##name#_ind);
     );
 
     # Input Module.
@@ -49518,23 +49512,21 @@ nn_lib :
     );
 
     nn_mse_update(name) = (
-      no_update = 0;
       learning_rate = $_nn_#name#_learning_rate;
       name#_previous_batch_out = $_nn_#name#_previous_batch_out;
       name#_nb_decreases = $_nn_#name#_nb_decreases;
-      !isinf(name#_previous_batch_out)?(
-        name#_batch_out>name#_previous_batch_out?(
+
+      name#_batch_out>=name#_previous_batch_out?(
+        name#_nb_decreases = 0;
+        learning_rate = max(1e-9,0.75*learning_rate);
+      ):(
+        ++name#_nb_decreases;
+        name#_nb_decreases>=4?(
+          learning_rate = min(1,1.25*learning_rate);
           name#_nb_decreases = 0;
-          learning_rate = max(1e-9,learning_rate/2);
-          no_update = 1;
-        ):(
-          ++name#_nb_decreases;
-          name#_nb_decreases>=4?(
-            learning_rate = min(1,learning_rate*1.25);
-            name#_nb_decreases = 0;
-          );
         );
       );
+
       run('_nn_#name#_previous_batch_out,\
            _nn_#name#_learning_rate,\
            _nn_#name#_nb_decreases=',name#_batch_out,',',learning_rate,',',name#_nb_decreases);
@@ -49656,7 +49648,7 @@ nn_mse : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
                  "end(nn_mse_end_backward($1));"
   _nn_update..="end(nn_mse_update($1));"
   _nn_$1_previous_batch_out=inf
-  _nn_$1_learning_rate=1e-5
+  _nn_$1_learning_rate=1
   _nn_$1_nb_decreases=0
 
 #@gmic nn_nl : name,in,activation
@@ -49746,14 +49738,14 @@ nn_test_conv :
   #----------------------
   nn_init
   nn_input X,64,64,1,3
-  nn_conv2dnl CONV1,X,512
+  nn_conv2dnl CONV1,X,16
 #  nn_conv2dnl CONV2,CONV1,256
 #  nn_conv2dnl CONV3,CONV2,128
-  nn_conv2dnl CONV4,CONV1,64
-  nn_conv2dnl CONV5,CONV4,32
-  nn_conv2dnl CONV6,CONV5,16
-  nn_conv2dnl CONV7,CONV6,8
-  nn_conv2dnl CONV8,CONV7,3
+  nn_conv2dnl CONV4,CONV1,8
+  nn_conv2dnl CONV5,CONV4,4
+#  nn_conv2dnl CONV6,CONV5,16
+#  nn_conv2dnl CONV7,CONV6,8
+  nn_conv2dnl CONV8,CONV5,3
   nn_mse L,CONV8,Y
   l[] sp lena,car,duck,earth r 64,64,1,100%,2 n -1,1 a z nm img endl
   +b[img] xy,0 l. s z n 0,255 rolling_guidance 4,4 n -1,1 a z endl nm. res
@@ -49786,7 +49778,7 @@ nn_test_conv :
           run('l[] $OUT',t,' w',t+1,'. 400,400 rm endl');
         );
         end(
-          print(L_out);
+          print([L_out,learning_rate]);
         ); I"
     done
     rm[batch]
