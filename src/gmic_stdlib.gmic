@@ -49216,18 +49216,26 @@ nn_lib :
       const name#_out_height = int(in#_out_height/2);
       const name#_out_depth = in#_out_depth;
       const name#_out_spectrum = in#_out_spectrum;
+      name#_kernel = [ 0.25,0.25,0.25,0.25 ];
     );
 
-    nn_avgpool_forward(name,in) = (
-      name#_mask = vector4(0.25);
+    nn_avgpool2d_forward(name,in) = (
       name#_out = convolve(in#_out,
                            in#_out_width,in#_out_height,in#_out_depth,in#_out_spectrum,
-                           name#_mask,2,2,1,1,
+                           name#_kernel,2,2,1,1,
                            0,0,1,
                            0,0,0,
                            0,0,0,
                            in#_out_width - 1,in#_out_height - 1,in#_out_depth - 1,in#_out_spectrum - 1,
                            2,2,1);
+    );
+
+    nn_avgpool2d_backward(name,in) = (
+      in#_deriv_out = vector(#size(in#_out));
+      fill(in#_deriv_out,_k,
+           _x = int((_k%in#_out_width)/2);
+           _y = int(int(_k/in#_out_height)/2);
+           name#_deriv_out[_x + name#_out_width*_y]);
     );
 
 
@@ -49570,6 +49578,14 @@ nn_lib :
     );
 "
 
+#@gmic nn_avgpool2d : name,in
+#@gmic : Add a 2d average pooling module to the network.
+nn_avgpool2d : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
+  _nn_$1_out_size={int([$_nn_$2_out_size]/2)}
+  _nn_forward.="begin(nn_avgpool2d_init_forward($1,$2));"\
+               "nn_avgpool2d_forward($1,$2);"
+  _nn_backward..="nn_avgpool2d_backward($1,$2);"
+
 #@gmic nn_bn : name,in,learning_mode={ 0=no parameters learnt | 1=gamma-only | 2=beta-only | 3=gamma & beta}
 #@gmic : Add a batch-norm module to the network.
 nn_bn : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint(${3=0}) && inrange($3,0,3)"
@@ -49772,6 +49788,59 @@ nn_test_conv :
         !("$batch_iter"%20)?(
           var = string('OUT',t);
           store(CONV5_out,var,w#res,h#res,1,s#res);
+          run('l[] $OUT',t,' w',t+1,'. 400,400 rm endl');
+        );
+        end(
+          print([L_out,learning_rate]);
+        ); I"
+    done
+    rm[batch]
+
+    # Visualize convolution kernels.
+#    +z[CONV1] 0,{CONV1,w-2} l. s y n 0,255 repeat $! l[$>] s x,3 r {v=sqrt(w);[v,v]},1,1,-1 r2dx 128,1 frame 1,1,0 frame 2,2,200 append_tiles 3 endl done a y w7. rm endl
+
+  done
+
+
+#----------------------------------
+# Test program for CONV networks.
+#----------------------------------
+nn_test :
+
+  # Build neural network.
+  #----------------------
+  nn_init
+  nn_input X,64,64,1,3
+  nn_conv2d CONV1,X,3
+  nn_avgpool2d POOL1,CONV1
+  nn_mse L,POOL1,Y
+  l[] sp lena,64 n 0,255 nm img endl
+  +r2dx[img] 50% n. 0,255 nm. res
+  d
+
+  # Optimize network.
+  #------------------
+  size_batch=1
+  repeat inf,iter
+    e[] "ITER = "$iter
+
+    # Build mini-batch.
+    $size_batch nm. batch
+
+    # Mini-batch stochastic gradient.
+    _nn_is_training=1
+    repeat 10,batch_iter
+      eval[batch] *${-nn_lib}${_nn_init_forward}${_nn_init_backward}"
+        const img = $img;
+        const res = $res;
+        X = crop(#img,0,0,x,0,w#img,h#img,1,s#img);
+        Y = crop(#res,0,0,x,0,w#res,h#res,1,s#res); "\ # Ground-truth
+        ${_nn_forward}\
+        ${_nn_backward}\
+        ${_nn_update}"
+        !("$batch_iter"%20)?(
+          var = string('OUT',t);
+          store(POOL1_out,var,w#res,h#res,1,s#res);
           run('l[] $OUT',t,' w',t+1,'. 400,400 rm endl');
         );
         end(
