@@ -49581,7 +49581,7 @@ nn_lib :
 #@gmic nn_avgpool2d : name,in
 #@gmic : Add a 2d average pooling module to the network.
 nn_avgpool2d : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
-  _nn_$1_out_size={int([$_nn_$2_out_size]/2)}
+  _nn_$1_out_size={s=[$_nn_$2_out_size];int([s[0]/2,s[1]/2,1,s[3]])}
   _nn_forward.="begin(nn_avgpool2d_init_forward($1,$2));"\
                "nn_avgpool2d_forward($1,$2);"
   _nn_backward..="nn_avgpool2d_backward($1,$2);"
@@ -49814,9 +49814,10 @@ nn_test :
   nn_conv2d CONV1,X,3
   nn_avgpool2d POOL1,CONV1
   nn_conv2d CONV2,POOL1,3
-  nn_mse L,CONV2,Y
+  nn_avgpool2d POOL2,CONV2
+  nn_mse L,POOL2,Y
   l[] sp lena,64 n 0,255 nm img endl
-  +r2dx[img] 50% n. 0,255 nm. res
+  +r2dx[img] 25% n. 0,255 nm. res
 
   # Optimize network.
   #------------------
