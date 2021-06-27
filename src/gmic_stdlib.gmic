@@ -49581,7 +49581,7 @@ nn_lib :
 #@gmic nn_avgpool2d : name,in
 #@gmic : Add a 2d average pooling module to the network.
 nn_avgpool2d : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
-  _nn_$1_out_size={s=[$_nn_$2_out_size];int([s[0]/2,s[1]/2,1,s[3]])}
+  _nn_$1_out_size={s=[$_nn_$2_out_size];[int(s[0]/2),int(s[1]/2),1,s[3]]}
   _nn_forward.="begin(nn_avgpool2d_init_forward($1,$2));"\
                "nn_avgpool2d_forward($1,$2);"
   _nn_backward..="nn_avgpool2d_backward($1,$2);"
@@ -49604,7 +49604,7 @@ nn_bn : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($
 #@gmic : Default values: 'kernel_size=3', 'stride=1' and 'dilation=1'.
 nn_conv2d : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "\
                   "isint($3) && $3>0 && isint(${4=3}) && $4>0 && ${5=1}>0" skip "${6=1}"
-  _nn_$1_out_size={[$_nn_$2_out_size][0,3]},$3
+  _nn_$1_out_size={s=[$_nn_$2_out_size];[max(1,int(s[0]/$5)),max(1,int(s[1]/$5)),s[2],$3]}
   if !isint($$1) {[$_nn_$2_out_size][3]*$4^2+1},$3 f. 4*g/(w-1) nm. $1 fi
   _nn_forward.="begin(nn_conv2d_init_forward($1,$2,$5,$6));"\
                "nn_conv2d_forward($1,$2);"
