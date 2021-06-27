@@ -49753,21 +49753,21 @@ nn_test_conv :
   # Build neural network.
   #----------------------
   nn_init
-  nn_input X,64,64,1,1
+  nn_input X,64,64,1,3
 #  nn_bn BN,X
-  nn_conv2dnl CONV1,X,512
-  nn_conv2dnl CONV2,CONV1,128
-  nn_conv2dnl CONV3,CONV2,32
+  nn_conv2dnl CONV1,X,64
+  nn_conv2dnl CONV2,CONV1,32
+  nn_conv2dnl CONV3,CONV2,16
   nn_conv2dnl CONV4,CONV3,8
-  nn_conv2dnl CONV5,CONV4,1
+  nn_conv2dnl CONV5,CONV4,3
   nn_mse L,CONV5,Y
-  l[] sp lena,car,duck,earth luminance r 64,64,1,100%,2 n 0,255 a z nm img endl
-  +b[img] xy,0 l. s z rolling_guidance 4,4 n 0,255 a z endl nm. res
+  l[] sp lena,earth r 64,64,1,100%,2 n 0,255 a z nm img endl
+  +b[img] xy,0 nm. res
   noise[img] 990 n[img] 0,255
 
   # Optimize network.
   #------------------
-  size_batch=4
+  size_batch=2
   repeat inf,iter
     e[] "ITER = "$iter
 
@@ -49810,13 +49810,13 @@ nn_test :
   # Build neural network.
   #----------------------
   nn_init
-  nn_input X,64,64,1,3
-  nn_conv2d CONV1,X,3
+  nn_input X,256,256,1,3
+  nn_conv2dnl CONV1,X,3
   nn_avgpool2d POOL1,CONV1
-  nn_conv2d CONV2,POOL1,3
+  nn_conv2dnl CONV2,POOL1,3
   nn_avgpool2d POOL2,CONV2
   nn_mse L,POOL2,Y
-  l[] sp lena,64 n 0,255 nm img endl
+  l[] sp colorful,256 n 0,255 nm img endl
   +r2dx[img] 25% n. 0,255 nm. res
 
   # Optimize network.
@@ -49851,7 +49851,7 @@ nn_test :
     rm[batch]
 
     # Visualize convolution kernels.
-    +z[CONV1] 0,{CONV1,w-2} l. s y n 0,255 repeat $! l[$>] s x,3 r {v=sqrt(w);[v,v]},1,1,-1 r2dx 128,1 frame 1,1,0 frame 2,2,200 append_tiles 3 endl done a y w7. rm endl
+    +z[CONV1_z] 0,{CONV1_z,w-2} l. s y n 0,255 repeat $! l[$>] s x,3 r {v=sqrt(w);[v,v]},1,1,-1 r2dx 128,1 frame 1,1,0 frame 2,2,200 append_tiles 3 endl done a y w7. rm endl
 
   done
 
