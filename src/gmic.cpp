@@ -5277,10 +5277,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         is_command = is_builtin_command;
 
       if (!is_builtin_command) {
-        *command = sep0 = sep1 = 0;
+        *command = sep0 = sep1 = sep = 0;
 
         // Extract command name.
-        // (same as but faster than 'err = cimg_sscanf(item,"%255[a-zA-Z_0-9]%c%c",command,&sep0,&sep1);').
+        // (same as but faster than 'err = cimg_sscanf(item,"%255[a-zA-Z_0-9]%c%c",command,&sep0,&sep1,&sep);').
         const char *ps = item;
         char *pd = command;
         char *const pde = _command.end() - 1;
@@ -5295,11 +5295,16 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           if (*ps) {
             sep0 = *(ps++);
             ++err;
-            if (*ps) { sep1 = *(ps++); ++err; }
+            if (*ps) {
+              sep1 = *(ps++);
+              ++err;
+              if (*ps) { sep = *(ps++); ++err; }
+            }
           }
         }
+
         is_command =
-          (err==1 || (err==2 && sep0=='.') || (err==3 && (sep0=='[' || (sep0=='.' && sep1=='.')))) &&
+          (err==1 || (err==2 && sep0=='.') || (err>=3 && (sep0=='[' || (sep0=='.' && sep1=='.' && sep!='=')))) &&
           (*item<'0' || *item>'9');
 
         if (is_command) {
@@ -13578,7 +13583,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
         // Execute custom command.
         if (!is_command_input && is_command) {
-          if (hash_custom==~0U) { // A --built-in_command not supporting double hyphen (e.g. --v)
+          if (hash_custom==~0U) { // A +builtin_command not supporting '+' prepend (e.g. +v)
             hash_custom = hashcode(command,false);
             is_command = search_sorted(command,commands_names[hash_custom],
                                        commands_names[hash_custom].size(),ind_custom);

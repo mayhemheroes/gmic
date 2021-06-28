@@ -49618,8 +49618,8 @@ nn_conv2d : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "\
 #@gmic : Default values: 'kernel_size=3', 'stride=1', 'dilation=1' and 'activation=leakyrelu'.
 nn_conv2dnl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "\
                   "isint($3) && $3>0 && isint(${4=3}) && $4>0 && ${5=1}>0" skip "${6=1}","${7=leakyrelu}"
-  nn_conv2d $1_z,$2,$3,$4,$5,$6
-  nn_nl $1,$1_z,$7
+  nn_conv2d $1_Z,$2,$3,$4,$5,$6
+  nn_nl $1,$1_Z,$7
 
 #@gmic nn_fc : name,in,nb_neurons>0
 #@gmic : Add an fully connected module to the network.
@@ -49637,8 +49637,8 @@ nn_fc : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($
 #@gmic : Add an fully connected + non-linearity module to the network.
 #@gmic : Default value: 'activation=leakyrelu'.
 nn_fcnl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($3) && $3>0" skip ${4=leakyrelu}
-  nn_fc $1_z,$2,$3
-  nn_nl $1,$1_z,$4
+  nn_fc $1_Z,$2,$3
+  nn_nl $1,$1_Z,$4
 
 #@gmic nn_init
 #@gmic : Initialize new neural network.
@@ -49761,7 +49761,7 @@ nn_test_conv :
   nn_conv2dnl CONV4,CONV3,8
   nn_conv2dnl CONV5,CONV4,3
   nn_mse L,CONV5,Y
-  l[] sp lena,earth r 64,64,1,100%,2 n 0,255 a z nm img endl
+  l[] sp duck,earth r 64,64,1,100%,2 n 0,255 a z nm img endl
   +b[img] xy,0 nm. res
   noise[img] 990 n[img] 0,255
 
@@ -49818,7 +49818,7 @@ nn_test :
   nn_mse L,POOL2,Y
   l[] sp colorful,256 n 0,255 nm img endl
   +r2dx[img] 25% n. 0,255 nm. res
-  noise[img] 900 n[img] 0,255
+  noise[img] 30 n[img] 0,255 d
 
   # Optimize network.
   #------------------
@@ -49852,7 +49852,7 @@ nn_test :
     rm[batch]
 
     # Visualize convolution kernels.
-    +z[CONV1_z] 0,{CONV1_z,w-2} l. s y n 0,255 repeat $! l[$>] s x,3 r {v=sqrt(w);[v,v]},1,1,-1 r2dx 128,1 frame 1,1,0 frame 2,2,200 append_tiles 3 endl done a y w7. rm endl
+    +z[CONV1_Z] 0,{CONV1_Z,w-2} l. s y n 0,255 repeat $! l[$>] s x,3 r {v=sqrt(w);[v,v]},1,1,-1 r2dx 128,1 frame 1,1,0 frame 2,2,200 append_tiles 3 endl done a y w7. rm endl
 
   done
 
