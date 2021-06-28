@@ -49810,15 +49810,13 @@ nn_test :
   # Build neural network.
   #----------------------
   nn_init
-  nn_input X,256,256,1,3
-  nn_conv2dnl CONV1,X,3
-  nn_avgpool2d POOL1,CONV1
-  nn_conv2dnl CONV2,POOL1,3
-  nn_avgpool2d POOL2,CONV2
-  nn_mse L,POOL2,Y
-  l[] sp colorful,256 n 0,255 nm img endl
-  +r2dx[img] 25% n. 0,255 nm. res
-  noise[img] 30 n[img] 0,255 d
+  nn_input X,64,64,1,3
+  nn_conv2d CONV1,X,3,3,0.5
+  nn_mse L,CONV1,Y
+
+  l[] sp colorful,128 n 0,255 nm img endl
+  [img] nm. res
+  r2dx[img] 50%
 
   # Optimize network.
   #------------------
@@ -49838,21 +49836,24 @@ nn_test :
         X = crop(#img,0,0,0,0,w#img,h#img,1,s#img);
         Y = crop(#res,0,0,0,0,w#res,h#res,1,s#res); "\ # Ground-truth
         ${_nn_forward}\
-        ${_nn_backward}\
-        ${_nn_update}"
+        ${_nn_backward}"
+
+        display(CONV1_out,CONV1_out_width,CONV1_out_height,CONV1_out_depth,CONV1_out_spectrum);
+        print(size(CONV1_out));
+
         !("$batch_iter"%20)?(
           var = string('OUT',t);
-          store(POOL2_out,var,w#res,h#res,1,s#res);
+          store(CONV1_out,var,w#res,h#res,1,s#res);
           run('l[] $OUT',t,' w',t+1,'. 400,400 rm endl');
         );
         end(
-          print([L_out,learning_rate]);
+          print(L_out);
         ); I"
     done
     rm[batch]
 
     # Visualize convolution kernels.
-    +z[CONV1_Z] 0,{CONV1_Z,w-2} l. s y n 0,255 repeat $! l[$>] s x,3 r {v=sqrt(w);[v,v]},1,1,-1 r2dx 128,1 frame 1,1,0 frame 2,2,200 append_tiles 3 endl done a y w7. rm endl
+    +z[CONV1] 0,{CONV1,w-2} l. s y n 0,255 repeat $! l[$>] s x,3 r {v=sqrt(w);[v,v]},1,1,-1 r2dx 128,1 frame 1,1,0 frame 2,2,200 append_tiles 3 endl done a y w7. rm endl
 
   done
 

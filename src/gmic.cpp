@@ -14101,12 +14101,17 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                         title,name.data());
                   break;
                 case '<' : case '>' :
-                  print(images,0,"Update %s variable '%s%c%c=%s'->'%s'.",
+                  print(images,0,"Update %s variable '%s%c%c=%s' -> '%s'.",
                         *title=='_'?"global":"local",
                         title,sep0,sep0,name.data(),new_value);
                   break;
+                case ':':
+                  print(images,0,"Update %s variable '%s..=%s' -> '%s'.",
+                        *title=='_'?"global":"local",
+                        title,name.data(),new_value);
+                  break;
                 default :
-                  print(images,0,"Update %s variable '%s%c=%s'->'%s'.",
+                  print(images,0,"Update %s variable '%s%c=%s' -> '%s'.",
                         *title=='_'?"global":"local",
                         title,sep0,name.data(),new_value);
                 }
