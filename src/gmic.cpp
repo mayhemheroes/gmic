@@ -6495,9 +6495,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             xstart = 0, ystart = 0, zstart = 0,
             xend = ~0U, yend = ~0U, zend = ~0U;
           int
-            xcenter = cimg::type<int>::min(),
-            ycenter = cimg::type<int>::min(),
-            zcenter = cimg::type<int>::min();
+            xcenter = (int)(~0U>>1),
+            ycenter = (int)(~0U>>1),
+            zcenter = (int)(~0U>>1);
           float
             xstride = 1, ystride = 1, zstride = 1,
             xdilation = 1, ydilation = 1 , zdilation = 1;
@@ -6530,15 +6530,12 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
             *argx = *argy = *argz = *argc = 0;
             if (is_verbose) {
-              if (xcenter!=cimg::type<int>::min() ||
-                  ycenter!=cimg::type<int>::min() ||
-                  zcenter!=cimg::type<int>::min()) {
+              if (xcenter!=(int)(~0U>>1) || ycenter!=(int)(~0U>>1) || zcenter!=(int)(~0U>>1)) {
                 gmic_use_argx;
                 cimg_snprintf(argx,_argx.width(),", kernel center (%d,%d,%d)",
                               (int)xcenter,(int)ycenter,(int)zcenter);
               }
-              if (xstart!=0 || ystart!=0 || zstart!=0 ||
-                  xend!=~0U || yend!=~0U || zend!=~0U) {
+              if (xstart!=0 || ystart!=0 || zstart!=0 || xend!=~0U || yend!=~0U || zend!=~0U) {
                 gmic_use_argy;
                 cimg_snprintf(argy,_argy.width(),", crop coordinates (%d,%d,%d) - (%d,%d,%d)",
                               (int)xstart,(int)ystart,(int)zstart,(int)xend,(int)yend,(int)zend);
