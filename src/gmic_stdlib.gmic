@@ -49400,8 +49400,8 @@ nn_lib :
             repeat (name#_out_spectrum,_l,
               repeat (name#_out_height,_j,
                 repeat (name#_out_width,_i,
-                  _p = name#_stride/name#_dilation*_i - 1/name#_dilation*_x + name#_kernel_center;
-                  _q = name#_stride/name#_dilation*_j - 1/name#_dilation*_y + name#_kernel_center;
+                  _p = int(name#_stride/name#_dilation*_i - 1/name#_dilation*_x + name#_kernel_center);
+                  _q = int(name#_stride/name#_dilation*_j - 1/name#_dilation*_y + name#_kernel_center);
                   _val+=dyl(_l,_i,_j)*wlk(_l,_k,_p,_q);
                 );
               );
@@ -49425,8 +49425,8 @@ nn_lib :
                               name#_out_width,name#_out_height,name#_out_depth,1,
                               0,0,1,
                               name#_dilation/name#_stride*(name#_kernel_size - 1 - name#_kernel_center),name#_dilation/name#_stride*(name#_kernel_size - 1 - name#_kernel_center),0,
-                              0,0,0,name#_out_width - 1,name#_out_height - 1,name#_out_depth - 1,
-                              1/name#_stride,1/name#_stride,1,
+                              0,0,0,in#_out_width/name#_dilation - 1,in#_out_height/name#_dilation - 1,in#_out_depth - 1,
+                              1/name#_dilation,1/name#_dilation,1,
                               name#_dilation/name#_stride,name#_dilation/name#_stride,1);
 
 
@@ -49443,8 +49443,15 @@ nn_lib :
         copy(in#_deriv_out[_k*_sizk],name#_dxk,_sizk);
       );
 
+      print(in#_deriv_out);
+      print(in#_deriv_out2);
        print(norm(in#_deriv_out - in#_deriv_out2));
-       in#_deriv_out = in#_deriv_out2;
+#       in#_deriv_out = in#_deriv_out2;
+
+       display(in#_deriv_out,in#_out_width,in#_out_height,in#_out_depth,in#_out_spectrum);
+       display(in#_deriv_out2,in#_out_width,in#_out_height,in#_out_depth,in#_out_spectrum);
+
+       run('q');
 
       # Compute dL/dbl.
       name#_deriv_biases = vector(#size(name#_biases));
@@ -49455,24 +49462,24 @@ nn_lib :
       name#_deriv_weights = vector(#size(name#_weights));
       unref(_stride); const _stride = name#_dilation/name#_stride;
 
-      name#_deriv_weights2 = vector(#size(name#_weights));
-      repeat (name#_out_spectrum,_l,
-        repeat (in#_out_spectrum,_k,
-          repeat (name#_kernel_size,_q,
-            repeat (name#_kernel_size,_p,
-              _val = 0;
-              repeat (name#_out_height,_j,
-                repeat (name#_out_width,_i,
-                  _nx = name#_stride*_i - name#_dilation*_p + name#_dilation*name#_kernel_center;
-                  _ny = name#_stride*_j - name#_dilation*_q + name#_dilation*name#_kernel_center;
-                  _val+=dyl(_l,_i,_j)*xk(_k,_nx,_ny);
-                );
-              );
-              name#_deriv_weights2[_l*(w##name#_ind - 1) + _k*_sizw + _q*name#_kernel_size + _p] = _val;
-            );
-          );
-        );
-      );
+      # name#_deriv_weights2 = vector(#size(name#_weights));
+      # repeat (name#_out_spectrum,_l,
+      #   repeat (in#_out_spectrum,_k,
+      #     repeat (name#_kernel_size,_q,
+      #       repeat (name#_kernel_size,_p,
+      #         _val = 0;
+      #         repeat (name#_out_height,_j,
+      #           repeat (name#_out_width,_i,
+      #             _nx = name#_stride*_i - name#_dilation*_p + name#_dilation*name#_kernel_center;
+      #             _ny = name#_stride*_j - name#_dilation*_q + name#_dilation*name#_kernel_center;
+      #             _val+=dyl(_l,_i,_j)*xk(_k,_nx,_ny);
+      #           );
+      #         );
+      #         name#_deriv_weights2[_l*(w##name#_ind - 1) + _k*_sizw + _q*name#_kernel_size + _p] = _val;
+      #       );
+      #     );
+      #   );
+      # );
 
       repeat (name#_out_spectrum,_l,
         repeat (in#_out_spectrum,_k,
@@ -49491,7 +49498,7 @@ nn_lib :
       );
 
 #       print(norm(name#_deriv_weights - name#_deriv_weights2));
-       name#_deriv_weights = name#_deriv_weights2;
+#       name#_deriv_weights = name#_deriv_weights2;
 
       name#_batch_deriv_weights+=name#_deriv_weights;
     );
