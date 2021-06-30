@@ -49363,7 +49363,7 @@ nn_lib :
                             1,0,0,
                             name#_kernel_center,name#_kernel_center,0,
                             0,0,0,
-                            in#_out_width - 1,in#_out_height - 1,in#_out_depth - 1,
+                            name#_out_width - 1,name#_out_height - 1,name#_out_depth - 1,
                             name#_stride,name#_stride,1,
                             name#_dilation,name#_dilation,1);
         name#_yl+=name#_biases[_l];
@@ -49419,26 +49419,26 @@ nn_lib :
 
           copy(name#_wlk[_sizw - 1],name#_weights[_l*(w##name#_ind - 1) + _k*_sizw],_sizw,-1,1); # Mirror kernel
 
-          # name#_dxk+=convolve(name#_wlk,
-          #                     name#_kernel_size,name#_kernel_size,1,1,
-          #                     name#_deriv_out[_l*_sizl,_sizl],
-          #                     name#_out_width,name#_out_height,name#_out_depth,1,
-          #                     0,0,1,
-          #                     name#_dilation/name#_stride*(name#_kernel_size - 1 - name#_kernel_center),name#_dilation/name#_stride*(name#_kernel_size - 1 - name#_kernel_center),0,
-          #                     0,0,0,name#_out_width - 1,name#_out_height - 1,name#_out_depth - 1,
-          #                     name#_dilation/name#_stride,name#_dilation/name#_stride,1,
-          #                     name#_dilation/name#_stride,name#_dilation/name#_stride,1);
-
-
-          name#_dxk+=convolve(name#_deriv_out[_l*_sizl,_sizl],
-                              name#_out_width,name#_out_height,name#_out_depth,1,
-                              name#_wlk,
+          name#_dxk+=convolve(name#_wlk,
                               name#_kernel_size,name#_kernel_size,1,1,
+                              name#_deriv_out[_l*_sizl,_sizl],
+                              name#_out_width,name#_out_height,name#_out_depth,1,
                               0,0,1,
-                              name#_kernel_size - 1 - name#_kernel_center,name#_kernel_size - 1 - name#_kernel_center,0,
-                              0,0,0,name#_out_width - 1,name#_out_height - 1,name#_out_depth - 1,
-                              1/name#_stride,1/name#_stride,1,
+                              name#_dilation/name#_stride*(name#_kernel_size - 1 - name#_kernel_center),name#_dilation/name#_stride*(name#_kernel_size - 1 - name#_kernel_center),0,
+                              0,0,0,in#_out_width - 1,in#_out_height - 1,in#_out_depth - 1,
+                              1/name#_dilation,1/name#_dilation,1,
                               name#_dilation/name#_stride,name#_dilation/name#_stride,1);
+
+
+          # name#_dxk+=convolve(name#_deriv_out[_l*_sizl,_sizl],
+          #                     name#_out_width,name#_out_height,name#_out_depth,1,
+          #                     name#_wlk,
+          #                     name#_kernel_size,name#_kernel_size,1,1,
+          #                     0,0,1,
+          #                     name#_kernel_size - 1 - name#_kernel_center,name#_kernel_size - 1 - name#_kernel_center,0,
+          #                     0,0,0,name#_out_width - 1,name#_out_height - 1,name#_out_depth - 1,
+          #                     1/name#_stride,1/name#_stride,1,
+          #                     name#_dilation/name#_stride,name#_dilation/name#_stride,1);
         );
         copy(in#_deriv_out[_k*_sizk],name#_dxk,_sizk);
       );
@@ -49448,9 +49448,9 @@ nn_lib :
 #     print(norm(in#_deriv_out - in#_deriv_out2));
 #     in#_deriv_out = in#_deriv_out2;
 
-#       display(in#_deriv_out,in#_out_width,in#_out_height,in#_out_depth,in#_out_spectrum);
-#       display(in#_deriv_out2,in#_out_width,in#_out_height,in#_out_depth,in#_out_spectrum);
-#       run('q');
+       display(in#_deriv_out,in#_out_width,in#_out_height,in#_out_depth,in#_out_spectrum);
+       display(in#_deriv_out2,in#_out_width,in#_out_height,in#_out_depth,in#_out_spectrum);
+       run('q');
 
       # Compute dL/dbl.
       name#_deriv_biases = vector(#size(name#_biases));
