@@ -49385,40 +49385,11 @@ nn_lib :
       name#_dxk = vector(#_sizk);
       name#_wlk = vector(#_sizw);
 
-      xk(k,x,y) = (inrange(x,0,in#_out_width - 1) && inrange(y,0,in#_out_height - 1)?in#_out[k*_sizk + y*in#_out_width + x]:0);
-      dyl(l,i,j) = (inrange(i,0,name#_out_width - 1) && inrange(j,0,name#_out_height - 1)?name#_deriv_out[l*_sizl + j*name#_out_width + i]:0);
-      wlk(l,k,p,q) = (inrange(p,0,name#_kernel_size - 1) && inrange(q,0,name#_kernel_size - 1)?name#_weights[l*(w##name#_ind - 1) + k*_sizw + q*name#_kernel_size + p]:0);
-
       # Compute dL/dxk(x,y).
-
-      in#_deriv_out2 = vector(#size(in#_out));
-      repeat (in#_out_spectrum,_k,
-        name#_dxk = 0;
-        repeat (in#_out_height,_y,
-          repeat (in#_out_width,_x,
-            _val = 0;
-            repeat (name#_out_spectrum,_l,
-              repeat (name#_out_height,_j,
-                repeat (name#_out_width,_i,
-                  _p = int(name#_stride/name#_dilation*_i - 1/name#_dilation*_x + name#_kernel_center);
-                  _q = int(name#_stride/name#_dilation*_j - 1/name#_dilation*_y + name#_kernel_center);
-                  _val+=dyl(_l,_i,_j)*wlk(_l,_k,_p,_q);
-                );
-              );
-            );
-            name#_dxk[_x + _y*in#_out_width] = _val;
-          );
-        );
-
-        copy(in#_deriv_out2[_k*_sizk],name#_dxk);
-      );
-
       repeat (in#_out_spectrum,_k,
         name#_dxk = 0;
         repeat (name#_out_spectrum,_l,
-
           copy(name#_wlk[_sizw - 1],name#_weights[_l*(w##name#_ind - 1) + _k*_sizw],_sizw,-1,1); # Mirror kernel
-
           name#_dxk+=convolve(name#_wlk,
                               name#_kernel_size,name#_kernel_size,1,1,
                               name#_deriv_out[_l*_sizl,_sizl],
@@ -49427,30 +49398,10 @@ nn_lib :
                               name#_dilation/name#_stride*(name#_kernel_size - 1 - name#_kernel_center),name#_dilation/name#_stride*(name#_kernel_size - 1 - name#_kernel_center),0,
                               0,0,0,in#_out_width - 1,in#_out_height - 1,in#_out_depth - 1,
                               1/name#_dilation,1/name#_dilation,1,
-                              name#_dilation/name#_stride,name#_dilation/name#_stride,1);
-
-
-          # name#_dxk+=convolve(name#_deriv_out[_l*_sizl,_sizl],
-          #                     name#_out_width,name#_out_height,name#_out_depth,1,
-          #                     name#_wlk,
-          #                     name#_kernel_size,name#_kernel_size,1,1,
-          #                     0,0,1,
-          #                     name#_kernel_size - 1 - name#_kernel_center,name#_kernel_size - 1 - name#_kernel_center,0,
-          #                     0,0,0,name#_out_width - 1,name#_out_height - 1,name#_out_depth - 1,
-          #                     1/name#_stride,1/name#_stride,1,
-          #                     name#_dilation/name#_stride,name#_dilation/name#_stride,1);
+                              name#_stride/name#_dilation,name#_stride/name#_dilation,1);
         );
         copy(in#_deriv_out[_k*_sizk],name#_dxk,_sizk);
       );
-
-#    print(in#_deriv_out);
-#    print(in#_deriv_out2);
-#    print(norm(in#_deriv_out - in#_deriv_out2));
-    in#_deriv_out = in#_deriv_out2;
-
-#       display(in#_deriv_out,in#_out_width,in#_out_height,in#_out_depth,in#_out_spectrum);
-#       display(in#_deriv_out2,in#_out_width,in#_out_height,in#_out_depth,in#_out_spectrum);
-#       run('q');
 
       # Compute dL/dbl.
       name#_deriv_biases = vector(#size(name#_biases));
@@ -49461,6 +49412,10 @@ nn_lib :
       name#_deriv_weights = vector(#size(name#_weights));
       unref(_stride); const _stride = name#_dilation/name#_stride;
 
+      xk(k,x,y) = (inrange(x,0,in#_out_width - 1) && inrange(y,0,in#_out_height - 1)?in#_out[k*_sizk + y*in#_out_width + x]:0);
+      dyl(l,i,j) = (inrange(i,0,name#_out_width - 1) && inrange(j,0,name#_out_height - 1)?name#_deriv_out[l*_sizl + j*name#_out_width + i]:0);
+      wlk(l,k,p,q) = (inrange(p,0,name#_kernel_size - 1) && inrange(q,0,name#_kernel_size - 1)?name#_weights[l*(w##name#_ind - 1) + k*_sizw + q*name#_kernel_size + p]:0);
+      wTlk(l,k,p,q) = (inrange(p,0,name#_kernel_size - 1) && inrange(q,0,name#_kernel_size - 1)?name#_wlk[q*name#_kernel_size + p]:0);
       name#_deriv_weights2 = vector(#size(name#_weights));
       repeat (name#_out_spectrum,_l,
         repeat (in#_out_spectrum,_k,
@@ -49886,12 +49841,12 @@ nn_test :
   nn_init
   nn_input X,32,32,1,3
   nn_conv2d CONV1,X,3,3
-  nn_conv2d CONV2,CONV1,3,3,2
+  nn_conv2d CONV2,CONV1,3,3,0.5
   nn_mse L,CONV2,Y
 
   l[] sp colorful,32 n 0,255 nm img endl
   [img] nm. res
-  r2dx[res] 50%
+  r2dx[res] 200%
 
   # Optimize network.
   #------------------
