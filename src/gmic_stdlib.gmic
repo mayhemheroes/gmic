@@ -49823,7 +49823,7 @@ nn_test :
 
   l[] sp colorful,64 n 0,255 nm img endl
   [img] nm. res
-  noise[img] 20 c[img] 0,255
+  noise[img] 200 c[img] 0,255
 
 #  r2dx[res] 50%
 
@@ -49858,6 +49858,17 @@ nn_test :
         ); I"
     done
     rm[batch]
+
+    # Render image from random noise.
+    eval ${-nn_lib}${_nn_init_forward}${_nn_init_backward}"
+        const img = $img;
+        const res = $res;
+        X = vector(#w#img*h#img*s#img);
+        fill(X,u(0,255));"\
+        ${_nn_forward}"
+        store(CONV4_out,'foo',w#res,h#res,1,s#res);
+        run('l[] $foo w9. 400,400 rm endl');
+        "
 
     # Visualize convolution kernels.
 #    +z[CONV1] 0,{CONV1,w-2} l. s y n 0,255 repeat $! l[$>] s x,3 r {v=sqrt(w);[v,v]},1,1,-1 r2dx 128,1 frame 1,1,0 frame 2,2,200 append_tiles 3 endl done a y w7. rm endl
