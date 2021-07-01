@@ -49415,8 +49415,6 @@ nn_lib :
         copy(in#_deriv_out[_k*_sizk],name#_dxk,_sizk);
       );
 
-#      display(name#_dxk,in#_out_width,in#_out_height,in#_out_depth,in#_out_spectrum);
-
       # Compute dL/dbl.
       name#_deriv_biases = vector(#size(name#_biases));
       fill(name#_deriv_biases,_l,sum(name#_deriv_out[_l*_sizl,_sizl]));
@@ -49825,14 +49823,18 @@ nn_test :
   # Build neural network.
   #----------------------
   nn_init
-  nn_input X,64,64,1,3
-  nn_conv2d CONV1,X,3,3,1
-  nn_conv2d CONV2,CONV1,3,3,2
-  nn_mse L,CONV2,Y
+  nn_input X,32,32,1,3
+  nn_conv2dnl CONV1,X,32,3
+  nn_conv2dnl CONV2,CONV1,32,3
+  nn_conv2dnl CONV3,CONV2,32,3
+  nn_conv2dnl CONV4,CONV3,3,3
+  nn_mse L,CONV4,Y
 
-  l[] sp colorful,64 n 0,255 nm img endl
+  l[] sp colorful,32 n 0,255 nm img endl
   [img] nm. res
-  r2dx[res] 50%
+  noise[img] 120 c[img] 0,255
+
+#  r2dx[res] 50%
 
   # Optimize network.
   #------------------
@@ -49855,12 +49857,9 @@ nn_test :
         ${_nn_backward}\
         ${_nn_update}"
 
-#        display(CONV1_out,CONV1_out_width,CONV1_out_height,CONV1_out_depth,CONV1_out_spectrum);
-#        print(size(CONV1_out));
-
         !("$batch_iter"%20)?(
           var = string('OUT',t);
-          store(CONV2_out,var,w#res,h#res,1,s#res);
+          store(CONV4_out,var,w#res,h#res,1,s#res);
           run('l[] $OUT',t,' w',t+1,'. 400,400 rm endl');
         );
         end(
@@ -49870,7 +49869,7 @@ nn_test :
     rm[batch]
 
     # Visualize convolution kernels.
-    +z[CONV1] 0,{CONV1,w-2} l. s y n 0,255 repeat $! l[$>] s x,3 r {v=sqrt(w);[v,v]},1,1,-1 r2dx 128,1 frame 1,1,0 frame 2,2,200 append_tiles 3 endl done a y w7. rm endl
+#    +z[CONV1] 0,{CONV1,w-2} l. s y n 0,255 repeat $! l[$>] s x,3 r {v=sqrt(w);[v,v]},1,1,-1 r2dx 128,1 frame 1,1,0 frame 2,2,200 append_tiles 3 endl done a y w7. rm endl
 
   done
 
