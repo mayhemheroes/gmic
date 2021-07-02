@@ -49216,18 +49216,26 @@ nn_lib :
       const name#_out_height = int(in#_out_height/2);
       const name#_out_depth = in#_out_depth;
       const name#_out_spectrum = in#_out_spectrum;
+      name#_kernel = [ 0.25,0.25,0.25,0.25 ];
     );
 
-    nn_avgpool_forward(name,in) = (
-      name#_mask = vector4(0.25);
-      name#_out = convolve(in#_out,
-                           in#_out_width,in#_out_height,in#_out_depth,in#_out_spectrum,
-                           name#_mask,2,2,1,1,
-                           0,0,1,
-                           0,0,0,
-                           0,0,0,
-                           in#_out_width - 1,in#_out_height - 1,in#_out_depth - 1,in#_out_spectrum - 1,
-                           2,2,1);
+    nn_avgpool2d_forward(name,in) = (
+      name#_out = correlate(in#_out,
+                            in#_out_width,in#_out_height,in#_out_depth,in#_out_spectrum,
+                            name#_kernel,2,2,1,1,
+                            0,0,1,
+                            0,0,0,
+                            0,0,0,
+                            in#_out_width - 1,in#_out_height - 1,in#_out_depth - 1,
+                            2,2,1);
+    );
+
+    nn_avgpool2d_backward(name,in) = (
+      in#_deriv_out = vector(#size(in#_out));
+      fill(in#_deriv_out,_k,
+           _x = int((_k%in#_out_width)/2);
+           _y = int(int(_k/in#_out_height)/2);
+           name#_deriv_out[_x + name#_out_width*_y]);
     );
 
 
@@ -49329,13 +49337,13 @@ nn_lib :
 
     # 2D Convolutional Layer (CONV2D).
     #----------------------------------
-    nn_conv2d_init_forward(name,in,stride,dilation) = (
+    nn_conv2d_init_forward(name,in,size,stride,dilation) = (
       const name#_ind = $name#;
-      const name#_out_width = in#_out_width/stride;
-      const name#_out_height = in#_out_height/stride;
+      const name#_out_width = max(1,int(in#_out_width/stride));
+      const name#_out_height = max(1,int(in#_out_height/stride));
       const name#_out_depth = in#_out_depth;
       const name#_out_spectrum = h##name#_ind;
-      const name#_kernel_size = sqrt((w##name#_ind - 1)/in#_out_spectrum);
+      const name#_kernel_size = size;
       const name#_kernel_center = name#_kernel_size - 1 - int(name#_kernel_size/2);
       const name#_stride = stride;
       const name#_dilation = dilation;
@@ -49352,10 +49360,10 @@ nn_lib :
                             in#_out_width,in#_out_height,in#_out_depth,in#_out_spectrum,
                             name#_weights[_l*(w##name#_ind - 1),w##name#_ind - 1],
                             name#_kernel_size,name#_kernel_size,1,in#_out_spectrum,
-                            1,0,0,
+                            1,0,3,
                             name#_kernel_center,name#_kernel_center,0,
                             0,0,0,
-                            in#_out_width - 1,in#_out_height - 1,in#_out_depth - 1,
+                            name#_out_width - 1,name#_out_height - 1,name#_out_depth - 1,
                             name#_stride,name#_stride,1,
                             name#_dilation,name#_dilation,1);
         name#_yl+=name#_biases[_l];
@@ -49379,19 +49387,22 @@ nn_lib :
 
       # Compute dL/dxk(x,y).
       repeat (in#_out_spectrum,_k,
-        name#_dxk = 0;
+
+        # Get mirrored kernels wlk, for all l.
+        name#_wk_mirrored = vector(#_sizw*name#_out_spectrum);
         repeat (name#_out_spectrum,_l,
-          copy(name#_wlk[_sizw - 1],name#_weights[_l*(w##name#_ind - 1) + _k*_sizw],_sizw,-1,1); # Mirror kernel
-          name#_dxk+=convolve(name#_deriv_out[_l*_sizl,_sizl],
-                              name#_out_width,name#_out_height,name#_out_depth,1,
-                              name#_wlk,
-                              name#_kernel_size,name#_kernel_size,1,1,
-                              0,0,1,
-                              name#_kernel_size - 1 - name#_kernel_center,name#_kernel_size - 1 - name#_kernel_center,0,
-                              0,0,0,name#_out_width - 1,name#_out_height - 1,name#_out_depth - 1,
-                              1/name#_stride,1/name#_stride,1,
-                              name#_dilation/name#_stride,name#_dilation/name#_stride,1);
+          copy(name#_wk_mirrored[_l*_sizw + _sizw - 1],name#_weights[_l*(w##name#_ind - 1) + _k*_sizw],_sizw,-1,1);
         );
+
+        name#_dxk = convolve(name#_deriv_out,
+                             name#_out_width,name#_out_height,name#_out_depth,name#_out_spectrum,
+                             name#_wk_mirrored,
+                             name#_kernel_size,name#_kernel_size,1,name#_out_spectrum,
+                             0,0,3,
+                             name#_kernel_size - 1 - name#_kernel_center,name#_kernel_size - 1 - name#_kernel_center,0,
+                             0,0,0,in#_out_width - 1,in#_out_height - 1,in#_out_depth - 1,
+                             1/name#_stride,1/name#_stride,1,
+                             name#_dilation/name#_stride,name#_dilation/name#_stride,1);
         copy(in#_deriv_out[_k*_sizk],name#_dxk,_sizk);
       );
 
@@ -49408,12 +49419,13 @@ nn_lib :
           name#_dwlk = convolve(name#_dxk,
                                 in#_out_width,in#_out_height,in#_out_depth,1,
                                 name#_deriv_out[_l*_sizl,_sizl],
-                                name#_out_width,name#_out_height,1,1,
+                                name#_out_width,name#_out_height,name#_out_depth,1,
                                 0,0,1,
-                                in#_out_width - 1 - name#_kernel_center,in#_out_height - 1 - name#_kernel_center,0,
+                                1/name#_stride*(in#_out_width - 1 - name#_dilation*name#_kernel_center),
+                                1/name#_stride*(in#_out_height - 1 - name#_dilation*name#_kernel_center),0,
                                 0,0,0,name#_kernel_size - 1,name#_kernel_size - 1,0,
-                                name#_dilation/name#_stride,name#_dilation/name#_stride,1,
-                                1/name#_stride,1/name#_stride,1);
+                                name#_dilation,name#_dilation,1,
+                                name#_stride,name#_stride,1);
           copy(name#_deriv_weights[_l*(w##name#_ind - 1) + _k*_sizw],name#_dwlk,_sizw);
         );
       );
@@ -49570,6 +49582,14 @@ nn_lib :
     );
 "
 
+#@gmic nn_avgpool2d : name,in
+#@gmic : Add a 2d average pooling module to the network.
+nn_avgpool2d : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
+  _nn_$1_out_size={s=[$_nn_$2_out_size];[int(s[0]/2),int(s[1]/2),1,s[3]]}
+  _nn_forward.="begin(nn_avgpool2d_init_forward($1,$2));"\
+               "nn_avgpool2d_forward($1,$2);"
+  _nn_backward..="nn_avgpool2d_backward($1,$2);"
+
 #@gmic nn_bn : name,in,learning_mode={ 0=no parameters learnt | 1=gamma-only | 2=beta-only | 3=gamma & beta}
 #@gmic : Add a batch-norm module to the network.
 nn_bn : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint(${3=0}) && inrange($3,0,3)"
@@ -49588,9 +49608,9 @@ nn_bn : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($
 #@gmic : Default values: 'kernel_size=3', 'stride=1' and 'dilation=1'.
 nn_conv2d : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "\
                   "isint($3) && $3>0 && isint(${4=3}) && $4>0 && ${5=1}>0" skip "${6=1}"
-  _nn_$1_out_size={[$_nn_$2_out_size][0,3]},$3
+  _nn_$1_out_size={s=[$_nn_$2_out_size];[max(1,int(s[0]/$5)),max(1,int(s[1]/$5)),s[2],$3]}
   if !isint($$1) {[$_nn_$2_out_size][3]*$4^2+1},$3 f. 4*g/(w-1) nm. $1 fi
-  _nn_forward.="begin(nn_conv2d_init_forward($1,$2,$5,$6));"\
+  _nn_forward.="begin(nn_conv2d_init_forward($1,$2,$4,$5,$6));"\
                "nn_conv2d_forward($1,$2);"
   _nn_backward..="begin(nn_conv2d_init_backward($1,$2));"\
                  "nn_conv2d_backward($1,$2);"\
@@ -49602,8 +49622,8 @@ nn_conv2d : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "\
 #@gmic : Default values: 'kernel_size=3', 'stride=1', 'dilation=1' and 'activation=leakyrelu'.
 nn_conv2dnl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "\
                   "isint($3) && $3>0 && isint(${4=3}) && $4>0 && ${5=1}>0" skip "${6=1}","${7=leakyrelu}"
-  nn_conv2d $1_z,$2,$3,$4,$5,$6
-  nn_nl $1,$1_z,$7
+  nn_conv2d $1_Z,$2,$3,$4,$5,$6
+  nn_nl $1,$1_Z,$7
 
 #@gmic nn_fc : name,in,nb_neurons>0
 #@gmic : Add an fully connected module to the network.
@@ -49621,8 +49641,8 @@ nn_fc : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($
 #@gmic : Add an fully connected + non-linearity module to the network.
 #@gmic : Default value: 'activation=leakyrelu'.
 nn_fcnl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($3) && $3>0" skip ${4=leakyrelu}
-  nn_fc $1_z,$2,$3
-  nn_nl $1,$1_z,$4
+  nn_fc $1_Z,$2,$3
+  nn_nl $1,$1_Z,$4
 
 #@gmic nn_init
 #@gmic : Initialize new neural network.
@@ -49737,21 +49757,21 @@ nn_test_conv :
   # Build neural network.
   #----------------------
   nn_init
-  nn_input X,64,64,1,1
+  nn_input X,64,64,1,3
 #  nn_bn BN,X
-  nn_conv2dnl CONV1,X,512
-  nn_conv2dnl CONV2,CONV1,128
-  nn_conv2dnl CONV3,CONV2,32
+  nn_conv2dnl CONV1,X,64
+  nn_conv2dnl CONV2,CONV1,32
+  nn_conv2dnl CONV3,CONV2,16
   nn_conv2dnl CONV4,CONV3,8
-  nn_conv2dnl CONV5,CONV4,1
+  nn_conv2dnl CONV5,CONV4,3
   nn_mse L,CONV5,Y
-  l[] sp lena,car,duck,earth luminance r 64,64,1,100%,2 n 0,255 a z nm img endl
-  +b[img] xy,0 l. s z rolling_guidance 4,4 n 0,255 a z endl nm. res
+  l[] sp duck,earth r 64,64,1,100%,2 n 0,255 a z nm img endl
+  +b[img] xy,0 nm. res
   noise[img] 990 n[img] 0,255
 
   # Optimize network.
   #------------------
-  size_batch=4
+  size_batch=2
   repeat inf,iter
     e[] "ITER = "$iter
 
@@ -49779,6 +49799,76 @@ nn_test_conv :
         ); I"
     done
     rm[batch]
+
+    # Visualize convolution kernels.
+#    +z[CONV1] 0,{CONV1,w-2} l. s y n 0,255 repeat $! l[$>] s x,3 r {v=sqrt(w);[v,v]},1,1,-1 r2dx 128,1 frame 1,1,0 frame 2,2,200 append_tiles 3 endl done a y w7. rm endl
+
+  done
+
+
+#----------------------------------
+# Test program for CONV networks.
+#----------------------------------
+nn_test :
+
+  # Build neural network.
+  #----------------------
+  nn_init
+  nn_input X,64,64,1,3
+  nn_conv2dnl CONV1,X,32,3
+  nn_conv2dnl CONV2,CONV1,32,3
+  nn_conv2dnl CONV3,CONV2,32,3
+  nn_conv2dnl CONV4,CONV3,3,3
+  nn_mse L,CONV4,Y
+
+  l[] sp colorful,64 n 0,255 nm img endl
+  [img] nm. res
+  noise[img] 200 c[img] 0,255
+
+#  r2dx[res] 50%
+
+  # Optimize network.
+  #------------------
+  size_batch=1
+  repeat inf,iter
+    e[] "ITER = "$iter
+
+    # Build mini-batch.
+    $size_batch nm. batch
+
+    # Mini-batch stochastic gradient.
+    _nn_is_training=1
+    repeat 10,batch_iter
+      eval[batch] *${-nn_lib}${_nn_init_forward}${_nn_init_backward}"
+        const img = $img;
+        const res = $res;
+        X = crop(#img,0,0,0,0,w#img,h#img,1,s#img);
+        Y = crop(#res,0,0,0,0,w#res,h#res,1,s#res); "\ # Ground-truth
+        ${_nn_forward}\
+        ${_nn_backward}\
+        ${_nn_update}"
+
+        !("$batch_iter"%20)?(
+          var = string('OUT',t);
+          store(CONV4_out,var,w#res,h#res,1,s#res);
+          run('l[] $OUT',t,' w',t+1,'. 400,400 rm endl');
+        );
+        end(
+          print([ L_out,learning_rate ]);
+        ); I"
+    done
+    rm[batch]
+
+    # Render image from random noise.
+    eval ${-nn_lib}${_nn_init_forward}${_nn_init_backward}"
+        const img = $img;
+        const res = $res;
+        X = vector(#w#img*h#img*s#img);
+        fill(X,u(0,255));"\
+        ${_nn_forward}"
+        store(CONV4_out,'foo',w#res,h#res,1,s#res);
+        run('l[] $foo w9. 400,400 rm endl');
+        "
 
     # Visualize convolution kernels.
 #    +z[CONV1] 0,{CONV1,w-2} l. s y n 0,255 repeat $! l[$>] s x,3 r {v=sqrt(w);[v,v]},1,1,-1 r2dx 128,1 frame 1,1,0 frame 2,2,200 append_tiles 3 endl done a y w7. rm endl
