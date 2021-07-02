@@ -6490,7 +6490,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Convolve & Correlate.
         if (!std::strcmp("convolve",command) || !std::strcmp("correlate",command)) {
           gmic_substitute_args(true);
-          unsigned int is_normalized = 0, channel_mode = 1;
+          unsigned int is_normalized = 0, channel_mode = 0;
           int
             xstart = 0, ystart = 0, zstart = 0,
             xend = (int)(~0U>>1), yend = (int)(~0U>>1), zend = (int)(~0U>>1),
@@ -6523,7 +6523,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                            &xstart,&ystart,&zstart,&xend,&yend,&zend,&xstride,&ystride,&zstride,
                            &xdilation,&ydilation,&zdilation,&end)==19) &&
               (ind=selection2cimg(indices,images.size(),images_names,"correlate")).height()==1 &&
-              boundary<=3 && channel_mode<=2) {
+              boundary<=3 && channel_mode<=3) {
 
             *argx = *argy = *argz = *argc = 0;
             if (is_verbose) {
@@ -6558,8 +6558,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   *ind,
                   boundary==0?"dirichlet":boundary==1?"neumann":boundary==2?"periodic":"mirror",
                   is_normalized?"":"out",
-                  channel_mode==0?"sum input":
-                  channel_mode==1?"one-for-one":"expand",
+                  channel_mode==0?"all":
+                  channel_mode==1?"one for one":
+                  channel_mode==2?"partial sum":"sum",
                   *argx?argx:"",*argy?argy:"",*argz?argz:"",*argc?argc:"");
             const CImg<T> kernel = gmic_image_arg(*ind);
             if (is_cond) {
