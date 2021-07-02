@@ -6490,7 +6490,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Convolve & Correlate.
         if (!std::strcmp("convolve",command) || !std::strcmp("correlate",command)) {
           gmic_substitute_args(true);
-          unsigned int is_normalized = 0, channel_mode = 0;
+          unsigned int is_normalized = 0, channel_mode = 1;
           int
             xstart = 0, ystart = 0, zstart = 0,
             xend = (int)(~0U>>1), yend = (int)(~0U>>1), zend = (int)(~0U>>1),
@@ -6552,7 +6552,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
             print(images,0,
                   "%s image%s with kernel [%u], %s boundary conditions, "
-                  "with%s normalization, %s channel mode%s%s%s.",
+                  "with%s normalization, channel mode '%s'%s%s%s.",
                   is_cond?"Convolve":"Correlate",
                   gmic_selection.data(),
                   *ind,
