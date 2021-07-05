@@ -49785,7 +49785,7 @@ nn_save :
 #@gmic nn_load : filename.gmz
 #@gmic : Load and initialize network saved as a .gmz file.
 nn_load :
-  "$1" run {t}
+  "$1" run {t} rm.
 
 #------------------------------
 # Test program for FC networks.
@@ -49865,7 +49865,7 @@ nn_test :
   #----------------------
   if isfile('network.gmz') nn_load network.gmz fi
   nn_init
-  nn_input X,64,64,1,3
+  nn_input X,32,32,1,3
   nn_res RES1,X
   nn_res RES2,RES1
   nn_res RES3,RES2
@@ -49876,12 +49876,12 @@ nn_test :
   nn_res RES8,RES7
   nn_mse L,RES8,Y
 
-  l[] repeat 10 sp portrait$>,64 done n 0,255 a z nm res endl
+  $HOME/work/img/landscape2.png nm. res
   [res] nm. img
 
   # Optimize network.
   #------------------
-  size_batch=10
+  size_batch=32
   repeat inf,iter
     e[] "ITER = "$iter
 
@@ -49891,20 +49891,24 @@ nn_test :
     # Mini-batch stochastic gradient.
     _nn_is_training=1
     repeat 10,batch_iter
-      eval[batch] *${-nn_lib}${_nn_init_forward}${_nn_init_backward}"
+      eval[batch] >${-nn_lib}${_nn_init_forward}${_nn_init_backward}"
         const img = $img;
         const res = $res;
         run('j[img] [res] noise[img] 20');
-        X = crop(#img,0,0,x,0,w#img,h#img,1,s#img);
-        Y = crop(#res,0,0,x,0,w#res,h#res,1,s#res); "\ # Ground-truth
-        ${_nn_forward}\
+
+        nx = int(u(32,w#img - 1 - 32));
+        ny = int(u(32,h#img - 1 - 32));
+        X = crop(#img,nx,ny,0,0,32,32,1,3);
+        Y = crop(#res,nx,ny,0,0,32,32,1,3);
+
+        "${_nn_forward}\
         ${_nn_backward}\
         ${_nn_update}"
 
         x<4 && !("$batch_iter"%20)?(
           var = string('OUT',t);
-          store(RES8_out,var,w#res,h#res,1,s#res);
-          run('l[] $OUT',t,' w',x+1,'. 400,400 rm endl');
+          store(RES8_out,var,32,32,1,3);
+          run('l[] $OUT',t,' w',x+1,'. 200,200 rm endl');
         );
         end(
           print([ sqrt(L_out),_learning_rate,_update_parameters ]);
