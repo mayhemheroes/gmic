@@ -49219,7 +49219,7 @@ nn_lib :
     );
 
     nn_add2_forward(name,in1,in2) = (
-      name#_out = in1 + in2;
+      name#_out = in1#_out + in2#_out;
     );
 
     nn_add2_backward(name,in1,in2) = (
@@ -49790,22 +49790,21 @@ nn_test :
   nn_init
   nn_input X1,128,128,1,3
   nn_input X2,128,128,1,3
-  nn_add2 ADD,X1,X2
 
-  #nn_conv2dnl CONV1,X,16,7
-  #nn_conv2dnl CONV2,CONV1,3,3
-  # nn_conv2dnl CONV3,CONV2,16,3
-  # nn_conv2dnl CONV4,CONV3,16,3
-  # nn_conv2dnl CONV5,CONV4,32,3
-  # nn_conv2dnl CONV6,CONV5,64,3
-  # nn_conv2dnl CONV7,CONV6,3,3
+  nn_conv2dnl CONV1,X1,16
+  nn_conv2dnl CONV2,CONV1,3
+
+  nn_conv2dnl CONV3,X2,16
+  nn_conv2dnl CONV4,CONV3,3
+
+  nn_add2 ADD,CONV2,CONV4
+
   nn_mse L,ADD,Y
 
   l[] sp colorful,lena,128 n 0,255 a z nm img endl
-  +f[img] x+y nm. res
-  d
-
-#  r2dx[res] 50%
+  [img] nm. res
+  noise[img] 30
+  l[res] s z max endl
 
   # Optimize network.
   #------------------
@@ -49824,7 +49823,7 @@ nn_test :
         const res = $res;
         X1 = crop(#img,0,0,0,0,w#img,h#img,1,s#img);
         X2 = crop(#img,0,0,1,0,w#img,h#img,1,s#img);
-        Y = crop(#res,0,0,x,0,w#res,h#res,1,s#res); "\ # Ground-truth
+        Y = crop(#res,0,0,0,0,w#res,h#res,1,s#res); "\ # Ground-truth
         ${_nn_forward}\
         ${_nn_backward}\
         ${_nn_update}"
