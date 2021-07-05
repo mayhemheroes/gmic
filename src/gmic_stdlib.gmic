@@ -49817,18 +49817,11 @@ nn_test :
   #----------------------
   nn_init
   nn_input X,64,64,1,3
-
-  nn_clone2 CL,X
-  nn_conv2dnl CONV1,CL0,32
-  nn_conv2d CONV2,CONV1,3,3
-  nn_add2 ADD,CONV2,CL1
-  nn_nl NL,ADD,leakyrelu
-
-  nn_mse L,NL,Y
+  nn_conv2d CONV,X,3,1
+  nn_mse L,CONV,Y
 
   l[] sp colorful,64 n 0,255 a z nm img endl
   [img] nm. res
-  noise[img] 30
 
   # Optimize network.
   #------------------
@@ -49853,11 +49846,11 @@ nn_test :
 
         !("$batch_iter"%20)?(
           var = string('OUT',t);
-          store(NL_out,var,w#res,h#res,1,s#res);
+          store(CONV_out,var,w#res,h#res,1,s#res);
           run('l[] $OUT',t,' w',x+1,'. 400,400 rm endl');
         );
         end(
-          print([ L_out,learning_rate,abs(maxabs(CONV1_Z_weights)) ]);
+          print([ L_out,learning_rate ]);
         ); I"
     done
     rm[batch]
