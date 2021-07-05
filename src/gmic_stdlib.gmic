@@ -49342,12 +49342,12 @@ nn_lib :
 
       _update_parameters?(
         learning_mode&1?(
-          name#_dt_gamma = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_gamma));
+          name#_dt_gamma = _learning_rate/abs(maxabs(1e-9,name#_batch_deriv_gamma));
           name#_gamma-=name#_dt_gamma*name#_batch_deriv_gamma;
           draw(##name#_ind,name#_gamma,4,0,0,0,1,h##name#_ind);
         );
         learning_mode&2?(
-          name#_dt_beta = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_beta));
+          name#_dt_beta = _learning_rate/abs(maxabs(1e-9,name#_batch_deriv_beta));
           name#_beta-=name#_dt_beta*name#_batch_deriv_beta;
           draw(##name#_ind,name#_beta,5,0,0,0,1,h##name#_ind);
         );
@@ -49476,8 +49476,8 @@ nn_lib :
 
     nn_conv2d_update(name) = (
       _update_parameters?(
-        name#_dt_weights = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_weights));
-        name#_dt_biases = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_biases));
+        name#_dt_weights = _learning_rate/abs(maxabs(1e-9,name#_batch_deriv_weights));
+        name#_dt_biases = _learning_rate/abs(maxabs(1e-9,name#_batch_deriv_biases));
         name#_weights-=name#_dt_weights*name#_batch_deriv_weights;
         name#_biases-=name#_dt_biases*name#_batch_deriv_biases;
         draw(##name#_ind,name#_weights,0,0,0,0,w##name#_ind - 1,h##name#_ind);
@@ -49525,8 +49525,8 @@ nn_lib :
 
     nn_fc_update(name) = (
       _update_parameters?(
-        name#_dt_weights = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_weights));
-        name#_dt_biases = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_biases));
+        name#_dt_weights = _learning_rate/abs(maxabs(1e-9,name#_batch_deriv_weights));
+        name#_dt_biases = _learning_rate/abs(maxabs(1e-9,name#_batch_deriv_biases));
         name#_weights-=name#_dt_weights*name#_batch_deriv_weights;
         name#_biases-=name#_dt_biases*name#_batch_deriv_biases;
         draw(##name#_ind,name#_weights,0,0,0,0,w##name#_ind - 1,h##name#_ind);
@@ -49564,33 +49564,35 @@ nn_lib :
     );
 
     nn_mse_update(name) = (
-      learning_rate = $_nn_#name#_learning_rate;
+      _learning_rate = $_nn_#name#_learning_rate;
       name#_previous_batch_out = $_nn_#name#_previous_batch_out;
       name#_nb_decreases = $_nn_#name#_nb_decreases;
       name#_nb_increases = $_nn_#name#_nb_increases;
 
-      name#_batch_out>=name#_previous_batch_out?(
+      name#_batch_out>1.5*name#_previous_batch_out?(
+        _update_parameters = 0;
+        _learning_rate = max(1e-9,0.75*_learning_rate);
+        name#_nb_increases = 0;
+      ):name#_batch_out>=name#_previous_batch_out?(
         name#_nb_decreases = 0;
         ++name#_nb_increases;
         name#_nb_increases>=4?(
-          learning_rate = max(1e-9,0.75*learning_rate);
+          _learning_rate = max(1e-9,0.75*_learning_rate);
           name#_nb_increases = 0;
         );
       ):(
 #        name#_nb_increases = 0;
         ++name#_nb_decreases;
         name#_nb_decreases>=4?(
-          learning_rate = min(1,2*learning_rate);
+          _learning_rate = min(1,25*_learning_rate);
           name#_nb_decreases = 0;
         );
       );
 
-      name#_batch_out>1.5*name#_previous_batch_out?(_update_parameters = 0); # Avoid update if loss increase is too high
-
       run('_nn_#name#_previous_batch_out,\
            _nn_#name#_learning_rate,\
            _nn_#name#_nb_decreases,_nn_#name#_nb_increases=',
-           name#_batch_out,',',learning_rate,',',name#_nb_decreases,',',name#_nb_increases);
+           name#_batch_out,',',_learning_rate,',',name#_nb_decreases,',',name#_nb_increases);
     );
 
     # Non-Linearity Module (NL).
@@ -49801,7 +49803,7 @@ nn_test_fc :
         Y = batch[2,3]; "\ # Ground-truth
         ${_nn_forward}${_nn_backward}${_nn_update}"
         end(
-          !($batch_iter%20)?print([L_out,learning_rate]);
+          !($batch_iter%20)?print([L_out,_learning_rate]);
         ); I"
     done
     rm[batch]
@@ -49825,7 +49827,7 @@ nn_test_fc :
 # Define custom residual CONV module.
 nn_res : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
   nn_clone2 $1_CL0,$1_CL1,$2
-  nn_conv2dnl $1_CONV1,$1_CL0,256
+  nn_conv2dnl $1_CONV1,$1_CL0,8
   nn_conv2d $1_CONV2,$1_CONV1,3
   nn_add2 $1_ADD,$1_CONV2,$1_CL1
   nn_nl $1,$1_ADD
@@ -49874,13 +49876,13 @@ nn_test :
         ${_nn_backward}\
         ${_nn_update}"
 
-        x<8 && !("$batch_iter"%20)?(
+        x<3 && !("$batch_iter"%20)?(
           var = string('OUT',t);
           store(RES9_out,var,w#res,h#res,1,s#res);
           run('l[] $OUT',t,' w',x+1,'. 400,400 rm endl');
         );
         end(
-          print([ sqrt(L_out),learning_rate ]);
+          print([ sqrt(L_out),_learning_rate,_update_parameters ]);
         ); I"
     done
     rm[batch]
