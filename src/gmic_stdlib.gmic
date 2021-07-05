@@ -49642,7 +49642,7 @@ nn_add2 : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "${"i
   _nn_forward.="begin(nn_add2_init_forward($1,$2));"\
                "nn_add2_forward($1,$2,$3);"
   _nn_backward..="nn_add2_backward($1,$2,$3);"
-  _nn_init.="$0 $* "
+  _nn_init.="$0 $*;"
 
 #@gmic nn_avgpool2d : name,in
 #@gmic : Add a 2d average pooling module to the network.
@@ -49651,7 +49651,7 @@ nn_avgpool2d : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
   _nn_forward.="begin(nn_avgpool2d_init_forward($1,$2));"\
                "nn_avgpool2d_forward($1,$2);"
   _nn_backward..="nn_avgpool2d_backward($1,$2);"
-  _nn_init.="$0 $* "
+  _nn_init.="$0 $*;"
 
 #@gmic nn_bn : name,in,learning_mode={ 0=no parameters learnt | 1=gamma-only | 2=beta-only | 3=gamma & beta}
 #@gmic : Add a batch-norm module to the network.
@@ -49665,7 +49665,8 @@ nn_bn : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($
                  "end_t(nn_bn_end_t_backward($1));"\
                  "end(nn_bn_end_backward($1));"
   _nn_update..="end(nn_bn_update($1,$3));"
-  _nn_init.="$0 $* "
+  _nn_init.="$0 $*;"
+  _nn_parameters.="$1;"
 
 #@gmic nn_clone2 : name1,name2,in
 #@gmic : Add a clon2 module to the network.
@@ -49675,7 +49676,7 @@ nn_clone2 : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "${
   _nn_forward.="begin(nn_clone2_init_forward($1,$2,$3));"\
                "nn_clone2_forward($1,$2,$3);"
   _nn_backward..="nn_clone2_backward($1,$2,$3);"
-  _nn_init.="$0 $* "
+  _nn_init.="$0 $*;"
 
 #@gmic nn_conv2d : name,in,nb_neurons>0,_kernel_size>0,_stride>0,_dilation>0
 #@gmic : Add a convolutional layer with 2D kernels to the network.
@@ -49690,7 +49691,8 @@ nn_conv2d : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "\
                  "nn_conv2d_backward($1,$2);"\
                  "end(nn_conv2d_end_backward($1));"
   _nn_update..="end(nn_conv2d_update($1));"
-  _nn_init.="$0 $* "
+  _nn_init.="$0 $*;"
+  _nn_parameters.="$1;"
 
 #@gmic nn_conv2dnl : name,in,nb_neurons>0,_kernel_size>0,_stride>0,_dilation>0,_activation
 #@gmic : Add a convolutional layer with 2D kernels + non-linearity module to the network.
@@ -49711,7 +49713,8 @@ nn_fc : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($
                  "nn_fc_backward($1,$2);"\
                  "end(nn_fc_end_backward($1));"
   _nn_update..="end(nn_fc_update($1));"
-  _nn_init.="$0 $* "
+  _nn_init.="$0 $*;"
+  _nn_parameters.="$1;"
 
 #@gmic nn_fcnl : name,in,nb_neurons>0,_activation
 #@gmic : Add an fully connected + non-linearity module to the network.
@@ -49723,10 +49726,10 @@ nn_fcnl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint
 #@gmic nn_init
 #@gmic : Initialize new neural network.
 nn_init :
-  _nn_forward.="begin(nn_init_forward());"\
-               "nn_forward();"
-  _nn_backward..="end(nn_end_backward());"
-  _nn_init.="$0 "
+  _nn_forward="begin(nn_init_forward());"\
+              "nn_forward();"
+  _nn_backward="end(nn_end_backward());"
+  _nn_init="$0;"
 
 #@gmic nn_input : name,width,_height,_depth,_spectrum
 #@gmic : Add an input module to the network.
@@ -49735,7 +49738,7 @@ nn_input : check ${"is_variable_name $1"}" && isint($2) && $2>0 && isint(${3=1})
                    "isint(${4=1}) && $4>0 && isint(${5=1}) && $5>0"
   _nn_$1_out_size=$2,$3,$4,$5
   _nn_forward.="begin(nn_input_init_forward($1,$2,$3,$4,$5));"
-  _nn_init.="$0 $* "
+  _nn_init.="$0 $*;"
 
 #@gmic nn_mse : name,in,truth
 #@gmic : Add a MSE loss to the network.
@@ -49749,7 +49752,7 @@ nn_mse : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
   _nn_$1_learning_rate=1e-3
   _nn_$1_nb_decreases=0
   _nn_$1_nb_increases=0
-  _nn_init.="$0 $* "
+  _nn_init.="$0 $*;"
 
 #@gmic nn_nl : name,in,activation
 #@gmic : Add a non-linearity module to the network.
@@ -49759,7 +49762,7 @@ nn_nl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"} skip ${3=le
   _nn_forward.="begin(nn_nl_init_forward($1,$2));"\
                "nn_nl_forward($1,$2,$3);"
   _nn_backward..="nn_nl_backward($1,$2,$3);"
-  _nn_init.="$0 $* "
+  _nn_init.="$0 $*;"
 
 #@gmic nn_reshape : name,in,width>0,_height>0,_depth>0,_spectrum>0
 #@gmic : Add a reshape module to the network.
@@ -49771,7 +49774,20 @@ nn_reshape :
   fi
   _nn_forward.="begin(nn_reshape_init_forward($1,$2,$3,$4,$5,$6));"
   _nn_backward..="begin(nn_reshape_init_backward($1,$2));"
-  _nn_init.="$0 $* "
+  _nn_init.="$0 $*;"
+
+#@gmic nn_save : filename.gmz
+#@gmic : Save current network as a .gmz file.
+nn_save :
+  ('$_nn_parameters') autocrop. {';'} replace. {';'},{','} sel={t} rm.
+  ('$_nn_init') autocrop. {';'} replace. {';'},{'" "'} nm. _nn_init
+  o[$sel,-1] "$1"
+  rm.
+
+#@gmic nn_load : filename.gmz
+#@gmic : Load and initialize network saved as a .gmz file.
+nn_load :
+  "$1" run {t}
 
 #------------------------------
 # Test program for FC networks.
@@ -49849,17 +49865,23 @@ nn_test :
 
   # Build neural network.
   #----------------------
-  if isfile('network.gmz') network.gmz fi
-  nn_init
-  nn_input X,64,64,1,3
-  nn_res RES1,X
-  nn_res RES2,RES1
-  nn_res RES3,RES2
-  nn_res RES4,RES3
-  nn_mse L,RES4,Y
+  # nn_init
+  # nn_input X,64,64,1,3
+  # nn_res RES1,X
+  # nn_res RES2,RES1
+  # nn_res RES3,RES2
+  # nn_res RES4,RES3
+  # nn_mse L,RES4,Y
+  # nn_save toto.gmz
+  # rm
+
+  nn_load toto.gmz
 
   l[] repeat 10 sp portrait$>,64 done a z nm res endl
   [res] nm. img
+
+d
+
 
   # Optimize network.
   #------------------
