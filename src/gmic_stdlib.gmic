@@ -49340,37 +49340,39 @@ nn_lib :
         draw(##name#_ind,name#_in_variance,3,0,0,0,1,h##name#_ind,1,1,momentum);
       );
 
-      learning_mode&1?(
-        name#_dt_gamma = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_gamma));
-        name#_gamma-=name#_dt_gamma*name#_batch_deriv_gamma;
-        draw(##name#_ind,name#_gamma,4,0,0,0,1,h##name#_ind);
-      );
-      learning_mode&2?(
-        name#_dt_beta = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_beta));
-        name#_beta-=name#_dt_beta*name#_batch_deriv_beta;
-        draw(##name#_ind,name#_beta,5,0,0,0,1,h##name#_ind);
+      _update_parameters?(
+        learning_mode&1?(
+          name#_dt_gamma = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_gamma));
+          name#_gamma-=name#_dt_gamma*name#_batch_deriv_gamma;
+          draw(##name#_ind,name#_gamma,4,0,0,0,1,h##name#_ind);
+        );
+        learning_mode&2?(
+          name#_dt_beta = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_beta));
+          name#_beta-=name#_dt_beta*name#_batch_deriv_beta;
+          draw(##name#_ind,name#_beta,5,0,0,0,1,h##name#_ind);
+        );
       );
     );
 
     # Clone Module (CLONE2)
     #-----------------------
-    nn_clone2_init_forward(name,in) = (
-      const name#0_out_width = in#_out_width;
-      const name#0_out_height = in#_out_height;
-      const name#0_out_depth = in#_out_depth;
-      const name#0_out_spectrum = in#_out_spectrum;
-      const name#1_out_width = in#_out_width;
-      const name#1_out_height = in#_out_height;
-      const name#1_out_depth = in#_out_depth;
-      const name#1_out_spectrum = in#_out_spectrum;
+    nn_clone2_init_forward(name0,name1,in) = (
+      const name0#_out_width = in#_out_width;
+      const name0#_out_height = in#_out_height;
+      const name0#_out_depth = in#_out_depth;
+      const name0#_out_spectrum = in#_out_spectrum;
+      const name1#_out_width = in#_out_width;
+      const name1#_out_height = in#_out_height;
+      const name1#_out_depth = in#_out_depth;
+      const name1#_out_spectrum = in#_out_spectrum;
     );
 
-    nn_clone2_forward(name,in) = (
-      name#0_out = name#1_out = in#_out;
+    nn_clone2_forward(name0,name1,in) = (
+      name0#_out = name1#_out = in#_out;
     );
 
-    nn_clone2_backward(name,in) = (
-      in#_deriv_out = name#0_deriv_out + name#1_deriv_out;
+    nn_clone2_backward(name0,name1,in) = (
+      in#_deriv_out = name0#_deriv_out + name1#_deriv_out;
     );
 
     # 2D Convolutional Layer (CONV2D).
@@ -49473,12 +49475,14 @@ nn_lib :
     );
 
     nn_conv2d_update(name) = (
-      name#_dt_weights = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_weights));
-      name#_dt_biases = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_biases));
-      name#_weights-=name#_dt_weights*name#_batch_deriv_weights;
-      name#_biases-=name#_dt_biases*name#_batch_deriv_biases;
-      draw(##name#_ind,name#_weights,0,0,0,0,w##name#_ind - 1,h##name#_ind);
-      draw(##name#_ind,name#_biases,w##name#_ind - 1,0,0,0,1,h##name#_ind);
+      _update_parameters?(
+        name#_dt_weights = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_weights));
+        name#_dt_biases = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_biases));
+        name#_weights-=name#_dt_weights*name#_batch_deriv_weights;
+        name#_biases-=name#_dt_biases*name#_batch_deriv_biases;
+        draw(##name#_ind,name#_weights,0,0,0,0,w##name#_ind - 1,h##name#_ind);
+        draw(##name#_ind,name#_biases,w##name#_ind - 1,0,0,0,1,h##name#_ind);
+      );
     );
 
     # Fully-Connected Module (FC).
@@ -49520,12 +49524,14 @@ nn_lib :
     );
 
     nn_fc_update(name) = (
-      name#_dt_weights = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_weights));
-      name#_dt_biases = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_biases));
-      name#_weights-=name#_dt_weights*name#_batch_deriv_weights;
-      name#_biases-=name#_dt_biases*name#_batch_deriv_biases;
-      draw(##name#_ind,name#_weights,0,0,0,0,w##name#_ind - 1,h##name#_ind);
-      draw(##name#_ind,name#_biases,w##name#_ind - 1,0,0,0,1,h##name#_ind);
+      _update_parameters?(
+        name#_dt_weights = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_weights));
+        name#_dt_biases = learning_rate/abs(maxabs(1e-9,name#_batch_deriv_biases));
+        name#_weights-=name#_dt_weights*name#_batch_deriv_weights;
+        name#_biases-=name#_dt_biases*name#_batch_deriv_biases;
+        draw(##name#_ind,name#_weights,0,0,0,0,w##name#_ind - 1,h##name#_ind);
+        draw(##name#_ind,name#_biases,w##name#_ind - 1,0,0,0,1,h##name#_ind);
+      );
     );
 
     # Input Module.
@@ -49543,6 +49549,7 @@ nn_lib :
     #-------------------------------
     nn_mse_init_backward(name) = (
       name#_batch_out = 0;
+      _update_parameters = 1;
     );
 
     nn_mse_backward(name,in,truth) = (
@@ -49577,6 +49584,8 @@ nn_lib :
           name#_nb_decreases = 0;
         );
       );
+
+      name#_batch_out>1.5*name#_previous_batch_out?(_update_parameters = 0); # Avoid update if loss increase is too high
 
       run('_nn_#name#_previous_batch_out,\
            _nn_#name#_learning_rate,\
@@ -49652,14 +49661,14 @@ nn_bn : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($
                  "end(nn_bn_end_backward($1));"
   _nn_update..="end(nn_bn_update($1,$3));"
 
-#@gmic nn_clone2 : name,in
+#@gmic nn_clone2 : name1,name2,in
 #@gmic : Add a clon2 module to the network.
-nn_clone2 : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
-  _nn_${1}0_out_size=$_nn_$2_out_size
-  _nn_${1}1_out_size=$_nn_$2_out_size
-  _nn_forward.="begin(nn_clone2_init_forward($1,$2));"\
-               "nn_clone2_forward($1,$2);"
-  _nn_backward..="nn_clone2_backward($1,$2);"
+nn_clone2 : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "${"is_variable_name $3"}
+  _nn_$1_out_size=$_nn_$3_out_size
+  _nn_$2_out_size=$_nn_$3_out_size
+  _nn_forward.="begin(nn_clone2_init_forward($1,$2,$3));"\
+               "nn_clone2_forward($1,$2,$3);"
+  _nn_backward..="nn_clone2_backward($1,$2,$3);"
 
 #@gmic nn_conv2d : name,in,nb_neurons>0,_kernel_size>0,_stride>0,_dilation>0
 #@gmic : Add a convolutional layer with 2D kernels to the network.
@@ -49815,8 +49824,8 @@ nn_test_fc :
 # nn_res : name,in
 # Define custom residual CONV module.
 nn_res : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
-  nn_clone2 $1_CL,$2
-  nn_conv2dnl $1_CONV1,$1_CL0,16
+  nn_clone2 $1_CL0,$1_CL1,$2
+  nn_conv2dnl $1_CONV1,$1_CL0,32
   nn_conv2d $1_CONV2,$1_CONV1,3
   nn_add2 $1_ADD,$1_CONV2,$1_CL1
   nn_nl $1,$1_ADD
@@ -49831,15 +49840,21 @@ nn_test :
   nn_res RES1,X
   nn_res RES2,RES1
   nn_res RES3,RES2
-  nn_mse L,RES3,Y
+  nn_res RES4,RES3
+  nn_res RES5,RES4
+  nn_res RES6,RES5
+  nn_res RES7,RES6
+  nn_res RES8,RES7
+  nn_res RES9,RES8
+  nn_mse L,RES9,Y
 
-  l[] sp colorful,earth,lena,portrait5,portrait8,64 n 0,255 a z nm img endl
+  l[] repeat 10 sp portrait$>,64 done a z nm img endl
   [img] nm. res
   noise[img] 30
 
   # Optimize network.
   #------------------
-  size_batch=4
+  size_batch=10
   repeat inf,iter
     e[] "ITER = "$iter
 
@@ -49849,7 +49864,7 @@ nn_test :
     # Mini-batch stochastic gradient.
     _nn_is_training=1
     repeat 10,batch_iter
-      eval[batch] >${-nn_lib}${_nn_init_forward}${_nn_init_backward}"
+      eval[batch] *${-nn_lib}${_nn_init_forward}${_nn_init_backward}"
         const img = $img;
         const res = $res;
         X = crop(#img,0,0,x,0,w#img,h#img,1,s#img);
@@ -49858,9 +49873,9 @@ nn_test :
         ${_nn_backward}\
         ${_nn_update}"
 
-        !("$batch_iter"%20)?(
+        x<8 && !("$batch_iter"%20)?(
           var = string('OUT',t);
-          store(RES3_out,var,w#res,h#res,1,s#res);
+          store(RES9_out,var,w#res,h#res,1,s#res);
           run('l[] $OUT',t,' w',x+1,'. 400,400 rm endl');
         );
         end(
