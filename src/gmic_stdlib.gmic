@@ -49354,20 +49354,20 @@ nn_lib :
     );
 
     nn_conv2d_forward(name,in) = (
-      name#_out = 0;
+      unref(_sizl);
+      const _sizl = size(name#_out)/name#_out_spectrum; # Size of output plane
+      name#_out = convolve(in#_out,
+                           in#_out_width,in#_out_height,in#_out_depth,in#_out_spectrum,
+                           name#_weights,
+                           name#_kernel_size,name#_kernel_size,1,in#_out_spectrum*name#_out_spectrum,
+                           1,0,2,
+                           name#_kernel_center,name#_kernel_center,0,
+                           0,0,0,
+                           name#_out_width - 1,name#_out_height - 1,name#_out_depth - 1,
+                           name#_stride,name#_stride,1,
+                           name#_dilation,name#_dilation,1);
       repeat (name#_out_spectrum,_l,
-        name#_yl = convolve(in#_out,
-                            in#_out_width,in#_out_height,in#_out_depth,in#_out_spectrum,
-                            name#_weights[_l*(w##name#_ind - 1),w##name#_ind - 1],
-                            name#_kernel_size,name#_kernel_size,1,in#_out_spectrum,
-                            1,0,3,
-                            name#_kernel_center,name#_kernel_center,0,
-                            0,0,0,
-                            name#_out_width - 1,name#_out_height - 1,name#_out_depth - 1,
-                            name#_stride,name#_stride,1,
-                            name#_dilation,name#_dilation,1);
-        name#_yl+=name#_biases[_l];
-        copy(name#_out[_l*size(name#_out)/name#_out_spectrum],name#_yl);
+        copy(name#_out[_l*_sizl],name#_biases[_l],_sizl,1,0,-1);
       );
     );
 
@@ -49823,18 +49823,18 @@ nn_test :
   #----------------------
   nn_init
   nn_input X,128,128,1,3
-  nn_conv2dnl CONV1,X,8,3
-  nn_conv2dnl CONV2,CONV1,8,3
-  nn_conv2dnl CONV3,CONV2,16,3
-  nn_conv2dnl CONV4,CONV3,16,3
-  nn_conv2dnl CONV5,CONV4,32,3
-  nn_conv2dnl CONV6,CONV5,64,3
-  nn_conv2dnl CONV7,CONV6,3,3
-  nn_mse L,CONV7,Y
+  nn_conv2dnl CONV1,X,2
+  nn_conv2dnl CONV2,CONV1,3
+  # nn_conv2dnl CONV3,CONV2,16,3
+  # nn_conv2dnl CONV4,CONV3,16,3
+  # nn_conv2dnl CONV5,CONV4,32,3
+  # nn_conv2dnl CONV6,CONV5,64,3
+  # nn_conv2dnl CONV7,CONV6,3,3
+  nn_mse L,CONV2,Y
 
-  l[] sp colorful,128 n 0,1 nm img endl
+  l[] sp colorful,128 n 0,255 nm img endl
   [img] nm. res
-  noise[img] 1 c[img] 0,1
+  noise[img] 20 c[img] 0,255
 
 #  r2dx[res] 50%
 
@@ -49861,7 +49861,7 @@ nn_test :
 
         !("$batch_iter"%20)?(
           var = string('OUT',t);
-          store(CONV7_out,var,w#res,h#res,1,s#res);
+          store(CONV2_out,var,w#res,h#res,1,s#res);
           run('l[] $OUT',t,' w',t+1,'. 400,400 rm endl');
         );
         end(
@@ -49870,19 +49870,10 @@ nn_test :
     done
     rm[batch]
 
-    # Render image from random noise.
-    eval ${-nn_lib}${_nn_init_forward}${_nn_init_backward}"
-        const img = $img;
-        const res = $res;
-        X = vector(#w#img*h#img*s#img);
-        fill(X,u(0,255));"\
-        ${_nn_forward}"
-        store(CONV7_out,'foo',w#res,h#res,1,s#res);
-        run('l[] $foo w9. 400,400 rm endl');
-        "
-
     # Visualize convolution kernels.
-#    +z[CONV1] 0,{CONV1,w-2} l. s y n 0,255 repeat $! l[$>] s x,3 r {v=sqrt(w);[v,v]},1,1,-1 r2dx 128,1 frame 1,1,0 frame 2,2,200 append_tiles 3 endl done a y w7. rm endl
+    +z[CONV1_Z] 0,{CONV1_Z,w-2} l. s y n 0,255 repeat $! l[$>] s x,-9 N=$! r {v=sqrt(w);[v,v]},1,1,-1 r2dx 128,1 frame 1,1,0 frame 2,2,200 append_tiles $N endl done a y w6. rm endl
+    +z[CONV2_Z] 0,{CONV2_Z,w-2} l. s y n 0,255 repeat $! l[$>] s x,-9 N=$! r {v=sqrt(w);[v,v]},1,1,-1 r2dx 128,1 frame 1,1,0 frame 2,2,200 append_tiles $N endl done a y w7. rm endl
+
 
   done
 
