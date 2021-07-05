@@ -49572,6 +49572,7 @@ nn_lib :
       name#_batch_out>1.25*name#_previous_batch_out?(
         _update_parameters = 0;
         _learning_rate = max(0.75*_learning_rate,1e-9);
+#        name#_batch_out = name#_previous_batch_out;
         name#_nb_increases = 0;
       ):name#_batch_out>=name#_previous_batch_out?(
         name#_nb_decreases = 0;
@@ -49844,8 +49845,7 @@ nn_test :
   nn_res RES2,RES1
   nn_res RES3,RES2
   nn_res RES4,RES3
-  nn_res RES5,RES4
-  nn_mse L,RES5,Y
+  nn_mse L,RES4,Y
 
   l[] repeat 10 sp portrait$>,64 done a z nm img endl
   [img] nm. res
@@ -49862,7 +49862,7 @@ nn_test :
 
     # Mini-batch stochastic gradient.
     _nn_is_training=1
-    repeat 100,batch_iter
+    repeat 10,batch_iter
       eval[batch] *${-nn_lib}${_nn_init_forward}${_nn_init_backward}"
         const img = $img;
         const res = $res;
@@ -49874,7 +49874,7 @@ nn_test :
 
         x<4 && !("$batch_iter"%20)?(
           var = string('OUT',t);
-          store(RES5_out,var,w#res,h#res,1,s#res);
+          store(RES4_out,var,w#res,h#res,1,s#res);
           run('l[] $OUT',t,' w',x+1,'. 400,400 rm endl');
         );
         end(
