@@ -49569,7 +49569,7 @@ nn_lib :
       name#_nb_decreases = $_nn_#name#_nb_decreases;
       name#_nb_increases = $_nn_#name#_nb_increases;
 
-      name#_batch_out>1.5*name#_previous_batch_out?(
+      name#_batch_out>1.25*name#_previous_batch_out?(
         _update_parameters = 0;
         _learning_rate = max(1e-9,0.75*_learning_rate);
         name#_nb_increases = 0;
@@ -49583,8 +49583,8 @@ nn_lib :
       ):(
 #        name#_nb_increases = 0;
         ++name#_nb_decreases;
-        name#_nb_decreases>=4?(
-          _learning_rate = min(1,25*_learning_rate);
+        name#_nb_decreases>=8?(
+          _learning_rate = min(1,2*_learning_rate);
           name#_nb_decreases = 0;
         );
       );
@@ -49781,7 +49781,7 @@ nn_test_fc :
 
   # Optimize network.
   #-------------------
-  size_batch=512
+  size_batch=1024
   repeat inf,iter
     e[] "ITER = "$iter
 
@@ -49845,11 +49845,7 @@ nn_test :
   nn_res RES3,RES2
   nn_res RES4,RES3
   nn_res RES5,RES4
-  nn_res RES6,RES5
-  nn_res RES7,RES6
-  nn_res RES8,RES7
-  nn_res RES9,RES8
-  nn_mse L,RES9,Y
+  nn_mse L,RES5,Y
 
   l[] repeat 10 sp portrait$>,64 done a z nm img endl
   [img] nm. res
@@ -49876,9 +49872,9 @@ nn_test :
         ${_nn_backward}\
         ${_nn_update}"
 
-        x<3 && !("$batch_iter"%20)?(
+        x<4 && !("$batch_iter"%20)?(
           var = string('OUT',t);
-          store(RES9_out,var,w#res,h#res,1,s#res);
+          store(RES5_out,var,w#res,h#res,1,s#res);
           run('l[] $OUT',t,' w',x+1,'. 400,400 rm endl');
         );
         end(
