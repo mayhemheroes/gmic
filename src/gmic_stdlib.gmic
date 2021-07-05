@@ -49816,20 +49816,17 @@ nn_test :
   # Build neural network.
   #----------------------
   nn_init
-  nn_input X,128,128,1,3
+  nn_input X,64,64,1,3
+
   nn_clone2 CL,X
+  nn_conv2dnl CONV1,CL0,32
+  nn_conv2d CONV2,CONV1,3,3
+  nn_add2 ADD,CONV2,CL1
+  nn_nl NL,ADD,leakyrelu
 
-  nn_conv2dnl CONV1,CL0,16
-  nn_conv2dnl CONV2,CONV1,3
+  nn_mse L,NL,Y
 
-  nn_conv2dnl CONV3,CL1,16
-  nn_conv2dnl CONV4,CONV3,3
-
-  nn_add2 ADD,CONV2,CONV4
-
-  nn_mse L,ADD,Y
-
-  l[] sp colorful,128 n 0,255 a z nm img endl
+  l[] sp colorful,64 n 0,255 a z nm img endl
   [img] nm. res
   noise[img] 30
 
@@ -49856,11 +49853,11 @@ nn_test :
 
         !("$batch_iter"%20)?(
           var = string('OUT',t);
-          store(ADD_out,var,w#res,h#res,1,s#res);
+          store(NL_out,var,w#res,h#res,1,s#res);
           run('l[] $OUT',t,' w',x+1,'. 400,400 rm endl');
         );
         end(
-          print([ L_out,learning_rate ]);
+          print([ L_out,learning_rate,abs(maxabs(CONV1_Z_weights)) ]);
         ); I"
     done
     rm[batch]
