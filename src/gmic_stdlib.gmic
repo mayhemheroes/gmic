@@ -49780,7 +49780,8 @@ nn_reshape :
 #@gmic : Save current network as a .gmz file.
 nn_save :
   ('$_nn_parameters') autocrop. {';'} replace. {';'},{','} sel={t} rm.
-  ('$_nn_init') autocrop. {';'} replace. {';'},{'" "'} nm. _nn_init
+  ('$_nn_init') autocrop. {';'} replace. {';'},{'" "'}
+  nm. _nn_init
   o[$sel,-1] "$1"
   rm.
 
@@ -49855,7 +49856,7 @@ nn_test_fc :
 # Define custom residual CONV module.
 nn_res : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
   nn_clone2 $1_CL0,$1_CL1,$2
-  nn_conv2dnl $1_CONV1,$1_CL0,64
+  nn_conv2dnl $1_CONV1,$1_CL0,12
   nn_conv2d $1_CONV2,$1_CONV1,3
   nn_add2 $1_ADD,$1_CONV2,$1_CL1
   nn_nl $1,$1_ADD
@@ -49865,23 +49866,19 @@ nn_test :
 
   # Build neural network.
   #----------------------
-  # nn_init
-  # nn_input X,64,64,1,3
-  # nn_res RES1,X
-  # nn_res RES2,RES1
-  # nn_res RES3,RES2
-  # nn_res RES4,RES3
-  # nn_mse L,RES4,Y
-  # nn_save toto.gmz
-  # rm
-
-  nn_load toto.gmz
+  if isfile('network.gmz') nn_load network.gmz
+  else
+    nn_init
+    nn_input X,64,64,1,3
+    nn_res RES1,X
+    nn_res RES2,RES1
+    nn_res RES3,RES2
+    nn_res RES4,RES3
+    nn_mse L,RES4,Y
+  fi
 
   l[] repeat 10 sp portrait$>,64 done a z nm res endl
   [res] nm. img
-
-d
-
 
   # Optimize network.
   #------------------
@@ -49916,17 +49913,12 @@ d
     done
     rm[batch]
 
-    o[^img,res] network.gmz
+    nn_save network.gmz
 
     # Visualize convolution kernels.
 #    +z[CONV1_0] 0,{CONV1_0,w-2} l. s y n 0,255 repeat $! l[$>] s x,-9 N=$! r {v=sqrt(w);[v,v]},1,1,-1 r2dx 128,1 frame 1,1,0 frame 2,2,200 append_tiles $N endl done a y w6. rm endl
-#    +z[CONV2_0] 0,{CONV2_0,w-2} l. s y n 0,255 repeat $! l[$>] s x,-9 N=$! r {v=sqrt(w);[v,v]},1,1,-1 r2dx 128,1 frame 1,1,0 frame 2,2,200 append_tiles $N endl done a y w7. rm endl
-
 
   done
-
-
-
 
 
 
