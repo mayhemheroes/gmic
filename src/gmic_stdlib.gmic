@@ -49565,33 +49565,36 @@ nn_lib :
 
     nn_mse_update(name) = (
       const name#_ind = $name#;
-      _learning_rate = i[##name#_ind,0];
-      name#_previous_batch_out = i[##name#_ind,1];
-      name#_nb_decreases = i[##name#_ind,2];
-      name#_nb_increases = i[##name#_ind,3];
+      name#_iteration = i[##name#_ind,0];
+      _learning_rate = i[##name#_ind,1];
+      name#_previous_batch_out = i[##name#_ind,2];
+      name#_nb_decreases = i[##name#_ind,3];
+      name#_nb_increases = i[##name#_ind,4];
 
-      name#_batch_out>1.5*name#_previous_batch_out?(
-        _update_parameters = 0;
-        _learning_rate = max(0.75*_learning_rate,1e-6);
-        name#_batch_out = name#_previous_batch_out;
-        name#_nb_increases = 0;
-      ):name#_batch_out>=name#_previous_batch_out?(
-        name#_nb_decreases = 0;
-        ++name#_nb_increases;
-        name#_nb_increases>=2?(
-          _learning_rate = max(0.9*_learning_rate,1e-6);
+      name#_iteration>3?(
+        name#_batch_out>1.5*name#_previous_batch_out?(
+          _update_parameters = 0;
+          _learning_rate = max(0.75*_learning_rate,1e-6);
+          name#_batch_out = name#_previous_batch_out;
           name#_nb_increases = 0;
-        );
-      ):(
-#        name#_nb_increases = 0;
-        ++name#_nb_decreases;
-        name#_nb_decreases>=4?(
-          _learning_rate = min(1.25*_learning_rate,1);
+        ):name#_batch_out>=name#_previous_batch_out?(
           name#_nb_decreases = 0;
+          ++name#_nb_increases;
+          name#_nb_increases>=2?(
+            _learning_rate = max(0.9*_learning_rate,1e-6);
+            name#_nb_increases = 0;
+          );
+        ):(
+#          name#_nb_increases = 0;
+          ++name#_nb_decreases;
+          name#_nb_decreases>=4?(
+            _learning_rate = min(1.25*_learning_rate,1);
+            name#_nb_decreases = 0;
+          );
         );
       );
 
-      copy(i[##name#_ind,0],[ _learning_rate,name#_batch_out,name#_nb_decreases,name#_nb_increases ]);
+      copy(i[##name#_ind,0],[ name#_iteration + 1,_learning_rate,name#_batch_out,name#_nb_decreases,name#_nb_increases ]);
     );
 
     # Non-Linearity Module (NL).
@@ -49743,7 +49746,7 @@ nn_input : check ${"is_variable_name $1"}" && isint($2) && $2>0 && isint(${3=1})
 #@gmic : Add a MSE loss to the network.
 nn_mse : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
   _nn_$1_out_size=1,1,1,1
-  if !isint($$1) (1e-3,inf,0,0) nm. $1 fi # learning_rate,batch_out,nb_decreases,nb_increases
+  if !isint($$1) (0,1e-3,inf,0,0) nm. $1 fi # iteration,learning_rate,batch_out,nb_decreases,nb_increases
   _nn_backward..="begin(nn_mse_init_backward($1));"\
                  "nn_mse_backward($1,$2,$3);"\
                  "end(nn_mse_end_backward($1));"
@@ -49873,35 +49876,37 @@ nn_test :
   nn_res RES5,RES4
   nn_mse L,RES5,Y
 
-  $HOME/work/img/landscape2.png nm. res
+  images.gmz nm. res
   [res] nm. img
 
   # Optimize network.
   #------------------
-  size_batch=32
+  size_batch=128
   repeat inf,iter
     e[] "ITER = "$iter
 
     # Build mini-batch.
-    $size_batch,1,1,2,"
+    $size_batch,1,1,3,"
       const img = $img;
+      ni = int(u(d#img))%d#img;
       nx = int(u(16,w#img - 1 - 16));
       ny = int(u(16,h#img - 1 - 16));
-      [ nx,ny ]"
+      [ ni,nx,ny ]"
     nm. batch
-    =[L] inf,1
+    =[L] inf,2
     j[img] [res] noise[img] 20
 
     # Mini-batch stochastic gradient.
     _nn_is_training=1
-    repeat 50,batch_iter
+    repeat 10,batch_iter
       eval[batch] *${-nn_lib}${_nn_init_forward}${_nn_init_backward}"
         const img = $img;
         const res = $res;
-        nx = i(x,0,0,0) - 16;
-        ny = i(x,0,0,1) - 16;
-        X = crop(#img,nx,ny,0,0,32,32,1,3);
-        Y = crop(#res,nx,ny,0,0,32,32,1,3);
+        ni = i(x,0,0,0);
+        nx = i(x,0,0,1) - 16;
+        ny = i(x,0,0,2) - 16;
+        X = crop(#img,nx,ny,ni,0,32,32,1,3);
+        Y = crop(#res,nx,ny,ni,0,32,32,1,3);
 
         "${_nn_forward}\
         ${_nn_backward}\
