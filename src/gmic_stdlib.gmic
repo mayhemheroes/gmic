@@ -49936,56 +49936,52 @@ nn_test :
   nn_layer_rename OUT,RES8
   nn_loss_mse L,OUT,Y
 
-  l[] images.gmz +mirror x +mirror y a z endl nm. res
-  [res] nm. img
+  l[] images.gmz +mirror x +mirror y a z endl nm. img
 
   # Optimize network.
   #------------------
-  size_batch=128
+  size_batch=64
   repeat inf,iter
     e[] "ITER = "$iter
 
     # Build mini-batch.
-    $size_batch,1,1,3,"
+    32,32,$size_batch,3
+    1,1,$size_batch,1,"*
       const img = $img;
       ni = int(u(d#img))%d#img;
-      nx = int(u(16,w#img - 1 - 16));
-      ny = int(u(16,h#img - 1 - 16));
-      [ ni,nx,ny ]"
+      nx = int(u(0,w#img - 1 - 32));
+      ny = int(u(0,h#img - 1 - 32));
+      X = crop(#img,nx,ny,0,0,32,32,1,3);
+      draw(#-1,X,0,0,z,0,32,32,1,3);
+    " rm.
+    +ac. "noise 20",ycbcr_y,1 ac. "noise 10",ycbcr_cbcr,1
+    a[-2,-1] c
     nm. batch
-    =[L] inf,2
-    j[img] [res]
-    ac[img] "noise 20",ycbcr_y,1
-    ac[img] "noise 10",ycbcr_cbcr,1
 
     # Mini-batch stochastic gradient.
     _nn_is_training=1
     repeat 30,batch_iter
-      eval[batch] *${-nn_lib}${_nn_init_forward}${_nn_init_backward}"
-        const img = $img;
-        const res = $res;
-        ni = i(x,0,0,0);
-        nx = i(x,0,0,1) - 16;
-        ny = i(x,0,0,2) - 16;
-        X = crop(#img,nx,ny,ni,0,32,32,1,3);
-        Y = crop(#res,nx,ny,ni,0,32,32,1,3);
+      1,1,{batch,d},1,*${-nn_lib}${_nn_init_forward}${_nn_init_backward}"
+        Y = crop(#$batch,0,0,z,0,32,32,1,3);
+        X = crop(#$batch,0,0,z,3,32,32,1,3);
 
         "${_nn_forward}\
         ${_nn_backward}\
         ${_nn_update}"
 
-        x<4 && !("$batch_iter"%10)?(
+        z<4 && !("$batch_iter"%10)?(
           var = string(#256,'IN',t);
           store(X,var,32,32,1,3);
           var = string(#256,'OUT',t);
           store(OUT_out,var,32,32,1,3);
           var = string(#256,'REF',t);
           store(Y,var,32,32,1,3);
-          run('l[] $IN',t,' $OUT',t,' $REF',t,' c 0,255 a x w',x+1,'. 600,200,0 rm endl');
+          run('l[] $IN',t,' $OUT',t,' $REF',t,' c 0,255 a x w',z+1,'. 600,200,0 rm endl');
         );
         end(
           print([ sqrt(L_out),nn_learning_rate ]);
         ); I"
+      rm.
     done
     rm[batch]
 
