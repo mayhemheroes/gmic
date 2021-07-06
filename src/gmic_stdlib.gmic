@@ -49141,7 +49141,6 @@ fx_solve_maze_preview :
 #@gmic nn_lib : Define functions to evaluate and optimize neural networks.
 nn_lib :
   u "
-
     #----------------------------------------------------------
     # Definition of activation functions and their derivatives.
     #----------------------------------------------------------
@@ -49150,42 +49149,49 @@ nn_lib :
     nn_activate(Z,activation) = nn_activate_#activation(#Z);
 
     # Linear.
+    #--------
     nn_activation_linear(z) = (z);
     nn_activation_deriv_linear(z) = (1);
     nn_activate_linear(Z) = (0);
     nn_activate_deriv_linear(Z) = (#Z = 1);
 
     # ELU: Exponential Linear Unit.
+    #-------------------------------
     nn_activation_elu(z) = (z<0?exp(z) - 1:z);
     nn_activation_deriv_elu(z) = (z<0?exp(z):1);
     nn_activate_elu(Z) = _nn_activate_pointwise(Z,elu);
     nn_activate_deriv_elu(Z) = _nn_activate_pointwise(Z,deriv_elu);
 
     # GELU: Gaussian Error Linear Unit.
+    #-----------------------------------
     nn_activation_gelu(z) = (0.5*z*(1 + erf(z/sqrt(2))));
     nn_activation_deriv_gelu(z) = (0.5 + 0.5*erf(z/sqrt(2)) + z*exp(-z^2/2)/sqrt(2*pi));
     nn_activate_gelu(Z) = _nn_activate_pointwise(Z,gelu);
     nn_activate_deriv_gelu(Z) = _nn_activate_pointwise(Z,deriv_gelu);
 
     # LeakyRELU: Leaky Rectified Linear Unit.
+    #-----------------------------------------
     nn_activation_leakyrelu(z) = (z<0?0.05*z:z);
     nn_activation_deriv_leakyrelu(z) = (z<0?0.05:1);
     nn_activate_leakyrelu(Z) = _nn_activate_pointwise(Z,leakyrelu);
     nn_activate_deriv_leakyrelu(Z) = _nn_activate_pointwise(Z,deriv_leakyrelu);
 
     # RELU: Rectified Linear Unit.
+    #------------------------------
     nn_activation_relu(z) = (z<0?0:z);
     nn_activation_deriv_relu(z) = (z<0?0:1);
     nn_activate_relu(Z) = _nn_activate_pointwise(Z,relu);
     nn_activate_deriv_relu(Z) = _nn_activate_pointwise(Z,deriv_relu);
 
     # Sigmoid.
+    #---------
     nn_activation_sigmoid(z) = (0.5 + 0.5*tanh(z/2));
     nn_activation_deriv_sigmoid(z) = (_nn_sig = nn_activation_sigmoid(z); _nn_sig*(1-_nn_sig));
     nn_activate_sigmoid(Z) = _nn_activate_pointwise(Z,sigmoid);
     nn_activate_deriv_sigmoid(Z) = _nn_activate_pointwise(Z,deriv_sigmoid);
 
     # Tanh.
+    #------
     nn_activation_tanh(z) = (tanh(z));
     nn_activation_deriv_tanh(z) = (1 - tanh(z)^2);
     nn_activate_tanh(Z) = _nn_activate_pointwise(Z,tanh);
@@ -49197,18 +49203,18 @@ nn_lib :
     const _nb_threads_max = n;
 
     nn_init_forward() = (
-      nb_samples = 0;
+      _nb_samples = 0;
     );
 
     nn_forward() = (
-      thread = t;
-      nb_threads_used = thread + 1;
-      ++nb_samples;
+      _thread = t;
+      _nb_threads_used = _thread + 1;
+      ++_nb_samples;
     );
 
     nn_end_backward() = (
-      merge(nb_threads_used,max);
-      merge(nb_samples,+);
+      merge(_nb_threads_used,max);
+      merge(_nb_samples,+);
     );
 
     # Network input.
@@ -49323,9 +49329,9 @@ nn_lib :
 
     nn_layer_batchnorm_end_t_backward(name) = (
       name#_in_variance/=name#_nb_samples;
-      copy(name#_threads_nb_samples[thread],name#_nb_samples);
-      copy(name#_threads_in_mean[thread*size(name#_in_mean)],name#_in_mean);
-      copy(name#_threads_in_variance[thread*size(name#_in_variance)],name#_in_variance);
+      copy(name#_threads_nb_samples[_thread],name#_nb_samples);
+      copy(name#_threads_in_mean[_thread*size(name#_in_mean)],name#_in_mean);
+      copy(name#_threads_in_variance[_thread*size(name#_in_variance)],name#_in_variance);
       name#_in_mean*=name#_nb_samples;
     );
 
@@ -49339,7 +49345,7 @@ nn_lib :
       merge(name#_batch_deriv_beta,+);
       name#_in_mean/=name#_nb_samples;
       name#_in_variance = 0;
-      repeat (nb_threads_used,_k,
+      repeat (_nb_threads_used,_k,
         name#_in_variance+=name#_threads_nb_samples[_k]*
           (name#_threads_in_variance[_k*size(name#_in_variance),size(name#_in_variance)] +
           (name#_threads_in_mean[_k*size(name#_in_mean),size(name#_in_variance)] - name#_in_mean)^2);
@@ -49486,8 +49492,8 @@ nn_lib :
     nn_layer_conv2d_end_backward(name) = (
       merge(name#_batch_deriv_weights,+);
       merge(name#_batch_deriv_biases,+);
-      name#_batch_deriv_weights/=nb_samples;
-      name#_batch_deriv_biases/=nb_samples;
+      name#_batch_deriv_weights/=_nb_samples;
+      name#_batch_deriv_biases/=_nb_samples;
     );
 
     nn_layer_conv2d_update(name) = (
@@ -49535,8 +49541,8 @@ nn_lib :
     nn_layer_fc_end_backward(name) = (
       merge(name#_batch_deriv_weights,+);
       merge(name#_batch_deriv_biases,+);
-      name#_batch_deriv_weights/=nb_samples;
-      name#_batch_deriv_biases/=nb_samples;
+      name#_batch_deriv_weights/=_nb_samples;
+      name#_batch_deriv_biases/=_nb_samples;
     );
 
     nn_layer_fc_update(name) = (
@@ -49620,7 +49626,7 @@ nn_lib :
 
     nn_loss_mse_end_backward(name) = (
       merge(name#_batch_out,+);
-      name#_out = name#_batch_out/nb_samples;
+      name#_out = name#_batch_out/_nb_samples;
     );
 
     nn_loss_mse_update(name) = (
@@ -49956,7 +49962,7 @@ nn_test :
           run('l[] $OUT',t,' c 0,255 w',x+1,'. 200,200,0 rm endl');
         );
         end(
-          print([ sqrt(L_out),_learning_rate,_update_parameters ]);
+          print([ sqrt(L_out),_learning_rate ]);
         ); I"
     done
     rm[batch]
