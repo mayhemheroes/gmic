@@ -49211,8 +49211,8 @@ nn_lib :
       merge(nb_samples,+);
     );
 
-    # Input Layer.
-    #--------------
+    # Network input.
+    #---------------
     nn_input_init_forward(name,w,h,d,s) = (
       const name#_out_width = w;
       const name#_out_height = h;
@@ -49572,8 +49572,22 @@ nn_lib :
       in#_deriv_out*=name#_deriv_out;
     );
 
-    # Reshape Module (RESHAPE).
-    #--------------------------
+    # Rename.
+    #--------
+    nn_layer_rename_init_forward(name,in) = (
+      const name#_out_width = in#_out_width;
+      const name#_out_height = in#_out_height;
+      const name#_out_depth = in#_out_depth;
+      const name#_out_spectrum = in#_out_spectrum;
+      ref(in#_out,name#_out);
+    );
+
+    nn_layer_rename_backward(name,in) = (
+      ref(name#_deriv_out,in#_deriv_out);
+    );
+
+    # Reshape.
+    #---------
     nn_layer_reshape_init_forward(name,in,w,h,d,s) = (
       const name#_out_width = w;
       const name#_out_height = h;
@@ -49775,6 +49789,14 @@ nn_layer_nl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"} skip 
   _nn_backward..="nn_layer_nl_backward($1,$2,$3);"
   _nn_init.="$0 $*;"
 
+#@gmic nn_layer_rename : name,in
+#@gmic : Add a rename layer to the network.
+nn_layer_rename : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
+  _nn_$1_out_size=$_nn_$2_out_size
+  _nn_forward.="begin(nn_layer_rename_init_forward($1,$2));"
+  _nn_backward..="nn_layer_rename_backward($1,$2);"
+  _nn_init.="$0 $*;"
+
 #@gmic nn_layer_reshape : name,in,width>0,_height>0,_depth>0,_spectrum>0
 #@gmic : Add a reshape layer to the network.
 #@gmic : Default values: 'height=1', 'depth=1' and 'spectrum=1'.
@@ -49814,7 +49836,8 @@ nn_test_fc :
   nn_layer_fcnl FC3,FC2,30,leakyrelu
   nn_layer_fcnl FC4,FC3,30,leakyrelu
   nn_layer_fc FC5,FC4,3
-  nn_loss_mse L,FC5,Y
+  nn_layer_rename OUT,FC5
+  nn_loss_mse L,OUT,Y
   sp lena,128 nm. img
 
   # Optimize network.
@@ -49851,7 +49874,7 @@ nn_test_fc :
     {img,[w,h]},1,3,*${-nn_lib}"
       X = [ x,y ];
       "${_nn_forward}"
-      cut(FC5_out,0,255)"
+      cut(OUT_out,0,255)"
 #    on. frame.png,$iter
     w. rm.
 
@@ -49886,7 +49909,8 @@ nn_test :
   nn_layer_res RES6,RES5
   nn_layer_res RES7,RES6
   nn_layer_res RES8,RES7
-  nn_loss_mse L,RES8,Y
+  nn_layer_rename OUT,RES8
+  nn_loss_mse L,OUT,Y
 
   l[] images.gmz +mirror x +mirror y a z endl nm. res
   [res] nm. img
@@ -49926,7 +49950,7 @@ nn_test :
 
         x<4 && !("$batch_iter"%4)?(
           var = string('OUT',t);
-          store(RES8_out,var,32,32,1,3);
+          store(OUT_out,var,32,32,1,3);
           run('l[] $OUT',t,' w',x+1,'. 200,200 rm endl');
         );
         end(
