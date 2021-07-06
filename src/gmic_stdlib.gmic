@@ -49956,12 +49956,14 @@ nn_test :
         ${_nn_backward}\
         ${_nn_update}"
 
-        x<4 && !("$batch_iter"%5)?(
-          var = string('IN',t);
+        x<4 && !("$batch_iter"%10)?(
+          var = string(#256,'IN',t);
           store(X,var,32,32,1,3);
-          var2 = string('OUT',t);
-          store(OUT_out,var2,32,32,1,3);
-          run('l[] $IN',t,' $OUT',t,' c 0,255 a x w',x+1,'. 400,200,0 rm endl');
+          var = string(#256,'OUT',t);
+          store(OUT_out,var,32,32,1,3);
+          var = string(#256,'REF',t);
+          store(Y,var,32,32,1,3);
+          run('l[] $IN',t,' $REF',t,' $OUT',t,' c 0,255 a x w',x+1,'. 600,200,0 rm endl');
         );
         end(
           print([ sqrt(L_out),_learning_rate ]);
