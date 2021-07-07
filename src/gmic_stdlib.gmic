@@ -49712,19 +49712,9 @@ nn_lib :
 #@gmic nn_init
 #@gmic : Initialize library for building a new neural network.
 nn_init :
-  e[^-1] "Initialize library for a new neural network."
+  e[^-1] "Initialize library for a new network."
   _nn_forward,_nn_backward,_nn_update,_nn_parameters=
-  _nn_init="$0 $*;"
-
-#@gmic nn_input : name,width,_height,_depth,_spectrum
-#@gmic : Define an input image/vector for the network.
-#@gmic : Default values: 'height=1', 'depth=1' and 'spectrum=1'.
-nn_input : check ${"is_variable_name $1"}" && isint($2) && $2>0 && isint(${3=1}) && $3>0 && "\
-                   "isint(${4=1}) && $4>0 && isint(${5=1}) && $5>0"
-  e[^-1] "Add data input '$1' to the network, with size ($2,$3,$4,$5)."
-  _nn_$1_out_size=$2,$3,$4,$5
-  _nn_forward.="begin(nn_input_init_forward($1,$2,$3,$4,$5));"
-  _nn_init.="$0 $*;"
+  _nn_init="$0"
 
 #@gmic nn_save : 'filename.gmz'
 #@gmic : Save current network as a .gmz file.
@@ -49741,8 +49731,18 @@ nn_save : check "s=['$1']; find(s,'.gmz')==size(s) - 4"
 #@gmic : Load and initialize network saved as a .gmz file.
 #@gmic : Neural network files can be only loaded in .gmz format.
 nn_load : check "s=['$1']; find(s,'.gmz')==size(s) - 4"
-  e[^-1] "Load and initialize network from file '$1'."
+  e[^-1] "Load network from file '$1'."
   i "$1" run {t} rm.
+
+#@gmic nn_input : name,width,_height,_depth,_spectrum
+#@gmic : Define an input image/vector for the network.
+#@gmic : Default values: 'height=1', 'depth=1' and 'spectrum=1'.
+nn_input : check ${"is_variable_name $1"}" && isint($2) && $2>0 && isint(${3=1}) && $3>0 && "\
+                   "isint(${4=1}) && $4>0 && isint(${5=1}) && $5>0"
+  e[^-1] "Add data input '$1' to the network, with size ($2,$3,$4,$5)."
+  _nn_$1_out_size=$2,$3,$4,$5
+  _nn_forward.="begin(nn_input_init_forward($1,$2,$3,$4,$5));"
+  _nn_init.="$0 $*;"
 
 #@gmic nn_layer_add : name,in0,in1
 #@gmic : Add an ADD layer to the network.
@@ -50108,7 +50108,7 @@ nn_test :
 
 
 nn_foo :
-  l[] nn_load network.gmz store network endl
+  l[] nn_init nn_load network.gmz store network endl
   repeat $! l[$>]
     w,h={[w,h]}
 
