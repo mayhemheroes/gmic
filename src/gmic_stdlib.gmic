@@ -49714,7 +49714,7 @@ nn_lib :
 nn_init :
   e[^-1] "Initialize library for a new network."
   _nn_forward,_nn_backward,_nn_update,_nn_parameters=
-  _nn_init="$0"
+  _nn_init="$0;"
 
 #@gmic nn_save : 'filename.gmz'
 #@gmic : Save current network as a .gmz file.
@@ -50035,16 +50035,18 @@ nn_test :
   #----------------------
   if isfile('network.gmz') nn_load network.gmz
   else
-    nn_input X,32,32,1,3
+    nn_init
+    nn_input X,32,32,1,1
     nn_layer_res RES1,X,32
     nn_layer_res RES2,RES1,32
     nn_layer_res RES3,RES2,32
     nn_layer_res RES4,RES3,32
     nn_layer_res RES5,RES4,32
-    nn_layer_rename OUT,RES5
+    nn_layer_res RES6,RES5,32
+    nn_layer_rename OUT,RES6
     nn_loss_mse L,OUT,Y
   fi
-  l[] images.gmz s z k[1,3] a z endl nm. img # +mirror x +mirror y a z endl nm. img
+  l[] images.gmz s z k[1,3] a z luminance n 0,255 endl nm. img # +mirror x +mirror y a z endl nm. img
 
   # Optimize network.
   #------------------
@@ -50053,7 +50055,7 @@ nn_test :
     e[] "ITER = "$iter
 
     # Build mini-batch.
-    32,32,$size_batch,3
+    32,32,$size_batch,1
     1,1,$size_batch,1,">
       const img = $img;
       const siz = 32*32;
@@ -50062,21 +50064,19 @@ nn_test :
         ni = int(u(d#img))%d#img;
         nx = int(u(0,w#img - 1 - 32));
         ny = int(u(0,h#img - 1 - 32));
-        X = crop(#img,nx,ny,0,0,32,32,1,3);
-        L = (X[0,siz] + X[siz,siz] + X[2*siz,siz])/3,
-      _(while); std(L)<p);
-      draw(#-1,X,0,0,z,0,32,32,1,3)"
+        X = crop(#img,nx,ny,0,0,32,32,1,1);
+      _(while); std(X)<p);
+      draw(#-1,X,0,0,z,0,32,32,1,1)"
     rm.
-    +ac. "noise 40",ycbcr_y,1 ac. "noise 20",ycbcr_cbcr,1
-    a[-2,-1] c
+    +noise. 40 c. 0,255 a[-2,-1] c
     nm. batch
 
     # Mini-batch stochastic gradient.
     _nn_is_training=1
     repeat 30,batch_iter
       1,1,{batch,d},1,*${-nn_lib}${_nn_init_forward}${_nn_init_backward}"
-        Y = crop(#$batch,0,0,z,0,32,32,1,3);
-        X = crop(#$batch,0,0,z,3,32,32,1,3);
+        Y = crop(#$batch,0,0,z,0,32,32,1,1);
+        X = crop(#$batch,0,0,z,1,32,32,1,1);
 
         "${_nn_forward}\
         ${_nn_backward}\
@@ -50084,11 +50084,11 @@ nn_test :
 
         z<4 && !("$batch_iter"%10)?(
           var = string(#256,'IN',t);
-          store(X,var,32,32,1,3);
+          store(X,var,32,32,1,1);
           var = string(#256,'OUT',t);
-          store(OUT_out,var,32,32,1,3);
+          store(OUT_out,var,32,32,1,1);
           var = string(#256,'REF',t);
-          store(Y,var,32,32,1,3);
+          store(Y,var,32,32,1,1);
           run('l[] $IN',t,' $OUT',t,' $REF',t,' c 0,255 a x w',z+1,'. 600,200,0 rm endl');
         );
         end(
