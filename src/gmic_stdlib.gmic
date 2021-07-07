@@ -49459,7 +49459,8 @@ nn_lib :
       name#_weights_mirrored = vector(#size(name#_weights));
       repeat (in#_out_spectrum,_k,
         repeat (name#_out_spectrum,_l,
-          copy(name#_weights_mirrored[_k*name#_out_spectrum*_sizw + _l*_sizw + _sizw - 1],name#_weights[_l*(w##name#_ind - 1) + _k*_sizw],_sizw,-1,1);
+          copy(name#_weights_mirrored[_k*name#_out_spectrum*_sizw + _l*_sizw + _sizw - 1],
+               name#_weights[_l*(w##name#_ind - 1) + _k*_sizw],_sizw,-1,1);
         );
       );
       in#_deriv_out = convolve(name#_deriv_out,
@@ -49467,7 +49468,8 @@ nn_lib :
                                name#_weights_mirrored,
                                name#_kernel_size,name#_kernel_size,1,name#_out_spectrum*in#_out_spectrum,
                                0,0,2,
-                               name#_kernel_size - 1 - name#_kernel_center,name#_kernel_size - 1 - name#_kernel_center,0,
+                               name#_kernel_size - 1 - name#_kernel_center,
+                               name#_kernel_size - 1 - name#_kernel_center,0,
                                0,0,0,in#_out_width - 1,in#_out_height - 1,in#_out_depth - 1,
                                1/name#_stride,1/name#_stride,1,
                                name#_dilation/name#_stride,name#_dilation/name#_stride,1);
@@ -49660,7 +49662,9 @@ nn_lib :
         nn_learning_rate = 1e-3;
       );
 
-      copy(i[##name#_ind,0],[ name#_iteration + 1,nn_learning_rate,name#_batch_out,name#_nb_decreases,name#_nb_increases,name#_nb_slowdowns ]);
+      copy(i[##name#_ind,0],
+           [ name#_iteration + 1,nn_learning_rate,name#_batch_out,
+             name#_nb_decreases,name#_nb_increases,name#_nb_slowdowns ]);
     );
 "
 
@@ -49713,8 +49717,9 @@ nn_layer_avgpool2d : check ${"is_variable_name $1"}" && "${"is_variable_name $2"
   _nn_backward..="nn_layer_avgpool2d_backward($1,$2);"
   _nn_init.="$0 $*;"
 
-#@gmic nn_layer_batchnorm : name,in,learning_mode={ 0=no parameters learnt | 1=gamma-only | 2=beta-only | 3=gamma & beta}
+#@gmic nn_layer_batchnorm : name,in,learning_mode.
 #@gmic : Add a batch-normalization layer to the network.
+#@gmic : 'learning_mode' can be { 0=no parameters learnt | 1=gamma-only | 2=beta-only | 3=gamma & beta}.
 nn_layer_batchnorm : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint(${3=0}) && inrange($3,0,3)"
   s0,s1,s2,s3="no parameters","gamma-only","beta-only","gamma & beta"
   e[^-1] "Add 'BATCHNORM' layer '$1' to the network, with input '$2' and learning mode '"${s$3}"'."
@@ -49755,7 +49760,8 @@ nn_layer_clone2 : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" 
 #@gmic : Default values: 'kernel_size=3', 'stride=1' and 'dilation=1'.
 nn_layer_conv2d : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "\
                         "isint($3) && $3>0 && isint(${4=3}) && $4>0 && ${5=1}>0" skip "${6=1}"
-  e[^-1] "Add 'CONV2D' layer '$1' to the network, with input '$2', $3 channels, $4x$4 kernels, stride $5 and dilation $6."
+  e[^-1] "Add 'CONV2D' layer '$1' to the network, with input '$2', $3 channels, $4x$4 kernels, stride $5 and "\
+         "dilation $6."
   _nn_$1_out_size={s=[$_nn_$2_out_size];[max(1,int(s[0]/$5)),max(1,int(s[1]/$5)),s[2],$3]}
   if !isint($$1) {[$_nn_$2_out_size][3]*$4^2+1},$3 f. 4*g/(w-1) nm. $1 fi
   _nn_forward.="begin(nn_layer_conv2d_init_forward($1,$2,$4,$5,$6));"\
@@ -49772,7 +49778,8 @@ nn_layer_conv2d : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" 
 #@gmic : Default values: 'kernel_size=3', 'stride=1', 'dilation=1' and 'activation=leakyrelu'.
 nn_layer_conv2dnl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "\
                           "isint($3) && $3>0 && isint(${4=3}) && $4>0 && ${5=1}>0" skip "${6=1}","${7=leakyrelu}"
-  e[^-1] "Add 'CONV2D+NL' layer '$1' to the network, with input '$2', $3 channels, $4x$4 kernels, stride $5, dilation $6 and '$7' activation."
+  e[^-1] "Add 'CONV2D+NL' layer '$1' to the network, with input '$2', $3 channels, $4x$4 kernels, stride $5, "\
+         "dilation $6 and '$7' activation."
   nn_layer_conv2d $1_0,$2,$3,$4,$5,$6
   nn_layer_nl $1,$1_0,$7
 
@@ -49977,7 +49984,8 @@ nn_test :
     nn_save network.gmz
 
     # Visualize convolution kernels.
-#    +z[CONV1_0] 0,{CONV1_0,w-2} l. s y n 0,255 repeat $! l[$>] s x,-9 N=$! r {v=sqrt(w);[v,v]},1,1,-1 r2dx 128,1 frame 1,1,0 frame 2,2,200 append_tiles $N endl done a y w6. rm endl
+#    +z[CONV1_0] 0,{CONV1_0,w-2} l. s y n 0,255 repeat $! l[$>] s x,-9 N=$! r {v=sqrt(w);[v,v]},1,1,-1
+# r2dx 128,1 frame 1,1,0 frame 2,2,200 append_tiles $N endl done a y w6. rm endl
 
   done
 
