@@ -49245,6 +49245,26 @@ nn_lib :
       in1#_deriv_out = in2#_deriv_out = name#_deriv_out/2;
     );
 
+    # APPEND: Append two inputs as a new output.
+    #--------------------------------------------
+    nn_layer_append_init_forward(name,in0,in1) = (
+      const name#_out_width = in0#_out_width;
+      const name#_out_height = in0#_out_height;
+      const name#_out_depth = in0#_out_depth;
+      const name#_out_spectrum = in0#_out_spectrum + in1#_out_spectrum;
+    );
+
+    nn_layer_append_forward(name,in0,in1) = (
+      name#_out = vector(#size(in0#_out)+size(in1#_out));
+      copy(name#_out,in0#_out,size(in0#_out));
+      copy(name#_out[size(in0#_out)],in1#_out,size(in1#_out));
+    );
+
+    nn_layer_append_backward(name,in0,in1) = (
+      in0#_deriv_out = name#_deriv_out[0,size(in0#_out)];
+      in1#_deriv_out = name#_deriv_out[size(in0#_out),size(in1#_out)];
+    );
+
     # AVGPOOL2D : 2D Average pooling.
     #--------------------------------
     nn_layer_avgpool2d_init_forward(name,in) = (
@@ -49372,23 +49392,9 @@ nn_lib :
       );
     );
 
-    # CLONE: Duplicate input.
-    #------------------------
-    nn_layer_clone_init_forward(name,in) = (
-      const name#_out_width = in#_out_width;
-      const name#_out_height = in#_out_height;
-      const name#_out_depth = in#_out_depth;
-      const name#_out_spectrum = in#_out_spectrum;
-      ref(in#_out,name#_out);
-    );
-
-    nn_layer_clone_backward(name,in) = (
-      ref(name#_deriv_out,in#_deriv_out);
-    );
-
-    # CLONE2: Duplicate input as two new outputs.
+    # CLONE: Duplicate input as two new outputs.
     #--------------------------------------------
-    nn_layer_clone2_init_forward(name0,name1,in) = (
+    nn_layer_clone_init_forward(name0,name1,in) = (
       const name0#_out_width = in#_out_width;
       const name0#_out_height = in#_out_height;
       const name0#_out_depth = in#_out_depth;
@@ -49399,11 +49405,11 @@ nn_lib :
       const name1#_out_spectrum = in#_out_spectrum;
     );
 
-    nn_layer_clone2_forward(name0,name1,in) = (
+    nn_layer_clone_forward(name0,name1,in) = (
       name0#_out = name1#_out = in#_out;
     );
 
-    nn_layer_clone2_backward(name0,name1,in) = (
+    nn_layer_clone_backward(name0,name1,in) = (
       in#_deriv_out = name0#_deriv_out + name1#_deriv_out;
     );
 
@@ -49590,6 +49596,20 @@ nn_lib :
       in#_deriv_out*=name#_deriv_out;
     );
 
+    # RENAME: Rename input.
+    #----------------------
+    nn_layer_rename_init_forward(name,in) = (
+      const name#_out_width = in#_out_width;
+      const name#_out_height = in#_out_height;
+      const name#_out_depth = in#_out_depth;
+      const name#_out_spectrum = in#_out_spectrum;
+      ref(in#_out,name#_out);
+    );
+
+    nn_layer_rename_backward(name,in) = (
+      ref(name#_deriv_out,in#_deriv_out);
+    );
+
     # RESHAPE: Reshape input to compatible size.
     #-------------------------------------------
     nn_layer_reshape_init_forward(name,in,w,h,d,s) = (
@@ -49603,6 +49623,30 @@ nn_lib :
 
     nn_layer_reshape_init_backward(name,in) = (
       ref(name#_deriv_out,in#_deriv_out);
+    );
+
+    # SPLIT: Split input as two outpus.
+    #----------------------------------
+    nn_layer_split_init_forward(name0,name1,in,nb_channels0) = (
+      const name0#_out_width = in#_out_width;
+      const name0#_out_height = in#_out_height;
+      const name0#_out_depth = in#_out_depth;
+      const name0#_out_spectrum = nb_channels0;
+      const name1#_out_width = in#_out_width;
+      const name1#_out_height = in#_out_height;
+      const name1#_out_depth = in#_out_depth;
+      const name1#_out_spectrum = in#_out_depth - nb_channels0;
+    );
+
+    nn_layer_split_forward(name0,name1,in) = (
+      unref(_siz0); const siz0 = name0#_out_width*name0#_out_height*name0#_out_depth*name0#_out_spectrum;
+      name0#_out = in#_out[0,siz0];
+      name1#_out = in#_out[siz0,name1#_out_width*name1#_out_height*name1#_out_depth*name1#_out_spectrum];
+    );
+
+    nn_layer_split_backward(name0,name1,in) = (
+      copy(name0#_deriv_out,in#_deriv_out,size(name0#_out));
+      copy(name1#_deriv_out,in#_deriv_out[size(name0#_out)],size(name1#_out));
     );
 
     #------------------------------
@@ -49702,7 +49746,7 @@ nn_load : check "s=['$1']; find(s,'.gmz')==size(s) - 4"
   e[^-1] "Load and initialize network from file '$1'."
   i "$1" run {t} rm.
 
-#@gmic nn_layer_add : name,in1,in2
+#@gmic nn_layer_add : name,in0,in1
 #@gmic : Add an ADD layer to the network.
 nn_layer_add : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "${"is_variable_name $3"}" && "\
                      [$_nn_$2_out_size]==[$_nn_$3_out_size]
@@ -49713,7 +49757,7 @@ nn_layer_add : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && 
   _nn_backward..="nn_layer_add_backward($1,$2,$3);"
   _nn_init.="$0 $*;"
 
-#@gmic nn_layer_append : name,in1,in2
+#@gmic nn_layer_append : name,in0,in1
 #@gmic : Add an append layer to the network.
 nn_layer_append : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "${"is_variable_name $3"}
   e[^-1] "Add 'APPEND' layer '$1' to the network, with inputs '$2' and '$3'."
@@ -49721,8 +49765,9 @@ nn_layer_append : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" 
     error "nn_layer_append: Cannot append inputs $2("$_nn_$2_out_size") and $3("$_nn_$3_out_size") together."
   fi
   _nn_$1_out_size={[$_nn_$2_out_size]+[0,0,0,[$_nn_$3_out_size][3]]}
-  _nn_forward.="begin(nn_layer_append_init_forward($1,$2));"
-  _nn_backward..="nn_layer_append_backward($1,$2);"
+  _nn_forward.="begin(nn_layer_append_init_forward($1,$2,$3));"\
+               "nn_layer_append_forward($1,$2,$3);"
+  _nn_backward..="nn_layer_append_backward($1,$2,$3);"
   _nn_init.="$0 $*;"
 
 #@gmic nn_layer_avgpool2d : name,in
@@ -49753,24 +49798,15 @@ nn_layer_batchnorm : check ${"is_variable_name $1"}" && "${"is_variable_name $2"
   _nn_init.="$0 $*;"
   _nn_parameters.="$1;"
 
-#@gmic nn_layer_clone : name,in
+#@gmic nn_layer_clone : name0,name1,in
 #@gmic : Add a clone layer to the network.
-nn_layer_clone : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
-  e[^-1] "Add 'CLONE' layer '$1' to the network, with input '$2'."
-  _nn_$1_out_size=$_nn_$2_out_size
-  _nn_forward.="begin(nn_layer_clone_init_forward($1,$2));"
-  _nn_backward..="nn_layer_clone_backward($1,$2);"
-  _nn_init.="$0 $*;"
-
-#@gmic nn_layer_clone2 : name1,name2,in
-#@gmic : Add a clone2 layer to the network.
-nn_layer_clone2 : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "${"is_variable_name $3"}
-  e[^-1] "Add 'CLONE2' layer with outputs '$1' and '$2' to the network, with input '$3'."
+nn_layer_clone : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "${"is_variable_name $3"}
+  e[^-1] "Add 'CLONE' layer with outputs '$1' and '$2' to the network, with input '$3'."
   _nn_$1_out_size=$_nn_$3_out_size
   _nn_$2_out_size=$_nn_$3_out_size
-  _nn_forward.="begin(nn_layer_clone2_init_forward($1,$2,$3));"\
-               "nn_layer_clone2_forward($1,$2,$3);"
-  _nn_backward..="nn_layer_clone2_backward($1,$2,$3);"
+  _nn_forward.="begin(nn_layer_clone_init_forward($1,$2,$3));"\
+               "nn_layer_clone_forward($1,$2,$3);"
+  _nn_backward..="nn_layer_clone_backward($1,$2,$3);"
   _nn_init.="$0 $*;"
 
 #@gmic nn_layer_conv2d : name,in,nb_channels>0,_kernel_size>0,_stride>0,_dilation>0
@@ -49835,6 +49871,15 @@ nn_layer_nl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"} skip 
   _nn_backward..="nn_layer_nl_backward($1,$2,$3);"
   _nn_init.="$0 $*;"
 
+#@gmic nn_layer_rename : name,in
+#@gmic : Add a rename layer to the network.
+nn_layer_rename : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
+  e[^-1] "Add a 'RENAME' layer '$1' to the network, with input '$2'."
+  _nn_$1_out_size=$_nn_$2_out_size
+  _nn_forward.="begin(nn_layer_rename_init_forward($1,$2));"
+  _nn_backward..="nn_layer_rename_backward($1,$2);"
+  _nn_init.="$0 $*;"
+
 #@gmic nn_layer_reshape : name,in,width>0,height>0,depth>0,spectrum>0
 #@gmic : Add a reshape layer to the network.
 nn_layer_reshape : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
@@ -49845,6 +49890,17 @@ nn_layer_reshape : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
   fi
   _nn_forward.="begin(nn_layer_reshape_init_forward($1,$2,$3,$4,$5,$6));"
   _nn_backward..="begin(nn_layer_reshape_init_backward($1,$2));"
+  _nn_init.="$0 $*;"
+
+#@gmic nn_layer_split : name0,name1,in,nb_channels0
+#@gmic : Add a split layer to the network.
+nn_layer_split : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "${"is_variable_name $3"}
+  e[^-1] "Add 'SPLIT' layer ('$1','$2') to the network from input '$3'."
+  _nn_$1_out_size={[[$_nn_$3_out_size][0,3],$4]}
+  _nn_$2_out_size={[$_nn_$3_out_size]-[0,0,0,$4]}
+  _nn_forward.="begin(nn_layer_split_init_forward($1,$2,$3,$4));"\
+               "nn_layer_split_forward($1,$2,$3);"
+  _nn_backward..="nn_layer_split_backward($1,$2,$3);"
   _nn_init.="$0 $*;"
 
 #@gmic nn_loss_mse : name,in,ground_truth
@@ -49874,7 +49930,7 @@ nn_test_fc :
   nn_layer_fcnl FC3,FC2,30,leakyrelu
   nn_layer_fcnl FC4,FC3,30,leakyrelu
   nn_layer_fc FC5,FC4,3
-  nn_layer_clone OUT,FC5
+  nn_layer_rename OUT,FC5
   nn_loss_mse L,OUT,Y
   sp lena,128 nm. img
 
@@ -49926,12 +49982,15 @@ nn_test_conv :
   # Build neural network.
   #----------------------
   nn_input X,64,64,1,3
-  nn_layer_conv2d CONV1,X,3
-  nn_layer_clone OUT,CONV1
-  nn_loss_mse L,OUT,Y
+
+  nn_layer_split S1,S2,X,2
+  nn_layer_conv2d CONV1,S1,2
+  nn_layer_conv2d CONV2,S2,1
+  nn_layer_append APP,CONV1,CONV2
+  nn_loss_mse L,APP,Y
   sp lena,64 nm. img
   [img] nm. res
-#  noise[img] 20
+  noise[img] 20
 
   # Optimize network.
   #-------------------
@@ -49963,7 +50022,7 @@ nn_test_conv :
 # nn_layer_res : name,in
 # Define a custom residual CONV module.
 nn_layer_res : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint(${3=16}) && $3>0"
-  nn_layer_clone2 $1_CL0,$1_CL1,$2
+  nn_layer_clone $1_CL0,$1_CL1,$2
   nn_layer_conv2dnl $1_CONV1,$1_CL0,$3
   nn_layer_conv2d $1_CONV2,$1_CONV1,{[$_nn_$2_out_size][3]}
   nn_layer_add $1_ADD,$1_CONV2,$1_CL1
@@ -49982,7 +50041,7 @@ nn_test :
     nn_layer_res RES3,RES2,32
     nn_layer_res RES4,RES3,32
     nn_layer_res RES5,RES4,32
-    nn_layer_clone OUT,RES5
+    nn_layer_rename OUT,RES5
     nn_loss_mse L,OUT,Y
   fi
   l[] images.gmz s z k[1,3] a z endl nm. img # +mirror x +mirror y a z endl nm. img
