@@ -49141,9 +49141,26 @@ fx_solve_maze_preview :
 #@gmic nn_lib : Define functions to evaluate and optimize neural networks.
 nn_lib :
   u "
-    #----------------------------------------------------------
-    # Definition of activation functions and their derivatives.
-    #----------------------------------------------------------
+    #-----------------------------------------
+    # Definition of the environment variables.
+    #-----------------------------------------
+    const _nb_threads_max = n;
+    begin(
+      nn_nb_samples = 0;
+    );
+
+    nn_thread = t;
+    nn_nb_threads_used = nn_thread + 1;
+    ++nn_nb_samples;
+
+    end(
+      merge(nn_nb_threads_used,max);
+      merge(nn_nb_samples,+);
+    );
+
+    #--------------------------------------------------------------
+    # Definition of the activation functions and their derivatives.
+    #--------------------------------------------------------------
     _nn_activate_pointwise(Z,activation) = (fill(#Z,k,nn_activation_#activation(#Z[k])));
     nn_activate(Z,activation) = nn_activate_#activation(#Z);
 
@@ -49196,32 +49213,12 @@ nn_lib :
     nn_activate_tanh(Z) = _nn_activate_pointwise(Z,tanh);
     nn_activate_deriv_tanh(Z) = _nn_activate_pointwise(Z,deriv_tanh);
 
-    #-------------------------------------------
-    # Mandatory library constants and functions.
-    #-------------------------------------------
-    const _nb_threads_max = n;
+    #----------------------------------
+    # Definition of the network layers.
+    #----------------------------------
 
-    nn_init_forward() = (
-      nn_nb_samples = 0;
-    );
-
-    nn_forward() = (
-      nn_thread = t;
-      nn_nb_threads_used = nn_thread + 1;
-      ++nn_nb_samples;
-    );
-
-    nn_end_backward() = (
-      merge(nn_nb_threads_used,max);
-      merge(nn_nb_samples,+);
-    );
-
-    #-------------------------------
-    # Definition of network layers.
-    #-------------------------------
-
-    # Network input.
-    #---------------
+    # INPUT: Input image or vector data.
+    #-----------------------------------
     nn_input_init_forward(name,w,h,d,s) = (
       const name#_out_width = w;
       const name#_out_height = h;
@@ -49231,8 +49228,8 @@ nn_lib :
       ref(#name,name#_out);
     );
 
-    # Add.
-    #------
+    # ADD: Add two inputs.
+    #---------------------
     nn_layer_add_init_forward(name,in) = (
       const name#_out_width = in#_out_width;
       const name#_out_height = in#_out_height;
@@ -49248,8 +49245,8 @@ nn_lib :
       in1#_deriv_out = in2#_deriv_out = name#_deriv_out/2;
     );
 
-    # 2D Average-Pooling.
-    #--------------------
+    # AVGPOOL2D : 2D Average pooling.
+    #--------------------------------
     nn_layer_avgpool2d_init_forward(name,in) = (
       const name#_out_width = int(in#_out_width/2);
       const name#_out_height = int(in#_out_height/2);
@@ -49277,8 +49274,8 @@ nn_lib :
            name#_deriv_out[_x + name#_out_width*_y]);
     );
 
-    # Batch-norm.
-    #------------
+    # BATCHNORM: Batch-normalization layer.
+    #---------------------------------------
     nn_layer_batchnorm_init_forward(name,in) = (
       const name#_ind = $name#;
       const name#_out_width = in#_out_width;
@@ -49375,9 +49372,23 @@ nn_lib :
       );
     );
 
-    # Clone.
-    #-------
-    nn_layer_clone_init_forward(name0,name1,in) = (
+    # CLONE: Duplicate input.
+    #------------------------
+    nn_layer_clone_init_forward(name,in) = (
+      const name#_out_width = in#_out_width;
+      const name#_out_height = in#_out_height;
+      const name#_out_depth = in#_out_depth;
+      const name#_out_spectrum = in#_out_spectrum;
+      ref(in#_out,name#_out);
+    );
+
+    nn_layer_clone_backward(name,in) = (
+      ref(name#_deriv_out,in#_deriv_out);
+    );
+
+    # CLONE2: Duplicate input as two new outputs.
+    #--------------------------------------------
+    nn_layer_clone2_init_forward(name0,name1,in) = (
       const name0#_out_width = in#_out_width;
       const name0#_out_height = in#_out_height;
       const name0#_out_depth = in#_out_depth;
@@ -49388,16 +49399,16 @@ nn_lib :
       const name1#_out_spectrum = in#_out_spectrum;
     );
 
-    nn_layer_clone_forward(name0,name1,in) = (
+    nn_layer_clone2_forward(name0,name1,in) = (
       name0#_out = name1#_out = in#_out;
     );
 
-    nn_layer_clone_backward(name0,name1,in) = (
+    nn_layer_clone2_backward(name0,name1,in) = (
       in#_deriv_out = name0#_deriv_out + name1#_deriv_out;
     );
 
-    # 2D Convolutional Layer.
-    #------------------------
+    # CONV2D: 2D Convolutional Layer.
+    #--------------------------------
     nn_layer_conv2d_init_forward(name,in,size,stride,dilation) = (
       const name#_ind = $name#;
       const name#_out_width = max(1,int(in#_out_width/stride));
@@ -49506,8 +49517,8 @@ nn_lib :
       );
     );
 
-    # Fully-Connected Layer.
-    #-----------------------
+    # FC: Fully-Connected Layer.
+    #---------------------------
     nn_layer_fc_init_forward(name) = (
       const name#_ind = $name#;
       const name#_out_width = 1;
@@ -49555,8 +49566,8 @@ nn_lib :
       );
     );
 
-    # Non-Linearity.
-    #---------------
+    # NL: Non-Linearity.
+    #--------------------
     nn_layer_nl_init_forward(name,in) = (
       const name#_out_width = in#_out_width;
       const name#_out_height = in#_out_height;
@@ -49577,22 +49588,8 @@ nn_lib :
       in#_deriv_out*=name#_deriv_out;
     );
 
-    # Rename.
-    #--------
-    nn_layer_rename_init_forward(name,in) = (
-      const name#_out_width = in#_out_width;
-      const name#_out_height = in#_out_height;
-      const name#_out_depth = in#_out_depth;
-      const name#_out_spectrum = in#_out_spectrum;
-      ref(in#_out,name#_out);
-    );
-
-    nn_layer_rename_backward(name,in) = (
-      ref(name#_deriv_out,in#_deriv_out);
-    );
-
-    # Reshape.
-    #---------
+    # RESHAPE: Reshape input to compatible size.
+    #-------------------------------------------
     nn_layer_reshape_init_forward(name,in,w,h,d,s) = (
       const name#_out_width = w;
       const name#_out_height = h;
@@ -49610,8 +49607,8 @@ nn_lib :
     # Definition of Loss Functions.
     #------------------------------
 
-    # Mean-Squared Error.
-    #--------------------
+    # MSE : Mean-Squared Error.
+    #---------------------------
     nn_loss_mse_init_backward(name) = (
       name#_batch_out = 0;
       _update_parameters = 1;
@@ -49663,22 +49660,12 @@ nn_lib :
     );
 "
 
-#@gmic nn_init
-#@gmic : Initialize NN library.
-nn_init :
-  e[^-1] "Init neural network library."
-  _nn_forward="begin(nn_init_forward());"\
-              "nn_forward();"
-  _nn_backward="end(nn_end_backward());"
-  _nn_update=
-  _nn_init="$0;"
-
 #@gmic nn_input : name,width,_height,_depth,_spectrum
 #@gmic : Define an input image/vector for the network.
 #@gmic : Default values: 'height=1', 'depth=1' and 'spectrum=1'.
 nn_input : check ${"is_variable_name $1"}" && isint($2) && $2>0 && isint(${3=1}) && $3>0 && "\
                    "isint(${4=1}) && $4>0 && isint(${5=1}) && $5>0"
-  e[^-1] "Add input '$1' to the network, with size ($2,$3,$4,$5)."
+  e[^-1] "Add data input '$1' to the network, with size ($2,$3,$4,$5)."
   _nn_$1_out_size=$2,$3,$4,$5
   _nn_forward.="begin(nn_input_init_forward($1,$2,$3,$4,$5));"
   _nn_init.="$0 $*;"
@@ -49699,14 +49686,13 @@ nn_save : check "s=['$1']; find(s,'.gmz')==size(s) - 4"
 #@gmic : Neural network files can be only loaded in .gmz format.
 nn_load : check "s=['$1']; find(s,'.gmz')==size(s) - 4"
   e[^-1] "Load and initialize network from file '$1'."
-  "$1"
-  run {t} rm.
+  i "$1" run {t} rm.
 
 #@gmic nn_layer_add : name,in1,in2
 #@gmic : Add an ADD layer to the network.
 nn_layer_add : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "${"is_variable_name $3"}" && "\
                      [$_nn_$2_out_size]==[$_nn_$3_out_size]
-  e[^-1] "Add ADD layer '$1' to the network, with inputs '$2' and '$3'."
+  e[^-1] "Add 'ADD' layer '$1' to the network, with inputs '$2' and '$3'."
   _nn_$1_out_size=$_nn_$2_out_size
   _nn_forward.="begin(nn_layer_add_init_forward($1,$2));"\
                "nn_layer_add_forward($1,$2,$3);"
@@ -49716,7 +49702,7 @@ nn_layer_add : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && 
 #@gmic nn_layer_avgpool2d : name,in
 #@gmic : Add a 2d average pooling layer to the network.
 nn_layer_avgpool2d : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
-  e[^-1] "Add AVGPOOL2D layer '$1' to the network, with input '$2'."
+  e[^-1] "Add 'AVGPOOL2D' layer '$1' to the network, with input '$2'."
   _nn_$1_out_size={s=[$_nn_$2_out_size];[int(s[0]/2),int(s[1]/2),1,s[3]]}
   _nn_forward.="begin(nn_layer_avgpool2d_init_forward($1,$2));"\
                "nn_layer_avgpool2d_forward($1,$2);"
@@ -49727,7 +49713,7 @@ nn_layer_avgpool2d : check ${"is_variable_name $1"}" && "${"is_variable_name $2"
 #@gmic : Add a batch-normalization layer to the network.
 nn_layer_batchnorm : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint(${3=0}) && inrange($3,0,3)"
   s0,s1,s2,s3="no parameters","gamma-only","beta-only","gamma & beta"
-  e[^-1] "Add BATCHNORM layer '$1' to the network, with input '$2' and learning mode '"${s$3}"'."
+  e[^-1] "Add 'BATCHNORM' layer '$1' to the network, with input '$2' and learning mode '"${s$3}"'."
   _nn_$1_out_size=$_nn_$2_out_size
   if !isint($$1) 6,{prod($_nn_$2_out_size)} f. nan,nan,nan,nan,1,0 nm. $1 fi
   _nn_forward.="begin(nn_layer_batchnorm_init_forward($1,$2));"\
@@ -49740,15 +49726,24 @@ nn_layer_batchnorm : check ${"is_variable_name $1"}" && "${"is_variable_name $2"
   _nn_init.="$0 $*;"
   _nn_parameters.="$1;"
 
-#@gmic nn_layer_clone : name1,name2,in
+#@gmic nn_layer_clone : name,in
 #@gmic : Add a clone layer to the network.
-nn_layer_clone : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "${"is_variable_name $3"}
-  e[^-1] "Add CLONE layer with outputs '$1' and '$2' to the network, with input '$3'."
+nn_layer_clone : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
+  e[^-1] "Add 'CLONE' layer '$1' to the network, with input '$2'."
+  _nn_$1_out_size=$_nn_$2_out_size
+  _nn_forward.="begin(nn_layer_clone_init_forward($1,$2));"
+  _nn_backward..="nn_layer_clone_backward($1,$2);"
+  _nn_init.="$0 $*;"
+
+#@gmic nn_layer_clone2 : name1,name2,in
+#@gmic : Add a clone2 layer to the network.
+nn_layer_clone2 : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "${"is_variable_name $3"}
+  e[^-1] "Add 'CLONE2' layer with outputs '$1' and '$2' to the network, with input '$3'."
   _nn_$1_out_size=$_nn_$3_out_size
   _nn_$2_out_size=$_nn_$3_out_size
-  _nn_forward.="begin(nn_layer_clone_init_forward($1,$2,$3));"\
-               "nn_layer_clone_forward($1,$2,$3);"
-  _nn_backward..="nn_layer_clone_backward($1,$2,$3);"
+  _nn_forward.="begin(nn_layer_clone2_init_forward($1,$2,$3));"\
+               "nn_layer_clone2_forward($1,$2,$3);"
+  _nn_backward..="nn_layer_clone2_backward($1,$2,$3);"
   _nn_init.="$0 $*;"
 
 #@gmic nn_layer_conv2d : name,in,nb_channels>0,_kernel_size>0,_stride>0,_dilation>0
@@ -49756,9 +49751,9 @@ nn_layer_clone : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" &
 #@gmic : Default values: 'kernel_size=3', 'stride=1' and 'dilation=1'.
 nn_layer_conv2d : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "\
                         "isint($3) && $3>0 && isint(${4=3}) && $4>0 && ${5=1}>0" skip "${6=1}"
-  e[^-1] "Add CONV2D layer '$1' to the network, with input '$2', $3 channels, $4x$4 kernels, stride $5 and dilation $6."
+  e[^-1] "Add 'CONV2D' layer '$1' to the network, with input '$2', $3 channels, $4x$4 kernels, stride $5 and dilation $6."
   _nn_$1_out_size={s=[$_nn_$2_out_size];[max(1,int(s[0]/$5)),max(1,int(s[1]/$5)),s[2],$3]}
-  if !isint($$1) {[$_nn_$2_out_size][3]*$4^2+1},$3 f. 4*g/(w-1) nm. $1 fi
+  if !isint($$1) {[$_nn_$2_out_size][3]*$4^2+1},$3 f. 5*g/(w-1) nm. $1 fi
   _nn_forward.="begin(nn_layer_conv2d_init_forward($1,$2,$4,$5,$6));"\
                "nn_layer_conv2d_forward($1,$2);"
   _nn_backward..="begin(nn_layer_conv2d_init_backward($1,$2));"\
@@ -49773,16 +49768,16 @@ nn_layer_conv2d : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" 
 #@gmic : Default values: 'kernel_size=3', 'stride=1', 'dilation=1' and 'activation=leakyrelu'.
 nn_layer_conv2dnl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "\
                           "isint($3) && $3>0 && isint(${4=3}) && $4>0 && ${5=1}>0" skip "${6=1}","${7=leakyrelu}"
-  e[^-1] "Add CONV2D+NL layer '$1' to the network, with input '$2', $3 channels, $4x$4 kernels, stride $5, dilation $6 and '$7' activation."
+  e[^-1] "Add 'CONV2D+NL' layer '$1' to the network, with input '$2', $3 channels, $4x$4 kernels, stride $5, dilation $6 and '$7' activation."
   nn_layer_conv2d $1_0,$2,$3,$4,$5,$6
   nn_layer_nl $1,$1_0,$7
 
 #@gmic nn_layer_fc : name,in,nb_channels>0
 #@gmic : Add an fully connected layer to the network.
 nn_layer_fc : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($3) && $3>0"
-  e[^-1] "Add FC layer '$1' to the network, with input '$2' and $3 channels."
+  e[^-1] "Add 'FC' layer '$1' to the network, with input '$2' and $3 channels."
   _nn_$1_out_size=1,1,1,$3
-  if !isint($$1) {prod($_nn_$2_out_size)+1},$3 f. 4*g/(w-1) nm. $1 fi
+  if !isint($$1) {prod($_nn_$2_out_size)+1},$3 f. 5*g/(w-1) nm. $1 fi
   _nn_forward.="begin(nn_layer_fc_init_forward($1));"\
                "nn_layer_fc_forward($1,$2);"
   _nn_backward..="begin(nn_layer_fc_init_backward($1));"\
@@ -49796,7 +49791,7 @@ nn_layer_fc : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && i
 #@gmic : Add a fully connected layer followed by a non-linearity, to the network.
 #@gmic : Default value: 'activation=leakyrelu'.
 nn_layer_fcnl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($3) && $3>0" skip ${4=leakyrelu}
-  e[^-1] "Add FC layer '$1' to the network, with input '$2', $3 channels and '$4' activation."
+  e[^-1] "Add 'FC+NL' layer '$1' to the network, with input '$2', $3 channels and '$4' activation."
   nn_layer_fc $1_0,$2,$3
   nn_layer_nl $1,$1_0,$4
 
@@ -49804,26 +49799,17 @@ nn_layer_fcnl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" &&
 #@gmic : Add a non-linearity layer to the network.
 #@gmic : Default value: 'activation=leakyrelu'.
 nn_layer_nl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"} skip ${3=leakyrelu}
-  e[^-1] "Add NL layer '$1' to the network, with input '$2' and '$3' activation."
+  e[^-1] "Add 'NL' layer '$1' to the network, with input '$2' and '$3' activation."
   _nn_$1_out_size=$_nn_$2_out_size
   _nn_forward.="begin(nn_layer_nl_init_forward($1,$2));"\
                "nn_layer_nl_forward($1,$2,$3);"
   _nn_backward..="nn_layer_nl_backward($1,$2,$3);"
   _nn_init.="$0 $*;"
 
-#@gmic nn_layer_rename : name,in
-#@gmic : Add a rename layer to the network.
-nn_layer_rename : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
-  e[^-1] "Add RENAME layer '$1' to the network, with input '$2'."
-  _nn_$1_out_size=$_nn_$2_out_size
-  _nn_forward.="begin(nn_layer_rename_init_forward($1,$2));"
-  _nn_backward..="nn_layer_rename_backward($1,$2);"
-  _nn_init.="$0 $*;"
-
 #@gmic nn_layer_reshape : name,in,width>0,height>0,depth>0,spectrum>0
 #@gmic : Add a reshape layer to the network.
 nn_layer_reshape : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
-  e[^-1] "Add RESHAPE layer '$1' to the network, with input '$2' and size ($3,$4,$5,$6)."
+  e[^-1] "Add 'RESHAPE' layer '$1' to the network, with input '$2' and size ($3,$4,$5,$6)."
   _nn_$1_out_size=$3,$4,$5,$6
   if prod($_nn_$1_out_size)!=prod($_nn_$2_out_size)
     error "nn_layer_reshape: Cannot reshape input ("$_nn_$2_out_size") to output ("$_nn_$1_out_size")."
@@ -49835,7 +49821,7 @@ nn_layer_reshape : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
 #@gmic nn_loss_mse : name,in,ground_truth
 #@gmic : Add a MSE loss to the network.
 nn_loss_mse : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
-  e[^-1] "Add MSE loss '$1' to the network, with input '$2' and ground truth '$3'."
+  e[^-1] "Add 'MSE' loss '$1' to the network, with input '$2' and ground truth '$3'."
   _nn_$1_out_size=1,1,1,1
   if !isint($$1) (0,1e-3,inf,0,0) nm. $1 fi # iteration,learning_rate,batch_out,nb_decreases,nb_increases
   _nn_backward..="begin(nn_loss_mse_init_backward($1));"\
@@ -49852,7 +49838,6 @@ nn_test_fc :
 
   # Build neural network.
   #----------------------
-  nn_init
   nn_input X,2
   nn_layer_batchnorm BN0,X
   nn_layer_fcnl FC1,BN0,100
@@ -49860,7 +49845,7 @@ nn_test_fc :
   nn_layer_fcnl FC3,FC2,30,leakyrelu
   nn_layer_fcnl FC4,FC3,30,leakyrelu
   nn_layer_fc FC5,FC4,3
-  nn_layer_rename OUT,FC5
+  nn_layer_clone OUT,FC5
   nn_loss_mse L,OUT,Y
   sp lena,128 nm. img
 
@@ -49911,7 +49896,7 @@ nn_test_fc :
 # nn_layer_res : name,in
 # Define a custom residual CONV module.
 nn_layer_res : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
-  nn_layer_clone $1_CL0,$1_CL1,$2
+  nn_layer_clone2 $1_CL0,$1_CL1,$2
   nn_layer_conv2dnl $1_CONV1,$1_CL0,128
   nn_layer_conv2d $1_CONV2,$1_CONV1,3
   nn_layer_add $1_ADD,$1_CONV2,$1_CL1
@@ -49923,17 +49908,16 @@ nn_test :
   # Build neural network.
   #----------------------
   if isfile('network.gmz') nn_load network.gmz fi
-  nn_init
   nn_input X,32,32,1,3
   nn_layer_res RES1,X
   nn_layer_res RES2,RES1
   nn_layer_res RES3,RES2
   nn_layer_res RES4,RES3
-  nn_layer_res RES5,RES4
-  nn_layer_res RES6,RES5
-  nn_layer_res RES7,RES6
-  nn_layer_res RES8,RES7
-  nn_layer_rename OUT,RES8
+  # nn_layer_res RES5,RES4
+  # nn_layer_res RES6,RES5
+  # nn_layer_res RES7,RES6
+  # nn_layer_res RES8,RES7
+  nn_layer_clone OUT,RES4
   nn_loss_mse L,OUT,Y
 
   l[] images.gmz +mirror x +mirror y a z endl nm. img
@@ -49994,7 +49978,7 @@ nn_test :
 
 
 nn_foo :
-  l[] nn_load network_light.gmz store network endl
+  l[] nn_load network.gmz store network endl
   repeat $! l[$>]
     w,h={[w,h]}
 
