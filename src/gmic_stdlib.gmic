@@ -49639,16 +49639,16 @@ nn_lib :
       # Compute trend: percentage of loss decrease(<0) or increase(>0).
       name#_trend = 100*(name#_batch_out - name#_previous_batch_out)/name#_previous_batch_out;
 
-      name#_trend>500?( # Large loss increase -> drastically reduce learning rate
+      name#_trend>=500?( # Large loss increase -> drastically reduce learning rate
         nn_update_parameters = 0;
-        nn_learning_rate = max(0.75*nn_learning_rate,1e-8);
+        nn_learning_rate = max(0.5*nn_learning_rate,1e-8);
         name#_batch_out = name#_previous_batch_out;
         name#_nb_increases = name#_nb_decreases = 0;
         ++name#_nb_slowdowns;
-      ):name#_trend>0?( # Loss increase
+      ):name#_trend>=0?( # Loss increase
         ++name#_nb_increases;
         name#_nb_decreases = 0;
-        name#_nb_increases>1?( # Frequent loss increase -> slightly reduce learning rate
+        name#_nb_increases>=2?( # Frequent loss increase -> slightly reduce learning rate
           nn_learning_rate = max(0.9*nn_learning_rate,1e-8);
           name#_nb_increases = name#_nb_decreases = 0;
           ++name#_nb_slowdowns;
