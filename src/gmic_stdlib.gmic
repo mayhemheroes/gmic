@@ -49985,8 +49985,7 @@ nn_test_conv :
   nn_layer_conv2d CONV1,S1,2
   nn_layer_conv2d CONV2,S2,1
   nn_layer_append APP,CONV1,CONV2
-  nn_layer_conv2d OUT,APP,3,1
-
+  nn_layer_conv2d OUT,APP,3
   nn_loss_mse L,OUT,Y
   sp lena,64 nm. img
   [img] nm. res
@@ -50000,13 +49999,13 @@ nn_test_conv :
 
     repeat 10,batch_iter
       eval ${-nn_lib}"
-        batch = I;
         X = crop(#$img); # Input
         Y = crop(#$res); # Ground-truth
         "${_nn_forward}${_nn_backward}${_nn_update}"
-        store(X,'X',64,64,1,3);
-        store(Y,'Y',64,64,1,3);
-        run('l[] $X $Y a x w. rm. endl');
+        store(X,'vX',64,64,1,3);
+        store(Y,'vY',64,64,1,3);
+        store(OUT_out,'vOUT',64,64,1,3);
+        run('l[] $vX $vOUT $vY a x w. rm. endl');
 
         end(
           print([L_out,nn_learning_rate,nn_update_parameters]);
@@ -50144,11 +50143,59 @@ nn_foo :
       draw(#1,one,X,Y,0,3,32,32,1,1,-1)"
     k..
     s c,-3
-#    d
 
     max. 1 / c 0,255
   endl done
 
+
+
+nn_test_unet :
+
+  # Build neural network.
+  nn_input X,64,64,1,3
+
+  nn_layer_clone A1,A2,X
+  nn_layer_conv2dnl CA1,A1,8,3,2
+  nn_layer_clone B1,B2,CA1
+  nn_layer_conv2dnl CB1,B1,16,3,2
+  nn_layer_clone C1,C2,CB1
+  nn_layer_conv2dnl CC1,C1,32,3,2
+  nn_layer_conv2dnl D,CC1,64
+
+  nn_layer_conv2dnl E,D,32,3,0.5
+  nn_layer_append F,E,C2
+  nn_layer_conv2dnl G,F,16,3,0.5
+  nn_layer_append H,G,B2
+  nn_layer_conv2dnl I,H,8,3,0.5
+  nn_layer_append J,I,A2
+
+  nn_layer_conv2dnl OUT,J,3
+  nn_loss_mse L,OUT,Y
+
+  # Define data.
+  sp lena,64 nm. img
+  [img] nm. res
+
+  # Optimize network.
+  repeat inf,iter
+    e[] "ITER = "$iter
+
+    repeat 10,batch_iter
+      eval ${-nn_lib}"
+        batch = I;
+        X = crop(#$img); # Input
+        Y = crop(#$res); # Ground-truth
+        "${_nn_forward}${_nn_backward}${_nn_update}"
+        store(X,'vX',64,64,1,3);
+        store(Y,'vY',64,64,1,3);
+        store(OUT_out,'vOUT',64,64,1,3);
+        run('l[] $vX $vOUT $vY a x w. rm. endl');
+
+        end(
+          print([L_out,nn_learning_rate]);
+        ); I"
+    done
+  done
 
 
 
