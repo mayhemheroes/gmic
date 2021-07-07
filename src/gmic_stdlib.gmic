@@ -49634,11 +49634,12 @@ nn_lib :
       name#_nb_increases = i[##name#_ind,4];
       name#_nb_slowdowns = i[##name#_ind,5];
 
-      name#_trend = name#_batch_out/name#_previous_batch_out;
-      name#_trend<1?(++name#_nb_decreases; name#_nb_increases = 0):
-      name#_trend>1.1?(++name#_nb_increases; name#_nb_decreases = 0);
+      # Compute trend: percentage of loss decrease(<0) or increase(>0).
+      name#_trend = 100*(name#_batch_out - name#_previous_batch_out)/name#_previous_batch_out;
+      name#_trend<0?(++name#_nb_decreases; name#_nb_increases = 0):
+      name#_trend>15?(++name#_nb_increases; name#_nb_decreases = 0);
 
-      name#_trend>1.5?(
+      name#_trend<-30?(
         _update_parameters = 0;
         nn_learning_rate = max(0.75*nn_learning_rate,1e-6);
         name#_batch_out = name#_previous_batch_out;
@@ -49986,7 +49987,7 @@ nn_foo :
     w,h={[w,h]}
 
     # Extract overlapping 32x32 tiles.
-    nx,ny={ceil([w,h]/30)}
+    nx,ny={ceil([w,h]/24)}
     32,32,{$nx*$ny},3
     1,1,{d},1,"*
       ix = z%$nx;
