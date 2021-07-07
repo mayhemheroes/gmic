@@ -49895,9 +49895,9 @@ nn_test_fc :
 
 # nn_layer_res : name,in
 # Define a custom residual CONV module.
-nn_layer_res : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
+nn_layer_res : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint(${3=16}) && $3>0"
   nn_layer_clone2 $1_CL0,$1_CL1,$2
-  nn_layer_conv2dnl $1_CONV1,$1_CL0,128
+  nn_layer_conv2dnl $1_CONV1,$1_CL0,$3
   nn_layer_conv2d $1_CONV2,$1_CONV1,3
   nn_layer_add $1_ADD,$1_CONV2,$1_CL1
   nn_layer_nl $1,$1_ADD
@@ -49907,19 +49907,17 @@ nn_test :
 
   # Build neural network.
   #----------------------
-  if isfile('network.gmz') nn_load network.gmz fi
-  nn_input X,32,32,1,3
-  nn_layer_res RES1,X
-  nn_layer_res RES2,RES1
-  nn_layer_res RES3,RES2
-  nn_layer_res RES4,RES3
-  # nn_layer_res RES5,RES4
-  # nn_layer_res RES6,RES5
-  # nn_layer_res RES7,RES6
-  # nn_layer_res RES8,RES7
-  nn_layer_clone OUT,RES4
-  nn_loss_mse L,OUT,Y
-
+  if isfile('network.gmz') nn_load network.gmz
+  else
+    nn_input X,32,32,1,3
+    nn_layer_res RES1,X,128
+    nn_layer_res RES2,RES1,64
+    nn_layer_res RES3,RES2,32
+    nn_layer_res RES4,RES3,16
+    nn_layer_res RES5,RES4,8
+    nn_layer_clone OUT,RES5
+    nn_loss_mse L,OUT,Y
+  fi
   l[] images.gmz +mirror x +mirror y a z endl nm. img
 
   # Optimize network.
@@ -49930,14 +49928,18 @@ nn_test :
 
     # Build mini-batch.
     32,32,$size_batch,3
-    1,1,$size_batch,1,"*
+    1,1,$size_batch,1,">
       const img = $img;
-      ni = int(u(d#img))%d#img;
-      nx = int(u(0,w#img - 1 - 32));
-      ny = int(u(0,h#img - 1 - 32));
-      X = crop(#img,nx,ny,0,0,32,32,1,3);
-      draw(#-1,X,0,0,z,0,32,32,1,3);
-    " rm.
+      const siz = 32*32;
+      do (
+        ni = int(u(d#img))%d#img;
+        nx = int(u(0,w#img - 1 - 32));
+        ny = int(u(0,h#img - 1 - 32));
+        X = crop(#img,nx,ny,0,0,32,32,1,3);
+        L = (X[0,siz] + X[siz,siz] + X[2*siz,siz])/3,
+      _(while); std(L)<40);
+      draw(#-1,X,0,0,z,0,32,32,1,3)"
+    rm.
     +ac. "noise 20",ycbcr_y,1 ac. "noise 10",ycbcr_cbcr,1
     a[-2,-1] c
     nm. batch
