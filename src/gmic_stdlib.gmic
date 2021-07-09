@@ -49222,174 +49222,174 @@ nn_lib :
     # INPUT: Input image or vector data.
     #-----------------------------------
     nn_input_init_forward(name,w,h,d,s) = (
-      const name#_out_width = w;
-      const name#_out_height = h;
-      const name#_out_depth = d;
-      const name#_out_spectrum = s;
+      const NAME#_out_width = w;
+      const NAME#_out_height = h;
+      const NAME#_out_depth = d;
+      const NAME#_out_spectrum = s;
 
-      ref(#name,name#_out);
+      ref(#name,NAME#_out);
     );
 
     # ADD: Add two inputs.
     #---------------------
     nn_layer_add_init_forward(name,in) = (
-      const name#_out_width = in#_out_width;
-      const name#_out_height = in#_out_height;
-      const name#_out_depth = in#_out_depth;
-      const name#_out_spectrum = in#_out_spectrum;
+      const NAME#_out_width = IN#_out_width;
+      const NAME#_out_height = IN#_out_height;
+      const NAME#_out_depth = IN#_out_depth;
+      const NAME#_out_spectrum = IN#_out_spectrum;
     );
 
     nn_layer_add_forward(name,in1,in2) = (
-      name#_out = in1#_out + in2#_out;
+      NAME#_out = in1#_out + in2#_out;
     );
 
     nn_layer_add_backward(name,in1,in2) = (
-      in1#_deriv_out = in2#_deriv_out = name#_deriv_out/2;
+      in1#_deriv_out = in2#_deriv_out = NAME#_deriv_out/2;
     );
 
     # APPEND: Append two inputs as a new output.
     #--------------------------------------------
     nn_layer_append_init_forward(name,in0,in1) = (
-      const name#_out_width = in0#_out_width;
-      const name#_out_height = in0#_out_height;
-      const name#_out_depth = in0#_out_depth;
-      const name#_out_spectrum = in0#_out_spectrum + in1#_out_spectrum;
+      const NAME#_out_width = in0#_out_width;
+      const NAME#_out_height = in0#_out_height;
+      const NAME#_out_depth = in0#_out_depth;
+      const NAME#_out_spectrum = in0#_out_spectrum + in1#_out_spectrum;
     );
 
     nn_layer_append_forward(name,in0,in1) = (
-      name#_out = vector(#size(in0#_out) + size(in1#_out));
-      copy(name#_out,in0#_out,size(in0#_out));
-      copy(name#_out[size(in0#_out)],in1#_out,size(in1#_out));
+      NAME#_out = vector(#size(in0#_out) + size(in1#_out));
+      copy(NAME#_out,in0#_out,size(in0#_out));
+      copy(NAME#_out[size(in0#_out)],in1#_out,size(in1#_out));
     );
 
     nn_layer_append_backward(name,in0,in1) = (
-      in0#_deriv_out = name#_deriv_out[0,size(in0#_out)];
-      in1#_deriv_out = name#_deriv_out[size(in0#_out),size(in1#_out)];
+      in0#_deriv_out = NAME#_deriv_out[0,size(in0#_out)];
+      in1#_deriv_out = NAME#_deriv_out[size(in0#_out),size(in1#_out)];
     );
 
     # AVGPOOL2D : 2D Average pooling.
     #--------------------------------
     nn_layer_avgpool2d_init_forward(name,in) = (
-      const name#_out_width = int(in#_out_width/2);
-      const name#_out_height = int(in#_out_height/2);
-      const name#_out_depth = in#_out_depth;
-      const name#_out_spectrum = in#_out_spectrum;
+      const NAME#_out_width = int(IN#_out_width/2);
+      const NAME#_out_height = int(IN#_out_height/2);
+      const NAME#_out_depth = IN#_out_depth;
+      const NAME#_out_spectrum = IN#_out_spectrum;
       nn_avgpool2d_kernel = [ 0.25,0.25,0.25,0.25 ];
     );
 
     nn_layer_avgpool2d_forward(name,in) = (
-      name#_out = correlate(in#_out,
-                            in#_out_width,in#_out_height,in#_out_depth,in#_out_spectrum,
+      NAME#_out = correlate(IN#_out,
+                            IN#_out_width,IN#_out_height,IN#_out_depth,IN#_out_spectrum,
                             nn_avgpool2d_kernel,2,2,1,1,
                             0,0,1,
                             0,0,0,
                             0,0,0,
-                            in#_out_width - 1,in#_out_height - 1,in#_out_depth - 1,
+                            IN#_out_width - 1,IN#_out_height - 1,IN#_out_depth - 1,
                             2,2,1);
     );
 
     nn_layer_avgpool2d_backward(name,in) = (
-      in#_deriv_out = vector(#size(in#_out));
-      fill(in#_deriv_out,_k,
-           _x = int((_k%in#_out_width)/2);
-           _y = int(int(_k/in#_out_height)/2);
-           name#_deriv_out[_x + name#_out_width*_y]);
+      IN#_deriv_out = vector(#size(IN#_out));
+      fill(IN#_deriv_out,_k,
+           _x = int((_k%IN#_out_width)/2);
+           _y = int(int(_k/IN#_out_height)/2);
+           NAME#_deriv_out[_x + NAME#_out_width*_y]);
     );
 
     # BATCHNORM: Batch-normalization layer.
     #---------------------------------------
     nn_layer_batchnorm_init_forward(name,in) = (
-      const name#_ind = $name#;
-      const name#_out_width = in#_out_width;
-      const name#_out_height = in#_out_height;
-      const name#_out_depth = in#_out_depth;
-      const name#_out_spectrum = in#_out_spectrum;
+      const NAME#_ind = $NAME#;
+      const NAME#_out_width = IN#_out_width;
+      const NAME#_out_height = IN#_out_height;
+      const NAME#_out_depth = IN#_out_depth;
+      const NAME#_out_spectrum = IN#_out_spectrum;
 
-      const name#_base_col = $_nn_is_training==1?0:2;
-      name#_mu = crop(##name#_ind,name#_base_col,0,1,h##name#_ind);
-      name#_sigma = sqrt(crop(##name#_ind,name#_base_col + 1,0,1,h##name#_ind));
-      isnan(name#_mu[0])?(name#_mu = 0; name#_sigma = 1);
-      name#_gamma = crop(##name#_ind,4,0,1,h##name#_ind);
-      name#_beta = crop(##name#_ind,5,0,1,h##name#_ind);
-      name#_out = vector(#size(in#_out));
+      const NAME#_base_col = $_nn_is_training==1?0:2;
+      NAME#_mu = crop(##NAME#_ind,NAME#_base_col,0,1,h##NAME#_ind);
+      NAME#_sigma = sqrt(crop(##NAME#_ind,NAME#_base_col + 1,0,1,h##NAME#_ind));
+      isnan(NAME#_mu[0])?(NAME#_mu = 0; NAME#_sigma = 1);
+      NAME#_gamma = crop(##NAME#_ind,4,0,1,h##NAME#_ind);
+      NAME#_beta = crop(##NAME#_ind,5,0,1,h##NAME#_ind);
+      NAME#_out = vector(#size(IN#_out));
     );
 
     nn_layer_batchnorm_forward(name,in) = (
-      name#_z = in#_out;
-      name#_z-=name#_mu;
-      name#_z/=1e-9 + name#_sigma;
-      name#_out = name#_gamma*name#_z;
-      name#_out+=name#_beta;
+      NAME#_z = IN#_out;
+      NAME#_z-=NAME#_mu;
+      NAME#_z/=1e-9 + NAME#_sigma;
+      NAME#_out = NAME#_gamma*NAME#_z;
+      NAME#_out+=NAME#_beta;
     );
 
     nn_layer_batchnorm_init_backward(name,in) = (
-      name#_threads_nb_samples = vector(#_nb_threads_max);
-      name#_threads_in_mean = name#_threads_in_variance = vector(#_nb_threads_max*size(in#_out));
-      name#_nb_samples = 0;
-      name#_in_mean = name#_in_variance = vector(#size(in#_out));
-      name#_batch_deriv_gamma = vector(#size(name#_gamma));
-      name#_batch_deriv_beta = vector(#size(name#_beta));
+      NAME#_threads_nb_samples = vector(#_nb_threads_max);
+      NAME#_threads_in_mean = NAME#_threads_in_variance = vector(#_nb_threads_max*size(IN#_out));
+      NAME#_nb_samples = 0;
+      NAME#_in_mean = NAME#_in_variance = vector(#size(IN#_out));
+      NAME#_batch_deriv_gamma = vector(#size(NAME#_gamma));
+      NAME#_batch_deriv_beta = vector(#size(NAME#_beta));
     );
 
     nn_layer_batchnorm_backward(name,in,learning_mode) = (
-      ++name#_nb_samples;
-      name#_pim = in#_out - name#_in_mean;
-      name#_in_mean+=name#_pim/name#_nb_samples;
-      name#_in_variance+=(in#_out - name#_in_mean)*name#_pim;
+      ++NAME#_nb_samples;
+      NAME#_pim = IN#_out - NAME#_in_mean;
+      NAME#_in_mean+=NAME#_pim/NAME#_nb_samples;
+      NAME#_in_variance+=(IN#_out - NAME#_in_mean)*NAME#_pim;
       learning_mode&1?(
-        name#_batch_deriv_gamma+=name#_deriv_out*name#_z;
+        NAME#_batch_deriv_gamma+=NAME#_deriv_out*NAME#_z;
       );
       learning_mode&2?(
-        name#_batch_deriv_beta+=name#_deriv_out;
+        NAME#_batch_deriv_beta+=NAME#_deriv_out;
       );
-      in#_deriv_out = name#_deriv_out*name#_gamma/(1e-9 + name#_sigma);
+      IN#_deriv_out = NAME#_deriv_out*NAME#_gamma/(1e-9 + NAME#_sigma);
     );
 
     nn_layer_batchnorm_end_t_backward(name) = (
-      name#_in_variance/=name#_nb_samples;
-      copy(name#_threads_nb_samples[nn_thread],name#_nb_samples);
-      copy(name#_threads_in_mean[nn_thread*size(name#_in_mean)],name#_in_mean);
-      copy(name#_threads_in_variance[nn_thread*size(name#_in_variance)],name#_in_variance);
-      name#_in_mean*=name#_nb_samples;
+      NAME#_in_variance/=NAME#_nb_samples;
+      copy(NAME#_threads_nb_samples[nn_thread],NAME#_nb_samples);
+      copy(NAME#_threads_in_mean[nn_thread*size(NAME#_in_mean)],NAME#_in_mean);
+      copy(NAME#_threads_in_variance[nn_thread*size(NAME#_in_variance)],NAME#_in_variance);
+      NAME#_in_mean*=NAME#_nb_samples;
     );
 
     nn_layer_batchnorm_end_backward(name) = (
-      merge(name#_nb_samples,+);
-      merge(name#_in_mean,+);
-      merge(name#_threads_nb_samples,+);
-      merge(name#_threads_in_mean,+);
-      merge(name#_threads_in_variance,+);
-      merge(name#_batch_deriv_gamma,+);
-      merge(name#_batch_deriv_beta,+);
-      name#_in_mean/=name#_nb_samples;
-      name#_in_variance = 0;
+      merge(NAME#_nb_samples,+);
+      merge(NAME#_in_mean,+);
+      merge(NAME#_threads_nb_samples,+);
+      merge(NAME#_threads_in_mean,+);
+      merge(NAME#_threads_in_variance,+);
+      merge(NAME#_batch_deriv_gamma,+);
+      merge(NAME#_batch_deriv_beta,+);
+      NAME#_in_mean/=NAME#_nb_samples;
+      NAME#_in_variance = 0;
       repeat (nn_nb_threads_used,_k,
-        name#_in_variance+=name#_threads_nb_samples[_k]*
-          (name#_threads_in_variance[_k*size(name#_in_variance),size(name#_in_variance)] +
-          (name#_threads_in_mean[_k*size(name#_in_mean),size(name#_in_variance)] - name#_in_mean)^2);
+        NAME#_in_variance+=NAME#_threads_nb_samples[_k]*
+          (NAME#_threads_in_variance[_k*size(NAME#_in_variance),size(NAME#_in_variance)] +
+          (NAME#_threads_in_mean[_k*size(NAME#_in_mean),size(NAME#_in_variance)] - NAME#_in_mean)^2);
       );
-      name#_in_variance/=name#_nb_samples;
+      NAME#_in_variance/=NAME#_nb_samples;
     );
 
     nn_layer_batchnorm_update(name,learning_mode) = (
-      draw(##name#_ind,name#_in_mean,0,0,0,0,1,h##name#_ind,1,1); # Update batch mean and batch variance
-      draw(##name#_ind,name#_in_variance,1,0,0,0,1,h##name#_ind,1,1);
+      draw(##NAME#_ind,NAME#_in_mean,0,0,0,0,1,h##NAME#_ind,1,1); # Update batch mean and batch variance
+      draw(##NAME#_ind,NAME#_in_variance,1,0,0,0,1,h##NAME#_ind,1,1);
       !$batch_iter?(
-        momentum = isnan(i[##name#_ind,2])?1:0.01;
-        draw(##name#_ind,name#_in_mean,2,0,0,0,1,h##name#_ind,1,1,momentum); # Global mean and variance
-        draw(##name#_ind,name#_in_variance,3,0,0,0,1,h##name#_ind,1,1,momentum);
+        momentum = isnan(i[##NAME#_ind,2])?1:0.01;
+        draw(##NAME#_ind,NAME#_in_mean,2,0,0,0,1,h##NAME#_ind,1,1,momentum); # Global mean and variance
+        draw(##NAME#_ind,NAME#_in_variance,3,0,0,0,1,h##NAME#_ind,1,1,momentum);
       );
 
       nn_update_parameters?(
         learning_mode&1?(
-          name#_dt_gamma = nn_learning_rate/abs(maxabs(1e-9,name#_batch_deriv_gamma));
-          name#_gamma-=name#_dt_gamma*name#_batch_deriv_gamma;
-          draw(##name#_ind,name#_gamma,4,0,0,0,1,h##name#_ind);
+          NAME#_dt_gamma = nn_learning_rate/abs(maxabs(1e-9,NAME#_batch_deriv_gamma));
+          NAME#_gamma-=NAME#_dt_gamma*NAME#_batch_deriv_gamma;
+          draw(##NAME#_ind,NAME#_gamma,4,0,0,0,1,h##NAME#_ind);
         );
         learning_mode&2?(
-          name#_dt_beta = nn_learning_rate/abs(maxabs(1e-9,name#_batch_deriv_beta));
-          name#_beta-=name#_dt_beta*name#_batch_deriv_beta;
-          draw(##name#_ind,name#_beta,5,0,0,0,1,h##name#_ind);
+          NAME#_dt_beta = nn_learning_rate/abs(maxabs(1e-9,NAME#_batch_deriv_beta));
+          NAME#_beta-=NAME#_dt_beta*NAME#_batch_deriv_beta;
+          draw(##NAME#_ind,NAME#_beta,5,0,0,0,1,h##NAME#_ind);
         );
       );
     );
@@ -49397,259 +49397,259 @@ nn_lib :
     # CLONE: Duplicate input as two new outputs.
     #--------------------------------------------
     nn_layer_clone_init_forward(name0,name1,in) = (
-      const name0#_out_width = in#_out_width;
-      const name0#_out_height = in#_out_height;
-      const name0#_out_depth = in#_out_depth;
-      const name0#_out_spectrum = in#_out_spectrum;
-      const name1#_out_width = in#_out_width;
-      const name1#_out_height = in#_out_height;
-      const name1#_out_depth = in#_out_depth;
-      const name1#_out_spectrum = in#_out_spectrum;
+      const name0#_out_width = IN#_out_width;
+      const name0#_out_height = IN#_out_height;
+      const name0#_out_depth = IN#_out_depth;
+      const name0#_out_spectrum = IN#_out_spectrum;
+      const name1#_out_width = IN#_out_width;
+      const name1#_out_height = IN#_out_height;
+      const name1#_out_depth = IN#_out_depth;
+      const name1#_out_spectrum = IN#_out_spectrum;
     );
 
     nn_layer_clone_forward(name0,name1,in) = (
-      name0#_out = name1#_out = in#_out;
+      name0#_out = name1#_out = IN#_out;
     );
 
     nn_layer_clone_backward(name0,name1,in) = (
-      in#_deriv_out = name0#_deriv_out + name1#_deriv_out;
+      IN#_deriv_out = name0#_deriv_out + name1#_deriv_out;
     );
 
     # CONV2D: 2D Convolutional Layer.
     #--------------------------------
     nn_layer_conv2d_init_forward(name,in,size,stride,dilation) = (
-      const name#_ind = $name#;
-      const name#_out_width = max(1,int(in#_out_width/stride));
-      const name#_out_height = max(1,int(in#_out_height/stride));
-      const name#_out_depth = in#_out_depth;
-      const name#_out_spectrum = h##name#_ind;
-      const name#_kernel_size = size;
-      const name#_kernel_center = name#_kernel_size - 1 - int(name#_kernel_size/2);
-      const name#_stride = stride;
-      const name#_dilation = dilation;
+      const NAME#_ind = $NAME#;
+      const NAME#_out_width = max(1,int(IN#_out_width/stride));
+      const NAME#_out_height = max(1,int(IN#_out_height/stride));
+      const NAME#_out_depth = IN#_out_depth;
+      const NAME#_out_spectrum = h##NAME#_ind;
+      const NAME#_kernel_size = size;
+      const NAME#_kernel_center = NAME#_kernel_size - 1 - int(NAME#_kernel_size/2);
+      const NAME#_stride = stride;
+      const NAME#_dilation = dilation;
 
-      name#_weights = crop(##name#_ind,0,0,w##name#_ind - 1,h##name#_ind);
-      name#_biases = crop(##name#_ind,w##name#_ind - 1,0,1,h##name#_ind);
-      name#_out = vector(##name#_out_width*name#_out_height*name#_out_depth*h##name#_ind);
+      NAME#_weights = crop(##NAME#_ind,0,0,w##NAME#_ind - 1,h##NAME#_ind);
+      NAME#_biases = crop(##NAME#_ind,w##NAME#_ind - 1,0,1,h##NAME#_ind);
+      NAME#_out = vector(##NAME#_out_width*NAME#_out_height*NAME#_out_depth*h##NAME#_ind);
     );
 
     nn_layer_conv2d_forward(name,in) = (
       unref(_sizl);
-      const _sizl = size(name#_out)/name#_out_spectrum; # Size of output plane
-      name#_out = convolve(in#_out,
-                           in#_out_width,in#_out_height,in#_out_depth,in#_out_spectrum,
-                           name#_weights,
-                           name#_kernel_size,name#_kernel_size,1,in#_out_spectrum*name#_out_spectrum,
+      const _sizl = size(NAME#_out)/NAME#_out_spectrum; # Size of output plane
+      NAME#_out = convolve(IN#_out,
+                           IN#_out_width,IN#_out_height,IN#_out_depth,IN#_out_spectrum,
+                           NAME#_weights,
+                           NAME#_kernel_size,NAME#_kernel_size,1,IN#_out_spectrum*NAME#_out_spectrum,
                            1,0,2,
-                           name#_kernel_center,name#_kernel_center,0,
+                           NAME#_kernel_center,NAME#_kernel_center,0,
                            0,0,0,
-                           name#_out_width - 1,name#_out_height - 1,name#_out_depth - 1,
-                           name#_stride,name#_stride,1,
-                           name#_dilation,name#_dilation,1);
-      repeat (name#_out_spectrum,_l,
-        copy(name#_out[_l*_sizl],name#_biases[_l],_sizl,1,0,-1); # Add biases
+                           NAME#_out_width - 1,NAME#_out_height - 1,NAME#_out_depth - 1,
+                           NAME#_stride,NAME#_stride,1,
+                           NAME#_dilation,NAME#_dilation,1);
+      repeat (NAME#_out_spectrum,_l,
+        copy(NAME#_out[_l*_sizl],NAME#_biases[_l],_sizl,1,0,-1); # Add biases
       );
     );
 
     nn_layer_conv2d_init_backward(name,in) = (
-      name#_batch_deriv_weights = vector(#size(name#_weights));
-      name#_batch_deriv_biases = vector(#size(name#_biases));
+      NAME#_batch_deriv_weights = vector(#size(NAME#_weights));
+      NAME#_batch_deriv_biases = vector(#size(NAME#_biases));
     );
 
     nn_layer_conv2d_backward(name,in) = (
-      in#_deriv_out = vector(#size(in#_out));
+      IN#_deriv_out = vector(#size(IN#_out));
       unref(_sizk,_sizl,_sizw);
-      const _sizk = size(in#_out)/in#_out_spectrum;     # Size of input plane
-      const _sizl = size(name#_out)/name#_out_spectrum; # Size of output plane
-      const _sizw = name#_kernel_size^2;                # Size of kernel^2
+      const _sizk = size(IN#_out)/IN#_out_spectrum;     # Size of input plane
+      const _sizl = size(NAME#_out)/NAME#_out_spectrum; # Size of output plane
+      const _sizw = NAME#_kernel_size^2;                # Size of kernel^2
 
       # Compute dL/dxk(x,y).
-      name#_weights_mirrored = vector(#size(name#_weights));
-      repeat (in#_out_spectrum,_k,
-        repeat (name#_out_spectrum,_l,
-          copy(name#_weights_mirrored[_k*name#_out_spectrum*_sizw + _l*_sizw + _sizw - 1],
-               name#_weights[_l*(w##name#_ind - 1) + _k*_sizw],_sizw,-1,1);
+      NAME#_weights_mirrored = vector(#size(NAME#_weights));
+      repeat (IN#_out_spectrum,_k,
+        repeat (NAME#_out_spectrum,_l,
+          copy(NAME#_weights_mirrored[_k*NAME#_out_spectrum*_sizw + _l*_sizw + _sizw - 1],
+               NAME#_weights[_l*(w##NAME#_ind - 1) + _k*_sizw],_sizw,-1,1);
         );
       );
-      in#_deriv_out = convolve(name#_deriv_out,
-                               name#_out_width,name#_out_height,name#_out_depth,name#_out_spectrum,
-                               name#_weights_mirrored,
-                               name#_kernel_size,name#_kernel_size,1,name#_out_spectrum*in#_out_spectrum,
+      IN#_deriv_out = convolve(NAME#_deriv_out,
+                               NAME#_out_width,NAME#_out_height,NAME#_out_depth,NAME#_out_spectrum,
+                               NAME#_weights_mirrored,
+                               NAME#_kernel_size,NAME#_kernel_size,1,NAME#_out_spectrum*IN#_out_spectrum,
                                0,0,2,
-                               name#_kernel_size - 1 - name#_kernel_center,
-                               name#_kernel_size - 1 - name#_kernel_center,0,
-                               0,0,0,in#_out_width - 1,in#_out_height - 1,in#_out_depth - 1,
-                               1/name#_stride,1/name#_stride,1,
-                               name#_dilation/name#_stride,name#_dilation/name#_stride,1);
+                               NAME#_kernel_size - 1 - NAME#_kernel_center,
+                               NAME#_kernel_size - 1 - NAME#_kernel_center,0,
+                               0,0,0,IN#_out_width - 1,IN#_out_height - 1,IN#_out_depth - 1,
+                               1/NAME#_stride,1/NAME#_stride,1,
+                               NAME#_dilation/NAME#_stride,NAME#_dilation/NAME#_stride,1);
 
       # Compute dL/dbl.
-      name#_deriv_biases = vector(#size(name#_biases));
-      fill(name#_deriv_biases,_l,sum(name#_deriv_out[_l*_sizl,_sizl]));
-      name#_batch_deriv_biases+=name#_deriv_biases;
+      NAME#_deriv_biases = vector(#size(NAME#_biases));
+      fill(NAME#_deriv_biases,_l,sum(NAME#_deriv_out[_l*_sizl,_sizl]));
+      NAME#_batch_deriv_biases+=NAME#_deriv_biases;
 
       # Compute dL/dwlk.
-      name#_xk_mirrored = vector(#_sizk);
-      name#_deriv_weights = vector(#size(name#_weights));
-      repeat (name#_out_spectrum,_l,
-        repeat (in#_out_spectrum,_k,
-          copy(name#_xk_mirrored[_sizk - 1],in#_out[_k*_sizk],_sizk,-1,1);
-          name#_dwlk = convolve(name#_xk_mirrored,
-                                in#_out_width,in#_out_height,in#_out_depth,1,
-                                name#_deriv_out[_l*_sizl,_sizl],
-                                name#_out_width,name#_out_height,name#_out_depth,1,
+      NAME#_xk_mirrored = vector(#_sizk);
+      NAME#_deriv_weights = vector(#size(NAME#_weights));
+      repeat (NAME#_out_spectrum,_l,
+        repeat (IN#_out_spectrum,_k,
+          copy(NAME#_xk_mirrored[_sizk - 1],IN#_out[_k*_sizk],_sizk,-1,1);
+          NAME#_dwlk = convolve(NAME#_xk_mirrored,
+                                IN#_out_width,IN#_out_height,IN#_out_depth,1,
+                                NAME#_deriv_out[_l*_sizl,_sizl],
+                                NAME#_out_width,NAME#_out_height,NAME#_out_depth,1,
                                 0,0,1,
-                                1/name#_stride*(in#_out_width - 1 - name#_dilation*name#_kernel_center),
-                                1/name#_stride*(in#_out_height - 1 - name#_dilation*name#_kernel_center),0,
-                                0,0,0,name#_kernel_size - 1,name#_kernel_size - 1,0,
-                                name#_dilation,name#_dilation,1,
-                                name#_stride,name#_stride,1);
-          copy(name#_deriv_weights[_l*(w##name#_ind - 1) + _k*_sizw],name#_dwlk,_sizw);
+                                1/NAME#_stride*(IN#_out_width - 1 - NAME#_dilation*NAME#_kernel_center),
+                                1/NAME#_stride*(IN#_out_height - 1 - NAME#_dilation*NAME#_kernel_center),0,
+                                0,0,0,NAME#_kernel_size - 1,NAME#_kernel_size - 1,0,
+                                NAME#_dilation,NAME#_dilation,1,
+                                NAME#_stride,NAME#_stride,1);
+          copy(NAME#_deriv_weights[_l*(w##NAME#_ind - 1) + _k*_sizw],NAME#_dwlk,_sizw);
         );
       );
-      name#_batch_deriv_weights+=name#_deriv_weights;
+      NAME#_batch_deriv_weights+=NAME#_deriv_weights;
     );
 
     nn_layer_conv2d_end_backward(name) = (
-      merge(name#_batch_deriv_weights,+);
-      merge(name#_batch_deriv_biases,+);
-      name#_batch_deriv_weights/=nn_nb_samples;
-      name#_batch_deriv_biases/=nn_nb_samples;
+      merge(NAME#_batch_deriv_weights,+);
+      merge(NAME#_batch_deriv_biases,+);
+      NAME#_batch_deriv_weights/=nn_nb_samples;
+      NAME#_batch_deriv_biases/=nn_nb_samples;
     );
 
     nn_layer_conv2d_update(name) = (
       nn_update_parameters?(
-        name#_dt_weights = nn_learning_rate/abs(maxabs(1e-9,name#_batch_deriv_weights));
-        name#_dt_biases = nn_learning_rate/abs(maxabs(1e-9,name#_batch_deriv_biases));
-        name#_weights-=name#_dt_weights*name#_batch_deriv_weights;
-        name#_biases-=name#_dt_biases*name#_batch_deriv_biases;
-        draw(##name#_ind,name#_weights,0,0,0,0,w##name#_ind - 1,h##name#_ind);
-        draw(##name#_ind,name#_biases,w##name#_ind - 1,0,0,0,1,h##name#_ind);
+        NAME#_dt_weights = nn_learning_rate/abs(maxabs(1e-9,NAME#_batch_deriv_weights));
+        NAME#_dt_biases = nn_learning_rate/abs(maxabs(1e-9,NAME#_batch_deriv_biases));
+        NAME#_weights-=NAME#_dt_weights*NAME#_batch_deriv_weights;
+        NAME#_biases-=NAME#_dt_biases*NAME#_batch_deriv_biases;
+        draw(##NAME#_ind,NAME#_weights,0,0,0,0,w##NAME#_ind - 1,h##NAME#_ind);
+        draw(##NAME#_ind,NAME#_biases,w##NAME#_ind - 1,0,0,0,1,h##NAME#_ind);
       );
     );
 
     # FC: Fully-Connected Layer.
     #---------------------------
     nn_layer_fc_init_forward(name) = (
-      const name#_ind = $name#;
-      const name#_out_width = 1;
-      const name#_out_height = 1;
-      const name#_out_depth = 1;
-      const name#_out_spectrum = h##name#_ind;
+      const NAME#_ind = $NAME#;
+      const NAME#_out_width = 1;
+      const NAME#_out_height = 1;
+      const NAME#_out_depth = 1;
+      const NAME#_out_spectrum = h##NAME#_ind;
 
-      name#_weights = crop(##name#_ind,0,0,w##name#_ind - 1,h##name#_ind);
-      name#_biases = crop(##name#_ind,w##name#_ind - 1,0,1,h##name#_ind);
-      name#_out = vector(#h##name#_ind);
+      NAME#_weights = crop(##NAME#_ind,0,0,w##NAME#_ind - 1,h##NAME#_ind);
+      NAME#_biases = crop(##NAME#_ind,w##NAME#_ind - 1,0,1,h##NAME#_ind);
+      NAME#_out = vector(#h##NAME#_ind);
     );
 
     nn_layer_fc_forward(name,in) = (
-      name#_out = mul(name#_weights,in#_out);
-      name#_out+=name#_biases;
+      NAME#_out = mul(NAME#_weights,IN#_out);
+      NAME#_out+=NAME#_biases;
     );
 
     nn_layer_fc_init_backward(name) = (
-      name#_batch_deriv_weights = vector(#size(name#_weights));
-      name#_batch_deriv_biases = vector(#size(name#_biases));
+      NAME#_batch_deriv_weights = vector(#size(NAME#_weights));
+      NAME#_batch_deriv_biases = vector(#size(NAME#_biases));
     );
 
     nn_layer_fc_backward(name,in) = (
-      in#_deriv_out = mul(transpose(name#_weights,size(in#_out)),name#_deriv_out);
-      name#_deriv_weights = mul(name#_deriv_out,in#_out,size(in#_out));
-      name#_batch_deriv_weights+=name#_deriv_weights;
-      name#_batch_deriv_biases+=name#_deriv_out;
+      IN#_deriv_out = mul(transpose(NAME#_weights,size(IN#_out)),NAME#_deriv_out);
+      NAME#_deriv_weights = mul(NAME#_deriv_out,IN#_out,size(IN#_out));
+      NAME#_batch_deriv_weights+=NAME#_deriv_weights;
+      NAME#_batch_deriv_biases+=NAME#_deriv_out;
     );
 
     nn_layer_fc_end_backward(name) = (
-      merge(name#_batch_deriv_weights,+);
-      merge(name#_batch_deriv_biases,+);
-      name#_batch_deriv_weights/=nn_nb_samples;
-      name#_batch_deriv_biases/=nn_nb_samples;
+      merge(NAME#_batch_deriv_weights,+);
+      merge(NAME#_batch_deriv_biases,+);
+      NAME#_batch_deriv_weights/=nn_nb_samples;
+      NAME#_batch_deriv_biases/=nn_nb_samples;
     );
 
     nn_layer_fc_update(name) = (
       nn_update_parameters?(
-        name#_dt_weights = nn_learning_rate/abs(maxabs(1e-9,name#_batch_deriv_weights));
-        name#_dt_biases = nn_learning_rate/abs(maxabs(1e-9,name#_batch_deriv_biases));
-        name#_weights-=name#_dt_weights*name#_batch_deriv_weights;
-        name#_biases-=name#_dt_biases*name#_batch_deriv_biases;
-        draw(##name#_ind,name#_weights,0,0,0,0,w##name#_ind - 1,h##name#_ind);
-        draw(##name#_ind,name#_biases,w##name#_ind - 1,0,0,0,1,h##name#_ind);
+        NAME#_dt_weights = nn_learning_rate/abs(maxabs(1e-9,NAME#_batch_deriv_weights));
+        NAME#_dt_biases = nn_learning_rate/abs(maxabs(1e-9,NAME#_batch_deriv_biases));
+        NAME#_weights-=NAME#_dt_weights*NAME#_batch_deriv_weights;
+        NAME#_biases-=NAME#_dt_biases*NAME#_batch_deriv_biases;
+        draw(##NAME#_ind,NAME#_weights,0,0,0,0,w##NAME#_ind - 1,h##NAME#_ind);
+        draw(##NAME#_ind,NAME#_biases,w##NAME#_ind - 1,0,0,0,1,h##NAME#_ind);
       );
     );
 
     # NL: Non-Linearity.
     #--------------------
     nn_layer_nl_init_forward(name,in) = (
-      const name#_out_width = in#_out_width;
-      const name#_out_height = in#_out_height;
-      const name#_out_depth = in#_out_depth;
-      const name#_out_spectrum = in#_out_spectrum;
+      const NAME#_out_width = IN#_out_width;
+      const NAME#_out_height = IN#_out_height;
+      const NAME#_out_depth = IN#_out_depth;
+      const NAME#_out_spectrum = IN#_out_spectrum;
 
-      name#_out = vector(#size(in#_out));
+      NAME#_out = vector(#size(IN#_out));
     );
 
     nn_layer_nl_forward(name,in,activation) = (
-      name#_out = in#_out;
-      nn_activate(name#_out,#activation);
+      NAME#_out = IN#_out;
+      nn_activate(NAME#_out,#activation);
     );
 
     nn_layer_nl_backward(name,in,activation) = (
-      in#_deriv_out = in#_out;
-      nn_activate(in#_deriv_out,deriv_#activation);
-      in#_deriv_out*=name#_deriv_out;
+      IN#_deriv_out = IN#_out;
+      nn_activate(IN#_deriv_out,deriv_#activation);
+      IN#_deriv_out*=NAME#_deriv_out;
     );
 
     # RENAME: Rename input.
     #----------------------
     nn_layer_rename_init_forward(name,in) = (
-      const name#_out_width = in#_out_width;
-      const name#_out_height = in#_out_height;
-      const name#_out_depth = in#_out_depth;
-      const name#_out_spectrum = in#_out_spectrum;
-      ref(in#_out,name#_out);
+      const NAME#_out_width = IN#_out_width;
+      const NAME#_out_height = IN#_out_height;
+      const NAME#_out_depth = IN#_out_depth;
+      const NAME#_out_spectrum = IN#_out_spectrum;
+      ref(IN#_out,NAME#_out);
     );
 
     nn_layer_rename_backward(name,in) = (
-      ref(name#_deriv_out,in#_deriv_out);
+      ref(NAME#_deriv_out,IN#_deriv_out);
     );
 
     # RESHAPE: Reshape input to compatible size.
     #-------------------------------------------
     nn_layer_reshape_init_forward(name,in,w,h,d,s) = (
-      const name#_out_width = w;
-      const name#_out_height = h;
-      const name#_out_depth = d;
-      const name#_out_spectrum = s;
+      const NAME#_out_width = w;
+      const NAME#_out_height = h;
+      const NAME#_out_depth = d;
+      const NAME#_out_spectrum = s;
 
-      ref(in#_out,name#_out);
+      ref(IN#_out,NAME#_out);
     );
 
     nn_layer_reshape_init_backward(name,in) = (
-      ref(name#_deriv_out,in#_deriv_out);
+      ref(NAME#_deriv_out,IN#_deriv_out);
     );
 
     # SPLIT: Split input as two outpus.
     #----------------------------------
     nn_layer_split_init_forward(name0,name1,in,nb_channels0) = (
-      const name0#_out_width = in#_out_width;
-      const name0#_out_height = in#_out_height;
-      const name0#_out_depth = in#_out_depth;
+      const name0#_out_width = IN#_out_width;
+      const name0#_out_height = IN#_out_height;
+      const name0#_out_depth = IN#_out_depth;
       const name0#_out_spectrum = nb_channels0;
-      const name1#_out_width = in#_out_width;
-      const name1#_out_height = in#_out_height;
-      const name1#_out_depth = in#_out_depth;
-      const name1#_out_spectrum = in#_out_spectrum - nb_channels0;
+      const name1#_out_width = IN#_out_width;
+      const name1#_out_height = IN#_out_height;
+      const name1#_out_depth = IN#_out_depth;
+      const name1#_out_spectrum = IN#_out_spectrum - nb_channels0;
     );
 
     nn_layer_split_forward(name0,name1,in) = (
       unref(_siz0); const siz0 = name0#_out_width*name0#_out_height*name0#_out_depth*name0#_out_spectrum;
-      name0#_out = in#_out[0,siz0];
-      name1#_out = in#_out[siz0,name1#_out_width*name1#_out_height*name1#_out_depth*name1#_out_spectrum];
+      name0#_out = IN#_out[0,siz0];
+      name1#_out = IN#_out[siz0,name1#_out_width*name1#_out_height*name1#_out_depth*name1#_out_spectrum];
     );
 
     nn_layer_split_backward(name0,name1,in) = (
-      in#_deriv_out = vector(#size(in#_out));
-      copy(in#_deriv_out,name0#_deriv_out,size(name0#_out));
-      copy(in#_deriv_out[size(name0#_out)],name1#_deriv_out,size(name1#_out));
+      IN#_deriv_out = vector(#size(IN#_out));
+      copy(IN#_deriv_out,name0#_deriv_out,size(name0#_out));
+      copy(IN#_deriv_out[size(name0#_out)],name1#_deriv_out,size(name1#_out));
     );
 
     #----------------------------------
@@ -49659,55 +49659,55 @@ nn_lib :
     # MSE : Mean-Squared Error.
     #---------------------------
     nn_loss_mse_init_backward(name) = (
-      name#_batch_out = 0;
+      NAME#_batch_out = 0;
       nn_update_parameters = 1;
     );
 
     nn_loss_mse_backward(name,in,truth) = (
-      in#_deriv_out = 2*(in#_out - truth);
-      name#_out = norm(in#_deriv_out/2)^2/size(in#_deriv_out);
-      name#_batch_out+=name#_out;
+      IN#_deriv_out = 2*(IN#_out - truth);
+      NAME#_out = norm(IN#_deriv_out/2)^2/size(IN#_deriv_out);
+      NAME#_batch_out+=NAME#_out;
     );
 
     nn_loss_mse_end_backward(name) = (
-      merge(name#_batch_out,+);
-      name#_batch_out/=nn_nb_samples;
-      name#_out = name#_batch_out;
+      merge(NAME#_batch_out,+);
+      NAME#_batch_out/=nn_nb_samples;
+      NAME#_out = NAME#_batch_out;
     );
 
     nn_loss_mse_update(name) = (
-      const name#_ind = $name#;
-      name#_iteration = i[##name#_ind,0];
-      nn_learning_rate = i[##name#_ind,1];
-      name#_previous_batch_out = i[##name#_ind,2];
-      name#_nb_decreases = i[##name#_ind,3];
-      name#_nb_increases = i[##name#_ind,4];
+      const NAME#_ind = $NAME#;
+      NAME#_iteration = i[##NAME#_ind,0];
+      nn_learning_rate = i[##NAME#_ind,1];
+      NAME#_previous_batch_out = i[##NAME#_ind,2];
+      NAME#_nb_decreases = i[##NAME#_ind,3];
+      NAME#_nb_increases = i[##NAME#_ind,4];
 
       # Compute trend: percentage of loss decrease(<0) or increase(>0).
-      name#_trend = 100*(name#_batch_out - name#_previous_batch_out)/name#_previous_batch_out;
+      NAME#_trend = 100*(NAME#_batch_out - NAME#_previous_batch_out)/NAME#_previous_batch_out;
 
-      name#_trend>=500?( # Large loss increase -> drastically reduce learning rate
+      NAME#_trend>=500?( # Large loss increase -> drastically reduce learning rate
         nn_update_parameters = 0;
         nn_learning_rate = max(0.5*nn_learning_rate,1e-8);
-        name#_batch_out = name#_previous_batch_out;
-        name#_nb_increases = name#_nb_decreases = 0;
-      ):name#_trend>=0?( # Loss increase
-        ++name#_nb_increases;
-        name#_nb_decreases = 0;
-        name#_nb_increases>=2?( # Frequent loss increase -> slightly reduce learning rate
+        NAME#_batch_out = NAME#_previous_batch_out;
+        NAME#_nb_increases = NAME#_nb_decreases = 0;
+      ):NAME#_trend>=0?( # Loss increase
+        ++NAME#_nb_increases;
+        NAME#_nb_decreases = 0;
+        NAME#_nb_increases>=2?( # Frequent loss increase -> slightly reduce learning rate
           nn_learning_rate = max(0.9*nn_learning_rate,1e-8);
-          name#_nb_increases = name#_nb_decreases = 0;
+          NAME#_nb_increases = NAME#_nb_decreases = 0;
         );
-      ):name#_trend<0?( # Loss decrease
-        ++name#_nb_decreases;
-#        name#_nb_increases = 0; # <- Don't set it to 0!
-        name#_nb_decreases>=4?( # Frequent loss decrease -> slightly increase learning rate
+      ):NAME#_trend<0?( # Loss decrease
+        ++NAME#_nb_decreases;
+#        NAME#_nb_increases = 0; # <- Don't set it to 0!
+        NAME#_nb_decreases>=4?( # Frequent loss decrease -> slightly increase learning rate
           nn_learning_rate = min(1.15*nn_learning_rate,1);
-          name#_nb_decreases = 0;
+          NAME#_nb_decreases = 0;
         );
       );
-      copy(i[##name#_ind,0],
-           [ name#_iteration + 1,nn_learning_rate,name#_batch_out,name#_nb_decreases,name#_nb_increases ]);
+      copy(i[##NAME#_ind,0],
+           [ NAME#_iteration + 1,nn_learning_rate,NAME#_batch_out,NAME#_nb_decreases,NAME#_nb_increases ]);
     );
     "
 
