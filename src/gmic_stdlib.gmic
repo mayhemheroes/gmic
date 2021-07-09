@@ -21727,7 +21727,7 @@ nn_lib :
 #        L#_batch_out = L#_previous_batch_out;
         L#_nb_increases = L#_nb_decreases = 0;
       ):L#_trend>=0?( # Loss increase
-        L#_trend>=1?++L#_nb_increases;
+        L#_trend>=0.5?++L#_nb_increases;
         L#_nb_decreases = 0;
         L#_nb_increases>=2?( # Frequent loss increase -> slightly reduce learning rate
           nn_learning_rate = max(0.9*nn_learning_rate,1e-6);
@@ -50100,6 +50100,7 @@ nn_test_conv :
   repeat inf,iter
     e[] "ITER = "$iter
 
+    =[L] inf,2
     repeat 10,batch_iter
       eval ${-nn_lib}"
         X = crop(#$img); # Input
