@@ -50138,52 +50138,29 @@ nn_test :
 
   if isfile('network.gmz') nn_load network.gmz
   else
-    # U-Net.
-    nn_layer_input X,64,64,1,1
-    nn_layer_clone X_copy0,X_copy1,X
-    nn_layer_res X_1,X_copy1,8
-    nn_layer_res X_2,X_1,8
-
-    # X = 64x64x1
-    nn_layer_conv2dnl L1,X_copy0,16
-    nn_layer_conv2dnl L2,L1,16
-    nn_layer_maxpool2d L3,L2
-    nn_layer_clone L3_copy0,L3_copy1,L3
-    nn_layer_res L3_1,L3_copy1,8
-    nn_layer_res L3_2,L3_1,8
-
-    # L3 = 32x32x16
-    nn_layer_conv2dnl L4,L3_copy0,32
-    nn_layer_conv2dnl L5,L4,32
-    nn_layer_maxpool2d L6,L5
-    nn_layer_clone L6_copy0,L6_copy1,L6
-    nn_layer_res L6_1,L6_copy1,8
-    nn_layer_res L6_2,L6_1,8
-
-    # L6 = 16x16x32
-    nn_layer_conv2dnl L7,L6_copy0,64
-    nn_layer_conv2dnl L8,L7,64
-    nn_layer_maxpool2d L9,L8
-    # L9 = 8x8x64
-    nn_layer_conv2dnl L10,L9,128
+    nn_layer_input X,64,64,1,1    # 64x64x1
+    nn_layer_conv2dnl L1,X,16     # 64x64x16
+    nn_layer_res L2,L1,16
+    nn_layer_maxpool2d L3,L2      # 32x32x16
+    nn_layer_conv2dnl L4,L3,32    # 32x32x32
+    nn_layer_res L5,L4,32
+    nn_layer_maxpool2d L6,L5      # 16x16x32
+    nn_layer_conv2dnl L7,L6,64    # 16x16x64
+    nn_layer_res L8,L7,64
+    nn_layer_maxpool2d L9,L8      # 8x8x64
+    nn_layer_conv2dnl L10,L9,128  # 8x8x128
     nn_layer_conv2dnl L11,L10,128
-    # L11 = 8x8x64
-    nn_layer_upsample2d L12,L11
-    nn_layer_conv2dnl L13,L12,64
-    nn_layer_conv2dnl L14,L13,32
-    nn_layer_add L15,L14,L6_2
-    # L15 = 16x16x32
-    nn_layer_upsample2d L16,L15
-    nn_layer_conv2dnl L17,L16,32
-    nn_layer_conv2dnl L18,L17,16
-    nn_layer_add L19,L18,L3_2
-    # L19 = 32x32x16
-    nn_layer_upsample2d L20,L19
-    nn_layer_conv2dnl L21,L20,16
-    nn_layer_conv2dnl L22,L21,1
-    nn_layer_add L23,L22,X_2
-    # L23 = 64x64x1
-    nn_layer_rename OUT,L23
+    nn_layer_upsample2d L12,L11,1 # 16x16x128
+    nn_layer_conv2dnl L13,L12,64  # 16x16x64
+    nn_layer_res L14,L13,64
+    nn_layer_upsample2d L15,L14,1 # 32x32x64
+    nn_layer_conv2dnl L16,L15,32  # 32x32x32
+    nn_layer_res L17,L16,32
+    nn_layer_upsample2d L18,L17,1 # 64x64x32
+    nn_layer_conv2dnl L19,L18,16  # 64x64x16
+    nn_layer_conv2dnl L20,L19,8   # 64x64x8
+    nn_layer_conv2dnl L21,L20,1   # 64x64x1
+    nn_layer_rename OUT,L21
     nn_loss_mse L,OUT,Y
   fi
 
