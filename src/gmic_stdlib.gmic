@@ -49278,13 +49278,13 @@ nn_lib :
 
     nn_layer_avgpool2d_forward(L,I) = (
       L#_out = correlate(I#_out,
-                            I#_out_width,I#_out_height,I#_out_depth,I#_out_spectrum,
-                            nn_avgpool2d_kernel,2,2,1,1,
-                            0,0,1,
-                            0,0,0,
-                            0,0,0,
-                            I#_out_width - 1,I#_out_height - 1,I#_out_depth - 1,
-                            2,2,1);
+                         I#_out_width,I#_out_height,I#_out_depth,I#_out_spectrum,
+                         nn_avgpool2d_kernel,2,2,1,1,
+                         0,0,1,
+                         0,0,0,
+                         0,0,0,
+                         I#_out_width - 1,I#_out_height - 1,I#_out_depth - 1,
+                         2,2,1);
     );
 
     nn_layer_avgpool2d_backward(L,I) = (
@@ -49436,15 +49436,15 @@ nn_lib :
       unref(_sizl);
       const _sizl = size(L#_out)/L#_out_spectrum; # Size of output plane
       L#_out = convolve(I#_out,
-                           I#_out_width,I#_out_height,I#_out_depth,I#_out_spectrum,
-                           L#_weights,
-                           L#_kernel_size,L#_kernel_size,1,I#_out_spectrum*L#_out_spectrum,
-                           1,0,2,
-                           L#_kernel_center,L#_kernel_center,0,
-                           0,0,0,
-                           L#_out_width - 1,L#_out_height - 1,L#_out_depth - 1,
-                           L#_stride,L#_stride,1,
-                           L#_dilation,L#_dilation,1);
+                        I#_out_width,I#_out_height,I#_out_depth,I#_out_spectrum,
+                        L#_weights,
+                        L#_kernel_size,L#_kernel_size,1,I#_out_spectrum*L#_out_spectrum,
+                        1,0,2,
+                        L#_kernel_center,L#_kernel_center,0,
+                        0,0,0,
+                        L#_out_width - 1,L#_out_height - 1,L#_out_depth - 1,
+                        L#_stride,L#_stride,1,
+                        L#_dilation,L#_dilation,1);
       repeat (L#_out_spectrum,_l,
         copy(L#_out[_l*_sizl],L#_biases[_l],_sizl,1,0,-1); # Add biases
       );
@@ -49471,15 +49471,15 @@ nn_lib :
         );
       );
       I#_deriv_out = convolve(L#_deriv_out,
-                               L#_out_width,L#_out_height,L#_out_depth,L#_out_spectrum,
-                               L#_weights_mirrored,
-                               L#_kernel_size,L#_kernel_size,1,L#_out_spectrum*I#_out_spectrum,
-                               0,0,2,
-                               L#_kernel_size - 1 - L#_kernel_center,
-                               L#_kernel_size - 1 - L#_kernel_center,0,
-                               0,0,0,I#_out_width - 1,I#_out_height - 1,I#_out_depth - 1,
-                               1/L#_stride,1/L#_stride,1,
-                               L#_dilation/L#_stride,L#_dilation/L#_stride,1);
+                              L#_out_width,L#_out_height,L#_out_depth,L#_out_spectrum,
+                              L#_weights_mirrored,
+                              L#_kernel_size,L#_kernel_size,1,L#_out_spectrum*I#_out_spectrum,
+                              0,0,2,
+                              L#_kernel_size - 1 - L#_kernel_center,
+                              L#_kernel_size - 1 - L#_kernel_center,0,
+                              0,0,0,I#_out_width - 1,I#_out_height - 1,I#_out_depth - 1,
+                              1/L#_stride,1/L#_stride,1,
+                              L#_dilation/L#_stride,L#_dilation/L#_stride,1);
 
       # Compute dL/dbl.
       L#_deriv_biases = vector(#size(L#_biases));
@@ -49493,15 +49493,15 @@ nn_lib :
         repeat (I#_out_spectrum,_k,
           copy(L#_xk_mirrored[_sizk - 1],I#_out[_k*_sizk],_sizk,-1,1);
           L#_dwlk = convolve(L#_xk_mirrored,
-                                I#_out_width,I#_out_height,I#_out_depth,1,
-                                L#_deriv_out[_l*_sizl,_sizl],
-                                L#_out_width,L#_out_height,L#_out_depth,1,
-                                0,0,1,
-                                1/L#_stride*(I#_out_width - 1 - L#_dilation*L#_kernel_center),
-                                1/L#_stride*(I#_out_height - 1 - L#_dilation*L#_kernel_center),0,
-                                0,0,0,L#_kernel_size - 1,L#_kernel_size - 1,0,
-                                L#_dilation,L#_dilation,1,
-                                L#_stride,L#_stride,1);
+                             I#_out_width,I#_out_height,I#_out_depth,1,
+                             L#_deriv_out[_l*_sizl,_sizl],
+                             L#_out_width,L#_out_height,L#_out_depth,1,
+                             0,0,1,
+                             1/L#_stride*(I#_out_width - 1 - L#_dilation*L#_kernel_center),
+                             1/L#_stride*(I#_out_height - 1 - L#_dilation*L#_kernel_center),0,
+                             0,0,0,L#_kernel_size - 1,L#_kernel_size - 1,0,
+                             L#_dilation,L#_dilation,1,
+                             L#_stride,L#_stride,1);
           copy(L#_deriv_weights[_l*(w##L#_ind - 1) + _k*_sizw],L#_dwlk,_sizw);
         );
       );
@@ -49618,7 +49618,6 @@ nn_lib :
       const L#_out_height = h;
       const L#_out_depth = d;
       const L#_out_spectrum = s;
-
       ref(I#_out,L#_out);
     );
 
