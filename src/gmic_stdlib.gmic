@@ -21221,14 +21221,15 @@ nn_lib :
       const L#_out_height = int(IN#_out_height/2);
       const L#_out_depth = IN#_out_depth;
       const L#_out_spectrum = IN#_out_spectrum;
-      nn_avgpool2d_kernel = [ 0.25,0.25,0.25,0.25 ];
+      nn_avgpool2d_kernel_forward = [ 0.25,0.25,0.25,0.25 ];
+      nn_avgpool2d_kernel_backward = [ 1,0,0,0 ];
     );
 
     nn_layer_avgpool2d_forward(L,IN) = (
       L#_out = correlate(IN#_out,
                          IN#_out_width,IN#_out_height,IN#_out_depth,IN#_out_spectrum,
-                         nn_avgpool2d_kernel,2,2,1,1,
-                         0,0,1,
+                         nn_avgpool2d_kernel_forward,2,2,1,1,
+                         1,0,1,
                          0,0,0,
                          0,0,0,
                          L#_out_width - 1,L#_out_height - 1,L#_out_depth - 1,
@@ -21236,11 +21237,16 @@ nn_lib :
     );
 
     nn_layer_avgpool2d_backward(L,IN) = (
-      IN#_deriv_out = vector(#size(IN#_out));
-      fill(IN#_deriv_out,_k,
-           _x = int((_k%IN#_out_width)/2);
-           _y = int(int(_k/IN#_out_height)/2);
-           L#_deriv_out[_x + L#_out_width*_y]);
+      IN#_deriv_out = correlate(L#_deriv_out,
+                                L#_out_width,L#_out_height,L#_out_depth,L#_out_spectrum,
+                                nn_avgpool2d_kernel_backward,2,2,1,1,
+                                1,0,1,
+                                0,0,0,
+                                0,0,0,
+                                IN#_out_width - 1,IN#_out_height - 1,IN#_out_depth - 1,
+                                0.5,0.5,1,
+                                1,1,1,
+                                0);
     );
 
     # batchnorm: Batch-normalization layer.
