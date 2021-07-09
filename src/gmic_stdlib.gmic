@@ -21336,17 +21336,15 @@ nn_lib :
         draw(##L#_ind,L#_in_variance,3,0,0,0,1,h##L#_ind,1,1,momentum);
       );
 
-      nn_update_parameters?(
-        learning_mode&1?(
-          L#_dt_gamma = nn_learning_rate/abs(maxabs(1e-9,L#_batch_deriv_gamma));
-          L#_gamma-=L#_dt_gamma*L#_batch_deriv_gamma;
-          draw(##L#_ind,L#_gamma,4,0,0,0,1,h##L#_ind);
-        );
-        learning_mode&2?(
-          L#_dt_beta = nn_learning_rate/abs(maxabs(1e-9,L#_batch_deriv_beta));
-          L#_beta-=L#_dt_beta*L#_batch_deriv_beta;
-          draw(##L#_ind,L#_beta,5,0,0,0,1,h##L#_ind);
-        );
+      learning_mode&1?(
+        L#_dt_gamma = nn_learning_rate/abs(maxabs(1e-9,L#_batch_deriv_gamma));
+        L#_gamma-=L#_dt_gamma*L#_batch_deriv_gamma;
+        draw(##L#_ind,L#_gamma,4,0,0,0,1,h##L#_ind);
+      );
+      learning_mode&2?(
+        L#_dt_beta = nn_learning_rate/abs(maxabs(1e-9,L#_batch_deriv_beta));
+        L#_beta-=L#_dt_beta*L#_batch_deriv_beta;
+        draw(##L#_ind,L#_beta,5,0,0,0,1,h##L#_ind);
       );
     );
 
@@ -21472,14 +21470,12 @@ nn_lib :
     );
 
     nn_layer_conv2d_update(L) = (
-      nn_update_parameters?(
-        L#_dt_weights = nn_learning_rate/abs(maxabs(1e-9,L#_batch_deriv_weights));
-        L#_dt_biases = nn_learning_rate/abs(maxabs(1e-9,L#_batch_deriv_biases));
-        L#_weights-=L#_dt_weights*L#_batch_deriv_weights;
-        L#_biases-=L#_dt_biases*L#_batch_deriv_biases;
-        draw(##L#_ind,L#_weights,0,0,0,0,w##L#_ind - 1,h##L#_ind);
-        draw(##L#_ind,L#_biases,w##L#_ind - 1,0,0,0,1,h##L#_ind);
-      );
+      L#_dt_weights = nn_learning_rate/abs(maxabs(1e-9,L#_batch_deriv_weights));
+      L#_dt_biases = nn_learning_rate/abs(maxabs(1e-9,L#_batch_deriv_biases));
+      L#_weights-=L#_dt_weights*L#_batch_deriv_weights;
+      L#_biases-=L#_dt_biases*L#_batch_deriv_biases;
+      draw(##L#_ind,L#_weights,0,0,0,0,w##L#_ind - 1,h##L#_ind);
+      draw(##L#_ind,L#_biases,w##L#_ind - 1,0,0,0,1,h##L#_ind);
     );
 
     # fc: Fully-connected layer.
@@ -21521,14 +21517,12 @@ nn_lib :
     );
 
     nn_layer_fc_update(L) = (
-      nn_update_parameters?(
-        L#_dt_weights = nn_learning_rate/abs(maxabs(1e-9,L#_batch_deriv_weights));
-        L#_dt_biases = nn_learning_rate/abs(maxabs(1e-9,L#_batch_deriv_biases));
-        L#_weights-=L#_dt_weights*L#_batch_deriv_weights;
-        L#_biases-=L#_dt_biases*L#_batch_deriv_biases;
-        draw(##L#_ind,L#_weights,0,0,0,0,w##L#_ind - 1,h##L#_ind);
-        draw(##L#_ind,L#_biases,w##L#_ind - 1,0,0,0,1,h##L#_ind);
-      );
+      L#_dt_weights = nn_learning_rate/abs(maxabs(1e-9,L#_batch_deriv_weights));
+      L#_dt_biases = nn_learning_rate/abs(maxabs(1e-9,L#_batch_deriv_biases));
+      L#_weights-=L#_dt_weights*L#_batch_deriv_weights;
+      L#_biases-=L#_dt_biases*L#_batch_deriv_biases;
+      draw(##L#_ind,L#_weights,0,0,0,0,w##L#_ind - 1,h##L#_ind);
+      draw(##L#_ind,L#_biases,w##L#_ind - 1,0,0,0,1,h##L#_ind);
     );
 
     # input: Input image or vector data.
@@ -21695,7 +21689,6 @@ nn_lib :
     #--------------------------
     nn_loss_mse_init_backward(L) = (
       L#_batch_out = 0;
-      nn_update_parameters = 1;
     );
 
     nn_loss_mse_backward(L,IN,TRUTH) = (
@@ -21722,9 +21715,7 @@ nn_lib :
       L#_trend = 100*(L#_batch_out - L#_previous_batch_out)/L#_previous_batch_out;
 
       L#_trend>=500?( # Large loss increase -> drastically reduce learning rate
-#        nn_update_parameters = 0;
         nn_learning_rate = max(0.5*nn_learning_rate,1e-6);
-#        L#_batch_out = L#_previous_batch_out;
         L#_nb_increases = L#_nb_decreases = 0;
       ):L#_trend>=0?( # Loss increase
         ++L#_nb_increases;
@@ -50111,7 +50102,7 @@ nn_test_conv :
         run('l[] $vX $vOUT $vY r2dx 200,1 a x w. rm. endl');
 
         end(
-          print([L_out,nn_learning_rate,nn_update_parameters]);
+          print([L_out,nn_learning_rate]);
         ); I"
     done
   done
