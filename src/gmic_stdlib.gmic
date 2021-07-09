@@ -21177,16 +21177,6 @@ nn_lib :
     # Definition of the different network layers.
     #--------------------------------------------
 
-    # input: Input image or vector data.
-    #-----------------------------------
-    nn_layer_input_init_forward(L,w,h,d,s) = (
-      const L#_out_width = w;
-      const L#_out_height = h;
-      const L#_out_depth = d;
-      const L#_out_spectrum = s;
-      ref(#L,L#_out);
-    );
-
     # add: Add two inputs.
     #---------------------
     nn_layer_add_init_forward(L,IN) = (
@@ -21241,7 +21231,7 @@ nn_lib :
                          0,0,1,
                          0,0,0,
                          0,0,0,
-                         IN#_out_width - 1,IN#_out_height - 1,IN#_out_depth - 1,
+                         L#_out_width - 1,L#_out_height - 1,L#_out_depth - 1,
                          2,2,1);
     );
 
@@ -21414,7 +21404,6 @@ nn_lib :
     );
 
     nn_layer_conv2d_backward(L,IN) = (
-      IN#_deriv_out = vector(#size(IN#_out));
       unref(_sizk,_sizl,_sizw);
       const _sizk = size(IN#_out)/IN#_out_spectrum; # Size of input plane
       const _sizl = size(L#_out)/L#_out_spectrum;   # Size of output plane
@@ -21429,15 +21418,15 @@ nn_lib :
         );
       );
       IN#_deriv_out = convolve(L#_deriv_out,
-                              L#_out_width,L#_out_height,L#_out_depth,L#_out_spectrum,
-                              L#_weights_mirrored,
-                              L#_kernel_size,L#_kernel_size,1,L#_out_spectrum*IN#_out_spectrum,
-                              0,0,2,
-                              L#_kernel_size - 1 - L#_kernel_center,
-                              L#_kernel_size - 1 - L#_kernel_center,0,
-                              0,0,0,IN#_out_width - 1,IN#_out_height - 1,IN#_out_depth - 1,
-                              1/L#_stride,1/L#_stride,1,
-                              L#_dilation/L#_stride,L#_dilation/L#_stride,1);
+                               L#_out_width,L#_out_height,L#_out_depth,L#_out_spectrum,
+                               L#_weights_mirrored,
+                               L#_kernel_size,L#_kernel_size,1,L#_out_spectrum*IN#_out_spectrum,
+                               0,0,2,
+                               L#_kernel_size - 1 - L#_kernel_center,
+                               L#_kernel_size - 1 - L#_kernel_center,0,
+                               0,0,0,IN#_out_width - 1,IN#_out_height - 1,IN#_out_depth - 1,
+                               1/L#_stride,1/L#_stride,1,
+                               L#_dilation/L#_stride,L#_dilation/L#_stride,1);
 
       # Compute dL/dbl.
       L#_deriv_biases = vector(#size(L#_biases));
@@ -21531,6 +21520,16 @@ nn_lib :
         draw(##L#_ind,L#_weights,0,0,0,0,w##L#_ind - 1,h##L#_ind);
         draw(##L#_ind,L#_biases,w##L#_ind - 1,0,0,0,1,h##L#_ind);
       );
+    );
+
+    # input: Input image or vector data.
+    #-----------------------------------
+    nn_layer_input_init_forward(L,w,h,d,s) = (
+      const L#_out_width = w;
+      const L#_out_height = h;
+      const L#_out_depth = d;
+      const L#_out_spectrum = s;
+      ref(#L,L#_out);
     );
 
     # nl: Non-linearity.
@@ -50010,9 +50009,9 @@ nn_test_conv :
         Y = crop(#$res); # Ground-truth
         "${_nn_forward}${_nn_backward}${_nn_update}"
         store(X,'vX',64,64,1,3);
-        store(Y,'vY',64,64,1,3);
-        store(OUT_out,'vOUT',64,64,1,3);
-        run('l[] $vX $vOUT $vY a x w. rm. endl');
+        store(Y,'vY',32,32,1,3);
+        store(OUT_out,'vOUT',32,32,1,3);
+        run('l[] $vX $vOUT $vY r2dx 200,1 a x w. rm. endl');
 
         end(
           print([L_out,nn_learning_rate,nn_update_parameters]);
