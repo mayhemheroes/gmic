@@ -49983,16 +49983,20 @@ nn_test_conv :
   # Build neural network.
   #----------------------
   nn_layer_input X,64,64,1,3
+  nn_layer_conv2dnl C1,X,3
+  e $_nn_C1_out_size
+  nn_layer_avgpool2d P,C1
+  e $_nn_P_out_size
 
-  nn_layer_split S1,S2,X,2
-  nn_layer_conv2d CONV1,S1,2
-  nn_layer_conv2d CONV2,S2,1
-  nn_layer_append APP,CONV1,CONV2
-  nn_layer_conv2d OUT,APP,3
+  nn_layer_conv2dnl C2,P,3
+  e $_nn_C2_out_size
+
+  nn_layer_rename OUT,C2
   nn_loss_mse L,OUT,Y
   sp lena,64 nm. img
   [img] nm. res
   noise[img] 20
+  r2dx[res] 50%
 
   # Optimize network.
   #-------------------
