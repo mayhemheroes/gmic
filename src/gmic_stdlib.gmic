@@ -21538,6 +21538,39 @@ nn_lib :
       ref(#L,L#_out);
     );
 
+    # maxpool2d : 2D max pooling.
+    #----------------------------
+    nn_layer_maxpool2d_init_forward(L,IN) = (
+      const L#_out_width = int(IN#_out_width/2);
+      const L#_out_height = int(IN#_out_height/2);
+      const L#_out_depth = IN#_out_depth;
+      const L#_out_spectrum = IN#_out_spectrum;
+      nn_avgpool2d_kernel_forward = [ 0.25,0.25,0.25,0.25 ];
+      nn_avgpool2d_kernel_backward = [ 1,0,0,0 ];
+    );
+
+    nn_layer_maxpool2d_forward(L,IN) = (
+      L#_out = vector(##L#_out_width*L#_out_height*L#_out_depth*L#_out_spectrum);
+      L#_from = vector(#size(L#_out));
+      repeat (size(L#_out),_l,
+        _x = _l%L#_out_width;
+        _y = int(_l/L#_out_width)%L#_out_height;
+        _z = int(_l/(L#_out_width*L#_out_height))%L#_out_depth;
+        _c = int(_l/(L#_out_width*L#_out_height*L#_out_depth));
+        _k = 2*_x + IN#_out_width*(2*_y + IN#_out_height*(_z + IN#_out_depth*_c));
+        _k+=arg0(argmax([ IN#_out[_k,2],IN#_out[_k + IN#_out_width,2] ]),0,1,IN#_out_width,IN#_out_width + 1);
+        L#_from[_l] = _k;
+        L#_out[_l] = IN#_out[_k];
+      );
+    );
+
+    nn_layer_maxpool2d_backward(L,IN) = (
+      IN#_deriv_out = vector(#size(IN#_out),0);
+      repeat (size(L#_out),_l,
+        IN#_deriv_out[L#_from[_l]] = L#_deriv_out[_l];
+      );
+    );
+
     # nl: Non-linearity.
     #-------------------
     nn_layer_nl_init_forward(L,IN) = (
@@ -21602,7 +21635,8 @@ nn_lib :
     );
 
     nn_layer_split_forward(L0,L1,IN) = (
-      unref(_siz0); const siz0 = L0#_out_width*L0#_out_height*L0#_out_depth*L0#_out_spectrum;
+      unref(_siz0);
+      const siz0 = L0#_out_width*L0#_out_height*L0#_out_depth*L0#_out_spectrum;
       L0#_out = IN#_out[0,siz0];
       L1#_out = IN#_out[siz0,L1#_out_width*L1#_out_height*L1#_out_depth*L1#_out_spectrum];
     );
@@ -21819,6 +21853,16 @@ nn_layer_fcnl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" &&
   e[^-1] "[nn_lib] Add 'fc+nl' layer '$1' to the network, with input '$2', $3 channels and '$4' activation."
   nn_layer_fc $1_0,$2,$3
   nn_layer_nl $1,$1_0,$4
+
+#@cli nn_layer_maxpool2d : name,in
+#@cli : Add a 'maxpool2d' layer (2d max pooling) to the network.
+nn_layer_maxpool2d : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
+  e[^-1] "[nn_lib] Add 'maxpool2d' layer '$1', with input '$2'."
+  _nn_$1_out_size={s=[$_nn_$2_out_size];[int(s[0]/2),int(s[1]/2),1,s[3]]}
+  _nn_forward.="begin(nn_layer_maxpool2d_init_forward($1,$2));"\
+               "nn_layer_maxpool2d_forward($1,$2);"
+  _nn_backward..="nn_layer_maxpool2d_backward($1,$2);"
+  _nn_init.="$0 $*;"
 
 #@cli nn_layer_nl : name,in,activation
 #@cli : Add a 'nl' layer (non-linearity) to the network.
@@ -49988,9 +50032,9 @@ nn_test_conv :
   # Build neural network.
   #----------------------
   nn_layer_input X,64,64,1,3
-  nn_layer_conv2dnl C1,X,3
+#  nn_layer_conv2dnl C1,X,3
   e $_nn_C1_out_size
-  nn_layer_avgpool2d P,C1
+  nn_layer_maxpool2d P,X
   e $_nn_P_out_size
 
   nn_layer_conv2dnl C2,P,3
@@ -50000,7 +50044,7 @@ nn_test_conv :
   nn_loss_mse L,OUT,Y
   sp lena,64 nm. img
   [img] nm. res
-  noise[img] 20
+#  noise[img] 20
   r2dx[res] 50%
 
   # Optimize network.
