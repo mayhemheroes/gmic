@@ -21751,15 +21751,15 @@ nn_lib :
 nn_init :
   e[^-1] "[nn_lib] Initialize new network."
   _nn_forward,_nn_backward,_nn_update,_nn_parameters=
-  _nn_init="$0;"
+  _nn_init="$0 "
 
 #@cli nn_save : 'filename.gmz'
 #@cli : Save current network as a .gmz file.
 #@cli : Neural network files can be only saved in .gmz format.
 nn_save : check "s=['$1']; find(s,'.gmz')==size(s) - 4"
   e[^-1] "[nn_lib] Save current network as file '$1'."
-  ('$_nn_parameters') autocrop. {';'} replace. {';'},{','} sel={t} rm.
-  ('$_nn_init') autocrop. {';'} replace. {';'},{'" "'}
+  ('$_nn_parameters') autocrop. {','} sel={t} rm.
+  ('$_nn_init') autocrop. {'" "'}
   nm. _nn_init
   o[$sel,-1] "$1"
   rm.
@@ -21779,7 +21779,7 @@ nn_layer_input : check ${"is_variable_name $1"}" && isint($2) && $2>0 && isint($
   e[^-1] "[nn_lib] Add input layer '$1', with size ($2,$3,$4,$5)."
   _nn_$1_out_size=$2,$3,$4,$5
   _nn_forward.="begin(nn_layer_input_init_forward($1,$2,$3,$4,$5));"
-  _nn_init.="$0 $*;"
+  _nn_init.="$0 $* "
 
 #@cli nn_layer_add : name,in0,in1
 #@cli : Add an 'add' layer to the network.
@@ -21790,7 +21790,7 @@ nn_layer_add : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && 
   _nn_forward.="begin(nn_layer_add_init_forward($1,$2));"\
                "nn_layer_add_forward($1,$2,$3);"
   _nn_backward..="nn_layer_add_backward($1,$2,$3);"
-  _nn_init.="$0 $*;"
+  _nn_init.="$0 $* "
 
 #@cli nn_layer_append : name,in0,in1
 #@cli : Add an 'append' layer to the network.
@@ -21803,7 +21803,7 @@ nn_layer_append : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" 
   _nn_forward.="begin(nn_layer_append_init_forward($1,$2,$3));"\
                "nn_layer_append_forward($1,$2,$3);"
   _nn_backward..="nn_layer_append_backward($1,$2,$3);"
-  _nn_init.="$0 $*;"
+  _nn_init.="$0 $* "
 
 #@cli nn_layer_avgpool2d : name,in
 #@cli : Add a 'avgpool2d' layer (2d average pooling) to the network.
@@ -21813,7 +21813,7 @@ nn_layer_avgpool2d : check ${"is_variable_name $1"}" && "${"is_variable_name $2"
   _nn_forward.="begin(nn_layer_avgpool2d_init_forward($1,$2));"\
                "nn_layer_avgpool2d_forward($1,$2);"
   _nn_backward..="nn_layer_avgpool2d_backward($1,$2);"
-  _nn_init.="$0 $*;"
+  _nn_init.="$0 $* "
 
 #@cli nn_layer_batchnorm : name,in,learning_mode.
 #@cli : Add a 'batchnorm' layer to the network.
@@ -21830,8 +21830,8 @@ nn_layer_batchnorm : check ${"is_variable_name $1"}" && "${"is_variable_name $2"
                  "end_t(nn_layer_batchnorm_end_t_backward($1));"\
                  "end(nn_layer_batchnorm_end_backward($1));"
   _nn_update..="end(nn_layer_batchnorm_update($1,$3));"
-  _nn_init.="$0 $*;"
-  _nn_parameters.="$1;"
+  _nn_init.="$0 $* "
+  _nn_parameters.="$1,"
 
 #@cli nn_layer_clone : name0,name1,in
 #@cli : Add a 'clone' layer to the network.
@@ -21842,7 +21842,7 @@ nn_layer_clone : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" &
   _nn_forward.="begin(nn_layer_clone_init_forward($1,$2,$3));"\
                "nn_layer_clone_forward($1,$2,$3);"
   _nn_backward..="nn_layer_clone_backward($1,$2,$3);"
-  _nn_init.="$0 $*;"
+  _nn_init.="$0 $* "
 
 #@cli nn_layer_conv2d : name,in,nb_channels>0,_kernel_size>0,_stride>0,_dilation>0
 #@cli : Add a 'conv2d' layer (2D convolutional layer) to the network.
@@ -21858,8 +21858,8 @@ nn_layer_conv2d : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" 
                  "nn_layer_conv2d_backward($1,$2);"\
                  "end(nn_layer_conv2d_end_backward($1));"
   _nn_update..="end(nn_layer_conv2d_update($1));"
-  _nn_init.="$0 $*;"
-  _nn_parameters.="$1;"
+  _nn_init.="$0 $* "
+  _nn_parameters.="$1,"
 
 #@cli nn_layer_conv2dnl : name,in,nb_channels>0,_kernel_size>0,_stride>0,_dilation>0,_activation
 #@cli : Add a 'con2dnl' (2D convolutional layer followed by a non-linearity), to the network.
@@ -21883,8 +21883,8 @@ nn_layer_fc : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && i
                  "nn_layer_fc_backward($1,$2);"\
                  "end(nn_layer_fc_end_backward($1));"
   _nn_update..="end(nn_layer_fc_update($1));"
-  _nn_init.="$0 $*;"
-  _nn_parameters.="$1;"
+  _nn_init.="$0 $* "
+  _nn_parameters.="$1,"
 
 #@cli nn_layer_fcnl : name,in,nb_neurons>0,_activation
 #@cli : Add a 'fcnl' layer (fully connected layer followed by a non-linearity), to the network.
@@ -21902,7 +21902,7 @@ nn_layer_maxpool2d : check ${"is_variable_name $1"}" && "${"is_variable_name $2"
   _nn_forward.="begin(nn_layer_maxpool2d_init_forward($1,$2));"\
                "nn_layer_maxpool2d_forward($1,$2);"
   _nn_backward..="nn_layer_maxpool2d_backward($1,$2);"
-  _nn_init.="$0 $*;"
+  _nn_init.="$0 $* "
 
 #@cli nn_layer_nl : name,in,activation
 #@cli : Add a 'nl' layer (non-linearity) to the network.
@@ -21913,7 +21913,7 @@ nn_layer_nl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"} skip 
   _nn_forward.="begin(nn_layer_nl_init_forward($1,$2));"\
                "nn_layer_nl_forward($1,$2,$3);"
   _nn_backward..="nn_layer_nl_backward($1,$2,$3);"
-  _nn_init.="$0 $*;"
+  _nn_init.="$0 $* "
 
 #@cli nn_layer_rename : name,in
 #@cli : Add a 'rename' layer to the network.
@@ -21922,7 +21922,7 @@ nn_layer_rename : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
   _nn_$1_out_size=$_nn_$2_out_size
   _nn_forward.="begin(nn_layer_rename_init_forward($1,$2));"
   _nn_backward..="nn_layer_rename_backward($1,$2);"
-  _nn_init.="$0 $*;"
+  _nn_init.="$0 $* "
 
 #@cli nn_layer_reshape : name,in,width>0,height>0,depth>0,spectrum>0
 #@cli : Add a 'reshape' layer to the network.
@@ -21934,7 +21934,7 @@ nn_layer_reshape : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
   fi
   _nn_forward.="begin(nn_layer_reshape_init_forward($1,$2,$3,$4,$5,$6));"
   _nn_backward..="begin(nn_layer_reshape_init_backward($1,$2));"
-  _nn_init.="$0 $*;"
+  _nn_init.="$0 $* "
 
 #@cli nn_layer_split : name0,name1,in,nb_channels0
 #@cli : Add a 'split' layer to the network.
@@ -21945,7 +21945,7 @@ nn_layer_split : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" &
   _nn_forward.="begin(nn_layer_split_init_forward($1,$2,$3,$4));"\
                "nn_layer_split_forward($1,$2,$3);"
   _nn_backward..="nn_layer_split_backward($1,$2,$3);"
-  _nn_init.="$0 $*;"
+  _nn_init.="$0 $* "
 
 #@cli nn_layer_upsample2d : name,in,_interpolation_type = { 0=nearest-neighbor | 1=linear }
 #@cli : Add a 'upsample2d' layer to the network.
@@ -21955,7 +21955,7 @@ nn_layer_upsample2d : check ${"is_variable_name $1"}" && "${"is_variable_name $2
   _nn_forward.="begin(nn_layer_upsample2d_init_forward($1,$2));"\
                "nn_layer_upsample2d_forward($1,$2,$3);"
   _nn_backward..="nn_layer_upsample2d_backward($1,$2);"
-  _nn_init.="$0 $*;"
+  _nn_init.="$0 $* "
 
 #@cli nn_loss_mse : name,in,ground_truth
 #@cli : Add a 'mse' loss to the network.
@@ -21967,8 +21967,8 @@ nn_loss_mse : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
                  "nn_loss_mse_backward($1,$2,$3);"\
                  "end(nn_loss_mse_end_backward($1));"
   _nn_update..="end(nn_loss_mse_update($1));"
-  _nn_init.="$0 $*;"
-  _nn_parameters.="$1;"
+  _nn_init.="$0 $* "
+  _nn_parameters.="$1,"
 
 #----------------------------------
 #
