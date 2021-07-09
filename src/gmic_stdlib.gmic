@@ -21090,6 +21090,787 @@ run :
 #@cli : End a 'do...while' block and go back to associated 'do' if specified condition holds.
 #@cli : 'condition' is a mathematical expression, whose evaluation is interpreted as { 0=false | other=true }.
 
+#-------------------------------
+#
+#@cli :: Neural Network Library
+#
+#-------------------------------
+
+#@cli nn_lib :
+#@cli : Return the list of library functions that has to be included in a math expression,
+#@cli : in order to use the neural network library.
+nn_lib :
+  u "
+    #-------------------------------------------------
+    # Definition of the library environment variables.
+    #-------------------------------------------------
+    const _nb_threads_max = n;
+    begin(
+      nn_nb_samples = 0;
+    );
+
+    nn_thread = t;
+    nn_nb_threads_used = nn_thread + 1;
+    ++nn_nb_samples;
+
+    end(
+      merge(nn_nb_threads_used,max);
+      merge(nn_nb_samples,+);
+    );
+
+    #--------------------------------------------------------------
+    # Definition of the activation functions and their derivatives.
+    #--------------------------------------------------------------
+    _nn_activate_pointwise(Z,activation) = (fill(#Z,k,nn_activation_#activation(#Z[k])));
+    nn_activate(Z,activation) = nn_activate_#activation(#Z);
+
+    # Linear.
+    #--------
+    nn_activation_linear(z) = (z);
+    nn_activation_deriv_linear(z) = (1);
+    nn_activate_linear(Z) = (0);
+    nn_activate_deriv_linear(Z) = (#Z = 1);
+
+    # ELU: Exponential Linear Unit.
+    #-------------------------------
+    nn_activation_elu(z) = (z<0?exp(z) - 1:z);
+    nn_activation_deriv_elu(z) = (z<0?exp(z):1);
+    nn_activate_elu(Z) = _nn_activate_pointwise(Z,elu);
+    nn_activate_deriv_elu(Z) = _nn_activate_pointwise(Z,deriv_elu);
+
+    # GELU: Gaussian Error Linear Unit.
+    #-----------------------------------
+    nn_activation_gelu(z) = (0.5*z*(1 + erf(z/sqrt(2))));
+    nn_activation_deriv_gelu(z) = (0.5 + 0.5*erf(z/sqrt(2)) + z*exp(-z^2/2)/sqrt(2*pi));
+    nn_activate_gelu(Z) = _nn_activate_pointwise(Z,gelu);
+    nn_activate_deriv_gelu(Z) = _nn_activate_pointwise(Z,deriv_gelu);
+
+    # LeakyRELU: Leaky Rectified Linear Unit.
+    #-----------------------------------------
+    nn_activation_leakyrelu(z) = (z<0?0.05*z:z);
+    nn_activation_deriv_leakyrelu(z) = (z<0?0.05:1);
+    nn_activate_leakyrelu(Z) = _nn_activate_pointwise(Z,leakyrelu);
+    nn_activate_deriv_leakyrelu(Z) = _nn_activate_pointwise(Z,deriv_leakyrelu);
+
+    # RELU: Rectified Linear Unit.
+    #------------------------------
+    nn_activation_relu(z) = (z<0?0:z);
+    nn_activation_deriv_relu(z) = (z<0?0:1);
+    nn_activate_relu(Z) = _nn_activate_pointwise(Z,relu);
+    nn_activate_deriv_relu(Z) = _nn_activate_pointwise(Z,deriv_relu);
+
+    # Sigmoid.
+    #---------
+    nn_activation_sigmoid(z) = (0.5 + 0.5*tanh(z/2));
+    nn_activation_deriv_sigmoid(z) = (_nn_sig = nn_activation_sigmoid(z); _nn_sig*(1-_nn_sig));
+    nn_activate_sigmoid(Z) = _nn_activate_pointwise(Z,sigmoid);
+    nn_activate_deriv_sigmoid(Z) = _nn_activate_pointwise(Z,deriv_sigmoid);
+
+    # Tanh.
+    #------
+    nn_activation_tanh(z) = (tanh(z));
+    nn_activation_deriv_tanh(z) = (1 - tanh(z)^2);
+    nn_activate_tanh(Z) = _nn_activate_pointwise(Z,tanh);
+    nn_activate_deriv_tanh(Z) = _nn_activate_pointwise(Z,deriv_tanh);
+
+    #--------------------------------------------
+    # Definition of the different network layers.
+    #--------------------------------------------
+
+    # input: Input image or vector data.
+    #-----------------------------------
+    nn_layer_input_init_forward(L,w,h,d,s) = (
+      const L#_out_width = w;
+      const L#_out_height = h;
+      const L#_out_depth = d;
+      const L#_out_spectrum = s;
+      ref(#L,L#_out);
+    );
+
+    # add: Add two inputs.
+    #---------------------
+    nn_layer_add_init_forward(L,I) = (
+      const L#_out_width = I#_out_width;
+      const L#_out_height = I#_out_height;
+      const L#_out_depth = I#_out_depth;
+      const L#_out_spectrum = I#_out_spectrum;
+    );
+
+    nn_layer_add_forward(L,I0,I1) = (
+      L#_out = I0#_out + I1#_out;
+    );
+
+    nn_layer_add_backward(L,I0,I1) = (
+      I0#_deriv_out = I1#_deriv_out = L#_deriv_out/2;
+    );
+
+    # append: Append two inputs as a new output.
+    #--------------------------------------------
+    nn_layer_append_init_forward(L,I0,I1) = (
+      const L#_out_width = I0#_out_width;
+      const L#_out_height = I0#_out_height;
+      const L#_out_depth = I0#_out_depth;
+      const L#_out_spectrum = I0#_out_spectrum + I1#_out_spectrum;
+    );
+
+    nn_layer_append_forward(L,I0,I1) = (
+      L#_out = vector(#size(I0#_out) + size(I1#_out));
+      copy(L#_out,I0#_out,size(I0#_out));
+      copy(L#_out[size(I0#_out)],I1#_out,size(I1#_out));
+    );
+
+    nn_layer_append_backward(L,I0,I1) = (
+      I0#_deriv_out = L#_deriv_out[0,size(I0#_out)];
+      I1#_deriv_out = L#_deriv_out[size(I0#_out),size(I1#_out)];
+    );
+
+    # avgpool2d : 2D average pooling.
+    #--------------------------------
+    nn_layer_avgpool2d_init_forward(L,I) = (
+      const L#_out_width = int(I#_out_width/2);
+      const L#_out_height = int(I#_out_height/2);
+      const L#_out_depth = I#_out_depth;
+      const L#_out_spectrum = I#_out_spectrum;
+      nn_avgpool2d_kernel = [ 0.25,0.25,0.25,0.25 ];
+    );
+
+    nn_layer_avgpool2d_forward(L,I) = (
+      L#_out = correlate(I#_out,
+                         I#_out_width,I#_out_height,I#_out_depth,I#_out_spectrum,
+                         nn_avgpool2d_kernel,2,2,1,1,
+                         0,0,1,
+                         0,0,0,
+                         0,0,0,
+                         I#_out_width - 1,I#_out_height - 1,I#_out_depth - 1,
+                         2,2,1);
+    );
+
+    nn_layer_avgpool2d_backward(L,I) = (
+      I#_deriv_out = vector(#size(I#_out));
+      fill(I#_deriv_out,_k,
+           _x = int((_k%I#_out_width)/2);
+           _y = int(int(_k/I#_out_height)/2);
+           L#_deriv_out[_x + L#_out_width*_y]);
+    );
+
+    # batchnorm: Batch-normalization layer.
+    #---------------------------------------
+    nn_layer_batchnorm_init_forward(L,I) = (
+      const L#_ind = $L#;
+      const L#_out_width = I#_out_width;
+      const L#_out_height = I#_out_height;
+      const L#_out_depth = I#_out_depth;
+      const L#_out_spectrum = I#_out_spectrum;
+
+      const L#_base_col = $_nn_is_training==1?0:2;
+      L#_mu = crop(##L#_ind,L#_base_col,0,1,h##L#_ind);
+      L#_sigma = sqrt(crop(##L#_ind,L#_base_col + 1,0,1,h##L#_ind));
+      isnan(L#_mu[0])?(L#_mu = 0; L#_sigma = 1);
+      L#_gamma = crop(##L#_ind,4,0,1,h##L#_ind);
+      L#_beta = crop(##L#_ind,5,0,1,h##L#_ind);
+      L#_out = vector(#size(I#_out));
+    );
+
+    nn_layer_batchnorm_forward(L,I) = (
+      L#_z = I#_out;
+      L#_z-=L#_mu;
+      L#_z/=1e-9 + L#_sigma;
+      L#_out = L#_gamma*L#_z;
+      L#_out+=L#_beta;
+    );
+
+    nn_layer_batchnorm_init_backward(L,I) = (
+      L#_threads_nb_samples = vector(#_nb_threads_max);
+      L#_threads_in_mean = L#_threads_in_variance = vector(#_nb_threads_max*size(I#_out));
+      L#_nb_samples = 0;
+      L#_in_mean = L#_in_variance = vector(#size(I#_out));
+      L#_batch_deriv_gamma = vector(#size(L#_gamma));
+      L#_batch_deriv_beta = vector(#size(L#_beta));
+    );
+
+    nn_layer_batchnorm_backward(L,I,learning_mode) = (
+      ++L#_nb_samples;
+      L#_pim = I#_out - L#_in_mean;
+      L#_in_mean+=L#_pim/L#_nb_samples;
+      L#_in_variance+=(I#_out - L#_in_mean)*L#_pim;
+      learning_mode&1?(
+        L#_batch_deriv_gamma+=L#_deriv_out*L#_z;
+      );
+      learning_mode&2?(
+        L#_batch_deriv_beta+=L#_deriv_out;
+      );
+      I#_deriv_out = L#_deriv_out*L#_gamma/(1e-9 + L#_sigma);
+    );
+
+    nn_layer_batchnorm_end_t_backward(L) = (
+      L#_in_variance/=L#_nb_samples;
+      copy(L#_threads_nb_samples[nn_thread],L#_nb_samples);
+      copy(L#_threads_in_mean[nn_thread*size(L#_in_mean)],L#_in_mean);
+      copy(L#_threads_in_variance[nn_thread*size(L#_in_variance)],L#_in_variance);
+      L#_in_mean*=L#_nb_samples;
+    );
+
+    nn_layer_batchnorm_end_backward(L) = (
+      merge(L#_nb_samples,+);
+      merge(L#_in_mean,+);
+      merge(L#_threads_nb_samples,+);
+      merge(L#_threads_in_mean,+);
+      merge(L#_threads_in_variance,+);
+      merge(L#_batch_deriv_gamma,+);
+      merge(L#_batch_deriv_beta,+);
+      L#_in_mean/=L#_nb_samples;
+      L#_in_variance = 0;
+      repeat (nn_nb_threads_used,_k,
+        L#_in_variance+=L#_threads_nb_samples[_k]*
+          (L#_threads_in_variance[_k*size(L#_in_variance),size(L#_in_variance)] +
+          (L#_threads_in_mean[_k*size(L#_in_mean),size(L#_in_variance)] - L#_in_mean)^2);
+      );
+      L#_in_variance/=L#_nb_samples;
+    );
+
+    nn_layer_batchnorm_update(L,learning_mode) = (
+      draw(##L#_ind,L#_in_mean,0,0,0,0,1,h##L#_ind,1,1); # Update batch mean and batch variance
+      draw(##L#_ind,L#_in_variance,1,0,0,0,1,h##L#_ind,1,1);
+      !$batch_iter?(
+        momentum = isnan(i[##L#_ind,2])?1:0.01;
+        draw(##L#_ind,L#_in_mean,2,0,0,0,1,h##L#_ind,1,1,momentum); # Global mean and variance
+        draw(##L#_ind,L#_in_variance,3,0,0,0,1,h##L#_ind,1,1,momentum);
+      );
+
+      nn_update_parameters?(
+        learning_mode&1?(
+          L#_dt_gamma = nn_learning_rate/abs(maxabs(1e-9,L#_batch_deriv_gamma));
+          L#_gamma-=L#_dt_gamma*L#_batch_deriv_gamma;
+          draw(##L#_ind,L#_gamma,4,0,0,0,1,h##L#_ind);
+        );
+        learning_mode&2?(
+          L#_dt_beta = nn_learning_rate/abs(maxabs(1e-9,L#_batch_deriv_beta));
+          L#_beta-=L#_dt_beta*L#_batch_deriv_beta;
+          draw(##L#_ind,L#_beta,5,0,0,0,1,h##L#_ind);
+        );
+      );
+    );
+
+    # clone: Duplicate input as two new outputs.
+    #-------------------------------------------
+    nn_layer_clone_init_forward(L0,L1,I) = (
+      const L0#_out_width = I#_out_width;
+      const L0#_out_height = I#_out_height;
+      const L0#_out_depth = I#_out_depth;
+      const L0#_out_spectrum = I#_out_spectrum;
+      const L1#_out_width = I#_out_width;
+      const L1#_out_height = I#_out_height;
+      const L1#_out_depth = I#_out_depth;
+      const L1#_out_spectrum = I#_out_spectrum;
+    );
+
+    nn_layer_clone_forward(L0,L1,I) = (
+      L0#_out = L1#_out = I#_out;
+    );
+
+    nn_layer_clone_backward(L0,L1,I) = (
+      I#_deriv_out = L0#_deriv_out + L1#_deriv_out;
+    );
+
+    # conv2d: 2D convolutional layer.
+    #--------------------------------
+    nn_layer_conv2d_init_forward(L,I,size,stride,dilation) = (
+      const L#_ind = $L#;
+      const L#_out_width = max(1,int(I#_out_width/stride));
+      const L#_out_height = max(1,int(I#_out_height/stride));
+      const L#_out_depth = I#_out_depth;
+      const L#_out_spectrum = h##L#_ind;
+      const L#_kernel_size = size;
+      const L#_kernel_center = L#_kernel_size - 1 - int(L#_kernel_size/2);
+      const L#_stride = stride;
+      const L#_dilation = dilation;
+
+      L#_weights = crop(##L#_ind,0,0,w##L#_ind - 1,h##L#_ind);
+      L#_biases = crop(##L#_ind,w##L#_ind - 1,0,1,h##L#_ind);
+      L#_out = vector(##L#_out_width*L#_out_height*L#_out_depth*h##L#_ind);
+    );
+
+    nn_layer_conv2d_forward(L,I) = (
+      unref(_sizl);
+      const _sizl = size(L#_out)/L#_out_spectrum; # Size of output plane
+      L#_out = convolve(I#_out,
+                        I#_out_width,I#_out_height,I#_out_depth,I#_out_spectrum,
+                        L#_weights,
+                        L#_kernel_size,L#_kernel_size,1,I#_out_spectrum*L#_out_spectrum,
+                        1,0,2,
+                        L#_kernel_center,L#_kernel_center,0,
+                        0,0,0,
+                        L#_out_width - 1,L#_out_height - 1,L#_out_depth - 1,
+                        L#_stride,L#_stride,1,
+                        L#_dilation,L#_dilation,1);
+      repeat (L#_out_spectrum,_l,
+        copy(L#_out[_l*_sizl],L#_biases[_l],_sizl,1,0,-1); # Add biases
+      );
+    );
+
+    nn_layer_conv2d_init_backward(L,I) = (
+      L#_batch_deriv_weights = vector(#size(L#_weights));
+      L#_batch_deriv_biases = vector(#size(L#_biases));
+    );
+
+    nn_layer_conv2d_backward(L,I) = (
+      I#_deriv_out = vector(#size(I#_out));
+      unref(_sizk,_sizl,_sizw);
+      const _sizk = size(I#_out)/I#_out_spectrum;     # Size of input plane
+      const _sizl = size(L#_out)/L#_out_spectrum; # Size of output plane
+      const _sizw = L#_kernel_size^2;                # Size of kernel^2
+
+      # Compute dL/dxk(x,y).
+      L#_weights_mirrored = vector(#size(L#_weights));
+      repeat (I#_out_spectrum,_k,
+        repeat (L#_out_spectrum,_l,
+          copy(L#_weights_mirrored[_k*L#_out_spectrum*_sizw + _l*_sizw + _sizw - 1],
+               L#_weights[_l*(w##L#_ind - 1) + _k*_sizw],_sizw,-1,1);
+        );
+      );
+      I#_deriv_out = convolve(L#_deriv_out,
+                              L#_out_width,L#_out_height,L#_out_depth,L#_out_spectrum,
+                              L#_weights_mirrored,
+                              L#_kernel_size,L#_kernel_size,1,L#_out_spectrum*I#_out_spectrum,
+                              0,0,2,
+                              L#_kernel_size - 1 - L#_kernel_center,
+                              L#_kernel_size - 1 - L#_kernel_center,0,
+                              0,0,0,I#_out_width - 1,I#_out_height - 1,I#_out_depth - 1,
+                              1/L#_stride,1/L#_stride,1,
+                              L#_dilation/L#_stride,L#_dilation/L#_stride,1);
+
+      # Compute dL/dbl.
+      L#_deriv_biases = vector(#size(L#_biases));
+      fill(L#_deriv_biases,_l,sum(L#_deriv_out[_l*_sizl,_sizl]));
+      L#_batch_deriv_biases+=L#_deriv_biases;
+
+      # Compute dL/dwlk.
+      L#_xk_mirrored = vector(#_sizk);
+      L#_deriv_weights = vector(#size(L#_weights));
+      repeat (L#_out_spectrum,_l,
+        repeat (I#_out_spectrum,_k,
+          copy(L#_xk_mirrored[_sizk - 1],I#_out[_k*_sizk],_sizk,-1,1);
+          L#_dwlk = convolve(L#_xk_mirrored,
+                             I#_out_width,I#_out_height,I#_out_depth,1,
+                             L#_deriv_out[_l*_sizl,_sizl],
+                             L#_out_width,L#_out_height,L#_out_depth,1,
+                             0,0,1,
+                             1/L#_stride*(I#_out_width - 1 - L#_dilation*L#_kernel_center),
+                             1/L#_stride*(I#_out_height - 1 - L#_dilation*L#_kernel_center),0,
+                             0,0,0,L#_kernel_size - 1,L#_kernel_size - 1,0,
+                             L#_dilation,L#_dilation,1,
+                             L#_stride,L#_stride,1);
+          copy(L#_deriv_weights[_l*(w##L#_ind - 1) + _k*_sizw],L#_dwlk,_sizw);
+        );
+      );
+      L#_batch_deriv_weights+=L#_deriv_weights;
+    );
+
+    nn_layer_conv2d_end_backward(L) = (
+      merge(L#_batch_deriv_weights,+);
+      merge(L#_batch_deriv_biases,+);
+      L#_batch_deriv_weights/=nn_nb_samples;
+      L#_batch_deriv_biases/=nn_nb_samples;
+    );
+
+    nn_layer_conv2d_update(L) = (
+      nn_update_parameters?(
+        L#_dt_weights = nn_learning_rate/abs(maxabs(1e-9,L#_batch_deriv_weights));
+        L#_dt_biases = nn_learning_rate/abs(maxabs(1e-9,L#_batch_deriv_biases));
+        L#_weights-=L#_dt_weights*L#_batch_deriv_weights;
+        L#_biases-=L#_dt_biases*L#_batch_deriv_biases;
+        draw(##L#_ind,L#_weights,0,0,0,0,w##L#_ind - 1,h##L#_ind);
+        draw(##L#_ind,L#_biases,w##L#_ind - 1,0,0,0,1,h##L#_ind);
+      );
+    );
+
+    # fc: Fully-connected layer.
+    #---------------------------
+    nn_layer_fc_init_forward(L) = (
+      const L#_ind = $L#;
+      const L#_out_width = 1;
+      const L#_out_height = 1;
+      const L#_out_depth = 1;
+      const L#_out_spectrum = h##L#_ind;
+
+      L#_weights = crop(##L#_ind,0,0,w##L#_ind - 1,h##L#_ind);
+      L#_biases = crop(##L#_ind,w##L#_ind - 1,0,1,h##L#_ind);
+      L#_out = vector(#h##L#_ind);
+    );
+
+    nn_layer_fc_forward(L,I) = (
+      L#_out = mul(L#_weights,I#_out);
+      L#_out+=L#_biases;
+    );
+
+    nn_layer_fc_init_backward(L) = (
+      L#_batch_deriv_weights = vector(#size(L#_weights));
+      L#_batch_deriv_biases = vector(#size(L#_biases));
+    );
+
+    nn_layer_fc_backward(L,I) = (
+      I#_deriv_out = mul(transpose(L#_weights,size(I#_out)),L#_deriv_out);
+      L#_deriv_weights = mul(L#_deriv_out,I#_out,size(I#_out));
+      L#_batch_deriv_weights+=L#_deriv_weights;
+      L#_batch_deriv_biases+=L#_deriv_out;
+    );
+
+    nn_layer_fc_end_backward(L) = (
+      merge(L#_batch_deriv_weights,+);
+      merge(L#_batch_deriv_biases,+);
+      L#_batch_deriv_weights/=nn_nb_samples;
+      L#_batch_deriv_biases/=nn_nb_samples;
+    );
+
+    nn_layer_fc_update(L) = (
+      nn_update_parameters?(
+        L#_dt_weights = nn_learning_rate/abs(maxabs(1e-9,L#_batch_deriv_weights));
+        L#_dt_biases = nn_learning_rate/abs(maxabs(1e-9,L#_batch_deriv_biases));
+        L#_weights-=L#_dt_weights*L#_batch_deriv_weights;
+        L#_biases-=L#_dt_biases*L#_batch_deriv_biases;
+        draw(##L#_ind,L#_weights,0,0,0,0,w##L#_ind - 1,h##L#_ind);
+        draw(##L#_ind,L#_biases,w##L#_ind - 1,0,0,0,1,h##L#_ind);
+      );
+    );
+
+    # nl: Non-linearity.
+    #-------------------
+    nn_layer_nl_init_forward(L,I) = (
+      const L#_out_width = I#_out_width;
+      const L#_out_height = I#_out_height;
+      const L#_out_depth = I#_out_depth;
+      const L#_out_spectrum = I#_out_spectrum;
+
+      L#_out = vector(#size(I#_out));
+    );
+
+    nn_layer_nl_forward(L,I,activation) = (
+      L#_out = I#_out;
+      nn_activate(L#_out,#activation);
+    );
+
+    nn_layer_nl_backward(L,I,activation) = (
+      I#_deriv_out = I#_out;
+      nn_activate(I#_deriv_out,deriv_#activation);
+      I#_deriv_out*=L#_deriv_out;
+    );
+
+    # rename: Rename input.
+    #----------------------
+    nn_layer_rename_init_forward(L,I) = (
+      const L#_out_width = I#_out_width;
+      const L#_out_height = I#_out_height;
+      const L#_out_depth = I#_out_depth;
+      const L#_out_spectrum = I#_out_spectrum;
+      ref(I#_out,L#_out);
+    );
+
+    nn_layer_rename_backward(L,I) = (
+      ref(L#_deriv_out,I#_deriv_out);
+    );
+
+    # reshape: Reshape input to output with compatible size.
+    #-------------------------------------------------------
+    nn_layer_reshape_init_forward(L,I,w,h,d,s) = (
+      const L#_out_width = w;
+      const L#_out_height = h;
+      const L#_out_depth = d;
+      const L#_out_spectrum = s;
+      ref(I#_out,L#_out);
+    );
+
+    nn_layer_reshape_init_backward(L,I) = (
+      ref(L#_deriv_out,I#_deriv_out);
+    );
+
+    # split: Split input as two outputs.
+    #-----------------------------------
+    nn_layer_split_init_forward(L0,L1,I,nb_channels0) = (
+      const L0#_out_width = I#_out_width;
+      const L0#_out_height = I#_out_height;
+      const L0#_out_depth = I#_out_depth;
+      const L0#_out_spectrum = nb_channels0;
+      const L1#_out_width = I#_out_width;
+      const L1#_out_height = I#_out_height;
+      const L1#_out_depth = I#_out_depth;
+      const L1#_out_spectrum = I#_out_spectrum - nb_channels0;
+    );
+
+    nn_layer_split_forward(L0,L1,I) = (
+      unref(_siz0); const siz0 = L0#_out_width*L0#_out_height*L0#_out_depth*L0#_out_spectrum;
+      L0#_out = I#_out[0,siz0];
+      L1#_out = I#_out[siz0,L1#_out_width*L1#_out_height*L1#_out_depth*L1#_out_spectrum];
+    );
+
+    nn_layer_split_backward(L0,L1,I) = (
+      I#_deriv_out = vector(#size(I#_out));
+      copy(I#_deriv_out,L0#_deriv_out,size(L0#_out));
+      copy(I#_deriv_out[size(L0#_out)],L1#_deriv_out,size(L1#_out));
+    );
+
+    #----------------------------------
+    # Definition of the loss functions.
+    #----------------------------------
+
+    # mse : Mean-squared error.
+    #--------------------------
+    nn_loss_mse_init_backward(L) = (
+      L#_batch_out = 0;
+      nn_update_parameters = 1;
+    );
+
+    nn_loss_mse_backward(L,I,TRUTH) = (
+      I#_deriv_out = 2*(I#_out - TRUTH);
+      L#_out = norm(I#_deriv_out/2)^2/size(I#_deriv_out);
+      L#_batch_out+=L#_out;
+    );
+
+    nn_loss_mse_end_backward(L) = (
+      merge(L#_batch_out,+);
+      L#_batch_out/=nn_nb_samples;
+      L#_out = L#_batch_out;
+    );
+
+    nn_loss_mse_update(L) = (
+      const L#_ind = $L#;
+      L#_iteration = i[##L#_ind,0];
+      nn_learning_rate = i[##L#_ind,1];
+      L#_previous_batch_out = i[##L#_ind,2];
+      L#_nb_decreases = i[##L#_ind,3];
+      L#_nb_increases = i[##L#_ind,4];
+
+      # Compute trend: percentage of loss decrease(<0) or increase(>0).
+      L#_trend = 100*(L#_batch_out - L#_previous_batch_out)/L#_previous_batch_out;
+
+      L#_trend>=500?( # Large loss increase -> drastically reduce learning rate
+        nn_update_parameters = 0;
+        nn_learning_rate = max(0.5*nn_learning_rate,1e-8);
+        L#_batch_out = L#_previous_batch_out;
+        L#_nb_increases = L#_nb_decreases = 0;
+      ):L#_trend>=0?( # Loss increase
+        ++L#_nb_increases;
+        L#_nb_decreases = 0;
+        L#_nb_increases>=2?( # Frequent loss increase -> slightly reduce learning rate
+          nn_learning_rate = max(0.9*nn_learning_rate,1e-8);
+          L#_nb_increases = L#_nb_decreases = 0;
+        );
+      ):L#_trend<0?( # Loss decrease
+        ++L#_nb_decreases;
+#        L#_nb_increases = 0; # <- Don't set it to 0!
+        L#_nb_decreases>=4?( # Frequent loss decrease -> slightly increase learning rate
+          nn_learning_rate = min(1.15*nn_learning_rate,1);
+          L#_nb_decreases = 0;
+        );
+      );
+      copy(i[##L#_ind,0],
+           [ L#_iteration + 1,nn_learning_rate,L#_batch_out,L#_nb_decreases,L#_nb_increases ]);
+    );
+    "
+
+#@cli nn_init
+#@cli : Initialize a new network.
+nn_init :
+  e[^-1] "[nn_lib] Initialize new network."
+  _nn_forward,_nn_backward,_nn_update,_nn_parameters=
+  _nn_init="$0;"
+
+#@cli nn_save : 'filename.gmz'
+#@cli : Save current network as a .gmz file.
+#@cli : Neural network files can be only saved in .gmz format.
+nn_save : check "s=['$1']; find(s,'.gmz')==size(s) - 4"
+  e[^-1] "[nn_lib] Save current network as file '$1'."
+  ('$_nn_parameters') autocrop. {';'} replace. {';'},{','} sel={t} rm.
+  ('$_nn_init') autocrop. {';'} replace. {';'},{'" "'}
+  nm. _nn_init
+  o[$sel,-1] "$1"
+  rm.
+
+#@cli nn_load : 'filename.gmz'
+#@cli : Load and initialize network saved as a .gmz file.
+#@cli : Neural network files can be only loaded in .gmz format.
+nn_load : check "s=['$1']; find(s,'.gmz')==size(s) - 4"
+  e[^-1] "[nn_lib] Load network from file '$1'."
+  i "$1" run {t} rm.
+
+#@cli nn_layer_input : name,width,_height,_depth,_spectrum
+#@cli : Add an 'input' layer to the network.
+#@cli : Default values: 'height=1', 'depth=1' and 'spectrum=1'.
+nn_layer_input : check ${"is_variable_name $1"}" && isint($2) && $2>0 && isint(${3=1}) && $3>0 && "\
+                   "isint(${4=1}) && $4>0 && isint(${5=1}) && $5>0"
+  e[^-1] "[nn_lib] Add input layer '$1', with size ($2,$3,$4,$5)."
+  _nn_$1_out_size=$2,$3,$4,$5
+  _nn_forward.="begin(nn_layer_input_init_forward($1,$2,$3,$4,$5));"
+  _nn_init.="$0 $*;"
+
+#@cli nn_layer_add : name,in0,in1
+#@cli : Add an 'add' layer to the network.
+nn_layer_add : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "${"is_variable_name $3"}" && "\
+                     [$_nn_$2_out_size]==[$_nn_$3_out_size]
+  e[^-1] "[nn_lib] Add 'add' layer '$1', with inputs '$2' and '$3'."
+  _nn_$1_out_size=$_nn_$2_out_size
+  _nn_forward.="begin(nn_layer_add_init_forward($1,$2));"\
+               "nn_layer_add_forward($1,$2,$3);"
+  _nn_backward..="nn_layer_add_backward($1,$2,$3);"
+  _nn_init.="$0 $*;"
+
+#@cli nn_layer_append : name,in0,in1
+#@cli : Add an 'append' layer to the network.
+nn_layer_append : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "${"is_variable_name $3"}
+  e[^-1] "[nn_lib] Add 'append' layer '$1', with inputs '$2' and '$3'."
+  if s1=[$_nn_$2_out_size];s2=[$_nn_$3_out_size];s1[0,3]!=s2[0,3]
+    error "nn_layer_append: Cannot append inputs $2("$_nn_$2_out_size") and $3("$_nn_$3_out_size") together."
+  fi
+  _nn_$1_out_size={[$_nn_$2_out_size]+[0,0,0,[$_nn_$3_out_size][3]]}
+  _nn_forward.="begin(nn_layer_append_init_forward($1,$2,$3));"\
+               "nn_layer_append_forward($1,$2,$3);"
+  _nn_backward..="nn_layer_append_backward($1,$2,$3);"
+  _nn_init.="$0 $*;"
+
+#@cli nn_layer_avgpool2d : name,in
+#@cli : Add a 'avgpool2d' layer (2d average pooling) to the network.
+nn_layer_avgpool2d : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
+  e[^-1] "[nn_lib] Add 'avgpool2d' layer '$1', with input '$2'."
+  _nn_$1_out_size={s=[$_nn_$2_out_size];[int(s[0]/2),int(s[1]/2),1,s[3]]}
+  _nn_forward.="begin(nn_layer_avgpool2d_init_forward($1,$2));"\
+               "nn_layer_avgpool2d_forward($1,$2);"
+  _nn_backward..="nn_layer_avgpool2d_backward($1,$2);"
+  _nn_init.="$0 $*;"
+
+#@cli nn_layer_batchnorm : name,in,learning_mode.
+#@cli : Add a 'batchnorm' layer to the network.
+#@cli : 'learning_mode' can be { 0=no parameters learnt | 1=gamma-only | 2=beta-only | 3=gamma & beta}.
+nn_layer_batchnorm : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint(${3=0}) && inrange($3,0,3)"
+  s0,s1,s2,s3="no parameters","gamma-only","beta-only","gamma & beta"
+  e[^-1] "[nn_lib] Add 'batchnorm' layer '$1' to the network, with input '$2' and learning mode '"${s$3}"'."
+  _nn_$1_out_size=$_nn_$2_out_size
+  if !isint($$1) 6,{prod($_nn_$2_out_size)} f. nan,nan,nan,nan,1,0 nm. $1 fi
+  _nn_forward.="begin(nn_layer_batchnorm_init_forward($1,$2));"\
+               "nn_layer_batchnorm_forward($1,$2);"
+  _nn_backward..="begin(nn_layer_batchnorm_init_backward($1,$2));"\
+                 "nn_layer_batchnorm_backward($1,$2,$3);"\
+                 "end_t(nn_layer_batchnorm_end_t_backward($1));"\
+                 "end(nn_layer_batchnorm_end_backward($1));"
+  _nn_update..="end(nn_layer_batchnorm_update($1,$3));"
+  _nn_init.="$0 $*;"
+  _nn_parameters.="$1;"
+
+#@cli nn_layer_clone : name0,name1,in
+#@cli : Add a 'clone' layer to the network.
+nn_layer_clone : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "${"is_variable_name $3"}
+  e[^-1] "[nn_lib] Add 'clone' layer with input '$3' and outputs '$1' and '$2'."
+  _nn_$1_out_size=$_nn_$3_out_size
+  _nn_$2_out_size=$_nn_$3_out_size
+  _nn_forward.="begin(nn_layer_clone_init_forward($1,$2,$3));"\
+               "nn_layer_clone_forward($1,$2,$3);"
+  _nn_backward..="nn_layer_clone_backward($1,$2,$3);"
+  _nn_init.="$0 $*;"
+
+#@cli nn_layer_conv2d : name,in,nb_channels>0,_kernel_size>0,_stride>0,_dilation>0
+#@cli : Add a 'conv2d' layer (2D convolutional layer) to the network.
+#@cli : Default values: 'kernel_size=3', 'stride=1' and 'dilation=1'.
+nn_layer_conv2d : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "\
+                        "isint($3) && $3>0 && isint(${4=3}) && $4>0 && ${5=1}>0" skip "${6=1}"
+  e[^-1] "[nn_lib] Add 'conv2d' layer '$1', with input '$2', $3 channels, $4x$4 kernels, stride $5 and dilation $6."
+  _nn_$1_out_size={s=[$_nn_$2_out_size];[max(1,int(s[0]/$5)),max(1,int(s[1]/$5)),s[2],$3]}
+  if !isint($$1) {[$_nn_$2_out_size][3]*$4^2+1},$3 f. 4*g/(w-1) nm. $1 fi
+  _nn_forward.="begin(nn_layer_conv2d_init_forward($1,$2,$4,$5,$6));"\
+               "nn_layer_conv2d_forward($1,$2);"
+  _nn_backward..="begin(nn_layer_conv2d_init_backward($1,$2));"\
+                 "nn_layer_conv2d_backward($1,$2);"\
+                 "end(nn_layer_conv2d_end_backward($1));"
+  _nn_update..="end(nn_layer_conv2d_update($1));"
+  _nn_init.="$0 $*;"
+  _nn_parameters.="$1;"
+
+#@cli nn_layer_conv2dnl : name,in,nb_channels>0,_kernel_size>0,_stride>0,_dilation>0,_activation
+#@cli : Add a 'con2dnl' (2D convolutional layer followed by a non-linearity), to the network.
+#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1' and 'activation=leakyrelu'.
+nn_layer_conv2dnl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "\
+                          "isint($3) && $3>0 && isint(${4=3}) && $4>0 && ${5=1}>0" skip "${6=1}","${7=leakyrelu}"
+  e[^-1] "[nn_lib] Add 'conv2d+nl' layer '$1', with input '$2', $3 channels, $4x$4 kernels, "\
+         "stride $5, dilation $6 and '$7' activation."
+  nn_layer_conv2d $1_0,$2,$3,$4,$5,$6
+  nn_layer_nl $1,$1_0,$7
+
+#@cli nn_layer_fc : name,in,nb_channels>0
+#@cli : Add a 'fc' layer (fully connected layer) to the network.
+nn_layer_fc : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($3) && $3>0"
+  e[^-1] "[nn_lib] Add 'fc' layer '$1', with input '$2' and $3 channels."
+  _nn_$1_out_size=1,1,1,$3
+  if !isint($$1) {prod($_nn_$2_out_size)+1},$3 f. 4*g/(w-1) nm. $1 fi
+  _nn_forward.="begin(nn_layer_fc_init_forward($1));"\
+               "nn_layer_fc_forward($1,$2);"
+  _nn_backward..="begin(nn_layer_fc_init_backward($1));"\
+                 "nn_layer_fc_backward($1,$2);"\
+                 "end(nn_layer_fc_end_backward($1));"
+  _nn_update..="end(nn_layer_fc_update($1));"
+  _nn_init.="$0 $*;"
+  _nn_parameters.="$1;"
+
+#@cli nn_layer_fcnl : name,in,nb_neurons>0,_activation
+#@cli : Add a 'fcnl' layer (fully connected layer followed by a non-linearity), to the network.
+#@cli : Default value: 'activation=leakyrelu'.
+nn_layer_fcnl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($3) && $3>0" skip ${4=leakyrelu}
+  e[^-1] "[nn_lib] Add 'fc+nl' layer '$1' to the network, with input '$2', $3 channels and '$4' activation."
+  nn_layer_fc $1_0,$2,$3
+  nn_layer_nl $1,$1_0,$4
+
+#@cli nn_layer_nl : name,in,activation
+#@cli : Add a 'nl' layer (non-linearity) to the network.
+#@cli : Default value: 'activation=leakyrelu'.
+nn_layer_nl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"} skip ${3=leakyrelu}
+  e[^-1] "[nn_lib] Add 'nl' layer '$1', with input '$2' and '$3' activation."
+  _nn_$1_out_size=$_nn_$2_out_size
+  _nn_forward.="begin(nn_layer_nl_init_forward($1,$2));"\
+               "nn_layer_nl_forward($1,$2,$3);"
+  _nn_backward..="nn_layer_nl_backward($1,$2,$3);"
+  _nn_init.="$0 $*;"
+
+#@cli nn_layer_rename : name,in
+#@cli : Add a 'rename' layer to the network.
+nn_layer_rename : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
+  e[^-1] "[nn_lib] Add 'rename' layer '$1', with input '$2'."
+  _nn_$1_out_size=$_nn_$2_out_size
+  _nn_forward.="begin(nn_layer_rename_init_forward($1,$2));"
+  _nn_backward..="nn_layer_rename_backward($1,$2);"
+  _nn_init.="$0 $*;"
+
+#@cli nn_layer_reshape : name,in,width>0,height>0,depth>0,spectrum>0
+#@cli : Add a 'reshape' layer to the network.
+nn_layer_reshape : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
+  e[^-1] "[nn_lib] Add 'reshape' layer '$1', with input '$2' and size ($3,$4,$5,$6)."
+  _nn_$1_out_size=$3,$4,$5,$6
+  if prod($_nn_$1_out_size)!=prod($_nn_$2_out_size)
+    error "nn_layer_reshape: Cannot reshape input ("$_nn_$2_out_size") to output ("$_nn_$1_out_size")."
+  fi
+  _nn_forward.="begin(nn_layer_reshape_init_forward($1,$2,$3,$4,$5,$6));"
+  _nn_backward..="begin(nn_layer_reshape_init_backward($1,$2));"
+  _nn_init.="$0 $*;"
+
+#@cli nn_layer_split : name0,name1,in,nb_channels0
+#@cli : Add a 'split' layer to the network.
+nn_layer_split : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "${"is_variable_name $3"}
+  e[^-1] "[nn_lib] Add 'split' layer, with input '$3' and outputs '$1' and '$2'."
+  _nn_$1_out_size={[[$_nn_$3_out_size][0,3],$4]}
+  _nn_$2_out_size={[$_nn_$3_out_size]-[0,0,0,$4]}
+  _nn_forward.="begin(nn_layer_split_init_forward($1,$2,$3,$4));"\
+               "nn_layer_split_forward($1,$2,$3);"
+  _nn_backward..="nn_layer_split_backward($1,$2,$3);"
+  _nn_init.="$0 $*;"
+
+#@cli nn_loss_mse : name,in,ground_truth
+#@cli : Add a 'mse' loss to the network.
+nn_loss_mse : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
+  e[^-1] "[nn_lib] Add 'mse' loss '$1', with input '$2' and ground truth '$3'."
+  _nn_$1_out_size=1,1,1,1
+  if !isint($$1) (0,1e-3,inf,0,0) nm. $1 fi # iteration,learning_rate,batch_out,nb_decreases,nb_increases
+  _nn_backward..="begin(nn_loss_mse_init_backward($1));"\
+                 "nn_loss_mse_backward($1,$2,$3);"\
+                 "end(nn_loss_mse_end_backward($1));"
+  _nn_update..="end(nn_loss_mse_update($1));"
+  _nn_init.="$0 $*;"
+  _nn_parameters.="$1;"
+
 #----------------------------------
 #
 #@cli :: Arrays, Tiles and Frames
@@ -49135,786 +49916,6 @@ fx_solve_maze_preview :
 #@cli : $ https://gmic.eu/samples/rotozoom.gmic go _fps=15 _label="Rotozoom"
 
 
-#-------------------------------
-#
-#@cli :: Neural Network Library
-#
-#-------------------------------
-
-#@cli nn_lib :
-#@cli : Return the list of library functions that has to be included in a math expression,
-#@cli : in order to use the neural network library.
-nn_lib :
-  u "
-    #-------------------------------------------------
-    # Definition of the library environment variables.
-    #-------------------------------------------------
-    const _nb_threads_max = n;
-    begin(
-      nn_nb_samples = 0;
-    );
-
-    nn_thread = t;
-    nn_nb_threads_used = nn_thread + 1;
-    ++nn_nb_samples;
-
-    end(
-      merge(nn_nb_threads_used,max);
-      merge(nn_nb_samples,+);
-    );
-
-    #--------------------------------------------------------------
-    # Definition of the activation functions and their derivatives.
-    #--------------------------------------------------------------
-    _nn_activate_pointwise(Z,activation) = (fill(#Z,k,nn_activation_#activation(#Z[k])));
-    nn_activate(Z,activation) = nn_activate_#activation(#Z);
-
-    # Linear.
-    #--------
-    nn_activation_linear(z) = (z);
-    nn_activation_deriv_linear(z) = (1);
-    nn_activate_linear(Z) = (0);
-    nn_activate_deriv_linear(Z) = (#Z = 1);
-
-    # ELU: Exponential Linear Unit.
-    #-------------------------------
-    nn_activation_elu(z) = (z<0?exp(z) - 1:z);
-    nn_activation_deriv_elu(z) = (z<0?exp(z):1);
-    nn_activate_elu(Z) = _nn_activate_pointwise(Z,elu);
-    nn_activate_deriv_elu(Z) = _nn_activate_pointwise(Z,deriv_elu);
-
-    # GELU: Gaussian Error Linear Unit.
-    #-----------------------------------
-    nn_activation_gelu(z) = (0.5*z*(1 + erf(z/sqrt(2))));
-    nn_activation_deriv_gelu(z) = (0.5 + 0.5*erf(z/sqrt(2)) + z*exp(-z^2/2)/sqrt(2*pi));
-    nn_activate_gelu(Z) = _nn_activate_pointwise(Z,gelu);
-    nn_activate_deriv_gelu(Z) = _nn_activate_pointwise(Z,deriv_gelu);
-
-    # LeakyRELU: Leaky Rectified Linear Unit.
-    #-----------------------------------------
-    nn_activation_leakyrelu(z) = (z<0?0.05*z:z);
-    nn_activation_deriv_leakyrelu(z) = (z<0?0.05:1);
-    nn_activate_leakyrelu(Z) = _nn_activate_pointwise(Z,leakyrelu);
-    nn_activate_deriv_leakyrelu(Z) = _nn_activate_pointwise(Z,deriv_leakyrelu);
-
-    # RELU: Rectified Linear Unit.
-    #------------------------------
-    nn_activation_relu(z) = (z<0?0:z);
-    nn_activation_deriv_relu(z) = (z<0?0:1);
-    nn_activate_relu(Z) = _nn_activate_pointwise(Z,relu);
-    nn_activate_deriv_relu(Z) = _nn_activate_pointwise(Z,deriv_relu);
-
-    # Sigmoid.
-    #---------
-    nn_activation_sigmoid(z) = (0.5 + 0.5*tanh(z/2));
-    nn_activation_deriv_sigmoid(z) = (_nn_sig = nn_activation_sigmoid(z); _nn_sig*(1-_nn_sig));
-    nn_activate_sigmoid(Z) = _nn_activate_pointwise(Z,sigmoid);
-    nn_activate_deriv_sigmoid(Z) = _nn_activate_pointwise(Z,deriv_sigmoid);
-
-    # Tanh.
-    #------
-    nn_activation_tanh(z) = (tanh(z));
-    nn_activation_deriv_tanh(z) = (1 - tanh(z)^2);
-    nn_activate_tanh(Z) = _nn_activate_pointwise(Z,tanh);
-    nn_activate_deriv_tanh(Z) = _nn_activate_pointwise(Z,deriv_tanh);
-
-    #--------------------------------------------
-    # Definition of the different network layers.
-    #--------------------------------------------
-
-    # input: Input image or vector data.
-    #-----------------------------------
-    nn_layer_input_init_forward(L,w,h,d,s) = (
-      const L#_out_width = w;
-      const L#_out_height = h;
-      const L#_out_depth = d;
-      const L#_out_spectrum = s;
-      ref(#L,L#_out);
-    );
-
-    # add: Add two inputs.
-    #---------------------
-    nn_layer_add_init_forward(L,I) = (
-      const L#_out_width = I#_out_width;
-      const L#_out_height = I#_out_height;
-      const L#_out_depth = I#_out_depth;
-      const L#_out_spectrum = I#_out_spectrum;
-    );
-
-    nn_layer_add_forward(L,I0,I1) = (
-      L#_out = I0#_out + I1#_out;
-    );
-
-    nn_layer_add_backward(L,I0,I1) = (
-      I0#_deriv_out = I1#_deriv_out = L#_deriv_out/2;
-    );
-
-    # append: Append two inputs as a new output.
-    #--------------------------------------------
-    nn_layer_append_init_forward(L,I0,I1) = (
-      const L#_out_width = I0#_out_width;
-      const L#_out_height = I0#_out_height;
-      const L#_out_depth = I0#_out_depth;
-      const L#_out_spectrum = I0#_out_spectrum + I1#_out_spectrum;
-    );
-
-    nn_layer_append_forward(L,I0,I1) = (
-      L#_out = vector(#size(I0#_out) + size(I1#_out));
-      copy(L#_out,I0#_out,size(I0#_out));
-      copy(L#_out[size(I0#_out)],I1#_out,size(I1#_out));
-    );
-
-    nn_layer_append_backward(L,I0,I1) = (
-      I0#_deriv_out = L#_deriv_out[0,size(I0#_out)];
-      I1#_deriv_out = L#_deriv_out[size(I0#_out),size(I1#_out)];
-    );
-
-    # avgpool2d : 2D average pooling.
-    #--------------------------------
-    nn_layer_avgpool2d_init_forward(L,I) = (
-      const L#_out_width = int(I#_out_width/2);
-      const L#_out_height = int(I#_out_height/2);
-      const L#_out_depth = I#_out_depth;
-      const L#_out_spectrum = I#_out_spectrum;
-      nn_avgpool2d_kernel = [ 0.25,0.25,0.25,0.25 ];
-    );
-
-    nn_layer_avgpool2d_forward(L,I) = (
-      L#_out = correlate(I#_out,
-                         I#_out_width,I#_out_height,I#_out_depth,I#_out_spectrum,
-                         nn_avgpool2d_kernel,2,2,1,1,
-                         0,0,1,
-                         0,0,0,
-                         0,0,0,
-                         I#_out_width - 1,I#_out_height - 1,I#_out_depth - 1,
-                         2,2,1);
-    );
-
-    nn_layer_avgpool2d_backward(L,I) = (
-      I#_deriv_out = vector(#size(I#_out));
-      fill(I#_deriv_out,_k,
-           _x = int((_k%I#_out_width)/2);
-           _y = int(int(_k/I#_out_height)/2);
-           L#_deriv_out[_x + L#_out_width*_y]);
-    );
-
-    # batchnorm: Batch-normalization layer.
-    #---------------------------------------
-    nn_layer_batchnorm_init_forward(L,I) = (
-      const L#_ind = $L#;
-      const L#_out_width = I#_out_width;
-      const L#_out_height = I#_out_height;
-      const L#_out_depth = I#_out_depth;
-      const L#_out_spectrum = I#_out_spectrum;
-
-      const L#_base_col = $_nn_is_training==1?0:2;
-      L#_mu = crop(##L#_ind,L#_base_col,0,1,h##L#_ind);
-      L#_sigma = sqrt(crop(##L#_ind,L#_base_col + 1,0,1,h##L#_ind));
-      isnan(L#_mu[0])?(L#_mu = 0; L#_sigma = 1);
-      L#_gamma = crop(##L#_ind,4,0,1,h##L#_ind);
-      L#_beta = crop(##L#_ind,5,0,1,h##L#_ind);
-      L#_out = vector(#size(I#_out));
-    );
-
-    nn_layer_batchnorm_forward(L,I) = (
-      L#_z = I#_out;
-      L#_z-=L#_mu;
-      L#_z/=1e-9 + L#_sigma;
-      L#_out = L#_gamma*L#_z;
-      L#_out+=L#_beta;
-    );
-
-    nn_layer_batchnorm_init_backward(L,I) = (
-      L#_threads_nb_samples = vector(#_nb_threads_max);
-      L#_threads_in_mean = L#_threads_in_variance = vector(#_nb_threads_max*size(I#_out));
-      L#_nb_samples = 0;
-      L#_in_mean = L#_in_variance = vector(#size(I#_out));
-      L#_batch_deriv_gamma = vector(#size(L#_gamma));
-      L#_batch_deriv_beta = vector(#size(L#_beta));
-    );
-
-    nn_layer_batchnorm_backward(L,I,learning_mode) = (
-      ++L#_nb_samples;
-      L#_pim = I#_out - L#_in_mean;
-      L#_in_mean+=L#_pim/L#_nb_samples;
-      L#_in_variance+=(I#_out - L#_in_mean)*L#_pim;
-      learning_mode&1?(
-        L#_batch_deriv_gamma+=L#_deriv_out*L#_z;
-      );
-      learning_mode&2?(
-        L#_batch_deriv_beta+=L#_deriv_out;
-      );
-      I#_deriv_out = L#_deriv_out*L#_gamma/(1e-9 + L#_sigma);
-    );
-
-    nn_layer_batchnorm_end_t_backward(L) = (
-      L#_in_variance/=L#_nb_samples;
-      copy(L#_threads_nb_samples[nn_thread],L#_nb_samples);
-      copy(L#_threads_in_mean[nn_thread*size(L#_in_mean)],L#_in_mean);
-      copy(L#_threads_in_variance[nn_thread*size(L#_in_variance)],L#_in_variance);
-      L#_in_mean*=L#_nb_samples;
-    );
-
-    nn_layer_batchnorm_end_backward(L) = (
-      merge(L#_nb_samples,+);
-      merge(L#_in_mean,+);
-      merge(L#_threads_nb_samples,+);
-      merge(L#_threads_in_mean,+);
-      merge(L#_threads_in_variance,+);
-      merge(L#_batch_deriv_gamma,+);
-      merge(L#_batch_deriv_beta,+);
-      L#_in_mean/=L#_nb_samples;
-      L#_in_variance = 0;
-      repeat (nn_nb_threads_used,_k,
-        L#_in_variance+=L#_threads_nb_samples[_k]*
-          (L#_threads_in_variance[_k*size(L#_in_variance),size(L#_in_variance)] +
-          (L#_threads_in_mean[_k*size(L#_in_mean),size(L#_in_variance)] - L#_in_mean)^2);
-      );
-      L#_in_variance/=L#_nb_samples;
-    );
-
-    nn_layer_batchnorm_update(L,learning_mode) = (
-      draw(##L#_ind,L#_in_mean,0,0,0,0,1,h##L#_ind,1,1); # Update batch mean and batch variance
-      draw(##L#_ind,L#_in_variance,1,0,0,0,1,h##L#_ind,1,1);
-      !$batch_iter?(
-        momentum = isnan(i[##L#_ind,2])?1:0.01;
-        draw(##L#_ind,L#_in_mean,2,0,0,0,1,h##L#_ind,1,1,momentum); # Global mean and variance
-        draw(##L#_ind,L#_in_variance,3,0,0,0,1,h##L#_ind,1,1,momentum);
-      );
-
-      nn_update_parameters?(
-        learning_mode&1?(
-          L#_dt_gamma = nn_learning_rate/abs(maxabs(1e-9,L#_batch_deriv_gamma));
-          L#_gamma-=L#_dt_gamma*L#_batch_deriv_gamma;
-          draw(##L#_ind,L#_gamma,4,0,0,0,1,h##L#_ind);
-        );
-        learning_mode&2?(
-          L#_dt_beta = nn_learning_rate/abs(maxabs(1e-9,L#_batch_deriv_beta));
-          L#_beta-=L#_dt_beta*L#_batch_deriv_beta;
-          draw(##L#_ind,L#_beta,5,0,0,0,1,h##L#_ind);
-        );
-      );
-    );
-
-    # clone: Duplicate input as two new outputs.
-    #-------------------------------------------
-    nn_layer_clone_init_forward(L0,L1,I) = (
-      const L0#_out_width = I#_out_width;
-      const L0#_out_height = I#_out_height;
-      const L0#_out_depth = I#_out_depth;
-      const L0#_out_spectrum = I#_out_spectrum;
-      const L1#_out_width = I#_out_width;
-      const L1#_out_height = I#_out_height;
-      const L1#_out_depth = I#_out_depth;
-      const L1#_out_spectrum = I#_out_spectrum;
-    );
-
-    nn_layer_clone_forward(L0,L1,I) = (
-      L0#_out = L1#_out = I#_out;
-    );
-
-    nn_layer_clone_backward(L0,L1,I) = (
-      I#_deriv_out = L0#_deriv_out + L1#_deriv_out;
-    );
-
-    # conv2d: 2D convolutional layer.
-    #--------------------------------
-    nn_layer_conv2d_init_forward(L,I,size,stride,dilation) = (
-      const L#_ind = $L#;
-      const L#_out_width = max(1,int(I#_out_width/stride));
-      const L#_out_height = max(1,int(I#_out_height/stride));
-      const L#_out_depth = I#_out_depth;
-      const L#_out_spectrum = h##L#_ind;
-      const L#_kernel_size = size;
-      const L#_kernel_center = L#_kernel_size - 1 - int(L#_kernel_size/2);
-      const L#_stride = stride;
-      const L#_dilation = dilation;
-
-      L#_weights = crop(##L#_ind,0,0,w##L#_ind - 1,h##L#_ind);
-      L#_biases = crop(##L#_ind,w##L#_ind - 1,0,1,h##L#_ind);
-      L#_out = vector(##L#_out_width*L#_out_height*L#_out_depth*h##L#_ind);
-    );
-
-    nn_layer_conv2d_forward(L,I) = (
-      unref(_sizl);
-      const _sizl = size(L#_out)/L#_out_spectrum; # Size of output plane
-      L#_out = convolve(I#_out,
-                        I#_out_width,I#_out_height,I#_out_depth,I#_out_spectrum,
-                        L#_weights,
-                        L#_kernel_size,L#_kernel_size,1,I#_out_spectrum*L#_out_spectrum,
-                        1,0,2,
-                        L#_kernel_center,L#_kernel_center,0,
-                        0,0,0,
-                        L#_out_width - 1,L#_out_height - 1,L#_out_depth - 1,
-                        L#_stride,L#_stride,1,
-                        L#_dilation,L#_dilation,1);
-      repeat (L#_out_spectrum,_l,
-        copy(L#_out[_l*_sizl],L#_biases[_l],_sizl,1,0,-1); # Add biases
-      );
-    );
-
-    nn_layer_conv2d_init_backward(L,I) = (
-      L#_batch_deriv_weights = vector(#size(L#_weights));
-      L#_batch_deriv_biases = vector(#size(L#_biases));
-    );
-
-    nn_layer_conv2d_backward(L,I) = (
-      I#_deriv_out = vector(#size(I#_out));
-      unref(_sizk,_sizl,_sizw);
-      const _sizk = size(I#_out)/I#_out_spectrum;     # Size of input plane
-      const _sizl = size(L#_out)/L#_out_spectrum; # Size of output plane
-      const _sizw = L#_kernel_size^2;                # Size of kernel^2
-
-      # Compute dL/dxk(x,y).
-      L#_weights_mirrored = vector(#size(L#_weights));
-      repeat (I#_out_spectrum,_k,
-        repeat (L#_out_spectrum,_l,
-          copy(L#_weights_mirrored[_k*L#_out_spectrum*_sizw + _l*_sizw + _sizw - 1],
-               L#_weights[_l*(w##L#_ind - 1) + _k*_sizw],_sizw,-1,1);
-        );
-      );
-      I#_deriv_out = convolve(L#_deriv_out,
-                              L#_out_width,L#_out_height,L#_out_depth,L#_out_spectrum,
-                              L#_weights_mirrored,
-                              L#_kernel_size,L#_kernel_size,1,L#_out_spectrum*I#_out_spectrum,
-                              0,0,2,
-                              L#_kernel_size - 1 - L#_kernel_center,
-                              L#_kernel_size - 1 - L#_kernel_center,0,
-                              0,0,0,I#_out_width - 1,I#_out_height - 1,I#_out_depth - 1,
-                              1/L#_stride,1/L#_stride,1,
-                              L#_dilation/L#_stride,L#_dilation/L#_stride,1);
-
-      # Compute dL/dbl.
-      L#_deriv_biases = vector(#size(L#_biases));
-      fill(L#_deriv_biases,_l,sum(L#_deriv_out[_l*_sizl,_sizl]));
-      L#_batch_deriv_biases+=L#_deriv_biases;
-
-      # Compute dL/dwlk.
-      L#_xk_mirrored = vector(#_sizk);
-      L#_deriv_weights = vector(#size(L#_weights));
-      repeat (L#_out_spectrum,_l,
-        repeat (I#_out_spectrum,_k,
-          copy(L#_xk_mirrored[_sizk - 1],I#_out[_k*_sizk],_sizk,-1,1);
-          L#_dwlk = convolve(L#_xk_mirrored,
-                             I#_out_width,I#_out_height,I#_out_depth,1,
-                             L#_deriv_out[_l*_sizl,_sizl],
-                             L#_out_width,L#_out_height,L#_out_depth,1,
-                             0,0,1,
-                             1/L#_stride*(I#_out_width - 1 - L#_dilation*L#_kernel_center),
-                             1/L#_stride*(I#_out_height - 1 - L#_dilation*L#_kernel_center),0,
-                             0,0,0,L#_kernel_size - 1,L#_kernel_size - 1,0,
-                             L#_dilation,L#_dilation,1,
-                             L#_stride,L#_stride,1);
-          copy(L#_deriv_weights[_l*(w##L#_ind - 1) + _k*_sizw],L#_dwlk,_sizw);
-        );
-      );
-      L#_batch_deriv_weights+=L#_deriv_weights;
-    );
-
-    nn_layer_conv2d_end_backward(L) = (
-      merge(L#_batch_deriv_weights,+);
-      merge(L#_batch_deriv_biases,+);
-      L#_batch_deriv_weights/=nn_nb_samples;
-      L#_batch_deriv_biases/=nn_nb_samples;
-    );
-
-    nn_layer_conv2d_update(L) = (
-      nn_update_parameters?(
-        L#_dt_weights = nn_learning_rate/abs(maxabs(1e-9,L#_batch_deriv_weights));
-        L#_dt_biases = nn_learning_rate/abs(maxabs(1e-9,L#_batch_deriv_biases));
-        L#_weights-=L#_dt_weights*L#_batch_deriv_weights;
-        L#_biases-=L#_dt_biases*L#_batch_deriv_biases;
-        draw(##L#_ind,L#_weights,0,0,0,0,w##L#_ind - 1,h##L#_ind);
-        draw(##L#_ind,L#_biases,w##L#_ind - 1,0,0,0,1,h##L#_ind);
-      );
-    );
-
-    # fc: Fully-connected layer.
-    #---------------------------
-    nn_layer_fc_init_forward(L) = (
-      const L#_ind = $L#;
-      const L#_out_width = 1;
-      const L#_out_height = 1;
-      const L#_out_depth = 1;
-      const L#_out_spectrum = h##L#_ind;
-
-      L#_weights = crop(##L#_ind,0,0,w##L#_ind - 1,h##L#_ind);
-      L#_biases = crop(##L#_ind,w##L#_ind - 1,0,1,h##L#_ind);
-      L#_out = vector(#h##L#_ind);
-    );
-
-    nn_layer_fc_forward(L,I) = (
-      L#_out = mul(L#_weights,I#_out);
-      L#_out+=L#_biases;
-    );
-
-    nn_layer_fc_init_backward(L) = (
-      L#_batch_deriv_weights = vector(#size(L#_weights));
-      L#_batch_deriv_biases = vector(#size(L#_biases));
-    );
-
-    nn_layer_fc_backward(L,I) = (
-      I#_deriv_out = mul(transpose(L#_weights,size(I#_out)),L#_deriv_out);
-      L#_deriv_weights = mul(L#_deriv_out,I#_out,size(I#_out));
-      L#_batch_deriv_weights+=L#_deriv_weights;
-      L#_batch_deriv_biases+=L#_deriv_out;
-    );
-
-    nn_layer_fc_end_backward(L) = (
-      merge(L#_batch_deriv_weights,+);
-      merge(L#_batch_deriv_biases,+);
-      L#_batch_deriv_weights/=nn_nb_samples;
-      L#_batch_deriv_biases/=nn_nb_samples;
-    );
-
-    nn_layer_fc_update(L) = (
-      nn_update_parameters?(
-        L#_dt_weights = nn_learning_rate/abs(maxabs(1e-9,L#_batch_deriv_weights));
-        L#_dt_biases = nn_learning_rate/abs(maxabs(1e-9,L#_batch_deriv_biases));
-        L#_weights-=L#_dt_weights*L#_batch_deriv_weights;
-        L#_biases-=L#_dt_biases*L#_batch_deriv_biases;
-        draw(##L#_ind,L#_weights,0,0,0,0,w##L#_ind - 1,h##L#_ind);
-        draw(##L#_ind,L#_biases,w##L#_ind - 1,0,0,0,1,h##L#_ind);
-      );
-    );
-
-    # nl: Non-linearity.
-    #-------------------
-    nn_layer_nl_init_forward(L,I) = (
-      const L#_out_width = I#_out_width;
-      const L#_out_height = I#_out_height;
-      const L#_out_depth = I#_out_depth;
-      const L#_out_spectrum = I#_out_spectrum;
-
-      L#_out = vector(#size(I#_out));
-    );
-
-    nn_layer_nl_forward(L,I,activation) = (
-      L#_out = I#_out;
-      nn_activate(L#_out,#activation);
-    );
-
-    nn_layer_nl_backward(L,I,activation) = (
-      I#_deriv_out = I#_out;
-      nn_activate(I#_deriv_out,deriv_#activation);
-      I#_deriv_out*=L#_deriv_out;
-    );
-
-    # rename: Rename input.
-    #----------------------
-    nn_layer_rename_init_forward(L,I) = (
-      const L#_out_width = I#_out_width;
-      const L#_out_height = I#_out_height;
-      const L#_out_depth = I#_out_depth;
-      const L#_out_spectrum = I#_out_spectrum;
-      ref(I#_out,L#_out);
-    );
-
-    nn_layer_rename_backward(L,I) = (
-      ref(L#_deriv_out,I#_deriv_out);
-    );
-
-    # reshape: Reshape input to output with compatible size.
-    #-------------------------------------------------------
-    nn_layer_reshape_init_forward(L,I,w,h,d,s) = (
-      const L#_out_width = w;
-      const L#_out_height = h;
-      const L#_out_depth = d;
-      const L#_out_spectrum = s;
-      ref(I#_out,L#_out);
-    );
-
-    nn_layer_reshape_init_backward(L,I) = (
-      ref(L#_deriv_out,I#_deriv_out);
-    );
-
-    # split: Split input as two outputs.
-    #-----------------------------------
-    nn_layer_split_init_forward(L0,L1,I,nb_channels0) = (
-      const L0#_out_width = I#_out_width;
-      const L0#_out_height = I#_out_height;
-      const L0#_out_depth = I#_out_depth;
-      const L0#_out_spectrum = nb_channels0;
-      const L1#_out_width = I#_out_width;
-      const L1#_out_height = I#_out_height;
-      const L1#_out_depth = I#_out_depth;
-      const L1#_out_spectrum = I#_out_spectrum - nb_channels0;
-    );
-
-    nn_layer_split_forward(L0,L1,I) = (
-      unref(_siz0); const siz0 = L0#_out_width*L0#_out_height*L0#_out_depth*L0#_out_spectrum;
-      L0#_out = I#_out[0,siz0];
-      L1#_out = I#_out[siz0,L1#_out_width*L1#_out_height*L1#_out_depth*L1#_out_spectrum];
-    );
-
-    nn_layer_split_backward(L0,L1,I) = (
-      I#_deriv_out = vector(#size(I#_out));
-      copy(I#_deriv_out,L0#_deriv_out,size(L0#_out));
-      copy(I#_deriv_out[size(L0#_out)],L1#_deriv_out,size(L1#_out));
-    );
-
-    #----------------------------------
-    # Definition of the loss functions.
-    #----------------------------------
-
-    # mse : Mean-squared error.
-    #--------------------------
-    nn_loss_mse_init_backward(L) = (
-      L#_batch_out = 0;
-      nn_update_parameters = 1;
-    );
-
-    nn_loss_mse_backward(L,I,TRUTH) = (
-      I#_deriv_out = 2*(I#_out - TRUTH);
-      L#_out = norm(I#_deriv_out/2)^2/size(I#_deriv_out);
-      L#_batch_out+=L#_out;
-    );
-
-    nn_loss_mse_end_backward(L) = (
-      merge(L#_batch_out,+);
-      L#_batch_out/=nn_nb_samples;
-      L#_out = L#_batch_out;
-    );
-
-    nn_loss_mse_update(L) = (
-      const L#_ind = $L#;
-      L#_iteration = i[##L#_ind,0];
-      nn_learning_rate = i[##L#_ind,1];
-      L#_previous_batch_out = i[##L#_ind,2];
-      L#_nb_decreases = i[##L#_ind,3];
-      L#_nb_increases = i[##L#_ind,4];
-
-      # Compute trend: percentage of loss decrease(<0) or increase(>0).
-      L#_trend = 100*(L#_batch_out - L#_previous_batch_out)/L#_previous_batch_out;
-
-      L#_trend>=500?( # Large loss increase -> drastically reduce learning rate
-        nn_update_parameters = 0;
-        nn_learning_rate = max(0.5*nn_learning_rate,1e-8);
-        L#_batch_out = L#_previous_batch_out;
-        L#_nb_increases = L#_nb_decreases = 0;
-      ):L#_trend>=0?( # Loss increase
-        ++L#_nb_increases;
-        L#_nb_decreases = 0;
-        L#_nb_increases>=2?( # Frequent loss increase -> slightly reduce learning rate
-          nn_learning_rate = max(0.9*nn_learning_rate,1e-8);
-          L#_nb_increases = L#_nb_decreases = 0;
-        );
-      ):L#_trend<0?( # Loss decrease
-        ++L#_nb_decreases;
-#        L#_nb_increases = 0; # <- Don't set it to 0!
-        L#_nb_decreases>=4?( # Frequent loss decrease -> slightly increase learning rate
-          nn_learning_rate = min(1.15*nn_learning_rate,1);
-          L#_nb_decreases = 0;
-        );
-      );
-      copy(i[##L#_ind,0],
-           [ L#_iteration + 1,nn_learning_rate,L#_batch_out,L#_nb_decreases,L#_nb_increases ]);
-    );
-    "
-
-#@cli nn_init
-#@cli : Initialize a new network.
-nn_init :
-  e[^-1] "[nn_lib] Initialize new network."
-  _nn_forward,_nn_backward,_nn_update,_nn_parameters=
-  _nn_init="$0;"
-
-#@cli nn_save : 'filename.gmz'
-#@cli : Save current network as a .gmz file.
-#@cli : Neural network files can be only saved in .gmz format.
-nn_save : check "s=['$1']; find(s,'.gmz')==size(s) - 4"
-  e[^-1] "[nn_lib] Save current network as file '$1'."
-  ('$_nn_parameters') autocrop. {';'} replace. {';'},{','} sel={t} rm.
-  ('$_nn_init') autocrop. {';'} replace. {';'},{'" "'}
-  nm. _nn_init
-  o[$sel,-1] "$1"
-  rm.
-
-#@cli nn_load : 'filename.gmz'
-#@cli : Load and initialize network saved as a .gmz file.
-#@cli : Neural network files can be only loaded in .gmz format.
-nn_load : check "s=['$1']; find(s,'.gmz')==size(s) - 4"
-  e[^-1] "[nn_lib] Load network from file '$1'."
-  i "$1" run {t} rm.
-
-#@cli nn_layer_input : name,width,_height,_depth,_spectrum
-#@cli : Add an 'input' layer to the network.
-#@cli : Default values: 'height=1', 'depth=1' and 'spectrum=1'.
-nn_layer_input : check ${"is_variable_name $1"}" && isint($2) && $2>0 && isint(${3=1}) && $3>0 && "\
-                   "isint(${4=1}) && $4>0 && isint(${5=1}) && $5>0"
-  e[^-1] "[nn_lib] Add input layer '$1', with size ($2,$3,$4,$5)."
-  _nn_$1_out_size=$2,$3,$4,$5
-  _nn_forward.="begin(nn_layer_input_init_forward($1,$2,$3,$4,$5));"
-  _nn_init.="$0 $*;"
-
-#@cli nn_layer_add : name,in0,in1
-#@cli : Add an 'add' layer to the network.
-nn_layer_add : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "${"is_variable_name $3"}" && "\
-                     [$_nn_$2_out_size]==[$_nn_$3_out_size]
-  e[^-1] "[nn_lib] Add 'add' layer '$1', with inputs '$2' and '$3'."
-  _nn_$1_out_size=$_nn_$2_out_size
-  _nn_forward.="begin(nn_layer_add_init_forward($1,$2));"\
-               "nn_layer_add_forward($1,$2,$3);"
-  _nn_backward..="nn_layer_add_backward($1,$2,$3);"
-  _nn_init.="$0 $*;"
-
-#@cli nn_layer_append : name,in0,in1
-#@cli : Add an 'append' layer to the network.
-nn_layer_append : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "${"is_variable_name $3"}
-  e[^-1] "[nn_lib] Add 'append' layer '$1', with inputs '$2' and '$3'."
-  if s1=[$_nn_$2_out_size];s2=[$_nn_$3_out_size];s1[0,3]!=s2[0,3]
-    error "nn_layer_append: Cannot append inputs $2("$_nn_$2_out_size") and $3("$_nn_$3_out_size") together."
-  fi
-  _nn_$1_out_size={[$_nn_$2_out_size]+[0,0,0,[$_nn_$3_out_size][3]]}
-  _nn_forward.="begin(nn_layer_append_init_forward($1,$2,$3));"\
-               "nn_layer_append_forward($1,$2,$3);"
-  _nn_backward..="nn_layer_append_backward($1,$2,$3);"
-  _nn_init.="$0 $*;"
-
-#@cli nn_layer_avgpool2d : name,in
-#@cli : Add a 'avgpool2d' layer (2d average pooling) to the network.
-nn_layer_avgpool2d : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
-  e[^-1] "[nn_lib] Add 'avgpool2d' layer '$1', with input '$2'."
-  _nn_$1_out_size={s=[$_nn_$2_out_size];[int(s[0]/2),int(s[1]/2),1,s[3]]}
-  _nn_forward.="begin(nn_layer_avgpool2d_init_forward($1,$2));"\
-               "nn_layer_avgpool2d_forward($1,$2);"
-  _nn_backward..="nn_layer_avgpool2d_backward($1,$2);"
-  _nn_init.="$0 $*;"
-
-#@cli nn_layer_batchnorm : name,in,learning_mode.
-#@cli : Add a 'batchnorm' layer to the network.
-#@cli : 'learning_mode' can be { 0=no parameters learnt | 1=gamma-only | 2=beta-only | 3=gamma & beta}.
-nn_layer_batchnorm : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint(${3=0}) && inrange($3,0,3)"
-  s0,s1,s2,s3="no parameters","gamma-only","beta-only","gamma & beta"
-  e[^-1] "[nn_lib] Add 'batchnorm' layer '$1' to the network, with input '$2' and learning mode '"${s$3}"'."
-  _nn_$1_out_size=$_nn_$2_out_size
-  if !isint($$1) 6,{prod($_nn_$2_out_size)} f. nan,nan,nan,nan,1,0 nm. $1 fi
-  _nn_forward.="begin(nn_layer_batchnorm_init_forward($1,$2));"\
-               "nn_layer_batchnorm_forward($1,$2);"
-  _nn_backward..="begin(nn_layer_batchnorm_init_backward($1,$2));"\
-                 "nn_layer_batchnorm_backward($1,$2,$3);"\
-                 "end_t(nn_layer_batchnorm_end_t_backward($1));"\
-                 "end(nn_layer_batchnorm_end_backward($1));"
-  _nn_update..="end(nn_layer_batchnorm_update($1,$3));"
-  _nn_init.="$0 $*;"
-  _nn_parameters.="$1;"
-
-#@cli nn_layer_clone : name0,name1,in
-#@cli : Add a 'clone' layer to the network.
-nn_layer_clone : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "${"is_variable_name $3"}
-  e[^-1] "[nn_lib] Add 'clone' layer with input '$3' and outputs '$1' and '$2'."
-  _nn_$1_out_size=$_nn_$3_out_size
-  _nn_$2_out_size=$_nn_$3_out_size
-  _nn_forward.="begin(nn_layer_clone_init_forward($1,$2,$3));"\
-               "nn_layer_clone_forward($1,$2,$3);"
-  _nn_backward..="nn_layer_clone_backward($1,$2,$3);"
-  _nn_init.="$0 $*;"
-
-#@cli nn_layer_conv2d : name,in,nb_channels>0,_kernel_size>0,_stride>0,_dilation>0
-#@cli : Add a 'conv2d' layer (2D convolutional layer) to the network.
-#@cli : Default values: 'kernel_size=3', 'stride=1' and 'dilation=1'.
-nn_layer_conv2d : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "\
-                        "isint($3) && $3>0 && isint(${4=3}) && $4>0 && ${5=1}>0" skip "${6=1}"
-  e[^-1] "[nn_lib] Add 'conv2d' layer '$1', with input '$2', $3 channels, $4x$4 kernels, stride $5 and dilation $6."
-  _nn_$1_out_size={s=[$_nn_$2_out_size];[max(1,int(s[0]/$5)),max(1,int(s[1]/$5)),s[2],$3]}
-  if !isint($$1) {[$_nn_$2_out_size][3]*$4^2+1},$3 f. 4*g/(w-1) nm. $1 fi
-  _nn_forward.="begin(nn_layer_conv2d_init_forward($1,$2,$4,$5,$6));"\
-               "nn_layer_conv2d_forward($1,$2);"
-  _nn_backward..="begin(nn_layer_conv2d_init_backward($1,$2));"\
-                 "nn_layer_conv2d_backward($1,$2);"\
-                 "end(nn_layer_conv2d_end_backward($1));"
-  _nn_update..="end(nn_layer_conv2d_update($1));"
-  _nn_init.="$0 $*;"
-  _nn_parameters.="$1;"
-
-#@cli nn_layer_conv2dnl : name,in,nb_channels>0,_kernel_size>0,_stride>0,_dilation>0,_activation
-#@cli : Add a 'con2dnl' (2D convolutional layer followed by a non-linearity), to the network.
-#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1' and 'activation=leakyrelu'.
-nn_layer_conv2dnl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "\
-                          "isint($3) && $3>0 && isint(${4=3}) && $4>0 && ${5=1}>0" skip "${6=1}","${7=leakyrelu}"
-  e[^-1] "[nn_lib] Add 'conv2d+nl' layer '$1', with input '$2', $3 channels, $4x$4 kernels, "\
-         "stride $5, dilation $6 and '$7' activation."
-  nn_layer_conv2d $1_0,$2,$3,$4,$5,$6
-  nn_layer_nl $1,$1_0,$7
-
-#@cli nn_layer_fc : name,in,nb_channels>0
-#@cli : Add a 'fc' layer (fully connected layer) to the network.
-nn_layer_fc : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($3) && $3>0"
-  e[^-1] "[nn_lib] Add 'fc' layer '$1', with input '$2' and $3 channels."
-  _nn_$1_out_size=1,1,1,$3
-  if !isint($$1) {prod($_nn_$2_out_size)+1},$3 f. 4*g/(w-1) nm. $1 fi
-  _nn_forward.="begin(nn_layer_fc_init_forward($1));"\
-               "nn_layer_fc_forward($1,$2);"
-  _nn_backward..="begin(nn_layer_fc_init_backward($1));"\
-                 "nn_layer_fc_backward($1,$2);"\
-                 "end(nn_layer_fc_end_backward($1));"
-  _nn_update..="end(nn_layer_fc_update($1));"
-  _nn_init.="$0 $*;"
-  _nn_parameters.="$1;"
-
-#@cli nn_layer_fcnl : name,in,nb_neurons>0,_activation
-#@cli : Add a 'fcnl' layer (fully connected layer followed by a non-linearity), to the network.
-#@cli : Default value: 'activation=leakyrelu'.
-nn_layer_fcnl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($3) && $3>0" skip ${4=leakyrelu}
-  e[^-1] "[nn_lib] Add 'fc+nl' layer '$1' to the network, with input '$2', $3 channels and '$4' activation."
-  nn_layer_fc $1_0,$2,$3
-  nn_layer_nl $1,$1_0,$4
-
-#@cli nn_layer_nl : name,in,activation
-#@cli : Add a 'nl' layer (non-linearity) to the network.
-#@cli : Default value: 'activation=leakyrelu'.
-nn_layer_nl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"} skip ${3=leakyrelu}
-  e[^-1] "[nn_lib] Add 'nl' layer '$1', with input '$2' and '$3' activation."
-  _nn_$1_out_size=$_nn_$2_out_size
-  _nn_forward.="begin(nn_layer_nl_init_forward($1,$2));"\
-               "nn_layer_nl_forward($1,$2,$3);"
-  _nn_backward..="nn_layer_nl_backward($1,$2,$3);"
-  _nn_init.="$0 $*;"
-
-#@cli nn_layer_rename : name,in
-#@cli : Add a 'rename' layer to the network.
-nn_layer_rename : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
-  e[^-1] "[nn_lib] Add 'rename' layer '$1', with input '$2'."
-  _nn_$1_out_size=$_nn_$2_out_size
-  _nn_forward.="begin(nn_layer_rename_init_forward($1,$2));"
-  _nn_backward..="nn_layer_rename_backward($1,$2);"
-  _nn_init.="$0 $*;"
-
-#@cli nn_layer_reshape : name,in,width>0,height>0,depth>0,spectrum>0
-#@cli : Add a 'reshape' layer to the network.
-nn_layer_reshape : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
-  e[^-1] "[nn_lib] Add 'reshape' layer '$1', with input '$2' and size ($3,$4,$5,$6)."
-  _nn_$1_out_size=$3,$4,$5,$6
-  if prod($_nn_$1_out_size)!=prod($_nn_$2_out_size)
-    error "nn_layer_reshape: Cannot reshape input ("$_nn_$2_out_size") to output ("$_nn_$1_out_size")."
-  fi
-  _nn_forward.="begin(nn_layer_reshape_init_forward($1,$2,$3,$4,$5,$6));"
-  _nn_backward..="begin(nn_layer_reshape_init_backward($1,$2));"
-  _nn_init.="$0 $*;"
-
-#@cli nn_layer_split : name0,name1,in,nb_channels0
-#@cli : Add a 'split' layer to the network.
-nn_layer_split : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "${"is_variable_name $3"}
-  e[^-1] "[nn_lib] Add 'split' layer, with input '$3' and outputs '$1' and '$2'."
-  _nn_$1_out_size={[[$_nn_$3_out_size][0,3],$4]}
-  _nn_$2_out_size={[$_nn_$3_out_size]-[0,0,0,$4]}
-  _nn_forward.="begin(nn_layer_split_init_forward($1,$2,$3,$4));"\
-               "nn_layer_split_forward($1,$2,$3);"
-  _nn_backward..="nn_layer_split_backward($1,$2,$3);"
-  _nn_init.="$0 $*;"
-
-#@cli nn_loss_mse : name,in,ground_truth
-#@cli : Add a 'mse' loss to the network.
-nn_loss_mse : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
-  e[^-1] "[nn_lib] Add 'mse' loss '$1', with input '$2' and ground truth '$3'."
-  _nn_$1_out_size=1,1,1,1
-  if !isint($$1) (0,1e-3,inf,0,0) nm. $1 fi # iteration,learning_rate,batch_out,nb_decreases,nb_increases
-  _nn_backward..="begin(nn_loss_mse_init_backward($1));"\
-                 "nn_loss_mse_backward($1,$2,$3);"\
-                 "end(nn_loss_mse_end_backward($1));"
-  _nn_update..="end(nn_loss_mse_update($1));"
-  _nn_init.="$0 $*;"
-  _nn_parameters.="$1;"
 
 #------------------------------
 # Test program for FC networks.
