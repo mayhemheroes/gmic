@@ -21101,9 +21101,9 @@ run :
 #@cli : in order to use the neural network library.
 nn_lib :
   u "
-    #-------------------------------------------------
-    # Definition of the library environment variables.
-    #-------------------------------------------------
+    #---------------------------------------------------------------------------
+    # Definition of the library environment variables and convenience functions.
+    #---------------------------------------------------------------------------
     const _nb_threads_max = n;
     begin(
       nn_nb_samples = 0;
@@ -21117,6 +21117,9 @@ nn_lib :
       merge(nn_nb_threads_used,max);
       merge(nn_nb_samples,+);
     );
+
+    nn_display(L) = display(L#_out,L#_out_width,L#_out_height,L#_out_depth,L#_out_spectrum);
+    nn_display_deriv(L) = display(L#_deriv_out,L#_out_width,L#_out_height,L#_out_depth,L#_out_spectrum);
 
     #--------------------------------------------------------------
     # Definition of the activation functions and their derivatives.
@@ -21647,6 +21650,43 @@ nn_lib :
       copy(IN#_deriv_out[size(L0#_out)],L1#_deriv_out,size(L1#_out));
     );
 
+    # upsample2d : 2D upsampling.
+    #----------------------------
+    nn_layer_upsample2d_init_forward(L,IN) = (
+      const L#_out_width = 2*IN#_out_width;
+      const L#_out_height = 2*IN#_out_height;
+      const L#_out_depth = IN#_out_depth;
+      const L#_out_spectrum = IN#_out_spectrum;
+      nn_upsample2d_kernel_forward = [ 1,0,0,0 ];
+      nn_upsample2d_kernel_backward = [ 0.25,0.25,0.25,0.25 ];
+    );
+
+    nn_layer_upsample2d_forward(L,IN,interpolation) = (
+      L#_out = correlate(IN#_out,
+                         IN#_out_width,IN#_out_height,IN#_out_depth,IN#_out_spectrum,
+                         nn_upsample2d_kernel_forward,2,2,1,1,
+                         0,0,1,
+                         0,0,0,
+                         0,0,0,
+                         L#_out_width - 1,L#_out_height - 1,L#_out_depth - 1,
+                         0.5,0.5,1,
+                         1,1,1,
+                         interpolation);
+    );
+
+    nn_layer_upsample2d_backward(L,IN) = (
+      IN#_deriv_out = correlate(L#_deriv_out,
+                                L#_out_width,L#_out_height,L#_out_depth,L#_out_spectrum,
+                                nn_upsample2d_kernel_backward,2,2,1,1,
+                                0,0,1,
+                                0,0,0,
+                                0,0,0,
+                                IN#_out_width - 1,IN#_out_height - 1,IN#_out_depth - 1,
+                                2,2,1,
+                                1,1,1,
+                                0);
+    );
+
     #----------------------------------
     # Definition of the loss functions.
     #----------------------------------
@@ -21769,7 +21809,7 @@ nn_layer_append : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" 
 #@cli : Add a 'avgpool2d' layer (2d average pooling) to the network.
 nn_layer_avgpool2d : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
   e[^-1] "[nn_lib] Add 'avgpool2d' layer '$1', with input '$2'."
-  _nn_$1_out_size={s=[$_nn_$2_out_size];[int(s[0]/2),int(s[1]/2),1,s[3]]}
+  _nn_$1_out_size={s=[$_nn_$2_out_size];[int(s[0]/2),int(s[1]/2),s[2,2]]}
   _nn_forward.="begin(nn_layer_avgpool2d_init_forward($1,$2));"\
                "nn_layer_avgpool2d_forward($1,$2);"
   _nn_backward..="nn_layer_avgpool2d_backward($1,$2);"
@@ -21905,6 +21945,16 @@ nn_layer_split : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" &
   _nn_forward.="begin(nn_layer_split_init_forward($1,$2,$3,$4));"\
                "nn_layer_split_forward($1,$2,$3);"
   _nn_backward..="nn_layer_split_backward($1,$2,$3);"
+  _nn_init.="$0 $*;"
+
+#@cli nn_layer_upsample2d : name,in,_interpolation_type = { 0=nearest-neighbor | 1=linear }
+#@cli : Add a 'upsample2d' layer to the network.
+nn_layer_upsample2d : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isbool(${3=0})"
+  e[^-1] "[nn_lib] Add 'upsample2d' layer '$1', with input '$2'."
+  _nn_$1_out_size={s=[$_nn_$2_out_size];[2*s[0,2],s[2],s[3]]}
+  _nn_forward.="begin(nn_layer_upsample2d_init_forward($1,$2));"\
+               "nn_layer_upsample2d_forward($1,$2,$3);"
+  _nn_backward..="nn_layer_upsample2d_backward($1,$2);"
   _nn_init.="$0 $*;"
 
 #@cli nn_loss_mse : name,in,ground_truth
@@ -50031,21 +50081,18 @@ nn_test_conv :
 
   # Build neural network.
   #----------------------
-  nn_layer_input X,64,64,1,3
-  nn_layer_conv2dnl C1,X,3
-  e $_nn_C1_out_size
-  nn_layer_maxpool2d P,C1
-  e $_nn_P_out_size
+  nn_layer_input X,32,32,1,3
+#  nn_layer_conv2dnl C1,X,3
 
-  nn_layer_conv2dnl C2,P,3,1
-  e $_nn_C2_out_size
+  nn_layer_upsample2d U,X
 
+  nn_layer_conv2dnl C2,U,3,1
   nn_layer_rename OUT,C2
   nn_loss_mse L,OUT,Y
   sp lena,64 nm. img
   [img] nm. res
 #  noise[img] 20
-  r2dx[res] 50%
+  r2dx[img] 50%
 
   # Optimize network.
   #-------------------
@@ -50058,9 +50105,9 @@ nn_test_conv :
         X = crop(#$img); # Input
         Y = crop(#$res); # Ground-truth
         "${_nn_forward}${_nn_backward}${_nn_update}"
-        store(X,'vX',64,64,1,3);
-        store(Y,'vY',32,32,1,3);
-        store(OUT_out,'vOUT',32,32,1,3);
+        store(X,'vX',32,32,1,3);
+        store(Y,'vY',64,64,1,3);
+        store(OUT_out,'vOUT',64,64,1,3);
         run('l[] $vX $vOUT $vY r2dx 200,1 a x w. rm. endl');
 
         end(
@@ -50112,17 +50159,17 @@ nn_test :
     nn_layer_conv2dnl L10,L9,128
     nn_layer_conv2dnl L11,L10,128
     # L11 = 8x8x64
-    nn_layer_conv2d L12,L11,64,2,0.5
+    nn_layer_upsample2d L12,L11
     nn_layer_conv2dnl L13,L12,64
     nn_layer_conv2dnl L14,L13,32
     nn_layer_add L15,L14,L6_copy1
     # L15 = 16x16x32
-    nn_layer_conv2d L16,L15,32,2,0.5
+    nn_layer_upsample2d L16,L15
     nn_layer_conv2dnl L17,L16,32
     nn_layer_conv2dnl L18,L17,16
     nn_layer_add L19,L18,L3_copy1
     # L19 = 32x32x16
-    nn_layer_conv2d L20,L19,16,2,0.5
+    nn_layer_upsample2d L20,L19
     nn_layer_conv2dnl L21,L20,16
     nn_layer_conv2dnl L22,L21,1
     nn_layer_add L23,L22,X_copy1
