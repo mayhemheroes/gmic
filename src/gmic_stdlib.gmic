@@ -21105,8 +21105,8 @@ nn_lib :
     # Definition of the library environment variables and convenience functions.
     #---------------------------------------------------------------------------
     begin(
-      const nn_optimizer = isnan($_nn_optimizer)?1:$_nn_optimizer;
       const nn_is_training = isnan($_nn_is_training)?0:$_nn_is_training;
+      const nn_optimizer = isnan($_nn_optimizer)?1:$_nn_optimizer;
       const nn_iter = isnan($_nn_iter)?0:$_nn_iter;
       const nn_batch_iter = isnan($_nn_batch_iter)?0:$_nn_batch_iter;
       const nn_nb_threads_max = n;
@@ -21205,27 +21205,30 @@ nn_lib :
 
     # Global strategy to adapt learning rate regarding loss decrease/increase.
     nn_optimizer_update_loss(L) = (
+      _nb_decreases = isnan($_nn_optimizer_nb_decreases)?0:$_nn_optimizer_nb_decreases;
+      _nb_increases = isnan($_nn_optimizer_nb_increases)?0:$_nn_optimizer_nb_increases;
 
       # Compute trend: percentage of loss decrease(<0) or increase(>0).
       L#_trend = 100*(L#_out - L#_previous_out)/L#_previous_out;
 
       L#_trend>=500?( # Large loss increase -> drastically reduce learning rate
         nn_learning_rate = max(0.5*nn_learning_rate,1e-6);
-        L#_nb_increases = L#_nb_decreases = 0;
+        _nb_increases = _nb_decreases = 0;
       ):L#_trend>=0?( # Loss increase
-        ++L#_nb_increases;
-        L#_nb_decreases = 0;
-        L#_nb_increases>=2?( # Frequent loss increase -> slightly reduce learning rate
+        ++_nb_increases;
+        _nb_decreases = 0;
+        _nb_increases>=2?( # Frequent loss increase -> slightly reduce learning rate
           nn_learning_rate = max(0.9*nn_learning_rate,1e-6);
-          L#_nb_increases = 0;
+          _nb_increases = 0;
         );
       ):L#_trend<0?( # Loss decrease
-        ++L#_nb_decreases;
-        L#_nb_decreases>=4?( # Frequent loss decrease -> slightly increase learning rate
+        ++_nb_decreases;
+        _nb_decreases>=4?( # Frequent loss decrease -> slightly increase learning rate
           nn_learning_rate = min(1.15*nn_learning_rate,1);
-          L#_nb_decreases = 0;
+          _nb_decreases = 0;
         );
       );
+      run('_nn_optimizer_nb_decreases,_nn_optimizer_nb_increases=',_nb_decreases,_nb_increases);
     );
 
     #----------------
