@@ -21107,7 +21107,6 @@ nn_lib :
     begin(
       const nn_is_training = isnan($_nn_is_training)?0:$_nn_is_training;
       const nn_optimizer = isnan($_nn_optimizer)?2:$_nn_optimizer; # Adam optimizer by default
-      const nn_iter = isnan($_nn_iter)?0:$_nn_iter;
       const nn_batch_iter = isnan($_nn_batch_iter)?0:$_nn_batch_iter;
       const nn_nb_threads_max = n;
       nn_nb_samples = 0;
@@ -21194,15 +21193,21 @@ nn_lib :
     # Loss optimizers.
     #-----------------
 
+    # Stochastic gradient descent.
+    #-----------------------------
     nn_optimizer_sgd_update_layer(L,dL) = (
       L#-=nn_learning_rate*#dL;
     );
 
+    # David optimizer.
+    #-----------------
     nn_optimizer_david_update_layer(L,dL) = (
       _dt = nn_learning_rate/abs(maxabs(1e-9,#dL));
       L#-=_dt*#dL;
     );
 
+    # Adam optimizer.
+    #----------------
     const nn_optimizer_adam_beta1 = 0.9;
     const nn_optimizer_adam_beta2 = 0.999;
 
@@ -21224,6 +21229,8 @@ nn_lib :
       L#-=nn_learning_rate*L#_m/sqrt(1e-8 + L#_v);
     );
 
+    # Generic function that dispatches to each optimizer.
+    #-----------------------------------------------------
     nn_optimizer_update_layer(L,dL) = (
       !nn_optimizer?nn_optimizer_sgd_update_layer(#L,#dL):     # Stochastic gradient descent
       nn_optimizer==1?nn_optimizer_david_update_layer(#L,#dL): # David optimizer
@@ -21231,6 +21238,7 @@ nn_lib :
     );
 
     # Global strategy to adapt learning rate regarding loss decrease/increase.
+    #--------------------------------------------------------------------------
     nn_optimizer_update_learning_rate(L) = (
       !isinf(L#_previous_out)?(
         # Compute trend: percentage of loss decrease(<0) or increase(>0).
