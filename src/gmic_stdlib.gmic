@@ -21106,6 +21106,7 @@ nn_lib :
     #---------------------------------------------------------------------------
     begin(
       const nn_optimizer = isnan($_nn_optimizer)?1:$_nn_optimizer;
+      const nn_is_training = isnan($_nn_is_training)?0:$_nn_is_training;
       const nn_nb_threads_max = n;
       nn_nb_samples = 0;
     );
@@ -21200,6 +21201,7 @@ nn_lib :
       nn_optimizer==2?nn_optimizer_adam_update_layer(#L,#dL);  # Adam optimizer
     );
 
+    # Global strategy to adapt learning rate regarding loss decrease/increase.
     nn_optimizer_update_loss(L) = (
 
       # Compute trend: percentage of loss decrease(<0) or increase(>0).
@@ -21309,7 +21311,7 @@ nn_lib :
       const L#_out_depth = IN#_out_depth;
       const L#_out_spectrum = IN#_out_spectrum;
 
-      const L#_base_col = $_nn_is_training==1?0:2;
+      const L#_base_col = nn_is_training==1?0:2;
       L#_mu = crop(##L#_ind,L#_base_col,0,1,h##L#_ind);
       L#_sigma = sqrt(crop(##L#_ind,L#_base_col + 1,0,1,h##L#_ind));
       isnan(L#_mu[0])?(L#_mu = 0; L#_sigma = 1);
@@ -21973,7 +21975,7 @@ nn_layer_upsample2d : check ${"is_variable_name $1"}" && "${"is_variable_name $2
 nn_loss_mse : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
   e[^-1] "[nn_lib] Add 'mse' loss '$1', with input '$2' and ground truth '$3'."
   _nn_$1_out_size=1,1,1,1
-  if !isint($$1) (0,1e-3,inf,0,0) nm. $1 fi # iteration,learning_rate,batch_out,nb_decreases,nb_increases
+  if !isint($$1) (0,1e-6,inf,0,0) nm. $1 fi # iteration,learning_rate,batch_out,nb_decreases,nb_increases
   _nn_backward..="begin(nn_loss_mse_init_backward($1));"\
                  "nn_loss_mse_backward($1,$2,$3);"\
                  "end(nn_loss_mse_end_backward($1));"
