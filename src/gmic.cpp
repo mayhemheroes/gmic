@@ -2246,8 +2246,10 @@ double gmic::mp_dollar(const char *const str,
 
   double res = cimg::type<double>::nan();
   CImg<char> value = gmic_instance.get_variable(str,variables_sizes,&images_names);
-  char end;
-  if (value && std::sscanf(value,"%lf%c",&res,&end)!=1) res = cimg::type<double>::nan();
+  if (value) {
+    char end;
+    if (std::sscanf(value,"%lf%c",&res,&end)!=1) res = 0;
+  }
   return res;
 }
 

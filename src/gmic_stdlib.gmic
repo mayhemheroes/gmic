@@ -21203,19 +21203,25 @@ nn_lib :
       L#-=_dt*#dL;
     );
 
+    const nn_optimizer_adam_beta1 = 0.9;
+    const nn_optimizer_adam_beta2 = 0.999;
+
     nn_optimizer_adam_update_layer(L,dL) = (
       L#_name_m = '_nn_#L#_m';
       L#_name_v = '_nn_#L#_v';
       isnan($_nn_#L#_is_mv)?(
-        L#_m = vector(#size(L#_out));
-        L#_v = vector(#size(L#_out));
+         L#_m = dL#;
+         L#_v = dL#^2;
       ):(
-        L#_m = get(L#_name_m,size(L#_out));
-        L#_v = get(L#_name_v,size(L#_out));
+        L#_m = lerp(get(L#_name_m,size(L#)),dL,nn_optimizer_adam_beta1);
+        L#_v = lerp(get(L#_name_v,size(L#)),dL^2,nn_optimizer_adam_beta2);
       );
-      store(L#_m,L#_name_m,L#_out_width,L#_out_height,L#_out_depth,L#_out_spectrum);
-      store(L#_v,L#_name_v,L#_out_width,L#_out_height,L#_out_depth,L#_out_spectrum);
+      store(L#_m,L#_name_m,size(L#));
+      store(L#_v,L#_name_v,size(L#));
       run('_nn_#L#_is_mv=1');
+
+      L#_v+=1e-8;
+      L#-=nn_learning_rate*L#_m/L#_v;
     );
 
     nn_optimizer_update_layer(L,dL) = (
@@ -50095,14 +50101,14 @@ nn_test_fc :
   nn_layer_input X,2
   nn_layer_batchnorm BN0,X
   nn_layer_fcnl FC1,BN0,100
-  nn_layer_fcnl FC2,FC1,50,sqrt
-  nn_layer_fcnl FC3,FC2,30,sqrt
-  nn_layer_fcnl FC4,FC3,30,linear
+  nn_layer_fcnl FC2,FC1,50
+  nn_layer_fcnl FC3,FC2,30
+  nn_layer_fcnl FC4,FC3,30
   nn_layer_fc FC5,FC4,3
   nn_layer_rename OUT,FC5
   nn_loss_mse L,OUT,Y
   sp lena,128 nm. img
-  _nn_optimizer=1
+  _nn_optimizer=2
 
   # Optimize network.
   #-------------------
