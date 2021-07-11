@@ -21106,7 +21106,7 @@ nn_lib :
     #---------------------------------------------------------------------------
     begin(
       const nn_is_training = isnan($_nn_is_training)?0:$_nn_is_training;
-      const nn_optimizer = isnan($_nn_optimizer)?1:$_nn_optimizer;
+      const nn_optimizer = isnan($_nn_optimizer)?2:$_nn_optimizer; # Adam optimizer by default
       const nn_iter = isnan($_nn_iter)?0:$_nn_iter;
       const nn_batch_iter = isnan($_nn_batch_iter)?0:$_nn_batch_iter;
       const nn_nb_threads_max = n;
@@ -21234,7 +21234,6 @@ nn_lib :
       _nb_increases = isnan($_nn_optimizer_nb_increases)?0:$_nn_optimizer_nb_increases;
 
       !isinf(L#_previous_out)?(
-
         # Compute trend: percentage of loss decrease(<0) or increase(>0).
         _trend = L#_out - L#_previous_out)/max(1e-8,L#_previous_out;
         _trend>=0.5?( # Large loss increase -> drastically reduce learning rate
@@ -50106,7 +50105,6 @@ nn_test_fc :
   nn_layer_rename OUT,FC5
   nn_loss_mse L,OUT,Y
   sp lena,128 nm. img
-  _nn_optimizer=2
 
   # Optimize network.
   #-------------------
@@ -50161,7 +50159,6 @@ nn_test_conv :
   nn_loss_mse L,OUT,Y
   sp lena,32 nm. img
   [img] nm. res
-  _nn_optimizer=2
 
   # Optimize network.
   #-------------------
