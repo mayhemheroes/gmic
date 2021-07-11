@@ -21181,25 +21181,48 @@ nn_lib :
     # Loss optimizers.
     #-----------------
 
-    nn_optimizer_sgd_update_parameters(params,params_deriv) = (
-      params-=nn_learning_rate*params_deriv;
+    nn_optimizer_sgd_update_layer(L,dL) = (
+      L#-=nn_learning_rate*#dL;
     );
 
-    nn_optimizer_david_update_parameters(params,params_deriv) = (
-      _dt = nn_learning_rate/abs(maxabs(1e-9,params_deriv));
-      params-=_dt*params_deriv;
+    nn_optimizer_david_update_layer(L,dL) = (
+      _dt = nn_learning_rate/abs(maxabs(1e-9,#dL));
+      L#-=_dt*#dL;
     );
 
-    nn_optimizer_adam_update_parameters(params,params_deriv) = (
-      0
+    nn_optimizer_adam_update_layer(L,dL) = (
+      0;
     );
 
-    nn_optimizer_update_parameters(params,params_deriv) = (
-      !nn_optimizer?nn_optimizer_sgd_update_parameters(params,params_deriv):     # Stochastic gradient descent
-      nn_optimizer==1?nn_optimizer_david_update_parameters(params,params_deriv): # David optimizer
-      nn_optimizer==2?nn_optimizer_adam_update_parameters(params,params_deriv);  # Adam optimizer
+    nn_optimizer_update_layer(L,dL) = (
+      !nn_optimizer?nn_optimizer_sgd_update_layer(#L,#dL):     # Stochastic gradient descent
+      nn_optimizer==1?nn_optimizer_david_update_layer(#L,#dL): # David optimizer
+      nn_optimizer==2?nn_optimizer_adam_update_layer(#L,#dL);  # Adam optimizer
     );
 
+    nn_optimizer_update_loss(L) = (
+
+      # Compute trend: percentage of loss decrease(<0) or increase(>0).
+      L#_trend = 100*(L#_out - L#_previous_out)/L#_previous_out;
+
+      L#_trend>=500?( # Large loss increase -> drastically reduce learning rate
+        nn_learning_rate = max(0.5*nn_learning_rate,1e-6);
+        L#_nb_increases = L#_nb_decreases = 0;
+      ):L#_trend>=0?( # Loss increase
+        ++L#_nb_increases;
+        L#_nb_decreases = 0;
+        L#_nb_increases>=2?( # Frequent loss increase -> slightly reduce learning rate
+          nn_learning_rate = max(0.9*nn_learning_rate,1e-6);
+          L#_nb_increases = 0;
+        );
+      ):L#_trend<0?( # Loss decrease
+        ++L#_nb_decreases;
+        L#_nb_decreases>=4?( # Frequent loss decrease -> slightly increase learning rate
+          nn_learning_rate = min(1.15*nn_learning_rate,1);
+          L#_nb_decreases = 0;
+        );
+      );
+    );
 
     #----------------
     # Network layers.
@@ -21360,13 +21383,12 @@ nn_lib :
         draw(##L#_ind,L#_in_mean,2,0,0,0,1,h##L#_ind,1,1,momentum); # Global mean and variance
         draw(##L#_ind,L#_in_variance,3,0,0,0,1,h##L#_ind,1,1,momentum);
       );
-
       learning_mode&1?(
-        nn_optimizer_update_parameters(L#_gamma,L#_batch_deriv_gamma);
+        nn_optimizer_update_layer(L#_gamma,L#_batch_deriv_gamma);
         draw(##L#_ind,L#_gamma,4,0,0,0,1,h##L#_ind);
       );
       learning_mode&2?(
-        nn_optimizer_update_parameters(L#_beta,L#_batch_deriv_beta);
+        nn_optimizer_update_layer(L#_beta,L#_batch_deriv_beta);
         draw(##L#_ind,L#_beta,5,0,0,0,1,h##L#_ind);
       );
     );
@@ -21493,8 +21515,8 @@ nn_lib :
     );
 
     nn_layer_conv2d_update(L) = (
-      nn_optimizer_update_parameters(L#_weights,L#_batch_deriv_weights);
-      nn_optimizer_update_parameters(L#_biases,L#_batch_deriv_biases);
+      nn_optimizer_update_layer(L#_weights,L#_batch_deriv_weights);
+      nn_optimizer_update_layer(L#_biases,L#_batch_deriv_biases);
       draw(##L#_ind,L#_weights,0,0,0,0,w##L#_ind - 1,h##L#_ind);
       draw(##L#_ind,L#_biases,w##L#_ind - 1,0,0,0,1,h##L#_ind);
     );
@@ -21538,8 +21560,8 @@ nn_lib :
     );
 
     nn_layer_fc_update(L) = (
-      nn_optimizer_update_parameters(L#_weights,L#_batch_deriv_weights);
-      nn_optimizer_update_parameters(L#_biases,L#_batch_deriv_biases);
+      nn_optimizer_update_layer(L#_weights,L#_batch_deriv_weights);
+      nn_optimizer_update_layer(L#_biases,L#_batch_deriv_biases);
       draw(##L#_ind,L#_weights,0,0,0,0,w##L#_ind - 1,h##L#_ind);
       draw(##L#_ind,L#_biases,w##L#_ind - 1,0,0,0,1,h##L#_ind);
     );
@@ -21726,30 +21748,10 @@ nn_lib :
       const L#_ind = $L#;
       L#_iteration = i[##L#_ind,0];
       nn_learning_rate = i[##L#_ind,1];
-      L#_previous_batch_out = i[##L#_ind,2];
+      L#_previous_out = i[##L#_ind,2];
       L#_nb_decreases = i[##L#_ind,3];
       L#_nb_increases = i[##L#_ind,4];
-
-      # Compute trend: percentage of loss decrease(<0) or increase(>0).
-      L#_trend = 100*(L#_batch_out - L#_previous_batch_out)/L#_previous_batch_out;
-
-      L#_trend>=500?( # Large loss increase -> drastically reduce learning rate
-        nn_learning_rate = max(0.5*nn_learning_rate,1e-6);
-        L#_nb_increases = L#_nb_decreases = 0;
-      ):L#_trend>=0?( # Loss increase
-        ++L#_nb_increases;
-        L#_nb_decreases = 0;
-        L#_nb_increases>=2?( # Frequent loss increase -> slightly reduce learning rate
-          nn_learning_rate = max(0.9*nn_learning_rate,1e-6);
-          L#_nb_increases = 0;
-        );
-      ):L#_trend<0?( # Loss decrease
-        ++L#_nb_decreases;
-        L#_nb_decreases>=4?( # Frequent loss decrease -> slightly increase learning rate
-          nn_learning_rate = min(1.15*nn_learning_rate,1);
-          L#_nb_decreases = 0;
-        );
-      );
+      nn_optimizer_update_loss(#L);
       copy(i[##L#_ind,0],
            [ L#_iteration + 1,nn_learning_rate,L#_batch_out,L#_nb_decreases,L#_nb_increases ]);
     );
