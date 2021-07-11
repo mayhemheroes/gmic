@@ -21209,7 +21209,7 @@ nn_lib :
       _nb_increases = isnan($_nn_optimizer_nb_increases)?0:$_nn_optimizer_nb_increases;
 
       # Compute trend: percentage of loss decrease(<0) or increase(>0).
-      _trend = 100*(L#_out - L#_previous_out)/L#_previous_out;
+      _trend = 100*(L#_out - L#_previous_out)/max(1e-8,L#_previous_out);
 
       _trend>=500?( # Large loss increase -> drastically reduce learning rate
         nn_learning_rate = max(0.5*nn_learning_rate,1e-6);
@@ -50230,7 +50230,7 @@ nn_test :
           run('l[] $IN',t,' $OUT',t,' $REF',t,' c 0,255 a x w',z+1,'. 600,200,0 rm endl');
         );
         end(
-          print([ sqrt(L_out),nn_learning_rate,L_trend ]);
+          print([ sqrt(L_out),nn_learning_rate,_trend ]);
         ); I"
       rm.
     done
