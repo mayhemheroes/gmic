@@ -21138,6 +21138,20 @@ nn_lib :
     nn_activate_linear(Z) = (0);
     nn_activate_deriv_linear(Z) = (#Z = 1);
 
+    # Sqr.
+    #-----
+    nn_activation_sqr(z) = (z^2);
+    nn_activation_deriv_sqr(z) = (2*z);
+    nn_activate_sqr(Z) = (Z*=Z);
+    nn_activate_deriv_sqr(Z) = (Z*=2);
+
+    # Sqrt.
+    #------
+    nn_activation_sqrt(z) = (sqrt(abs(z)));
+    nn_activation_deriv_sqrt(z) = (0.5*sign(x)/sqrt(max(1e-8,abs(z))));
+    nn_activate_sqrt(Z) = _nn_activate_pointwise(Z,sqrt);
+    nn_activate_deriv_sqrt(Z) = _nn_activate_pointwise(Z,deriv_sqrt);
+
     # ELU: Exponential Linear Unit.
     #-------------------------------
     nn_activation_elu(z) = (z<0?exp(z) - 1:z);
@@ -50043,9 +50057,9 @@ nn_test_fc :
   nn_layer_input X,2
   nn_layer_batchnorm BN0,X
   nn_layer_fcnl FC1,BN0,100
-  nn_layer_fcnl FC2,FC1,50,leakyrelu
-  nn_layer_fcnl FC3,FC2,30,leakyrelu
-  nn_layer_fcnl FC4,FC3,30,leakyrelu
+  nn_layer_fcnl FC2,FC1,50,sqrt
+  nn_layer_fcnl FC3,FC2,30,sqrt
+  nn_layer_fcnl FC4,FC3,30,sqrt
   nn_layer_fc FC5,FC4,3
   nn_layer_rename OUT,FC5
   nn_loss_mse L,OUT,Y
