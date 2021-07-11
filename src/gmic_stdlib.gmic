@@ -21131,27 +21131,6 @@ nn_lib :
     _nn_activate_pointwise(Z,activation) = (fill(#Z,k,nn_activation_#activation(#Z[k])));
     nn_activate(Z,activation) = nn_activate_#activation(#Z);
 
-    # Linear.
-    #--------
-    nn_activation_linear(z) = (z);
-    nn_activation_deriv_linear(z) = (1);
-    nn_activate_linear(Z) = (0);
-    nn_activate_deriv_linear(Z) = (#Z = 1);
-
-    # Sqr: Square.
-    #-------------
-    nn_activation_sqr(z) = (z^2);
-    nn_activation_deriv_sqr(z) = (2*z);
-    nn_activate_sqr(Z) = (Z*=Z);
-    nn_activate_deriv_sqr(Z) = (Z*=2);
-
-    # Sqrt: Sqrt(|z|).
-    #-----------------
-    nn_activation_sqrt(z) = (sqrt(abs(z)));
-    nn_activation_deriv_sqrt(z) = (0.5*sign(x)/sqrt(max(1e-8,abs(z))));
-    nn_activate_sqrt(Z) = _nn_activate_pointwise(Z,sqrt);
-    nn_activate_deriv_sqrt(Z) = _nn_activate_pointwise(Z,deriv_sqrt);
-
     # ELU: Exponential Linear Unit.
     #-------------------------------
     nn_activation_elu(z) = (z<0?exp(z) - 1:z);
@@ -21173,6 +21152,13 @@ nn_lib :
     nn_activate_leakyrelu(Z) = _nn_activate_pointwise(Z,leakyrelu);
     nn_activate_deriv_leakyrelu(Z) = _nn_activate_pointwise(Z,deriv_leakyrelu);
 
+    # Linear.
+    #--------
+    nn_activation_linear(z) = (z);
+    nn_activation_deriv_linear(z) = (1);
+    nn_activate_linear(Z) = (0);
+    nn_activate_deriv_linear(Z) = (#Z = 1);
+
     # RELU: Rectified Linear Unit.
     #------------------------------
     nn_activation_relu(z) = (z<0?0:z);
@@ -21186,6 +21172,20 @@ nn_lib :
     nn_activation_deriv_sigmoid(z) = (_nn_sig = nn_activation_sigmoid(z); _nn_sig*(1-_nn_sig));
     nn_activate_sigmoid(Z) = _nn_activate_pointwise(Z,sigmoid);
     nn_activate_deriv_sigmoid(Z) = _nn_activate_pointwise(Z,deriv_sigmoid);
+
+    # Sqr: Square.
+    #-------------
+    nn_activation_sqr(z) = (z^2);
+    nn_activation_deriv_sqr(z) = (2*z);
+    nn_activate_sqr(Z) = (Z*=Z);
+    nn_activate_deriv_sqr(Z) = (Z*=2);
+
+    # Sqrt: Sqrt(|z|).
+    #-----------------
+    nn_activation_sqrt(z) = (sqrt(abs(z)));
+    nn_activation_deriv_sqrt(z) = (0.5*sign(x)/sqrt(max(1e-8,abs(z))));
+    nn_activate_sqrt(Z) = _nn_activate_pointwise(Z,sqrt);
+    nn_activate_deriv_sqrt(Z) = _nn_activate_pointwise(Z,deriv_sqrt);
 
     # Tanh.
     #------
