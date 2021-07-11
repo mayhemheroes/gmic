@@ -21154,8 +21154,6 @@ nn_lib :
 
     # Linear.
     #--------
-    nn_activation_linear(z) = (z);
-    nn_activation_deriv_linear(z) = (1);
     nn_activate_linear(Z) = (0);
     nn_activate_deriv_linear(Z) = (#Z = 1);
 
@@ -21173,10 +21171,20 @@ nn_lib :
     nn_activate_sigmoid(Z) = _nn_activate_pointwise(Z,sigmoid);
     nn_activate_deriv_sigmoid(Z) = _nn_activate_pointwise(Z,deriv_sigmoid);
 
+    # Softmax.
+    #----------
+    nn_activate_softmax(Z) = (
+      Z-=max(Z);
+      Z = exp(Z);
+      Z/=sum(Z);
+    );
+
+    nn_activate_deriv_softmax(Z) = (
+      0; # TODO!
+    );
+
     # Sqr: Square.
     #-------------
-    nn_activation_sqr(z) = (z^2);
-    nn_activation_deriv_sqr(z) = (2*z);
     nn_activate_sqr(Z) = (Z*=Z);
     nn_activate_deriv_sqr(Z) = (Z*=2);
 
@@ -50059,7 +50067,7 @@ nn_test_fc :
   nn_layer_fcnl FC1,BN0,100
   nn_layer_fcnl FC2,FC1,50,sqrt
   nn_layer_fcnl FC3,FC2,30,sqrt
-  nn_layer_fcnl FC4,FC3,30,sqrt
+  nn_layer_fcnl FC4,FC3,30,linear
   nn_layer_fc FC5,FC4,3
   nn_layer_rename OUT,FC5
   nn_loss_mse L,OUT,Y
