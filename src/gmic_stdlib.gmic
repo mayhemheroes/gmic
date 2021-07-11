@@ -21181,24 +21181,25 @@ nn_lib :
     # Loss optimizers.
     #-----------------
 
-    nn_optimizer_sgd_update(params,params_deriv) = (
+    nn_optimizer_sgd_update_parameters(params,params_deriv) = (
       params-=nn_learning_rate*params_deriv;
     );
 
-    nn_optimizer_david_update(params,params_deriv) = (
+    nn_optimizer_david_update_parameters(params,params_deriv) = (
       _dt = nn_learning_rate/abs(maxabs(1e-9,params_deriv));
       params-=_dt*params_deriv;
     );
 
-    nn_optimizer_adam_update(params,params_deriv) = (
+    nn_optimizer_adam_update_parameters(params,params_deriv) = (
       0
     );
 
-    nn_optimizer_update(params,params_deriv) = (
-      !nn_optimizer?nn_optimizer_sgd_update(params,params_deriv):     # Stochastic gradient descent
-      nn_optimizer==1?nn_optimizer_david_update(params,params_deriv): # David optimizer
-      nn_optimizer==2?nn_optimizer_adam_update(params,params_deriv);  # Adam optimizer
+    nn_optimizer_update_parameters(params,params_deriv) = (
+      !nn_optimizer?nn_optimizer_sgd_update_parameters(params,params_deriv):     # Stochastic gradient descent
+      nn_optimizer==1?nn_optimizer_david_update_parameters(params,params_deriv): # David optimizer
+      nn_optimizer==2?nn_optimizer_adam_update_parameters(params,params_deriv);  # Adam optimizer
     );
+
 
     #----------------
     # Network layers.
@@ -21361,11 +21362,11 @@ nn_lib :
       );
 
       learning_mode&1?(
-        nn_optimizer_update(L#_gamma,L#_batch_deriv_gamma);
+        nn_optimizer_update_parameters(L#_gamma,L#_batch_deriv_gamma);
         draw(##L#_ind,L#_gamma,4,0,0,0,1,h##L#_ind);
       );
       learning_mode&2?(
-        nn_optimizer_update(L#_beta,L#_batch_deriv_beta);
+        nn_optimizer_update_parameters(L#_beta,L#_batch_deriv_beta);
         draw(##L#_ind,L#_beta,5,0,0,0,1,h##L#_ind);
       );
     );
@@ -21492,8 +21493,8 @@ nn_lib :
     );
 
     nn_layer_conv2d_update(L) = (
-      nn_optimizer_update(L#_weights,L#_batch_deriv_weights);
-      nn_optimizer_update(L#_biases,L#_batch_deriv_biases);
+      nn_optimizer_update_parameters(L#_weights,L#_batch_deriv_weights);
+      nn_optimizer_update_parameters(L#_biases,L#_batch_deriv_biases);
       draw(##L#_ind,L#_weights,0,0,0,0,w##L#_ind - 1,h##L#_ind);
       draw(##L#_ind,L#_biases,w##L#_ind - 1,0,0,0,1,h##L#_ind);
     );
@@ -21537,8 +21538,8 @@ nn_lib :
     );
 
     nn_layer_fc_update(L) = (
-      nn_optimizer_update(L#_weights,L#_batch_deriv_weights);
-      nn_optimizer_update(L#_biases,L#_batch_deriv_biases);
+      nn_optimizer_update_parameters(L#_weights,L#_batch_deriv_weights);
+      nn_optimizer_update_parameters(L#_biases,L#_batch_deriv_biases);
       draw(##L#_ind,L#_weights,0,0,0,0,w##L#_ind - 1,h##L#_ind);
       draw(##L#_ind,L#_biases,w##L#_ind - 1,0,0,0,1,h##L#_ind);
     );
