@@ -21232,31 +21232,27 @@ nn_lib :
 
     # Global strategy to adapt learning rate regarding loss decrease/increase.
     nn_optimizer_update_learning_rate(L) = (
-      _nb_decreases = isnan($_nn_optimizer_nb_decreases)?0:$_nn_optimizer_nb_decreases;
-      _nb_increases = isnan($_nn_optimizer_nb_increases)?0:$_nn_optimizer_nb_increases;
-
       !isinf(L#_previous_out)?(
         # Compute trend: percentage of loss decrease(<0) or increase(>0).
-        _trend = (L#_out - L#_previous_out)/max(1e-8,L#_previous_out);
-        _trend>=0.5?( # Large loss increase -> drastically reduce learning rate
+        L#_trend = (L#_out - L#_previous_out)/max(1e-8,L#_previous_out);
+        L#_trend>=0.5?( # Large loss increase -> drastically reduce learning rate
           nn_learning_rate = max(0.5*nn_learning_rate,1e-6);
-          _nb_increases = _nb_decreases = 0;
-        ):_trend>=0?( # Loss increase
+          _nb_increases = L#_nb_decreases = 0;
+        ):L#_trend>=0?( # Loss increase
           ++_nb_increases;
-          _nb_decreases = 0;
+          L#_nb_decreases = 0;
           _nb_increases>=2?( # Frequent loss increase -> slightly reduce learning rate
             nn_learning_rate = max(0.9*nn_learning_rate,1e-6);
             _nb_increases = 0;
           );
-        ):_trend<0?( # Loss decrease
-          ++_nb_decreases;
-          _nb_decreases>=4?( # Frequent loss decrease -> slightly increase learning rate
+        ):L#_trend<0?( # Loss decrease
+          ++L#_nb_decreases;
+          L#_nb_decreases>=4?( # Frequent loss decrease -> slightly increase learning rate
             nn_learning_rate = min(1.15*nn_learning_rate,1);
-            _nb_decreases = 0;
+            L#_nb_decreases = 0;
           );
         );
       );
-      run('_nn_optimizer_nb_decreases,_nn_optimizer_nb_increases=',_nb_decreases,_nb_increases);
     );
 
     #----------------
@@ -21805,8 +21801,10 @@ nn_lib :
       L#_iteration = i[##L#_ind,0];
       nn_learning_rate = i[##L#_ind,1];
       L#_previous_out = i[##L#_ind,2];
+      L#_nb_decreases = i[##L#_ind,3];
+      L#_nb_increases = i[##L#_ind,4];
       nn_optimizer_update_learning_rate(#L);
-      copy(i[##L#_ind,0],[ L#_iteration + 1,nn_learning_rate,L#_batch_out ]);
+      copy(i[##L#_ind,0],[ L#_iteration + 1,nn_learning_rate,L#_batch_out,L#_nb_decreases,L#_nb_increases ]);
     );
     "
 
@@ -22036,7 +22034,7 @@ nn_layer_upsample2d : check ${"is_variable_name $1"}" && "${"is_variable_name $2
 nn_loss_mse : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
   e[^-1] "[nn_lib] Add 'mse' loss '$1', with input '$2' and ground truth '$3'."
   _nn_$1_out_size=1,1,1,1
-  if !isint($$1) (0,1e-4,inf) nm. $1 fi # iteration,learning_rate,batch_out
+  if !isint($$1) (0,1e-4,inf,0,0) nm. $1 fi # iteration,learning_rate,batch_out,nb_decreases,nb_increases
   _nn_backward..="begin(nn_loss_mse_init_backward($1));"\
                  "nn_loss_mse_backward($1,$2,$3);"\
                  "end(nn_loss_mse_end_backward($1));"
@@ -50132,7 +50130,7 @@ nn_test_fc :
         Y = batch[2,3]; "\ # Ground-truth
         ${_nn_forward}${_nn_backward}${_nn_update}"
         end(
-          !($_nn_batch_iter%20)?print([L_out,nn_learning_rate]);
+          !($_nn_batch_iter%20)?print([L_out,nn_learning_rate,L_trend]);
         ); I"
     done
     rm[batch]
@@ -50279,7 +50277,7 @@ nn_test :
           run('l[] $IN',t,' $OUT',t,' $REF',t,' c 0,255 a x w',z+1,'. 600,200,0 rm endl');
         );
         end(
-          print([ sqrt(L_out),nn_learning_rate,_trend ]);
+          print([ sqrt(L_out),nn_learning_rate,L_trend ]);
         ); I"
       rm.
     done
