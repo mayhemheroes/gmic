@@ -21249,7 +21249,7 @@ nn_lib :
       !isinf(L#_previous_out)?(
         # Compute trend: percentage of loss decrease(<0) or increase(>0).
         L#_trend = (L#_out - L#_previous_out)/max(1e-8,L#_previous_out);
-        L#_trend>=0.5?( # Large loss increase -> drastically reduce learning rate
+        L#_trend>=0.3?( # Large loss increase -> drastically reduce learning rate
           L#_learning_rate = max(0.5*L#_learning_rate,1e-6);
           L#_nb_increases = L#_nb_decreases = 0;
         ):L#_trend>=0?( # Loss increase
@@ -21818,7 +21818,7 @@ nn_lib :
       L#_nb_decreases = i[##L#_ind,3];
       L#_nb_increases = i[##L#_ind,4];
       nn_optimizer_update_learning_rate(#L);
-      copy(i[##L#_ind,0],[ L#_iteration + 1,L#_learning_rate,L#_batch_out,L#_nb_decreases,L#_nb_increases ]);
+      copy(i[##L#_ind,0],[ L#_iteration + 1,L#_learning_rate,L#_out,L#_nb_decreases,L#_nb_increases ]);
       nn_learning_rate = L#_learning_rate;
     );
     "
@@ -50146,7 +50146,7 @@ nn_test_fc :
         Y = batch[2,3]; "\ # Ground-truth
         ${_nn_forward}${_nn_backward}${_nn_update}"
         end(
-          !($_nn_batch_iter%20)?print([L_out,nn_learning_rate,L_trend]);
+          !($_nn_batch_iter%1)?print([L_out,nn_learning_rate,L_trend]);
         ); I"
     done
     rm[batch]
