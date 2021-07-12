@@ -900,9 +900,11 @@ reference : skip "${2=}"
 "* '_(comment) expr' just returns expression 'expr' (useful for inserting inline comments in math expressions)."\n\
 "* 'run('pipeline')' executes the specified G'MIC pipeline as if it was called outside the currently evaluated "\
 "expression."\n\
-"* 'store(A,\\'varname\\',_w,_h,_d,_s,_is_compressed)' transfers the data of vector 'A' as a "\
-"`w x h x d x s` image to the G'MIC variable '$varname'. Thus, the data becomes available outside the math expression "\
-"(that is equivalent to using the regular command ''store'', but directly in the math expression)."\n\
+"* 'set(A,\\'variable_name\\')' set the G'MIC variable '$variable_name' with the value of expression 'A'. If 'A' is"\
+" a vector-valued variable, it is assumed to encode a string."\n\
+"* 'store(A,\\'variable_name\\',_w,_h,_d,_s,_is_compressed)' transfers the data of vector 'A' as a "\
+"`w x h x d x s` image to the G'MIC variable '$variable_name'. Thus, the data becomes available outside the math "\
+"expression (that is equivalent to using the regular command ''store'', but directly in the math expression)."\n\
 "* 'get(\\'variable_name\\',_size,_return_as_string)' returns the value of the specified variable, as a vector of "\
 "'size' values, or as a scalar (if 'size' is zero or not specified)."\n\
 "* 'name(_#ind,size)' returns a vector of size 'size', whose values are the characters codes of the name of image "\
@@ -8352,7 +8354,7 @@ update_tutorial_html : check "isbool(${1=0})"
 
   # Build directory structure.
   e[] " > Build directory structure."
-  x "mkdir -p images"
+  x "mkdir -p images scripts"
   files 5,$path_tutorial/*
   l[]
     ({'${}'}:y) s -,{','}
@@ -8363,6 +8365,8 @@ update_tutorial_html : check "isbool(${1=0})"
         if isdir(['$file']) files 5,$file/* ({'${}'}:y) s. -,{','} # Folder -> Recursively add files
         elif s=['$ext'];s=='png'||s=='jpg'||s=='jpeg'||s=='gif'||s=='mp4'||s=='svg'
           x "cp -f \""$file"\" images/" # Image/videos: Copy to sub-folder 'images/'
+        elif s=['$ext'];s=='gmic'
+          x "cp -f \""$file"\" scripts/" # Scripts: Copy to sub-folder 'scripts/'
         elif s=['$ext'];s=='gmd' # G'MIC Markdown -> Copy to current folder './'
           it[] $file
           ot. $basename rm.
@@ -21090,22 +21094,27 @@ run :
 #@cli : End a 'do...while' block and go back to associated 'do' if specified condition holds.
 #@cli : 'condition' is a mathematical expression, whose evaluation is interpreted as { 0=false | other=true }.
 
-#-------------------------------
+#-------------------------
 #
-#@cli :: Neural Network Library
+#@cli :: Neural Networks
 #
-#-------------------------------
+#-------------------------
 
 #@cli nn_lib :
-#@cli : Return the list of library functions that has to be included in a math expression,
-#@cli : in order to use the neural network library.
+#@cli : Return the list of library functions that has to be included in a math expression,\
+# in order to use the neural network library.
 nn_lib :
   u "
     #---------------------------------------------------------------------------
     # Definition of the library environment variables and convenience functions.
     #---------------------------------------------------------------------------
-    const _nb_threads_max = n;
     begin(
+      const nn_is_training = isnan($_nn_is_training)?0:$_nn_is_training;
+      const nn_optimizer = isnan($_nn_optimizer)?2:$_nn_optimizer; # Adam optimizer by default
+      const nn_batch_iter = isnan($_nn_batch_iter)?0:$_nn_batch_iter;
+      const nn_nb_threads_max = n;
+
+      nn_learning_rate = isnan($_nn_learning_rate)?1e-4:$_nn_learning_rate;
       nn_nb_samples = 0;
     );
 
@@ -21116,23 +21125,17 @@ nn_lib :
     end(
       merge(nn_nb_threads_used,max);
       merge(nn_nb_samples,+);
+      set(nn_learning_rate,'_nn_learning_rate');
     );
 
     nn_display(L) = display(L#_out,L#_out_width,L#_out_height,L#_out_depth,L#_out_spectrum);
     nn_display_deriv(L) = display(L#_deriv_out,L#_out_width,L#_out_height,L#_out_depth,L#_out_spectrum);
 
-    #--------------------------------------------------------------
-    # Definition of the activation functions and their derivatives.
-    #--------------------------------------------------------------
+    #--------------------------------------------
+    # Activation functions and their derivatives.
+    #--------------------------------------------
     _nn_activate_pointwise(Z,activation) = (fill(#Z,k,nn_activation_#activation(#Z[k])));
     nn_activate(Z,activation) = nn_activate_#activation(#Z);
-
-    # Linear.
-    #--------
-    nn_activation_linear(z) = (z);
-    nn_activation_deriv_linear(z) = (1);
-    nn_activate_linear(Z) = (0);
-    nn_activate_deriv_linear(Z) = (#Z = 1);
 
     # ELU: Exponential Linear Unit.
     #-------------------------------
@@ -21155,6 +21158,11 @@ nn_lib :
     nn_activate_leakyrelu(Z) = _nn_activate_pointwise(Z,leakyrelu);
     nn_activate_deriv_leakyrelu(Z) = _nn_activate_pointwise(Z,deriv_leakyrelu);
 
+    # Linear.
+    #--------
+    nn_activate_linear(Z) = (0);
+    nn_activate_deriv_linear(Z) = (#Z = 1);
+
     # RELU: Rectified Linear Unit.
     #------------------------------
     nn_activation_relu(z) = (z<0?0:z);
@@ -21169,6 +21177,18 @@ nn_lib :
     nn_activate_sigmoid(Z) = _nn_activate_pointwise(Z,sigmoid);
     nn_activate_deriv_sigmoid(Z) = _nn_activate_pointwise(Z,deriv_sigmoid);
 
+    # Sqr: Square.
+    #-------------
+    nn_activate_sqr(Z) = (Z*=Z);
+    nn_activate_deriv_sqr(Z) = (Z*=2);
+
+    # Sqrt: sqrt(|z|).
+    #-----------------
+    nn_activation_sqrt(z) = (sqrt(abs(z)));
+    nn_activation_deriv_sqrt(z) = (0.5*sign(x)/sqrt(max(1e-8,abs(z))));
+    nn_activate_sqrt(Z) = _nn_activate_pointwise(Z,sqrt);
+    nn_activate_deriv_sqrt(Z) = _nn_activate_pointwise(Z,deriv_sqrt);
+
     # Tanh.
     #------
     nn_activation_tanh(z) = (tanh(z));
@@ -21176,9 +21196,82 @@ nn_lib :
     nn_activate_tanh(Z) = _nn_activate_pointwise(Z,tanh);
     nn_activate_deriv_tanh(Z) = _nn_activate_pointwise(Z,deriv_tanh);
 
-    #--------------------------------------------
-    # Definition of the different network layers.
-    #--------------------------------------------
+    #------------
+    # Optimizers.
+    #------------
+
+    # Stochastic gradient descent.
+    #-----------------------------
+    nn_optimizer_sgd_update_layer(L_params,dL_params) = (
+      L_params#-=nn_learning_rate*#dL_params;
+    );
+
+    # David optimizer.
+    #-----------------
+    nn_optimizer_david_update_layer(L_params,dL_params) = (
+      _dt = nn_learning_rate/abs(maxabs(1e-9,#dL_params));
+      L_params#-=_dt*#dL_params;
+    );
+
+    # Adam optimizer.
+    #----------------
+    const nn_optimizer_adam_beta1 = 0.9;
+    const nn_optimizer_adam_beta2 = 0.999;
+
+    nn_optimizer_adam_update_layer(L_params,dL_params) = (
+      begin(
+        dL_params#_name_moment1 = '_nn_#dL_params#_moment1';
+        dL_params#_name_moment2 = '_nn_#dL_params#_moment2';
+      );
+      isnan($_nn_#dL_params#_moment1)?(
+         dL_params#_moment1 = dL_params#;
+         dL_params#_moment2 = dL_params#^2;
+      ):(
+        dL_params#_moment1 = lerp(dL_params,get(dL_params#_name_moment1,size(dL_params)),nn_optimizer_adam_beta1);
+        dL_params#_moment2 = lerp(dL_params^2,get(dL_params#_name_moment2,size(dL_params)),nn_optimizer_adam_beta2);
+      );
+      store(dL_params#_moment1,dL_params#_name_moment1,size(dL_params));
+      store(dL_params#_moment2,dL_params#_name_moment2,size(dL_params));
+      L_params#-=nn_learning_rate*dL_params#_moment1/sqrt(1e-8 + dL_params#_moment2);
+    );
+
+    # Generic function that dispatches to each optimizer.
+    #-----------------------------------------------------
+    nn_optimizer_update_layer(L,dL) = (
+      !nn_optimizer?nn_optimizer_sgd_update_layer(#L,#dL):     # Stochastic gradient descent
+      nn_optimizer==1?nn_optimizer_david_update_layer(#L,#dL): # David optimizer
+      nn_optimizer==2?nn_optimizer_adam_update_layer(#L,#dL);  # Adam optimizer
+    );
+
+    # Global strategy to adapt learning rate regarding loss decrease/increase.
+    #--------------------------------------------------------------------------
+    nn_optimizer_update_learning_rate(L) = (
+      !isinf(L#_previous_out)?(
+        # Compute trend: percentage of loss decrease(<0) or increase(>0).
+        L#_trend = (L#_out - L#_previous_out)/max(1e-8,L#_previous_out);
+        L#_trend>=0.3?( # Large loss increase -> drastically reduce learning rate
+          L#_learning_rate = max(0.5*L#_learning_rate,1e-6);
+          L#_nb_increases = L#_nb_decreases = 0;
+        ):L#_trend>=0?( # Loss increase
+          ++L#_nb_increases;
+          L#_nb_decreases = 0;
+          L#_nb_increases>=2?( # Frequent loss increase -> slightly reduce learning rate
+            L#_learning_rate = max(0.9*L#_learning_rate,1e-6);
+            L#_nb_increases = 0;
+          );
+        ):L#_trend<0?( # Loss decrease
+          ++L#_nb_decreases;
+          L#_nb_decreases>=4?( # Frequent loss decrease -> slightly increase learning rate
+            L#_learning_rate = min(1.15*L#_learning_rate,1);
+            L#_nb_decreases = 0;
+          );
+        );
+      );
+    );
+
+    #----------------
+    # Network layers.
+    #----------------
 
     # add: Add two inputs.
     #---------------------
@@ -21224,7 +21317,7 @@ nn_lib :
       const L#_out_height = int(IN#_out_height/2);
       const L#_out_depth = IN#_out_depth;
       const L#_out_spectrum = IN#_out_spectrum;
-      nn_avgpool2d_kernel_forward = [ 0.25,0.25,0.25,0.25 ];
+      nn_avgpool2d_kernel_forward = vector4(0.25);
       nn_avgpool2d_kernel_backward = [ 1,0,0,0 ];
     );
 
@@ -21261,7 +21354,7 @@ nn_lib :
       const L#_out_depth = IN#_out_depth;
       const L#_out_spectrum = IN#_out_spectrum;
 
-      const L#_base_col = $_nn_is_training==1?0:2;
+      const L#_base_col = nn_is_training==1?0:2;
       L#_mu = crop(##L#_ind,L#_base_col,0,1,h##L#_ind);
       L#_sigma = sqrt(crop(##L#_ind,L#_base_col + 1,0,1,h##L#_ind));
       isnan(L#_mu[0])?(L#_mu = 0; L#_sigma = 1);
@@ -21279,8 +21372,8 @@ nn_lib :
     );
 
     nn_layer_batchnorm_init_backward(L,IN) = (
-      L#_threads_nb_samples = vector(#_nb_threads_max);
-      L#_threads_in_mean = L#_threads_in_variance = vector(#_nb_threads_max*size(IN#_out));
+      L#_threads_nb_samples = vector(#nn_nb_threads_max);
+      L#_threads_in_mean = L#_threads_in_variance = vector(#nn_nb_threads_max*size(IN#_out));
       L#_nb_samples = 0;
       L#_in_mean = L#_in_variance = vector(#size(IN#_out));
       L#_batch_deriv_gamma = vector(#size(L#_gamma));
@@ -21330,23 +21423,18 @@ nn_lib :
     nn_layer_batchnorm_update(L,learning_mode) = (
       draw(##L#_ind,L#_in_mean,0,0,0,0,1,h##L#_ind,1,1); # Update batch mean and batch variance
       draw(##L#_ind,L#_in_variance,1,0,0,0,1,h##L#_ind,1,1);
-      !$batch_iter?(
+      !$nn_batch_iter?(
         momentum = isnan(i[##L#_ind,2])?1:0.01;
         draw(##L#_ind,L#_in_mean,2,0,0,0,1,h##L#_ind,1,1,momentum); # Global mean and variance
         draw(##L#_ind,L#_in_variance,3,0,0,0,1,h##L#_ind,1,1,momentum);
       );
-
-      nn_update_parameters?(
-        learning_mode&1?(
-          L#_dt_gamma = nn_learning_rate/abs(maxabs(1e-9,L#_batch_deriv_gamma));
-          L#_gamma-=L#_dt_gamma*L#_batch_deriv_gamma;
-          draw(##L#_ind,L#_gamma,4,0,0,0,1,h##L#_ind);
-        );
-        learning_mode&2?(
-          L#_dt_beta = nn_learning_rate/abs(maxabs(1e-9,L#_batch_deriv_beta));
-          L#_beta-=L#_dt_beta*L#_batch_deriv_beta;
-          draw(##L#_ind,L#_beta,5,0,0,0,1,h##L#_ind);
-        );
+      learning_mode&1?(
+        nn_optimizer_update_layer(L#_gamma,L#_batch_deriv_gamma);
+        draw(##L#_ind,L#_gamma,4,0,0,0,1,h##L#_ind);
+      );
+      learning_mode&2?(
+        nn_optimizer_update_layer(L#_beta,L#_batch_deriv_beta);
+        draw(##L#_ind,L#_beta,5,0,0,0,1,h##L#_ind);
       );
     );
 
@@ -21472,14 +21560,10 @@ nn_lib :
     );
 
     nn_layer_conv2d_update(L) = (
-      nn_update_parameters?(
-        L#_dt_weights = nn_learning_rate/abs(maxabs(1e-9,L#_batch_deriv_weights));
-        L#_dt_biases = nn_learning_rate/abs(maxabs(1e-9,L#_batch_deriv_biases));
-        L#_weights-=L#_dt_weights*L#_batch_deriv_weights;
-        L#_biases-=L#_dt_biases*L#_batch_deriv_biases;
-        draw(##L#_ind,L#_weights,0,0,0,0,w##L#_ind - 1,h##L#_ind);
-        draw(##L#_ind,L#_biases,w##L#_ind - 1,0,0,0,1,h##L#_ind);
-      );
+      nn_optimizer_update_layer(L#_weights,L#_batch_deriv_weights);
+      nn_optimizer_update_layer(L#_biases,L#_batch_deriv_biases);
+      draw(##L#_ind,L#_weights,0,0,0,0,w##L#_ind - 1,h##L#_ind);
+      draw(##L#_ind,L#_biases,w##L#_ind - 1,0,0,0,1,h##L#_ind);
     );
 
     # fc: Fully-connected layer.
@@ -21521,14 +21605,10 @@ nn_lib :
     );
 
     nn_layer_fc_update(L) = (
-      nn_update_parameters?(
-        L#_dt_weights = nn_learning_rate/abs(maxabs(1e-9,L#_batch_deriv_weights));
-        L#_dt_biases = nn_learning_rate/abs(maxabs(1e-9,L#_batch_deriv_biases));
-        L#_weights-=L#_dt_weights*L#_batch_deriv_weights;
-        L#_biases-=L#_dt_biases*L#_batch_deriv_biases;
-        draw(##L#_ind,L#_weights,0,0,0,0,w##L#_ind - 1,h##L#_ind);
-        draw(##L#_ind,L#_biases,w##L#_ind - 1,0,0,0,1,h##L#_ind);
-      );
+      nn_optimizer_update_layer(L#_weights,L#_batch_deriv_weights);
+      nn_optimizer_update_layer(L#_biases,L#_batch_deriv_biases);
+      draw(##L#_ind,L#_weights,0,0,0,0,w##L#_ind - 1,h##L#_ind);
+      draw(##L#_ind,L#_biases,w##L#_ind - 1,0,0,0,1,h##L#_ind);
     );
 
     # input: Input image or vector data.
@@ -21624,6 +21704,27 @@ nn_lib :
       ref(L#_deriv_out,IN#_deriv_out);
     );
 
+    # # softmax : Compute the softmax function.
+    # #----------------------------------------
+    # nn_layer_softmax_init_forward(L,IN) = (
+    #   const L#_out_width = IN#_out_width;
+    #   const L#_out_height = IN#_out_height;
+    #   const L#_out_depth = IN#_out_depth;
+    #   const L#_out_spectrum = IN#_out_spectrum;
+    # );
+
+    # nn_layer_softmax_forward(L,IN) = (
+    #   L#_out = exp(IN#_out - max(IN#_out));
+    #   L#_sum = resize(correlate(L#_out,L#_out_width,L#_out_height,L#_out_depth,L#_out_spectrum,
+    #                             [ 1 ],1,1,1,1,
+    #                             0,0,3),size(L#_out),0,2);
+    #   L#_out/=L#_sum;
+    # );
+
+    # nn_layer_softmax_backward(L,IN) = (
+    #   IN#_deriv_out = L#_deriv_out;   # TODO !
+    # );
+
     # split: Split input as two outputs.
     #-----------------------------------
     nn_layer_split_init_forward(L0,L1,IN,nb_channels0) = (
@@ -21687,15 +21788,14 @@ nn_lib :
                                 0);
     );
 
-    #----------------------------------
-    # Definition of the loss functions.
-    #----------------------------------
+    #----------------
+    # Loss functions.
+    #----------------
 
     # mse : Mean-squared error.
     #--------------------------
     nn_loss_mse_init_backward(L) = (
       L#_batch_out = 0;
-      nn_update_parameters = 1;
     );
 
     nn_loss_mse_backward(L,IN,TRUTH) = (
@@ -21713,36 +21813,13 @@ nn_lib :
     nn_loss_mse_update(L) = (
       const L#_ind = $L#;
       L#_iteration = i[##L#_ind,0];
-      nn_learning_rate = i[##L#_ind,1];
-      L#_previous_batch_out = i[##L#_ind,2];
+      L#_learning_rate = i[##L#_ind,1];
+      L#_previous_out = i[##L#_ind,2];
       L#_nb_decreases = i[##L#_ind,3];
       L#_nb_increases = i[##L#_ind,4];
-
-      # Compute trend: percentage of loss decrease(<0) or increase(>0).
-      L#_trend = 100*(L#_batch_out - L#_previous_batch_out)/L#_previous_batch_out;
-
-      L#_trend>=500?( # Large loss increase -> drastically reduce learning rate
-        nn_update_parameters = 0;
-        nn_learning_rate = max(0.5*nn_learning_rate,1e-8);
-        L#_batch_out = L#_previous_batch_out;
-        L#_nb_increases = L#_nb_decreases = 0;
-      ):L#_trend>=0?( # Loss increase
-        L#_trend>=1?++L#_nb_increases;
-        L#_nb_decreases = 0;
-        L#_nb_increases>=2?( # Frequent loss increase -> slightly reduce learning rate
-          nn_learning_rate = max(0.9*nn_learning_rate,1e-8);
-          L#_nb_increases = L#_nb_decreases = 0;
-        );
-      ):L#_trend<0?( # Loss decrease
-        ++L#_nb_decreases;
-#        L#_nb_increases = 0; # <- Don't set it to 0!
-        L#_nb_decreases>=4?( # Frequent loss decrease -> slightly increase learning rate
-          nn_learning_rate = min(1.15*nn_learning_rate,1);
-          L#_nb_decreases = 0;
-        );
-      );
-      copy(i[##L#_ind,0],
-           [ L#_iteration + 1,nn_learning_rate,L#_batch_out,L#_nb_decreases,L#_nb_increases ]);
+      nn_optimizer_update_learning_rate(#L);
+      copy(i[##L#_ind,0],[ L#_iteration + 1,L#_learning_rate,L#_out,L#_nb_decreases,L#_nb_increases ]);
+      nn_learning_rate = L#_learning_rate;
     );
     "
 
@@ -21752,6 +21829,15 @@ nn_init :
   e[^-1] "[nn_lib] Initialize new network."
   _nn_forward,_nn_backward,_nn_update,_nn_parameters=
   _nn_init="$0 "
+
+#@cli nn_check_layer : name
+#@cli : Check that the layer with specified name exists in the network.
+nn_check_layer :
+  if !${"is_variable_name $1"}
+    error[0--3] "nn_check_layer: Invalid layer name '$1'."
+  elif narg($_nn_$1_out_size)!=4
+    error[0--3] "nn_check_layer: Layer with name '$1' does not exist."
+  fi
 
 #@cli nn_save : 'filename.gmz'
 #@cli : Save current network as a .gmz file.
@@ -21775,7 +21861,7 @@ nn_load : check "s=['$1']; find(s,'.gmz')==size(s) - 4"
 #@cli : Add an 'input' layer to the network.
 #@cli : Default values: 'height=1', 'depth=1' and 'spectrum=1'.
 nn_layer_input : check ${"is_variable_name $1"}" && isint($2) && $2>0 && isint(${3=1}) && $3>0 && "\
-                   "isint(${4=1}) && $4>0 && isint(${5=1}) && $5>0"
+                 "isint(${4=1}) && $4>0 && isint(${5=1}) && $5>0"
   e[^-1] "[nn_lib] Add input layer '$1', with size ($2,$3,$4,$5)."
   _nn_$1_out_size=$2,$3,$4,$5
   _nn_forward.="begin(nn_layer_input_init_forward($1,$2,$3,$4,$5));"
@@ -21783,8 +21869,8 @@ nn_layer_input : check ${"is_variable_name $1"}" && isint($2) && $2>0 && isint($
 
 #@cli nn_layer_add : name,in0,in1
 #@cli : Add an 'add' layer to the network.
-nn_layer_add : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "${"is_variable_name $3"}" && "\
-                     [$_nn_$2_out_size]==[$_nn_$3_out_size]
+nn_layer_add : nn_check_layer "$2" nn_check_layer "$3"
+               check ${"is_variable_name $1"}" && [$_nn_$2_out_size]==[$_nn_$3_out_size]"
   e[^-1] "[nn_lib] Add 'add' layer '$1', with inputs '$2' and '$3'."
   _nn_$1_out_size=$_nn_$2_out_size
   _nn_forward.="begin(nn_layer_add_init_forward($1,$2));"\
@@ -21794,7 +21880,7 @@ nn_layer_add : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && 
 
 #@cli nn_layer_append : name,in0,in1
 #@cli : Add an 'append' layer to the network.
-nn_layer_append : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "${"is_variable_name $3"}
+nn_layer_append : nn_check_layer "$2" nn_check_layer "$3" check ${"is_variable_name $1"}
   e[^-1] "[nn_lib] Add 'append' layer '$1', with inputs '$2' and '$3'."
   if s1=[$_nn_$2_out_size];s2=[$_nn_$3_out_size];s1[0,3]!=s2[0,3]
     error "nn_layer_append: Cannot append inputs $2("$_nn_$2_out_size") and $3("$_nn_$3_out_size") together."
@@ -21807,7 +21893,7 @@ nn_layer_append : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" 
 
 #@cli nn_layer_avgpool2d : name,in
 #@cli : Add a 'avgpool2d' layer (2d average pooling) to the network.
-nn_layer_avgpool2d : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
+nn_layer_avgpool2d : nn_check_layer "$2" check ${"is_variable_name $1"}
   e[^-1] "[nn_lib] Add 'avgpool2d' layer '$1', with input '$2'."
   _nn_$1_out_size={s=[$_nn_$2_out_size];[int(s[0,2]/2),s[2,2]]}
   _nn_forward.="begin(nn_layer_avgpool2d_init_forward($1,$2));"\
@@ -21818,7 +21904,7 @@ nn_layer_avgpool2d : check ${"is_variable_name $1"}" && "${"is_variable_name $2"
 #@cli nn_layer_batchnorm : name,in,learning_mode.
 #@cli : Add a 'batchnorm' layer to the network.
 #@cli : 'learning_mode' can be { 0=no parameters learnt | 1=gamma-only | 2=beta-only | 3=gamma & beta}.
-nn_layer_batchnorm : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint(${3=0}) && inrange($3,0,3)"
+nn_layer_batchnorm : nn_check_layer "$2" check ${"is_variable_name $1"}" && isint(${3=0}) && inrange($3,0,3)"
   s0,s1,s2,s3="no parameters","gamma-only","beta-only","gamma & beta"
   e[^-1] "[nn_lib] Add 'batchnorm' layer '$1' to the network, with input '$2' and learning mode '"${s$3}"'."
   _nn_$1_out_size=$_nn_$2_out_size
@@ -21835,7 +21921,7 @@ nn_layer_batchnorm : check ${"is_variable_name $1"}" && "${"is_variable_name $2"
 
 #@cli nn_layer_clone : name0,name1,in
 #@cli : Add a 'clone' layer to the network.
-nn_layer_clone : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "${"is_variable_name $3"}
+nn_layer_clone : nn_check_layer "$3" check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
   e[^-1] "[nn_lib] Add 'clone' layer with input '$3' and outputs '$1' and '$2'."
   _nn_$1_out_size=$_nn_$3_out_size
   _nn_$2_out_size=$_nn_$3_out_size
@@ -21847,8 +21933,9 @@ nn_layer_clone : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" &
 #@cli nn_layer_conv2d : name,in,nb_channels>0,_kernel_size>0,_stride>0,_dilation>0
 #@cli : Add a 'conv2d' layer (2D convolutional layer) to the network.
 #@cli : Default values: 'kernel_size=3', 'stride=1' and 'dilation=1'.
-nn_layer_conv2d : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "\
-                        "isint($3) && $3>0 && isint(${4=3}) && $4>0 && ${5=1}>0" skip "${6=1}"
+nn_layer_conv2d : nn_check_layer "$2"
+                  check ${"is_variable_name $1"}" && isint($3) && $3>0 && isint(${4=3}) && $4>0 && ${5=1}>0"
+                  skip "${6=1}"
   e[^-1] "[nn_lib] Add 'conv2d' layer '$1', with input '$2', $3 channels, $4x$4 kernels, stride $5 and dilation $6."
   _nn_$1_out_size={s=[$_nn_$2_out_size];[max(1,int(s[0]/$5)),max(1,int(s[1]/$5)),s[2],$3]}
   if !isint($$1) {[$_nn_$2_out_size][3]*$4^2+1},$3 if $4>1 f. 4*g/(w-1) else f. 1 fi nm. $1 fi
@@ -21864,8 +21951,9 @@ nn_layer_conv2d : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" 
 #@cli nn_layer_conv2dnl : name,in,nb_channels>0,_kernel_size>0,_stride>0,_dilation>0,_activation
 #@cli : Add a 'con2dnl' (2D convolutional layer followed by a non-linearity), to the network.
 #@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1' and 'activation=leakyrelu'.
-nn_layer_conv2dnl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "\
-                          "isint($3) && $3>0 && isint(${4=3}) && $4>0 && ${5=1}>0" skip "${6=1}","${7=leakyrelu}"
+nn_layer_conv2dnl : nn_check_layer "$2"
+                    check ${"is_variable_name $1"}" && isint($3) && $3>0 && isint(${4=3}) && $4>0 && ${5=1}>0"
+                    skip "${6=1}","${7=leakyrelu}"
   e[^-1] "[nn_lib] Add 'conv2d+nl' layer '$1', with input '$2', $3 channels, $4x$4 kernels, "\
          "stride $5, dilation $6 and '$7' activation."
   nn_layer_conv2d $1_0,$2,$3,$4,$5,$6
@@ -21873,7 +21961,7 @@ nn_layer_conv2dnl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
 
 #@cli nn_layer_fc : name,in,nb_channels>0
 #@cli : Add a 'fc' layer (fully connected layer) to the network.
-nn_layer_fc : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($3) && $3>0"
+nn_layer_fc : nn_check_layer "$2" check ${"is_variable_name $1"}" && isint($3) && $3>0"
   e[^-1] "[nn_lib] Add 'fc' layer '$1', with input '$2' and $3 channels."
   _nn_$1_out_size=1,1,1,$3
   if !isint($$1) {prod($_nn_$2_out_size)+1},$3 f. 4*g/(w-1) nm. $1 fi
@@ -21889,14 +21977,14 @@ nn_layer_fc : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && i
 #@cli nn_layer_fcnl : name,in,nb_neurons>0,_activation
 #@cli : Add a 'fcnl' layer (fully connected layer followed by a non-linearity), to the network.
 #@cli : Default value: 'activation=leakyrelu'.
-nn_layer_fcnl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint($3) && $3>0" skip ${4=leakyrelu}
+nn_layer_fcnl : nn_check_layer "$2" check ${"is_variable_name $1"}" && isint($3) && $3>0" skip ${4=leakyrelu}
   e[^-1] "[nn_lib] Add 'fc+nl' layer '$1' to the network, with input '$2', $3 channels and '$4' activation."
   nn_layer_fc $1_0,$2,$3
   nn_layer_nl $1,$1_0,$4
 
 #@cli nn_layer_maxpool2d : name,in
 #@cli : Add a 'maxpool2d' layer (2d max pooling) to the network.
-nn_layer_maxpool2d : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
+nn_layer_maxpool2d : nn_check_layer "$2" check ${"is_variable_name $1"}
   e[^-1] "[nn_lib] Add 'maxpool2d' layer '$1', with input '$2'."
   _nn_$1_out_size={s=[$_nn_$2_out_size];[int(s[0,2]/2),s[2,2]]}
   _nn_forward.="begin(nn_layer_maxpool2d_init_forward($1,$2));"\
@@ -21907,7 +21995,7 @@ nn_layer_maxpool2d : check ${"is_variable_name $1"}" && "${"is_variable_name $2"
 #@cli nn_layer_nl : name,in,activation
 #@cli : Add a 'nl' layer (non-linearity) to the network.
 #@cli : Default value: 'activation=leakyrelu'.
-nn_layer_nl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"} skip ${3=leakyrelu}
+nn_layer_nl : nn_check_layer "$2" check ${"is_variable_name $1"} skip ${3=leakyrelu}
   e[^-1] "[nn_lib] Add 'nl' layer '$1', with input '$2' and '$3' activation."
   _nn_$1_out_size=$_nn_$2_out_size
   _nn_forward.="begin(nn_layer_nl_init_forward($1,$2));"\
@@ -21917,7 +22005,7 @@ nn_layer_nl : check ${"is_variable_name $1"}" && "${"is_variable_name $2"} skip 
 
 #@cli nn_layer_rename : name,in
 #@cli : Add a 'rename' layer to the network.
-nn_layer_rename : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
+nn_layer_rename : nn_check_layer "$2" check ${"is_variable_name $1"}
   e[^-1] "[nn_lib] Add 'rename' layer '$1', with input '$2'."
   _nn_$1_out_size=$_nn_$2_out_size
   _nn_forward.="begin(nn_layer_rename_init_forward($1,$2));"
@@ -21926,7 +22014,7 @@ nn_layer_rename : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
 
 #@cli nn_layer_reshape : name,in,width>0,height>0,depth>0,spectrum>0
 #@cli : Add a 'reshape' layer to the network.
-nn_layer_reshape : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
+nn_layer_reshape : nn_check_layer "$2" check ${"is_variable_name $1"}
   e[^-1] "[nn_lib] Add 'reshape' layer '$1', with input '$2' and size ($3,$4,$5,$6)."
   _nn_$1_out_size=$3,$4,$5,$6
   if prod($_nn_$1_out_size)!=prod($_nn_$2_out_size)
@@ -21936,9 +22024,19 @@ nn_layer_reshape : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
   _nn_backward..="begin(nn_layer_reshape_init_backward($1,$2));"
   _nn_init.="$0 $* "
 
+# #@cli nn_layer_softmax : name,in
+# #@cli : Add a 'softmax' layer to the network.
+# nn_layer_softmax : nn_check_layer "$2" check ${"is_variable_name $1"}
+#   e[^-1] "[nn_lib] Add 'softmax' layer '$1', with input '$2'."
+#   _nn_$1_out_size=$_nn_$2_out_size
+#   _nn_forward.="begin(nn_layer_softmax_init_forward($1,$2));"\
+#                "nn_layer_softmax_forward($1,$2);"
+#   _nn_backward..="nn_layer_softmax_backward($1,$2);"
+#   _nn_init.="$0 $* "
+
 #@cli nn_layer_split : name0,name1,in,nb_channels0
 #@cli : Add a 'split' layer to the network.
-nn_layer_split : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && "${"is_variable_name $3"}
+nn_layer_split : nn_check_layer "$3" check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
   e[^-1] "[nn_lib] Add 'split' layer, with input '$3' and outputs '$1' and '$2'."
   _nn_$1_out_size={[[$_nn_$3_out_size][0,3],$4]}
   _nn_$2_out_size={[$_nn_$3_out_size]-[0,0,0,$4]}
@@ -21949,7 +22047,7 @@ nn_layer_split : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" &
 
 #@cli nn_layer_upsample2d : name,in,_interpolation_type = { 0=nearest-neighbor | 1=linear }
 #@cli : Add a 'upsample2d' layer to the network.
-nn_layer_upsample2d : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isbool(${3=0})"
+nn_layer_upsample2d : nn_check_layer "$2" check ${"is_variable_name $1"}" && isbool(${3=0})"
   e[^-1] "[nn_lib] Add 'upsample2d' layer '$1', with input '$2'."
   _nn_$1_out_size={s=[$_nn_$2_out_size];[2*s[0,2],s[2,2]]}
   _nn_forward.="begin(nn_layer_upsample2d_init_forward($1,$2));"\
@@ -21959,10 +22057,10 @@ nn_layer_upsample2d : check ${"is_variable_name $1"}" && "${"is_variable_name $2
 
 #@cli nn_loss_mse : name,in,ground_truth
 #@cli : Add a 'mse' loss to the network.
-nn_loss_mse : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}
+nn_loss_mse : nn_check_layer "$2" check ${"is_variable_name $1"}" && "${"is_variable_name $3"}
   e[^-1] "[nn_lib] Add 'mse' loss '$1', with input '$2' and ground truth '$3'."
   _nn_$1_out_size=1,1,1,1
-  if !isint($$1) (0,1e-3,inf,0,0) nm. $1 fi # iteration,learning_rate,batch_out,nb_decreases,nb_increases
+  if !isint($$1) (0,1e-4,inf,0,0) nm. $1 fi # iteration,learning_rate,batch_out,nb_decreases,nb_increases
   _nn_backward..="begin(nn_loss_mse_init_backward($1));"\
                  "nn_loss_mse_backward($1,$2,$3);"\
                  "end(nn_loss_mse_end_backward($1));"
@@ -50026,19 +50124,20 @@ nn_test_fc :
   nn_layer_input X,2
   nn_layer_batchnorm BN0,X
   nn_layer_fcnl FC1,BN0,100
-  nn_layer_fcnl FC2,FC1,50,leakyrelu
-  nn_layer_fcnl FC3,FC2,30,leakyrelu
-  nn_layer_fcnl FC4,FC3,30,leakyrelu
+  nn_layer_fcnl FC2,FC1,50
+  nn_layer_fcnl FC3,FC2,30
+  nn_layer_fcnl FC4,FC3,30
   nn_layer_fc FC5,FC4,3
   nn_layer_rename OUT,FC5
   nn_loss_mse L,OUT,Y
   sp lena,128 nm. img
+#  _nn_optimizer=1
 
   # Optimize network.
   #-------------------
   size_batch=1024
-  repeat inf,iter
-    e[] "ITER = "$iter
+  repeat inf,_nn_iter
+    e[] "ITER = "$_nn_iter
 
     # Build mini-batch.
     $size_batch,1,1,5,"
@@ -50051,14 +50150,14 @@ nn_test_fc :
 
     # Mini-batch stochastic gradient descent.
     _nn_is_training=1
-    repeat 128,batch_iter
+    repeat 128,_nn_batch_iter
       eval[batch] *${-nn_lib}"
         batch = I;
         X = batch[0,2]; # Input
         Y = batch[2,3]; "\ # Ground-truth
         ${_nn_forward}${_nn_backward}${_nn_update}"
         end(
-          !($batch_iter%20)?print([L_out,nn_learning_rate]);
+          !($_nn_batch_iter%20)?print([L_out,nn_learning_rate,L_trend]);
         ); I"
     done
     rm[batch]
@@ -50069,7 +50168,7 @@ nn_test_fc :
       X = [ x,y ];
       "${_nn_forward}"
       cut(OUT_out,0,255)"
-#    on. frame.png,$iter
+#    on. frame.png,$_nn_iter
     w. rm.
 
   done
@@ -50082,36 +50181,31 @@ nn_test_conv :
   # Build neural network.
   #----------------------
   nn_layer_input X,32,32,1,3
-#  nn_layer_conv2dnl C1,X,3
-
-  nn_layer_upsample2d U,X
-
-  nn_layer_conv2dnl C2,U,3,1
-  nn_layer_rename OUT,C2
+  nn_layer_conv2dnl L1,X,3
+  nn_layer_rename OUT,L1
   nn_loss_mse L,OUT,Y
-  sp lena,64 nm. img
+  sp lena,32 nm. img
   [img] nm. res
-#  noise[img] 20
-  r2dx[img] 50%
 
   # Optimize network.
   #-------------------
   size_batch=1
-  repeat inf,iter
-    e[] "ITER = "$iter
+  repeat inf,_nn_iter
+    e[] "ITER = "$_nn_iter
 
-    repeat 10,batch_iter
+    =[L] inf,2
+    repeat 10,_nn_batch_iter
       eval ${-nn_lib}"
         X = crop(#$img); # Input
         Y = crop(#$res); # Ground-truth
         "${_nn_forward}${_nn_backward}${_nn_update}"
         store(X,'vX',32,32,1,3);
-        store(Y,'vY',64,64,1,3);
-        store(OUT_out,'vOUT',64,64,1,3);
-        run('l[] $vX $vOUT $vY r2dx 200,1 a x w. rm. endl');
+        store(Y,'vY',32,32,1,3);
+        store(OUT_out,'vOUT',32,32,1,3);
+        run('l[] $vOUT r2dx 200,1 a x w. rm. endl');
 
         end(
-          print([L_out,nn_learning_rate,nn_update_parameters]);
+          print([L_out,nn_learning_rate]);
         ); I"
     done
   done
@@ -50123,11 +50217,19 @@ nn_test_conv :
 
 # nn_layer_res : name,in
 # Define a custom residual CONV module.
-nn_layer_res : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint(${3=16}) && $3>0"
+nn_layer_res : nn_check_layer "$2" check ${"is_variable_name $1"}" && isint(${3=16}) && $3>0"
   nn_layer_clone $1_CL0,$1_CL1,$2
   nn_layer_conv2dnl $1_CONV1,$1_CL0,$3
   nn_layer_conv2d $1_CONV2,$1_CONV1,{[$_nn_$2_out_size][3]}
   nn_layer_add $1_ADD,$1_CONV2,$1_CL1
+  nn_layer_nl $1,$1_ADD
+
+nn_layer_res2 : nn_check_layer "$2" check ${"is_variable_name $1"}" && isint(${3=16}) && $3>0"
+  nn_layer_clone $1_CL0,$1_CL1,$2
+  nn_layer_conv2dnl $1_CONV1,$1_CL0,$3
+  nn_layer_conv2dnl $1_CONV2,$1_CONV1,$3
+  nn_layer_conv2d $1_CONV3,$1_CONV2,{[$_nn_$2_out_size][3]}
+  nn_layer_add $1_ADD,$1_CONV3,$1_CL1
   nn_layer_nl $1,$1_ADD
 
 # Main test procedure.
@@ -50135,83 +50237,96 @@ nn_test :
 
   # Build neural network.
   #----------------------
-
   if isfile('network.gmz') nn_load network.gmz
   else
-    nn_layer_input X,64,64,1,1    # 64x64x1
-    nn_layer_conv2dnl L1,X,32     # 64x64x32
-    nn_layer_res L2,L1,32
-    nn_layer_maxpool2d L3,L2      # 32x32x32
-    nn_layer_conv2dnl L4,L3,64    # 32x32x64
-    nn_layer_res L5,L4,64
-    nn_layer_maxpool2d L6,L5      # 16x16x64
-    nn_layer_conv2dnl L7,L6,128   # 16x16x128
-    nn_layer_res L8,L7,128
-    nn_layer_maxpool2d L9,L8      # 8x8x1284
-    nn_layer_conv2dnl L10,L9,256  # 8x8x256
-    nn_layer_conv2dnl L11,L10,256
-    nn_layer_upsample2d L12,L11   # 16x16x256
-    nn_layer_conv2dnl L13,L12,128 # 16x16x128
-    nn_layer_res L14,L13,128
-    nn_layer_upsample2d L15,L14   # 32x32x128
-    nn_layer_conv2dnl L16,L15,64  # 32x32x64
-    nn_layer_res L17,L16,64
-    nn_layer_upsample2d L18,L17   # 64x64x64
-    nn_layer_conv2dnl L19,L18,32  # 64x64x32
-    nn_layer_res L20,L19,32
-    nn_layer_conv2dnl L21,L20,1   # 64x64x1
-    nn_layer_rename OUT,L21
+    nn_layer_input X,32,32,1,1
+    nn_layer_clone lA0,lA1,X
+    nn_layer_maxpool2d lB,lA0
+
+    nn_layer_clone lB0,lB1,lB
+    nn_layer_maxpool2d lC,lB0
+
+    nn_layer_conv2dnl lCA,lC,64
+    nn_layer_res2 lCC,lCA,64
+#    nn_layer_conv2dnl lCA,lC,64
+#    nn_layer_conv2dnl lCB,lCA,64
+#    nn_layer_conv2dnl lCC,lCB,64
+
+     nn_layer_conv2dnl lBA,lB1,32
+     nn_layer_res2 lBC,lBA,32
+#    nn_layer_conv2dnl lBA,lB1,32
+#    nn_layer_conv2dnl lBB,lBA,32
+#    nn_layer_conv2dnl lBC,lBB,32
+
+     nn_layer_conv2dnl lAA,lA1,16
+     nn_layer_res2 lAC,lAA,16
+#    nn_layer_conv2dnl lAA,lA1,16
+#    nn_layer_conv2dnl lAB,lAA,16
+#    nn_layer_conv2dnl lAC,lAB,16
+
+    nn_layer_upsample2d lUC,lCC,1
+    nn_layer_conv2dnl lOC,lUC,32
+    nn_layer_add lOC1,lOC,lBC
+
+    nn_layer_upsample2d lUB,lOC1,1
+    nn_layer_conv2dnl lOB,lUB,16
+    nn_layer_add lOB1,lOB,lAC
+
+    nn_layer_conv2dnl lL1,lOB1,8
+    nn_layer_conv2dnl lL2,lL1,1
+    nn_layer_rename OUT,lL2
     nn_loss_mse L,OUT,Y
-  fi
+ fi
 
   l[] images.gmz luminance n 0,255 +mirror x +mirror y a z endl nm. img
 
   # Optimize network.
   #------------------
-  size_batch=32
-  repeat inf,iter
-    e[] "ITER = "$iter
+  size_batch=16
+  repeat inf,_nn_iter
+    e[] "ITER = "$_nn_iter
 
     # Build mini-batch.
-    64,64,$size_batch,1
+    32,32,$size_batch,1
     1,1,$size_batch,1,">
       const img = $img;
-      const siz = 64*64;
+      const siz = 32*32;
       p = u<0.15?0:30;
       do (
         ni = int(u(d#img))%d#img;
-        nx = int(u(0,w#img - 1 - 64));
-        ny = int(u(0,h#img - 1 - 64));
-        X = crop(#img,nx,ny,0,0,64,64,1,1);
+        nx = int(u(0,w#img - 1 - 32));
+        ny = int(u(0,h#img - 1 - 32));
+        X = crop(#img,nx,ny,0,0,32,32,1,1);
       _(while); std(X)<p);
-      draw(#-1,X,0,0,z,0,64,64,1,1)"
+      draw(#-1,X,0,0,z,0,32,32,1,1)"
     rm.
     +noise. 15 c. 0,255 a[-2,-1] c
     nm. batch
 
     # Mini-batch stochastic gradient.
     _nn_is_training=1
-    repeat 15,batch_iter
-      1,1,{batch,d},1,*${-nn_lib}${_nn_init_forward}${_nn_init_backward}"
-        Y = crop(#$batch,0,0,z,0,64,64,1,1);
-        X = crop(#$batch,0,0,z,1,64,64,1,1);
+    repeat 30,_nn_batch_iter
+      1,1,{batch,d},1,*${-nn_lib}"
+        Y = crop(#$batch,0,0,z,0,32,32,1,1);
+        X = crop(#$batch,0,0,z,1,32,32,1,1);
 
-        "${_nn_forward}\
-        ${_nn_backward}\
-        ${_nn_update}"
+        "${_nn_forward}"
+        "${_nn_backward}"
+        "${_nn_update}"
 
-        z<4 && !("$batch_iter"%10)?(
+        z<4 && !("$_nn_batch_iter"%10)?(
           var = string(#256,'IN',t);
-          store(X,var,64,64,1,1);
+          store(X,var,32,32,1,1);
           var = string(#256,'OUT',t);
-          store(OUT_out,var,64,64,1,1);
+          store(OUT_out,var,32,32,1,1);
           var = string(#256,'REF',t);
-          store(Y,var,64,64,1,1);
+          store(Y,var,32,32,1,1);
           run('l[] $IN',t,' $OUT',t,' $REF',t,' c 0,255 a x w',z+1,'. 600,200,0 rm endl');
         );
         end(
-          print([ sqrt(L_out),nn_learning_rate ]);
-        ); I"
+          print([ sqrt(L_out),nn_learning_rate,L_trend ]);
+        ); I
+"
       rm.
     done
     rm[batch]
@@ -50230,41 +50345,41 @@ nn_foo :
   repeat $! l[$>]
     w,h={[w,h]}
 
-    # Extract overlapping 64x64 tiles.
-    nx,ny={ceil([w,h]/33)}
-    64,64,{$nx*$ny},3
+    # Extract overlapping 32x32 tiles.
+    nx,ny={ceil([w,h]/24)}
+    32,32,{$nx*$ny},3
     1,1,{d},1,"*
       ix = z%$nx;
       iy = int(z/$nx);
-      X = round(lerp(0,$w - 64,ix/($nx-1)));
-      Y = round(lerp(0,$h - 64,iy/($ny-1)));
-      V = crop(#0,X,Y,0,0,64,64,1,3);
-      draw(#-1,V,0,0,z,0,64,64,1,3)"
+      X = round(lerp(0,$w - 32,ix/($nx-1)));
+      Y = round(lerp(0,$h - 32,iy/($ny-1)));
+      V = crop(#0,X,Y,0,0,32,32,1,3);
+      draw(#-1,V,0,0,z,0,32,32,1,3)"
     k..
 
-    # Denoise 64x64 tiles.
+    # Denoise 32x32 tiles.
     $network
     1,1,{0,d},1,*${-nn_lib}${_nn_init_forward}"
     repeat (3,c,
-      X = crop(#0,0,0,z,c,64,64,1,1);"${_nn_forward}"
-      Y = correlate(X,64,64,1,1,[1],1,1,1,1,0,0,1,0,0,0,2,2,0,61,61,0);
-      print(X,Y);
-      draw(#0,OUT_out,0,0,z,c,64,64,1,1);
+      X = crop(#0,0,0,z,c,32,32,1,1);"${_nn_forward}"
+      draw(#0,OUT_out,0,0,z,c,32,32,1,1);
     )"
     k[0]
 
     # Reconstruct image from tiles.
     $w,$h,1,4
-    1,1,{0,d},1,">begin(one = vector(#64*64,1));
+    1,1,{0,d},1,">begin(one = vector(#32*32,1));
       ix = z%$nx;
       iy = int(z/$nx);
-      X = round(lerp(0,$w - 64,ix/($nx-1)));
-      Y = round(lerp(0,$h - 64,iy/($ny-1)));
-      V = crop(#0,0,0,z,0,64,64,1,3);
-      draw(#1,V,X,Y,0,0,64,64,1,3,-1);
-      draw(#1,one,X,Y,0,3,64,64,1,1,-1)"
+      X = round(lerp(0,$w - 32,ix/($nx-1)));
+      Y = round(lerp(0,$h - 32,iy/($ny-1)));
+      V = crop(#0,0,0,z,0,32,32,1,3);
+      draw(#1,V,X,Y,0,0,32,32,1,3,-1);
+      draw(#1,one,X,Y,0,3,32,32,1,1,-1)"
     k..
     s c,-3
+
+    d
 
     max. 1 / c 0,255
   endl done
