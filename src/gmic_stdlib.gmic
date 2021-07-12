@@ -50221,31 +50221,38 @@ nn_test :
 
   if isfile('network.gmz') nn_load network.gmz
   else
-    nn_layer_input X,64,64,1,1    # 64x64x1
-    nn_layer_conv2dnl L1,X,32     # 64x64x32
-    nn_layer_res L2,L1,32
-    nn_layer_maxpool2d L3,L2      # 32x32x32
-    nn_layer_conv2dnl L4,L3,64    # 32x32x64
-    nn_layer_res L5,L4,64
-    nn_layer_maxpool2d L6,L5      # 16x16x64
-    nn_layer_conv2dnl L7,L6,128   # 16x16x128
-    nn_layer_res L8,L7,128
-    nn_layer_maxpool2d L9,L8      # 8x8x1284
-    nn_layer_conv2dnl L10,L9,256  # 8x8x256
-    nn_layer_conv2dnl L11,L10,256
-    nn_layer_upsample2d L12,L11,1 # 16x16x256
-    nn_layer_conv2dnl L13,L12,128 # 16x16x128
-    nn_layer_res L14,L13,128
-    nn_layer_upsample2d L15,L14,1 # 32x32x128
-    nn_layer_conv2dnl L16,L15,64  # 32x32x64
-    nn_layer_res L17,L16,64
-    nn_layer_upsample2d L18,L17,1 # 64x64x64
-    nn_layer_conv2dnl L19,L18,32  # 64x64x32
-    nn_layer_res L20,L19,32
-    nn_layer_conv2dnl L21,L20,1   # 64x64x1
-    nn_layer_rename OUT,L21
+    nn_layer_input X,32,32,1,1
+    nn_layer_clone lA0,lA1,X
+    nn_layer_maxpool2d lB,lA0
+
+    nn_layer_clone lB0,lB1,lB
+    nn_layer_maxpool2d lC,lB0
+
+    nn_layer_conv2dnl lCA,lC,64
+    nn_layer_conv2dnl lCB,lCA,64
+    nn_layer_conv2dnl lCC,lCB,64
+
+    nn_layer_conv2dnl lBA,lB1,32
+    nn_layer_conv2dnl lBB,lBA,32
+    nn_layer_conv2dnl lBC,lBB,32
+
+    nn_layer_conv2dnl lAA,lA1,16
+    nn_layer_conv2dnl lAB,lAA,16
+    nn_layer_conv2dnl lAC,lAB,16
+
+    nn_layer_upsample2d lUC,lCC
+    nn_layer_conv2dnl lOC,lUC,32
+    nn_layer_add lOC1,lOC,lBC
+
+    nn_layer_upsample2d lUB,lOC1
+    nn_layer_conv2dnl lOB,lUB,16
+    nn_layer_add lOB1,lOB,lAC
+
+    nn_layer_conv2dnl lL1,lOB1,8
+    nn_layer_conv2dnl lL2,lL1,1
+    nn_layer_rename OUT,lL2
     nn_loss_mse L,OUT,Y
-  fi
+ fi
 
   l[] images.gmz luminance n 0,255 +mirror x +mirror y a z endl nm. img
 
@@ -50256,18 +50263,18 @@ nn_test :
     e[] "ITER = "$_nn_iter
 
     # Build mini-batch.
-    64,64,$size_batch,1
+    32,32,$size_batch,1
     1,1,$size_batch,1,">
       const img = $img;
-      const siz = 64*64;
+      const siz = 32*32;
       p = u<0.15?0:30;
       do (
         ni = int(u(d#img))%d#img;
-        nx = int(u(0,w#img - 1 - 64));
-        ny = int(u(0,h#img - 1 - 64));
-        X = crop(#img,nx,ny,0,0,64,64,1,1);
+        nx = int(u(0,w#img - 1 - 32));
+        ny = int(u(0,h#img - 1 - 32));
+        X = crop(#img,nx,ny,0,0,32,32,1,1);
       _(while); std(X)<p);
-      draw(#-1,X,0,0,z,0,64,64,1,1)"
+      draw(#-1,X,0,0,z,0,32,32,1,1)"
     rm.
     +noise. 15 c. 0,255 a[-2,-1] c
     nm. batch
@@ -50275,26 +50282,27 @@ nn_test :
     # Mini-batch stochastic gradient.
     _nn_is_training=1
     repeat 30,_nn_batch_iter
-      1,1,{batch,d},1,*${-nn_lib}${_nn_init_forward}${_nn_init_backward}"
-        Y = crop(#$batch,0,0,z,0,64,64,1,1);
-        X = crop(#$batch,0,0,z,1,64,64,1,1);
+      1,1,{batch,d},1,*${-nn_lib}"
+        Y = crop(#$batch,0,0,z,0,32,32,1,1);
+        X = crop(#$batch,0,0,z,1,32,32,1,1);
 
-        "${_nn_forward}\
-        ${_nn_backward}\
-        ${_nn_update}"
+        "${_nn_forward}"
+        "${_nn_backward}"
+        "${_nn_update}"
 
         z<4 && !("$_nn_batch_iter"%10)?(
           var = string(#256,'IN',t);
-          store(X,var,64,64,1,1);
+          store(X,var,32,32,1,1);
           var = string(#256,'OUT',t);
-          store(OUT_out,var,64,64,1,1);
+          store(OUT_out,var,32,32,1,1);
           var = string(#256,'REF',t);
-          store(Y,var,64,64,1,1);
+          store(Y,var,32,32,1,1);
           run('l[] $IN',t,' $OUT',t,' $REF',t,' c 0,255 a x w',z+1,'. 600,200,0 rm endl');
         );
         end(
           print([ sqrt(L_out),nn_learning_rate,L_trend ]);
-        ); I"
+        ); I
+"
       rm.
     done
     rm[batch]
