@@ -21220,19 +21220,19 @@ nn_lib :
 
     nn_optimizer_adam_update_layer(L_params,dL_params) = (
       begin(
-        dL_params#_name_moment1 = '_nn_#dL_params#_moment1';
-        dL_params#_name_moment2 = '_nn_#dL_params#_moment2';
+        dL_params#_name_m = '_nn_#dL_params#_m';
+        dL_params#_name_v = '_nn_#dL_params#_v';
       );
-      isnan($_nn_#dL_params#_moment1)?(
-         dL_params#_moment1 = dL_params#;
-         dL_params#_moment2 = dL_params#^2;
+      isnan($_nn_#dL_params#_m)?(
+         dL_params#_m = dL_params#;
+         dL_params#_v = dL_params#^2;
       ):(
-        dL_params#_moment1 = lerp(dL_params,get(dL_params#_name_moment1,size(dL_params)),nn_optimizer_adam_beta1);
-        dL_params#_moment2 = lerp(dL_params^2,get(dL_params#_name_moment2,size(dL_params)),nn_optimizer_adam_beta2);
+        dL_params#_m = lerp(dL_params,get(dL_params#_name_m,size(dL_params)),nn_optimizer_adam_beta1);
+        dL_params#_v = lerp(dL_params^2,get(dL_params#_name_v,size(dL_params)),nn_optimizer_adam_beta2);
       );
-      store(dL_params#_moment1,dL_params#_name_moment1,size(dL_params));
-      store(dL_params#_moment2,dL_params#_name_moment2,size(dL_params));
-      L_params#-=nn_learning_rate*dL_params#_moment1/sqrt(1e-8 + dL_params#_moment2);
+      store(dL_params#_m,dL_params#_name_m,size(dL_params));
+      store(dL_params#_v,dL_params#_name_v,size(dL_params));
+      L_params#-=nn_learning_rate*dL_params#_m/sqrt(1e-8 + dL_params#_v);
     );
 
     # Generic function that dispatches to each optimizer.
