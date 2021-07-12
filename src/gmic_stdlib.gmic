@@ -50239,44 +50239,9 @@ nn_test :
   #----------------------
   if isfile('network.gmz') nn_load network.gmz
   else
-    nn_layer_input X,32,32,1,1
-    nn_layer_clone lA0,lA1,X
-    nn_layer_maxpool2d lB,lA0
-
-    nn_layer_clone lB0,lB1,lB
-    nn_layer_maxpool2d lC,lB0
-
-    nn_layer_conv2dnl lCA,lC,64
-    nn_layer_res2 lCC,lCA,64
-#    nn_layer_conv2dnl lCA,lC,64
-#    nn_layer_conv2dnl lCB,lCA,64
-#    nn_layer_conv2dnl lCC,lCB,64
-
-     nn_layer_conv2dnl lBA,lB1,32
-     nn_layer_res2 lBC,lBA,32
-#    nn_layer_conv2dnl lBA,lB1,32
-#    nn_layer_conv2dnl lBB,lBA,32
-#    nn_layer_conv2dnl lBC,lBB,32
-
-     nn_layer_conv2dnl lAA,lA1,16
-     nn_layer_res2 lAC,lAA,16
-#    nn_layer_conv2dnl lAA,lA1,16
-#    nn_layer_conv2dnl lAB,lAA,16
-#    nn_layer_conv2dnl lAC,lAB,16
-
-    nn_layer_upsample2d lUC,lCC,1
-    nn_layer_conv2dnl lOC,lUC,32
-    nn_layer_add lOC1,lOC,lBC
-
-    nn_layer_upsample2d lUB,lOC1,1
-    nn_layer_conv2dnl lOB,lUB,16
-    nn_layer_add lOB1,lOB,lAC
-
-    nn_layer_conv2dnl lL1,lOB1,8
-    nn_layer_conv2dnl lL2,lL1,1
-    nn_layer_rename OUT,lL2
+    nn_unet
     nn_loss_mse L,OUT,Y
- fi
+  fi
 
   l[] images.gmz luminance n 0,255 +mirror x +mirror y a z endl nm. img
 
@@ -50383,6 +50348,33 @@ nn_foo :
 
     max. 1 / c 0,255
   endl done
+
+
+nn_unet :
+  nn_layer_input X,32,32,1,1
+  nn_layer_conv2dnl lA,X,64
+  nn_layer_conv2dnl lB,lA,64
+  nn_layer_clone lB0,lB1,lB
+
+  nn_layer_maxpool2d lC,lB0
+  nn_layer_conv2dnl lD,lC,128
+  nn_layer_conv2dnl lE,lD,128
+  nn_layer_clone lE0,lE1,lE
+
+  nn_layer_maxpool2d lF,lE0
+  nn_layer_conv2dnl lG,lF,256
+  nn_layer_conv2dnl lH,lG,256
+
+  nn_layer_upsample2d lI,lH,1
+  nn_layer_append lJ,lI,lE1
+  nn_layer_conv2dnl lK,lJ,128
+  nn_layer_conv2dnl lL,lK,128
+
+  nn_layer_upsample2d lM,lL,1
+  nn_layer_append lN,lM,lB1
+  nn_layer_conv2dnl lO,lN,64
+  nn_layer_conv2dnl lP,lO,64
+  nn_layer_conv2d OUT,lP,1,1
 
 
 # Local Variables:
