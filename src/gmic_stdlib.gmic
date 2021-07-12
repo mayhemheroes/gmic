@@ -50217,14 +50217,14 @@ nn_test_conv :
 
 # nn_layer_res : name,in
 # Define a custom residual CONV module.
-nn_layer_res : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint(${3=16}) && $3>0"
+nn_layer_res : nn_check_layer "$2" check ${"is_variable_name $1"}" && isint(${3=16}) && $3>0"
   nn_layer_clone $1_CL0,$1_CL1,$2
   nn_layer_conv2dnl $1_CONV1,$1_CL0,$3
   nn_layer_conv2d $1_CONV2,$1_CONV1,{[$_nn_$2_out_size][3]}
   nn_layer_add $1_ADD,$1_CONV2,$1_CL1
   nn_layer_nl $1,$1_ADD
 
-nn_layer_res2 : check ${"is_variable_name $1"}" && "${"is_variable_name $2"}" && isint(${3=16}) && $3>0"
+nn_layer_res2 : nn_check_layer "$2" check ${"is_variable_name $1"}" && isint(${3=16}) && $3>0"
   nn_layer_clone $1_CL0,$1_CL1,$2
   nn_layer_conv2dnl $1_CONV1,$1_CL0,$3
   nn_layer_conv2dnl $1_CONV2,$1_CONV1,$3
@@ -50245,7 +50245,6 @@ nn_test :
 
     nn_layer_clone lB0,lB1,lB
     nn_layer_maxpool2d lC,lB0
-
     nn_layer_conv2dnl lCA,lC,64
     nn_layer_conv2dnl lCB,lCA,64
     nn_layer_conv2dnl lCC,lCB,64
@@ -50258,11 +50257,11 @@ nn_test :
     nn_layer_conv2dnl lAB,lAA,16
     nn_layer_conv2dnl lAC,lAB,16
 
-    nn_layer_upsample2d lUC,lCC
+    nn_layer_upsample2d lUC,lCC,1
     nn_layer_conv2dnl lOC,lUC,32
     nn_layer_add lOC1,lOC,lBC
 
-    nn_layer_upsample2d lUB,lOC1
+    nn_layer_upsample2d lUB,lOC1,1
     nn_layer_conv2dnl lOB,lUB,16
     nn_layer_add lOB1,lOB,lAC
 
