@@ -21821,6 +21821,42 @@ nn_lib :
       copy(i[##L#_ind,0],[ L#_iteration + 1,L#_learning_rate,L#_out,L#_nb_decreases,L#_nb_increases ]);
       nn_learning_rate = L#_learning_rate;
     );
+
+    # gwmse : Gradient-weighted mean-squared error.
+    #----------------------------------------------
+    nn_loss_gwmse_init_backward(L) = (
+      L#_batch_out = 0;
+    );
+
+    nn_loss_gwmse_backward(L,IN,TRUTH) = (
+
+      # Compute gradient norm of IN
+      # TODO!
+
+      IN#_deriv_out = 2*(IN#_out - TRUTH);
+      L#_out = norm(IN#_deriv_out/2)^2/size(IN#_deriv_out);
+      L#_batch_out+=L#_out;
+    );
+
+    nn_loss_gwmse_end_backward(L) = (
+      merge(L#_batch_out,+);
+      L#_batch_out/=nn_nb_samples;
+      L#_out = L#_batch_out;
+    );
+
+    nn_loss_gwmse_update(L) = (
+      const L#_ind = $L#;
+      L#_iteration = i[##L#_ind,0];
+      L#_learning_rate = i[##L#_ind,1];
+      L#_previous_out = i[##L#_ind,2];
+      L#_nb_decreases = i[##L#_ind,3];
+      L#_nb_increases = i[##L#_ind,4];
+      nn_optimizer_update_learning_rate(#L);
+      copy(i[##L#_ind,0],[ L#_iteration + 1,L#_learning_rate,L#_out,L#_nb_decreases,L#_nb_increases ]);
+      nn_learning_rate = L#_learning_rate;
+    );
+
+
     "
 
 #@cli nn_init
@@ -22065,6 +22101,19 @@ nn_loss_mse : nn_check_layer "$2" check ${"is_variable_name $1"}" && "${"is_vari
                  "nn_loss_mse_backward($1,$2,$3);"\
                  "end(nn_loss_mse_end_backward($1));"
   _nn_update..="end(nn_loss_mse_update($1));"
+  _nn_init.="$0 $* "
+  _nn_parameters.="$1,"
+
+#@cli nn_loss_gwmse : name,in,ground_truth
+#@cli : Add a 'gwmse' loss to the network.
+nn_loss_gwmse : nn_check_layer "$2" check ${"is_variable_name $1"}" && "${"is_variable_name $3"}
+  e[^-1] "[nn_lib] Add 'gwmse' loss '$1', with input '$2' and ground truth '$3'."
+  _nn_$1_out_size=1,1,1,1
+  if !isint($$1) (0,1e-4,inf,0,0) nm. $1 fi # iteration,learning_rate,batch_out,nb_decreases,nb_increases
+  _nn_backward..="begin(nn_loss_gwmse_init_backward($1));"\
+                 "nn_loss_gwmse_backward($1,$2,$3);"\
+                 "end(nn_loss_gwmse_end_backward($1));"
+  _nn_update..="end(nn_loss_gwmse_update($1));"
   _nn_init.="$0 $* "
   _nn_parameters.="$1,"
 
@@ -50239,8 +50288,9 @@ nn_test :
   #----------------------
   if isfile('network.gmz') nn_load network.gmz
   else
+    nn_layer_input X,32,32,1,1
     nn_unet
-    nn_loss_mse L,OUT,Y
+    nn_loss_gwmse L,OUT,Y
   fi
 
   l[] images.gmz luminance n 0,255 +mirror x +mirror y a z endl nm. img
@@ -50306,41 +50356,46 @@ nn_test :
 
 
 nn_foo :
-  l[] nn_load network.gmz store network endl
+  l[]
+    network.gmz
+    nn_layer_input X,128,128,1,1
+    nn_unet
+    store network
+  endl
   repeat $! l[$>]
     w,h={[w,h]}
 
-    # Extract overlapping 32x32 tiles.
-    nx,ny={ceil([w,h]/24)}
-    32,32,{$nx*$ny},3
+    # Extract overlapping 128x128 tiles.
+    nx,ny={ceil([w,h]/124)}
+    128,128,{$nx*$ny},3
     1,1,{d},1,"*
       ix = z%$nx;
       iy = int(z/$nx);
-      X = round(lerp(0,$w - 32,ix/($nx-1)));
-      Y = round(lerp(0,$h - 32,iy/($ny-1)));
-      V = crop(#0,X,Y,0,0,32,32,1,3);
-      draw(#-1,V,0,0,z,0,32,32,1,3)"
+      X = round(lerp(0,$w - 128,ix/($nx-1)));
+      Y = round(lerp(0,$h - 128,iy/($ny-1)));
+      V = crop(#0,X,Y,0,0,128,128,1,3);
+      draw(#-1,V,0,0,z,0,128,128,1,3)"
     k..
 
-    # Denoise 32x32 tiles.
+    # Denoise 128x128 tiles.
     $network
     1,1,{0,d},1,*${-nn_lib}${_nn_init_forward}"
     repeat (3,c,
-      X = crop(#0,0,0,z,c,32,32,1,1);"${_nn_forward}"
-      draw(#0,OUT_out,0,0,z,c,32,32,1,1);
+      X = crop(#0,0,0,z,c,128,128,1,1);"${_nn_forward}"
+      draw(#0,OUT_out,0,0,z,c,128,128,1,1);
     )"
     k[0]
 
     # Reconstruct image from tiles.
     $w,$h,1,4
-    1,1,{0,d},1,">begin(one = vector(#32*32,1));
+    1,1,{0,d},1,">begin(one = vector(#128*128,1));
       ix = z%$nx;
       iy = int(z/$nx);
-      X = round(lerp(0,$w - 32,ix/($nx-1)));
-      Y = round(lerp(0,$h - 32,iy/($ny-1)));
-      V = crop(#0,0,0,z,0,32,32,1,3);
-      draw(#1,V,X,Y,0,0,32,32,1,3,-1);
-      draw(#1,one,X,Y,0,3,32,32,1,1,-1)"
+      X = round(lerp(0,$w - 128,ix/($nx-1)));
+      Y = round(lerp(0,$h - 128,iy/($ny-1)));
+      V = crop(#0,0,0,z,0,128,128,1,3);
+      draw(#1,V,X,Y,0,0,128,128,1,3,-1);
+      draw(#1,one,X,Y,0,3,128,128,1,1,-1)"
     k..
     s c,-3
 
@@ -50350,8 +50405,24 @@ nn_foo :
   endl done
 
 
+nn_fii :
+  l[]
+    network.gmz
+    nn_layer_input X,128,128,1,1
+    nn_unet
+  endl
+  sp lena,128 luminance. n. 0,255
+  +f. 0
+  eval ${-nn_lib}"
+    X = crop(#-2);
+    "$_nn_forward"
+    draw(#-1,OUT_out,0,0,0,0,128,128,1,1);
+  "
+  d[-2,-1]
+
+
+
 nn_unet :
-  nn_layer_input X,32,32,1,1
   nn_layer_conv2dnl lA,X,64
   nn_layer_conv2dnl lB,lA,64
   nn_layer_clone lB0,lB1,lB
