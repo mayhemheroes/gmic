@@ -21113,6 +21113,8 @@ nn_lib :
       const nn_optimizer = isnan($_nn_optimizer)?2:$_nn_optimizer; # Adam optimizer by default
       const nn_batch_iter = isnan($_nn_batch_iter)?0:$_nn_batch_iter;
       const nn_nb_threads_max = n;
+
+      nn_learning_rate = isnan($_nn_learning_rate)?1e-4:$_nn_learning_rate;
       nn_nb_samples = 0;
     );
 
@@ -21248,19 +21250,19 @@ nn_lib :
         # Compute trend: percentage of loss decrease(<0) or increase(>0).
         L#_trend = (L#_out - L#_previous_out)/max(1e-8,L#_previous_out);
         L#_trend>=0.5?( # Large loss increase -> drastically reduce learning rate
-          nn_learning_rate = max(0.5*nn_learning_rate,1e-6);
+          L#_learning_rate = max(0.5*L#_learning_rate,1e-6);
           _nb_increases = L#_nb_decreases = 0;
         ):L#_trend>=0?( # Loss increase
           ++_nb_increases;
           L#_nb_decreases = 0;
           _nb_increases>=2?( # Frequent loss increase -> slightly reduce learning rate
-            nn_learning_rate = max(0.9*nn_learning_rate,1e-6);
+            L#_learning_rate = max(0.9*L#_learning_rate,1e-6);
             _nb_increases = 0;
           );
         ):L#_trend<0?( # Loss decrease
           ++L#_nb_decreases;
           L#_nb_decreases>=4?( # Frequent loss decrease -> slightly increase learning rate
-            nn_learning_rate = min(1.15*nn_learning_rate,1);
+            L#_learning_rate = min(1.15*L#_learning_rate,1);
             L#_nb_decreases = 0;
           );
         );
@@ -21811,12 +21813,13 @@ nn_lib :
     nn_loss_mse_update(L) = (
       const L#_ind = $L#;
       L#_iteration = i[##L#_ind,0];
-      nn_learning_rate = i[##L#_ind,1];
+      L#_learning_rate = i[##L#_ind,1];
       L#_previous_out = i[##L#_ind,2];
       L#_nb_decreases = i[##L#_ind,3];
       L#_nb_increases = i[##L#_ind,4];
       nn_optimizer_update_learning_rate(#L);
-      copy(i[##L#_ind,0],[ L#_iteration + 1,nn_learning_rate,L#_batch_out,L#_nb_decreases,L#_nb_increases ]);
+      copy(i[##L#_ind,0],[ L#_iteration + 1,L#_learning_rate,L#_batch_out,L#_nb_decreases,L#_nb_increases ]);
+      nn_learning_rate = L#_learning_rate;
     );
     "
 
