@@ -212,6 +212,12 @@ inline double gmic_mp_get(Ts *const ptr, const unsigned int siz, const bool to_s
 #define cimg_mp_func_get(ptr,siz,to_string,str) \
   return ::gmic_mp_get(ptr,siz,to_string,str,&mp.listout,(T)0)
 
+template<typename Ts, typename T>
+inline double gmic_mp_set(Ts *const ptr, const unsigned int siz, const char *const str,
+                          void *const p_list, const T& pixel_type);
+#define cimg_mp_func_set(ptr,siz,str) \
+  return ::gmic_mp_set(ptr,siz,str,&mp.listout,(T)0)
+
 template<typename T, typename Ts>
 inline double gmic_mp_name(const unsigned int ind, Ts *const out_str, const unsigned int siz,
                            void *const p_list, const T& pixel_type);
@@ -308,6 +314,9 @@ struct gmic {
                           void *const p_list, const T& pixel_type);
   template<typename Ts, typename T>
   static double mp_get(Ts *const ptr, const unsigned int siz, const bool to_string, const char *const str,
+                       void *const p_list, const T& pixel_type);
+  template<typename Ts, typename T>
+  static double mp_set(Ts *const ptr, const unsigned int siz, const char *const str,
                        void *const p_list, const T& pixel_type);
   template<typename T, typename Ts>
   static double mp_name(const unsigned int ind, Ts *const out_str, const unsigned int siz,
@@ -528,6 +537,12 @@ template<typename Ts, typename T>
 inline double gmic_mp_get(Ts *const ptr, const unsigned int siz, const bool to_string, const char *const str,
                           void *const p_list, const T& pixel_type) {
   return gmic::mp_get(ptr,siz,to_string,str,p_list,pixel_type);
+}
+
+template<typename Ts, typename T>
+inline double gmic_mp_set(Ts *const ptr, const unsigned int siz, const char *const str,
+                          void *const p_list, const T& pixel_type) {
+  return gmic::mp_set(ptr,siz,str,p_list,pixel_type);
 }
 
 template<typename T, typename Ts>

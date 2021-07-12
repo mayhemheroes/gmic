@@ -2319,6 +2319,25 @@ double gmic::mp_get(Ts *const ptr, const unsigned int siz, const bool to_string,
   return siz?cimg::type<double>::nan():*ptr;
 }
 
+template<typename Ts, typename T>
+double gmic::mp_set(Ts *const ptr, const unsigned int siz, const char *const str,
+                    void *const p_list, const T& pixel_type) {
+  const CImg<void*> gr = get_current_run("Function 'set()'",p_list,pixel_type);
+  gmic &gmic_instance = *(gmic*)gr[0];
+  const unsigned int *const variables_sizes = (const unsigned int*)gr[5];
+  CImg<char> s_value;
+  if (siz) { // Value is a string
+    s_value.assign(siz + 1);
+    cimg_for_inX(s_value,0,s_value.width() - 1,i) s_value[i] = (char)ptr[i];
+    s_value.back() = 0;
+  } else { // Value is a scalar
+    s_value.assign(24);
+    cimg_snprintf(s_value,s_value.width(),"%.17g",*ptr);
+  }
+  gmic_instance.set_variable(str,s_value,'=',variables_sizes);
+  return (double)*ptr;
+}
+
 template<typename T, typename Ts>
 double gmic::mp_name(const unsigned int ind, Ts *const out_str, const unsigned int siz,
                      void *const p_list, const T& pixel_type) {
