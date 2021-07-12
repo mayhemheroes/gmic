@@ -21219,20 +21219,19 @@ nn_lib :
 
     nn_optimizer_adam_update_layer(L,dL) = (
       begin(
-        L#_name_m = '_nn_#L#_m';
-        L#_name_v = '_nn_#L#_v';
+        L#_name_m = '_nn_#L#_moment1';
+        L#_name_v = '_nn_#L#_moment2';
       );
-      isnan($_nn_#L#_is_mv)?(
-         L#_m = dL#;
-         L#_v = dL#^2;
+      isnan($_nn_#L#_moment1)?(
+         L#_moment1 = dL#;
+         L#_moment2 = dL#^2;
       ):(
-        L#_m = lerp(dL,get(L#_name_m,size(L)),nn_optimizer_adam_beta1);
-        L#_v = lerp(dL^2,get(L#_name_v,size(L)),nn_optimizer_adam_beta2);
+        L#_moment1 = lerp(dL,get(L#_name_moment1,size(L)),nn_optimizer_adam_beta1);
+        L#_moment2 = lerp(dL^2,get(L#_name_moment2,size(L)),nn_optimizer_adam_beta2);
       );
-      store(L#_m,L#_name_m,size(L));
-      store(L#_v,L#_name_v,size(L));
-      set(1,'_nn_#L#_is_mv');
-      L#-=nn_learning_rate*L#_m/sqrt(1e-8 + L#_v);
+      store(L#_moment1,L#_name_moment1,size(L));
+      store(L#_moment2,L#_name_moment2,size(L));
+      L#-=nn_learning_rate*L#_moment1/sqrt(1e-8 + L#_moment2);
     );
 
     # Generic function that dispatches to each optimizer.
