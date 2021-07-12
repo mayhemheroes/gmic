@@ -2325,7 +2325,6 @@ double gmic::mp_set(Ts *const ptr, const unsigned int siz, const char *const str
   const CImg<void*> gr = get_current_run("Function 'set()'",p_list,pixel_type);
   gmic &gmic_instance = *(gmic*)gr[0];
   const unsigned int *const variables_sizes = (const unsigned int*)gr[5];
-
   CImg<char> _varname(256);
   char *const varname = _varname.data(), end;
 
