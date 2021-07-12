@@ -21201,15 +21201,15 @@ nn_lib :
 
     # Stochastic gradient descent.
     #-----------------------------
-    nn_optimizer_sgd_update_layer(L,dL) = (
-      L#-=nn_learning_rate*#dL;
+    nn_optimizer_sgd_update_layer(L_params,dL_params) = (
+      L_params#-=nn_learning_rate*#dL_params;
     );
 
     # David optimizer.
     #-----------------
-    nn_optimizer_david_update_layer(L,dL) = (
-      _dt = nn_learning_rate/abs(maxabs(1e-9,#dL));
-      L#-=_dt*#dL;
+    nn_optimizer_david_update_layer(L_params,dL_params) = (
+      _dt = nn_learning_rate/abs(maxabs(1e-9,#dL_params));
+      L_params#-=_dt*#dL_params;
     );
 
     # Adam optimizer.
@@ -21217,21 +21217,21 @@ nn_lib :
     const nn_optimizer_adam_beta1 = 0.9;
     const nn_optimizer_adam_beta2 = 0.999;
 
-    nn_optimizer_adam_update_layer(L,dL) = (
+    nn_optimizer_adam_update_layer(L_params,dL_params) = (
       begin(
-        L#_name_m = '_nn_#L#_moment1';
-        L#_name_v = '_nn_#L#_moment2';
+        dL_params#_name_moment1 = '_nn_#dL_params#_moment1';
+        dL_params#_name_moment2 = '_nn_#dL_params#_moment2';
       );
-      isnan($_nn_#L#_moment1)?(
-         L#_moment1 = dL#;
-         L#_moment2 = dL#^2;
+      isnan($_nn_#dL_params#_moment1)?(
+         dL_params#_moment1 = dL_params#;
+         dL_params#_moment2 = dL_params#^2;
       ):(
-        L#_moment1 = lerp(dL,get(L#_name_moment1,size(L)),nn_optimizer_adam_beta1);
-        L#_moment2 = lerp(dL^2,get(L#_name_moment2,size(L)),nn_optimizer_adam_beta2);
+        dL_params#_moment1 = lerp(dL_params,get(dL_params#_name_moment1,size(dL_params)),nn_optimizer_adam_beta1);
+        dL_params#_moment2 = lerp(dL_params^2,get(dL_params#_name_moment2,size(dL_params)),nn_optimizer_adam_beta2);
       );
-      store(L#_moment1,L#_name_moment1,size(L));
-      store(L#_moment2,L#_name_moment2,size(L));
-      L#-=nn_learning_rate*L#_moment1/sqrt(1e-8 + L#_moment2);
+      store(dL_params#_moment1,dL_params#_name_moment1,size(dL_params));
+      store(dL_params#_moment2,dL_params#_name_moment2,size(dL_params));
+      L_params#-=nn_learning_rate*dL_params#_moment1/sqrt(1e-8 + dL_params#_moment2);
     );
 
     # Generic function that dispatches to each optimizer.
@@ -50119,6 +50119,7 @@ nn_test_fc :
   nn_layer_rename OUT,FC5
   nn_loss_mse L,OUT,Y
   sp lena,128 nm. img
+  _nn_optimizer=1
 
   # Optimize network.
   #-------------------
