@@ -21232,8 +21232,8 @@ nn_lib :
 
     nn_optimizer_adam_init_update_layer() = (
       begin(
-        nn_optimizer_adam_beta1_t = nn_iteration>100?0:nn_optimizer_adam_beta1^(nn_iteration + 1);
-        nn_optimizer_adam_beta2_t = nn_iteration>100?0:nn_optimizer_adam_beta2^(nn_iteration + 1);
+        nn_optimizer_adam_beta1_t = nn_iteration>200?0:nn_optimizer_adam_beta1^(nn_iteration + 1);
+        nn_optimizer_adam_beta2_t = nn_iteration>200?0:nn_optimizer_adam_beta2^(nn_iteration + 1);
         nn_optimizer_adam_alpha_t = sqrt(1 - nn_optimizer_adam_beta2_t)/(1 - nn_optimizer_adam_beta1_t);
       );
     );
@@ -21241,7 +21241,7 @@ nn_lib :
     nn_optimizer_adam_update_layer(L_params,dL_params) = (
       dL_params#_name_m = '_nn_#dL_params#_m';
       dL_params#_name_v = '_nn_#dL_params#_v';
-      isnan($_nn_#dL_params#_m)?(
+      !nn_iteration || isnan($_nn_#dL_params#_m)?(
          dL_params#_m = dL_params#_v = vector(#size(dL_params));
       ):(
         dL_params#_m = lerp(dL_params,get(dL_params#_name_m,size(dL_params)),nn_optimizer_adam_beta1);
@@ -21253,15 +21253,40 @@ nn_lib :
       L_params#-=nn_learning_rate*nn_optimizer_adam_alpha_t*dL_params#_m/sqrt(1e-8 + dL_params#_v);
     );
 
+    # Adamax optimizer.
+    #------------------
+    nn_optimizer_adamax_init_update_layer() = (
+      begin(
+        nn_optimizer_adamax_ombeta1_t = nn_iteration>200?1:(1 - nn_optimizer_adam_beta1^(nn_iteration + 1));
+      );
+    );
+
+    nn_optimizer_adamax_update_layer(L_params,dL_params) = (
+      dL_params#_name_m = '_nn_#dL_params#_m';
+      dL_params#_name_v = '_nn_#dL_params#_v';
+      !nn_iteration || isnan($_nn_#dL_params#_m)?(
+         dL_params#_m = dL_params#_v = vector(#size(dL_params));
+      ):(
+        dL_params#_m = lerp(dL_params,get(dL_params#_name_m,size(dL_params)),nn_optimizer_adam_beta1);
+        dL_params#_v = vmax(abs(dL_params),nn_optimizer_adam_beta2*get(dL_params#_name_v,size(dL_params)));
+      );
+      store(dL_params#_m,dL_params#_name_m,size(dL_params));
+      store(dL_params#_v,dL_params#_name_v,size(dL_params));
+
+      L_params#-=(nn_learning_rate/nn_optimizer_adamax_ombeta1_t)*dL_params#_m/sqrt(1e-8 + dL_params#_v);
+    );
+
     # Generic function that dispatches to selected optimizer.
     #--------------------------------------------------------
     begin(
-      nn_optimizer==2?nn_optimizer_adam_init_update_layer();   # Adam optimizer
+      nn_optimizer==2?nn_optimizer_adam_init_update_layer():    # Adam
+      nn_optimizer==3?nn_optimizer_adamax_init_update_layer();  # Adamax
     );
     nn_optimizer_update_layer(L,dL) = (
-      !nn_optimizer?nn_optimizer_sgd_update_layer(#L,#dL):     # Stochastic gradient descent
-      nn_optimizer==1?nn_optimizer_david_update_layer(#L,#dL): # David optimizer
-      nn_optimizer==2?nn_optimizer_adam_update_layer(#L,#dL);  # Adam optimizer
+      !nn_optimizer?nn_optimizer_sgd_update_layer(#L,#dL):      # Stochastic gradient descent
+      nn_optimizer==1?nn_optimizer_david_update_layer(#L,#dL):  # David
+      nn_optimizer==2?nn_optimizer_adam_update_layer(#L,#dL):   # Adam
+      nn_optimizer==3?nn_optimizer_adamax_update_layer(#L,#dL); # Adamax
     );
 
     # Global strategy to adapt learning rate regarding loss decrease/increase.
@@ -50196,7 +50221,7 @@ nn_test_fc :
   nn_layer_rename OUT,FC7
   nn_loss_mse L,OUT,Y
   sp lena,128 nm. img
-#  _nn_optimizer=1
+  _nn_optimizer=3
 
   # Optimize network.
   #-------------------
