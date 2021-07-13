@@ -21136,8 +21136,8 @@ nn_lib :
     end(
       merge(nn_nb_threads_used,max);
       merge(nn_nb_samples,+);
-      set(nn_learning_rate,'_nn_learning_rate');
       set(nn_iteration + 1,'_nn_iteration');
+      set(nn_learning_rate,'_nn_learning_rate');
     );
 
     nn_display(L) = display(L#_out,L#_out_width,L#_out_height,L#_out_depth,L#_out_spectrum);
@@ -21234,10 +21234,7 @@ nn_lib :
       begin(
         nn_optimizer_adam_beta1_t = nn_iteration>100?0:nn_optimizer_adam_beta1^(nn_iteration + 1);
         nn_optimizer_adam_beta2_t = nn_iteration>100?0:nn_optimizer_adam_beta2^(nn_iteration + 1);
-        nn_optimizer_adam_alpha_t = nn_learning_rate*sqrt(1 - nn_optimizer_adam_beta2_t)/(1 - nn_optimizer_adam_beta1_t);
-
-        !(nn_iteration%20)?print([nn_optimizer_adam_alpha_t,nn_learning_rate]);
-
+        nn_optimizer_adam_alpha_t = sqrt(1 - nn_optimizer_adam_beta2_t)/(1 - nn_optimizer_adam_beta1_t);
       );
     );
 
@@ -21246,8 +21243,6 @@ nn_lib :
       dL_params#_name_v = '_nn_#dL_params#_v';
       isnan($_nn_#dL_params#_m)?(
          dL_params#_m = dL_params#_v = vector(#size(dL_params));
- #        dL_params#_m = dL_params;
- #        dL_params#_v = dL_params^2;
       ):(
         dL_params#_m = lerp(dL_params,get(dL_params#_name_m,size(dL_params)),nn_optimizer_adam_beta1);
         dL_params#_v = lerp(dL_params^2,get(dL_params#_name_v,size(dL_params)),nn_optimizer_adam_beta2);
@@ -21255,8 +21250,7 @@ nn_lib :
       store(dL_params#_m,dL_params#_name_m,size(dL_params));
       store(dL_params#_v,dL_params#_name_v,size(dL_params));
 
-      L_params#-=nn_optimizer_adam_alpha_t*dL_params#_m/sqrt(1e-8 + dL_params#_v);
-#      L_params#-=nn_learning_rate*dL_params#_m/sqrt(1e-8 + dL_params#_v);
+      L_params#-=nn_learning_rate*nn_optimizer_adam_alpha_t*dL_params#_m/sqrt(1e-8 + dL_params#_v);
     );
 
     # Generic function that dispatches to selected optimizer.
@@ -21877,10 +21871,7 @@ nn_lib :
       nn_optimizer_update_learning_rate(#L);
       copy(i[##L#_ind,0],[ L#_iter + 1,L#_learning_rate,L#_out,L#_nb_decreases,L#_nb_increases ]);
       nn_learning_rate = L#_learning_rate;
-    );
-
-
-    "
+    );"
 
 #@cli nn_init
 #@cli : Initialize a new network.
