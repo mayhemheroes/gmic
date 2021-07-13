@@ -50293,7 +50293,8 @@ nn_test :
     nn_loss_gwmse L,OUT,Y
   fi
 
-  l[] images.gmz luminance n 0,255 +mirror x +mirror y a z endl nm. img
+  l[] images.gmz s z luminance n 0,255 +mirror x +mirror y  a z endl nm. img
+  +g[img] xy a[-2,-1] c norm. nm. grad
 
   # Optimize network.
   #------------------
@@ -50302,7 +50303,9 @@ nn_test :
     e[] "ITER = "$_nn_iter
 
     # Build mini-batch.
-    32,32,$size_batch,1
+    32,32,$size_batch,1 nm. batch_X
+    32,32,$size_batch,1 nm. batch_Y
+    32,32,$size_batch,1 nm. batch_gY
     1,1,$size_batch,1,">
       const img = $img;
       const siz = 32*32;
@@ -50311,24 +50314,26 @@ nn_test :
         ni = int(u(d#img))%d#img;
         nx = int(u(0,w#img - 1 - 32));
         ny = int(u(0,h#img - 1 - 32));
-        X = crop(#img,nx,ny,0,0,32,32,1,1);
-      _(while); std(X)<p);
-      draw(#-1,X,0,0,z,0,32,32,1,1)"
+        Y = crop(#img,nx,ny,0,0,32,32,1,1);
+        gY = crop(#$grad,nx,ny,0,0,32,32,1,1);
+      _(while); std(Y)<p);
+      draw(#$batch_X,Y,0,0,z,0,32,32,1,1);
+      draw(#$batch_Y,Y,0,0,z,0,32,32,1,1);
+      draw(#$batch_gY,gY,0,0,z,0,32,32,1,1)
+       "
     rm.
-    +noise. 15 c. 0,255 a[-2,-1] c
-    nm. batch
+    +noise[batch_X] 15 c[batch_X] 0,255
 
     # Mini-batch stochastic gradient.
     _nn_is_training=1
     repeat 30,_nn_batch_iter
-      1,1,{batch,d},1,*${-nn_lib}"
-        Y = crop(#$batch,0,0,z,0,32,32,1,1);
-        X = crop(#$batch,0,0,z,1,32,32,1,1);
-
+      1,1,{batch_X,d},1,*${-nn_lib}"
+        Y = crop(#$batch_Y,0,0,z,0,32,32,1,1);
+        gY = crop(#$batch_gY,0,0,z,0,32,32,1,1);
+        X = crop(#$batch_X,0,0,z,0,32,32,1,1);
         "${_nn_forward}"
         "${_nn_backward}"
         "${_nn_update}"
-
         z<4 && !("$_nn_batch_iter"%10)?(
           var = string(#256,'IN',t);
           store(X,var,32,32,1,1);
@@ -50344,7 +50349,7 @@ nn_test :
 "
       rm.
     done
-    rm[batch]
+    rm[batch_X,batch_Y,batch_gY]
 
     nn_save network.gmz
 
