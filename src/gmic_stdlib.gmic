@@ -50334,11 +50334,12 @@ nn_test :
   fi
 
   l[] images.gmz s z luminance n 0,255 +mirror x +mirror y  a z endl nm. img
+  +b[img] xy,1 nm. imgb
   +g[img] xy a[-2,-1] c norm. nm. grad
 
   # Optimize network.
   #------------------
-  size_batch=128
+  size_batch=32
   repeat inf,_nn_iter
     e[] "ITER = "$_nn_iter
 
@@ -50354,15 +50355,16 @@ nn_test :
         ni = int(u(d#img))%d#img;
         nx = int(u(0,w#img - 1 - 32));
         ny = int(u(0,h#img - 1 - 32));
+        X = crop(#$imgb,nx,ny,0,0,32,32,1,1);
         Y = crop(#img,nx,ny,0,0,32,32,1,1);
         gY = crop(#$grad,nx,ny,0,0,32,32,1,1);
       _(while); std(Y)<p);
-      draw(#$batch_X,Y,0,0,z,0,32,32,1,1);
+      draw(#$batch_X,X,0,0,z,0,32,32,1,1);
       draw(#$batch_Y,Y,0,0,z,0,32,32,1,1);
       draw(#$batch_gY,gY,0,0,z,0,32,32,1,1)
        "
     rm.
-    noise[batch_X] {u(5,25)} b. 1 c[batch_X] 0,255
+    noise[batch_X] {u(5,15)} c[batch_X] 0,255
 
     # Mini-batch stochastic gradient.
     _nn_is_training=1
