@@ -50331,7 +50331,8 @@ nn_test :
   if isfile('network.gmz') nn_load network.gmz
   else
     nn_layer_input X,32,32,1,1
-    nn_unet_small
+#    nn_unet_small
+    nn_resnet
     nn_loss_gwmse L,OUT,Y
   fi
 
@@ -50474,10 +50475,7 @@ nn_unet :
 
 
 nn_unet_small :
-
-  nn_layer_batchnorm BN,X,3
-
-  nn_layer_conv2dnl lA,BN,8
+  nn_layer_conv2dnl lA,X,8
   nn_layer_conv2dnl lB,lA,8
   nn_layer_clone lB0,lB1,lB
 
@@ -50500,6 +50498,15 @@ nn_unet_small :
   nn_layer_conv2dnl lO,lN,8
   nn_layer_conv2dnl lP,lO,8
   nn_layer_conv2d OUT,lP,1,1
+
+nn_resnet :
+  nn_layer_conv2d lA,X,64
+  nn_layer_res lB,lA,64
+  nn_layer_res lC,lB,64
+  nn_layer_res lD,lC,64
+  nn_layer_res lE,lD,64
+  nn_layer_conv2d lF,lE,1
+  nn_layer_rename OUT,lF
 
 
 # Local Variables:
