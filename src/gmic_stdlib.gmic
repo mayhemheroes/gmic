@@ -21829,11 +21829,8 @@ nn_lib :
     );
 
     nn_loss_gwmse_backward(L,IN,TRUTH) = (
-
-      # Compute gradient norm of IN
-      # TODO!
-
-      IN#_deriv_out = 2*(IN#_out - TRUTH);
+      GRAD = g#TRUTH;
+      IN#_deriv_out = 2*GRAD*(IN#_out - TRUTH);
       L#_out = norm(IN#_deriv_out/2)^2/size(IN#_deriv_out);
       L#_batch_out+=L#_out;
     );
@@ -50345,8 +50342,7 @@ nn_test :
         );
         end(
           print([ sqrt(L_out),nn_learning_rate,L_trend ]);
-        ); I
-"
+        ); I"
       rm.
     done
     rm[batch_X,batch_Y,batch_gY]
