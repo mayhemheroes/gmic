@@ -21122,6 +21122,7 @@ nn_lib :
       const nn_is_training = isnan($_nn_is_training)?0:$_nn_is_training;
       const nn_optimizer = isnan($_nn_optimizer)?2:$_nn_optimizer; # Adam optimizer by default
       const nn_batch_iter = isnan($_nn_batch_iter)?0:$_nn_batch_iter;
+      const nn_iteration = isnan($_nn_iteration)?0:$_nn_iteration;
       const nn_nb_threads_max = n;
 
       nn_learning_rate = isnan($_nn_learning_rate)?1e-4:$_nn_learning_rate;
@@ -21136,6 +21137,7 @@ nn_lib :
       merge(nn_nb_threads_used,max);
       merge(nn_nb_samples,+);
       set(nn_learning_rate,'_nn_learning_rate');
+      set(nn_iteration + 1,'_nn_iteration');
     );
 
     nn_display(L) = display(L#_out,L#_out_width,L#_out_height,L#_out_depth,L#_out_spectrum);
@@ -21228,25 +21230,41 @@ nn_lib :
     const nn_optimizer_adam_beta1 = 0.9;
     const nn_optimizer_adam_beta2 = 0.999;
 
-    nn_optimizer_adam_update_layer(L_params,dL_params) = (
+    nn_optimizer_adam_init_update_layer() = (
       begin(
-        dL_params#_name_m = '_nn_#dL_params#_m';
-        dL_params#_name_v = '_nn_#dL_params#_v';
+        nn_optimizer_adam_beta1_t = nn_iteration>100?0:nn_optimizer_adam_beta1^(nn_iteration + 1);
+        nn_optimizer_adam_beta2_t = nn_iteration>100?0:nn_optimizer_adam_beta2^(nn_iteration + 1);
+        nn_optimizer_adam_alpha_t = nn_learning_rate*sqrt(1 - nn_optimizer_adam_beta2_t)/(1 - nn_optimizer_adam_beta1_t);
+
+#        print([nn_optimizer_adam_alpha_t,nn_learning_rate]);
+
       );
-      !nn_batch_iter || isnan($_nn_#dL_params#_m)?(
-         dL_params#_m = dL_params#;
-         dL_params#_v = dL_params#^2;
+    );
+
+    nn_optimizer_adam_update_layer(L_params,dL_params) = (
+      dL_params#_name_m = '_nn_#dL_params#_m';
+      dL_params#_name_v = '_nn_#dL_params#_v';
+      isnan($_nn_#dL_params#_m)?(
+#        dL_params#_m = dL_params#_v = vector(#size(dL_params));
+
+         dL_params#_m = dL_params;
+         dL_params#_v = dL_params^2;
       ):(
         dL_params#_m = lerp(dL_params,get(dL_params#_name_m,size(dL_params)),nn_optimizer_adam_beta1);
         dL_params#_v = lerp(dL_params^2,get(dL_params#_name_v,size(dL_params)),nn_optimizer_adam_beta2);
       );
       store(dL_params#_m,dL_params#_name_m,size(dL_params));
       store(dL_params#_v,dL_params#_name_v,size(dL_params));
+
+#      L_params#-=nn_optimizer_adam_alpha_t*dL_params#_m/sqrt(1e-8 + dL_params#_v);
       L_params#-=nn_learning_rate*dL_params#_m/sqrt(1e-8 + dL_params#_v);
     );
 
-    # Generic function that dispatches to each optimizer.
-    #-----------------------------------------------------
+    # Generic function that dispatches to selected optimizer.
+    #--------------------------------------------------------
+    begin(
+      nn_optimizer==2?nn_optimizer_adam_init_update_layer();   # Adam optimizer
+    );
     nn_optimizer_update_layer(L,dL) = (
       !nn_optimizer?nn_optimizer_sgd_update_layer(#L,#dL):     # Stochastic gradient descent
       nn_optimizer==1?nn_optimizer_david_update_layer(#L,#dL): # David optimizer
@@ -21821,13 +21839,13 @@ nn_lib :
 
     nn_loss_mse_update(L) = (
       const L#_ind = $L#;
-      L#_iteration = i[##L#_ind,0];
+      L#_iter = i[##L#_ind,0];
       L#_learning_rate = i[##L#_ind,1];
       L#_previous_out = i[##L#_ind,2];
       L#_nb_decreases = i[##L#_ind,3];
       L#_nb_increases = i[##L#_ind,4];
       nn_optimizer_update_learning_rate(#L);
-      copy(i[##L#_ind,0],[ L#_iteration + 1,L#_learning_rate,L#_out,L#_nb_decreases,L#_nb_increases ]);
+      copy(i[##L#_ind,0],[ L#_iter + 1,L#_learning_rate,L#_out,L#_nb_decreases,L#_nb_increases ]);
       nn_learning_rate = L#_learning_rate;
     );
 
@@ -21852,13 +21870,13 @@ nn_lib :
 
     nn_loss_gwmse_update(L) = (
       const L#_ind = $L#;
-      L#_iteration = i[##L#_ind,0];
+      L#_iter = i[##L#_ind,0];
       L#_learning_rate = i[##L#_ind,1];
       L#_previous_out = i[##L#_ind,2];
       L#_nb_decreases = i[##L#_ind,3];
       L#_nb_increases = i[##L#_ind,4];
       nn_optimizer_update_learning_rate(#L);
-      copy(i[##L#_ind,0],[ L#_iteration + 1,L#_learning_rate,L#_out,L#_nb_decreases,L#_nb_increases ]);
+      copy(i[##L#_ind,0],[ L#_iter + 1,L#_learning_rate,L#_out,L#_nb_decreases,L#_nb_increases ]);
       nn_learning_rate = L#_learning_rate;
     );
 
@@ -22102,7 +22120,7 @@ nn_layer_upsample2d : nn_check_layer "$2" check ${"is_variable_name $1"}" && isb
 nn_loss_mse : nn_check_layer "$2" check ${"is_variable_name $1"}" && "${"is_variable_name $3"}
   e[^-1] "[nn_lib] Add 'mse' loss '$1', with input '$2' and ground truth '$3'."
   _nn_$1_out_size=1,1,1,1
-  if !isint($$1) (0,1e-4,inf,0,0) nm. $1 fi # iteration,learning_rate,batch_out,nb_decreases,nb_increases
+  if !isint($$1) (0,1e-4,inf,0,0) nm. $1 fi # iteration,learning_rate,previous_out,nb_decreases,nb_increases
   _nn_backward..="begin(nn_loss_mse_init_backward($1));"\
                  "nn_loss_mse_backward($1,$2,$3);"\
                  "end(nn_loss_mse_end_backward($1));"
@@ -22115,7 +22133,7 @@ nn_loss_mse : nn_check_layer "$2" check ${"is_variable_name $1"}" && "${"is_vari
 nn_loss_gwmse : nn_check_layer "$2" check ${"is_variable_name $1"}" && "${"is_variable_name $3"}
   e[^-1] "[nn_lib] Add 'gwmse' loss '$1', with input '$2' and ground truth '$3'."
   _nn_$1_out_size=1,1,1,1
-  if !isint($$1) (0,1e-4,inf,0,0) nm. $1 fi # iteration,learning_rate,batch_out,nb_decreases,nb_increases
+  if !isint($$1) (0,1e-4,inf,0,0) nm. $1 fi # iteration,learning_rate,previous_out,nb_decreases,nb_increases
   _nn_backward..="begin(nn_loss_gwmse_init_backward($1));"\
                  "nn_loss_gwmse_backward($1,$2,$3);"\
                  "end(nn_loss_gwmse_end_backward($1));"
