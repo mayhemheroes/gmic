@@ -21232,8 +21232,8 @@ nn_lib :
 
     nn_optimizer_adam_init_update_layer() = (
       begin(
-        nn_optimizer_adam_beta1_t = nn_iteration>100?0:nn_optimizer_adam_beta1^(nn_iteration + 1);
-        nn_optimizer_adam_beta2_t = nn_iteration>100?0:nn_optimizer_adam_beta2^(nn_iteration + 1);
+        nn_optimizer_adam_beta1_t = nn_iteration>200?0:nn_optimizer_adam_beta1^(nn_iteration + 1);
+        nn_optimizer_adam_beta2_t = nn_iteration>200?0:nn_optimizer_adam_beta2^(nn_iteration + 1);
         nn_optimizer_adam_alpha_t = sqrt(1 - nn_optimizer_adam_beta2_t)/(1 - nn_optimizer_adam_beta1_t);
       );
     );
@@ -21241,7 +21241,7 @@ nn_lib :
     nn_optimizer_adam_update_layer(L_params,dL_params) = (
       dL_params#_name_m = '_nn_#dL_params#_m';
       dL_params#_name_v = '_nn_#dL_params#_v';
-      isnan($_nn_#dL_params#_m)?(
+      !nn_iteration || isnan($_nn_#dL_params#_m)?(
          dL_params#_m = dL_params#_v = vector(#size(dL_params));
       ):(
         dL_params#_m = lerp(dL_params,get(dL_params#_name_m,size(dL_params)),nn_optimizer_adam_beta1);
@@ -21253,15 +21253,40 @@ nn_lib :
       L_params#-=nn_learning_rate*nn_optimizer_adam_alpha_t*dL_params#_m/sqrt(1e-8 + dL_params#_v);
     );
 
+    # Adamax optimizer.
+    #------------------
+    nn_optimizer_adamax_init_update_layer() = (
+      begin(
+        nn_optimizer_adamax_ombeta1_t = nn_iteration>200?1:(1 - nn_optimizer_adam_beta1^(nn_iteration + 1));
+      );
+    );
+
+    nn_optimizer_adamax_update_layer(L_params,dL_params) = (
+      dL_params#_name_m = '_nn_#dL_params#_m';
+      dL_params#_name_v = '_nn_#dL_params#_v';
+      !nn_iteration || isnan($_nn_#dL_params#_m)?(
+         dL_params#_m = dL_params#_v = vector(#size(dL_params));
+      ):(
+        dL_params#_m = lerp(dL_params,get(dL_params#_name_m,size(dL_params)),nn_optimizer_adam_beta1);
+        dL_params#_v = vmax(abs(dL_params),nn_optimizer_adam_beta2*get(dL_params#_name_v,size(dL_params)));
+      );
+      store(dL_params#_m,dL_params#_name_m,size(dL_params));
+      store(dL_params#_v,dL_params#_name_v,size(dL_params));
+
+      L_params#-=(nn_learning_rate/nn_optimizer_adamax_ombeta1_t)*dL_params#_m/sqrt(1e-8 + dL_params#_v);
+    );
+
     # Generic function that dispatches to selected optimizer.
     #--------------------------------------------------------
     begin(
-      nn_optimizer==2?nn_optimizer_adam_init_update_layer();   # Adam optimizer
+      nn_optimizer==2?nn_optimizer_adam_init_update_layer():    # Adam
+      nn_optimizer==3?nn_optimizer_adamax_init_update_layer();  # Adamax
     );
     nn_optimizer_update_layer(L,dL) = (
-      !nn_optimizer?nn_optimizer_sgd_update_layer(#L,#dL):     # Stochastic gradient descent
-      nn_optimizer==1?nn_optimizer_david_update_layer(#L,#dL): # David optimizer
-      nn_optimizer==2?nn_optimizer_adam_update_layer(#L,#dL);  # Adam optimizer
+      !nn_optimizer?nn_optimizer_sgd_update_layer(#L,#dL):      # Stochastic gradient descent
+      nn_optimizer==1?nn_optimizer_david_update_layer(#L,#dL):  # David
+      nn_optimizer==2?nn_optimizer_adam_update_layer(#L,#dL):   # Adam
+      nn_optimizer==3?nn_optimizer_adamax_update_layer(#L,#dL); # Adamax
     );
 
     # Global strategy to adapt learning rate regarding loss decrease/increase.
@@ -50185,18 +50210,16 @@ nn_test_fc :
   # Build neural network.
   #----------------------
   nn_layer_input X,2
-  nn_layer_batchnorm BN0,X
-  nn_layer_fcnl FC1,BN0,100
+  nn_layer_fcnl FC1,X,100
   nn_layer_fcnl FC2,FC1,100
   nn_layer_fcnl FC3,FC2,50
-  nn_layer_fcnl FC4,FC3,50
+  nn_layer_fcnl FC4,FC3,30
   nn_layer_fcnl FC5,FC4,30
-  nn_layer_fcnl FC6,FC5,30
-  nn_layer_fcnl FC7,FC6,3
-  nn_layer_rename OUT,FC7
+  nn_layer_fcnl FC6,FC5,3
+  nn_layer_rename OUT,FC6
   nn_loss_mse L,OUT,Y
   sp lena,128 nm. img
-#  _nn_optimizer=1
+  _nn_optimizer=2
 
   # Optimize network.
   #-------------------
@@ -50305,16 +50328,18 @@ nn_test :
   if isfile('network.gmz') nn_load network.gmz
   else
     nn_layer_input X,32,32,1,1
-    nn_unet_small
+#    nn_unet_small
+    nn_resnet
     nn_loss_gwmse L,OUT,Y
   fi
 
   l[] images.gmz s z luminance n 0,255 +mirror x +mirror y  a z endl nm. img
+  +b[img] xy,0.5 nm. imgb
   +g[img] xy a[-2,-1] c norm. nm. grad
 
   # Optimize network.
   #------------------
-  size_batch=128
+  size_batch=64
   repeat inf,_nn_iter
     e[] "ITER = "$_nn_iter
 
@@ -50330,10 +50355,11 @@ nn_test :
         ni = int(u(d#img))%d#img;
         nx = int(u(0,w#img - 1 - 32));
         ny = int(u(0,h#img - 1 - 32));
+        X = crop(#$imgb,nx,ny,0,0,32,32,1,1);
         Y = crop(#img,nx,ny,0,0,32,32,1,1);
         gY = crop(#$grad,nx,ny,0,0,32,32,1,1);
       _(while); std(Y)<p);
-      draw(#$batch_X,Y,0,0,z,0,32,32,1,1);
+      draw(#$batch_X,X,0,0,z,0,32,32,1,1);
       draw(#$batch_Y,Y,0,0,z,0,32,32,1,1);
       draw(#$batch_gY,gY,0,0,z,0,32,32,1,1)
        "
@@ -50377,48 +50403,53 @@ nn_test :
 
 nn_foo :
   l[]
+    nn_init
     network.gmz
-    nn_layer_input X,48,48,1,1
-    nn_unet
+    nn_layer_input X,64,64,1,1
+    nn_resnet
     store network
   endl
   repeat $! l[$>]
     w,h={[w,h]}
 
-    # Extract overlapping 48x48 tiles.
-    nx,ny={ceil([w,h]/40)}
-    48,48,{$nx*$ny},3
+    # Extract overlapping 64x64 tiles.
+    nx,ny={ceil([w,h]/60)}
+    64,64,{$nx*$ny},3
     1,1,{d},1,"*
+      const boundary = 1;
       ix = z%$nx;
       iy = int(z/$nx);
-      X = round(lerp(0,$w - 48,ix/($nx-1)));
-      Y = round(lerp(0,$h - 48,iy/($ny-1)));
-      V = crop(#0,X,Y,0,0,48,48,1,3);
-      draw(#-1,V,0,0,z,0,48,48,1,3)"
+      X = round(lerp(-1,$w - 64,ix/($nx-1)));
+      Y = round(lerp(-1,$h - 64,iy/($ny-1)));
+      V = crop(#0,X,Y,0,0,64,64,1,3);
+      draw(#-1,V,0,0,z,0,64,64,1,3)"
     k..
 
-    # Denoise 48x48 tiles.
+    # Denoise 64x64 tiles.
     $network
     1,1,{0,d},1,*${-nn_lib}${_nn_init_forward}"
     repeat (3,c,
-      X = crop(#0,0,0,z,c,48,48,1,1);"${_nn_forward}"
-      draw(#0,OUT_out,0,0,z,c,48,48,1,1);
+      X = crop(#0,0,0,z,c,64,64,1,1);"${_nn_forward}"
+      draw(#0,OUT_out,0,0,z,c,64,64,1,1);
     )"
     k[0]
 
     # Reconstruct image from tiles.
     $w,$h,1,4
-    1,1,{0,d},1,">begin(one = vector(#48*48,1));
+    1,1,{0,d},1,">begin(one = vector(#(64 - 2)*(64 - 2),1));
+      const boundary = 1;
       ix = z%$nx;
       iy = int(z/$nx);
-      X = round(lerp(0,$w - 48,ix/($nx-1)));
-      Y = round(lerp(0,$h - 48,iy/($ny-1)));
-      V = crop(#0,0,0,z,0,48,48,1,3);
-      draw(#1,V,X,Y,0,0,48,48,1,3,-1);
-      draw(#1,one,X,Y,0,3,48,48,1,1,-1)"
+      X = round(lerp(-1,$w - 64,ix/($nx-1)));
+      Y = round(lerp(-1,$h - 64,iy/($ny-1)));
+      V = crop(#0,1,1,z,0,64 - 2,64 - 2,1,3);
+      draw(#1,V,X + 1,Y + 1,0,0,64 - 2,64 - 2,1,3,-1);
+      draw(#1,one,X + 1,Y + 1,0,3,64 - 2,64 - 2,1,1,-1)"
     k..
     s c,-3
-    max. 1 / c 0,255
+    max. 1 /
+    c 0,255
+
   endl done
 
 nn_unet :
@@ -50448,10 +50479,7 @@ nn_unet :
 
 
 nn_unet_small :
-
-  nn_layer_batchnorm BN,X,3
-
-  nn_layer_conv2dnl lA,BN,8
+  nn_layer_conv2dnl lA,X,8
   nn_layer_conv2dnl lB,lA,8
   nn_layer_clone lB0,lB1,lB
 
@@ -50474,6 +50502,15 @@ nn_unet_small :
   nn_layer_conv2dnl lO,lN,8
   nn_layer_conv2dnl lP,lO,8
   nn_layer_conv2d OUT,lP,1,1
+
+nn_resnet :
+  nn_layer_conv2d lA,X,16
+  nn_layer_res lB,lA,16
+  nn_layer_res lC,lB,16
+  nn_layer_res lD,lC,16
+  nn_layer_res lE,lD,16
+  nn_layer_conv2d lF,lE,1
+  nn_layer_rename OUT,lF
 
 
 # Local Variables:
