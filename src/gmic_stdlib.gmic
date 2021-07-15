@@ -21228,11 +21228,10 @@ nn_lib :
 
     # Adam optimizer.
     #----------------
-    const nn_optimizer_adam_beta1 = 0.9;
-    const nn_optimizer_adam_beta2 = 0.999;
-
     nn_optimizer_adam_init_update_layer() = (
       begin(
+        const nn_optimizer_adam_beta1 = 0.9;
+        const nn_optimizer_adam_beta2 = 0.999;
         const nn_optimizer_adam_beta1_t = nn_iteration>200?0:nn_optimizer_adam_beta1^(nn_iteration + 1);
         const nn_optimizer_adam_beta2_t = nn_iteration>200?0:nn_optimizer_adam_beta2^(nn_iteration + 1);
         const nn_optimizer_adam_alpha_t = sqrt(1 - nn_optimizer_adam_beta2_t)/(1 - nn_optimizer_adam_beta1_t);
@@ -21260,7 +21259,9 @@ nn_lib :
     #------------------
     nn_optimizer_adamax_init_update_layer() = (
       begin(
-        const nn_optimizer_adamax_ombeta1_t = nn_iteration>200?1:(1 - nn_optimizer_adam_beta1^(nn_iteration + 1));
+        const nn_optimizer_adamax_beta1 = 0.9;
+        const nn_optimizer_adamax_beta2 = 0.999;
+        const nn_optimizer_adamax_ombeta1_t = nn_iteration>200?1:(1 - nn_optimizer_adamax_beta1^(nn_iteration + 1));
       );
     );
 
@@ -21273,8 +21274,8 @@ nn_lib :
         dL_params#_m = get(dL_params#_name_m,size(dL_params));
         dL_params#_v = get(dL_params#_name_v,size(dL_params));
       );
-      dL_params#_m = lerp(dL_params,dL_params#m,nn_optimizer_adam_beta1);
-      dL_params#_v = vmax(abs(dL_params),nn_optimizer_adam_beta2*dL_params#_v);
+      dL_params#_m = lerp(dL_params,dL_params#_m,nn_optimizer_adamax_beta1);
+      dL_params#_v = vmax(abs(dL_params),nn_optimizer_adamax_beta2*dL_params#_v);
       store(dL_params#_m,dL_params#_name_m,size(dL_params));
       store(dL_params#_v,dL_params#_name_v,size(dL_params));
 
