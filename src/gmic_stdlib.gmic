@@ -50340,7 +50340,7 @@ nn_layer_res2 : nn_check_layer "$2" check ${"is_variable_name $1"}" && isint(${3
   nn_layer_nl $1,$1_ADD
 
 # Main test procedure.
-nn_test :
+nn_test : skip ${1=nan}
 
   # Build neural network.
   #----------------------
@@ -50349,15 +50349,14 @@ nn_test :
     nn_init
     nn_layer_input X,32,32,1,1
     nn_unet_small
-#    nn_resnet
-    nn_loss_mse L,OUT,Y
+    nn_loss_mse L,OUT,Y,0
   fi
 
   l[] images.gmz s z luminance n 0,255 +mirror x +mirror y  a z endl nm. res
   +l[res] s c noise 0 c 0,255 a z endl nm. img
 
   _nn_optimizer=2
-  _nn_learning_rate=1e-7
+  _nn_learning_rate={isnan($1)?1e-8:$1}
 
   # Optimize network.
   #------------------
