@@ -50207,110 +50207,9 @@ fx_solve_maze_preview :
 #@cli : $ https://gmic.eu/samples/distortion.gmic go _fps=20 _label="Distortion"
 #@cli : $ https://gmic.eu/samples/rotozoom.gmic go _fps=15 _label="Rotozoom"
 
-
-
-#------------------------------
-# Test program for FC networks.
-#------------------------------
-nn_test_fc :
-
-  # Build neural network.
-  #----------------------
-  nn_layer_input X,2
-  nn_layer_batchnorm BN,X
-  nn_layer_fcnl FC1,BN,100
-  nn_layer_fcnl FC2,FC1,50
-  nn_layer_fcnl FC3,FC2,50
-  nn_layer_fcnl FC4,FC3,30
-  nn_layer_fcnl FC5,FC4,30
-  nn_layer_fcnl FC6,FC5,3
-  nn_layer_rename OUT,FC6
-  nn_loss_mse L,OUT,Y
-  sp lena,128 nm. img
-  _nn_optimizer=2
-
-  # Optimize network.
-  #-------------------
-  size_batch=1024
-  repeat inf,_nn_iter
-    e[] "ITER = "$_nn_iter
-
-    # Build mini-batch.
-    $size_batch,1,1,5,"
-      const ind = $img;
-      px = u(0,w#ind)%w#ind;
-      py = u(0,h#ind)%h#ind;
-      val = I(#$img,px,py,0,0,1);
-      [ px,py,val ]"
-    nm. batch
-
-    # Mini-batch stochastic gradient descent.
-    _nn_batch_iteration=0
-    _nn_is_training=1
-    repeat 128,batch_iter
-      eval[batch] *${-nn_lib}"
-        batch = I;
-        X = batch[0,2]; # Input
-        Y = batch[2,3]; "\ # Ground-truth
-        ${_nn_forward}${_nn_backward}${_nn_update}"
-        end(
-          !($batch_iter%20)?print([L_out,nn_learning_rate,L_trend]);
-        ); I"
-    done
-    rm[batch]
-
-    # Render image from network.
-    _nn_is_training=0
-    {img,[w,h]},1,3,*${-nn_lib}"
-      X = [ x,y ];
-      "${_nn_forward}"
-      cut(OUT_out,0,255)"
-#    on. frame.png,$_nn_iter
-    w. 600,600 rm.
-
-  done
-
-#--------------------------------
-# Test program for CONV networks.
-#--------------------------------
-nn_test_conv :
-
-  # Build neural network.
-  #----------------------
-  nn_layer_input X,32,32,1,3
-  nn_layer_conv2dnl L1,X,3
-  nn_layer_rename OUT,L1
-  nn_loss_mse L,OUT,Y
-  sp lena,32 nm. img
-  [img] nm. res
-
-  # Optimize network.
-  #-------------------
-  size_batch=1
-  repeat inf,_nn_iter
-    e[] "ITER = "$_nn_iter
-
-    _nn_batch_iteration=0
-    repeat 10,batch_iter
-      eval ${-nn_lib}"
-        X = crop(#$img); # Input
-        Y = crop(#$res); # Ground-truth
-        "${_nn_forward}${_nn_backward}${_nn_update}"
-        store(X,'vX',32,32,1,3);
-        store(Y,'vY',32,32,1,3);
-        store(OUT_out,'vOUT',32,32,1,3);
-        run('l[] $vOUT r2dx 200,1 a x w. rm. endl');
-
-        end(
-          print([L_out,nn_learning_rate]);
-        ); I"
-    done
-  done
-
-
-#----------------------------------
-# Test program for CONV networks.
-#----------------------------------
+#---------------------------
+# Test programs for NN lib.
+#---------------------------
 
 # nn_layer_res : name,in
 # Define a custom residual CONV module.
@@ -50373,7 +50272,6 @@ nn_test :
       draw(#$batch_X,X,0,0,z,0,32,32,1,1);
       draw(#$batch_Y,Y,0,0,z,0,32,32,1,1)"
     rm.
-    noise[batch_X] {u(5,25)} c[batch_X] 0,255
 
     # Mini-batch stochastic gradient.
     _nn_is_training=1
