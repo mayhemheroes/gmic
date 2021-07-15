@@ -21121,8 +21121,8 @@ nn_lib :
     begin(
       const nn_is_training = isnan($_nn_is_training)?0:$_nn_is_training;
       const nn_optimizer = isnan($_nn_optimizer)?2:$_nn_optimizer; # Adam optimizer by default
-      const nn_batch_iter = isnan($_nn_batch_iter)?0:$_nn_batch_iter;
       const nn_iteration = isnan($_nn_iteration)?0:$_nn_iteration;
+      const nn_batch_iteration = isnan($_nn_batch_iteration)?0:$_nn_batch_iteration;
       const nn_nb_threads_max = n;
 
       nn_learning_rate = isnan($_nn_learning_rate)?1e-4:$_nn_learning_rate;
@@ -21137,6 +21137,7 @@ nn_lib :
       merge(nn_nb_threads_used,max);
       merge(nn_nb_samples,+);
       set(nn_iteration + 1,'_nn_iteration');
+      set(nn_batch_iteration + 1,'_nn_batch_iteration');
       set(nn_learning_rate,'_nn_learning_rate');
     );
 
@@ -21292,7 +21293,7 @@ nn_lib :
     # Global strategy to adapt learning rate regarding loss decrease/increase.
     #--------------------------------------------------------------------------
     nn_optimizer_update_learning_rate(L) = (
-      !isinf(L#_previous_out)?(
+      nn_batch_iteration?(
         # Compute trend: percentage of loss decrease(<0) or increase(>0).
         L#_trend = (L#_out - L#_previous_out)/max(1e-8,L#_previous_out);
         L#_trend>=0.3?( # Large loss increase -> drastically reduce learning rate
@@ -21312,7 +21313,7 @@ nn_lib :
             L#_nb_decreases = 0;
           );
         );
-      );
+      ):(L#_trend = 0);
     );
 
     #----------------
@@ -21468,7 +21469,7 @@ nn_lib :
     nn_layer_batchnorm_update(L,learning_mode) = (
       draw(##L#_ind,L#_in_mean,0,0,0,0,1,h##L#_ind,1,1); # Update batch mean and batch variance
       draw(##L#_ind,L#_in_variance,1,0,0,0,1,h##L#_ind,1,1);
-      !$nn_batch_iter?(
+      !$nn_batch_iteration?(
         momentum = isnan(i[##L#_ind,2])?1:0.01;
         draw(##L#_ind,L#_in_mean,2,0,0,0,1,h##L#_ind,1,1,momentum); # Global mean and variance
         draw(##L#_ind,L#_in_variance,3,0,0,0,1,h##L#_ind,1,1,momentum);
@@ -21902,7 +21903,8 @@ nn_lib :
 #@cli : Initialize a new network.
 nn_init :
   e[^-1] "[nn_lib] Initialize new network."
-  _nn_forward,_nn_backward,_nn_update,_nn_parameters,nn_iteration,_nn_learning_rate,_nn_is_training,_nn_optimizer=
+  _nn_forward,_nn_backward,_nn_update,_nn_parameters,_nn_iteration,_nn_batch_iteration,_nn_learning_rate,\
+  _nn_is_training,_nn_optimizer=
   _nn_init="$0 "
 
 #@cli nn_check_layer : name
@@ -50237,15 +50239,16 @@ nn_test_fc :
     nm. batch
 
     # Mini-batch stochastic gradient descent.
+    _nn_batch_iteration=0
     _nn_is_training=1
-    repeat 128,_nn_batch_iter
+    repeat 128,batch_iter
       eval[batch] *${-nn_lib}"
         batch = I;
         X = batch[0,2]; # Input
         Y = batch[2,3]; "\ # Ground-truth
         ${_nn_forward}${_nn_backward}${_nn_update}"
         end(
-          !($_nn_batch_iter%20)?print([L_out,nn_learning_rate,L_trend]);
+          !($batch_iter%20)?print([L_out,nn_learning_rate,L_trend]);
         ); I"
     done
     rm[batch]
@@ -50281,8 +50284,8 @@ nn_test_conv :
   repeat inf,_nn_iter
     e[] "ITER = "$_nn_iter
 
-    =[L] inf,2
-    repeat 10,_nn_batch_iter
+    _nn_batch_iteration=0
+    repeat 10,batch_iter
       eval ${-nn_lib}"
         X = crop(#$img); # Input
         Y = crop(#$res); # Ground-truth
@@ -50374,7 +50377,8 @@ nn_test :
 
     # Mini-batch stochastic gradient.
     _nn_is_training=1
-    repeat 30,_nn_batch_iter
+    _nn_batch_iteration=0
+    repeat 30,batch_iter
       1,1,{batch_X,d},1,*${-nn_lib}"
         Y = crop(#$batch_Y,0,0,z,0,32,32,1,1);
         gY = crop(#$batch_gY,0,0,z,0,32,32,1,1);
@@ -50382,7 +50386,7 @@ nn_test :
         "${_nn_forward}"
         "${_nn_backward}"
         "${_nn_update}"
-        z<4 && !("$_nn_batch_iter"%10)?(
+        z<4 && !("$batch_iter"%10)?(
           var = string(#256,'IN',t);
           store(X,var,32,32,1,1);
           var = string(#256,'OUT',t);
