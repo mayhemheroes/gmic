@@ -21307,18 +21307,18 @@ nn_lib :
         # Compute trend: percentage of loss decrease(<0) or increase(>0).
         L#_trend = (L#_out - L#_previous_out)/max(1e-8,L#_previous_out);
         L#_trend>=0.3?( # Large loss increase -> drastically reduce learning rate
-          L#_learning_rate = max(0.5*L#_learning_rate,1e-8);
+          L#_learning_rate = max(0.1*L#_learning_rate,1e-9);
           L#_nb_increases = L#_nb_decreases = 0;
         ):L#_trend>=0?( # Loss increase
           ++L#_nb_increases;
           L#_nb_decreases = 0;
           L#_nb_increases>=2?( # Frequent loss increase -> slightly reduce learning rate
-            L#_learning_rate = max(L#_learning_rate/1.75,1e-8);
+            L#_learning_rate = max(L#_learning_rate/2,1e-9);
             L#_nb_increases = 0;
           );
         ):L#_trend<0?( # Loss decrease
           ++L#_nb_decreases;
-          L#_nb_decreases>=6?( # Frequent loss decrease -> slightly increase learning rate
+          L#_nb_decreases>=4?( # Frequent loss decrease -> slightly increase learning rate
             L#_learning_rate = min(L#_learning_rate*1.15,1);
             L#_nb_decreases = 0;
           );
