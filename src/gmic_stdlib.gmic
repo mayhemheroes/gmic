@@ -21124,18 +21124,23 @@ nn_lib :
       const nn_iteration = isnan($_nn_iteration)?0:$_nn_iteration;
       const nn_batch_iteration = isnan($_nn_batch_iteration)?0:$_nn_batch_iteration;
       const nn_nb_threads_max = n;
-
       nn_learning_rate = isnan($_nn_learning_rate)?1e-4:$_nn_learning_rate;
       nn_nb_samples = 0;
     );
 
-    nn_thread = t;
-    nn_nb_threads_used = nn_thread + 1;
+    begin_t(
+      nn_thread = t;
+      nn_nb_threads_used = nn_thread + 1;
+    );
+
     ++nn_nb_samples;
 
     end(
       merge(nn_nb_threads_used,max);
       merge(nn_nb_samples,+);
+    );
+
+    nn_end_backward() = ( # This has to be the last 'end()' bloc encountered
       set(nn_iteration + 1,'_nn_iteration');
       set(nn_batch_iteration + 1,'_nn_batch_iteration');
       set(nn_learning_rate,'_nn_learning_rate');
@@ -21866,6 +21871,8 @@ nn_lib :
       L#_iter = i[##L#_ind,0];
       L#_learning_rate = i[##L#_ind,1];
 #      L#_learning_rate = nn_learning_rate;
+#      print(nn_learning_rate);
+
       L#_previous_out = i[##L#_ind,2];
       L#_nb_decreases = i[##L#_ind,3];
       L#_nb_increases = i[##L#_ind,4];
@@ -21909,9 +21916,10 @@ nn_lib :
 #@cli : Initialize a new network.
 nn_init :
   e[^-1] "[nn_lib] Initialize new network."
-  _nn_forward,_nn_backward,_nn_update,_nn_parameters,_nn_iteration,_nn_batch_iteration,_nn_learning_rate,\
+  _nn_forward,_nn_update,_nn_parameters,_nn_iteration,_nn_batch_iteration,_nn_learning_rate,\
   _nn_is_training,_nn_optimizer=
   _nn_init="$0 "
+  _nn_backward="end(nn_end_backward());"
 
 #@cli nn_check_layer : name
 #@cli : Check that the layer with specified name exists in the network.
@@ -50219,6 +50227,7 @@ nn_test_fc :
 
   # Build neural network.
   #----------------------
+  nn_init
   nn_layer_input X,2
   nn_layer_batchnorm BN,X
   nn_layer_fcnl FC1,BN,100
@@ -50232,6 +50241,8 @@ nn_test_fc :
   sp lena,128 nm. img
   _nn_optimizer=2
   _nn_learning_rate=1e-6
+
+#  +e "DEBUG : "$_nn_backward
 
   # Optimize network.
   #-------------------
