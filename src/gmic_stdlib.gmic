@@ -21140,7 +21140,7 @@ nn_lib :
       merge(nn_nb_samples,+);
     );
 
-    nn_end_backward() = ( # This has to be the last 'end()' bloc encountered
+    nn_end_update() = ( # This has to be the last 'end()' bloc encountered in $_nn_update
       set(nn_iteration + 1,'_nn_iteration');
       set(nn_batch_iteration + 1,'_nn_batch_iteration');
       set(nn_learning_rate,'_nn_learning_rate');
@@ -21312,13 +21312,13 @@ nn_lib :
         ):L#_trend>=0?( # Loss increase
           ++L#_nb_increases;
           L#_nb_decreases = 0;
-          L#_nb_increases>=6?( # Frequent loss increase -> slightly reduce learning rate
+          L#_nb_increases>=2?( # Frequent loss increase -> slightly reduce learning rate
             L#_learning_rate = max(L#_learning_rate/1.15,1e-8);
             L#_nb_increases = 0;
           );
         ):L#_trend<0?( # Loss decrease
           ++L#_nb_decreases;
-          L#_nb_decreases>=3?( # Frequent loss decrease -> slightly increase learning rate
+          L#_nb_decreases>=6?( # Frequent loss decrease -> slightly increase learning rate
             L#_learning_rate = min(L#_learning_rate*1.15,1);
             L#_nb_decreases = 0;
           );
@@ -21869,10 +21869,8 @@ nn_lib :
     nn_loss_mse_update(L) = (
       const L#_ind = $L#;
       L#_iter = i[##L#_ind,0];
-      L#_learning_rate = i[##L#_ind,1];
-#      L#_learning_rate = nn_learning_rate;
-#      print(nn_learning_rate);
-
+#      L#_learning_rate = i[##L#_ind,1];
+      L#_learning_rate = nn_learning_rate;
       L#_previous_out = i[##L#_ind,2];
       L#_nb_decreases = i[##L#_ind,3];
       L#_nb_increases = i[##L#_ind,4];
@@ -21919,7 +21917,7 @@ nn_init :
   _nn_forward,_nn_update,_nn_parameters,_nn_iteration,_nn_batch_iteration,_nn_learning_rate,\
   _nn_is_training,_nn_optimizer=
   _nn_init="$0 "
-  _nn_backward="end(nn_end_backward());"
+  _nn_update="end(nn_end_update());"
 
 #@cli nn_check_layer : name
 #@cli : Check that the layer with specified name exists in the network.
@@ -50240,7 +50238,7 @@ nn_test_fc :
   nn_loss_mse L,OUT,Y
   sp lena,128 nm. img
   _nn_optimizer=2
-  _nn_learning_rate=1e-6
+  _nn_learning_rate=1
 
 #  +e "DEBUG : "$_nn_backward
 
