@@ -21295,8 +21295,8 @@ nn_lib :
       nn_optimizer==3?nn_optimizer_adamax_update_layer(#L,#dL); # Adamax
     );
 
-    # Global strategy to adapt learning rate regarding loss decrease/increase.
-    #--------------------------------------------------------------------------
+    # Strategy to adapt learning rate regarding loss decrease/increase.
+    #-------------------------------------------------------------------
     nn_optimizer_update_learning_rate(L) = (
       nn_batch_iteration?(
         # Compute trend: percentage of loss decrease(<0) or increase(>0).
@@ -21307,14 +21307,14 @@ nn_lib :
         ):L#_trend>=0?( # Loss increase
           ++L#_nb_increases;
           L#_nb_decreases = 0;
-          L#_nb_increases>=2?( # Frequent loss increase -> slightly reduce learning rate
-            L#_learning_rate = max(0.9*L#_learning_rate,1e-8);
+          L#_nb_increases>=6?( # Frequent loss increase -> slightly reduce learning rate
+            L#_learning_rate = max(L#_learning_rate/1.15,1e-8);
             L#_nb_increases = 0;
           );
         ):L#_trend<0?( # Loss decrease
           ++L#_nb_decreases;
-          L#_nb_decreases>=6?( # Frequent loss decrease -> slightly increase learning rate
-            L#_learning_rate = min(1.15*L#_learning_rate,1);
+          L#_nb_decreases>=3?( # Frequent loss decrease -> slightly increase learning rate
+            L#_learning_rate = min(L#_learning_rate*1.15,1);
             L#_nb_decreases = 0;
           );
         );
@@ -21865,6 +21865,7 @@ nn_lib :
       const L#_ind = $L#;
       L#_iter = i[##L#_ind,0];
       L#_learning_rate = i[##L#_ind,1];
+#      L#_learning_rate = nn_learning_rate;
       L#_previous_out = i[##L#_ind,2];
       L#_nb_decreases = i[##L#_ind,3];
       L#_nb_increases = i[##L#_ind,4];
@@ -50211,6 +50212,105 @@ fx_solve_maze_preview :
 # Test programs for NN lib.
 #---------------------------
 
+#------------------------------
+# Test program for FC networks.
+#------------------------------
+nn_test_fc :
+
+  # Build neural network.
+  #----------------------
+  nn_layer_input X,2
+  nn_layer_batchnorm BN,X
+  nn_layer_fcnl FC1,BN,100
+  nn_layer_fcnl FC2,FC1,50
+  nn_layer_fcnl FC3,FC2,50
+  nn_layer_fcnl FC4,FC3,30
+  nn_layer_fcnl FC5,FC4,30
+  nn_layer_fcnl FC6,FC5,3
+  nn_layer_rename OUT,FC6
+  nn_loss_mse L,OUT,Y
+  sp lena,128 nm. img
+  _nn_optimizer=2
+  _nn_learning_rate=1e-6
+
+  # Optimize network.
+  #-------------------
+  size_batch=1024
+  repeat inf,_nn_iter
+    e[] "ITER = "$_nn_iter
+
+    # Build mini-batch.
+    $size_batch,1,1,5,"
+      const ind = $img;
+      px = u(0,w#ind)%w#ind;
+      py = u(0,h#ind)%h#ind;
+      val = I(#$img,px,py,0,0,1);
+      [ px,py,val ]"
+    nm. batch
+
+    # Mini-batch stochastic gradient descent.
+    _nn_batch_iteration=0
+    _nn_is_training=1
+    repeat 128,batch_iter
+      eval[batch] *${-nn_lib}"
+        batch = I;
+        X = batch[0,2]; # Input
+        Y = batch[2,3]; "\ # Ground-truth
+        ${_nn_forward}${_nn_backward}${_nn_update}"
+        end(
+          !($batch_iter%20)?print([L_out,nn_learning_rate,L_trend]);
+        ); I"
+    done
+    rm[batch]
+
+    # Render image from network.
+    _nn_is_training=0
+    {img,[w,h]},1,3,*${-nn_lib}"
+      X = [ x,y ];
+      "${_nn_forward}"
+      cut(OUT_out,0,255)"
+#    on. frame.png,$_nn_iter
+    w. 600,600 rm.
+
+  done
+
+#--------------------------------
+# Test program for CONV networks.
+#--------------------------------
+nn_test_conv :
+
+  # Build neural network.
+  #----------------------
+  nn_layer_input X,32,32,1,3
+  nn_layer_conv2dnl L1,X,3
+  nn_layer_rename OUT,L1
+  nn_loss_mse L,OUT,Y
+  sp lena,32 nm. img
+  [img] nm. res
+
+  # Optimize network.
+  #-------------------
+  size_batch=1
+  repeat inf,_nn_iter
+    e[] "ITER = "$_nn_iter
+
+    _nn_batch_iteration=0
+    repeat 10,batch_iter
+      eval ${-nn_lib}"
+        X = crop(#$img); # Input
+        Y = crop(#$res); # Ground-truth
+        "${_nn_forward}${_nn_backward}${_nn_update}"
+        store(X,'vX',32,32,1,3);
+        store(Y,'vY',32,32,1,3);
+        store(OUT_out,'vOUT',32,32,1,3);
+        run('l[] $vOUT r2dx 200,1 a x w. rm. endl');
+
+        end(
+          print([L_out,nn_learning_rate]);
+        ); I"
+    done
+  done
+
 # nn_layer_res : name,in
 # Define a custom residual CONV module.
 nn_layer_res : nn_check_layer "$2" check ${"is_variable_name $1"}" && isint(${3=16}) && $3>0"
@@ -50245,6 +50345,7 @@ nn_test :
   +l[res] s c noise 0 c 0,255 a z endl nm. img
 
   _nn_optimizer=2
+  _nn_learning_rate=1e-7
 
   # Optimize network.
   #------------------
@@ -50293,7 +50394,7 @@ nn_test :
           run('l[] $IN',t,' $OUT',t,' $REF',t,' c 0,255 a x w',z+1,'. 600,200,0 rm endl');
         );
         end(
-          print([ sqrt(L_out),nn_learning_rate,L_trend ]);
+          print([ sqrt(L_out),nn_learning_rate ]);
         ); I"
       rm.
     done
