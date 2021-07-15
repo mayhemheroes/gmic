@@ -21243,11 +21243,13 @@ nn_lib :
       dL_params#_name_m = '_nn_#dL_params#_m';
       dL_params#_name_v = '_nn_#dL_params#_v';
       !nn_batch_iteration || isnan($_nn_#dL_params#_m)?(
-         dL_params#_m = dL_params#_v = vector(#size(dL_params));
+        dL_params#_m = dL_params#_v = vector(#size(dL_params));
       ):(
-        dL_params#_m = lerp(dL_params,get(dL_params#_name_m,size(dL_params)),nn_optimizer_adam_beta1);
-        dL_params#_v = lerp(dL_params^2,get(dL_params#_name_v,size(dL_params)),nn_optimizer_adam_beta2);
+        dL_params#_m = get(dL_params#_name_m,size(dL_params));
+        dL_params#_v = get(dL_params#_name_v,size(dL_params));
       );
+      dL_params#_m = lerp(dL_params,dL_params#_m,nn_optimizer_adam_beta1);
+      dL_params#_v = lerp(dL_params^2,dL_params#_v,nn_optimizer_adam_beta2);
       store(dL_params#_m,dL_params#_name_m,size(dL_params));
       store(dL_params#_v,dL_params#_name_v,size(dL_params));
 
@@ -21265,12 +21267,14 @@ nn_lib :
     nn_optimizer_adamax_update_layer(L_params,dL_params) = (
       dL_params#_name_m = '_nn_#dL_params#_m';
       dL_params#_name_v = '_nn_#dL_params#_v';
-      !nn_iteration || isnan($_nn_#dL_params#_m)?(
-         dL_params#_m = dL_params#_v = vector(#size(dL_params));
+      !nn_batch_iteration || isnan($_nn_#dL_params#_m)?(
+        dL_params#_m = dL_params#_v = vector(#size(dL_params));
       ):(
-        dL_params#_m = lerp(dL_params,get(dL_params#_name_m,size(dL_params)),nn_optimizer_adam_beta1);
-        dL_params#_v = vmax(abs(dL_params),nn_optimizer_adam_beta2*get(dL_params#_name_v,size(dL_params)));
+        dL_params#_m = get(dL_params#_name_m,size(dL_params));
+        dL_params#_v = get(dL_params#_name_v,size(dL_params));
       );
+      dL_params#_m = lerp(dL_params,get(dL_params#_name_m,size(dL_params)),nn_optimizer_adam_beta1);
+      dL_params#_v = vmax(abs(dL_params),nn_optimizer_adam_beta2*get(dL_params#_name_v,size(dL_params)));
       store(dL_params#_m,dL_params#_name_m,size(dL_params));
       store(dL_params#_v,dL_params#_name_v,size(dL_params));
 
