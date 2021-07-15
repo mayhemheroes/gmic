@@ -21246,7 +21246,7 @@ nn_lib :
     nn_optimizer_adam_update_layer(L_params,dL_params) = (
       dL_params#_name_m = '_nn_#dL_params#_m';
       dL_params#_name_v = '_nn_#dL_params#_v';
-      !nn_batch_iteration || isnan($_nn_#dL_params#_m)?(
+      !nn_iteration || isnan($_nn_#dL_params#_m)?(
         dL_params#_m = dL_params#_v = vector(#size(dL_params));
       ):(
         dL_params#_m = get(dL_params#_name_m,size(dL_params));
@@ -21273,7 +21273,7 @@ nn_lib :
     nn_optimizer_adamax_update_layer(L_params,dL_params) = (
       dL_params#_name_m = '_nn_#dL_params#_m';
       dL_params#_name_v = '_nn_#dL_params#_v';
-      !nn_batch_iteration || isnan($_nn_#dL_params#_m)?(
+      !nn_iteration || isnan($_nn_#dL_params#_m)?(
         dL_params#_m = dL_params#_v = vector(#size(dL_params));
       ):(
         dL_params#_m = get(dL_params#_name_m,size(dL_params));
@@ -21313,7 +21313,7 @@ nn_lib :
           ++L#_nb_increases;
           L#_nb_decreases = 0;
           L#_nb_increases>=2?( # Frequent loss increase -> slightly reduce learning rate
-            L#_learning_rate = max(L#_learning_rate/1.15,1e-8);
+            L#_learning_rate = max(L#_learning_rate/1.75,1e-8);
             L#_nb_increases = 0;
           );
         ):L#_trend<0?( # Loss decrease
@@ -21866,15 +21866,14 @@ nn_lib :
       L#_out = L#_batch_out;
     );
 
-    nn_loss_mse_update(L) = (
+    nn_loss_mse_update(L,is_adaptive_lr) = (
       const L#_ind = $L#;
       L#_iter = i[##L#_ind,0];
-#      L#_learning_rate = i[##L#_ind,1];
       L#_learning_rate = nn_learning_rate;
       L#_previous_out = i[##L#_ind,2];
       L#_nb_decreases = i[##L#_ind,3];
       L#_nb_increases = i[##L#_ind,4];
-      nn_optimizer_update_learning_rate(#L);
+      is_adaptive_lr?nn_optimizer_update_learning_rate(#L);
       copy(i[##L#_ind,0],[ L#_iter + 1,L#_learning_rate,L#_out,L#_nb_decreases,L#_nb_increases ]);
       nn_learning_rate = L#_learning_rate;
     );
@@ -21905,7 +21904,7 @@ nn_lib :
       L#_previous_out = i[##L#_ind,2];
       L#_nb_decreases = i[##L#_ind,3];
       L#_nb_increases = i[##L#_ind,4];
-      nn_optimizer_update_learning_rate(#L);
+#      nn_optimizer_update_learning_rate(#L);
       copy(i[##L#_ind,0],[ L#_iter + 1,L#_learning_rate,L#_out,L#_nb_decreases,L#_nb_increases ]);
       nn_learning_rate = L#_learning_rate;
     );"
@@ -22144,16 +22143,17 @@ nn_layer_upsample2d : nn_check_layer "$2" check ${"is_variable_name $1"}" && isb
   _nn_backward..="nn_layer_upsample2d_backward($1,$2);"
   _nn_init.="$0 $* "
 
-#@cli nn_loss_mse : name,in,ground_truth
+#@cli nn_loss_mse : name,in,ground_truth,_is_adaptive_lr={ 0=false | 1=true }
 #@cli : Add a 'mse' loss to the network.
-nn_loss_mse : nn_check_layer "$2" check ${"is_variable_name $1"}" && "${"is_variable_name $3"}
+#@cli : Default value: 'is_adaptive_lr=1'.
+nn_loss_mse : nn_check_layer "$2" check ${"is_variable_name $1"}" && "${"is_variable_name $3"}" && isbool(${4=1})"
   e[^-1] "[nn_lib] Add 'mse' loss '$1', with input '$2' and ground truth '$3'."
   _nn_$1_out_size=1,1,1,1
   if !isint($$1) (0,1e-4,inf,0,0) nm. $1 fi # iteration,learning_rate,previous_out,nb_decreases,nb_increases
   _nn_backward..="begin(nn_loss_mse_init_backward($1));"\
                  "nn_loss_mse_backward($1,$2,$3);"\
                  "end(nn_loss_mse_end_backward($1));"
-  _nn_update..="end(nn_loss_mse_update($1));"
+  _nn_update..="end(nn_loss_mse_update($1,$4));"
   _nn_init.="$0 $* "
   _nn_parameters.="$1,"
 
@@ -50238,7 +50238,7 @@ nn_test_fc :
   nn_loss_mse L,OUT,Y
   sp lena,128 nm. img
   _nn_optimizer=2
-  _nn_learning_rate=1
+#  _nn_learning_rate=1
 
 #  +e "DEBUG : "$_nn_backward
 
@@ -50267,7 +50267,7 @@ nn_test_fc :
         Y = batch[2,3]; "\ # Ground-truth
         ${_nn_forward}${_nn_backward}${_nn_update}"
         end(
-          !($batch_iter%20)?print([L_out,nn_learning_rate,L_trend]);
+          !($batch_iter%20)?print([L_out,nn_learning_rate]);
         ); I"
     done
     rm[batch]
