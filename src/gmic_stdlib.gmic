@@ -21233,9 +21233,9 @@ nn_lib :
 
     nn_optimizer_adam_init_update_layer() = (
       begin(
-        nn_optimizer_adam_beta1_t = nn_iteration>200?0:nn_optimizer_adam_beta1^(nn_iteration + 1);
-        nn_optimizer_adam_beta2_t = nn_iteration>200?0:nn_optimizer_adam_beta2^(nn_iteration + 1);
-        nn_optimizer_adam_alpha_t = sqrt(1 - nn_optimizer_adam_beta2_t)/(1 - nn_optimizer_adam_beta1_t);
+        const nn_optimizer_adam_beta1_t = nn_iteration>200?0:nn_optimizer_adam_beta1^(nn_iteration + 1);
+        const nn_optimizer_adam_beta2_t = nn_iteration>200?0:nn_optimizer_adam_beta2^(nn_iteration + 1);
+        const nn_optimizer_adam_alpha_t = sqrt(1 - nn_optimizer_adam_beta2_t)/(1 - nn_optimizer_adam_beta1_t);
       );
     );
 
@@ -21260,7 +21260,7 @@ nn_lib :
     #------------------
     nn_optimizer_adamax_init_update_layer() = (
       begin(
-        nn_optimizer_adamax_ombeta1_t = nn_iteration>200?1:(1 - nn_optimizer_adam_beta1^(nn_iteration + 1));
+        const nn_optimizer_adamax_ombeta1_t = nn_iteration>200?1:(1 - nn_optimizer_adam_beta1^(nn_iteration + 1));
       );
     );
 
@@ -21273,8 +21273,8 @@ nn_lib :
         dL_params#_m = get(dL_params#_name_m,size(dL_params));
         dL_params#_v = get(dL_params#_name_v,size(dL_params));
       );
-      dL_params#_m = lerp(dL_params,get(dL_params#_name_m,size(dL_params)),nn_optimizer_adam_beta1);
-      dL_params#_v = vmax(abs(dL_params),nn_optimizer_adam_beta2*get(dL_params#_name_v,size(dL_params)));
+      dL_params#_m = lerp(dL_params,dL_params#m,nn_optimizer_adam_beta1);
+      dL_params#_v = vmax(abs(dL_params),nn_optimizer_adam_beta2*dL_params#_v);
       store(dL_params#_m,dL_params#_name_m,size(dL_params));
       store(dL_params#_v,dL_params#_name_v,size(dL_params));
 
@@ -21301,13 +21301,13 @@ nn_lib :
         # Compute trend: percentage of loss decrease(<0) or increase(>0).
         L#_trend = (L#_out - L#_previous_out)/max(1e-8,L#_previous_out);
         L#_trend>=0.3?( # Large loss increase -> drastically reduce learning rate
-          L#_learning_rate = max(0.5*L#_learning_rate,1e-8);
+          L#_learning_rate = max(0.5*L#_learning_rate,1e-10);
           L#_nb_increases = L#_nb_decreases = 0;
         ):L#_trend>=0?( # Loss increase
           ++L#_nb_increases;
           L#_nb_decreases = 0;
           L#_nb_increases>=2?( # Frequent loss increase -> slightly reduce learning rate
-            L#_learning_rate = max(0.9*L#_learning_rate,1e-8);
+            L#_learning_rate = max(0.9*L#_learning_rate,1e-10);
             L#_nb_increases = 0;
           );
         ):L#_trend<0?( # Loss decrease
@@ -50336,20 +50336,15 @@ nn_test :
   if isfile('network.gmz') nn_load network.gmz
   else
     nn_layer_input X,32,32,1,1
-    nn_unet
-#    nn_resnet
-    nn_loss_gwmse L,OUT,Y
+#    nn_unet_small
+    nn_resnet
+    nn_loss_mse L,OUT,Y
   fi
 
-  l[] images.gmz s z luminance n 0,255 +mirror x +mirror y  a z endl nm. img
+  l[] images.gmz s z luminance n 0,255 +mirror x +mirror y  a z endl nm. res
+  +l[res] s c noise 10 c 0,255 a z endl nm. img
 
-  +g[img] xy a[-2,-1] c norm. nm. imgb
-
-#  +b[img] xy,0.5 nm. imgb
-
-  +g[img] xy a[-2,-1] c norm. b. xy,1 nm. grad
-
-  d
+  _nn_optimizer=3
 
   # Optimize network.
   #------------------
@@ -50362,23 +50357,20 @@ nn_test :
     # Build mini-batch.
     32,32,$size_batch,1 nm. batch_X
     32,32,$size_batch,1 nm. batch_Y
-    32,32,$size_batch,1 nm. batch_gY
     1,1,$size_batch,1,">
       const img = $img;
+      const res = $res;
       const siz = 32*32;
       p = u<0.15?0:30;
       do (
         ni = int(u(d#img))%d#img;
         nx = int(u(0,w#img - 1 - 32));
         ny = int(u(0,h#img - 1 - 32));
-        X = crop(#$imgb,nx,ny,0,0,32,32,1,1);
-        Y = crop(#img,nx,ny,0,0,32,32,1,1);
-        gY = crop(#$grad,nx,ny,0,0,32,32,1,1);
+        X = crop(#img,nx,ny,0,0,32,32,1,1);
+        Y = crop(#res,nx,ny,0,0,32,32,1,1);
       _(while); std(Y)<p);
       draw(#$batch_X,X,0,0,z,0,32,32,1,1);
-      draw(#$batch_Y,Y,0,0,z,0,32,32,1,1);
-      draw(#$batch_gY,gY,0,0,z,0,32,32,1,1)
-       "
+      draw(#$batch_Y,Y,0,0,z,0,32,32,1,1)"
     rm.
     noise[batch_X] {u(5,25)} c[batch_X] 0,255
 
@@ -50387,9 +50379,8 @@ nn_test :
     _nn_batch_iteration=0
     repeat 30,batch_iter
       1,1,{batch_X,d},1,*${-nn_lib}"
-        Y = crop(#$batch_Y,0,0,z,0,32,32,1,1);
-        gY = crop(#$batch_gY,0,0,z,0,32,32,1,1);
         X = crop(#$batch_X,0,0,z,0,32,32,1,1);
+        Y = crop(#$batch_Y,0,0,z,0,32,32,1,1);
         "${_nn_forward}"
         "${_nn_backward}"
         "${_nn_update}"
@@ -50407,7 +50398,7 @@ nn_test :
         ); I"
       rm.
     done
-    rm[batch_X,batch_Y,batch_gY]
+    rm[batch_X,batch_Y]
 
     nn_save network.gmz
 
