@@ -21106,7 +21106,6 @@ nn_lib :
       const nn_iteration = isnan($_nn_iteration)?0:$_nn_iteration;
       const nn_batch_iteration = isnan($_nn_batch_iteration)?0:$_nn_batch_iteration;
       const nn_nb_threads_max = n;
-      nn_learning_rate = isnan($_nn_learning_rate)?1e-4:$_nn_learning_rate;
     );
 
     begin_t(
@@ -21125,7 +21124,6 @@ nn_lib :
     nn_update() = ( # This has to be the last 'end()' bloc encountered in $_nn_update
       set(nn_iteration + 1,'_nn_iteration');
       set(nn_batch_iteration + 1,'_nn_batch_iteration');
-      set(nn_learning_rate,'_nn_learning_rate');
     );
 
     nn_display(L) = display(L#_out,L#_out_width,L#_out_height,L#_out_depth,L#_out_spectrum);
@@ -21286,10 +21284,9 @@ nn_lib :
     #-------------------------------------------------------------------
     nn_optimizer_update_learning_rate(L) = (
       nn_batch_iteration?(
-
         # Compute trend: percentage of loss decrease(<0) or increase(>0).
         L#_trend = (L#_out - L#_previous_out)/max(1e-8,L#_previous_out);
-        L#_trend_moment = lerp(tanh(L#_trend),L#_trend_moment,0.75);
+        L#_trend_moment = lerp(sign(L#_trend),L#_trend_moment,0.75);
 
         # Adapt strategy regarding to trend.
         L#_trend>=0.3?( # Large local loss increase -> drastically reduce learning rate
@@ -21298,7 +21295,7 @@ nn_lib :
         ):L#_trend_moment>=0?( # Global loss increase
           ++L#_nb_increases;
           L#_nb_decreases = 0;
-          L#_nb_increases>2?( # Global loss increase -> slightly reduce learning rate
+          L#_nb_increases>=2?( # Global loss increase -> slightly reduce learning rate
             L#_learning_rate = max(0.75*L#_learning_rate,1e-11);
             L#_nb_increases = 0;
           );
@@ -21852,16 +21849,16 @@ nn_lib :
       L#_out = L#_batch_out;
     );
 
-    nn_loss_mse_update(L,is_adaptive_lr) = (
+    nn_loss_mse_update(L,is_adaptive_learning_rate) = (
       const L#_ind = $L#;
-      L#_iter = i[##L#_ind,0];
-      L#_learning_rate = is_adaptive_lr?i[##L#_ind,1];nn_learning_rate;
+      L#_iteration = i[##L#_ind,0];
+      L#_learning_rate = i[##L#_ind,1];
       L#_previous_out = i[##L#_ind,2];
       L#_trend_moment = i[##L#_ind,3];
       L#_nb_decreases = i[##L#_ind,4];
       L#_nb_increases = i[##L#_ind,5];
-      is_adaptive_lr?nn_optimizer_update_learning_rate(#L);
-      copy(i[##L#_ind,0],[ L#_iter + 1,L#_learning_rate,L#_out,L#_trend_moment,L#_nb_decreases,L#_nb_increases ]);
+      is_adaptive_learning_rate?nn_optimizer_update_learning_rate(#L);
+      copy(i[##L#_ind,0],[ L#_iteration + 1,L#_learning_rate,L#_out,L#_trend_moment,L#_nb_decreases,L#_nb_increases ]);
       nn_learning_rate = L#_learning_rate;
     );
     "
@@ -21870,7 +21867,7 @@ nn_lib :
 #@cli : Initialize a new network.
 nn_init :
   e[^-1] "[nn_lib] Initialize new network."
-  _nn_forward,_nn_update,_nn_parameters,_nn_iteration,_nn_batch_iteration,_nn_learning_rate,\
+  _nn_forward,_nn_update,_nn_parameters,_nn_iteration,_nn_batch_iteration,\
   _nn_is_training,_nn_optimizer=
   _nn_init="$0 "
   _nn_update="end(nn_update());"
@@ -50166,7 +50163,7 @@ fx_solve_maze_preview :
 #------------------------------
 # Test program for FC networks.
 #------------------------------
-nn_test_fc :
+nn_test_fc : check "${1=1e-4}>0 && isbool(${2=1})"
 
   # Build neural network.
   #----------------------
@@ -50180,10 +50177,8 @@ nn_test_fc :
   nn_layer_fcnl FC5,FC4,30
   nn_layer_fcnl FC6,FC5,3
   nn_layer_rename OUT,FC6
-  nn_loss_mse L,OUT,Y
+  nn_loss_mse L,OUT,Y,$1,$2
   sp lena,128 nm. img
-  _nn_optimizer=2
-  _nn_learning_rate=1
 
   # Optimize network.
   #-------------------
@@ -50210,7 +50205,7 @@ nn_test_fc :
         Y = batch[2,3]; "\ # Ground-truth
         ${_nn_forward}${_nn_backward}${_nn_update}"
         end(
-          !($batch_iter%20)?print([L_out,nn_learning_rate,L_trend_moment]);
+          !($batch_iter%1)?print([L_out,nn_learning_rate,L_trend,L_trend_moment]);
         ); I"
     done
     rm[batch]
@@ -50300,7 +50295,6 @@ nn_test : skip ${1=nan}
   if isfile('stats.gmz') stats.gmz else 0 fi nm. stats
 
   _nn_optimizer=2
-  _nn_learning_rate={isnan($1)?1e-4:$1}
 
   # Optimize network.
   #------------------
