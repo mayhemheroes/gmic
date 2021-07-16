@@ -2050,18 +2050,6 @@ _display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
     fi
 
     repeat {img,d} cursor[$>] 0 done
-    xin0,yin0,xin1,yin1=0,0,{0,[w,h]}
-    if isnan(ia)" || "isinf(im)" || "isinf(iM) # Detect if image has nan or inf values, and find bounding box
-      eval[0] "*
-        begin(x0 = w; y0 = h; x1 = y1 = -1);
-        isinf(i) || isnan(i)?critical(
-          x<x0?(x0 = x);
-          y<y0?(y0 = y);
-          x>x1?(x1 = x);
-          y>y1?(y1 = y);
-        );
-        end(run('xin0,yin0,xin1,yin1=',x0,',',y0,',',x1,',',y1))"
-    fi
 
     # Start event loop.
     for ${-isvisible}" && "!${"iskey ESC"}" && "!((${"iskey CTRLLEFT"}" || "${"iskey CTRLRIGHT"})" && "${"iskey W"})
@@ -2094,21 +2082,15 @@ _display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
         rm..
 
         if s>($alpha_mode?4:3) channels. 0,{$alpha_mode?3:2} fi # Discard useless channels
-        if (($xin0>=floor($posx)" && "$xin0<floor($posx+$sizx))" || "\
-            ($xin1>=floor($posx)" && "$xin1<=floor($posx+$sizx)))" && "\
-           (($yin0>=floor($posy)" && "$yin0<floor($posy+$sizy))" || "\
-            ($yin1>=floor($posy)" && "$yin1<=floor($posy+$sizy)))
-          if $normalization_mode
-            # Find min and max values that are not nan of inf.
-            eval[0] ">begin(m = inf; M = -inf);
-              !isinf(i) && !isnan(i)?(m = min(i,m); M = max(i,M));
-              end(run('im,iM=',m,',',M))"
-          else im,iM=0,255 fi
-        fi
         if $normalization_mode
+          # Find min and max values that are not nan of inf.
+          eval[0] ">begin(m = inf; M = -inf);
+            !isinf(i) && !isnan(i)?(m = min(i,m); M = max(i,M));
+            end(run('im,iM=',m,',',M))"
           vim,viM={[$im-abs($im),$iM+abs($iM)]}
           f. "isnan(i)?"$vim":isinf(i)?(i<0?"$vim":"$viM"):i"
         else
+          im,iM=0,255
           f. "isnan(i)?"$im":isinf(i)?(i<0?"$im":"$iM"):i"
         fi
 
@@ -21882,37 +21864,7 @@ nn_lib :
       copy(i[##L#_ind,0],[ L#_iter + 1,L#_learning_rate,L#_out,L#_trend_moment,L#_nb_decreases,L#_nb_increases ]);
       nn_learning_rate = L#_learning_rate;
     );
-
-    # gwmse : Gradient-weighted mean-squared error.
-    #----------------------------------------------
-    nn_loss_gwmse_init_backward(L) = (
-      L#_batch_out = 0;
-    );
-
-    nn_loss_gwmse_backward(L,IN,TRUTH) = (
-      GRAD = sqrt(g#TRUTH);
-      IN#_deriv_out = 2*GRAD*(IN#_out - TRUTH);
-      L#_out = norm(IN#_deriv_out/2)^2/size(IN#_deriv_out);
-      L#_batch_out+=L#_out;
-    );
-
-    nn_loss_gwmse_end_backward(L) = (
-      merge(L#_batch_out,+);
-      L#_batch_out/=nn_nb_samples;
-      L#_out = L#_batch_out;
-    );
-
-    nn_loss_gwmse_update(L) = (
-      const L#_ind = $L#;
-      L#_iter = i[##L#_ind,0];
-      L#_learning_rate = i[##L#_ind,1];
-      L#_previous_out = i[##L#_ind,2];
-      L#_nb_decreases = i[##L#_ind,3];
-      L#_nb_increases = i[##L#_ind,4];
-#      nn_optimizer_update_learning_rate(#L);
-      copy(i[##L#_ind,0],[ L#_iter + 1,L#_learning_rate,L#_out,L#_nb_decreases,L#_nb_increases ]);
-      nn_learning_rate = L#_learning_rate;
-    );"
+    "
 
 #@cli nn_init
 #@cli : Initialize a new network.
@@ -22148,30 +22100,18 @@ nn_layer_upsample2d : nn_check_layer "$2" check ${"is_variable_name $1"}" && isb
   _nn_backward..="nn_layer_upsample2d_backward($1,$2);"
   _nn_init.="$0 $* "
 
-#@cli nn_loss_mse : name,in,ground_truth,_is_adaptive_lr={ 0=false | 1=true }
+#@cli nn_loss_mse : name,in,ground_truth,_learning_rate,_is_adaptive_learning_rate={ 0=false | 1=true }
 #@cli : Add a 'mse' loss to the network.
-#@cli : Default value: 'is_adaptive_lr=1'.
-nn_loss_mse : nn_check_layer "$2" check ${"is_variable_name $1"}" && "${"is_variable_name $3"}" && isbool(${4=1})"
-  e[^-1] "[nn_lib] Add 'mse' loss '$1', with input '$2' and ground truth '$3'."
+#@cli : Default value: 'learning_rate=1e-6' and 'is_adaptive_learning_rate=1'.
+nn_loss_mse : nn_check_layer "$2" check ${"is_variable_name $1"}" && "${"is_variable_name $3"}" && ${4=1e-6}>0 && isbool(${5=1})"
+  s0,s1=fixed,adaptive
+  e[^-1] "[nn_lib] Add 'mse' loss '$1', with input '$2', ground truth '$3' and "${s$5}" learning rate $4."
   _nn_$1_out_size=1,1,1,1
-  if !isint($$1) (0,1e-4,inf,0,0,0) nm. $1 fi # iteration,learning_rate,previous_out,trend_moment,nb_decreases,nb_increases
+  if !isint($$1) (0,$4,inf,0,0,0) nm. $1 fi # iteration,learning_rate,previous_out,trend_moment,nb_decreases,nb_increases
   _nn_backward..="begin(nn_loss_mse_init_backward($1));"\
                  "nn_loss_mse_backward($1,$2,$3);"\
                  "end(nn_loss_mse_end_backward($1));"
-  _nn_update..="end(nn_loss_mse_update($1,$4));"
-  _nn_init.="$0 $* "
-  _nn_parameters.="$1,"
-
-#@cli nn_loss_gwmse : name,in,ground_truth
-#@cli : Add a 'gwmse' loss to the network.
-nn_loss_gwmse : nn_check_layer "$2" check ${"is_variable_name $1"}" && "${"is_variable_name $3"}
-  e[^-1] "[nn_lib] Add 'gwmse' loss '$1', with input '$2' and ground truth '$3'."
-  _nn_$1_out_size=1,1,1,1
-  if !isint($$1) (0,1e-4,inf,0,0) nm. $1 fi # iteration,learning_rate,previous_out,nb_decreases,nb_increases
-  _nn_backward..="begin(nn_loss_gwmse_init_backward($1));"\
-                 "nn_loss_gwmse_backward($1,$2,$3);"\
-                 "end(nn_loss_gwmse_end_backward($1));"
-  _nn_update..="end(nn_loss_gwmse_update($1));"
+  _nn_update..="end(nn_loss_mse_update($1,$5));"
   _nn_init.="$0 $* "
   _nn_parameters.="$1,"
 
@@ -50243,9 +50183,7 @@ nn_test_fc :
   nn_loss_mse L,OUT,Y
   sp lena,128 nm. img
   _nn_optimizer=2
-#  _nn_learning_rate=1
-
-#  +e "DEBUG : "$_nn_backward
+  _nn_learning_rate=1
 
   # Optimize network.
   #-------------------
