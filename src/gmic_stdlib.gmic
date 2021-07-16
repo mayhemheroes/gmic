@@ -50355,14 +50355,16 @@ nn_test : skip ${1=nan}
   l[] images.gmz s z luminance n 0,255 +mirror x +mirror y  a z endl nm. res
   +l[res] s c noise 0 c 0,255 a z endl nm. img
 
+  if isfile('stats.gmz') stats.gmz else 0 fi nm. stats
+
   _nn_optimizer=2
-  _nn_learning_rate={isnan($1)?1e-6:$1}
+  _nn_learning_rate={isnan($1)?1e-4:$1}
 
   # Optimize network.
   #------------------
   size_batch=1
-  repeat inf,_nn_iter
-    e[] "ITER = "$_nn_iter
+  repeat inf,iter
+    e[] "ITER = "$iter
 
     srand 100
 
@@ -50388,7 +50390,7 @@ nn_test : skip ${1=nan}
     # Mini-batch stochastic gradient.
     _nn_is_training=1
     _nn_batch_iteration=0
-    repeat 30,batch_iter
+    repeat 10,batch_iter
       1,1,{batch_X,d},1,*${-nn_lib}"
         X = crop(#$batch_X,0,0,z,0,32,32,1,1);
         Y = crop(#$batch_Y,0,0,z,0,32,32,1,1);
@@ -50406,12 +50408,18 @@ nn_test : skip ${1=nan}
         );
         end(
           print([ sqrt(L_out),nn_learning_rate ]);
+          set(L_out,'loss');
         ); I"
       rm.
     done
     rm[batch_X,batch_Y]
 
-    nn_save network.gmz
+    if !($iter%20) nn_save network.gmz fi
+    l[stats]
+      ($loss^$_nn_learning_rate)
+      a x
+      o stats.gmz
+    endl
 
     # Visualize convolution kernels.
 #    +z[CONV1_0] 0,{CONV1_0,w-2} l. s y n 0,255 repeat $! l[$>] s x,-9 N=$! r {v=sqrt(w);[v,v]},1,1,-1
