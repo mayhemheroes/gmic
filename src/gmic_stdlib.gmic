@@ -50288,24 +50288,28 @@ nn_test : skip ${1=1e-4}
   else
     nn_init
     nn_layer_input X,32,32,1,1
-    nn_unet
+    nn_unet_small
     nn_loss_mse L,OUT,Y,$1
   fi
 
-  l[] images.gmz s z luminance n 0,255 +mirror x +mirror y  a z endl nm. res
-  +l[res] s c noise 0 c 0,255 a z endl nm. img
+  l[]
+    repeat 59 sp $> done luminance r2dx 512 r 512,512,1,1,0,3,0.5,0.5
+    a z nm. img
+  endl
+  [img] nm. res
 
-  if isfile('stats.gmz') stats.gmz else 0 fi nm. stats
+
+#  if isfile('stats.gmz') stats.gmz else 0 fi nm. stats
 
   _nn_optimizer=2
 
   # Optimize network.
   #------------------
-  size_batch=1
+  size_batch=128
   repeat inf,iter
     e[] "ITER = "$iter
 
-    srand 100
+#    srand 100
 
     # Build mini-batch.
     32,32,$size_batch,1 nm. batch_X
@@ -50355,11 +50359,11 @@ nn_test : skip ${1=1e-4}
     rm[batch_X,batch_Y]
 
     if !($iter%20) nn_save network.gmz fi
-    l[stats]
-      ($loss^$nn_learning_rate)
-      a x
-      o stats.gmz
-    endl
+    # l[stats]
+    #   ($loss^$nn_learning_rate)
+    #   a x
+    #   o stats.gmz
+    # endl
 
     # Visualize convolution kernels.
 #    +z[CONV1_0] 0,{CONV1_0,w-2} l. s y n 0,255 repeat $! l[$>] s x,-9 N=$! r {v=sqrt(w);[v,v]},1,1,-1
