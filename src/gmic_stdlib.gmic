@@ -50287,7 +50287,7 @@ nn_test : skip ${1=1e-4}
   if isfile('network.gmz') nn_load network.gmz
   else
     nn_init
-    nn_layer_input X,32,32,1,1
+    nn_layer_input X,32,32,1,2
 #    nn_resnet
     nn_unet
     nn_loss_mse L,OUT,Y,$1
@@ -50298,7 +50298,7 @@ nn_test : skip ${1=1e-4}
     a z nm. img
   endl
   [img] nm. res
-  l[img] s z gradient_norm a z endl
+  l[img] s z repeat $! l[$>] g. xy a c endl done a z endl
 #  if isfile('stats.gmz') stats.gmz else 0 fi nm. stats
 
   _nn_optimizer=2
@@ -50312,7 +50312,7 @@ nn_test : skip ${1=1e-4}
 #    srand 100
 
     # Build mini-batch.
-    32,32,$size_batch,1 nm. batch_X
+    32,32,$size_batch,2 nm. batch_X
     32,32,$size_batch,1 nm. batch_Y
     1,1,$size_batch,1,">
       const img = $img;
@@ -50323,13 +50323,13 @@ nn_test : skip ${1=1e-4}
         ni = int(u(d#img))%d#img;
         nx = int(u(0,w#img - 1 - 32));
         ny = int(u(0,h#img - 1 - 32));
-        X = crop(#img,nx,ny,0,0,32,32,1,1);
+        X = crop(#img,nx,ny,0,0,32,32,1,2);
         Y = crop(#res,nx,ny,0,0,32,32,1,1);
+        Y-=avg(Y);
       _(while); std(Y)<p);
-      draw(#$batch_X,X,0,0,z,0,32,32,1,1);
+      draw(#$batch_X,X,0,0,z,0,32,32,1,2);
       draw(#$batch_Y,Y,0,0,z,0,32,32,1,1)"
     rm.
-
 #    noise[batch_X] {u(5,30)} c[batch_X] 0,255
 
     # Mini-batch stochastic gradient.
@@ -50337,19 +50337,19 @@ nn_test : skip ${1=1e-4}
     _nn_batch_iteration=0
     repeat 10,batch_iter
       1,1,{batch_X,d},1,*${-nn_lib}"
-        X = crop(#$batch_X,0,0,z,0,32,32,1,1);
+        X = crop(#$batch_X,0,0,z,0,32,32,1,2);
         Y = crop(#$batch_Y,0,0,z,0,32,32,1,1);
         "${_nn_forward}"
         "${_nn_backward}"
         "${_nn_update}"
         z<4 && !("$batch_iter"%10)?(
           var = string(#256,'IN',t);
-          store(X,var,32,32,1,1);
+          store(X,var,32,32,1,2);
           var = string(#256,'OUT',t);
           store(OUT_out,var,32,32,1,1);
           var = string(#256,'REF',t);
           store(Y,var,32,32,1,1);
-          run('l[] $IN',t,' $OUT',t,' $REF',t,' c 0,255 a x w',z+1,'. 600,200,0 rm endl');
+          run('l[] $IN',t,' $OUT',t,' $REF',t,' n 0,255 to_rgb[-2,-1] a x w',z+1,'. 600,200,0 rm endl');
         );
         end(
           print([ sqrt(L_out),nn_learning_rate ]);
