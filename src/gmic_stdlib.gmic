@@ -16453,7 +16453,7 @@ minimal_path : check "$1>=0 && $2>=0 && $3>=0" skip ${7=0}
 #@cli : $ image.jpg +noise 30 +noise[0] 35 +noise[0] 38 cut. 0,255 mse
 mse :
   e[^-1] "Compute the "$!x$!" matrix of MSE values, for image$?."
-  +my_mse k.
+  +mse k.
 
 +mse :
   e[^-1] "Compute the "$!x$!" matrix of MSE values, for image$?."
@@ -16461,7 +16461,8 @@ mse :
   repeat $N,q
     repeat $q,p
       if "const p = "$p"; const q = "$q"; [w#p,h#p,d#p,s#p]!=[w#q,h#q,d#q,s#q]"
-        error[0--4] "Image ["$p"] = '"{$p,n}"' ("{$p,[w,h,d,s]}") and ["$q"] = '"{$q,n}"' ("{$q,[w,h,d,s]}") have different sizes."
+        error[0--4] "Image ["$p"] = '"{$p,n}"' ("{$p,[w,h,d,s]}") and ["$q"] = '"{$q,n}"' ("{$q,[w,h,d,s]}") "\
+                    "have different sizes."
       fi
       +-[$p,$q] sqr. mse={ia} rm.
       =. $mse,$p,$q =. $mse,$q,$p
@@ -16570,19 +16571,26 @@ pointcloud : check "${1=0}<=3 && ${2=0}>=0 && ${3=0}>=0 && ${4=0}>=0"
 #@cli : Compute PSNR (Peak Signal-to-Noise Ratio) matrix between selected images.
 #@cli : Default value: 'max_value=255'.
 #@cli : $ image.jpg +noise 30 +noise[0] 35 +noise[0] 38 cut[-1] 0,255 psnr 255 replace_inf 0
-psnr : skip "${1=}"
++psnr : skip "${1=}"
   if isnum("$1")
     e[0--3] "Compute the "$!x$!" matrix of PSNR values, from image$? with maximum value $1."
-    mse log10 - {log10(($1)^2)}
+    +mse f. ">x==y?inf:y>x?i(y,x):10*log10(($1)^2/i)"
   else
     e[0--3] "Compute the "$!x$!" matrix of PSNR values, from image$?."
     noarg
-    if $!
-      $! repeat $!-1 =. {$>,iM},$> done
-      mse[^-1] sqr. log10 -.. 'max(i[#-1,x],i[#-1,y])' rm.
-    fi
+    if $! $!,1,1,1,iM#x +mse[^-1] f. ">x==y?inf:y>x?i(y,x):10*log10(max(i[#-2,x],i[#-2,y])^2/i)" rm.. fi
   fi
-  * -10 nm [PSNR]
+  nm. [PSNR]
+
+psnr : skip "${1=}"
+  if isnum("$1")
+    e[0--3] "Compute the "$!x$!" matrix of PSNR values, from image$? with maximum value $1."
+    +psnr $1
+  else
+    e[0--3] "Compute the "$!x$!" matrix of PSNR values, from image$?."
+    noarg +psnr
+  fi
+  k.
 
 #@cli segment_watershed : _threshold>=0
 #@cli : Apply watershed segmentation on selected images.
