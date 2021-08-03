@@ -5426,7 +5426,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         if (err==1) { // No selection -> all images
-          if (!is_get && *command=='p' && command[1]=='a' && command[2]=='s' && command[3]=='s' && !command[4])
+          if (*command=='p' && command[1]=='a' && command[2]=='s' && command[3]=='s' && !command[4])
             selection.assign(1,parent_images.size());
           else selection.assign(1,siz);
           cimg_forY(selection,y) selection[y] = (unsigned int)y;
@@ -5437,7 +5437,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           if (!is_get && (!std::strcmp("wait",command) ||
                           !std::strcmp("cursor",command)))
             selection2cimg(s_selection,10,CImgList<char>::empty(),command).move_to(selection);
-          else if (!is_get && *command=='i' && (!command[1] || !std::strcmp("input",command)))
+          else if (*command=='i' && (!command[1] || !std::strcmp("input",command)))
             selection2cimg(s_selection,siz + 1,images_names,command,true).move_to(selection);
           else if (!is_get &&
                    ((*command=='e' && (!command[1] ||
@@ -5445,7 +5445,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                        !std::strcmp("error",command))) ||
                     !std::strcmp("warn",command)))
             selection2cimg(s_selection,callstack.size(),CImgList<char>::empty(),command).move_to(selection);
-          else if (!is_get && !std::strcmp("pass",command))
+          else if (!std::strcmp("pass",command))
             selection2cimg(s_selection,parent_images.size(),parent_images_names,command).move_to(selection);
           else
             selection2cimg(s_selection,siz,images_names,command).move_to(selection);
@@ -5474,7 +5474,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           is_command && *command=='e' && !std::strcmp(command,"error"),
         is_command_warn = is_command_verbose || is_command_echo || is_command_error?false:
           is_command && *command=='w' && !std::strcmp(command,"warn"),
-        is_command_input = is_get || is_command_verbose || is_command_echo || is_command_error ||
+        is_command_input = is_command_verbose || is_command_echo || is_command_error ||
           is_command_warn?false:
           is_command && *command=='i' && (!command[1] || !std::strcmp(command,"input")),
         is_command_check = is_get || is_command_verbose || is_command_echo || is_command_error ||
@@ -5568,7 +5568,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           }
 
         } else if (!command2) { // Two-chars shortcuts
-          if (command0=='s' && command1=='h' && !is_get) std::strcpy(command,"shared");
+          if (command0=='s' && command1=='h') std::strcpy(command,"shared");
           else if (command0=='m' && command1=='v') std::strcpy(command,"move");
           else if (command0=='n' && command1=='m' && !is_get) std::strcpy(command,"name");
           else if (command0=='r' && command1=='m') std::strcpy(command,"remove");
