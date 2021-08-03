@@ -13546,7 +13546,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   std::fflush(cimg::output());
                   cimg::mutex(29,0);
                 }
-                if (is_get && !is_get_custom) {
+                if (is_get) {
                   g_list.assign(img0,img1);
                   if (is_valid_argument) for (const char *s = argument; *s; ++s) g_list.FFT(*s,inv_fft);
                   else g_list.FFT(inv_fft);
@@ -13572,7 +13572,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   std::fflush(cimg::output());
                   cimg::mutex(29,0);
                 }
-                if (is_get && !is_get_custom) {
+                if (is_get) {
                   g_list.assign(img0);
                   CImg<T>(g_list[0].width(),g_list[0].height(),g_list[0].depth(),g_list[0].spectrum(),(T)0).
                     move_to(g_list);
