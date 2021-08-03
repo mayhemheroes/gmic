@@ -2550,7 +2550,7 @@ const char *gmic::builtin_commands_names[] = {
   "k","keep",
   "l","l3d","label","le","light3d","line","local","log","log10","log2","lt",
   "m","m*","m/","m3d","mandelbrot","map","matchpatch","max","maxabs","md3d","mdiv","median","min","minabs","mirror",
-    "mmul","mod","mode3d","moded3d","move","mproj","mse","mul","mul3d","mutex","mv",
+    "mmul","mod","mode3d","moded3d","move","mproj","mul","mul3d","mutex","mv",
   "n","name","named","neq","network","nm","nmd","noarg","noise","normalize",
   "o","o3d","object3d","onfail","opacity3d","or","output",
   "p","parallel","pass","permute","plasma","plot","point","polygon","pow","print","progress",
@@ -3483,7 +3483,8 @@ gmic& gmic::add_commands(const char *const data_commands, const char *const comm
     char
       *const nlines = lines + (is_plus?1:0),
       *const ns_name = s_name.data() + (is_plus?1:0);
-    if (is_plus) { *s_name = '+'; s_name[1] = 0; } else *s_name = 0;
+    if (is_plus) *s_name = '+';
+    *ns_name = 0;
 
     if ((!is_last_slash && std::strchr(lines,':') && // Check for a command definition (or implicit '_main_')
          cimg_sscanf(nlines,"%255[a-zA-Z0-9_] %c %262143[^\n]",ns_name,&sep,s_body.data())>=2 &&
@@ -5291,8 +5292,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         is_plus = *item=='+' && item[1] &&
           item[1]!='[' && item[1]!='.' && (item[1]!='3' || item[2]!='d');
       item+=is_hyphen || is_plus?1:0;
-      const bool is_get = is_plus;
-      bool is_get_custom = false;
+      bool is_get = is_plus;
 
 #define _gmic_eok(i) (!item[i] || item[i]=='[' || (item[i]=='.' && (!item[i + 1] || item[i + 1]=='.')))
       unsigned int hash_custom = ~0U, ind_custom = ~0U;
@@ -5354,12 +5354,12 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                                  _ind1 - _ind0 + 1U,__ind);
           }
           if (!is_builtin_command) { // Search for a custom command name
-            if (is_get) { // Search for a custom specialization of '+command'
+            if (is_get) { // Search for custom specialization of '+command'
               *_command = '+';
               hash_custom = hashcode(_command,false);
               is_command = search_sorted(_command,commands_names[hash_custom],
                                          commands_names[hash_custom].size(),ind_custom);
-              if (is_command) is_get_custom = true;
+              if (is_command) is_get = false; // If found, consider it as a 'non-get' command
             }
             if (!is_command) {
               hash_custom = hashcode(command,false);
@@ -9195,30 +9195,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 renderd3d==3?"flat-shaded":renderd3d==4?"Gouraud-shaded":
                 renderd3d==5?"Phong-shaded":"none");
           continue;
-        }
-
-        // MSE.
-        if (!std::strcmp("mse",command)) {
-          print(images,0,"Compute the %dx%d matrix of MSE values, from image%s.",
-                selection.height(),selection.height(),
-                gmic_selection.data());
-          if (selection) {
-            g_list.assign(selection.height());
-            cimg_forY(selection,l) g_list[l].assign(gmic_check(images[selection[l]]),true);
-            CImg<T> img(g_list.size(),g_list.size(),1,1,(T)0);
-            cimg_forXY(img,x,y) if (x>y) img(x,y) = img(y,x) = (T)g_list[x].MSE(g_list[y]);
-            CImg<char>::string("[MSE]").move_to(name);
-            if (is_get) {
-              img.move_to(images);
-              name.move_to(images_names);
-            } else {
-              remove_images(images,images_names,selection,1,selection.height() - 1);
-              img.move_to(images[selection[0]].assign());
-              name.move_to(images_names[selection[0]]);
-            }
-            g_list.assign();
-          }
-          is_change = true; continue;
         }
 
         // Get patch-matching correspondence map.
@@ -13638,7 +13614,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
         // Execute custom command.
         if (!is_command_input && is_command) {
-          if (hash_custom==~0U) { // A +builtin_command not supporting '+' prepend (e.g. +v)
+          if (hash_custom==~0U) { // Probably a +builtin_command not supporting '+' prepend (e.g. +v)
             hash_custom = hashcode(command,false);
             is_command = search_sorted(command,commands_names[hash_custom],
                                        commands_names[hash_custom].size(),ind_custom);
@@ -13956,7 +13932,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               previous_debug_line = debug_line;
             CImg<char>::string(commands_names[hash_custom][ind_custom]).move_to(callstack);
 
-            if (is_get && !is_get_custom) {
+            if (is_get) {
               cimg_forY(selection,l) {
                 const unsigned int uind = selection[l];
                 g_list[l] = images[uind];

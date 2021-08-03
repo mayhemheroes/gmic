@@ -8731,7 +8731,7 @@ upload_filters :
   x "cd "$HOME"/work/src/gmic-community && git pull"
 
   # Define the list of compatible versions.
-  (298,$_version) store. compat
+  (299,$_version) store. compat
 
   # Import filters from stdlib and community.
   files $HOME/work/src/gmic-community/include/*.gmic
@@ -16448,9 +16448,25 @@ minimal_path : check "$1>=0 && $2>=0 && $3>=0" skip ${7=0}
     rm[0,-1] a x
   nm $nm endl done
 
-#@cli mse : : (+)
+#@cli mse
 #@cli : Compute MSE (Mean-Squared Error) matrix between selected images.
 #@cli : $ image.jpg +noise 30 +noise[0] 35 +noise[0] 38 cut. 0,255 mse
+mse :
+  e[^-1] "Compute the "$!x$!" matrix of MSE values, for image$?."
+  +my_mse k.
+
++mse :
+  e[^-1] "Compute the "$!x$!" matrix of MSE values, for image$?."
+  N=$! $N,$N
+  repeat $N,q
+    repeat $q,p
+      if "const p = "$p"; const q = "$q"; [w#p,h#p,d#p,s#p]!=[w#q,h#q,d#q,s#q]"
+        error[0--4] "Image ["$p"] = '"{$p,n}"' ("{$p,[w,h,d,s]}") and ["$q"] = '"{$q,n}"' ("{$q,[w,h,d,s]}") have different sizes."
+      fi
+      +-[$p,$q] sqr. mse={ia} rm.
+      =. $mse,$p,$q =. $mse,$q,$p
+    done
+  done
 
 #@cli patches : patch_width>0,patch_height>0,patch_depth>0,x0,y0,z0,_x1,_y1,_z1,...,_xN,_yN,_zN
 #@cli : Extract N+1 patches from selected images, centered at specified locations.
