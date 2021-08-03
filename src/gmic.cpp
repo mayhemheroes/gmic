@@ -5250,17 +5250,15 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       if (position>=commands_line.size()) break;
 
       // Check consistency of the interpreter environment.
-      if (is_debug) {
-        if (images_names.size()!=images.size())
-          error(true,"G'MIC encountered a fatal error (images (%u) and images names (%u) have different size). "
-                "Please submit a bug report, at: https://github.com/dtschump/gmic/issues",
-                images_names.size(),images.size());
-        if (!callstack)
-          error(true,"G'MIC encountered a fatal error (empty call stack). "
-                "Please submit a bug report, at: https://github.com/dtschump/gmic/issues");
-        if (callstack.size()>=64)
-          error(true,"Call stack overflow (infinite recursion?).");
-      }
+      if (images_names.size()!=images.size())
+        error(true,"G'MIC encountered a fatal error (images (%u) and images names (%u) have different size). "
+              "Please submit a bug report, at: https://github.com/dtschump/gmic/issues",
+              images_names.size(),images.size());
+      if (!callstack)
+        error(true,"G'MIC encountered a fatal error (empty call stack). "
+              "Please submit a bug report, at: https://github.com/dtschump/gmic/issues");
+      if (callstack.size()>=64)
+        error(true,"Call stack overflow (infinite recursion?).");
 
       // Substitute expressions in current item.
       const char
