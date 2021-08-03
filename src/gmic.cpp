@@ -5177,7 +5177,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
   CImg<T> g_img;
 
   CImg<char> name,o_status,_argument_text, _argx, _argy, _argz, _argc, _title, _indices, _message, _formula, _color,
-    _command(256), _s_selection(256);
+    _command(257), _s_selection(256);
   char _c0 = 0,
     *argument_text = &_c0,
     *argx = &_c0,
@@ -5189,7 +5189,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     *message = &_c0,
     *formula = &_c0,
     *color = &_c0,
-    *const command = _command.data(),
+    *const command = _command.data(1),
     *s_selection = _s_selection.data();
 
 // Macros below allows to allocate memory for string variables only when necessary.
@@ -5356,6 +5356,15 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             hash_custom = hashcode(command,false);
             is_command = search_sorted(command,commands_names[hash_custom],
                                        commands_names[hash_custom].size(),ind_custom);
+            if (is_get && !is_command) {
+              *_command = '+';
+
+              std::fprintf(stderr,"\nDEBUG : com = '%s'\n",_command.data());
+
+              hash_custom = hashcode(_command,false);
+              is_command = search_sorted(_command,commands_names[hash_custom],
+                                         commands_names[hash_custom].size(),ind_custom);
+            }
           }
         }
         is_command|=is_builtin_command;
