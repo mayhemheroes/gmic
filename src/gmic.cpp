@@ -3426,7 +3426,7 @@ gmic& gmic::add_commands(const char *const data_commands, const char *const comm
                          bool *const is_entrypoint) {
   if (!data_commands || !*data_commands) return *this;
   cimg::mutex(23);
-  CImg<char> s_body(256*1024), s_line(256*1024), s_name(256), debug_info(32);
+  CImg<char> s_body(256*1024), s_line(256*1024), s_name(257), debug_info(32);
   unsigned int line_number = 0, pos = 0;
   bool is_last_slash = false, _is_last_slash = false, is_newline = false;
   int hash = -1, l_debug_info = 0;
@@ -3478,11 +3478,16 @@ gmic& gmic::add_commands(const char *const data_commands, const char *const comm
     for (_line = linee; _line>=lines && *_line=='\\'; --_line) _is_last_slash = !_is_last_slash;
     if (_is_last_slash) *(linee--) = 0; // ... and remove it if necessary
     if (!*lines) continue; // Empty line found
-    *s_name = *s_body = 0;
+    *s_body = 0;
+    const bool is_plus = *lines=='+';
+    char
+      *const nlines = lines + (is_plus?1:0),
+      *const ns_name = s_name.data() + (is_plus?1:0);
+    if (is_plus) { *s_name = '+'; s_name[1] = 0; } else *s_name = 0;
 
     if ((!is_last_slash && std::strchr(lines,':') && // Check for a command definition (or implicit '_main_')
-         cimg_sscanf(lines,"%255[a-zA-Z0-9_] %c %262143[^\n]",s_name.data(),&sep,s_body.data())>=2 &&
-         (*lines<'0' || *lines>'9') && sep==':') || ((*s_name=0), hash<0)) {
+         cimg_sscanf(nlines,"%255[a-zA-Z0-9_] %c %262143[^\n]",ns_name,&sep,s_body.data())>=2 &&
+         (*nlines<'0' || *nlines>'9') && sep==':') || ((*s_name=0), hash<0)) {
       CImg<char> body = CImg<char>::string(hash<0 && !*s_name?lines:s_body);
       if (hash<0 && !*s_name) std::strcpy(s_name,"_main_");
       if (is_entrypoint && !std::strcmp(s_name,"_main_")) *is_entrypoint = true;
@@ -5280,9 +5285,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       // Check if current item is a known command.
       const bool
         is_hyphen = *item=='-' && item[1] &&
-        item[1]!='[' && item[1]!='.' && (item[1]!='3' || item[2]!='d'),
+          item[1]!='[' && item[1]!='.' && (item[1]!='3' || item[2]!='d'),
         is_plus = *item=='+' && item[1] &&
-        item[1]!='[' && item[1]!='.' && (item[1]!='3' || item[2]!='d');
+          item[1]!='[' && item[1]!='.' && (item[1]!='3' || item[2]!='d');
       item+=is_hyphen || is_plus?1:0;
       const bool is_get = is_plus;
 
