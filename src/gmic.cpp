@@ -5290,8 +5290,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         is_plus = *item=='+' && item[1] &&
           item[1]!='[' && item[1]!='.' && (item[1]!='3' || item[2]!='d');
       item+=is_hyphen || is_plus?1:0;
-      const bool is_get = is_plus;
-      bool is_specialized_get = false;
+      bool is_get = is_plus, is_specialized_get = false;
 
 #define _gmic_eok(i) (!item[i] || item[i]=='[' || (item[i]=='.' && (!item[i + 1] || item[i + 1]=='.')))
       unsigned int hash_custom = ~0U, ind_custom = ~0U;
@@ -5358,7 +5357,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               hash_custom = hashcode(_command,false);
               is_command = search_sorted(_command,commands_names[hash_custom],
                                          commands_names[hash_custom].size(),ind_custom);
-              if (is_command) is_specialized_get = true; // +-specialization found
+              if (is_command) { is_get = false; is_specialized_get = true; } // +-specialization found
             }
             if (!is_command) {
               hash_custom = hashcode(command,false);
@@ -13938,11 +13937,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               previous_debug_line = debug_line;
             CImg<char>::string(commands_names[hash_custom][ind_custom]).move_to(callstack);
 
-            if (is_get) {
+            if (is_get) { // Call to '+command'
               cimg_forY(selection,l) {
                 const unsigned int uind = selection[l];
-                g_list[l].assign(images[uind],is_specialized_get);
-                g_list_c[l].assign(images_names[uind],is_specialized_get);
+                g_list[l] = images[uind];
+                g_list_c[l] = images_names[uind];
               }
 
               try {
@@ -13956,22 +13955,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 cimg::swap(exception._message,e._message);
               }
 
-              if (is_specialized_get) {
-                bool valid_return = true;
-                for (int l = 0; valid_return && l<selection.height(); ++l)
-                  valid_return&=g_list[l].data()==images[selection[l]].data();
-                if (valid_return) {
-                  g_list.remove(0,selection.height() - 1);
-                  g_list_c.remove(0,selection.height() - 1);
-                } else error(true,images,0,0,
-                             "Command '%s': Invalid image list (%u element%s) returned by +-specialization.",
-                             command_name,g_list.size(),g_list.size()!=1?"s":"");
-              }
-
               g_list.move_to(images,~0U);
               cimglist_for(g_list_c,l) g_list_c[l].copymark();
               g_list_c.move_to(images_names,~0U);
-            } else {
+            } else { // Call to 'command'
               cimg::mutex(27);
               cimg_forY(selection,l) {
                 const unsigned int uind = selection[l];
@@ -14022,7 +14009,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               if (nb<(unsigned int)selection.height())
                 remove_images(images,images_names,selection,nb,selection.height() - 1);
               else if (g_list) {
-                const unsigned int uind0 = selection?selection.back() + 1:images.size();
+                const unsigned int uind0 = selection && !is_specialized_get?selection.back() + 1:images.size();
                 g_list_c.move_to(images_names,uind0);
                 g_list.move_to(images,uind0);
               }
