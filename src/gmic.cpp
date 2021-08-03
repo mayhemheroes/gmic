@@ -5359,7 +5359,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               hash_custom = hashcode(_command,false);
               is_command = search_sorted(_command,commands_names[hash_custom],
                                          commands_names[hash_custom].size(),ind_custom);
-              is_get_custom = true;
+//              is_get_custom = true;
             }
             if (!is_command) {
               hash_custom = hashcode(command,false);
@@ -13645,6 +13645,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           }
 
           if (is_command) {
+
+            // std::fprintf(stderr,"\nDEBUG : command = '%s', is_get = %d, is_get_custom = %d\n",
+            //              command,
+            //              (int)is_get,(int)is_get_custom);
+
             bool has_arguments = false, _is_noarg = false;
             CImg<char> substituted_command(1024);
             char *ptr_sub = substituted_command.data();
