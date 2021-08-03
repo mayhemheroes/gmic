@@ -4982,10 +4982,12 @@ CImg<char> gmic::substitute_item(const char *const source,
 
         // Substitute '$$command' and '$${command}' -> Source of custom command.
       } else if (nsource[1]=='$' &&
-                 (((is_braces && cimg_sscanf(inbraces,"%255[a-zA-Z0-9_]",
-                                             substr.assign(256).data())==1) &&
+                 ((is_braces &&
+                   (cimg_sscanf(inbraces,"%255[a-zA-Z0-9_]",substr.assign(257).data())==1 ||
+                    (*substr='+',cimg_sscanf(inbraces,"+%255[a-zA-Z0-9_]",substr.data(1)))==1) &&
                    !inbraces[std::strlen(substr)]) ||
-                  (cimg_sscanf(nsource + 2,"%255[a-zA-Z0-9_]",substr.assign(256).data())==1)) &&
+                  (cimg_sscanf(nsource + 2,"%255[a-zA-Z0-9_]",substr.assign(257).data())==1 ||
+                   (*substr='+',cimg_sscanf(nsource + 2,"+%255[a-zA-Z0-9_]",substr.data(1)))==1)) &&
                  (*substr<'0' || *substr>'9')) {
         const CImg<char>& name = is_braces?inbraces:substr;
         const unsigned int
