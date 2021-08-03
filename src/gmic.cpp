@@ -5292,6 +5292,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           item[1]!='[' && item[1]!='.' && (item[1]!='3' || item[2]!='d');
       item+=is_hyphen || is_plus?1:0;
       const bool is_get = is_plus;
+      bool is_get_custom = false;
 
 #define _gmic_eok(i) (!item[i] || item[i]=='[' || (item[i]=='.' && (!item[i + 1] || item[i + 1]=='.')))
       unsigned int hash_custom = ~0U, ind_custom = ~0U;
@@ -5353,11 +5354,12 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                                  _ind1 - _ind0 + 1U,__ind);
           }
           if (!is_builtin_command) { // Search for a custom command name
-            if (is_get) {
+            if (is_get) { // Search for a custom specialization of '+command'
               *_command = '+';
               hash_custom = hashcode(_command,false);
               is_command = search_sorted(_command,commands_names[hash_custom],
                                          commands_names[hash_custom].size(),ind_custom);
+              is_get_custom = true;
             }
             if (!is_command) {
               hash_custom = hashcode(command,false);
