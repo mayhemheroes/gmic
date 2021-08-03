@@ -13954,7 +13954,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             const unsigned int
               previous_debug_filename = debug_filename,
               previous_debug_line = debug_line;
-            CImg<char>::string(command).move_to(callstack);
+//            CImg<char>::string(command).move_to(callstack);
+            CImg<char>::string(commands_names[hash_custom][ind_custom]).move_to(callstack);
+
             if (is_get) {
               cimg_forY(selection,l) {
                 const unsigned int uind = selection[l];
