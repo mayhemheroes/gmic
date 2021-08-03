@@ -5353,16 +5353,15 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                                  _ind1 - _ind0 + 1U,__ind);
           }
           if (!is_builtin_command) { // Search for a custom command name
-            hash_custom = hashcode(command,false);
-            is_command = search_sorted(command,commands_names[hash_custom],
-                                       commands_names[hash_custom].size(),ind_custom);
-            if (is_get && !is_command) {
+            if (is_get) {
               *_command = '+';
-
-              std::fprintf(stderr,"\nDEBUG : com = '%s'\n",_command.data());
-
               hash_custom = hashcode(_command,false);
               is_command = search_sorted(_command,commands_names[hash_custom],
+                                         commands_names[hash_custom].size(),ind_custom);
+            }
+            if (!is_command) {
+              hash_custom = hashcode(command,false);
+              is_command = search_sorted(command,commands_names[hash_custom],
                                          commands_names[hash_custom].size(),ind_custom);
             }
           }
