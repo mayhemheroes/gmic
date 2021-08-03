@@ -6686,7 +6686,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         gmic_simple_command("cosh",cosh,"Compute pointwise hyperbolic cosine of image%s.");
 
         // Camera input.
-        if (!is_get && !std::strcmp("camera",item)) {
+        if (!std::strcmp("camera",item)) {
           gmic_substitute_args(false);
           float
             cam_index = 0, nb_frames = 1, skip_frames = 0,
@@ -10471,7 +10471,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       gmic_commands_p :
 
         // Pass image from parent context.
-        if (!is_get && !std::strcmp("pass",command)) {
+        if (!std::strcmp("pass",command)) {
           gmic_substitute_args(false);
           if (cimg_sscanf(argument,"%d%c",&(err=2),&end)==1 && err>=-1 && err<=2) ++position;
           else err = 2;
@@ -12304,7 +12304,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         // Screenshot.
-        if (!is_get && !std::strcmp("screen",item)) {
+        if (!std::strcmp("screen",item)) {
           gmic_substitute_args(false);
           gmic_use_title;
           sepx = sepy = sepz = sepc = *argx = *argy = *argz = *argc = 0;
@@ -12373,7 +12373,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         // Input 3D sphere.
-        if (!is_get && !std::strcmp("sphere3d",item)) {
+        if (!std::strcmp("sphere3d",item)) {
           gmic_substitute_args(false);
           float radius = 100, recursions = 3;
           if ((cimg_sscanf(argument,"%f%c",
