@@ -5567,14 +5567,17 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         if (!command1) { // Single-char shortcut
           const bool
             is_mquvx = command0=='m' || command0=='q' || command0=='u' || command0=='v' || command0=='x',
-            is_deiopwx = command0=='d' || command0=='e' || command0=='i' || command0=='o' || command0=='p' ||
-                         command0=='w' || command0=='x';
+            is_deiowx = command0=='d' || command0=='e' || command0=='i' || command0=='o' || command0=='w' ||
+                        command0=='x';
           if ((unsigned int)command0<128 && onechar_shortcuts[(unsigned int)command0] &&
-              (!is_mquvx || (!is_get && !is_selection)) &&
-              (!is_deiopwx || !is_get)) {
-            std::strcpy(command,onechar_shortcuts[(unsigned int)command0]);
-            if (is_mquvx) { CImg<char>::string(command).move_to(_item); *command = 0; }
-            else *item = 0;
+              !(is_mquvx && (is_get || is_selection)) && !(is_deiowx && is_get)) {
+            if (is_mquvx) {
+              CImg<char>::string(onechar_shortcuts[(unsigned int)command0]).move_to(_item);
+              *command = 0;
+            } else {
+              std::strcpy(command,onechar_shortcuts[(unsigned int)command0]);
+              *item = 0;
+            }
           }
 
         } else if (!command2) { // Two-chars shortcuts
@@ -10677,9 +10680,12 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         // Print.
-        if (!is_get && !std::strcmp("print",command)) {
-          ++verbosity;
+        if (!std::strcmp("print",command)) {
+          const int _verbosity = ++verbosity;
+          std::FILE *_file = 0;
+          if (is_get) { _file = cimg::output(); verbosity = 1; cimg::output(stdout); }
           print_images(images,images_names,selection);
+          if (is_get) { verbosity = _verbosity; cimg::output(_file); }
           --verbosity;
           is_change = false; continue;
         }
