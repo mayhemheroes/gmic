@@ -5372,7 +5372,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                             commands_names[hash_custom].size(),ind_custom);
               if (found_command) is_specialized_get = true;
             }
-            if (!found_command) is_command = false;
+            if (!found_command) hash_custom = ind_custom = ~0U;
           }
         }
         is_command|=is_builtin_command;
