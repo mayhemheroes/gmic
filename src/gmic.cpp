@@ -5192,6 +5192,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     *color = &_c0,
     *const command = _command.data(1),
     *s_selection = _s_selection.data();
+  *_command = '+';
 
 // Macros below allows to allocate memory for string variables only when necessary.
 #define gmic_use_var(name,siz) (name = (name!=&_c0?name:&(*_##name.assign(siz).data() = 0)))
@@ -5352,17 +5353,24 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                                  _ind1 - _ind0 + 1U,__ind);
           }
           if (!is_builtin_command) { // Search for a custom command name
-            if (is_get) { // Search for custom specialization of '+command'
-              *_command = '+';
+            bool is_command_found = false;
+
+            if (is_get) { // Search for specialization '+command' that has priority over 'command'
               hash_custom = hashcode(_command,false);
-              is_command = search_sorted(_command,commands_names[hash_custom],
-                                         commands_names[hash_custom].size(),ind_custom);
-              if (is_command) { is_get = false; is_specialized_get = true; } // +-specialization found
+              is_command_found = search_sorted(_command,commands_names[hash_custom],
+                                               commands_names[hash_custom].size(),ind_custom);
+              if (is_command_found) { is_get = false; is_specialized_get = true; }
             }
-            if (!is_command) {
+            if (!is_command_found) { // Search for regular command
               hash_custom = hashcode(command,false);
-              is_command = search_sorted(command,commands_names[hash_custom],
-                                         commands_names[hash_custom].size(),ind_custom);
+              is_command_found = search_sorted(command,commands_names[hash_custom],
+                                               commands_names[hash_custom].size(),ind_custom);
+            }
+            if (!is_command_found && !is_get) { // Finally, search for specialization '+command' invoked as 'command'
+              hash_custom = hashcode(_command,false);
+              is_command_found = search_sorted(_command,commands_names[hash_custom],
+                                               commands_names[hash_custom].size(),ind_custom);
+              if (is_command_found) is_specialized_get = true;
             }
           }
         }
@@ -5458,13 +5466,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           else
             selection2cimg(s_selection,siz,images_names,command).move_to(selection);
         } else {
-          std::strncpy(command,item,_command.width() - 1);
+          std::strncpy(command,item,_command.width() - 2);
           is_command = false; ind_custom = ~0U;
-          command[_command.width() - 1] = *s_selection = 0;
+          command[_command.width() - 2] = *s_selection = 0;
         }
       } else {
-        std::strncpy(command,item,_command.width() - 1);
-        command[_command.width() - 1] = *s_selection = 0;
+        std::strncpy(command,item,_command.width() - 2);
+        command[_command.width() - 2] = *s_selection = 0;
       }
       position = position_argument;
       if (_s_selection._width!=selsiz) { // Go back to initial size for selection image.
