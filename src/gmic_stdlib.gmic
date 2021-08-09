@@ -1992,7 +1992,7 @@ _display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
 
     if $is_multiview
       if narg($_d2d_names) l[] $_d2d_names repeat $! wname$>={$>,t} done rm endl fi
-      com_iskey,com_flushkey,com_isvisible,com_isresizeed,com_idisp,sep=
+      com_iskey,com_flushkey,com_isvisible,com_isresized,com_idisp,sep=
       repeat {img,d}
         if narg($_d2d_names) w$>[] {{*$>,w}?[-1,-1]:[$wsiz0]},0,${wname$>}" ("{w}x{h}x{d}x{s}")"
         else w$>[] {{*$>,w}?[-1,-1]:[$wsiz0]},0,$nm" ("{w}x{h}x{d}x{s}")-#"$>
@@ -2088,16 +2088,29 @@ _display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
         rm..
 
         if s>($alpha_mode?4:3) channels. 0,{$alpha_mode?3:2} fi # Discard useless channels
+
+        # Check if image potentially contain inf or nan values.
+        +r[0] 1,1,1,1,2 is_infnan={isnan(i)||isinf(i)} rm.
+
         if $normalization_mode
-          # Find min and max values that are not nan of inf.
-          eval[0] ">begin(m = inf; M = -inf);
-            !isinf(i) && !isnan(i)?(m = min(i,m); M = max(i,M));
-            end(run('im,iM=',m,',',M))"
-          vim,viM={[$im-abs($im),$iM+abs($iM)]}
-          f. "isnan(i)?"$vim":isinf(i)?(i<0?"$vim":"$viM"):i"
+          if $is_infnan
+            # Find min and max values that are not nan of inf.
+            eval[0] "*begin(m = inf; M = -inf);
+              !isinf(i) && !isnan(i)?(m = min(i,m); M = max(i,M));
+              end(
+                merge(m,min);
+                merge(M,max);
+                run('im,iM=',m,',',M)
+              )"
+            vim,viM={[$im-abs($im),$iM+abs($iM)]}
+            f. "isnan(i)?"$vim":isinf(i)?(i<0?"$vim":"$viM"):i"
+          else
+            im,iM={0,[im,iM]}
+          fi
+
         else
           im,iM=0,255
-          f. "isnan(i)?"$im":isinf(i)?(i<0?"$im":"$iM"):i"
+          if $is_infnan f. "isnan(i)?"$im":isinf(i)?(i<0?"$im":"$iM"):i" fi
         fi
 
         # Normalize view.
