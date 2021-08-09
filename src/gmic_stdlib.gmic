@@ -1044,7 +1044,13 @@ reference : skip "${2=}"
 "* Specifying arguments may be skipped when invoking a custom command, by replacing them by commas ',' as in "\
 "expression \n~~~\nflower ,,3\n~~~\n Omitted arguments are set to their default values, which must be thus explicitly "\
 "defined in the code of the corresponding custom command (using default argument expressions as '$""{1=default}')."\n\
-"* If one numbered argument required by a custom command misses a value, an error is thrown by the G'MIC interpreter."
+"* If one numbered argument required by a custom command misses a value, an error is thrown by the G'MIC "\
+"interpreter."\n\
+"* It is possible to specialize the invokation of a '+command' by defining it as "\
+"\n~~~\n+command_name: command_definition\n~~~\n"\
+"* A +-specialization takes priority over the regular command definition when the command is invoked with a "\
+"prepended '+'."\n\
+"* When only a +-specialization of a command is defined, invoking 'command' is actually equivalent to '+command'."
 
   _section "List of Commands"
   _text \
@@ -49669,8 +49675,10 @@ fx_custom_code : skip "${1=-skip ,}"
   fi
   if $4
     _nb_out=$!
-    _dim_out="" sep="" repeat $! l[$>]
-      _dim_out=$_dim_out$sep"["$>"] = "{w}x{h}x{d}x{s}", in ["{_round([im,iM],0.1)}"]" sep="\n" endl done
+    _dim_out="" sep=""
+    repeat $! l[$>]
+      _dim_out=$_dim_out$sep"["$>"] = "{w}x{h}x{d}x{s}", in ["{_round([im,iM],0.1)}"]" sep="\n"
+    endl done
   fi
   um _fx_custom_code_start
 
@@ -49688,7 +49696,8 @@ fx_custom_code_preview : skip "${1=-skip ,}"
   endl
   if $4 # Display debug infos on preview
     if !$3 % 256 fi
-    if $_preview_mode>=4 gui_preview fi
+    if $!>1 gui_preview fi
+    rr2d $_preview_width,$_preview_height,0,1
     siz0=13 siz1=17 siz2=19 siz3=22
     if ['$_status_out']==0 _status_out=(empty) fi
     info="Input images: "#$_nb_in"\n"\
