@@ -14277,7 +14277,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           img.resize(maxcx + 1,maxcy + 1,maxcz + 1,cc + 1,0);
           if (unroll_axis) img.unroll(unroll_axis=='x' || unroll_axis==','?'x':
                                       unroll_axis=='y' || unroll_axis==';'?'y':
-                                      unroll_axis=='z' || unroll_axis=='/'?'z':'v');
+                                      unroll_axis=='z' || unroll_axis=='/'?'z':'c');
           else if (*permute_axes) img.permute_axes(permute_axes);
           print(images,0,"Input image at position%s, with values %s",
                 _gmic_selection.data(),
@@ -14999,10 +14999,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
           // Check if a custom command handling requested file format exists.
           gmic_use_formula;
-          cimg_snprintf(formula,_formula.width(),"input_%s",uext.data());
+          cimg_snprintf(formula,_formula.width(),"+input_%s",uext.data());
           hash = hashcode(formula,false);
           if (search_sorted(formula,commands_names[hash],commands_names[hash].size(),pattern)) { // Command found
-            cimg_snprintf(formula,_formula.width(),"input_%s[] \"%s\"%s%s",uext.data(),_filename0,
+            cimg_snprintf(formula,_formula.width(),"+input_%s[] \"%s\"%s%s",uext.data(),_filename0,
                           *options?",":"",options.data());
             const CImgList<char> ncommands_line = commands_line_to_CImgList(formula);
             unsigned int nposition = 0;
