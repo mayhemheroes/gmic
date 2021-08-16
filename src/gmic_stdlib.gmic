@@ -3534,37 +3534,33 @@ echo_file : skip "${2='\n'}"
   l[] raw:"$1",ushort if $4 endian ushort fi
   r $2,$3,1,1,-1 +>> 5 &. 63 +&.. 31 >>... 11 *[-3,-1] 8 *.. 4 a c endl
 
-#@cli input_csv : "filename",_variable_name
-#@cli : Insert text data read from a .csv file.
+#@cli input_csv : "filename",_read_data_as={ 0=numbers | 1=strings | _variable_name }
+#@cli : Insert number of string array from specified .csv file.
 #@cli : If 'variable_name' is provided, the string of each cell is stored in a numbered variable '_variable_name_x_y', \
 # where 'x' and 'y' are the indices of the cell column and row respectively (starting from '0').
 #@cli : Otherwise, a 'WxH' image is inserted at the end of the list, with each vector-valued pixel 'I(x,y)' encoding \
-# the string of each cell.
+# the number or the string of each cell.
 #@cli : This command returns the 'W,H' dimension of the read array, as the status.
-#@cli : Default value: 'variable_name=(undefined)'.
-+input_csv : check ${"if ['${2=}']==0 u 1 else is_variable_name $2 fi"}
+#@cli : Default value: 'read_data_as=1'.
++input_csv : check ${"is_variable_name ${2=1} if s=['$2'];s=='0'||s=='1'||${} u 1 else u 0 fi"}
   l[]
-    if ['$2']==0
-      e[0--4] "Input csv data from file '$1'."
-      it "$1" s -,{'\n'} replace {'" "'},255
-      repeat $! _input_csv_img[] ${u\ {$>,t}} rv[$>,-1] rm. done
-      a y replace 255,{'" "'} nm "$1"
-      u {[w,h]}
-    else
-      e[0--4] "Input csv data from file '$1', in variable '$2'."
-      it "$1" s -,{'\n'} replace {'" "'},255 W,H=0,$!
+    is_var={"s=['$2'];s!='0'&&s!='1'"}
+    if $is_var # Read data as new variables
+      e[0--4] "Input string array from file '$1', in variable '$2'."
+      it "$1" replace {'" "'},255 s -,{'\n'}
+      W,H=0,$!
       repeat $! _input_csv_var[] $2,$>,${u\ {$>,t}} W={max($W,${})} done
       rm u $W,$H
+    else # Read data as a new image
+      s0,s1="number","string"
+      e[0--4] "Input "${s$2}" array from file '$1'."
+      it "$1" s -,{'\n'} replace {'" "'},255
+      if $2 repeat $! _input_csv_str[] ${u\ {$>,t}} rv[$>,-1] rm. done a y replace 255,{'" "'} # Read as strings
+      else repeat $! _input_csv_val[] ${u\ {$>,t}} rv[$>,-1] rm. done a y # Read as values
+      fi
+      nm "$1" u {[w,h]}
     fi
   endl
-
-_input_csv_img :
-  $=arg
-  repeat $#
-    arg=${arg{1+$>}}
-    if ['$arg']!=0 ({'$arg'}:c) else (0) fi
-  done
-  a x
 
 _input_csv_var :
   $=arg
@@ -3574,6 +3570,22 @@ _input_csv_var :
    if ['$arg']!=0 ({'${arg{3+$>}}'}) replace. 255,{'" "'} $1_$>_$2={t} rm. else $1_$>_$2= fi
   done
   u $W
+
+_input_csv_str :
+  $=arg
+  repeat $#
+    arg=${arg{1+$>}}
+    if ['$arg']!=0 ({'$arg'}:c) else (0) fi
+  done
+  a x
+
+_input_csv_val :
+  $=arg
+  repeat $#
+    arg=${arg{1+$>}}
+    if ['$arg']!=0 ({stov(['$arg'])}) else (nan) fi
+  done
+  a x
 
 #@cli input_cube : "filename",_convert_1d_cluts_to_3d={ 0 | 1 }.
 #@cli : Insert CLUT data from a .cube filename (Adobe CLUT file format).
