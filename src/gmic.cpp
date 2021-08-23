@@ -6452,7 +6452,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   arg_command_text,
                   add_debug_info?" with debug info":"");
             try {
-              file = cimg::std_fopen(cimg::load_network(arg_command,gmic_use_argx,network_timeout),"r");
+              file = cimg::std_fopen(cimg::load_network(arg_command,gmic_use_argx,network_timeout,true),"r");
             } catch (...) {
               file = 0;
             }
@@ -14462,7 +14462,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         if (!cimg::strncasecmp(_filename,"http://",7) ||
             !cimg::strncasecmp(_filename,"https://",8)) {
           try {
-            cimg::load_network(_filename,filename_tmp,network_timeout);
+            cimg::load_network(_filename,filename_tmp,network_timeout,true);
           } catch (CImgIOException&) {
             print(images,0,"Input file '%s' at position%s",
                   _filename0,
