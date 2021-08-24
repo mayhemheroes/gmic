@@ -6452,7 +6452,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   arg_command_text,
                   add_debug_info?" with debug info":"");
             try {
-              file = cimg::std_fopen(cimg::load_network(arg_command,gmic_use_argx,network_timeout),"r");
+              file = cimg::std_fopen(cimg::load_network(arg_command,gmic_use_argx,network_timeout,true),"r");
             } catch (...) {
               file = 0;
             }
@@ -14462,7 +14462,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         if (!cimg::strncasecmp(_filename,"http://",7) ||
             !cimg::strncasecmp(_filename,"https://",8)) {
           try {
-            cimg::load_network(_filename,filename_tmp,network_timeout);
+            cimg::load_network(_filename,filename_tmp,network_timeout,true);
           } catch (CImgIOException&) {
             print(images,0,"Input file '%s' at position%s",
                   _filename0,
@@ -15071,13 +15071,14 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   char *const posb = std::strchr(name,'[');
                   if (posb) *posb = 0; // Discard selection from the command name
                   int dmin = 4;
-                  // Look for a built-in command
+                  // Look for a built-in command.
                   for (unsigned int l = 0; l<sizeof(builtin_commands_names)/sizeof(char*); ++l) {
                     const char *const c = builtin_commands_names[l];
                     const int d = levenshtein(c,name.data() + foff);
                     if (d<dmin) { dmin = d; misspelled = builtin_commands_names[l]; }
                   }
-                  for (unsigned int i = 0; i<gmic_comslots; ++i) // Look for a custom command
+                  // Look for a custom command.
+                  for (unsigned int i = 0; i<gmic_comslots; ++i)
                     cimglist_for(commands_names[i],l) {
                       const char *const c = commands_names[i][l].data();
                       const int d = levenshtein(c,name.data() + foff);
@@ -15086,7 +15087,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   if (misspelled)
                     error(true,images,0,0,
                           "Unknown command or filename '%s'; did you mean '%s'?",
-                          gmic_argument_text(),misspelled);
+                          gmic_argument_text(),misspelled + (*misspelled=='+'?1:0));
                   else error(true,images,0,0,
                              "Unknown command or filename '%s'.",
                              gmic_argument_text());
