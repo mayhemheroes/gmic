@@ -8147,60 +8147,58 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Histogram.
         if (!std::strcmp("histogram",command)) {
           gmic_substitute_args(false);
-          float nb_levels = 256;
-          bool no_min_max = false;
-          sep = sep0 = sep1 = 0;
-          value0 = value1 = 0;
-          if (((cimg_sscanf(argument,"%f%c",
-                            &nb_levels,&end)==1 && (no_min_max=true)) ||
-               ((cimg_sscanf(argument,"%f%c%c",
-                             &nb_levels,&sep,&end)==2 && sep=='%') && (no_min_max=true)) ||
-               cimg_sscanf(argument,"%f,%lf,%lf%c",
-                           &nb_levels,&value0,&value1,&end)==3 ||
-               (cimg_sscanf(argument,"%f%c,%lf,%lf%c",
-                            &nb_levels,&sep,&value0,&value1,&end)==4 && sep=='%') ||
-               (cimg_sscanf(argument,"%f,%lf%c,%lf%c",
-                            &nb_levels,&value0,&sep0,&value1,&end)==4 && sep0=='%') ||
-               (cimg_sscanf(argument,"%f%c,%lf%c,%lf%c",
-                            &nb_levels,&sep,&value0,&sep0,&value1,&end)==5 && sep=='%' &&
+          value = value0 = 0; value1 = 100;
+          sep = 0; sep0 = sep1 = '%';
+          if ((cimg_sscanf(argument,"%lf%c",
+                           &value,&end)==1 ||
+               (cimg_sscanf(argument,"%lf%c%c",
+                            &value,&sep,&end)==2 && sep=='%') ||
+               cimg_sscanf(argument,"%lf,%lf,%lf%c",
+                           &value,&value0,&value1,&end)==3 ||
+               (cimg_sscanf(argument,"%lf%c,%lf,%lf%c",
+                            &value,&sep,&value0,&value1,&end)==4 && sep=='%') ||
+               (cimg_sscanf(argument,"%lf,%lf%c,%lf%c",
+                            &value,&value0,&sep0,&value1,&end)==4 && sep0=='%') ||
+               (cimg_sscanf(argument,"%lf%c,%lf%c,%lf%c",
+                            &value,&sep,&value0,&sep0,&value1,&end)==5 && sep=='%' &&
                 sep0=='%') ||
-               (cimg_sscanf(argument,"%f,%lf,%lf%c%c",
-                            &nb_levels,&value0,&value1,&sep1,&end)==4 && sep1=='%') ||
-               (cimg_sscanf(argument,"%f%c,%lf,%lf%c%c",
-                            &nb_levels,&sep,&value0,&value1,&sep1,&end)==5 && sep=='%' &&
+               (cimg_sscanf(argument,"%lf,%lf,%lf%c%c",
+                            &value,&value0,&value1,&sep1,&end)==4 && sep1=='%') ||
+               (cimg_sscanf(argument,"%lf%c,%lf,%lf%c%c",
+                            &value,&sep,&value0,&value1,&sep1,&end)==5 && sep=='%' &&
                 sep1=='%') ||
-               (cimg_sscanf(argument,"%f,%lf%c,%lf%c%c",
-                            &nb_levels,&value0,&sep0,&value1,&sep1,&end)==5 && sep0=='%' &&
+               (cimg_sscanf(argument,"%lf,%lf%c,%lf%c%c",
+                            &value,&value0,&sep0,&value1,&sep1,&end)==5 && sep0=='%' &&
                 sep1=='%') ||
-               (cimg_sscanf(argument,"%f%c,%lf%c,%lf%c%c",
-                            &nb_levels,&sep,&value0,&sep0,&value1,&sep1,&end)==6 && sep=='%' &&
+               (cimg_sscanf(argument,"%lf%c,%lf%c,%lf%c%c",
+                            &value,&sep,&value0,&sep0,&value1,&sep1,&end)==6 && sep=='%' &&
                 sep0=='%' && sep1=='%')) &&
-              nb_levels>=0.5) { nb_levels = cimg::round(nb_levels); ++position; }
-          else { nb_levels = 256; value0 = 0; value1 = 100; sep = 0; sep0 = sep1 = '%'; }
-          if (no_min_max) { value0 = 0; value1 = 100; sep0 = sep1 = '%'; }
-          print(images,0,"Compute histogram of image%s, using %g%s level%s in range [%g%s,%g%s].",
-                gmic_selection.data(),
-                nb_levels,sep=='%'?"%":"",
-                nb_levels>1?"s":"",
-                value0,sep0=='%'?"%":"",
-                value1,sep1=='%'?"%":"");
-          cimg_forY(selection,l) {
-            CImg<T> &img = gmic_check(images[selection[l]]);
-            nvalue0 = value0; nvalue1 = value1;
-            vmin = vmax = 0;
-            if (sep0=='%' || sep1=='%') {
-              if (img) vmax = (double)img.max_min(vmin);
-              if (sep0=='%') nvalue0 = vmin + (vmax - vmin)*value0/100;
-              if (sep1=='%') nvalue1 = vmin + (vmax - vmin)*value1/100;
+              value>=0.5) {
+            value = cimg::round(value);
+            print(images,0,"Compute histogram of image%s, using %g%s level%s in range [%g%s,%g%s].",
+                  gmic_selection.data(),
+                  value,sep=='%'?"%":"",
+                  value>1?"s":"",
+                  value0,sep0=='%'?"%":"",
+                  value1,sep1=='%'?"%":"");
+            cimg_forY(selection,l) {
+              CImg<T> &img = gmic_check(images[selection[l]]);
+              nvalue0 = value0; nvalue1 = value1;
+              vmin = vmax = 0;
+              if (sep0=='%' || sep1=='%') {
+                if (img) vmax = (double)img.max_min(vmin);
+                if (sep0=='%') nvalue0 = vmin + (vmax - vmin)*value0/100;
+                if (sep1=='%') nvalue1 = vmin + (vmax - vmin)*value1/100;
+              }
+              const unsigned int
+                _nb_levels = std::max(1U,
+                                      (unsigned int)cimg::round(sep=='%'?
+                                                                value*(1 + nvalue1 - nvalue0)/100:
+                                                                value));
+              gmic_apply(histogram(_nb_levels,(T)nvalue0,(T)nvalue1));
             }
-            const unsigned int
-              _nb_levels = std::max(1U,
-                                    (unsigned int)cimg::round(sep=='%'?
-                                                              nb_levels*(1 + nvalue1 - nvalue0)/100:
-                                                              nb_levels));
-            gmic_apply(histogram(_nb_levels,(T)nvalue0,(T)nvalue1));
-          }
-          is_change = true; continue;
+          } else arg_error("histogram");
+          is_change = true; ++position; continue;
         }
 
         // Compute Hessian.
