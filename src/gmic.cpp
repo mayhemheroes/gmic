@@ -8147,12 +8147,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Histogram.
         if (!std::strcmp("histogram",command)) {
           gmic_substitute_args(false);
-          value = value0 = 0; value1 = 100;
-          sep = 0; sep0 = sep1 = '%';
-          if ((cimg_sscanf(argument,"%lf%c",
-                           &value,&end)==1 ||
-               (cimg_sscanf(argument,"%lf%c%c",
-                            &value,&sep,&end)==2 && sep=='%') ||
+          value = value0 = value1 = 0;
+          sep = sep0 = sep1 = 0;
+          is_cond = false; // no_min_max?
+          if (((cimg_sscanf(argument,"%lf%c",
+                            &value,&end)==1 && (is_cond = true)) ||
+               ((cimg_sscanf(argument,"%lf%c%c",
+                             &value,&sep,&end)==2 && sep=='%') && (is_cond = true)) ||
                cimg_sscanf(argument,"%lf,%lf,%lf%c",
                            &value,&value0,&value1,&end)==3 ||
                (cimg_sscanf(argument,"%lf%c,%lf,%lf%c",
@@ -8175,6 +8176,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 sep0=='%' && sep1=='%')) &&
               value>=0.5) {
             value = cimg::round(value);
+            if (is_cond) { value0 = 0; value1 = 100; sep0 = sep1 = '%'; }
             print(images,0,"Compute histogram of image%s, using %g%s level%s in range [%g%s,%g%s].",
                   gmic_selection.data(),
                   value,sep=='%'?"%":"",
