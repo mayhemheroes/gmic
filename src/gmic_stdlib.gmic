@@ -35447,6 +35447,7 @@ fx_lylejk_painting_preview :
 #@gui : Predefined style = choice("Standard")_0+
 #@gui : sep = separator()
 #@gui : note = note("<span color="#EE5500"><small><b>Global Settings:</b></small></span>")
+#@gui : Painting Order = choice(1,"Random","Coarse to Fine","Fine to Coarse")
 #@gui : Number of Iterations = int(8,1,32)
 #@gui : Precision (%) = float(50,0,100)
 #@gui : Details (%) = float(100,0,100)
@@ -35492,7 +35493,7 @@ fx_lylejk_painting_preview :
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.\nLatest Update: <i>2021/08/30</i>.</small>")
 fx_paint_with_brush :
   predefined_style,\
-  nb_iterations,precision,details_threshold,background_threshold,\
+  painting_order,nb_iterations,precision,details_threshold,background_threshold,\
   sharpness,anisotropy,smoothness,coherence,init_canvas,\
   brush_diameter_details,stroke_length_details,\
   hue_randomness_details,saturation_randomness_details,value_randomness_details,opacity_details,\
@@ -35500,11 +35501,19 @@ fx_paint_with_brush :
   hue_randomness_background,saturation_randomness_background,value_randomness_background,opacity_background,\
   brush_diameter_dynamics,stroke_length_dynamics,\
   hue_randomness_dynamics,saturation_randomness_dynamics,value_randomness_dynamics,opacity_dynamics,\
-  spatial_step,angular_step,preview_progression=${1-31}
+  spatial_step,angular_step,preview_progression=${1-32}
 
   repeat $! l[$>] to_color
     +diffusiontensors {[$sharpness,$anisotropy]%},$smoothness,$coherence
-    +gradient_norm.. b. 1 100%,100%,1,2,[x,y] a[-2,-1] c r. {[wh,1,1,whds/whd]},-1 sort. +,x
+
+    +gradient_norm..
+    if $painting_order==0 100%,100% rand. 0,1
+    elif $painting_order==1 +b. 1
+    else +b. 1 *. -1
+    fi
+    rv[-2,-1]
+    100%,100%,1,2,[x,y] a[-3--1] c r. {wh},1,1,4,-1 sort. +,x
+    channels. 1,100%
     r. {max(0.01,$precision)}%,1,1,3
     z. {(100-$background_threshold)*$details_threshold%}%,$details_threshold%
 
