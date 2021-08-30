@@ -35502,7 +35502,7 @@ fx_paint_with_brush :
   hue_randomness_dynamics,saturation_randomness_dynamics,value_randomness_dynamics,opacity_dynamics,\
   spatial_step,angular_step,preview_progression=${1-31}
 
-  repeat $! l[$>]
+  repeat $! l[$>] to_color
     +diffusiontensors {[$sharpness,$anisotropy]%},$smoothness,$coherence
     +gradient_norm.. b. 1 100%,100%,1,2,[x,y] a[-2,-1] c r. {[wh,1,1,whds/whd]},-1 sort. +,x
     r. {max(0.01,$precision)}%,1,1,3
@@ -35555,11 +35555,14 @@ fx_paint_with_brush :
           value_randomness = lerp(value_randomness_background,value_randomness_details,lambda(value_randomness_dynamics));
           opacity = lerp(opacity_background,opacity_details,lambda(opacity_dynamics));
 
-          HSV = rgb2hsv(I(#0,X0));
+          val = I(#0,X0);
+          HSV = rgb2hsv(val[0,3]);
           HSV[0] = (HSV[0] + 180*hue_randomness*0.35*g)%360;
           HSV[1] = cut(HSV[1] + saturation_randomness*0.35*g,0,1);
           HSV[2] = cut(HSV[2] + value_randomness*0.35*g,0,1);
-          color = [ hsv2rgb(HSV),opacity ];
+          RGB = hsv2rgb(HSV);
+          copy(val,RGB,3);
+          color = [ val,opacity ];
 
           for (a = 0, a<360, a+=angular_step,
             X = X0;
