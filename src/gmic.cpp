@@ -10886,18 +10886,23 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             if (xmin==0 && xmax==0) { xmin = -4; xmax = 4; }
             if (!plot_type && !vertex_type) plot_type = 1;
             if (resolution<1) resolution = 65536;
-            CImgList<double> tmp_img(1);
-            CImg<double> &values = tmp_img[0];
 
-            values.assign(4,(unsigned int)resolution--,1,1,0);
-            const double dx = xmax - xmin;
-            cimg_forY(values,X) values(0,X) = xmin + X*dx/resolution;
-            cimg::eval(formula,values).move_to(values);
+            gmic_use_argx;
+            cimg_snprintf(argx,_argx.width(),"x = lerp(%g,%g,x/%d);",xmin,xmax,(unsigned int)resolution - 1);
+            const CImg<char> n_formula = (CImg<char>::string(argx,false,true),
+                                          CImg<char>::string(formula,true,true))>'x';
+            pattern = 1U;
+            try { // Determine vector dimension of specified formula
+              CImg<double>::_cimg_math_parser mp(n_formula.data() + (*n_formula=='>' || *n_formula=='<' ||
+                                                                    *n_formula=='*' || *n_formula==':'));
+              pattern = std::max(1U,mp.result_dim);
+            } catch (...) { is_cond = false; }
+            CImg<double> values((unsigned int)resolution,1,1,pattern,n_formula,false);
 
             gmic_use_title;
             cimg_snprintf(title,_title.width(),"[Plot of '%s']",formula);
             CImg<char>::string(title).move_to(g_list_c);
-            display_plots(tmp_img,g_list_c,CImg<unsigned int>::vector(0),
+            display_plots(CImgList<double>(values,true),g_list_c,CImg<unsigned int>::vector(0),
                           plot_type,vertex_type,xmin,xmax,ymin,ymax,exit_on_anykey);
             g_list_c.assign();
             ++position;
