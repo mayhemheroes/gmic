@@ -16260,11 +16260,11 @@ fftpolar :
     fft complex2polar shift {-round(w/2)},{-round(h/2)},{-round(d/2)},0,2
   endl done
 
-#@cli histogram : nb_levels>0[%],_value0[%],_value1[%] : (+)
+#@cli histogram : nb_levels>0[%],_min_value[%],_max_value[%] : (+)
 #@cli : Compute the histogram of selected images.
 #@cli : If value range is set, the histogram is estimated only for pixels in the specified
-#@cli : value range. Argument 'value1' must be specified if 'value0' is set.
-#@cli : Default values: 'value0=0%' and 'value1=100%'.
+#@cli : value range. Argument 'max_value' must be specified if 'min_value' is set.
+#@cli : Default values: 'min_value=0%' and 'max_value=100%'.
 #@cli : $ image.jpg +histogram 64 display_graph[-1] 400,300,3
 
 #@cli histogram_nd : nb_levels>0[%],_value0[%],_value1[%]
@@ -26649,13 +26649,21 @@ math_lib :
   );
 
   hsv2rgb(I) = ( # Convert HSV vector to RGB
-    _I = I;
+    ref(I,_I);
     _I[0]%=360;
     _I[1] = cut(_I[1],0,1);
     _I[2] = cut(_I[2],0,1);
     _c = _I[2]*_I[1];
     _x = _c*(1-abs((_I[0]/60)%2-1));
     (arg(1 + int(_I[0]/60),[_c,_x,0],[_x,_c,0],[0,_c,_x],[0,_x,_c],[_x,0,_c],[_c,0,_x])+=_I[2] - _c)*=255;
+  );
+
+  rgb2hsv(I) = ( # Convert RGB vector to HSV
+    ref(I,_I);
+    _M = max(_I);
+    _C = _M - min(_I);
+    [ 60*(_C==0?0:_M==_I[0]?((_I[1] - _I[2])/_C)%6:_M==_I[1]?(_I[2] - _I[0])/_C + 2:(_I[0] - _I[1])/_C + 4),
+      _M<=0?0:_C/_M, _M/255 ];
   );
 
   is_intriangle(P,A,B,C) = ( # Test if a point is inside a triangle
@@ -35435,6 +35443,157 @@ fx_lylejk_painting :
 fx_lylejk_painting_preview :
   gui_split_preview "fx_lylejk_painting $*",${-3--1}
 
+#@gui Paint With Brush : fx_paint_with_brush, fx_paint_with_brush_preview(0)
+#@gui : Predefined style = choice("Standard")_0+
+#@gui : sep = separator()
+#@gui : note = note("<span color="#EE5500"><small><b>Global Settings:</b></small></span>")
+#@gui : Number of Iterations = int(8,1,32)
+#@gui : Precision (%) = float(50,0,100)
+#@gui : Details (%) = float(100,0,100)
+#@gui : Background (%) = float(100,0,100)
+#@gui : Sharpness (%) = float(10,0,100)
+#@gui : Anisotropy (%) = float(80,0,100)
+#@gui : Smoothness = float(0.5,0,8)
+#@gui : Coherence = float(4,0,8)
+#@gui : Init Canvas = choice(6,"Black","Gray","White","Self","Blur","Kuwahara","Vector Painting")
+#@gui : sep = separator()
+#@gui : note = note("<span color="#EE5500"><small><b>Brush for Details:</b></small></span>")
+#@gui : Brush Diameter (px) = float(2,0,100)
+#@gui : Stroke Length (px) = float(10,0,100)
+#@gui : Hue Randomness (%) = float(0,0,100)
+#@gui : Saturation Randomness (%) = float(0,0,100)
+#@gui : Value Randomness (%) = float(0,0,100)
+#@gui : Opacity (%) = float(60,0,100)
+#@gui : sep = separator()
+#@gui : note = note("<span color="#EE5500"><small><b>Brush for Background:</b></small></span>")
+#@gui : Brush Diameter (px) = float(20,0,100)
+#@gui : Stroke Length (px) = float(1,0,100)
+#@gui : Hue Randomness (%) = float(0,0,100)
+#@gui : Saturation Randomness (%) = float(0,0,100)
+#@gui : Value Randomness (%) = float(0,0,100)
+#@gui : Opacity (%) = float(30,0,100)
+#@gui : sep = separator()
+#@gui : note = note("<span color="#EE5500"><small><b>Brush Dynamics:</b></small></span>")
+#@gui : Brush Diameter = float(20,0,100)
+#@gui : Stroke Length = float(5,0,100)
+#@gui : Hue Randomness = float(15,0,100)
+#@gui : Saturation Randomness = float(15,0,100)
+#@gui : Value Randomness = float(15,0,100)
+#@gui : Opacity = float(15,0,100)
+#@gui : Spatial Step = float(1,0,3)
+#@gui : Angular Step (°) = float(45,0,90)
+#@gui : sep = separator()
+#@gui : Preview Progression While Running = bool(0)
+#@gui : Preview Type = choice("Full","Forward Horizontal","Forward Vertical","Backward Horizontal",
+#@gui : "Backward Vertical","Duplicate Top","Duplicate Left","Duplicate Bottom","Duplicate Right",
+#@gui : "Duplicate Horizontal","Duplicate Vertical","Checkered","Checkered Inverse")
+#@gui : Preview Split = point(50,50,0,0,200,200,200,0,10)_0
+#@gui : sep = separator()
+#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.\nLatest Update: <i>2021/08/30</i>.</small>")
+fx_paint_with_brush :
+  predefined_style,\
+  nb_iterations,precision,details_threshold,background_threshold,\
+  sharpness,anisotropy,smoothness,coherence,init_canvas,\
+  brush_diameter_details,stroke_length_details,\
+  hue_randomness_details,saturation_randomness_details,value_randomness_details,opacity_details,\
+  brush_diameter_background,stroke_length_background,\
+  hue_randomness_background,saturation_randomness_background,value_randomness_background,opacity_background,\
+  brush_diameter_dynamics,stroke_length_dynamics,\
+  hue_randomness_dynamics,saturation_randomness_dynamics,value_randomness_dynamics,opacity_dynamics,\
+  spatial_step,angular_step,preview_progression=${1-31}
+
+  repeat $! l[$>]
+    +diffusiontensors {[$sharpness,$anisotropy]%},$smoothness,$coherence
+    +gradient_norm.. 100%,100%,1,2,[x,y] a[-2,-1] c r. {[wh,1,1,whds/whd]},-1 sort. +,x
+    r. {max(0.01,$precision)}%,1,1,3
+    z. {(100-$background_threshold)*$details_threshold%}%,$details_threshold%
+
+    # Initialize canvas.
+    arg0 $init_canvas,"+f[0] 0","+f[0] 128","+f[0] 255","[0]","+b[0] 8%","+kuwahara[0] 10","+fx_vector_painting[0] 9"
+    run ${}
+
+    # Paint brush strokes.
+    ind=0
+    repeat inf,t
+      100%,100%,1,{s#0+1}
+      nb_strokes={max(1,w#2/$nb_iterations)}
+      $nb_strokes,1,1,1,:${-math_lib}"
+        begin(color_random = vector(#s#0));
+        lambda(tau) = (1 - exp(-4*edge/tau));
+        const brush_diameter_background = $brush_diameter_background;
+        const brush_diameter_details = $brush_diameter_details;
+        const brush_diameter_dynamics = $brush_diameter_dynamics;
+        const stroke_length_background = $stroke_length_background;
+        const stroke_length_details = $stroke_length_details;
+        const stroke_length_dynamics = $stroke_length_dynamics;
+        const opacity_background = 255*$opacity_background%;
+        const opacity_details = 255*$opacity_details%;
+        const opacity_dynamics = $opacity_dynamics;
+        const hue_randomness_background = $hue_randomness_background%;
+        const hue_randomness_details = $hue_randomness_details%;
+        const hue_randomness_dynamics = $hue_randomness_dynamics;
+        const saturation_randomness_background = $saturation_randomness_background%;
+        const saturation_randomness_details = $saturation_randomness_details%;
+        const saturation_randomness_dynamics = $saturation_randomness_dynamics;
+        const value_randomness_background = $value_randomness_background%;
+        const value_randomness_details = $value_randomness_details%;
+        const value_randomness_dynamics = $value_randomness_dynamics;
+        const spatial_step = max($spatial_step,0.1);
+        const angular_step = max($angular_step,1);
+
+        stroke = $ind + x;
+        stroke<w#2?(
+          P = I[#2,stroke];
+          edge = P[0];
+          X0 = P[1,2];
+
+          brush_size = max(0.5,lerp(brush_diameter_background,brush_diameter_details,lambda(brush_diameter_dynamics)));
+          stroke_length = lerp(stroke_length_background,stroke_length_details,lambda(stroke_length_dynamics));
+
+          hue_randomness = lerp(hue_randomness_background,hue_randomness_details,lambda(hue_randomness_dynamics));
+          saturation_randomness = lerp(saturation_randomness_background,saturation_randomness_details,lambda(saturation_randomness_dynamics));
+          value_randomness = lerp(value_randomness_background,value_randomness_details,lambda(value_randomness_dynamics));
+          opacity = lerp(opacity_background,opacity_details,lambda(opacity_dynamics));
+
+          HSV = rgb2hsv(I(#0,X0));
+          HSV[0] = (HSV[0] + 180*hue_randomness*0.35*g)%360;
+          HSV[1] = cut(HSV[1] + saturation_randomness*0.35*g,0,1);
+          HSV[2] = cut(HSV[2] + value_randomness*0.35*g,0,1);
+          color = [ hsv2rgb(HSV),opacity ];
+
+          for (a = 0, a<360, a+=angular_step,
+            X = X0;
+            U = [ cos(a°), sin(a°) ];
+            for (l = 0, l<stroke_length, l+=spatial_step,
+              C = I(#1,X,1);
+              T = [ C[0],C[1],C[1],C[2] ];
+              eig = eig(T);
+              U = T*U;
+              ellipse(#-1,X[0],X[1],brush_size,brush_size*(1 - eig[0] + eig[1]),atan2(U[1],U[0]),1,color);
+              X+=spatial_step*U;
+              U/=max(1e-9,norm(U));
+            );
+          );
+        );" rm.
+
+      sh. 100% j[3] ..,0,0,0,0,1,.,255 rm[-2,-1]
+
+      if !0$_is_preview" && "$preview_progression
+        if !{*} w. ${"fitscreen ."},0 else w. -1,-1,0 fi
+        if !{*} break fi
+      fi
+
+      ind+=$nb_strokes
+      if $ind>=w#2 break fi
+
+    done
+    k.
+  endl done
+
+fx_paint_with_brush_preview :
+  _is_preview=1
+  gui_split_preview "fx_paint_with_brush $*",${-3--1}
+
 #@gui Painting : fx_painting, fx_painting_preview(0)+
 #@gui : Abstraction = int(5,1,10)
 #@gui : Details Scale = float(2.5,0,5)
@@ -36140,7 +36299,7 @@ fx_vector_painting :
           p = arg(n,-1,0,1,-1,1,-1,0,1);
           q = arg(n,-1,-1,-1,0,0,1,1,1);
           d = (j(p,q,0,0,0,1) - i)^2;
-          if (d>dmax,dmax = d; nmax = n,nmax)
+          d>dmax?(dmax = d; nmax = n):nmax;
         )"
     blend shapeaverage
   endl done
