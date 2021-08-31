@@ -35449,8 +35449,8 @@ fx_lylejk_painting_preview :
 #@gui : sep = separator()
 #@gui : note = note("<span color="#EE5500"><small><b>Global Settings:</b></small></span>")
 #@gui : Painting Order = choice(1,"Random","Coarse to Fine","Fine to Coarse")
-#@gui : Number of Iterations = int(32,1,128)
-#@gui : Precision (%) = float(50,0,100)
+#@gui : Number of Iterations = int(16,1,128)
+#@gui : Precision (%) = float(30,0,100)
 #@gui : Details (%) = float(100,0,100)
 #@gui : Background (%) = float(100,0,100)
 #@gui : Sharpness (%) = float(10,0,100)
@@ -35510,7 +35510,7 @@ fx_paint_with_brush :
 
   # Define parameters for predefined styles.
   style0=1,8,50,100,100,10,80,0.5,3,0,0,6,2,10,0,0,0,60,20,1,0,0,0,30,15,15,15,15,15,15,1,45
-  style1=1,8,5,100,100,10,80,0.5,3,0,0,2,5.7,1.9,0,0,0,60,20,1,0,0,0,30,15,15,15,15,15,15,1,45
+  style1=1,8,4,100,100,1,30,0.5,3,0,0,2,3,1,0,0,0,80,10,1,0,0,0,30,8,15,15,15,15,15,1,45
   style2=1,8,50,100,100,10,80,0.5,3,0,0,6,5,5,23.2,74.9,0,70,40,1,0,0,0,10,15,15,15,15,15,30,1,45
   style3=0,8,6.6,100,100,0,0,1.7,3,0,0,2,5,1,0,0,50,50,100,1,0,0,50,20,40,15,15,15,15,15,1,45
 
@@ -35571,11 +35571,11 @@ fx_paint_with_brush :
     fi
 
     # Compute contour map and sequence of brush strokes.
-    +gradient_norm..
-    if $painting_order==0 100%,100% rand. 0,1 elif $painting_order==1 . else +*. -1 fi
-    rv[-2,-1]
-    100%,100%,1,2,[x,y] a[-3--1] c r. {wh},1,1,4,-1 sort. +,x channels. 1,100%
+    +gradient_norm.. 100%,100%,1,2,[x,y] a[-2,-1] c r. {wh},1,1,3,-1 sort. +,x
     r. {max(0.01,$precision)}%,1,1,3 z. {(100-$background_threshold)*$details_threshold%}%,$details_threshold%
+    if $painting_order==0 100% rand. 0,100 rv[-2,-1] a[-2,-1] c sort. +,x channels. 1,100%
+    elif $painting_order==2 mirror. x
+    fi
 
     # Initialize canvas.
     arg0 $init_canvas,"+f[0] 0","+f[0] 128","+f[0] 255","[0]","+b[0] 1%","+kuwahara[0] 10","+fx_vector_painting[0] 9"
