@@ -35458,8 +35458,9 @@ fx_lylejk_painting_preview :
 #@gui : Smoothness = float(0.5,0,8)
 #@gui : Coherence = float(3,0,16)
 #@gui : Twist Angle (°) = int(45,-1,360)
-#@gui : note = note{"<small>(<b>-1</b> means 'random').</small>"}
-#@gui : Twist strength (%) = float(0,-100,100)
+#@gui : note = note{"<small>(<b>-1</b> means '<i>Random Angle</i>').</small>"}
+#@gui : Twist strength (%) = int(0,-1,100)
+#@gui : note = note{"<small>(<b>-1</b> means '<i>Angle Shift</i>').</small>"}
 #@gui : Init Canvas = choice(6,"Black","Gray","White","Self","Blur","Kuwahara","Vector Painting")
 #@gui : sep = separator()
 #@gui : note = note("<span color="#EE5500"><small><b>Brush for Details:</b></small></span>")
@@ -35527,13 +35528,15 @@ fx_paint_with_brush :
 
   # Process images.
   repeat $! l[$>] to_color
+
+    # Determine painting geometry.
     +diffusiontensors {[$sharpness,$anisotropy]%},$smoothness,$coherence
     if $twist_strength>0 # Attract to twist angle
       if $twist_angle>=0
         f. "begin(Id = eye(2));
             T = [ i0,i1,i1,i2 ];
             eig = eig(T);
-            ang = $twist_angle°;
+            const ang = $twist_angle°;
             U = lerp(eig[2,2],[ cos(ang),sin(ang) ],$twist_strength%);
             U/=max(1e-8,norm(U));
             UUt = mul(U,U,2);
@@ -35551,9 +35554,23 @@ fx_paint_with_brush :
         rm.
       fi
     else # Shift with twist angle
-
+      if $twist_angle>=0
+        f. "R = rot($twist_angle°);
+            Rt = transpose(R,2);
+            T = mul(mul(Rt,[ i0,i1,i1,i2 ],2),R,2);
+            [ T[0],T[1],T[3] ]"
+      else
+        100%,100%,1,2 rand. -1,1 b. $coherence orientation.
+        f.. "ang = atan2(i(#-1,x,y,0,1),i(#-1,x,y,0,0));
+            R = rot(ang);
+            Rt = transpose(R,2);
+            T = mul(mul(Rt,[ i0,i1,i1,i2 ],2),R,2);
+            [ T[0],T[1],T[3] ]"
+        rm.
+      fi
     fi
 
+    # Compute contour map and sequence of brush strokes.
     +gradient_norm..
     if $painting_order==0 100%,100% rand. 0,1
     elif $painting_order==1 .
@@ -35657,6 +35674,7 @@ fx_paint_with_brush :
     k.
   endl done
 
+  # Set style parameters if new style has been selected.
   if $predefined_style!=$previous_style
     u "{"$predefined_style"}{"$predefined_style"}"\
     "{"$painting_order"}{"$nb_iterations"}{"$precision"}{"$details_threshold"}{"$background_threshold"}"\
