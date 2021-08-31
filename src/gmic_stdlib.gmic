@@ -35457,6 +35457,9 @@ fx_lylejk_painting_preview :
 #@gui : Anisotropy (%) = float(80,0,100)
 #@gui : Smoothness = float(0.5,0,8)
 #@gui : Coherence = float(3,0,16)
+#@gui : Twist Angle (°) = int(45,-1,360)
+#@gui : note = note{"<small>(<b>-1</b> means 'random').</small>"}
+#@gui : Twist strength (%) = float(0,-100,100)
 #@gui : Init Canvas = choice(6,"Black","Gray","White","Self","Blur","Kuwahara","Vector Painting")
 #@gui : sep = separator()
 #@gui : note = note("<span color="#EE5500"><small><b>Brush for Details:</b></small></span>")
@@ -35495,24 +35498,24 @@ fx_lylejk_painting_preview :
 fx_paint_with_brush :
   predefined_style,previous_style,\
   painting_order,nb_iterations,precision,details_threshold,background_threshold,\
-  sharpness,anisotropy,smoothness,coherence,init_canvas,\
+  sharpness,anisotropy,smoothness,coherence,twist_angle,twist_strength,init_canvas,\
   brush_diameter_details,stroke_length_details,\
   hue_randomness_details,saturation_randomness_details,value_randomness_details,opacity_details,\
   brush_diameter_background,stroke_length_background,\
   hue_randomness_background,saturation_randomness_background,value_randomness_background,opacity_background,\
   brush_diameter_dynamics,stroke_length_dynamics,\
   hue_randomness_dynamics,saturation_randomness_dynamics,value_randomness_dynamics,opacity_dynamics,\
-  spatial_step,angular_step,preview_progression,preview_type,preview_splitx,preview_splity=${1-36}
+  spatial_step,angular_step,preview_progression,preview_type,preview_splitx,preview_splity=${1-38}
 
   # Define parameters for predefined styles.
-  style0=1,8,50,100,100,10,80,0.5,3,6,2,10,0,0,0,60,20,1,0,0,0,30,15,15,15,15,15,15,1,45
-  style1=1,8,5,100,100,10,80,0.5,3,2,5.7,1.9,0,0,0,60,20,1,0,0,0,30,15,15,15,15,15,15,1,45
-  style2=1,8,50,100,100,10,80,0.5,3,6,5,5,23.2,74.9,0,70,40,1,0,0,0,10,15,15,15,15,15,30,1,45
-  style3=0,8,6.6,100,100,0,0,1.704,3,2,5,1,0,0,50,50,100,1,0,0,50,20,40,15,15,15,15,15,1,45
+  style0=1,8,50,100,100,10,80,0.5,3,0,0,6,2,10,0,0,0,60,20,1,0,0,0,30,15,15,15,15,15,15,1,45
+  style1=1,8,5,100,100,10,80,0.5,3,0,0,2,5.7,1.9,0,0,0,60,20,1,0,0,0,30,15,15,15,15,15,15,1,45
+  style2=1,8,50,100,100,10,80,0.5,3,0,0,6,5,5,23.2,74.9,0,70,40,1,0,0,0,10,15,15,15,15,15,30,1,45
+  style3=0,8,6.6,100,100,0,0,1.7,3,0,0,2,5,1,0,0,50,50,100,1,0,0,50,20,40,15,15,15,15,15,1,45
 
-  if $predefined_style!=$previous_style
+  if $predefined_style!=$previous_style" && "$previous_style>=0
     painting_order,nb_iterations,precision,details_threshold,background_threshold,\
-    sharpness,anisotropy,smoothness,coherence,init_canvas,\
+    sharpness,anisotropy,smoothness,coherence,twist_angle,twist_strength,init_canvas,\
     brush_diameter_details,stroke_length_details,\
     hue_randomness_details,saturation_randomness_details,value_randomness_details,opacity_details,\
     brush_diameter_background,stroke_length_background,\
@@ -35525,6 +35528,31 @@ fx_paint_with_brush :
   # Process images.
   repeat $! l[$>] to_color
     +diffusiontensors {[$sharpness,$anisotropy]%},$smoothness,$coherence
+    if $twist_strength>0 # Attract to twist angle
+      if $twist_angle>=0
+        f. "begin(Id = eye(2));
+            T = [ i0,i1,i1,i2 ];
+            eig = eig(T);
+            ang = $twist_angle°;
+            U = lerp(eig[2,2],[ cos(ang),sin(ang) ],$twist_strength%);
+            U/=max(1e-8,norm(U));
+            UUt = mul(U,U,2);
+            T = eig[0]*UUt + eig[1]*(Id - UUt);
+            [ T[0],T[1],T[3] ]"
+      else
+        100%,100%,1,2 rand. -1,1 b. $coherence orientation.
+        f.. "begin(Id = eye(2));
+             T = [ i0,i1,i1,i2 ];
+             eig = eig(T);
+             U = lerp(eig[2,2],I(#-1),$twist_strength%);
+             UUt = mul(U,U,2);
+             T = eig[0]*UUt + eig[1]*(Id - UUt);
+             [ T[0],T[1],T[3] ]"
+        rm.
+      fi
+    else # Shift with twist angle
+
+    fi
 
     +gradient_norm..
     if $painting_order==0 100%,100% rand. 0,1
@@ -35550,9 +35578,7 @@ fx_paint_with_brush :
       nb_strokes={max(1,w#2/$nb_iterations)}
       $nb_strokes,1,1,1,:${-math_lib}"
         begin(color_random = vector(#s#0));
-#        lambda(tau) = (1 - exp(-4*edge/tau));
-#        lambda(tau) = min(1,(x/tau)^2);
-         lambda(tau) = min(1,x/tau);
+        lambda(tau) = min(1,x/tau);
 
         const brush_diameter_background = $brush_diameter_background;
         const brush_diameter_details = $brush_diameter_details;
@@ -35634,7 +35660,7 @@ fx_paint_with_brush :
   if $predefined_style!=$previous_style
     u "{"$predefined_style"}{"$predefined_style"}"\
     "{"$painting_order"}{"$nb_iterations"}{"$precision"}{"$details_threshold"}{"$background_threshold"}"\
-    "{"$sharpness"}{"$anisotropy"}{"$smoothness"}{"$coherence"}{"$init_canvas"}"\
+    "{"$sharpness"}{"$anisotropy"}{"$smoothness"}{"$coherence"}{"$twist_angle"}{"$twist_strength"}{"$init_canvas"}"\
     "{"$brush_diameter_details"}{"$stroke_length_details"}"\
     "{"$hue_randomness_details"}{"$saturation_randomness_details"}{"$value_randomness_details"}{"$opacity_details"}"\
     "{"$brush_diameter_background"}{"$stroke_length_background"}"\

@@ -10888,7 +10888,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             if (resolution<1) resolution = 65536;
 
             gmic_use_argx;
-            cimg_snprintf(argx,_argx.width(),"x = lerp(%g,%g,x/%d);",xmin,xmax,(unsigned int)resolution - 1);
+            cimg_snprintf(argx,_argx.width(),"x = lerp(%g,%g,x/%d);",
+                          xmin,xmax,(unsigned int)(resolution>1?resolution - 1:0));
             const CImg<char> n_formula = (CImg<char>::string(argx,false,true),
                                           CImg<char>::string(formula,true,true))>'x';
             pattern = 1U;
