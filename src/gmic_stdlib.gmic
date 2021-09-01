@@ -27166,32 +27166,20 @@ render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2
   use_vt100
   nb_months={$2?$2:4}
   l[]
-    it[] "$1" s -,{'\n'}
-    rm[0] # Discard labels
-
     # Parse CSV data.
+    "$1"
     eur2usd={1/0.7988} # Change rate from EUR to USD (Paypal conversion rate).
-    nb_entries=$!
-    repeat $!,e l[0]
-
-      # Split CSV items.
-      repeat 10 l$>= done
-      f ">begin(iss=0);i==_'\"'?(iss=!iss;i):i==_',' && !iss?-1:i" s -,-1 autocrop {'\"'}
-      if $!>3 f[3] "lowercase(i)" fi # currency
-      if $!>4 replace[4-{min($!,6)}] {','},{'.'} fi # amounts
-      repeat $! l$>={$>,t} done
-      rm
-
-      # Available values.
-      date_$e=$l0
-      name_$e=$l1
-      type_$e=$l2
-      currency_$e=$l3
-      donation_$e={$l4}
-      charge_paypal_$e={$l5}
-      charge_lila_$e={$l6}
-      mail_$e=$l7
-      message_$e=$l8
+    nb_entries={h}
+    repeat $nb_entries,e
+      date_$e={`I(0,$e)`}
+      name_$e={`I(1,$e)`}
+      type_$e={`I(2,$e)`}
+      currency_$e={`lowercase(I(3,$e))`}
+      donation_$e={{`I(4,$e)`}}
+      charge_paypal_$e={{`I(5,$e)`}}
+      charge_lila_$e={{`I(6,$e)`}}
+      mail_$e={`I(7,$e)`}
+      message_$e={`I(8,$e)`}
 
       # Deduced values.
       l[]
@@ -27221,7 +27209,8 @@ render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2
           " "{_${donation_charged_$e}}" "${currency_$e}" ="\
           " "{_${donation_charged_eur_$e}}" eur),"\
           " from "${name_$e}" ("${mail_$e}") : '"$_vt100_b${message_$e}$_vt100_n"'"
-    endl done
+    done
+    rm
 
     # Compute image for donations of the last months.
     e[] ""
