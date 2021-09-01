@@ -27166,32 +27166,20 @@ render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2
   use_vt100
   nb_months={$2?$2:4}
   l[]
-    it[] "$1" s -,{'\n'}
-    rm[0] # Discard labels
-
     # Parse CSV data.
+    "$1"
     eur2usd={1/0.7988} # Change rate from EUR to USD (Paypal conversion rate).
-    nb_entries=$!
-    repeat $!,e l[0]
-
-      # Split CSV items.
-      repeat 10 l$>= done
-      f ">begin(iss=0);i==_'\"'?(iss=!iss;i):i==_',' && !iss?-1:i" s -,-1 autocrop {'\"'}
-      if $!>3 f[3] "lowercase(i)" fi # currency
-      if $!>4 replace[4-{min($!,6)}] {','},{'.'} fi # amounts
-      repeat $! l$>={$>,t} done
-      rm
-
-      # Available values.
-      date_$e=$l0
-      name_$e=$l1
-      type_$e=$l2
-      currency_$e=$l3
-      donation_$e={$l4}
-      charge_paypal_$e={$l5}
-      charge_lila_$e={$l6}
-      mail_$e=$l7
-      message_$e=$l8
+    nb_entries={h}
+    repeat $nb_entries,e
+      date_$e={`I(0,$e)`}
+      name_$e={`I(1,$e)`}
+      type_$e={`I(2,$e)`}
+      currency_$e={`lowercase(I(3,$e))`}
+      donation_$e={{`I(4,$e)`}}
+      charge_paypal_$e={{`I(5,$e)`}}
+      charge_lila_$e={{`I(6,$e)`}}
+      mail_$e={`I(7,$e)`}
+      message_$e={`I(8,$e)`}
 
       # Deduced values.
       l[]
@@ -27221,7 +27209,8 @@ render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2
           " "{_${donation_charged_$e}}" "${currency_$e}" ="\
           " "{_${donation_charged_eur_$e}}" eur),"\
           " from "${name_$e}" ("${mail_$e}") : '"$_vt100_b${message_$e}$_vt100_n"'"
-    endl done
+    done
+    rm
 
     # Compute image for donations of the last months.
     e[] ""
@@ -35444,17 +35433,24 @@ fx_lylejk_painting_preview :
   gui_split_preview "fx_lylejk_painting $*",${-3--1}
 
 #@gui Paint With Brush : fx_paint_with_brush, fx_paint_with_brush_preview(0)
-#@gui : Predefined style = choice("Standard")_0+
+#@gui : Predefined style = choice("Default","Felt Spots","Style 2","Circles","Dream Smoothing","Style5",
+#@gui : "Chaos","Smooth")
+#@gui : previous_style = value(-1)
 #@gui : sep = separator()
 #@gui : note = note("<span color="#EE5500"><small><b>Global Settings:</b></small></span>")
-#@gui : Number of Iterations = int(8,1,32)
-#@gui : Precision (%) = float(50,0,100)
+#@gui : Painting Order = choice(1,"Random","Coarse to Fine","Fine to Coarse")
+#@gui : Number of Iterations = int(16,1,128)
+#@gui : Precision (%) = float(30,0,100)
 #@gui : Details (%) = float(100,0,100)
 #@gui : Background (%) = float(100,0,100)
 #@gui : Sharpness (%) = float(10,0,100)
 #@gui : Anisotropy (%) = float(80,0,100)
 #@gui : Smoothness = float(0.5,0,8)
-#@gui : Coherence = float(4,0,8)
+#@gui : Coherence = float(3,0,16)
+#@gui : Twist Angle (°) = int(45,-1,360)
+#@gui : note = note{"<small>(<b>-1</b> means '<i>Random Angle</i>').</small>"}
+#@gui : Twist strength (%) = int(0,-1,100)
+#@gui : note = note{"<small>(<b>-1</b> means '<i>Angle Shift</i>').</small>"}
 #@gui : Init Canvas = choice(6,"Black","Gray","White","Self","Blur","Kuwahara","Vector Painting")
 #@gui : sep = separator()
 #@gui : note = note("<span color="#EE5500"><small><b>Brush for Details:</b></small></span>")
@@ -35474,16 +35470,16 @@ fx_lylejk_painting_preview :
 #@gui : Opacity (%) = float(30,0,100)
 #@gui : sep = separator()
 #@gui : note = note("<span color="#EE5500"><small><b>Brush Dynamics:</b></small></span>")
-#@gui : Brush Diameter = float(20,0,100)
-#@gui : Stroke Length = float(5,0,100)
-#@gui : Hue Randomness = float(15,0,100)
-#@gui : Saturation Randomness = float(15,0,100)
-#@gui : Value Randomness = float(15,0,100)
-#@gui : Opacity = float(15,0,100)
+#@gui : Brush Diameter = float(15,0,255)
+#@gui : Stroke Length = float(15,0,255)
+#@gui : Hue Randomness = float(15,0,255)
+#@gui : Saturation Randomness = float(15,0,255)
+#@gui : Value Randomness = float(15,0,255)
+#@gui : Opacity = float(15,0,255)
 #@gui : Spatial Step = float(1,0,3)
 #@gui : Angular Step (°) = float(45,0,90)
 #@gui : sep = separator()
-#@gui : Preview Progression While Running = bool(0)
+#@gui : Preview Progression While Running = _bool(0)
 #@gui : Preview Type = choice("Full","Forward Horizontal","Forward Vertical","Backward Horizontal",
 #@gui : "Backward Vertical","Duplicate Top","Duplicate Left","Duplicate Bottom","Duplicate Right",
 #@gui : "Duplicate Horizontal","Duplicate Vertical","Checkered","Checkered Inverse")
@@ -35491,35 +35487,105 @@ fx_lylejk_painting_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.\nLatest Update: <i>2021/08/30</i>.</small>")
 fx_paint_with_brush :
-  predefined_style,\
-  nb_iterations,precision,details_threshold,background_threshold,\
-  sharpness,anisotropy,smoothness,coherence,init_canvas,\
+  predefined_style,previous_style,\
+  painting_order,nb_iterations,precision,details_threshold,background_threshold,\
+  sharpness,anisotropy,smoothness,coherence,twist_angle,twist_strength,init_canvas,\
   brush_diameter_details,stroke_length_details,\
   hue_randomness_details,saturation_randomness_details,value_randomness_details,opacity_details,\
   brush_diameter_background,stroke_length_background,\
   hue_randomness_background,saturation_randomness_background,value_randomness_background,opacity_background,\
   brush_diameter_dynamics,stroke_length_dynamics,\
   hue_randomness_dynamics,saturation_randomness_dynamics,value_randomness_dynamics,opacity_dynamics,\
-  spatial_step,angular_step,preview_progression=${1-31}
+  spatial_step,angular_step,preview_progression,preview_type,preview_splitx,preview_splity=${1-38}
 
-  repeat $! l[$>]
+  # Define parameters for predefined styles.
+  style0=1,16,50,100,100,10,80,0.5,3,0,0,6,2,10,0,0,0,60,20,1,0,0,0,30,15,15,15,15,15,15,1,45
+  style1=1,16,4,100,100,1,30,0.5,3,0,0,2,3,1,0,0,0,80,10,1,0,0,0,30,8,15,15,15,15,15,1,45
+  style2=2,16,30,100,20,10,100,0.5,3,45,0,4,4,10,80,0,0,60,20,1,0,0,0,30,10,15,15,15,15,15,1,45
+  style3=1,16,6.6,100,100,0,0,1.7,3,0,0,2,3,1,0,0,50,80,30,1,0,0,50,20,15,15,15,15,15,15,1,45
+  style4=1,16,50,100,80,5,80,0.5,1.5,45,0,4,1,20,0,0,0,10,5,1,0,0,0,30,15,15,15,15,15,15,1,45
+  style5=0,16,10,100,100,10,80,0.5,3,135,50,6,1,20,0,0,0,90,3,10,0,0,0,30,0,15,15,15,15,15,1,45
+  style6=1,16,30,100,100,0,95,0.5,8,-1,-1,2,2,30,0,0,0,100,20,1,0,0,0,30,0,0,0,0,0,0,1,45
+  style7=1,16,50,100,100,10,80,0.5,3,0,0,6,1,10,0,0,0,6,20,1,0,0,0,100,17.34,15,15,15,15,20,1,45
+
+  if $predefined_style!=$previous_style" && "$previous_style>=0
+    painting_order,nb_iterations,precision,details_threshold,background_threshold,\
+    sharpness,anisotropy,smoothness,coherence,twist_angle,twist_strength,init_canvas,\
+    brush_diameter_details,stroke_length_details,\
+    hue_randomness_details,saturation_randomness_details,value_randomness_details,opacity_details,\
+    brush_diameter_background,stroke_length_background,\
+    hue_randomness_background,saturation_randomness_background,value_randomness_background,opacity_background,\
+    brush_diameter_dynamics,stroke_length_dynamics,\
+    hue_randomness_dynamics,saturation_randomness_dynamics,value_randomness_dynamics,opacity_dynamics,\
+    spatial_step,angular_step=${style$predefined_style}
+  fi
+
+  # Process images.
+  repeat $! l[$>] to_color
+
+    # Determine painting geometry.
     +diffusiontensors {[$sharpness,$anisotropy]%},$smoothness,$coherence
-    +gradient_norm.. 100%,100%,1,2,[x,y] a[-2,-1] c r. {[wh,1,1,whds/whd]},-1 sort. +,x
-    r. {max(0.01,$precision)}%,1,1,3
-    z. {(100-$background_threshold)*$details_threshold%}%,$details_threshold%
+    if $twist_strength>0 # Attract to twist angle
+      if $twist_angle>=0
+        f. "begin(Id = eye(2));
+            T = [ i0,i1,i1,i2 ];
+            eig = eig(T);
+            const ang = $twist_angle°;
+            U = lerp(eig[2,2],[ cos(ang),sin(ang) ],$twist_strength%);
+            U/=max(1e-8,norm(U));
+            UUt = mul(U,U,2);
+            T = eig[0]*UUt + eig[1]*(Id - UUt);
+            [ T[0],T[1],T[3] ]"
+      else
+        100%,100%,1,2 rand. -1,1 b. $coherence orientation.
+        f.. "begin(Id = eye(2));
+             T = [ i0,i1,i1,i2 ];
+             eig = eig(T);
+             U = lerp(eig[2,2],I(#-1),$twist_strength%);
+             UUt = mul(U,U,2);
+             T = eig[0]*UUt + eig[1]*(Id - UUt);
+             [ T[0],T[1],T[3] ]"
+        rm.
+      fi
+    elif $twist_strength<0 # Shift with twist angle
+      if $twist_angle>=0
+        f. "R = rot($twist_angle°);
+            Rt = transpose(R,2);
+            T = mul(mul(Rt,[ i0,i1,i1,i2 ],2),R,2);
+            [ T[0],T[1],T[3] ]"
+      else
+        100%,100%,1,2 rand. -1,1 b. $coherence orientation.
+        f.. "ang = atan2(i(#-1,x,y,0,1),i(#-1,x,y,0,0));
+            R = rot(ang);
+            Rt = transpose(R,2);
+            T = mul(mul(Rt,[ i0,i1,i1,i2 ],2),R,2);
+            [ T[0],T[1],T[3] ]"
+        rm.
+      fi
+    fi
+
+    # Compute contour map and sequence of brush strokes.
+    +gradient_norm.. 100%,100%,1,2,[x,y] a[-2,-1] c r. {wh},1,1,3,-1 sort. +,x
+    r. {max(0.01,$precision)}%,1,1,3 z. {(100-$background_threshold)*$details_threshold%}%,$details_threshold%
+    if $painting_order==0 100% rand. 0,100 rv[-2,-1] a[-2,-1] c sort. +,x channels. 1,100%
+    elif $painting_order==2 mirror. x
+    fi
 
     # Initialize canvas.
-    arg0 $init_canvas,"+f[0] 0","+f[0] 128","+f[0] 255","[0]","+b[0] 8%","+kuwahara[0] 10","+fx_vector_painting[0] 9"
+    arg0 $init_canvas,"+f[0] 0","+f[0] 128","+f[0] 255","[0]","+b[0] 1%","+kuwahara[0] 10","+fx_vector_painting[0] 9"
     run ${}
 
     # Paint brush strokes.
     ind=0
     repeat inf,t
+      progress {$ind*100/w#2}
+
       100%,100%,1,{s#0+1}
       nb_strokes={max(1,w#2/$nb_iterations)}
       $nb_strokes,1,1,1,:${-math_lib}"
         begin(color_random = vector(#s#0));
-        lambda(tau) = (1 - exp(-4*edge/tau));
+        lambda(tau) = min(1,edge/(1e-8+tau));
+
         const brush_diameter_background = $brush_diameter_background;
         const brush_diameter_details = $brush_diameter_details;
         const brush_diameter_dynamics = $brush_diameter_dynamics;
@@ -35546,20 +35612,27 @@ fx_paint_with_brush :
           P = I[#2,stroke];
           edge = P[0];
           X0 = P[1,2];
+          brush_size = max(0.5,lerp(brush_diameter_background,brush_diameter_details,
+                                    lambda(brush_diameter_dynamics)));
+          stroke_length = lerp(stroke_length_background,stroke_length_details,
+                               lambda(stroke_length_dynamics));
+          hue_randomness = lerp(hue_randomness_background,hue_randomness_details,
+                                lambda(hue_randomness_dynamics));
+          saturation_randomness = lerp(saturation_randomness_background,saturation_randomness_details,
+                                       lambda(saturation_randomness_dynamics));
+          value_randomness = lerp(value_randomness_background,value_randomness_details,
+                                  lambda(value_randomness_dynamics));
+          opacity = lerp(opacity_background,opacity_details,
+                         lambda(opacity_dynamics));
 
-          brush_size = max(0.5,lerp(brush_diameter_background,brush_diameter_details,lambda(brush_diameter_dynamics)));
-          stroke_length = lerp(stroke_length_background,stroke_length_details,lambda(stroke_length_dynamics));
-
-          hue_randomness = lerp(hue_randomness_background,hue_randomness_details,lambda(hue_randomness_dynamics));
-          saturation_randomness = lerp(saturation_randomness_background,saturation_randomness_details,lambda(saturation_randomness_dynamics));
-          value_randomness = lerp(value_randomness_background,value_randomness_details,lambda(value_randomness_dynamics));
-          opacity = lerp(opacity_background,opacity_details,lambda(opacity_dynamics));
-
-          HSV = rgb2hsv(I(#0,X0));
+          val = I(#0,X0);
+          HSV = rgb2hsv(val[0,3]);
           HSV[0] = (HSV[0] + 180*hue_randomness*0.35*g)%360;
-          HSV[1] = cut(HSV[1] + saturation_randomness*0.35*g,0,1);
+          HSV[1] = cut(HSV[1] + saturation_randomness*0.35*abs(g),0,1);
           HSV[2] = cut(HSV[2] + value_randomness*0.35*g,0,1);
-          color = [ hsv2rgb(HSV),opacity ];
+          RGB = hsv2rgb(HSV);
+          copy(val,RGB,3);
+          color = [ val,opacity ];
 
           for (a = 0, a<360, a+=angular_step,
             X = X0;
@@ -35589,6 +35662,22 @@ fx_paint_with_brush :
     done
     k.
   endl done
+
+  # Set style parameters if new style has been selected.
+  if $predefined_style!=$previous_style
+    u "{"$predefined_style"}{"$predefined_style"}"\
+    "{"$painting_order"}{"$nb_iterations"}{"$precision"}{"$details_threshold"}{"$background_threshold"}"\
+    "{"$sharpness"}{"$anisotropy"}{"$smoothness"}{"$coherence"}{"$twist_angle"}{"$twist_strength"}{"$init_canvas"}"\
+    "{"$brush_diameter_details"}{"$stroke_length_details"}"\
+    "{"$hue_randomness_details"}{"$saturation_randomness_details"}{"$value_randomness_details"}{"$opacity_details"}"\
+    "{"$brush_diameter_background"}{"$stroke_length_background"}"\
+    "{"$hue_randomness_background"}{"$saturation_randomness_background"}{"$value_randomness_background"}"\
+    "{"$opacity_background"}"\
+    "{"$brush_diameter_dynamics"}{"$stroke_length_dynamics"}"\
+    "{"$hue_randomness_dynamics"}{"$saturation_randomness_dynamics"}{"$value_randomness_dynamics"}"\
+    "{"$opacity_dynamics"}"\
+    "{"$spatial_step"}{"$angular_step"}{"$preview_progression"}{"$preview_type"}{"$preview_splitx,$preview_splity"}"
+  fi
 
 fx_paint_with_brush_preview :
   _is_preview=1
@@ -40967,7 +41056,7 @@ fx_circle_transform_preview :
   fi
 
 #@gui Conformal Maps : fx_conformal_maps, fx_conformal_maps_preview(1)
-#@gui : Mapping = choice{8,"Custom Formula","z","(z-1)/(z+1)","cos(z)","sin(z)","tan(z)","exp(z)","log(z)",
+#@gui : Mapping = choice{8,"Custom Formula","z","(z+1)/(z-1)","cos(z)","sin(z)","tan(z)","exp(z)","log(z)",
 #@gui : "Dipole: 1/(4*z^2-1)","Star: -5*(z^3/3-z/4)/2"}
 #@gui : Exponent (Real) = float(1,-16,16)
 #@gui : Exponent (Imaginary) = float(0,-16,16)
@@ -44140,8 +44229,8 @@ fx_bandpass_preview :
 fx_display_fft :
   to_rgb display_fft
 
-#@gui Fourier Transform : fx_fourier, fx_fourier_preview(1)
-#@gui : Magnitude / Phase = choice{1,"One Layer (Horizontal)","One Layer (Vertical)","Two Layers"}
+#@gui Fourier Transform : fx_fourier, fx_fourier_preview(1) : *
+#@gui : Magnitude / Phase = choice{2,"One Layer (Horizontal)","One Layer (Vertical)","Two Layers"}
 #@gui : Discard Transparency = bool(1)
 #@gui : sep = separator()
 #@gui : note = note{"<small><b>Note:</b> Apply this filter once to get the direct FFT,
