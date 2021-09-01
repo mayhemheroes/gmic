@@ -300,6 +300,30 @@ CImg<T> get_draw_graph(const CImg<t>& data,
   return (+*this).draw_graph(data,color,opacity,plot_type,vertex_type,ymin,ymax,pattern);
 }
 
+template<typename t, typename tc>
+CImg<T> gmic_draw_graph(const CImg<t>& data,
+                        const tc *const color, const float opacity,
+                        const unsigned int plot_type, const int vertex_type,
+                        const double ymin, const double ymax,
+                        const unsigned int pattern) {
+  double m = ymin, M = ymax;
+  if (ymin==ymax) m = (double)data.max_min(M);
+  if (m==M) { --m; ++M; }
+  cimg_forC(data,c)
+    draw_graph(data.get_shared_channel(c),
+               color,opacity,plot_type,vertex_type,m,M,pattern);
+  return *this;
+}
+
+template<typename t, typename tc>
+CImg<T> get_gmic_draw_graph(const CImg<t>& data,
+                            const tc *const color, const float opacity,
+                            const unsigned int plot_type, const int vertex_type,
+                            const double ymin, const double ymax,
+                            const unsigned int pattern) const {
+  return (+*this).gmic_draw_graph(data,color,opacity,plot_type,vertex_type,ymin,ymax,pattern);
+}
+
 CImg<T>& gmic_draw_image(const float x, const float y, const float z, const float c,
                          const char sepx, const char sepy, const char sepz, const char sepc,
                          const CImg<T>& sprite, const CImg<T>& mask, const float opacity,
@@ -8078,15 +8102,26 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             if (!plot_type && !vertex_type) plot_type = 1;
             if (resolution<1) resolution = 65536;
 
-            CImg<double> values(4,(unsigned int)resolution--,1,1,0);
-            const double dx = xmax - xmin;
-            cimg_forY(values,X) values(0,X) = xmin + X*dx/resolution;
-            cimg::eval(formula,values).move_to(values);
+            gmic_use_argx;
+            cimg_snprintf(argx,_argx.width(),"x = lerp(%g,%g,x/%d);",
+                          xmin,xmax,(unsigned int)(resolution>1?resolution - 1:0));
+            const CImg<char> n_formula = (CImg<char>::string(argx,false,true),
+                                          CImg<char>::string(formula,true,true))>'x';
+            boundary = 1U;
+            try { // Determine vector dimension of specified formula
+              typename CImg<T>::_cimg_math_parser mp(n_formula.data() + (*n_formula=='>' || *n_formula=='<' ||
+                                                                         *n_formula=='*' || *n_formula==':'),
+                                                     "graph",CImg<T>::const_empty(),0,&images);
+              boundary = std::max(1U,mp.result_dim);
+            } catch (...) { is_cond = false; }
+            CImg<T> values((int)resolution,1,1,boundary,0);
+            values.fill(n_formula,false,true,&images,0);
 
             cimg_forY(selection,l) {
               CImg<T> &img = images[selection[l]];
               g_img.assign(img.spectrum(),1,1,1,(T)0).fill(color,true,false);
-              gmic_apply(draw_graph(values,g_img.data(),opacity,plot_type,vertex_type,ymin,ymax,pattern));
+              gmic_apply(gmic_draw_graph(values,g_img.data(),opacity,
+                                         plot_type,vertex_type,ymin,ymax,pattern));
             }
           } else if (((cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]%c%c",
                                    gmic_use_indices,&sep,&end)==2 && sep==']') ||
@@ -10892,18 +10927,20 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                           xmin,xmax,(unsigned int)(resolution>1?resolution - 1:0));
             const CImg<char> n_formula = (CImg<char>::string(argx,false,true),
                                           CImg<char>::string(formula,true,true))>'x';
-            pattern = 1U;
+            boundary = 1U;
             try { // Determine vector dimension of specified formula
-              CImg<double>::_cimg_math_parser mp(n_formula.data() + (*n_formula=='>' || *n_formula=='<' ||
-                                                                    *n_formula=='*' || *n_formula==':'));
-              pattern = std::max(1U,mp.result_dim);
+              typename CImg<T>::_cimg_math_parser mp(n_formula.data() + (*n_formula=='>' || *n_formula=='<' ||
+                                                                         *n_formula=='*' || *n_formula==':'),
+                                                     "plot",CImg<T>::const_empty(),0,&images);
+              boundary = std::max(1U,mp.result_dim);
             } catch (...) { is_cond = false; }
-            CImg<double> values((unsigned int)resolution,1,1,pattern,n_formula,false);
+            CImg<T> values((int)resolution,1,1,boundary,0);
+            values.fill(n_formula,false,true,&images,0);
 
             gmic_use_title;
             cimg_snprintf(title,_title.width(),"[Plot of '%s']",formula);
             CImg<char>::string(title).move_to(g_list_c);
-            display_plots(CImgList<double>(values,true),g_list_c,CImg<unsigned int>::vector(0),
+            display_plots(CImgList<T>(values,true),g_list_c,CImg<unsigned int>::vector(0),
                           plot_type,vertex_type,xmin,xmax,ymin,ymax,exit_on_anykey);
             g_list_c.assign();
             ++position;
