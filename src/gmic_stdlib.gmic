@@ -16193,6 +16193,50 @@ _delaunay :
        polygon(#-1,3,P0,P1,P2,1,[p0,p1,p2]);
     ); i"
 
+#@gui delaunay2 : _output_type={ 0=image | 1=coordinates/triangles }
+delaunay2 :
+  300,300 noise. 0.5,2 gt. 0
+
+  repeat $! l[$>]
+
+    # Extract and label points.
+    1,64,1,2 =. 1,0,100%
+    f.. ${-math_lib}"begin(N = 0); i?(dar_insert(#-1,[x,y]);++N):0; end(resize(#-1,1,dar_size(#-1),1,2,0))"
+
+    # Construct discrete voronoi diagram.
+    +neq.. 0 distance. 1 *. -1 watershed... . rm.
+
+    # Extract delaunay triangles from discrete voronoi.
+    1,64,1,3
+    eval... ${-math_lib}"
+      V = crop(x,y,2,2);
+      min(V)?(
+        V[1]==V[0] && V[2]!=V[0] && V[3]!=V[0] && V[3]!=V[2]?( # [ a,a,b,c ]
+          dar_insert(#-1,[ V[0],V[2],V[3] ]);
+        ):(V[2]==V[0] && V[1]!=V[0] && V[3]!=V[0] && V[3]!=V[1]) || # [ a,b,a,c ]
+          (V[1]==V[2] && V[0]!=V[1] && V[3]!=V[0] && V[3]!=V[1])?(  # [ a,b,b,c ]
+          dar_insert(#-1,[ V[0],V[1],V[3] ]);
+        ):(V[3]==V[0] && V[1]!=V[0] && V[2]!=V[0] && V[2]!=V[1]) || # [ a,b,c,a ]
+          (V[1]==V[3] && V[0]!=V[1] && V[2]!=V[0] && V[2]!=V[1]) || # [ a,b,c,b ]
+          (V[2]==V[3] && V[0]!=V[1] && V[0]!=V[2] && V[1]!=V[2]) ?( # [ a,b,c,c ]
+          dar_insert(#-1,[ V[0],V[1],V[2] ]);
+        ):V[0]!=V[1] && V[0]!=V[2] && V[0]!=V[3] && V[1]!=V[2] && V[1]!=V[3] && V[2]!=V[3]?( # [ a,b,c,d ]
+          dar_insert(#-1,[ V[0],V[1],V[2] ]);
+          dar_insert(#-1,[ V[1],V[3],V[2] ]);
+        );
+        end(resize(#-1,1,dar_size(#-1),1,3,0));
+      )"
+
+    # Generate discrete delaunay triangulation.
+    if $1 k[-2,-1]
+    else
+      {0,[w,h,1,3]}
+      eval.. "P0 = I[#1,i0]; P1 = I[#1,i1]; P2 = I[#1,i2]; polygon(#-1,3,P0,P1,P2,1,i0,i1,i2)"
+      k.
+    fi
+
+  endl done
+
 #@cli detect_skin : 0<=tolerance<=1,_skin_x,_skin_y,_skin_radius>=0
 #@cli : Detect skin in selected color images and output an appartenance probability map.
 #@cli : Detection is performed using CbCr chromaticity data of skin pixels.
