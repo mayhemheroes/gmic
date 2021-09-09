@@ -14928,7 +14928,7 @@ inn :
 #@cli : $ image.jpg 100%,100% circle 30%,30%,30,1,255,0,255 circle 70%,70%,50,1,255,0,255 \
 # +inpaint[0] [1],5,15,0.5,1,9,0 remove[1]
 
-#@cli inpaint_pde : [mask],_nb_scales[%]>=0,_diffusion_type={ 0=isotropic | 1=delaunay-guided | \
+#@cli inpaint_pde : [mask],_nb_scales[%]>=0,_diffusion_type={ 0=isotropic | 1=Delaunay-guided | \
 # 2=edge-guided | 3=mask-guided },_diffusion_iter>=0
 #@cli : Inpaint selected images by specified mask using a multiscale transport-diffusion algorithm.
 #@cli : If 'diffusion type==3', non-zero values of the mask (e.g. a distance function) are used
@@ -14936,7 +14936,7 @@ inn :
 #@cli : Default values: 'nb_scales=75%', 'diffusion_type=1' and 'diffusion_iter=20'.
 #@cli : $ image.jpg 100%,100% ellipse[-1] 30%,30%,40,30,0,1,255 +inpaint_pde[0] [1]
 inpaint_pde : check ${is_image_arg\ $1}" && ${2=75%}>=0 && isint(${3=1}) && $3>=0 && $3<=3 && ${4=20}>=0"
-  s0="isotropic" s1="delaunay-guided" s2="edge-guided" s3="mask-guided"
+  s0="isotropic" s1="Delaunay-guided" s2="edge-guided" s3="mask-guided"
   e[^-1] "Inpaint image$? by mask $1, using a multiscale diffusion algorithm with $2 scales
               and $4 iterations of "${s$3}" diffusion."
   repeat $! nm={n} pass$1 l[$>,-1]
@@ -15801,13 +15801,13 @@ split_details : check "isint(${1=4}) && $1>0 && ${2=0}>=0 && ${3=0}>=0"
 #@cli : $ image.jpg structuretensors abs pow 0.2
 #@cli : $$ https://gmic.eu/oldtutorial/_structuretensors
 
-#@cli solidify : _smoothness[%]>=0,_diffusion_type={ 0=isotropic | 1=delaunay-oriented | 2=edge-oriented },\
+#@cli solidify : _smoothness[%]>=0,_diffusion_type={ 0=isotropic | 1=Delaunay-guided | 2=edge-oriented },\
 # _diffusion_iter>=0
 #@cli : Solidify selected transparent images.
 #@cli : Default values: 'smoothness=75%', 'diffusion_type=1' and 'diffusion_iter=20'.
 #@cli : $ image.jpg 100%,100% circle[-1] 50%,50%,25%,1,255 append c +solidify , display_rgba
 solidify : check "${1=75%}>=0 && isint(${2=1}) && $2>=0 && $2<=2 && ${3=20}>=0"
-  s0="isotropic" s1="delaunay-oriented" s2="edge-oriented"
+  s0="isotropic" s1="Delaunay-guided" s2="edge-oriented"
   e[^-1] "Solidify transparent image$? with smoothness $1 and $3 iterations of "${s$2}" diffusion."
   repeat $! l[$>] split_opacity
     if $!>1 <=. 128 inpaint_pde.. [1],${1-3} rm. c 0,255 fi
@@ -16174,7 +16174,7 @@ delaunay : skip "${1=0}"
     # Construct discrete voronoi diagram.
     +neq.. 0 distance. 1 *. -1 watershed... . rm.
 
-    # Extract delaunay triangles from discrete voronoi.
+    # Extract Delaunay triangles from discrete voronoi.
     1,64,1,3
     eval... ${-math_lib}"
       V = crop(x,y,2,2);
@@ -19093,13 +19093,13 @@ cubes3d : check ${1=1}>=0
    nm. [3D\ cylinder] endl
 
 #@cli delaunay3d
-#@cli : Generate 3D delaunay triangulations from selected images.
+#@cli : Generate 3D Delaunay triangulations from selected images.
 #@cli : One assumes that the selected input images are binary images containing the set of points to mesh.
 #@cli : The output 3D object is a mesh composed of non-oriented triangles.
 #@cli : $ 500,500 noise 0.05,2 eq 1 * 255 +delaunay3d color3d[1] 255,128,0 dilate_circ[0] 5 to_rgb[0] \
 # +object3d[0] [1],0,0,0,1,1 max[-1] [0]
 delaunay3d :
-  e[^-1] "Generate 3D delaunay triangulation from image$?."
+  e[^-1] "Generate 3D Delaunay triangulation from image$?."
   repeat $! l[$>]
     channels 0 != 0
 
@@ -19109,7 +19109,7 @@ delaunay3d :
     # Compute voronoi diagram of point cloud.
     +distance[0] 1 *[2] -1 watershed[1] [2] rm[2]
 
-    # Get redondant set of delaunay triangles from the voronoi diagram.
+    # Get redondant set of Delaunay triangles from the voronoi diagram.
     r[1] 100%,100%,100%,3
     if d>1 # Add detection cases for 3D images.
       +_delaunay3d[1] 1,0,0,0,0,1 +_delaunay3d[1] -1,0,0,0,0,-1
@@ -35758,7 +35758,7 @@ fx_polygonize_delaunay :
     +to_rgb. gradient_norm. ge. $2
     f. "!x || !y || x==w-1 || y==h-1?(u^0.25<$3%):(u^0.25<$1%?i:0)"
     {is+1},1,1,2 f.. ">begin(p = 0); i?(I[#-1,++p] = [x,y];p):0"
-    delaunay..
+    delaunay.. 0
 
     # Render filling.
     if $5==4 # Linear
@@ -36197,7 +36197,7 @@ fx_sketchbw_preview :
 
 #@gui Smooth Abstract : fx_smooth_abstract, fx_smooth_abstract_preview(0)
 #@gui : Smoothness (%) = float(75,0,100)
-#@gui : Regularization = choice(0,"Isotropic","Delaunay-oriented","Edge-oriented")
+#@gui : Regularization = choice(0,"Isotropic","Delaunay-Guided","Edge-Oriented")
 #@gui : Regularization Iterations = int(20,0,100)
 #@gui : Geometry = float(1,0,5)
 #@gui : Details = float(30,0,50)
@@ -46628,7 +46628,7 @@ fx_inpaint_patch_preview :
 
 #@gui Inpaint [Transport-Diffusion] : fx_inpaint_pde, fx_inpaint_pde_preview(1)
 #@gui : Smoothness (%) = float(75,0,100)
-#@gui : Regularization = choice(1,"Isotropic","Delaunay-Oriented","Edge-Oriented")
+#@gui : Regularization = choice(1,"Isotropic","Delaunay-Guided","Edge-Oriented")
 #@gui : Regularization Iterations = int(20,0,100)
 #@gui : Mask Color = _color(255,0,0,255)
 #@gui : Mask Dilation = _int(0,0,32)
@@ -46672,7 +46672,7 @@ fx_remove_hotpixels_preview :
 
 #@gui Solidify : fx_solidify_td, fx_solidify_td_preview(1)
 #@gui : Smoothness (%) = float(75,0,100)
-#@gui : Regularization = choice(1,"Isotropic","Delaunay-Oriented","Edge-Oriented")
+#@gui : Regularization = choice(1,"Isotropic","Delaunay-Guided","Edge-Oriented")
 #@gui : Regularization Iterations = int(20,0,100)
 #@gui : Dilation / Erosion = int(0,-20,20)
 #@gui : Colorspace = choice(1,"sRGB","Linear RGB")
