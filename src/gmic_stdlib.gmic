@@ -42363,40 +42363,80 @@ fx_blur_radial_preview :
 
 #@gui Chromatic Aberrations : fx_chromatic_aberrations, fx_chromatic_aberrations_preview(0)
 #@gui : Primary Color = color(255,0,0)
-#@gui : X-Shift = float(2,-16,16)
-#@gui : Y-Shift = float(2,-16,16)
+#@gui : Deformation Type = choice("Shift","Radial","Random")
+#@gui : X-Amplitude = float(2,-32,32)
+#@gui : Y-Amplitude = float(2,-32,32)
+#@gui : Smoothness = float(0,0,10)
+#@gui : Attenuation Near Center (%) = float(50,-100,100)
+#@gui : Attenuation Decay = float(1,0,8)
 #@gui : sep = separator()
 #@gui : Secondary Color = color(0,255,0)
-#@gui : X-Shift (px) = float(0,-16,16)
-#@gui : Y-Shift (px) = float(0,-16,16)
+#@gui : Deformation Type = choice("Shift","Radial","Random")
+#@gui : X-Amplitude = float(0,-32,32)
+#@gui : Y-Amplitude = float(0,-32,32)
+#@gui : Smoothness = float(0,0,10)
+#@gui : Attenuation Near Center (%) = float(0,-100,100)
+#@gui : Attenuation Decay = float(1,0,8)
 #@gui : sep = separator()
 #@gui : Preview Type = choice("Full","Forward Horizontal","Forward Vertical","Backward Horizontal",
 #@gui : "Backward Vertical","Duplicate Top","Duplicate Left","Duplicate Bottom","Duplicate Right",
 #@gui : "Duplicate Horizontal","Duplicate Vertical","Checkered","Checkered Inverse")
 #@gui : Preview Split = point(50,50,0,0,200,200,200,0,10)_0
 #@gui : sep = separator()
-#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2015/05/07</i>.</small>")
+#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2021/08/10</i>.</small>")
 fx_chromatic_aberrations :
+  U1={u=[${1-3}];u/max(1e-8,norm(u))}
+  U2={u=[${10-12}];u/max(1e-8,norm(u))}
 
-  # Compute orthonormal color basis.
-  l[]
-    (${1-3}) (${6-8}) y c orientation[0]
-    +*[0,1] +*[0] {is} -[1,3] rm[2] orientation[1]
-    _cross3d {0,^},{^} y x a y
-    M={^} transpose Minv={^} rm
-  endl
-
-  # Shift images.
   repeat $! l[$>] to_color split_opacity l[0]
-    mix_rgb $M
-    s c
-    100%,100%,1,2 fc. {($9-$4)/2},{($10-$5)/2} warp[0] .,1,2,1 rm.
-    100%,100%,1,2 fc. {($4-$9)/2},{($5-$10)/2} warp[1] .,1,2,1 rm.
-    100%,100%,1,2 fc. {(-$4-$9)/2},{(-$5-$10)/2} warp[2] .,1,2,1 rm.
-    a c
-    mix_rgb $Minv
+
+    # Compute image decomposition : [0] = residual, [1] = weights for primary/secondary colors.
+    100%,100%,1,2,"*begin(U1 = ["$U1"]; U2 = ["$U2"]);
+      V = I(#0);
+      d1 = dot(V,U1); V-=d1*U1;
+      d2 = dot(V,U2); V-=d2*U2;
+      I(#0) = V;
+      [ d1,d2 ]"
+    s. c
+
+    # Shift weights.
+    _fx_chromatic_abberations.. ${4-9}
+    _fx_chromatic_abberations. ${13-18}
+
+    # Reconstruct color image.
+    a[-2,-1] c
+    +[0] '"*begin(U1 = ["$U1"]; U2 = ["$U2"]); i(#1,x,y,0,0)*U1 + i(#1,x,y,0,1)*U2"'
+    rm.
   endl a c endl done
-  c 0,255
+
+_fx_chromatic_abberations :
+  if $1==0 # Shift
+    100%,100%,1,2,[$2,$3]
+  elif $1==1 # Radial
+    100%,100%,1,2,"
+      const xc = w/2;
+      const yc = h/2;
+      U = [ x,y ] - [ xc,yc ];
+      U/=max(1e-8,norm(U));
+      U*=[ $2,$3 ]"
+  elif $1==2 # Random
+    100%,100%,1,2,g s. c n.. -$1,$1 n. -$2,$2 a[-2,-1] c
+  fi
+  if $4 # Smoothness
+    s. c
+    m,M={-2,[im,iM]} b.. $4 n.. $m,$M
+    m,M={[im,iM]} b. $4 n. $m,$M
+    a[-2,-1] c
+  fi
+  if $5 # Center/Borders attenuation
+    100%,100% =. 1,50%,50% distance. 1 n. 0,1.4142 c. 0,1
+    if $5>0 pow. {0.1+$6} n. {1-$5%},1
+    else negate. 1 pow. $6 n. {1+$5%},1
+    fi
+    *[-2,-1]
+  fi
+
+  warp.. .,1,1,1 rm.
 
 fx_chromatic_aberrations_preview :
   gui_split_preview "fx_chromatic_aberrations $*",${-3--1}
