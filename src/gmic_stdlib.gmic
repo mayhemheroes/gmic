@@ -42363,7 +42363,7 @@ fx_blur_radial_preview :
 
 #@gui Chromatic Aberrations : fx_chromatic_aberrations, fx_chromatic_aberrations_preview(0)
 #@gui : Primary Color = color(255,0,0)
-#@gui : Deformation Type = choice("Shift","Radial","Random")
+#@gui : Deformation Type = choice("Shift","Radial","Angular","Random")
 #@gui : X-Amplitude = float(2,-32,32)
 #@gui : Y-Amplitude = float(2,-32,32)
 #@gui : Smoothness = float(0,0,10)
@@ -42371,7 +42371,7 @@ fx_blur_radial_preview :
 #@gui : Attenuation Decay = float(1,0,8)
 #@gui : sep = separator()
 #@gui : Secondary Color = color(0,255,0)
-#@gui : Deformation Type = choice("Shift","Radial","Random")
+#@gui : Deformation Type = choice("Shift","Radial","Angular","Random")
 #@gui : X-Amplitude = float(0,-32,32)
 #@gui : Y-Amplitude = float(0,-32,32)
 #@gui : Smoothness = float(0,0,10)
@@ -42414,12 +42414,13 @@ _fx_chromatic_abberations :
     100%,100%,1,2,[$2,$3]
   elif $1==1 # Radial
     100%,100%,1,2,"
-      const xc = w/2;
-      const yc = h/2;
-      U = [ x,y ] - [ xc,yc ];
-      U/=max(1e-8,norm(U));
-      U*=[ $2,$3 ]"
-  elif $1==2 # Random
+      ang = atan2(y - h/2, x - w/2);
+      U = [ $2*cos(ang), $3*sin(ang) ]"
+  elif $1==2 # Angular
+    100%,100%,1,2,"
+      ang = atan2(x - w/2, -y + h/2);
+      U = [ $2*cos(ang), $3*sin(ang) ]"
+  else # Random
     100%,100%,1,2,g s. c n.. -$1,$1 n. -$2,$2 a[-2,-1] c
   fi
   if $4 # Smoothness
