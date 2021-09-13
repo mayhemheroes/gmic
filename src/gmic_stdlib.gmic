@@ -6603,13 +6603,13 @@ parse_gui_print :
 parse_gui_parseparams_whatsnew : u 0 # Tell parser to not parse filter parameters
 parse_gui_whatsnew :
   e[] "  >> Generate output, in 'whatsnew' mode.\n"
-  l[]
+  l[] if $_nbfilters
     1,1,1,1x$_nbfilters
     repeat $! nm[$>] -${_f$>_path}${_f$>_name} f[$>] $> done
     sort_list +,n a x
     repeat w n={0,i[$>]} ('${_f${n}_path}" "${_f${n}_name}\n') done
     rm[0]
-  endl
+  fi endl
   y a y
   e[] "\r  >> "${_vt100_g}{`copy(vector64(_'" "'),'"Output done!"')`}$_vt100_n
 
@@ -8799,7 +8799,7 @@ upload_filters :
   x "cd "$HOME"/work/src/gmic-community && git pull"
 
   # Define the list of compatible versions.
-  (299,$_version) store. compat
+  (299,300,$_version) store. compat
 
   # Import filters from stdlib and community.
   files $HOME/work/src/gmic-community/include/*.gmic
@@ -14928,7 +14928,7 @@ inn :
 #@cli : $ image.jpg 100%,100% circle 30%,30%,30,1,255,0,255 circle 70%,70%,50,1,255,0,255 \
 # +inpaint[0] [1],5,15,0.5,1,9,0 remove[1]
 
-#@cli inpaint_pde : [mask],_nb_scales[%]>=0,_diffusion_type={ 0=isotropic | 1=delaunay-guided | \
+#@cli inpaint_pde : [mask],_nb_scales[%]>=0,_diffusion_type={ 0=isotropic | 1=Delaunay-guided | \
 # 2=edge-guided | 3=mask-guided },_diffusion_iter>=0
 #@cli : Inpaint selected images by specified mask using a multiscale transport-diffusion algorithm.
 #@cli : If 'diffusion type==3', non-zero values of the mask (e.g. a distance function) are used
@@ -14936,7 +14936,7 @@ inn :
 #@cli : Default values: 'nb_scales=75%', 'diffusion_type=1' and 'diffusion_iter=20'.
 #@cli : $ image.jpg 100%,100% ellipse[-1] 30%,30%,40,30,0,1,255 +inpaint_pde[0] [1]
 inpaint_pde : check ${is_image_arg\ $1}" && ${2=75%}>=0 && isint(${3=1}) && $3>=0 && $3<=3 && ${4=20}>=0"
-  s0="isotropic" s1="delaunay-guided" s2="edge-guided" s3="mask-guided"
+  s0="isotropic" s1="Delaunay-guided" s2="edge-guided" s3="mask-guided"
   e[^-1] "Inpaint image$? by mask $1, using a multiscale diffusion algorithm with $2 scales
               and $4 iterations of "${s$3}" diffusion."
   repeat $! nm={n} pass$1 l[$>,-1]
@@ -15801,13 +15801,13 @@ split_details : check "isint(${1=4}) && $1>0 && ${2=0}>=0 && ${3=0}>=0"
 #@cli : $ image.jpg structuretensors abs pow 0.2
 #@cli : $$ https://gmic.eu/oldtutorial/_structuretensors
 
-#@cli solidify : _smoothness[%]>=0,_diffusion_type={ 0=isotropic | 1=delaunay-oriented | 2=edge-oriented },\
+#@cli solidify : _smoothness[%]>=0,_diffusion_type={ 0=isotropic | 1=Delaunay-guided | 2=edge-oriented },\
 # _diffusion_iter>=0
 #@cli : Solidify selected transparent images.
 #@cli : Default values: 'smoothness=75%', 'diffusion_type=1' and 'diffusion_iter=20'.
 #@cli : $ image.jpg 100%,100% circle[-1] 50%,50%,25%,1,255 append c +solidify , display_rgba
 solidify : check "${1=75%}>=0 && isint(${2=1}) && $2>=0 && $2<=2 && ${3=20}>=0"
-  s0="isotropic" s1="delaunay-oriented" s2="edge-oriented"
+  s0="isotropic" s1="Delaunay-guided" s2="edge-oriented"
   e[^-1] "Solidify transparent image$? with smoothness $1 and $3 iterations of "${s$2}" diffusion."
   repeat $! l[$>] split_opacity
     if $!>1 <=. 128 inpaint_pde.. [1],${1-3} rm. c 0,255 fi
@@ -16154,44 +16154,51 @@ barycenter :
     fi
   nm "[barycenter of '"$nm"']" endl done
 
-#@cli delaunay
+#@cli delaunay : _output_type={ 0=image | 1=coordinates/triangles }
 #@cli : Generate discrete 2D Delaunay triangulation of non-zero pixels in selected images.
 #@cli : Input images must be scalar.
 #@cli : Each pixel of the output image is a triplet (a,b,c) meaning the pixel belongs to
 #@cli : the Delaunay triangle 'ABC' where 'a','b','c' are the labels of the pixels 'A','B','C'.
 #@cli : $ 400,400 rand 32,255 100%,100% noise. 0.4,2 eq. 1 mul +delaunay
-#@cli : $ image.jpg b 1% 100%,100% noise. 0.8,2 eq. 1 mul +delaunay channels 0,2
-delaunay :
-  e[^-1] "Generate discrete 2D Delaunay triangulation of non-zero pixels in image$?."
-  repeat $! l[$>]
+#@cli : $ image.jpg 100%,100% noise. 2,2 eq. 1 delaunay. +blend shapeaverage0
+delaunay : skip "${1=0}"
+  mode=0 if s=['"$1"'];s=='0'||s=='1' mode=$1 else mode=0 noarg fi
+  s0,s1=image,coordinates
+  e[^-1] "Generate discrete 2D Delaunay triangulation of non-zero pixels in image$?, in "${s$mode}" mode."
+  repeat $! l[$<] bnm={b} nm={n}
 
-    # Retrieve point coordinates.
-    +slices 0 norm. !=. 0 {is+1},1,1,2 +f.. ">begin(p = 0); i?(I[#-1,++p] = [x,y]; p):0"
+    # Extract and label non-zero pixels.
+    1,64,1,2 =. 1,0,100%
+    f.. ${-math_lib}"begin(N = 0); I!=0?(dar_insert(#-1,[x,y]);++N):0; end(resize(#-1,1,dar_size(#-1),1,2,0))"
 
-    # Compute voronoi diagram of point cloud.
-    distance... 1 *... -1 watershed. ... rm...
+    # Construct discrete voronoi diagram.
+    +neq.. 0 distance. 1 *. -1 watershed... . rm.
 
-    # Detect delaunay triangles.
-    100%,100%,1,3
-    _delaunay 1,0,0,1 _delaunay -1,0,0,-1 _delaunay -1,0,0,1 _delaunay 0,-1,1,0 rm..
+    # Extract Delaunay triangles from discrete voronoi.
+    1,64,1,3
+    eval... ${-math_lib}"
+      V = crop(x,y,2,2);
+      min(V)?(
+        V[1]==V[0] && V[2]!=V[0] && V[3]!=V[0] && V[3]!=V[2]?( # [ a,a,b,c ]
+          dar_insert(#-1,[ V[0],V[2],V[3] ]);
+        ):(V[2]==V[0] && V[1]!=V[0] && V[3]!=V[0] && V[3]!=V[1]) || # [ a,b,a,c ]
+          (V[1]==V[2] && V[0]!=V[1] && V[3]!=V[0] && V[3]!=V[1])?(  # [ a,b,b,c ]
+          dar_insert(#-1,[ V[0],V[1],V[3] ]);
+        ):(V[3]==V[0] && V[1]!=V[0] && V[2]!=V[0] && V[2]!=V[1]) || # [ a,b,c,a ]
+          (V[1]==V[3] && V[0]!=V[1] && V[2]!=V[0] && V[2]!=V[1]) || # [ a,b,c,b ]
+          (V[2]==V[3] && V[0]!=V[1] && V[0]!=V[2] && V[1]!=V[2]) ?( # [ a,b,c,c ]
+          dar_insert(#-1,[ V[0],V[1],V[2] ]);
+        ):V[0]!=V[1] && V[0]!=V[2] && V[0]!=V[3] && V[1]!=V[2] && V[1]!=V[3] && V[2]!=V[3]?( # [ a,b,c,d ]
+          dar_insert(#-1,[ V[0],V[1],V[2] ]);
+          dar_insert(#-1,[ V[1],V[3],V[2] ]);
+        );
+        end(resize(#-1,1,dar_size(#-1),1,3,0));
+      )"
 
-    # Map initial labels.
-    s. c +warp[0] [1],0,0 point. 0,0 map[-4--2] . rm. a[-3--1] c
-    k.
+    # Return output in expected mode.
+    if $mode k[-2,-1] nm.. ${bnm}_points nm. ${bnm}_faces
+    else {0,[w,h,1,3]} eval.. "polygon(#-1,3,I[#1,i0],I[#1,i1],I[#1,i2],1,i0,i1,i2)" k. nm $nm fi
   endl done
-
-_delaunay :
-  f.. "*
-     const boundary = 1;
-     p0 = i;
-     p1 = j($1,$2);
-     p2 = j($3,$4);
-     if (p0!=p1 && p0!=p2 && p1!=p2,
-       P0 = I[#-3,p0];
-       P1 = I[#-3,p1];
-       P2 = I[#-3,p2];
-       polygon(#-1,3,P0,P1,P2,1,[p0,p1,p2]);
-    ); i"
 
 #@cli detect_skin : 0<=tolerance<=1,_skin_x,_skin_y,_skin_radius>=0
 #@cli : Detect skin in selected color images and output an appartenance probability map.
@@ -16373,10 +16380,10 @@ label_fg : check "$1>=0" skip ${2=0}
   e[^-1] "Label foreground connected components on image [1], with tolerance $1 and "\
          ${arg\ 1+!$2,high,low}" connectivity."
   repeat $! l[$>]
-    if d>1 +z -1,-1,-1,{w-1},{h-1},{d-1} label. $1,$2 z. 1,1,1,{w-1},{h-1},{d-1}
-    else +z -1,-1,{w-1},{h-1} label. $1,$2 z. 1,1,{w-1},{h-1}
+    if d>1 +z -1,-1,-1,100%,100%,100% label. $1,$2 z. 1,1,1,100%,100%,100%
+    else +z -1,-1,100%,100% label. $1,$2 z. 1,1,100%,100%
     fi
-    !=.. 0 * +histogram {1+iM} =. 0
+    norm.. !=.. 0 * +histogram {1+iM} =. 0
     >. 0 cumulate. map.. . rm.
   endl done
 
@@ -18267,7 +18274,7 @@ piechart : check $1>=0
 #@cli : $ 400,400,1,3 plasma
 #@cli : $$ https://gmic.eu/oldtutorial/_plasma
 
-#@cli point : x[%],y[%],_z[%],_opacity,_color1,... : (+)
+#@cli point : x[%],_y[%],_z[%],_opacity,_color1,... : (+)
 #@cli : Set specified colored pixel on selected images.
 #@cli : Default values: 'z=0', 'opacity=1' and 'color1=0'.
 #@cli : $ image.jpg repeat 10000 point {u(100)}%,{u(100)}%,0,1,${-rgb} done
@@ -19086,13 +19093,13 @@ cubes3d : check ${1=1}>=0
    nm. [3D\ cylinder] endl
 
 #@cli delaunay3d
-#@cli : Generate 3D delaunay triangulations from selected images.
+#@cli : Generate 3D Delaunay triangulations from selected images.
 #@cli : One assumes that the selected input images are binary images containing the set of points to mesh.
 #@cli : The output 3D object is a mesh composed of non-oriented triangles.
 #@cli : $ 500,500 noise 0.05,2 eq 1 * 255 +delaunay3d color3d[1] 255,128,0 dilate_circ[0] 5 to_rgb[0] \
 # +object3d[0] [1],0,0,0,1,1 max[-1] [0]
 delaunay3d :
-  e[^-1] "Generate 3D delaunay triangulation from image$?."
+  e[^-1] "Generate 3D Delaunay triangulation from image$?."
   repeat $! l[$>]
     channels 0 != 0
 
@@ -19102,7 +19109,7 @@ delaunay3d :
     # Compute voronoi diagram of point cloud.
     +distance[0] 1 *[2] -1 watershed[1] [2] rm[2]
 
-    # Get redondant set of delaunay triangles from the voronoi diagram.
+    # Get redondant set of Delaunay triangles from the voronoi diagram.
     r[1] 100%,100%,100%,3
     if d>1 # Add detection cases for 3D images.
       +_delaunay3d[1] 1,0,0,0,0,1 +_delaunay3d[1] -1,0,0,0,0,-1
@@ -33917,8 +33924,8 @@ fx_gmicky_preview :
 #@gui : - <b>2019/08/14</b> : version <i>2.7.0</i>.\n
 #@gui : - <b>2019/12/04</b> : version <i>2.8.0</i>.\n
 #@gui : - <b>2020/03/28</b> : version <i>2.9.0</i>.\n
-#@gui : - <span foreground="purple"><b>2021/07/16</b> : version <i>2.9.8</i> (Current stable).</span>\n
-#@gui : - <b>2021/08/03</b> : version <i>2.9.9</i> (Current pre-release).\n
+#@gui : - <span foreground="purple"><b>2021/09/02</b> : version <i>2.9.9</i> (Current stable).</span>\n
+##@gui : - <b>2021/08/03</b> : version <i>2.9.9</i> (Current pre-release).\n
 #@gui : "}
 #@gui : sep = separator()
 #@gui : url = link{"View changelog to upcoming major version (3.0)","https://discuss.pixls.us/t/on-the-road-to-3-0"}
@@ -35433,8 +35440,8 @@ fx_lylejk_painting_preview :
   gui_split_preview "fx_lylejk_painting $*",${-3--1}
 
 #@gui Paint With Brush : fx_paint_with_brush, fx_paint_with_brush_preview(0)
-#@gui : Predefined style = choice("Default","Felt Spots","Style 2","Circles","Dream Smoothing","Style5",
-#@gui : "Chaos","Smooth")
+#@gui : Predefined style = choice("Default","Felt Spots","Colored Edges","Circles","Dreamy","Fuzzy",
+#@gui : "Whirls","Smooth")
 #@gui : previous_style = value(-1)
 #@gui : sep = separator()
 #@gui : note = note("<span color="#EE5500"><small><b>Global Settings:</b></small></span>")
@@ -35751,7 +35758,7 @@ fx_polygonize_delaunay :
     +to_rgb. gradient_norm. ge. $2
     f. "!x || !y || x==w-1 || y==h-1?(u^0.25<$3%):(u^0.25<$1%?i:0)"
     {is+1},1,1,2 f.. ">begin(p = 0); i?(I[#-1,++p] = [x,y];p):0"
-    delaunay..
+    delaunay.. 0
 
     # Render filling.
     if $5==4 # Linear
@@ -36168,6 +36175,7 @@ fx_sharp_abstract_preview :
 #@gui : Curved Stroke = bool(1)
 #@gui : Color Model = choice(4,"Black on white","White on black","Black on transparent white",
 #@gui : "White on transparent black","Color on white")
+#@gui : Random Seed = int(0,0,65535)
 #@gui : sep = separator()
 #@gui : Preview Type = choice("Full","Forward Horizontal","Forward Vertical","Backward Horizontal",
 #@gui : "Backward Vertical","Duplicate Top","Duplicate Left","Duplicate Bottom","Duplicate Right",
@@ -36175,7 +36183,8 @@ fx_sharp_abstract_preview :
 #@gui : Preview Split = point(50,50,0,0,200,200,200,0,10)_0
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2018/05/11</i>.</small>")
-fx_sketchbw :
+fx_sketchbw : skip ${16=0}
+  srand $16
   if $15==4 repeat $! l[$>] +sketchbw ${1-14} blend hardlight endl done return fi
   sketchbw ${1-14}
   if $15&1 negate fi
@@ -36188,7 +36197,7 @@ fx_sketchbw_preview :
 
 #@gui Smooth Abstract : fx_smooth_abstract, fx_smooth_abstract_preview(0)
 #@gui : Smoothness (%) = float(75,0,100)
-#@gui : Regularization = choice(0,"Isotropic","Delaunay-oriented","Edge-oriented")
+#@gui : Regularization = choice(0,"Isotropic","Delaunay-Guided","Edge-Oriented")
 #@gui : Regularization Iterations = int(20,0,100)
 #@gui : Geometry = float(1,0,5)
 #@gui : Details = float(30,0,50)
@@ -39621,7 +39630,7 @@ fx_clut_from_ab :
       if !$1 rm[1] fi # Replace Layer with CLUT
       nm[0] "name(CLUT to '"$nm"')"
     fi
-  if $_output_mode k[0] fi
+  if 0$_output_mode k[0] fi
   endl done
 
 fx_clut_from_ab_preview :
@@ -40378,7 +40387,7 @@ _fx_tune_hsv :
         -. .. a c
 
         # Create CLUT.
-        if $_is_preview 33,33,33,4 else 63,63,63,4 fi
+        if 0$_is_preview 33,33,33,4 else 63,63,63,4 fi
         f.. "I(#-1,round([i0,i1,i2]*(w#-1-1)/255))+=[i3,i4,i5,1];"
         s. c,-3 +max. 1 /[-3,-1] eq. 0
         inpaint_pde.. . rm[-3,-1]
@@ -40999,6 +41008,26 @@ fx_thin_edges_preview :
 
 #@gui ____<b>Deformations</b>
 #----------------------------
+
+#@gui Breaks : fx_breaks,fx_breaks(0)
+#@gui : Type = choice("Flat","Wavy")
+#@gui : Amplitude = float(30,0,300)
+#@gui : Frequency (%) = float(30,0,100)
+#@gui : Smoothness = float(0.5,0,10)
+#@gui : Boundary = choice(3,"Transparent","Nearest","Periodic","Mirror")
+#@gui : sep = separator()
+#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2021/09/09</i>.</small>")
+fx_breaks :
+  repeat $! l[$>]
+    if !$5 to_a fi
+    100%,100%,1,1,"u<($3%)^6"
+    if $1 # Wavy
+      distance. 1 sharpen. 100000 neq. 0 distance. 1 b. $4 g. xy a[-2,-1] c
+    else # Flat
+      delaunay. 0 label_fg. 0,1 {1+iM},1,1,2 rand. -30,30 point. 0 map.. . rm.
+    fi
+    n. -$2,$2 warp[0] .,1,1,$5 rm.
+  endl done
 
 #@gui Cartesian Transform : fx_custom_deformation, fx_custom_deformation(1)
 #@gui : X-Warping = text{"(w+h)/20 * cos(y*20/h)"}
@@ -41739,7 +41768,7 @@ fx_project_stereographic :
     fi
   k. endl done um _fx_project_stereographic
 
-  if $_is_preview
+  if 0$_is_preview
     line $centerx%,$centery%,$radangx%,$radangy%,0.75,0xF0F0F0F0,255,255,255,255
     line $centerx%,$centery%,$radangx%,$radangy%,0.75,0x0F0F0F0F,0,0,0,255
   fi
@@ -41961,7 +41990,8 @@ fx_zoom :
 #@gui : Preset = choice{"Orwo NP20-GDR","Kodak TMAX 400","Kodak TMAX 3200","Kodak TRI-X 1600","Unknown"}
 #@gui : Blend Mode = choice(1,"Alpha","Grain Merge","Hard Light","Overlay","Soft Light","Grain Only")
 #@gui : Opacity = float(0.2,0,1)
-#@gui : Scale = float(100,30,200)
+#@gui : Scale = float(100,30,800)
+#@gui : Sharpness = float(0,0,512)
 #@gui : Colored Grain = bool()
 #@gui : sep = separator()
 #@gui : Brightness (%) = float(0,-100,100)
@@ -41977,7 +42007,7 @@ fx_zoom :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2016/02/08</i>.</small>")
 fx_simulate_grain :
-  __fx_simulate_grain ${arg\ {1+$1},${-_fx_simulate_grain}},${2-10},0,0
+  __fx_simulate_grain ${arg\ {1+$1},${-_fx_simulate_grain}},${2-11},0,0
 
 _fx_simulate_grain :
   u orwo_np20,kodak_tmax400,kodak_tmax3200,kodak_trix1600,unknown
@@ -41986,7 +42016,7 @@ fx_simulate_grain_preview :
   gui_split_preview "_fx_simulate_grain_preview $*",$-2
 
 _fx_simulate_grain_preview :
-  __fx_simulate_grain ${arg\ {1+$1},${-_fx_simulate_grain}},${2-12}
+  __fx_simulate_grain ${arg\ {1+$1},${-_fx_simulate_grain}},${2-13}
 
 __fx_simulate_grain :
   bm0=alpha bm1=grainmerge bm2=hardlight bm3=overlay bm4=softlight bm5=alpha
@@ -41994,12 +42024,16 @@ __fx_simulate_grain :
   else i https://gmic.eu/data_film_presets/grain_$1.cimgz o. ${-path_cache}grain_$1.cimgz
   fi
 
+  r. $4%,$4%,1,1,6
+  if $4>100 b. 1 fi
+  sharpen. $5 c. 0,255
+
   repeat $!-1 l[$>,-1] split_opacity[0]
-    +syntexturize. {0,max(10,100*w/$4)},{0,max(10,100*h/$4)}
-    if $5 +syntexturize.. {w},{h} +syntexturize... {w},{h} a[-3--1] c fi
-    r. {0,w},{0,h},1,100%,5 c. 0,255
-    adjust_colors. ${6-10}
-    if $12 k[0,-1] rv
+    +syntexturize. {0,[w,h]}
+    if $6 +syntexturize.. {w},{h} +syntexturize... {w},{h} a[-3--1] c fi
+    c. 0,255
+    adjust_colors. ${7-11}
+    if $13 k[0,-1] rv
     else blend[0,-1] ${bm$2},{if($2<=4,$3,1)}
     fi
   a[^-1] c endl done rm.
@@ -42329,40 +42363,81 @@ fx_blur_radial_preview :
 
 #@gui Chromatic Aberrations : fx_chromatic_aberrations, fx_chromatic_aberrations_preview(0)
 #@gui : Primary Color = color(255,0,0)
-#@gui : X-Shift = float(2,-16,16)
-#@gui : Y-Shift = float(2,-16,16)
+#@gui : Deformation Type = choice("Shift","Radial","Angular","Random")
+#@gui : X-Amplitude = float(2,-32,32)
+#@gui : Y-Amplitude = float(2,-32,32)
+#@gui : Smoothness = float(0,0,10)
+#@gui : Attenuation Near Center (%) = float(50,-100,100)
+#@gui : Attenuation Decay = float(1,0,8)
 #@gui : sep = separator()
 #@gui : Secondary Color = color(0,255,0)
-#@gui : X-Shift (px) = float(0,-16,16)
-#@gui : Y-Shift (px) = float(0,-16,16)
+#@gui : Deformation Type = choice("Shift","Radial","Angular","Random")
+#@gui : X-Amplitude = float(0,-32,32)
+#@gui : Y-Amplitude = float(0,-32,32)
+#@gui : Smoothness = float(0,0,10)
+#@gui : Attenuation Near Center (%) = float(0,-100,100)
+#@gui : Attenuation Decay = float(1,0,8)
 #@gui : sep = separator()
 #@gui : Preview Type = choice("Full","Forward Horizontal","Forward Vertical","Backward Horizontal",
 #@gui : "Backward Vertical","Duplicate Top","Duplicate Left","Duplicate Bottom","Duplicate Right",
 #@gui : "Duplicate Horizontal","Duplicate Vertical","Checkered","Checkered Inverse")
 #@gui : Preview Split = point(50,50,0,0,200,200,200,0,10)_0
 #@gui : sep = separator()
-#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2015/05/07</i>.</small>")
+#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2021/08/10</i>.</small>")
 fx_chromatic_aberrations :
+  U1={u=[${1-3}];u/max(1e-8,norm(u))}
+  U2={u=[${10-12}];u/max(1e-8,norm(u))}
 
-  # Compute orthonormal color basis.
-  l[]
-    (${1-3}) (${6-8}) y c orientation[0]
-    +*[0,1] +*[0] {is} -[1,3] rm[2] orientation[1]
-    _cross3d {0,^},{^} y x a y
-    M={^} transpose Minv={^} rm
-  endl
-
-  # Shift images.
   repeat $! l[$>] to_color split_opacity l[0]
-    mix_rgb $M
-    s c
-    100%,100%,1,2 fc. {($9-$4)/2},{($10-$5)/2} warp[0] .,1,2,1 rm.
-    100%,100%,1,2 fc. {($4-$9)/2},{($5-$10)/2} warp[1] .,1,2,1 rm.
-    100%,100%,1,2 fc. {(-$4-$9)/2},{(-$5-$10)/2} warp[2] .,1,2,1 rm.
-    a c
-    mix_rgb $Minv
+
+    # Compute image decomposition : [0] = residual, [1] = weights for primary/secondary colors.
+    100%,100%,1,2,"*begin(U1 = ["$U1"]; U2 = ["$U2"]);
+      V = I(#0);
+      d1 = dot(V,U1); V-=d1*U1;
+      d2 = dot(V,U2); V-=d2*U2;
+      I(#0) = V;
+      [ d1,d2 ]"
+    s. c
+
+    # Shift weights.
+    _fx_chromatic_aberrations.. ${4-9}
+    _fx_chromatic_aberrations. ${13-18}
+
+    # Reconstruct color image.
+    a[-2,-1] c
+    +[0] '"*begin(U1 = ["$U1"]; U2 = ["$U2"]); i(#1,x,y,0,0)*U1 + i(#1,x,y,0,1)*U2"'
+    rm.
   endl a c endl done
-  c 0,255
+
+_fx_chromatic_aberrations :
+  if $1==0 # Shift
+    100%,100%,1,2,[$2,$3]
+  elif $1==1 # Radial
+    100%,100%,1,2,"
+      ang = atan2(y - h/2, x - w/2);
+      U = [ $2*cos(ang), $3*sin(ang) ]"
+  elif $1==2 # Angular
+    100%,100%,1,2,"
+      ang = atan2(x - w/2, -y + h/2);
+      U = [ $2*cos(ang), $3*sin(ang) ]"
+  else # Random
+    100%,100%,1,2,g s. c n.. 0,$1 n. 0,$2 a[-2,-1] c
+  fi
+  if $4 # Smoothness
+    s. c
+    m,M={-2,[im,iM]} b.. $4 n.. $m,$M
+    m,M={[im,iM]} b. $4 n. $m,$M
+    a[-2,-1] c
+  fi
+  if $5 # Center/Borders attenuation
+    100%,100% =. 1,50%,50% distance. 1 n. 0,1.4142 c. 0,1
+    if $5>0 pow. {0.1+$6} n. {1-$5%},1
+    else negate. 1 pow. $6 n. {1+$5%},1
+    fi
+    *[-2,-1]
+  fi
+
+  warp.. .,1,1,1 rm.
 
 fx_chromatic_aberrations_preview :
   gui_split_preview "fx_chromatic_aberrations $*",${-3--1}
@@ -44979,7 +45054,7 @@ fx_guided_lightrays :
     k. gui_set_layer_mode $bmode gui_set_layer_opacity $13
   endl
   if 0$_is_preview gui_merge_layers
-  elif $_output_mode k[0]
+  elif 0$_output_mode k[0]
   fi
 
 fx_guided_lightrays_preview :
@@ -46080,7 +46155,7 @@ _fx_random_pattern :
   mv. 0
 
 fx_random_pattern :
-  if $_output_mode rm fi
+  if 0$_output_mode rm fi
   _fx_random_pattern $*
 
 fx_random_pattern_preview :
@@ -46605,7 +46680,7 @@ fx_inpaint_patch_preview :
 
 #@gui Inpaint [Transport-Diffusion] : fx_inpaint_pde, fx_inpaint_pde_preview(1)
 #@gui : Smoothness (%) = float(75,0,100)
-#@gui : Regularization = choice(1,"Isotropic","Delaunay-Oriented","Edge-Oriented")
+#@gui : Regularization = choice(1,"Isotropic","Delaunay-Guided","Edge-Oriented")
 #@gui : Regularization Iterations = int(20,0,100)
 #@gui : Mask Color = _color(255,0,0,255)
 #@gui : Mask Dilation = _int(0,0,32)
@@ -46649,7 +46724,7 @@ fx_remove_hotpixels_preview :
 
 #@gui Solidify : fx_solidify_td, fx_solidify_td_preview(1)
 #@gui : Smoothness (%) = float(75,0,100)
-#@gui : Regularization = choice(1,"Isotropic","Delaunay-Oriented","Edge-Oriented")
+#@gui : Regularization = choice(1,"Isotropic","Delaunay-Guided","Edge-Oriented")
 #@gui : Regularization Iterations = int(20,0,100)
 #@gui : Dilation / Erosion = int(0,-20,20)
 #@gui : Colorspace = choice(1,"sRGB","Linear RGB")
@@ -48726,7 +48801,7 @@ fx_sine_curve :
   fi
 
   # Change unit for some variables.
-  W,H={w#0?[w#0,h#0]:$_is_preview" && "0$_preview_width?[0$_preview_width,0$_preview_height]:[1024,1024]}
+  W,H={w#0?[w#0,h#0]:0$_is_preview" && "0$_preview_width?[0$_preview_width,0$_preview_height]:[1024,1024]}
   nresolution={max(1,round($periods*1000000*($resolution%)^2))}
   nfocale={arg($focale,0.05,0.1,0.2,0.3,0.4,0.5,0.75,1,1.25,1.5,1.75,2,3,4,8,16,32,128,1024,16384)}
   noxa,noxb,noya,noyb,noza,nozb={[$oxa,$oxb,$oya,$oyb,$oza,$ozb]*pi/180}
@@ -48823,7 +48898,7 @@ fx_sine_curve :
     a[-2,-1] c
   endl
 
-  if $_is_preview
+  if 0$_is_preview
     if $!==1 i[0] $W,$H,1,3 fi
     if $preview_background [0],[0] f. {$preview_background==1?0:255} to_rgb. rv[0,-1] rm. fi
     blend[0,-1] alpha
@@ -48833,8 +48908,7 @@ fx_sine_curve :
     line. $xc%,$yc%,$xa%,$ya%,0.75,0x0F0F0F0F,0
   fi
   mv. 0
-  if $_output_mode k[0] fi
-
+  if 0$_output_mode k[0] fi
 
   # Update parameter values.
   r,m,o,p,s,a={d=$dp;[d==0?2:0,d==1?2:0,d==2?2:0,d==3?2:0,d==4?2:0,d==5?2:0]}
@@ -48913,7 +48987,7 @@ fx_symmetric_shape2d :
   if !narg($_is_preview) _is_preview=0 fi
   repeat $! l[$<]
     100%,100%,1,4 _fx_symmetric_shape2d. $* rv
-    if !$_is_preview" && "$_output_mode rm. fi
+    if !0$_is_preview" && "0$_output_mode rm. fi
   endl done
 
 _fx_symmetric_shape2d :
@@ -49102,7 +49176,7 @@ _fx_tree:
 
 fx_tree :
   _fx_tree. $* mv. 0
-  if $_output_mode k[0] fi
+  if 0$_output_mode k[0] fi
 
 fx_tree_preview :
   repeat $! l[$>] _fx_tree $* blend alpha endl done
@@ -50501,6 +50575,7 @@ fx_solve_maze_preview :
 #@cli : $ https://gmic.eu/samples/heart.gmic go _fps=15 _label="Heart"
 #@cli : $ https://gmic.eu/samples/distortion.gmic go _fps=20 _label="Distortion"
 #@cli : $ https://gmic.eu/samples/rotozoom.gmic go _fps=15 _label="Rotozoom"
+#@cli : $ https://gmic.eu/samples/french_flag.gmic go _fps=20 _label="French~Flag"
 
 #---------------------------
 # Test programs for NN lib.

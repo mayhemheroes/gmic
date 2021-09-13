@@ -2534,7 +2534,7 @@ struct _gmic_parallel {
 };
 
 template<typename T>
-static void *gmic_parallel(void *arg) {
+static void* gmic_parallel(void *arg) {
   _gmic_parallel<T> &st = *(_gmic_parallel<T>*)arg;
   try {
     unsigned int pos = 0;
@@ -10659,7 +10659,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               pthread_create(&_gmic_threads[l].thread_id,0,gmic_parallel<T>,(void*)&_gmic_threads[l]);
 
 #elif cimg_OS==2 // #ifdef PTHREAD_CANCEL_ENABLE
-            _gmic_threads[l].thread_id = CreateThread(0,0,gmic_parallel<T>,
+            _gmic_threads[l].thread_id = CreateThread(0,0,(LPTHREAD_START_ROUTINE)gmic_parallel<T>,
                                                       (void*)&_gmic_threads[l],0,0);
 #endif // #ifdef PTHREAD_CANCEL_ENABLE
 #else // #ifdef gmic_is_parallel
@@ -12756,7 +12756,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           const char *p_argument = argument;
           is_cond = *argument==','; // is_cond = is_empty_string?
           if (is_cond) {
-            CImg<char>(std::strlen(argument) + 2,1,1,1).move_to(g_list_c);
+            CImg<char>((unsigned int)(std::strlen(argument) + 2),1,1,1).move_to(g_list_c);
             g_list_c(0,0) = ' ';
             std::strcpy(&g_list_c(0,1),argument);
             p_argument = g_list_c[0];
