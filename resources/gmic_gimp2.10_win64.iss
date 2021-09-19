@@ -42,17 +42,18 @@ Source: build64-gimp\styles\qwindowsvistastyle.dll; DestDir: {app}\styles
 Source: build64-gimp\updatexxx.gmic; DestDir: {userappdata}\gmic; Flags: ignoreversion
 Source: build64-gimp\gmic_cluts.gmz; DestDir: {userappdata}\gmic; Flags: ignoreversion
 
-Source: build64-gimp\libdouble-conversion.dll; DestDir: {app}
-Source: build64-gimp\libfftw3-3.dll; DestDir: {app}
-Source: build64-gimp\libicudt68.dll; DestDir: {app}
-Source: build64-gimp\libicuin68.dll; DestDir: {app}
-Source: build64-gimp\libicuuc68.dll; DestDir: {app}
-Source: build64-gimp\libpcre-1.dll; DestDir: {app}
-Source: build64-gimp\libpcre2-16-0.dll; DestDir: {app}
 Source: build64-gimp\Qt5Core.dll; DestDir: {app}
 Source: build64-gimp\Qt5Gui.dll; DestDir: {app}
 Source: build64-gimp\Qt5Network.dll; DestDir: {app}
 Source: build64-gimp\Qt5Widgets.dll; DestDir: {app}
+Source: build64-gimp\libdouble-conversion.dll; DestDir: {app}
+Source: build64-gimp\libfftw3-3.dll; DestDir: {app}
+Source: build64-gimp\libicudt69.dll; DestDir: {app}
+Source: build64-gimp\libicuin69.dll; DestDir: {app}
+Source: build64-gimp\libicuuc69.dll; DestDir: {app}
+Source: build64-gimp\libmd4c.dll; DestDir: {app}
+Source: build64-gimp\libpcre-1.dll; DestDir: {app}
+Source: build64-gimp\libpcre2-16-0.dll; DestDir: {app}
 
 ;[Icons]
 ;Name: {userstartmenu}\Gimp\Gmic_Gimp\Uninstall Gmic_Gimp; Filename: {uninstallexe}
