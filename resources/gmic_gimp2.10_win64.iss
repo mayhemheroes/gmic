@@ -51,6 +51,7 @@ Source: build64-gimp\libfftw3-3.dll; DestDir: {app}
 Source: build64-gimp\libicudt69.dll; DestDir: {app}
 Source: build64-gimp\libicuin69.dll; DestDir: {app}
 Source: build64-gimp\libicuuc69.dll; DestDir: {app}
+Source: build64-gimp\libmd4c.dll; DestDir: {app}
 Source: build64-gimp\libpcre-1.dll; DestDir: {app}
 Source: build64-gimp\libpcre2-16-0.dll; DestDir: {app}
 
