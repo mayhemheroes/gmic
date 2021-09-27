@@ -27059,9 +27059,8 @@ _ovh2stats :
       store(versions,'versions')"
     rm $features
     ips,gimp,krita,_8bf,paintdotnet,digikam,standalone,windows,linux,macos,bsd,unknown,prereleases={^}
-    $versions +f. x a[-2,-1] y sort. -,x eo0={find(crop(),0)}
-    if !$eo0 rm. 0 else z. 0,{$eo0-1} fi
-    mirror. y a y
+    $versions
+    a y
 
     if $N>1
       e[] "  > "$date": "\
@@ -27080,7 +27079,8 @@ _ovh2stats :
           ${_vt100_c}${_vt100_b}"BSD"${_vt100_n}" = "$bsd" ("{_round($bsd/$ips*100,0.1)}"%), "\
           ${_vt100_c}${_vt100_b}"Unknown"${_vt100_n}" = "$unknown" ("{_round($unknown/$ips*100,0.1)}"%)."
       e[] "                "\
-          ${_vt100_b}"Prereleases"${_vt100_n}" = "$prereleases" ("{_round($prereleases/$ips*100,0.1)}"%).\n"
+          ${_vt100_b}"Prereleases"${_vt100_n}" = "$prereleases" ("{_round($prereleases/$ips*100,0.1)}"%)."
+      _ovh2stats_versions
     fi
   endl done
   + / $N round.
@@ -27102,9 +27102,23 @@ _ovh2stats :
       ${_vt100_c}${_vt100_b}"BSD"${_vt100_n}" = "$bsd" ("{_round($bsd/$ips*100,0.1)}"%), "\
       ${_vt100_c}${_vt100_b}"Unknown"${_vt100_n}" = "$unknown" ("{_round($unknown/$ips*100,0.1)}"%)."
   e[] "                "\
-      ${_vt100_b}"Prereleases"${_vt100_n}" = "$prereleases" ("{_round($prereleases/$ips*100,0.1)}"%).\n"
-  rows. 100%
+      ${_vt100_b}"Prereleases"${_vt100_n}" = "$prereleases" ("{_round($prereleases/$ips*100,0.1)}"%)."
+  _ovh2stats_versions
   rm
+
+_ovh2stats_versions :
+  v + +rows. 100% l. ips={is}
+    +f x a y sort -,x eo0={min(9,find(crop(),0))}
+    if $eo0
+      str= v=0 c=
+      for i($v,0)>0" && "$v<9
+        str.=$c${_vt100_b}{i($v,1)}${_vt100_n}" ("{i($v,0)}": "{_round(i($v,0)/$ips*100,0.1)}"%)"
+        v+=1 c=", "
+      done
+      e[] "                "${_vt100_c}${_vt100_b}"Version"${_vt100_n}" = "$str".\n"
+    fi
+    rm
+  endl
 
 #@cli padint : number,_size>0
 #@cli : Return a integer with 'size' digits (eventually left-padded with '0').
