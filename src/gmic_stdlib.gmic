@@ -26996,7 +26996,8 @@ ovh2stats : skip "${1=gmic.eu-*-*-*.log.gz}"
 
 
 _ovh2stats :
-  v + N=$! repeat $! l[$>] ('{n}') replace. {'_'},{'/'} date={t} rm.
+  v + N=$! repeat $! l[$>] ('{n}') replace. {'_'},{'^'} ({t})
+    date={`[vtos(i0,0,4),_'/',i1<10?[_'0',i1+_'0']:vtos(i1,0,2),_'/',i2<10?[_'0',i2+_'0']:vtos(i2,0,2)]`}
     s -,{'\n'}
 
     # Name each image by the IP address.
@@ -27028,6 +27029,8 @@ _ovh2stats :
     eval "
       gimp = krita = _8bf = paintdotnet = digikam = standalone = 0;
       linux = windows = macos = bsd = unknown = 0;
+      versions = vector400();
+      prereleases = 0;
       ips = 0;
       repeat (l,k,
         ref(lowercase(crop(#k,0,0,0,0,1,256,1,1)),str);
@@ -27044,49 +27047,58 @@ _ovh2stats :
         find(str,'bsd')>=0?++bsd:
         ++unknown;
 
+        (eos = find(str,0))<0?(eos = size(str));
+        space = find(str,_' ',eos,-1);
+        ver = sum(([ str[space + 1],str[space + 3],str[space + 5] ] - _'0')*[ 100,10,1 ]);
+        find(str,'_pre#')>=0?++prereleases;
+
         ++ips;
       );
-      store([ips,gimp,krita,_8bf,paintdotnet,digikam,standalone,windows,linux,macos,bsd,unknown],'features')"
+      store([ips,gimp,krita,_8bf,paintdotnet,digikam,standalone,windows,linux,macos,bsd,unknown,prereleases],'features')"
     rm $features
-    ips,gimp,krita,_8bf,paintdotnet,digikam,standalone,windows,linux,macos,bsd,unknown={^}
+    ips,gimp,krita,_8bf,paintdotnet,digikam,standalone,windows,linux,macos,bsd,unknown,prereleases={^}
 
     if $N>1
       e[] "  > "$date": "\
-          ${_vt100_b}"Unique IPs"${_vt100_n}" = "$ips" (100%), "\
+          ${_vt100_b}"Unique IPs"${_vt100_n}" = "$ips" (100%),"
+      e[] "                "\
           ${_vt100_m}${_vt100_b}"GIMP"${_vt100_n}" = "$gimp" ("{_round($gimp/$ips*100,0.1)}"%), "\
           ${_vt100_c}${_vt100_b}"Krita"${_vt100_n}" = "$krita" ("{_round($krita/$ips*100,0.1)}"%), "\
           ${_vt100_g}${_vt100_b}"8bf"${_vt100_n}" = "$_8bf" ("{_round($_8bf/$ips*100,0.1)}"%), "\
           ${_vt100_r}${_vt100_b}"Paint.NET"${_vt100_n}" = "$paintdotnet" ("{_round($paintdotnet/$ips*100,0.1)}"%), "\
           ${_vt100_m}${_vt100_b}"Digikam"${_vt100_n}" = "$digikam" ("{_round($digikam/$ips*100,0.1)}"%), "\
           ${_vt100_c}${_vt100_b}"Standalone"${_vt100_n}" = "$standalone" ("{_round($standalone/$ips*100,0.1)}"%)."
-
       e[] "                "\
           ${_vt100_r}${_vt100_b}"Windows"${_vt100_n}" = "$windows" ("{_round($windows/$ips*100,0.1)}"%), "\
           ${_vt100_g}${_vt100_b}"Linux"${_vt100_n}" = "$linux" ("{_round($linux/$ips*100,0.1)}"%), "\
           ${_vt100_m}${_vt100_b}"Mac OS"${_vt100_n}" = "$macos" ("{_round($macos/$ips*100,0.1)}"%), "\
           ${_vt100_c}${_vt100_b}"BSD"${_vt100_n}" = "$bsd" ("{_round($bsd/$ips*100,0.1)}"%), "\
-          ${_vt100_c}${_vt100_b}"Unknown"${_vt100_n}" = "$unknown" ("{_round($unknown/$ips*100,0.1)}"%).\n"
+          ${_vt100_c}${_vt100_b}"Unknown"${_vt100_n}" = "$unknown" ("{_round($unknown/$ips*100,0.1)}"%)."
+      e[] "                "\
+          ${_vt100_b}"Prereleases"${_vt100_n}" = "$prereleases" ("{_round($prereleases/$ips*100,0.1)}"%).\n"
     fi
 
   endl done
   + / $N round.
-  ips,gimp,krita,_8bf,paintdotnet,digikam,standalone,windows,linux,macos,bsd,unknown={^}
-  summary0,summary1=Total,Average
-  e[] "  > "${summary{$N>1}}" : "\
-      ${_vt100_b}"Unique IPs"${_vt100_n}" = "$ips" (100%), "\
+  ips,gimp,krita,_8bf,paintdotnet,digikam,standalone,windows,linux,macos,bsd,unknown,prereleases={^}
+  summary0,summary1="Total:      ","Average:    "
+  e[] "  > "${summary{$N>1}}\
+      ${_vt100_b}"Unique IPs"${_vt100_n}" = "$ips" (100%),"
+  e[] "                "\
       ${_vt100_m}${_vt100_b}"GIMP"${_vt100_n}" = "$gimp" ("{_round($gimp/$ips*100,0.1)}"%), "\
       ${_vt100_c}${_vt100_b}"Krita"${_vt100_n}" = "$krita" ("{_round($krita/$ips*100,0.1)}"%), "\
       ${_vt100_g}${_vt100_b}"8bf"${_vt100_n}" = "$_8bf" ("{_round($_8bf/$ips*100,0.1)}"%), "\
       ${_vt100_r}${_vt100_b}"Paint.NET"${_vt100_n}" = "$paintdotnet" ("{_round($paintdotnet/$ips*100,0.1)}"%), "\
       ${_vt100_m}${_vt100_b}"Digikam"${_vt100_n}" = "$digikam" ("{_round($digikam/$ips*100,0.1)}"%), "\
       ${_vt100_c}${_vt100_b}"Standalone"${_vt100_n}" = "$standalone" ("{_round($standalone/$ips*100,0.1)}"%)."
-
   e[] "                "\
       ${_vt100_r}${_vt100_b}"Windows"${_vt100_n}" = "$windows" ("{_round($windows/$ips*100,0.1)}"%), "\
       ${_vt100_g}${_vt100_b}"Linux"${_vt100_n}" = "$linux" ("{_round($linux/$ips*100,0.1)}"%), "\
       ${_vt100_m}${_vt100_b}"Mac OS"${_vt100_n}" = "$macos" ("{_round($macos/$ips*100,0.1)}"%), "\
       ${_vt100_c}${_vt100_b}"BSD"${_vt100_n}" = "$bsd" ("{_round($bsd/$ips*100,0.1)}"%), "\
-      ${_vt100_c}${_vt100_b}"Unknown"${_vt100_n}" = "$unknown" ("{_round($unknown/$ips*100,0.1)}"%).\n"
+      ${_vt100_c}${_vt100_b}"Unknown"${_vt100_n}" = "$unknown" ("{_round($unknown/$ips*100,0.1)}"%)."
+  e[] "                "\
+      ${_vt100_b}"Prereleases"${_vt100_n}" = "$prereleases" ("{_round($prereleases/$ips*100,0.1)}"%).\n"
   rm
 
 #@cli padint : number,_size>0
