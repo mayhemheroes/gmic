@@ -21202,7 +21202,7 @@ nn_lib :
     #---------------------------------------------------------------------------
     begin(
       const nn_is_training = isnan($_nn_is_training)?0:$_nn_is_training;
-      const nn_optimizer = isnan($_nn_optimizer)?2:$_nn_optimizer; # Adam optimizer by default
+      const nn_optimizer = isnan($_nn_optimizer)?1:$_nn_optimizer; # Adam optimizer by default
       const nn_iteration = isnan($_nn_iteration)?0:$_nn_iteration;
       const nn_batch_iteration = isnan($_nn_batch_iteration)?0:$_nn_batch_iteration;
       const nn_nb_threads_max = n;
@@ -21315,13 +21315,6 @@ nn_lib :
       L_params#-=nn_learning_rate*#dL_params;
     );
 
-    # David optimizer.
-    #-----------------
-    nn_optimizer_david_update_layer(L_params,dL_params) = (
-      _dt = nn_learning_rate/abs(maxabs(1e-9,#dL_params));
-      L_params#-=_dt*#dL_params;
-    );
-
     # Adam optimizer.
     #----------------
     nn_optimizer_adam_init_update_layer() = (
@@ -21381,14 +21374,13 @@ nn_lib :
     # Generic function that dispatches to selected optimizer.
     #--------------------------------------------------------
     begin(
-      nn_optimizer==2?nn_optimizer_adam_init_update_layer():    # Adam
-      nn_optimizer==3?nn_optimizer_adamax_init_update_layer();  # Adamax
+      nn_optimizer==1?nn_optimizer_adam_init_update_layer():    # Adam
+      nn_optimizer==2?nn_optimizer_adamax_init_update_layer();  # Adamax
     );
     nn_optimizer_update_layer(L,dL) = (
       !nn_optimizer?nn_optimizer_sgd_update_layer(#L,#dL):      # Stochastic gradient descent
-      nn_optimizer==1?nn_optimizer_david_update_layer(#L,#dL):  # David
-      nn_optimizer==2?nn_optimizer_adam_update_layer(#L,#dL):   # Adam
-      nn_optimizer==3?nn_optimizer_adamax_update_layer(#L,#dL); # Adamax
+      nn_optimizer==1?nn_optimizer_adam_update_layer(#L,#dL):   # Adam
+      nn_optimizer==2?nn_optimizer_adamax_update_layer(#L,#dL); # Adamax
     );
 
     # Strategy to adapt learning rate regarding loss decrease/increase.
@@ -50845,7 +50837,7 @@ nn_test : skip ${1=1e-4}
   l[img] s z repeat $! l[$>] g. xy a c endl done a z endl
 #  if isfile('stats.gmz') stats.gmz else 0 fi nm. stats
 
-  _nn_optimizer=2
+  _nn_optimizer=1
 
   # Optimize network.
   #------------------
