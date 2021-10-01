@@ -21287,6 +21287,17 @@ nn_lib :
     nn_activate_sqrt(Z) = _nn_activate_pointwise(Z,sqrt);
     nn_activate_deriv_sqrt(Z) = _nn_activate_pointwise(Z,deriv_sqrt);
 
+    # Swish.
+    #--------
+    nn_activation_swish(z) = (z*nn_activation_sigmoid(z));
+    nn_activation_deriv_swish(z) = (
+      _nn_sig = nn_activation_sigmoid(z);
+      _nn_swi = z*_nn_sig;
+      _nn_swi + _nn_sig*(1 - _nn_swi)
+    );
+    nn_activate_swish(Z) = _nn_activate_pointwise(Z,swish);
+    nn_activate_deriv_swish(Z) = _nn_activate_pointwise(Z,deriv_swish);
+
     # Tanh.
     #------
     nn_activation_tanh(z) = (tanh(z));
@@ -22091,10 +22102,10 @@ nn_layer_conv2d : nn_check_layer "$2"
 
 #@cli nn_layer_conv2dnl : name,in,nb_channels>0,_kernel_size>0,_stride>0,_dilation>0,_activation
 #@cli : Add a 'con2dnl' (2D convolutional layer followed by a non-linearity), to the network.
-#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1' and 'activation=leakyrelu'.
+#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1' and 'activation=swish'.
 nn_layer_conv2dnl : nn_check_layer "$2"
                     check ${"is_variable_name $1"}" && isint($3) && $3>0 && isint(${4=3}) && $4>0 && ${5=1}>0"
-                    skip "${6=1}","${7=leakyrelu}"
+                    skip "${6=1}","${7=swish}"
   e[^-1] "[nn_lib] Add 'conv2d+nl' layer '$1', with input '$2', $3 channels, $4x$4 kernels, "\
          "stride $5, dilation $6 and '$7' activation."
   nn_layer_conv2d $1_0,$2,$3,$4,$5,$6
@@ -22117,8 +22128,8 @@ nn_layer_fc : nn_check_layer "$2" check ${"is_variable_name $1"}" && isint($3) &
 
 #@cli nn_layer_fcnl : name,in,nb_neurons>0,_activation
 #@cli : Add a 'fcnl' layer (fully connected layer followed by a non-linearity), to the network.
-#@cli : Default value: 'activation=leakyrelu'.
-nn_layer_fcnl : nn_check_layer "$2" check ${"is_variable_name $1"}" && isint($3) && $3>0" skip ${4=leakyrelu}
+#@cli : Default value: 'activation=swish'.
+nn_layer_fcnl : nn_check_layer "$2" check ${"is_variable_name $1"}" && isint($3) && $3>0" skip ${4=swish}
   e[^-1] "[nn_lib] Add 'fc+nl' layer '$1' to the network, with input '$2', $3 channels and '$4' activation."
   nn_layer_fc $1_0,$2,$3
   nn_layer_nl $1,$1_0,$4
@@ -22135,8 +22146,8 @@ nn_layer_maxpool2d : nn_check_layer "$2" check ${"is_variable_name $1"}
 
 #@cli nn_layer_nl : name,in,activation
 #@cli : Add a 'nl' layer (non-linearity) to the network.
-#@cli : Default value: 'activation=leakyrelu'.
-nn_layer_nl : nn_check_layer "$2" check ${"is_variable_name $1"} skip ${3=leakyrelu}
+#@cli : Default value: 'activation=swish'.
+nn_layer_nl : nn_check_layer "$2" check ${"is_variable_name $1"} skip ${3=swish}
   e[^-1] "[nn_lib] Add 'nl' layer '$1', with input '$2' and '$3' activation."
   _nn_$1_out_size=$_nn_$2_out_size
   _nn_forward.="begin(nn_layer_nl_init_forward($1,$2));"\
