@@ -26463,31 +26463,35 @@ math_lib :
 
   # Inserts new element 'elt' into dynamic array #ind, at index [pos] ('pos' must be in [0,dar_size(#ind)]).
   dar_insert(ind,elt,pos) = (
-    _dar_pos = pos;
+    ref(pos,_dar_pos);
+    ref(elt,_dar_elt);
     _dar_siz = dar_size(#ind);
+    unref(_dar_sizelt);
+    const _dar_sizelt = max(1,size(_dar_elt));
     if (_dar_pos<=_dar_siz,
-      _dar_siz>=h(#ind) - 1?resize(#ind,1,_dar_siz*2 + 2,1,s(#ind),0);
-      for (_dar_c = 0, _dar_c<s(#ind), ++_dar_c,
+      _dar_siz>=h(#ind) - 1?resize(#ind,1,_dar_siz*2 + 2,1,_dar_sizelt,0);
+      for (_dar_c = 0, _dar_c<_dar_sizelt, ++_dar_c,
         copy(i(#ind,_dar_pos + 1,0,0,_dar_c),i(#ind,_dar_pos,0,0,_dar_c),_dar_siz - _dar_pos)
       );
-      unref(_dar_elt); _dar_elt = elt;
-      copy(i[#ind,_dar_pos],_dar_elt,max(1,size(_dar_elt)),h(#ind),1);
+      copy(i[#ind,_dar_pos],_dar_elt,_dar_sizelt,h(#ind),1);
       (dar_size(ind#)) = ++_dar_siz;
     );
   );
 
   # Inserts new element 'elt' at the end of dynamic array #ind.
   dar_insert(ind,elt) = (
+    ref(elt,_dar_elt);
     _dar_siz = dar_size(#ind);
-    _dar_siz>=h(#ind) - 1?resize(#ind,1,_dar_siz*2 + 2,1,s(#ind),0);
-    unref(_dar_elt); _dar_elt = elt;
-    copy(i[#ind,_dar_siz],_dar_elt,max(1,size(_dar_elt)),h(#ind),1);
+    unref(_dar_sizelt);
+    const _dar_sizelt = max(1,size(_dar_elt));
+    _dar_siz>=h(#ind) - 1?resize(#ind,1,_dar_siz*2 + 2,1,_dar_sizelt,0);
+    copy(i[#ind,_dar_siz],_dar_elt,_dar_sizelt,h(#ind),1);
     (dar_size(ind#)) = ++_dar_siz;
   );
 
   # Remove element from dynamic array #ind, at index [pos] ('pos' must be in [0,dar_size(#ind) - 1]).
   dar_remove(ind,pos) = (
-    _dar_pos = pos;
+    ref(pos,_dar_pos);
     _dar_siz = dar_size(#ind);
     if (_dar_pos<_dar_siz,
       _dar_siz = --dar_size(#ind);
