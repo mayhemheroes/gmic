@@ -3695,11 +3695,11 @@ CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned
         uind1 = (int)(iind1<0?iind1 + index_max:iind1);
       if (uind0>uind1) { cimg::swap(uind0,uind1); cimg::swap(iind0,iind1); }
       if (uind0<0 || uind0>=(int)index_max)
-        error(true,"Command '%s': Invalid %s %c%s%c (contains index '%d', "
+        error(true,"Command '%s': Invalid %s %c%s%c (contains index %d, "
               "not in range -%u...%u).",
               command,stype,ctypel,string,ctyper,iind0,index_max,index_max - 1);
       if (uind1<0 || uind1>=(int)index_max)
-        error(true,"Command '%s': Invalid %s %c%s%c (contains index '%d', "
+        error(true,"Command '%s': Invalid %s %c%s%c (contains index %d, "
               "not in range -%u...%u).",
               command,stype,ctypel,string,ctyper,iind1,index_max,index_max - 1);
       for (int l = uind0; l<=uind1; l+=istep) is_selected[l] = true;
@@ -7493,7 +7493,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           gmic_use_title;
           cimg_snprintf(title,_title.width(),"%d",errcode);
           CImg<char>::string(title).move_to(status);
-          if (errcode) print(images,0,"Command 'exec' returned error code '%d'.",
+          if (errcode) print(images,0,"Command 'exec' returned error code %d.",
                              errcode);
 #endif // #ifdef gmic_noexec
           ++position; continue;
@@ -9014,7 +9014,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               iind0 = _iind0<0?_iind0 + (int)images.size():_iind0;
             if (iind0<0 || iind0>(int)images.size())
               error(true,images,0,0,
-                    "Command 'move': Invalid position '%d' (not in range -%u...%u).",
+                    "Command 'move': Invalid position %d (not in range -%u...%u).",
                     _iind0,images.size(),images.size() - 1);
             print(images,0,"Move image%s to position %d.",
                   gmic_selection.data(),
@@ -10289,7 +10289,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             const unsigned int ich = (unsigned int)opacity;
             if (ich!=420 && ich!=422 && ich!=444)
               error(true,images,0,0,
-                    "Command 'output': YUV file '%s', specified chroma subsampling '%g' is invalid.",
+                    "Command 'output': YUV file '%s', specified chroma subsampling %g is invalid.",
                     _filename.data(),opacity);
             g_list.assign(selection.height());
             cimg_forY(selection,l)
@@ -14869,7 +14869,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                     _filename0,dx,dy);
             if (ich!=420 && ich!=422 && ich!=444)
               error(true,images,0,0,
-                    "Command 'input': YUV file '%s', specified chroma subsampling '%g' is invalid.",
+                    "Command 'input': YUV file '%s', specified chroma subsampling %g is invalid.",
                     _filename0,ch);
             first_frame = cimg::round(first_frame);
             if (err>4) { // Load multiple frames
