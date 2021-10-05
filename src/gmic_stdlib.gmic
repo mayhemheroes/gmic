@@ -785,6 +785,20 @@ reference : skip "${2=}"
 "* Function 'echo(str1,str2,...,strN)' prints the concatenation of given string arguments on the console."\n\
 "* Function 'string(_#siz,str1,str2,...,strN)' generates a vector corresponding to the concatenation of given "\
 "string/number arguments."\n\
+"## Dynamic arrays:"\n\
+"A dynamic array is defined as a 1-column (or empty) image '[ind]' in the image list. "\
+"It allows elements to be added or removed, each having the same size "\
+"(which is actually the number of channels of image '[ind]'). "\
+"Dynamic arrays adapt their size to the number of elements they contain."\n\n\
+"A dynamic array can be manipulated in a math expression, with the following functions:"\n\
+"* 'dar_size(_#ind)': Return the number of elements in dynamic array '[ind]'."\n\
+"* 'dar_insert(_#ind,pos,elt_1,_elt_2,...,_elt_N)': Insert 'N' new elements 'elt_k' starting from index 'pos' "\
+"in dynamic array '[ind]'."\n\
+"* 'dar_push(_#ind,elt1,_elt2,...,_eltN)': Insert 'N' new elements 'elt_k' at the end of dynamic array '[ind]'."\n\
+"* 'dar_remove(_#ind,_start,_end)': Remove elements located between indices 'start' and 'end' "\
+"in dynamic array '[ind]'."\n\
+"* The value of the k-th element of dynamic array '[ind]' is retrieved with 'i[#ind,k]' (if elements are scalar), "\
+"or 'I[#ind,k]' (if elements are vectors)."\n\
 "## Special operators:"\n\
 "* ';': expression separator. The returned value is always the last encountered expression. "\
 "For instance expression '1;2;pi' is evaluated as 'pi'."\n\
@@ -21202,7 +21216,7 @@ nn_lib :
     #---------------------------------------------------------------------------
     begin(
       const nn_is_training = isnan($_nn_is_training)?0:$_nn_is_training;
-      const nn_optimizer = isnan($_nn_optimizer)?2:$_nn_optimizer; # Adam optimizer by default
+      const nn_optimizer = isnan($_nn_optimizer)?1:$_nn_optimizer; # Adam optimizer by default
       const nn_iteration = isnan($_nn_iteration)?0:$_nn_iteration;
       const nn_batch_iteration = isnan($_nn_batch_iteration)?0:$_nn_batch_iteration;
       const nn_nb_threads_max = n;
@@ -21287,6 +21301,17 @@ nn_lib :
     nn_activate_sqrt(Z) = _nn_activate_pointwise(Z,sqrt);
     nn_activate_deriv_sqrt(Z) = _nn_activate_pointwise(Z,deriv_sqrt);
 
+    # Swish.
+    #--------
+    nn_activation_swish(z) = (z*nn_activation_sigmoid(z));
+    nn_activation_deriv_swish(z) = (
+      _nn_sig = nn_activation_sigmoid(z);
+      _nn_swi = z*_nn_sig;
+      _nn_swi + _nn_sig*(1 - _nn_swi)
+    );
+    nn_activate_swish(Z) = _nn_activate_pointwise(Z,swish);
+    nn_activate_deriv_swish(Z) = _nn_activate_pointwise(Z,deriv_swish);
+
     # Tanh.
     #------
     nn_activation_tanh(z) = (tanh(z));
@@ -21302,13 +21327,6 @@ nn_lib :
     #-----------------------------
     nn_optimizer_sgd_update_layer(L_params,dL_params) = (
       L_params#-=nn_learning_rate*#dL_params;
-    );
-
-    # David optimizer.
-    #-----------------
-    nn_optimizer_david_update_layer(L_params,dL_params) = (
-      _dt = nn_learning_rate/abs(maxabs(1e-9,#dL_params));
-      L_params#-=_dt*#dL_params;
     );
 
     # Adam optimizer.
@@ -21370,14 +21388,13 @@ nn_lib :
     # Generic function that dispatches to selected optimizer.
     #--------------------------------------------------------
     begin(
-      nn_optimizer==2?nn_optimizer_adam_init_update_layer():    # Adam
-      nn_optimizer==3?nn_optimizer_adamax_init_update_layer();  # Adamax
+      nn_optimizer==1?nn_optimizer_adam_init_update_layer():    # Adam
+      nn_optimizer==2?nn_optimizer_adamax_init_update_layer();  # Adamax
     );
     nn_optimizer_update_layer(L,dL) = (
       !nn_optimizer?nn_optimizer_sgd_update_layer(#L,#dL):      # Stochastic gradient descent
-      nn_optimizer==1?nn_optimizer_david_update_layer(#L,#dL):  # David
-      nn_optimizer==2?nn_optimizer_adam_update_layer(#L,#dL):   # Adam
-      nn_optimizer==3?nn_optimizer_adamax_update_layer(#L,#dL); # Adamax
+      nn_optimizer==1?nn_optimizer_adam_update_layer(#L,#dL):   # Adam
+      nn_optimizer==2?nn_optimizer_adamax_update_layer(#L,#dL); # Adamax
     );
 
     # Strategy to adapt learning rate regarding loss decrease/increase.
@@ -23816,7 +23833,8 @@ stencilbw : skip ${1=15},${2=10}
 # 'init_max_gradient=0', 'patchsize_analysis=5', 'patchsize_synthesis=5', 'patchsize_synthesis_final=5', \
 # 'nb_matches_finest=2', 'nb_matchesc_coarsest=30', 'penalize_repetitions=10', 'matching_precision=2', \
 # 'scale_factor=1.85', 'skip_finest_scales=0' and \
-# 'image_matching_command'="s c,-3 transfer_pca[0] [2] b[0,2] xy,0.7 n[0,2] 0,255 n[1,2] 0,200 a[0,1] c a[1,2] c"'.
+# 'image_matching_command'="s c,-3 transfer_pca[0] [2] b[0,2] xy,0.7 n[0,2] 0,255 n[1,2] 0,200 \
+# a[0,1] c a[1,2] c"'.
 stylize :
   check ${"is_image_arg $1"}" && isnum(${2=0.5}) && isnum(${3=2}) && ${4=3}>=0 && ${5=0.5}>=0 && ${6=0.1}>=0 && "\
         "$6<=1 && isint(${7=0}) && $7>=0 && $7<=3 && isint(${8=16}) && $8>=0 && ${9=0}>=0 && isint(${10=5}) && "\
@@ -26451,39 +26469,41 @@ math_lib :
   );
 
   # Return number of elements in dynamic array #ind.
-  dar_size(ind) = i[#ind,whd(#ind)-1];
+  dar_size(ind) = i[#ind,h(#ind) - 1];
 
   # Return last element of a dynamic array
-  dar_Back(ind) = I[#ind,dar_size(#ind)-1];
-  dar_back(ind) = i[#ind,dar_size(#ind)-1];
+  dar_Back(ind) = I[#ind,dar_size(#ind) - 1];
+  dar_back(ind) = i[#ind,dar_size(#ind) - 1];
 
   # Inserts new element 'elt' into dynamic array #ind, at index [pos] ('pos' must be in [0,dar_size(#ind)]).
   dar_insert(ind,elt,pos) = (
-    _dar_pos = pos;
+    ref(pos,_dar_pos);
+    ref(elt,_dar_elt);
     _dar_siz = dar_size(#ind);
+    ref(max(1,s(#ind),size(_dar_elt)),_dar_sizelt);
     if (_dar_pos<=_dar_siz,
-      _dar_siz>=h(#ind) - 1?resize(#ind,1,_dar_siz*2 + 2,1,s(#ind),0);
-      for (_dar_c = 0, _dar_c<s(#ind), ++_dar_c,
+      _dar_siz>=h(#ind) - 1?resize(#ind,1,_dar_siz*2 + 2,1,_dar_sizelt,0);
+      for (_dar_c = 0, _dar_c<_dar_sizelt, ++_dar_c,
         copy(i(#ind,_dar_pos + 1,0,0,_dar_c),i(#ind,_dar_pos,0,0,_dar_c),_dar_siz - _dar_pos)
       );
-      unref(_dar_elt); _dar_elt = elt;
-      copy(i[#ind,_dar_pos],_dar_elt,max(1,size(_dar_elt)),h(#ind),1);
-      (dar_size(ind#)) = ++_dar_siz;
+      copy(i[#ind,_dar_pos],_dar_elt,_dar_sizelt,h(#ind),1);
+      i[#ind,h(#ind) - 1] = ++_dar_siz;
     );
   );
 
   # Inserts new element 'elt' at the end of dynamic array #ind.
   dar_insert(ind,elt) = (
+    ref(elt,_dar_elt);
     _dar_siz = dar_size(#ind);
-    _dar_siz>=h(#ind) - 1?resize(#ind,1,_dar_siz*2 + 2,1,s(#ind),0);
-    unref(_dar_elt); _dar_elt = elt;
-    copy(i[#ind,_dar_siz],_dar_elt,max(1,size(_dar_elt)),h(#ind),1);
-    (dar_size(ind#)) = ++_dar_siz;
+    ref(max(1,s(#ind),size(_dar_elt)),_dar_sizelt);
+    _dar_siz>=h(#ind) - 1?resize(#ind,1,_dar_siz*2 + 2,1,_dar_sizelt,0);
+    copy(i[#ind,_dar_siz],_dar_elt,_dar_sizelt,h(#ind),1);
+    i[#ind,h(#ind) - 1] = ++_dar_siz;
   );
 
   # Remove element from dynamic array #ind, at index [pos] ('pos' must be in [0,dar_size(#ind) - 1]).
   dar_remove(ind,pos) = (
-    _dar_pos = pos;
+    ref(pos,_dar_pos);
     _dar_siz = dar_size(#ind);
     if (_dar_pos<_dar_siz,
       _dar_siz = --dar_size(#ind);
@@ -27055,7 +27075,8 @@ _ovh2stats :
 
         ++ips;
       );
-      store([ips,gimp,krita,_8bf,paintdotnet,digikam,standalone,windows,linux,macos,bsd,unknown,prereleases],'features');
+      store([ips,gimp,krita,_8bf,paintdotnet,digikam,standalone,windows,linux,macos,bsd,unknown,prereleases],
+            'features');
       store(versions,'versions')"
     rm $features
     ips,gimp,krita,_8bf,paintdotnet,digikam,standalone,windows,linux,macos,bsd,unknown,prereleases={^}
@@ -50761,13 +50782,15 @@ nn_test_fc : check "${1=1e-4}>0 && isbool(${2=1})"
 #--------------------------------
 nn_test_conv :
 
+  srand 3
+
   # Build neural network.
   #----------------------
   nn_init
   nn_layer_input X,32,32,1,3
-  nn_layer_conv2dnl L1,X,3
+  nn_layer_conv2dnl L1,X,3,3,1,1,swish
   nn_layer_rename OUT,L1
-  nn_loss_mse L,OUT,Y
+  nn_loss_mse L,OUT,Y,0.01,0
   sp lena,32 nm. img
   [img] nm. res
 
@@ -50833,7 +50856,7 @@ nn_test : skip ${1=1e-4}
   l[img] s z repeat $! l[$>] g. xy a c endl done a z endl
 #  if isfile('stats.gmz') stats.gmz else 0 fi nm. stats
 
-  _nn_optimizer=2
+  _nn_optimizer=1
 
   # Optimize network.
   #------------------
