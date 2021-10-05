@@ -16936,7 +16936,7 @@ ssd_patch : check ${is_image_arg\ $1} skip ${2=0},${3=0}
 thinning : check "!isnum(${1=1}) || ($1>=0 && $1<=1)"
   if isnum($1) bc=$1 else bc=1 noarg fi
   e[^-1] "Apply morphological thinning to binary image$? with "\
-             ${"arg 1+"$bc",dirichlet,neumann"}" boundary conditions."
+         ${"arg 1+"$bc",dirichlet,neumann"}" boundary conditions."
   repeat $! l[$>] s c repeat $! l[$>]
                     # [0] = 2D binary shape (current iteration)
     1,16,1,2        # [1] = List of boundary pixels (current iteration)
@@ -16944,8 +16944,8 @@ thinning : check "!isnum(${1=1}) || ($1>=0 && $1<=1)"
     1,16,1,2        # [3] = List of boundary pixels (for next iteration)
 
     # Extract boundary pixels.
-    f[0] ">"${-math_lib}"const boundary = "$bc";
-          i && (!j(-1) || !j(1) || !j(0,-1) || !j(0,1))?dar_insert(#1,[x,y]); i;"
+    f[0] ">const boundary = "$bc";
+          i && (!j(-1) || !j(1) || !j(0,-1) || !j(0,1))?da_push(#1,[x,y]); i;"
 
     # Run thinning algorithm.
     eval ${-math_lib}"
@@ -16962,7 +16962,7 @@ thinning : check "!isnum(${1=1}) || ($1>=0 && $1<=1)"
       nind = 3;
       it = 0;
       do (
-        N = dar_size(#ind);
+        N = da_size(#ind);
         it8 = it%8;
         is_removed[it8] = 0;
 
@@ -16977,24 +16977,24 @@ thinning : check "!isnum(${1=1}) || ($1>=0 && $1<=1)"
             ref(crop(#0,xp,yp,3,3),V);
             val = dot(dotm,V>0);
             (val & hm_and[it8])==hm_eq[it8]?(
-              dar_insert(#2,[xc,yc]);
+              da_push(#2,[xc,yc]);
               is_removed[it8] = 1;
-              V[3]==1?(dar_insert(#nind,[xp,yc]); i(#0,xp,yc) = 2);
-              V[5]==1?(dar_insert(#nind,[xn,yc]); i(#0,xn,yc) = 2);
-              V[1]==1?(dar_insert(#nind,[xc,yp]); i(#0,xc,yp) = 2);
-              V[7]==1?(dar_insert(#nind,[xc,yn]); i(#0,xc,yn) = 2);
-            ):(dar_insert(#nind,[xc,yc]); i(#0,xc,yc) = 2);
+              V[3]==1?(da_push(#nind,[xp,yc]); i(#0,xp,yc) = 2);
+              V[5]==1?(da_push(#nind,[xn,yc]); i(#0,xn,yc) = 2);
+              V[1]==1?(da_push(#nind,[xc,yp]); i(#0,xc,yp) = 2);
+              V[7]==1?(da_push(#nind,[xc,yn]); i(#0,xc,yn) = 2);
+            ):(da_push(#nind,[xc,yc]); i(#0,xc,yc) = 2);
           );
         );
 
         # Re-assign value '1' to contour points.
-        N = dar_size(#nind);
+        N = da_size(#nind);
         repeat (N,n, i(#0,i[#nind,n],i[#nind,n + h(#nind)]) = 1);
         _tmp = ind; ind = nind; nind = _tmp;
         i[#nind,h(#nind)-1] = 0;
 
         # Remove matching contour points.
-        N = dar_size(#2);
+        N = da_size(#2);
         repeat (N,n, i(#0,I[#2,n]) = 0);
         i[#2,h(#2)-1] = 0;
         ++it;
