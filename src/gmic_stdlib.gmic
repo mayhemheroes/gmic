@@ -13076,13 +13076,13 @@ expand_z : check "$1>=0 && ${2=1}>=0 && $2<=3"
 extract : check "isin(${2=0},0,1,2,3)"
   s0,s1,s2,s3=xyzc-coordinates,xyz-coordinates,scalar-values,vector-values
   e[^-1] "Extract "$s$2" from image$? verifying condition '$1'."
-  str=">"${-math_lib}"begin(run('1,32,1,',arg(1+$2,4,3,1,s)));($1)?("
-  if $2==0   str.="dar_insert(#-1,[x,y,z,c]));i"
-  elif $2==1 str.="dar_insert(#-1,[x,y,z]));I"
-  elif $2==2 str.="dar_insert(#-1,i));i"
-  else       str.="dar_insert(#-1,I));I"
+  str=">begin(run('1,32,1,',arg(1+$2,4,3,1,s)));($1)?("
+  if $2==0   str.="da_push(#-1,[x,y,z,c]));i"
+  elif $2==1 str.="da_push(#-1,[x,y,z]));I"
+  elif $2==2 str.="da_push(#-1,i));i"
+  else       str.="da_push(#-1,I));I"
   fi
-  str.=";end(resize(#-1,1,dar_size(#-1),1,s(#-1),0))"
+  str.=";end(resize(#-1,1,da_size(#-1),1,s(#-1),0))"
   repeat $! nm={$>,n} eval[$>] $str nm. $nm rv[$>,-1] rm. done
 
 #@cli extract_region : [label_image],_extract_xyz_coordinates={ 0 | 1 },_label_1,...,_label_M
