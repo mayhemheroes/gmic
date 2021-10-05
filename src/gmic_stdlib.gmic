@@ -10255,38 +10255,38 @@ noise_poissondisk : check "${1=8}>0 && ${2=30}>0"
       prox = I#5;
       lim = I#1;
 
-      dar_insert(#3,I#1,0);               # dummy sample to simplify bounds checks
-      dar_insert(#3,u(I#1),1);            # add initial sample to list
-      dar_insert(#4,1,0);                 # add its index to active list
-      I(#2,int(I[#3,1]/grid_cw)) = 1;     # add its index to grid cell
-      I(#0,I[#3,1]) = value;              # draw the point
+      dar_insert(#3,I#1,0);               # Dummy sample to simplify bounds checks
+      dar_insert(#3,u(I#1),1);            # Add initial sample to list
+      dar_insert(#4,1,0);                 # Add its index to active list
+      I(#2,int(I[#3,1]/grid_cw)) = 1;     # Add its index to grid cell
+      I(#0,I[#3,1]) = value;              # Draw the point
 
       while (dar_size(#4)>0,
-        R = int(u(dar_size(#4)-1e-4));    # choose a random active list index
-        P = i[#4,R];                      # get the index of that sample
-        T = I[#3,P];                      # position vector of that sample
+        R = int(u(dar_size(#4)-1e-4));    # Choose a random active list index
+        P = i[#4,R];                      # Get the index of that sample
+        T = I[#3,P];                      # Position vector of that sample
 
         repeat (max_sample_attempts,attempts,
           do (S = 4*(u(vectorN(1)) - 0.5); M = mag2(S), M <= 1 || M > 4);
 
-          X = T + radius * S;             # potential sample from annulus around T
-          if (min(X)<0 || min(lim-X)<0, continue()); # check within bounds
+          X = T + radius * S;             # Potential sample from annulus around T
+          if (min(X)<0 || min(lim-X)<0, continue()); # Check within bounds
 
           # check proximity of surrounding points
-          G = int(X/grid_cw);             # grid cell position vector
+          G = int(X/grid_cw);             # Grid cell position vector
           GI = dot(G,dotoff);    # grid cell direct buffer index
 
           for (K = 0; rejected = 0, K<size(prox), ++K,
-            V = i[#2,GI+prox[K]];         # sample index from grid to check
+            V = i[#2,GI+prox[K]];         # Sample index from grid to check
             if (V>0 && mag2(I[#3,V]-X)<sqr(radius), rejected = 1; break())
           );
 
           if (!rejected,
-            Q = dar_size(#3);               # sample found, get new index
-            dar_insert(#3,X);               # insert into samples list
-            dar_insert(#4,Q);               # insert its index into active
-            I(#2,G) = Q;                    # insert its index into grid
-            I(#0,X) = value;                # draw the point
+            Q = dar_size(#3);             # Sample found, get new index
+            dar_insert(#3,X);             # Insert into samples list
+            dar_insert(#4,Q);             # Insert its index into active
+            I(#2,G) = Q;                  # Insert its index into grid
+            I(#0,X) = value;              # Draw the point
             break();
           );
         );
