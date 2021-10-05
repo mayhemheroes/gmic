@@ -786,8 +786,8 @@ reference : skip "${2=}"
 "* Function 'string(_#siz,str1,str2,...,strN)' generates a vector corresponding to the concatenation of given "\
 "string/number arguments."\n\
 "## Dynamic arrays:"\n\
-"A dynamic array is defined as a 1-column (or empty) image '[ind]' in the image list. "\
-"It allows elements to be added or removed, each having the same size "\
+"A dynamic array is defined as a one-column (or empty) image '[ind]' in the image list. "\
+"It allows elements to be added or removed, each element having the same dimension "\
 "(which is actually the number of channels of image '[ind]'). "\
 "Dynamic arrays adapt their size to the number of elements they contain."\n\n\
 "A dynamic array can be manipulated in a math expression, with the following functions:"\n\
@@ -797,8 +797,9 @@ reference : skip "${2=}"
 "* 'da_push(_#ind,elt1,_elt2,...,_eltN)': Insert 'N' new elements 'elt_k' at the end of dynamic array '[ind]'."\n\
 "* 'da_remove(_#ind,_start,_end)': Remove elements located between indices 'start' and 'end' (included) "\
 "in dynamic array '[ind]'."\n\
-"* The value of the k-th element of dynamic array '[ind]' is retrieved with 'i[#ind,k]' (if the element is a "\
-"scalar value), or 'I[#ind,k]' (if the element is a vector)."\n\
+"* The value of the k-th element of dynamic array '[ind]' is retrieved with 'i[_#ind,k]' (if the element is a "\
+"scalar value), or 'I[_#ind,k]' (if the element is a vector)."\n\n\
+"In the functions above, argument '#ind' may be omitted in which case it is assumed to be '#-1'."\n\
 "## Special operators:"\n\
 "* ';': expression separator. The returned value is always the last encountered expression. "\
 "For instance expression '1;2;pi' is evaluated as 'pi'."\n\
@@ -7610,7 +7611,7 @@ update_deprecate : check "isint($1) && $1>0 && $1<999"
 
 # update_download_version.
 # Update file versions on G'MIC download page, with specified version number.
-# $1 = version number (e.g. '2.9.9').
+# $1 = version number (e.g. '3.0.0').
 update_download_version : check "
     is_digit(c)=(c>=_'0' && c<=_'9');
     ver = ['${1=undefined}'];
@@ -8814,7 +8815,7 @@ upload_filters :
   x "cd "$HOME"/work/src/gmic-community && git pull"
 
   # Define the list of compatible versions.
-  (299,300,$_version) store. compat
+  (300,$_version) store. compat
 
   # Import filters from stdlib and community.
   files $HOME/work/src/gmic-community/include/*.gmic
@@ -10240,7 +10241,7 @@ noise_poissondisk : check "${1=8}>0 && ${2=30}>0"
     f. "P=[x,y,z]-int([w/2,h/2,d/2]);[sum(sqr(P)),dot(P,[1,w#2,w#2*h#2])]"
     r. {[whd,s,1,1,-1]} sort. +,x z. 0,1,100%,100% y. c # sort kernel by distance
     nm[1] dims nm[2] grid nm[3] samples nm[4] active nm[5] prox
-    eval ${-math_lib}"
+    eval "
       begin(
         dotoff = resize([ 1,w#2,w#2*h#2 ],d#2>1?3:h#2>1?2:1,0);
       );
@@ -10253,42 +10254,42 @@ noise_poissondisk : check "${1=8}>0 && ${2=30}>0"
       prox = I#5;
       lim = I#1;
 
-      dar_insert(#3,I#1,0);               # dummy sample to simplify bounds checks
-      dar_insert(#3,u(I#1),1);            # add initial sample to list
-      dar_insert(#4,1,0);                 # add its index to active list
-      I(#2,int(I[#3,1]/grid_cw)) = 1;     # add its index to grid cell
-      I(#0,I[#3,1]) = value;              # draw the point
+      da_push(#3,I#1);                    # Dummy sample to simplify bounds checks
+      da_push(#3,u(I#1));                 # Add initial sample to list
+      da_push(#4,1);                      # Add its index to active list
+      I(#2,int(I[#3,1]/grid_cw)) = 1;     # Add its index to grid cell
+      I(#0,I[#3,1]) = value;              # Draw the point
 
-      while (dar_size(#4)>0,
-        R = int(u(dar_size(#4)-1e-4));    # choose a random active list index
-        P = i[#4,R];                      # get the index of that sample
-        T = I[#3,P];                      # position vector of that sample
+      while (da_size(#4)>0,
+        R = int(u(da_size(#4) - 1e-4));   # Choose a random active list index
+        P = i[#4,R];                      # Get the index of that sample
+        T = I[#3,P];                      # Position vector of that sample
 
         repeat (max_sample_attempts,attempts,
           do (S = 4*(u(vectorN(1)) - 0.5); M = mag2(S), M <= 1 || M > 4);
 
-          X = T + radius * S;             # potential sample from annulus around T
-          if (min(X)<0 || min(lim-X)<0, continue()); # check within bounds
+          X = T + radius * S;             # Potential sample from annulus around T
+          if (min(X)<0 || min(lim-X)<0, continue()); # Check within bounds
 
           # check proximity of surrounding points
-          G = int(X/grid_cw);             # grid cell position vector
+          G = int(X/grid_cw);             # Grid cell position vector
           GI = dot(G,dotoff);    # grid cell direct buffer index
 
           for (K = 0; rejected = 0, K<size(prox), ++K,
-            V = i[#2,GI+prox[K]];         # sample index from grid to check
+            V = i[#2,GI+prox[K]];         # Sample index from grid to check
             if (V>0 && mag2(I[#3,V]-X)<sqr(radius), rejected = 1; break())
           );
 
           if (!rejected,
-            Q = dar_size(#3);               # sample found, get new index
-            dar_insert(#3,X);               # insert into samples list
-            dar_insert(#4,Q);               # insert its index into active
-            I(#2,G) = Q;                    # insert its index into grid
-            I(#0,X) = value;                # draw the point
+            Q = da_size(#3);              # Sample found, get new index
+            da_push(#3,X);                # Insert into samples list
+            da_push(#4,Q);                # Insert its index into active
+            I(#2,G) = Q;                  # Insert its index into grid
+            I(#0,X) = value;              # Draw the point
             break();
           );
         );
-        if (attempts==max_sample_attempts, dar_remove(#4,R));
+        if (attempts==max_sample_attempts, da_remove(#4,R));
       )"
     k[0]
   endl done
@@ -10925,19 +10926,19 @@ colormap : check "isint($1) && $1>=0" skip ${2=1},${3=1}
 
       # Find single occurrence of each color/vector.
       1,1,1,.. .x2047
-      eval[0] ">"${-math_lib}"
+      eval[0] ">
         begin( ret = vectors(); col_r = vectors() );
         col_s = I;
         H = 2 + i#1;
-        sH = dar_size(#H);
+        sH = da_size(#H);
         is_found = 0;
         repeat (sH,p,
           copy(col_r,i[#H,p],s#0,1,h(#H));
           col_r==col_s?(is_found = 1; break());
         );
-        !is_found?dar_insert(#H,col_s);
+        !is_found?da_push(#H,col_s);
         ret;
-        end(repeat (l - 2,p, resize(#2 + p,1,dar_size(#2 + p),1,s#0,0)))"
+        end(repeat (l - 2,p, resize(#2 + p,1,da_size(#2 + p),1,s#0,0)))"
       a[2--1] y transpose. k.
     fi
 
@@ -13074,13 +13075,13 @@ expand_z : check "$1>=0 && ${2=1}>=0 && $2<=3"
 extract : check "isin(${2=0},0,1,2,3)"
   s0,s1,s2,s3=xyzc-coordinates,xyz-coordinates,scalar-values,vector-values
   e[^-1] "Extract "$s$2" from image$? verifying condition '$1'."
-  str=">"${-math_lib}"begin(run('1,32,1,',arg(1+$2,4,3,1,s)));($1)?("
-  if $2==0   str.="dar_insert(#-1,[x,y,z,c]));i"
-  elif $2==1 str.="dar_insert(#-1,[x,y,z]));I"
-  elif $2==2 str.="dar_insert(#-1,i));i"
-  else       str.="dar_insert(#-1,I));I"
+  str=">begin(run('1,32,1,',arg(1+$2,4,3,1,s)));($1)?("
+  if $2==0   str.="da_push([x,y,z,c]));i"
+  elif $2==1 str.="da_push([x,y,z]));I"
+  elif $2==2 str.="da_push(i));i"
+  else       str.="da_push(I));I"
   fi
-  str.=";end(resize(#-1,1,dar_size(#-1),1,s(#-1),0))"
+  str.=";end(resize(#-1,1,da_size(),1,s(#-1),0))"
   repeat $! nm={$>,n} eval[$>] $str nm. $nm rv[$>,-1] rm. done
 
 #@cli extract_region : [label_image],_extract_xyz_coordinates={ 0 | 1 },_label_1,...,_label_M
@@ -13094,7 +13095,7 @@ extract_region : check ${"is_image_arg $1"}" && isnum(${2=0})"
   e[^-1] "Extract pixels of image$? for labels {${3--1}} in image $1, with"${"arg 1+!!$2,out"}" coordinates."
   pass$1 mv. 0 repeat $!-1 l[0,{1+$<}] nm={n}
     1,16,1,{s+($2?3:0)} if $#>3 .x{$#-3} fi
-    f[0] ">"${-math_lib}"
+    f[0] ">
       begin(
         const N = iM + 1;  # Number of labels
         R = [ ${3--1} ];   # Requested labels
@@ -13102,10 +13103,10 @@ extract_region : check ${"is_image_arg $1"}" && isnum(${2=0})"
         repeat (size(R),k, hash[R[k]] = k + 2);
       );
       (ind = hash[i])>0?(
-        $2?dar_insert(#ind,[ I(#1),x,y,z ]):dar_insert(#ind,I(#1));
+        $2?da_push(#ind,[ I(#1),x,y,z ]):da_push(#ind,I(#1));
       ); i;
       end(
-        repeat (l - 2,k, resize(#k + 2,1,dar_size(#k + 2),1,-100,0))
+        repeat (l - 2,k, resize(#k + 2,1,da_size(#k + 2),1,-100,0))
       )"
     rm[1] nm $nm
   endl done rm[0]
@@ -16184,30 +16185,30 @@ delaunay : skip "${1=0}"
 
     # Extract and label non-zero pixels.
     1,64,1,2 =. 1,0,100%
-    f.. ${-math_lib}"begin(N = 0); I!=0?(dar_insert(#-1,[x,y]);++N):0; end(resize(#-1,1,dar_size(#-1),1,2,0))"
+    f.. "begin(N = 0); I!=0?(da_push([x,y]);++N):0; end(resize(#-1,1,da_size(),1,2,0))"
 
     # Construct discrete voronoi diagram.
     +neq.. 0 distance. 1 *. -1 watershed... . rm.
 
     # Extract Delaunay triangles from discrete voronoi.
     1,64,1,3
-    eval... ${-math_lib}"
+    eval... "
       V = crop(x,y,2,2);
       min(V)?(
         V[1]==V[0] && V[2]!=V[0] && V[3]!=V[0] && V[3]!=V[2]?( # [ a,a,b,c ]
-          dar_insert(#-1,[ V[0],V[2],V[3] ]);
+          da_push([ V[0],V[2],V[3] ]);
         ):(V[2]==V[0] && V[1]!=V[0] && V[3]!=V[0] && V[3]!=V[1]) || # [ a,b,a,c ]
           (V[1]==V[2] && V[0]!=V[1] && V[3]!=V[0] && V[3]!=V[1])?(  # [ a,b,b,c ]
-          dar_insert(#-1,[ V[0],V[1],V[3] ]);
+          da_push([ V[0],V[1],V[3] ]);
         ):(V[3]==V[0] && V[1]!=V[0] && V[2]!=V[0] && V[2]!=V[1]) || # [ a,b,c,a ]
           (V[1]==V[3] && V[0]!=V[1] && V[2]!=V[0] && V[2]!=V[1]) || # [ a,b,c,b ]
           (V[2]==V[3] && V[0]!=V[1] && V[0]!=V[2] && V[1]!=V[2]) ?( # [ a,b,c,c ]
-          dar_insert(#-1,[ V[0],V[1],V[2] ]);
+          da_push([ V[0],V[1],V[2] ]);
         ):V[0]!=V[1] && V[0]!=V[2] && V[0]!=V[3] && V[1]!=V[2] && V[1]!=V[3] && V[2]!=V[3]?( # [ a,b,c,d ]
-          dar_insert(#-1,[ V[0],V[1],V[2] ]);
-          dar_insert(#-1,[ V[1],V[3],V[2] ]);
+          da_push([ V[0],V[1],V[2] ]);
+          da_push([ V[1],V[3],V[2] ]);
         );
-        end(resize(#-1,1,dar_size(#-1),1,3,0));
+        end(resize(#-1,1,da_size(),1,3,0));
       )"
 
     # Return output in expected mode.
@@ -16765,11 +16766,11 @@ skeleton : check "!isnum(${1=1}) || ($1>=0 && $1<=1)"
         (i>j(-1)&&i>j(1)) || (i>j(0,-1)&&i>j(0,1)) || (i>j(-1,-1)&&i>j(1,1)) || (i>j(-1,1)&&i>j(1,-1))"
 
     # Extract boundary pixels.
-    f[0] ">"${-math_lib}"const boundary = "$bc";
-          i && (!j(-1) || !j(1) || !j(0,-1) || !j(0,1))?dar_insert(#1,[x,y]); i;"
+    f[0] ">const boundary = "$bc";
+          i && (!j(-1) || !j(1) || !j(0,-1) || !j(0,1))?da_push(#1,[x,y]); i;"
 
     # Run thinning algorithm.
-    eval ${-math_lib}"
+    eval "
       const boundary = "$bc";
 
       # Lookup tables for detecting the simple points.
@@ -16785,7 +16786,7 @@ skeleton : check "!isnum(${1=1}) || ($1>=0 && $1<=1)"
       # Start thinning iterations.
       while (is_removed,
         is_removed = 0;
-        N = dar_size(#1);
+        N = da_size(#1);
         repeat (N,n,
           xc = i(#1,0,n,0,0);
           yc = i(#1,0,n,0,1);
@@ -16798,11 +16799,11 @@ skeleton : check "!isnum(${1=1}) || ($1>=0 && $1<=1)"
             is_removable[val]?(
               i(#0,xc,yc) = 0;
               is_removed = 1;
-              V[3]==1?(dar_insert(#2,[xp,yc]); i(#0,xp,yc) = 2);
-              V[5]==1?(dar_insert(#2,[xn,yc]); i(#0,xn,yc) = 2);
-              V[1]==1?(dar_insert(#2,[xc,yp]); i(#0,xc,yp) = 2);
-              V[7]==1?(dar_insert(#2,[xc,yn]); i(#0,xc,yn) = 2);
-            ):(dar_insert(#2,[xc,yc]); i(#0,xc,yc) = 2);
+              V[3]==1?(da_push(#2,[xp,yc]); i(#0,xp,yc) = 2);
+              V[5]==1?(da_push(#2,[xn,yc]); i(#0,xn,yc) = 2);
+              V[1]==1?(da_push(#2,[xc,yp]); i(#0,xc,yp) = 2);
+              V[7]==1?(da_push(#2,[xc,yn]); i(#0,xc,yn) = 2);
+            ):(da_push(#2,[xc,yc]); i(#0,xc,yc) = 2);
           )
         );
         resize(#1,1,h(#2),1,2,0);
@@ -16935,7 +16936,7 @@ ssd_patch : check ${is_image_arg\ $1} skip ${2=0},${3=0}
 thinning : check "!isnum(${1=1}) || ($1>=0 && $1<=1)"
   if isnum($1) bc=$1 else bc=1 noarg fi
   e[^-1] "Apply morphological thinning to binary image$? with "\
-             ${"arg 1+"$bc",dirichlet,neumann"}" boundary conditions."
+         ${"arg 1+"$bc",dirichlet,neumann"}" boundary conditions."
   repeat $! l[$>] s c repeat $! l[$>]
                     # [0] = 2D binary shape (current iteration)
     1,16,1,2        # [1] = List of boundary pixels (current iteration)
@@ -16943,11 +16944,11 @@ thinning : check "!isnum(${1=1}) || ($1>=0 && $1<=1)"
     1,16,1,2        # [3] = List of boundary pixels (for next iteration)
 
     # Extract boundary pixels.
-    f[0] ">"${-math_lib}"const boundary = "$bc";
-          i && (!j(-1) || !j(1) || !j(0,-1) || !j(0,1))?dar_insert(#1,[x,y]); i;"
+    f[0] ">const boundary = "$bc";
+          i && (!j(-1) || !j(1) || !j(0,-1) || !j(0,1))?da_push(#1,[x,y]); i;"
 
     # Run thinning algorithm.
-    eval ${-math_lib}"
+    eval "
       const boundary = "$bc";
 
       # Lookup tables for detecting the 8 3x3 hit&miss.
@@ -16961,7 +16962,7 @@ thinning : check "!isnum(${1=1}) || ($1>=0 && $1<=1)"
       nind = 3;
       it = 0;
       do (
-        N = dar_size(#ind);
+        N = da_size(#ind);
         it8 = it%8;
         is_removed[it8] = 0;
 
@@ -16976,24 +16977,24 @@ thinning : check "!isnum(${1=1}) || ($1>=0 && $1<=1)"
             ref(crop(#0,xp,yp,3,3),V);
             val = dot(dotm,V>0);
             (val & hm_and[it8])==hm_eq[it8]?(
-              dar_insert(#2,[xc,yc]);
+              da_push(#2,[xc,yc]);
               is_removed[it8] = 1;
-              V[3]==1?(dar_insert(#nind,[xp,yc]); i(#0,xp,yc) = 2);
-              V[5]==1?(dar_insert(#nind,[xn,yc]); i(#0,xn,yc) = 2);
-              V[1]==1?(dar_insert(#nind,[xc,yp]); i(#0,xc,yp) = 2);
-              V[7]==1?(dar_insert(#nind,[xc,yn]); i(#0,xc,yn) = 2);
-            ):(dar_insert(#nind,[xc,yc]); i(#0,xc,yc) = 2);
+              V[3]==1?(da_push(#nind,[xp,yc]); i(#0,xp,yc) = 2);
+              V[5]==1?(da_push(#nind,[xn,yc]); i(#0,xn,yc) = 2);
+              V[1]==1?(da_push(#nind,[xc,yp]); i(#0,xc,yp) = 2);
+              V[7]==1?(da_push(#nind,[xc,yn]); i(#0,xc,yn) = 2);
+            ):(da_push(#nind,[xc,yc]); i(#0,xc,yc) = 2);
           );
         );
 
         # Re-assign value '1' to contour points.
-        N = dar_size(#nind);
+        N = da_size(#nind);
         repeat (N,n, i(#0,i[#nind,n],i[#nind,n + h(#nind)]) = 1);
         _tmp = ind; ind = nind; nind = _tmp;
         i[#nind,h(#nind)-1] = 0;
 
         # Remove matching contour points.
-        N = dar_size(#2);
+        N = da_size(#2);
         repeat (N,n, i(#0,I[#2,n]) = 0);
         i[#2,h(#2)-1] = 0;
         ++it;
@@ -33977,7 +33978,7 @@ fx_gmicky_preview :
 #@gui : - <b>2019/12/04</b> : version <i>2.8.0</i>.\n
 #@gui : - <b>2020/03/28</b> : version <i>2.9.0</i>.\n
 #@gui : - <span foreground="purple"><b>2021/09/02</b> : version <i>2.9.9</i> (Current stable).</span>\n
-##@gui : - <b>2021/08/03</b> : version <i>2.9.9</i> (Current pre-release).\n
+#@gui : - <b>2021/10/05</b> : version <i>3.0.0</i> (Current pre-release).\n
 #@gui : "}
 #@gui : sep = separator()
 #@gui : url = link{"View changelog to upcoming major version (3.0)","https://discuss.pixls.us/t/on-the-road-to-3-0"}
@@ -46507,7 +46508,7 @@ fx_triangular_pattern :
   if !$! 1024,1024,1,3 fi
   W,H={0,[w,h]} f={arg0($14,1,1.5,2,3,4)*100} r[0] $f%,$f%,1,100%
   1,1,1,6
-  eval ${-math_lib}"
+  eval "
 
     # Init parameters for random generator.
     srand($1);
@@ -46519,41 +46520,41 @@ fx_triangular_pattern :
 
     # Create set of subdivided triangles.
     C = [ w#0,h#0 ]/2;
-    dar_insert(#-1,[ C,0,h#0-1,0,0 ]);
-    dar_insert(#-1,[ C,w#0-1,0,0,0 ]);
-    dar_insert(#-1,[ C,w#0-1,0,w#0-1,h#0-1 ]);
-    dar_insert(#-1,[ C,0,h#0-1,w#0-1,h#0-1 ]);
+    da_push([ C,0,h#0-1,0,0 ],
+            [ C,w#0-1,0,0,0 ],
+            [ C,w#0-1,0,w#0-1,h#0-1 ],
+            [ C,0,h#0-1,w#0-1,h#0-1 ]);
     repeat($2,
       n = int(u(pn5))%pn5;
       n = n<pn1?0:n<pn2?1:n<pn3?2:n<pn4?3:4;
       is_hole = u<=$8%;
-      repeat(dar_size(#-1),k,
+      repeat(da_size(),k,
         F = I[k]; P0 = F[0,2]; P1 = F[2,2]; P2 = F[4,2];
         n==0?(
           P = lerp(P1,P2,0.5);
-          dar_insert(#-1,[ P0,P,P1 ]);
+          da_push([ P0,P,P1 ]);
           I[k] = [ P0,P,P2 ];
         ):n==1?(
           P = lerp(P0,P2,0.5);
-          dar_insert(#-1,[ P1,P,P0 ]);
+          da_push([ P1,P,P0 ]);
           I[k] = [ P1,P,P2 ];
         ):n==2?(
           P = lerp(P0,P1,0.5);
-          dar_insert(#-1,[ P2,P,P0 ]);
+          da_push([ P2,P,P0 ]);
           I[k] = [ P2,P,P1 ];
         ):n==3?(
           P = (P0 + P1 + P2)/3;
-          dar_insert(#-1,[ P,P0,P1 ]);
-          dar_insert(#-1,[ P,P1,P2 ]);
+          da_push([ P,P0,P1 ]);
+          da_push([ P,P1,P2 ]);
           I[k] = [ P,P2,P0 ];
         ):(
           P01 = lerp(P0,P1,0.5); P02 = lerp(P0,P2,0.5); P12 = lerp(P1,P2,0.5);
-          dar_insert(#-1,[ P0,P01,P02 ]);
-          dar_insert(#-1,[ P1,P12,P01 ]);
+          da_push([ P0,P01,P02 ]);
+          da_push([ P1,P12,P01 ]);
           is_hole?( # Hole
             I[k] = [ P2,P02,P12 ];
           ):( # No hole
-            dar_insert(#-1,[ P2,P02,P12 ]);
+            da_push([ P2,P02,P12 ]);
             I[k] = [ P01,P02,P12 ];
           );
         );
@@ -46561,7 +46562,7 @@ fx_triangular_pattern :
     );
 
     # Draw triangles.
-    repeat(dar_size(#-1),k,
+    repeat(da_size(),k,
       F = I[k];
       polygon(#0,3,F,$9%,u([255,255,255]));
       polygon(#0,-3,F,$13%/3,0xFFFFFFFF,$10,$11,$12,255);
@@ -49242,7 +49243,7 @@ _fx_tree:
     # Compute tree geometry.
     repeat $recursion_depth
       1,8,1,9
-      eval.. >${-math_lib}"
+      eval.. ">
         const dangle = "$avg_rightangle" - "$avg_leftangle";
         ref(I,val);
         ref(val[0,2],P0);
@@ -49271,9 +49272,9 @@ _fx_tree:
           nthickness = thickness*("$avg_thickness" + u(-1,1)*"$std_thickness")%;
           Q0 = nB + nthickness*orth;
           Q1 = nB - nthickness*orth;
-          dar_insert(#-1,[ P3,P2,Q1,Q0,ndepth ]);
+          da_push([ P3,P2,Q1,Q0,ndepth ]);
         );
-        end(resize(#-1,1,dar_size(#-1),1,s#-1,0)); val"
+        end(resize(#-1,1,da_size(),1,s#-1,0)); val"
     done
     a y
 
