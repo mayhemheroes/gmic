@@ -21420,7 +21420,7 @@ nn_lib :
         ):L#_trend_moment<0?( # Global loss decrease
           ++L#_nb_decreases;
           L#_nb_decreases>=4?( # Global loss decrease -> slightly increase learning rate
-            L#_learning_rate = min(L#_learning_rate*1.15,1);
+            L#_learning_rate = min(L#_learning_rate*1.15,0.1);
             L#_nb_decreases = 0;
           );
         );
@@ -50727,12 +50727,12 @@ nn_test_fc : check "${1=1e-4}>0 && isbool(${2=1})"
   nn_init
   nn_layer_input X,2
   nn_layer_batchnorm BN,X
-  nn_layer_fcnl FC1,BN,100
-  nn_layer_fcnl FC2,FC1,50
-  nn_layer_fcnl FC3,FC2,50
-  nn_layer_fcnl FC4,FC3,30
-  nn_layer_fcnl FC5,FC4,30
-  nn_layer_fcnl FC6,FC5,3
+  nn_layer_fcnl FC1,BN,100,relu
+  nn_layer_fcnl FC2,FC1,50,relu
+  nn_layer_fcnl FC3,FC2,50,relu
+  nn_layer_fcnl FC4,FC3,30,relu
+  nn_layer_fcnl FC5,FC4,30,relu
+  nn_layer_fcnl FC6,FC5,3,relu
   nn_layer_rename OUT,FC6
   nn_loss_mse L,OUT,Y,$1,$2
   sp lena,128 nm. img
@@ -50789,9 +50789,9 @@ nn_test_conv :
   #----------------------
   nn_init
   nn_layer_input X,32,32,1,3
-  nn_layer_conv2dnl L1,X,3,3,1,1,swish
+  nn_layer_conv2dnl L1,X,3,3,1,1,sqr
   nn_layer_rename OUT,L1
-  nn_loss_mse L,OUT,Y,0.01,0
+  nn_loss_mse L,OUT,Y,0.01
   sp lena,32 nm. img
   [img] nm. res
 
