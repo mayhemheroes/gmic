@@ -7026,17 +7026,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 name = images_names[uind];
                 CImg<T> path(1),
                   dist = img.get_distance_dijkstra((T)nvalue,custom_metric,algorithm==4,path);
-                if (is_get) {
-                  images_names.insert(2,name.copymark());
-                  dist.move_to(images,~0U);
-                  path.move_to(images,~0U);
-                } else {
-                  off+=1;
-                  dist.move_to(images[uind].assign());
-                  path.move_to(images,uind + 1);
-                  images_names[uind] = name;
-                  images_names.insert(name.copymark(),uind + 1);
-                }
+                dist.append(path,'c');
+                if (is_get) { images_names.insert(name.copymark()); dist.move_to(images,~0U); }
+                else { dist.move_to(images[uind].assign()); images_names[uind] = name; }
               }
           } else arg_error("distance");
           is_change = true; ++position; continue;
