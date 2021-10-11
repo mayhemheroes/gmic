@@ -10273,7 +10273,7 @@ noise_poissondisk : check "${1=8}>0 && ${2=30}>0"
 
           # check proximity of surrounding points
           G = int(X/grid_cw);             # Grid cell position vector
-          GI = dot(G,dotoff);    # grid cell direct buffer index
+          GI = dot(G,dotoff);             # Grid cell direct buffer index
 
           for (K = 0; rejected = 0, K<size(prox), ++K,
             V = i[#2,GI+prox[K]];         # Sample index from grid to check
@@ -16518,26 +16518,23 @@ minimal_path : check "$1>=0 && $2>=0 && $3>=0" skip ${7=0}
          ${arg\ 1+$7,low,high}" connectivity."
   repeat $! l[$>] nm={0,n}
     - {im} + {iM/100}
-    100%,100% = 1,${4-6} distance. 1,[0],{if($7,4,3)} k.
-    x={round(if(${is_percent\ $1},$1*(w-1),$1))}
-    y={round(if(${is_percent\ $2},$2*(h-1),$2))}
-    z={round(if(${is_percent\ $3},$3*(d-1),$3))}
-    ($x;$y;$z)
-    do
-      p={0,i($x,$y,$z)}
-      if $p&1 x-=1
-      elif $p&2 x+=1
-      fi
-      if $p&4 y-=1
-      elif $p&8 y+=1
-      fi
-      if $p&16 z-=1
-      elif $p&32 z+=1
-      fi
-      ($x;$y;$z)
-    while $p
-    rm[0,-1] a x
-  nm $nm endl done
+    100%,100% = 1,${4-6} distance. 1,[0],{if($7,4,3)} k. channels. 1
+    i[0] 0
+    eval "
+      is_percent(str) = (unref(_is_pct); _is_pct=['#str']; _is_pct[size(_is_pct) - 1]==_'%');
+      x = round(is_percent($1)?$1*(w - 1):$1);
+      y = round(is_percent($2)?$2*(h - 1):$2);
+      z = round(is_percent($3)?$3*(d - 1):$3);
+      da_push(#0,[x,y,z]);
+      do (
+        p = i(x,y,z);
+        p&1?--x:p&2?++x;
+        p&4?--y:p&8?++y;
+        p&16?--z:p&32?++z;
+        da_push(#0,[x,y,z]),
+      _(while) p);
+      resize(#0,1,da_size(#0),1,3,0)"
+    rm. nm $nm endl done
 
 #@cli mse
 #@cli : Compute MSE (Mean-Squared Error) matrix between selected images.
@@ -21420,7 +21417,7 @@ nn_lib :
         ):L#_trend_moment<0?( # Global loss decrease
           ++L#_nb_decreases;
           L#_nb_decreases>=4?( # Global loss decrease -> slightly increase learning rate
-            L#_learning_rate = min(L#_learning_rate*1.15,1);
+            L#_learning_rate = min(L#_learning_rate*1.15,0.1);
             L#_nb_decreases = 0;
           );
         );
@@ -30589,7 +30586,7 @@ x_pacman : check_display $0
 
       # Precompute valid directions on each map point, and shortest path to the ghost's home.
       +shift[map] -1,0 +shift[map] 0,-1 +shift[map] 1,0 +shift[map] 0,1 a[-4--1] z !=. 1 nm. can_go
-      +==[map] 1 100%,100% =. 1,$mw2,$mh2 distance. 1,..,3 rm..
+      +==[map] 1 100%,100% =. 1,$mw2,$mh2 distance. 1,..,3 channels. 100%
       f. 'if(i==2,0,if(i==8,1,if(i==1,2,if(i==4,3,i))))' nm. path
       +==[map] 2 pacdots={is} rm.
       level={-$level}
@@ -50727,12 +50724,12 @@ nn_test_fc : check "${1=1e-4}>0 && isbool(${2=1})"
   nn_init
   nn_layer_input X,2
   nn_layer_batchnorm BN,X
-  nn_layer_fcnl FC1,BN,100
-  nn_layer_fcnl FC2,FC1,50
-  nn_layer_fcnl FC3,FC2,50
-  nn_layer_fcnl FC4,FC3,30
-  nn_layer_fcnl FC5,FC4,30
-  nn_layer_fcnl FC6,FC5,3
+  nn_layer_fcnl FC1,BN,100,relu
+  nn_layer_fcnl FC2,FC1,50,relu
+  nn_layer_fcnl FC3,FC2,50,relu
+  nn_layer_fcnl FC4,FC3,30,relu
+  nn_layer_fcnl FC5,FC4,30,relu
+  nn_layer_fcnl FC6,FC5,3,relu
   nn_layer_rename OUT,FC6
   nn_loss_mse L,OUT,Y,$1,$2
   sp lena,128 nm. img
@@ -50789,9 +50786,9 @@ nn_test_conv :
   #----------------------
   nn_init
   nn_layer_input X,32,32,1,3
-  nn_layer_conv2dnl L1,X,3,3,1,1,swish
+  nn_layer_conv2dnl L1,X,3,3,1,1,sqr
   nn_layer_rename OUT,L1
-  nn_loss_mse L,OUT,Y,0.01,0
+  nn_loss_mse L,OUT,Y,0.01
   sp lena,32 nm. img
   [img] nm. res
 
