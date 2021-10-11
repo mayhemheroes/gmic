@@ -16519,25 +16519,22 @@ minimal_path : check "$1>=0 && $2>=0 && $3>=0" skip ${7=0}
   repeat $! l[$>] nm={0,n}
     - {im} + {iM/100}
     100%,100% = 1,${4-6} distance. 1,[0],{if($7,4,3)} k.
-    x={round(if(${is_percent\ $1},$1*(w-1),$1))}
-    y={round(if(${is_percent\ $2},$2*(h-1),$2))}
-    z={round(if(${is_percent\ $3},$3*(d-1),$3))}
-    ($x;$y;$z)
-    do
-      p={0,i($x,$y,$z)}
-      if $p&1 x-=1
-      elif $p&2 x+=1
-      fi
-      if $p&4 y-=1
-      elif $p&8 y+=1
-      fi
-      if $p&16 z-=1
-      elif $p&32 z+=1
-      fi
-      ($x;$y;$z)
-    while $p
-    rm[0,-1] a x
-  nm $nm endl done
+    i[0] 0
+    eval "
+      is_percent(str) = (unref(_is_pct); _is_pct=['#str']; _is_pct[size(_is_pct) - 1]==_'%');
+      x = round(is_percent($1)?$1*(w - 1):$1);
+      y = round(is_percent($2)?$2*(h - 1):$2);
+      z = round(is_percent($3)?$3*(d - 1):$3);
+      da_push(#0,[x,y,z]);
+      do (
+        p = i(x,y,z);
+        p&1?--x:p&2?++x;
+        p&4?--y:p&8?++y;
+        p&16?--z:p&32?++z;
+        da_push(#0,[x,y,z]),
+      _(while) p);
+      resize(#0,1,da_size(#0),1,3,0)"
+    rm. nm $nm endl done
 
 #@cli mse
 #@cli : Compute MSE (Mean-Squared Error) matrix between selected images.
