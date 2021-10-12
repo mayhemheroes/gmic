@@ -6994,17 +6994,7 @@ parse_gui_gmicol :
   repeat $_nbfilters,f
     e[] "\r  >> "$_vt100_c[#$f/$N]$_vt100_n" "{`copy(vector48(_'" "'),['${_f${f}_path}${_f${f}_name}'])`}
 
-    # Manage categories.
-    0 nm. {`s=['${_f${f}_path}'];s[0,size(s)-1]`} _parse_gui_gmicol[] {b} path=${} rm.
-    if ['$current_category']!=['$path']
-      if ['$current_category']!=0 ('"    ]\n  },\n"') fi
-      ('"  {\n"')
-      ('"    \"name\": \""$path"\", \"filters\": [\n"')
-      current_category=$path
-    else
-      if i[-1,2]==_'\n' z. 0,{w-2} fi
-      ('",\n"')
-    fi
+    ('${_f${f}_command}') z. 0,{w-2} category={t} rm.
 
     # Filter definition.
     _parse_gui_gmicol[] ${_f${f}_name} fname=${}
@@ -7014,13 +7004,12 @@ parse_gui_gmicol :
 
     ('"<command id=\""$f"\">"\n\
       "  <title>"$fname"</title>"\n\
-      "  <category>"$current_category"</category>"\n\
+      "  <category>"$category"</category>"\n\
       "  <name>"${_f${f}_command}"</name>"\n\
       "  <preview>"${_f${f}_commandpreview}"</preview>"\n\
       "  <parameters>\n"')
 
     sepf={`$<?_',':0`}
-    ppos=1
     repeat ${_f${f}_nbparams},p
       _parse_gui_gmicol ${_f${f}_p{$p}_name} name={/${}}
       type=${_f${f}_p{$p}_type}
@@ -7040,13 +7029,12 @@ parse_gui_gmicol :
           "      <name>"$name"</name>\n"\
           "      <default>"$arg0"</default>\n"\
           "    </bool>\n"')
-        ppos+=1
 
       elif ['$type']=='button'
-        if narg($arg0) alignment=", \"alignment\": \""$arg0"\"" else alignment= fi
-        ('"      { \"type\": \"button\", \"name\": \""$name"\""$alignment", \"pos\": \""$ppos"\""$visibility" }"\
-         $sepp\n')
-        ppos+=1
+        ('"    <const>\n"\
+          "      <name>"$name"</name>\n"\
+          "      <default>0</default>\n"\
+          "    </const>\n"')
 
       elif ['$type']=='choice'
         default=0 n=0 choices=
@@ -7059,12 +7047,6 @@ parse_gui_gmicol :
           ('"      <option selected=\""{$default==$a}"\">"$choice"</option>\n"')
         done
         ('"    </choice>\n"')
-        ppos+=1
-
-        # c= repeat $nbargs-$n,a choices.=${c}"\""$>"\": \""${arg{$n+$a}}"\"" c=", " done
-        # ('"      { \"type\": \"choice\", \"name\": \""$name"\", \"default\": \""$default"\", \"pos\": \""$ppos"\", "\
-        #   "\"choices\": { "$choices" }"$visibility" }"$sepp\n')
-        # ppos+=1
 
       elif ['$type']=='color'
         ('"    <color update=\""$responsivity"\">\n"\
@@ -7072,10 +7054,8 @@ parse_gui_gmicol :
           "      <red>"$arg0"</red>\n"\
           "      <green>"$arg1"</green>\n"\
           "      <blue>"$arg2"</blue>\n"')
-        ppos+=3
         if $nbargs>3
           ('"      <alpha>"$arg3"</alpha>\n"')
-          ppos+=1
         fi
         ('"    </color>\n"')
 
@@ -7086,7 +7066,6 @@ parse_gui_gmicol :
            "      <min>"$arg1"</min>\n"\
            "      <max>"$arg2"</max>\n"\
            "    </int>\n"')
-        ppos+=1
 
       elif s=['$type'];s=='float'
          ('"    <float update=\""$responsivity"\">\n"\
@@ -7095,51 +7074,72 @@ parse_gui_gmicol :
            "      <min>"$arg1"</min>\n"\
            "      <max>"$arg2"</max>\n"\
            "    </float>\n"')
-        ppos+=1
 
       elif ['$type']=='file'" || "['$type']=='filein'" || "['$type']=='fileout'
-        ('"      { \"type\": \"file\", \"name\": \""$name"\", \"default\": \""{/$arg0}"\", \"pos\": "\
-          "\""$ppos"\""$visibility" }"$sepp\n')
-        ppos+=1
+        ('"    <const>\n"\
+          "      <name>"$name"</name>\n"\
+          "      <default>"$arg0"</default>\n"\
+          "    </const>\n"')
 
       elif ['$type']=='folder'
-        ('"      { \"type\": \"folder\", \"name\": \""$name"\", \"default\": \""{/$arg0}"\", \"pos\": "\
-          "\""$ppos"\""$visibility" }"$sepp\n')
-        ppos+=1
+        ('"    <const>\n"\
+          "      <name>"$name"</name>\n"\
+          "      <default>"$arg0"</default>\n"\
+          "    </const>\n"')
 
       elif ['$type']=='link'
-        align=-1 name= url= n=0
+        align=0 name= url= n=0
         l[] if isnum($arg0) align=$arg0 n+=1 fi onfail endl
         if $nbargs-$n>1 name=${arg$n} url=${arg{$n+1}}
         else url,name=${arg$n}
         fi
-        if $align==0 align=left elif $align==1 align=right else align=center fi
-        ('"      { \"type\": \"link\", \"name\": \""$name"\", \"url\": \""{/$url}"\", \"align\": "\
-          "\""$align"\""$visibility" }"$sepp\n')
+        ('"    <link>"\n\
+          "      <alignment>"$align"</alignment>"\n\
+          "      <href>"$url"</href>"\n\
+          "      <title>"$name"</title>"\n\
+          "    </link>"\n')
 
       elif ['$type']=='note'
-        ('"      { \"type\": \"note\", \"text\": \""{/$arg0}"\""$visibility" }"$sepp\n')
+        ('"    <note>\n"')
+        ('$arg0') _gmd_ascii2html.
+        ('"\n    </note>"\n')
 
       elif ['$type']=='point'
-        ('"      { \"type\": \"point\", \"name\": \""$name"\", \"position\": \""$arg0,$arg1"\", \"pos\": "\
-          "\""$ppos"\""$visibility" }"$sepp\n')
-        ppos+=2
+         ('"    <float update=\"1\">\n"\
+           "      <name>"$name" (X)</name>\n"\
+           "      <default>"$arg0"</default>\n"\
+           "      <min>0</min>\n"\
+           "      <max>100</max>\n"\
+           "    </float>\n"\
+           "    <float update=\"1\">\n"\
+           "      <name>"$name" (Y)</name>\n"\
+           "      <default>"$arg1"</default>\n"\
+           "      <min>0</min>\n"\
+           "      <max>100</max>\n"\
+           "    </float>\n"')
 
       elif ['$type']=='separator'
         ('"    <separator></separator>\n"')
 
       elif ['$type']=='text'
-        ('"      { \"type\": \"text\", \"name\": \""$name"\", \"default\": \""{/$arg0}"\", \"pos\": "\
-          "\""$ppos"\""$visibility" }"\
-         $sepp\n')
-        ppos+=1
+        multiline=0 n=0
+        l[] if isnum($arg0) multiline=$arg0 n+=1 fi onfail endl
+        ('"    <text multiline=\""$multiline"\" update=\""$responsivity"\">"\n\
+          "      <name>"$name"</name>"\n\
+          "      <default>"${arg$n}"</default>"\n\
+          "    </text>"\n')
 
       elif ['$type']=='value'
-        ('"      { \"type\": \"value\", \"value\": \""{/$arg0}"\", \"pos\": \""$ppos"\""$visibility" }"$sepp\n')
-        ppos+=1
+        ('"    <const>\n"\
+          "      <name>"$name"</name>\n"\
+          "      <default>"$arg0"</default>\n"\
+          "    </const>\n"')
 
       else # Unknown parameter
-        ('"      { \"type\": \"unknown\", \"name\": \""$name"\""$visibility" }"$sepp\n')
+        ('"    <const>\n"\
+          "      <name>"$name"</name>\n"\
+          "      <default>Unknown Parameter</default>\n"\
+          "    </const>\n"')
       fi
 
     done
