@@ -6260,7 +6260,7 @@ _gmd_write :
 
 #@cli parse_gui : _outputmode,_{ * | filter_name}
 #@cli : Parse selected filter definitions and generate info about filters in selected output mode.
-#@cli : 'outputmode' can be { json | list | print | strings | update | zart }.\n
+#@cli : 'outputmode' can be { gmicol | json | list | print | strings | update | zart }.\n
 #@cli : It is possible to define a custom output mode, by implementing the following commands
 #@cli : ('outputmode' must be replaced by the name of the custom user output mode):
 #@cli : . 'parse_gui_outputmode' : A command that outputs the parsing information with a custom format.
@@ -6958,6 +6958,193 @@ parse_gui_json :
   e[] "\r  >> "${_vt100_g}{`copy(vector64(_'" "'),'"Output done!"')`}$_vt100_n
 
 _parse_gui_json :
+  l[]
+    ('{/"$*"}')
+    replace_str "\\","\\\\"
+    replace_str "\n","\\n"
+    replace_str "\r","\\r"
+    replace_str "\"","\\\""
+    replace_str "&amp;","&"
+    replace_str "&nbsp;"," "
+    replace_str. "<i>",""
+    replace_str. "</i>",""
+    replace_str. "<b>",""
+    replace_str. "</b>",""
+    replace_str. "<small>",""
+    replace_str. "</small>",""
+    u {t} rm.
+  onfail u "" endl
+
+#
+# Implements 'gmicol' mode for command 'parse_gui'.
+#
+parse_gui_parseparams_gmicol : u 1 # Tell parser to not parse filter parameters
+parse_gui_trigger_gmicol :
+  repeat $! l[$>] # Keep only 1-level folders
+    nm {`s=[['{n}'],0];p=find(s,_'/',size(s)-1,0);p>=0?(p=find(s,_'/',p-1,0);p>0?copy(s,s[p+1],size(s)-p));s`}
+  endl done
+  sort_list +,n
+
+parse_gui_gmicol :
+  e[] "  >> Generate output, in 'gmicol' mode.\n"
+  ('"<?xml version=\"1.0\"?>\n<filters>\n"')
+
+  current_category=
+  N={$_nbfilters-1}
+  repeat $_nbfilters,f
+    e[] "\r  >> "$_vt100_c[#$f/$N]$_vt100_n" "{`copy(vector48(_'" "'),['${_f${f}_path}${_f${f}_name}'])`}
+
+    # Manage categories.
+    # 0 nm. {`s=['${_f${f}_path}'];s[0,size(s)-1]`} _parse_gui_gmicol[] {b} path=${} rm.
+    # if ['$current_category']!=['$path']
+    #   if ['$current_category']!=0 ('"    ]\n  },\n"') fi
+    #   ('"  {\n"')
+    #   ('"    \"name\": \""$path"\", \"filters\": [\n"')
+    #   current_category=$path
+    # else
+    #   if i[-1,2]==_'\n' z. 0,{w-2} fi
+    #   ('",\n"')
+    # fi
+
+    # Filter definition.
+    _parse_gui_gmicol[] ${_f${f}_name} fname=${}
+
+    locale=en
+    if narg(${_f${f}_locale}) locale=${_f${f}_locale} fi
+
+    ('"<command id=\""$f"\">\n  <title>"$fname"</title>\n  <name>"${_f${f}_command}"</name>\n  <preview>"${_f${f}_commandpreview}"</preview>\n  <parameters>\n"')
+
+    sepf={`$<?_',':0`}
+    ppos=1
+    repeat ${_f${f}_nbparams},p
+      _parse_gui_gmicol ${_f${f}_p{$p}_name} name={/${}}
+      type=${_f${f}_p{$p}_type}
+      nbargs=${_f${f}_p{$p}_nbargs}
+      arg0= repeat $nbargs ('${_f${f}_p${p}_a$>}') autocrop. {'\"'} _parse_gui_gmicol {t} arg$>=${} rm. done
+      sepp={`$<?_',':0`}
+      if narg(${_f${f}_p{$p}_visibility})
+        visibility=", \"visibility\": \""${_f${f}_p{$p}_visibility}"\""
+      else
+        visibility=
+      fi
+
+      if ['$type']=='bool'
+        if lowercase(['$arg0'])=='false' arg0=0 elif lowercase(['$arg0'])=='true' arg0=1 elif !isnum($arg0) arg0=0 fi
+        ('"    <bool update=\"1\">\n"\
+          "      <name>"$name"</name>\n"\
+          "      <default>"$arg0"</default>\n"\
+          "    </bool>\n"')
+        ppos+=1
+
+      elif ['$type']=='button'
+        if narg($arg0) alignment=", \"alignment\": \""$arg0"\"" else alignment= fi
+        ('"      { \"type\": \"button\", \"name\": \""$name"\""$alignment", \"pos\": \""$ppos"\""$visibility" }"\
+         $sepp\n')
+        ppos+=1
+
+      elif ['$type']=='choice'
+        default=0 n=0 choices=
+        l[] if isint($arg0) default=$arg0 n+=1 fi onfail endl
+        ('"    <choice update=\"1\">\n"\
+          "      <name>"$name"</name>\n"\
+          "      <default>"$default"</default>\n"')
+        repeat $nbargs-$n,a
+          choice=${arg{$n+$a}}
+          ('"      <option selected=\""{$default==$a}"\">"$choice"</option>\n"')
+        done
+        ('"    </choice>\n"')
+        ppos+=1
+
+        # c= repeat $nbargs-$n,a choices.=${c}"\""$>"\": \""${arg{$n+$a}}"\"" c=", " done
+        # ('"      { \"type\": \"choice\", \"name\": \""$name"\", \"default\": \""$default"\", \"pos\": \""$ppos"\", "\
+        #   "\"choices\": { "$choices" }"$visibility" }"$sepp\n')
+        # ppos+=1
+
+      elif ['$type']=='color'
+        ('"    <color update=\"1\">\n"\
+          "      <name>"$name"</name>\n"\
+          "      <red>"$arg0"</red>\n"\
+          "      <green>"$arg1"</green>\n"\
+          "      <blue>"$arg2"</blue>\n"')
+        ppos+=3
+        if $nbargs>3
+          ('"      <alpha>"$arg3"</alpha>\n"')
+          ppos+=1
+        fi
+        ('"    </color>\n"')
+
+      elif s=['$type'];s=='int'
+         ('"    <int update=\"1\">\n"\
+           "      <name>"$name"</name>\n"\
+           "      <default>"$arg0"</default>\n"\
+           "      <min>"$arg1"</min>\n"\
+           "      <max>"$arg2"</max>\n"\
+           "    </int>\n"')
+        ppos+=1
+
+      elif s=['$type'];s=='float'
+         ('"    <float update=\"1\">\n"\
+           "      <name>"$name"</name>\n"\
+           "      <default>"$arg0"</default>\n"\
+           "      <min>"$arg1"</min>\n"\
+           "      <max>"$arg2"</max>\n"\
+           "    </float>\n"')
+        ppos+=1
+
+      elif ['$type']=='file'" || "['$type']=='filein'" || "['$type']=='fileout'
+        ('"      { \"type\": \"file\", \"name\": \""$name"\", \"default\": \""{/$arg0}"\", \"pos\": "\
+          "\""$ppos"\""$visibility" }"$sepp\n')
+        ppos+=1
+
+      elif ['$type']=='folder'
+        ('"      { \"type\": \"folder\", \"name\": \""$name"\", \"default\": \""{/$arg0}"\", \"pos\": "\
+          "\""$ppos"\""$visibility" }"$sepp\n')
+        ppos+=1
+
+      elif ['$type']=='link'
+        align=-1 name= url= n=0
+        l[] if isnum($arg0) align=$arg0 n+=1 fi onfail endl
+        if $nbargs-$n>1 name=${arg$n} url=${arg{$n+1}}
+        else url,name=${arg$n}
+        fi
+        if $align==0 align=left elif $align==1 align=right else align=center fi
+        ('"      { \"type\": \"link\", \"name\": \""$name"\", \"url\": \""{/$url}"\", \"align\": "\
+          "\""$align"\""$visibility" }"$sepp\n')
+
+      elif ['$type']=='note'
+        ('"      { \"type\": \"note\", \"text\": \""{/$arg0}"\""$visibility" }"$sepp\n')
+
+      elif ['$type']=='point'
+        ('"      { \"type\": \"point\", \"name\": \""$name"\", \"position\": \""$arg0,$arg1"\", \"pos\": "\
+          "\""$ppos"\""$visibility" }"$sepp\n')
+        ppos+=2
+
+      elif ['$type']=='separator'
+        ('"    <separator></separator>\n"')
+
+      elif ['$type']=='text'
+        ('"      { \"type\": \"text\", \"name\": \""$name"\", \"default\": \""{/$arg0}"\", \"pos\": "\
+          "\""$ppos"\""$visibility" }"\
+         $sepp\n')
+        ppos+=1
+
+      elif ['$type']=='value'
+        ('"      { \"type\": \"value\", \"value\": \""{/$arg0}"\", \"pos\": \""$ppos"\""$visibility" }"$sepp\n')
+        ppos+=1
+
+      else # Unknown parameter
+        ('"      { \"type\": \"unknown\", \"name\": \""$name"\""$visibility" }"$sepp\n')
+      fi
+
+    done
+    ('"  </parameters>\n\n"')
+  done
+  if ['$current_category']!=0 ('"    ]\n  }\n"') fi
+  ('"</filters>\n"')
+  y a y html2utf8
+  e[] "\r  >> "${_vt100_g}{`copy(vector64(_'" "'),'"Output done!"')`}$_vt100_n
+
+_parse_gui_gmicol :
   l[]
     ('{/"$*"}')
     replace_str "\\","\\\\"
