@@ -7541,46 +7541,37 @@ um :
 #@cli : $ uniform_distribution 64,3 * 255 +distribution3d circles3d[-1] 10
 +uniform_distribution : check "isint($1) && $1>0 && isint($2) && $2>0"
   e[^1] "Input set of $1 uniformly distributed $2-d points in [0,1]^$2."
-  n={round($1^(1/$2),1,1)}
-  (0,1) r. $n,1,1,1,3
-  repeat $2-1 +channels. 100% r. {$n*w},1,1,1,1 r.. .,1,1,100%,0,2 a[-2,-1] c done
-  r. $1,1,1,$2,1 nm. "[uniform $2D distribution]"
-
-
-# #@cli uniform_distribution : nb_levels>=1,spectrum>=1
-# #@cli : Input set of uniformly distributed spectrum-d points in [0,1]^spectrum.
-# #@cli : $ uniform_distribution 64,3 * 255 +distribution3d circles3d[-1] 10
-# +uniform_distribution : check "isint($1) && $1>0 && isint($2) && $2>0"
-#   e[^1] "Input set of $1 uniformly distributed $2-d points in [0,1]^$2."
-#   dim=$2
-#   (0;1^$1;0)
-#   repeat $dim
-#     0
-#     eval "
-#       repeat (da_size(#0),s,
-#         V = I[#0,s];
-#         N = V[size(V) - 1];    # Number of elts in Sk
-#         off = V[size(V) - 2];  # Position offset of elts in subsets of Sk
-#         M = round(N^(1/$dim)); # Number of subsets
-#         n = ceil(N/M);         # Number of max elts in subsets of Sk
-#         k0 = 0;
-#         repeat (M,k,
-#           k1 = round(lerp(0,N,(k + 1)/M));
-#           m = k1 - k0;
-#           V[size(V) - 1] = m;
-#           V[size(V) - 2] = (n - m)/2;
-#           da_push(#-1,[ k + off,V ]);
-#           k0 = k1;
-#         );
-#       );
-#       resize(#-2,1,da_size(#1),1,1,0);
-#       "
-#     rv[0,-1]
-#     rm.
-#     dim-=1
-#   done
-#   r. {[1,da_size(),1,s-2]},0
-#   n. 0,1
+  l[]
+    dim=$2
+    (0;1^$1;0)
+    repeat $dim
+      0
+      eval "
+        repeat (da_size(#0),s,
+          V = I[#0,s];
+          N = V[size(V) - 1];    # Number of elts in Sk
+          off = V[size(V) - 2];  # Position offset of elts in subsets of Sk
+          M = round(N^(1/$dim)); # Number of subsets
+          n = ceil(N/M);         # Number of max elts in subsets of Sk
+          k0 = 0;
+          repeat (M,k,
+            k1 = round(lerp(0,N,(k + 1)/M));
+            m = k1 - k0;
+            V[size(V) - 1] = m;
+            V[size(V) - 2] = (n - m)/2;
+            da_push(#-1,[ k + off,V ]);
+            k0 = k1;
+          );
+        );
+        resize(#-2,1,da_size(#1),1,1,0)"
+      rv[0,-1]
+      rm.
+      dim-=1
+    done
+    r {[1,da_size(),1,s-2]},0
+    s c n 0,1 a c
+    r {h},1,1,100%,-1
+  endl
 
 #@cli unserialize : : (+)
 #@cli : Recreate lists of images from serialized image buffers, obtained with command 'serialize'.
