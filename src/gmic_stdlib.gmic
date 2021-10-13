@@ -6996,7 +6996,7 @@ parse_gui_gmicol :
     ('${_f${f}_command}') z. 0,{w-2} category={t} rm.
 
     # Filter definition.
-    _parse_gui_gmicol[] ${_f${f}_name} fname=${}
+    fname=${_f${f}_name}
 
     locale=en
     if narg(${_f${f}_locale}) locale=${_f${f}_locale} fi
@@ -7005,10 +7005,10 @@ parse_gui_gmicol :
 
     sepf={`$<?_',':0`}
     repeat ${_f${f}_nbparams},p
-      _parse_gui_gmicol ${_f${f}_p{$p}_name} name={/${}}
+      name=${_f${f}_p{$p}_name}
       type=${_f${f}_p{$p}_type}
       nbargs=${_f${f}_p{$p}_nbargs}
-      arg0= repeat $nbargs ('${_f${f}_p${p}_a$>}') autocrop. {'\"'} _parse_gui_gmicol {t} arg$>=${} rm. done
+      arg0= repeat $nbargs ('${_f${f}_p${p}_a$>}') autocrop. {'\"'} _gmd_ascii2html. arg$>={/{t}} rm. done
       sepp={`$<?_',':0`}
       if narg(${_f${f}_p{$p}_visibility}) visibility=${_f${f}_p{$p}_visibility} else visibility=1 fi
       responsivity=${_f${f}_p${p}_responsivity}
@@ -7045,16 +7045,10 @@ parse_gui_gmicol :
          ('"    <float name=\""$name"\" value=\""$arg0"\" min=\""$arg1"\" max=\""$arg2"\" responsivity=\""$responsivity"\" visibility=\""$visibility"\"/>"\n')
 
       elif ['$type']=='file'" || "['$type']=='filein'" || "['$type']=='fileout'
-        ('"    <const>"\n\
-          "      <name>"$name"</name>"\n\
-          "      <default>"$arg0"</default>"\n\
-          "    </const>\n"')
+        ('"    <file name=\""$name"\" value=\""$arg0"\">\n"')
 
       elif ['$type']=='folder'
-        ('"    <const>"\n\
-          "      <name>"$name"</name>"\n\
-          "      <default>"$arg0"</default>"\n\
-          "    </const>\n"')
+        ('"    <folder name=\""$name"\" value=\""$arg0"\">\n"')
 
       elif ['$type']=='link'
         align=0 name= url= n=0
@@ -7062,14 +7056,10 @@ parse_gui_gmicol :
         if $nbargs-$n>1 name=${arg$n} url=${arg{$n+1}}
         else url,name=${arg$n}
         fi
-        ('"    <link>"\n\
-          "      <alignment>"$align"</alignment>"\n\
-          "      <href>"$url"</href>"\n\
-          "      <title>"$name"</title>"\n\
-          "    </link>"\n')
+        ('"    <link name=\""$name"\" href=\""$url"\" alignment=\""$align"\"/>\n"')
 
       elif ['$type']=='note'
-        ('$arg0') utf82html. arg0={/{t}} rm.
+#        ('$arg0') utf82html. arg0={/{t}} rm.
         ('"    <note name=\""$name"\">\n"$arg0"\n    </note>"\n')
 
       elif ['$type']=='point'
@@ -7082,7 +7072,8 @@ parse_gui_gmicol :
         multiline=0 n=0
         l[] if isnum($arg0) multiline=$arg0 n+=1 fi onfail endl
         ('"    <text name=\""$name"\" multiline=\""$multiline"\" update=\""$responsivity"\" visibility=\""$visibility"\">"')
-        if ['${arg$n}']!=0 ('\n${arg$n}</text>\n')
+        if ['${arg$n}']!=0
+          if $multiline ('\n${arg$n}\n</text>\n') else ('${arg$n}</text>\n') fi
         else ('"</text>\n"') fi
 
       elif ['$type']=='value'
@@ -7098,11 +7089,6 @@ parse_gui_gmicol :
   ('"</filters>\n"')
   y a y html2utf8
   e[] "\r  >> "${_vt100_g}{`copy(vector64(_'" "'),'"Output done!"')`}$_vt100_n
-
-_parse_gui_gmicol :
-  l[]
-    ('{/"$*"}') _gmd_ascii2html. utf82html. u {t} rm.
-  onfail u "" endl
 
 #
 # Implements 'strings' mode for command 'parse_gui'.
