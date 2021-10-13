@@ -6987,13 +6987,20 @@ parse_gui_trigger_gmicol :
 
 parse_gui_gmicol :
   e[] "  >> Generate output, in 'gmicol' mode.\n"
-  ('"<?xml version=\"1.0\"?>\n<filters>\n"')
+  ('"<?xml version=\"1.0\"?>\n"')
 
+  current_category=
   N={$_nbfilters-1}
   repeat $_nbfilters,f
     e[] "\r  >> "$_vt100_c[#$f/$N]$_vt100_n" "{`copy(vector48(_'" "'),['${_f${f}_path}${_f${f}_name}'])`}
 
-    ('${_f${f}_command}') z. 0,{w-2} category={t} rm.
+    # Manage categories.
+    0 nm. {`s=['${_f${f}_path}'];s[0,size(s)-1]`} path={b} rm.
+    if ['$current_category']!=['$path']
+      if ['$current_category']!=0 ('"</category>\n"') fi
+      ('"\n<!-- Category: "$path" -->\n<category name=\""$path"\">\n"')
+      current_category=$path
+    fi
 
     # Filter definition.
     fname=${_f${f}_name}
@@ -7001,7 +7008,7 @@ parse_gui_gmicol :
     locale=en
     if narg(${_f${f}_locale}) locale=${_f${f}_locale} fi
 
-    ('"  <filter name=\""$fname"\" command=\""${_f${f}_command}"\" preview_command=\""${_f${f}_commandpreview}"\">\n"')
+    ('"\n  <!-- Filter: "$fname" -->\n  <filter name=\""$fname"\" command=\""${_f${f}_command}"\" preview_command=\""${_f${f}_commandpreview}"\">\n"')
 
     sepf={`$<?_',':0`}
     repeat ${_f${f}_nbparams},p
@@ -7059,7 +7066,6 @@ parse_gui_gmicol :
         ('"    <link name=\""$name"\" href=\""$url"\" alignment=\""$align"\"/>\n"')
 
       elif ['$type']=='note'
-#        ('$arg0') utf82html. arg0={/{t}} rm.
         ('"    <note name=\""$name"\">\n"$arg0"\n    </note>"\n')
 
       elif ['$type']=='point'
@@ -7086,7 +7092,7 @@ parse_gui_gmicol :
     done
     ('"  </filter>\n\n"')
   done
-  ('"</filters>\n"')
+  if ['$current_category']!=0 ('"</category>\n"') fi
   y a y html2utf8
   e[] "\r  >> "${_vt100_g}{`copy(vector64(_'" "'),'"Output done!"')`}$_vt100_n
 
