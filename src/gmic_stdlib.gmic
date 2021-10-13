@@ -6817,7 +6817,7 @@ straprilfool : skip "${1=}"
 #
 # Implements 'json' mode for command 'parse_gui'.
 #
-parse_gui_parseparams_json : u 1 # Tell parser to not parse filter parameters
+parse_gui_parseparams_json : u 1 # Tell parser to parse filter parameters
 parse_gui_trigger_json :
   repeat $! l[$>] # Keep only 1-level folders
     nm {`s=[['{n}'],0];p=find(s,_'/',size(s)-1,0);p>=0?(p=find(s,_'/',p-1,0);p>0?copy(s,s[p+1],size(s)-p));s`}
@@ -6978,7 +6978,7 @@ _parse_gui_json :
 #
 # Implements 'gmicol' mode for command 'parse_gui'.
 #
-parse_gui_parseparams_gmicol : u 1 # Tell parser to not parse filter parameters
+parse_gui_parseparams_gmicol : u 1 # Tell parser to parse filter parameters
 parse_gui_trigger_gmicol :
   repeat $! l[$>] # Keep only 1-level folders
     nm {`s=[['{n}'],0];p=find(s,_'/',size(s)-1,0);p>=0?(p=find(s,_'/',p-1,0);p>0?copy(s,s[p+1],size(s)-p));s`}
@@ -7001,12 +7001,7 @@ parse_gui_gmicol :
     locale=en
     if narg(${_f${f}_locale}) locale=${_f${f}_locale} fi
 
-    ('"<command id=\""$f"\">"\n\
-      "  <title>"$fname"</title>"\n\
-      "  <category>"$category"</category>"\n\
-      "  <name>"${_f${f}_command}"</name>"\n\
-      "  <preview>"${_f${f}_commandpreview}"</preview>"\n\
-      "  <parameters>\n"')
+    ('"  <filter name=\""$fname"\" command=\""${_f${f}_command}"\" preview_command=\""${_f${f}_commandpreview}"\">\n"')
 
     sepf={`$<?_',':0`}
     repeat ${_f${f}_nbparams},p
@@ -7015,64 +7010,39 @@ parse_gui_gmicol :
       nbargs=${_f${f}_p{$p}_nbargs}
       arg0= repeat $nbargs ('${_f${f}_p${p}_a$>}') autocrop. {'\"'} _parse_gui_gmicol {t} arg$>=${} rm. done
       sepp={`$<?_',':0`}
-      if narg(${_f${f}_p{$p}_visibility})
-        visibility=", \"visibility\": \""${_f${f}_p{$p}_visibility}"\""
-      else
-        visibility=
-      fi
+      if narg(${_f${f}_p{$p}_visibility}) visibility=${_f${f}_p{$p}_visibility} else visibility=1 fi
       responsivity=${_f${f}_p${p}_responsivity}
 
       if ['$type']=='bool'
         if lowercase(['$arg0'])=='false' arg0=0 elif lowercase(['$arg0'])=='true' arg0=1 elif !isnum($arg0) arg0=0 fi
-        ('"    <bool update=\""$responsivity"\">"\n\
-          "      <name>"$name"</name>"\n\
-          "      <default>"$arg0"</default>"\n\
-          "    </bool>\n"')
+         ('"    <bool name=\""$name"\" value=\""$arg0"\" responsivity=\""$responsivity"\" visibility=\""$visibility"\"/>\n"')
 
       elif ['$type']=='button'
-        ('"    <const>"\n\
-          "      <name>"$name"</name>"\n\
-          "      <default>0</default>"\n\
-          "    </const>\n"')
+        if !$nbargs arg0=0.5 fi
+        ('"    <button name=\""$name"\" alignment=\""$arg0"\" responsivity=\""$responsivity"\" visibility=\""$visibility"\"/>\n"')
 
       elif ['$type']=='choice'
         default=0 n=0 choices=
         l[] if isnum($arg0)&&isint($arg0) default=$arg0 n+=1 fi onfail endl
-        ('"    <choice update=\""$responsivity"\">"\n\
-          "      <name>"$name"</name>"\n\
-          "      <default>"$default"</default>\n"')
+        ('"    <choice name=\""$name"\" value=\""$default"\" responsivity=\""$responsivity"\" visibility=\""$visibility"\">\n"')
         repeat $nbargs-$n,a
           choice=${arg{$n+$a}}
-          ('"      <option selected=\""{$default==$a}"\">"$choice"</option>\n"')
+          ('"      <item name=\""$choice"\"/>\n"')
         done
         ('"    </choice>\n"')
 
       elif ['$type']=='color'
-        ('"    <color update=\""$responsivity"\">"\n\
-          "      <name>"$name"</name>"\n\
-          "      <red>"$arg0"</red>"\n\
-          "      <green>"$arg1"</green>"\n\
-          "      <blue>"$arg2"</blue>\n"')
         if $nbargs>3
-          ('"      <alpha>"$arg3"</alpha>\n"')
+          ('"    <rgba name=\""$name"\" red=\""$arg0"\" green=\""$arg1"\" blue=\""$arg2"\" alpha=\""$arg3"\" responsivity=\""$responsivity"\" visibility=\""$visibility"\"/>\n"')
+        else
+          ('"    <rgb name=\""$name"\" red=\""$arg0"\" green=\""$arg1"\" blue=\""$arg2"\" responsivity=\""$responsivity"\" visibility=\""$visibility"\"/>\n"')
         fi
-        ('"    </color>\n"')
 
       elif s=['$type'];s=='int'
-         ('"    <int update=\""$responsivity"\">"\n\
-           "      <name>"$name"</name>"\n\
-           "      <default>"$arg0"</default>"\n\
-           "      <min>"$arg1"</min>"\n\
-           "      <max>"$arg2"</max>"\n\
-           "    </int>\n"')
+         ('"    <int name=\""$name"\" value=\""$arg0"\" min=\""$arg1"\" max=\""$arg2"\" responsivity=\""$responsivity"\" visibility=\""$visibility"\"/>"\n')
 
       elif s=['$type'];s=='float'
-         ('"    <float update=\""$responsivity"\">"\n\
-           "      <name>"$name"</name>"\n\
-           "      <default>"$arg0"</default>"\n\
-           "      <min>"$arg1"</min>"\n\
-           "      <max>"$arg2"</max>"\n\
-           "    </float>\n"')
+         ('"    <float name=\""$name"\" value=\""$arg0"\" min=\""$arg1"\" max=\""$arg2"\" responsivity=\""$responsivity"\" visibility=\""$visibility"\"/>"\n')
 
       elif ['$type']=='file'" || "['$type']=='filein'" || "['$type']=='fileout'
         ('"    <const>"\n\
@@ -7099,48 +7069,31 @@ parse_gui_gmicol :
           "    </link>"\n')
 
       elif ['$type']=='note'
-        ('"    <note>\n"$arg0"\n    </note>"\n')
+        ('$arg0') utf82html. arg0={/{t}} rm.
+        ('"    <note name=\""$name"\">\n"$arg0"\n    </note>"\n')
 
       elif ['$type']=='point'
-         ('"    <float update=\"1\">"\n\
-           "      <name>"$name" (X)</name>"\n\
-           "      <default>"$arg0"</default>"\n\
-           "      <min>0</min>"\n\
-           "      <max>100</max>"\n\
-           "    </float>"\n\
-           "    <float update=\"1\">"\n\
-           "      <name>"$name" (Y)</name>"\n\
-           "      <default>"$arg1"</default>"\n\
-           "      <min>0</min>"\n\
-           "      <max>100</max>"\n\
-           "    </float>\n"')
+         ('"    <point name=\""$name"\" x=\""$arg0"\" y=\""$arg1"\" responsivity=\""$responsivity"\"/>\n"')
 
       elif ['$type']=='separator'
-        ('"    <separator></separator>\n"')
+        ('"    <separator/>\n"')
 
       elif ['$type']=='text'
         multiline=0 n=0
         l[] if isnum($arg0) multiline=$arg0 n+=1 fi onfail endl
-        ('"    <text multiline=\""$multiline"\" update=\""$responsivity"\">"\n\
-          "      <name>"$name"</name>"\n\
-          "      <default>"${arg$n}"</default>"\n\
-          "    </text>"\n')
+        ('"    <text name=\""$name"\" multiline=\""$multiline"\" update=\""$responsivity"\" visibility=\""$visibility"\">"')
+        if ['${arg$n}']!=0 ('\n${arg$n}</text>\n')
+        else ('"</text>\n"') fi
 
       elif ['$type']=='value'
-        ('"    <const>"\n\
-          "      <name>"$name"</name>"\n\
-          "      <default>"$arg0"</default>"\n\
-          "    </const>\n"')
+        ('"    <value name=\""$name"\" value=\""$arg0"\"/>\n"')
 
       else # Unknown parameter
-        ('"    <const>"\n\
-          "      <name>"$name"</name>"\n\
-          "      <default>Unknown Parameter</default>"\n\
-          "    </const>\n"')
+        ('"    <unknown name=\"$name\"/>\n"')
       fi
 
     done
-    ('"  </parameters>\n\n"')
+    ('"  </filter>\n\n"')
   done
   ('"</filters>\n"')
   y a y html2utf8
@@ -7148,7 +7101,7 @@ parse_gui_gmicol :
 
 _parse_gui_gmicol :
   l[]
-    ('{/"$*"}') _gmd_ascii2html. u {t} rm.
+    ('{/"$*"}') _gmd_ascii2html. utf82html. u {t} rm.
   onfail u "" endl
 
 #
@@ -8765,7 +8718,7 @@ _strings2ts_dest :
 #
 # Output mode 'zart' (output in stdout).
 #
-parse_gui_parseparams_zart : u 1 # Tell parser to not parse filter parameters
+parse_gui_parseparams_zart : u 1 # Tell parser to parse filter parameters
 parse_gui_trigger_zart :
   repeat $! l[$>] # Keep only 1-level folders
     nm {`s=[['{n}'],0];p=find(s,_'/',size(s)-1,0);p>=0?(p=find(s,_'/',p-1,0);p>0?copy(s,s[p+1],size(s)-p));s`}
