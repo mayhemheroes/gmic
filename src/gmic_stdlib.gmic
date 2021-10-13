@@ -6882,7 +6882,7 @@ parse_gui_json :
 
       elif ['$type']=='choice'
         default=0 n=0 choices=
-        l[] if isint($arg0) default=$arg0 n+=1 fi onfail endl
+        l[] if isnum($arg0)&&isint($arg0) default=$arg0 n+=1 fi onfail endl
         c= repeat $nbargs-$n,a choices.=${c}"\""$>"\": \""${arg{$n+$a}}"\"" c=", " done
         ('"      { \"type\": \"choice\", \"name\": \""$name"\", \"default\": \""$default"\", \"pos\": \""$ppos"\", "\
           "\"choices\": { "$choices" }"$visibility" }"$sepp\n')
@@ -7037,7 +7037,7 @@ parse_gui_gmicol :
 
       elif ['$type']=='choice'
         default=0 n=0 choices=
-        l[] if isint($arg0) default=$arg0 n+=1 fi onfail endl
+        l[] if isnum($arg0)&&isint($arg0) default=$arg0 n+=1 fi onfail endl
         ('"    <choice update=\""$responsivity"\">"\n\
           "      <name>"$name"</name>"\n\
           "      <default>"$default"</default>\n"')
@@ -7099,9 +7099,7 @@ parse_gui_gmicol :
           "    </link>"\n')
 
       elif ['$type']=='note'
-        ('"    <note>\n"')
-        ('$arg0') _gmd_ascii2html.
-        ('"\n    </note>"\n')
+        ('"    <note>\n"$arg0"\n    </note>"\n')
 
       elif ['$type']=='point'
          ('"    <float update=\"1\">"\n\
@@ -7150,20 +7148,7 @@ parse_gui_gmicol :
 
 _parse_gui_gmicol :
   l[]
-    ('{/"$*"}')
-    replace_str "\\","\\\\"
-    replace_str "\n","\\n"
-    replace_str "\r","\\r"
-    replace_str "\"","\\\""
-    replace_str "&amp;","&"
-    replace_str "&nbsp;"," "
-    replace_str. "<i>",""
-    replace_str. "</i>",""
-    replace_str. "<b>",""
-    replace_str. "</b>",""
-    replace_str. "<small>",""
-    replace_str. "</small>",""
-    u {t} rm.
+    ('{/"$*"}') _gmd_ascii2html. u {t} rm.
   onfail u "" endl
 
 #
