@@ -7018,24 +7018,27 @@ parse_gui_gmicol :
       nbargs=${_f${f}_p{$p}_nbargs}
       arg0= repeat $nbargs ('${_f${f}_p${p}_a$>}') autocrop. {'\"'} _gmd_ascii2html. arg$>={/{t}} rm. done
       sepp={`$<?_',':0`}
-      if narg(${_f${f}_p{$p}_visibility}) visibility=${_f${f}_p{$p}_visibility} else visibility=1 fi
-      responsivity=${_f${f}_p${p}_responsivity}
+
+      visibility=${_f${f}_p{$p}_visibility}
+      if !narg($visibility) visibility=1 fi
+      if $visibility!=1 visibility=" visibility=\""$visibility"\"" else visibility= fi
+
+      responsivity=${_f${f}_p{$p}_responsivity}
+      if !narg($responsivity) responsivity=1 fi
+      if $responsivity!=1 responsivity=" responsivity=\""$responsivity"\"" else responsivity= fi
 
       if ['$type']=='bool'
         if lowercase(['$arg0'])=='false' arg0=0 elif lowercase(['$arg0'])=='true' arg0=1 elif !isnum($arg0) arg0=0 fi
-        ('"    <bool name=\""$name"\" value=\""$arg0"\" "\
-          "responsivity=\""$responsivity"\" visibility=\""$visibility"\"/>\n"')
+        ('"    <bool name=\""$name"\" value=\""$arg0"\""$responsivity$visibility"/>\n"')
 
       elif ['$type']=='button'
         if !$nbargs arg0=0.5 fi
-        ('"    <button name=\""$name"\" alignment=\""$arg0"\" "\
-          "responsivity=\""$responsivity"\" visibility=\""$visibility"\"/>\n"')
+        ('"    <button name=\""$name"\" alignment=\""$arg0"\""$responsivity$visibility"\"/>\n"')
 
       elif ['$type']=='choice'
         default=0 n=0 choices=
         l[] if isnum($arg0)&&isint($arg0) default=$arg0 n+=1 fi onfail endl
-        ('"    <choice name=\""$name"\" value=\""$default"\" "\
-          "responsivity=\""$responsivity"\" visibility=\""$visibility"\">\n"')
+        ('"    <choice name=\""$name"\" value=\""$default"\""$responsivity$visibility"\">\n"')
         repeat $nbargs-$n,a
           choice=${arg{$n+$a}}
           ('"      <item name=\""$choice"\"/>\n"')
@@ -7044,26 +7047,26 @@ parse_gui_gmicol :
 
       elif ['$type']=='color'
         if $nbargs>3
-          ('"    <rgba name=\""$name"\" red=\""$arg0"\" green=\""$arg1"\" blue=\""$arg2"\" alpha=\""$arg3"\" "\
-            "responsivity=\""$responsivity"\" visibility=\""$visibility"\"/>\n"')
+          ('"    <rgba name=\""$name"\" red=\""$arg0"\" green=\""$arg1"\" blue=\""$arg2"\" alpha=\""$arg3"\""\
+            $responsivity$visibility"/>\n"')
         else
-          ('"    <rgb name=\""$name"\" red=\""$arg0"\" green=\""$arg1"\" blue=\""$arg2"\" "\
-            "responsivity=\""$responsivity"\" visibility=\""$visibility"\"/>\n"')
+          ('"    <rgb name=\""$name"\" red=\""$arg0"\" green=\""$arg1"\" blue=\""$arg2"\""\
+            $responsivity$visibility"/>\n"')
         fi
 
       elif s=['$type'];s=='int'
-         ('"    <int name=\""$name"\" value=\""$arg0"\" min=\""$arg1"\" max=\""$arg2"\" "\
-           "responsivity=\""$responsivity"\" visibility=\""$visibility"\"/>"\n')
+         ('"    <int name=\""$name"\" value=\""$arg0"\" min=\""$arg1"\" max=\""$arg2"\""\
+           $responsivity$visibility"/>"\n')
 
       elif s=['$type'];s=='float'
-         ('"    <float name=\""$name"\" value=\""$arg0"\" min=\""$arg1"\" max=\""$arg2"\" "\
-           "responsivity=\""$responsivity"\" visibility=\""$visibility"\"/>"\n')
+         ('"    <float name=\""$name"\" value=\""$arg0"\" min=\""$arg1"\" max=\""$arg2"\""\
+           $responsivity$visibility"/>"\n')
 
       elif ['$type']=='file'" || "['$type']=='filein'" || "['$type']=='fileout'
-        ('"    <file name=\""$name"\" value=\""$arg0"\"/>\n"')
+        ('"    <file name=\""$name"\" value=\""$arg0"\""$responsivity$visibility"/>\n"')
 
       elif ['$type']=='folder'
-        ('"    <folder name=\""$name"\" value=\""$arg0"\"/>\n"')
+        ('"    <folder name=\""$name"\" value=\""$arg0"\""$responsivity$visibility"/>\n"')
 
       elif ['$type']=='link'
         align=0 name= url= n=0
@@ -7071,23 +7074,23 @@ parse_gui_gmicol :
         if $nbargs-$n>1 name=${arg$n} url=${arg{$n+1}}
         else url,name=${arg$n}
         fi
-        ('"    <link name=\""$name"\" href=\""$url"\" alignment=\""$align"\"/>\n"')
+        ('"    <link name=\""$name"\" href=\""$url"\" alignment=\""$align"\""$visibility"/>\n"')
 
       elif ['$type']=='note'
-        ('"    <note name=\""$name"\">\n"$arg0"\n    </note>"\n')
+        ('"    <note name=\""$name"\""$visibility">\n"$arg0"\n    </note>"\n')
 
       elif ['$type']=='point'
-         ('"    <point name=\""$name"\" x=\""$arg0"\" y=\""$arg1"\" "\
-           "responsivity=\""$responsivity"\"/>\n"')
+         ('"    <point name=\""$name"\" x=\""$arg0"\" y=\""$arg1"\""\
+           $responsivity$visibility"/>\n"')
 
       elif ['$type']=='separator'
-        ('"    <separator/>\n"')
+        ('"    <separator"$visibility"/>\n"')
 
       elif ['$type']=='text'
         multiline=0 n=0
         l[] if isnum($arg0) multiline=$arg0 n+=1 fi onfail endl
-        ('"    <text name=\""$name"\" multiline=\""$multiline"\" "\
-          "responsivity=\""$responsivity"\" visibility=\""$visibility"\">"')
+        ('"    <text name=\""$name"\" multiline=\""$multiline"\""\
+          $responsivity$visibility">"')
         if ['${arg$n}']!=0
           if $multiline ('\n${arg$n}\n</text>\n') else ('${arg$n}</text>\n') fi
         else ('"</text>\n"') fi
