@@ -4582,26 +4582,6 @@ CImg<char> gmic::substitute_item(const char *const source,
                   cimg_snprintf(substr,substr.width(),"%d",disp?(disp.is_closed()?0:1):0);
                   is_substituted = true;
                 } else if (*feature && !feature[1]) switch (*feature) { // Single-char features
-                  case 'w' : // Display width
-                    cimg_snprintf(substr,substr.width(),"%d",disp.width());
-                    is_substituted = true;
-                    break;
-                  case 'h' : // Display height
-                    cimg_snprintf(substr,substr.width(),"%d",disp.height());
-                    is_substituted = true;
-                    break;
-                  case 'd' : // Window width
-                    cimg_snprintf(substr,substr.width(),"%d",disp.window_width());
-                    is_substituted = true;
-                    break;
-                  case 'e' : // Window height
-                    cimg_snprintf(substr,substr.width(),"%d",disp.window_height());
-                    is_substituted = true;
-                    break;
-                  case 'f' : // Is fullscreen?
-                    cimg_snprintf(substr,substr.width(),"%d",disp.is_fullscreen());
-                    is_substituted = true;
-                    break;
                   case 'u' : // Screen width
                     try {
                       cimg_snprintf(substr,substr.width(),"%d",CImgDisplay::screen_width());
@@ -4616,6 +4596,34 @@ CImg<char> gmic::substitute_item(const char *const source,
                     } catch (CImgDisplayException&) {
                       *substr = '0'; substr[1] = 0;
                     }
+                    is_substituted = true;
+                    break;
+                  case 'd' : // Window width
+                    cimg_snprintf(substr,substr.width(),"%d",disp.window_width());
+                    is_substituted = true;
+                    break;
+                  case 'e' : // Window height
+                    cimg_snprintf(substr,substr.width(),"%d",disp.window_height());
+                    is_substituted = true;
+                    break;
+                  case 'w' : // Display width
+                    cimg_snprintf(substr,substr.width(),"%d",disp.width());
+                    is_substituted = true;
+                    break;
+                  case 'h' : // Display height
+                    cimg_snprintf(substr,substr.width(),"%d",disp.height());
+                    is_substituted = true;
+                    break;
+                  case 'i' : // X-coordinate of window
+                    cimg_snprintf(substr,substr.width(),"%d",disp.window_x());
+                    is_substituted = true;
+                    break;
+                  case 'j' : // Y-coordinate of window
+                    cimg_snprintf(substr,substr.width(),"%d",disp.window_y());
+                    is_substituted = true;
+                    break;
+                  case 'f' : // Is fullscreen?
+                    cimg_snprintf(substr,substr.width(),"%d",disp.is_fullscreen());
                     is_substituted = true;
                     break;
                   case 'n' : // Normalization type
