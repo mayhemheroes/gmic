@@ -23820,38 +23820,11 @@ pixelsort : check "(str1='${1=+}'; str1=='+' || str1=='-') && "\
   done
 
 _pixelsort :
-  1,{h},{d}
-  f. ":
-    quicksort(x0,x1,y,z) = (
-      stack = vector"{0,2*w}"();
-      stacksize = 0;
-      push(elt0,elt1) = (stack[stacksize++] = elt0; stack[stacksize++] = elt1);
-      pop() = (_s1 = stack[--stacksize]; _s0 = stack[--stacksize]; [_s0,_s1]);
-      swap(a,b) = (_tmp = a; a = b; b = _tmp);
-      push(x0,x1);
-      while (stacksize>0,
-        range = pop();
-        lo = range[0];
-        hi = range[1];
-        pivot = i(#0,int((lo + hi)/2),y,z,0);
-        while (lo<=hi,
-           while (i(#0,lo,y,z,0)$1pivot, ++lo);
-           while (pivot$1i(#0,hi,y,z,0), --hi);
-           lo<=hi?(lo!=hi?(swap(I(#0,lo,y,z),I(#0,hi,y,z))); ++lo; --hi);
-        );
-        range[0]<hi?push(range[0],hi);
-        lo<range[1]?push(lo,range[1]);
-      )
-    );
-    s1 = s#0 - 1;
-    repeat (w#0,x0,
-      if (i(#0,x0,y,z,s1),
-        for (x1 = x0, x1<w#0 && i(#0,x1,y,z,s1)==1, ++x1);
-        quicksort(x0,min(x1,w#0-1),y,z);
-        x0 = ++x1;
-      )
-    )"
-  rm.
+  eval. ">begin(ret = [ 0 ]; const m = s - 1);
+          i(x,y,z,m) && !i(#-1,x - 1,y,z,m)?(
+            for (x1 = x + 1, x1<w && i(x1,y,z,m), ++x1);
+            --x1>x?run('+z[0] ',x,',',y,',',z,',',0,',',x1,',',y,',',z,',',m - 1,' sort. +,x j.. .,',x,',',y,' rm.');
+          ); ret"
 
 #@cli polaroid : _size1>=0,_size2>=0
 #@cli : Create polaroid effect in selected images.
