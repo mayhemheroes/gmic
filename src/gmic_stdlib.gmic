@@ -23803,17 +23803,16 @@ pixelsort : check "(str1='${1=+}'; str1=='+' || str1=='-') && "\
     if '$4'!=0 pass$4 0 else [$>],[$>],[$>],1,1 fi
     l[$>,-2,-1]
       nm={0,n} >=. 50% mv.. 0 a c
-      order={`";'$1'=='+'?'<':'>'"`}
       if '$2'=='x';
-        _pixelsort $order channels 1,{s-2}
+        _pixelsort $1 channels 1,{s-2}
       elif '$2'=='y';
-        permute yxzc _pixelsort $order channels 1,{s-2} permute yxzc
+        permute yxzc _pixelsort $1 channels 1,{s-2} permute yxzc
       elif '$2'=='z';
-        permute zxyc _pixelsort $order channels 1,{s-2} permute yzxc
+        permute zxyc _pixelsort $1 channels 1,{s-2} permute yzxc
       elif '$2'=='xy';
-        _pixelsort $order permute yxzc _pixelsort $order channels 1,{s-2} permute yxzc
+        _pixelsort $1 permute yxzc _pixelsort $1 channels 1,{s-2} permute yxzc
       elif '$2'=='yx';
-        permute yxzc _pixelsort $order permute yxzc _pixelsort $order channels 1,{s-2}
+        permute yxzc _pixelsort $1 permute yxzc _pixelsort $1 channels 1,{s-2}
       fi
       nm $nm
     endl
@@ -23823,7 +23822,7 @@ _pixelsort :
   eval. ">begin(ret = [ 0 ]; const m = s - 1);
           i(x,y,z,m) && !i(#-1,x - 1,y,z,m)?(
             for (x1 = x + 1, x1<w && i(x1,y,z,m), ++x1);
-            --x1>x?run('+z[0] ',x,',',y,',',z,',',0,',',x1,',',y,',',z,',',m - 1,' sort. +,x j.. .,',x,',',y,' rm.');
+            --x1>x?run('+z[0] ',x,',',y,',',z,',',0,',',x1,',',y,',',z,',',m - 1,' sort. $1,x j.. .,',x,',',y,' rm.');
           ); ret"
 
 #@cli polaroid : _size1>=0,_size2>=0
