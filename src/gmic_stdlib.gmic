@@ -21681,35 +21681,6 @@ nn_lib :
       nn_optimizer==2?nn_optimizer_adamax_update_layer(#L,#dL); # Adamax
     );
 
-    # Strategy to adapt learning rate regarding loss decrease/increase.
-    #-------------------------------------------------------------------
-    nn_optimizer_update_learning_rate(L) = (
-      nn_batch_iteration?(
-        # Compute trend: percentage of loss decrease(<0) or increase(>0).
-        L#_trend = (L#_out - L#_previous_out)/max(1e-8,L#_previous_out);
-        L#_trend_moment = lerp(sign(L#_trend),L#_trend_moment,0.75);
-
-        # Adapt strategy regarding to trend.
-        L#_trend>=0.3?( # Large local loss increase -> drastically reduce learning rate
-          L#_learning_rate = max(0.25*L#_learning_rate,1e-11);
-          L#_nb_increases = L#_nb_decreases = 0;
-        ):L#_trend_moment>=0?( # Global loss increase
-          ++L#_nb_increases;
-          L#_nb_decreases = 0;
-          L#_nb_increases>=2?( # Global loss increase -> slightly reduce learning rate
-            L#_learning_rate = max(0.75*L#_learning_rate,1e-11);
-            L#_nb_increases = 0;
-          );
-        ):L#_trend_moment<0?( # Global loss decrease
-          ++L#_nb_decreases;
-          L#_nb_decreases>=4?( # Global loss decrease -> slightly increase learning rate
-            L#_learning_rate = min(L#_learning_rate*1.15,0.1);
-            L#_nb_decreases = 0;
-          );
-        );
-      ):(L#_trend = 0);
-    );
-
     #----------------
     # Network layers.
     #----------------
@@ -22229,7 +22200,7 @@ nn_lib :
       L#_out = L#_batch_out;
     );
 
-    nn_loss_mse_update(L,is_adaptive_learning_rate) = (
+    nn_loss_mse_update(L,lr_scheduler) = (
       const L#_ind = $L#;
       L#_iteration = i[##L#_ind,0];
       L#_learning_rate = i[##L#_ind,1];
@@ -22237,9 +22208,51 @@ nn_lib :
       L#_trend_moment = i[##L#_ind,3];
       L#_nb_decreases = i[##L#_ind,4];
       L#_nb_increases = i[##L#_ind,5];
-      is_adaptive_learning_rate?nn_optimizer_update_learning_rate(#L);
+      is_adaptive_learning_rate?nn_scheduler_adaptive_update(#L);
       copy(i[##L#_ind,0],[ L#_iteration + 1,L#_learning_rate,L#_out,L#_trend_moment,L#_nb_decreases,L#_nb_increases ]);
       nn_learning_rate = L#_learning_rate;
+    );
+
+    #--------------------------
+    # Learning Rate Schedulers.
+    #--------------------------
+    nn_scheduler_init(L) = (
+      nn_learning_rate = L#_learning_rate;
+    );
+
+    # linear : Linear decrease
+    #--------------------------
+    nn_scheduler_linear_update(L) = (
+      nn_learning_rate = lerp(0,nn_learning_rate,0.99);
+    );
+
+    # adaptive
+    #----------
+    nn_scheduler_adaptive_update(L) = (
+      nn_batch_iteration?(
+        # Compute trend: percentage of loss decrease(<0) or increase(>0).
+        L#_trend = (L#_out - L#_previous_out)/max(1e-8,L#_previous_out);
+        L#_trend_moment = lerp(sign(L#_trend),L#_trend_moment,0.75);
+
+        # Adapt strategy regarding to trend.
+        L#_trend>=0.3?( # Large local loss increase -> drastically reduce learning rate
+          L#_learning_rate = max(0.25*L#_learning_rate,1e-11);
+          L#_nb_increases = L#_nb_decreases = 0;
+        ):L#_trend_moment>=0?( # Global loss increase
+          ++L#_nb_increases;
+          L#_nb_decreases = 0;
+          L#_nb_increases>=2?( # Global loss increase -> slightly reduce learning rate
+            L#_learning_rate = max(0.75*L#_learning_rate,1e-11);
+            L#_nb_increases = 0;
+          );
+        ):L#_trend_moment<0?( # Global loss decrease
+          ++L#_nb_decreases;
+          L#_nb_decreases>=4?( # Global loss decrease -> slightly increase learning rate
+            L#_learning_rate = min(L#_learning_rate*1.15,0.1);
+            L#_nb_decreases = 0;
+          );
+        );
+      ):(L#_trend = 0);
     );
     "
 
@@ -22466,13 +22479,12 @@ nn_layer_upsample2d : nn_check_layer "$2" check ${"is_variable_name $1"}" && isb
   _nn_backward..="nn_layer_upsample2d_backward($1,$2);"
   _nn_init.="$0 $* "
 
-#@cli nn_loss_mse : name,in,ground_truth,_learning_rate,_is_adaptive_learning_rate={ 0=false | 1=true }
+#@cli nn_loss_mse : name,in,ground_truth,_learning_rate,_lr_scheduler
 #@cli : Add a 'mse' loss to the network.
-#@cli : Default value: 'learning_rate=1e-6' and 'is_adaptive_learning_rate=1'.
+#@cli : Default value: 'learning_rate=1e-6' and 'learning_rate_scheduler=adaptive'.
 nn_loss_mse : nn_check_layer "$2" check ${"is_variable_name $1"}" && "${"is_variable_name $3"}" && "\
-             "${4=1e-6}>0 && isbool(${5=1})"
-  s0,s1=fixed,adaptive
-  e[^-1] "[nn_lib] Add 'mse' loss '$1', with input '$2', ground truth '$3' and "${s$5}" learning rate $4."
+             "${4=1e-6}>0 && "${"is_variable_name $5"}
+  e[^-1] "[nn_lib] Add 'mse' loss '$1', with input '$2', ground truth '$3', learning rate $4 and lr_scheduler $5."
   _nn_$1_out_size=1,1,1,1
   if !isint($$1)
   # (iteration,learning_rate,previous_out,trend_moment,nb_decreases,nb_increases)
