@@ -3479,16 +3479,15 @@ echo_file : skip "${2='\n'}"
 #@cli function1d : 0<=smoothness<=1,x0>=0,y0,x1>=0,y1,...,xn>=0,yn
 #@cli : Insert continuous 1D function from specified list of keypoints (xk,yk)
 #@cli : in range [0,max(xk)] (xk are positive integers).
-#@cli : Default values: 'smoothness=1' and 'x0=y0=0'.
 #@cli : $ function1d 1,0,0,10,30,40,20,70,30,80,0 +display_graph 400,300
-+function1d : check "${1=1}>=0 && $1<=1" skip ${2=0},${3=0}
++function1d :
   e[^-1] "Input continuous 1D function, with smoothness $1 and keypoints (${2--1})."
   l[]
 
   # Sort and normalize input keypoints.
   smoothness={max(0,min(1,$1))}
   (${2--1}) r 2,{int(w/2)},1,1,-1
-  sort +,y s x size={0,if(iM>=0,1+int(iM),0)}
+  sort +,y s x size={0,iM>=0?1+int(iM):0}
   if !$size rm 0 break fi
   a x
 
@@ -3540,7 +3539,7 @@ echo_file : skip "${2='\n'}"
 #@cli : Default values: 'nb_copies=1', 'height=depth=spectrum=1' and 'value1=0'.
 #@cli : $ input image.jpg
 #@cli : $ input (1,2,3;4,5,6;7,8,9^9,8,7;6,5,4;3,2,1)
-#@cli : $ image.jpg (1,2,3;4,5,6;7,8,9) (255^128^64) 400,400,1,3,'if(x>w/2,x,y)*c'
+#@cli : $ image.jpg (1,2,3;4,5,6;7,8,9) (255^128^64) 400,400,1,3,'(x>w/2?x:y)*c'
 #@cli : $$
 
 #@cli input_565 : filename,width>0,height>0,reverse_endianness={ 0 | 1 }
