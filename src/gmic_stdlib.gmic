@@ -22184,14 +22184,18 @@ nn_lib :
 
     # mse : Mean-squared error.
     #--------------------------
-    nn_loss_mse_init_backward(L) = (
+    nn_loss_mse_init_forward(L) = (
       L#_batch_out = 0;
     );
 
-    nn_loss_mse_backward(L,IN,TRUTH) = (
-      IN#_deriv_out = 2*(IN#_out - TRUTH);
-      L#_out = norm(IN#_deriv_out/2)^2/size(IN#_deriv_out);
+    nn_loss_mse_forward(L,IN,TRUTH) = (
+      L#_tmp = IN#_out - TRUTH;
+      L#_out = norm(L#_tmp)^2/size(L#_tmp);
       L#_batch_out+=L#_out;
+    );
+
+    nn_loss_mse_backward(L,IN) = (
+      IN#_deriv_out = 2*L#_tmp;
     );
 
     nn_loss_mse_end_backward(L) = (
@@ -22200,22 +22204,22 @@ nn_lib :
       L#_out = L#_batch_out;
     );
 
-    nn_loss_mse_update(L,lr_scheduler) = (
-      const L#_ind = $L#;
-      L#_iteration = i[##L#_ind,0];
-      L#_learning_rate = i[##L#_ind,1];
-      L#_previous_out = i[##L#_ind,2];
-      L#_trend_moment = i[##L#_ind,3];
-      L#_nb_decreases = i[##L#_ind,4];
-      L#_nb_increases = i[##L#_ind,5];
-      is_adaptive_learning_rate?nn_scheduler_adaptive_update(#L);
-      copy(i[##L#_ind,0],[ L#_iteration + 1,L#_learning_rate,L#_out,L#_trend_moment,L#_nb_decreases,L#_nb_increases ]);
-      nn_learning_rate = L#_learning_rate;
-    );
+    # nn_loss_mse_update(L,lr_scheduler) = (
+    #   const L#_ind = $L#;
+    #   L#_iteration = i[##L#_ind,0];
+    #   L#_learning_rate = i[##L#_ind,1];
+    #   L#_previous_out = i[##L#_ind,2];
+    #   L#_trend_moment = i[##L#_ind,3];
+    #   L#_nb_decreases = i[##L#_ind,4];
+    #   L#_nb_increases = i[##L#_ind,5];
+    #   is_adaptive_learning_rate?nn_scheduler_adaptive_update(#L);
+    #   copy(i[##L#_ind,0],[ L#_iteration + 1,L#_learning_rate,L#_out,L#_trend_moment,L#_nb_decreases,L#_nb_increases ]);
+    #   nn_learning_rate = L#_learning_rate;
+    # );
 
-    #--------------------------
-    # Learning Rate Schedulers.
-    #--------------------------
+    #-------------
+    # Schedulers.
+    #-------------
     nn_scheduler_init(L) = (
       nn_learning_rate = L#_learning_rate;
     );
@@ -22272,24 +22276,6 @@ nn_check_layer :
   elif narg($_nn_$1_out_size)!=4
     error[0--3] "nn_check_layer: Layer with name '$1' does not exist."
   fi
-
-#@cli nn_save : 'filename.gmz'
-#@cli : Save current network as a .gmz file.
-#@cli : Neural network files can be only saved in .gmz format.
-nn_save : check "s=['$1']; find(s,'.gmz')==size(s) - 4"
-  e[^-1] "[nn_lib] Save current network as file '$1'."
-  ('$_nn_parameters') autocrop. {','} sel={t} rm.
-  ('$_nn_init') autocrop. {'" "'}
-  nm. _nn_init
-  o[$sel,-1] "$1"
-  rm.
-
-#@cli nn_load : 'filename.gmz'
-#@cli : Load and initialize network saved as a .gmz file.
-#@cli : Neural network files can be only loaded in .gmz format.
-nn_load : check "s=['$1']; find(s,'.gmz')==size(s) - 4"
-  e[^-1] "[nn_lib] Load network from file '$1'."
-  i "$1" run {t} rm.
 
 #@cli nn_layer_input : name,width,_height,_depth,_spectrum
 #@cli : Add an 'input' layer to the network.
@@ -22479,23 +22465,51 @@ nn_layer_upsample2d : nn_check_layer "$2" check ${"is_variable_name $1"}" && isb
   _nn_backward..="nn_layer_upsample2d_backward($1,$2);"
   _nn_init.="$0 $* "
 
-#@cli nn_loss_mse : name,in,ground_truth,_learning_rate,_lr_scheduler
+#@cli nn_loss_mse : name,in,ground_truth
 #@cli : Add a 'mse' loss to the network.
 #@cli : Default value: 'learning_rate=1e-6' and 'learning_rate_scheduler=adaptive'.
-nn_loss_mse : nn_check_layer "$2" check ${"is_variable_name $1"}" && "${"is_variable_name $3"}" && "\
-             "${4=1e-6}>0 && "${"is_variable_name $5"}
-  e[^-1] "[nn_lib] Add 'mse' loss '$1', with input '$2', ground truth '$3', learning rate $4 and lr_scheduler $5."
+nn_loss_mse : nn_check_layer "$2" check ${"is_variable_name $1"}" && "${"is_variable_name $3"}
+  e[^-1] "[nn_lib] Add MSE loss '$1', with input '$2' and ground truth '$3'."
   _nn_$1_out_size=1,1,1,1
-  if !isint($$1)
-  # (iteration,learning_rate,previous_out,trend_moment,nb_decreases,nb_increases)
-    (0,$4,inf,0,0,0) nm. $1
-  fi
-  _nn_backward..="begin(nn_loss_mse_init_backward($1));"\
-                 "nn_loss_mse_backward($1,$2,$3);"\
-                 "end(nn_loss_mse_end_backward($1));"
-  _nn_update..="end(nn_loss_mse_update($1,$5));"
+  _nn_forward.="begin(nn_loss_mse_init_forward($2);"\
+               "nn_loss_mse_forward(${1-3});
+               end(nn_loss_mse_end_forward($1));"
+  _nn_backward..="nn_loss_mse_backward($1,$2);"
   _nn_init.="$0 $* "
   _nn_parameters.="$1,"
+
+#@cli nn_trainer : name,loss,_learning_rate,_scheduler,_scheduler_options...
+#@cli : Add a network trainer to the network.
+#@cli : Default value: 'learning_rate=1e-6' and 'scheduler=adaptive'.
+nn_trainer : nn_check_layer "$2" check ${"is_variable_name $1"}" && {3=1e-6}>0 && "${"is_variable_name ${4=adaptive}"}
+  e[^-1] "[nn_lib] Add trainer '$1' for loss '$2', with learning rate '$3' and $4 scheduler."
+  _nn_$1_out_size=1,1,1,1
+  if !isint($$1)
+    # (iteration,learning_rate;{scheduler variables})
+    l[] (0,$3) _nn_scheduler_$4 "${5--1}" a c nm $1 endl
+  fi
+
+_nn_scheduler_constant : skip $* 0
+_nn_scheduler_linear : skip $* 0
+_nn_scheduler_adaptive : skip $* 0
+
+#@cli nn_load : 'filename.gmz'
+#@cli : Load and initialize network saved as a .gmz file.
+#@cli : Neural network files can be only loaded in .gmz format.
+nn_load : check "s=['$1']; find(s,'.gmz')==size(s) - 4"
+  e[^-1] "[nn_lib] Load network from file '$1'."
+  i "$1" run {t} rm.
+
+#@cli nn_save : 'filename.gmz'
+#@cli : Save current network as a .gmz file.
+#@cli : Neural network files can be only saved in .gmz format.
+nn_save : check "s=['$1']; find(s,'.gmz')==size(s) - 4"
+  e[^-1] "[nn_lib] Save current network as file '$1'."
+  ('$_nn_parameters') autocrop. {','} sel={t} rm.
+  ('$_nn_init') autocrop. {'" "'}
+  nm. _nn_init
+  o[$sel,-1] "$1"
+  rm.
 
 #----------------------------------
 #
@@ -50957,7 +50971,7 @@ fx_solve_maze_preview :
 #------------------------------
 # Test program for FC networks.
 #------------------------------
-nn_test_fc : check "${1=1e-4}>0 && isbool(${2=1})"
+nn_test_fc : check "${1=1e-4}>0"
 
   # Build neural network.
   #----------------------
@@ -50971,7 +50985,11 @@ nn_test_fc : check "${1=1e-4}>0 && isbool(${2=1})"
   nn_layer_fcnl FC5,FC4,30,relu
   nn_layer_fcnl FC6,FC5,3,relu
   nn_layer_rename OUT,FC6
-  nn_loss_mse L,OUT,Y,$1,$2
+  nn_loss_mse LOSS,OUT,Y
+  nn_trainer TRAINER,LOSS,$1,constant
+
+  d
+
   sp lena,128 nm. img
 
   # Optimize network.
