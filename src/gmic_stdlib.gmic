@@ -21601,16 +21601,19 @@ nn_lib :
     #---------
     nn_trainer_init_backward(T,O,S) = (
       const T#_ind = $T#;
-      const nn_optimizer = O;
-      const nn_scheduler = S;
       nn_iteration = i[##T#_ind,0];
       nn_learning_rate = i[##T#_ind,1];
-      nn_optimizer==1?nn_optimizer_adam_init():    # Adam
-      nn_optimizer==2?nn_optimizer_adamax_init();  # Adamax
+
+      const nn_optimizer = O;
+      const nn_scheduler = S;
+      nn_optimizer==1?nn_optimizer_adam_init():
+      nn_optimizer==2?nn_optimizer_adamax_init();
     );
 
-    nn_trainer_end_backward(T) = (
-      i[##T#_ind,0] = nn_iteration + 1;
+    nn_trainer_update(T) = (
+      nn_scheduler==1?nn_scheduler_linear_update():
+      nn_scheduler==2?nn_scheduler_adaptive_update();
+      i[##T#_ind,0] = ++nn_iteration;
       i[##T#_ind,1] = nn_learning_rate;
     );
 
@@ -21685,6 +21688,59 @@ nn_lib :
 
       L_params#-=(nn_learning_rate/nn_optimizer_adamax_ombeta1_t)*dL_params#_m/sqrt(1e-8 + dL_params#_v);
     );
+
+    #-------------
+    # Schedulers.
+    #-------------
+
+    # linear : Linear decrease
+    #--------------------------
+    nn_scheduler_linear_update() = (
+      nn_learning_rate*=0.999;
+    );
+
+    # adaptive
+    #----------
+    nn_scheduler_adaptive_update(L) = (
+      nn_iteration?(
+        # Compute trend: percentage of loss decrease(<0) or increase(>0).
+        L#_trend = (L#_out - L#_previous_out)/max(1e-8,L#_previous_out);
+        L#_trend_moment = lerp(sign(L#_trend),L#_trend_moment,0.75);
+
+        # Adapt strategy regarding to trend.
+        L#_trend>=0.3?( # Large local loss increase -> drastically reduce learning rate
+          L#_learning_rate = max(0.25*L#_learning_rate,1e-11);
+          L#_nb_increases = L#_nb_decreases = 0;
+        ):L#_trend_moment>=0?( # Global loss increase
+          ++L#_nb_increases;
+          L#_nb_decreases = 0;
+          L#_nb_increases>=2?( # Global loss increase -> slightly reduce learning rate
+            L#_learning_rate = max(0.75*L#_learning_rate,1e-11);
+            L#_nb_increases = 0;
+          );
+        ):L#_trend_moment<0?( # Global loss decrease
+          ++L#_nb_decreases;
+          L#_nb_decreases>=4?( # Global loss decrease -> slightly increase learning rate
+            L#_learning_rate = min(L#_learning_rate*1.15,0.1);
+            L#_nb_decreases = 0;
+          );
+        );
+      ):(L#_trend = 0);
+    );
+
+    # nn_loss_mse_update(L,lr_scheduler) = (
+    #   const L#_ind = $L#;
+    #   L#_iteration = i[##L#_ind,0];
+    #   L#_learning_rate = i[##L#_ind,1];
+    #   L#_previous_out = i[##L#_ind,2];
+    #   L#_trend_moment = i[##L#_ind,3];
+    #   L#_nb_decreases = i[##L#_ind,4];
+    #   L#_nb_increases = i[##L#_ind,5];
+    #   is_adaptive_learning_rate?nn_scheduler_adaptive_update(#L);
+    #   copy(i[##L#_ind,0],[ L#_iteration + 1,L#_learning_rate,L#_out,L#_trend_moment,L#_nb_decreases,L#_nb_increases ]);
+    #   nn_learning_rate = L#_learning_rate;
+    # );
+
 
     #----------------
     # Network layers.
@@ -22189,81 +22245,21 @@ nn_lib :
 
     # mse : Mean-squared error.
     #--------------------------
-    nn_loss_mse_init_forward(L) = (
+    nn_loss_mse_init_backward(L) = (
       L#_batch_out = 0;
     );
 
-    nn_loss_mse_forward(L,IN,TRUTH) = (
-      L#_tmp = IN#_out - TRUTH;
-      L#_out = norm(L#_tmp)^2/size(L#_tmp);
+    nn_loss_mse_backward(L,IN,TRUTH) = (
+      IN#_deriv_out = 2*(IN#_out - TRUTH);
+      L#_out = norm(IN#_deriv_out/2)^2/size(IN#_deriv_out);
       L#_batch_out+=L#_out;
     );
 
-    nn_loss_mse_end_forward(L) = (
+    nn_loss_mse_end_backward(L) = (
       merge(L#_batch_out,+);
       L#_batch_out/=nn_nb_samples;
       L#_out = L#_batch_out;
     );
-
-    nn_loss_mse_backward(L,IN) = (
-      IN#_deriv_out = 2*L#_tmp;
-    );
-
-    # nn_loss_mse_update(L,lr_scheduler) = (
-    #   const L#_ind = $L#;
-    #   L#_iteration = i[##L#_ind,0];
-    #   L#_learning_rate = i[##L#_ind,1];
-    #   L#_previous_out = i[##L#_ind,2];
-    #   L#_trend_moment = i[##L#_ind,3];
-    #   L#_nb_decreases = i[##L#_ind,4];
-    #   L#_nb_increases = i[##L#_ind,5];
-    #   is_adaptive_learning_rate?nn_scheduler_adaptive_update(#L);
-    #   copy(i[##L#_ind,0],[ L#_iteration + 1,L#_learning_rate,L#_out,L#_trend_moment,L#_nb_decreases,L#_nb_increases ]);
-    #   nn_learning_rate = L#_learning_rate;
-    # );
-
-    #-------------
-    # Schedulers.
-    #-------------
-    nn_scheduler_init(L) = (
-      nn_learning_rate = L#_learning_rate;
-    );
-
-    # linear : Linear decrease
-    #--------------------------
-    nn_scheduler_linear_update(L) = (
-      nn_learning_rate = lerp(0,nn_learning_rate,0.99);
-    );
-
-    # adaptive
-    #----------
-    nn_scheduler_adaptive_update(L) = (
-      nn_iteration?(
-        # Compute trend: percentage of loss decrease(<0) or increase(>0).
-        L#_trend = (L#_out - L#_previous_out)/max(1e-8,L#_previous_out);
-        L#_trend_moment = lerp(sign(L#_trend),L#_trend_moment,0.75);
-
-        # Adapt strategy regarding to trend.
-        L#_trend>=0.3?( # Large local loss increase -> drastically reduce learning rate
-          L#_learning_rate = max(0.25*L#_learning_rate,1e-11);
-          L#_nb_increases = L#_nb_decreases = 0;
-        ):L#_trend_moment>=0?( # Global loss increase
-          ++L#_nb_increases;
-          L#_nb_decreases = 0;
-          L#_nb_increases>=2?( # Global loss increase -> slightly reduce learning rate
-            L#_learning_rate = max(0.75*L#_learning_rate,1e-11);
-            L#_nb_increases = 0;
-          );
-        ):L#_trend_moment<0?( # Global loss decrease
-          ++L#_nb_decreases;
-          L#_nb_decreases>=4?( # Global loss decrease -> slightly increase learning rate
-            L#_learning_rate = min(L#_learning_rate*1.15,0.1);
-            L#_nb_decreases = 0;
-          );
-        );
-      ):(L#_trend = 0);
-    );
-
     "
 
 #@cli nn_init
@@ -22474,10 +22470,9 @@ nn_layer_upsample2d : nn_check_layer "$2" check "isvarname('$1') && isbool(${3=0
 nn_loss_mse : nn_check_layer "$2" check "isvarname('$1') && isvarname('$3')"
   e[^-1] "[nn_lib] Add MSE loss '$1', with input '$2' and ground truth '$3'."
   _nn_$1_out_size=1,1,1,1
-  _nn_forward.="begin(nn_loss_mse_init_forward($1));"\
-               "nn_loss_mse_forward(${1-3});"\
-               "end(nn_loss_mse_end_forward($1));"
-  _nn_backward..="nn_loss_mse_backward($1,$2);"
+  _nn_backward..="begin(nn_loss_mse_init_backward($1));"\
+                 "nn_loss_mse_backward(${1-3});"\
+                 "end(nn_loss_mse_end_backward($1));"
   _nn_init.="$0 $* "
   _nn_parameters.="$1,"
 
@@ -22494,8 +22489,8 @@ nn_trainer : nn_check_layer "$2" check "isvarname('$1') && ${3=1e-6}>0 && isvarn
   fi
   o_sgd,o_adam,o_adamax=0,1,2
   s_constant,s_linear,s_adaptive=0,1,2
-  _nn_backward..="begin(nn_trainer_init_backward($1,"${o_$4},${s_$5}"));"\
-                 "end(nn_trainer_end_backward($1));"
+  _nn_backward..="begin(nn_trainer_init_backward($1,"${o_$4},${s_$5}"));"
+  _nn_update.="end(nn_trainer_update($1));" # <- Keep this as the last thing done in an 'end()' bloc!
   _nn_init.="$0 $*"
   _nn_parameters.="$1,"
 
@@ -50985,8 +50980,8 @@ nn_test_fc : check "${1=1e-4}>0"
   nn_layer_fcnl FC6,FC5,3,relu
   nn_layer_rename OUT,FC6
   nn_loss_mse LOSS,OUT,Y
-  nn_trainer TRAINER,LOSS,$1,adam,constant
-  sp lena,128 nm. img
+  nn_trainer TRAINER,LOSS,$1,adam,linear
+  sp lena,64 nm. img
 
   # Optimize network.
   #-------------------
@@ -51004,7 +50999,7 @@ nn_test_fc : check "${1=1e-4}>0"
     nm. batch
 
     # Mini-batch stochastic gradient descent.
-    repeat 128,batch_iter
+    repeat 32,batch_iter
       eval[batch] *${-nn_lib}"
         batch = I;
         X = batch[0,2]; # Input
@@ -51014,7 +51009,7 @@ nn_test_fc : check "${1=1e-4}>0"
         ${_nn_update}"
         end(
 #          !($batch_iter%20)?print([LOSS_out,nn_learning_rate,LOSS_trend,LOSS_trend_moment]);
-          !($batch_iter%20)?print([LOSS_out,nn_learning_rate]);
+          !($batch_iter%5)?print([LOSS_out,nn_learning_rate]);
         ); I"
     done
     rm[batch]
