@@ -22470,7 +22470,6 @@ nn_loss_mse : nn_check_layer "$2" check "isvarname('$1') && isvarname('$3')"
                  "nn_loss_mse_backward(${1-3});"\
                  "end(nn_loss_mse_end_backward($1));"
   _nn_init.="$0 $* "
-  _nn_parameters.="$1,"
 
 #@cli nn_trainer : name,loss,_learning_rate>0,_optimizer,_scheduler
 #@cli : Add a network trainer to the network.
@@ -50982,7 +50981,7 @@ nn_test_fc : check "${1=1e-4}>0"
   nn_layer_fcnl FC6,FC5,3
   nn_layer_rename OUT,FC6
   nn_loss_mse LOSS,OUT,Y
-  nn_trainer TRAINER,LOSS,$1,adam,constant
+  nn_trainer TRAINER,LOSS,$1,adam,linear
   sp lena,64 nm. img
 
   # Optimize network.
@@ -51084,7 +51083,7 @@ nn_layer_res2 : nn_check_layer "$2" check "isvarname('$1') && isint(${3=16}) && 
   nn_layer_nl $1,$1_ADD
 
 # Main test procedure.
-nn_test : skip ${1=1e-4}
+nn_test : skip ${1=1e-3}
 
   # Build neural network.
   #----------------------
@@ -51093,9 +51092,9 @@ nn_test : skip ${1=1e-4}
     nn_init
     nn_layer_input X,32,32,1,2
 #    nn_resnet
-    nn_unet
+    nn_unet_small
     nn_loss_mse L,OUT,Y
-    nn_trainer T,L,$1
+    nn_trainer T,L,$1,adam,constant
   fi
 
   l[]
@@ -51106,15 +51105,11 @@ nn_test : skip ${1=1e-4}
   l[img] s z repeat $! l[$>] g. xy a c endl done a z endl
 #  if isfile('stats.gmz') stats.gmz else 0 fi nm. stats
 
-  _nn_optimizer=1
-
   # Optimize network.
   #------------------
   size_batch=128
   repeat inf,iter
     e[] "ITER = "$iter
-
-#    srand 100
 
     # Build mini-batch.
     32,32,$size_batch,2 nm. batch_X
@@ -51137,7 +51132,7 @@ nn_test : skip ${1=1e-4}
     rm.
 #    noise[batch_X] {u(5,30)} c[batch_X] 0,255
 
-    # Mini-batch stochastic gradient.
+    # Process mini-batch.
     repeat 10,batch_iter
       1,1,{batch_X,d},1,*${-nn_lib}"
         X = crop(#$batch_X,0,0,z,0,32,32,1,2);
@@ -51255,7 +51250,9 @@ nn_unet :
 
 
 nn_unet_small :
-  nn_layer_conv2dnl lA,X,8
+  nn_layer_batchnorm BN,X
+
+  nn_layer_conv2dnl lA,BN,8
   nn_layer_conv2dnl lB,lA,8
   nn_layer_clone lB0,lB1,lB
 
