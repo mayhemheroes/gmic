@@ -21617,15 +21617,14 @@ nn_lib :
       i[##T#_ind,1] = nn_learning_rate;
     );
 
-    nn_trainer_update_layer(L,dL) = (
+    #------------
+    # Optimizers.
+    #------------
+    nn_optimizer_update_layer(L,dL) = (
       !nn_optimizer?nn_optimizer_sgd_update_layer(#L,#dL):      # Stochastic gradient descent
       nn_optimizer==1?nn_optimizer_adam_update_layer(#L,#dL):   # Adam
       nn_optimizer==2?nn_optimizer_adamax_update_layer(#L,#dL); # Adamax
     );
-
-    #------------
-    # Optimizers.
-    #------------
 
     # Stochastic gradient descent.
     #-----------------------------
@@ -21901,11 +21900,11 @@ nn_lib :
         draw(##L#_ind,L#_in_variance,3,0,0,0,1,h##L#_ind,1,1,momentum);
       );
       learning_mode&1?(
-        nn_trainer_update_layer(L#_gamma,L#_batch_deriv_gamma);
+        nn_optimizer_update_layer(L#_gamma,L#_batch_deriv_gamma);
         draw(##L#_ind,L#_gamma,4,0,0,0,1,h##L#_ind);
       );
       learning_mode&2?(
-        nn_trainer_update_layer(L#_beta,L#_batch_deriv_beta);
+        nn_optimizer_update_layer(L#_beta,L#_batch_deriv_beta);
         draw(##L#_ind,L#_beta,5,0,0,0,1,h##L#_ind);
       );
     );
@@ -22032,8 +22031,8 @@ nn_lib :
     );
 
     nn_layer_conv2d_update(L) = (
-      nn_trainer_update_layer(L#_weights,L#_batch_deriv_weights);
-      nn_trainer_update_layer(L#_biases,L#_batch_deriv_biases);
+      nn_optimizer_update_layer(L#_weights,L#_batch_deriv_weights);
+      nn_optimizer_update_layer(L#_biases,L#_batch_deriv_biases);
       draw(##L#_ind,L#_weights,0,0,0,0,w##L#_ind - 1,h##L#_ind);
       draw(##L#_ind,L#_biases,w##L#_ind - 1,0,0,0,1,h##L#_ind);
     );
@@ -22077,8 +22076,8 @@ nn_lib :
     );
 
     nn_layer_fc_update(L) = (
-      nn_trainer_update_layer(L#_weights,L#_batch_deriv_weights);
-      nn_trainer_update_layer(L#_biases,L#_batch_deriv_biases);
+      nn_optimizer_update_layer(L#_weights,L#_batch_deriv_weights);
+      nn_optimizer_update_layer(L#_biases,L#_batch_deriv_biases);
       draw(##L#_ind,L#_weights,0,0,0,0,w##L#_ind - 1,h##L#_ind);
       draw(##L#_ind,L#_biases,w##L#_ind - 1,0,0,0,1,h##L#_ind);
     );
