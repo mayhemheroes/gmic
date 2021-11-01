@@ -21501,10 +21501,8 @@ nn_lib :
     # Definition of the library environment variables and convenience functions.
     #---------------------------------------------------------------------------
     begin(
-      const nn_is_training = isnan($_nn_is_training)?0:$_nn_is_training;
       const nn_optimizer = isnan($_nn_optimizer)?1:$_nn_optimizer; # Adam optimizer by default
       const nn_iteration = isnan($_nn_iteration)?0:$_nn_iteration;
-      const nn_batch_iteration = isnan($_nn_batch_iteration)?0:$_nn_batch_iteration;
       const nn_nb_threads_max = n;
     );
 
@@ -21523,7 +21521,6 @@ nn_lib :
 
     nn_update() = ( # This has to be the last 'end()' bloc encountered in $_nn_update
       set(nn_iteration + 1,'_nn_iteration');
-      set(nn_batch_iteration + 1,'_nn_batch_iteration');
     );
 
     nn_display(L) = display(L#_out,L#_out_width,L#_out_height,L#_out_depth,L#_out_spectrum);
@@ -21767,7 +21764,7 @@ nn_lib :
       const L#_out_height = IN#_out_height;
       const L#_out_depth = IN#_out_depth;
       const L#_out_spectrum = IN#_out_spectrum;
-      const L#_base_col = nn_is_training==1?0:2;
+      const L#_base_col = 0;
       L#_mu = crop(##L#_ind,L#_base_col,0,1,h##L#_ind);
       L#_sigma = sqrt(crop(##L#_ind,L#_base_col + 1,0,1,h##L#_ind));
       isnan(L#_mu[0])?(L#_mu = 0; L#_sigma = 1);
@@ -21836,7 +21833,7 @@ nn_lib :
     nn_layer_batchnorm_update(L,learning_mode) = (
       draw(##L#_ind,L#_in_mean,0,0,0,0,1,h##L#_ind,1,1); # Update batch mean and batch variance
       draw(##L#_ind,L#_in_variance,1,0,0,0,1,h##L#_ind,1,1);
-      !$nn_batch_iteration?(
+      !$nn_iteration?(
         momentum = isnan(i[##L#_ind,2])?1:0.01;
         draw(##L#_ind,L#_in_mean,2,0,0,0,1,h##L#_ind,1,1,momentum); # Global mean and variance
         draw(##L#_ind,L#_in_variance,3,0,0,0,1,h##L#_ind,1,1,momentum);
@@ -22235,7 +22232,7 @@ nn_lib :
     # adaptive
     #----------
     nn_scheduler_adaptive_update(L) = (
-      nn_batch_iteration?(
+      nn_iteration?(
         # Compute trend: percentage of loss decrease(<0) or increase(>0).
         L#_trend = (L#_out - L#_previous_out)/max(1e-8,L#_previous_out);
         L#_trend_moment = lerp(sign(L#_trend),L#_trend_moment,0.75);
@@ -22266,7 +22263,7 @@ nn_lib :
 #@cli : Initialize a new network.
 nn_init :
   e[^-1] "[nn_lib] Initialize new network."
-  _nn_forward,_nn_backward,_nn_parameters,_nn_iteration,_nn_batch_iteration,_nn_is_training,_nn_optimizer=
+  _nn_forward,_nn_backward,_nn_parameters,_nn_iteration,_nn_optimizer=
   _nn_init="$0 "
   _nn_update="end(nn_update());"
 
@@ -22485,13 +22482,14 @@ nn_trainer : nn_check_layer "$2" check "isvarname('$1') && ${3=1e-6}>0 && isvarn
   e[^-1] "[nn_lib] Add trainer '$1' for loss '$2', with learning rate '$3' and $4 scheduler."
   _nn_$1_out_size=1,1,1,1
   if !isint($$1)
-    # (iteration,learning_rate;{scheduler variables})
-    l[] (0,$3) _nn_scheduler_$4 ${5--1} a c nm $1 endl
+    # (iteration,learning_rate,initial_learning_rate;{scheduler variables})
+    l[] (0,$3,$3) _nn_scheduler_$4 ${5--1} a y nm $1 endl
   fi
+  _nn_forward..="begin(nn_trainer_init_forward(T));"
 
-_nn_scheduler_constant : skip $* 0
-_nn_scheduler_linear : skip $* 0
-_nn_scheduler_adaptive : skip $* 0
+_nn_scheduler_constant : skip $* 1
+_nn_scheduler_linear : skip $* 1
+_nn_scheduler_adaptive : skip $* 1
 
 #@cli nn_load : 'filename.gmz'
 #@cli : Load and initialize network saved as a .gmz file.
@@ -50974,9 +50972,8 @@ nn_test_fc : check "${1=1e-4}>0"
   nn_loss_mse LOSS,OUT,Y
   nn_trainer TRAINER,LOSS,$1,constant
 
-  d
-
   sp lena,128 nm. img
+  d
 
   # Optimize network.
   #-------------------
@@ -50987,15 +50984,13 @@ nn_test_fc : check "${1=1e-4}>0"
     # Build mini-batch.
     $size_batch,1,1,5,"
       const ind = $img;
-      px = u(0,w#ind)%w#ind;
-      py = u(0,h#ind)%h#ind;
+      px = round(u(0,w#ind))%w#ind;
+      py = round(u(0,h#ind))%h#ind;
       val = I(#$img,px,py,0,0,1);
       [ px,py,val ]"
     nm. batch
 
     # Mini-batch stochastic gradient descent.
-    _nn_batch_iteration=0
-    _nn_is_training=1
     repeat 128,batch_iter
       eval[batch] *${-nn_lib}"
         batch = I;
@@ -51009,7 +51004,6 @@ nn_test_fc : check "${1=1e-4}>0"
     rm[batch]
 
     # Render image from network.
-    _nn_is_training=0
     {img,[w,h]},1,3,*${-nn_lib}"
       X = [ x,y ];
       "${_nn_forward}"
@@ -51042,7 +51036,6 @@ nn_test_conv :
   repeat inf,_nn_iter
     e[] "ITER = "$_nn_iter
 
-    _nn_batch_iteration=0
     repeat 10,batch_iter
       eval ${-nn_lib}"
         X = crop(#$img); # Input
@@ -51130,8 +51123,6 @@ nn_test : skip ${1=1e-4}
 #    noise[batch_X] {u(5,30)} c[batch_X] 0,255
 
     # Mini-batch stochastic gradient.
-    _nn_is_training=1
-    _nn_batch_iteration=0
     repeat 10,batch_iter
       1,1,{batch_X,d},1,*${-nn_lib}"
         X = crop(#$batch_X,0,0,z,0,32,32,1,2);
