@@ -21828,12 +21828,10 @@ nn_lib :
       const L#_out_height = IN#_out_height;
       const L#_out_depth = IN#_out_depth;
       const L#_out_spectrum = IN#_out_spectrum;
-      const L#_base_col = 0;
-      L#_mu = crop(##L#_ind,L#_base_col,0,1,h##L#_ind);
-      L#_sigma = sqrt(crop(##L#_ind,L#_base_col + 1,0,1,h##L#_ind));
-      isnan(L#_mu[0])?(L#_mu = 0; L#_sigma = 1);
-      L#_gamma = crop(##L#_ind,4,0,1,h##L#_ind);
-      L#_beta = crop(##L#_ind,5,0,1,h##L#_ind);
+      L#_mu = crop(##L#_ind,0,0,1,h##L#_ind);
+      L#_sigma = sqrt(crop(##L#_ind,1,0,1,h##L#_ind));
+      L#_gamma = crop(##L#_ind,2,0,1,h##L#_ind);
+      L#_beta = crop(##L#_ind,3,0,1,h##L#_ind);
       L#_out = vector(#size(IN#_out));
     );
 
@@ -21870,7 +21868,7 @@ nn_lib :
 
     nn_layer_batchnorm_end_t_backward(L) = (
       L#_in_variance/=L#_nb_samples;
-      copy(L#_threads_nb_samples[nn_thread],L#_nb_samples);
+      L#_threads_nb_samples[nn_thread] = L#_nb_samples;
       copy(L#_threads_in_mean[nn_thread*size(L#_in_mean)],L#_in_mean);
       copy(L#_threads_in_variance[nn_thread*size(L#_in_variance)],L#_in_variance);
       L#_in_mean*=L#_nb_samples;
@@ -21895,20 +21893,16 @@ nn_lib :
     );
 
     nn_layer_batchnorm_update(L,learning_mode) = (
-      draw(##L#_ind,L#_in_mean,0,0,0,0,1,h##L#_ind,1,1); # Update batch mean and batch variance
-      draw(##L#_ind,L#_in_variance,1,0,0,0,1,h##L#_ind,1,1);
-      !$nn_iteration?(
-        momentum = isnan(i[##L#_ind,2])?1:0.01;
-        draw(##L#_ind,L#_in_mean,2,0,0,0,1,h##L#_ind,1,1,momentum); # Global mean and variance
-        draw(##L#_ind,L#_in_variance,3,0,0,0,1,h##L#_ind,1,1,momentum);
-      );
+      momentum = !nn_iteration?1:1e-4;
+      draw(##L#_ind,L#_in_mean,0,0,0,0,1,h##L#_ind,1,1,momentum); # Global mean and variance
+      draw(##L#_ind,L#_in_variance,1,0,0,0,1,h##L#_ind,1,1,momentum);
       learning_mode&1?(
         nn_optimizer_update_layer(L#_gamma,L#_batch_deriv_gamma);
-        draw(##L#_ind,L#_gamma,4,0,0,0,1,h##L#_ind);
+        draw(##L#_ind,L#_gamma,2,0,0,0,1,h##L#_ind);
       );
       learning_mode&2?(
         nn_optimizer_update_layer(L#_beta,L#_batch_deriv_beta);
-        draw(##L#_ind,L#_beta,5,0,0,0,1,h##L#_ind);
+        draw(##L#_ind,L#_beta,3,0,0,0,1,h##L#_ind);
       );
     );
 
@@ -22330,7 +22324,7 @@ nn_layer_batchnorm : nn_check_layer "$2" check "isvarname('$1') && isint(${3=0})
   s0,s1,s2,s3="no parameters","gamma-only","beta-only","gamma & beta"
   e[^-1] "[nn_lib] Add 'batchnorm' layer '$1' to the network, with input '$2' and learning mode '"${s$3}"'."
   _nn_$1_out_size=$_nn_$2_out_size
-  if !isint($$1) 6,{prod($_nn_$2_out_size)} f. nan,nan,nan,nan,1,0 nm. $1 fi
+  if !isint($$1) 4,{prod($_nn_$2_out_size)} f. 0,1,1,0 nm. $1 fi
   _nn_forward.="begin(nn_layer_batchnorm_init_forward($1,$2));"\
                "nn_layer_batchnorm_forward($1,$2);"
   _nn_backward..="begin(nn_layer_batchnorm_init_backward($1,$2));"\
@@ -51002,7 +50996,7 @@ nn_test_fc : check "${1=1e-4}>0"
     nm. batch
 
     # Mini-batch stochastic gradient descent.
-    repeat 32,batch_iter
+    repeat 128,batch_iter
       eval[batch] *${-nn_lib}"
         batch = I;
         X = batch[0,2]; # Input
