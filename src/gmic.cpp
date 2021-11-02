@@ -3414,7 +3414,7 @@ const char *gmic::set_variable(const char *const name, const char *const value,
     int nb_cpus = 0;
     if (cimg_sscanf(__variables[ind],"%d%c",&nb_cpus,&end)!=1 || nb_cpus<=0) {
       s_value.assign(8);
-      nb_cpus = omp_get_max_threads();
+      nb_cpus = (int)cimg::nb_cpus();
       cimg_snprintf(s_value,s_value.width(),"%d",nb_cpus);
       CImg<char>::string(s_value).move_to(__variables[ind]);
     }
