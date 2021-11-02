@@ -51113,7 +51113,17 @@ nn_test : skip ${1=1e-5}
   else
     nn_init
     nn_layer_input X,32,32,1,1
-    nn_resnet
+    nn_layer_clone X0,X1,X
+    nn_layer_batchnorm BN,X1,0
+    nn_layer_conv2d C1,BN,32
+    nn_layer_conv2d C2,C1,32
+    nn_layer_conv2d C3,C2,32
+    nn_layer_conv2d C4,C3,32
+    nn_layer_conv2d C5,C4,32
+    nn_layer_conv2d C6,C5,1
+    nn_layer_add OUT,C6,X0
+
+#    nn_resnet
 #    nn_unet_small
     nn_loss_mse L,OUT,Y
     nn_trainer T,L,$1,rmsprop,constant
