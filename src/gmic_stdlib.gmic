@@ -22496,10 +22496,10 @@ nn_loss_mse : nn_check_layer "$2" check "isvarname('$1') && isvarname('$3')"
 #@cli : 'optimizer' can be { 0=sgd | 1=rmsprop | 2=adam | 3=adamax }.
 #@cli : 'scheduler' can be { 0=constant | 1=linear | 2=exponential | 3=adaptive }.
 #@cli : Default value: 'learning_rate=1e-6', 'optimizer=adam' and 'scheduler=adaptive'.
-nn_trainer : nn_check_layer "$2" check "isvarname('$1') && ${3=1e-6}>0 && isvarname('${4=adam}') && "\
-                                       "isvarname('${5=adaptive}')"
+nn_trainer : nn_check_layer "$2"
+             check "isvarname('$1') && ${3=1e-6}>0 && isvarname('${4=adam}') && isvarname('${5=adaptive}')"
   e[^-1] "[nn_lib] Add trainer '$1' for loss '$2', with learning rate '$3', $4 optimizer and $5 scheduler."
-  _nn_$1_out_size=1,1,1,1
+  _nn_$1_out_size=0,0,0,0
   if !isint($$1)
     # (iteration,learning_rate,initial_learning_rate,previous_loss;{optimizer variables};{scheduler variables})
     l[] (0,$3,$3,inf) _nn_optimizer_$4 _nn_scheduler_$5 a y nm $1 endl
@@ -51112,11 +51112,11 @@ nn_test : skip ${1=1e-5}
   if isfile('network.gmz') nn_load network.gmz
   else
     nn_init
-    nn_layer_input X,32,32,1,2
-#    nn_resnet
-    nn_unet_small
+    nn_layer_input X,32,32,1,1
+    nn_resnet
+#    nn_unet_small
     nn_loss_mse L,OUT,Y
-    nn_trainer T,L,$1,adam,constant
+    nn_trainer T,L,$1,rmsprop,constant
   fi
 
   l[]
@@ -51124,7 +51124,9 @@ nn_test : skip ${1=1e-5}
     a z nm. img
   endl
   [img] nm. res
-  l[img] s z repeat $! l[$>] g. xy a c endl done a z endl
+
+#  l[img] s z repeat $! l[$>] g. xy a c endl done a z endl
+#  l[img] noise 20 c 0,255 endl
 #  if isfile('stats.gmz') stats.gmz else 0 fi nm. stats
 
   # Optimize network.
@@ -51134,7 +51136,7 @@ nn_test : skip ${1=1e-5}
     e[] "ITER = "$iter
 
     # Build mini-batch.
-    32,32,$size_batch,2 nm. batch_X
+    32,32,$size_batch,1 nm. batch_X
     32,32,$size_batch,1 nm. batch_Y
     1,1,$size_batch,1,">
       const img = $img;
@@ -51145,31 +51147,31 @@ nn_test : skip ${1=1e-5}
         ni = int(u(d#img))%d#img;
         nx = int(u(0,w#img - 1 - 32));
         ny = int(u(0,h#img - 1 - 32));
-        X = crop(#img,nx,ny,0,0,32,32,1,2);
+        X = crop(#img,nx,ny,0,0,32,32,1,1);
         Y = crop(#res,nx,ny,0,0,32,32,1,1);
         Y-=avg(Y);
       _(while); std(Y)<p);
-      draw(#$batch_X,X,0,0,z,0,32,32,1,2);
+      draw(#$batch_X,X,0,0,z,0,32,32,1,1);
       draw(#$batch_Y,Y,0,0,z,0,32,32,1,1)"
     rm.
-#    noise[batch_X] {u(5,30)} c[batch_X] 0,255
+    noise[batch_X] {u(5,30)} c[batch_X] 0,255
 
     # Process mini-batch.
-    repeat 64,batch_iter
+    repeat 4,batch_iter
       1,1,{batch_X,d},1,*${-nn_lib}"
-        X = crop(#$batch_X,0,0,z,0,32,32,1,2);
+        X = crop(#$batch_X,0,0,z,0,32,32,1,1);
         Y = crop(#$batch_Y,0,0,z,0,32,32,1,1);
         "${_nn_forward}"
         "${_nn_backward}"
         "${_nn_update}"
         z<4 && !("$batch_iter"%10)?(
           var = string(#256,'IN',t);
-          store(X,var,32,32,1,2);
+          store(X,var,32,32,1,1);
           var = string(#256,'OUT',t);
           store(OUT_out,var,32,32,1,1);
           var = string(#256,'REF',t);
           store(Y,var,32,32,1,1);
-          run('l[] $IN',t,' $OUT',t,' $REF',t,' n 0,255 to_rgb[-2,-1] a x w',z+1,'. 600,200,0 rm endl');
+          run('l[] $IN',t,' $OUT',t,' $REF',t,' n 0,255 a x w',z+1,'. 600,200,0 rm endl');
         );
         end(
           print([ sqrt(L_out),nn_learning_rate ]);
