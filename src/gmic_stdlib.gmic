@@ -21605,6 +21605,7 @@ nn_lib :
       nn_learning_rate = i[##T#_ind,1];
       nn_learning_rate0 = i[##T#_ind,2];
       nn_previous_loss = i[##T#_ind,3];
+      nn_best_loss = i[##T#_ind,4];
 
       const nn_optimizer = O;
       const nn_scheduler = S;
@@ -21621,6 +21622,7 @@ nn_lib :
       i[##T#_ind,0] = ++nn_iteration;
       i[##T#_ind,1] = nn_learning_rate;
       i[##T#_ind,3] = L#_out;
+      i[##T#_ind,4] = min(nn_best_loss,L#_out);
     );
 
     #-------------
@@ -22501,8 +22503,8 @@ nn_trainer : nn_check_layer "$2"
   e[^-1] "[nn_lib] Add trainer '$1' for loss '$2', with learning rate '$3', $4 optimizer and $5 scheduler."
   _nn_$1_out_size=0,0,0,0
   if !isint($$1)
-    # (iteration,learning_rate,initial_learning_rate,previous_loss;{optimizer variables};{scheduler variables})
-    l[] (0,$3,$3,inf) _nn_optimizer_$4 _nn_scheduler_$5 a y nm $1 endl
+    # (iteration,learning_rate,initial_learning_rate,previous_loss,best_loss;{optimizer variables};{scheduler variables})
+    l[] (0,$3,$3,inf,inf) _nn_optimizer_$4 _nn_scheduler_$5 a y nm $1 endl
   fi
   o_sgd,o_rmsprop,o_adam,o_adamax=0,1,2,3
   s_constant,s_linear,s_exponential,s_adaptive=0,1,2,3
@@ -51109,7 +51111,7 @@ nn_test : skip ${1=1e-5}
 
   # Build neural network.
   #----------------------
-  if isfile('network.gmz') nn_load network.gmz
+  if isfile('best_network.gmz') nn_load best_network.gmz
   else
     nn_init
     nn_layer_input X,32,32,1,1
@@ -51142,6 +51144,7 @@ nn_test : skip ${1=1e-5}
 
   # Optimize network.
   #------------------
+  best_loss={T,i[4]}
   size_batch=64
   repeat inf,iter
     e[] "ITER = "$iter
@@ -51166,14 +51169,8 @@ nn_test : skip ${1=1e-5}
     rm.
 
     l[batch_X] s z repeat $! l[$>]
-      noise {u(5,25)} c 0,255
-#      ba$>,bs$>={[ia,sqrt(iv)]}
-#      - ${ba$>} # / ${bs$>}
+      noise {u(5,20)} c 0,255
     endl done a z endl
-
-#    l[batch_Y] s z repeat $! l[$>]
-#      - ${ba$>} # / ${bs$>}
-#    endl done a z endl
 
     # Process mini-batch.
     repeat 4,batch_iter
@@ -51198,10 +51195,15 @@ nn_test : skip ${1=1e-5}
           set(nn_learning_rate,'nn_learning_rate');
         ); I"
       rm.
+      if $loss<$best_loss
+        e[] "New best loss = "{sqrt($best_loss)}
+        nn_save best_network.gmz
+        best_loss=$loss
+      fi
     done
     rm[batch_X,batch_Y]
 
-    if !($iter%20) nn_save network.gmz fi
+#    if !($iter%20) nn_save network.gmz fi
     # l[stats]
     #   ($loss^$nn_learning_rate)
     #   a x
