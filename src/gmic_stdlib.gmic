@@ -51190,7 +51190,7 @@ nn_test : skip ${1=1e-5}
           run('l[] $IN',t,' $OUT',t,' $REF',t,' c 0,255 a x w',z+1,'. 600,200,0 rm endl');
         );
         end(
-          print([ sqrt(L_out),nn_learning_rate ]);
+          print([ sqrt(L_out),sqrt($best_loss),nn_learning_rate ]);
           set(L_out,'loss');
           set(nn_learning_rate,'nn_learning_rate');
         ); I"
@@ -51203,7 +51203,8 @@ nn_test : skip ${1=1e-5}
     done
     rm[batch_X,batch_Y]
 
-#    if !($iter%20) nn_save network.gmz fi
+    if !($iter%20) nn_save network.gmz fi
+
     # l[stats]
     #   ($loss^$nn_learning_rate)
     #   a x
@@ -51221,49 +51222,61 @@ nn_foo :
   l[]
     nn_init
     network.gmz
-    nn_layer_input X,64,64,1,1
-    nn_unet
+    nn_layer_input X,32,32,1,1
+    nn_layer_clone X0,X1,X
+    nn_layer_conv2dnl C1,X1,16
+    nn_layer_conv2dnl C2,C1,16
+    nn_layer_conv2dnl C3,C2,16
+    nn_layer_conv2dnl C4,C3,16
+    nn_layer_conv2dnl C5,C4,16
+    nn_layer_conv2dnl C6,C5,16
+    nn_layer_conv2dnl C7,C6,16
+    nn_layer_conv2dnl C8,C7,16
+    nn_layer_conv2dnl C9,C8,16
+    nn_layer_conv2d C10,C9,1
+    nn_layer_add OUT,C10,X0
     store network
   endl
   repeat $! l[$>]
     w,h,s={[w,h,s]}
 
-    # Extract overlapping 64x64 tiles.
-    nx,ny={ceil([w,h]/60)}
-    64,64,{$nx*$ny},$s
+    # Extract overlapping 32x32 tiles.
+    nx,ny={ceil([w,h]/30)}
+    32,32,{$nx*$ny},$s
     1,1,{d},1,"*
       const boundary = 1;
       ix = z%$nx;
       iy = int(z/$nx);
-      X = round(lerp(-1,$w - 64,ix/($nx-1)));
-      Y = round(lerp(-1,$h - 64,iy/($ny-1)));
-      V = crop(#0,X,Y,0,0,64,64,1,"$s");
-      draw(#-1,V,0,0,z,0,64,64,1,"$s")"
+      X = round(lerp(-1,$w - 32,ix/($nx-1)));
+      Y = round(lerp(-1,$h - 32,iy/($ny-1)));
+      V = crop(#0,X,Y,0,0,32,32,1,"$s");
+      draw(#-1,V,0,0,z,0,32,32,1,"$s")"
     k..
 
-    # Denoise 64x64 tiles.
+    # Denoise 32x32 tiles.
     $network
-    1,1,{0,d},1,*${-nn_lib}${_nn_init_forward}"
+    1,1,{0,d},1,*${-nn_lib}"
     repeat ("$s",c,
-      X = crop(#0,0,0,z,c,64,64,1,1);"${_nn_forward}"
-      draw(#0,OUT_out,0,0,z,c,64,64,1,1);
+      X = crop(#0,0,0,z,c,32,32,1,1);"${_nn_forward}"
+      draw(#0,OUT_out,0,0,z,c,32,32,1,1);
     )"
     k[0]
 
     # Reconstruct image from tiles.
     $w,$h,1,{$s+1}
-    1,1,{0,d},1,">begin(one = vector(#(64 - 2)*(64 - 2),1));
+    1,1,{0,d},1,">begin(one = vector(#(32 - 2)*(32 - 2),1));
       const boundary = 1;
       ix = z%$nx;
       iy = int(z/$nx);
-      X = round(lerp(-1,$w - 64,ix/($nx-1)));
-      Y = round(lerp(-1,$h - 64,iy/($ny-1)));
-      V = crop(#0,1,1,z,0,64 - 2,64 - 2,1,"$s");
-      draw(#1,V,X + 1,Y + 1,0,0,64 - 2,64 - 2,1,"$s",-1);
-      draw(#1,one,X + 1,Y + 1,0,"$s",64 - 2,64 - 2,1,1,-1)"
+      X = round(lerp(-1,$w - 32,ix/($nx-1)));
+      Y = round(lerp(-1,$h - 32,iy/($ny-1)));
+      V = crop(#0,1,1,z,0,32 - 2,32 - 2,1,"$s");
+      draw(#1,V,X + 1,Y + 1,0,0,32 - 2,32 - 2,1,"$s",-1);
+      draw(#1,one,X + 1,Y + 1,0,"$s",32 - 2,32 - 2,1,1,-1)"
     k..
     s c,-$s
     max. 1 /
+    sharpen. 30
     c 0,255
 
   endl done
