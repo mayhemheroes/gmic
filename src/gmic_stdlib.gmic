@@ -22278,6 +22278,34 @@ nn_lib :
       L#_batch_out/=nn_nb_samples;
       L#_out = L#_batch_out;
     );
+
+    # mse : Mean-squared error (ignoring a 2px border).
+    #--------------------------------------------------
+    nn_loss_mse2_init_backward(L) = (
+      L#_batch_out = 0;
+    );
+
+    nn_loss_mse2_backward(L,IN,TRUTH) = (
+      IN#_deriv_out = 2*(IN#_out - TRUTH);
+
+      L#_tmp = IN#_deriv_out/2;
+      fill(L#_tmp,k,
+        nx = k%IN#_out_width;
+        ny = int(k/IN#_out_width);
+        nx<2 || ny<2 || nx>=IN#_out_width - 2 || ny>=IN#_out_height - 2?0:L#_tmp[k]
+      );
+      L#_out = norm(L#_tmp)^2/size(IN#_deriv_out);
+      L#_batch_out+=L#_out;
+    );
+
+    nn_loss_mse2_end_backward(L) = (
+      merge(L#_batch_out,+);
+      L#_batch_out/=nn_nb_samples;
+      L#_out = L#_batch_out;
+    );
+
+
+
     "
 
 #@cli nn_init
@@ -22491,6 +22519,17 @@ nn_loss_mse : nn_check_layer "$2" check "isvarname('$1') && isvarname('$3')"
   _nn_backward..="begin(nn_loss_mse_init_backward($1));"\
                  "nn_loss_mse_backward(${1-3});"\
                  "end(nn_loss_mse_end_backward($1));"
+  _nn_init.="$0 $* "
+
+#@cli nn_loss_mse2 : name,in,ground_truth
+#@cli : Add a 'mse2' loss to the network.
+#@cli : Default value: 'learning_rate=1e-6' and 'learning_rate_scheduler=adaptive'.
+nn_loss_mse2 : nn_check_layer "$2" check "isvarname('$1') && isvarname('$3')"
+  e[^-1] "[nn_lib] Add MSE2 loss '$1', with input '$2' and ground truth '$3'."
+  _nn_$1_out_size=1,1,1,1
+  _nn_backward..="begin(nn_loss_mse2_init_backward($1));"\
+                 "nn_loss_mse2_backward(${1-3});"\
+                 "end(nn_loss_mse2_end_backward($1));"
   _nn_init.="$0 $* "
 
 #@cli nn_trainer : name,loss,_learning_rate>0,_optimizer,_scheduler
@@ -51132,7 +51171,7 @@ nn_test : skip ${1=1e-4}
 
 #    nn_resnet
 #    nn_unet_small
-    nn_loss_mse L,OUT,Y
+    nn_loss_mse2 L,OUT,Y
     nn_trainer T,L,$1,rmsprop,constant
   fi
   =[T] $1,1 =[T] $1,2
