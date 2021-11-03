@@ -51111,22 +51111,22 @@ nn_test : skip ${1=1e-4}
 
   # Build neural network.
   #----------------------
-  if isfile('best_network.gmz') nn_load best_network.gmz
+  if isfile('network.gmz') nn_load network.gmz
   else
     nn_init
     nn_layer_input X,32,32,1,1
     nn_layer_clone X0,X1,X
-    nn_layer_conv2dnl C1,X1,12
-    nn_layer_conv2dnl C2,C1,12
-    nn_layer_conv2dnl C3,C2,12
-    nn_layer_conv2dnl C4,C3,12
+    nn_layer_conv2dnl C1,X1,16
+    nn_layer_conv2dnl C2,C1,16
+    nn_layer_conv2dnl C3,C2,16
+    nn_layer_conv2dnl C4,C3,16
     nn_layer_conv2dnl C5,C4,12
     nn_layer_conv2dnl C6,C5,12
     nn_layer_conv2dnl C7,C6,12
     nn_layer_conv2dnl C8,C7,12
-    nn_layer_conv2dnl C9,C8,12
-    nn_layer_conv2dnl C10,C9,12
-    nn_layer_conv2dnl C11,C10,12
+    nn_layer_conv2dnl C9,C8,8
+    nn_layer_conv2dnl C10,C9,8
+    nn_layer_conv2dnl C11,C10,8
     nn_layer_conv2d C12,C11,1
     nn_layer_add OUT,C12,X0
 
@@ -51153,7 +51153,7 @@ nn_test : skip ${1=1e-4}
     nm valid_Y
   endl
   +l[valid_Y]
-    s z repeat $! l[$>] noise {u(5,20)} endl done a z c 0,255
+    s z repeat $! l[$>] noise {u(0,20)} endl done a z c 0,255
     nm valid_X
   endl
 
@@ -51184,7 +51184,7 @@ nn_test : skip ${1=1e-4}
     rm.
 
     l[batch_X] s z repeat $! l[$>]
-      noise {u(5,20)} c 0,255
+      noise {u(0,20)} c 0,255
     endl done a z endl
 
     # Process mini-batch.
@@ -51224,7 +51224,7 @@ nn_test : skip ${1=1e-4}
         )"
       if $loss<$best_loss
         best_loss=$loss
-        if $iter nn_save best_network.gmz fi
+        if $iter nn_save network.gmz fi
       fi
 
     fi
@@ -51238,7 +51238,7 @@ nn_test : skip ${1=1e-4}
 
 nn_foo :
   l[]
-    nn_load best_network.gmz
+    nn_load network.gmz
     store network
   endl
   repeat $! l[$>]
@@ -51251,8 +51251,8 @@ nn_foo :
       const boundary = 1;
       ix = z%$nx;
       iy = int(z/$nx);
-      X = round(lerp(-1,$w - 32,ix/($nx-1)));
-      Y = round(lerp(-1,$h - 32,iy/($ny-1)));
+      X = round(lerp(0,$w - 1 - 32,ix/($nx - 1)));
+      Y = round(lerp(0,$h - 1 - 32,iy/($ny - 1)));
       V = crop(#0,X,Y,0,0,32,32,1,"$s");
       draw(#-1,V,0,0,z,0,32,32,1,"$s")"
     k..
@@ -51272,15 +51272,15 @@ nn_foo :
       const boundary = 1;
       ix = z%$nx;
       iy = int(z/$nx);
-      X = round(lerp(-1,$w - 32,ix/($nx-1)));
-      Y = round(lerp(-1,$h - 32,iy/($ny-1)));
+      X = round(lerp(0,$w - 1 - 32,ix/($nx - 1)));
+      Y = round(lerp(0,$h - 1 - 32,iy/($ny - 1)));
       V = crop(#0,1,1,z,0,32 - 2,32 - 2,1,"$s");
       draw(#1,V,X + 1,Y + 1,0,0,32 - 2,32 - 2,1,"$s",-1);
       draw(#1,one,X + 1,Y + 1,0,"$s",32 - 2,32 - 2,1,1,-1)"
     k..
     s c,-$s
     max. 1 /
-    sharpen. 30
+#    sharpen. 30
     c 0,255
 
   endl done
