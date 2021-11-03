@@ -51125,26 +51125,45 @@ nn_test : skip ${1=1e-5}
     nn_layer_conv2dnl C7,C6,16
     nn_layer_conv2dnl C8,C7,16
     nn_layer_conv2dnl C9,C8,16
-    nn_layer_conv2d C10,C9,1
-    nn_layer_add OUT,C10,X0
+    nn_layer_conv2dnl C10,C9,16
+    nn_layer_conv2dnl C11,C10,16
+    nn_layer_conv2dnl C12,C11,16
+    nn_layer_conv2dnl C13,C12,16
+    nn_layer_conv2dnl C14,C13,16
+    nn_layer_conv2dnl C15,C14,16
+    nn_layer_conv2d C16,C15,1
+    nn_layer_add OUT,C16,X0
 
 #    nn_resnet
 #    nn_unet_small
     nn_loss_mse L,OUT,Y
     nn_trainer T,L,$1,rmsprop,constant
   fi
-
   =[T] $1,1 =[T] $1,2
 
+  # Build learning set.
+  #--------------------
   l[]
     repeat 59 sp $> done luminance r2dx 512 r 512,512,1,1,0,3,0.5,0.5
     a z nm. img
   endl
   [img] nm. res
 
+  # Build validation set.
+  #-----------------------
+  l[]
+    sp colorful,{32*30} luminance
+    s xy,-32 a z
+    nm valid_Y
+  endl
+  +l[valid_Y]
+    s z repeat $! l[$>] noise {u(5,20)} endl done a z c 0,255
+    nm valid_X
+  endl
+
   # Optimize network.
   #------------------
-  best_loss={T,i[4]}
+  best_loss=inf
   size_batch=64
   repeat inf,iter
     e[] "ITER = "$iter
@@ -51190,26 +51209,29 @@ nn_test : skip ${1=1e-5}
           run('l[] $IN',t,' $OUT',t,' $REF',t,' c 0,255 a x w',z+1,'. 600,200,0 rm endl');
         );
         end(
-          print([ sqrt(L_out),sqrt($best_loss),nn_learning_rate ]);
-          set(L_out,'loss');
-          set(nn_learning_rate,'nn_learning_rate');
+          print([ sqrt(L_out),nn_learning_rate ]);
         ); I"
       rm.
-      if $loss<$best_loss
-        e[] "New best loss = "{sqrt($best_loss)}
-        nn_save best_network.gmz
-        best_loss=$loss
-      fi
     done
     rm[batch_X,batch_Y]
 
-    if !($iter%20) nn_save network.gmz fi
+    # Test on validation set.
+    if !($iter%10)
+      1,1,{valid_X,d},1,*${-nn_lib}"
+        X = crop(#$valid_X,0,0,z,0,32,32,1,1);
+        Y = crop(#$valid_Y,0,0,z,0,32,32,1,1);
+        "${_nn_forward}${_nn_backward}"
+        end(
+          loss = sqrt(L_out);
+          echo('\nValidation Loss = ',loss,' (best = ',$best_loss,')\n');
+          set(loss,'loss');
+        )"
+      if $loss<$best_loss
+        best_loss=$loss
+        nn_save best_network.gmz
+      fi
 
-    # l[stats]
-    #   ($loss^$nn_learning_rate)
-    #   a x
-    #   o stats.gmz
-    # endl
+    fi
 
     # Visualize convolution kernels.
 #    +z[CONV1_0] 0,{CONV1_0,w-2} l. s y n 0,255 repeat $! l[$>] s x,-9 N=$! r {v=sqrt(w);[v,v]},1,1,-1
@@ -51220,21 +51242,7 @@ nn_test : skip ${1=1e-5}
 
 nn_foo :
   l[]
-    nn_init
-    network.gmz
-    nn_layer_input X,32,32,1,1
-    nn_layer_clone X0,X1,X
-    nn_layer_conv2dnl C1,X1,16
-    nn_layer_conv2dnl C2,C1,16
-    nn_layer_conv2dnl C3,C2,16
-    nn_layer_conv2dnl C4,C3,16
-    nn_layer_conv2dnl C5,C4,16
-    nn_layer_conv2dnl C6,C5,16
-    nn_layer_conv2dnl C7,C6,16
-    nn_layer_conv2dnl C8,C7,16
-    nn_layer_conv2dnl C9,C8,16
-    nn_layer_conv2d C10,C9,1
-    nn_layer_add OUT,C10,X0
+    nn_load network.gmz
     store network
   endl
   repeat $! l[$>]
