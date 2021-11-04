@@ -22424,6 +22424,14 @@ nn_layer_conv2dnl : nn_check_layer "$2"
   nn_layer_conv2d $1_0,$2,$3,$4,$5,$6
   nn_layer_nl $1,$1_0,$7
 
+#@cli nn_layer_crop : name,in,x0,y0,z0,c0,x1,y1,z1,c1
+#@cli : Add a 'crop' layer to the network.
+nn_layer_crop : nn_check_layer "$2" check "min(isint([${3-10}]))"
+  e[^1] "[nn_lin] Add 'crop' layer '$1', with input '$2' and coordinates (${3-6})-(${7-10})."
+  cmin={vmin([${3-6}],[${7-10}])}
+  cmax={vmax([${3-6}],[${7-10}])}
+  _nn_$1_out_size={[$cmax]-[$cmin]+1}
+
 #@cli nn_layer_fc : name,in,nb_channels>0
 #@cli : Add a 'fc' layer (fully connected layer) to the network.
 nn_layer_fc : nn_check_layer "$2" check "isvarname('$1') && isint($3) && $3>0"
