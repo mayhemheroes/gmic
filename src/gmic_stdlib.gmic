@@ -22075,7 +22075,7 @@ nn_lib :
     );
 
     nn_layer_crop_backward(L,IN,x0,y0,z0,x1,y1,z1) = (
-      IN#_deriv_out = convolve(L#_deriv_out,L#_out_width,L#_out,height,L#_out_depth,L#_out_spectrum,
+      IN#_deriv_out = convolve(L#_deriv_out,L#_out_width,L#_out_height,L#_out_depth,L#_out_spectrum,
                                [1],1,1,1,1,
                                0,0,1,
                                0,0,0,
@@ -22432,7 +22432,7 @@ nn_layer_crop : nn_check_layer "$2" check "min(isint([${3-8}]))"
   _nn_$1_out_size={[[$cmax]-[$cmin]+1,arg(4,$_nn_$2_out_size)]}
   _nn_forward.="begin(nn_layer_crop_init_forward($1,$2,${3-8}));"\
                "nn_layer_crop_forward($1,$2,${3-8});"
-  _nn_backward.="nn_layer_crop_backward($1,$2,${3-8});"
+  _nn_backward..="nn_layer_crop_backward($1,$2,${3-8});"
   _nn_init.="$0 $* "
 
 #@cli nn_layer_fc : name,in,nb_channels>0
@@ -51167,8 +51167,8 @@ nn_test : skip ${1=1e-4}
     nn_layer_conv2dnl C10,C9,8
     nn_layer_conv2dnl C11,C10,8
     nn_layer_conv2d C12,C11,1
-    nn_layer_crop CROP,C12,2,2,0,{32-1-2},{32-1-2},0
-    nn_layer_add OUT,CROP,X0
+    nn_layer_add OUT0,C12,X0
+    nn_layer_crop OUT,OUT0,2,2,0,{32-1-2},{32-1-2},0
 
 #    nn_resnet
 #    nn_unet_small
@@ -51194,6 +51194,7 @@ nn_test : skip ${1=1e-4}
   endl
   +l[valid_Y]
     s z repeat $! l[$>] noise {u(10,20)} endl done a z c 0,255
+    r {32-4},{32-4},100%,1,0,0,0.5,0.5
     nm valid_X
   endl
 
@@ -51205,8 +51206,8 @@ nn_test : skip ${1=1e-4}
     e[] "ITER = "$iter
 
     # Build mini-batch.
-    32,32,$size_batch,3 nm. batch_X
-    32,32,$size_batch,3 nm. batch_Y
+    32,32,$size_batch,1 nm. batch_X
+    {32-4},{32-4},$size_batch,1 nm. batch_Y
     1,1,$size_batch,1,">
       const img = $img;
       const res = $res;
@@ -51217,10 +51218,10 @@ nn_test : skip ${1=1e-4}
         nx = int(u(0,w#img - 1 - 32))%w#img;
         ny = int(u(0,h#img - 1 - 32))%h#img;
         X = crop(#img,nx,ny,ni,0,32,32,1,1);
-        Y = crop(#res,nx,ny,ni,0,32,32,1,1);
+        Y = crop(#res,nx + 2,ny + 2,ni,0,32 - 4,32 - 4,1,1);
       _(while); std(Y)<p);
       draw(#$batch_X,X,0,0,z,0,32,32,1,1);
-      draw(#$batch_Y,Y,0,0,z,0,32,32,1,1)"
+      draw(#$batch_Y,Y,0,0,z,0,32-4,32-4,1,1)"
     rm.
 
     l[batch_X] s z repeat $! l[$>]
@@ -51230,18 +51231,18 @@ nn_test : skip ${1=1e-4}
     # Process mini-batch.
     repeat 4,batch_iter
       1,1,{batch_X,d},1,*${-nn_lib}"
-        X = crop(#$batch_X,0,0,z,0,32,32,1,1);
-        Y = crop(#$batch_Y,0,0,z,0,32,32,1,1);
+        X = crop(#$batch_X,0,0,z,0,w#$batch_X,h#$batch_X,1,1);
+        Y = crop(#$batch_Y,0,0,z,0,w#$batch_Y,h#$batch_Y,1,1);
         "${_nn_forward}"
         "${_nn_backward}"
         "${_nn_update}"
         z<4 && !("$batch_iter"%10)?(
           var = string(#256,'IN',t);
-          store(X,var,32,32,1,1);
+          store(X,var,w#$batch_X,h#$batch_X,1,1);
           var = string(#256,'OUT',t);
-          store(OUT_out,var,32,32,1,1);
+          store(OUT_out,var,w#$batch_Y,h#$batch_Y,1,1);
           var = string(#256,'REF',t);
-          store(Y,var,32,32,1,1);
+          store(Y,var,w#$batch_Y,h#$batch_Y,1,1);
           run('l[] $IN',t,' $OUT',t,' $REF',t,' c 0,255 a x w',z+1,'. 600,200,0 rm endl');
         );
         end(
@@ -51250,6 +51251,8 @@ nn_test : skip ${1=1e-4}
       rm.
     done
     rm[batch_X,batch_Y]
+
+    d
 
     # Test on validation set.
     if !($iter%20)
