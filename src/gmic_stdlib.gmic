@@ -51263,9 +51263,16 @@ nn_test : skip ${1=1e-4}
           echo('\nValidation Loss = ',loss,' (best = ',$best_loss,')\n');
           set(loss,'loss');
         )"
-      if abs($loss-$best_loss)/$best_loss<10%
+
+      loss_change={abs($loss-$best_loss)/$best_loss}
+      e[] "\nLOSS change = "$loss_change
+
+      if !$iter" || "$loss_change<3%
         if $loss<$best_loss best_loss=$loss fi
-        if $iter nn_save network.gmz fi
+        if $iter
+          e[] "\n--> Save network."
+          nn_save network.gmz
+        fi
       fi
 
     fi
