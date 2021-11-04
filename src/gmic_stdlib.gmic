@@ -22080,7 +22080,7 @@ nn_lib :
                                0,0,1,
                                0,0,0,
                                -x0,-y0,-z0,
-                               -x0 + L#_out_width - 1,-y0 + L#_out_height - 1,-y0 + L#_out_depth - z0);
+                               -x0 + IN#_out_width - 1,-y0 + IN#_out_height - 1,-z0 + IN#_out_depth - 1);
     );
 
     # fc: Fully-connected layer.
@@ -51194,9 +51194,9 @@ nn_test : skip ${1=1e-4}
   endl
   +l[valid_Y]
     s z repeat $! l[$>] noise {u(10,20)} endl done a z c 0,255
-    r {32-4},{32-4},100%,1,0,0,0.5,0.5
     nm valid_X
   endl
+  r[valid_Y] {32-4},{32-4},100%,1,0,0,0.5,0.5
 
   # Optimize network.
   #------------------
@@ -51217,11 +51217,11 @@ nn_test : skip ${1=1e-4}
         ni = int(u(d#img))%d#img;
         nx = int(u(0,w#img - 1 - 32))%w#img;
         ny = int(u(0,h#img - 1 - 32))%h#img;
-        X = crop(#img,nx,ny,ni,0,32,32,1,1);
-        Y = crop(#res,nx + 2,ny + 2,ni,0,32 - 4,32 - 4,1,1);
+        X = crop(#img,nx,ny,ni,0,w#$batch_X,h#$batch_X,1,1);
+        Y = crop(#res,nx + 2,ny + 2,ni,0,w#$batch_Y,h#$batch_Y,1,1);
       _(while); std(Y)<p);
-      draw(#$batch_X,X,0,0,z,0,32,32,1,1);
-      draw(#$batch_Y,Y,0,0,z,0,32-4,32-4,1,1)"
+      draw(#$batch_X,X,0,0,z,0,w#$batch_X,h#$batch_X,1,1);
+      draw(#$batch_Y,Y,0,0,z,0,w#$batch_Y,h#$batch_Y,1,1)"
     rm.
 
     l[batch_X] s z repeat $! l[$>]
@@ -51252,13 +51252,11 @@ nn_test : skip ${1=1e-4}
     done
     rm[batch_X,batch_Y]
 
-    d
-
     # Test on validation set.
     if !($iter%20)
       1,1,{valid_X,d},1,*${-nn_lib}"
-        X = crop(#$valid_X,0,0,z,0,32,32,1,1);
-        Y = crop(#$valid_Y,0,0,z,0,32,32,1,1);
+        X = crop(#$valid_X,0,0,z,0,w#$valid_X,h#$valid_X,1,1);
+        Y = crop(#$valid_Y,0,0,z,0,w#$valid_Y,h#$valid_Y,1,1);
         "${_nn_forward}${_nn_backward}"
         end(
           loss = sqrt(L_out);
