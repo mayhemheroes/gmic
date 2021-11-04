@@ -3409,6 +3409,20 @@ const char *gmic::set_variable(const char *const name, const char *const value,
     CImg<char>::string(name).move_to(__variables_names);
     s_value.move_to(__variables);
   }
+
+  if (!std::strcmp(name,"_cpus")) { // Set max number of threads for multi-threaded operators
+    int nb_cpus = 0;
+    if (cimg_sscanf(__variables[ind],"%d%c",&nb_cpus,&end)!=1 || nb_cpus<=0) {
+      s_value.assign(8);
+      nb_cpus = (int)cimg::nb_cpus();
+      cimg_snprintf(s_value,s_value.width(),"%d",nb_cpus);
+      CImg<char>::string(s_value).move_to(__variables[ind]);
+    }
+#if cimg_use_openmp!=0
+    omp_set_num_threads(nb_cpus);
+#endif
+  }
+
   if (is_thread_global) cimg::mutex(30,0);
   return __variables[ind].data();
 }
