@@ -22059,21 +22059,28 @@ nn_lib :
     # crop : Crop layer.
     #--------------------
     nn_layer_crop_init_forward(L,IN,x0,y0,z0,x1,y1,z1) = (
-      ref(min(x0,x1),_x0); ref(min(y0,y1),_y0); ref(min(z0,z1),_z0);
-      ref(max(x0,x1),_x1); ref(max(y0,y1),_y1); ref(max(z0,z1),_z1);
-      const L#_out_width = _x1 - _x0 + 1;
-      const L#_out_height = _y1 - _y0 + 1;
-      const L#_out_depth = _z1 - _z0 + 1;
+      const L#_out_width = abs(x1 - x0) + 1;
+      const L#_out_height = abs(y1 - y0) + 1;
+      const L#_out_depth = abs(z1 - z0) + 1;
       const L#_out_spectrum = IN#_out_spectrum;
     );
 
     nn_layer_crop_forward(L,IN,x0,y0,z0,x1,y1,z1) = (
-      L#_out = convolve(IN#_out,IN#_width,IN#_height,IN#_depth,IN#_spectrum,
+      L#_out = convolve(IN#_out,IN#_out_width,IN#_out_height,IN#_out_depth,IN#_out_spectrum,
                         [1],1,1,1,1,
                         0,0,1,
                         0,0,0,
                         x0,y0,z0,
                         x1,y1,z1);
+    );
+
+    nn_layer_crop_backward(L,IN,x0,y0,z0,x1,y1,z1) = (
+      IN#_deriv_out = convolve(L#_deriv_out,L#_out_width,L#_out,height,L#_out_depth,L#_out_spectrum,
+                               [1],1,1,1,1,
+                               0,0,1,
+                               0,0,0,
+                               -x0,-y0,-z0,
+                               -x0 + L#_out_width - 1,-y0 + L#_out_height - 1,-y0 + L#_out_depth - z0);
     );
 
     # fc: Fully-connected layer.
@@ -22298,34 +22305,6 @@ nn_lib :
       L#_batch_out/=nn_nb_samples;
       L#_out = L#_batch_out;
     );
-
-    # mse : Mean-squared error (ignoring a 2px border).
-    #--------------------------------------------------
-    nn_loss_mse2_init_backward(L) = (
-      L#_batch_out = 0;
-    );
-
-    nn_loss_mse2_backward(L,IN,TRUTH) = (
-      IN#_deriv_out = 2*(IN#_out - TRUTH);
-
-      L#_tmp = IN#_deriv_out/2;
-      fill(L#_tmp,k,
-        nx = k%IN#_out_width;
-        ny = int(k/IN#_out_width);
-        nx<2 || ny<2 || nx>=IN#_out_width - 2 || ny>=IN#_out_height - 2?0:L#_tmp[k]
-      );
-      L#_out = norm(L#_tmp)^2/size(IN#_deriv_out);
-      L#_batch_out+=L#_out;
-    );
-
-    nn_loss_mse2_end_backward(L) = (
-      merge(L#_batch_out,+);
-      L#_batch_out/=nn_nb_samples;
-      L#_out = L#_batch_out;
-    );
-
-
-
     "
 
 #@cli nn_init
@@ -22450,7 +22429,7 @@ nn_layer_crop : nn_check_layer "$2" check "min(isint([${3-8}]))"
   e[^1] "[nn_lin] Add 'crop' layer '$1', with input '$2' and coordinates (${3-5})-(${6-8})."
   cmin={vmin([${3-5}],[${6-8}])}
   cmax={vmax([${3-5}],[${6-8}])}
-  _nn_$1_out_size={[$cmax]-[$cmin]+1}
+  _nn_$1_out_size={[[$cmax]-[$cmin]+1,arg(4,$_nn_$2_out_size)]}
   _nn_forward.="begin(nn_layer_crop_init_forward($1,$2,${3-8}));"\
                "nn_layer_crop_forward($1,$2,${3-8});"
   _nn_backward.="nn_layer_crop_backward($1,$2,${3-8});"
@@ -22551,17 +22530,6 @@ nn_loss_mse : nn_check_layer "$2" check "isvarname('$1') && isvarname('$3')"
   _nn_backward..="begin(nn_loss_mse_init_backward($1));"\
                  "nn_loss_mse_backward(${1-3});"\
                  "end(nn_loss_mse_end_backward($1));"
-  _nn_init.="$0 $* "
-
-#@cli nn_loss_mse2 : name,in,ground_truth
-#@cli : Add a 'mse2' loss to the network.
-#@cli : Default value: 'learning_rate=1e-6' and 'learning_rate_scheduler=adaptive'.
-nn_loss_mse2 : nn_check_layer "$2" check "isvarname('$1') && isvarname('$3')"
-  e[^-1] "[nn_lib] Add MSE2 loss '$1', with input '$2' and ground truth '$3'."
-  _nn_$1_out_size=1,1,1,1
-  _nn_backward..="begin(nn_loss_mse2_init_backward($1));"\
-                 "nn_loss_mse2_backward(${1-3});"\
-                 "end(nn_loss_mse2_end_backward($1));"
   _nn_init.="$0 $* "
 
 #@cli nn_trainer : name,loss,_learning_rate>0,_optimizer,_scheduler
@@ -51199,11 +51167,12 @@ nn_test : skip ${1=1e-4}
     nn_layer_conv2dnl C10,C9,8
     nn_layer_conv2dnl C11,C10,8
     nn_layer_conv2d C12,C11,1
-    nn_layer_add OUT,C12,X0
+    nn_layer_crop CROP,C12,2,2,0,{32-1-2},{32-1-2},0
+    nn_layer_add OUT,CROP,X0
 
 #    nn_resnet
 #    nn_unet_small
-    nn_loss_mse2 L,OUT,Y
+    nn_loss_mse L,OUT,Y
     nn_trainer T,L,$1,rmsprop,constant
   fi
   =[T] $1,1 =[T] $1,2
