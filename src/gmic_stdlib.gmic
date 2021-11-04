@@ -22431,6 +22431,9 @@ nn_layer_crop : nn_check_layer "$2" check "min(isint([${3-10}]))"
   cmin={vmin([${3-6}],[${7-10}])}
   cmax={vmax([${3-6}],[${7-10}])}
   _nn_$1_out_size={[$cmax]-[$cmin]+1}
+  _nn_forward.="nn_layer_crop_forward(${1-10});"
+  _nn_backward.="nn_layer_crop_backward(${1-10});"
+  _nn_init.="$0 $* "
 
 #@cli nn_layer_fc : name,in,nb_channels>0
 #@cli : Add a 'fc' layer (fully connected layer) to the network.
@@ -22557,7 +22560,7 @@ nn_trainer : nn_check_layer "$2"
   s_constant,s_linear,s_exponential,s_adaptive=0,1,2,3
   _nn_backward..="begin(nn_trainer_init_backward($1,$2,"${o_$4},${s_$5}"));"
   _nn_update.="end(nn_trainer_update($1,$2));" # <- Keep this as the last thing done in an 'end()' bloc!
-  _nn_init.="$0 $*"
+  _nn_init.="$0 $* "
   _nn_parameters.="$1,"
 
 _nn_optimizer_sgd : 1
