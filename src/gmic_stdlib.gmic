@@ -51285,14 +51285,13 @@ nn_foo :
   N=$!
   nn_load network.gmz
 
-
   repeat $N l[$>,$N--1] to_rgb[0]
     w,h,s={0,[w,h,s]}
 
     # Extract overlapping 32x32 tiles.
     nx,ny={ceil([$w,$h]/26)}
     32,32,{$nx*$ny},$s
-    1,1,{d},1,"*
+    1,1,{d},1,">
       const boundary = 1;
       ix = z%$nx;
       iy = int(z/$nx);
@@ -51311,7 +51310,7 @@ nn_foo :
 
     # Reconstruct image from tiles.
     i[0] $w,$h,1,{$s+1}
-    1,1,{d},1,"*begin(
+    1,1,{d},1,">begin(
         mask = convolve(vector(#(32 - 4)*(32 - 4),1),
                         32 - 4,32 - 4,1,1,
                         [1],1,1,1,1,
@@ -51328,9 +51327,31 @@ nn_foo :
       draw(#0,mask,X,Y,0,"$s",32,32,1,1,-1,mask)"
     rm[-2,-1]
 
-    l[0] s c,-$s max. 1 / sharpen. 20 c 0,255 endl
+    l[0] s c,-$s max. 1 / c 0,255 endl
 
   endl done
+  rm[$N--1]
+
+
+nn_fig :
+  N=0
+  repeat 10 l[]
+    sp ?,{round(u(400,800))}
+    noise {u(10,20)} c 0,255 to_rgb
+    xz[0]
+    +nn_foo
+    r2dx 640,1
+    to[0] "Noisy"
+    to[1] "Denoised"
+    frame 1,1,0 frame 3,3,255 a x
+    on denoise.png,$N
+    N+=1
+    d
+    rm
+  endl done
+
+
+
 
 nn_unet :
   nn_layer_conv2dnl lA,X,64
