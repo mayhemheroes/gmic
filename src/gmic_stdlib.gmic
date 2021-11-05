@@ -51268,7 +51268,7 @@ nn_test : skip ${1=1e-4}
       loss_change={($loss-$best_loss)/$best_loss}
       e[] "\nDeviation from best LOSS = "{$loss_change*100}"%."
 
-      if !$iter" || "$loss_change<3%
+      if !$iter" || "$loss_change<2%
         if $loss<$best_loss best_loss=$loss fi
         if $iter
           e[] "\n--> Save network.\n"
@@ -51290,14 +51290,14 @@ nn_foo :
     w,h,s={[w,h,s]}
 
     # Extract overlapping 32x32 tiles.
-    nx,ny={ceil([w,h]/30)}
+    nx,ny={ceil([w,h]/26)}
     32,32,{$nx*$ny},$s
-    1,1,{d},1,"*
+    1,1,{d},1,">
       const boundary = 1;
       ix = z%$nx;
       iy = int(z/$nx);
-      X = round(lerp(0,$w - 1 - 32,ix/($nx - 1)));
-      Y = round(lerp(0,$h - 1 - 32,iy/($ny - 1)));
+      X = round(lerp(-2,$w - 32 + 2,ix/($nx - 1)));
+      Y = round(lerp(-2,$h - 32 + 2,iy/($ny - 1)));
       V = crop(#0,X,Y,0,0,32,32,1,"$s");
       draw(#-1,V,0,0,z,0,32,32,1,"$s")"
     k..
@@ -51305,25 +51305,36 @@ nn_foo :
     # Denoise 32x32 tiles.
     $network
     1,1,{0,d},1,*${-nn_lib}"
-    repeat ("$s",c,
-      X = crop(#0,0,0,z,c,32,32,1,1);"${_nn_forward}"
-      draw(#0,OUT_out,0,0,z,c,32,32,1,1);
-    )"
+      X = crop(#0,0,0,z,0,32,32,1,3);"${_nn_forward}"
+      draw(#0,OUT0_out,0,0,z,0,32,32,1,3);
+    "
     k[0]
 
     # Reconstruct image from tiles.
     $w,$h,1,{$s+1}
-    1,1,{0,d},1,">begin(one = vector(#(32 - 2)*(32 - 2),1));
+    1,1,{0,d},1,">begin(
+        mask = convolve(vector(#(32 - 4)*(32 - 4),1),
+                        32 - 4,32 - 4,1,1,
+                        [1],1,1,1,1,
+                        0,0,1,
+                        0,0,0,
+                        -2,-2,0,32 - 4 - 1 + 2,32 - 4 - 1 + 2,0);
+      );
       const boundary = 1;
       ix = z%$nx;
       iy = int(z/$nx);
-      X = round(lerp(0,$w - 1 - 32,ix/($nx - 1)));
-      Y = round(lerp(0,$h - 1 - 32,iy/($ny - 1)));
-      V = crop(#0,1,1,z,0,32 - 2,32 - 2,1,"$s");
-      draw(#1,V,X + 1,Y + 1,0,0,32 - 2,32 - 2,1,"$s",-1);
-      draw(#1,one,X + 1,Y + 1,0,"$s",32 - 2,32 - 2,1,1,-1)"
+      X = round(lerp(-2,$w - 32 + 2,ix/($nx - 1)));
+      Y = round(lerp(-2,$h - 32 + 2,iy/($ny - 1)));
+
+      V = crop(#0,0,0,z,0,32,32,1,"$s");
+      draw(#1,V,X,Y,0,0,32,32,1,"$s",-1,mask);
+      draw(#1,mask,X,Y,0,"$s",32,32,1,1,-1,mask)"
+
     k..
     s c,-$s
+
+    d
+
     max. 1 /
 #    sharpen. 30
     c 0,255
