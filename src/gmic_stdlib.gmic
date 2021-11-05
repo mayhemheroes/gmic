@@ -3743,8 +3743,9 @@ _input_text :
 
 #@cli lorem : _width>0,_height>0
 #@cli : Input random image of specified size, retrieved from Internet.
-+lorem : check "isint(${1=800}) && $1>0 && isint(${2=600}) && $2>0"
-  e[^-1] "Input random image of size $1x$2, matching keywords '$3'."
+#@cli : Default values: 'width=height=800'.
++lorem : check "isint(${1=800}) && $1>0 && isint(${2=$1}) && $2>0"
+  e[^-1] "Input random image of size $1x$2."
   i "https://picsum.photos/$1/$2"
 
 # Merge multi-lines (lines continued by backslash before NL) in a string image.
@@ -51156,6 +51157,7 @@ nn_test : skip ${1=1e-4}
 
   # Build neural network.
   #----------------------
+   e[^-1] "Build Neural Network."
   if isfile('network.gmz') nn_load network.gmz
   else
     nn_init
@@ -51186,18 +51188,20 @@ nn_test : skip ${1=1e-4}
 
   # Build learning set.
   #--------------------
+  e[^-1] "Build Learning Set.\n"
   l[]
-    repeat 59 sp $> done to_rgb # luminance
-    r2dx 512 r 512,512,1,100%,0,3,0.5,0.5
+    N=128
+    repeat $N e[] \t{1+$>}/$N"    " lorem 1024 done to_rgb
+    r2dx 512 # r 512,512,1,100%,0,3,0.5,0.5
     a z nm. img
   endl
   [img] nm. res
 
   # Build validation set.
-  #-----------------------
+  #----------------------
+  e[^-1] "Build Validation Set.\n"
   l[]
-    sp portrait1,portrait2,portrait7,portrait8,{32*20} to_rgb
-    # luminance
+    repeat 4 e[] \t{1+$>}/$N"    " lorem {32*20} done to_rgb
     s xy,-32 a z
     nm valid_Y
   endl
@@ -51209,6 +51213,7 @@ nn_test : skip ${1=1e-4}
 
   # Optimize network.
   #------------------
+  e[^-1] "Optimize Network."
   best_loss=inf
   size_batch=32
   repeat inf,iter
