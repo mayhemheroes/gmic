@@ -3741,6 +3741,13 @@ _input_text :
   if i[0]==239" && "i[1]==187" && "i[2]==191 rows. 3,100% fi # Remove BOM
   discard. {'\r'} # Remove CR
 
+#@cli lorem : _width>0,_height>0
+#@cli : Input random image of specified size, retrieved from Internet.
+#@cli : Default values: 'width=height=800'.
++lorem : check "isint(${1=800}) && $1>0 && isint(${2=$1}) && $2>0"
+  e[^-1] "Input random image of size $1x$2."
+  i "https://picsum.photos/$1/$2"
+
 # Merge multi-lines (lines continued by backslash before NL) in a string image.
 merge_multiline :
   eval[^] "*i==_'\\' && j[-1]!=_'\\' && j[+1]==_'\n'?(
@@ -51150,28 +51157,30 @@ nn_test : skip ${1=1e-4}
 
   # Build neural network.
   #----------------------
+   e[^-1] "Build Neural Network."
   if isfile('network.gmz') nn_load network.gmz
   else
     nn_init
-    nn_layer_input X,32,32,1,1
+    nn_layer_input X,32,32,1,3
     nn_layer_clone X0,X1,X
-    nn_layer_conv2dnl C1,X1,32
-    nn_layer_conv2dnl C2,C1,32
+    nn_layer_conv2dnl C1,X1,64
+    nn_layer_conv2dnl C2,C1,64
     nn_layer_conv2dnl C3,C2,32
     nn_layer_conv2dnl C4,C3,32
-    nn_layer_conv2dnl C5,C4,16
-    nn_layer_conv2dnl C6,C5,16
-    nn_layer_conv2dnl C7,C6,16
+    nn_layer_conv2dnl C5,C4,32
+    nn_layer_conv2dnl C6,C5,32
+    nn_layer_conv2dnl C7,C6,32
     nn_layer_conv2dnl C8,C7,16
-    nn_layer_conv2dnl C9,C8,8
-    nn_layer_conv2dnl C10,C9,8
-    nn_layer_conv2dnl C11,C10,8
-    nn_layer_conv2d C12,C11,1
-    nn_layer_add OUT0,C12,X0
+    nn_layer_conv2dnl C9,C8,16
+    nn_layer_conv2dnl C10,C9,16
+    nn_layer_conv2dnl C11,C10,16
+    nn_layer_conv2dnl C12,C11,16
+    nn_layer_conv2dnl C13,C12,8
+    nn_layer_conv2dnl C14,C13,8
+    nn_layer_conv2dnl C15,C14,8
+    nn_layer_conv2d C16,C15,3
+    nn_layer_add OUT0,C16,X0
     nn_layer_crop OUT,OUT0,2,2,0,{32-1-2},{32-1-2},0
-
-#    nn_resnet
-#    nn_unet_small
     nn_loss_mse L,OUT,Y
     nn_trainer T,L,$1,rmsprop,constant
   fi
@@ -51179,16 +51188,21 @@ nn_test : skip ${1=1e-4}
 
   # Build learning set.
   #--------------------
+  e[^-1] "Build Learning Set.\n"
   l[]
-    repeat 59 sp $> done luminance r2dx 512 r 512,512,1,1,0,3,0.5,0.5
+    N=128
+    repeat $N e[] \r{1+$>}/$N"    " lorem 1024 done to_rgb
+    r2dx 512 # r 512,512,1,100%,0,3,0.5,0.5
     a z nm. img
   endl
   [img] nm. res
 
   # Build validation set.
-  #-----------------------
+  #----------------------
+  e[^-1] "Build Validation Set.\n"
   l[]
-    sp portrait1,portrait2,portrait7,portrait8,{32*20} luminance
+    N=4
+    repeat $N e[] \r{1+$>}/$N"    " lorem {32*20} done to_rgb
     s xy,-32 a z
     nm valid_Y
   endl
@@ -51196,18 +51210,19 @@ nn_test : skip ${1=1e-4}
     s z repeat $! l[$>] noise {u(10,20)} endl done a z c 0,255
     nm valid_X
   endl
-  r[valid_Y] {32-4},{32-4},100%,1,0,0,0.5,0.5
+  r[valid_Y] {32-4},{32-4},100%,100%,0,0,0.5,0.5
 
   # Optimize network.
   #------------------
+  e[^-1] "Optimize Network."
   best_loss=inf
   size_batch=32
   repeat inf,iter
     e[] "ITER = "$iter
 
     # Build mini-batch.
-    32,32,$size_batch,1 nm. batch_X
-    {32-4},{32-4},$size_batch,1 nm. batch_Y
+    32,32,$size_batch,3 nm. batch_X
+    {32-4},{32-4},$size_batch,3 nm. batch_Y
     1,1,$size_batch,1,">
       const img = $img;
       const res = $res;
@@ -51217,11 +51232,11 @@ nn_test : skip ${1=1e-4}
         ni = int(u(d#img))%d#img;
         nx = int(u(0,w#img - 1 - 32))%w#img;
         ny = int(u(0,h#img - 1 - 32))%h#img;
-        X = crop(#img,nx,ny,ni,0,w#$batch_X,h#$batch_X,1,1);
-        Y = crop(#res,nx + 2,ny + 2,ni,0,w#$batch_Y,h#$batch_Y,1,1);
+        X = crop(#img,nx,ny,ni,0,w#$batch_X,h#$batch_X,1,3);
+        Y = crop(#res,nx + 2,ny + 2,ni,0,w#$batch_Y,h#$batch_Y,1,3);
       _(while); std(Y)<p);
-      draw(#$batch_X,X,0,0,z,0,w#$batch_X,h#$batch_X,1,1);
-      draw(#$batch_Y,Y,0,0,z,0,w#$batch_Y,h#$batch_Y,1,1)"
+      draw(#$batch_X,X,0,0,z,0,w#$batch_X,h#$batch_X,1,3);
+      draw(#$batch_Y,Y,0,0,z,0,w#$batch_Y,h#$batch_Y,1,3)"
     rm.
 
     l[batch_X] s z repeat $! l[$>]
@@ -51231,100 +51246,132 @@ nn_test : skip ${1=1e-4}
     # Process mini-batch.
     repeat 4,batch_iter
       1,1,{batch_X,d},1,*${-nn_lib}"
-        X = crop(#$batch_X,0,0,z,0,w#$batch_X,h#$batch_X,1,1);
-        Y = crop(#$batch_Y,0,0,z,0,w#$batch_Y,h#$batch_Y,1,1);
+        X = crop(#$batch_X,0,0,z,0,w#$batch_X,h#$batch_X,1,3);
+        Y = crop(#$batch_Y,0,0,z,0,w#$batch_Y,h#$batch_Y,1,3);
         "${_nn_forward}"
         "${_nn_backward}"
         "${_nn_update}"
         z<4 && !("$batch_iter"%10)?(
           var = string(#256,'IN',t);
-          store(X,var,w#$batch_X,h#$batch_X,1,1);
+          store(X,var,w#$batch_X,h#$batch_X,1,3);
           var = string(#256,'OUT',t);
-          store(OUT_out,var,w#$batch_Y,h#$batch_Y,1,1);
+          store(OUT_out,var,w#$batch_Y,h#$batch_Y,1,3);
           var = string(#256,'REF',t);
-          store(Y,var,w#$batch_Y,h#$batch_Y,1,1);
+          store(Y,var,w#$batch_Y,h#$batch_Y,1,3);
           run('l[] $IN',t,' $OUT',t,' $REF',t,' c 0,255 a x w',z+1,'. 600,200,0 rm endl');
         );
         end(
-          print([ sqrt(L_out),nn_learning_rate ]);
+          psnr = 10*log10(255^2/L_out);
+          print([ psnr,sqrt(L_out),nn_learning_rate ]);
         ); I"
       rm.
     done
     rm[batch_X,batch_Y]
 
     # Test on validation set.
-    if !($iter%20)
+    if !($iter%40)
       1,1,{valid_X,d},1,*${-nn_lib}"
-        X = crop(#$valid_X,0,0,z,0,w#$valid_X,h#$valid_X,1,1);
-        Y = crop(#$valid_Y,0,0,z,0,w#$valid_Y,h#$valid_Y,1,1);
+        X = crop(#$valid_X,0,0,z,0,w#$valid_X,h#$valid_X,1,3);
+        Y = crop(#$valid_Y,0,0,z,0,w#$valid_Y,h#$valid_Y,1,3);
         "${_nn_forward}${_nn_backward}"
         end(
           loss = sqrt(L_out);
-          echo('\nValidation Loss = ',loss,' (best = ',$best_loss,')\n');
+          psnr = 10*log10(255^2/L_out);
+          echo('\nValidation : PSNR = ',psnr,' Loss = ',loss,' (best = ',$best_loss,')\n');
           set(loss,'loss');
         )"
-      if $loss<$best_loss
-        best_loss=$loss
-        if $iter nn_save network.gmz fi
+
+      loss_change={($loss-$best_loss)/$best_loss}
+      e[] "\nDeviation from best LOSS = "{$loss_change*100}"%."
+
+      if !$iter" || "$loss_change<2%
+        if $loss<$best_loss
+          e[] "\n--> Save best network.\n"
+          nn_save best_network.gmz
+          best_loss=$loss
+        fi
+        if $iter
+          e[] "\n--> Save network.\n"
+          nn_save network.gmz
+        fi
       fi
 
     fi
-
-    # Visualize convolution kernels.
-#    +z[CONV1_0] 0,{CONV1_0,w-2} l. s y n 0,255 repeat $! l[$>] s x,-9 N=$! r {v=sqrt(w);[v,v]},1,1,-1
-# r2dx 128,1 frame 1,1,0 frame 2,2,200 append_tiles $N endl done a y w6. rm endl
 
   done
 
 
 nn_foo :
-  l[]
-    nn_load network.gmz
-    store network
-  endl
-  repeat $! l[$>]
-    w,h,s={[w,h,s]}
+  N=$!
+  nn_load network.gmz
+
+  repeat $N l[$>,$N--1] to_rgb[0]
+    w,h,s={0,[w,h,s]}
 
     # Extract overlapping 32x32 tiles.
-    nx,ny={ceil([w,h]/30)}
+    nx,ny={ceil([$w,$h]/26)}
     32,32,{$nx*$ny},$s
-    1,1,{d},1,"*
+    1,1,{d},1,">
       const boundary = 1;
       ix = z%$nx;
       iy = int(z/$nx);
-      X = round(lerp(0,$w - 1 - 32,ix/($nx - 1)));
-      Y = round(lerp(0,$h - 1 - 32,iy/($ny - 1)));
-      V = crop(#0,X,Y,0,0,32,32,1,"$s");
+      X = round(lerp(-2,$w - 32 + 2,ix/($nx - 1)));
+      Y = round(lerp(-2,$h - 32 + 2,iy/($ny - 1)));
+      V = crop(#0,X,Y,0,0,32,32,1,"$s",2);
       draw(#-1,V,0,0,z,0,32,32,1,"$s")"
-    k..
+    rm[0,-1]
 
     # Denoise 32x32 tiles.
-    $network
-    1,1,{0,d},1,*${-nn_lib}"
-    repeat ("$s",c,
-      X = crop(#0,0,0,z,c,32,32,1,1);"${_nn_forward}"
-      draw(#0,OUT_out,0,0,z,c,32,32,1,1);
-    )"
-    k[0]
+    1,1,{d},1,*${-nn_lib}"
+      X = crop(#-1,0,0,z,0,32,32,1,3);"${_nn_forward}"
+      draw(#-1,OUT0_out,0,0,z,0,32,32,1,3);
+    "
+    rm.
 
     # Reconstruct image from tiles.
-    $w,$h,1,{$s+1}
-    1,1,{0,d},1,">begin(one = vector(#(32 - 2)*(32 - 2),1));
-      const boundary = 1;
+    i[0] $w,$h,1,{$s+1}
+    1,1,{d},1,">begin(
+        mask = convolve(vector(#(32 - 4)*(32 - 4),1),
+                        32 - 4,32 - 4,1,1,
+                        [1],1,1,1,1,
+                        0,0,1,
+                        0,0,0,
+                        -2,-2,0,32 - 4 - 1 + 2,32 - 4 - 1 + 2,0);
+      );
       ix = z%$nx;
       iy = int(z/$nx);
-      X = round(lerp(0,$w - 1 - 32,ix/($nx - 1)));
-      Y = round(lerp(0,$h - 1 - 32,iy/($ny - 1)));
-      V = crop(#0,1,1,z,0,32 - 2,32 - 2,1,"$s");
-      draw(#1,V,X + 1,Y + 1,0,0,32 - 2,32 - 2,1,"$s",-1);
-      draw(#1,one,X + 1,Y + 1,0,"$s",32 - 2,32 - 2,1,1,-1)"
-    k..
-    s c,-$s
-    max. 1 /
-#    sharpen. 30
-    c 0,255
+      X = round(lerp(-2,$w - 32 + 2,ix/($nx - 1)));
+      Y = round(lerp(-2,$h - 32 + 2,iy/($ny - 1)));
+      V = crop(#-1,0,0,z,0,32,32,1,"$s",2);
+      draw(#0,V,X,Y,0,0,32,32,1,"$s",-1,mask);
+      draw(#0,mask,X,Y,0,"$s",32,32,1,1,-1,mask)"
+    rm[-2,-1]
+
+    l[0] s c,-$s max. 1 / c 0,255 endl
 
   endl done
+  rm[$N--1]
+
+
+nn_fig :
+  N=0
+  repeat 10 l[]
+    sp ?,{round(u(400,800))}
+    noise {u(10,20)} c 0,255 to_rgb
+    xz[0]
+    +nn_foo
+    r2dx 640,1
+    to[0] "Noisy"
+    to[1] "Denoised"
+    frame 1,1,0 frame 3,3,255 a x
+    on denoise.png,$N
+    N+=1
+    d
+    rm
+  endl done
+
+
+
 
 nn_unet :
   nn_layer_conv2dnl lA,X,64
