@@ -51304,34 +51304,33 @@ nn_test : skip ${1=1e-4},${2=256}
 
 nn_foo :
   N=$!
-  T=128
+  T=64
   best_network.gmz
   nn_init
   nn_layer_input X,$T,$T,1,3
   nn_denoisenet11
 
-  repeat $N l[$>,$N--1] to_rgb[0]
-    w,h,s={0,[w,h,s]}
+  repeat $N l[$>,$N--1] to_color[0]
 
     # Extract overlapping TxT tiles.
-    nx,ny={ceil([$w,$h]/($T-6))}
-    $T,$T,{$nx*$ny},$s
+    nx,ny={0,ceil([w,h]/($T-6))}
+    $T,$T,{$nx*$ny},{0,s}
     1,1,{d},1,":
       const boundary = 1;
       ix = z%$nx;
       iy = int(z/$nx);
-      X = round(lerp(-2,$w - $T + 2,ix/($nx - 1)));
-      Y = round(lerp(-2,$h - $T + 2,iy/($ny - 1)));
-      V = crop(#0,X,Y,0,0,$T,$T,1,"$s",2);
-      draw(#-1,V,0,0,z,0,$T,$T,1,"$s")"
-    rm[0,-1]
+      X = round(lerp(-2,w#0 - $T + 2,ix/($nx - 1)));
+      Y = round(lerp(-2,h#0 - $T + 2,iy/($ny - 1)));
+      V = crop(#0,X,Y,0,0,$T,$T,1,3,2);
+      draw(#-1,V,0,0,z,0,$T,$T,1,3)"
+    rm.
 
     # Denoise tiles.
-    1,1,{d},1,:${-nn_lib}"X = crop(#-1,0,0,z,0,$T,$T,1,3);"${_nn_forward}"draw(#-1,OUT0_out,0,0,z,0,$T,$T,1,3)" rm.
+    1,1,{d},1,*${-nn_lib}"X = crop(#-1,0,0,z,0,$T,$T,1,3);"${_nn_forward}"draw(#-1,OUT0_out,0,0,z,0,$T,$T,1,3)" rm.
 
     # Reconstruct image from overlapping tiles.
-    i[0] $w,$h,1,{$s+1}
-    1,1,{d},1,">begin(
+    {0,[w,h,1,4]}
+    1,1,{-2,d},1,">begin(
         mask = convolve(vector(#($T - 4)*($T - 4),1),
                         $T - 4,$T - 4,1,1,
                         [1],1,1,1,1,
@@ -51341,13 +51340,17 @@ nn_foo :
       );
       ix = z%$nx;
       iy = int(z/$nx);
-      X = round(lerp(-2,$w - $T + 2,ix/($nx - 1)));
-      Y = round(lerp(-2,$h - $T + 2,iy/($ny - 1)));
-      V = crop(#-1,0,0,z,0,$T,$T,1,"$s",2);
-      draw(#0,V,X,Y,0,0,$T,$T,1,"$s",-1,mask);
-      draw(#0,mask,X,Y,0,"$s",$T,$T,1,1,-1,mask)"
-    rm[-2,-1]
-    l[0] s c,-$s max. 1 / c 0,255 endl
+      X = round(lerp(-2,w#0 - $T + 2,ix/($nx - 1)));
+      Y = round(lerp(-2,h#0 - $T + 2,iy/($ny - 1)));
+      V = crop(#-2,0,0,z,0,$T,$T,1,3,2);
+      draw(#-1,V,X,Y,0,0,$T,$T,1,3,-1,mask);
+      draw(#-1,mask,X,Y,0,3,$T,$T,1,1,-1,mask)"
+    rm[-3,-1]
+    l. s c,-3 max. 1 / c 0,255 endl
+
+    # Add color-preserving constraint.
+    j[0] . rm.
+
 
   endl done
   rm[$N--1]
