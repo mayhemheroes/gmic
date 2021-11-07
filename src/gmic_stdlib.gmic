@@ -14727,6 +14727,66 @@ denoise_haar : check "${1=1.4}>=0 && isint(${2=0}) && $2>=0 && isint(${3=10}) &&
     rm[0] / $3 r $w,$h,$d,100%,0
   nm $nm endl done
 
+#@cli denoise_cnn : _patch_size>0
+#@cli : Denoise selected images using a convolutional neural network (CNN).
+#@cli : $$ image.jpg noise 20 cut 0,255 +denoise_cnn
+denoise_cnn : skip ${1=64}
+  N=$!
+  if isint($1)" && "$1>0 T=$1 else T=64 noarg fi
+  e[^-1] "Denoise image$? using a convolutional neural network, with patch size "$T"."
+
+  # Load denoising network.
+  file=${-path_cache}denoise_cnn.gmz
+  url=https://gmic.eu/denoise_cnn.gmz
+  if isfile('$file') i $file
+  else l[] i $url o $file onfail error[0--3] "Unable to load network file '"$url"'." endl
+  fi
+  replace_str. "nn_layer_input X,32,32,1,3","nn_layer_input X,"$T","$T",1,3" # Set patch size
+  run {t} rm[-2,-1]
+
+  # Process images.
+  repeat $N l[$>,$N--1] to_color[0]
+
+    # Extract overlapping TxT tiles.
+    nx,ny={0,ceil([w,h]/($T-6))}
+    {0,[$T,$T,$nx*$ny,s]}
+    1,1,{d},1,":
+      ix = z%$nx;
+      iy = int(z/$nx);
+      X = $nx<2?-2:round(lerp(-2,w#0 - $T + 2,ix/($nx - 1)));
+      Y = $ny<2?-2:round(lerp(-2,h#0 - $T + 2,iy/($ny - 1)));
+      V = crop(#0,X,Y,0,0,$T,$T,1,3,3);
+      draw(#-1,V,0,0,z,0,$T,$T,1,3)"
+    rm.
+
+    # Denoise tiles.
+    1,1,{d},1,*${-nn_lib}"X = crop(#-1,0,0,z,0,$T,$T,1,3);"${_nn_forward}"draw(#-1,OUT0_out,0,0,z,0,$T,$T,1,3)" rm.
+    c. 0,255
+
+    # Reconstruct image from overlapping tiles.
+    {0,[w,h,1,4]}
+    1,1,{-2,d},1,">begin(
+        mask = convolve(vector(#($T - 4)*($T - 4),1),
+                        $T - 4,$T - 4,1,1,
+                        [1],1,1,1,1,
+                        0,0,1,
+                        0,0,0,
+                        -2,-2,0,$T - 4 - 1 + 2,$T - 4 - 1 + 2,0);
+      );
+      ix = z%$nx;
+      iy = int(z/$nx);
+      X = $nx<2?-2:round(lerp(-2,w#0 - $T + 2,ix/($nx - 1)));
+      Y = $ny<2?-2:round(lerp(-2,h#0 - $T + 2,iy/($ny - 1)));
+      V = crop(#-2,0,0,z,0,$T,$T,1,3);
+      draw(#-1,V,X,Y,0,0,$T,$T,1,3,-1,mask);
+      draw(#-1,mask,X,Y,0,3,$T,$T,1,1,-1,mask)"
+    rm[-3,-1]
+    l. s c,-3 max. 1 / c 0,255 endl
+    j[0] . rm.
+
+  endl done
+  rm[$N--1]
+
 #@cli denoise_patchpca : _strength>=0,_patch_size>0,_lookup_size>0,_spatial_sampling>0
 #@cli : Denoise selected images using the patch-pca algorithm.
 #@cli : Default values: 'patch_size=7', 'lookup_size=11', 'details=1.8' and 'spatial_sampling=5'.
@@ -22549,7 +22609,9 @@ nn_trainer : nn_check_layer "$2"
   e[^-1] "[nn_lib] Add trainer '$1' for loss '$2', with learning rate '$3', $4 optimizer and $5 scheduler."
   _nn_$1_out_size=0,0,0,0
   if !isint($$1)
-    # (iteration,learning_rate,initial_learning_rate,previous_loss,best_loss;{optimizer variables};{scheduler variables})
+    # (iteration,learning_rate,initial_learning_rate,previous_loss,best_loss;
+    # {optimizer variables};
+    # {scheduler variables})
     l[] (0,$3,$3,inf,inf) _nn_optimizer_$4 _nn_scheduler_$5 a y nm $1 endl
   fi
   o_sgd,o_rmsprop,o_adam,o_adamax=0,1,2,3
@@ -47286,6 +47348,31 @@ fx_smooth_bilateral : skip ${5=0},${6=0}
 fx_smooth_bilateral_preview :
   gui_split_preview "fx_smooth_bilateral $*",${-3--1}
 
+#@gui Smooth [CNN] : fx_smooth_cnn,fx_smooth_cnn_preview(0)
+#@gui : Iterations = int(1,1,5)
+#@gui : sep = separator()
+#@gui : Preview Type = choice("Full","Forward Horizontal","Forward Vertical","Backward Horizontal",
+#@gui : "Backward Vertical","Duplicate Top","Duplicate Left","Duplicate Bottom","Duplicate Right",
+#@gui : "Duplicate Horizontal","Duplicate Vertical","Checkered","Checkered Inverse")
+#@gui : Preview Split = point(50,50,0,0,200,200,200,0,10)_0
+#@gui : sep = separator()
+#@gui : note = note{"<small>
+#@gui : <b><span color="#EE5500">Note:</span></b> This filter uses a convolutional neural network (CNN)
+#@gui : to denoise images. This filter does not take advantage of GPU computing, so expect it to be quite slow
+#@gui : if you don't have many CPU cores available.
+#@gui : </small>"}
+#@gui : sep = separator()
+#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2021/11/06</i>.</small>")
+fx_smooth_cnn :
+  repeat $1
+    denoise_cnn 64
+    progress {round(($>+1)/$1*100)}
+  done
+
+fx_smooth_cnn_preview :
+  r2din 256,256,0,0,0.5,0.5
+  gui_split_preview "fx_smooth_cnn $*",${-3--1}
+
 #@gui Smooth [Guided] : fx_smooth_guided, fx_smooth_guided_preview(0)
 #@gui : Guide As = choice("Self","Top Layer","Bottom Layer")
 #@gui : Radius = int(5,1,100)
@@ -51152,37 +51239,38 @@ nn_layer_res2 : nn_check_layer "$2" check "isvarname('$1') && isint(${3=16}) && 
   nn_layer_add $1_ADD,$1_CONV3,$1_CL1
   nn_layer_nl $1,$1_ADD
 
+
+# nn_denoisenet11 : A 11-layer network for image denoising
+nn_denoisenet11 :
+  nn_layer_clone X0,X1,X
+  nn_layer_conv2dnl C1,X1,64
+  nn_layer_conv2dnl C2,C1,64
+  nn_layer_conv2dnl C3,C2,32
+  nn_layer_conv2dnl C4,C3,32
+  nn_layer_conv2dnl C5,C4,32
+  nn_layer_conv2dnl C6,C5,32
+  nn_layer_conv2dnl C7,C6,16
+  nn_layer_conv2dnl C8,C7,16
+  nn_layer_conv2dnl C9,C8,16
+  nn_layer_conv2dnl C10,C9,16
+  nn_layer_conv2d C11,C10,3
+  nn_layer_add OUT0,C11,X0
+  nn_layer_crop OUT,OUT0,2,2,0,{32-1-2},{32-1-2},0
+
 # Main test procedure.
-nn_test : skip ${1=1e-4}
+nn_test : skip ${1=1e-4},${2=256}
 
   # Build neural network.
   #----------------------
-   e[^-1] "Build Neural Network."
-  if isfile('network.gmz') nn_load network.gmz
+  e[^-1] "Build Neural Network."
+  if isfile('network.gmz')
+    nn_load best_network.gmz
   else
     nn_init
     nn_layer_input X,32,32,1,3
-    nn_layer_clone X0,X1,X
-    nn_layer_conv2dnl C1,X1,64
-    nn_layer_conv2dnl C2,C1,64
-    nn_layer_conv2dnl C3,C2,32
-    nn_layer_conv2dnl C4,C3,32
-    nn_layer_conv2dnl C5,C4,32
-    nn_layer_conv2dnl C6,C5,32
-    nn_layer_conv2dnl C7,C6,32
-    nn_layer_conv2dnl C8,C7,16
-    nn_layer_conv2dnl C9,C8,16
-    nn_layer_conv2dnl C10,C9,16
-    nn_layer_conv2dnl C11,C10,16
-    nn_layer_conv2dnl C12,C11,16
-    nn_layer_conv2dnl C13,C12,8
-    nn_layer_conv2dnl C14,C13,8
-    nn_layer_conv2dnl C15,C14,8
-    nn_layer_conv2d C16,C15,3
-    nn_layer_add OUT0,C16,X0
-    nn_layer_crop OUT,OUT0,2,2,0,{32-1-2},{32-1-2},0
+    nn_denoisenet11
     nn_loss_mse L,OUT,Y
-    nn_trainer T,L,$1,rmsprop,constant
+    nn_trainer T,L,$1,adam,constant
   fi
   =[T] $1,1 =[T] $1,2
 
@@ -51190,7 +51278,7 @@ nn_test : skip ${1=1e-4}
   #--------------------
   e[^-1] "Build Learning Set.\n"
   l[]
-    N=128
+    N=$2
     repeat $N e[] \r{1+$>}/$N"    " lorem 1024 done to_rgb
     r2dx 512 # r 512,512,1,100%,0,3,0.5,0.5
     a z nm. img
@@ -51201,7 +51289,7 @@ nn_test : skip ${1=1e-4}
   #----------------------
   e[^-1] "Build Validation Set.\n"
   l[]
-    N=4
+    N=8
     repeat $N e[] \r{1+$>}/$N"    " lorem {32*20} done to_rgb
     s xy,-32 a z
     nm valid_Y
@@ -51269,7 +51357,7 @@ nn_test : skip ${1=1e-4}
     rm[batch_X,batch_Y]
 
     # Test on validation set.
-    if !($iter%40)
+    if !($iter%80)
       1,1,{valid_X,d},1,*${-nn_lib}"
         X = crop(#$valid_X,0,0,z,0,w#$valid_X,h#$valid_X,1,3);
         Y = crop(#$valid_Y,0,0,z,0,w#$valid_Y,h#$valid_Y,1,3);
@@ -51299,76 +51387,6 @@ nn_test : skip ${1=1e-4}
     fi
 
   done
-
-
-nn_foo :
-  N=$!
-  nn_load network.gmz
-
-  repeat $N l[$>,$N--1] to_rgb[0]
-    w,h,s={0,[w,h,s]}
-
-    # Extract overlapping 32x32 tiles.
-    nx,ny={ceil([$w,$h]/26)}
-    32,32,{$nx*$ny},$s
-    1,1,{d},1,">
-      const boundary = 1;
-      ix = z%$nx;
-      iy = int(z/$nx);
-      X = round(lerp(-2,$w - 32 + 2,ix/($nx - 1)));
-      Y = round(lerp(-2,$h - 32 + 2,iy/($ny - 1)));
-      V = crop(#0,X,Y,0,0,32,32,1,"$s",2);
-      draw(#-1,V,0,0,z,0,32,32,1,"$s")"
-    rm[0,-1]
-
-    # Denoise 32x32 tiles.
-    1,1,{d},1,*${-nn_lib}"
-      X = crop(#-1,0,0,z,0,32,32,1,3);"${_nn_forward}"
-      draw(#-1,OUT0_out,0,0,z,0,32,32,1,3);
-    "
-    rm.
-
-    # Reconstruct image from tiles.
-    i[0] $w,$h,1,{$s+1}
-    1,1,{d},1,">begin(
-        mask = convolve(vector(#(32 - 4)*(32 - 4),1),
-                        32 - 4,32 - 4,1,1,
-                        [1],1,1,1,1,
-                        0,0,1,
-                        0,0,0,
-                        -2,-2,0,32 - 4 - 1 + 2,32 - 4 - 1 + 2,0);
-      );
-      ix = z%$nx;
-      iy = int(z/$nx);
-      X = round(lerp(-2,$w - 32 + 2,ix/($nx - 1)));
-      Y = round(lerp(-2,$h - 32 + 2,iy/($ny - 1)));
-      V = crop(#-1,0,0,z,0,32,32,1,"$s",2);
-      draw(#0,V,X,Y,0,0,32,32,1,"$s",-1,mask);
-      draw(#0,mask,X,Y,0,"$s",32,32,1,1,-1,mask)"
-    rm[-2,-1]
-
-    l[0] s c,-$s max. 1 / c 0,255 endl
-
-  endl done
-  rm[$N--1]
-
-
-nn_fig :
-  N=0
-  repeat 10 l[]
-    sp ?,{round(u(400,800))}
-    noise {u(10,20)} c 0,255 to_rgb
-    xz[0]
-    +nn_foo
-    r2dx 640,1
-    to[0] "Noisy"
-    to[1] "Denoised"
-    frame 1,1,0 frame 3,3,255 a x
-    on denoise.png,$N
-    N+=1
-    d
-    rm
-  endl done
 
 
 
