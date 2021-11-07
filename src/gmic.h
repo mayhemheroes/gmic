@@ -196,7 +196,7 @@ namespace cimg_library {
 
 #ifdef cimg_use_abort
 inline bool *gmic_abort_ptr(bool *const p_is_abort);
-#define cimg_abort_init bool *const gmic_is_abort = ::gmic_abort_ptr(0)
+#define cimg_abort_init bool *const gmic_is_abort = ::gmic_abort_ptr(0); cimg::unused(gmic_is_abort)
 #define cimg_abort_test if (*gmic_is_abort) throw CImgAbortException()
 #endif
 
