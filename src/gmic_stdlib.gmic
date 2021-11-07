@@ -11032,15 +11032,19 @@ colorblind : check "isint($1) && $1>=0 && $1<=7"
   s0="protanopia" s1="protanomaly" s2="deuteranopia" s3="deuteranomaly" s4="tritanopia"
   s5="tritanomaly" s6="achromatopsia" s7="achromatomaly"
   e[^-1] "Simulate color blindness of type '"${s$1}"' on image$?."
-  type0=(0.567,0.433,0;0.558,0.442,0;0,0.242,0.758)
-  type1=(0.817,0.183,0;0.333,0.667,0;0,0.125,0.875)
-  type2=(0.625,0.375,0;0.7,0.3,0;0,0.3,0.7)
-  type3=(0.8,0.2,0;0.258,0.742,0;0,0.142,0.858)
-  type4=(0.95,0.05,0;0,0.433,0.567;0,0.475,0.525)
-  type5=(0.967,0.033,0;0,0.733,0.267;0,0.183,0.817)
+  # Simulation method of Vienot, Brettel & Mollon 1999
+  # "Digital video colourmaps for checking the legibility of displays by dichromats"
+  # The dichromacy matrices of the paper were adapted to sRGB (RGB->XYZ).
+  # Anomalous trichromacy simulated via linear interpolation with the identity and a factor of 0.6
+  type0=(0.10889,0.89111,0;0.10889,0.89111,0;0.00447,-0.00447,1.0)
+  type1=(0.46533,0.53467,0;0.06533,0.93467,0;0.00268,-0.00268,1)
+  type2=(0.29031,0.70969,0;0.29031,0.70969,0;-0.02197,0.02197,1)
+  type3=(0.57418,0.42582,0;0.17418,0.82582,0;-0.01318,0.01318,1)
+  type4=(1,0.15236,-0.15236;0,0.86717,0.13283;0,0.86717,0.13283)
+  type5=(1,0.09142,-0.09142;0,0.92030,0.07970;0,0.52030,0.47970)
   type6=(0.299,0.587,0.114;0.299,0.587,0.114;0.299,0.587,0.114)
   type7=(0.618,0.320,0.062;0.163,0.775,0.062;0.163,0.320,0.516)
-  repeat $! l[$>] split_opacity l[0] to_rgb mix_channels ${type$1} endl a c endl done
+  repeat $! l[$>] split_opacity l[0] to_rgb srgb2rgb mix_channels ${type$1} rgb2srgb endl a c endl done
 
 #@cli colormap : nb_levels>=0,_method={ 0=median-cut | 1=k-means },_sort_vectors
 #@cli : Estimate best-fitting colormap with 'nb_colors' entries, to index selected images.
