@@ -51263,6 +51263,16 @@ nn_denoisenet11 :
   nn_layer_add OUT0,C11,X0
   nn_layer_crop OUT,OUT0,2,2,0,{32-1-2},{32-1-2},0
 
+# Add synthetic noise to batch images.
+_nn_test_noise :
+  s z repeat $! l[$>]
+    rgb2hsi s c
+      noise[0] {u(20)}
+      noise[1] {u(0.1)}
+      noise[2] {u(0.1)}
+    a c hsi2rgb c 0,255
+  endl done a z
+
 # Main test procedure.
 nn_test : skip ${1=1e-4},${2=256}
 
@@ -51300,10 +51310,7 @@ nn_test : skip ${1=1e-4},${2=256}
     s xy,-32 a z
     nm valid_Y
   endl
-  +l[valid_Y]
-    s z repeat $! l[$>] noise {u(10,20)} endl done a z c 0,255
-    nm valid_X
-  endl
+  +l[valid_Y] _nn_test_noise nm valid_X endl
   r[valid_Y] {32-4},{32-4},100%,100%,0,0,0.5,0.5
 
   # Optimize network.
@@ -51333,9 +51340,7 @@ nn_test : skip ${1=1e-4},${2=256}
       draw(#$batch_Y,Y,0,0,z,0,w#$batch_Y,h#$batch_Y,1,3)"
     rm.
 
-    l[batch_X] s z repeat $! l[$>]
-      noise {u(10,20)} c 0,255
-    endl done a z endl
+    l[batch_X] _nn_test_noise endl
 
     # Process mini-batch.
     repeat 4,batch_iter
@@ -51371,31 +51376,25 @@ nn_test : skip ${1=1e-4},${2=256}
         end(
           loss = sqrt(L_out);
           psnr = 10*log10(255^2/L_out);
-          echo('\nValidation : PSNR = ',psnr,' Loss = ',loss,' (best = ',$best_loss,')\n');
+          echo('\nValidation : PSNR = ',psnr,' Loss = ',loss,' (best so far = ',$best_loss,')\n');
           set(loss,'loss');
         )"
-
       loss_change={($loss-$best_loss)/$best_loss}
       e[] "\nDeviation from best LOSS = "{$loss_change*100}"%."
 
-      if !$iter" || "$loss_change<2%
-        if $iter" && "$loss<$best_loss
+      if $loss_change<0 best_loss=$loss fi
+
+      if $iter" || "$loss_change<2%
+        e[] "\n--> Save network.\n"
+        nn_save network.gmz
+        if $loss_change<0
           e[] "\n--> Save best network.\n"
           nn_save best_network.gmz
-          best_loss=$loss
-        fi
-        if $iter
-          e[] "\n--> Save network.\n"
-          nn_save network.gmz
         fi
       fi
 
     fi
-
   done
-
-
-
 
 nn_unet :
   nn_layer_conv2dnl lA,X,64
