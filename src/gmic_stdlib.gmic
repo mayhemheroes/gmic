@@ -14731,61 +14731,67 @@ denoise_haar : check "${1=1.4}>=0 && isint(${2=0}) && $2>=0 && isint(${3=10}) &&
     rm[0] / $3 r $w,$h,$d,100%,0
   nm $nm endl done
 
-#@cli denoise_cnn : _patch_size>0
+#@cli denoise_cnn : _noise_type={ 0=soft | 1=heavy },_patch_size>0
 #@cli : Denoise selected images using a convolutional neural network (CNN).
 #@cli : Input value range should be [0,255]. Output value range is [0,255].
 #@cli : Default value: 'patch_size=64'.
 #@cli : $ image.jpg noise 20 cut 0,255 +denoise_cnn
-denoise_cnn : skip ${1=64}
+denoise_cnn : check "isint(${1=0}) && inrange($1,0,1) && isint(${2=64}) && $2>0"
   N=$!
-  if isint($1)" && "$1>0 T=$1 else T=64 noarg fi
-  e[^-1] "Denoise image$? using a convolutional neural network, with patch size "$T"."
+  if isint($1)" && "inrange($1,0,1) type=$1 else type=0 noarg fi
+  s0,s1=soft,heavy
+  e[^-1] "Denoise image$? using a convolutional neural network (for "${s$type}"-noise), with patch size $2."
 
   # Load denoising network.
-  file=${-path_cache}denoise_cnn.gmz
-  url=https://gmic.eu/denoise_cnn.gmz
-  if isfile('$file') i $file
-  else l[] i $url o $file onfail error[0--3] "Unable to load network file '"$url"'." endl
-  fi
-  replace_str. "nn_layer_input X,32,32,1,3","nn_layer_input X,"$T","$T",1,3" # Set patch size
-  run {t} rm[-2,-1]
+  l[]
+    file=${-path_cache}denoise_cnn.gmz
+    url=https://gmic.eu/denoise_cnn.gmz
+    if isfile('$file') i $file
+    else i $url o $file
+    fi
+    k[cnn_${s$type}] unserialize
+    ps=$2 replace_str. "nn_layer_input X,32,32,1,3","nn_layer_input X,"$ps","$ps",1,3" # Set patch size
+    run {t} rm[-2,-1]
+  onfail
+    error[0--3] "Unable to load network file '"$url"'."
+  endl
 
   # Process images.
   repeat $N l[$>,$N--1] to_color[0]
 
-    # Extract overlapping TxT tiles.
-    nx,ny={0,ceil([w,h]/($T-6))}
-    {0,[$T,$T,$nx*$ny,s]}
+    # Extract overlapping psxps tiles.
+    nx,ny={0,ceil([w,h]/($ps-6))}
+    {0,[$ps,$ps,$nx*$ny,s]}
     1,1,{d},1,":
       ix = z%$nx;
       iy = int(z/$nx);
-      X = $nx<2?-2:round(lerp(-2,w#0 - $T + 2,ix/($nx - 1)));
-      Y = $ny<2?-2:round(lerp(-2,h#0 - $T + 2,iy/($ny - 1)));
-      V = crop(#0,X,Y,0,0,$T,$T,1,3,3);
-      draw(#-1,V,0,0,z,0,$T,$T,1,3)"
+      X = $nx<2?-2:round(lerp(-2,w#0 - $ps + 2,ix/($nx - 1)));
+      Y = $ny<2?-2:round(lerp(-2,h#0 - $ps + 2,iy/($ny - 1)));
+      V = crop(#0,X,Y,0,0,$ps,$ps,1,3,3);
+      draw(#-1,V,0,0,z,0,$ps,$ps,1,3)"
     rm.
 
     # Denoise tiles.
-    1,1,{d},1,*${-nn_lib}"X = crop(#-1,0,0,z,0,$T,$T,1,3);"${_nn_forward}"draw(#-1,OUT0_out,0,0,z,0,$T,$T,1,3);0" rm.
-    c. 0,255
+    1,1,{d},1,*${-nn_lib}"X = crop(#-1,0,0,z,0,$ps,$ps,1,3);"${_nn_forward}"draw(#-1,OUT0_out,0,0,z,0,$ps,$ps,1,3);0"
+    rm. c. 0,255
 
     # Reconstruct image from overlapping tiles.
     {0,[w,h,1,4]}
     1,1,{-2,d},1,">begin(
-        mask = convolve(vector(#($T - 4)*($T - 4),1),
-                        $T - 4,$T - 4,1,1,
+        mask = convolve(vector(#($ps - 4)*($ps - 4),1),
+                        $ps - 4,$ps - 4,1,1,
                         [1],1,1,1,1,
                         0,0,1,
                         0,0,0,
-                        -2,-2,0,$T - 4 - 1 + 2,$T - 4 - 1 + 2,0);
+                        -2,-2,0,$ps - 4 - 1 + 2,$ps - 4 - 1 + 2,0);
       );
       ix = z%$nx;
       iy = int(z/$nx);
-      X = $nx<2?-2:round(lerp(-2,w#0 - $T + 2,ix/($nx - 1)));
-      Y = $ny<2?-2:round(lerp(-2,h#0 - $T + 2,iy/($ny - 1)));
-      V = crop(#-2,0,0,z,0,$T,$T,1,3);
-      draw(#-1,V,X,Y,0,0,$T,$T,1,3,-1,mask);
-      draw(#-1,mask,X,Y,0,3,$T,$T,1,1,-1,mask)"
+      X = $nx<2?-2:round(lerp(-2,w#0 - $ps + 2,ix/($nx - 1)));
+      Y = $ny<2?-2:round(lerp(-2,h#0 - $ps + 2,iy/($ny - 1)));
+      V = crop(#-2,0,0,z,0,$ps,$ps,1,3);
+      draw(#-1,V,X,Y,0,0,$ps,$ps,1,3,-1,mask);
+      draw(#-1,mask,X,Y,0,3,$ps,$ps,1,1,-1,mask)"
     rm[-3,-1]
     l. s c,-3 max. 1 / c 0,255 endl
     j[0] . rm.
