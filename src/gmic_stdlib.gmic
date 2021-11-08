@@ -51344,24 +51344,23 @@ nn_test : skip ${1=1e-4},${2=256}
         end(
           loss = sqrt(L_out);
           psnr = 10*log10(255^2/L_out);
-          echo('\nValidation : PSNR = ',psnr,' Loss = ',loss,' (best = ',$best_loss,')\n');
+          echo('\nValidation : PSNR = ',psnr,' Loss = ',loss,' (best so far = ',$best_loss,')\n');
           set(loss,'loss');
         )"
-
       loss_change={($loss-$best_loss)/$best_loss}
       e[] "\nDeviation from best LOSS = "{$loss_change*100}"%."
 
-      if !$iter" || "$loss_change<2%
-        if $iter" && "$loss<$best_loss
+      if $loss_change<0 best_loss=$loss fi
+
+      if $iter" || "$loss_change<2%
+        e[] "\n--> Save network.\n"
+        nn_save network.gmz
+        if $loss_change<0
           e[] "\n--> Save best network.\n"
           nn_save best_network.gmz
         fi
-        if $iter
-          e[] "\n--> Save network.\n"
-          nn_save network.gmz
-        fi
       fi
-      if $loss<$best_loss best_loss=$loss fi
+
     fi
 
   done
