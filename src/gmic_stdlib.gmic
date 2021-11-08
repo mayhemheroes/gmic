@@ -51195,45 +51195,6 @@ nn_test_fc : check "${1=1e-4}>0"
 
   done
 
-#--------------------------------
-# Test program for CONV networks.
-#--------------------------------
-nn_test_conv :
-
-  srand 3
-
-  # Build neural network.
-  #----------------------
-  nn_init
-  nn_layer_input X,32,32,1,3
-  nn_layer_conv2dnl L1,X,3,3,1,1
-  nn_layer_rename OUT,L1
-  nn_loss_mse L,OUT,Y
-  nn_trainer TRAINER,L,0.1
-  sp lena,32 nm. img
-  [img] nm. res
-
-  # Optimize network.
-  #-------------------
-  size_batch=1
-  repeat inf,_nn_iter
-    e[] "ITER = "$_nn_iter
-
-    repeat 10,batch_iter
-      eval ${-nn_lib}"
-        X = crop(#$img); # Input
-        Y = crop(#$res); # Ground-truth
-        "${_nn_forward}${_nn_backward}${_nn_update}"
-        store(X,'vX',32,32,1,3);
-        store(Y,'vY',32,32,1,3);
-        store(OUT_out,'vOUT',32,32,1,3);
-        run('l[] $vOUT r2dx 200,1 a x w. rm. endl');
-
-        end(
-          print([L_out,nn_learning_rate]);
-        ); I"
-    done
-  done
 
 # nn_layer_res : name,in
 # Define a custom residual CONV module.
@@ -51269,6 +51230,16 @@ nn_denoisenet11 :
   nn_layer_conv2d C11,C10,3
   nn_layer_add OUT0,C11,X0
   nn_layer_crop OUT,OUT0,2,2,0,{32-1-2},{32-1-2},0
+
+# Add synthetic noise to batch images.
+_nn_test_noise :
+  s z repeat $! l[$>]
+    rgb2hsi s c
+      noise[0] {u(20)}
+      noise[1] {u(0.1)}
+      noise[2] {u(0.1)}
+    a c hsi2rgb c 0,255
+  endl done a z
 
 # Main test procedure.
 nn_test : skip ${1=1e-4},${2=256}
@@ -51307,10 +51278,7 @@ nn_test : skip ${1=1e-4},${2=256}
     s xy,-32 a z
     nm valid_Y
   endl
-  +l[valid_Y]
-    s z repeat $! l[$>] noise {u(10,20)} endl done a z c 0,255
-    nm valid_X
-  endl
+  +l[valid_Y] _nn_test_noise nm valid_X endl
   r[valid_Y] {32-4},{32-4},100%,100%,0,0,0.5,0.5
 
   # Optimize network.
@@ -51340,9 +51308,7 @@ nn_test : skip ${1=1e-4},${2=256}
       draw(#$batch_Y,Y,0,0,z,0,w#$batch_Y,h#$batch_Y,1,3)"
     rm.
 
-    l[batch_X] s z repeat $! l[$>]
-      noise {u(10,20)} c 0,255
-    endl done a z endl
+    l[batch_X] _nn_test_noise endl
 
     # Process mini-batch.
     repeat 4,batch_iter
