@@ -14736,9 +14736,9 @@ denoise_haar : check "${1=1.4}>=0 && isint(${2=0}) && $2>=0 && isint(${3=10}) &&
 #@cli : Input value range should be [0,255]. Output value range is [0,255].
 #@cli : Default value: 'patch_size=64'.
 #@cli : $ image.jpg noise 20 cut 0,255 +denoise_cnn
-denoise_cnn : check "isint(${1=0}) && inrange($1,0,1) && isint(${2=64}) && $2>0"
+denoise_cnn : skip "${1=0},${2=64}"
   N=$!
-  if isint($1)" && "inrange($1,0,1) type=$1 else type=0 noarg fi
+  if isint($1)" && "inrange($1,0,1) check "isint($2) && $2>0" type=$1 else type=0 noarg fi
   s0,s1=soft,heavy
   e[^-1] "Denoise image$? using a convolutional neural network (for "${s$type}"-noise), with patch size $2."
 
@@ -14749,7 +14749,7 @@ denoise_cnn : check "isint(${1=0}) && inrange($1,0,1) && isint(${2=64}) && $2>0"
     if isfile('$file') i $file
     else i $url o $file
     fi
-    k[$1] unserialize
+    k[$type] unserialize
     ps=$2 replace_str. "nn_layer_input X,32,32,1,3","nn_layer_input X,"$ps","$ps",1,3" # Set patch size
     run {t} rm[-2,-1]
   onfail
