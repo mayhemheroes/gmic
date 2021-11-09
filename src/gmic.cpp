@@ -2050,7 +2050,7 @@ using namespace cimg_library;
 #include "gmic_community.h"
 #else
 #include "gmic_stdlib.h"
-#fi
+#endif
 
 // Define convenience macros, variables and functions.
 //----------------------------------------------------
