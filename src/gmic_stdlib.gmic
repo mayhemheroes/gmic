@@ -14744,12 +14744,13 @@ denoise_cnn : skip "${1=0},${2=64}"
 
   # Load denoising network.
   l[]
-    file=${-path_cache}denoise_cnn.gmz
-    url=https://gmic.eu/denoise_cnn.gmz
-    if isfile('$file') i $file
-    else i $url o $file
+    if 0${_is_denoise_cnn_$type} ${_denoise_cnn_$type}
+    else
+      file=${-path_cache}denoise_cnn.gmz
+      url=https://gmic.eu/denoise_cnn.gmz
+      if isfile('$file') i $file else i $url o $file fi
+      k[$type] unserialize +store _denoise_cnn_$type _is_denoise_cnn_$type=1
     fi
-    k[$type] unserialize
     ps=$2 replace_str. "nn_layer_input X,32,32,1,3","nn_layer_input X,"$ps","$ps",1,3" # Set patch size
     run {t} rm[-2,-1]
   onfail
