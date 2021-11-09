@@ -387,8 +387,6 @@ _cli: gmic_cli.o gmic.cpp gmic.h gmic_stdlib.h CImg.h
 gmic_cli.o: gmic.cpp gmic.h gmic_stdlib.h CImg.h
 	$(CXX) -o gmic_cli.o -c gmic.cpp $(CFLAGS)
 
-
-
 # CLI (static)
 #-------------
 GMIC_STATIC_CLI_PATH = $(USR)/$(LIB)/x86_64-linux-gnu
@@ -557,15 +555,15 @@ gmicol:
 
 # G'MIC-Qt
 #---------
-gimp: gmic_qt_files CImg.h gmic_stdlib.h
+gimp: gmic_qt_files CImg.h gmic_community.h
 	cd ../gmic-qt && $(QMAKE) CONFIG+=release GMIC_PATH=$(SRC_PATH) PRERELEASE=$(PRERELEASE) HOST=gimp gmic_qt.pro && $(MAKE)
 	@echo "Executable 'gmic_gimp_qt' has been successfully compiled in '../gmic-qt/'."
 
-krita: gmic_qt_files CImg.h gmic_stdlib.h
+krita: gmic_qt_files CImg.h gmic_community.h
 	cd ../gmic-qt && $(QMAKE) CONFIG+=release GMIC_PATH=$(SRC_PATH) PRERELEASE=$(PRERELEASE) HOST=krita gmic_qt.pro && $(MAKE)
 	@echo "Executable 'gmic_krita_qt' has been successfully compiled in '../gmic-qt/'."
 
-gmic_qt: gmic_qt_files CImg.h gmic_stdlib.h
+gmic_qt: gmic_qt_files CImg.h gmic_community.h
 	cd ../gmic-qt && $(QMAKE) CONFIG+=release GMIC_PATH=$(SRC_PATH) PRERELEASE=$(PRERELEASE) HOST=none gmic_qt.pro && $(MAKE)
 	@echo "Executable 'gmic_qt' has been successfully compiled in '../gmic-qt/'."
 
@@ -766,7 +764,7 @@ do_gmic_community.h:
 	@\gmic gmic_stdlib.gmic update it '$${_path_rc}'update'$${_version}'.gmic parse_gui update "(0)" a y serialize uchar,1,0 o -.h | sed 's/unsigned char/const unsigned char/' | sed 's/unnamed/gmic/' >> gmic_community.h
 	@echo "\nconst unsigned long size_data_gmic = (unsigned long)sizeof(data_gmic);" >> gmic_community.h
 	@\gmic v - _upload gmic_community.h
-	@cp -f gmic_stdlib.h /tmp/gmic_community$(VERSION).h
+	@cp -f gmic_community.h /tmp/gmic_community$(VERSION).h
 	@\gmic v - _upload /tmp/gmic_community$(VERSION).h
 	@\gmic v - _upload gmic_community.h
 
@@ -871,7 +869,7 @@ uninstall:
 distclean: clean
 
 clean:
-	rm -rf CImg.h gmic_stdlib.h gmic$(EXE) use_libgmic$(EXE) use_libcgmic$(EXE) use_libcgmic_static$(EXE) gmic*.o libgmic* libcgmic* *~
+	rm -rf CImg.h gmic_stdlib.h gmic_community.h gmic$(EXE) use_libgmic$(EXE) use_libcgmic$(EXE) use_libcgmic_static$(EXE) gmic*.o libgmic* libcgmic* *~
 	@if [ -f ../zart/Makefile ]; then cd ../zart && $(MAKE) clean; fi
 	@if [ -h ../zart ]; then rm -f ../zart; fi
 	@if [ -f ../gmic-qt/Makefile ]; then cd ../gmic-qt && $(MAKE) clean; fi
