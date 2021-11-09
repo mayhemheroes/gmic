@@ -703,7 +703,7 @@ do_gmic_stdlib.h:
 gmic_community.h: gmic_stdlib.gmic
 	@echo "> Retrieve G'MIC Standard Library + Community Contributions..."
 	@if [ ! -f ./gmic_community.h ]; then \
-	  $(WGET) gmic_community.h https://gmic.eu/gmic_community(VERSION).h; \
+	  $(WGET) gmic_community.h https://gmic.eu/gmic_community$(VERSION).h; \
 	  touch gmic_community.h; \
 	fi
 	@echo " done!"
@@ -761,7 +761,7 @@ do_gmic_community.h:
  #  knowledge of the CeCILL and CeCILL-C licenses and that you accept its terms.\n\
  #\n\
 */\n" > gmic_community.h
-	@\gmic gmic_stdlib.gmic update it '$${_path_rc}'update'$${_version}'.gmic parse_gui update "(0)" a y serialize uchar,1,0 o -.h | sed 's/unsigned char/const unsigned char/' | sed 's/unnamed/gmic/' >> gmic_community.h
+	@\gmic gmic_stdlib.gmic update it '$${_path_rc}'update'$${_version}'.gmic "(0)" a y serialize uchar,1,0 o -.h | sed 's/unsigned char/const unsigned char/' | sed 's/unnamed/gmic/' >> gmic_community.h
 	@echo "\nconst unsigned long size_data_gmic = (unsigned long)sizeof(data_gmic);" >> gmic_community.h
 	@\gmic v - _upload gmic_community.h
 	@cp -f gmic_community.h /tmp/gmic_community$(VERSION).h
