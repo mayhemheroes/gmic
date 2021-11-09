@@ -703,7 +703,7 @@ do_gmic_stdlib.h:
 gmic_community.h: gmic_stdlib.gmic
 	@echo "> Retrieve G'MIC Standard Library + Community Contributions..."
 	@if [ ! -f ./gmic_community.h ]; then \
-	  $(WGET) gmic_community.h https://gmic.eu/gmic_community(VERSION).h; \
+	  $(WGET) gmic_community.h https://gmic.eu/gmic_community$(VERSION).h; \
 	  touch gmic_community.h; \
 	fi
 	@echo " done!"
