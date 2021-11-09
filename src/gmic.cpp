@@ -2046,7 +2046,11 @@ const CImgList<T>& _gmic_display(CImgDisplay &disp, const char *const title, con
 #include "gmic.h"
 using namespace cimg_library;
 
+#ifdef gmic_community
+#include "gmic_community.h"
+#else
 #include "gmic_stdlib.h"
+#fi
 
 // Define convenience macros, variables and functions.
 //----------------------------------------------------
@@ -2833,7 +2837,7 @@ gmic::~gmic() {
 //---------------------------------------------
 const CImg<char>& gmic::decompress_stdlib() {
   if (!stdlib) try {
-      CImgList<char>::get_unserialize(CImg<unsigned char>(data_gmic_stdlib,1,size_data_gmic_stdlib,1,1,true))[0].
+      CImgList<char>::get_unserialize(CImg<unsigned char>(data_gmic,1,size_data_gmic,1,1,true))[0].
         move_to(stdlib);
     } catch (...) {
       cimg::mutex(29);

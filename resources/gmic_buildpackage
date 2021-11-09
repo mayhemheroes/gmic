@@ -287,13 +287,26 @@ rm -rf gmic-qt
 # ln -fs ../zart .
 ln -fs ../gmic-qt .
 
+# Perform filters update on the G'MIC server.
+#---------------------------------------------
+echo " - Create list of filters."
+rm -f /tmp/gui_filters.txt
+gmic gmic_stdlib.gmic upload_filters > /tmp/gui_filters.txt
+size=`du -b /tmp/gui_filters.txt | head -c 1`
+if [ "$size" != "0" ]; then
+    cp -f /tmp/gui_filters.txt ../html/
+fi
+update_filename=$HOME/.config/gmic/update${VERSION}.gmic
+update_filenamez=$HOME/.config/gmic/update${VERSION}.gmicz
+gmic it $update_filename o cimgz:$update_filenamez,uchar
+
 # Create default command file.
 #-----------------------------
-echo " - Create 'gmic_stdlib.h' file"
+echo " - Create 'gmic_stdlib.h' and 'gmic_community.h' files"
 cd src/
 cp -f gmic_stdlib.gmic ../html/
 cp -f gmic_stdlib.gmic ../html/gmic_stdlib.$VERSION
-make do_gmic_stdlib.h CImg.h
+make CImg.h do_gmic_stdlib.h do_gmic_community.h
 ln -fs ../../gmic-community/libcgmic/gmic_libc.cpp .
 ln -fs ../../gmic-community/libcgmic/gmic_libc.h .
 ln -fs ../../gmic-community/libcgmic/use_libcgmic.c .
@@ -312,19 +325,6 @@ else
     gmic _update_header_html ../html/header1.html,${VERSION},1
     gmic_commit "Auto-commit for release "${SVERSION}${SUFFIX}
 fi
-
-# Perform filters update on the G'MIC server.
-#---------------------------------------------
-echo " - Create list of filters."
-rm -f /tmp/gui_filters.txt
-gmic gmic_stdlib.gmic upload_filters > /tmp/gui_filters.txt
-size=`du -b /tmp/gui_filters.txt | head -c 1`
-if [ "$size" != "0" ]; then
-    cp -f /tmp/gui_filters.txt ../html/
-fi
-update_filename=$HOME/.config/gmic/update${VERSION}.gmic
-update_filenamez=$HOME/.config/gmic/update${VERSION}.gmicz
-gmic it $update_filename o cimgz:$update_filenamez,uchar
 
 # Create man page and bash autocompletion script.
 #-------------------------------------------------
