@@ -48090,22 +48090,31 @@ _fx_coloredobject3d_preview_7 : cup3d 64 *3d. $1,$2,$3
 #@gui : Rendering = choice(2,"Dots","Wireframe","Flat","Flat-Shaded","Gouraud","Phong")
 #@gui : Antialiasing = bool(1)
 #@gui : sep = separator()
-#@gui : note = note{"<small><b>Note:</b> Add a top layer to define object texture.</small>"}
+#@gui : Top Layer Defines Object Texture = bool(0)
 #@gui : sep = separator()
-#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2010/29/12</i>.</small>")
+#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2021/11/10</i>.</small>")
 _fx_elevation3d :
-  repeat $!/2 l[$>,{min($>+1,$!-1)}]
-    if $!==1 +norm else r[1] [0],3 fi
-    n[1] 0,{abs($1)} *[1] {sign($1)} b[1] $2
-    elevation3d[0] [1] rm[1]
-  endl done
+  if $3" && "$!>1 # Textured object
+    repeat $!-1 l[0,{1+$>}]
+      +ri.. .,3
+      n. 0,{abs($1)} *. {sign($1)} b. $2
+      elevation3d.. . rm.
+    endl done
+  else  # Non-textured object
+    repeat $! l[$>]
+      +norm n. 0,{abs($1)} *. {sign($1)} b. $2
+      elevation3d.. . rm.
+    endl done
+  fi
   db3d
 
 fx_elevation3d :
-  _fx_elevation3d ${1-2} fx_render3d ${3--1}
+  _fx_elevation3d ${1-2},$17
+  s0,s1=^,^0 fx_render3d[${s$17}] ${3--1}
 
 fx_elevation3d_preview :
   fx_elevation3d ${1-2},{w},{h},${5--1}
+  if $17 rm[0] fi
 
 #@gui 3D Extrusion : fx_extrude3d, fx_extrude3d_preview(1)
 #@gui : Depth = float(10,1,1024)
@@ -48127,21 +48136,23 @@ fx_elevation3d_preview :
 #@gui : Rendering = choice(4,"Dots","Wireframe","Flat","Flat-Shaded","Gouraud","Phong")
 #@gui : Antialiasing = bool(1)
 #@gui : sep = separator()
-#@gui : note = note{"<small><b>Note:</b> Add a top layer to define object texture.</small>"}
+#@gui : Top Layer Defines Object Texture = bool(0)
 #@gui : sep = separator()
-#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2010/29/12</i>.</small>")
+#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2021/11/10</i>.</small>")
 _fx_extrude3d :
-  repeat $!/2 l[$>,{min($>+1,$!-1)}]
-    extrude3d. $1,$2,$3%
-    if $!==2 t3d. .. rm.. fi
-  endl done
+  if $4" && "$!>1 # Textured object
+    repeat $!-1 l[0,{$>+1}] extrude3d. $1,$2,$3% t3d. .. endl done
+  else extrude3d $1,$2,$3% # Non-textured object
+  fi
   db3d 0
 
 fx_extrude3d :
-  _fx_extrude3d ${1-3} fx_render3d ${4--1}
+  _fx_extrude3d ${1-3},$18
+  s0,s1=^,^0 fx_render3d[${s$18}] ${4--1}
 
 fx_extrude3d_preview :
   fx_extrude3d ${1-3},{w},{h},${6--1}
+  if $18 rm[0] fi
 
 #@gui 3D Image Object : fx_imageobject3d, fx_imageobject3d_preview(1)
 #@gui : Type = choice{1,"Plane","Cube","Pyramid","Sphere","Torus","Gyroid","Weird","Cup","Rubik"}
@@ -48211,22 +48222,24 @@ _fx_imageobject3d_preview_8 : imagerubik3d 3,3,5,5
 #@gui : Rendering = choice(4,"Dots","Wireframe","Flat","Flat-Shaded","Gouraud","Phong")
 #@gui : Antialiasing = bool(1)
 #@gui : sep = separator()
-#@gui : note = note{"<small><b>Note:</b> Add a top layer to define object texture.</small>"}
+#@gui : Top Layer Defines Object Texture = bool(0)
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2010/29/12</i>.</small>")
 _fx_lathing3d :
-  repeat $!/2 l[$>,{min($>+1,$!-1)}]
-    lathe3d. $1,$2%,$3
-    if $!==2 t3d. .. rm.. fi
-  endl done
+  if $4" && "$!>1 # Textured object
+    repeat $!-1 l[0,{$>+1}] lathe3d. $1,$2%,$3 t3d. .. endl done
+  else lathe3d $1,$2%,$3 # Non-textured object
+  fi
   db3d 0
 
 fx_lathing3d :
-  _fx_lathing3d ${1-3} fx_render3d ${4--1}
+  _fx_lathing3d ${1-3},$18
+  s0,s1=^,^0 fx_render3d[${s$18}] ${4--1}
   nm pos(0,0),mode(alpha)
 
 fx_lathing3d_preview :
   fx_lathing3d ${1-3},{w},{h},${6--1}
+  if $18 rm[0] fi
 
 #@gui 3D Random Objects : fx_random3d, fx_random3d(1)
 #@gui : Type = choice("Cube","Cone","Cylinder","Sphere","Torus")
