@@ -22475,11 +22475,11 @@ nn_layer_clone : nn_check_layer "$3" check "isvarname('$1') && isvarname('$2')"
   _nn_backward..="nn_layer_clone_backward($1,$2,$3);"
   _nn_init.="$0 $* "
 
-#@cli nn_layer_conv2d : name,in,nb_channels>0,_kernel_size>0,_stride>0,_dilation>0
+#@cli nn_layer_conv2d : name,in,nb_channels>0,_kernel_size>0,_stride>0,_dilation,_updateable={ 0 | 1 }
 #@cli : Add a 'conv2d' layer (2D convolutional layer) to the network.
-#@cli : Default values: 'kernel_size=3', 'stride=1' and 'dilation=1'.
-nn_layer_conv2d : nn_check_layer "$2" check "isvarname('$1') && isint($3) && $3>0 && isint(${4=3}) && $4>0 && ${5=1}>0"
-                  skip "${6=1}"
+#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1' and 'updateable=1'.
+nn_layer_conv2d : nn_check_layer "$2" check "isvarname('$1') && isint($3) && $3>0 && isint(${4=3}) && $4>0 && "\
+                                            "${5=1}>0 && isbool(${7=1})" skip "${6=1}"
   e[^-1] "[nn_lib] Add 'conv2d' layer '$1', with input '$2', $3 channels, $4x$4 kernels, stride $5 and dilation $6."
   _nn_$1_out_size={s=[$_nn_$2_out_size];[max(1,int(s[0]/$5)),max(1,int(s[1]/$5)),s[2],$3]}
   if !isint($$1) {[$_nn_$2_out_size][3]*$4^2+1},$3 if $4>1 f. 4*g/(w-1) else f. 1 fi nm. $1 fi
@@ -22488,19 +22488,19 @@ nn_layer_conv2d : nn_check_layer "$2" check "isvarname('$1') && isint($3) && $3>
   _nn_backward..="begin(nn_layer_conv2d_init_backward($1,$2));"\
                  "nn_layer_conv2d_backward($1,$2);"\
                  "end(nn_layer_conv2d_end_backward($1));"
-  _nn_update..="end(nn_layer_conv2d_update($1));"
+  if $7 _nn_update..="end(nn_layer_conv2d_update($1));" fi
   _nn_init.="$0 $* "
   _nn_parameters.="$1,"
 
-#@cli nn_layer_conv2dnl : name,in,nb_channels>0,_kernel_size>0,_stride>0,_dilation>0,_activation
+#@cli nn_layer_conv2dnl : name,in,nb_channels>0,_kernel_size>0,_stride>0,_dilation>0,_activation,_updateable={ 0 | 1 }
 #@cli : Add a 'con2dnl' (2D convolutional layer followed by a non-linearity), to the network.
-#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1' and 'activation=leakyrelu'.
+#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1', 'activation=leakyrelu' and 'updateable=1'.
 nn_layer_conv2dnl : nn_check_layer "$2"
-                    check "isvarname('$1') && isint($3) && $3>0 && isint(${4=3}) && $4>0 && ${5=1}>0"
+                    check "isvarname('$1') && isint($3) && $3>0 && isint(${4=3}) && $4>0 && ${5=1}>0 && isbool(${8=1})"
                     skip "${6=1}","${7=leakyrelu}"
   e[^-1] "[nn_lib] Add 'conv2d+nl' layer '$1', with input '$2', $3 channels, $4x$4 kernels, "\
          "stride $5, dilation $6 and '$7' activation."
-  nn_layer_conv2d $1_0,$2,$3,$4,$5,$6
+  nn_layer_conv2d $1_0,$2,$3,$4,$5,$6,$8
   nn_layer_nl $1,$1_0,$7
 
 #@cli nn_layer_crop : name,in,x0,y0,z0,x1,y1,z1
