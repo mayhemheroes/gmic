@@ -22516,9 +22516,10 @@ nn_layer_crop : nn_check_layer "$2" check "min(isint([${3-8}]))"
   _nn_backward..="nn_layer_crop_backward($1,$2,${3-8});"
   _nn_init.="$0 $* "
 
-#@cli nn_layer_fc : name,in,nb_channels>0
+#@cli nn_layer_fc : name,in,nb_channels>0,_is_updateable={ 0 | 1 }
 #@cli : Add a 'fc' layer (fully connected layer) to the network.
-nn_layer_fc : nn_check_layer "$2" check "isvarname('$1') && isint($3) && $3>0"
+#@cli : Default value: 'is_updateable=1'.
+nn_layer_fc : nn_check_layer "$2" check "isvarname('$1') && isint($3) && $3>0 && isbool(${4=1})"
   e[^-1] "[nn_lib] Add 'fc' layer '$1', with input '$2' and $3 channels."
   _nn_$1_out_size=1,1,1,$3
   if !isint($$1) {prod($_nn_$2_out_size)+1},$3 f. 4*g/(w-1) nm. $1 fi
@@ -22527,16 +22528,16 @@ nn_layer_fc : nn_check_layer "$2" check "isvarname('$1') && isint($3) && $3>0"
   _nn_backward..="begin(nn_layer_fc_init_backward($1));"\
                  "nn_layer_fc_backward($1,$2);"\
                  "end(nn_layer_fc_end_backward($1));"
-  _nn_update..="end(nn_layer_fc_update($1));"
+  if $4 _nn_update..="end(nn_layer_fc_update($1));" fi
   _nn_init.="$0 $* "
   _nn_parameters.="$1,"
 
-#@cli nn_layer_fcnl : name,in,nb_neurons>0,_activation
+#@cli nn_layer_fcnl : name,in,nb_neurons>0,_activation,_is_updateable={ 0 | 1 }
 #@cli : Add a 'fcnl' layer (fully connected layer followed by a non-linearity), to the network.
-#@cli : Default value: 'activation=leakyrelu'.
-nn_layer_fcnl : nn_check_layer "$2" check "isvarname('$1') && isint($3) && $3>0" skip ${4=leakyrelu}
+#@cli : Default value: 'activation=leakyrelu' and 'is_updateable=1'.
+nn_layer_fcnl : nn_check_layer "$2" check "isvarname('$1') && isint($3) && $3>0 && isbool(${5=1})" skip ${4=leakyrelu}
   e[^-1] "[nn_lib] Add 'fc+nl' layer '$1' to the network, with input '$2', $3 channels and '$4' activation."
-  nn_layer_fc $1_0,$2,$3
+  nn_layer_fc $1_0,$2,$3,$5
   nn_layer_nl $1,$1_0,$4
 
 #@cli nn_layer_maxpool2d : name,in
