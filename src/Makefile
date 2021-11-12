@@ -172,7 +172,6 @@ endif
 MANDATORY_LIBS += -L$(USR)/$(LIB)
 ifdef IS_GCC
 MANDATORY_CFLAGS += -Wall -Wextra -Wfatal-errors -Werror=unknown-pragmas -Werror=unused-label
-MANDATORY_LIBS += -lm
 GCC_VER_GTEQ5 = $(shell expr `$(CXX) -dumpversion | cut -f1 -d.` \>= 5)
 ifeq ($(GCC_VER_GTEQ5),1)
 MANDATORY_CFLAGS += -Wshadow
@@ -273,8 +272,8 @@ endif
 
 # Enable native support of JPEG image files, using the JPEG library.
 # (http://libjpeg.sourceforge.net/)
-JPEG_CFLAGS = -Dcimg_use_jpeg
-JPEG_LIBS = -ljpeg
+JPEG_CFLAGS = -Dcimg_use_jpeg $(shell pkg-config --cflags libjpeg)
+JPEG_LIBS = $(shell pkg-config --libs libjpeg || echo -ljpeg)
 
 # Enable native support of TIFF image files, using the TIFF library.
 # (http://www.libtiff.org/)
