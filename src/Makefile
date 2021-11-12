@@ -172,7 +172,6 @@ endif
 MANDATORY_LIBS += -L$(USR)/$(LIB)
 ifdef IS_GCC
 MANDATORY_CFLAGS += -Wall -Wextra -Wfatal-errors -Werror=unknown-pragmas -Werror=unused-label
-MANDATORY_LIBS += -lm
 GCC_VER_GTEQ5 = $(shell expr `$(CXX) -dumpversion | cut -f1 -d.` \>= 5)
 ifeq ($(GCC_VER_GTEQ5),1)
 MANDATORY_CFLAGS += -Wshadow
@@ -273,8 +272,8 @@ endif
 
 # Enable native support of JPEG image files, using the JPEG library.
 # (http://libjpeg.sourceforge.net/)
-JPEG_CFLAGS = -Dcimg_use_jpeg
-JPEG_LIBS = -ljpeg
+JPEG_CFLAGS = -Dcimg_use_jpeg $(shell pkg-config --cflags libjpeg)
+JPEG_LIBS = $(shell pkg-config --libs libjpeg || echo -ljpeg)
 
 # Enable native support of TIFF image files, using the TIFF library.
 # (http://www.libtiff.org/)
@@ -308,8 +307,8 @@ MAGICK_LIBS = $(shell pkg-config --libs GraphicsMagick++ || echo -lGraphicsMagic
 
 # Enable native support of EXR image files, using the OpenEXR library.
 # (http://www.openexr.com/)
-OPENEXR_CFLAGS = -Dcimg_use_openexr -I$(USR)/$(INCLUDE)/OpenEXR
-OPENEXR_LIBS = -lIlmImf -lHalf
+OPENEXR_CFLAGS = -Dcimg_use_openexr $(shell pkg-config --cflags OpenEXR || echo -I$(USR)/$(INCLUDE)/OpenEXR)
+OPENEXR_LIBS = $(shell pkg-config --libs OpenEXR || echo -lIlmImf -lHalf)
 
 # Enable Fast Fourier Transforms, using the FFTW3 library.
 # (http://www.fftw.org/)

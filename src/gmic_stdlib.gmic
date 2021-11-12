@@ -751,6 +751,9 @@ reference : skip "${2=}"
 "specified interpolation mode. 'interpolation' can be "\
 "{ -1=none (memory content) | 0=none | 1=nearest | 2=average | 3=linear | 4=grid | 5=bicubic | 6=lanczos }, and "\
 "'boundary_conditions' can be { 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }."\n\
+"* Function 'resize(A,ow,oh,od,os,nw,_,nh,_nd,_ns,_interpolation,_boundary_conditions,_ax,_ay,_az,_ac)' is an "\
+"extended version of the previous function. It allows to resize the vector 'A', seen as an image of size "\
+"'ow x oh x od x os' as a new image of size 'nw x nh x nd x ns', with specified resizing options."\n\
 "* Function 'find(A,B,_starting_index,_search_step)' returns the index where sub-vector 'B' appears in vector 'A', "\
 "(or '-1' if 'B' is not contained in 'A'). Argument 'A' can be also replaced by an image index '#ind'."\n\
 "* A `2`-dimensional vector may be seen as a complex number and used in those particular functions/operators: "\
@@ -6621,6 +6624,88 @@ parse_gui_print :
   repeat $_nbfilters
     +e[] "  [#"{1+$>}"] "${_f$>_path}${_f$>_name}
   done
+
+# Implements 'thumbnails' mode for command 'parse_gui'.
+parse_gui_parseparams_thumbnails : u 1 # Tell parser to parse filter parameters
+parse_gui_thumbnails :
+  e[] "  >> Generate output, in 'thumbnails' mode.\n"
+  if !isdir('thumbnails') x "mkdir -p thumbnails" fi
+  sp landscape r2dy 256 r 256,256,1,3,0,0,0.5,0.5 store img
+  _preview_width,_preview_height=256
+
+  repeat $_nbfilters,f
+    nb$f=${_f${f}_nbparams}
+  done
+
+  repeat $_nbfilters,f
+    command=${_f${f}_commandpreview}
+    if ['$command']==0 command=${_f${f}_command} fi
+    pipeline=
+    c=
+    if s='$command';s!='_none_'&&s!='fx_whatsnew_preview'
+      pipeline.=$command" "
+      repeat ${_f${f}_nbparams},p
+        type=${_f${f}_p${p}_type}
+        arg0=${_f${f}_p${p}_a0}
+        if s='$type';s=='file'||s=='filein'||s=='fileout'||s=='folder'||s=='value'
+          if !${_f{$f}_p${p}_nbargs} pipeline.=$c\"\"
+          else
+            args= ac=
+            repeat ${_f${f}_p${p}_nbargs},a args.=$ac${_f${f}_p${p}_a${a}} ac=, done
+            s=\"
+            if ['$args']==0 s=\" elif ['$args'][0]==_'\"' s= fi
+            pipeline.=$c$s$args$s
+          fi
+          c=,
+        elif s='$type';s=='text'
+          val,off=0
+          N=${_f${f}_p${p}_nbargs}
+          l[] if isint($arg0) val=$arg0 N-=1 off=1 fi onfail endl
+          args= ac=
+          repeat $N,a na={$a+$off} args.=$ac${_f${f}_p${p}_a${na}} ac=, done
+          s=\"
+          if ['$args']==0 s=\" elif ['$args'][0]==_'\"' s= fi
+          pipeline.=$c$s$args$s
+          c=,
+        elif s='$type';s=='float'||s=='int'
+          pipeline.=$c$arg0 c=,
+        elif s='$type';s=='button'
+          pipeline.=${c}0 c=,
+        elif s='$type';s=='bool'
+          val=0
+          if s='$arg0';s==1||s=='true' val=1 fi
+          pipeline.=$c$val c=,
+        elif s='$type';s=='choice'
+          val=0
+          l[] if isint($arg0) val=$arg0 fi onfail endl
+          pipeline.=$c$val c=,
+        elif s='$type';s=='color'
+          repeat ${_f${f}_p${p}_nbargs},a
+            pipeline.=$c${_f${f}_p${p}_a${a}} c=,
+          done
+        elif s='$type';s=='point'
+          pipeline.=$c$arg0,${_f${f}_p${p}_a1} c=,
+        fi
+      done
+    fi
+    +e[] "  [#"{1+$>}"] "${_vt100_c}${_f${f}_name}${_vt100_n}": "$pipeline
+    if ['$pipeline']!=0
+      filename thumbnails/thumb.png,$f file_out=${}
+      l[]
+        $img run $pipeline k[0] r2din 200,200,2
+      onfail
+        e[] "Error "$_vt100_r${}$_vt100_n"\n"
+        rm
+      endl
+    fi
+
+    if !$! $img gui_no_preview , fi
+    r2din. 200,200,2 to_rgba. r. 200,200,1,4,0,0,0.5,0.5
+    if {*} w. ${"fitscreen ."} fi
+    o. $file_out rm.
+
+  done
+  e[] "  >> "${_vt100_g}{`copy(vector64(_'" "'),'"Output done!"')`}$_vt100_n
 
 #
 # Implements 'whatsnew' mode for command 'parse_gui'.
@@ -22029,7 +22114,8 @@ nn_lib :
     );
 
     nn_layer_clone_forward(L0,L1,IN) = (
-      L0#_out = L1#_out = IN#_out;
+      L0#_out = IN#_out;
+      L1#_out = IN#_out;
     );
 
     nn_layer_clone_backward(L0,L1,IN) = (
@@ -22048,7 +22134,6 @@ nn_lib :
       const L#_kernel_center = L#_kernel_size - 1 - int(L#_kernel_size/2);
       const L#_stride = stride;
       const L#_dilation = dilation;
-
       L#_weights = crop(##L#_ind,0,0,w##L#_ind - 1,h##L#_ind);
       L#_biases = crop(##L#_ind,w##L#_ind - 1,0,1,h##L#_ind);
       L#_out = vector(##L#_out_width*L#_out_height*L#_out_depth*h##L#_ind);
@@ -22178,10 +22263,8 @@ nn_lib :
       const L#_out_height = 1;
       const L#_out_depth = 1;
       const L#_out_spectrum = h##L#_ind;
-
       L#_weights = crop(##L#_ind,0,0,w##L#_ind - 1,h##L#_ind);
       L#_biases = crop(##L#_ind,w##L#_ind - 1,0,1,h##L#_ind);
-      L#_out = vector(#h##L#_ind);
     );
 
     nn_layer_fc_forward(L,IN) = (
@@ -22265,8 +22348,6 @@ nn_lib :
       const L#_out_height = IN#_out_height;
       const L#_out_depth = IN#_out_depth;
       const L#_out_spectrum = IN#_out_spectrum;
-
-      L#_out = vector(#size(IN#_out));
     );
 
     nn_layer_nl_forward(L,IN,activation) = (
@@ -22306,6 +22387,57 @@ nn_lib :
 
     nn_layer_reshape_init_backward(L,IN) = (
       ref(L#_deriv_out,IN#_deriv_out);
+    );
+
+    # resize: Resize input.
+    #----------------------
+    nn_layer_resize_init_forward(L,IN,w,h,d,s) = (
+      const L#_out_width = w;
+      const L#_out_height = h;
+      const L#_out_depth = d;
+      const L#_out_spectrum = s;
+    );
+
+    nn_layer_resize_forward(L,IN,interpolation) = (
+      L#_out = resize(IN#_out,
+                      IN#_out_width,IN#_out_height,IN#_out_depth,IN#_out_spectrum,
+                      L#_out_width,L#_out_height,L#_out_depth,L#_out_spectrum,
+                      interpolation);
+    );
+
+    nn_layer_resize_backward(L,IN) = (
+      IN#_deriv_out = resize(L#_deriv_out,
+                             L#_out_width,L#_out_height,L#_out_depth,L#_out_spectrum,
+                             IN#_out_width,IN#_out_height,IN#_out_depth,IN#_out_spectrum,
+                             3);
+    );
+
+    # run: Transform input with G'MIC command.
+    #-----------------------------------------
+    nn_layer_run_init_forward(L,IN,command,w,h,d,s) = (
+      const L#_out_width = w;
+      const L#_out_height = h;
+      const L#_out_depth = d;
+      const L#_out_spectrum = s;
+      L#_varname = 'nn_#L#_out';
+      L#_pipeline = string('l[] $nn_#IN#_out ',command,' k. r ',
+                           L#_out_width,',',L#_out_height,',',L#_out_depth,',',L#_out_spectrum,
+                           ',3 k. store ',L#_varname,' endl');
+    );
+
+    nn_layer_run_forward(L,IN) = (
+      critical(
+        store(IN#_out,'nn_#IN#_out',IN#_out_width,IN#_out_height,IN#_out_depth,IN#_out_spectrum);
+        run(L#_pipeline);
+        L#_out = get(L#_varname,L#_out_width*L#_out_height*L#_out_depth*L#_out_spectrum);
+      );
+    );
+
+    nn_layer_run_backward(L,IN) = (
+      IN#_deriv_out = resize(L#_deriv_out,
+                             L#_out_width,L#_out_height,L#_out_depth,L#_out_spectrum,
+                             IN#_out_width,IN#_out_height,IN#_out_depth,IN#_out_spectrum,
+                             3);
     );
 
     # split: Split input as two outputs.
@@ -22482,11 +22614,11 @@ nn_layer_clone : nn_check_layer "$3" check "isvarname('$1') && isvarname('$2')"
   _nn_backward..="nn_layer_clone_backward($1,$2,$3);"
   _nn_init.="$0 $* "
 
-#@cli nn_layer_conv2d : name,in,nb_channels>0,_kernel_size>0,_stride>0,_dilation>0
+#@cli nn_layer_conv2d : name,in,nb_channels>0,_kernel_size>0,_stride>0,_dilation,_is_updated={ 0 | 1 }
 #@cli : Add a 'conv2d' layer (2D convolutional layer) to the network.
-#@cli : Default values: 'kernel_size=3', 'stride=1' and 'dilation=1'.
-nn_layer_conv2d : nn_check_layer "$2" check "isvarname('$1') && isint($3) && $3>0 && isint(${4=3}) && $4>0 && ${5=1}>0"
-                  skip "${6=1}"
+#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1' and 'is_updated=1'.
+nn_layer_conv2d : nn_check_layer "$2" check "isvarname('$1') && isint($3) && $3>0 && isint(${4=3}) && $4>0 && "\
+                                            "${5=1}>0 && isbool(${7=1})" skip "${6=1}"
   e[^-1] "[nn_lib] Add 'conv2d' layer '$1', with input '$2', $3 channels, $4x$4 kernels, stride $5 and dilation $6."
   _nn_$1_out_size={s=[$_nn_$2_out_size];[max(1,int(s[0]/$5)),max(1,int(s[1]/$5)),s[2],$3]}
   if !isint($$1) {[$_nn_$2_out_size][3]*$4^2+1},$3 if $4>1 f. 4*g/(w-1) else f. 1 fi nm. $1 fi
@@ -22495,19 +22627,20 @@ nn_layer_conv2d : nn_check_layer "$2" check "isvarname('$1') && isint($3) && $3>
   _nn_backward..="begin(nn_layer_conv2d_init_backward($1,$2));"\
                  "nn_layer_conv2d_backward($1,$2);"\
                  "end(nn_layer_conv2d_end_backward($1));"
-  _nn_update..="end(nn_layer_conv2d_update($1));"
+  if $7 _nn_update..="end(nn_layer_conv2d_update($1));" fi
   _nn_init.="$0 $* "
   _nn_parameters.="$1,"
 
-#@cli nn_layer_conv2dnl : name,in,nb_channels>0,_kernel_size>0,_stride>0,_dilation>0,_activation
+#@cli nn_layer_conv2dnl : name,in,nb_channels>0,_kernel_size>0,_stride>0,_dilation>0,_activation,\
+# _is_updated={ 0 | 1 }
 #@cli : Add a 'con2dnl' (2D convolutional layer followed by a non-linearity), to the network.
-#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1' and 'activation=leakyrelu'.
+#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1', 'activation=leakyrelu' and 'is_updated=1'.
 nn_layer_conv2dnl : nn_check_layer "$2"
-                    check "isvarname('$1') && isint($3) && $3>0 && isint(${4=3}) && $4>0 && ${5=1}>0"
+                    check "isvarname('$1') && isint($3) && $3>0 && isint(${4=3}) && $4>0 && ${5=1}>0 && isbool(${8=1})"
                     skip "${6=1}","${7=leakyrelu}"
   e[^-1] "[nn_lib] Add 'conv2d+nl' layer '$1', with input '$2', $3 channels, $4x$4 kernels, "\
          "stride $5, dilation $6 and '$7' activation."
-  nn_layer_conv2d $1_0,$2,$3,$4,$5,$6
+  nn_layer_conv2d $1_0,$2,$3,$4,$5,$6,$8
   nn_layer_nl $1,$1_0,$7
 
 #@cli nn_layer_crop : name,in,x0,y0,z0,x1,y1,z1
@@ -22522,9 +22655,10 @@ nn_layer_crop : nn_check_layer "$2" check "min(isint([${3-8}]))"
   _nn_backward..="nn_layer_crop_backward($1,$2,${3-8});"
   _nn_init.="$0 $* "
 
-#@cli nn_layer_fc : name,in,nb_channels>0
+#@cli nn_layer_fc : name,in,nb_channels>0,_is_updated={ 0 | 1 }
 #@cli : Add a 'fc' layer (fully connected layer) to the network.
-nn_layer_fc : nn_check_layer "$2" check "isvarname('$1') && isint($3) && $3>0"
+#@cli : Default value: 'is_updated=1'.
+nn_layer_fc : nn_check_layer "$2" check "isvarname('$1') && isint($3) && $3>0 && isbool(${4=1})"
   e[^-1] "[nn_lib] Add 'fc' layer '$1', with input '$2' and $3 channels."
   _nn_$1_out_size=1,1,1,$3
   if !isint($$1) {prod($_nn_$2_out_size)+1},$3 f. 4*g/(w-1) nm. $1 fi
@@ -22533,16 +22667,16 @@ nn_layer_fc : nn_check_layer "$2" check "isvarname('$1') && isint($3) && $3>0"
   _nn_backward..="begin(nn_layer_fc_init_backward($1));"\
                  "nn_layer_fc_backward($1,$2);"\
                  "end(nn_layer_fc_end_backward($1));"
-  _nn_update..="end(nn_layer_fc_update($1));"
+  if $4 _nn_update..="end(nn_layer_fc_update($1));" fi
   _nn_init.="$0 $* "
   _nn_parameters.="$1,"
 
-#@cli nn_layer_fcnl : name,in,nb_neurons>0,_activation
+#@cli nn_layer_fcnl : name,in,nb_neurons>0,_activation,_is_updated={ 0 | 1 }
 #@cli : Add a 'fcnl' layer (fully connected layer followed by a non-linearity), to the network.
-#@cli : Default value: 'activation=leakyrelu'.
-nn_layer_fcnl : nn_check_layer "$2" check "isvarname('$1') && isint($3) && $3>0" skip ${4=leakyrelu}
+#@cli : Default value: 'activation=leakyrelu' and 'is_updated=1'.
+nn_layer_fcnl : nn_check_layer "$2" check "isvarname('$1') && isint($3) && $3>0 && isbool(${5=1})" skip ${4=leakyrelu}
   e[^-1] "[nn_lib] Add 'fc+nl' layer '$1' to the network, with input '$2', $3 channels and '$4' activation."
-  nn_layer_fc $1_0,$2,$3
+  nn_layer_fc $1_0,$2,$3,$5
   nn_layer_nl $1,$1_0,$4
 
 #@cli nn_layer_maxpool2d : name,in
@@ -22587,6 +22721,37 @@ nn_layer_reshape : nn_check_layer "$2" check "isvarname('$1')"
   _nn_backward..="begin(nn_layer_reshape_init_backward($1,$2));"
   _nn_init.="$0 $* "
 
+#@cli nn_layer_resize : name,in,width[%]>0,_height[%]>0,_depth[%]>0,_spectrum[%]>0,_interpolation
+#@cli : Add a 'resize' layer to the network.
+#@cli : Default values: 'height=depth=spectrum=100%'.
+nn_layer_resize : nn_check_layer "$2" check "isvarname('$1') && $3>0 && ${4=100%}>0 && ${5=100%}>0 && ${6=100%}>0"
+                  skip ${7=3}
+  if ${"is_percent $3"} w={max(1,round([$_nn_$2_out_size][1]*$3))} else w=$3 fi
+  if ${"is_percent $4"} h={max(1,round([$_nn_$2_out_size][1]*$4))} else h=$4 fi
+  if ${"is_percent $5"} d={max(1,round([$_nn_$2_out_size][2]*$5))} else d=$5 fi
+  if ${"is_percent $6"} s={max(1,round([$_nn_$2_out_size][3]*$6))} else s=$6 fi
+  e[^-1] "[nn_lib] Add 'resize' layer '$1', with input '$2' and output size ("$w","$h","$d","$s")."
+  _nn_$1_out_size=$w,$h,$d,$s
+  _nn_forward.="begin(nn_layer_resize_init_forward($1,$2,"$w","$h","$d","$s"));"\
+               "nn_layer_resize_forward($1,$2,$7);"
+  _nn_backward..="nn_layer_resize_backward($1,$2);"
+  _nn_init.="$0 $* "
+
+#@cli nn_layer_run : name,in,"command",_width[%]>0,_height[%]>0,_depth[%]>0,_spectrum[%]>0
+#@cli : Add a 'run' layer to the network.
+#@cli : Default values: 'width=height=depth=spectrum=100%'.
+nn_layer_run : nn_check_layer "$2" check "isvarname('$1') && ${4=100%}>0 && ${5=100%}>0 && ${6=100%}>0 && ${7=100%}>0"
+  if ${"is_percent $4"} w={max(1,round([$_nn_$2_out_size][0]*$4))} else w=$4 fi
+  if ${"is_percent $5"} h={max(1,round([$_nn_$2_out_size][1]*$5))} else h=$5 fi
+  if ${"is_percent $6"} d={max(1,round([$_nn_$2_out_size][2]*$6))} else d=$6 fi
+  if ${"is_percent $7"} s={max(1,round([$_nn_$2_out_size][3]*$7))} else s=$7 fi
+  e[^-1] "[nn_lib] Add 'run' layer '$1', with input '$2', command '$3' and output size ("$w","$h","$d","$s")."
+  _nn_$1_out_size=$w,$h,$d,$s
+  _nn_forward.="begin(nn_layer_run_init_forward($1,$2,'$3',"$w","$h","$d","$s"));"\
+               "nn_layer_run_forward($1,$2);"
+  _nn_backward..="nn_layer_run_backward($1,$2);"
+  _nn_init.="$0 $* "
+
 #@cli nn_layer_split : name0,name1,in,nb_channels0
 #@cli : Add a 'split' layer to the network.
 nn_layer_split : nn_check_layer "$3" check "isvarname('$1') && isvarname('$2')"
@@ -22623,7 +22788,7 @@ nn_loss_mse : nn_check_layer "$2" check "isvarname('$1') && isvarname('$3')"
 #@cli : Add a network trainer to the network.
 #@cli : 'optimizer' can be { 0=sgd | 1=rmsprop | 2=adam | 3=adamax }.
 #@cli : 'scheduler' can be { 0=constant | 1=linear | 2=exponential | 3=adaptive }.
-#@cli : Default value: 'learning_rate=1e-6', 'optimizer=adam' and 'scheduler=adaptive'.
+#@cli : Default value: 'learning_rate=1e-6', 'optimizer=adam' and 'scheduler=0'.
 nn_trainer : nn_check_layer "$2"
              check "isvarname('$1') && ${3=1e-6}>0 && isvarname('${4=adam}') && isvarname('${5=adaptive}')"
   e[^-1] "[nn_lib] Add trainer '$1' for loss '$2', with learning rate '$3', $4 optimizer and $5 scheduler."
@@ -27616,7 +27781,7 @@ remove_copymark :
 # render_donations: Parse the PayPal .CSV file and generate 'latest-months' donation gfx.
 # $1 = filename.csv
 # $2 = number of latest months.
-render_donations : skip "${1="$HOME"/work/src/gmic_donations/donations.csv}",${2=0}
+render_donations : skip "${1="$HOME"/work/src/private_tschumperle/gmic_donations.csv}",${2=0}
   use_vt100
   nb_months={$2?$2:4}
   l[]
@@ -40053,7 +40218,7 @@ fx_mix_ycbcr_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      
 #@gui : Latest Update: <i>2019/08/27</i>.</small>")
-fx_clut_from_ab :
+fx_clut_from_ab : skip "${3=},${4=}"
   if $!<2 error "At least two input layers are needed to run this filter." fi
   repeat $!-1 l[$<,-1] nm=${gui_layer_name..}
     i[0] {a=0$_is_preview?32:64;[a,a,a]},4 f[1] ">I(#0,round(I(#2)*(w#0-1)/255))+=[R,G,B,1]; I"
@@ -40082,7 +40247,7 @@ fx_clut_from_ab :
   if 0$_output_mode k[0] fi
   endl done
 
-fx_clut_from_ab_preview :
+fx_clut_from_ab_preview : skip "${3=},${4=}"
   if $!<2 gui_warning_preview "At least two input layers are needed to run this filter." return fi
   _is_preview,_output_mode=1 fx_clut_from_ab 0,4,0,0,$5
   repeat $! l[$>]
@@ -45200,7 +45365,7 @@ fx_pack : skip "${8=}"
   nm "name(G'MIC packing),pos(0,0),mode(normal)"
   if $4 autocrop fi
 
-fx_pack_preview :
+fx_pack_preview : skip "${8=}"
   if !$! return fi
   w={w} h={h}
   filled=0 repeat $! filled={$>,$filled+w*h} done
@@ -47985,7 +48150,7 @@ fx_render3d : skip ${14=1}
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2014/10/02</i>.</small>")
 fx_blocks3d :
   repeat $! l[$>]
-    nm=${"gui_layer_name"}
+    nm=${"-gui_layer_name"}
     W={w} H={h} M={max(w,h)}
     if w>h r2dx $1 else r2dy $1 fi
     w={w} h={h} m={max(w,h)}
@@ -48097,22 +48262,31 @@ _fx_coloredobject3d_preview_7 : cup3d 64 *3d. $1,$2,$3
 #@gui : Rendering = choice(2,"Dots","Wireframe","Flat","Flat-Shaded","Gouraud","Phong")
 #@gui : Antialiasing = bool(1)
 #@gui : sep = separator()
-#@gui : note = note{"<small><b>Note:</b> Add a top layer to define object texture.</small>"}
+#@gui : Top Layer Defines Object Texture = bool(0)
 #@gui : sep = separator()
-#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2010/29/12</i>.</small>")
+#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2021/11/10</i>.</small>")
 _fx_elevation3d :
-  repeat $!/2 l[$>,{min($>+1,$!-1)}]
-    if $!==1 +norm else r[1] [0],3 fi
-    n[1] 0,{abs($1)} *[1] {sign($1)} b[1] $2
-    elevation3d[0] [1] rm[1]
-  endl done
+  if $3" && "$!>1 # Textured object
+    repeat $!-1 l[0,{1+$>}]
+      +ri.. .,3
+      n. 0,{abs($1)} *. {sign($1)} b. $2
+      elevation3d.. . rm.
+    endl done
+  else  # Non-textured object
+    repeat $! l[$>]
+      +norm n. 0,{abs($1)} *. {sign($1)} b. $2
+      elevation3d.. . rm.
+    endl done
+  fi
   db3d
 
 fx_elevation3d :
-  _fx_elevation3d ${1-2} fx_render3d ${3--1}
+  _fx_elevation3d ${1-2},$17
+  s0,s1=^,^0 fx_render3d[${s$17}] ${3--1}
 
 fx_elevation3d_preview :
   fx_elevation3d ${1-2},{w},{h},${5--1}
+  if $17 rm[0] fi
 
 #@gui 3D Extrusion : fx_extrude3d, fx_extrude3d_preview(1)
 #@gui : Depth = float(10,1,1024)
@@ -48134,21 +48308,23 @@ fx_elevation3d_preview :
 #@gui : Rendering = choice(4,"Dots","Wireframe","Flat","Flat-Shaded","Gouraud","Phong")
 #@gui : Antialiasing = bool(1)
 #@gui : sep = separator()
-#@gui : note = note{"<small><b>Note:</b> Add a top layer to define object texture.</small>"}
+#@gui : Top Layer Defines Object Texture = bool(0)
 #@gui : sep = separator()
-#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2010/29/12</i>.</small>")
+#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2021/11/10</i>.</small>")
 _fx_extrude3d :
-  repeat $!/2 l[$>,{min($>+1,$!-1)}]
-    extrude3d. $1,$2,$3%
-    if $!==2 t3d. .. rm.. fi
-  endl done
+  if $4" && "$!>1 # Textured object
+    repeat $!-1 l[0,{$>+1}] extrude3d. $1,$2,$3% t3d. .. endl done
+  else extrude3d $1,$2,$3% # Non-textured object
+  fi
   db3d 0
 
 fx_extrude3d :
-  _fx_extrude3d ${1-3} fx_render3d ${4--1}
+  _fx_extrude3d ${1-3},$18
+  s0,s1=^,^0 fx_render3d[${s$18}] ${4--1}
 
 fx_extrude3d_preview :
   fx_extrude3d ${1-3},{w},{h},${6--1}
+  if $18 rm[0] fi
 
 #@gui 3D Image Object : fx_imageobject3d, fx_imageobject3d_preview(1)
 #@gui : Type = choice{1,"Plane","Cube","Pyramid","Sphere","Torus","Gyroid","Weird","Cup","Rubik"}
@@ -48218,22 +48394,24 @@ _fx_imageobject3d_preview_8 : imagerubik3d 3,3,5,5
 #@gui : Rendering = choice(4,"Dots","Wireframe","Flat","Flat-Shaded","Gouraud","Phong")
 #@gui : Antialiasing = bool(1)
 #@gui : sep = separator()
-#@gui : note = note{"<small><b>Note:</b> Add a top layer to define object texture.</small>"}
+#@gui : Top Layer Defines Object Texture = bool(0)
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2010/29/12</i>.</small>")
 _fx_lathing3d :
-  repeat $!/2 l[$>,{min($>+1,$!-1)}]
-    lathe3d. $1,$2%,$3
-    if $!==2 t3d. .. rm.. fi
-  endl done
+  if $4" && "$!>1 # Textured object
+    repeat $!-1 l[0,{$>+1}] lathe3d. $1,$2%,$3 t3d. .. endl done
+  else lathe3d $1,$2%,$3 # Non-textured object
+  fi
   db3d 0
 
 fx_lathing3d :
-  _fx_lathing3d ${1-3} fx_render3d ${4--1}
-  nm name("[3D lathing]"),pos(0,0),mode(alpha)
+  _fx_lathing3d ${1-3},$18
+  s0,s1=^,^0 fx_render3d[${s$18}] ${4--1}
+  nm pos(0,0),mode(alpha)
 
 fx_lathing3d_preview :
   fx_lathing3d ${1-3},{w},{h},${6--1}
+  if $18 rm[0] fi
 
 #@gui 3D Random Objects : fx_random3d, fx_random3d(1)
 #@gui : Type = choice("Cube","Cone","Cylinder","Sphere","Torus")
@@ -51137,6 +51315,7 @@ fx_solve_maze_preview :
 #@cli : $ https://gmic.eu/samples/rotozoom.gmic go _fps=15 _label="Rotozoom"
 #@cli : $ https://gmic.eu/samples/french_flag.gmic go _fps=20 _label="French~Flag"
 
+<<<<<<< HEAD
 #---------------------------
 # Test programs for NN lib.
 #---------------------------
@@ -51443,6 +51622,8 @@ nn_resnet :
   nn_layer_rename OUT,lF
 
 
+=======
+>>>>>>> develop
 # Local Variables:
 # mode: sh
 # End:
