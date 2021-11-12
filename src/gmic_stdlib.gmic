@@ -6640,11 +6640,8 @@ parse_gui_thumbnails :
     command=${_f${f}_commandpreview}
     pipeline=
     c=
-    if '$command'!='_none_'
+    if s='$command';s!='_none_'&&s!='fx_whatsnew_preview'
       pipeline.=$command" "
-
-      e "Command '"$command"', NB_PARAMS["$f"] = "${nb$f}" = "${_f${f}_nbparams}
-
       repeat ${_f${f}_nbparams},p
         type=${_f${f}_p${p}_type}
         arg0=${_f${f}_p${p}_a0}
@@ -6689,12 +6686,12 @@ parse_gui_thumbnails :
         fi
       done
     fi
-#    +e[] "  [#"{1+$>}"] "${_f${f}_name}": "$pipeline
+    +e[] "  [#"{1+$>}"] "${_f${f}_name}": "$pipeline
     if ['$pipeline']!=0
       l[]
         sp lena,256 run $pipeline w. k[0] on thumbnails/thumb.png,$f rm
       onfail
-#        e[] "Error "$_vt100_r${}$_vt100_n"\n"
+        e[] "Error "$_vt100_r${}$_vt100_n"\n"
         rm sp lena,256 gui_no_preview , on thumbnails/thumb.png,$f
       endl
     fi
