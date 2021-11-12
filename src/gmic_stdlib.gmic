@@ -6625,6 +6625,83 @@ parse_gui_print :
     +e[] "  [#"{1+$>}"] "${_f$>_path}${_f$>_name}
   done
 
+# Implements 'thumbnails' mode for command 'parse_gui'.
+parse_gui_parseparams_thumbnails : u 1 # Tell parser to parse filter parameters
+parse_gui_thumbnails :
+  e[] "  >> Generate output, in 'thumbnails' mode.\n"
+  if !isdir('thumbnails') x "mkdir -p thumbnails" fi
+  _preview_width,_preview_height=400
+
+  repeat $_nbfilters,f
+    nb$f=${_f${f}_nbparams}
+  done
+
+  repeat $_nbfilters,f
+    command=${_f${f}_commandpreview}
+    pipeline=
+    c=
+    if '$command'!='_none_'
+      pipeline.=$command" "
+
+      e "Command '"$command"', NB_PARAMS["$f"] = "${nb$f}" = "${_f${f}_nbparams}
+
+      repeat ${_f${f}_nbparams},p
+        type=${_f${f}_p${p}_type}
+        arg0=${_f${f}_p${p}_a0}
+        if s='$type';s=='file'||s=='filein'||s=='fileout'||s=='folder'||s=='value'
+          if !${_f{$f}_p${p}_nbargs} pipeline.=$c\"\"
+          else
+            args= ac=
+            repeat ${_f${f}_p${p}_nbargs},a args.=$ac${_f${f}_p${p}_a${a}} ac=, done
+            s=\"
+            if ['$args']==0 s=\" elif ['$args'][0]==_'\"' s= fi
+            pipeline.=$c$s$args$s
+          fi
+          c=,
+        elif s='$type';s=='text'
+          val,off=0
+          N=${_f${f}_p${p}_nbargs}
+          if isint($arg0) val=$arg0 N-=1 off=1 fi
+          args= ac=
+          repeat $N,a na={$a+$off} args.=$ac${_f${f}_p${p}_a${na}} ac=, done
+          s=\"
+          if ['$args']==0 s=\" elif ['$args'][0]==_'\"' s= fi
+          pipeline.=$c$s$args$s
+          c=,
+        elif s='$type';s=='float'||s=='int'
+          pipeline.=$c$arg0 c=,
+        elif s='$type';s=='button'
+          pipeline.=${c}0 c=,
+        elif s='$type';s=='bool'
+          val=0
+          if s='$arg0';s==1||s=='true' val=1 fi
+          pipeline.=$c$val c=,
+        elif s='$type';s=='choice'
+          val=0
+          if isint($arg0) val=$arg0 fi
+          pipeline.=$c$val c=,
+        elif s='$type';s=='color'
+          repeat ${_f${f}_p${p}_nbargs},a
+            pipeline.=$c${_f${f}_p${p}_a${a}} c=,
+          done
+        elif s='$type';s=='point'
+          pipeline.=$c$arg0,${_f${f}_p${p}_a1} c=,
+        fi
+      done
+    fi
+#    +e[] "  [#"{1+$>}"] "${_f${f}_name}": "$pipeline
+    if ['$pipeline']!=0
+      l[]
+        sp lena,256 run $pipeline w. k[0] on thumbnails/thumb.png,$f rm
+      onfail
+#        e[] "Error "$_vt100_r${}$_vt100_n"\n"
+        rm sp lena,256 gui_no_preview , on thumbnails/thumb.png,$f
+      endl
+    fi
+
+  done
+  e[] "\r  >> "${_vt100_g}{`copy(vector64(_'" "'),'"Output done!"')`}$_vt100_n
+
 #
 # Implements 'whatsnew' mode for command 'parse_gui'.
 #
