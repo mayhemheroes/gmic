@@ -6639,6 +6639,7 @@ parse_gui_thumbnails :
 
   repeat $_nbfilters,f
     command=${_f${f}_commandpreview}
+    if ['$command']==0 command=${_f${f}_command} fi
     pipeline=
     c=
     if s='$command';s!='_none_'&&s!='fx_whatsnew_preview'
@@ -6687,21 +6688,24 @@ parse_gui_thumbnails :
         fi
       done
     fi
-    +e[] "  [#"{1+$>}"] "${_f${f}_name}": "$pipeline
+    +e[] "  [#"{1+$>}"] "${_vt100_c}${_f${f}_name}${_vt100_n}": "$pipeline
     if ['$pipeline']!=0
       filename thumbnails/thumb.png,$f file_out=${}
       l[]
         $img run $pipeline k[0] r2din 200,200,2
       onfail
         e[] "Error "$_vt100_r${}$_vt100_n"\n"
-        rm $img gui_no_preview ,
+        rm
       endl
-      r2din. 200,200,2 to_rgba. r. 200,200,1,4,0,0,0.5,0.5
-      w. ${"fitscreen ."} o. $file_out rm.
     fi
 
+    if !$! $img gui_no_preview , fi
+    r2din. 200,200,2 to_rgba. r. 200,200,1,4,0,0,0.5,0.5
+    if {*} w. ${"fitscreen ."} fi
+    o. $file_out rm.
+
   done
-  e[] "\r  >> "${_vt100_g}{`copy(vector64(_'" "'),'"Output done!"')`}$_vt100_n
+  e[] "  >> "${_vt100_g}{`copy(vector64(_'" "'),'"Output done!"')`}$_vt100_n
 
 #
 # Implements 'whatsnew' mode for command 'parse_gui'.
@@ -40207,7 +40211,7 @@ fx_mix_ycbcr_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      
 #@gui : Latest Update: <i>2019/08/27</i>.</small>")
-fx_clut_from_ab :
+fx_clut_from_ab : skip "${3=},${4=}"
   if $!<2 error "At least two input layers are needed to run this filter." fi
   repeat $!-1 l[$<,-1] nm=${gui_layer_name..}
     i[0] {a=0$_is_preview?32:64;[a,a,a]},4 f[1] ">I(#0,round(I(#2)*(w#0-1)/255))+=[R,G,B,1]; I"
@@ -40236,7 +40240,7 @@ fx_clut_from_ab :
   if 0$_output_mode k[0] fi
   endl done
 
-fx_clut_from_ab_preview :
+fx_clut_from_ab_preview : skip "${3=},${4=}"
   if $!<2 gui_warning_preview "At least two input layers are needed to run this filter." return fi
   _is_preview,_output_mode=1 fx_clut_from_ab 0,4,0,0,$5
   repeat $! l[$>]
@@ -45354,7 +45358,7 @@ fx_pack : skip "${8=}"
   nm "name(G'MIC packing),pos(0,0),mode(normal)"
   if $4 autocrop fi
 
-fx_pack_preview :
+fx_pack_preview : skip "${8=}"
   if !$! return fi
   w={w} h={h}
   filled=0 repeat $! filled={$>,$filled+w*h} done
