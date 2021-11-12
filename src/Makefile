@@ -309,7 +309,7 @@ MAGICK_LIBS = $(shell pkg-config --libs GraphicsMagick++ || echo -lGraphicsMagic
 # Enable native support of EXR image files, using the OpenEXR library.
 # (http://www.openexr.com/)
 OPENEXR_CFLAGS = -Dcimg_use_openexr $(shell pkg-config --cflags OpenEXR || echo -I$(USR)/$(INCLUDE)/OpenEXR)
-OPENEXR_LIBS = $(shell pkg-config --libs GraphicsMagick++ || echo -lIlmImf -lHalf)
+OPENEXR_LIBS = $(shell pkg-config --libs OpenEXR || echo -lIlmImf -lHalf)
 
 # Enable Fast Fourier Transforms, using the FFTW3 library.
 # (http://www.fftw.org/)
