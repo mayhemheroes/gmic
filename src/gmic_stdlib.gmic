@@ -22610,14 +22610,14 @@ nn_layer_reshape : nn_check_layer "$2" check "isvarname('$1')"
   _nn_backward..="begin(nn_layer_reshape_init_backward($1,$2));"
   _nn_init.="$0 $* "
 
-#@cli nn_layer_run : name,in,"command",_width>0,_height>0,_depth>0,_spectrum>0
+#@cli nn_layer_run : name,in,"command",_width[%]>0,_height[%]>0,_depth[%]>0,_spectrum[%]>0
 #@cli : Add a 'run' layer to the network.
-#@cli : Default values: 'width=in_out_width', 'height=in_out_height', 'depth=in_out_depth' and \
-# 'spectrum=in_out_spectrum'.
-nn_layer_run : nn_check_layer "$2" check "isvarname('$1') && "\
-               "isint(${4=-1}) && ($4==-1 || $4>0) && isint(${5=-1}) && ($5==-1 || $5>0) && "\
-               "isint(${6=-1}) && ($6==-1 || $6>0) && isint(${7=-1}) && ($7==-1 || $7>0)"
-  w,h,d,s={"in=["$_nn_$2_out_size"];[$4>0?$4:in[0],$5>0?$5:in[1],$6>0?$6:in[2],$7>0?$7:in[3]]"}
+#@cli : Default values: 'width=height=depth=spectrum=100%'.
+nn_layer_run : nn_check_layer "$2" check "isvarname('$1') && ${4=100%}>0 && ${5=100%}>0 && ${6=100%}>0 && ${7=100%}>0"
+  if ${"is_percent $4"} w={max(1,round([$_nn_$2_out_size][0]*$4))} else w=$4 fi
+  if ${"is_percent $5"} h={max(1,round([$_nn_$2_out_size][1]*$5))} else h=$5 fi
+  if ${"is_percent $6"} d={max(1,round([$_nn_$2_out_size][2]*$6))} else d=$6 fi
+  if ${"is_percent $7"} s={max(1,round([$_nn_$2_out_size][3]*$7))} else s=$7 fi
   e[^-1] "[nn_lib] Add 'run' layer '$1', with input '$2', command '$3' and output size ("$w","$h","$d","$s")."
   _nn_$1_out_size=$w,$h,$d,$s
   _nn_forward.="begin(nn_layer_run_init_forward($1,$2,'$3',"$w","$h","$d","$s"));"\
