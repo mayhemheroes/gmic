@@ -6680,15 +6680,17 @@ parse_gui_thumbnails :
           l[] if isint($arg0) val=$arg0 fi onfail endl
           pipeline.=$c$val c=,
         elif s='$type';s=='color'
-          repeat ${_f${f}_p${p}_nbargs},a
-            pipeline.=$c${_f${f}_p${p}_a${a}} c=,
-          done
+          if ${_f${f}_p${p}_nbargs}==1" && "['$arg0'][0]==_'#'
+            l[] ('$arg0') autocrop. {'#'} s x,-2 repeat $! hex2dec {$>,t} pipeline.=$c${} c=, done rm endl
+          else
+            repeat ${_f${f}_p${p}_nbargs},a pipeline.=$c${_f${f}_p${p}_a${a}} c=, done
+          fi
         elif s='$type';s=='point'
           pipeline.=$c$arg0,${_f${f}_p${p}_a1} c=,
         fi
       done
     fi
-    +e[] "  [#"{1+$>}"] "${_vt100_c}${_f${f}_name}${_vt100_n}": "$pipeline
+    +e[] ${_vt100_c}"  [#"{1+$>}"] "${_vt100_n}${_f${f}_name}": "${_vt100_g}$pipeline${_vt100_n}
     if ['$pipeline']!=0
       filename thumbnails/thumb.png,$f file_out=${}
       l[]
@@ -6700,7 +6702,7 @@ parse_gui_thumbnails :
     fi
 
     if !$! $img gui_no_preview , fi
-    r2din. 200,200,2 to_rgba. r. 200,200,1,4,0,0,0.5,0.5
+    r2din. 200,200,2 r. 100%,100%,1,{min(s,4)} to_rgba. r. 200,200,1,4,0,0,0.5,0.5
     if {*} w. ${"fitscreen ."} fi
     o. $file_out rm.
 
