@@ -6680,15 +6680,17 @@ parse_gui_thumbnails :
           l[] if isint($arg0) val=$arg0 fi onfail endl
           pipeline.=$c$val c=,
         elif s='$type';s=='color'
-          repeat ${_f${f}_p${p}_nbargs},a
-            pipeline.=$c${_f${f}_p${p}_a${a}} c=,
-          done
+          if ${_f${f}_p${p}_nbargs}==1" && "['$arg0'][0]==_'#'
+            l[] ('$arg0') autocrop. {'#'} s x,-2 repeat $! hex2dec {$>,t} pipeline.=$c${} c=, done rm endl
+          else
+            repeat ${_f${f}_p${p}_nbargs},a pipeline.=$c${_f${f}_p${p}_a${a}} c=, done
+          fi
         elif s='$type';s=='point'
           pipeline.=$c$arg0,${_f${f}_p${p}_a1} c=,
         fi
       done
     fi
-    +e[] "  [#"{1+$>}"] "${_vt100_c}${_f${f}_name}${_vt100_n}": "$pipeline
+    +e[] ${_vt100_c}"  [#"{1+$>}"] "${_vt100_n}${_f${f}_name}": "${_vt100_g}$pipeline${_vt100_n}
     if ['$pipeline']!=0
       filename thumbnails/thumb.png,$f file_out=${}
       l[]
@@ -6700,7 +6702,7 @@ parse_gui_thumbnails :
     fi
 
     if !$! $img gui_no_preview , fi
-    r2din. 200,200,2 to_rgba. r. 200,200,1,4,0,0,0.5,0.5
+    c. 0,255 r2din. 200,200,2 r. 100%,100%,1,{min(s,4)} to_rgba. r. 200,200,1,4,0,0,0.5,0.5
     if {*} w. ${"fitscreen ."} fi
     o. $file_out rm.
 
@@ -14823,15 +14825,15 @@ denoise_haar : check "${1=1.4}>=0 && isint(${2=0}) && $2>=0 && isint(${3=10}) &&
     rm[0] / $3 r $w,$h,$d,100%,0
   nm $nm endl done
 
-#@cli denoise_cnn : _noise_type={ 0=soft | 1=heavy },_patch_size>0
+#@cli denoise_cnn : _noise_type={ 0=soft | 1=heavy | 2=heavy (fatser) },_patch_size>0
 #@cli : Denoise selected images using a convolutional neural network (CNN).
 #@cli : Input value range should be [0,255]. Output value range is [0,255].
 #@cli : Default value: 'patch_size=64'.
 #@cli : $ image.jpg noise 20 cut 0,255 +denoise_cnn
 denoise_cnn : skip "${1=0},${2=64}"
   N=$!
-  if isint($1)" && "inrange($1,0,1) check "isint($2) && $2>0" type=$1 else type=0 noarg fi
-  s0,s1=soft,heavy
+  if isint($1)" && "inrange($1,0,2) check "isint($2) && $2>0" type=$1 else type=0 noarg fi
+  s0,s1,s2=soft,heavy,heavy
   e[^-1] "Denoise image$? using a convolutional neural network (for "${s$type}"-noise), with patch size $2."
 
   # Load denoising network.
@@ -47534,7 +47536,7 @@ fx_smooth_bilateral_preview :
   gui_split_preview "fx_smooth_bilateral $*",${-3--1}
 
 #@gui Denoise : fx_denoise,fx_denoise_preview(0)
-#@gui : Noise type = choice("Soft","Heavy")
+#@gui : Noise type = choice{"Soft","Heavy","Heavy (Faster)"}
 #@gui : Iterations = int(1,1,5)
 #@gui : sep = separator()
 #@gui : Update Neural Network = button()
