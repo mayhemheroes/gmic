@@ -6832,12 +6832,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   state?"Show":"Hide",
                   gmic_selection.data(),cimg_display?"available":"support");
           } else {
-            if (state) cimg_forY(selection,l) {
-                if (!display_window(l).is_closed()) display_window(selection[l]).show_mouse();
-              }
-            else cimg_forY(selection,l) {
-                if (!display_window(l).is_closed()) display_window(selection[l]).hide_mouse();
-              }
+            if (state) cimg_forY(selection,l) display_window(selection[l]).show_mouse();
+            else cimg_forY(selection,l) display_window(selection[l]).hide_mouse();
             print(images,0,"%s mouse cursor for display window%s.",
                   state?"Show":"Hide",
                   gmic_selection.data());
