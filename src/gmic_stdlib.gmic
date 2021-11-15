@@ -6696,7 +6696,7 @@ parse_gui_thumbnails :
     if ['$pipeline']!=0
       filename thumbnails/thumb.png,$f file_out=${}
       l[]
-        $img run $pipeline k[0] r2din 200,200,2
+        $img run $pipeline gui_merge_layers r2din 200,200,2
       onfail
         e[] "Error "$_vt100_r${}$_vt100_n"\n"
         rm
@@ -8642,6 +8642,481 @@ __gallery :
   if $!==2 if w>h a y else a x fi
   else montage A # append_tiles 2
   fi
+
+# Generate data files for the G'MIC Online website.
+update_gmicol :
+  e[^-1] "Generate data files for the G'MIC Online website."
+  filename=$_path_rc/update$_version.gmic
+  if !isfile('$filename') up fi
+  rm it $filename
+
+  # Generate XML file.
+  m "parse_gui_trigger_gmicol : _update_gmicol $*"
+  v + +parse_gui. gmicol v -
+  um parse_gui_trigger_gmicol
+  ot. gmicol.xml
+  rm.
+
+  # Generate thumbnails.
+  m "parse_gui_trigger_thumbnails : _update_gmicol $*"
+  v + w[] parse_gui thumbnails v -
+  um parse_gui_trigger_thumbnails
+
+_update_gmicol : # Keep only a subset of existing filters
+  nmd 3,\
+  "About/♥ Support Us ! ♥",\
+  "About/About G'MIC",\
+  "About/Friends Hall of Fame",\
+  "Arrays & Tiles/Annular Steiner Chain Round Tile",\
+  "Arrays & Tiles/Array [Faded]",\
+  "Arrays & Tiles/Array [Mirrored]",\
+  "Arrays & Tiles/Array [Random Colors]",\
+  "Arrays & Tiles/Array [Random]",\
+  "Arrays & Tiles/Array [Regular]",\
+  "Arrays & Tiles/Ascii Art",\
+  "Arrays & Tiles/Chessboard",\
+  "Arrays & Tiles/Dices",\
+  "Arrays & Tiles/Grid [Cartesian]",\
+  "Arrays & Tiles/Grid [Hexagonal]",\
+  "Arrays & Tiles/Grid [Triangular]",\
+  "Arrays & Tiles/Ministeck",\
+  "Arrays & Tiles/Puzzle",\
+  "Arrays & Tiles/Taquin",\
+  "Arrays & Tiles/Tiled Isolation",\
+  "Arrays & Tiles/Tiled Normalization",\
+  "Arrays & Tiles/Tiled Parameterization",\
+  "Arrays & Tiles/Tiled Random Shifts",\
+  "Arrays & Tiles/Tiled Rotation",\
+  "Artistic/Angoisse Anguish",\
+  "Artistic/Aurora",\
+  "Artistic/Blockism",\
+  "Artistic/Bokeh",\
+  "Artistic/Cartoon",\
+  "Artistic/Circle Abstraction",\
+  "Artistic/Color Abstraction Paint",\
+  "Artistic/Colored Pencils",\
+  "Artistic/Comic Book",\
+  "Artistic/Cubism",\
+  "Artistic/Cutout",\
+  "Artistic/Diffusion Tensors",\
+  "Artistic/Dream Smoothing",\
+  "Artistic/Ellipsionism",\
+  "Artistic/Felt Pen",\
+  "Artistic/Finger Paint",\
+  "Artistic/Fractalize",\
+  "Artistic/Ghost",\
+  "Artistic/Graphic Boost",\
+  "Artistic/Graphic Novel",\
+  "Artistic/Hard Sketch",\
+  "Artistic/Highlight Bloom",\
+  "Artistic/Hope Poster",\
+  "Artistic/Hough Sketch",\
+  "Artistic/Illustration Look",\
+  "Artistic/Kuwahara",\
+  "Artistic/Lylejk's Painting",\
+  "Artistic/Make Squiggly",\
+  "Artistic/Morphology Painting",\
+  "Artistic/Paint With Brush",\
+  "Artistic/Painting",\
+  "Artistic/Pen Drawing",\
+  "Artistic/Photoillustration",\
+  "Artistic/Polygonize [Delaunay]",\
+  "Artistic/Polygonize [Energy]",\
+  "Artistic/Poster Edges",\
+  "Artistic/Posterize",\
+  "Artistic/Posterized Dithering",\
+  "Artistic/Quadtree Variations",\
+  "Artistic/Rodilius",\
+  "Artistic/Sharp Abstract",\
+  "Artistic/Simple Noise Canvas",\
+  "Artistic/Skeletik",\
+  "Artistic/Sketch",\
+  "Artistic/Smooth Abstract",\
+  "Artistic/Stylize",\
+  "Artistic/Vector Painting",\
+  "Artistic/Warhol",\
+  "Artistic/Whirl Drawing",\
+  "Black & White/B&W Stencil",\
+  "Black & White/Black & White",\
+  "Black & White/Charcoal",\
+  "Black & White/Colorize [with Colormap]",\
+  "Black & White/Colorize Lineart [Auto-Fill]",\
+  "Black & White/Colorize Lineart [Smart Coloring]",\
+  "Black & White/Desaturate Norm",\
+  "Black & White/Dithering",\
+  "Black & White/Emboss",\
+  "Black & White/Engrave",\
+  "Black & White/Freaky B&W",\
+  "Black & White/Ink Wash",\
+  "Black & White/Multi-Layer Etch",\
+  "Black & White/Pencil",\
+  "Black & White/Pencil Portrait",\
+  "Black & White/Stamp",\
+  "Black & White/Threshold Etch",\
+  "Colors/Abstraction",\
+  "Colors/Auto Balance",\
+  "Colors/Basic Adjustments",\
+  "Colors/Boost Chromaticity",\
+  "Colors/Boost-Fade",\
+  "Colors/Brightness",\
+  "Colors/Channel Processing",\
+  "Colors/CMYK Tone",\
+  "Colors/Color Balance",\
+  "Colors/Color Blindness",\
+  "Colors/Color Grading",\
+  "Colors/Color Presets",\
+  "Colors/Color Temperature",\
+  "Colors/Colormap",\
+  "Colors/Contrast",\
+  "Colors/Customize CLUT",\
+  "Colors/Dark Sky",\
+  "Colors/Equalize HSI-HSL-HSV",\
+  "Colors/Equalize HSV",\
+  "Colors/HSL Adjustment",\
+  "Colors/HSV Select",\
+  "Colors/Hue Lighten-Darken",\
+  "Colors/LMS Adjustment",\
+  "Colors/Local Contrast",\
+  "Colors/Metallic Look",\
+  "Colors/Mixer [CMYK]",\
+  "Colors/Mixer [HSV]",\
+  "Colors/Mixer [Lab]",\
+  "Colors/Mixer [PCA]",\
+  "Colors/Mixer [RGB]",\
+  "Colors/Mixer [YCbCr]",\
+  "Colors/Normalize Brightness",\
+  "Colors/Retinex",\
+  "Colors/Retro Fade",\
+  "Colors/RGB Tone",\
+  "Colors/Saturation EQ",\
+  "Colors/Select-Replace Color",\
+  "Colors/Selective Desaturation",\
+  "Colors/Sepia",\
+  "Colors/Simulate Film",\
+  "Colors/Softlight",\
+  "Colors/Specific Saturation",\
+  "Colors/Temperature Balance",\
+  "Colors/Tone Presets",\
+  "Colors/Tune HSV Colors",\
+  "Colors/User-Defined",\
+  "Colors/Vintage Style",\
+  "Colors/Zone System",\
+  "Contours/Convolve",\
+  "Contours/Curvature",\
+  "Contours/Difference of Gaussians",\
+  "Contours/Distance Transform",\
+  "Contours/Edge",\
+  "Contours/Edges",\
+  "Contours/Edges Offsets",\
+  "Contours/Gradient Norm",\
+  "Contours/Gradient RGB",\
+  "Contours/Isophotes",\
+  "Contours/Laplacian",\
+  "Contours/Local Orientation",\
+  "Contours/Morphological Filter",\
+  "Contours/Segmentation",\
+  "Contours/Skeleton",\
+  "Contours/Super-Pixels",\
+  "Contours/Thin Edges",\
+  "Deformations/Breaks",\
+  "Deformations/Cartesian Transform",\
+  "Deformations/Circle Transform",\
+  "Deformations/Conformal Maps",\
+  "Deformations/Continuous Droste",\
+  "Deformations/Crease",\
+  "Deformations/Distort Lens",\
+  "Deformations/Drop Water",\
+  "Deformations/Equirectangular to Nadir-Zenith",\
+  "Deformations/Euclidean - Polar",\
+  "Deformations/Fish-Eye",\
+  "Deformations/Flower",\
+  "Deformations/Kaleidoscope [Blended]",\
+  "Deformations/Kaleidoscope [Polar]",\
+  "Deformations/Kaleidoscope [Reptorian-Polar]",\
+  "Deformations/Kaleidoscope [Symmetry]",\
+  "Deformations/Logarithmic Distortion",\
+  "Deformations/Moon2panorama",\
+  "Deformations/Perspective",\
+  "Deformations/Pixel Push",\
+  "Deformations/Point Warp",\
+  "Deformations/Polar Transform",\
+  "Deformations/Quadrangle",\
+  "Deformations/Raindrops",\
+  "Deformations/Random",\
+  "Deformations/Reflection",\
+  "Deformations/Ripple",\
+  "Deformations/Seamcarve",\
+  "Deformations/Sinusoidal Water Distortion",\
+  "Deformations/Sphere",\
+  "Deformations/Spherize",\
+  "Deformations/Square to Circle",\
+  "Deformations/Stereographic Projection",\
+  "Deformations/Symmetrize",\
+  "Deformations/Textured Glass",\
+  "Deformations/Twirl",\
+  "Deformations/Water",\
+  "Deformations/Wave",\
+  "Deformations/Wind",\
+  "Deformations/Zoom",\
+  "Degradations/Add Grain",\
+  "Degradations/Blur [Angular]",\
+  "Degradations/Blur [Bloom]",\
+  "Degradations/Blur [Depth-Of-Field]",\
+  "Degradations/Blur [Gaussian]",\
+  "Degradations/Blur [Glow]",\
+  "Degradations/Blur [Linear]",\
+  "Degradations/Blur [Multidirectional]",\
+  "Degradations/Blur [Radial]",\
+  "Degradations/Blur [Splinter]",\
+  "Degradations/Chromatic Aberrations",\
+  "Degradations/CRT Sub-Pixels",\
+  "Degradations/Dirty",\
+  "Degradations/Flip & Rotate Blocs",\
+  "Degradations/Fragment Blur",\
+  "Degradations/JPEG Artefacts",\
+  "Degradations/Lomo",\
+  "Degradations/Mess with Bits",\
+  "Degradations/Noise [Additive]",\
+  "Degradations/Noise [Perlin]",\
+  "Degradations/Noise [Spread]",\
+  "Degradations/Old-Movie Stripes",\
+  "Degradations/Oldschool 8bits",\
+  "Degradations/Pixel Sort",\
+  "Degradations/Rain & Snow",\
+  "Degradations/Random Shade Stripes",\
+  "Degradations/Rebuild From Similar Blocs",\
+  "Degradations/Scanlines",\
+  "Degradations/Self Glitching",\
+  "Degradations/Streak",\
+  "Degradations/UltraWarp++++",\
+  "Degradations/Visible Watermark",\
+  "Degradations/Warp by Intensity",\
+  "Details/Constrained Sharpen",\
+  "Details/DCP Dehaze",\
+  "Details/Details Equalizer",\
+  "Details/Dynamic Range Increase",\
+  "Details/Easy Skin Retouch",\
+  "Details/Emboss-Relief",\
+  "Details/Equalize Local Histograms",\
+  "Details/Freaky Details",\
+  "Details/High Pass",\
+  "Details/Local Contrast Enhancement",\
+  "Details/Local Normalization",\
+  "Details/Local Processing",\
+  "Details/Local Variance Normalization",\
+  "Details/Magic Details",\
+  "Details/Make Up",\
+  "Details/Mighty Details",\
+  "Details/Portrait Retouching",\
+  "Details/Pyramid Processing",\
+  "Details/Quick Tonemap",\
+  "Details/Sharpen [Deblur]",\
+  "Details/Sharpen [Gold-Meinel]",\
+  "Details/Sharpen [Gradient]",\
+  "Details/Sharpen [Hessian]",\
+  "Details/Sharpen [Inverse Diffusion]",\
+  "Details/Sharpen [Multiscale]",\
+  "Details/Sharpen [Octave Sharpening]",\
+  "Details/Sharpen [Richardson-Lucy]",\
+  "Details/Sharpen [Shock Filters]",\
+  "Details/Sharpen [Texture]",\
+  "Details/Sharpen [Tones]",\
+  "Details/Sharpen [Unsharp Mask]",\
+  "Details/Sharpen [Whiten]",\
+  "Details/Simple Local Contrast",\
+  "Details/Spotify",\
+  "Details/Texture",\
+  "Details/Texture Enhance",\
+  "Details/Tone Enhance",\
+  "Details/Tone Mapping",\
+  "Details/Tone Mapping [Fast]",\
+  "Details/YAG Effect",\
+  "Frames/Droste",\
+  "Frames/Frame [Blur]",\
+  "Frames/Frame [Cube]",\
+  "Frames/Frame [Fuzzy]",\
+  "Frames/Frame [Mirror]",\
+  "Frames/Frame [Painting]",\
+  "Frames/Frame [Pattern]",\
+  "Frames/Frame [Regular]",\
+  "Frames/Frame [Round]",\
+  "Frames/Frame [Smooth]",\
+  "Frames/Old Photograph",\
+  "Frames/Polaroid",\
+  "Frames/Tunnel",\
+  "Frames/Vignette",\
+  "Frequencies/Bandpass",\
+  "Frequencies/Fourier Analysis",\
+  "Frequencies/Fourier Transform",\
+  "Frequencies/Fourier Watermark",\
+  "Lights & Shadows/Burn",\
+  "Lights & Shadows/Contrast Swiss Mask",\
+  "Lights & Shadows/Dodge and Burn",\
+  "Lights & Shadows/Drop Shadow",\
+  "Lights & Shadows/Drop Shadow 3D",\
+  "Lights & Shadows/Equalize Light",\
+  "Lights & Shadows/Equalize Shadow",\
+  "Lights & Shadows/Guided Light Rays",\
+  "Lights & Shadows/Illuminate 2D Shape",\
+  "Lights & Shadows/Light Glow",\
+  "Lights & Shadows/Light Leaks",\
+  "Lights & Shadows/Light Patch",\
+  "Lights & Shadows/Light Rays",\
+  "Lights & Shadows/Pop Shadows",\
+  "Lights & Shadows/Relief Light",\
+  "Lights & Shadows/Shadow Patch",\
+  "Patterns/Bayer Filter",\
+  "Patterns/Box Fitting",\
+  "Patterns/Camouflage",\
+  "Patterns/Canvas",\
+  "Patterns/Canvas Texture",\
+  "Patterns/Clouds",\
+  "Patterns/Cracks",\
+  "Patterns/Crystal",\
+  "Patterns/Crystal Background",\
+  "Patterns/Denim Texture",\
+  "Patterns/Fibers",\
+  "Patterns/Freqy Pattern",\
+  "Patterns/Halftone",\
+  "Patterns/Halftone Shapes",\
+  "Patterns/Hearts",\
+  "Patterns/Hedcut (Experimental)",\
+  "Patterns/Lava",\
+  "Patterns/Marble",\
+  "Patterns/Maze",\
+  "Patterns/Mineral Mosaic",\
+  "Patterns/Mosaic",\
+  "Patterns/Op Art",\
+  "Patterns/Paper Texture",\
+  "Patterns/Periodic Dots",\
+  "Patterns/Plaid",\
+  "Patterns/Polka Dots",\
+  "Patterns/Random Color Ellipses",\
+  "Patterns/Random Pattern",\
+  "Patterns/Rays",\
+  "Patterns/Reptile",\
+  "Patterns/Resynthetize Texture [FFT]",\
+  "Patterns/Resynthetize Texture [Patch-Based]",\
+  "Patterns/Rorschach",\
+  "Patterns/Satin",\
+  "Patterns/Seamless Deco",\
+  "Patterns/Seamless Turbulence",\
+  "Patterns/Shock Waves",\
+  "Patterns/Soft Random Shades",\
+  "Patterns/Sponge",\
+  "Patterns/Stained Glass",\
+  "Patterns/Stars",\
+  "Patterns/Stencil",\
+  "Patterns/Strip",\
+  "Patterns/Tetris",\
+  "Patterns/Triangular Pattern",\
+  "Patterns/Truchet",\
+  "Patterns/Turbulent Halftone",\
+  "Patterns/Voronoi",\
+  "Patterns/Weave",\
+  "Patterns/Whirls",\
+  "Rendering/3D Blocks",\
+  "Rendering/3D Colored Object",\
+  "Rendering/3D Elevation",\
+  "Rendering/3D Extrusion",\
+  "Rendering/3D Image Object",\
+  "Rendering/3D Lathing",\
+  "Rendering/3D Random Objects",\
+  "Rendering/Ball",\
+  "Rendering/Circle Art",\
+  "Rendering/Construction Material Texture",\
+  "Rendering/Disco",\
+  "Rendering/Equation Plot [Parametric]",\
+  "Rendering/Equation Plot [Y=f(X)]",\
+  "Rendering/Gradient [Corners]",\
+  "Rendering/Gradient [Custom Shape]",\
+  "Rendering/Gradient [from Line]",\
+  "Rendering/Gradient [Linear]",\
+  "Rendering/Gradient [Radial]",\
+  "Rendering/Gradient [Random]",\
+  "Rendering/Hair Locks",\
+  "Rendering/Hypotrochoid",\
+  "Rendering/Kitaoka Spin Illusion",\
+  "Rendering/Lightning",\
+  "Rendering/Lissajous",\
+  "Rendering/Mandelbrot - Julia Sets",\
+  "Rendering/Nebulous",\
+  "Rendering/Neon Lightning",\
+  "Rendering/Newton Fractal",\
+  "Rendering/Plasma",\
+  "Rendering/Popcorn Fractal",\
+  "Rendering/Pseudorandom Noise",\
+  "Rendering/Pythagoras Tree",\
+  "Rendering/Quick Copyright",\
+  "Rendering/Rainbow",\
+  "Rendering/Shade Bobs",\
+  "Rendering/Sine Curve",\
+  "Rendering/Snowflake 2",\
+  "Rendering/Spiral",\
+  "Rendering/Spiral RGB",\
+  "Rendering/Superformula",\
+  "Rendering/Symmetric 2D Shape",\
+  "Rendering/Thorn Fractal - Secant Sea",\
+  "Rendering/Tree",\
+  "Rendering/Turbulence",\
+  "Rendering/Twisted Rays",\
+  "Rendering/Wiremap",\
+  "Repair/Anti Alias",\
+  "Repair/Banding Denoise",\
+  "Repair/Bayer Reconstruction",\
+  "Repair/Clean Text",\
+  "Repair/Compression Blur",\
+  "Repair/Deinterlace",\
+  "Repair/Deinterlace2x",\
+  "Repair/Denoise",\
+  "Repair/Denoise Smooth",\
+  "Repair/Denoise Smooth Alt",\
+  "Repair/Descreen",\
+  "Repair/Despeckle",\
+  "Repair/Iain Noise Reduction 2019",\
+  "Repair/Iain's Fast Denoise",\
+  "Repair/Inpaint [Holes]",\
+  "Repair/Inpaint [Morphological]",\
+  "Repair/Inpaint [Multi-Scale]",\
+  "Repair/Inpaint [Patch-Based]",\
+  "Repair/Inpaint [Transport-Diffusion]",\
+  "Repair/JPEG Smooth",\
+  "Repair/Local Similarity Mask",\
+  "Repair/Moire Removal",\
+  "Repair/Pixel Denoise",\
+  "Repair/Recursive Median",\
+  "Repair/Red-Eye Attenuation",\
+  "Repair/Remove Hot Pixels",\
+  "Repair/Repair Scanned Document",\
+  "Repair/Smooth [Anisotropic]",\
+  "Repair/Smooth [Antialias]",\
+  "Repair/Smooth [Bilateral]",\
+  "Repair/Smooth [Block PCA]",\
+  "Repair/Smooth [Diffusion]",\
+  "Repair/Smooth [Geometric-Median]",\
+  "Repair/Smooth [Guided]",\
+  "Repair/Smooth [IUWT]",\
+  "Repair/Smooth [Mean-Curvature]",\
+  "Repair/Smooth [Median]",\
+  "Repair/Smooth [NL-Means]",\
+  "Repair/Smooth [Patch-Based]",\
+  "Repair/Smooth [Patch-PCA]",\
+  "Repair/Smooth [Perona-Malik]",\
+  "Repair/Smooth [Selective Gaussian]",\
+  "Repair/Smooth [Skin]",\
+  "Repair/Smooth [Thin Brush]",\
+  "Repair/Smooth [Total Variation]",\
+  "Repair/Smooth [Wavelets]",\
+  "Repair/Smooth [Wiener]",\
+  "Repair/Solidify",\
+  "Repair/Unpurple",\
+  "Repair/Unquantize [JPEG Smooth]",\
+  "Repair/Unstrip",\
+  "Repair/Upscale [DCCI2x]",\
+  "Repair/Upscale [Diffusion]",\
+  "Repair/Upscale [Edge]",\
+  "Repair/Upscale [Scale2x]"
+  k[${}]
 
 # Generate reference documentation pages for the G'MIC website.
 # $1 = upload to G'MIC server, can be { 0 | 1 }.
