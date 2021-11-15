@@ -14832,12 +14832,22 @@ denoise_cnn : skip "${1=0},${2=64}"
   e[^-1] "Denoise image$? using a convolutional neural network (for "${s$type}"-noise), with patch size $2."
 
   # Load denoising network.
+  url=https://gmic.eu/gmic_denoise_cnn.gmz
   l[]
     if 0${_is_denoise_cnn_$type} ${_denoise_cnn_$type}
     else
-      file=${-path_cache}denoise_cnn.gmz
-      url=https://gmic.eu/denoise_cnn.gmz
-      if isfile('$file') i $file else i $url o $file fi
+      path_denoise_cnn=${-path_cache}
+      path_test0=$path_denoise_cnn
+      path_test1=$_path_rc
+      path_test2=${-path_gimp}plug-ins/
+      path_test3=${-path_gimp}plug-ins/gmic_gimp_qt/
+      path_test4=$g_path_unix
+      repeat 5 file_denoise_cnn=${path_test$>}/gmic_denoise_cnn.gmz
+        l[] $file_denoise_cnn onfail endl if $! break fi
+      done
+      if !$! # Download from G'MIC server
+        i $url o ${path_denoise_cnn}gmic_denoise_cnn.gmz
+      fi
       k[$type] unserialize +store _denoise_cnn_$type _is_denoise_cnn_$type=1
     fi
     ps=$2 replace_str. "nn_layer_input X,32,32,1,3","nn_layer_input X,"$ps","$ps",1,3" # Set patch size
@@ -47549,7 +47559,7 @@ fx_smooth_bilateral_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2021/11/06</i>.</small>")
 fx_denoise :
-  if $3 delete ${-path_cache}denoise_cnn.gmz fi
+  if $3 delete ${-path_cache}gmic_denoise_cnn.gmz fi
   repeat $2
     denoise_cnn $1,64
     progress {round(($>+1)/$2*100)}
