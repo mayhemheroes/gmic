@@ -6682,11 +6682,12 @@ parse_gui_thumbnails :
           l[] if isint($arg0) val=$arg0 fi onfail endl
           pipeline.=$c$val c=,
         elif s='$type';s=='color'
-          if ${_f${f}_p${p}_nbargs}==1" && "['$arg0'][0]==_'#'
-            l[] ('$arg0') autocrop. {'#'} s x,-2 repeat $! hex2dec {$>,t} pipeline.=$c${} c=, done rm endl
-          else
-            repeat ${_f${f}_p${p}_nbargs},a pipeline.=$c${_f${f}_p${p}_a${a}} c=, done
+          if ${_f${f}_p${p}_nbargs}==1" && "['$arg0'][0]==_'#' # Convert colors specified as '#RRGGBB[AA]'
+            l[] ('$arg0') autocrop. {'#'} s x,-2 _f${f}_p${p}_nbargs=$!
+              repeat $!,a hex2dec {$>,t} _f${f}_p${p}_a${a}=${} done rm
+            endl
           fi
+          repeat ${_f${f}_p${p}_nbargs},a pipeline.=$c${_f${f}_p${p}_a${a}} c=, done
         elif s='$type';s=='point'
           pipeline.=$c$arg0,${_f${f}_p${p}_a1} c=,
         fi
@@ -7145,6 +7146,9 @@ parse_gui_gmicol :
         ('"    </choice>\n"')
 
       elif ['$type']=='color'
+        if $nbargs==1" && "['$arg0'][0]==_'#' # Convert colors specified as '#RRGGBB[AA]'
+          l[] ('$arg0') autocrop. {'#'} s x,-2 nbargs=$! repeat $!,a hex2dec {$>,t} arg$a=${} done rm endl
+        fi
         if $nbargs>3
           ('"    <rgba name=\""$name"\" red=\""$arg0"\" green=\""$arg1"\" blue=\""$arg2"\" alpha=\""$arg3"\""\
             $responsivity$visibility"/>\n"')
@@ -8656,8 +8660,6 @@ update_gmicol :
   um parse_gui_trigger_gmicol
   ot. gmicol.xml
   rm.
-
-  q
 
   # Generate thumbnails.
   m "parse_gui_trigger_thumbnails : _update_gmicol $*"
