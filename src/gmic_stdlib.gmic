@@ -6682,11 +6682,12 @@ parse_gui_thumbnails :
           l[] if isint($arg0) val=$arg0 fi onfail endl
           pipeline.=$c$val c=,
         elif s='$type';s=='color'
-          if ${_f${f}_p${p}_nbargs}==1" && "['$arg0'][0]==_'#'
-            l[] ('$arg0') autocrop. {'#'} s x,-2 repeat $! hex2dec {$>,t} pipeline.=$c${} c=, done rm endl
-          else
-            repeat ${_f${f}_p${p}_nbargs},a pipeline.=$c${_f${f}_p${p}_a${a}} c=, done
+          if ${_f${f}_p${p}_nbargs}==1" && "['$arg0'][0]==_'#' # Convert colors specified as '#RRGGBB[AA]'
+            l[] ('$arg0') autocrop. {'#'} s x,-2 _f${f}_p${p}_nbargs=$!
+              repeat $!,a hex2dec {$>,t} _f${f}_p${p}_a${a}=${} done rm
+            endl
           fi
+          repeat ${_f${f}_p${p}_nbargs},a pipeline.=$c${_f${f}_p${p}_a${a}} c=, done
         elif s='$type';s=='point'
           pipeline.=$c$arg0,${_f${f}_p${p}_a1} c=,
         fi
@@ -6988,6 +6989,9 @@ parse_gui_json :
         ppos+=1
 
       elif ['$type']=='color'
+        if $nbargs==1" && "['$arg0'][0]==_'#' # Convert colors specified as '#RRGGBB[AA]'
+          l[] ('$arg0') autocrop. {'#'} s x,-2 nbargs=$! repeat $!,a hex2dec {$>,t} arg$a=${} done rm endl
+        fi
         args= c= repeat $nbargs,a args.=$c${arg$a} c="," done
         ('"      { \"type\": \"color\", \"name\": \""$name"\", \"default\": \""$args"\", \"pos\": "\
           "\""$ppos"\""$visibility" }"$sepp\n')
@@ -7106,13 +7110,19 @@ parse_gui_gmicol :
 
     locale=en
     if narg(${_f${f}_locale}) locale=${_f${f}_locale} fi
+    zoom_factor=
+    if narg(${_f${f}_zoomfactor}) zoom_factor=" zoom_factor=\""${_f${f}_zoomfactor}"\"" fi
+    zoom_accurate=
+    if ${_f${f}_zoomaccurate}!=0 zoom_accurate=" zoom_accurate=\""${_f${f}_zoomaccurate}"\"" fi
 
     ('"\n  <!-- Filter: "$fname" -->\n"\
-      "  <filter name=\""$fname"\" command=\""${_f${f}_command}"\" preview_command=\""${_f${f}_commandpreview}"\">\n"')
+      "  <filter name=\""$fname"\" command=\""${_f${f}_command}"\" preview_command=\""${_f${f}_commandpreview}"\""\
+      $zoom_factor" "$zoom_accurate\
+      ">\n"')
 
     sepf={`$<?_',':0`}
     repeat ${_f${f}_nbparams},p
-      name=${_f${f}_p{$p}_name}
+      ({'${_f${f}_p{$p}_name}'}) _gmd_ascii2html. name={t} rm.
       type=${_f${f}_p{$p}_type}
       nbargs=${_f${f}_p{$p}_nbargs}
       arg0= repeat $nbargs ('${_f${f}_p${p}_a$>}') autocrop. {'\"'} _gmd_ascii2html. arg$>={/{t}} rm. done
@@ -7145,6 +7155,9 @@ parse_gui_gmicol :
         ('"    </choice>\n"')
 
       elif ['$type']=='color'
+        if $nbargs==1" && "['$arg0'][0]==_'#' # Convert colors specified as '#RRGGBB[AA]'
+          l[] ('$arg0') autocrop. {'#'} s x,-2 nbargs=$! repeat $!,a hex2dec {$>,t} arg$a=${} done rm endl
+        fi
         if $nbargs>3
           ('"    <rgba name=\""$name"\" red=\""$arg0"\" green=\""$arg1"\" blue=\""$arg2"\" alpha=\""$arg3"\""\
             $responsivity$visibility"/>\n"')
@@ -9354,6 +9367,9 @@ parse_gui_zart :
         +e[] "  <choice name=\""$name"\" default=\""$default"\" "$args" />"
 
       elif ['$type']=='color'
+        if $nbargs==1" && "['$arg0'][0]==_'#' # Convert colors specified as '#RRGGBB[AA]'
+          l[] ('$arg0') autocrop. {'#'} s x,-2 nbargs=$! repeat $!,a hex2dec {$>,t} arg$a=${} done rm endl
+        fi
         args= c= repeat $nbargs,a args.=$c${arg$a} c="," done
         +e[] "  <color name=\""$name"\" default=\""$args"\" />"
 
@@ -15302,15 +15318,15 @@ denoise_haar : check "${1=1.4}>=0 && isint(${2=0}) && $2>=0 && isint(${3=10}) &&
     rm[0] / $3 r $w,$h,$d,100%,0
   nm $nm endl done
 
-#@cli denoise_cnn : _noise_type={ 0=soft | 1=heavy | 2=heavy (fatser) },_patch_size>0
+#@cli denoise_cnn : _noise_type={ 0=soft | 1=heavy | 2=heavy (faster) | 3=poisson+gaussian },_patch_size>0
 #@cli : Denoise selected images using a convolutional neural network (CNN).
 #@cli : Input value range should be [0,255]. Output value range is [0,255].
 #@cli : Default value: 'patch_size=64'.
 #@cli : $ image.jpg noise 20 cut 0,255 +denoise_cnn
 denoise_cnn : skip "${1=0},${2=64}"
   N=$!
-  if isint($1)" && "inrange($1,0,2) check "isint($2) && $2>0" type=$1 else type=0 noarg fi
-  s0,s1,s2=soft,heavy,heavy
+  if isint($1)" && "inrange($1,0,3) check "isint($2) && $2>0" type=$1 else type=0 noarg fi
+  s0,s1,s2,s3=soft,heavy,heavy,poisson+gaussian
   e[^-1] "Denoise image$? using a convolutional neural network (for "${s$type}"-noise), with patch size $2."
 
   # Load denoising network.
@@ -15340,6 +15356,7 @@ denoise_cnn : skip "${1=0},${2=64}"
 
   # Process images.
   repeat $N l[$>,$N--1] to_color[0]
+    if $type==3 srgb2rgb[0] fi
 
     # Extract overlapping psxps tiles.
     nx,ny={0,ceil([w,h]/($ps-6))}
@@ -15375,7 +15392,7 @@ denoise_cnn : skip "${1=0},${2=64}"
       draw(#-1,V,X,Y,0,0,$ps,$ps,1,3,-1,mask);
       draw(#-1,mask,X,Y,0,3,$ps,$ps,1,1,-1,mask)"
     rm[-3,-1]
-    l. s c,-3 max. 1 / c 0,255 endl
+    l. s c,-3 max. 1 / if $type==3 rgb2srgb. fi c 0,255 endl
     j[0] . rm.
 
   endl done
@@ -27187,11 +27204,12 @@ filename : skip "${1=default}"
 #@cli : Default value: 'mode=5'.
 
 #@cli files2img : _mode,path
-#@cli : Insert a new image where each row corresponds to one filename returned by command ''files''.
+#@cli : Insert a new image where each vector-valued pixel is a string encoding the filenames returned by \
+# command ''files''.
 #@cli : Useful to manage list of filenames containing characters that have a special meaning in the G'MIC language,\
 # such as spaces or commas.
 +files2img :
-  if ['$$_$0_f2i']==0 m "_$0_f2i: $""=arg repeat $""# ({'${arg{1+$>}}'}) done a y" fi
+  if ['$$_$0_f2i']==0 m "_$0_f2i: $""=arg repeat $""# ({'${arg{1+$>}}'}:^) done a y" fi
   files $"*" l[] _$0_f2i[] ${} if !$! 0 fi endl
 
 #@cli fitratio_wh : min_width,min_height,ratio_wh
@@ -48031,7 +48049,7 @@ fx_smooth_bilateral_preview :
   gui_split_preview "fx_smooth_bilateral $*",${-3--1}
 
 #@gui Denoise : fx_denoise,fx_denoise_preview(0)
-#@gui : Noise type = choice{"Soft","Heavy","Heavy (Faster)"}
+#@gui : Noise type = choice{"Soft","Heavy","Heavy (Faster)","Poisson + Gaussian"}
 #@gui : Iterations = int(1,1,5)
 #@gui : sep = separator()
 #@gui : Update Neural Network = button()
