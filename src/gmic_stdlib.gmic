@@ -22521,18 +22521,19 @@ nn_lib :
       const L#_out_height = IN#_out_height;
       const L#_out_depth = IN#_out_depth;
       const L#_out_spectrum = IN#_out_spectrum;
-      L#_mu = crop(##L#_ind,0,0,1,h##L#_ind);
-      L#_sigma = sqrt(crop(##L#_ind,1,0,1,h##L#_ind));
-      L#_gamma = crop(##L#_ind,2,0,1,h##L#_ind);
-      L#_beta = crop(##L#_ind,3,0,1,h##L#_ind);
+      const L#_out_whd = L#_out_width*L#_out_height*L#_out_depth;
+      L#_mu = resize(crop(##L#_ind,0,0,1,L#_out_spectrum),size(IN#_out),1);
+      L#_sigma = resize(sqrt(crop(##L#_ind,1,0,1,L#_out_spectrum)+=1e-9),size(IN#_out),1);
+      L#_gamma = resize(crop(##L#_ind,2,0,1,L#_out_spectrum),size(IN#_out),1);
+      L#_beta = resize(crop(##L#_ind,3,0,1,L#_out_spectrum),size(IN#_out),1);
       L#_out = vector(#size(IN#_out));
     );
 
     nn_layer_batchnorm_forward(L,IN) = (
-      L#_z = IN#_out;
-      L#_z-=L#_mu;
-      L#_z/=1e-9 + L#_sigma;
-      L#_out = L#_gamma*L#_z;
+      L#_xhat = IN#_out;
+      L#_xhat-=L#_mu;
+      L#_xhat/=L#_sigma;
+      L#_out = L#_gamma*L#_xhat;
       L#_out+=L#_beta;
     );
 
@@ -23086,12 +23087,12 @@ nn_layer_avgpool2d : check "isvarname('$1')" nn_check_layer "$2"
 
 #@cli nn_layer_batchnorm : name,in,learning_mode.
 #@cli : Add a 'batchnorm' layer to the network.
-#@cli : 'learning_mode' can be { 0=no parameters learnt | 1=gamma-only | 2=beta-only | 3=gamma & beta}.
+#@cli : 'learning_mode' can be { 0=learn no parameters | 1=learn gamma | 2=learn beta | 3=learn gamma and beta}.
 nn_layer_batchnorm : nn_check_layer "$2" check "isvarname('$1') && isint(${3=0}) && inrange($3,0,3)"
   s0,s1,s2,s3="no parameters","gamma-only","beta-only","gamma & beta"
   e[^-1] "[nn_lib] Add 'batchnorm' layer '$1' to the network, with input '$2' and learning mode '"${s$3}"'."
   _nn_$1_out_size=$_nn_$2_out_size
-  if !isint($$1) 4,{prod($_nn_$2_out_size)} f. 0,1,1,0 nm. $1 fi
+  if !isint($$1) 4,{[$_nn_$2_out_size][3]} f. 0,1,1,0 nm. $1 fi
   _nn_forward.="begin(nn_layer_batchnorm_init_forward($1,$2));"\
                "nn_layer_batchnorm_forward($1,$2);"
   _nn_backward..="begin(nn_layer_batchnorm_init_backward($1,$2));"\
