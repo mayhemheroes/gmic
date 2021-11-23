@@ -7757,7 +7757,9 @@ _sample :
     name=${_sp_name${arg{1+$>}}}
 
     # Retrieve image data.
-    l[] input_cached img/sample_$name.png onfail testimage2d {m=max($W,$H);m>0?m:400} endl
+    l[] input_cached img/sample_$name.png
+    onfail testimage2d {m=max($W,$H);m>0?m:400}
+    endl
 
     # Resize to desired dimensions.
     if $W>0" && "$H==0 r2dx. $W round.
@@ -37506,10 +37508,7 @@ _fx_stylize : # Download pre-defined style image
             "almondblossom,irises,starrynight,wheatfieldwithcrows"}
   else name="$1"
   fi
-  filename=${-path_cache}style_$name.png
-  if isfile(['{/$filename}']) $filename
-  else i https://gmic.eu/img/style_$name.png o. $filename
-  fi
+  input_cached img/style_$name.png
 
 #@gui Vector Painting : fx_vector_painting, fx_vector_painting_preview(1)
 #@gui : Details = float(9,0,10)
@@ -43152,10 +43151,7 @@ _fx_simulate_grain_preview :
 
 __fx_simulate_grain :
   bm0=alpha bm1=grainmerge bm2=hardlight bm3=overlay bm4=softlight bm5=alpha
-  if isfile(['{/${-path_cache}grain_$1.cimgz}']) i ${-path_cache}grain_$1.cimgz
-  else i https://gmic.eu/data_film_presets/grain_$1.cimgz o. ${-path_cache}grain_$1.cimgz
-  fi
-
+  input_cached data_film_presets/grain_$1.cimgz
   r. $4%,$4%,1,1,6
   if $4>100 b. 1 fi
   sharpen. $5 c. 0,255
@@ -46544,9 +46540,7 @@ fx_lightglow_preview :
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2015/01/07</i>.</small>")
 fx_light_leaks :
   filename=lightleak_${"padint $1",6}.cimgz
-  if isfile(['{/${-path_cache}$filename}']) i ${-path_cache}$filename
-  else i https://gmic.eu/data_lightleaks/$filename o. ${-path_cache}$filename
-  fi
+  input_cached data_lightleaks/$filename
   mode=${arg\ 1+$7,normal,lighten,screen,dodge,add,darken,multiply,burn,overlay,softlight,hardlight,difference,\
          subtract,grainextract,grainmerge,divide,hue,saturation,value}
   mv. 0
@@ -51392,11 +51386,7 @@ fx_gmic_demos :
   +l[$sel] m "foo : x_"$com foo rm um foo endl
 
 fx_gmic_demos_preview :
-  rm filename=${-path_tmp}gmic_demos.cimgz
-  if isfile(['{/$filename}']) $filename
-  else l[] https://gmic.eu/img/gmic_demos.cimgz o $filename endl
-  fi
-  k[$1,-1] rows. $1 map[0] [1] k[0]
+  rm input_cached img/gmic_demos.cimgz k[$1,-1] rows. $1 map[0] [1] k[0]
 
 #@gui Histogram Analysis : _none_, fx_display_histogram(1)
 #@gui : Number of Clusters = int(256,2,1024)
