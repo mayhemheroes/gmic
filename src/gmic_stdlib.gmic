@@ -1683,23 +1683,7 @@ v : # Allow 'gmic +v' to get the version number.
     path_clut=${-path_cache}
     if isfile(['{/${path_clut}clut_$name.cimgz}']) i ${path_clut}clut_$name.cimgz fi
     if $!"!=1 || w<$2 || h<$2 || d<$2" # Decompression needed
-      rm
-      if narg($GMIC_SYSTEM_PATH) g_path_unix=$GMIC_SYSTEM_PATH
-      else g_path_unix=/usr/lib/gimp/2.0/plug-ins/
-      fi
-      path_test0=$path_clut
-      path_test1=$_path_rc
-      path_test2=${-path_gimp}plug-ins/
-      path_test3=${-path_gimp}plug-ins/gmic_gimp_qt/
-      path_test4=$g_path_unix
-      repeat 5 file_clut=${path_test$>}/gmic_cluts.gmz
-        l[] $file_clut onfail endl if $! break fi
-      done
-      if !$! # Download from G'MIC server
-        i https://gmic.eu/gmic_cluts.gmz o ${path_clut}gmic_cluts.gmz
-      fi
-
-      k[${"nmd 1,"$name}]
+      rm input_cached gmic_cluts.gmz k[${"nmd 1,"$name}]
       if $!!=1
         rm i https://gmic.eu/gmic_cluts.gmz o ${path_clut}gmic_cluts.gmz # Try getting newest version of the CLUTs file
         repeat $! if ['{$>,n}']==['$name'] k[$>] break fi done
