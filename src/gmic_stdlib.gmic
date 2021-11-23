@@ -3736,7 +3736,8 @@ _input_glob :
 #@cli : in the '${-path_cache}' folder.
 #@cli : Default value: 'try_downloading=1'.
 +input_cached : check "isbool(${2=1})"
-  e[^-1] "Input cached file '$1'."
+  basename "$1" basename=${}
+  e[^-1] "Input cached file '"$basename"'."
   if ['$GMIC_SYSTEM_PATH']!=0 g_path_unix=$GMIC_SYSTEM_PATH/ else g_path_unix=/usr/lib/gimp/2.0/plug-ins/ fi
   path_test0=${-path_cache}
   path_test1=$_path_rc
@@ -3745,13 +3746,13 @@ _input_glob :
   path_test4=$g_path_unix
   file_found=0
   repeat 5
-    file=${path_test$>}"$1"
+    file=${path_test$>}$basename
     l[] i $file file_found=1 onfail endl
     if $file_found break fi
   done
   if !$file_found" && $2" # Try downloading from the G'MIC server
     url=https://gmic.eu/"$1"
-    l[] i $url o ${-path_cache}"$1" file_found=1 is_change 1
+    l[] i $url o ${-path_cache}$basename file_found=1 is_change 1
     onfail
     endl
   fi
@@ -7756,14 +7757,7 @@ _sample :
     name=${_sp_name${arg{1+$>}}}
 
     # Retrieve image data.
-    filename=${-path_cache}sample_$name.png
-    url=https://gmic.eu/img/sample_$name.png
-    if isfile(['{/$filename}']) $filename
-    else
-      if ${is_rand{1+$>}} l[] $url o. $filename onfail testimage2d {m=max($W,$H);m>0?m:400} endl
-      else $url o. $filename
-      fi
-    fi
+    l[] input_cached img/sample_$name.png onfail testimage2d {m=max($W,$H);m>0?m:400} endl
 
     # Resize to desired dimensions.
     if $W>0" && "$H==0 r2dx. $W round.
