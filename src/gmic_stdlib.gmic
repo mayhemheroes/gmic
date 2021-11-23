@@ -3730,6 +3730,35 @@ _input_glob :
     rm ($colors) rows 1,100% nm "$1" permute yzcx
   endl
 
+#@cli input_cached : "basename.ext",_try_downloading={ 0 | 1 }
+#@cli : Input specified filename, assumed to be stored in one of the G'MIC resource folder.
+#@cli : If file not found and 'try_downloading=1', file is downloaded from the G'MIC server and stored
+#@cli : in the '${-path_cache}' folder.
+#@cli : Default value: 'try_downloading=0'.
++input_cached : check "isbool(${2=0})"
+  e[^-1] "Input cached file '$1'."
+  if ['$GMIC_SYSTEM_PATH']!=0 g_path_unix=$GMIC_SYSTEM_PATH/ else g_path_unix=/usr/lib/gimp/2.0/plug-ins/ fi
+  path_test0=${-path_cache}
+  path_test1=$_path_rc
+  path_test2=${-path_gimp}plug-ins/
+  path_test3=${-path_gimp}plug-ins/gmic_gimp_qt/
+  path_test4=$g_path_unix
+  file_found=0
+  repeat 5
+    file=${path_test$>}"$1"
+    l[] i $file file_found=1 onfail endl
+    if $file_found break fi
+  done
+  if !$file_found" && $2" # Try downloading from the G'MIC server
+    url=https://gmic.eu/"$1"
+    l[] i $url o ${-path_cache}"$1" file_found=1 is_change 1
+    onfail
+    endl
+  fi
+  if !$file_found
+    error[0--3] "Command 'input_cached': Unknown filename '$1'."
+  fi
+
 #@cli it : eq. to 'input_text'.
 +it :
   v + _input_text "$*"
