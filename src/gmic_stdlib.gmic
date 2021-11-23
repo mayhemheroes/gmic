@@ -3714,11 +3714,11 @@ _input_glob :
     rm ($colors) rows 1,100% nm "$1" permute yzcx
   endl
 
-#@cli input_cached : "basename.ext",_try_downloading={ 0 | 1 }
+#@cli input_cached : "basename.ext",_try_downloading_from_gmic_server={ 0 | 1 }
 #@cli : Input specified filename, assumed to be stored in one of the G'MIC resource folder.
 #@cli : If file not found and 'try_downloading=1', file is downloaded from the G'MIC server and stored
 #@cli : in the '${-path_cache}' folder.
-#@cli : Default value: 'try_downloading=1'.
+#@cli : Default value: 'try_downloading_from_gmic_server=1'.
 +input_cached : check "isbool(${2=1})"
   basename "$1" basename=${}
   e[^-1] "Input cached file '"$basename"'."
@@ -22542,17 +22542,27 @@ nn_lib :
     );
 
     nn_layer_batchnorm_backward(L,IN,learning_mode) = (
+      # L#_threads_nb_samples[nn_thread]+=L#_out_whd;
+      # repeat (L#_out_spectrum,feature,
+      #   L#_mean_whd =
+
+
+      #   copy(L#_threads_in_mean,
+      # );
+
       ++L#_nb_samples;
       L#_pim = IN#_out - L#_in_mean;
       L#_in_mean+=L#_pim/L#_nb_samples;
       L#_in_variance+=(IN#_out - L#_in_mean)*L#_pim;
-      learning_mode&1?(
-        L#_batch_deriv_gamma+=L#_deriv_out*L#_z;
+
+      learning_mode&1?( # Learn gamma
+        L#_batch_deriv_gamma+=L#_deriv_out*L#_xhat;
       );
-      learning_mode&2?(
+      learning_mode&2?( # Learn beta
         L#_batch_deriv_beta+=L#_deriv_out;
       );
-      IN#_deriv_out = L#_deriv_out*L#_gamma/(1e-9 + L#_sigma);
+      IN#_deriv_out = L#_deriv_out*L#_gamma;
+      IN#_deriv_out/=L#_sigma;
     );
 
     nn_layer_batchnorm_end_t_backward(L) = (
