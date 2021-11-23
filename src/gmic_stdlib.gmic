@@ -1683,23 +1683,7 @@ v : # Allow 'gmic +v' to get the version number.
     path_clut=${-path_cache}
     if isfile(['{/${path_clut}clut_$name.cimgz}']) i ${path_clut}clut_$name.cimgz fi
     if $!"!=1 || w<$2 || h<$2 || d<$2" # Decompression needed
-      rm
-      if narg($GMIC_SYSTEM_PATH) g_path_unix=$GMIC_SYSTEM_PATH
-      else g_path_unix=/usr/lib/gimp/2.0/plug-ins/
-      fi
-      path_test0=$path_clut
-      path_test1=$_path_rc
-      path_test2=${-path_gimp}plug-ins/
-      path_test3=${-path_gimp}plug-ins/gmic_gimp_qt/
-      path_test4=$g_path_unix
-      repeat 5 file_clut=${path_test$>}/gmic_cluts.gmz
-        l[] $file_clut onfail endl if $! break fi
-      done
-      if !$! # Download from G'MIC server
-        i https://gmic.eu/gmic_cluts.gmz o ${path_clut}gmic_cluts.gmz
-      fi
-
-      k[${"nmd 1,"$name}]
+      rm input_cached gmic_cluts.gmz k[${"nmd 1,"$name}]
       if $!!=1
         rm i https://gmic.eu/gmic_cluts.gmz o ${path_clut}gmic_cluts.gmz # Try getting newest version of the CLUTs file
         repeat $! if ['{$>,n}']==['$name'] k[$>] break fi done
@@ -3729,6 +3713,36 @@ _input_glob :
     onfail rm 0 endl done
     rm ($colors) rows 1,100% nm "$1" permute yzcx
   endl
+
+#@cli input_cached : "basename.ext",_try_downloading_from_gmic_server={ 0 | 1 }
+#@cli : Input specified filename, assumed to be stored in one of the G'MIC resource folder.
+#@cli : If file not found and 'try_downloading=1', file is downloaded from the G'MIC server and stored
+#@cli : in the '${-path_cache}' folder.
+#@cli : Default value: 'try_downloading_from_gmic_server=1'.
++input_cached : check "isbool(${2=1})"
+  basename "$1" basename=${}
+  e[^-1] "Input cached file '"$basename"'."
+  if ['$GMIC_SYSTEM_PATH']!=0 g_path_unix=$GMIC_SYSTEM_PATH/ else g_path_unix=/usr/lib/gimp/2.0/plug-ins/ fi
+  path_test0=${-path_cache}
+  path_test1=$_path_rc
+  path_test2=${-path_gimp}plug-ins/
+  path_test3=${-path_gimp}plug-ins/gmic_gimp_qt/
+  path_test4=$g_path_unix
+  file_found=0
+  repeat 5
+    file=${path_test$>}$basename
+    l[] i $file file_found=1 onfail endl
+    if $file_found break fi
+  done
+  if !$file_found" && $2" # Try downloading from the G'MIC server
+    url=https://gmic.eu/"$1"
+    l[] i $url o ${-path_cache}$basename file_found=1 is_change 1
+    onfail
+    endl
+  fi
+  if !$file_found
+    error[0--3] "Command 'input_cached': Unknown filename '$1'."
+  fi
 
 #@cli it : eq. to 'input_text'.
 +it :
@@ -7727,14 +7741,9 @@ _sample :
     name=${_sp_name${arg{1+$>}}}
 
     # Retrieve image data.
-    filename=${-path_cache}sample_$name.png
-    url=https://gmic.eu/img/sample_$name.png
-    if isfile(['{/$filename}']) $filename
-    else
-      if ${is_rand{1+$>}} l[] $url o. $filename onfail testimage2d {m=max($W,$H);m>0?m:400} endl
-      else $url o. $filename
-      fi
-    fi
+    l[] input_cached img/sample_$name.png
+    onfail testimage2d {m=max($W,$H);m>0?m:400}
+    endl
 
     # Resize to desired dimensions.
     if $W>0" && "$H==0 r2dx. $W round.
@@ -15330,29 +15339,15 @@ denoise_cnn : skip "${1=0},${2=64}"
   e[^-1] "Denoise image$? using a convolutional neural network (for "${s$type}"-noise), with patch size $2."
 
   # Load denoising network.
-  url=https://gmic.eu/gmic_denoise_cnn.gmz
-  l[]
-    if 0${_is_denoise_cnn_$type} ${_denoise_cnn_$type}
-    else
-      path_denoise_cnn=${-path_cache}
-      path_test0=$path_denoise_cnn
-      path_test1=$_path_rc
-      path_test2=${-path_gimp}plug-ins/
-      path_test3=${-path_gimp}plug-ins/gmic_gimp_qt/
-      path_test4=$g_path_unix
-      repeat 5 file_denoise_cnn=${path_test$>}/gmic_denoise_cnn.gmz
-        l[] $file_denoise_cnn onfail endl if $! break fi
-      done
-      if !$! # Download from G'MIC server
-        i $url o ${path_denoise_cnn}gmic_denoise_cnn.gmz
-      fi
-      k[$type] unserialize +store _denoise_cnn_$type _is_denoise_cnn_$type=1
-    fi
-    ps=$2 replace_str. "nn_layer_input X,32,32,1,3","nn_layer_input X,"$ps","$ps",1,3" # Set patch size
-    run {t} rm[-2,-1]
-  onfail
-    error[0--3] "Unable to load network file '"$url"'."
-  endl
+  if 0${_is_denoise_cnn_$type} ${_denoise_cnn_$type}
+  else l[]
+    l[] input_cached gmic_denoise_cnn.gmz
+    onfail error[0--5] "Command 'denoise_cnn': Unable to load network file 'gmic_denoise_cnn.gmz'."
+    endl
+    k[$type] unserialize +store _denoise_cnn_$type _is_denoise_cnn_$type=1
+  endl fi
+  ps=$2 replace_str. "nn_layer_input X,32,32,1,3","nn_layer_input X,"$ps","$ps",1,3" # Set patch size
+  run {t} rm[-2,-1]
 
   # Process images.
   repeat $N l[$>,$N--1] to_color[0]
@@ -22528,42 +22523,53 @@ nn_lib :
       const L#_out_height = IN#_out_height;
       const L#_out_depth = IN#_out_depth;
       const L#_out_spectrum = IN#_out_spectrum;
-      L#_mu = crop(##L#_ind,0,0,1,h##L#_ind);
-      L#_sigma = sqrt(crop(##L#_ind,1,0,1,h##L#_ind));
-      L#_gamma = crop(##L#_ind,2,0,1,h##L#_ind);
-      L#_beta = crop(##L#_ind,3,0,1,h##L#_ind);
+      const L#_out_whd = L#_out_width*L#_out_height*L#_out_depth;
+      L#_mu = resize(crop(##L#_ind,0,0,1,L#_out_spectrum),size(IN#_out),1);
+      L#_sigma = resize(sqrt(crop(##L#_ind,1,0,1,L#_out_spectrum)+=1e-9),size(IN#_out),1);
+      L#_gamma = resize(crop(##L#_ind,2,0,1,L#_out_spectrum),size(IN#_out),1);
+      L#_beta = resize(crop(##L#_ind,3,0,1,L#_out_spectrum),size(IN#_out),1);
       L#_out = vector(#size(IN#_out));
     );
 
     nn_layer_batchnorm_forward(L,IN) = (
-      L#_z = IN#_out;
-      L#_z-=L#_mu;
-      L#_z/=1e-9 + L#_sigma;
-      L#_out = L#_gamma*L#_z;
+      L#_xhat = IN#_out;
+      L#_xhat-=L#_mu;
+      L#_xhat/=L#_sigma;
+      L#_out = L#_gamma*L#_xhat;
       L#_out+=L#_beta;
     );
 
     nn_layer_batchnorm_init_backward(L,IN) = (
       L#_threads_nb_samples = vector(#nn_nb_threads_max);
-      L#_threads_in_mean = L#_threads_in_variance = vector(#nn_nb_threads_max*size(IN#_out));
+      L#_threads_in_mean = L#_threads_in_variance = vector(#nn_nb_threads_max*IN#_out_spectrum);
       L#_nb_samples = 0;
-      L#_in_mean = L#_in_variance = vector(#size(IN#_out));
+      L#_in_mean = L#_in_variance = vector(##IN#_out_spectrum);
       L#_batch_deriv_gamma = vector(#size(L#_gamma));
       L#_batch_deriv_beta = vector(#size(L#_beta));
     );
 
     nn_layer_batchnorm_backward(L,IN,learning_mode) = (
+      # L#_threads_nb_samples[nn_thread]+=L#_out_whd;
+      # repeat (L#_out_spectrum,feature,
+      #   L#_mean_whd =
+
+
+      #   copy(L#_threads_in_mean,
+      # );
+
       ++L#_nb_samples;
       L#_pim = IN#_out - L#_in_mean;
       L#_in_mean+=L#_pim/L#_nb_samples;
       L#_in_variance+=(IN#_out - L#_in_mean)*L#_pim;
-      learning_mode&1?(
-        L#_batch_deriv_gamma+=L#_deriv_out*L#_z;
+
+      learning_mode&1?( # Learn gamma
+        L#_batch_deriv_gamma+=L#_deriv_out*L#_xhat;
       );
-      learning_mode&2?(
+      learning_mode&2?( # Learn beta
         L#_batch_deriv_beta+=L#_deriv_out;
       );
-      IN#_deriv_out = L#_deriv_out*L#_gamma/(1e-9 + L#_sigma);
+      IN#_deriv_out = L#_deriv_out*L#_gamma;
+      IN#_deriv_out/=L#_sigma;
     );
 
     nn_layer_batchnorm_end_t_backward(L) = (
@@ -23093,12 +23099,12 @@ nn_layer_avgpool2d : check "isvarname('$1')" nn_check_layer "$2"
 
 #@cli nn_layer_batchnorm : name,in,learning_mode.
 #@cli : Add a 'batchnorm' layer to the network.
-#@cli : 'learning_mode' can be { 0=no parameters learnt | 1=gamma-only | 2=beta-only | 3=gamma & beta}.
+#@cli : 'learning_mode' can be { 0=learn no parameters | 1=learn gamma | 2=learn beta | 3=learn gamma and beta}.
 nn_layer_batchnorm : nn_check_layer "$2" check "isvarname('$1') && isint(${3=0}) && inrange($3,0,3)"
   s0,s1,s2,s3="no parameters","gamma-only","beta-only","gamma & beta"
   e[^-1] "[nn_lib] Add 'batchnorm' layer '$1' to the network, with input '$2' and learning mode '"${s$3}"'."
   _nn_$1_out_size=$_nn_$2_out_size
-  if !isint($$1) 4,{prod($_nn_$2_out_size)} f. 0,1,1,0 nm. $1 fi
+  if !isint($$1) 4,{[$_nn_$2_out_size][3]} f. 0,1,1,0 nm. $1 fi
   _nn_forward.="begin(nn_layer_batchnorm_init_forward($1,$2));"\
                "nn_layer_batchnorm_forward($1,$2);"
   _nn_backward..="begin(nn_layer_batchnorm_init_backward($1,$2));"\
@@ -37503,10 +37509,7 @@ _fx_stylize : # Download pre-defined style image
             "almondblossom,irises,starrynight,wheatfieldwithcrows"}
   else name="$1"
   fi
-  filename=${-path_cache}style_$name.png
-  if isfile(['{/$filename}']) $filename
-  else i https://gmic.eu/img/style_$name.png o. $filename
-  fi
+  input_cached img/style_$name.png
 
 #@gui Vector Painting : fx_vector_painting, fx_vector_painting_preview(1)
 #@gui : Details = float(9,0,10)
@@ -43149,10 +43152,7 @@ _fx_simulate_grain_preview :
 
 __fx_simulate_grain :
   bm0=alpha bm1=grainmerge bm2=hardlight bm3=overlay bm4=softlight bm5=alpha
-  if isfile(['{/${-path_cache}grain_$1.cimgz}']) i ${-path_cache}grain_$1.cimgz
-  else i https://gmic.eu/data_film_presets/grain_$1.cimgz o. ${-path_cache}grain_$1.cimgz
-  fi
-
+  input_cached data_film_presets/grain_$1.cimgz
   r. $4%,$4%,1,1,6
   if $4>100 b. 1 fi
   sharpen. $5 c. 0,255
@@ -46541,9 +46541,7 @@ fx_lightglow_preview :
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2015/01/07</i>.</small>")
 fx_light_leaks :
   filename=lightleak_${"padint $1",6}.cimgz
-  if isfile(['{/${-path_cache}$filename}']) i ${-path_cache}$filename
-  else i https://gmic.eu/data_lightleaks/$filename o. ${-path_cache}$filename
-  fi
+  input_cached data_lightleaks/$filename
   mode=${arg\ 1+$7,normal,lighten,screen,dodge,add,darken,multiply,burn,overlay,softlight,hardlight,difference,\
          subtract,grainextract,grainmerge,divide,hue,saturation,value}
   mv. 0
@@ -51389,11 +51387,7 @@ fx_gmic_demos :
   +l[$sel] m "foo : x_"$com foo rm um foo endl
 
 fx_gmic_demos_preview :
-  rm filename=${-path_tmp}gmic_demos.cimgz
-  if isfile(['{/$filename}']) $filename
-  else l[] https://gmic.eu/img/gmic_demos.cimgz o $filename endl
-  fi
-  k[$1,-1] rows. $1 map[0] [1] k[0]
+  rm input_cached img/gmic_demos.cimgz k[$1,-1] rows. $1 map[0] [1] k[0]
 
 #@gui Histogram Analysis : _none_, fx_display_histogram(1)
 #@gui : Number of Clusters = int(256,2,1024)
