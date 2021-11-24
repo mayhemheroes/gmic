@@ -15117,9 +15117,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             } catch (CImgException&) {
               std::FILE *efile = 0;
               if (!(efile = cimg::std_fopen(filename,"r"))) {
-                if (is_command_input)
+                if (is_command_input || std::strchr(filename,'.')!=0)
                   error(true,images,0,0,
-                        "Unknown filename '%s'.",
+                        "Command 'input': Unknown filename '%s'.",
                         gmic_argument_text());
                 else {
                   CImg<char>::string(filename).move_to(name);
