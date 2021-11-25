@@ -22517,23 +22517,23 @@ nn_lib :
       const L#_out_depth = IN#_out_depth;
       const L#_out_spectrum = IN#_out_spectrum;
       const L#_out_whd = L#_out_width*L#_out_height*L#_out_depth;
-      L#_mu = crop(##L#_ind,0,0,1,L#_out_spectrum);
-      L#_sigma = crop(##L#_ind,1,0,1,L#_out_spectrum);
-      L#_gamma = crop(##L#_ind,2,0,1,L#_out_spectrum);
-      L#_beta = crop(##L#_ind,3,0,1,L#_out_spectrum);
+      L#_mu = crop(##L#_ind,0,0,1,h##L#_ind);
+      L#_sigma = crop(##L#_ind,1,0,1,h##L#_ind);
+      L#_gamma = crop(##L#_ind,2,0,1,h##L#_ind);
+      L#_beta = crop(##L#_ind,3,0,1,h##L#_ind);
       L#_out = vector(#size(IN#_out));
-      L#_mu_resized = resize(L#_mu,size(L#_out),1);
-      L#_sigma_resized = resize(sqrt(L#_sigma + 1e-9),size(L#_out),1);
-      L#_gamma_resized = resize(L#_gamma,size(L#_out),1);
-      L#_beta_resized = resize(L#_beta,size(L#_out),1);
+      L#_mu_whds = resize(L#_mu,size(L#_out),1);
+      L#_sigma_whds = resize(sqrt(L#_sigma + 1e-9),size(L#_out),1);
+      L#_gamma_whds = resize(L#_gamma,size(L#_out),1);
+      L#_beta_whds = resize(L#_beta,size(L#_out),1);
     );
 
     nn_layer_batchnorm_forward(L,IN) = (
       L#_xhat = IN#_out;
-      L#_xhat-=L#_mu_resized;
-      L#_xhat/=L#_sigma_resized;
-      L#_out = L#_gamma_resized*L#_xhat;
-      L#_out+=L#_beta_resized;
+      L#_xhat-=L#_mu_whds;
+      L#_xhat/=L#_sigma_whds;
+      L#_out = L#_gamma_whds*L#_xhat;
+      L#_out+=L#_beta_whds;
     );
 
     nn_layer_batchnorm_init_backward(L) = (
@@ -22564,14 +22564,14 @@ nn_lib :
 
       learning_mode&1?( # Learn gamma
         L#_tmp = L#_deriv_out*L#_xhat;
-        repeat(L#_out_spectrum,_k,L#_batch_deriv_gamma[_k]+=avg(L#_tmp[_k*L#_out_whd,L#_out_whd]));
+        repeat(L#_out_spectrum,_k,L#_batch_deriv_gamma[_k]+=sum(L#_tmp[_k*L#_out_whd,L#_out_whd]));
       );
       learning_mode&2?( # Learn beta
-        repeat(L#_out_spectrum,_k,L#_batch_deriv_beta[_k]+=avg(L#_deriv_out[_k*L#_out_whd,L#_out_whd]));
+        repeat(L#_out_spectrum,_k,L#_batch_deriv_beta[_k]+=sum(L#_deriv_out[_k*L#_out_whd,L#_out_whd]));
       );
 
-      IN#_deriv_out = L#_deriv_out*L#_gamma_resized;
-      IN#_deriv_out/=L#_sigma_resized;
+      IN#_deriv_out = L#_deriv_out*L#_gamma_whds;
+      IN#_deriv_out/=L#_sigma_whds;
     );
 
     nn_layer_batchnorm_end_backward(L) = (
@@ -22601,9 +22601,10 @@ nn_lib :
     );
 
     nn_layer_batchnorm_update(L,learning_mode) = (
-      momentum = !nn_iteration?1:1e-3;
-      draw(##L#_ind,L#_in_mean,0,0,0,0,1,h##L#_ind,1,1,momentum);
-      draw(##L#_ind,L#_in_variance,1,0,0,0,1,h##L#_ind,1,1,momentum);
+#      momentum = !nn_iteration?1:1e-3;
+      const momentum = 0.5;
+#      draw(##L#_ind,L#_in_mean,0,0,0,0,1,h##L#_ind,1,1,momentum);
+#      draw(##L#_ind,L#_in_variance,1,0,0,0,1,h##L#_ind,1,1,momentum);
       learning_mode&1?(
         nn_optimizer_update_layer(L#_gamma,L#_batch_deriv_gamma);
         draw(##L#_ind,L#_gamma,2,0,0,0,1,h##L#_ind);
