@@ -22524,83 +22524,92 @@ nn_lib :
       const L#_out_depth = IN#_out_depth;
       const L#_out_spectrum = IN#_out_spectrum;
       const L#_out_whd = L#_out_width*L#_out_height*L#_out_depth;
-      L#_mu = resize(crop(##L#_ind,0,0,1,L#_out_spectrum),size(IN#_out),1);
-      L#_sigma = resize(sqrt(crop(##L#_ind,1,0,1,L#_out_spectrum)+=1e-9),size(IN#_out),1);
-      L#_gamma = resize(crop(##L#_ind,2,0,1,L#_out_spectrum),size(IN#_out),1);
-      L#_beta = resize(crop(##L#_ind,3,0,1,L#_out_spectrum),size(IN#_out),1);
+      L#_mu = crop(##L#_ind,0,0,1,h##L#_ind);
+      L#_sigma = crop(##L#_ind,1,0,1,h##L#_ind);
+      L#_gamma = crop(##L#_ind,2,0,1,h##L#_ind);
+      L#_beta = crop(##L#_ind,3,0,1,h##L#_ind);
       L#_out = vector(#size(IN#_out));
+      L#_mu_whds = resize(L#_mu,size(L#_out),1);
+      L#_sigma_whds = resize(sqrt(L#_sigma + 1e-9),size(L#_out),1);
+      L#_gamma_whds = resize(L#_gamma,size(L#_out),1);
+      L#_beta_whds = resize(L#_beta,size(L#_out),1);
     );
 
     nn_layer_batchnorm_forward(L,IN) = (
       L#_xhat = IN#_out;
-      L#_xhat-=L#_mu;
-      L#_xhat/=L#_sigma;
-      L#_out = L#_gamma*L#_xhat;
-      L#_out+=L#_beta;
+      L#_xhat-=L#_mu_whds;
+      L#_xhat/=L#_sigma_whds;
+      L#_out = L#_gamma_whds*L#_xhat;
+      L#_out+=L#_beta_whds;
     );
 
-    nn_layer_batchnorm_init_backward(L,IN) = (
-      L#_threads_nb_samples = vector(#nn_nb_threads_max);
-      L#_threads_in_mean = L#_threads_in_variance = vector(#nn_nb_threads_max*IN#_out_spectrum);
-      L#_nb_samples = 0;
-      L#_in_mean = L#_in_variance = vector(##IN#_out_spectrum);
-      L#_batch_deriv_gamma = vector(#size(L#_gamma));
-      L#_batch_deriv_beta = vector(#size(L#_beta));
+    nn_layer_batchnorm_init_backward(L) = (
+      L#_threads_nbs = vector(#nn_nb_threads_max);
+      L#_threads_mus = vector(#nn_nb_threads_max*L#_out_spectrum);
+      L#_threads_sigmas = vector(#nn_nb_threads_max*L#_out_spectrum);
+      L#_batch_deriv_gamma = vector(##L#_out_spectrum);
+      L#_batch_deriv_beta = vector(##L#_out_spectrum);
     );
 
     nn_layer_batchnorm_backward(L,IN,learning_mode) = (
-      # L#_threads_nb_samples[nn_thread]+=L#_out_whd;
-      # repeat (L#_out_spectrum,feature,
-      #   L#_mean_whd =
-
-
-      #   copy(L#_threads_in_mean,
-      # );
-
-      ++L#_nb_samples;
-      L#_pim = IN#_out - L#_in_mean;
-      L#_in_mean+=L#_pim/L#_nb_samples;
-      L#_in_variance+=(IN#_out - L#_in_mean)*L#_pim;
+      L#_nb1 = L#_threads_nbs[nn_thread];
+      L#_mu1 = L#_threads_mus[nn_thread*L#_out_spectrum,L#_out_spectrum];
+      L#_sigma1 = L#_threads_sigmas[nn_thread*L#_out_spectrum,L#_out_spectrum];
+      L#_mu2 = vector(##L#_out_spectrum);
+      L#_sigma2 = vector(##L#_out_spectrum);
+      repeat (L#_out_spectrum,_k,
+        L#_feature = IN#_out[_k*L#_out_whd,L#_out_whd];
+        L#_mu2[_k] = avg(L#_feature);
+        L#_sigma2[_k] = var(L#_feature);
+      );
+      L#_nbc = ++L#_threads_nbs[nn_thread];
+      L#_in_mean = L#_mu1 + (L#_mu2 - L#_mu1)/L#_nbc;
+      L#_in_variance = L#_sigma1 + (L#_sigma2 - L#_sigma1 +
+                                    L#_nb1*(L#_mu1 - L#_in_mean)^2 + (L#_mu2 - L#_in_mean)^2)/L#_nbc;
+      copy(L#_threads_mus[nn_thread*L#_out_spectrum],L#_in_mean);
+      copy(L#_threads_sigmas[nn_thread*L#_out_spectrum],L#_in_variance);
 
       learning_mode&1?( # Learn gamma
-        L#_batch_deriv_gamma+=L#_deriv_out*L#_xhat;
+        L#_tmp = L#_deriv_out*L#_xhat;
+        repeat(L#_out_spectrum,_k,L#_batch_deriv_gamma[_k]+=sum(L#_tmp[_k*L#_out_whd,L#_out_whd]));
       );
       learning_mode&2?( # Learn beta
-        L#_batch_deriv_beta+=L#_deriv_out;
+        repeat(L#_out_spectrum,_k,L#_batch_deriv_beta[_k]+=sum(L#_deriv_out[_k*L#_out_whd,L#_out_whd]));
       );
-      IN#_deriv_out = L#_deriv_out*L#_gamma;
-      IN#_deriv_out/=L#_sigma;
-    );
 
-    nn_layer_batchnorm_end_t_backward(L) = (
-      L#_in_variance/=L#_nb_samples;
-      L#_threads_nb_samples[nn_thread] = L#_nb_samples;
-      copy(L#_threads_in_mean[nn_thread*size(L#_in_mean)],L#_in_mean);
-      copy(L#_threads_in_variance[nn_thread*size(L#_in_variance)],L#_in_variance);
-      L#_in_mean*=L#_nb_samples;
+      IN#_deriv_out = L#_deriv_out*L#_gamma_whds;
+      IN#_deriv_out/=L#_sigma_whds;
     );
 
     nn_layer_batchnorm_end_backward(L) = (
-      merge(L#_nb_samples,+);
-      merge(L#_in_mean,+);
-      merge(L#_threads_nb_samples,+);
-      merge(L#_threads_in_mean,+);
-      merge(L#_threads_in_variance,+);
       merge(L#_batch_deriv_gamma,+);
       merge(L#_batch_deriv_beta,+);
-      L#_in_mean/=L#_nb_samples;
+      L#_batch_deriv_gamma/=nn_nb_samples;
+      L#_batch_deriv_beta/=nn_nb_samples;
+
+      merge(L#_threads_nbs,+);
+      merge(L#_threads_mus,+);
+      merge(L#_threads_sigmas,+);
+      L#_nbc = 0;
+      L#_in_mean = 0;
       L#_in_variance = 0;
-      repeat (nn_nb_threads_used,_k,
-        L#_in_variance+=L#_threads_nb_samples[_k]*
-          (L#_threads_in_variance[_k*size(L#_in_variance),size(L#_in_variance)] +
-          (L#_threads_in_mean[_k*size(L#_in_mean),size(L#_in_variance)] - L#_in_mean)^2);
+      repeat (size(L#_threads_nbs),_k,
+        L#_nb1 = L#_nbc;
+        L#_mu1 = L#_in_mean;
+        L#_sigma1 = L#_in_variance;
+        L#_nb2 = L#_threads_nbs[_k];
+        L#_mu2 = L#_threads_mus[_k*size(L#_mu2),size(L#_mu2)];
+        L#_sigma2 = L#_threads_sigmas[_k*size(L#_mu2),size(L#_mu2)];
+        L#_nbc = L#_nb1 + L#_nb2;
+        L#_in_mean = (L#_nb1*L#_mu1 + L#_nb2*L#_mu2)/L#_nbc;
+        L#_in_variance = (L#_nb1*(L#_sigma1 + (L#_mu1 - L#_in_mean)^2) +
+                          L#_nb2*(L#_sigma2 + (L#_mu2 - L#_in_mean)^2))/L#_nbc;
       );
-      L#_in_variance/=L#_nb_samples;
     );
 
     nn_layer_batchnorm_update(L,learning_mode) = (
       momentum = !nn_iteration?1:1e-3;
-      draw(##L#_ind,L#_in_mean,0,0,0,0,1,h##L#_ind,1,1,momentum); # Global mean and variance
+      draw(##L#_ind,L#_in_mean,0,0,0,0,1,h##L#_ind,1,1,momentum);
       draw(##L#_ind,L#_in_variance,1,0,0,0,1,h##L#_ind,1,1,momentum);
       learning_mode&1?(
         nn_optimizer_update_layer(L#_gamma,L#_batch_deriv_gamma);
@@ -22978,43 +22987,6 @@ nn_lib :
       copy(IN#_deriv_out[size(L0#_out)],L1#_deriv_out,size(L1#_out));
     );
 
-    # upsample2d : 2D upsampling.
-    #----------------------------
-    nn_layer_upsample2d_init_forward(L,IN) = (
-      const L#_out_width = 2*IN#_out_width;
-      const L#_out_height = 2*IN#_out_height;
-      const L#_out_depth = IN#_out_depth;
-      const L#_out_spectrum = IN#_out_spectrum;
-      nn_upsample2d_kernel_forward = [ 1,0,0,0 ];
-      nn_upsample2d_kernel_backward = [ 0.25,0.25,0.25,0.25 ];
-    );
-
-    nn_layer_upsample2d_forward(L,IN,interpolation) = (
-      L#_out = correlate(IN#_out,
-                         IN#_out_width,IN#_out_height,IN#_out_depth,IN#_out_spectrum,
-                         nn_upsample2d_kernel_forward,2,2,1,1,
-                         1,0,1,
-                         0,0,0,
-                         0,0,0,
-                         L#_out_width - 1,L#_out_height - 1,L#_out_depth - 1,
-                         0.5,0.5,1,
-                         1,1,1,
-                         interpolation);
-    );
-
-    nn_layer_upsample2d_backward(L,IN) = (
-      IN#_deriv_out = correlate(L#_deriv_out,
-                                L#_out_width,L#_out_height,L#_out_depth,L#_out_spectrum,
-                                nn_upsample2d_kernel_backward,2,2,1,1,
-                                0,0,1,
-                                0,0,0,
-                                0,0,0,
-                                IN#_out_width - 1,IN#_out_height - 1,IN#_out_depth - 1,
-                                2,2,1,
-                                1,1,1,
-                                0);
-    );
-
     #----------------
     # Loss functions.
     #----------------
@@ -23097,19 +23069,19 @@ nn_layer_avgpool2d : check "isvarname('$1')" nn_check_layer "$2"
   _nn_backward..="nn_layer_avgpool2d_backward($1,$2);"
   _nn_init.="$0 $* "
 
-#@cli nn_layer_batchnorm : name,in,learning_mode.
+#@cli nn_layer_batchnorm : name,in,_learning_mode.
 #@cli : Add a 'batchnorm' layer to the network.
 #@cli : 'learning_mode' can be { 0=learn no parameters | 1=learn gamma | 2=learn beta | 3=learn gamma and beta}.
-nn_layer_batchnorm : nn_check_layer "$2" check "isvarname('$1') && isint(${3=0}) && inrange($3,0,3)"
+#@cli : Default value: 'learning_mode=3'.
+nn_layer_batchnorm : nn_check_layer "$2" check "isvarname('$1') && isint(${3=3}) && inrange($3,0,3)"
   s0,s1,s2,s3="no parameters","gamma-only","beta-only","gamma & beta"
   e[^-1] "[nn_lib] Add 'batchnorm' layer '$1' to the network, with input '$2' and learning mode '"${s$3}"'."
   _nn_$1_out_size=$_nn_$2_out_size
   if !isint($$1) 4,{[$_nn_$2_out_size][3]} f. 0,1,1,0 nm. $1 fi
   _nn_forward.="begin(nn_layer_batchnorm_init_forward($1,$2));"\
                "nn_layer_batchnorm_forward($1,$2);"
-  _nn_backward..="begin(nn_layer_batchnorm_init_backward($1,$2));"\
+  _nn_backward..="begin(nn_layer_batchnorm_init_backward($1));"\
                  "nn_layer_batchnorm_backward($1,$2,$3);"\
-                 "end_t(nn_layer_batchnorm_end_t_backward($1));"\
                  "end(nn_layer_batchnorm_end_backward($1));"
   _nn_update..="end(nn_layer_batchnorm_update($1,$3));"
   _nn_init.="$0 $* "
@@ -23142,6 +23114,20 @@ nn_layer_conv2d : nn_check_layer "$2" check "isvarname('$1') && isint($3) && $3>
   if $7 _nn_update..="end(nn_layer_conv2d_update($1));" fi
   _nn_init.="$0 $* "
   _nn_parameters.="$1,"
+
+#@cli nn_layer_conv2dbnnl : name,in,nb_channels>0,_kernel_size>0,_stride>0,_dilation>0,_activation,\
+# _is_updated={ 0 | 1 }
+#@cli : Add a 'con2dbnnl' (2D convolutional layer followed by a batchnorm, then a non-linearity), to the network.
+#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1', 'activation=leakyrelu' and 'is_updated=1'.
+nn_layer_conv2dbnnl : nn_check_layer "$2"
+                      check "isvarname('$1') && isint($3) && $3>0 && isint(${4=3}) && $4>0 && ${5=1}>0 && "\
+                            "isbool(${8=1})"
+                      skip "${6=1}","${7=leakyrelu}"
+  e[^-1] "[nn_lib] Add 'conv2d+bn+nl' layer '$1', with input '$2', $3 channels, $4x$4 kernels, "\
+         "stride $5, dilation $6 and '$7' activation."
+  nn_layer_conv2d $1_0,$2,$3,$4,$5,$6,$8
+  nn_layer_batchnorm $1_1,$1_0
+  nn_layer_nl $1,$1_1,$7
 
 #@cli nn_layer_conv2dnl : name,in,nb_channels>0,_kernel_size>0,_stride>0,_dilation>0,_activation,\
 # _is_updated={ 0 | 1 }
@@ -23183,6 +23169,15 @@ nn_layer_fc : nn_check_layer "$2" check "isvarname('$1') && isint($3) && $3>0 &&
   _nn_init.="$0 $* "
   _nn_parameters.="$1,"
 
+#@cli nn_layer_fcbnnl : name,in,nb_neurons>0,_activation,_is_updated={ 0 | 1 }
+#@cli : Add a 'fcbnnl' layer (fully connected layer followed by batchnorm, then a non-linearity), to the network.
+#@cli : Default value: 'activation=leakyrelu' and 'is_updated=1'.
+nn_layer_fcbnnl : nn_check_layer "$2" check "isvarname('$1') && isint($3) && $3>0 && isbool(${5=1})" skip ${4=leakyrelu}
+  e[^-1] "[nn_lib] Add 'fc+bn+nl' layer '$1' to the network, with input '$2', $3 channels and '$4' activation."
+  nn_layer_fc $1_0,$2,$3,$5
+  nn_layer_batchnorm $1_1,$1_0
+  nn_layer_nl $1,$1_1,$4
+
 #@cli nn_layer_fcnl : name,in,nb_neurons>0,_activation,_is_updated={ 0 | 1 }
 #@cli : Add a 'fcnl' layer (fully connected layer followed by a non-linearity), to the network.
 #@cli : Default value: 'activation=leakyrelu' and 'is_updated=1'.
@@ -23201,7 +23196,7 @@ nn_layer_maxpool2d : nn_check_layer "$2" check "isvarname('$1')"
   _nn_backward..="nn_layer_maxpool2d_backward($1,$2);"
   _nn_init.="$0 $* "
 
-#@cli nn_layer_nl : name,in,activation
+#@cli nn_layer_nl : name,in,_activation
 #@cli : Add a 'nl' layer (non-linearity) to the network.
 #@cli : Default value: 'activation=leakyrelu'.
 nn_layer_nl : nn_check_layer "$2" check "isvarname('$1')" skip ${3=leakyrelu}
@@ -23275,16 +23270,6 @@ nn_layer_split : nn_check_layer "$3" check "isvarname('$1') && isvarname('$2')"
   _nn_backward..="nn_layer_split_backward($1,$2,$3);"
   _nn_init.="$0 $* "
 
-#@cli nn_layer_upsample2d : name,in,_interpolation_type = { 0=nearest-neighbor | 1=linear }
-#@cli : Add a 'upsample2d' layer to the network.
-nn_layer_upsample2d : nn_check_layer "$2" check "isvarname('$1') && isbool(${3=0})"
-  e[^-1] "[nn_lib] Add 'upsample2d' layer '$1', with input '$2'."
-  _nn_$1_out_size={s=[$_nn_$2_out_size];[2*s[0,2],s[2,2]]}
-  _nn_forward.="begin(nn_layer_upsample2d_init_forward($1,$2));"\
-               "nn_layer_upsample2d_forward($1,$2,$3);"
-  _nn_backward..="nn_layer_upsample2d_backward($1,$2);"
-  _nn_init.="$0 $* "
-
 #@cli nn_loss_mse : name,in,ground_truth
 #@cli : Add a 'mse' loss to the network.
 #@cli : Default value: 'learning_rate=1e-6' and 'learning_rate_scheduler=adaptive'.
@@ -23298,11 +23283,11 @@ nn_loss_mse : nn_check_layer "$2" check "isvarname('$1') && isvarname('$3')"
 
 #@cli nn_trainer : name,loss,_learning_rate>0,_optimizer,_scheduler
 #@cli : Add a network trainer to the network.
-#@cli : 'optimizer' can be { 0=sgd | 1=rmsprop | 2=adam | 3=adamax }.
-#@cli : 'scheduler' can be { 0=constant | 1=linear | 2=exponential | 3=adaptive }.
-#@cli : Default value: 'learning_rate=1e-6', 'optimizer=adam' and 'scheduler=0'.
+#@cli : 'optimizer' can be { sgd | rmsprop | adam | adamax }.
+#@cli : 'scheduler' can be { constant | linear | exponential | adaptive }.
+#@cli : Default value: 'learning_rate=1e-6', 'optimizer=adam' and 'scheduler=constant'.
 nn_trainer : nn_check_layer "$2"
-             check "isvarname('$1') && ${3=1e-6}>0 && isvarname('${4=adam}') && isvarname('${5=adaptive}')"
+             check "isvarname('$1') && ${3=1e-6}>0 && isvarname('${4=adam}') && isvarname('${5=constant}')"
   e[^-1] "[nn_lib] Add trainer '$1' for loss '$2', with learning rate '$3', $4 optimizer and $5 scheduler."
   _nn_$1_out_size=0,0,0,0
   if !isint($$1)
