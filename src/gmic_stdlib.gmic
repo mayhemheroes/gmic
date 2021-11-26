@@ -1923,10 +1923,24 @@ csv2ts : skip "${1=fr}"
       if ['$tr']!=0
         ({'$str'}) _gmd_ascii2html. str={t} rm.
         ({'$tr'}) _gmd_ascii2html. tr={t} rm.
-        ('"    <message>"\n\
-          "      <source>"$str"</source>"\n\
-          "      <translation>"$tr"</translation>"\n\
-          "    </message>"\n\n':y)
+
+        if {0,!i(2,$>)} # No specializations
+          ('"    <message>"\n\
+            "      <source>"$str"</source>"\n\
+            "      <translation>"$tr"</translation>"\n\
+            "    </message>"\n\n':y)
+        else # Filter specialization
+          i=2
+          for {0,i($i,$>)}
+            ('"    <message>"\n\
+              "      <source>"$str"</source>"\n\
+              "      <comment>"{0,`I($i,$>)`}"</comment>"\n\
+              "      <translation>"$tr"</translation>"\n\
+              "    </message>"\n':y)
+            i+=1
+          done
+          r. 1,{h+1},1,1,0,1 # Last item has two endl
+        fi
       fi
     done
     ('"  </context>\n</TS>"\n':y)
