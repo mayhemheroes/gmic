@@ -7244,43 +7244,39 @@ parse_gui_gmicol :
   e[] "\r  >> "${_vt100_g}{`copy(vector64(_'" "'),'"Output done!"')`}$_vt100_n
 
 #
-# Implements 'ts' mode for command 'parse_gui'.
-# (Extract all strings from filters, for translation purpose, and put them in (commented) .ts file format).
+# Implements 'strings' mode for command 'parse_gui'.
+# (Extract all strings from filters, for translation purpose, and put them in a .csv file format).
 #
-parse_gui_ts :
-  e[] "  >> Generate output, in 'ts' mode.\n"
+parse_gui_strings :
+  e[] "  >> Generate output, in 'strings' mode.\n"
   N={$_nbfilters-1}
   repeat $_nbfilters,f
     if !narg(${_f${f}_locale})" && "find(['${_f${f}_path}'],'Testing/')<0  # Consider only English, non-Testing filters
       e[] "\r  >> "$_vt100_c[#$f/$N]$_vt100_n" "{`copy(vector48(_'" "'),['${_f${f}_path}${_f${f}_name}'])`}
-      _parse_gui_ts ${_f${f}_name}
+      _parse_gui_strings ${_f${f}_name}
       repeat ${_f${f}_nbparams},p
         type=${_f${f}_p${p}_type}
-        if s=['$type'];s!='link'&&s!='note'&&s!='separator'&&s!='value' _parse_gui_ts ${_f${f}_p${p}_name} fi
+        if s=['$type'];s!='link'&&s!='note'&&s!='separator'&&s!='value' _parse_gui_strings ${_f${f}_p${p}_name} fi
         if ['$type']==['choice']
           repeat ${_f${f}_p${p}_nbargs},a
             arg=${_f${f}_p${p}_a${a}}
-            l[] if !isnum($arg) ({'$arg'}) discard. {'\"'} arg={t} rm. _parse_gui_ts $arg fi onfail endl
+            l[] if !isnum($arg) ({'$arg'}) discard. {'\"'} arg={t} rm. _parse_gui_strings $arg fi onfail endl
           done
         fi
       done
     fi
   done
   # Sort strings and remove duplicates.
-  sort_list +,n repeat $!-1 i,ni={[$<,$<+1]} if ['{$i,n}']==['{$ni,n}'] rm[$ni] fi done
+  sort_list +,n repeat $!-1 i,ni={[$<,$<+1]} if lowercase(['{$i,n}'])==lowercase(['{$ni,n}']) rm[$ni] fi done
 
   # Generate output in commented .ts format.
   repeat $! l[$>]
     nm={n}
-    ({'"    <!-- <message> -->"\n\
-       "    <!--   <source>"$nm"</source> -->"\n\
-       "    <!--   <translation></translation> -->"\n\
-       "    <!-- </message> -->"\n\
-     '}:y) k. nm $nm
+    ({'$nm,,'}:y) k. nm $nm
   endl done
   if $! y i[1--1] (10) a y else 0 fi
 
-_parse_gui_ts :
+_parse_gui_strings :
   str="$*"
   if size(['$str'])>2 l[]
     if !isexpr($str)
