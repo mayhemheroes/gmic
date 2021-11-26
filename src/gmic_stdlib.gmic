@@ -7267,8 +7267,7 @@ parse_gui_strings :
     fi
   done
   # Sort strings and remove duplicates.
-  sort_list +,n repeat $!-1 i,ni={[$<,$<+1]} if lowercase(['{$i,n}'])==lowercase(['{$ni,n}']) +[$i,$ni] fi done
-  sort_list -,i
+  sort_list +,N repeat $!-1 i,ni={[$<,$<+1]} if ['{$i,n}']==['{$ni,n}'] +[$i,$ni] fi done sort_list -,i
 
   # Generate output in commented .ts format.
   repeat $! l[$>]
@@ -9939,13 +9938,14 @@ sort_list : skip ${1=+},${2=i}
   s0="descending" s1="ascending"
   e[^-1] "Sort list of image$? in "${s{_'+'=='$1'}}" order, according to the image criterion '$2'."
   if $!
-    if '$2'=='n' # Special case : lexicographic order from image names
+    if '$2'=='n'||'$2'=='N' # Special case : lexicographic order from image names (n: ignore case, N: consider case)
       op={`;'$1'=='-'?_'>':_'<'`}
+      if '$2'=='n' fn=lowercase else fn= fi
       $!,1,1,1,"n = name(#x,1024); find(n,0)%1025" slen={iM} rm. # Largest name length.
       eval "
         const lm1 = l - 1;
         const slen = "$slen";
-        strcmp(n0,n1) = (for (k = 0, k<slen && !(diff = lowercase(n0[k]) - lowercase(n1[k])), ++k); diff);
+        strcmp(n0,n1) = (for (k = 0, k<slen && !(diff = "$fn"(n0[k]) - "$fn"(n1[k])), ++k); diff);
         quicksort(lo0,hi0) = (
           stack = vector(#2*l);
           stacksize = 0;
@@ -9977,20 +9977,6 @@ sort_list : skip ${1=+},${2=i}
       rm.
     fi
   fi
-
-_sort_list_lexi :
-  u {"
-       str1 = ['$1'];
-       str2 = ['$2'];
-       siz = min(size(str1),size(str2));
-       lex = -1;
-       for (i = 0, i<siz && lex<0, ++i,
-         s1 = lowercase(str1[i]);
-         s2 = lowercase(str2[i]);
-         lex = s1"$3"s2?1:s2"$3"s1?0:-1;
-       );
-       lex<0?size(str1)"$3"size(str2):lex;
-     "}
 
 #---------------------------------
 #
