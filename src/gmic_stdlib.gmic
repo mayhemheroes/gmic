@@ -6289,7 +6289,7 @@ _gmd_write :
 
 #@cli parse_gui : _outputmode,_{ * | filter_name}
 #@cli : Parse selected filter definitions and generate info about filters in selected output mode.
-#@cli : 'outputmode' can be { gmicol | json | list | print | strings | update | zart }.\n
+#@cli : 'outputmode' can be { gmicol | json | list | print | ts | update | zart }.\n
 #@cli : It is possible to define a custom output mode, by implementing the following commands
 #@cli : ('outputmode' must be replaced by the name of the custom user output mode):
 #@cli : . 'parse_gui_outputmode' : A command that outputs the parsing information with a custom format.
@@ -7266,8 +7266,10 @@ parse_gui_ts :
       done
     fi
   done
-  # Sort strings and remove duplicates.
-  sort_list +,n repeat $!-1 i,ni={[$<,$<+1]} if ['{$i,n}']==['{$ni,n}'] rm[$ni] fi done
+
+  # Remove duplicates and sort strings by decreasing occurences.
+  sort_list +,n repeat $!-1 i,ni={[$<,$<+1]} if ['{$i,n}']==['{$ni,n}'] +[$i,$ni] fi done
+  sort_list -,i
 
   # Generate output in commented .ts format.
   repeat $! l[$>]
@@ -7286,7 +7288,7 @@ _parse_gui_ts :
     if !isexpr($str)
       ({'$str'}) replace_str. "---","-" replace_str. "--","-"
       _gmd_ascii2html. str={t} rm.
-      0 nm. $str
+      (1) nm. $str
     fi
   onfail endl fi
 
