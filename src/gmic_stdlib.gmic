@@ -1907,6 +1907,32 @@ compress_gmic :
 #@cli : Command selection (if any) stands for instant display window indices instead of image indices.
 #@cli : Default value: 'mode=1'.
 
+# csv2ts : _output_locale
+# Convert selected buffers from .csv format to .ts format (translation files for G'MIC-Qt).
+# Default value: 'output_locale=fr'.
+csv2ts : skip "${1=fr}"
+  e[^-1] "Convert buffer$? from .csv format to .ts format (in '$1' locale)."
+  repeat $! l[$>] if w>1
+    ('"<?xml version=\"1.0\" encoding=\"utf-8\"?>"\n\n\
+      "<!DOCTYPE TS>"\n\
+      "<TS version=\"2.1\" language=\"$1\">"\n\
+      "<context>"\n\
+      "  <name>FilterTextTranslator</name>"\n\n':y)
+    repeat h#0
+      str={0,`I(0,$>)`} tr={0,`I(1,$>)`}
+      if ['$tr']!=0
+        ({'$str'}) _gmd_ascii2html. str={t} rm.
+        ({'$tr'}) _gmd_ascii2html. tr={t} rm.
+        ('"    <message>"\n\
+          "      <source>"$str"</source>"\n\
+          "      <translation>"$tr"</translation>"\n\
+          "    </message>"\n\n':y)
+      fi
+    done
+    ('"  </context>\n</TS>"\n':y)
+    a[^0] y k.
+  fi endl done
+
 #@cli delete : filename1[,filename2,...] : (+)
 #@cli : Delete specified filenames on disk. Multiple filenames must be separated by commas.
 
@@ -7280,7 +7306,7 @@ _parse_gui_strings :
   str="$*"
   if size(['$str'])>2 l[]
     if !isexpr($str)
-      ({'$str'}) replace_str. "---","-" replace_str. "--","-"
+      ({'$str'}) replace_str. "---","-" replace_str. "--","-" str={t} rm.
       (1) nm. $str
     fi
   onfail endl fi
