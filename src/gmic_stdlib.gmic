@@ -7244,38 +7244,50 @@ parse_gui_gmicol :
   e[] "\r  >> "${_vt100_g}{`copy(vector64(_'" "'),'"Output done!"')`}$_vt100_n
 
 #
-# Implements 'strings' mode for command 'parse_gui'.
-# (Extract all strings from filters, for translation purpose).
+# Implements 'ts' mode for command 'parse_gui'.
+# (Extract all strings from filters, for translation purpose, and put them in (commented) .ts file format).
 #
-parse_gui_strings :
-  e[] "  >> Generate output, in 'strings' mode.\n"
-  m "is_str : u {\"s = ['$""1']; isl = 0; "\
-    "repeat (size(s),k, inrange(lowercase(s[k]),_'a',_'z')?(isl = 1; break())); isl && size(s)>2 \"}"
+parse_gui_ts :
+  e[] "  >> Generate output, in 'ts' mode.\n"
   N={$_nbfilters-1}
   repeat $_nbfilters,f
     if !narg(${_f${f}_locale})" && "find(['${_f${f}_path}'],'Testing/')<0  # Consider only English, non-Testing filters
       e[] "\r  >> "$_vt100_c[#$f/$N]$_vt100_n" "{`copy(vector48(_'" "'),['${_f${f}_path}${_f${f}_name}'])`}
-      name=${_f${f}_name}
-      is_str $name if ${} ({'$name'}:y) nm. $name fi
+      _parse_gui_ts ${_f${f}_name}
       repeat ${_f${f}_nbparams},p
-        pname=${_f${f}_p${p}_name}
-        ptype=${_f${f}_p${p}_type}
-        is_str $pname if ${} ({'$pname'}:y) nm. $pname fi
-        if ['$ptype']==['choice']
+        type=${_f${f}_p${p}_type}
+        if s=['$type'];s!='link'&&s!='note'&&s!='separator'&&s!='value' _parse_gui_ts ${_f${f}_p${p}_name} fi
+        if ['$type']==['choice']
           repeat ${_f${f}_p${p}_nbargs},a
-            ({'${_f${f}_p${p}_a${a}}'}) discard. {'\"'}
-            aname={t} rm.
-            is_str $aname if ${} ({'$aname'}:y) nm. $aname fi
+            arg=${_f${f}_p${p}_a${a}}
+            l[] if !isnum($arg) ({'$arg'}) discard. {'\"'} arg={t} rm. _parse_gui_ts $arg fi onfail endl
           done
         fi
       done
     fi
   done
-  repeat $! nm[$>] {`lowercase(['{$>,n}'])`} done
-  sort_list +,n
-  repeat $!-1 if ['{$<,n}']==['{{$<+1},n}'] rm[$<] fi done
-  um is_str
+  sort_list +,n repeat $!-1 i,ni={[$<,$<+1]} if ['{$i,n}']==['{$ni,n}'] rm[$ni] fi done # Sort strings and remove duplicates.
+
+  # Generate output in commented .ts format.
+  repeat $! l[$>]
+    nm={n}
+    ({'"    <!-- <message> -->"\n\
+       "    <!--   <source>"$nm"</source> -->"\n\
+       "    <!--   <translation></translation> -->"\n\
+       "    <!-- </message> -->"\n\
+     '}:y) k. nm $nm
+  endl done
   if $! y i[1--1] (10) a y else 0 fi
+
+_parse_gui_ts :
+  str="$*"
+  if size(['$str'])>2 l[]
+    if !isexpr($str)
+      ({'$str'}) replace_str. "---","-" replace_str. "--","-"
+      _gmd_ascii2html. str={t} rm.
+      0 nm. $str
+    fi
+  onfail endl fi
 
 #@cli pass : _shared_state={ -1=status only | 0=non-shared (copy) | 1=shared | 2=adaptive } : (+)
 #@cli : Insert images from parent context of a custom command or a local environment.
