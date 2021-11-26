@@ -1919,10 +1919,11 @@ csv2ts : skip "${1=fr}"
       "<context>"\n\
       "  <name>FilterTextTranslator</name>"\n\n':y)
     repeat h#0
-      str={0,`I(0,$>)`} tr={0,`I(1,$>)`}
-      if ['$tr']!=0
-        ({'$str'}) _gmd_ascii2html. str={t} rm.
-        ({'$tr'}) _gmd_ascii2html. tr={t} rm.
+      str={0,`I(0,$>)`}
+      tr={0,`I(1,$>)`}
+      if s=['$tr'];s!=0" && norm(s-=_' ')"
+        ({'$str'}) autocrop. {'" "'} _gmd_ascii2html. str={t} rm.
+        ({'$tr'}) autocrop. {'" "'} _gmd_ascii2html. tr={t} rm.
 
         if {0,!i(2,$>)} # Global translation
           ('"    <message>"\n\
@@ -1932,6 +1933,7 @@ csv2ts : skip "${1=fr}"
         else # Filter specialization
           i=2
           for {0,i($i,$>)}
+            path={0,`I($i,$>)`} {('$path')} autocrop. {'" "'} _gmd_ascii2html. path={t} rm.
             ('"    <message>"\n\
               "      <source>"$str"</source>"\n\
               "      <comment>"{0,`I($i,$>)`}"</comment>"\n\
@@ -1943,7 +1945,7 @@ csv2ts : skip "${1=fr}"
         fi
       fi
     done
-    ('"  </context>\n</TS>"\n':y)
+    ('"</context>\n</TS>"\n':y)
     a[^0] y k.
   fi endl done
 
@@ -7312,7 +7314,7 @@ parse_gui_strings :
   # Generate output in commented .ts format.
   repeat $! l[$>]
     nm={n}
-    ({'$nm,'}:y) k. nm $nm
+    ({'$nm" , "'}:y) k. nm $nm
   endl done
   if $! y i[1--1] (10) a y else 0 fi
 
