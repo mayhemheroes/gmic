@@ -1907,6 +1907,48 @@ compress_gmic :
 #@cli : Command selection (if any) stands for instant display window indices instead of image indices.
 #@cli : Default value: 'mode=1'.
 
+# csv2ts : _output_locale
+# Convert selected buffers from .csv format to .ts format (translation files for G'MIC-Qt).
+# Default value: 'output_locale=fr'.
+csv2ts : skip "${1=fr}"
+  e[^-1] "Convert buffer$? from .csv format to .ts format (in '$1' locale)."
+  repeat $! l[$>] if w>1
+    ('"<?xml version=\"1.0\" encoding=\"utf-8\"?>"\n\n\
+      "<!DOCTYPE TS>"\n\
+      "<TS version=\"2.1\" language=\"$1\">"\n\
+      "<context>"\n\
+      "  <name>FilterTextTranslator</name>"\n\n':y)
+    repeat h#0
+      str={0,`I(0,$>)`}
+      tr={0,`I(1,$>)`}
+      if s=['$tr'];s!=0" && norm(s-=_' ')"
+        ({'$str'}) autocrop. {'" "'} _gmd_ascii2html. str={t} rm.
+        ({'$tr'}) autocrop. {'" "'} _gmd_ascii2html. tr={t} rm.
+
+        if {0,!i(2,$>)} # Global translation
+          ('"    <message>"\n\
+            "      <source>"$str"</source>"\n\
+            "      <translation>"$tr"</translation>"\n\
+            "    </message>"\n\n':y)
+        else # Filter specialization
+          i=2
+          for {0,i($i,$>)}
+            path={0,`I($i,$>)`} {('$path')} autocrop. {'" "'} _gmd_ascii2html. path={t} rm.
+            ('"    <message>"\n\
+              "      <source>"$str"</source>"\n\
+              "      <comment>"{0,`I($i,$>)`}"</comment>"\n\
+              "      <translation>"$tr"</translation>"\n\
+              "    </message>"\n':y)
+            i+=1
+          done
+          r. 1,{h+1},1,1,0,1 # Last item has two endl
+        fi
+      fi
+    done
+    ('"</context>\n</TS>"\n':y)
+    a[^0] y k.
+  fi endl done
+
 #@cli delete : filename1[,filename2,...] : (+)
 #@cli : Delete specified filenames on disk. Multiple filenames must be separated by commas.
 
@@ -6289,7 +6331,7 @@ _gmd_write :
 
 #@cli parse_gui : _outputmode,_{ * | filter_name}
 #@cli : Parse selected filter definitions and generate info about filters in selected output mode.
-#@cli : 'outputmode' can be { gmicol | json | list | print | strings | update | zart }.\n
+#@cli : 'outputmode' can be { gmicol | json | list | print | ts | update | zart }.\n
 #@cli : It is possible to define a custom output mode, by implementing the following commands
 #@cli : ('outputmode' must be replaced by the name of the custom user output mode):
 #@cli : . 'parse_gui_outputmode' : A command that outputs the parsing information with a custom format.
@@ -7245,37 +7287,45 @@ parse_gui_gmicol :
 
 #
 # Implements 'strings' mode for command 'parse_gui'.
-# (Extract all strings from filters, for translation purpose).
+# (Extract all strings from filters, for translation purpose, and put them in a .csv file format).
 #
 parse_gui_strings :
   e[] "  >> Generate output, in 'strings' mode.\n"
-  m "is_str : u {\"s = ['$""1']; isl = 0; "\
-    "repeat (size(s),k, inrange(lowercase(s[k]),_'a',_'z')?(isl = 1; break())); isl && size(s)>2 \"}"
   N={$_nbfilters-1}
   repeat $_nbfilters,f
     if !narg(${_f${f}_locale})" && "find(['${_f${f}_path}'],'Testing/')<0  # Consider only English, non-Testing filters
       e[] "\r  >> "$_vt100_c[#$f/$N]$_vt100_n" "{`copy(vector48(_'" "'),['${_f${f}_path}${_f${f}_name}'])`}
-      name=${_f${f}_name}
-      is_str $name if ${} ({'$name'}:y) nm. $name fi
+      _parse_gui_strings ${_f${f}_name}
       repeat ${_f${f}_nbparams},p
-        pname=${_f${f}_p${p}_name}
-        ptype=${_f${f}_p${p}_type}
-        is_str $pname if ${} ({'$pname'}:y) nm. $pname fi
-        if ['$ptype']==['choice']
+        type=${_f${f}_p${p}_type}
+        if s=['$type'];s!='link'&&s!='note'&&s!='separator'&&s!='value' _parse_gui_strings ${_f${f}_p${p}_name} fi
+        if ['$type']==['choice']
           repeat ${_f${f}_p${p}_nbargs},a
-            ({'${_f${f}_p${p}_a${a}}'}) discard. {'\"'}
-            aname={t} rm.
-            is_str $aname if ${} ({'$aname'}:y) nm. $aname fi
+            arg=${_f${f}_p${p}_a${a}}
+            l[] if !isnum($arg) ({'$arg'}) discard. {'\"'} arg={t} rm. _parse_gui_strings $arg fi onfail endl
           done
         fi
       done
     fi
   done
-  repeat $! nm[$>] {`lowercase(['{$>,n}'])`} done
-  sort_list +,n
-  repeat $!-1 if ['{$<,n}']==['{{$<+1},n}'] rm[$<] fi done
-  um is_str
+  # Sort strings and remove duplicates.
+  sort_list +,N repeat $!-1 i,ni={[$<,$<+1]} if ['{$i,n}']==['{$ni,n}'] +[$i,$ni] fi done sort_list -,i
+
+  # Generate output in commented .ts format.
+  repeat $! l[$>]
+    nm={n}
+    ({'$nm" , "'}:y) k. nm $nm
+  endl done
   if $! y i[1--1] (10) a y else 0 fi
+
+_parse_gui_strings :
+  str="$*"
+  if size(['$str'])>2 l[]
+    if !isexpr($str)
+      ({'$str'}) replace_str. "---","-" replace_str. "--","-" str={t} rm.
+      (1) nm. $str
+    fi
+  onfail endl fi
 
 #@cli pass : _shared_state={ -1=status only | 0=non-shared (copy) | 1=shared | 2=adaptive } : (+)
 #@cli : Insert images from parent context of a custom command or a local environment.
@@ -9929,13 +9979,14 @@ sort_list : skip ${1=+},${2=i}
   s0="descending" s1="ascending"
   e[^-1] "Sort list of image$? in "${s{_'+'=='$1'}}" order, according to the image criterion '$2'."
   if $!
-    if '$2'=='n' # Special case : lexicographic order from image names
+    if '$2'=='n'||'$2'=='N' # Special case : lexicographic order from image names (n: ignore case, N: consider case)
       op={`;'$1'=='-'?_'>':_'<'`}
+      if '$2'=='n' fn=lowercase else fn= fi
       $!,1,1,1,"n = name(#x,1024); find(n,0)%1025" slen={iM} rm. # Largest name length.
       eval "
         const lm1 = l - 1;
         const slen = "$slen";
-        strcmp(n0,n1) = (for (k = 0, k<slen && !(diff = lowercase(n0[k]) - lowercase(n1[k])), ++k); diff);
+        strcmp(n0,n1) = (for (k = 0, k<slen && !(diff = "$fn"(n0[k]) - "$fn"(n1[k])), ++k); diff);
         quicksort(lo0,hi0) = (
           stack = vector(#2*l);
           stacksize = 0;
@@ -9967,20 +10018,6 @@ sort_list : skip ${1=+},${2=i}
       rm.
     fi
   fi
-
-_sort_list_lexi :
-  u {"
-       str1 = ['$1'];
-       str2 = ['$2'];
-       siz = min(size(str1),size(str2));
-       lex = -1;
-       for (i = 0, i<siz && lex<0, ++i,
-         s1 = lowercase(str1[i]);
-         s2 = lowercase(str2[i]);
-         lex = s1"$3"s2?1:s2"$3"s1?0:-1;
-       );
-       lex<0?size(str1)"$3"size(str2):lex;
-     "}
 
 #---------------------------------
 #
@@ -15636,15 +15673,90 @@ erode_threshold : check "isint($1) && $1>=1 && isint(${2=$1}) && $2>=1 && isint(
 
 #@cli g : eq. to 'gradient'. : (+)
 
-#@cli gradient : { x | y | z }...{ x | y | z },_scheme : (no arg) : (+)
+#@cli gradient : { x | y | z }...{ x | y | z },_scheme,_boundary_conditions : (no arg) : (+)
 #@cli : Compute the gradient components (first derivatives) of selected images.
 #@cli : (eq. to 'g').\n
 #@cli : 'scheme' can be { -1=backward | 0=centered | 1=forward | 2=sobel | 3=rotation-invariant (default) | \
 # 4=deriche | 5=vanvliet }.
+#@cli : 'boundary_conditions' can be { 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }.
 #@cli : (no arg) compute all significant components.
-#@cli : Default value: 'scheme=0'.
+#@cli : Default values: 'scheme=0' and 'boundary_conditions=1'.
 #@cli : $ image.jpg gradient
 #@cli : $$ https://gmic.eu/oldtutorial/_gradient
+grad :  skip "${1=},${2=},${3=}"
+
+  # Parse arguments.
+  l[]
+    if ['$1']==0 axes,scheme,boundary=,0,1 noarg           # No 1st arg
+    else
+      is_axes={"min(inrange(['$1'],_'x',_'z'))"}
+      if !$is_axes axes,scheme,boundary=,0,1 noarg         # Invalid 1st arg
+      elif ['$2']==0 axes,scheme,boundary=$1,0,1           # No 2nd arg
+      else
+        is_scheme={"isint($2) && inrange($2,-1,5)"}
+        if !$is_scheme axes,scheme,boundary=,0,1 noarg     # Invalid 2nd arg
+        elif ['$3']==0 axes,scheme,boundary=$1,$2,1        # No 3rd arg
+        else
+          is_boundary={"isint($3) && inrange($3,0,3)"}
+          if !$is_boundary axes,scheme,boundary=,0,1 noarg # Invalid 3rd arg
+          else axes,scheme,boundary=${1-3}
+          fi
+        fi
+      fi
+    fi
+  onfail axes,scheme,boundary=,0,1                         # Invalid arguments
+  endl
+
+  # Display log message.
+  if '$axes'!=0 s_axes=" along axes '"$axes"'" fi
+  s0,s1,s2,s3,s4,s5,s6=backward,centered,forward,sobel,rotation-invariant,deriche,vanvliet
+  s_scheme=${s{$scheme+1}}
+  s0,s1,s2,s3=dirichlet,neumann,periodic,mirror
+  s_boundary=${s$boundary}
+  e[^-1] "Compute gradient of image$?"$s_axes", with "$s_scheme" scheme and "$s_boundary" boundary conditions."
+  sx,sy,sz,sc=",",;,/,^
+
+  # Process images.
+  repeat $! l[$<] nm={n}
+    laxes=$axes if '$laxes'==0 if d>1 laxes=xyz else laxes=xy fi fi
+    ('$laxes')
+    repeat w
+      a={`i[#1,$>]`} s=${s$a}
+      if ${gradient_$a} [gradient_$a]
+      elif $scheme==-1 # Backward
+        (-1${s}1${s}0) +correlate[0] .,$boundary rm..
+      elif $scheme==0 # Centered
+        (-0.5${s}0${s}0.5) +correlate[0] .,$boundary rm..
+      elif $scheme==1 # Forward
+        (0${s}-1${s}1) +correlate[0] .,$boundary rm..
+      elif $scheme==2 # Sobel
+        if _'$a'==_'x' (-1,0,1;-2,0,2;-1,0,1)
+        elif _'$a'==_'y' (-1,-2,-1;0,0,0;1,2,1)
+        else (-0.5${s}0${s}0.5)
+        fi
+        +correlate[0] .,$boundary rm..
+      elif $scheme==3 # Rotation-invariant
+        A,B={[0.25*(2-sqrt(2)),0.5*(sqrt(2)-1)]}
+        if _'$a'==_'x' (-$A,0,$A;-$B,0,$B;-$A,0,$A)
+        elif _'$a'==_'y' (-$A,-$B,-$A;0,0,0;$A,$B,$A)
+        else (-0.5${s}0${s}0.5)
+        fi
+        +correlate[0] .,$boundary rm..
+      else # Deriche/Vanvliet
+        s4,s5=deriche,vanvliet com=${s$scheme}
+        if $boundary<2 +$com[0] 0,1,$a,$boundary
+        else
+          if _'$a'==_'x' +r[0] {0,[w+2,h,d,s]},0,$boundary,0.5 $com. 0,1,$a shrink_x. 1
+          elif _'$a'==_'y' +r[0] {0,[w,h+2,d,s]},0,$boundary,0,0.5 $com. 0,1,$a shrink_y. 1
+          elif _'$a'==_'z' +r[0] {0,[w,h,d+2,s]},0,$boundary,0,0,0.5 $com. 0,1,$a shrink_z. 1
+          fi
+        fi
+      fi
+      nm. gradient_$a
+    done
+    rm[0,1]
+    nm $nm
+  endl done
 
 #@cli gradient_norm
 #@cli : Compute gradient norm of selected images.
@@ -22608,9 +22720,9 @@ nn_lib :
     );
 
     nn_layer_batchnorm_update(L,learning_mode) = (
-      momentum = !nn_iteration?1:1e-3;
-      draw(##L#_ind,L#_in_mean,0,0,0,0,1,h##L#_ind,1,1,momentum);
-      draw(##L#_ind,L#_in_variance,1,0,0,0,1,h##L#_ind,1,1,momentum);
+      L#_momentum = lerp(1,1e-5,tanh(nn_iteration/100));
+      draw(##L#_ind,L#_in_mean,0,0,0,0,1,h##L#_ind,1,1,L#_momentum);
+      draw(##L#_ind,L#_in_variance,1,0,0,0,1,h##L#_ind,1,1,L#_momentum);
       learning_mode&1?(
         nn_optimizer_update_layer(L#_gamma,L#_batch_deriv_gamma);
         draw(##L#_ind,L#_gamma,2,0,0,0,1,h##L#_ind);
@@ -50484,13 +50596,13 @@ fx_animate_preview : skip ${4=1},${5=0},${6=$5}
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2010/29/12</i>.</small>")
 fx_animate_elevation3d : skip "${4=}"
   if $3 filename="$4/gmic_elevation3d.png" else filename="" fi
-  _fx_elevation3d ${5-6}
+  _fx_elevation3d ${5-6},0
   animate fx_render3d,"${7-8},${10-19},$9",\
                       "${7-8},${20-29},$9",$1,$2,{``$filename}
 
 fx_animate_elevation3d_preview : skip "${4=}"
   w={w} h={h}
-  _fx_elevation3d ${5-6}
+  _fx_elevation3d ${5-6},0
   fx_animate_preview fx_render3d,$w","$h",${10-19},$9",\
                                       $w","$h",${20-29},$9",0,$w,$h
 
@@ -50532,13 +50644,13 @@ fx_animate_elevation3d_preview : skip "${4=}"
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2010/29/12</i>.</small>")
 fx_animate_extrude3d : skip "${4=}"
   if $3 filename="$4/gmic_extrude3d.png" else filename="" fi
-  _fx_extrude3d ${5-7}
+  _fx_extrude3d ${5-7},0
   animate fx_render3d,"${8-9},${11-20},$10",\
                       "${8-9},${21-30},$10",$1,$2,{``$filename}
 
 fx_animate_extrude3d_preview : skip "${4=}"
   w={w} h={h}
-  _fx_extrude3d ${5-7}
+  _fx_extrude3d ${5-7},0
   fx_animate_preview fx_render3d,$w","$h",${11-20},$10",\
                                       $w","$h",${21-30},$10",0,$w,$h
 

@@ -96,8 +96,9 @@ endif()
 # compile flags
 set(CMAKE_POSITION_INDEPENDENT_CODE True)
 
-set(COMPILE_FLAGS "-Dgmic_build -Dcimg_use_vt100 -Dgmic_is_parallel -Dcimg_use_abort")
+list(APPEND GMIC_CXX_COMPILE_FLAGS -Dgmic_build -Dcimg_use_vt100 -Dgmic_is_parallel -Dcimg_use_abort)
 if(APPLE)
+<<<<<<< HEAD
    set(COMPILE_FLAGS "${COMPILE_FLAGS} -mmacosx-version-min=10.8 -stdlib=libc++ -Wno-error=c++11-narrowing -Wc++11-extensions -fpermissive")
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU") 
   # GCC
@@ -105,10 +106,15 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   # Clang
   set(COMPILE_FLAGS "${COMPILE_FLAGS} -Wno-error=narrowing -fpermissive")
+=======
+    list(APPEND GMIC_CXX_COMPILE_FLAGS -mmacosx-version-min=10.8 -stdlib=libc++ -Wno-error=c++11-narrowing -Wc++11-extensions -fpermissive)
+else()
+    list(APPEND GMIC_CXX_COMPILE_FLAGS -Wno-error=narrowing -fno-ipa-sra -fpermissive)
+>>>>>>> develop
 endif()
 
 if(NOT "${PRERELEASE_TAG}" STREQUAL "")
-  set(COMPILE_FLAGS "${COMPILE_FLAGS} -Dgmic_prerelease=\"${PRERELEASE_TAG}\"")
+    list(APPEND GMIC_CXX_COMPILE_FLAGS "-Dgmic_prerelease=\"${PRERELEASE_TAG}\"")
 endif()
 
 if (ENABLE_LTO)
@@ -130,14 +136,20 @@ if(ENABLE_DYNAMIC_LINKING)
   set(CMAKE_SKIP_RPATH TRUE)
 endif()
 
-set(CMAKE_CXX_FLAGS_DEBUG "-g -ansi -Wall -Wextra -pedantic -Dcimg_verbosity=3 ${COMPILE_FLAGS}")
-set(CMAKE_CXX_FLAGS_RELEASE "${COMPILE_FLAGS}")
-set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-g ${COMPILE_FLAGS}")
+string(TOLOWER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE_LOWER)
+if (${CMAKE_BUILD_TYPE_LOWER} STREQUAL "debug")
+    list(PREPEND GMIC_CXX_COMPILE_FLAGS -g -ansi -Wall -Wextra -pedantic -Dcimg_verbosity=3)
+endif()
+if (${CMAKE_BUILD_TYPE_LOWER} STREQUAL "relwithdebinfo")
+    list(PREPEND GMIC_CXX_COMPILE_FLAGS -g)
+endif()
 
-if(NOT CUSTOM_CFLAGS)
-  set(CMAKE_CXX_FLAGS_DEBUG "-Og ${CMAKE_CXX_FLAGS_DEBUG}")
-  set(CMAKE_CXX_FLAGS_RELEASE "-Ofast ${CMAKE_CXX_FLAGS_RELEASE}")
-  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-Ofast ${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
+if (NOT CUSTOM_CFLAGS)
+    if (${CMAKE_BUILD_TYPE_LOWER} STREQUAL "debug")
+        list(PREPEND GMIC_CXX_COMPILE_FLAGS -Og)
+    else()
+        list(PREPEND GMIC_CXX_COMPILE_FLAGS -Ofast)
+    endif()
 endif()
 
 # source files
@@ -145,6 +157,7 @@ set(CLI_Sources src/gmic.cpp)
 
 if(BUILD_LIB)
   add_library(libgmic SHARED ${CLI_Sources})
+  target_compile_options(libgmic PRIVATE ${GMIC_CXX_COMPILE_FLAGS})
   set_target_properties(libgmic PROPERTIES SOVERSION "1" OUTPUT_NAME "gmic")
   target_link_libraries(libgmic
     CImg::CImg
@@ -168,6 +181,7 @@ endif()
 
 if(BUILD_LIB_STATIC)
   add_library(libgmicstatic STATIC ${CLI_Sources})
+  target_compile_options(libgmicstatic PRIVATE ${GMIC_CXX_COMPILE_FLAGS})
   set_target_properties(libgmicstatic PROPERTIES OUTPUT_NAME "gmic")
   target_link_libraries(libgmicstatic
     CImg::CImg
@@ -186,6 +200,7 @@ endif()
 
 if(BUILD_CLI)
   add_executable(gmic src/gmic_cli.cpp)
+  target_compile_options(gmic PRIVATE ${GMIC_CXX_COMPILE_FLAGS})
   if(ENABLE_DYNAMIC_LINKING)
     target_link_libraries(gmic libgmic)
   else()
