@@ -15727,7 +15727,7 @@ _gradient :
   s_scheme=${s{$scheme+1}}
   s0,s1,s2,s3=dirichlet,neumann,periodic,mirror
   s_boundary=${s$boundary}
-  e[0--3] "Compute gradient of image$?"$s_axes", with "$s_scheme" scheme and "$s_boundary" boundary conditions."
+  e[0--3] "Compute gradient of image"$_gmic_s$s_axes", with "$s_scheme" scheme and "$s_boundary" boundary conditions."
   sx,sy,sz,sc=",",;,/,^
 
   # Process images.
@@ -15736,7 +15736,7 @@ _gradient :
     ('$laxes')
     repeat w
       a={`i[#1,$>]`} s=${s$a}
-      if ${gradient_$a} [gradient_$a]
+      if 0${gradient_$a}>0 [gradient_$a]
       elif $scheme==-1 # Backward
         (-1${s}1${s}0) +correlate[0] .,$boundary rm..
       elif $scheme==0 # Centered
@@ -15768,8 +15768,7 @@ _gradient :
       fi
       nm. gradient_$a
     done
-    rm[0,1]
-    nm $nm
+    rm[0,1] nm $nm
   endl done
   u $is_noaarg
 
@@ -15845,10 +15844,57 @@ heat_flow : skip ${1=10},${2=30},${3=0}
   e[^-1] "Apply $1 iterations of the heat flow on image$?, with time step $2."
   pde_flow $1,$2,laplacian,$3
 
-#@cli hessian : { xx | xy | xz | yy | yz | zz }...{ xx | xy | xz | yy | yz | zz } : (no arg) : (+)
-#@cli : Compute the hessian components (second derivatives) of selected images.
+#@cli hessian : { xx | xy | xz | yy | yz | zz }...{ xx | xy | xz | yy | yz | zz },_boundary_conditions : (no arg) :
+#@cli : Compute the hessian components (second derivatives) of selected images along specified axes.
+#@cli : 'boundary_conditions' can be { 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }.
 #@cli : (no arg) compute all significant components.
+#@cli : Default value: 'boundary_conditions=1'.
 #@cli : $ image.jpg hessian
+hessian : skip "${1=},${2=}"
+
+  # Parse arguments.
+  l[]
+    if ['$1']==0 axes,boundary=,1 noarg # No 1st arg
+    else
+      is_axes={"s=['$1'];fill(s,k,isin(s[k],'xyz'));min(s)"}
+      if !$is_axes axes,boundary=,1 noarg # Invalid 1st arg
+      elif ['$2']==0 axes,boundary=$1,1 # No 2nd arg
+      else
+        is_boundary={"isint($2) && inrange($2,0,3)"}
+        if !$is_boundary axes,boundary=,1 noarg # Invalid 2nd arg
+        else axes,boundary=$1,$2
+        fi
+      fi
+    fi
+  onfail axes,boundary=,1 noarg # Invalid arguments
+  endl
+
+  # Display log message.
+  if '$axes'!=0 s_axes=" along axes '"$axes"'" fi
+  s0,s1,s2,s3=dirichlet,neumann,periodic,mirror
+  s_boundary=${s$boundary}
+  e[^-1] "Compute hessian of image$?"$s_axes", with "$s_boundary" boundary conditions."
+
+  # Process images.
+  repeat $! l[$<] nm={n}
+    laxes=$axes if '$laxes'==0 if d>1 laxes=xxxyxzyyyzzz else laxes=xxxyyy fi fi
+    ('$laxes')
+    repeat int(w/2)
+      a1,a2={`i[#1,2*$>]`},{`i[#1,2*$>+1]`}
+      if _'$a1'>_'$a2' a1,a2=$a2,$a1 fi
+      if 0${hessian_$a1$a2}>0 [hessian_$a1$a2]
+      elif _'$a1'==_'x'" && "_'$a2'==_'x' (1,-2,1) +correlate[0] .,$boundary rm..
+      elif _'$a1'==_'x'" && "_'$a2'==_'y' (0.25,0,-0.25;0,0,0;-0.25,0,0.25) +correlate[0] .,$boundary rm..
+      elif _'$a1'==_'x'" && "_'$a2'==_'z' (0.25,0,-0.25/0,0,0/-0.25,0,0.25) +correlate[0] .,$boundary rm..
+      elif _'$a1'==_'y'" && "_'$a2'==_'y' (1;-2;1) +correlate[0] .,$boundary rm..
+      elif _'$a1'==_'y'" && "_'$a2'==_'z' (0.25;0;-0.25/0;0;0/-0.25;0;0.25) +correlate[0] .,$boundary rm..
+      elif _'$a1'==_'z'" && "_'$a2'==_'z' (1/-2/1) +correlate[0] .,$boundary rm..
+      fi
+      nm. hessian_$a1$a2
+    done
+    rm[0,1] nm $nm
+  endl done
+  u $is_noaarg
 
 #@cli idct : _{ x | y | z }...{ x | y | z } : (no arg)
 #@cli : Compute the inverse discrete cosine transform of selected images, optionally along the specified axes only.
@@ -16811,12 +16857,78 @@ rolling_guidance : check "${1=4}>=0 && ${2=10}>=0 && ${3=0.5}>=0"
     k.
   endl done
 
-#@cli sharpen : amplitude>=0 : amplitude>=0,edge>=0,_alpha,_sigma : (+)
+#@cli sharpen : amplitude>=0 : amplitude>=0,edge>=0,_alpha[%],_sigma[%]
 #@cli : Sharpen selected images by inverse diffusion or shock filters methods.
 #@cli : 'edge' must be specified to enable shock-filter method.
-#@cli : Default values: 'alpha=0' and 'sigma=0'.
+#@cli : Default values: 'edge=0', 'alpha=0' and 'sigma=0'.
 #@cli : $ image.jpg sharpen 300
 #@cli : $ image.jpg blur 5 sharpen 300,1
+sharpen : check "$1>=0 && ${2=0}>=0 && ${3=0}>=0 && ${4=0}>=0"
+  if $2>0 # Shock filters
+    e[0--3] "Sharpen image$? with shock filters, amplitude $1, edge $2, alpha $3 and sigma $4."
+    repeat $! l[$>]
+      im,iM={[im,iM]}
+      +b $3 structuretensors. 0 b. $4 eigen. l.. max 0 s c + + 1 ^ {-0.5*$2} *. -1 +. 1 endl
+      if {0,d>1} # 3D
+        +f[0] "const boundary = 1;
+          minmod(a,b) = (a*b<=0?0:minabs(a,b));
+          u = i(#-1,x,y,z,0);
+          v = i(#-1,x,y,z,1);
+          w = i(#-1,x,y,z,2);
+          amp = i(#-2,x,y,z,0);
+          Ippp = j(-1,-1,-1); Icpp = j(0,-1,-1); Inpp = j(1,-1,-1);
+          Ipcp = j(-1,0,-1); Iccp = j(0,0,-1); Incp = j(1,0,-1);
+          Ipnp = j(-1,1,-1); Icnp = j(0,1,-1); Innp = j(1,1,-1);
+          Ippc = j(-1,-1,0); Icpc = j(0,-1,0); Inpc = j(1,-1,0);
+          Ipcc = j(-1,0,0); Iccc = i; Incc = j(1,0,0);
+          Ipnc = j(-1,1,0); Icnc = j(0,1,0); Innc = j(1,1,0);
+          Ippn = j(-1,-1,1); Icpn = j(0,-1,1); Inpn = j(1,-1,1);
+          Ipcn = j(-1,0,1); Iccn = j(0,0,1); Incn = j(1,0,1);
+          Ipnn = j(-1,1,1); Icnn = j(0,1,1); Innn = j(1,1,1);
+          ixx = Incc + Ipcc - 2*Iccc;
+          ixy = 0.25*(Innc + Ippc - Inpc - Ipnc);
+          ixz = 0.25*(Incn + Ipcp - Incp - Ipcn);
+          iyy = Icnc + Icpc - 2*Iccc;
+          iyz = 0.25*(Icnn + Icpp - Icnp - Icpn);
+          izz = Iccn + Iccp - 2*Iccc;
+          ixf = Incc - Iccc;
+          ixb = Iccc - Ipcc;
+          iyf = Icnc - Iccc;
+          iyb = Iccc - Icpc;
+          izf = Iccn - Iccc;
+          izb = Iccc - Iccp;
+          itt = u^2*ixx + v^2*iyy + w^2*izz + 2*u*v*ixy + 2*u*w*ixz + 2*v*w*iyz;
+          it = u*minmod(ixf,ixb) + v*minmod(iyf,iyb) + w*minmod(izf,izb);
+          amp*sign(itt)*abs(it)"
+
+      else # 2D
+        +f[0] "const boundary = 1;
+          minmod(a,b) = (a*b<=0?0:minabs(a,b));
+          u = i(#-1,x,y,z,0);
+          v = i(#-1,x,y,z,1);
+          amp = i(#-2,x,y,z,0);
+          Ipp = j(-1,-1); Icp = j(0,-1); Inp = j(1,-1);
+          Ipc = j(-1,0); Icc = i; Inc = j(1,0);
+          Ipn = j(-1,1); Icn = j(0,1); Inn = j(1,1);
+          ixx = Inc + Ipc - 2*Icc;
+          ixy = 0.25*(Ipp + Inn - Ipn - Inp);
+          iyy = Icn + Icp - 2*Icc;
+          ixf = Inc - Icc;
+          iyf = Icn - Icc;
+          ixb = Icc - Ipc;
+          iyb = Icc - Icp;
+          itt = u^2*ixx + v^2*iyy + 2*u*v*ixy;
+          it = y*minmod(ixf,ixb) + v*minmod(iyf,iyb);
+          amp*sign(itt)*abs(it)"
+      fi
+      *. {$1/abs(maxabs(im,iM))} rm[-3,-2] - c $im,$iM
+    endl done
+  else # Inverse diffusion
+    e[0--3] "Sharpen image$? with inverse diffusion and amplitude $1."
+    repeat $! l[$>]
+      im,iM={[im,iM]} +laplacian *. {$1/abs(maxabs(im,iM))} - c $im,$iM
+    endl done
+  fi
 
 #@cli smooth : amplitude[%]>=0,_sharpness>=0,0<=_anisotropy<=1,_alpha[%],_sigma[%],_dl>0,_da>0,\
 # _precision>0,_interpolation,_fast_approx={ 0 | 1 } : \
