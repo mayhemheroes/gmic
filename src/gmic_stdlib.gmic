@@ -15720,7 +15720,7 @@ _gradient :
   s_scheme=${s{$scheme+1}}
   s0,s1,s2,s3=dirichlet,neumann,periodic,mirror
   s_boundary=${s$boundary}
-  e[0--3] "Compute gradient of image$?"$s_axes", with "$s_scheme" scheme and "$s_boundary" boundary conditions."
+  e[0--3] "Compute gradient of image"$_gmic_s$s_axes", with "$s_scheme" scheme and "$s_boundary" boundary conditions."
   sx,sy,sz,sc=",",;,/,^
 
   # Process images.
@@ -15729,7 +15729,7 @@ _gradient :
     ('$laxes')
     repeat w
       a={`i[#1,$>]`} s=${s$a}
-      if ${gradient_$a} [gradient_$a]
+      if 0${gradient_$a}>0 [gradient_$a]
       elif $scheme==-1 # Backward
         (-1${s}1${s}0) +correlate[0] .,$boundary rm..
       elif $scheme==0 # Centered
@@ -15761,8 +15761,7 @@ _gradient :
       fi
       nm. gradient_$a
     done
-    rm[0,1]
-    nm $nm
+    rm[0,1] nm $nm
   endl done
   u $is_noaarg
 
@@ -15838,10 +15837,57 @@ heat_flow : skip ${1=10},${2=30},${3=0}
   e[^-1] "Apply $1 iterations of the heat flow on image$?, with time step $2."
   pde_flow $1,$2,laplacian,$3
 
-#@cli hessian : { xx | xy | xz | yy | yz | zz }...{ xx | xy | xz | yy | yz | zz } : (no arg) : (+)
-#@cli : Compute the hessian components (second derivatives) of selected images.
+#@cli hessian : { xx | xy | xz | yy | yz | zz }...{ xx | xy | xz | yy | yz | zz },_boundary_conditions : (no arg) :
+#@cli : Compute the hessian components (second derivatives) of selected images along specified axes.
+#@cli : 'boundary_conditions' can be { 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }.
 #@cli : (no arg) compute all significant components.
+#@cli : Default value: 'boundary_conditions=1'.
 #@cli : $ image.jpg hessian
+hessian : skip "${1=},${2=}"
+
+  # Parse arguments.
+  l[]
+    if ['$1']==0 axes,boundary=,1 noarg # No 1st arg
+    else
+      is_axes={"s=['$1'];fill(s,k,isin(s[k],'xyz'));min(s)"}
+      if !$is_axes axes,boundary=,1 noarg # Invalid 1st arg
+      elif ['$2']==0 axes,boundary=$1,1 # No 2nd arg
+      else
+        is_boundary={"isint($2) && inrange($2,0,3)"}
+        if !$is_boundary axes,boundary=,1 noarg # Invalid 2nd arg
+        else axes,boundary=$1,$2
+        fi
+      fi
+    fi
+  onfail axes,boundary=,1 noarg # Invalid arguments
+  endl
+
+  # Display log message.
+  if '$axes'!=0 s_axes=" along axes '"$axes"'" fi
+  s0,s1,s2,s3=dirichlet,neumann,periodic,mirror
+  s_boundary=${s$boundary}
+  e[^-1] "Compute hessian of image$?"$s_axes", with "$s_boundary" boundary conditions."
+
+  # Process images.
+  repeat $! l[$<] nm={n}
+    laxes=$axes if '$laxes'==0 if d>1 laxes=xxxyxzyyyzzz else laxes=xxxyyy fi fi
+    ('$laxes')
+    repeat int(w/2)
+      a1,a2={`i[#1,2*$>]`},{`i[#1,2*$>+1]`}
+      if _'$a1'>_'$a2' a1,a2=$a2,$a1 fi
+      if 0${hessian_$a1$a2}>0 [hessian_$a1$a2]
+      elif _'$a1'==_'x'" && "_'$a2'==_'x' (1,-2,1) +correlate[0] .,$boundary rm..
+      elif _'$a1'==_'x'" && "_'$a2'==_'y' (0.25,0,-0.25;0,0,0;-0.25,0,0.25) +correlate[0] .,$boundary rm..
+      elif _'$a1'==_'x'" && "_'$a2'==_'z' (0.25,0,-0.25/0,0,0/-0.25,0,0.25) +correlate[0] .,$boundary rm..
+      elif _'$a1'==_'y'" && "_'$a2'==_'y' (1;-2;1) +correlate[0] .,$boundary rm..
+      elif _'$a1'==_'y'" && "_'$a2'==_'z' (0.25;0;-0.25/0;0;0/-0.25;0;0.25) +correlate[0] .,$boundary rm..
+      elif _'$a1'==_'z'" && "_'$a2'==_'z' (1/-2/1) +correlate[0] .,$boundary rm..
+      fi
+      nm. hessian_$a1$a2
+    done
+    rm[0,1] nm $nm
+  endl done
+  u $is_noaarg
 
 #@cli idct : _{ x | y | z }...{ x | y | z } : (no arg)
 #@cli : Compute the inverse discrete cosine transform of selected images, optionally along the specified axes only.
@@ -16810,7 +16856,7 @@ rolling_guidance : check "${1=4}>=0 && ${2=10}>=0 && ${3=0.5}>=0"
 #@cli : Default values: 'edge=0', 'alpha=0' and 'sigma=0'.
 #@cli : $ image.jpg sharpen 300
 #@cli : $ image.jpg blur 5 sharpen 300,1
-sharp : check "$1>=0 && ${2=0}>=0 && ${3=0}>=0 && ${4=0}>=0"
+sharpen : check "$1>=0 && ${2=0}>=0 && ${3=0}>=0 && ${4=0}>=0"
   if $2>0 # Shock filters
     e[0--3] "Sharpen image$? with shock filters, amplitude $1, edge $2, alpha $3 and sigma $4."
     repeat $! l[$>]

@@ -2572,7 +2572,7 @@ const char *gmic::builtin_commands_names[] = {
     "equalize","erf","erode","error","eval","exec","exp",
   "f","f3d","fft","fi","files","fill","flood","focale3d","for",
   "ge","graph","gt","guided",
-  "h","hessian","histogram",
+  "h","histogram",
   "i","if","ifft","image","index","inpaint","input","invert","isoline3d","isosurface3d",
   "j","j3d",
   "k","keep",
@@ -2585,7 +2585,7 @@ const char *gmic::builtin_commands_names[] = {
   "q","quit",
   "r","r3d","rand","remove","repeat","resize","return","reverse","reverse3d",
     "rm","rol","ror","rotate","rotate3d","round","rows","rv","rv3d",
-  "s","s3d","screen","select","serialize","set","sh","shared","sharpen","shift","sign","sin","sinc","sinh","skip",
+  "s","s3d","screen","select","serialize","set","sh","shared","shift","sign","sin","sinc","sinh","skip",
     "sl3d","slices","smooth","solve","sort","specl3d","specs3d","sphere3d","split","split3d","sqr","sqrt","srand",
     "ss3d","status","store","streamline3d","structuretensors","sub","sub3d","svd",
   "t","tan","tanh","text","trisolve",
@@ -8211,40 +8211,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           is_change = true; ++position; continue;
         }
 
-        // Compute Hessian.
-        if (!std::strcmp("hessian",command)) {
-          gmic_substitute_args(false);
-          *argx = 0;
-          if (cimg_sscanf(argument,"%255[xyz]%c",
-                          gmic_use_argx,&end)==1) {
-            ++position;
-            print(images,0,"Compute Hessian of image%s along axes '%s'.",
-                  gmic_selection.data(),
-                  argx);
-          } else
-            print(images,0,"Compute Hessian of image%s.",
-                  gmic_selection.data());
-          unsigned int off = 0;
-          cimg_forY(selection,l) {
-            const unsigned int uind = selection[l] + off;
-            CImg<T>& img = gmic_check(images[uind]);
-            g_list = img.get_hessian(*argx?argx:0);
-            name = images_names[uind];
-            if (is_get) {
-              images_names.insert(g_list.size(),name.copymark());
-              g_list.move_to(images,~0U);
-            } else {
-              off+=g_list.size() - 1;
-              g_list[0].move_to(images[uind].assign());
-              for (unsigned int i = 1; i<g_list.size(); ++i) g_list[i].move_to(images,uind + i);
-              images_names[uind] = name;
-              if (g_list.size()>1) images_names.insert(g_list.size() - 1,name.copymark(),uind + 1);
-            }
-          }
-          g_list.assign();
-          is_change = true; continue;
-        }
-
         goto gmic_commands_others;
 
         //-----------------------------
@@ -12117,36 +12083,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               }
             }
           } else arg_error("sub3d");
-          is_change = true; ++position; continue;
-        }
-
-        // Sharpen.
-        if (!std::strcmp("sharpen",command)) {
-          gmic_substitute_args(false);
-          float amplitude = 0, edge = -1, alpha = 0, sigma = 0;
-          if ((cimg_sscanf(argument,"%f%c",
-                           &amplitude,&end)==1 ||
-               cimg_sscanf(argument,"%f,%f%c",
-                           &amplitude,&edge,&end)==2 ||
-               cimg_sscanf(argument,"%f,%f,%f%c",
-                           &amplitude,&edge,&alpha,&end)==3 ||
-               cimg_sscanf(argument,"%f,%f,%f,%f%c",
-                           &amplitude,&edge,&alpha,&sigma,&end)==4) &&
-              amplitude>=0 && (edge==-1 || edge>=0)) {
-            if (edge>=0)
-              print(images,0,"Sharpen image%s with shock filters, amplitude %g, edge %g, "
-                    "alpha %g and sigma %g.",
-                    gmic_selection.data(),
-                    amplitude,
-                    edge,
-                    alpha,
-                    sigma);
-            else
-              print(images,0,"Sharpen image%s with inverse diffusion and amplitude %g.",
-                    gmic_selection.data(),
-                    amplitude);
-            cimg_forY(selection,l) gmic_apply(sharpen(amplitude,(bool)(edge>=0),edge,alpha,sigma));
-          } else arg_error("sharpen");
           is_change = true; ++position; continue;
         }
 
