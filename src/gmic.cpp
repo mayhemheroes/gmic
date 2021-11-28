@@ -2571,7 +2571,7 @@ const char *gmic::builtin_commands_names[] = {
   "e","echo","eigen","eikonal","elif","ellipse","else","endian","endif","endl","endlocal","eq",
     "equalize","erf","erode","error","eval","exec","exp",
   "f","f3d","fft","fi","files","fill","flood","focale3d","for",
-  "g","ge","gradient","graph","gt","guided",
+  "ge","graph","gt","guided",
   "h","hessian","histogram",
   "i","if","ifft","image","index","inpaint","input","invert","isoline3d","isosurface3d",
   "j","j3d",
@@ -5616,7 +5616,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           0,0,0,0,0,"mod","and",0,0,0,"mul","add",0,"sub",0,"div",0,0,0,0,0,0,0,0,0,0,0,0, // 32-59
           "lt","set","gt",0, // 60-63
           0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"pow",0, // 64-95
-          0,"append","blur","cut","display","echo","fill","gradient",0,"input","image","keep", // 96-107
+          0,"append","blur","cut","display","echo","fill",0,0,"input","image","keep", // 96-107
           "local","command","normalize","output","print","quit","resize","split","text","status", // 108-117
           "verbose","window","exec","unroll","crop",0,"or",0,0,0 // 118-127
         };
@@ -7976,47 +7976,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                 "Compute boolean 'greater than' between image%s and expression %s'",
                                 gmic_selection.data(),gmic_argument_text_printed(),
                                 "Compute boolean 'greater than' between image%s");
-
-        // Compute gradient.
-        if (!std::strcmp("gradient",command)) {
-          gmic_substitute_args(false);
-          int scheme = 0;
-          *argx = 0;
-          if ((cimg_sscanf(argument,"%15[xyz]%c",
-                           gmic_use_argx,&end)==1 ||
-               cimg_sscanf(argument,"%15[xyz],%d%c",
-                           argx,&scheme,&end)==2) &&
-              scheme>=-1 && scheme<=5) {
-            ++position;
-            print(images,0,"Compute gradient of image%s along axes '%s', with %s scheme.",
-                  gmic_selection.data(),
-                  argx,
-                  scheme==-1?"backward differences":scheme==4?"deriche":scheme==5?"vanvliet":
-                  scheme==1?"forward differences":scheme==2?"sobel":
-                  scheme==3?"rotation invariant":"centered differences");
-          } else print(images,0,"Compute gradient of image%s, with rotation invariant scheme.",
-                       gmic_selection.data());
-          unsigned int off = 0;
-          cimg_forY(selection,l) {
-            const unsigned int uind = selection[l] + off;
-            CImg<T>& img = gmic_check(images[uind]);
-            g_list = img.get_gradient(*argx?argx:0,scheme);
-            name = images_names[uind];
-            if (is_get) {
-              images_names.insert(g_list.size(),name.copymark());
-              g_list.move_to(images,~0U);
-            } else {
-              off+=g_list.size() - 1;
-              g_list[0].move_to(images[uind].assign());
-              for (unsigned int i = 1; i<g_list.size(); ++i) g_list[i].move_to(images,uind + i);
-              images_names[uind] = name;
-              if (g_list.size()>1)
-                images_names.insert(g_list.size() - 1,name.copymark(),uind + 1);
-            }
-          }
-          g_list.assign();
-          is_change = true; continue;
-        }
 
         // Guided filter.
         if (!std::strcmp("guided",command)) {
