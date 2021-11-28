@@ -15735,17 +15735,15 @@ grad :  skip "${1=},${2=},${3=}"
         else (-0.5${s}0${s}0.5)
         fi
         +correlate[0] .,$boundary rm..
-      elif $scheme==4 # Deriche
-        if $boundary<2 +deriche[0] 0,1,$a$,$boundary
+      else # Deriche/Vanvliet
+        s4,s5=deriche,vanvliet com=${s$scheme}
+        if $boundary<2 +$com[0] 0,1,$a$,$boundary
         else
-          if _'$a'==_'x' +r[0] {0,[w+2,h,d,s]},0,$boundary,0.5 deriche. 0,1,$a shrink_x. 1
-          elif _'$a'==_'y' +r[0] {0,[w,h+2,d,s]},0,$boundary,0,0.5 deriche. 0,1,$a shrink_y. 1
-          elif _'$a'==_'z' +r[0] {0,[w,h,d+2,s]},0,$boundary,0,0,0.5 deriche. 0,1,$a shrink_z. 1
+          if _'$a'==_'x' +r[0] {0,[w+2,h,d,s]},0,$boundary,0.5 $com. 0,1,$a shrink_x. 1
+          elif _'$a'==_'y' +r[0] {0,[w,h+2,d,s]},0,$boundary,0,0.5 $com. 0,1,$a shrink_y. 1
+          elif _'$a'==_'z' +r[0] {0,[w,h,d+2,s]},0,$boundary,0,0,0.5 $com. 0,1,$a shrink_z. 1
           fi
         fi
-      else # Vanvliet
-        sh[0]
-        +vanvliet[0] 0,1,$a,$boundary rm..
       fi
       nm. gradient_$a
     done
