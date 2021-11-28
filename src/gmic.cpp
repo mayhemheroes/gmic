@@ -422,7 +422,7 @@ CImg<T> get_gmic_autocrop(const CImg<T>& color=CImg<T>::empty()) {
 }
 
 CImg<T>& gmic_blur(const float sigma_x, const float sigma_y, const float sigma_z, const float sigma_c,
-                   const bool boundary_conditions, const bool is_gaussian) {
+                   const unsigned int boundary_conditions, const bool is_gaussian) {
   if (is_empty()) return *this;
   if (is_gaussian) {
     if (_width>1) vanvliet(sigma_x,0,'x',boundary_conditions);
@@ -439,7 +439,7 @@ CImg<T>& gmic_blur(const float sigma_x, const float sigma_y, const float sigma_z
 }
 
 CImg<Tfloat> get_gmic_blur(const float sigma_x, const float sigma_y, const float sigma_z, const float sigma_c,
-                           const bool boundary_conditions, const bool is_gaussian) const {
+                           const unsigned int boundary_conditions, const bool is_gaussian) const {
   return CImg<Tfloat>(*this,false).gmic_blur(sigma_x,sigma_y,sigma_z,sigma_c,boundary_conditions,is_gaussian);
 }
 
@@ -5984,7 +5984,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                            &sigma,&boundary,&is_gaussian,&end)==3 ||
                (cimg_sscanf(p_argument,"%f%c,%u,%u%c",
                             &sigma,&sep,&boundary,&is_gaussian,&end)==4 && sep=='%')) &&
-              sigma>=0 && boundary<=1 && is_gaussian<=1) {
+              sigma>=0 && boundary<=3 && is_gaussian<=1) {
             print(images,0,"Blur image%s%s%s%s with standard deviation %g%s, %s boundary conditions "
                   "and %s kernel.",
                   gmic_selection.data(),
@@ -5992,16 +5992,16 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   *argx?argx:"",
                   *argx?std::strlen(argx)==1?"'-axis,":"'-axes,":"",
                   sigma,sep=='%'?"%":"",
-                  boundary?"neumann":"dirichlet",
+                  boundary==0?"dirichlet":boundary==1?"neumann":boundary==2?"periodic":"mirror",
                   is_gaussian?"gaussian":"quasi-gaussian");
             if (sep=='%') sigma = -sigma;
             if (*argx) {
               g_img.assign(4,1,1,1,(T)0);
               for (const char *s = argx; *s; ++s) g_img[*s>='x'?*s - 'x':3]+=sigma;
               cimg_forY(selection,l) gmic_apply(gmic_blur(g_img[0],g_img[1],g_img[2],g_img[3],
-                                                          (bool)boundary,(bool)is_gaussian));
+                                                          boundary,(bool)is_gaussian));
               g_img.assign();
-            } else cimg_forY(selection,l) gmic_apply(blur(sigma,(bool)boundary,(bool)is_gaussian));
+            } else cimg_forY(selection,l) gmic_apply(blur(sigma,boundary,(bool)is_gaussian));
           } else arg_error("blur");
           is_change = true; ++position; continue;
         }
