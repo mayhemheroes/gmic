@@ -15712,10 +15712,18 @@ grad :  skip "${1=},${2=},${3=}"
   repeat $! l[$<]
     laxes=$axes if '$laxes'==0 if d>1 laxes=xyz else laxes=xy fi fi
 
-    repeat size('$laxes')
+    if find('$laxes',_'x')>=0
+      if $scheme==-1 +shift 1,0,0,0,$boundary -[-2,-1]
+      elif $scheme==0 +shift 1,0,0,0,$boundary shift.. -1,0,0,0,$boundary -[-2,-1] / 2
+      elif $scheme==1 +shift -1,0,0,0,$boundary rv[-2,-1] -[-2,-1]
+      elif $scheme==2 (-1,0,1;-2,0,2;-1,0,1) convolve.. .,$boundary rm.
+      elif $scheme==3 a,b={[0.25*(2-sqrt(2)),0.5*(sqrt(2)-1)]} (-$a,0,$a;-$b,0,$b;-$a,0,$a) convolve.. .,$boundary rm.
+      elif $scheme==4 deriche 0,1,x
+      else vanvliet 0,1,x
+      fi
+    fi
 
 
-    done
 
   endl done
 
