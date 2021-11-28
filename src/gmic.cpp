@@ -7205,14 +7205,14 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                cimg_sscanf(argument,"%f,%u,%c,%u%c",&sigma,&order,&axis,&boundary,&end)==4 ||
                (cimg_sscanf(argument,"%f%c,%u,%c,%u%c",
                             &sigma,&sep,&order,&axis,&boundary,&end)==5 && sep=='%')) &&
-              sigma>=0 && order<=2 && is_xyzc(axis) && boundary<=1) {
+              sigma>=0 && order<=2 && is_xyzc(axis) && boundary<=3) {
             print(images,0,"Apply %u-order Deriche filter on image%s, along axis '%c' with standard "
                   "deviation %g%s and %s boundary conditions.",
                   order,gmic_selection.data(),axis,
                   sigma,sep=='%'?"%":"",
-                  boundary?"neumann":"dirichlet");
+                  boundary==0?"dirichlet":boundary==1?"neumann":boundary==2?"periodic":"mirror");
             if (sep=='%') sigma = -sigma;
-            cimg_forY(selection,l) gmic_apply(deriche(sigma,order,axis,(bool)boundary));
+            cimg_forY(selection,l) gmic_apply(deriche(sigma,order,axis,boundary));
           } else arg_error("deriche");
           is_change = true; ++position; continue;
         }
@@ -12898,14 +12898,14 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                cimg_sscanf(argument,"%f,%u,%c,%u%c",&sigma,&order,&axis,&boundary,&end)==4 ||
                (cimg_sscanf(argument,"%f%c,%u,%c,%u%c",
                             &sigma,&sep,&order,&axis,&boundary,&end)==5 && sep=='%')) &&
-              sigma>=0 && order<=3 && is_xyzc(axis) && boundary<=1) {
+              sigma>=0 && order<=3 && is_xyzc(axis) && boundary<=3) {
             print(images,0,"Apply %u-order Vanvliet filter on image%s, along axis '%c' with standard "
                   "deviation %g%s and %s boundary conditions.",
                   order,gmic_selection.data(),axis,
                   sigma,sep=='%'?"%":"",
-                  boundary?"neumann":"dirichlet");
+                  boundary==0?"dirichlet":boundary==1?"neumann":boundary==2?"periodic":"mirror");
             if (sep=='%') sigma = -sigma;
-            cimg_forY(selection,l) gmic_apply(vanvliet(sigma,order,axis,(bool)boundary));
+            cimg_forY(selection,l) gmic_apply(vanvliet(sigma,order,axis,boundary));
           } else arg_error("vanvliet");
           is_change = true; ++position; continue;
         }
