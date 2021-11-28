@@ -15720,12 +15720,17 @@ grad :  skip "${1=},${2=},${3=}"
       elif $scheme==0 (-0.5${s}0${s}0.5) +correlate[0] .,$boundary rm..
       elif $scheme==1 (0${s}-1${s}1) +correlate[0] .,$boundary rm..
       elif $scheme==2
-        (-1,0,1;-2,0,2;-1,0,1)
-        if _'$a'==_'y' transpose. fi
+        if _'$a'==_'x' (-1,0,1;-2,0,2;-1,0,1)
+        elif _'$a'==_'y' (-1,-2,-1;0,0,0;1,2,1)
+        else (-0.5${s}0${s}0.5)
+        fi
         +correlate[0] .,$boundary rm..
       elif $scheme==3
-        a,b={[0.25*(2-sqrt(2)),0.5*(sqrt(2)-1)]} (-$a,0,$a;-$b,0,$b;-$a,0,$a)
-        if _'$a'==_'y' transpose. fi
+        a,b={[0.25*(2-sqrt(2)),0.5*(sqrt(2)-1)]}
+        if _'$a'==_'x' (-$a,0,$a;-$b,0,$b;-$a,0,$a)
+        elif _'$a'==_'y' (-$a,-$b,-$a;0,0,0;$a,$b,$c)
+        else (-0.5${s}0${s}0.5)
+        fi
         +correlate[0] .,$boundary rm..
       elif $scheme==4 +deriche[0] 0,1,$a,$boundary
       else +vanvliet[0] 0,1,$a,$boundary
