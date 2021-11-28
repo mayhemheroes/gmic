@@ -14969,7 +14969,7 @@ bandpass : skip ${1=0},${2=20%}
 # axes,std_deviation>=0[%],_boundary_conditions,_kernel : (+)
 #@cli : Blur selected images by a deriche or gaussian filter (recursive implementation).
 #@cli : (eq. to 'b').\n
-#@cli : 'boundary_conditions' can be { 0=dirichlet | 1=neumann }.
+#@cli : 'boundary_conditions' can be { 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }.
 #@cli : 'kernel' can be { 0=deriche | 1=gaussian }.
 #@cli : When specified, argument 'axes' is a sequence of { x | y | z | c }.
 #@cli : Specifying one axis multiple times apply also the blur multiple times.
@@ -15057,46 +15057,47 @@ blur_selective : check "${1=5}>=0 && ${2=0.5}>=0 && isint(${3=5}) && $3>0"
     repeat $3 +==. $> *. ... +[-2,-1] b.. {$1/($3+1)} done
   rm.. nm $nm endl done
 
-#@cli blur_x : amplitude[%]>=0,_boundary_conditions={ 0=dirichlet | 1=neumann }
+#@cli blur_x : amplitude[%]>=0,_boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }
 #@cli : Blur selected images along the x-axis.
 #@cli : Default value: 'boundary_conditions=1'.
 #@cli : $ image.jpg +blur_x 6
 #@cli : $$ https://gmic.eu/oldtutorial/_blur_x
-blur_x : skip ${2=1}
+blur_x : check "isint(${2=1}) && inrange($2,0,3)"
   e[^-1] "Blur image$? along the x-axis, with sigma $1 and "${arg\ 1+!$2,neumann,dirichlet}" boundary conditions."
   deriche $1,0,x,$2
 
-#@cli blur_xy : amplitude_x[%],amplitude_y[%],_boundary_conditions={ 0=dirichlet | 1=neumann }
+#@cli blur_xy : amplitude_x[%],amplitude_y[%],_boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }
 #@cli : Blur selected images along the X and Y axes.
 #@cli : Default value: 'boundary_conditions=1'.
 #@cli : $ image.jpg +blur_xy 6
 #@cli : $$ https://gmic.eu/oldtutorial/_blur_y
-blur_xy : skip ${2=$1},${3=1}
+blur_xy : skip ${2=$1} check "isint(${3=1}) && inrange($3,0,3)"
   e[^-1] "Blur image$? along the xy-axes, with sigma $1 and "${arg\ 1+!$2,neumann,dirichlet}" boundary conditions."
   deriche $1,0,x,$3 deriche $2,0,y,$3
 
-#@cli blur_xyz : amplitude_x[%],amplitude_y[%],amplitude_z,_boundary_conditions={ 0=dirichlet | 1=neumann }
+#@cli blur_xyz : amplitude_x[%],amplitude_y[%],amplitude_z,\
+# _boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }
 #@cli : Blur selected images along the X, Y and Z axes.
 #@cli : Default value: 'boundary_conditions=1'.
 #@cli : $$ https://gmic.eu/oldtutorial/_blur_xyz
-blur_xyz : skip ${4=1}
+blur_xyz : skip ${2=$1},${3=$1} check "isint(${4=1}) && inrange($4,0,3)"
   e[^-1] "Blur image$? along the xyz-axes, with sigma $1 and "${arg\ 1+!$2,neumann,dirichlet}" boundary conditions."
   deriche $1,0,x,$4 deriche $2,0,y,$4 deriche $3,0,z,$4
 
-#@cli blur_y : amplitude[%]>=0,_boundary_conditions={ 0=dirichlet | 1=neumann }
+#@cli blur_y : amplitude[%]>=0,_boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }
 #@cli : Blur selected images along the y-axis.
 #@cli : Default value: 'boundary_conditions=1'.
 #@cli : $ image.jpg +blur_y 6
 #@cli : $$ https://gmic.eu/oldtutorial/_blur_y
-blur_y : skip ${2=1}
+blur_y : check "isint(${2=1}) && inrange($2,0,3)"
   e[^-1] "Blur image$? along the y-axis, with sigma $1 and "${arg\ 1+!$2,neumann,dirichlet}" boundary conditions."
   deriche $1,0,y,$2
 
-#@cli blur_z : amplitude[%]>=0,_boundary_conditions={ 0=dirichlet | 1=neumann }
+#@cli blur_z : amplitude[%]>=0,_boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }
 #@cli : Blur selected images along the z-axis.
 #@cli : Default value: 'boundary_conditions=1'.
 #@cli : $$ https://gmic.eu/oldtutorial/_blur_z
-blur_z : skip ${2=1}
+blur_z : check "isint(${2=1}) && inrange($2,0,3)"
   e[^-1] "Blur image$? along the z-axis, with sigma $1 and "${arg\ 1+!$2,neumann,dirichlet}" boundary conditions."
   deriche $1,0,z,$2
 
@@ -15489,7 +15490,7 @@ denoise_patchpca : check "${1=1.8} && $1>=0 && isint(${2=7}) && $2>0 && isint(${
 #@cli deriche : std_deviation>=0[%],order={ 0 | 1 | 2 },axis={ x | y | z | c },_boundary_conditions : (+)
 #@cli : Apply Deriche recursive filter on selected images, along specified axis and with
 #@cli : specified standard deviation, order and boundary conditions.
-#@cli : 'boundary_conditions' can be { 0=dirichlet | 1=neumann }.
+#@cli : 'boundary_conditions' can be { 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }.
 #@cli : Default value: 'boundary_conditions=1'.
 #@cli : $ image.jpg deriche 3,1,x
 #@cli : $ image.jpg +deriche 30,0,x deriche[-2] 30,0,y add
@@ -17213,7 +17214,7 @@ unsharp_octave : check "${1=4}>0 && ${3=2}>=0" skip ${2=1},${4=0}
 #@cli vanvliet : std_deviation>=0[%],order={ 0 | 1 | 2 | 3 },axis={ x | y | z | c },_boundary_conditions : (+)
 #@cli : Apply Vanvliet recursive filter on selected images, along specified axis and with
 #@cli : specified standard deviation, order and boundary conditions.
-#@cli : 'boundary_conditions' can be { 0=dirichlet | 1=neumann }.
+#@cli : 'boundary_conditions' can be { 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }.
 #@cli : Default value: 'boundary_conditions=1'.
 #@cli : $ image.jpg +vanvliet 3,1,x
 #@cli : $ image.jpg +vanvliet 30,0,x vanvliet[-2] 30,0,y add
@@ -25612,7 +25613,7 @@ symmetrize : skip ${1=50%},${2=50%},${3=90},${4=3},${5=0},${6=0}
   endl done
 
 #@cli transform_polar : "expr_radius",_"expr_angle",_center_x[%],_center_y[%],\
-# _boundary_conditions={ 0=dirichlet | 1=neumann }
+# _boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }
 #@cli : Apply user-defined transform on polar representation of selected images.
 #@cli : Default values: 'expr_radius=R-r', 'expr_rangle=a', 'center_x=center_y=50%' and 'boundary_conditions=1'.
 #@cli : $ image.jpg +transform_polar[0] R*(r/R)^2,a +transform_polar[0] r,2*a
