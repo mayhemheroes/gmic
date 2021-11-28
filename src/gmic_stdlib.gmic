@@ -15716,24 +15716,34 @@ grad :  skip "${1=},${2=},${3=}"
     repeat w
       a={`i[#1,$>]`} s=${s$a}
       if ${gradient_$a} [gradient_$a]
-      elif $scheme==-1 (-1${s}1${s}0) +correlate[0] .,$boundary rm..
-      elif $scheme==0 (-0.5${s}0${s}0.5) +correlate[0] .,$boundary rm..
-      elif $scheme==1 (0${s}-1${s}1) +correlate[0] .,$boundary rm..
-      elif $scheme==2
+      elif $scheme==-1 # Backward
+        (-1${s}1${s}0) +correlate[0] .,$boundary rm..
+      elif $scheme==0 # Centered
+        (-0.5${s}0${s}0.5) +correlate[0] .,$boundary rm..
+      elif $scheme==1 # Forward
+        (0${s}-1${s}1) +correlate[0] .,$boundary rm..
+      elif $scheme==2 # Sobel
         if _'$a'==_'x' (-1,0,1;-2,0,2;-1,0,1)
         elif _'$a'==_'y' (-1,-2,-1;0,0,0;1,2,1)
         else (-0.5${s}0${s}0.5)
         fi
         +correlate[0] .,$boundary rm..
-      elif $scheme==3
+      elif $scheme==3 # Rotation-invariant
         a,b={[0.25*(2-sqrt(2)),0.5*(sqrt(2)-1)]}
         if _'$a'==_'x' (-$a,0,$a;-$b,0,$b;-$a,0,$a)
         elif _'$a'==_'y' (-$a,-$b,-$a;0,0,0;$a,$b,$c)
         else (-0.5${s}0${s}0.5)
         fi
         +correlate[0] .,$boundary rm..
-      elif $scheme==4 +deriche[0] 0,1,$a,$boundary
-      else +vanvliet[0] 0,1,$a,$boundary
+      elif $scheme==4 # Deriche
+        sh[0]
+#        if $boundary>1
+ #         if _'$a'==_'x' r[0]  fi
+ #       fi
+        +deriche. 0,1,$a,$boundary rm..
+      else # Vanvliet
+        sh[0]
+        +vanvliet[0] 0,1,$a,$boundary rm..
       fi
       nm. gradient_$a
     done
