@@ -15666,12 +15666,12 @@ erode_threshold : check "isint($1) && $1>=1 && isint(${2=$1}) && $2>=1 && isint(
 
 #@cli g : eq. to 'gradient'. : (+)
 g :
-  _gmic_s="$?" axes,scheme,boundary,is_noarg=${"_gradient_checkargs $*"}
+  _gmic_s="$?" axes,scheme,boundary,is_noarg=${"_gradient_get_args $*"}
   v + _gradient $axes,$scheme,$boundary v -
   if $is_noarg noarg fi
 
-#@cli gradient : { x | y | z }...{ x | y | z },_scheme,_boundary_conditions : (no arg) : (+)
-#@cli : Compute the gradient components (first derivatives) of selected images.
+#@cli gradient : { x | y | z | c }...{ x | y | z | c },_scheme,_boundary_conditions : (no arg)
+#@cli : Compute the gradient components (first derivatives) of selected images, along specified axes.
 #@cli : (eq. to 'g').\n
 #@cli : 'scheme' can be { -1=backward | 0=centered | 1=forward | 2=sobel | 3=rotation-invariant (default) | \
 # 4=deriche | 5=vanvliet }.
@@ -15681,17 +15681,17 @@ g :
 #@cli : $ image.jpg gradient
 #@cli : $$ https://gmic.eu/oldtutorial/_gradient
 gradient :
-  _gmic_s="$?" axes,scheme,boundary,is_noarg=${"_gradient_checkargs $*"}
+  _gmic_s="$?" axes,scheme,boundary,is_noarg=${"_gradient_get_args $*"}
   v + _gradient $axes,$scheme,$boundary v -
   if $is_noarg noarg fi
 
 # Parse and check arguments.
-_gradient_checkargs : skip "${1=},${2=},${3=}"
+_gradient_get_args : skip "${1=},${2=},${3=}"
   is_noarg=0
   l[]
     if ['$1']==0 axes,scheme,boundary=,0,1 is_noarg=1 # No 1st arg
     else
-      is_axes={"min(inrange(['$1'],_'x',_'z'))"}
+      is_axes={"s=['$1'];fill(s,k,isin(s[k],'xyzc'));min(s)"}
       if !$is_axes axes,scheme,boundary=,0,1 is_noarg=1 # Invalid 1st arg
       elif ['$2']==0 axes,scheme,boundary=$1,0,1 # No 2nd arg
       else
