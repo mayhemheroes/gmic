@@ -15707,24 +15707,33 @@ grad :  skip "${1=},${2=},${3=}"
   s0,s1,s2,s3=dirichlet,neumann,periodic,mirror
   s_boundary=${s$boundary}
   e[^-1] "Compute gradient of image$?"$s_axes", with "$s_scheme" scheme and "$s_boundary" boundary conditions."
+  sx,sy,sz,sc=",",;,/,^
 
   # Process images.
-  repeat $! l[$<]
+  repeat $! l[$<] nm={n}
     laxes=$axes if '$laxes'==0 if d>1 laxes=xyz else laxes=xy fi fi
-
-    if find('$laxes',_'x')>=0
-      if $scheme==-1 +shift 1,0,0,0,$boundary -[-2,-1]
-      elif $scheme==0 +shift 1,0,0,0,$boundary shift.. -1,0,0,0,$boundary -[-2,-1] / 2
-      elif $scheme==1 +shift -1,0,0,0,$boundary rv[-2,-1] -[-2,-1]
-      elif $scheme==2 (-1,0,1;-2,0,2;-1,0,1) convolve.. .,$boundary rm.
-      elif $scheme==3 a,b={[0.25*(2-sqrt(2)),0.5*(sqrt(2)-1)]} (-$a,0,$a;-$b,0,$b;-$a,0,$a) convolve.. .,$boundary rm.
-      elif $scheme==4 deriche 0,1,x
-      else vanvliet 0,1,x
+    ('$laxes')
+    repeat w
+      a={`i[#1,$>]`} s=${s$a}
+      if ${gradient_$a} [gradient_$a]
+      elif $scheme==-1 (-1${s}1${s}0) +correlate[0] .,$boundary rm..
+      elif $scheme==0 (-0.5${s}0${s}0.5) +correlate[0] .,$boundary rm..
+      elif $scheme==1 (0${s}-1${s}1) +correlate[0] .,$boundary rm..
+      elif $scheme==2
+        (-1,0,1;-2,0,2;-1,0,1)
+        if _'$a'==_'y' transpose. fi
+        +correlate[0] .,$boundary rm..
+      elif $scheme==3
+        a,b={[0.25*(2-sqrt(2)),0.5*(sqrt(2)-1)]} (-$a,0,$a;-$b,0,$b;-$a,0,$a)
+        if _'$a'==_'y' transpose. fi
+        +correlate[0] .,$boundary rm..
+      elif $scheme==4 +deriche[0] 0,1,$a
+      else +vanvliet[0] 0,1,$a
       fi
-    fi
-
-
-
+      nm. gradient_$a
+    done
+    rm[0,1]
+    nm $nm
   endl done
 
 #@cli gradient_norm
