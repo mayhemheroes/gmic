@@ -16804,12 +16804,25 @@ rolling_guidance : check "${1=4}>=0 && ${2=10}>=0 && ${3=0.5}>=0"
     k.
   endl done
 
-#@cli sharpen : amplitude>=0 : amplitude>=0,edge>=0,_alpha,_sigma : (+)
+#@cli sharpen : amplitude>=0 : amplitude>=0,edge>=0,_alpha,_sigma
 #@cli : Sharpen selected images by inverse diffusion or shock filters methods.
 #@cli : 'edge' must be specified to enable shock-filter method.
-#@cli : Default values: 'alpha=0' and 'sigma=0'.
+#@cli : Default values: 'edge=0', 'alpha=0' and 'sigma=0'.
 #@cli : $ image.jpg sharpen 300
 #@cli : $ image.jpg blur 5 sharpen 300,1
+sharp : check "$1>=0 && ${2=0}>=0 && ${3=0}>=0 && ${4=0}>=0"
+  if $2>0 # Shock filters
+    e[0--3] "Sharpen image$? with shock filters, amplitude $1, alpha $2 and sigma $3."
+    repeat $! l[$>]
+
+
+    endl done
+  else # Inverse diffusion
+    e[0--3] "Sharpen image$? with inverse diffusion and amplitude $1."
+    repeat $! l[$>]
+      im,iM={[im,iM]} +laplacian *. {$1/abs(maxabs(im,iM))} - c $im,$iM
+    endl done
+  fi
 
 #@cli smooth : amplitude[%]>=0,_sharpness>=0,0<=_anisotropy<=1,_alpha[%],_sigma[%],_dl>0,_da>0,\
 # _precision>0,_interpolation,_fast_approx={ 0 | 1 } : \
