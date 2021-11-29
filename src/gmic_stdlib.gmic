@@ -13771,16 +13771,24 @@ autocrop_seq : skip ${1=auto}
   else z $x0,$y0,$z0,$x1,$y1,$z1
   fi
 
-#@cli channels : { [image0] | c0[%] },_{ [image1] | c1[%] } : (+)
+#@cli channels : c0[%],_c1[%]
 #@cli : Keep only specified channels of selected images.
 #@cli : Dirichlet boundary is used when specified channels are out of range.
+#@cli : Default value: 'c1=c0'.
 #@cli : $ image.jpg channels 0,1
 #@cli : $ image.jpg luminance channels 0,2
+channels : skip ${2=$1}
+  e[^-1] "Keep channels $1...$2 of image$?."
+  z 0,0,0,$1,100%,100%,100%,$2
 
-#@cli columns : { [image0] | x0[%] },_{ [image1] | x1[%] } : (+)
+#@cli columns : x0[%],_x1[%]
 #@cli : Keep only specified columns of selected images.
 #@cli : Dirichlet boundary is used when specified columns are out of range.
+#@cli : Default value: 'x1=x0'.
 #@cli : $ image.jpg columns -25%,50%
+columns : skip ${2=$1}
+  e[^-1] "Keep columns $1...$2 of image?."
+  z $1,$2
 
 #@cli z : eq. to 'crop'. : (+)
 
@@ -14485,10 +14493,14 @@ rotate_tileable : check ${2=8}>=0
     fi
   endl done
 
-#@cli rows : { [image0] | y0[%] },_{ [image1] | y1[%] } : (+)
+#@cli rows : y0[%],_y1[%]
 #@cli : Keep only specified rows of selected images.
 #@cli : Dirichlet boundary conditions are used when specified rows are out of range.
+#@cli : Default value: 'y1=y0'.
 #@cli : $ image.jpg rows -25%,50%
+rows : skip ${2=$1}
+  e[^-1] "Keep rows $1...$2 of image$?."
+  z 0,$1,100%,$2
 
 #@cli scale2x
 #@cli : Resize selected images using the Scale2x algorithm.
@@ -14716,9 +14728,13 @@ shrink_z : check "$1>=0"
   e[^-1] "Shrink image$? along the z-axis with size $1."
   repeat $! z[$>] 0,0,$1,100%,100%,{$>,d-$1-1} done
 
-#@cli slices : { [image0] | z0[%] },_{ [image1] | z1[%] } : (+)
+#@cli slices : z0[%],_z1[%]
 #@cli : Keep only specified slices of selected images.
 #@cli : Dirichlet boundary conditions are used when specified slices are out of range.
+#@cli : Default value: 'z1=z0'.
+slices : skip ${2=$1}
+  e[^-1] "Keep slices $1...$2 of image$?."
+  z 0,0,$1,100%,100%,$2
 
 #@cli sort : _ordering={ + | - },_axis={ x | y | z | c } : (+)
 #@cli : Sort pixel values of selected images.
@@ -15105,7 +15121,7 @@ blur_z : check "isint(${2=1}) && inrange($2,0,3)"
 # axes,size>=0[%],_order,_boundary_conditions,_nb_iter>=0 : (+)
 #@cli : Blur selected images by a box filter of specified size (fast recursive implementation).
 #@cli : 'order' can be { 0=smooth | 1=1st-derivative | 2=2nd-derivative }.
-#@cli : 'boundary_conditions' can be { 0=dirichlet | 1=neumann }.
+#@cli : 'boundary_conditions' can be { 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }.
 #@cli : When specified, argument 'axes' is a sequence of { x | y | z | c }.
 #@cli : Specifying one axis multiple times apply also the blur multiple times.
 #@cli : Default values: 'order=0', 'boundary_conditions=1' and 'nb_iter=1'.
@@ -15499,7 +15515,7 @@ denoise_patchpca : check "${1=1.8} && $1>=0 && isint(${2=7}) && $2>0 && isint(${
 #@cli dilate : size>=0 : size_x>=0,size_y>=0,size_z>=0 : \
 # [kernel],_boundary_conditions,_is_real={ 0=binary-mode | 1=real-mode } : (+)
 #@cli : Dilate selected images by a rectangular or the specified structuring element.
-#@cli : 'boundary_conditions' can be { 0=dirichlet | 1=neumann }.
+#@cli : 'boundary_conditions' can be { 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }.
 #@cli : Default values: 'size_z=1', 'boundary_conditions=1' and 'is_real=0'.
 #@cli : $ image.jpg +dilate 10
 
@@ -15548,7 +15564,7 @@ _jf_circle :
 
 #@cli dilate_threshold : size_x>=1,size_y>=1,size_z>=1,_threshold>=0,_boundary_conditions
 #@cli : Dilate selected images in the (X,Y,Z,I) space.
-#@cli : 'boundary_conditions' can be { 0=dirichlet | 1=neumann }.
+#@cli : 'boundary_conditions' can be { 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }.
 #@cli : Default values: 'size_y=size_x', 'size_z=1', 'threshold=255' and 'boundary_conditions=1'.
 dilate_threshold : check "isint($1) && $1>=1 && isint(${2=$1}) && $2>=1 && isint(${3=1}) && $3>=1 && ${4=255}>=0 &&
                           isint(${5=1}) && $5>=0"
@@ -15616,7 +15632,7 @@ edges : skip ${1=15%}
 #@cli erode : size>=0 : size_x>=0,size_y>=0,_size_z>=0 : \
 # [kernel],_boundary_conditions,_is_real={ 0=binary-mode | 1=real-mode } : (+)
 #@cli : Erode selected images by a rectangular or the specified structuring element.
-#@cli : 'boundary_conditions' can be { 0=dirichlet | 1=neumann }.
+#@cli : 'boundary_conditions' can be { 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }.
 #@cli : Default values: 'size_z=1', 'boundary_conditions=1' and 'is_real=0'.
 #@cli : $ image.jpg +erode 10
 
@@ -15647,7 +15663,7 @@ erode_oct : check $1>=0 skip ${2=1},${3=0}
 
 #@cli erode_threshold : size_x>=1,size_y>=1,size_z>=1,_threshold>=0,_boundary_conditions
 #@cli : Erode selected images in the (X,Y,Z,I) space.
-#@cli : 'boundary_conditions' can be { 0=dirichlet | 1=neumann }.
+#@cli : 'boundary_conditions' can be { 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }.
 #@cli : Default values: 'size_y=size_x', 'size_z=1', 'threshold=255' and 'boundary_conditions=1'.
 erode_threshold : check "isint($1) && $1>=1 && isint(${2=$1}) && $2>=1 && isint(${3=1}) && $3>=1 && ${4=255}>=0 &&
                          isint(${5=1}) && $5>=0"
@@ -18101,9 +18117,10 @@ slic : check "${1=16}>0 && ${2=10}>=0 && ${3=10}>0"
     label. 0,0
   endl done
 
-#@cli ssd_patch : [patch],_use_fourier={ 0 | 1 },_boundary_conditions={ 0=dirichlet | 1=neumann }
+#@cli ssd_patch : [patch],_use_fourier={ 0 | 1 },_boundary_conditions
 #@cli : Compute fields of SSD between selected images and specified patch.
 #@cli : Argument 'boundary_conditions' is valid only when 'use_fourier=0'.
+#@cli : 'boundary_conditions' can be { 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }.
 #@cli : Default value: 'use_fourier=0' and 'boundary_conditions=0'.
 #@cli : $ image.jpg +crop 20%,20%,35%,35% +ssd_patch[0] [1],0,0
 ssd_patch : check ${is_image_arg\ $1} skip ${2=0},${3=0}
