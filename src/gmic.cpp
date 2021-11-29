@@ -444,7 +444,7 @@ CImg<Tfloat> get_gmic_blur(const float sigma_x, const float sigma_y, const float
 }
 
 CImg<T>& gmic_blur_box(const float sigma_x, const float sigma_y, const float sigma_z, const float sigma_c,
-                       const unsigned int order, const bool boundary_conditions,
+                       const unsigned int order, const unsigned int boundary_conditions,
                        const unsigned int nb_iter) {
   if (is_empty()) return *this;
   if (_width>1) boxfilter(sigma_x,order,'x',boundary_conditions,nb_iter);
@@ -455,18 +455,18 @@ CImg<T>& gmic_blur_box(const float sigma_x, const float sigma_y, const float sig
 }
 
 CImg<Tfloat> get_gmic_blur_box(const float sigma_x, const float sigma_y, const float sigma_z, const float sigma_c,
-                               const unsigned int order, const bool boundary_conditions,
+                               const unsigned int order, const unsigned int boundary_conditions,
                                const unsigned int nb_iter) const {
   return CImg<Tfloat>(*this,false).gmic_blur_box(sigma_x,sigma_y,sigma_z,sigma_c,order,boundary_conditions,nb_iter);
 }
 
-CImg<T>& gmic_blur_box(const float sigma, const unsigned int order, const bool boundary_conditions,
+CImg<T>& gmic_blur_box(const float sigma, const unsigned int order, const unsigned int boundary_conditions,
                        const unsigned int nb_iter) {
   const float nsigma = sigma>=0?sigma:-sigma*cimg::max(_width,_height,_depth)/100;
   return gmic_blur_box(nsigma,nsigma,nsigma,0,order,boundary_conditions,nb_iter);
 }
 
-CImg<Tfloat> get_gmic_blur_box(const float sigma, const unsigned int order, const bool boundary_conditions,
+CImg<Tfloat> get_gmic_blur_box(const float sigma, const unsigned int order, const unsigned int boundary_conditions,
                                const unsigned int nb_iter) const {
   return CImg<Tfloat>(*this,false).gmic_blur_box(sigma,order,boundary_conditions,nb_iter);
 }
@@ -6034,7 +6034,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                            &sigma,&order,&boundary,&value,&end)==4 ||
                (cimg_sscanf(p_argument,"%f%c,%u,%u,%lf%c",
                             &sigma,&sep,&order,&boundary,&value,&end)==5 && sep=='%')) &&
-              sigma>=0 && boundary<=1 && order<=2 && value>=0) {
+              sigma>=0 && boundary<=3 && order<=2 && value>=0) {
             const unsigned int nb_iter = (unsigned int)cimg::round(value);
             print(images,0,"Blur image%s%s%s%s with normalized box filter of size %g%s, order %u and "
                   "%s boundary conditions (%u iteration%s).",
@@ -6044,16 +6044,16 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   *argx?std::strlen(argx)==1?"'-axis,":"'-axes,":"",
                   sigma,sep=='%'?"%":"",
                   order,
-                  boundary?"neumann":"dirichlet",
+                  boundary==0?"dirichlet":boundary==1?"neumann":boundary==2?"periodic":"mirror",
                   nb_iter,nb_iter!=1?"s":"");
             if (sep=='%') sigma = -sigma;
             if (*argx) {
               g_img.assign(4,1,1,1,(T)0);
               for (const char *s = argx; *s; ++s) g_img[*s>='x'?*s - 'x':3]+=sigma;
               cimg_forY(selection,l) gmic_apply(gmic_blur_box(g_img[0],g_img[1],g_img[2],g_img[3],
-                                                              order,(bool)boundary,nb_iter));
+                                                              order,boundary,nb_iter));
               g_img.assign();
-            } else cimg_forY(selection,l) gmic_apply(gmic_blur_box(sigma,order,(bool)boundary,nb_iter));
+            } else cimg_forY(selection,l) gmic_apply(gmic_blur_box(sigma,order,boundary,nb_iter));
           } else arg_error("boxfilter");
           is_change = true; ++position; continue;
         }
