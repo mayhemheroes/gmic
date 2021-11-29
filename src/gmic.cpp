@@ -7070,15 +7070,15 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%u,%u%c",
                            indices,&boundary,&is_real,&end)==3) &&
               (ind=selection2cimg(indices,images.size(),images_names,"dilate")).height()==1 &&
-              boundary<=1) {
+              boundary<=3) {
             print(images,0,"Dilate image%s with kernel [%u] and %s boundary conditions, "
                   "in %s mode.",
                   gmic_selection.data(),
                   *ind,
-                  boundary?"neumann":"dirichlet",
+                  boundary==0?"dirichlet":boundary==1?"neumann":boundary==2?"periodic":"mirror",
                   is_real?"real":"binary");
             const CImg<T> kernel = gmic_image_arg(*ind);
-            cimg_forY(selection,l) gmic_apply(dilate(kernel,(bool)boundary,(bool)is_real));
+            cimg_forY(selection,l) gmic_apply(dilate(kernel,boundary,(bool)is_real));
           } else if ((cimg_sscanf(argument,"%f%c",
                                   &sx,&end)==1) &&
                      sx>=0) {
@@ -7706,15 +7706,15 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%u,%u%c",
                            indices,&boundary,&is_real,&end)==3) &&
               (ind=selection2cimg(indices,images.size(),images_names,"erode")).height()==1 &&
-              boundary<=1) {
+              boundary<=3) {
             print(images,0,"Erode image%s with kernel [%u] and %s boundary conditions, "
                   "in %s mode.",
                   gmic_selection.data(),
                   *ind,
-                  boundary?"neumann":"dirichlet",
+                  boundary==0?"dirichlet":boundary==1?"neumann":boundary==2?"periodic":"mirror",
                   is_real?"real":"binary");
             const CImg<T> kernel = gmic_image_arg(*ind);
-            cimg_forY(selection,l) gmic_apply(erode(kernel,(bool)boundary,(bool)is_real));
+            cimg_forY(selection,l) gmic_apply(erode(kernel,boundary,(bool)is_real));
           } else if ((cimg_sscanf(argument,"%f%c",
                                   &sx,&end)==1) &&
                      sx>=0) {
