@@ -2538,7 +2538,11 @@ struct _gmic_parallel {
 };
 
 template<typename T>
-static void* gmic_parallel(void *arg) {
+#if cimg_OS==2 && !defined(PTHREAD_CANCEL_ENABLE)
+DWORD WINAPI gmic_parallel(LPVOID arg) {
+#else
+static void *gmic_parallel(void *arg) {
+#endif
   _gmic_parallel<T> &st = *(_gmic_parallel<T>*)arg;
   try {
     unsigned int pos = 0;
