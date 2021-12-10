@@ -5306,8 +5306,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
       // Check consistency of the interpreter environment.
       if (images_names.size()!=images.size())
-        error(true,"G'MIC encountered a fatal error (images (%u) and images names (%u) have different size). "
-              "Please submit a bug report, at: https://github.com/dtschump/gmic/issues",
+        error(true,"List of images is in an inconsistent state (%u images for %u image names). "
+              "It could be caused by conccurent threads manipulating the image list at the same time.",
               images_names.size(),images.size());
       if (!callstack)
         error(true,"G'MIC encountered a fatal error (empty call stack). "
