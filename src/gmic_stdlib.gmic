@@ -3807,7 +3807,7 @@ _input_text :
 #@cli : Default values: 'width=height=800'.
 +lorem : check "isint(${1=800}) && $1>0 && isint(${2=$1}) && $2>0"
   e[^-1] "Input random image of size $1x$2."
-  i "https://picsum.photos/$1/$2"
+  i "https://picsum.photos/$1/$2" nm. lorem
 
 # Merge multi-lines (lines continued by backslash before NL) in a string image.
 merge_multiline :
@@ -7350,7 +7350,7 @@ _parse_gui_strings :
 #@cli : Default values: 'size=800'.
 +portrait : check "isint(${1=800}) && $1>0"
   e[^-1] "Input random portrait image of size $1x$1."
-  i jpg:"https://thispersondoesnotexist.com/image" r2dx. $1
+  i jpg:"https://thispersondoesnotexist.com/image" r2dx. $1 nm. portrait
 
 #@cli p : eq. to 'print'. : (+)
 
@@ -7371,6 +7371,9 @@ _parse_gui_strings :
   repeat 3
     do
       expr="z = [ "{u(20)}"*((x+0.5)/w-0.5), "{u(20)}"*((y+0.5)/h-0.5) + 0.5/h ]; "${-_random_pattern_expr}
+
+      e $expr
+
       {round([$1,$2]*128/min($1,$2))},1,2,*$expr
       replace_naninf. 0 norm. n. 0,255 equalize. 256 c. 0,255
       cond=${-_random_pattern_check_image.\ $3}
