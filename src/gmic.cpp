@@ -1469,35 +1469,35 @@ CImg<T> get_inpaint_patch(const CImg<t>& mask, const unsigned int patch_size=11,
 }
 
 CImg<T>& max(const char *const expression, CImgList<T> &images) {
-  return max((+*this)._fill(expression,true,1,&images,&images,"max",this));
+  return max((+*this)._fill(expression,true,1,&images,"max",this));
 }
 
 CImg<T>& maxabs(const char *const expression, CImgList<T> &images) {
-  return maxabs((+*this)._fill(expression,true,1,&images,&images,"maxabs",this));
+  return maxabs((+*this)._fill(expression,true,1,&images,"maxabs",this));
 }
 
 CImg<T>& min(const char *const expression, CImgList<T> &images) {
-  return min((+*this)._fill(expression,true,1,&images,&images,"min",this));
+  return min((+*this)._fill(expression,true,1,&images,"min",this));
 }
 
 CImg<T>& minabs(const char *const expression, CImgList<T> &images) {
-  return minabs((+*this)._fill(expression,true,1,&images,&images,"minabs",this));
+  return minabs((+*this)._fill(expression,true,1,&images,"minabs",this));
 }
 
 CImg<T>& operator_andeq(const char *const expression, CImgList<T> &images) {
-  return operator&=((+*this)._fill(expression,true,1,&images,&images,"operator&=",this));
+  return operator&=((+*this)._fill(expression,true,1,&images,"operator&=",this));
 }
 
 CImg<T>& operator_brseq(const char *const expression, CImgList<T> &images) {
-  return operator<<=((+*this)._fill(expression,true,1,&images,&images,"operator<<=",this));
+  return operator<<=((+*this)._fill(expression,true,1,&images,"operator<<=",this));
 }
 
 CImg<T>& operator_blseq(const char *const expression, CImgList<T> &images) {
-  return operator>>=((+*this)._fill(expression,true,1,&images,&images,"operator>>=",this));
+  return operator>>=((+*this)._fill(expression,true,1,&images,"operator>>=",this));
 }
 
 CImg<T>& operator_diveq(const char *const expression, CImgList<T> &images) {
-  return div((+*this)._fill(expression,true,1,&images,&images,"operator/=",this));
+  return div((+*this)._fill(expression,true,1,&images,"operator/=",this));
 }
 
 template<typename t>
@@ -1508,7 +1508,7 @@ CImg<T>& operator_eq(const t value) {
 }
 
 CImg<T>& operator_eq(const char *const expression, CImgList<T> &images) {
-  return operator_eq((+*this)._fill(expression,true,1,&images,&images,"operator_eq",this));
+  return operator_eq((+*this)._fill(expression,true,1,&images,"operator_eq",this));
 }
 
 template<typename t>
@@ -1534,7 +1534,7 @@ CImg<T>& operator_ge(const t value) {
 }
 
 CImg<T>& operator_ge(const char *const expression, CImgList<T> &images) {
-  return operator_ge((+*this)._fill(expression,true,1,&images,&images,"operator_ge",this));
+  return operator_ge((+*this)._fill(expression,true,1,&images,"operator_ge",this));
 }
 
 template<typename t>
@@ -1560,7 +1560,7 @@ CImg<T>& operator_gt(const t value) {
 }
 
 CImg<T>& operator_gt(const char *const expression, CImgList<T> &images) {
-  return operator_gt((+*this)._fill(expression,true,1,&images,&images,"operator_gt",this));
+  return operator_gt((+*this)._fill(expression,true,1,&images,"operator_gt",this));
 }
 
 template<typename t>
@@ -1586,7 +1586,7 @@ CImg<T>& operator_le(const t value) {
 }
 
 CImg<T>& operator_le(const char *const expression, CImgList<T> &images) {
-  return operator_le((+*this)._fill(expression,true,1,&images,&images,"operator_le",this));
+  return operator_le((+*this)._fill(expression,true,1,&images,"operator_le",this));
 }
 
 template<typename t>
@@ -1612,7 +1612,7 @@ CImg<T>& operator_lt(const t value) {
 }
 
 CImg<T>& operator_lt(const char *const expression, CImgList<T> &images) {
-  return operator_lt((+*this)._fill(expression,true,1,&images,&images,"operator_lt",this));
+  return operator_lt((+*this)._fill(expression,true,1,&images,"operator_lt",this));
 }
 
 template<typename t>
@@ -1631,15 +1631,15 @@ CImg<T>& operator_lt(const CImg<t>& img) {
 }
 
 CImg<T>& operator_minuseq(const char *const expression, CImgList<T> &images) {
-  return operator-=((+*this)._fill(expression,true,1,&images,&images,"operator-=",this));
+  return operator-=((+*this)._fill(expression,true,1,&images,"operator-=",this));
 }
 
 CImg<T>& operator_modeq(const char *const expression, CImgList<T> &images) {
-  return operator%=((+*this)._fill(expression,true,1,&images,&images,"operator%=",this));
+  return operator%=((+*this)._fill(expression,true,1,&images,"operator%=",this));
 }
 
 CImg<T>& operator_muleq(const char *const expression, CImgList<T> &images) {
-  return mul((+*this)._fill(expression,true,1,&images,&images,"operator*=",this));
+  return mul((+*this)._fill(expression,true,1,&images,"operator*=",this));
 }
 
 template<typename t>
@@ -1650,7 +1650,7 @@ CImg<T>& operator_neq(const t value) {
 }
 
 CImg<T>& operator_neq(const char *const expression, CImgList<T> &images) {
-  return operator_neq((+*this)._fill(expression,true,1,&images,&images,"operator_neq",this));
+  return operator_neq((+*this)._fill(expression,true,1,&images,"operator_neq",this));
 }
 
 template<typename t>
@@ -1669,19 +1669,19 @@ CImg<T>& operator_neq(const CImg<t>& img) {
 }
 
 CImg<T>& operator_oreq(const char *const expression, CImgList<T> &images) {
-  return operator|=((+*this)._fill(expression,true,1,&images,&images,"operator|=",this));
+  return operator|=((+*this)._fill(expression,true,1,&images,"operator|=",this));
 }
 
 CImg<T>& operator_pluseq(const char *const expression, CImgList<T> &images) {
-  return operator+=((+*this)._fill(expression,true,1,&images,&images,"operator+=",this));
+  return operator+=((+*this)._fill(expression,true,1,&images,"operator+=",this));
 }
 
 CImg<T>& operator_xoreq(const char *const expression, CImgList<T> &images) {
-  return operator^=((+*this)._fill(expression,true,1,&images,&images,"operator^=",this));
+  return operator^=((+*this)._fill(expression,true,1,&images,"operator^=",this));
 }
 
 CImg<T>& pow(const char *const expression, CImgList<T> &images) {
-  return pow((+*this)._fill(expression,true,1,&images,&images,"pow",this));
+  return pow((+*this)._fill(expression,true,1,&images,"pow",this));
 }
 
 template<typename t>
@@ -1695,7 +1695,7 @@ CImg<T> get_replace(const CImg<t>& img) const {
 }
 
 CImg<T>& gmic_eval(const char *const expression, CImgList<T> &images) {
-  return _fill(expression,true,2,&images,&images,"eval",0);
+  return _fill(expression,true,2,&images,"eval",0);
 }
 
 CImg<T> get_gmic_eval(const char *const expression, CImgList<T> &images) const {
@@ -1732,11 +1732,11 @@ CImg<T> get_reverse_CImg3d() const {
 }
 
 CImg<T>& rol(const char *const expression, CImgList<T> &images) {
-  return rol((+*this)._fill(expression,true,1,&images,&images,"rol",this));
+  return rol((+*this)._fill(expression,true,1,&images,"rol",this));
 }
 
 CImg<T>& ror(const char *const expression, CImgList<T> &images) {
-  return ror((+*this)._fill(expression,true,1,&images,&images,"ror",this));
+  return ror((+*this)._fill(expression,true,1,&images,"ror",this));
 }
 
 template<typename t>
@@ -3971,7 +3971,7 @@ bool gmic::check_cond(const char *const expr, CImgList<T>& images, const char *c
   if (img.__eval(expr,_res)) return (bool)_res;
   CImg<char> _expr(expr,(unsigned int)std::strlen(expr) + 1);
   strreplace_fw(_expr);
-  try { if (img.eval(_expr,0,0,0,0,&images,&images)) res = true; }
+  try { if (img.eval(_expr,0,0,0,0,&images)) res = true; }
   catch (CImgException &e) {
     const char *const e_ptr = std::strstr(e.what(),": ");
     error(true,images,0,command,
@@ -4934,7 +4934,7 @@ CImg<char> gmic::substitute_item(const char *const source,
 
             try {
               CImg<double> output;
-              img.eval(output,feature,0,0,0,0,&images,&images);
+              img.eval(output,feature,0,0,0,0,&images);
               if (is_string) {
                 vs.assign(output.height() + 1,1,1,1).fill(output).back() = 0;
                 CImg<char>::string(vs,false,true).
@@ -7347,7 +7347,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   _argument_text.data());
             CImg<T> &img = images.size()?images.back():CImg<T>::empty();
             CImg<double> output;
-            img.eval(output,name,0,0,0,0,&images,&images);
+            img.eval(output,name,0,0,0,0,&images);
             if (output.height()>1) // Vector-valued result
               output.value_string().move_to(status);
             else { // Scalar result
@@ -7746,7 +7746,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             name.assign(argument,(unsigned int)std::strlen(argument) + 1);
             cimg::strpare(name,'\'',true,false);
             strreplace_fw(name);
-            cimg_forY(selection,l) gmic_apply(fill(name.data(),true,true,&images,&images));
+            cimg_forY(selection,l) gmic_apply(fill(name.data(),true,true,&images));
           }
           is_change = true; ++position; continue;
         }
@@ -7992,7 +7992,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               boundary = std::max(1U,mp.result_dim);
             } catch (...) { is_cond = false; }
             CImg<T> values((int)resolution,1,1,boundary,0);
-            values.fill(n_formula,false,true,&images,0);
+            values.fill(n_formula,false,true,&images);
 
             cimg_forY(selection,l) {
               CImg<T> &img = images[selection[l]];
@@ -10546,7 +10546,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             name.assign(argument,(unsigned int)std::strlen(argument) + 1);
             CImg<T> &img = images.size()?images.back():CImg<T>::empty();
             strreplace_fw(name);
-            try { value = img.eval(name,0,0,0,0,&images,&images); }
+            try { value = img.eval(name,0,0,0,0,&images); }
             catch (CImgException &e) {
               const char *const e_ptr = std::strstr(e.what(),": ");
               error(true,images,0,"progress",
@@ -10778,7 +10778,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               boundary = std::max(1U,mp.result_dim);
             } catch (...) { is_cond = false; }
             CImg<T> values((int)resolution,1,1,boundary,0);
-            values.fill(n_formula,false,true,&images,0);
+            values.fill(n_formula,false,true,&images);
 
             gmic_use_title;
             cimg_snprintf(title,_title.width(),"[Plot of '%s']",formula);
@@ -10870,7 +10870,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               if (cimg_sscanf(name,"%lf%c",&value,&end)!=1) {
                 CImg<T> &img = images.size()?images.back():CImg<T>::empty();
                 strreplace_fw(name);
-                try { value = img.eval(name,0,0,0,0,&images,&images); }
+                try { value = img.eval(name,0,0,0,0,&images); }
                 catch (CImgException &e) {
                   const char *const e_ptr = std::strstr(e.what(),": ");
                   error(true,images,0,"repeat",
@@ -14184,7 +14184,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 _gmic_selection.data());
         CImg<T> new_image(idx,idy,idz,idc);
         if (s_values) {
-          new_image.fill(s_values.data(),true,true,&images,&images);
+          new_image.fill(s_values.data(),true,true,&images);
           gmic_use_title;
           cimg_snprintf(title,_title.width(),"[image of '%s']",s_values.data());
           CImg<char>::string(title).move_to(g_list_c);
