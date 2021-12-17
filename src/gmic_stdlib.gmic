@@ -15381,15 +15381,15 @@ denoise_haar : check "${1=1.4}>=0 && isint(${2=0}) && $2>=0 && isint(${3=10}) &&
     rm[0] / $3 r $w,$h,$d,100%,0
   nm $nm endl done
 
-#@cli denoise_cnn : _noise_type={ 0=soft | 1=heavy | 2=heavy (faster) | 3=poisson+gaussian },_patch_size>0
+#@cli denoise_cnn : _noise_type={ 0=soft | 1=heavy | 2=heavy (faster) | 3=poisson+gaussian | 4=poisson+gaussian2 },_patch_size>0
 #@cli : Denoise selected images using a convolutional neural network (CNN).
 #@cli : Input value range should be [0,255]. Output value range is [0,255].
 #@cli : Default value: 'patch_size=64'.
 #@cli : $ image.jpg noise 20 cut 0,255 +denoise_cnn
 denoise_cnn : skip "${1=0},${2=64}"
   N=$!
-  if isint($1)" && "inrange($1,0,3) check "isint($2) && $2>0" type=$1 else type=0 noarg fi
-  s0,s1,s2,s3=soft,heavy,heavy,poisson+gaussian
+  if isint($1)" && "inrange($1,0,4) check "isint($2) && $2>0" type=$1 else type=0 noarg fi
+  s0,s1,s2,s3,s4=soft,heavy,heavy,poisson+gaussian,poisson+gaussian2
   e[^-1] "Denoise image$? using a convolutional neural network (for "${s$type}"-noise), with patch size $2."
 
   # Load denoising network.
@@ -15405,7 +15405,9 @@ denoise_cnn : skip "${1=0},${2=64}"
 
   # Process images.
   repeat $N l[$>,$N--1] to_color[0]
-    if $type==3 srgb2rgb[0] fi
+    if $type==3 srgb2rgb[0]
+    elif $type==4 srgb2rgb[0] /[0] 255
+    fi
 
     # Extract overlapping psxps tiles.
     nx,ny={0,ceil([w,h]/($ps-6))}
@@ -15441,7 +15443,11 @@ denoise_cnn : skip "${1=0},${2=64}"
       draw(#-1,V,X,Y,0,0,$ps,$ps,1,3,-1,mask);
       draw(#-1,mask,X,Y,0,3,$ps,$ps,1,1,-1,mask)"
     rm[-3,-1]
-    l. s c,-3 max. 1 / if $type==3 rgb2srgb. fi c 0,255 endl
+    l. s c,-3 max. 1 /
+    if $type==3 rgb2srgb.
+    elif $type==4 *. 255 rgb2srgb.
+    fi
+    c 0,255 endl
     j[0] . rm.
 
   endl done
@@ -48289,7 +48295,7 @@ fx_smooth_bilateral_preview :
   gui_split_preview "fx_smooth_bilateral $*",${-3--1}
 
 #@gui Denoise : fx_denoise,fx_denoise_preview(0)
-#@gui : Noise type = choice{"Soft","Heavy","Heavy (Faster)","Poisson + Gaussian"}
+#@gui : Noise type = choice{"Soft","Heavy","Heavy (Faster)","Poisson + Gaussian","Poisson + Gaussian (v2)"}
 #@gui : Iterations = int(1,1,5)
 #@gui : sep = separator()
 #@gui : Update Neural Network = button()
