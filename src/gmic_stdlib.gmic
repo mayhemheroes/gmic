@@ -23254,6 +23254,24 @@ nn_lib :
     # Loss functions.
     #----------------
 
+    # bce : Binary cross entropy.
+    #-----------------------------
+    nn_loss_bce_init_backward(L) = (
+      L#_batch_out = 0;
+    );
+
+    nn_loss_bce_backward(L,IN,TRUTH) = (
+      L#_out = TRUTH*log(IN#_out) + (1 - TRUTH)*log(1 - IN#_out);
+      IN#_deriv_out = (IN#_out - TRUTH)/(IN#_out*(1 - IN#_out));
+      L#_batch_out+=L#_out;
+    );
+
+    nn_loss_mse_end_backward(L) = (
+      merge(L#_batch_out,+);
+      L#_batch_out/=nn_nb_samples;
+      L#_out = L#_batch_out;
+    );
+
     # mse : Mean-squared error.
     #--------------------------
     nn_loss_mse_init_backward(L) = (
@@ -23270,8 +23288,7 @@ nn_lib :
       merge(L#_batch_out,+);
       L#_batch_out/=nn_nb_samples;
       L#_out = L#_batch_out;
-    );
-    "
+    );"
 
 #@cli nn_init
 #@cli : Initialize a new network.
@@ -23533,9 +23550,18 @@ nn_layer_split : nn_check_layer "$3" check "isvarname('$1') && isvarname('$2')"
   _nn_backward..="nn_layer_split_backward($1,$2,$3);"
   _nn_init.="$0 $* "
 
+#@cli nn_loss_bce : name,in,ground_truth
+#@cli : Add a 'bce' loss to the network (binary cross entropy).
+nn_loss_bce : nn_check_layer "$2" check "isvarname('$1') && isvarname('$3')"
+  e[^-1] "[nn_lib] Add BCE loss '$1', with input '$2' and ground truth '$3'."
+  _nn_$1_out_size=1,1,1,1
+  _nn_backward..="begin(nn_loss_bce_init_backward($1));"\
+                 "nn_loss_bce_backward(${1-3});"\
+                 "end(nn_loss_bce_end_backward($1));"
+  _nn_init.="$0 $* "
+
 #@cli nn_loss_mse : name,in,ground_truth
-#@cli : Add a 'mse' loss to the network.
-#@cli : Default value: 'learning_rate=1e-6' and 'learning_rate_scheduler=adaptive'.
+#@cli : Add a 'mse' loss to the network (mean-squared error).
 nn_loss_mse : nn_check_layer "$2" check "isvarname('$1') && isvarname('$3')"
   e[^-1] "[nn_lib] Add MSE loss '$1', with input '$2' and ground truth '$3'."
   _nn_$1_out_size=1,1,1,1
