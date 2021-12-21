@@ -23234,7 +23234,14 @@ nn_lib :
     );
 
     nn_layer_softmax_forward(L,IN) = (
-      L#_out = IN#_out;
+      L#_out = vector(#size(IN#_out));
+      L#_sumexp = 0;
+      fill(L#_out,k,
+        _sm_val = exp(IN#_out[k]);
+        L#_sumexp+=_sm_val;
+        _sm_val;
+      );
+      L#_out/=L#_sumexp;
     );
 
     nn_layer_softmax_backward(L,IN) = (
@@ -23562,8 +23569,8 @@ nn_layer_softmax : nn_check_layer "$2" check "isvarname('$1')"
   e[^-1] "[nn_lib] Add 'softmax' layer '$1', with input '$2'."
   _nn_$1_out_size=$_nn_$2_out_size
   _nn_forward.="begin(nn_layer_softmax_init_forward($1,$2));"\
-               "nn_layer_softmax_forward($1,$2,$3);"
-  _nn_backward..="nn_layer_softmax_backward($1,$2,$3);"
+               "nn_layer_softmax_forward($1,$2);"
+  _nn_backward..="nn_layer_softmax_backward($1,$2);"
   _nn_init.="$0 $* "
 
 #@cli nn_layer_split : name0,name1,in,nb_channels0
