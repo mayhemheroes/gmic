@@ -23245,7 +23245,15 @@ nn_lib :
     );
 
     nn_layer_softmax_backward(L,IN) = (
-      IN#_deriv_out = L#_out;
+      IN#_deriv_out = vector(#size(L#_out));
+      L#_fact = (L#_sumexp - 1)/L#_sumexp;
+      fill(IN#_deriv_out,i,
+        _sm_val = 0;
+        repeat(size(L#_out),j,
+          _sm_val+=L#_deriv_out[j]*(i!=j?-L#_out[j]/L#_sumexp:L#_out[i]*L#_fact);
+        );
+        _sm_val;
+      );
     );
 
     # split: Split input as two outputs.
