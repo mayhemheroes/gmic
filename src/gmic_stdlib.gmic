@@ -23510,14 +23510,21 @@ nn_layer_maxpool2d : nn_check_layer "$2" check "isvarname('$1')"
   _nn_init.="$0 $* "
 
 #@cli nn_layer_nl : name,in,_activation
-#@cli : Add a 'nl' layer (non-linearity) to the network.
+#@cli : Add a 'nl' (nonlinearity) layer to the network.
+#@cli : 'activation' can be { elu | gelu | leakyrelu | linear | relu | sigmoid | softmax | sqr | sqrt | swish | tanh }.
 #@cli : Default value: 'activation=leakyrelu'.
 nn_layer_nl : nn_check_layer "$2" check "isvarname('$1')" skip ${3=leakyrelu}
   e[^-1] "[nn_lib] Add 'nl' layer '$1', with input '$2' and '$3' activation."
   _nn_$1_out_size=$_nn_$2_out_size
-  _nn_forward.="begin(nn_layer_nl_init_forward($1,$2));"\
-               "nn_layer_nl_forward($1,$2,$3);"
-  _nn_backward..="nn_layer_nl_backward($1,$2,$3);"
+  if s=['$3'];s=='softmax'
+    _nn_forward.="begin(nn_layer_$3_init_forward($1,$2));"\
+                 "nn_layer_$3_forward($1,$2);"
+    _nn_backward..="nn_layer_$3_backward($1,$2);"
+  else
+    _nn_forward.="begin(nn_layer_nl_init_forward($1,$2));"\
+                 "nn_layer_nl_forward($1,$2,$3);"
+    _nn_backward..="nn_layer_nl_backward($1,$2,$3);"
+  fi
   _nn_init.="$0 $* "
 
 #@cli nn_layer_rename : name,in
@@ -23570,16 +23577,6 @@ nn_layer_run : nn_check_layer "$2" check "isvarname('$1') && ${4=100%}>0 && ${5=
   _nn_forward.="begin(nn_layer_run_init_forward($1,$2,'$3',"$w","$h","$d","$s"));"\
                "nn_layer_run_forward($1,$2);"
   _nn_backward..="nn_layer_run_backward($1,$2);"
-  _nn_init.="$0 $* "
-
-#@cli nn_layer_softmax : name,in
-#@cli : Add a 'softmax' layer to the network.
-nn_layer_softmax : nn_check_layer "$2" check "isvarname('$1')"
-  e[^-1] "[nn_lib] Add 'softmax' layer '$1', with input '$2'."
-  _nn_$1_out_size=$_nn_$2_out_size
-  _nn_forward.="begin(nn_layer_softmax_init_forward($1,$2));"\
-               "nn_layer_softmax_forward($1,$2);"
-  _nn_backward..="nn_layer_softmax_backward($1,$2);"
   _nn_init.="$0 $* "
 
 #@cli nn_layer_split : name0,name1,in,nb_channels0
