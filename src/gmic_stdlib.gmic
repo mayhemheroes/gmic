@@ -11034,8 +11034,91 @@ noise_perlin : check "${1=16}>0 && ${2=$1}>0 && ${3=$1}>0 && isnum(${4=0}) && is
 #@cli : by Robert Bridson (SIGGRAPH'2007).
 #@cli : Default values: 'radius=8' and 'max_sample_attempts=30'.
 #@cli : $ 300,300 noise_poissondisk 8
-##### : Original G'MIC code by Garagecoder (Andy Kelday)
-noise_poissondisk : check "${1=8}>0 && ${2=30}>0"
+noise_poissondisk : check "${1=8}>0 && isint(${2=30}) && $2>0 && ${3=2}>0"
+  e[^-1] "Add poisson disk sampling points to image$?, with radius $1, max sample attempts $2 and p-norm $3."
+  R0,K,P=${1-3}
+  repeat $! l[$>]
+    W,H,D={[w,h,d]}
+    value={iM+(im==iM?1:0)}
+    R={${is_percent\ $R0}?max(w,h,d)*$R0:$R0}
+    C={$R/sqrt(sum([$W,$H,$D]>1))} # Cell size
+
+    # Determing optimal set of neighbors.
+    _poissondisk[] $R,$P,$C
+    f. "($W<2 && i0) || ($H<2 && i1) || ($D<2 && i2)?[8,8,8]:I" discard. 8 s. y,3 a[-3--1] x # Discard useless dimensions
+    neighbors={^} rm.
+
+    # Start point sampling.
+    {ceil([$W,$H,$D]/$C)},1,-1 nm. grid # Grid used for quick testing neighboring points
+    1,32,1,3 nm. points # List of points
+    1,32,1,1 nm. active # List of active indices
+    eval "
+      insert_active_point(X) = (
+        i(#$grid,int(X/$C)) = new_ind = da_size(#$points);
+        da_push(#$points,X);
+        da_push(#$active,new_ind);
+        I(#0,X) = $value;
+      );
+      const eps = 1e-8;
+      neighbors = ["$neighbors"];
+
+      # Initialize list of active points.
+      X = int(u([$W,$H,$D] - eps));
+      insert_active_point(X);
+
+      # Propagate new points.
+      while (siz = da_size(#$active),
+        indX = int(u(siz - eps));
+        X = I[#$points,i[#$active,indX]];
+
+        for (k = 0, k<$K, ++k,
+          U = [ $W>1?u(-1,1):0, $H>1?u(-1,1):0, $D>1?u(-1,1):0 ];
+          U*=u($R,2*$R)/(norm(U) + eps);
+          Y = round(X + U);
+          min(inrange(Y,0,[$W,$H,$D] - 1))?(
+            P = int(Y/$C);
+            i(#$grid,P)<0?(
+              is_sample_ok = 1;
+              repeat(size(neighbors)/3,n, # Test neighboring points
+                ind = i(#$grid,P + neighbors[3*n,3]);
+                ind>=0?(nY = I[#$points,ind]; norm"$P"(nY - Y)<=$R?(is_sample_ok = 0; break())); # Invalid point
+              );
+              is_sample_ok?(insert_active_point(Y); break()); # Add new point
+            );
+          );
+        );
+        k>=$K?da_remove(#$active,indX); # Remove point from active list
+      );
+      resize(#$points,1,da_size(#$points),1,3,0)"
+    k[0]
+  endl done
+
+# Determine optimal list of 3D neighbors to be tested.
++_poissondisk :
+  R,P,C=${1-3}
+  0 eval "
+    dmin(dx,dy,dz,C) = (
+      _dx = dx*C; _dy = dy*C; _dz = dz*C;
+      norm"$P"(min(abs(_dx),abs(_dx + C),abs(_dx - C)),
+               min(abs(_dy),abs(_dy + C),abs(_dy - C)),
+               min(abs(_dz),abs(_dz + C),abs(_dz - C)));
+    );
+    for (n = 1, n<4, ++n,
+      is_none_added = 1;
+      for (k = -n, k<=n, ++k,
+        for (j = -n, j<=n, ++j,
+          for (i = -n, i<=n, ++i,
+            abs(maxabs(i,j,k))==n && dmin(i,j,k,$C)<$R?(da_push([i,j,k]); is_none_added = 0)
+          )
+        )
+      );
+      is_none_added?break();
+    );
+    resize(#-1,1,da_size(),1,3,0)"
+
+# Original version by Andy Kelday.
+#
+noise_poissondisk0 : check "${1=8}>0 && ${2=30}>0"
   e[^-1] "Add poisson disk sampling points to image$?, with radius $1 and max sample attempts $2."
   repeat $! l[$>]
     R={${"is_percent $1"}?max(w,h,d)*$1:$1} # [0] input image to draw samples on
