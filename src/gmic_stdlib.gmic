@@ -24443,43 +24443,6 @@ boxfitting : check "isint(${1=3}) && $1>=1 && isint(${2=0}) && $2>=0 && ${3=0.1}
     blend shapeaverage0
   endl done
 
-
-# Older version.
-boxfitting0 : check "isint(${1=3}) && $1>=1 && isint(${2=0}) && $2>=0 && ${3=0.1}>=0 && isint(${4=3}) && $4>=1"
-  e[^-1] "Apply box fitting effect on image$?, with box sizes ($1,$2), density $3 and $4 attempts."
-  min_size=$1
-  max_size={if($2,$2,max(w,h))}
-  repeat $! l[$>]
-    nb_attempts=0 prec=5
-    100%,100%
-    repeat 1e8
-
-      # Add random non-intersecting squares with min size.
-      if $><1 # Takes random points for the first iteration.
-        100%,100% noise. {max(1e-3,$3)},2 ==. 1
-      else # Then, try to take points near the median axis of the distance function otherwise.
-        +distance. 1 +rand. 0,1 *[-2,-1] max_patch. {round($prec*$min_size)}
-        prec={max(1,$prec*0.9)}
-      fi
-
-      # Discard new squares that intersect something.
-      dilate. $min_size area_fg. 0,1 ==. {($min_size)^2}
-      +dilate.. 3 ==. 0 *[-2,-1] area_fg. 0,1 ==. {($min_size)^2}
-      if !iM nb_attempts+=1 if $nb_attempts>$4 rm. break fi # If no new squares have been placed.
-      else nb_attempts=0 fi
-      +[-2,-1]
-
-      # Make current squares grown until max square size is reached.
-      repeat int(($max_size-$min_size)/2)
-        +dilate. 3 area_fg. 0,1 ==. {($min_size+2*$>+2)^2}
-        if !iM rm. break fi  # No more squares to grow.
-        -|[-2,-1]
-      done
-
-    done
-    blend shapeaverage0
-  endl done
-
 #@cli brushify : [brush],_brush_nb_sizes>=1,0<=_brush_min_size_factor<=1,_brush_nb_orientations>=1,\
 # _brush_light_type,0<=_brush_light_strength<=1,_brush_opacity,_painting_density[%]>=0,\
 # 0<=_painting_contours_coherence<=1,0<=_painting_orientation_coherence<=1,_painting_coherence_alpha[%]>=0,\
