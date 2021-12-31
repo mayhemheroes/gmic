@@ -24362,10 +24362,9 @@ tunnel : check "${1=9}>=0 && ${2=80%}>0" skip ${3=0.5},${4=0.5},${5=0.1},${6=0}
 #@cli : $ image.jpg boxfitting ,
 boxfitting : check "isint(${1=3}) && $1>=1 && isint(${2=0}) && $2>=0 && ${3=0.1}>=0"
   e[^-1] "Apply box fitting effect on image$?, with box sizes ($1,$2) and density $3."
-  min_size=$1
-  max_size={if($2,$2,max(w,h))}
+  min_size,max_size=$1,{$2?$2:max(w,h)}
   repeat $! l[$>]
-    nb_attempts=0 prec=5
+    prec=5
     100%,100%
     repeat inf
 
@@ -24382,11 +24381,9 @@ boxfitting : check "isint(${1=3}) && $1>=1 && isint(${2=0}) && $2>=0 && ${3=0.1}
 
       # Dilate each square as much as possible.
       do
-        f. ">begin(is_new = 0);
-          const boundary = 1;
-          Xc = i0;
-          Yc = i1;
-          N = i2;
+        f. ">
+          begin(is_new = 0; const boundary = 1);
+          Xc = i0; Yc = i1; N = i2;
 
           N>0?(
             N2 = int(N/2); N1 = N - N2 - 1;
@@ -24428,8 +24425,7 @@ boxfitting : check "isint(${1=3}) && $1>=1 && isint(${2=0}) && $2>=0 && ${3=0.1}
       f. "
         Xc = i0; Yc = i1; N = abs(i2);
         N<$min_size?(
-          N2 = int(N/2);
-          N1 = N - N2 - 1;
+          N2 = int(N/2); N1 = N - N2 - 1;
           X0 = Xc - N1; Y0 = Yc - N1;
           X1 = Xc + N2; Y1 = Yc + N2;
           polygon(#-2,4,X0,Y0,X1,Y0,X1,Y1,X0,Y1,1,0);
@@ -24438,7 +24434,6 @@ boxfitting : check "isint(${1=3}) && $1>=1 && isint(${2=0}) && $2>=0 && ${3=0.1}
       discard. -1
       if !h rm. break fi
       rm.
-
     done
     blend shapeaverage0
   endl done
