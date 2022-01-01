@@ -13862,12 +13862,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           }
 
           // Assign or update values of variables.
-          if (sep0==':') sep0 = '=';
           if (is_valid_name) {
             const char *new_value = 0;
             if (varnames) { // Multiple variables
               cimglist_for(varnames,l) {
-                new_value = set_variable(varnames[l],varvalues[is_multiarg?l:0],sep0,variables_sizes);
+                new_value = set_variable(varnames[l],varvalues[is_multiarg?l:0],sep0==':'?'=':sep0,variables_sizes);
                 if (is_verbose) {
                   if (is_multiarg || !l) cimg::strellipsize(varvalues[l],80,true);
                   CImg<char>::string(new_value).move_to(name);
@@ -13896,10 +13895,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 (varnames>'x').move_to(name);
                 cimg::strellipsize(name,80,false);
                 print(images,0,"%s multiple variables %s.",
-                      sep0=='='?"Set":"Update",name.data());
+                      sep0=='=' || sep0==':'?"Set":"Update",name.data());
               }
             } else { // Single variable
-              new_value = set_variable(title,s_op_right + 1,sep0,variables_sizes);
+              new_value = set_variable(title,s_op_right + 1,sep0==':'?'=':sep0,variables_sizes);
               if (is_verbose) {
                 cimg::strellipsize(title,80,true);
                 _gmic_argument_text(s_op_right + 1,name.assign(128),is_verbose);
@@ -13910,17 +13909,17 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                         title,name.data());
                   break;
                 case '<' : case '>' :
-                  print(images,0,"Update %s variable '%s%c%c=%s' -> '%s'.",
+                  print(images,0,"Update %s variable '%s%c%c=%s'->'%s'.",
                         *title=='_'?"global":"local",
                         title,sep0,sep0,name.data(),new_value);
                   break;
                 case ',':
-                  print(images,0,"Update %s variable '%s..=%s' -> '%s'.",
+                  print(images,0,"Update %s variable '%s..=%s'->'%s'.",
                         *title=='_'?"global":"local",
                         title,name.data(),new_value);
                   break;
                 default :
-                  print(images,0,"%s %s variable '%s%c=%s' -> '%s'.",
+                  print(images,0,"%s %s variable '%s%c=%s'->'%s'.",
                         sep0==':'?"Set":"Update",
                         *title=='_'?"global":"local",
                         title,sep0,name.data(),new_value);
