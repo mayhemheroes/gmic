@@ -13863,8 +13863,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
           // Assign or update values of variables.
           if (is_valid_name) {
-            const char *new_value = 0;
-            const char *const s_operation = sep0==':'?":":sep0=='+'?"+":sep0=='-'?"-":sep0=='*'?"*":sep0=='/'?"/":
+            const
+              char *new_value = 0,
+              char *const s_operation = sep0==':'?":":sep0=='+'?"+":sep0=='-'?"-":sep0=='*'?"*":sep0=='/'?"/":
               sep0=='%'?"%":sep0=='&'?"&":sep0=='|'?"|":sep0=='^'?"^":sep0=='<'?"<<":">>";
 
             if (!varnames) { // Single variable
