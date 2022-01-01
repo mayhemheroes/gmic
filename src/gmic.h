@@ -355,7 +355,7 @@ struct gmic {
   const char *set_variable(const char *const name, const char *const value,
                            const char operation='=',
                            const unsigned int *const variables_sizes=0) {
-    gmic_list<gmic_pixel_type> *const images = 0;
+    static gmic_list<gmic_pixel_type> *const images = 0;
     return set_variable(name,value,operation,variables_sizes,images);
   }
   template<typename T>
