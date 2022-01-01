@@ -13868,7 +13868,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               sep0=='%'?"%":sep0=='&'?"&":sep0=='|'?"|":sep0=='^'?"^":sep0=='<'?"<<":">>";
 
             if (!varnames) { // Single variable
-              if (is_cond && cimg_sscanf(s_op_right + 1,"%lf%c",&value,&end)!=1) { // Evaluate right-hand side as a math expression
+              if (is_cond && cimg_sscanf(s_op_right + 1,"%lf%c",&value,&end)!=1) {
+
+                // Evaluate right-hand side as a math expression
                 CImg<T> &img = images.size()?images.back():CImg<T>::empty();
                 CImg<char>::string(s_op_right + 1).move_to(name);
                 strreplace_fw(name);
