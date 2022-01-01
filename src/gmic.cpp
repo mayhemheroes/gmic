@@ -13865,8 +13865,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           if (is_valid_name) {
             const
               char *new_value = 0,
-              char *const s_operation = sep0==':'?":":sep0=='+'?"+":sep0=='-'?"-":sep0=='*'?"*":sep0=='/'?"/":
-              sep0=='%'?"%":sep0=='&'?"&":sep0=='|'?"|":sep0=='^'?"^":sep0=='<'?"<<":">>";
+              *const s_operation = sep0==':'?":":sep0=='+'?"+":sep0=='-'?"-":sep0=='*'?"*":sep0=='/'?"/":sep0=='%'?"%":
+              sep0=='&'?"&":sep0=='|'?"|":sep0=='^'?"^":sep0=='<'?"<<":">>";
 
             if (!varnames) { // Single variable
               if (is_cond && cimg_sscanf(s_op_right + 1,"%lf%c",&value,&end)!=1) {
@@ -13878,7 +13878,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 try { value = img.eval(name,0,0,0,0,&images); }
                 catch (CImgException &e) {
                   const char *const e_ptr = std::strstr(e.what(),": ");
-                  error(true,images,0,"variable assignment",
+                  error(true,images,0,0,
                         "Operator '%s=' on variable '%s': Invalid right-hand side '%s'; %s",
                         s_operation,title,name.data(),e_ptr?e_ptr + 2:e.what());
                 }
