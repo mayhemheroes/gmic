@@ -13827,25 +13827,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           if (!s || s>s_op_right) { // Single variable assignment
             is_valid_name = cimg_sscanf(item,"%255[a-zA-Z0-9_]",gmic_use_title)==1 && (*title<'0' || *title>'9');
             is_valid_name&=(item + std::strlen(title)==s_op_left);
-
-            // if (is_cond) {
-            //   CImg<T> &img = images.size()?images.back():CImg<T>::empty();
-            //   strreplace_fw(name);
-            //   value = cimg::type<double>::nan();
-            //   try { value = img.eval(name,0,0,0,0,&images); }
-            //   catch (CImgException &e) {
-            //     const char *const s_operation = sep0==':'?":":sep0=='+'?"+":sep0=='-'?"-":sep0=='*'?"*":
-            //       sep0=='/'?"/":sep0=='%'?"%":sep0=='&'?"&":sep0=='|'?"|":sep0=='^'?"^":sep0=='<'?"<<":">>";
-            //     const char *const e_ptr = std::strstr(e.what(),": ");
-            //     error(true,images,0,"Variable assignment",
-            //           "Operation '%s=' on variable '%s': Invalid right-hand side '%s'; %s",
-            //           s_operation,varnames[l].data(),name.data(),e_ptr?e_ptr + 2:e.what());
-            //   }
-            //   if (name.width()<24) name.assign(24);
-            //   *name = 0;
-            //   cimg_snprintf(name,name.width(),"%.17g",value);
-            // }
-
           } else { // Multi-variable assignment
             s = item; // Parse sequence of variable names
             while (s<s_op_left) {
@@ -13881,6 +13862,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           }
 
           // Assign or update values of variables.
+          if (sep0==':') sep0 = '=';
           if (is_valid_name) {
             const char *new_value = 0;
             if (varnames) { // Multiple variables
