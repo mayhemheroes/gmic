@@ -3385,17 +3385,17 @@ const char *gmic::set_variable(const char *const name, const char *const value,
 
       if (!is_name_found) {
         if (is_thread_global) cimg::mutex(30,0);
-        error(true,"Operation '%s=' on undefined variable '%s'.",
+        error(true,"Operator '%s=' on undefined variable '%s'.",
               s_operation,name);
       }
       if (cimg_sscanf(__variables[ind],"%lf%c",&lvalue,&end)!=1) {
         if (is_thread_global) cimg::mutex(30,0);
-        error(true,"Operation '%s=' on non-numerical variable '%s=%s'.",
+        error(true,"Operator '%s=' on non-numerical variable '%s=%s'.",
               s_operation,name,__variables[ind].data());
       }
       if (cimg_sscanf(value,"%lf%c",&rvalue,&end)!=1) {
         if (is_thread_global) cimg::mutex(30,0);
-        error(true,"Operation '%s=' on variable '%s': Right-hand side '%s' is not a number.",
+        error(true,"Operator '%s=' on variable '%s': Right-hand side '%s' is not a number.",
               s_operation,name,value);
       }
       *s_value = 0;
@@ -13864,7 +13864,52 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           // Assign or update values of variables.
           if (is_valid_name) {
             const char *new_value = 0;
-            if (varnames) { // Multiple variables
+            const char *const s_operation = sep0==':'?":":sep0=='+'?"+":sep0=='-'?"-":sep0=='*'?"*":sep0=='/'?"/":
+              sep0=='%'?"%":sep0=='&'?"&":sep0=='|'?"|":sep0=='^'?"^":sep0=='<'?"<<":">>";
+
+            if (!varnames) { // Single variable
+              if (is_cond && cimg_sscanf(s_op_right + 1,"%lf%c",&value,&end)!=1) { // Evaluate right-hand side as a math expression
+                CImg<T> &img = images.size()?images.back():CImg<T>::empty();
+                CImg<char>::string(s_op_right + 1).move_to(name);
+                strreplace_fw(name);
+                try { value = img.eval(name,0,0,0,0,&images); }
+                catch (CImgException &e) {
+                  const char *const e_ptr = std::strstr(e.what(),": ");
+                  error(true,images,0,"variable assignment",
+                        "Operator '%s=' on variable '%s': Invalid right-hand side '%s'; %s",
+                        s_operation,title,name.data(),e_ptr?e_ptr + 2:e.what());
+                }
+                name.assign(24);
+                cimg_snprintf(name,name.width(),"%.17g",value);
+                new_value = set_variable(title,name.data(),sep0==':'?'=':sep0,variables_sizes);
+              } else new_value = set_variable(title,s_op_right + 1,sep0==':'?'=':sep0,variables_sizes);
+              if (is_verbose) {
+                cimg::strellipsize(title,80,true);
+                _gmic_argument_text(s_op_right + 1,name.assign(128),is_verbose);
+                switch (sep0) {
+                case '=' :
+                  print(images,0,"Set %s variable '%s=%s'.",
+                        *title=='_'?"global":"local",
+                        title,name.data());
+                  break;
+                case '<' : case '>' :
+                  print(images,0,"Update %s variable '%s%c%c=%s'->'%s'.",
+                        *title=='_'?"global":"local",
+                        title,sep0,sep0,name.data(),new_value);
+                  break;
+                case ',':
+                  print(images,0,"Update %s variable '%s..=%s'->'%s'.",
+                        *title=='_'?"global":"local",
+                        title,name.data(),new_value);
+                  break;
+                default :
+                  print(images,0,"%s %s variable '%s%c=%s'->'%s'.",
+                        sep0==':'?"Set":"Update",
+                        *title=='_'?"global":"local",
+                        title,sep0,name.data(),new_value);
+                }
+              }
+            } else { // Multiple variables
               cimglist_for(varnames,l) {
                 new_value = set_variable(varnames[l],varvalues[is_multiarg?l:0],sep0==':'?'=':sep0,variables_sizes);
                 if (is_verbose) {
@@ -13896,34 +13941,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 cimg::strellipsize(name,80,false);
                 print(images,0,"%s multiple variables %s.",
                       sep0=='=' || sep0==':'?"Set":"Update",name.data());
-              }
-            } else { // Single variable
-              new_value = set_variable(title,s_op_right + 1,sep0==':'?'=':sep0,variables_sizes);
-              if (is_verbose) {
-                cimg::strellipsize(title,80,true);
-                _gmic_argument_text(s_op_right + 1,name.assign(128),is_verbose);
-                switch (sep0) {
-                case '=' :
-                  print(images,0,"Set %s variable '%s=%s'.",
-                        *title=='_'?"global":"local",
-                        title,name.data());
-                  break;
-                case '<' : case '>' :
-                  print(images,0,"Update %s variable '%s%c%c=%s'->'%s'.",
-                        *title=='_'?"global":"local",
-                        title,sep0,sep0,name.data(),new_value);
-                  break;
-                case ',':
-                  print(images,0,"Update %s variable '%s..=%s'->'%s'.",
-                        *title=='_'?"global":"local",
-                        title,name.data(),new_value);
-                  break;
-                default :
-                  print(images,0,"%s %s variable '%s%c=%s'->'%s'.",
-                        sep0==':'?"Set":"Update",
-                        *title=='_'?"global":"local",
-                        title,sep0,name.data(),new_value);
-                }
               }
             }
             continue;
