@@ -13871,7 +13871,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             if (!varnames) { // Single variable
               if (is_cond && cimg_sscanf(s_op_right + 1,"%lf%c",&value,&end)!=1) {
 
-                // Evaluate right-hand side as a math expression
+                // Evaluate right-hand side as a math expression.
                 CImg<T> &img = images.size()?images.back():CImg<T>::empty();
                 CImg<char>::string(s_op_right + 1).move_to(name);
                 strreplace_fw(name);
@@ -13886,6 +13886,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 cimg_snprintf(name,name.width(),"%.17g",value);
                 new_value = set_variable(title,name.data(),sep0==':'?'=':sep0,variables_sizes);
               } else new_value = set_variable(title,s_op_right + 1,sep0==':'?'=':sep0,variables_sizes);
+
               if (is_verbose) {
                 cimg::strellipsize(title,80,true);
                 _gmic_argument_text(s_op_right + 1,name.assign(128),is_verbose);
@@ -13913,6 +13914,23 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 }
               }
             } else { // Multiple variables
+              if (is_cond) {
+                CImg<T> &img = images.size()?images.back():CImg<T>::empty();
+                cimglist_for(varvalues,l) // Evaluate right-hand side as math expressions.
+                  if (cimg_sscanf(varvalues[l],"%lf%c",&value,&end)!=1) {
+                    strreplace_fw(varvalues[l]);
+                    try { value = img.eval(varvalues[l],0,0,0,0,&images); }
+                    catch (CImgException &e) {
+                      const char *const e_ptr = std::strstr(e.what(),": ");
+                      error(true,images,0,0,
+                            "Operator '%s=' on variable '%s': Invalid right-hand side '%s'; %s",
+                            s_operation,title,varvalues[l].data(),e_ptr?e_ptr + 2:e.what());
+                    }
+                    if (varvalues[l].width()<24) varvalues[l].assign(24);
+                    cimg_snprintf(varvalues[l],varvalues[l].width(),"%.17g",value);
+                  }
+              }
+
               cimglist_for(varnames,l) {
                 new_value = set_variable(varnames[l],varvalues[is_multiarg?l:0],sep0==':'?'=':sep0,variables_sizes);
                 if (is_verbose) {
