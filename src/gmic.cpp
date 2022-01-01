@@ -2352,7 +2352,6 @@ double gmic::mp_set(Ts *const ptr, const unsigned int siz, const char *const str
                     void *const p_list, const T& pixel_type) {
   const CImg<void*> gr = get_current_run("Function 'set()'",p_list,pixel_type);
   gmic &gmic_instance = *(gmic*)gr[0];
-  CImgList<T> &images = *(CImgList<T>*)gr[1];
   const unsigned int *const variables_sizes = (const unsigned int*)gr[5];
   CImg<char> _varname(256);
   char *const varname = _varname.data(), end;
@@ -2367,7 +2366,7 @@ double gmic::mp_set(Ts *const ptr, const unsigned int siz, const char *const str
       s_value.assign(24);
       cimg_snprintf(s_value,s_value.width(),"%.17g",*ptr);
     }
-    gmic_instance.set_variable(str,s_value,'=',variables_sizes,&images);
+    gmic_instance.set_variable(str,s_value,'=',variables_sizes);
   } else
     throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'set()': "
                                 "Invalid variable name '%s'.",
