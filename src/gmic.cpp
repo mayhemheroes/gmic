@@ -3553,12 +3553,15 @@ gmic& gmic::add_commands(const char *const data_commands, const char *const comm
       *const nlines = lines + (is_plus?1:0),
       *const ns_name = s_name.data() + (is_plus?1:0);
     if (is_plus) *s_name = '+';
-    *ns_name = 0;
+    *ns_name = sep = 0;
 
     if ((!is_last_slash && std::strchr(lines,':') && // Check for a command definition (or implicit '_main_')
-         cimg_sscanf(nlines,"%255[a-zA-Z0-9_] %c %262143[^\n]",ns_name,&sep,s_body.data())>=2 &&
+         cimg_sscanf(nlines,"%255[a-zA-Z0-9_] %c%262143[^\n]",ns_name,&sep,s_body.data())>=2 &&
          (*nlines<'0' || *nlines>'9') && sep==':' && *s_body!='=') || ((*s_name=0), hash<0)) {
-      CImg<char> body = CImg<char>::string(hash<0 && !*s_name?lines:s_body);
+      const char *_s_body = s_body;
+      if (sep==':') while (*_s_body && cimg::is_blank(*_s_body)) ++_s_body;
+      CImg<char> body = CImg<char>::string(hash<0 && !*s_name?lines:_s_body);
+
       if (hash<0 && !*s_name) std::strcpy(s_name,"_main_");
       if (is_entrypoint && !std::strcmp(s_name,"_main_")) *is_entrypoint = true;
       hash = (int)hashcode(s_name,false);
