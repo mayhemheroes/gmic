@@ -351,18 +351,9 @@ struct gmic {
   gmic_image<char> get_variable(const char *const name,
                                 const unsigned int *const variables_sizes=0,
                                 const gmic_list<char> *const images_names=0) const;
-
   const char *set_variable(const char *const name, const char *const value,
                            const char operation='=',
-                           const unsigned int *const variables_sizes=0) {
-    static gmic_list<gmic_pixel_type> *const images = 0;
-    return set_variable(name,value,operation,variables_sizes,images);
-  }
-  template<typename T>
-  const char *set_variable(const char *const name, const char *const value,
-                           const char operation,
-                           const unsigned int *const variables_sizes,
-                           gmic_list<T> *const images);
+                           const unsigned int *const variables_sizes=0);
   const char *set_variable(const char *const name, const gmic_image<unsigned char>& value,
                            const unsigned int *const variables_sizes=0);
 
