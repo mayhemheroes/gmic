@@ -13805,8 +13805,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
       // Variable assignment.
       if (!is_command_input && (*item=='_' || (*item>='a' && *item<='z') || (*item>='A' && *item<='Z'))) {
-        const char *const s_op_right = std::strchr(item,'=');
-        if (s_op_right) {
+        const char *const s_op_right = std::strchr(item + 1,'=');
+        if (s_op_right && *(s_op_right - 1)!=',') {
           const char *s_op_left = s_op_right;
           sep0 = s_op_right>item?*(s_op_right - 1):0;
           sep1 = s_op_right>item + 1?*(s_op_right - 2):0;
