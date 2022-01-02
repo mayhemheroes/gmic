@@ -13914,8 +13914,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 }
               }
             } else { // Multiple variables
+              CImg<double> varvalues_double;
               if (is_cond) {
                 CImg<T> &img = images.size()?images.back():CImg<T>::empty();
+                varvalues_double.assign(varvalues.size());
                 cimglist_for(varvalues,l) // Evaluate right-hand side as math expressions.
                   if (cimg_sscanf(varvalues[l],"%lf%c",&value,&end)!=1) {
                     strreplace_fw(varvalues[l]);
@@ -13926,13 +13928,14 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                             "Operator '%s=' on variable '%s': Invalid right-hand side '%s'; %s",
                             s_operation,title,varvalues[l].data(),e_ptr?e_ptr + 2:e.what());
                     }
-                    if (varvalues[l].width()<24) varvalues[l].assign(24);
-                    cimg_snprintf(varvalues[l],varvalues[l].width(),"%.17g",value);
+                    varvalues_double[l] = value;
                   }
               }
-
               cimglist_for(varnames,l) {
-                new_value = set_variable(varnames[l],sep0==':'?'=':sep0,varvalues[is_multiarg?l:0],0,variables_sizes);
+                const int k = is_multiarg?l:0;
+                new_value = set_variable(varnames[l],sep0==':'?'=':sep0,
+                                         is_cond?0:varvalues[k].data(),is_cond?&varvalues_double[k]:0,
+                                         variables_sizes);
                 if (is_verbose) {
                   if (is_multiarg || !l) cimg::strellipsize(varvalues[l],80,true);
                   CImg<char>::string(new_value).move_to(name);
