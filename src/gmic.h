@@ -353,7 +353,8 @@ struct gmic {
                                 const gmic_list<char> *const images_names=0) const;
   const char *set_variable(const char *const name, const char *const value,
                            const char operation='=',
-                           const unsigned int *const variables_sizes=0);
+                           const unsigned int *const variables_sizes=0,
+                           const double *const pvalue=0);
   const char *set_variable(const char *const name, const gmic_image<unsigned char>& value,
                            const unsigned int *const variables_sizes=0);
 

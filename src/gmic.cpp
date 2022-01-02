@@ -3321,7 +3321,8 @@ CImg<char> gmic::get_variable(const char *const name,
 // Return the variable value.
 const char *gmic::set_variable(const char *const name, const char *const value,
                                const char operation,
-                               const unsigned int *const variables_sizes) {
+                               const unsigned int *const variables_sizes,
+                               const double *const pvalue) {
   if (!name || !value) return "";
   bool is_name_found = false, is_new_variable = false;
   double lvalue, rvalue;
@@ -3393,7 +3394,9 @@ const char *gmic::set_variable(const char *const name, const char *const value,
         error(true,"Operator '%s=' on non-numerical variable '%s=%s'.",
               s_operation,name,__variables[ind].data());
       }
-      if (cimg_sscanf(value,"%lf%c",&rvalue,&end)!=1) {
+
+      if (pvalue) rvalue = *pvalue;
+      else if (cimg_sscanf(value,"%lf%c",&rvalue,&end)!=1) {
         if (is_thread_global) cimg::mutex(30,0);
         error(true,"Operator '%s=' on variable '%s': Right-hand side '%s' is not a number.",
               s_operation,name,value);
