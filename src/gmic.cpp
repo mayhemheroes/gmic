@@ -13982,7 +13982,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 last[last.width() - 2] = 0;
                 (varnames>'x').move_to(name);
                 cimg::strellipsize(name,80,false);
-                print(images,0,"%s multiple variables %s.",
+                print(images,0,"%s variables %s.",
                       sep0=='=' || sep0==':'?"Set":"Update",name.data());
               }
             }
