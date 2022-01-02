@@ -13996,7 +13996,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 }
                 if (is_cond) {
                   if (is_multiarg && ++q>=varvalues_double[p].height()) { q = 0; ++p; }
-                } else ++p;
+                } else if (is_multiarg) ++p;
               }
 
               if (is_verbose) {
