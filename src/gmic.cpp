@@ -13884,9 +13884,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                         "Operator '%s=' on variable '%s': Invalid right-hand side '%s'; %s",
                         s_operation,title,name.data(),e_ptr?e_ptr + 2:e.what());
                 }
-                name.assign(24);
-                cimg_snprintf(name,name.width(),"%.17g",value);
-                new_value = set_variable(title,sep0==':'?'=':sep0,name.data(),0,variables_sizes);
+                new_value = set_variable(title,sep0==':'?'=':sep0,0,&value,variables_sizes);
               } else new_value = set_variable(title,sep0==':'?'=':sep0,s_op_right + 1,0,variables_sizes);
 
               if (is_verbose) {
