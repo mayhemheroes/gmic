@@ -13961,18 +13961,21 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   cimg::strellipsize(name,80,true);
                   cimg::strellipsize(varnames[l],80,true);
                   gmic_use_message;
+                  const char *const s_sep = l==varnames.width() - 2?" and":",";
+
                   switch (sep0) {
                   case '=' :
-                    cimg_snprintf(message,_message.width(),"'%s=%s', ",
-                                  varnames[l].data(),varvalues[is_multiarg?l:0].data());
+                    cimg_snprintf(message,_message.width(),"'%s=%s'%s ",
+                                  varnames[l].data(),varvalues[is_multiarg?l:0].data(),s_sep);
+
                     break;
                   case '<' : case '>' :
-                    cimg_snprintf(message,_message.width(),"'%s%c%c=%s'->'%s', ",
-                                  varnames[l].data(),sep0,sep0,varvalues[is_multiarg?l:0].data(),name.data());
+                    cimg_snprintf(message,_message.width(),"'%s%c%c=%s'->'%s'%s ",
+                                  varnames[l].data(),sep0,sep0,varvalues[is_multiarg?l:0].data(),name.data(),s_sep);
                     break;
                   default :
-                    cimg_snprintf(message,_message.width(),"'%s%c=%s'->'%s', ",
-                                  varnames[l].data(),sep0,varvalues[is_multiarg?l:0].data(),name.data());
+                    cimg_snprintf(message,_message.width(),"'%s%c=%s'->'%s'%s ",
+                                  varnames[l].data(),sep0,varvalues[is_multiarg?l:0].data(),name.data(),s_sep);
                   }
                   CImg<char>::string(message,false).move_to(varnames[l]);
                 }
