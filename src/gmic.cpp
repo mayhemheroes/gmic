@@ -3397,8 +3397,9 @@ const char *gmic::set_variable(const char *const name, const char operation,
       if (pvalue) rvalue = *pvalue;
       else if (cimg_sscanf(value,"%lf%c",&rvalue,&end)!=1) {
         if (is_thread_global) cimg::mutex(30,0);
-        error(true,"Operator '%s=' on variable '%s': Right-hand side '%s' is not a number.",
-              s_operation,name,value);
+        CImg<char>::string(value).move_to(s_value);
+        error(true,"Operator '%s=' on variable '%s': Right-hand side '%s' is not a single number.",
+              s_operation,name,cimg::strellipsize(s_value,64,false));
       }
       *s_value = 0;
       cimg_snprintf(s_value,s_value.width(),"%.17g",
@@ -13877,14 +13878,20 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 CImg<T> &img = images.size()?images.back():CImg<T>::empty();
                 CImg<char>::string(s_op_right + 1).move_to(name);
                 strreplace_fw(name);
-                try { value = img.eval(name,0,0,0,0,&images); }
-                catch (CImgException &e) {
+                CImg<double> output;
+                try {
+                  img.eval(output,name,0,0,0,0,&images);
+                } catch (CImgException &e) {
                   const char *const e_ptr = std::strstr(e.what(),": ");
                   error(true,images,0,0,
                         "Operator '%s=' on variable '%s': Invalid right-hand side '%s'; %s",
                         s_operation,title,name.data(),e_ptr?e_ptr + 2:e.what());
                 }
-                new_value = set_variable(title,sep0==':'?'=':sep0,0,&value,variables_sizes);
+                if (output.height()>1) // Vector-valued result
+                  new_value = set_variable(title,sep0==':'?'=':sep0,
+                                           output.value_string(',',0,"%.17g"),0,variables_sizes);
+                else // Scalar result
+                  new_value = set_variable(title,sep0==':'?'=':sep0,0,output,variables_sizes);
               } else new_value = set_variable(title,sep0==':'?'=':sep0,s_op_right + 1,0,variables_sizes);
 
               if (is_verbose) {
