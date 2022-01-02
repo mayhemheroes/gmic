@@ -3322,8 +3322,7 @@ CImg<char> gmic::get_variable(const char *const name,
 const char *gmic::set_variable(const char *const name, const char operation,
                                const char *const value, const double *const pvalue,
                                const unsigned int *const variables_sizes) {
-  cimg::unused(pvalue);
-  if (!name || !value) return "";
+  if (!name || (!value && !pvalue)) return "";
   bool is_name_found = false, is_new_variable = false;
   double lvalue, rvalue;
   CImg<char> s_value;
@@ -3339,7 +3338,7 @@ const char *gmic::set_variable(const char *const name, const char operation,
     &__variables = *variables[hash],
     &__variables_names = *variables_names[hash];
 
-  if ((!operation || operation=='=') && *value==gmic_store &&
+  if ((!operation || operation=='=') && value && *value==gmic_store &&
       !std::strncmp(value + 1,"*store/",7) && value[8]) { // Get value from image-encoded variable.
     const char *const cname = value + 8;
     const bool is_cglobal = *cname=='_';
@@ -3357,9 +3356,10 @@ const char *gmic::set_variable(const char *const name, const char operation,
       std::sprintf(s_value,"%c*store/%s",gmic_store,name);
     } else s_value.assign(1,1,1,1,0);
     is_name_found = false;
-  } else if (!operation || operation=='=' || operation=='.' || operation==',')
-    s_value.assign(value,(unsigned int)(std::strlen(value) + 1),1,1,1,true);
-  else s_value.assign(24);
+  } else if (!operation || operation=='=') {
+    if (value) s_value.assign(value,(unsigned int)(std::strlen(value) + 1),1,1,1,true);
+    else { s_value.assign(24); cimg_snprintf(s_value,s_value.width(),"%.17g",*pvalue); }
+  } else s_value.assign(24); // Will be determined later
 
   if (!operation) is_new_variable = true;
   else {
@@ -3394,7 +3394,8 @@ const char *gmic::set_variable(const char *const name, const char operation,
         error(true,"Operator '%s=' on non-numerical variable '%s=%s'.",
               s_operation,name,__variables[ind].data());
       }
-      if (cimg_sscanf(value,"%lf%c",&rvalue,&end)!=1) {
+      if (pvalue) rvalue = *pvalue;
+      else if (cimg_sscanf(value,"%lf%c",&rvalue,&end)!=1) {
         if (is_thread_global) cimg::mutex(30,0);
         error(true,"Operator '%s=' on variable '%s': Right-hand side '%s' is not a number.",
               s_operation,name,value);
