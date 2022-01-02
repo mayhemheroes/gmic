@@ -13942,7 +13942,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                       output.value_string(',',0,"%.17g").move_to(varvalues[l]);
                       is_varvalues_double[l] = 0;
                     } else { // Scalar result
-                      varvalues_double[l] = value;
+                      varvalues_double[l] = *output;
                       is_varvalues_double[l] = 1;
                     }
                   } else { varvalues_double[l] = value; is_varvalues_double[l] = 1; }
