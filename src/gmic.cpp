@@ -13879,9 +13879,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 CImg<char>::string(s_op_right + 1).move_to(name);
                 strreplace_fw(name);
                 CImg<double> output;
-                try {
-                  img.eval(output,name,0,0,0,0,&images);
-                } catch (CImgException &e) {
+                try { img.eval(output,name,0,0,0,0,&images); }
+                catch (CImgException &e) {
                   const char *const e_ptr = std::strstr(e.what(),": ");
                   error(true,images,0,0,
                         "Operator '%s=' on variable '%s': Invalid right-hand side '%s'; %s",
@@ -13922,26 +13921,39 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               }
             } else { // Multiple variables
               CImg<double> varvalues_double;
+              CImg<unsigned char> is_varvalues_double;
               if (is_cond) {
                 CImg<T> &img = images.size()?images.back():CImg<T>::empty();
                 varvalues_double.assign(varvalues.size());
-                cimglist_for(varvalues,l) // Evaluate right-hand side as math expressions.
+                is_varvalues_double.assign(varvalues.size(),1,1,1,0);
+
+                cimglist_for(varvalues,l) { // Evaluate right-hand side as math expression
                   if (cimg_sscanf(varvalues[l],"%lf%c",&value,&end)!=1) {
+                    CImg<double> output;
                     strreplace_fw(varvalues[l]);
-                    try { value = img.eval(varvalues[l],0,0,0,0,&images); }
+                    try { img.eval(output,varvalues[l],0,0,0,0,&images); }
                     catch (CImgException &e) {
                       const char *const e_ptr = std::strstr(e.what(),": ");
                       error(true,images,0,0,
                             "Operator '%s=' on variable '%s': Invalid right-hand side '%s'; %s",
                             s_operation,title,varvalues[l].data(),e_ptr?e_ptr + 2:e.what());
                     }
-                    varvalues_double[l] = value;
-                  }
+                    if (output.height()>1) { // Vector-valued result
+                      output.value_string(',',0,"%.17g").move_to(varvalues[l]);
+                      is_varvalues_double[l] = 0;
+                    } else { // Scalar result
+                      varvalues_double[l] = value;
+                      is_varvalues_double[l] = 1;
+                    }
+                  } else { varvalues_double[l] = value; is_varvalues_double[l] = 1; }
+                }
               }
               cimglist_for(varnames,l) {
                 const int k = is_multiarg?l:0;
+                const bool is_double = is_cond && is_varvalues_double[k];
                 new_value = set_variable(varnames[l],sep0==':'?'=':sep0,
-                                         is_cond?0:varvalues[k].data(),is_cond?&varvalues_double[k]:0,
+                                         is_double?0:varvalues[k].data(),
+                                         is_double?&varvalues_double[k]:0,
                                          variables_sizes);
                 if (is_verbose) {
                   if (is_multiarg || !l) cimg::strellipsize(varvalues[l],80,true);
