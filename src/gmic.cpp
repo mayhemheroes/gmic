@@ -13822,11 +13822,14 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             sep0 = '=';
           is_cond = sep0=='+' || sep0=='-' || sep0=='*' || sep0=='/' || sep0=='%' || sep0=='&' || sep0=='|' ||
             sep0=='^' || sep0==':'; // Right-hand side must be evaluated?
+          const char *const s_operation = sep0=='='?"":sep0==':'?":":sep0=='+'?"+":sep0=='-'?"-":sep0=='*'?"*":
+            sep0=='/'?"/":sep0=='%'?"%":sep0=='&'?"&":sep0=='|'?"|":sep0=='^'?"^":sep0=='<'?"<<":">>";
 
           // Check validity of variable name(s).
           CImgList<char> varnames, varvalues;
           bool is_valid_name = true, is_multiarg = false;
           const char *s = std::strchr(item,',');
+
           if (!s || s>s_op_right) { // Single variable assignment
             is_valid_name = cimg_sscanf(item,"%255[a-zA-Z0-9_]",gmic_use_title)==1 && (*title<'0' || *title>'9');
             is_valid_name&=(item + std::strlen(title)==s_op_left);
@@ -13860,17 +13863,23 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 if (*(s_end - 1)==',') CImg<char>(1,1,1,1,0).move_to(varvalues);
               }
               is_multiarg = varnames.width()==varvalues.width();
-              is_valid_name&=(is_multiarg || varvalues.width()==1);
+              is_valid_name&=(is_cond || is_multiarg || varvalues.width()==1);
+            }
+            if (!is_valid_name) {
+              name.assign();
+              cimglist_for(varnames,k) { varnames[k].back() = ','; name.append(varnames[k],'x'); }
+              name.back() = 0;
+              error(true,images,0,0,
+                    "Operator '%s=' on variable%s '%s': Right-hand side '%s' defines %s%d values for %s%d variables.",
+                    s_operation,varnames.size()!=1?"s":"",name.data(),s_op_right + 1,
+                    varvalues.width()<varnames.width()?"only ":"",varvalues.width(),
+                    varvalues.width()>varnames.width()?"only ":"",varnames.width());
             }
           }
 
           // Assign or update values of variables.
           if (is_valid_name) {
-            const
-              char *new_value = 0,
-              *const s_operation = sep0==':'?":":sep0=='+'?"+":sep0=='-'?"-":sep0=='*'?"*":sep0=='/'?"/":sep0=='%'?"%":
-              sep0=='&'?"&":sep0=='|'?"|":sep0=='^'?"^":sep0=='<'?"<<":">>";
-
+            const char *new_value = 0;
             if (!varnames) { // Single variable
               if (is_cond && cimg_sscanf(s_op_right + 1,"%lf%c",&value,&end)!=1) {
 
@@ -13920,43 +13929,49 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 }
               }
             } else { // Multiple variables
-              CImg<double> varvalues_double;
-              CImg<unsigned char> is_varvalues_double;
+              CImgList<double> varvalues_double;
               if (is_cond) {
                 CImg<T> &img = images.size()?images.back():CImg<T>::empty();
-                varvalues_double.assign(varvalues.size());
-                is_varvalues_double.assign(varvalues.size(),1,1,1,0);
-
                 cimglist_for(varvalues,l) { // Evaluate right-hand side as math expression
                   if (cimg_sscanf(varvalues[l],"%lf%c",&value,&end)!=1) {
                     CImg<double> output;
                     strreplace_fw(varvalues[l]);
                     try { img.eval(output,varvalues[l],0,0,0,0,&images); }
                     catch (CImgException &e) {
+                      name.assign();
+                      cimglist_for(varnames,k) { varnames[k].back() = ','; name.append(varnames[k],'x'); }
+                      name.back() = 0;
                       const char *const e_ptr = std::strstr(e.what(),": ");
                       error(true,images,0,0,
-                            "Operator '%s=' on variable '%s': Invalid right-hand side '%s'; %s",
-                            s_operation,title,varvalues[l].data(),e_ptr?e_ptr + 2:e.what());
+                            "Operator '%s=' on variables '%s': Invalid right-hand side '%s'; %s",
+                            s_operation,name.data(),varvalues[l].data(),e_ptr?e_ptr + 2:e.what());
                     }
-                    if (output.height()>1) { // Vector-valued result
-                      output.value_string(',',0,"%.17g").move_to(varvalues[l]);
-                      is_varvalues_double[l] = 0;
-                    } else { // Scalar result
-                      varvalues_double[l] = *output;
-                      is_varvalues_double[l] = 1;
-                    }
-                  } else { varvalues_double[l] = value; is_varvalues_double[l] = 1; }
+                    output.move_to(varvalues_double);
+                  } else CImg<double>::vector(value).move_to(varvalues_double);
+                }
+                int nb_args = 0;
+                cimglist_for(varvalues_double,l) nb_args+=varvalues_double[l].height();
+                is_multiarg = nb_args>1;
+                if (is_multiarg && nb_args!=varnames.width()) {
+                  name.assign();
+                  cimglist_for(varnames,k) { varnames[k].back() = ','; name.append(varnames[k],'x'); }
+                  name.back() = 0;
+                  error(true,images,0,0,
+                        "Operator '%s=' on variable%s '%s': Right-hand side '%s' defines %s%d values "
+                        "for %s%d variables.",
+                        s_operation,varnames.size()!=1?"s":"",name.data(),s_op_right + 1,
+                        nb_args<varnames.width()?"only ":"",nb_args,
+                        nb_args>varnames.width()?"only ":"",varnames.width());
                 }
               }
+              int p = 0, q = 0;
               cimglist_for(varnames,l) {
-                const int k = is_multiarg?l:0;
-                const bool is_double = is_cond && is_varvalues_double[k];
                 new_value = set_variable(varnames[l],sep0==':'?'=':sep0,
-                                         is_double?0:varvalues[k].data(),
-                                         is_double?&varvalues_double[k]:0,
+                                         is_cond?0:varvalues[p].data(),
+                                         is_cond?&varvalues_double(p,q):0,
                                          variables_sizes);
                 if (is_verbose) {
-                  if (is_multiarg || !l) cimg::strellipsize(varvalues[l],80,true);
+                  cimg::strellipsize(varvalues[p],80,true);
                   CImg<char>::string(new_value).move_to(name);
                   cimg::strellipsize(name,80,true);
                   cimg::strellipsize(varnames[l],80,true);
@@ -13966,20 +13981,24 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   switch (sep0) {
                   case '=' :
                     cimg_snprintf(message,_message.width(),"'%s=%s'%s ",
-                                  varnames[l].data(),varvalues[is_multiarg?l:0].data(),s_sep);
+                                  varnames[l].data(),varvalues[p].data(),s_sep);
 
                     break;
                   case '<' : case '>' :
                     cimg_snprintf(message,_message.width(),"'%s%c%c=%s'->'%s'%s ",
-                                  varnames[l].data(),sep0,sep0,varvalues[is_multiarg?l:0].data(),name.data(),s_sep);
+                                  varnames[l].data(),sep0,sep0,varvalues[p].data(),name.data(),s_sep);
                     break;
                   default :
                     cimg_snprintf(message,_message.width(),"'%s%c=%s'->'%s'%s ",
-                                  varnames[l].data(),sep0,varvalues[is_multiarg?l:0].data(),name.data(),s_sep);
+                                  varnames[l].data(),sep0,varvalues[p].data(),name.data(),s_sep);
                   }
                   CImg<char>::string(message,false).move_to(varnames[l]);
                 }
+                if (is_cond) {
+                  if (is_multiarg && ++q>=varvalues_double[p].height()) { q = 0; ++p; }
+                } else ++p;
               }
+
               if (is_verbose) {
                 CImg<char> &last = varnames.back();
                 last[last.width() - 2] = 0;
