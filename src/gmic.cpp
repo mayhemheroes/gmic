@@ -3317,7 +3317,7 @@ CImg<char> gmic::get_variable(const char *const name,
 // Set variable value.
 //--------------------
 // 'operation' can be { 0 (add new variable), '=' (replace or add), '.' (append), ',' (prepend),
-//                      '+', '-', '*', '/', '%', '&', '|', '^', '<', '>' }
+//                      ':', '+', '-', '*', '/', '%', '&', '|', '^', '<', '>' }
 // Return the variable value.
 const char *gmic::set_variable(const char *const name, const char operation,
                                const char *const value, const double *const pvalue,
@@ -3356,10 +3356,10 @@ const char *gmic::set_variable(const char *const name, const char operation,
       std::sprintf(s_value,"%c*store/%s",gmic_store,name);
     } else s_value.assign(1,1,1,1,0);
     is_name_found = false;
-  } else if (!operation || operation=='=') {
+  } else if (!operation || operation=='=' || operation==':') {
     if (value) s_value.assign(value,(unsigned int)(std::strlen(value) + 1),1,1,1,true);
     else { s_value.assign(24); cimg_snprintf(s_value,s_value.width(),"%.17g",*pvalue); }
-  } else s_value.assign(24); // Will be determined later
+  } else s_value.assign(24); // Self-operator : value will be determined later
 
   if (!operation) is_new_variable = true;
   else {
@@ -3367,7 +3367,7 @@ const char *gmic::set_variable(const char *const name, const char operation,
     for (int l = __variables.width() - 1; l>=lind; --l) if (!std::strcmp(__variables_names[l],name)) {
         is_name_found = true; ind = l; break;
       }
-    if (operation=='=') {
+    if (operation=='=' || operation==':') {
       if (!is_name_found) is_new_variable = true;
       else s_value.move_to(__variables[ind]);
     } else if (operation=='.') {
@@ -3394,14 +3394,9 @@ const char *gmic::set_variable(const char *const name, const char operation,
         error(true,"Operator '%s=' on non-numerical variable '%s=%s'.",
               s_operation,name,__variables[ind].data());
       }
-      if (pvalue) rvalue = *pvalue;
-      else if (cimg_sscanf(value,"%lf%c",&rvalue,&end)!=1) {
-        if (is_thread_global) cimg::mutex(30,0);
-        CImg<char>::string(value).move_to(s_value);
-        error(true,"Operator '%s=' on variable '%s': Right-hand side '%s' is not a single number.",
-              s_operation,name,cimg::strellipsize(s_value,64,false));
-      }
-      *s_value = 0;
+      if (pvalue) rvalue = *pvalue; // For self-operators, righ-and side *must* be passed as a double value
+      else error(true,"Operator '%s=' on variable '%s': Right-hand side '%s' not defined as a double value.",
+                 s_operation,name,cimg::strellipsize(s_value,64,false));
       cimg_snprintf(s_value,s_value.width(),"%.17g",
                     operation=='+'?lvalue + rvalue:
                     operation=='-'?lvalue - rvalue:
@@ -13881,26 +13876,27 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           if (is_valid_name) {
             const char *new_value = 0;
             if (!varnames) { // Single variable
-              if (is_cond && cimg_sscanf(s_op_right + 1,"%lf%c",&value,&end)!=1) {
+              if (is_cond) { // Self-operator
+                if (cimg_sscanf(s_op_right + 1,"%lf%c",&value,&end)!=1) {
 
-                // Evaluate right-hand side as a math expression.
-                CImg<T> &img = images.size()?images.back():CImg<T>::empty();
-                CImg<char>::string(s_op_right + 1).move_to(name);
-                strreplace_fw(name);
-                CImg<double> output;
-                try { img.eval(output,name,0,0,0,0,&images); }
-                catch (CImgException &e) {
-                  const char *const e_ptr = std::strstr(e.what(),": ");
-                  error(true,images,0,0,
-                        "Operator '%s=' on variable '%s': Invalid right-hand side '%s'; %s",
-                        s_operation,title,name.data(),e_ptr?e_ptr + 2:e.what());
-                }
-                if (output.height()>1) // Vector-valued result
-                  new_value = set_variable(title,sep0==':'?'=':sep0,
-                                           output.value_string(',',0,"%.17g"),0,variables_sizes);
-                else // Scalar result
-                  new_value = set_variable(title,sep0==':'?'=':sep0,0,output,variables_sizes);
-              } else new_value = set_variable(title,sep0==':'?'=':sep0,s_op_right + 1,0,variables_sizes);
+                  // Evaluate right-hand side as a math expression.
+                  CImg<T> &img = images.size()?images.back():CImg<T>::empty();
+                  CImg<char>::string(s_op_right + 1).move_to(name);
+                  strreplace_fw(name);
+                  CImg<double> output;
+                  try { img.eval(output,name,0,0,0,0,&images); }
+                  catch (CImgException &e) {
+                    const char *const e_ptr = std::strstr(e.what(),": ");
+                    error(true,images,0,0,
+                          "Operator '%s=' on variable '%s': Invalid right-hand side '%s'; %s",
+                          s_operation,title,name.data(),e_ptr?e_ptr + 2:e.what());
+                  }
+                  if (output.height()>1) // Vector-valued result
+                    new_value = set_variable(title,sep0,output.value_string(',',0,"%.17g"),0,variables_sizes);
+                  else // Scalar result
+                    new_value = set_variable(title,sep0,0,output,variables_sizes);
+                } else new_value = set_variable(title,sep0,0,&value,variables_sizes);
+              } else new_value = set_variable(title,sep0,s_op_right + 1,0,variables_sizes);
 
               if (is_verbose) {
                 cimg::strellipsize(title,80,true);
@@ -13966,9 +13962,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               }
               int p = 0, q = 0;
               cimglist_for(varnames,l) {
-                new_value = set_variable(varnames[l],sep0==':'?'=':sep0,
-                                         is_cond?0:varvalues[p].data(),
-                                         is_cond?&varvalues_double(p,q):0,
+                new_value = set_variable(varnames[l],sep0,
+                                         is_cond?0:varvalues[p].data(),is_cond?&varvalues_double(p,q):0,
                                          variables_sizes);
                 if (is_verbose) {
                   cimg::strellipsize(varvalues[p],80,true);
@@ -13977,7 +13972,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   cimg::strellipsize(varnames[l],80,true);
                   gmic_use_message;
                   const char *const s_sep = l==varnames.width() - 2?" and":",";
-
                   switch (sep0) {
                   case '=' :
                     cimg_snprintf(message,_message.width(),"'%s=%s'%s ",
