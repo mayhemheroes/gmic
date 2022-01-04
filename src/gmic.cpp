@@ -3356,7 +3356,7 @@ const char *gmic::set_variable(const char *const name, const char operation,
       std::sprintf(s_value,"%c*store/%s",gmic_store,name);
     } else s_value.assign(1,1,1,1,0);
     is_name_found = false;
-  } else if (!operation || operation=='=' || operation==':') {
+  } else if (!operation || operation=='=' || operation==':' || operation=='.' || operation==',') {
     if (value) s_value.assign(value,(unsigned int)(std::strlen(value) + 1),1,1,1,true);
     else { s_value.assign(24); cimg_snprintf(s_value,s_value.width(),"%.17g",*pvalue); }
   } else s_value.assign(24); // Self-operator : value will be determined later
