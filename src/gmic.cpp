@@ -3324,7 +3324,7 @@ const char *gmic::set_variable(const char *const name, const char operation,
                                const unsigned int *const variables_sizes) {
   if (!name || (!value && !pvalue)) return "";
   bool is_name_found = false, is_new_variable = false;
-  double lvalue, rvalue;
+  double lvalue = 0, rvalue = 0;
   CImg<char> s_value;
   int ind = 0;
   char end;
