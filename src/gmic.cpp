@@ -3338,6 +3338,7 @@ const char *gmic::set_variable(const char *const name, const char operation,
     &__variables = *variables[hash],
     &__variables_names = *variables_names[hash];
 
+  // Get target value in string 's_value' (except for arithmetic self-operators).
   if ((!operation || operation=='=') && value && *value==gmic_store &&
       !std::strncmp(value + 1,"*store/",7) && value[8]) { // Get value from image-encoded variable.
     const char *const cname = value + 8;
@@ -3361,6 +3362,7 @@ const char *gmic::set_variable(const char *const name, const char operation,
     else { s_value.assign(24); cimg_snprintf(s_value,s_value.width(),"%.17g",*pvalue); }
   } else s_value.assign(24); // Arithmetic self-operator : value will be determined later
 
+  // Check state of existing variable and update if it exists.
   if (!operation) is_new_variable = true;
   else {
     // Retrieve index of current definition.
@@ -3412,6 +3414,7 @@ const char *gmic::set_variable(const char *const name, const char operation,
     }
   }
 
+  // Otherwise, create new variable.
   if (is_new_variable) { // New variable
     ind = __variables.width();
     CImg<char>::string(name).move_to(__variables_names);
