@@ -507,15 +507,15 @@ gmicol:
 # G'MIC-Qt.
 #----------
 gimp: gmic_qt_files CImg.h gmic_stdlib_community.h
-	cd ../gmic-qt && $(QMAKE) CONFIG+=release GMIC_PATH=$(SRC_PATH) PRERELEASE=$(PRERELEASE) HOST=gimp gmic_qt.pro && $(MAKE)
+	cd ../gmic-qt && $(QMAKE) CONFIG+=release GMIC_PATH=$(SRC_PATH) PRERELEASE=$(PRERELEASE) GMIC_DYNAMIC_LINKING=on HOST=gimp gmic_qt.pro && $(MAKE)
 	@echo "Executable 'gmic_gimp_qt' has been successfully compiled in '../gmic-qt/'."
 
 krita: gmic_qt_files CImg.h gmic_stdlib_community.h
-	cd ../gmic-qt && $(QMAKE) CONFIG+=release GMIC_PATH=$(SRC_PATH) PRERELEASE=$(PRERELEASE) HOST=krita gmic_qt.pro && $(MAKE)
+	cd ../gmic-qt && $(QMAKE) CONFIG+=release GMIC_PATH=$(SRC_PATH) PRERELEASE=$(PRERELEASE) GMIC_DYNAMIC_LINKING=on HOST=krita gmic_qt.pro && $(MAKE)
 	@echo "Executable 'gmic_krita_qt' has been successfully compiled in '../gmic-qt/'."
 
 gmic_qt: gmic_qt_files CImg.h gmic_stdlib_community.h
-	cd ../gmic-qt && $(QMAKE) CONFIG+=release GMIC_PATH=$(SRC_PATH) PRERELEASE=$(PRERELEASE) HOST=none gmic_qt.pro && $(MAKE)
+	cd ../gmic-qt && $(QMAKE) CONFIG+=release GMIC_PATH=$(SRC_PATH) PRERELEASE=$(PRERELEASE) GMIC_DYNAMIC_LINKING=on HOST=none gmic_qt.pro && $(MAKE)
 	@echo "Executable 'gmic_qt' has been successfully compiled in '../gmic-qt/'."
 
 gmic_qt_files:
