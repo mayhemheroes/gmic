@@ -13828,8 +13828,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           bool is_valid_name = true, is_multiarg = false;
           const char *s = std::strchr(item,',');
 
-          std::fprintf(stderr,"\nDEBUG : item = '%s', s = '%s'\n",item,s);
-
           if (!s || s>s_op_right) { // Single variable assignment
             is_valid_name = cimg_sscanf(item,"%255[a-zA-Z0-9_]",gmic_use_title)==1 && (*title<'0' || *title>'9');
             is_valid_name&=(item + std::strlen(title)==s_op_left);
@@ -13863,11 +13861,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 if (*(s_end - 1)==',') CImg<char>(1,1,1,1,0).move_to(varvalues);
               }
               is_multiarg = varnames.width()==varvalues.width();
-
-              std::fprintf(stderr,"\nDEBUG : is_multi_arg = %d",(int)is_multiarg);
-              varnames.display("VARNAMES");
-              varvalues.display("VARVALUES");
-
               is_valid_name&=(is_cond || is_multiarg || varvalues.width()==1);
             }
             if (!is_valid_name) {
