@@ -169,7 +169,7 @@ MANDATORY_LIBS = $(shell pkg-config --libs zlib || echo -lz) $(EXTRA_LIBS)
 ifndef NO_SRIPDLIB
 MANDATORY_CFLAGS += -std=c++11 -pedantic
 endif
-MANDATORY_LIBS += -L$(USR)/$(LIB)
+MANDATORY_LIBS += -L. -L$(USR)/$(LIB)
 ifdef IS_GCC
 MANDATORY_CFLAGS += -Wall -Wextra -Wfatal-errors -Werror=unknown-pragmas -Werror=unused-label
 GCC_VER_GTEQ5 = $(shell expr `$(CXX) -dumpversion | cut -f1 -d.` \>= 5)
@@ -369,7 +369,7 @@ ifeq ($(OS),Darwin)
 	$(CXX) -shared -std=c++11 -pedantic -o libgmic.so.$(VERSION) libgmic.o $(LIBS)
 else
 	$(CXX) -shared -std=c++11 -pedantic -Wl,-soname,libgmic.so.$(VERSION1) -o libgmic.so.$(VERSION) libgmic.o $(LIBS)
-	$(CXX) -o use_libgmic use_libgmic.cpp -std=c++11 -pedantic -L. -lgmic $(LIBS)
+	$(CXX) -o use_libgmic use_libgmic.cpp -std=c++11 -pedantic -lgmic $(LIBS)
 endif
 	ln -fs libgmic.so.$(VERSION) libgmic.so.$(VERSION1); \
 	ln -fs libgmic.so.$(VERSION1) libgmic.so; \
@@ -380,7 +380,7 @@ libgmic.o: gmic.cpp gmic.h gmic_stdlib.h CImg.h
 # CLI.
 #-----
 cli: lib
-	$(MAKE) "CFLAGS+=$(GMIC_STD_CFLAGS) $(OPT_CFLAGS)" "LIBS+=$(GMIC_STD_LIBS) $(OPT_LIBS) -L. -lgmic" _cli
+	$(MAKE) "CFLAGS+=$(GMIC_STD_CFLAGS) $(OPT_CFLAGS)" "LIBS+=$(GMIC_STD_LIBS) $(OPT_LIBS) -lgmic" _cli
 	$(STRIP) gmic$(EXE)
 
 dev:
@@ -438,7 +438,7 @@ else
 	$(CXX) -shared -Wl,-soname,libcgmic.so.$(VERSION1) -o libcgmic$(SO) libcgmic.o libgmic.o $(LIBS)
 endif
 endif
-	$(CC) -std=c99 -o use_libcgmic use_libcgmic.c -L. -lcgmic
+	$(CC) -std=c99 -o use_libcgmic use_libcgmic.c -lcgmic
 
 libcgmic.o: gmic.cpp gmic.h gmic_stdlib.h CImg.h
 	$(CXX) -o libcgmic.o -c gmic_libc.cpp $(PIC) $(CFLAGS)
@@ -494,7 +494,7 @@ else
 	$(CXX) -shared -Wl,-soname,libcgmicstatic.so.$(VERSION1) -o libcgmicstatic$(SO) libcgmicstatic.o libgmic.o $(PIC) $(CFLAGS) $(LIBS)
 endif
 endif
-	$(CC) -std=c99 -o use_libcgmic_static use_libcgmic.c -L. -lcgmicstatic
+	$(CC) -std=c99 -o use_libcgmic_static use_libcgmic.c -lcgmicstatic
 
 libcgmicstatic.o: gmic.cpp gmic.h gmic_stdlib.h CImg.h
 	$(CXX) -o libcgmicstatic.o -c gmic_libc.cpp $(PIC) $(CFLAGS)
