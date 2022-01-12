@@ -384,20 +384,20 @@ cli: lib
 	$(STRIP) gmic$(EXE)
 
 dev:
-	$(MAKE) "CFLAGS+=$(GMIC_STD_CFLAGS)" "LIBS+=$(GMIC_STD_LIBS) gmic.o" gmic.o _cli
+	$(MAKE) "CFLAGS+=$(GMIC_STD_CFLAGS)" "LIBS+=gmic.o $(GMIC_STD_LIBS)" gmic.o _cli
 
 debug:
-	$(MAKE) "CFLAGS+=$(GMIC_STD_CFLAGS) $(DEBUG_CFLAGS)" "LIBS+=$(GMIC_STD_LIBS) gmic.o" gmic.o _cli
+	$(MAKE) "CFLAGS+=$(GMIC_STD_CFLAGS) $(DEBUG_CFLAGS)" "LIBS+=gmic.o $(GMIC_STD_LIBS)" gmic.o _cli
 
 valgrind:
-	$(MAKE) "CFLAGS+=$(GMIC_STD_CFLAGS) -g" "LIBS+=$(GMIC_STD_LIBS) gmic.o" gmic.o _cli
+	$(MAKE) "CFLAGS+=$(GMIC_STD_CFLAGS) -g" "LIBS+=gmic.o $(GMIC_STD_LIBS)" gmic.o _cli
 
 opencv:
-	$(MAKE) "CFLAGS+=$(GMIC_STD_CFLAGS) $(OPT_CFLAGS) $(OPENCV_CFLAGS)" "LIBS+=$(GMIC_STD_LIBS) $(OPT_LIBS) $(OPENCV_LIBS) gmic.o" gmic.o _cli
+	$(MAKE) "CFLAGS+=$(GMIC_STD_CFLAGS) $(OPT_CFLAGS) $(OPENCV_CFLAGS)" "LIBS+=gmic.o $(GMIC_STD_LIBS) $(OPT_LIBS) $(OPENCV_LIBS)" gmic.o _cli
 
 half:
 	$(MAKE) "CFLAGS+=$(MANDATORY_CFLAGS) $(ABORT_CFLAGS) $(PARALLEL_CFLAGS) $(OPENMP_CFLAGS) $(X11_CFLAGS) $(OPENEXR_CFLAGS) -Dcimg_use_half -I/usr/include/OpenEXR -Dgmic_pixel_type=half" \
-	        "LIBS+=$(MANDATORY_LIBS) $(PARALLEL_LIBS) $(OPENMP_LIBS) $(X11_LIBS) $(OPENEXR_LIBS) gmic.o" gmic.o _cli
+	        "LIBS+=gmic.o $(MANDATORY_LIBS) $(PARALLEL_LIBS) $(OPENMP_LIBS) $(X11_LIBS) $(OPENEXR_LIBS)" gmic.o _cli
 
 _cli: gmic_cli.cpp gmic.h CImg.h
 	$(CXX) -o gmic gmic_cli.cpp $(CFLAGS) $(LIBS)
