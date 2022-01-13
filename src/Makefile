@@ -8,7 +8,6 @@
 #                 . the G'MIC library, with the C++ API (type 'make lib').
 #                 . the G'MIC library, with the C API (type 'make libc' or 'make libcstatic').
 #                 . the G'MIC plug-in for GIMP (type 'make gimp').
-#                 . the G'MIC plug-in for Krita (type 'make krita').
 #                 . To compile all of them, just type 'make', or 'make all').
 #
 #                ( https://gmic.eu )
@@ -64,7 +63,6 @@ USR = /usr
 LIB = lib
 BIN = bin
 INCLUDE = include
-SO = .so
 PIC = -fPIC
 EXE =
 WGET = wget --no-check-certificate --quiet -O
@@ -130,7 +128,6 @@ endif
 
 ifeq ($(OS),Windows)
 EXE = .exe
-SO = .dll
 PIC =
 endif
 
@@ -353,7 +350,7 @@ else
 endif
 endif
 	@echo "**"
-	$(MAKE) lib cli gimp krita gmic_qt libc zart
+	$(MAKE) lib cli gimp gmic_qt libc zart
 
 native:
 	$(MAKE) "CFLAGS+=$(GMIC_STD_CFLAGS) -Ofast -march=native" "LIBS+=$(GMIC_STD_LIBS)" cli
@@ -372,8 +369,10 @@ ifeq ($(OS),Darwin)
 else
 	$(CXX) -shared -std=c++11 -pedantic -Wl,-soname,libgmic.so.$(VERSION1) -o libgmic.so.$(VERSION) libgmic.o $(LIBS)
 endif
+ifneq ($(OS),Windows)
 	ln -fs libgmic.so.$(VERSION) libgmic.so.$(VERSION1)
 	ln -fs libgmic.so.$(VERSION1) libgmic.so
+endif
 
 libgmic.o: gmic.cpp gmic.h gmic_stdlib.h CImg.h
 	$(CXX) -o libgmic.o -c gmic.cpp $(PIC) $(CFLAGS)
@@ -456,13 +455,15 @@ ifeq ($(OS),Darwin)
 	$(CXX) -shared -o libcgmic.so.$(VERSION) libcgmic.o libgmic.o $(LIBS)
 else
 ifeq ($(OS),Windows)
-	$(CXX) -shared -Wl,-soname,libcgmic.so.$(VERSION1) -o libcgmic$(SO).$(VERSION) libcgmic.o libgmic.o -Wl,--output-def,libcgmic.def,--out-implib,libcgmic.a $(LIBS)
+	$(CXX) -shared -o libcgmic.dll libcgmic.o libgmic.o -Wl,--output-def,libcgmic.def,--out-implib,libcgmic.a $(LIBS)
 else
-	$(CXX) -shared -Wl,-soname,libcgmic.so.$(VERSION1) -o libcgmic$(SO).$(VERSION) libcgmic.o libgmic.o $(LIBS)
+	$(CXX) -shared -Wl,-soname,libcgmic.so.$(VERSION1) -o libcgmic.so.$(VERSION) libcgmic.o libgmic.o $(LIBS)
 endif
 endif
+ifneq ($(OS),Windows)
 	ln -fs libcgmic.so.$(VERSION) libcgmic.so.$(VERSION1)
 	ln -fs libcgmic.so.$(VERSION1) libcgmic.so
+endif
 
 libcgmic.o: gmic.cpp gmic.h gmic_stdlib.h CImg.h
 	$(CXX) -o libcgmic.o -c gmic_libc.cpp $(PIC) $(CFLAGS)
@@ -501,13 +502,15 @@ ifeq ($(OS),Darwin)
 	$(CXX) -shared -static -o libcgmicstatic.so.$(VERSION) libcgmicstatic.o libgmic.o $(PIC) $(CFLAGS) $(LIBS)
 else
 ifeq ($(OS),Windows)
-	$(CXX) -shared -static -Wl,-soname,libcgmicstatic.so.$(VERSION1) -o libcgmicstatic$(SO).$(VERSION) libcgmicstatic.o libgmic.o $(PIC) -Wl,--output-def,libcgmicstatic.def,--out-implib,libcgmicstatic.a $(CFLAGS) $(LIBS)
+	$(CXX) -shared -static -o libcgmicstatic.dll libcgmicstatic.o libgmic.o $(PIC) -Wl,--output-def,libcgmicstatic.def,--out-implib,libcgmicstatic.a $(CFLAGS) $(LIBS)
 else
-	$(CXX) -shared -Wl,-soname,libcgmicstatic.so.$(VERSION1) -o libcgmicstatic$(SO).$(VERSION) libcgmicstatic.o libgmic.o $(PIC) $(CFLAGS) $(LIBS)
+	$(CXX) -shared -Wl,-soname,libcgmicstatic.so.$(VERSION1) -o libcgmicstatic.so libcgmicstatic.o libgmic.o $(PIC) $(CFLAGS) $(LIBS)
 endif
 endif
+ifneq ($(OS),Windows)
 	ln -fs libcgmicstatic.so.$(VERSION) libcgmicstatic.so.$(VERSION1)
 	ln -fs libcgmicstatic.so.$(VERSION1) libcgmicstatic.so
+endif
 
 libcgmicstatic.o: gmic.cpp gmic.h gmic_stdlib.h CImg.h
 	$(CXX) -o libcgmicstatic.o -c gmic_libc.cpp $(PIC) $(CFLAGS)
@@ -532,10 +535,6 @@ gimp: gmic_qt_files CImg.h gmic_stdlib_community.h
 	cd ../gmic-qt && $(QMAKE) CONFIG+=release GMIC_PATH=$(SRC_PATH) PRERELEASE=$(PRERELEASE) GMIC_DYNAMIC_LINKING=on HOST=gimp gmic_qt.pro && $(MAKE)
 	@echo "Executable 'gmic_gimp_qt' has been successfully compiled in '../gmic-qt/'."
 
-krita: gmic_qt_files CImg.h gmic_stdlib_community.h
-	cd ../gmic-qt && $(QMAKE) CONFIG+=release GMIC_PATH=$(SRC_PATH) PRERELEASE=$(PRERELEASE) GMIC_DYNAMIC_LINKING=on HOST=krita gmic_qt.pro && $(MAKE)
-	@echo "Executable 'gmic_krita_qt' has been successfully compiled in '../gmic-qt/'."
-
 gmic_qt: gmic_qt_files CImg.h gmic_stdlib_community.h
 	cd ../gmic-qt && $(QMAKE) CONFIG+=release GMIC_PATH=$(SRC_PATH) PRERELEASE=$(PRERELEASE) GMIC_DYNAMIC_LINKING=on HOST=none gmic_qt.pro && $(MAKE)
 	@echo "Executable 'gmic_qt' has been successfully compiled in '../gmic-qt/'."
@@ -545,7 +544,7 @@ gmic_qt_files:
 	  if [ ! -d ../../gmic-qt ]; then \
 	    echo "**"; \
 	    echo "** Warning: folder 'gmic-qt' was not found !"; \
-	    echo "** It is mandatory to compile the G'MIC plug-in for GIMP and Krita ('gmic_gimp_qt' and 'gmic_krita_qt'),"; \
+	    echo "** It is mandatory to compile the G'MIC plug-in for GIMP ('gmic_gimp_qt'),"; \
 	    echo "** as well as the standalone Qt-based interface 'gmic_qt'."; \
             echo "** Trying to retrieve it, with: $$ cd ../../ && git clone https://github.com/c-koi/gmic-qt.git"; \
 	    echo "**"; \
@@ -771,7 +770,6 @@ install:
 	@if [ -f ../zart/zart ]; then cp -f ../zart/zart $(DESTDIR)$(USR)/$(BIN); fi
 	@if [ -f ../gmic-qt/gmic_qt ]; then cp -f ../gmic-qt/gmic_qt $(DESTDIR)$(USR)/$(BIN); fi
 	@if [ -f ../gmic-qt/gmic_gimp_qt ]; then cp -f ../gmic-qt/gmic_gimp_qt $(DESTDIR)$(PLUGINDIR); fi
-	@if [ -f ../gmic-qt/gmic_krita_qt ]; then cp -f ../gmic-qt/gmic_krita_qt $(DESTDIR)$(USR)/$(BIN); fi
 	@if [ -f libgmic.so ]; then \
 	  cp -f gmic.h $(DESTDIR)$(USR)/$(INCLUDE); \
           cp -f libgmic.so $(DESTDIR)$(USR)/$(LIB)/libgmic.so.$(VERSION); \
@@ -819,7 +817,6 @@ install:
 
 uninstall:
 	rm -f $(DESTDIR)$(PLUGINDIR)/gmic_gimp_qt
-	rm -f $(DESTDIR)$(PLUGINDIR)/gmic_krita_qt
 	rm -f $(DESTDIR)$(USR)/$(BIN)/gmic
 	rm -f $(DESTDIR)$(USR)/$(BIN)/zart
 	rm -f $(DESTDIR)$(USR)/$(BIN)/gmic_qt
@@ -829,7 +826,7 @@ uninstall:
 	rm -f $(DESTDIR)$(USR)/$(LIB)/libgmic.so
 	rm -f $(DESTDIR)$(USR)/$(LIB)/libcgmic.so.$(VERSION)
 	rm -f $(DESTDIR)$(USR)/$(LIB)/libcgmic.so.$(VERSION1)
-	rm -f $(DESTDIR)$(USR)/$(LIB)/libcgmic$(SO)
+	rm -f $(DESTDIR)$(USR)/$(LIB)/libcgmic.so
 	rm -rf $(DESTDIR)$(USR)/share/doc/gmic/
 	rm -f $(DESTDIR)$(USR)/share/man/man1/gmic.1.gz
 	rm -f $(DESTDIR)$(USR)/share/man/fr/man1/gmic.1.gz
