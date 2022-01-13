@@ -8,7 +8,6 @@
 #                 . the G'MIC library, with the C++ API (type 'make lib').
 #                 . the G'MIC library, with the C API (type 'make libc' or 'make libcstatic').
 #                 . the G'MIC plug-in for GIMP (type 'make gimp').
-#                 . the G'MIC plug-in for Krita (type 'make krita').
 #                 . To compile all of them, just type 'make', or 'make all').
 #
 #                ( https://gmic.eu )
@@ -353,7 +352,7 @@ else
 endif
 endif
 	@echo "**"
-	$(MAKE) lib cli gimp krita gmic_qt libc zart
+	$(MAKE) lib cli gimp gmic_qt libc zart
 
 native:
 	$(MAKE) "CFLAGS+=$(GMIC_STD_CFLAGS) -Ofast -march=native" "LIBS+=$(GMIC_STD_LIBS)" cli
@@ -532,10 +531,6 @@ gimp: gmic_qt_files CImg.h gmic_stdlib_community.h
 	cd ../gmic-qt && $(QMAKE) CONFIG+=release GMIC_PATH=$(SRC_PATH) PRERELEASE=$(PRERELEASE) GMIC_DYNAMIC_LINKING=on HOST=gimp gmic_qt.pro && $(MAKE)
 	@echo "Executable 'gmic_gimp_qt' has been successfully compiled in '../gmic-qt/'."
 
-krita: gmic_qt_files CImg.h gmic_stdlib_community.h
-	cd ../gmic-qt && $(QMAKE) CONFIG+=release GMIC_PATH=$(SRC_PATH) PRERELEASE=$(PRERELEASE) GMIC_DYNAMIC_LINKING=on HOST=krita gmic_qt.pro && $(MAKE)
-	@echo "Executable 'gmic_krita_qt' has been successfully compiled in '../gmic-qt/'."
-
 gmic_qt: gmic_qt_files CImg.h gmic_stdlib_community.h
 	cd ../gmic-qt && $(QMAKE) CONFIG+=release GMIC_PATH=$(SRC_PATH) PRERELEASE=$(PRERELEASE) GMIC_DYNAMIC_LINKING=on HOST=none gmic_qt.pro && $(MAKE)
 	@echo "Executable 'gmic_qt' has been successfully compiled in '../gmic-qt/'."
@@ -545,7 +540,7 @@ gmic_qt_files:
 	  if [ ! -d ../../gmic-qt ]; then \
 	    echo "**"; \
 	    echo "** Warning: folder 'gmic-qt' was not found !"; \
-	    echo "** It is mandatory to compile the G'MIC plug-in for GIMP and Krita ('gmic_gimp_qt' and 'gmic_krita_qt'),"; \
+	    echo "** It is mandatory to compile the G'MIC plug-in for GIMP ('gmic_gimp_qt'),"; \
 	    echo "** as well as the standalone Qt-based interface 'gmic_qt'."; \
             echo "** Trying to retrieve it, with: $$ cd ../../ && git clone https://github.com/c-koi/gmic-qt.git"; \
 	    echo "**"; \
@@ -771,7 +766,6 @@ install:
 	@if [ -f ../zart/zart ]; then cp -f ../zart/zart $(DESTDIR)$(USR)/$(BIN); fi
 	@if [ -f ../gmic-qt/gmic_qt ]; then cp -f ../gmic-qt/gmic_qt $(DESTDIR)$(USR)/$(BIN); fi
 	@if [ -f ../gmic-qt/gmic_gimp_qt ]; then cp -f ../gmic-qt/gmic_gimp_qt $(DESTDIR)$(PLUGINDIR); fi
-	@if [ -f ../gmic-qt/gmic_krita_qt ]; then cp -f ../gmic-qt/gmic_krita_qt $(DESTDIR)$(USR)/$(BIN); fi
 	@if [ -f libgmic.so ]; then \
 	  cp -f gmic.h $(DESTDIR)$(USR)/$(INCLUDE); \
           cp -f libgmic.so $(DESTDIR)$(USR)/$(LIB)/libgmic.so.$(VERSION); \
@@ -819,7 +813,6 @@ install:
 
 uninstall:
 	rm -f $(DESTDIR)$(PLUGINDIR)/gmic_gimp_qt
-	rm -f $(DESTDIR)$(PLUGINDIR)/gmic_krita_qt
 	rm -f $(DESTDIR)$(USR)/$(BIN)/gmic
 	rm -f $(DESTDIR)$(USR)/$(BIN)/zart
 	rm -f $(DESTDIR)$(USR)/$(BIN)/gmic_qt

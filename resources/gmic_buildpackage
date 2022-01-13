@@ -109,9 +109,6 @@ if [ "$OSTYPE" == "msys" ]; then
     OUTZIP_GIMP=gmic_${SVERSION}${SUFFIX}_gimp${GIMPVER}_win${BITS}.zip
     OUTINST_GIMP=gmic_${SVERSION}${SUFFIX}_gimp${GIMPVER}_win${BITS}.exe
 
-    OUTDIR_KRITA=gmic-${SVERSION}${SUFFIX}-krita-win${BITS}
-    OUTZIP_KRITA=gmic_${SVERSION}${SUFFIX}_krita_win${BITS}.zip
-
     # Generate binaries.
     cd $HOME/gmic/src && make clean && rm -f gmic *.o && cp -f /e/work/src/CImg/CImg.h .
     make EXTRA_CFLAGS="-m${BITS}" cli libc libcstatic
@@ -119,11 +116,9 @@ if [ "$OSTYPE" == "msys" ]; then
     if [ "$1" == "final" ]; then
         qmake PRERELEASE= HOST=none gmic_qt.pro && make clean && make release
         qmake PRERELEASE= HOST=gimp gmic_qt.pro && make release
-        qmake PRERELEASE= HOST=krita gmic_qt.pro && make release
     else
         qmake PRERELEASE=`date +%y%m%d` HOST=none gmic_qt.pro && make clean && make release
         qmake PRERELEASE=`date +%y%m%d` HOST=gimp gmic_qt.pro && make release
-        qmake PRERELEASE=`date +%y%m%d` HOST=krita gmic_qt.pro && make release
     fi
 
     # Copy binaries into their respective folders.
@@ -132,7 +127,6 @@ if [ "$OSTYPE" == "msys" ]; then
     cp -f gmic/src/gmic.h gmic/src/gmic_libc.h gmic/src/use_lib* gmic/src/lib*.d* gmic/src/lib*.a* build${BITS}-lib/
     cp -f gmic-qt/release/gmic_qt.exe build${BITS}-qt/
     cp -f gmic-qt/release/gmic_gimp_qt.exe build${BITS}-gimp/
-    cp -f gmic-qt/release/gmic_krita_qt.exe build${BITS}-krita/
     # cp -f gmic/zart/release/zart.exe build${BITS}-zart/
 
     # Construct G'MIC (CLI) archive.
@@ -169,13 +163,6 @@ if [ "$OSTYPE" == "msys" ]; then
         sleep 3 &&
         cp -f ${OUTINST_GIMP} /e/work/src/
 
-    # Construct G'MIC for Krita archive.
-    cp -rf build${BITS}-krita ${OUTDIR_KRITA} &&
-        cp -f /e/work/src/gmic/COPYING ${OUTDIR_KRITA} &&
-        sed s\/_gmic_version\/${SVERSION}${SUFFIX}\/ /e/work/src/gmic/README > ${OUTDIR_KRITA}/README &&
-        zip -r -9 ${OUTZIP_KRITA} ${OUTDIR_KRITA} &&
-        cp -f ${OUTZIP_KRITA} /e/work/src/
-
     echo " - All done!"
     exit 0;
 fi
@@ -210,23 +197,22 @@ if [ "$HOSTNAME" != "elara" ] ; then
     OUTDIR=gmic-${SVERSION}${SUFFIX}
     OUTPAK=gmic_${SVERSION}${SUFFIX}_${CODENAME}_${ARCH}.deb
     OUTZIP_GIMP=gmic_${SVERSION}${SUFFIX}_gimp${GIMPVER}_${CODENAME}_${ARCH}.zip
-    OUTZIP_KRITA=gmic_${SVERSION}${SUFFIX}_krita_${CODENAME}_${ARCH}.zip
     GENERIC_OUTZIP_GIMP=gmic_${SVERSION}${SUFFIX}_gimp${GIMPVER}_linux${BITS}.zip
 
     while [ ! -f deb_${TARFILE}.gz ]; do sleep 10; done
     sleep 10
     cp deb_${TARFILE}.gz /tmp/ &&
         cd /tmp/ &&
-        rm -rf $OUTDIR $OUTPAK $OUTZIP_GIMP $OUTZIP_KRITA $GENERIC_OUTZIP_GIMP &&
+        rm -rf $OUTDIR $OUTPAK $OUTZIP_GIMP $GENERIC_OUTZIP_GIMP &&
         touch deb_${TARFILE}.gz &&
         tar zxvf deb_${TARFILE}.gz &&
         find gmic-${SVERSION}${SUFFIX} -exec touch {} ;
 
     cd $OUTDIR/src
     if [ -f $HOME/is_qt5 ]; then
-        sed "s/\$(MAKE) lib cli gimp krita gmic_qt libc zart/\$(MAKE) lib cli gimp krita gmic_qt libc/g" Makefile > /tmp/Makefile && mv /tmp/Makefile Makefile;
+        sed "s/\$(MAKE) lib cli gimp gmic_qt libc zart/\$(MAKE) lib cli gimp gmic_qt libc/g" Makefile > /tmp/Makefile && mv /tmp/Makefile Makefile;
     else
-        sed "s/\$(MAKE) lib cli gimp krita gmic_qt libc zart/\$(MAKE) lib cli libc/g" Makefile > /tmp/Makefile && mv /tmp/Makefile Makefile
+        sed "s/\$(MAKE) lib cli gimp gmic_qt libc zart/\$(MAKE) lib cli libc/g" Makefile > /tmp/Makefile && mv /tmp/Makefile Makefile
     fi
     sed "s/\&\& \$(MAKE) clean//g" Makefile > /tmp/Makefile && mv /tmp/Makefile Makefile;  # Prevent 'qmake not found' bug when using dpkg-buildpackage, still don't know why.
 
@@ -237,8 +223,7 @@ if [ "$HOSTNAME" != "elara" ] ; then
 
     if [ -f $HOME/is_qt5 ]; then
         zip -j -r -9 ../$OUTZIP_GIMP gmic-qt/gmic_gimp_qt src/libgmic.so.$RELEASE1 README
-        zip -j -r -9 ../$OUTZIP_KRITA gmic-qt/gmic_krita_qt src/libgmic.so.$RELEASE1 README
-        cp -f ../$OUTZIP_GIMP ../$OUTZIP_KRITA $SF_HOME/work/src/
+        cp -f ../$OUTZIP_GIMP $SF_HOME/work/src/
     fi
 
     echo VIRTUALBOX_DONE
@@ -482,21 +467,19 @@ cp ${HOME}/work/src/deb_${TARFILE}.gz /tmp/ &&
     cd /tmp/ &&
     OUTPAK=gmic_${SVERSION}${SUFFIX}_${CODENAME}_${ARCH}.deb &&
     OUTZIP_GIMP=gmic_${SVERSION}${SUFFIX}_gimp${GIMPVER}_${CODENAME}_${ARCH}.zip &&
-    OUTZIP_KRITA=gmic_${SVERSION}${SUFFIX}_krita_${CODENAME}_${ARCH}.zip &&
     OUTDIR=gmic-${SVERSION}${SUFFIX} &&
-    rm -rf $OUTPAK $OUTZIP_GIMP $OUTZIP_KRITA &&
+    rm -rf $OUTPAK $OUTZIP_GIMP &&
     touch deb_${TARFILE}.gz &&
     tar zxvf deb_${TARFILE}.gz &&
     find gmic-${SVERSION}${SUFFIX} -exec touch {} \; &&
     cd $OUTDIR/src &&
-    sed "s/\$(MAKE) lib cli gimp krita gmic_qt libc zart/\$(MAKE) lib cli gimp krita gmic_qt libc/g" Makefile > /tmp/Makefile &&
+    sed "s/\$(MAKE) lib cli gimp gmic_qt libc zart/\$(MAKE) lib cli gimp gmic_qt libc/g" Makefile > /tmp/Makefile &&
     mv /tmp/Makefile Makefile && cd ../..
 cd $OUTDIR &&
     dpkg-buildpackage -d -j3 -rfakeroot;
 mv ../gmic_${SVERSION}_amd64.deb ../$OUTPAK &&
     zip -j -r -9 ../$OUTZIP_GIMP gmic-qt/gmic_gimp_qt src/libgmic.so.$RELEASE1 README &&
-    zip -j -r -9 ../$OUTZIP_KRITA gmic-qt/gmic_krita_qt src/libgmic.so.$RELEASE1 README &&
-    cp -f ../$OUTPAK ../$OUTZIP_GIMP ../$OUTZIP_KRITA $HOME/work/src/
+    cp -f ../$OUTPAK ../$OUTZIP_GIMP $HOME/work/src/
 
 echo ELARA_DONE
 
