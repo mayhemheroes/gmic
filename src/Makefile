@@ -492,6 +492,7 @@ endif
 endif
 
 libcstatic:
+	rm libgmic.o
 	$(MAKE) "CFLAGS+=$(GMIC_LIBC_STATIC_CFLAGS) $(OPT_CFLAGS)" "LIBS+=$(GMIC_LIBC_STATIC_LIBS) $(OPT_LIBS)" _lib _libcstatic
 
 _libcstatic: libcgmic_files libcgmicstatic.so use_libcgmicstatic
