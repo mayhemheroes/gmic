@@ -844,12 +844,12 @@ distclean: clean
 
 clean:
 	rm -rf CImg.h gmic_stdlib.h gmic_stdlib_community.h gmic$(EXE) use_libgmic$(EXE) use_libcgmic$(EXE) use_libcgmic_static$(EXE) gmic*.o libgmic* libcgmic* *~
-# @if [ -f ../zart/Makefile ]; then cd ../zart && $(MAKE) clean; fi
-# @if [ -h ../zart ]; then rm -f ../zart; fi
-# @if [ -f ../gmic-qt/Makefile ]; then cd ../gmic-qt && $(MAKE) clean; fi
-# @if [ -h ../gmic-qt ]; then rm -f ../gmic-qt; fi
-# @if [ -h gmic_libc.h ]; then rm -f gmic_libc.h; fi
-# @if [ -h gmic_libc.cpp ]; then rm -f gmic_libc.cpp; fi
-# @if [ -h use_libcgmic.c ]; then rm -f use_libcgmic.c; fi
+	@if [ -f ../zart/Makefile ]; then cd ../zart && $(MAKE) clean; fi
+	@if [ -h ../zart ]; then rm -f ../zart; fi
+	@if [ -f ../gmic-qt/Makefile ]; then cd ../gmic-qt && $(MAKE) clean; fi
+	@if [ -h ../gmic-qt ]; then rm -f ../gmic-qt; fi
+	@if [ -h gmic_libc.h ]; then rm -f gmic_libc.h; fi
+	@if [ -h gmic_libc.cpp ]; then rm -f gmic_libc.cpp; fi
+	@if [ -h use_libcgmic.c ]; then rm -f use_libcgmic.c; fi
 
 # End of Makefile.
