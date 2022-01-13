@@ -403,8 +403,10 @@ half:
 	$(MAKE) "CFLAGS+=$(MANDATORY_CFLAGS) $(ABORT_CFLAGS) $(PARALLEL_CFLAGS) $(OPENMP_CFLAGS) $(X11_CFLAGS) $(OPENEXR_CFLAGS) -Dcimg_use_half -I/usr/include/OpenEXR -Dgmic_pixel_type=half" \
 	        "LIBS+=gmic.o $(MANDATORY_LIBS) $(PARALLEL_LIBS) $(OPENMP_LIBS) $(X11_LIBS) $(OPENEXR_LIBS)" gmic.o _cli
 
-_cli: gmic_cli.cpp gmic.h CImg.h
-	$(CXX) -o gmic gmic_cli.cpp $(CFLAGS) $(LIBS)
+_cli: gmic$(EXE)
+
+gmic$(EXE): gmic_cli.cpp gmic.h CImg.h
+	$(CXX) -o gmic$(EXE) gmic_cli.cpp $(CFLAGS) $(LIBS)
 
 gmic.o: gmic.cpp gmic.h gmic_stdlib.h CImg.h
 	$(CXX) -o gmic.o -c gmic.cpp $(CFLAGS)
