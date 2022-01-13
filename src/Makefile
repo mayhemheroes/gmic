@@ -369,8 +369,10 @@ ifeq ($(OS),Darwin)
 else
 	$(CXX) -shared -std=c++11 -pedantic -Wl,-soname,libgmic.so.$(VERSION1) -o libgmic.so.$(VERSION) libgmic.o $(LIBS)
 endif
+ifneq ($(OS),Windows)
 	ln -fs libgmic.so.$(VERSION) libgmic.so.$(VERSION1)
 	ln -fs libgmic.so.$(VERSION1) libgmic.so
+endif
 
 libgmic.o: gmic.cpp gmic.h gmic_stdlib.h CImg.h
 	$(CXX) -o libgmic.o -c gmic.cpp $(PIC) $(CFLAGS)
@@ -458,8 +460,10 @@ else
 	$(CXX) -shared -Wl,-soname,libcgmic.so.$(VERSION1) -o libcgmic.so.$(VERSION) libcgmic.o libgmic.o $(LIBS)
 endif
 endif
+ifneq ($(OS),Windows)
 	ln -fs libcgmic.so.$(VERSION) libcgmic.so.$(VERSION1)
 	ln -fs libcgmic.so.$(VERSION1) libcgmic.so
+endif
 
 libcgmic.o: gmic.cpp gmic.h gmic_stdlib.h CImg.h
 	$(CXX) -o libcgmic.o -c gmic_libc.cpp $(PIC) $(CFLAGS)
@@ -503,8 +507,10 @@ else
 	$(CXX) -shared -Wl,-soname,libcgmicstatic.so.$(VERSION1) -o libcgmicstatic.so libcgmicstatic.o libgmic.o $(PIC) $(CFLAGS) $(LIBS)
 endif
 endif
+ifneq ($(OS),Windows)
 	ln -fs libcgmicstatic.so.$(VERSION) libcgmicstatic.so.$(VERSION1)
 	ln -fs libcgmicstatic.so.$(VERSION1) libcgmicstatic.so
+endif
 
 libcgmicstatic.o: gmic.cpp gmic.h gmic_stdlib.h CImg.h
 	$(CXX) -o libcgmicstatic.o -c gmic_libc.cpp $(PIC) $(CFLAGS)
