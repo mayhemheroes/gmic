@@ -427,27 +427,12 @@ static:
 	$(MAKE) "CFLAGS+=$(GMIC_STATIC_CLI_CFLAGS) $(OPT_CFLAGS)" "LIBS+=$(GMIC_STATIC_CLI_LIBS) $(OPT_LIBS)" _cli
 	$(STRIP) gmic$(EXE)
 
-
 # libcgmic (standard).
 #---------------------
-libc:
+libc: lib
 	$(MAKE) "CFLAGS+=$(GMIC_STD_CFLAGS) $(OPT_CFLAGS)" "LIBS+=$(GMIC_STD_LIBS) $(OPT_LIBS)" _libc
 
-_libc: libcgmic_files libgmic.o libcgmic.o
-	ar rcs libcgmic.a libcgmic.o
-ifeq ($(OS),Darwin)
-	$(CXX) -shared -o libcgmic.so libcgmic.o libgmic.o $(LIBS)
-else
-ifeq ($(OS),Windows)
-	$(CXX) -shared -Wl,-soname,libcgmic.so.$(VERSION1) -o libcgmic$(SO) libcgmic.o libgmic.o -Wl,--output-def,libcgmic.def,--out-implib,libcgmic.a $(LIBS)
-else
-	$(CXX) -shared -Wl,-soname,libcgmic.so.$(VERSION1) -o libcgmic$(SO) libcgmic.o libgmic.o $(LIBS)
-endif
-endif
-	$(CC) -std=c99 -o use_libcgmic use_libcgmic.c -lcgmic
-
-libcgmic.o: gmic.cpp gmic.h gmic_stdlib.h CImg.h
-	$(CXX) -o libcgmic.o -c gmic_libc.cpp $(PIC) $(CFLAGS)
+_libc: libcgmic_files libcgmic.so use_libcgmic
 
 libcgmic_files:
 	@echo "> Retrieve G'MIC libcgmic files..."
@@ -464,6 +449,26 @@ libcgmic_files:
 	  fi; \
 	fi
 	@echo " done!"
+
+libcgmic.so: libcgmic.o
+	ar rcs libcgmic.a libcgmic.o
+ifeq ($(OS),Darwin)
+	$(CXX) -shared -o libcgmic.so.$(VERSION) libcgmic.o libgmic.o $(LIBS)
+else
+ifeq ($(OS),Windows)
+	$(CXX) -shared -Wl,-soname,libcgmic.so.$(VERSION1) -o libcgmic$(SO).$(VERSION) libcgmic.o libgmic.o -Wl,--output-def,libcgmic.def,--out-implib,libcgmic.a $(LIBS)
+else
+	$(CXX) -shared -Wl,-soname,libcgmic.so.$(VERSION1) -o libcgmic$(SO).$(VERSION) libcgmic.o libgmic.o $(LIBS)
+endif
+endif
+	ln -fs libcgmic.so.$(VERSION) libcgmic.so.$(VERSION1); \
+	ln -fs libcgmic.so.$(VERSION1) libcgmic.so; \
+
+libcgmic.o: gmic.cpp gmic.h gmic_stdlib.h CImg.h
+	$(CXX) -o libcgmic.o -c gmic_libc.cpp $(PIC) $(CFLAGS)
+
+use_libcgmic: use_libcgmic.c
+	$(CC) -std=c99 -o use_libcgmic use_libcgmic.c -lcgmic $(LIBS)
 
 # libcgmic (static).
 #-------------------
@@ -833,12 +838,12 @@ distclean: clean
 
 clean:
 	rm -rf CImg.h gmic_stdlib.h gmic_stdlib_community.h gmic$(EXE) use_libgmic$(EXE) use_libcgmic$(EXE) use_libcgmic_static$(EXE) gmic*.o libgmic* libcgmic* *~
-	@if [ -f ../zart/Makefile ]; then cd ../zart && $(MAKE) clean; fi
-	@if [ -h ../zart ]; then rm -f ../zart; fi
-	@if [ -f ../gmic-qt/Makefile ]; then cd ../gmic-qt && $(MAKE) clean; fi
-	@if [ -h ../gmic-qt ]; then rm -f ../gmic-qt; fi
-	@if [ -h gmic_libc.h ]; then rm -f gmic_libc.h; fi
-	@if [ -h gmic_libc.cpp ]; then rm -f gmic_libc.cpp; fi
-	@if [ -h use_libcgmic.c ]; then rm -f use_libcgmic.c; fi
+# @if [ -f ../zart/Makefile ]; then cd ../zart && $(MAKE) clean; fi
+# @if [ -h ../zart ]; then rm -f ../zart; fi
+# @if [ -f ../gmic-qt/Makefile ]; then cd ../gmic-qt && $(MAKE) clean; fi
+# @if [ -h ../gmic-qt ]; then rm -f ../gmic-qt; fi
+# @if [ -h gmic_libc.h ]; then rm -f gmic_libc.h; fi
+# @if [ -h gmic_libc.cpp ]; then rm -f gmic_libc.cpp; fi
+# @if [ -h use_libcgmic.c ]; then rm -f use_libcgmic.c; fi
 
 # End of Makefile.
