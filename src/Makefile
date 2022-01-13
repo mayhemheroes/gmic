@@ -63,7 +63,6 @@ USR = /usr
 LIB = lib
 BIN = bin
 INCLUDE = include
-SO = .so
 PIC = -fPIC
 EXE =
 WGET = wget --no-check-certificate --quiet -O
@@ -129,7 +128,6 @@ endif
 
 ifeq ($(OS),Windows)
 EXE = .exe
-SO = .dll
 PIC =
 endif
 
@@ -455,9 +453,9 @@ ifeq ($(OS),Darwin)
 	$(CXX) -shared -o libcgmic.so.$(VERSION) libcgmic.o libgmic.o $(LIBS)
 else
 ifeq ($(OS),Windows)
-	$(CXX) -shared -Wl,-soname,libcgmic.so.$(VERSION1) -o libcgmic$(SO).$(VERSION) libcgmic.o libgmic.o -Wl,--output-def,libcgmic.def,--out-implib,libcgmic.a $(LIBS)
+	$(CXX) -shared -o libcgmic.dll libcgmic.o libgmic.o -Wl,--output-def,libcgmic.def,--out-implib,libcgmic.a $(LIBS)
 else
-	$(CXX) -shared -Wl,-soname,libcgmic.so.$(VERSION1) -o libcgmic$(SO).$(VERSION) libcgmic.o libgmic.o $(LIBS)
+	$(CXX) -shared -Wl,-soname,libcgmic.so.$(VERSION1) -o libcgmic.so.$(VERSION) libcgmic.o libgmic.o $(LIBS)
 endif
 endif
 	ln -fs libcgmic.so.$(VERSION) libcgmic.so.$(VERSION1)
@@ -500,9 +498,9 @@ ifeq ($(OS),Darwin)
 	$(CXX) -shared -static -o libcgmicstatic.so.$(VERSION) libcgmicstatic.o libgmic.o $(PIC) $(CFLAGS) $(LIBS)
 else
 ifeq ($(OS),Windows)
-	$(CXX) -shared -static -Wl,-soname,libcgmicstatic.so.$(VERSION1) -o libcgmicstatic$(SO).$(VERSION) libcgmicstatic.o libgmic.o $(PIC) -Wl,--output-def,libcgmicstatic.def,--out-implib,libcgmicstatic.a $(CFLAGS) $(LIBS)
+	$(CXX) -shared -static -o libcgmicstatic.dll libcgmicstatic.o libgmic.o $(PIC) -Wl,--output-def,libcgmicstatic.def,--out-implib,libcgmicstatic.a $(CFLAGS) $(LIBS)
 else
-	$(CXX) -shared -Wl,-soname,libcgmicstatic.so.$(VERSION1) -o libcgmicstatic$(SO).$(VERSION) libcgmicstatic.o libgmic.o $(PIC) $(CFLAGS) $(LIBS)
+	$(CXX) -shared -Wl,-soname,libcgmicstatic.so.$(VERSION1) -o libcgmicstatic.so libcgmicstatic.o libgmic.o $(PIC) $(CFLAGS) $(LIBS)
 endif
 endif
 	ln -fs libcgmicstatic.so.$(VERSION) libcgmicstatic.so.$(VERSION1)
@@ -822,7 +820,7 @@ uninstall:
 	rm -f $(DESTDIR)$(USR)/$(LIB)/libgmic.so
 	rm -f $(DESTDIR)$(USR)/$(LIB)/libcgmic.so.$(VERSION)
 	rm -f $(DESTDIR)$(USR)/$(LIB)/libcgmic.so.$(VERSION1)
-	rm -f $(DESTDIR)$(USR)/$(LIB)/libcgmic$(SO)
+	rm -f $(DESTDIR)$(USR)/$(LIB)/libcgmic.so
 	rm -rf $(DESTDIR)$(USR)/share/doc/gmic/
 	rm -f $(DESTDIR)$(USR)/share/man/man1/gmic.1.gz
 	rm -f $(DESTDIR)$(USR)/share/man/fr/man1/gmic.1.gz
