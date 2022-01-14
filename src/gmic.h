@@ -74,6 +74,10 @@
 #endif // #if cimg_OS==2
 #endif // #ifndef gmic_uint64
 
+// Define some special character codes used for replacement in double quoted strings.
+const char gmic_dollar = 23, gmic_lbrace = 24, gmic_rbrace = 25, gmic_comma = 26, gmic_dquote = 28,
+  gmic_store = 29; // <- this one is only used in variable names.
+
 #ifndef gmic_build
 
 // Define classes 'gmic_image<T>' and 'gmic_list<T>'.
@@ -257,11 +261,6 @@ inline double gmic_mp_store(const Ts *const ptr, const unsigned int siz,
 #include <signal.h>
 
 #endif // #if cimg_OS==2
-
-// Define some special character codes used for replacement in double quoted strings.
-const char gmic_dollar = 23, gmic_lbrace = 24, gmic_rbrace = 25, gmic_comma = 26, gmic_dquote = 28,
-  gmic_store = 29; // <- this one is only used in variable names.
-
 #endif // #ifndef gmic_build
 
 // Define main libgmic class 'gmic'.
