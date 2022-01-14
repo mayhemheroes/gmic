@@ -383,7 +383,11 @@ use_libgmic : use_libgmic.cpp
 # CLI.
 #-----
 cli:
+ifeq ($(OS),Windows)
+	$(MAKE) "CFLAGS+=$(GMIC_STD_CFLAGS) $(OPT_CFLAGS)" "LIBS+=gmic.o $(GMIC_STD_LIBS) $(OPT_LIBS)" gmic.o _cli
+else
 	$(MAKE) "CFLAGS+=$(GMIC_STD_CFLAGS) $(OPT_CFLAGS)" "LIBS+=$(GMIC_STD_LIBS) $(OPT_LIBS) -lgmic" _lib _cli
+endif
 	$(STRIP) gmic$(EXE)
 
 dev:
