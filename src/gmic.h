@@ -195,8 +195,12 @@ namespace cimg_library {
 #ifdef cimg_version
 #error "[gmic] *** Error *** File 'CImg.h' has been already included (should have been done first in file 'gmic.h')."
 #endif
+#ifndef cimg_plugin
 #define cimg_plugin "gmic.cpp"
+#endif
+#ifndef cimglist_plugin
 #define cimglist_plugin "gmic.cpp"
+#endif
 
 #ifdef cimg_use_abort
 inline bool *gmic_abort_ptr(bool *const p_is_abort);
