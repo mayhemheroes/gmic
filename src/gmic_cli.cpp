@@ -49,8 +49,8 @@
 */
 
 #include <signal.h>
-#include "CImg.h"
 #include "gmic.h"
+#include "CImg.h"
 using namespace cimg_library;
 
 // Fallback function for segfault signals.
