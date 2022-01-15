@@ -160,7 +160,7 @@ PRERELEASE = $(shell date +%y%m%d)
 PRERELEASE_CFLAGS = -Dgmic_prerelease="\\\"$(PRERELEASE)\\\""
 
 # Minimal set of flags mandatory to compile G'MIC.
-MANDATORY_CFLAGS = -Dgmic_build -Dcimg_date=\\\"\\\" -Dcimg_time=\\\"\\\" -Dcimg_use_zlib -I. $(shell pkg-config --cflags zlib || echo -I$(USR)/$(INCLUDE)) $(PRERELEASE_CFLAGS) $(EXTRA_CFLAGS)
+MANDATORY_CFLAGS = -Dcimg_date=\\\"\\\" -Dcimg_time=\\\"\\\" -Dcimg_use_zlib -I. $(shell pkg-config --cflags zlib || echo -I$(USR)/$(INCLUDE)) $(PRERELEASE_CFLAGS) $(EXTRA_CFLAGS)
 MANDATORY_LIBS = $(shell pkg-config --libs zlib || echo -lz) $(EXTRA_LIBS)
 
 ifndef NO_SRIPDLIB
@@ -190,8 +190,8 @@ endif
 FLTO = -flto
 OPT_CFLAGS =
 ifdef IS_GCC
-OPT_CFLAGS += -Ofast -mtune=generic $(FLTO)
-OPT_LIBS = $(FLTO)
+OPT_CFLAGS += -Ofast -mtune=generic # $(FLTO)
+OPT_LIBS = # $(FLTO)
 endif
 ifdef icpc
 OPT_CFLAGS += -fast
@@ -375,7 +375,7 @@ ifneq ($(OS),Windows)
 endif
 
 libgmic.o: gmic.cpp gmic.h gmic_stdlib.h CImg.h
-	$(CXX) -o libgmic.o -c gmic.cpp $(PIC) $(CFLAGS)
+	$(CXX) -o libgmic.o -c gmic.cpp -Dgmic_core $(PIC) $(CFLAGS)
 
 use_libgmic : use_libgmic.cpp
 	$(CXX) -o use_libgmic use_libgmic.cpp -std=c++11 -pedantic -lgmic $(LIBS)
@@ -383,11 +383,18 @@ use_libgmic : use_libgmic.cpp
 # CLI.
 #-----
 cli:
+ifeq ($(OS),Windows)
+	$(MAKE) "CFLAGS+=$(GMIC_STD_CFLAGS) $(OPT_CFLAGS)" "LIBS+=gmic.o $(GMIC_STD_LIBS) $(OPT_LIBS)" gmic.o _cli
+else
 	$(MAKE) "CFLAGS+=$(GMIC_STD_CFLAGS) $(OPT_CFLAGS)" "LIBS+=$(GMIC_STD_LIBS) $(OPT_LIBS) -lgmic" _lib _cli
+endif
 	$(STRIP) gmic$(EXE)
 
 dev:
 	$(MAKE) "CFLAGS+=$(GMIC_STD_CFLAGS)" "LIBS+=gmic.o $(GMIC_STD_LIBS)" gmic.o _cli
+
+devopt:
+	$(MAKE) "CFLAGS+=$(GMIC_STD_CFLAGS) $(OPT_CFLAGS)" "LIBS+=gmic.o $(GMIC_STD_LIBS) $(OPT_LIBS)" gmic.o _cli
 
 debug:
 	$(MAKE) "CFLAGS+=$(GMIC_STD_CFLAGS) $(DEBUG_CFLAGS)" "LIBS+=gmic.o $(GMIC_STD_LIBS)" gmic.o _cli
@@ -408,7 +415,7 @@ gmic$(EXE): gmic_cli.cpp gmic.h CImg.h
 	$(CXX) -o gmic$(EXE) gmic_cli.cpp $(CFLAGS) $(LIBS)
 
 gmic.o: gmic.cpp gmic.h gmic_stdlib.h CImg.h
-	$(CXX) -o gmic.o -c gmic.cpp $(CFLAGS)
+	$(CXX) -o gmic.o -c gmic.cpp -Dgmic_core $(CFLAGS)
 
 # CLI (static).
 #--------------
@@ -455,7 +462,7 @@ ifeq ($(OS),Darwin)
 	$(CXX) -shared -o libcgmic.so.$(VERSION) libcgmic.o libgmic.o $(LIBS)
 else
 ifeq ($(OS),Windows)
-	$(CXX) -shared -o libcgmic.dll libcgmic.o libgmic.o -Wl,--output-def,libcgmic.def,--out-implib,libcgmic.a $(LIBS)
+	$(CXX) -shared -o libcgmic-$(VERSION1).dll libcgmic.o libgmic.o -Wl,--output-def,libcgmic.def,--out-implib,libcgmic.a $(LIBS)
 else
 	$(CXX) -shared -Wl,-soname,libcgmic.so.$(VERSION1) -o libcgmic.so.$(VERSION) libcgmic.o libgmic.o $(LIBS)
 endif
@@ -465,19 +472,19 @@ ifneq ($(OS),Windows)
 	ln -fs libcgmic.so.$(VERSION1) libcgmic.so
 endif
 
-libcgmic.o: gmic.cpp gmic.h gmic_stdlib.h CImg.h
+libcgmic.o: gmic_libc.cpp CImg.h gmic_libc.h gmic.h
 	$(CXX) -o libcgmic.o -c gmic_libc.cpp $(PIC) $(CFLAGS)
 
-use_libcgmic: use_libcgmic.c
+use_libcgmic: use_libcgmic.c gmic_libc.h
 	$(CC) -std=c99 -o use_libcgmic use_libcgmic.c -lcgmic $(LIBS)
 
 # libcgmic (static).
 #-------------------
-GMIC_LIBC_STATIC_CFLAGS = $(MANDATORY_CFLAGS) $(ABORT_CFLAGS) $(PARALLEL_CFLAGS) $(FFTW_CFLAGS) $(PNG_CFLAGS) $(JPEG_CFLAGS) # $(CURL_CFLAGS) $(TIFF_CFLAGS)
+GMIC_LIBC_STATIC_CFLAGS = $(MANDATORY_CFLAGS) $(ABORT_CFLAGS) $(PARALLEL_CFLAGS) $(FFTW_CFLAGS) $(PNG_CFLAGS) $(JPEG_CFLAGS)
 ifeq ($(OS),Window)
 GMIC_LIBC_STATIC_LIBS = -Bstatic -lpthread
 endif
-GMIC_LIBC_STATIC_LIBS += $(MANDATORY_LIBS) $(PARALLEL_LIBS) $(FFTW_LIBS) $(PNG_LIBS) $(JPEG_LIBS) # $(CURL_LIBS) $(TIFF_LIBS)
+GMIC_LIBC_STATIC_LIBS += $(MANDATORY_LIBS) $(PARALLEL_LIBS) $(FFTW_LIBS) $(PNG_LIBS) $(JPEG_LIBS)
 ifeq ($(OS),Unix) # Unix.
 GMIC_LIBC_STATIC_CFLAGS += $(OPENMP_CFLAGS) $(X11_CFLAGS)
 GMIC_LIBC_STATIC_LIBS += $(OPENMP_LIBS) $(X11_LIBS)
@@ -492,6 +499,9 @@ endif
 endif
 
 libcstatic:
+ifeq ($(OS),Windows)
+	rm libgmic.o
+endif
 	$(MAKE) "CFLAGS+=$(GMIC_LIBC_STATIC_CFLAGS) $(OPT_CFLAGS)" "LIBS+=$(GMIC_LIBC_STATIC_LIBS) $(OPT_LIBS)" _lib _libcstatic
 
 _libcstatic: libcgmic_files libcgmicstatic.so use_libcgmicstatic
@@ -502,7 +512,7 @@ ifeq ($(OS),Darwin)
 	$(CXX) -shared -static -o libcgmicstatic.so.$(VERSION) libcgmicstatic.o libgmic.o $(PIC) $(CFLAGS) $(LIBS)
 else
 ifeq ($(OS),Windows)
-	$(CXX) -shared -static -o libcgmicstatic.dll libcgmicstatic.o libgmic.o $(PIC) -Wl,--output-def,libcgmicstatic.def,--out-implib,libcgmicstatic.a $(CFLAGS) $(LIBS)
+	$(CXX) -shared -static -o libcgmicstatic-$(VERSION1).dll libcgmicstatic.o libgmic.o $(PIC) -Wl,--output-def,libcgmicstatic.def,--out-implib,libcgmicstatic.a $(CFLAGS) $(LIBS)
 else
 	$(CXX) -shared -Wl,-soname,libcgmicstatic.so.$(VERSION1) -o libcgmicstatic.so libcgmicstatic.o libgmic.o $(PIC) $(CFLAGS) $(LIBS)
 endif
@@ -512,10 +522,10 @@ ifneq ($(OS),Windows)
 	ln -fs libcgmicstatic.so.$(VERSION1) libcgmicstatic.so
 endif
 
-libcgmicstatic.o: gmic.cpp gmic.h gmic_stdlib.h CImg.h
+libcgmicstatic.o: gmic_libc.cpp CImg.h gmic_libc.h gmic.h
 	$(CXX) -o libcgmicstatic.o -c gmic_libc.cpp $(PIC) $(CFLAGS)
 
-use_libcgmicstatic: use_libcgmic.c
+use_libcgmicstatic: use_libcgmic.c gmic_libc.h
 	$(CC) -std=c99 -o use_libcgmic_static use_libcgmic.c -lcgmicstatic $(LIBS)
 
 

@@ -111,7 +111,7 @@ if [ "$OSTYPE" == "msys" ]; then
 
     # Generate binaries.
     cd $HOME/gmic/src && make clean && rm -f gmic *.o && cp -f /e/work/src/CImg/CImg.h .
-    make EXTRA_CFLAGS="-m${BITS}" cli libc libcstatic
+    make EXTRA_CFLAGS="-m${BITS}" cli lib libc libcstatic
     cd $HOME/gmic-qt && rm -rf .obj
     if [ "$1" == "final" ]; then
         qmake PRERELEASE= HOST=none gmic_qt.pro && make clean && make release
@@ -124,7 +124,7 @@ if [ "$OSTYPE" == "msys" ]; then
     # Copy binaries into their respective folders.
     cd $HOME
     cp -f gmic/src/gmic.exe build${BITS}-cli/
-    cp -f gmic/src/gmic.h gmic/src/gmic_libc.h gmic/src/use_lib* gmic/src/lib*.d* gmic/src/lib*.a* build${BITS}-lib/
+    cp -f gmic/src/gmic.h gmic/src/gmic_libc.h gmic/src/use_lib* gmic/src/lib*.d* gmic/src/lib*.a build${BITS}-lib/
     cp -f gmic-qt/release/gmic_qt.exe build${BITS}-qt/
     cp -f gmic-qt/release/gmic_gimp_qt.exe build${BITS}-gimp/
     # cp -f gmic/zart/release/zart.exe build${BITS}-zart/
@@ -308,7 +308,8 @@ ln -fs ../../gmic-community/libcgmic/use_libcgmic.c .
 gmic _version=$VERSION update_instimg
 
 if [ "$1" == "final" ]; then
-#    gmic _update_header_html ../html/header.html,${VERSION},0
+    git push --delete origin v.$VERSION
+    git pull
     git tag -d v.$SVERSION
     git tag v.$SVERSION
     gmic_commit "Final release "${SVERSION}

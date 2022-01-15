@@ -7942,7 +7942,7 @@ update_deprecate : check "isint($1) && $1>0 && $1<999"
 
 # update_download_version.
 # Update file versions on G'MIC download page, with specified version number.
-# $1 = version number (e.g. '3.0.1').
+# $1 = version number (e.g. '3.0.2').
 update_download_version : check "
     is_digit(c)=(c>=_'0' && c<=_'9');
     ver = ['${1=undefined}'];
@@ -9623,7 +9623,7 @@ upload_filters :
   x "cd "$HOME"/work/src/gmic-community && git pull"
 
   # Define the list of compatible versions.
-  (301,$_version) sort. discard. store. compat
+  (301,302,$_version) sort. discard. store. compat
 
   # Import filters from stdlib and community.
   files $HOME/work/src/gmic-community/include/*.gmic
@@ -20303,7 +20303,8 @@ cubes3d : check ${1=1}>=0
   ellipse. 0,0,35%,35%,0,1,0
   polygon. 4,0,45%,8%,45%,20%,90%,0,90%,1,1
   ellipse. 0%,100%,30%,10%,0,1,1 b. 0.1%
-  lathe3d. $1,2 nm. [3D\ cup]
+  lathe3d. $1,2
+  nm. [3D\ cup]
 
 #@cli cylinder3d : _radius,_height,_nb_subdivisions>0
 #@cli : Input 3D cylinder at (0,0,0), with specified geometry.
@@ -20788,7 +20789,7 @@ label_points3d : check ${1=13}>0 skip ${2=0.8}
   repeat $!
     +p3d[$>] 0 l. s3d rm[-3--1]
     nbp={-2,@0} =.. $nbp,0,1                               # Set correct number of primitives
-    (1,0;1,{$nbp-1}) r. 2,$nbp,1,1,3 r. 1,{2*h},1,1,-1    # Create new primitive data
+    (1,0;1,{$nbp-1}) r. 2,$nbp,1,1,3 r. 1,{2*h},1,1,-1     # Create new primitive data
     repeat $nbp                                            # Create texture labels as primitive colors.
       0 t. $>,0,0,$1,1,255,255,255 autocrop. 0
       i.. (-128;{w};{h};3) y.
@@ -20808,7 +20809,7 @@ label_points3d : check ${1=13}>0 skip ${2=0.8}
 #@cli : $ 300,300 rand -1,1 blur 40 sign normalize 0,255 lathe3d ,
 lathe3d : check "${1=128}>0 && ${2=0.5%}>=0 && ${3=361}>=0"
   e[^-1] "Generate lathed 3D object from XY-profile$?, with resolution $1, smoothness $2 and maximum angle $3 deg."
-  tmax={($3-180)*pi/180} norm n 0,1 autocrop 0
+  tmax={($3-180)*pi/180} round norm n 0,1 autocrop 0
   repeat $! l[$>]
     wr={max(1,w2=2*w;if(w2>h,min($1,w2),min($1,h)*w2/h))}
     hr={max(1,w2=2*w;if(w2>h,min($1,w2)*h/w2,min($1,h)))}
@@ -27427,6 +27428,7 @@ _bin2dec :
 _check120 :
   use_vt100
   it[] "$1" s +,10
+  if !$! return fi
   1,$!,1,2,">begin(line = 1); is_lines=i[#y,0]==10; line+=is_lines?h#y:0; [is_lines || h#y<=120?-1:y,line]"
   lines={{@-1}-1} f. "I = I; if(I[0]<0,I[1]=-1); I"
   discard. -1
@@ -35411,7 +35413,7 @@ fx_gmicky_preview :
 #@gui : - <b>2020/03/28</b> : version <i>2.9.0</i>.\n
 #@gui : - <b>2021/12/09</b> : version <i>3.0.0</i>.\n
 #@gui : - <span foreground="purple"><b>2022/01/13</b> : version <i>3.0.1</i> (Current stable).</span>\n
-##@gui : - <b>2021/01/xx</b> : version <i>3.0.2</i> (Current pre-release).\n
+#@gui : - <b>2021/01/15</b> : version <i>3.0.2</i> (Current pre-release).\n
 #@gui : "}
 #@gui : sep = separator()
 #@gui : url = link{"View changelog to upcoming minor version (3.1)","https://discuss.pixls.us/t/on-the-road-to-3-1"}
