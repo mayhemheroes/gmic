@@ -187,7 +187,7 @@ MANDATORY_LIBS += -Wl,--stack,16777216
 endif
 
 # Enable optimizations for 'cli'.
-FLTO = -flto
+FLTO = # -flto
 OPT_CFLAGS =
 ifdef IS_GCC
 OPT_CFLAGS += -Ofast -mtune=generic $(FLTO)
