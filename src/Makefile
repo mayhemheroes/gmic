@@ -160,7 +160,7 @@ PRERELEASE = $(shell date +%y%m%d)
 PRERELEASE_CFLAGS = -Dgmic_prerelease="\\\"$(PRERELEASE)\\\""
 
 # Minimal set of flags mandatory to compile G'MIC.
-MANDATORY_CFLAGS = -Dcimg_date=\\\"\\\" -Dcimg_time=\\\"\\\" -Dcimg_use_zlib -I. $(shell pkg-config --cflags zlib || echo -I$(USR)/$(INCLUDE)) $(PRERELEASE_CFLAGS) # -fsanitize=address -g $(EXTRA_CFLAGS)
+MANDATORY_CFLAGS = -Dcimg_date=\\\"\\\" -Dcimg_time=\\\"\\\" -Dcimg_use_zlib -I. $(shell pkg-config --cflags zlib || echo -I$(USR)/$(INCLUDE)) $(PRERELEASE_CFLAGS) $(EXTRA_CFLAGS)
 MANDATORY_LIBS = $(shell pkg-config --libs zlib || echo -lz) $(EXTRA_LIBS)
 
 ifndef NO_SRIPDLIB
@@ -187,11 +187,11 @@ MANDATORY_LIBS += -Wl,--stack,16777216
 endif
 
 # Enable optimizations for 'cli'.
-FLTO = # -flto
+FLTO = -flto
 OPT_CFLAGS =
 ifdef IS_GCC
-OPT_CFLAGS += -Ofast -mtune=generic $(FLTO)
-OPT_LIBS = $(FLTO)
+OPT_CFLAGS += -Ofast -mtune=generic # $(FLTO)
+OPT_LIBS = # $(FLTO)
 endif
 ifdef icpc
 OPT_CFLAGS += -fast
@@ -375,7 +375,7 @@ ifneq ($(OS),Windows)
 endif
 
 libgmic.o: gmic.cpp gmic.h gmic_stdlib.h CImg.h
-	$(CXX) -o libgmic.o -c gmic.cpp -Dgmic_build $(PIC) $(CFLAGS)
+	$(CXX) -o libgmic.o -c gmic.cpp -Dgmic_core $(PIC) $(CFLAGS)
 
 use_libgmic : use_libgmic.cpp
 	$(CXX) -o use_libgmic use_libgmic.cpp -std=c++11 -pedantic -lgmic $(LIBS)
@@ -415,7 +415,7 @@ gmic$(EXE): gmic_cli.cpp gmic.h CImg.h
 	$(CXX) -o gmic$(EXE) gmic_cli.cpp $(CFLAGS) $(LIBS)
 
 gmic.o: gmic.cpp gmic.h gmic_stdlib.h CImg.h
-	$(CXX) -o gmic.o -c gmic.cpp -Dgmic_build $(CFLAGS)
+	$(CXX) -o gmic.o -c gmic.cpp -Dgmic_core $(CFLAGS)
 
 # CLI (static).
 #--------------
