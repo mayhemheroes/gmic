@@ -472,10 +472,10 @@ ifneq ($(OS),Windows)
 	ln -fs libcgmic.so.$(VERSION1) libcgmic.so
 endif
 
-libcgmic.o: gmic_libc.cpp
+libcgmic.o: gmic_libc.cpp CImg.h gmic_libc.h gmic.h
 	$(CXX) -o libcgmic.o -c gmic_libc.cpp $(PIC) $(CFLAGS)
 
-use_libcgmic: use_libcgmic.c
+use_libcgmic: use_libcgmic.c gmic_libc.h
 	$(CC) -std=c99 -o use_libcgmic use_libcgmic.c -lcgmic $(LIBS)
 
 # libcgmic (static).
@@ -522,10 +522,10 @@ ifneq ($(OS),Windows)
 	ln -fs libcgmicstatic.so.$(VERSION1) libcgmicstatic.so
 endif
 
-libcgmicstatic.o: gmic_libc.cpp
+libcgmicstatic.o: gmic_libc.cpp CImg.h gmic_libc.h gmic.h
 	$(CXX) -o libcgmicstatic.o -c gmic_libc.cpp $(PIC) $(CFLAGS)
 
-use_libcgmicstatic: use_libcgmic.c
+use_libcgmicstatic: use_libcgmic.c gmic_libc.h
 	$(CC) -std=c99 -o use_libcgmic_static use_libcgmic.c -lcgmicstatic $(LIBS)
 
 
