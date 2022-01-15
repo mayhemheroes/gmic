@@ -78,7 +78,7 @@
 const char gmic_dollar = 23, gmic_lbrace = 24, gmic_rbrace = 25, gmic_comma = 26, gmic_dquote = 28,
   gmic_store = 29; // <- this one is only used in variable names.
 
-#ifndef gmic_build
+#ifndef gmic_core
 
 // Define classes 'gmic_image<T>' and 'gmic_list<T>'.
 //---------------------------------------------------
@@ -177,7 +177,7 @@ namespace cimg_library {
 #undef gmic_list
 #endif // #ifndef cimg_version
 
-#else // #ifndef gmic_build
+#else // #ifndef gmic_core
 
 // Define private functions, used to compile libgmic.
 //---------------------------------------------------
@@ -265,7 +265,7 @@ inline double gmic_mp_store(const Ts *const ptr, const unsigned int siz,
 #include <signal.h>
 
 #endif // #if cimg_OS==2
-#endif // #ifndef gmic_build
+#endif // #ifndef gmic_core
 
 // Define main libgmic class 'gmic'.
 //----------------------------------
