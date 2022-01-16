@@ -210,9 +210,9 @@ if [ "$HOSTNAME" != "elara" ] ; then
 
     cd $OUTDIR/src
     if [ -f $HOME/is_qt5 ]; then
-        sed "s/\$(MAKE) lib cli gimp gmic_qt libc zart/\$(MAKE) lib cli gimp gmic_qt libc/g" Makefile > /tmp/Makefile && mv /tmp/Makefile Makefile;
+        sed "s/\$(MAKE) lib cli gimp gmic_qt libc zart/\$(MAKE) lib cli_shared gimp_shared gmic_qt_shared libc/g" Makefile > /tmp/Makefile && mv /tmp/Makefile Makefile;
     else
-        sed "s/\$(MAKE) lib cli gimp gmic_qt libc zart/\$(MAKE) lib cli libc/g" Makefile > /tmp/Makefile && mv /tmp/Makefile Makefile
+        sed "s/\$(MAKE) lib cli gimp gmic_qt libc zart/\$(MAKE) lib cli_shared libc/g" Makefile > /tmp/Makefile && mv /tmp/Makefile Makefile
     fi
     sed "s/\&\& \$(MAKE) clean//g" Makefile > /tmp/Makefile && mv /tmp/Makefile Makefile;  # Prevent 'qmake not found' bug when using dpkg-buildpackage, still don't know why.
 
@@ -474,7 +474,7 @@ cp ${HOME}/work/src/deb_${TARFILE}.gz /tmp/ &&
     tar zxvf deb_${TARFILE}.gz &&
     find gmic-${SVERSION}${SUFFIX} -exec touch {} \; &&
     cd $OUTDIR/src &&
-    sed "s/\$(MAKE) lib cli gimp gmic_qt libc zart/\$(MAKE) lib cli gimp gmic_qt libc/g" Makefile > /tmp/Makefile &&
+    sed "s/\$(MAKE) lib cli gimp gmic_qt libc zart/\$(MAKE) lib cli_shared gimp_shared gmic_qt_shared libc/g" Makefile > /tmp/Makefile &&
     mv /tmp/Makefile Makefile && cd ../..
 cd $OUTDIR &&
     dpkg-buildpackage -d -j3 -rfakeroot;

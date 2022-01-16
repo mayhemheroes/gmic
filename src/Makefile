@@ -383,18 +383,11 @@ use_libgmic : use_libgmic.cpp
 # CLI.
 #-----
 cli:
-ifeq ($(OS),Windows)
 	$(MAKE) "CFLAGS+=$(GMIC_STD_CFLAGS) $(OPT_CFLAGS)" "LIBS+=gmic.o $(GMIC_STD_LIBS) $(OPT_LIBS)" gmic.o _cli
-else
-	$(MAKE) "CFLAGS+=$(GMIC_STD_CFLAGS) $(OPT_CFLAGS)" "LIBS+=$(GMIC_STD_LIBS) $(OPT_LIBS) -lgmic" _lib _cli
-endif
 	$(STRIP) gmic$(EXE)
 
 dev:
 	$(MAKE) "CFLAGS+=$(GMIC_STD_CFLAGS)" "LIBS+=gmic.o $(GMIC_STD_LIBS)" gmic.o _cli
-
-devopt:
-	$(MAKE) "CFLAGS+=$(GMIC_STD_CFLAGS) $(OPT_CFLAGS)" "LIBS+=gmic.o $(GMIC_STD_LIBS) $(OPT_LIBS)" gmic.o _cli
 
 debug:
 	$(MAKE) "CFLAGS+=$(GMIC_STD_CFLAGS) $(DEBUG_CFLAGS)" "LIBS+=gmic.o $(GMIC_STD_LIBS)" gmic.o _cli
@@ -417,6 +410,12 @@ gmic$(EXE): gmic_cli.cpp gmic.h CImg.h
 gmic.o: gmic.cpp gmic.h gmic_stdlib.h CImg.h
 	$(CXX) -o gmic.o -c gmic.cpp -Dgmic_core $(CFLAGS)
 
+# CLI (shared).
+#--------------
+cli_shared:
+	$(MAKE) "CFLAGS+=$(GMIC_STD_CFLAGS) $(OPT_CFLAGS)" "LIBS+=$(GMIC_STD_LIBS) $(OPT_LIBS) -lgmic" _lib _cli
+	$(STRIP) gmic$(EXE)
+
 # CLI (static).
 #--------------
 GMIC_STATIC_CLI_PATH = $(USR)/$(LIB)/x86_64-linux-gnu
@@ -429,12 +428,12 @@ GMIC_STATIC_CLI_LIBS = $(PARALLEL_LIBS) \
                        $(GMIC_STATIC_CLI_PATH)/libfftw3.a $(GMIC_STATIC_CLI_PATH)/libfftw3_threads.a \
 	               $(GMIC_STATIC_CLI_EXTRA)
 
-static:
+cli_static:
 	$(MAKE) "CFLAGS+=$(GMIC_STATIC_CLI_CFLAGS) $(OPT_CFLAGS)" "LIBS+=$(GMIC_STATIC_CLI_LIBS) $(OPT_LIBS)" _cli
 	$(STRIP) gmic$(EXE)
 
-# libcgmic (standard).
-#---------------------
+# libcgmic.
+#----------
 libc:
 	$(MAKE) "CFLAGS+=$(GMIC_STD_CFLAGS) $(OPT_CFLAGS)" "LIBS+=$(GMIC_STD_LIBS) $(OPT_LIBS)" _lib _libc
 
@@ -498,36 +497,35 @@ GMIC_LIBC_STATIC_LIBS += $(OPENMP_LIBS) $(GDI32_LIBS)
 endif
 endif
 
-libcstatic:
+libc_static:
 ifeq ($(OS),Windows)
 	rm libgmic.o
 endif
-	$(MAKE) "CFLAGS+=$(GMIC_LIBC_STATIC_CFLAGS) $(OPT_CFLAGS)" "LIBS+=$(GMIC_LIBC_STATIC_LIBS) $(OPT_LIBS)" _lib _libcstatic
+	$(MAKE) "CFLAGS+=$(GMIC_LIBC_STATIC_CFLAGS) $(OPT_CFLAGS)" "LIBS+=$(GMIC_LIBC_STATIC_LIBS) $(OPT_LIBS)" _lib _libc_static
 
-_libcstatic: libcgmic_files libcgmicstatic.so use_libcgmicstatic
+_libc_static: libcgmic_files libcgmic_static.so use_libcgmic_static
 
-libcgmicstatic.so: libcgmicstatic.o
-	ar rcs libcgmicstatic.a libcgmicstatic.o
+libcgmic_static.so: libcgmic_static.o
+	ar rcs libcgmic_static.a libcgmic_static.o
 ifeq ($(OS),Darwin)
-	$(CXX) -shared -static -o libcgmicstatic.so.$(VERSION) libcgmicstatic.o libgmic.o $(PIC) $(CFLAGS) $(LIBS)
+	$(CXX) -shared -static -o libcgmic_static.so.$(VERSION) libcgmic_static.o libgmic.o $(PIC) $(CFLAGS) $(LIBS)
 else
 ifeq ($(OS),Windows)
-	$(CXX) -shared -static -o libcgmicstatic-$(VERSION1).dll libcgmicstatic.o libgmic.o $(PIC) -Wl,--output-def,libcgmicstatic.def,--out-implib,libcgmicstatic.a $(CFLAGS) $(LIBS)
+	$(CXX) -shared -static -o libcgmic_static-$(VERSION1).dll libcgmic_static.o libgmic.o $(PIC) -Wl,--output-def,libcgmic_static.def,--out-implib,libcgmic_static.a $(CFLAGS) $(LIBS)
 else
-	$(CXX) -shared -Wl,-soname,libcgmicstatic.so.$(VERSION1) -o libcgmicstatic.so libcgmicstatic.o libgmic.o $(PIC) $(CFLAGS) $(LIBS)
+	$(CXX) -shared -Wl,-soname,libcgmic_static.so.$(VERSION1) -o libcgmic_static.so libcgmic_static.o libgmic.o $(PIC) $(CFLAGS) $(LIBS)
 endif
 endif
 ifneq ($(OS),Windows)
-	ln -fs libcgmicstatic.so.$(VERSION) libcgmicstatic.so.$(VERSION1)
-	ln -fs libcgmicstatic.so.$(VERSION1) libcgmicstatic.so
+	ln -fs libcgmic_static.so.$(VERSION) libcgmic_static.so.$(VERSION1)
+	ln -fs libcgmic_static.so.$(VERSION1) libcgmic_static.so
 endif
 
-libcgmicstatic.o: gmic_libc.cpp CImg.h gmic_libc.h gmic.h
-	$(CXX) -o libcgmicstatic.o -c gmic_libc.cpp $(PIC) $(CFLAGS)
+libcgmic_static.o: gmic_libc.cpp CImg.h gmic_libc.h gmic.h
+	$(CXX) -o libcgmic_static.o -c gmic_libc.cpp $(PIC) $(CFLAGS)
 
-use_libcgmicstatic: use_libcgmic.c gmic_libc.h
-	$(CC) -std=c99 -o use_libcgmic_static use_libcgmic.c -lcgmicstatic $(LIBS)
-
+use_libcgmic_static: use_libcgmic.c gmic_libc.h
+	$(CC) -std=c99 -o use_libcgmic_static use_libcgmic.c -lcgmic_static $(LIBS)
 
 # G'MIC Online.
 #--------------
@@ -542,11 +540,11 @@ gmicol:
 # G'MIC-Qt.
 #----------
 gimp: gmic_qt_files CImg.h gmic_stdlib_community.h
-	cd ../gmic-qt && $(QMAKE) CONFIG+=release GMIC_PATH=$(SRC_PATH) PRERELEASE=$(PRERELEASE) GMIC_DYNAMIC_LINKING=on HOST=gimp gmic_qt.pro && $(MAKE)
+	cd ../gmic-qt && $(QMAKE) CONFIG+=release GMIC_PATH=$(SRC_PATH) PRERELEASE=$(PRERELEASE) GMIC_DYNAMIC_LINKING=off HOST=gimp gmic_qt.pro && $(MAKE)
 	@echo "Executable 'gmic_gimp_qt' has been successfully compiled in '../gmic-qt/'."
 
 gmic_qt: gmic_qt_files CImg.h gmic_stdlib_community.h
-	cd ../gmic-qt && $(QMAKE) CONFIG+=release GMIC_PATH=$(SRC_PATH) PRERELEASE=$(PRERELEASE) GMIC_DYNAMIC_LINKING=on HOST=none gmic_qt.pro && $(MAKE)
+	cd ../gmic-qt && $(QMAKE) CONFIG+=release GMIC_PATH=$(SRC_PATH) PRERELEASE=$(PRERELEASE) GMIC_DYNAMIC_LINKING=off HOST=none gmic_qt.pro && $(MAKE)
 	@echo "Executable 'gmic_qt' has been successfully compiled in '../gmic-qt/'."
 
 gmic_qt_files:
@@ -570,6 +568,16 @@ gmic_qt_files:
 	  fi; \
 	  if [ -d ../../gmic-qt ]; then ln -fs ../gmic-qt ..; fi \
 	fi
+
+# G'MIC-Qt (shared).
+#-------------------
+gimp_shared: gmic_qt_files CImg.h gmic_stdlib_community.h
+	cd ../gmic-qt && $(QMAKE) CONFIG+=release GMIC_PATH=$(SRC_PATH) PRERELEASE=$(PRERELEASE) GMIC_DYNAMIC_LINKING=on HOST=gimp gmic_qt.pro && $(MAKE)
+	@echo "Executable 'gmic_gimp_qt' has been successfully compiled in '../gmic-qt/'."
+
+gmic_qt_shared: gmic_qt_files CImg.h gmic_stdlib_community.h
+	cd ../gmic-qt && $(QMAKE) CONFIG+=release GMIC_PATH=$(SRC_PATH) PRERELEASE=$(PRERELEASE) GMIC_DYNAMIC_LINKING=on HOST=none gmic_qt.pro && $(MAKE)
+	@echo "Executable 'gmic_qt' has been successfully compiled in '../gmic-qt/'."
 
 # ZArt.
 #------
