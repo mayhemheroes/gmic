@@ -13337,13 +13337,13 @@ transfer_pca : check ${"is_image_arg $1"} skip "${2=all}"
 _transfer_pca :
   $_transfer_pca_reference
   f.. "*begin(
-         cov = [ "${"covariance_colors[0] _avg"}" ];
+         cov = [ "${"covariance_vectors[0] _avg"}" ];
          avg = [ "$_avg" ];
          eig = eig(cov);
          lambda = 1/sqrt(1e-6 + eig[0,s]);
          rot = mul(diag(lambda),eig[s,s*s],s);
 
-         cov_ref = [ "${"covariance_colors[1] _avg_ref"}" ];
+         cov_ref = [ "${"covariance_vectors[1] _avg_ref"}" ];
          avg_ref = [ "$_avg_ref" ];
          eig_ref = eig(cov_ref);
          lambda_ref = sqrt(eig_ref[0,s]);
@@ -16031,7 +16031,7 @@ ilaplacian : check "${1=0}>=0" skip "${2=}"
   if !$nb_iter # Inversion in Fourier space
     if $is_estimate
       e[0--4] "Invert Laplacian image$? in Fourier space, with initial estimate $2."
-      pass$2 1 ia=${-average_colors} rm.
+      pass$2 1 ia=${-average_vectors} rm.
     else
       e[0--4] "Invert Laplacian image$? in Fourier space."
       ia=0
@@ -17066,7 +17066,7 @@ syntexturize : check "${1=100%}>0 && ${2=$1}>0"
     if $nw>w||$nh>h # Spot extension required when rendering on bigger image.
       periodize_poisson
       100%,100% rectangle. 5,5,{w-6},{h-6},1,1 b. 2 n. 0,1
-      $nw,$nh,1,{-2,s} fc. ${average_colors...}
+      $nw,$nh,1,{-2,s} fc. ${average_vectors...}
       j. ...,{(w-{-2,w})/2},{(h-{-2,h})/2},0,0,1,..
       rm[-3,-2]
     else
@@ -27354,11 +27354,11 @@ autocrop_coords : skip ${1=auto}
 _autocrop0 : autocrop $*
 _autocrop1 : skip $* autocrop
 
-#@cli average_colors
-#@cli : Return the average vector-value of the latest of the selected images.
-average_colors :
-  res=""
-  repeat s-1 sh. {1+$>} res=$res,{ia} rm. done
+#@cli average_vectors
+#@cli : Return the vector-valued average of the latest of the selected images.
+average_vectors :
+  if !w u "" return fi
+  repeat s-1 sh. {1+$>} res.={ia} rm. done
   sh. 0 u {ia}$res rm.
 
 #@cli base642img : "base64_string"
@@ -27461,16 +27461,24 @@ check120 :
   done
   e[] " - Total scanned : "${_total_lines}" lines"
 
-#@cli covariance_colors : _avg_outvarname
+#@cli covariance_vectors : _avg_outvarname
 #@cli : Return the covariance matrix of the vector-valued colors in the latest of the selected images
 #@cli : (for arbitrary number of channels).
 #@cli : Parameter 'avg_outvarname' is used as a variable name that takes the value of the average vector-value.
-covariance_colors : skip "${1=avg}"
-  $1=${-average_colors}
+covariance_vectors : skip "${1=avg}"
+  $1=${-average_vectors}
   f ">begin( avg = [ "$""$1" ]; const S2 = s^2; C = vectorS2(0); );
       mI = I - avg; C+=mul(mI,mI,s);
       end( C/=whd - 1; run('u ',vtos(C)) );
       I"
+
+#@cli covariance : _avg_varname_out
+#@cli : Return the covariance matrix of the set of vector values of the latest of the selected images
+#@cli : (for arbitrary number of channels).
+#@cli : Parameter 'avg_varname_out' is used as a variable name that takes the value of the average vector-value.
+covariance : skip "${1=avg}
+  $1
+
 
 #@cli dec : decimal_int1,...
 #@cli : Print specified decimal integers into their binary, octal, hexadecimal and string representations.
@@ -35962,7 +35970,7 @@ fx_imagegrid_triangular :
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2015/24/02</i>.</small>")
 fx_make_seamless :
   repeat $! l[$>]
-    if $1 +b {20.5-$1/50}% -[0] [1] fc. ${average_colors.} + fi
+    if $1 +b {20.5-$1/50}% -[0] [1] fc. ${average_vectors.} + fi
   endl done
   periodize_poisson c 0,255
 
@@ -35991,7 +35999,7 @@ fx_make_seamless_preview :
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2015/15/12</i>.</small>")
 fx_frame_seamless :
   repeat $! l[$>]
-    if $5 +b {20.5-$5/50}% -[0] [1] fc. ${average_colors.} + fi
+    if $5 +b {20.5-$5/50}% -[0] [1] fc. ${average_vectors.} + fi
   endl done
   frame_seamless ${1-4} c 0,255
 
@@ -40906,7 +40914,7 @@ fx_mix_pca :
     # Get image covariance (and remember it to speed up multiple calls of the filter).
     if [$14]==round(stats()[0,4],0.1) _avg={[$15][0,3]} C={[$15][3,9]} status=
     else
-      +rr2d 256,256,0,2 C=${"covariance_colors. _avg"} rm.
+      +rr2d 256,256,0,2 C=${"covariance_vectors. _avg"} rm.
       __status="{$1}{$2}{$3}{$4}"\
                "{$5}{$6}{$7}{$8}"\
                "{$9}{$10}{$11}{$12}"\
@@ -47669,7 +47677,7 @@ fx_random_pattern_preview :
 #@gui :       Latest Update: <i>2014/09/04</i>.</small>")
 fx_syntexturize :
   repeat $! l[$>]
-    if $3 +b {20.5-$3/50}% -[0] [1] fc. ${average_colors.} + c 0,255 fi
+    if $3 +b {20.5-$3/50}% -[0] [1] fc. ${average_vectors.} + c 0,255 fi
     syntexturize $1,$2
   endl done
 
@@ -47697,7 +47705,7 @@ fx_syntexturize_preview :
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2015/22/10</i>.</small>")
 _fx_syntexturize_matchpatch_preview :
   repeat $! l[$>]
-    if $7 +b {20.5-$7/50}% -[0] [1] fc. ${average_colors.} + c 0,255 fi
+    if $7 +b {20.5-$7/50}% -[0] [1] fc. ${average_vectors.} + c 0,255 fi
     w={w} h={h}
     syntexturize_matchpatch 100%,100%,${3--1}
     to_rgba r $w,$h,1,4,0,0,0.5,0.5
