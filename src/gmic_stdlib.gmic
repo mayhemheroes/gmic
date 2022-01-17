@@ -27467,18 +27467,10 @@ check120 :
 #@cli : Parameter 'avg_outvarname' is used as a variable name that takes the value of the average vector-value.
 covariance_vectors : skip "${1=avg}"
   $1=${-average_vectors}
-  f ">begin( avg = [ "$""$1" ]; const S2 = s^2; C = vectorS2(0); );
-      mI = I - avg; C+=mul(mI,mI,s);
-      end( C/=whd - 1; run('u ',vtos(C)) );
-      I"
-
-#@cli covariance : _avg_varname_out
-#@cli : Return the covariance matrix of the set of vector values of the latest of the selected images
-#@cli : (for arbitrary number of channels).
-#@cli : Parameter 'avg_varname_out' is used as a variable name that takes the value of the average vector-value.
-covariance : skip "${1=avg}
-  $1
-
+  eval. "*begin(avg = [ "$""$1" ]; C = vector(#s^2,0));
+         mI = I - avg;
+         C+=mul(mI,mI,s);
+         end(merge(C,+); C/=whd - 1; run('u ',vtos(C)))"
 
 #@cli dec : decimal_int1,...
 #@cli : Print specified decimal integers into their binary, octal, hexadecimal and string representations.
