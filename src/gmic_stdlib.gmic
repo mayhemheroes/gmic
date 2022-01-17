@@ -13341,12 +13341,14 @@ _transfer_pca :
          avg = [ "$_avg" ];
          eig = eig(cov);
          lambda = 1/sqrt(1e-6 + eig[0,s]);
+         repeat(s,k,sks = s + k*s; eig[sks]<0?copy(eig[sks],-eig[sks,s]));
          rot = mul(diag(lambda),eig[s,s*s],s);
 
          cov_ref = [ "${"covariance_vectors[1] _avg_ref"}" ];
          avg_ref = [ "$_avg_ref" ];
          eig_ref = eig(cov_ref);
          lambda_ref = sqrt(eig_ref[0,s]);
+         repeat(s,k,sks = s + k*s; eig_ref[sks]<0?copy(eig_ref[sks],-eig_ref[sks,s]));
          rot_ref = mul(transpose(eig_ref[s,s*s],s),diag(lambda_ref),s);
 
          M = mul(rot_ref,rot,s);
