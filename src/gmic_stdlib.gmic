@@ -17924,30 +17924,30 @@ segment_watershed : check "${1=2}>=0"
     - {1+$min}
   endl done
 
-#@cli shape2bump : _resolution>=0,0<=_weight_avg_max_avg<=1,_dilation,_smoothness>=0
+#@cli shape2bump : _resolution>=0,0<=_weight_std_max_avg<=1,_dilation,_smoothness>=0
 #@cli : Estimate bumpmap from binary shape in selected images.
-#@cli : Default value: 'resolution=256', 'weight_avg_max=0.75', 'dilation=0' and 'smoothness=100'.
+#@cli : Default value: 'resolution=256', 'weight_std_max=0.75', 'dilation=0' and 'smoothness=100'.
 shape2bump : check "isint(${1=256}) && $1>=0 && ${2=0.75}>=0 && $2<=1 && isnum(${3=0}) && ${4=100}>=0"
   e[^-1] "Estimate bumpmap from binary shape in image$?, using "\
          ${"if $1 u \"resolution $1\" else u \"full resolution\" fi"}", avg/max weight $2, dilation $3
           and smoothness $4."
-  repeat $!
-    +l[$>]
-      norm > 0
-      siz={[w,h]}
+  repeat $! l[$>]
+    slices 0 channels 100% > 0 siz={[w,h]}
 
-      # Generate skeleton.
-      distance 0 + $3
-      +f. "const boundary = 1;
-           (i>j(-1)&&i>j(1)) || (i>j(0,-1)&&i>j(0,1)) || (i>j(-1,-1)&&i>j(1,1)) || (i>j(-1,1)&&i>j(1,-1))"
+    # Generate skeleton (fast method).
+    distance 0 + $3
+    +f. "const boundary = 1;
+         (i>j(-1)&&i>j(1)) || (i>j(0,-1)&&i>j(0,1)) || (i>j(-1,-1)&&i>j(1,1)) || (i>j(-1,1)&&i>j(1,-1))"
 
-      # Downsize for faster computation.
-      is_resized=0
-      if $1" && "max(w,h)>$1 rr2d $1,$1,0,2 gt. 0 thinning. 1 *.. {$1/max($siz)} is_resized=1 fi
+    # Downsize for faster computation.
+    is_resized=0
+    if $1" && "max(w,h)>$1 rr2d $1,$1,0,2 gt. 0 thinning. 1 *.. {$1/max([$siz])} is_resized=1 fi
+    rmax={0,iM}
 
-      # Generate z-map.
-      +f. 0 .x2
-      f[1] "*if (i,
+    # Generate z-map (max method).
+    [0],[0]
+    if $2>0
+      eval[1] ":i?(
         r = i(#0,x,y);
         ir = floor(r);
         r2 = r^2;
@@ -17956,24 +17956,36 @@ shape2bump : check "isint(${1=256}) && $1>=0 && ${2=0.75}>=0 && $2<=1 && isnum($
           for (p = -ir, p<=ir, ++p,
             X = x + p;
             dist = norm(p,q);
-            if (dist<r,
+            dist<r?(
               elev = sqrt(r2 - dist^2);
-              i(#2,X,Y) = max(i(#2,X,Y),elev);
-              if ($2<1, i(#3,X,Y) += elev; ++i(#4,X,Y));
+              critical(i(#-1,X,Y) = max(i(#-1,X,Y),elev));
             );
           )
         );
-      ); i"
+      ); 0"
+      n. 0,$rmax
+      if $4 +neq[0] 0 guided.. .,$4,1 rm. fi # Smooth bumpmap
+    fi
 
-      if $2<1 M={-3,iM} max. 1 /[-2,-1] n. 0,$M j. ..,0,0,0,0,$2
-      else rm[-2,-1]
-      fi
-      k.
-      if $is_resized *. {max([$siz]/[w,h])} r $siz,1,1,5 c 0,100% fi
-    endl
-    if $4 M={iM} (1^0^1) r. [0],[0] !=[0] 0 *. [0] smooth.. .,$4,0.1,0 rm. b. 0.5 n. 0,$M fi # Smooth bumpmap
-    k.
-  done
+    # Generate z-map (std method).
+    [0],[0]
+    if $2<1
+      1,1,1,3 eval[1] "i?da_push([x,y,i(#0)]); end(resize(#-1,1,da_size(),1,3,0))"
+      eval[0] ":i?(
+        U = vector(#h#-1);
+        for (k = 0, k<h#-1, ++k,
+          K = I[#-1,k];
+          d = norm(x - K[0], y - K[1]);
+          d<K[2]?(U[k] = sqrt(K[2]^2 - d^2));
+        );
+        i(#-2) = std(U);
+      )"
+      rm. n. 0,$rmax
+    fi
+
+    j. ..,0,0,0,0,$2 k.
+    if $is_resized *. {max([$siz]/[w,h])} r $siz,1,1,5 c 0,100% fi
+  endl done
 
 #@cli skeleton : _boundary_conditions={ 0=dirichlet | 1=neumann }
 #@cli : Compute skeleton of binary shapes using distance transform and constrained thinning.
@@ -46576,7 +46588,7 @@ fx_guided_lightrays_preview :
 #@gui : Erosion / Dilation = float(0,-10,10)
 #@gui : Smoothness = float(3,0,6)
 #@gui : Bump Factor = float(1,-5,5)
-#@gui : Avg / Max Weight = float(1,0,1)
+#@gui : Std / Max Weight = float(0.5,0,1)
 #@gui : Resolution = choice{4,"Full (Slower)","2048","1024","512","256","128","64 (Faster)"}
 #@gui : sep = separator()
 #@gui : note = note("<small><b>Illumination:</b></small>)
@@ -46787,7 +46799,7 @@ _fx_illuminate_shape2d : # Input selection must contains a single image. Output 
 
   if $input_type<=1
     shape2bump. {arg($resolution,2048,1024,512,256,128,64)},$weight_avg_max,{$dilation%*max(w,h)},\
-                {$shape_smoothness*50}
+                $shape_smoothness
   fi
   if $input_type<=2
     if $input_type==2" && "$shape_smoothness mM={[im,iM]} guided. ..,$shape_smoothness%,100 n. $mM fi
