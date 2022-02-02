@@ -13832,6 +13832,27 @@ downsize_aliased : check "${1=50}>=0 && $1<=100"
     r $1%,$1%,$1%,100%,2
   endl done
 
+
+#@cli edgels : x0,y0 : (no arg)
+#@cli : Retrieve list of edgels (and their normals) that go around a 2D binary silhouette.
+#@cli : When specified, arguments 'x0,y0' are the 2D coordinates of the starting point \
+# (must be located at the edge of the binary silhouette).
+#@cli : Output image has 3 channels '[x,y,n]' where 'x' and 'y' are the 2D coordinates of the edgel point, \
+# and 'n' is the orientation of its associated canonical normal (can be { 0=[1,0] | 1=[0,1] | 2=[-1,0] | 3=[0,-1] }.
+edgels : skip "${1=},${2=}"
+  l[] if "isint($1) && $1>=0 && isint($2) && $2>=0" x0,y0=${1,2} else error[] fi onfail x0,y0=-1 noarg endl
+  repeat $! l[$>]
+    slices. 0 channels. 0 gt. 0
+    1,1,1,3
+    eval ${-math_lib}"
+      x0 = $x0<0?xM#-2:$1;
+      y0 = $y0<0?yM#-2:$2;
+      P0 = P = [ x0,y0,argmin(i(#-2,x0 + 1,y0),i(#-2,x0,y0 + 1),i(#-2,x0 - 1,y0),i(#-2,x0,y0 - 1)) ];
+      do (da_push(P); P = next_edgel4(#-2,P,1), P!=P0);
+      resize(#-1,1,da_size(),1,3,0)"
+    k.
+  endl done
+
 #@cli elevate : _depth,_is_plain={ 0 | 1 },_is_colored={ 0 | 1 }
 #@cli : Elevate selected 2D images into 3D volumes.
 #@cli : Default values: 'depth=64', 'is_plain=1' and 'is_colored=1'.
@@ -28296,6 +28317,43 @@ math_lib :
          (_deltaE00_deltaHprime/(_deltaE00_k_H*_deltaE00_S_H))^2 +
          _deltaE00_R_T*_deltaE00_deltaCprime/(_deltaE00_k_C*_deltaE00_S_C)*
          _deltaE00_deltaHprime/(_deltaE00_k_H*_deltaE00_S_H));
+  );
+
+  # Functions to manage curve motion with edgels.
+  # k: index of image.
+  # P: input edgel = [ x,y,n ] where 'n' is the canonical normal, can be { 0=right | 1=bottom | 2=left | 3=top }.
+  # l: value of the pixels of the silhouette.
+
+  next_edgel4(k,P,l) = ( # Next edgel, in 4-connexity
+    ref(P#[0],_u); ref(P#[1],_v);
+    P#[2]==0?(i(#k,_u,_nv = _v + 1,0,0)!=l?[ _u,_v,1 ]:i(#k,_nu = _u + 1,_nv,0,0)!=l?[ _u,_nv,0 ]:[ _nu,_nv,3 ]):
+    P#[2]==1?(i(#k,_pu = _u - 1,_v,0,0)!=l?[ _u,_v,2 ]:i(#k,_pu,_nv = _v + 1,0,0)!=l?[ _pu,_v,1 ]:[ _pu,_nv,0 ]):
+    P#[2]==2?(i(#k,_u,_pv = _v - 1,0,0)!=l?[ _u,_v,3 ]:i(#k,_pu = _u - 1,_pv,0,0)!=l?[ _u,_pv,2 ]:[ _pu,_pv,1 ]):
+             (i(#k,_nu = _u + 1,_v,0,0)!=l?[ _u,_v,0 ]:i(#k,_nu,_pv = _v - 1,0,0)!=l?[ _nu,_v,3 ]:[ _nu,_pv,2 ]);
+  );
+
+  previous_edgel4(k,P,l) = ( # Previous edgel, in 4-connexity
+    ref(P#[0],_u); ref(P#[1],_v);
+    P#[2]==0?(i(#k,_u,_pv = _v - 1,0,0)!=l?[ _u,_v,3 ]:i(#k,_nu = _u + 1,_pv,0,0)!=l?[ _u,_pv,0 ]:[ _nu,_pv,1 ]):
+    P#[2]==1?(i(#k,_nu = _u + 1,_v,0,0)!=l?[ _u,_v,0 ]:i(#k,_nu,_nv = _v + 1,0,0)!=l?[ _nu,_v,1 ]:[ _nu,_nv,2 ]):
+    P#[2]==2?(i(#k,_u,_nv = _v + 1,0,0)!=l?[ _u,_v,1 ]:i(#k,_pu = _u - 1,_nv,0,0)!=l?[ _u,_nv,2 ]:[ _pu,_nv,3 ]):
+             (i(#k,_pu = _u - 1,_v,0,0)!=l?[ _u,_v,2 ]:i(#k,_pu,_pv = _v - 1,0,0)!=l?[ _pu,_v,3 ]:[ _pu,_pv,0 ]);
+  );
+
+  next_edgel8(k,P,l) = ( # Next edgel, in 8-connexity
+    ref(P#[0],_u); ref(P#[1],_v);
+    P#[2]==0?(i(#k,_nu = _u + 1,_nv = _v + 1,0,0)==l?[ _nu,_nv,3 ]:i(#k,_u,_nv,0,0)==l?[ _u,_nv,0 ]:[ _u,_v,1 ]):
+    P#[2]==1?(i(#k,_pu = _u - 1,_nv = _v + 1,0,0)==l?[ _pu,_nv,0 ]:i(#k,_pu,_v,0,0)==l?[ _pu,_v,1 ]:[ _u,_v,2 ]):
+    P#[2]==2?(i(#k,_pu = _u - 1,_pv = _v - 1,0,0)==l?[ _pu,_pv,1 ]:i(#k,_u,_pv,0,0)==l?[ _u,_pv,2 ]:[ _u,_v,3 ]):
+             (i(#k,_nu = _u + 1,_pv = _v - 1,0,0)==l?[ _nu,_pv,2 ]:i(#k,_nu,_v,0,0)==l?[ _nu,_v,3 ]:[ _u,_v,0 ]);
+  );
+
+  previous_edgel8(k,P,l) = ( # Previous edgel, in 8-connexity
+    ref(P#[0],_u); ref(P#[1],_v);
+    P#[2]==0?(i(#k,_nu = _u + 1,_pv = _v - 1,0,0)==l?[ _nu,_pv,1 ]:i(#k,_u,_pv,0,0)==l?[ _u,_pv,0 ]:[ _u,_v,3 ]):
+    P#[2]==1?(i(#k,_nu = _u + 1,_nv = _v + 1,0,0)==l?[ _nu,_nv,2 ]:i(#k,_nu,_v,0,0)==l?[ _nu,_v,1 ]:[ _u,_v,0 ]):
+    P#[2]==2?(i(#k,_pu = _u - 1,_nv = _v + 1,0,0)==l?[ _pu,_nv,3 ]:i(#k,_u,_nv,0,0)==l?[ _u,_nv,2 ]:[ _u,_v,1 ]):
+             (i(#k,_pu = _u - 1,_pv = _v - 1,0,0)==l?[ _pu,_pv,0 ]:i(#k,_pu,_v,0,0)==l?[ _pu,_v,3 ]:[ _u,_v,2 ]);
   );"
 
 #@cli mad
