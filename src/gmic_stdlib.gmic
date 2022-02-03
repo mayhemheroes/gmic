@@ -28323,70 +28323,47 @@ math_lib :
   # k: index of image.
   # P: input edgel = [ x,y,n ] where 'n' is the canonical normal, can be { 0=right | 1=bottom | 2=left | 3=top }.
   # l: value of the pixels of the silhouette.
-
-  next_edgel4_fg(k,P,fg) = ( # Next edgel, in 4-connexity (with foreground value specified)
+  _next_edgel4(k,P,op) = (
     ref(P#[0],_u); ref(P#[1],_v);
-    P#[2]==0?(i(#k,_u,_nv = _v + 1,0,0)!=fg?[ _u,_v,1 ]:i(#k,_nu = _u + 1,_nv,0,0)!=fg?[ _u,_nv,0 ]:[ _nu,_nv,3 ]):
-    P#[2]==1?(i(#k,_pu = _u - 1,_v,0,0)!=fg?[ _u,_v,2 ]:i(#k,_pu,_nv = _v + 1,0,0)!=fg?[ _pu,_v,1 ]:[ _pu,_nv,0 ]):
-    P#[2]==2?(i(#k,_u,_pv = _v - 1,0,0)!=fg?[ _u,_v,3 ]:i(#k,_pu = _u - 1,_pv,0,0)!=fg?[ _u,_pv,2 ]:[ _pu,_pv,1 ]):
-             (i(#k,_nu = _u + 1,_v,0,0)!=fg?[ _u,_v,0 ]:i(#k,_nu,_pv = _v - 1,0,0)!=fg?[ _nu,_v,3 ]:[ _nu,_pv,2 ]);
+    P#[2]==0?(i(#k,_u,_nv = _v + 1,0,0)#op?[ _u,_v,1 ]:i(#k,_nu = _u + 1,_nv,0,0)#op?[ _u,_nv,0 ]:[ _nu,_nv,3 ]):
+    P#[2]==1?(i(#k,_pu = _u - 1,_v,0,0)#op?[ _u,_v,2 ]:i(#k,_pu,_nv = _v + 1,0,0)#op?[ _pu,_v,1 ]:[ _pu,_nv,0 ]):
+    P#[2]==2?(i(#k,_u,_pv = _v - 1,0,0)#op?[ _u,_v,3 ]:i(#k,_pu = _u - 1,_pv,0,0)#op?[ _u,_pv,2 ]:[ _pu,_pv,1 ]):
+             (i(#k,_nu = _u + 1,_v,0,0)#op?[ _u,_v,0 ]:i(#k,_nu,_pv = _v - 1,0,0)#op?[ _nu,_v,3 ]:[ _nu,_pv,2 ]);
+  );
+  next_edgel4_fg(k,P,fg) = _next_edgel4(#k,#P,!=fg); # Next edgel, 4-connexity (foreground value specified)
+  next_edgel4_bg(k,P,bg) = _next_edgel4(#k,#P,==bg); # Next edgel, 4-connexity (background value specified)
+
+  _previous_edgel4(k,P,op) = (
+    ref(P#[0],_u); ref(P#[1],_v);
+    P#[2]==0?(i(#k,_u,_pv = _v - 1,0,0)#op?[ _u,_v,3 ]:i(#k,_nu = _u + 1,_pv,0,0)#op?[ _u,_pv,0 ]:[ _nu,_pv,1 ]):
+    P#[2]==1?(i(#k,_nu = _u + 1,_v,0,0)#op?[ _u,_v,0 ]:i(#k,_nu,_nv = _v + 1,0,0)#op?[ _nu,_v,1 ]:[ _nu,_nv,2 ]):
+    P#[2]==2?(i(#k,_u,_nv = _v + 1,0,0)#op?[ _u,_v,1 ]:i(#k,_pu = _u - 1,_nv,0,0)#op?[ _u,_nv,2 ]:[ _pu,_nv,3 ]):
+             (i(#k,_pu = _u - 1,_v,0,0)#op?[ _u,_v,2 ]:i(#k,_pu,_pv = _v - 1,0,0)#op?[ _pu,_v,3 ]:[ _pu,_pv,0 ]);
+  );
+  previous_edgel4_fg(k,P,fg) = _previous_edgel4(#k,#P,!=fg); # Previous edgel, 4-connexity (foreground value specified)
+  previous_edgel4_bg(k,P,bg) = _previous_edgel4(#k,#P,==bg); # Previous edgel, 4-connexity (background value specified)
+
+  _next_edgel8(k,P,op) = (
+    ref(P#[0],_u); ref(P#[1],_v);
+    P#[2]==0?(i(#k,_nu = _u + 1,_nv = _v + 1,0,0)#op?[ _nu,_nv,3 ]:i(#k,_u,_nv,0,0)#op?[ _u,_nv,0 ]:[ _u,_v,1 ]):
+    P#[2]==1?(i(#k,_pu = _u - 1,_nv = _v + 1,0,0)#op?[ _pu,_nv,0 ]:i(#k,_pu,_v,0,0)#op?[ _pu,_v,1 ]:[ _u,_v,2 ]):
+    P#[2]==2?(i(#k,_pu = _u - 1,_pv = _v - 1,0,0)#op?[ _pu,_pv,1 ]:i(#k,_u,_pv,0,0)#op?[ _u,_pv,2 ]:[ _u,_v,3 ]):
+             (i(#k,_nu = _u + 1,_pv = _v - 1,0,0)#op?[ _nu,_pv,2 ]:i(#k,_nu,_v,0,0)#op?[ _nu,_v,3 ]:[ _u,_v,0 ]);
   );
 
-  next_edgel4_bg(k,P,bg) = ( # Next edgel, in 4-connexity (with background value specified)
-    ref(P#[0],_u); ref(P#[1],_v);
-    P#[2]==0?(i(#k,_u,_nv = _v + 1,0,0)==bg?[ _u,_v,1 ]:i(#k,_nu = _u + 1,_nv,0,0)==bg?[ _u,_nv,0 ]:[ _nu,_nv,3 ]):
-    P#[2]==1?(i(#k,_pu = _u - 1,_v,0,0)==bg?[ _u,_v,2 ]:i(#k,_pu,_nv = _v + 1,0,0)==bg?[ _pu,_v,1 ]:[ _pu,_nv,0 ]):
-    P#[2]==2?(i(#k,_u,_pv = _v - 1,0,0)==bg?[ _u,_v,3 ]:i(#k,_pu = _u - 1,_pv,0,0)==bg?[ _u,_pv,2 ]:[ _pu,_pv,1 ]):
-             (i(#k,_nu = _u + 1,_v,0,0)==bg?[ _u,_v,0 ]:i(#k,_nu,_pv = _v - 1,0,0)==bg?[ _nu,_v,3 ]:[ _nu,_pv,2 ]);
-  );
+  next_edgel8_fg(k,P,fg) = _next_edgel8(#k,#P,==fg); # Next edgel, 8-connexity (foreground value specified)
+  next_edgel8_bg(k,P,bg) = _next_edgel8(#k,#P,!=bg); # Next edgel, 8-connexity (background value specified)
 
-  previous_edgel4_fg(k,P,fg) = ( # Previous edgel, in 4-connexity (with foreground value specified)
+  _previous_edgel8(k,P,op) = (
     ref(P#[0],_u); ref(P#[1],_v);
-    P#[2]==0?(i(#k,_u,_pv = _v - 1,0,0)!=fg?[ _u,_v,3 ]:i(#k,_nu = _u + 1,_pv,0,0)!=fg?[ _u,_pv,0 ]:[ _nu,_pv,1 ]):
-    P#[2]==1?(i(#k,_nu = _u + 1,_v,0,0)!=fg?[ _u,_v,0 ]:i(#k,_nu,_nv = _v + 1,0,0)!=fg?[ _nu,_v,1 ]:[ _nu,_nv,2 ]):
-    P#[2]==2?(i(#k,_u,_nv = _v + 1,0,0)!=fg?[ _u,_v,1 ]:i(#k,_pu = _u - 1,_nv,0,0)!=fg?[ _u,_nv,2 ]:[ _pu,_nv,3 ]):
-             (i(#k,_pu = _u - 1,_v,0,0)!=fg?[ _u,_v,2 ]:i(#k,_pu,_pv = _v - 1,0,0)!=fg?[ _pu,_v,3 ]:[ _pu,_pv,0 ]);
+    P#[2]==0?(i(#k,_nu = _u + 1,_pv = _v - 1,0,0)#op?[ _nu,_pv,1 ]:i(#k,_u,_pv,0,0)#op?[ _u,_pv,0 ]:[ _u,_v,3 ]):
+    P#[2]==1?(i(#k,_nu = _u + 1,_nv = _v + 1,0,0)#op?[ _nu,_nv,2 ]:i(#k,_nu,_v,0,0)#op?[ _nu,_v,1 ]:[ _u,_v,0 ]):
+    P#[2]==2?(i(#k,_pu = _u - 1,_nv = _v + 1,0,0)#op?[ _pu,_nv,3 ]:i(#k,_u,_nv,0,0)#op?[ _u,_nv,2 ]:[ _u,_v,1 ]):
+             (i(#k,_pu = _u - 1,_pv = _v - 1,0,0)#op?[ _pu,_pv,0 ]:i(#k,_pu,_v,0,0)#op?[ _pu,_v,3 ]:[ _u,_v,2 ]);
   );
-
-  previous_edgel4_bg(k,P,bg) = ( # Previous edgel, in 4-connexity (with background value specified)
-    ref(P#[0],_u); ref(P#[1],_v);
-    P#[2]==0?(i(#k,_u,_pv = _v - 1,0,0)==bg?[ _u,_v,3 ]:i(#k,_nu = _u + 1,_pv,0,0)==bg?[ _u,_pv,0 ]:[ _nu,_pv,1 ]):
-    P#[2]==1?(i(#k,_nu = _u + 1,_v,0,0)==bg?[ _u,_v,0 ]:i(#k,_nu,_nv = _v + 1,0,0)==bg?[ _nu,_v,1 ]:[ _nu,_nv,2 ]):
-    P#[2]==2?(i(#k,_u,_nv = _v + 1,0,0)==bg?[ _u,_v,1 ]:i(#k,_pu = _u - 1,_nv,0,0)==bg?[ _u,_nv,2 ]:[ _pu,_nv,3 ]):
-             (i(#k,_pu = _u - 1,_v,0,0)==bg?[ _u,_v,2 ]:i(#k,_pu,_pv = _v - 1,0,0)==bg?[ _pu,_v,3 ]:[ _pu,_pv,0 ]);
-  );
-
-  next_edgel8_fg(k,P,fg) = ( # Next edgel, in 8-connexity (with foreground value specified)
-    ref(P#[0],_u); ref(P#[1],_v);
-    P#[2]==0?(i(#k,_nu = _u + 1,_nv = _v + 1,0,0)==fg?[ _nu,_nv,3 ]:i(#k,_u,_nv,0,0)==fg?[ _u,_nv,0 ]:[ _u,_v,1 ]):
-    P#[2]==1?(i(#k,_pu = _u - 1,_nv = _v + 1,0,0)==fg?[ _pu,_nv,0 ]:i(#k,_pu,_v,0,0)==fg?[ _pu,_v,1 ]:[ _u,_v,2 ]):
-    P#[2]==2?(i(#k,_pu = _u - 1,_pv = _v - 1,0,0)==fg?[ _pu,_pv,1 ]:i(#k,_u,_pv,0,0)==fg?[ _u,_pv,2 ]:[ _u,_v,3 ]):
-             (i(#k,_nu = _u + 1,_pv = _v - 1,0,0)==fg?[ _nu,_pv,2 ]:i(#k,_nu,_v,0,0)==fg?[ _nu,_v,3 ]:[ _u,_v,0 ]);
-  );
-
-  next_edgel8_bg(k,P,bg) = ( # Next edgel, in 8-connexity (with background value specified)
-    ref(P#[0],_u); ref(P#[1],_v);
-    P#[2]==0?(i(#k,_nu = _u + 1,_nv = _v + 1,0,0)!=bg?[ _nu,_nv,3 ]:i(#k,_u,_nv,0,0)!=bg?[ _u,_nv,0 ]:[ _u,_v,1 ]):
-    P#[2]==1?(i(#k,_pu = _u - 1,_nv = _v + 1,0,0)!=bg?[ _pu,_nv,0 ]:i(#k,_pu,_v,0,0)!=bg?[ _pu,_v,1 ]:[ _u,_v,2 ]):
-    P#[2]==2?(i(#k,_pu = _u - 1,_pv = _v - 1,0,0)!=bg?[ _pu,_pv,1 ]:i(#k,_u,_pv,0,0)!=bg?[ _u,_pv,2 ]:[ _u,_v,3 ]):
-             (i(#k,_nu = _u + 1,_pv = _v - 1,0,0)!=bg?[ _nu,_pv,2 ]:i(#k,_nu,_v,0,0)!=bg?[ _nu,_v,3 ]:[ _u,_v,0 ]);
-  );
-
-  previous_edgel8_fg(k,P,fg) = ( # Previous edgel, in 8-connexity (with foreground value specified)
-    ref(P#[0],_u); ref(P#[1],_v);
-    P#[2]==0?(i(#k,_nu = _u + 1,_pv = _v - 1,0,0)==fg?[ _nu,_pv,1 ]:i(#k,_u,_pv,0,0)==fg?[ _u,_pv,0 ]:[ _u,_v,3 ]):
-    P#[2]==1?(i(#k,_nu = _u + 1,_nv = _v + 1,0,0)==fg?[ _nu,_nv,2 ]:i(#k,_nu,_v,0,0)==fg?[ _nu,_v,1 ]:[ _u,_v,0 ]):
-    P#[2]==2?(i(#k,_pu = _u - 1,_nv = _v + 1,0,0)==fg?[ _pu,_nv,3 ]:i(#k,_u,_nv,0,0)==fg?[ _u,_nv,2 ]:[ _u,_v,1 ]):
-             (i(#k,_pu = _u - 1,_pv = _v - 1,0,0)==fg?[ _pu,_pv,0 ]:i(#k,_pu,_v,0,0)==fg?[ _pu,_v,3 ]:[ _u,_v,2 ]);
-  );
-
-  previous_edgel8_bg(k,P,bg) = ( # Previous edgel, in 8-connexity (with background value specified)
-    ref(P#[0],_u); ref(P#[1],_v);
-    P#[2]==0?(i(#k,_nu = _u + 1,_pv = _v - 1,0,0)!=bg?[ _nu,_pv,1 ]:i(#k,_u,_pv,0,0)!=bg?[ _u,_pv,0 ]:[ _u,_v,3 ]):
-    P#[2]==1?(i(#k,_nu = _u + 1,_nv = _v + 1,0,0)!=bg?[ _nu,_nv,2 ]:i(#k,_nu,_v,0,0)!=bg?[ _nu,_v,1 ]:[ _u,_v,0 ]):
-    P#[2]==2?(i(#k,_pu = _u - 1,_nv = _v + 1,0,0)!=bg?[ _pu,_nv,3 ]:i(#k,_u,_nv,0,0)!=bg?[ _u,_nv,2 ]:[ _u,_v,1 ]):
-             (i(#k,_pu = _u - 1,_pv = _v - 1,0,0)!=bg?[ _pu,_pv,0 ]:i(#k,_pu,_v,0,0)!=bg?[ _pu,_v,3 ]:[ _u,_v,2 ]);
-  );"
+  previous_edgel8_fg(k,P,fg) = _previous_edgel8(#k,#P,==fg); # Previous edgel, 8-connexity (foreground value specified)
+  previous_edgel8_bg(k,P,bg) = _previous_edgel8(#k,#P,!=bg); # Previous edgel, 8-connexity (background value specified)
+  "
 
 #@cli mad
 #@cli : Return the MAD (Maximum Absolute Deviation) of the last selected image.
