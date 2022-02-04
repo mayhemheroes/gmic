@@ -3771,7 +3771,7 @@ _input_glob :
   fi
   file_found=0
   repeat inf
-    if ['${path_test$>}']==0 break fi
+    if ['{/${path_test$>}}']==0 break fi
     file=${path_test$>}$basename
     l[] i $file file_found=1 onfail endl
     if $file_found break fi
@@ -7946,7 +7946,7 @@ update_deprecate : check "isint($1) && $1>0 && $1<999"
 
 # update_download_version.
 # Update file versions on G'MIC download page, with specified version number.
-# $1 = version number (e.g. '3.0.2').
+# $1 = version number (e.g. '3.0.3').
 update_download_version : check "
     is_digit(c)=(c>=_'0' && c<=_'9');
     ver = ['${1=undefined}'];
@@ -9635,7 +9635,7 @@ upload_filters :
   x "cd "$HOME"/work/src/gmic-community && git pull"
 
   # Define the list of compatible versions.
-  (300,301,302,$_version) sort. discard. store. compat
+  (300,301,302,303,$_version) sort. discard. store. compat
 
   # Import filters from stdlib and community.
   files $HOME/work/src/gmic-community/include/*.gmic
@@ -13832,6 +13832,27 @@ downsize_aliased : check "${1=50}>=0 && $1<=100"
     r $1%,$1%,$1%,100%,2
   endl done
 
+
+#@cli edgels : x0,y0 : (no arg)
+#@cli : Retrieve list of edgels (and their normals) that go around a 2D binary silhouette.
+#@cli : When specified, arguments 'x0,y0' are the 2D coordinates of the starting point \
+# (must be located at the edge of the binary silhouette).
+#@cli : Output image has 3 channels '[x,y,n]' where 'x' and 'y' are the 2D coordinates of the edgel point, \
+# and 'n' is the orientation of its associated canonical normal (can be { 0=[1,0] | 1=[0,1] | 2=[-1,0] | 3=[0,-1] }.
+edgels : skip "${1=},${2=}"
+  l[] if "isint($1) && $1>=0 && isint($2) && $2>=0" x0,y0=${1,2} else error[] fi onfail x0,y0=-1 noarg endl
+  repeat $! l[$>]
+    slices. 0 channels. 0 gt. 0
+    1,1,1,3
+    eval ${-math_lib}"
+      x0 = $x0<0?xM#-2:$1;
+      y0 = $y0<0?yM#-2:$2;
+      P0 = P = [ x0,y0,argmin(i(#-2,x0 + 1,y0),i(#-2,x0,y0 + 1),i(#-2,x0 - 1,y0),i(#-2,x0,y0 - 1)) ];
+      do (da_push(P); P = next_edgel4_fg(#-2,P,1), P!=P0);
+      resize(#-1,1,da_size(),1,3,0)"
+    k.
+  endl done
+
 #@cli elevate : _depth,_is_plain={ 0 | 1 },_is_colored={ 0 | 1 }
 #@cli : Elevate selected 2D images into 3D volumes.
 #@cli : Default values: 'depth=64', 'is_plain=1' and 'is_colored=1'.
@@ -17924,30 +17945,30 @@ segment_watershed : check "${1=2}>=0"
     - {1+$min}
   endl done
 
-#@cli shape2bump : _resolution>=0,0<=_weight_avg_max_avg<=1,_dilation,_smoothness>=0
+#@cli shape2bump : _resolution>=0,0<=_weight_std_max_avg<=1,_dilation,_smoothness>=0
 #@cli : Estimate bumpmap from binary shape in selected images.
-#@cli : Default value: 'resolution=256', 'weight_avg_max=0.75', 'dilation=0' and 'smoothness=100'.
+#@cli : Default value: 'resolution=256', 'weight_std_max=0.75', 'dilation=0' and 'smoothness=100'.
 shape2bump : check "isint(${1=256}) && $1>=0 && ${2=0.75}>=0 && $2<=1 && isnum(${3=0}) && ${4=100}>=0"
   e[^-1] "Estimate bumpmap from binary shape in image$?, using "\
          ${"if $1 u \"resolution $1\" else u \"full resolution\" fi"}", avg/max weight $2, dilation $3
           and smoothness $4."
-  repeat $!
-    +l[$>]
-      norm > 0
-      siz={[w,h]}
+  repeat $! l[$>]
+    slices 0 channels 100% > 0 siz={[w,h]}
 
-      # Generate skeleton.
-      distance 0 + $3
-      +f. "const boundary = 1;
-           (i>j(-1)&&i>j(1)) || (i>j(0,-1)&&i>j(0,1)) || (i>j(-1,-1)&&i>j(1,1)) || (i>j(-1,1)&&i>j(1,-1))"
+    # Generate skeleton (fast method).
+    distance 0 + $3
+    +f. "const boundary = 1;
+         (i>j(-1)&&i>j(1)) || (i>j(0,-1)&&i>j(0,1)) || (i>j(-1,-1)&&i>j(1,1)) || (i>j(-1,1)&&i>j(1,-1))"
 
-      # Downsize for faster computation.
-      is_resized=0
-      if $1" && "max(w,h)>$1 rr2d $1,$1,0,2 gt. 0 thinning. 1 *.. {$1/max($siz)} is_resized=1 fi
+    # Downsize for faster computation.
+    is_resized=0
+    if $1" && "max(w,h)>$1 rr2d $1,$1,0,2 gt. 0 thinning. 1 *.. {$1/max([$siz])} is_resized=1 fi
+    rmax={0,iM}
 
-      # Generate z-map.
-      +f. 0 .x2
-      f[1] "*if (i,
+    # Generate z-map (max method).
+    [0],[0]
+    if $2>0
+      eval[1] ":i?(
         r = i(#0,x,y);
         ir = floor(r);
         r2 = r^2;
@@ -17956,24 +17977,36 @@ shape2bump : check "isint(${1=256}) && $1>=0 && ${2=0.75}>=0 && $2<=1 && isnum($
           for (p = -ir, p<=ir, ++p,
             X = x + p;
             dist = norm(p,q);
-            if (dist<r,
+            dist<r?(
               elev = sqrt(r2 - dist^2);
-              i(#2,X,Y) = max(i(#2,X,Y),elev);
-              if ($2<1, i(#3,X,Y) += elev; ++i(#4,X,Y));
+              critical(i(#-1,X,Y) = max(i(#-1,X,Y),elev));
             );
           )
         );
-      ); i"
+      ); 0"
+      n. 0,$rmax
+      if $4 +neq[0] 0 guided.. .,$4,1 rm. fi # Smooth bumpmap
+    fi
 
-      if $2<1 M={-3,iM} max. 1 /[-2,-1] n. 0,$M j. ..,0,0,0,0,$2
-      else rm[-2,-1]
-      fi
-      k.
-      if $is_resized *. {max([$siz]/[w,h])} r $siz,1,1,5 c 0,100% fi
-    endl
-    if $4 M={iM} (1^0^1) r. [0],[0] !=[0] 0 *. [0] smooth.. .,$4,0.1,0 rm. b. 0.5 n. 0,$M fi # Smooth bumpmap
-    k.
-  done
+    # Generate z-map (std method).
+    [0],[0]
+    if $2<1
+      1,1,1,3 eval[1] "i?da_push([x,y,i(#0)]); end(resize(#-1,1,da_size(),1,3,0))"
+      eval[0] ":i?(
+        U = vector(#h#-1);
+        for (k = 0, k<h#-1, ++k,
+          K = I[#-1,k];
+          d = norm(x - K[0], y - K[1]);
+          d<K[2]?(U[k] = sqrt(K[2]^2 - d^2));
+        );
+        i(#-2) = std(U);
+      )"
+      rm. n. 0,$rmax
+    fi
+
+    j. ..,0,0,0,0,$2 k.
+    if $is_resized *. {max([$siz]/[w,h])} r $siz,1,1,5 c 0,100% fi
+  endl done
 
 #@cli skeleton : _boundary_conditions={ 0=dirichlet | 1=neumann }
 #@cli : Compute skeleton of binary shapes using distance transform and constrained thinning.
@@ -27813,7 +27846,7 @@ is_half :
 
 #@cli is_ext : filename,_extension
 #@cli : Return 1 if specified filename has a given extensioin.
-is_ext : skip "${2=}"
+is_ext : skip "${1=},${2=}"
   0 nm. "_$1" u {"lowercase(['"{x}"'])==lowercase(['$2'])"} rm.
 
 #@cli is_image_arg : string
@@ -28284,7 +28317,53 @@ math_lib :
          (_deltaE00_deltaHprime/(_deltaE00_k_H*_deltaE00_S_H))^2 +
          _deltaE00_R_T*_deltaE00_deltaCprime/(_deltaE00_k_C*_deltaE00_S_C)*
          _deltaE00_deltaHprime/(_deltaE00_k_H*_deltaE00_S_H));
-  );"
+  );
+
+  # Functions to manage curve motion with edgels.
+  # k: index of image.
+  # P: input edgel = [ x,y,n ] where 'n' is the canonical normal, can be { 0=right | 1=bottom | 2=left | 3=top }.
+  # l: value of the pixels of the silhouette.
+  _next_edgel4(k,P,op) = (
+    ref(P#[0],_u); ref(P#[1],_v);
+    P#[2]==0?(i(#k,_u,_nv = _v + 1,0,0)#op?[ _u,_v,1 ]:i(#k,_nu = _u + 1,_nv,0,0)#op?[ _u,_nv,0 ]:[ _nu,_nv,3 ]):
+    P#[2]==1?(i(#k,_pu = _u - 1,_v,0,0)#op?[ _u,_v,2 ]:i(#k,_pu,_nv = _v + 1,0,0)#op?[ _pu,_v,1 ]:[ _pu,_nv,0 ]):
+    P#[2]==2?(i(#k,_u,_pv = _v - 1,0,0)#op?[ _u,_v,3 ]:i(#k,_pu = _u - 1,_pv,0,0)#op?[ _u,_pv,2 ]:[ _pu,_pv,1 ]):
+             (i(#k,_nu = _u + 1,_v,0,0)#op?[ _u,_v,0 ]:i(#k,_nu,_pv = _v - 1,0,0)#op?[ _nu,_v,3 ]:[ _nu,_pv,2 ]);
+  );
+  next_edgel4_fg(k,P,fg) = _next_edgel4(#k,#P,!=fg); # Next edgel, 4-connexity (foreground value specified)
+  next_edgel4_bg(k,P,bg) = _next_edgel4(#k,#P,==bg); # Next edgel, 4-connexity (background value specified)
+
+  _previous_edgel4(k,P,op) = (
+    ref(P#[0],_u); ref(P#[1],_v);
+    P#[2]==0?(i(#k,_u,_pv = _v - 1,0,0)#op?[ _u,_v,3 ]:i(#k,_nu = _u + 1,_pv,0,0)#op?[ _u,_pv,0 ]:[ _nu,_pv,1 ]):
+    P#[2]==1?(i(#k,_nu = _u + 1,_v,0,0)#op?[ _u,_v,0 ]:i(#k,_nu,_nv = _v + 1,0,0)#op?[ _nu,_v,1 ]:[ _nu,_nv,2 ]):
+    P#[2]==2?(i(#k,_u,_nv = _v + 1,0,0)#op?[ _u,_v,1 ]:i(#k,_pu = _u - 1,_nv,0,0)#op?[ _u,_nv,2 ]:[ _pu,_nv,3 ]):
+             (i(#k,_pu = _u - 1,_v,0,0)#op?[ _u,_v,2 ]:i(#k,_pu,_pv = _v - 1,0,0)#op?[ _pu,_v,3 ]:[ _pu,_pv,0 ]);
+  );
+  previous_edgel4_fg(k,P,fg) = _previous_edgel4(#k,#P,!=fg); # Previous edgel, 4-connexity (foreground value specified)
+  previous_edgel4_bg(k,P,bg) = _previous_edgel4(#k,#P,==bg); # Previous edgel, 4-connexity (background value specified)
+
+  _next_edgel8(k,P,op) = (
+    ref(P#[0],_u); ref(P#[1],_v);
+    P#[2]==0?(i(#k,_nu = _u + 1,_nv = _v + 1,0,0)#op?[ _nu,_nv,3 ]:i(#k,_u,_nv,0,0)#op?[ _u,_nv,0 ]:[ _u,_v,1 ]):
+    P#[2]==1?(i(#k,_pu = _u - 1,_nv = _v + 1,0,0)#op?[ _pu,_nv,0 ]:i(#k,_pu,_v,0,0)#op?[ _pu,_v,1 ]:[ _u,_v,2 ]):
+    P#[2]==2?(i(#k,_pu = _u - 1,_pv = _v - 1,0,0)#op?[ _pu,_pv,1 ]:i(#k,_u,_pv,0,0)#op?[ _u,_pv,2 ]:[ _u,_v,3 ]):
+             (i(#k,_nu = _u + 1,_pv = _v - 1,0,0)#op?[ _nu,_pv,2 ]:i(#k,_nu,_v,0,0)#op?[ _nu,_v,3 ]:[ _u,_v,0 ]);
+  );
+
+  next_edgel8_fg(k,P,fg) = _next_edgel8(#k,#P,==fg); # Next edgel, 8-connexity (foreground value specified)
+  next_edgel8_bg(k,P,bg) = _next_edgel8(#k,#P,!=bg); # Next edgel, 8-connexity (background value specified)
+
+  _previous_edgel8(k,P,op) = (
+    ref(P#[0],_u); ref(P#[1],_v);
+    P#[2]==0?(i(#k,_nu = _u + 1,_pv = _v - 1,0,0)#op?[ _nu,_pv,1 ]:i(#k,_u,_pv,0,0)#op?[ _u,_pv,0 ]:[ _u,_v,3 ]):
+    P#[2]==1?(i(#k,_nu = _u + 1,_nv = _v + 1,0,0)#op?[ _nu,_nv,2 ]:i(#k,_nu,_v,0,0)#op?[ _nu,_v,1 ]:[ _u,_v,0 ]):
+    P#[2]==2?(i(#k,_pu = _u - 1,_nv = _v + 1,0,0)#op?[ _pu,_nv,3 ]:i(#k,_u,_nv,0,0)#op?[ _u,_nv,2 ]:[ _u,_v,1 ]):
+             (i(#k,_pu = _u - 1,_pv = _v - 1,0,0)#op?[ _pu,_pv,0 ]:i(#k,_pu,_v,0,0)#op?[ _pu,_v,3 ]:[ _u,_v,2 ]);
+  );
+  previous_edgel8_fg(k,P,fg) = _previous_edgel8(#k,#P,==fg); # Previous edgel, 8-connexity (foreground value specified)
+  previous_edgel8_bg(k,P,bg) = _previous_edgel8(#k,#P,!=bg); # Previous edgel, 8-connexity (background value specified)
+  "
 
 #@cli mad
 #@cli : Return the MAD (Maximum Absolute Deviation) of the last selected image.
@@ -35428,8 +35507,8 @@ fx_gmicky_preview :
 #@gui : - <b>2019/12/04</b> : version <i>2.8.0</i>.\n
 #@gui : - <b>2020/03/28</b> : version <i>2.9.0</i>.\n
 #@gui : - <b>2021/12/09</b> : version <i>3.0.0</i>.\n
-#@gui : - <span foreground="purple"><b>2022/01/13</b> : version <i>3.0.1</i> (Current stable).</span>\n
-#@gui : - <b>2021/01/15</b> : version <i>3.0.2</i> (Current pre-release).\n
+#@gui : - <span foreground="purple"><b>2022/01/18</b> : version <i>3.0.2</i> (Current stable).</span>\n
+#@gui : - <b>2021/01/19</b> : version <i>3.0.3</i> (Current pre-release).\n
 #@gui : "}
 #@gui : sep = separator()
 #@gui : url = link{"View changelog to upcoming minor version (3.1)","https://discuss.pixls.us/t/on-the-road-to-3-1"}
@@ -46576,7 +46655,7 @@ fx_guided_lightrays_preview :
 #@gui : Erosion / Dilation = float(0,-10,10)
 #@gui : Smoothness = float(3,0,6)
 #@gui : Bump Factor = float(1,-5,5)
-#@gui : Avg / Max Weight = float(1,0,1)
+#@gui : Std / Max Weight = float(0.5,0,1)
 #@gui : Resolution = choice{4,"Full (Slower)","2048","1024","512","256","128","64 (Faster)"}
 #@gui : sep = separator()
 #@gui : note = note("<small><b>Illumination:</b></small>)
@@ -46787,7 +46866,7 @@ _fx_illuminate_shape2d : # Input selection must contains a single image. Output 
 
   if $input_type<=1
     shape2bump. {arg($resolution,2048,1024,512,256,128,64)},$weight_avg_max,{$dilation%*max(w,h)},\
-                {$shape_smoothness*50}
+                $shape_smoothness
   fi
   if $input_type<=2
     if $input_type==2" && "$shape_smoothness mM={[im,iM]} guided. ..,$shape_smoothness%,100 n. $mM fi

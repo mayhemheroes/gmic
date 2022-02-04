@@ -1,5 +1,5 @@
 set(HEADER_URL "https://github.com/dtschump/CImg/raw/master/CImg.h")
-set(HEADER_DIR ${CMAKE_SOURCE_DIR}/src)
+set(HEADER_DIR ${PROJECT_SOURCE_DIR}/src)
 set(HEADER_NAME CImg.h)
 set(HEADER_PATH ${HEADER_DIR}/${HEADER_NAME})
 
