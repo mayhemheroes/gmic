@@ -137,7 +137,7 @@ int main(int argc, char **argv) {
   catch (...) {}
   if (commands_user) try {
       commands_user.resize(1,commands_user.height() + 1,1,1,0);
-      gmic_instance.add_commands(commands_user,is_debug?filename_user:0);
+      gmic_instance.add_commands(commands_user,filename_user,true);
     } catch (...) { is_invalid_userfile = true; }
   commands_user.assign();
 
