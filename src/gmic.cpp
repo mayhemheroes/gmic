@@ -2591,7 +2591,7 @@ const char *gmic::builtin_commands_names[] = {
     "rm","rol","ror","rotate","rotate3d","round","rv","rv3d",
   "s","s3d","screen","select","serialize","set","sh","shared","shift","sign","sin","sinc","sinh","skip",
     "sl3d","smooth","solve","sort","specl3d","specs3d","sphere3d","split","split3d","sqr","sqrt","srand",
-    "ss3d","status","store","streamline3d","structuretensors","sub","sub3d","svd",
+    "ss3d","status","store","streamline3d","sub","sub3d","svd",
   "t","tan","tanh","text","trisolve",
   "u","um","uncommand","unroll","unserialize",
   "v","vanvliet","verbose",
@@ -12289,20 +12289,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             CImg<char>::string(title).move_to(images_names);
           } else arg_error("streamline3d");
           is_change = true; ++position; continue;
-        }
-
-        // Compute structure tensor field.
-        if (!std::strcmp("structuretensors",command)) {
-          gmic_substitute_args(false);
-          unsigned int is_fwbw_scheme = 0;
-          if (cimg_sscanf(argument,"%u%c",&is_fwbw_scheme,&end)==1 &&
-              is_fwbw_scheme<=1) ++position;
-          else is_fwbw_scheme = 1;
-          print(images,0,"Compute structure tensor field of image%s, with %s scheme.",
-                gmic_selection.data(),
-                is_fwbw_scheme==1?"forward-backward":"centered");
-          cimg_forY(selection,l) gmic_apply(structure_tensors((bool)is_fwbw_scheme));
-          is_change = true; continue;
         }
 
         // Select image feature.

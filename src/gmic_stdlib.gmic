@@ -3421,8 +3421,8 @@ _display_rgba : skip "${1=},${2=$1},${3=$1}"
   else e[0--4] "Render RGBA image"$_gmic_s" over a checkerboard background."
   fi
   repeat $! l[$>] if s==2" || "s==4
-    if $is_rgb i[0] 100%,100%,1,3 fc[0] {[$*]}
-    else i[0] (160,128;128,160) r[0] 16,16 r[0] [1],[1],1,{s-1},0,2
+    if $is_rgb i[0] 100%,100%,100%,3 fc[0] {[$*]}
+    else i[0] (160,128;128,160) r[0] 16,16 r[0] [1],[1],[1],{s-1},0,2
     fi
     nm[0] {1,n}
     sh. {s-1} j[0] [1],0,0,0,0,1,[2],255 k[0]
@@ -11782,9 +11782,7 @@ _colormap : # Implementation of the median-cut algorithm.
 compose_channels : skip ${1="+"}
   e[^-1] "Compose all channels of image$?, with operator '$1'."
   repeat $! l[$>]
-    sh 0
-    repeat s#-2-1 sh.. {$>+1} l[-2,-1] $1 endl done
-    rm. r 100%,100%,100%,1,-1
+    repeat s sh[0] $> done $1[^0] r[0] 100%,100%,100%,1,-1 k[0]
   endl done
 
 #@cli direction2rgb
@@ -17067,6 +17065,36 @@ split_details : check "isint(${1=4}) && $1>0 && ${2=0}>=0 && ${3=0}>=0"
 #@cli : Default value: 'scheme=1'.
 #@cli : $ image.jpg structuretensors abs pow 0.2
 #@cli : $$ https://gmic.eu/oldtutorial/_structuretensors
+structuretensors : skip "${1=}"
+  l[] if "isbool($1)" scheme=$1 else scheme=1 noarg fi onfail scheme=1 noarg endl
+  s0,s1=centered,forward-backward
+  e[^-1] "Compute structure tensor field of image$?, with "${s$scheme}" scheme."
+  repeat $! l[$>]
+    if d>1 # 3D
+      if $scheme  # Fwd/bwd
+        +g xyz,1 g[0] xyz,-1 100%,100%,100%,6
+        eval[0] ":
+          ixb = i; iyb = i(#1); izb = i(#2); ixf = i(#3); iyf = i(#4); izf = i(#5);
+          I(#-1,x,y,z)+=[ (ixf^2 + ixb^2)/2,
+                          (ixf*iyf + ixf*iyb + ixb*iyf + ixb*iyb)/4,
+                          (ixf*izf + ixf*izb + ixb*izf + ixb*izb)/4,
+                          (iyf^2 + iyb^2)/2,
+                          (iyf*izf + iyf*izb + iyb*izf + iyb*izb)/4,
+                          (izf^2 + izb^2)/2 ]; 0" k.
+      else # Centered
+        g xyz,0 +*[0,1] +*[0,2] +*[1,2] sqr[0-2] compose_channels + mv[3,4] 1 rv[4,5] a c
+      fi
+    else # 2D
+      if $scheme  # Fwd/bwd
+        +g xy,1 g[0] xy,-1 100%,100%,1,3
+        eval[0] ":
+          ixb = i; iyb = i(#1); ixf = i(#2); iyf = i(#3);
+          I(#-1,x,y)+=[ (ixb^2 + ixf^2)/2, (ixf*iyf + ixf*iyb + ixb*iyf + ixb*iyb)/4, (iyb^2 + iyf^2)/2 ]; 0" k.
+      else # Centered
+        g xy,0 +* sqr[0,1] compose_channels + rv[1,2] a c
+      fi
+    fi
+  endl done
 
 #@cli solidify : _smoothness[%]>=0,_diffusion_type={ 0=isotropic | 1=Delaunay-guided | 2=edge-oriented },\
 # _diffusion_iter>=0
