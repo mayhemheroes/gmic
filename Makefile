@@ -2,13 +2,33 @@
 #  File        : Makefile
 #                ( Makefile for GNU 'make' utility )
 #
-#  Description : Makefile for compiling :
+#  Description : This Makefile exposes the following entries:
 #
-#                 . the G'MIC command line tool (type 'make cli').
-#                 . the G'MIC library, with the C++ API (type 'make lib').
-#                 . the G'MIC library, with the C API (type 'make libc' or 'make libcstatic').
-#                 . the G'MIC plug-in for GIMP (type 'make gimp').
-#                 . To compile all of them, just type 'make', or 'make all').
+#                 . 'all':
+#                   Equivalent to 'lib','cli','gimp','gmic_qt','libc','zart' (see below).
+#
+#                 . 'lib':
+#                   C++ API for the G'MIC library. Generate files 'src/libgmic.*'.
+#
+#                 . 'libc' and 'libc_static':
+#                   C API for the G'MIC library. Generate files 'src/libcgmic.*'.
+#                   'libc_static' tries to embed most libraries as static.
+#
+#                 . 'cli' and 'cli_shared':
+#                    G'MIC command line tool. Generate file 'src/gmic[.exe]'
+#                    'cli_shared' generates a binary that is dynamically linked with 'libgmic'.
+#
+#                 . 'gimp' and 'gimp_shared':
+#                   G'MIC-Qt plug-in for GIMP. Generate file 'gmic-qt/gmic_gimp_qt'.
+#                   'gimp_shared' generates a binary that is dynamically linked with 'libgmic'.
+#
+#                 . 'gmic_qt' and 'gmic_qt_shared':
+#                   G'MIC-Qt stand-alone application. Generate file 'gmic-qt/gmic_qt'.
+#                   'gimp_shared' generates a binary that is dynamically linked with 'libgmic'.
+#
+#                 . 'zart':
+#                   ZArt interface for real-time processing of videos coming from webcams or files.
+#                   Generate file 'zart/zart'.
 #
 #                ( https://gmic.eu )
 #
