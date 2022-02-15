@@ -574,9 +574,9 @@ gmic_qt_files:
 	    echo "** Warning: folder 'gmic-qt' was not found !"; \
 	    echo "** It is mandatory to compile the G'MIC plug-in for GIMP ('gmic_gimp_qt'),"; \
 	    echo "** as well as the standalone Qt-based interface 'gmic_qt'."; \
-            echo "** Trying to retrieve it, with: $$ cd ../../ && git clone https://github.com/c-koi/gmic-qt.git"; \
+            echo "** Trying to retrieve it, with: $$ cd ../../ && git clone https://github.com/dtschump/gmic-qt.git"; \
 	    echo "**"; \
-	    if cd ../../ && git clone https://github.com/c-koi/gmic-qt.git; then \
+	    if cd ../../ && git clone https://github.com/dtschump/gmic-qt.git; then \
 	      echo "**"; \
               echo "** Success !"; \
 	      echo "**"; \
@@ -615,9 +615,9 @@ zart_files:
 	    echo "**"; \
 	    echo "** Warning: folder 'zart' was not found !"; \
 	    echo "** It is mandatory to compile 'zart'."; \
-            echo "** Trying to retrieve it, with: $$ cd ../../ && git clone https://github.com/c-koi/zart.git"; \
+            echo "** Trying to retrieve it, with: $$ cd ../../ && git clone https://github.com/dtschump/zart.git"; \
 	    echo "**"; \
-	    if cd ../../ && git clone https://github.com/c-koi/zart.git; then \
+	    if cd ../../ && git clone https://github.com/dtschump/zart.git; then \
 	      echo "**"; \
               echo "** Success !"; \
 	      echo "**"; \
