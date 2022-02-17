@@ -9901,6 +9901,7 @@ _update_header_html : check "narg(${1=}) && ${2=0}>0 && isbool(${3=0})"
 
 #@cli move : position[%] : (+)
 #@cli : Move selected images at specified position.
+#@cli : Images are actually inserted between current positions 'position-1' and 'position'.
 #@cli : (eq. to 'mv').
 #@cli : $ image.jpg split x,3 move[1] 0
 #@cli : $ image.jpg split x move[50%--1:2] 0 append x
@@ -14221,7 +14222,7 @@ r2din :
 
 #@cli resize2din : width[%]>0,_height[%]>0,_interpolation,_boundary_conditions,_ax,_ay,_az,_ac
 #@cli : Resize selected images so the size is not larger than 'width'x'height' while preserving 2D ratio.
-#@cli : (eq. to r2din).\n
+#@cli : (eq. to 'r2din').\n
 #@cli : 'interpolation' can be { -1=none (memory content) | 0=none | 1=nearest | 2=average | 3=linear | \
 # 4=grid | 5=bicubic | 6=lanczos }.
 #@cli : 'boundary_conditions' has different meanings, according to the chosen 'interpolation' mode :
@@ -14251,7 +14252,7 @@ r3din :
 
 #@cli resize3din : width[%]>0,_height[%]>0,_depth[%]>0,_interpolation,_boundary_conditions,_ax,_ay,_az,_ac
 #@cli : Resize selected images so the size is not larger than 'width'x'height'x'depth' while preserving 3D ratio.
-#@cli : (eq. to r3din).\n
+#@cli : (eq. to 'r3din').\n
 #@cli : 'interpolation' can be { -1=none (memory content) | 0=none | 1=nearest | 2=average | 3=linear | \
 # 4=grid | 5=bicubic | 6=lanczos }.
 #@cli : 'boundary_conditions' has different meanings, according to the chosen 'interpolation' mode :
@@ -14281,7 +14282,7 @@ r2dout :
 
 #@cli resize2dout : width[%]>0,_height[%]>0,_interpolation,_boundary_conditions,_ax,_ay,_az,_ac
 #@cli : Resize selected images so the size is not smaller than 'width'x'height' while preserving 2D ratio.
-#@cli : (eq. to r2dout).\n
+#@cli : (eq. to 'r2dout').\n
 #@cli : 'interpolation' can be { -1=none (memory content) | 0=none | 1=nearest | 2=average | 3=linear | \
 # 4=grid | 5=bicubic | 6=lanczos }.
 #@cli : 'boundary_conditions' has different meanings, according to the chosen 'interpolation' mode :
@@ -14311,7 +14312,7 @@ r2dout :
 
 #@cli resize3dout : width[%]>0,_height[%]>0,_depth[%]>0,_interpolation,_boundary_conditions,_ax,_ay,_az,_ac
 #@cli : Resize selected images so the size is not smaller than 'width'x'height'x'depth' while preserving 3D ratio.
-#@cli : (eq. to r3dout).\n
+#@cli : (eq. to 'r3dout').\n
 #@cli : 'interpolation' can be { -1=none (memory content) | 0=none | 1=nearest | 2=average | 3=linear | \
 # 4=grid | 5=bicubic | 6=lanczos }.
 #@cli : 'boundary_conditions' has different meanings, according to the chosen 'interpolation' mode :
@@ -17062,34 +17063,25 @@ split_details : check "isint(${1=4}) && $1>0 && ${2=0}>=0 && ${3=0}>=0"
 
 #@cli structuretensors : _scheme={ 0=centered | 1=forward/backward }
 #@cli : Compute the structure tensor field of selected images.
-#@cli : Default value: 'scheme=1'.
+#@cli : Default value: 'scheme=0'.
 #@cli : $ image.jpg structuretensors abs pow 0.2
 #@cli : $$ https://gmic.eu/oldtutorial/_structuretensors
 structuretensors : skip "${1=}"
-  l[] if "isbool($1)" scheme=$1 else scheme=1 noarg fi onfail scheme=1 noarg endl
+  l[] if "isbool($1)" scheme=$1 else scheme=0 noarg fi onfail scheme=0 noarg endl
   s0,s1=centered,forward-backward
   e[^-1] "Compute structure tensor field of image$?, with "${s$scheme}" scheme."
   repeat $! l[$>]
     if d>1 # 3D
       if $scheme  # Fwd/bwd
-        +g xyz,1 g[0] xyz,-1 100%,100%,100%,6
-        eval[0] ":
-          ixb = i; iyb = i(#1); izb = i(#2); ixf = i(#3); iyf = i(#4); izf = i(#5);
-          I(#-1,x,y,z)+=[ (ixf^2 + ixb^2)/2,
-                          (ixf*iyf + ixf*iyb + ixb*iyf + ixb*iyb)/4,
-                          (ixf*izf + ixf*izb + ixb*izf + ixb*izb)/4,
-                          (iyf^2 + iyb^2)/2,
-                          (iyf*izf + iyf*izb + iyb*izf + iyb*izb)/4,
-                          (izf^2 + izb^2)/2 ]; 0" k.
+        +g xyz,-1 +g[0] xyz,1 sqr[^0] +[1,4] +[2,4] +[3,4] /[^0] 2
+        g[0] xyz,0 [2] *. [1] *[2] [0] *[0,1] compose_channels + mv[2] 0 mv. -2 a c
       else # Centered
         g xyz,0 +*[0,1] +*[0,2] +*[1,2] sqr[0-2] compose_channels + mv[3,4] 1 rv[4,5] a c
       fi
     else # 2D
       if $scheme  # Fwd/bwd
-        +g xy,1 g[0] xy,-1 100%,100%,1,3
-        eval[0] ":
-          ixb = i; iyb = i(#1); ixf = i(#2); iyf = i(#3);
-          I(#-1,x,y)+=[ (ixb^2 + ixf^2)/2, (ixf*iyf + ixf*iyb + ixb*iyf + ixb*iyb)/4, (iyb^2 + iyf^2)/2 ]; 0" k.
+        +g xy,-1 +g[0] xy,1 sqr[^0] +[1,3] +[2,3] /[^0] 2
+        g[0] xy,0 *[0,1] compose_channels + mv[0] 2 a c
       else # Centered
         g xy,0 +* sqr[0,1] compose_channels + rv[1,2] a c
       fi
