@@ -445,7 +445,7 @@ GMIC_STATIC_CLI_LIBS = $(PARALLEL_LIBS) \
 	               $(GMIC_STATIC_CLI_PATH)/libpng.a \
 	               $(GMIC_STATIC_CLI_PATH)/libjpeg.a \
                        $(GMIC_STATIC_CLI_PATH)/libz.a \
-                       $(GMIC_STATIC_CLI_PATH)/libfftw3.a $(GMIC_STATIC_CLI_PATH)/libfftw3_threads.a \
+	               $(GMIC_STATIC_CLI_PATH)/libfftw3_threads.a $(GMIC_STATIC_CLI_PATH)/libfftw3.a \
 	               $(GMIC_STATIC_CLI_EXTRA)
 
 cli_static:
