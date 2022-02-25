@@ -2565,7 +2565,7 @@ static void *gmic_parallel(void *arg) {
 
 // Array of G'MIC built-in commands (must be sorted in lexicographic order!).
 const char *gmic::builtin_commands_names[] = {
-  "!=","%","&","*","*3d","+","+3d","-","-3d","/","/3d","<","<<","<=","=","==",">",">=",">>",
+  "!=","%","&","*","*3d","+","+3d","-","-3d","/","/3d","::","<","<<","<=","=","==",">",">=",">>",
   "a","abs","acos","acosh","add","add3d","and","append","asin","asinh","atan","atan2","atanh","autocrop","axes",
   "b","bilateral","blur","boxfilter","break","bsl","bsr",
   "c","camera","check","check3d","col3d","color3d","command","continue","convolve","correlate",
@@ -3537,7 +3537,7 @@ gmic& gmic::add_commands(const char *const data_commands, const char *const comm
 
     if ((!is_last_slash && std::strchr(lines,':') && // Check for a command definition (or implicit '_main_')
          cimg_sscanf(nlines,"%255[a-zA-Z0-9_] %c%262143[^\n]",ns_name,&sep,s_body.data())>=2 &&
-         (*nlines<'0' || *nlines>'9') && sep==':' && *s_body!='=') || ((*s_name=0), hash<0)) {
+         (*nlines<'0' || *nlines>'9') && sep==':' && *s_body!='=' && *s_body!=':') || ((*s_name=0), hash<0)) {
       const char *_s_body = s_body;
       if (sep==':') while (*_s_body && cimg::is_blank(*_s_body)) ++_s_body;
       CImg<char> body = CImg<char>::string(hash<0 && !*s_name?lines:_s_body);
@@ -5365,6 +5365,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         (*item=='f' && item[1]=='i' && is_com2) || // Shortcuts 'fi'
         (*item=='u' && item[1]=='m' && is_com2) || // Shortcut 'um'
         (*item=='!' && item[1]=='=' && is_com2) || // Shortcut '!='
+        (*item==':' && item[1]==':' && is_com2) || // Shortcut '::'
         ((*item=='%' || *item=='&' || *item=='^' || *item=='|') && is_com1) || // Shortcuts '%','&','^' and '|'
         ((*item=='*' || *item=='+' || *item=='-' || *item=='/') && // Shortcuts '*','+','-','/',
          (is_com1 || (item[1]=='3' && item[2]=='d' && is_com3))) || // '*3d','+3d','-3d' and '/3d'
@@ -5503,9 +5504,14 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         if (err==1) { // No selection -> all images
-          if (!std::strcmp(command,"pass")) selection.assign(1,parent_images.size());
-          else selection.assign(1,siz);
-          cimg_forY(selection,y) selection[y] = (unsigned int)y;
+          if (siz && ((*command==':' && command[1]==':' && !command[2]) ||
+                      (*command=='n' && (!std::strcmp(command,"name") || !std::strcmp(command,"nm")))))
+            selection.assign();
+          else {
+            if (!std::strcmp(command,"pass")) selection.assign(1,parent_images.size());
+            else selection.assign(1,siz);
+            cimg_forY(selection,y) selection[y] = (unsigned int)y;
+          }
         } else if (err==2 && sep0=='[' && item[std::strlen(command) + 1]==']') { // Empty selection
           is_selection = true;
         } else if (err==4 && sep1==']') { // Other selections
@@ -5649,6 +5655,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         } else if (!command2) { // Two-chars shortcuts
           if (command0=='s' && command1=='h') std::strcpy(command,"shared");
           else if (command0=='m' && command1=='v') std::strcpy(command,"move");
+          else if (command0==':' && command1==':' && !is_get) std::strcpy(command,"name");
           else if (command0=='n' && command1=='m' && !is_get) std::strcpy(command,"name");
           else if (command0=='r' && command1=='m') std::strcpy(command,"remove");
           else if (command0=='r' && command1=='v') std::strcpy(command,"reverse");
@@ -9264,7 +9271,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Set image name.
         if (!is_get && !std::strcmp("name",command)) {
           gmic_substitute_args(false);
-          if (selection.height()>1) {
+          if (selection.height()!=1) {
             const CImg<T> arg = CImg<char>::string(argument);
             const unsigned int pend = (unsigned int)arg.size();
             g_list_c.assign();
@@ -9278,6 +9285,15 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               p = np;
             }
           } else CImg<char>::string(argument).move_to(g_list_c);
+          if (!selection) { // Determine selection from number of arguments.
+            if (g_list_c.size()>images._width)
+              error(true,images,0,0,
+                    "Command 'name': Number of arguments (%u) cannot be higher than "
+                    "the number of images in the list (%u).",
+                    g_list_c.size(),images._width);
+            selection.assign(1,g_list_c.size()).sequence(images._width - g_list_c.size(), images._width - 1);
+          }
+
           print(images,0,"Set name%s of image%s to '%s'.",
                 selection.height()>1?"s":"",gmic_selection.data(),gmic_argument_text_printed());
           cimglist_for(g_list_c,l) strreplace_fw(g_list_c[l]);
