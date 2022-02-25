@@ -5503,8 +5503,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         if (err==1) { // No selection -> all images
-          if (*command=='p' && command[1]=='a' && command[2]=='s' && command[3]=='s' && !command[4])
-            selection.assign(1,parent_images.size());
+          if (!std::strcmp(command,"pass")) selection.assign(1,parent_images.size());
           else selection.assign(1,siz);
           cimg_forY(selection,y) selection[y] = (unsigned int)y;
         } else if (err==2 && sep0=='[' && item[std::strlen(command) + 1]==']') { // Empty selection
