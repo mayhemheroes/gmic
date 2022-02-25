@@ -5655,8 +5655,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         } else if (!command2) { // Two-chars shortcuts
           if (command0=='s' && command1=='h') std::strcpy(command,"shared");
           else if (command0=='m' && command1=='v') std::strcpy(command,"move");
-          else if (command0==':' && command1==':' && !is_get) std::strcpy(command,"name");
-          else if (command0=='n' && command1=='m' && !is_get) std::strcpy(command,"name");
+          else if (((command0==':' && command1==':') ||
+                    (command0=='n' && command1=='m')) && !is_get) std::strcpy(command,"name");
           else if (command0=='r' && command1=='m') std::strcpy(command,"remove");
           else if (command0=='r' && command1=='v') std::strcpy(command,"reverse");
           else if (command0=='<' && command1=='<') std::strcpy(command,"bsl");
@@ -9285,7 +9285,14 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               p = np;
             }
           } else CImg<char>::string(argument).move_to(g_list_c);
-          if (!selection) { // Determine selection from number of arguments.
+
+          if (selection) { // Selection has been set explicitly
+            if (g_list_c.size()>selection._height)
+              error(true,images,0,0,
+                    "Command 'name': Number of arguments (%u) cannot be higher than "
+                    "the number of images in the selection (%u).",
+                    g_list_c.size(),selection._height);
+          } else { // Selection size depends on number of arguments
             if (g_list_c.size()>images._width)
               error(true,images,0,0,
                     "Command 'name': Number of arguments (%u) cannot be higher than "
