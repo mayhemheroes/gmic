@@ -14,9 +14,10 @@
 #                   C API for the G'MIC library. Generate files 'src/libcgmic.*'.
 #                   'libc_static' tries to embed most libraries as static.
 #
-#                 . 'cli' and 'cli_shared':
+#                 . 'cli', 'cli_shared' and 'cli_static':
 #                    G'MIC command line tool. Generate file 'src/gmic[.exe]'
-#                    'cli_shared' generates a binary that is dynamically linked with 'libgmic'.
+#                    'cli_shared' generates an executable that is dynamically linked with 'libgmic'.
+#                    'cli_static' generates an executable where most libraries are statically linked.
 #
 #                 . 'gimp' and 'gimp_shared':
 #                   G'MIC-Qt plug-in for GIMP. Generate file 'gmic-qt/gmic_gimp_qt'.
@@ -440,16 +441,17 @@ cli_shared:
 #--------------
 GMIC_STATIC_CLI_PATH = $(USR)/$(LIB)/x86_64-linux-gnu
 GMIC_STATIC_CLI_EXTRA =
-GMIC_STATIC_CLI_CFLAGS = $(MANDATORY_CFLAGS) $(ABORT_CFLAGS) $(PARALLEL_CFLAGS) $(ZLIB_CFLAGS) $(FFTW_CFLAGS) $(PNG_CFLAGS) $(JPEG_CFLAGS) -Dcimg_display=0
-GMIC_STATIC_CLI_LIBS = $(PARALLEL_LIBS) \
+GMIC_STATIC_CLI_CFLAGS = -Dcimg_display=0 $(MANDATORY_CFLAGS) $(OPENMP_CFLAGS) $(ABORT_CFLAGS) $(PARALLEL_CFLAGS) $(ZLIB_CFLAGS) $(PNG_CFLAGS) $(JPEG_CFLAGS) $(FFTW_CFLAGS)
+GMIC_STATIC_CLI_LIBS = ./libgmic.o $(PARALLEL_LIBS) \
+                       $(GMIC_STATIC_CLI_PATH)/libz.a \
 	               $(GMIC_STATIC_CLI_PATH)/libpng.a \
 	               $(GMIC_STATIC_CLI_PATH)/libjpeg.a \
-                       $(GMIC_STATIC_CLI_PATH)/libz.a \
-                       $(GMIC_STATIC_CLI_PATH)/libfftw3.a $(GMIC_STATIC_CLI_PATH)/libfftw3_threads.a \
+	               $(GMIC_STATIC_CLI_PATH)/libfftw3_threads.a $(GMIC_STATIC_CLI_PATH)/libfftw3.a \
 	               $(GMIC_STATIC_CLI_EXTRA)
 
 cli_static:
-	$(MAKE) "CFLAGS+=$(GMIC_STATIC_CLI_CFLAGS) $(OPT_CFLAGS)" "LIBS+=$(GMIC_STATIC_CLI_LIBS) $(OPT_LIBS)" _cli
+	rm -f libgmic.o
+	$(MAKE) "CFLAGS+=$(GMIC_STATIC_CLI_CFLAGS) $(OPT_CFLAGS)" "LIBS+=$(GMIC_STATIC_CLI_LIBS) $(OPT_LIBS)" libgmic.o _cli
 	$(STRIP) gmic$(EXE)
 
 # libcgmic.
