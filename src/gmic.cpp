@@ -2574,7 +2574,7 @@ const char *gmic::builtin_commands_names[] = {
     "distance","div","div3d","do","done","double3d",
   "e","echo","eigen","eikonal","elif","ellipse","else","endian","endif","endl","endlocal","eq",
     "equalize","erf","erode","error","eval","exec","exp",
-  "f","f3d","fft","fi","files","fill","flood","focale3d","for",
+  "f","f3d","fft","fi","files","fill","flood","focale3d","for","foreach",
   "ge","graph","gt","guided",
   "h","histogram",
   "i","if","ifft","image","index","inpaint","input","invert","isoline3d","isosurface3d",
@@ -3028,7 +3028,7 @@ void gmic::pop_callstack(const unsigned int callstack_size) {
     if (*s=='*') switch (s[1]) {
       case 'r' : --nb_repeatdones; break;
       case 'd' : --nb_dowhiles; break;
-      case 'f' : --nb_fordones; break;
+      case 'f' : if (s[4]) --nb_foreachdones; else --nb_fordones; break;
       }
     callstack.remove();
   }
@@ -5159,6 +5159,7 @@ gmic& gmic::_run(const gmic_list<char>& commands_line,
   callstack[0][1] = 0;
   dowhiles.assign(nb_dowhiles = 0U);
   fordones.assign(nb_fordones = 0U);
+  foreachdones.assign(nb_foreachdones = 0U);
   repeatdones.assign(nb_repeatdones = 0U);
   status.assign(0U);
   nb_carriages_default = nb_carriages_stdout = 0;
@@ -6794,6 +6795,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               --nb_repeatdones;
               callstack.remove();
             }
+          } else if (s[4]) { // End a 'foreach...done' block
+            unsigned int *const fed = foreachdones.data(0,nb_foreachdones - 1);
+            position = fed[0] - 1;
+            fed[1] = 1; // Mark 'foreach' as already visited
+            next_debug_line = fed[2]; next_debug_filename = debug_filename;
           } else { // End a 'for...done' block
             unsigned int *const fd = fordones.data(0,nb_fordones - 1);
             position = fd[0] - 1;
@@ -7724,6 +7730,25 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               error(true,images,0,0,
                     "Command 'for': Missing associated 'done' command.");
             if (!is_first) { --nb_fordones; callstack.remove(); }
+          }
+          continue;
+        }
+
+        // Foreach.
+        if (!is_get && !std::strcmp("foreach",command)) {
+          const bool is_first = !nb_foreachdones || foreachdones(0U,nb_foreachdones - 1)!=position;
+          if (is_first) {
+            if (is_debug_info && debug_line!=~0U) {
+              gmic_use_argx;
+              cimg_snprintf(argx,_argx.width(),"*foreach#%u",debug_line);
+              CImg<char>::string(argx).move_to(callstack);
+            } else CImg<char>::string("*foreach").move_to(callstack);
+              if (nb_foreachdones>=foreachdones._height)
+                foreachdones.resize(3,std::max(2*foreachdones._height,8U),1,1,0);
+              unsigned int *const fed = foreachdones.data(0,nb_foreachdones++);
+              fed[0] = position;
+              fed[1] = 0;
+              fed[2] = debug_line;
           }
           continue;
         }
@@ -10843,9 +10868,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Quit.
         if (!is_get && !std::strcmp("quit",item)) {
           print(images,0,"Quit G'MIC interpreter.");
-          dowhiles.assign(nb_dowhiles = 0);
-          fordones.assign(nb_fordones = 0);
-          repeatdones.assign(nb_repeatdones = 0);
+          dowhiles.assign(nb_dowhiles = 0U);
+          fordones.assign(nb_fordones = 0U);
+          foreachdones.assign(nb_foreachdones = 0U);
+          repeatdones.assign(nb_repeatdones = 0U);
           position = commands_line.size();
           is_change = false;
           is_quit = true;
@@ -15104,9 +15130,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     // Do the same as for a cancellation point.
     const bool is_very_verbose = verbosity>1 || is_debug;
     if (is_very_verbose) print(images,0,"Abort G'MIC interpreter (caught abort signal).");
-    dowhiles.assign(nb_dowhiles = 0);
-    fordones.assign(nb_fordones = 0);
-    repeatdones.assign(nb_repeatdones = 0);
+    dowhiles.assign(nb_dowhiles = 0U);
+    fordones.assign(nb_fordones = 0U);
+    foreachdones.assign(nb_foreachdones = 0U);
+    repeatdones.assign(nb_repeatdones = 0U);
     position = commands_line.size();
     is_change = false;
     is_quit = true;
