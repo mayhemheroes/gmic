@@ -2583,7 +2583,7 @@ const char *gmic::builtin_commands_names[] = {
   "l","l3d","label","le","light3d","line","local","log","log10","log2","lt",
   "m","m*","m/","m3d","mandelbrot","map","matchpatch","max","maxabs","md3d","mdiv","median","min","minabs","mirror",
     "mmul","mod","mode3d","moded3d","move","mproj","mul","mul3d","mutex","mv",
-  "n","name","named","neq","network","nm","nmd","noarg","noise","normalize",
+  "n","name","named","neq","network","nmd","noarg","noise","normalize",
   "o","o3d","object3d","onfail","opacity3d","or","output",
   "p","parallel","pass","permute","plasma","plot","point","polygon","pow","print","progress",
   "q","quit",
@@ -5504,8 +5504,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         if (err==1) { // No selection -> all images
-          if (siz && ((*command==':' && command[1]==':' && !command[2]) ||
-                      (*command=='n' && (!std::strcmp(command,"name") || !std::strcmp(command,"nm")))))
+          if (siz && ((*command==':' && command[1]==':' && !command[2]) || !std::strcmp(command,"name")))
             selection.assign();
           else {
             if (!std::strcmp(command,"pass")) selection.assign(1,parent_images.size());
@@ -5655,8 +5654,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         } else if (!command2) { // Two-chars shortcuts
           if (command0=='s' && command1=='h') std::strcpy(command,"shared");
           else if (command0=='m' && command1=='v') std::strcpy(command,"move");
-          else if (((command0==':' && command1==':') ||
-                    (command0=='n' && command1=='m')) && !is_get) std::strcpy(command,"name");
+          else if ((command0==':' && command1==':') && !is_get) std::strcpy(command,"name");
           else if (command0=='r' && command1=='m') std::strcpy(command,"remove");
           else if (command0=='r' && command1=='v') std::strcpy(command,"reverse");
           else if (command0=='<' && command1=='<') std::strcpy(command,"bsl");
