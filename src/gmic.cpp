@@ -6812,12 +6812,12 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               --nb_repeatdones;
               callstack.remove();
             }
-          } else if (s[1]=='f') { // End of a 'for...done' or 'foreach...done' block
+          } else if (s[1]=='f') {
             if (s[4]=='e') { // End a 'foreach...done' block
               unsigned int *const fed = foreachdones.data(0,nb_foreachdones - 1);
               ++fed[1];
               if (--fed[2]) {
-                position = fed[0] + 1;
+                position = fed[0] - 1;
                 next_debug_line = fed[3];
                 next_debug_filename = debug_filename;
               } else {
@@ -7765,13 +7765,15 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
         // Foreach.
         if (!is_get && !std::strcmp("foreach",command)) {
-          const bool is_first = !nb_foreachdones || foreachdones(0U,nb_foreachdones - 1)!=position;
-          if (is_first) {
-            if (is_debug_info && debug_line!=~0U) {
-              gmic_use_argx;
-              cimg_snprintf(argx,_argx.width(),"*foreach#%u",debug_line);
-              CImg<char>::string(argx).move_to(callstack);
-            } else CImg<char>::string("*foreach").move_to(callstack);
+          const unsigned int nb = selection._height;
+          if (nb) {
+            const bool is_first = !nb_foreachdones || foreachdones(0U,nb_foreachdones - 1)!=position;
+            if (is_first) {
+              if (is_debug_info && debug_line!=~0U) {
+                gmic_use_argx;
+                cimg_snprintf(argx,_argx.width(),"*foreach#%u",debug_line);
+                CImg<char>::string(argx).move_to(callstack);
+              } else CImg<char>::string("*foreach").move_to(callstack);
               if (nb_foreachdones>=foreachdones._height)
                 foreachdones.resize(3,std::max(2*foreachdones._height,8U),1,1,0);
               unsigned int *const fed = foreachdones.data(0,nb_foreachdones++);
@@ -7779,6 +7781,19 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               fed[1] = 0;
               fed[2] = selection._height;
               fed[3] = debug_line;
+            }
+          } else { // Empty selection: skip 'foreach...done' block
+            int nb_repeat_for_foreachs = 0;
+            for (nb_repeat_for_foreachs = 1; nb_repeat_for_foreachs && position<commands_line.size(); ++position) {
+              const char *it = commands_line[position].data();
+              it+=*it=='-';
+              if (!std::strcmp("repeat",it) || (*it=='f' && (!std::strcmp("for",it) || !std::strcmp("foreach",it))))
+                ++nb_repeat_for_foreachs;
+              else if (!std::strcmp("done",it)) --nb_repeat_for_foreachs;
+            }
+            if (nb_repeat_for_foreachs && position>=commands_line.size())
+              error(true,images,0,0,
+                    "Command 'foreach': Missing associated 'done' command.");
           }
           continue;
         }
