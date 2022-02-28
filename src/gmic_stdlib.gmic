@@ -2360,7 +2360,7 @@ _display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
 
       # Events related to window resizing.
       if ${-isresized} # One of the display windows has been resized
-        repeat {img,d},w if {*$w,r}
+        repeat {img,d} w=$> if {*$w,r}
           w$w[] {*$w,d,e}
           if $is_multiview repeat {img,d} w$>[] {*$w,w,h} done fi
           if $nsizx>w#0" && "$nsizy>h#0 nposx,nposy,nsizx,nsizy={[0,0,w#0,h#0]} fi
@@ -2986,8 +2986,8 @@ __display_array :
   +luminance. r.. {$1*24},{$2*24} grid.. {100/$1}%,{100/$2}%,0,0,1,0
   xb={24*int($1/2)} yb={24*int($2/2)} xe={$xb+24} ye={$yb+24}
   rectangle.. $xb,$yb,$xe,$ye,1,0xFFFFFFFF,$3,$4,$5
-  repeat $2,yg
-    repeat $1,xg
+  repeat $2 yg=$>
+    repeat $1 xg=$>
       t.. {-3,i($xg,$yg)},{5+$xg*24},{5+$yg*24},13,0.8,{i($xg,$yg)>128?0:255}
     done
   done
@@ -6492,7 +6492,7 @@ parse_gui : skip "${1=print},${2=*}"
 
   # Parse each filter.
   nbchunks=$!
-  f=0 repeat $nbchunks,c _f${f}_path={$>,f} if {$>,h} l[$>]
+  f=0 repeat $nbchunks c=$> _f${f}_path={$>,f} if {$>,h} l[$>]
     if crop(0,0,1,5)!='#@gui' # Non-gui : merge code and skip chunk
       autocrop {'\n'} store nongui$c 0 continue
     fi
@@ -6685,25 +6685,25 @@ parse_gui_thumbnails :
   sp landscape r2dy 256 r 256,256,1,3,0,0,0.5,0.5 store img
   _preview_width,_preview_height=256
 
-  repeat $_nbfilters,f
+  repeat $_nbfilters f=$>
     nb$f=${_f${f}_nbparams}
   done
 
-  repeat $_nbfilters,f
+  repeat $_nbfilters f=$>
     command=${_f${f}_commandpreview}
     if ['$command']==0 command=${_f${f}_command} fi
     pipeline=
     c=
     if s='$command';s!='_none_'&&s!='fx_whatsnew_preview'
       pipeline.=$command" "
-      repeat ${_f${f}_nbparams},p
+      repeat ${_f${f}_nbparams} p=$>
         type=${_f${f}_p${p}_type}
         arg0=${_f${f}_p${p}_a0}
         if s='$type';s=='file'||s=='filein'||s=='fileout'||s=='folder'||s=='value'
           if !${_f{$f}_p${p}_nbargs} pipeline.=$c\"\"
           else
             args= ac=
-            repeat ${_f${f}_p${p}_nbargs},a args.=$ac${_f${f}_p${p}_a${a}} ac=, done
+            repeat ${_f${f}_p${p}_nbargs} a=$> args.=$ac${_f${f}_p${p}_a${a}} ac=, done
             s=\"
             if ['$args']==0 s=\" elif ['$args'][0]==_'\"' s= fi
             pipeline.=$c$s$args$s
@@ -6714,7 +6714,7 @@ parse_gui_thumbnails :
           N=${_f${f}_p${p}_nbargs}
           l[] if isint($arg0) val=$arg0 N-=1 off=1 fi onfail endl
           args= ac=
-          repeat $N,a na={$a+$off} args.=$ac${_f${f}_p${p}_a${na}} ac=, done
+          repeat $N a=$> na={$a+$off} args.=$ac${_f${f}_p${p}_a${na}} ac=, done
           s=\"
           if ['$args']==0 s=\" elif ['$args'][0]==_'\"' s= fi
           pipeline.=$c$s$args$s
@@ -6734,10 +6734,10 @@ parse_gui_thumbnails :
         elif s='$type';s=='color'
           if ${_f${f}_p${p}_nbargs}==1" && "['$arg0'][0]==_'#' # Convert colors specified as '#RRGGBB[AA]'
             l[] ('$arg0') autocrop. {'#'} s x,-2 _f${f}_p${p}_nbargs=$!
-              repeat $!,a hex2dec {$>,t} _f${f}_p${p}_a${a}=${} done rm
+              repeat $! a=$> hex2dec {$>,t} _f${f}_p${p}_a${a}=${} done rm
             endl
           fi
-          repeat ${_f${f}_p${p}_nbargs},a pipeline.=$c${_f${f}_p${p}_a${a}} c=, done
+          repeat ${_f${f}_p${p}_nbargs} a=$> pipeline.=$c${_f${f}_p${p}_a${a}} c=, done
         elif s='$type';s=='point'
           pipeline.=$c$arg0,${_f${f}_p${p}_a1} c=,
         fi
@@ -6825,7 +6825,7 @@ parse_gui_update :
   path=/
   N={$_nbfilters-1}
   is_af={date([1,2])==[4,1]" && "(date(4)%2)} # April fool mode ?
-  repeat $_nbfilters,f
+  repeat $_nbfilters f=$>
     e[] "\r  >> "$_vt100_c[#$f/$N]$_vt100_n" "{`copy(vector48(_'" "'),['${_f${f}_path}${_f${f}_name}'])`}
 
     # Insert directives to change folder if necessary.
@@ -6870,7 +6870,7 @@ parse_gui_update :
     if ['${_f${f}_hide}']!=0 ('"#@gui"$locale" hide("${_f${f}_hide}")\n"') fi
     ('"#@gui"$locale" "$name:${_f${f}_command}$commandpreview$zoomfactor$zoomaccurate$inputmode\n')
 
-    repeat ${_f${f}_nbparams},p
+    repeat ${_f${f}_nbparams} p=$>
       responsivity,visibility=
       if !${_f${f}_p${p}_responsivity} responsivity=_ fi
       if narg(${_f${f}_p${p}_visibility}) visibility=_${_f${f}_p${p}_visibility}${_f${f}_p${p}_propagation} fi
@@ -6880,7 +6880,7 @@ parse_gui_update :
       # Build list of arguments.
       args= c=
       if $is_choice # Capitalize arguments of choice()
-        repeat ${_f${f}_p${p}_nbargs},a
+        repeat ${_f${f}_p${p}_nbargs} a=$>
           if $is_af straprilfool ${_f${f}_p${p}_a${a}}
           else strcapitalize ${_f${f}_p${p}_a${a}}
           fi
@@ -6892,14 +6892,14 @@ parse_gui_update :
            inrange(${_f${f}_p${p}_a2},0,255)" && "\
            (${_f${f}_p${p}_nbargs}==3" || "inrange(${_f${f}_p${p}_a3},0,255))
           args=#
-          repeat ${_f${f}_p${p}_nbargs},a
+          repeat ${_f${f}_p${p}_nbargs} a=$>
             args.={`"tab = [ _'0',_'1',_'2',_'3',_'4',_'5',_'6',_'7',_'8',_'9',_'a',_'b',_'c',_'d',_'e',_'f' ];
                      const v = "${_f${f}_p${p}_a${a}}"; [ tab[(v>>4)&15],tab[v&15] ]"`}
           done
-        else repeat ${_f${f}_p${p}_nbargs},a args.=$c${_f${f}_p${p}_a${a}} c=, done
+        else repeat ${_f${f}_p${p}_nbargs} a=$> args.=$c${_f${f}_p${p}_a${a}} c=, done
         fi
       else
-        repeat ${_f${f}_p${p}_nbargs},a args.=$c${_f${f}_p${p}_a${a}} c=, done
+        repeat ${_f${f}_p${p}_nbargs} a=$> args.=$c${_f${f}_p${p}_a${a}} c=, done
       fi
       sep1,sep2={`"
         s = ['"$args"'];
@@ -6980,7 +6980,7 @@ parse_gui_json :
 
   current_category=
   N={$_nbfilters-1}
-  repeat $_nbfilters,f
+  repeat $_nbfilters f=$>
     e[] "\r  >> "$_vt100_c[#$f/$N]$_vt100_n" "{`copy(vector48(_'" "'),['${_f${f}_path}${_f${f}_name}'])`}
 
     # Manage categories.
@@ -7006,7 +7006,7 @@ parse_gui_json :
 
     sepf={`$<?_',':0`}
     ppos=1
-    repeat ${_f${f}_nbparams},p
+    repeat ${_f${f}_nbparams} p=$>
       _parse_gui_json ${_f${f}_p{$p}_name} name={/${}}
       type=${_f${f}_p{$p}_type}
       nbargs=${_f${f}_p{$p}_nbargs}
@@ -7033,16 +7033,16 @@ parse_gui_json :
       elif ['$type']=='choice'
         default=0 n=0 choices=
         l[] if isnum($arg0)&&isint($arg0) default=$arg0 n+=1 fi onfail endl
-        c= repeat $nbargs-$n,a choices.=${c}"\""$>"\": \""${arg{$n+$a}}"\"" c=", " done
+        c= repeat $nbargs-$n a=$> choices.=${c}"\""$>"\": \""${arg{$n+$a}}"\"" c=", " done
         ('"      { \"type\": \"choice\", \"name\": \""$name"\", \"default\": \""$default"\", \"pos\": \""$ppos"\", "\
           "\"choices\": { "$choices" }"$visibility" }"$sepp\n')
         ppos+=1
 
       elif ['$type']=='color'
         if $nbargs==1" && "['$arg0'][0]==_'#' # Convert colors specified as '#RRGGBB[AA]'
-          l[] ('$arg0') autocrop. {'#'} s x,-2 nbargs=$! repeat $!,a hex2dec {$>,t} arg$a=${} done rm endl
+          l[] ('$arg0') autocrop. {'#'} s x,-2 nbargs=$! repeat $! a=$> hex2dec {$>,t} arg$a=${} done rm endl
         fi
-        args= c= repeat $nbargs,a args.=$c${arg$a} c="," done
+        args= c= repeat $nbargs a=$> args.=$c${arg$a} c="," done
         ('"      { \"type\": \"color\", \"name\": \""$name"\", \"default\": \""$args"\", \"pos\": "\
           "\""$ppos"\""$visibility" }"$sepp\n')
         ppos+=$nbargs
@@ -7143,7 +7143,7 @@ parse_gui_gmicol :
   ('"<?xml version=\"1.0\"?>\n\n<categories>\n"')
   current_category=
   N={$_nbfilters-1}
-  repeat $_nbfilters,f
+  repeat $_nbfilters f=$>
     e[] "\r  >> "$_vt100_c[#$f/$N]$_vt100_n" "{`copy(vector48(_'" "'),['${_f${f}_path}${_f${f}_name}'])`}
 
     # Manage categories.
@@ -7170,7 +7170,7 @@ parse_gui_gmicol :
       ">\n"')
 
     sepf={`$<?_',':0`}
-    repeat ${_f${f}_nbparams},p
+    repeat ${_f${f}_nbparams} p=$>
       ({'${_f${f}_p{$p}_name}'}) _gmd_ascii2html. name={t} rm.
       type=${_f${f}_p{$p}_type}
       nbargs=${_f${f}_p{$p}_nbargs}
@@ -7197,7 +7197,7 @@ parse_gui_gmicol :
         default=0 n=0 choices=
         l[] if isnum($arg0)&&isint($arg0) default=$arg0 n+=1 fi onfail endl
         ('"    <choice name=\""$name"\" value=\""$default"\""$responsivity$visibility">\n"')
-        repeat $nbargs-$n,a
+        repeat $nbargs-$n a=$>
           choice=${arg{$n+$a}}
           ('"      <item name=\""$choice"\"/>\n"')
         done
@@ -7205,7 +7205,7 @@ parse_gui_gmicol :
 
       elif ['$type']=='color'
         if $nbargs==1" && "['$arg0'][0]==_'#' # Convert colors specified as '#RRGGBB[AA]'
-          l[] ('$arg0') autocrop. {'#'} s x,-2 nbargs=$! repeat $!,a hex2dec {$>,t} arg$a=${} done rm endl
+          l[] ('$arg0') autocrop. {'#'} s x,-2 nbargs=$! repeat $! a=$> hex2dec {$>,t} arg$a=${} done rm endl
         fi
         if $nbargs>3
           ('"    <rgba name=\""$name"\" red=\""$arg0"\" green=\""$arg1"\" blue=\""$arg2"\" alpha=\""$arg3"\""\
@@ -7285,15 +7285,15 @@ parse_gui_gmicol :
 parse_gui_strings :
   e[] "  >> Generate output, in 'strings' mode.\n"
   N={$_nbfilters-1}
-  repeat $_nbfilters,f
+  repeat $_nbfilters f=$>
     if !narg(${_f${f}_locale})" && "find(['${_f${f}_path}'],'Testing/')<0  # Consider only English, non-Testing filters
       e[] "\r  >> "$_vt100_c[#$f/$N]$_vt100_n" "{`copy(vector48(_'" "'),['${_f${f}_path}${_f${f}_name}'])`}
       _parse_gui_strings ${_f${f}_name}
-      repeat ${_f${f}_nbparams},p
+      repeat ${_f${f}_nbparams} p=$>
         type=${_f${f}_p${p}_type}
         if s=['$type'];s!='link'&&s!='note'&&s!='separator'&&s!='value' _parse_gui_strings ${_f${f}_p${p}_name} fi
         if ['$type']==['choice']
-          repeat ${_f${f}_p${p}_nbargs},a
+          repeat ${_f${f}_p${p}_nbargs} a=$>
             arg=${_f${f}_p${p}_a${a}}
             l[] if !isnum($arg) ({'$arg'}) discard. {'\"'} arg={t} rm. _parse_gui_strings $arg fi onfail endl
           done
@@ -8392,7 +8392,7 @@ update_gallery_html : check "isbool(${1=0})"
   ('\n') a[0--3] .,y rm. a y
   nb_cols=3
 
-  repeat $nb_categories,ncat
+  repeat $nb_categories ncat=$>
     category=${arg\ 1+$>,$categories}
     if isfile('{/$category.html}') continue fi
     e[] "\n  * Process category '"$_vt100_b$category$_vt100_n"'."
@@ -9398,7 +9398,7 @@ parse_gui_zart :
 
   current_group=
   N={$_nbfilters-1}
-  repeat $_nbfilters,f
+  repeat $_nbfilters f=$>
     e[] "\r  >> "$_vt100_c[#$f/$N]$_vt100_n" "{`copy(vector48(_'" "'),['${_f${f}_path}${_f${f}_name}'])`}
 
     # Manage groups.
@@ -9416,7 +9416,7 @@ parse_gui_zart :
     +e[] "<!-- "$path/$fname" -->"
     +e[] "<preset name=\""$fname"\">"
     +e[] "  <command>"${_f${f}_commandpreview}" $""*</command>"
-    repeat ${_f${f}_nbparams},p
+    repeat ${_f${f}_nbparams} p=$>
       _parse_gui_zart ${_f${f}_p{$p}_name} name=${}
       type=${_f${f}_p{$p}_type}
       nbargs=${_f${f}_p{$p}_nbargs}
@@ -9429,14 +9429,14 @@ parse_gui_zart :
       elif ['$type']=='choice'
         default=0 n=0 args=
         l[] if isint($arg0) default=$arg0 n+=1 fi onfail endl
-        c= repeat $nbargs-$n,a args.=${c}"choice"$>"=\""${arg{$n+$a}}"\"" c=" " done
+        c= repeat $nbargs-$n a=$> args.=${c}"choice"$>"=\""${arg{$n+$a}}"\"" c=" " done
         +e[] "  <choice name=\""$name"\" default=\""$default"\" "$args" />"
 
       elif ['$type']=='color'
         if $nbargs==1" && "['$arg0'][0]==_'#' # Convert colors specified as '#RRGGBB[AA]'
-          l[] ('$arg0') autocrop. {'#'} s x,-2 nbargs=$! repeat $!,a hex2dec {$>,t} arg$a=${} done rm endl
+          l[] ('$arg0') autocrop. {'#'} s x,-2 nbargs=$! repeat $! a=$> hex2dec {$>,t} arg$a=${} done rm endl
         fi
-        args= c= repeat $nbargs,a args.=$c${arg$a} c="," done
+        args= c= repeat $nbargs a=$> args.=$c${arg$a} c="," done
         +e[] "  <color name=\""$name"\" default=\""$args"\" />"
 
       elif s=['$type'];s=='int'" || "s=='float'
@@ -9935,7 +9935,7 @@ nm :
 #@cli : $ (1,2,3,4,2,4,3,1,3,4,2,1) split x remove_duplicates append x
 remove_duplicates :
   e[^-1] "Remove duplicates images in selected list of image$?."
-  repeat $!,base
+  repeat $! base=$>
     off=0
     repeat $!-$>-1
       comp={$base+1+$>-$off}
@@ -10321,7 +10321,7 @@ med :
 #@cli : $ image.jpg +mul_channels 1,0.5,0.8
 mul_channels :
   e[^-1] "Multiply channels of image$? by value sequence ($*)."
-  $=arg repeat $#,i
+  $=arg repeat $# i=$>
     fact=${arg{1+($>%$#)}}
     repeat $! if {$>,$i<s} sh[$>] $i *. $fact rm. fi done
   done
@@ -17821,8 +17821,8 @@ mse :
 +mse :
   e[^-1] "Compute the "$!x$!" matrix of MSE values, for image$?."
   N=$! $N,$N
-  repeat $N,q
-    repeat $q,p
+  repeat $N q=$>
+    repeat $q p=$>
       if "const p = "$p"; const q = "$q"; [w#p,h#p,d#p,s#p]!=[w#q,h#q,d#q,s#q]"
         error[0--4] "Image ["$p"] = '"{$p,n}"' ("{$p,[w,h,d,s]}") and ["$q"] = '"{$q,n}"' ("{$q,[w,h,d,s]}") "\
                     "have different sizes."
@@ -20819,10 +20819,10 @@ imagesphere3d : check "${1=32}>=3 && ${2=16}>=3"
     a[-3--1] c permute. cxyz y. a[-3--1] y
 
     # Define sphere primitives (triangles and quadrangles).
-    repeat $1,v
+    repeat $1 v=$>
       tx0={$v*$tw/$1} tx1={($v+1)*$tw/$1} ty1={$th/($2-1)}
       (9;0;{2+$v};{2+($v+1)%$1};{$tw/2};0;$tx0;$ty1;$tx1;$ty1) # Textured triangle from 1st pole.
-      repeat $2-3,u
+      repeat $2-3 u=$>
         ty0=$ty1 ty1={($u+2)*$th/($2-1)} i0={2+$u*$1+$v} i1={2+$u*$1+($v+1)%$1}
         (12;$i0;{$i0+$1};{$i1+$1};$i1;$tx0;$ty0;$tx0;$ty1;$tx1;$ty1;$tx1;$ty0) # Textured quadrangle.
       done
@@ -22443,7 +22443,7 @@ parallel : skip "${1=},${2=},${3=},${4=},${5=},${6=},${7=},${8=},${9=},${10=},${
 #@cli repeat : nb_iterations,_variable_name : (+)
 #@cli : Start 'nb_iterations' iterations of a 'repeat...done' block.
 #@cli : 'nb_iterations' is a mathematical expression that will be evaluated.
-#@cli : $ image.jpg split y repeat $!,n shift[$n] $<,0,0,0,2 done append y
+#@cli : $ image.jpg split y repeat $! n=$> shift[$n] $<,0,0,0,2 done append y
 #@cli : $ image.jpg mode3d 2 repeat 4 imagecube3d rotate3d 1,1,0,40 snapshot3d 400,1.4 done
 #@cli : $$ https://gmic.eu/oldtutorial/_repeat
 
@@ -25382,7 +25382,7 @@ stylize :
     nb_scales={1+round(log(min(w#0,h#0,w#1,h#1)/$init_resolution)/log($scale_factor),1,-1)}
     if {*} wsiz=${"fitscreen "{0,[w,h]}} w[0] $wsiz,0,"[G'MIC Stylize]" fi
 
-    repeat $nb_scales,scale
+    repeat $nb_scales scale=$>
       size_factor={100/($scale_factor^$<)}
       if !$scale
 
@@ -26579,7 +26579,7 @@ animate : skip ${1=30},${2=0},${3=""},${4=10},${5=1},"${6=}"
     e[0--3] "Compute animated version of filter '$1', from parameters $2 to $3 with $4 frames."
     if !($5||narg("$6")) return fi
     ($2) ($3) y[-2,-1] x a[-2,-1] y r. 100%,$4,1,1,3 mv. 0 rprogress 0
-    repeat $!-1,u
+    repeat $!-1 u=$>
       e[] " > Animate image ["$>"]"
       repeat $4 +l[0,1]
         -$1. {0,@{$>*{0,w}}-{($>+1)*{0,w}-1}} rm[0]
@@ -28783,7 +28783,7 @@ render_donations : skip "${1="$HOME"/work/src/private_tschumperle/gmic_donations
 #    eur2usd={1/0.7988} # Change rate from EUR to USD (Paypal conversion rate in 2020).
     eur2usd={1/0.8568} # Change rate from EUR to USD (Paypal conversion rate in 2021).
     nb_entries={h}
-    repeat $nb_entries,e
+    repeat $nb_entries e=$>
       date_$e={`I(0,$e)`}
       name_$e={`I(1,$e)`}
       type_$e={`I(2,$e)`}
@@ -28836,7 +28836,7 @@ render_donations : skip "${1="$HOME"/work/src/private_tschumperle/gmic_donations
 
       month_eur,month_charged_eur,month_usd,month_charged_usd,msep_eur,msep_usd=
       nb_sponsors=0
-      repeat $nb_entries,e if $edate==int(${edate_$e}/100)
+      repeat $nb_entries e=$> if $edate==int(${edate_$e}/100)
         currency=${currency_$e}
         val_eur=${donation_eur_$e}
         val_charged_eur=${donation_charged_eur_$e}
@@ -30289,7 +30289,7 @@ x_connect4 : check_display $0
     # Initialize game.
     if !narg($visu)
       {board,[w,h]*$R},1,3,64
-      repeat h#$board,y repeat w#$board,x
+      repeat h#$board y=$> repeat w#$board x=$>
         val={board,i($x,$y)} if $val j. [token{$val-1}],{$x*$R},{$y*$R},0,0,1,[tokenm],255 fi
       done done
       +r[cache,cachem] {board,[w,h]*$R},1,100%,0,2 a[-2,-1] c blend[-2,-1] alpha
@@ -30346,14 +30346,14 @@ x_connect4 : check_display $0
       elif ${autoplayer$turn}" || "{*,-SPACE}" || "{*,ENTER} # Computer play
         if {*,-ENTER} autoplayer$turn=1 fi
         max_score=-inf max_col=
-        repeat w#$board,move1
+        repeat w#$board move1=$>
           yM1={i("#"$ymax,$move1)}
           if $yM1>=0
             +=[board] {1+$turn},$move1,$yM1 nm. board1
             {board,w},1,1,1,"y = -1; repeat (h#"$board1",k, if(!i(#"$board1",x,k),y = k)); y" nm. ymax1
             opp_max_score=-inf opp_max_board={board,^}
             opp_turn={($turn+1)%2}
-            repeat w#$board,move2
+            repeat w#$board move2=$>
               yM2={i("#"$ymax1,$move2)}
               if $yM2>=0
                 +=[board1] {1+$opp_turn},$move2,$yM2
@@ -32426,7 +32426,7 @@ _x_paint :
     # Open/refresh brush window.
     if $refresh_brush
       rm. (32,64;64,32) r. 16,16,1,3,1 r. {8*48},{4*48},1,3,0,2
-      repeat 4,y repeat 8
+      repeat 4 y=$> repeat 8
         ellipse. {48*$>+24},{48*$y+24},{2*$>+1},{(2*$>+1)*$brushthickness},$brushangle,{1-$y/4},255
       done done
       rectangle. {$brushsize*48},{$brushopacity*48},\
@@ -37191,7 +37191,7 @@ fx_paint_with_brush :
 
     # Paint brush strokes.
     ind=0
-    repeat inf,t
+    repeat inf t=$>
       progress {$ind*100/w#2}
 
       100%,100%,1,{s#0+1}
