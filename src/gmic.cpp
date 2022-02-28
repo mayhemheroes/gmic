@@ -6799,7 +6799,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           const CImg<char> &s = callstack.back();
           if (s[0]!='*' || (s[1]!='r' && s[1]!='f'))
             error(true,images,0,0,
-                  "Command 'done': Not associated to a 'repeat' or 'for' command "
+                  "Command 'done': Not associated to a 'repeat', 'for' or 'foreach' command "
                   "within the same scope.");
           if (s[1]=='r') { // End a 'repeat...done' block
             unsigned int *const rd = repeatdones.data(0,nb_repeatdones - 1);
@@ -7792,6 +7792,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               fed[2] = selection._height;
               fed[3] = debug_line;
             }
+
           } else { // Empty selection: skip 'foreach...done' block
             int nb_repeat_for_foreachs = 0;
             for (nb_repeat_for_foreachs = 1; nb_repeat_for_foreachs && position<commands_line.size(); ++position) {
