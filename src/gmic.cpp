@@ -5064,7 +5064,7 @@ CImg<char> gmic::substitute_item(const char *const source,
         case 3 : { // foreach...done
           const unsigned int *const fed = foreachdones.data(0,nb_foreachdones - 1);
           if (nsource[1]=='>') cimg_snprintf(substr,substr.width(),"%d",fed[1]);
-          else std::strcpy(substr,"nan");
+          else std::strcpy(substr,"nan"); // TODO!
         } break;
         }
         CImg<char>(substr.data(),(unsigned int)std::strlen(substr),1,1,1,true).
