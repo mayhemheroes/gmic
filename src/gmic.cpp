@@ -5035,7 +5035,7 @@ CImg<char> gmic::substitute_item(const char *const source,
           error(true,images,0,0,
                 "Item substitution '$%c': There is no loop currently running.",
                 nsource[1]);
-        unsigned int loop_type = 0; // 0=repeatdones, 1=dohwiles, 2=fordones, 3=foreachdones
+        unsigned int loop_type = 0; // 0=repeatdones, 1=dowhiles, 2=fordones, 3=foreachdones
         for (int i = (int)callstack.size() - 1; i>=0; --i) { // Find type of latest loop
           const CImg<char>& s = callstack[i];
           if (*s=='*') {
@@ -5047,7 +5047,7 @@ CImg<char> gmic::substitute_item(const char *const source,
         switch (loop_type) {
         case 0 : { // repeat...done
           const unsigned int *const rd = repeatdones.data(0,nb_repeatdones - 1);
-          cimg_snprintf(substr,substr.width(),"%u",nsource[1]=='>'?rd[2]:rd[1] - 1);
+          cimg_snprintf(substr,substr.width(),"%u",nsource[1]=='>'?rd[1]:rd[2] - 1);
         } break;
         case 1 : { // do...while
           const unsigned int *const dw = dowhiles.data(0,nb_dowhiles - 1);
@@ -5266,7 +5266,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
   CImg<float> vertices;
   CImg<T> g_img;
 
-  CImg<char> name,o_status,_argument_text, _argx, _argy, _argz, _argc, _title, _indices, _message, _formula, _color,
+  CImg<char> name, o_status, _argument_text, _argx, _argy, _argz, _argc, _title, _indices, _message, _formula, _color,
     _command(257), _s_selection(256);
   char _c0 = 0,
     *argument_text = &_c0,
@@ -6803,23 +6803,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           if (s[1]=='r') { // End a 'repeat...done' block
             *title = 0;
             unsigned int *const rd = repeatdones.data(0,nb_repeatdones - 1);
-            const unsigned int pos = rd[4];
-            hash = rd[3];
-            ++rd[2]; // Increase iteration counter
-            if (--rd[1]) {
+            ++rd[1]; // Increase iteration counter
+            if (--rd[2]) {
               position = rd[0] + 1;
-              if (hash!=~0U) {
-                gmic_use_argx;
-                cimg_snprintf(argx,_argx.width(),"%u",rd[2]);
-                CImg<char>::string(argx).move_to((*variables[hash])[pos]);
-              }
-              next_debug_line = rd[5]; next_debug_filename = debug_filename;
+              next_debug_line = rd[3];
+              next_debug_filename = debug_filename;
             } else {
               if (is_very_verbose) print(images,0,"End 'repeat...done' block.");
-              if (hash!=~0U) {
-                variables[hash]->remove(pos);
-                variables_names[hash]->remove(pos);
-              }
               --nb_repeatdones;
               callstack.remove();
             }
@@ -10941,26 +10931,16 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Repeat.
         if (!is_get && !std::strcmp("repeat",item)) {
           gmic_substitute_args(false);
-          const char *varname = gmic_use_title;
-          *title = 0;
           if (cimg_sscanf(argument,"%lf%c",&value,&end)!=1) {
             name.assign(argument,(unsigned int)std::strlen(argument) + 1);
-            for (char *ps = name.data() + name.width() - 2; ps>=name.data(); --ps) {
-              if (*ps==',' && ps[1] && (ps[1]<'0' || ps[1]>'9')) { varname = ps + 1; *ps = 0; break; }
-              else if ((*ps<'a' || *ps>'z') && (*ps<'A' || *ps>'Z') && (*ps<'0' || *ps>'9') && *ps!='_') break;
-            }
-            if (*name) {
-              if (cimg_sscanf(name,"%lf%c",&value,&end)!=1) {
-                CImg<T> &img = images.size()?images.back():CImg<T>::empty();
-                strreplace_fw(name);
-                try { value = img.eval(name,0,0,0,0,&images); }
-                catch (CImgException &e) {
-                  const char *const e_ptr = std::strstr(e.what(),": ");
-                  error(true,images,0,"repeat",
-                        "Command 'repeat': Invalid argument '%s'; %s",
-                        cimg::strellipsize(name,64,false),e_ptr?e_ptr + 2:e.what());
-                }
-              }
+            strreplace_fw(name);
+            CImg<T> &img = images.size()?images.back():CImg<T>::empty();
+            try { value = img.eval(name,0,0,0,0,&images); }
+            catch (CImgException &e) {
+              const char *const e_ptr = std::strstr(e.what(),": ");
+              error(true,images,0,"repeat",
+                    "Command 'repeat': Invalid argument '%s'; %s",
+                    cimg::strellipsize(name,64,false),e_ptr?e_ptr + 2:e.what());
             }
           }
           const unsigned int nb = value<=0?0U:
@@ -10971,30 +10951,15 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               cimg_snprintf(argx,_argx.width(),"*repeat#%u",debug_line);
               CImg<char>::string(argx).move_to(callstack);
             } else CImg<char>::string("*repeat").move_to(callstack);
-            if (is_very_verbose) {
-              if (*varname) print(images,0,"Start 'repeat...done' block with variable '%s' (%u iteration%s).",
-                                  varname,nb,nb>1?"s":"");
-              else print(images,0,"Start 'repeat...done' block (%u iteration%s).",
-                         nb,nb>1?"s":"");
-            }
-            const unsigned int l = (unsigned int)std::strlen(varname);
-            if (nb_repeatdones>=repeatdones._height) repeatdones.resize(6,std::max(2*repeatdones._height,8U),1,1,0);
+            if (is_very_verbose) print(images,0,"Start 'repeat...done' block (%u iteration%s).",nb,nb>1?"s":"");
+            if (nb_repeatdones>=repeatdones._height) repeatdones.resize(4,std::max(2*repeatdones._height,8U),1,1,0);
             unsigned int *const rd = repeatdones.data(0,nb_repeatdones++);
-            rd[0] = position; rd[1] = nb; rd[2] = 0;
-            if (l) {
-              hash = hashcode(varname,true);
-              rd[3] = hash;
-              rd[4] = variables[hash]->_width;
-              CImg<char>::string(varname).move_to(*variables_names[hash]);
-              CImg<char>::string("0").move_to(*variables[hash]);
-            } else rd[3] = rd[4] = ~0U;
-            rd[5] = debug_line;
+            rd[0] = position;
+            rd[1] = 0;
+            rd[2] = nb;
+            rd[3] = debug_line;
           } else {
-            if (is_very_verbose) {
-              if (*varname) print(images,0,"Skip 'repeat...done' block with variable '%s' (0 iteration).",
-                                  varname);
-              else print(images,0,"Skip 'repeat...done' block (0 iteration).");
-            }
+            if (is_very_verbose) print(images,0,"Skip 'repeat...done' block (0 iteration).");
             int nb_repeat_fors = 0;
             for (nb_repeat_fors = 1; nb_repeat_fors && position<commands_line.size(); ++position) {
               const char *it = commands_line[position].data();
