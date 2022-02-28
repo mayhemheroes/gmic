@@ -5029,7 +5029,7 @@ CImg<char> gmic::substitute_item(const char *const source,
         }
         nsource+=2;
 
-        // Substitute '$>' and '$<' -> Forward/backward index of current loop.
+        // Substitute '$>' and '$<' -> Forward/backward index of current 'repeat...done' loop.
       } else if (nsource[1]=='>' || nsource[1]=='<') {
         if (!nb_repeatdones)
           error(true,images,0,0,
