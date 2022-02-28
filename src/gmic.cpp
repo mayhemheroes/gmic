@@ -7775,7 +7775,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 CImg<char>::string(argx).move_to(callstack);
               } else CImg<char>::string("*foreach").move_to(callstack);
               if (nb_foreachdones>=foreachdones._height)
-                foreachdones.resize(3,std::max(2*foreachdones._height,8U),1,1,0);
+                foreachdones.resize(4,std::max(2*foreachdones._height,8U),1,1,0);
               unsigned int *const fed = foreachdones.data(0,nb_foreachdones++);
               fed[0] = position;
               fed[1] = 0;
