@@ -3028,7 +3028,7 @@ void gmic::pop_callstack(const unsigned int callstack_size) {
     if (*s=='*') switch (s[1]) {
       case 'r' : --nb_repeatdones; break;
       case 'd' : --nb_dowhiles; break;
-      case 'f' : if (s[4]) --nb_foreachdones; else --nb_fordones; break;
+      case 'f' : if (s[4] && s[5]=='e') --nb_foreachdones; else --nb_fordones; break;
       }
     callstack.remove();
   }
@@ -6777,7 +6777,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             unsigned int *const rd = repeatdones.data(0,nb_repeatdones - 1);
             const unsigned int pos = rd[4];
             hash = rd[3];
-            ++rd[2];
+            ++rd[2]; // Increase iteration counter
             if (--rd[1]) {
               position = rd[0] + 1;
               if (hash!=~0U) {
@@ -6795,16 +6795,18 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               --nb_repeatdones;
               callstack.remove();
             }
-          } else if (s[4]) { // End a 'foreach...done' block
-            unsigned int *const fed = foreachdones.data(0,nb_foreachdones - 1);
-            position = fed[0] - 1;
-            fed[1] = 1; // Mark 'foreach' as already visited
-            next_debug_line = fed[2]; next_debug_filename = debug_filename;
-          } else { // End a 'for...done' block
-            unsigned int *const fd = fordones.data(0,nb_fordones - 1);
-            position = fd[0] - 1;
-            fd[1] = 1; // Mark 'for' as already visited
-            next_debug_line = fd[2]; next_debug_filename = debug_filename;
+          } else if (s[1]=='f') { // End of a 'for...done' or 'foreach...done' block
+            if (s[4] && s[5]=='e') { // End a 'foreach...done' block
+              unsigned int *const fed = foreachdones.data(0,nb_foreachdones - 1);
+              position = fed[0] - 1;
+              ++fed[1]; // Increase iteration counter
+              next_debug_line = fed[2]; next_debug_filename = debug_filename;
+            } else { // End a 'for...done' block
+              unsigned int *const fd = fordones.data(0,nb_fordones - 1);
+              position = fd[0] - 1;
+              ++fd[1]; // Increase iteration counter
+              next_debug_line = fd[2]; next_debug_filename = debug_filename;
+            }
           }
           continue;
         }
@@ -7714,7 +7716,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               if (nb_fordones>=fordones._height) fordones.resize(3,std::max(2*fordones._height,8U),1,1,0);
               unsigned int *const fd = fordones.data(0,nb_fordones++);
               fd[0] = position;
-              fd[1] = 0;
+              fd[1] = 0; // Iteration counter
               fd[2] = debug_line;
             }
             ++position;
