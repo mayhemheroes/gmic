@@ -5338,6 +5338,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       while (position<commands_line.size() && *commands_line[position]==1)
         is_debug_info|=get_debug_info(commands_line[position++].data(),debug_line,debug_filename);
       if (position>=commands_line.size()) break;
+      const unsigned int position_item = position; // Save initial position
 
       // Check consistency of the interpreter environment.
       if (images_names.size()!=images.size())
@@ -5628,11 +5629,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
       if (is_debug) {
         if (std::strcmp(item,initial_item))
-          debug(images,"Item '%s' -> '%s', selection%s.",
-                initial_item,item,gmic_selection.data());
+          debug(images,"Item[%u] '%s' -> '%s', selection%s.",
+                position_item,initial_item,item,gmic_selection.data());
         else
-          debug(images,"Item '%s', selection%s.",
-                initial_item,gmic_selection.data());
+          debug(images,"Item[%u] '%s', selection%s.",
+                position_item,initial_item,gmic_selection.data());
       }
 
       // Display starting message.
@@ -6804,7 +6805,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             unsigned int *const rd = repeatdones.data(0,nb_repeatdones - 1);
             ++rd[1];
             if (--rd[2]) {
-              position = rd[0] + 1;
+              position = rd[0] + 2;
               next_debug_line = rd[3];
               next_debug_filename = debug_filename;
             } else {
@@ -6817,7 +6818,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               unsigned int *const fed = foreachdones.data(0,nb_foreachdones - 1);
               ++fed[1];
               if (--fed[2]) {
-                position = fed[0] - 1;
+                position = fed[0];
                 next_debug_line = fed[3];
                 next_debug_filename = debug_filename;
               } else {
@@ -6827,7 +6828,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               }
             } else { // End a 'for...done' block
               unsigned int *const fd = fordones.data(0,nb_fordones - 1);
-              position = fd[0] - 1;
+              position = fd[0];
               ++fd[1];
               next_debug_line = fd[2];
               next_debug_filename = debug_filename;
@@ -6846,8 +6847,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           if (is_very_verbose) print(images,0,"Start 'do...while' block.");
           if (nb_dowhiles>=dowhiles._height) dowhiles.resize(3,std::max(2*dowhiles._height,8U),1,1,0);
           unsigned int *const dw = dowhiles.data(0,nb_dowhiles++);
-          dw[0] = position;
-          dw[1] = 0; // Iteration counter
+          dw[0] = position_item;
+          dw[1] = 0;
           dw[2] = debug_line;
           continue;
         }
@@ -7725,7 +7726,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         if (!is_get && !std::strcmp("for",item)) {
           gmic_substitute_args(false);
           is_cond = check_cond(argument,images,"for");
-          const bool is_first = !nb_fordones || fordones(0U,nb_fordones - 1)!=position;
+          const bool is_first = !nb_fordones || fordones(0U,nb_fordones - 1)!=position_item;
           if (is_very_verbose)
             print(images,0,"%s %s -> condition '%s' %s.",
                   !is_first?"Reach":is_cond?"Start":"Skip",
@@ -7741,8 +7742,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               } else CImg<char>::string("*for").move_to(callstack);
               if (nb_fordones>=fordones._height) fordones.resize(3,std::max(2*fordones._height,8U),1,1,0);
               unsigned int *const fd = fordones.data(0,nb_fordones++);
-              fd[0] = position;
-              fd[1] = 0; // Iteration counter
+              fd[0] = position_item;
+              fd[1] = 0;
               fd[2] = debug_line;
             }
             ++position;
@@ -7765,9 +7766,14 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
         // Foreach.
         if (!is_get && !std::strcmp("foreach",command)) {
+          const bool is_first = !nb_foreachdones || foreachdones(0U,nb_foreachdones - 1)!=position_item;
           const unsigned int nb = selection._height;
+          if (is_very_verbose)
+            print(images,0,"%s %s, with selected image%s.",
+                  !is_first?"Reach":nb?"Start":"Skip",
+                  is_first?"'foreach...done' block":"'foreach' command",
+                  gmic_selection.data());
           if (nb) {
-            const bool is_first = !nb_foreachdones || foreachdones(0U,nb_foreachdones - 1)!=position;
             if (is_first) {
               if (is_debug_info && debug_line!=~0U) {
                 gmic_use_argx;
@@ -7777,7 +7783,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               if (nb_foreachdones>=foreachdones._height)
                 foreachdones.resize(4,std::max(2*foreachdones._height,8U),1,1,0);
               unsigned int *const fed = foreachdones.data(0,nb_foreachdones++);
-              fed[0] = position;
+              fed[0] = position_item;
               fed[1] = 0;
               fed[2] = selection._height;
               fed[3] = debug_line;
@@ -10978,7 +10984,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             if (is_very_verbose) print(images,0,"Start 'repeat...done' block (%u iteration%s).",nb,nb>1?"s":"");
             if (nb_repeatdones>=repeatdones._height) repeatdones.resize(4,std::max(2*repeatdones._height,8U),1,1,0);
             unsigned int *const rd = repeatdones.data(0,nb_repeatdones++);
-            rd[0] = position;
+            rd[0] = position_item;
             rd[1] = 0;
             rd[2] = nb;
             rd[3] = debug_line;
@@ -12795,7 +12801,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           unsigned int *const dw = dowhiles.data(0,nb_dowhiles - 1);
           ++dw[1];
           if (is_cond) {
-            position = dw[0];
+            position = dw[0] + 1;
             next_debug_line = dw[2];
             next_debug_filename = debug_filename;
             continue;
