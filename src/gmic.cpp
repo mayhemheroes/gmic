@@ -3028,7 +3028,7 @@ void gmic::pop_callstack(const unsigned int callstack_size) {
     if (*s=='*') switch (s[1]) {
       case 'r' : --nb_repeatdones; break;
       case 'd' : --nb_dowhiles; break;
-      case 'f' : if (s[4] && s[5]=='e') --nb_foreachdones; else --nb_fordones; break;
+      case 'f' : if (s[4]=='e') --nb_foreachdones; else --nb_fordones; break;
       }
     callstack.remove();
   }
@@ -5029,14 +5029,36 @@ CImg<char> gmic::substitute_item(const char *const source,
         }
         nsource+=2;
 
-        // Substitute '$>' and '$<' -> Forward/backward index of current 'repeat...done' loop.
+        // Substitute '$>' and '$<' -> Forward/backward index of current loop.
       } else if (nsource[1]=='>' || nsource[1]=='<') {
-        if (!nb_repeatdones)
+        if (!nb_repeatdones && !nb_fordones)
           error(true,images,0,0,
                 "Item substitution '$%c': There is no loop currently running.",
                 nsource[1]);
-        const unsigned int *const rd = repeatdones.data(0,nb_repeatdones - 1);
-        cimg_snprintf(substr,substr.width(),"%u",nsource[1]=='>'?rd[2]:rd[1] - 1);
+        unsigned int loop_type = 0; // 0=repeatdones, 1=fordones, 2=foreachdones
+        for (int i = (int)callstack.size() - 1; i>=0; --i) { // Find type of latest loop
+          const CImg<char>& s = callstack[i];
+          if (*s=='*') {
+            if (s[1]=='r') { loop_type = 0; break; }
+            else if (s[1]=='f') { loop_type = s[4]=='e'?2:1; break; }
+          }
+        }
+        switch (loop_type) {
+        case 0 : { // repeat...done
+          const unsigned int *const rd = repeatdones.data(0,nb_repeatdones - 1);
+          cimg_snprintf(substr,substr.width(),"%u",nsource[1]=='>'?rd[2]:rd[1] - 1);
+        } break;
+        case 1 : { // for...done
+          const unsigned int *const fd = fordones.data(0,nb_fordones - 1);
+          if (nsource[1]=='>') cimg_snprintf(substr,substr.width(),"%d",fd[1]);
+          else std::strcpy(substr,"nan");
+        } break;
+        case 2 : { // foreach...done
+          const unsigned int *const fed = foreachdones.data(0,nb_foreachdones - 1);
+          if (nsource[1]=='>') cimg_snprintf(substr,substr.width(),"%d",fed[1]);
+          else std::strcpy(substr,"nan");
+        } break;
+        }
         CImg<char>(substr.data(),(unsigned int)std::strlen(substr),1,1,1,true).
           append_string_to(substituted_items,ptr_sub);
         nsource+=2;
@@ -6796,7 +6818,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               callstack.remove();
             }
           } else if (s[1]=='f') { // End of a 'for...done' or 'foreach...done' block
-            if (s[4] && s[5]=='e') { // End a 'foreach...done' block
+            if (s[4]=='e') { // End a 'foreach...done' block
               unsigned int *const fed = foreachdones.data(0,nb_foreachdones - 1);
               position = fed[0] - 1;
               ++fed[1]; // Increase iteration counter
