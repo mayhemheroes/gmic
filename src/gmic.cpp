@@ -6801,7 +6801,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   "Command 'done': Not associated to a 'repeat' or 'for' command "
                   "within the same scope.");
           if (s[1]=='r') { // End a 'repeat...done' block
-            *title = 0;
             unsigned int *const rd = repeatdones.data(0,nb_repeatdones - 1);
             ++rd[1]; // Increase iteration counter
             if (--rd[2]) {
