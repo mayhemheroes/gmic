@@ -5629,10 +5629,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
       if (is_debug) {
         if (std::strcmp(item,initial_item))
-          debug(images,"Item[%u] '%s' -> '%s', selection%s.",
+          debug(images,"Item[%u]: '%s' -> '%s', selection%s.",
                 position_item,initial_item,item,gmic_selection.data());
         else
-          debug(images,"Item[%u] '%s', selection%s.",
+          debug(images,"Item[%u]: '%s', selection%s.",
                 position_item,initial_item,gmic_selection.data());
       }
 
@@ -8735,9 +8735,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               else {
                 const bool _is_get = *it=='+' || (*it=='-' && it[1]=='-');
                 it+=(*it=='+' || *it=='-') + (*it=='-' && it[1]=='-');
-                if (!std::strcmp("local",it) || !std::strcmp("l",it) ||
-                    !std::strncmp("local.",it,6) || !std::strncmp("l.",it,2) ||
-                    !std::strncmp("local[",it,6) || !std::strncmp("l[",it,2)) ++nb_locals;
+                if (*it=='l' && (!std::strcmp("local",it) || !std::strcmp("l",it) ||
+                                 !std::strncmp("local.",it,6) || !std::strncmp("l.",it,2) ||
+                                 !std::strncmp("local[",it,6) || !std::strncmp("l[",it,2))) ++nb_locals;
                 else if (!_is_get && (!std::strcmp("endlocal",it) || !std::strcmp("endl",it))) --nb_locals;
                 else if (!_is_get && nb_locals==1 && !std::strcmp("onfail",it)) break;
               }
