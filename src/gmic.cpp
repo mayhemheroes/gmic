@@ -5039,11 +5039,9 @@ CImg<char> gmic::substitute_item(const char *const source,
         for (int i = (int)callstack.size() - 1; i>=0; --i) { // Find type of latest loop
           const CImg<char>& s = callstack[i];
           if (*s=='*') {
-            switch (s[1]) {
-            case 'r' : loop_type = 0; break;
-            case 'd' : loop_type = 1; break;
-            case 'f' : loop_type = s[4]=='e'?3:2; break;
-            }
+            if (s[1]=='r') { loop_type = 0; break; }
+            else if (s[1]=='d') { loop_type = 1; break; }
+            else if (s[1]=='f') { loop_type = s[4]=='e'?3:2; break; }
           }
         }
         switch (loop_type) {
