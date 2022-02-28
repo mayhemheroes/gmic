@@ -7743,7 +7743,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             for (nb_repeat_fors = 1; nb_repeat_fors && position<commands_line.size(); ++position) {
               const char *it = commands_line[position].data();
               it+=*it=='-';
-              if (!std::strcmp("repeat",it) || !std::strcmp("for",it)) ++nb_repeat_fors;
+              if (!std::strcmp("repeat",it) || (*it=='f' && (!std::strcmp("for",it) || !std::strcmp("foreach",it))))
+                ++nb_repeat_fors;
               else if (!std::strcmp("done",it)) --nb_repeat_fors;
             }
             if (nb_repeat_fors && position>=commands_line.size())
@@ -10963,7 +10964,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             for (nb_repeat_fors = 1; nb_repeat_fors && position<commands_line.size(); ++position) {
               const char *it = commands_line[position].data();
               it+=*it=='-';
-              if (!std::strcmp("repeat",it) || !std::strcmp("for",it)) ++nb_repeat_fors;
+              if (!std::strcmp("repeat",it) || (*it=='f' && (!std::strcmp("for",it) || !std::strcmp("foreach",it))))
+                ++nb_repeat_fors;
               else if (!std::strcmp("done",it)) --nb_repeat_fors;
             }
             if (nb_repeat_fors && position>=commands_line.size())
@@ -13225,7 +13227,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               for (level = 1; level && position<commands_line.size(); ++position) {
                 const char *it = commands_line[position].data();
                 it+=*it=='-';
-                if (!std::strcmp("repeat",it) || !std::strcmp("for",it)) ++level;
+                if (!std::strcmp("repeat",it) || (*it=='f' && (!std::strcmp("for",it) || !std::strcmp("foreach",it))))
+                  ++level;
                 else if (!std::strcmp("done",it)) --level;
               }
               callstack_ind = callstack_repeat;
@@ -13247,7 +13250,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               for (level = 1; level && position<commands_line.size(); ++position) {
                 const char *it = commands_line[position].data();
                 it+=*it=='-';
-                if (!std::strcmp("repeat",it) || !std::strcmp("for",it)) ++level;
+                if (!std::strcmp("repeat",it) || (*it=='f' && (!std::strcmp("for",it) || !std::strcmp("foreach",it))))
+                  ++level;
                 else if (!std::strcmp("done",it)) --level;
               }
               callstack_ind = callstack_for;
@@ -15039,11 +15043,12 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           error(true,images,0,0,
                 "A '%s' command is missing (for '%s', line #%u), before return point.",
                 s[1]=='d'?"while":s[1]=='i'?"endif":s[1]=='r' || s[1]=='f'?"done":"endlocal",
-                s[1]=='d'?"do":s[1]=='i'?"if":s[1]=='r'?"repeat":s[1]=='f'?"for":"local",
+                s[1]=='d'?"do":s[1]=='i'?"if":s[1]=='r'?"repeat":s[1]=='f'?(s[4]=='e'?"foreach":"for"):"local",
                 reference_line);
         else error(true,images,0,0,
-              "A '%s' command is missing, before return point.",
-              s[1]=='d'?"while":s[1]=='i'?"endif":s[1]=='r'?"done":s[1]=='f'?"for":"endlocal");
+                   "A '%s' command is missing, before return point.",
+                   s[1]=='d'?"while":s[1]=='i'?"endif":s[1]=='r'?"done":
+                   s[1]=='f'?(s[4]=='e'?"foreach":"for"):"endlocal");
       }
     } else pop_callstack(initial_callstack_size);
 
