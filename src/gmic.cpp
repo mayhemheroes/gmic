@@ -6802,7 +6802,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   "within the same scope.");
           if (s[1]=='r') { // End a 'repeat...done' block
             unsigned int *const rd = repeatdones.data(0,nb_repeatdones - 1);
-            ++rd[1]; // Increase iteration counter
+            ++rd[1];
             if (--rd[2]) {
               position = rd[0] + 1;
               next_debug_line = rd[3];
@@ -6815,14 +6815,22 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           } else if (s[1]=='f') { // End of a 'for...done' or 'foreach...done' block
             if (s[4]=='e') { // End a 'foreach...done' block
               unsigned int *const fed = foreachdones.data(0,nb_foreachdones - 1);
-              position = fed[0] - 1;
-              ++fed[1]; // Increase iteration counter
-              next_debug_line = fed[2]; next_debug_filename = debug_filename;
+              ++fed[1];
+              if (--fed[2]) {
+                position = fed[0] + 1;
+                next_debug_line = fed[3];
+                next_debug_filename = debug_filename;
+              } else {
+                if (is_very_verbose) print(images,0,"End 'foreach...done' block.");
+                --nb_foreachdones;
+                callstack.remove();
+              }
             } else { // End a 'for...done' block
               unsigned int *const fd = fordones.data(0,nb_fordones - 1);
               position = fd[0] - 1;
-              ++fd[1]; // Increase iteration counter
-              next_debug_line = fd[2]; next_debug_filename = debug_filename;
+              ++fd[1];
+              next_debug_line = fd[2];
+              next_debug_filename = debug_filename;
             }
           }
           continue;
@@ -7739,15 +7747,15 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             }
             ++position;
           } else {
-            int nb_repeat_fors = 0;
-            for (nb_repeat_fors = 1; nb_repeat_fors && position<commands_line.size(); ++position) {
+            int nb_repeat_for_foreachs = 0;
+            for (nb_repeat_for_foreachs = 1; nb_repeat_for_foreachs && position<commands_line.size(); ++position) {
               const char *it = commands_line[position].data();
               it+=*it=='-';
               if (!std::strcmp("repeat",it) || (*it=='f' && (!std::strcmp("for",it) || !std::strcmp("foreach",it))))
-                ++nb_repeat_fors;
-              else if (!std::strcmp("done",it)) --nb_repeat_fors;
+                ++nb_repeat_for_foreachs;
+              else if (!std::strcmp("done",it)) --nb_repeat_for_foreachs;
             }
-            if (nb_repeat_fors && position>=commands_line.size())
+            if (nb_repeat_for_foreachs && position>=commands_line.size())
               error(true,images,0,0,
                     "Command 'for': Missing associated 'done' command.");
             if (!is_first) { --nb_fordones; callstack.remove(); }
@@ -7769,7 +7777,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               unsigned int *const fed = foreachdones.data(0,nb_foreachdones++);
               fed[0] = position;
               fed[1] = 0;
-              fed[2] = debug_line;
+              fed[2] = selection._height;
+              fed[3] = debug_line;
           }
           continue;
         }
@@ -10959,16 +10968,16 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             rd[2] = nb;
             rd[3] = debug_line;
           } else {
-            if (is_very_verbose) print(images,0,"Skip 'repeat...done' block (0 iteration).");
-            int nb_repeat_fors = 0;
-            for (nb_repeat_fors = 1; nb_repeat_fors && position<commands_line.size(); ++position) {
+            if (is_very_verbose) print(images,0,"Skip 'repeat...done' block (0 iterations).");
+            int nb_repeat_for_foreachs = 0;
+            for (nb_repeat_for_foreachs = 1; nb_repeat_for_foreachs && position<commands_line.size(); ++position) {
               const char *it = commands_line[position].data();
               it+=*it=='-';
               if (!std::strcmp("repeat",it) || (*it=='f' && (!std::strcmp("for",it) || !std::strcmp("foreach",it))))
-                ++nb_repeat_fors;
-              else if (!std::strcmp("done",it)) --nb_repeat_fors;
+                ++nb_repeat_for_foreachs;
+              else if (!std::strcmp("done",it)) --nb_repeat_for_foreachs;
             }
-            if (nb_repeat_fors && position>=commands_line.size())
+            if (nb_repeat_for_foreachs && position>=commands_line.size())
               error(true,images,0,0,
                     "Command 'repeat': Missing associated 'done' command.");
             continue;
@@ -12768,17 +12777,19 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             print(images,0,"Reach 'while' command -> condition '%s' %s.",
                   gmic_argument_text_printed(),
                   is_cond?"holds":"does not hold");
+          unsigned int *const dw = dowhiles.data(0,nb_dowhiles - 1);
+          ++dw[1];
           if (is_cond) {
-            const unsigned int *const dw = dowhiles.data(0,nb_dowhiles - 1);
             position = dw[0];
-            next_debug_line = dw[2]; next_debug_filename = debug_filename;
+            next_debug_line = dw[2];
+            next_debug_filename = debug_filename;
             continue;
           } else {
             if (is_very_verbose) print(images,0,"End 'do...while' block.");
             --nb_dowhiles;
             callstack.remove();
+            ++position; continue;
           }
-          ++position; continue;
         }
 
         // Warning.
