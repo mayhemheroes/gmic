@@ -7782,13 +7782,23 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 CImg<char>::string(argx).move_to(callstack);
               } else CImg<char>::string("*foreach").move_to(callstack);
               if (nb_foreachdones>=foreachdones._height)
-                foreachdones.resize(4,std::max(2*foreachdones._height,8U),1,1,0);
+                foreachdones.resize(8,std::max(2*foreachdones._height,8U),1,1,0);
               unsigned int *const fed = foreachdones.data(0,nb_foreachdones++);
               fed[0] = position_item;
               fed[1] = 0;
               fed[2] = selection._height;
               fed[3] = debug_line;
+              CImgList<T> *const saved_images = new CImgList<T>();
+              images.move_to(*saved_images);
+              std::memcpy(fed + 4,&saved_images,sizeof(saved_images));
+              CImgList<char> *const saved_images_names = new CImgList<char>();
+              images_names.move_to(*saved_images_names);
+              std::memcpy(fed + 6,&saved_images_names,sizeof(saved_images_names));
             }
+
+            // Keep only a single image from the list of images.
+
+
 
           } else { // Empty selection -> skip block
             if (is_very_verbose)
