@@ -6821,6 +6821,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               next_debug_filename = debug_filename;
             } else { // End a 'foreach...done' block
               unsigned int *const fed = foreachdones.data(0,nb_foreachdones - 1);
+//              int off = (int)fed[4];
               CImgList<T> *p_saved_images;
               std::memcpy(&p_saved_images,fed + 6,sizeof(CImgList<T>*));
               CImgList<T> &saved_images = *p_saved_images;
@@ -6830,17 +6831,29 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               CImg<unsigned int> *p_saved_selection;
               std::memcpy(&p_saved_selection,fed + 10,sizeof(CImg<unsigned int>*));
               CImg<unsigned int> &saved_selection = *p_saved_selection;
-              int off = (int)fed[4];
 
               __ind = saved_selection[fed[1]];
-              images[0].move_to(saved_images[__ind]);
-              images_names[0].move_to(saved_images_names[__ind]);
+              if (fed[3]) { // is_get?
+                images.move_to(saved_images,~0U);
+                images_names.move_to(saved_images_names,~0U);
+              } else {
+                images[0].move_to(saved_images[__ind]);
+                images_names[0].move_to(saved_images_names[__ind]);
+              }
+
+              images.assign(); // TODO : To be removed when all is OK.
+              images_names.assign();
 
               ++fed[1];
               if (--fed[2]) {
                 __ind = saved_selection[fed[1]];
-                saved_images[__ind].move_to(images.assign());
-                saved_images_names[__ind].move_to(images_names.assign());
+                if (fed[3]) { // is_get?
+                  images.assign(saved_images[__ind]);
+                  images_names.assign(saved_images_names[__ind]);
+                } else {
+                  saved_images[__ind].move_to(images);
+                  saved_images_names[__ind].move_to(images_names);
+                }
                 position = fed[0];
                 next_debug_line = fed[5];
                 next_debug_filename = debug_filename;
@@ -7787,7 +7800,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         // Foreach.
-        if (!is_get && !std::strcmp("foreach",command)) {
+        if (!std::strcmp("foreach",command)) {
           if (selection) {
             if (is_very_verbose)
               print(images,0,"Start 'foreach...done' block, with image%s.",
@@ -7818,8 +7831,14 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             std::memcpy(fed + 10,&p_saved_selection,sizeof(CImg<unsigned int>*)); // [10-11]: ptr to 'saved_selection'
 
             // Keep only first image of the selection.
-            (*p_saved_images)[*(*p_saved_selection)].move_to(images);
-            (*p_saved_images_names)[*(*p_saved_selection)].move_to(images_names);
+            __ind = *(*p_saved_selection);
+            if (is_get) {
+              images.assign((*p_saved_images)[__ind]);
+              images_names.assign((*p_saved_images_names)[__ind]);
+            } else {
+              (*p_saved_images)[__ind].move_to(images);
+              (*p_saved_images_names)[__ind].move_to(images_names);
+            }
           } else { // Empty selection -> skip block
             if (is_very_verbose)
               print(images,0,"Skip 'foreach...done' block.");
