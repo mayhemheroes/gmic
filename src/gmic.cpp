@@ -6832,13 +6832,15 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               std::memcpy(&p_saved_selection,fed + 8,sizeof(CImg<unsigned int>*));
               CImg<unsigned int> &saved_selection = *p_saved_selection;
 
-              images[0].move_to(saved_images[fed[1]]);
-              images_names[0].move_to(saved_images_names[fed[1]]);
+              __ind = saved_selection[fed[1]];
+              images[0].move_to(saved_images[__ind]);
+              images_names[0].move_to(saved_images_names[__ind]);
 
               ++fed[1];
               if (--fed[2]) {
-                saved_images[saved_selection[fed[1]]].move_to(images.assign());
-                saved_images_names[saved_selection[fed[1]]].move_to(images_names.assign());
+                __ind = saved_selection[fed[1]];
+                saved_images[__ind].move_to(images.assign());
+                saved_images_names[__ind].move_to(images_names.assign());
                 position = fed[0];
                 next_debug_line = fed[3];
                 next_debug_filename = debug_filename;
