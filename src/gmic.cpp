@@ -5300,7 +5300,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     boundary = 0, pattern = 0, exit_on_anykey = 0, wind = 0, interpolation = 0, hash = 0;
   char end, sep = 0, sep0 = 0, sep1 = 0, sepx = 0, sepy = 0, sepz = 0, sepc = 0, axis = 0;
   double vmin = 0, vmax = 0, value, value0, value1, nvalue, nvalue0, nvalue1;
-  bool is_cond, is_endlocal = false, check_elif = false, run_entrypoint = false;
+  bool is_cond, is_end_local = false, is_end_foreach = false, check_elif = false, run_entrypoint = false;
   float opacity = 0;
   int err;
 
@@ -6823,8 +6823,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 next_debug_filename = debug_filename;
               } else {
                 if (is_very_verbose) print(images,0,"End 'foreach...done' block.");
-                --nb_foreachdones;
-                callstack.remove();
+                is_end_foreach = true;
+                break;
               }
             } else { // End a 'for...done' block
               unsigned int *const fd = fordones.data(0,nb_fordones - 1);
@@ -7371,7 +7371,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   "Command 'endlocal': Not associated to a 'local' command within "
                   "the same scope.");
           if (is_very_verbose) print(images,0,"End 'local...endlocal' block.");
-          is_endlocal = true;
+          is_end_local = true;
           break;
         }
 
@@ -9353,7 +9353,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           if (selection.height()!=1) {
             const CImg<T> arg = CImg<char>::string(argument);
             const unsigned int pend = (unsigned int)arg.size();
-            g_list_c.assign();
             for (unsigned int p = 0; p<pend; ) { // Retrieve list of image names
               unsigned int np = p;
               while (np<pend && arg[np] && arg[np]!=',') ++np;
@@ -9365,13 +9364,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             }
           } else CImg<char>::string(argument).move_to(g_list_c);
 
-          if (selection) { // Selection has been set explicitly
-            if (g_list_c.size()>selection._height)
-              error(true,images,0,0,
-                    "Command 'name': Number of arguments (%u) cannot be higher than "
-                    "the number of images in the selection (%u).",
-                    g_list_c.size(),selection._height);
-          } else { // Selection size depends on number of arguments
+          // Check correctness of specified arguments.
+          if (selection.height()>1 && g_list_c.size()>selection._height)
+            error(true,images,0,0,
+                  "Command 'name': Number of arguments (%u) cannot be higher than "
+                  "the number of images in the selection (%u).",
+                  g_list_c.size(),selection._height);
+          else if (!selection) {
             if (g_list_c.size()>images._width)
               error(true,images,0,0,
                     "Command 'name': Number of arguments (%u) cannot be higher than "
@@ -9379,10 +9378,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                     g_list_c.size(),images._width);
             selection.assign(1,g_list_c.size()).sequence(images._width - g_list_c.size(), images._width - 1);
           }
-
           print(images,0,"Set name%s of image%s to '%s'.",
                 selection.height()>1?"s":"",gmic_selection.data(),gmic_argument_text_printed());
           cimglist_for(g_list_c,l) strreplace_fw(g_list_c[l]);
+
           cimg_forY(selection,l)
             images_names[selection[l]].assign(g_list_c[l%g_list_c.width()]);
           g_list_c.assign();
@@ -15074,7 +15073,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     // Post-check call stack consistency.
     if (!is_quit && !is_return) {
       const CImg<char>& s = callstack.back();
-      if (s[0]=='*' && (s[1]=='d' || s[1]=='f' || s[1]=='i' || (s[1]=='l' && !is_endlocal) || s[1]=='r')) {
+      if (s[0]=='*' && (s[1]=='d' || s[1]=='i' || s[1]=='r' ||
+                        (s[1]=='f' && (s[4]!='e' || !is_end_foreach)) ||
+                        (s[1]=='l' && !is_end_local))) {
         unsigned int reference_line = ~0U;
         if (cimg_sscanf(s,"*%*[a-z]#%u",&reference_line)==1)
           error(true,images,0,0,
@@ -15207,7 +15208,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       error(true,images,0,command,"Command '%s': %s",command,em);
     } else error(true,images,0,0,"%s",error_message.data());
   }
-  if (!is_endlocal) debug_line = initial_debug_line;
+  if (!is_end_local && !is_end_foreach) debug_line = initial_debug_line;
   else {
     if (next_debug_line!=~0U) { debug_line = next_debug_line; next_debug_line = ~0U; }
     if (next_debug_filename!=~0U) { debug_filename = next_debug_filename; next_debug_filename = ~0U; }

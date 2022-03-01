@@ -9906,9 +9906,9 @@ _update_header_html : check "narg(${1=}) && ${2=0}>0 && isbool(${3=0})"
 #@cli : $ image.jpg split x,3 move[1] 0
 #@cli : $ image.jpg split x move[50%--1:2] 0 append x
 
-#@cli nm : eq. to 'name'.
+# nm : eq. to 'name' (old shortcut, keep it for compatibility reasons).
 nm :
-  :: $"*"
+  if narg($[])==1 ::. "$*" else :: $"*" fi
 
 #@cli name : "name1","name2",... : (+)
 #@cli : Set names of selected images.
@@ -34331,7 +34331,7 @@ gui_set_layer_opacity :
 gui_set_layer_pos :
   repeat $! l[$>]
     name=${-gui_layer_name} mode=${-gui_layer_mode} opacity=${-gui_layer_opacity}
-    nm "name("$name"),mode("$mode"),opacity("$opacity"),pos("{round("$1")},{round("$2")}")"
+    nm "name("$name"),mode("$mode"),opacity("$opacity"),pos("{round("$1")}","{round("$2")}")"
   endl done
 
 # Flatten list of input layers according to their blending modes, opacities and positions,
@@ -34369,6 +34369,7 @@ _gui_merge_layers :
       q = r>=0?r:(str[sstr-1]==_')'?sstr-1:-1);
     );
     q>=0?copy(res,str[p + sker],q - p - sker):(def = ['${2--1}']; copy(res,def,size(def)));
+    for (p = 0, p<size(res) && (q = find(res,_','))>=0, res[p=q++] = 26); # Replace comma by quoted comma
     res"`}
 
 # gui_split_preview : "command",_split_type,_split_posx,_split_posy
