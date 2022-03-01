@@ -7766,34 +7766,16 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
         // Foreach.
         if (!is_get && !std::strcmp("foreach",command)) {
-          const bool is_first = !nb_foreachdones || foreachdones(0U,nb_foreachdones - 1)!=position_item;
-          const unsigned int nb = is_first?selection._height:foreachdones(2,nb_foreachdones - 1);
-          if (is_very_verbose) {
-            if (is_first && nb)
+
+          if (selection) {
+            if (is_very_verbose)
               print(images,0,"Start 'foreach...done' block, with image%s.",
                     gmic_selection.data());
-            else
-              print(images,0,"%s %s.",
-                    !nb?"Skip":"Go back to",
-                    is_first?"'foreach...done' block":"'foreach' command");
-          }
-          if (nb) {
-            if (is_first) {
-              if (is_debug_info && debug_line!=~0U) {
-                gmic_use_argx;
-                cimg_snprintf(argx,_argx.width(),"*foreach#%u",debug_line);
-                CImg<char>::string(argx).move_to(callstack);
-              } else CImg<char>::string("*foreach").move_to(callstack);
-              if (nb_foreachdones>=foreachdones._height)
-                foreachdones.resize(4,std::max(2*foreachdones._height,8U),1,1,0);
-              unsigned int *const fed = foreachdones.data(0,nb_foreachdones++);
-              fed[0] = position_item;
-              fed[1] = 0;
-              fed[2] = selection._height;
-              fed[3] = debug_line;
-            }
 
-          } else { // Empty selection: skip 'foreach...done' block
+          } else { // Empty selection -> skip block
+            if (is_very_verbose)
+              print(images,0,"Skip 'foreach...done' block.");
+
             int nb_repeat_for_foreachs = 0;
             for (nb_repeat_for_foreachs = 1; nb_repeat_for_foreachs && position<commands_line.size(); ++position) {
               const char *it = commands_line[position].data();
@@ -7806,6 +7788,29 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               error(true,images,0,0,
                     "Command 'foreach': Missing associated 'done' command.");
           }
+
+          // if (nb) {
+          //   if (is_first) {
+          //     if (is_debug_info && debug_line!=~0U) {
+          //       gmic_use_argx;
+          //       cimg_snprintf(argx,_argx.width(),"*foreach#%u",debug_line);
+          //       CImg<char>::string(argx).move_to(callstack);
+          //     } else CImg<char>::string("*foreach").move_to(callstack);
+          //     if (nb_foreachdones>=foreachdones._height)
+          //       foreachdones.resize(4,std::max(2*foreachdones._height,8U),1,1,0);
+          //     unsigned int *const fed = foreachdones.data(0,nb_foreachdones++);
+          //     fed[0] = position_item;
+          //     fed[1] = 0;
+          //     fed[2] = selection._height;
+          //     fed[3] = debug_line;
+          //   }
+
+          //   // Loop over each image of the selection
+          //   gmic_exception exception;
+          //   cimg_forY(selection,l) {
+          //     std::fprintf(stderr,"\nDEBUG : Run 'foreach' for image[%u]\n",selection[l]);
+          //   }
+
           continue;
         }
 
