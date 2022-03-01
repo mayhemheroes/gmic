@@ -13382,11 +13382,10 @@ transfer_rgb : check "${2=0.3}>=0 && ${3=8}>=0 && ${4=0.15}>=0 && ${5=64}>=0 && 
   sigma=1.5
   repeat $! pass$1 0 l[$>,-1]
     nm_source={0,b} nm_target={1,b}
-    ::[0] source ::[1] target
+    :: source,target
 
     # Generate matching functions from 3D RGB features.
-    +_transfer_rgb[source,target] $2,$sigma,$5
-    ::. fsource :: ftarget
+    +_transfer_rgb[source,target] $2,$sigma,$5 :: fsource,ftarget
     n[fsource,ftarget] 0,255
 
     # Manage color constraints.
@@ -13400,7 +13399,7 @@ transfer_rgb : check "${2=0.3}>=0 && ${3=8}>=0 && ${4=0.15}>=0 && ${5=64}>=0 && 
       fi
       if w>$w1 r2dx[-2,-1] $w1 fi
       if h>$h0 r2dy[-2,-1] $h0 fi
-      ::. visu :: both
+      :: visu,both
 
       w[visu] -1,-1
       N=0 do
@@ -14671,7 +14670,7 @@ _seamcarve :
 
     # Initialise seams, top matrix.
     100%,100% +rows[1] 0
-    ::[1] grad ::[2] low ::[3] seam ::[4] top
+    :: grad,low,seam,top
 
     repeat h#0-1 nr={$>+1}
       +rows[low] $nr
@@ -16288,7 +16287,7 @@ inpaint_matchpatch : check ${is_image_arg\ $1}"&& ${2=0}>=0 && isint(${3=9}) && 
       progress {100*$>/max(1,$nb_scales-1)}
 
       # Compute image and mask at current scales.
-      +r[img,mask] $scale%,$scale%,1,100%,2 ::[-2,-1] scaled_img,scaled_mask
+      +r[img,mask] $scale%,$scale%,1,100%,2 :: scaled_img,scaled_mask
       >=[scaled_mask] 0.95
       if {scaled_mask,!iM} rm[scaled_img,scaled_mask] continue fi # Skip scale (if too low).
       +f[scaled_img] -4096 +j[scaled_img] .,0,0,0,0,1,[scaled_mask] rm.. :: scaled_reference
@@ -17484,7 +17483,7 @@ delaunay : skip "${1=0}"
       )"
 
     # Return output in expected mode.
-    if $mode k[-2,-1] ::. ${bnm}_points :: ${bnm}_faces
+    if $mode k[-2,-1] :: ${bnm}_points,${bnm}_faces
     else {0,[w,h,1,3]} eval.. "polygon(#-1,3,I[#1,i0],I[#1,i1],I[#1,i2],1,i0,i1,i2)" k. :: $nm fi
   endl done
 
@@ -24664,7 +24663,7 @@ drawing : skip ${1=200}
   repeat $! l[$>] split_opacity l[0] to_rgb
     smooth $1,0.2,1,3,3 b 2 sharpen 1000 [0]
     r[0] 20,20,1,3,2 equalize[0] index[1] [0],1,1
-    ::[1] {0,n},1 rm[0]
+    :: {0,n} rm[0]
   endl a c endl done
 
 #@cli drop_shadow : _offset_x[%],_offset_y[%],_smoothness[%]>=0,0<=_curvature<=1,_expand_size={ 0 | 1 }
@@ -30136,8 +30135,7 @@ _x_colorize :
         +. 1 permute. xcyz +j[points] .,0,3 rm..
       else 0 0
       fi
-      ::. colors_replaced
-      :: points_replaced
+      :: colors_replaced,points_replaced
       if narg($baseview) rm[baseview] fi
     fi
 
@@ -30307,7 +30305,7 @@ x_connect4 : check_display $0
       if $x<0 # Draw game
         if !narg($text)
           0 t. "Draw game",0,0,57,1,1 r2dx. {tmpvisu,w/2} expand_xy. 3,0 +dilate. 5 n.. 0,255 to_rgb..
-          ::[-2,-1] text,textm
+          :: text,textm
         fi
         j[tmpvisu] [text],{tmpvisu,([w,h]-[w#$text,h#$text])/2},0,0,{0.7+0.3*sin(5*$|)},[textm]
       else
@@ -30730,7 +30728,7 @@ x_grab_color : skip ${1=xgc_variable} check_display $0
   e[^-1] "Open "${arg\ {0,s},GRAY,GRAYA,RGB,RGBA}" color grabber widget for image$?, with variable name '$1'."
 
   if !{*} w[] ${fitscreen[]\ {[w,h,1]},128,50%},0,0,-1,-1,"Grab a color" fi
-  _x_grab_color +dilate. 3 :: icon_mask *.. 255 to_rgb.. ::. icon_sprite
+  _x_grab_color +dilate. 3 :: icon_mask *.. 255 to_rgb.. :: icon_sprite
 
   xc=5 yc=5 o$1=$$1
 
@@ -31961,7 +31959,7 @@ x_morph : check "isint(${1=16}) && isint(${2=3}) && $2>=0 && $2<=4" check_displa
         +l[keypoints] s c,-2 rv[0,1] a c endl +_x_warp_rbf. {imgb0,round([w,h]/$subsamp)} rm..
         *[-2,-1] $subsamp
         r[-2,-1] {imgb0,[w,h]},1,100%,3
-        ::[-2,-1] warp0,warp1
+        :: warp0,warp1
         rmn imgm
       fi
 
@@ -32054,7 +32052,7 @@ x_morph : check "isint(${1=16}) && isint(${2=3}) && $2>=0 && $2<=4" check_displa
     rmn colormap,imgb0,imgb1,warp0,warp1,imgr,imgm
     +_x_warp_rbf[keypoints] {img0,[w,h]}
     +l[keypoints] s c,-2 rv[0,1] a c endl +_x_warp_rbf. {img0,[w,h]} rm..
-    ::[-2,-1] warp0,warp1
+    :: warp0,warp1
 
     repeat $1
       t,onemt={t=$>/max(1,$1-1);[t,1-t]}
@@ -32400,7 +32398,7 @@ x_paint : check_display $0
 _x_paint :
 
   # Init variables.
-  pass[-2,-1] 1 ('{-2,n}') discard. {'_c1'} ::.. {t} rm.
+  pass[-2,-1] 1 ('{-2,n}') discard. {'_c1'} ::[0] {t} rm.
   __color={0,if(ia<128,vector3(255),vector3(0))}
   brushsize=1
   brushopacity=0
@@ -33683,7 +33681,7 @@ x_tetris : check_display $0
   3,2,1,1,0,1,1,1,1,0
   3,2,1,1,0,1,0,1,1,1
   3,2,1,1,1,1,0,0,1,1
-  ::[-7--1] m0,m4,m8,m12,m16,m20,m24
+  :: m0,m4,m8,m12,m16,m20,m24
 
   if u<0.25  # Enable extended set.
     i 2,1,1,1,1,1
@@ -33692,7 +33690,7 @@ x_tetris : check_display $0
     i 1,1,1,1,1
     i 3,2,1,1,1,1,1,1,0,1
     i 3,3,1,1,1,1,1,1,0,1,1,1,1
-    ::[-6--1] m28,m32,m36,m40,m44,m48
+    :: m28,m32,m36,m40,m44,m48
   fi
   repeat $! i={4*$>} l[m$i] repeat 3 +rotate[0] {90*($>+1)} :: m{$i+$>+1} done endl done
   N=$!
@@ -33710,8 +33708,8 @@ x_tetris : check_display $0
 
   # Generate board and background.
   W=12 H=20
-  $W,$H . ::[-2,-1] board,curr_board
-  {$fact*$W},{$fact*$H},1,3 . ::[-2,-1] render,curr_render +channels. 0 :: curr_render_mask
+  $W,$H . :: board,curr_board
+  {$fact*$W},{$fact*$H},1,3 . :: render,curr_render +channels. 0 :: curr_render_mask
   +rows[render] 0,50% plasma. 1,2 noise. 20 blur_y. 40%,1 +mirror. y a[-2,-1] y ri. [render]
   n. 0,64 blur_x. 1 100%,100% noise. 0.5,2 ==. 1 b. 1 *. 300 +[-2,-1] c. 0,255 :: background
 
@@ -38723,8 +38721,8 @@ fx_engrave :
         repeat $10 guided 10,{$10*80} done
         rgb2hsv s c +... $11 +.. {$12%} +. $13% a c hsv2rgb
       endl a c endl
-      ::[0] mode(darken),name($nm),pos($pos)
-      ::[1] name($nm" [colors]"),pos($pos)
+      ::[0] "mode(darken),name("$nm"),pos("$pos")"
+      ::[1] "name("$nm" [colors]),pos("$pos")"
     fi
 
  endl done
@@ -39116,20 +39114,20 @@ fx_channels2layers :
   repeat $! l[$<] nm=${-gui_layer_name} to_rgb
     if $1==0 # RGB
       s[0] c
-      r[0] 100%,100%,1,3,0,0,0,0,0,0 ::[0] name($nm" "[red]),mode(add)
-      r[1] 100%,100%,1,3,0,0,0,0,0,0.5 ::[1] name($nm" "[green]),mode(add)
-      r[2] 100%,100%,1,3,0,0,0,0,0,1 ::[2] name($nm" "[blue]),mode(add)
+      r[0] 100%,100%,1,3,0,0,0,0,0,0 ::[0] "name("$nm" [red]),mode(add)"
+      r[1] 100%,100%,1,3,0,0,0,0,0,0.5 ::[1] "name("$nm" [green]),mode(add)"
+      r[2] 100%,100%,1,3,0,0,0,0,0,1 ::[2] "name("$nm" [blue]),mode(add)"
     elif $1==1 # CMY
       rgb2cmy[0] -[0] 255 s[0] c
-      r[0] 100%,100%,1,3,0,0,0,0,0,0 ::[0] name($nm" "[cyan]),mode(difference)
-      r[1] 100%,100%,1,3,0,0,0,0,0,0.5 ::[1] name($nm" "[magenta]),mode(difference)
-      r[2] 100%,100%,1,3,0,0,0,0,0,1 ::[2] name($nm" "[yellow]),mode(difference)
+      r[0] 100%,100%,1,3,0,0,0,0,0,0 ::[0] "name("$nm" [cyan]),mode(difference)"
+      r[1] 100%,100%,1,3,0,0,0,0,0,0.5 ::[1] "name("$nm" [magenta]),mode(difference)"
+      r[2] 100%,100%,1,3,0,0,0,0,0,1 ::[2] "name("$nm" [yellow]),mode(difference)"
       +[0-2] 255
-      i[0] 100%,100%,1,3,255 ::[0] name($nm" "[base]),mode(difference)
+      i[0] 100%,100%,1,3,255 ::[0] "name("$nm" [base]),mode(difference)"
     else # HSV
       rgb2hsv[0] s[0] c,-2
-      r[0] 100%,100%,1,3,0,0 sh[0] 2 f. 1 rm. ::[0] name($nm" "[color]),mode(normal)
-      r[1] 100%,100%,1,3,0,0,0,0,0,1 ::[1] name($nm" "[value]),mode(value)
+      r[0] 100%,100%,1,3,0,0 sh[0] 2 f. 1 rm. ::[0] "name("$nm" [color]),mode(normal)"
+      r[1] 100%,100%,1,3,0,0,0,0,0,1 ::[1] "name("$nm" [value]),mode(value)"
       hsv2rgb[0,1] rv[0,1]
     fi
   endl done
@@ -42297,7 +42295,7 @@ fx_extract_foreground :
     sh 3 b. $1% if $2>0 dilate. {1+2*$2} elif $2<0 erode. {1-2*$2} fi
     rm.
     if $3==1 sh 3 max. 1 rm.
-    elif $3==2 s c,-3 r. 100%,100%,1,4 rv ::[0] name(Mask) ::[1] name($nm)
+    elif $3==2 s c,-3 r. 100%,100%,1,4 rv ::[0] "name(Mask)" ::[1] "name("$nm")"
     elif $3==3
       .
       sh.. 0,2 +channels... 3,3 >=. 3 *[-2,-1] rm.
@@ -42305,8 +42303,8 @@ fx_extract_foreground :
       sh. 3 *. -1 +. 255 rm.
       gui_autocrop_layers[0]
       pos0=${gui_layer_pos[0]} pos1=${gui_layer_pos[1]}
-      ::[0] name($nm" [foreground]"),pos($pos0)
-      ::[1] name($nm" [background]"),pos($pos1)
+      ::[0] "name("$nm" [foreground]),pos("$pos0")"
+      ::[1] "name("$nm" [background]),pos("$pos1")"
     fi
   endl done
   if narg($status)>=4 u \{$1\}\{$2\}\{$3\}\{$4\}\{{w},{h}\}\{$status\} else u "" fi
@@ -42863,17 +42861,17 @@ fx_drop_water :
     ::[img] name($nm)
 
     *[shadow] 255 channels[shadow] -1,0 mv[shadow] 1
-    ::[shadow] name($nm" [shadow]"),mode(alpha),opacity({$12*100})
+    ::[shadow] "name("$nm" [shadow]),mode(alpha),opacity("{$12*100}")"
 
     to_a[refraction] sh[refraction] 100% +b[shape] $15% *[-2,-1] rm.
     mv[refraction] 2
-    ::[refraction] name($nm" [refraction]"),mode(alpha)
+    ::[refraction] "name("$nm" [refraction]),mode(alpha)"
 
     channels[spots] -1,0 sh[spots] 0 f. 1 rm. *[spots] 255
-    ::[spots] name($nm" [specular spots]"),mode(alpha),opacity({$9*100})
+    ::[spots] "name("$nm" [specular spots]),mode(alpha),opacity("{$9*100}")"
 
     rv[shape,grad] a[grad,shape] c *[grad] 255 b[grad] $15%
-    ::[grad] name($nm" [gradient]"),mode(grainmerge)
+    ::[grad] "name("$nm" [gradient]),mode(grainmerge)"
 
     rv
     if !$16 gui_merge_layers :: $nm0 fi
@@ -44188,7 +44186,7 @@ fx_jpeg_artefacts :
 "O/t/7vw+sf/n1g8Z/cHbX4j4P5qfZ/vvPf0+0v+j/YGo/ojmF4nf/7nz82z/vaffR/p/tD8Q1R/R/CLx+z93fp7tv/f0+0j/j/YHovojml8kfv/nzs+"\
 "z/feefh/p/9H+QFR/RPOLxO//3Pl5tv/e0+8j/T/aH4jqj2h+kfj9nzs/z/bfe/p9pP9H+wNR/RHNLxK//3Pn59n+e0+/j/T/aH8gqj+i+UXi93/u/D"\
 "zbf+/p95H+H+0PRPVHNL/4DgTd2gQ="
-  ::[-2,-1] dct,idct
+  :: dct,idct
 
   # Input DCT quantization matrix.
   (16,11,10,16,24,40,51,61;12,12,14,19,26,58,60,55;14,13,16,24,40,57,69,56;14,17,22,29,51,87,80,62;\
