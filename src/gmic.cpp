@@ -5299,7 +5299,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     boundary = 0, pattern = 0, exit_on_anykey = 0, wind = 0, interpolation = 0, hash = 0;
   char end, sep = 0, sep0 = 0, sep1 = 0, sepx = 0, sepy = 0, sepz = 0, sepc = 0, axis = 0;
   double vmin = 0, vmax = 0, value, value0, value1, nvalue, nvalue0, nvalue1;
-  bool is_cond, is_end_local = false, is_end_foreach = false, check_elif = false, run_entrypoint = false;
+  bool is_cond, is_end_local = false, check_elif = false, run_entrypoint = false;
   float opacity = 0;
   int err;
 
@@ -15104,9 +15104,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     // Post-check call stack consistency.
     if (!is_quit && !is_return) {
       const CImg<char>& s = callstack.back();
-      if (s[0]=='*' && (s[1]=='d' || s[1]=='i' || s[1]=='r' ||
-                        (s[1]=='f' && (s[4]!='e' || !is_end_foreach)) ||
-                        (s[1]=='l' && !is_end_local))) {
+      if (s[0]=='*' && (s[1]=='d' || s[1]=='i' || s[1]=='r' || s[1]=='f' || (s[1]=='l' && !is_end_local))) {
         unsigned int reference_line = ~0U;
         if (cimg_sscanf(s,"*%*[a-z]#%u",&reference_line)==1)
           error(true,images,0,0,
@@ -15239,7 +15237,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       error(true,images,0,command,"Command '%s': %s",command,em);
     } else error(true,images,0,0,"%s",error_message.data());
   }
-  if (!is_end_local && !is_end_foreach) debug_line = initial_debug_line;
+  if (!is_end_local) debug_line = initial_debug_line;
   else {
     if (next_debug_line!=~0U) { debug_line = next_debug_line; next_debug_line = ~0U; }
     if (next_debug_filename!=~0U) { debug_filename = next_debug_filename; next_debug_filename = ~0U; }
