@@ -6822,13 +6822,35 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               next_debug_filename = debug_filename;
             } else { // End a 'foreach...done' block
               unsigned int *const fed = foreachdones.data(0,nb_foreachdones - 1);
+              CImgList<T> *p_saved_images;
+              std::memcpy(&p_saved_images,fed + 4,sizeof(CImgList<T>*));
+              CImgList<T> &saved_images = *p_saved_images;
+              CImgList<char> *p_saved_images_names;
+              std::memcpy(&p_saved_images_names,fed + 6,sizeof(CImgList<char>*));
+              CImgList<char> &saved_images_names = *p_saved_images_names;
+              CImg<unsigned int> *p_saved_selection;
+              std::memcpy(&p_saved_selection,fed + 8,sizeof(CImg<unsigned int>*));
+              CImg<unsigned int> &saved_selection = *p_saved_selection;
+
+              images[0].move_to(saved_images[fed[1]]);
+              images_names[0].move_to(saved_images_names[fed[1]]);
+
               ++fed[1];
               if (--fed[2]) {
+                saved_images[saved_selection[fed[1]]].move_to(images.assign());
+                saved_images_names[saved_selection[fed[1]]].move_to(images_names.assign());
                 position = fed[0];
                 next_debug_line = fed[3];
                 next_debug_filename = debug_filename;
               } else {
                 if (is_very_verbose) print(images,0,"End 'foreach...done' block.");
+
+                saved_images.move_to(images.assign());
+                saved_images_names.move_to(images_names.assign());
+                delete p_saved_images;
+                delete p_saved_images_names;
+                delete p_saved_selection;
+
                 --nb_foreachdones;
                 callstack.remove();
               }
@@ -7777,7 +7799,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               CImg<char>::string(argx).move_to(callstack);
             } else CImg<char>::string("*foreach").move_to(callstack);
             if (nb_foreachdones>=foreachdones._height)
-              foreachdones.resize(8,std::max(2*foreachdones._height,8U),1,1,0);
+              foreachdones.resize(10,std::max(2*foreachdones._height,8U),1,1,0);
             unsigned int *const fed = foreachdones.data(0,nb_foreachdones++);
             fed[0] = position_item + 1;
             fed[1] = 0;
