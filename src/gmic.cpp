@@ -7766,40 +7766,35 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
         // Foreach.
         if (!is_get && !std::strcmp("foreach",command)) {
-          const bool is_first = !nb_foreachdones || foreachdones(0U,nb_foreachdones - 1)!=position_item;
+          if (selection) {
+            if (is_very_verbose)
+              print(images,0,"Start 'foreach...done' block, with image%s.",
+                    gmic_selection.data());
 
-          if (!is_first || selection) {
-            if (is_very_verbose) {
-              if (is_first) print(images,0,"Start 'foreach...done' block, with image%s.",
-                                  gmic_selection.data());
-              else print(images,0,"Go back to 'foreach' command.");
-            }
+            if (is_debug_info && debug_line!=~0U) {
+              gmic_use_argx;
+              cimg_snprintf(argx,_argx.width(),"*foreach#%u",debug_line);
+              CImg<char>::string(argx).move_to(callstack);
+            } else CImg<char>::string("*foreach").move_to(callstack);
+            if (nb_foreachdones>=foreachdones._height)
+              foreachdones.resize(8,std::max(2*foreachdones._height,8U),1,1,0);
+            unsigned int *const fed = foreachdones.data(0,nb_foreachdones++);
+            fed[0] = position_item + 1;
+            fed[1] = 0;
+            fed[2] = selection._height;
+            fed[3] = debug_line;
+            CImgList<T> *const p_saved_images = new CImgList<T>();
+            images.move_to(*p_saved_images);
+            std::memcpy(fed + 4,&p_saved_images,sizeof(CImgList<T>*));
+            CImgList<char> *const p_saved_images_names = new CImgList<char>();
+            images_names.move_to(*p_saved_images_names);
+            std::memcpy(fed + 6,&p_saved_images_names,sizeof(CImgList<char>*));
+            CImg<unsigned int> *const p_saved_selection = new CImg<unsigned int>(selection);
+            std::memcpy(fed + 8,&p_saved_selection,sizeof(CImg<unsigned int>*));
 
-            if (is_first) {
-              if (is_debug_info && debug_line!=~0U) {
-                gmic_use_argx;
-                cimg_snprintf(argx,_argx.width(),"*foreach#%u",debug_line);
-                CImg<char>::string(argx).move_to(callstack);
-              } else CImg<char>::string("*foreach").move_to(callstack);
-              if (nb_foreachdones>=foreachdones._height)
-                foreachdones.resize(8,std::max(2*foreachdones._height,8U),1,1,0);
-              unsigned int *const fed = foreachdones.data(0,nb_foreachdones++);
-              fed[0] = position_item;
-              fed[1] = 0;
-              fed[2] = selection._height;
-              fed[3] = debug_line;
-              CImgList<T> *const saved_images = new CImgList<T>();
-              images.move_to(*saved_images);
-              std::memcpy(fed + 4,&saved_images,sizeof(saved_images));
-              CImgList<char> *const saved_images_names = new CImgList<char>();
-              images_names.move_to(*saved_images_names);
-              std::memcpy(fed + 6,&saved_images_names,sizeof(saved_images_names));
-            }
-
-            // Keep only a single image from the list of images.
-
-
-
+            // Keep only first image of the selection.
+            (*p_saved_images)[*selection].move_to(images);
+            (*p_saved_images_names)[*selection].move_to(images_names);
           } else { // Empty selection -> skip block
             if (is_very_verbose)
               print(images,0,"Skip 'foreach...done' block.");
