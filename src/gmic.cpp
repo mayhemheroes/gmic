@@ -7809,13 +7809,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             fed[5] = debug_line;
             CImgList<T> *const p_saved_images = new CImgList<T>();
             images.swap(*p_saved_images);
-            std::memcpy(fed + 6,&p_saved_images,sizeof(CImgList<T>*)); // fed[6-7]: ptr to 'saved_images'
+            std::memcpy(fed + 6,&p_saved_images,sizeof(CImgList<T>*)); // [6-7]: ptr to 'saved_images'
             CImgList<char> *const p_saved_images_names = new CImgList<char>();
             images_names.swap(*p_saved_images_names);
-            std::memcpy(fed + 8,&p_saved_images_names,sizeof(CImgList<char>*)); // fed[8-9]: ptr to 'saved_images_names'
+            std::memcpy(fed + 8,&p_saved_images_names,sizeof(CImgList<char>*)); // [8-9]: ptr to 'saved_images_names'
             CImg<unsigned int> *const p_saved_selection = new CImg<unsigned int>();
             selection.swap(*p_saved_selection);
-            std::memcpy(fed + 10,&p_saved_selection,sizeof(CImg<unsigned int>*)); // fed[10-11]: ptr to 'saved_selection'
+            std::memcpy(fed + 10,&p_saved_selection,sizeof(CImg<unsigned int>*)); // [10-11]: ptr to 'saved_selection'
 
             // Keep only first image of the selection.
             (*p_saved_images)[*(*p_saved_selection)].move_to(images);
