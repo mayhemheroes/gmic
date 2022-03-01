@@ -6821,7 +6821,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               next_debug_filename = debug_filename;
             } else { // End a 'foreach...done' block
               unsigned int *const fed = foreachdones.data(0,nb_foreachdones - 1);
-//              int off = (int)fed[4];
+              int off = (int)fed[4];
               CImgList<T> *p_saved_images;
               std::memcpy(&p_saved_images,fed + 6,sizeof(CImgList<T>*));
               CImgList<T> &saved_images = *p_saved_images;
@@ -6832,21 +6832,29 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               std::memcpy(&p_saved_selection,fed + 10,sizeof(CImg<unsigned int>*));
               CImg<unsigned int> &saved_selection = *p_saved_selection;
 
-              __ind = saved_selection[fed[1]];
+              // Transfer back images to saved list of images.
               if (fed[3]) { // is_get?
                 images.move_to(saved_images,~0U);
                 images_names.move_to(saved_images_names,~0U);
               } else {
-                images[0].move_to(saved_images[__ind]);
-                images_names[0].move_to(saved_images_names[__ind]);
+                __ind = saved_selection[fed[1]] + off;
+                if (!images) {
+                  saved_images.remove(__ind);
+                  saved_images_names.remove(__ind);
+                  --off;
+                } else {
+                  images[0].move_to(saved_images[__ind]);
+                  images_names[0].move_to(saved_images_names[__ind]);
+                }
               }
 
               images.assign(); // TODO : To be removed when all is OK.
               images_names.assign();
 
+              // Prepare next iteration.
               ++fed[1];
               if (--fed[2]) {
-                __ind = saved_selection[fed[1]];
+                __ind = saved_selection[fed[1]] + off;
                 if (fed[3]) { // is_get?
                   images.assign(saved_images[__ind]);
                   images_names.assign(saved_images_names[__ind]);
@@ -6854,6 +6862,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   saved_images[__ind].move_to(images);
                   saved_images_names[__ind].move_to(images_names);
                 }
+                fed[4] = (unsigned int)off;
                 position = fed[0];
                 next_debug_line = fed[5];
                 next_debug_filename = debug_filename;
