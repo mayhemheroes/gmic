@@ -6814,7 +6814,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               callstack.remove();
             }
           } else if (s[1]=='f') {
-            if (s[4]=='e') { // End a 'foreach...done' block
+            if (s[4]!='e') { // End a 'for...done' block
+              unsigned int *const fd = fordones.data(0,nb_fordones - 1);
+              position = fd[0];
+              ++fd[1];
+              next_debug_line = fd[2];
+              next_debug_filename = debug_filename;
+            } else { // End a 'foreach...done' block
               unsigned int *const fed = foreachdones.data(0,nb_foreachdones - 1);
               ++fed[1];
               if (--fed[2]) {
@@ -6826,12 +6832,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 --nb_foreachdones;
                 callstack.remove();
               }
-            } else { // End a 'for...done' block
-              unsigned int *const fd = fordones.data(0,nb_fordones - 1);
-              position = fd[0];
-              ++fd[1];
-              next_debug_line = fd[2];
-              next_debug_filename = debug_filename;
             }
           }
           continue;
