@@ -5061,8 +5061,7 @@ CImg<char> gmic::substitute_item(const char *const source,
         } break;
         case 3 : { // foreach...done
           const unsigned int *const fed = foreachdones.data(0,nb_foreachdones - 1);
-          if (nsource[1]=='>') cimg_snprintf(substr,substr.width(),"%d",fed[1]);
-          else std::strcpy(substr,"nan"); // TODO!
+          cimg_snprintf(substr,substr.width(),"%d",nsource[1]=='>'?fed[1]:fed[2] - 1);
         } break;
         }
         CImg<char>(substr.data(),(unsigned int)std::strlen(substr),1,1,1,true).
@@ -6823,14 +6822,15 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             } else { // End a 'foreach...done' block
               unsigned int *const fed = foreachdones.data(0,nb_foreachdones - 1);
               CImgList<T> *p_saved_images;
-              std::memcpy(&p_saved_images,fed + 4,sizeof(CImgList<T>*));
+              std::memcpy(&p_saved_images,fed + 6,sizeof(CImgList<T>*));
               CImgList<T> &saved_images = *p_saved_images;
               CImgList<char> *p_saved_images_names;
-              std::memcpy(&p_saved_images_names,fed + 6,sizeof(CImgList<char>*));
+              std::memcpy(&p_saved_images_names,fed + 8,sizeof(CImgList<char>*));
               CImgList<char> &saved_images_names = *p_saved_images_names;
               CImg<unsigned int> *p_saved_selection;
-              std::memcpy(&p_saved_selection,fed + 8,sizeof(CImg<unsigned int>*));
+              std::memcpy(&p_saved_selection,fed + 10,sizeof(CImg<unsigned int>*));
               CImg<unsigned int> &saved_selection = *p_saved_selection;
+              int off = (int)fed[4];
 
               __ind = saved_selection[fed[1]];
               images[0].move_to(saved_images[__ind]);
@@ -6842,17 +6842,15 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 saved_images[__ind].move_to(images.assign());
                 saved_images_names[__ind].move_to(images_names.assign());
                 position = fed[0];
-                next_debug_line = fed[3];
+                next_debug_line = fed[5];
                 next_debug_filename = debug_filename;
               } else {
                 if (is_very_verbose) print(images,0,"End 'foreach...done' block.");
-
-                saved_images.move_to(images.assign());
-                saved_images_names.move_to(images_names.assign());
+                saved_images.swap(images);
+                saved_images_names.swap(images_names);
                 delete p_saved_images;
                 delete p_saved_images_names;
                 delete p_saved_selection;
-
                 --nb_foreachdones;
                 callstack.remove();
               }
@@ -7801,24 +7799,27 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               CImg<char>::string(argx).move_to(callstack);
             } else CImg<char>::string("*foreach").move_to(callstack);
             if (nb_foreachdones>=foreachdones._height)
-              foreachdones.resize(10,std::max(2*foreachdones._height,8U),1,1,0);
+              foreachdones.resize(11,std::max(2*foreachdones._height,8U),1,1,0);
             unsigned int *const fed = foreachdones.data(0,nb_foreachdones++);
             fed[0] = position_item + 1;
-            fed[1] = 0;
+            fed[1] = 0; // Iteration counter
             fed[2] = selection._height;
-            fed[3] = debug_line;
+            fed[3] = (unsigned int)is_get;
+            fed[4] = 0; // Index offset
+            fed[5] = debug_line;
             CImgList<T> *const p_saved_images = new CImgList<T>();
-            images.move_to(*p_saved_images);
-            std::memcpy(fed + 4,&p_saved_images,sizeof(CImgList<T>*)); // fed[4-5]: ptr to 'saved_images'
+            images.swap(*p_saved_images);
+            std::memcpy(fed + 6,&p_saved_images,sizeof(CImgList<T>*)); // fed[6-7]: ptr to 'saved_images'
             CImgList<char> *const p_saved_images_names = new CImgList<char>();
-            images_names.move_to(*p_saved_images_names);
-            std::memcpy(fed + 6,&p_saved_images_names,sizeof(CImgList<char>*)); // fed[6-7]: ptr to 'saved_images_names'
-            CImg<unsigned int> *const p_saved_selection = new CImg<unsigned int>(selection);
-            std::memcpy(fed + 8,&p_saved_selection,sizeof(CImg<unsigned int>*)); // fed[8-9]: ptr to 'saved_selection'
+            images_names.swap(*p_saved_images_names);
+            std::memcpy(fed + 8,&p_saved_images_names,sizeof(CImgList<char>*)); // fed[8-9]: ptr to 'saved_images_names'
+            CImg<unsigned int> *const p_saved_selection = new CImg<unsigned int>();
+            selection.swap(*p_saved_selection);
+            std::memcpy(fed + 10,&p_saved_selection,sizeof(CImg<unsigned int>*)); // fed[10-11]: ptr to 'saved_selection'
 
             // Keep only first image of the selection.
-            (*p_saved_images)[*selection].move_to(images);
-            (*p_saved_images_names)[*selection].move_to(images_names);
+            (*p_saved_images)[*(*p_saved_selection)].move_to(images);
+            (*p_saved_images_names)[*(*p_saved_selection)].move_to(images_names);
           } else { // Empty selection -> skip block
             if (is_very_verbose)
               print(images,0,"Skip 'foreach...done' block.");
