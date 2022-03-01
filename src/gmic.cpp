@@ -6842,16 +6842,21 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   saved_images.remove(__ind);
                   saved_images_names.remove(__ind);
                   --off;
-                } else {
+                } else if (images.width()==1) {
                   images[0].move_to(saved_images[__ind]);
                   images_names[0].move_to(saved_images_names[__ind]);
+                } else {
+                  saved_images.remove(__ind);
+                  saved_images_names.remove(__ind);
+                  off+=images.width() - 1;
+                  images.move_to(saved_images,__ind);
+                  images_names.move_to(saved_images_names,__ind);
                 }
               }
 
-              images.assign(); // TODO : To be removed when all is OK.
-              images_names.assign();
-
               // Prepare next iteration.
+              images.assign();
+              images_names.assign();
               ++fed[1];
               if (--fed[2]) {
                 __ind = saved_selection[fed[1]] + off;
