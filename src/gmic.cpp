@@ -6832,9 +6832,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               std::memcpy(&p_saved_selection,fed + 10,sizeof(CImg<unsigned int>*));
               CImg<unsigned int> &saved_selection = *p_saved_selection;
 
-              selection.print("\nDEBUG : SELECT");
-              saved_selection.print("\nDEBUG : SAVED");
-
               // Transfer back images to saved list of images.
               if (fed[3]) { // is_get?
                 images.move_to(saved_images,~0U);
@@ -7829,7 +7826,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               CImg<char>::string(argx).move_to(callstack);
             } else CImg<char>::string("*foreach").move_to(callstack);
             if (nb_foreachdones>=foreachdones._height)
-              foreachdones.resize(11,std::max(2*foreachdones._height,8U),1,1,0);
+              foreachdones.resize(12,std::max(2*foreachdones._height,8U),1,1,0);
             unsigned int *const fed = foreachdones.data(0,nb_foreachdones++);
             fed[0] = position_item + 1;
             fed[1] = 0; // Iteration counter
@@ -7856,10 +7853,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               (*p_saved_images)[__ind].move_to(images);
               (*p_saved_images_names)[__ind].move_to(images_names);
             }
-
-            selection.print("\nDEBUG-0 : SELECT");
-            p_saved_selection->print("\nDEBUG-0 : SAVED");
-
 
           } else { // Empty selection -> skip block
             if (is_very_verbose)
