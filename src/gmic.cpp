@@ -5294,6 +5294,12 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 #define gmic_use_message gmic_use_var(message,1024)
 #define gmic_use_formula gmic_use_var(formula,4096)
 #define gmic_use_color gmic_use_var(color,4096)
+#define gmic_if_flr \
+  if (!std::strcmp("repeat",it) || \
+  (*it=='l' && ((!std::strncmp("local",it,5) && (!it[5] || it[5]=='.' || it[5]=='[')) || \
+                (!std::strncmp("l",it,2) && (!it[2] || it[2]=='.' || it[2]=='[')))) || \
+    (*it=='f' && (!std::strcmp("for",it) || \
+                  (!std::strncmp("foreach",it,7) && (!it[7] || it[7]=='.' || it[7]=='[')))))
 
   unsigned int next_debug_line = ~0U, next_debug_filename = ~0U, is_high_connectivity, __ind = 0,
     boundary = 0, pattern = 0, exit_on_anykey = 0, wind = 0, interpolation = 0, hash = 0;
@@ -7804,9 +7810,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             for (nb_levels = 1; nb_levels && position<commands_line.size(); ++position) {
               const char *it = commands_line[position].data();
               it+=*it=='-';
-              if (!std::strcmp("repeat",it) || (*it=='f' && (!std::strcmp("for",it) || !std::strcmp("foreach",it))))
-                ++nb_levels;
-              else if (!std::strcmp("done",it)) --nb_levels;
+              gmic_if_flr ++nb_levels; else if (!std::strcmp("done",it)) --nb_levels;
             }
             if (nb_levels && position>=commands_line.size())
               error(true,images,0,0,
@@ -7865,9 +7869,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             for (nb_levels = 1; nb_levels && position<commands_line.size(); ++position) {
               const char *it = commands_line[position].data();
               it+=*it=='-';
-              if (!std::strcmp("repeat",it) || (*it=='f' && (!std::strcmp("for",it) || !std::strcmp("foreach",it))))
-                ++nb_levels;
-              else if (!std::strcmp("done",it)) --nb_levels;
+              gmic_if_flr ++nb_levels; else if (!std::strcmp("done",it)) --nb_levels;
             }
             if (nb_levels && position>=commands_line.size())
               error(true,images,0,0,
@@ -7875,19 +7877,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           }
           continue;
         }
-
-#define gmic_if_sth_done \
-        if (!std::strcmp("repeat",it) || \
-            (*it=='l' && (!std::strcmp("local",it) || !std::strcmp("l",it) || \
-                          !std::strncmp("local.",it,6) || !std::strcmp("l.",it,2) || \
-                          !std::strncmp("local[",it,6) || !std::strcmp("l[",it,2))) || \
-            (*it=='f' && (!std::strcmp("for",it) || !std::strcmp("foreach",it) || \
-                          !std::strncmp("foreach.",it,8) || \
-                          !std::strncmp("foreach[",it,8))))
-
-
-
-
 
         // Fill.
         if (!std::strcmp("fill",command)) {
@@ -11080,9 +11069,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             for (nb_levels = 1; nb_levels && position<commands_line.size(); ++position) {
               const char *it = commands_line[position].data();
               it+=*it=='-';
-              if (!std::strcmp("repeat",it) || (*it=='f' && (!std::strcmp("for",it) || !std::strcmp("foreach",it))))
-                ++nb_levels;
-              else if (!std::strcmp("done",it)) --nb_levels;
+              gmic_if_flr ++nb_levels; else if (!std::strcmp("done",it)) --nb_levels;
             }
             if (nb_levels && position>=commands_line.size())
               error(true,images,0,0,
@@ -13349,9 +13336,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               for (nb_levels = 1; nb_levels && position<commands_line.size(); ++position) {
                 const char *it = commands_line[position].data();
                 it+=*it=='-';
-                if (!std::strcmp("repeat",it) || (*it=='f' && (!std::strcmp("for",it) || !std::strcmp("foreach",it))))
-                  ++nb_levels;
-                else if (!std::strcmp("done",it)) --nb_levels;
+                gmic_if_flr ++nb_levels; else if (!std::strcmp("done",it)) --nb_levels;
               }
               callstack_ind = callstack_repeat;
               stb = "repeat"; ste = "done";
@@ -13372,9 +13357,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               for (nb_levels = 1; nb_levels && position<commands_line.size(); ++position) {
                 const char *it = commands_line[position].data();
                 it+=*it=='-';
-                if (!std::strcmp("repeat",it) || (*it=='f' && (!std::strcmp("for",it) || !std::strcmp("foreach",it))))
-                  ++nb_levels;
-                else if (!std::strcmp("done",it)) --nb_levels;
+                gmic_if_flr ++nb_levels; else if (!std::strcmp("done",it)) --nb_levels;
               }
               callstack_ind = callstack_for;
               stb = "for"; ste = "done";
@@ -13384,9 +13367,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               for (nb_levels = 1; nb_levels && position<commands_line.size(); ++position) {
                 const char *it = commands_line[position].data();
                 it+=*it=='-';
-                if (!std::strcmp("repeat",it) || (*it=='f' && (!std::strcmp("for",it) || !std::strcmp("foreach",it))))
-                  ++nb_levels;
-                else if (!std::strcmp("done",it)) --nb_levels;
+                gmic_if_flr ++nb_levels; else if (!std::strcmp("done",it)) --nb_levels;
               }
               callstack_ind = callstack_foreach;
               stb = "foreach"; ste = "done";
