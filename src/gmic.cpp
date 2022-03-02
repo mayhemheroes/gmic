@@ -6832,6 +6832,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               std::memcpy(&p_saved_selection,fed + 10,sizeof(CImg<unsigned int>*));
               CImg<unsigned int> &saved_selection = *p_saved_selection;
 
+              saved_selection.print("DEBUG");
+
               // Transfer back images to saved list of images.
               if (fed[3]) { // is_get?
                 images.move_to(saved_images,~0U);
@@ -9440,7 +9442,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                     "Command 'name': Number of arguments (%u) cannot be higher than "
                     "the number of images in the list (%u).",
                     g_list_c.size(),images._width);
-            selection.assign(1,g_list_c.size()).sequence(images._width - g_list_c.size(), images._width - 1);
+            selection.assign(1,g_list_c.size());
+            cimg_forY(selection,l) selection[l] = images._width - g_list_c.size() + l;
           }
           print(images,0,"Set name%s of image%s to '%s'.",
                 selection.height()>1?"s":"",gmic_selection.data(),gmic_argument_text_printed());
