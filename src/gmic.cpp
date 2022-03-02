@@ -5541,7 +5541,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
         if (err==1) { // No selection -> all images
           if (siz && ((*command==':' && command[1]==':' && !command[2]) || !std::strcmp(command,"name"))) {
-            selection.assign(); selection._is_shared = false; // Empty shared selection -> depends on number of arguments
+            selection.assign(); selection._is_shared = true; // Empty shared selection -> depends on number of arguments
           } else {
             if (!std::strcmp(command,"pass")) selection.assign(1,parent_images.size());
             else selection.assign(1,siz);
@@ -9423,7 +9423,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           } else CImg<char>::string(argument).move_to(g_list_c);
 
           // Check correctness of specified arguments.
-          if (selection.height()>1 && g_list_c.size()>selection._height)
+          if (!selection.is_shared() && selection.height()!=1 && g_list_c.size()>selection._height)
             error(true,images,0,0,
                   "Command 'name': Number of arguments (%u) cannot be higher than "
                   "the number of images in the selection (%u).",
@@ -9434,6 +9434,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                     "Command 'name': Number of arguments (%u) cannot be higher than "
                     "the number of images in the list (%u).",
                     g_list_c.size(),images._width);
+            selection._is_shared = false;
             selection.assign(1,g_list_c.size());
             cimg_forY(selection,l) selection[l] = images._width - g_list_c.size() + l;
           }
