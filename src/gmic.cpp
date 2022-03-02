@@ -2572,7 +2572,7 @@ const char *gmic::builtin_commands_names[] = {
     "cos","cosh","crop","cumulate","cursor","cut",
   "d","db3d","debug","delete","denoise","deriche","dijkstra","dilate","discard","displacement","display",
     "distance","div","div3d","do","done","double3d",
-  "e","echo","eigen","eikonal","elif","ellipse","else","endian","endl","endlocal","eq",
+  "e","echo","eigen","eikonal","elif","ellipse","else","endian","endl","eq",
     "equalize","erf","erode","error","eval","exec","exp",
   "f","f3d","fft","fi","files","fill","flood","focale3d","for","foreach",
   "ge","graph","gt","guided",
@@ -7401,13 +7401,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         // End local environment.
-        if (!is_get && (!std::strcmp("endlocal",item) || !std::strcmp("endl",item))) {
+        if (!is_get && !std::strcmp("endl",item)) {
           const CImg<char> &s = callstack.back();
           if (s[0]!='*' || s[1]!='l')
             error(true,images,0,0,
-                  "Command 'endlocal': Not associated to a 'local' command within "
+                  "Command 'endl': Not associated to a 'local' command within "
                   "the same scope.");
-          if (is_very_verbose) print(images,0,"End 'local...endlocal' block.");
+          if (is_very_verbose) print(images,0,"End 'local...endl' block.");
           is_end_local = true;
           break;
         }
@@ -8747,7 +8747,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             CImg<char>::string(argx).move_to(callstack);
           } else CImg<char>::string("*local").move_to(callstack);
           if (is_very_verbose)
-            print(images,0,"Start 'local...endlocal' block, with image%s.",
+            print(images,0,"Start 'local...endl' block, with image%s.",
                   gmic_selection.data());
           g_list.assign(selection.height());
           g_list_c.assign(selection.height());
@@ -8800,7 +8800,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 if (*it=='l' && (!std::strcmp("local",it) || !std::strcmp("l",it) ||
                                  !std::strncmp("local.",it,6) || !std::strncmp("l.",it,2) ||
                                  !std::strncmp("local[",it,6) || !std::strncmp("l[",it,2))) ++nb_locals;
-                else if (!_is_get && (!std::strcmp("endlocal",it) || !std::strcmp("endl",it))) --nb_locals;
+                else if (!_is_get && !std::strcmp("endl",it)) --nb_locals;
                 else if (!_is_get && nb_locals==1 && !std::strcmp("onfail",it)) break;
               }
             }
@@ -9701,7 +9701,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               if (!std::strcmp("local",it) || !std::strcmp("l",it) ||
                   !std::strncmp("local.",it,6) || !std::strncmp("l.",it,2) ||
                   !std::strncmp("local[",it,6) || !std::strncmp("l[",it,2)) ++nb_locals;
-              else if (!_is_get && (!std::strcmp("endlocal",it) || !std::strcmp("endl",it))) {
+              else if (!_is_get && !std::strcmp("endl",it)) {
                 --nb_locals; if (!nb_locals) --position;
               }
             }
@@ -13385,10 +13385,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 if (!std::strcmp("local",it) || !std::strcmp("l",it) ||
                     !std::strncmp("local.",it,6) || !std::strncmp("l.",it,2) ||
                     !std::strncmp("local[",it,6) || !std::strncmp("l[",it,2)) ++level;
-                else if (!_is_get && (!std::strcmp("endlocal",it) || !std::strcmp("endl",it))) --level;
+                else if (!_is_get && !std::strcmp("endl",it)) --level;
               }
               callstack_ind = callstack_local;
-              stb = "local"; ste = "endlocal";
+              stb = "local"; ste = "endl";
             } else {
               print(images,0,"%s",Com);
               error(true,images,0,0,
@@ -15164,13 +15164,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         if (cimg_sscanf(s,"*%*[a-z]#%u",&reference_line)==1)
           error(true,images,0,0,
                 "A '%s' command is missing (for '%s', line #%u), before return point.",
-                s[1]=='d'?"while":s[1]=='i'?"fi":s[1]=='r' || s[1]=='f'?"done":"endlocal",
+                s[1]=='d'?"while":s[1]=='i'?"fi":s[1]=='r' || s[1]=='f'?"done":"endl",
                 s[1]=='d'?"do":s[1]=='i'?"if":s[1]=='r'?"repeat":s[1]=='f'?(s[4]!='e'?"for":"foreach"):"local",
                 reference_line);
         else error(true,images,0,0,
                    "A '%s' command is missing, before return point.",
                    s[1]=='d'?"while":s[1]=='i'?"fi":s[1]=='r'?"done":
-                   s[1]=='f'?(s[4]!='e'?"for":"foreach"):"endlocal");
+                   s[1]=='f'?(s[4]!='e'?"for":"foreach"):"endl");
       }
     } else pop_callstack(initial_callstack_size);
 
