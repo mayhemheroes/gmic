@@ -7876,6 +7876,19 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           continue;
         }
 
+#define gmic_if_sth_done \
+        if (!std::strcmp("repeat",it) || \
+            (*it=='l' && (!std::strcmp("local",it) || !std::strcmp("l",it) || \
+                          !std::strncmp("local.",it,6) || !std::strcmp("l.",it,2) || \
+                          !std::strncmp("local[",it,6) || !std::strcmp("l[",it,2))) || \
+            (*it=='f' && (!std::strcmp("for",it) || !std::strcmp("foreach",it) || \
+                          !std::strncmp("foreach.",it,8) || \
+                          !std::strncmp("foreach[",it,8))))
+
+
+
+
+
         // Fill.
         if (!std::strcmp("fill",command)) {
           gmic_substitute_args(true);
