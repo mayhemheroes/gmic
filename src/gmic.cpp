@@ -7800,15 +7800,15 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             }
             ++position;
           } else {
-            int nb_repeat_for_foreachs = 0;
-            for (nb_repeat_for_foreachs = 1; nb_repeat_for_foreachs && position<commands_line.size(); ++position) {
+            int nb_levels = 0;
+            for (nb_levels = 1; nb_levels && position<commands_line.size(); ++position) {
               const char *it = commands_line[position].data();
               it+=*it=='-';
               if (!std::strcmp("repeat",it) || (*it=='f' && (!std::strcmp("for",it) || !std::strcmp("foreach",it))))
-                ++nb_repeat_for_foreachs;
-              else if (!std::strcmp("done",it)) --nb_repeat_for_foreachs;
+                ++nb_levels;
+              else if (!std::strcmp("done",it)) --nb_levels;
             }
-            if (nb_repeat_for_foreachs && position>=commands_line.size())
+            if (nb_levels && position>=commands_line.size())
               error(true,images,0,0,
                     "Command 'for': Missing associated 'done' command.");
             if (!is_first) { --nb_fordones; callstack.remove(); }
@@ -7861,15 +7861,15 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             if (is_very_verbose)
               print(images,0,"Skip 'foreach...done' block.");
 
-            int nb_repeat_for_foreachs = 0;
-            for (nb_repeat_for_foreachs = 1; nb_repeat_for_foreachs && position<commands_line.size(); ++position) {
+            int nb_levels = 0;
+            for (nb_levels = 1; nb_levels && position<commands_line.size(); ++position) {
               const char *it = commands_line[position].data();
               it+=*it=='-';
               if (!std::strcmp("repeat",it) || (*it=='f' && (!std::strcmp("for",it) || !std::strcmp("foreach",it))))
-                ++nb_repeat_for_foreachs;
-              else if (!std::strcmp("done",it)) --nb_repeat_for_foreachs;
+                ++nb_levels;
+              else if (!std::strcmp("done",it)) --nb_levels;
             }
-            if (nb_repeat_for_foreachs && position>=commands_line.size())
+            if (nb_levels && position>=commands_line.size())
               error(true,images,0,0,
                     "Command 'foreach': Missing associated 'done' command.");
           }
@@ -8794,8 +8794,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                  command_selection);
           } catch (gmic_exception &e) {
             check_elif = false;
-            int nb_locals = 0;
-            for (nb_locals = 1; nb_locals && position<commands_line.size(); ++position) {
+            int nb_levels = 0;
+            for (nb_levels = 1; nb_levels && position<commands_line.size(); ++position) {
               const char *it = commands_line[position].data();
               if (*it==1)
                 is_debug_info|=get_debug_info(commands_line[position].data(),next_debug_line,next_debug_filename);
@@ -8804,12 +8804,12 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 it+=(*it=='+' || *it=='-');
                 if (*it=='l' && (!std::strcmp("local",it) || !std::strcmp("l",it) ||
                                  !std::strncmp("local.",it,6) || !std::strncmp("l.",it,2) ||
-                                 !std::strncmp("local[",it,6) || !std::strncmp("l[",it,2))) ++nb_locals;
-                else if (!_is_get && !std::strcmp("endl",it)) --nb_locals;
-                else if (!_is_get && nb_locals==1 && !std::strcmp("onfail",it)) break;
+                                 !std::strncmp("local[",it,6) || !std::strncmp("l[",it,2))) ++nb_levels;
+                else if (!_is_get && !std::strcmp("endl",it)) --nb_levels;
+                else if (!_is_get && nb_levels==1 && !std::strcmp("onfail",it)) break;
               }
             }
-            if (nb_locals==1 && position<commands_line.size()) { // Onfail block found
+            if (nb_levels==1 && position<commands_line.size()) { // Onfail block found
               verbosity = o_verbosity; // Restore verbosity
               if (is_very_verbose) print(images,0,"Reach 'onfail' block.");
               try {
@@ -9696,7 +9696,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             error(true,images,0,0,
                   "Command 'onfail': Not associated to a 'local' command within "
                   "the same scope.");
-          for (int nb_locals = 1; nb_locals && position<commands_line.size(); ++position) {
+          for (int nb_levels = 1; nb_levels && position<commands_line.size(); ++position) {
             const char *it = commands_line[position].data();
             if (*it==1)
               is_debug_info|=get_debug_info(commands_line[position].data(),next_debug_line,next_debug_filename);
@@ -9705,9 +9705,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               it+=(*it=='+' || *it=='-');
               if (!std::strcmp("local",it) || !std::strcmp("l",it) ||
                   !std::strncmp("local.",it,6) || !std::strncmp("l.",it,2) ||
-                  !std::strncmp("local[",it,6) || !std::strncmp("l[",it,2)) ++nb_locals;
+                  !std::strncmp("local[",it,6) || !std::strncmp("l[",it,2)) ++nb_levels;
               else if (!_is_get && !std::strcmp("endl",it)) {
-                --nb_locals; if (!nb_locals) --position;
+                --nb_levels; if (!nb_levels) --position;
               }
             }
           }
@@ -11063,15 +11063,15 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             rd[3] = debug_line;
           } else {
             if (is_very_verbose) print(images,0,"Skip 'repeat...done' block (0 iterations).");
-            int nb_repeat_for_foreachs = 0;
-            for (nb_repeat_for_foreachs = 1; nb_repeat_for_foreachs && position<commands_line.size(); ++position) {
+            int nb_levels = 0;
+            for (nb_levels = 1; nb_levels && position<commands_line.size(); ++position) {
               const char *it = commands_line[position].data();
               it+=*it=='-';
               if (!std::strcmp("repeat",it) || (*it=='f' && (!std::strcmp("for",it) || !std::strcmp("foreach",it))))
-                ++nb_repeat_for_foreachs;
-              else if (!std::strcmp("done",it)) --nb_repeat_for_foreachs;
+                ++nb_levels;
+              else if (!std::strcmp("done",it)) --nb_levels;
             }
-            if (nb_repeat_for_foreachs && position>=commands_line.size())
+            if (nb_levels && position>=commands_line.size())
               error(true,images,0,0,
                     "Command 'repeat': Missing associated 'done' command.");
             continue;
@@ -13329,68 +13329,65 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             }
             const char *stb = 0, *ste = 0;
             unsigned int callstack_ind = 0;
-            int level = 0;
+            int nb_levels = 0;
             if (callstack_repeat) {
               print(images,0,"%s %scurrent 'repeat...done' block.",
                     Com,is_continue?"to next iteration of ":"");
-              for (level = 1; level && position<commands_line.size(); ++position) {
+              for (nb_levels = 1; nb_levels && position<commands_line.size(); ++position) {
                 const char *it = commands_line[position].data();
                 it+=*it=='-';
                 if (!std::strcmp("repeat",it) || (*it=='f' && (!std::strcmp("for",it) || !std::strcmp("foreach",it))))
-                  ++level;
-                else if (!std::strcmp("done",it)) --level;
+                  ++nb_levels;
+                else if (!std::strcmp("done",it)) --nb_levels;
               }
               callstack_ind = callstack_repeat;
               stb = "repeat"; ste = "done";
             } else if (callstack_do) {
               print(images,0,"%s %scurrent 'do...while' block.",
                     Com,is_continue?"to next iteration of ":"");
-              for (level = 1; level && position<commands_line.size(); ++position) {
+              for (nb_levels = 1; nb_levels && position<commands_line.size(); ++position) {
                 const char *it = commands_line[position].data();
                 it+=*it=='-';
-                if (!std::strcmp("do",it)) ++level;
-                else if (!std::strcmp("while",it)) --level;
+                if (!std::strcmp("do",it)) ++nb_levels;
+                else if (!std::strcmp("while",it)) --nb_levels;
               }
               callstack_ind = callstack_do;
               stb = "do"; ste = "while";
             } else if (callstack_for) {
               print(images,0,"%s %scurrent 'for...done' block.",
                     Com,is_continue?"to next iteration of ":"");
-              for (level = 1; level && position<commands_line.size(); ++position) {
+              for (nb_levels = 1; nb_levels && position<commands_line.size(); ++position) {
                 const char *it = commands_line[position].data();
                 it+=*it=='-';
                 if (!std::strcmp("repeat",it) || (*it=='f' && (!std::strcmp("for",it) || !std::strcmp("foreach",it))))
-                  ++level;
-                else if (!std::strcmp("done",it)) --level;
+                  ++nb_levels;
+                else if (!std::strcmp("done",it)) --nb_levels;
               }
               callstack_ind = callstack_for;
               stb = "for"; ste = "done";
             } else if (callstack_foreach) {
               print(images,0,"%s %scurrent 'foreach...done' block.",
                     Com,is_continue?"to next iteration of ":"");
-              for (level = 1; level && position<commands_line.size(); ++position) {
+              for (nb_levels = 1; nb_levels && position<commands_line.size(); ++position) {
                 const char *it = commands_line[position].data();
                 it+=*it=='-';
                 if (!std::strcmp("repeat",it) || (*it=='f' && (!std::strcmp("for",it) || !std::strcmp("foreach",it))))
-                  ++level;
-                else if (!std::strcmp("done",it)) --level;
+                  ++nb_levels;
+                else if (!std::strcmp("done",it)) --nb_levels;
               }
               callstack_ind = callstack_foreach;
               stb = "foreach"; ste = "done";
-
-              // TODO!
-
             } else if (callstack_local) {
               print(images,0,"%s %scurrent local environment.",
                     Com,is_continue?"to end of ":"");
-              for (level = 1; level && position<commands_line.size(); ++position) {
+              for (nb_levels = 1; nb_levels && position<commands_line.size(); ++position) {
                 const char *it = commands_line[position].data();
                 const bool _is_get = *it=='+';
                 it+=(*it=='+' || *it=='-');
                 if (!std::strcmp("local",it) || !std::strcmp("l",it) ||
                     !std::strncmp("local.",it,6) || !std::strncmp("l.",it,2) ||
-                    !std::strncmp("local[",it,6) || !std::strncmp("l[",it,2)) ++level;
-                else if (!_is_get && !std::strcmp("endl",it)) --level;
+                    !std::strncmp("local[",it,6) || !std::strncmp("l[",it,2)) ++nb_levels;
+                else if (!_is_get && !std::strcmp("endl",it)) --nb_levels;
               }
               callstack_ind = callstack_local;
               stb = "local"; ste = "endl";
@@ -13401,7 +13398,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               continue;
             }
 
-            if (level && position>=commands_line.size())
+            if (nb_levels && position>=commands_line.size())
               error(true,images,0,0,
                     "Command '%s': Missing associated '%s' command.",stb,ste);
             if (is_continue || callstack_local || callstack_foreach) {
