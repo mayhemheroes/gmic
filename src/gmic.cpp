@@ -13397,10 +13397,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                     "Command '%s': There are no loops or local environment to %s.",com,com);
               continue;
             }
+
             if (level && position>=commands_line.size())
               error(true,images,0,0,
                     "Command '%s': Missing associated '%s' command.",stb,ste);
-            if (is_continue || callstack_local) {
+            if (is_continue || callstack_local || callstack_foreach) {
+              if (callstack_foreach && !is_continue) // Break 'foreach...done' loop
+                foreachdones(2,nb_foreachdones - 1) = 1; // Force loop to end at next 'done'
               if (callstack_ind<callstack.size() - 1) callstack.remove(callstack_ind + 1,callstack.size() - 1);
               --position;
             } else {
