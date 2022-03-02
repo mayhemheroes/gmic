@@ -7392,14 +7392,14 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   item);
           check_elif = false;
           if (is_very_verbose) print(images,0,"Reach 'else' block.");
-          for (int nb_ifs = 1; nb_ifs && position<commands_line.size(); ++position) {
+          for (int nb_levels = 1; nb_levels && position<commands_line.size(); ++position) {
             const char *it = commands_line[position].data();
             if (*it==1)
               is_debug_info|=get_debug_info(commands_line[position].data(),next_debug_line,next_debug_filename);
             else {
               it+=*it=='-';
-              if (!std::strcmp("if",it)) ++nb_ifs;
-              else if (!std::strcmp("fi",it)) { if (!--nb_ifs) --position; }
+              if (!std::strcmp("if",it)) ++nb_levels;
+              else if (!std::strcmp("fi",it)) { if (!--nb_levels) --position; }
             }
           }
           continue;
@@ -13288,17 +13288,17 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                               gmic_argument_text_printed(),
                                               is_cond?"holds":"does not hold");
             if (!is_cond) {
-              for (int nb_ifs = 1; nb_ifs && position<commands_line.size(); ++position) {
+              for (int nb_levels = 1; nb_levels && position<commands_line.size(); ++position) {
                 const char *it = commands_line[position].data();
                 if (*it==1)
                   is_debug_info|=get_debug_info(commands_line[position].data(),next_debug_line,next_debug_filename);
                 else {
                   it+=*it=='-';
-                  if (!std::strcmp("if",it)) ++nb_ifs;
-                  else if (!std::strcmp("fi",it)) { --nb_ifs; if (!nb_ifs) --position; }
-                  else if (nb_ifs==1) {
-                    if (!std::strcmp("else",it)) --nb_ifs;
-                    else if (!std::strcmp("elif",it)) { --nb_ifs; check_elif = true; --position; }
+                  if (!std::strcmp("if",it)) ++nb_levels;
+                  else if (!std::strcmp("fi",it)) { --nb_levels; if (!nb_levels) --position; }
+                  else if (nb_levels==1) {
+                    if (!std::strcmp("else",it)) --nb_levels;
+                    else if (!std::strcmp("elif",it)) { --nb_levels; check_elif = true; --position; }
                   }
                 }
               }
