@@ -6796,7 +6796,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Done.
         if (!is_get && !std::strcmp("done",item)) {
           const CImg<char> &s = callstack.back();
-          if (s[0]!='*' || (s[1]!='f' && s[1]!='r'))
+          if (s[0]!='*' || (s[1]!='f' && s[1]!='l' && s[1]!='r'))
             error(true,images,0,0,
                   "Command 'done': Not associated to a 'repeat', 'for' or 'foreach' command "
                   "within the same scope.");
@@ -6871,6 +6871,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 callstack.remove();
               }
             }
+          } else if (s[1]=='l') { // End a 'local...done' block
+            if (is_very_verbose) print(images,0,"End 'local...endl' block.");
+            is_end_local = true;
+            break;
           } else if (s[1]=='r') { // End a 'repeat...done' block
             unsigned int *const rd = repeatdones.data(0,nb_repeatdones - 1);
             ++rd[1];
