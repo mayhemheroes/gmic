@@ -5540,9 +5540,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         if (err==1) { // No selection -> all images
-          if (siz && ((*command==':' && command[1]==':' && !command[2]) || !std::strcmp(command,"name")))
-            selection.assign(); // selection._is_shared = true;
-          else {
+          if (siz && ((*command==':' && command[1]==':' && !command[2]) || !std::strcmp(command,"name"))) {
+            selection.assign(); // selection._is_shared = false; // Empty shared selection -> depends on number of arguments
+          } else {
             if (!std::strcmp(command,"pass")) selection.assign(1,parent_images.size());
             else selection.assign(1,siz);
             cimg_forY(selection,y) selection[y] = (unsigned int)y;
