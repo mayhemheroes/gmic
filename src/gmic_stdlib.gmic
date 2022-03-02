@@ -2008,7 +2008,7 @@ _display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
        else ('\"$""*\"') replace. {','},32 u {t} rm.
        fi"
   p
-  repeat $! l[$>]
+  foreach
     ('{n}') if s=crop();find(s,_'.',size(s)-1,-1)>0 nm={-2,b}.{-2,x} else nm={-2,b} fi rm.
     :: img
 
@@ -2516,7 +2516,8 @@ _display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
     else
       if $is_multiview repeat d w$>[] 0 done else w[] 0 fi
     fi
-  :: $nm um iskey,flushkey,isvisible,isresized,idisp endl done
+    :: $nm um iskey,flushkey,isvisible,isresized,idisp
+  done
   um _d2d_format v -1 d[]
 
 #@cli d3d : eq. to 'display3d'.
@@ -2542,7 +2543,7 @@ _display3d :
   is_user_background,exit_on_anykey=$1,$2
   if !$! e[0--3] "Display 3D object []." return fi
 
-  repeat $! l[$>]
+  foreach
     l. check3d 0
     onfail l[] ({'${}'}) s +,{'"'check3d': "'} k. msg={t} rm endl error[] "Command 'display3d': "$msg
     endl
@@ -2874,7 +2875,7 @@ _display3d :
 
     while {*}" && "!{*,ESC}" && "!($is_CTRL" && "{*,W})
     k[0]
-  endl done
+  done
   if narg($disp_normalization) w[] -1,-1,$disp_normalization else w[] 0 fi
   v -1 d[]
 
@@ -2894,7 +2895,7 @@ _display_array : check ${1=13}>0" && "${2=$1}>0
   dxb={round($1/2,1,1)} dxf={$1-1-$dxb}
   dyb={round($2/2,1,1)} dyf={$2-1-$dyb}
 
-  repeat $! l[$>]
+  foreach
     if w<128" && "h<128 r 128,128,100%,100%,0,0,0.5,0.5 fi # Manage cases of small and large images.
     x0=0 y0=0 w={w} h={h}
     wmax={0.9*{*,u}} hmax={0.9*{*,v}}
@@ -2979,7 +2980,7 @@ _display_array : check ${1=13}>0" && "${2=$1}>0
           !{*2,ESC}" && "!{*2,Q}" && "\
           !{*3,ESC}" && "!{*3,Q}
     k[0] w 0 w1 0 w2 0 w3 0
-  endl done
+  done
 
 __display_array :
   round.. 1 c.. 0,999 r. 100%,100%,1,3,{s==1}
@@ -3065,7 +3066,7 @@ display_fft :
 
 _display_fft :
   e[0--3] "Render fourier transform of image$? with centered log-module and argument."
-  repeat $! l[$>] fftpolar +.. 1 log.. n 0,255 a x endl done s x,2
+  foreach fftpolar +.. 1 log.. n 0,255 a x done s x,2
 
 #@cli dg : eq. to 'display_graph'.
 dg : check "${1=0}>=0 && ${2=0}>=0" skip ${3=1},${4=0},${5=0},${6=0},${7=0},${8=0},"${9=x-axis}","${10=y-axis}"
@@ -3088,7 +3089,7 @@ _display_graph : check "${1=0}>=0 && ${2=0}>=0"
   skip ${3=1},${4=0},${5=0},${6=0},${7=0},${8=0},"${9=x-axis}","${10=y-axis}"
   e[0--3] "Render $1x$2 graph plot from data of image$?."
 
-  repeat $! l[$>] nm={0,n}
+  foreach nm={0,n}
 
     # Determine output size.
     if $1>0" && "$2>0 w,h=$1,$2 else w,h={{*,u}/2},{{*,v}/2} fi
@@ -3135,7 +3136,7 @@ _display_graph : check "${1=0}>=0 && ${2=0}>=0"
     0 t. "$9",0,0,14,1,-220,-220,-220 j.. .,{({-2,w}-w)/2},{{-2,h}-16},0,0,-1 rm.
     0 t. "$10",0,0,14,1,-220,-220,-220 rotate. -90 j.. .,2,{({-2,h}-h)/2},0,0,-1 rm.
 
-  :: $nm endl done c 0,255
+  :: $nm done c 0,255
 
 #@cli dh : eq. to 'display_histogram'.
 dh :
@@ -3156,7 +3157,7 @@ display_histogram :
 _display_histogram : check "${1=0}>=0 && ${2=0}>=0 && ${3=256}>0" skip ${4=0%},${5=100%},${6=1},"${7=i}"
   e[0--3] "Render $1x$2 channel-by-channel histogram of image"$_gmic_s", with $3 clusters, minimum value $4
  and maximum value $5."
-  repeat $! l[$>] nm={0,n}
+  foreach nm={0,n}
     if ${is_percent\ $4} m={im+(iM-im)*$4} else m=$4 fi
     if ${is_percent\ $5} M={im+(iM-im)*$5} else M=$5 fi
     s={s} s c
@@ -3176,7 +3177,7 @@ _display_histogram : check "${1=0}>=0 && ${2=0}>=0 && ${3=256}>0" skip ${4=0%},$
       fi
     endl done
     a z :: $nm
-  endl done
+  done
 
 #@cli display_parametric : _width>0,_height>0,_outline_opacity,_vertex_radius>=0,_is_antialiased={ 0 | 1 },\
 # _is_decorated={ 0 | 1 },_xlabel,_ylabel
@@ -3194,7 +3195,7 @@ display_parametric : check "${1=512}>0 && ${2=$1}>0 && ${4=0}>=0" skip ${3=3},${
   s0="no " s1="" o0="" o1="colored "
   e[^-1] "Render $1x$2 parametric graph plot from data of image$?, with "${o{$3>1}}"outline opacity "\
       {$3>1?$3-1:$3}", vertex radius $4, "${s{$5!=0}}"antialiasing and "${s{$6!=0}}"decoration."
-  repeat $! l[$>]
+  foreach
     nm={0,n} N={w*h*d}
     i[0] ('CImg3d') +[0] 0.5 i[1] ($N;$N)  # Header + nb of vertices/primitives.
 
@@ -3246,7 +3247,7 @@ display_parametric : check "${1=512}>0 && ${2=$1}>0 && ${4=0}>=0" skip ${3=3},${
       0 t. "$8",0,0,14,1,-220,-220,-220 rotate. -90 j.. .,2,{({-2,h}-h)/2},0,0,-1 rm.
     fi
     :: $nm
-  endl done
+  done
 
 #@cli dp : eq. to 'display_parallel'.
 dp :
@@ -3300,7 +3301,7 @@ display_parallel0 :
 display_polar : check "${1=500}>32 && ${2=$1}>32"
   skip ${3=1},${4=200},${5=$4},${6=$5},${7=0},${8=360},"${9=x-axis}","${10=y-axis}"
   e[^-1] "Render $1x$2 polar graph plot from data of image"$_gmic_s", with outline $4 and fill color ($4,$5,$6)."
-  repeat $! l[$>] nm={0,n}
+  foreach nm={0,n}
 
     # Compute (x,y) coordinates of the polar curve points.
     M={max(abs(iM),abs(im))}
@@ -3356,7 +3357,7 @@ display_polar : check "${1=500}>32 && ${2=$1}>32"
     0 t. "$9",0,0,13,1,-220,-220,-220 j.. .,{({-2,w}-w)/2},{{-2,h}-16},0,0,-1 rm.
     0 t. "$10",0,0,13,1,-220,-220,-220 rotate. -90 j.. .,2,{({-2,h}-h)/2},0,0,-1 rm.
 
-  :: $nm endl done
+  :: $nm done
 
 #@cli dq : eq. to 'display_quiver'.
 dq :
@@ -3373,7 +3374,7 @@ display_quiver :
 _display_quiver : check "${1=16}>0 && ${2=1.5}>=0 && isint(${3=2}) && $3>=0 && $3<=2"
   e[0--3] "Render field of 2D arrows from image"$_gmic_s", with size factor $1, arrow size $2 in "\
           ${arg\ 1+$3,monochrome,grayscale,color}" mode."
-  repeat $! l[$>]
+  foreach
     +norm. /.. {max(1e-6,iM)} rm. # Normalize vector values.
     {$1*w},{$1*h},1,{"1<<cut($3,0,2)"}
     eval.. "
@@ -3399,7 +3400,7 @@ _display_quiver : check "${1=16}>0 && ${2=1.5}>=0 && isint(${3=2}) && $3>=0 && $
         polygon(#1,3,X[i0,2],X[i1,2],X[i2,2],1,C);
       ); I"
     rm..
-  endl done
+  done
 
 #@cli drgba : eq. to 'display_rgba'.
 drgba : skip "${1=none},${2=$1},${3=$1}"
@@ -3420,13 +3421,13 @@ _display_rgba : skip "${1=},${2=$1},${3=$1}"
   if $is_rgb e[0--4] "Render RGBA image"$_gmic_s" over RGB background ($*)."
   else e[0--4] "Render RGBA image"$_gmic_s" over a checkerboard background."
   fi
-  repeat $! l[$>] if s==2" || "s==4
+  foreach if s==2" || "s==4
     if $is_rgb i[0] 100%,100%,100%,3 fc[0] {[$*]}
     else i[0] (160,128;128,160) r[0] 16,16 r[0] [1],[1],[1],{s-1},0,2
     fi
     ::[0] {1,n}
     sh. {s-1} j[0] [1],0,0,0,0,1,[2],255 k[0]
-  fi endl done to_rgb u $is_rgb
+  fi done to_rgb u $is_rgb
 
 #@cli dt : eq. to 'display_tensors'.
 dt :
@@ -3444,7 +3445,7 @@ display_tensors :
 _display_tensors : check "${1=16}>0 && ${2=1.5}>=0 && isint(${3=2}) && $3>=0 && $3<=2 && ${4=2}>=0"
   e[0--3] "Render field of 2x2 tensors from image"$_gmic_s", with size factor $1, ellipse size $2 in "\
           ${arg\ 1+$3,monochrome,grayscale,color}" mode and outline $4."
-  repeat $! l[$>]
+  foreach
     * {($2*$1/2)/max(abs(im),abs(iM))} # Normalize tensor values.
     {$1*w},{$1*h},1,{"1<<cut($3,0,2)"}
     f.. "
@@ -3466,7 +3467,7 @@ _display_tensors : check "${1=16}>0 && ${2=1.5}>=0 && isint(${3=2}) && $3>=0 && 
       for (k = 1, k>=0, --k, ellipse(#1,X,r1 + k*$4,r2 + k*$4,ang°,1,arg(k + 1,C,Co)));
       I"
     rm..
-  endl done
+  done
 
 #@cli dw : eq. to 'display_warp'.
 dw :
@@ -3482,14 +3483,14 @@ display_warp :
 
 _display_warp : check "${1=15}>0"
   e[0--3] "Render 2D warping field"$_gmic_s", with cell size $1."
-  repeat $! l[$>]
+  foreach
     if d!=1" || "s!=2
       error[0--3] "Command 'display_warp': Invalid image ["{$!-$>-1}"]: Dimensions "{w}","{h}","{d}","{s}"
        does not represent a 2D field of 2D vectors."
     fi
     i[0] 100%,100%,1,1,1 grid[0] $1,$1 ::[0] {1,n}
     warp[0] [1],1,1,0 rm[1]
-  endl done * 255
+  done * 255
 
 #@cli e : eq. to 'echo'. : (+)
 
@@ -3744,7 +3745,7 @@ _input_glob :
   l[]
     it[] "$*" discard 13 replace 9,32 s -,10
     colors=0
-    repeat $! l[$>]
+    foreach l
       s -,32
       if $!>=3" && "isint({0,t})" && "isint({1,t})" && "isint({2,t}) colors=$colors;{0,t},{1,t},{2,t} fi
       rm 0
@@ -4212,16 +4213,16 @@ _outputx :
     else
       e[0--4] "Output image"$_gmic_s" at same location, with same base filename but extension"${s{$N>1}}" '$*'."
     fi
-     repeat $! l[$>]
+    foreach
       repeat $N ext=${arg{1+$>}} if ext=lowercase(['$ext']);ext=='jpg'||ext=='jpeg' ext.=,85 fi o {0,f}{0,b}.$ext done
-    endl done
+    done
   else
     if $is_last_arg e[0--4] "Output image"$_gmic_s" with same base filename but extension"${s{$N>1}}"' ${^-1}'."
     else e[0--4] "Output image"$_gmic_s" with same base filename but extension"${s{$N>1}}" '$*'."
     fi
-    repeat $! l[$>]
+    foreach
       repeat $N ext=${arg{1+$>}} if ext=lowercase(['$ext']);ext=='jpg'||ext=='jpeg' ext.=,85 fi o {0,b}.$ext done
-    endl done
+    done
   fi
 
 #@cli parse_cli : _output_mode,_{ * | command_name }
@@ -4426,7 +4427,7 @@ parse_cli_ascii :
         if $is_builtin rm. fi
       fi
       +e[] "\n  "$_vt100_m$_vt100_b$name${"s1,s0=\" (+)\", u $s"$is_builtin}:$_vt100_n
-      repeat $! l[$>]
+      foreach
         if ${parse_cli_is_eqto.}
           s -,39 eqto={1,t} k[0]
           +e[] "      "${_vt100_i}"Shortcut for command '"$_vt100_m$_vt100_b$eqto$_vt100_n"'."
@@ -4436,7 +4437,7 @@ parse_cli_ascii :
           str="      "{t}${"if "$<" u \" |\" else u \"\" fi"}
           +e[] ${_vt100_c}$str$_vt100_n
         fi
-      endl done
+      done
       rm
     endl
     rm[0]
@@ -4646,7 +4647,7 @@ parse_cli_html :
   endl fi done
 
   # Generate html page for each command.
-  repeat $! l[$>]
+  foreach
     ('{n}') l. s -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm endl
     e[] "\r  > "$_vt100_c[#{1+$>}]$_vt100_n" "{`copy(vector48(_'" "'),['$category" / "$name'])`}
 
@@ -4865,7 +4866,7 @@ parse_cli_html :
     rm ({'$html'}:y)
     replace_str. "<tutorial_tag>",$tutorial_html # Insert tutorial button
     :: $name ot $url_name
-  endl done
+  done
   rm
   e[] "\r  > "${_vt100_g}{`copy(vector64(_'" "'),'"Parsing done!"')`}$_vt100_n
 
