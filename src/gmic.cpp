@@ -2572,7 +2572,7 @@ const char *gmic::builtin_commands_names[] = {
     "cos","cosh","crop","cumulate","cursor","cut",
   "d","db3d","debug","delete","denoise","deriche","dijkstra","dilate","discard","displacement","display",
     "distance","div","div3d","do","done","double3d",
-  "e","echo","eigen","eikonal","elif","ellipse","else","endian","endif","endl","endlocal","eq",
+  "e","echo","eigen","eikonal","elif","ellipse","else","endian","endl","endlocal","eq",
     "equalize","erf","erode","error","eval","exec","exp",
   "f","f3d","fft","fi","files","fill","flood","focale3d","for","foreach",
   "ge","graph","gt","guided",
@@ -7378,18 +7378,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         if (check_elif && !std::strcmp("elif",item)) // Redirect 'elif'
           goto gmic_commands_others;
 
-        // Endif.
-        if (!is_get && (!std::strcmp("endif",item) || !std::strcmp("fi",item))) {
-          const CImg<char> &s = callstack.back();
-          if (s[0]!='*' || s[1]!='i')
-            error(true,images,0,0,
-                  "Command 'endif': Not associated to a 'if' command within the same scope.");
-          if (is_very_verbose) print(images,0,"End 'if...endif' block.");
-          check_elif = false;
-          callstack.remove();
-          continue;
-        }
-
         // Else and eluded elif.
         if (!is_get && (!std::strcmp("else",item) || (!check_elif && !std::strcmp("elif",item)))) {
           const CImg<char> &s = callstack.back();
@@ -7406,7 +7394,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             else {
               it+=*it=='-';
               if (!std::strcmp("if",it)) ++nb_ifs;
-              else if (!std::strcmp("endif",it) || !std::strcmp("fi",it)) { if (!--nb_ifs) --position; }
+              else if (!std::strcmp("fi",it)) { if (!--nb_ifs) --position; }
             }
           }
           continue;
@@ -7767,9 +7755,19 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Commands starting by 'f...'
         //-----------------------------
       gmic_commands_f :
-        if ((command[1]=='i' && !command[2]) || // Redirect 'fi'
-            (command[1]=='f' && command[2]=='t' && !command[3])) // Redirect 'fft'
-          goto gmic_commands_e;
+        if (command[1]=='f' && command[2]=='t' && !command[3]) goto gmic_commands_e; // Redirect 'fft'
+
+        // Fi.
+        if (!is_get && !std::strcmp("fi",item)) {
+          const CImg<char> &s = callstack.back();
+          if (s[0]!='*' || s[1]!='i')
+            error(true,images,0,0,
+                  "Command 'endif': Not associated to a 'if' command within the same scope.");
+          if (is_very_verbose) print(images,0,"End 'if...endif' block.");
+          check_elif = false;
+          callstack.remove();
+          continue;
+        }
 
         // For.
         if (!is_get && !std::strcmp("for",item)) {
@@ -13292,7 +13290,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 else {
                   it+=*it=='-';
                   if (!std::strcmp("if",it)) ++nb_ifs;
-                  else if (!std::strcmp("endif",it) || !std::strcmp("fi",it)) { --nb_ifs; if (!nb_ifs) --position; }
+                  else if (!std::strcmp("fi",it)) { --nb_ifs; if (!nb_ifs) --position; }
                   else if (nb_ifs==1) {
                     if (!std::strcmp("else",it)) --nb_ifs;
                     else if (!std::strcmp("elif",it)) { --nb_ifs; check_elif = true; --position; }
@@ -15166,12 +15164,12 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         if (cimg_sscanf(s,"*%*[a-z]#%u",&reference_line)==1)
           error(true,images,0,0,
                 "A '%s' command is missing (for '%s', line #%u), before return point.",
-                s[1]=='d'?"while":s[1]=='i'?"endif":s[1]=='r' || s[1]=='f'?"done":"endlocal",
+                s[1]=='d'?"while":s[1]=='i'?"fi":s[1]=='r' || s[1]=='f'?"done":"endlocal",
                 s[1]=='d'?"do":s[1]=='i'?"if":s[1]=='r'?"repeat":s[1]=='f'?(s[4]!='e'?"for":"foreach"):"local",
                 reference_line);
         else error(true,images,0,0,
                    "A '%s' command is missing, before return point.",
-                   s[1]=='d'?"while":s[1]=='i'?"endif":s[1]=='r'?"done":
+                   s[1]=='d'?"while":s[1]=='i'?"fi":s[1]=='r'?"done":
                    s[1]=='f'?(s[4]!='e'?"for":"foreach"):"endlocal");
       }
     } else pop_callstack(initial_callstack_size);
