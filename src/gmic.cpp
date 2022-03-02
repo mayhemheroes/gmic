@@ -8795,8 +8795,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               if (*it==1)
                 is_debug_info|=get_debug_info(commands_line[position].data(),next_debug_line,next_debug_filename);
               else {
-                const bool _is_get = *it=='+' || (*it=='-' && it[1]=='-');
-                it+=(*it=='+' || *it=='-') + (*it=='-' && it[1]=='-');
+                const bool _is_get = *it=='+';
+                it+=(*it=='+' || *it=='-');
                 if (*it=='l' && (!std::strcmp("local",it) || !std::strcmp("l",it) ||
                                  !std::strncmp("local.",it,6) || !std::strncmp("l.",it,2) ||
                                  !std::strncmp("local[",it,6) || !std::strncmp("l[",it,2))) ++nb_locals;
@@ -9696,8 +9696,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             if (*it==1)
               is_debug_info|=get_debug_info(commands_line[position].data(),next_debug_line,next_debug_filename);
             else {
-              const bool _is_get = *it=='+' || (*it=='-' && it[1]=='-');
-              it+=(*it=='+' || *it=='-') + (*it=='-' && it[1]=='-');
+              const bool _is_get = *it=='+';
+              it+=(*it=='+' || *it=='-');
               if (!std::strcmp("local",it) || !std::strcmp("l",it) ||
                   !std::strncmp("local.",it,6) || !std::strncmp("l.",it,2) ||
                   !std::strncmp("local[",it,6) || !std::strncmp("l[",it,2)) ++nb_locals;
@@ -13380,8 +13380,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                     Com,is_continue?"to end of ":"");
               for (level = 1; level && position<commands_line.size(); ++position) {
                 const char *it = commands_line[position].data();
-                const bool _is_get = *it=='+' || (*it=='-' && it[1]=='-');
-                it+=(*it=='+' || *it=='-') + (*it=='-' && it[1]=='-');
+                const bool _is_get = *it=='+';
+                it+=(*it=='+' || *it=='-');
                 if (!std::strcmp("local",it) || !std::strcmp("l",it) ||
                     !std::strncmp("local.",it,6) || !std::strncmp("l.",it,2) ||
                     !std::strncmp("local[",it,6) || !std::strncmp("l[",it,2)) ++level;
@@ -15061,7 +15061,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                         gmic_argument_text());
                 else {
                   CImg<char>::string(filename).move_to(name);
-                  const unsigned int foff = (*name=='+' || *name=='-') + (*name=='-' && name[1]=='-');
+                  const unsigned int foff = (*name=='+' || *name=='-');
                   const char *misspelled = 0;
                   char *const posb = std::strchr(name,'[');
                   if (posb) *posb = 0; // Discard selection from the command name
