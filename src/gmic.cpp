@@ -6796,23 +6796,12 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Done.
         if (!is_get && !std::strcmp("done",item)) {
           const CImg<char> &s = callstack.back();
-          if (s[0]!='*' || (s[1]!='r' && s[1]!='f'))
+          if (s[0]!='*' || (s[1]!='f' && s[1]!='r'))
             error(true,images,0,0,
                   "Command 'done': Not associated to a 'repeat', 'for' or 'foreach' command "
                   "within the same scope.");
-          if (s[1]=='r') { // End a 'repeat...done' block
-            unsigned int *const rd = repeatdones.data(0,nb_repeatdones - 1);
-            ++rd[1];
-            if (--rd[2]) {
-              position = rd[0] + 2;
-              next_debug_line = rd[3];
-              next_debug_filename = debug_filename;
-            } else {
-              if (is_very_verbose) print(images,0,"End 'repeat...done' block.");
-              --nb_repeatdones;
-              callstack.remove();
-            }
-          } else if (s[1]=='f') {
+
+          if (s[1]=='f') {
             if (s[4]!='e') { // End a 'for...done' block
               unsigned int *const fd = fordones.data(0,nb_fordones - 1);
               position = fd[0];
@@ -6881,6 +6870,18 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 --nb_foreachdones;
                 callstack.remove();
               }
+            }
+          } else if (s[1]=='r') { // End a 'repeat...done' block
+            unsigned int *const rd = repeatdones.data(0,nb_repeatdones - 1);
+            ++rd[1];
+            if (--rd[2]) {
+              position = rd[0] + 2;
+              next_debug_line = rd[3];
+              next_debug_filename = debug_filename;
+            } else {
+              if (is_very_verbose) print(images,0,"End 'repeat...done' block.");
+              --nb_repeatdones;
+              callstack.remove();
             }
           }
           continue;
