@@ -3022,13 +3022,35 @@ CImg<char> gmic::callstack2string(const CImg<unsigned int>& callstack_selection,
 // Pop callstack until it reaches a certain size.
 //-----------------------------------------------
 // Used to ensure that callstack stays coherent when errors occurs in '_run()'.
-void gmic::pop_callstack(const unsigned int callstack_size) {
+template<typename T>
+void gmic::pop_callstack(const unsigned int callstack_size,
+                         CImgList<T>& images, CImgList<char>& images_names,
+                         CImgList<T>& parent_images, CImgList<char>& parent_images_names) {
   while (callstack.size()>callstack_size) {
     const char *const s = callstack.back();
     if (*s=='*') switch (s[1]) {
       case 'r' : --nb_repeatdones; break;
       case 'd' : --nb_dowhiles; break;
-      case 'f' : if (s[4]!='e') --nb_fordones; else --nb_foreachdones; break;
+      case 'f' :
+        if (s[4]!='e') --nb_fordones;
+        else {
+          unsigned int *const fed = foreachdones.data(0,--nb_foreachdones);
+          CImgList<T> *p_prev_parent_images;
+          std::memcpy(&p_prev_parent_images,fed + 6,sizeof(CImgList<T>*));
+          CImgList<T> &prev_parent_images = *p_prev_parent_images;
+          CImgList<char> *p_prev_parent_images_names;
+          std::memcpy(&p_prev_parent_images_names,fed + 8,sizeof(CImgList<char>*));
+          CImgList<char> &prev_parent_images_names = *p_prev_parent_images_names;
+          CImg<unsigned int> *p_prev_selection;
+          std::memcpy(&p_prev_selection,fed + 10,sizeof(CImg<unsigned int>*));
+          images.swap(parent_images);
+          images_names.swap(parent_images_names);
+          parent_images.swap(prev_parent_images);
+          parent_images_names.swap(prev_parent_images_names);
+          delete p_prev_parent_images;
+          delete p_prev_parent_images_names;
+          delete p_prev_selection;
+        } break;
       }
     callstack.remove();
   }
@@ -5310,7 +5332,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
   float opacity = 0;
   int err;
 
- gmic_run_try : try {
+// gmic_run_try :
+  try {
 
     // Init interpreter environment.
     if (images.size()<images_names.size())
@@ -15192,7 +15215,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                    "A '%s' command is missing, before return point.",
                    s[1]=='d'?"while":s[1]=='i'?"fi":"done");
       }
-    } else pop_callstack(initial_callstack_size);
+    } else pop_callstack(initial_callstack_size,images,images_names,parent_images,parent_images_names);
 
     // Post-check validity of shared images.
     cimglist_for(images,l) gmic_check(images[l]);
@@ -15280,7 +15303,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     if (is_onfail) goto gmic_run_try;
 */
 
-    pop_callstack(initial_callstack_size);
+    pop_callstack(initial_callstack_size,images,images_names,parent_images,parent_images_names);
     throw;
 
   } catch (CImgAbortException &) { // Special case of abort (abort from a CImg method)

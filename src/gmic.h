@@ -374,7 +374,10 @@ struct gmic {
                                     const bool _is_debug=false) const;
   gmic_image<char> callstack2string(const gmic_image<unsigned int>* callstack_selection,
                                     const bool _is_debug=false) const;
-  void pop_callstack(const unsigned int callstack_size);
+  template<typename T>
+  void pop_callstack(const unsigned int callstack_size,
+                     gmic_list<T>& images, gmic_list<char>& images_names,
+                     gmic_list<T>& parent_images, gmic_list<char>& parent_images_names);
 
   gmic_image<unsigned int> selection2cimg(const char *const string, const unsigned int indice_max,
                                           const gmic_list<char>& names, const char *const command,
