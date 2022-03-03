@@ -5310,7 +5310,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
   float opacity = 0;
   int err;
 
-  try {
+ gmic_run_try : try {
 
     // Init interpreter environment.
     if (images.size()<images_names.size())
@@ -9699,11 +9699,12 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
         // Exception handling in local environments.
         if (!is_get && !std::strcmp("onfail",item)) {
-          const CImg<char> &s = callstack.back();
-          if (s[0]!='*' || s[1]!='l')
-            error(true,images,0,0,
-                  "Command 'onfail': Not associated to a 'local' command within "
-                  "the same scope.");
+
+          // const CImg<char> &s = callstack.back();
+          // if (s[0]!='*' || s[1]!='l')
+          //   error(true,images,0,0,
+          //         "Command 'onfail': Not associated to a 'local' command within "
+          //         "the same scope.");
           for (int nb_levels = 1; nb_levels && position<commands_line.size(); ++position) {
             it = commands_line[position].data();
             if (*it==1)
@@ -15263,9 +15264,20 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     cimglist_for(gmic_threads,k) wait_threads(&gmic_threads[k],true,(T)0);
 
     // Search for a 'onfail' block in same scope.
-//    int nb_levels = 0;
-
-
+    bool is_onfail = false;
+    int nb_levels = 0;
+    for (nb_levels = 1; nb_levels && position<commands_line.size(); ++position) {
+      it = commands_line[position].data();
+      if (!std::strcmp("onfail",it)) { is_onfail = true; break; }
+      if (*it==1)
+        is_debug_info|=get_debug_info(commands_line[position].data(),next_debug_line,next_debug_filename);
+      else {
+        _is_get = *it=='+';
+        it+=(_is_get || *it=='-');
+        gmic_if_flr ++nb_levels; else if (!std::strcmp("done",it)) --nb_levels;
+      }
+    }
+    if (is_onfail) goto gmic_run_try;
 
     pop_callstack(initial_callstack_size);
     throw;
