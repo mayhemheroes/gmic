@@ -6818,35 +6818,35 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             } else { // End a 'foreach...done' block
               unsigned int *const fed = foreachdones.data(0,nb_foreachdones - 1);
               int off = (int)fed[4];
-              CImgList<T> *p_saved_images;
-              std::memcpy(&p_saved_images,fed + 6,sizeof(CImgList<T>*));
-              CImgList<T> &saved_images = *p_saved_images;
-              CImgList<char> *p_saved_images_names;
-              std::memcpy(&p_saved_images_names,fed + 8,sizeof(CImgList<char>*));
-              CImgList<char> &saved_images_names = *p_saved_images_names;
+              CImgList<T> *p_saved_parent_images;
+              std::memcpy(&p_saved_parent_images,fed + 6,sizeof(CImgList<T>*));
+              CImgList<T> &saved_parent_images = *p_saved_parent_images;
+              CImgList<char> *p_saved_parent_images_names;
+              std::memcpy(&p_saved_parent_images_names,fed + 8,sizeof(CImgList<char>*));
+              CImgList<char> &saved_parent_images_names = *p_saved_parent_images_names;
               CImg<unsigned int> *p_saved_selection;
               std::memcpy(&p_saved_selection,fed + 10,sizeof(CImg<unsigned int>*));
               CImg<unsigned int> &saved_selection = *p_saved_selection;
 
               // Transfer back images to saved list of images.
               if (fed[3]) { // is_get?
-                images.move_to(saved_images,~0U);
-                images_names.move_to(saved_images_names,~0U);
+                images.move_to(parent_images,~0U);
+                images_names.move_to(parent_images_names,~0U);
               } else {
                 __ind = saved_selection[fed[1]] + off;
                 if (!images) {
-                  saved_images.remove(__ind);
-                  saved_images_names.remove(__ind);
+                  parent_images.remove(__ind);
+                  parent_images_names.remove(__ind);
                   --off;
                 } else if (images.width()==1) {
-                  images[0].move_to(saved_images[__ind]);
-                  images_names[0].move_to(saved_images_names[__ind]);
+                  images[0].move_to(parent_images[__ind]);
+                  images_names[0].move_to(parent_images_names[__ind]);
                 } else {
-                  saved_images.remove(__ind);
-                  saved_images_names.remove(__ind);
+                  parent_images.remove(__ind);
+                  parent_images_names.remove(__ind);
                   off+=images.width() - 1;
-                  images.move_to(saved_images,__ind);
-                  images_names.move_to(saved_images_names,__ind);
+                  images.move_to(parent_images,__ind);
+                  images_names.move_to(parent_images_names,__ind);
                 }
               }
 
@@ -6857,11 +6857,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               if (--fed[2]) {
                 __ind = saved_selection[fed[1]] + off;
                 if (fed[3]) { // is_get?
-                  images.assign(saved_images[__ind]);
-                  images_names.assign(saved_images_names[__ind]);
+                  images.assign(parent_images[__ind]);
+                  images_names.assign(parent_images_names[__ind]);
                 } else {
-                  saved_images[__ind].move_to(images);
-                  saved_images_names[__ind].move_to(images_names);
+                  parent_images[__ind].move_to(images);
+                  parent_images_names[__ind].move_to(images_names);
                 }
                 fed[4] = (unsigned int)off;
                 position = fed[0];
@@ -6869,10 +6869,12 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 next_debug_filename = debug_filename;
               } else {
                 if (is_very_verbose) print(images,0,"End 'foreach...done' block.");
-                saved_images.swap(images);
-                saved_images_names.swap(images_names);
-                delete p_saved_images;
-                delete p_saved_images_names;
+                images.swap(parent_images);
+                images_names.swap(parent_images_names);
+                parent_images.swap(saved_parent_images);
+                parent_images_names.swap(saved_parent_images_names);
+                delete p_saved_parent_images;
+                delete p_saved_parent_images_names;
                 delete p_saved_selection;
                 --nb_foreachdones;
                 callstack.remove();
@@ -7831,24 +7833,26 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             fed[3] = (unsigned int)is_get;
             fed[4] = 0; // Index offset
             fed[5] = debug_line;
-            CImgList<T> *const p_saved_images = new CImgList<T>();
-            images.swap(*p_saved_images);
-            std::memcpy(fed + 6,&p_saved_images,sizeof(CImgList<T>*)); // [6-7]: ptr to 'saved_images'
-            CImgList<char> *const p_saved_images_names = new CImgList<char>();
-            images_names.swap(*p_saved_images_names);
-            std::memcpy(fed + 8,&p_saved_images_names,sizeof(CImgList<char>*)); // [8-9]: ptr to 'saved_images_names'
+            CImgList<T> *const p_saved_parent_images = new CImgList<T>();
+            parent_images.swap(*p_saved_parent_images);
+            std::memcpy(fed + 6,&p_saved_parent_images,sizeof(CImgList<T>*)); // [6-7]: ptr to 'saved_parent_images'
+            CImgList<char> *const p_saved_parent_images_names = new CImgList<char>();
+            parent_images_names.swap(*p_saved_parent_images_names);
+            std::memcpy(fed + 8,&p_saved_parent_images_names,sizeof(CImgList<char>*)); // [8-9]: ptr to 'saved_parent_images_names'
             CImg<unsigned int> *const p_saved_selection = new CImg<unsigned int>();
             selection.swap(*p_saved_selection);
             std::memcpy(fed + 10,&p_saved_selection,sizeof(CImg<unsigned int>*)); // [10-11]: ptr to 'saved_selection'
+            images.swap(parent_images);
+            images_names.swap(parent_images_names);
 
             // Keep only first image of the selection.
             __ind = *(*p_saved_selection);
             if (is_get) {
-              images.assign((*p_saved_images)[__ind]);
-              images_names.assign((*p_saved_images_names)[__ind]);
+              images.assign(parent_images[__ind]);
+              images_names.assign(parent_images_names[__ind]);
             } else {
-              (*p_saved_images)[__ind].move_to(images);
-              (*p_saved_images_names)[__ind].move_to(images_names);
+              parent_images[__ind].move_to(images);
+              parent_images_names[__ind].move_to(images_names);
             }
 
           } else { // Empty selection -> skip block
