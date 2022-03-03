@@ -15263,7 +15263,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     // Wait for remaining threads to finish.
     cimglist_for(gmic_threads,k) wait_threads(&gmic_threads[k],true,(T)0);
 
-    // Search for a 'onfail' block in same scope.
+/*    // Search for a 'onfail' block in same scope.
     bool is_onfail = false;
     int nb_levels = 0;
     for (nb_levels = 1; nb_levels && position<commands_line.size(); ++position) {
@@ -15278,6 +15278,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       }
     }
     if (is_onfail) goto gmic_run_try;
+*/
 
     pop_callstack(initial_callstack_size);
     throw;
