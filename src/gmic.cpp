@@ -5604,7 +5604,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
       // Check for verbosity command, prior to the first output of a log message.
       bool is_verbose = verbosity>=1 || is_debug, is_verbose_argument = false;
-      const int old_verbosity = verbosity;
+      const int prev_verbosity = verbosity;
       if (is_command_verbose) {
         // Do a first fast check.
         if (*argument=='-' && !argument[1]) { --verbosity; is_verbose_argument = true; }
@@ -6818,22 +6818,22 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             } else { // End a 'foreach...done' block
               unsigned int *const fed = foreachdones.data(0,nb_foreachdones - 1);
               int off = (int)fed[4];
-              CImgList<T> *p_saved_parent_images;
-              std::memcpy(&p_saved_parent_images,fed + 6,sizeof(CImgList<T>*));
-              CImgList<T> &saved_parent_images = *p_saved_parent_images;
-              CImgList<char> *p_saved_parent_images_names;
-              std::memcpy(&p_saved_parent_images_names,fed + 8,sizeof(CImgList<char>*));
-              CImgList<char> &saved_parent_images_names = *p_saved_parent_images_names;
-              CImg<unsigned int> *p_saved_selection;
-              std::memcpy(&p_saved_selection,fed + 10,sizeof(CImg<unsigned int>*));
-              CImg<unsigned int> &saved_selection = *p_saved_selection;
+              CImgList<T> *p_prev_parent_images;
+              std::memcpy(&p_prev_parent_images,fed + 6,sizeof(CImgList<T>*));
+              CImgList<T> &prev_parent_images = *p_prev_parent_images;
+              CImgList<char> *p_prev_parent_images_names;
+              std::memcpy(&p_prev_parent_images_names,fed + 8,sizeof(CImgList<char>*));
+              CImgList<char> &prev_parent_images_names = *p_prev_parent_images_names;
+              CImg<unsigned int> *p_prev_selection;
+              std::memcpy(&p_prev_selection,fed + 10,sizeof(CImg<unsigned int>*));
+              CImg<unsigned int> &prev_selection = *p_prev_selection;
 
               // Transfer back images to saved list of images.
               if (fed[3]) { // is_get?
                 images.move_to(parent_images,~0U);
                 images_names.move_to(parent_images_names,~0U);
               } else {
-                __ind = saved_selection[fed[1]] + off;
+                __ind = prev_selection[fed[1]] + off;
                 if (!images) {
                   parent_images.remove(__ind);
                   parent_images_names.remove(__ind);
@@ -6855,7 +6855,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               images_names.assign();
               ++fed[1];
               if (--fed[2]) {
-                __ind = saved_selection[fed[1]] + off;
+                __ind = prev_selection[fed[1]] + off;
                 if (fed[3]) { // is_get?
                   images.assign(parent_images[__ind]);
                   images_names.assign(parent_images_names[__ind]);
@@ -6871,11 +6871,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 if (is_very_verbose) print(images,0,"End 'foreach...done' block.");
                 images.swap(parent_images);
                 images_names.swap(parent_images_names);
-                parent_images.swap(saved_parent_images);
-                parent_images_names.swap(saved_parent_images_names);
-                delete p_saved_parent_images;
-                delete p_saved_parent_images_names;
-                delete p_saved_selection;
+                parent_images.swap(prev_parent_images);
+                parent_images_names.swap(prev_parent_images_names);
+                delete p_prev_parent_images;
+                delete p_prev_parent_images_names;
+                delete p_prev_selection;
                 --nb_foreachdones;
                 callstack.remove();
               }
@@ -7833,20 +7833,21 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             fed[3] = (unsigned int)is_get;
             fed[4] = 0; // Index offset
             fed[5] = debug_line;
-            CImgList<T> *const p_saved_parent_images = new CImgList<T>();
-            parent_images.swap(*p_saved_parent_images);
-            std::memcpy(fed + 6,&p_saved_parent_images,sizeof(CImgList<T>*)); // [6-7]: ptr to 'saved_parent_images'
-            CImgList<char> *const p_saved_parent_images_names = new CImgList<char>();
-            parent_images_names.swap(*p_saved_parent_images_names);
-            std::memcpy(fed + 8,&p_saved_parent_images_names,sizeof(CImgList<char>*)); // [8-9]: ptr to 'saved_parent_images_names'
-            CImg<unsigned int> *const p_saved_selection = new CImg<unsigned int>();
-            selection.swap(*p_saved_selection);
-            std::memcpy(fed + 10,&p_saved_selection,sizeof(CImg<unsigned int>*)); // [10-11]: ptr to 'saved_selection'
+            CImgList<T> *const p_prev_parent_images = new CImgList<T>();
+            parent_images.swap(*p_prev_parent_images);
+            std::memcpy(fed + 6,&p_prev_parent_images,sizeof(CImgList<T>*)); // [6-7]: ptr to 'prev_parent_images'
+            CImgList<char> *const p_prev_parent_images_names = new CImgList<char>();
+            parent_images_names.swap(*p_prev_parent_images_names);
+            std::memcpy(fed + 8,&p_prev_parent_images_names, // [8-9]: ptr to 'prev_parent_images_names'
+                        sizeof(CImgList<char>*));
+            CImg<unsigned int> *const p_prev_selection = new CImg<unsigned int>();
+            selection.swap(*p_prev_selection);
+            std::memcpy(fed + 10,&p_prev_selection,sizeof(CImg<unsigned int>*)); // [10-11]: ptr to 'prev_selection'
             images.swap(parent_images);
             images_names.swap(parent_images_names);
 
             // Keep only first image of the selection.
-            __ind = *(*p_saved_selection);
+            __ind = *(*p_prev_selection);
             if (is_get) {
               images.assign(parent_images[__ind]);
               images_names.assign(parent_images_names[__ind]);
@@ -12811,7 +12812,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           else if (*argument=='+' && !argument[1]) {
             if (is_very_verbose) print(images,0,"Increment verbosity level (set to %d).",
                                        verbosity);
-          } else if ((verbosity>=1 && old_verbosity>=1) || is_debug)
+          } else if ((verbosity>=1 && prev_verbosity>=1) || is_debug)
             print(images,0,"Set verbosity level to %d.",
                   verbosity);
           if (is_verbose_argument) ++position;
