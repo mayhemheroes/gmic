@@ -6817,6 +6817,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               next_debug_line = fd[2];
               next_debug_filename = debug_filename;
             } else { // End a 'foreach...done' block
+              break;
+
 /*              unsigned int *const fed = foreachdones.data(0,nb_foreachdones - 1);
               int off = (int)fed[4];
               CImgList<T> *p_prev_parent_images;
