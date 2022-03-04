@@ -11401,7 +11401,7 @@ adjust_colors : check "${1=0}>=-100 && $1<=100 && ${2=0}>=-100 && $2<=100 && ${3
                        ${4=0}>=-100 && $4<=100 && ${5=0}>=-100 && $5<=100" skip ${6=0},${7=0}
   e[^-1] "Adjust colors of image$?, with brightness $1, contrast $2, gamma $3, hue shift $4, saturation $5 and
           value range [$6,$7]."
-  repeat $! l[$>] split_opacity l[0]
+  foreach split_opacity l[0]
     range={"$6==$7 && $6==0?[im,iM]:[min($6,$7),max($6,$7)]"}
     m={arg(1,$range)} M={arg(2,$range)} fact={255/max(1e-5,$M-$m)}
     - $m * $fact
@@ -11420,7 +11420,7 @@ adjust_colors : check "${1=0}>=-100 && $1<=100 && ${2=0}>=-100 && $2<=100 && ${3
     +[0] {$1*2} # Adjust Brightness
     /[0] $fact +[0] $m c[0] $range # Renormalize values.
     a c
-  done a c done done
+  done a c done
 
 #@cli ac : eq. to 'apply_channels'.
 ac :
@@ -11444,7 +11444,7 @@ _apply_channels : check "isint(${3=0}) && $3>=0 && $3<=2"
   e[^-1] "Apply command '$1' on channels '"$channels"' of image"$_gmic_s"."
   ('$/') id={h=0;for(k=0,k<w,((h*=31)+=i[k++])%=1048576)} rm.
   _ac_$channels m _ac_precond$id:$_p m _ac_forward$id:$_f m _ac_backward$id:$_b
-  repeat $! l[$>]
+  foreach
     _ac_precond$id is_alpha={s==2" || "s==4}
     if $is_alpha s c,{1-s} fi
     _ac_forward$id[0] a c
@@ -11453,7 +11453,7 @@ _apply_channels : check "isint(${3=0}) && $3>=0 && $3<=2"
     rm.
     if $is_alpha s c,{1-s} fi
     _ac_backward$id[0] a c
-  done done
+  done
   um _ac_precond$id,_ac_forward$id,_ac_backward$id
 
 _ac_list :
@@ -11557,13 +11557,13 @@ _ac_yiq_q : _p="to_color" _f="rgb2yiq8" _b="yiq82rgb" _s=2
 autoindex : check "isint($1) && $1>0 && ${2=0}>=0" skip ${3=1}
   e[^-1] "Index colors in images$? by adapted colormap with $1 entries, dithering level $2 and "\
           ${arg\ 1+!$3,k-means,median-cut}" method."
-  repeat $! l[$>]
+  foreach {
     if w>h if w>256 +r2dx 256 else [0] fi
     else if h>256 +r2dy 256 else [0] fi
     fi
     colormap[1] $1,$3,0
     index[0] [1],$2,1 rm[1]
-  done done
+  }
 
 #@cli bayer2rgb : _GM_smoothness,_RB_smoothness1,_RB_smoothness2
 #@cli : Transform selected RGB-Bayer sampled images to color images.
@@ -11571,7 +11571,7 @@ autoindex : check "isint($1) && $1>0 && ${2=0}>=0" skip ${3=1}
 #@cli : $ image.jpg rgb2bayer 0 +bayer2rgb 1,1,0.5
 bayer2rgb : skip ${1=1},${2=1},${3=0.5}
   e[^-1] "Transform RGB-Bayer image$? to color images, with smoothness ($1,$2,$3)."
-  channels 0 repeat $! l[$>]
+  channels 0 foreach
 
     # Expand image size to avoid problems with borders.
     expand_x {"2 + 4*$1"},0 expand_y {"2 + 4*$1"},0
@@ -11612,7 +11612,7 @@ bayer2rgb : skip ${1=1},${2=1},${3=0.5}
     shrink_x {"2 + 4*$1"},0 shrink_y {"2 + 4*$1"},0
     c 0,255
 
-  done done
+  done
 
 #@cli deltaE : [image],_metric={ 0=deltaE_1976 | 1=deltaE_2000 },"_to_Lab_command"
 #@cli : Compute the CIE DeltaE color difference between selected images and specified [image].
@@ -11643,10 +11643,10 @@ cmy2rgb :
 #@cli : Convert color representation of selected images from CMYK to RGB.
 cmyk2rgb :
   e[^-1] "Convert color representation of image$? from CMYK to RGB."
-  repeat $! l[$>]
+  foreach {
     s c +/. -255 +. 1 *[0-2] . rm. +[0-2] . rm.
     a c cmy2rgb
-  done done
+  }
 
 #@cli colorblind : type={ 0=protanopia | 1=protanomaly | 2=deuteranopia | 3=deuteranomaly | \
 # 4=tritanopia | 5=tritanomaly | 6=achromatopsia | 7=achromatomaly }
@@ -11668,7 +11668,7 @@ colorblind : check "isint($1) && $1>=0 && $1<=7"
   type5=(1,0.09142,-0.09142;0,0.92030,0.07970;0,0.52030,0.47970)
   type6=(0.299,0.587,0.114;0.299,0.587,0.114;0.299,0.587,0.114)
   type7=(0.618,0.320,0.062;0.163,0.775,0.062;0.163,0.320,0.516)
-  repeat $! l[$>] split_opacity l[0] to_rgb srgb2rgb mix_channels ${type$1} rgb2srgb done a c done done
+  foreach { split_opacity l[0] { to_rgb srgb2rgb mix_channels ${type$1} rgb2srgb } a c }
 
 #@cli colormap : nb_levels>=0,_method={ 0=median-cut | 1=k-means },_sort_vectors
 #@cli : Estimate best-fitting colormap with 'nb_colors' entries, to index selected images.
@@ -11681,7 +11681,7 @@ colormap : check "isint($1) && $1>=0" skip ${2=1},${3=1}
   if $1 e[0--3] "Estimate colormap with $1 entries for image$?, by "${arg\ 1+!$2,k-means,median-cut}" method."
   else e[0--3] "Estimate full colormap for image$?."
   fi
-  repeat $! l[$>] nm={b} is_half=${-is_half}
+  foreach nm={b} is_half=${-is_half}
 
     if $1 # Estimate quantized colormap.
       r {whd},1,1,100%,-1
@@ -11746,7 +11746,7 @@ colormap : check "isint($1) && $1>=0" skip ${2=1},${3=1}
 
     if $3==1 +norm rv a c sort +,x channels 1,100% fi # Sort colors by increasing norm.
     :: "[colormap of "$nm"]"
-  done done
+  done
 
 _colormap : # Implementation of the median-cut algorithm.
   m "__colormap : repeat s sh[$""1] $> =.. {iv},$""1,0,0,$> rm. done"
@@ -11768,30 +11768,29 @@ _colormap : # Implementation of the median-cut algorithm.
 #@cli : $$
 compose_channels : skip ${1="+"}
   e[^-1] "Compose all channels of image$?, with operator '$1'."
-  repeat $! l[$>]
-    repeat s sh[0] $> done $1[^0] r[0] 100%,100%,100%,1,-1 k[0]
-  done done
+  foreach {
+    repeat s { sh[0] $> }
+    $1[^0] r[0] 100%,100%,100%,1,-1 k[0]
+  }
 
 #@cli direction2rgb
 #@cli : Compute RGB representation of selected 2D direction fields.
 #@cli : $ image.jpg luminance gradient append c blur 2 orientation +direction2rgb
 direction2rgb :
   e[^-1] "Compute RGB representation of 2D direction field$?."
-  channels 0,1 repeat $! l[$>] nm={0,n}
+  channels 0,1 foreach nm={0,n}
     s c complex2polar round.. 0.001
     *. {180/pi} %. 360 100%,100%,1,1,1 mv... $!
     if im!=iM n. 0,1 else f. 1 fi
     a c hsv2rgb
-  :: $nm done done
+  :: $nm done
 
 #@cli ditheredbw
 #@cli : Create dithered B&W version of selected images.
 #@cli : $ image.jpg +equalize ditheredbw[-1]
 ditheredbw :
   e[^-1] "Create dithered B&W version of image$?."
-  repeat $! l[$>] split_opacity
-    luminance[0] n[0] 0,255 (0,255) index[0] .,1,1 rm.
-  a c done done
+  foreach { split_opacity luminance[0] n[0] 0,255 (0,255) index[0] .,1,1 rm. a c }
 
 #@cli fc : eq. to 'fill_color'.
 fc :
@@ -11807,9 +11806,9 @@ fill_color :
 
 _fill_color :
   e[0--3] "Fill image"$_gmic_s" with color (${^0})."
-  repeat $! l[$>]
-    repeat s sh[0] $> f. {arg(1+$>,${^0})} done k[0]
-  done done
+  foreach {
+    repeat s { sh[0] $> f. {arg(1+$>,${^0})} } k[0]
+  }
 
 #@cli gradient2rgb : _is_orientation={ 0 | 1 }
 #@cli : Compute RGB representation of 2D gradient of selected images.
@@ -11818,10 +11817,10 @@ _fill_color :
 gradient2rgb : check "isbool(${1=0})"
   arg 1+!$1,"orientation ",""
   e[^-1] "Compute RGB representation of 2D gradient "${}"of image$?."
-  norm repeat $! l[$>]
+  norm foreach {
     if $1 gradient_orientation 2 else g xy fi
     a c direction2rgb
-  done done
+  }
 
 #@cli hcy2rgb
 #@cli : Convert color representation of selected images from HCY to RGB.
@@ -11909,9 +11908,7 @@ _hsx82rgb :
 #@cli : Convert color representation of selected images from INT24 to RGB.
 int2rgb :
   e[^-1] "Convert color representation of image$? from INT24 scalars to RGB."
-  round repeat $! l[$>]
-    +>> 8 &[1] 255 +&[0] 255 >>[0] 16 a c
-  done done
+  round foreach { +>> 8 &[1] 255 +&[0] 255 >>[0] 16 a c }
 
 #@cli jzazbz2rgb : illuminant={ 0=D50 | 1=D65 | 2=E } : (no arg)
 #@cli : Convert color representation of selected images from RGB to Jzazbz.
@@ -11925,7 +11922,7 @@ jzazbz2rgb : skip "${1=,}"
 #@cli : Convert color representation of selected images from RGB to XYZ.
 jzazbz2xyz :
   e[^-1] "Convert color representation of image$? from Jzazbz to XYZ."
-  repeat $! l[$>] split_opacity
+  foreach split_opacity
     f[0] ${-_jzazbz_const}"
       tmp = i0 + Jzazbz_d0;
       Iz = tmp/(1 + Jzazbz_d - Jzazbz_d*tmp);
@@ -11947,7 +11944,7 @@ jzazbz2xyz :
       Y = (Yp + (Jzazbz_g - 1)*X)/Jzazbz_g;
       Z = Zp;
       [ X,Y,Z ]/255"
-  a c done done
+  a c done
 
 # The XYZ<->Jzazbz conversion code has been written by Alan Gibson,
 # and published on this page: <http://im.snibgo.com/jzazbz.htm>
@@ -11967,9 +11964,7 @@ _jzazbz_const :
 #@cli : Convert color representation of selected images from Lab to Lch.
 lab2lch :
   e[^-1] "Convert color representation of image$? from Lab to Lch."
-  repeat $! l[$>]
-    to_color s c complex2polar[1,2] a c
-  done done
+  foreach { to_color s c complex2polar[1,2] a c }
 
 #@cli lab2rgb : illuminant={ 0=D50 | 1=D65 | 2=E } : (no arg)
 #@cli : Convert color representation of selected images from Lab to RGB.
@@ -12047,9 +12042,7 @@ lab82rgb : skip "${1=,}"
 #@cli : Convert color representation of selected images from Lch to Lab.
 lch2lab :
   e[^-1] "Convert color representation of image$? from Lch to Lab."
-  repeat $! l[$>]
-    to_color s c polar2complex[1,2] a c
-  done done
+  foreach { to_color s c polar2complex[1,2] a c }
 
 #@cli lch2rgb : illuminant={ 0=D50 | 1=D65 | 2=E } : (no arg)
 #@cli : Convert color representation of selected images from Lch to RGB.
@@ -12079,10 +12072,11 @@ lch82rgb : skip "${1=,}"
 luminance :
   e[^-1] "Compute luminance of image$?."
   remove_opacity srgb2rgb
-  repeat $! l[$>]
-  if s==3 sh 0 sh[0] 1 sh[0] 2 *[1] 0.22248840 *[2] 0.71690369 *[3] 0.06060791 +[1-3] rm[1]
-  elif s!=1 norm n 0,255
-  fi done done
+  foreach {
+    if s==3 sh 0 sh[0] 1 sh[0] 2 *[1] 0.22248840 *[2] 0.71690369 *[3] 0.06060791 +[1-3] rm[1]
+    elif s!=1 norm n 0,255
+    fi
+  }
   channels 0 rgb2srgb
 
 #@cli lightness
@@ -12192,7 +12186,8 @@ mix_rgb : skip ${1=1},${2=0},${3=0},${4=0},${5=1},${6=0},${7=0},${8=0},${9=1}
 #@cli : See also: ''rgb2oklab''.
 oklab2rgb :
   e[^-1] "Convert color representation of image$? from Oklab to RGB."
-  repeat $! l[$>] split_opacity to_rgb[0]
+  foreach {
+    split_opacity to_rgb[0]
     f[0] "
      l = (i0 + 0.3963377774*i1 + 0.2158037573*i2)^3;
      m = (i0 - 0.1055613458*i1 - 0.0638541728*i2)^3;
@@ -12200,8 +12195,8 @@ oklab2rgb :
      [ 4.0767245293*l - 3.3072168827*m + 0.2307590544*s,
        -1.2681437731*l + 2.6093323231*m - 0.3411344290*s,
        -0.0041119885*l - 0.7034763098*m + 1.7068625689*s ]"
-    * 255
-  a c done done
+    * 255 a c
+  }
 
 #@cli palette : palette_name | palette_number
 #@cli : Input specified color palette at the end of the image list.
@@ -12227,14 +12222,14 @@ _palette_names :
 
 _palette2code : # Convert a set of input palettes
   sort_list +,n
-  repeat $! l[$>]
+  foreach {
     r {whd},1,1,100%,-1
     img2base64 0,0
     e[] "_palette_"{n}" : "
     b64=\"${}\"
     l[] ('$b64') s x,-119 ('\\\\\n') a[0--3] .,x rm. a x b64={t} rm done # No more than 120 char / lines
     e[] "  base642img \\\n"$b64"\n"
-  done done
+  }
 
 # The color palettes below comes from the CImg library 'http://cimg.eu/'.
 _palette_default :
@@ -12658,12 +12653,12 @@ pseudogray : check "isint(${1=5}) && $1>=0 && ${2=2.3}>=0 && isint(${3=8}) && $3
 replace_color : check "$1>=0 && $2>=0"
   l[] (${3--1}) y c s c,2 col1={0,^} col2={1,^} rm done
   e[^-1] "Replace color ("$col1") by color ("$col2") in image$?, with tolerance $1 and smoothness $2."
-  repeat $! l[$>]
+  foreach {
     1,1,1,100%,$col1 ri[1] [0]
     if $1 -[1] [0] norm[1] <=[1] $1 else ==[1] [0] l[1] s c & done fi
     b[1] $2
     1,1,1,{0,s},$col2 ri[2] [0] j[0] [2],0,0,0,0,1,[1] k[0]
-  done done
+  }
 
 #@cli retinex : _value_offset>0,_colorspace={ hsi | hsv | lab | lrgb | rgb | ycbcr },\
 # 0<=_min_cut<=100,0<=_max_cut<=100,_sigma_low>0,_sigma_mid>0,_sigma_high>0
@@ -12696,9 +12691,7 @@ _retinex :
 #@cli : $ image.jpg +rgb2bayer 0
 rgb2bayer : skip ${1=0},${2=0}
   e[^-1] "Transform image$? to a RGB-Bayer "${arg\ 1+!$2,color,monochrome}" grid, starting from pattern '$1'."
-  to_rgb repeat $! l[$>]
-    _rgb2bayer$1 ri[1] [0],0,2 * if !$2 s c + fi
-  done done
+  to_rgb foreach { _rgb2bayer$1 ri[1] [0],0,2 * if !$2 s c + fi }
 
 _rgb2bayer0 : (1,0;0,0^0,1;1,0^0,0;0,1)
 _rgb2bayer1 : (0,0;0,1^0,1;1,0^1,0;0,0)
@@ -12718,10 +12711,7 @@ rgb2cmy :
 #@cli : $ image.jpg rgb2cmyk split c fill[3] 0 append c cmyk2rgb
 rgb2cmyk :
   e[^-1] "Convert color representation of image$? from RGB to CMYK."
-  rgb2cmy repeat $! l[$>]
-    s c +min -[0-2] . +/. 255 -. 1 *. -1 +==. 0 +[-2,-1]
-    /[0-2] . rm. a c
-  done done
+  rgb2cmy foreach { s c +min -[0-2] . +/. 255 -. 1 *. -1 +==. 0 +[-2,-1] /[0-2] . rm. a c }
 
 #@cli rgb2hcy
 #@cli : Convert color representation of selected images from RGB to HCY.
@@ -12813,9 +12803,7 @@ _rgb2hsx8 :
 #@cli : $ image.jpg rgb2int
 rgb2int :
   e[^-1] "Convert color representation of image$? from RGB to INT24 scalars."
-  to_rgb round repeat $! l[$>]
-    s c <<[0] 16 <<[1] 8 +
-  done done
+  to_rgb round foreach { s c <<[0] 16 <<[1] 8 + }
 
 #@cli rgb2jzazbz : illuminant={ 0=D50 | 1=D65 | 2=E } : (no arg)
 #@cli : Convert color representation of selected images from RGB to Jzazbz.
@@ -12874,13 +12862,13 @@ rgb2lch8 : skip "${1=,}"
 #@cli : $ image.jpg rgb2luv split c
 rgb2luv :
   e[^-1] "Convert color representation of image$? from RGB to LUV."
-  repeat $! l[$>]
+  foreach {
     +rgb2xyz rgb2lab.. channels.. 0 s. c
     *. 3 +*.. 15 +[-2,-1] +. ... +. 1e-8  # Z <- X+15Y+3Z
     *... 4 *.. 9 /[-3,-2] . rm.
     -.. 0.2009 -. 0.4610
     +*... 13 *... . *[-2,-1] a c
-  done done
+  }
 
 #@cli rgb2oklab
 #@cli : Convert color representation of selected images from RGB to Oklab.
@@ -12888,7 +12876,8 @@ rgb2luv :
 #@cli : See also: ''oklab2rgb''.
 rgb2oklab :
   e[^-1] "Convert color representation of image$? from RGB to Oklab."
-  repeat $! l[$>] split_opacity to_rgb[0] /[0] 255
+  foreach {
+    split_opacity to_rgb[0] /[0] 255
     f[0] "
       l = cbrt(0.4121656120*R + 0.5362752080*G + 0.0514575653*B);
       m = cbrt(0.2118591070*R + 0.6807189584*G + 0.1074065790*B);
@@ -12896,7 +12885,8 @@ rgb2oklab :
       [ 0.2104542553*l + 0.7936177850*m - 0.0040720468*s,
         1.9779984951*l - 2.4285922050*m + 0.4505937099*s,
         0.0259040371*l + 0.7827717662*m - 0.8086757660*s ]"
-  a c done done
+    a c
+  }
 
 #@cli rgb2ryb
 #@cli : Convert color representation of selected images from RGB to RYB.
@@ -13026,11 +13016,11 @@ rgb2yuv8 :
 #@cli : Remove opacity channel of selected images.
 remove_opacity :
   e[^-1] "Remove opacity channel of image$?."
-  repeat $! l[$>]
+  foreach {
     if s==2 channels 0
     elif s==4 channels 0,2
     fi
-  done done
+  }
 
 #@cli ryb2rgb
 #@cli : Convert color representation of selected images from RYB to RGB.
@@ -13069,9 +13059,7 @@ ryb2rgb :
 #@cli : $$ https://gmic.eu/oldtutorial/_select_color
 select_color : skip ${1=0}
   e[^-1] "Select color (${2--1}) in image$?, with tolerance $1."
-  repeat $! l[$>]
-    +fc ${2--1} - norm <= $1
-  done done
+  foreach { +fc ${2--1} - norm <= $1 }
 
 #@cli sepia
 #@cli : Apply sepia tones effect on selected images.
@@ -13097,7 +13085,7 @@ solarize :
 #@cli : $ image.jpg quantize 5 +split_colors , display_rgba
 split_colors : check "${1=0}>=0 && isint(${2=256}) && $2>0 && ${3=8}>=1"
   e[^-1] "Split image$? as single color outputs, with tolerance $1, $2 maximal outputs and minimal color area $3."
-  repeat $! l[$>]
+  foreach {
     +label 0,1 norm. area. 0,1
 
     # Loop over biggest color regions.
@@ -13114,14 +13102,15 @@ split_colors : check "${1=0}>=0 && isint(${2=256}) && $2>0 && ${3=8}>=1"
     N={$!-1}
     sh[^0] 0,{s-2} *[-$N--1] [0] rm[-$N--1]
     sh[^0] 100% *[-$N--1] 255 rm[0,-$N--1]
-
-  done done
+  }
 
 #@cli split_opacity
 #@cli : Split color and opacity parts of selected images.
 split_opacity :
   e[^-1] "Split color and opacity parts of image$?."
   repeat $! l[$<] s c,{s==4?-3:s==2?-1:-s} done done
+#  foreach { s c,{s==4?-3:s==2?-1:-s} }
+
 
 #@cli srgb2lab : illuminant={ 0=D50 | 1=D65 | 2=E } : (no arg)
 #@cli : Convert color representation of selected images from sRGB to Lab.
