@@ -3022,35 +3022,13 @@ CImg<char> gmic::callstack2string(const CImg<unsigned int>& callstack_selection,
 // Pop callstack until it reaches a certain size.
 //-----------------------------------------------
 // Used to ensure that callstack stays coherent when errors occurs in '_run()'.
-template<typename T>
-void gmic::pop_callstack(const unsigned int callstack_size,
-                         CImgList<T>& images, CImgList<char>& images_names,
-                         CImgList<T>& parent_images, CImgList<char>& parent_images_names) {
+void gmic::pop_callstack(const unsigned int callstack_size) {
   while (callstack.size()>callstack_size) {
     const char *const s = callstack.back();
     if (*s=='*') switch (s[1]) {
       case 'r' : --nb_repeatdones; break;
       case 'd' : --nb_dowhiles; break;
-      case 'f' :
-        if (s[4]!='e') --nb_fordones;
-        else {
-          unsigned int *const fed = foreachdones.data(0,--nb_foreachdones);
-          CImgList<T> *p_prev_parent_images;
-          std::memcpy(&p_prev_parent_images,fed + 6,sizeof(CImgList<T>*));
-          CImgList<T> &prev_parent_images = *p_prev_parent_images;
-          CImgList<char> *p_prev_parent_images_names;
-          std::memcpy(&p_prev_parent_images_names,fed + 8,sizeof(CImgList<char>*));
-          CImgList<char> &prev_parent_images_names = *p_prev_parent_images_names;
-          CImg<unsigned int> *p_prev_selection;
-          std::memcpy(&p_prev_selection,fed + 10,sizeof(CImg<unsigned int>*));
-          images.swap(parent_images);
-          images_names.swap(parent_images_names);
-          parent_images.swap(prev_parent_images);
-          parent_images_names.swap(prev_parent_images_names);
-          delete p_prev_parent_images;
-          delete p_prev_parent_images_names;
-          delete p_prev_selection;
-        } break;
+      case 'f' : if (s[4]!='e') --nb_fordones; else --nb_foreachdones; break;
       }
     callstack.remove();
   }
@@ -6839,7 +6817,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               next_debug_line = fd[2];
               next_debug_filename = debug_filename;
             } else { // End a 'foreach...done' block
-              unsigned int *const fed = foreachdones.data(0,nb_foreachdones - 1);
+/*              unsigned int *const fed = foreachdones.data(0,nb_foreachdones - 1);
               int off = (int)fed[4];
               CImgList<T> *p_prev_parent_images;
               std::memcpy(&p_prev_parent_images,fed + 6,sizeof(CImgList<T>*));
@@ -6902,6 +6880,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 --nb_foreachdones;
                 callstack.remove();
               }
+*/
             }
           } else if (s[1]=='l') { // End a 'local...done' block
             if (is_very_verbose) print(images,0,"End 'local...done' block.");
@@ -7852,7 +7831,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               CImg<char>::string(argx).move_to(callstack);
             } else CImg<char>::string("*foreach").move_to(callstack);
             if (nb_foreachdones>=foreachdones._height)
-              foreachdones.resize(12,std::max(2*foreachdones._height,8U),1,1,0);
+              foreachdones.resize(6,std::max(2*foreachdones._height,8U),1,1,0);
             unsigned int *const fed = foreachdones.data(0,nb_foreachdones++);
             fed[0] = position_item + 1;
             fed[1] = 0; // Iteration counter
@@ -7860,20 +7839,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             fed[3] = (unsigned int)is_get;
             fed[4] = 0; // Index offset
             fed[5] = debug_line;
-            CImgList<T> *const p_prev_parent_images = new CImgList<T>();
-            parent_images.swap(*p_prev_parent_images);
-            std::memcpy(fed + 6,&p_prev_parent_images,sizeof(CImgList<T>*)); // [6-7]: ptr to 'prev_parent_images'
-            CImgList<char> *const p_prev_parent_images_names = new CImgList<char>();
-            parent_images_names.swap(*p_prev_parent_images_names);
-            std::memcpy(fed + 8,&p_prev_parent_images_names, // [8-9]: ptr to 'prev_parent_images_names'
-                        sizeof(CImgList<char>*));
-            CImg<unsigned int> *const p_prev_selection = new CImg<unsigned int>();
-            selection.swap(*p_prev_selection);
-            std::memcpy(fed + 10,&p_prev_selection,sizeof(CImg<unsigned int>*)); // [10-11]: ptr to 'prev_selection'
-            images.swap(parent_images);
-            images_names.swap(parent_images_names);
 
-            // Keep only first image of the selection.
+/*            // Keep only first image of the selection.
             __ind = *(*p_prev_selection);
             if (is_get) {
               images.assign(parent_images[__ind]);
@@ -7882,6 +7849,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               parent_images[__ind].move_to(images);
               parent_images_names[__ind].move_to(images_names);
             }
+*/
 
           } else { // Empty selection -> skip block
             if (is_very_verbose)
@@ -15214,7 +15182,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                    "A '%s' command is missing, before return point.",
                    s[1]=='d'?"while":s[1]=='i'?"fi":"done");
       }
-    } else pop_callstack(initial_callstack_size,images,images_names,parent_images,parent_images_names);
+    } else pop_callstack(initial_callstack_size);
 
     // Post-check validity of shared images.
     cimglist_for(images,l) gmic_check(images[l]);
@@ -15284,25 +15252,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
   } catch (gmic_exception&) {
     // Wait for remaining threads to finish.
     cimglist_for(gmic_threads,k) wait_threads(&gmic_threads[k],true,(T)0);
-
-/*    // Search for a 'onfail' block in same scope.
-    bool is_onfail = false;
-    int nb_levels = 0;
-    for (nb_levels = 1; nb_levels && position<commands_line.size(); ++position) {
-      it = commands_line[position].data();
-      if (!std::strcmp("onfail",it)) { is_onfail = true; break; }
-      if (*it==1)
-        is_debug_info|=get_debug_info(commands_line[position].data(),next_debug_line,next_debug_filename);
-      else {
-        _is_get = *it=='+';
-        it+=(_is_get || *it=='-');
-        gmic_if_flr ++nb_levels; else if (!std::strcmp("done",it)) --nb_levels;
-      }
-    }
-    if (is_onfail) goto gmic_run_try;
-*/
-
-    pop_callstack(initial_callstack_size,images,images_names,parent_images,parent_images_names);
+    pop_callstack(initial_callstack_size);
     throw;
 
   } catch (CImgAbortException &) { // Special case of abort (abort from a CImg method)
