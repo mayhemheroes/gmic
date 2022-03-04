@@ -7792,6 +7792,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             fed[2] = debug_line;
 
             const unsigned int _position = position;
+            is_cond = false; // is_exception?
 
             cimg_forY(selection,l) {
               uind = selection[l];
@@ -7845,6 +7846,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 if (nb_levels==1 && position<commands_line.size()) { // Onfail block found
                   verbosity = o_verbosity; // Restore verbosity
                   if (is_very_verbose) print(images,0,"Reach 'onfail' block.");
+                  is_cond = true;
                   try {
                     _run(commands_line,++position,g_list,g_list_c,
                          parent_images,parent_images_names,variables_sizes,is_noarg,0,0);
@@ -7887,6 +7889,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               next_debug_line = fed[2];
               next_debug_filename = debug_filename;
 
+              if (is_cond) break;
             }
             callstack.remove();
           }
