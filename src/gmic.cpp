@@ -7721,21 +7721,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   is_first?"'for...done' block":"'for' command",
                   gmic_argument_text_printed(),
                   is_cond?"holds":"does not hold");
-          if (is_cond) {
-            if (is_first) {
-              if (is_debug_info && debug_line!=~0U) {
-                gmic_use_argx;
-                cimg_snprintf(argx,_argx.width(),"*for#%u",debug_line);
-                CImg<char>::string(argx).move_to(callstack);
-              } else CImg<char>::string("*for").move_to(callstack);
-              if (nb_fordones>=fordones._height) fordones.resize(3,std::max(2*fordones._height,8U),1,1,0);
-              unsigned int *const fd = fordones.data(0,nb_fordones++);
-              fd[0] = position_item;
-              fd[1] = 0;
-              fd[2] = debug_line;
-            }
-            ++position;
-          } else {
+          ++position;
+
+          if (!is_cond) {
             int nb_levels = 0;
             for (nb_levels = 1; nb_levels && position<commands_line.size(); ++position) {
               it = commands_line[position].data();
@@ -7747,10 +7735,21 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 gmic_if_flr ++nb_levels; else if (!std::strcmp("done",it)) --nb_levels;
               }
             }
-            if (nb_levels || position>=commands_line.size())
+            if (nb_levels)
               error(true,images,0,0,
                     "Command 'for': Missing associated 'done' command.");
             if (!is_first) { --nb_fordones; callstack.remove(); }
+          } else if (is_first) {
+            if (is_debug_info && debug_line!=~0U) {
+              gmic_use_argx;
+              cimg_snprintf(argx,_argx.width(),"*for#%u",debug_line);
+              CImg<char>::string(argx).move_to(callstack);
+            } else CImg<char>::string("*for").move_to(callstack);
+            if (nb_fordones>=fordones._height) fordones.resize(3,std::max(2*fordones._height,8U),1,1,0);
+            unsigned int *const fd = fordones.data(0,nb_fordones++);
+            fd[0] = position_item;
+            fd[1] = 0;
+            fd[2] = debug_line;
           }
           continue;
         }
