@@ -10464,7 +10464,7 @@ apply_curve : check "${1=1}>=0 && $1<=1" skip ${2=0},${3=100}
 apply_gamma : check $1>=0
   e[^-1] "Apply Gamma-correction to image$?, with gamma $1."
   if $1==1 return fi
-  repeat $! l[$>] mM={[im,iM]} n 0,1 ^ {1/$1} n $mM done done
+  foreach { mM={[im,iM]} n 0,1 ^ {1/$1} n $mM }
 
 #@cli balance_gamma : _ref_color1,...
 #@cli : Compute gamma-corrected color balance of selected image, with respect to specified reference color.
@@ -10472,11 +10472,11 @@ apply_gamma : check $1>=0
 #@cli : $ image.jpg +balance_gamma 128,64,64
 balance_gamma : check "isnum(${1=128})"
   e[^-1] "Apply gamma-corrected color balance of image$?, with reference color ("${^0}")."
-  repeat $! l[$>]
+  foreach {
     (${^0}) r. {-2,s},1,1,1,0,1 s.. c /. 255
     repeat $!-1 /[$>] 255 ^[$>] {log({@$>})/log({$>,ia})} *[$>] 255 done
     rm. a c c 0,255
-  done done
+  }
 
 #@cli cast : datatype_source,datatype_target
 #@cli : Cast datatype of image buffer from specified source type to specified target type.
@@ -10496,14 +10496,14 @@ cast :
          s=='int'||s=='float'?4:8}
   dsize={s='$dtype';s=='"unsigned_char"'||s=='char'?1:s=='"unsigned_short"'||s=='short'?2:s=='"unsigned_int"'||\
          s=='int'||s=='float'?4:8}
-  repeat $! l[$>]
+  foreach {
     w,h,d,s={[w,h,d,s]}
     serialize $1,0,0
     s -,{'\n$w\ $h\ $d\ $s\n'}
     i[1] ('\n1\ {int($w*$h*$d*$s*$ssize/$dsize)}\ 1\ 1\n') y[1]
     replace_str[0] $stype,$dtype
     a y unserialize
-  done done
+  }
 
 #@cli complex2polar
 #@cli : Compute complex to polar transforms of selected images.
@@ -10640,22 +10640,6 @@ compress_cluts : check "${2=1.5}>0 && ${3=0.75}>0 && isint(${4=2048}) && $4>8"
     rm
   done done
 
-# cluts2libclut : "compressed_CLUT_collection.gmz"
-# Convert specified compressed CLUT collection for C++ 'libclut'
-# (https://framagit.org/dtschump/libclut)
-cluts2libclut : skip ${1=$HOME/work/src/gmic/resources/gmic_cluts.gmz}
-  e[] "Convert compressed CLUT collection '$1' to .png/.ppm/.txt for C++ libclut."
-  l[]
-    i $1
-    0 :: "$1" basename={b} rm.
-    list=
-    repeat $! l[$>] if s<6 r 100%,100%,1,6,0,1 fi transpose list.={n}"\n" done done s c,2 a y
-    o. $basename.png
-    o. $basename.ppm
-    ('$list') ot. $basename.txt
-    rm
-  done
-
 #@cli compress_rle : _is_binary_data={ 0 | 1 },_maximum_sequence_length>=0
 #@cli : Compress selected images as 2xN data matrices, using RLE algorithm.
 #@cli : Set 'maximum_sequence_length=0' to disable maximum length constraint.
@@ -10665,7 +10649,8 @@ compress_rle : check "isbool(${1=0}) && isint(${2=0}) && $2>=0"
   s0=" for binary data" s1=""
   if $2 s=", with maximal sequence length "$2 else s="" fi
   e[^-1] "Compress image$? using RLE algorithm"${s{!$1}}$s"."
-  repeat $! l[$>] nm={0,n} im={im} header={w};{h};{d};{s};$im;{$1!=0}
+  foreach {
+    nm={0,n} im={im} header={w};{h};{d};{s};$im;{$1!=0}
     - $im y x ({{0,@-1}+1}) a x r 100%,3
     f '>!y?i:y==1?(i(x,0)==i(x+1,0)?-1:x):(i(x-1,1)==-1?i(x-1,2)+1:1)'
     if $2 # Constrain maximum sequence length.
@@ -10680,7 +10665,7 @@ compress_rle : check "isbool(${1=0}) && isint(${2=0}) && $2>=0"
       *. -1 rv a x y discard -1 f '>i(0,y-1)<0&&i==0&&i(0,y+1)<0?-1:i' discard -1
     fi
     i[0] ($header) a y :: $nm
-  done done
+  }
 
 #@cli cumulate : { x | y | z | c }...{ x | y | z | c } : (no arg) : (+)
 #@cli : Compute the cumulative function of specified image data, optionally along the specified axes.
@@ -10701,13 +10686,13 @@ decompress_clut : check "isint(${1=33}) && $1>0 && isint(${2=$1}) && $2>0 && isi
                         "isin(${4=0},0,1,2)"
   e[^-1] "Decompress colored keypoint$? into $1x$2x$3 CLUTs, using "\
          ${"s0,s1=srgb,rgb u $s$4"}" colorspace for reconstruction."
-  repeat $! l[$>]
+  foreach {
     if "h>=320 || (P0 = I[0]; P1 = I[h - 1]; val(P) = (P[0]*65536 + P[1]*256 + P[2]); val(P0)>val(P1))"
       decompress_clut_pde. ${1-4}
     else
       decompress_clut_rbf. ${1-4}
     fi
-  done done
+  }
 
 #@cli decompress_clut_rbf : _width>0,_height>0,_depth>0,_reconstruction_colorspace={ 0=srgb | 1=rgb | 2=lab }
 #@cli : Decompress selected colored keypoints into 3D CLUTs, using RBF thin plate spline interpolation.
@@ -10716,11 +10701,11 @@ decompress_clut_rbf : check "isint(${1=33}) && $1>0 && isint(${2=$1}) && $2>0 &&
                             "isin(${4=0},0,1,2)"
   e[^-1] "Decompress colored keypoint$? into $1x$2x$3 CLUTs (RBF approach), using "\
          ${"s0,s1,s2=srgb,rgb,lab u $s$4"}" colorspace for reconstruction."
-  repeat $! l[$>]
+  foreach {
     if $4 s c,-3 srgb2${"arg $4,rgb,lab"}. a c fi
     rbf $1,$2,$3,0,0,0,255,255,255
     if $4 ${"arg $4,rgb,lab"}2srgb fi
-  done done
+  }
 
 #@cli decompress_clut_pde : _width>0,_height>0,_depth>0,_reconstruction_colorspace={ 0=srgb | 1=rgb | 2=lab }
 #@cli : Decompress selected colored keypoints into 3D CLUTs, using multiscale diffusion PDE's.
@@ -10729,7 +10714,7 @@ decompress_clut_pde : check "isint(${1=33}) && $1>0 && isint(${2=$1}) && $2>0 &&
                             "isin(${4=0},0,1,2)"
   e[^-1] "Decompress colored keypoint$? into $1x$2x$3 CLUTs (PDE approach), using "\
          ${"s0,s1,s2=srgb,rgb,lab u $s$4"}" colorspace for reconstruction."
-  repeat $! l[$>] nm={n}
+  foreach nm={n}
     if $4 s c,-3 srgb2${"arg $4,rgb,lab"}. a c fi
     2,2,2,{s-3}
     do
@@ -10758,14 +10743,14 @@ decompress_clut_pde : check "isint(${1=33}) && $1>0 && isint(${2=$1}) && $2>0 &&
     k.
     if $4 ${"arg $4,rgb,lab"}2srgb fi
     :: $nm
-  done done
+  done
   um srgb2srgb
 
 #@cli decompress_rle
 #@cli : Decompress selected data vectors, using RLE algorithm.
 decompress_rle :
   e[^-1] "Decompress data vector$?, using RLE algorithm."
-  repeat $! l[$>]
+  foreach
 
     # Retrieve original data dimension and min value.
     y whds={0,@0-3} im={0,@4} is_binary_data={0,@5} rows 6,100%
@@ -10794,7 +10779,7 @@ decompress_rle :
       $siz j3d. ..,0,0,0,1,2,0,0 rm..
     done done
     a x r $whds,-1 + $im
-  done done
+  done
 
 #@cli discard : _value1,_value2,... : { x | y | z | c}...{ x | y | z | c},_value1,_value2,... : (no arg) : (+)
 #@cli : Discard specified values in selected images or discard neighboring duplicate values,
@@ -10888,12 +10873,12 @@ _inrange : skip "${3=1},${4=$3}"
   s=${"arg 1+"$v",out,\" min\",\" max\",\" min and max\""}
   if $v%3 b="y" else b="ies" fi
   e[0--3] "Extract pixel values in range [$1,$2] in image"$_gmic_s", with"$s" boundar"$b" included."
-  repeat $! l[$>]
+  foreach {
     m=$1 M=$2
     if ${is_percent\ $1} m={im+(iM-im)*$1} fi
     if ${is_percent\ $2} M={im+(iM-im)*$2} fi
     f. inrange(i,$m,$M,$3)
-  done done
+  }
 
 #@cli map : [palette],_boundary_conditions : palette_name,_boundary_conditions : (+)
 #@cli : Map specified vector-valued palette to selected indexed scalar images.
@@ -11030,7 +11015,7 @@ noise_perlin : check "${1=16}>0 && ${2=$1}>0 && ${3=$1}>0 && isnum(${4=0}) && is
 noise_poissondisk : check "${1=8}>0 && isint(${2=30}) && $2>0 && ${3=2}>0"
   e[^-1] "Add poisson disk sampling points to image$?, with radius $1, max sample attempts $2 and p-norm $3."
   R0,K,P=${1-3}
-  repeat $! l[$>]
+  foreach
     W,H,D={[w,h,d]}
     value={iM+(im==iM?1:0)}
     R={${is_percent\ $R0}?max(w,h,d)*$R0:$R0}
@@ -11084,7 +11069,7 @@ noise_poissondisk : check "${1=8}>0 && isint(${2=30}) && $2>0 && ${3=2}>0"
       );
       resize(#$points,1,da_size(#$points),1,3,0)"
     k[0]
-  done done
+  done
 
 # Determine optimal list of 3D neighbors to be tested.
 +_poissondisk :
@@ -11180,7 +11165,7 @@ oneminus :
 #@cli : $ image.jpg luminance +otsu ,
 otsu : check "isint(${1=256}) && $1>0"
   e[^-1] "Hard-threshold image$? using Otsu\47s method, with $1 histogram levels."
-  repeat $! l[$>]
+  foreach
     imM={[im,iM]} +histogram $1,$imM
     otsu={"
       sum = sumB = wB = best_variance = best_t = 0;
@@ -11200,7 +11185,7 @@ otsu : check "isint(${1=256}) && $1>0"
       imM[0] + best_t*(imM[1] - imM[0])/(w - 1)"}
     rm. >=. $otsu
     if $> u ${},$otsu else u $otsu fi
-  done done
+  done
 
 #@cli polar2complex
 #@cli : Compute polar to complex transforms of selected images.
@@ -11217,7 +11202,7 @@ polar2complex :
 #@cli : $ 200,200,1,1,'cos(x/10)*sin(y/10)' +quantize[0] 6 +quantize[0] 4 +quantize[0] 3 +quantize[0] 2
 quantize : check "isint($1) && $1>=1 && isbool(${2=1}) && isint(${3=0}) && $3>=-1 && $3<=1"
   e[^-1] "Quantize image$? using $1 levels, "${arg\ 1+!$2,with,without}" keeping value range."
-  repeat $! l[$>]
+  foreach {
     if $3==1 # Uniform quantization.
       if s==1 # Greyscale image.
         if $2 mM={[im,iM]} n 0,$1 round 1,-1 min {$1-1} n $mM
@@ -11226,7 +11211,7 @@ quantize : check "isint($1) && $1>=1 && isbool(${2=1}) && isint(${3=0}) && $3>=-
       fi
     else +colormap $1,{!$3},1 index.. .,0,$2 rm. # Non-uniform quantization.
     fi
-  done done
+  }
 
 #@cli quantize_area : _min_area>0
 #@cli : Quantize selected images such that each flat region has an area greater or equal to 'min_area'.
@@ -11235,7 +11220,7 @@ quantize : check "isint($1) && $1>=1 && isbool(${2=1}) && isint(${3=0}) && $3>=-
 quantize_area : check "${1=10}>0"
   e[^-1] "Quantize image$? by regions of areas greater than $1."
   if $1==1 return fi
-  repeat $! l[$>]
+  foreach {
     if s>1 +f. "begin(A = resize([ 0,(s-1)/s ],s,3));I+A" norm. round. 0.01 else [0] fi
     area. 0,0 <. $1
     do
@@ -11275,7 +11260,7 @@ quantize_area : check "${1=10}>0"
       rv[0,-1] rm.
     while iM
     rm.
-  done done
+  }
 
 #@cli rand : { value0[%] | [image0] },_{ value1[%] | [image1] } : [image] : (+)
 #@cli : Fill selected images with random values uniformly distributed in the specified range.
@@ -11313,7 +11298,7 @@ replace_naninf :
 #@cli : $ (1;2;3;4;5) +replace_seq "2,3,4","7,8"
 replace_seq : skip "${2=''}"
   e[^-1] "Replace value sequence '$1' by value sequence '${2--1}' in image$?."
-  y repeat $! l[$>] nm={n}
+  y foreach nm={n}
     1,100%
     eval "ref([ $1 ],str1);
           ref([ ${2--1} ],str2);
@@ -11331,7 +11316,7 @@ replace_seq : skip "${2=''}"
           ps<h#0?copy_bloc(pd,i[#0,ps],h#0 - ps);
           resize(#1,1,pd,1,1,0)"
     k. :: $nm
-  done done
+  done
 
 #@cli replace_str : "search_str","replace_str"
 #@cli : Search and replace a string in selected images (viewed as strings, i.e. sequences of character codes).
@@ -11354,9 +11339,7 @@ replace_str : skip "${2=}"
 roundify : check $1>=0
   e[^-1] "Roundify image$?, with gamma $1."
   if $1==1 return fi
-  repeat $! l[$>]
-    +round 1 -.. . +*.. 2 abs. ^. $1 sign... *[-3,-1] *.. 0.5 +
-  done done
+  foreach { +round 1 -.. . +*.. 2 abs. ^. $1 sign... *[-3,-1] *.. 0.5 + }
 
 #@cli = : eq. to 'set'. : (+)
 
@@ -11390,7 +11373,7 @@ threshold : check "isexpr($1) && isbool(${2=0})"
 #@cli : Convert selected vector fields to corresponding tensor fields.
 vector2tensor :
   e[^-1] "Convert vector field$? to tensor field$?."
-  repeat $! l[$>]
+  foreach {
     s c
     if $!==2 +sqr. *.. ... sqr...
     elif $!==3 +sqr.. +*... .. +sqr... *[-5,-4] [-6] sqr[-6]
@@ -11398,7 +11381,7 @@ vector2tensor :
                       represent a field of 2D or 3D vectors."
     fi
     a c
-  done done
+  }
 
 #---------------------------------
 #
@@ -13251,25 +13234,25 @@ to_pseudogray : check "isint(${1=5}) && $1>=0 && isint(${3=8}) && $3>0" skip ${2
 #@cli : Force selected images to be in RGB mode.
 to_rgb :
    e[^-1] "Force image$? to be in RGB mode."
-   repeat $! l[$>]
+   foreach {
      if s>4 error[0--5] "Command '$0': Image ["$>"] is not a G,GA,RGB or RGBA image ("{s}" channels)."
      elif s==4 channels 0,2
      elif s==2 channels 0,0 r 100%,100%,100%,3
      elif s==1 r 100%,100%,100%,3
      fi
-   done done
+   }
 
 #@cli to_rgba
 #@cli : Force selected images to be in RGBA mode.
 to_rgba :
    e[^-1] "Force image$? to be in RGBA mode."
-   repeat $! l[$>]
+   foreach {
      if s>4 error[0--5] "Command '$0': Image ["$>"] is not a G,GA,RGB or RGBA image ("{s}" channels)."
      elif s==3 channels 0,3 sh. 3 f. 255 rm.
      elif s==2 r 100%,100%,100%,4 sh. 2 f. .. rm.
      elif s==1 r 100%,100%,100%,4 sh. 3 f. 255 rm.
      fi
-   done done
+   }
 
 #@cli transfer_histogram : [reference_image],_nb_levels>0,_color_channels
 #@cli : Transfer histogram of the specified reference image to selected images.
@@ -51670,10 +51653,14 @@ fx_barnsley_fern_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2010/29/12</i>.</small>")
 fx_snowflake :
-  repeat $! l[$>] to_color split_opacity l[0]
-    shape_snowflake {min(w,h)},$1 100%,100%,1,3,[${3-5}]
-    j[0] .,{([w#0,h#0]-[w#1,h#1])/2},0,0,$2,.. k[0]
-  done a c done done
+  foreach {
+    to_color split_opacity
+    l[0] {
+      shape_snowflake {min(w,h)},$1 100%,100%,1,3,[${3-5}]
+      j[0] .,{([w#0,h#0]-[w#1,h#1])/2},0,0,$2,.. k[0]
+    }
+    a c
+  }
 
 #@gui _<i>Others</i>
 
@@ -51685,10 +51672,14 @@ fx_snowflake :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2019/01/29</i>.</small>")
 fx_dragoncurve :
-  repeat $! l[$>] to_color split_opacity l[0]
-    shape_dragon {min(w,h)},$1,$2 100%,100%,1,3,[${4-6}]
-    j[0] .,{([w#0,h#0]-[w#1,h#1])/2},0,0,$3,.. k[0]
-  done a c done done
+  foreach {
+    to_color split_opacity
+    l[0] {
+      shape_dragon {min(w,h)},$1,$2 100%,100%,1,3,[${4-6}]
+      j[0] .,{([w#0,h#0]-[w#1,h#1])/2},0,0,$3,.. k[0]
+    }
+    a c
+  }
 
 #@gui ____<b>Various</b>
 #------------------------
@@ -51760,9 +51751,7 @@ fx_custom_code : skip "${1=-skip ,}"
   if $4
     _nb_in=$!
     _dim_in="" sep=""
-    repeat $! l[$>]
-      _dim_in=$_dim_in$sep"["$>"] = "{w}x{h}x{d}x{s}", in ["{_round([im,iM],0.1)}"]" sep="\n"
-    done done
+    foreach { _dim_in=$_dim_in$sep"["$>"] = "{w}x{h}x{d}x{s}", in ["{_round([im,iM],0.1)}"]" sep="\n" }
   fi
   if $2
     ac "_fx_custom_code_start _status_out=${}",{$2-1},$3
@@ -51773,9 +51762,7 @@ fx_custom_code : skip "${1=-skip ,}"
   if $4
     _nb_out=$!
     _dim_out="" sep=""
-    repeat $! l[$>]
-      _dim_out=$_dim_out$sep"["$>"] = "{w}x{h}x{d}x{s}", in ["{_round([im,iM],0.1)}"]" sep="\n"
-    done done
+    foreach { _dim_out=$_dim_out$sep"["$>"] = "{w}x{h}x{d}x{s}", in ["{_round([im,iM],0.1)}"]" sep="\n" }
   fi
   um _fx_custom_code_start
 
@@ -51869,11 +51856,11 @@ fx_display_histogram :
              cmyk_c,cmyk_m,cmyk_y,cmyk_k,\
              yiq_y,yiq_iq}
   _ac_$mode m "_ac_precond : "$_p m "_ac_forward : "$_f m "_ac_backward : "$_b
-  repeat $! l[$>]
+  foreach {
     _ac_precond _ac_forward[0] channels $_s
     display_histogram {w},{h},$1,0,255
     if s==2" || "s==4 channels 0,2 fi
-  done done
+  }
 
 #@gui Import Data : fx_import_image, gui_no_preview
 #@gui : Filename = filein()
