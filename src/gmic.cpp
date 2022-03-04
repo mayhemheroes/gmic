@@ -7793,10 +7793,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             fed[2] = debug_line;
 
             const unsigned int _position = position;
+            int off = 0;
             is_cond = false; // is_exception?
 
             cimg_forY(selection,l) {
-              uind = selection[l];
+              uind = selection[l] + off;
               if (is_get) {
                 g_list.assign(images[uind]);
                 g_list_c.assign(images_names[uind]);
@@ -7820,7 +7821,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
               gmic_exception exception;
               const int o_verbosity = verbosity;
-              int off = 0;
               try {
                 if (next_debug_line!=~0U) { debug_line = next_debug_line; next_debug_line = ~0U; }
                 if (next_debug_filename!=~0U) { debug_filename = next_debug_filename; next_debug_filename = ~0U; }
@@ -7867,7 +7867,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 g_list.move_to(images,~0U);
                 g_list_c.move_to(images_names,~0U);
               } else {
-                uind+=off;
                 if (!g_list) {
                   images.remove(uind);
                   images_names.remove(uind);
