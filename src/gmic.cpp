@@ -2596,7 +2596,7 @@ const char *gmic::builtin_commands_names[] = {
   "u","um","uncommand","unroll","unserialize",
   "v","vanvliet","verbose",
   "w","w0","w1","w2","w3","w4","w5","w6","w7","w8","w9","wait","warn","warp","watershed","while","window",
-  "x","xor","y","z","^","|" };
+  "x","xor","y","z","^","{","|","}" };
 
 CImg<int> gmic::builtin_commands_inds = CImg<int>::empty();
 
@@ -5378,7 +5378,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
       char *item = _item;
       const char *argument = initial_argument;
-      if (*item==',' && !item[1]) { ++position; continue; }
+      if ((*item==',' || *item=='{') && !item[1]) { ++position; continue; }
 
       // Check if current item is a known command.
       const bool
@@ -5397,6 +5397,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         is_com3 = *item && item[1] && item[2] && _gmic_eok(3);
       bool is_builtin_command =
         (*item>='a' && *item<='z' && is_com1) || // Alphabetical shortcut commands
+        (*item=='}' && !item[1]) || // Shortcut for 'done'
         (*item=='m' && (item[1]=='*' || item[1]=='/') && is_com2) || // Shortcuts 'm*' and 'm/'
         (*item=='f' && item[1]=='i' && is_com2) || // Shortcuts 'fi'
         (*item=='u' && item[1]=='m' && is_com2) || // Shortcut 'um'
@@ -5668,12 +5669,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"pow",0, // 64-95
           0,"append","blur","cut","display","echo","fill",0,0,"input","image","keep", // 96-107
           "local","command","normalize","output","print","quit","resize","split","text","status", // 108-117
-          "verbose","window","exec","unroll","crop",0,"or",0,0,0 // 118-127
+          "verbose","window","exec","unroll","crop",0,"or","done",0,0 // 118-127
         };
 
         if (!command1) { // Single-char shortcut
           const bool
-            is_mquvx = command0=='m' || command0=='q' || command0=='u' || command0=='v' || command0=='x',
+            is_mquvx = command0=='m' || command0=='q' || command0=='u' || command0=='v' || command0=='x' ||
+                       command0=='}',
             is_deiowx = command0=='d' || command0=='e' || command0=='i' || command0=='o' || command0=='w' ||
                         command0=='x';
           if ((unsigned int)command0<128 && onechar_shortcuts[(unsigned int)command0] &&
@@ -7732,7 +7734,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               else {
                 _is_get = *it=='+';
                 it+=(_is_get || *it=='-');
-                gmic_if_flr ++nb_levels; else if (!std::strcmp("done",it)) --nb_levels;
+                gmic_if_flr ++nb_levels; else if ((*it=='}' && !it[1]) || !std::strcmp("done",it)) --nb_levels;
               }
             }
             if (nb_levels)
@@ -7766,7 +7768,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               else {
                 _is_get = *it=='+';
                 it+=(_is_get || *it=='-');
-                gmic_if_flr ++nb_levels; else if (!std::strcmp("done",it)) --nb_levels;
+                gmic_if_flr ++nb_levels;
+                else if (!_is_get && ((*it=='}' && !it[1]) || !std::strcmp("done",it))) --nb_levels;
               }
             }
             if (nb_levels)
@@ -7836,7 +7839,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                       is_debug_info|=get_debug_info(commands_line[position].data(),next_debug_line,next_debug_filename);
                     else {
                       it+=(_is_get || *it=='-');
-                      gmic_if_flr ++nb_levels; else if (!_is_get && !std::strcmp("done",it)) --nb_levels;
+                      gmic_if_flr ++nb_levels;
+                      else if (!_is_get && ((*it=='}' && !it[1]) || !std::strcmp("done",it))) --nb_levels;
                       else if (!_is_get && nb_levels==1 && !std::strcmp("onfail",it)) break;
                     }
                   }
@@ -8825,7 +8829,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   is_debug_info|=get_debug_info(commands_line[position].data(),next_debug_line,next_debug_filename);
                 else {
                   it+=(_is_get || *it=='-');
-                  gmic_if_flr ++nb_levels; else if (!_is_get && !std::strcmp("done",it)) --nb_levels;
+                  gmic_if_flr ++nb_levels;
+                  else if (!_is_get && ((*it=='}' && !it[1]) || !std::strcmp("done",it))) --nb_levels;
                   else if (!_is_get && nb_levels==1 && !std::strcmp("onfail",it)) break;
                 }
               }
@@ -9724,7 +9729,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             else {
               _is_get = *it=='+';
               it+=(_is_get || *it=='-');
-              gmic_if_flr ++nb_levels; else if (!_is_get && !std::strcmp("done",it)) {
+              gmic_if_flr ++nb_levels;
+              else if (!_is_get && ((*it=='}' && !it[1]) || !std::strcmp("done",it))) {
                 --nb_levels; if (!nb_levels) --position;
               }
             }
@@ -11078,7 +11084,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               else {
                 _is_get = *it=='+';
                 it+=(_is_get || *it=='-');
-                gmic_if_flr ++nb_levels; else if (!std::strcmp("done",it)) --nb_levels;
+                gmic_if_flr ++nb_levels;
+                else if (!_is_get && ((*it=='}' && !it[1]) || !std::strcmp("done",it))) --nb_levels;
               }
             }
             if (nb_levels)
@@ -13362,7 +13369,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 else {
                   _is_get = *it=='+';
                   it+=(_is_get || *it=='-');
-                  gmic_if_flr ++nb_levels; else if (!std::strcmp("done",it)) --nb_levels;
+                  gmic_if_flr ++nb_levels;
+                  else if (!_is_get && ((*it=='}' && !it[1]) || !std::strcmp("done",it))) --nb_levels;
                 }
               }
               callstack_ind = callstack_repeat;
@@ -13388,7 +13396,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 else {
                   _is_get = *it=='+';
                   it+=(_is_get || *it=='-');
-                  gmic_if_flr ++nb_levels; else if (!std::strcmp("done",it)) --nb_levels;
+                  gmic_if_flr ++nb_levels;
+                  else if (!_is_get && ((*it=='}' && !it[1]) || !std::strcmp("done",it))) --nb_levels;
                 }
               }
               callstack_ind = callstack_for;
@@ -13403,7 +13412,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 else {
                   _is_get = *it=='+';
                   it+=(_is_get || *it=='-');
-                  gmic_if_flr ++nb_levels; else if (!std::strcmp("done",it)) --nb_levels;
+                  gmic_if_flr ++nb_levels;
+                  else if (!_is_get && ((*it=='}' && !it[1]) || !std::strcmp("done",it))) --nb_levels;
                 }
               }
               callstack_ind = callstack_foreach;
@@ -13418,7 +13428,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 else {
                   _is_get = *it=='+';
                   it+=(_is_get || *it=='-');
-                  gmic_if_flr ++nb_levels; else if (!_is_get && !std::strcmp("done",it)) --nb_levels;
+                  gmic_if_flr ++nb_levels;
+                  else if (!_is_get && ((*it=='}' && !it[1]) || !std::strcmp("done",it))) --nb_levels;
                 }
               }
               callstack_ind = callstack_local;
