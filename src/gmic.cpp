@@ -7813,6 +7813,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                           name.data() + (*name=='s'?1:0),uind);
                   }
                 images[uind].move_to(g_list);
+                g_list_c.assign(images_names[uind]);
+
                 // Small hack to be able to track images of the selection passed to the new environment.
                 std::memcpy(&images[uind]._width,&g_list[0]._data,sizeof(void*));
                 images[uind]._spectrum = 0;
