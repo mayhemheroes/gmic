@@ -1806,14 +1806,14 @@ clean_cluts :
   done done
 
   # Convert RGB CLUTs to Grayscale when possible.
-  repeat $! l[$>]
+  foreach {
     if "ref(crop(#0,0,0,0,3,1,h,1,1),R);
         ref(crop(#0,0,0,0,4,1,h,1,1),G);
         ref(crop(#0,0,0,0,5,1,h,1,1),B);
         R==G && G==B?1:0"
       channels 0,3
     fi
-  done done
+  }
 
   # Search for duplicates and sort.
   p=0 for $p<$!
@@ -1836,7 +1836,7 @@ clean_cluts :
       "#@cli : Insert one of the "$!" pre-defined CLUTs at the end of the image list.\\n\n"\
       "#@cli : 'clut_name' can be {" sep="|"
   nbc=28
-  repeat $! l[$>]
+  foreach {
     if !$< sep="}" fi
     str=" "{n}" "$sep
     s_str={size(['$str'])}
@@ -1847,7 +1847,7 @@ clean_cluts :
       doc=${doc}" \\\n#"${str}
       nbc={1+$s_str}
     fi
-  done done
+  }
 
   doc=${doc}"\n"\
       "#@cli : Default values: 'resolution=33' and 'cut_and_round=1'.\n"\
@@ -1908,7 +1908,7 @@ compress_gmic :
 # Default value: 'output_locale=fr'.
 csv2ts : skip "${1=fr}"
   e[^-1] "Convert buffer$? from .csv format to .ts format (in '$1' locale)."
-  repeat $! l[$>] if w>1
+  foreach if w>1
     ('"<?xml version=\"1.0\" encoding=\"utf-8\"?>"\n\n\
       "<!DOCTYPE TS>"\n\
       "<TS version=\"2.1\" language=\"$1\">"\n\
@@ -1943,7 +1943,7 @@ csv2ts : skip "${1=fr}"
     done
     ('"</context>\n</TS>"\n':y)
     a[^0] y k.
-  fi done done
+  fi done
 
 #@cli delete : filename1[,filename2,...] : (+)
 #@cli : Delete specified filenames on disk. Multiple filenames must be separated by commas.
@@ -3745,11 +3745,12 @@ _input_glob :
   l[]
     it[] "$*" discard 13 replace 9,32 s -,10
     colors=0
-    foreach l
+    foreach {
       s -,32
       if $!>=3" && "isint({0,t})" && "isint({1,t})" && "isint({2,t}) colors=$colors;{0,t},{1,t},{2,t} fi
       rm 0
-    onfail rm 0 done done
+      onfail rm 0
+    }
     rm ($colors) rows 1,100% :: "$1" permute yzcx
   done
 
@@ -5022,10 +5023,11 @@ parse_cli_list :
 parse_cli_print :
   v 0 e[] ""
   sort_list +,n
-  repeat $! l[$>]
-    ('{n}') l. s -,{'@'} name={0,t} rm done
+  foreach {
+    ('{n}') l. { s -,{'@'} name={0,t} rm }
     +e[] $name
-  done done rm
+  }
+  rm
 
 parse_cli_trigger_print :
   if "['$1']!='*'"
@@ -13067,7 +13069,7 @@ select_color : skip ${1=0}
 sepia :
   e[^-1] "Apply sepia tones effect on image$?."
   (0,44,115,143,196,244^0,20,84,119,184,235^0,5,44,73,144,200) r. 256,1,1,3,3
-  repeat $!-1 l[$>,-1] split_opacity luminance[0] map[0] . a[^-1] c done done
+  foreach[^-1] { pass. split_opacity[0] luminance[0] map[0] . rm. a c }
   rm.
 
 #@cli solarize
@@ -13108,9 +13110,7 @@ split_colors : check "${1=0}>=0 && isint(${2=256}) && $2>0 && ${3=8}>=1"
 #@cli : Split color and opacity parts of selected images.
 split_opacity :
   e[^-1] "Split color and opacity parts of image$?."
-  repeat $! l[$<] s c,{s==4?-3:s==2?-1:-s} done done
-#  foreach { s c,{s==4?-3:s==2?-1:-s} }
-
+  foreach { s c,{s==4?-3:s==2?-1:-s} }
 
 #@cli srgb2lab : illuminant={ 0=D50 | 1=D65 | 2=E } : (no arg)
 #@cli : Convert color representation of selected images from sRGB to Lab.
