@@ -1806,14 +1806,14 @@ clean_cluts :
   done done
 
   # Convert RGB CLUTs to Grayscale when possible.
-  repeat $! l[$>]
+  foreach {
     if "ref(crop(#0,0,0,0,3,1,h,1,1),R);
         ref(crop(#0,0,0,0,4,1,h,1,1),G);
         ref(crop(#0,0,0,0,5,1,h,1,1),B);
         R==G && G==B?1:0"
       channels 0,3
     fi
-  done done
+  }
 
   # Search for duplicates and sort.
   p=0 for $p<$!
@@ -1836,7 +1836,7 @@ clean_cluts :
       "#@cli : Insert one of the "$!" pre-defined CLUTs at the end of the image list.\\n\n"\
       "#@cli : 'clut_name' can be {" sep="|"
   nbc=28
-  repeat $! l[$>]
+  foreach {
     if !$< sep="}" fi
     str=" "{n}" "$sep
     s_str={size(['$str'])}
@@ -1847,7 +1847,7 @@ clean_cluts :
       doc=${doc}" \\\n#"${str}
       nbc={1+$s_str}
     fi
-  done done
+  }
 
   doc=${doc}"\n"\
       "#@cli : Default values: 'resolution=33' and 'cut_and_round=1'.\n"\
@@ -1908,7 +1908,7 @@ compress_gmic :
 # Default value: 'output_locale=fr'.
 csv2ts : skip "${1=fr}"
   e[^-1] "Convert buffer$? from .csv format to .ts format (in '$1' locale)."
-  repeat $! l[$>] if w>1
+  foreach if w>1
     ('"<?xml version=\"1.0\" encoding=\"utf-8\"?>"\n\n\
       "<!DOCTYPE TS>"\n\
       "<TS version=\"2.1\" language=\"$1\">"\n\
@@ -1943,7 +1943,7 @@ csv2ts : skip "${1=fr}"
     done
     ('"</context>\n</TS>"\n':y)
     a[^0] y k.
-  fi done done
+  fi done
 
 #@cli delete : filename1[,filename2,...] : (+)
 #@cli : Delete specified filenames on disk. Multiple filenames must be separated by commas.
@@ -3745,11 +3745,12 @@ _input_glob :
   l[]
     it[] "$*" discard 13 replace 9,32 s -,10
     colors=0
-    foreach l
+    foreach {
       s -,32
       if $!>=3" && "isint({0,t})" && "isint({1,t})" && "isint({2,t}) colors=$colors;{0,t},{1,t},{2,t} fi
       rm 0
-    onfail rm 0 done done
+      onfail rm 0
+    }
     rm ($colors) rows 1,100% :: "$1" permute yzcx
   done
 
@@ -5022,10 +5023,11 @@ parse_cli_list :
 parse_cli_print :
   v 0 e[] ""
   sort_list +,n
-  repeat $! l[$>]
-    ('{n}') l. s -,{'@'} name={0,t} rm done
+  foreach {
+    ('{n}') l. { s -,{'@'} name={0,t} rm }
     +e[] $name
-  done done rm
+  }
+  rm
 
 parse_cli_trigger_print :
   if "['$1']!='*'"
@@ -13067,7 +13069,7 @@ select_color : skip ${1=0}
 sepia :
   e[^-1] "Apply sepia tones effect on image$?."
   (0,44,115,143,196,244^0,20,84,119,184,235^0,5,44,73,144,200) r. 256,1,1,3,3
-  repeat $!-1 l[$>,-1] split_opacity luminance[0] map[0] . a[^-1] c done done
+  foreach[^-1] { pass. split_opacity[0] luminance[0] map[0] . rm. a c }
   rm.
 
 #@cli solarize
@@ -13108,9 +13110,7 @@ split_colors : check "${1=0}>=0 && isint(${2=256}) && $2>0 && ${3=8}>=1"
 #@cli : Split color and opacity parts of selected images.
 split_opacity :
   e[^-1] "Split color and opacity parts of image$?."
-  repeat $! l[$<] s c,{s==4?-3:s==2?-1:-s} done done
-#  foreach { s c,{s==4?-3:s==2?-1:-s} }
-
+  foreach { s c,{s==4?-3:s==2?-1:-s} }
 
 #@cli srgb2lab : illuminant={ 0=D50 | 1=D65 | 2=E } : (no arg)
 #@cli : Convert color representation of selected images from sRGB to Lab.
@@ -14124,7 +14124,7 @@ resize_mn : check "${2=100%}>=0 && ${3=100%}>=0" skip "${4=0.333},${5=0.333}"
                            + ( (B/2+2*C)*P0 + (2*B+C-3)*P1 + (-5*B/2-2*C+3)*P2 -C*P3)*d^2
                            + ( (-B/2-C)*P0 + (B/2+C)*P2)*d
                            + B/6*P0 + (-B/3+1)*P1 + B/6*P2);"
-  repeat $! l[$>] nm={n}
+  foreach nm={n}
     nw={${"is_percent $1"}?max(1,round($1*w)):round($1)}
     nh={${"is_percent $2"}?max(1,round($2*h)):round($2)}
     nd={${"is_percent $3"}?max(1,round($3*d)):round($3)}
@@ -14149,7 +14149,7 @@ resize_mn : check "${2=100%}>=0 && ${3=100%}>=0" skip "${4=0.333},${5=0.333}"
                                   P2 = I(#-1,x,y,Z+1); P3 = I(#-1,x,y,Z+2); mn(P0,P1,P2,P3,d);" k.
       fi
     fi
-  :: $nm done done
+  :: $nm done
 
 #@cli resize_pow2 : _interpolation,_boundary_conditions,_ax,_ay,_az,_ac
 #@cli : Resize selected images so that each dimension is a power of 2.
@@ -14332,10 +14332,10 @@ resize2dx :
 _resize2dx : check "$1>0 && ${2=3}>=0 && $2<=6 && ${3=0}>=0 && $3<=3 && ${4=0}>=0 && $4<=1 && ${5=0}>=0 && $5<=1 &&
                     ${6=0}>=0 && $6<=1 && ${7=0}>=0 && $7<=1"
   e[0--3] "Resize 2D image"$_gmic_s" to $1 pixels along the x-axis, while preserving 2D ratio."
-  repeat $! l[$>]
+  foreach {
     size={if(${is_percent\ $1},$1*w,$1)}
     r {max(1,$size)},{max(1,h*$size/w)},100%,100%,${2-7}
-  done done
+  }
 
 #@cli r2dy : eq. to 'resize2dy'.
 r2dy :
@@ -14360,10 +14360,10 @@ resize2dy :
 _resize2dy : check "$1>=0 && ${2=3}>=0 && $2<=6 && ${3=0}>=0 && $3<=3 && ${4=0}>=0 && $4<=1 && ${5=0}>=0 && $5<=1 &&
                     ${6=0}>=0 && $6<=1 && ${7=0}>=0 && $7<=1"
   e[0--3] "Resize 2D image"$_gmic_s" to $1 pixels along the y-axis, while preserving 2D ratio."
-  repeat $! l[$>]
+  foreach {
     size={if(${is_percent\ $1},$1*h,$1)}
     r {max(1,w*$size/h)},{max(1,$size)},100%,100%,${2-7}
-  done done
+  }
 
 #@cli r3dx : eq. to 'resize3dx'.
 r3dx :
@@ -14387,10 +14387,10 @@ resize3dx :
 _resize3dx : check "$1>0 && ${2=3}>=0 && $2<=6 && ${3=0}>=0 && $3<=3 && ${4=0}>=0 && $4<=1 && ${5=0}>=0 && $5<=1 &&
                     ${6=0}>=0 && $6<=1 && ${7=0}>=0 && $7<=1"
   e[0--3] "Resize 3D image"$_gmic_s" to $1 pixels along the x-axis, while preserving 3D ratio."
-  repeat $! l[$>]
+  foreach {
     size={if(${is_percent\ $1},$1*w,$1)}
     r {max(1,$size)},{max(1,h*$size/w)},{max(1,d*$size/w)},100%,${2-7}
-  done done
+  }
 
 #@cli r3dy : eq. to 'resize3dy'.
 r3dy :
@@ -14414,10 +14414,10 @@ resize3dy :
 _resize3dy : check "$1>0 && ${2=3}>=0 && $2<=6 && ${3=0}>=0 && $3<=3 && ${4=0}>=0 && $4<=1 && ${5=0}>=0 && $5<=1 &&
                     ${6=0}>=0 && $6<=1 && ${7=0}>=0 && $7<=1"
   e[0--3] "Resize 3D image"$_gmic_s" to $1 pixels along the y-axis, while preserving 3D ratio."
-  repeat $! l[$>]
+  foreach {
     size={if(${is_percent\ $1},$1*h,$1)}
     r {max(1,w*$size/h)},{max(1,$size)},{max(1,d*$size/h)},100%,${2-7}
-  done done
+  }
 
 #@cli r3dz : eq. to 'resize3dz'.
 r3dz :
@@ -14441,10 +14441,10 @@ resize3dz :
 _resize3dz : check "$1>0 && ${2=3}>=0 && $2<=6 && ${3=0}>=0 && $3<=3 && ${4=0}>=0 && $4<=1 && ${5=0}>=0 && $5<=1 &&
                     ${6=0}>=0 && $6<=1 && ${7=0}>=0 && $7<=1"
   e[0--3] "Resize 3D image"$_gmic_s" to $1 pixels along the z-axis, while preserving 3D ratio."
-  repeat $! l[$>]
+  foreach {
     size={if(${is_percent\ $1},$1*d,$1)}
     r[$>] {max(1,w*$size/d)},{max(1,h*$size/d)},{max(1,$size)},100%,${2-7}
-  done done
+  }
 
 #@cli rotate : angle,_interpolation,_boundary_conditions,_center_x[%],_center_y[%] : \
 # u,v,w,angle,interpolation,boundary_conditions,_center_x[%],_center_y[%],_center_z[%] : (+)
@@ -14475,7 +14475,7 @@ rotate_tileable : check ${2=8}>=0
   p={-3,@{^}} q={-2,@{^}} rm[-3--1]       # Find nearest fraction p/q to atan(angle).
   if !$p||!$q return fi
 
-  repeat $! l[$>]
+  foreach {
     # Compute width and height of tile.
     theta={atan2($p,$q)}
     gcd=${gcd" "{h*$q},{w*$p}}
@@ -14492,7 +14492,7 @@ rotate_tileable : check ${2=8}>=0
       r $nw,$nh,1,100%,0,2,0.5,0.5
     else error[0--4] "Command '$0': Invalid image dimension "({w},{h},{d},{s}).
     fi
-  done done
+  }
 
 #@cli rows : y0[%],_y1[%]
 #@cli : Keep only specified rows of selected images.
@@ -14508,19 +14508,19 @@ rows : skip ${2=$1}
 #@cli : $ image.jpg threshold 50% resize 50%,50% +scale2x
 scale2x :
   e[^-1] "Double xy-dimensions of image$?, using Scale2x algorithm."
-  repeat $! l[$>]
+  foreach {
     r 200%,200%
     f "dx=x&1;dy=y&1;A=j(0,-2,0,0,0,1);B=j(2,0,0,0,0,1);C=j(-2,0,0,0,0,1);D=j(0,2,0,0,0,1);
        !dy*(!dx*if(C==A&&C!=D&&A!=B,A,i) + dx*if(A==B&&A!=C&&B!=D,B,i)) +
        dy*(dx*if(B==D&&B!=A&&D!=C,D,i) + !dx*if(D==C&&D!=B&&C!=A,C,i))"
-  done done
+  }
 
 #@cli scale3x
 #@cli : Resize selected images using the Scale3x algorithm.
 #@cli : $ image.jpg threshold 50% resize 33%,33% +scale3x
 scale3x :
   e[^-1] "Triple xy-dimensions of image$?, using Scale3x algorithm."
-  repeat $! l[$>]
+  foreach {
     r 300%,300%
     f "dx=x%3;dy=y%3;c0=!dx;c1=(dx==1);c2=(dx==2);
        A=j(-3,-3,0,0,0,1);B=j(0,-3,0,0,0,1);C=j(3,-3,0,0,0,1);
@@ -14532,7 +14532,7 @@ scale3x :
             c2*if((B==F&&B!=D&&F!=H&&i!=I)||(F==H&&F!=B&&H!=D&&i!=C),F,i)) +
        (dy==2)*(c0*if(H==D&&H!=F&&D!=B,D,i) + c1*if((F==H&&F!=B&&H!=D&&i!=G)||(H==D&&H!=F&&D!=B&&i!=I),H,i) +
             c2*if(F==H&&F!=B&&H!=D,F,i))"
-  done done
+  }
 
 #@cli scale_dcci2x : _edge_threshold>=0,_exponent>0,_extend_1px={ 0=false | 1=true }
 #@cli : Double image size using directional cubic convolution interpolation,
@@ -14541,7 +14541,7 @@ scale3x :
 #@cli : $ image.jpg +scale_dcci2x ,
 scale_dcci2x : check "${1=1.15}>=0 && ${2=5}>=0" skip ${3=0}
   e[^-1] "Double xy-dimensions of image$?, using DCCI2x algorithm."
-  repeat $! l[$>]
+  foreach
     r {2*w-(!$3)},{2*h-(!$3)},1,100%,4
 
     # Estimate diagonal values.
@@ -14597,7 +14597,7 @@ scale_dcci2x : check "${1=1.15}>=0 && ${2=5}>=0" skip ${3=0}
                  (w1 = 1/(1 + d1^exponent); w2 = 1/(1 + d2^exponent);
                   (interp(j1)*w1 + interp(j2)*w2)/(w1 + w2)); # Smooth area
          value/=16)"
-  done done
+  done
 
 #@cli seamcarve : _width[%]>=0,_height[%]>=0,_is_priority_channel={ 0 | 1 },_is_antialiasing={ 0 | 1 },\
 # _maximum_seams[%]>=0
@@ -14608,12 +14608,12 @@ scale_dcci2x : check "${1=1.15}>=0 && ${2=5}>=0" skip ${3=0}
 seamcarve : check "${2=100%}>=0 && ${5=25%}>=0" skip ${3=0},${4=1}
   e[^-1] "Resize image$? to $1x$2 using seam-carving algorithm, "${arg\ 1+!$3,with,without}" priority channel, "\
          ${arg\ 1+!$4,with,without}" anti-aliasing and maximum seams $5."
-  repeat $! l[$>]
+  foreach {
     nw={max(1,round(if(${is_percent\ $1},$1*w,$1)))}
     nh={max(1,round(if(${is_percent\ $2},$2*h,$2)))}
     if $nw!=w _seamcarve $nw,$3,$4,$5 fi
     if $nh!=h transpose _seamcarve $nh,$3,$4,$5 transpose fi
-  done done
+  }
 
 # Subroutine to remove/add vertical seams/
 # $1 = desired width.
@@ -14782,7 +14782,7 @@ split_tiles : skip ${2=$1},${3=0}
 undistort : check "${1=0.1}>=-1 && $1<=1 && ${6=0}>=0 && $6<=3" skip ${2=0},${3=0},${4=50%},${5=50%}
   e[^-1] "Undistort barrel/pincushion effect in image$?, with amplitude $1, aspect ratio $2, zoom factor $3,
           center ($4,$5) and "${"arg 1+$6,dirichlet,neumann,periodic,mirror"}" boundary conditions."
-  repeat $! l[$>]
+  foreach {
     center_x={${"is_percent $4"}?w*$4:$4}
     center_y={${"is_percent $5"}?h*$5:$5}
     f "
@@ -14805,7 +14805,7 @@ undistort : check "${1=0.1}>=-1 && $1<=1 && ${6=0}>=0 && $6<=3" skip ${2=0},${3=
       x = 0.5*nx*ratio*M + center_x;
       y = 0.5*ny*M + center_y;
       I(x,y)"
-  done done
+  }
 
 #@cli y : eq. to 'unroll'. : (+)
 
@@ -14821,7 +14821,7 @@ undistort : check "${1=0.1}>=-1 && $1<=1 && ${6=0}>=0 && $6<=3" skip ${2=0},${3=
 #@cli : $ image.jpg resize2dy 100 +upscale_smart 500%,500% append x
 upscale_smart : skip ${2=100%},${3=100%} check "${4=2}>=0 && ${5=0.4}>=0 && $5<=1 && ${6=10}>=0"
   e[^-1] "Upscale image$? to $1x$2x$3, with smoothness $4, anisotropy $5 and sharpening $6."
-  repeat $! l[$>]
+  foreach {
     w={w} h={h}
     +r. $1,$2,$3,1,0 # Compute desired dimensions.
     if w<$w" && "h<$h # Test for downscaling
@@ -14832,7 +14832,7 @@ upscale_smart : skip ${2=100%},${3=100%} check "${4=2}>=0 && ${5=0.4}>=0 && $5<=
       smooth.. .,$4 rm.
       ac "sharpen. $6,10",ycbcr_y
     fi
-  done done
+  }
 
 #@cli warp : [warping_field],_mode,_interpolation,_boundary_conditions,_nb_frames>0 : (+)
 #@cli : Warp selected images with specified displacement field.
@@ -14943,7 +14943,7 @@ warp_rbf :
   e[^-1] "Warp image$? using RBF interpolation, with keypoints ($*)."
   $=arg N={$#/4}
   if int($N)!=$N error[0--2] "Command 'warp_rbf': Wrong number of arguments ($#)." fi
-  repeat $! l[$>]
+  foreach {
     # Retrieve absolute keypoints coordinates.
     4,$N
     repeat wh a=${arg{1+$>}} isp=${"is_percent "$a} eval i[$>]=$isp?($>%2?w#0:h#0)*$a:$a done
@@ -14951,7 +14951,7 @@ warp_rbf :
 
     # Generate warping field by RBF interpolation.
     rbf. {0,[w,h]} warp[0] .,1,1,3 rm.
-  done done
+  }
 
 #---------------------------------
 #
@@ -14966,11 +14966,11 @@ warp_rbf :
 #@cli : $$ https://gmic.eu/oldtutorial/_bandpass
 bandpass : skip ${1=0},${2=20%}
   e[^-1] "Apply bandpass filter [$1,$2] to image$?."
-  repeat $! l[$>]
+  foreach {
     100%,100%,100% f. "sqrt((x/w-0.5)^2 + (y/h-0.5)^2 + (z/d-0.5)^2)"
     n. 0,1 ir. $1,$2 shift. {int(w/2)},{int(h/2)},{int(d/2)},0,2
     fft.. *... . *[-2,-1] ifft rm.
-  done done
+  }
 
 #@cli bilateral : [guide],std_deviation_s[%]>=0,std_deviation_r[%]>=0,_sampling_s>=0,_sampling_r>=0 : \
 # std_deviation_s[%]>=0,std_deviation_r[%]>=0,_sampling_s>=0,_sampling_r>=0 : (+)
@@ -15003,7 +15003,7 @@ bandpass : skip ${1=0},${2=20%}
 blur_angular : skip ${2=50%},${3=50%}
   e[^-1] "Apply angular blur on image$?, with amplitude $1 and center point ($2,$3)."
   euclidean2polar $2,$3,1.3,1
-  repeat $! l[$>] 1,100% =. 1,50%,50% b. y,$1 convolve_fft.. . rm. done done
+  foreach { 1,100% =. 1,50%,50% b. y,$1 convolve_fft.. . rm. }
   polar2euclidean $2,$3,1.3,1
 
 #@cli blur_bloom : _amplitude>=0,_ratio>=0,_nb_iter>=0,_blend_operator={ + | max | min },\
@@ -15027,13 +15027,13 @@ blur_bloom : check "${1=1}>=0 && ${2=2}>=0 && isint(${3=5}) && $3>=0 && isint(${
   m "_bloom2 : boxfilter "$axes"{1+2*$""1},0,1"
   m "_bloom3 : boxfilter "$axes"{1+2*$""1},0,1,2"
   m "_bloom4 : boxfilter "$axes"{1+2*$""1},0,1,3"
-  repeat $! l[$>] nm={n} mM={[im,iM]}
+  foreach { nm={n} mM={[im,iM]}
     [0] repeat $3 sigma={$1*($2^$>)} +_bloom$5[0] $sigma
     if $6 n. $mM fi
     -$4[1,-1]
     done
     n. $mM k. :: $nm
-  done done
+  }
   um _bloom0,_bloom1,_bloom2,_bloom3,_bloom4
 
 #@cli blur_linear : amplitude1[%],_amplitude2[%],_angle,_boundary_conditions={ 0=dirichlet | 1=neumann }
@@ -15047,11 +15047,11 @@ blur_linear : skip ${2=0},${3=0},${4=1}
   std2={if(${is_percent\ $2},$2*max(w,h),$2)}
   stdM={round(1.25*max($std1,$std2))}
   if $stdM<=0 return fi
-  repeat $! l[$>]
+  foreach {
     expand_xy $stdM,{$4!=0}
     {2*$stdM},{2*$stdM} gaussian. $1,$2,$3 normalize_sum.
     convolve_fft[0] [1] rm. shrink_xy $stdM
-  done done
+  }
 
 #@cli blur_radial : amplitude[%],_center_x[%],_center_y[%]
 #@cli : Apply radial blur on selected images.
@@ -15069,10 +15069,12 @@ blur_radial : skip ${2=50%},${3=50%}
 #@cli : $$ https://gmic.eu/oldtutorial/_blur_selective
 blur_selective : check "${1=5}>=0 && ${2=0.5}>=0 && isint(${3=5}) && $3>0"
   e[^-1] "Blur image$? using $3 selective gaussian scales, with sigma $1 and edges $2."
-  repeat $! l[$>] nm={0,n}
+  foreach {
+    nm={0,n}
     +gradient_norm +. 1 ^. {-max(0.01,$2)} quantize. {$3+1},0,1 min. {$3-1} ri. ..
     repeat $3 +==. $> *. ... +[-2,-1] b.. {$1/($3+1)} done
-  rm.. :: $nm done done
+    rm.. :: $nm
+  }
 
 #@cli blur_x : amplitude[%]>=0,_boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }
 #@cli : Blur selected images along the x-axis.
@@ -15134,10 +15136,10 @@ blur_z : check "isint(${2=1}) && inrange($2,0,3)"
 #@cli : $ 300,300 circle 50%,50%,128,1,1 blur 5% bump2normal
 bump2normal :
   e[^-1] "Convert bumpmap$? to normalmap."
-  repeat $! l[$>]
+  foreach {
     channels 0 g xy,1 +f. 1 a c orientation
     * 127 + 128 round c 0,255
-  done done
+  }
 
 #@cli compose_freq
 #@cli : Compose selected low and high frequency parts into new images.
@@ -15167,7 +15169,7 @@ compose_freq :
 convolve_fft : check ${is_image_arg\ $1}" && isin(${2=2},0,1,2,3)"
   e[^-1] "Convolve image$? with mask $1, in the fourier domain."
   pass$1 store. kernel
-  repeat $! l[$>] if w
+  foreach { if w
     w0,h0,d0={[w,h,d]}
     $kernel
     if $2!=2 r[0] {[w#0,h#0,d#0]+2*round([w#1>1?w#1:0,h#1>1?h#1:0,d#1>1?d#1:0]/2)},100%,0,$2,0.5,0.5 fi
@@ -15177,7 +15179,7 @@ convolve_fft : check ${is_image_arg\ $1}" && isin(${2=2},0,1,2,3)"
     ifft rm.
     shift {-int(([w,h,d]-1)/2)},0,2
     r $w0,$h0,$d0,100%,0,0,0.5,0.5
-  fi done done
+  fi }
 
 #@cli correlate : [mask],_boundary_conditions,_is_normalized={ 0 | 1 },_channel_mode,\
 # _xcenter,_ycenter,_zcenter,_xstart,_ystart,_zstart,_xend,_yend,_zend,_xstride,_ystride,_zstride,\
@@ -22349,6 +22351,11 @@ _exec_out :
 #@cli for : condition : (+)
 #@cli : Start a 'for...done' block.
 #@cli : $ image.jpg resize2dy 32 400,400,1,3 x=0 for $x<400 image[1] [0],$x,$x x+=40 done
+
+#@cli foreach : (+)
+#@cli : Start a 'foreach...[onfail]...done' block, that iterates over all images in the selection, \
+# with a separate local environment for each one.
+#@cli : $ sample colorful,earth,duck,dog foreach[^2] +blur 10 sub normalize 0,255 done
 
 #@cli if : condition : (+)
 #@cli : Start a 'if...[elif]...[else]...fi' block and test if specified condition holds.
