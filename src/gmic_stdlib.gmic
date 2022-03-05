@@ -14124,7 +14124,7 @@ resize_mn : check "${2=100%}>=0 && ${3=100%}>=0" skip "${4=0.333},${5=0.333}"
                            + ( (B/2+2*C)*P0 + (2*B+C-3)*P1 + (-5*B/2-2*C+3)*P2 -C*P3)*d^2
                            + ( (-B/2-C)*P0 + (B/2+C)*P2)*d
                            + B/6*P0 + (-B/3+1)*P1 + B/6*P2);"
-  repeat $! l[$>] nm={n}
+  foreach nm={n}
     nw={${"is_percent $1"}?max(1,round($1*w)):round($1)}
     nh={${"is_percent $2"}?max(1,round($2*h)):round($2)}
     nd={${"is_percent $3"}?max(1,round($3*d)):round($3)}
@@ -14149,7 +14149,7 @@ resize_mn : check "${2=100%}>=0 && ${3=100%}>=0" skip "${4=0.333},${5=0.333}"
                                   P2 = I(#-1,x,y,Z+1); P3 = I(#-1,x,y,Z+2); mn(P0,P1,P2,P3,d);" k.
       fi
     fi
-  :: $nm done done
+  :: $nm done
 
 #@cli resize_pow2 : _interpolation,_boundary_conditions,_ax,_ay,_az,_ac
 #@cli : Resize selected images so that each dimension is a power of 2.
@@ -14332,10 +14332,10 @@ resize2dx :
 _resize2dx : check "$1>0 && ${2=3}>=0 && $2<=6 && ${3=0}>=0 && $3<=3 && ${4=0}>=0 && $4<=1 && ${5=0}>=0 && $5<=1 &&
                     ${6=0}>=0 && $6<=1 && ${7=0}>=0 && $7<=1"
   e[0--3] "Resize 2D image"$_gmic_s" to $1 pixels along the x-axis, while preserving 2D ratio."
-  repeat $! l[$>]
+  foreach {
     size={if(${is_percent\ $1},$1*w,$1)}
     r {max(1,$size)},{max(1,h*$size/w)},100%,100%,${2-7}
-  done done
+  }
 
 #@cli r2dy : eq. to 'resize2dy'.
 r2dy :
@@ -14360,10 +14360,10 @@ resize2dy :
 _resize2dy : check "$1>=0 && ${2=3}>=0 && $2<=6 && ${3=0}>=0 && $3<=3 && ${4=0}>=0 && $4<=1 && ${5=0}>=0 && $5<=1 &&
                     ${6=0}>=0 && $6<=1 && ${7=0}>=0 && $7<=1"
   e[0--3] "Resize 2D image"$_gmic_s" to $1 pixels along the y-axis, while preserving 2D ratio."
-  repeat $! l[$>]
+  foreah {
     size={if(${is_percent\ $1},$1*h,$1)}
     r {max(1,w*$size/h)},{max(1,$size)},100%,100%,${2-7}
-  done done
+  }
 
 #@cli r3dx : eq. to 'resize3dx'.
 r3dx :
@@ -14387,10 +14387,10 @@ resize3dx :
 _resize3dx : check "$1>0 && ${2=3}>=0 && $2<=6 && ${3=0}>=0 && $3<=3 && ${4=0}>=0 && $4<=1 && ${5=0}>=0 && $5<=1 &&
                     ${6=0}>=0 && $6<=1 && ${7=0}>=0 && $7<=1"
   e[0--3] "Resize 3D image"$_gmic_s" to $1 pixels along the x-axis, while preserving 3D ratio."
-  repeat $! l[$>]
+  foreach {
     size={if(${is_percent\ $1},$1*w,$1)}
     r {max(1,$size)},{max(1,h*$size/w)},{max(1,d*$size/w)},100%,${2-7}
-  done done
+  }
 
 #@cli r3dy : eq. to 'resize3dy'.
 r3dy :
@@ -14414,10 +14414,10 @@ resize3dy :
 _resize3dy : check "$1>0 && ${2=3}>=0 && $2<=6 && ${3=0}>=0 && $3<=3 && ${4=0}>=0 && $4<=1 && ${5=0}>=0 && $5<=1 &&
                     ${6=0}>=0 && $6<=1 && ${7=0}>=0 && $7<=1"
   e[0--3] "Resize 3D image"$_gmic_s" to $1 pixels along the y-axis, while preserving 3D ratio."
-  repeat $! l[$>]
+  foreach {
     size={if(${is_percent\ $1},$1*h,$1)}
     r {max(1,w*$size/h)},{max(1,$size)},{max(1,d*$size/h)},100%,${2-7}
-  done done
+  }
 
 #@cli r3dz : eq. to 'resize3dz'.
 r3dz :
@@ -14441,10 +14441,10 @@ resize3dz :
 _resize3dz : check "$1>0 && ${2=3}>=0 && $2<=6 && ${3=0}>=0 && $3<=3 && ${4=0}>=0 && $4<=1 && ${5=0}>=0 && $5<=1 &&
                     ${6=0}>=0 && $6<=1 && ${7=0}>=0 && $7<=1"
   e[0--3] "Resize 3D image"$_gmic_s" to $1 pixels along the z-axis, while preserving 3D ratio."
-  repeat $! l[$>]
+  foreach {
     size={if(${is_percent\ $1},$1*d,$1)}
     r[$>] {max(1,w*$size/d)},{max(1,h*$size/d)},{max(1,$size)},100%,${2-7}
-  done done
+  }
 
 #@cli rotate : angle,_interpolation,_boundary_conditions,_center_x[%],_center_y[%] : \
 # u,v,w,angle,interpolation,boundary_conditions,_center_x[%],_center_y[%],_center_z[%] : (+)
@@ -14475,7 +14475,7 @@ rotate_tileable : check ${2=8}>=0
   p={-3,@{^}} q={-2,@{^}} rm[-3--1]       # Find nearest fraction p/q to atan(angle).
   if !$p||!$q return fi
 
-  repeat $! l[$>]
+  foreach {
     # Compute width and height of tile.
     theta={atan2($p,$q)}
     gcd=${gcd" "{h*$q},{w*$p}}
@@ -14492,7 +14492,7 @@ rotate_tileable : check ${2=8}>=0
       r $nw,$nh,1,100%,0,2,0.5,0.5
     else error[0--4] "Command '$0': Invalid image dimension "({w},{h},{d},{s}).
     fi
-  done done
+  }
 
 #@cli rows : y0[%],_y1[%]
 #@cli : Keep only specified rows of selected images.
@@ -14508,19 +14508,19 @@ rows : skip ${2=$1}
 #@cli : $ image.jpg threshold 50% resize 50%,50% +scale2x
 scale2x :
   e[^-1] "Double xy-dimensions of image$?, using Scale2x algorithm."
-  repeat $! l[$>]
+  foreach {
     r 200%,200%
     f "dx=x&1;dy=y&1;A=j(0,-2,0,0,0,1);B=j(2,0,0,0,0,1);C=j(-2,0,0,0,0,1);D=j(0,2,0,0,0,1);
        !dy*(!dx*if(C==A&&C!=D&&A!=B,A,i) + dx*if(A==B&&A!=C&&B!=D,B,i)) +
        dy*(dx*if(B==D&&B!=A&&D!=C,D,i) + !dx*if(D==C&&D!=B&&C!=A,C,i))"
-  done done
+  }
 
 #@cli scale3x
 #@cli : Resize selected images using the Scale3x algorithm.
 #@cli : $ image.jpg threshold 50% resize 33%,33% +scale3x
 scale3x :
   e[^-1] "Triple xy-dimensions of image$?, using Scale3x algorithm."
-  repeat $! l[$>]
+  foreach {
     r 300%,300%
     f "dx=x%3;dy=y%3;c0=!dx;c1=(dx==1);c2=(dx==2);
        A=j(-3,-3,0,0,0,1);B=j(0,-3,0,0,0,1);C=j(3,-3,0,0,0,1);
@@ -14532,7 +14532,7 @@ scale3x :
             c2*if((B==F&&B!=D&&F!=H&&i!=I)||(F==H&&F!=B&&H!=D&&i!=C),F,i)) +
        (dy==2)*(c0*if(H==D&&H!=F&&D!=B,D,i) + c1*if((F==H&&F!=B&&H!=D&&i!=G)||(H==D&&H!=F&&D!=B&&i!=I),H,i) +
             c2*if(F==H&&F!=B&&H!=D,F,i))"
-  done done
+  }
 
 #@cli scale_dcci2x : _edge_threshold>=0,_exponent>0,_extend_1px={ 0=false | 1=true }
 #@cli : Double image size using directional cubic convolution interpolation,
@@ -14541,7 +14541,7 @@ scale3x :
 #@cli : $ image.jpg +scale_dcci2x ,
 scale_dcci2x : check "${1=1.15}>=0 && ${2=5}>=0" skip ${3=0}
   e[^-1] "Double xy-dimensions of image$?, using DCCI2x algorithm."
-  repeat $! l[$>]
+  foreach
     r {2*w-(!$3)},{2*h-(!$3)},1,100%,4
 
     # Estimate diagonal values.
@@ -14597,7 +14597,7 @@ scale_dcci2x : check "${1=1.15}>=0 && ${2=5}>=0" skip ${3=0}
                  (w1 = 1/(1 + d1^exponent); w2 = 1/(1 + d2^exponent);
                   (interp(j1)*w1 + interp(j2)*w2)/(w1 + w2)); # Smooth area
          value/=16)"
-  done done
+  done
 
 #@cli seamcarve : _width[%]>=0,_height[%]>=0,_is_priority_channel={ 0 | 1 },_is_antialiasing={ 0 | 1 },\
 # _maximum_seams[%]>=0
@@ -14608,12 +14608,12 @@ scale_dcci2x : check "${1=1.15}>=0 && ${2=5}>=0" skip ${3=0}
 seamcarve : check "${2=100%}>=0 && ${5=25%}>=0" skip ${3=0},${4=1}
   e[^-1] "Resize image$? to $1x$2 using seam-carving algorithm, "${arg\ 1+!$3,with,without}" priority channel, "\
          ${arg\ 1+!$4,with,without}" anti-aliasing and maximum seams $5."
-  repeat $! l[$>]
+  foreach {
     nw={max(1,round(if(${is_percent\ $1},$1*w,$1)))}
     nh={max(1,round(if(${is_percent\ $2},$2*h,$2)))}
     if $nw!=w _seamcarve $nw,$3,$4,$5 fi
     if $nh!=h transpose _seamcarve $nh,$3,$4,$5 transpose fi
-  done done
+  }
 
 # Subroutine to remove/add vertical seams/
 # $1 = desired width.
@@ -14782,7 +14782,7 @@ split_tiles : skip ${2=$1},${3=0}
 undistort : check "${1=0.1}>=-1 && $1<=1 && ${6=0}>=0 && $6<=3" skip ${2=0},${3=0},${4=50%},${5=50%}
   e[^-1] "Undistort barrel/pincushion effect in image$?, with amplitude $1, aspect ratio $2, zoom factor $3,
           center ($4,$5) and "${"arg 1+$6,dirichlet,neumann,periodic,mirror"}" boundary conditions."
-  repeat $! l[$>]
+  foreach {
     center_x={${"is_percent $4"}?w*$4:$4}
     center_y={${"is_percent $5"}?h*$5:$5}
     f "
@@ -14805,7 +14805,7 @@ undistort : check "${1=0.1}>=-1 && $1<=1 && ${6=0}>=0 && $6<=3" skip ${2=0},${3=
       x = 0.5*nx*ratio*M + center_x;
       y = 0.5*ny*M + center_y;
       I(x,y)"
-  done done
+  }
 
 #@cli y : eq. to 'unroll'. : (+)
 
@@ -14821,7 +14821,7 @@ undistort : check "${1=0.1}>=-1 && $1<=1 && ${6=0}>=0 && $6<=3" skip ${2=0},${3=
 #@cli : $ image.jpg resize2dy 100 +upscale_smart 500%,500% append x
 upscale_smart : skip ${2=100%},${3=100%} check "${4=2}>=0 && ${5=0.4}>=0 && $5<=1 && ${6=10}>=0"
   e[^-1] "Upscale image$? to $1x$2x$3, with smoothness $4, anisotropy $5 and sharpening $6."
-  repeat $! l[$>]
+  foreach {
     w={w} h={h}
     +r. $1,$2,$3,1,0 # Compute desired dimensions.
     if w<$w" && "h<$h # Test for downscaling
@@ -14832,7 +14832,7 @@ upscale_smart : skip ${2=100%},${3=100%} check "${4=2}>=0 && ${5=0.4}>=0 && $5<=
       smooth.. .,$4 rm.
       ac "sharpen. $6,10",ycbcr_y
     fi
-  done done
+  }
 
 #@cli warp : [warping_field],_mode,_interpolation,_boundary_conditions,_nb_frames>0 : (+)
 #@cli : Warp selected images with specified displacement field.
