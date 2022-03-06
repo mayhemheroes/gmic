@@ -15326,9 +15326,9 @@ deblur_goldmeinel : check "$1>=0 && ${2=8}>=0 && ${3=1}>=0" skip ${4=1}
   e[^-1] "Deblur image$? using Gold-Meinel algorithm, with sigma $1, $2 iterations, acceleration $3 and "\
          ${arg\ 1+!$4,"",quasi-}"gaussian kernel."
   foreach {
-    [0] repeat $2
+    [0] repeat $2 {
       +b. $1,1,$4 +/[0,-1] rm.. ^. $3 *[-1,-2] # u *= f / Hu
-    done rm[0]
+    } rm[0]
   }
 
 #@cli deblur_richardsonlucy : sigma>=0, nb_iter>=0, _kernel_type={ 0=deriche | 1=gaussian }.
@@ -15340,9 +15340,9 @@ deblur_richardsonlucy : check "$1>=0 && ${2=50}>=0" skip ${3=1}
   e[^-1] "Deblur image$? using Richardson-Lucy algorithm, with sigma $1, $2 iterations and "\
          ${arg\ 1+!$3,"",quasi-}"gaussian kernel."
   foreach {
-    [0] repeat $2
+    [0] repeat $2 {
       +b. $1,1,{$3!=0} max. 1e-6 +/[0,-1] rm.. b. $1,1,{$3!=0} *[-1,-2] # u *= H ( f / Hu )
-    done rm[0]
+    } rm[0]
   }
 
 #@cli deconvolve_fft :  [kernel],_regularization>=0
@@ -15400,7 +15400,7 @@ denoise_haar : check "${1=1.4}>=0 && isint(${2=0}) && $2>=0 && isint(${3=10}) &&
     w={w} h={h} d={d} sigma=${-std_noise}
     r {round(w,2^($nb_scales+1),1)},{round(h,2^($nb_scales+1),1)},{if(d==1,1,round(d,2^($nb_scales+1),1))},100%,0,0
     +f 0
-    repeat $3
+    repeat $3 {
       dx={round(u(0,{4*$nb_scales}))}
       dy={round(u(0,{4*$nb_scales}))}
       dz={if($d==1,0,round(u(0,{4*$nb_scales})))}
@@ -15410,7 +15410,7 @@ denoise_haar : check "${1=1.4}>=0 && isint(${2=0}) && $2>=0 && isint(${3=10}) &&
       ihaar. $nb_scales
       shift. {-$dx},{-$dy},{-$dz},0,2
       +[-2,-1]
-    done
+    }
     rm[0] / $3 r $w,$h,$d,100%,0
   :: $nm }
 
@@ -15578,12 +15578,14 @@ dilate_oct : check $1>=0 skip ${2=1},${3=0}
   if $1<2 return fi
   if $1&1 ss={$1} else ss={$1+1} fi
   i[0] (0,1,0;1,1,1;0,1,0) i[1] (1,1,1;1,1,1;1,1,1)
-  repeat $!-2
+  repeat $!-2 {
     r={round(($ss-1)*sqrt(2)/(1+sqrt(2))/2)}
     q={round(($ss-1)/(1+sqrt(2))/2)}
     if $r>0 repeat $r dilate. [0],$2,$3 done fi
     if $q>0 repeat $q dilate. [1],$2,$3 done fi
-  mv. 2 done rm[0,1]
+    mv. 2
+  }
+  rm[0,1]
 
 _kr_circle :
   if $1%2==0 2,2,1,1,1 else 1,1,1,1,1 fi r. $1,$1,1,1,0,0,0.5,0.5
@@ -15693,12 +15695,14 @@ erode_oct : check $1>=0 skip ${2=1},${3=0}
   if $1<2 return fi
   if $1&1 ss={$1} else ss={$1+1} fi
   i[0] (0,1,0;1,1,1;0,1,0) i[1] (1,1,1;1,1,1;1,1,1)
-  repeat $!-2
+  repeat $!-2 {
     r={round(($ss-1)*sqrt(2)/(1+sqrt(2))/2)}
     q={round(($ss-1)/(1+sqrt(2))/2)}
     if $r>0 repeat $r erode. [0],$2,$3 done fi
     if $q>0 repeat $q erode. [1],$2,$3 done fi
-  mv. 2 done rm[0,1]
+    mv. 2
+  }
+  rm[0,1]
 
 #@cli erode_threshold : size_x>=1,size_y>=1,size_z>=1,_threshold>=0,_boundary_conditions
 #@cli : Erode selected images in the (X,Y,Z,I) space.
@@ -15935,7 +15939,7 @@ hessian : skip "${1=},${2=}"
   repeat $! l[$<] {
     nm={n} laxes=$axes if '$laxes'==0 if d>1 laxes=xxxyxzyyyzzz else laxes=xxxyyy fi fi
     ('$laxes')
-    repeat int(w/2)
+    repeat int(w/2) {
       a1,a2={`i[#1,2*$>]`},{`i[#1,2*$>+1]`}
       if _'$a1'>_'$a2' a1,a2=$a2,$a1 fi
       if 0${hessian_$a1$a2}>0 [hessian_$a1$a2]
@@ -15947,7 +15951,7 @@ hessian : skip "${1=},${2=}"
       elif _'$a1'==_'z'" && "_'$a2'==_'z' (1/-2/1) +correlate[0] .,$boundary rm..
       fi
       :: hessian_$a1$a2
-    done
+    }
     rm[0,1] ::[^] $nm
   } done
   u $is_noaarg
@@ -15964,13 +15968,13 @@ idct : skip ${1=0}
   is_axes={im>=_'x'" && "iM<=_'z'}
   if $is_axes
     e[0--3] "Compute inverse discrete cosine transform of image$? along axes '$1'."
-    repeat w
+    repeat w {
       axis={i[$>]}
       if $axis==_'x' foreach[^-1] { if w>1 _idct fi }
       elif $axis==_'y' foreach[^-1] { if h>1 permute yxzc _idct permute yxzc fi }
       elif $axis==_'z' foreach[^-1] { if d>1 permute zxyc _idct permute yzxc fi }
       fi
-    done
+    }
     rm.
   else
     rm.
@@ -16085,13 +16089,13 @@ ilaplacian : check "${1=0}>=0" skip "${2=}"
                    initial estimate $2."
       repeat $! pass$2 0 l[$>,-1] {
         *[0] 5 i[1] (0,5,0;5,0,5;0,5,0)
-        repeat $1 +convolve. [1] -. [0] +[-2,-1] /. 21 done k. # Optimized semi-implicit scheme, with dt=5
+        repeat $1 { +convolve. [1] -. [0] +[-2,-1] /. 21 } k. # Optimized semi-implicit scheme, with dt=5
       } done
     else
       e[0--4] "Invert Laplacian image$? using $1 iterations of PDE flow."
       foreach {
         * 5 (0,5,0;5,0,5;0,5,0) +f.. 0
-        repeat $1 +convolve. [1] -. [0] +[-2,-1] /. 21 done k. # Optimized semi-implicit scheme, with dt=5
+        repeat $1 { +convolve. [1] -. [0] +[-2,-1] /. 21 } k. # Optimized semi-implicit scheme, with dt=5
       }
     fi
   fi
@@ -16173,7 +16177,7 @@ inpaint_pde : check ${is_image_arg\ $1}" && ${2=75%}>=0 && isint(${3=1}) && $3>=
         # Apply diffusion iterations.
         ri... ..,3
         if $3==0 # Isotropic diffusion
-          repeat $nb_iter j... ..,0,0,0,0,1,. b... 0.5 done
+          repeat $nb_iter { j... ..,0,0,0,0,1,. b... 0.5 }
 
         elif $3==1 # Delaunay-guided
           +distance. 1 100%,100%,100%,{d==1?2:3}
@@ -16187,25 +16191,25 @@ inpaint_pde : check ${is_image_arg\ $1}" && ${2=75%}>=0 && isint(${3=1}) && $3>=
               copy(I(#-1),[ ix,iy,iz ],3,whd);
             ):copy(I(#-1),[ ix,iy ],2,whd)"
           rm.. orientation.
-          repeat $nb_iter
+          repeat $nb_iter {
             j[-4] ...,0,0,0,0,1,..
             +warp[-4] .,1,2,1 *.. -1 warp[-5] ..,1,2,1 +[-5,-1] /[-4] 2
-          done
+          }
           rm.
 
         elif $3==2 # Edge-guided
-          repeat $nb_iter
+          repeat $nb_iter {
             +diffusiontensors... 0,1,1.5,0.5
             j[-4] ...,0,0,0,0,1,..
             smooth[-4] .,1,10,0 rm.
-          done
+          }
 
         else # Mask-guided
           +r[1] .,2 g. a[-{d==1?2:3}--1] c orientation.
-          repeat $nb_iter
+          repeat $nb_iter {
             j[-4] ...,0,0,0,0,1,..
             +warp[-4] .,1,2,1 *.. -1 warp[-5] ..,1,2,1 +[-5,-1] /[-4] 2
-          done rm.
+          } rm.
         fi
         j... ..,0,0,0,0,1,.
       fi
@@ -16222,10 +16226,10 @@ inpaint_flow : check ${is_image_arg\ $1}" && ${2=10}>=0 && ${3=100}>=0 && ${4=5}
   e[^-1] "Apply $2x$3 iterations of the inpainting flow on image$?, with mask $1, time step $4, alpha $5 and sigma $6."
   repeat $! pass$1 0 l[$>,-1]
     r. [0],[0],[0],1,0 inpaint.. [1]
-    repeat $2
+    repeat $2 {
       progress {100*$>/($2-1)}
       +diffusiontensors.. 0,1,$5,$6,0 *. .. smooth... .,$3,$4,0 rm.
-    done
+    }
     progress 100
   done rm. done
 
@@ -16239,7 +16243,7 @@ inpaint_holes : check "${1=4}>=0 && ${2=0}>=0" skip ${3=0}
   foreach {
     100%,100%,100%
     area={if(${is_percent\ $1},$1*w*h*d,$1)}
-    repeat s#0 sh[0] $> +area. $2,$3 <=. $1 -|[1,-1] rm. done
+    repeat s#0 { sh[0] $> +area. $2,$3 <=. $1 -|[1,-1] rm. }
     if im k[0] whd={w},{h},{d} r 1,1,1,100%,2 r $whd,100%
     else inpaint[0] [1],0,{2*!$2+!!$3} k[0] fi
   }
@@ -16332,13 +16336,13 @@ inpaint_matchpatch : check ${is_image_arg\ $1}"&& ${2=0}>=0 && isint(${3=9}) && 
         nbs1={max(1,$nb_scales-1)}
         nb_iter={round(max(1,$4*(($<+1)/$nbs1)^2))}
 
-        repeat $nb_iter
+        repeat $nb_iter {
           _inpaint_matchpatch[scaled_img] [correspondence],[scaled_mask],$blend_size,$6
           +matchpatch[scaled_img] [scaled_reference],$patch_size,$patch_size,1,4,4,0,0,[correspondence]
           j[correspondence] . rm.
           if {*1} w1[scaled_img] $visu_size,0 fi
           if {*2} w2[correspondence] $visu_size,1 fi
-        done
+        }
         rm[scaled_img,scaled_mask,scaled_reference] channels[correspondence] 0,1
       fi
 
@@ -16489,8 +16493,7 @@ map_tones : skip ${1=0.1},${2=0.8},${3=0.5},${4=30}
     a c * 0.25 done
 
    # Start Poisson-PDE iterations
-    repeat $4 +laplacian.. *. 0.25 +. ... -. .. *. 800 +[-3,-1] /.. 801 c.. 0,255 done rm.
-
+    repeat $4 { +laplacian.. *. 0.25 +. ... -. .. *. 800 +[-3,-1] /.. 801 c.. 0,255 } rm.
   }
 
 #@cli map_tones_fast : _radius[%]>=0,_power>=0
@@ -16680,7 +16683,7 @@ peronamalik_flow : check "${1=20}>0 && ${2=5}>=0" skip ${3=5},${4=0}
 phase_correlation : check ${"is_image_arg $1"}
   e[^-1] "Estimate shift between source image$? and destination $1."
   pass$1
-  repeat $!-1
+  repeat $!-1 {
     normalized_cross_correlation[$>] .
     l[$>] eval "
       store([xM>=w/2?xM - w:xM,
@@ -16688,7 +16691,7 @@ phase_correlation : check ${"is_image_arg $1"}
              zM>=d/2?zM - d:zM]*=-1,'res',1,1,1,3)"
     done
     $res :: "[phase correlation]" rv[$>,-1] rm.
-  done rm.
+  } rm.
 
 #@cli pde_flow : _nb_iter>=0,_dt,_velocity_command,_keep_sequence={ 0 | 1 }
 #@cli : Apply iterations of a generic PDE flow on selected images.
@@ -16697,10 +16700,10 @@ phase_correlation : check ${"is_image_arg $1"}
 pde_flow : skip ${1=10},${2=30},${3=laplacian},${4=0}
   e[^-1] "Apply $1 iterations of the velocity flow '$3' on image$?, with time step $2."
   repeat $! l[$<] {
-    repeat $1
+    repeat $1 {
       +$3. *. {$2/(0.01+max(abs(im),abs(iM)))}
       if $4 +. .. else +[-2,-1] fi
-    done
+    }
     if $4 rm[0] fi
     a x
   } done
@@ -17026,7 +17029,7 @@ solve_poisson : check "${2=60}>=0 && ${3=5}>0 && ${4=0}>=0"
       f={2^$<}
       r[1] {0,max(1,w/$f)},{0,max(1,h/$f)},1,100%,3
       +ri[0] [1],2 l. -$1 k[0] done
-      repeat $2 +laplacian.. -. .. *. {$3/max(1e-8,abs(im),abs(iM))} +[-3,-1] done
+      repeat $2 { +laplacian.. -. .. *. {$3/max(1e-8,abs(im),abs(iM))} +[-3,-1] }
       rm.
     }
     rm[0]
@@ -17117,10 +17120,10 @@ syntexturize : check "${1=100%}>0 && ${2=$1}>0"
   foreach
 
     # Prepare input image data.
-    mM={[im,iM]} repeat s sh. $> sum$>={is} var$>={iv} rm. done  # Retrieve some stats for post-normalization.
+    mM={[im,iM]} repeat s { sh. $> sum$>={is} var$>={iv} rm. } # Retrieve some stats for post-normalization.
     nw={if(${is_percent\ $1},$1*w,$1)}
     nh={if(${is_percent\ $2},$2*h,$2)}
-    repeat s sum$>*={$nw*$nh/(w*h)} done # Re-estimate output (0,0) frequency.
+    repeat s { sum$>*={$nw*$nh/(w*h)} } # Re-estimate output (0,0) frequency.
 
     if $nw>w||$nh>h # Spot extension required when rendering on bigger image.
       periodize_poisson
@@ -17147,9 +17150,9 @@ syntexturize : check "${1=100%}>0 && ${2=$1}>0"
     *[-5,-3] *[-3,-2] -[-3,-2]
 
     # Get synthetised result and normalize it.
-    repeat s =.. ${sum$>},0,0,0,$> =. 0,0,0,0,$> done
+    repeat s { =.. ${sum$>},0,0,0,$> =. 0,0,0,0,$> }
     ifft rm.
-    repeat s sh. $> avg={ia} -. $avg *. {sqrt(${var$>}/if(iv,iv,1))} +. $avg rm. done
+    repeat s { sh. $> avg={ia} -. $avg *. {sqrt(${var$>}/if(iv,iv,1))} +. $avg rm. }
     c $mM
 
   done
@@ -17205,11 +17208,11 @@ syntexturize_matchpatch : check "${1=100%}>0 && ${2=$1}>0 && isint(${3=0}) && $3
 
       # Synthesis.
       psize={-2,min(w,h,$4)}
-      repeat 1+$6*$<
+      repeat 1+$6*$< {
         psynth={int(max(3,$5*$scale%))}
         +warp_patch.. .,$psynth
         matchpatch. ...,$psize,$psize,1,4,4,0,0,.. rm..
-      done
+      }
       rm..
 
     done
@@ -17267,11 +17270,11 @@ tv_flow : skip ${1=10},${2=30},${3=0}
 #@cli : $ image.jpg blur 3 +unsharp 1.5,15 cut 0,255
 unsharp : check "${2=2}>=0" skip ${3=0}
   e[^-1] "Apply unsharp mask on image$?, with radius $1, amount $2 and threshold $3."
-  repeat $!
+  repeat $! {
     +b[$>] $1 -. [$>]
     if $3 +norm. >=. $3 *[-2,-1] fi
     *. $2 -[$>,-1]
-  done
+  }
 
 #@cli unsharp_octave : _nb_scales>0,_radius[%]>=0,_amount>=0,threshold[%]>=0
 #@cli : Apply octave sharpening on selected images.
@@ -17282,11 +17285,11 @@ unsharp_octave : check "${1=4}>0 && ${3=2}>=0" skip ${2=1},${4=0}
   foreach {
     nm={0,n}
     +f 0 weight=0
-    repeat $1
+    repeat $1 {
       +unsharp[0] {$2*2^-$<},$3,$4 *. {2^-$>}
       weight+={2^-$>}
       +[1,-1]
-    done
+    }
     rm[0] / $weight :: $nm
   }
 
@@ -17611,7 +17614,7 @@ histogram_nd : check $1>0 skip ${2=0%},${3=100%}
 histogram_cumul : check ${1=256}>0 skip ${2=0},${3=0%},${4=100%}
   arg 1+!$2,"normalized ",""
   e[^-1] "Compute "${}"cumulative histogram of image$?, using $1 levels."
-  histogram $1,$3,$4 cumulate if $2 repeat $! /[$>] {$>,iM} done fi
+  histogram $1,$3,$4 cumulate if $2 repeat $! { /[$>] {$>,iM} } fi
 
 #@cli histogram_pointwise : nb_levels>0[%],_value0[%],_value1[%]
 #@cli : Compute the histogram of each vector-valued point of selected images.
@@ -17670,7 +17673,7 @@ isophotes : skip ${1=64}
   e[^-1] "Render isophote maps from images$?, with $1 levels."
   to_rgba
   foreach {
-    +luminance repeat $1 +isoline3d[1] {$>*255/($1-1)} done rm[1] +3d[^0] col3d. 1
+    +luminance repeat $1 { +isoline3d[1] {$>*255/($1-1)} } rm[1] +3d[^0] col3d. 1
     [0],[0] j3d. ..,0,0,0,1,0,0,0 rm.. *
   }
 
@@ -17791,7 +17794,7 @@ _laar : skip "${3=}"
 #@cli : $ image.jpg norm +max_patch 16
 max_patch : check "isint(${1=16}) && $1>=1"
   e[^-1] "Return locations of maximal values in local patch neighborhood of size $1, in image$?."
-  repeat $! +dilate[$>] $1 ==[$>,-1] done
+  repeat $! { +dilate[$>] $1 ==[$>,-1] }
 
 #@cli min_patch : _patch_size>=1
 #@cli : Return locations of minimal values in local patch-based neighborhood of given size for selected images.
@@ -17799,7 +17802,7 @@ max_patch : check "isint(${1=16}) && $1>=1"
 #@cli : $ image.jpg norm +min_patch 16
 min_patch : check "isint(${1=16}) && $1>=1"
   e[^-1] "Return locations of minimal values in local patch neighborhood of size $1, in image$?."
-  repeat $! +erode[$>] $1 ==[$>,-1] done
+  repeat $! { +erode[$>] $1 ==[$>,-1] }
 
 #@cli minimal_path : x0[%]>=0,y0[%]>=0,z0[%]>=0,x1[%]>=0,y1[%]>=0,z1[%]>=0,_is_high_connectivity={ 0 | 1 }
 #@cli : Compute minimal path between two points on selected potential maps.
@@ -17841,16 +17844,16 @@ mse :
 +mse :
   e[^-1] "Compute the "$!x$!" matrix of MSE values, for image$?."
   N=$! $N,$N
-  repeat $N q=$>
-    repeat $q p=$>
+  repeat $N { q=$>
+    repeat $q { p=$>
       if "const p = "$p"; const q = "$q"; [w#p,h#p,d#p,s#p]!=[w#q,h#q,d#q,s#q]"
         error[0--4] "Image ["$p"] = '"{$p,n}"' ("{$p,[w,h,d,s]}") and ["$q"] = '"{$q,n}"' ("{$q,[w,h,d,s]}") "\
                     "have different sizes."
       fi
       +-[$p,$q] sqr. mse={ia} rm.
       =. $mse,$p,$q =. $mse,$q,$p
-    done
-  done
+    }
+  }
 
 #@cli patches : patch_width>0,patch_height>0,patch_depth>0,x0,y0,z0,_x1,_y1,_z1,...,_xN,_yN,_zN
 #@cli : Extract N+1 patches from selected images, centered at specified locations.
@@ -17861,7 +17864,7 @@ patches : check "isint($1) && $1>0 && isint($2) && $2>0 && isint($3) && $3>0"
   H={int(sqrt(w))} W={round(w/$H,1,1)} r. {$W*$H},1,1,3,0 r. $W,$H,1,3,-1
   r. {w*$1},{h*$2},{d*$3}
   $1,$2,$3,1,x-{int($1/2)} +f. y-{int($2/2)} +f. z-{int($3/2)} a[-3--1] c ri. ..,0,2 +[-2,-1]
-  repeat $!-1 warp[$>] .,0,0,0 done rm.
+  repeat $!-1 { warp[$>] .,0,0,0 } rm.
   foreach { s y,$H s x,$W k[0-{$N-1}] }
 
 #@cli matchpatch : [patch_image],patch_width>=1,_patch_height>=1,_patch_depth>=1,_nb_iterations>=0,\
@@ -18151,7 +18154,7 @@ slic : check "${1=16}>0 && ${2=10}>=0 && ${3=10}>0"
     [0],[0],1,2 eval.. "I(#-1,i0,i1) = [ x + 1,1 ]; I" s. c distance. 1 *. -1 watershed.. . rm. channels. 0,1
 
     # Start iteration loop.
-    repeat $nb_iter
+    repeat $nb_iter {
 
       # Assign best superpixel to each pixel.
       sh[2] 1 f. inf rm.
@@ -18183,7 +18186,7 @@ slic : check "${1=16}>0 && ${2=10}>=0 && ${3=10}>0"
       eval[2] "I[#1,i0]+=[ x,y,I#0,1 ];I"
       s[1] c,-{1,s-1} max[2] 1 /[1,2]
 
-    done
+    }
 
     # Remove small and isolated regions (surrounded by pixels all having the same label).
     k[2] channels 0 label. 0,0
@@ -18548,7 +18551,7 @@ _axes :
 #@cli ball : _size>0, _R,_G,_B,0<=_specular_light<=8,0<=_specular_size<=8,_shadow>=0
 #@cli : Input a 2D RGBA colored ball sprite.
 #@cli : Default values: 'size=64', 'R=255', 'G=R', 'B=R', 'specular_light=0.8', 'specular_size=1' and 'shading=1.5'.
-#@cli : $ repeat 9 ball {1.5^($>+2)},${-rgb} done append x
+#@cli : $ repeat 9 { ball {1.5^($>+2)},${-rgb} } append x
 +ball : check "${1=64}>0 && ${5=0.8}>=0 && $5<=8 && ${6=1}>=0 && $6<=8 && ${7=1.5}>=0" skip ${2=255},${3=$2},${4=$3}
   e[^-1] "Input $1x$1 ball with color (${2-4}), specular light $5, specular size $6 and shadow factor $7."
   l[]
@@ -19452,7 +19455,7 @@ pack_sprites : check "isint(${1=5}) && $1>=0 && ${2=25}>=0 && $2<=100 && isint($
   e[^-1] "Randomly pack image$? with $1 scales, minimum scale $2%, "${arg\ 1+$3,no,180\"\ \"deg.,90\"\ \"deg.,any}\
          " rotation, spacing $4, precision $5 and $6 maximum iterations."
   N={$!-1} is_first_time=1
-  repeat $! r[$>] 100%,100%,1,{$>,max(2,s)} done   # Ensure all images have a binary shape mask.
+  repeat $! { r[$>] 100%,100%,1,{$>,max(2,s)} } # Ensure all images have a binary shape mask.
 
   # Start iterations over scales.
   repeat $1
@@ -19561,14 +19564,14 @@ piechart : check $1>=0
     ellipse 50%,50%,{w/2-1},{h/2-1},0,1,0xFFFFFFFF
     (${6--1:5}) normalize_sum.
     theta=0
-    if w>1 repeat w
+    if w>1 repeat w {
       xe={0.5*{-2,w}*(1+cos($theta))}
       ye={0.5*{-2,h}*(1+sin($theta))}
       line.. 50%,50%,$xe,$ye
       theta-={2*pi*i($>)}
-    done fi
+    } fi
     theta=0
-    repeat w if i($>)
+    repeat w { if i($>)
       ntheta={$theta-2*pi*i($>)}
       xc={0.5*{-2,w}*(1+0.5*cos(0.5*($ntheta+$theta)))}
       yc={0.5*{-2,h}*(1+0.5*sin(0.5*($ntheta+$theta)))}
@@ -19582,7 +19585,7 @@ piechart : check $1>=0
         rm[-2,-1]
       fi
       theta=$ntheta
-    fi done
+    fi }
     rm.
   }
 
