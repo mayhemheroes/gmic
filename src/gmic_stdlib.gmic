@@ -37544,20 +37544,21 @@ fx_poster_edges_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2016/25/10</i>.</small>")
 fx_posterize :
-  repeat $! l[$>] split_opacity l[0]
-    . amp=$1 do smooth. {min(50,$amp)},{$2%},1,$3,{2*$3} amp-=50 while $amp>0
-    bilateral.. .,5,10 rm.
-    srgb2rgb +colormap $4 rgb2srgb
-    index.. .,0,0
-    if $5
-      +area.. 0,0 <. $5 inpaint... .,0,3 rm.
-    fi
-    map.. . rm.
-    if $6
-      +norm (0,1,0;1,1,1;0,1,0) +dilate.. . rm.. -[-2,-1] !=. 0 100%,100%,1,{0,s} j... .,0,0,0,0,{$6%},.. rm[-2,-1]
-    fi
-    if $7 n 0,255 fi
-  done a c done done
+  foreach {
+    split_opacity l[0] {
+      . amp=$1 do smooth. {min(50,$amp)},{$2%},1,$3,{2*$3} amp-=50 while $amp>0
+      bilateral.. .,5,10 rm.
+      srgb2rgb +colormap $4 rgb2srgb
+      index.. .,0,0
+      if $5 +area.. 0,0 <. $5 inpaint... .,0,3 rm. fi
+      map.. . rm.
+      if $6
+        +norm (0,1,0;1,1,1;0,1,0) +dilate.. . rm.. -[-2,-1] !=. 0 100%,100%,1,{0,s} j... .,0,0,0,0,{$6%},.. rm[-2,-1]
+      fi
+      if $7 n 0,255 fi
+    }
+    a c
+  }
 
 fx_posterize_preview :
   gui_split_preview "fx_posterize $*",${-3--1}
@@ -37583,7 +37584,7 @@ fx_posterize_preview :
 fx_quadtree :
   mode,precision,homogeneity,outline,radius1,radius2,anisotropy,only_leafs=${1-8}
   m "_qt : sh 3 u {w>1&&h>1?iv*(w*h)^"$homogeneity":-0.1} k[0]" # Function used to split quads
-  repeat $! l[$>]
+  foreach
     to_rgb
 
     # Decompose image with quadtree.
@@ -37689,7 +37690,7 @@ fx_quadtree :
       if !$outline sh[0] 100% if !im solidify[0] 10% fi fi
     fi
     k[0]
-  done done
+  done
   um _qt
 
 fx_quadtree_preview :
@@ -37751,7 +37752,7 @@ fx_rodilius_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2013/11/06</i>.</small>")
 fx_shapeism :
-  repeat $! l[$>]
+  foreach {
     to_rgb
     +gradient_norm b. $13% ^. $12 quantize. $6,0,0
     100%,100%,1,2
@@ -37782,7 +37783,7 @@ fx_shapeism :
     i[0] 100%,100%,1,4 fc[0] $14,$15,$16,$17
     blend alpha
     rprogress 100
-  done done
+  }
 
 fx_shapeism_preview :
   gui_print_preview ""
@@ -37865,7 +37866,7 @@ fx_sharp_abstract_preview :
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2018/05/11</i>.</small>")
 fx_sketchbw : skip ${16=0}
   srand $16
-  if $15==4 repeat $! l[$>] +sketchbw ${1-14} blend hardlight done done return fi
+  if $15==4 foreach { +sketchbw ${1-14} blend hardlight } return fi
   sketchbw ${1-14}
   if $15&1 negate fi
   if $15==2 r 100%,100%,1,4 repeat $! sh[$>] 3 *. -2 +. {2*255} c. 0,255 rm. done
@@ -37889,12 +37890,15 @@ fx_sketchbw_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2016/06/04</i>.</small>")
 fx_smooth_abstract :
-  repeat $! l[$>] split_opacity l[0]
-    srgb2rgb
-    mM={[im,iM]} +b $4 n. $mM gradient_norm. <=. {50-$5}
-    inpaint_pde[0] [1],$1%,$2,$3 rm.
-    rgb2srgb c 0,255
-  done a c done done
+  foreach {
+    split_opacity l[0] {
+      srgb2rgb
+      mM={[im,iM]} +b $4 n. $mM gradient_norm. <=. {50-$5}
+      inpaint_pde[0] [1],$1%,$2,$3 rm.
+      rgb2srgb c 0,255
+    }
+    a c
+  }
 
 fx_smooth_abstract_preview :
   gui_split_preview "fx_smooth_abstract $*",${-3--1}
@@ -38067,7 +38071,7 @@ _fx_stylize : # Download pre-defined style image
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.\nLatest Update: <i>2015/25/08</i>.</small>")
 fx_vector_painting :
-  repeat $! l[$>]
+  foreach {
     +luminance b. {10-$1}%,1,1
     f. "dmax = -1; nmax = 0;
         for (n = 0, ++n<=8,
@@ -38077,7 +38081,7 @@ fx_vector_painting :
           d>dmax?(dmax = d; nmax = n):nmax;
         )"
     blend shapeaverage
-  done done
+  }
 
 fx_vector_painting_preview :
   gui_split_preview "fx_vector_painting $*",${-3--1}
@@ -38100,7 +38104,7 @@ fx_vector_painting_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2010/29/12</i>.</small>")
 fx_draw_whirl :
-  repeat $! l[$>] split_opacity draw_whirl[0] $* a c done done
+  foreach { split_opacity draw_whirl[0] $* a c }
 
 fx_draw_whirl_preview :
   gui_split_preview "fx_draw_whirl $*",${-3--1}
@@ -38181,9 +38185,9 @@ fx_blackandwhite_preview :
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2010/29/12</i>.</small>")
 fx_stencilbw :
   stencilbw $1,$2
-  if $3||$4 repeat $! l[$>] split_opacity
-    /[0] 255 i[0] 100%,100%,1,1,$4 i[0] 100%,100%,1,1,$3 a[0-2] c hsv2rgb[0]
-  a c done done fi
+  if $3||$4 foreach {
+    split_opacity /[0] 255 i[0] 100%,100%,1,1,$4 i[0] 100%,100%,1,1,$3 a[0-2] c hsv2rgb[0] a c
+  }
 
 fx_stencilbw_preview :
   gui_split_preview "fx_stencilbw $*",${-3--1}
@@ -38210,20 +38214,23 @@ fx_stencilbw_preview :
 #@gui : note = note("<small>Inspired from the Charcoal script by <i>micomicon</i> :</small>")
 #@gui : url = link("http://registry.gimp.org/node/25078")
 fx_charcoal :
-  repeat $! l[$>] split_opacity l[0]
-    compose_channels max
-    w={w} h={h}
-    if $5 r. 150%,150%,1,1,6 fi
-    if $4 equalize. n. 0,255 fi
-    sharpen {$1*3} cut 0,255
-    if $6 +ir $7,$8 fi  # Add highlights layer if required.
-    ir[0] $2,$3
-    if !$15 ==[0] 0 fi
-    -|
-    +*[0] $10 +*[0] $11 *[0] $9
-    a[-3--1] c replace_color 0,0,0,0,0,$12,$13,$14
-    r $w,$h,1,100%,2
-  done a c done done
+  foreach {
+    split_opacity l[0] {
+      compose_channels max
+      w={w} h={h}
+      if $5 r. 150%,150%,1,1,6 fi
+      if $4 equalize. n. 0,255 fi
+      sharpen {$1*3} cut 0,255
+      if $6 +ir $7,$8 fi  # Add highlights layer if required.
+      ir[0] $2,$3
+      if !$15 ==[0] 0 fi
+      -|
+      +*[0] $10 +*[0] $11 *[0] $9
+      a[-3--1] c replace_color 0,0,0,0,0,$12,$13,$14
+      r $w,$h,1,100%,2
+    }
+    a c
+  }
 
 fx_charcoal_preview :
   gui_split_preview "fx_charcoal $*",${-3--1}
@@ -38415,7 +38422,8 @@ fx_bwrecolorize_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2016/12/11</i>.</small>")
 fx_autofill_lineart :
-  repeat $! l[$>] nm=${-gui_layer_name}
+  foreach
+    nm=${-gui_layer_name}
 
     # Format input lineart to expected format.
     is_alpha={s==2||s==4}
@@ -38462,13 +38470,13 @@ fx_autofill_lineart :
     # Format output layers.
     if !$is_alpha gui_set_layer_mode.. multiply fi
     gui_set_layer_name. $nm" [colors]"
-  done done
+  done
 
 fx_autofill_lineart_preview :
-  repeat $! l[$>]
+  foreach {
     fx_autofill_lineart ${1-4}
     if $5 k. else rv blend multiply fi
-  done done
+  }
 
 #@gui Colorize Lineart [Smart Coloring] : fx_colorize_lineart_smart, fx_colorize_lineart_smart_preview(0)
 #@gui : Colorize Mode = choice("Generate Random-Colors Layer","Extrapolate Color Spots on Transparent Top Layer",
@@ -38730,11 +38738,14 @@ fx_colorize_lineart_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2010/29/12</i>.</small>")
 fx_ditheredbw :
-  repeat $! l[$>] split_opacity l[0]
-    luminance  adjust_colors ${1-3} b $6
-    ditheredbw
-    if $4" || "$5 / 255 i[0] 100%,100%,1,2 fc[0] $4,{$5%} a c hsv2rgb fi
-  done a c done done
+  foreach {
+    split_opacity l[0] {
+      luminance  adjust_colors ${1-3} b $6
+      ditheredbw
+      if $4" || "$5 / 255 i[0] 100%,100%,1,2 fc[0] $4,{$5%} a c hsv2rgb fi
+    }
+    a c
+  }
 
 fx_ditheredbw_preview :
   gui_split_preview "fx_ditheredbw $*",${-3--1}
@@ -38828,45 +38839,48 @@ fx_engrave_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2015/30/09</i>.</small>")
 fx_freaky_bw :
-  repeat $! l[$>] split_opacity l[0]
-    to_rgb
+  foreach {
+    split_opacity l[0] {
+      to_rgb
 
-    # Estimate gradient field of B&W result.
-    +expand_xy 1,0 channels. 0,4
-    f. ">if (c!=4,i,
-          Rx = i(x+1,y,0,0) - i(x,y,0,0);
-          Ry = i(x,y+1,0,0) - i(x,y,0,0);
-          Rn = Rx^2 + Ry^2;
-          Gx = i(x+1,y,0,1) - i(x,y,0,1);
-          Gy = i(x,y+1,0,1) - i(x,y,0,1);
-          Gn = Gx^2 + Gy^2;
-          Bx = i(x+1,y,0,2) - i(x,y,0,2);
-          By = i(x,y+1,0,2) - i(x,y,0,2);
-          Bn = Bx^2 + By^2;
-          n = 1e-5 + max(Rn,Gn,Bn)^"{$2%}";
-          val = 0;
-         if (Rn>=Gn && Rn>=Bn,
-           i(x,y,0,3) = Rx/n; val=Ry/n,
-         if (Gn>=Rn && Gn>=Bn,
-           i(x,y,0,3) = Gx/n; val=Gy/n,
-           i(x,y,0,3) = Bx/n; val=By/n));
-         val
-        )"
-    channels. 3,4
-    luminance[0] ia={0,ia}
+      # Estimate gradient field of B&W result.
+      +expand_xy 1,0 channels. 0,4
+      f. ">if (c!=4,i,
+            Rx = i(x+1,y,0,0) - i(x,y,0,0);
+            Ry = i(x,y+1,0,0) - i(x,y,0,0);
+            Rn = Rx^2 + Ry^2;
+            Gx = i(x+1,y,0,1) - i(x,y,0,1);
+            Gy = i(x,y+1,0,1) - i(x,y,0,1);
+            Gn = Gx^2 + Gy^2;
+            Bx = i(x+1,y,0,2) - i(x,y,0,2);
+            By = i(x,y+1,0,2) - i(x,y,0,2);
+            Bn = Bx^2 + By^2;
+            n = 1e-5 + max(Rn,Gn,Bn)^"{$2%}";
+            val = 0;
+           if (Rn>=Gn && Rn>=Bn,
+             i(x,y,0,3) = Rx/n; val=Ry/n,
+           if (Gn>=Rn && Gn>=Bn,
+             i(x,y,0,3) = Gx/n; val=Gy/n,
+             i(x,y,0,3) = Bx/n; val=By/n));
+           val
+          )"
+      channels. 3,4
+      luminance[0] ia={0,ia}
 
-    # Estimate laplacian of final image and invert it.
-    s. c
-    f.. "i - i(x-1,y,0,0)"
-    f. "i - i(x,y-1,0,0)"
-    +[-2,-1]
-    ilaplacian. 0
-    shrink_xy. 1 +. $ia n. 0,255
+      # Estimate laplacian of final image and invert it.
+      s. c
+      f.. "i - i(x-1,y,0,0)"
+      f. "i - i(x,y-1,0,0)"
+      +[-2,-1]
+      ilaplacian. 0
+      shrink_xy. 1 +. $ia n. 0,255
 
-    # Merge result with original color image.
-    j[0] [1],0,0,0,0,{$1%} rm.
-    adjust_colors ${3-5}
-  done a c done done
+      # Merge result with original color image.
+      j[0] [1],0,0,0,0,{$1%} rm.
+      adjust_colors ${3-5}
+    }
+    a c
+  }
 
 fx_freaky_bw_preview :
   gui_split_preview "fx_freaky_bw $*",${-3--1}
@@ -38896,16 +38910,19 @@ fx_freaky_bw_preview :
 #@gui :       Latest Update: <i>2011/05/04</i>.</small>")
 #@gui : url = link(0,"Forum thread about the filter discussion","http://gimpchat.com/viewtopic.php?f=10&t=914")
 fx_ink_wash :
-  repeat $! l[$>] split_opacity l[0]
-    fx_pencilbw. $1,$2,0,0,0
-    if $3==1 continue
-    elif $3==0 fx_smooth_anisotropic. 60,$4,$5,$6,1.1,0.8,30,2,0,1,1,0,1,16
-    fi
-    if $7==1 normalize_local. 2,6,5,24,1,0,255
-    elif $7==2 normalize_local. 2,6,5,24,1,0,255 fx_contrast_swm 2,0,0.512
-    elif $7==3 fx_normalize_local. $8,$9,$10,$11,1,3,0
-    fi
-  done a c done done
+  foreach {
+    split_opacity l[0] {
+      fx_pencilbw. $1,$2,0,0,0
+      if $3==1 continue
+      elif $3==0 fx_smooth_anisotropic. 60,$4,$5,$6,1.1,0.8,30,2,0,1,1,0,1,16
+      fi
+      if $7==1 normalize_local. 2,6,5,24,1,0,255
+      elif $7==2 normalize_local. 2,6,5,24,1,0,255 fx_contrast_swm 2,0,0.512
+      elif $7==3 fx_normalize_local. $8,$9,$10,$11,1,3,0
+      fi
+    }
+    a c
+  }
 
 #@gui Pencil : fx_pencilbw, fx_pencilbw_preview(0)
 #@gui : Size = float(0.3,0,5)
@@ -38921,9 +38938,9 @@ fx_ink_wash :
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2013/05/03</i>.</small>")
 fx_pencilbw :
   pencilbw $1,$2
-  if $3" || "$4 repeat $! l[$>] split_opacity
-    /[0] 255 i[0] 100%,100%,1,1,$4 i[0] 100%,100%,1,1,$3 a[0-2] c hsv2rgb[0]
-  a c done done fi
+  if $3" || "$4 foreach {
+    split_opacity /[0] 255 i[0] 100%,100%,1,1,$4 i[0] 100%,100%,1,1,$3 a[0-2] c hsv2rgb[0] a c
+  } fi
 
 fx_pencilbw_preview :
   gui_split_preview "fx_pencilbw $*",${-3--1}
@@ -38943,18 +38960,21 @@ fx_pencilbw_preview :
 #@gui : note = note("<small>Authors: <i>Jamac4k</i> and <i>David Tschumperlé</i>.
 #@gui :       Latest Update: <i>2015/29/06</i>.</small>")
 fx_pencil_portraitbw :
-  repeat $! l[$>] split_opacity l[0]
-    +b 2%
-    +blend divide rm.. luminance.
-    fx_ink_wash.. 0,167,0,0.5,0.54,2.25,0,2,6,5,20
-    +fx_hardsketchbw. 80,32,1.89,0.21,31.46,0,0
-    +fx_sketchbw.. 1,$2,180,$1,$3,0.03,0,0.6,0.1,0.6,0.25,1,0,1,0
-    blend[0,1] darken
-    blend[0,1] multiply,0.5
-    blend[0,1] lighten,$4
-    normalize_local ,
-    to_rgb +fc ${5-7} blend softlight
-  done a c done done
+  foreach {
+    split_opacity l[0] {
+      +b 2%
+      +blend divide rm.. luminance.
+      fx_ink_wash.. 0,167,0,0.5,0.54,2.25,0,2,6,5,20
+      +fx_hardsketchbw. 80,32,1.89,0.21,31.46,0,0
+      +fx_sketchbw.. 1,$2,180,$1,$3,0.03,0,0.6,0.1,0.6,0.25,1,0,1,0
+      blend[0,1] darken
+      blend[0,1] multiply,0.5
+      blend[0,1] lighten,$4
+      normalize_local ,
+      to_rgb +fc ${5-7} blend softlight
+    }
+    a c
+  }
 
 fx_pencil_portraitbw_preview :
   gui_split_preview "fx_pencil_portraitbw $*",${-3--1}
@@ -38976,17 +38996,20 @@ fx_pencil_portraitbw_preview :
 #@gui : note = note("<small>Authors: <i>Antaron</i>, <i>Mahvin</i> and <i>David Tschumperlé</i>.
 #@gui :      Latest Update: <i>2015/16/03</i>.</small>")
 fx_stamp :
-  repeat $! l[$>] split_opacity l[0]
-    wh={w},{h}
-    norm
-    if $7 r 150%,150%,1,1,3 fi
-    noise $5
-    if $1 otsu 256 else >= $2% fi
-    b {if($7,1.5,1)*$3},0 sharpen $4 n 0,255
-    apply_curve 1,0,0,101,33,170,229,255,255
-    if $7 r $wh,1,1,2 fi
-    if $6 negate fi
-  done a c done done
+  foreach {
+    split_opacity l[0] {
+      wh={w},{h}
+      norm
+      if $7 r 150%,150%,1,1,3 fi
+      noise $5
+      if $1 otsu 256 else >= $2% fi
+      b {if($7,1.5,1)*$3},0 sharpen $4 n 0,255
+      apply_curve 1,0,0,101,33,170,229,255,255
+      if $7 r $wh,1,1,2 fi
+      if $6 negate fi
+    }
+    a c
+  }
 
 fx_stamp_preview :
   gui_split_preview "fx_stamp $*",${-3--1}
@@ -39007,9 +39030,10 @@ fx_stamp_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2011/19/10</i>.</small>")
 fx_color_abstraction :
-  repeat $! l[$>] split_opacity l[0] to_rgb
-    b $1 s c quantize $2,1,0 area 0 ^ $3 n 0,255
-  done a c done done
+  foreach {
+    split_opacity l[0] { to_rgb b $1 s c quantize $2,1,0 area 0 ^ $3 n 0,255 }
+    a c
+  }
 
 fx_color_abstraction_preview :
   gui_split_preview "fx_color_abstraction $*",${-3--1}
@@ -39060,7 +39084,7 @@ fx_apply_haldclut : skip "${2=}"
   repeat $! if $>!=$ind_clut +map_clut[$>] [$ind_clut] j[$>] .,0,0,0,0,{$strength%} rm. fi done rm[$ind_clut]
   adjust_colors $brightness,$contrast,$gamma,$hue,$saturation,0,255
   if $normalize==2" || "$normalize==3 # Post-normalization
-     repeat $! l[$>] split_opacity n[0] 0,255 a c done done
+    foreach { split_opacity n[0] 0,255 a c }
   fi
 
 fx_apply_haldclut_preview : skip "${2=}"
@@ -39097,23 +39121,26 @@ fx_adjust_colors_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2016/19/07</i>.</small>")
 fx_boost_chroma :
-  repeat $! l[$>] split_opacity l[0]
-    +to_rgb
-    if $2>=2
-      srgb2rgb rgb2lab.
-      if $2==2 sh. 1 sh.. 2 equalize[-2,-1] rm[-2,-1]
-      else sh. 1,2 equalize. rm.
+  foreach {
+    split_opacity l[0] {
+      +to_rgb
+      if $2>=2
+        srgb2rgb rgb2lab.
+        if $2==2 sh. 1 sh.. 2 equalize[-2,-1] rm[-2,-1]
+        else sh. 1,2 equalize. rm.
+        fi
+        lab2rgb. rgb2srgb
+      else
+        rgb2ycbcr.
+        if $2==0 sh. 1 sh.. 2 equalize[-2,-1] rm[-2,-1]
+        else sh. 1,2 equalize. rm.
+        fi
+        ycbcr2rgb.
       fi
-      lab2rgb. rgb2srgb
-    else
-      rgb2ycbcr.
-      if $2==0 sh. 1 sh.. 2 equalize[-2,-1] rm[-2,-1]
-      else sh. 1,2 equalize. rm.
-      fi
-      ycbcr2rgb.
-    fi
-    j.. .,0,0,0,0,{$1%} rm.
-  done a c done done
+      j.. .,0,0,0,0,{$1%} rm.
+    }
+    a c
+  }
 
 fx_boost_chroma_preview :
   gui_split_preview "fx_boost_chroma $*",${-3--1}
@@ -39129,11 +39156,11 @@ fx_boost_chroma_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2018/11/26</i>.</small>")
 fx_boost_fade :
-  repeat $! l[$>]
+  foreach {
     100%,100%,1,3 rand. 0,1 b. {10-10*($1/10)^0.5} n. 0,255
     to_colormode 0 a z
     ac "s z transfer_histogram.. . rm.",${"arg 1+$2,ycbcr_cbcr,lab_ab"}
-  done done
+  }
 
 fx_boost_fade_preview :
   gui_split_preview "fx_boost_fade $1,$2",${-3--1}
@@ -39215,11 +39242,11 @@ fx_channels2layers :
   done done
 
 fx_channels2layers_preview :
-  repeat $! l[$>]
+  foreach {
     fx_channels2layers $*
     repeat $! l[$>] to "#"{1+$>},1,1,43,7,1,255 done done
     frame 1,1,0 frame 3,3,255 append_tiles ,
-  done done
+  }
 
 #@gui Color Balance : fx_balance_gamma, fx_balance_gamma_preview
 #@gui : Neutral Color = color(128,128,128)
@@ -39232,14 +39259,12 @@ fx_channels2layers_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2011/01/07</i>.</small>")
 fx_balance_gamma :
-  repeat $! l[$>] split_opacity
+  foreach {
+    split_opacity
     if $!>1 +!=. 0 *[0,-1] fi
-    l[0]
-      balance_gamma ${1-3}
-      if $4 n 0,255 fi
-    done
-    a c done
-  done
+    l[0] { balance_gamma ${1-3} if $4 n 0,255 fi }
+    a c
+  }
 
 fx_balance_gamma_preview :
   gui_split_preview "fx_balance_gamma $*",${-3--1}
@@ -39930,7 +39955,7 @@ fx_color_presets :
   thumbsize,strength,brightness,contrast,gamma,hue,saturation,normalize=${28-35}
 
   if $normalize==1" || "$normalize==3 # Pre-normalization
-    repeat $! l[$>] split_opacity balance_gamma[0] , a c done done
+    foreach { split_opacity balance_gamma[0] , a c }
   fi
   if $index>=2 # Apply CLUT
     path_clut=${-path_cache}
@@ -39939,14 +39964,14 @@ fx_color_presets :
     repeat $!-1 if $strength<100 +map_clut[$>] . j[$>] .,0,0,0,0,{$strength%} rm. else map_clut[$>] . fi done
     rm.
     adjust_colors $brightness,$contrast,$gamma,$hue,$saturation,0,255
-    if $normalize==2" || "$normalize==3 repeat $! l[$>] split_opacity n[0] 0,255 a c done done fi # Post-normalization
+    if $normalize==2" || "$normalize==3 foreach { split_opacity n[0] 0,255 a c } fi # Post-normalization
 
   elif $index==1 # "None"
     adjust_colors $brightness,$contrast,$gamma,$hue,$saturation,0,255
-    if $normalize==2" || "$normalize==3 repeat $! l[$>] split_opacity n[0] 0,255 a c done done fi # Post-normalization
+    if $normalize==2" || "$normalize==3 foreach { split_opacity n[0] 0,255 a c } fi # Post-normalization
 
   else # Collage
-    repeat $! l[$>] if max(w,h)>$thumbsize rr2d $thumbsize,$thumbsize,0,2 fi done done
+    foreach { if max(w,h)>$thumbsize rr2d $thumbsize,$thumbsize,0,2 fi }
     N=$! +to "Original",1%,1%,7.5%,2,0.5
     Np={narg($presets)} repeat $Np
       clut_name=${arg\ 1+$>,$presets}
@@ -40354,7 +40379,8 @@ fx_colorful_blobs_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2011/27/12</i>.</small>")
 fx_colormap :
-  repeat $! l[$>] split_opacity to_rgb[0]
+  foreach {
+    split_opacity to_rgb[0]
     if $1>=2                # Pre-defined colormap.
       index[0] {$1-2},$2,1
     elif $1==1              # Custom colormap.
@@ -40365,7 +40391,7 @@ fx_colormap :
       autoindex[0] $3,$2,{if($3<=32,1,0)}
     fi
     a c
-  done done
+  }
 
 fx_colormap_preview :
   gui_split_preview "fx_colormap $*",${-3--1}
@@ -40609,7 +40635,7 @@ fx_customize_clut :
     repeat $3 guided. ..,2,50 done +[$>,-1] rm.
   done fi
   adjust_colors ${4-8},0,255
-  if $9 repeat $! l[$>] split_opacity n[0] 0,255 a c done done fi
+  if $9 foreach { split_opacity n[0] 0,255 a c } fi
   if $10
     if $10==2 r. 256,256,256,3,5 c. 0,255 fi
     siz={w^1.5} r. $siz,$siz,1,3,-1
@@ -40762,13 +40788,13 @@ fx_detect_skin :
        if $5 balance_gamma 128,128,128 fi
        if $1 detect_skin $2 else detect_skin $2,$6%,$7%,$8% fi
        M={iM} b $3% * {255*$M/iM} * $4 c 0,255"
-  repeat $! l[$>]
+  foreach {
     if $9  # Opaque/transparent skin.
       +_fx_detect_skin a c
       if $9>1 sh 100% *. -1 +. 255 rm. fi
     else _fx_detect_skin # Probability mask.
     fi
-  done done
+  }
   um _fx_detect_skin
 
 fx_detect_skin_preview :
@@ -40806,31 +40832,31 @@ fx_detect_skin_preview :
 #@gui :       Latest Update: <i>01/14/2011</i>.</small>")
 #@gui : url = link("Filter explained here","http://www.flickr.com/groups/gmic/discuss/72157625798533482")
 fx_hsv_equalizer :
-  repeat $! l[$>]
-  to_rgb rgb2hsv s c
-# From now on 0,1,2 are H,S,V
-#3 masks:
-  +f[0] if(abs(i-$2)<$3/2|abs(i-$2-360)<$3/2|abs(i-$2+360)<$3/2,1,0)
-  +f[0] if(abs(i-$7)<$8/2|abs(i-$7-360)<$8/2|abs(i-$7+360)<$8/2,1,0)
-  +f[0] if(abs(i-$12)<$13/2|abs(i-$12-360)<$13/2|abs(i-$12+360)<$13/2,1,0)
-# From now on 3,4,5 are Masks
-  +threshold[1,2] 0.01 *[-1,-2] [-1]x2 *[-1,3] *[-1,4] *[-1,5]  #0 saturation and value not in mask
-# Hue shift:
-  +*[3] $4 +*[4] $9 +*[5] $14 +[-1,-2,-3]
-  +[-1,0] %[0] 360
-# Saturation :
-  if $5>=0 +*[3] -$5 else +*[3] {1/(1+$5)-1} fi +. 1
-  if $10>=0 +*[4] -$10 else +*[4] {1/(1+$10)-1} fi +. 1
-  if $15>=0 +*[5] -$15 else +*[5] {1/(1+$15)-1} fi +. 1
-  *[-1,-2,-3] ^[1,-1]
-# Value :
-  if $6>=0 +*[3] -$6 else +*[3] {1/(1+$6)-1} fi +. 1
-  if $11>=0 +*[4] -$11 else +*[4] {1/(1+$11)-1} fi +. 1
-  if $16>=0 +*[5] -$16 else +*[5] {1/(1+$16)-1} fi +. 1
-  *[-1,-2,-3] ^[2,-1]
-#reconstruction
-  rm[3,4,5] a[0,1,2] c hsv2rgb
-  done done
+  foreach {
+    to_rgb rgb2hsv s c
+    # From now on 0,1,2 are H,S,V
+    #3 masks:
+    +f[0] if(abs(i-$2)<$3/2|abs(i-$2-360)<$3/2|abs(i-$2+360)<$3/2,1,0)
+    +f[0] if(abs(i-$7)<$8/2|abs(i-$7-360)<$8/2|abs(i-$7+360)<$8/2,1,0)
+    +f[0] if(abs(i-$12)<$13/2|abs(i-$12-360)<$13/2|abs(i-$12+360)<$13/2,1,0)
+    # From now on 3,4,5 are Masks
+    +threshold[1,2] 0.01 *[-1,-2] [-1]x2 *[-1,3] *[-1,4] *[-1,5]  #0 saturation and value not in mask
+    # Hue shift:
+    +*[3] $4 +*[4] $9 +*[5] $14 +[-1,-2,-3]
+    +[-1,0] %[0] 360
+    # Saturation :
+    if $5>=0 +*[3] -$5 else +*[3] {1/(1+$5)-1} fi +. 1
+    if $10>=0 +*[4] -$10 else +*[4] {1/(1+$10)-1} fi +. 1
+    if $15>=0 +*[5] -$15 else +*[5] {1/(1+$15)-1} fi +. 1
+    *[-1,-2,-3] ^[1,-1]
+    # Value :
+    if $6>=0 +*[3] -$6 else +*[3] {1/(1+$6)-1} fi +. 1
+    if $11>=0 +*[4] -$11 else +*[4] {1/(1+$11)-1} fi +. 1
+    if $16>=0 +*[5] -$16 else +*[5] {1/(1+$16)-1} fi +. 1
+    *[-1,-2,-3] ^[2,-1]
+    # Reconstruction
+    rm[3,4,5] a[0,1,2] c hsv2rgb
+  }
 
 fx_hsv_equalizer_preview :
   l.
@@ -40908,29 +40934,32 @@ fx_hsv_equalizer_preview :
 #@gui :       Latest Update: <i>2018/01/19</i>.</small>")
 fx_equalize_hsv :
   cs=${"arg 1+$1,hsi,hsl,hsv"}
-  repeat $! l[$>] split_opacity l[0]
-    to_rgb
-    9,1,1,4,\
-    {"V = [${6-30:3}]*pi/180; [cos(V),sin(V)]"},${7-31:3},\
-    {"V = [${8-32:3}];
-      const sV = size(V);
-      repeat (sV,k,
-        v0 = k/sV;
-        v1 = (k+1)/sV;
-        V[k]*=(V[k]>0?(1 - v0):v1);
-      ); V"}
-    r. 256,1,1,4,1
-    sh. 3 b. $3 rm.   # Value smoothness
-    f. "[ atan2(G,R)*180/pi,B,A,0 ]" channels. 0,2
-    +rgb2$cs.. +channels. 100% *. 256 round. map. ...
-    +[-2,-1] rm.. +channels. 100% ${cs}2rgb..
-    if $4 # Spatial smoothness
-      *. 255 bilateral.. .,$4,{2+$4}
-      rgb2$cs.. /. 255 j.. .,0,0,0,2 ${cs}2rgb..
-    fi
-    rm.
-    blend alpha,{$2%}
-  done a c done done
+  foreach {
+    split_opacity l[0] {
+      to_rgb
+      9,1,1,4,\
+      {"V = [${6-30:3}]*pi/180; [cos(V),sin(V)]"},${7-31:3},\
+      {"V = [${8-32:3}];
+        const sV = size(V);
+        repeat (sV,k,
+          v0 = k/sV;
+          v1 = (k+1)/sV;
+          V[k]*=(V[k]>0?(1 - v0):v1);
+        ); V"}
+      r. 256,1,1,4,1
+      sh. 3 b. $3 rm.   # Value smoothness
+      f. "[ atan2(G,R)*180/pi,B,A,0 ]" channels. 0,2
+      +rgb2$cs.. +channels. 100% *. 256 round. map. ...
+      +[-2,-1] rm.. +channels. 100% ${cs}2rgb..
+      if $4 # Spatial smoothness
+        *. 255 bilateral.. .,$4,{2+$4}
+        rgb2$cs.. /. 255 j.. .,0,0,0,2 ${cs}2rgb..
+      fi
+      rm.
+      blend alpha,{$2%}
+    }
+    a c
+  }
 
 fx_equalize_hsv_preview :
   if $5
@@ -41089,7 +41118,8 @@ fx_mix_lab_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2018/07/18</i>.</small>")
 fx_mix_pca :
-  repeat $! l[$>] split_opacity l[0] to_rgb
+  foreach
+    split_opacity l[0] to_rgb
 
     # Get image covariance (and remember it to speed up multiple calls of the filter).
     if [$14]==round(stats()[0,4],0.1) _avg={[$15][0,3]} C={[$15][3,9]} status=
@@ -41154,12 +41184,12 @@ fx_mix_pca :
        );
        avg_shift + T*nI"
     c 0,255
-  done a c done done u $__status
+  done a c done u $__status
 
 fx_mix_pca_preview :
   _is_preview=1
   __status=
-  repeat $! l[$>]
+  foreach {
     gui_split_preview "fx_mix_pca ${1-13},\"$14\",\"$15\",${16-18}",${-3--1}
     if $13
       rr2d ${-gui_preview_wh},0,1
@@ -41171,7 +41201,7 @@ fx_mix_pca_preview :
       to[0] Tertiary,4,32,13,1 j[0] .,64,34
       k[0]
     fi
-  done done
+  }
   u $__status
 
 #@gui Mixer [RGB] : fx_mix_rgb, fx_mix_rgb_preview(1)+
@@ -41313,7 +41343,7 @@ fx_clut_from_ab : skip "${3=},${4=}"
 fx_clut_from_ab_preview : skip "${3=},${4=}"
   if $!<2 gui_warning_preview "At least two input layers are needed to run this filter." return fi
   _is_preview,_output_mode=1 fx_clut_from_ab 0,4,0,0,$5
-  repeat $! l[$>]
+  foreach {
     r {a=round(cbrt(wh));[a,a,a]},3,-1
     +r3dx. 24 _fx_clut_from_ab_preview.
     S={arg(1+$2,16,25,36,49,64,81,100,121,144,169,225,256)} if $S!=w#0 r[0] $S,$S,$S,3,3 fi
@@ -41321,14 +41351,14 @@ fx_clut_from_ab_preview : skip "${3=},${4=}"
     rr2d[0] $_preview_width,$_preview_height,2,1 r2dx. 70%
     sh. 100% b. 1% n. 0,255 rm.
     blend alpha
-  done done
+  }
 
   file_attr={$1==2?2:1}
   u "{$1}{$2}{$3}_"$file_attr"{$4}_"$file_attr"{$5}"
 
 # Render 3D visualization of a CLUT.
 _fx_clut_from_ab_preview :
-  repeat $! l[$>]
+  foreach {
     fact={256/w}
 
     # Color data, as a point cloud.
@@ -41350,7 +41380,7 @@ _fx_clut_from_ab_preview :
     snapshot3d {max(512,0$_preview_width,0$_preview_height)},1.22,255,255,255
     autocrop frame 10,10,255
     to_rgba flood 0,0,0,20,1,1,255,255,255,0
-  done done
+  }
 
 #@gui Retinex : fx_retinex, fx_retinex_preview(0)+
 #@gui : Strength (%) = float(75,0,100)
@@ -41375,12 +41405,12 @@ _fx_clut_from_ab_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2016/13/09</i>.</small>")
 fx_retinex :
-  repeat $! l[$>]
+  foreach {
     +retinex $2,${"arg 1+$3,hsi,hsv,lab,lrgb,rgb,ycbcr"},$4,$5,${7--1}
     if $6 guided. ..,$6,$6 fi
     j[0] .,0,0,0,0,{$1%} rm.
     c 0,255
-  done done
+  }
 
 fx_retinex_preview :
   gui_split_preview "fx_retinex $*",${-3--1}
@@ -41397,16 +41427,19 @@ fx_retinex_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2016/25/10</i>.</small>")
 fx_retrofade :
-  repeat $! l[$>] split_opacity l[0]
-    +f 0
-    repeat $1
-      +noise[0] $3 c. 0,255 autoindex. $2,0,0
-      +[-2,-1]
-      progress {$>*100/$1}
-    done
-    k. n 0,255
-    progress 100
-  done a c done done
+  foreach {
+    split_opacity l[0] {
+      +f 0
+      repeat $1
+        +noise[0] $3 c. 0,255 autoindex. $2,0,0
+        +[-2,-1]
+        progress {$>*100/$1}
+      done
+      k. n 0,255
+      progress 100
+    }
+    a c
+  }
 
 fx_retrofade_preview :
   gui_split_preview "fx_retrofade $*",${-3--1}
@@ -41442,7 +41475,8 @@ _fx_select_color :
 
 fx_select_color :
   ($5^$6^$7^$8) _fx_select_color. $1 color={^} rm.
-  repeat $! l[$>] to_rgba
+  foreach {
+    to_rgba
     +_fx_select_color $1
     select_color[1] $2%,$color
     if $4 +area. 0,0 <=. {round($4^1.5)} inpaint.. .,0,3 rm. fi # Fill holes.
@@ -41455,7 +41489,7 @@ fx_select_color :
       /[1] 255 +*[0,1] +*[1] $11 +*[1] $12 +*[1] $13 *[1] $10 a[1,-3--1] c -[1,2] +
     fi
     k[0]
-  done done
+  }
 
 fx_select_color_preview :
   gui_split_preview "fx_select_color $*",${-3--1}
@@ -41474,21 +41508,24 @@ fx_select_color_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2015/15/07</i>.</small>")
 fx_selective_desaturation :
-  repeat $! l[$>] to_color split_opacity l[0]
-    +fc $1,$2,$3
-    -[1] [0] norm[1] /[1] {1e-6+iM}
-    if $4 *[1] -{max(0.01,$5)} +[1] 1
-    else >=[1] {5*$5}%
-    fi
-    c[1] 0,1
-    rgb2hsl[0] s[0] c
-    mM={[im,iM]} repeat $6 guided. [2],1,0.1 done n. $mM # Regularization step.
-    if $7==0 *[1,-1]
-    elif $7==1 ($1^$2^$3) rgb2hsl. *[1] {i[1]} rm[-2,-1]
-    else rv[1,-1] rm.
-    fi
-    a c hsl2rgb
-  done a c done done
+  foreach {
+    to_color split_opacity l[0] {
+      +fc $1,$2,$3
+      -[1] [0] norm[1] /[1] {1e-6+iM}
+      if $4 *[1] -{max(0.01,$5)} +[1] 1
+      else >=[1] {5*$5}%
+      fi
+      c[1] 0,1
+      rgb2hsl[0] s[0] c
+      mM={[im,iM]} repeat $6 guided. [2],1,0.1 done n. $mM # Regularization step.
+      if $7==0 *[1,-1]
+      elif $7==1 ($1^$2^$3) rgb2hsl. *[1] {i[1]} rm[-2,-1]
+      else rv[1,-1] rm.
+      fi
+      a c hsl2rgb
+    }
+    a c
+  }
 
 fx_selective_desaturation_preview :
   gui_split_preview "fx_selective_desaturation $*",${-3--1}
@@ -41649,7 +41686,7 @@ fx_simulate_film :
   index={arg(1+$1,${2-10})}
   thumbsize,strength,brightness,contrast,gamma,hue,saturation,normalize=${11-18}
   if $normalize==1" || "$normalize==3 # Pre-normalization
-    repeat $! l[$>] split_opacity balance_gamma[0] , a c done done
+    foreach { split_opacity balance_gamma[0] , a c }
   fi
   if $index>=2 # Apply CLUT
     path_clut=${-path_cache}
@@ -41658,14 +41695,14 @@ fx_simulate_film :
     repeat $!-1 if $strength<100 +map_clut[$>] . j[$>] .,0,0,0,0,{$strength%} rm. else map_clut[$>] . fi done
     rm.
     adjust_colors $brightness,$contrast,$gamma,$hue,$saturation,0,255
-    if $normalize==2" || "$normalize==3 repeat $! l[$>] split_opacity n[0] 0,255 a c done done fi # Post-normalization
+    if $normalize==2" || "$normalize==3 foreach { split_opacity n[0] 0,255 a c } fi # Post-normalization
 
   elif $index==1 # "None"
     adjust_colors $brightness,$contrast,$gamma,$hue,$saturation,0,255
-    if $normalize==2" || "$normalize==3 repeat $! l[$>] split_opacity n[0] 0,255 a c done done fi # Post-normalization
+    if $normalize==2" || "$normalize==3 foreach { split_opacity n[0] 0,255 a c } fi # Post-normalization
 
   else # Collage
-    repeat $! l[$>] if max(w,h)>$thumbsize rr2d $thumbsize,$thumbsize,0,2 fi done done
+    foreach { if max(w,h)>$thumbsize rr2d $thumbsize,$thumbsize,0,2 fi }
     N=$! +to "Original",1%,1%,7.5%,2,0.5
     Np={narg($presets)} repeat $Np
       clut_name=${arg\ 1+$>,$presets}
@@ -41997,8 +42034,7 @@ _fx_tune_hsv :
   preview_mapping=${1-64}
   all_colors=dark,light,avg,red,yellow,green,cyan,blue,magenta
 
-  repeat $! l[$>] split_opacity l[0]
-    to_rgb
+  foreach split_opacity l[0] to_rgb
 
     # Define list of considered colors.
     colors,sep=
@@ -42100,14 +42136,14 @@ _fx_tune_hsv :
       done
     fi
 
-  done a c done done
+  done a c done
 
 fx_tune_hsv :
   _fx_tune_hsv ${1-63},0
 
 fx_tune_hsv_preview :
   preview_mapping=$64
-  repeat $! l[$>]
+  foreach {
     gui_split_preview "_is_preview=1 _fx_tune_hsv $*",${-3--1}
     if $preview_mapping
       $__preview_mapping
@@ -42115,7 +42151,7 @@ fx_tune_hsv_preview :
       s. c,-3 to_colormode.. {-3,s}
       j... ..,$__px~,$__py~,0,0,1,.,255 rm[-2,-1]
     fi
-  done done
+  }
 
   d,l,a,r,y,g,c,b,m={[$1==2?2:0,$8==2?2:0,$15==2?2:0,$22==2?2:0,$29==2?2:0,$36==2?2:0,$43==2?2:0,$50==2?2:0,$57==2?2:0]}
   u "{$1}{$2,$3,$4}_"$d"{$5}_"$d"{$6}_"$d"{$7}_"$d\
@@ -42227,13 +42263,16 @@ fx_convolve_preview : skip "${3=1}"
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2010/29/12</i>.</small>")
 fx_curvature :
-  repeat $! l[$>] split_opacity l[0]
-    b $1 iee
-    if $4 abs fi
-    c $2%,$3%
-    if $5 negate fi
-    n 0,255
-  done a c done done
+  foreach {
+    split_opacity l[0] {
+      b $1 iee
+      if $4 abs fi
+      c $2%,$3%
+      if $5 negate fi
+      n 0,255
+    }
+    a c
+  }
 
 fx_curvature_preview :
   gui_split_preview "fx_curvature ${^0}",${-3--1}
@@ -42274,13 +42313,16 @@ fx_dog_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2011/07/04</i>.</small>")
 fx_distance :
-  repeat $! l[$>] split_opacity l[0]
-    distance $1,$2
-    if $3==0 c 0,255
-    elif $3==1 n 0,255
-    else % $4 n 0,255
-    fi
-  done a c done done
+  foreach {
+    split_opacity l[0] {
+      distance $1,$2
+      if $3==0 c 0,255
+      elif $3==1 n 0,255
+      else % $4 n 0,255
+      fi
+    }
+    a c
+  }
 
 fx_distance_preview :
   gui_split_preview "fx_distance ${^0}",${-3--1}
@@ -42500,12 +42542,15 @@ fx_laplacian_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2010/29/12</i>.</small>")
 _fx_local_orientation :
-  repeat $! l[$>] split_opacity l[0]
-    b $1% gradient_orientation 2 complex2polar rm[0--1:2]
-    c $2%,$3%
-    if $4 negate fi
-    n 0,255
-  done a c done done
+  foreach {
+    split_opacity l[0] {
+      b $1% gradient_orientation 2 complex2polar rm[0--1:2]
+      c $2%,$3%
+      if $4 negate fi
+      n 0,255
+    }
+    a c
+  }
 
 fx_local_orientation :
   ac "_fx_local_orientation $1,$2,$3,$4",$5,2
@@ -42581,12 +42626,12 @@ _fx_morphological :
   # Closing - Opening
   else m "my_action : +my_erode $3 my_dilate. $3 my_dilate.. $3 my_erode.. $3 -"
   fi
-  repeat $! l[$>]
+  foreach {
     if !$6 split_opacity fi
     my_action[0]
     a c
-  done done
-  if $5 repeat $! l[$>] split_opacity negate[0] a c done done fi
+  }
+  if $5 foreach { split_opacity negate[0] a c } fi
   um my_erode,my_dilate,my_action
 
 #@gui Segmentation : fx_segment_watershed, fx_segment_watershed_preview(0)
@@ -42652,13 +42697,13 @@ fx_skeleton_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2017/11/16</i>.</small>")
 fx_superpixels :
-  repeat $! l[$>]
+  foreach {
     +srgb2lab slic. ${1-3}
     if $4 +blend shapeaverage else +map. 2,2 fi
     if $5 f[1] "i!=j(1,0) || i!=j(0,1)" [0],[0],1,4 fc. ${6-9} to_rgba.. j.. .,0,0,0,0,$5,... k..
     else k.
     fi
-  done done
+  }
 
 fx_superpixels_preview :
   gui_split_preview "fx_superpixels ${^0}",${-3--1}
@@ -42695,7 +42740,7 @@ fx_thin_edges_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2021/09/09</i>.</small>")
 fx_breaks :
-  repeat $! l[$>]
+  foreach {
     if !$5 to_a fi
     100%,100%,1,1,"u<($3%)^6"
     if $1 # Wavy
@@ -42704,7 +42749,7 @@ fx_breaks :
       delaunay. 0 label_fg. 0,1 {1+iM},1,1,2 rand. -30,30 point. 0 map.. . rm.
     fi
     n. -$2,$2 warp[0] .,1,1,$5 rm.
-  done done
+  }
 
 #@gui Cartesian Transform : fx_custom_deformation, fx_custom_deformation(1)
 #@gui : X-Warping = text{"(w+h)/20 * cos(y*20/h)"}
@@ -42733,8 +42778,8 @@ fx_custom_deformation :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2013/08/01</i>.</small>")
 fx_circle_transform :
-  repeat $! l[$>] to_rgba
-    r={dx=($3-$1)*(w-1)%;dy=($4-$2)*(h-1)%;norm(dx,dy)}
+  foreach {
+    to_rgba r={dx=($3-$1)*(w-1)%;dy=($4-$2)*(h-1)%;norm(dx,dy)}
     if $7==0 cond="i(X,Y,z,c,$8,$9)"
     elif $7==1 cond="if(N<"$r",i(X,Y,z,c,$8,$9),i)"
     else cond="if(N>"$r",i(X,Y,z,c,$8,$9),i)"
@@ -42746,19 +42791,19 @@ fx_circle_transform :
        X = x + $5*Nr*U/N;
        Y = y + $6*Nr*V/N;
        "$cond
-  done done
+  }
 
 fx_circle_transform_preview :
   fx_circle_transform $*
   if $10
     rr2d ${-gui_preview_wh},0,1
-    repeat $! l[$>]
+    foreach {
       x0,y0={[$1,$2]*([w,h]-1)%}
       r={dx=($3-$1)*(w-1)%;dy=($4-$2)*(h-1)%;norm(dx,dy)}
       circle $x0,$y0,{$r-1},1,0xFFFFFFFF,0,0,0,255
       circle $x0,$y0,{$r+1},1,0xFFFFFFFF,0,0,0,255
       circle $x0,$y0,$r,1,0xFFFFFFFF,0,255,0,255
-    done done
+    }
   fi
 
 #@gui Conformal Maps : fx_conformal_maps, fx_conformal_maps_preview(1)
@@ -42806,7 +42851,7 @@ fx_conformal_maps :
   expr={t}
   rm.
 
-  repeat $! l[$>]
+  foreach {
     wh={$12?[$13,$14]:[w,h]}
     {(1+$11)*[$wh]},1,100%
     f. "begin(
@@ -42830,7 +42875,7 @@ fx_conformal_maps :
         I(#0,z)"
       r. $wh,1,100%,2
     rm..
-  done done
+  }
 
 fx_conformal_maps_preview :
   fx_conformal_maps ${1-3},"$4",${5-11},0,0,0
@@ -42842,12 +42887,12 @@ fx_conformal_maps_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2018/01/22</i>.</small>")
 fx_crease :
-  repeat $! l[$>]
+  foreach {
     if !$3 to_a fi
     2,2,1,2,{"const w1 = w#-1-1; const h1 = h#-1 - 1; [ 0,w1,0,w1,0,0,h1,h1 ];"}
     r. {0,D=$2*[w,h]%;[max(D[0],1),max(D[1],1)]},1,2,3 noise. $1,1
     r. ..,..,1,2,3 warp.. .,0,1,$3 rm.
-  done done
+  }
 
 #@gui Distort Lens : fx_distort_lens, fx_distort_lens(1)
 #@gui : Amplitude = float(0.1,-1,1)
@@ -42969,10 +43014,7 @@ fx_drop_water_preview :
       fx_drop_water $* gui_merge_layers
     done done
     rm[0]
-  else
-    repeat $! l[$>]
-      fx_drop_water $* gui_merge_layers
-    done done
+  else foreach { fx_drop_water $* gui_merge_layers }
   fi
 
 #@gui Equirectangular to Nadir-Zenith : fx_equirectangular2nadirzenith, fx_equirectangular2nadirzenith(1)
@@ -43143,7 +43185,7 @@ fx_quadrangle :
   at_quadrangle $1%,$2%,$3%,$4%,$5%,$6%,$7%,$8%,${9-10}
 
 fx_quadrangle_preview :
-  repeat $! l[$>]
+  foreach {
     if !$10 to_a fi
     if $11 +fx_quadrangle $* rr2d. {0,[w,h]},2,3 fi
     polygon[{$11==1?1:0}] 4,$1%,$2%,$3%,$4%,$5%,$6%,$7%,$8%,0.25,255
@@ -43160,7 +43202,7 @@ fx_quadrangle_preview :
       +a x a[0,1] y rr2d ${-gui_preview_wh},0,3
       k[{max(w#0,h#0)>max(w#1,h#1)?0:1}]
     fi
-  done done
+  }
 
 #@gui Raindrops : raindrops, raindrops(0)
 #@gui : Amplitude = float(80,0,300)
@@ -43244,12 +43286,12 @@ fx_seamcarve_preview :
     if $!<2 to_rgb to "Priority mask (top layer) is missing!",5,5,18,2 return fi
     _fx_seamcarve
   fi
-  repeat $! l[$>]
+  foreach {
     w={w} h={h}
     seamcarve $1%,$2%,$4,$5,{max($3,10)}%
     if $4 channels 0,{s-2} fi
     to_rgba r $w,$h,1,100%,0,0,0.5,0.5
-  done done
+  }
   c 0,255
 
 _fx_seamcarve :
@@ -43407,7 +43449,7 @@ fx_project_stereographic :
         const theta0 = atan2(radangy,radangx);
         const pi2 = 2*pi;"
   m "_fx_project_stereographic_mirror : if !$""1 mirror y elif $""1==1 mirror xy elif $""1==3 mirror x fi"
-  repeat $! l[$>]
+  foreach
     if !$boundary to_a fi
     if $rechor rotate $rechor,1,3 fi
     if $lrblur
@@ -43443,7 +43485,7 @@ fx_project_stereographic :
         phi = (h#0*(phi/pi + 0.5))%h#0;
         I(#0,theta,phi)"
     fi
-  k. done done um _fx_project_stereographic
+  k. done um _fx_project_stereographic
 
   if 0$_is_preview
     line $centerx%,$centery%,$radangx%,$radangy%,0.75,0xF0F0F0F0,255,255,255,255
@@ -43473,11 +43515,11 @@ fx_symmetrize_preview :
   fx_symmetrize $*
   rr2d ${-gui_preview_wh},0,1
   u,v={angle=isnan($3)?$5*pi/180:atan2($4-$2,$3-$1);[cos(angle),sin(angle)]}
-  repeat $! l[$>]
+  foreach {
     x0,y0,x1,y1={V=[$u,$v];([${1,2},${1,2}]+10000*[V,-V])*([w,h,w,h]-1)%}
     line $x0,$y0,$x1,$y1,1,0x0F0F0F0F,0,0,0,255
     line $x0,$y0,$x1,$y1,1,0xF0F0F0F0,255
-  done done
+  }
 
 #@gui Textured Glass : fx_textured_glass, fx_textured_glass_preview(0)
 #@gui : X-Amplitude = float(40,0,400)
@@ -43495,7 +43537,7 @@ fx_symmetrize_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2013/21/11</i>.</small>")
 fx_textured_glass :
-  repeat $! l[$>]
+  foreach {
     100%,100%,1,1
     if $7 plasma. 1,1,$7 else rand. 0,1 fi
     g. xy
@@ -43508,7 +43550,7 @@ fx_textured_glass :
     *. {$2/max(abs(im),abs(iM))}
     a[-2,-1] c
     warp.. .,1,1 rm.
-  done done
+  }
 
 fx_textured_glass_preview :
   gui_split_preview "fx_textured_glass $*",${-3--1}
@@ -43552,7 +43594,7 @@ fx_warp_interactive :
 
 fx_warp_interactive_preview :
   if [$4][0]!=-1 __x_warp_keypoints=$4 fi
-  repeat $! l[$>]
+  foreach
     rr2d $_preview_width,$_preview_height,0,3 to_color drgba
     if narg($__x_warp_keypoints) ($__x_warp_keypoints) r. 1,{w/4},1,4,-1
     else
@@ -43603,7 +43645,7 @@ fx_warp_interactive_preview :
       0 t. "Keypoints from previous\nrun have been saved",0,0,24,1,255
       frame. 5,5,0 +dilate_circ. 5 a[-2,-1] c blend alpha
     fi
-  done done
+  done
 
 #@gui Water : water, water(0)
 #@gui : Amplitude = float(30,0,300)
@@ -43806,26 +43848,30 @@ fx_blur_dof_preview :
 
 _fx_blur_dof :
   if !$3  # Gaussian DOF.
-    repeat $! l[$>] if $11 drgba fi split_opacity l[0]
-      rmax={(w*w+h*h)^0.5} R={$7*$rmax/100} r={$8*$rmax/100}
-      t={$9*pi/180} u={cos($t)} v={sin($t)}
-      l1={($rmax/(1e-8+$R))^2} l2={($rmax/(1e-8+$r))^2}
-      a={$l1*($u)^2+$l2*($v)^2} b={$u*$v*($l1-$l2)} c={$l1*($v)^2+$l2*($u)^2}
-      100%,100%,1,1,'X=(x-$5*w/100)/max(w,h);Y=(y-$6*h/100)/max(w,h);f=$a*X*X+2*$b*X*Y+$c*Y*Y;exp(-f^$10/2.5)'
-      -[1] 1 *[1] -$1 ms={im} Ms={iM}
+    foreach {
+      if $11 drgba fi
+      split_opacity l[0] {
+        rmax={(w*w+h*h)^0.5} R={$7*$rmax/100} r={$8*$rmax/100}
+        t={$9*pi/180} u={cos($t)} v={sin($t)}
+        l1={($rmax/(1e-8+$R))^2} l2={($rmax/(1e-8+$r))^2}
+        a={$l1*($u)^2+$l2*($v)^2} b={$u*$v*($l1-$l2)} c={$l1*($v)^2+$l2*($u)^2}
+        100%,100%,1,1,'X=(x-$5*w/100)/max(w,h);Y=(y-$6*h/100)/max(w,h);f=$a*X*X+2*$b*X*Y+$c*Y*Y;exp(-f^$10/2.5)'
+        -[1] 1 *[1] -$1 ms={im} Ms={iM}
 
-      if $11 # With preview of guides.
-        +isoline3d[1] {0.1*$1} col3d. 255,255,0
-        +isoline3d[1] {0.5*$1} col3d. 255,128,0
-        +3d[-2--1]
-        __fx_dof_blur[0,1] $2,$ms,$Ms,$4
-        [0],[0],1,3 j3d. ..,0,0,0,1,1,0,0 rm..
-        circle. $5%,$6%,3,1,255,255,255
-        +compose_channels. + !=. 0 dilate. 3
-        j[0] ..,0,0,0,0,0.5,.,1 rm[-2,-1]
-      else __fx_dof_blur[0,1] $2,$ms,$Ms,$4 # Without preview.
-      fi
-    done if $11 k[0] fi a c done done
+        if $11 # With preview of guides.
+          +isoline3d[1] {0.1*$1} col3d. 255,255,0
+          +isoline3d[1] {0.5*$1} col3d. 255,128,0
+          +3d[-2--1]
+          __fx_dof_blur[0,1] $2,$ms,$Ms,$4
+          [0],[0],1,3 j3d. ..,0,0,0,1,1,0,0 rm..
+          circle. $5%,$6%,3,1,255,255,255
+          +compose_channels. + !=. 0 dilate. 3
+          j[0] ..,0,0,0,0,0.5,.,1 rm[-2,-1]
+        else __fx_dof_blur[0,1] $2,$ms,$Ms,$4 # Without preview.
+        fi
+      }
+      if $11 k[0] fi a c
+    }
   elif $!>1 # User-defined DOF (as bottom layer).
     luminance. n. 0,1 ^. {10^$12}
     repeat $!-1 +r. {$>,w},{$>,h},1,1,3 l[$>,-1] split_opacity[0]
@@ -43978,7 +44024,7 @@ _fx_blur_multidirectional :
   sharpness,\
   blend_mode,\
   contrast=${1-9}
-  repeat $! l[$>]
+  foreach {
     # If no median blend, blend step by step in an accumulator to reduce memory usage.
     if $blend_mode<3 +f {$blend_mode?0:inf} fi
 
@@ -44001,7 +44047,7 @@ _fx_blur_multidirectional :
     fi
 
     n 0,255 ac "normalize_local "$contrast,hsl_l
-  done done
+  }
 
 fx_blur_multidirectional :
   ac "_fx_blur_multidirectional ${1-9}",$10
@@ -44062,26 +44108,29 @@ fx_chromatic_aberrations :
   U1={u=[${1-3}];u/max(1e-8,norm(u))}
   U2={u=[${10-12}];u/max(1e-8,norm(u))}
 
-  repeat $! l[$>] to_color split_opacity l[0]
+  foreach {
+    to_color split_opacity l[0] {
 
-    # Compute image decomposition : [0] = residual, [1] = weights for primary/secondary colors.
-    100%,100%,1,2,"*begin(U1 = ["$U1"]; U2 = ["$U2"]);
-      V = I(#0);
-      d1 = dot(V,U1); V-=d1*U1;
-      d2 = dot(V,U2); V-=d2*U2;
-      I(#0) = V;
-      [ d1,d2 ]"
-    s. c
+      # Compute image decomposition : [0] = residual, [1] = weights for primary/secondary colors.
+      100%,100%,1,2,"*begin(U1 = ["$U1"]; U2 = ["$U2"]);
+        V = I(#0);
+        d1 = dot(V,U1); V-=d1*U1;
+        d2 = dot(V,U2); V-=d2*U2;
+        I(#0) = V;
+        [ d1,d2 ]"
+      s. c
 
-    # Shift weights.
-    _fx_chromatic_aberrations.. ${4-9}
-    _fx_chromatic_aberrations. ${13-18}
+      # Shift weights.
+      _fx_chromatic_aberrations.. ${4-9}
+      _fx_chromatic_aberrations. ${13-18}
 
-    # Reconstruct color image.
-    a[-2,-1] c
-    +[0] '"*begin(U1 = ["$U1"]; U2 = ["$U2"]); i(#1,x,y,0,0)*U1 + i(#1,x,y,0,1)*U2"'
-    rm.
-  done a c done done
+      # Reconstruct color image.
+      a[-2,-1] c
+      +[0] '"*begin(U1 = ["$U1"]; U2 = ["$U2"]); i(#1,x,y,0,0)*U1 + i(#1,x,y,0,1)*U2"'
+      rm.
+    }
+    a c
+  }
 
 _fx_chromatic_aberrations :
   if $1==0 # Shift
@@ -44142,11 +44191,11 @@ fx_dirty_preview :
   gui_split_preview "fx_dirty ${1--2}",${-3--1}
 
 _fx_dirty :
-  repeat $! l[$>]
+  foreach {
     dct 100%,100%,1,{if($2,1,s)} noise. $1,2
     ==. 0 point. 0,0,0,1,1
     * idct c 0,255
-  done done
+  }
 
 #@gui Flip & Rotate Blocs : fx_flip_blocs,fx_flip_blocs_preview(0)
 #@gui : X-Size (px) = int(4,1,128)
@@ -44169,11 +44218,11 @@ _fx_dirty :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2016/01/09</i>.</small>")
 fx_flip_blocs :
-  repeat $! l[$>]
+  foreach {
     if $5 ac "_fx_flip_blocs ${1-4}",$5
     else _fx_flip_blocs ${1-4}
     fi
-  done done
+  }
 
 _fx_flip_blocs :
   if ($3%2)" && "$1>1 s x,-$1 mirror x a x fi
@@ -44325,8 +44374,9 @@ fx_jpeg_artefacts_preview :
 #@gui : note = note("<small>Authors: <i>Jérome Boulanger</i> and <i>David Tschumperlé</i>.
 #@gui :       Latest Update: <i>2012/06/06</i>.</small>")
 fx_lomo :
-  remove_opacity repeat $! l[$>] to_rgb
-    +gaussian {100-$1}%,{100-$1}% n. 0,1 *
+  remove_opacity
+  foreach {
+    to_rgb +gaussian {100-$1}%,{100-$1}% n. 0,1 *
     s c
     f[0] '255*atan((i-128)/128)'
     f[1] '255*tan((i-128)/128)'
@@ -44334,7 +44384,7 @@ fx_lomo :
     a c
     sharpen 1
     normalize 0,255
-  done done
+  }
 
 fx_lomo_preview :
   gui_split_preview "fx_lomo $*",${-3--1}
@@ -44405,7 +44455,7 @@ fx_noise :
   ac "_fx_noise $1,$2",$3,$4
 
 _fx_noise :
-  repeat $! l[$>] split_opacity l[0] noise $1,$2 done a c done done
+  foreach { split_opacity noise[0] $1,$2 a c }
 
 fx_noise_preview :
   gui_split_preview "fx_noise $*",${-3--1}
@@ -44449,12 +44499,12 @@ fx_noise_preview :
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2019/01/24</i>.</small>")
 _fx_noise_perlin :
   seedx,seedy={[$1>>8,$1&255]}
-  repeat $! l[$>]
+  foreach {
     if $2 .,.,1,. noise_perlin. {r=2^$4;s=max(w,h)*$3%;[max(1,s/r),max(1,s*r)]},1,$seedx,$seedy *. $2 + fi
     if $5 .,.,1,. noise_perlin. {r=2^$7;s=max(w,h)*$6%;[max(1,s/r),max(1,s*r)]},1,$seedx,$seedy *. $5 + fi
     if $8 .,.,1,. noise_perlin. {r=2^$10;s=max(w,h)*$9%;[max(1,s/r),max(1,s*r)]},1,$seedx,$seedy *. $8 + fi
     if $11 .,.,1,. noise_perlin. {r=2^$13;s=max(w,h)*$12%;[max(1,s/r),max(1,s*r)]},1,$seedx,$seedy *. $11 + fi
-  done done
+  }
 
 fx_noise_perlin :
   ac "_fx_noise_perlin $*",$-4,1
@@ -44523,13 +44573,14 @@ fx_stripes_y_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2011/02/11</i>.</small>")
 fx_8bits :
-  remove_opacity repeat $! l[$>]
+  remove_opacity
+  foreach {
     w={w} h={h}
     r $1%,$1%,1,100%,2
     +luminance sharpen. $2 otsu. 256 blend[-2,-1] shapeaverage0
     l. s c quantize $3,1,1 a c done
     r. $w,$h,1,100%,1
-  done done
+  }
 
 fx_8bits_preview :
   gui_split_preview "fx_8bits $*",${-3--1}
@@ -44615,7 +44666,7 @@ fx_rain :
   done done
 
 fx_rain_preview :
-  gui_split_preview "repeat $! l[$>] fx_rain $* rv blend screen,$6 done done",${-3--1}
+  gui_split_preview "foreach { fx_rain $* rv blend screen,$6 }",${-3--1}
 
 #@gui Random Shade Stripes : fx_shade_stripes, fx_shade_stripes_preview(1)
 #@gui : Frequency = float(30,1,100)
@@ -44656,41 +44707,44 @@ fx_shade_stripes_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2020/09/17</i>.</small>")
 fx_rebuild_from_similar_blocs :
-  repeat $! l[$>] split_opacity l[0] to_rgb
-    w0,h0,S={[w,h,round(min(w,h)*$1%)]} # S: Bloc size
+  foreach {
+    split_opacity l[0] {
+      to_rgb w0,h0,S={[w,h,round(min(w,h)*$1%)]} # S: Bloc size
 
-    # Split image into regular blocs.
-    r {ceil([w,h]/$S)*$S},1,100%,0,3,0.5,0.5
-    M,N={[w,h]/$S}
+      # Split image into regular blocs.
+      r {ceil([w,h]/$S)*$S},1,100%,0,3,0.5,0.5
+      M,N={[w,h]/$S}
 
-    s yx,-$S a z # Original RGB blocs
+      s yx,-$S a z # Original RGB blocs
 #    +mirror x +mirror y a z # + all xy mirrors
 #    repeat 3 +rotate. 90 done a z # + all 90° rotations
-    +l b xy,$2% rgb2ycbcr sh. 0 *. $3 rm. done # Blocs to compare, in YCbCr space
+      +l b xy,$2% rgb2ycbcr sh. 0 *. $3 rm. done # Blocs to compare, in YCbCr space
 
-    # For each bloc, find most similar bloc.
-    $M,$N,1,1,-1
-    f. ":
-      i<0?(
-        ind = x + y*w;
-        ref(crop(#1,0,0,ind,w#1,h#1,1),S);
-        kmin = 0;
-        dmin = inf;
-        repeat (wh,k, k!=ind?(
-          d = norm"{1+$4}"(S - crop(#1,0,0,k,w#1,h#1,1));
-          d<dmin?(dmin = d; kmin = k);
-        ));
-        xt = kmin%w;
-        yt = int(kmin/w);
-        i(xt,yt) = ind;
-        kmin;
-      ):i"
+      # For each bloc, find most similar bloc.
+      $M,$N,1,1,-1
+      f. ":
+        i<0?(
+          ind = x + y*w;
+          ref(crop(#1,0,0,ind,w#1,h#1,1),S);
+          kmin = 0;
+          dmin = inf;
+          repeat (wh,k, k!=ind?(
+            d = norm"{1+$4}"(S - crop(#1,0,0,k,w#1,h#1,1));
+            d<dmin?(dmin = d; kmin = k);
+          ));
+          xt = kmin%w;
+          yt = int(kmin/w);
+          i(xt,yt) = ind;
+          kmin;
+        ):i"
 
-    # Reconstruct image.
-    {[$M,$N]*$S},1,{0,s}
-    eval.. "draw(#-1,crop(#0,0,0,i,w#0,h#0,1),x*w#0,y*h#0,0,0,w#0,h#0)"
-    k. r $w0,$h0,1,100%,0,0,0.5,0.5
-  done a c done done
+      # Reconstruct image.
+      {[$M,$N]*$S},1,{0,s}
+      eval.. "draw(#-1,crop(#0,0,0,i,w#0,h#0,1),x*w#0,y*h#0,0,0,w#0,h#0)"
+      k. r $w0,$h0,1,100%,0,0,0.5,0.5
+    }
+    a c
+  }
 
 #@gui Scanlines : fx_scanlines, fx_scanlines_preview(0)
 #@gui : Amplitude = float(60,0,255)
@@ -44775,7 +44829,7 @@ fx_self_glitching_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2017/12/22</i>.</small>")
 fx_streak :
-  repeat $! l[$>]
+  foreach {
     to_rgba
     if !$4 R,G,B,A=0 else R,G,B,A=${1-4} fi +select_color 0,$R,$G,$B,$A
     if $7==3 srgb2rgb.. fi
@@ -44796,7 +44850,7 @@ fx_streak :
       )"
     if $7==3 rgb2srgb.. fi
     rm.
-  done done
+  }
 
 #@gui Visible Watermark : fx_watermark_visible, fx_watermark_visible(0)
 #@gui : Text = text{"\\251 G'MIC"}
@@ -44897,14 +44951,14 @@ fx_warp_by_intensity_preview :
 #@gui : note = note("<small>Author: <i>Jérome Boulanger</i> and <i>David Tschumperlé</i>.
 #@gui :       Latest Update: <i>2015/11/11</i>.</small>")
 _fx_equalize_details :
-  repeat $! l[$>]
+  foreach {
     split_details 5,{max(0.1,$1)},{max(0.1,$2)}
     __fx_equalize_details[1] ${3-6},8
     __fx_equalize_details[2] ${7-10},4
     __fx_equalize_details[3] ${11-14},2
     __fx_equalize_details[4] ${15-18},1
     + c 0,255
-  done done
+  }
 
 __fx_equalize_details :
   threshold $1,1
@@ -44949,10 +45003,10 @@ fx_equalize_details_preview :
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2018/01/31</i>.</small>")
 fx_equalize_local_histograms :
   b0="normal" b1="overlay" b2="softlight"
-  repeat $! l[$>]
+  foreach {
     +ac "_fx_equalize_local_histograms ${1-6}",$7,1
     blend ${b$2},{$1%}
-  done done
+  }
 
 _fx_equalize_local_histograms :
   +n 0,511 round.
@@ -45023,13 +45077,17 @@ fx_equalize_local_histograms_preview :
 #@gui : url = link("This tutorial from Patrick David",
 #@gui : "https://patdavid.net/2013/02/calvin-hollywood-freaky-details-in-gimp.html")
 fx_freaky_details :
-  repeat $! l[$>] split_opacity l[0]
-    repeat $3
-      . +-. 255 *. -1
-      repeat $1 bilateral. $2,{1.5*$2} done
-      blend[-2,-1] vividlight blend overlay
-    done
-  done a c done done n 0,255
+  foreach {
+    split_opacity l[0] {
+      repeat $3 {
+        . +-. 255 *. -1
+        repeat $1 { bilateral. $2,{1.5*$2} }
+        blend[-2,-1] vividlight blend overlay
+      }
+    }
+    a c
+  }
+  n 0,255
 
 fx_freaky_details_preview :
   gui_split_preview "fx_freaky_details $*",${-3--1}
@@ -45056,9 +45114,7 @@ fx_freaky_details_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2010/29/12</i>.</small>")
 fx_normalize_local :
-  repeat $! l[$>]
-    ac "normalize_local $1,$2,$3,$4,$5,0,255",$6
-  done done
+  ac "normalize_local $1,$2,$3,$4,$5,0,255",$6
 
 fx_normalize_local_preview :
   gui_split_preview "fx_normalize_local $*",${-3--1}
@@ -45090,12 +45146,12 @@ fx_local_processing :
   com1="equalize 256,0,255 n 0,255"
   com=${com$1}
   if $6 com="s c "$com" a c" fi
-  repeat $! l[$>]
+  foreach {
     size={round(max(8,max(w,h)*$3%))}
     +ac "at \""$com"\","$size","$size",1,$4%,$4%",$7
     if $5 +norm[0] bilateral[1] .,{$5/20}%,{2+$5/4} rm. fi
     blend alpha,{$2%}
-  done done
+  }
 
 fx_local_processing_preview :
   gui_split_preview "fx_local_processing $*",${-3--1}
@@ -45125,13 +45181,13 @@ fx_magic_details :
   ac "_fx_magic_details ${1-5}",$6,1
 
 _fx_magic_details :
-  repeat $! l[$>]
+  foreach {
     +bilateral $2,$3
     +gradient_norm.. +. 1
     pow. {$4>=0?3.1-$4:-3.1-$4}
     b. $5 n. 1,{1+$1}
     -... .. *[-3,-1] + c 0,255
-  done done
+  }
 
 fx_magic_details_preview :
   gui_split_preview "fx_magic_details $*",${-3--1}
