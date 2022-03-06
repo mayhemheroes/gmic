@@ -35809,11 +35809,11 @@ fx_asciiart : skip "${10=},${11=},${12=}"
   }
 
 fx_asciiart_preview :
-  repeat $! l[$>]
+  foreach {
     w={w} h={h}
     fx_asciiart $1,"$2",${3-9},0,foo,foo
     r $w,$h,1,100%,0,0,0.5,0.5
-  done done
+  }
 
 #@gui Chessboard : fx_chessboard, fx_chessboard_preview(0)
 #@gui : First Size = int(64,1,512)
@@ -36067,7 +36067,8 @@ fx_extract_objects :
 fx_extract_objects_preview :
   x0,y0=${1,2}
   if $5 min_area=$5% else min_area=5 fi
-  repeat $! l[$>] to_rgba
+  foreach {
+    to_rgba
     x={$x0%*(w-1)}
     y={$y0%*(h-1)}
     color={I($x,$y)}
@@ -36086,7 +36087,7 @@ fx_extract_objects_preview :
       line $x0%,0,$x0%,100%,0.5,0xF0F0F0F0,255 line $x0%,0,$x0%,100%,0.5,0x0F0F0F0F,0
     fi
     circle $x,$y,3,1,0,255,0 circle $x,$y,3,1,0xFFFFFFFF,0
-  done done
+  }
 
 #@gui Grid [Cartesian] : fx_imagegrid, fx_imagegrid(0)
 #@gui : X-Size = int(10,2,512)
@@ -36103,11 +36104,11 @@ fx_imagegrid :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2015/12/01</i>.</small>")
 fx_imagegrid_hexagonal :
-  repeat $! l[$>]
+  foreach {
     if $3 r 200%,200%,1,100% fi
     imagegrid_hexagonal $1,$2
     if $3 r 50%,50%,1,100%,2 fi
-  done done
+  }
 
 #@gui Grid [Triangular] : fx_imagegrid_triangular, fx_imagegrid_triangular(0)
 #@gui : Pattern Width = int(10,8,128)
@@ -36117,9 +36118,10 @@ fx_imagegrid_hexagonal :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2015/08/07</i>.</small>")
 fx_imagegrid_triangular :
-  repeat $! l[$>] split_opacity l[0] to_rgb
-    imagegrid_triangular ${1-3},{$7/255},${4-6}
-  done a c done done
+  foreach {
+    split_opacity l[0] { to_rgb imagegrid_triangular ${1-3},{$7/255},${4-6} }
+    a c
+  }
 
 #@gui Make Seamless [Diffusion] : fx_make_seamless, fx_make_seamless_preview(1)
 #@gui : Equalize Light = float(0,0,100)
@@ -36137,9 +36139,9 @@ fx_imagegrid_triangular :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2015/24/02</i>.</small>")
 fx_make_seamless :
-  repeat $! l[$>]
+  foreach {
     if $1 +b {20.5-$1/50}% -[0] [1] fc. ${average_vectors.} + fi
-  done done
+  }
   periodize_poisson c 0,255
 
 fx_make_seamless_preview :
@@ -36166,9 +36168,9 @@ fx_make_seamless_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2015/15/12</i>.</small>")
 fx_frame_seamless :
-  repeat $! l[$>]
+  foreach {
     if $5 +b {20.5-$5/50}% -[0] [1] fc. ${average_vectors.} + fi
-  done done
+  }
   frame_seamless ${1-4} c 0,255
 
 fx_frame_seamless_preview :
@@ -36186,7 +36188,7 @@ fx_frame_seamless_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2015/14/01</i>.</small>")
 fx_ministeck :
-  repeat $! l[$>]
+  foreach {
     if w>h r2dx {min($2,w)} else r2dy {min($2,h)} fi
     split_opacity l[0]
       +colormap. $1 index.. .
@@ -36199,15 +36201,15 @@ fx_ministeck :
       map[0] [1] rm[1] +[0,-1]
       if $7 ==[1] 0 * fi
     done r. [0],[0],1,100% a c
-  done done
+  }
   c 0,255
 
 fx_ministeck_preview :
-  repeat $! l[$>]
+  foreach {
     w={w} h={h}
     fx_ministeck $*
     r $w,$h,1,100%,0,0,0.5,0.5
-  done done
+  }
 
 #@gui Montage : fx_montage, fx_montage_preview(1) : *
 #@gui : Montage Type = choice("Auto","Custom Layout","Horizontal","Vertical","Horizontal Array","Vertical Array")
@@ -36380,7 +36382,7 @@ fx_puzzle_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2014/13/01</i>.</small>")
 fx_taquin :
-  to_a repeat $! l[$>] srand $11 taquin $1,$2,$3,$4,$5%,$6,${7-10} done done
+  to_a foreach { srand $11 taquin $1,$2,$3,$4,$5%,$6,${7-10} }
 
 #@gui Tileable Rotation : fx_rotate_tileable, fx_rotate_tileable_preview(1)
 #@gui : Angle = float(45,0,360)
@@ -36469,13 +36471,14 @@ fx_parameterize_tiles :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2011/13/04</i>.</small>")
 fx_isolate_tiles :
-  repeat $! l[$>] to_rgba
+  foreach {
+    to_rgba
     if $5 sx={round(min(w,h)*max($1,$2)/100)} sy=$sx else sx={round(w*$1/100)} sy={round(h*$2/100)} fi
     if $6 bx={max($3,$4)} by=$bx else bx=$3 by=$4 fi
     s x,-$sx
-    repeat $! l[$>] s y,-$sy r 100%,{100+$by}%,1,100%,0,0,0.5,0.5 a y done done
+    foreach { s y,-$sy r 100%,{100+$by}%,1,100%,0,0,0.5,0.5 a y }
     r {100+$bx}%,100%,1,100%,0,0,0.5,0.5 a x
-  done done
+  }
 
 
 #@gui ____<b>Artistic</b>
@@ -36663,7 +36666,7 @@ fx_cartoon_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2014/16/06</i>.</small>")
 fx_circle_abstraction :
-  repeat $! l[$>]
+  foreach {
     b $4%
     +colormap $1 index[0] [1],0,0
     [0],[0],1,4,0
@@ -36690,7 +36693,7 @@ fx_circle_abstraction :
     if $6 +channels 3 <. 1 inpaint[0] [1],0,1 rm. channels. 0,2 fi
     if $7 n 0,255 fi
     rprogress 100
-  done done
+  }
 
 fx_circle_abstraction_preview :
   gui_split_preview "fx_circle_abstraction $*",${-3--1}
@@ -36729,13 +36732,16 @@ fx_cubism_preview :
 #@gui : note = note("<small>Authors: <i>David Tschumperlé</i> and <i>Garagecoder</i>
 #@gui :       Latest Update: <i>2014/03/06</i>.</small>")
 fx_cutout :
-  repeat $! l[$>] split_opacity l[0]
-    median {10-$3}
-    quantize $1
-    +luminance. round. area. 0,1 med={ic} rm.
-    inpaint_holes {$med*$2%},0,1
-    if $4 n 0,255 fi
-  done a c done done
+  foreach {
+    split_opacity l[0] {
+      median {10-$3}
+      quantize $1
+      +luminance. round. area. 0,1 med={ic} rm.
+      inpaint_holes {$med*$2%},0,1
+      if $4 n 0,255 fi
+    }
+    a c
+  }
 
 fx_cutout_preview :
   gui_split_preview "fx_cutout $*",${-3--1}
@@ -36751,7 +36757,7 @@ fx_cutout_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2020/07/08</i>.</small>")
 fx_doodle : skip "$*"
-   repeat $! l[$>]
+  foreach {
     b $2 n 0,255 structuretensors b $3
     100%,100%,1,1,100
     if $7 w. ${"fitscreen ."},"[G'MIC] Doodle" fi
@@ -36792,7 +36798,7 @@ fx_doodle : skip "$*"
         )
       )"
     k. != 0 * 255
-  done done
+  }
 
 #@gui Diffusion Tensors : fx_diffusiontensors, fx_diffusiontensors_preview(0)
 #@gui : Resolution (%) = float(10,0,20)
@@ -36812,7 +36818,7 @@ fx_doodle : skip "$*"
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2016/19/10</i>.</small>")
 fx_diffusiontensors :
-  repeat $! l[$>]
+  foreach {
     wh={[w,h]}
     +diffusiontensors ${5-8}
     r2dx. {max(1,w*$1%)}
@@ -36821,7 +36827,7 @@ fx_diffusiontensors :
       remove_opacity.. r.. .,.,1,100%,3 blend[0] [1],shapeaverage0 dilate. {1+2*$4} a c
     else k. fi
     r. $wh,1,100%,2
-  done done
+  }
 
 fx_diffusiontensors_preview :
   gui_split_preview "fx_diffusiontensors $*",${-3--1}
@@ -36861,7 +36867,7 @@ fx_ellipsionism_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2012/25/10</i>.</small>")
 fx_feltpen :
-  repeat $! l[$>] +fx_hardsketchbw ${1-5},0,0 blend hardlight erode_oct $6 done done
+  foreach { +fx_hardsketchbw ${1-5},0,0 blend hardlight erode_oct $6 }
 
 fx_feltpen_preview :
   gui_split_preview "fx_feltpen $*",${-3--1}
@@ -36896,22 +36902,25 @@ fx_feltpen_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2021/01/30</i>.</small>")
 fx_ghost :
-  repeat $! l[$>] split_opacity l[0]
-    diffusiontensors. 1,1,$2,$3 eigen. compose_channels.. + sqrt.. n.. 1,100 pow.. $4 n.. 0,$1
-    100%,100%
-    eval.. "*
-      ca = i(x,y,0,0);
-      sa = i(x,y,0,1);
-      N = i(#-3,x,y);
-      x0 = x + N*ca;
-      y0 = y + N*sa;
-      x1 = x - N*ca;
-      y1 = y - N*sa;
-      polygon(#-1,2,x0,y0,x1,y1,-1,1);
-      I"
-    k. normalize_local $5,$6
-    n 0,255 if $7 negate fi
-  done a c done done
+  foreach {
+    split_opacity l[0] {
+      diffusiontensors. 1,1,$2,$3 eigen. compose_channels.. + sqrt.. n.. 1,100 pow.. $4 n.. 0,$1
+      100%,100%
+      eval.. "*
+        ca = i(x,y,0,0);
+        sa = i(x,y,0,1);
+        N = i(#-3,x,y);
+        x0 = x + N*ca;
+        y0 = y + N*sa;
+        x1 = x - N*ca;
+        y1 = y - N*sa;
+        polygon(#-1,2,x0,y0,x1,y1,-1,1);
+        I"
+      k. normalize_local $5,$6
+      n 0,255 if $7 negate fi
+    }
+    a c
+  }
 
 fx_ghost_preview :
   gui_split_preview "fx_ghost $*",${-3--1}
@@ -36934,7 +36943,7 @@ fx_ghost_preview :
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2010/29/12</i>.</small>")
 fx_hardsketchbw :
   b $3
-  if $7==4 repeat $! l[$>] +hardsketchbw $1,$2,$4,$5,$6 blend hardlight done done return fi
+  if $7==4 foreach { +hardsketchbw $1,$2,$4,$5,$6 blend hardlight } return fi
   hardsketchbw $1,$2,$4,$5,$6
   if $7&1 negate fi
   if $7==2 r 100%,100%,1,4 repeat $! sh[$>] 3 *. -2 +. {2*255} c. 0,255 rm. done
@@ -36962,15 +36971,18 @@ fx_hardsketchbw_preview :
 #@gui : url = link("This tutorial by Sebastien Guyader and Patrick David",
 #@gui : "https://pixls.us/articles/highlight-bloom-and-photoillustration-look/")
 fx_highlight_bloom :
-  repeat $! l[$>] split_opacity l[0]
-    +smooth $2,0.3,0.8,1,2
-    -.. .
-    amp=$3 do smooth. {min(50,$amp)},0.1,1,1,2 amp-=50 while $amp>0
-    +retinex. 16,lab,0,15 j.. .,0,0,0,0,{$4%} rm.
-    ac. "normalize_local {$5%},5",lab_l
-    *.. {$1%}
-    + c 0,255
-  done a c done done
+  foreach {
+    split_opacity l[0] {
+      +smooth $2,0.3,0.8,1,2
+      -.. .
+      amp=$3 do smooth. {min(50,$amp)},0.1,1,1,2 amp-=50 while $amp>0
+      +retinex. 16,lab,0,15 j.. .,0,0,0,0,{$4%} rm.
+      ac. "normalize_local {$5%},5",lab_l
+      *.. {$1%}
+      + c 0,255
+    }
+    a c
+  }
 
 fx_highlight_bloom_preview :
   gui_split_preview "fx_highlight_bloom $*",${-3--1}
@@ -36986,9 +36998,9 @@ fx_highlight_bloom_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2013/07/11</i>.</small>")
 fx_poster_hope :
-  repeat $! l[$>] split_opacity l[0]
-    apply_gamma {10^$1} poster_hope $2
-  done a c done done
+  foreach {
+    split_opacity l[0] { apply_gamma {10^$1} poster_hope $2 } a c
+  }
 
 fx_poster_hope_preview :
   gui_split_preview "fx_poster_hope $*",${-3--1}
@@ -37010,7 +37022,7 @@ fx_poster_hope_preview :
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2011/18/05</i>.</small>")
 fx_houghsketchbw :
   b $1 n 0,255
-  if $6==4 repeat $! l[$>] +houghsketchbw ${2-5} blend hardlight done done return fi
+  if $6==4 { +houghsketchbw ${2-5} blend hardlight } return fi
   houghsketchbw ${2-5}
   if $6&1 negate fi
   if $6==2 r 100%,100%,1,4 repeat $! sh[$>] 3 *. -2 +. {2*255} c. 0,255 rm. done
@@ -37069,10 +37081,10 @@ fx_kuwahara_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2017/11/21</i>.</small>")
 fx_linify :
-  repeat $! l[$>]
+  foreach {
     if $7 _debug=1 w ${-fitscreen\ {[w,h]}},0,"[Preview] G'MIC: Linify" fi
     linify $1,$2,$3%,$4,$5,$6
-  done done
+  }
 
 fx_linify_preview :
   gui_split_preview "fx_linify ${1-6},0",${-3--1}
@@ -37092,7 +37104,7 @@ fx_linify_preview :
 #@gui :       Latest Update: <i>2015/23/02</i>.</small>")
 #@gui : url = link("Filter Explained here","http://www.gimpchat.com/viewtopic.php?f=10&t=2624")
 fx_lylejk_painting :
-  repeat $! l[$>]
+  foreach {
     nm={0,n}
     +l repeat $1 b 0.75 unsharp 0.75,10.49 c 0,255 mv. 0 done done
     smooth. 300,0.26,1,0,7
@@ -37100,9 +37112,8 @@ fx_lylejk_painting :
     blend[-2,-1] lighten,0.5
     blend[-2,-1] grainmerge,1
     fx_kuwahara. $2,$3,0,0
-    texturize_canvas. $4,4
-    :: $nm
-  done done
+    texturize_canvas. $4,4 :: $nm
+  }
 
 fx_lylejk_painting_preview :
   gui_split_preview "fx_lylejk_painting $*",${-3--1}
@@ -37196,7 +37207,8 @@ fx_paint_with_brush :
   fi
 
   # Process images.
-  repeat $! l[$>] to_color
+  foreach
+    to_color
 
     # Determine painting geometry.
     +diffusiontensors {[$sharpness,$anisotropy]%},$smoothness,$coherence
@@ -37336,7 +37348,7 @@ fx_paint_with_brush :
 
     done
     k.
-  done done
+  done
 
   # Set style parameters if new style has been selected.
   if $predefined_style!=$previous_style
@@ -37373,7 +37385,7 @@ fx_paint_with_brush_preview :
 #@gui : note = note("<small>Authors: <i>Lyle Kroll</i>, <i>Angelo Lama</i> and <i>David Tschumperlé</i>.
 #@gui : \nLatest Update: <i>2011/28/02</i>.</small>")
 fx_painting : skip ${4=0},${5=0}
-  repeat $! l[$>]
+  foreach {
     to_colormode {max(3,s)} split_opacity rv
     repeat $1 fx_normalize_local. 10,6,5,20,1,11 done
     fx_smooth_anisotropic. {100*$2},0.2,1,$2,{2*$2},0.8,90,2,0,1,1,2,1,16
@@ -37381,7 +37393,7 @@ fx_painting : skip ${4=0},${5=0}
     if $5 fx_segment_watershed. 10,1,0 fi
     smooth. $4,0,1,1,1
     rv a c
-  done done
+  }
 
 fx_painting_preview :
   gui_split_preview "fx_painting $*",${-3--1}
@@ -37418,8 +37430,8 @@ fx_pen_drawing_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2018/06/05</i>.</small>")
 fx_polygonize_delaunay :
-  repeat $! l[$>] to_rgba
-    wh={[w,h]} if $11 r 150%,150%,1,100%,3 fi
+  foreach
+    to_rgba wh={[w,h]} if $11 r 150%,150%,1,100%,3 fi
 
     # Compute Delaunay triangulation.
     mM={[im,iM]} b $4 n $mM
@@ -37457,7 +37469,7 @@ fx_polygonize_delaunay :
     k.
     if $11 r $wh,1,100%,2 fi
 
-  done done
+  done
 
 fx_polygonize_delaunay_preview :
   gui_split_preview "fx_polygonize_delaunay $*",${-3--1}
@@ -37481,11 +37493,11 @@ fx_polygonize_delaunay_preview :
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2013/02/12</i>.</small>")
 fx_polygonize :
   polygonize $1,$2,{$3^2},$4,$5
-  if $9 repeat $! l[$>]  # has outline.
+  if $9 foreach { # has outline.
     +norm g. xy,1 !=[-2,-1] 0 -|[-2,-1] r. 100%,100%,1,4
     replace_color. 0,0,1,1,1,1,$6,$7,$8,$9
     blend alpha
-  done done fi
+  } fi
 
 fx_polygonize_preview :
   gui_split_preview "fx_polygonize $*",${-3--1}
