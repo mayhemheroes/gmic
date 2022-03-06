@@ -242,7 +242,7 @@ help : skip ${1=""}
       done
     fi
     if narg("$1")" && "narg($_path_commands) l[]
-      $_path_commands repeat $! l[$>] it[] {n} k. onfail rm 0 done done
+      $_path_commands foeach { it[] {n} k. onfail rm 0 }
     onfail
     done fi
     if !$! return fi
@@ -1305,14 +1305,14 @@ reference_finalize_html :
 
   ind_loc=${"-nmd 1,\"List of Commands\""}
   if narg($ind_loc)
-    repeat $! l[$>]
+    foreach {
       name={n} strvar $name url=${}.html
       if $>==$ind_loc
          html.="<li><a class=\"ref_loc\" href=\""$url"#top\">"$name"</a></li>"
       else
         html.="<li><a href=\""$url"#top\">"$name"</a></li>"
       fi
-    done done
+    }
     html.="\n    </ul>"\n\n\
           "<!-- end_content -->"\n\n\
           "<!-- ref_navigation_bottom -->"\n\
@@ -1363,7 +1363,7 @@ reference_end_html :
   reference_finalize_html
 
   # Save html pages.
-  repeat $! l[$>] strvar {n} ot ${}.html done done
+  foreach { strvar {n} ot ${}.html }
   if isfile('table_of_contents.html') x "ln -fs table_of_contents.html index.html" fi
   rm
 
@@ -1712,7 +1712,7 @@ clean_cluts :
   round c 0,255
 
   # Standardize names.
-  repeat $! l[$>]
+  foreach
     nm={n}
 
     # Standardize names for 'Moviz'.
@@ -1807,7 +1807,7 @@ clean_cluts :
       = 0,0,100%  nm={t} rm
     done
     ::[^] $nm
-  done done
+  done
 
   # Convert RGB CLUTs to Grayscale when possible.
   foreach {
@@ -4724,10 +4724,10 @@ parse_cli_html :
       if $!
         html.="\n      <h2>Arguments:</h2>\n      <ul>"\n
         if $!>1 or="&nbsp;&nbsp;&nbsp; or" else or= fi
-        repeat $! l[$>]
+        foreach {
           if !$< or= fi
           html.="        <li><span class=\"gmd_monospace\">"{t}"</span>"$or"</li>"\n
-        done done
+        }
         html.="      </ul>"\n
       else
         html.="\n      <h3>No arguments</h2>"\n
@@ -4750,7 +4750,7 @@ parse_cli_html :
       if i==_'$'" && "i[1]!=_'$' nb_examples+=1 fi
     done fi done
 
-    repeat $! l[$>]
+    foreach
       if "find(#0,'(eq. to ')>=0"
 
         # Found 'Eq. to' description.
@@ -4859,7 +4859,7 @@ parse_cli_html :
         if i[-1,2]!=_'\n' html.="\n" fi
         line+=1
       fi
-    done done
+    done
 
     # Generate page.
     html.=\n\
@@ -4896,7 +4896,7 @@ parse_cli_images :
     s -,{'\n'} discard {'#@cli'} max {'" "'} autocrop {'" "'}
     n_example=0
 
-    repeat $! l[$>]
+    foreach
       if "i==_':' && (
             for (p = 1, p<h && i[p]<=_' ', ++p);
             i[p]==_'$' && i[p+1]!=_'$')"
@@ -4945,7 +4945,7 @@ parse_cli_images :
         e[] "\r"$_vt100_c[$n_global]$_vt100_n" Command '"$_vt100_g$name$_vt100_n"': $ "\
             $example" "${_vt100_m}"("$etime")."$_vt100_n
       fi
-    done done
+    done
     old_category=$category
     rm 0
   done done rm
@@ -4955,7 +4955,7 @@ _parse_cli_images :
   if !$! rm return fi
   W,H={[640,480]}
 
-  repeat $! l[$>] nm={n}
+  foreach nm={n}
     label=[$>]:" "'$nm'
     if ${-is_3d} # 3D vector object
       label2="("{i[6]}" vert., "{i[7]}" prim.)"
@@ -5006,7 +5006,7 @@ _parse_cli_images :
     *. -1 n. 0,255 to_rgb.
     - 245 a y,0.5 + 245
 
-  done done
+  done
   c 0,255
 
 parse_cli_trigger_images :
@@ -5609,7 +5609,7 @@ gmd2html : skip "${1=}"
 
   parse_gmd
   s_section,e_section={${-_gmd_tokens}"[s_section,e_section]"}
-  repeat $! l[$>] nm$>={b} strvar ${nm$>} fnm=${}
+  foreach nm$>={b} strvar ${nm$>} fnm=${}
     if "i=="$s_section" && find(#-1,"$e_section")>0"
       +rows 1,{"find(#-1,"$e_section")-1"} title$>={t} rm.
     else title$>=
@@ -5847,12 +5847,12 @@ gmd2html : skip "${1=}"
       );
       end(resize(#0,1,_write_off,1,1,0))"
     k[0] autocrop 0 :: $fnm.html
-  done done
+  done
 
   # Embed with header and footer if needed.
   if $embed_html
     section_title=${"arg "$embed_html",Reference,Tutorial,News"}
-    repeat $! l[$>] nm={b} nm0=${nm$>}
+    foreach nm={b} nm0=${nm$>}
       if ['${title$>}']!=0 title=${title$>} else title=$nm0 fi
       if isfile('../style.css') style="../style.css" else style="https://gmic.eu/style.css" fi
       i[0] ('"<!DOCTYPE html>"\n\
@@ -5874,7 +5874,7 @@ gmd2html : skip "${1=}"
 "    <!--#include file=\"footer.html\" -->"\n\
 "  </body>"':y)
       a y :: $nm.html
-    done done
+    done
   fi
 
 # Manage sections / subsections / subsubsections / subsubsubsections.
@@ -5965,7 +5965,7 @@ _gmd_shell :
 
 # Convert an ascii buffer into html.
 _gmd_ascii2html :
-  repeat $! l[$>]
+  foreach
     . # [0] = Output, [1] = Input
     eval. ">
       begin("${-_gmd_write}${-_gmd_vt100}" spans = 0);
@@ -6026,7 +6026,7 @@ _gmd_ascii2html :
       ):write(c);
     "
     k[0] discard 0
-  done done
+  done
 
 #@cli gmd2ascii : _max_line_length>0,_indent_forced_newlines>=0 : (no arg)
 #@cli : Convert selected gmd-formatted text images to ascii format.
@@ -6040,7 +6040,7 @@ gmd2ascii :
   fi
 
   use_vt100 parse_gmd
-  repeat $! l[$>] nm={b} strvar $nm fnm=${}
+  foreach nm={b} strvar $nm fnm=${}
     . # [0] = Output, [1] = Input
     eval. ">
       begin("${-_gmd_tokens}${-_gmd_write}${-_gmd_vt100}"
@@ -6169,13 +6169,13 @@ gmd2ascii :
     k[0] discard 0
     _gmd2ascii_cut $max_line_length,$indent_forced_newline
     :: $fnm.txt
-  done done
+  done
 
 # Cut long ascii lines in selected text images (ignoring the VT100 codes for the length).
 # $1: Max length of each line >0.
 # $2: Indentation put after each forced newline.
 _gmd2ascii_cut :
-  repeat $! l[$>]
+  foreach
     . # [0] = Output, [1] = Input
     eval ${-_gmd_write}"
       const N = max(8,$1);
@@ -6206,7 +6206,7 @@ _gmd2ascii_cut :
       p<h?(len = h - p; write(#1,p,len))"
 
     k[0] autocrop 0
-  done done
+  done
 
 # Define variables associated to markdown tokens, for the math parser.
 _gmd_tokens :
@@ -6975,9 +6975,9 @@ straprilfool : skip "${1=}"
 #
 parse_gui_parseparams_json : u 1 # Tell parser to parse filter parameters
 parse_gui_trigger_json :
-  repeat $! l[$>] # Keep only 1-level folders
+  foreach { # Keep only 1-level folders
     :: {`s=[['{n}'],0];p=find(s,_'/',size(s)-1,0);p>=0?(p=find(s,_'/',p-1,0);p>0?copy(s,s[p+1],size(s)-p));s`}
-  done done
+  }
   sort_list +,n
 
 parse_gui_json :
@@ -7139,9 +7139,9 @@ _parse_gui_json :
 #
 parse_gui_parseparams_gmicol : u 1 # Tell parser to parse filter parameters
 parse_gui_trigger_gmicol :
-  repeat $! l[$>] # Keep only 1-level folders
+  foreach { # Keep only 1-level folders
     :: {`s=[['{n}'],0];p=find(s,_'/',size(s)-1,0);p>=0?(p=find(s,_'/',p-1,0);p>0?copy(s,s[p+1],size(s)-p));s`}
-  done done
+  }
   sort_list +,n
 
 parse_gui_gmicol :
@@ -7311,10 +7311,7 @@ parse_gui_strings :
   sort_list +,N repeat $!-1 i,ni={[$<,$<+1]} if ['{$i,n}']==['{$ni,n}'] +[$i,$ni] fi done sort_list -,i
 
   # Generate output in commented .ts format.
-  repeat $! l[$>]
-    nm={n}
-    ({'$nm" , "'}:y) k. :: $nm
-  done done
+  foreach { nm={n} ({'$nm" , "'}:y) k. :: $nm }
   if $! y i[1--1] (10) a y else 0 fi
 
 _parse_gui_strings :
@@ -8104,7 +8101,7 @@ update_color_presets_html : check "isbool(${1=0})"
                        "http://juanmelara.com.au/print-film-emulation-luts-for-download",\
                        "https://patdavid.net/2013/08/film-emulation-presets-in-gmic-gimp.html"
 
-  m "_thumb : frame 3%,3%,255 to_rgba drop_shadow 2,2,3 repeat $! l[$>] i[0] 100%,100%,1,3,245 blend alpha done done"
+  m "_thumb : frame 3%,3%,255 to_rgba drop_shadow 2,2,3 foreach { i[0] 100%,100%,1,3,245 blend alpha }"
   m "_title : ('\"$""*\"') replace_str. \"_\",\" \" replace_str. \"iii\",\"III\" f. \"(!y || j(0,-1)==32) &&
      i>=_'a' && i<=_'z'?uppercase(i):i\" u {t} rm."
 
@@ -8686,19 +8683,19 @@ update_gallery_html : check "isbool(${1=0})"
 
 # Generate a single image from a list of images, for the gallery.
 _gallery :
-  repeat $! l[$>] W$>={w} H$>={h} D$>={d} S$>={s} IS_3D$>=${-_is_3d} done done
-  repeat $! l[$>]
+  foreach { W$>={w} H$>={h} D$>={d} S$>={s} IS_3D$>=${-_is_3d} }
+  foreach {
     if ${IS_3D$>} r3d 1,1,0,-80 r3d 0,1,0,80 snapshot3d 400
     else if w>8192 z 0,8191 elif h>8192 rows 0,8191 fi n 0,255
     fi
-  done done
+  }
 
   if !$_is_animated
     +__gallery
     if w>1024 r={round(1024*100/w,0.1)} r[^-1] $r%,$r%,1,100%,2 fi rm.
   fi
 
-  repeat $! l[$>]
+  foreach {
     if s==1 r {w},{h},1,3
     elif s==4 drgba
     else r {w},{h},1,3,0 fi
@@ -8708,7 +8705,7 @@ _gallery :
     if w<48 r 48,100% fi
     if $_is_animated" && "(w>480" || "h>480) rr2d 480,480,0,2 fi
     frame 1,1,0 frame 4,4,255
-  done done
+  }
 
   if $_is_animated
     - 255 r ${-max_wh},1,3,0,0,0.5,0.5 + 255
@@ -9315,7 +9312,7 @@ strings2ts : skip "${1=}"
       e[] "  > File '$1', detected language : "$lang.
       s -,10
       N0=0
-      repeat $! l[$>]
+      foreach {
         autocrop {'" "'}
         if s=crop();find(s,'<source>')>=0" && "find(s,'</source>')>=0
           discard {'<source>'} discard {'</source>'} src$N0={t}
@@ -9323,7 +9320,7 @@ strings2ts : skip "${1=}"
           discard {'<translation>'} discard {'</translation>'} dest$N0={t}
           N0+=1
         fi
-      done done
+      }
       rm
     done
   else N0=0 lang=
@@ -9345,7 +9342,7 @@ strings2ts : skip "${1=}"
   e[] "  > "$!" strings remain after cleaning/merging ("{$!-$N0}" new)."
 
   # Generate .ts file.
-  repeat $! l[$>]
+  foreach {
     _strings2ts_src {n} src=${}
     _strings2ts_dest {t} dest=${}
     rm
@@ -9353,7 +9350,7 @@ strings2ts : skip "${1=}"
        "      <source>"$src"</source>"\n\
        "      <translation>"$dest"</translation>"\n\
        "    </message>"\n\n'})
-  done done
+  }
   i[0] ({'"<?xml version=\"1.0\" encoding=\"utf-8\"?>"\n\
      "<!DOCTYPE TS>"\n\
      "<TS version=\"2.1\" language=\""$lang"\">"\n\
@@ -9392,9 +9389,9 @@ _strings2ts_dest :
 #
 parse_gui_parseparams_zart : u 1 # Tell parser to parse filter parameters
 parse_gui_trigger_zart :
-  repeat $! l[$>] # Keep only 1-level folders
+  foreach { # Keep only 1-level folders
     :: {`s=[['{n}'],0];p=find(s,_'/',size(s)-1,0);p>=0?(p=find(s,_'/',p-1,0);p>0?copy(s,s[p+1],size(s)-p));s`}
-  done done
+  }
   sort_list +,n
 
 parse_gui_zart :
@@ -10534,7 +10531,7 @@ compress_clut : check "${1=1.5}>0 && ${2=0.75}>0 && isint(${3=2048}) && (!$3 || 
   v 0
   max_error,avg_error,max_keypoints,metric,colorspace,try_rbf=${1-6}
   if $try_rbf method=rbf else method=pde fi
-  repeat $! l[$>] nm={b}
+  foreach nm={b}
     if iM>1024 / 257 fi # When input is 16bits
     if d==1 S={round(cbrt(wh))} r $S,$S,$S,100%,-1 fi # When input is a 2D haldclut image
     e[] "\n* Process CLUT '"$nm"' ("{w}"x"{h}"x"{d}")."
@@ -10599,7 +10596,7 @@ compress_clut : check "${1=1.5}>0 && ${2=0.75}>0 && isint(${3=2048}) && (!$3 || 
     1,100%,1,1,"P = I(#0); P[0]*65536 + P[1]*256 + P[2]" rv a x sort {`'$method'=='rbf'?_'+':_'-'`},y z. 1,100%
 
     to_clutname $nm :: ${}
-  done done
+  done
 
 # compress_cluts : {"file_pattern" | "file_list.txt"},_max_error>0,_avg_error>0,_max_nb_points>=8
 # Batch compress CLUT files.
@@ -10775,7 +10772,7 @@ decompress_rle :
 
     # Decompress, using 3D objects.
     s y,-256
-    repeat $! l[$>]
+    foreach {
       i[0] ('CImg3d') +[0] 0.5
       i[1] ({2*h};{h})
       s. x,2 cumulate.. siz={-2,@-1}
@@ -10783,7 +10780,7 @@ decompress_rle :
       i[3] (2,0,1;2,{2*h-2},{2*h-1}) r[3] 3,{h},1,1,3 round[3]
       r[4] 3 1,100%,1,1,1 y a y
       $siz j3d. ..,0,0,0,1,2,0,0 rm..
-    done done
+    }
     a x r $whds,-1 + $im
   done
 
@@ -15838,15 +15835,15 @@ gradient_orientation : check "isint(${1=3}) && inrange($1,1,3)"
 #@cli : $$ https://gmic.eu/oldtutorial/_haar
 haar : check "isint(${1=1}) && $1>=0"
   e[^-1] "Compute haar transform of image$? with $1 scales."
-  repeat $! l[$>]
+  foreach {
     _haar
-    repeat $1-1
+    repeat $1-1 {
       w={max(0,round(w/2^(1+$>))-1)}
       h={max(0,round(h/2^(1+$>))-1)}
       d={max(0,round(d/2^(1+$>))-1)}
       +z 0,0,0,$w,$h,$d _haar. j.. . rm.
-    done
-  done done
+    }
+  }
 
 _haar : # Mono-scale direct haar transform.
   _haar_x _haar_y _haar_z
@@ -15950,11 +15947,11 @@ idct : skip ${1=0}
     rm.
     e[0--3] "Compute inverse discrete cosine transform of image$?."
     noarg
-    repeat $! l[$>]
+    foreach {
       if w>1 _idct fi
       if h>1 permute yxzc _idct permute yxzc fi
       if d>1 permute zxyc _idct permute yzxc fi
-    done done
+    }
   fi
 
 # 1D inverse transform (DCT-III) along the x-axis, for a single image.
@@ -15977,7 +15974,7 @@ _idct :
 #@cli : $ image.jpg iee
 iee :
   e[^-1] "Compute gradient-orthogonal-directed 2nd derivative of image$?."
-  repeat $! l[$>]
+  foreach {
     if d==1
       +g xy,0 hessian... xxxyyy      # ixx ixy iyy ix iy
       *... .. *[-4] . *[-4] -2       # ixx -2iyixy ixiyy ix iy
@@ -15987,7 +15984,7 @@ iee :
     else
       +inn laplacian.. -
     fi
-  done done
+  }
 
 #@cli ifft : _{ x | y | z }...{ x | y | z } : (+)
 #@cli : Compute the inverse fourier transform (real and imaginary parts) of selected images.
@@ -16001,15 +15998,15 @@ iee :
 #@cli : $$ https://gmic.eu/oldtutorial/_haar
 ihaar : check "isint(${1=1}) && $1>=0"
   e[^-1] "Compute inverse haar transform of image$? with $1 scales."
-  repeat $! l[$>]
-    repeat $1-1
+  foreach {
+    repeat $1-1 {
       w={max(0,round(w/2^(1+$<))-1)}
       h={max(0,round(h/2^(1+$<))-1)}
       d={max(0,round(d/2^(1+$<))-1)}
       +z 0,0,0,$w,$h,$d _ihaar. j.. . rm.
-    done
+    }
     _ihaar
-  done done
+  }
 
 _ihaar : # Mono-scale inverse haar transform.
   _ihaar_x _ihaar_y _ihaar_z
@@ -16046,11 +16043,12 @@ ilaplacian : check "${1=0}>=0" skip "${2=}"
       e[0--4] "Invert Laplacian image$? in Fourier space."
       ia=0
     fi
-    repeat $! l[$>]
+    foreach {
       fft 100%,100%,1,1,"2*(cos(x*2*pi/w) + cos(y*2*pi/h)) - 4" =. 1
       /[-3,-2] . rm.
       = 0 ifft rm.
-    done done + '"begin(S = resize(["$ia"],s,0)); S"'
+    }
+    + '"begin(S = resize(["$ia"],s,0)); S"'
 
   else # Inversion with PDE-flow
     if $is_estimate
@@ -16062,10 +16060,10 @@ ilaplacian : check "${1=0}>=0" skip "${2=}"
       done done
     else
       e[0--4] "Invert Laplacian image$? using $1 iterations of PDE flow."
-      repeat $! l[$>]
+      foreach {
         * 5 (0,5,0;5,0,5;0,5,0) +f.. 0
         repeat $1 +convolve. [1] -. [0] +[-2,-1] /. 21 done k. # Optimized semi-implicit scheme, with dt=5
-      done done
+      }
     fi
   fi
 
