@@ -3167,7 +3167,7 @@ _display_histogram : check "${1=0}>=0 && ${2=0}>=0 && ${3=256}>0" skip ${4=0%},$
     s={s} s c
     repeat $s l[{-1-$>}] s z histogram $3,$m,$M a z done done
     a c f '"${7--1}"' vM={iM} s z
-    repeat $! l[$>]
+    foreach
       if $1>0" && "$2>0 wh=$1,$2 else wh={{*,u}/2},{{*,v}/2} fi
       $wh,1,{s},-255
       repeat s sh[-2,-1] $> graph. ..,3,0,$vM,0,1,0 rm[-2,-1] done
@@ -3179,7 +3179,7 @@ _display_histogram : check "${1=0}>=0 && ${2=0}>=0 && ${3=256}>0" skip ${4=0%},$
         if $M<0 axes. {w-1},{w-1},$vM,0,14,1,200 fi
         +dilate. 3 ri.. ... j... ..,0,0,0,0,1,.,255 rm[-2,-1]
       fi
-    done done
+    done
     a z :: $nm
   done
 
@@ -13144,20 +13144,20 @@ srgb2rgb :
 #@cli : Force selected images to have an alpha channel.
 to_a :
   e[^-1] "Force image$? to have an alpha channel."
-  repeat $! l[$>]
+  foreach {
     if s==1||s==3 channels 0,{s} sh. {s-1} f. 255 rm. fi
-  done done
+  }
 
 #@cli to_color
 #@cli : Force selected images to be in color mode (RGB or RGBA).
 to_color :
   e[^-1] "Force image$? to be in color mode."
-  repeat $! l[$>]
+  foreach {
     if s>4 error[0--5] "Command '$0': Image ["$>"] is not a G,GA,RGB or RGBA image ("{s}" channels)."
     elif s==2 r 100%,100%,1,4,0,1,0,0,0,1
     elif s==1 r 100%,100%,1,3,1
     fi
-  done done
+  }
 
 #@cli to_colormode : mode={ 0=adaptive | 1=G | 2=GA | 3=RGB | 4=RGBA }
 #@cli : Force selected images to be in a given color mode.
@@ -13184,12 +13184,12 @@ to_colormode : skip ${1=0}
 #@cli : $ image.jpg +to_gray
 to_gray :
   e[^-1] "Force image$? to be in GRAY mode."
-  repeat $! l[$>]
+  foreach {
     if s>4 error[0--5] "Command '$0': Image ["$>"] is not a G,GA,RGB or RGBA image ("{s}" channels)."
     elif s>=3 channels 0,2 luminance
     elif s==2 r 100%,100%,100%,1,0
     fi
-  done done
+  }
 
 #@cli to_graya
 #@cli : Force selected images to be in GRAYA mode.
