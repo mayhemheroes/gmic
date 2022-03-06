@@ -26005,7 +26005,8 @@ zoom : skip ${1=2},${2=0.5},${3=0.5},${4=0.5},${5=0}
 #@cli : $ image.jpg +cracks ,
 cracks : check "${1=25}>=0" skip ${2=0},${3=1},${4=0}
   e[^-1] "Add random cracks to image$?, with density $1, opacity $3 and color (${4--1})."
-  repeat $! l[$>] cut={[im,iM]}
+  foreach {
+    cut={[im,iM]}
     100%,100%,1,2,'u<0.25*($1%)^4?[u,1]:[0,0]'
     s. c distance. 1 *. -1 watershed.. . rm.
     +dilate. 3 -[-2,-1] !=. 0 # thinning. 1
@@ -26016,7 +26017,7 @@ cracks : check "${1=25}>=0" skip ${2=0},${3=1},${4=0}
       +fc.. ${4--1} j... .,0,0,0,0,$3,..
     fi
     k[0]
-  done done
+  }
 
 #@cli light_patch : _density>0,_darkness>=0,_lightness>=0
 #@cli : Add light patches to selected images.
@@ -26024,10 +26025,10 @@ cracks : check "${1=25}>=0" skip ${2=0},${3=1},${4=0}
 #@cli : $ image.jpg +light_patch 20,0.9,4
 light_patch : skip ${1=10},${2=0.9},${3=1.7}
   e[^-1] "Apply light patches to image$?, with density $1, darkness $2 and lightness $3."
-  repeat $! l[$>]
+  foreach {
     n 0,255 $1,$1 noise. 40 ri. ..,5 c. 0,255
     n. $2,$3 * c 0,255
-  done done
+  }
 
 #@cli noise_hurl : _amplitude>=0
 #@cli : Add hurl noise to selected images.
@@ -26035,11 +26036,11 @@ light_patch : skip ${1=10},${2=0.9},${3=1.7}
 #@cli : $ image.jpg +noise_hurl ,
 noise_hurl : skip ${1=10}
   e[^-1] "Add hurl noise to image$?, with amplitude $1%."
-  repeat $! l[$>]
+  foreach {
     +f 0 noise. 10 n. {-2,[im,iM]} 100%,100%
     noise. $1,2 >. 0 ri. ..
     *.. . *. -1 +. 1 *[-3,-1] +
-  done done
+  }
 
 #@cli pixelize : _scale_x>0,_scale_y>0,_scale_z>0
 #@cli : Pixelize selected images with specified scales.
@@ -26047,7 +26048,7 @@ noise_hurl : skip ${1=10}
 #@cli : $ image.jpg +pixelize ,
 pixelize : skip ${1=20},${2=$1},${3=$1}
   e[^-1] "Pixelize image$? with scales ($1%,$2%,$3%)."
-  repeat $! l[$>] whd={w},{h},{d} r $1%,$2%,$3%,100%,2 r $whd done done
+  foreach { whd={w},{h},{d} r $1%,$2%,$3%,100%,2 r $whd }
 
 #@cli scanlines : _amplitude,_bandwidth,_shape={ 0=bloc | 1=triangle | 2=sine | 3=sine+ | 4=random },_angle,_offset
 #@cli : Apply ripple deformation on selected images.
@@ -26056,13 +26057,13 @@ pixelize : skip ${1=20},${2=$1},${3=$1}
 scanlines : skip ${1=60},${2=2},${3=0},${4=0},${5=0}
   e[^-1] "Apply scanlines effect on image$?, with amplitude $1, bandwidth $2, shape $3, angle $4 deg. and offset $5."
   theta={$4*pi/180} C={cos($theta)} S={-sin($theta)}
-  repeat $! l[$>]
+  foreach {
     100%,100%,1,1,"x" -. {w/2} 100%,100%,1,1,'y'
     -. {h/2-$5} *.. $S *. $C +[-2,-1]      # Generate rotated Y.
     _ripple$3. $1,$2                            # Generate warp field.
     n. {-$1},$1
     + cut 0,255
-  done done
+  }
 
 #@cli shade_stripes : _frequency>=0,_direction={ 0=horizontal | 1=vertical },_darkness>=0,_lightness>=0
 #@cli : Add shade stripes to selected images.
@@ -26071,9 +26072,7 @@ scanlines : skip ${1=60},${2=2},${3=0},${4=0},${5=0}
 shade_stripes : skip ${1=5},${2=1},${3=0.8},${4=2}
   e[^-1] "Add "${arg\ 1+!$2,vertical,horizontal}" shaded stripes to image$?, with frequency $1, darkness $3 and
           lightness $4."
-  n 0,255 repeat $! l[$>]
-    {max(1,w*($2!=0))},{max(1,h*($2==0))} noise. $1,2 ==. 1 distance. 1 ri. .. n. $3,$4 * c 0,255
-  done done
+  n 0,255 foreach { {max(1,w*($2!=0))},{max(1,h*($2==0))} noise. $1,2 ==. 1 distance. 1 ri. .. n. $3,$4 * c 0,255 }
 
 #@cli shadow_patch : _opacity>=0
 #@cli : Add shadow patches to selected images.
@@ -26081,11 +26080,11 @@ shade_stripes : skip ${1=5},${2=1},${3=0.8},${4=2}
 #@cli : $ image.jpg +shadow_patch 0.4
 shadow_patch : skip ${1=0.7}
   e[^-1] "Apply shadow patches to image$?, with opacity $1."
-  repeat $! l[$>]
+  foreach {
     100%,100%,1,1 shift. -2,-2 shift. 1,1
     plasma. 3,0.3,8 abs. b. 1 c. 3%,15% ri. ..
     n. $1,1 *
-  done done
+  }
 
 #@cli spread : _dx>=0,_dy>=0,_dz>=0
 #@cli : Spread pixel values of selected images randomly along x,y and z.
@@ -26093,13 +26092,13 @@ shadow_patch : skip ${1=0.7}
 #@cli : $ image.jpg +spread 3
 spread : skip ${1=3},${2=$1},${3=0}
   e[^-1] "Spread pixel of image$? randomly, with amplitudes ($1,$2,$3)."
-  repeat $! l[$>]
+  foreach {
     100%,100%,100%,3
     sh. 0 rand. {-$1},$1 rm.
     sh. 1 rand. {-$2},$2 rm.
     sh. 2 rand. {-$3},$3 rm.
     warp.. .,1 rm.
-  done done
+  }
 
 #@cli stripes_y : _frequency>=0
 #@cli : Add vertical stripes to selected images.
@@ -26107,10 +26106,7 @@ spread : skip ${1=3},${2=$1},${3=0}
 #@cli : $ image.jpg +stripes_y ,
 stripes_y : skip ${1=10}
   e[^-1] "Add vertical stripes to image$?, with frequency $1."
-  repeat $! l[$>]
-    100% noise. $1,2 ==. 1 *. 255 ri. ..
-    *. 0.15 + c 0,255
-  done done
+  foreach { 100% noise. $1,2 ==. 1 *. 255 ri. .. *. 0.15 + c 0,255 }
 
 #@cli texturize_canvas : _amplitude>=0,_fibrousness>=0,_emboss_level>=0
 #@cli : Add paint canvas texture to selected images.
@@ -26118,22 +26114,22 @@ stripes_y : skip ${1=10}
 #@cli : $ image.jpg +texturize_canvas ,
 texturize_canvas : check "${1=20}>=0 && ${2=3}>=0 && ${3=0.6}>=0 && ${4=80}"
   e[^-1] "Add canvas texture to image$?, with amplitude $1, fibrousness $2 and emboss level $3."
-  repeat $! l[$>]
+  foreach {
     {w},{h} rand. 0,255 +blur_x. $2 blur_y.. $2 +[-2,-1] g. a[-2,-1] c
     +compose_channels. + orientation.. compose_channels.. + n.. $3,1 n. 0,255
     sharpen. 80 *[-2,-1] n. -$1,$1 + c 0,255
-  done done
+  }
 
 #@cli texturize_paper
 #@cli : Add paper texture to selected images.
 #@cli : $ image.jpg +texturize_paper
 texturize_paper :
   e[^-1] "Add paper texture to image$?."
-  repeat $! l[$>]
+  foreach {
     . 30%,30% noise. 1,2 ==. 1 r. ..,..,..,1,0 ifft.
     rm. shift. {round(w/2)},{round(h/2)},{round(d/2)},0,2 sharpen. 1 n. 1,1.2 ri. ..
     *[-2,-1] c. ..,.. rm..
-  done done
+  }
 
 #@cli vignette : _strength>=0,0<=_radius_min<=100,0<=_radius_max<=100
 #@cli : Add vignette effect to selected images.
@@ -26141,11 +26137,11 @@ texturize_paper :
 #@cli : $ image.jpg vignette ,
 vignette : check "${1=100}>=0 && ${2=70}>=0 && $2<=100 && ${3=90}>=0 && $3<=100"
   e[^-1] "Add vignette effect to image$?, with strength $1 and size $2."
-  repeat $! l[$>]
+  foreach {
     mM={[im,iM]} d={max(w,h)}
     $d,$d =. 1,50%,50% distance. 1 ri. ..,2
     c. $2%,$3% n. 0,$1 - c $mM
-  done done
+  }
 
 #@cli watermark_visible : _text,0<_opacity<1,_size>0,_angle,_mode={ 0=remove | 1=add },_smoothness>=0
 #@cli : Add or remove a visible watermark on selected images (value range must be [0,255]).
@@ -26154,14 +26150,14 @@ vignette : check "${1=100}>=0 && ${2=70}>=0 && $2<=100 && ${3=90}>=0 && $3<=100"
 watermark_visible : check "${2=0.3}>0 && $2<1 && ${3=53}>0 && ${6=0.5}>=0"
                     skip "${1=\251\ G\47MIC}",${4=25},${5=1}
   e[^-1] ${arg\ 1+!$5,Add,Remove}" visible watermark '$1' on image$?, with opacity $2, size $3, angle $4 deg."
-  repeat $! l[$>]
+  foreach {
     0 t. "$1",0,0,$3,1,255 rotate. $4,0,0 b. $6 n. 0,255
     ri. ..,0,2 +. .. c. 0,255   # Generate opaque watermark image
     if $5 *. $2 *.. {1-$2} +  # Add watermark
     else *. $2 - / {1-$2}     # Remove watermark
     fi
     c 0,255
-  done done
+  }
 
 #--------------------------------------
 #
