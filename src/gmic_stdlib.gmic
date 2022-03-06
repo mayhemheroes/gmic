@@ -13195,13 +13195,13 @@ to_gray :
 #@cli : Force selected images to be in GRAYA mode.
 to_graya :
   e[^-1] "Force image$? to be in GRAYA mode."
-  repeat $! l[$>]
+  foreach {
     if s>4 error[0--5] "Command '$0': Image ["$>"] is not a G,GA,RGB or RGBA image ("{s}" channels)."
     elif s==4 +channels 3 channels.. 0,2 luminance.. a c
     elif s==3 luminance channels 0,1 sh. 1 f. 255 rm.
     elif s==1 channels 0,1 sh. 1 f. 255 rm.
     fi
-  done done
+  }
 
 #@cli to_pseudogray : _max_step>=0,_is_perceptual_constraint={ 0 | 1 },_bits_depth>0
 #@cli : Convert selected scalar images ([0-255]-valued) to pseudo-gray color images.
@@ -13307,7 +13307,7 @@ transfer_pca : check ${"is_image_arg $1"} skip "${2=all}"
   if $sref==1 # Scalar case can to be solved more easily
     pass$1
     var_ref,avg_ref={[iv,ia]} rm.
-    repeat $! l[$>] - {ia} * {sqrt($var_ref/iv)} + $avg_ref done done
+    foreach { - {ia} * {sqrt($var_ref/iv)} + $avg_ref }
   elif ['$channels']!='all'
     pass$1 {$sref==3?2:0}
     to_color
@@ -13477,17 +13477,18 @@ _transfer_rgb : l[] check "${1=0}>=0 && ${2=1.5}>=0 && ${3=128}>0" gamma=$1 smoo
   onfail noarg gamma=0 smoothness=1.5 res=128 done
   e[^-1] "Convert image$? as 3D volumetric scalar functions for color matching, with gamma "$gamma",
           smoothness "$smoothness" and resolution "$res"."
-  to_rgb repeat $! l[$>]
+  to_rgb
+  foreach {
     b 0.3%
     r {w*h},3,1,1,-1 * {($res-1)/255}
     pointcloud 1,$res,$res,$res f 'if(i,i^$gamma,0)' b $smoothness% n 0,1
-  done done
+  }
 
 #@cli xyz2jzazbz
 #@cli : Convert color representation of selected images from XYZ to RGB.
 xyz2jzazbz :
   e[^-1] "Convert color representation of image$? from XYZ to Jzazbz."
-  repeat $! l[$>] split_opacity
+  foreach { split_opacity
     f[0] ${-_jzazbz_const}"
       X = i0*255;
       Y = i1*255;
@@ -13509,7 +13510,7 @@ xyz2jzazbz :
       bz = 0.199076*Lp + 1.096799*Mp - 1.295875*Sp;
       Jz = (1 + Jzazbz_d)*Iz/(1 + Jzazbz_d*Iz) - Jzazbz_d0;
       [ Jz,az,bz ]"
-  a c done done
+  a c }
 
 #@cli xyz2lab : illuminant={ 0=D50 | 1=D65 | 2=E } : (no arg)
 #@cli : Convert color representation of selected images from XYZ to Lab.
@@ -13718,7 +13719,7 @@ autocrop_components : skip ${1=0%} check "${2=0.1%}>=0 && isbool(${3=0}) && isin
   e[^-1] "Autocrop connected components from image$?, with threshold $1, minimal area $2, "\
          ${arg\ 1+$3,low,high}" connectivity "\
          "and output type set to '"${arg\ 1+$4,crop,segmentation,coordinates}"'.\n"
-  repeat $! l[$>]
+  foreach {
     min_area={max(1,round(if(${is_percent\ $2},$2*w*h,$2)))}
     +channels 100% >. $1 area_fg. 0,$3 >=. $min_area  # Discard background and small objects.
     +area. 0,1 <. $min_area -|[-2,-1] label_fg. 0,1    # Fill small holes in objects.
@@ -13737,7 +13738,7 @@ autocrop_components : skip ${1=0%} check "${2=0.1%}>=0 && isbool(${3=0}) && isin
     rm[0,1]
     if !$! 0 fi
     if $4==2 a x fi
-  done done
+  }
 
 #@cli autocrop_seq : value1,value2,... | auto
 #@cli : Autocrop selected images using the crop geometry of the last one by specified vector-valued intensity,
@@ -13800,14 +13801,14 @@ diagonal :
 downsize_aliased : check "${1=50}>=0 && $1<=100"
   if $1==100 return elif !$1 r 1,1,1,100%,2 return fi
   N={ceil(1+100/$1)}
-  repeat $! l[$>]
+  foreach {
     split_opacity
     if $!==1 continue fi
     +dilate.. $N +==.. 0
     j[0] ..,0,0,0,0,1,. rm[-2,-1]
     a c
     r $1%,$1%,$1%,100%,2
-  done done
+  }
 
 
 #@cli edgels : x0,y0 : (no arg)
@@ -13818,7 +13819,7 @@ downsize_aliased : check "${1=50}>=0 && $1<=100"
 # and 'n' is the orientation of its associated canonical normal (can be { 0=[1,0] | 1=[0,1] | 2=[-1,0] | 3=[0,-1] }.
 edgels : skip "${1=},${2=}"
   l[] if "isint($1) && $1>=0 && isint($2) && $2>=0" x0,y0=${1,2} else error[] fi onfail x0,y0=-1 noarg done
-  repeat $! l[$>]
+  foreach {
     slices. 0 channels. 0 gt. 0
     1,1,1,3
     eval ${-math_lib}"
@@ -13828,7 +13829,7 @@ edgels : skip "${1=},${2=}"
       do (da_push(P); P = next_edgel4_fg(#-2,P,1), P!=P0);
       resize(#-1,1,da_size(),1,3,0)"
     k.
-  done done
+  }
 
 #@cli elevate : _depth,_is_plain={ 0 | 1 },_is_colored={ 0 | 1 }
 #@cli : Elevate selected 2D images into 3D volumes.
@@ -13836,7 +13837,7 @@ edgels : skip "${1=},${2=}"
 elevate : check "${1=64}>0" skip ${2=1},${3=1}
   e[^-1] "Elevate 2D image$? into $1-slices volume(s)."
   r 100%,100%,1,100%
-  repeat $! l[$>] nm={0,n}
+  foreach { nm={0,n}
     +norm 100%,100%,$1,{if($3,{0,s},1)}
     m={-2,im} d={-2,iM-$m}
     repeat $1
@@ -13846,7 +13847,7 @@ elevate : check "${1=64}>0" skip ${2=1},${3=1}
       r. 100%,100%,1,.. if $3 *. [0] fi
       j.. .,0,0,$> rm.
     done
-  rm[0,1] :: $nm done done
+  rm[0,1] :: $nm }
 
 #@cli expand_x : size_x>=0,_boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }
 #@cli : Expand selected images along the x-axis.
@@ -13990,7 +13991,7 @@ montage : check "isnum(${2=2}) && $2>=0 && $2<=3" skip "${1=X}",${3=0},"${4=}"
         if $N<2 return fi
         nr={round(sqrt($N))} nc={round($N/$nr,1,1)} # Horizontal array.
         if lowercase('"$1"')=='b' n=$nr nr=$nc nc=$n fi # Vertical array.
-        $N,1,1,1,x s x,-{round(w/$nr,1,1)} repeat $! l[$>] if w>1 i[0] {w-1},1,1,1,-1 a x fi done done a x
+        $N,1,1,1,x s x,-{round(w/$nr,1,1)} foreach { if w>1 i[0] {w-1},1,1,1,-1 a x fi } a x
         if $nr>1 i[0] {$nr-1},1,1,1,-2 a x fi y
       else # Other complex montage.
         ('"$1"') f "if(i==72 || i==104,-1,
@@ -13999,7 +14000,7 @@ montage : check "isnum(${2=2}) && $2>=0 && $2<=3" skip "${1=X}",${3=0},"${4=}"
                     if(i==77 || i==109,-4,
                     if(i>=48 && i<=57,i-48,-5)))))"
         s +,-1 s +,-2 s +,-3 s +,-4 s +,-5
-        repeat $! l[$>] if im>=0 ++. 48 =.. {t} rm. rows 0 fi done done a y discard -5
+        foreach { if im>=0 ++. 48 =.. {t} rm. rows 0 fi } a y discard -5
       fi
       f 'if(i<0,i,i%$N)'
     done
@@ -15213,7 +15214,7 @@ cross_correlation : check ${is_image_arg\ $1}
 #@cli : $ image.jpg blur 10 curvature
 curvature :
   e[^-1] "Compute isophote curvatures on image$?."
-  repeat $! l[$>]
+  foreach {
     if d==1
       +g xy,0 hessian... xxxyyy                          # ixx ixy iyy ix iy
       *... .. *[-4] . *[-4] -2                           # ixx -2iyixy ixiyy ix iy
@@ -15225,7 +15226,7 @@ curvature :
       -[-3,-2] +. 0.1 /[-2,-1]                           # iee in
       +inn. laplacian.. -                                # iee/in
     fi
-  done done
+  }
 
 #@cli dct : _{ x | y | z }...{ x | y | z } : (no arg)
 #@cli : Compute the discrete cosine transform of selected images, optionally along the specified axes only.
@@ -15251,11 +15252,11 @@ dct : skip ${1=0}
     rm.
     e[0--3] "Compute discrete cosine transform of image$?."
     noarg
-    repeat $! l[$>]
+    foreach {
       if w>1 _dct fi
       if h>1 permute yxzc _dct permute yxzc fi
       if d>1 permute zxyc _dct permute yzxc fi
-    done done
+    }
   fi
 
 # 1D direct transform (DCT-II) along the x-axis, for a single image.
@@ -15275,7 +15276,7 @@ _dct :
 deblur : check "${2=10}>=0 && ${3=20}>=0 && ${4=0.7}>=0" skip ${5=1}
   e[^-1] "Deblur image$? with a regularized Jansson-Van Cittert algorithm, with sigma $1, $2 iterations,
           time step $3 and regularization $4."
-  repeat $! l[$>] nm={0,n}
+  foreach { nm={0,n}
     [0]
     repeat $2
       if $5>=2 +curvature.                         # TV regularization.
@@ -15289,7 +15290,7 @@ deblur : check "${2=10}>=0 && ${3=20}>=0 && ${4=0.7}>=0" skip ${5=1}
       +[-2,-1]                                     # Update image.
       done
     rm..
-  :: $nm done done
+  :: $nm }
 
 #@cli deblur_goldmeinel : sigma>=0,_nb_iter>=0,_acceleration>=0,_kernel_type={ 0=deriche | 1=gaussian }.
 #@cli : Deblur selected images using Gold-Meinel algorithm
@@ -15299,11 +15300,11 @@ deblur : check "${2=10}>=0 && ${3=20}>=0 && ${4=0.7}>=0" skip ${5=1}
 deblur_goldmeinel : check "$1>=0 && ${2=8}>=0 && ${3=1}>=0" skip ${4=1}
   e[^-1] "Deblur image$? using Gold-Meinel algorithm, with sigma $1, $2 iterations, acceleration $3 and "\
          ${arg\ 1+!$4,"",quasi-}"gaussian kernel."
-  repeat $! l[$>]
+  foreach {
     [0] repeat $2
       +b. $1,1,$4 +/[0,-1] rm.. ^. $3 *[-1,-2] # u *= f / Hu
     done rm[0]
-  done done
+  }
 
 #@cli deblur_richardsonlucy : sigma>=0, nb_iter>=0, _kernel_type={ 0=deriche | 1=gaussian }.
 #@cli : Deblur selected images using Richardson-Lucy algorithm.
@@ -15313,11 +15314,11 @@ deblur_goldmeinel : check "$1>=0 && ${2=8}>=0 && ${3=1}>=0" skip ${4=1}
 deblur_richardsonlucy : check "$1>=0 && ${2=50}>=0" skip ${3=1}
   e[^-1] "Deblur image$? using Richardson-Lucy algorithm, with sigma $1, $2 iterations and "\
          ${arg\ 1+!$3,"",quasi-}"gaussian kernel."
-  repeat $! l[$>]
+  foreach {
     [0] repeat $2
       +b. $1,1,{$3!=0} max. 1e-6 +/[0,-1] rm.. b. $1,1,{$3!=0} *[-1,-2] # u *= H ( f / Hu )
     done rm[0]
-  done done
+  }
 
 #@cli deconvolve_fft :  [kernel],_regularization>=0
 #@cli : Deconvolve selected images by specified mask in the fourier space.
@@ -15346,12 +15347,12 @@ deconvolve_fft : check ${is_image_arg\ $1}" && ${2=.001}>=0"
 #@cli : $ image.jpg +rotate 3,1,1,50%,50% resize 100%,50% resize 100%,200%,1,3,4 shift[-1] 0,1 add +deinterlace 1
 deinterlace : skip ${1=0}
   e[^-1] "Deinterlace image$? with "${arg\ 1+!$1,motion-compensated,standard}" method."
-  repeat $! l[$>]
+  foreach {
     wh={w},{h}
     s y a[0--1:2] y a[^0] y ri.. .,0 r 100%,200%,1,100%,5
     if $1!=0 +displacement. ..,0.05 warp... .,1,1,1 rm. fi
     + / 2 c 0,255 r $wh
-  done done
+  }
 
 #@cli denoise : [guide],std_deviation_s[%]>=0,_std_deviation_r[%]>=0,_patch_size>0,_lookup_size>0,_smoothness,\
 # _fast_approx={ 0 | 1 } : \
@@ -15369,7 +15370,7 @@ deinterlace : skip ${1=0}
 denoise_haar : check "${1=1.4}>=0 && isint(${2=0}) && $2>=0 && isint(${3=10}) && $3>0"
   e[^-1] "Denoise image$? using haar-wavelet thresholding, with threshold $1, "\
           ${arg\ 1+($2>0),auto,$2}" scales and $3 spinning cycles."
-  repeat $! l[$>] nm={0,n}
+  foreach { nm={0,n}
     nb_scales={min(if($2,$2,32),int(log2(min(w,h))-1))}
     w={w} h={h} d={d} sigma=${-std_noise}
     r {round(w,2^($nb_scales+1),1)},{round(h,2^($nb_scales+1),1)},{if(d==1,1,round(d,2^($nb_scales+1),1))},100%,0,0
@@ -15386,7 +15387,7 @@ denoise_haar : check "${1=1.4}>=0 && isint(${2=0}) && $2>=0 && isint(${3=10}) &&
       +[-2,-1]
     done
     rm[0] / $3 r $w,$h,$d,100%,0
-  :: $nm done done
+  :: $nm }
 
 #@cli denoise_cnn : _noise_type={ 0=soft | 1=heavy | 2=heavy (faster) | 3=poisson+gaussian | \
 # 4=poisson+gaussian2 },_patch_size>0
@@ -15467,7 +15468,7 @@ denoise_cnn : skip "${1=0},${2=64}"
 #@cli : $ image.jpg +noise 20 cut[-1] 0,255 +denoise_patchpca[-1] ,
 denoise_patchpca : check "${1=1.8} && $1>=0 && isint(${2=7}) && $2>0 && isint(${3=11}) && $3>0 && isint(${4=5}) && $4>0"
   e[^-1] "Denoise image$? using patch-pca, with strength $1, patch size $2, lookup size $3 and spatial sampling $4."
-  repeat $! l[$>] nm={n}
+  foreach l[$>] nm={n}
     N2={$2*$2} M2={$3*$3} stdnoise=${-std_noise}
     100%,100%,1,100% :: aggreg
     100%,100% :: weights
@@ -15515,7 +15516,7 @@ denoise_patchpca : check "${1=1.8} && $1>=0 && isint(${2=7}) && $2>0 && isint(${
       );
     0);0"
     max[weights] 0.01 /[aggreg,weights] k[aggreg] :: $nm
-  done done
+  done
 
 #@cli deriche : std_deviation>=0[%],order={ 0 | 1 | 2 },axis={ x | y | z | c },_boundary_conditions : (+)
 #@cli : Apply Deriche recursive filter on selected images, along specified axis and with
@@ -15599,13 +15600,13 @@ dilate_threshold : check "isint($1) && $1>=1 && isint(${2=$1}) && $2>=1 && isint
 #@cli : $ image.jpg luminance +gradient append[-2,-1] c divergence[-1]
 divergence :
   e[^-1] "Compute divergence of vector field$?."
-  repeat $! l[$>]
+  foreach {
     if s==1 g x,0
     elif s==2 s c g.. x,0 g. y,0 +
     elif s==3 s c g... x,0 g.. y,0 g. z,0 +
     else error[] "Command '$0': Cannot compute divergence of image ["$>"] (has "{s}">3 channels)."
     fi
-  done done
+  }
 
 #@cli dog : _sigma1>=0[%],_sigma2>=0[%]
 #@cli : Compute difference of gaussian on selected images.
@@ -15613,9 +15614,7 @@ divergence :
 #@cli : $ image.jpg dog 2,3
 dog : check "${1=2%}>=0 && ${2=3%}>=0"
   e[^-1] "Compute difference of gaussian on image$?, with standard deviations $1 and $2."
-  repeat $! l[$>]
-    [0] parallel "b[0] $1","b[1] $2" - abs
-  done done
+  foreach { [0] parallel "b[0] $1","b[1] $2" - abs }
 
 #@cli diffusiontensors : _sharpness>=0,0<=_anisotropy<=1,_alpha[%],_sigma[%],is_sqrt={ 0 | 1 }
 #@cli : Compute the diffusion tensors of selected images for edge-preserving smoothing algorithms.
@@ -15627,13 +15626,13 @@ diffusiontensors : check "${1=0.7}>=0 && ${2=0.3}>=0 && $2<=1" skip ${3=0.6},${4
   p1={if($5,0.5,1)*max($1,1e-2)}
   p2={$p1/(1e-7+1-$2)}
   b $3 n 0,255 structuretensors 0 b $4
-  repeat $! l[$>]
+  foreach {
     eigen max.. 0
     if s==2 s.. c +[-3,-2] +.. 1 +^.. -$p1 ^... -$p2 a[-3,-1] c                   # 2D
     else s.. c +[-4--2] +.. 1 +^.. -$p1 r. 100%,100%,100%,2 ^... -$p2 a[-3,-1] c  # 3D
     fi
     eigen2tensor
-  done done
+  }
 
 #@cli edges : _threshold[%]>=0
 #@cli : Estimate contours of selected images.
@@ -15809,20 +15808,20 @@ _gradient :
 #@cli : $$ https://gmic.eu/oldtutorial/_gradient_norm
 gradient_norm :
   e[^-1] "Compute gradient norm of image$?."
-  repeat $! l[$>] g sqr s c + sqrt done done
+  foreach { g sqr s c + sqrt }
 
-#@cli gradient_orientation : _dimension={1,2,3}
+#@cli gradient_orientation : _dimension={ 1 | 2 | 3 }
 #@cli : Compute N-d gradient orientation of selected images.
 #@cli : Default value: 'dimension=3'.
 #@cli : $ image.jpg +gradient_orientation 2
-gradient_orientation : check "${1=3}==1 || $1==2 || $1==3"
+gradient_orientation : check "isint(${1=3}) && inrange($1,1,3)"
   e[^-1] "Compute $1-d gradient orientation of image$?."
-  repeat $! l[$<]
+  foreach {
     if $1==1 g x +abs. +. 1e-8 -/
     elif $1==2 g xy +sqr +[-2,-1] +. 1e-8 sqrt. /... . /[-2,-1]
     else g xyz +sqr +[-3--1] +. 1e-8 sqrt. /[-4,-3] . /[-2,-1]
     fi
-  done done
+  }
 
 #@cli guided : [guide],radius[%]>=0,regularization[%]>=0 : radius[%]>=0,regularization[%]>=0 : (+)
 #@cli : Blur selected images by guided image filtering.
