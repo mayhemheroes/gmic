@@ -17781,7 +17781,8 @@ min_patch : check "isint(${1=16}) && $1>=1"
 minimal_path : check "$1>=0 && $2>=0 && $3>=0" skip ${7=0}
   e[^-1] "Compute minimal path between points ($1,$2,$3) and ($4,$5,$6) for potential map$?, with "\
          ${arg\ 1+$7,low,high}" connectivity."
-  repeat $! l[$>] nm={0,n}
+  foreach {
+    nm={0,n}
     - {im} + {iM/100}
     100%,100% = 1,${4-6} distance. 1,[0],{if($7,4,3)} k. channels. 1
     i[0] 0
@@ -17799,7 +17800,8 @@ minimal_path : check "$1>=0 && $2>=0 && $3>=0" skip ${7=0}
         da_push(#0,[x,y,z]),
       _(while) p);
       resize(#0,1,da_size(#0),1,3,0)"
-    rm. :: $nm done done
+    rm. :: $nm
+  }
 
 #@cli mse
 #@cli : Compute MSE (Mean-Squared Error) matrix between selected images.
@@ -17853,11 +17855,11 @@ patches : check "isint($1) && $1>0 && isint($2) && $2>0 && isint($3) && $3>0"
 #@cli : $ 400,300,1,1,'if(y>300*abs(cos(x/10+2*u)),1,0)' +plot2value +display_graph[-1] 400,300
 plot2value :
   e[^-1] "Retrieve values from 2D graph plot$?."
-  repeat $! l[$>]
+  foreach {
     s c >= 50%
-    repeat $! l[$>] (1,{w}) ri[1] [0],3 * histogram {w},1,{w} done done
+    foreach { l[$>] (1,{w}) ri[1] [0],3 * histogram {w},1,{w} }
     a c
-  done done
+  }
 
 #@cli pointcloud : _type = { -X=-X-opacity | 0=binary | 1=cumulative | 2=label | 3=retrieve coordinates },\
 # _width,_height>0,_depth>0
@@ -17878,7 +17880,8 @@ plot2value :
 pointcloud : check "${1=0}<=3 && ${2=0}>=0 && ${3=0}>=0 && ${4=0}>=0"
   e[^-1] "Convert image$? to point clouds, in "${arg\ 2+($1>=0)*$1-($1<0),{-$1}-opacity,binary,cumulative,labeling}\
          " mode, with dimensions $2x$3x$4."
-  repeat $! l[$>] nm={0,n}
+  foreach
+    nm={0,n}
     if $1!=3 # Render point cloud image from set of point coordinates
 
       # Force input data to be of size Nx1x1xM.
@@ -17918,7 +17921,8 @@ pointcloud : check "${1=0}<=3 && ${2=0}>=0 && ${3=0}>=0 && ${4=0}>=0"
         end(resize(#-1,N,1,1,s#-1,0));
         I"
     fi
-  k. :: $nm done done
+    k. :: $nm
+  done
 
 #@cli psnr : _max_value
 #@cli : Compute PSNR (Peak Signal-to-Noise Ratio) matrix between selected images.
@@ -17951,13 +17955,13 @@ psnr : skip "${1=}"
 #@cli : $ image.jpg segment_watershed 2
 segment_watershed : check "${1=2}>=0"
   e[^-1] "Apply watershed segmentation on image$?, with edge threshold $1."
-  repeat $! l[$>]
+  foreach {
     min={im}
     + {1+$min} +gradient_norm
     +f. "i<$1 && i<j(1) && i<j(-1) && i<j(0,1) && i<j(0,-1) && (d<=1?1:i<j(0,0,1) && i<j(0,0,-1))"
     *[-3,-1] *. -1 watershed.. . rm.
     - {1+$min}
-  done done
+  }
 
 #@cli shape2bump : _resolution>=0,0<=_weight_std_max_avg<=1,_dilation,_smoothness>=0
 #@cli : Estimate bumpmap from binary shape in selected images.
@@ -17966,7 +17970,7 @@ shape2bump : check "isint(${1=256}) && $1>=0 && ${2=0.75}>=0 && $2<=1 && isnum($
   e[^-1] "Estimate bumpmap from binary shape in image$?, using "\
          ${"if $1 u \"resolution $1\" else u \"full resolution\" fi"}", avg/max weight $2, dilation $3
           and smoothness $4."
-  repeat $! l[$>]
+  foreach
     slices 0 channels 100% > 0 siz={[w,h]}
 
     # Generate skeleton (fast method).
@@ -18020,7 +18024,7 @@ shape2bump : check "isint(${1=256}) && $1>=0 && ${2=0.75}>=0 && $2<=1 && isnum($
 
     j. ..,0,0,0,0,$2 k.
     if $is_resized *. {max([$siz]/[w,h])} r $siz,1,1,5 c 0,100% fi
-  done done
+  done
 
 #@cli skeleton : _boundary_conditions={ 0=dirichlet | 1=neumann }
 #@cli : Compute skeleton of binary shapes using distance transform and constrained thinning.
@@ -18029,7 +18033,7 @@ shape2bump : check "isint(${1=256}) && $1>=0 && ${2=0.75}>=0 && $2<=1 && isnum($
 skeleton : check "!isnum(${1=1}) || ($1>=0 && $1<=1)"
   if isnum($1) bc=$1 else bc=1 noarg fi
   e[^-1] "Compute skeleton of binary image$? with "${"arg 1+"$bc",dirichlet,neumann"}" boundary conditions."
-  repeat $! l[$>] s c repeat $! l[$>]
+  foreach s c foreach
                     # [0] = 2D binary shape
     1,16,1,2        # [1] = List of boundary pixels
     1,16,1,2        # [2] = List of boundary pixels (next iteration)
@@ -18085,12 +18089,7 @@ skeleton : check "!isnum(${1=1}) || ($1>=0 && $1<=1)"
         i[#2,h(#2)-1] = 0;
       );"
     k[0] > 0 thinning
-  done done a c done done
-
-skeleton_v236 : check ${1=0}>=0
-  e[^-1] "Compute skeleton of binary image$?."
-  distance 0 b $1 sharpen 1e10 >= 100%
-  repeat $! +erode[$>] 2 -[$>,-1] done
+  done a c done
 
 #@cli slic : size>0,_regularity>=0,_nb_iterations>0
 #@cli : Segment selected 2D images with superpixels, using the SLIC algorithm (Simple Linear Iterative Clustering).
@@ -18102,7 +18101,8 @@ skeleton_v236 : check ${1=0}>=0
 slic : check "${1=16}>0 && ${2=10}>=0 && ${3=10}>0"
   e[^-1] "Segment image$? using SLIC superpixels, with size $1, regularity $2 and $3 iterations."
   S,m,nb_iter=${1-3}
-  repeat $! l[$>] slices 50%
+  foreach
+    slices 50%
 
     # Initialize superpixel centers Ck.
     {[max(1,round(w/$S)),max(1,round(h/$S))]},1,2,"round(([x,y]+=0.5)*="$S")"
@@ -18177,7 +18177,7 @@ slic : check "${1=16}>0 && ${2=10}>=0 && ${3=10}>0"
     +[0] 1 100%,100% j[0] .,0,0,0,0,1,.. rm.
     distance. 0 *. -1 watershed.. . rm.
     label. 0,0
-  done done
+  done
 
 #@cli ssd_patch : [patch],_use_fourier={ 0 | 1 },_boundary_conditions
 #@cli : Compute fields of SSD between selected images and specified patch.
@@ -18212,7 +18212,7 @@ thinning : check "!isnum(${1=1}) || ($1>=0 && $1<=1)"
   if isnum($1) bc=$1 else bc=1 noarg fi
   e[^-1] "Apply morphological thinning to binary image$? with "\
          ${"arg 1+"$bc",dirichlet,neumann"}" boundary conditions."
-  repeat $! l[$>] s c repeat $! l[$>]
+  foreach s c foreach
                     # [0] = 2D binary shape (current iteration)
     1,16,1,2        # [1] = List of boundary pixels (current iteration)
     1,16,1,2        # [2] = List of pixels to remove (current iteration)
@@ -18276,7 +18276,7 @@ thinning : check "!isnum(${1=1}) || ($1>=0 && $1<=1)"
         _(while), max(is_removed)
       );"
     k[0]
-  done done a c done done
+  done a c done
 
 #@cli tones : N>0
 #@cli : Get N tones masks from selected images.
@@ -18293,9 +18293,7 @@ tones : check $1>0
 #@cli : $ image.jpg topographic_map 10
 topographic_map : check "isint(${1=16}) && $1>0" skip ${2=2}
   e[^-1] "Render topographic maps from image$?, with $1 levels and smoothness $2."
-  repeat $! l[$>]
-    +b $2 isophotes. $1 compose_channels. + ==. 0 blend shapeaverage0
-  done done
+  foreach { +b $2 isophotes. $1 compose_channels. + ==. 0 blend shapeaverage0 }
 
 #@cli tsp : _precision>=0
 #@cli : Try to solve the 'travelling salesman' problem, using a combination of greedy search and 2-opt algorithms.
@@ -18306,7 +18304,7 @@ topographic_map : check "isint(${1=16}) && $1>0" skip ${2=2}
 # line[-1] {0,boundary=2;[I[$>],I[$>+1]]},1,255,128,0 done keep[-1]
 tsp : check "${1=256}>=0"
   e[^-1] "Try to solve the 'travelling salesman' problem for pointcloud$?, with precision $1."
-  repeat $! l[$>] n={n}
+  foreach n={n}
     if h>1" || "d>1 error[0--4] "Selected image '"{n}"' has invalid dimensions ("{[w,h,d,s]}")." fi
 
     # Find initial estimate, using greedy nearest neighbor algorithm.
@@ -18366,7 +18364,7 @@ tsp : check "${1=256}>=0"
         );
       )"
     :: $n
-  done done
+  done
 
 #@cli variance_patch : _patch_size>=1
 #@cli : Compute variance of each images patch centered at (x,y), in selected images.
@@ -18398,7 +18396,7 @@ variance_patch : check "isint(${1=16}) && $1>=1"
 arrow : check "${5=1%}>=0 && ${6=10%}>=0 && ${7=3%}" skip ${8=1}
   e[^-1] "Draw arrow in image$?, from ($1,$2) to ($3,$4), with thickness $5, head length $6,
           head_thickness $7 and opacity $8."
-  repeat $! l[$>]
+  foreach {
     polygon. 7,{"
       x0 = "${"is_percent $1"}"?(w-1)*$1:$1;
       y0 = "${"is_percent $2"}"?(h-1)*$2:$2;
@@ -18413,7 +18411,7 @@ arrow : check "${5=1%}>=0 && ${6=10%}>=0 && ${7=3%}" skip ${8=1}
       lmhl = l - hl;
       X = mul([0,-t,lmhl,-t,lmhl,-ht,l,0,lmhl,ht,lmhl,t,0,t],rot(-atan2(dp[1],dp[0])),2);
       X+=[p0,p0,p0,p0,p0,p0,p0]"},${8--1}
-  done done
+  }
 
 #@cli axes : x0,x1,y0,y1,_font_height>=0,_opacity,_pattern,_color1,...
 #@cli : Draw xy-axes on selected images.
@@ -18438,7 +18436,7 @@ axes : check "isint(${5=14}) && $5>=0 && ${6=1}>=0" skip ${7=0},${8=0}
   my={min($3,$4)} My={max($3,$4)}
 
   # Start drawing axes on selected images.
-  repeat $! l[$>]
+  foreach
     w1={0,w-1} h1={0,h-1}
 
     # Determine number of axes tick marks.
@@ -18505,7 +18503,7 @@ axes : check "isint(${5=14}) && $5>=0 && ${6=1}>=0" skip ${7=0},${8=0}
       j[0] .,{if($stx>0,$x0+6,$x0-w-6)},{if($sty>0,$y0+3,$y0-h-3)},0,0,$6,.. rm[-2,-1]
     fi
 
-  done done
+  done
 
 # Return optimal (offset0,scale) to display input (min,max) values.
 # $1 = min value, $2 = max value, $3 = max number of tags(>=1).
@@ -18720,7 +18718,7 @@ close_binary :
       [ cos(ang), sin(ang) ];
     );"
 
-  repeat $! l[$>] nm={n}
+  foreach nm={n}
 
     # Ensure input is a 2D binary image.
     slices 50% channels 0 > 0
@@ -19116,9 +19114,8 @@ close_binary :
       ==[new_strokes] 0
       if !0$_keep_keycoords rm[keycoords] fi # Small hack used by the plug-in preview.
     fi
-    rm[strokes]
-    ::[new_strokes] $nm
-  done done
+    rm[strokes] ::[new_strokes] $nm
+  done
 
 #@cli ellipse : x[%],y[%],R[%],r[%],_angle,_opacity,_pattern,_color1,... : (+)
 #@cli : Draw specified colored ellipse on selected images.
@@ -19152,11 +19149,11 @@ gaussian : skip ${1=3},${2=$1},${3=0}
   A={$l1*$u*$u+$l2*$v*$v}
   B={($l1-$l2)*$u*$v}
   C={$l1*$v*$v+$l2*$u*$u}
-  repeat $! l[$>] nm={0,n}
-    w={w} h={h} ds={d},{s} rm
+  foreach {
+    nm={0,n} w={w} h={h} ds={d},{s} rm
     $w,$h,1,1,'X=x-{($w-1)/2};Y=y-{($h-1)/2};$A*X*X+2*$B*X*Y+$C*Y*Y'
-    * -1 exp r $w,$h,$ds
-  :: $nm done done
+    * -1 exp r $w,$h,$ds :: $nm
+  }
 
 #@cli graph : [function_image],_plot_type,_vertex_type,_ymin,_ymax,_opacity,_pattern,_color1,... : \
 # 'formula',_resolution>=0,_plot_type,_vertex_type,_xmin,xmax,_ymin,_ymax,_opacity,_pattern,_color1,... : (+)
@@ -19230,7 +19227,7 @@ grid : check "$1>=0 && $2>=0" skip ${3=0},${4=0},${5=1},${6=0},${7=$6}
 linethick : check "${5=2}>=0 && isnum(${6=1}) && isnum(${7=0})"
   e[^-1] "Draw thick line ($1,$2) - ($3,$4) on image$?, with thickness $5, opacity $6 and color (${7--1})."
   if !$5 line ${1-4},${6--1}
-  else repeat $! l[$>]
+  else foreach {
     x0={${"is_percent $1"}?(w-1)*$1:$1}
     y0={${"is_percent $2"}?(h-1)*$2:$2}
     x1={${"is_percent $3"}?(w-1)*$3:$3}
@@ -19244,7 +19241,7 @@ linethick : check "${5=2}>=0 && isnum(${6=1}) && isnum(${7=0})"
       round([ P0 - n, P0 + n, P1 + n, P1 - n ]);
     "}
     polygon 4,$coords,${6--1}
-  done done fi
+  } fi
 
 #@cli mandelbrot : z0r,z0i,z1r,z1i,_iteration_max>=0,_is_julia={ 0 | 1 },_c0r,_c0i,_opacity : (+)
 #@cli : Draw mandelbrot/julia fractal on selected images.
@@ -19325,7 +19322,8 @@ _render_maze :
 #@cli : $ 0 text "G'MIC",0,0,53,1,1 dilate 3 autocrop 0 frame 1,1,0 maze_mask 8 dilate 3 negate mul 255
 maze_mask : check "isint(${1=24}) && $1>0"
   e[^-1] "Input masked maze from image$? with cell size $1."
-  compose_channels + >= 50% repeat $! l[$>]
+  compose_channels + >= 50%
+  foreach {
     do
       +rand[0] 0,1 *. [0] ({[xM,yM]}) rm..  # Select one starting point in the mask.
       +flood[0] {^},0,0,0,1,2 >=. 2 +negate. *.. 15 a[-2,-1] c
@@ -19333,7 +19331,7 @@ maze_mask : check "isint(${1=24}) && $1>0"
       _generate_maze {w},{h}
     while iM#0
     rm[0] + _render_maze. $1 :: [maze]
-  done done
+  }
 
 #@cli newton_fractal : z0r,z0i,z1r,z1i,_angle,0<=_descent_method<=2,_iteration_max>=0,_convergence_precision>0,\
 # _expr_p(z),_expr_dp(z),_expr_d2p(z)
@@ -19528,7 +19526,8 @@ pack_sprites : check "isint(${1=5}) && $1>=0 && ${2=25}>=0 && $2<=100 && isint($
 #@cli : $ image.jpg piechart 25,0,0,0,"Red",55,255,0,0,"Green",40,0,255,0,"Blue",30,128,128,255,"Other",5,128,128,128
 piechart : check $1>=0
   e[^-1] "Draw pie chart on image$?, with label height $1 and color ($2,$3,$4)."
-  $=arg repeat $! l[$>]
+  $=arg
+  foreach {
     ellipse 50%,50%,{w/2-1},{h/2-1},0,1,1
     ellipse 50%,50%,{w/2-1},{h/2-1},0,1,0xFFFFFFFF
     (${6--1:5}) normalize_sum.
@@ -19556,7 +19555,7 @@ piechart : check $1>=0
       theta=$ntheta
     fi done
     rm.
-  done done
+  }
 
 #@cli plasma : _alpha,_beta,_scale>=0 : (+)
 #@cli : Draw a random colored plasma fractal on selected images.
@@ -19654,24 +19653,24 @@ rorschach : check "${1=5%}>=0 && isint(${2=1}) && $2>=0 && $2<=3"
   if $2==0 # No mirroring.
    rand -1,1 b $1 >= 0
   elif $2==1 # X-mirroring.
-    repeat $! l[$>]
+    foreach {
       w={w}
       columns 0,{w/2-1} rand -1,1 b $1 >= 0
       +mirror x if $w%2 columns. 1,100% fi a x
-    done done
+    }
   elif $2==2 # Y-mirroring.
-    repeat $! l[$>]
+    foreach {
       h={h}
       rows 0,{h/2-1} rand -1,1 b $1 >= 0
       +mirror y if $h%2 rows. 1,100% fi a y
-    done done
+    }
   elif $2==3 # XY-mirroring.
-    repeat $! l[$>]
+    foreach {
       w={w} h={h}
       z 0,0,{w/2-1},{h/2-1} rand -1,1 b $1 >= 0
       +mirror x if $w%2 columns. 1,100% fi a x
       +mirror y if $h%2 rows. 1,100% fi a y
-    done done
+    }
   fi
 
 #@cli sierpinski : recursion_level>=0
@@ -19714,7 +19713,7 @@ _sierpinski :
 # {u(-600,600)},{u(-600,600)},0.6,255 done
 spline : skip ${9=1},${10=0}
   e[^-1] "Draw spline from ($1,$2) [$3,$4] to ($5,$6) [$7,$8] on image$?, with opacity $9 and color (${10--1})."
-  repeat $! l[$>]
+  foreach {
     x0={if(${"is_percent $1"},$1*(w-1),$1)}
     y0={if(${"is_percent $2"},$2*(h-1),$2)}
     u0={if(${"is_percent $3"},$3*(w-1),$3)}
@@ -19724,7 +19723,7 @@ spline : skip ${9=1},${10=0}
     u1={if(${"is_percent $7"},$7*(w-1),$7)}
     v1={if(${"is_percent $8"},$8*(h-1),$8)}
     eval ${-math_lib}"spline(#0,["$x0","$y0"],["$u0","$v0"],["$x1","$y1"],["$u1","$v1"],$9,[${10--1}])"
-  done done
+  }
 
 #@cli tetraedron_shade : x0,y0,z0,x1,y1,z1,x2,y2,z2,x3,y3,z3,R0,G0,B0,...,R1,G1,B1,...,R2,G2,B2,...,R3,G3,B3,...
 #@cli : Draw tetraedron with interpolated colors on selected (volumetric) images.
@@ -19816,7 +19815,7 @@ _text_outline : skip "${1=}"
   is_fontpercent=${"is_percent $4"}
   xpos={`s=['"$2"'];$sepx==_'~'||$sepx==_'%'?s[0,size(s)-1]:s`}
   ypos={`s=['"$3"'];$sepy==_'~'||$sepy==_'%'?s[0,size(s)-1]:s`}
-  repeat $! l[$>]
+  foreach {
     0 t. "$1",0,0,{-2,$is_fontpercent?h*$4:$4},1,1 expand_xy. {1+$5},0
     +dilate. {2*$5+1}
     i[-3] (${7--1}) r... {s#0},1,1,1,0,2 y... c r... .,.,1,100%
@@ -19827,7 +19826,7 @@ _text_outline : skip "${1=}"
       k[0]
     else k[1]
     fi
-  done done
+  }
 
 #@cli triangle_shade : x0,y0,x1,y1,x2,y2,R0,G0,B0,...,R1,G1,B1,...,R2,G2,B2,...
 #@cli : Draw triangle with interpolated colors on selected images.
@@ -19859,14 +19858,14 @@ triangle_shade :
 #@cli : $ 400,300 truchet ,
 truchet : check "isint(${1=32}) && $1>0 && ${2=3}>=0" skip ${3=1}
   e[^-1] "Render "${arg\ 1+!$3,curved,straight}" truchet patterns in image$?, with scale $1 and radius $2."
-  repeat $! l[$>] nm={0,n}
-    w={w} h={h} s={s} rm
+  foreach {
+    nm={0,n} w={w} h={h} s={s} rm
     $1,$1 = 1,0,0 = 1,100%,100% distance 1,{1+$3} M={int(iM/2)} # Generate truchet pattern and its mirrored version.
     ir {$M-$2/2-($1%2)},{$M+$2/2} +mirror y a x
     {round($w/$1,1,1)},{round($h/$1,1,1)} rand. 0,1 >=. 50% r. {w*$1},{h*$1} *. $1
     channels. 0,1 (0,{$1-1}) r. $1,$1,1,1,3 +transpose. a[-2,-1] c ri. ..,0,2 +[-2,-1]
-    warp.. . rm. >= 50% r $w,$h,1,1,0 r 100%,100%,1,$s
-  :: $nm done done
+    warp.. . rm. >= 50% r $w,$h,1,1,0 r 100%,100%,1,$s :: $nm
+  }
 
 #@cli turbulence : _radius>0,_octaves={1,2,3...,12},_alpha>0,_difference={-10,10},_mode={0,1,2,3}
 #@cli : Render fractal noise or turbulence on selected images.
@@ -19876,7 +19875,8 @@ truchet : check "isint(${1=32}) && $1>0 && ${2=3}>=0" skip ${3=1}
 turbulence : check "${1=32}>0 && ${2=6}>0" skip ${3=3},${4=0},${5=0}
   e[^-1] "Render fractal noise or turbulence on image$?, with radius $1, octaves $2, damping per octave $3,
           difference $4 and mode $5."
-  repeat $! l[$>] nm={0,n}
+  foreach {
+    nm={0,n}
     if $4 . fi
     f. 0 +noise. 10,0 b. $1,0
     if $5==0||$5==1 -. {ia} abs.
@@ -19894,14 +19894,16 @@ turbulence : check "${1=32}>0 && ${2=6}>0" skip ${3=3},${4=0},${5=0}
     n. 0,255
     rm..
     if $4 *. $4 mv.. 2 - n. 0,255 fi
-  :: $nm done done
+    :: $nm
+  }
 
 #@cli yinyang
 #@cli : Draw a yin-yang symbol on selected images.
 #@cli : $ 400,400 yinyang
 yinyang :
   e[^-1] "Draw yin-yang symbol on image$?."
-  f 0 repeat $! l[$>]
+  f 0
+  foreach {
     s={s} channels 0
     r={round(0.95*min(w,h)/4)}
     +line 50%,0,50%,50%,1,2 ellipse. 50%,{h/2-$r},$r,$r,0,1,2
@@ -19913,7 +19915,7 @@ yinyang :
     ellipse. 50%,{h/2-$r},{$r/3},{$r/3},0,1,1
     ellipse. 50%,{h/2+$r},{$r/3},{$r/3},0,1,2
     r 100%,100%,1,$s
-  done done
+  }
 
 #---------------------------------
 #
