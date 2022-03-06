@@ -7865,6 +7865,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               }
 
               // Transfer back images to saved list of images.
+              cimg::mutex(27);
               if (is_get) { // is_get?
                 g_list.move_to(images,~0U);
                 g_list_c.move_to(images_names,~0U);
@@ -7886,6 +7887,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               }
               g_list.assign();
               g_list_c.assign();
+              cimg::mutex(27,0);
               if (exception._message) throw exception;
 
               ++fed[0]; --fed[1];
@@ -8852,7 +8854,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             }
           }
 
-          callstack.remove();
+          cimg::mutex(27);
           if (is_get) {
             g_list.move_to(images,~0U);
             g_list_c.move_to(images_names,~0U);
@@ -8878,8 +8880,12 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               g_list_c.move_to(images_names,uind0);
             }
           }
-          g_list.assign(); g_list_c.assign();
+          g_list.assign();
+          g_list_c.assign();
+          cimg::mutex(27,0);
           if (exception._message) throw exception;
+
+          callstack.remove();
           continue;
         }
 
@@ -15289,12 +15295,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
   } catch (gmic_exception&) {
     // Wait for remaining threads to finish.
     cimglist_for(gmic_threads,k) wait_threads(&gmic_threads[k],true,(T)0);
-//    pop_callstack(initial_callstack_size);
+    pop_callstack(initial_callstack_size);
     throw;
 
   } catch (CImgAbortException &) { // Special case of abort (abort from a CImg method)
     // Wait for remaining threads to finish.
     cimglist_for(gmic_threads,k) wait_threads(&gmic_threads[k],true,(T)0);
+    pop_callstack(initial_callstack_size);
 
     // Do the same as for a cancellation point.
     const bool is_very_verbose = verbosity>1 || is_debug;
