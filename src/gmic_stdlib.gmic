@@ -27817,16 +27817,16 @@ font2cimgh :
     replace_str "\\","\\\\"
     replace_str "\"","\\\""
     s y,-111
-    repeat $!
+    repeat $! {
       if {$>,i[h-1]==_'\\'&&i[h-2]!=_'\\'} rows[$>] 0,{$>,h-2} rows[{$>+1}] -1,100% =[{$>+1}] {'\\'} fi
-      l[$>]
+      l[$>] {
         i[0] ('"      \""') ('\"')
         if !$< ('" };"') fi
         ('\n')
         y a y
-      done
-    done
-    repeat $nb_chunks-1 ind={int($!*($>+1)/$nb_chunks)} l[$ind] { = {','},0,100% ('\n') y a y } done
+      }
+    }
+    repeat $nb_chunks-1 { ind={int($!*($>+1)/$nb_chunks)} l[$ind] { = {','},0,100% ('\n') y a y } }
     i[0] ('"    static const char *const data_font"${W}x${H}"[] = {"\n')
     y a y ot $bnm.h
 
@@ -27862,7 +27862,7 @@ hex :
 #@cli hex2dec : hexadecimal_int1,...
 #@cli : Convert specified hexadecimal integers into their decimal representations.
 hex2dec :
-  $=arg res,sep= repeat $# res=$res$sep${_$0\ ${arg{$>+1}}} sep=, done u $res
+  $=arg res,sep= repeat $# { res=$res$sep${_$0\ ${arg{$>+1}}} sep=, } u $res
 
 _hex2dec :
   u {"str = ['$1']; str[0]==_'-'?-stov([['0x'],str[1,max(1,size(str)-1)]]):stov([['0x'],str])"}
@@ -27929,19 +27929,19 @@ img2text : skip "${1= }"
 img82hex :
   e[^-1] "Convert 8bits-valued vector$? into hexadecimal representations (ascii-encoded)."
   % 256 y
-  repeat $!
+  repeat $! {
     +f[$>] 'v=int(i)&15;v+if(v<10,48,87)' # Lower digit
     f[$>] 'v=int(i)>>4;v+if(v<10,48,87)'  # Higher digit
     a[$>,-1] x
-  done
+  }
 
 #@cli hex2img8
 #@cli : Convert selected hexadecimal representations (ascii-encoded) into 8bits-valued vectors.
 hex2img8 :
   e[^-1] "Convert hexadecimal representation$? (ascii-encoded) into 8bits-valued vectors."
-  repeat $!
-    s. x,2 f[-2,-1] 'if(i>=97,i-87,i-48)' *.. 16 +[-2,-1]
-  mv. 0 done
+  repeat $! {
+    s. x,2 f[-2,-1] 'if(i>=97,i-87,i-48)' *.. 16 +[-2,-1] mv. 0
+  }
 
 #@cli is_3d
 #@cli : Return 1 if all of the selected images are 3D objects, 0 otherwise.
@@ -28604,7 +28604,7 @@ oct :
 #@cli oct2dec : octal_int1,...
 #@cli : Convert specified octal integers into their decimal representations.
 oct2dec :
-  $=arg res,sep= repeat $# res=$res$sep${_$0\ ${arg{$>+1}}} sep=, done u $res
+  $=arg res,sep= repeat $# { res=$res$sep${_$0\ ${arg{$>+1}}} sep=, } u $res
 
 _oct2dec :
   u {"str = vtos(abs($1));
@@ -28627,7 +28627,7 @@ ovh2stats : skip "${1=gmic.eu-*-*-*.log.gz}"
   e[] "* Load log files."
   if !narg(${}) error[0--2] "No OVH logfiles matching name '$1' have been found." fi
 
-  repeat narg(${})
+  repeat narg(${}) {
     arg0 $>,$files file=${}
     day,month,year={"str = ['"$file"'];
       t1 = find(str,_'-') + 1;
@@ -28643,7 +28643,7 @@ ovh2stats : skip "${1=gmic.eu-*-*-*.log.gz}"
     e[] "  > "$year/$month/$day:" "$_vt100_g$file$_vt100_n
     it $file
     :: ${year}_${month}_${day}
-  done
+  }
 
   # Keep only lines containing 'G'MIC-Qt'.
   repeat $! nm={$>,n} l[$>] {
@@ -28798,7 +28798,7 @@ _ovh2stats_versions :
 #@cli padint : number,_size>0
 #@cli : Return a integer with 'size' digits (eventually left-padded with '0').
 padint : check "isint($1)" skip ${2=4}
-  u "" repeat $2 u ${}{int($1/10^$<)%10} done
+  u "" repeat $2 { u ${}{int($1/10^$<)%10} }
 
 #@cli path_cache
 #@cli : Return a path to store G'MIC data files for one user (whose value is OS-dependent).
@@ -29138,7 +29138,7 @@ strreplace : skip "${3=}"
     ls=${strlen\ "$2"}
     lr={${strlen\ "$3"}-1}
     l[] ('"$1"':y) s +,{'"$2"'} s y,-$ls
-    repeat $! if [{$>,^}]==['"$2"'] rows[$>] 0,$lr f[$>] {'"$3"'} fi done
+    repeat $! { if [{$>,^}]==['"$2"'] rows[$>] 0,$lr f[$>] {'"$3"'} fi }
     a y u {t} rm done
   else
     l[] ('"$1"') s -,{'"$2"'} a y u {t} rm done
@@ -29277,10 +29277,10 @@ demos : check "isint(${1=2}) && $1>=0 && $1<=2" check_display $0
 
   # Generate menu graphics.
   l[]
-    repeat $nb_entries
+    repeat $nb_entries {
       arg 1+$>,$entries entry=${}
       0 t. $entry,0,0,24,1,1
-    done
+    }
     r ${-max_wh},1,1,0,0,0.5,0.5
     frame 12,6,0 a z
     +n[0] 0,255
@@ -29556,10 +29556,10 @@ x_2048 : check_display $0
   m "_x_2048_setrandom : +==[0] 0 f. 'if(i,4*y+x,-1)' discard. -1
      off={i[round(u(h-1))]} rm. x={$off&3} y={$off>>2} n={if(u<0.75,1,2)}
      =[0] $n,$x,$y [{2+$n}] c3d.
-     repeat 6 j3d[1] .,{78+$x*121},{190+$y*121},{10*$<},{(1+$>)/6} w[1] wait 20 done
+     repeat 6 { j3d[1] .,{78+$x*121},{190+$y*121},{10*$<},{(1+$>)/6} w[1] wait 20 }
      rm."
   m "_x_2048_object3d : +f[0] 'if(i,i*16+4*y+x,-1)' discard. -1
-     N={h} repeat h v={-{1+$>},@$>} ++3d[{2+($v>>4)}] {$v&3},{($v>>2)&3} done
+     N={h} repeat h { v={-{1+$>},@$>} ++3d[{2+($v>>4)}] {$v&3},{($v>>2)&3} }
      +3d[-$N--1] rm.."
   i[0] 4,4
 
@@ -29571,19 +29571,19 @@ x_2048 : check_display $0
   t. "2048",20,10,86,1,$c0
   t. "Join the numbers and get to the 2048 tile!",20,90,20,1,$c0
   rectangle. 422,20,501,75,1,187,173,160 t. "SCORE",439,25,15,1,238,228,218
-  repeat 12
+  repeat 12 {
     107,107,1,3 fc. ${b{min($>,7)}} +fc. ${c{$>>2}}
     s1={2^$>} 0 t. ${s{$>>0}},0,0,52,1,1
     r. ..,..,1,1,0,0,0.5,0.5 dilate_circ. 3 b. 0.5
     j... ..,0,0,0,0,1,.,1 rm[-2,-1]
-  done
+  }
   frame_round[2--1] 10,5,1,0.5,187,173,160 frame[2--1] 7,7,187,173,160 to_rgb[2--1]
   r[2] 400%,400%,1,3,0,2 j[1] [2],18,130
   sprite3d[3--1]
 
   # Run game.
   w[1] 100%,100%,0,"[G"{`39`}"MIC] 2048" insert_new=1
-  repeat 2 _x_2048_setrandom done
+  repeat 2 { _x_2048_setrandom }
   do
 
     # Render game graphics at current iteration.
@@ -29640,24 +29640,24 @@ x_2048 : check_display $0
 
         if (im||iM)&&!{*,k} # Render animation for shift.
           /. 5 z. 0,2 y.
-          repeat 5
+          repeat 5 {
             j.. .,0,8,0,0,-1
             j[1] [2],18,130 +vshift2048.. *3d. 121 j3d[1] .,78,190 rm.
             w[1] wait 20
-          done
+          }
         fi
         rm[-2,-1]
 
         # Tile fusions.
         if !$> dscore=0
           [0] +f[0] 'if(i,i*16+4*y+x,-1)' discard. -1
-          repeat h
+          repeat h {
             x={i[$>]&3} y={(i[$>]>>2)&3} n={i[$>]>>4}
             if $x>0" && "{0,i($x-1,$y)}==$n
               =[0] 0,$x,$y =[0] {$n+1},{$x-1},$y =.. 0,$x,$y insert_new=1 dscore+={2^($n+1)}
             else =. -1,0,$>
             fi
-          done
+          }
           score+=$dscore
 
           if iM<0 rm[-2,-1]
@@ -29665,14 +29665,14 @@ x_2048 : check_display $0
             discard. -1
             rv[0,-2] _x_2048_object3d rv[0,-3] vshift2048. *3d. 121 # Only tiles that do not move in this step.
             j[1] [2],18,130 j3d[1] .,78,190 rm[-3,-1]
-            N={h} repeat h v={-{1+$>},@$>} ++3d[{2+($v>>4)}] {$v&3},{($v>>2)&3} done # Only tiles that move.
+            N={h} repeat h { v={-{1+$>},@$>} ++3d[{2+($v>>4)}] {$v&3},{($v>>2)&3} } # Only tiles that move.
             +3d[-$N--1] rm..
             0 t. +$dscore,0,0,33,1,1 100%,100%,1,3 fc. $c0
-            repeat 6  # Render animation for fusion.
+            repeat 6 { # Render animation for fusion.
               +vshift2048... *3d. 121 +j3d[1] .,78,190
               j. ...,440,{40-3*$>},0,0,{min(1,$</3)},[-4]
               w. rm[-2,-1] -3d... {1/6},0,0 wait 20
-            done
+            }
             rm[-3--1]
           fi
 
@@ -29717,12 +29717,13 @@ x_blobs : check_display $0
     # Render image of blobs and find nearest blob to mouse pointer.
     if $!>1
       {0,[w,h]},1,2
-      repeat h#1
+      repeat h#1 {
         r={1,i[2]*(1+i[3]*cos(i[4]+i[5]*$|*1000))}
         ellipse. {1,@0,1},$r,$r,0,1,{1,@6-7}
         d={sqrt(($x-{1,@0})^2+($y-{1,@1})^2)}
         if $d<$r nearest=$> fi
-      shift[1] 0,-1,0,0,2 done
+        shift[1] 0,-1,0,0,2
+      }
       b. 15
       +norm. +>=. 50 <=.. 40 *[-3,-1]
       +*[0,-1] rm.. rv[-2,-1] *. 1.6 c. 0,255 +[-2,-1]
@@ -29780,17 +29781,17 @@ x_bouncing : check_display $0
   l[]
   520,320,1,3 plasma 1,1,9 n 0,220
   N=12
-  repeat $N
+  repeat $N {
     ball[] {round(u(32,80))},${-rgb}
     t$>={u(200)} x$>={0,u(10,w-10)} h$>={u(150,300)} vx$>={if(u<0.5,1,-1)*u(1,8)}
-  done
+  }
   mv[0] $!
   w. {f=w<0.5*{*,u}?1.5:1;[w,h]*=f},0,"[G"{`39`}"MIC] Bouncing Balls"
   (0;0.7;1) r. {-2,w},70,1,1,3
 
   do
     [$N]
-    repeat $N
+    repeat $N {
       bw={$>,w} bh={$>,h}
       y={${h$>}*abs(cos(${t$>}*pi/60))-$bh/2}
       dt=1
@@ -29807,7 +29808,7 @@ x_bouncing : check_display $0
       j... ..,{max(0,min({$N,w-$bw},${x$>}-$bw/2))},{{$N,h}-{h}-$y-70},0,0,1,.,255 rm[-2,-1]
       t$>+=$dt
       x$>+={$dt*${vx$>}}
-    done
+    }
 
     +rows. {h-2*70},{h-1-70} mirror. y *. [{$N+1}]
     j.. .,0,{-2,h-71},0,0,0.5 rm.
@@ -29886,7 +29887,7 @@ x_color_curves : skip ${1=rgb}
 
     # Apply color curves on fullres image.
     xcc_goto
-    repeat s function1d[] 1,${__xcc_C$>} *. {255%} r. 256,1,1,1,5 c. 0,255 sh[0] $> map. .. rm[-2,-1] done
+    repeat s { function1d[] 1,${__xcc_C$>} *. {255%} r. 256,1,1,1,5 c. 0,255 sh[0] $> map. .. rm[-2,-1] }
     xcc_backto
 
   done
@@ -29910,18 +29911,18 @@ _x_color_curves :
     elif {*,b}&1 viewmode={x={*,x};if(x<w/3,1,if(x<2*w/3,2,3))} # Change viewmode.
     elif {*,b}&2" && "$x>=0" && "$y>=0 # Add control point from picked color.
       xc={$x*w/{*,w}} yc={$y*h/{*,h}} +z[0] $xc,$yc,$xc,$yc
-      repeat s (${__C$>},{i[$>]/255%},{i[$>]/255%}) r. 2,{w/2},1,1,-1 sort. +,y __C$>={^} rm. done
+      repeat s { (${__C$>},{i[$>]/255%},{i[$>]/255%}) r. 2,{w/2},1,1,-1 sort. +,y __C$>={^} rm. }
       rm. wait -1
     else viewmode=0
     fi
     need_refresh={$need_refresh||$oviewmode!=$viewmode}
 
     # Update result.
-    repeat s if ['_${oC$>}']!=['_${__C$>}'] # Channel must be updated.
+    repeat s { if ['_${oC$>}']!=['_${__C$>}'] # Channel must be updated.
       function1d[] 1,${__C$>} *. {255%} r. 256,1,1,1,5 c. 0,255
       +channels[0] $> map. .. j[1] .,0,0,0,$> rm[-2,-1]
       need_refresh=1 oC$>=${__C$>}
-    fi done
+    fi }
 
     # Display view.
     if $need_refresh
@@ -29940,7 +29941,7 @@ _x_color_curves :
   w 0
 
   # Transfer curves to output variable and request curve widgets to close.
-  repeat 5 if narg(${__C$>}) __xcc_C$>=${__C$>} __C$>=-1 fi done
+  repeat 5 { if narg(${__C$>}) __xcc_C$>=${__C$>} __C$>=-1 fi }
 
 # Define colorspace conversion functions.
 __x_color_curves :
@@ -30268,14 +30269,14 @@ _x_colorize :
       if $view_markers
         if $view_markers==2 rad1=5 rad2=3 else rad1=3 rad2=2 fi
         if narg($replace_color)" && "{points,w} ipoints=$points_replaced else ipoints=$points fi
-        repeat w#$ipoints
+        repeat w#$ipoints {
           +columns[$ipoints] $>
           x={(i[0]-$x0)*$ww/(1+$x1-$x0)}
           y={(i[1]-$y0)*$wh/(1+$y1-$y0)}
           col={i[3]-1},{i[4]-1},{i[5]-1}
           rm.
           circle. $x,$y,$rad1,1,0 circle. $x,$y,$rad2,1,$col
-        done
+        }
       fi
 
       if narg($replace_color)
@@ -30321,7 +30322,7 @@ _x_colorize :
 # Compute potential function.
 __x_colorize :
   if $1 # Potential for lineart.
-    n. 0,1 ^. 5 repeat 4 +b. 0.5% min done
+    n. 0,1 ^. 5 repeat 4 { +b. 0.5% min } done
   else  # Potential for generic grayscale image.
     gradient_norm. n. 0,255 normalize_local. 3,3 *. -1 n. 0,255
     b. 0.05% n. 0,1 sqr. +b. 0.5% n[-2,-1] 0,1 min[-2,-1]
@@ -30390,9 +30391,11 @@ x_connect4 : check_display $0
     # Initialize game.
     if !narg($visu)
       {board,[w,h]*$R},1,3,64
-      repeat h#$board y=$> repeat w#$board x=$>
-        val={board,i($x,$y)} if $val j. [token{$val-1}],{$x*$R},{$y*$R},0,0,1,[tokenm],255 fi
-      done done
+      repeat h#$board { y=$>
+        repeat w#$board { x=$>
+          val={board,i($x,$y)} if $val j. [token{$val-1}],{$x*$R},{$y*$R},0,0,1,[tokenm],255 fi
+        }
+      }
       +r[cache,cachem] {board,[w,h]*$R},1,100%,0,2 a[-2,-1] c blend[-2,-1] alpha
       :: visu w[visu] 100%,100%,0,"[G'MIC] Connect Four"
       turn=0 is_falling=0 x=-1 yv=0 dyv=0 winner=
@@ -30415,13 +30418,13 @@ x_connect4 : check_display $0
         fi
         j[tmpvisu] [text],{tmpvisu,([w,h]-[w#$text,h#$text])/2},0,0,{0.7+0.3*sin(5*$|)},[textm]
       else
-        repeat 4
+        repeat 4 {
           [token$turn]
           rgb2hsv. sh. 1,2 +. {0.4*sin(5*$|)} c. 0,1 rm. hsv2rgb.
           j. [cache],0,0,0,0,1,[cachem],255
           j[tmpvisu] .,{$R*[$x,$y]},0,0,1 rm.
           x+={$c!=2?1:0} y+={$c==1?0:$c==4?-1:1}
-        done
+        }
       fi
       w[tmpvisu] 100%,100% rm[tmpvisu] wait 20
 
@@ -30476,7 +30479,7 @@ x_connect4 : check_display $0
     else # Manage token falling animation
       if !narg($column)
         $R,{board,h*$R},1,3,64
-        repeat h#$board v={board,i($x,$>)} if $v j. [token{$v-1}],0,{$>*$R},0,0,1,[tokenm],255 fi done
+        repeat h#$board { v={board,i($x,$>)} if $v j. [token{$v-1}],0,{$>*$R},0,0,1,[tokenm],255 fi }
         :: column
       fi
 
@@ -30663,10 +30666,10 @@ x_fireworks : check_display $0
         color={min(255,80+u(200))},{min(255,80+u(200))},{min(255,80+u(200))}
         radius={u(10)}
         N={5+u(10)}
-        repeat $N
+        repeat $N {
           angle={$>*2*pi/$N}
           i... ({$i,@0,1},{2*cos($angle)+{$i,@2}/1.5},{2*sin($angle)+{$i,@3}/1.5},-2,$radius,$color)
-        done
+        }
         to_be_removed=1
       fi
       if $to_be_removed rm[$i] else i+=1 fi  # If processed rocket has to be removed.
@@ -30910,7 +30913,7 @@ x_hanoi : check_display $0
 ----\n
 -------------------------------------------"
   l[]
-  l[] # Create 3D rods
+  l[] { # Create 3D rods
     cylinder3d 1,10 r3d 1,0,0,90
     ++3d 10,0,0  +-3d.. 10,0,0
     box3d 30,1,10 -3d. 15,0,5
@@ -30919,12 +30922,12 @@ x_hanoi : check_display $0
     (86,50,50;132,36,12;218,109,66;231,207,180;255,193,140) permute. yzcx r. 32,1,1,3,3
     map.. . rm. b. 2% b. x,1% sharpen. 100 c. 0,255
     r3d.. 1,0,0,-90 texturize3d.. . r3d.. 1,0,0,90 rm.
-  done
+  }
 
-  l[] # Create 3D disks
+  l[] { # Create 3D disks
     6,1,1,3,'[360*x/w,0.9*(1-(x/w)^0.5),0.9]' hsi2rgb.
     ytop0=0
-    repeat w#0
+    repeat w#0 {
       R,r={3-0.3*$>},{1.6-0.22*$>}
       torus3d $R,$r,36,10
       300,300 plasma. 1,1,3 b. 20 sharpen. 300 n. 150,255 1,1,1,3,{0,I[$>]} r. ..,..,1,3 rv[-2,-1] blend[-2,-1]
@@ -30934,9 +30937,9 @@ x_hanoi : check_display $0
       a$>,x$>,y$>,h$>=0,0,$ytop0,{1.8*$r/(0.3+$r)}
       ytop0+=${h$>}
       :: disk3d$>
-    done
+    }
     rm[0]
-  done
+  }
 
   w[] 640,400,0,"[G"{`39`}"MIC] Tower of Hano\357"
   1,3,1,3,'y==0?[32,128,100]:y==1?[64,16,0]:[0,0,0]' r. {*,w},{*,h},1,3,3 :: background
@@ -30946,7 +30949,7 @@ x_hanoi : check_display $0
   do
 
     # Display 3D view for current game state.
-    repeat 6 +r3d[disk3d$>] 1,1,1,${a$>} +3d. {10*(${x$>}-1)},-${y$>},0 done +3d[-6--1] +3d. [rods3d]
+    repeat 6 { +r3d[disk3d$>] 1,1,1,${a$>} +3d. {10*(${x$>}-1)},-${y$>},0 } +3d[-6--1] +3d. [rods3d]
     r3d. 1,0,0,20
     if !($buttons&2) r3d. 0,1,0.3,{5*cos(1.5*$|)} r3d. 0.3,0,1,{3*sin(0.8*$|)} fi
     r3d. 1,0,0,$motion3d_y r3d. 0,-1,0,$motion3d_x *3d. 20
@@ -30961,10 +30964,10 @@ x_hanoi : check_display $0
 
     # Get index of top disk for each rod.
     top0,top1,top2,ytop0,ytop1,ytop2=-1
-    repeat 6
+    repeat 6 {
       rod={round(${x$>})}
       if $selected!=$>" && "${y$>}+${h$>}>${ytop$rod} ytop$rod={${y$>}+${h$>}} top$rod=$> fi
-    done
+    }
 
     # Manage user events.
     prev_buttons=$buttons
@@ -31294,11 +31297,11 @@ x_jawbreaker : check "${1=12}>0 && $1<20 && ${2=13}>0 && $2<20 && ${3=5}>0 && $3
 
           # Manage board shifts (vertical and horizontal).
           flood[board] $x,$y,0,0,0,1,0
-          repeat w#$board
+          repeat w#$board {
             +columns[board] $> mirror. y
             h={board,h} l. s -,0 a y if $! r 1,$h,1,1,0 mirror y else i 1,$h fi done
             j[board] .,$> rm.
-          done
+          }
           rows[board] -1,100% f[board] "if(y==0,if(i(x,h-1),x,w),i)" sort[board] +,x rows[board] 1,100%
 
           # Update score.
@@ -31320,11 +31323,11 @@ x_jawbreaker : check "${1=12}>0 && $1<20 && ${2=13}>0 && $2<20 && ${3=5}>0 && $3
     w[] {visu,w},{visu,h},0,"[G"{`39`}"MIC] Jawbreaker (Final Score : "$score")"
     260,85 :: gameover t. "Game Over!",3,0,53,1,1 t. "Score : "$score,23,53,32,1,1
     +dilate. 5 :: "mgameover" *.. 255 r.. 100%,100%,1,3
-    repeat 25
+    repeat 25 {
       +r[gameover,mgameover] {400-12*($>+1)}%,{400-12*($>+1)}%
       +j[visu] ..,{({visu,w}-w)/2},{({visu,h}-h)/2},0,0,{$>/25},.
       w. rm[-3--1] wait 25
-    done
+    }
     do
       wait if {*,r} w[] {*,w},{*,h} wait -1 fi
       while {*}" && "!{*,Q}" && "!{*,ESC}" && "!{*,b}
@@ -31475,13 +31478,13 @@ x_life : check_display $0
     rv[0,-1]                                                  # Update game state.
     if {*,x}>0" && "{*,b}==1" && "$stock>0                    # Add random cells to the game if mouse button pressed.
       nb={u*7}
-      repeat $nb
+      repeat $nb {
         x={{*,x}/{*,w}*{0,w}+u(-4,4)}
         y={{*,y}/{*,h}*{0,h}+u(-3,3)}
         =[0] 1,$x,$y
         =[1] $iteration,$x,$y
         point[2] {$x*{2,w}/{0,w}},{$y*{2,h}/{0,h}},0,0.8,255
-      done
+      }
       stock={round(max(0,$stock-$nb))}
     fi
 
@@ -31809,15 +31812,15 @@ x_metaballs3d : check_display $0
   24,24,24,1,'X=x-w/2;Y=y-h/2;Z=z-d/2;exp(-(X*X+Y*Y+Z*Z)/100)'
   72,72,72 M=8 mode=3
   s0=Dots s1=Wireframe s2=Flat s3=Flat-shaded s4=Gouraud-shaded s5=Phong-shaded
-  repeat $M fx$>={2*g} fy$>={2*g} fz$>={2*g} done
+  repeat $M { fx$>={2*g} fy$>={2*g} fz$>={2*g} }
   w[0] -1,-1,0,"[G"{`39`}"MIC] 3D Metaballs"
   do
-    repeat $M
+    repeat $M {
       x$>={w/2+0.5*(w-{2,w}-4)*cos(${fx$>}*$|)}
       y$>={h/2+0.5*(h-{2,h}-4)*sin(${fy$>}*$|)}
       z$>={d/2+0.5*(d-{2,d}-4)*sin(${fz$>}*$|)}
-    done
-    f[3] 0 repeat $M j[3] [2],{${x$>}-{2,w/2}},{${y$>}-{2,h/2}},{${z$>}-{2,d/2}},0,-1 done
+    }
+    f[3] 0 repeat $M { j[3] [2],{${x$>}-{2,w/2}},{${y$>}-{2,h/2}},{${z$>}-{2,d/2}},0,-1 }
     +r[3] 28,28,28,1,2 isosurface3d. 0.4 -3d. 12,12,12 *3d. 13 rv3d.
     r3d. 1,2,1,{100*$|}
     N={i[7]} (255,255,150;200,96,164;50,150,230) r. 3,$N,1,1,3 y. j.. .,0,{{-2,h}-4*$N} # Do some color tweaks.
@@ -32055,7 +32058,7 @@ x_morph : check "isint(${1=16}) && isint(${2=3}) && $2>=0 && $2<=4" check_displa
         else wdims=${"fitscreen "{img0,[w,h,1]},128,50%}
         fi
         w[] $wdims,0,"[G'MIC] Interactive Morph"
-        repeat 2 +to_color[img$>] r. $wdims,1,100%,2 n. 0,255 :: imgb$> done
+        repeat 2 { +to_color[img$>] r. $wdims,1,100%,2 n. 0,255 :: imgb$> }
         rmn imgr,warp0,warp1
       fi
 
@@ -32161,7 +32164,7 @@ x_morph : check "isint(${1=16}) && isint(${2=3}) && $2>=0 && $2<=4" check_displa
     +l[keypoints] s c,-2 rv[0,1] a c done +_x_warp_rbf. {img0,[w,h]} rm..
     :: warp0,warp1
 
-    repeat $1
+    repeat $1 {
       t,onemt={t=$>/max(1,$1-1);[t,1-t]}
       +*[warp1] $t *. -1 +warp[img0] .,1,2,3 rm.. *. $onemt
       +*[warp0] $onemt *. -1 +warp[img1] .,1,2,3 rm.. *. $t
@@ -32172,7 +32175,7 @@ x_morph : check "isint(${1=16}) && isint(${2=3}) && $2>=0 && $2<=4" check_displa
         if {*} +r. {*,d,e},1,100%,2 to. $text,5,5,20,2 w. rm. fi
         if {*1} +r. {*1,d,e},1,100%,2 to. $text,5,5,20,2 w1. rm. fi
       fi
-    done
+    }
     :: $nm1 k[-$1--1]
     offset+={$!-2}
   done done w0 0 w1 0
@@ -32205,7 +32208,7 @@ x_pacman : check_display $0
 
   # Initialize characters gfx.
   m "_pacman_ghost_base_gfx : 31,19 circle. 15,15,15,1,1 31,12,1,1,'y<4+8*abs(cos(x*0.3+0.25*pi*$""1))' a[-2,-1] y"
-  repeat 4
+  repeat 4 {
     _pacman_ghost_standard_gfx 255,0,0,$> :: ghost0_$>
     _pacman_ghost_standard_gfx 0,255,222,$> :: ghost1_$>
     _pacman_ghost_standard_gfx 255,184,222,$> :: ghost2_$>
@@ -32214,16 +32217,16 @@ x_pacman : check_display $0
     _pacman_ghost_base_gfx $> r. 16,16,1,1,2 :: ghostm_$>
     _pacman_ghost_standard_gfx 0,0,0,$> :: ghostd_$>
     _pacman_pacman_gfx $> :: pacman_$>,pacmanm_$>
-  done
+  }
   +channels[ghostd_0] 0 !=. 0 :: ghostdm
   _pacman_cherry_gfx _pacman_strawberry_gfx _pacman_orange_gfx _pacman_banana_gfx :: fruit0,fruit1,fruit2,fruit3
   20,2,1,3,200 :: gate
   score0,score1,score2,score3,score4=10,100,1000,5000,"Argh!"
-  repeat 5
+  repeat 5 {
     0 t. ${score$>},0,0,13,1,255,255,255 autocrop. 0 expand_xy. 1,0 +dilate. 3 :: score$>,scorem$>
-  done
+  }
   time4=255,255,255 time3=255,255,32 time2=255,128,32 time1=255,32,32
-  repeat 11 0 t. $<" s",0,0,23,1,${time{min(4,round(($<+1)/2))}} :: time$< done
+  repeat 11 { 0 t. $<" s",0,0,23,1,${time{min(4,round(($<+1)/2))}} :: time$< }
   0 t. "Get Ready!",0,0,32,1,255 autocrop. 0 expand_xy. 4,0 +dilate. 8 r.. 100%,100%,1,3 :: get_ready,get_readym
   0 t. "Game\nOver!",0,0,53,1,255 autocrop. 0 expand_xy. 4,0 +dilate. 8 r.. 100%,100%,1,3 :: game_over,game_overm
 
@@ -32260,7 +32263,7 @@ x_pacman : check_display $0
     0 t. "Level "$level,0,0,64,1,1 autocrop. 0 expand_xy. 4,0 (0,255^0,255^0,0) +map.. . rm.. dilate.. 8
     :: levelm_N,level_N
 
-    repeat 4 xg$>={16*$mw2} yg$>={16*$mh2+4*$>} dg$>=3 mg$>=0 done
+    repeat 4 { xg$>={16*$mw2} yg$>={16*$mh2+4*$>} dg$>=3 mg$>=0 }
     xp={16*10} yp={16*21} dp=-1 pacgum_timer=-1 fruit_timer=$| dying_pacman=0 is_get_ready=1
     xscore=0 yscore=0 nscore=0 oscore=0
 
@@ -32270,14 +32273,14 @@ x_pacman : check_display $0
       # Display board graphics.
       t={int(6*$|)%4} left={if($pacgum_timer>=0,10-$|+$pacgum_timer,-1)}
       [visu]
-      repeat 4
+      repeat 4 {
         mg=${mg$>} xg=${xg$>} yg={${yg$>}+24}
         if $mg==0 j. [ghost$>_$t],$xg,$yg,0,0,1,[ghostm_$t]
         elif $mg==1 t2={if($left>7,$t,if($left>3,int(12*$|)%4,int(24*$|)%4))} j. [ghosta_$t2],$xg,$yg,0,0,1,[ghostm_$t]
         elif $mg==2 j. [ghostd_$t],$xg,$yg,0,0,0.8,[ghostdm]
         else j. [ghost$>_$t],$xg,$yg,0,0,{$mg-2},[ghostm_$t] j. [ghostd_$t],$xg,$yg,0,0,1,[ghostdm]
         fi
-      done
+      }
       if $dying_pacman
         _pacman_pacman_gfx {$dying_pacman/2} rotate[-2,-1] {90*(abs($dp)-1)} j... ..,$xp,{24+$yp},0,0,1,.,255 rm[-2,-1]
         dying_pacman+=1
@@ -32331,9 +32334,9 @@ x_pacman : check_display $0
           else =. 1,{path,i({$xg>>4},{$yg>>4})} # If dying ghost, follow the best path to home.
           fi
           sort. -,x
-          repeat 4 d={i($>,1)} # Try directions until it matches.
+          repeat 4 { d={i($>,1)} # Try directions until it matches.
             if {can_go,i({$xg>>4},{$yg>>4},$d)} dg=$d break fi
-          done rm.
+          } rm.
           dg$>=$d
         fi
         u={D=${dg$>};(D==0)-(D==2)}
@@ -32350,7 +32353,7 @@ x_pacman : check_display $0
         if !($xp&15)" && "!($yp&15)
           i={map,i({$xp>>4},{$yp>>4})}
           if $i==2 score+=10 pacdots-=1 # Pacdot eaten.
-          elif $i==3 pacgum_timer=$| repeat 4 if !${mg$>} mg$>=1 dg$>={(${dg$>}+2)%4} fi done  # Pacgum eaten.
+          elif $i==3 pacgum_timer=$| repeat 4 { if !${mg$>} mg$>=1 dg$>={(${dg$>}+2)%4} fi } # Pacgum eaten.
           elif $i>=4 score+={${score{$i-4}}} xscore=$xp yscore={$yp+12} oscore=1 nscore={$i-4} # Fruit eaten.
           fi
           =[map] 0,{$xp>>4},{$yp>>4}
@@ -32367,7 +32370,7 @@ x_pacman : check_display $0
         yp={($yp+2*$v)%(16*$mh)}
 
         if $pacgum_timer>=0" && "$|>$pacgum_timer+10 # Check if pacgum still has some effect.
-          repeat 4 xg$>&=-2 yg$>&=-2 mg$>={if(${mg$>}==1,0,${mg$>})} done
+          repeat 4 { xg$>&=-2 yg$>&=-2 mg$>={if(${mg$>}==1,0,${mg$>})} }
           pacgum_timer=-1
         fi
 
@@ -32523,9 +32526,11 @@ _x_paint :
     # Open/refresh brush window.
     if $refresh_brush
       rm. (32,64;64,32) r. 16,16,1,3,1 r. {8*48},{4*48},1,3,0,2
-      repeat 4 y=$> repeat 8
-        ellipse. {48*$>+24},{48*$y+24},{2*$>+1},{(2*$>+1)*$brushthickness},$brushangle,{1-$y/4},255
-      done done
+      repeat 4 { y=$>
+        repeat 8 {
+          ellipse. {48*$>+24},{48*$y+24},{2*$>+1},{(2*$>+1)*$brushthickness},$brushangle,{1-$y/4},255
+        }
+      }
       rectangle. {$brushsize*48},{$brushopacity*48},\
                   {$brushsize*48+47},{$brushopacity*48+47},\
                   1,0xFFFFFFFF,255,128,128
@@ -32566,9 +32571,9 @@ _x_paint :
         dx={2*($x1-$ox1)/max(1,$delta)}
         dy={2*($y1-$oy1)/max(1,$delta)}
         o={1-($brushopacity/4)^0.04}
-        repeat max(1,($delta+1)/2)
+        repeat max(1,($delta+1)/2) {
           ellipse[$image] {$ox1+$>*$dx},{$oy1+$>*$dy},$r1,$r2,$brushangle,$o,$__color
-        done
+        }
         ox1=$x1 oy1=$y1
         refresh_image=1
       else
@@ -32621,11 +32626,11 @@ x_plasma : check_display $0
 
   # Init plasma backgrounds.
   N=8
-  repeat $N
+  repeat $N {
     320,200,1,3 rand. 0,255 plasma. 1,0,7 n. 0,255
     amp={u(-40,40)} freq={round(u(2,6))} dir$>={if(u<0.5,-1,1)*round(u(1,2))}
     100%,100%,1,1,'$amp*cos(y*2*pi*$freq/h)'
-  done
+  }
 
   {w+2},100%,1,1,'x' 100%,100%,1,1,'Y=(y-80+15*cos(x/30)+10*sin(x/22));if(Y<0||Y>=50,-1,Y)' a[-2,-1] c
   0 t. "** Welcome to G\47MIC, a powerful image processing framework **",0,0,50,1,255
@@ -32802,16 +32807,19 @@ x_quantize_rgb : check "isint(${1=16}) && $1>1" check_display $0
 
       # Estimate new centroids positions.
       &[colors] 255 +index[colors] [centroids] *. 256 +[colors,-1]      # Estimate nearest centroids for all colors.
-      repeat s#$colors                                                  # Recompute centroid positions.
+      repeat s#$colors {                                                # Recompute centroid positions.
         sh[colors] $> +histogram. {centroids,w*256},0,{centroids,w*256-1} rm..
         i.. 256,1,1,1,'x' r.. {w},1,1,1,0,2 *.. . r[-2,-1] {centroids,w},1,1,1,2 max. 0.01 /[-2,-1]
-      done a[-{colors,s}--1] c
+      }
+      a[-{colors,s}--1] c
       rm[centroids] :: centroids
 
       # Reassign unused centroids.
       +>>[colors] 8 channels. 0 histogram. {centroids,w},0,{centroids,w-1}
       cmax={xM}
-      repeat w if !i($>) point[centroids] $>,0,0,1,{centroids,I($cmax)} point[centroids] $>,0,0,-0.001,${-rgb} fi done
+      repeat w {
+        if !i($>) point[centroids] $>,0,0,1,{centroids,I($cmax)} point[centroids] $>,0,0,-0.001,${-rgb} fi
+      }
       rm. c[centroids] 0,255
 
       if $visu_3d rm[visu_3d] fi
@@ -33125,10 +33133,10 @@ x_segment : check "${1=1024}==0 || $1>=128" check_display $0
         if $marker_mode
           if $marker_mode==2 rad1=5 rad2=3 opa=1 else rad1=3 rad2=2 opa=0.8 fi
           col0=255,0,0 col1=0,255,0
-          repeat w#$points
+          repeat w#$points {
             +columns[points] $> x={(i[0]-$x0)*$ww/(1+$x1-$x0)} y={(i[1]-$y0)*$wh/(1+$y1-$y0)} l={i[3]-1} rm.
             circle. $x,$y,$rad1,1,0 circle. $x,$y,$rad2,$opa,${col$l}
-          done
+          }
         fi
 
         :: view
@@ -33212,11 +33220,11 @@ x_select_color : skip ${1=xsc_variable} check_display $0
         t. "Old",$x0,{$y1+34},14,1,0
         ($_xsc_old) y. c r. 48,16 drgba. r. {w+2},{h+2},1,3,0,0,0.5,0.5 j.. .,{$x0+55},{$y1+32} rm.
       fi
-      repeat 12
+      repeat 12 {
         (${_xsc_preset$>}) -. 255 r. 4,1,1,1,0 +. 255
         y. c r. 18,18 drgba. frame. 1,1,{255*($>==$_xsc_preset)}
         j.. .,{$x6+($>%6)*25},{$y6+($>>=6)*25} rm.
-      done
+      }
       update_view=1
     fi
 
@@ -33373,10 +33381,10 @@ x_select_function1d : skip ${1=xsf_variable},${2=220},${3=$2},${4=$2} check_disp
       j3d.. .,0,100%,0,1,1,0,0 rm.
 
       # Draw control points.
-      repeat h#$points
+      repeat h#$points {
         x={points,i(0,$>)} y={100-{points,i(1,$>)}}
         circle. $x%,$y%,6,1,0xFFFFFFFF,0
-      done
+      }
       if $selected>=0
         x={points,i(0,$selected)} y={100-{points,i(1,$selected)}}
         circle. $x%,$y%,3,1,0
@@ -33635,17 +33643,17 @@ x_spline : check_display $0
     # Display curve, control points, polygon and tangents.
     +r[0] {*,w},{*,h},1,3
     if $visuflags&4 polygon. {2,h},{2,^},0.3,128,200,255 fi
-    repeat h#1
+    repeat h#1 {
       line. {2,@0-3},0.3,255,255,0
       if $visuflags&1 spline. {2,@0-1},{3,@0-1},{2,@2-3},{3,@2-3},1,255 fi
       if $visuflags&8 line. {{2,@0}-{4,@0}*20},{{2,@1}-{4,@1}*20},{{2,@0}+{4,@0}*20},{{2,@1}+{4,@1}*20},1,0,255,0 fi
       if $visuflags&16 t. $>,{{2,@0}-3},{{2,@1}-18},13,1,255,255,0 fi
       if $visuflags&32 t. "("{round({1,@0})}","{round({1,@1})}")",{{2,@0}-16},{{2,@1}+10},13,1,100,200,255 fi
       shift[1-4] 0,-1,0,0,2
-    done
-    if $visuflags&2 repeat h#1
+    }
+    if $visuflags&2 repeat h#1 {
       ellipse. {2,@0-1},4,4,0,1,0,0,0 ellipse. {2,@0-1},2,2,0,1,255,100,155 shift[2] 0,1,0,0,2
-    done fi
+    } fi
     w. rm[3,4,-1] wait
 
     # Handle key events.
@@ -33698,7 +33706,7 @@ x_spline : check_display $0
   # Render spline as a tertiary mask for output.
   +shift[1] 0,-1,0,0,2 +shift[1] 0,1,0,0,2 -[-2,-1] *. $roundness
   [0],[0],1,1,2 rm[0]
-  repeat h#1 spline. {0,@0-1},{1,@0-1},{0,@2-3},{1,@2-3},1,1 shift[0] 0,-1,0,0,2 shift[1] 0,-1,0,0,2 done
+  repeat h#1 { spline. {0,@0-1},{1,@0-1},{0,@2-3},{1,@2-3},1,1 shift[0] 0,-1,0,0,2 shift[1] 0,-1,0,0,2 }
   flood. 0,0,0,0,0,1,0
 
   # Exit properly.
@@ -33716,9 +33724,9 @@ x_starfield3d : check_display $0
 -----------------------------------------------------------"
   l[]
     ('G\47MIC') s x
-    x=0 N=$! repeat $N 0 t. {$>,t},0,0,48,1,1 x$>=$x y$>=0 z$>={-3200-150*$>} x={$x+w+8} done k[50%--1]
+    x=0 N=$! repeat $N { 0 t. {$>,t},0,0,48,1,1 x$>=$x y$>=0 z$>={-3200-150*$>} x={$x+w+8} } k[50%--1]
     expand_xy 6,0 dilate_circ 5 b 0.5 expand_z 1,0 isosurface3d 10% *3d 1,1,5 rv3d
-    repeat $N col3d[$>] ${-rgb} done
+    repeat $N { col3d[$>] ${-rgb} }
     0 t. "Version "${-strver},0,0,48,1,1 r2dy. 18 +f. 255 to_rgb.
     random3d 2500 col3d. 255 *3d. 320,200,1000 -3d. 160,100
     l3d 0,0,-600
@@ -33745,11 +33753,11 @@ x_starfield3d : check_display $0
       j3d.. .,{($t-200)*2}%,50%,0,0.25,3,0,0 rm.
 
       # Letters.
-      repeat $N
+      repeat $N {
         +r3d[$>] 1,{$>%4},1,{-${z$>}/2}
         j3d.. .,{90+${x$>}},{60+${y$>}},${z$>},1,4,0,0 rm.
         z$>={tl=280+6*$<;if($t<tl,min(0,${z$>}+20),-20*($t-tl))}
-      done
+      }
 
       # Presents.
       if $t<280 op={max(0,min(1,($t-200)/20))}
@@ -33759,7 +33767,7 @@ x_starfield3d : check_display $0
 
       w. wait 30 rm.
       t0+=1 t={$t0%350}
-      if !$t x=0 repeat 5 z$>={-3200-150*$>} done fi
+      if !$t x=0 repeat 5 { z$>={-3200-150*$>} } fi
 
     while {*}" && "!{*,ESC}" && "!{*,Q}
     w[] 0 rm done
@@ -33805,11 +33813,11 @@ x_tetris : check_display $0
   # Render triomino colored sprites.
   3,$N,1,1,'u(16,224)' r. 3,400% :: colors
   (0,-1,0;1,0,-1;0,1,0) *. 120 :: mask
-  repeat $N
+  repeat $N {
     +r[m$>] 500%,500%,1,3 +correlate. [mask],0 r. 200%,200%,1,1,3 ri.. . *[-2,-1] c. 30%,100%
     +r[m$>] .,.,1,3 +replace_color. 0,0,1,1,1,{colors,@{3*$>}-{3*$>+2}} rv[-3,-1] +[-3,-1] c.. 0,255
     channels. 0 *. 255 a[-2,-1] c :: s$>
-  done
+  }
   rm[colors,mask]
   fact={{s0,w}/{m0,w}}
 
@@ -33834,7 +33842,7 @@ x_tetris : check_display $0
 
     # Check for completed lines and select new random triomino.
     if $n<0
-      l[board] s y i=-1 repeat $! if {$<,im} i=$<,$i fi done
+      l[board] s y i=-1 repeat $! { if {$<,im} i=$<,$i fi }
       0 rm[$i] a y score+={2^(narg($i)-1)-1} r $W,$H,1,1,0,0,0,1 :: board done
       if narg($i)>1 l[render] s y,$H 0 rm[$i] a y r {$fact*$W},{$fact*$H},1,3,0,0,0,1 :: render done fi
       n=$nn nn={round(u(0,$N-1))} x={$W/2} y=0 do_render=1 fall_mode=0
@@ -33984,26 +33992,26 @@ x_tictactoe : check_display $0
      0,0,0,0,1,2,0,0;\                                                       # Corresponding X coords for the stroke.
      0,1,2,0,0,0,0,0;\                                                       # Corresponding Y coords for the stroke.
      3,3,3,4,4,4,5,6)                                                        # Corresponding index of the stroke sprite.
-    repeat w                                                                 # Start to check configurations.
+    repeat w {                                                               # Start to check configurations.
       tmp1={@$>}                                                             # Save the current configuration code.
       if ($state&$tmp1)==$tmp1||($state&(2*$tmp1))==2*$tmp1                  # If a winner has been found.
         _x_tictactoe{i($>,3)}                                                # Generate the stroke symbol and his mask.
         j[-4] ..,{130*{-3,i($>,1)}+u(-5,5)},\                                # And display it on the board.
                         {130*{-3,i($>,2)}+u(-5,5)},0,0,1,. rm[-2--1]
         if ($state&$tmp1)==$tmp1 w.. -1,-1,0,"Tic-Tac-Toe (X won!)"
-        else w.. -1,-1,0,"Tic-Tac-Toe (O won!)"                             # Update display window.
+        else w.. -1,-1,0,"Tic-Tac-Toe (O won!)"                              # Update display window.
         fi
         do wait
           if {*} w[] {*,w},{*,h} fi
-        while {*}" && "!{*,ESC}" && "!{*,Q}                                # Wait for the window to be closed.
-        rm w[] 0 return                                               # And return properly.
+        while {*}" && "!{*,ESC}" && "!{*,Q}                                  # Wait for the window to be closed.
+        rm w[] 0 return                                                      # And return properly.
       fi
-    done                                                                     # Go on until all configurations checked.
+    }                                                                        # Go on until all configurations checked.
     rm.                                                                      # Delete winning configuration data.
 
-    player={($player+1)%2}                                                  # Select next player.
-    counter+=1                                                              # Increment turn counter.
-  while $counter<9                                                       # Loop to next move until all positions filled.
+    player={($player+1)%2}                                                   # Select next player.
+    counter+=1                                                               # Increment turn counter.
+  while $counter<9                                                           # Loop to next move until all positions filled.
 
   # Here, the game has been ended without winners.
   w[] -1,-1,0,0,"Tic-Tac-Toe (Tied game!)"                                 # Change window title.
@@ -34302,7 +34310,7 @@ x_waves : check_display $0
     if {*,b}&1||($|-$time0)>1 ({u*$w};{u*$w};70;0) a[5,-1] x time0={$|-u} fi # Insert new ball.
     if {5,h} l[5,-1] # Manage ball motion and collision.
       sh[0] 2,2,0,0 sh[0] 3,3,0,0 -.. . +. 0.2 rm[-2,-1]
-      s[0] x repeat $!-1 coords={$<,@0-1} if {$<,@2}<i($coords) =. {80+{i($coords)}},$coords rm[$<] fi done
+      s[0] x repeat $!-1 { coords={$<,@0-1} if {$<,@2}<i($coords) =. {80+{i($coords)}},$coords rm[$<] fi }
       if $!==1 i[0] 0 else a[0--2] x fi
       done
     fi
@@ -34360,11 +34368,11 @@ gui_filter_sources : skip ${1=0},${2=1}
   # Try to clean older update files to save disk space.
   if u>0.95 l[]
     files=${"files "$_path_rc"/update*.gmic"}
-    repeat narg($files)
+    repeat narg($files) {
       file=${arg\ 1+$>,$files}
       ('$file') z. {[w-8,w-6]} ver={t} rm.
       if isnum($ver)" && "$ver<$_version delete $file rm. fi
-    done
+    }
   onfail
   done fi
 
@@ -35271,15 +35279,15 @@ gui_download_all_data :
   progress 100
 
 _gui_download_all_data :
-   repeat narg(${_filenames_$1})
+   repeat narg(${_filenames_$1}) {
      filename=${_prefix_$1}${arg\ 1+$>,${_filenames_$1}}.${_ext_$1}
      e[] "Download "$filename
-     if $2" || "!isfile(['{/${-path_cache}$filename}']) l[]
+     if $2" || "!isfile(['{/${-path_cache}$filename}']) l[] {
        ${_url_$1}/$filename o ${-path_cache}$filename rm onfail
-     done fi
+     } fi
      progress {100*$_n/$_N}
      _n+=1
-   done
+   }
 
 #@gui Filter Design : _none_, _none_
 #@gui : note = note{"
@@ -35663,7 +35671,7 @@ fx_whatsnew_preview : skip "$*"
 
       if !w # First call to the filter
         rm. s -,10
-        repeat $! newfilters.=" - "{$>,t}{`10`} done
+        repeat $! { newfilters.=" - "{$>,t}{`10`} }
 
       elif $is_changes # Estimate changes
         eval "
@@ -35764,9 +35772,9 @@ fx_array_mirror_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2010/29/12</i>.</small>")
 fx_array_color :
-  repeat $! l.
+  repeat $! l. {
     $1,$2,1,3 rand. 0,255 to_colormode. {-2,s} ri. .. *. $3 *.. {1-$3} +[-2,-1]
-  done mv. 0 done
+  } mv. 0 done
 
 #@gui Array [Regular] : fx_array, fx_array_preview(1)
 #@gui : X-Tiles = int(2,1,10)
@@ -35883,7 +35891,7 @@ fx_chessboard_preview :
 fx_dices :
 
     # Create dice patterns.
-    repeat 6 {2*$2},{2*$2} _dice$> done
+    repeat 6 { {2*$2},{2*$2} _dice$> }
     if $3%2 negate[-6--1] fi
     frame_round[-6--1] 10,10,0,0,128,128,128,0
     r2dy[-6--1] $2 a[-6--1] x
@@ -35965,10 +35973,10 @@ _fx_drawn_montage :
          \{$args11\}\{$args12\}\{$args13\}\{$args14\}\{$args15\}
 
   # Read parameters for all layers.
-  c= repeat $nb_layers
+  c= repeat $nb_layers {
     ('${args$>}') replace. {':'},{','} R$>,G$>,B$>,zoom$>,xcenter$>,ycenter$>,angle$>=${u\ {t}}
     cols=$cols$c${R$>},${G$>},${B$>} c=, rm. rotate[{1+$>}] {90*${angle$>}}
-  done
+  }
 
   # Get bounding boxes for each associated color in layout layer, as well as labeled layout layer.
   to_rgb[0] to_rgba[^0] $nb_layers,1,1,4,[inf,inf,-inf,-inf] [0],[0]
@@ -36001,13 +36009,13 @@ _fx_drawn_montage :
     +f. "const boundaries = 1; ref(crop(x - 2,y - 2,5,5),V); if (min(V)==max(V),0,i)"
     (0,0,0,$cols) r. 3,{$nb_layers+1},1,1,-1 1,100%,1,1,y?255:0 a[-2,-1] x permute. yzcx map.. . rm.
 
-    repeat $nb_layers
+    repeat $nb_layers {
       xmin,ymin,xmax,ymax={-3,I[$>]}
       if !isinf($xmin)" && "!isinf($ymin)" && "!isinf($xmax)" && "!isinf($ymax)
         xc$>,yc$>={0,0.5*([$xmin,$ymin]+[$xmax,$ymax]-6)*100/[w,h]}
       else xc$>,yc$>=-1024
       fi
-    done
+    }
 
     mv. -3
     boundaries=1
@@ -36017,7 +36025,7 @@ _fx_drawn_montage :
   if iM>0
 
     # Resize layers to fit proposed layout.
-    repeat $nb_layers
+    repeat $nb_layers {
       l={$>+1} xmin,ymin,xmax,ymax={-2,I[$>]}
       if !isinf($xmin)" && "!isinf($ymin)" && "!isinf($xmax)" && "!isinf($ymax)
         dx={$xmax-$xmin+1}
@@ -36027,7 +36035,7 @@ _fx_drawn_montage :
         r[$l] $dx,$dy,1,100%,6                                                # Resize
       else r[$l] 1,1 # Save a bit of memory!
       fi
-    done
+    }
 
     # Draw image pixels over layout layer.
     to_rgba[0]
@@ -36051,9 +36059,7 @@ _fx_drawn_montage :
     j[0] .,3,3,0,0,0.75
     rm.
   fi
-  if $-1 repeat $nb_layers
-    to "#"{1+$>},${xc$>}%,${yc$>}%,13,1,0.75
-  done fi
+  if $-1 repeat $nb_layers { to "#"{1+$>},${xc$>}%,${yc$>}%,13,1,0.75 } fi
 
 
   k[0] c 0,255
@@ -36089,15 +36095,16 @@ fx_extract_objects :
     color={I($x,$y)}
     if $7==0 # Output: Crop.
       +replace_color $3,0,$color,0,0,0,0 autocrop_components. $4%,$min_area,$6,2
-      repeat w
+      repeat w {
         +z[0] {1,i($>,0)},{1,i($>,1)},{1,i($>,3)},{1,i($>,4)}
         :: pos({1,i($>,0)},{1,i($>,1)}),name($nm" "[$>])
-      done rm[0,1]
+      }
+      rm[0,1]
     elif $7==1 # Output: Segmentation.
       replace_color $3,0,$color,0,0,0,0
       +autocrop_components[0] $4%,$min_area,$6,2
       autocrop_components[0] $4%,$min_area,$6,1
-      repeat w ::[$>] pos({i($>,0)},{i($>,1)}),name($nm" "[$>]) done rm.
+      repeat w { ::[$>] pos({i($>,0)},{i($>,1)}),name($nm" "[$>]) } rm.
     fi
     $w,$h,1,4 fc. $color :: name($nm" [background]")
   } done
@@ -36112,11 +36119,11 @@ fx_extract_objects_preview :
     color={I($x,$y)}
     +replace_color $3,0,$color,0,0,0,0
     autocrop_components. $4%,$min_area,$6,2
-    repeat w
+    repeat w {
       xycoords={1,i($>,0)},{1,i($>,1)},{1,i($>,3)},{1,i($>,4)}
       rectangle[0] $xycoords,0.3,0,0,255,255
       rectangle[0] $xycoords,1,0xFFFFFFFF,0,0,0,255
-    done
+    }
     drgba[0]
     to[0] {w}" objects",2,2,13,2,0.3,255,255,255,255
     k[0]
@@ -36289,7 +36296,7 @@ fx_montage : skip "${2=A}"
   code0=X code1="$2" code2=H code3=V code4=A code5=B
   if $3==1" && "$4<0.5 r {max(10,$4*200)}%,{max(10,$4*200)}%,1,100%,2 fi
   to_rgba if $14 rv fi if $13%$! mv[{$13%$!}--1] 0 fi
-  if $11" || "$12 repeat $! rotate[$>] {$11+u(-$12,$12)},1,0 done fi
+  if $11" || "$12 repeat $! { rotate[$>] {$11+u(-$12,$12)},1,0 } fi
   montage ${code$1},{if($3==0,$4,2+max(0,$4-0.5))},$15,\
     "if $""7%2 mirror x fi if $""8%2 mirror y fi "\
     "rotate {90*$""6} "\
@@ -36308,7 +36315,7 @@ fx_montage_preview : skip "${2=A}"
   drgba
   code0=X code1="$2" code2=H code3=V code4=A code5=B
   to_rgba if $14 rv fi if $13%$! mv[{$13%$!}--1] 0 fi
-  if $11" || "$12 repeat $! rotate[$>] {$11+u(-$12,$12)},1,0 done fi
+  if $11" || "$12 repeat $! { rotate[$>] {$11+u(-$12,$12)},1,0 } fi
   montage ${code$1},{if($3==0,$4,2+max(0,$4-0.5))},0,\
     "if $""7%2 mirror x fi if $""8%2 mirror y fi
      rotate {90*$""6}
@@ -36367,12 +36374,12 @@ fx_puzzle :
       +area_fg. 0,0 <. 50% -|... . ==. 0 *[-2,-1]
       distance.. 0 *.. -1 watershed. .. rm.. label. 0,0
 
-      repeat iM+1
+      repeat iM+1 {
         +==[1] $>
         coords=${autocrop_coords.\ 0}
         +z[0] $coords z.. $coords rv[-2,-1] *.. . *. 255 a[-2,-1] c
         x$>={arg(1,$coords)+round(w/2)} y$>={arg(2,$coords)+round(h/2)}
-      done
+      }
       rm[0,1]
 
       # Recompose puzzle.
@@ -36390,13 +36397,13 @@ fx_puzzle :
 
       else # All pieces on the same layer.
         i[0] $w,$h,1,{s}
-        repeat $!-1
+        repeat $!-1 {
           r2dy. {max(0.1,$10+$11*u(-1,1))}% rotate. {$12+$13*u(-1,1)}
           if $15 expand_xy. 1,0 fi
           cx={round(w/2)} cy={round(h/2)}
           sh. 100% if $15 dilate. 3 fi
           j[0] ..,{${x$<}-$cx},{${y$<}-$cy},0,0,1,.,255 rm[-2,-1]
-        done
+        }
       fi
 
     else rm.
@@ -36469,7 +36476,7 @@ fx_rotate_tiles :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2010/29/12</i>.</small>")
 _fx_normalize_tiles :
-  repeat $! l. split_tiles $1,$2 n $3,$4 append_tiles $1,$2 done mv. 0 done
+  repeat $! { l. { split_tiles $1,$2 n $3,$4 append_tiles $1,$2 } mv. 0 }
 
 fx_normalize_tiles :
   ac "_fx_normalize_tiles ${1-4}",$-1
@@ -36483,7 +36490,7 @@ fx_normalize_tiles :
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2010/29/12</i>.</small>")
 fx_shift_tiles :
   to_rgba shift_tiles $1,$2,$3
-  if $4<1 repeat $! s. c *. $4 a[-4--1] c mv. 0 done fi
+  if $4<1 repeat $! { s. c *. $4 a[-4--1] c mv. 0 } fi
 
 #@gui Tiled Parameterization : fx_parameterize_tiles, fx_parameterize_tiles(1)
 #@gui : X-Tiles = int(10,1,30)
@@ -36558,9 +36565,7 @@ fx_bokeh :
     nm=${-gui_layer_name} pos=${-gui_layer_pos}
     100%,100%,1,3
     (${4-13};${14-23}) if $1>2 r. 100%,$1,1,1,3 fi
-    repeat $1
-      +rows. $> _fx_bokeh... {^} rm.
-    done
+    repeat $1 { +rows. $> _fx_bokeh... {^} rm. }
     rm. :: "name("$nm"),opacity(100),mode(screen),pos("$pos")"
     rv
     if 0$_output_mode==0 gui_merge_layers
@@ -36710,7 +36715,7 @@ fx_circle_abstraction :
     +colormap $1 index[0] [1],0,0
     [0],[0],1,4,0
 
-    repeat $1
+    repeat $1 {
       rprogress {$>*100/$1}
       +==[0] $>
       skeleton3d. 2,2,0,1,0
@@ -36727,7 +36732,7 @@ fx_circle_abstraction :
         rm..
         blend[2,-1] alpha
       fi
-    done
+    }
     k[2]
     if $6 +channels 3 <. 1 inpaint[0] [1],0,1 rm. channels. 0,2 fi
     if $7 n 0,255 fi
@@ -36752,7 +36757,7 @@ fx_circle_abstraction_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2013/05/06</i>.</small>")
 fx_cubism :
-  repeat $1 cubism ${2--1} done
+  repeat $1 { cubism ${2--1} }
 
 fx_cubism_preview :
   gui_split_preview "fx_cubism $*",${-3--1}
@@ -36985,8 +36990,8 @@ fx_hardsketchbw :
   if $7==4 foreach { +hardsketchbw $1,$2,$4,$5,$6 blend hardlight } return fi
   hardsketchbw $1,$2,$4,$5,$6
   if $7&1 negate fi
-  if $7==2 r 100%,100%,1,4 repeat $! sh[$>] 3 *. -2 +. {2*255} c. 0,255 rm. done
-  elif $7==3 r 100%,100%,1,4 repeat $! sh[$>] 3 *. 2 c. 0,255 rm. done
+  if $7==2 r 100%,100%,1,4 repeat $! { sh[$>] 3 *. -2 +. {2*255} c. 0,255 rm. }
+  elif $7==3 r 100%,100%,1,4 repeat $! { sh[$>] 3 *. 2 c. 0,255 rm. }
   fi
 
 fx_hardsketchbw_preview :
@@ -37064,8 +37069,8 @@ fx_houghsketchbw :
   if $6==4 { +houghsketchbw ${2-5} blend hardlight } return fi
   houghsketchbw ${2-5}
   if $6&1 negate fi
-  if $6==2 r 100%,100%,1,4 repeat $! sh[$>] 3 *. -2 +. {2*255} c. 0,255 rm. done
-  elif $6==3 r 100%,100%,1,4 repeat $! sh[$>] 3 *. 2 c. 0,255 rm. done
+  if $6==2 r 100%,100%,1,4 repeat $! { sh[$>] 3 *. -2 +. {2*255} c. 0,255 rm. }
+  elif $6==3 r 100%,100%,1,4 repeat $! { sh[$>] 3 *. 2 c. 0,255 rm. }
   fi
 
 fx_houghsketchbw_preview :
@@ -37091,7 +37096,7 @@ fx_houghsketchbw_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2011/31/05</i>.</small>")
 fx_kuwahara :
-  ac "repeat $1 kuwahara $2 done",$3,$4
+  ac "repeat $1 { kuwahara $2 }",$3,$4
 
 fx_kuwahara_preview :
   gui_split_preview "fx_kuwahara $*",${-3--1}
@@ -37426,7 +37431,7 @@ fx_paint_with_brush_preview :
 fx_painting : skip ${4=0},${5=0}
   foreach {
     to_colormode {max(3,s)} split_opacity rv
-    repeat $1 fx_normalize_local. 10,6,5,20,1,11 done
+    repeat $1 { fx_normalize_local. 10,6,5,20,1,11 } done
     fx_smooth_anisotropic. {100*$2},0.2,1,$2,{2*$2},0.8,90,2,0,1,1,2,1,16
     fx_mix_lab. 1,0,0,$3,0,0.5,$3,0,0.5,0,2,0
     if $5 fx_segment_watershed. 10,1,0 fi
@@ -37630,7 +37635,7 @@ fx_quadtree :
     keep_only_leafs={$mode!=2" || "$only_leafs}
     +norm. a c
     _qt ({d=max(w,h);[0,0,d-1,d-1]},0,${})
-    repeat $precision
+    repeat $precision {
       +columns. 100% n={yM} rm.
       x0,y0,x1,y1,level={crop(0,$n,5,1)}
       xc={round(($x1+$x0)/2)} yc={round(($y1+$y0)/2)}
@@ -37648,17 +37653,17 @@ fx_quadtree :
         ($B0;$B1;$B2;$B3) a[-2,-1] y # Insert new leafs
       else
       fi
-    done
+    }
     shift. 2,0,0,0,2 sort. +,y levelmax={i(0,h-1)} shift. -2,0,0,0,2 # Sort by quadtree level order
 
     # Estimate data average in each quad.
     channels[0] 0,2 +structuretensors[0] a[0,-1] c
     r. {w+6},100%,1,1,0
-    repeat h
+    repeat h {
       x0,y0,x1,y1={crop(0,$>,4,1)}
       +crop[0] $x0,$y0,$x1,$y1,3 r. 1,1,1,100%,2 y. x
       j.. .,{-2,w-6},$> rm.
-    done
+    }
 
     # Synthetize image.
     permute. cyzx
@@ -37762,7 +37767,7 @@ fx_quadtree_preview :
 #@gui : note = note("<small>Authors: <i>David Tschumperlé</i> and <i>Rod/GimpChat</i>.
 #@gui :       Latest Update: <i>2013/05/03</i>.</small>")
 fx_rodilius :
-  ac "rodilius ${1-5,7} repeat $6 smooth 10,0,1,1,1,0.8,45 sharpen 30 done c 0,255",$8,$9
+  ac "rodilius ${1-5,7} repeat $6 { smooth 10,0,1,1,1,0.8,45 sharpen 30 } c 0,255",$8,$9
 
 fx_rodilius_preview :
   gui_split_preview "fx_rodilius $*",${-3--1}
@@ -37795,7 +37800,7 @@ fx_shapeism :
     to_rgb
     +gradient_norm b. $13% ^. $12 quantize. $6,0,0
     100%,100%,1,2
-    repeat $6
+    repeat $6 {
 
       # Create map of possible locations.
       +channels[2] 100% +>[1] $> !=.. 0 -|[-2,-1] a[2,-1] c
@@ -37814,7 +37819,7 @@ fx_shapeism :
       rprogress "pack_sprites[-2,-1] 1,100,$9,$10,$11",{$>*100/$6},{($>+1)*100/$6}
       channels. 0,1
 
-    done
+    }
 
     rprogress 97
     rm[1]
@@ -37908,8 +37913,8 @@ fx_sketchbw : skip ${16=0}
   if $15==4 foreach { +sketchbw ${1-14} blend hardlight } return fi
   sketchbw ${1-14}
   if $15&1 negate fi
-  if $15==2 r 100%,100%,1,4 repeat $! sh[$>] 3 *. -2 +. {2*255} c. 0,255 rm. done
-  elif $15==3 r 100%,100%,1,4 repeat $! sh[$>] 3 *. 2 c. 0,255 rm. done
+  if $15==2 r 100%,100%,1,4 repeat $! { sh[$>] 3 *. -2 +. {2*255} c. 0,255 rm. }
+  elif $15==3 r 100%,100%,1,4 repeat $! { sh[$>] 3 *. 2 c. 0,255 rm. }
   fi
 
 fx_sketchbw_preview :
@@ -38042,7 +38047,7 @@ fx_stylize :
   elif $12==4 match_colors=$match_colors" srgb2lab[0,1] sh[0,1] 0 f[-2,-1] 50 rm[-2,-1] lab2srgb[0,1]"
   fi
   match_colors=$match_colors\
-              " b[0,1] xy,$13 repeat 2 l[$>] { s c n 0,255 a c } done *[-2,-1] {$14*255} a[0,-2] c a[1,-1] c"
+              " b[0,1] xy,$13 repeat 2 { l[$>] { s c n 0,255 a c } } *[-2,-1] {$14*255} a[0,-2] c a[1,-1] c"
 
   patch_penalization=$23
 
@@ -38060,8 +38065,8 @@ fx_stylize :
     nm={0,n}
     if $2 +rr2d[1] {0,[w,h]*arg($2,0.1,0.2,0.3,0.5,0.75,1,1.5,2,2.5,3)},1,2 fi
     if $3==1 . +mirror. x +mirror[-2,-1] y a[-4--1] z
-    elif $3==2 +l. r {u={max(w,h)};[u,u]},1,100%,0,3,0.5,0.5 repeat 3 +rotate[0] {90*$>},1,3,50%,50% done a z done
-    elif $3==3 +l. r {u={max(w,h)};[u,u]},1,100%,0,3,0.5,0.5 repeat 7 +rotate[0] {45*$>},1,3,50%,50% done a z done
+    elif $3==2 +l. r {u={max(w,h)};[u,u]},1,100%,0,3,0.5,0.5 repeat 3 { +rotate[0] {90*$>},1,3,50%,50% } a z done
+    elif $3==3 +l. r {u={max(w,h)};[u,u]},1,100%,0,3,0.5,0.5 repeat 7 { +rotate[0] {45*$>},1,3,50%,50% } a z done
     fi
     if $4 wsiz=${"fitscreen "{0,[w,h]}} w[0] $wsiz is_window={*} fi
     stylize[0] .,${5-9},$15,$init_resolution,${17-22},$patch_penalization,${24-26},$match_colors
@@ -38348,9 +38353,9 @@ fx_colorize_interactive : skip "${4=},${5=},${6=}"
   onfail rm done
   if $arg_grabber arg_grabber=[{$!-1}] fi
 
-  repeat $N
+  repeat $N {
     status=${x_colorize[$>]\ $1,$resolution,$2,$arg_palette1,$arg_palette2,$arg_grabber}
-  done
+  }
   k[0-{$N-1}]
 
   if $2==1 foreach { channels {s-3},{s-1} } # Output : colors only (1 layer).
@@ -38381,9 +38386,9 @@ fx_colorize_interactive_preview : skip "${4=},${5=},${6=}"
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2013/16/01</i>.</small>")
 fx_recolorize :
-  repeat int($!/2)
+  repeat int($!/2) {
     if $3 s=$>,{$>+1} else s={2*$>},{2*$>+1} fi
-    l[$s] rv[0,1]
+    l[$s] rv[0,1] {
       channels[0] 0 to_rgb.. # Convert to pure gray.
       to_rgba. split_opacity. !=. 0  # Retrieve mask of color patches.
       srgb2rgb[-3,-2] rgb2lab8[-3,-2] channels... 0 channels.. 1,2 # Now, list is [0]=lightness / [1]=chroma / [2]=mask.
@@ -38392,8 +38397,8 @@ fx_recolorize :
       smooth.. .,{$1*80},0.8,60 rm.
       a[-2,-1] c lab82rgb. rgb2srgb.
       if $3 rgb2hsv. s. c i[2] 100%,100%,1,1,1 i[3] 100%,100%,1,2,0 a[0-2] c a[^0] c hsv2rgb rv fi
-    done
-  done
+    }
+  }
 
 fx_recolorize_preview :
   fx_recolorize $* a x
