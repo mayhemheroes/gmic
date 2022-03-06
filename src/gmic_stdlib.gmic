@@ -19947,7 +19947,7 @@ orthogonalize :
   if isbool($1) mode=$1 else mode=0 noarg fi
   u0,u1,v0,v1=Orthogonalize,Orthonormalize,x,ce
   e[^-1] ${u$mode}" matri"${v{$!!=1}}"$?, using Modified Gram-Schmidt process."
-  repeat $! l[$>]
+  foreach {
     eval ">
       proj(u,v) = (dot(u,v)/dot(u,u)*u);
       for (p = 1, p<w, ++p,
@@ -19966,7 +19966,7 @@ orthogonalize :
         draw(v,x,0,0,0,1,h);
       )"
     fi
-  done done
+  }
 
 #@cli meigen : m>=1
 #@cli : Compute an approximation of the 'm' largest eigenvalues and eigenvectors of selected symmetric matrices,
@@ -19976,10 +19976,11 @@ orthogonalize :
 meigen : check "isint($1) && $1>0"
   if $!!=1 s="ce" else s="x" fi
   e[^-1] "Compute $1 largest eigen-values of matri"$s"$?."
-  repeat $! l[$>] nm={n}
+  foreach {
+    nm={n}
     if w!=h" || "d!=1" || "s!=1 v 1 error[0--5] "Command 'meigen': Image '"$nm"' is not a square matrix." fi
     eval ${-math_lib}" store(meig(crop(),$1,h),'val',1,min($1,h))" $val k. :: $nm
-  done done
+  }
 
 #@cli mproj : [dictionary],_method,_max_iter={ 0=auto | >0 },_max_residual>=0 : (+)
 #@cli : Find best matching projection of selected matrices onto the span of an over-complete
@@ -20096,9 +20097,7 @@ _cross3d :
 #@cli : $ torus3d 10,1 +apply_matrix3d {mul(rot(1,0,1,-15°),[1,0,0,0,2,0,0,0,8],3)} double3d 0
 apply_matrix3d :
   e[^-1] "Apply 3x3 matrix (${1-3};${4-6};${7-9}) to 3D object$?."
-  repeat $! l[$>]
-    nbp={i[6]} sh 8,{8+3*$nbp-1},0,0 r. 3,$nbp,1,1,-1 3,3,1,1,$* transpose. m*[-2,-1] rm.
-  done done
+  foreach { nbp={i[6]} sh 8,{8+3*$nbp-1},0,0 r. 3,$nbp,1,1,-1 3,3,1,1,$* transpose. m*[-2,-1] rm. }
 
 #@cli array3d : size_x>=1,_size_y>=1,_size_z>=1,_offset_x[%],_offset_y[%],_offset_y[%]
 #@cli : Duplicate a 3D object along the X,Y and Z axes.
@@ -20107,7 +20106,7 @@ apply_matrix3d :
 array3d : check "isint($1) && $1>0 && isint(${2=1}) && $2>0 && isint(${3=1}) && $3>0"
   skip ${4=100%},${5=100%},${6=100%}
   e[^-1] "Duplicate 3D object$? along X,Y,Z axes with factors ($1,$2,$3) and offsets ($4,$5,$6)."
-  repeat $! l[$>]
+  foreach {
 
     # Retrieve object dimensions.
     +rows 8,{8+3*i[6]} r. 3,{h/3},1,1,-1 s. x,3
@@ -20133,7 +20132,7 @@ array3d : check "isint($1) && $1>0 && isint(${2=1}) && $2>0 && isint(${3=1}) && 
       ++3d. 0,0,{2^$>*$dz} +3d. ..
       if !($3&(2^$>)) rm.. else +3d.. 0,0,$off off+={2^$>*$dz} fi
     done +3d. 0,0,$off +3d
-  done done
+  }
 
 #@cli arrow3d : x0,y0,z0,x1,y1,z1,_radius[%]>=0,_head_length[%]>=0,_head_radius[%]>=0
 #@cli : Input 3D arrow with specified starting and ending 3D points.
@@ -20196,11 +20195,11 @@ _axes3d :
 #@cli : $ torus3d 100,30 +boundingbox3d +3d[-1] [-2]
 boundingbox3d :
   e[^-1] "Replace 3D object$? by their 3D bounding boxes."
-  repeat $! l[$>]
+  foreach {
     nbv={f2ui(i[6])} rows 8,{8+3*$nbv} r. 3,$nbv,1,1,-1 s. x
     xc,yc,zc,sx,sy,sz={"[ (im#0 + iM#0)/2, (im#1 + iM#1)/2, (im#2 + iM#2)/2, iM#0 - im#0,iM#1 - im#1, iM#2 - im#2 ]"}
     rm box3d $sx,$sy,$sz c3d +3d $xc,$yc,$zc p3d. 1
-  done done
+  }
 
 #@cli box3d : _size_x,_size_y,_size_z
 #@cli : Input 3D box at (0,0,0), with specified geometry.
@@ -20231,13 +20230,14 @@ center3d :
 
 _center3d :
   e[0--3] "Center 3D object$?."
-  check3d 0 repeat $! l[$>]
+  check3d 0
+  foreach {
     if i[6]
       s3d r[2] 3,{2,h/3},1,1,-1 s[2] x
       -[2] {2,(iM+im)/2} -[3] {3,(iM+im)/2} -[4] {4,(iM+im)/2}
       a[2-4] x y[2] a y
     fi
-  done done
+  }
 
 #@cli circle3d : _x0,_y0,_z0,_radius>=0
 #@cli : Input 3D circle at specified coordinates.
@@ -20259,14 +20259,15 @@ _center3d :
 #@cli : $ image.jpg luminance resize2dy 40 threshold 50% * 255 pointcloud3d color3d[-1] 255,255,255 circles3d 0.7
 circles3d : check "${1=1}>=0 && isbool(${2=0})"
   e[^-1] "Convert 3D object$? to sets of 3D "${arg\ 1+$2,filled,wireframe}" circles with radius $1."
-  p3d 0 repeat $! l[$>]
+  p3d 0
+  foreach {
     -3d {$1/2},0,0 ++3d $1,0,0 +3d[1] [0]
     s3d # Two 3d objects decomposed here!
     rows[7] 0 j[1] [7] # Number of points
     rv[2,8] # Points
     rv[3,9] l[3] r 2,{h/2},1,1,-1 z 1,1 s y,2 i[0] 1,100%,1,1,5 1,100%,1,1,$2 2,100% a x y done # Primitives
     k[0-5] a y
-  done done
+  }
 
 #@cli col3d : eq. to 'color3d'. : (+)
 
@@ -20337,7 +20338,8 @@ circles3d : check "${1=1}>=0 && isbool(${2=0})"
 #@cli : $ image.jpg luminance resize2dy 40 threshold 50% * 255 pointcloud3d color3d[-1] 255,255,255 cubes3d 1
 cubes3d : check ${1=1}>=0
   e[^-1] "Convert 3D object$? to sets of 3D cubes with size $1."
-  p3d 0 repeat $! l[$>]
+  p3d 0
+  foreach {
     nbv={@6} nbp={@7}
     if $nbv&&$nbp
       s3d
@@ -20355,7 +20357,7 @@ cubes3d : check ${1=1}>=0
       l[4] r 3,{h/3},1,1,-1 r 18,100%,1,1,0,2 done r[5] 6,100% # Colors & opacities.
       y a y
     fi
-  done done
+  }
 
 #@cli cup3d : _resolution>0
 #@cli : Input 3D cup object.
@@ -20397,7 +20399,7 @@ cubes3d : check ${1=1}>=0
 # +object3d[0] [1],0,0,0,1,1 max[-1] [0]
 delaunay3d :
   e[^-1] "Generate 3D Delaunay triangulation from image$?."
-  repeat $! l[$>]
+  foreach {
     channels 0 != 0
 
     # Label each point separately
@@ -20419,7 +20421,7 @@ delaunay3d :
     pointcloud3d[0]
     s3d[0] rm[3-5] i.. 1,100%,1,1,3 a[-2,-1] x
     3,100%,1,1,200 1,100%,1,1,1 =[1] {h},0,1 y a y
-  done done
+  }
 
 _delaunay3d :
   f. "A=j($1,$2,$3,0,0,1); B=j($4,$5,$6,0,0,1);
@@ -20432,7 +20434,7 @@ _delaunay3d :
 distribution3d :
   e[^-1] "Get 3D color distribution of image$?."
   to_rgb permute "cxyz" y
-  repeat $! l[$>]
+  foreach {
     nbp={round(h/3)}
     i.. (67.5;73.5;109.5;103.5;51.5;100.5;\    # Magick number for CImg3d.
          $nbp;$nbp)                            # Number of vertices and primitives.
@@ -20440,7 +20442,7 @@ distribution3d :
     ..                                         # Colors.
     1,$nbp,1,1,1                               # Opacities.
     a y :: [3D\ distribution]                 # Build 3D object.
-  done done
+  }
 
 #@cli /3d : eq. to 'div3d'. : (+)
 
@@ -20480,8 +20482,8 @@ elevation3d : skip "${1=_noarg}" check "${2=-1}==-1 || $2>=0"
   fi
   is_base={$2>=0}
 
-  repeat $! l[$>] nm={n}
-    to_rgb M,N={[w,h]}
+  foreach
+    nm={n} M,N={[w,h]} to_rgb
 
     # Generate vertices.
     100%,100%,1,2,[x,y]
@@ -20528,7 +20530,7 @@ elevation3d : skip "${1=_noarg}" check "${2=-1}==-1 || $2>=0"
     # Add header and merge object.
     i[0] ('CImg3d':y) +[0] 0.5 i[1] ({ui2f([$nbv,$nbp]):;}) y a y
     :: $nm
-  done done
+  done
 
 #@cli empty3d
 #@cli : Input empty 3D object.
@@ -20543,13 +20545,15 @@ elevation3d : skip "${1=_noarg}" check "${2=-1}==-1 || $2>=0"
 #@cli : $ image.jpg threshold 50% extrude3d 16
 extrude3d : check "${1=16}>0 && ${2=1024}>0 && ${3=0.5%}>=0"
   e[^-1] "Generate extruded 3D object from XY-profile$?, with depth $1, resolution $2 and smoothness $3."
-  norm n 0,1 autocrop 0 repeat $! l[$>] nm={0,n}
+  norm n 0,1 autocrop 0
+  foreach {
+    nm={0,n}
     wr={round(max(1,if(w>h,min($2,w),min($2,h)*w/h)))}
     hr={round(max(1,if(w>h,min($2,w)*h/w,min($2,h))))}
     fact={$1/max(w/$wr,h/$hr)}
     b $3,0 r $wr,$hr,1,1,2 expand_xyz 1,0
-    isosurface3d 50% *3d 1,1,$fact rv3d
-  :: $nm done done
+    isosurface3d 50% *3d 1,1,$fact rv3d :: $nm
+  }
 
 #@cli f3d : eq. to 'focale3d'. : (+)
 
@@ -20566,12 +20570,13 @@ extrude3d : check "${1=16}>0 && ${2=1024}>0 && ${3=0.5%}>=0"
 #@cli : $ image.jpg r2dy 32 distribution3d gaussians3d 20 colorcube3d primitives3d[-1] 1 +3d
 gaussians3d : check "${1=32}>0" skip ${2=0.3}
   e[^-1] "Convert 3D object$? into sets of gaussian-shaped 3D sprites, with size $1 and opacity $2."
-  p3d 2 p3d 0 repeat $! l[$>] nm={0,n} s3d
-    nbv={h} rm. (-128;$1;$1;1)
+  p3d 2 p3d 0
+  foreach {
+    nm={0,n} s3d nbv={h} rm. (-128;$1;$1;1)
     $1,$1 gaussian. 35%,35%,0 c. 30%,100% n. 0,$2 y. a[-2,-1] y      # First opacity is generated.
     if $nbv>1 4,{$nbv-1},1,1,-128,0,0,0 y[-2,-1] a[-2,-1] y fi   # Other ones are shared copies of the first one.
-    a y
-  :: $nm done done
+    a y :: $nm
+  }
 
 #@cli gmic3d
 #@cli : Input a 3D G'MIC logo.
@@ -20626,9 +20631,10 @@ gaussians3d : check "${1=32}>0" skip ${2=0.3}
 #@cli : $ image.jpg resize2dx 64 histogram3d circles3d 3 opacity3d. 0.75 colorcube3d primitives3d[-1] 1 add3d
 histogram3d :
   e[^-1] "Get 3D color histogram of image$?."
-  to_rgb repeat $! l[$>]
+  to_rgb
+  foreach {
     r {wh},3,1,1,-1 pointcloud 1 n 0,255 palette hot point. 0,0,0,1,0 map.. . rm. pointcloud3d :: "[3D histogram]"
-  done done
+  }
 
 #@cli image6cube3d
 #@cli : Generate 3D mapped cubes from 6-sets of selected images.
@@ -20653,7 +20659,7 @@ image6cube3d :
 #@cli : $ image.jpg resize2dy 32 imageblocks3d -20 mode3d 3
 imageblocks3d : check ${2=0}>=0 skip ${1=10},${3=0}
   e[^-1] "Generate 3D blocks from image$?, with maximum elevation $1 and smoothness $2."
-  repeat $! l[$>]
+  foreach {
     w={w} h={h}
     split_opacity to_rgb[0] is_opacity={$!==2}
 
@@ -20680,14 +20686,16 @@ imageblocks3d : check ${2=0}>=0 skip ${1=10},${3=0}
     if $is_opacity rm. mv[0] $! /. 255 y. r. 6,100%,1,1 y. fi
 
     a y
-  done done
+  }
 
 #@cli imagecube3d
 #@cli : Generate 3D mapped cubes from selected images.
 #@cli : $ image.jpg imagecube3d
 imagecube3d :
   e[^-1] "Generate 3D mapped cubes from image$?."
-  slices 50% to_rgb repeat $! l[$>] nm={0,n}
+  slices 50% to_rgb
+  foreach {
+    nm={0,n}
     i.. (67.5;73.5;109.5;103.5;51.5;100.5;\  # Magick number for CImg3d.
          8;6;\                               # Number of vertices and primitives.
          -0.5;-0.5;-0.5;\                    # Vertex coordinates.
@@ -20707,15 +20715,17 @@ imagecube3d :
          -128;{w};{h};{s})       # Texture map for the first face.
     y.
     (-128;0;0;0;-128;0;0;0;-128;0;0;0;-128;0;0;0;-128;0;0;0;1;1;1;1;1;1)  # Other faces and opacities.
-    a y
-  :: $nm done done
+    a y :: $nm
+  }
 
 #@cli imageplane3d
 #@cli : Generate 3D mapped planes from selected images.
 #@cli : $ image.jpg imageplane3d
 imageplane3d :
   e[^-1] "Generate 3D mapped planes from image$?."
-  slices 50% to_color repeat $! l[$>] nm={0,n}
+  slices 50% to_color
+  foreach {
+    nm={0,n}
     i.. (67.5;73.5;109.5;103.5;51.5;100.5;\   # Magick number for CImg3d.
          4;1;\                                # Number of vertices and primitives.
          0;0;0;\                              # Vertex coordinates.
@@ -20726,16 +20736,17 @@ imageplane3d :
          -128;{w};{h};{s})                    # Texture map.
     y.
     (1)  # Opacity.
-    a y
-  :: $nm done done
+    a y :: $nm
+  }
 
 #@cli imagepyramid3d
 #@cli : Generate 3D mapped pyramids from selected images.
 #@cli : $ image.jpg imagepyramid3d
 imagepyramid3d :
   e[^-1] "Generate 3D mapped pyramids from image$?."
-  to_rgb repeat $! l[$>] nm={0,n}
-    w2={w/2}
+  to_rgb
+  foreach {
+    nm={0,n} w2={w/2}
     i.. (67.5;73.5;109.5;103.5;51.5;100.5;\  # Magick number for CImg3d.
          5;5;\                               # Number of vertices and primitives.
          -0.5;-0.5;-0.5;\                    # Vertex coordinates.
@@ -20751,8 +20762,8 @@ imagepyramid3d :
          -128;{w};{h};{s})                   # Texture map for the first face.
     y.
     (-128;0;0;0;-128;0;0;0;-128;0;0;0;-128;0;0;0;1;1;1;1;1)  # Other faces and opacities.
-    a y
-  :: $nm done done
+    a y :: $nm
+  }
 
 #@cli imagerubik3d : _xy_tiles>=1,0<=xy_shift<=100,0<=z_shift<=100
 #@cli : Generate 3D mapped rubik's cubes from selected images.
@@ -20760,7 +20771,8 @@ imagepyramid3d :
 #@cli : $ image.jpg imagerubik3d ,
 imagerubik3d : check "${1=3}>=1 && ${2=5}>=0 && $2<=100 && ${3=5}>=0 && $3<=100"
   e[^-1] "Generate 3D mapped rubik\47s cubes from image$? with $1 xy-tiles, xy-shift $2 and z-shift $3."
-  repeat $! l[$>] nm={0,n}
+  foreach {
+    nm={0,n}
     # Generate primary 3D side.
     ('CImg3d') +. 0.5
     (8,5)
@@ -20786,8 +20798,8 @@ imagerubik3d : check "${1=3}>=1 && ${2=5}>=0 && $2<=100 && ${3=5}>=0 && $3<=100"
     /3d. $1 -3d. 50,50,50
     +r3d. 0,1,0,-90 +r3d. 0,1,0,-90 +r3d. 0,1,0,-90  # Generate the 5 other sides.
     +r3d. 0,0,1,-90 +r3d. 0,0,1,180
-    +3d
-  :: $nm done done
+    +3d :: $nm
+  }
 
 #@cli imagesphere3d : _resolution1>=3,_resolution2>=3
 #@cli : Generate 3D mapped sphere from selected images.
@@ -20795,7 +20807,9 @@ imagerubik3d : check "${1=3}>=1 && ${2=5}>=0 && $2<=100 && ${3=5}>=0 && $3<=100"
 #@cli : $ image.jpg imagesphere3d 32,16
 imagesphere3d : check "${1=32}>=3 && ${2=16}>=3"
   e[^-1] "Generate 3D mapped sphere from image$?, with resolutions ($1,$2)."
-  to_rgb repeat $! l[$>] nm={0,n}
+  to_rgb
+  foreach {
+    nm={0,n}
 
     # Generate object header.
     tw={w-1} th={h-1}                    # Maximum texture xy-coordinates.
@@ -20823,8 +20837,8 @@ imagesphere3d : check "${1=32}>=3 && ${2=16}>=3"
     a[-$nbp--1] y
 
     # Define sphere textures, opacities and generate object.
-    mv[-4] $! i.. (-128;{w};{h};3) y. 1,{4*($nbp-1)},1,1,-128,0,0,0 1,$nbp,1,1,1 a y
-  :: $nm done done
+    mv[-4] $! i.. (-128;{w};{h};3) y. 1,{4*($nbp-1)},1,1,-128,0,0,0 1,$nbp,1,1,1 a y :: $nm
+  }
 
 #@cli isoline3d : isovalue[%] : 'formula',value,_x0,_y0,_x1,_y1,_size_x>0[%],_size_y>0[%] : (+)
 #@cli : Extract 3D isolines with specified value from selected images or from specified formula.
@@ -20875,7 +20889,7 @@ label_points3d : check ${1=13}>0 skip ${2=0.8}
 lathe3d : check "${1=128}>0 && ${2=0.5%}>=0 && ${3=361}>=0"
   e[^-1] "Generate lathed 3D object from XY-profile$?, with resolution $1, smoothness $2 and maximum angle $3 deg."
   tmax={($3-180)*pi/180} round norm n 0,1 autocrop 0
-  repeat $! l[$>]
+  foreach {
     wr={max(1,w2=2*w;if(w2>h,min($1,w2),min($1,h)*w2/h))}
     hr={max(1,w2=2*w;if(w2>h,min($1,w2)*h/w2,min($1,h)))}
     rmax={sqrt(($wr)^2+($hr)^2)/2}
@@ -20884,7 +20898,7 @@ lathe3d : check "${1=128}>0 && ${2=0.5%}>=0 && ${3=361}>=0"
     (0;{{-2,h}-1}) r. $wr,$hr,$wr,1,3 a[-2--1] c
     warp.. .,0,1,0 rm.
     expand_xyz 10,0 b $2 isosurface3d 50% rv3d
-  done done
+  }
 
 #@cli l3d : eq. to 'light3d'. : (+)
 
@@ -20962,13 +20976,14 @@ normalize3d :
 
 _normalize3d :
   e[0--3] "Normalize size of 3D object$?."
-  check3d 0 repeat $! l[$>]
+  check3d 0
+  foreach {
     if i[6]
       s3d r[2] 3,{2,h/3},1,1,-1 s[2] x
       factor={v=max({2,iM-im},{3,iM-im},{4,iM-im});if(v,v,1)}
       a[2-4] x /[2] $factor y[2] a y
     fi
-  done done
+  }
 
 #@cli o3d : eq. to 'opacity3d'. : (+)
 
@@ -21018,8 +21033,8 @@ pca_patch3d : check "isint(${1=7}) && $1>0 && isint(${2=1000}) && $2>0 && isint(
   P2={$1-$P1-1}        # Forward half-patch size.
 
   n 0,255 round 1
-  repeat $! l[$>] nm={0,n}
-    s={s}
+  foreach
+    nm={0,n} s={s}
 
     # Pick set of M random located patches.
     1,$2 rand. 0,{0,w-1} +rand. 0,{0,h-1} +f. 0 a[-3--1] x round. 1 +patches[0] $1,$1,1,{^} y[2--1] a[2--1] x
@@ -21060,8 +21075,8 @@ pca_patch3d : check "isint(${1=7}) && $1>0 && isint(${2=1000}) && $2>0 && isint(
     i[3] 2,$3,1,1,if(x==0,1,y)                          # Primitives.
     1,$3,1,1,1                                          # Opacities.
     y a[-6--1] y                                        # Merge as a 3D object.
-
-  :: $nm done done
+    :: $nm
+  done
 
 #@cli plane3d : _size_x,_size_y,_nb_subdivisions_x>0,_nb_subdisivions_y>0
 #@cli : Input 3D plane at (0,0,0), with specified geometry.
@@ -21083,8 +21098,9 @@ pca_patch3d : check "isint(${1=7}) && $1>0 && isint(${2=1000}) && $2>0 && isint(
 #@cli : $ image.jpg luminance resize2dy 100 threshold 50% mul 255 pointcloud3d color3d[-1] 255,255,255
 pointcloud3d :
   e[^-1] "Convert image$? to 3D point cloud."
-  repeat $! l[$>] nm={0,n}
-    s z repeat $! l[$>]
+  foreach {
+    nm={0,n} s z
+    foreach {
       +norm !=. 0
       i.. (1,{w};1,{w}^1,1;{h},{h}) r.. .,.,1,2,3 *[-2,-1] round. permute. cxyz
       l. s -,0 a y is_points=$! done
@@ -21102,9 +21118,9 @@ pointcloud3d :
         y[-6--1] a[-6--1] y
       else rm empty3d
       fi
-      done done
-    +3d
-  :: $nm done done
+    }
+    +3d :: $nm
+  }
 
 #@cli pose3d : p1,...,p12
 #@cli : Apply 3D pose matrix to selected 3D objects.
@@ -21112,12 +21128,14 @@ pointcloud3d :
 # 0.548966,0,0,0,-206,1 snapshot3d 400
 pose3d :
   e[^-1] "Apply 3D pose matrix [ $1,$2,$3,$4; $5,$6,$7,$8; $9,$10,$11,$12 ] to 3D object$?."
-  repeat $! l[$>] if ${-_is_3d}
-    s3d r[2] 3,{2,h/3},1,1,-1 i[3] 1,{2,h},1,1,1 a[2,3] x
-    i[3] ($1,$5,$9;$2,$6,$10;$3,$7,$11;$4,$8,$12) m*[2,3]
-    r[2] 1,{2,3*h},1,1,-1 a y
-  else error "Command '$0': Image ["{$!-$>-1}"] does not represent a 3D object."
-  fi done done
+  foreach {
+    if ${-_is_3d}
+      s3d r[2] 3,{2,h/3},1,1,-1 i[3] 1,{2,h},1,1,1 a[2,3] x
+      i[3] ($1,$5,$9;$2,$6,$10;$3,$7,$11;$4,$8,$12) m*[2,3]
+      r[2] 1,{2,3*h},1,1,-1 a y
+    else error "Command '$0': Image ["{$!-$>-1}"] does not represent a 3D object."
+    fi
+  }
 
 #@cli p3d : eq. to 'primitives3d'.
 p3d : check "isint($1) && $1>=0 && $1<=2"
@@ -21133,7 +21151,7 @@ primitives3d : check "isint($1) && $1>=0 && $1<=2"
 
 _primitives3d :
   e[0--3] "Convert primitives of 3D object$? to "${"arg 1+$1,points,outlines,non-textured"}"."
-  repeat $! l[$>]
+  foreach
     s3d 1,64 .x2
     eval "
       const mode = $1;
@@ -21398,13 +21416,14 @@ _primitives3d :
       i[#1,1] = nq"
 
     rm[3-5] a y
-  done done
+  done
 
 #@cli projections3d : _x[%],_y[%],_z[%],_is_bounding_box={ 0 | 1 }
 #@cli : Generate 3D xy,xz,yz projection planes from specified volumetric images.
 projections3d : skip ${1=50%},${2=50%},${3=50%},${4=1}
   e[^-1] "Generate 3D xy,xz,yz projection planes from image$?."
-  n 0,255 repeat $! l[$>]
+  n 0,255
+  foreach {
     w={w} h={h} d={d}
     x={if(${is_percent\ $1},$1*w,$1)}
     y={if(${is_percent\ $2},$2*h,$2)}
@@ -21417,7 +21436,7 @@ projections3d : skip ${1=50%},${2=50%},${3=50%},${4=1}
     +3d... 0,0,$z +3d.. 0,$y,0 +3d. $x,0,0
     +3d[-3--1] o3d. 0.8
     if $4 box3d $w,$h,$d p3d. 1 o3d. 0.4 +3d[-2,-1] fi
-  done done
+  }
 
 #@cli pyramid3d : width,height
 #@cli : Input 3D pyramid at (0,0,0), with specified geometry.
@@ -21558,7 +21577,8 @@ size3d :
 skeleton3d : check "isint(${1=2}) && $1>=0 && $1<=2 && isint(${2=3}) && $2>=0 && $2<=3" skip ${3=1},${4=0.1},${5=1}
   e[^-1] "Build 3D skeletal structure object from image$?, with "${arg\ 1+$1,chebyshev,manhattan,euclidean}" metric, "\
           ${arg\ 1+$2,squares,diamonds,circles,auto}" bones, skeleton opacity $3 and frame opacity $4 ."
-  repeat $! l[$>] channels 0
+  foreach {
+    channels 0
 
     # Construct skeleton representation.
     +distance 0,$1
@@ -21593,7 +21613,7 @@ skeleton3d : check "isint(${1=2}) && $1>=0 && $1<=2 && isint(${2=3}) && $2>=0 &&
       else rm empty3d fi
     done else rm[0] fi
     +3d
-  done done
+  }
 
 #@cli snapshot3d : _size>0,_zoom>=0,_backgroundR,_backgroundG,_backgroundB,_backgroundA : [background_image],zoom>=0
 #@cli : Take 2d snapshots of selected 3D objects.
@@ -21717,14 +21737,14 @@ snapshot3d : check "${2=1}>=0" skip ${1=512},${3=""}
 #@cli : $ image.jpg sprite3d
 sprite3d :
   e[^-1] "Convert image$? as 3D sprites."
-  repeat $! l[$>] nm={0,n}
-    split_opacity
+  foreach {
+    nm={0,n} split_opacity
     i[0] (67.5;73.5;109.5;103.5;51.5;100.5;1;1;0;0;0;1;0;-128;{w};{h};{0,s}) y[1]
     if $!==2 (1) a y
     else /. 255 i.. (-128;{w};{h};{s}) y.
     fi
-    a y
-  :: $nm done done
+    a y :: $nm
+  }
 
 #@cli sprites3d : [sprite],_sprite_has_alpha_channel={ 0 | 1 }
 #@cli : Convert selected 3D objects as a sprite cloud.
@@ -21818,7 +21838,7 @@ sprites3d : check ${is_image_arg\ $1} skip ${2=0}
 tensors3d : check "${1=1}>=0 && isint(${2=2}) && $2>=0 && ${3=0.05}>=0"
   e[^-1] "Generate 3D tensor field(s) from image$?, with radius factor $1, "\
           ${"if $2 u ellipsoid else u box fi"}" shape and radius min $3."
-  repeat $! l[$>]
+  foreach {
 
     # Check input image format.
     if s==1 100%,100%,100%,6,"[i#0,0,0,i#0,0,i#0]" k.
@@ -21874,7 +21894,7 @@ tensors3d : check "${1=1}>=0 && isint(${2=2}) && $2>=0 && ${3=0.05}>=0"
         draw(#ind,col,0,off,0,0,1,size(col),1,1);
         0); I"
     rm[0] +3d
-  done done
+  }
 
 #@cli text_pointcloud3d : _"text1",_"text2",_smoothness
 #@cli : Input 3D text pointcloud from the two specified strings.
@@ -22052,7 +22072,7 @@ _texturize3d :
 #@cli : $ image.jpg animate blur,0,5,30 append z volume3d
 volume3d :
   e[^-1] "Transform image$? as 3D parallelepipedic objects."
-  repeat $! l[$>]
+  foreach {
     w={w} h={h} d={d}
     +slices[0] 0
     +columns[0] 0 permute. zyxc mirror. x
@@ -22061,7 +22081,7 @@ volume3d :
     +rows[0] 100% permute. xzyc
     +rows[0] 0 permute. xzyc mirror. y
     rm[0] image6cube3d *3d $w,$h,$d
-  done done
+  }
 
 #@cli weird3d : _resolution>0
 #@cli : Input 3D weird object at (0,0,0), with specified resolution.
@@ -24183,13 +24203,12 @@ linearize_tiles : check "$1>0 && ${2=$1}>0"
   foreach {
     nm={0,n}
     s={s} split_tiles $1,$2 s c # Split as tiles for all channels.
-    repeat $! l[$>]
+    foreach {
       wh={w},{h}
       +f x +f. y +f. 1 y a[^0] x solve.. . rm.
       $wh,1,1,{@0}"*x + "{@1}"*y + "{@2} rm..
-    done done
-    repeat int($!/$s) a[-$s--1] c mv. 0 done append_tiles $1,$2
-    :: $nm
+    }
+    repeat int($!/$s) a[-$s--1] c mv. 0 done append_tiles $1,$2 :: $nm
   }
 
 #@cli map_sprites : _nb_sprites>=1,_allow_rotation={ 0=none | 1=90 deg. | 2=180 deg. }
@@ -25603,9 +25622,7 @@ whirls : skip ${1=3},${2=6},${3=0.5},${4=1.8}
 #@cli : $ image.jpg +deform[0] 10 +deform[0] 20
 deform : skip ${1=10},${2=1}
   e[^-1] "Apply random smooth deformation on image$?, with amplitude $1."
-  repeat $! l[$>]
-    2%,2%,1,2 noise. $1 r. ..,..,1,2,5 warp.. .,1,$2,1 rm.
-  done done
+  foreach { 2%,2%,1,2 noise. $1 r. ..,..,1,2,5 warp.. .,1,$2,1 rm. }
 
 #@cli euclidean2polar : _center_x[%],_center_y[%],_stretch_factor>0,\
 # _boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }
@@ -25615,18 +25632,18 @@ deform : skip ${1=10},${2=1}
 euclidean2polar : skip ${1=50%},${2=50%} check "${3=1}>0 && isint(${4=1}) && $4>=0 && $4<=3"
   e[^-1] "Apply euclidean to polar transform on image$?, with center point ($1,$2), stretch factor $3 and "\
          ${"arg 1+$4,dirichlet,neumann,periodic,mirror"}" boundary conditions."
-  repeat $! l[$>]
+  foreach {
     cx={if(${is_percent\ $1},$1*(w-1),$1)}
     cy={if(${is_percent\ $2},$2*(h-1),$2)}
     R={sqrt(max($cx^2,(w-1-$cx)^2)+max($cy^2,(h-1-$cy)^2))}
     f 'r=$R*(x/(w-1))^$3;a=y*2*pi/(h-1);i($cx+r*cos(a),$cy+r*sin(a),z,c,1,$4)'
-  done done
+  }
 
 #@cli equirectangular2nadirzenith
 #@cli : Transform selected equirectangular images to nadir/zenith rectilinear projections.
 equirectangular2nadirzenith :
   e[^-1] "Transform equirectangular image$? to nadir/zenith rectilinear projections."
-  repeat $! l[$>]
+  foreach {
     100%,100%,1,2
     sh. 100%
     f. "
@@ -25645,7 +25662,7 @@ equirectangular2nadirzenith :
       (Y+=0.5)*=h;
       i(#-2) = X; Y;"
     warp[0] [1],0,0,1 k...
-  done done
+  }
 
 #@cli fisheye : _center_x,_center_y,0<=_radius<=100,_amplitude>=0
 #@cli : Apply fish-eye deformation on selected images.
@@ -25654,12 +25671,12 @@ equirectangular2nadirzenith :
 fisheye : skip ${1=50},${2=50},${3=50},${4=1.2}
   e[^-1] "Apply Fish-eye effect on image$?, centered at ($1%,$2%) with radius $3% and amplitude $4."
   if $4==0 return fi
-  repeat $! l[$>]
+  foreach {
     100%,100%,1,1 =. 1,$1%,$2% distance. 1 c. 0,$3% *. -1 n. 0,1 ^. {1/$4}
     i.. ({-$1/100},{1-$1/100};{-$1/100},{1-$1/100}^{-$2/100},{-$2/100};{1-$2/100},{1-$2/100}) r.. .,.,1,2,3
     n. 0,{max(w,h)} *[-2,-1]
     warp.. .,1,1,1 rm.
-  done done
+  }
 
 #@cli flower : _amplitude,_frequency,_offset_r[%],_angle,_center_x[%],_center_y[%],\
 # _boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror}
@@ -25683,9 +25700,9 @@ flower : skip ${1=30},${2=6},${3=0},${4=0},${5=50%},${6=50%},${7=3}
 #@cli : $ image.jpg kaleidoscope ,
 kaleidoscope : skip ${1=50%},${2=50%},${3=100},${4=30},${5=3}
   e[^-1] "Create kaleidoscope effect from image$?, with center point ($1,$2), radius $3, angle $4 deg."
-  euclidean2polar $1,$2,1,$5 repeat $! l[$>]
-    +columns 0,$3% rows. 0,$4% ri. ..,0,2 ::[1] {0,n} rm[0]
-  done done polar2euclidean $1,$2,1,$5
+  euclidean2polar $1,$2,1,$5
+  foreach { +columns 0,$3% rows. 0,$4% ri. ..,0,2 ::[1] {0,n} rm[0] }
+  polar2euclidean $1,$2,1,$5
 
 #@cli map_sphere : _width>0,_height>0,_radius,_dilation>0,_fading>=0,_fading_power>=0
 #@cli : Map selected images on a sphere.
@@ -25694,7 +25711,7 @@ kaleidoscope : skip ${1=50%},${2=50%},${3=100},${4=30},${5=3}
 map_sphere : check "${1=512}>0 && ${2=512}>0 && ${5=0}>=0 && ${6=0.5}>=0" skip ${3=100},${4=0.5}
    e[^-1] "Map image$? on spheres in $1x$2 images, with radius $3, dilation $4 and fading $5."
    r2={($3*min($1,$2)/200)^2} # Compute squared radius.
-   repeat $! l[$>]
+   foreach {
      i.. 100%,1,1,100%,0 ::[0] {1,n} a y # Add one border line to have a sphere exterior.
      ({-$1/2},{$1/2}) ({-$2/2};{$2/2}) r[-2,-1] $1,$2,1,1,3 atan2. .. rm.. # Compute theta angle.
      $1,$2 =. 1,50%,50% distance. 1,3 /. $r2 sqrt. c. 0,1
@@ -25705,13 +25722,13 @@ map_sphere : check "${1=512}>0 && ${2=512}>0 && ${5=0}>=0 && ${6=0.5}>=0" skip $
      r[-1,-2] 100%,100%,{-3,d}
      +f. z a[-3--1] c
      warp.. .,0,1,1 rm. # Apply image warping
-   done done
+   }
 
 #@cli nadirzenith2equirectangular
 #@cli : Transform selected nadir/zenith rectilinear projections to equirectangular images.
 nadirzenith2equirectangular :
   e[^-1] "Transform nadir/zenith rectilinear projection$? to equirectangular images."
-  repeat $! l[$>]
+  foreach {
     100%,100%,1,2
     sh. 100%
     f. "
@@ -25735,7 +25752,7 @@ nadirzenith2equirectangular :
       (yy+=0.5)*=h;
       i(#-2) = xx; yy;"
     to_a[0] warp[0] [1],0,0,0 k...
-  done done
+  }
 
 #@cli polar2euclidean : _center_x[%],_center_y[%],_stretch_factor>0,\
 # _boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }
@@ -25745,7 +25762,7 @@ nadirzenith2equirectangular :
 polar2euclidean : skip ${1=50%},${2=50%} check "${3=1}>0 && isint(${4=1}) && $4>=0 && $4<=3"
   e[^-1] "Apply polar to euclidean transform on image$?, with center point ($1,$2), stretch factor $3 and "\
          ${"arg 1+$4,dirichlet,neumann,periodic,mirror"}" boundary conditions."
-  repeat $! l[$>]
+  foreach {
     cx={if(${is_percent\ $1},$1*(w-1),$1)}
     cy={if(${is_percent\ $2},$2*(h-1),$2)}
     R={sqrt(max($cx^2,(w-1-$cx)^2)+max($cy^2,(h-1-$cy)^2))}
@@ -25753,7 +25770,7 @@ polar2euclidean : skip ${1=50%},${2=50%} check "${3=1}>0 && isint(${4=1}) && $4>
        tmp = atan2((y-"$cy"),(x-"$cx"));
        Y = if(tmp<0,tmp+2*pi,tmp);
        i((X/"$R")^(1/$3)*(w-1),Y*(h-1)/(2*pi),z,c,1,$4)"
-  done done
+  }
 
 #@cli raindrops : _amplitude,_density>=0,_wavelength>=0,_merging_steps>=0
 #@cli : Apply raindrops deformation on selected images.
@@ -25761,7 +25778,7 @@ polar2euclidean : skip ${1=50%},${2=50%} check "${3=1}>0 && isint(${4=1}) && $4>
 #@cli : $ image.jpg +raindrops ,
 raindrops : check "${2=0.1}>=0 && ${3=1}>=0 && isint(${4=0}) && $4>=0" skip ${1=80}
   e[^-1] "Apply raindrops deformation on image$?, with amplitude $1, density $2, wavelength $3 and $4 merging steps."
-  repeat $! l[$>]
+  foreach {
     100%,100% noise. $2,2 ==. 1 distance. 1 f. 'cos(i)/(1+i/(1e-8+$3))'
     if $4
       i.. (0,1,0;1,0,1;0,1,0) /.. 2 .
@@ -25769,7 +25786,7 @@ raindrops : check "${2=0.1}>=0 && ${3=1}>=0 && isint(${4=0}) && $4>=0" skip ${1=
     fi
     g. a[-2,-1] c *. {$1/(1e-5+max(abs(im),abs(iM)))}
     warp.. .,1 rm.
-  done done
+  }
 
 #@cli ripple : _amplitude,_bandwidth,_shape={ 0=bloc | 1=triangle | 2=sine | 3=sine+ | 4=random },_angle,_offset
 #@cli : Apply ripple deformation on selected images.
@@ -25778,13 +25795,13 @@ raindrops : check "${2=0.1}>=0 && ${3=1}>=0 && isint(${4=0}) && $4>=0" skip ${1=
 ripple : skip ${1=10},${2=20},${3=2},${4=0},${5=0}
   e[^-1] "Apply ripple deformation on image$?, with amplitude $1, bandwidth $2, shape $3, angle $4 deg. and offset $5."
   theta={$4*pi/180} C={cos($theta)} S={-sin($theta)}
-  repeat $! l[$>]
+  foreach {
     100%,100%,1,1,"x" -. {w/2} 100%,100%,1,1,'y'
     -. {h/2-$5} *.. $S *. $C +[-2,-1]      # Generate rotated Y.
     _ripple$3. $1,$2                       # Generate warp field.
     +*. {-$S} *.. $C a[-2,-1] c            # Rotate warp field.
     warp.. .,1 rm.
-  done done
+  }
 
 _ripple0 : f {$1/2}*"(1-2*(i%"{2*$2}"<$2))"
 _ripple1 : f "I=(i%$2)/$2;$1*(2*if(I<0.5,I,1-I)-0.5)"
@@ -25799,9 +25816,9 @@ _ripple4 : skip $* n 0,{h-1} 1,{h} rand. {-$1/2},{$1/2} m={im} M={iM} b. {$2/10}
 #@cli : $ image.jpg +rotoidoscope ,
 rotoidoscope : skip ${1=50%},${2=50%},${5=1} check "${3=10}>0 && ${4=3}>=0"
   e[^-1] "Create rotational kaleidoscope effect from image$?, with center point ($1,$2), $3 tiles and smoothness $4."
-  repeat $! l[$>]
-    repeat $3 +rotate[0] {360/$3},1,$5,$1,$2 blend_edges $4 done
-  done done
+  foreach {
+    repeat $3 { +rotate[0] {360/$3},1,$5,$1,$2 blend_edges $4 }
+  }
 
 #@cli spherize : _radius[%]>=0,_strength,_smoothness[%]>=0,_center_x[%],_center_y[%],_ratio_x/y>0,_angle,\
 # _interpolation
@@ -25814,7 +25831,7 @@ spherize : check "${1=50%}>=0 && ${3=0}>=0 && ${6=1}>0 && isint(${8=1}) && $8>=0
   e[^-1] "Apply spherize effect on image$?, with radius $1, strength $2, smoothness $3, center ($4,$5),
           x/y-ratio $6, angle $7 and "${"arg 1+$8,nearest-neighbor,linear,cubic"}" interpolation."
   if !$1||!$2 return fi
-  repeat $! l[$>]
+  foreach {
     rmax={${"is_percent $1"}?0.5*sqrt((w-1)^2+(h-1)^2)*$1:$1}
     centerx={${"is_percent $4"}?(w-1)*$4:$4}
     centery={${"is_percent $5"}?(h-1)*$5:$5}
@@ -25840,7 +25857,7 @@ spherize : check "${1=50%}>=0 && ${3=0}>=0 && ${6=1}>0 && isint(${8=1}) && $8>=0
       xy = center + f*xy/(f + z)*m2wh1"
     b. $3
     warp.. .,0,$8,1 rm.
-  done done
+  }
 
 #@cli symmetrize : _x[%],_y[%],_angle,_boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror },\
 # _is_antisymmetry={ 0 | 1 },_swap_sides={ 0 | 1 }
@@ -25851,13 +25868,13 @@ symmetrize : skip ${1=50%},${2=50%},${3=90},${4=3},${5=0},${6=0}
   e[^-1] "Symmetrize image$?, regarding axis ($1,$2,$3 deg.)."
   theta={$3*pi/180} u={cos($theta)} v={sin($theta)}
   if $6 symmetry_cond=A<0 else symmetry_cond=A>0 fi
-  repeat $! l[$>]
+  foreach {
     x0={if(${is_percent\ $1},w*$1,$1)}
     y0={if(${is_percent\ $2},h*$2,$2)}
     if $5 f 'A=($y0-y)*$u-($x0-x)*$v;X=x+2*($x0-x);Y=y+2*($y0-y);if($symmetry_cond,i(X,Y,z,c,1,$4),i)'
     else f 'A=($y0-y)*$u-($x0-x)*$v;X=x-2*$v*A;Y=y+2*$u*A;if($symmetry_cond,i(X,Y,z,c,1,$4),i)'
     fi
-  done done
+  }
 
 #@cli transform_polar : "expr_radius",_"expr_angle",_center_x[%],_center_y[%],\
 # _boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }
@@ -25866,7 +25883,7 @@ symmetrize : skip ${1=50%},${2=50%},${3=90},${4=3},${5=0},${6=0}
 #@cli : $ image.jpg +transform_polar[0] R*(r/R)^2,a +transform_polar[0] r,2*a
 transform_polar : skip "${1=R-r}","${2=a}",${3=50%},${4=50%},${5=1}
   e[^-1] "Apply custom polar transform with 'new_r = $1', 'new_a = $2', center point ($3%,$4%)."
-  repeat $! l[$>]
+  foreach {
     cx={if(${is_percent\ $3},$3*(w-1),$3)}
     cy={if(${is_percent\ $4},$4*(h-1),$4)}
     R={sqrt(max($cx^2,(w-1-$cx)^2)+max($cy^2,(h-1-$cy)^2))}
@@ -25876,7 +25893,7 @@ transform_polar : skip "${1=R-r}","${2=a}",${3=50%},${4=50%},${5=1}
        nr = ($1);
        na = ($2);
        i("$cx" + nr*cos(na), "$cy" + nr*sin(na), z, c,1,$5)"
-  done done
+  }
 
 #@cli twirl : _amplitude,_center_x[%],_center_y[%],\
 # _boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }
@@ -25896,13 +25913,13 @@ twirl : skip ${1=1},${2=50%},${3=50%},${4=3}
 #@cli : $ image.jpg warp_perspective ,
 warp_perspective : skip ${1=1.5},${2=0},${3=1},${4=50},${5=50},${6=2}
   e[^-1] "Apply perspective warp on image$?, with angles ($1 deg.,$2 deg.), zoom $3 and offsets ($4,$5)."
-  repeat $! l[$>]
+  foreach {
     (0,100) -. $4 /. 100 (0;100) -. $5 /. 100 r[-2,-1] ...,...,...,1,3
     +*.. $2 +*.. $1 +[-2,-1] +. $3 /... . /[-2,-1]
     *.. 100 +.. $4 /.. 100 *.. {-3,w}
     *. 100 +. $5 /. 100 *. {-3,h}
     a[-2,-1] c warp.. .,0,1,$6 rm.
-  done done
+  }
 
 #@cli water : _amplitude,_smoothness>=0,_angle
 #@cli : Apply water deformation on selected images.
@@ -25910,10 +25927,10 @@ warp_perspective : skip ${1=1.5},${2=0},${3=1},${4=50},${5=50},${6=2}
 #@cli : $ image.jpg water ,
 water : check ${2=1.5}>=0 skip ${1=30},${3=1},${4=45}
   e[^-1] "Apply water deformation on image$?, with amplitude $1, smoothness $2 and angle $3."
-  repeat $! l[$>]
+  foreach {
     25%,25%,25%,1 noise. $1 g. xy *.. {-sin($3*pi/180)} *. {cos($3*pi/180)} +[-2,-1] b. $2 *. 2
     r. ..,..,1,2,3 warp.. .,1 rm.
-  done done
+  }
 
 #@cli wave : _amplitude>=0,_frequency>=0,_center_x,_center_y
 #@cli : Apply wave deformation on selected images.
@@ -25921,11 +25938,11 @@ water : check ${2=1.5}>=0 skip ${1=30},${3=1},${4=45}
 #@cli : $ image.jpg wave ,
 wave : skip ${1=4},${2=0.4},${3=50},${4=50}
   e[^-1] "Apply wave deformation on image$?, with amplitude $1, frequency $2 and center point at ($3%,$4%)."
-  repeat $! l[$>]
+  foreach {
     100%,100% =. 1,$3%,$4% distance. 1
     *. $2 +sin. cos.. a[-2,-1] c *. $1
     warp.. .,1 rm.
-  done done
+  }
 
 #@cli wind : _amplitude>=0,_angle,0<=_attenuation<=1,_threshold
 #@cli : Apply wind effect on selected images.
@@ -25937,14 +25954,15 @@ wind : check "isint(${1=20}) && $1>=0 && ${3=0.7}>=0 && $3<=1" skip "${2=0},${4=
   if !$1 return fi
   dxdy=${-_wind{round($2/45)%8}}
   fact={(1-$3)^(1/$1)}
-  repeat $! l[$>]
+  foreach {
     +gradient_norm >=. $4%
     r. 100%,100%,1,.. *. ..
-    repeat $1
+    repeat $1 {
       shift. $dxdy,0,0,0 max.. . *. $fact
       remove_pixels. {100/$1}%
-    done rm.
-  done done
+    }
+    rm.
+  }
 
 _wind0 : u 1,0
 _wind1 : u 1,1
@@ -25961,7 +25979,7 @@ _wind7 : u 1,-1
 #@cli : $ image.jpg +zoom[0] 0.6 +zoom[0] 1.5
 zoom : skip ${1=2},${2=0.5},${3=0.5},${4=0.5},${5=0}
   e[^-1] "Apply zoom effect on image$?, with factor $1 and center ($2,$3)."
-  repeat $! l[$>]
+  foreach {
     if d==1 # 2D image.
        ({(w-1)*$2*(1-1/$1)},{(w-1)*($2+(1-$2)/$1)})
        ({({-2,h}-1)*$3*(1-1/$1)};{({-2,h}-1)*($3+(1-$3)/$1)})
@@ -25973,7 +25991,7 @@ zoom : skip ${1=2},${2=0.5},${3=0.5},${4=0.5},${5=0}
        r[-3--1] [-4],[-4],[-4],1,3 a[-3--1] c warp.. .,0,1,$5
     fi
     rm.
-  done done
+  }
 
 #-----------------------------
 #
