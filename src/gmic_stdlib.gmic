@@ -16072,7 +16072,7 @@ ilaplacian : check "${1=0}>=0" skip "${2=}"
 #@cli : $ image.jpg inn
 inn :
   e[^-1] "Compute gradient-directed 2nd derivative of image$?."
-  repeat $! l[$>]
+  foreach {
     if d==1
       +g xy,0 hessian... xxxyyy  # ixx ixy iyy ix iy
       *[-5] .. *[-4] . *[-4] 2   # ixixx 2iyixy iyy ix iy
@@ -16088,7 +16088,7 @@ inn :
       sqr[-3--1] *[-4] . +[-5,-4]                # ix^2ixx+2ixiyixy+2ixizixy+iy^2iyy+2iyiziyz+iz^2izz ix^2 iy^2 iz^2
       +[-3--1] +. 1e-8 /                         # (ix^2ixx+2ixiyixy+2ixizixy+iy^2iyy+2iyiziyz+iz^2izz)/(ix^2+iy^2+iz^2)
     fi
-  done done
+  }
 
 #@cli inpaint : [mask] : [mask],0,_fast_method : \
 # [mask],_patch_size>=1,_lookup_size>=1,_lookup_factor>=0,_lookup_increment!=0,_blend_size>=0,\
@@ -16207,13 +16207,13 @@ inpaint_flow : check ${is_image_arg\ $1}" && ${2=10}>=0 && ${3=100}>=0 && ${4=5}
 inpaint_holes : check "${1=4}>=0 && ${2=0}>=0" skip ${3=0}
   e[^-1] "Inpaint holes with area less than $1 pixels in image$?, with tolerance $2 and "\
          ${arg\ 1+!$3,high,low}" connectivity."
-  repeat $! l[$>]
+  foreach {
     100%,100%,100%
     area={if(${is_percent\ $1},$1*w*h*d,$1)}
     repeat s#0 sh[0] $> +area. $2,$3 <=. $1 -|[1,-1] rm. done
     if im k[0] whd={w},{h},{d} r 1,1,1,100%,2 r $whd,100%
     else inpaint[0] [1],0,{2*!$2+!!$3} k[0] fi
-  done done
+  }
 
 #@cli inpaint_morpho : [mask]
 #@cli : Inpaint selected images by specified mask using morphological operators.
@@ -16367,13 +16367,13 @@ _inpaint_matchpatch :
 
 # _inpaint_warping2d : fill-in zero-valued vectors in absolute 2d warping field (works even when 'spectrum>2').
 _inpaint_warping2d :
-  repeat $! l[$>]
+  foreach
     100%,100%,100%,2,"> begin(const S = s#0; zero0 = vectorS(); zero1 = [0,0]; N = 0); I(#-1)==zero0?zero1:[++N,1]"
     s. c distance. 1 *. -1
     watershed.. . rm.
 
     # Propagate offsets in each distinct voronoi cell.
-    repeat 2
+    repeat 2 {
       f.. ">i?I:( # Forward propagation
         nP = vectors();
         const sP = size(nP);
@@ -16392,16 +16392,16 @@ _inpaint_warping2d :
         (P = J(-1,1))[0] && j(#-1,-1,1)==r?(nP[0] = ++P[0]; nP[1] = --P[1]; sP>2?copy(nP[2],P[2],sP-2)):
         (P = J(1,0))[0] && j(#-1,1,0)==r  ?(nP[0] = --P[0]; nP[1] = P[1]; sP>2?copy(nP[2],P[2],sP-2));
         nP)"
-    done
+    }
     rm.
-  done done
+  done
 
 #@cli kuwahara : size>0
 #@cli : Apply Kuwahara filter of specified size on selected images.
 #@cli : $ image.jpg kuwahara 9
 kuwahara : check $1>0
   e[^-1] "Apply Kuwahara filter of size $1 on image$?."
-  repeat $! l[$>]
+  foreach {
     s={s}
     +dilate $1 compose_channels. min
     +erode[0] $1 compose_channels. max
@@ -16420,16 +16420,14 @@ kuwahara : check $1>0
              if(vm==v3,i(x-"$p",y+"$p",0,c,0,1),
                i(x+"$p",y+"$p",0,c,0,1)))))"
     channels 0,{s-2}
-  done done
+  }
 
 #@cli laplacian
 #@cli : Compute Laplacian of selected images.
 #@cli : $ image.jpg laplacian
 laplacian :
   e[^-1] "Compute Laplacian of image$?."
-  repeat $! l[$>]
-    hessian ${arg\ 1+(d==1),xxyyzz,xxyy} +
-  done done
+  foreach { hessian ${arg\ 1+(d==1),xxyyzz,xxyy} + }
 
 #@cli lic : _amplitude>0,_channels>0
 #@cli : Render LIC representation of selected vector fields.
@@ -16437,11 +16435,12 @@ laplacian :
 #@cli : $ 400,400,1,2,'if(c==0,x-w/2,y-h/2)' +lic 200,3 quiver[-2] [-2],10,1,1,1,255
 lic : skip ${1=30},${2=1}
   e[^-1] "Render LIC representation of 2D vector field$?, with amplitude $1 and $2 channel(s)."
-  repeat $! l[$>] nm={0,n}
+  foreach {
+     nm={0,n}
      channels 0,1 / {max(abs(im),abs(iM))} vector2tensor
      100%,100%,100%,$2 rand. 0,255 smooth. ..,$1 rm..
-     equalize
-  :: $nm done done
+     equalize :: $nm
+  }
 
 #@cli map_tones : _threshold>=0,_gamma>=0,_smoothness>=0,nb_iter>=0
 #@cli : Apply tone mapping operator on selected images, based on Poisson equation.
@@ -16449,20 +16448,21 @@ lic : skip ${1=30},${2=1}
 #@cli : $ image.jpg +map_tones ,
 map_tones : skip ${1=0.1},${2=0.8},${3=0.5},${4=30}
   e[^-1] "Apply tone mapping operator on image$?, with threshold $1, gamma $2, smoothness $3 and $4 iterations."
-  repeat $! l[$>]
+  foreach {
 
     # Estimate target divergence for each channel.
-    +l s c repeat $! l[$>]
+    +l s c foreach {
       g xy,1 a c +norm orientation..
       m={im} M={iM} b. $3 n. $m,$M
       *. 'alpha=$1*iM;(alpha/(1e-10+i))*(i/(1e-10+alpha))^$2'
       * s c g.. x,-1 g. y,-1 +
-    done done a c * 0.25 done
+    }
+    a c * 0.25 done
 
    # Start Poisson-PDE iterations
     repeat $4 +laplacian.. *. 0.25 +. ... -. .. *. 800 +[-3,-1] /.. 801 c.. 0,255 done rm.
 
-  done done
+  }
 
 #@cli map_tones_fast : _radius[%]>=0,_power>=0
 #@cli : Apply fast tone mapping operator on selected images.
@@ -16470,13 +16470,14 @@ map_tones : skip ${1=0.1},${2=0.8},${3=0.5},${4=30}
 #@cli : $ image.jpg +map_tones_fast ,
 map_tones_fast : check "${1=3%}>=0 && ${2=0.3}>=0"
   e[^-1] "Apply fast tone mapping operator on image$?, with radius $1 and power $2."
-  repeat $! l[$>]
+  foreach {
     +luminance b. $1 n 0,1
     +*. 2 -. 1 abs. *. {$2*log(10)} exp.
     <=.. 0.5 ri. ...
     +*... -1 +. 1 ^. .. *. -1 +. 1 *. ...
     ^[-4,-2] ==.. 0 *[-3,-2] +
-  done done n 0,255
+  }
+  n 0,255
 
 #@cli meancurvature_flow : _nb_iter>=0,_dt,_keep_sequence={ 0 | 1 }
 #@cli : Apply iterations of the mean curvature flow on selected images.
@@ -16519,11 +16520,11 @@ nlmeans:
     check "${1=4}>0 && ${2=4}>0 && ${3=10}>0" skip "${4=-norm}"
     e[^-1] "Apply non-local means denoising on image$?, with patch size $1, spatial bandwidth $2,
             tonal bandwidth $3 and patch measure command '$4'."
-    repeat $! l[$>]
+    foreach {
       +l $4 k[0] done # [1] preprocessed image used to compute weights.
       100%,100%,100%,100%,{-1.0/($3*$3)} # [2] compute a scaling.
       nlmeans_core[0] [1],[2],$1,$2 k[0] # Apply the NLM denoising with image 1 and 2 as parameter.
-    done done
+    }
   fi
 
 #@cli nlmeans_core: _reference_image,_scaling_map,_patch_radius>0,_spatial_bandwidth>0
@@ -16569,7 +16570,7 @@ normalize_local :
   check "${1=3}>=0 && ${2=16}>0 && isbool(${5=1})" skip ${3=4%},${4=2%},${6=0},${7=255}
   e[^-1] "Normalize image$? locally, with amplitude $1, radius $2, neighborhood smoothness $3 and
           average smoothness $4."
-  repeat $! l[$>]
+  foreach {
     +l erode {2*$2+1} s c min done
     +l.. dilate {2*$2+1} s c max done
     +b... $4 b[-3,-2] $3
@@ -16578,7 +16579,7 @@ normalize_local :
     if $5 max.. $6 min. $7 fi
     -. .. *[-3,-1] +
     if $5 c $6,$7 fi
-  done done
+  }
 
 #@cli normalized_cross_correlation : [mask]
 #@cli : Compute normalized cross-correlation of selected images with specified mask.
@@ -16681,12 +16682,13 @@ pde_flow : skip ${1=10},${2=30},${3=laplacian},${4=0}
 #@cli : $ image.jpg +periodize_poisson array 2,2,2
 periodize_poisson :
   e[^-1] "Periodize image$? using Poisson solver in Fourier space."
-  repeat $! l[$>]
-    s c repeat $! l[$>]
+  foreach {
+    s c foreach {
       mM={[im,iM]} sum={0,ia}
       laplacian ilaplacian 0 + $sum c $mM
-    done done a c
-  done done
+    }
+    a c
+  }
 
 #@cli rbf : dx,_x0,_x1,_phi(r) : dx,dy,_x0,_y0,_x1,_y1,_phi(r) : dx,dy,dz,x0,y0,z0,x1,y1,z1,phi(r)
 #@cli : Reconstruct 1D/2D or 3D image from selected sets of keypoints, by RBF-interpolation.
@@ -16710,7 +16712,7 @@ rbf :
     check $dx>0
     e[^-1] "Reconstruct 1D image from keypoint set$?, with size "$dx", "\
      "from ("$x0") to ("$x1") and phi(r) = "$phi_r.
-    repeat $! l[$>] nm={n} if !w $dx elif whd==1 channels. 1,100% r. $dx,1,1,100% else
+    foreach nm={n} if !w $dx elif whd==1 channels. 1,100% r. $dx,1,1,100% else
       r 1,{whd},1,100%,-1 permute. cyzx
       $dx,1,1,{w-1},"*
         begin(
@@ -16730,7 +16732,7 @@ rbf :
         ref(vectors(),res); x = (x - "$x0")*fx;
         repeat (h#0,k, r = abs(x - X[k]); res+=W[s*k,s]*phi(r))"
       k. :: $nm
-    fi done done
+    fi done
 
   elif isin($#,2,6,7) # 2D reconstruction
     dx,dy,x0,y0,x1,y1=$a1,$a2,{$#>2?[$a3,$a4,$a5,$a6]:[0,0,[$a1,$a2]-1]}
@@ -16738,7 +16740,7 @@ rbf :
     check $dx>0" && "$dy>0
     e[^-1] "Reconstruct 2D image from keypoint set$?, with size "$dx,$dy", "\
      "from ("$x0,$y0") to ("$x1,$y1") and phi(r) = "$phi_r.
-    repeat $! l[$>] nm={n} if !w $dx,$dy elif whd==1 channels 2,100% r. $dx,$dy,1,100% else
+    foreach nm={n} if !w $dx,$dy elif whd==1 channels 2,100% r. $dx,$dy,1,100% else
       r 1,{whd},1,100%,-1 permute. cyzx
       $dx,$dy,1,{w-2},"*
         begin(
@@ -16760,7 +16762,7 @@ rbf :
         ref(vectors(),res); x = (x - "$x0")*fx; y = (y - "$y0")*fy;
         repeat (h#0,k, r = norm(x - X[k], y - Y[k]); res+=W[s*k,s]*phi(r))"
       k. :: $nm
-    fi done done
+    fi done
 
   elif isin($#,3,9,10) # 3D reconstruction
     dx,dy,dz,x0,y0,z0,x1,y1,z1=$a1,$a2,$a3,{$#>3?[$a4,$a5,$a6,$a7,$a8,$a9]:[0,0,0,[$a1,$a2,$a3]-1]}
@@ -16768,7 +16770,7 @@ rbf :
     check $dx>0" && "$dy>0" && "$dz>0
     e[^-1] "Reconstruct 3D image from keypoint set$?, with size "$dx,$dy,$dz", "\
      "from ("$x0,$y0,$z0") to ("$x1,$y1,$z1") and phi(r) = "$phi_r.
-    repeat $! l[$>] nm={n} if !w $dx,$dy,$dz elif whd==1 channels 3,100% r. $dx,$dy,$dz,100% else
+    foreach nm={n} if !w $dx,$dy,$dz elif whd==1 channels 3,100% r. $dx,$dy,$dz,100% else
       r 1,{whd},1,100%,-1 permute. cyzx
       $dx,$dy,$dz,{w-3},"*
         begin(
@@ -16792,7 +16794,7 @@ rbf :
         ref(vectors(),res); x = (x - "$x0")*fx; y = (y - "$y0")*fy; z = (z - "$z0")*fz;
         repeat (h#0,k, r = norm(x - X[k], y - Y[k], z - Z[k]); res+=W[s*k,s]*phi(r))"
       k. :: $nm
-    fi done done
+    fi done
 
   else error[0--2] "Command 'rbf': invalid arguments '$*'."
   fi
@@ -16803,10 +16805,11 @@ rbf :
 #@cli : $ image.jpg +red_eye ,
 red_eye : skip ${1=75},${2=3.5},${3=0.1}
   e[^-1] "Attenuate red-eye effect in image$?, with threshold $1, smoothness $2 and attenuation $3."
-  to_rgb rgb2ycbcr repeat $! l[$>]
+  to_rgb rgb2ycbcr
+  foreach {
     s c -. 128 +>=. $1% b. $2 sqrt. *. -1 +. 1
     n. $3,1 *[-2,-1] +. 128 a c ycbcr2rgb
-  done done
+  }
 
 #@cli remove_hotpixels : _mask_size>0, _threshold[%]>0
 #@cli : Remove hot pixels in selected images.
@@ -16814,17 +16817,17 @@ red_eye : skip ${1=75},${2=3.5},${3=0.1}
 #@cli : $ image.jpg noise 10,2 +remove_hotpixels ,
 remove_hotpixels : check ${1=3}>0 skip ${2=10%}
   e[^-1] "Remove hot pixels in image$?, with mask size $1 and threshold $2."
-  repeat $! l[$>]
+  foreach {
     +median $1 +- abs. >=. $2
     *.. . ==. 0 *[-3,-1] +
-  done done
+  }
 
 #@cli remove_pixels : number_of_pixels[%]>=0
 #@cli : Remove specified number of pixels (i.e. set them to 0) from the set of non-zero pixels in selected images.
 #@cli : $ image.jpg +remove_pixels 50%
 remove_pixels : check "$1>=0"
   e[^-1] "Remove $1 of the non-zero pixels in image$?."
-  repeat $! l[$>]
+  foreach
     +norm !=. 0
     N={is}                                      # Number of non-zero pixels.
     n={round(if(${"is_percent $1"},$N*$1,$1))} # Number of pixels to remove.
@@ -16862,7 +16865,7 @@ remove_pixels : check "$1>=0"
 
       r 100%,{h/$d},$d,100%,-1  # Resize to original dimension (eventually 3D).
     fi
-  done done
+  done
 
 #@cli rolling_guidance : std_deviation_s[%]>=0,std_deviation_r[%]>=0,_precision>=0
 #@cli : Apply the rolling guidance filter on selected image.
@@ -16873,17 +16876,17 @@ remove_pixels : check "$1>=0"
 rolling_guidance : check "${1=4}>=0 && ${2=10}>=0 && ${3=0.5}>=0"
   e[^-1] "Apply rolling guidance filter on image$?, with standard deviations ($1,$2) and precision $3."
   precision={2^-$3}
-  repeat $! l[$>]
+  foreach {
     +b $1
-    repeat 100
+    repeat 100 {
       if c>1 +norm. +bilateral... .,$1,$2 rm..
       else +bilateral.. .,$1,$2
       fi
       -.. . std={-2,sqrt(iv)} rm..
       if $std<$precision break fi
-    done
+    }
     k.
-  done done
+  }
 
 #@cli sharpen : amplitude>=0 : amplitude>=0,edge>=0,_alpha[%],_sigma[%]
 #@cli : Sharpen selected images by inverse diffusion or shock filters methods.
@@ -16894,7 +16897,7 @@ rolling_guidance : check "${1=4}>=0 && ${2=10}>=0 && ${3=0.5}>=0"
 sharpen : check "$1>=0 && ${2=0}>=0 && ${3=0}>=0 && ${4=0}>=0"
   if $2>0 # Shock filters
     e[0--3] "Sharpen image$? with shock filters, amplitude $1, edge $2, alpha $3 and sigma $4."
-    repeat $! l[$>]
+    foreach
       im,iM={[im,iM]}
       +b $3 structuretensors. 0 b. $4 eigen. l.. max 0 s c + + 1 ^ {-0.5*$2} *. -1 +. 1 done
       if {0,d>1} # 3D
@@ -16950,12 +16953,12 @@ sharpen : check "$1>=0 && ${2=0}>=0 && ${3=0}>=0 && ${4=0}>=0"
           amp*sign(itt)*abs(it)"
       fi
       *. {$1/abs(maxabs(im,iM))} rm[-3,-2] - c $im,$iM
-    done done
+    done
   else # Inverse diffusion
     e[0--3] "Sharpen image$? with inverse diffusion and amplitude $1."
-    repeat $! l[$>]
+    foreach {
       im,iM={[im,iM]} +laplacian *. {$1/abs(maxabs(im,iM))} - c $im,$iM
-    done done
+    }
   fi
 
 #@cli smooth : amplitude[%]>=0,_sharpness>=0,0<=_anisotropy<=1,_alpha[%],_sigma[%],_dl>0,_da>0,\
@@ -16977,7 +16980,7 @@ sharpen : check "$1>=0 && ${2=0}>=0 && ${3=0}>=0 && ${4=0}>=0"
 #@cli : $ image.jpg split_freq 2%
 split_freq :
   e[^-1] "Split image$? into low and high frequency parts, with smoothness $1."
-  repeat $! l[$>] +b $1 -[0] [1] rv done done
+  foreach { +b $1 -[0] [1] rv }
 
 #@cli solve_poisson : "laplacian_command",_nb_iterations>=0,_time_step>0,_nb_scales>=0
 #@cli : Solve Poisson equation so that applying 'laplacian[n]' is close to the result of 'laplacian_command[n]'.
@@ -16988,17 +16991,17 @@ split_freq :
 solve_poisson : check "${2=60}>=0 && ${3=5}>0 && ${4=0}>=0"
   e[^-1] "Solve Poisson equation for image$?, for laplacian command '$1', with $2 iterations, time step $3 and "\
          ${arg\ 1+($4==0),$4,auto}" scales."
-  repeat $! l[$>]
+  foreach {
     [0]
-    repeat if($4,$4,int(max(log2(max(w,h))-1,1)))
+    repeat if($4,$4,int(max(log2(max(w,h))-1,1))) {
       f={2^$<}
       r[1] {0,max(1,w/$f)},{0,max(1,h/$f)},1,100%,3
       +ri[0] [1],2 l. -$1 k[0] done
       repeat $2 +laplacian.. -. .. *. {$3/max(1e-8,abs(im),abs(iM))} +[-3,-1] done
       rm.
-    done
+    }
     rm[0]
-  done done
+  }
 
 #@cli split_details : _nb_scales>0,_base_scale[%]>=0,_detail_scale[%]>=0
 #@cli : Split selected images into 'nb_scales' detail scales.
@@ -17046,7 +17049,7 @@ structuretensors : skip "${1=}"
   l[] if "isbool($1)" scheme=$1 else scheme=0 noarg fi onfail scheme=0 noarg done
   s0,s1=centered,forward-backward
   e[^-1] "Compute structure tensor field of image$?, with "${s$scheme}" scheme."
-  repeat $! l[$>]
+  foreach {
     if d>1 # 3D
       if $scheme  # Fwd/bwd
         +g xyz,-1 +g[0] xyz,1 sqr[^0] +[1,4] +[2,4] +[3,4] /[^0] 2
@@ -17062,7 +17065,7 @@ structuretensors : skip "${1=}"
         g xy,0 +* sqr[0,1] compose_channels + rv[1,2] a c
       fi
     fi
-  done done
+  }
 
 #@cli solidify : _smoothness[%]>=0,_diffusion_type={ 0=isotropic | 1=Delaunay-guided | 2=edge-oriented },\
 # _diffusion_iter>=0
@@ -17072,9 +17075,7 @@ structuretensors : skip "${1=}"
 solidify : check "${1=75%}>=0 && isint(${2=1}) && $2>=0 && $2<=2 && ${3=20}>=0"
   s0="isotropic" s1="Delaunay-guided" s2="edge-oriented"
   e[^-1] "Solidify transparent image$? with smoothness $1 and $3 iterations of "${s$2}" diffusion."
-  repeat $! l[$>] split_opacity
-    if $!>1 <=. 128 inpaint_pde.. [1],${1-3} rm. c 0,255 fi
-  done done
+  foreach { split_opacity if $!>1 <=. 128 inpaint_pde.. [1],${1-3} rm. c 0,255 fi }
 
 #@cli syntexturize : _width[%]>0,_height[%]>0
 #@cli : Resynthetize 'width'x'height' versions of selected micro-textures by phase randomization.
@@ -17084,7 +17085,7 @@ solidify : check "${1=75%}>=0 && isint(${2=1}) && $2>=0 && $2<=2 && ${3=20}>=0"
 #@cli : $ image.jpg crop 2,282,50,328 +syntexturize 320,320
 syntexturize : check "${1=100%}>0 && ${2=$1}>0"
   e[^-1] "Resynthetize $1x$2 versions of texture$? by phase randomization."
-  repeat $! l[$>]
+  foreach
 
     # Prepare input image data.
     mM={[im,iM]} repeat s sh. $> sum$>={is} var$>={iv} rm. done  # Retrieve some stats for post-normalization.
@@ -17122,7 +17123,7 @@ syntexturize : check "${1=100%}>0 && ${2=$1}>0"
     repeat s sh. $> avg={ia} -. $avg *. {sqrt(${var$>}/if(iv,iv,1))} +. $avg rm. done
     c $mM
 
-  done done
+  done
 
 #@cli syntexturize_matchpatch : _width[%]>0,_height[%]>0,_nb_scales>=0,_patch_size>0,_blending_size>=0,_precision>=0
 #@cli : Resynthetize 'width'x'height' versions of selected micro-textures using a patch-matching algorithm.
@@ -17133,7 +17134,7 @@ syntexturize_matchpatch : check "${1=100%}>0 && ${2=$1}>0 && isint(${3=0}) && $3
                                  ${5=5}>=0 && ${6=1}>=0"
   e[^-1] "Resynthetize $1x$2 version(s) of texture$? using a patch-matching algorithm with "\
          ${"if $3 u \"$3 \" else u auto- fi"}"scales, $4x$4 patches, blending size $5 and precision $6."
-  repeat $! l[$>]
+  foreach
     nb_scales={round(if($3,$3,log2(min(w,h)/16)),1,1)}
     width={if(${"is_percent $1"},round(w*$1,1,1),$1)}
     height={if(${"is_percent $2"},round(h*$2,1,1),$2)}
@@ -17185,7 +17186,7 @@ syntexturize_matchpatch : check "${1=100%}>0 && ${2=$1}>0 && isint(${3=0}) && $3
     done
     warp_patch.. .,$5
     rm. r $width,$height,1,100%,0,0,0.5,0.5
-  done done
+  done
 
 # _syntexturize_matchpatch : [correspondence_map],blend_size>0
 _syntexturize_matchpatch : check ${is_image_arg\ $1}" && isint(${2=3}) && $2>=0"
@@ -17249,15 +17250,16 @@ unsharp : check "${2=2}>=0" skip ${3=0}
 #@cli : $ image.jpg blur 3 +unsharp_octave 4,5,15 cut 0,255
 unsharp_octave : check "${1=4}>0 && ${3=2}>=0" skip ${2=1},${4=0}
   e[^-1] "Apply octave sharpening on image$?, with $1 scales, radius $2, amount $3 and threshold $4."
-  repeat $! l[$>] nm={0,n}
+  foreach {
+    nm={0,n}
     +f 0 weight=0
     repeat $1
       +unsharp[0] {$2*2^-$<},$3,$4 *. {2^-$>}
       weight+={2^-$>}
       +[1,-1]
     done
-    rm[0] / $weight
-  :: $nm done done
+    rm[0] / $weight :: $nm
+  }
 
 #@cli vanvliet : std_deviation>=0[%],order={ 0 | 1 | 2 | 3 },axis={ x | y | z | c },_boundary_conditions : (+)
 #@cli : Apply Vanvliet recursive filter on selected images, along specified axis and with
@@ -17273,10 +17275,14 @@ unsharp_octave : check "${1=4}>0 && ${3=2}>=0" skip ${2=1},${4=0}
 # norm[-1] ==[-1] 0 map[-2] 2,2 mul[-2,-1] normalize[-2] 0,255 dilate_circ[-2] 4 reverse max
 voronoi :
   e[^-1] "Compute the discrete Voronoi diagram of non-zero pixels in image$?."
-  repeat $! l[$>] s c repeat $! l[$>]
-    +!=. 0 distance. 1 *. -1
-    watershed.. . rm.
-  done done a c done done
+  foreach {
+    s c
+    foreach {
+      +!=. 0 distance. 1 *. -1
+      watershed.. . rm.
+    }
+    a c
+  }
 
 #@cli watermark_fourier : text,_size>0
 #@cli : Add a textual watermark in the frequency domain of selected images.
