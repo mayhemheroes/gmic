@@ -19915,14 +19915,14 @@ turbulence : check "${1=32}>0 && ${2=6}>0" skip ${3=3},${4=0},${5=0}
     elif $5==3||$5==4 ^. 2
     elif $5==5 ^. 3
     fi
-    repeat $2-1
+    repeat $2-1 {
       +noise.. 10,0 b. {$1/2^$>},0
       if $5==0 -. {ia} abs.
       elif $5==4 ^. 2
       elif $5==5 ^. 3
       fi
       *.. $3 +[-2--1]
-    done
+    }
     n. 0,255
     rm..
     if $4 *. $4 mv.. 2 - n. 0,255 fi
@@ -20092,7 +20092,7 @@ animate3d : check "isint($1) && $1>0 && isnum(${2=0}) && isnum(${3=5}) && isnum(
   repeat {$!-1} l[$>,-1] check ${-is_3d..} nm={0,n} bn={0,b}
     e[] "  * Object '"$bn"': 0/$1"
     c3d[0] n3d[0] *3d[0] {1,$5*min(w,h)/2}
-    repeat $1
+    repeat $1 {
       e[] "\r  * Object '"$bn"': "{1+$>}"/$1"
       +r3d[0] 0,0,1,{$>*$4} r3d. 0,1,0,{$>*$3} r3d. 1,0,0,{$>*$2}
       {1,[w,h,d,4]},-1 j3d. ..,50%,50%,0,1
@@ -20100,7 +20100,7 @@ animate3d : check "isint($1) && $1>0 && isnum(${2=0}) && isnum(${3=5}) && isnum(
       if $6 sh. 100% +b. 2% shift. {m=min(w,h)*2%;[m,m]} -. {255-$6*255%} c. 0,255 max[-2,-1] rm. fi # Add fake shadow
       +blend[1,-1] alpha rm[-3,-2]
       if {*} w. -1,-1,0 fi
-    done
+    }
     a[2--1] z
     rv[0,-1] rm.
   done ::[$>] $nm done
@@ -20148,22 +20148,22 @@ array3d : check "isint($1) && $1>0 && isint(${2=1}) && $2>0 && isint(${3=1}) && 
     rm[-3--1]
 
     # Duplicate along X.
-    off=0 repeat int(log2($1))
+    off=0 repeat int(log2($1)) {
       ++3d. {2^$>*$dx} +3d. ..
       if !($1&(2^$>)) rm.. else +3d.. $off off+={2^$>*$dx} fi
-    done +3d. $off +3d
+    } +3d. $off +3d
 
     # Duplicate along Y.
-    off=0 repeat int(log2($2))
+    off=0 repeat int(log2($2)) {
       ++3d. 0,{2^$>*$dy} +3d. ..
       if !($2&(2^$>)) rm.. else +3d.. 0,$off off+={2^$>*$dy} fi
-    done +3d. 0,$off +3d
+    } +3d. 0,$off +3d
 
     # Duplicate along Z.
-    off=0 repeat int(log2($3))
+    off=0 repeat int(log2($3)) {
       ++3d. 0,0,{2^$>*$dz} +3d. ..
       if !($3&(2^$>)) rm.. else +3d.. 0,0,$off off+={2^$>*$dz} fi
-    done +3d. 0,0,$off +3d
+    } +3d. 0,0,$off +3d
   }
 
 #@cli arrow3d : x0,y0,z0,x1,y1,z1,_radius[%]>=0,_head_length[%]>=0,_head_radius[%]>=0
@@ -20622,11 +20622,11 @@ gaussians3d : check "${1=32}>0" skip ${2=0.3}
   text3d C,60,20,2 +3d. 100 col3d. 16,64,255
   sphere3d 8 +3d. 102,-3,20 col3d. 192,128,255
   +3d[-6--1] c3d.
-  repeat 30
+  repeat 30 {
     box3d {min(3+$</2,10)} col3d. {30*$>},{20+80*$>},{10*$>},0.5
     r3d. 1,1,1,{$>*12}
     +3d. {80*cos(0.5+1.02*$>*12*pi/180)},{30*sin(0.8+$>*12*pi/180)},{2*$>-60}
-  done
+  }
   +3d[-30--1] +3d. 0,5,30 +3d[-2--1] :: [3d\ gmic]
 
 #@cli gyroid3d : _resolution>0,_zoom
@@ -20697,8 +20697,8 @@ imageblocks3d : check ${2=0}>=0 skip ${1=10},${3=0}
 
     # Create 3D object template.
     l[] box3d 1,1,0
-    repeat $w-1 ++3d. 1,0,0 done +3d
-    repeat $h-1 ++3d. 0,1,0 done +3d
+    repeat $w-1 { ++3d. 1,0,0 } +3d
+    repeat $h-1 { ++3d. 0,1,0 } +3d
     done
     s3d.
 
@@ -20824,8 +20824,8 @@ imagerubik3d : check "${1=3}>=1 && ${2=5}>=0 && $2<=100 && ${3=5}>=0 && $3<=100"
     3,5,1,1,200
     1,5,1,1,1
     y[-6--1] a[-6--1] y
-    repeat $1-1 ++3d. 100 done +3d[-$1--1]   # Duplicate along X
-    repeat $1-1 ++3d. 0,100 done +3d[-$1--1] # Duplicate along Y
+    repeat $1-1 { ++3d. 100 } +3d[-$1--1]   # Duplicate along X
+    repeat $1-1 { ++3d. 0,100 } +3d[-$1--1] # Duplicate along Y
     t3d. .. rm..
     /3d. $1 -3d. 50,50,50
     +r3d. 0,1,0,-90 +r3d. 0,1,0,-90 +r3d. 0,1,0,-90  # Generate the 5 other sides.
@@ -20857,15 +20857,15 @@ imagesphere3d : check "${1=32}>=3 && ${2=16}>=3"
     a[-3--1] c permute. cxyz y. a[-3--1] y
 
     # Define sphere primitives (triangles and quadrangles).
-    repeat $1 v=$>
+    repeat $1 { v=$>
       tx0={$v*$tw/$1} tx1={($v+1)*$tw/$1} ty1={$th/($2-1)}
       (9;0;{2+$v};{2+($v+1)%$1};{$tw/2};0;$tx0;$ty1;$tx1;$ty1) # Textured triangle from 1st pole.
-      repeat $2-3 u=$>
+      repeat $2-3 { u=$>
         ty0=$ty1 ty1={($u+2)*$th/($2-1)} i0={2+$u*$1+$v} i1={2+$u*$1+($v+1)%$1}
         (12;$i0;{$i0+$1};{$i1+$1};$i1;$tx0;$ty0;$tx0;$ty1;$tx1;$ty1;$tx1;$ty0) # Textured quadrangle.
-      done
+      }
       (9;1;{2+$1*($2-3)+($v+1)%$1};{2+$1*($2-3)+$v};{$tw/2};$th;$tx1;$ty1;$tx0;$ty1) # Textured triangle from 2nd pole.
-    done
+    }
     a[-$nbp--1] y
 
     # Define sphere textures, opacities and generate object.
@@ -20901,14 +20901,14 @@ label_points3d : check ${1=13}>0 skip ${2=0.8}
     +p3d[$>] 0 l. s3d rm[-3--1]
     nbp={-2,@0} =.. $nbp,0,1                               # Set correct number of primitives
     (1,0;1,{$nbp-1}) r. 2,$nbp,1,1,3 r. 1,{2*h},1,1,-1     # Create new primitive data
-    repeat $nbp                                            # Create texture labels as primitive colors.
+    repeat $nbp {                                          # Create texture labels as primitive colors.
       0 t. $>,0,0,$1,1,255,255,255 autocrop. 0
       i.. (-128;{w};{h};3) y.
-    done
-    repeat $nbp                                            # Create texture masks as primitive opacities.
+    }
+    repeat $nbp {                                          # Create texture masks as primitive opacities.
       0 t. $>,0,0,$1,1,$2 autocrop. 0
       i.. (-128;{w};{h};1) y.
-    done
+    }
     a y  # Merge final object data.
     done
     +3d[$>,-1]
@@ -21084,13 +21084,13 @@ pca_patch3d : check "isint(${1=7}) && $1>0 && isint(${2=1000}) && $2>0 && isint(
     rm..
 
     # Pick set of N random located patches.
-    repeat $3
+    repeat $3 {
       x={round(u({0,w}))}
       y={round(u({0,h}))}
       ({$6*$x};{$6*$y})
       +z[0] {$x-$P1},{$y-$P1},{$x+$P2},{$y+$P2},1
       y. a[-2,-1] y
-    done
+    }
 
     # Generate 3D representation of the projected patch set.
     +a[2--1] x m*[1,-1] transpose[1]                    # Vertex coordinates.
@@ -22156,7 +22156,7 @@ _apply_parallel :
   if $!" && "narg("$*")
     m "_ap : foreach $* if $! k[0] else 0 fi done"
     N={min($!,$_cpus)}
-    commands= sep= repeat $N commands=$commands${sep}_ap[$>--1:$N] sep=, done
+    commands= sep= repeat $N { commands=$commands${sep}_ap[$>--1:$N] sep=, }
     parallel $commands
     um _ap
   fi
@@ -22175,9 +22175,9 @@ apply_parallel_channels :
 
 _apply_parallel_channels :
   e[0--3] "Apply command '$*' on all channels of image"$_gmic_s" in parallel, using "$_cpus" threads."
-  N=$! repeat $N s$>={$>,s} done s c
+  N=$! repeat $N { s$>={$>,s} } s c
   ap "$1"
-  repeat $N a[$>-{$>+${s$>}-1}] c done
+  repeat $N { a[$>-{$>+${s$>}-1}] c }
 
 #@cli apo : eq. to 'apply_parallel_overlap'.
 apo : check "${2=0}>=0 && isint(${3=0}) && $3>=0"
@@ -23807,7 +23807,7 @@ array_fade : skip ${2=$1},${3=60},${4=90},${5=1}
 #@cli : $ image.jpg array_mirror 2
 array_mirror : skip ${2=2},${3=0}
   e[^-1] "Create a 2^$1x2^$1 mirrored-array from image$?, with expand type $2."
-  repeat $1
+  repeat $1 {
     if $3==0
       if $2>=3 r 33%,33%,100%,100%,2
       else r 50%,50%,100%,100%,2
@@ -23819,7 +23819,7 @@ array_mirror : skip ${2=2},${3=0}
       else +mirror x a x +mirror y a y if $2==3 r 150%,150%,1,100%,0,2,1,1 fi
       fi
     }
-  done
+  }
 
 #@cli array_random : Ms>0,_Ns>0,_Md>0,_Nd>0
 #@cli : Create MdxNd array of tiles from selected MsxNs source arrays.
@@ -24086,11 +24086,11 @@ img2ascii : check "${2=16}>0 && ${3=20%}>=0 && ${4=16}>0"
 
   # Generate dictionaries for image analysis and synthesis.
   l[]
-    ('"$1"') repeat w
+    ('"$1"') repeat w {
       C={`92`}${dec2oct\ {0,@$>}}
       0 t. $C,0,0,$2,1,1
       0 t. $C,0,0,$4,1,1
-    done rm[0]
+    } rm[0]
     = -1 = -1,0,100% autocrop = 0 = 0,0,100%
     l[0--2:2] r {${-max_w}+1},100%,1,1,0,0,0.5 b $3 n 0,255 a z done
     l[1--1] r {${-max_w}+1},100%,1,1,0,0,0.5 a z done
@@ -24216,7 +24216,7 @@ imagegrid_triangular : check "$1>=1 && ${2=$1}>=1 && isint(${3=0}) && $3>=0 && $
   fi
 
   # Apply grid on images.
-  repeat $!-1
+  repeat $!-1 {
     wh={$>,w},{$>,h}
     if $1>$2 r[$>] 100%,{$>,$1*h/$2} elif $1<$2 r[$>] {$>,$2*w/$1} fi
     +r. [$>],[$>],1,2,0,2,0.5,0.5
@@ -24224,7 +24224,7 @@ imagegrid_triangular : check "$1>=1 && ${2=$1}>=1 && isint(${3=0}) && $3>=0 && $
     blend[$>,-2] shapeaverage
     +fc[$>] ${5--1} j[$>] .,0,0,0,0,$4,.. rm[-2,-1]
     r[$>] $wh,1,100%,2
-  done
+  }
   rm.
 
 #@cli linearize_tiles : M>0,_N>0
@@ -24241,7 +24241,7 @@ linearize_tiles : check "$1>0 && ${2=$1}>0"
       +f x +f. y +f. 1 y a[^0] x solve.. . rm.
       $wh,1,1,{@0}"*x + "{@1}"*y + "{@2} rm..
     }
-    repeat int($!/$s) a[-$s--1] c mv. 0 done append_tiles $1,$2 :: $nm
+    repeat int($!/$s) { a[-$s--1] c mv. 0 } append_tiles $1,$2 :: $nm
   }
 
 #@cli map_sprites : _nb_sprites>=1,_allow_rotation={ 0=none | 1=90 deg. | 2=180 deg. }
@@ -24254,17 +24254,17 @@ map_sprites : check "isint($1) && $1>0 && isint(${2=0}) && $2>=0 && $2<=2"
   slices[-$1--1] 0 r[-$1--1] ${max_wh[-$1--1]},1,100%,0,0,0.5,0.5
   if $2==1
     N={4*$1}
-    repeat $!-$1 *[$>] 4 +rand[$>] 0,3 round. +[$>,-1] done
+    repeat $!-$1 { *[$>] 4 +rand[$>] 0,3 round. +[$>,-1] }
     repeat $1 l[{1+$<}] { +mirror xy +rotate 90 } done
   elif $2==2
     N={2*$1}
-    repeat $!-$1 *[$>] 2 +rand[$>] 0,1 round. +[$>,-1] done
+    repeat $!-$1 { *[$>] 2 +rand[$>] 0,1 round. +[$>,-1] }
     repeat $1 l[{1+$<}] { +mirror xy } done
   else N=$1 fi
   r[-$N--1] 100%,100%,1,${max_s[-$N--1]} w={w} h={h} a[-$N--1] x
   r[^-1] ${w}00%,${h}00%,1,1 *[^-1] $w
   (0,{$w-1};0,{$w-1}^0,0;{$h-1},{$h-1}) r. $w,$h,1,2,3 round.
-  repeat $!-2 +r. [$>],[$>],1,2,0,2 r[$>] 100%,100%,1,2,0 +[$>,-1] +warp.. [$>],0,0 rv[$>,-1] rm. done rm[-2,-1]
+  repeat $!-2 { +r. [$>],[$>],1,2,0,2 r[$>] 100%,100%,1,2,0 +[$>,-1] +warp.. [$>],0,0 rv[$>,-1] rm. } rm[-2,-1]
 
 #@cli pack : is_ratio_constraint={ 0 | 1 },_sort_criterion
 #@cli : Pack selected images into a single image.
@@ -24280,7 +24280,7 @@ pack : skip ${1=0},${2=max(w,h)}
   nm={0,n} to_colormode 0
 
   # Sort images by decreasing size.
-  repeat $! nm$>={$>,n} ::[$>] ${nm$>}:$> done
+  repeat $! { nm$>={$>,n} ::[$>] ${nm$>}:$> }
   m "_pack : ('{n}') l. s +,{':'} u {t} rm done"
   if ['$2']=='n' sort_list +,n else sort_list -,"$2" fi
 
@@ -24294,13 +24294,13 @@ pack : skip ${1=0},${2=max(w,h)}
 
     # Search an empty slot that fits.
     slot,min_slot_area=-1,inf
-    repeat h#0
+    repeat h#0 {
       x,y,w,h={0,crop(0,$>,4,1)}
       slot_area={$w*$h}
       if $w>=$w2" && "$h>=$h2" && "$slot_area<=$min_slot_area # Found a fit.
         slot,min_slot_area=$>,$slot_area
       fi
-    done
+    }
 
     if $slot>=0 # Empty slot found -> Use it.
       x,y,w,h={0,crop(0,$slot,4,1)}
@@ -24349,7 +24349,7 @@ pack : skip ${1=0},${2=max(w,h)}
 
   # Return offsets.
   status=
-  repeat $N if narg($status) status=$status,${offsets$>} else status=${offsets$>} fi done
+  repeat $N { if narg($status) status=$status,${offsets$>} else status=${offsets$>} fi }
   :: $nm u $status
   um _pack
 
@@ -24447,7 +24447,7 @@ taquin : check "isint($1) && $1>0 & isint(${2=$1}) && $2>0"
    repeat $!-1 l[$>,-1] { split_opacity[0] +[0] . a[^-1] c } done rm. c 0,255
    frame $6,$6,${7-10}
    if $3==3 f. 0 fi
-   repeat $! mv[$>] {u($!)} done
+   repeat $! { mv[$>] {u($!)} }
    if $3==1 f[0] 0 elif $3==2 f. 0 fi
    append_tiles $1,$2 :: $nm
  }
@@ -24587,7 +24587,7 @@ brushify : check ${"is_image_arg $1"}" &&"\         # $1: [brush]
   # Precompute the set of oriented/resized brushes.
   pass$1 0 l.
     slices 0 max 1e-8 norm n 0,1 threshold 0.1,1 autocrop.
-    repeat $4 +rotate[0] {360*$>/$4} done
+    repeat $4 { +rotate[0] {360*$>/$4} }
     rm[0] n 0,1 threshold 0.1,1
     autocrop r ${-max_wh},1,1,0,0,0.5,0.5
     a z :: brush
@@ -24600,11 +24600,11 @@ brushify : check ${"is_image_arg $1"}" &&"\         # $1: [brush]
     fi
     :: brushlight
 
-    repeat $2-1
+    repeat $2-1 {
       ratio={v=(1+$>)/max(1,$2-1);100*((1-v)+$3*v)}%
       +r[brush,brushlight] $ratio,$ratio,100%,1,2
       ri[-2,-1] [brush],0,0,0.5,0.5
-    done
+    }
     a[^:2] z a[^0] z
   done
 
@@ -24673,9 +24673,9 @@ cartoon : skip ${1=3},${2=150},${3=15},${4=0.25},${5=1.5},${6=8}
 #@cli : $ image.jpg +color_ellipses ,,0.15
 color_ellipses : skip ${1=1400},${2=5},${3=0.1}
   e[^-1] "Add $1 random color ellipses to image$?, with maximum radius $2 and opacity $1."
-  repeat $1
+  repeat $1 {
     ellipse {u(0,100)}%,{u(0,100)}%,{u(0,$2)}%,{u(0,$2)}%,{u(0,360)},$3,{u(60,255)},{u(60,255)},{u(60,255)},255
-  done
+  }
 
 #@cli cubism : _density>=0,0<=_thickness<=50,_max_angle,_opacity,_smoothness>=0
 #@cli : Apply cubism effect on selected images.
@@ -25001,7 +25001,7 @@ lightrays : check "${1=50}>=0 && $1<=100 && ${4=1}>=0 && ${5=1}>=0" skip ${2=50%
   e[^-1] "Generate ray lights from image$?, with density $1, center point ($2,$3), ray length $4 and attenuation $5."
   foreach {
     gradient_norm >= $1% euclidean2polar $2,$3
-    repeat log2(w) +shift. {2^$>} +[-2,-1] done
+    repeat log2(w) { +shift. {2^$>} +[-2,-1] }
     function1d 0.5,0,1,{$4*w},1,{1+($4+1-$5)*w},0 r. {-2,w},1,1,1,0
     (1,{w}) r. {-2,w},1,1,1,3 /[-2,-1]
     ri. .. *[-2,-1] polar2euclidean $2,$3 n 0,255
@@ -25393,20 +25393,20 @@ stars : check "${1=10%}>=0 && ${2=1}>=0 && ${3=32}>0 && ${4=5}>=1 && ${5=0.38}>=
 
   # Generate star sprites.
   star3d $4,$5 col3d. 255 *3d. $3
-  l. repeat 4 {round(2*$3)},{round(2*$3)} j3d. [0],50%,50%,0,1,2,0,0 r3d[0] 0,0,1,-90 done rm[0] done
+  l. { repeat 4 {round(2*$3)},{round(2*$3)} j3d. [0],50%,50%,0,1,2,0,0 r3d[0] 0,0,1,-90 done rm[0] }
   autocrop[-4--1] 0 r2dy[-4--1] $3 b[-4--1] $6,0 r[-4--1] 100%,100%,1,4
-  repeat 4 sh[{-1-$>}] 0,2 fc. $7,$8,$9 rm. done
+  repeat 4 { sh[{-1-$>}] 0,2 fc. $7,$8,$9 rm. }
 
   # Draw stars on selected images.
   repeat $!-1 [-4--1] l[$>,-4--1] {
     N={round(if(${is_percent\ $1},w*h*$1,$1)/4,1,1)}
-    repeat 4
+    repeat 4 {
       2,$N rand. -1,1 1,$N rand. 0,1 a[-2,-1] x
       i.. ('CImg3d') +.. 0.5 i.. ($N;$N)
       (1,0;1,{$N-1}) r. 2,$N,1,1,3 round. 4,$N,1,1,1 y[-5,-3--1] a[-5--1] y
       rv[-2,-1] sprites3d.. .,1 rm. *3d. {0.75*{0,w}},{0.75*{0,h}},{1000*$2}
       j3d[0] .,50%,50%,0,$10,0,0,0 rm.
-    done
+    }
   } done
   rm[-4--1]
 
@@ -25416,7 +25416,7 @@ stars : check "${1=10%}>=0 && ${2=1}>=0 && ${3=32}>0 && ${4=5}>=1 && ${5=0.38}>=
 #@cli : $ image.jpg +norm stencil. 2,1,4 +mul rm[0]
 stencil : check "${1=3}>=0 && ${2=1}>=0 && ${3=8}>=0"
   e[^-1] "Apply stencil filter on image$?, with radius $1, smoothness $2 and $3 iterations."
-  n 0,1 repeat $3 b $1 unsharp {$1+$2},1000 c 0,255 done
+  n 0,1 repeat $3 { b $1 unsharp {$1+$2},1000 c 0,255 }
 
 #@cli stencilbw : _edges>=0,_smoothness>=0
 #@cli : Apply B&W stencil effect on selected images.
@@ -25553,7 +25553,7 @@ stylize :
         nb_matches1={$nb_matches-1}
         if {*} +r. $wsiz,1,100% to. "Scale "$scale/$nb_scales1": 0%",5,2,24 w. -1,-1,0 rm. fi
 
-        repeat $nb_matches
+        repeat $nb_matches {
           matchpatch. ...,$patchsize_analysis,$patchsize_analysis,1,$mprec0,$mprec1,$penalize_repetitions,0,..
           -.. . abs.. diff={-2,ia} rm..
           +warp_patch.. .,$patchsize_synthesis,$patchsize_synthesis,1
@@ -25563,7 +25563,7 @@ stylize :
           fi
           if $is_window" && "!{*} break fi
           if $diff<1 break fi
-        done
+        }
         rm[-3,-1]
       fi
       if $is_window" && "!{*} break fi
@@ -25638,7 +25638,7 @@ weave : check "${1=6}>=0 && ${2=65}>=0 && $2<=100 && ${3=40}>=0 && $3<=100 && ${
 whirls : skip ${1=3},${2=6},${3=0.5},${4=1.8}
   e[^-1] "Add random whirl texture to image$?, with texture $1, smoothness $2, darkness $3 and lightness $4."
   foreach {
-    100%,100% noise. 0.3,2 ==. 1 repeat $1 b. $2 +. 0.1 gradient_norm. ^. 0.2 done
+    100%,100% noise. 0.3,2 ==. 1 repeat $1 { b. $2 +. 0.1 gradient_norm. ^. 0.2 }
     n. $3,$4 ri. .. * c 0,255
   }
 
@@ -25815,7 +25815,7 @@ raindrops : check "${2=0.1}>=0 && ${3=1}>=0 && isint(${4=0}) && $4>=0" skip ${1=
     100%,100% noise. $2,2 ==. 1 distance. 1 f. 'cos(i)/(1+i/(1e-8+$3))'
     if $4
       i.. (0,1,0;1,0,1;0,1,0) /.. 2 .
-      repeat $4 +convolve. ...,1 -. ... rm... done rm[-3,-2]
+      repeat $4 { +convolve. ...,1 -. ... rm... } rm[-3,-2]
     fi
     g. a[-2,-1] c *. {$1/(1e-5+max(abs(im),abs(iM)))}
     warp.. .,1 rm.
@@ -25935,9 +25935,9 @@ transform_polar : skip "${1=R-r}","${2=a}",${3=50%},${4=50%},${5=1}
 #@cli : $ image.jpg twirl 0.6
 twirl : skip ${1=1},${2=50%},${3=50%},${4=3}
   e[^-1] "Apply twirl deformation on image$?, with amplitude $1 and center point at ($2%,$3%)."
-  euclidean2polar $2,$3,1,$4 repeat $!
-    [$>],[$>],1,1,$1*x channels. -1,0 warp[$>] .,1,1,2 rm.
-  done polar2euclidean $2,$3,1,1
+  euclidean2polar $2,$3,1,$4
+  repeat $! { [$>],[$>],1,1,$1*x channels. -1,0 warp[$>] .,1,1,2 rm. }
+  polar2euclidean $2,$3,1,1
 
 #@cli warp_perspective : _x-angle,_y-angle,_zoom>0,_x-center,_y-center,\
 # _boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }
@@ -26235,7 +26235,7 @@ blend : skip ${1=alpha},${2=1},${3=1},${4=0}
   if ${"is_image_arg $1"}
     n={narg($*)} mode=${arg\ 1+($n>=2),alpha,$2}
     e[^-1] "Blend image$? with "${arg\ 1+$4,base,top}" layer $1, using '"$mode"' mode and opacity $3."
-    repeat $! pass$1 l[$>,-1] { if $4 rv fi blend $mode,$3 } done return
+    repeat $! { pass$1 l[$>,-1] { if $4 rv fi blend $mode,$3 } } return
   fi
   e[^-1] "Blend all image$? together, using '$1' mode and opacity $2."
   repeat $!-1 l[0,1] {
@@ -26388,7 +26388,7 @@ _blend_shapemedian :
     if (siz[k]>=hk3,resize(#k3,1,round(1.5*hk3+1),1,s#0,0,0));
     end(repeat (size(siz),k, resize(#k+3,1,siz[k],1,s#0,0,0)));
     i"
-  repeat s#0 sh[3--1] $> $N,1,1,1,"ic(#"$N"+3+x)" j[2] .,0,0,0,$> rm[-{$N+1}--1] done
+  repeat s#0 { sh[3--1] $> $N,1,1,1,"ic(#"$N"+3+x)" j[2] .,0,0,0,$> rm[-{$N+1}--1] }
   map[1] [2] k[0,1]
 _blend_shapemedian0 :
   f[1] "begin(A = resize([ 0,(s-1)/s ],s,3));I!=0?I+A:I" norm[1] round[1] 0.01 label_fg[1] 0
@@ -26405,7 +26405,7 @@ _blend_shapemedian0 :
     );
     end(repeat (size(siz),k, resize(#k+3,1,siz[k],1,s#0,0,0)));
     i"
-  repeat s#0 sh[3--1] $> $N,1,1,1,"ic(#"$N"+3+x)" j[2] .,1,0,0,$> rm[-{$N+1}--1] done
+  repeat s#0 { sh[3--1] $> $N,1,1,1,"ic(#"$N"+3+x)" j[2] .,1,0,0,$> rm[-{$N+1}--1] }
   map[1] [2] k[0,1]
 _blend_shapemin :
   f[1] "begin(A = resize([ 0,(s-1)/s ],s,3));I+A" norm[1] round[1] 0.01 label[1] 0 {iM+1},1,1,{0,s},inf
@@ -26461,7 +26461,7 @@ blend_fade :
   e[^-1] "Blend image$? together using fading pattern $1."
   r ${-max_whds},0
   pass$1 0 r. [0],[0],[0],100%,1 max. 0 min. {$!-2}
-  repeat $!-1 +-. $> abs. -. 1 *. -1 max. 0 *[$>,-1] done rm.
+  repeat $!-1 { +-. $> abs. -. 1 *. -1 max. 0 *[$>,-1] } rm.
   +
 
 _fade :
@@ -27114,7 +27114,7 @@ morph_rbf : check "$1>=0.5"
 
     # Retrieve absolute keypoints coordinates.
     4,$N
-    repeat wh a=${arg{2+$>}} isp=${"is_percent "$a} eval i[$>]=$isp?($>%2?w#0:h#0)*$a:$a done
+    repeat wh { a=${arg{2+$>}} isp=${"is_percent "$a} eval i[$>]=$isp?($>%2?w#0:h#0)*$a:$a }
     permute. yzcx
 
     # Generate forward and backward warping fields.
@@ -27207,10 +27207,10 @@ register_nonrigid : check ${is_image_arg\ $1}" && ${2=0.2}>=0 && ${3=5}>0 && ${4
   e[^-1] "Register source image$? with destination image $1, using non-rigid warp with smoothness $2,
           precision $3 and $4 scale(s)."
   pass$1 0 equalize. n. 0,255
-  repeat $!-1
+  repeat $!-1 {
     +equalize[$>] n. 0,255 +displacement.. .,$2,$3,$4 rm..
     warp[$>] .,1,1,1 rm.
-  done rm.
+  } rm.
 
 #@cli register_rigid : [destination],_smoothness>=0,\
 # _boundary_conditions={ 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }
@@ -27303,25 +27303,25 @@ transition3d : check "isint(${1=10}) && $1>=2 && isint(${2=3}) && $2>0 && isint(
     $2,$3,1,1,'$6'
     a[-3--1] z
     permute. zxyc r. 3,{$2*$3},1,1,-1
-    repeat h rot$>={@0-2} shift. 0,-1,0,0 done
+    repeat h { rot$>={@0-2} shift. 0,-1,0,0 }
     rm.
 
     # Create 3D tiles.
     +split_tiles[-2,-1] $2,$3 mv[0,1] $!
     N={$2*$3} i=0 y=0
-    repeat $3
+    repeat $3 {
       x=0
-      repeat $2
+      repeat $2 {
         lw={$i,w} lh={$i,h}
         imageplane3d[$i] imageplane3d[$N] r3d[$N] ${rot$i},180 c3d[$i,$N] +3d[$i,$N]
         x$i=$x y$i=$y x+=$lw i+=1
-      done
+      }
       y+=$lh
-    done
+    }
 
     # Generate intermediate animation frames.
     repeat $1-2
-      repeat $N r3d[$>] ${rot$>},{180/(1-$1)} ++3d[$>] ${x$>},${y$>},0 done
+      repeat $N { r3d[$>] ${rot$>},{180/(1-$1)} ++3d[$>] ${x$>},${y$>},0 }
       +3d[-$N--1] c3d.
 
       if $7 # Antialiased rendering.
@@ -27393,7 +27393,7 @@ alert : skip "${1=[G"{`39`}"MIC Alert]},${2=This is an alert box.},${3=OK}"
 
     # Create buttons graphics.
     $=arg
-    repeat $#-2 label=${arg{$>+3}} 0 t. $label,0,0,16,1,-200 done
+    repeat $#-2 { label=${arg{$>+3}} 0 t. $label,0,0,16,1,-200 }
     r[^0] {min(128,max(64,${max_w[^0]}+12))},{min(48,max(24,${max_h[^0]}+12))},1,1,0,0,0.5,0.5
     +[^0] 200 to_rgb[^0]
     mv[0] $!
@@ -27443,11 +27443,11 @@ alert : skip "${1=[G"{`39`}"MIC Alert]},${2=This is an alert box.},${3=OK}"
     (0,{w-1}) (0;{-2,h-1}) ri[-2,-1] ...,3 a[-2,-1] c round. rv[-2,-1] *[-2,-1]
     discard. 0 y. r. {h/2},2,1,1,-1
     channels.. 1,3 rv[-2,-1]
-    100%,100% repeat w#-3 x0={-3,i($>,0)} y0={-3,i($>,1)} rectangle. $x0,$y0,{$x0+{0,w}-1},{$y0+{0,h}-1},1,{1+$>} done
+    100%,100% repeat w#-3 { x0={-3,i($>,0)} y0={-3,i($>,1)} rectangle. $x0,$y0,{$x0+{0,w}-1},{$y0+{0,h}-1},1,{1+$>} }
     a[-2,-1] c
 
     # Enter event loop.
-    repeat 9 if !{*$>} disp=$> break fi done   # Find available display window.
+    repeat 9 { if !{*$>} disp=$> break fi } # Find available display window.
     if !narg($disp) error[0--4] "Command '$0': Cannot open display window for alert box." fi
 
     selected={if($#==3,0,-1)} clicked=-1
@@ -27496,13 +27496,13 @@ arg0 : check "isint($1) && ($1)>=0"
 #@cli arg2img : argument_1,...,argument_N
 #@cli : Split specified list of arguments and return each as a new image (as a null-terminated string).
 arg2img :
-  $=arg repeat $# ({'${arg{1+$>}}'},0) done
+  $=arg repeat $# { ({'${arg{1+$>}}'},0) }
 
 #@cli arg2var : variable_name,argument_1,...,argument_N
 #@cli : For each i in [1...N], set 'variable_name$i=argument_i'.
 #@cli : The variable name should be global to make this command useful (i.e. starts by an underscore).
 arg2var :
-  $=arg u {$#-1} repeat ${} $1{1+$>}=${arg{2+$>}} done
+  $=arg u {$#-1} repeat ${} { $1{1+$>}=${arg{2+$>}} }
 
 #@cli autocrop_coords : value1,value2,... | auto
 #@cli : Return coordinates (x0,y0,z0,x1,y1,z1) of the autocrop that could be performed on the latest
@@ -27524,7 +27524,7 @@ _autocrop1 : skip $* autocrop
 #@cli : Return the vector-valued average of the latest of the selected images.
 average_vectors :
   if !w u "" return fi
-  repeat s-1 sh. $> res.={ia}, rm. done
+  repeat s-1 { sh. $> res.={ia}, rm. }
   sh. 100% u $res{ia} rm.
 
 #@cli base642img : "base64_string"
@@ -27584,7 +27584,7 @@ bin :
 #@cli bin2dec : binary_int1,...
 #@cli : Convert specified binary integers into their decimal representations.
 bin2dec :
-  $=arg res,sep= repeat $# res=$res$sep${_$0\ ${arg{$>+1}}} sep=, done u $res
+  $=arg res,sep= repeat $# { res=$res$sep${_$0\ ${arg{$>+1}}} sep=, } u $res
 
 _bin2dec :
   u {"str = vtos(abs($1));
@@ -27604,11 +27604,11 @@ _check120 :
   discard. -1
   if w
     r. 1,{h/2},1,2,-1
-    repeat h
+    repeat h {
       l,L={I[$>]}
       e[] $_vt100_c"  - [Line "$_vt100_b$L$_vt100_n$_vt100_c", "\
               $_vt100_b{$l,h}$_vt100_n$_vt100_c" chars]: "$_vt100_n{$l,t}
-    done
+    }
   fi
   rm
   _total_lines+=$lines
@@ -27620,11 +27620,11 @@ check120 :
   files 0,*.cpp c={`narg($files)?',':0`} if narg(${}) files=$files$c${} fi
   files 0,*.c c={`narg($files)?',':0`} if narg(${}) files=$files$c${} fi
   files 0,*.gmic c={`narg($files)?',':0`} if narg(${}) files=$files$c${} fi
-  repeat narg($files)
+  repeat narg($files) {
     arg 1+$>,$files file=${}
     e[] " * File '"$file"'."
     v + _check120 $file v -
-  done
+  }
   e[] " - Total scanned : "${_total_lines}" lines"
 
 #@cli covariance_vectors : _avg_outvarname
@@ -27652,7 +27652,7 @@ dec2str :
 #@cli dec2bin : decimal_int1,...
 #@cli : Convert specified decimal integers into their binary representations.
 dec2bin :
-  $=arg res,sep= repeat $# res=$res$sep${_$0\ ${arg{$>+1}}} sep=, done u $res
+  $=arg res,sep= repeat $# { res=$res$sep${_$0\ ${arg{$>+1}}} sep=, } u $res
 
 _dec2bin :
   u {`"const sgn = sign($1);
@@ -27664,7 +27664,7 @@ _dec2bin :
 #@cli dec2hex : decimal_int1,...
 #@cli : Convert specified decimal integers into their hexadecimal representations.
 dec2hex :
-  $=arg res,sep= repeat $# res=$res$sep${_$0\ ${arg{$>+1}}} sep=, done u $res
+  $=arg res,sep= repeat $# { res=$res$sep${_$0\ ${arg{$>+1}}} sep=, } u $res
 
 _dec2hex :
   u {`"begin(tab = [ _'0',_'1',_'2',_'3',_'4',_'5',_'6',_'7',_'8',_'9',_'a',_'b',_'c',_'d',_'e',_'f' ]);
@@ -27677,7 +27677,7 @@ _dec2hex :
 #@cli dec2oct : decimal_int1,...
 #@cli : Convert specified decimal integers into their octal representations.
 dec2oct :
-  $=arg res,sep= repeat $# res=$res$sep${_$0\ ${arg{$>+1}}} sep=, done u $res
+  $=arg res,sep= repeat $# { res=$res$sep${_$0\ ${arg{$>+1}}} sep=, } u $res
 
 _dec2oct :
   u {`"const sgn = sign($1);
@@ -27689,7 +27689,7 @@ _dec2oct :
 #@cli fact : value
 #@cli : Return the factorial of the specified value.
 fact : check isint($1)
-  res=1 repeat $1 res*={($>+1)} done u $res
+  res=1 repeat $1 { res*={($>+1)} } u $res
 
 #@cli fibonacci : N>=0
 #@cli : Return the Nth number of the Fibonacci sequence.
@@ -27717,10 +27717,10 @@ filename : skip "${1=default}"
   if $#==1 u "$1"
   else
   (${2--1}) :: "$1" u {f}{b}
-  repeat w
+  repeat w {
     u ${}_{int(i/100000)%10}{int(i/10000)%10}{int(i/1000)%10}{int(i/100)%10}{int(i/10)%10}{i%10}
     shift. -1
-  done
+  }
   if narg({'{x}'}) u ${}.{x} fi
   rm.
   fi
@@ -27738,7 +27738,7 @@ filename : skip "${1=default}"
 #@cli : Useful to manage list of filenames containing characters that have a special meaning in the G'MIC language,\
 # such as spaces or commas.
 +files2img :
-  if ['$$_$0_f2i']==0 m "_$0_f2i: $""=arg repeat $""# ({'${arg{1+$>}}'}:^) done a y" fi
+  if ['$$_$0_f2i']==0 m "_$0_f2i: $""=arg repeat $""# { ({'${arg{1+$>}}'}:^) } a y" fi
   files $"*" l[] _$0_f2i[] ${} if !$! 0 fi done
 
 #@cli fitratio_wh : min_width,min_height,ratio_wh
@@ -27776,20 +27776,20 @@ fitscreen : skip "${2=},${3=},${4=},${5=}"
 #@cli : $ fontchart
 +fontchart :
   e[^-1] "Generate G'MIC font chart."
-  l[]
-    repeat 256
+  l[] {
+    repeat 256 {
       if $>==92 char=\\ else char={`max(1,(c=$>;c>=23&&c<=28?32:c))`} fi
       0 t. {``$char},0,0,50,1,255
-    done
+    }
     a z,0.5
     s z
-    repeat $!
+    repeat $! {
       t[$>] $>,1,-1,13,1,200
       0 t. \\${dec2oct\ $>},1,-1,13,1,1
       100%,100%,1,1,200 j[$>] .,{$>,[w,h]-[w#-1,h#-1]},0,0,1,.. rm[-2,-1]
-    done
+    }
     frame 1,1,128 append_tiles ,
-  done
+  }
 
 # font2cimgh
 # Encode a font image as a C-style string for CImg.h.
