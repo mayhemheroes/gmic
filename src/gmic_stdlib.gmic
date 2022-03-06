@@ -38476,7 +38476,7 @@ fx_autofill_lineart :
     l.
 
       # Start multi-scale filling.
-      repeat 1+$4
+      repeat 1+$4 {
         fact={2^-$<}
         nw={0,max(1,round(w*$fact))}
         nh={0,max(1,round(h*$fact))}
@@ -38487,7 +38487,7 @@ fx_autofill_lineart :
         fi
 
         label_fg. 0,1 b.. 0.8 watershed. .. rm.. :: colors
-      done
+      }
 
       # Inpaint regions that are too small.
       +area. 0,1 label_maxarea={"P=[xM,yM];i(#-2,P)-1"}
@@ -38754,7 +38754,7 @@ fx_colorize_lineart :
       while $iM>=0 else  # Split by disconnected regions.
         label.
         if $3<10 %. {$3+1} fi
-        repeat iM+1 +==[1] $< area={is} +r. 100%,100%,1,[0] *. [0] rv[-2,-1] *. 255 a[-2,-1] c :: $area done
+        repeat iM+1 { +==[1] $< area={is} +r. 100%,100%,1,[0] *. [0] rv[-2,-1] *. 255 a[-2,-1] c :: $area }
       fi
       rm[0,1]
       sort_list +,n
@@ -38832,7 +38832,7 @@ fx_engrave :
       if $7>0 [0] fi  # Keep copy for flat regions removal.
       l[0]
         amount={(0.5+$2)^2}
-        repeat 5 b $r unsharp $r,{1+$2} c 0,255 done
+        repeat 5 { b $r unsharp $r,{1+$2} c 0,255 }
         smooth 100,0.1,1,{$f*$3},{$f*$4}
         >= {100-$5}%
       done
@@ -38853,7 +38853,7 @@ fx_engrave :
         if $14 r {100*$f}%,{100*$f}%,1,100%,3 fi
         b {$f*$9} segment_watershed 5
         if $14 r $wh,1,100%,2 fi
-        repeat $10 guided 10,{$10*80} done
+        repeat $10 { guided 10,{$10*80} }
         rgb2hsv s c +... $11 +.. {$12%} +. $13% a c hsv2rgb
       done a c done
       ::[0] "mode(darken),name("$nm"),pos("$pos")"
@@ -39119,9 +39119,9 @@ fx_apply_haldclut : skip "${2=}"
   if {$ind_clut,iM>512} /[$ind_clut] 255 fi # Possibly a 16bits HaldCLUT.
 
   if $normalize==1" || "$normalize==3 # Pre-normalization
-    repeat $! if $>!=$ind_clut l[$>] split_opacity balance_gamma[0] , a c done fi done
+    repeat $! { if $>!=$ind_clut l[$>] split_opacity balance_gamma[0] , a c } fi done
   fi
-  repeat $! if $>!=$ind_clut +map_clut[$>] [$ind_clut] j[$>] .,0,0,0,0,{$strength%} rm. fi done rm[$ind_clut]
+  repeat $! { if $>!=$ind_clut +map_clut[$>] [$ind_clut] j[$>] .,0,0,0,0,{$strength%} rm. fi } rm[$ind_clut]
   adjust_colors $brightness,$contrast,$gamma,$hue,$saturation,0,255
   if $normalize==2" || "$normalize==3 # Post-normalization
     foreach { split_opacity n[0] 0,255 a c }
@@ -40002,7 +40002,7 @@ fx_color_presets :
     path_clut=${-path_cache}
     name=${arg\ 1+$index-2,$presets}
     clut $name,{0$_is_preview" && "!isfile(['{/${path_clut}clut_$name.cimgz}'])?17:48}
-    repeat $!-1 if $strength<100 +map_clut[$>] . j[$>] .,0,0,0,0,{$strength%} rm. else map_clut[$>] . fi done
+    repeat $!-1 { if $strength<100 +map_clut[$>] . j[$>] .,0,0,0,0,{$strength%} rm. else map_clut[$>] . fi }
     rm.
     adjust_colors $brightness,$contrast,$gamma,$hue,$saturation,0,255
     if $normalize==2" || "$normalize==3 foreach { split_opacity n[0] 0,255 a c } fi # Post-normalization
@@ -40017,13 +40017,13 @@ fx_color_presets :
     Np={narg($presets)} repeat $Np
       clut_name=${arg\ 1+$>,$presets}
       clut $clut_name mv. $N
-      repeat $N
+      repeat $N {
         if $strength<100 [$>] +map_clut. [$N] j.. .,0,0,0,0,{$strength%} rm. else +map_clut[$>] [$N] fi
         adjust_colors. $brightness,$contrast,$gamma,$hue,$saturation,0,255
         if $normalize==2" || "$normalize==3 l. split_opacity n[0] 0,255 a c done fi # Post-normalization
         strcapitalize $clut_name clut_name=${}
         to. $clut_name,0.01~,0.01~,7.5%,1
-      done
+      }
       rm[$N]
       progress {$>*100/($Np-1)}
     done
@@ -40338,7 +40338,7 @@ fx_colorful_blobs :
 
   {0,s=min(w,h);[s,s]},1,4 k. 100%,100%,1,1,1e-8
 
-  repeat $N
+  repeat $N {
     # If center point has been moved -> Update radius point.
     rx$>,ry$>={"P = ["${x$>},${y$>}"];
                 R = ["${rx$>},${ry$>}"];
@@ -40361,11 +40361,11 @@ fx_colorful_blobs :
         i + w;
       "
     fi
-  done
+  }
   sh[0] 0,2 /. [1] if $1 $cs2srgb. fi
   f[0] "*begin(bg = [ "$bgR,$bgG,$bgB,$bgA" ]); i(#1)<0.5?bg:[R,G,B,255]" k[0]
 
-  repeat $N
+  repeat $N {
     if !isnan(${x$>})" && "$display_controls
     x,y,rx,ry,R,G,B={"const w1 = (w - 1)%; const h1 = (h -1)%; "\
                      round([${x$>}*w1,${y$>}*h1,${rx$>}*w1,${ry$>}*h1,${R$>},${G$>},${B$>}])}
@@ -40374,7 +40374,7 @@ fx_colorful_blobs :
                 {v=avg(crop($rx-3,$ry-3,7,7))>128?0:255;[v,v,v,255]}
       line $x,$y,$rx,$ry,0.5,0xF0F0F0F0,255 line $x,$y,$rx,$ry,0.5,0x0F0F0F0F,0,0,0,255
     fi
-  done
+  }
 
   if 0$_is_preview
     u \{$colorspace\}\{$bgR,$bgG,$bgB,$bgA\}\{$display_controls\}\
@@ -40522,8 +40522,8 @@ fx_mask_color :
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>09/28/2014</i>.</small>")
 fx_curves_interactive :
   :: "Color curves"
-  repeat 4 __xcc_C$>=0,0,100,100 done
-  if $4==$1 l[] ($5) s -,-1 repeat $! __xcc_C$>={$>,^} done rm done fi
+  repeat 4 { __xcc_C$>=0,0,100,100 }
+  if $4==$1 l[] ($5) s -,-1 repeat $! { __xcc_C$>={$>,^} } rm done fi
   if $3 # Apply transformation from previously defined curves
     _xcc_colorbase=${arg\ {$4+1},rgb,cmy,cmyk,hsi,hsl,hsv,lab,lch,ycbcr} x_color_curves last
   else # Run interactive curve builder
@@ -40642,11 +40642,11 @@ fx_customize_clut :
 
   if $2 # Lock uniform sampling
     uniform_distribution {(1+$2)^3},3
-    repeat w point.. {round($N1*I[$>])},1,{255*I[$>]},1 done rm.
+    repeat w { point.. {round($N1*I[$>])},1,{255*I[$>]},1 } rm.
   fi
 
   $=arg # Add user-defined color correspondences
-  repeat 24
+  repeat 24 {
     mode=${arg{13+7*$<}}
     if $mode
       sr=${arg{14+7*$<}} sg=${arg{15+7*$<}} sb=${arg{16+7*$<}}
@@ -40654,7 +40654,7 @@ fx_customize_clut :
       xyz={round(($N1/255)*[$sr,$sg,$sb])}
       point. $xyz,1,{$mode==2?[$tr,$tg,$tb]:[$sr,$sg,$sb]},1
     fi
-  done
+  }
 
   s c,-3
   if $1<100 # Need to compute a weighting map.
@@ -40672,10 +40672,10 @@ fx_customize_clut :
 
   # Apply CLUT on input layers + global color corrections.
   if !$3 map_clut[^-1] . # w/o spatial regularization
-  else repeat $!-1       # w/ spatial regularization
+  else repeat $!-1 {     # w/ spatial regularization
     +luminance[$>] +map_clut[$>] .. -. [$>]
     repeat $3 guided. ..,2,50 done +[$>,-1] rm.
-  done fi
+  } fi
   adjust_colors ${4-8},0,255
   if $9 foreach { split_opacity n[0] 0,255 a c } fi
   if $10
@@ -40697,10 +40697,10 @@ fx_customize_clut_preview :
     l[]
       if $2 # Lock uniform sampling
         uniform_distribution {(1+$2)^3},3
-        repeat w circle3d {0,round($_N*I[$>])},0.75 col3d. {0,255*I[$>]} done rm[0]
+        repeat w { circle3d {0,round($_N*I[$>])},0.75 col3d. {0,255*I[$>]} } rm[0]
       fi
       $=arg # Add user-defined color correspondences
-      repeat 24
+      repeat 24 {
         mode=${arg{13+7*$<}}
         if $mode
           sr=${arg{14+7*$<}} sg=${arg{15+7*$<}} sb=${arg{16+7*$<}}
@@ -40709,7 +40709,7 @@ fx_customize_clut_preview :
           z={round(($_N/255)*$sb)-0.1}
           circle3d $xy,$z,0.75 col3d. {$mode==2?[$tr,$tg,$tb]:[$sr,$sg,$sb]}
         fi
-      done
+      }
       colorcube3d *3d. {$_N/255} o3d. 0.5 col3d. 0 p3d. 1
     done
     +3d[2--1]
@@ -40752,17 +40752,17 @@ fx_decompose_channels :
       _fx_decompose_channels$1[0]
       s[0] c
       if !$3 a x :: $nm
-      else nm=${-gui_layer_name} repeat $! gui_set_layer_name[$>] {``$nm}" ["${_s$>}"]" done
+      else nm=${-gui_layer_name} repeat $! { gui_set_layer_name[$>] {``$nm}" ["${_s$>}"]" }
       fi
     }
   else # Recompose
     channels 0 nbc={3+($1==10)} nb={$nbc+$4}
-    if $3 repeat int($!/$nb) l[0-{$nb-1}]
+    if $3 repeat int($!/$nb) l[0-{$nb-1}] {
       a[0-{$nbc-1}] c _fx_recompose_channels$1[0] a c
-    done mv. 0 done
-    else repeat $! l[$>]
+    } mv. 0 done
+    else repeat $! l[$>] {
       s x,$nb a[0-{$nbc-1}] c _fx_recompose_channels$1[0] a c
-    done mv. 0 done fi
+    } mv. 0 done fi
   fi
 
 fx_decompose_channels_preview :
@@ -40771,7 +40771,7 @@ fx_decompose_channels_preview :
     fx_decompose_channels $1,$2,1,$4
     if !$2
       fs={round(min(w,h)*15%)}
-      repeat $! to[$>] ${_s$>},5,3,$fs,{max(2,round($fs/15))} done
+      repeat $! { to[$>] ${_s$>},5,3,$fs,{max(2,round($fs/15))} }
       to_rgba
     fi
   }
@@ -41180,7 +41180,7 @@ fx_mix_pca :
     # Find value ranges for gamma correction.
     if "$4 || $8 || $12" +l
       f "begin(avg = ["$_avg"]; eig = eig(["$C"]); Pt = eig[3,9]); Pt*(I-avg)"
-      s c repeat $! vmax$>={$>,1.1*max(abs(im),abs(iM))} done
+      s c repeat $! { vmax$>={$>,1.1*max(abs(im),abs(iM))} }
       rm
     done else vmax0,vmax1,vmax2=1 fi
 
@@ -41412,7 +41412,7 @@ _fx_clut_from_ab_preview :
     colorcube3d[]
     l. s3d l.. s y,6 repeat $! { sh[$>] 4,100%,0,0 /. 1.25 rm. } done a y done # Darken colors of edges
     p3d. 1
-    l. repeat 8 o={a=$>;0.5*[a&1,(a>>1)&1,(a>>2)&1]} ++3d[0] $o +-3d[0] $o done +3d done # Increase thickness of edges
+    l. repeat 8 { o={a=$>;0.5*[a&1,(a>>1)&1,(a>>2)&1]} ++3d[0] $o +-3d[0] $o } +3d done # Increase thickness of edges
 
     # Add 3D axes, without the 'O'.
     axes3d 64,64,64,24,R,G,B,0
@@ -41474,11 +41474,11 @@ fx_retrofade :
   foreach {
     split_opacity l[0] {
       +f 0
-      repeat $1
+      repeat $1 {
         +noise[0] $3 c. 0,255 autoindex. $2,0,0
         +[-2,-1]
         progress {$>*100/$1}
-      done
+      }
       k. n 0,255
       progress 100
     }
@@ -41561,7 +41561,7 @@ fx_selective_desaturation :
       fi
       c[1] 0,1
       rgb2hsl[0] s[0] c
-      mM={[im,iM]} repeat $6 guided. [2],1,0.1 done n. $mM # Regularization step.
+      mM={[im,iM]} repeat $6 { guided. [2],1,0.1 } n. $mM # Regularization step.
       if $7==0 *[1,-1]
       elif $7==1 ($1^$2^$3) rgb2hsl. *[1] {i[1]} rm[-2,-1]
       else rv[1,-1] rm.
@@ -41736,7 +41736,7 @@ fx_simulate_film :
     path_clut=${-path_cache}
     name=${arg\ 1+$index-2,$presets}
     clut $name,{0$_is_preview" && "!isfile(['{/${path_clut}clut_$name.cimgz}'])?17:48}
-    repeat $!-1 if $strength<100 +map_clut[$>] . j[$>] .,0,0,0,0,{$strength%} rm. else map_clut[$>] . fi done
+    repeat $!-1 { if $strength<100 +map_clut[$>] . j[$>] .,0,0,0,0,{$strength%} rm. else map_clut[$>] . fi }
     rm.
     adjust_colors $brightness,$contrast,$gamma,$hue,$saturation,0,255
     if $normalize==2" || "$normalize==3 foreach { split_opacity n[0] 0,255 a c } fi # Post-normalization
@@ -42082,7 +42082,7 @@ _fx_tune_hsv :
 
     # Define list of considered colors.
     colors,sep=
-    repeat narg($all_colors) color=${arg\ 1+$>,$all_colors} if ${mode_$color} colors.=$sep$color sep=, fi done
+    repeat narg($all_colors) { color=${arg\ 1+$>,$all_colors} if ${mode_$color} colors.=$sep$color sep=, fi }
 
     # Find darkest, lightest and average colors.
     +srgb2lab channels. 0 darklight={"[I(#-2,xm,ym),I(#-2,xM,yM)]"} rm.
@@ -42119,12 +42119,12 @@ _fx_tune_hsv :
       l[]
 
         # Define color correspondences.
-        repeat narg($colors)
+        repeat narg($colors) {
           color=${arg\ 1+$>,$colors}
           if ${mode_$color}==2 (${$color},${R$color},${G$color},${B$color},${H$color},${S$color},${V$color})
           else (${$color},${$color},0,0,0)
           fi
-        done
+        }
         a y permute yzcx
         s c,-3 srgb2rgb[0,1] rgb2hsv[0,1] /. 100
         f.. "
@@ -42140,7 +42140,7 @@ _fx_tune_hsv :
           [ H,S,V ]"
         rm.
         hsv2rgb rgb2srgb
-        repeat w color=${arg\ 1+$>,$colors} t_$color={I[$>]} done
+        repeat w { color=${arg\ 1+$>,$colors} t_$color={I[$>]} }
         -. .. a c
 
         # Create CLUT.
@@ -42162,7 +42162,7 @@ _fx_tune_hsv :
                                                     p==3?[1,0,48]:\
                                                     p==4?[0,1,64]:[1,1,64]}
       l[]
-        repeat narg($all_colors) color=${arg\ 1+$>,$all_colors} (${$color}) done a y permute. yzcx
+        repeat narg($all_colors) { color=${arg\ 1+$>,$all_colors} (${$color}) } a y permute. yzcx
         s x r {s=round(max($__ps,16));[s,s]}
         repeat narg($all_colors) l[$>] {
           color=${arg\ 1+$>,$all_colors}
@@ -42220,7 +42220,7 @@ fx_tune_hsv_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2010/29/12</i>.</small>")
 fx_custom_transform :
-  to_rgba repeat $!
+  to_rgba repeat $! {
     f. "$1"
     s. c a[-4--2] c f.. "$2"
     s.. c f[-4] "$3" f... "$4" f.. "$5" f. "$6"
@@ -42228,7 +42228,7 @@ fx_custom_transform :
     elif $7==1 a[-4--2] c n.. 0,255 c. 0,255 a[-2,-1] c
     else a[-4--1] c n. 0,255
     fi
-  mv. 0 done
+  mv. 0 }
 
 #@gui ____<b>Contours</b>
 #------------------------
@@ -42404,12 +42404,12 @@ fx_edges_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2010/29/12</i>.</small>")
 fx_edge_offsets :
-  repeat $!
+  repeat $! {
     os={s}
     b. $1% gradient_norm. >=. $2% skeleton. 0 distance. 1 round. 1 %. $3 >=. {max(1,$3-$4)}
     if !$5 negate. fi
     n. 0,255 to_colormode. $os
-  mv. 0 done
+  mv. 0 }
 
 fx_edge_offsets_preview :
   gui_split_preview "fx_edge_offsets ${^0}",${-3--1}
@@ -42719,7 +42719,7 @@ fx_skeleton :
   if $1 thinning 1
   else
     distance 0 sharpen 1e10 >= 100%
-    repeat $! +erode[$>] 2 -[$>,-1] done
+    repeat $! { +erode[$>] 2 -[$>,-1] }
   fi
   * 255
 
@@ -42805,10 +42805,10 @@ fx_breaks :
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2010/29/12</i>.</small>")
 fx_custom_deformation :
   if !$5 to_a fi
-  repeat $!
+  repeat $! {
     +norm. . f.. "$1" f. "$2"
     a[-2,-1] c warp.. .,$3,$4,$5,1 rm.
-  mv. 0 done
+  mv. 0 }
 
 #@gui Circle Transform : fx_circle_transform, fx_circle_transform_preview(1)
 #@gui : Center (%) = point(50,50,0,1)
@@ -42992,13 +42992,13 @@ fx_drop_water :
     else # Procedural shape.
       100%,100%
       rmin={max(0.1,$3*(1-$4%))} rmax={max(0.1,$3)}
-      repeat 10
+      repeat 10 {
         100%,100%
         random3d {max(1,$2)} *3d. {-2,w},{-2,h},0
         j3d.. .,0,0,0,1,1,0,0 rm.
         b. {$rmin+($rmax-$rmin)*$>/9}%,0,1
         j.. .,0,0,0,0,0.5 rm.
-      done
+      }
       >=. 10%
     fi
     :: shape
@@ -43137,10 +43137,10 @@ fx_kaleidoscope :
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2013/07/01</i>.</small>")
 fx_symmetrizoscope :
   if !$3 to_a fi
-  repeat $1
+  repeat $1 {
     ang={$2+180*$>/max(1,$1-1)}
     symmetrize 50%,50%,$ang,$3,0,{if($4!=2,$4,$>%2)}
-  done
+  }
 
 #@gui Morph [Interactive] : fx_morph_interactive, fx_morph_interactive_preview
 #@gui : Number of Frames = int(16,3,1024)
@@ -43172,7 +43172,7 @@ fx_morph_interactive :
   if [$3][0]!=-1 __x_morph_keypoints=$3 fi
   rv
   x_morph $1,$2
-  repeat $! gui_set_layer_name[$>] "Morphing ""#"$> gui_set_layer_pos[$>] 0,0 done
+  repeat $! { gui_set_layer_name[$>] "Morphing ""#"$> gui_set_layer_pos[$>] 0,0 }
   rv
   u "{$1}{$2}{"$__x_morph_keypoints"}"
 
@@ -43283,7 +43283,7 @@ fx_quadrangle_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2010/29/12</i>.</small>")
 fx_reflect :
-  repeat $!
+  repeat $! {
     to_rgba. +rows. {100-$1}%,100% mirror. y water. $7,$8
     s. c
     f[-4] "(i*(255-$6) + $6*$3)/255"
@@ -43296,7 +43296,7 @@ fx_reflect :
     /... . +... 0.5 *... {-3,w}
     /[-2,-1] +. 0.5 *. {h}
     a[-2,-1] c warp.. .,0,1,0 rm.
-  mv. 0 done
+  mv. 0 }
   autocrop 0,0,0,0
 
 #@gui Seamcarve : fx_seamcarve, fx_seamcarve_preview(1)
@@ -43322,7 +43322,7 @@ fx_seamcarve :
     _fx_seamcarve
   fi
   seamcarve $1%,$2%,$4,$5,$3%
-  if $4 repeat $! channels[$>] 0,{$>,s-2} done fi
+  if $4 repeat $! { channels[$>] 0,{$>,s-2} } fi
   c 0,255
 
 fx_seamcarve_preview :
@@ -43344,7 +43344,7 @@ _fx_seamcarve :
     s c k[0,1]
     >[1] [0] !=[0] 0 -[0] [1] *[0] -1 + * 256
   done
-  repeat $!-1 a[$>] .,c done rm.
+  repeat $!-1 { a[$>] .,c } rm.
 
 #@gui Sphere : fx_map_sphere, fx_map_sphere_preview(1)
 #@gui : Width = _int(512,1,4096)
@@ -43363,25 +43363,25 @@ _fx_seamcarve :
 fx_map_sphere :
   rotate {$8*90}
   if $6
-    repeat $!
+    repeat $! {
       shift. {round(w/2)},0,0,0,2 +columns. {(1-$7/100)*w/2},{(1+$7/100)*w/2}
       100% gaussian. {0.1*w},{h},0 100% 100% a[-3--1] c r. ..,..,1,3
       smooth.. .,$6,5,0 rm.
       j.. .,{(1-$7/100)*{-2,w}/2} rm. shift. -{round(w/2)},0,0,0,2
-    mv. 0 done
+    mv. 0 }
   fi
   shift $5%,0,0,0,2 to_rgba
   if $9
-    repeat $!
+    repeat $! {
       +rows[$>] 0 r. 1,1,1,4,2 RGBA$>={^}
       r. [$>],[$>],1,4 -[$>,-1]
-    done
+    }
   fi
   map_sphere $1,$2,$3,$4,$10,$11
   if $9
-    repeat $!
+    repeat $! {
       (${RGBA$>}) y. c r. [$>],[$>],1,4 +[$>,-1]
-    done
+    }
   fi
 
 fx_map_sphere_preview :
@@ -43937,7 +43937,7 @@ __fx_dof_blur :
   n[1] 0,{$1-1} round[1]
   [0],[0],1,{0,s+1}
   s=0
-  repeat $1
+  repeat $1 {
     +==[1] {if($4,$<,$>)} b. 2%
     j.. [0],0,0,0,0,-1,.,1
     j.. .,0,0,0,100%,-1
@@ -43945,7 +43945,7 @@ __fx_dof_blur :
      ns={$2+($3-$2)*($>+1)/($1-1)}
      b[0] {sqrt($ns^2-$s^2)}%
      s=$ns
-  done
+  }
   s. c,{-s+1} /[-2,-1] rm[0,1]
 
 #@gui Blur [Gaussian] : fx_gaussian_blur, fx_gaussian_blur_preview(0)
@@ -43971,8 +43971,8 @@ __fx_dof_blur :
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2010/29/12</i>.</small>")
 _fx_gaussian_blur :
   b $1,$4
-  if $2>0 repeat $! l. s y b $2,$4 a y done mv. 0 done fi
-  if $3>0 repeat $! l. s x b $3,$4 a x done mv. 0 done fi
+  if $2>0 repeat $! { l. s y b $2,$4 a y done mv. 0 } fi
+  if $3>0 repeat $! { l. s x b $3,$4 a x done mv. 0 } fi
 
 fx_gaussian_blur :
   ac "_fx_gaussian_blur $1,$2,$3,$4",$5,$6
@@ -44074,7 +44074,7 @@ _fx_blur_multidirectional :
     # If no median blend, blend step by step in an accumulator to reduce memory usage.
     if $blend_mode<3 +f {$blend_mode?0:inf} fi
 
-    repeat $nb_orientations
+    repeat $nb_orientations {
       angle={$angle_ref+$angle_range*($>/$nb_orientations-0.5)}
 
       # Kernel definition.
@@ -44085,7 +44085,7 @@ _fx_blur_multidirectional :
       # Blur and blend.
       +convolve_fft[0] .,$boundary_conditions rm.. n. 0,255 sharpen. $sharpness
       if $blend_mode<3 ${arg\ 1+$blend_mode,min,max,+}[1,-1] fi
-    done
+    }
     rm[0]
 
     if $blend_mode==6 blend_median
@@ -44465,7 +44465,7 @@ fx_mess_with_bits :
   ac "_fx_mess_with_bits ${1-7}",$8
 
 _fx_mess_with_bits :
-  repeat $! +l[$>]
+  repeat $! +l[$>] {
     b {($2/100)^2*100}% if $1 n 0,255 fi * $3 round
     # -> Here, images are 'ushort'-valued.
     if $4==1 f "for (k = res = 0, k<15, ++k, res|=((i>>k)&1)<<(15-k))"
@@ -44473,7 +44473,7 @@ _fx_mess_with_bits :
     fi
     f "begin( mask = (65535>>(15-max($5,$6))) & (65535<<min($5,$6))); i & mask"
     n 0,255
-  done j[$>] .,0,0,0,0,{$7%} rm. done
+  } j[$>] .,0,0,0,0,{$7%} rm. done
 
 fx_mess_with_bits_preview :
   gui_split_preview "fx_mess_with_bits $*",${-3--1}
@@ -44764,7 +44764,7 @@ fx_rebuild_from_similar_blocs :
 
       s yx,-$S a z # Original RGB blocs
 #    +mirror x +mirror y a z # + all xy mirrors
-#    repeat 3 +rotate. 90 done a z # + all 90° rotations
+#    repeat 3 { +rotate. 90 } a z # + all 90° rotations
       +l b xy,$2% rgb2ycbcr sh. 0 *. $3 rm. done # Blocs to compare, in YCbCr space
 
       # For each bloc, find most similar bloc.
@@ -45013,7 +45013,7 @@ __fx_equalize_details :
   elif $3==1
     if $2>0
       m={im} M={iM} n. 0,255
-      repeat int($2/5) bilateral 15,{5*$5} done
+      repeat int($2/5) { bilateral 15,{5*$5} }
       bilateral 15,{($2%5)*$5}
       *. {($M-$m)/255} +. $m
     fi
@@ -45263,7 +45263,7 @@ _fx_mighty_details :
   +smooth $3,0,1,0.5,0.5 -[1] [0]
   +abs. sign.. M={iM} ^. {2-$2} *. {$M/iM} *[-2,-1]
   +diffusiontensors[0] 0,1,0.5,0.5
-  repeat $4 smooth[1] [2],20 done
+  repeat $4 { smooth[1] [2],20 }
   *[1] {-$1/5} +
 
 fx_mighty_details :
@@ -45388,20 +45388,20 @@ fx_sharpen_multiscale_preview :
 _fx_sharpen_multiscale :
   foreach {
     N={max(1,int(log2(min(w,h))-2))}
-    +l repeat $N { +r. 50%,50%,1,100%,2 +r. ..,..,1,100%,5 -[-3,-1] } done # Decompose
+    +l { repeat $N { +r. 50%,50%,1,100%,2 +r. ..,..,1,100%,5 -[-3,-1] } } # Decompose
     guided[0] 4,100 # Smooth guide image
 
     # Process each scale.
-    repeat $!-1 l[0,{$>+1}] {
+    repeat $!-1 { l[0,{$>+1}] {
       +ri[0] [1],2
       +equalize.. 1024
       bilateral. ..,{2*$2%},100
       j[1] .,0,0,0,0,{$1%}
       k[0,1]
-    } done
+    } }
     rm[0]
 
-    repeat $!-1 r. ..,..,1,100%,5 +[-2,-1] done # Recompose
+    repeat $!-1 { r. ..,..,1,100%,5 +[-2,-1] } # Recompose
     c 0,255
   }
 
@@ -45475,7 +45475,7 @@ fx_unsharp_richardsonlucy_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2010/29/12</i>.</small>")
 fx_sharpen_shock :
-  ac "repeat $5 sharpen $1,$2,$3,$4 c 0,255 done",$6,1
+  ac "repeat $5 { sharpen $1,$2,$3,$4 c 0,255 }",$6,1
 
 fx_sharpen_shock_preview :
   gui_split_preview "fx_sharpen_shock $*",${-3--1}
@@ -45538,14 +45538,14 @@ fx_sharpen_texture_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2010/29/12</i>.</small>")
 _fx_unsharp :
-  repeat $! repeat $8
+  repeat $! { repeat $8 {
     if $1==0 +b. $2 else +bilateral. $2,$3 fi
     -. .. *. -$4
     +norm. >=. $5% ri. .. *[-2,-1]
     if $9 *. -1 fi
     +c. 0,100% c.. -100%,0 *.. $6 *. $7 +[-2,-1]
     +[-2,-1] c. 0,255
-  done mv. 0 done
+  } mv. 0 }
 
 fx_unsharp :
   ac "_fx_unsharp $1,$2,$3,$4,$5,$6,$7,$8,$9",$10,1
@@ -45565,11 +45565,11 @@ fx_unsharp_preview :
 fx_split_details_alpha :
   remove_opacity
   foreach {
-    repeat $1-1
+    repeat $1-1 {
       s={$3+($2-$3)*$>/if($1-2>0,$1-2,1)}
       +_fx_split_details_alpha_blur. $s
       sub_alpha.. .,$4
-    done
+    }
   }
 
 _fx_split_details_alpha_blur :
@@ -45604,7 +45604,7 @@ fx_split_details_gaussian :
     pos=${-gui_layer_pos}
     split_details $1,$2,$3
     +[^0] 128 c[^0] 0,255 round
-    repeat $!-1 ::[{1+$>}] "mode(grainmerge), name"($nm" [scale ""#"{1+$>}"]), pos("$pos")" done
+    repeat $!-1 { ::[{1+$>}] "mode(grainmerge), name"($nm" [scale ""#"{1+$>}"]), pos("$pos")" }
     ::[0] "name"($nm" [residual]), pos("$pos")"
     rv
   }
@@ -45639,7 +45639,7 @@ fx_split_details_wavelets :
     pos=${-gui_layer_pos}
     split_details $1,0,0 rv +[^-1] 128 c[^-1] 0,255 round
     if $2 to_a[^-1] fi
-    repeat $!-1 ::[$>] "mode(grainmerge), name"($nm" [scale ""#"{1+$>}"]), pos("$pos")" done
+    repeat $!-1 { ::[$>] "mode(grainmerge), name"($nm" [scale ""#"{1+$>}"]), pos("$pos")" }
     :: "name"($nm" [residual]), pos("$pos")"
   }
 
@@ -45920,8 +45920,10 @@ fx_frame_mirror_preview :
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2012/07/06</i>.</small>")
 fx_frame_painting :
   if $14
-    repeat $! 100%,100%,1,4 frame_painting. $1%,$2,$3%,${4-6},$7%,${8-13}
-    rv[-2,-1] to_a. r. ..,..,1,4,0,0,0.5,0.5 mv[-2,-1] 0 done
+    repeat $! {
+      100%,100%,1,4 frame_painting. $1%,$2,$3%,${4-6},$7%,${8-13}
+      rv[-2,-1] to_a. r. ..,..,1,4,0,0,0.5,0.5 mv[-2,-1] 0
+    }
   else frame_painting $1%,$2,$3%,${4-6},$7%,${8-13}
   fi
 
@@ -45936,8 +45938,9 @@ fx_frame_painting_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2014/01/08</i>.</small>")
 fx_frame_pattern :
-  if $2" || "$!==1 repeat $3 frame_pattern $1,$4 done
-  else repeat $3 frame_pattern[^0] $1,[0],$4 done fi
+  if $2" || "$!==1 repeat $3 { frame_pattern $1,$4 }
+  else repeat $3 { frame_pattern[^0] $1,[0],$4 }
+  fi
 
 fx_frame_pattern_preview :
   fx_frame_pattern ${1-3},1
@@ -45958,12 +45961,12 @@ fx_frame_pattern_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2010/29/12</i>.</small>")
 fx_frame :
- to_rgba repeat $!
+ to_rgba repeat $! {
    z. $1%,$3%,$2%,$4%
    frame. $11,$11,${12-15}
     sx={$5%*max(w,h)} sy={$6%*max(w,h)}
    frame. $sx,$sy,${7-10}
- mv. 0 done
+ mv. 0 }
 
 #@gui Frame [Round] : fx_frame_round, fx_frame_round(1)
 #@gui : Sharpness = float(6,0.1,40)
@@ -46174,7 +46177,7 @@ fx_align_layers_preview :
   fx_align_layers $1,$2,0 blend_edges 0.1
 
 _fx_revert_layers :
-  repeat int($!/2) rv[{2*$>},{2*$>+1}] done
+  repeat int($!/2) { rv[{2*$>},{2*$>+1}] }
 
 #@gui Blend [Average All] : fx_blend_average_all, fx_blend_average_all : *
 #@gui : Colorspace = choice(0,"sRGB","Linear RGB","Lab")
@@ -46217,7 +46220,7 @@ _gb_bwd :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2013/21/01</i>.</small>")
 fx_blend_edges :
-  repeat int($!/2) l[$>,{$>+1}] { if $3 rv fi +blend_edges[-2,-1] $2 rm... blend[-2,-1] alpha,$1 } done
+  repeat int($!/2) { l[$>,{$>+1}] { if $3 rv fi +blend_edges[-2,-1] $2 rm... blend[-2,-1] alpha,$1 } }
 
 #@gui Blend [Fade] : fx_blend_fade, fx_blend_fade(1) : +
 #@gui : Preset = choice{1,"Custom","Linear","Circular","Wave","Keftales"}
@@ -46305,7 +46308,7 @@ fx_blend_seamless :
   rv
   _gb_fwd $4
   to_a[^0] r[^0] [0],[0],1,100%,0
-  repeat $! pos=${gui_layer_pos[$>]} shift[$>] ${u\ $pos},0,0 done
+  repeat $! { pos=${gui_layer_pos[$>]} shift[$>] ${u\ $pos},0,0 }
   if $5 # Output as separate layers
     +blend_seamless $1,$2%,$3%
     remove_opacity[0,-1] k[0,-1] rv sub_alpha[0] [1],1
@@ -46354,7 +46357,7 @@ fx_blend :
        softburn,softdodge,softlight,screen,stamp,subtract,value,\
        vividlight,xor}
   m "_blend_custom_formula : f. \"a = i#0/255; b = i#1/255; 255*cut(($5),0,1)\""
-  if $2==0 repeat int($!/2) l[$>,{$>+1}] { rv blend $mode,{$3%} } done # Two-by-two.
+  if $2==0 repeat int($!/2) { l[$>,{$>+1}] { rv blend $mode,{$3%} } } # Two-by-two.
   elif $2==1" && "$!>1 blend[^0] [0],$mode,{$3%},0 rm[0]  # Top layer is top for all blends.
   elif $2==2" && "$!>1 blend[^-1] .,$mode,{$3%},1 rm. # Bottom layer is bottom for all blends.
   fi
@@ -46459,21 +46462,21 @@ fx_apply_multiscale : skip "${13=}"
   foreach {
     w0={w} h0={h}
     apply_scales "$13",$1,$2%,$3%,{10^$4},{arg(1+$5,1,3,5,6)}
-    if $8" || "($9" && "$8!=$12) to_a N=$! repeat $!
+    if $8" || "($9" && "$8!=$12) to_a N=$! repeat $! {
       angle={$9?$8+($12-$8)*$>/max($N-1,1):$8}
       rotate[$>] $angle
-    done fi
+    } fi
     if $14
       if $15 siz=$w0,$h0 else siz=${-max_wh} fi
       r $siz,1,100%,{arg($14,1,3,5,6)}
       c 0,255
     fi
     w=${-max_w} h=${-max_h} N=$!
-    repeat $!
+    repeat $! {
       cx={$9?$6+($10-$6)*$>/max($N-1,1):$6}
       cy={$9?$7+($11-$7)*$>/max($N-1,1):$7}
       gui_set_layer_pos[$>] {$>,($w-w)*$cx},{$>,($h-h)*$cy}
-    done
+    }
   }
 
 fx_apply_multiscale_preview :
@@ -46516,16 +46519,16 @@ fx_pack : skip "${8=}"
     rv a y,{w#0>w?0.5:0} :: $nm0
   done fi
   if $3 to_a fi
-  repeat $! gui_layer_name[$>] nm$>=${} ::[$>] {`lowercase(['${nm$>}'])`} done
+  repeat $! { gui_layer_name[$>] nm$>=${} ::[$>] {`lowercase(['${nm$>}'])`} }
   c0="w" c1="h" c2="max(w,h)" c3="w*h" c4="n"
   pack $2,${c$1} coords=${}
   if $7
-    repeat 256 filename "$8/gmic_pack.txt",$> filename=${} if isfile(['{/$filename}']) else break fi done
+    repeat 256 { filename "$8/gmic_pack.txt",$> filename=${} if isfile(['{/$filename}']) else break fi }
     if !narg($filename) filename="$8/gmic_pack.txt" fi
-    l[] repeat narg($coords)/2
+    l[] { repeat narg($coords)/2 {
       x={arg(1+2*$>,$coords)} y={arg(2+2*$>,$coords)}
       ('"Image ""#"{1+$>}" ("${nm$>}"): "$x,$y\n')
-    done a x ot $filename rm done
+    } a x ot $filename rm }
   fi
   :: "name(G'MIC packing),pos(0,0),mode(normal)"
   if $4 autocrop fi
@@ -46533,7 +46536,7 @@ fx_pack : skip "${8=}"
 fx_pack_preview : skip "${8=}"
   if !$! return fi
   w={w} h={h}
-  filled=0 repeat $! filled={$>,$filled+w*h} done
+  filled=0 repeat $! { filled={$>,$filled+w*h} }
   fx_pack $1,$2,$3,$4,$5,$6,0
   area={w*h}
   to_rgba rr2d $w,$h,0
@@ -46616,7 +46619,7 @@ fx_tones2layers :
   remove_opacity
   foreach {
     +luminance rv
-    repeat $1-1
+    repeat $1-1 {
       [1]
       val0={$sval+($eval-$sval)*$>/($1-2)}
       val1={$sval+($eval-$sval)*($>+1)/($1-2)-1}
@@ -46625,7 +46628,7 @@ fx_tones2layers :
       else b. $4% n. 0,255  # Binary alpha.
       fi
       a[-2,-1] c
-    done
+    }
     rm[0] rv
   }
 
@@ -46901,7 +46904,7 @@ fx_illuminate_shape2d :
   keep_input_bg&={$!>1}
 
   if $output_type # Output : bumpmap or normalmap
-    repeat $!-$keep_input_bg _fx_illuminate_shape2d[$>] $* done
+    repeat $!-$keep_input_bg { _fx_illuminate_shape2d[$>] $* }
 
   else # Output : illumination
     repeat $!-$keep_input_bg if $keep_input_bg sel=$>,-1 else sel=$> fi l[$sel] {
@@ -46933,11 +46936,11 @@ fx_illuminate_shape2d_preview :
   keep_input_bg&={$!>1}
   if $preview_interactive fx_illuminate_shape2d_preview_interactive $* fi
   if $keep_input_bg
-    repeat $!-1 l[$>,-1] {
+    repeat $!-1 { l[$>,-1] {
       fx_illuminate_shape2d $*
       rv to_colormode 0 a z
       gui_split_preview "slices 50%,100%",$-1
-    } done
+    } }
   else
     gui_split_preview "fx_illuminate_shape2d $*",$-1
   fi
@@ -47161,9 +47164,9 @@ _fx_illuminate_shape2d : # Input selection must contains a single image. Output 
 _fx_lightglow :
   mode=${arg\ 1+$3,burn,dodge,freeze,grainmerge,hardlight,interpolation,lighten,multiply,overlay,reflect,\
          softlight,stamp,value}
-  repeat $!
+  repeat $! {
     +gradient_norm. >=. {100-$1}% distance. 1 ^. $2 *. -1 n. 0,255 blend $mode,$4
-  mv. 0 done
+  mv. 0 }
 
 fx_lightglow :
   ac "_fx_lightglow ${1-4}",$5
@@ -47215,7 +47218,7 @@ fx_light_leaks_preview :
   gui_split_preview "fx_light_leaks ${1--5},0",${-3--1}
 
 _fx_light_leaks :
-  u="" repeat 71 if narg($u) u=$u, fi u=${u}lightleak_${"padint "$>,6} done
+  u="" repeat 71 { if narg($u) u=$u, fi u=${u}lightleak_${"padint "$>,6} }
   u $u
 
 #@gui Light Patch : fx_light_patch, fx_light_patch(0)
@@ -47245,7 +47248,7 @@ fx_light_patch :
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2011/03/01</i>.</small>")
 fx_lightrays :
   lightrays $1,$2%,$3%,$4,$5
-  if $6 repeat $! r[$>] 100%,100%,1,{{$>,s}+({$>,s}%2)} done fi
+  if $6 repeat $! { r[$>] 100%,100%,1,{{$>,s}+({$>,s}%2)} } fi
 
 #@gui Pop Shadows : fx_pop_shadows, fx_pop_shadows_preview(1)
 #@gui : Strength = float(0.75,0,1)
@@ -47415,7 +47418,7 @@ fx_camouflage :
       channels 0 r {w+16},{h+16},1,1,0 rand 0,16
       amp=$3 do smooth {min(50,$amp)},0,1 amp-=50 while $amp>0
       shrink_xy. 8 n 1,$2 round
-      repeat $1 +area 0,0 <. {1+2^$>} inpaint[0] [1],0,3 rm. done
+      repeat $1 { +area 0,0 <. {1+2^$>} inpaint[0] [1],0,3 rm. }
       +colormap 0 n.. 0,{w-1}
       4,1,1,3,"col=[${4-15}];col[3*x,3]"
       r. ..,..,1,3,3 rm.. map.. . rm.
@@ -47441,7 +47444,7 @@ fx_camouflage :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2010/29/12</i>.</small>")
 fx_canvas :
-  repeat $! l.
+  repeat $! { l. {
     if $4
       ({cos($2*pi/180)}^{sin($2*pi/180)}) vector2tensor. r. ..,.. +smooth.. .,$1 rm.. sharpen. $3 c. 0,255
       ({cos($6*pi/180)}^{sin($6*pi/180)}) vector2tensor. r. ..,.. smooth... .,$5 rm. sharpen.. $7 c.. 0,255
@@ -47449,7 +47452,7 @@ fx_canvas :
     else
       ({cos($2*pi/180)}^{sin($2*pi/180)}) vector2tensor. r. ..,.. smooth.. .,$1 rm. sharpen. $3 c. 0,255
     fi
-  done mv. 0 done
+  } mv. 0 }
 
 fx_canvas_preview :
   gui_split_preview "fx_canvas $*",${-3--1}
@@ -47534,7 +47537,7 @@ fx_crystal_background :
       N={2*max(3,round((${"is_percent $2"}?4*wh*$2:$2)))}
       if $5 col="u([255,255,255])" else col="u(255)" fi
       srand $3 M={max(w,h)} 2,$N
-      repeat $1 rand. {-$M/2},{3*$M/2} polygon.. $N,{^},{-$4%},{$col} done
+      repeat $1 { rand. {-$M/2},{3*$M/2} polygon.. $N,{^},{-$4%},{$col} }
       rm. n 0,255
     }
     a c
@@ -47728,7 +47731,7 @@ fx_shapes :
     remove_opacity
     foreach {
       if !$7 _fx_shapes $* * 255
-      elif $7==1 split_opacity to_rgb[0] s[0] c repeat 3 _fx_shapes[$>] $* done *[0-2] 255 a[0-2] c a c
+      elif $7==1 split_opacity to_rgb[0] s[0] c repeat 3 { _fx_shapes[$>] $* } *[0-2] 255 a[0-2] c a c
       else +_fx_shapes $* r[0] $3%,$3% r[0] [1],[1] *
       fi
     }
@@ -47737,14 +47740,14 @@ fx_shapes :
       error[] "Command '$0': Some layers are missing in 'Custom layers' mode ("{$2+1}" expected at least, "\
               $!" provided)." fi
     to_colormode[0-{$2-1}] ${max_s[0-{$2-1}]} remove_opacity[$2--1]
-    repeat $!-$2 l[0-{$2-1},{$2+$>}] {
+    repeat $!-$2 { l[0-{$2-1},{$2+$>}] {
       norm. w={w} h={h} r. $3%,$3%,1,1,2
       s={$4*max(round($w/w),round($h/h))}
       r0={$s*$5%} r1={$s*$6%}
       repeat $2 r={round($r0+$>*($r1-$r0)/($2-1))} if $r +r[$>] $r,$r,1,100%,3 else 1,1 fi done
       r[-$2--1] $s,$s,1,100%,0,0,0.5,0.5
       map_sprites[$2--1] $2,$8
-    } done rm[0-{$2-1}]
+    } } rm[0-{$2-1}]
   fi
 
 fx_shapes_preview :
@@ -47753,11 +47756,11 @@ fx_shapes_preview :
     gui_split_preview "fx_shapes ${1-3},1,${5--2}",$-1
     r $w,$h,1,100%,0,0,0.5,0.5
   } else
-    if $!>$2 repeat $!-$2 l[0-{$2-1},{$2+$>}] {
+    if $!>$2 repeat $!-$2 { l[0-{$2-1},{$2+$>}] {
       w={w} h={h}
       +fx_shapes ${1-3},1,${5--2} rm..
       r. $w,$h,1,100%,0,0,0.5,0.5
-    } done rm[0-{$2-1}]
+    } } rm[0-{$2-1}]
     else gui_warning_preview "Missing input layers!"
     fi
   fi
@@ -47766,7 +47769,7 @@ _fx_shapes :
   norm w={w} h={h} r $3%,$3%,1,1,2
   s={(1+$10)*$4*max(round($w/w),round($h/h))}
   r0={$s*$5%} r1={$s*$6%}
-  repeat $2 r={round($r0+$>*($r1-$r0)/($2-1))} if $r _fx_shapes{$1-1}[] $r,$s else 1,1 fi done
+  repeat $2 { r={round($r0+$>*($r1-$r0)/($2-1))} if $r _fx_shapes{$1-1}[] $r,$s else 1,1 fi }
   r[-$2--1] $s,$s,1,1,0,0,0.5,0.5
   if $9 rv[-$2--1] *[-$2--1] -1 +[-$2--1] 1 fi
   map_sprites $2,$8
@@ -47896,7 +47899,7 @@ fx_plaid_texture :
     b $5% sharpen $6
     r $w,$h,1,$s,2
     +rotate[0] $3,1,2,50%,50%
-    repeat $2-1 +rotate[0] {$3+$4*($>+1)/($2-1)},1,2,50%,50% +[-2,-1] done rm[0]
+    repeat $2-1 { +rotate[0] {$3+$4*($>+1)/($2-1)},1,2,50%,50% +[-2,-1] } rm[0]
     / $2
   }
 
@@ -48054,7 +48057,7 @@ fx_satin :
   ($4,$8^$5,$9^$6,$10^$7,$11) srgb2rgb. r. 256,1,1,4,3 rgb2srgb.
   foreach[^-1] {
     srand $3 channels 0 f 0
-    repeat $1
+    repeat $1 {
       100%,100%,1,1,"begin(
            A = u([0,0],[w,h]-1);
            B = u([0,0],[w,h]-1);
@@ -48065,7 +48068,7 @@ fx_satin :
          );
          dot(abc,[x,y,1])"
       c. 0,255 -- abs
-    done
+    }
     b $2% gradient_norm negate n 0,255
     if $12 normalize_local , fi
     pass. 1 map.. . rm.
@@ -48211,9 +48214,9 @@ fx_stars :
 fx_stencil :
   if $5==0 norm stencil $1,$2,$3
   elif $5==1 stencil $1,$2,$3
-  else repeat $!
+  else repeat $! {
     +norm. stencil. $1,$2,$3 >=. 50% blend[-2,-1] shapeaverage0
-  mv. 0 done fi
+  mv. 0 } fi
   if $6 to_rgba replace_color 0,0,0,0,0,255,0,0,0,0 fi
   if $4 smooth {30*$4},0,1,1 fi
 
@@ -48706,7 +48709,7 @@ fx_smooth_antialias_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2013/27/08</i>.</small>")
 fx_smooth_bilateral : skip ${5=0},${6=0}
-  ac "repeat $3 bilateral $1,$2 done",$4
+  ac "repeat $3 { bilateral $1,$2 }",$4
 
 fx_smooth_bilateral_preview :
   gui_split_preview "fx_smooth_bilateral $*",${-3--1}
@@ -48731,10 +48734,7 @@ fx_smooth_bilateral_preview :
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2021/11/06</i>.</small>")
 fx_denoise :
   if $3 delete ${-path_cache}gmic_denoise_cnn.gmz fi
-  repeat $2
-    denoise_cnn $1,64
-    progress {round(($>+1)/$2*100)}
-  done
+  repeat $2 { denoise_cnn $1,64 progress {round(($>+1)/$2*100)} }
 
 fx_denoise_preview :
   r2din 280,280,0,0,0.5,0.5
@@ -48766,12 +48766,12 @@ fx_smooth_guided : skip ${6=0},${7=0}
     store[{$1==1?0:-1}] _guide
   fi
   if $1==0 # Self-guide
-    ac "repeat $4 guided $2,$3 done",$5
+    ac "repeat $4 { guided $2,$3 }",$5
   elif $1==1 # Guide as top layer
-    ac "$_guide r. ..,..,1,100%,0,0,0.5,0.5 repeat $4 guided[0] [1],$2,$3 done rm.",$5
+    ac "$_guide r. ..,..,1,100%,0,0,0.5,0.5 repeat $4 { guided[0] [1],$2,$3 } rm.",$5
     if !narg($_is_preview) $_guide mv. 0 fi
   else # Guide as bottom layer
-    ac "$_guide r. ..,..,1,100%,0,0,0.5,0.5 repeat $4 guided[0] [1],$2,$3 done rm.",$5
+    ac "$_guide r. ..,..,1,100%,0,0,0.5,0.5 repeat $4 { guided[0] [1],$2,$3 } rm.",$5
     if !narg($_is_preview) $_guide fi
   fi
 
@@ -48933,7 +48933,7 @@ fx_smooth_nlmeans_preview:
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2013/27/08</i>.</small>")
 fx_smooth_patch :
-  ac "gui_parallel_overlap \"repeat $7 denoise $1,$2,$3,$4,$5,$6 done c 0,255\",$9,$10",$8
+  ac "gui_parallel_overlap \"repeat $7 { denoise $1,$2,$3,$4,$5,$6 } c 0,255\",$9,$10",$8
 
 fx_smooth_patch_preview :
   gui_split_preview "fx_smooth_patch $*",${-3--1}
@@ -49022,7 +49022,7 @@ fx_smooth_peronamalik_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2013/27/08</i>.</small>")
 fx_smooth_selective :
-  ac "gui_parallel_overlap \"repeat $4 blur_selective $1,$2,$3 done c 0,255\",$6,$7",$5
+  ac "gui_parallel_overlap \"repeat $4 { blur_selective $1,$2,$3 } c 0,255\",$6,$7",$5
 
 fx_smooth_selective_preview :
   gui_split_preview "fx_smooth_selective $*",${-3--1}
@@ -49082,7 +49082,7 @@ _fx_smooth_skin :
   else
     if $2>0
       m={im} M={iM} n 0,255
-      repeat int($2/5) bilateral 3%,{5*3} done
+      repeat int($2/5) { bilateral 3%,{5*3} }
       bilateral 3%,{($2%5)*3}
       * {($M-$m)/255} + $m
     fi
@@ -49203,7 +49203,7 @@ fx_upscale_smart :
   to_rgb upscale_smart $1,$2,1,$3,$4,$5 c 0,255
 
 fx_upscale_smart_preview :
-  repeat $!
+  repeat $! {
     +r. $1,$2,1,1,0
     if w<{-2,w}" || "h<{-2,h}  # Test for downscaling
       rm. /. 4
@@ -49213,7 +49213,7 @@ fx_upscale_smart_preview :
       z.. {50-50*{-2,w}/w}%,{50-50*{-2,h}/h}%,{50+50*{-2,w}/w}%,{50+50*{-2,h}/h}%
       rm. fx_upscale_smart. $1,$2,$3,$4,$5 c. 0,255
     fi
-  mv. 0 done
+  mv. 0 }
 
 #@gui Upscale [Scale2x] : fx_scalenx, fx_scalenx_preview(0)
 #@gui : Scaling Factor = choice("x 2","x 3","x 4","x 6","x 8","x 9","x 12","x 16","x 18","x 27")
@@ -49392,20 +49392,20 @@ _fx_coloredobject3d :
 
 fx_coloredobject3d :
   _fx_coloredobject3d "_",${1-4,6-8}
-  repeat $!-1
+  repeat $!-1 {
     +fx_render3d. {$>,w},{$>,h},$6,${9--1}
     sh. 3 *. {$5/255} rm.
     blend[$>,-1] alpha
-  done
+  }
   rm.
 
 fx_coloredobject3d_preview :
   _fx_coloredobject3d "_preview_",${1-4,6-8}
-  repeat $!-1
+  repeat $!-1 {
     +fx_render3d. {$>,w},{$>,h},$6,${9--1}
     sh. 3 *. {$5/255} rm.
     blend[$>,-1] alpha
-  done rm.
+  } rm.
 
 _fx_coloredobject3d_0 : plane3d 1 *3d. $1,$2,1
 _fx_coloredobject3d_1 : box3d 1 *3d. $1,$2,$3
@@ -49448,11 +49448,11 @@ _fx_coloredobject3d_preview_7 : cup3d 64 *3d. $1,$2,$3
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2021/11/10</i>.</small>")
 _fx_elevation3d :
   if $3" && "$!>1 # Textured object
-    repeat $!-1 l[0,{1+$>}] {
+    repeat $!-1 { l[0,{1+$>}] {
       +ri.. .,3
       n. 0,{abs($1)} *. {sign($1)} b. $2
       elevation3d.. . rm.
-    } done
+    } }
   else foreach { +norm n. 0,{abs($1)} *. {sign($1)} b. $2 elevation3d.. . rm. } # Non-textured object
   fi
   db3d
@@ -49489,7 +49489,7 @@ fx_elevation3d_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2021/11/10</i>.</small>")
 _fx_extrude3d :
-  if $4" && "$!>1 repeat $!-1 l[0,{$>+1}] { extrude3d. $1,$2,$3% t3d. .. } done # Textured object
+  if $4" && "$!>1 repeat $!-1 { l[0,{$>+1}] { extrude3d. $1,$2,$3% t3d. .. } } # Textured object
   else extrude3d $1,$2,$3% # Non-textured object
   fi
   db3d 0
@@ -49574,7 +49574,7 @@ _fx_imageobject3d_preview_8 : imagerubik3d 3,3,5,5
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2010/29/12</i>.</small>")
 _fx_lathing3d :
-  if $4" && "$!>1 repeat $!-1 l[0,{$>+1}] { lathe3d. $1,$2%,$3 t3d. .. } done # Textured object
+  if $4" && "$!>1 repeat $!-1 { l[0,{$>+1}] { lathe3d. $1,$2%,$3 t3d. .. } } # Textured object
   else lathe3d $1,$2%,$3 # Non-textured object
   fi
   db3d 0
@@ -49890,7 +49890,7 @@ fx_line_gradient : skip "${10=}"
     dir_ggr=${-path_gimp}gradients
     0 :: ${"normalize_filename \"$10\""} name_ggr={b} rm. output_ggr. $dir_ggr/$name_ggr.ggr,"$10"
   fi
-  repeat $! r[$>] 100%,64,1,100% done
+  r 100%,64,1,100%
 
 fx_line_gradient_preview :
   foreach {
@@ -50227,7 +50227,7 @@ fx_neon_lightning :
   d={$13*255}
   foreach {
     100%,100%,1,4 rm[0]
-    repeat $7
+    repeat $7 {
       x0={max(0,min(w,$1+u(-$3,$3)))} y0={max(0,min(h,$2+u(-$3,$3)))}
       x1={max(0,min(w,$4+u(-$6,$6)))} y1={max(0,min(h,$5+u(-$6,$6)))}
       u0={u(0,100)} v0={u(0,100)} u1={u(0,100)} v1={u(0,100)}
@@ -50235,7 +50235,7 @@ fx_neon_lightning :
       G={max(0,min(255,u($11-$d,$11+$d)))}
       B={max(0,min(255,u($12-$d,$12+$d)))}
       spline $x0%,$y0%,$u0%,$v0%,$x1%,$y1%,$u1%,$v1%,1,$R,$G,$B,1
-    done
+    }
     s c,-3
     b[0] 3%
     distance. 1 *. -1 c. -{$9+1e-5},0 n. 0,1 sqrt.
@@ -50475,13 +50475,14 @@ fx_quick_copyright :
   i[0] 0 t[0] "$1",0,0,$2,1,$3,$4,$5 autocrop[0] 0 r[0] {{0,w}+2*$7},{{0,h}+2*$7},1,3,0,0,0.5,0.5
   i[1] 0 t[1] "$1",0,0,$2,1,1 autocrop[1] 0 r[1] {{1,w}+2*$7},{{1,h}+2*$7},1,1,0,0,0.5,0.5 dilate[1] {1+2*$7}
   rotate[0,1] {90*($10-1)}
-  repeat $!-2
-  if $8==0 j. [0],$9,$9,0,0,{$6/255},[1]
-  elif $8==1 j. [0],{w-1-{0,w}-$9},$9,0,0,{$6/255},[1]
-  elif $8==2 j. [0],$9,{h-1-{0,h}-$9},0,0,{$6/255},[1]
-  else j. [0],{w-1-{0,w}-$9},{h-1-{0,h}-$9},0,0,{$6/255},[1]
-  fi
-  mv. 2 done
+  repeat $!-2 {
+    if $8==0 j. [0],$9,$9,0,0,{$6/255},[1]
+    elif $8==1 j. [0],{w-1-{0,w}-$9},$9,0,0,{$6/255},[1]
+    elif $8==2 j. [0],$9,{h-1-{0,h}-$9},0,0,{$6/255},[1]
+    else j. [0],{w-1-{0,w}-$9},{h-1-{0,h}-$9},0,0,{$6/255},[1]
+    fi
+    mv. 2
+  }
   rm[0,1]
 
 #@gui Rainbow : fx_rainbow, fx_rainbow
@@ -50524,17 +50525,17 @@ fx_shadebobs :
   channels 0 f 0
   foreach {
     t=0
-    repeat $3
-      repeat $1
+    repeat $3 {
+      repeat $1 {
         r={$6+$5*cos(6*$7*$t)+(1-$5)*sin(6*$8*$t)}
         a={(360*sin($7*$t)+30*$6*$>)*pi/180}
         ax={2*$>*pi/$1+$t}
         cx={(1+$9*cos($ax)+$r*cos($a))*w/2}
         cy={(1+$9*sin($ax)+$r*sin($a))*h/2}
         ellipse. $cx,$cy,$2%,$2%,0,-1,1
-      done
+      }
       t+={$4%}
-    done
+    }
   }
   & 255 if $10 map {$10-1} fi
 
@@ -50922,14 +50923,14 @@ _fx_symmetric_shape2d_preview :
   angx,angy=$6,$7
   if [$2,$3]!=[$4,$5]" || "[$angx,$angy]!=[$8,$9] # Center or angle has been modified
     dx,dy={[$2-$4,$3-$5]}
-    repeat 6 i={1+$>}
+    repeat 6 { i={1+$>}
       cx$i,cy$i={"
         const cx = "${cx$i}";
         const cy = "${cy$i}";
         dang = atan2($7 - $3,$6 - $2) - atan2($9 - $3,$8 - $2);
         dsca = norm($6 - $2,$7 - $3)/norm($9 - $3,$8 - $2);
         [ $2,$3 ] + dsca*rot(dang)*[ cx - $4, cy - $5 ]"}
-    done
+    }
     angx,angy={[$6+$2-$4,$7+$3-$5]}
   fi
 
@@ -51112,7 +51113,7 @@ fx_turbulence :
 # fx_animate_preview : _command,_parameters1,_parameters2,_compute_half={ 0 | 1 },_width>=0,_height>=0
 # Generate a preview with start/end rendering of an animation.
 fx_animate_preview : skip ${4=1},${5=0},${6=$5}
-  repeat $!
+  repeat $! {
     if $5 width=$5 else width={w} fi
     if $6 height=$6 else height={h} fi
     if $4 s. x,2 else . fi
@@ -51122,7 +51123,7 @@ fx_animate_preview : skip ${4=1},${5=0},${6=$5}
     a[-2,-1] x r. $width,$height,1,100%,2 drgba.
     line. 50%,0,50%,100%,1,0,0,0,255
     to. "Start",3,-1,13,2,1,255 to. "End",{w-24},{h-18},13,2,1,255
-  mv. 0 done
+  mv. 0 }
 
 #@gui 3D Elevation [Animated] : fx_animate_elevation3d, fx_animate_elevation3d_preview(1)
 #@gui : Frames = _int(10,2,100)
@@ -51283,12 +51284,12 @@ fx_text_pointcloud3d :
   text_pointcloud3d "$2","$3",$4
   col3d. ${5-7} *3d. {0.7*$M}
   f3d 4000 db3d 0 m3d
-  repeat $1
+  repeat $1 {
     rprogress {60*$>/$1}
     angle={$>*360/$1}
     +r3d[0] 1,0,1,$angle
     $M,$M,1,3,-1 j3d. ..,50%,50%,0,1 rm..
-  done
+  }
   rm[0] a z autocrop -1 to_rgba s z replace_color 0,0,-1,-1,-1,255,0,0,0,0
   if $11 N=$! foreach {
     rprogress {60+40*$>/$N}
@@ -51563,7 +51564,7 @@ fx_moire :
   if 0$_is_preview" && "!narg($_preview_width) _preview_width,_preview_height=512 fi
 
   # Reconstruct frames from base image.
-  if $2 repeat $! if $>" && "{$<,s==2||s==4} blend[$<] [{$<+1}],alpha,1,1 fi done fi
+  if $2 repeat $! { if $>" && "{$<,s==2||s==4} blend[$<] [{$<+1}],alpha,1,1 fi } fi
 
   # Auto-reduce number of frames (4, 5 or 6).
   if $4
@@ -52159,7 +52160,7 @@ fx_intarsia :
     # Render image of colors.
     0 :: "$2" image_name={b} rm.
     nb_cols={1,w}
-    repeat $nb_cols
+    repeat $nb_cols {
       color={1,I($>)}
       R={arg(1,$color)} G={arg(2,$color)} B={arg(3,$color)}
       ('${dec2hex\ {$R*65536+$G*256+$B}}') -. {'0'} r. 6,1,1,1,0,0,1,0 +. {'0'}
@@ -52167,7 +52168,7 @@ fx_intarsia :
       hcolor={t} rm.
       48,32,1,4 fc. $color,255 frame. 1,1,0,0,0,255 o. "$1/"${image_name}_$>.png rm.
       ('"<tr><td><b>Colour "$>"</b></td><td><img src=\""${image_name}_$>.png"\" /></td><td>#"$hcolor"</td></tr>\n"')
-    done
+    }
     ('"</table>\n</td><td>"')
 
     # Render result and overview images.
@@ -52293,7 +52294,7 @@ fx_image_sample_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2011/01/09</i>.</small>")
 fx_solve_maze :
-  repeat $!
+  repeat $! {
     +norm. >=. 50%
     if !$10 negate. fi
     *. 255 +b. $5% *.. 1e10 +[-2,-1]
@@ -52305,7 +52306,7 @@ fx_solve_maze :
     ellipse. $1%,$2%,5,5,0,1,${7-9},255
     ellipse. $3%,$4%,5,5,0,1,${7-9},255
     rv[-2,-1]
-  mv[-2,-1] 0 done
+  mv[-2,-1] 0 }
 
 fx_solve_maze_preview :
   drgba
