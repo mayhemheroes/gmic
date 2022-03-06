@@ -3165,7 +3165,7 @@ _display_histogram : check "${1=0}>=0 && ${2=0}>=0 && ${3=256}>0" skip ${4=0%},$
     if ${is_percent\ $4} m={im+(iM-im)*$4} else m=$4 fi
     if ${is_percent\ $5} M={im+(iM-im)*$5} else M=$5 fi
     s={s} s c
-    repeat $s l[{-1-$>}] s z histogram $3,$m,$M a z done done
+    repeat $s l[{-1-$>}] { s z histogram $3,$m,$M a z } done
     a c f '"${7--1}"' vM={iM} s z
     foreach
       if $1>0" && "$2>0 wh=$1,$2 else wh={{*,u}/2},{{*,v}/2} fi
@@ -3843,47 +3843,48 @@ merge_multiline_comments :
 #@cli : Default value: 'reverse_endianness=0'.
 output_565 : check "isbool(${2=0})"
   e[^-1] "Output image$? as raw RGB-565 file '$1'."
-  N=$! repeat $N +l[$>]
+  N=$! repeat $N +l[$>] {
     s c c 0,255 /[-3,-1] 8 /.. 4 round
     bsl... 11 bsl.. 5 +
     if $N>1 fn=${"filename \"$1\",$>"} else fn="$1" fi
     if $2 endian ushort fi
     o raw:$fn,ushort rm
-  done done is_change 0
+  } done is_change 0
 
 #@cli output_cube : "filename"
 #@cli : Output selected CLUTs as a .cube file (Adobe CLUT format).
 output_cube :
- e[^-1] "Output CLUT$? as file '$1'."
- N=$! repeat $N +l[$>] to_rgb
-   l={round((w*h*d)^(1/3))}
-   if w*h*d!=$l^3 error "Command '$0': CLUT '"{n}"' has invalid dimensions "({w},{h},{d},{s}). fi
-   r $l,$l,$l,3,-1 permute cxyz / 255
-   if $N>1 fn=${"filename \"$1\",$>"} else fn="$1" fi
-   o dlm:$fn rm it[] $fn replace {','},32
-   0 :: $fn basename={b} rm.
-   header="\# Created by: G'MIC (https://gmic.eu)\n"\
-          "TITLE \""$basename"\"\n\n"\
-          "# LUT size\n"\
-          "LUT_3D_SIZE "$l"\n\n"\
-          "# Data domain\n"\
-          "DOMAIN_MIN 0.0 0.0 0.0\n"\
-          "DOMAIN_MAX 1.0 1.0 1.0\n\n"\
-          "# LUT data points\n"
-   i[0] ('$header')
-   y a y ot $fn rm
- done done is_change 0
+  e[^-1] "Output CLUT$? as file '$1'."
+  N=$! repeat $N +l[$>] {
+    to_rgb
+    l={round((w*h*d)^(1/3))}
+    if w*h*d!=$l^3 error "Command '$0': CLUT '"{n}"' has invalid dimensions "({w},{h},{d},{s}). fi
+    r $l,$l,$l,3,-1 permute cxyz / 255
+    if $N>1 fn=${"filename \"$1\",$>"} else fn="$1" fi
+    o dlm:$fn rm it[] $fn replace {','},32
+    0 :: $fn basename={b} rm.
+    header="\# Created by: G'MIC (https://gmic.eu)\n"\
+           "TITLE \""$basename"\"\n\n"\
+           "# LUT size\n"\
+           "LUT_3D_SIZE "$l"\n\n"\
+           "# Data domain\n"\
+           "DOMAIN_MIN 0.0 0.0 0.0\n"\
+           "DOMAIN_MAX 1.0 1.0 1.0\n\n"\
+           "# LUT data points\n"
+    i[0] ('$header')
+    y a y ot $fn rm
+  } done is_change 0
 
 #@cli output_flo : "filename"
 #@cli : Output selected optical flow as a .flo file (vision.middlebury.edu file format).
 output_flo :
   e[^-1] "Output optical flow$? as file '$1'."
-  N=$! repeat $N +l[$>]
+  N=$! repeat $N +l[$>] {
    w,h={[w,h]}
    channels 0,1 permute cxyz i[0] (202021.25) i[1] ($w,$h) cast[1] uint,float y a y
    if $N>1 fn=${"filename \"$1\",$>"} else fn="$1" fi
    o raw:$fn,float rm
- done done is_change 0
+ } done is_change 0
 
 #@cli output_ggr : filename,_gradient_name
 #@cli : Output selected images as .ggr gradient files (GIMP).
@@ -3891,7 +3892,8 @@ output_flo :
 output_ggr : skip "${2=}"
  e[^-1] "Output image$? as .ggr gradient file '$1'."
  N=$!
-  repeat $N +l[$>] r 1,{w*h*d},1,100%,-1 to_rgba / 255
+  repeat $N +l[$>] {
+    r 1,{w*h*d},1,100%,-1 to_rgba / 255
     if narg("$2") name="$2"
     else l[] 1 :: "$1" ('{b}') f "if(x==0 && i>=_'a' && i<=_'z',i-_'a'+_'A',i)" name={t} rm done
     fi
@@ -3907,7 +3909,7 @@ output_ggr : skip "${2=}"
     rm[0] a x
     if $N>1 ot ${"filename \"$1\",$>"} else ot "$1" fi
     rm
-  done done is_change 0
+  } done is_change 0
 
 #@cli output_gmz : filename,_datatype
 #@cli : Output selected images as .gmz files (G'MIC native file format).
@@ -4337,10 +4339,10 @@ parse_cli_bashcompletion :
   coms="    coms=\"" c=
 
   # Extract list of available commands.
-  repeat $! if s=['{$>,n}'];s[0]==_'_' continue fi l[$>]
+  repeat $! if s=['{$>,n}'];s[0]==_'_' continue fi l[$>] {
     ('{n}') l. s -,{'@'} name={0,t} rm done :: $name
     coms.=$c$name c=" "
-  done done
+  } done
   +e[] $coms"\""\n\
 "    opts=$(echo \"$coms\" | sed \"s: \\([^ ]\\+\\): \\1 -\\1 \\+\\1:g\")"\n
 
@@ -4361,7 +4363,7 @@ parse_cli_bashcompletion :
 
   # Extract list of arguments.
   +e[] "    case \"${prev}\" in"
-  repeat $! if s=['{$>,n}'];s[0]==_'_' continue fi l[$>]
+  repeat $! if s=['{$>,n}'];s[0]==_'_' continue fi l[$>] {
     name={n}
     if n=['$name'];"n[0]!=_'_' && find(n,'input') && find(n,'output') && "\
                    "n!='i' && n!='o' && n!='m' && n!='it' && n!='ot'"
@@ -4380,7 +4382,7 @@ parse_cli_bashcompletion :
       fi
       rm 0
     fi
-  done done
+  } done
 
   +e[] "    esac"\n\n\
 "    COMPREPLY=( $(compgen -W \"$opts\" -- \"$cur\") )"\n\
@@ -4556,7 +4558,7 @@ parse_cli_html :
 
   list_categories,c=
   category,p_category= n,is_tr,is_table,row=0
-  repeat $! if s=['{$>,n}'];s[0]==_'_' continue fi l[$>]
+  repeat $! if s=['{$>,n}'];s[0]==_'_' continue fi l[$>] {
     ('{n}') l. s -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm done
     if ['$category']!=['$p_category']
       strvar $category category_id=${}
@@ -4589,7 +4591,7 @@ parse_cli_html :
       n+=1
     fi
     p_category=$category
-  done done
+  } done
   if $is_tr
     if $n%5" && "$row>1 html.="        <td colspan=\""{5-$n%5}"\"></td>"\n fi
     html.="      </tr>"\n
@@ -4602,7 +4604,7 @@ parse_cli_html :
         "      <tr style=\"background-color: \#d8dcea;\"><td><b>Shortcut name</b></td><td>"\
         "<b>Equivalent command name</b></td></tr>"\n
 
-  repeat $! if s=['{$>,n}'];s[0]==_'_' continue fi l[$>]
+  repeat $! if s=['{$>,n}'];s[0]==_'_' continue fi l[$>] {
     ('{n}') l. s -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm done
     if ${parse_cli_is_eqto.}
       is_builtin={"find(#-1,'(+)')>=0"}
@@ -4617,7 +4619,7 @@ parse_cli_html :
       html.="</tr>"\n
       n+=1
     fi
-  done done
+  } done
   if $is_table html.="    </table>"\n fi
 
   html.=\n\
@@ -5018,7 +5020,7 @@ parse_cli_trigger_images :
 #
 parse_cli_list :
   res=
-  repeat $! ('{$>,n}') l. s -,{'@'} res.=$c{0,t} c=, rm done done
+  repeat $! ('{$>,n}') l. { s -,{'@'} res.=$c{0,t} c=, rm } done
   rm u $res
 
 #
@@ -6922,7 +6924,7 @@ parse_gui_update :
 
     done
   done
-#  repeat $! l[$>] utf82html done done
+#  foreach { utf82html }
   $_nongui y a y
 
   # Clean generated output, add footer and header.
@@ -8124,7 +8126,7 @@ update_color_presets_html : check "isbool(${1=0})"
   e[] $_vt100_g"\n  * Generate thumbnails from samples.\n"$_vt100_n
   x "mkdir -p original"
   nb_samples=$!
-  to_rgb repeat $nb_samples l[$<]
+  to_rgb repeat $nb_samples l[$<] {
     ::[0] sample_{1+$<}
     basename={0,b} basename$<=$basename
     e[] "    - "$basename
@@ -8134,7 +8136,7 @@ update_color_presets_html : check "isbool(${1=0})"
     +_thumb[1] o. original/thumb_$basename.jpg,$jpeg_quality rm.
     +r2dy[0] $thumb_height r. {h},{h},1,100%,0,0,0.5,0.5 _thumb.
     o. original/minithumb_$basename.jpg,$jpeg_quality rm.
-  done done
+  } done
 
   # Generate color grading data and rendering on each input sample.
   ind_preset=0
@@ -8161,7 +8163,7 @@ update_color_presets_html : check "isbool(${1=0})"
       x 0,"zip -j -9 "$category/clut/$preset.zip" "$category/clut/$preset.cube
       rm.
 
-      repeat $nb_samples l[{2*$>},{2*$>+1},-1]
+      repeat $nb_samples l[{2*$>},{2*$>+1},-1] {
         basename={0,b}
         if !isfile(['{/$category/$basename/$preset.jpg}'])
           x "mkdir -p \""$category/$basename"\""
@@ -8172,7 +8174,7 @@ update_color_presets_html : check "isbool(${1=0})"
           _thumb. o. $category/$basename/thumb_$preset.jpg,$jpeg_quality
           rm[-2,-1]
         fi
-      done done
+      } done
 
       rm.
 
@@ -9335,9 +9337,10 @@ strings2ts : skip "${1=}"
   l[] repeat $N1 ({'${ndest$>}'}) :: ${nsrc$>} done y done
   repeat $N0 rmn ${src$>} done # Discard already-translated strings in the .ts file
   if $N0 i[0] 0 l[0] rm repeat $N0 i ({'${dest$>}'}) :: ${src$>} done y done fi
-  repeat $! l[$<] src={n} dest={t}
+  repeat $! l[$<] {
+    src={n} dest={t}
     if lowercase(['$src'])==lowercase(['$dest']) rm fi
-  done done
+  } done
   sort_list +,n
   e[] "  > "$!" strings remain after cleaning/merging ("{$!-$N0}" new)."
 
@@ -9642,7 +9645,7 @@ upload_filters :
   # Import filters from stdlib and community.
   files $HOME/work/src/gmic-community/include/*.gmic
   files=${},$HOME/work/src/gmic/src/gmic_stdlib.gmic
-  repeat narg($files) l[]
+  repeat narg($files) l[] {
     file=${"arg 1+$>,"$files}
     it[] $file
     basename $file basename=${}
@@ -9651,7 +9654,7 @@ upload_filters :
     elif s=['$basename'];s=='template.gmic'
       rm 0
     fi
-  done done
+  } done
   i[1--2] ('"#@gui _________________\n"') y a y
 
   # Create update file.
@@ -10176,12 +10179,12 @@ deg2rad :
 #@cli : Default value: 'epsilon=1e-8'.
 div_complex : check ${3=1e-8}>=0
   e[^-1] "Divide complex pair$? by complex pair "${"pass$1,$2 -1"}" (with epsilon $3)."
-  repeat int($!/2) pass${1,2} 0 l[$>,{$>+1},-2,-1]
+  repeat int($!/2) pass${1,2} 0 l[$>,{$>+1},-2,-1] {
     +*[1,2] +*[0,3] -[-2,-1] # bc-ad
     *[0] [2] *[1] [3] +[0,1] # ac+bd
     sqr[1,2] +[1,2] +[1] $3  # c^2+d^2
     /[2] [1] /[0,1]
-  done done
+  } done
 
 #@cli == : eq. to 'eq'. : (+)
 
@@ -10334,10 +10337,10 @@ mul_channels :
 #@cli : In complex pairs, the real image must be always located before the imaginary image in the image list.
 mul_complex :
   e[^-1] "Multiply complex pair$? by complex pair "${"pass$1,$2 -1"}"."
-  repeat int($!/2) pass${1,2} 0 l[$>,{$>+1},-2,-1]
+  repeat int($!/2) pass${1,2} 0 l[$>,{$>+1},-2,-1] {
     +*[0,3] +*[1,2] +[-2,-1] # ad+bc
     *[0,2] *[1,2] -[0,1] # ac-bd
-  done done
+  } done
 
 #@cli != : eq. to 'neq'. : (+)
 
@@ -10513,9 +10516,9 @@ cast :
 #@cli : $ image.jpg +fft complex2polar[-2,-1] log[-2] shift[-2] 50%,50%,0,0,2 remove[-1]
 complex2polar :
   e[^-1] "Compute complex to polar transforms of image$?."
-  repeat int($!/2) l[{2*$>},{2*$>+1}]
+  repeat int($!/2) l[{2*$>},{2*$>+1}] {
     ri[1] [0],3 +atan2[1] [0] :: {1,n} sqr[-3,-2] +[-3,-2] sqrt..
-  done done
+  } done
 
 #@cli compress_clut : _max_error>0,_avg_error>0,_max_nbpoints>=8 | 0 (unlimited),\
 # _error_metric={ 0=L2-norm | 1=deltaE_1976 | 2=deltaE_2000 },_reconstruction_colorspace={ 0=srgb | 1=rgb | 2=lab },\
@@ -10606,7 +10609,7 @@ compress_cluts : check "${2=1.5}>0 && ${3=0.75}>0 && isint(${4=2048}) && $4>8"
   else files "$1" ('${}') s -,{','}
   fi
   rv
-  repeat $! l[$<]
+  repeat $! l[$<] {
     filename={t} 0 :: $filename ext={x} rm
     basename $filename
     l[] ('${}') replace_str .$ext,"" basename={t} rm done
@@ -10641,7 +10644,7 @@ compress_cluts : check "${2=1.5}>0 && ${3=0.75}>0 && isint(${4=2048}) && $4>8"
       o $cclut
     fi
     rm
-  done done
+  } done
 
 #@cli compress_rle : _is_binary_data={ 0 | 1 },_maximum_sequence_length>=0
 #@cli : Compress selected images as 2xN data matrices, using RLE algorithm.
@@ -10797,7 +10800,8 @@ decompress_rle :
 #@cli : $$
 eigen2tensor :
   e[^-1] "Recompose pairs in eigen field$? as 2x2 or 3x3 tensor fields."
-  repeat $!/2 l[$>,{$>+1}] nm={0,n}
+  repeat $!/2 l[$>,{$>+1}] {
+    nm={0,n}
     if s==2 # 2D tensors.
       s. c
       +sqr. *.. ... sqr... # u^2 uv v^2
@@ -10817,7 +10821,8 @@ eigen2tensor :
     else error[0--3] "Command '$0': Invalid image ["{$!-$>-1}"] : Dimensions "{w}","{h}","{d}","{s}" does
                           not represent a field of 2D or 3D eigenvectors."
     fi
-  :: $nm done done
+    :: $nm
+  } done
 
 #@cli endian : _datatype : (+)
 #@cli : Reverse data endianness of selected images, eventually considering the pixel being of the specified datatype.
@@ -10905,12 +10910,12 @@ map : check "isint(${2=0}) && $2>=0 && $2<=3"
 #@cli : Apply specified matrix to channels of selected images.
 #@cli : $ image.jpg +mix_channels (0,1,0;1,0,0;0,0,1)
 mix_channels :
-  e[^-1] "Apply matrix $1 to channels of image$?."
+  e[^-1] "Apply matrix $* to channels of image$?."
   if ${"is_image_arg $1"} pass$1 1 else i ${^0} fi
-  repeat $!-1 l[$>] nm={n}
-    whd={[w,h,d]} r. {[whd,s]},1,1,-1
-    pass. 0 mv. 0 m* r $whd,{h},-1
-  :: $nm done done rm.
+  foreach[^-1] {
+    nm={n} whd={[w,h,d]} r. {[whd,s]},1,1,-1
+    pass. 0 mv. 0 m* r $whd,{h},-1 :: $nm
+  } rm.
 
 #@cli negate : base_value : (no arg)
 #@cli : Negate image values.
@@ -11194,9 +11199,9 @@ otsu : check "isint(${1=256}) && $1>0"
 #@cli : Compute polar to complex transforms of selected images.
 polar2complex :
   e[^-1] "Compute polar to complex transforms of image$?."
-  repeat int($!/2) l[{2*$>},{2*$>+1}]
+  repeat int($!/2) l[{2*$>},{2*$>+1}] {
     ri[1] [0],3 +sin. cos.. *. ... *[-3,-2]
-  done done
+  } done
 
 #@cli quantize : nb_levels>=1,_keep_values={ 0 | 1 },_quantization_type={ -1=median-cut | 0=k-means | 1=uniform }
 #@cli : Quantize selected images.
@@ -11628,12 +11633,14 @@ deltaE : check ${"is_image_arg $1"}" && isbool(${2=1})" skip "${3=srgb2lab}"
   pass$1 1
   needs_to_lab={"s = ['$3']; s!=0 && s!=' '"}
   if $needs_to_lab m "_deltaE_to_lab : $3" +_deltaE_to_lab. rm.. fi
-  repeat $!-1 l[$>,-1] nm={0,n}
+  repeat $!-1 l[$>,-1] {
+    nm={0,n}
     if $needs_to_lab _deltaE_to_lab[0] fi
     if !$2 -.. . norm..                                                # DeltaE_1976
     else 100%,100%,100%,1,${-math_lib}"deltaE00(I#0,I#1)" rv[0,-1] rm. # DeltaE_2000
     fi
-  ::[0] $nm done done
+    ::[0] $nm
+  } done
   rm. um _deltaE_to_lab
 
 #@cli cmy2rgb
@@ -12169,10 +12176,11 @@ map_clut :
   l={round((w*h*d)^(1/3))}
   if w*h*d!=$l^3 error "Command '$0': Specified CLUT $1 has invalid dimensions "({w},{h},{d},{s}). fi
   r. $l,$l,$l,3,-1
-  repeat $!-1 l[$>,-1] nm={0,n} split_opacity[0] /[0] {256/$l}
+  repeat $!-1 l[$>,-1] {
+    nm={0,n} split_opacity[0] /[0] {256/$l}
     +warp. [0],0,1,1
     rm[0] mv. 0 a[^-1] c ::[0] $nm
-  done done rm.
+  } done rm.
 
 #@cli mix_rgb : a11,a12,a13,a21,a22,a23,a31,a32,a33
 #@cli : Apply 3x3 specified matrix to RGB colors of selected images.
@@ -13673,9 +13681,10 @@ append_tiles : check "isint(${1=0}) && isint(${2=0}) && ${3=0}>=0 && $3<=1 && ${
   fi
   W,H=${-max_wh} rr2d $W,$H,2,1
   MN={$M*$N} if $!%$MN 0x{$MN-($!%$MN)} fi
-  repeat $!/$MN l[$>-{$>+$MN-1}]
-    repeat $!/$M a[$>-{$>+$M-1}] x,$3 done a y,$4
-  done done
+  repeat $!/$MN l[$>-{$>+$MN-1}] {
+    repeat $!/$M { a[$>-{$>+$M-1}] x,$3 }
+    a y,$4
+  } done
 
 #@cli apply_scales : "command",number_of_scales>0,_min_scale[%]>=0,_max_scale[%]>=0,_scale_gamma>0,_interpolation
 #@cli : Apply specified command on different scales of selected images.
@@ -13686,7 +13695,8 @@ apply_scales : check "isint($2) && $2>0 && ${3=25%}>=0 && ${4=100%}>=0 && ${5=1}
                skip "${1=}"
   s0="no" s1="nearest-neighbor" s2="average" s3="linear" s4="grid" s5="bicubic" s6="lanczos"
   e[^-1] "Apply command '$1' on image$? for $2 scales ($3 -> $4) and "${s{min(6,$6)}}" interpolation."
-  repeat $! l[$<] nm={0,n}
+  foreach {
+    nm={0,n}
     scale0={if(${"is_percent $3"},$3*max(w,h,d),$3)}
     scale1={if(${"is_percent $4"},$4*max(w,h,d),$4)}
     repeat $2
@@ -13698,7 +13708,7 @@ apply_scales : check "isint($2) && $2>0 && ${3=25%}>=0 && ${4=100%}>=0 && ${5=1}
       if narg("$1") l. $1 done fi
     done
     rm[0] ::[^] $nm
-  done done
+  }
 
 #@cli autocrop : value1,value2,... : (no arg) : (+)
 #@cli : Autocrop selected images by specified vector-valued intensity.
@@ -13916,7 +13926,8 @@ extract_region : check ${"is_image_arg $1"}" && isnum(${2=0})"
   if $#<3 e[0--3] "Extract pixels of image$? for labels [] in image $1, with"${"arg 1+!!$2,out"}" coordinates
                    -> no labels provided, ignoring." return fi
   e[^-1] "Extract pixels of image$? for labels {${3--1}} in image $1, with"${"arg 1+!!$2,out"}" coordinates."
-  pass$1 mv. 0 repeat $!-1 l[0,{1+$<}] nm={n}
+  pass$1 mv. 0 repeat $!-1 l[0,{1+$<}] {
+    nm={n}
     1,16,1,{s+($2?3:0)} if $#>3 .x{$#-3} fi
     f[0] ">
       begin(
@@ -13932,7 +13943,7 @@ extract_region : check ${"is_image_arg $1"}" && isnum(${2=0})"
         repeat (l - 2,k, resize(#k + 2,1,da_size(#k + 2),1,-100,0))
       )"
     rm[1] ::[^] $nm
-  done done rm[0]
+  } done rm[0]
 
 #@cli montage : "_layout_code",_montage_mode={ 0<=centering<=1 | 2<=scale+2<=3 },\
 # _output_mode={ 0=single layer | 1=multiple layers },"_processing_command"
@@ -14771,7 +14782,7 @@ split_tiles : skip ${2=$1},${3=0}
   if $3 e[^-1] "Split image$? as a $1x$2 array of homogeneous tiles."
   else e[^-1] "Split image$? as a $1x$2 array of tiles."
   fi
-  repeat $! l[$<] s y,$2 s x,$1 if $3 r [0],[0],100%,100%,0 fi done done
+  foreach { s y,$2 s x,$1 if $3 r [0],[0],100%,100%,0 fi }
 
 #@cli undistort : -1<=_amplitude<=1,_aspect_ratio,_zoom,_center_x[%],_center_y[%],_boundary_conditions
 #@cli : Correct barrel/pincushion distortions occurring with wide-angle lens.
@@ -14857,7 +14868,8 @@ warp_patch : check ${is_image_arg\ $1}" && isint(${2=3}) && $2>=1 && isint(${3=$
   e[^-1] "Patch-warp image$? with backward-absolute displacement field $1, using $2x$3x$4 patches, std factor $5
           and "${"arg 1+$6,dirichlet,neumann,periodic,mirror"}" boundary conditions."
   if $2<=1 pass$1 warp[^-1] .,0 rm. return fi
-  repeat $! pass$1 l[$>,-1] nm={0,n}
+  repeat $! pass$1 l[$>,-1] {
+    nm={0,n}
     [0],[0],[0],1,1 a[0,-1] c # Add weighting channel
     100%,100%,100%,{0,s}
 
@@ -14934,7 +14946,7 @@ warp_patch : check ${is_image_arg\ $1}" && isint(${2=3}) && $2>=1 && isint(${3=$
         return"
     fi
     s. c,-{0,s-1} /[-2,-1] k. :: $nm
-  done done
+  } done
 
 #@cli warp_rbf : xs0[%],ys0[%],xt0[%],yt0[%],...,xsN[%],ysN[%],xtN[%],ytN[%]
 #@cli : Warp selected images using RBF-based interpolation.
@@ -15067,7 +15079,7 @@ blur_radial : skip ${2=50%},${3=50%}
 #@cli blur_selective : sigma>=0,_edges>0,_nb_scales>0
 #@cli : Blur selected images using selective gaussian scales.
 #@cli : Default values: 'sigma=5', 'edges=0.5' and 'nb_scales=5'.
-#@cli : $ image.jpg noise 20 cut 0,255 +local[-1] repeat 4 blur_selective , done done
+#@cli : $ image.jpg noise 20 cut 0,255 +local[-1] repeat 4 { blur_selective , } done
 #@cli : $$ https://gmic.eu/oldtutorial/_blur_selective
 blur_selective : check "${1=5}>=0 && ${2=0.5}>=0 && isint(${3=5}) && $3>0"
   e[^-1] "Blur image$? using $3 selective gaussian scales, with sigma $1 and edges $2."
@@ -15201,10 +15213,10 @@ convolve_fft : check ${is_image_arg\ $1}" && isin(${2=2},0,1,2,3)"
 #@cli : $ image.jpg +shift -30,-20 +cross_correlation[0] [1]
 cross_correlation : check ${is_image_arg\ $1}
   e[^-1] "Compute cross-correlation of image$? with mask $1."
-  repeat $! pass$1 0 l[$>,-1]
+  repeat $! pass$1 0 l[$>,-1] {
     norm fft.. fft. [-2,-1] *.. [-5] *. [-6]
     -[-2,-1] *[-5,-3] *[-3,-2] +[-3,-2] ifft rm.
-  done done
+  } done
 
 #@cli curvature
 #@cli : Compute isophote curvatures on selected images.
@@ -15239,9 +15251,9 @@ dct : skip ${1=0}
     e[0--3] "Compute discrete cosine transform of image$? along axes '$1'."
     repeat w
       axis={i[$>]}
-      if $axis==_'x' repeat $!-1 l[$>] if w>1 _dct fi done done
-      elif $axis==_'y' repeat $!-1 l[$>] if h>1 permute yxzc _dct permute yxzc fi done done
-      elif $axis==_'z' repeat $!-1 l[$>] if d>1 permute zxyc _dct permute yzxc fi done done
+      if $axis==_'x' foreach[^-1] { if w>1 _dct fi }
+      elif $axis==_'y' foreach[^-1] { if h>1 permute yxzc _dct permute yxzc fi }
+      elif $axis==_'z' foreach[^-1] { if d>1 permute zxyc _dct permute yzxc fi }
       fi
     done
     rm.
@@ -15323,7 +15335,7 @@ deblur_richardsonlucy : check "$1>=0 && ${2=50}>=0" skip ${3=1}
 #@cli : $ image.jpg +gaussian 5 +convolve_fft[0] [1] +deconvolve_fft[-1] [1]
 deconvolve_fft : check ${is_image_arg\ $1}" && ${2=.001}>=0"
   e[^-1] "Deconvolve image$? with mask $1 and regularization $2, in the fourier domain."
-  repeat $! pass$1 0 l[$>,-1]
+  repeat $! pass$1 0 l[$>,-1] {
     w2={0,int(w/2)} h2={0,int(h/2)} d2={0,int(d/2)}
     r[1] [0],[0],[0],1,0,0,0.5,0.5,0.5,0.5 shift[1] -$w2,-$h2,-$d2,0,2
     fft[0] fft[2]                 # a b a' b'
@@ -15336,7 +15348,7 @@ deconvolve_fft : check ${is_image_arg\ $1}" && ${2=.001}>=0"
     +[-4,-3]                      # aa'+bb' (a'^2+b'^2) ba'-ab'
     /. .. /[-3,-2]                # divide (aa'+bb') and (ba'-ab') by (a'^2+b'^2)
     ifft rm.
-  done done
+  } done
 
 #@cli deinterlace : _method={ 0 | 1 }
 #@cli : Deinterlace selected images ('method' can be { 0=standard or 1=motion-compensated }).
