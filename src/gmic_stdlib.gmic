@@ -22083,7 +22083,7 @@ apply_parallel :
 _apply_parallel :
   e[0--3] "Apply command '$*' on all image"$_gmic_s" in parallel, using "$_cpus" threads."
   if $!" && "narg("$*")
-    m "_ap : repeat $! l[$>] $* if $! k[0] else 0 fi done done"
+    m "_ap : foreach $* if $! k[0] else 0 fi done"
     N={min($!,$_cpus)}
     commands= sep= repeat $N commands=$commands${sep}_ap[$>--1:$N] sep=, done
     parallel $commands
@@ -22128,9 +22128,7 @@ _apply_parallel_overlap : check "${2=0}>=0 && isint(${3=0}) && $3>=0"
   __apo_exception=""
   m "_check1 : if $!!=1 rm 0 __apo_exception=\"Command 'apply_parallel_overlap': Specified command '$1' changes the
      size of the image stack.\" fi"
-  repeat $! l[$>]
-    _apply_parallel_overlap$N "$1",$2
-  done done
+  foreach { _apply_parallel_overlap$N "$1",$2 }
   um _check1
 
 _apply_parallel_overlap1 :
@@ -22192,7 +22190,7 @@ apply_tiles : check "${2=10%}>0 && ${3=10%}>0 && ${4=10%}>0 && ${5=0}>=0 && ${6=
 _apply_tiles :
   e[0--3] "Apply command '$1' on $2x$3x$4 tiles of image$?, with overlaps ($5,$6,$7) and "\
           ${"arg 1+$8,dirichlet,neumann,periodic,mirror"}" boundary conditions."
-  repeat $! l[$>]
+  foreach
     bw={cut(round(${"is_percent $2"}?w*$2:$2),1,w)}
     bh={cut(round(${"is_percent $3"}?h*$3:$3),1,h)}
     bd={cut(round(${"is_percent $4"}?d*$4:$4),1,d)}
@@ -22228,7 +22226,7 @@ _apply_tiles :
     rm[-2,-1]
     s. c,-{0,s} /[-2,-1] k.
     um __at
-  done done
+  done
 
 #@cli apply_timeout : "command",_timeout={ 0=no timeout | >0=with specified timeout (in seconds) }
 #@cli : Apply a command with a timeout.
@@ -23729,7 +23727,7 @@ array : check "isint($1) && $1>0 && isint(${2=$1}) && $2>0" skip ${3=0}
 #@cli : $ image.jpg array_fade 3,2
 array_fade : skip ${2=$1},${3=60},${4=90},${5=1}
   e[^-1] "Create $1x$2 array of ($3%,$4%) faded tiles from image$?, with expand type $5."
-  repeat $! l[$>] . shift.. {round(w/2)},{round(h/2)},1,1,2 fade_diamond $3,$4 done done
+  foreach { . shift.. {round(w/2)},{round(h/2)},1,1,2 fade_diamond $3,$4 }
   array $1,$2,$5
 
 #@cli array_mirror : N>=0,_dir={ 0=x | 1=y | 2=xy | 3=tri-xy },_expand_type={ 0 | 1 }
@@ -23744,12 +23742,12 @@ array_mirror : skip ${2=2},${3=0}
       else r 50%,50%,100%,100%,2
       fi
     fi
-    repeat $! l[$>]
+    foreach {
       if $2==0 +mirror x a x
       elif $2==1 +mirror y a y
       else +mirror x a x +mirror y a y if $2==3 r 150%,150%,1,100%,0,2,1,1 fi
       fi
-    done done
+    }
   done
 
 #@cli array_random : Ms>0,_Ns>0,_Md>0,_Nd>0
@@ -23758,11 +23756,13 @@ array_mirror : skip ${2=2},${3=0}
 #@cli : $ image.jpg +array_random 8,8,15,10
 array_random : skip ${2=$1},${3=$1},${4=$2}
   e[^-1] "Create $3x$4 array of tiles from $1x$2 array$?."
-  repeat $! l[$>] nm={0,n}
+  foreach {
+    nm={0,n}
     split_tiles $1,$2
     repeat $3 repeat $4 [{u($1*$2-1)}] done done
     rm[0-{$1*$2-1}] append_tiles $3,$4
-  :: $nm done done
+    :: $nm
+  }
 
 #@cli frame : eq. to 'frame_xy'.
 frame : skip ${2=$1}>=0,${3=255},${4=$3},${5=$4},${6=255}
@@ -23774,11 +23774,13 @@ frame : skip ${2=$1}>=0,${3=255},${4=$3},${5=$4},${6=255}
 #@cli : $ image.jpg frame_blur 3,30,8,10%
 frame_blur : skip ${1=10},${2=30},${3=0},${4=1},${5=3%}
   e[^-1] "Draw round frame on image$?, with sharpness $1, size $2, smoothness $3, shading $4 and blur $5."
-  to_rgba repeat $! l[$>] nm={0,n}
+  to_rgba foreach {
+     nm={0,n}
     100%,100%,1,1,"-(abs(x/w-0.5)^$1 + abs(y/h-0.5)^$1)^(1/$1)" >=. $2%
     if $4 distance. 1 n. 0,1 *. -1 +. 1 ^. {1/$4} fi
     b. $3 +b.. $5 mv. -3 blend_fade[0,1] . rm.
-  :: $nm done done
+    :: $nm
+  }
 
 #@cli frame_cube : _depth>=0,_centering_x,_centering_y,_left_side={0=normal | 1=mirror-x | 2=mirror-y | 3=mirror-xy},\
 # _right_side,_lower_side,_upper_side
@@ -23787,7 +23789,8 @@ frame_blur : skip ${1=10},${2=30},${3=0},${4=1},${5=3%}
 #@cli : $ image.jpg frame_cube ,
 frame_cube : check "${1=1}>=0" skip ${2=0},${3=0},${4=0},${5=0},${6=0},${7=0}
   e[^-1] "Insert 3D frame in image$?, with depth $1, centering point ($2,$3) and orientations (${4--1})."
-  repeat $! l[$>] nm={0,n} split_opacity
+  foreach {
+    nm={0,n} split_opacity
     if $!==2 frame_cube ${1--1} a c  # Manage image with alpha-channel.
     else
       m={max(w,h)} w={w} h={h} s={s}
@@ -23807,7 +23810,8 @@ frame_cube : check "${1=1}>=0" skip ${2=0},${3=0},${4=0},${5=0},${6=0},${7=0}
       j3d. ..,50%,50%,0,1,2,0,0 rm..
       r $w,$h,1,100%,2
     fi
-  :: $nm done done
+    :: $nm
+  }
 
 _frame_cube :
   if $1==1 r3d. 0,1,0,180 rv3d.
@@ -23821,14 +23825,15 @@ _frame_cube :
 #@cli : $ image.jpg frame_fuzzy 20
 frame_fuzzy : skip ${2=$1},${3=5},${4=1},${5=255},${6=$5},${7=$6},${8=255}
   e[^-1] "Draw $1x$2 fuzzy frame on image$?, with fuzzyness $3, smoothness $4 and RGBA color ($5,$6,$7,$8)."
-  to_rgba repeat $! l[$>]
+  to_rgba
+  foreach {
     100%,100%,1,1,1
     padx={if(${"is_percent $1"},$1*(w-1)/2,$1)}
     pady={if(${"is_percent $2"},$2*(h-1)/2,$2)}
     rectangle. $padx,$pady,{w-1-$padx},{h-1-$pady}
     spread. $3 b. $4 100%,100%,1,4 fc. ${5-8}
     j[0] [2],0,0,0,0,1,[1] k[0]
-  done done
+  }
 
 #@cli frame_painting : _size[%]>=0,0<=_contrast<=1,_profile_smoothness[%]>=0,_R,_G,_B,_vignette_size[%]>=0,\
 # _vignette_contrast>=0,_defects_contrast>=0,0<=_defects_density<=100,_defects_size>=0,_defects_smoothness[%]>=0,\
@@ -23846,7 +23851,7 @@ frame_painting :
           vignette size $7, vignette strength $8, defects contrast $9, defects density $10, defects size $11,
           defects smoothness $12 and serial number $13."
   if !$1 return fi
-  repeat $! l[$>]
+  foreach
     $1,$1 s={max(w,h)} rm.                             # Determine size of the frame
     ('${dec2bin\ $13}') -. {'0'} r. $s                 # Generate frame profile from serial number
     transpose. b. $3 n. {1-$2},{1+$2}
@@ -23871,42 +23876,44 @@ frame_painting :
     ..,..,1,1,-255 r. ..,..,1,1,0,0,0.5,0.5 +. 255 +b. $7 n. 0,$8 max[-2,-1] c. 0,255 # Frame opacity.
     a[-2--1] c
     r.. .,.,1,100%,0,0,0.5,0.5 blend alpha # Insert initial image into frame picture.
-  done done
+  done
 
 _frame_painting : # Add color + texture to each frame part.
-  repeat $! l[$>]
+  foreach {
     +*. $2 +*.. $3 *... $1 a[-3--1] c
     100%,100%
     i=0 do rand. 0,1 remove_pixels. {100-$5}% b. $6 >=. 50% i+=1 while "m=$5/200;(ia<m-0.2 || ia>m+0.2) && "$i"<10"
     b. $7 g. +[-2,-1] n. -$4,$4
     +[-2,-1] c. 0,255
-  done done
+  }
 
 #@cli frame_pattern : M>=3,_constrain_size={ 0 | 1 } : M>=3,_[frame_image],_constrain_size={ 0 | 1 }
 #@cli : Insert selected pattern frame in selected images.
 #@cli : Default values: 'pattern=0' and 'constrain_size=0'.
 #@cli : $ image.jpg frame_pattern 8
-frame_pattern : check $1>=3 skip "${2=0},${3=}"
+frame_pattern : check $1>=3 skip "${2=0},${3=0}"
   to_colormode 0
   if ${"is_image_arg $2"} # Frame from specified image.
     e[^-1] "Insert $1x$1 pattern frame on image$?, using frame image$2."
-    pass$2 0 repeat $!-1 l[$>,-1]
+    pass$2 0
+    foreach[^-1] pass.
       wh={0,w},{0,h}
       +r[1] {0,max(1,w/($1-2))},{0,max(1,h/($1-2))},1,100%,2
       r[0] {{0,w}+2*w},{{0,h}+2*h},1,100%,0,0,0.5,0.5
       [-1]x{$1+2} a[{-$1-2}--1] x j[0] .,0,0 j[0] .,0,{{0,h}-1-h} rm.
       [-1]x{$1+1} a[{-$1-2}--1] y j[0] .,0,0 j[0] .,{{0,w}-1-w} rm.
       if $3 r[0] $wh,1,100%,2 fi
-    done done rm.
+      rm.
+    done rm.
   else # Self-frame.
     e[^-1] "Insert $1x$1 self-pattern frame on image$?."
-    repeat $! l[$>]
+    foreach
       wh={w},{h}
       +r {max(1,w/($1-2))},{max(1,h/($1-2))},1,100%,2 r.. {$1*w},{$1*h},1,100%,0,0,0.5,0.5
       [-1]x{$1+2} a[{-$1-2}--1] x j... .,0,0 j... .,0,{{-3,h}-1-h} rm.
       [-1]x{$1+1} a[{-$1-2}--1] y j.. .,0,0 j.. .,{{-2,w}-1-w} rm.
       if $3 r $wh,1,100%,2 fi
-    done done
+    done
   fi
 
 #@cli frame_round : _sharpness>0,_size>=0,_smoothness,_shading,_R,_G,_B,_A
@@ -23916,11 +23923,14 @@ frame_pattern : check $1>=3 skip "${2=0},${3=}"
 frame_round : skip ${1=10},${2=10},${3=0},${4=0},${5=255},${6=$5},${7=$6},${8=255}
   e[^-1] "Draw round frame on image$?, with sharpness $1, size $2, smoothness $3, shading $4 and
           RGBA color ($5,$6,$7,$8)."
-  to_rgba repeat $! l[$>] nm={0,n}
+  to_rgba
+  foreach {
+    nm={0,n}
     100%,100%,1,1,"-(abs(x/w-0.5)^$1 + abs(y/h-0.5)^$1)^(1/$1)" >=. $2%
     if $4 distance. 1 n. 0,1 *. -1 +. 1 ^. {1/$4} fi
     b. $3 i... 100%,100%,1,4 fc... $5,$6,$7,$8 blend_fade[0,1] . rm.
-  :: $nm done done
+    :: $nm
+  }
 
 #@cli frame_seamless : frame_size>=0,_patch_size>0,_blend_size>=0,\
 # _frame_direction={ 0=inner (preserve image size) | 1=outer }
@@ -23930,7 +23940,7 @@ frame_round : skip ${1=10},${2=10},${3=0},${4=0},${5=255},${6=$5},${7=$6},${8=25
 frame_seamless : check "$1>=0 && isint(${2=7}) && $2>0 && isint(${3=5}) && $3>=0" skip ${4=1}
   s0="inner" s1="outer"
   e[^-1] "Insert "${s{!!$4}}" seamless frame in image$?, with size $1, patch size $2 and blend size $3."
-  repeat $! l[$>]
+  foreach {
     w2={round(w/2)} h2={round(h/2)}
     w4={round(w/4)} h4={round(h/4)}
     if !$4 r {max(1,w-$1)},{max(1,h-$1)},1,100%,0,0,0.5,0.5 fi
@@ -23942,7 +23952,7 @@ frame_seamless : check "$1>=0 && isint(${2=7}) && $2>0 && isint(${3=5}) && $3>=0
     inpaint_matchpatch.. [1],0,$2,10,$3
     rm.
     shift {$w4+$w2},{$h4+$h2},0,0,2
-  done done
+  }
 
 #@cli frame_x : size_x[%],_col1,...,_colN
 #@cli : Insert colored frame along the x-axis in selected images.
@@ -23980,14 +23990,14 @@ frame_y : skip ${2=255},${3=$2},${4=$3},${5=255}
   _frame 0,$1,0,${2--1}
 
 _frame :
-  repeat $! l[$>]
+  foreach {
     nm={0,n}
     w={round($1*if(${is_percent\ $1},w,1))}
     h={round($2*if(${is_percent\ $2},h,1))}
     d={round($3*if(${is_percent\ $3},d,1))}
     {w+2*$w},{h+2*$h},{d+2*$d},100% fc[1] ${4--1}
     j[1] [0],$w,$h,$d rm[0] :: $nm
-  done done
+  }
 
 #@cli img2ascii : _charset,_analysis_scale>0,_analysis_smoothness[%]>=0,_synthesis_scale>0,_output_ascii_filename
 #@cli : Render selected images as binary ascii art.
@@ -24051,11 +24061,11 @@ img2ascii : check "${2=16}>0 && ${3=20%}>=0 && ${4=16}>0"
 #@cli : $ image.jpg imagegrid 16
 imagegrid : skip ${2=$1}
   e[^-1] "Create $1x$2 image grid from image$?."
-  repeat $! l[$>]
+  foreach {
     ({w},{h}) ($1,$2) /[-2,-1] round. 1 r.. {^},..,..,2 rm.
     ({w},{h}) ($1,$2) *[-2,-1] r.. {^},..,..,2 rm.
     $1,$2,1,.,1 shift. 1,1 ri. ..,0,2 *
-  done done
+  }
 
 #@cli imagegrid_hexagonal : _resolution>0,0<=_outline<=1
 #@cli : Create hexagonal grids from selected images.
@@ -24063,7 +24073,7 @@ imagegrid : skip ${2=$1}
 #@cli : $ image.jpg imagegrid_hexagonal 24
 imagegrid_hexagonal : check "isint(${1=32}) && $1>0 && ${2=0.1}>=0 && $2<=1"
   e[^-1] "Create hexagonal grid(s) from image$?, with resolution $1 and outline $2."
-  repeat $! l[$>]
+  foreach
 
     # Generate hexagonal grid.
     l[]
@@ -24090,7 +24100,7 @@ imagegrid_hexagonal : check "isint(${1=32}) && $1>0 && ${2=0.1}>=0 && $2<=1"
     [0],[0] j3d. ..,50%,50%,0,1,2,0,0 rm..
     blend shapeaverage0
 
-  done done
+  done
 
 #@cli imagegrid_triangular : pattern_width>=1,_pattern_height>=1,_pattern_type,0<=_outline_opacity<=1,\
 # _outline_color1,...
@@ -24152,7 +24162,8 @@ imagegrid_triangular : check "$1>=1 && ${2=$1}>=1 && isint(${3=0}) && $3>=0 && $
 #@cli : $ image.jpg +linearize_tiles 16
 linearize_tiles : check "$1>0 && ${2=$1}>0"
   e[^-1] "Linearize $1x$2 tiles on image$?."
-  repeat $! l[$>] nm={0,n}
+  foreach {
+    nm={0,n}
     s={s} split_tiles $1,$2 s c # Split as tiles for all channels.
     repeat $! l[$>]
       wh={w},{h}
@@ -24160,7 +24171,8 @@ linearize_tiles : check "$1>0 && ${2=$1}>0"
       $wh,1,1,{@0}"*x + "{@1}"*y + "{@2} rm..
     done done
     repeat int($!/$s) a[-$s--1] c mv. 0 done append_tiles $1,$2
-  :: $nm done done
+    :: $nm
+  }
 
 #@cli map_sprites : _nb_sprites>=1,_allow_rotation={ 0=none | 1=90 deg. | 2=180 deg. }
 #@cli : Map set of sprites (defined as the 'nb_sprites' latest images of the selection) to other selected images,
@@ -24317,16 +24329,18 @@ _puzzle :
 #@cli : $ image.jpg +quadratize_tiles 16
 quadratize_tiles : check "$1>0 && ${2=$1}>0"
   e[^-1] "Quadratize $1x$2 tiles on image$?."
-  repeat $! l[$>] nm={0,n}
+  foreach {
+    nm={0,n}
     s={s} split_tiles $1,$2 s c # Split as tiles for all channels.
-    repeat $! l[$>]
+    foreach {
       wh={w},{h}
       +f x^2 +f. y^2 +f. x*y +f. x +f. y +f. 1 y a[^0] x
       solve.. . rm.
       $wh,1,1,{@0}"*x^2 + "{@1}"*y^2 + "{@2}"*x*y +"{@3}"*x + "{@4}"*y + "{@5} rm..
-    done done
-    repeat int($!/$s) a[-$s--1] c mv. 0 done append_tiles $1,$2
-  :: $nm done done
+    }
+    repeat int($!/$s) { a[-$s--1] c mv. 0 } append_tiles $1,$2
+    :: $nm
+  }
 
 #@cli rotate_tiles : angle,_M>0,N>0
 #@cli : Apply MxN tiled-rotation effect on selected images.
@@ -24342,9 +24356,7 @@ rotate_tiles : skip ${2=8},${3=$2}
 #@cli : $ image.jpg +shift_tiles 8,8,10
 shift_tiles : check "${2=$1}>=0" skip ${3=20}
   e[^-1] "Apply $1x$2 tiled-shift effect on image$?, with amplitude $3."
-  repeat $! l[$>]
-    $1,$2,1,2 noise. $3 r. ..,..,1,2 warp.. .,1,1,0 rm.
-  done done
+  foreach { $1,$2,1,2 noise. $3 r. ..,..,1,2 warp.. .,1,1,0 rm. }
 
 #@cli taquin : M>0,_N>0,_remove_tile={ 0=none | 1=first | 2=last | 3=random },_relief,_border_thickness[%],\
 # _border_outline[%],_outline_color
@@ -24355,7 +24367,8 @@ taquin : check "isint($1) && $1>0 & isint(${2=$1}) && $2>0"
          skip ${3=0},${4=50},${5=5%},${6=0},${7=0},${8=$7},${9=$8},${10=255}
  e[^-1] "Create $1x$2 taquin puzzle from image$?, with relief $4, border thickness $5, border outline $6 and
          outline color (${7--1})."
- repeat $! l[$>] nm={0,n}
+ foreach {
+   nm={0,n}
    split_tiles $1,$2 r ${-min_wh},100%,100%,0
    100%,100%,1,1,1
    if ${"is_percent $5"} rectangle. {100*$5/2}%,{100*$5/2}%,{100-50*$5}%,{100-50*$5}%,1,0
@@ -24366,8 +24379,8 @@ taquin : check "isint($1) && $1>0 & isint(${2=$1}) && $2>0"
    if $3==3 f. 0 fi
    repeat $! mv[$>] {u($!)} done
    if $3==1 f[0] 0 elif $3==2 f. 0 fi
-   append_tiles $1,$2
- :: $nm done done
+   append_tiles $1,$2 :: $nm
+ }
 
 #@cli tunnel : _level>=0,_factor>0,_centering_x,_centering_y,_opacity,_angle
 #@cli : Apply tunnel effect on selected images.
@@ -24375,12 +24388,14 @@ taquin : check "isint($1) && $1>0 & isint(${2=$1}) && $2>0"
 #@cli : $ image.jpg tunnel 20
 tunnel : check "${1=9}>=0 && ${2=80%}>0" skip ${3=0.5},${4=0.5},${5=0.1},${6=0}
   e[^-1] "Apply tunnel effect on image$?, with depth $1, factor $2, centering ($3,$4), opacity $5 and angle $6."
-  repeat $! l[$>]
-    repeat $1 +r. $2,$2,1,100%,5
-    if $6 100%,100%,1,1,1 rotate[-2,-1] $6,1,0 erode. 3 j... ..,{({-3,w}-w)*$3},{({-3,h}-h)*$4},0,0,$5,. rm[-2,-1]
-    else j.. .,{({-2,w}-w)*$3},{({-2,h}-h)*$4},0,0,$5 rm. fi
-    done
-  done done c 0,255
+  foreach {
+    repeat $1 {
+      +r. $2,$2,1,100%,5
+      if $6 100%,100%,1,1,1 rotate[-2,-1] $6,1,0 erode. 3 j... ..,{({-3,w}-w)*$3},{({-3,h}-h)*$4},0,0,$5,. rm[-2,-1]
+      else j.. .,{({-2,w}-w)*$3},{({-2,h}-h)*$4},0,0,$5 rm. fi
+    }
+  }
+  c 0,255
 
 #-----------------------------
 #
