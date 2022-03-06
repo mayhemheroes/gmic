@@ -17592,7 +17592,8 @@ histogram_cumul : check ${1=256}>0 skip ${2=0},${3=0%},${4=100%}
 #@cli : Default values: 'value0=0%' and 'value1=100%'.
 histogram_pointwise : skip ${2=0%},${3=100%}
   e[^-1] "Compute the pointwise histogram of vector-valued points in image$?, with $1 levels."
-  repeat $! l[$>] nm={0,n}
+  foreach {
+    nm={0,n}
     nb_levels={round(if(${is_percent\ $1},(iM-im)*$1,$1))}
     value0={if(${is_percent\ $2},im+(iM-im)*$2,$2)}
     value1={if(${is_percent\ $3},im+(iM-im)*$3,$3)}
@@ -17604,8 +17605,8 @@ histogram_pointwise : skip ${2=0%},${3=100%}
     (1,0;1,{h/3-1}) r. 2,{-2,h/3},1,1,3 round.
     3,100%,1,1,1 1,100%,1,1,-1 y[-5,-3,-2] a[-5--1] y
     {$w*$h*$d},$nb_levels j3d. ..,0,0,0,1,0,0,0 rm..
-    r $w,$h,$d,$nb_levels,-1
-  :: $nm done done
+    r $w,$h,$d,$nb_levels,-1 :: $nm
+  }
 
 #@cli hough : _width>0,_height>0,gradient_norm_voting={ 0 | 1 }
 #@cli : Compute hough transform (theta,rho) of selected images.
@@ -17613,15 +17614,17 @@ histogram_pointwise : skip ${2=0%},${3=100%}
 #@cli : $ image.jpg +blur 1.5 hough[-1] 400,400 blur[-1] 0.5 add[-1] 1 log[-1]
 hough : check "${1=512}>0 && ${2=$1}>0" skip ${3=1}
   e[^-1] "Compute $1x$2 hough transform of image$?, "${arg\ 1+!$3,with,without}" gradient norm voting."
-  slices 50% luminance repeat $! l[$>] nm={0,n}
+  slices 50% luminance
+  foreach {
+    nm={0,n}
     rhomax={sqrt(w^2+h^2)/2}
     g (0,{w-1}) (0;{{-2,h}-1}) r[-2,-1] {-3,w},{-3,h},1,1,3 -.. {w/2} -. {h/2}
     complex2polar[-4--1] -. ... polar2complex[-2,-1] rm.
     +<. 0 *. {pi} +[-3,-1] abs. %.. {2*pi}
     *. {$2/$rhomax} *.. {0.5*$1/pi}
     y[-3--1] x {w} mv[-4] $! if !$3 f. 1 fi
-    a y pointcloud 1 r $1,$2,1,1,0
-  :: $nm done done
+    a y pointcloud 1 r $1,$2,1,1,0 :: $nm
+  }
 
 #@cli ifftpolar
 #@cli : Compute inverse fourier transform of selected images, from centered magnitude/phase images.
@@ -17637,10 +17640,11 @@ ifftpolar :
 #@cli : $ image.jpg blur 2 isophotes 6 dilate_circ 5 display_rgba
 isophotes : skip ${1=64}
   e[^-1] "Render isophote maps from images$?, with $1 levels."
-  to_rgba repeat $! l[$>]
+  to_rgba
+  foreach {
     +luminance repeat $1 +isoline3d[1] {$>*255/($1-1)} done rm[1] +3d[^0] col3d. 1
     [0],[0] j3d. ..,0,0,0,1,0,0,0 rm.. *
-  done done
+  }
 
 #@cli label : _tolerance>=0,is_high_connectivity={ 0 | 1 },_is_L2_norm={ 0 | 1 } : (+)
 #@cli : Label connected components in selected images.
@@ -17656,13 +17660,13 @@ isophotes : skip ${1=64}
 label_fg : check "$1>=0" skip ${2=0}
   e[^-1] "Label foreground connected components on image [1], with tolerance $1 and "\
          ${arg\ 1+!$2,high,low}" connectivity."
-  repeat $! l[$>]
+  foreach {
     if d>1 +z -1,-1,-1,100%,100%,100% label. $1,$2 z. 1,1,1,100%,100%,100%
     else +z -1,-1,100%,100% label. $1,$2 z. 1,1,100%,100%
     fi
     norm.. !=.. 0 * +histogram {1+iM} =. 0
     >. 0 cumulate. map.. . rm.
-  done done
+  }
 
 #@cli laar
 #@cli : Extract the largest axis-aligned rectangle in non-zero areas of selected images.
@@ -17671,7 +17675,7 @@ label_fg : check "$1>=0" skip ${2=0}
 laar :
   e[^-1] "Extract the largest axis-aligned rectangle in non-zero areas of image$?."
   res= sep=
-  repeat $! l[$>]
+  foreach
     +channels 0 gt. 0 :: shape
     +cumulate[shape] xy :: cumul
     val={i[-1,2]}
@@ -17727,7 +17731,7 @@ laar :
       res.=$sep$maxP,{[$maxP]+[$maxW,$maxH]-1} sep=,
     fi
     rm[shape,cumul]
-  done done u $res
+  done u $res
 
 # $1,$2: Rectangle width and height.
 # ${3--1}: Coordinates of candidate locations. If empty, full-search is done.
