@@ -48,6 +48,7 @@
  #
 */
 
+#undef gmic_core
 #include <signal.h>
 #include "CImg.h"
 #include "gmic.h"
