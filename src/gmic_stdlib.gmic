@@ -9360,31 +9360,30 @@ strings2ts : skip "${1=}"
   e[^-1] "Regenerate translation file by merging file '$1' and source/translated strings '$2/$3'."
 
   # Import data and extract original/translated strings.
-  if narg($1)
-    l[] it "$1"
-      lang={`"
-        lang = vector256();
-        p = find(#-1,'language=\"');
-        p>=0?(
-          p+=10;
-          q = find(#-1,'\">',p);
-          q>=0?copy(lang,i[p],q - p);
-        ); lang"`}
-      e[] "  > File '$1', detected language : "$lang.
-      s -,10
-      N0=0
-      foreach {
-        autocrop {'" "'}
-        if s=crop();find(s,'<source>')>=0" && "find(s,'</source>')>=0
-          discard {'<source>'} discard {'</source>'} src$N0={t}
-        elif s=crop();find(s,'<translation>')>=0" && "find(s,'</translation>')>=0
-          discard {'<translation>'} discard {'</translation>'} dest$N0={t}
-          N0+=1
-        fi
-      }
-      rm
-    done
-  else N0=0 lang=
+  if narg($1) l[] {
+    it "$1"
+    lang={`"
+      lang = vector256();
+      p = find(#-1,'language=\"');
+      p>=0?(
+        p+=10;
+        q = find(#-1,'\">',p);
+        q>=0?copy(lang,i[p],q - p);
+      ); lang"`}
+    e[] "  > File '$1', detected language : "$lang.
+    s -,10
+    N0=0
+    foreach {
+      autocrop {'" "'}
+      if s=crop();find(s,'<source>')>=0" && "find(s,'</source>')>=0
+        discard {'<source>'} discard {'</source>'} src$N0={t}
+      elif s=crop();find(s,'<translation>')>=0" && "find(s,'</translation>')>=0
+        discard {'<translation>'} discard {'</translation>'} dest$N0={t}
+        N0+=1
+      fi
+    }
+    rm
+  } else N0=0 lang=
   fi
   if $N0 e[] "  > File '$1' contains "$N0" strings." fi
   l[] { it "$2" s -,10 N1=$! repeat $! { nsrc$>={$>,t} } rm }
@@ -9463,7 +9462,7 @@ parse_gui_zart :
 
   current_group=
   N={$_nbfilters-1}
-  repeat $_nbfilters f=$>
+  repeat $_nbfilters { f=$>
     e[] "\r  >> "$_vt100_c[#$f/$N]$_vt100_n" "{`copy(vector48(_'" "'),['${_f${f}_path}${_f${f}_name}'])`}
 
     # Manage groups.
@@ -9481,7 +9480,7 @@ parse_gui_zart :
     +e[] "<!-- "$path/$fname" -->"
     +e[] "<preset name=\""$fname"\">"
     +e[] "  <command>"${_f${f}_commandpreview}" $""*</command>"
-    repeat ${_f${f}_nbparams} p=$>
+    repeat ${_f${f}_nbparams} { p=$>
       _parse_gui_zart ${_f${f}_p{$p}_name} name=${}
       type=${_f${f}_p{$p}_type}
       nbargs=${_f${f}_p{$p}_nbargs}
@@ -9542,9 +9541,9 @@ parse_gui_zart :
         +e[] "  <value value=\""$arg0"\" />"
       fi
 
-    done
+    }
     +e[] "</preset>\n"
-  done
+  }
   if narg($current_group) +e[] "</preset_group>" fi
   +e[] "</document>"
   e[] "\r  >> "${_vt100_g}{`copy(vector64(_'" "'),'"Output done!"')`}$_vt100_n
@@ -9865,10 +9864,10 @@ upload_binaries : check "isbool(${2=1})"
 # $3 = is_prerelease = { 0 | 1 }
 _update_header_html : check "narg(${1=}) && ${2=0}>0 && isbool(${3=0})"
   filename="$1"
-  l[]
+  l[] {
     it[] $filename
     s +,{'\n'}
-    repeat $! if {$>,h>=64} l[$>]
+    repeat $! { if {$>,h>=64} l[$>] {
       +autocrop {'" "'} autocrop. {'\t'}
       if "find(#0,['Latest stable version: '])>=0"
         is_gmic={"find(#-1,'gmic.eu')>=0"}
@@ -9903,11 +9902,11 @@ _update_header_html : check "narg(${1=}) && ${2=0}>0 && isbool(${3=0})"
         y
       fi
       rm.
-    done fi done
+    } fi }
     a y
     ot $filename
     rm
-  done
+  }
 
 #@cli v : eq. to 'verbose'. : (+)
 
@@ -10600,7 +10599,8 @@ compress_clut : check "${1=1.5}>0 && ${2=0.75}>0 && isint(${3=2048}) && (!$3 || 
   v 0
   max_error,avg_error,max_keypoints,metric,colorspace,try_rbf=${1-6}
   if $try_rbf method=rbf else method=pde fi
-  foreach nm={b}
+  foreach {
+    nm={b}
     if iM>1024 / 257 fi # When input is 16bits
     if d==1 S={round(cbrt(wh))} r $S,$S,$S,100%,-1 fi # When input is a 2D haldclut image
     e[] "\n* Process CLUT '"$nm"' ("{w}"x"{h}"x"{d}")."
@@ -10665,7 +10665,7 @@ compress_clut : check "${1=1.5}>0 && ${2=0.75}>0 && isint(${3=2048}) && (!$3 || 
     1,100%,1,1,"P = I(#0); P[0]*65536 + P[1]*256 + P[2]" rv a x sort {`'$method'=='rbf'?_'+':_'-'`},y z. 1,100%
 
     to_clutname $nm :: ${}
-  done
+  }
 
 # compress_cluts : {"file_pattern" | "file_list.txt"},_max_error>0,_avg_error>0,_max_nb_points>=8
 # Batch compress CLUT files.
@@ -10674,8 +10674,7 @@ compress_cluts : check "${2=1.5}>0 && ${3=0.75}>0 && isint(${4=2048}) && $4>8"
   if isfile(['{/"$1"}']) it[] "$1" s -,{'\n'}
   else files "$1" ('${}') s -,{','}
   fi
-  rv
-  repeat $! l[$<] {
+  foreach {
     filename={t} 0 :: $filename ext={x} rm
     basename $filename
     l[] { ('${}') replace_str .$ext,"" basename={t} rm }
@@ -10710,7 +10709,7 @@ compress_cluts : check "${2=1.5}>0 && ${3=0.75}>0 && isint(${4=2048}) && $4>8"
       o $cclut
     fi
     rm
-  } done
+  }
 
 #@cli compress_rle : _is_binary_data={ 0 | 1 },_maximum_sequence_length>=0
 #@cli : Compress selected images as 2xN data matrices, using RLE algorithm.
@@ -11090,7 +11089,7 @@ noise_perlin : check "${1=16}>0 && ${2=$1}>0 && ${3=$1}>0 && isnum(${4=0}) && is
 noise_poissondisk : check "${1=8}>0 && isint(${2=30}) && $2>0 && ${3=2}>0"
   e[^-1] "Add poisson disk sampling points to image$?, with radius $1, max sample attempts $2 and p-norm $3."
   R0,K,P=${1-3}
-  foreach
+  foreach {
     W,H,D={[w,h,d]}
     value={iM+(im==iM?1:0)}
     R={${is_percent\ $R0}?max(w,h,d)*$R0:$R0}
@@ -11144,7 +11143,7 @@ noise_poissondisk : check "${1=8}>0 && isint(${2=30}) && $2>0 && ${3=2}>0"
       );
       resize(#$points,1,da_size(#$points),1,3,0)"
     k[0]
-  done
+  }
 
 # Determine optimal list of 3D neighbors to be tested.
 +_poissondisk :
@@ -11649,7 +11648,8 @@ autoindex : check "isint($1) && $1>0 && ${2=0}>=0" skip ${3=1}
 #@cli : $ image.jpg rgb2bayer 0 +bayer2rgb 1,1,0.5
 bayer2rgb : skip ${1=1},${2=1},${3=0.5}
   e[^-1] "Transform RGB-Bayer image$? to color images, with smoothness ($1,$2,$3)."
-  channels 0 foreach
+  channels 0
+  foreach {
 
     # Expand image size to avoid problems with borders.
     expand_x {"2 + 4*$1"},0 expand_y {"2 + 4*$1"},0
@@ -11689,8 +11689,7 @@ bayer2rgb : skip ${1=1},${2=1},${3=0.5}
     # Shrink to original image size.
     shrink_x {"2 + 4*$1"},0 shrink_y {"2 + 4*$1"},0
     c 0,255
-
-  done
+  }
 
 #@cli deltaE : [image],_metric={ 0=deltaE_1976 | 1=deltaE_2000 },"_to_Lab_command"
 #@cli : Compute the CIE DeltaE color difference between selected images and specified [image].
@@ -11761,7 +11760,8 @@ colormap : check "isint($1) && $1>=0" skip ${2=1},${3=1}
   if $1 e[0--3] "Estimate colormap with $1 entries for image$?, by "${arg\ 1+!$2,k-means,median-cut}" method."
   else e[0--3] "Estimate full colormap for image$?."
   fi
-  foreach nm={b} is_half=${-is_half}
+  foreach {
+    nm={b} is_half=${-is_half}
 
     if $1 # Estimate quantized colormap.
       r {whd},1,1,100%,-1
@@ -11826,7 +11826,7 @@ colormap : check "isint($1) && $1>=0" skip ${2=1},${3=1}
 
     if $3==1 +norm rv a c sort +,x channels 1,100% fi # Sort colors by increasing norm.
     :: "[colormap of "$nm"]"
-  done
+  }
 
 _colormap : # Implementation of the median-cut algorithm.
   m "__colormap : repeat s { sh[$""1] $> =.. {iv},$""1,0,0,$> rm. }"
@@ -12175,9 +12175,9 @@ lightness :
 #@cli : This function performs a specific score maximization to generate the result, so
 #@cli : it may take some time when 'nb_colors' is high.
 #@cli : Default values: 'nb_colors=256' and 'min_rgb_value=64'.
-lut_contrast : check "isint(${1=256}) && $1>=1 && isnum(${2=48})"
++lut_contrast : check "isint(${1=256}) && $1>=1 && isnum(${2=48})"
   e[^-1] "Generate high-contrast RGB colormap with $1 colors and min RGB value $2."
-  l[]
+  l[] {
 
     # Initialization by farthest point sampling of the RGB cube.
     64,64,64,1 eval "repeat (8,k, x = !!(k&1); y = !!(k&2); z = !!(k&4); i([x,y,z]*(w-1)) = 1)"
@@ -12220,7 +12220,7 @@ lut_contrast : check "isint(${1=256}) && $1>=1 && isnum(${2=48})"
     while $nb_attempts>0
 
     channels 0,2
-  done
+  }
 
 _lut_contrast :
   100%,1,1,1,">
@@ -13435,7 +13435,7 @@ _transfer_pca :
 transfer_rgb : check "${2=0.3}>=0 && ${3=8}>=0 && ${4=0.15}>=0 && ${5=64}>=0 && isint(${6=0})"
   e[^-1] "Transfer colors of image $1 to image$?."
   sigma=1.5
-  repeat $! pass$1 0 l[$>,-1]
+  repeat $! { pass$1 0 l[$>,-1] {
     nm_source={0,b} nm_target={1,b}
     :: source,target
 
@@ -13547,12 +13547,15 @@ transfer_rgb : check "${2=0.3}>=0 && ${3=8}>=0 && ${4=0.15}>=0 && ${5=64}>=0 && 
     fi
 
     k[res]
-  done done
+  } }
 
 # _transfer_rgb : _gamma>=0,_smoothness>=0,_resolution>0
 # Convert selected images into 3D volumetric scalar function for color matching.
-_transfer_rgb : l[] check "${1=0}>=0 && ${2=1.5}>=0 && ${3=128}>0" gamma=$1 smoothness=$2 res=$3
-  onfail noarg gamma=0 smoothness=1.5 res=128 done
+_transfer_rgb :
+  l[] {
+    check "${1=0}>=0 && ${2=1.5}>=0 && ${3=128}>0" gamma=$1 smoothness=$2 res=$3
+    onfail noarg gamma=0 smoothness=1.5 res=128
+  }
   e[^-1] "Convert image$? as 3D volumetric scalar functions for color matching, with gamma "$gamma",
           smoothness "$smoothness" and resolution "$res"."
   to_rgb
@@ -14044,22 +14047,25 @@ montage : check "isnum(${2=2}) && $2>=0 && $2<=3" skip "${1=X}",${3=0},"${4=}"
   to_colormode 0
 
   # Manage automatic layout.
-  if lowercase('"$1"')=='x' +l
-    repeat $! { ::[$>] $> }
-    repeat $!-1 {
-      if {-2,w>h}" && "w>h mode=V      # Both landscape.
-      elif {-2,h>w}" && "h>w mode=H    # Both portrait.
-      elif {-2,w>h}" && "h>w # Landscape - portrait.
-        if {-2,h/w}<(w/h) mode=V else mode=H fi
-      else # Portrait - landscape.
-        if {-2,w/h}<(h/w) mode=H else mode=V fi
-      fi
-      name=$mode{-2,n}:{n}
-      montage[-2,-1] $mode,$2
-      mv. 0 ::[0] $name
+  if lowercase('"$1"')=='x'
+    +l {
+      repeat $! { ::[$>] $> }
+      repeat $!-1 {
+        if {-2,w>h}" && "w>h mode=V      # Both landscape.
+        elif {-2,h>w}" && "h>w mode=H    # Both portrait.
+        elif {-2,w>h}" && "h>w # Landscape - portrait.
+          if {-2,h/w}<(w/h) mode=V else mode=H fi
+        else # Portrait - landscape.
+          if {-2,w/h}<(h/w) mode=H else mode=V fi
+        fi
+        name=$mode{-2,n}:{n}
+        montage[-2,-1] $mode,$2
+        mv. 0 ::[0] $name
+      }
+      layout={0,n}
+      rm
     }
-    layout={0,n}
-    rm done montage $layout,$2,$3,"$4"
+    montage $layout,$2,$3,"$4"
 
   else # Non-automatic layout.
 
@@ -14947,7 +14953,7 @@ warp_patch : check ${is_image_arg\ $1}" && isint(${2=3}) && $2>=1 && isint(${3=$
   e[^-1] "Patch-warp image$? with backward-absolute displacement field $1, using $2x$3x$4 patches, std factor $5
           and "${"arg 1+$6,dirichlet,neumann,periodic,mirror"}" boundary conditions."
   if $2<=1 pass$1 warp[^-1] .,0 rm. return fi
-  repeat $! pass$1 l[$>,-1] {
+  repeat $! { pass$1 l[$>,-1] {
     nm={0,n}
     [0],[0],[0],1,1 a[0,-1] c # Add weighting channel
     100%,100%,100%,{0,s}
@@ -15025,7 +15031,7 @@ warp_patch : check ${is_image_arg\ $1}" && isint(${2=3}) && $2>=1 && isint(${3=$
         return"
     fi
     s. c,-{0,s-1} /[-2,-1] k. :: $nm
-  } done
+  } }
 
 #@cli warp_rbf : xs0[%],ys0[%],xt0[%],yt0[%],...,xsN[%],ysN[%],xtN[%],ytN[%]
 #@cli : Warp selected images using RBF-based interpolation.
@@ -15505,7 +15511,7 @@ denoise_cnn : skip "${1=0},${2=64}"
   run {t} rm[-2,-1]
 
   # Process images.
-  repeat $N l[$>,$N--1] {
+  repeat $N { l[$>,$N--1] {
     to_color[0]
     if $type==3 srgb2rgb[0]
     elif $type==4 srgb2rgb[0] /[0] 255
@@ -15545,14 +15551,15 @@ denoise_cnn : skip "${1=0},${2=64}"
       draw(#-1,V,X,Y,0,0,$ps,$ps,1,3,-1,mask);
       draw(#-1,mask,X,Y,0,3,$ps,$ps,1,1,-1,mask)"
     rm[-3,-1]
-    l. s c,-3 max. 1 /
-    if $type==3 rgb2srgb.
-    elif $type==4 *. 255 rgb2srgb.
-    fi
-    c 0,255 done
+    l. {
+      s c,-3 max. 1 /
+      if $type==3 rgb2srgb.
+      elif $type==4 *. 255 rgb2srgb.
+      fi
+      c 0,255
+    }
     j[0] . rm.
-
-  } done
+  } }
   rm[$N--1]
 
 #@cli denoise_patchpca : _strength>=0,_patch_size>0,_lookup_size>0,_spatial_sampling>0
@@ -15561,8 +15568,8 @@ denoise_cnn : skip "${1=0},${2=64}"
 #@cli : $ image.jpg +noise 20 cut[-1] 0,255 +denoise_patchpca[-1] ,
 denoise_patchpca : check "${1=1.8} && $1>=0 && isint(${2=7}) && $2>0 && isint(${3=11}) && $3>0 && isint(${4=5}) && $4>0"
   e[^-1] "Denoise image$? using patch-pca, with strength $1, patch size $2, lookup size $3 and spatial sampling $4."
-  foreach l[$>] nm={n}
-    N2={$2*$2} M2={$3*$3} stdnoise=${-std_noise}
+  foreach {
+    nm={n} N2={$2*$2} M2={$3*$3} stdnoise=${-std_noise}
     100%,100%,1,100% :: aggreg
     100%,100% :: weights
     f[0] "*
@@ -15609,7 +15616,7 @@ denoise_patchpca : check "${1=1.8} && $1>=0 && isint(${2=7}) && $2>0 && isint(${
       );
     0);0"
     max[weights] 0.01 /[aggreg,weights] k[aggreg] :: $nm
-  done
+  }
 
 #@cli deriche : std_deviation>=0[%],order={ 0 | 1 | 2 },axis={ x | y | z | c },_boundary_conditions : (+)
 #@cli : Apply Deriche recursive filter on selected images, along specified axis and with
@@ -15858,10 +15865,10 @@ _gradient :
   sx,sy,sz,sc=",",;,/,^
 
   # Process images.
-  repeat $! l[$<] {
+  foreach {
     nm={n} laxes=$axes if '$laxes'==0 if d>1 laxes=xyz else laxes=xy fi fi
     ('$laxes')
-    repeat w
+    repeat w {
       a={`i[#1,$>]`} s=${s$a}
       if 0${gradient_$a}>0 [gradient_$a]
       elif $scheme==-1 # Backward
@@ -15894,9 +15901,9 @@ _gradient :
         fi
       fi
       :: gradient_$a
-    done
+    }
     rm[0,1] ::[^] $nm
-  } done
+  }
   u $is_noaarg
 
 #@cli gradient_norm
@@ -16215,13 +16222,13 @@ inpaint_pde : check ${is_image_arg\ $1}" && ${2=75%}>=0 && isint(${3=1}) && $3>=
   s0="isotropic" s1="Delaunay-guided" s2="edge-guided" s3="mask-guided"
   e[^-1] "Inpaint image$? by mask $1, using a multiscale diffusion algorithm with $2 scales
               and $4 iterations of "${s$3}" diffusion."
-  repeat $! nm={n} pass$1 l[$>,-1]
+  repeat $! { nm={n} pass$1 l[$>,-1] {
     nb_scalesM={ceil(log2(max(w,h,d)))}
     nb_scales={round(${"is_percent $2"}?$nb_scalesM*$2:$2)}
     nb_scales={max(1,min($nb_scales,$nb_scalesM))}
     nb_iter={max(5,$4)}
 
-    repeat $nb_scales
+    repeat $nb_scales {
       {0,"S = 2^"$<"; round([ max(1,w/S), max(1,h/S), max(1,d/S), s ])"}
       100%,100%,100%
       eval[1] "const wl1 = w#-1 - 1;    const hl1 = h#-1 - 1;    const dl1 = d#-1 - 1;
@@ -16281,9 +16288,9 @@ inpaint_pde : check ${is_image_arg\ $1}" && ${2=75%}>=0 && isint(${3=1}) && $3>=
         j... ..,0,0,0,0,1,.
       fi
       rm[-2,-1]
-    done
+    }
     :: $nm rv[0,-1] rm.
-  done rm. done
+  } rm. }
 
 #@cli inpaint_flow : [mask],_nb_global_iter>=0,_nb_local_iter>=0,_dt>0,_alpha>=0,_sigma>=0
 #@cli : Apply iteration of the inpainting flow on selected images.
@@ -16351,7 +16358,8 @@ inpaint_matchpatch : check ${is_image_arg\ $1}"&& ${2=0}>=0 && isint(${3=9}) && 
   e[^-1] "Inpaint image$? with mask $1, using a multiscale patch-matching algorithm with "\
          ${"if $2 u \"$2 \" else u auto- fi"}\
          "scales, $3x$3 patches, $4 iterations per scale and blending size $5."
-  repeat $! pass$1 0 l[$>,-1] nm={0,n}
+  repeat $! { pass$1 0 l[$>,-1] {
+    nm={0,n}
 
     # Init variables and images.
     nm={0,n} nm img,mask
@@ -16362,7 +16370,7 @@ inpaint_matchpatch : check ${is_image_arg\ $1}"&& ${2=0}>=0 && isint(${3=9}) && 
     im={img,im} -[img] $im
 
     first_iter=1 iter=0
-    repeat $nb_scales
+    repeat $nb_scales {
       scale={100*(0.5^$<)}
       e[] "> Process scale "{1+$>}"/"$nb_scales" -> "$scale%
       progress {100*$>/max(1,$nb_scales-1)}
@@ -16418,7 +16426,7 @@ inpaint_matchpatch : check ${is_image_arg\ $1}"&& ${2=0}>=0 && isint(${3=9}) && 
         rm[scaled_img,scaled_mask,scaled_reference] channels[correspondence] 0,1
       fi
 
-    done
+    }
     progress 100
 
     # Generate final result.
@@ -16429,7 +16437,7 @@ inpaint_matchpatch : check ${is_image_arg\ $1}"&& ${2=0}>=0 && isint(${3=9}) && 
     fi
     +[img] $im
     ::[0] $nm
-  done rm[mask] done
+  } rm[mask] }
 
 # _inpaint_matchpatch : [correspondence_map],[mask],blend_size>0,_allow_outer_blending={ 0 | 1 }
 _inpaint_matchpatch :
@@ -16934,7 +16942,7 @@ remove_hotpixels : check ${1=3}>0 skip ${2=10%}
 #@cli : $ image.jpg +remove_pixels 50%
 remove_pixels : check "$1>=0"
   e[^-1] "Remove $1 of the non-zero pixels in image$?."
-  foreach
+  foreach {
     +norm !=. 0
     N={is}                                      # Number of non-zero pixels.
     n={round(if(${"is_percent $1"},$N*$1,$1))} # Number of pixels to remove.
@@ -16972,7 +16980,7 @@ remove_pixels : check "$1>=0"
 
       r 100%,{h/$d},$d,100%,-1  # Resize to original dimension (eventually 3D).
     fi
-  done
+  }
 
 #@cli rolling_guidance : std_deviation_s[%]>=0,std_deviation_r[%]>=0,_precision>=0
 #@cli : Apply the rolling guidance filter on selected image.
@@ -17004,7 +17012,7 @@ rolling_guidance : check "${1=4}>=0 && ${2=10}>=0 && ${3=0.5}>=0"
 sharpen : check "$1>=0 && ${2=0}>=0 && ${3=0}>=0 && ${4=0}>=0"
   if $2>0 # Shock filters
     e[0--3] "Sharpen image$? with shock filters, amplitude $1, edge $2, alpha $3 and sigma $4."
-    foreach
+    foreach {
       im,iM={[im,iM]}
       +b $3 structuretensors. 0 b. $4 eigen. l.. { max 0 s c + + 1 ^ {-0.5*$2} *. -1 +. 1 }
       if {0,d>1} # 3D
@@ -17060,7 +17068,7 @@ sharpen : check "$1>=0 && ${2=0}>=0 && ${3=0}>=0 && ${4=0}>=0"
           amp*sign(itt)*abs(it)"
       fi
       *. {$1/abs(maxabs(im,iM))} rm[-3,-2] - c $im,$iM
-    done
+    }
   else # Inverse diffusion
     e[0--3] "Sharpen image$? with inverse diffusion and amplitude $1."
     foreach {
@@ -17193,7 +17201,7 @@ solidify : check "${1=75%}>=0 && isint(${2=1}) && $2>=0 && $2<=2 && ${3=20}>=0"
 #@cli : $ image.jpg crop 2,282,50,328 +syntexturize 320,320
 syntexturize : check "${1=100%}>0 && ${2=$1}>0"
   e[^-1] "Resynthetize $1x$2 versions of texture$? by phase randomization."
-  foreach
+  foreach {
 
     # Prepare input image data.
     mM={[im,iM]} repeat s { sh. $> sum$>={is} var$>={iv} rm. } # Retrieve some stats for post-normalization.
@@ -17230,8 +17238,7 @@ syntexturize : check "${1=100%}>0 && ${2=$1}>0"
     ifft rm.
     repeat s { sh. $> avg={ia} -. $avg *. {sqrt(${var$>}/if(iv,iv,1))} +. $avg rm. }
     c $mM
-
-  done
+  }
 
 #@cli syntexturize_matchpatch : _width[%]>0,_height[%]>0,_nb_scales>=0,_patch_size>0,_blending_size>=0,_precision>=0
 #@cli : Resynthetize 'width'x'height' versions of selected micro-textures using a patch-matching algorithm.
