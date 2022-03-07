@@ -239,7 +239,7 @@ help : skip ${1=""}
     fi
     if isfile(['{/$_path_rc/update$_version.gmic}'])
       l[] {
-        cimgz:$_path_rc/update$_version.gmic
+        i cimgz:$_path_rc/update$_version.gmic
         onfail l[] { it[] $_path_rc/update$_version.gmic onfail }
       }
     fi
@@ -3858,19 +3858,19 @@ merge_multiline_comments :
 #@cli : Default value: 'reverse_endianness=0'.
 output_565 : check "isbool(${2=0})"
   e[^-1] "Output image$? as raw RGB-565 file '$1'."
-  N=$! repeat $N +l[$>] {
+  N=$! repeat $N { +l[$>] {
     s c c 0,255 /[-3,-1] 8 /.. 4 round
     bsl... 11 bsl.. 5 +
     if $N>1 fn=${"filename \"$1\",$>"} else fn="$1" fi
     if $2 endian ushort fi
     o raw:$fn,ushort rm
-  } done is_change 0
+  } } is_change 0
 
 #@cli output_cube : "filename"
 #@cli : Output selected CLUTs as a .cube file (Adobe CLUT format).
 output_cube :
   e[^-1] "Output CLUT$? as file '$1'."
-  N=$! repeat $N +l[$>] {
+  N=$! repeat $N { +l[$>] {
     to_rgb
     l={round((w*h*d)^(1/3))}
     if w*h*d!=$l^3 error "Command '$0': CLUT '"{n}"' has invalid dimensions "({w},{h},{d},{s}). fi
@@ -3888,18 +3888,18 @@ output_cube :
            "# LUT data points\n"
     i[0] ('$header')
     y a y ot $fn rm
-  } done is_change 0
+  } } is_change 0
 
 #@cli output_flo : "filename"
 #@cli : Output selected optical flow as a .flo file (vision.middlebury.edu file format).
 output_flo :
   e[^-1] "Output optical flow$? as file '$1'."
-  N=$! repeat $N +l[$>] {
+  N=$! repeat $N { +l[$>] {
    w,h={[w,h]}
    channels 0,1 permute cxyz i[0] (202021.25) i[1] ($w,$h) cast[1] uint,float y a y
    if $N>1 fn=${"filename \"$1\",$>"} else fn="$1" fi
    o raw:$fn,float rm
- } done is_change 0
+ } } is_change 0
 
 #@cli output_ggr : filename,_gradient_name
 #@cli : Output selected images as .ggr gradient files (GIMP).
@@ -3907,7 +3907,7 @@ output_flo :
 output_ggr : skip "${2=}"
  e[^-1] "Output image$? as .ggr gradient file '$1'."
  N=$!
-  repeat $N +l[$>] {
+  repeat $N { +l[$>] {
     r 1,{w*h*d},1,100%,-1 to_rgba / 255
     if narg("$2") name="$2"
     else l[] { 1 :: "$1" ('{b}') f "if(x==0 && i>=_'a' && i<=_'z',i-_'a'+_'A',i)" name={t} rm }
@@ -3924,7 +3924,7 @@ output_ggr : skip "${2=}"
     rm[0] a x
     if $N>1 ot ${"filename \"$1\",$>"} else ot "$1" fi
     rm
-  } done is_change 0
+  } } is_change 0
 
 #@cli output_gmz : filename,_datatype
 #@cli : Output selected images as .gmz files (G'MIC native file format).
@@ -9282,9 +9282,9 @@ update_tutorial_html : check "isbool(${1=0})"
   x "ln -fs "$HOME/work/src/gmic/html/footer.html" ."
   x "mkdir -p images scripts"
   files 5,$path_tutorial/*
-  l[]
+  l[] {
     ({'${}'}:y) s -,{','}
-    for $!
+    for $! {
       file={0,t} rm[0]
       basename $file basename=${} 0 :: $basename ext={`lowercase(['{x}'])`} rm.
       if ['$basename']!='img'
@@ -9298,8 +9298,8 @@ update_tutorial_html : check "isbool(${1=0})"
           ot. $basename rm.
         fi
       fi
-    done
-  done
+    }
+  }
 
   # Generate html pages.
   files 0,*.gmd files=${}
@@ -14035,7 +14035,8 @@ montage : check "isnum(${2=2}) && $2>=0 && $2<=3" skip "${1=X}",${3=0},"${4=}"
 
     # Format and check validity of layout code.
     N=$!
-    l[] _scode="$1" _mode=$2
+    l[] {
+      _scode="$1" _mode=$2
       if lowercase('"$1"')=='h' if $N>1 {$N-1},1,1,1,-1 $N,1,1,1,x a x y else return fi # Simple horizontal montage.
       elif lowercase('"$1"')=='v' if $N>1 {$N-1},1,1,1,-2 $N,1,1,1,x a x y else return fi # Simple vertical montage.
       elif s=lowercase('"$1"');s=='a'||s=='b' # Montage as an array.
@@ -14054,11 +14055,13 @@ montage : check "isnum(${2=2}) && $2>=0 && $2<=3" skip "${1=X}",${3=0},"${4=}"
         foreach { if im>=0 ++. 48 =.. {t} rm. rows 0 fi } a y discard -5
       fi
       f 'if(i<0,i,i%$N)'
-    done
+    }
     if $!==$N rm return fi  # Empty layout code.
-    ::[^-1] 0 repeat h c={i[$>]} # Duplicate multiple references.
+    ::[^-1] 0
+    repeat h {
+      c={i[$>]} # Duplicate multiple references.
       if $c>=0 if {$c,n} i.. [$c] i={$!-2} =. $i,0,$> ref$i=$c else ::[$c] 1 ref$c=$c fi fi
-    done
+    }
     _code={^} _lcode={narg($_code)} rm.
 
     # Determine image positions and sizes.
@@ -16644,8 +16647,8 @@ normalize_local :
   e[^-1] "Normalize image$? locally, with amplitude $1, radius $2, neighborhood smoothness $3 and
           average smoothness $4."
   foreach {
-    +l erode {2*$2+1} s c min done
-    +l.. dilate {2*$2+1} s c max done
+    +l { erode {2*$2+1} s c min }
+    +l.. { dilate {2*$2+1} s c max }
     +b... $4 b[-3,-2] $3
     +-.. ... +. 0.01 -[-5] [-4] /[-5,-1]
     *[-3,-2] {$1+1} *. -$1 +... . +[-2,-1]
@@ -16659,11 +16662,11 @@ normalize_local :
 #@cli : $ image.jpg +shift -30,-20 +normalized_cross_correlation[0] [1]
 normalized_cross_correlation : check ${is_image_arg\ $1}
   e[^-1] "Compute normalized cross-correlation of image$? with mask $1."
-  pass$1 0 norm repeat $!-1 . l[$>,-1] {
+  pass$1 0 norm repeat $!-1 . { l[$>,-1] {
     fft.. fft. [-2,-1] *.. [-5] *. [-6]
     -[-2,-1] *[-5,-3] *[-3,-2] +[-3,-2] [-2,-1] a[-2,-1] c norm.
     /... . /[-2,-1] ifft rm.
-  } done rm.
+  } } rm.
 
 #@cli percentile : [mask],0<=_min_percentile[%]<=100,0<=_max_percentile[%]<=100.
 #@cli : Apply percentile averaging filter to selected images.
@@ -16726,11 +16729,12 @@ phase_correlation : check ${"is_image_arg $1"}
   pass$1
   repeat $!-1 {
     normalized_cross_correlation[$>] .
-    l[$>] eval "
-      store([xM>=w/2?xM - w:xM,
-             yM>=h/2?yM - h:yM,
-             zM>=d/2?zM - d:zM]*=-1,'res',1,1,1,3)"
-    done
+    l[$>] {
+      eval "
+        store([xM>=w/2?xM - w:xM,
+               yM>=h/2?yM - h:yM,
+               zM>=d/2?zM - d:zM]*=-1,'res',1,1,1,3)"
+    }
     $res :: "[phase correlation]" rv[$>,-1] rm.
   } rm.
 
@@ -16740,14 +16744,14 @@ phase_correlation : check ${"is_image_arg $1"}
 #@cli : $ image.jpg +pde_flow 20
 pde_flow : skip ${1=10},${2=30},${3=laplacian},${4=0}
   e[^-1] "Apply $1 iterations of the velocity flow '$3' on image$?, with time step $2."
-  repeat $! l[$<] {
+  foreach {
     repeat $1 {
       +$3. *. {$2/(0.01+max(abs(im),abs(iM)))}
       if $4 +. .. else +[-2,-1] fi
     }
     if $4 rm[0] fi
     a x
-  } done
+  }
   if $4 s x,$1 fi
 
 #@cli periodize_poisson
@@ -16785,7 +16789,7 @@ rbf :
     check $dx>0
     e[^-1] "Reconstruct 1D image from keypoint set$?, with size "$dx", "\
      "from ("$x0") to ("$x1") and phi(r) = "$phi_r.
-    foreach nm={n} if !w $dx elif whd==1 channels. 1,100% r. $dx,1,1,100% else
+    foreach { nm={n} if !w $dx elif whd==1 channels. 1,100% r. $dx,1,1,100% else
       r 1,{whd},1,100%,-1 permute. cyzx
       $dx,1,1,{w-1},"*
         begin(
@@ -16805,7 +16809,7 @@ rbf :
         ref(vectors(),res); x = (x - "$x0")*fx;
         repeat (h#0,k, r = abs(x - X[k]); res+=W[s*k,s]*phi(r))"
       k. :: $nm
-    fi done
+    fi }
 
   elif isin($#,2,6,7) # 2D reconstruction
     dx,dy,x0,y0,x1,y1=$a1,$a2,{$#>2?[$a3,$a4,$a5,$a6]:[0,0,[$a1,$a2]-1]}
@@ -16813,7 +16817,7 @@ rbf :
     check $dx>0" && "$dy>0
     e[^-1] "Reconstruct 2D image from keypoint set$?, with size "$dx,$dy", "\
      "from ("$x0,$y0") to ("$x1,$y1") and phi(r) = "$phi_r.
-    foreach nm={n} if !w $dx,$dy elif whd==1 channels 2,100% r. $dx,$dy,1,100% else
+    foreach { nm={n} if !w $dx,$dy elif whd==1 channels 2,100% r. $dx,$dy,1,100% else
       r 1,{whd},1,100%,-1 permute. cyzx
       $dx,$dy,1,{w-2},"*
         begin(
@@ -16835,7 +16839,7 @@ rbf :
         ref(vectors(),res); x = (x - "$x0")*fx; y = (y - "$y0")*fy;
         repeat (h#0,k, r = norm(x - X[k], y - Y[k]); res+=W[s*k,s]*phi(r))"
       k. :: $nm
-    fi done
+    fi }
 
   elif isin($#,3,9,10) # 3D reconstruction
     dx,dy,dz,x0,y0,z0,x1,y1,z1=$a1,$a2,$a3,{$#>3?[$a4,$a5,$a6,$a7,$a8,$a9]:[0,0,0,[$a1,$a2,$a3]-1]}
@@ -16843,7 +16847,7 @@ rbf :
     check $dx>0" && "$dy>0" && "$dz>0
     e[^-1] "Reconstruct 3D image from keypoint set$?, with size "$dx,$dy,$dz", "\
      "from ("$x0,$y0,$z0") to ("$x1,$y1,$z1") and phi(r) = "$phi_r.
-    foreach nm={n} if !w $dx,$dy,$dz elif whd==1 channels 3,100% r. $dx,$dy,$dz,100% else
+    foreach { nm={n} if !w $dx,$dy,$dz elif whd==1 channels 3,100% r. $dx,$dy,$dz,100% else
       r 1,{whd},1,100%,-1 permute. cyzx
       $dx,$dy,$dz,{w-3},"*
         begin(
@@ -16867,7 +16871,7 @@ rbf :
         ref(vectors(),res); x = (x - "$x0")*fx; y = (y - "$y0")*fy; z = (z - "$z0")*fz;
         repeat (h#0,k, r = norm(x - X[k], y - Y[k], z - Z[k]); res+=W[s*k,s]*phi(r))"
       k. :: $nm
-    fi done
+    fi }
 
   else error[0--2] "Command 'rbf': invalid arguments '$*'."
   fi
@@ -16972,7 +16976,7 @@ sharpen : check "$1>=0 && ${2=0}>=0 && ${3=0}>=0 && ${4=0}>=0"
     e[0--3] "Sharpen image$? with shock filters, amplitude $1, edge $2, alpha $3 and sigma $4."
     foreach
       im,iM={[im,iM]}
-      +b $3 structuretensors. 0 b. $4 eigen. l.. max 0 s c + + 1 ^ {-0.5*$2} *. -1 +. 1 done
+      +b $3 structuretensors. 0 b. $4 eigen. l.. { max 0 s c + + 1 ^ {-0.5*$2} *. -1 +. 1 }
       if {0,d>1} # 3D
         +f[0] "const boundary = 1;
           minmod(a,b) = (a*b<=0?0:minabs(a,b));
@@ -17069,7 +17073,7 @@ solve_poisson : check "${2=60}>=0 && ${3=5}>0 && ${4=0}>=0"
     repeat if($4,$4,int(max(log2(max(w,h))-1,1))) {
       f={2^$<}
       r[1] {0,max(1,w/$f)},{0,max(1,h/$f)},1,100%,3
-      +ri[0] [1],2 l. -$1 k[0] done
+      +ri[0] [1],2 l. { $1 k[0] }
       repeat $2 { +laplacian.. -. .. *. {$3/max(1e-8,abs(im),abs(iM))} +[-3,-1] }
       rm.
     }
@@ -17085,8 +17089,8 @@ solve_poisson : check "${2=60}>=0 && ${3=5}>0 && ${4=0}>=0"
 split_details : check "isint(${1=4}) && $1>0 && ${2=0}>=0 && ${3=0}>=0"
   if ($2)==0" && "($3)==0
     e[^-1] "Split image$? using $1 spatial scales and 'a trous' wavelets."
-    repeat $! l[$<] {
-      repeat $1-1
+    foreach {
+      repeat $1-1 {
         +f. "begin(interpolation = 0; boundary = 1; d = 2^"$>"; d2 = d*2);
               i(x - d2) + i(x + d2) + 4*i(x - d) + 4*i(x + d) + 6*i;"
         /. 16
@@ -17101,8 +17105,9 @@ split_details : check "isint(${1=4}) && $1>0 && ${2=0}>=0 && ${3=0}>=0"
           /. 16
         fi
         -.. .
-      done rv
-    } done
+      }
+      rv
+    }
   else
     e[^-1] "Split image$? using $1 spatial scales with base scale $2 and detail scale $3."
     foreach {
@@ -17119,7 +17124,7 @@ split_details : check "isint(${1=4}) && $1>0 && ${2=0}>=0 && ${3=0}>=0"
 #@cli : $ image.jpg structuretensors abs pow 0.2
 #@cli : $$ https://gmic.eu/oldtutorial/_structuretensors
 structuretensors : skip "${1=}"
-  l[] if "isbool($1)" scheme=$1 else scheme=0 noarg fi onfail scheme=0 noarg done
+  l[] { if "isbool($1)" scheme=$1 else scheme=0 noarg fi onfail scheme=0 noarg }
   s0,s1=centered,forward-backward
   e[^-1] "Compute structure tensor field of image$?, with "${s$scheme}" scheme."
   foreach {
@@ -17264,7 +17269,7 @@ syntexturize_matchpatch : check "${1=100%}>0 && ${2=$1}>0 && isint(${3=0}) && $3
 # _syntexturize_matchpatch : [correspondence_map],blend_size>0
 _syntexturize_matchpatch : check ${is_image_arg\ $1}" && isint(${2=3}) && $2>=0"
   if $2<=1 pass$1 warp[^-1] .,0 rm.
-  else repeat $! pass$1 l[$>,-1] {
+  else repeat $! { pass$1 l[$>,-1] {
     [1],[1],1,[0]
     f. "*begin(
           boundary = 1;
@@ -17295,7 +17300,7 @@ _syntexturize_matchpatch : check ${is_image_arg\ $1}" && isint(${2=3}) && $2>=0"
         );
         avg/norm"
     k.
-  } done fi
+  } } fi
 
 #@cli tv_flow : _nb_iter>=0,_dt,_keep_sequence={ 0 | 1 }
 #@cli : Apply iterations of the total variation flow on selected images.
@@ -17365,7 +17370,8 @@ voronoi :
 watermark_fourier : check ${2=33}>0
   e[^-1] "Add textual watermark '$1' with size $2 in the frequency domain of image$?."
   i[0] 0 t[0] "$1",0,0,$2,1,1 >=[0] 0.5 autocrop[0] 0
-  repeat $!-1 w2={int(w/2)} h2={int(h/2)}
+  repeat $!-1 {
+    w2={int(w/2)} h2={int(h/2)}
     fft.
     shift[-2,-1] $w2,$h2,0,0,2
     [0],[0],1,{s}
@@ -17379,8 +17385,8 @@ watermark_fourier : check ${2=33}>0
     mirror[0] y
     rm.
     shift[-2,-1] -$w2,-$h2,0,0,2
-    ifft[-2,-1] rm.
-  mv. 1 done
+    ifft[-2,-1] rm. mv. 1
+  }
   rm[0]
 
 #@cli watershed : [priority_image],_is_high_connectivity={ 0 | 1 } : (+)
@@ -17514,7 +17520,7 @@ delaunay : skip "${1=0}"
   mode=0 if s=['"$1"'];s=='0'||s=='1' mode=$1 else mode=0 noarg fi
   s0,s1=image,coordinates
   e[^-1] "Generate discrete 2D Delaunay triangulation of non-zero pixels in image$?, in "${s$mode}" mode."
-  repeat $! l[$<] {
+  foreach {
     bnm={b} nm={n}
 
     # Extract and label non-zero pixels.
@@ -17548,7 +17554,7 @@ delaunay : skip "${1=0}"
     # Return output in expected mode.
     if $mode k[-2,-1] :: ${bnm}_points,${bnm}_faces
     else {0,[w,h,1,3]} eval.. "polygon(#-1,3,I[#1,i0],I[#1,i1],I[#1,i2],1,i0,i1,i2)" k. :: $nm fi
-  } done
+  }
 
 #@cli detect_skin : 0<=tolerance<=1,_skin_x,_skin_y,_skin_radius>=0
 #@cli : Detect skin in selected color images and output an appartenance probability map.
@@ -17702,9 +17708,9 @@ hough : check "${1=512}>0 && ${2=$1}>0" skip ${3=1}
 #@cli : Compute inverse fourier transform of selected images, from centered magnitude/phase images.
 ifftpolar :
   e[^-1] "Compute inverse fourier transform of image$?, from centered magnitude/phase images."
-  repeat int($!/2) l[$>,{$>+1}] {
+  repeat int($!/2) { l[$>,{$>+1}] {
     shift {round(w/2)},{round(h/2)},{round(d/2)},0,2 polar2complex ifft rm.
-  } done
+  } }
 
 #@cli isophotes : _nb_levels>0
 #@cli : Render isophotes of selected images on a transparent background.
@@ -17768,7 +17774,7 @@ laar :
       # Step 2: Compute largest rectangle, for W>H.
       maxA,maxW,maxH=0 maxcoords=
       P=$P0 W,H=$Rin
-      for $H>0
+      for $H>0 {
         A={$W*$H} if $A>$maxA maxA,maxW,maxH=$A,$W,$H maxP={[$P][0,2]} fi
         nW={$W+1}
         Q=${_laar\ $nW,$H,$P}
@@ -17781,11 +17787,11 @@ laar :
           fi
         else break
         fi
-      done
+      }
 
       # Step 3: Compute largest rectangle, for H>W.
       P=$P0 W,H=$Rin
-      for $W>0
+      for $W>0 {
         A={$W*$H} if $A>$maxA maxA,maxW,maxH=$A,$W,$H maxP={[$P][0,2]} fi
         nH={$H+1}
         Q=${_laar\ $W,$nH,$P}
@@ -17798,7 +17804,7 @@ laar :
           fi
         else break
         fi
-      done
+      }
 
       res.=$sep$maxP,{[$maxP]+[$maxW,$maxH]-1} sep=,
     fi
@@ -17820,7 +17826,7 @@ _laar : skip "${3=}"
     (${3--1}) r. 2,{w/2},1,1,-1 s. x a[-2,-1] c
     f. ${fn}"x1 = i0 + $1 - 1; y1 = i1 + $2 - 1;
        i(#"$shape",i0,i1) && x1<w#"$shape" && y1<h#"$shape" && cumul(i0,i1,x1,y1)==$1*$2?I:[-1,-1]"
-    l. discard y,-1 if w s c a x res={^} fi rm done
+    l. { discard y,-1 if w s c a x res={^} fi rm }
   else # Test all shape points
     +f[cumul] *${fn}"x1 = x + $1 - 1; y1 = y + $2 - 1;
               i(#"$shape",x,y) && x1<w#"$shape" && y1<h#"$shape" && cumul(x,y,x1,y1)==$1*$2"
@@ -18446,10 +18452,10 @@ tsp : check "${1=256}>=0"
 variance_patch : check "isint(${1=16}) && $1>=1"
   e[^-1] "Compute variance of image patches in image$?, with patch size $1."
   $1,$1,1,1,1 normalize_sum.
-  repeat $!-1 l[$>,-1] {
+  repeat $!-1 { l[$>,-1] {
     +sqr[0] convolve[0,2] [1]
     sqr[0] rv[0,2] -[0,2] max[0] 0
-  } done rm.
+  } } rm.
 
 #---------------------------------
 #
@@ -18595,13 +18601,13 @@ _axes :
 #@cli : $ repeat 9 { ball {1.5^($>+2)},${-rgb} } append x
 +ball : check "${1=64}>0 && ${5=0.8}>=0 && $5<=8 && ${6=1}>=0 && $6<=8 && ${7=1.5}>=0" skip ${2=255},${3=$2},${4=$3}
   e[^-1] "Input $1x$1 ball with color (${2-4}), specular light $5, specular size $6 and shadow factor $7."
-  l[]
-  {2*$1},{2*$1} = 1,65%,30% distance 1 * -1
-  +n 0,1 ^[1] $7 *[1] 1.4 +*[1] $3 +*[1] $4 *[1] $2 a[^0] c
-  >=[0] {100-10*$6}% b[0] {3*$6}% n[0] 0,{$5*255} rv + c 0,255
-  100%,100% circle[1] 50%,50%,34%,1,1 *[0] [1] *. 255 a c
-  r $1,$1,1,4,2
-  done
+  l[] {
+    {2*$1},{2*$1} = 1,65%,30% distance 1 * -1
+    +n 0,1 ^[1] $7 *[1] 1.4 +*[1] $3 +*[1] $4 *[1] $2 a[^0] c
+    >=[0] {100-10*$6}% b[0] {3*$6}% n[0] 0,{$5*255} rv + c 0,255
+    100%,100% circle[1] 50%,50%,34%,1,1 *[0] [1] *. 255 a c
+    r $1,$1,1,4,2
+  }
 
 # chromeball64x64 : Output a 64x64 GreyA chrome ball sprite.
 # ${1-3} = R,G,B
@@ -22468,7 +22474,7 @@ _exec_out :
   it $filename u {t} rm. delete $filename
 
 #@cli for : condition : (+)
-#@cli : Start a 'for...done' block.
+#@cli : Start a 'for...done' of 'for { ... }' block.
 #@cli : $ image.jpg resize2dy 32 400,400,1,3 x=0 for $x<400 image[1] [0],$x,$x x+=40 done
 
 #@cli foreach : (+)
