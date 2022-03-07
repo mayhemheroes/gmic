@@ -17249,12 +17249,12 @@ syntexturize_matchpatch : check "${1=100%}>0 && ${2=$1}>0 && isint(${3=0}) && $3
                                  ${5=5}>=0 && ${6=1}>=0"
   e[^-1] "Resynthetize $1x$2 version(s) of texture$? using a patch-matching algorithm with "\
          ${"if $3 u \"$3 \" else u auto- fi"}"scales, $4x$4 patches, blending size $5 and precision $6."
-  foreach
+  foreach {
     nb_scales={round(if($3,$3,log2(min(w,h)/16)),1,1)}
     width={if(${"is_percent $1"},round(w*$1,1,1),$1)}
     height={if(${"is_percent $2"},round(h*$2,1,1),$2)}
 
-    repeat $nb_scales
+    repeat $nb_scales {
       scale={100*(0.5^$<)}
       +r[0] $scale%,$scale%,1,3,2
 
@@ -17297,11 +17297,10 @@ syntexturize_matchpatch : check "${1=100%}>0 && ${2=$1}>0 && isint(${3=0}) && $3
         matchpatch. ...,$psize,$psize,1,4,4,0,0,.. rm..
       }
       rm..
-
-    done
+    }
     warp_patch.. .,$5
     rm. r $width,$height,1,100%,0,0,0.5,0.5
-  done
+  }
 
 # _syntexturize_matchpatch : [correspondence_map],blend_size>0
 _syntexturize_matchpatch : check ${is_image_arg\ $1}" && isint(${2=3}) && $2>=0"
@@ -17790,7 +17789,7 @@ label_fg : check "$1>=0" skip ${2=0}
 laar :
   e[^-1] "Extract the largest axis-aligned rectangle in non-zero areas of image$?."
   res= sep=
-  foreach
+  foreach {
     +channels 0 gt. 0 :: shape
     +cumulate[shape] xy :: cumul
     val={i[-1,2]}
@@ -17846,7 +17845,8 @@ laar :
       res.=$sep$maxP,{[$maxP]+[$maxW,$maxH]-1} sep=,
     fi
     rm[shape,cumul]
-  done u $res
+  }
+  u $res
 
 # $1,$2: Rectangle width and height.
 # ${3--1}: Coordinates of candidate locations. If empty, full-search is done.
@@ -17995,7 +17995,7 @@ plot2value :
 pointcloud : check "${1=0}<=3 && ${2=0}>=0 && ${3=0}>=0 && ${4=0}>=0"
   e[^-1] "Convert image$? to point clouds, in "${arg\ 2+($1>=0)*$1-($1<0),{-$1}-opacity,binary,cumulative,labeling}\
          " mode, with dimensions $2x$3x$4."
-  foreach
+  foreach {
     nm={0,n}
     if $1!=3 # Render point cloud image from set of point coordinates
 
@@ -18037,7 +18037,7 @@ pointcloud : check "${1=0}<=3 && ${2=0}>=0 && ${3=0}>=0 && ${4=0}>=0"
         I"
     fi
     k. :: $nm
-  done
+  }
 
 #@cli psnr : _max_value
 #@cli : Compute PSNR (Peak Signal-to-Noise Ratio) matrix between selected images.
@@ -18085,7 +18085,7 @@ shape2bump : check "isint(${1=256}) && $1>=0 && ${2=0.75}>=0 && $2<=1 && isnum($
   e[^-1] "Estimate bumpmap from binary shape in image$?, using "\
          ${"if $1 u \"resolution $1\" else u \"full resolution\" fi"}", avg/max weight $2, dilation $3
           and smoothness $4."
-  foreach
+  foreach {
     slices 0 channels 100% > 0 siz={[w,h]}
 
     # Generate skeleton (fast method).
@@ -18139,7 +18139,7 @@ shape2bump : check "isint(${1=256}) && $1>=0 && ${2=0.75}>=0 && $2<=1 && isnum($
 
     j. ..,0,0,0,0,$2 k.
     if $is_resized *. {max([$siz]/[w,h])} r $siz,1,1,5 c 0,100% fi
-  done
+  }
 
 #@cli skeleton : _boundary_conditions={ 0=dirichlet | 1=neumann }
 #@cli : Compute skeleton of binary shapes using distance transform and constrained thinning.
@@ -18148,7 +18148,7 @@ shape2bump : check "isint(${1=256}) && $1>=0 && ${2=0.75}>=0 && $2<=1 && isnum($
 skeleton : check "!isnum(${1=1}) || ($1>=0 && $1<=1)"
   if isnum($1) bc=$1 else bc=1 noarg fi
   e[^-1] "Compute skeleton of binary image$? with "${"arg 1+"$bc",dirichlet,neumann"}" boundary conditions."
-  foreach s c foreach
+  foreach { s c foreach {
                     # [0] = 2D binary shape
     1,16,1,2        # [1] = List of boundary pixels
     1,16,1,2        # [2] = List of boundary pixels (next iteration)
@@ -18204,7 +18204,7 @@ skeleton : check "!isnum(${1=1}) || ($1>=0 && $1<=1)"
         i[#2,h(#2)-1] = 0;
       );"
     k[0] > 0 thinning
-  done a c done
+  } a c }
 
 #@cli slic : size>0,_regularity>=0,_nb_iterations>0
 #@cli : Segment selected 2D images with superpixels, using the SLIC algorithm (Simple Linear Iterative Clustering).
@@ -18216,7 +18216,7 @@ skeleton : check "!isnum(${1=1}) || ($1>=0 && $1<=1)"
 slic : check "${1=16}>0 && ${2=10}>=0 && ${3=10}>0"
   e[^-1] "Segment image$? using SLIC superpixels, with size $1, regularity $2 and $3 iterations."
   S,m,nb_iter=${1-3}
-  foreach
+  foreach {
     slices 50%
 
     # Initialize superpixel centers Ck.
@@ -18292,7 +18292,7 @@ slic : check "${1=16}>0 && ${2=10}>=0 && ${3=10}>0"
     +[0] 1 100%,100% j[0] .,0,0,0,0,1,.. rm.
     distance. 0 *. -1 watershed.. . rm.
     label. 0,0
-  done
+  }
 
 #@cli ssd_patch : [patch],_use_fourier={ 0 | 1 },_boundary_conditions
 #@cli : Compute fields of SSD between selected images and specified patch.
@@ -18302,9 +18302,9 @@ slic : check "${1=16}>0 && ${2=10}>=0 && ${3=10}>0"
 #@cli : $ image.jpg +crop 20%,20%,35%,35% +ssd_patch[0] [1],0,0
 ssd_patch : check ${is_image_arg\ $1} skip ${2=0},${3=0}
   e[^-1] "Compute field of SSD between image$? and patch $1 using "${arg\ 1+!$2,fourier,spatial}" mode."
-  repeat $! pass$1 0 l[$>,-1] {
+  repeat $! { pass$1 0 l[$>,-1] {
     r 100%,100%,100%,${-max_s} s c
-    repeat $!/2 l[$>,{-1-$<}] {
+    repeat $!/2 { l[$>,{-1-$<}] {
       +sqr[1] val={is} rm. # Sum J(p,q)^2
       +sqr[0] +f[1] 1
       if $2
@@ -18315,8 +18315,8 @@ ssd_patch : check ${is_image_arg\ $1} skip ${2=0},${3=0}
         correlate[0] [1],$3 rm[1] # Sum I(x+p,y+q).J(p,q)
       fi
       *[0] -2 +[0,1] + $val
-    } done +
-  } done
+    } } +
+  } }
 
 #@cli thinning : _boundary_conditions={ 0=dirichlet | 1=neumann }
 #@cli : Compute skeleton of binary shapes using morphological thinning
@@ -18327,7 +18327,7 @@ thinning : check "!isnum(${1=1}) || ($1>=0 && $1<=1)"
   if isnum($1) bc=$1 else bc=1 noarg fi
   e[^-1] "Apply morphological thinning to binary image$? with "\
          ${"arg 1+"$bc",dirichlet,neumann"}" boundary conditions."
-  foreach s c foreach
+  foreach { s c foreach {
                     # [0] = 2D binary shape (current iteration)
     1,16,1,2        # [1] = List of boundary pixels (current iteration)
     1,16,1,2        # [2] = List of pixels to remove (current iteration)
@@ -18391,7 +18391,7 @@ thinning : check "!isnum(${1=1}) || ($1>=0 && $1<=1)"
         _(while), max(is_removed)
       );"
     k[0]
-  done a c done
+  } a c }
 
 #@cli tones : N>0
 #@cli : Get N tones masks from selected images.
@@ -18420,7 +18420,8 @@ topographic_map : check "isint(${1=16}) && $1>0" skip ${2=2}
 # line[-1] {0,boundary=2;[I[$>],I[$>+1]]},1,255,128,0 done keep[-1]
 tsp : check "${1=256}>=0"
   e[^-1] "Try to solve the 'travelling salesman' problem for pointcloud$?, with precision $1."
-  foreach n={n}
+  foreach {
+    nm={n}
     if h>1" || "d>1 error[0--4] "Selected image '"{n}"' has invalid dimensions ("{[w,h,d,s]}")." fi
 
     # Find initial estimate, using greedy nearest neighbor algorithm.
@@ -18479,8 +18480,8 @@ tsp : check "${1=256}>=0"
           );
         );
       )"
-    :: $n
-  done
+    :: $nm
+  }
 
 #@cli variance_patch : _patch_size>=1
 #@cli : Compute variance of each images patch centered at (x,y), in selected images.
@@ -18552,7 +18553,7 @@ axes : check "isint(${5=14}) && $5>=0 && ${6=1}>=0" skip ${7=0},${8=0}
   my={min($3,$4)} My={max($3,$4)}
 
   # Start drawing axes on selected images.
-  foreach
+  foreach {
     w1={0,w-1} h1={0,h-1}
 
     # Determine number of axes tick marks.
@@ -18618,8 +18619,7 @@ axes : check "isint(${5=14}) && $5>=0 && ${6=1}>=0" skip ${7=0},${8=0}
       0 t. 0,0,0,$5,1,1 100%,100%,1,[0] fc. $color
       j[0] .,{if($stx>0,$x0+6,$x0-w-6)},{if($sty>0,$y0+3,$y0-h-3)},0,0,$6,.. rm[-2,-1]
     fi
-
-  done
+  }
 
 # Return optimal (offset0,scale) to display input (min,max) values.
 # $1 = min value, $2 = max value, $3 = max number of tags(>=1).
@@ -18738,7 +18738,7 @@ cie1931 :
   y. (1) a[-3--1] y mv. 1
 
   # Draw chroma diagram.
-  repeat $!-2
+  repeat $!-2 {
     to_rgb. fc. 255,255,255 grid. 10%,10%,0,0,0.3,0xCCCCCCCC,1,0
     100%,100%,1,3
     +*3d[0,1] {(w-8)/$xM},{(h-32)/$yM}
@@ -18751,7 +18751,9 @@ cie1931 :
     a[-2,-1] c blend[-2,-1] alpha
     100%,100%,1,1,255 axes. 0,0.75,0.85,0,14,1 +erode. 3 negate. to_rgb..
     j... ..,0,0,0,0,1,.,400 rm[-2,-1]
-  mv. 2 done rm[0,1]
+    mv. 2
+  }
+  rm[0,1]
 
 #@cli circle : x[%],y[%],R[%],_opacity,_pattern,_color1,...
 #@cli : Draw specified colored circle on selected images.
@@ -18834,7 +18836,8 @@ close_binary :
       [ cos(ang), sin(ang) ];
     );"
 
-  foreach nm={n}
+  foreach {
+     nm={n}
 
     # Ensure input is a 2D binary image.
     slices 50% channels 0 > 0
@@ -19231,7 +19234,7 @@ close_binary :
       if !0$_keep_keycoords rm[keycoords] fi # Small hack used by the plug-in preview.
     fi
     rm[strokes] ::[new_strokes] $nm
-  done
+  }
 
 #@cli ellipse : x[%],y[%],R[%],r[%],_angle,_opacity,_pattern,_color1,... : (+)
 #@cli : Draw specified colored ellipse on selected images.
@@ -19542,21 +19545,21 @@ pack_sprites : check "isint(${1=5}) && $1>=0 && ${2=25}>=0 && $2<=100 && isint($
   repeat $! { r[$>] 100%,100%,1,{$>,max(2,s)} } # Ensure all images have a binary shape mask.
 
   # Start iterations over scales.
-  repeat $1
+  repeat $1 {
     rprogress {$>*100/$1}
     nb_attempts=0
 
     # Generate all sprites for current scale.
     ratio={if($1>1,$2+(100-$2)*$</($1-1),100)}%
-    repeat $N +l[{1+$>}] {
+    repeat $N { +l[{1+$>}] {
       w={w*$ratio} h={h*$ratio}
       if $w<1||$h<1 rm
       else r $w,$h,1,100%,2 sh. 100% !=. 0 area{1+$>}={is} rm.
       fi
-    } done
+    } }
 
     # Pack rescaled sprites together.
-    l[0,{$N+1}--1] repeat $6
+    l[0,{$N+1}--1] { repeat $6 {
 
       # Compute reference sprite.
       ind={1+($>%$N)} area=${area$ind}
@@ -19633,9 +19636,8 @@ pack_sprites : check "isint(${1=5}) && $1>=0 && ${2=25}>=0 && $2<=100 && isint($
         if $nb_attempts>$5 break else continue fi
       fi
 
-    done k[0] done
-
-  done k[0]
+    } k[0] }
+  } k[0]
 
 #@cli piechart : label_height>=0,label_R,label_G,label_B,"label1",value1,R1,G1,B1,...,"labelN",valueN,RN,GN,BN
 #@cli : Draw pie chart on selected (RGB) images.
@@ -19752,7 +19754,7 @@ quiver : check ${"is_image_arg $1"}" && ${2=5%}>0 && ${3=1}>=0 && isbool(${4=1})
 #@cli : even if a color is specified. If a pattern is specified, the rectangle is
 #@cli : drawn outlined instead of filled.
 #@cli : Default values: 'opacity=1', 'pattern=(undefined)' and 'color1=0'.
-#@cli : $ image.jpg repeat 30 rectangle {u(100)}%,{u(100)}%,{u(100)}%,{u(100)}%,0.3,${-rgb} done
+#@cli : $ image.jpg repeat 30 { rectangle {u(100)}%,{u(100)}%,{u(100)}%,{u(100)}%,0.3,${-rgb} }
 rectangle : skip ${5=1},${6=0},${7=$6}
   if ${"is_pattern \"$5\""}
     e[0--3] "Draw outlined rectangle from ($1,$2) to ($3,$4) on image$?, with opacity $5 and color (${7--1})."
@@ -19826,8 +19828,8 @@ _sierpinski :
 #@cli spline : x0[%],y0[%],u0[%],v0[%],x1[%],y1[%],u1[%],v1[%],_opacity,_color1,...
 #@cli : Draw specified colored spline curve on selected images (cubic hermite spline).
 #@cli : Default values: 'opacity=1' and 'color1=0'.
-#@cli : $ image.jpg repeat 30 spline {u(100)}%,{u(100)}%,{u(-600,600)},{u(-600,600)},{u(100)}%,{u(100)}%,\
-# {u(-600,600)},{u(-600,600)},0.6,255 done
+#@cli : $ image.jpg repeat 30 { spline {u(100)}%,{u(100)}%,{u(-600,600)},{u(-600,600)},{u(100)}%,{u(100)}%,\
+# {u(-600,600)},{u(-600,600)},0.6,255 }
 spline : skip ${9=1},${10=0}
   e[^-1] "Draw spline from ($1,$2) [$3,$4] to ($5,$6) [$7,$8] on image$?, with opacity $9 and color (${10--1})."
   foreach {
@@ -19902,8 +19904,8 @@ tetraedron_shade :
 #@cli : Specifying an empty target image resizes it to new dimensions such that the image contains
 #@cli : the entire text string.
 #@cli : Default values: 'x=y=0.01~', 'font_height=16', 'opacity=1' and 'color1=0'.
-#@cli : $ image.jpg resize2dy 600 y=0 repeat 30 text {2*$>}" : This is a nice text, isn't it ?",10,$y,{2*$>},0.9,255 \
-# y+={2*$>} done
+#@cli : $ image.jpg resize2dy 600 y=0 repeat 30 { text {2*$>}" : This is a nice text, isn't it ?",10,$y,{2*$>},0.9,255 \
+# y+={2*$>} }
 #@cli : $ 0 text "G'MIC",0,0,23,1,255
 
 #@cli to : eq. to 'text_outline'.
@@ -19959,14 +19961,18 @@ triangle_shade :
   t1={$1*$4-$2*$3} t2={$2-$4} t3={$3-$1}
 
   # Begin drawing on each selected image.
-  repeat $!-1 l[$>,-1] repeat s#0 {
-    a={i(0,0,0,$>)} b={i(0,1,0,$>)} c={i(0,2,0,$>)}
-    sh[0] $>
-    f. "s = "$invarea"*("$s1" + "$s2"*x + "$s3"*y);
-        t = "$invarea"*("$t1" + "$t2"*x + "$t3"*y);
-        s>=0 && t>=0 && t+s<=1 ? "$a"*x+"$b"*y+"$c":i"
-    rm.
-  } done done
+  repeat $!-1 {
+    l[$>,-1] {
+      repeat s#0 {
+        a={i(0,0,0,$>)} b={i(0,1,0,$>)} c={i(0,2,0,$>)}
+        sh[0] $>
+        f. "s = "$invarea"*("$s1" + "$s2"*x + "$s3"*y);
+            t = "$invarea"*("$t1" + "$t2"*x + "$t3"*y);
+            s>=0 && t>=0 && t+s<=1 ? "$a"*x+"$b"*y+"$c":i"
+        rm.
+      }
+    }
+  }
   rm.
 
 #@cli truchet : _scale>0,_radius>=0,_pattern_type={ 0=straight | 1=curved }
@@ -20156,9 +20162,9 @@ transpose :
 #@cli : 3D object, or merge all selected 3D objects together.
 #@cli : (eq. to '+3d').
 #@cli : Default values: 'ty=tz=0'.
-#@cli : $ sphere3d 10 repeat 5 +add3d[-1] 10,{u(-10,10)},0 color3d[-1] ${-rgb} done add3d
-#@cli : $ repeat 20 torus3d 15,2 color3d[-1] ${-rgb} mul3d[-1] 0.5,1 if $>%2 rotate3d[-1] 0,1,0,90 fi add3d[-1] 70 \
-# add3d rotate3d[-1] 0,0,1,18 done double3d 0
+#@cli : $ sphere3d 10 repeat 5 { +add3d[-1] 10,{u(-10,10)},0 color3d[-1] ${-rgb} } add3d
+#@cli : $ repeat 20 { torus3d 15,2 color3d[-1] ${-rgb} mul3d[-1] 0.5,1 if $>%2 rotate3d[-1] 0,1,0,90 fi add3d[-1] 70 \
+# add3d rotate3d[-1] 0,0,1,18 } double3d 0
 
 #@cli animate3d : nb_frames>0,_step_angle_x,_step_angle_y,_step_angle_z,_zoom_factor,0<=_fake_shadow_level<=100,\
 # _[background]
@@ -20174,7 +20180,8 @@ animate3d : check "isint($1) && $1>0 && isnum(${2=0}) && isnum(${3=5}) && isnum(
   else 3,2,1,1,"32,32,64,64,116,96" permute. cyzx r. 800,800,1,3,3 round.
   fi
   :: anim3d_bg
-  repeat {$!-1} l[$>,-1] check ${-is_3d..} nm={0,n} bn={0,b}
+  repeat {$!-1} { l[$>,-1] {
+    check ${-is_3d..} nm={0,n} bn={0,b}
     e[] "  * Object '"$bn"': 0/$1"
     c3d[0] n3d[0] *3d[0] {1,$5*min(w,h)/2}
     repeat $1 {
@@ -20188,7 +20195,7 @@ animate3d : check "isint($1) && $1>0 && isnum(${2=0}) && isnum(${3=5}) && isnum(
     }
     a[2--1] z
     rv[0,-1] rm.
-  done ::[$>] $nm done
+  } ::[$>] $nm }
   rm.
 
 #@cli apply_camera3d : pos_x,pos_y,pos_z,target_x,target_y,target_z,up_x,up_y,up_z
@@ -20254,7 +20261,7 @@ array3d : check "isint($1) && $1>0 && isint(${2=1}) && $2>0 && isint(${3=1}) && 
 #@cli arrow3d : x0,y0,z0,x1,y1,z1,_radius[%]>=0,_head_length[%]>=0,_head_radius[%]>=0
 #@cli : Input 3D arrow with specified starting and ending 3D points.
 #@cli : Default values: 'radius=5%', 'head_length=25%' and 'head_radius=15%'.
-#@cli : $ repeat 10 a={$>*2*pi/10} arrow3d 0,0,0,{cos($a)},{sin($a)},-0.5 done +3d
+#@cli : $ repeat 10 { a={$>*2*pi/10} arrow3d 0,0,0,{cos($a)},{sin($a)},-0.5 } +3d
 +arrow3d : check "${7=5%}>=0 && ${8=25%}>=0 && ${9=15%}>=0"
   e[^-1] "Input 3D arrow, from (${1-3}) to (${4-6}), with radius $7, head length $8 and head radius $9."
 
@@ -20340,7 +20347,7 @@ c3d :
 #@cli center3d
 #@cli : Center selected 3D objects at (0,0,0).
 #@cli : (eq. to 'c3d').
-#@cli : $ repeat 100 circle3d {u(100)},{u(100)},{u(100)},2 done add3d color3d[-1] 255,0,0 +center3d \
+#@cli : $ repeat 100 { circle3d {u(100)},{u(100)},{u(100)},2 } add3d color3d[-1] 255,0,0 +center3d \
 # color3d[-1] 0,255,0 add3d
 center3d :
   _$0
@@ -20359,7 +20366,7 @@ _center3d :
 #@cli circle3d : _x0,_y0,_z0,_radius>=0
 #@cli : Input 3D circle at specified coordinates.
 #@cli : Default values: 'x0=y0=z0=0' and 'radius=1'.
-#@cli : $ repeat 500 a={$>*pi/250} circle3d {cos(3*$a)},{sin(2*$a)},0,{$a/50} color3d[-1] ${-rgb},0.4 done add3d
+#@cli : $ repeat 500 { a={$>*pi/250} circle3d {cos(3*$a)},{sin(2*$a)},0,{$a/50} color3d[-1] ${-rgb},0.4 } add3d
 +circle3d : skip ${1=0},${2=0},${3=0},${4=1}
   e[^-1] "Input 3D circle at position ($1,$2,$3) with radius $4."
   r={$4/sqrt(3)}
@@ -20392,7 +20399,7 @@ circles3d : check "${1=1}>=0 && isbool(${2=0})"
 #@cli : Set color and opacity of selected 3D objects.
 #@cli : (eq. to 'col3d').
 #@cli : Default value: 'B=G=R' and 'opacity=(undefined)'.
-#@cli : $ torus3d 100,10 double3d 0 repeat 7 +rotate3d[-1] 1,0,0,20 color3d[-1] ${-rgb} done add3d
+#@cli : $ torus3d 100,10 double3d 0 repeat 7 { +rotate3d[-1] 1,0,0,20 color3d[-1] ${-rgb} } add3d
 
 #@cli colorcube3d
 #@cli : Input 3D color cube.
@@ -20570,7 +20577,7 @@ distribution3d :
 #@cli : factors.
 #@cli : (eq. to '/3d').
 #@cli : Default value: 'factor_z=0'.
-#@cli : $ torus3d 5,2 repeat 5 +add3d[-1] 12,0,0 div3d[-1] 1.2 color3d[-1] ${-rgb} done add3d
+#@cli : $ torus3d 5,2 repeat 5 { +add3d[-1] 12,0,0 div3d[-1] 1.2 color3d[-1] ${-rgb} } add3d
 
 #@cli db3d : eq. to 'double3d'. : (+)
 
@@ -20578,7 +20585,7 @@ distribution3d :
 #@cli : Enable/disable double-sided mode for 3D rendering.
 #@cli : (eq. to 'db3d').
 #@cli : Default value: 'is_double_sided=1'.
-#@cli : $ mode3d 1 repeat 2 torus3d 100,30 rotate3d[-1] 1,1,0,60 double3d $> snapshot3d[-1] 400 done
+#@cli : $ mode3d 1 repeat 2 { torus3d 100,30 rotate3d[-1] 1,1,0,60 double3d $> snapshot3d[-1] 400 }
 
 #@cli elevation3d : { z-factor | [elevation_map] | 'formula' },base_height={ -1 | >=0 } : (no arg)
 #@cli : Generate 3D elevation of selected images, opt. with a specified elevation map.
@@ -20601,7 +20608,7 @@ elevation3d : skip "${1=_noarg}" check "${2=-1}==-1 || $2>=0"
   fi
   is_base={$2>=0}
 
-  foreach
+  foreach {
     nm={n} M,N={[w,h]} to_rgb
 
     # Generate vertices.
@@ -20649,7 +20656,7 @@ elevation3d : skip "${1=_noarg}" check "${2=-1}==-1 || $2>=0"
     # Add header and merge object.
     i[0] ('CImg3d':y) +[0] 0.5 i[1] ({ui2f([$nbv,$nbp]):;}) y a y
     :: $nm
-  done
+  }
 
 #@cli empty3d
 #@cli : Input empty 3D object.
@@ -20682,7 +20689,7 @@ extrude3d : check "${1=16}>0 && ${2=1024}>0 && ${3=0.5%}>=0"
 #@cli : Set 'focale' to 0 to enable parallel projection (instead of perspective).
 #@cli : Set negative 'focale' will disable 3D sprite zooming.
 #@cli : Default value: 'focale=700'.
-#@cli : $ repeat 5 torus3d 100,30 rotate3d[-1] 1,1,0,60 focale3d {$<*90} snapshot3d[-1] 400 done remove[0]
+#@cli : $ repeat 5 { torus3d 100,30 rotate3d[-1] 1,1,0,60 focale3d {$<*90} snapshot3d[-1] 400 } remove[0]
 
 #@cli gaussians3d : _size>0,_opacity
 #@cli : Convert selected 3D objects into set of 3D gaussian-shaped sprites.
@@ -21027,11 +21034,11 @@ lathe3d : check "${1=128}>0 && ${2=0.5%}>=0 && ${3=361}>=0"
 #@cli : Set the light coordinates or the light texture for 3D rendering.
 #@cli : (eq. to 'l3d').\n
 #@cli : (no arg) resets the 3D light to default.
-#@cli : $ torus3d 100,30 double3d 0 specs3d 1.2 repeat 5 light3d {$>*100},0,-300 +snapshot3d[0] 400 done remove[0]
+#@cli : $ torus3d 100,30 double3d 0 specs3d 1.2 repeat 5 { light3d {$>*100},0,-300 +snapshot3d[0] 400 } remove[0]
 
 #@cli line3d : x0,y0,z0,x1,y1,z1
 #@cli : Input 3D line at specified coordinates.
-#@cli : $ repeat 100 a={$>*pi/50} line3d 0,0,0,{cos(3*$a)},{sin(2*$a)},0 color3d. ${-rgb} done add3d
+#@cli : $ repeat 100 { a={$>*pi/50} line3d 0,0,0,{cos(3*$a)},{sin(2*$a)},0 color3d. ${-rgb} } add3d
 +line3d :
   e[^-1] "Input 3D line (${1-3})-(${4-6})."
   1,21,1,1,67.5,73.5,109.5,103.5,51.5,100.5,2,1,${1-6},2,0,1,200,200,200,1 :: [3D\ line]
@@ -21063,8 +21070,8 @@ lathe3d : check "${1=128}>0 && ${2=0.5%}>=0 && ${3=361}>=0"
 # 5=phong-shaded }.");
 #@cli : Bounding-box mode ('mode==-1') is active only for the interactive 3D viewer.
 #@cli : Default value: 'mode=4'.
-#@cli : $ (0,1,2,3,4,5) double3d 0 repeat w torus3d 100,30 rotate3d[-1] 1,1,0,60 mode3d {0,@$>} \
-# snapshot3d[-1] 300 done remove[0]
+#@cli : $ (0,1,2,3,4,5) double3d 0 repeat w { torus3d 100,30 rotate3d[-1] 1,1,0,60 mode3d {0,@$>} \
+# snapshot3d[-1] 300 } remove[0]
 
 #@cli md3d : eq. to 'moded3d'. : (+)
 
@@ -21081,7 +21088,7 @@ lathe3d : check "${1=128}>0 && ${2=0.5%}>=0 && ${3=361}>=0"
 #@cli : Scale selected 3D objects isotropically or anisotropically, with specified factors.
 #@cli : (eq. to '*3d').
 #@cli : Default value: 'factor_z=0'.
-#@cli : $ torus3d 5,2 repeat 5 +add3d[-1] 10,0,0 mul3d[-1] 1.2 color3d[-1] ${-rgb} done add3d
+#@cli : $ torus3d 5,2 repeat 5 { +add3d[-1] 10,0,0 mul3d[-1] 1.2 color3d[-1] ${-rgb} } add3d
 
 #@cli n3d : eq. to 'normalize3d'.
 n3d :
@@ -21090,7 +21097,7 @@ n3d :
 #@cli normalize3d
 #@cli : Normalize selected 3D objects to unit size.
 #@cli : (eq. to 'n3d').
-#@cli : $ repeat 100 circle3d {u(3)},{u(3)},{u(3)},0.1 done add3d color3d[-1] 255,0,0 +normalize3d[-1] \
+#@cli : $ repeat 100 { circle3d {u(3)},{u(3)},{u(3)},0.1 } add3d color3d[-1] 255,0,0 +normalize3d[-1] \
 # color3d[-1] 0,255,0 add3d
 normalize3d :
   _$0
@@ -21112,7 +21119,7 @@ _normalize3d :
 #@cli : Set opacity of selected 3D objects.
 #@cli : (eq. to 'o3d').
 #@cli : Default value: 'opacity=1'.
-#@cli : $ torus3d 100,10 double3d 0 repeat 7 +rotate3d[-1] 1,0,0,20 opacity3d[-1] {u} done add3d
+#@cli : $ torus3d 100,10 double3d 0 repeat 7 { +rotate3d[-1] 1,0,0,20 opacity3d[-1] {u} } add3d
 
 #@cli parametric3d : _x(a,b),_y(a,b),_z(a,b),_amin,_amax,_bmin,_bmax,_res_a>0,_res_b>0,_res_x>0,_res_y>0,_res_z>0,\
 # _smoothness>=0,_isovalue>=0
@@ -21209,7 +21216,7 @@ pca_patch3d : check "isint(${1=7}) && $1>0 && isint(${2=1000}) && $2>0 && isint(
 
 #@cli point3d : x0,y0,z0
 #@cli : Input 3D point at specified coordinates.
-#@cli : $ repeat 1000 a={$>*pi/500} point3d {cos(3*$a)},{sin(2*$a)},0 color3d[-1] ${-rgb} done add3d
+#@cli : $ repeat 1000 { a={$>*pi/500} point3d {cos(3*$a)},{sin(2*$a)},0 color3d[-1] ${-rgb} } add3d
 +point3d :
   e[^-1] "Input 3D point ($1,$2,$3)."
   1,17,1,1,67.5,73.5,109.5,103.5,51.5,100.5,1,1,${1-3},1,0,200,200,200,1 :: [3D\ point]
@@ -21580,8 +21587,8 @@ projections3d : skip ${1=50%},${2=50%},${3=50%},${4=1}
 
 #@cli quadrangle3d : x0,y0,z0,x1,y1,z1,x2,y2,z2,x3,y3,z3
 #@cli : Input 3D quadrangle at specified coordinates.
-#@cli : $ quadrangle3d -10,-10,10,10,-10,10,10,10,10,-10,10,10 repeat 10 +rotate3d[-1] 0,1,0,30 \
-# color3d[-1] ${-rgb},0.6 done add3d mode3d 2
+#@cli : $ quadrangle3d -10,-10,10,10,-10,10,10,10,10,-10,10,10 repeat 10 { +rotate3d[-1] 0,1,0,30 \
+# color3d[-1] ${-rgb},0.6 } add3d mode3d 2
 +quadrangle3d :
   e[^-1] "Input 3D quadrangle ($1,$2,$3)-($4,$5,$6)-($7,$8,$9)-($10,$11,$12)."
   1,29,1,1,67.5,73.5,109.5,103.5,51.5,100.5,4,1,${1-12},4,0,1,2,3,200,200,200,1 :: [3D\ quadrangle]
@@ -21614,7 +21621,7 @@ projections3d : skip ${1=50%},${2=50%},${3=50%},${4=1}
 #@cli rotate3d : u,v,w,angle : (+)
 #@cli : Rotate selected 3D objects around specified axis with specified angle (in deg.).
 #@cli : (eq. to 'r3d').
-#@cli : $ torus3d 100,10 double3d 0 repeat 7 +rotate3d[-1] 1,0,0,20 done add3d
+#@cli : $ torus3d 100,10 double3d 0 repeat 7 { +rotate3d[-1] 1,0,0,20 } add3d
 
 #@cli rotation3d : u,v,w,angle
 #@cli : Input 3x3 rotation matrix with specified axis and angle (in deg).
@@ -21772,8 +21779,8 @@ snapshot3d : check "${2=1}>=0" skip ${1=512},${3=""}
 #@cli : Set lightness of 3D specular light.
 #@cli : (eq. to 'sl3d').
 #@cli : Default value: 'value=0.15'.
-#@cli : $ (0,0.3,0.6,0.9,1.2) repeat w torus3d 100,30 rotate3d[-1] 1,1,0,60 color3d[-1] 255,0,0 specl3d {0,@$>} \
-# snapshot3d[-1] 400 done remove[0]
+#@cli : $ (0,0.3,0.6,0.9,1.2) repeat w { torus3d 100,30 rotate3d[-1] 1,1,0,60 color3d[-1] 255,0,0 specl3d {0,@$>} \
+# snapshot3d[-1] 400 } remove[0]
 
 #@cli ss3d : eq. to 'specs3d'. : (+)
 
@@ -21781,8 +21788,8 @@ snapshot3d : check "${2=1}>=0" skip ${1=512},${3=""}
 #@cli : Set shininess of 3D specular light.
 #@cli : (eq. to 'ss3d').
 #@cli : Default value: 'value=0.8'.
-#@cli : $ (0,0.3,0.6,0.9,1.2) repeat w torus3d 100,30 rotate3d[-1] 1,1,0,60 color3d[-1] 255,0,0 specs3d {0,@$>} \
-# snapshot3d[-1] 400 done remove[0]
+#@cli : $ (0,0.3,0.6,0.9,1.2) repeat w { torus3d 100,30 rotate3d[-1] 1,1,0,60 color3d[-1] 255,0,0 specs3d {0,@$>} \
+# snapshot3d[-1] 400 } remove[0]
 
 #@cli sphere3d : radius,_nb_recursions>=0 : (+)
 #@cli : Input 3D sphere at (0,0,0), with specified geometry.
@@ -21827,7 +21834,7 @@ snapshot3d : check "${2=1}>=0" skip ${1=512},${3=""}
 #@cli spline3d : x0[%],y0[%],z0[%],u0[%],v0[%],w0[%],x1[%],y1[%],z1[%],u1[%],v1[%],w1[%],_nb_vertices>=2
 #@cli : Input 3D spline with specified geometry.
 #@cli : Default values: 'nb_vertices=128'.
-#@cli : $ repeat 100 spline3d {u},{u},{u},{u},{u},{u},{u},{u},{u},{u},{u},{u},128 color3d[-1] ${-rgb} done \
+#@cli : $ repeat 100 { spline3d {u},{u},{u},{u},{u},{u},{u},{u},{u},{u},{u},{u},128 color3d[-1] ${-rgb} } \
 # box3d 1 primitives3d[-1] 1 add3d
 +spline3d : check ${13=128}>=2
   e[^-1] "Input new 3D spline from (${1-3}) [${4-6}] to (${7-9}) [${10-12}] with $13 vertices."
@@ -21922,8 +21929,8 @@ sprites3d : check ${is_image_arg\ $1} skip ${2=0}
 #@cli : Extract 3D streamlines from selected vector fields or from specified formula.
 #@cli : 'interpolation' can be { 0=nearest integer | 1=1st-order | 2=2nd-order | 3=4th-order }.
 #@cli : Default values: 'dl=0.1', 'interpolation=2', 'is_backward=0' and 'is_oriented=0'.
-#@cli : $ 100,100,100,3 rand -10,10 blur 3 repeat 300 +streamline3d[0] {u(100)},{u(100)},{u(100)},1000,1,1 \
-# color3d[-1] ${-rgb} done remove[0] box3d 100 primitives3d[-1] 1 add3d
+#@cli : $ 100,100,100,3 rand -10,10 blur 3 repeat 300 { +streamline3d[0] {u(100)},{u(100)},{u(100)},1000,1,1 \
+# color3d[-1] ${-rgb} } remove[0] box3d 100 primitives3d[-1] 1 add3d
 
 #@cli -3d : eq. to 'sub3d'. : (+)
 
@@ -21931,7 +21938,7 @@ sprites3d : check ${is_image_arg\ $1} skip ${2=0}
 #@cli : Shift selected 3D objects with the opposite of specified displacement vector.
 #@cli : (eq. to '3d').
 #@cli : Default values: 'ty=tz=0'.
-#@cli : $ sphere3d 10 repeat 5 +sub3d[-1] 10,{u(-10,10)},0 color3d[-1] ${-rgb} done add3d
+#@cli : $ sphere3d 10 repeat 5 { +sub3d[-1] 10,{u(-10,10)},0 color3d[-1] ${-rgb} } add3d
 
 #@cli superformula3d : resolution>1,m>=1,n1,n2,n3
 #@cli : Input 2D superformula curve as a 3D object.
@@ -22076,7 +22083,7 @@ texturize3d : check ${"is_image_arg $1"}" && (!narg(${2=}) || "${"is_image_arg $
   v + _$0
 
 _texturize3d :
-  repeat $!-2 l[$>,-2,-1]
+  repeat $!-2 { l[$>,-2,-1] {
     np={f2ui(i[7])}
     s3d[0]
 
@@ -22156,7 +22163,8 @@ _texturize3d :
     rm[3-5] mv[-3--1] 3
     if !w rm.. fi
     a[0-5] y
-  done done rm[-2,-1]
+  } }
+  rm[-2,-1]
 
 #@cli torus3d : _radius1,_radius2,_nb_subdivisions1>2,_nb_subdivisions2>2
 #@cli : Input 3D torus at (0,0,0), with specified geometry.
@@ -22186,7 +22194,7 @@ _texturize3d :
 
 #@cli triangle3d : x0,y0,z0,x1,y1,z1,x2,y2,z2
 #@cli : Input 3D triangle at specified coordinates.
-#@cli : $ repeat 100 a={$>*pi/50} triangle3d 0,0,0,0,0,3,{cos(3*$a)},{sin(2*$a)},0 color3d[-1] ${-rgb} done add3d
+#@cli : $ repeat 100 { a={$>*pi/50} triangle3d 0,0,0,0,0,3,{cos(3*$a)},{sin(2*$a)},0 color3d[-1] ${-rgb} } add3d
 +triangle3d :
   e[^-1] "Input 3D triangle ($1,$2,$3)-($4,$5,$6)-($7,$8,$9)."
   1,25,1,1,67.5,73.5,109.5,103.5,51.5,100.5,3,1,${1-9},3,0,1,2,200,200,200,1 :: [3D\ triangle]
@@ -25570,12 +25578,13 @@ stylize :
   mprec1={1+round(4*$matching_precision)}
   is_window={*}
 
-  pass$1 repeat $!-1 l[$>,-1]
+  pass$1
+  repeat $!-1 { l[$>,-1] {
     to_colormode.. {s}
     nb_scales={1+round(log(min(w#0,h#0,w#1,h#1)/$init_resolution)/log($scale_factor),1,-1)}
     if {*} wsiz=${"fitscreen "{0,[w,h]}} w[0] $wsiz,0,"[G'MIC Stylize]" fi
 
-    repeat $nb_scales scale=$>
+    repeat $nb_scales { scale=$>
       size_factor={100/($scale_factor^$<)}
       if !$scale
 
@@ -25660,13 +25669,13 @@ stylize :
         rm[-3,-1]
       fi
       if $is_window" && "!{*} break fi
-    done
+    }
     if $is_window" && "!{*} k[0,1] break fi
 
     # Do final rendering.
     +warp_patch[1] .,$patchsize_synthesis_final,$patchsize_synthesis_final,1 c. 0,255
     rv[0,-1] rm[-2,-1]
-  done done rm.
+  } } rm.
   um stylize_match
 
 #@cli tetris : _scale>0
@@ -26331,7 +26340,7 @@ blend : skip ${1=alpha},${2=1},${3=1},${4=0}
     repeat $! { pass$1 l[$>,-1] { if $4 rv fi blend $mode,$3 } } return
   fi
   e[^-1] "Blend all image$? together, using '$1' mode and opacity $2."
-  repeat $!-1 l[0,1] {
+  repeat $!-1 { l[0,1] {
     r[1] [0],[0],[0],100%,0,0,0.5,0.5
     s={"s0 = s#0<3?1:3; s1 = s<3?1:3; max(s0,s1)"} # Target color format (G or RGB).
     to_colormode[0] {$s+1-(s#0%2)}                 # Target format (G,GA,RGB or RGBA).
@@ -26358,7 +26367,7 @@ blend : skip ${1=alpha},${2=1},${3=1},${4=0}
         _blend_$1 j[0] [1],0,0,0,0,{max(0,min(1,$2))} rm[1]
       fi
     fi
-  } done
+  } }
 
 _blend_alpha :
 _blend_normal :
@@ -26594,7 +26603,7 @@ blend_seamless : check "${2=0}>=0 && ${3=100%}>=0" skip ${1=0}
     } }
   else # Without outer fading.
 
-    repeat $!-1 l[0,1]
+    repeat $!-1 { l[0,1] {
 
       # Get background average color.
       +r[0] 1,1,1,100%,2 avg={^} rm.
@@ -26632,7 +26641,7 @@ blend_seamless : check "${2=0}>=0 && ${3=100%}>=0" skip ${1=0}
       +[-2,-1]
       c 0,255
 
-    done done
+    } }
   fi
   z 16,16,{w-17},{h-17}
 
@@ -26992,14 +27001,14 @@ files2video : check "isint(${3=25}) && $3>0" skip "${2=output.mp4}",${4=mp4v}
   files=${"files \"$1\""} arg2var _file,$files nb_files=${}
   ('$files') if w>128 z. 0,127 s_files={t}... else s_files=$files fi rm.
   e[^-1] "Convert image files '"$s_files"' into frames of output video '$2', with $3 fps and $4 codec.\n"
-  repeat $nb_files l[] {
+  repeat $nb_files { l[] {
     file=${_file{$>+1}}
     _file=${basename\ $file}
     e[] "\r - Image "{1+$>}/$nb_files" ["$_file"] -> [$2]                    "
     i $file o "$2",$3,$4,1
     rm
   onfail e[] "\n - Error occurred on input file '"$file"'.\n"
-  } done
+  } }
   o $"$2",0,0,0
 
 #@cli median_files : "filename_pattern",_first_frame>=0,_last_frame={ >=0 | -1=last },_frame_step>=1,\
@@ -27066,7 +27075,7 @@ _median_stream :
   # Start median computation.
   h1={h-1} drows={round(${is_percent\ $5}?$5*h:$5)}
   nb_iter={round(h/$drows,1,1)}
-  repeat $nb_iter
+  repeat $nb_iter {
     row0={$drows*$>} row1={0,min(h,$row0+$drows-1)}
     e[] "- Iteration \#"{$>+1}/$nb_iter": Load rows "$row0-$row1/$h1".\n"
     frame=$2 go_on=1
@@ -27132,7 +27141,7 @@ _median_stream :
     if {*} w[res] -1,-1,1,"[G'MIC] Iteration ""#"$> fi
     rm.
 
-  done
+  }
   e[] "- Done!"
 
 # Median blending optimized to deal with a lot of input frames.
@@ -27405,7 +27414,7 @@ transition3d : check "isint(${1=10}) && $1>=2 && isint(${2=3}) && $2>0 && isint(
   e[^-1] "Create 3D transition sequence between image$?, with $1 frames, $2x$3 tiles and rotation axis ($4,$5,$6).\n"
   if $!<2 return fi
   slices 0 to_rgb r ${-max_whds},3
-  off=0 repeat $!-1 l[{$>+$off},{$>+$off+1}]
+  off=0 repeat $!-1 { l[{$>+$off},{$>+$off+1}] {
     e[] "\r > Generate transition from image "$>" to image "{$>+1}".    "
 
     # Create 3D rotation vectors.
@@ -27449,7 +27458,7 @@ transition3d : check "isint(${1=10}) && $1>=2 && isint(${2=3}) && $2>0 && isint(
     rm[0-{$N-1}]
     ::[1--2] {0,n}
     off+={$1-2}
-  done done
+  } }
 
 #@cli video2files : input_filename,_output_filename,_first_frame>=0,_last_frame={ >=0 | -1=last },_frame_step>=1
 #@cli : Split specified input video file into image files, one for each frame.
@@ -27488,7 +27497,7 @@ alert : skip "${1=[G"{`39`}"MIC Alert]},${2=This is an alert box.},${3=OK}"
   fi
 
   if $!==1 logo= else logo=[] fi
-  +l$logo
+  +l$logo {
 
     # Manage alert icon.
     if $!==1 to_rgb
@@ -27591,7 +27600,7 @@ alert : skip "${1=[G"{`39`}"MIC Alert]},${2=This is an alert box.},${3=OK}"
 
     # Return result (index of clicked button or '-1').
     w$disp 0 rm u $clicked
-  done
+  }
 
 #@cli arg : n>=1,_arg1,...,_argN
 #@cli : Return the n-th argument of the specified argument list.
@@ -27907,7 +27916,7 @@ fitscreen : skip "${2=},${3=},${4=},${5=}"
 # Encode a font image as a C-style string for CImg.h.
 font2cimgh :
   e[^-1] "Encode font image$? as a C-style string for CImg.h."
-  foreach
+  foreach {
     bnm={0,b} W,H={[w/256,h]}
     e[] "  > Encode font '"$bnm"'."
     if !isint($W) error[0--4] "Font image '"$bnm"' has wrong dimensions ("{[w,h,d,s]}")." fi
@@ -27941,8 +27950,7 @@ font2cimgh :
     repeat $nb_chunks-1 { ind={int($!*($>+1)/$nb_chunks)} l[$ind] { = {','},0,100% ('\n') y a y } }
     i[0] ('"    static const char *const data_font"${W}x${H}"[] = {"\n')
     y a y ot $bnm.h
-
-  done
+  }
 
 #@cli fps
 #@cli : Return the number of time this function is called per second, or -1 if this info is not yet available.
@@ -28784,7 +28792,7 @@ ovh2stats : skip "${1=gmic.eu-*-*-*.log.gz}"
 
 _ovh2stats :
   v + N=$!
-  foreach
+  foreach {
     ('{n}') replace. {'_'},{'^'} ({t})
     date={`[vtos(i0,0,4),_'/',i1<10?[_'0',i1+_'0']:vtos(i1,0,2),_'/',i2<10?[_'0',i2+_'0']:vtos(i2,0,2)]`}
     s -,{'\n'}
@@ -28872,7 +28880,8 @@ _ovh2stats :
           ${_vt100_b}"Prereleases"${_vt100_n}" = "$prereleases" ("{_round($prereleases/$ips*100,0.1)}"%)."
       _ovh2stats_versions
     fi
-  done
+  }
+
   + / $N round.
   +z. 0,0,12,0 ips,gimp,krita,_8bf,paintdotnet,digikam,standalone,windows,linux,macos,bsd,unknown,prereleases={^} rm.
   summary0,summary1="Total:      ","Average:    "
@@ -29001,7 +29010,7 @@ render_donations : skip "${1="$HOME"/work/src/private_tschumperle/gmic_donations
 #    eur2usd={1/0.7988} # Change rate from EUR to USD (Paypal conversion rate in 2020).
     eur2usd={1/0.8568} # Change rate from EUR to USD (Paypal conversion rate in 2021).
     nb_entries={h}
-    repeat $nb_entries e=$>
+    repeat $nb_entries { e=$>
       date_$e={`I(0,$e)`}
       name_$e={`I(1,$e)`}
       type_$e={`I(2,$e)`}
@@ -29046,7 +29055,7 @@ render_donations : skip "${1="$HOME"/work/src/private_tschumperle/gmic_donations
     # Compute image for donations of the last months.
     e[] ""
     all_eur,all_usd,all_charged_eur,all_charged_usd,asep_eur,asep_usd=
-    repeat $nb_months
+    repeat $nb_months {
       edate={y=date(0);m=date(1)-1-$>;while(m<=0,--y;m+=12);100*y+m}
       s_month=${"arg "$edate%100",January,February,March,April,May,June,July,August,\
                                   September,October,November,December"}
@@ -29054,28 +29063,30 @@ render_donations : skip "${1="$HOME"/work/src/private_tschumperle/gmic_donations
 
       month_eur,month_charged_eur,month_usd,month_charged_usd,msep_eur,msep_usd=
       nb_sponsors=0
-      repeat $nb_entries { e=$> if $edate==int(${edate_$e}/100)
-        currency=${currency_$e}
-        val_eur=${donation_eur_$e}
-        val_charged_eur=${donation_charged_eur_$e}
-        val_usd=${donation_usd_$e}
-        val_charged_usd=${donation_charged_usd_$e}
-        nb_sponsors+=1
+      repeat $nb_entries { e=$>
+        if $edate==int(${edate_$e}/100)
+          currency=${currency_$e}
+          val_eur=${donation_eur_$e}
+          val_charged_eur=${donation_charged_eur_$e}
+          val_usd=${donation_usd_$e}
+          val_charged_usd=${donation_charged_usd_$e}
+          nb_sponsors+=1
 
-        if '${currency_$e}'=='eur'
-          all_eur.=$asep_eur$val_eur
-          all_charged_eur.=$asep_eur$val_charged_eur
-          month_eur.=$msep_eur$val_eur
-          month_charged_eur.=$msep_eur$val_charged_eur
-          asep_eur=, msep_eur=,
-        else
-          all_usd.=$asep_usd$val_usd
-          all_charged_usd.=$asep_usd$val_charged_usd
-          month_usd.=$msep_usd$val_usd
-          month_charged_usd.=$msep_usd$val_charged_usd
-          asep_usd=, msep_usd=,
+          if '${currency_$e}'=='eur'
+            all_eur.=$asep_eur$val_eur
+            all_charged_eur.=$asep_eur$val_charged_eur
+            month_eur.=$msep_eur$val_eur
+            month_charged_eur.=$msep_eur$val_charged_eur
+            asep_eur=, msep_eur=,
+          else
+            all_usd.=$asep_usd$val_usd
+            all_charged_usd.=$asep_usd$val_charged_usd
+            month_usd.=$msep_usd$val_usd
+            month_charged_usd.=$msep_usd$val_charged_usd
+            asep_usd=, msep_usd=,
+          fi
         fi
-      fi }
+      }
 
       month_sum_eur={sum(0$month_eur)+sum(0$month_usd)/$eur2usd}
       month_sum_charged_eur={sum(0$month_charged_eur)+sum(0$month_charged_usd)/$eur2usd}
@@ -29095,7 +29106,7 @@ render_donations : skip "${1="$HOME"/work/src/private_tschumperle/gmic_donations
       t. $s_month" "$s_year,0.02~,0.5~,24,0.5,0,0,0,255
       t. {_round($month_sum_eur)}" \37 = "{_round($month_sum_eur*$eur2usd)}" $",0.5~,0.5~,24,1,0,0,0,255
       t. $nb_sponsors" sponsor"${"if "$nb_sponsors"!=1 u s else u \"\" fi"},0.97~,0.5~,24,0.5,0,0,0,255
-    done
+    }
     rv
 
     all_max={max($all_eur,[$all_usd]/$eur2usd)}
@@ -29115,7 +29126,7 @@ render_donations : skip "${1="$HOME"/work/src/private_tschumperle/gmic_donations
 
     rows -5,100% a y,0.5 r2dx 480
     if $2==0 o $HOME/work/src/gmic/html/img/donations_latest_months.png fi
-  done
+  }
 
   total_eur={$all_sum_eur+$all_sum_usd/$eur2usd}
   total_charged_eur={$all_sum_charged_eur+$all_sum_charged_usd/$eur2usd}
@@ -29137,7 +29148,7 @@ render_donations : skip "${1="$HOME"/work/src/private_tschumperle/gmic_donations
   }
 
   # Generate coin graphics.
-  l[]
+  l[] {
     $HOME/work/src/gmic/html/img/icon_coin.png
     N=0
     text$N,r$N,g$N,b$N,file$N="2 \37",32,48,32,"don_2eur.png" N+=1
@@ -29148,7 +29159,7 @@ render_donations : skip "${1="$HOME"/work/src/private_tschumperle/gmic_donations
     text$N,r$N,g$N,b$N,file$N="5 $",200,200,200,"don_5usd.png" N+=1
     text$N,r$N,g$N,b$N,file$N="10 $",190,100,100,"don_10usd.png" N+=1
     text$N,r$N,g$N,b$N,file$N="+ $",255,128,0,"don_moreusd.png" N+=1
-    repeat $N +l[0] {
+    repeat $N { +l[0] {
       frame. 10,10,0,0,0,0
       sh. 0,2
       (${r$>}^${g$>}^${b$>}) rgb2hsl[-2,-1] H,S={[R,G]} rm.
@@ -29161,9 +29172,9 @@ render_donations : skip "${1="$HOME"/work/src/private_tschumperle/gmic_donations
       outfile=$HOME/work/src/gmic/html/img/${file$>}
       if !isfile('$outfile') o. $outfile fi
       rm.
-    } done
+    } }
     rm[0]
-  done
+  }
 
 #@cli reset
 #@cli : Reset global parameters of the interpreter environment.
@@ -29380,7 +29391,7 @@ demos : check "isint(${1=2}) && $1>=0 && $1<=2" check_display $0
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' to exit.\n
 ----\n
 -------------------------------------"
-  l[]
+  l[] {
   entries="2048 game","Blobs Editor","Bouncing Balls","Connect Four","Fire Effect","Fireworks","Fish-Eye Effect",\
           "Fourier Filtering","Tower of Hano\357","Histogram Demo","Hough Transform","Jawbreaker","Virtual Landscape",\
           "The Game of Life","Light Effect","Mandelbrot Explorer","3D Metaballs","Minesweeper","Minimal Path",\
@@ -29397,7 +29408,7 @@ demos : check "isint(${1=2}) && $1>=0 && $1<=2" check_display $0
   if $_prerelease strver.=_pre#$_prerelease fi
 
   # Generate menu graphics.
-  l[]
+  l[] {
     repeat $nb_entries {
       arg 1+$>,$entries entry=${}
       0 t. $entry,0,0,24,1,1
@@ -29436,7 +29447,7 @@ demos : check "isint(${1=2}) && $1>=0 && $1<=2" check_display $0
     j[1] ..,{(w#0-w)/2},{$s+3},0,0,1,. rm[-2,-1]
     c[0] 0,1
     :: menu_opac,menu_fgcol,menu_ind,menu_bgcol
-  done
+  }
 
   # Generate 3D cursors.
   arrow3d 20,20,0,0,0,0,20%,40%,40% col3d. 255,128,0 :: cursor3d
@@ -29513,7 +29524,7 @@ demos : check "isint(${1=2}) && $1>=0 && $1<=2" check_display $0
 
     wait 20
   while {*}" && "!{*,ESC}" && "!{*,Q}
-  rm w 0 done v 0 e[] ""
+  rm w 0 } v 0 e[] ""
 
 _demo_color_curves :
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
@@ -29674,7 +29685,7 @@ x_2048 : check_display $0
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' to exit.\n
 ----\n
 --------------------------------------------------------------"
-  l[]
+  l[] {
   score=0 f3d 50 m3d 0
   m "_x_2048_setrandom : +==[0] 0 f. 'if(i,4*y+x,-1)' discard. -1
      off={i[round(u(h-1))]} rm. x={$off&3} y={$off>>2} n={if(u<0.75,1,2)}
@@ -29753,7 +29764,7 @@ x_2048 : check_display $0
     if $is_shift
       wait -1
       shift2048[0]
-      repeat 2
+      repeat 2 {
 
         # Tile shifts.
         _x_2048_object3d
@@ -29800,7 +29811,7 @@ x_2048 : check_display $0
           fi
 
         fi
-      done
+      }
       ishift2048[0]
 
       # Insert new tile.
@@ -29808,7 +29819,7 @@ x_2048 : check_display $0
     fi
 
   while {*}" && "!{*,ESC}" && "!{*,Q}
-  rm w 0 done um _x_2048_setrandom,_x_2048_object3d
+  rm w 0 } um _x_2048_setrandom,_x_2048_object3d
 
 #@cli x_blobs
 #@cli : Launch the blobs editor.
@@ -29824,9 +29835,10 @@ x_blobs : check_display $0
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' to exit.\n
 ----\n
 -----------------------------------------------------"
+  l[] {
 
   # Create background image [0].
-  l[] (0;0^0;128^0;255) r. 450,450,1,3,3 flower. 30,8,0,0,50%,50%,1 water. 20
+  (0;0^0;128^0;255) r. 450,450,1,3,3 flower. 30,8,0,0,50%,50%,1 water. 20
   w {f=h<0.5*{*,v}?1.5:1;[w,h]*=f},0,0,"[G"{`39`}"MIC] Blobs Editor"
 
   # Start event loop.
@@ -29887,7 +29899,7 @@ x_blobs : check_display $0
     fi
 
   while {*}" && "!{*,ESC}" && "!{*,Q}
-  rm w 0 done
+  rm w 0 }
 
 #@cli x_bouncing
 #@cli : Launch the bouncing balls demo.
@@ -29901,7 +29913,7 @@ x_bouncing : check_display $0
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' to exit.\n
 ----\n
 -----------------------------------------------------"
-  l[]
+  l[] {
   520,320,1,3 plasma 1,1,9 n 0,220
   N=12
   repeat $N {
@@ -29939,7 +29951,7 @@ x_bouncing : check_display $0
     if {*,CTRLLEFT}" && "{*,D} w[] {1.5*w},{1.5*h} elif {*,CTRLLEFT}" && "{*,C} w[] {w},{h} fi
     w. rm. wait 20
   while {*}" && "!{*,ESC}" && "!{*,Q}
-  w 0 rm done
+  w 0 rm }
 
 #@cli x_color_curves : _colorspace={ rgb | cmy | cmyk | hsi | hsl | hsv | lab | lch | ycbcr | last }
 #@cli : Apply color curves on selected RGB[A] images, using an interactive window.
@@ -30469,7 +30481,7 @@ x_connect4 : check_display $0
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' close the window.\n
 ----\n
 ----------------------------------------------------------------"
-  l[]
+  l[] {
 
   # Create sprite graphics.
   7,6 :: board
@@ -30635,7 +30647,7 @@ x_connect4 : check_display $0
     fi
 
   while {*}" && "!{*,ESC}" && "!{*,Q}
-  rm w 0 done
+  rm w 0 }
 
 #@cli xz : eq. to 'x_crop'
 xz :
@@ -30759,7 +30771,7 @@ x_fireworks : check_display $0
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' to exit.\n
 ----\n
 --------------------------------------------"
-  l[]
+  l[] {
   (16;64^64;32^128;32) r 320,160,1,3,3             # [-2] = Background (color gradient).
   .                                                 # [-1] = Rendered image.
   w. {1.5*w},{1.5*h},0,"[G"{`39`}"MIC] Fireworks"  # Display window.
@@ -30801,7 +30813,7 @@ x_fireworks : check_display $0
     w. wait 20  # Display rendered frame.
     if {*,CTRLLEFT}" && "{*,D} w[] {3*w},{3*h} elif {*,CTRLLEFT}" && "{*,C} w[] {1.5*w},{1.5*h} fi
   while {*}" && "!{*,ESC}" && "!{*,Q}
-  rm w 0 done
+  rm w 0 }
 
 #@cli x_fisheye
 #@cli : Launch the fish-eye effect demo.
@@ -30857,7 +30869,7 @@ x_fourier : check_display $0
 -----------------------------------------------------------------"
 
   if !$! sp ? r2dx 400 fi
-  foreach
+  foreach {
 
     # Init variables.
     need_update=1  # need_update (boolean)
@@ -30878,7 +30890,7 @@ x_fourier : check_display $0
     +r2dy. 128 frame. 1,1,0 :: thumb
     w[0,-2] -1,-1,0,"[G"{`39`}"MIC] Fourier Filtering"
 
-    l
+    l {
     if !narg($first_time)
       parallel 0,"alert[thumb] \"[G"{`39`}"MIC Fourier Filtering]\",\
             \"The G\47MIC Fourier filtering demo illustrates the effect\n\
@@ -30945,9 +30957,9 @@ x_fourier : check_display $0
 
     while {*}" && "!{*,ESC}" && "!{*,Q}
     w 0
-    done
+    }
     rm[^0] # Clean images and window.
-  done rm
+  } rm
 
 #@cli x_grab_color : _variable_name
 #@cli : Open a color grabber widget from the first selected image.
@@ -30956,7 +30968,7 @@ x_fourier : check_display $0
 #@cli : Default values: 'variable_name=xgc_variable'.
 x_grab_color : skip ${1=xgc_variable} check_display $0
   if !$! error[0--3] "Command '$0': Missing specified input image." fi
-  l[0] nm={n} :: img
+  l[0] { nm={n} :: img
   e[^-1] "Open "${arg\ {0,s},GRAY,GRAYA,RGB,RGBA}" color grabber widget for image$?, with variable name '$1'."
 
   if !{*} w[] ${fitscreen[]\ {[w,h,1]},128,50%},0,0,-1,-1,"Grab a color" fi
@@ -31007,7 +31019,7 @@ x_grab_color : skip ${1=xgc_variable} check_display $0
     if ['$$1']=='-1' break fi # Close request
 
   while {*}" && "!{*,ESC}" && "!{*,Q}
-  w 0 k[img] :: $nm done
+  w 0 k[img] :: $nm }
   u $color
 
 # Define color grabber icon.
@@ -31035,7 +31047,7 @@ x_hanoi : check_display $0
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' to exit.\n
 ----\n
 -------------------------------------------"
-  l[]
+  l[] {
   l[] { # Create 3D rods
     cylinder3d 1,10 r3d 1,0,0,90
     ++3d 10,0,0  +-3d.. 10,0,0
@@ -31136,7 +31148,7 @@ x_hanoi : check_display $0
     fi
 
   while {*}" && "!{*,ESC}" && "!{*,Q}
-  w[] 0 rm done
+  w[] 0 rm }
 
 #@cli x_histogram
 #@cli : Launch the histogram demo.
@@ -31260,7 +31272,7 @@ x_hough : check_display $0
   if !$! l[] { sp greece onfail testimage2d 400 } fi
   n 0,255
 
-  repeat $! l[$>]
+  foreach {
     r. ${fitscreen\ {[w,h]}},1,100%,3  # Resize to fit screen if necessary.
     if !narg($first_time)
       parallel 0,"+l[0] { r2dy 128 frame 1,1,0 \
@@ -31323,9 +31335,10 @@ x_hough : check_display $0
 
     while {*}" && "{*1}" && "!{*,ESC}" && "!{*,Q}" && "!{*1,ESC}" && "!{*1,Q}
     w 0 w1 0
-    rm. done
+    rm.
     if !{*}" || "!{*1} break fi
-  done rm
+  }
+  rm
 
 #@cli x_jawbreaker : 0<_width<20,0<_height<20,0<_balls<=8
 #@cli : Launch the Jawbreaker game.
@@ -31486,7 +31499,7 @@ x_landscape : check_display $0
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' to exit.\n
 ----\n
 --------------------------------------------------------------"
-  l[]
+  l[] {
   W=150 H=350
 
   # Generate global map + colors.
@@ -31563,7 +31576,7 @@ x_landscape : check_display $0
     if {*,CTRLLEFT}" && "{*,D} w[] 900,600 elif {*,CTRLLEFT}" && "{*,C} w[] 600,400 fi
     wait 20
   while {*}" && "!{*,ESC}" && "!{*,Q}
-  rm w 0 done
+  rm w 0 }
 
 #@cli x_life
 #@cli : Launch the game of life.
@@ -31788,7 +31801,7 @@ x_mask_color : check "${2=5}>=0 && ${3=5}>=0" skip ${1=all} check_display $0
 ----------------------------------------------------------------------------------------------------"
   l[] { _ac_$1 onfail error[0--3] "Command '$0' : Invalid colorspace '$*'." }
   m _ac_forward:$_f
-  foreach
+  foreach {
     slices 0 basename {0,n} nm=${}
     wh=${fitscreen\ {[w,h,1]},128,1024}
     +r $wh,1,100%,2
@@ -31860,8 +31873,7 @@ x_mask_color : check "${2=5}>=0 && ${3=5}>=0" skip ${1=all} check_display $0
     rm[-2,-1] +_ac_forward channels. $_s
     _x_mask_color. $2,$3,{``$colors_add},{``$colors_sub}
     rm.. a c
-
-  done
+  }
   um _ac_forward
 
 _x_mask_color : # Estimate color mask image.
@@ -31930,7 +31942,7 @@ x_metaballs3d : check_display $0
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' to exit.\n
 ----\n
 -----------------------------------------------------------"
-  l[]
+  l[] {
   100,100 noise. 100,1 plasma. 1,0,10 r. 512,320,1,3 n. 0,1 b. 4,0 n. 0,255
   mix_channels. (0.7,0,0;0,0.9,0;0,0,1.2) c. 0,255 l3d
   0
@@ -31961,7 +31973,7 @@ x_metaballs3d : check_display $0
     rm[-3--1] wait 20
     if {*,b}" || "{*,SPACE} mode={($mode+if({*,b}&2,-1,1))%6} wait -1 rm[1] i[1] 0 fi
   while {*}" && "!{*,ESC}" && "!{*,Q}
-  rm w 0 done
+  rm w 0 }
 
 #@cli x_minesweeper : 8<=_width=<20,8<=_height<=20
 #@cli : Launch the Minesweeper game.
@@ -32153,7 +32165,8 @@ x_morph : check "isint(${1=16}) && isint(${2=3}) && $2>=0 && $2<=4" check_displa
 
   offset=0
   radius_keypoints=3
-  repeat $!-1 l[{[$>,$>+1]+$offset}] nm0={0,n} nm1={1,n}
+  repeat $!-1 { l[{[$>,$>+1]+$offset}] {
+    nm0={0,n} nm1={1,n}
     to_colormode 0
     rr2d ${-max_wh},2
     :: img0,img1
@@ -32303,7 +32316,7 @@ x_morph : check "isint(${1=16}) && isint(${2=3}) && $2>=0 && $2<=4" check_displa
     }
     :: $nm1 k[-$1--1]
     offset+={$!-2}
-  done done w0 0 w1 0
+  } } w0 0 w1 0
 
 #@cli x_pacman
 #@cli : Launch pacman game.
@@ -32329,7 +32342,7 @@ x_pacman : check_display $0
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' to exit.\n
 ----\n
 --------------------------------------------------------------"
-  l[]
+  l[] {
 
   # Initialize characters gfx.
   m "_pacman_ghost_base_gfx : 31,19 circle. 15,15,15,1,1 31,12,1,1,'y<4+8*abs(cos(x*0.3+0.25*pi*$""1))' a[-2,-1] y"
@@ -32521,7 +32534,7 @@ x_pacman : check_display $0
     fi
     rm[visu,level_N,levelm_N]
   while $lives
-  rm w 0 done
+  rm w 0 }
 
 # The functions below create the various sprite gfx.
 _pacman_ghost_standard_gfx :
@@ -32747,7 +32760,7 @@ x_plasma : check_display $0
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' to exit.\n
 ----\n
 -------------------------------------------"
-  l[]
+  l[] {
 
   # Init plasma backgrounds.
   N=8
@@ -32798,7 +32811,7 @@ x_plasma : check_display $0
     if {*,CTRLLEFT}" && "{*,D} w[] {3*w},{3*h} elif {*,CTRLLEFT}" && "{*,C} w[] {1.5*w},{1.5*h} fi
     rm. wait 20
   while {*}" && "!{*,ESC}" && "!{*,Q}
-  rm[{-2*$N-2}--1] w[] 0 done
+  rm[{-2*$N-2}--1] w[] 0 }
 
 #@cli x_quantize_rgb : _nbcolors>=2
 #@cli : Launch the RGB color quantization demo.
@@ -33095,7 +33108,7 @@ x_segment : check "${1=1024}==0 || $1>=128" check_display $0
 ---- Keys '"${c}"ESC"$n"', '"${c}"Q"$n"' or '"${c}"ENTER"$n"' exit the interactive window.\n
 ----\n
 ----------------------------------------------------------------------------------------------------"
-  foreach
+  foreach {
 
     # Init variables and images.
     name={0,n} title={0,b} if narg({0,x}) title=$title.{0,x} fi
@@ -33283,8 +33296,7 @@ x_segment : check "${1=1024}==0 || $1>=128" check_display $0
     else k[img] [img],[img],1,1,255
     fi
     a c :: $name
-
-  done
+  }
   u $status # Return control points of last image.
   w 0
 
@@ -33848,7 +33860,7 @@ x_starfield3d : check_display $0
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' to exit.\n
 ----\n
 -----------------------------------------------------------"
-  l[]
+  l[] {
     ('G\47MIC') s x
     x=0 N=$! repeat $N { 0 t. {$>,t},0,0,48,1,1 x$>=$x y$>=0 z$>={-3200-150*$>} x={$x+w+8} } k[50%--1]
     expand_xy 6,0 dilate_circ 5 b 0.5 expand_z 1,0 isosurface3d 10% *3d 1,1,5 rv3d
@@ -33897,7 +33909,8 @@ x_starfield3d : check_display $0
       if !$t x=0 repeat 5 { z$>={-3200-150*$>} } fi
 
     while {*}" && "!{*,ESC}" && "!{*,Q}
-    w[] 0 rm done
+    w[] 0 rm
+  }
 
 #@cli x_tetris
 #@cli : Launch tetris game.
@@ -34211,7 +34224,7 @@ x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2 && isint(${3=0
   if ${"is_image_arg $5"} pass$5 store. background fi
   radius_keypoints=4
 
-  foreach
+  foreach {
     nm={n} :: img
     if narg($background) $background rr2d. {-2,[w,h]},2,3 store. rbackground fi
 
@@ -34357,7 +34370,8 @@ x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2 && isint(${3=0
     k[img,keypoints]
     _x_warp_rbf[keypoints] {img,[w,h]} +. '[x,y]'
     warp[img] .,0,2,3 rm. :: $nm
-  done c 0,255 w 0
+  }
+  c 0,255 w 0
 
 # Generate 2d warping field from set of keypoints, using RBF reconstruction.
 # $1,$2 = width,height
@@ -37379,7 +37393,7 @@ fx_paint_with_brush :
   fi
 
   # Process images.
-  foreach
+  foreach {
     to_color
 
     # Determine painting geometry.
@@ -37436,7 +37450,7 @@ fx_paint_with_brush :
 
     # Paint brush strokes.
     ind=0
-    repeat inf t=$>
+    repeat inf { t=$>
       progress {$ind*100/w#2}
 
       100%,100%,1,{s#0+1}
@@ -37518,9 +37532,9 @@ fx_paint_with_brush :
       ind+=$nb_strokes
       if $ind>=w#2 break fi
 
-    done
+    }
     k.
-  done
+  }
 
   # Set style parameters if new style has been selected.
   if $predefined_style!=$previous_style
@@ -38319,12 +38333,12 @@ fx_draw_whirl_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2013/20/02</i>.</small>")
 fx_blackandwhite :
-  repeat $!
-    l. split_opacity rv to_rgb. s. c      # Isolate opacity
-    *... $1 b... $2%                      # Red level + smoothness
-    *.. $3 b.. $4%                        # Green level + smoothness
-    *. $5 b. $6%                          # Blue level + smoothness
-    +[-3--1] /. {$1+$3+$5} c. 0,255       # (R,G,B) -> B&W
+  repeat $! { l. {
+    split_opacity rv to_rgb. s. c      # Isolate opacity
+    *... $1 b... $2%                   # Red level + smoothness
+    *.. $3 b.. $4%                     # Green level + smoothness
+    *. $5 b. $6%                       # Blue level + smoothness
+    +[-3--1] /. {$1+$3+$5} c. 0,255    # (R,G,B) -> B&W
     adjust_colors ${7-11},0,255
     if $12||$13||$14
       100%,100% [-1]x2                          # Create noise for shadows, midtones and highlights.
@@ -38335,7 +38349,7 @@ fx_blackandwhite :
       *[-6,-3] *[-4,-2] *[-2,-1]                # Get noisy tones.
       +[-4--1] c. 0,255                         # Compose them with the B&W image.
     fi
-    rv a c done mv. 0 done                      # Re-compose opacity and loop to next image.
+  rv a c } mv. 0 }                      # Re-compose opacity and loop to next image.
   if $18 normalize_local $18,$19,$20,2%,1,0,255 fi
   if $22 n 0,255 fi
   if $21 to_pseudogray $21,1 fi
@@ -38696,7 +38710,7 @@ _fx_colorize_lineart_smart :
   fi
   min_color_area={$15^2}
 
-  repeat $1?1:$! inds=${arg\ 1+!!$1,$<,0--1} l[$inds]
+  repeat $1?1:$! { inds=${arg\ 1+!!$1,$<,0--1} l[$inds] {
 
     ind_lineart={$1==1?1:0}
     nm=${gui_layer_name[$ind_lineart]} ::[$ind_lineart] lineart
@@ -38809,8 +38823,7 @@ _fx_colorize_lineart_smart :
       if $3 l[$ind_lineart] { s={s} to_rgb rgb2hsv channels 2 * 255 to_colormode $s } fi
       blend[$ind_lineart,$ind_colors] multiply k[$ind_lineart]
     fi
-
-  done done
+  } }
 
 #@gui Colorize Lineart [Propagation] : fx_colorize_lineart, fx_colorize_lineart_preview(1)
 #@gui : note = note("<b>Layers ordering:</b>")
@@ -41300,8 +41313,8 @@ fx_mix_lab_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2018/07/18</i>.</small>")
 fx_mix_pca :
-  foreach {
-    split_opacity l[0] to_rgb
+  foreach { split_opacity l[0] {
+    to_rgb
 
     # Get image covariance (and remember it to speed up multiple calls of the filter).
     if [$14]==round(stats()[0,4],0.1) _avg={[$15][0,3]} C={[$15][3,9]} status=
@@ -41366,7 +41379,7 @@ fx_mix_pca :
        );
        avg_shift + T*nI"
     c 0,255
-  done a c } u $__status
+  } a c } u $__status
 
 fx_mix_pca_preview :
   _is_preview=1
@@ -42222,7 +42235,8 @@ _fx_tune_hsv :
   preview_mapping=${1-64}
   all_colors=dark,light,avg,red,yellow,green,cyan,blue,magenta
 
-  foreach split_opacity l[0] to_rgb
+  foreach { split_opacity l[0] {
+    to_rgb
 
     # Define list of considered colors.
     colors,sep=
@@ -42308,7 +42322,7 @@ _fx_tune_hsv :
       l[] {
         repeat narg($all_colors) { color=${arg\ 1+$>,$all_colors} (${$color}) } a y permute. yzcx
         s x r {s=round(max($__ps,16));[s,s]}
-        repeat narg($all_colors) l[$>] {
+        repeat narg($all_colors) { l[$>] {
           color=${arg\ 1+$>,$all_colors}
           mode=${mode_$color}
           if $mode==2
@@ -42318,13 +42332,12 @@ _fx_tune_hsv :
           to {`uppercase(['$color'][0])`},0.5~,0.5~,50%,2,0.5
           to_rgba
           if $mode frame 1,1,0,0,0,255 frame 2,2,255 else frame 3,3,0,0,0,64 fi
-        } done
+        } }
         append_tiles 3,3
         store __preview_mapping
       }
     fi
-
-  done a c done
+  } a c }
 
 fx_tune_hsv :
   _fx_tune_hsv ${1-63},0
@@ -43125,7 +43138,8 @@ fx_drop_water :
   N={$!-$1}
   if $N<=0 error "At least two layers are required in this mode." fi
 
-  repeat $N l[{$!-$>-1}] nm0={n} nm=${-gui_layer_name}
+  repeat $N { l[{$!-$>-1}] {
+    nm0={n} nm=${-gui_layer_name}
     :: img
 
     # Create binary shapes (i.e. opacity map).
@@ -43190,7 +43204,7 @@ fx_drop_water :
 
     rv
     if !$16 gui_merge_layers :: $nm0 fi
-  done done
+  } }
   if $1 rm[0] fi
 
 fx_drop_water_preview :
@@ -47097,7 +47111,7 @@ fx_illuminate_shape2d_preview_interactive :
   input_type,\
   keep_input_bg=$1,$7
   keep_input_bg&={$!>1}
-  repeat $!-$keep_input_bg if $keep_input_bg sel=$>,-1 else sel=$> fi +l[$sel]
+  repeat $!-$keep_input_bg { if $keep_input_bg sel=$>,-1 else sel=$> fi +l[$sel] {
     to_rgba
     +_fx_illuminate_shape2d[0] $1,2,${3-6},0,1,""$9,0,${11-15},""${16-29},""0,0
     if $!>2 rm[0] elif $input_type>=2 sh[0] 0,2 f. 128 rm. fi
@@ -47147,8 +47161,8 @@ fx_illuminate_shape2d_preview_interactive :
       ox,oy,ob=$x,$y,$b
 
     while {*}" && "!{*,ESC}" && "!{*,Q}
-    w 0
-  rm done done
+    w 0 rm
+  } }
 
 _fx_illuminate_shape2d : # Input selection must contains a single image. Output is a single image.
   input_type,\
@@ -50873,7 +50887,7 @@ fx_sine_curve :
   rW,rH={[$W,$H]*$nantialiasing} # Size of the non-antialiased rendering
 
   # Generate and render curve.
-  l[]
+  l[] {
 
     # Compute curve coordinates.
     $nresolution,1,1,2,"*
@@ -50960,7 +50974,7 @@ fx_sine_curve :
     r. $W,$H,1,1,2 n 0,255
     i[0] 100%,100%,1,3 fc[0] $colR,$colG,$colB
     a[-2,-1] c
-  done
+  }
 
   if 0$_is_preview
     if $!==1 i[0] $W,$H,1,3 fi
@@ -52292,7 +52306,8 @@ fx_input_565 : skip "${1=}"
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2015/09/07</i>.</small>")
 fx_intarsia :
-  to_rgb repeat $! nm=${gui_layer_name[$>]} +l[$>]
+  to_rgb
+  repeat $! { nm=${gui_layer_name[$>]} +l[$>] {
 
     # Constrain image for size and number of colors, and index it with colormap.
     if max(w,h)>$3 rr2d $3,$3,0 fi
@@ -52385,7 +52400,7 @@ fx_intarsia :
     ('"</table>\n</font></center>\n</body>"')
     a x ot "$1/$2"
     rm
-  done done
+  } }
 
 fx_intarsia_preview :
   to_rgb
