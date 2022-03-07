@@ -7787,7 +7787,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
             if (nb_foreachdones>=foreachdones._height)
               foreachdones.resize(3,std::max(2*foreachdones._height,8U),1,1,0);
-            unsigned int *const fed = foreachdones.data(0,nb_foreachdones++);
+            unsigned int *fed = foreachdones.data(0,nb_foreachdones++);
             fed[0] = 0; // Iteration counter
             fed[1] = selection._height;
             fed[2] = debug_line;
@@ -7892,6 +7892,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               cimg::mutex(27,0);
               if (exception._message) throw exception;
 
+              fed = foreachdones.data(0,nb_foreachdones - 1);
               ++fed[0]; --fed[1];
               next_debug_line = fed[2];
               next_debug_filename = debug_filename;
