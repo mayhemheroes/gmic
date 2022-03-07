@@ -1715,7 +1715,7 @@ clean_cluts :
   round c 0,255
 
   # Standardize names.
-  foreach
+  foreach {
     nm={n}
 
     # Standardize names for 'Moviz'.
@@ -1810,7 +1810,7 @@ clean_cluts :
       = 0,0,100%  nm={t} rm
     }
     ::[^] $nm
-  done
+  }
 
   # Convert RGB CLUTs to Grayscale when possible.
   foreach {
@@ -1915,42 +1915,44 @@ compress_gmic :
 # Default value: 'output_locale=fr'.
 csv2ts : skip "${1=fr}"
   e[^-1] "Convert buffer$? from .csv format to .ts format (in '$1' locale)."
-  foreach if w>1
-    ('"<?xml version=\"1.0\" encoding=\"utf-8\"?>"\n\n\
-      "<!DOCTYPE TS>"\n\
-      "<TS version=\"2.1\" language=\"$1\">"\n\
-      "<context>"\n\
-      "  <name>FilterTextTranslator</name>"\n\n':y)
-    repeat h#0 {
-      str={0,`I(0,$>)`}
-      tr={0,`I(1,$>)`}
-      if s=['$tr'];s!=0" && norm(s-=_' ')"
-        ({'$str'}) autocrop. {'" "'} _gmd_ascii2html. str={t} rm.
-        ({'$tr'}) autocrop. {'" "'} _gmd_ascii2html. tr={t} rm.
+  foreach {
+    if w>1
+      ('"<?xml version=\"1.0\" encoding=\"utf-8\"?>"\n\n\
+        "<!DOCTYPE TS>"\n\
+        "<TS version=\"2.1\" language=\"$1\">"\n\
+        "<context>"\n\
+        "  <name>FilterTextTranslator</name>"\n\n':y)
+      repeat h#0 {
+        str={0,`I(0,$>)`}
+        tr={0,`I(1,$>)`}
+        if s=['$tr'];s!=0" && norm(s-=_' ')"
+          ({'$str'}) autocrop. {'" "'} _gmd_ascii2html. str={t} rm.
+          ({'$tr'}) autocrop. {'" "'} _gmd_ascii2html. tr={t} rm.
 
-        if {0,!i(2,$>)} # Global translation
-          ('"    <message>"\n\
-            "      <source>"$str"</source>"\n\
-            "      <translation>"$tr"</translation>"\n\
-            "    </message>"\n\n':y)
-        else # Filter specialization
-          i=2
-          for {0,i($i,$>)} {
-            path={0,`I($i,$>)`} ({'$path'}) autocrop. {'" "'} _gmd_ascii2html. path={t} rm.
+          if {0,!i(2,$>)} # Global translation
             ('"    <message>"\n\
               "      <source>"$str"</source>"\n\
-              "      <comment>"$path"</comment>"\n\
               "      <translation>"$tr"</translation>"\n\
-              "    </message>"\n':y)
-            i+=1
-          }
-          r. 1,{h+1},1,1,0,1 # Last item has two done
+              "    </message>"\n\n':y)
+          else # Filter specialization
+            i=2
+            for {0,i($i,$>)} {
+              path={0,`I($i,$>)`} ({'$path'}) autocrop. {'" "'} _gmd_ascii2html. path={t} rm.
+              ('"    <message>"\n\
+                "      <source>"$str"</source>"\n\
+                "      <comment>"$path"</comment>"\n\
+                "      <translation>"$tr"</translation>"\n\
+                "    </message>"\n':y)
+              i+=1
+            }
+            r. 1,{h+1},1,1,0,1 # Last item has two done
+          fi
         fi
-      fi
-    }
-    ('"</context>\n</TS>"\n':y)
-    a[^0] y k.
-  fi done
+      }
+      ('"</context>\n</TS>"\n':y)
+      a[^0] y k.
+    fi
+  }
 
 #@cli delete : filename1[,filename2,...] : (+)
 #@cli : Delete specified filenames on disk. Multiple filenames must be separated by commas.
@@ -2015,7 +2017,7 @@ _display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
        else ('\"$""*\"') replace. {','},32 u {t} rm.
        fi"
   p
-  foreach
+  foreach {
     ('{n}') if s=crop();find(s,_'.',size(s)-1,-1)>0 nm={-2,b}.{-2,x} else nm={-2,b} fi rm.
     :: img
 
@@ -2111,7 +2113,7 @@ _display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
     repeat {img,d} { cursor[$>] 0 }
 
     # Start event loop.
-    for ${-isvisible}" && "!${"iskey ESC"}" && "!((${"iskey CTRLLEFT"}" || "${"iskey CTRLRIGHT"})" && "${"iskey W"})
+    for ${-isvisible}" && "!${"iskey ESC"}" && "!((${"iskey CTRLLEFT"}" || "${"iskey CTRLRIGHT"})" && "${"iskey W"}) {
 
       # Correct aspect ratio while centering image.
       if $ratio_mode" && "$sizx>16" && "$sizy>16
@@ -2523,14 +2525,14 @@ _display2d : check "isbool(${1=0}) && isint(${2=1}) && $2>=0"
       if [$mx,$my]!=[$old_mx,$old_my] rmn view fi
       omb=$mb
 
-    done
+    }
     k[0]
     if narg($_d2d_core) w[] -1,-1,$wnormalization0
     else
       if $is_multiview repeat d { w$>[] 0 } else w[] 0 fi
     fi
     :: $nm um iskey,flushkey,isvisible,isresized,idisp
-  done
+  }
   um _d2d_format v -1 d[]
 
 #@cli d3d : eq. to 'display3d'.
@@ -2556,7 +2558,7 @@ _display3d :
   is_user_background,exit_on_anykey=$1,$2
   if !$! e[0--3] "Display 3D object []." return fi
 
-  foreach
+  foreach {
     l. {
       check3d 0
       onfail l[] { ({'${}'}) s +,{'"'check3d': "'} k. msg={t} rm } error[] "Command 'display3d': "$msg
@@ -2889,7 +2891,7 @@ _display3d :
 
     while {*}" && "!{*,ESC}" && "!($is_CTRL" && "{*,W})
     k[0]
-  done
+  }
   if narg($disp_normalization) w[] -1,-1,$disp_normalization else w[] 0 fi
   v -1 d[]
 
@@ -2909,7 +2911,7 @@ _display_array : check ${1=13}>0" && "${2=$1}>0
   dxb={round($1/2,1,1)} dxf={$1-1-$dxb}
   dyb={round($2/2,1,1)} dyf={$2-1-$dyb}
 
-  foreach
+  foreach {
     if w<128" && "h<128 r 128,128,100%,100%,0,0,0.5,0.5 fi # Manage cases of small and large images.
     x0=0 y0=0 w={w} h={h}
     wmax={0.9*{*,u}} hmax={0.9*{*,v}}
@@ -2994,7 +2996,7 @@ _display_array : check ${1=13}>0" && "${2=$1}>0
           !{*2,ESC}" && "!{*2,Q}" && "\
           !{*3,ESC}" && "!{*3,Q}
     k[0] w 0 w1 0 w2 0 w3 0
-  done
+  }
 
 __display_array :
   round.. 1 c.. 0,999 r. 100%,100%,1,3,{s==1}
@@ -3104,7 +3106,8 @@ _display_graph : check "${1=0}>=0 && ${2=0}>=0"
   skip ${3=1},${4=0},${5=0},${6=0},${7=0},${8=0},"${9=x-axis}","${10=y-axis}"
   e[0--3] "Render $1x$2 graph plot from data of image$?."
 
-  foreach nm={0,n}
+  foreach {
+    nm={0,n}
 
     # Determine output size.
     if $1>0" && "$2>0 w,h=$1,$2 else w,h={{*,u}/2},{{*,v}/2} fi
@@ -3150,8 +3153,9 @@ _display_graph : check "${1=0}>=0 && ${2=0}>=0"
     frame. 16,16,220
     0 t. "$9",0,0,14,1,-220,-220,-220 j.. .,{({-2,w}-w)/2},{{-2,h}-16},0,0,-1 rm.
     0 t. "$10",0,0,14,1,-220,-220,-220 rotate. -90 j.. .,2,{({-2,h}-h)/2},0,0,-1 rm.
-
-  :: $nm done c 0,255
+    :: $nm
+  }
+  c 0,255
 
 #@cli dh : eq. to 'display_histogram'.
 dh :
@@ -3210,7 +3214,7 @@ display_parametric : check "${1=512}>0 && ${2=$1}>0 && ${4=0}>=0" skip ${3=3},${
   s0="no " s1="" o0="" o1="colored "
   e[^-1] "Render $1x$2 parametric graph plot from data of image$?, with "${o{$3>1}}"outline opacity "\
       {$3>1?$3-1:$3}", vertex radius $4, "${s{$5!=0}}"antialiasing and "${s{$6!=0}}"decoration."
-  foreach
+  foreach {
     nm={0,n} N={w*h*d}
     i[0] ('CImg3d') +[0] 0.5 i[1] ($N;$N)  # Header + nb of vertices/primitives.
 
@@ -3263,7 +3267,7 @@ display_parametric : check "${1=512}>0 && ${2=$1}>0 && ${4=0}>=0" skip ${3=3},${
       0 t. "$8",0,0,14,1,-220,-220,-220 rotate. -90 j.. .,2,{({-2,h}-h)/2},0,0,-1 rm.
     fi
     :: $nm
-  done
+  }
 
 #@cli dp : eq. to 'display_parallel'.
 dp :
@@ -3317,7 +3321,8 @@ display_parallel0 :
 display_polar : check "${1=500}>32 && ${2=$1}>32"
   skip ${3=1},${4=200},${5=$4},${6=$5},${7=0},${8=360},"${9=x-axis}","${10=y-axis}"
   e[^-1] "Render $1x$2 polar graph plot from data of image"$_gmic_s", with outline $4 and fill color ($4,$5,$6)."
-  foreach nm={0,n}
+  foreach {
+    nm={0,n}
 
     # Compute (x,y) coordinates of the polar curve points.
     M={max(abs(iM),abs(im))}
@@ -3371,9 +3376,8 @@ display_polar : check "${1=500}>32 && ${2=$1}>32"
     +erode. 3 !=. 255 r.. 100%,100%,1,3 j... ..,0,0,0,0,1,.,1 rm[-2,-1]
     frame. 1,1,128 frame. 15,15,220
     0 t. "$9",0,0,13,1,-220,-220,-220 j.. .,{({-2,w}-w)/2},{{-2,h}-16},0,0,-1 rm.
-    0 t. "$10",0,0,13,1,-220,-220,-220 rotate. -90 j.. .,2,{({-2,h}-h)/2},0,0,-1 rm.
-
-  :: $nm done
+    0 t. "$10",0,0,13,1,-220,-220,-220 rotate. -90 j.. .,2,{({-2,h}-h)/2},0,0,-1 rm. :: $nm
+  }
 
 #@cli dq : eq. to 'display_quiver'.
 dq :
@@ -3956,7 +3960,7 @@ output_gmz : skip ${2=auto}
 output_obj : check "isbool(${2=1})" check3d 0
   s0,s1=out,
   e[^-1] "Output 3D object$? as Wavefront 3D object file '$1' (with"${s$2}" materials)."
-  N=$! repeat $N nm={$>,n} +l[$>]
+  N=$! repeat $N { nm={$>,n} +l[$>] {
     nb_materials,nb_primitives,nb_textures,nb_tcoords=0
 
     # Generate basename, file header and eval macros.
@@ -3990,7 +3994,7 @@ output_obj : check "isbool(${2=1})" check3d 0
     }
 
     # Generate material output.
-    if $2 l.
+    if $2 l. {
       e[] "    - Export materials."
       256,256,256 :: materials_rgb
       1,$nbp,1,3 :: materials
@@ -4038,7 +4042,7 @@ output_obj : check "isbool(${2=1})" check3d 0
         run('nb_materials,nb_textures=',nb_materials,',',nb_textures)"
       e[] "\r    - Export materials: Done."
       k[materials,out_mtl]
-    done fi
+    } fi
 
     # Generate primitive output.
     e[] "    - Export primitives."
@@ -4144,7 +4148,8 @@ output_obj : check "isbool(${2=1})" check3d 0
     } fi
 
     rm
-  done done is_change 0
+  } }
+  is_change 0
 
 #@cli ot : eq. to 'output_text'.
 ot :
@@ -4355,10 +4360,13 @@ parse_cli_bashcompletion :
   coms="    coms=\"" c=
 
   # Extract list of available commands.
-  repeat $! if s=['{$>,n}'];s[0]==_'_' continue fi l[$>] {
-    ('{n}') l. { s -,{'@'} name={0,t} rm } :: $name
-    coms.=$c$name c=" "
-  } done
+  repeat $! {
+    if s=['{$>,n}'];s[0]==_'_' continue fi
+    l[$>] {
+      ('{n}') l. { s -,{'@'} name={0,t} rm } :: $name
+      coms.=$c$name c=" "
+    }
+  }
   +e[] $coms"\""\n\
 "    opts=$(echo \"$coms\" | sed \"s: \\([^ ]\\+\\): \\1 -\\1 \\+\\1:g\")"\n
 
@@ -4381,26 +4389,29 @@ parse_cli_bashcompletion :
 
   # Extract list of arguments.
   +e[] "    case \"${prev}\" in"
-  repeat $! if s=['{$>,n}'];s[0]==_'_' continue fi l[$>] {
-    name={n}
-    if n=['$name'];"n[0]!=_'_' && find(n,'input') && find(n,'output') && "\
-                   "n!='i' && n!='o' && n!='m' && n!='it' && n!='ot'"
-      if s=['$name'];s=='help'||s=='h'
-        +e[] "        \""$name"\" | \"-"$name"\" | \"+"$name"\")"
-        +e[] "            COMPREPLY=( $(compgen -W \"$coms\" -- \"$cur\") ); return 0;;"
-      else
-        s -,{'\n'} k[0] discard {'#@cli'} max {'" "'} autocrop {'" "'}
-        s -,{':'} autocrop {'" "'} rm[0] replace {'" "'},{'_'}
-        n_args=0 args,c= repeat $! { if ['{/{$>,t}}']!='(+)' args.=$c{$>,t} c=" " n_args+=1 fi }
-        if $n_args==1 args="> "$args fi
-        if ['$args']!=0
+  repeat $! {
+    if s=['{$>,n}'];s[0]==_'_' continue fi
+    l[$>] {
+      name={n}
+      if n=['$name'];"n[0]!=_'_' && find(n,'input') && find(n,'output') && "\
+                     "n!='i' && n!='o' && n!='m' && n!='it' && n!='ot'"
+        if s=['$name'];s=='help'||s=='h'
           +e[] "        \""$name"\" | \"-"$name"\" | \"+"$name"\")"
-          +e[] "            COMPREPLY=( $(compgen -W \""{/{/$args}}"\") ); return 0;;"
+          +e[] "            COMPREPLY=( $(compgen -W \"$coms\" -- \"$cur\") ); return 0;;"
+        else
+          s -,{'\n'} k[0] discard {'#@cli'} max {'" "'} autocrop {'" "'}
+          s -,{':'} autocrop {'" "'} rm[0] replace {'" "'},{'_'}
+          n_args=0 args,c= repeat $! { if ['{/{$>,t}}']!='(+)' args.=$c{$>,t} c=" " n_args+=1 fi }
+          if $n_args==1 args="> "$args fi
+          if ['$args']!=0
+            +e[] "        \""$name"\" | \"-"$name"\" | \"+"$name"\")"
+            +e[] "            COMPREPLY=( $(compgen -W \""{/{/$args}}"\") ); return 0;;"
+          fi
         fi
+        rm 0
       fi
-      rm 0
-    fi
-  } done
+    }
+  }
 
   +e[] "    esac"\n\n\
 "    COMPREPLY=( $(compgen -W \"$opts\" -- \"$cur\") )"\n\
@@ -4426,7 +4437,7 @@ parse_cli_ascii :
   category= n_category=0
   if !narg($_section) _section=1 fi
 
-  repeat $! if s=['{$>,n}'];s[0]==_'_' continue fi l[$>]
+  repeat $! { if s=['{$>,n}'];s[0]==_'_' continue fi l[$>] {
 
     # Detect and display new category.
     if !0$_no_categories
@@ -4469,7 +4480,7 @@ parse_cli_ascii :
 
     # Parse command description.
     n_example=0 nl="\n"
-    repeat $! if {$>,i==_':'} l[$>]
+    repeat $! { if {$>,i==_':'} l[$>] {
       if "h==1 || (h==2 && i[-1,2]==_' ')" rm ('":  "':y) fi # Empty description lines
       rows {1+(i[1]==_'" "')},100%
       if "find(#0,'(eq. to ')>=0" # Found 'Eq. to' description.
@@ -4511,9 +4522,9 @@ parse_cli_ascii :
         if w +e[] $nl{/{t}} nl= fi
       fi
 
-    done fi done
+    } fi }
     rm 0
-  done done rm u $eqto
+  } } rm u $eqto
 
 parse_cli_text_ascii :
   if !narg($_shell_cols) _shell_cols={${-shell_cols}-5} fi
@@ -4550,9 +4561,9 @@ parse_cli_html :
   v 0 use_vt100 e[] ""
 
   # Sort by categories.
-#  repeat $! ('{$>,n}') l. s +,{'@'} rv a y nm={t} done rm. ::[$>] $nm done # Rename as 'category@name'
+#  repeat $! { ('{$>,n}') l. { s +,{'@'} rv a y nm={t} } rm. ::[$>] $nm } # Rename as 'category@name'
 #  sort_list +,n # Sort by categories
-#  repeat $! ('{$>,n}') l. s +,{'@'} rv a y nm={t} done rm. ::[$>] $nm done # Rename as 'name@category'
+#  repeat $! { ('{$>,n}') l. { s +,{'@'} rv a y nm={t} } rm. ::[$>] $nm } # Rename as 'name@category'
 
   # Generate html page 'List of Commands'.
   html="<!DOCTYPE html>"\n\
@@ -4576,40 +4587,43 @@ parse_cli_html :
 
   list_categories,c=
   category,p_category= n,is_tr,is_table,row=0
-  repeat $! if s=['{$>,n}'];s[0]==_'_' continue fi l[$>] {
-    ('{n}') l. { s -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm }
-    if ['$category']!=['$p_category']
-      strvar $category category_id=${}
-      if $is_tr
-        if $n%5" && "$row>1 html.="        <td colspan=\""{5-$n%5}"\"></td>"\n fi
-        html.="      </tr>"\n is_tr=0
-      fi
-      if $is_table html.="    </table><br/>"\n is_table=0 fi
-      html.="\n    <h1 class=\"ref_h1\"><a name=\""$category_id"\"></a>"$category":</h1>"\n\
-            "    <table class=\"ref_table_category\">"\n
+  repeat $! {
+    if s=['{$>,n}'];s[0]==_'_' continue fi
+    l[$>] {
+      ('{n}') l. { s -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm }
+      if ['$category']!=['$p_category']
+        strvar $category category_id=${}
+        if $is_tr
+          if $n%5" && "$row>1 html.="        <td colspan=\""{5-$n%5}"\"></td>"\n fi
+          html.="      </tr>"\n is_tr=0
+        fi
+        if $is_table html.="    </table><br/>"\n is_table=0 fi
+        html.="\n    <h1 class=\"ref_h1\"><a name=\""$category_id"\"></a>"$category":</h1>"\n\
+              "    <table class=\"ref_table_category\">"\n
 
-      ('$category') replace_str. ",","&#44;" lcategory={t} rm.
-      list_categories.=$c$lcategory c=,
-      is_table=1
-      n,row=0
-    fi
-    if !${parse_cli_is_eqto.}
-      is_builtin={"find(#-1,'(+)')>=0"}
-      if !($n%5)
-        if $is_tr html.="      </tr>"\n fi
-        html.="      <tr>"\n
-        is_tr=1 row+=1
+        ('$category') replace_str. ",","&#44;" lcategory={t} rm.
+        list_categories.=$c$lcategory c=,
+        is_table=1
+        n,row=0
       fi
-      if ['$name']=='index' url_name=_index.html else url_name=$name.html fi
-      if $is_builtin
-        html.="        <td><a href=\""$url_name"#top\"><span class=\"gmd_monospace\" >"$name"</span></a></td>"\n
-      else
-        html.="        <td><a href=\""$url_name"#top\">"$name"</a></td>"\n
+      if !${parse_cli_is_eqto.}
+        is_builtin={"find(#-1,'(+)')>=0"}
+        if !($n%5)
+          if $is_tr html.="      </tr>"\n fi
+          html.="      <tr>"\n
+          is_tr=1 row+=1
+        fi
+        if ['$name']=='index' url_name=_index.html else url_name=$name.html fi
+        if $is_builtin
+          html.="        <td><a href=\""$url_name"#top\"><span class=\"gmd_monospace\" >"$name"</span></a></td>"\n
+        else
+          html.="        <td><a href=\""$url_name"#top\">"$name"</a></td>"\n
+        fi
+        n+=1
       fi
-      n+=1
-    fi
-    p_category=$category
-  } done
+      p_category=$category
+    }
+  }
   if $is_tr
     if $n%5" && "$row>1 html.="        <td colspan=\""{5-$n%5}"\"></td>"\n fi
     html.="      </tr>"\n
@@ -4622,22 +4636,25 @@ parse_cli_html :
         "      <tr style=\"background-color: \#d8dcea;\"><td><b>Shortcut name</b></td><td>"\
         "<b>Equivalent command name</b></td></tr>"\n
 
-  repeat $! if s=['{$>,n}'];s[0]==_'_' continue fi l[$>] {
-    ('{n}') l. s { -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm }
-    if ${parse_cli_is_eqto.}
-      is_builtin={"find(#-1,'(+)')>=0"}
-      +l { s -,{'"eq. to \47"'} k. s -,{'\47'} k[0] autocrop {'" "'} eqto={t} rm }
-      ('$name') replace_str. ">","&gt;" replace_str. "<","&lt;" html_name={t} rm.
-      html.="      <tr><td><a href=\""$eqto.html"#top\"><b>"$html_name"</b></a></td>"
-      if $is_builtin
-        html.="<td><a href=\""$eqto.html"#top\"><span class=\"gmd_monospace\">"$eqto"</span></a></td>"
-      else
-        html.="<td><a href=\""$eqto.html"#top\">"$eqto"</a></td>"
+  repeat $! {
+    if s=['{$>,n}'];s[0]==_'_' continue fi
+    l[$>] {
+      ('{n}') l. s { -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm }
+      if ${parse_cli_is_eqto.}
+        is_builtin={"find(#-1,'(+)')>=0"}
+        +l { s -,{'"eq. to \47"'} k. s -,{'\47'} k[0] autocrop {'" "'} eqto={t} rm }
+        ('$name') replace_str. ">","&gt;" replace_str. "<","&lt;" html_name={t} rm.
+        html.="      <tr><td><a href=\""$eqto.html"#top\"><b>"$html_name"</b></a></td>"
+        if $is_builtin
+          html.="<td><a href=\""$eqto.html"#top\"><span class=\"gmd_monospace\">"$eqto"</span></a></td>"
+        else
+          html.="<td><a href=\""$eqto.html"#top\">"$eqto"</a></td>"
+        fi
+        html.="</tr>"\n
+        n+=1
       fi
-      html.="</tr>"\n
-      n+=1
-    fi
-  } done
+    }
+  }
   if $is_table html.="    </table>"\n fi
 
   html.=\n\
@@ -4674,7 +4691,7 @@ parse_cli_html :
   }
 
   # Generate html page for each command.
-  foreach
+  foreach {
     ('{n}') l. { s -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm }
     e[] "\r  > "$_vt100_c[#{1+$>}]$_vt100_n" "{`copy(vector48(_'" "'),['$category" / "$name'])`}
 
@@ -4774,7 +4791,7 @@ parse_cli_html :
       } fi
     }
 
-    foreach
+    foreach {
       if "find(#0,'(eq. to ')>=0"
 
         # Found 'Eq. to' description.
@@ -4881,7 +4898,7 @@ parse_cli_html :
         if i[-1,2]!=_'\n' html.="\n" fi
         line+=1
       fi
-    done
+    }
 
     # Generate page.
     html.=\n\
@@ -4893,7 +4910,7 @@ parse_cli_html :
     rm ({'$html'}:y)
     replace_str. "<tutorial_tag>",$tutorial_html # Insert tutorial button
     :: $name ot $url_name
-  done
+  }
   rm
   e[] "\r  > "${_vt100_g}{`copy(vector64(_'" "'),'"Parsing done!"')`}$_vt100_n
 
@@ -4908,77 +4925,81 @@ parse_cli_images :
   old_category,category= n_category,n_example=0
   if !isfile('image.jpg') l[] { sp bottles,640 onfail testimage2d 500 } o. image.jpg rm. fi
   n_global=0
-  repeat $! if s=['{$>,n}'];s[0]==_'_' continue fi l[$>]
-    ('{n}') l. { s -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm }
+  repeat $! {
+    if s=['{$>,n}'];s[0]==_'_' continue fi
+    l[$>] {
+      ('{n}') l. { s -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm }
 
-    if ['$category']!=['$old_category']
-      n_category+=1
-      e[] $_vt100_r"\n ** Section \#"$n_category": "$category"."$_vt100_n"\n"
-    fi
-    s -,{'\n'} discard {'#@cli'} max {'" "'} autocrop {'" "'}
-    n_example=0
-
-    foreach
-      if "i==_':' && (
-            for (p = 1, p<h && i[p]<=_' ', ++p);
-            i[p]==_'$' && i[p+1]!=_'$')"
-
-        s +,{'$'} rm[0,1] a y autocrop {'" "'} example={/{t}}
-        n_example+=1
-        n_global+=1
-        if $n_example>1
-          basename=${name}_$n_example.jpg
-        else
-          basename=${name}.jpg
-        fi
-        e[] $_vt100_c[$n_global]$_vt100_n" Command '"$_vt100_g$name$_vt100_n"': $ "$example
-        skip_rendering={"['"$name"'][0]==_'_' || "\
-                        "(isfile(['"{/${_parse_cli_images_path}f_$basename}"']) &&"\
-                        " isfile(['"{/${_parse_cli_images_path}t_$basename}"'])) || "\
-                        "(isfile(['"{/${_parse_cli_images_path}f0_$basename}"']) && "\
-                        "isfile(['"{/${_parse_cli_images_path}t0_$basename}"']))"}
-
-        if !$skip_rendering # Generate picture only if the file doesn't yet exist
-          m "run_example : "$example
-          l[]
-            reset etime=$|
-            run_example
-            etime="done in "$_vt100_n{_round($|-$etime,0.01)}"s"$_vt100_m
-            _parse_cli_images
-            if $!
-              if $!>1 repeat $! { o[$>] ${_parse_cli_images_path}f$>_$basename,85 }
-              else o ${_parse_cli_images_path}f_$basename,85 fi
-              rr2d 480,320,0,2
-              if $!>1 repeat $! { o[$>] ${_parse_cli_images_path}t$>_$basename,75 }
-              else o ${_parse_cli_images_path}t_$basename,75 fi
-              rm
-            fi
-          onfail
-            rm gui_error_preview "Unable to generate preview image"
-            o ${_parse_cli_images_path}f_$basename,85
-            rr2d 480,320,0,2
-            o ${_parse_cli_images_path}t_$basename,75
-            rm
-            etime="failed"
-          done
-          um run_example
-        else etime="skipped"
-        fi
-        e[] "\r"$_vt100_c[$n_global]$_vt100_n" Command '"$_vt100_g$name$_vt100_n"': $ "\
-            $example" "${_vt100_m}"("$etime")."$_vt100_n
+      if ['$category']!=['$old_category']
+        n_category+=1
+        e[] $_vt100_r"\n ** Section \#"$n_category": "$category"."$_vt100_n"\n"
       fi
-    done
-    old_category=$category
-    rm 0
-  done done rm
+      s -,{'\n'} discard {'#@cli'} max {'" "'} autocrop {'" "'}
+      n_example=0
+
+      foreach {
+        if "i==_':' && (
+              for (p = 1, p<h && i[p]<=_' ', ++p);
+              i[p]==_'$' && i[p+1]!=_'$')"
+
+          s +,{'$'} rm[0,1] a y autocrop {'" "'} example={/{t}}
+          n_example+=1
+          n_global+=1
+          if $n_example>1
+            basename=${name}_$n_example.jpg
+          else
+            basename=${name}.jpg
+          fi
+          e[] $_vt100_c[$n_global]$_vt100_n" Command '"$_vt100_g$name$_vt100_n"': $ "$example
+          skip_rendering={"['"$name"'][0]==_'_' || "\
+                          "(isfile(['"{/${_parse_cli_images_path}f_$basename}"']) &&"\
+                          " isfile(['"{/${_parse_cli_images_path}t_$basename}"'])) || "\
+                          "(isfile(['"{/${_parse_cli_images_path}f0_$basename}"']) && "\
+                          "isfile(['"{/${_parse_cli_images_path}t0_$basename}"']))"}
+
+          if !$skip_rendering # Generate picture only if the file doesn't yet exist
+            m "run_example : "$example
+            l[] {
+              reset etime=$|
+              run_example
+              etime="done in "$_vt100_n{_round($|-$etime,0.01)}"s"$_vt100_m
+              _parse_cli_images
+              if $!
+                if $!>1 repeat $! { o[$>] ${_parse_cli_images_path}f$>_$basename,85 }
+                else o ${_parse_cli_images_path}f_$basename,85 fi
+                rr2d 480,320,0,2
+                if $!>1 repeat $! { o[$>] ${_parse_cli_images_path}t$>_$basename,75 }
+                else o ${_parse_cli_images_path}t_$basename,75 fi
+                rm
+              fi
+            onfail
+              rm gui_error_preview "Unable to generate preview image"
+              o ${_parse_cli_images_path}f_$basename,85
+              rr2d 480,320,0,2
+              o ${_parse_cli_images_path}t_$basename,75
+              rm
+              etime="failed"
+            }
+            um run_example
+          else etime="skipped"
+          fi
+          e[] "\r"$_vt100_c[$n_global]$_vt100_n" Command '"$_vt100_g$name$_vt100_n"': $ "\
+              $example" "${_vt100_m}"("$etime")."$_vt100_n
+        fi
+      }
+      old_category=$category
+      rm 0
+    }
+  }
+  rm
 
 # Generate a single image from a list of images, for the reference documentation.
 _parse_cli_images :
   if !$! rm return fi
   W,H={[640,480]}
 
-  foreach nm={n}
-    label=[$>]:" "'$nm'
+  foreach {
+    nm={n} label=[$>]:" "'$nm'
     if ${-is_3d} # 3D vector object
       label2="("{i[6]}" vert., "{i[7]}" prim.)"
       r3d 1,1,0,-80 r3d 0,1,0,80 snapshot3d {max($W,$H)}
@@ -5028,7 +5049,7 @@ _parse_cli_images :
     *. -1 n. 0,255 to_rgb.
     - 245 a y,0.5 + 245
 
-  done
+  }
   c 0,255
 
 parse_cli_trigger_images :
@@ -5631,7 +5652,8 @@ gmd2html : skip "${1=}"
 
   parse_gmd
   s_section,e_section={${-_gmd_tokens}"[s_section,e_section]"}
-  foreach nm$>={b} strvar ${nm$>} fnm=${}
+  foreach {
+    nm$>={b} strvar ${nm$>} fnm=${}
     if "i=="$s_section" && find(#-1,"$e_section")>0"
       +rows 1,{"find(#-1,"$e_section")-1"} title$>={t} rm.
     else title$>=
@@ -5869,7 +5891,7 @@ gmd2html : skip "${1=}"
       );
       end(resize(#0,1,_write_off,1,1,0))"
     k[0] autocrop 0 :: $fnm.html
-  done
+  }
 
   # Embed with header and footer if needed.
   if $embed_html
