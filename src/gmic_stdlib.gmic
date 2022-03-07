@@ -4639,7 +4639,7 @@ parse_cli_html :
   repeat $! {
     if s=['{$>,n}'];s[0]==_'_' continue fi
     l[$>] {
-      ('{n}') l. s { -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm }
+      ('{n}') l. { s -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm }
       if ${parse_cli_is_eqto.}
         is_builtin={"find(#-1,'(+)')>=0"}
         +l { s -,{'"eq. to \47"'} k. s -,{'\47'} k[0] autocrop {'" "'} eqto={t} rm }
@@ -4661,7 +4661,7 @@ parse_cli_html :
 "<!-- end_content -->"\n\n\
 "<!-- ref_navigation_bottom -->"\n\
 "    </div><div class=\"section_end\"></div>"\n\
-"    <!--#include file=\"../footer1.html\" -->"\n\
+"    <!--#include file=\"../footer.html\" -->"\n\
 "  </body>"
   ({'$html'}:y)
 
@@ -4684,7 +4684,7 @@ parse_cli_html :
   # Retrieve full list of commands and discard those starting with '_'.
   repeat $! {
     if s=['{$<,n}'];s[0]==_'_' rm[$<] else l[$<] {
-      ('{n}') l. s { -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm }
+      ('{n}') l. { s -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm }
       is_eqto=${parse_cli_is_eqto.}
       if !$is_eqto _is_$name=1 else rm fi
     } fi
@@ -7952,7 +7952,7 @@ _update :
   out=${_path_rc}update$_version.gmic
   e[0--3] "Update command definition file '"{/$out}"' from the G\47MIC server."
   l[] {
-    cimgz:https://gmic.eu/update$_version.gmic
+    i cimgz:https://gmic.eu/update$_version.gmic
     if h>7" && "same([{^}],'#@gmic',6) ot $out fi
     rm
     onfail error[0--3] "Command 'update' : Unreachable update file."
@@ -22229,15 +22229,9 @@ volume3d :
 
 #-------------------------------
 #
-#@cli :: Control Flow
+#@cli :: Flow Control
 #
 #-------------------------------
-
-#@cli { : eq. to ','.
-
-#@cli , : (+)
-#@cli : Do nothing. May be used as a separator after any command that takes arguments or not.
-#@cli : (eq. to '{').
 
 #@cli ap : eq. to 'apply_parallel'.
 ap :
