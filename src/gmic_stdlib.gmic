@@ -14063,9 +14063,10 @@ montage : check "isnum(${2=2}) && $2>=0 && $2<=3" skip "${1=X}",${3=0},"${4=}"
 
     # Determine image positions and sizes.
     N=$! repeat $N { ($>,0,0,{$>,w},{$>,h},0,0,0) }
-    l[$N--1] _p=1 k[${-_montage}] w={i[3]} h={i[4]} f 'if(i(0,y)<0,-1,i)' discard -1 y r 8,{h/8},1,1,-1
-    onfail error[0--3] "Too many input images."
-    done
+    l[$N--1] {
+      _p=1 k[${-_montage}] w={i[3]} h={i[4]} f 'if(i(0,y)<0,-1,i)' discard -1 y r 8,{h/8},1,1,-1
+      onfail error[0--3] "Too many input images."
+    }
 
     # Render montage.
     if narg("$4") m "__montage : $4 k[0]"
@@ -14093,7 +14094,7 @@ _montage :
   elif $c==-4 # Mirror.
     _p+=1 l=${-_montage} f[$l] 'a=i(5,y)%2;if((x==7&&a)||(x==6&&!a),!i,if(x==1,i(3,0)-i(3,y)-i,i))' u $l
   elif $c==-3 # Rotation.
-    _p+=1 l=${-_montage} l[$l] s x +[2] [4] rv[1,2] *[1] -1 +[1] {4,@0} rv[3,4] +[5] 1 a x done u $l
+    _p+=1 l=${-_montage} l[$l] { s x +[2] [4] rv[1,2] *[1] -1 +[1] {4,@0} rv[3,4] +[5] 1 a x } u $l
   else # Merge.
     _p+=1
     l=${-_montage} lw={$l,@3} lh={$l,@4}
@@ -14180,7 +14181,8 @@ resize_mn : check "${2=100%}>=0 && ${3=100%}>=0" skip "${4=0.333},${5=0.333}"
                            + ( (B/2+2*C)*P0 + (2*B+C-3)*P1 + (-5*B/2-2*C+3)*P2 -C*P3)*d^2
                            + ( (-B/2-C)*P0 + (B/2+C)*P2)*d
                            + B/6*P0 + (-B/3+1)*P1 + B/6*P2);"
-  foreach nm={n}
+  foreach {
+    nm={n}
     nw={${"is_percent $1"}?max(1,round($1*w)):round($1)}
     nh={${"is_percent $2"}?max(1,round($2*h)):round($2)}
     nd={${"is_percent $3"}?max(1,round($3*d)):round($3)}
@@ -14205,7 +14207,8 @@ resize_mn : check "${2=100%}>=0 && ${3=100%}>=0" skip "${4=0.333},${5=0.333}"
                                   P2 = I(#-1,x,y,Z+1); P3 = I(#-1,x,y,Z+2); mn(P0,P1,P2,P3,d);" k.
       fi
     fi
-  :: $nm done
+    :: $nm
+  }
 
 #@cli resize_pow2 : _interpolation,_boundary_conditions,_ax,_ay,_az,_ac
 #@cli : Resize selected images so that each dimension is a power of 2.
@@ -14597,7 +14600,7 @@ scale3x :
 #@cli : $ image.jpg +scale_dcci2x ,
 scale_dcci2x : check "${1=1.15}>=0 && ${2=5}>=0" skip ${3=0}
   e[^-1] "Double xy-dimensions of image$?, using DCCI2x algorithm."
-  foreach
+  foreach {
     r {2*w-(!$3)},{2*h-(!$3)},1,100%,4
 
     # Estimate diagonal values.
@@ -14653,7 +14656,7 @@ scale_dcci2x : check "${1=1.15}>=0 && ${2=5}>=0" skip ${3=0}
                  (w1 = 1/(1 + d1^exponent); w2 = 1/(1 + d2^exponent);
                   (interp(j1)*w1 + interp(j2)*w2)/(w1 + w2)); # Smooth area
          value/=16)"
-  done
+  }
 
 #@cli seamcarve : _width[%]>=0,_height[%]>=0,_is_priority_channel={ 0 | 1 },_is_antialiasing={ 0 | 1 },\
 # _maximum_seams[%]>=0
@@ -15257,10 +15260,12 @@ convolve_fft : check ${is_image_arg\ $1}" && isin(${2=2},0,1,2,3)"
 #@cli : $ image.jpg +shift -30,-20 +cross_correlation[0] [1]
 cross_correlation : check ${is_image_arg\ $1}
   e[^-1] "Compute cross-correlation of image$? with mask $1."
-  repeat $! pass$1 0 l[$>,-1] {
-    norm fft.. fft. [-2,-1] *.. [-5] *. [-6]
-    -[-2,-1] *[-5,-3] *[-3,-2] +[-3,-2] ifft rm.
-  } done
+  repeat $! {
+    pass$1 0 l[$>,-1] {
+      norm fft.. fft. [-2,-1] *.. [-5] *. [-6]
+      -[-2,-1] *[-5,-3] *[-3,-2] +[-3,-2] ifft rm.
+    }
+  }
 
 #@cli curvature
 #@cli : Compute isophote curvatures on selected images.
@@ -15315,7 +15320,7 @@ dct : skip ${1=0}
 # 1D direct transform (DCT-II) along the x-axis, for a single image.
 _dct :
   if w%2 r {w+1},100%,100%,100%,0,1 fi
-  s x l[1--1:2] a x mirror x done mv[1] $! a x
+  s x l[1--1:2] { a x mirror x } mv[1] $! a x
   fft x
   100%,1,1,1,2*cos(-x*pi/(2*w)) *[0,2]
   100%,1,1,1,2*sin(-x*pi/(2*w)) *[1,2]
@@ -15379,11 +15384,11 @@ deblur_richardsonlucy : check "$1>=0 && ${2=50}>=0" skip ${3=1}
 #@cli : $ image.jpg +gaussian 5 +convolve_fft[0] [1] +deconvolve_fft[-1] [1]
 deconvolve_fft : check ${is_image_arg\ $1}" && ${2=.001}>=0"
   e[^-1] "Deconvolve image$? with mask $1 and regularization $2, in the fourier domain."
-  repeat $! pass$1 0 l[$>,-1] {
+  repeat $! { pass$1 0 l[$>,-1] {
     w2={0,int(w/2)} h2={0,int(h/2)} d2={0,int(d/2)}
     r[1] [0],[0],[0],1,0,0,0.5,0.5,0.5,0.5 shift[1] -$w2,-$h2,-$d2,0,2
     fft[0] fft[2]                 # a b a' b'
-    +l[-1,-2] sqr + + $2 done     # a b a' b' (a'^2+b'^2+eps)
+    +l[-1,-2] { sqr + + $2 }      # a b a' b' (a'^2+b'^2+eps)
     +*[-4] ...                    # a b a' b' (a'^2+b'^2) ba'
     +*[-6] ...                    # a b a' b' (a'^2+b'^2) ba' ab'
     -[-2,-1]                      # a b a' b' (a'^2+b'^2) ba'-ab'
@@ -15392,7 +15397,7 @@ deconvolve_fft : check ${is_image_arg\ $1}" && ${2=.001}>=0"
     +[-4,-3]                      # aa'+bb' (a'^2+b'^2) ba'-ab'
     /. .. /[-3,-2]                # divide (aa'+bb') and (ba'-ab') by (a'^2+b'^2)
     ifft rm.
-  } done
+  } }
 
 #@cli deinterlace : _method={ 0 | 1 }
 #@cli : Deinterlace selected images ('method' can be { 0=standard or 1=motion-compensated }).
@@ -15456,12 +15461,13 @@ denoise_cnn : skip "${1=0},${2=64}"
 
   # Load denoising network.
   if 0${_is_denoise_cnn_$type} ${_denoise_cnn_$type}
-  else l[]
-    l[] input_cached gmic_denoise_cnn.gmz
-    onfail error[0--5] "Command 'denoise_cnn': Unable to load network file 'gmic_denoise_cnn.gmz'."
-    done
+  else l[] {
+    l[] {
+      input_cached gmic_denoise_cnn.gmz
+      onfail error[0--5] "Command 'denoise_cnn': Unable to load network file 'gmic_denoise_cnn.gmz'."
+    }
     k[$type] unserialize +store _denoise_cnn_$type _is_denoise_cnn_$type=1
-  done fi
+  } fi
   ps=$2 replace_str. "nn_layer_input X,32,32,1,3","nn_layer_input X,"$ps","$ps",1,3" # Set patch size
   run {t} rm[-2,-1]
 
@@ -15609,8 +15615,8 @@ dilate_oct : check $1>=0 skip ${2=1},${3=0}
   repeat $!-2 {
     r={round(($ss-1)*sqrt(2)/(1+sqrt(2))/2)}
     q={round(($ss-1)/(1+sqrt(2))/2)}
-    if $r>0 repeat $r dilate. [0],$2,$3 done fi
-    if $q>0 repeat $q dilate. [1],$2,$3 done fi
+    if $r>0 repeat $r { dilate. [0],$2,$3 } fi
+    if $q>0 repeat $q { dilate. [1],$2,$3 } fi
     mv. 2
   }
   rm[0,1]
@@ -15640,7 +15646,7 @@ _jf_circle :
 dilate_threshold : check "isint($1) && $1>=1 && isint(${2=$1}) && $2>=1 && isint(${3=1}) && $3>=1 && ${4=255}>=0 &&
                           isint(${5=1}) && $5>=0"
   e[^-1] "Dilate image$? with mask $1x$2x$3, threshold $4 and "${arg\ $5,dirichlet,neumann}" boundary conditions."
-  l[]
+  l[] {
     dx1={int($1/2)} dx2={$1-$dx1-1}
     dy1={int($2/2)} dy2={$2-$dy1-1}
     dz1={int($3/2)} dz2={$3-$dz1-1}
@@ -15648,7 +15654,7 @@ dilate_threshold : check "isint($1) && $1>=1 && isint(${2=$1}) && $2>=1 && isint
     i.. 1,100%,1,1,254 1,100%,1,1,255 a x
     ('{^}') rm.. replace_str "254,","(v=j(" replace_str ",255",",0,0,$5);if(abs(v-i)<=$4,v,-1e20))" list={t}
     rm
-  done
+  }
   f 'max($list)'
 
 #@cli divergence
@@ -15726,8 +15732,8 @@ erode_oct : check $1>=0 skip ${2=1},${3=0}
   repeat $!-2 {
     r={round(($ss-1)*sqrt(2)/(1+sqrt(2))/2)}
     q={round(($ss-1)/(1+sqrt(2))/2)}
-    if $r>0 repeat $r erode. [0],$2,$3 done fi
-    if $q>0 repeat $q erode. [1],$2,$3 done fi
+    if $r>0 repeat $r { erode. [0],$2,$3 } fi
+    if $q>0 repeat $q { erode. [1],$2,$3 } fi
     mv. 2
   }
   rm[0,1]
@@ -15739,7 +15745,7 @@ erode_oct : check $1>=0 skip ${2=1},${3=0}
 erode_threshold : check "isint($1) && $1>=1 && isint(${2=$1}) && $2>=1 && isint(${3=1}) && $3>=1 && ${4=255}>=0 &&
                          isint(${5=1}) && $5>=0"
   e[^-1] "Erode image$? with mask $1x$2x$3, threshold $4 and "${arg\ $5,dirichlet,neumann}" boundary conditions."
-  l[]
+  l[] {
     dx1={int($1/2)} dx2={$1-$dx1-1}
     dy1={int($2/2)} dy2={$2-$dy1-1}
     dz1={int($3/2)} dz2={$3-$dz1-1}
@@ -15747,7 +15753,7 @@ erode_threshold : check "isint($1) && $1>=1 && isint(${2=$1}) && $2>=1 && isint(
     i.. 1,100%,1,1,254 1,100%,1,1,255 a x
     ('{^}') rm.. replace_str "254,","(v=j(" replace_str ",255",",0,0,$5);if(abs(v-i)<=$4,v,1e20))" list={t}
     rm
-  done
+  }
   f 'min($list)'
 
 #@cli fft : _{ x | y | z }...{ x | y | z } : (+)
@@ -15783,7 +15789,7 @@ gradient :
 # Parse and check arguments.
 _gradient_get_args : skip "${1=},${2=},${3=}"
   is_noarg=0
-  l[]
+  l[] {
     if ['$1']==0 axes,scheme,boundary=,0,1 is_noarg=1 # No 1st arg
     else
       is_axes={"s=['$1'];fill(s,k,isin(s[k],'xyzc'));min(s)"}
@@ -15801,8 +15807,8 @@ _gradient_get_args : skip "${1=},${2=},${3=}"
         fi
       fi
     fi
-  onfail axes,scheme,boundary=,0,1 is_noarg=1 # Invalid arguments
-  done
+    onfail axes,scheme,boundary=,0,1 is_noarg=1 # Invalid arguments
+  }
   u $axes,$scheme,$boundary,$is_noarg
 
 # Main command.
@@ -15941,7 +15947,7 @@ heat_flow : skip ${1=10},${2=30},${3=0}
 hessian : skip "${1=},${2=}"
 
   # Parse arguments.
-  l[]
+  l[] {
     if ['$1']==0 axes,boundary=,1 noarg # No 1st arg
     else
       is_axes={"s=['$1'];fill(s,k,isin(s[k],'xyz'));min(s)"}
@@ -15954,8 +15960,8 @@ hessian : skip "${1=},${2=}"
         fi
       fi
     fi
-  onfail axes,boundary=,1 noarg # Invalid arguments
-  done
+    onfail axes,boundary=,1 noarg # Invalid arguments
+  }
 
   # Display log message.
   if '$axes'!=0 s_axes=" along axes '"$axes"'" fi
@@ -15964,7 +15970,7 @@ hessian : skip "${1=},${2=}"
   e[^-1] "Compute hessian of image$?"$s_axes", with "$s_boundary" boundary conditions."
 
   # Process images.
-  repeat $! l[$<] {
+  repeat $! { l[$<] {
     nm={n} laxes=$axes if '$laxes'==0 if d>1 laxes=xxxyxzyyyzzz else laxes=xxxyyy fi fi
     ('$laxes')
     repeat int(w/2) {
@@ -15981,7 +15987,7 @@ hessian : skip "${1=},${2=}"
       :: hessian_$a1$a2
     }
     rm[0,1] ::[^] $nm
-  } done
+  } }
   u $is_noaarg
 
 #@cli idct : _{ x | y | z }...{ x | y | z } : (no arg)
@@ -16115,10 +16121,10 @@ ilaplacian : check "${1=0}>=0" skip "${2=}"
     if $is_estimate
       e[0--4] "Invert Laplacian image$? using $1 iterations of PDE flow and
                    initial estimate $2."
-      repeat $! pass$2 0 l[$>,-1] {
+      repeat $! { pass$2 0 l[$>,-1] {
         *[0] 5 i[1] (0,5,0;5,0,5;0,5,0)
         repeat $1 { +convolve. [1] -. [0] +[-2,-1] /. 21 } k. # Optimized semi-implicit scheme, with dt=5
-      } done
+      } }
     else
       e[0--4] "Invert Laplacian image$? using $1 iterations of PDE flow."
       foreach {
@@ -16252,14 +16258,17 @@ inpaint_pde : check ${is_image_arg\ $1}" && ${2=75%}>=0 && isint(${3=1}) && $3>=
 #@cli : $ image.jpg 100%,100% ellipse[-1] 30%,30%,40,30,0,1,255 inpaint_flow[0] [1]
 inpaint_flow : check ${is_image_arg\ $1}" && ${2=10}>=0 && ${3=100}>=0 && ${4=5}>0 && ${5=1}>=0 && ${6=3}>=0"
   e[^-1] "Apply $2x$3 iterations of the inpainting flow on image$?, with mask $1, time step $4, alpha $5 and sigma $6."
-  repeat $! pass$1 0 l[$>,-1]
-    r. [0],[0],[0],1,0 inpaint.. [1]
-    repeat $2 {
-      progress {100*$>/($2-1)}
-      +diffusiontensors.. 0,1,$5,$6,0 *. .. smooth... .,$3,$4,0 rm.
+  repeat $! {
+    pass$1 0 l[$>,-1] {
+      r. [0],[0],[0],1,0 inpaint.. [1]
+      repeat $2 {
+        progress {100*$>/($2-1)}
+        +diffusiontensors.. 0,1,$5,$6,0 *. .. smooth... .,$3,$4,0 rm.
+      }
+      progress 100
     }
-    progress 100
-  done rm. done
+    rm.
+  }
 
 #@cli inpaint_holes : maximal_area[%]>=0,_tolerance>=0,_is_high_connectivity={ 0 | 1 }
 #@cli : Inpaint all connected regions having an area less than specified value.
@@ -16281,20 +16290,22 @@ inpaint_holes : check "${1=4}>=0 && ${2=0}>=0" skip ${3=0}
 #@cli : $ image.jpg 100%,100% ellipse[-1] 30%,30%,40,30,0,1,255 +inpaint_morpho[0] [1]
 inpaint_morpho : check ${is_image_arg\ $1}
   e[^-1] "Inpaint image$? by mask $1, using morphological operators."
-  repeat $! pass$1 0 l[$>,-1] {
-    nm={0,n} im={0,im} iM={0,iM} im1={$im-1} iM1={$iM+1}
-    channels. 0 ==. 0
-    +f[0] $im1 j. [0],0,0,0,0,1,..
-    do
-      +dilate. 3
-      replace.. $im1,$iM1
-      erode.. 3
-      replace.. $iM1,$im1
-      +[-2,-1] /. 2
-      j. ...,0,0,0,0,1,..
-    while im==$im1
-    k. :: $nm
-  } done
+  repeat $! {
+    pass$1 0 l[$>,-1] {
+      nm={0,n} im={0,im} iM={0,iM} im1={$im-1} iM1={$iM+1}
+      channels. 0 ==. 0
+      +f[0] $im1 j. [0],0,0,0,0,1,..
+      do
+        +dilate. 3
+        replace.. $im1,$iM1
+        erode.. 3
+        replace.. $iM1,$im1
+        +[-2,-1] /. 2
+        j. ...,0,0,0,0,1,..
+      while im==$im1
+      k. :: $nm
+    }
+  }
 
 #@cli inpaint_matchpatch : [mask],_nb_scales={ 0=auto | >0 },_patch_size>0,_nb_iterations_per_scale>0,\
 # _blend_size>=0,_allow_outer_blending={ 0 | 1 },_is_already_initialized={ 0 | 1 }
@@ -16428,7 +16439,7 @@ _inpaint_matchpatch :
 
 # _inpaint_warping2d : fill-in zero-valued vectors in absolute 2d warping field (works even when 'spectrum>2').
 _inpaint_warping2d :
-  foreach
+  foreach {
     100%,100%,100%,2,"> begin(const S = s#0; zero0 = vectorS(); zero1 = [0,0]; N = 0); I(#-1)==zero0?zero1:[++N,1]"
     s. c distance. 1 *. -1
     watershed.. . rm.
@@ -16455,7 +16466,7 @@ _inpaint_warping2d :
         nP)"
     }
     rm.
-  done
+  }
 
 #@cli kuwahara : size>0
 #@cli : Apply Kuwahara filter of specified size on selected images.
@@ -16512,15 +16523,17 @@ map_tones : skip ${1=0.1},${2=0.8},${3=0.5},${4=30}
   foreach {
 
     # Estimate target divergence for each channel.
-    +l s c foreach {
-      g xy,1 a c +norm orientation..
-      m={im} M={iM} b. $3 n. $m,$M
-      *. 'alpha=$1*iM;(alpha/(1e-10+i))*(i/(1e-10+alpha))^$2'
-      * s c g.. x,-1 g. y,-1 +
+    +l {
+      s c foreach {
+        g xy,1 a c +norm orientation..
+        m={im} M={iM} b. $3 n. $m,$M
+        *. 'alpha=$1*iM;(alpha/(1e-10+i))*(i/(1e-10+alpha))^$2'
+        * s c g.. x,-1 g. y,-1 +
+      }
+      a c * 0.25
     }
-    a c * 0.25 done
 
-   # Start Poisson-PDE iterations
+    # Start Poisson-PDE iterations
     repeat $4 { +laplacian.. *. 0.25 +. ... -. .. *. 800 +[-3,-1] /.. 801 c.. 0,255 } rm.
   }
 
@@ -16567,11 +16580,11 @@ nlmeans:
     check "${2=4}>0 && ${3=4}>0 && ${4=10}>0" skip "${5=-norm}"
     e[^-1] "Apply non-local means denoising on image$?, with guide $1, patch size $2, spatial bandwidth $3,
             tonal bandwidth $4 and patch measure command '$5'."
-    pass$1 0 l. $5 k[0] done # [1] preprocessed image used to compute weights.
-    repeat $!-1 l[$>,-1] {
+    pass$1 0 l. { $5 k[0] } # [1] preprocessed image used to compute weights.
+    repeat $!-1 { l[$>,-1] {
       100%,100%,100%,100%,{-1.0/($4*$4)} # [2] compute a scaling.
       nlmeans_core[0] [1],[2],$2,$3 rm. # Apply the NLM denoising with image 1 and 2 as parameter.
-    } done
+    } }
     rm.
 
   else
@@ -16581,7 +16594,7 @@ nlmeans:
     e[^-1] "Apply non-local means denoising on image$?, with patch size $1, spatial bandwidth $2,
             tonal bandwidth $3 and patch measure command '$4'."
     foreach {
-      +l $4 k[0] done # [1] preprocessed image used to compute weights.
+      +l { $4 k[0] } # [1] preprocessed image used to compute weights.
       100%,100%,100%,100%,{-1.0/($3*$3)} # [2] compute a scaling.
       nlmeans_core[0] [1],[2],$1,$2 k[0] # Apply the NLM denoising with image 1 and 2 as parameter.
     }
@@ -16593,11 +16606,11 @@ nlmeans_core : check ${is_image_arg\ $1}" && "${is_image_arg\ $2}" && $3>0 && $4
   e[^-1] "Apply non-local means denoising using weight images $1, scaling map $2, patch size $3 and
           spatial bandwidth $4."
   pass$1 0 pass$2 0
-  repeat $!-2 l[$>,-1,-2] {
+  repeat $!-2 { l[$>,-1,-2] {
     # [0] original, [1] weights, [2] scaling [3] sum(weights * patch), [4] sum(weights), [5] max(weights)
     100%,100%,100%,{0,s},0 100%,100%,100%,{1,s},0 100%,100%,100%,{1,s},1e-6
     if d#0==1
-      repeat 2*$4+1 j={$>-$4} repeat 2*$4+1 i={$>-$4}
+      repeat 2*$4+1 { j={$>-$4} repeat 2*$4+1 { i={$>-$4}
         if $i!=0||$j!=0
           # Compute shifted images [6] and weight [7]
           +shift[0,1] $i,$j,0,0,2 -[7] [1]
@@ -16605,9 +16618,9 @@ nlmeans_core : check ${is_image_arg\ $1}" && "${is_image_arg\ $2}" && $3>0 && $4
           # Accumulate weights
           *[6] [7] max[5] [7] +[4,7] +[3,6]
         fi
-      done done
+      } }
     else
-      repeat 2*$4+1 k={$>-$4} repeat 2*$4+1 j={$>-$4} repeat 2*$4+1 i={$>-$4}
+      repeat 2*$4+1 { k={$>-$4} repeat 2*$4+1 { j={$>-$4} repeat 2*$4+1 { i={$>-$4}
         if $i!=0||$j!=0||$k!=0
           # Compute shifted images [6] and weight [7]
           +shift[0,1] $i,$j,0,0,2 -[7] [1]
@@ -16615,12 +16628,12 @@ nlmeans_core : check ${is_image_arg\ $1}" && "${is_image_arg\ $2}" && $3>0 && $4
           # Accumulate weights
           *[6] [7] max[5] [7] +[4,7] +[3,6]
         fi
-      done done done
+      } } }
     fi
     rm[1,2]
     *[0] [3] +[1,0] +[1,2] # Add central patch
     / # Normalize
-  } done
+  } }
 
 #@cli normalize_local : _amplitude>=0,_radius>0,_n_smooth>=0[%],_a_smooth>=0[%],_is_cut={ 0 | 1 },_min=0,_max=255
 #@cli : Normalize selected images locally.
