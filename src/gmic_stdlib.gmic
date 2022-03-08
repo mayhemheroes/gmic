@@ -14704,8 +14704,8 @@ seamcarve : check "${2=100%}>=0 && ${5=25%}>=0" skip ${3=0},${4=1}
   e[^-1] "Resize image$? to $1x$2 using seam-carving algorithm, "${arg\ 1+!$3,with,without}" priority channel, "\
          ${arg\ 1+!$4,with,without}" anti-aliasing and maximum seams $5."
   foreach {
-    nw={max(1,round(if(${is_percent\ $1},$1*w,$1)))}
-    nh={max(1,round(if(${is_percent\ $2},$2*h,$2)))}
+    nw:=max(1,round(if(${is_percent\ $1},$1*w,$1)))
+    nh:=max(1,round(if(${is_percent\ $2},$2*h,$2)))
     if $nw!=w _seamcarve $nw,$3,$4,$5 fi
     if $nh!=h transpose _seamcarve $nh,$3,$4,$5 transpose fi
   }
@@ -14717,9 +14717,9 @@ seamcarve : check "${2=100%}>=0 && ${5=25%}>=0" skip ${3=0},${4=1}
 # $4 = max number of seams added/removed at once.
 _seamcarve :
   do
-    max_seams={max(1,round(if(${is_percent\ $4},$4*w,$4)))}
-    ssms={max(min(round($1-w),w),1-w)}
-    sms={min($max_seams,abs($ssms))}
+    max_seams:=max(1,round(if(${is_percent\ $4},$4*w,$4)))
+    ssms:=max(min(round($1-w),w),1-w)
+    sms:=min($max_seams,abs($ssms))
 
     # Compute potential map.
     if $2 s[0] c,{1-s} /. 256 fi
@@ -14740,7 +14740,7 @@ _seamcarve :
     100%,100% +rows[1] 0
     :: grad,low,seam,top
 
-    repeat h#0-1 nr={$>+1} {
+    repeat h#0-1 nr:=$>+1 {
       +rows[low] $nr
 
       # Find optimum matches between two 1D matrices.
@@ -14761,11 +14761,11 @@ _seamcarve :
     }
 
     # Add / remove seams.
-    max={iM*2} repeat $sms { =. $max,{xm} }
+    max:=iM*2 repeat $sms { =. $max,{xm} }
     j[grad] .,0,100% rm[low,top] a[-2,-1] c
     f. "<if(c,i,j(j(0,0,0,1),1,0,0,0,1))" channels. 0
     +[0] 0.1 !=. $max
-    w={w} h={h} s={0,s}
+    w:=w h:=h s={0,s}
     if $ssms<0 * discard 0 r {$w-$sms},$h,1,$s,-1  # Remove seams.
     elif $ssms>0 # Add seams.
       -. 2 s[0] c
@@ -14878,8 +14878,8 @@ undistort : check "${1=0.1}>=-1 && $1<=1 && ${6=0}>=0 && $6<=3" skip ${2=0},${3=
   e[^-1] "Undistort barrel/pincushion effect in image$?, with amplitude $1, aspect ratio $2, zoom factor $3,
           center ($4,$5) and "${"arg 1+$6,dirichlet,neumann,periodic,mirror"}" boundary conditions."
   foreach {
-    center_x={${"is_percent $4"}?w*$4:$4}
-    center_y={${"is_percent $5"}?h*$5:$5}
+    center_x:=${"is_percent $4"}?w*$4:$4
+    center_y:=${"is_percent $5"}?h*$5:$5
     f "
       const interpolation = 1;
       const boundary = $6;
@@ -14917,7 +14917,7 @@ undistort : check "${1=0.1}>=-1 && $1<=1 && ${6=0}>=0 && $6<=3" skip ${2=0},${3=
 upscale_smart : skip ${2=100%},${3=100%} check "${4=2}>=0 && ${5=0.4}>=0 && $5<=1 && ${6=10}>=0"
   e[^-1] "Upscale image$? to $1x$2x$3, with smoothness $4, anisotropy $5 and sharpening $6."
   foreach {
-    w={w} h={h}
+    w,h:="[w,h]"
     +r. $1,$2,$3,1,0 # Compute desired dimensions.
     if w<$w" && "h<$h # Test for downscaling
       rm. r. $1,$2,$3,100%,2
@@ -15037,7 +15037,7 @@ warp_patch : check ${is_image_arg\ $1}" && isint(${2=3}) && $2>=1 && isint(${3=$
 #@cli : $ image.jpg +warp_rbf 0,0,0,0,100%,0,100%,0,100%,100%,100%,100%,0,100%,0,100%,50%,50%,70%,50%,25%,25%,25%,75%
 warp_rbf :
   e[^-1] "Warp image$? using RBF interpolation, with keypoints ($*)."
-  $=arg N={$#/4}
+  $=arg N:=$#/4
   if int($N)!=$N error[0--2] "Command 'warp_rbf': Wrong number of arguments ($#)." fi
   foreach {
     # Retrieve absolute keypoints coordinates.
@@ -15123,9 +15123,10 @@ blur_bloom : check "${1=1}>=0 && ${2=2}>=0 && isint(${3=5}) && $3>=0 && isint(${
   m "_bloom2 : boxfilter "$axes"{1+2*$""1},0,1"
   m "_bloom3 : boxfilter "$axes"{1+2*$""1},0,1,2"
   m "_bloom4 : boxfilter "$axes"{1+2*$""1},0,1,3"
-  foreach { nm={n} mM={[im,iM]}
+  foreach {
+    nm={n} mM:=[im,iM]
     [0] repeat $3 {
-      sigma={$1*($2^$>)} +_bloom$5[0] $sigma
+      sigma:=$1*($2^$>) +_bloom$5[0] $sigma
       if $6 n. $mM fi
       -$4[1,-1]
     }
@@ -15140,13 +15141,13 @@ blur_bloom : check "${1=1}>=0 && ${2=2}>=0 && isint(${3=5}) && $3>=0 && isint(${
 #@cli : $$ https://gmic.eu/oldtutorial/_blur_linear
 blur_linear : skip ${2=0},${3=0},${4=1}
   e[^-1] "Apply linear blur on image$?, with angle $3 deg. and amplitudes ($1,$2)."
-  std1={if(${is_percent\ $1},$1*max(w,h),$1)}
-  std2={if(${is_percent\ $2},$2*max(w,h),$2)}
-  stdM={round(1.25*max($std1,$std2))}
+  std1:=${is_percent\ $1}?$1*max(w,h):$1
+  std2:=${is_percent\ $2}?$2*max(w,h):$2
+  stdM:=round(1.25*max($std1,$std2))
   if $stdM<=0 return fi
   foreach {
     expand_xy $stdM,{$4!=0}
-    {2*$stdM},{2*$stdM} gaussian. $1,$2,$3 normalize_sum.
+    {s=2*$stdM;[s,s]} gaussian. $1,$2,$3 normalize_sum.
     convolve_fft[0] [1] rm. shrink_xy $stdM
   }
 
@@ -15167,7 +15168,7 @@ blur_radial : skip ${2=50%},${3=50%}
 blur_selective : check "${1=5}>=0 && ${2=0.5}>=0 && isint(${3=5}) && $3>0"
   e[^-1] "Blur image$? using $3 selective gaussian scales, with sigma $1 and edges $2."
   foreach {
-    nm={0,n}
+    nm={n}
     +gradient_norm +. 1 ^. {-max(0.01,$2)} quantize. {$3+1},0,1 min. {$3-1} ri. ..
     repeat $3 { +==. $> *. ... +[-2,-1] b.. {$1/($3+1)} }
     rm.. :: $nm
@@ -15266,17 +15267,19 @@ compose_freq :
 convolve_fft : check ${is_image_arg\ $1}" && isin(${2=2},0,1,2,3)"
   e[^-1] "Convolve image$? with mask $1, in the fourier domain."
   pass$1 store. kernel
-  foreach { if w
-    w0,h0,d0={[w,h,d]}
-    $kernel
-    if $2!=2 r[0] {[w#0,h#0,d#0]+2*round([w#1>1?w#1:0,h#1>1?h#1:0,d#1>1?d#1:0]/2)},100%,0,$2,0.5,0.5 fi
-    r ${-max_whd},100%,0,0,0.5,0.5 r 100%,100%,100%,${-max_s}
-    fft[1] fft[0]
-    +*[1,2] +*[0,3] +[-2,-1] *[1,3] *[0,2] -[0,1]
-    ifft rm.
-    shift {-int(([w,h,d]-1)/2)},0,2
-    r $w0,$h0,$d0,100%,0,0,0.5,0.5
-  fi }
+  foreach {
+    if w
+      w0,h0,d0:="[w,h,d]"
+      $kernel
+      if $2!=2 r[0] {[w#0,h#0,d#0]+2*round([w#1>1?w#1:0,h#1>1?h#1:0,d#1>1?d#1:0]/2)},100%,0,$2,0.5,0.5 fi
+      r ${-max_whd},100%,0,0,0.5,0.5 r 100%,100%,100%,${-max_s}
+      fft[1] fft[0]
+      +*[1,2] +*[0,3] +[-2,-1] *[1,3] *[0,2] -[0,1]
+      ifft rm.
+      shift {-int(([w,h,d]-1)/2)},0,2
+      r $w0,$h0,$d0,100%,0,0,0.5,0.5
+    fi
+  }
 
 #@cli correlate : [mask],_boundary_conditions,_is_normalized={ 0 | 1 },_channel_mode,\
 # _xcenter,_ycenter,_zcenter,_xstart,_ystart,_zstart,_xend,_yend,_zend,_xstride,_ystride,_zstride,\
@@ -15331,11 +15334,11 @@ curvature :
 #@cli : $$ https://gmic.eu/oldtutorial/_dct-and-idct
 dct : skip ${1=0}
   ('"$1"')
-  is_axes={im>=_'x'" && "iM<=_'z'}
+  is_axes:="im>=_'x' && iM<=_'z'"
   if $is_axes
     e[0--3] "Compute discrete cosine transform of image$? along axes '$1'."
     repeat w {
-      axis={i[$>]}
+      axis:=i[$>]
       if $axis==_'x' foreach[^-1] { if w>1 _dct fi }
       elif $axis==_'y' foreach[^-1] { if h>1 permute yxzc _dct permute yxzc fi }
       elif $axis==_'z' foreach[^-1] { if d>1 permute zxyc _dct permute yzxc fi }
@@ -15370,7 +15373,8 @@ _dct :
 deblur : check "${2=10}>=0 && ${3=20}>=0 && ${4=0.7}>=0" skip ${5=1}
   e[^-1] "Deblur image$? with a regularized Jansson-Van Cittert algorithm, with sigma $1, $2 iterations,
           time step $3 and regularization $4."
-  foreach { nm={0,n}
+  foreach {
+    nm={n}
     [0]
     repeat $2 {
       if $5>=2 +curvature.                         # TV regularization.
@@ -15421,7 +15425,7 @@ deblur_richardsonlucy : check "$1>=0 && ${2=50}>=0" skip ${3=1}
 deconvolve_fft : check ${is_image_arg\ $1}" && ${2=.001}>=0"
   e[^-1] "Deconvolve image$? with mask $1 and regularization $2, in the fourier domain."
   repeat $! { pass$1 0 l[$>,-1] {
-    w2={0,int(w/2)} h2={0,int(h/2)} d2={0,int(d/2)}
+    w2,h2,d2={0,int([w,h,d]/2)}
     r[1] [0],[0],[0],1,0,0,0.5,0.5,0.5,0.5 shift[1] -$w2,-$h2,-$d2,0,2
     fft[0] fft[2]                 # a b a' b'
     +l[-1,-2] { sqr + + $2 }      # a b a' b' (a'^2+b'^2+eps)
@@ -15442,7 +15446,7 @@ deconvolve_fft : check ${is_image_arg\ $1}" && ${2=.001}>=0"
 deinterlace : skip ${1=0}
   e[^-1] "Deinterlace image$? with "${arg\ 1+!$1,motion-compensated,standard}" method."
   foreach {
-    wh={w},{h}
+    wh:=[w,h]
     s y a[0--1:2] y a[^0] y ri.. .,0 r 100%,200%,1,100%,5
     if $1!=0 +displacement. ..,0.05 warp... .,1,1,1 rm. fi
     + / 2 c 0,255 r $wh
