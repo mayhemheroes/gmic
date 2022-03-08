@@ -2277,13 +2277,41 @@ double gmic::mp_dollar(const char *const str,
   gmic &gmic_instance = *(gmic*)gr[0];
   CImgList<char> &images_names = *(CImgList<char>*)gr[2];
   const unsigned int *const variables_sizes = (const unsigned int*)gr[5];
-
   double res = cimg::type<double>::nan();
 
   switch (*str) {
-    case '>' : case '<' : {
-//      res = 1976;
-    } break;
+    case '>' : case '<' :
+      if (gmic_instance.nb_repeatdones || gmic_instance.nb_dowhiles || gmic_instance.nb_fordones ||
+          gmic_instance.nb_foreachdones) {
+        unsigned int loop_type = 0; // 0=repeatdones, 1=dowhiles, 2=fordones, 3=foreachdones
+        for (int i = (int)gmic_instance.callstack.size() - 1; i>=0; --i) { // Find type of latest loop
+          const CImg<char>& s = gmic_instance.callstack[i];
+          if (*s=='*') {
+            if (s[1]=='r') { loop_type = 0; break; }
+            else if (s[1]=='d') { loop_type = 1; break; }
+            else if (s[1]=='f') { loop_type = s[4]!='e'?2:3; break; }
+          }
+        }
+        switch (loop_type) {
+        case 0 : { // repeat...done
+          const unsigned int *const rd = gmic_instance.repeatdones.data(0,gmic_instance.nb_repeatdones - 1);
+          res = (double)(*str=='>'?rd[1]:rd[2] - 1);
+        } break;
+        case 1 : { // do...while
+          const unsigned int *const dw = gmic_instance.dowhiles.data(0,gmic_instance.nb_dowhiles - 1);
+          if (*str=='>') res = (double)dw[1];
+        } break;
+        case 2 : { // for...done
+          const unsigned int *const fd = gmic_instance.fordones.data(0,gmic_instance.nb_fordones - 1);
+          if (*str=='>') res = (double)fd[1];
+        } break;
+        case 3 : { // foreach...done
+          const unsigned int *const fed = gmic_instance.foreachdones.data(0,gmic_instance.nb_foreachdones - 1);
+          res = (double)(*str=='>'?fed[0]:fed[1] - 1);
+        } break;
+        }
+      }
+      break;
   case '!' :
     res = (double)images_names.size();
     break;
