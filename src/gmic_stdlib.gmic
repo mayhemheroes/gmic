@@ -15475,9 +15475,9 @@ denoise_haar : check "${1=1.4}>=0 && isint(${2=0}) && $2>=0 && isint(${3=10}) &&
     r {round(w,2^($nb_scales+1),1)},{round(h,2^($nb_scales+1),1)},{if(d==1,1,round(d,2^($nb_scales+1),1))},100%,0,0
     +f 0
     repeat $3 {
-      dx={round(u(0,{4*$nb_scales}))}
-      dy={round(u(0,{4*$nb_scales}))}
-      dz={if($d==1,0,round(u(0,{4*$nb_scales})))}
+      dx:=round(u(0,{4*$nb_scales}))
+      dy:=round(u(0,{4*$nb_scales}))
+      dz:=$d==1?0:round(u(0,{4*$nb_scales}))
       +shift[0] $dx,$dy,$dz,0,2
       haar. $nb_scales
       threshold. {$1*$sigma},1
@@ -15571,7 +15571,7 @@ denoise_cnn : skip "${1=0},${2=64}"
 denoise_patchpca : check "${1=1.8} && $1>=0 && isint(${2=7}) && $2>0 && isint(${3=11}) && $3>0 && isint(${4=5}) && $4>0"
   e[^-1] "Denoise image$? using patch-pca, with strength $1, patch size $2, lookup size $3 and spatial sampling $4."
   foreach {
-    nm={n} N2={$2*$2} M2={$3*$3} stdnoise=${-std_noise}
+    nm={n} N2:=$2^2 M2:=$3^2 stdnoise=${-std_noise}
     100%,100%,1,100% :: aggreg
     100%,100% :: weights
     f[0] "*
@@ -15652,11 +15652,11 @@ dilate_circ : check $1>=0 skip ${2=1},${3=0}
 dilate_oct : check $1>=0 skip ${2=1},${3=0}
   e[^-1] "Apply octagonal dilation of image$? by size $1, boundary conditions $2 and is_normalized $3."
   if $1<2 return fi
-  if $1&1 ss={$1} else ss={$1+1} fi
+  if $1&1 ss=$1 else ss:=$1+1 fi
   i[0] (0,1,0;1,1,1;0,1,0) i[1] (1,1,1;1,1,1;1,1,1)
   repeat $!-2 {
-    r={round(($ss-1)*sqrt(2)/(1+sqrt(2))/2)}
-    q={round(($ss-1)/(1+sqrt(2))/2)}
+    r:=round(($ss-1)*sqrt(2)/(1+sqrt(2))/2)
+    q:=round(($ss-1)/(1+sqrt(2))/2)
     if $r>0 repeat $r { dilate. [0],$2,$3 } fi
     if $q>0 repeat $q { dilate. [1],$2,$3 } fi
     mv. 2
@@ -15669,14 +15669,14 @@ _kr_circle :
 
 _jf_circle :
   {round($1)},{round($1)}
-  center={0.5*(w-1)}
+  center:=0.5*(w-1)
   f. 'sqrt((x-$center)^2+(y-$center)^2)'
   if !(w%2)
     round. 0.0001,-1
-    t1={sqrt(((round($1)-1)/2)^2+0.25)}
-    t2={sqrt(((round($1)+1)/2)^2+0.25)}
-    k={$1-round($1)+0.5}
-    t={$t1+($t2-$t1)*$k}
+    t1:=sqrt(((round($1)-1)/2)^2+0.25)
+    t2:=sqrt(((round($1)+1)/2)^2+0.25)
+    k:=$1-round($1)+0.5
+    t:=$t1+($t2-$t1)*$k
     ir. 0,$t
   else ir. 0,{$1/2-0.25}
   fi
@@ -15689,9 +15689,9 @@ dilate_threshold : check "isint($1) && $1>=1 && isint(${2=$1}) && $2>=1 && isint
                           isint(${5=1}) && $5>=0"
   e[^-1] "Dilate image$? with mask $1x$2x$3, threshold $4 and "${arg\ $5,dirichlet,neumann}" boundary conditions."
   l[] {
-    dx1={int($1/2)} dx2={$1-$dx1-1}
-    dy1={int($2/2)} dy2={$2-$dy1-1}
-    dz1={int($3/2)} dz2={$3-$dz1-1}
+    dx1:=int($1/2) dx2:=$1-$dx1-1
+    dy1:=int($2/2) dy2:=$2-$dy1-1
+    dz1:=int($3/2) dz2:=$3-$dz1-1
     (-$dx1,$dx1) (-$dy1;$dy1) (-$dz1/$dz1) r $1,$2,$3,1,3 a c round r {w*h*d},3,1,1,-1 transpose.
     i.. 1,100%,1,1,254 1,100%,1,1,255 a x
     ('{^}') rm.. replace_str "254,","(v=j(" replace_str ",255",",0,0,$5);if(abs(v-i)<=$4,v,-1e20))" list={t}
@@ -15727,8 +15727,8 @@ dog : check "${1=2%}>=0 && ${2=3%}>=0"
 #@cli : $$ https://gmic.eu/oldtutorial/_diffusiontensors
 diffusiontensors : check "${1=0.7}>=0 && ${2=0.3}>=0 && $2<=1" skip ${3=0.6},${4=1.1},${5=0}
   e[^-1] "Compute diffusion tensors for image$?, with sharpness $1, anisotropy $2, alpha $3 and sigma $4."
-  p1={if($5,0.5,1)*max($1,1e-2)}
-  p2={$p1/(1e-7+1-$2)}
+  p1:=($5?0.5:1)*max($1,1e-2)
+  p2:=$p1/(1e-7+1-$2)
   b $3 n 0,255 structuretensors 0 b $4
   foreach {
     eigen max.. 0
@@ -15769,11 +15769,11 @@ erode_circ : check $1>=0 skip ${2=1},${3=0}
 erode_oct : check $1>=0 skip ${2=1},${3=0}
   e[^-1] "Apply octagonal erosion of image$? by size $1, boundary conditions $2 and is_normalized $3."
   if $1<2 return fi
-  if $1&1 ss={$1} else ss={$1+1} fi
+  if $1&1 ss=$1 else ss:=$1+1 fi
   i[0] (0,1,0;1,1,1;0,1,0) i[1] (1,1,1;1,1,1;1,1,1)
   repeat $!-2 {
-    r={round(($ss-1)*sqrt(2)/(1+sqrt(2))/2)}
-    q={round(($ss-1)/(1+sqrt(2))/2)}
+    r:=round(($ss-1)*sqrt(2)/(1+sqrt(2))/2)
+    q:=round(($ss-1)/(1+sqrt(2))/2)
     if $r>0 repeat $r { erode. [0],$2,$3 } fi
     if $q>0 repeat $q { erode. [1],$2,$3 } fi
     mv. 2
@@ -15788,9 +15788,9 @@ erode_threshold : check "isint($1) && $1>=1 && isint(${2=$1}) && $2>=1 && isint(
                          isint(${5=1}) && $5>=0"
   e[^-1] "Erode image$? with mask $1x$2x$3, threshold $4 and "${arg\ $5,dirichlet,neumann}" boundary conditions."
   l[] {
-    dx1={int($1/2)} dx2={$1-$dx1-1}
-    dy1={int($2/2)} dy2={$2-$dy1-1}
-    dz1={int($3/2)} dz2={$3-$dz1-1}
+    dx1:=int($1/2) dx2:=$1-$dx1-1
+    dy1:=int($2/2) dy2:=$2-$dy1-1
+    dz1:=int($3/2) dz2:=$3-$dz1-1
     (-$dx1,$dx1) (-$dy1;$dy1) (-$dz1/$dz1) r $1,$2,$3,1,3 a c round r {w*h*d},3,1,1,-1 transpose.
     i.. 1,100%,1,1,254 1,100%,1,1,255 a x
     ('{^}') rm.. replace_str "254,","(v=j(" replace_str ",255",",0,0,$5);if(abs(v-i)<=$4,v,1e20))" list={t}
@@ -15803,7 +15803,7 @@ erode_threshold : check "isint($1) && $1>=1 && isint(${2=$1}) && $2>=1 && isint(
 #@cli : optionally along the specified axes only.
 #@cli : See also: ''ifft''.
 #@cli : $ image.jpg luminance +fft append[-2,-1] c norm[-1] log[-1] shift[-1] 50%,50%,0,0,2
-#@cli : $ image.jpg w2={int(w/2)} h2={int(h/2)} fft shift $w2,$h2,0,0,2 ellipse $w2,$h2,30,30,0,1,0 \
+#@cli : $ image.jpg w2:=int(w/2) h2:=int(h/2) fft shift $w2,$h2,0,0,2 ellipse $w2,$h2,30,30,0,1,0 \
 # shift -$w2,-$h2,0,0,2 ifft remove[-1]
 #@cli : $$ https://gmic.eu/oldtutorial/_fft
 
@@ -15834,15 +15834,15 @@ _gradient_get_args : skip "${1=},${2=},${3=}"
   l[] {
     if ['$1']==0 axes,scheme,boundary=,0,1 is_noarg=1 # No 1st arg
     else
-      is_axes={"s=['$1'];fill(s,k,isin(s[k],'xyzc'));min(s)"}
+      is_axes:="s=['$1'];fill(s,k,isin(s[k],'xyzc'));min(s)"
       if !$is_axes axes,scheme,boundary=,0,1 is_noarg=1 # Invalid 1st arg
       elif ['$2']==0 axes,scheme,boundary=$1,0,1 # No 2nd arg
       else
-        is_scheme={"isint($2) && inrange($2,-1,5)"}
+        is_scheme:="isint($2) && inrange($2,-1,5)"
         if !$is_scheme axes,scheme,boundary=,0,1 is_noarg=1 # Invalid 2nd arg
         elif ['$3']==0 axes,scheme,boundary=$1,$2,1 # No 3rd arg
         else
-          is_boundary={"isint($3) && inrange($3,0,3)"}
+          is_boundary:="isint($3) && inrange($3,0,3)"
           if !$is_boundary axes,scheme,boundary=,0,1 is_noarg=1 # Invalid 3rd arg
           else axes,scheme,boundary=${1-3}
           fi
@@ -15886,7 +15886,7 @@ _gradient :
         fi
         +correlate[0] .,$boundary rm..
       elif $scheme==3 # Rotation-invariant
-        A,B={[0.25*(2-sqrt(2)),0.5*(sqrt(2)-1)]}
+        A,B:="[0.25*(2-sqrt(2)),0.5*(sqrt(2)-1)]"
         if _'$a'==_'x' (-$A,0,$A;-$B,0,$B;-$A,0,$A)
         elif _'$a'==_'y' (-$A,-$B,-$A;0,0,0;$A,$B,$A)
         else (-0.5${s}0${s}0.5)
@@ -15947,9 +15947,7 @@ haar : check "isint(${1=1}) && $1>=0"
   foreach {
     _haar
     repeat $1-1 {
-      w={max(0,round(w/2^(1+$>))-1)}
-      h={max(0,round(h/2^(1+$>))-1)}
-      d={max(0,round(d/2^(1+$>))-1)}
+      w,h,d:="vmax(0,round([w,h,d]/2^(1+"$>"))-1)"
       +z 0,0,0,$w,$h,$d _haar. j.. . rm.
     }
   }
@@ -15992,11 +15990,11 @@ hessian : skip "${1=},${2=}"
   l[] {
     if ['$1']==0 axes,boundary=,1 noarg # No 1st arg
     else
-      is_axes={"s=['$1'];fill(s,k,isin(s[k],'xyz'));min(s)"}
+      is_axes:="s=['$1'];fill(s,k,isin(s[k],'xyz'));min(s)"
       if !$is_axes axes,boundary=,1 noarg # Invalid 1st arg
       elif ['$2']==0 axes,boundary=$1,1 # No 2nd arg
       else
-        is_boundary={"isint($2) && inrange($2,0,3)"}
+        is_boundary:="isint($2) && inrange($2,0,3)"
         if !$is_boundary axes,boundary=,1 noarg # Invalid 2nd arg
         else axes,boundary=$1,$2
         fi
@@ -16041,11 +16039,11 @@ hessian : skip "${1=},${2=}"
 #@cli : $$ https://gmic.eu/oldtutorial/_dct-and-idct
 idct : skip ${1=0}
   ('"$1"')
-  is_axes={im>=_'x'" && "iM<=_'z'}
+  is_axes:="im>=_'x' && iM<=_'z'"
   if $is_axes
     e[0--3] "Compute inverse discrete cosine transform of image$? along axes '$1'."
     repeat w {
-      axis={i[$>]}
+      axis:=i[$>]
       if $axis==_'x' foreach[^-1] { if w>1 _idct fi }
       elif $axis==_'y' foreach[^-1] { if h>1 permute yxzc _idct permute yxzc fi }
       elif $axis==_'z' foreach[^-1] { if d>1 permute zxyc _idct permute yzxc fi }
@@ -16109,9 +16107,7 @@ ihaar : check "isint(${1=1}) && $1>=0"
   e[^-1] "Compute inverse haar transform of image$? with $1 scales."
   foreach {
     repeat $1-1 {
-      w={max(0,round(w/2^(1+$<))-1)}
-      h={max(0,round(h/2^(1+$<))-1)}
-      d={max(0,round(d/2^(1+$<))-1)}
+      w,h,d:="vmax(0,round([w,h,d]/2^(1+"$<"))-1)"
       +z 0,0,0,$w,$h,$d _ihaar. j.. . rm.
     }
     _ihaar
@@ -16143,7 +16139,7 @@ _ihaar_z : # Inverse haar transform along the z-axis.
 #@cli : Default values: 'nb_iterations=0' and '[initial_estimated]=(undefined)'.
 #@cli : $ image.jpg +laplacian +ilaplacian[-1] 0
 ilaplacian : check "${1=0}>=0" skip "${2=}"
-  is_estimate=${"is_image_arg $2"} nb_iter={round($1)}
+  is_estimate=${"is_image_arg $2"} nb_iter:=round($1)
   if !$nb_iter # Inversion in Fourier space
     if $is_estimate
       e[0--4] "Invert Laplacian image$? in Fourier space, with initial estimate $2."
@@ -16225,10 +16221,10 @@ inpaint_pde : check ${is_image_arg\ $1}" && ${2=75%}>=0 && isint(${3=1}) && $3>=
   e[^-1] "Inpaint image$? by mask $1, using a multiscale diffusion algorithm with $2 scales
               and $4 iterations of "${s$3}" diffusion."
   repeat $! { nm={n} pass$1 l[$>,-1] {
-    nb_scalesM={ceil(log2(max(w,h,d)))}
-    nb_scales={round(${"is_percent $2"}?$nb_scalesM*$2:$2)}
-    nb_scales={max(1,min($nb_scales,$nb_scalesM))}
-    nb_iter={max(5,$4)}
+    nb_scalesM:=ceil(log2(max(w,h,d)))
+    nb_scales:=round(${"is_percent $2"}?$nb_scalesM*$2:$2)
+    nb_scales:=max(1,min($nb_scales,$nb_scalesM))
+    nb_iter:=max(5,$4)
 
     repeat $nb_scales {
       {0,"S = 2^"$<"; round([ max(1,w/S), max(1,h/S), max(1,d/S), s ])"}
@@ -16321,9 +16317,9 @@ inpaint_holes : check "${1=4}>=0 && ${2=0}>=0" skip ${3=0}
          ${arg\ 1+!$3,high,low}" connectivity."
   foreach {
     100%,100%,100%
-    area={if(${is_percent\ $1},$1*w*h*d,$1)}
+    area:=${is_percent\ $1}?$1*w*h*d:$1
     repeat s#0 { sh[0] $> +area. $2,$3 <=. $1 -|[1,-1] rm. }
-    if im k[0] whd={w},{h},{d} r 1,1,1,100%,2 r $whd,100%
+    if im k[0] whd=[w,h,d] r 1,1,1,100%,2 r $whd,100%
     else inpaint[0] [1],0,{2*!$2+!!$3} k[0] fi
   }
 
@@ -16334,7 +16330,7 @@ inpaint_morpho : check ${is_image_arg\ $1}
   e[^-1] "Inpaint image$? by mask $1, using morphological operators."
   repeat $! {
     pass$1 0 l[$>,-1] {
-      nm={0,n} im={0,im} iM={0,iM} im1={$im-1} iM1={$iM+1}
+      nm={0,n} im={0,im} iM={0,iM} im1:=$im-1 iM1:=$iM+1
       channels. 0 ==. 0
       +f[0] $im1 j. [0],0,0,0,0,1,..
       do
@@ -16365,7 +16361,7 @@ inpaint_matchpatch : check ${is_image_arg\ $1}"&& ${2=0}>=0 && isint(${3=9}) && 
 
     # Init variables and images.
     nm img,mask
-    nb_scales={max(1,round(if($2,$2,log2(min(w,h)/16)),1,1))}
+    nb_scales:=max(1,round(if($2,$2,log2(min(w,h)/16)),1,1))
     visu_size=${fitscreen[]" "{0,[w,h,1]},25%,50%}
     slices[img] 0 r[mask] [img],[img],1,1,0 !=[mask] 0
     if !$7 inpaint_pde[img] [mask],75% fi # Quick first estimate.
@@ -16373,7 +16369,7 @@ inpaint_matchpatch : check ${is_image_arg\ $1}"&& ${2=0}>=0 && isint(${3=9}) && 
 
     first_iter=1 iter=0
     repeat $nb_scales {
-      scale={100*(0.5^$<)}
+      scale:=100*(0.5^$<)
       e[] "> Process scale "{1+$>}"/"$nb_scales" -> "$scale%
       progress {100*$>/max(1,$nb_scales-1)}
 
@@ -16383,10 +16379,10 @@ inpaint_matchpatch : check ${is_image_arg\ $1}"&& ${2=0}>=0 && isint(${3=9}) && 
       if {scaled_mask,!iM} rm[scaled_img,scaled_mask] continue fi # Skip scale (if too low).
       +f[scaled_img] -4096 +j[scaled_img] .,0,0,0,0,1,[scaled_mask] rm.. :: scaled_reference
 
-      coef={0.5^($nb_scales-$iter)}
-      patch_size={v=round(max(min($3,5),$3*$coef));v+(1-(v%2))}
-      patch_size={min(w,h,$patch_size)}
-      blend_size={v=if($5,round(max(3,$5*$coef)));v+(1-(v%2))}
+      coef:=0.5^($nb_scales-$iter)
+      patch_size:="v=round(max(min($3,5),$3*$coef));v+(1-(v%2))"
+      patch_size:=min(w,h,$patch_size)
+      blend_size:="v=if($5,round(max(3,$5*$coef)));v+(1-(v%2))"
       iter+=1
       ==[scaled_mask] 0
 
@@ -16415,8 +16411,8 @@ inpaint_matchpatch : check ${is_image_arg\ $1}"&& ${2=0}>=0 && isint(${3=9}) && 
         a[correspondence] [scaled_mask],c
 
         # Refine correspondence map iteratively with matchpatch.
-        nbs1={max(1,$nb_scales-1)}
-        nb_iter={round(max(1,$4*(($<+1)/$nbs1)^2))}
+        nbs1:=max(1,$nb_scales-1)
+        nb_iter:=round(max(1,$4*(($<+1)/$nbs1)^2))
 
         repeat $nb_iter {
           _inpaint_matchpatch[scaled_img] [correspondence],[scaled_mask],$blend_size,$6
@@ -16517,12 +16513,12 @@ _inpaint_warping2d :
 kuwahara : check $1>0
   e[^-1] "Apply Kuwahara filter of size $1 on image$?."
   foreach {
-    s={s}
+    s:=s
     +dilate $1 compose_channels. min
     +erode[0] $1 compose_channels. max
     -[-2,-1]
     $1,1,1,1,{1/$1} convolve[0] . transpose. convolve[0] . rm.
-    p={int($1/2)}
+    p:=int($1/2)
     a[-2,-1] c
     f "v1=i(x-"$p",y-"$p",0,"$s",0,1); \
        v2=i(x+"$p",y-"$p",0,"$s",0,1); \
@@ -16569,7 +16565,7 @@ map_tones : skip ${1=0.1},${2=0.8},${3=0.5},${4=30}
     +l {
       s c foreach {
         g xy,1 a c +norm orientation..
-        m={im} M={iM} b. $3 n. $m,$M
+        m,M:="[im,iM]" b. $3 n. $m,$M
         *. 'alpha=$1*iM;(alpha/(1e-10+i))*(i/(1e-10+alpha))^$2'
         * s c g.. x,-1 g. y,-1 +
       }
@@ -16653,7 +16649,7 @@ nlmeans_core : check ${is_image_arg\ $1}" && "${is_image_arg\ $2}" && $3>0 && $4
     # [0] original, [1] weights, [2] scaling [3] sum(weights * patch), [4] sum(weights), [5] max(weights)
     100%,100%,100%,{0,s},0 100%,100%,100%,{1,s},0 100%,100%,100%,{1,s},1e-6
     if d#0==1
-      repeat 2*$4+1 { j={$>-$4} repeat 2*$4+1 { i={$>-$4}
+      repeat 2*$4+1 { j:=$>-$4 repeat 2*$4+1 { i:=$>-$4
         if $i!=0||$j!=0
           # Compute shifted images [6] and weight [7]
           +shift[0,1] $i,$j,0,0,2 -[7] [1]
@@ -16663,7 +16659,7 @@ nlmeans_core : check ${is_image_arg\ $1}" && "${is_image_arg\ $2}" && $3>0 && $4
         fi
       } }
     else
-      repeat 2*$4+1 { k={$>-$4} repeat 2*$4+1 { j={$>-$4} repeat 2*$4+1 { i={$>-$4}
+      repeat 2*$4+1 { k:=$>-$4 repeat 2*$4+1 { j:=$>-$4 repeat 2*$4+1 { i:=$>-$4
         if $i!=0||$j!=0||$k!=0
           # Compute shifted images [6] and weight [7]
           +shift[0,1] $i,$j,0,0,2 -[7] [1]
@@ -16718,7 +16714,7 @@ percentile : check ${"is_image_arg $1"}" && inrange(${2=0},0,100) && inrange(${3
          "min percentile "$vmin"% and max percentile "$vmax"%."
 
   # Generate code for masking.
-  pass$1 0 !=. 0 N={is} if !$N rm. return fi 128,$N
+  pass$1 0 !=. 0 N:=is if !$N rm. return fi 128,$N
   eval.. ">
     begin(
       p = 0;
@@ -16801,7 +16797,7 @@ periodize_poisson :
   e[^-1] "Periodize image$? using Poisson solver in Fourier space."
   foreach {
     s c foreach {
-      mM={[im,iM]} sum={0,ia}
+      mM:=[im,iM] sum={0,ia}
       laplacian ilaplacian 0 + $sum c $mM
     }
     a c
@@ -16946,14 +16942,14 @@ remove_pixels : check "$1>=0"
   e[^-1] "Remove $1 of the non-zero pixels in image$?."
   foreach {
     +norm !=. 0
-    N={is}                                      # Number of non-zero pixels.
-    n={round(if(${"is_percent $1"},$N*$1,$1))} # Number of pixels to remove.
+    N:=is                                 # Number of non-zero pixels.
+    n:=round(${"is_percent $1"}?$N*$1:$1) # Number of pixels to remove.
     if $n<=0 rm.        # No pixels to remove.
     elif $n>=$N rm. f 0 # All pixels to remove.
     elif $n>int($N/2)   # More pixels to remove than to keep.
       remove_pixels. {$N-$n} ==. 0 *
     else                       # Less pixels to remove than to keep.
-      d={d} r 100%,{d*h},1,100%,-1  # Force image to be in 2D.
+      d:=d r 100%,{d*h},1,100%,-1  # Force image to be in 2D.
 
       # Retrieve coordinates of all non-zero pixels.
       100%,1,1,1,x 1,{-2,h},1,1,y +[-2,-1] 1 r[-2,-1] ..,.
@@ -16992,7 +16988,7 @@ remove_pixels : check "$1>=0"
 #@cli : $ image.jpg +rolling_guidance , +-
 rolling_guidance : check "${1=4}>=0 && ${2=10}>=0 && ${3=0.5}>=0"
   e[^-1] "Apply rolling guidance filter on image$?, with standard deviations ($1,$2) and precision $3."
-  precision={2^-$3}
+  precision:=2^-$3
   foreach {
     +b $1
     repeat 100 {
@@ -17015,7 +17011,7 @@ sharpen : check "$1>=0 && ${2=0}>=0 && ${3=0}>=0 && ${4=0}>=0"
   if $2>0 # Shock filters
     e[0--3] "Sharpen image$? with shock filters, amplitude $1, edge $2, alpha $3 and sigma $4."
     foreach {
-      im,iM={[im,iM]}
+      im,iM:="[im,iM]"
       +b $3 structuretensors. 0 b. $4 eigen. l.. { max 0 s c + + 1 ^ {-0.5*$2} *. -1 +. 1 }
       if {0,d>1} # 3D
         +f[0] "const boundary = 1;
@@ -17074,7 +17070,7 @@ sharpen : check "$1>=0 && ${2=0}>=0 && ${3=0}>=0 && ${4=0}>=0"
   else # Inverse diffusion
     e[0--3] "Sharpen image$? with inverse diffusion and amplitude $1."
     foreach {
-      im,iM={[im,iM]} +laplacian *. {$1/abs(maxabs(im,iM))} - c $im,$iM
+      im,iM:="[im,iM]" +laplacian *. {$1/abs(maxabs(im,iM))} - c $im,$iM
     }
   fi
 
