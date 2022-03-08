@@ -3107,7 +3107,7 @@ _display_graph : check "${1=0}>=0 && ${2=0}>=0"
   e[0--3] "Render $1x$2 graph plot from data of image$?."
 
   foreach {
-    nm={0,n}
+    nm={n}
 
     # Determine output size.
     if $1>0" && "$2>0 w,h=$1,$2 else w,h={{*,u}/2},{{*,v}/2} fi
@@ -3176,7 +3176,8 @@ display_histogram :
 _display_histogram : check "${1=0}>=0 && ${2=0}>=0 && ${3=256}>0" skip ${4=0%},${5=100%},${6=1},"${7=i}"
   e[0--3] "Render $1x$2 channel-by-channel histogram of image"$_gmic_s", with $3 clusters, minimum value $4
  and maximum value $5."
-  foreach nm={0,n} {
+  foreach {
+    nm={n}
     if ${is_percent\ $4} m={im+(iM-im)*$4} else m=$4 fi
     if ${is_percent\ $5} M={im+(iM-im)*$5} else M=$5 fi
     s={s} s c
@@ -3215,7 +3216,7 @@ display_parametric : check "${1=512}>0 && ${2=$1}>0 && ${4=0}>=0" skip ${3=3},${
   e[^-1] "Render $1x$2 parametric graph plot from data of image$?, with "${o{$3>1}}"outline opacity "\
       {$3>1?$3-1:$3}", vertex radius $4, "${s{$5!=0}}"antialiasing and "${s{$6!=0}}"decoration."
   foreach {
-    nm={0,n} N={w*h*d}
+    nm={n} N={w*h*d}
     i[0] ('CImg3d') +[0] 0.5 i[1] ($N;$N)  # Header + nb of vertices/primitives.
 
     # Calibrate colors of vertices.
@@ -3322,7 +3323,7 @@ display_polar : check "${1=500}>32 && ${2=$1}>32"
   skip ${3=1},${4=200},${5=$4},${6=$5},${7=0},${8=360},"${9=x-axis}","${10=y-axis}"
   e[^-1] "Render $1x$2 polar graph plot from data of image"$_gmic_s", with outline $4 and fill color ($4,$5,$6)."
   foreach {
-    nm={0,n}
+    nm={n}
 
     # Compute (x,y) coordinates of the polar curve points.
     M:=max(abs(iM),abs(im))
@@ -10718,7 +10719,7 @@ compress_rle : check "isbool(${1=0}) && isint(${2=0}) && $2>=0"
   if $2 s=", with maximal sequence length "$2 else s="" fi
   e[^-1] "Compress image$? using RLE algorithm"${s{!$1}}$s"."
   foreach {
-    nm={0,n} im:=im header={w};{h};{d};{s};$im;{$1!=0}
+    nm={n} im:=im header={w};{h};{d};{s};$im;{$1!=0}
     - $im y x ({{0,@-1}+1}) a x r 100%,3
     f '>!y?i:y==1?(i(x,0)==i(x+1,0)?-1:x):(i(x-1,1)==-1?i(x-1,2)+1:1)'
     if $2 # Constrain maximum sequence length.
@@ -11855,8 +11856,9 @@ compose_channels : skip ${1="+"}
 #@cli : $ image.jpg luminance gradient append c blur 2 orientation +direction2rgb
 direction2rgb :
   e[^-1] "Compute RGB representation of 2D direction field$?."
-  channels 0,1 foreach {
-    nm={0,n}
+  channels 0,1
+  foreach {
+    nm={n}
     s c complex2polar round.. 0.001
     *. {180/pi} %. 360 100%,100%,1,1,1 mv... $!
     if im!=iM n. 0,1 else f. 1 fi
@@ -13769,7 +13771,7 @@ apply_scales : check "isint($2) && $2>0 && ${3=25%}>=0 && ${4=100%}>=0 && ${5=1}
   s0="no" s1="nearest-neighbor" s2="average" s3="linear" s4="grid" s5="bicubic" s6="lanczos"
   e[^-1] "Apply command '$1' on image$? for $2 scales ($3 -> $4) and "${s{min(6,$6)}}" interpolation."
   foreach {
-    nm={0,n}
+    nm={n}
     scale0:=${"is_percent $3"}?$3*max(w,h,d):$3
     scale1:=${"is_percent $4"}?$4*max(w,h,d):$4
     repeat $2 {
@@ -13917,7 +13919,7 @@ elevate : check "${1=64}>0" skip ${2=1},${3=1}
   e[^-1] "Elevate 2D image$? into $1-slices volume(s)."
   r 100%,100%,1,100%
   foreach {
-    nm={0,n}
+    nm={n}
     +norm 100%,100%,$1,{if($3,{0,s},1)}
     m={-2,im} d={-2,iM-$m}
     repeat $1 {
@@ -16362,7 +16364,7 @@ inpaint_matchpatch : check ${is_image_arg\ $1}"&& ${2=0}>=0 && isint(${3=9}) && 
     nm={0,n}
 
     # Init variables and images.
-    nm={0,n} nm img,mask
+    nm img,mask
     nb_scales={max(1,round(if($2,$2,log2(min(w,h)/16)),1,1))}
     visu_size=${fitscreen[]" "{0,[w,h,1]},25%,50%}
     slices[img] 0 r[mask] [img],[img],1,1,0 !=[mask] 0
@@ -16549,7 +16551,7 @@ laplacian :
 lic : skip ${1=30},${2=1}
   e[^-1] "Render LIC representation of 2D vector field$?, with amplitude $1 and $2 channel(s)."
   foreach {
-     nm={0,n}
+     nm={n}
      channels 0,1 / {max(abs(im),abs(iM))} vector2tensor
      100%,100%,100%,$2 rand. 0,255 smooth. ..,$1 rm..
      equalize :: $nm
@@ -17365,7 +17367,7 @@ unsharp : check "${2=2}>=0" skip ${3=0}
 unsharp_octave : check "${1=4}>0 && ${3=2}>=0" skip ${2=1},${4=0}
   e[^-1] "Apply octave sharpening on image$?, with $1 scales, radius $2, amount $3 and threshold $4."
   foreach {
-    nm={0,n}
+    nm={n}
     +f 0 weight=0
     repeat $1 {
       +unsharp[0] {$2*2^-$<},$3,$4 *. {2^-$>}
@@ -17707,7 +17709,7 @@ histogram_cumul : check ${1=256}>0 skip ${2=0},${3=0%},${4=100%}
 histogram_pointwise : skip ${2=0%},${3=100%}
   e[^-1] "Compute the pointwise histogram of vector-valued points in image$?, with $1 levels."
   foreach {
-    nm={0,n}
+    nm={n}
     nb_levels={round(if(${is_percent\ $1},(iM-im)*$1,$1))}
     value0={if(${is_percent\ $2},im+(iM-im)*$2,$2)}
     value1={if(${is_percent\ $3},im+(iM-im)*$3,$3)}
@@ -17730,7 +17732,7 @@ hough : check "${1=512}>0 && ${2=$1}>0" skip ${3=1}
   e[^-1] "Compute $1x$2 hough transform of image$?, "${arg\ 1+!$3,with,without}" gradient norm voting."
   slices 50% luminance
   foreach {
-    nm={0,n}
+    nm={n}
     rhomax={sqrt(w^2+h^2)/2}
     g (0,{w-1}) (0;{{-2,h}-1}) r[-2,-1] {-3,w},{-3,h},1,1,3 -.. {w/2} -. {h/2}
     complex2polar[-4--1] -. ... polar2complex[-2,-1] rm.
@@ -17897,7 +17899,7 @@ minimal_path : check "$1>=0 && $2>=0 && $3>=0" skip ${7=0}
   e[^-1] "Compute minimal path between points ($1,$2,$3) and ($4,$5,$6) for potential map$?, with "\
          ${arg\ 1+$7,low,high}" connectivity."
   foreach {
-    nm={0,n}
+    nm={n}
     - {im} + {iM/100}
     100%,100% = 1,${4-6} distance. 1,[0],{if($7,4,3)} k. channels. 1
     i[0] 0
@@ -17996,7 +17998,7 @@ pointcloud : check "${1=0}<=3 && ${2=0}>=0 && ${3=0}>=0 && ${4=0}>=0"
   e[^-1] "Convert image$? to point clouds, in "${arg\ 2+($1>=0)*$1-($1<0),{-$1}-opacity,binary,cumulative,labeling}\
          " mode, with dimensions $2x$3x$4."
   foreach {
-    nm={0,n}
+    nm={n}
     if $1!=3 # Render point cloud image from set of point coordinates
 
       # Force input data to be of size Nx1x1xM.
@@ -19269,7 +19271,7 @@ gaussian : skip ${1=3},${2=$1},${3=0}
   B={($l1-$l2)*$u*$v}
   C={$l1*$v*$v+$l2*$u*$u}
   foreach {
-    nm={0,n} w={w} h={h} ds={d},{s} rm
+    nm={n} w={w} h={h} ds={d},{s} rm
     $w,$h,1,1,'X=x-{($w-1)/2};Y=y-{($h-1)/2};$A*X*X+2*$B*X*Y+$C*Y*Y'
     * -1 exp r $w,$h,$ds :: $nm
   }
@@ -19982,7 +19984,7 @@ triangle_shade :
 truchet : check "isint(${1=32}) && $1>0 && ${2=3}>=0" skip ${3=1}
   e[^-1] "Render "${arg\ 1+!$3,curved,straight}" truchet patterns in image$?, with scale $1 and radius $2."
   foreach {
-    nm={0,n} w={w} h={h} s={s} rm
+    nm={n} w={w} h={h} s={s} rm
     $1,$1 = 1,0,0 = 1,100%,100% distance 1,{1+$3} M={int(iM/2)} # Generate truchet pattern and its mirrored version.
     ir {$M-$2/2-($1%2)},{$M+$2/2} +mirror y a x
     {round($w/$1,1,1)},{round($h/$1,1,1)} rand. 0,1 >=. 50% r. {w*$1},{h*$1} *. $1
@@ -19999,7 +20001,7 @@ turbulence : check "${1=32}>0 && ${2=6}>0" skip ${3=3},${4=0},${5=0}
   e[^-1] "Render fractal noise or turbulence on image$?, with radius $1, octaves $2, damping per octave $3,
           difference $4 and mode $5."
   foreach {
-    nm={0,n}
+    nm={n}
     if $4 . fi
     f. 0 +noise. 10,0 b. $1,0
     if $5==0||$5==1 -. {ia} abs.
@@ -20673,7 +20675,7 @@ extrude3d : check "${1=16}>0 && ${2=1024}>0 && ${3=0.5%}>=0"
   e[^-1] "Generate extruded 3D object from XY-profile$?, with depth $1, resolution $2 and smoothness $3."
   norm n 0,1 autocrop 0
   foreach {
-    nm={0,n}
+    nm={n}
     wr={round(max(1,if(w>h,min($2,w),min($2,h)*w/h)))}
     hr={round(max(1,if(w>h,min($2,w)*h/w,min($2,h))))}
     fact={$1/max(w/$wr,h/$hr)}
@@ -20698,7 +20700,7 @@ gaussians3d : check "${1=32}>0" skip ${2=0.3}
   e[^-1] "Convert 3D object$? into sets of gaussian-shaped 3D sprites, with size $1 and opacity $2."
   p3d 2 p3d 0
   foreach {
-    nm={0,n} s3d nbv={h} rm. (-128;$1;$1;1)
+    nm={n} s3d nbv={h} rm. (-128;$1;$1;1)
     $1,$1 gaussian. 35%,35%,0 c. 30%,100% n. 0,$2 y. a[-2,-1] y      # First opacity is generated.
     if $nbv>1 4,{$nbv-1},1,1,-128,0,0,0 y[-2,-1] a[-2,-1] y fi   # Other ones are shared copies of the first one.
     a y :: $nm
@@ -20822,7 +20824,7 @@ imagecube3d :
   e[^-1] "Generate 3D mapped cubes from image$?."
   slices 50% to_rgb
   foreach {
-    nm={0,n}
+    nm={n}
     i.. (67.5;73.5;109.5;103.5;51.5;100.5;\  # Magick number for CImg3d.
          8;6;\                               # Number of vertices and primitives.
          -0.5;-0.5;-0.5;\                    # Vertex coordinates.
@@ -20852,7 +20854,7 @@ imageplane3d :
   e[^-1] "Generate 3D mapped planes from image$?."
   slices 50% to_color
   foreach {
-    nm={0,n}
+    nm={n}
     i.. (67.5;73.5;109.5;103.5;51.5;100.5;\   # Magick number for CImg3d.
          4;1;\                                # Number of vertices and primitives.
          0;0;0;\                              # Vertex coordinates.
@@ -20873,7 +20875,7 @@ imagepyramid3d :
   e[^-1] "Generate 3D mapped pyramids from image$?."
   to_rgb
   foreach {
-    nm={0,n} w2={w/2}
+    nm={n} w2={w/2}
     i.. (67.5;73.5;109.5;103.5;51.5;100.5;\  # Magick number for CImg3d.
          5;5;\                               # Number of vertices and primitives.
          -0.5;-0.5;-0.5;\                    # Vertex coordinates.
@@ -20899,7 +20901,7 @@ imagepyramid3d :
 imagerubik3d : check "${1=3}>=1 && ${2=5}>=0 && $2<=100 && ${3=5}>=0 && $3<=100"
   e[^-1] "Generate 3D mapped rubik\47s cubes from image$? with $1 xy-tiles, xy-shift $2 and z-shift $3."
   foreach {
-    nm={0,n}
+    nm={n}
     # Generate primary 3D side.
     ('CImg3d') +. 0.5
     (8,5)
@@ -20936,7 +20938,7 @@ imagesphere3d : check "${1=32}>=3 && ${2=16}>=3"
   e[^-1] "Generate 3D mapped sphere from image$?, with resolutions ($1,$2)."
   to_rgb
   foreach {
-    nm={0,n}
+    nm={n}
 
     # Generate object header.
     tw={w-1} th={h-1}                    # Maximum texture xy-coordinates.
@@ -21162,7 +21164,7 @@ pca_patch3d : check "isint(${1=7}) && $1>0 && isint(${2=1000}) && $2>0 && isint(
 
   n 0,255 round 1
   foreach {
-    nm={0,n} s={s}
+    nm={n} s={s}
 
     # Pick set of M random located patches.
     1,$2 rand. 0,{0,w-1} +rand. 0,{0,h-1} +f. 0 a[-3--1] x round. 1 +patches[0] $1,$1,1,{^} y[2--1] a[2--1] x
@@ -21227,7 +21229,7 @@ pca_patch3d : check "isint(${1=7}) && $1>0 && isint(${2=1000}) && $2>0 && isint(
 pointcloud3d :
   e[^-1] "Convert image$? to 3D point cloud."
   foreach {
-    nm={0,n} s z
+    nm={n} s z
     foreach {
       +norm !=. 0
       i.. (1,{w};1,{w}^1,1;{h},{h}) r.. .,.,1,2,3 *[-2,-1] round. permute. cxyz
@@ -21868,7 +21870,7 @@ snapshot3d : check "${2=1}>=0" skip ${1=512},${3=""}
 sprite3d :
   e[^-1] "Convert image$? as 3D sprites."
   foreach {
-    nm={0,n} split_opacity
+    nm={n} split_opacity
     i[0] (67.5;73.5;109.5;103.5;51.5;100.5;1;1;0;0;0;1;0;-128;{w};{h};{0,s}) y[1]
     if $!==2 (1) a y
     else /. 255 i.. (-128;{w};{h};{s}) y.
@@ -23930,7 +23932,7 @@ array_mirror : skip ${2=2},${3=0}
 array_random : skip ${2=$1},${3=$1},${4=$2}
   e[^-1] "Create $3x$4 array of tiles from $1x$2 array$?."
   foreach {
-    nm={0,n}
+    nm={n}
     split_tiles $1,$2
     repeat $3 { repeat $4 { [{u($1*$2-1)}] } }
     rm[0-{$1*$2-1}] append_tiles $3,$4
@@ -23948,7 +23950,7 @@ frame : skip ${2=$1}>=0,${3=255},${4=$3},${5=$4},${6=255}
 frame_blur : skip ${1=10},${2=30},${3=0},${4=1},${5=3%}
   e[^-1] "Draw round frame on image$?, with sharpness $1, size $2, smoothness $3, shading $4 and blur $5."
   to_rgba foreach {
-     nm={0,n}
+    nm={n}
     100%,100%,1,1,"-(abs(x/w-0.5)^$1 + abs(y/h-0.5)^$1)^(1/$1)" >=. $2%
     if $4 distance. 1 n. 0,1 *. -1 +. 1 ^. {1/$4} fi
     b. $3 +b.. $5 mv. -3 blend_fade[0,1] . rm.
@@ -23963,7 +23965,7 @@ frame_blur : skip ${1=10},${2=30},${3=0},${4=1},${5=3%}
 frame_cube : check "${1=1}>=0" skip ${2=0},${3=0},${4=0},${5=0},${6=0},${7=0}
   e[^-1] "Insert 3D frame in image$?, with depth $1, centering point ($2,$3) and orientations (${4--1})."
   foreach {
-    nm={0,n} split_opacity
+    nm={n} split_opacity
     if $!==2 frame_cube ${1--1} a c  # Manage image with alpha-channel.
     else
       m={max(w,h)} w={w} h={h} s={s}
@@ -24098,7 +24100,7 @@ frame_round : skip ${1=10},${2=10},${3=0},${4=0},${5=255},${6=$5},${7=$6},${8=25
           RGBA color ($5,$6,$7,$8)."
   to_rgba
   foreach {
-    nm={0,n}
+    nm={n}
     100%,100%,1,1,"-(abs(x/w-0.5)^$1 + abs(y/h-0.5)^$1)^(1/$1)" >=. $2%
     if $4 distance. 1 n. 0,1 *. -1 +. 1 ^. {1/$4} fi
     b. $3 i... 100%,100%,1,4 fc... $5,$6,$7,$8 blend_fade[0,1] . rm.
@@ -24164,7 +24166,7 @@ frame_y : skip ${2=255},${3=$2},${4=$3},${5=255}
 
 _frame :
   foreach {
-    nm={0,n}
+    nm={n}
     w={round($1*if(${is_percent\ $1},w,1))}
     h={round($2*if(${is_percent\ $2},h,1))}
     d={round($3*if(${is_percent\ $3},d,1))}
@@ -24336,7 +24338,7 @@ imagegrid_triangular : check "$1>=1 && ${2=$1}>=1 && isint(${3=0}) && $3>=0 && $
 linearize_tiles : check "$1>0 && ${2=$1}>0"
   e[^-1] "Linearize $1x$2 tiles on image$?."
   foreach {
-    nm={0,n}
+    nm={n}
     s={s} split_tiles $1,$2 s c # Split as tiles for all channels.
     foreach {
       wh={w},{h}
@@ -24502,7 +24504,7 @@ _puzzle :
 quadratize_tiles : check "$1>0 && ${2=$1}>0"
   e[^-1] "Quadratize $1x$2 tiles on image$?."
   foreach {
-    nm={0,n}
+    nm={n}
     s={s} split_tiles $1,$2 s c # Split as tiles for all channels.
     foreach {
       wh={w},{h}
@@ -24540,7 +24542,7 @@ taquin : check "isint($1) && $1>0 & isint(${2=$1}) && $2>0"
  e[^-1] "Create $1x$2 taquin puzzle from image$?, with relief $4, border thickness $5, border outline $6 and
          outline color (${7--1})."
  foreach {
-   nm={0,n}
+   nm={n}
    split_tiles $1,$2 r ${-min_wh},100%,100%,0
    100%,100%,1,1,1
    if ${"is_percent $5"} rectangle. {100*$5/2}%,{100*$5/2}%,{100-50*$5}%,{100-50*$5}%,1,0
@@ -24856,7 +24858,7 @@ drop_shadow : check "${3=5}>=0 && ${4=0}>=0 && $4<=1" skip ${1=20},${2=$1},${5=1
   e[^-1] "Drop shadow behind image$?, with offsets ($1,$2), smoothness $3 and curvature $4."
   to_a
   foreach {
-    nm={0,n}
+    nm={n}
     dx={if(${is_percent\ $1},w*$1,$1)}
     dy={if(${is_percent\ $2},h*$2,$2)}
     sigma={if(${is_percent\ $3},min(w,h)*$3,$3)}
@@ -24914,7 +24916,7 @@ fire_edges : check "${1=0.7}>=0 && ${2=0.25}>=0 && $2<=1 && ${3=0.5}>=0 && ${4=2
   e[^-1] "Generate fire effect from edges of image$?, with edges $1, attenuation $2, smoothness $3, threshold $4,
           $5 frames, starting frame $6 and frame skip $7."
   foreach {
-    nm={0,n}
+    nm={n}
     norm +gradient_norm n. 0,1 roundify. $1 f[0] 0
     (0,0,0;0,0,0;1,1,1;0,1,0) *. {(1-$2^4)/4}
     repeat $5*(1+$7)+$6 {
@@ -24943,7 +24945,7 @@ fractalize : check "${1=0.8}>=0 && $1<=1"
   c0r=0.317
   c0i=0.03
   foreach {
-    nm={0,n}
+    nm={n}
     luminance equalize 256 b 0.25% n 0,255
     100%,100%
     dx={$delta*w/max(w,h)}
@@ -25007,7 +25009,7 @@ hardsketchbw : skip ${1=300},${2=50},${3=0.1},${4=20},${5=0}
 
   if $5 # Fast version.
     foreach {
-      nm={0,n}
+      nm={n}
       g xy rv *.. -1 a c
       if $4 +norm >=. $4% * fi
       100%,100%,1,1,255 quiver. ..,{max(1,10-$2/6)},$1,0,$3 rm.. :: $nm
@@ -25015,7 +25017,7 @@ hardsketchbw : skip ${1=300},${2=50},${3=0.1},${4=20},${5=0}
 
   else # Slower version.
     foreach {
-      nm={0,n}
+      nm={n}
 
       # Isolate starting points and tangents.
       w={w} h={h} g xy rv *.. -1 a c * $1
@@ -25058,7 +25060,7 @@ houghsketchbw : check "${1=100}>=0 && ${2=3}>=0 && ${3=100}>=0 && $3<=100 && ${4
           and votesize $5."
   luminance
   foreach {
-    nm={0,n}
+    nm={n}
 
     # Compute normalized Hough transform.
     res={round(if(${is_percent\ $5},$5*max(w,h),$5))} w={w} h={h} rhomax={sqrt(w^2+h^2)/2}
@@ -37286,7 +37288,7 @@ fx_linify_preview :
 #@gui : url = link("Filter Explained here","http://www.gimpchat.com/viewtopic.php?f=10&t=2624")
 fx_lylejk_painting :
   foreach {
-    nm={0,n}
+    nm={n}
     +l { repeat $1 { b 0.75 unsharp 0.75,10.49 c 0,255 mv. 0 } }
     smooth. 300,0.26,1,0,7
     . rv[-3--1]
@@ -40887,7 +40889,7 @@ fx_decompose_channels :
   if !$2 # Decompose
     if $4 to_rgba else to_rgb fi
     foreach {
-      nm={0,n}
+      nm={n}
       split_opacity
       _s3=A _s4=A
       _fx_decompose_channels$1[0]
