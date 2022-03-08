@@ -44611,8 +44611,8 @@ fx_mess_with_bits :
   ac "_fx_mess_with_bits ${1-7}",$8
 
 _fx_mess_with_bits :
-  repeat $! {
-    +l[$>] {
+  foreach {
+    +l {
       b {($2/100)^2*100}% if $1 n 0,255 fi * $3 round
       # -> Here, images are 'ushort'-valued.
       if $4==1 f "for (k = res = 0, k<15, ++k, res|=((i>>k)&1)<<(15-k))"
@@ -44621,7 +44621,7 @@ _fx_mess_with_bits :
       f "begin( mask = (65535>>(15-max($5,$6))) & (65535<<min($5,$6))); i & mask"
       n 0,255
     }
-    j[$>] .,0,0,0,0,{$7%} rm.
+    j.. .,0,0,0,0,{$7%} rm.
   }
 
 fx_mess_with_bits_preview :
@@ -44805,7 +44805,7 @@ fx_pixelsort :
   _fx_pixelsort ${1-8},0
 
 _fx_pixelsort :
-  repeat $!-($4==0) { l[$>] {
+  foreach[0-{$4==0?-2:-1}] {
     if $3==0 +to_rgb channels. 0             # Red
     elif $3==1 +to_rgb channels. 1           # Green
     elif $3==2 +to_rgb channels. 2           # Blue
@@ -44828,7 +44828,7 @@ _fx_pixelsort :
     if $9 k. * 255
     else pixelsort[0] {`$1?_'+':_'-'`},{`$2==0?'x':$2==1?'y':$2==2?'xy':'yx'`},[1],[2] k[0]
     fi
-  } }
+  }
 
 fx_pixelsort_preview :
   _fx_pixelsort $*
@@ -52298,7 +52298,8 @@ fx_input_565 : skip "${1=}"
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2015/09/07</i>.</small>")
 fx_intarsia :
   to_rgb
-  repeat $! { nm=${gui_layer_name[$>]} +l[$>] {
+  +foreach {
+    nm=${gui_layer_name.}
 
     # Constrain image for size and number of colors, and index it with colormap.
     if max(w,h)>$3 rr2d $3,$3,0 fi
@@ -52391,7 +52392,7 @@ fx_intarsia :
     ('"</table>\n</font></center>\n</body>"')
     a x ot "$1/$2"
     rm
-  } }
+  }
 
 fx_intarsia_preview :
   to_rgb
