@@ -2267,7 +2267,8 @@ const CImg<void*> get_current_run(const char *const func_name,void *const p_list
 template<typename T>
 double gmic::mp_dollar(const char *const str,
                        void *const p_list, const T& pixel_type) {
-  if (!CImg<T>::_cimg_math_parser::is_varname(str))
+  if (!(CImg<T>::_cimg_math_parser::is_varname(str) ||
+        ((*str=='>' || *str=='<' || *str=='!' || *str=='^' || *str=='|') && !str[1])))
     throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Operator '$': "
                                 "Invalid variable name '%s'.",
                                 cimg::type<T>::string(),str);
@@ -2278,10 +2279,27 @@ double gmic::mp_dollar(const char *const str,
   const unsigned int *const variables_sizes = (const unsigned int*)gr[5];
 
   double res = cimg::type<double>::nan();
-  CImg<char> value = gmic_instance.get_variable(str,variables_sizes,&images_names);
-  if (value && *value) {
-    char end;
-    if (std::sscanf(value,"%lf%c",&res,&end)!=1) res = 0;
+
+  switch (*str) {
+    case '>' : case '<' : {
+//      res = 1976;
+    } break;
+  case '!' :
+    res = (double)images_names.size();
+    break;
+  case '^' :
+    res = (double)gmic_instance.verbosity;
+    break;
+  case '|' :
+    res = (cimg::time() - gmic_instance.reference_time)/1000.;
+    break;
+  default : {
+    CImg<char> value = gmic_instance.get_variable(str,variables_sizes,&images_names);
+    if (value && *value) {
+      char end;
+      if (std::sscanf(value,"%lf%c",&res,&end)!=1) res = 0;
+    }
+  }
   }
   return res;
 }
