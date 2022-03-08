@@ -28762,20 +28762,18 @@ ovh2stats : skip "${1=gmic.eu-*-*-*.log.gz}"
   }
 
   # Keep only lines containing 'G'MIC-Qt'.
-  repeat $! {
-    nm={$>,n}
-    l[$>] {
-      s -,{'\n'}
-      eval "
-        str = ['G'MIC-Qt'];
-        to_keep = vectorl();
-        p = 0;
-        repeat (l,k, find(#k,str)>=0?(to_keep[p++] = k));
-        store(to_keep,'to_keep',p);
-        run('$to_keep k[{^}]')"
-      if $!>1 i[1--2] ('\n') fi
-      a y :: $nm
-    }
+  foreach {
+    nm={n}
+    s -,{'\n'}
+    eval "
+      str = ['G'MIC-Qt'];
+      to_keep = vectorl();
+      p = 0;
+      repeat (l,k, find(#k,str)>=0?(to_keep[p++] = k));
+      store(to_keep,'to_keep',p);
+      run('$to_keep k[{^}]')"
+    if $!>1 i[1--2] ('\n') fi
+    a y :: $nm
   }
 
   # Analyze log files.
@@ -30188,9 +30186,7 @@ x_colorize : skip ${1=0},${3=0},${4=0},${5=0},${6=0} check "${2=1024}==0 || $2>=
   __color=255,255,255
 
   if !$is_palette1" && "!$is_palette2" && "!$is_grabber
-    repeat $N { l[$>] {
-      parallel $thread_main,$thread_color
-    } }
+    foreach[0-{$N-1}] { parallel $thread_main,$thread_color }
   else
     repeat $N { l[$>,$N--1] {
       parallel $thread_main,$thread_color,$thread_palette1,$thread_palette2,$thread_grabber
@@ -38184,7 +38180,7 @@ fx_stylize :
   elif $12==4 match_colors=$match_colors" srgb2lab[0,1] sh[0,1] 0 f[-2,-1] 50 rm[-2,-1] lab2srgb[0,1]"
   fi
   match_colors=$match_colors\
-              " b[0,1] xy,$13 repeat 2 { l[$>] { s c n 0,255 a c } } *[-2,-1] {$14*255} a[0,-2] c a[1,-1] c"
+              " b[0,1] xy,$13 foreach[0,1] { s c n 0,255 a c } *[-2,-1] {$14*255} a[0,-2] c a[1,-1] c"
 
   patch_penalization=$23
 
@@ -39255,7 +39251,7 @@ fx_apply_haldclut : skip "${2=}"
   if {$ind_clut,iM>512} /[$ind_clut] 255 fi # Possibly a 16bits HaldCLUT.
 
   if $normalize==1" || "$normalize==3 # Pre-normalization
-    repeat $! { if $>!=$ind_clut l[$>] { split_opacity balance_gamma[0] , a c } fi }
+    foreach { if $>!=$ind_clut split_opacity balance_gamma[0] , a c fi }
   fi
   repeat $! { if $>!=$ind_clut +map_clut[$>] [$ind_clut] j[$>] .,0,0,0,0,{$strength%} rm. fi } rm[$ind_clut]
   adjust_colors $brightness,$contrast,$gamma,$hue,$saturation,0,255
@@ -40902,9 +40898,8 @@ fx_decompose_channels :
     if $3 repeat int($!/$nb) { l[0-{$nb-1}] {
       a[0-{$nbc-1}] c _fx_recompose_channels$1[0] a c
     } mv. 0 }
-    else repeat $! { l[$>] {
-      s x,$nb a[0-{$nbc-1}] c _fx_recompose_channels$1[0] a c
-    } mv. 0 } fi
+    else foreach { s x,$nb a[0-{$nbc-1}] c _fx_recompose_channels$1[0] a c }
+    fi
   fi
 
 fx_decompose_channels_preview :
@@ -42318,7 +42313,7 @@ _fx_tune_hsv :
       l[] {
         repeat narg($all_colors) { color=${arg\ 1+$>,$all_colors} (${$color}) } a y permute. yzcx
         s x r {s=round(max($__ps,16));[s,s]}
-        repeat narg($all_colors) { l[$>] {
+        foreach[0-{narg($all_colors)-1}] {
           color=${arg\ 1+$>,$all_colors}
           mode=${mode_$color}
           if $mode==2
@@ -42328,7 +42323,7 @@ _fx_tune_hsv :
           to {`uppercase(['$color'][0])`},0.5~,0.5~,50%,2,0.5
           to_rgba
           if $mode frame 1,1,0,0,0,255 frame 2,2,255 else frame 3,3,0,0,0,64 fi
-        } }
+        }
         append_tiles 3,3
         store __preview_mapping
       }
