@@ -9395,10 +9395,10 @@ strings2ts : skip "${1=}"
   l[] { repeat $N1 { ({'${ndest$>}'}) :: ${nsrc$>} } y }
   repeat $N0 { rmn ${src$>} } # Discard already-translated strings in the .ts file
   if $N0 i[0] 0 l[0] { rm repeat $N0 { i ({'${dest$>}'}) :: ${src$>} } y } fi
-  repeat $! { l[$<] {
+  foreach {
     src={n} dest={t}
     if lowercase(['$src'])==lowercase(['$dest']) rm fi
-  } }
+  }
   sort_list +,n
   e[] "  > "$!" strings remain after cleaning/merging ("{$!-$N0}" new)."
 
@@ -16010,7 +16010,7 @@ hessian : skip "${1=},${2=}"
   e[^-1] "Compute hessian of image$?"$s_axes", with "$s_boundary" boundary conditions."
 
   # Process images.
-  repeat $! { l[$<] {
+  foreach {
     nm={n} laxes=$axes if '$laxes'==0 if d>1 laxes=xxxyxzyyyzzz else laxes=xxxyyy fi fi
     ('$laxes')
     repeat int(w/2) {
@@ -16027,7 +16027,7 @@ hessian : skip "${1=},${2=}"
       :: hessian_$a1$a2
     }
     rm[0,1] ::[^] $nm
-  } }
+  }
   u $is_noaarg
 
 #@cli idct : _{ x | y | z }...{ x | y | z } : (no arg)
@@ -27519,7 +27519,7 @@ alert : skip "${1=[G"{`39`}"MIC Alert]},${2=This is an alert box.},${3=OK}"
     mv[0] $!
     [0],[0],1,1,'(y-h/2)' *. -2 c. -30,30 +[0--3] . rm. c[^-1] 0,255  # Add shading to buttons.
 
-    repeat $!-1 { l[$<] {
+    foreach[^-1] {
 
       # Create selected buttons.
       +rectangle 0,0,100%,100%,1,0xFFFFFFFF,0
@@ -27541,9 +27541,8 @@ alert : skip "${1=[G"{`39`}"MIC Alert]},${2=This is an alert box.},${3=OK}"
 
       # Create coordinates image.
       i[0] 100%,100% =[0] 1,0,0
-
       a c
-    } }
+    }
 
     # Render alert box graphics.
     +l {
@@ -34754,7 +34753,7 @@ gui_print_preview : skip "${1=},${3=}" check "${2=32}>=0 && ${4=20}>=0"
       if $x +z. {$x+1},100% z.. 0,$x sh.. 0,2 fc. 0,255,0 rm. i.. 1,10 fi
     fi
 
-    repeat $! { l[$<] {
+    foreach {
       for w>$sizw {
         x={"const c0 = "$sizw"-1;
             const c02 = c0/2;
@@ -34763,7 +34762,7 @@ gui_print_preview : skip "${1=},${3=}" check "${2=32}>=0 && ${4=20}>=0"
             c<c02?c0:c"}
        +z. {$x+1},100% z.. 0,$x
       }
-    } }
+    }
     a y,0
     onfail rm
   }
@@ -36229,7 +36228,7 @@ fx_drawn_montage_preview :
 #@gui : url = link("Filter explained here","http://gimpchat.com/viewtopic.php?f=28&t=7905")
 fx_extract_objects :
   if $5 min_area=$5% else min_area=6 fi
-  repeat $! { l[$<] {
+  foreach {
     to_rgba
     nm=${-gui_layer_name}
     w={w} h={h}
@@ -36250,7 +36249,7 @@ fx_extract_objects :
       repeat w { ::[$>] pos({i($>,0)},{i($>,1)}),name($nm" "[$>]) } rm.
     fi
     $w,$h,1,4 fc. $color :: name($nm" [background]")
-  } }
+  }
 
 fx_extract_objects_preview :
   x0,y0=${1,2}
@@ -36529,14 +36528,14 @@ fx_puzzle :
       if $14 sort_list +,u fi
 
       if $16 # One piece by layer.
-        repeat $! { l[$<] {
+        foreach {
           r2dy {max(0.1,$10+$11*u(-1,1))}% rotate {$12+$13*u(-1,1)}
           if $15 expand_xy 1,0 fi
           cx={round(w/2)} cy={round(h/2)}
           sh 100% if $15 dilate. 3 fi
           i[0] $w,$h,1,4
           j[0] ..,{${x$<}-$cx},{${y$<}-$cy},0,0,1,.,255 rm[-2,-1]
-        } }
+        }
 
       else # All pieces on the same layer.
         i[0] $w,$h,1,{s}
@@ -42612,7 +42611,7 @@ fx_edge_offsets_preview :
 fx_extract_foreground :
   if !$! return fi
   resolution={arg(1+$3,512,1024,2048,0)}
-  repeat $! { l[$<] {
+  foreach {
     nm=${-gui_layer_name}
     :: "[G"{`39`}"MIC] Interactive Foreground Extraction"
     if [$6][0]==-1" || "[$5]!=[w,h] _gui_control_points= else _gui_control_points=$6 fi
@@ -42631,7 +42630,7 @@ fx_extract_foreground :
       ::[0] "name("$nm" [foreground]),pos("$pos0")"
       ::[1] "name("$nm" [background]),pos("$pos1")"
     fi
-  } }
+  }
   if narg($status)>=4 u \{$1\}\{$2\}\{$3\}\{$4\}\{{w},{h}\}\{$status\} else u "" fi
 
 #@gui Gradient Norm : fx_gradient_norm, fx_gradient_norm_preview(0)
