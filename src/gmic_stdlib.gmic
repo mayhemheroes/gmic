@@ -3862,19 +3862,20 @@ merge_multiline_comments :
 #@cli : Default value: 'reverse_endianness=0'.
 output_565 : check "isbool(${2=0})"
   e[^-1] "Output image$? as raw RGB-565 file '$1'."
-  N=$! repeat $N { +l[$>] {
+  N=$! +foreach {
     s c c 0,255 /[-3,-1] 8 /.. 4 round
     bsl... 11 bsl.. 5 +
     if $N>1 fn=${"filename \"$1\",$>"} else fn="$1" fi
     if $2 endian ushort fi
     o raw:$fn,ushort rm
-  } } is_change 0
+  }
+  is_change 0
 
 #@cli output_cube : "filename"
 #@cli : Output selected CLUTs as a .cube file (Adobe CLUT format).
 output_cube :
   e[^-1] "Output CLUT$? as file '$1'."
-  N=$! repeat $N { +l[$>] {
+  N=$! +foreach {
     to_rgb
     l={round((w*h*d)^(1/3))}
     if w*h*d!=$l^3 error "Command '$0': CLUT '"{n}"' has invalid dimensions "({w},{h},{d},{s}). fi
@@ -3892,26 +3893,27 @@ output_cube :
            "# LUT data points\n"
     i[0] ('$header')
     y a y ot $fn rm
-  } } is_change 0
+  }
+  is_change 0
 
 #@cli output_flo : "filename"
 #@cli : Output selected optical flow as a .flo file (vision.middlebury.edu file format).
 output_flo :
   e[^-1] "Output optical flow$? as file '$1'."
-  N=$! repeat $N { +l[$>] {
+  N=$! +foreach {
    w,h={[w,h]}
    channels 0,1 permute cxyz i[0] (202021.25) i[1] ($w,$h) cast[1] uint,float y a y
    if $N>1 fn=${"filename \"$1\",$>"} else fn="$1" fi
    o raw:$fn,float rm
- } } is_change 0
+  }
+  is_change 0
 
 #@cli output_ggr : filename,_gradient_name
 #@cli : Output selected images as .ggr gradient files (GIMP).
 #@cli : If no gradient name is specified, it is deduced from the filename.
 output_ggr : skip "${2=}"
- e[^-1] "Output image$? as .ggr gradient file '$1'."
- N=$!
-  repeat $N { +l[$>] {
+  e[^-1] "Output image$? as .ggr gradient file '$1'."
+  N=$! +foreach {
     r 1,{w*h*d},1,100%,-1 to_rgba / 255
     if narg("$2") name="$2"
     else l[] { 1 :: "$1" ('{b}') f "if(x==0 && i>=_'a' && i<=_'z',i-_'a'+_'A',i)" name={t} rm }
@@ -3928,7 +3930,8 @@ output_ggr : skip "${2=}"
     rm[0] a x
     if $N>1 ot ${"filename \"$1\",$>"} else ot "$1" fi
     rm
-  } } is_change 0
+  }
+  is_change 0
 
 #@cli output_gmz : filename,_datatype
 #@cli : Output selected images as .gmz files (G'MIC native file format).
@@ -3960,8 +3963,8 @@ output_gmz : skip ${2=auto}
 output_obj : check "isbool(${2=1})" check3d 0
   s0,s1=out,
   e[^-1] "Output 3D object$? as Wavefront 3D object file '$1' (with"${s$2}" materials)."
-  N=$! repeat $N { nm={$>,n} +l[$>] {
-    nb_materials,nb_primitives,nb_textures,nb_tcoords=0
+  N=$! +foreach {
+    nm={n} nb_materials,nb_primitives,nb_textures,nb_tcoords=0
 
     # Generate basename, file header and eval macros.
     if $N>1 filename=${"filename \"$1\",$>"} else filename="$1" fi
@@ -4148,7 +4151,7 @@ output_obj : check "isbool(${2=1})" check3d 0
     } fi
 
     rm
-  } }
+  }
   is_change 0
 
 #@cli ot : eq. to 'output_text'.
@@ -4340,35 +4343,33 @@ parse_cli_bashcompletion :
   v 0 use_vt100
   sort_list +,n
   +e[] "#"\n\
-"#  Bash completion rules for 'gmic'."\n\
-"#"\n\
-"# This file has been generated automatically."\n\
-"# Do not edit!"\n\
-"#"\n\
-"# This file should be copied/renamed in '/usr/share/bash-completion/completions/gmic'."\n\
-"#"\n\n\
-"_gmic()"\n\
-"{"\n\
-"    local cur prev opts coms"\n\
-"    if type -t _init_completion >/dev/null; then"\n\
-"        _init_completion -n = || return"\n\
-"    else"\n\
-"        COMPREPLY=()"\n\
-"        cur=\"${COMP_WORDS[COMP_CWORD]}\""\n\
-"        prev=\"${COMP_WORDS[COMP_CWORD-1]}\""\n\
-"    fi"
+    "#  Bash completion rules for 'gmic'."\n\
+    "#"\n\
+    "# This file has been generated automatically."\n\
+    "# Do not edit!"\n\
+    "#"\n\
+    "# This file should be copied/renamed in '/usr/share/bash-completion/completions/gmic'."\n\
+    "#"\n\n\
+    "_gmic()"\n\
+    "{"\n\
+    "    local cur prev opts coms"\n\
+    "    if type -t _init_completion >/dev/null; then"\n\
+    "        _init_completion -n = || return"\n\
+    "    else"\n\
+    "        COMPREPLY=()"\n\
+    "        cur=\"${COMP_WORDS[COMP_CWORD]}\""\n\
+    "        prev=\"${COMP_WORDS[COMP_CWORD-1]}\""\n\
+    "    fi"
   coms="    coms=\"" c=
 
   # Extract list of available commands.
-  repeat $! {
-    if s=['{$>,n}'];s[0]==_'_' continue fi
-    l[$>] {
-      ('{n}') l. { s -,{'@'} name={0,t} rm } :: $name
-      coms.=$c$name c=" "
-    }
+  foreach {
+    if s=['{n}'];s[0]==_'_' continue fi
+    ('{n}') l. { s -,{'@'} name={0,t} rm } :: $name
+    coms.=$c$name c=" "
   }
   +e[] $coms"\""\n\
-"    opts=$(echo \"$coms\" | sed \"s: \\([^ ]\\+\\): \\1 -\\1 \\+\\1:g\")"\n
+    "    opts=$(echo \"$coms\" | sed \"s: \\([^ ]\\+\\): \\1 -\\1 \\+\\1:g\")"\n
 
   # Duplicate list of arguments for command shortcuts.
   repeat $! {
@@ -7487,13 +7488,9 @@ _random_pattern_expr : skip "${1=0},${2=0}"
 _random_pattern_check_image :
   cond=1
   +s. xy,4
-  l[^0] {
-    repeat $! {
-      if $cond l[$>] {
-        gradient_norm.
-        if ic<$1 cond=0 fi
-      } fi
-    }
+  foreach[^0] {
+    gradient_norm
+    if ic<$1 cond=0 rm break fi
     rm
   }
   u $cond
@@ -9867,7 +9864,7 @@ _update_header_html : check "narg(${1=}) && ${2=0}>0 && isbool(${3=0})"
   l[] {
     it[] $filename
     s +,{'\n'}
-    repeat $! { if {$>,h>=64} l[$>] {
+    foreach { if h>=64
       +autocrop {'" "'} autocrop. {'\t'}
       if "find(#0,['Latest stable version: '])>=0"
         is_gmic={"find(#-1,'gmic.eu')>=0"}
@@ -9902,7 +9899,7 @@ _update_header_html : check "narg(${1=}) && ${2=0}>0 && isbool(${3=0})"
         y
       fi
       rm.
-    } fi }
+    fi }
     a y
     ot $filename
     rm
@@ -17446,7 +17443,7 @@ area : check "$1>=0" skip ${2=0}
          ${arg\ 1+!$2,high,low}" connectivity."
   foreach {
     s c
-    repeat $! { label[$>] $1,$2 nb={$>,1+iM} +histogram[$>] $nb,0,{$nb-1} map[$>] . rm. }
+    foreach { label $1,$2 nb:=iM+1 +histogram $nb,0,{$nb-1} map.. . rm. }
     a c
   }
 
@@ -17972,7 +17969,7 @@ plot2value :
   e[^-1] "Retrieve values from 2D graph plot$?."
   foreach {
     s c >= 50%
-    foreach { l[$>] (1,{w}) ri[1] [0],3 * histogram {w},1,{w} }
+    foreach { (1,{w}) ri[1] [0],3 * histogram {w},1,{w} }
     a c
   }
 
