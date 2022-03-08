@@ -12931,7 +12931,7 @@ rgb2lch : skip "${1=,}"
 rgb2lch8 : skip "${1=,}"
   l[] { if isnum("$1") illu:="$1>1?2:$1>0?1:0" else if ["'$1'"]!=',' noarg fi illu=2 fi onfail noarg illu=2 }
   e[^-1] "Convert color representation of image$? from RGB to Lch8, using the "${arg\ 1+$illu,D50,D65,E}" illuminant."
-  pi,facth="[pi,255/(2*pi)]"
+  pi,facth:="[pi,255/(2*pi)]"
   rgb2lch $illu repeat $! {
     sh[$>] 0 *. 2.55 rm.
     sh[$>] 1 *. 1.1086 rm.
@@ -15468,9 +15468,8 @@ deinterlace : skip ${1=0}
 denoise_haar : check "${1=1.4}>=0 && isint(${2=0}) && $2>=0 && isint(${3=10}) && $3>0"
   e[^-1] "Denoise image$? using haar-wavelet thresholding, with threshold $1, "\
           ${arg\ 1+($2>0),auto,$2}" scales and $3 spinning cycles."
-  foreach { nm={0,n}
-    nb_scales={min(if($2,$2,32),int(log2(min(w,h))-1))}
-    w={w} h={h} d={d} sigma=${-std_noise}
+  foreach {
+    nm={n} nb_scales:=min(if($2,$2,32),int(log2(min(w,h))-1)) w,h,d:="[w,h,d]" sigma=${-std_noise}
     r {round(w,2^($nb_scales+1),1)},{round(h,2^($nb_scales+1),1)},{if(d==1,1,round(d,2^($nb_scales+1),1))},100%,0,0
     +f 0
     repeat $3 {
