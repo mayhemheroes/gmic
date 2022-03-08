@@ -2267,6 +2267,11 @@ const CImg<void*> get_current_run(const char *const func_name,void *const p_list
 template<typename T>
 double gmic::mp_dollar(const char *const str,
                        void *const p_list, const T& pixel_type) {
+  if (!CImg<T>::_cimg_math_parser::is_varname(str))
+    throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Operator '$': "
+                                "Invalid variable name '%s'.",
+                                cimg::type<T>::string(),str);
+
   const CImg<void*> gr = get_current_run("Operator '$'",p_list,pixel_type);
   gmic &gmic_instance = *(gmic*)gr[0];
   CImgList<char> &images_names = *(CImgList<char>*)gr[2];
