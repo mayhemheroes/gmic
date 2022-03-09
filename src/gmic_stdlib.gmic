@@ -15241,6 +15241,57 @@ bump2normal :
     * 127 + 128 round c 0,255
   }
 
+#@cli closing : size>=0 : size_x>=0,size_y>=0,_size_z>=0 : \
+# [kernel],_is_real={ 0=binary-mode | 1=real-mode }
+#@cli : Apply morphological closing to selected images.
+#@cli : 'boundary_conditions' can be { 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }.
+#@cli : Default values: 'size_z=1', 'boundary_conditions=1' and 'is_real=0'.
+#@cli : $ image.jpg +closing 10
+closing : skip "${2=-1},${3=-1}" check "isbool(${4=0})"
+  is_kernel,sel=0,^
+  if "isnum($1)" # Full square kernel
+    if "$2==-1 && $3==-1"
+      sx,sy,sz=$1
+      e[0--4] "Apply morphological closing to image$?, with kernel size "$sx"."
+    else
+      sx,sy,sz:="[$1,$#>1?$2:1,$#>2?$3:1]"
+      e[0--4] "Apply morphological closing to image$?, with kernel size ("$sx,$sy,$sz")."
+    fi
+  elif ${"is_image_arg $1"}" && narg("${"pass$1 -1"}")==1" # Custom kernel
+    pass$1
+    sx,sy,sz:="[w,h,d]"
+    is_kernel,sel=1,^-1
+    e[0--3] "Apply morphological closing to image$?, with kernel ["${"pass$1 -1"}"]."
+  else error[0--3] "Command 'closing': Invalid arguments '$*'."
+  fi
+
+  sx1,sx2:="s=int(($sx-1)/2);[s,$sx-s-1]"
+  sy1,sy2:="s=int(($sy-1)/2);[s,$sy-s-1]"
+  sz1,sz2:="s=int(($sz-1)/2);[s,$sz-s-1]"
+  foreach[$sel] {
+    nm={n}
+    if d>1 # 3D
+      {[w+$sx+1,h+$sy+1,d+$sz+1]},100% j. ..,{$sx1+1},{$sy1+1},{$sz1+1} rm..
+      if $is_kernel pass. dilate.. .,0,$4 erode.. .,0,$4 rm.
+      else dilate $sx,$sy,$sz erode $sx,$sy,$sz
+      fi
+      z {$sx1+1},{$sy1+1},{$sz1+1},{w-$sx2-2},{h-$sy2-2},{d-$sz2-2} :: $nm
+    elif h>1 # 2D
+      {[w+$sx+1,h+$sy+1]},1,100% j. ..,{$sx1+1},{$sy1+1} rm..
+      if $is_kernel pass. dilate.. .,0,$4 erode.. .,0,$4 rm.
+      else dilate $sx,$sy erode $sx,$sy
+      fi
+      z {$sx1+1},{$sy1+1},{w-$sx2-2},{h-$sy2-2} :: $nm
+    else # 1D
+      {w+$sx+1},1,1,100% j. ..,{$sx1+1} rm..
+      if $is_kernel pass. dilate.. .,0,$4 erode.. .,0,$4 rm.
+      else dilate $sx,1 erode $sx,1
+      fi
+      z {$sx1+1},{w-$sx2-2} :: $nm
+    fi
+  }
+  if $is_kernel rm. fi
+
 #@cli compose_freq
 #@cli : Compose selected low and high frequency parts into new images.
 #@cli : $ image.jpg split_freq 2% mirror[-1] x compose_freq
@@ -34792,7 +34843,7 @@ gui_autocrop_layers :
     mode=${-gui_layer_mode}
     opacity=${-gui_layer_opacity}
     coords=${autocrop_coords\ auto}
-    z $coords :: "mode("$mode"),opacity("$opacity"),pos("{arg(1,$coords)"},{"arg(2,$coords)}"),name("$nm")"
+    z $coords :: "mode("$mode"),opacity("$opacity"),pos("{arg(1,$coords)}","{arg(2,$coords)}"),name("$nm")"
   }
 
 
