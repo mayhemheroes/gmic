@@ -10662,10 +10662,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             uind = _arg[1]?2:1;
             _arg+=uind; _arg_text+=uind;
           }
-          if (!*_arg) { // No command specified
-            print(images,0,"Skip command 'parallel' (no commands specified).");
-
-          } else {
+          if (!*_arg) print(images,0,"Skip command 'parallel' (no commands specified)."); // No command specified
+          else {
             CImgList<char> arguments = CImg<char>::string(_arg).get_split(CImg<char>::vector(','),0,false);
             CImg<_gmic_parallel<T> >(1,arguments.width()).move_to(gmic_threads);
             CImg<_gmic_parallel<T> > &_gmic_threads = gmic_threads.back();
