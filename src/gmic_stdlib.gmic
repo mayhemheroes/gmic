@@ -15245,7 +15245,7 @@ bump2normal :
 #@cli : Apply morphological closing to selected images.
 #@cli : Default values: 'size_z=1' and 'is_real=0'.
 #@cli : $ image.jpg +closing 10
-closing : skip "${2=},${3=}" check "isbool(${4=0})"
+closing : skip "${2=},${3=}"
   is_kernel,sel=0,^
   if "isnum($1)" # Full square kernel
     if "['$2']==0 && ['$3']==0"
@@ -15260,8 +15260,8 @@ closing : skip "${2=},${3=}" check "isbool(${4=0})"
   elif ${"is_image_arg $1"}" && narg("${"pass$1 -1"}")==1" # Custom kernel
     pass$1
     sx,sy,sz:="[w,h,d]"
-    is_kernel,sel=1,^-1
-    e[0--3] "Apply morphological closing to image$?, with kernel ["${"pass$1 -1"}"]."
+    is_kernel,sel,r0,r1,is_real=1,^-1,binary,real,$2
+    e[0--3] "Apply morphological closing to image$?, with kernel ["${"pass$1 -1"}"], in "${r$is_real}" mode."
   else error[0--3] "Command 'closing': Invalid arguments '$*'."
   fi
 
@@ -15273,19 +15273,19 @@ closing : skip "${2=},${3=}" check "isbool(${4=0})"
       nm={n}
       if d>1 # 3D
         {[w+$sx+1,h+$sy+1,d+$sz+1]},100%,{im} j. ..,{$sx1+1},{$sy1+1},{$sz1+1} rm..
-        if $is_kernel pass. dilate.. .,0,$4 erode.. .,0,$4 rm.
+        if $is_kernel pass. dilate.. .,0,$is_real erode.. .,0,$is_real rm.
         else dilate $sx,$sy,$sz erode $sx,$sy,$sz
         fi
         z {$sx1+1},{$sy1+1},{$sz1+1},{w-$sx2-2},{h-$sy2-2},{d-$sz2-2} :: $nm
       elif h>1 # 2D
         {[w+$sx+1,h+$sy+1]},1,100%,{im} j. ..,{$sx1+1},{$sy1+1} rm..
-        if $is_kernel pass. dilate.. .,0,$4 erode.. .,0,$4 rm.
+        if $is_kernel pass. dilate.. .,0,$is_real erode.. .,0,$is_real rm.
         else dilate $sx,$sy erode $sx,$sy
         fi
         z {$sx1+1},{$sy1+1},{w-$sx2-2},{h-$sy2-2} :: $nm
       else # 1D
         {w+$sx+1},1,1,100%,{im} j. ..,{$sx1+1} rm..
-        if $is_kernel pass. dilate.. .,0,$4 erode.. .,0,$4 rm.
+        if $is_kernel pass. dilate.. .,0,$is_real erode.. .,0,$is_real rm.
         else dilate $sx,1 erode $sx,1
         fi
         z {$sx1+1},{w-$sx2-2} :: $nm
@@ -16770,7 +16770,7 @@ normalized_cross_correlation : check ${is_image_arg\ $1}
 #@cli : Apply morphological opening to selected images.
 #@cli : Default values: 'size_z=1' and 'is_real=0'.
 #@cli : $ image.jpg +opening 10
-opening : skip "${2=},${3=}" check "isbool(${4=0})"
+opening : skip "${2=},${3=}"
   is_kernel,sel=0,^
   if "isnum($1)" # Full square kernel
     if "['$2']==0 && ['$3']==0"
@@ -16785,8 +16785,8 @@ opening : skip "${2=},${3=}" check "isbool(${4=0})"
   elif ${"is_image_arg $1"}" && narg("${"pass$1 -1"}")==1" # Custom kernel
     pass$1
     sx,sy,sz:="[w,h,d]"
-    is_kernel,sel=1,^-1
-    e[0--3] "Apply morphological opening to image$?, with kernel ["${"pass$1 -1"}"]."
+    is_kernel,sel,r0,r1,is_real=1,^-1,binary,real,$2
+    e[0--3] "Apply morphological opening to image$?, with kernel ["${"pass$1 -1"}"], in "${r$is_real}" mode."
   else error[0--3] "Command 'opening': Invalid arguments '$*'."
   fi
 
@@ -16798,19 +16798,19 @@ opening : skip "${2=},${3=}" check "isbool(${4=0})"
       nm={n}
       if d>1 # 3D
         {[w+$sx+1,h+$sy+1,d+$sz+1]},100%,{iM} j. ..,{$sx1+1},{$sy1+1},{$sz1+1} rm..
-        if $is_kernel pass. erode.. .,0,$4 dilate.. .,0,$4 rm.
+        if $is_kernel pass. erode.. .,0,$is_real dilate.. .,0,$is_real rm.
         else erode $sx,$sy,$sz dilate $sx,$sy,$sz
         fi
         z {$sx1+1},{$sy1+1},{$sz1+1},{w-$sx2-2},{h-$sy2-2},{d-$sz2-2} :: $nm
       elif h>1 # 2D
         {[w+$sx+1,h+$sy+1]},1,100%,{iM} j. ..,{$sx1+1},{$sy1+1} rm..
-        if $is_kernel pass. erode.. .,0,$4 dilate.. .,0,$4 rm.
+        if $is_kernel pass. erode.. .,0,$is_real dilate.. .,0,$is_real rm.
         else erode $sx,$sy dilate $sx,$sy
         fi
         z {$sx1+1},{$sy1+1},{w-$sx2-2},{h-$sy2-2} :: $nm
       else # 1D
         {w+$sx+1},1,1,100%,{iM} j. ..,{$sx1+1} rm..
-        if $is_kernel pass. erode.. .,0,$4 dilate.. .,0,$4 rm.
+        if $is_kernel pass. erode.. .,0,$is_real dilate.. .,0,$is_real rm.
         else erode $sx,1 dilate $sx,1
         fi
         z {$sx1+1},{w-$sx2-2} :: $nm
