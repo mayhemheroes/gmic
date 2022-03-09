@@ -15260,7 +15260,9 @@ closing : skip "${2=},${3=}"
   elif ${"is_image_arg $1"}" && narg("${"pass$1 -1"}")==1" # Custom kernel
     pass$1
     sx,sy,sz:="[w,h,d]"
-    is_kernel,sel,r0,r1,is_real=1,^-1,binary,real,$2
+    is_kernel,sel,r0,r1=1,^-1,binary,real
+    is_real=0
+    if ['$2']!=0 is_real=$2 fi
     e[0--3] "Apply morphological closing to image$?, with kernel ["${"pass$1 -1"}"], in "${r$is_real}" mode."
   else error[0--3] "Command 'closing': Invalid arguments '$*'."
   fi
@@ -16792,7 +16794,10 @@ opening : skip "${2=},${3=}"
   elif ${"is_image_arg $1"}" && narg("${"pass$1 -1"}")==1" # Custom kernel
     pass$1
     sx,sy,sz:="[w,h,d]"
-    is_kernel,sel,r0,r1,is_real=1,^-1,binary,real,$2
+    is_kernel,sel,r0,r1=1,^-1,binary,real
+    is_real=0
+    if ['$2']!=0 is_real=$2 fi
+
     e[0--3] "Apply morphological opening to image$?, with kernel ["${"pass$1 -1"}"], in "${r$is_real}" mode."
   else error[0--3] "Command 'opening': Invalid arguments '$*'."
   fi
@@ -42923,33 +42928,47 @@ fx_morphological_preview :
 
 _fx_morphological :
   ('"$4"') f. "(i>=_'0' && i<=_'9') || i==_',' || i==_';'?i:-1" discard. -1 ckernel={t} rm.
-  if $2==0 m "my_erode: erode $""1" m "my_dilate: dilate $""1"
-  elif $2==1 m "my_erode: erode_oct $""1" m "my_dilate: dilate_oct $""1"
-  elif $2==2 m "my_erode: erode_circ $""1" m "my_dilate: dilate_circ $""1"
+  if $2==0
+    m "my_erode: erode $""1"
+    m "my_dilate: dilate $""1"
+    m "my_opening : opening $""1"
+    m "my_closing : closing $""1"
+  elif $2==1
+    m "my_erode: erode_oct $""1"
+    m "my_dilate: dilate_oct $""1"
+    m "my_opening : opening_circ $""1"
+    m "my_closing : closing_circ $""1"
+  elif $2==2
+    m "my_erode: erode_circ $""1"
+    m "my_dilate: dilate_circ $""1"
+    m "my_opening : opening_circ $""1"
+    m "my_closing : closing_circ $""1"
   else
-    m "my_erode : ("$ckernel") erode[^-1] . rm."
-    m "my_dilate : ("$ckernel") dilate[^-1] . rm."
+    m "my_erode : skip $""1 ("$ckernel") erode[^-1] . rm."
+    m "my_dilate : skip $""1 ("$ckernel") dilate[^-1] . rm."
+    m "my_opening : skip $""1 ("$ckernel") opening[^-1] . rm."
+    m "my_closing : skip $""1 ("$ckernel") closing[^-1] . rm."
   fi
   # Erosion
   if $1==0 m "my_action : my_erode $3"
   # Dilation
   elif $1==1 m "my_action : my_dilate $3"
   # Opening
-  elif $1==2 m "my_action : my_erode $3 my_dilate $3"
+  elif $1==2 m "my_action : my_opening $3"
   # Closing
-  elif $1==3 m "my_action : my_dilate $3 my_erode $3"
+  elif $1==3 m "my_action : my_closing $3"
   # Original - Erosion
   elif $1==4 m "my_action : +my_erode $3 -"
   # Dilation - Original
   elif $1==5 m "my_action : +my_dilate $3 rv -"
   # Original - Opening
-  elif $1==6 m "my_action : +my_erode $3 my_dilate. $3 -"
+  elif $1==6 m "my_action : +my_opening $3 -"
   # Closing - Original
-  elif $1==7 m "my_action : +my_dilate $3 my_erode. $3 rv -"
+  elif $1==7 m "my_action : +my_closing $3 rv -"
   # Original - (Opening + Closing)/2
-  elif $1==8 m "my_action : +my_erode $3 my_dilate. $3 +my_dilate.. $3 my_erode. $3 +[-2,-1] /. 2 -"
+  elif $1==8 m "my_action : +my_opening $3 +my_closing.. $3 +[-2,-1] /. 2 -"
   # Closing - Opening
-  else m "my_action : +my_erode $3 my_dilate. $3 my_dilate.. $3 my_erode.. $3 -"
+  else m "my_action : +my_opening $3 my_closing.. $3 -"
   fi
   foreach {
     if !$6 split_opacity fi
