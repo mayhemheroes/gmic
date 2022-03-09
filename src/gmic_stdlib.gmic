@@ -15271,19 +15271,19 @@ closing : skip "${2=-1},${3=-1}" check "isbool(${4=0})"
   foreach[$sel] {
     nm={n}
     if d>1 # 3D
-      {[w+$sx+1,h+$sy+1,d+$sz+1]},100% j. ..,{$sx1+1},{$sy1+1},{$sz1+1} rm..
+      {[w+$sx+1,h+$sy+1,d+$sz+1]},100%,{im} j. ..,{$sx1+1},{$sy1+1},{$sz1+1} rm..
       if $is_kernel pass. dilate.. .,0,$4 erode.. .,0,$4 rm.
       else dilate $sx,$sy,$sz erode $sx,$sy,$sz
       fi
       z {$sx1+1},{$sy1+1},{$sz1+1},{w-$sx2-2},{h-$sy2-2},{d-$sz2-2} :: $nm
     elif h>1 # 2D
-      {[w+$sx+1,h+$sy+1]},1,100% j. ..,{$sx1+1},{$sy1+1} rm..
+      {[w+$sx+1,h+$sy+1]},1,100%,{im} j. ..,{$sx1+1},{$sy1+1} rm..
       if $is_kernel pass. dilate.. .,0,$4 erode.. .,0,$4 rm.
       else dilate $sx,$sy erode $sx,$sy
       fi
       z {$sx1+1},{$sy1+1},{w-$sx2-2},{h-$sy2-2} :: $nm
     else # 1D
-      {w+$sx+1},1,1,100% j. ..,{$sx1+1} rm..
+      {w+$sx+1},1,1,100%,{im} j. ..,{$sx1+1} rm..
       if $is_kernel pass. dilate.. .,0,$4 erode.. .,0,$4 rm.
       else dilate $sx,1 erode $sx,1
       fi
@@ -16754,6 +16754,56 @@ normalized_cross_correlation : check ${is_image_arg\ $1}
     -[-2,-1] *[-5,-3] *[-3,-2] +[-3,-2] [-2,-1] a[-2,-1] c norm.
     /... . /[-2,-1] ifft rm.
   } } rm.
+
+#@cli opening : size>=0 : size_x>=0,size_y>=0,_size_z>=0 : \
+# [kernel],_is_real={ 0=binary-mode | 1=real-mode }
+#@cli : Apply morphological opening to selected images.
+#@cli : Default values: 'size_z=1' and 'is_real=0'.
+#@cli : $ image.jpg +opening 10
+opening : skip "${2=-1},${3=-1}" check "isbool(${4=0})"
+  is_kernel,sel=0,^
+  if "isnum($1)" # Full square kernel
+    if "$2==-1 && $3==-1"
+      sx,sy,sz=$1
+      e[0--4] "Apply morphological opening to image$?, with kernel size "$sx"."
+    else
+      sx,sy,sz:="[$1,$#>1?$2:1,$#>2?$3:1]"
+      e[0--4] "Apply morphological opening to image$?, with kernel size ("$sx,$sy,$sz")."
+    fi
+  elif ${"is_image_arg $1"}" && narg("${"pass$1 -1"}")==1" # Custom kernel
+    pass$1
+    sx,sy,sz:="[w,h,d]"
+    is_kernel,sel=1,^-1
+    e[0--3] "Apply morphological opening to image$?, with kernel ["${"pass$1 -1"}"]."
+  else error[0--3] "Command 'opening': Invalid arguments '$*'."
+  fi
+
+  sx1,sx2:="s=int(($sx-1)/2);[s,$sx-s-1]"
+  sy1,sy2:="s=int(($sy-1)/2);[s,$sy-s-1]"
+  sz1,sz2:="s=int(($sz-1)/2);[s,$sz-s-1]"
+  foreach[$sel] {
+    nm={n}
+    if d>1 # 3D
+      {[w+$sx+1,h+$sy+1,d+$sz+1]},100%,{iM} j. ..,{$sx1+1},{$sy1+1},{$sz1+1} rm..
+      if $is_kernel pass. erode.. .,0,$4 dilate.. .,0,$4 rm.
+      else erode $sx,$sy,$sz dilate $sx,$sy,$sz
+      fi
+      z {$sx1+1},{$sy1+1},{$sz1+1},{w-$sx2-2},{h-$sy2-2},{d-$sz2-2} :: $nm
+    elif h>1 # 2D
+      {[w+$sx+1,h+$sy+1]},1,100%,{iM} j. ..,{$sx1+1},{$sy1+1} rm..
+      if $is_kernel pass. erode.. .,0,$4 dilate.. .,0,$4 rm.
+      else erode $sx,$sy dilate $sx,$sy
+      fi
+      z {$sx1+1},{$sy1+1},{w-$sx2-2},{h-$sy2-2} :: $nm
+    else # 1D
+      {w+$sx+1},1,1,100%,{iM} j. ..,{$sx1+1} rm..
+      if $is_kernel pass. erode.. .,0,$4 dilate.. .,0,$4 rm.
+      else erode $sx,1 dilate $sx,1
+      fi
+      z {$sx1+1},{w-$sx2-2} :: $nm
+    fi
+  }
+  if $is_kernel rm. fi
 
 #@cli percentile : [mask],0<=_min_percentile[%]<=100,0<=_max_percentile[%]<=100.
 #@cli : Apply percentile averaging filter to selected images.
