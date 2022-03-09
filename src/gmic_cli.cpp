@@ -220,7 +220,7 @@ int main(int argc, char **argv) {
     bool is_error_code = false;
 
     const char
-      *const it1 = std::strstr(gmic_instance.status,"***"),
+      *const it1 = gmic_instance.status?std::strstr(gmic_instance.status,"***"):"",
       *const it2 = it1?std::strstr(it1 + 3,"***"):0;
     if (it2 && std::sscanf(it2,"*** %d%c",&error_code,&sep)!=1) error_code = -1;
     else is_error_code = true;
