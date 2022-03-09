@@ -10658,136 +10658,142 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           const char *_arg = argument, *_arg_text = gmic_argument_text_printed();
           bool wait_mode = true;
           if ((*_arg=='0' || *_arg=='1') && (_arg[1]==',' || !_arg[1])) {
-            wait_mode = (bool)(*_arg - '0'); _arg+=2; _arg_text+=2;
+            wait_mode = (bool)(*_arg - '0');
+            uind = _arg[1]?2:1;
+            _arg+=uind; _arg_text+=uind;
           }
-          CImgList<char> arguments = CImg<char>::string(_arg).get_split(CImg<char>::vector(','),0,false);
-          CImg<_gmic_parallel<T> >(1,arguments.width()).move_to(gmic_threads);
-          CImg<_gmic_parallel<T> > &_gmic_threads = gmic_threads.back();
+          if (!*_arg) { // No command specified
+            print(images,0,"Skip command 'parallel' (no commands specified).");
+
+          } else {
+            CImgList<char> arguments = CImg<char>::string(_arg).get_split(CImg<char>::vector(','),0,false);
+            CImg<_gmic_parallel<T> >(1,arguments.width()).move_to(gmic_threads);
+            CImg<_gmic_parallel<T> > &_gmic_threads = gmic_threads.back();
 
 #ifdef gmic_is_parallel
-          print(images,0,"Execute %d command%s '%s' in parallel%s.",
-                arguments.width(),arguments.width()>1?"s":"",_arg_text,
-                wait_mode?" and wait thread termination immediately":
-                " and wait thread termination when current environment ends");
+            print(images,0,"Execute %d command%s '%s' in parallel%s.",
+                  arguments.width(),arguments.width()>1?"s":"",_arg_text,
+                  wait_mode?" and wait thread termination immediately":
+                  " and wait thread termination when current environment ends");
 #else // #ifdef gmic_is_parallel
-          print(images,0,"Execute %d commands '%s' (run sequentially, "
-                "parallel computing disabled).",
-                arguments.width(),_arg_text);
+            print(images,0,"Execute %d commands '%s' (run sequentially, "
+                  "parallel computing disabled).",
+                  arguments.width(),_arg_text);
 #endif // #ifdef gmic_is_parallel
 
-          // Prepare thread structures.
-          cimg_forY(_gmic_threads,l) {
-            gmic &gmic_instance = _gmic_threads[l].gmic_instance;
-            for (unsigned int i = 0; i<gmic_comslots; ++i) {
-              gmic_instance.commands[i].assign(commands[i],true);
-              gmic_instance.commands_names[i].assign(commands_names[i],true);
-              gmic_instance.commands_has_arguments[i].assign(commands_has_arguments[i],true);
-            }
-            for (unsigned int i = 0; i<gmic_varslots; ++i) {
-              if (i>=6*gmic_varslots/7) { // Share inter-thread global variables
-                gmic_instance.variables[i] = variables[i];
-                gmic_instance.variables_names[i] = variables_names[i];
-              } else {
-                if (i>=gmic_varslots/2) { // Make a copy of single-thread global variables
-                  gmic_instance._variables[i].assign(_variables[i]);
-                  gmic_instance._variables_names[i].assign(_variables_names[i]);
-                  _gmic_threads[l].variables_sizes[i] = variables_sizes[i];
-                } else _gmic_threads[l].variables_sizes[i] = 0;
-                gmic_instance.variables[i] = &gmic_instance._variables[i];
-                gmic_instance.variables_names[i] = &gmic_instance._variables_names[i];
+            // Prepare thread structures.
+            cimg_forY(_gmic_threads,l) {
+              gmic &gmic_instance = _gmic_threads[l].gmic_instance;
+              for (unsigned int i = 0; i<gmic_comslots; ++i) {
+                gmic_instance.commands[i].assign(commands[i],true);
+                gmic_instance.commands_names[i].assign(commands_names[i],true);
+                gmic_instance.commands_has_arguments[i].assign(commands_has_arguments[i],true);
               }
-            }
-            gmic_instance.callstack.assign(callstack);
-            gmic_instance.commands_files.assign(commands_files,true);
-            gmic_use_title;
-            cimg_snprintf(title,_title.width(),"*thread%d",l);
-            CImg<char>::string(title).move_to(gmic_instance.callstack);
-            gmic_instance.light3d.assign(light3d);
-            gmic_instance.status.assign(status);
-            gmic_instance.debug_filename = debug_filename;
-            gmic_instance.debug_line = debug_line;
-            gmic_instance.focale3d = focale3d;
-            gmic_instance.light3d_x = light3d_x;
-            gmic_instance.light3d_y = light3d_y;
-            gmic_instance.light3d_z = light3d_z;
-            gmic_instance.specular_lightness3d = specular_lightness3d;
-            gmic_instance.specular_shininess3d = specular_shininess3d;
-            gmic_instance._progress = 0;
-            gmic_instance.progress = &gmic_instance._progress;
-            gmic_instance.is_change = is_change;
-            gmic_instance.is_debug = is_debug;
-            gmic_instance.is_start = false;
-            gmic_instance.is_quit = false;
-            gmic_instance.is_return = false;
-            gmic_instance.is_double3d = is_double3d;
-            gmic_instance.verbosity = verbosity;
-            gmic_instance.render3d = render3d;
-            gmic_instance.renderd3d = renderd3d;
-            gmic_instance._is_abort = _is_abort;
-            gmic_instance.is_abort = is_abort;
-            gmic_instance.is_abort_thread = false;
-            gmic_instance.nb_carriages_default = nb_carriages_default;
-            gmic_instance.nb_carriages_stdout = nb_carriages_stdout;
-            gmic_instance.reference_time = reference_time;
-            _gmic_threads[l].images = &images;
-            _gmic_threads[l].images_names = &images_names;
-            _gmic_threads[l].parent_images = &parent_images;
-            _gmic_threads[l].parent_images_names = &parent_images_names;
-            _gmic_threads[l].gmic_threads = &_gmic_threads;
-            _gmic_threads[l].command_selection = command_selection;
-            _gmic_threads[l].is_thread_running = true;
+              for (unsigned int i = 0; i<gmic_varslots; ++i) {
+                if (i>=6*gmic_varslots/7) { // Share inter-thread global variables
+                  gmic_instance.variables[i] = variables[i];
+                  gmic_instance.variables_names[i] = variables_names[i];
+                } else {
+                  if (i>=gmic_varslots/2) { // Make a copy of single-thread global variables
+                    gmic_instance._variables[i].assign(_variables[i]);
+                    gmic_instance._variables_names[i].assign(_variables_names[i]);
+                    _gmic_threads[l].variables_sizes[i] = variables_sizes[i];
+                  } else _gmic_threads[l].variables_sizes[i] = 0;
+                  gmic_instance.variables[i] = &gmic_instance._variables[i];
+                  gmic_instance.variables_names[i] = &gmic_instance._variables_names[i];
+                }
+              }
+              gmic_instance.callstack.assign(callstack);
+              gmic_instance.commands_files.assign(commands_files,true);
+              gmic_use_title;
+              cimg_snprintf(title,_title.width(),"*thread%d",l);
+              CImg<char>::string(title).move_to(gmic_instance.callstack);
+              gmic_instance.light3d.assign(light3d);
+              gmic_instance.status.assign(status);
+              gmic_instance.debug_filename = debug_filename;
+              gmic_instance.debug_line = debug_line;
+              gmic_instance.focale3d = focale3d;
+              gmic_instance.light3d_x = light3d_x;
+              gmic_instance.light3d_y = light3d_y;
+              gmic_instance.light3d_z = light3d_z;
+              gmic_instance.specular_lightness3d = specular_lightness3d;
+              gmic_instance.specular_shininess3d = specular_shininess3d;
+              gmic_instance._progress = 0;
+              gmic_instance.progress = &gmic_instance._progress;
+              gmic_instance.is_change = is_change;
+              gmic_instance.is_debug = is_debug;
+              gmic_instance.is_start = false;
+              gmic_instance.is_quit = false;
+              gmic_instance.is_return = false;
+              gmic_instance.is_double3d = is_double3d;
+              gmic_instance.verbosity = verbosity;
+              gmic_instance.render3d = render3d;
+              gmic_instance.renderd3d = renderd3d;
+              gmic_instance._is_abort = _is_abort;
+              gmic_instance.is_abort = is_abort;
+              gmic_instance.is_abort_thread = false;
+              gmic_instance.nb_carriages_default = nb_carriages_default;
+              gmic_instance.nb_carriages_stdout = nb_carriages_stdout;
+              gmic_instance.reference_time = reference_time;
+              _gmic_threads[l].images = &images;
+              _gmic_threads[l].images_names = &images_names;
+              _gmic_threads[l].parent_images = &parent_images;
+              _gmic_threads[l].parent_images_names = &parent_images_names;
+              _gmic_threads[l].gmic_threads = &_gmic_threads;
+              _gmic_threads[l].command_selection = command_selection;
+              _gmic_threads[l].is_thread_running = true;
 
-            // Substitute special characters codes appearing outside strings.
-            arguments[l].resize(1,arguments[l].height() + 1,1,1,0);
-            bool is_dquoted = false;
-            for (char *s = arguments[l].data(); *s; ++s) {
-              if (*s=='\"') is_dquoted = !is_dquoted;
-              else if (!is_dquoted) _strreplace_fw(*s);
+              // Substitute special characters codes appearing outside strings.
+              arguments[l].resize(1,arguments[l].height() + 1,1,1,0);
+              bool is_dquoted = false;
+              for (char *s = arguments[l].data(); *s; ++s) {
+                if (*s=='\"') is_dquoted = !is_dquoted;
+                else if (!is_dquoted) _strreplace_fw(*s);
+              }
+              gmic_instance.commands_line_to_CImgList(arguments[l].data()).
+                move_to(_gmic_threads[l].commands_line);
             }
-            gmic_instance.commands_line_to_CImgList(arguments[l].data()).
-              move_to(_gmic_threads[l].commands_line);
-          }
 
-          // Run threads.
-          cimg_forY(_gmic_threads,l) {
+            // Run threads.
+            cimg_forY(_gmic_threads,l) {
 #ifdef gmic_is_parallel
 #ifdef PTHREAD_CANCEL_ENABLE
 
 #if defined(__MACOSX__) || defined(__APPLE__)
-            const uint64T stacksize = (uint64T)8*1024*1024;
-            pthread_attr_t thread_attr;
-            if (!pthread_attr_init(&thread_attr) && !pthread_attr_setstacksize(&thread_attr,stacksize))
-              // Reserve enough stack size for the new thread.
-              pthread_create(&_gmic_threads[l].thread_id,&thread_attr,gmic_parallel<T>,(void*)&_gmic_threads[l]);
-            else
+              const uint64T stacksize = (uint64T)8*1024*1024;
+              pthread_attr_t thread_attr;
+              if (!pthread_attr_init(&thread_attr) && !pthread_attr_setstacksize(&thread_attr,stacksize))
+                // Reserve enough stack size for the new thread.
+                pthread_create(&_gmic_threads[l].thread_id,&thread_attr,gmic_parallel<T>,(void*)&_gmic_threads[l]);
+              else
 #endif // #if defined(__MACOSX__) || defined(__APPLE__)
-              pthread_create(&_gmic_threads[l].thread_id,0,gmic_parallel<T>,(void*)&_gmic_threads[l]);
+                pthread_create(&_gmic_threads[l].thread_id,0,gmic_parallel<T>,(void*)&_gmic_threads[l]);
 
 #elif cimg_OS==2 // #ifdef PTHREAD_CANCEL_ENABLE
-            _gmic_threads[l].thread_id = CreateThread(0,0,(LPTHREAD_START_ROUTINE)gmic_parallel<T>,
-                                                      (void*)&_gmic_threads[l],0,0);
+              _gmic_threads[l].thread_id = CreateThread(0,0,(LPTHREAD_START_ROUTINE)gmic_parallel<T>,
+                                                        (void*)&_gmic_threads[l],0,0);
 #endif // #ifdef PTHREAD_CANCEL_ENABLE
 #else // #ifdef gmic_is_parallel
-            gmic_parallel<T>((void*)&_gmic_threads[l]);
+              gmic_parallel<T>((void*)&_gmic_threads[l]);
 #endif // #ifdef gmic_is_parallel
+            }
+
+            // Wait threads if immediate waiting mode selected.
+            if (wait_mode) {
+              wait_threads((void*)&_gmic_threads,false,(T)0);
+
+              // Get 'released' state of the image list.
+              cimg_forY(_gmic_threads,l) is_change|=_gmic_threads[l].gmic_instance.is_change;
+
+              // Get status modified by first thread.
+              _gmic_threads[0].gmic_instance.status.move_to(status);
+
+              // Check for possible exceptions thrown by threads.
+              cimg_forY(_gmic_threads,l) if (_gmic_threads[l].exception._message)
+                error(false,images,0,_gmic_threads[l].exception.command(),"%s",_gmic_threads[l].exception.what());
+              gmic_threads.remove();
+            }
           }
-
-          // Wait threads if immediate waiting mode selected.
-          if (wait_mode) {
-            wait_threads((void*)&_gmic_threads,false,(T)0);
-
-            // Get 'released' state of the image list.
-            cimg_forY(_gmic_threads,l) is_change|=_gmic_threads[l].gmic_instance.is_change;
-
-            // Get status modified by first thread.
-            _gmic_threads[0].gmic_instance.status.move_to(status);
-
-            // Check for possible exceptions thrown by threads.
-            cimg_forY(_gmic_threads,l) if (_gmic_threads[l].exception._message)
-              error(false,images,0,_gmic_threads[l].exception.command(),"%s",_gmic_threads[l].exception.what());
-            gmic_threads.remove();
-          }
-
           ++position; continue;
         }
 
@@ -15348,7 +15354,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
     verbosity = starting_verbosity;
 
-  } catch (gmic_exception&) {
+  } catch (gmic_exception& e) {
     // Wait for remaining threads to finish.
     cimglist_for(gmic_threads,k) wait_threads(&gmic_threads[k],true,(T)0);
     throw;
