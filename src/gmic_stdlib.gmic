@@ -3555,7 +3555,8 @@ echo_file : skip "${2='\n'}"
       slope:=($y1-$y0)/max(0.01,$x1-$x0)
       yp0={0,i(2,$>)*$smoothness+(1-$smoothness)*$slope}
       yp1={0,i(2,$>+1)*$smoothness+(1-$smoothness)*$slope}
-      i:=round($x0,1,1) j:=round($x1,1,0)
+      i:=round($x0,1,1)
+      j:=round($x1,1,0)
       line[1] $i,0,$j,0,1,$>
       if $j-$i<=1 # Linear interpolation for very close points.
         ({$y0-$x0*$slope}^{$slope}^0^0)
@@ -3904,7 +3905,7 @@ output_cube :
 output_flo :
   e[^-1] "Output optical flow$? as file '$1'."
   N=$! +foreach {
-   w,h:="[w,h]"
+   w,h:=[w,h]
    channels 0,1 permute cxyz i[0] (202021.25) i[1] ($w,$h) cast[1] uint,float y a y
    if $N>1 fn=${"filename \"$1\",$>"} else fn="$1" fi
    o raw:$fn,float rm
@@ -5022,7 +5023,7 @@ _parse_cli_images :
         else rm[0] 0
         fi
 
-        eW,eH:="[w#0+w#1,h#0+h#2]"
+        eW,eH:=[w#0+w#1,h#0+h#2]
         if $eW>$W" || "$eH>$H fact:=min($W/$eW,$H/$eH)*100 r $fact%,$fact%,1,100%,2 fi
         n 0,255
 
@@ -7454,7 +7455,7 @@ _random_pattern_expr : skip "${1=0},${2=0}"
     else u [{_round(u([-1,-1],[1,1]),0.1)}]
     fi
   else # Function or operator
-    p1,p2:="[$1,$1]+u([0.2,0.2])"
+    p1,p2:=[$1,$1]+u([0.2,0.2])
     r:=u(27)
     if $r<1 u ccos(${$0\ $p1,$nl})
     elif $r<2 u csin(${$0\ $p1,$nl})
@@ -8624,10 +8625,10 @@ update_gallery_html : check "isbool(${1=0})"
               if $is_stylization
                 +l { _gallery o $filename_full,70 rm } k.
                 _gallery
-                width,height:="[w,h]"
+                width,height:=[w,h]
               else
                 _gallery
-                width,height:="[w,h]"
+                width,height:=[w,h]
                 if $_is_animated o $filename_full,$_fps else o $filename_full,70 fi
               fi
               e[] "\r"$_vt100_g"        $ "${example$nex}" (done in "$_vt100_n${etime}"s"$_vt100_g")."$_vt100_n
@@ -10523,7 +10524,7 @@ apply_curve : check "${1=1}>=0 && $1<=1" skip ${2=0},${3=100}
   e[^-1] "Apply intensity curve with smoothness $1 and keypoints (${2--1}) on image$?."
 
   # Determine value mapping.
-  (${^0,1}) r. 2,{w/2},1,1,-1 +z. 0,0 vm,vM:="[im,iM]" n. 0,8191 j.. . function1d[] $1,{-2,^} rm[-3,-2]
+  (${^0,1}) r. 2,{w/2},1,1,-1 +z. 0,0 vm,vM:=[im,iM] n. 0,8191 j.. . function1d[] $1,{-2,^} rm[-3,-2]
 
   # Apply value mapping.
   -[^-1] $vm *[^-1] {8191/($vM-$vm)} map[^-1] .,1 rm.
@@ -10567,7 +10568,7 @@ cast :
   dsize:=s='$dtype';s=='"unsigned_char"'||s=='char'?1:s=='"unsigned_short"'||s=='short'?2:s=='"unsigned_int"'||\
          s=='int'||s=='float'?4:8
   foreach {
-    w,h,d,s:="[w,h,d,s]"
+    w,h,d,s:=[w,h,d,s]
     serialize $1,0,0
     s -,{'\n$w\ $h\ $d\ $s\n'}
     i[1] ('\n1\ {int($w*$h*$d*$s*$ssize/$dsize)}\ 1\ 1\n') y[1]
@@ -10630,7 +10631,7 @@ compress_clut : check "${1=1.5}>0 && ${2=0.75}>0 && isint(${3=2048}) && (!$3 || 
     do
       +decompress_clut_$method. {0,[w,h,d]},$colorspace
       if !$_metric -. [0] norm. else srgb2lab. deltaE. [1],{$_metric-1}," " fi
-      emax,eavg:="[iM,ia]"
+      emax,eavg:=[iM,ia]
       e[] "\r"$sep"  > Add [#"{-2,h}"] Max_Err = "{_$emax}", Avg_Err = "{_$eavg}"         " sep=""
       if $emax<=$max_error" && "$eavg<=$avg_error rm. break fi
       1,1,1,{0,s+3},{"P = [ xM,yM,zM ]; [ P*255/[max(1,w#0-1),max(1,h#0-1),max(1,d#0-1)], I(#0,P) ]"} rm..
@@ -10652,7 +10653,7 @@ compress_clut : check "${1=1.5}>0 && ${2=0.75}>0 && isint(${3=2048}) && (!$3 || 
         +l. { s y rm[$index] a y } # Remove kth keypoint
         +decompress_clut_$method. {0,[w,h,d]},$colorspace
         if $_metric==0 -. [0] norm. else srgb2lab. deltaE. [1],{$_metric-1}," " fi
-        emax,eavg:="[iM,ia]" rm.
+        emax,eavg:=[iM,ia] rm.
 
         if $emax<=$max_error" && "$eavg<=$avg_error rv[-2,-1] else index+=1 fi
         e[] "\r"$sep"  > Rem [#"{min($index,h-1)}"/"{h}"] Max_Err = "{_$emax}", Avg_Err = "{_$eavg}"       "
@@ -11091,7 +11092,7 @@ noise_poissondisk : check "${1=8}>0 && isint(${2=30}) && $2>0 && ${3=2}>0"
   e[^-1] "Add poisson disk sampling points to image$?, with radius $1, max sample attempts $2 and p-norm $3."
   R0,K,P=${1-3}
   foreach {
-    W,H,D:="[w,h,d]"
+    W,H,D:=[w,h,d]
     value:=iM+(im==iM?1:0)
     R:=${is_percent\ $R0}?max(w,h,d)*$R0:$R0
     C:=$R/sqrt(sum([$W,$H,$D]>1)) # Cell size
@@ -11833,7 +11834,7 @@ _colormap : # Implementation of the median-cut algorithm.
   m "__colormap : repeat s { sh[$""1] $> =.. {iv},$""1,0,0,$> rm. }"
   1,1,1,{s} __colormap 0 # Initialize image of box variances
   repeat $1-1 {
-    b,a:="[xM,cM]" # b = box with highest variance, a = axis with highest variance
+    b,a:=[xM,cM] # b = box with highest variance, a = axis with highest variance
     shift[$b] 0,0,0,{-$a},2 sort[$b] +,x shift[$b] 0,0,0,$a,2
     if {$b,w>1} s[$b] x,2 else 1 fi # Split selected box along its median axis
     mv[$b] -1 r. {w+1},1,1,100%,0
@@ -12142,7 +12143,7 @@ lch2rgb : skip "${1=,}"
 lch82rgb : skip "${1=,}"
   l[] { if isnum("$1") illu:="$1>1?2:$1>0?1:0" else if ["'$1'"]!=',' noarg fi illu=2 fi onfail noarg illu=2 }
   e[^-1] "Convert color representation of image$? from Lch8 to RGB, using the "${arg\ 1+$illu,D50,D65,E}" illuminant."
-  pi,facth:="[pi,255/(2*pi)]"
+  pi,facth:=[pi,255/(2*pi)]
   repeat $! {
     sh[$>] 0 /. 2.55 rm.
     sh[$>] 1 /. 1.1086 rm.
@@ -12936,7 +12937,7 @@ rgb2lch : skip "${1=,}"
 rgb2lch8 : skip "${1=,}"
   l[] { if isnum("$1") illu:="$1>1?2:$1>0?1:0" else if ["'$1'"]!=',' noarg fi illu=2 fi onfail noarg illu=2 }
   e[^-1] "Convert color representation of image$? from RGB to Lch8, using the "${arg\ 1+$illu,D50,D65,E}" illuminant."
-  pi,facth:="[pi,255/(2*pi)]"
+  pi,facth:=[pi,255/(2*pi)]
   rgb2lch $illu repeat $! {
     sh[$>] 0 *. 2.55 rm.
     sh[$>] 1 *. 1.1086 rm.
@@ -13386,7 +13387,7 @@ transfer_pca : check ${"is_image_arg $1"} skip "${2=all}"
   to_colormode[^-1] $sref
   if $sref==1 # Scalar case can to be solved more easily
     pass$1
-    var_ref,avg_ref:="[iv,ia]" rm.
+    var_ref,avg_ref:=[iv,ia] rm.
     foreach { - {ia} * {sqrt($var_ref/iv)} + $avg_ref }
   elif ['$channels']!='all'
     pass$1 {$sref==3?2:0}
@@ -14922,7 +14923,7 @@ undistort : check "${1=0.1}>=-1 && $1<=1 && ${6=0}>=0 && $6<=3" skip ${2=0},${3=
 upscale_smart : skip ${2=100%},${3=100%} check "${4=2}>=0 && ${5=0.4}>=0 && $5<=1 && ${6=10}>=0"
   e[^-1] "Upscale image$? to $1x$2x$3, with smoothness $4, anisotropy $5 and sharpening $6."
   foreach {
-    w,h:="[w,h]"
+    w,h:=[w,h]
     +r. $1,$2,$3,1,0 # Compute desired dimensions.
     if w<$w" && "h<$h # Test for downscaling
       rm. r. $1,$2,$3,100%,2
@@ -15262,7 +15263,7 @@ closing : skip "${2=},${3=}"
     fi
   elif ${"is_image_arg $1"}" && narg("${"pass$1 -1"}")==1" # Custom kernel
     pass$1
-    sx,sy,sz:="[w,h,d]"
+    sx,sy,sz:=[w,h,d]
     is_kernel,sel,r0,r1=1,^-1,binary,real
     is_real=0
     if ['$2']!=0 is_real=$2 fi
@@ -15339,7 +15340,7 @@ convolve_fft : check ${is_image_arg\ $1}" && isin(${2=2},0,1,2,3)"
   pass$1 store. kernel
   foreach {
     if w
-      w0,h0,d0:="[w,h,d]"
+      w0,h0,d0:=[w,h,d]
       $kernel
       if $2!=2 r[0] {[w#0,h#0,d#0]+2*round([w#1>1?w#1:0,h#1>1?h#1:0,d#1>1?d#1:0]/2)},100%,0,$2,0.5,0.5 fi
       r ${-max_whd},100%,0,0,0.5,0.5 r 100%,100%,100%,${-max_s}
@@ -15539,7 +15540,7 @@ denoise_haar : check "${1=1.4}>=0 && isint(${2=0}) && $2>=0 && isint(${3=10}) &&
   e[^-1] "Denoise image$? using haar-wavelet thresholding, with threshold $1, "\
           ${arg\ 1+($2>0),auto,$2}" scales and $3 spinning cycles."
   foreach {
-    nm={n} nb_scales:=min(if($2,$2,32),int(log2(min(w,h))-1)) w,h,d:="[w,h,d]" sigma=${-std_noise}
+    nm={n} nb_scales:=min(if($2,$2,32),int(log2(min(w,h))-1)) w,h,d:=[w,h,d] sigma=${-std_noise}
     r {round(w,2^($nb_scales+1),1)},{round(h,2^($nb_scales+1),1)},{if(d==1,1,round(d,2^($nb_scales+1),1))},100%,0,0
     +f 0
     repeat $3 {
@@ -15960,7 +15961,7 @@ _gradient :
         fi
         +correlate[0] .,$boundary rm..
       elif $scheme==3 # Rotation-invariant
-        A,B:="[0.25*(2-sqrt(2)),0.5*(sqrt(2)-1)]"
+        A,B:=[0.25*(2-sqrt(2)),0.5*(sqrt(2)-1)]
         if _'$a'==_'x' (-$A,0,$A;-$B,0,$B;-$A,0,$A)
         elif _'$a'==_'y' (-$A,-$B,-$A;0,0,0;$A,$B,$A)
         else (-0.5${s}0${s}0.5)
@@ -16639,7 +16640,7 @@ map_tones : skip ${1=0.1},${2=0.8},${3=0.5},${4=30}
     +l {
       s c foreach {
         g xy,1 a c +norm orientation..
-        m,M:="[im,iM]" b. $3 n. $m,$M
+        m,M:=[im,iM] b. $3 n. $m,$M
         *. 'alpha=$1*iM;(alpha/(1e-10+i))*(i/(1e-10+alpha))^$2'
         * s c g.. x,-1 g. y,-1 +
       }
@@ -16796,7 +16797,7 @@ opening : skip "${2=},${3=}"
     fi
   elif ${"is_image_arg $1"}" && narg("${"pass$1 -1"}")==1" # Custom kernel
     pass$1
-    sx,sy,sz:="[w,h,d]"
+    sx,sy,sz:=[w,h,d]
     is_kernel,sel,r0,r1=1,^-1,binary,real
     is_real=0
     if ['$2']!=0 is_real=$2 fi
@@ -17151,7 +17152,7 @@ sharpen : check "$1>=0 && ${2=0}>=0 && ${3=0}>=0 && ${4=0}>=0"
   if $2>0 # Shock filters
     e[0--3] "Sharpen image$? with shock filters, amplitude $1, edge $2, alpha $3 and sigma $4."
     foreach {
-      im,iM:="[im,iM]"
+      im,iM:=[im,iM]
       +b $3 structuretensors. 0 b. $4 eigen. l.. { max 0 s c + + 1 ^ {-0.5*$2} *. -1 +. 1 }
       if {0,d>1} # 3D
         +f[0] "const boundary = 1;
@@ -17210,7 +17211,7 @@ sharpen : check "$1>=0 && ${2=0}>=0 && ${3=0}>=0 && ${4=0}>=0"
   else # Inverse diffusion
     e[0--3] "Sharpen image$? with inverse diffusion and amplitude $1."
     foreach {
-      im,iM:="[im,iM]" +laplacian *. {$1/abs(maxabs(im,iM))} - c $im,$iM
+      im,iM:=[im,iM] +laplacian *. {$1/abs(maxabs(im,iM))} - c $im,$iM
     }
   fi
 
