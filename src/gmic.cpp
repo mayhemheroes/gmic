@@ -14113,6 +14113,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             if (is_valid_name) {
               s = s_op_right + 1; // Parse sequence of values
               if (!*s) CImg<char>(1,1,1,1,0).move_to(varvalues);
+              else if (sep0==':') CImg<char>::string(s,true,true).move_to(varvalues);
               else {
                 const char *const s_end = item + std::strlen(item);
                 while (s<s_end) {
