@@ -11930,7 +11930,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             if (next) // Count number of specified variable names
               for (const char *ptr = next; ptr; ptr = std::strchr(ptr,',')) { ++ptr; ++pattern; }
             print(images,0,
-                  "Store image%s as %s variable%s '%s'",
+                  "Store image%s as %svariable%s '%s'",
                   gmic_selection.data(),
                   is_compressed?"compressed":"",
                   next?"s":"",
