@@ -11960,8 +11960,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               name.resize(name.width() + 4,1,1,1,0,0,1);
               name[0] = 'G'; name[1] = 'M'; name[2] = 'Z'; name[3] = 0;
               name.unroll('y').move_to(g_list);
-              g_list.get_serialize((bool)is_compressed).unroll('x').move_to(name);
-              name.resize((unsigned int)(name.width() + 9 + std::strlen(formula)),1,1,1,0,0,1);
+              g_list.get_serialize((bool)is_compressed,9 + std::strlen(formula)).move_to(name);
               std::sprintf(name,"%c*store/%s",gmic_store,_formula.data());
               set_variable(formula,name,variables_sizes);
             } else for (unsigned int n = 0; n<pattern; ++n) { // Assignment to multiple variables
@@ -14408,10 +14407,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         const CImg<char> svalue = get_variable(argx,0,0);
         try {
           if (!svalue) throw CImgArgumentException(0);
-          const char *const zero = (char*)std::memchr(svalue,0,svalue.width());
+          const char *const zero = (char*)std::memchr(svalue,0,svalue.size());
           if (!zero) throw CImgArgumentException(0);
-          CImgList<T>::get_unserialize(svalue.get_shared_points(zero + 1 - svalue.data(),svalue.width() - 1)).
-            move_to(g_list);
+          CImgList<T>::get_unserialize(svalue,zero + 1 - svalue.data()).move_to(g_list);
         } catch (CImgArgumentException&) {
           error(true,images,0,0,
                 "Command 'input': Variable '%s' has not been assigned with command 'store'.",
