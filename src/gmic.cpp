@@ -12655,7 +12655,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             if (is_gmz) (gmz_info>'x').unroll('y').move_to(g_list);
             if (!std::strcmp(argx,"auto")) std::strcpy(argx,CImg<T>::storage_type(g_list,false));
 
-            CImg<T> serialized;
+            CImg<unsigned char> serialized;
             gmic_serialize(unsigned char,"uchar")
             else gmic_serialize(unsigned char,"unsigned char")
               else gmic_serialize(char,"char")
