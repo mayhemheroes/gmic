@@ -15245,9 +15245,11 @@ bump2normal :
     * 127 + 128 round c 0,255
   }
 
-#@cli closing : size>=0 : size_x>=0,size_y>=0,_size_z>=0 : [kernel],_is_real={ 0=binary-mode | 1=real-mode }
+#@cli closing : size>=0 : size_x>=0,size_y>=0,_size_z>=0 : \
+# [kernel],_boundary_conditions,_is_real={ 0=binary-mode | 1=real-mode }
 #@cli : Apply morphological closing to selected images.
-#@cli : Default values: 'size_z=1' and 'is_real=0'.
+#@cli : 'boundary_conditions' can be { 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }.
+#@cli : Default values: 'size_z=1', 'boundary_conditions=1' and 'is_real=0'.
 #@cli : $ image.jpg +closing 10
 closing : skip "${2=},${3=}"
   is_kernel,sel=0,^
@@ -15264,10 +15266,12 @@ closing : skip "${2=},${3=}"
   elif ${"is_image_arg $1"}" && narg("${"pass$1 -1"}")==1" # Custom kernel
     pass$1
     sx,sy,sz:=[w,h,d]
-    is_kernel,sel,r0,r1=1,^-1,binary,real
-    is_real=0
-    if ['$2']!=0 is_real=$2 fi
-    e[0--3] "Apply morphological closing to image$?, with kernel ["${"pass$1 -1"}"], in "${r$is_real}" mode."
+    is_kernel,sel,r0,r1,b0,b1,b2,b3=1,^-1,binary,real,dirichlet,neumann,periodic,mirror
+    boundary,is_real=1,0
+    if ['$2']!=0 boundary:=cut($2,0,3) fi
+    if ['$3']!=0 is_real=$3 fi
+    e[0--3] "Apply morphological closing to image$? with kernel ["${"pass$1 -1"}"] and "${b$boundary}" boundary "\
+            "conditions, in "${r$is_real}" mode."
   else error[0--3] "Command 'closing': Invalid arguments '$*'."
   fi
 
@@ -15278,19 +15282,19 @@ closing : skip "${2=},${3=}"
     foreach[$sel] {
       nm={n}
       if d>1 # 3D
-        {[w+$sx+1,h+$sy+1,d+$sz+1]},100%,-inf j. ..,{$sx1+1},{$sy1+1},{$sz1+1} rm..
+        r {[w+$sx+1,h+$sy+1,d+$sz+1]},100%,0,$boundary,0.5,0.5,0.5
         if $is_kernel pass. dilate.. .,0,$is_real erode.. .,0,$is_real rm.
         else dilate $sx,$sy,$sz erode $sx,$sy,$sz
         fi
         z {$sx1+1},{$sy1+1},{$sz1+1},{w-$sx2-2},{h-$sy2-2},{d-$sz2-2} :: $nm
       elif h>1 # 2D
-        {[w+$sx+1,h+$sy+1]},1,100%,-inf j. ..,{$sx1+1},{$sy1+1} rm..
+        r {[w+$sx+1,h+$sy+1]},1,100%,0,$boundary,0.5,0.5
         if $is_kernel pass. dilate.. .,0,$is_real erode.. .,0,$is_real rm.
         else dilate $sx,$sy erode $sx,$sy
         fi
         z {$sx1+1},{$sy1+1},{w-$sx2-2},{h-$sy2-2} :: $nm
       else # 1D
-        {w+$sx+1},1,1,100%,-inf j. ..,{$sx1+1} rm..
+        r {w+$sx+1},1,1,100%,0,$boundary,0.5
         if $is_kernel pass. dilate.. .,0,$is_real erode.. .,0,$is_real rm.
         else dilate $sx,1 erode $sx,1
         fi
@@ -16779,9 +16783,11 @@ normalized_cross_correlation : check ${is_image_arg\ $1}
     /... . /[-2,-1] ifft rm.
   } } rm.
 
-#@cli opening : size>=0 : size_x>=0,size_y>=0,_size_z>=0 : [kernel],_is_real={ 0=binary-mode | 1=real-mode }
+#@cli opening : size>=0 : size_x>=0,size_y>=0,_size_z>=0 : \
+# [kernel],_boundary_conditions,_is_real={ 0=binary-mode | 1=real-mode }
 #@cli : Apply morphological opening to selected images.
-#@cli : Default values: 'size_z=1' and 'is_real=0'.
+#@cli : 'boundary_conditions' can be { 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }.
+#@cli : Default values: 'size_z=1', 'boundary_conditions=1' and 'is_real=0'.
 #@cli : $ image.jpg +opening 10
 opening : skip "${2=},${3=}"
   is_kernel,sel=0,^
@@ -16798,11 +16804,12 @@ opening : skip "${2=},${3=}"
   elif ${"is_image_arg $1"}" && narg("${"pass$1 -1"}")==1" # Custom kernel
     pass$1
     sx,sy,sz:=[w,h,d]
-    is_kernel,sel,r0,r1=1,^-1,binary,real
-    is_real=0
-    if ['$2']!=0 is_real=$2 fi
-
-    e[0--3] "Apply morphological opening to image$?, with kernel ["${"pass$1 -1"}"], in "${r$is_real}" mode."
+    is_kernel,sel,r0,r1,b0,b1,b2,b3=1,^-1,binary,real,dirichlet,neumann,periodic,mirror
+    boundary,is_real=1,0
+    if ['$2']!=0 boundary:=cut($2,0,3) fi
+    if ['$3']!=0 is_real=$3 fi
+    e[0--3] "Apply morphological opening to image$? with kernel ["${"pass$1 -1"}"] and "${b$boundary}" boundary "\
+            "conditions, in "${r$is_real}" mode."
   else error[0--3] "Command 'opening': Invalid arguments '$*'."
   fi
 
@@ -16813,19 +16820,19 @@ opening : skip "${2=},${3=}"
     foreach[$sel] {
       nm={n}
       if d>1 # 3D
-        {[w+$sx+1,h+$sy+1,d+$sz+1]},100%,inf j. ..,{$sx1+1},{$sy1+1},{$sz1+1} rm..
+        r {[w+$sx+1,h+$sy+1,d+$sz+1]},100%,0,$boundary,0.5,0.5,0.5
         if $is_kernel pass. erode.. .,0,$is_real dilate.. .,0,$is_real rm.
         else erode $sx,$sy,$sz dilate $sx,$sy,$sz
         fi
         z {$sx1+1},{$sy1+1},{$sz1+1},{w-$sx2-2},{h-$sy2-2},{d-$sz2-2} :: $nm
       elif h>1 # 2D
-        {[w+$sx+1,h+$sy+1]},1,100%,inf j. ..,{$sx1+1},{$sy1+1} rm..
+        r {[w+$sx+1,h+$sy+1]},1,100%,0,$boundary,0.5,0.5
         if $is_kernel pass. erode.. .,0,$is_real dilate.. .,0,$is_real rm.
         else erode $sx,$sy dilate $sx,$sy
         fi
         z {$sx1+1},{$sy1+1},{w-$sx2-2},{h-$sy2-2} :: $nm
       else # 1D
-        {w+$sx+1},1,1,100%,inf j. ..,{$sx1+1} rm..
+        r {w+$sx+1},1,1,100%,0,$boundary,0.5
         if $is_kernel pass. erode.. .,0,$is_real dilate.. .,0,$is_real rm.
         else erode $sx,1 dilate $sx,1
         fi
