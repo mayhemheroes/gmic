@@ -2367,9 +2367,9 @@ double gmic::mp_get(Ts *const ptr, const unsigned int siz, const bool to_string,
       } else { // Vector result
         CImg<Ts> dest(ptr,siz,1,1,1,true);
         if (*value==gmic_store) { // Image-encoded variable
-          const char *const zero = (char*)::std::memchr(value,0,value.width());
-          CImgList<T> list = CImgList<T>::get_unserialize(value.get_shared_points(zero + 1 - value.data(),
-                                                                                  value.width() - 1));
+          const char *const zero = (char*)::std::memchr(value,0,value.size());
+          CImgList<T> list;
+          if (zero) CImgList<T>::get_unserialize(value,zero + 1 - value.data()).move_to(list);
           if (list.size()!=2)
             throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
                                         "Variable '%s' stores %u images, cannot be returned as a single vector.",
