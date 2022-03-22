@@ -7940,14 +7940,16 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               }
               g_list.assign();
               g_list_c.assign();
+
+              if (!exception._message && nb_foreachdones>0 && foreachdones._height>=nb_foreachdones) {
+                fed = foreachdones.data(0,nb_foreachdones - 1);
+                ++fed[0]; --fed[1];
+                next_debug_line = fed[2];
+                next_debug_filename = debug_filename;
+              }
+
               cimg::mutex(27,0);
               if (exception._message) throw exception;
-
-              fed = foreachdones.data(0,nb_foreachdones - 1);
-              ++fed[0]; --fed[1];
-              next_debug_line = fed[2];
-              next_debug_filename = debug_filename;
-
               if (is_cond) break;
             }
 
@@ -8938,10 +8940,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           }
           g_list.assign();
           g_list_c.assign();
+          if (!exception._message) callstack.remove();
           cimg::mutex(27,0);
           if (exception._message) throw exception;
-
-          callstack.remove();
           continue;
         }
 
@@ -15366,10 +15367,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     // Do the same as for a cancellation point.
     const bool is_very_verbose = verbosity>1 || is_debug;
     if (is_very_verbose) print(images,0,"Abort G'MIC interpreter (caught abort signal).");
-    dowhiles.assign(nb_dowhiles = 0U);
+/*    dowhiles.assign(nb_dowhiles = 0U);
     fordones.assign(nb_fordones = 0U);
     foreachdones.assign(nb_foreachdones = 0U);
     repeatdones.assign(nb_repeatdones = 0U);
+*/
     position = commands_line.size();
     is_change = false;
     is_quit = true;
