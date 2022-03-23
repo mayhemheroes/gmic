@@ -15367,11 +15367,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     // Do the same as for a cancellation point.
     const bool is_very_verbose = verbosity>1 || is_debug;
     if (is_very_verbose) print(images,0,"Abort G'MIC interpreter (caught abort signal).");
-/*    dowhiles.assign(nb_dowhiles = 0U);
-    fordones.assign(nb_fordones = 0U);
-    foreachdones.assign(nb_foreachdones = 0U);
-    repeatdones.assign(nb_repeatdones = 0U);
-*/
     position = commands_line.size();
     is_change = false;
     is_quit = true;
