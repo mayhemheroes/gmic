@@ -18273,18 +18273,21 @@ shape2bump : check "isint(${1=256}) && $1>=0 && ${2=0.75}>=0 && $2<=1 && isnum($
     [0],[0]
     if $2<1
       1,1,1,3 eval[1] "i?da_push([x,y,i(#0)]); end(resize(#-1,1,da_size(),1,3,0))"
-      eval[0] ":i?(
-        U = vector(#h#-1);
-        for (k = 0, k<h#-1, ++k,
-          K = I[#-1,k];
-          d = norm(x - K[0], y - K[1]);
-          d<K[2]?(U[k] = sqrt(K[2]^2 - d^2));
-        );
-        i(#-2) = std(U);
-      )"
-      rm. n. 0,$rmax
+      if w
+        eval[0] ":i?(
+          U = vector(#h#-1);
+          for (k = 0, k<h#-1, ++k,
+            K = I[#-1,k];
+            d = norm(x - K[0], y - K[1]);
+            d<K[2]?(U[k] = sqrt(K[2]^2 - d^2));
+          );
+          i(#-2) = std(U);
+        )"
+        rm. n. 0,$rmax
+      else
+        .
+      fi
     fi
-
     j. ..,0,0,0,0,$2 k.
     if $is_resized *. {max([$siz]/[w,h])} r $siz,1,1,5 c 0,100% fi
   }
