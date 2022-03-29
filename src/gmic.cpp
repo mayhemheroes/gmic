@@ -7884,7 +7884,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 cimg::mutex(27,0);
               }
 
-              const unsigned int _initial_callstack_size = callstack.size();
               const int o_verbosity = verbosity;
               gmic_exception exception;
               try {
@@ -7893,7 +7892,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 _run(commands_line,position = _position,g_list,g_list_c,images,images_names,variables_sizes,is_noarg,0,
                      command_selection);
               } catch (gmic_exception &e) {
-                pop_callstack(_initial_callstack_size);
                 check_elif = false;
                 int nb_levels = 0;
                 for (nb_levels = 1; nb_levels && position<commands_line.size(); ++position) {
@@ -8880,7 +8878,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             cimg::mutex(27,0);
           }
 
-          const unsigned int _initial_callstack_size = callstack.size();
           const int o_verbosity = verbosity;
           gmic_exception exception;
           try {
@@ -8889,7 +8886,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             _run(commands_line,position,g_list,g_list_c,images,images_names,variables_sizes,is_noarg,0,
                  command_selection);
           } catch (gmic_exception &e) {
-            pop_callstack(_initial_callstack_size);
             check_elif = false;
             int nb_levels = 0;
             for (nb_levels = 1; nb_levels && position<commands_line.size(); ++position) {
@@ -14163,7 +14159,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
                   // Evaluate right-hand side as a math expression.
                   CImg<T> &img = images.size()?images.back():CImg<T>::empty();
-                  CImg<char>::string(s_op_right + 1).move_to(name);
+                  const bool is_rounded = s_op_right[1]=='_';
+                  CImg<char>::string(s_op_right + 1 + (is_rounded?1:0)).move_to(name);
                   strreplace_fw(name);
                   CImg<double> output;
                   try { img.eval(output,name,0,0,0,0,&images); }
@@ -14173,10 +14170,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                           "Operator '%s=' on variable '%s': Invalid right-hand side '%s'; %s",
                           s_operation,title,name.data(),e_ptr?e_ptr + 2:e.what());
                   }
-                  if (output.height()>1) // Vector-valued result
-                    new_value = set_variable(title,sep0,output.value_string(',',0,"%.17g"),0,variables_sizes);
-                  else // Scalar result
-                    new_value = set_variable(title,sep0,0,output,variables_sizes);
+                  if (output.height()>1 || is_rounded) // Vector-valued result (or rounded scalar)
+                    new_value = set_variable(title,sep0,output.value_string(',',0,is_rounded?"%g":"%.17g"),
+                                             0,variables_sizes);
+                  else new_value = set_variable(title,sep0,0,output,variables_sizes);
                 } else new_value = set_variable(title,sep0,0,&value,variables_sizes);
               } else new_value = set_variable(title,sep0,s_op_right + 1,0,variables_sizes);
 
@@ -15300,7 +15297,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                    "A '%s' command is missing, before return point.",
                    s[1]=='d'?"while":s[1]=='i'?"fi":"done");
       }
-    } else pop_callstack(initial_callstack_size);
+    }
+    pop_callstack(initial_callstack_size);
 
     // Post-check validity of shared images.
     cimglist_for(images,l) gmic_check(images[l]);
@@ -15364,17 +15362,18 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         is_quit = true;
       }
     }
-
     verbosity = starting_verbosity;
 
   } catch (gmic_exception& e) {
     // Wait for remaining threads to finish.
     cimglist_for(gmic_threads,k) wait_threads(&gmic_threads[k],true,(T)0);
+    pop_callstack(initial_callstack_size);
     throw;
 
   } catch (CImgAbortException &) { // Special case of abort (abort from a CImg method)
     // Wait for remaining threads to finish.
     cimglist_for(gmic_threads,k) wait_threads(&gmic_threads[k],true,(T)0);
+    pop_callstack(initial_callstack_size);
 
     // Do the same as for a cancellation point.
     const bool is_very_verbose = verbosity>1 || is_debug;
@@ -15386,10 +15385,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
   } catch (CImgException &e) {
     // Wait for remaining threads to finish.
     cimglist_for(gmic_threads,k) wait_threads(&gmic_threads[k],true,(T)0);
+    pop_callstack(initial_callstack_size);
 
     const char *const e_ptr = e.what() + (!std::strncmp(e.what(),"[gmic_math_parser] ",19)?19:0);
     CImg<char> error_message(e_ptr,(unsigned int)std::strlen(e_ptr) + 1);
-
     const char *const s_fopen = "cimg::fopen(): Failed to open file '";
     const unsigned int l_fopen = (unsigned int)std::strlen(s_fopen);
     if (!std::strncmp(error_message,s_fopen,l_fopen) &&
