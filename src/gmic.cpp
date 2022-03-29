@@ -14112,6 +14112,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             }
           } else { // Multiple variable names
 
+
+            // TO CHECK : gmic a,:=30
+            // and : gmic a,b,:=30 different than gmic a,b,=30.
+
             // Split list of variable names in 'varnames'.
             s = item;
             while (s<s_end_left) {
