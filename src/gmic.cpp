@@ -14116,8 +14116,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             s = item;
             while (s<s_end_left) {
               const char *ns = std::strchr(s,',');
-              if (ns==s) { is_valid_expr = false; break; }
-              if (!ns || ns>=s_end_left) ns = s_end_left;
+              if (ns==s || ns==s_end_left - 1) { is_valid_expr = false; break; }
+              if (!ns || ns>s_equal) ns = s_end_left;
               CImg<char>(s,(unsigned int)(ns - s + 1)).move_to(name);
               name.back() = 0;
               if (cimg_sscanf(name,"%255[a-zA-Z0-9_]%c",gmic_use_title,&sep)==1 && (*title<'0' || *title>'9'))
@@ -14201,15 +14201,20 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 CImg<double> output;
                 try { img.eval(output,name,0,0,0,0,&images); }
                 catch (CImgException &e) {
+                  CImg<char> vnames = (varnames>'x');
+                  cimg_forX(vnames,k) if (!vnames[k]) vnames[k] = ',';
+                  vnames.back() = 0;
+                  cimg::strellipsize(vnames,80,true);
                   const char *const e_ptr = std::strstr(e.what(),": ");
                   error(true,images,0,0,
-                        "Operator '%s=' on variable '%s': Invalid right-hand side '%s'; %s",
-                        s_operation,varnames[0].data(),name.data(),e_ptr?e_ptr + 2:e.what());
+                        "Operator '%s=' on variable%s '%s': Invalid right-hand side '%s'; %s",
+                        s_operation,varnames.width()==1?"":"s",vnames.data(),name.data(),e_ptr?e_ptr + 2:e.what());
                 }
               }
 
-            }
 
+
+            }
             continue;
           }
         }
