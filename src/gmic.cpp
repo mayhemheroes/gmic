@@ -6294,7 +6294,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               const int
                 x0 = (int)cimg::round(sep0=='%'?a0*(img.width() - 1)/100:a0),
                 x1 = (int)cimg::round(sep1=='%'?a1*(img.width() - 1)/100:a1);
-              gmic_apply(crop(x0,x1,boundary));
+              if (img) { gmic_apply(crop(x0,x1,boundary)); }
+              else error(true,images,0,0,
+                         "Command 'crop': Cannot crop empty image [%d] (with arguments '%s').",
+                         selection[l],gmic_argument_text());
             }
           } else if ((boundary=0,cimg_sscanf(argument,
                                              "%63[0-9.eE%+-],%63[0-9.eE%+-],"
@@ -6329,7 +6332,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 y0 = (int)cimg::round(sep1=='%'?a1*(img.height() - 1)/100:a1),
                 x1 = (int)cimg::round(sep2=='%'?a2*(img.width() - 1)/100:a2),
                 y1 = (int)cimg::round(sep3=='%'?a3*(img.height() - 1)/100:a3);
-              gmic_apply(crop(x0,y0,x1,y1,boundary));
+              if (img) { gmic_apply(crop(x0,y0,x1,y1,boundary)); }
+              else error(true,images,0,0,
+                         "Command 'crop': Cannot crop empty image [%d] (with arguments '%s').",
+                         selection[l],gmic_argument_text());
             }
           } else if ((boundary=0,cimg_sscanf(argument,
                                              "%63[0-9.eE%+-],%63[0-9.eE%+-],%63[0-9.eE%+-],"
@@ -6370,7 +6376,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 x1 = (int)cimg::round(sep3=='%'?a3*(img.width() - 1)/100:a3),
                 y1 = (int)cimg::round(sep4=='%'?a4*(img.height() - 1)/100:a4),
                 z1 = (int)cimg::round(sep5=='%'?a5*(img.depth() - 1)/100:a5);
-              gmic_apply(crop(x0,y0,z0,x1,y1,z1,boundary));
+              if (img) { gmic_apply(crop(x0,y0,z0,x1,y1,z1,boundary)); }
+              else error(true,images,0,0,
+                         "Command 'crop': Cannot crop empty image [%d] (with arguments '%s').",
+                         selection[l],gmic_argument_text());
             }
           } else if ((boundary=0,cimg_sscanf(argument,
                                              "%63[0-9.eE%+-],%63[0-9.eE%+-],%63[0-9.eE%+-],"
@@ -6422,7 +6431,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 y1 = (int)cimg::round(sep5=='%'?a5*(img.height() - 1)/100:a5),
                 z1 = (int)cimg::round(sep6=='%'?a6*(img.depth() - 1)/100:a6),
                 v1 = (int)cimg::round(sep7=='%'?a7*(img.spectrum() - 1)/100:a7);
-              gmic_apply(crop(x0,y0,z0,v0,x1,y1,z1,v1,boundary));
+              if (img) { gmic_apply(crop(x0,y0,z0,v0,x1,y1,z1,v1,boundary)); }
+              else error(true,images,0,0,
+                         "Command 'crop': Cannot crop empty image [%d] (with arguments '%s').",
+                         selection[l],gmic_argument_text());
             }
           } else arg_error("crop");
           is_change = true; ++position; continue;
