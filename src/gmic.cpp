@@ -14197,11 +14197,16 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   }
                 }
                 if (is_verbose) {
-                  CImg<char> &last = varnames.back();
-                  last[last.width() - 2] = 0;
+                  vnames.assign(item,s_end_left - item + 1).back() = 0;
+                  cimg::strellipsize(vnames,80,true);
                   (varnames>'x').move_to(name);
-                  cimg::strellipsize(name,80,false);
-                  print(images,0,"Set variables %s.",name.data());
+                  name[name.width() - 2] = 0;
+                  gmic_use_argx;
+                  cimg::strellipsize(name,argx,80,true);
+                  print(images,0,"Set %svariable%s %s.",
+                        varnames.width()!=1?"":*vnames=='_'?"global ":"local ",
+                        varnames.width()==1?"":"s",
+                        argx);
                 }
 
               } else { // Arithmetic assignment: A[,B,C]*=a[,b,c]
@@ -14256,6 +14261,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   cimglist_for(varnames,k) {
                     const int l = k%varvalues_d.height();
                     new_value = set_variable(varnames[k],sep0,0,&varvalues_d[l],variables_sizes);
+                  }
+                  if (is_verbose) {
                   }
                 }
               }
