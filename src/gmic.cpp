@@ -14222,26 +14222,39 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                     cimg::strellipsize(vnames,80,true);
                     const char *const e_ptr = std::strstr(e.what(),": ");
                     error(true,images,0,0,
-                          "Operator '%s=' on variable%s '%s': Invalid right-hand side '%s'; %s",
-                          s_operation,varnames.width()==1?"":"s",vnames.data(),name.data(),e_ptr?e_ptr + 2:e.what());
+                          "Operator '%s=' on variable%s '%s': Invalid right-hand side; %s",
+                          s_operation,varnames.width()==1?"":"s",vnames.data(),e_ptr?e_ptr + 2:e.what());
                   }
                   if (varnames.width()>1 && varvalues_d.height()!=1 && varvalues_d.height()!=varnames.width()) {
                     vnames.assign(item,s_end_left - item + 1).back() = 0;
                     cimg::strellipsize(vnames,80,true);
+                    gmic_use_argx;
+                    cimg::strellipsize(s_equal + 1,argx,80,true);
                     error(true,images,0,0,
                           "Operator '%s=' on variable%s '%s': Right-hand side '%s' defines %s%d values for %s%d variables.",
-                          s_operation,varnames.size()!=1?"s":"",vnames.data(),s_equal + 1,
+                          s_operation,varnames.size()!=1?"s":"",vnames.data(),argx,
                           varvalues_d.height()<varnames.width()?"only ":"",varvalues_d.height(),
                           varvalues_d.height()>varnames.width()?"only ":"",varnames.width());
                   }
                 }
-                if (sep0==':' && varnames.width()==1)
-                  new_value = set_variable(varnames[0],sep0,varvalues_d.value_string(),0,variables_sizes);
-                else
+                if (sep0==':' && varnames.width()==1) {
+                  varvalues_d.value_string().move_to(name);
+                  new_value = set_variable(varnames[0],sep0,name,0,variables_sizes);
+                  if (is_verbose) {
+                    gmic_use_argx;
+                    gmic_use_argy;
+                    cimg::strellipsize(varnames[0],argx,80,true);
+                    cimg::strellipsize(varvalues[0],argy,80,true);
+                    cimg::strellipsize(name,80,true);
+                    print(images,0,"Set variable '%s:=%s'->'%s'.",
+                          argx,argy,name.data());
+                  }
+                } else {
                   cimglist_for(varnames,k) {
                     const int l = k%varvalues_d.height();
                     new_value = set_variable(varnames[k],sep0,0,&varvalues_d[l],variables_sizes);
                   }
+                }
               }
               continue;
             }
