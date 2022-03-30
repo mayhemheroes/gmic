@@ -1260,7 +1260,6 @@ reference_footer_html :
 reference_finalize_html :
 
   # Generate table of contents.
-  if $_prerelease strprerelease=" (pre-release ""#"$_prerelease")" else strprerelease="" fi
   html="<!DOCTYPE html>"\n\
 "<html lang=\"en\">"\n\
 "  <head>"\n\
@@ -1295,7 +1294,7 @@ reference_finalize_html :
 "        <span class=\"gmd_gmic\">G&apos;MIC</span>: "\
 "<span class=\"gmd_monospace\">GREYC's Magic for Image Computing</span><br/>"\n\
 "        <a href=\"https://gmic.eu\">https://gmic.eu</a><br/>"\n\
-"        Version <b>"${-strver}"</b>"$strprerelease"<br/><br/>"\n\
+"        Version <b>"${strver" "$_version,$_prerelease}"</b><br/><br/>"\n\
 "        Copyright &copy; Since 2008, "\
 "<a target=\"_blank\" href=\"https://tschumperle.users.greyc.fr/\">David Tschumperlé</a> / "\
 "<a target=\"_blank\" href=\"https://www.greyc.fr\">GREYC</a> / "\
@@ -6982,7 +6981,7 @@ parse_gui_update :
          "#  File         : update"$_version".gmic"\n\
          "#                 ( G\47MIC command file )"\n\
          "#"\n\
-         "#  Description  : Update file for G\47MIC commands and filters (for version "${-strver}")."\n\
+         "#  Description  : Update file for G\47MIC commands and filters, for version "${strver" "$_version,$_prerelease}")."\n\
          "#                 ( https://gmic.eu )"\n\
          "#"\n\
          "#  License      : CeCILL v2.1"\n\
@@ -29564,8 +29563,7 @@ uchar2base64 : skip "${1=0}"
 #@cli : Show a menu to select and view all G'MIC interactive demos.
 demos : check "isint(${1=2}) && $1>=0 && $1<=2" check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
-  strver=${-strver}
-  if $_prerelease strver=${strver}_pre#$_prerelease fi
+  strver=${strver" "$_version,$_prerelease}
   e[] "\n
 ------ "${g}"G\47MIC demos"$n" ------------------\n
 ----\n
@@ -29588,8 +29586,6 @@ demos : check "isint(${1=2}) && $1>=0 && $1<=2" check_display $0
            x_tetris,x_tictactoe,x_waves,x_whirl,_demo_color_curves
   nb_entries={narg($entries)}
   parallel_mode={1-if($1!=2,$1,$_cpus>=2)}
-  strver=${-strver}
-  if $_prerelease strver.=_pre#$_prerelease fi
 
   # Generate menu graphics.
   l[] {
