@@ -14227,7 +14227,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                     cimg::strellipsize(name,80,true);
                     cimg::strellipsize(s_equal + 1,gmic_use_argx,80,true);
                     error(true,images,0,0,
-                          "Operator '%s=' on variable%s '%s': Right-hand side '%s' defines %s%d values for %s%d variables.",
+                          "Operator '%s=' on variable%s '%s': "
+                          "Right-hand side '%s' defines %s%d values for %s%d variables.",
                           s_operation,varnames.size()!=1?"s":"",name.data(),argx,
                           varvalues_d.height()<varnames.width()?"only ":"",varvalues_d.height(),
                           varvalues_d.height()>varnames.width()?"only ":"",varnames.width());

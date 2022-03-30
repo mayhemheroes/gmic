@@ -1167,10 +1167,9 @@ reference_begin_ascii :
   +e[] ""
 
 reference_header_ascii :
-  if $_prerelease strprerelease=" (pre-release ""#"$_prerelease")" else strprerelease="" fi
   str=\n\
       "  "${_vt100_b}"gmic: GREYC\'s Magic for Image Computing:"$_vt100_n" command-line interface"\n\
-      "        "${_vt100_c}${_vt100_b}"Version "${-strver}$strprerelease$_vt100_n\n\
+      "        "${_vt100_c}${_vt100_b}"Version "${strver" "$_version,$_prerelease}$_vt100_n\n\
       "        "$_vt100_g$_vt100_u"(https://gmic.eu)"$_vt100_n\n\
       \n\
       "        Copyright (c) Since 2008, David Tschumperlé / GREYC / CNRS."\n\
@@ -1443,7 +1442,6 @@ reference_end_pdf :
   k[2--1:5]
 
   # Add specific header and footer.
-  if $_prerelease strprerelease=" (pre-release ""#"$_prerelease")" else strprerelease="" fi
   i[0] ('"<!DOCTYPE html>"\n\
 "<html lang=\"en\">"\n\
 "  <head>"\n\
@@ -1460,7 +1458,7 @@ reference_end_pdf :
 "margin-right: auto; margin-top: 9cm; break-after: page\">"\n\
 "      <img style=\"width: 98%\" src=\"../img/gmic_banner.jpg\" />"\n\
 "      <h1 class=\"ref_h1\">The Handbook</h1>"\n\
-"      <h3>Version "${strver[]}$strprerelease"</h3>"\n\
+"      <h3>Version "${strver" "$_version,$_prerelease}"</h3>"\n\
 "      <p>&copy; David Tschumperlé / GREYC / CNRS</p>"\n\
 "      <p>"{date(0)}"/"{date(1)}"/"{date(2)}"</p>"\n\
 "    </div>"':y)
@@ -7207,7 +7205,7 @@ parse_gui_gmicol :
     "   -  File         : gmicol.xml\n"\
     "   -                 ( G'MIC filter file, in XML format )\n"\
     "   -\n"\
-    "   -  Description  : Filter definition for G'MIC Online (for version "${-strver}").\n"\
+    "   -  Description  : Filter definition for G'MIC Online, for version "${strver" "$_version,$_prerelease}".\n"\
     "   -                 ( https://gmic.eu )\n"\
     "   -\n"\
     "   -  License      : CeCILL v2.1\n"\
@@ -29493,12 +29491,13 @@ _strvar :
     u {t} rm
   }
 
-#@cli strver : _version
+#@cli strver : _version,_prerelease
 #@cli : Return the specified version number of the G'MIC interpreter, as a string.
-#@cli : Default value: 'version=$_version'.
-strver : skip "${1=}"
+#@cli : Default value: 'version=$_version' and 'prerelease='.
+strver : skip "${1=},${2=}"
   if isnum("$1")" && $1>0" ver="$1" else ver=$_version noarg fi
   ('$ver') r. {2*w-1} f. 'if(x%2,_'.',i)' u {t} rm.
+  if ['$2']!=0 u ${}" (pre-release \#"$2")" fi
 
 #@cli tic
 #@cli : Initialize tic-toc timer.
