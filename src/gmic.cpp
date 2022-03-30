@@ -14101,7 +14101,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
             // Check validity of variable name(s).
             CImgList<char> varnames, varvalues;
-            CImgList<double> varvalues_double;
             CImg<char> vnames;
             bool is_valid_expr = true;
             const char *s = std::strchr(item,',');
@@ -14204,8 +14203,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
               } else { // Arithmetic assignment: A[,B,C]*=a[,b,c]
 
+                CImg<double> varvalues_d;
                 if (cimg_sscanf(s_equal + 1,"%lf%c",&value,&end)==1)
-                  new_value = set_variable(title,sep0,0,&value,variables_sizes);
+                  varvalues_d.assign(1)[0] = value;
                 else { // Evaluate right-hand side as a math expression.
                   CImg<T> &img = images.size()?images.back():CImg<T>::empty();
                   const bool is_rounded = s_equal[1]=='_';
@@ -14214,8 +14214,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   *name = '['; name[name._width - 2] = ']'; name.back() = 0;
                   std::memcpy(name.data() + 1,s,name.width() - 3);
                   strreplace_fw(name);
-                  CImg<double> output;
-                  try { img.eval(output,name,0,0,0,0,&images); }
+                  try { img.eval(varvalues_d,name,0,0,0,0,&images); }
                   catch (CImgException &e) {
                     (varnames>'x').move_to(vnames);
                     cimg_forX(vnames,k) if (!vnames[k]) vnames[k] = ',';
@@ -14226,14 +14225,14 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                           "Operator '%s=' on variable%s '%s': Invalid right-hand side '%s'; %s",
                           s_operation,varnames.width()==1?"":"s",vnames.data(),name.data(),e_ptr?e_ptr + 2:e.what());
                   }
-                  if (output.height()!=1 && output.height()!=varnames.width()) {
+                  if (varvalues_d.height()!=1 && varvalues_d.height()!=varnames.width()) {
                     vnames.assign(item,s_end_left - item + 1).back() = 0;
                     cimg::strellipsize(vnames,80,true);
                     error(true,images,0,0,
                           "Operator '%s=' on variable%s '%s': Right-hand side '%s' defines %s%d values for %s%d variables.",
                           s_operation,varnames.size()!=1?"s":"",vnames.data(),s_equal + 1,
-                          output.height()<varnames.width()?"only ":"",output.height(),
-                          output.height()>varnames.width()?"only ":"",varnames.width());
+                          varvalues_d.height()<varnames.width()?"only ":"",varvalues_d.height(),
+                          varvalues_d.height()>varnames.width()?"only ":"",varnames.width());
                   }
                 }
               }
