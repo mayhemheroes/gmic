@@ -14140,7 +14140,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                         s_operation,vnames.data(),title);
                 else
                   error(true,images,0,0,
-                        "Operator '%s=' on variable '%s': Invalid sequence of variable names.",
+                        "Operator '%s=' on variables '%s': Invalid sequence of variable names.",
                         s_operation,vnames.data());
               }
 
