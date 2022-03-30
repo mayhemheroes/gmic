@@ -14110,7 +14110,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               if (is_valid_expr) {
                 s = s_equal + 1;
                 varnames.insert(1).back().assign(title,std::strlen(title) + 1,1,1,1,true);
-                varvalues.insert(1).back().assign(s,std::strlen(s),1,1,1,true);
+                varvalues.insert(1).back().assign(s,std::strlen(s) + 1,1,1,1,true);
               }
             } else { // Multiple variable names
 
