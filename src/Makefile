@@ -578,26 +578,28 @@ gmic_qt_debug: gmic_qt_files CImg.h gmic_stdlib_community.h
 	@echo "Executable 'gmic_qt' has been successfully compiled in '../gmic-qt/'."
 
 gmic_qt_files:
-	@if [ ! -d ../gmic-qt ]; then \
-	  if [ ! -d ../../gmic-qt ]; then \
-	    echo "**"; \
-	    echo "** Warning: folder 'gmic-qt' was not found !"; \
-	    echo "** It is mandatory to compile the G'MIC plug-in for GIMP ('gmic_gimp_qt'),"; \
-	    echo "** as well as the standalone Qt-based interface 'gmic_qt'."; \
-            echo "** Trying to retrieve it, with: $$ cd ../../ && git clone https://github.com/c-koi/gmic-qt.git"; \
-	    echo "**"; \
-	    if cd ../../ && git clone https://github.com/c-koi/gmic-qt.git; then \
-	      echo "**"; \
-              echo "** Success !"; \
-	      echo "**"; \
-	    else \
-	      echo "**"; \
-              echo "** Fatal error: Failed to retrieve folder 'gmic-qt', compilation will probably ends shortly !"; \
-	      echo "**"; \
-	    fi; \
-	  fi; \
-	  if [ -d ../../gmic-qt ]; then ln -fs ../gmic-qt ..; fi \
-	fi
+	@if [ ! -e ../gmic-qt ]; then \
+	   curr_pwd=`pwd`; \
+	   if [ ! -d ../../gmic-qt ]; then \
+	     echo "**"; \
+	     echo "** Warning: folder 'gmic-qt' was not found !"; \
+	     echo "** It is mandatory to compile the G'MIC plug-in for GIMP ('gmic_gimp_qt'),"; \
+	     echo "** as well as the standalone Qt-based interface 'gmic_qt'."; \
+             echo "** Trying to retrieve it, with: $$ cd ../../ && git clone https://github.com/c-koi/gmic-qt.git"; \
+	     echo "**"; \
+	     if cd ../../ && git clone https://github.com/c-koi/gmic-qt.git; then \
+	       echo "**"; \
+               echo "** Success !"; \
+	       echo "**"; \
+	     else \
+	       echo "**"; \
+               echo "** Fatal error: Failed to retrieve folder 'gmic-qt', compilation will probably ends shortly !"; \
+	       echo "**"; \
+	     fi; \
+	   fi; \
+	   cd $$curr_pwd; \
+	   if [ -d ../../gmic-qt ]; then ln -fs ../gmic-qt ..; fi \
+	 fi
 
 # G'MIC-Qt (shared).
 #-------------------
@@ -621,24 +623,26 @@ endif
 
 zart_files:
 	@if [ ! -d ../zart ]; then \
-	  if [ ! -d ../../zart ]; then \
-	    echo "**"; \
-	    echo "** Warning: folder 'zart' was not found !"; \
-	    echo "** It is mandatory to compile 'zart'."; \
-            echo "** Trying to retrieve it, with: $$ cd ../../ && git clone https://github.com/c-koi/zart.git"; \
-	    echo "**"; \
-	    if cd ../../ && git clone https://github.com/c-koi/zart.git; then \
-	      echo "**"; \
-              echo "** Success !"; \
-	      echo "**"; \
-	    else \
-              echo "**"; \
-              echo "** Fatal error: Failed to retrieve folder 'zart', compilation will probably ends shortly !"; \
-              echo "**"; \
-	    fi; \
-	  fi; \
-	  if [ -d ../../zart ]; then ln -fs ../zart ..; fi \
-	fi
+	   curr_pwd=`pwd`; \
+	   if [ ! -d ../../zart ]; then \
+	     echo "**"; \
+	     echo "** Warning: folder 'zart' was not found !"; \
+	     echo "** It is mandatory to compile 'zart'."; \
+             echo "** Trying to retrieve it, with: $$ cd ../../ && git clone https://github.com/c-koi/zart.git"; \
+	     echo "**"; \
+	     if cd ../../ && git clone https://github.com/c-koi/zart.git; then \
+	       echo "**"; \
+               echo "** Success !"; \
+	       echo "**"; \
+	     else \
+               echo "**"; \
+               echo "** Fatal error: Failed to retrieve folder 'zart', compilation will probably ends shortly !"; \
+               echo "**"; \
+	     fi; \
+	   fi; \
+	   cd $$curr_pwd; \
+	   if [ -d ../../zart ]; then ln -fs ../zart ..; fi \
+	 fi
 
 # Get header files.
 #------------------
