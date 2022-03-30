@@ -3447,7 +3447,7 @@ const char *gmic::set_variable(const char *const name, const char operation,
         error(true,"Operator '%s=' on non-numerical variable '%s=%s'.",
               s_operation,name,__variables[ind].data());
       }
-      if (pvalue) rvalue = *pvalue; // For self-operators, righ-and side *must* be passed as a double value
+      if (pvalue) rvalue = *pvalue; // For self-operators, right-hand side *must* be passed as a double value
       else error(true,"Operator '%s=' on variable '%s': Right-hand side '%s' not defined as a double value.",
                  s_operation,name,cimg::strellipsize(s_value,64,false));
       cimg_snprintf(s_value,s_value.width(),"%.17g",
@@ -14225,7 +14225,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                           "Operator '%s=' on variable%s '%s': Invalid right-hand side '%s'; %s",
                           s_operation,varnames.width()==1?"":"s",vnames.data(),name.data(),e_ptr?e_ptr + 2:e.what());
                   }
-                  if (varvalues_d.height()!=1 && varvalues_d.height()!=varnames.width()) {
+                  if (varnames.width()>1 && varvalues_d.height()!=1 && varvalues_d.height()!=varnames.width()) {
                     vnames.assign(item,s_end_left - item + 1).back() = 0;
                     cimg::strellipsize(vnames,80,true);
                     error(true,images,0,0,
@@ -14235,6 +14235,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                           varvalues_d.height()>varnames.width()?"only ":"",varnames.width());
                   }
                 }
+                if (sep0==':' && varnames.width()==1)
+                  new_value = set_variable(varnames[0],sep0,varvalues_d.value_string(),0,variables_sizes);
+                else
+                  cimglist_for(varnames,k) {
+                    const int l = k%varvalues_d.height();
+                    new_value = set_variable(varnames[k],sep0,0,&varvalues_d[l],variables_sizes);
+                  }
               }
               continue;
             }
