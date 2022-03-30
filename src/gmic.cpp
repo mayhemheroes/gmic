@@ -14240,7 +14240,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                     cimg::strellipsize(varnames[0],gmic_use_argx,80,true);
                     cimg::strellipsize(varvalues[0],gmic_use_argy,80,true);
                     cimg::strellipsize(new_value,gmic_use_argz,80,true);
-                    print(images,0,"Set variable '%s:=%s'->'%s'.",
+                    print(images,0,"Set %s variable '%s:=%s'->'%s'.",
+                          *item=='_'?"global":"local",
                           argx,argy,argz);
                   }
                 } else {
