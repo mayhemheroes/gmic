@@ -3369,7 +3369,7 @@ CImg<char> gmic::get_variable(const char *const name,
 //--------------------
 // 'operation' can be { 0 (add new variable), '=' (replace or add), '.' (append), ',' (prepend),
 //                      ':', '+', '-', '*', '/', '%', '&', '|', '^', '<', '>' }
-// Return the variable value.
+// Return the new variable value.
 const char *gmic::set_variable(const char *const name, const char operation,
                                const char *const value, const double *const pvalue,
                                const unsigned int *const variables_sizes) {
@@ -14133,11 +14133,12 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               if (!is_valid_expr) { // Variable names are invalid
                 vnames.assign(item,s_end_left - item + 1).back() = 0;
                 cimg::strellipsize(vnames,80,true);
-                if (*title)
+                if (*title) {
+                  cimg::strellipsize(title,80,true);
                   error(true,images,0,0,
                         "Operator '%s=' on variables '%s': Invalid variable name '%s'.",
                         s_operation,vnames.data(),title);
-                else
+                } else
                   error(true,images,0,0,
                         "Operator '%s=' on variables '%s': Invalid sequence of variable names.",
                         s_operation,vnames.data());
@@ -14163,9 +14164,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               if (varvalues.width()!=1 && varvalues.width()!=varnames.width()) {
                 vnames.assign(item,s_end_left - item + 1).back() = 0;
                 cimg::strellipsize(vnames,80,true);
+                gmic_use_argx;
+                cimg::strellipsize(s_equal + 1,argx,80,true);
                 error(true,images,0,0,
                       "Operator '%s=' on variable%s '%s': Right-hand side '%s' defines %s%d values for %s%d variables.",
-                      s_operation,varnames.size()!=1?"s":"",vnames.data(),s_equal + 1,
+                      s_operation,varnames.size()!=1?"s":"",vnames.data(),argx,
                       varvalues.width()<varnames.width()?"only ":"",varvalues.width(),
                       varvalues.width()>varnames.width()?"only ":"",varnames.width());
               }
@@ -14238,16 +14241,16 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   }
                 }
                 if (sep0==':' && varnames.width()==1) {
-                  varvalues_d.value_string().move_to(name);
-                  new_value = set_variable(varnames[0],sep0,name,0,variables_sizes);
+                  new_value = set_variable(varnames[0],sep0,varvalues_d.value_string(),0,variables_sizes);
                   if (is_verbose) {
                     gmic_use_argx;
                     gmic_use_argy;
+                    gmic_use_argz;
                     cimg::strellipsize(varnames[0],argx,80,true);
                     cimg::strellipsize(varvalues[0],argy,80,true);
-                    cimg::strellipsize(name,80,true);
+                    cimg::strellipsize(new_value,argz,80,true);
                     print(images,0,"Set variable '%s:=%s'->'%s'.",
-                          argx,argy,name.data());
+                          argx,argy,argz);
                   }
                 } else {
                   cimglist_for(varnames,k) {
