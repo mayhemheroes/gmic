@@ -14102,6 +14102,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             // Check validity of variable name(s).
             CImgList<char> varnames, varvalues;
             CImgList<double> varvalues_double;
+            CImg<char> vnames;
             bool is_valid_expr = true;
             const char *s = std::strchr(item,',');
 
@@ -14116,23 +14117,32 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             } else { // Multiple variable names
 
               // Split list of variable names in 'varnames'.
+              gmic_use_title;
               s = item;
               while (s<s_end_left) {
+                *title = 0;
                 const char *ns = std::strchr(s,',');
-                std::fprintf(stderr,"\nDEBUG : ns = %d, end = %d\n",(int)(ns - item),(int)(s_end_left - item));
                 if (ns==s) { is_valid_expr = false; break; }
                 if (!ns || ns>s_equal) ns = s_end_left;
                 CImg<char>(s,(unsigned int)(ns - s + 1)).move_to(name);
                 name.back() = 0;
-                if (cimg_sscanf(name,"%255[a-zA-Z0-9_]%c",gmic_use_title,&sep)==1 && (*title<'0' || *title>'9'))
+                if (cimg_sscanf(name,"%255[a-zA-Z0-9_]%c",title,&sep)==1 && (*title<'0' || *title>'9'))
                   name.move_to(varnames);
                 else { is_valid_expr = false; break; }
                 s = ns + 1;
               }
-              if (!is_valid_expr) // Variable names are invalid
-                error(true,images,0,0,
-                      "Operator '%s=' on variable '%s': Invalid variable name.",
-                      s_operation,varnames.back().data());
+              if (!is_valid_expr) { // Variable names are invalid
+                vnames.assign(item,s_end_left - item + 1).back() = 0;
+                cimg::strellipsize(vnames,80,true);
+                if (*title)
+                  error(true,images,0,0,
+                        "Operator '%s=' on variables '%s': Invalid variable name '%s'.",
+                        s_operation,vnames.data(),title);
+                else
+                  error(true,images,0,0,
+                        "Operator '%s=' on variable '%s': Invalid sequence of variable names.",
+                        s_operation,vnames.data());
+              }
 
               // Split list of variable values in 'varvalues'.
               s = s_equal + 1;
@@ -14205,7 +14215,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   CImg<double> output;
                   try { img.eval(output,name,0,0,0,0,&images); }
                   catch (CImgException &e) {
-                    CImg<char> vnames = (varnames>'x');
+                    (varnames>'x').move_to(vnames);
                     cimg_forX(vnames,k) if (!vnames[k]) vnames[k] = ',';
                     vnames.back() = 0;
                     cimg::strellipsize(vnames,80,true);
