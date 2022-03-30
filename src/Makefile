@@ -622,7 +622,7 @@ endif
 	@echo "Executable 'zart' has been successfully compiled in '../zart/'."
 
 zart_files:
-	@if [ ! -d ../zart ]; then \
+	@if [ ! -e ../zart ]; then \
 	   curr_pwd=`pwd`; \
 	   if [ ! -d ../../zart ]; then \
 	     echo "**"; \
