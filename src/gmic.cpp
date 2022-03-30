@@ -14164,8 +14164,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               if (varvalues.width()!=1 && varvalues.width()!=varnames.width()) {
                 vnames.assign(item,s_end_left - item + 1).back() = 0;
                 cimg::strellipsize(vnames,80,true);
-                gmic_use_argx;
-                cimg::strellipsize(s_equal + 1,argx,80,true);
+                cimg::strellipsize(s_equal + 1,gmic_use_argx,80,true);
                 error(true,images,0,0,
                       "Operator '%s=' on variable%s '%s': Right-hand side '%s' defines %s%d values for %s%d variables.",
                       s_operation,varnames.size()!=1?"s":"",vnames.data(),argx,
@@ -14183,14 +14182,12 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   const int l = k%varvalues.width();
                   new_value = set_variable(varnames[k],sep0,varvalues[l],0,variables_sizes);
                   if (is_verbose) {
-                    gmic_use_argx;
-                    gmic_use_argy;
-                    gmic_use_message;
                     CImg<char>::string(new_value).move_to(name);
-                    cimg::strellipsize(varnames[k],argx,80,true);
-                    cimg::strellipsize(varvalues[l],argy,80,true);
+                    cimg::strellipsize(varnames[k],gmic_use_argx,80,true);
+                    cimg::strellipsize(varvalues[l],gmic_use_argy,80,true);
                     cimg::strellipsize(name,80,true);
                     const char *const s_sep = k==varnames.width() - 2?" and":",";
+                    gmic_use_message;
                     cimg_snprintf(message,_message.width(),"'%s=%s'%s ",
                                   argx,argy,s_sep);
                     CImg<char>::string(message,false).move_to(varnames[k].assign());
@@ -14201,8 +14198,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   cimg::strellipsize(vnames,80,true);
                   (varnames>'x').move_to(name);
                   name[name.width() - 2] = 0;
-                  gmic_use_argx;
-                  cimg::strellipsize(name,argx,80,true);
+                  cimg::strellipsize(name,gmic_use_argx,80,true);
                   print(images,0,"Set %svariable%s %s.",
                         varnames.width()!=1?"":*vnames=='_'?"global ":"local ",
                         varnames.width()==1?"":"s",
@@ -14236,8 +14232,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   if (varnames.width()>1 && varvalues_d.height()!=1 && varvalues_d.height()!=varnames.width()) {
                     vnames.assign(item,s_end_left - item + 1).back() = 0;
                     cimg::strellipsize(vnames,80,true);
-                    gmic_use_argx;
-                    cimg::strellipsize(s_equal + 1,argx,80,true);
+                    cimg::strellipsize(s_equal + 1,gmic_use_argx,80,true);
                     error(true,images,0,0,
                           "Operator '%s=' on variable%s '%s': Right-hand side '%s' defines %s%d values for %s%d variables.",
                           s_operation,varnames.size()!=1?"s":"",vnames.data(),argx,
@@ -14248,12 +14243,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 if (sep0==':' && varnames.width()==1) {
                   new_value = set_variable(varnames[0],sep0,varvalues_d.value_string(),0,variables_sizes);
                   if (is_verbose) {
-                    gmic_use_argx;
-                    gmic_use_argy;
-                    gmic_use_argz;
-                    cimg::strellipsize(varnames[0],argx,80,true);
-                    cimg::strellipsize(varvalues[0],argy,80,true);
-                    cimg::strellipsize(new_value,argz,80,true);
+                    cimg::strellipsize(varnames[0],gmic_use_argx,80,true);
+                    cimg::strellipsize(varvalues[0],gmic_use_argy,80,true);
+                    cimg::strellipsize(new_value,gmic_use_argz,80,true);
                     print(images,0,"Set variable '%s:=%s'->'%s'.",
                           argx,argy,argz);
                   }
