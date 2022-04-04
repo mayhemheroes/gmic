@@ -630,7 +630,7 @@ zart_files:
 	     echo "** It is mandatory to compile 'zart'."; \
              echo "** Trying to retrieve it, with: $$ cd ../../ && git clone https://github.com/c-koi/zart.git"; \
 	     echo "**"; \
-	     if cd ../../ && git clone https://github.com/dtschump/zart.git; then \
+	     if cd ../../ && git clone https://github.com/c-koi/zart.git; then \
 	       echo "**"; \
                echo "** Success !"; \
 	       echo "**"; \
