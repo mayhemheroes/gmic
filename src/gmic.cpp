@@ -2616,7 +2616,7 @@ static void *gmic_parallel(void *arg) {
 
 // Array of G'MIC built-in commands (must be sorted in lexicographic order!).
 const char *gmic::builtin_commands_names[] = {
-  "!=","%","&","*","*3d","+","+3d","-","-3d","/","/3d",":","<","<<","<=","=","==",">",">=",">>",
+  "!=","%","&","*","*3d","+","+3d","-","-3d","/","/3d","::","<","<<","<=","=","==",">",">=",">>",
   "a","abs","acos","acosh","add","add3d","and","append","asin","asinh","atan","atan2","atanh","autocrop","axes",
   "b","bilateral","blur","boxfilter","break","bsl","bsr",
   "c","camera","check","check3d","col3d","color3d","command","continue","convolve","correlate","cos","cosh","crop",
@@ -3588,7 +3588,7 @@ gmic& gmic::add_commands(const char *const data_commands, const char *const comm
 
     if ((!is_last_slash && std::strchr(lines,':') && // Check for a command definition (or implicit '_main_')
          cimg_sscanf(nlines,"%255[a-zA-Z0-9_] %c%262143[^\n]",ns_name,&sep,s_body.data())>=2 &&
-         (*nlines<'0' || *nlines>'9') && sep==':' && *s_body!='=') || ((*s_name=0), hash<0)) {
+         (*nlines<'0' || *nlines>'9') && sep==':' && *s_body!='=' && *s_body!=':') || ((*s_name=0), hash<0)) {
       const char *_s_body = s_body;
       if (sep==':') while (*_s_body && cimg::is_blank(*_s_body)) ++_s_body;
       CImg<char> body = CImg<char>::string(hash<0 && !*s_name?lines:_s_body);
@@ -5448,12 +5448,12 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         is_com3 = *item && item[1] && item[2] && _gmic_eok(3);
       bool is_builtin_command =
         (*item>='a' && *item<='z' && is_com1) || // Alphabetical shortcut commands
-        (*item==':' && is_com1) || // Shortcut ':'
         (*item=='}' && !item[1]) || // Shortcut for 'done'
         (*item=='m' && (item[1]=='*' || item[1]=='/') && is_com2) || // Shortcuts 'm*' and 'm/'
         (*item=='f' && item[1]=='i' && is_com2) || // Shortcuts 'fi'
         (*item=='u' && item[1]=='m' && is_com2) || // Shortcut 'um'
         (*item=='!' && item[1]=='=' && is_com2) || // Shortcut '!='
+        (*item==':' && item[1]==':' && is_com2) || // Shortcut '::'
         ((*item=='%' || *item=='&' || *item=='^' || *item=='|') && is_com1) || // Shortcuts '%','&','^' and '|'
         ((*item=='*' || *item=='+' || *item=='-' || *item=='/') && // Shortcuts '*','+','-','/',
          (is_com1 || (item[1]=='3' && item[2]=='d' && is_com3))) || // '*3d','+3d','-3d' and '/3d'
@@ -5592,7 +5592,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         if (err==1) { // No selection -> all images
-          if (siz && ((*command==':' && !command[1]) || !std::strcmp(command,"name"))) {
+          if (siz && ((*command==':' && command[1]==':' && !command[2]) || !std::strcmp(command,"name"))) {
             selection.assign(); selection._is_shared = true; // Empty shared selection -> depends on number of arguments
           } else {
             if (!std::strcmp(command,"pass")) selection.assign(1,parent_images.size());
@@ -5715,7 +5715,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
         static const char* onechar_shortcuts[] = {
           0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 0-31
-          0,0,0,0,0,"mod","and",0,0,0,"mul","add",0,"sub",0,"div",0,0,0,0,0,0,0,0,0,0,"name",0, // 32-59
+          0,0,0,0,0,"mod","and",0,0,0,"mul","add",0,"sub",0,"div",0,0,0,0,0,0,0,0,0,0,0,0, // 32-59
           "lt","set","gt",0, // 60-63
           0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"pow",0, // 64-95
           0,"append","blur","cut","display","echo","fill",0,0,"input","image","keep", // 96-107
@@ -5743,6 +5743,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         } else if (!command2) { // Two-chars shortcuts
           if (command0=='s' && command1=='h') std::strcpy(command,"shared");
           else if (command0=='m' && command1=='v') std::strcpy(command,"move");
+          else if ((command0==':' && command1==':') && !is_get) std::strcpy(command,"name");
           else if (command0=='r' && command1=='m') std::strcpy(command,"remove");
           else if (command0=='r' && command1=='v') std::strcpy(command,"reverse");
           else if (command0=='<' && command1=='<') std::strcpy(command,"bsl");
