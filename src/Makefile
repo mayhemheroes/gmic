@@ -425,7 +425,7 @@ half:
 
 _cli: gmic$(EXE)
 
-gmic$(EXE): gmic_cli.cpp gmic.cpp gmic.h CImg.h
+gmic$(EXE): gmic_cli.cpp gmic.o
 	$(CXX) -o gmic$(EXE) gmic_cli.cpp $(CFLAGS) $(LIBS)
 
 gmic.o: gmic.cpp gmic.h gmic_stdlib.h CImg.h
