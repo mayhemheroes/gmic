@@ -83,7 +83,7 @@ static const char *storage_type(const CImgList<T>& images, const bool allow_bool
       else if (iM<(1U<<16)) return "ushort";
       else if (iM<((cimg_uint64)1<<32)) return "uint";
     } else {
-      if (im>=-(1<<7) && iM<(1<<7)) return "char";
+      if (im>=-(1<<7) && iM<(1<<7) && cimg::type<char>::min()<0) return "char";
       else if (im>=-(1<<15) && iM<(1<<15)) return "short";
       else if (im>=-((cimg_int64)1<<31) && iM<((cimg_int64)1<<31)) return "int";
     }
