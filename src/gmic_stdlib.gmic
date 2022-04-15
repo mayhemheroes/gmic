@@ -26778,8 +26778,7 @@ blend_seamless : check "${2=0}>=0 && ${3=100%}>=0" skip ${1=0}
   s0="non-mixed" s1="mixed"
   e[^-1] "Blend image$? using seamless mode (Poisson-based), in "${s{$1!=0}}" mode with inner fading $2 and
               outer fading $3."
-  to_a[^0] r {0,w+32},{0,h+32},1,100%,0,0,0.5,0.5 # Avoid periodic boundaries problems.
-
+  to_a[^0]
   if ['$3']!='100%' # With outer fading.
     repeat $!-1 { l[0,1] {
       +blend_seamless $1,$2,100% channels.. 100% !=.. 0 distance.. 1
@@ -26791,7 +26790,6 @@ blend_seamless : check "${2=0}>=0 && ${3=100%}>=0" skip ${1=0}
       j[0] [2],0,0,0,0,1,[1] rm[1,2]
     } }
   else # Without outer fading.
-
     repeat $!-1 { l[0,1] {
 
       # Get background average color.
@@ -26799,7 +26797,7 @@ blend_seamless : check "${2=0}>=0 && ${3=100%}>=0" skip ${1=0}
 
       # Compute mixed gradients of background and top layer.
       split_opacity. !=. 0 *.. . erode. 3
-      g[0,1] xy,1
+      g[0,1] xy,1,2
       *[-3,-2] .
 
       # Modify mask if 'mixed' mode selected.
@@ -26821,10 +26819,10 @@ blend_seamless : check "${2=0}>=0 && ${3=100%}>=0" skip ${1=0}
       j[-4] ..,0,0,0,0,1,.
       rm[-3--1]
 
-      # Compute divergence (right-hand term of Poisson eq.)
-      g[0] x,-1 g[1] y,-1 +
+      # Compute divergence (right-hand term of Poisson eq.) -> laplacian map.
+      g[0] x,-1,2 g[1] y,-1,2 +
 
-      # Inverse Laplacian and renormalize
+      # Inverse laplacian and renormalize
       ilaplacian 0
       +fc. $avg
       +[-2,-1]
@@ -26832,7 +26830,6 @@ blend_seamless : check "${2=0}>=0 && ${3=100%}>=0" skip ${1=0}
 
     } }
   fi
-  z 16,16,{w-17},{h-17}
 
 #@cli fade_diamond : 0<=_start<=100,0<=_end<=100
 #@cli : Create diamond fading from selected images.
@@ -27837,13 +27834,13 @@ average_vectors :
 #@cli base642img : "base64_string"
 #@cli : Decode given base64-encoded string as a newly inserted image at the end of the list.
 #@cli : The argument string must have been generated using command 'img2base64'.
-base642img :
++base642img :
   base642uchar "$1" unserialize.
 
 #@cli base642uchar : "base64_string"
 #@cli : Decode given base64-encoded string as a newly inserted 1-column image at the end of the list.
 #@cli : The argument string must have been generated using command 'uchar2base64'.
-base642uchar :
++base642uchar :
   0
   eval "
     ref(vector256(),hash);
