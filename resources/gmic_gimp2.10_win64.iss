@@ -91,6 +91,7 @@ Source: build64-gimp\libpcre-1.dll; DestDir: {app}; Flags: ignoreversion
 Source: build64-gimp\libpcre2-16-0.dll; DestDir: {app}; Flags: ignoreversion
 Source: build64-gimp\libpixman-1-0.dll; DestDir: {app}; Flags: ignoreversion
 Source: build64-gimp\libpng16-16.dll; DestDir: {app}; Flags: ignoreversion
+Source: build64-gimp\libjpeg-8.dll; DestDir: {app}; Flags: ignoreversion
 Source: build64-gimp\libpsl-5.dll; DestDir: {app}; Flags: ignoreversion
 Source: build64-gimp\libssh2-1.dll; DestDir: {app}; Flags: ignoreversion
 Source: build64-gimp\libssl-1_1-x64.dll; DestDir: {app}; Flags: ignoreversion
