@@ -498,7 +498,7 @@ reference : skip "${2=}"
 "'filename.cimg,N0,N1,x0,y0,z0,c0,x1,y1,z1,c1'. "\
 "Specifying '-1' for one coordinates stands for the maximum possible value. Output expression "\
 "'filename.cimg[z][,datatype]' can be used to force the output pixel type. 'datatype' can be "\
-"{ auto | bool | uchar | char | ushort | short | uint | int | uint64 | int64 | float | double }. "\n\
+"{ auto | bool | uint8 | int8 | uint16 | int16 | uint32 | int32 | uint64 | int64 | float32 | float64 }. "\n\
 "  - `.raw` __binary files:__ Image dimensions and input pixel type may be specified when loading `.raw` "\
 "files with input expression 'filename.raw[,datatype][,width][,height[,depth[,dim[,offset]]]]]'. If no dimensions are "\
 "specified, the resulting image is a one-column vector with maximum possible height. Pixel "\
@@ -563,7 +563,7 @@ reference : skip "${2=}"
 "  - '$_path_user': The path to the G'MIC user file `.gmic` or `user.gmic` (its value is OS-dependent)."\n\
 "  - '$_path_commands': A list of all imported command files (stored as a list-valued variable)."\n\
 "  - '$_pid': The current process identifier, as an integer."\n\
-"  - '$_pixeltype': The type of image pixels (default: 'float')."\n\
+"  - '$_pixeltype': The type of image pixels (default: 'float32')."\n\
 "  - '$_prerelease': For pre-releases, the date of the pre-release as `yymmdd`. "\
 "For stable releases, this variable is set to `0`."\n\
 "  - '$_version': A 3-digits number telling about the current version of the G'MIC interpreter "\
@@ -3602,7 +3602,7 @@ echo_file : skip "${2='\n'}"
 +input_565 : check "isint($2) && $2>0 && isint($3) && $3>0 && isbool(${4=0})"
   e[^-1] "Input raw RGB-565 file '$1', with size $2x$3."
   l[] {
-    raw:"$1",ushort if $4 endian ushort fi
+    raw:"$1",uint16 if $4 endian uint16 fi
     r $2,$3,1,1,-1 +>> 5 &. 63 +&.. 31 >>... 11 *[-3,-1] 8 *.. 4 a c
   }
 
@@ -3739,10 +3739,10 @@ _input_csv_val :
 +input_flo :
   e[^-1] "Input optical flow from file '$1'."
   l[] {
-    i raw:"$1",float
+    i raw:"$1",float32
     if i!=202021.25 endian. fi
     if i!=202021.25 error[0--3] "Command 'input_flo': Filename '$1' is not a valid .flo file." return fi
-    +rows 1,2 cast. float,uint w,h={^} rm.
+    +rows 1,2 cast. float32,uint32 w,h={^} rm.
     rows 3,100% r 2,$w,$h,1,-1 permute yzcx
   }
 
@@ -3826,7 +3826,7 @@ _input_glob :
 
 _input_text :
   e[0--3] "Input text-data file '$*'."
-  i raw:"$*",uchar
+  i raw:"$*",uint8
   if i[0]==239" && "i[1]==187" && "i[2]==191 rows. 3,100% fi # Remove BOM
   discard. {'\r'} # Remove CR
 
@@ -3869,8 +3869,8 @@ output_565 : check "isbool(${2=0})"
     s c c 0,255 /[-3,-1] 8 /.. 4 round
     bsl... 11 bsl.. 5 +
     if $N>1 fn=${"filename \"$1\",$>"} else fn="$1" fi
-    if $2 endian ushort fi
-    o raw:$fn,ushort rm
+    if $2 endian uint16 fi
+    o raw:$fn,uint16 rm
   }
   is_change 0
 
@@ -3905,9 +3905,9 @@ output_flo :
   e[^-1] "Output optical flow$? as file '$1'."
   N=$! +foreach {
    w,h:=[w,h]
-   channels 0,1 permute cxyz i[0] (202021.25) i[1] ($w,$h) cast[1] uint,float y a y
+   channels 0,1 permute cxyz i[0] (202021.25) i[1] ($w,$h) cast[1] uint32,float32 y a y
    if $N>1 fn=${"filename \"$1\",$>"} else fn="$1" fi
-   o raw:$fn,float rm
+   o raw:$fn,float32 rm
   }
   is_change 0
 
@@ -3938,7 +3938,7 @@ output_ggr : skip "${2=}"
 
 #@cli output_gmz : filename,_datatype
 #@cli : Output selected images as .gmz files (G'MIC native file format).
-#@cli : 'datatype' can be { bool | uchar | char | ushort | short | uint | int | uint64 | int64 | float | double }.
+#@cli : 'datatype' can be { bool | uint8 | int8 | uint16 | int16 | uint32 | int32 | uint64 | int64 | float32 | float64 }.
 output_gmz : skip ${2=auto}
   e[^-1] "Output image$? as gmz file '$1', with pixel type '$2'."
   1,64
@@ -4143,14 +4143,14 @@ output_obj : check "isbool(${2=1})" check3d 0
       if $2 i[1] ('"\n# Materials.\n\
                       mtllib "$folder$basename$ext".mtl\n"':y) fi
       a y
-      o raw:$folder$basename$ext,uchar
+      o raw:$folder$basename$ext,uint8
     }
 
     # Save object materials (.mtl file).
     if $2 l[out_mtl] {
       i[0] ('"# File: "$folder$basename$ext.mtl\n$header\n':y)
       a y
-      o raw:$folder$basename$ext.mtl,uchar
+      o raw:$folder$basename$ext.mtl,uint8
     } fi
 
     rm
@@ -4169,7 +4169,7 @@ output_text :
 
 _output_text :
   e[0--3] "Output image"$_gmic_s" as text-data file '$1'."
-  o raw:"$1",uchar
+  o raw:"$1",uint8
 
 #@cli on : eq. to 'outputn'.
 on :
@@ -7535,7 +7535,7 @@ _random_pattern_check_image :
 
 #@cli serialize : _datatype,_is_compressed={ 0 | 1 },_store_names={ 0 | 1 } : (+)
 #@cli : Serialize selected list of images into a single image, optionally in a compressed form.
-#@cli : 'datatype' can be { auto | uchar | char | ushort | short | uint | int | uint64 | int64 | float | double }.
+#@cli : 'datatype' can be { auto | uint8 | int8 | uint16 | int16 | uint32 | int32 | uint64 | int64 | float32 | float64 }.
 #@cli : Specify 'datatype' if all selected images have a range of values constrained to a particular datatype,
 #@cli : in order to minimize the memory footprint.
 #@cli : The resulting image has only integers values in [0,255] and can then be saved as a raw image of
@@ -7543,7 +7543,7 @@ _random_pattern_check_image :
 #@cli : If 'store_names' is set to '1', serialization uses the .gmz format to store data in memory
 #@cli : (otherwise the .cimg[z] format).
 #@cli : Default values: 'datatype=auto', 'is_compressed=1' and 'store_names=1'.
-#@cli : $ image.jpg +serialize uchar +unserialize[-1]
+#@cli : $ image.jpg +serialize uint8 +unserialize[-1]
 
 #@cli shape_circle : _size>=0
 #@cli : Input a 2D circle binary shape with specified size.
@@ -7988,7 +7988,7 @@ update_deprecate : check "isint($1) && $1>0 && $1<999"
   e[^-1] "Deprecate filter updates for G'MIC version $1."
   l[] {
     file=${_path_rc}update$1.gmic
-    i cimgz:"https://gmic.eu/update$1.gmic",uchar
+    i cimgz:"https://gmic.eu/update$1.gmic",uint8
     +l. { s +,{'"UPDATE"" INFORMATION"'} is_deprecated:=$!>1 rm } # Check if deprecation has not been already done.
     if $is_deprecated
       e[0--4] "  > Version $1 already deprecated -> Removing deprecation."
@@ -7998,7 +7998,7 @@ update_deprecate : check "isint($1) && $1>0 && $1<999"
         off2:="ref(crop(),data); find(data,'\n\n')"
         if $off2>0
           rows. {$off2+2},100% a y
-          o cimgz:$file,uchar
+          o cimgz:$file,uint8
           _upload[] $file
           e[0--6] "  > Done! Version $1 is not deprecated anymore."
         fi
@@ -8016,7 +8016,7 @@ update_deprecate : check "isint($1) && $1>0 && $1<999"
              \#@gui : to provide filter updates anymore for your current plug-in version.\\n\\n\n\
              \#@gui : Best regards,\\n\\n <i>The G\47MIC team.</i>\"}\n\n"')
       y[1] a y
-      o cimgz:$file,uchar
+      o cimgz:$file,uint8
       _upload[] $file
       e[0--4] "  > Done! Version $1 is now deprecated."
     fi
@@ -9753,7 +9753,7 @@ upload_filters :
     else url=https://bit.ly/33lRzX4 # https://bit.ly/2WeKVPv url=http://bit.ly/2uaBRMB #
     fi
     replace_str "<i>David Tschumperlé</i>","<i><a href=\""$url"\">David Tschumperlé</a></i>"
-    o cimgz:/tmp/update$_version.gmic,uchar
+    o cimgz:/tmp/update$_version.gmic,uint8
 
     $compat
     repeat h {
@@ -10576,7 +10576,7 @@ balance_gamma : check "isnum(${1=128})"
 #@cli cast : datatype_source,datatype_target
 #@cli : Cast datatype of image buffer from specified source type to specified target type.
 #@cli : 'datatype_source' and 'datatype_target' can be \
-# { uchar | char | ushort | short | uint | int | uint64 | int64 | float | double }.
+# { uint8 | int8 | uint16 | int16 | uint32 | int32 | uint64 | int64 | float32 | float64 }.
 cast :
   e[^-1] "Cast datatype of image buffer$? from '$1' to '$2'."
   stype="$1"
@@ -10587,10 +10587,8 @@ cast :
   if s='$dtype';s[0]==_'u'" && "s[1]!=_'n' dtype="unsigned_"{`s='$dtype';s[1,size(s)-1]`}
   elif s='$dtype';s[0]==_'u'" && "s[0,9]=='"unsigned "' dtype="unsigned_"{`s='$dtype';s[9,size(s)-9]`}
   fi
-  ssize:=s='$stype';s=='"unsigned_char"'||s=='char'?1:s=='"unsigned_short"'||s=='short'?2:s=='"unsigned_int"'||\
-         s=='int'||s=='float'?4:8
-  dsize:=s='$dtype';s=='"unsigned_char"'||s=='char'?1:s=='"unsigned_short"'||s=='short'?2:s=='"unsigned_int"'||\
-         s=='int'||s=='float'?4:8
+  ssize:=s='$stype';s=='"uint8"'||s=='int8'?1:s=='"uint16"'||s=='int16'?2:s=='"uint32"'||s=='int32'||s=='float32'?4:8
+  dsize:=s='$dtype';s=='"uint8"'||s=='int8'?1:s=='"uint16"'||s=='int16'?2:s=='"uint32"'||s=='int32'||s=='float32'?4:8
   foreach {
     w,h,d,s:=[w,h,d,s]
     serialize $1,0,0
@@ -10918,8 +10916,8 @@ eigen2tensor :
 
 #@cli endian : _datatype : (+)
 #@cli : Reverse data endianness of selected images, eventually considering the pixel being of the specified datatype.
-#@cli : 'datatype' can be { bool | uchar | char | ushort | short | uint | int | uint64 | int64 | float | double }.
-#@cli : This command does nothing for 'bool', 'uchar' and 'char' datatypes.
+#@cli : 'datatype' can be { bool | uint8 | int8 | uint16 | int16 | uint32 | int32 | uint64 | int64 | float32 | float64 }.
+#@cli : This command does nothing for 'bool', 'uint8' and 'int8' datatypes.
 
 #@cli equalize : _nb_levels>0[%],_value_min[%],_value_max[%] : (+)
 #@cli : Equalize histograms of selected images.
@@ -27835,12 +27833,12 @@ average_vectors :
 #@cli : Decode given base64-encoded string as a newly inserted image at the end of the list.
 #@cli : The argument string must have been generated using command 'img2base64'.
 +base642img :
-  base642uchar "$1" unserialize.
+  base642uint8 "$1" unserialize.
 
-#@cli base642uchar : "base64_string"
+#@cli base642uint8 : "base64_string"
 #@cli : Decode given base64-encoded string as a newly inserted 1-column image at the end of the list.
-#@cli : The argument string must have been generated using command 'uchar2base64'.
-+base642uchar :
+#@cli : The argument string must have been generated using command 'uint82base64'.
++base642uint8 :
   0
   eval "
     ref(vector256(),hash);
@@ -28197,7 +28195,7 @@ hex2str : skip ${1=""}
 #@cli : Default values: 'encoding=0'.
 img2base64 : check "isbool(${1=0}) && isbool(${2=1})"
   if isnum("$1") encoding=$1 else encoding=0 noarg fi
-  +serialize auto,1,$2 u ${uchar2base64\ $encoding} rm.
+  +serialize auto,1,$2 u ${uint82base64\ $encoding} rm.
 
 #@cli img2hex
 #@cli : Return representation of last image as an hexadecimal-encoded string.
@@ -29393,7 +29391,7 @@ shell_cols :
 #@cli size_value
 #@cli : Return the size (in bytes) of image values.
 size_value :
-  u {str=['$_pixeltype'];str=='float'?4:str=='double'?8:0}
+  u {str=['$_pixeltype'];str=='float32'?4:str=='float64'?8:0}
 
 #@cli std_noise
 #@cli : Return the estimated noise standard deviation of the last selected image.
@@ -29530,12 +29528,12 @@ to_clutname :
          (sd[pd++] = ss[ps]);
        ); sd[pd] = 0; sd"`}
 
-#@cli uchar2base64 : _encoding={ 0=base64 | 1=base64url }
+#@cli uint82base64 : _encoding={ 0=base64 | 1=base64url }
 #@cli : Encode the values of the latest of the selected images as a base64-encoded string.
-#@cli : The string can be decoded using command 'base642uchar'.
+#@cli : The string can be decoded using command 'base642uint8'.
 #@cli : Selected images must have values that are integers in [0,255].
 #@cli : Default values: 'encoding=0'.
-uchar2base64 : skip "${1=0}"
+uint82base64 : skip "${1=0}"
   if isnum("$1") encoding=$1 else encoding=0 noarg fi
   {ceil(whds*4/3)+([0,2,1])[whds%3]}
   eval "
