@@ -4316,7 +4316,7 @@ void gmic::_gmic(const char *const commands_line,
 #endif
     "";
   set_variable("_flags",0,s_flags + 1);
-  set_variable("_pixeltype",0,cimg_str2(gmic_pixel_type));
+  set_variable("_pixeltype",0,cimg::type<gmic_pixel_type>::string());
 
   // Launch the G'MIC interpreter.
   const CImgList<char> items = commands_line?commands_line_to_CImgList(commands_line):CImgList<char>::empty();
