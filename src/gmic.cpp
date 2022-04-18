@@ -10348,7 +10348,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                     "Command 'output': File '%s', instance list (%u,%p) is empty.",
                     _filename.data(),g_list.size(),g_list.data());
 
-#define gmic_save_raw(value_type,svalue_type) \
+#define gmic_save_raw(svalue_type,value_type) \
               if (!std::strcmp(stype,svalue_type)) { \
                 if (g_list.size()==1) \
                   CImg<value_type>::copy_rounded(g_list[0]).save_raw(filename); \
@@ -10360,17 +10360,17 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 } \
               }
             if (!std::strcmp(stype,"auto")) stype = CImg<T>::storage_type(g_list,true);
-            gmic_save_raw(bool,"bool")
-            else gmic_save_raw(cimg_uint8,"uint8")
-              else gmic_save_raw(cimg_int8,"int8")
-                else gmic_save_raw(cimg_uint16,"uint16")
-                  else gmic_save_raw(cimg_int16,"int16")
-                    else gmic_save_raw(cimg_uint32,"uint32")
-                      else gmic_save_raw(cimg_int32,"int32")
-                        else gmic_save_raw(cimg_uint64,"uint64")
-                          else gmic_save_raw(cimg_int64,"int64")
-                            else gmic_save_raw(cimg_float32,"float32")
-                              else gmic_save_raw(cimg_float64,"float64")
+            gmic_save_raw("bool",bool)
+            else gmic_save_raw("uint8",cimg_uint8)
+              else gmic_save_raw("int8",cimg_int8)
+                else gmic_save_raw("uint16",cimg_uint16)
+                  else gmic_save_raw("int16",cimg_int16)
+                    else gmic_save_raw("uint32",cimg_uint32)
+                      else gmic_save_raw("int32",cimg_int32)
+                        else gmic_save_raw("uint64",cimg_uint64)
+                          else gmic_save_raw("int64",cimg_int64)
+                            else gmic_save_raw("float32",cimg_float32)
+                              else gmic_save_raw("float64",cimg_float64)
                                 else error(true,images,0,0,
                                            "Command 'output': File '%s', invalid "
                                            "specified pixel type '%s'.",
@@ -10406,21 +10406,21 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   uext.data(),_filename.data(),
                   stype);
 
-#define gmic_save_cimg(value_type,svalue_type) \
+#define gmic_save_cimg(svalue_type,value_type) \
               if (!std::strcmp(stype,svalue_type)) \
                 CImgList<value_type>::copy_rounded(g_list).save(filename);
 
             if (!std::strcmp(stype,"auto")) stype = CImg<T>::storage_type(g_list,true);
-            gmic_save_cimg(cimg_uint8,"uint8")
-              else gmic_save_cimg(cimg_int8,"int8")
-                else gmic_save_cimg(cimg_uint16,"uint16")
-                  else gmic_save_cimg(cimg_int16,"int16")
-                    else gmic_save_cimg(cimg_uint32,"uint32")
-                      else gmic_save_cimg(cimg_int32,"int32")
-                        else gmic_save_cimg(cimg_uint64,"uint64")
-                          else gmic_save_cimg(cimg_int64,"int64")
-                            else gmic_save_cimg(cimg_float32,"float32")
-                              else gmic_save_cimg(cimg_float64,"float64")
+            gmic_save_cimg("uint8",cimg_uint8)
+              else gmic_save_cimg("int8",cimg_int8)
+                else gmic_save_cimg("uint16",cimg_uint16)
+                  else gmic_save_cimg("int16",cimg_int16)
+                    else gmic_save_cimg("uint32",cimg_uint32)
+                      else gmic_save_cimg("int32",cimg_int32)
+                        else gmic_save_cimg("uint64",cimg_uint64)
+                          else gmic_save_cimg("int64",cimg_int64)
+                            else gmic_save_cimg("float32",cimg_float32)
+                              else gmic_save_cimg("float64",cimg_float64)
                                 else error(true,images,0,0,
                                            "Command 'output': File '%s', invalid "
                                            "specified pixel type '%s'.",
@@ -10440,20 +10440,20 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   uext.data(),_filename.data(),
                   stype);
 
-#define gmic_save_gmz(value_type,svalue_type) \
+#define gmic_save_gmz(svalue_type,value_type) \
               if (!std::strcmp(stype,svalue_type)) \
                 CImg<value_type>::save_gmz(filename,CImgList<value_type>::copy_rounded(g_list),g_list_c);
             if (!std::strcmp(stype,"auto")) stype = CImg<T>::storage_type(g_list,false);
-            gmic_save_gmz(cimg_uint8,"uint8")
-            else gmic_save_gmz(cimg_int8,"int8")
-              else gmic_save_gmz(cimg_uint16,"uint16")
-                else gmic_save_gmz(cimg_int16,"int16")
-                  else gmic_save_gmz(cimg_uint32,"uint32")
-                    else gmic_save_gmz(cimg_int32,"int32")
-                      else gmic_save_gmz(cimg_uint64,"uint64")
-                        else gmic_save_gmz(cimg_int64,"int64")
-                          else gmic_save_gmz(cimg_float32,"float32")
-                            else gmic_save_gmz(cimg_float64,"float64")
+            gmic_save_gmz("uint8",cimg_uint8)
+            else gmic_save_gmz("int8",cimg_int8)
+              else gmic_save_gmz("uint16",cimg_uint16)
+                else gmic_save_gmz("int16",cimg_int16)
+                  else gmic_save_gmz("uint32",cimg_uint32)
+                    else gmic_save_gmz("int32",cimg_int32)
+                      else gmic_save_gmz("uint64",cimg_uint64)
+                        else gmic_save_gmz("int64",cimg_int64)
+                          else gmic_save_gmz("float32",cimg_float32)
+                            else gmic_save_gmz("float64",cimg_float64)
                               else error(true,images,0,0,
                                          "Command 'output': File '%s', invalid "
                                          "specified pixel type '%s'.",
@@ -12581,7 +12581,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
         // Serialize.
         if (!std::strcmp("serialize",command)) {
-#define gmic_serialize(value_type,svalue_type) \
+#define gmic_serialize(svalue_type,value_type) \
           if (!std::strcmp(argx,svalue_type)) \
             CImgList<value_type>(g_list,cimg::type<T>::string()==cimg::type<value_type>::string()). \
               get_serialize((bool)is_compressed).move_to(serialized);
@@ -12633,16 +12633,16 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             if (!std::strcmp(argx,"auto")) std::strcpy(argx,CImg<T>::storage_type(g_list,false));
 
             CImg<unsigned char> serialized;
-            gmic_serialize(cimg_uint8,"uint8")
-            else gmic_serialize(cimg_int8,"int8")
-              else gmic_serialize(cimg_uint16,"uint16")
-                else gmic_serialize(cimg_int16,"int16")
-                  else gmic_serialize(cimg_uint32,"uint32")
-                    else gmic_serialize(cimg_int32,"int32")
-                      else gmic_serialize(cimg_uint64,"uint64")
-                        else gmic_serialize(cimg_int64,"int64")
-                          else gmic_serialize(cimg_float32,"float32")
-                            else gmic_serialize(cimg_float64,"float64")
+            gmic_serialize("uint8",cimg_uint8)
+            else gmic_serialize("int8",cimg_int8)
+              else gmic_serialize("uint16",cimg_uint16)
+                else gmic_serialize("int16",cimg_int16)
+                  else gmic_serialize("uint32",cimg_uint32)
+                    else gmic_serialize("int32",cimg_int32)
+                      else gmic_serialize("uint64",cimg_uint64)
+                        else gmic_serialize("int64",cimg_int64)
+                          else gmic_serialize("float32",cimg_float32)
+                            else gmic_serialize("float64",cimg_float64)
                               else error(true,images,0,0,
                                          "Command 'serialize': Invalid "
                                          "specified pixel type '%s'.",
@@ -14852,23 +14852,23 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                     _filename0,stype,
                     _gmic_selection.data());
 
-#define gmic_load_raw(value_type,svalue_type) \
+#define gmic_load_raw(svalue_type,value_type) \
             if (!cimg::strcasecmp(stype,svalue_type)) \
               CImg<value_type>::get_load_raw(filename, \
                                              (unsigned int)dx,(unsigned int)dy, \
                                              (unsigned int)dz,(unsigned int)dc,false,false,\
                                              (cimg_ulong)offset).move_to(g_list);
-            gmic_load_raw(bool,"bool")
-            else gmic_load_raw(cimg_uint8,"uint8")
-              else gmic_load_raw(cimg_int8,"int8")
-                else gmic_load_raw(cimg_uint16,"uint16")
-                  else gmic_load_raw(cimg_int16,"int16")
-                    else gmic_load_raw(cimg_uint32,"uint32")
-                      else gmic_load_raw(cimg_int32,"int32")
-                        else gmic_load_raw(cimg_uint64,"uint64")
-                          else gmic_load_raw(cimg_int64,"int64")
-                            else gmic_load_raw(cimg_float32,"float32")
-                              else gmic_load_raw(cimg_float64,"double64")
+            gmic_load_raw("bool",bool)
+            else gmic_load_raw("uint8",cimg_uint8)
+              else gmic_load_raw("int8",cimg_int8)
+                else gmic_load_raw("uint16",cimg_uint16)
+                  else gmic_load_raw("int16",cimg_int16)
+                    else gmic_load_raw("uint32",cimg_uint32)
+                      else gmic_load_raw("int32",cimg_int32)
+                        else gmic_load_raw("uint64",cimg_uint64)
+                          else gmic_load_raw("int64",cimg_int64)
+                            else gmic_load_raw("float32",cimg_float32)
+                              else gmic_load_raw("double64",cimg_float64)
                                 else error(true,images,0,0,
                                            "Command 'input': raw file '%s', "
                                            "invalid specified pixel type '%s'.\n",
