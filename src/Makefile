@@ -717,7 +717,7 @@ do_gmic_stdlib.h:
  #  knowledge of the CeCILL and CeCILL-C licenses and that you accept its terms.\n\
  #\n\
 */\n" > gmic_stdlib.h
-	@\gmic gmic_stdlib.gmic it gmic_stdlib.gmic parse_gui update "(0)" a y serialize uchar,1,0 o -.h | sed 's/unsigned char/const unsigned char/' | sed 's/unnamed/gmic/' >> gmic_stdlib.h
+	@\gmic gmic_stdlib.gmic it gmic_stdlib.gmic parse_gui update "(0)" a y serialize uint8,1,0 o -.h | sed 's/uint8/const unsigned char/' | sed 's/unnamed/gmic/' >> gmic_stdlib.h
 	@echo "\nconst unsigned long size_data_gmic = (unsigned long)sizeof(data_gmic);" >> gmic_stdlib.h
 	@\gmic v - _upload gmic_stdlib.h
 	@cp -f gmic_stdlib.h /tmp/gmic_stdlib$(VERSION).h
@@ -785,7 +785,7 @@ do_gmic_stdlib_community.h:
  #  knowledge of the CeCILL and CeCILL-C licenses and that you accept its terms.\n\
  #\n\
 */\n" > gmic_stdlib_community.h
-	@\gmic gmic_stdlib.gmic update it '$${_path_rc}'update'$${_version}'.gmic "(0)" a y serialize uchar,1,0 o -.h | sed 's/unsigned char/const unsigned char/' | sed 's/unnamed/gmic/' >> gmic_stdlib_community.h
+	@\gmic gmic_stdlib.gmic update it '$${_path_rc}'update'$${_version}'.gmic "(0)" a y serialize uint8,1,0 o -.h | sed 's/uint8/const unsigned char/' | sed 's/unnamed/gmic/' >> gmic_stdlib_community.h
 	@echo "\nconst unsigned long size_data_gmic = (unsigned long)sizeof(data_gmic);" >> gmic_stdlib_community.h
 	@\gmic v - _upload gmic_stdlib_community.h
 	@cp -f gmic_stdlib_community.h /tmp/gmic_stdlib_community$(VERSION).h

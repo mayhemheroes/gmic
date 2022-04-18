@@ -10360,7 +10360,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 } \
               }
             if (!std::strcmp(stype,"auto")) stype = CImg<T>::storage_type(g_list,true);
-            gmic_save_raw(cimg_bool8,"bool8")
+            gmic_save_raw(cimg_uint8,"bool8")
             else gmic_save_raw(cimg_uint8,"uint8")
               else gmic_save_raw(cimg_int8,"int8")
                 else gmic_save_raw(cimg_uint16,"uint16")
@@ -10411,7 +10411,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 CImgList<value_type>::copy_rounded(g_list).save(filename);
 
             if (!std::strcmp(stype,"auto")) stype = CImg<T>::storage_type(g_list,true);
-            gmic_save_cimg(cimg_bool8,"bool8")
+            gmic_save_cimg(cimg_uint8,"bool8")
             else gmic_save_cimg(cimg_uint8,"uint8")
               else gmic_save_cimg(cimg_int8,"int8")
                 else gmic_save_cimg(cimg_uint16,"uint16")
@@ -14859,7 +14859,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                              (unsigned int)dx,(unsigned int)dy, \
                                              (unsigned int)dz,(unsigned int)dc,false,false,\
                                              (cimg_ulong)offset).move_to(g_list);
-            gmic_load_raw(cimg_bool8,"bool8")
+            gmic_load_raw(cimg_uint8,"bool8")
             else gmic_load_raw(cimg_uint8,"uint8")
               else gmic_load_raw(cimg_int8,"int8")
                 else gmic_load_raw(cimg_uint16,"uint16")
