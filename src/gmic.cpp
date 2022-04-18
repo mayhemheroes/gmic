@@ -10062,8 +10062,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
             // .cpp, .c, .hpp, .h, .pan, .pnk, .pgm, .ppm, .pnm, .hdr or .nii file.
             const char *
-              stype = (cimg_sscanf(options,"%255[a-z1468]%c",&(*gmic_use_argx=0),&(end=0))==1 ||
-                       (cimg_sscanf(options,"%255[a-z1468]%c",&(*argx=0),&end)==2 && end==','))?
+              stype = (cimg_sscanf(options,"%255[a-z12468]%c",&(*gmic_use_argx=0),&(end=0))==1 ||
+                       (cimg_sscanf(options,"%255[a-z12468]%c",&(*argx=0),&end)==2 && end==','))?
               argx:"auto";
             g_list.assign(selection.height());
             cimg_forY(selection,l) if (!gmic_check(images[selection(l)]))
@@ -10123,8 +10123,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
             // TIFF file.
             const char *
-              stype = (cimg_sscanf(options,"%255[a-z1468]%c",&(*gmic_use_argx=0),&(end=0))==1 ||
-                       (cimg_sscanf(options,"%255[a-z1468]%c",&(*argx=0),&end)==2 && end==','))?
+              stype = (cimg_sscanf(options,"%255[a-z12468]%c",&(*gmic_use_argx=0),&(end=0))==1 ||
+                       (cimg_sscanf(options,"%255[a-z12468]%c",&(*argx=0),&end)==2 && end==','))?
               argx:"auto";
             const unsigned int l_stype = (unsigned int)std::strlen(stype);
             const char *const _options = options.data() + (stype!=argx?0:l_stype + (end==','?1:0));
@@ -10319,7 +10319,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           } else if (!std::strcmp(uext,"raw")) {
 
             // RAW data file.
-            const char *stype = cimg_sscanf(options,"%255[a-z1468]%c",gmic_use_argx,&end)==1?argx:"auto";
+            const char *stype = cimg_sscanf(options,"%255[a-z12468]%c",gmic_use_argx,&end)==1?argx:"auto";
             g_list.assign(selection.height());
             cimg_forY(selection,l) if (!gmic_check(images[selection(l)]))
               CImg<unsigned int>::vector(selection(l)).move_to(empty_indices);
@@ -10397,7 +10397,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           } else if (!std::strcmp(uext,"cimg") || !std::strcmp(uext,"cimgz")) {
 
             // CImg[z] file.
-            const char *stype = cimg_sscanf(options,"%255[a-z1468]%c",gmic_use_argx,&end)==1?argx:"auto";
+            const char *stype = cimg_sscanf(options,"%255[a-z12468]%c",gmic_use_argx,&end)==1?argx:"auto";
             g_list.assign(selection.height());
             cimg_forY(selection,l)
               g_list[l].assign(images[selection[l]],true);
@@ -10429,7 +10429,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           } else if (!std::strcmp(uext,"gmz") || !*ext) {
 
             // GMZ file.
-            const char *stype = cimg_sscanf(options,"%255[a-z1468]%c",gmic_use_argx,&end)==1?argx:"auto";
+            const char *stype = cimg_sscanf(options,"%255[a-z12468]%c",gmic_use_argx,&end)==1?argx:"auto";
             g_list.assign(selection.height());
             g_list_c.assign(selection.height());
             cimg_forY(selection,l) {
@@ -12594,11 +12594,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           bool is_compressed0 = false;
 #endif
           unsigned int is_compressed = is_compressed0?1U:0U, is_gmz = 1;
-          if ((cimg_sscanf(argument,"%255[a-z1468 ]%c",
+          if ((cimg_sscanf(argument,"%255[a-z12468 ]%c",
                            gmic_use_argx,&end)==1 ||
-               cimg_sscanf(argument,"%255[a-z1468 ],%u%c",
+               cimg_sscanf(argument,"%255[a-z12468 ],%u%c",
                            argx,&is_compressed,&end)==2 ||
-               cimg_sscanf(argument,"%255[a-z1468 ],%u,%u%c",
+               cimg_sscanf(argument,"%255[a-z12468 ],%u,%u%c",
                            argx,&is_compressed,&is_gmz,&end)==3) &&
               (!std::strcmp(argx,"auto") ||
                !std::strcmp(argx,"uint8") || !std::strcmp(argx,"int8") ||
@@ -14826,12 +14826,12 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               cimg_sscanf(options,"%f,%f,%f%c",&dx,&dy,&dz,&end)==3 ||
               cimg_sscanf(options,"%f,%f,%f,%f%c",&dx,&dy,&dz,&dc,&end)==4 ||
               cimg_sscanf(options,"%f,%f,%f,%f," cimg_fuint64 "%c",&dx,&dy,&dz,&dc,&offset,&end)==5 ||
-              cimg_sscanf(options,"%255[a-z1468]%c",gmic_use_argx,&end)==1 ||
-              cimg_sscanf(options,"%255[a-z1468],%f%c",argx,&dx,&end)==2 ||
-              cimg_sscanf(options,"%255[a-z1468],%f,%f%c",argx,&dx,&dy,&end)==3 ||
-              cimg_sscanf(options,"%255[a-z1468],%f,%f,%f%c",argx,&dx,&dy,&dz,&end)==4 ||
-              cimg_sscanf(options,"%255[a-z1468],%f,%f,%f,%f%c",argx,&dx,&dy,&dz,&dc,&end)==5 ||
-              cimg_sscanf(options,"%255[a-z1468],%f,%f,%f,%f," cimg_fuint64 "%c",argx,&dx,&dy,&dz,&dc,&offset,
+              cimg_sscanf(options,"%255[a-z12468]%c",gmic_use_argx,&end)==1 ||
+              cimg_sscanf(options,"%255[a-z12468],%f%c",argx,&dx,&end)==2 ||
+              cimg_sscanf(options,"%255[a-z12468],%f,%f%c",argx,&dx,&dy,&end)==3 ||
+              cimg_sscanf(options,"%255[a-z12468],%f,%f,%f%c",argx,&dx,&dy,&dz,&end)==4 ||
+              cimg_sscanf(options,"%255[a-z12468],%f,%f,%f,%f%c",argx,&dx,&dy,&dz,&dc,&end)==5 ||
+              cimg_sscanf(options,"%255[a-z12468],%f,%f,%f,%f," cimg_fuint64 "%c",argx,&dx,&dy,&dz,&dc,&offset,
                           &end)==6) {
             const char *const stype = *argx?argx:cimg::type<T>::string();
             dx = cimg::round(dx);
