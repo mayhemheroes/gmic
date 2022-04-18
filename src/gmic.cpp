@@ -77,7 +77,7 @@ static const char *storage_type(const CImgList<T>& images, const bool allow_bool
     }
   }
   if (is_int) {
-    if (allow_bool && im==0 && iM==1) return "bool8";
+    if (allow_bool && im==0 && iM==1) return "bool";
     else if (im>=0) {
       if (iM<(1U<<8)) return "uint8";
       else if (iM<(1U<<16)) return "uint16";
@@ -533,7 +533,7 @@ CImg<T>& gmic_invert_endianness(const char *const stype) {
   if (!std::strcmp(stype,svalue_type)) \
     if (pixel_type()==cimg::type<value_type>::string()) invert_endianness(); \
     else CImg<value_type>(*this).invert_endianness().move_to(*this);
-  if (!std::strcmp(stype,"bool8") ||
+  if (!std::strcmp(stype,"bool") ||
       !std::strcmp(stype,"uint8") ||
       !std::strcmp(stype,"int8")) return *this;
   _gmic_invert_endianness(cimg_uint16,"uint16")
@@ -7511,12 +7511,12 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Invert endianness.
         if (!std::strcmp("endian",command)) {
           gmic_substitute_args(false);
-          if (!std::strcmp(argument,"bool8") || !std::strcmp(argument,"uint8") ||
-              !std::strcmp(argument,"int8") || !std::strcmp(argument,"uint16") ||
-              !std::strcmp(argument,"int16") || !std::strcmp(argument,"uint32") ||
-              !std::strcmp(argument,"int32") || !std::strcmp(argument,"uint64") ||
-              !std::strcmp(argument,"int64") || !std::strcmp(argument,"float32") ||
-              !std::strcmp(argument,"float64")) {
+          if (!std::strcmp(argument,"bool") ||
+              !std::strcmp(argument,"uint8") || !std::strcmp(argument,"int8") ||
+              !std::strcmp(argument,"uint16") || !std::strcmp(argument,"int16") ||
+              !std::strcmp(argument,"uint32") || !std::strcmp(argument,"int32") ||
+              !std::strcmp(argument,"uint64") || !std::strcmp(argument,"int64") ||
+              !std::strcmp(argument,"float32") || !std::strcmp(argument,"float64")) {
             print(images,0,"Invert data endianness of image%s, with assumed pixel type '%s'.",
                   gmic_selection.data(),argument);
             ++position;
@@ -10360,7 +10360,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 } \
               }
             if (!std::strcmp(stype,"auto")) stype = CImg<T>::storage_type(g_list,true);
-            gmic_save_raw(cimg_uint8,"bool8")
+            gmic_save_raw(bool,"bool")
             else gmic_save_raw(cimg_uint8,"uint8")
               else gmic_save_raw(cimg_int8,"int8")
                 else gmic_save_raw(cimg_uint16,"uint16")
@@ -10411,8 +10411,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 CImgList<value_type>::copy_rounded(g_list).save(filename);
 
             if (!std::strcmp(stype,"auto")) stype = CImg<T>::storage_type(g_list,true);
-            gmic_save_cimg(cimg_uint8,"bool8")
-            else gmic_save_cimg(cimg_uint8,"uint8")
+            gmic_save_cimg(cimg_uint8,"uint8")
               else gmic_save_cimg(cimg_int8,"int8")
                 else gmic_save_cimg(cimg_uint16,"uint16")
                   else gmic_save_cimg(cimg_int16,"int16")
@@ -14859,7 +14858,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                              (unsigned int)dx,(unsigned int)dy, \
                                              (unsigned int)dz,(unsigned int)dc,false,false,\
                                              (cimg_ulong)offset).move_to(g_list);
-            gmic_load_raw(cimg_uint8,"bool8")
+            gmic_load_raw(bool,"bool")
             else gmic_load_raw(cimg_uint8,"uint8")
               else gmic_load_raw(cimg_int8,"int8")
                 else gmic_load_raw(cimg_uint16,"uint16")
