@@ -12599,7 +12599,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                            argx,&is_compressed,&end)==2 ||
                cimg_sscanf(argument,"%255[a-z123468 ],%u,%u%c",
                            argx,&is_compressed,&is_gmz,&end)==3) &&
-              (!std::strcmp(argx,"auto") || !std::strcmp(argx,"bool") ||
+              (!std::strcmp(argx,"auto") ||
                !std::strcmp(argx,"uint8") || !std::strcmp(argx,"int8") ||
                !std::strcmp(argx,"uint16") || !std::strcmp(argx,"int16") ||
                !std::strcmp(argx,"uint32") || !std::strcmp(argx,"int32") ||
