@@ -13144,7 +13144,8 @@ rgb2yuv8 :
 remove_opacity :
   e[^-1] "Remove opacity channel of image$?."
   foreach {
-    if s==2 channels 0
+    if !s||s>4 error[0--5] "Command '$0': Image ["$>"] is not a G,GA,RGB or RGBA image ("{s}" channels)."
+    elif s==2 channels 0
     elif s==4 channels 0,2
     fi
   }
@@ -13233,6 +13234,7 @@ split_colors : check "${1=0}>=0 && isint(${2=256}) && $2>0 && ${3=8}>=1"
 
 #@cli split_opacity
 #@cli : Split color and opacity parts of selected images.
+#@cli : This command returns 1 or 2 images for each selected image, whether it has an opacity channel or not.
 split_opacity :
   e[^-1] "Split color and opacity parts of image$?."
   foreach { s c,{s==4?-3:s==2?-1:-s} }
@@ -13339,26 +13341,26 @@ to_pseudogray : check "isint(${1=5}) && $1>=0 && isint(${3=8}) && $3>0" skip ${2
 #@cli to_rgb
 #@cli : Force selected images to be in RGB mode.
 to_rgb :
-   e[^-1] "Force image$? to be in RGB mode."
-   foreach {
-     if !s||s>4 error[0--5] "Command '$0': Image ["$>"] is not a G,GA,RGB or RGBA image ("{s}" channels)."
-     elif s==4 channels 0,2
-     elif s==2 channels 0 r 100%,100%,100%,3
-     elif s==1 r 100%,100%,100%,3
-     fi
-   }
+  e[^-1] "Force image$? to be in RGB mode."
+  foreach {
+    if !s||s>4 error[0--5] "Command '$0': Image ["$>"] is not a G,GA,RGB or RGBA image ("{s}" channels)."
+    elif s==4 channels 0,2
+    elif s==2 channels 0 r 100%,100%,100%,3
+    elif s==1 r 100%,100%,100%,3
+    fi
+  }
 
 #@cli to_rgba
 #@cli : Force selected images to be in RGBA mode.
 to_rgba :
-   e[^-1] "Force image$? to be in RGBA mode."
-   foreach {
-     if !s||s>4 error[0--5] "Command '$0': Image ["$>"] is not a G,GA,RGB or RGBA image ("{s}" channels)."
-     elif s==3 channels 0,3 sh. 3 f. 255 rm.
-     elif s==2 r 100%,100%,100%,4,0,1,0,0,0,1
-     elif s==1 r 100%,100%,100%,4 sh. 3 f. 255 rm.
-     fi
-   }
+  e[^-1] "Force image$? to be in RGBA mode."
+  foreach {
+    if !s||s>4 error[0--5] "Command '$0': Image ["$>"] is not a G,GA,RGB or RGBA image ("{s}" channels)."
+    elif s==3 channels 0,3 sh. 3 f. 255 rm.
+    elif s==2 r 100%,100%,100%,4,0,1,0,0,0,1
+    elif s==1 r 100%,100%,100%,4 sh. 3 f. 255 rm.
+    fi
+  }
 
 #@cli transfer_histogram : [reference_image],_nb_levels>0,_color_channels
 #@cli : Transfer histogram of the specified reference image to selected images.
