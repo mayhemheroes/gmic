@@ -12019,6 +12019,13 @@ int2rgb :
   e[^-1] "Convert color representation of image$? from INT24 scalars to RGB."
   round foreach { +>> 8 &[1] 255 +&[0] 255 >>[0] 16 a c }
 
+#@cli ipremula
+#@cli : Convert selected images with premultiplied alpha colors to normal colors.
+#@cli : See also: ''premula''.
+ipremula :
+  e[^-1] "Convert image$? with premultiplied alpha colors to normal colors."
+  to_a foreach { +channels. 100% /. 255 max. 1e-8 sh.. 0,{s#-2-2} /. .. rm[-2,-1] }
+
 #@cli jzazbz2rgb : illuminant={ 0=D50 | 1=D65 | 2=E } : (no arg)
 #@cli : Convert color representation of selected images from RGB to Jzazbz.
 #@cli : Default value: 'illuminant=2'.
@@ -12721,6 +12728,13 @@ compress_palette :
   ('"\n  r. 256,1,1,3,3 round.\n"')
   a x
   ot pal.txt
+
+#@cli premula
+#@cli : Convert selected images with normal colors to premultiplied alpha colors.
+#@cli : See also: ''ipremula''.
+premula :
+  e[^-1] "Convert image$? with normal colors to premultiplied alpha colors."
+  to_a foreach { +channels. 100% /. 255 sh.. 0,{s#-2-2} *. .. rm[-2,-1] }
 
 #@cli pseudogray : _max_increment>=0,_JND_threshold>=0,_bits_depth>0
 #@cli : Generate pseudogray colormap with specified increment and perceptual threshold.
