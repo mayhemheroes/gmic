@@ -26511,7 +26511,7 @@ watermark_visible : check "${2=0.3}>0 && $2<1 && ${3=53}>0 && ${6=0.5}>=0"
 #@cli : screen | shapeareamax | shapeareamax0 | shapeareamin | shapeareamin0 | shapeaverage | shapeaverage0 |
 #@cli : shapemedian | shapemedian0 | shapemin | shapemin0 | shapemax | shapemax0 | softburn | softdodge |
 #@cli : softlight | stamp | subtract | value | vividlight | xor }.
-#@cli : 'opacity' should be in '[0,1]', or '[0,100]' if expressed with a '%'.
+#@cli : 'opacity' must be in range '[0,1]' (or '[0%,100%]').
 #@cli : Default values: 'blending_mode=alpha', 'opacity=1' and 'selection_is=0'.
 #@cli : $ image.jpg +drop_shadow , resize2dy[-1] 200 rotate[-1] 20 +blend alpha display_rgba[-2]
 #@cli : $ image.jpg testimage2d {w},{h} blend overlay
@@ -26535,7 +26535,7 @@ watermark_visible : check "${2=0.3}>0 && $2<1 && ${3=53}>0 && ${6=0.5}>=0"
 # ex softdodge,softlight,stamp,subtract,value,vividlight,xor
 #@cli blend : [layer],blending_mode,_opacity[%],_selection_is={ 0=base-layers | 1=top-layers } : \
 # blending_mode,_opacity[%]
-blend : check "inrange(${3=1},0,1) && isbool(${4=0})" skip "${1=alpha},${2=1}"
+blend : check "isbool(${4=0}) && isin(${5=1},0,1,2)" skip "${1=alpha},${2=1},${3=1}"
   if !${"is_image_arg $1"}
     e[0--3] "Blend image$? together, using '$1' mode and opacity $2."
     repeat $!-1 { $0.. .,$1,$2 rm. }
