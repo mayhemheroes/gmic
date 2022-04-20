@@ -26533,42 +26533,43 @@ watermark_visible : check "${2=0.3}>0 && $2<1 && ${3=53}>0 && ${6=0.5}>=0"
 #@cli : $ command "ex : $""=arg repeat $""# +blend[0,1] ${arg{$>+1}} \
 # text_outline[-1] Mode:\" \"${arg{$>+1}},2,2,23,2,1,255 done" image.jpg testimage2d {w},{h} \
 # ex softdodge,softlight,stamp,subtract,value,vividlight,xor
-blend : skip ${1=alpha},${2=1},${3=1},${4=0}
-  if ${"is_image_arg $1"}
-    n:=narg($*) mode=${arg\ 1+($n>=2),alpha,$2}
-    e[^-1] "Blend image$? with "${"arg 1+$4,base,top"}" layer $1, using '"$mode"' mode and opacity $3."
-    pass$1 foreach[^-1] { pass. 0 if $4 rv fi blend $mode,$3 } rm.
+#@cli blend : [layer],blending_mode,_opacity[%],_selection_is={ 0=base-layers | 1=top-layers } : \
+# blending_mode,_opacity[%]
+blend : check "inrange(${3=1},0,1) && isbool(${4=0})" skip "${1=alpha},${2=1}"
+  if !${"is_image_arg $1"}
+    e[0--3] "Blend image$? together, using '$1' mode and opacity $2."
+    repeat $!-1 { $0.. .,$1,$2 rm. }
     return
   fi
-  e[^-1] "Blend all image$? together, using '$1' mode and opacity $2."
-  repeat $!-1 { l[0,1] {
+  if $4 s0,s1=foreground,background else s0,s1=background,foreground fi
+  e[^-1] "Blend "$s0" image$? with "$s1" image $1, using '$2' mode and opacity $3."
+  if !$3 return fi
+  opacity:=$3
+  pass$1 1
+  foreach[^-1] {
+    pass. 0 if $4 rv fi # [0] = background, [1] = foreground
+    nb_col_channels,is_alpha_b,is_alpha_f:=max(s#0,s)>=3?3:1,!(s#0%2),!(s%2)||w<w#0||h<h#0||d<d#0||$opacity!=1
+    to_colormode[0] {$nb_col_channels+$is_alpha_b}
+    to_colormode[1] {$nb_col_channels+$is_alpha_f}
+    if $opacity<1 sh[1] 100% *. $opacity rm. fi
     r[1] [0],[0],[0],100%,0,0,0.5,0.5
-    s:=max(s#0<3?1:3,s<3?1:3) # Target color format (G or RGB).
-    to_colormode[0] {$s+1-(s#0%2)} # Target format (G,GA,RGB or RGBA).
-    to_colormode[1] {$s+1-(s%2)} # Mask format (G,GA,RGB or RGBA).
-    if {0,"s==2 || s==4"} # Target has alpha.
-      if "s==2 || s==4" # Mask has alpha.
-        sh[0,1] 0,{s-2} _blend_$1[2,3] rm[2,3]
-        if ['"$1"']=='alpha' # Special blending code for alpha-mode.
-          sh[0,1] 0,{s#0-2} sh[0,1] 100% *[2,4] *[3,4] rm[2,3]
-          +channels[1] 100% sh[1] 100% f[3] 255 rm[3]
-          j[0] [1],0,0,0,0,{max(0,min(1,$2))},[2],255 rm[1,2]
-          sh[0] 0,{s-2} sh[0] 100% +[2] 1e-10 /[1,2] rm[1] c 0,255
-        else
-          sh[1] 0,{s-2} sh[1] 100% j[0] [2],0,0,0,0,{max(0,min(1,$2))},[3],255 rm[^0]
-        fi
-      else # Mask has no alpha.
-        sh[0] 0,{{0,s}-2} rv[1,2] _blend_$1[1,2] j[1] [2],0,0,0,0,{max(0,min(1,$2))} rm[^0]
+    s[0,1] c,-$nb_col_channels
+    if $is_alpha_b # Background has alpha
+      _$0_$2[0,2]
+      if $is_alpha_f # Foreground has alpha
+        *[0] [1] /[0] 255 j[0] [2],0,0,0,0,1,[3],255 # Co = Cf*Af + Cb*Ab*(1-Af)
+        +f. 255 j[1] .,0,0,0,0,1,[3],255 # Ao = Af + Ab*(1 - Af)
+        k[0,1] +max. 1 /. 255 /[0,-1] a c # [ Co/Ao, Ao ]
+      else j[0] [2],0,0,0,0,1 rm. f. 255 a c # Foreground has no alpha
       fi
-    else # Target has no alpha.
-      if "s==2 || s==4" # Mask has alpha.
-        sh[1] 0,{s-2} _blend_$1[0,2] rm[2]
-        sh[1] 100% j[0] [1],0,0,0,0,{max(0,min(1,$2))},[2],255 rm[^0]
-      else # Mask has no alpha.
-        _blend_$1 j[0] [1],0,0,0,0,{max(0,min(1,$2))} rm[1]
+    else # Background has no alpha
+      _$0_$2[0,1]
+      if $is_alpha_f j[0] [1],0,0,0,0,1,.,255 k[0] # Foreground has alpha
+      else k[1] # Foreground has no alpha
       fi
     fi
-  } }
+  }
+  rm.
 
 _blend_alpha :
 _blend_normal :
