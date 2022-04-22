@@ -594,7 +594,7 @@ const CImg<T>& gmic_print(const char *const title, const bool is_debug,
     wh = _width*_height, whd = _width*_height*_depth,
     w1 = _width - 1, wh1 = _width*_height - 1, whd1 = _width*_height*_depth - 1;
 
-  std::fprintf(cimg::output(),"%s%s%s%s:\n  %ssize%s = (%u,%u,%u,%u) [%lu %s of %s%ss].\n  %sdata%s = %s",
+  std::fprintf(cimg::output(),"%s%s%s%s:\n  %ssize%s = (%u,%u,%u,%u) [%lu %s of %s%s].\n  %sdata%s = %s",
                cimg::t_magenta,cimg::t_bold,title,cimg::t_normal,
                cimg::t_bold,cimg::t_normal,_width,_height,_depth,_spectrum,
                (unsigned long)(mdisp==0?msiz:(mdisp==1?(msiz>>10):(msiz>>20))),
