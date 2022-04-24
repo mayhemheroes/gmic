@@ -3151,12 +3151,13 @@ CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) 
     CImg<char> str = CImg<char>::string(commands_line); // Discard debug info inside string
     bool _is_debug_info = false;
     ptrd = str;
-    for (const char *ptrs = str; *ptrs; ++ptrs) {
-      c = *ptrs;
-      if (c!=1) *(ptrd++) = c;
+    for (const char *ptrs = str; *ptrs; ) {
+      c = *(ptrs++);
+      if (c!=1) { *(ptrd++) = c; }
       else {
         if (!_is_debug_info) is_debug_info|=(_is_debug_info=get_debug_info(ptrs,debug_line,debug_filename));
-        while (c && c!=' ') c = *(++ptrs);
+        do { c = *(ptrs++); } while (c && c!=' ');
+        if (!c) --ptrs;
       }
     }
     *ptrd = 0;
