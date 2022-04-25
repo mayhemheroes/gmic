@@ -3150,16 +3150,17 @@ CImgList<char> gmic::commands_line_to_CImgList(const char *const commands_line) 
   if (is_dquoted) {
     CImg<char> str = CImg<char>::string(commands_line); // Discard debug info inside string
     bool _is_debug_info = false;
-    ptrd = str;
-    for (const char *ptrs = str; *ptrs; ) {
+    const char *ptrs = ptrd = str;
+    do {
       c = *(ptrs++);
-      if (c!=1) { *(ptrd++) = c; }
+      if (!c) break;
+      if (c!=1) *(ptrd++) = c;
       else {
         if (!_is_debug_info) is_debug_info|=(_is_debug_info=get_debug_info(ptrs,debug_line,debug_filename));
         do { c = *(ptrs++); } while (c && c!=' ');
-        if (!c) --ptrs;
+        if (c) ++ptrs;
       }
-    }
+    } while (c);
     *ptrd = 0;
     error(true,"Invalid command line: Double quotes are not closed, in expression '%s'.",
           str.data());
@@ -6568,7 +6569,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         if (!is_get && !std::strcmp("check3d",command)) {
           gmic_substitute_args(false);
           bool is_full_check = true;
-          if (!argument[1] && (*argument=='0' || *argument=='1')) {
+          if ((*argument=='0' || *argument=='1') && !argument[1]) {
             is_full_check = (*argument=='1');
             ++position;
           } else is_full_check = true;
@@ -6833,7 +6834,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           if (!is_selection)
             CImg<unsigned int>::vector(0,1,2,3,4,5,6,7,8,9).move_to(selection);
           bool state = true;
-          if (!argument[1] && (*argument=='0' || *argument=='1')) {
+          if ((*argument=='0' || *argument=='1') && !argument[1]) {
             state = (*argument=='1'); ++position;
           } else state = true;
 
@@ -7118,7 +7119,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         if (!is_get && !std::strcmp("double3d",item)) {
           gmic_substitute_args(false);
           bool state = true;
-          if (!argument[1] && (*argument=='0' || *argument=='1')) {
+          if ((*argument=='0' || *argument=='1') && !argument[1]) {
             state = (*argument=='1');
             ++position;
           } else state = true;
@@ -12778,7 +12779,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Remove custom command.
         if (!is_get && !std::strcmp("uncommand",item)) {
           gmic_substitute_args(false);
-          if (argument[0]=='*' && !argument[1]) { // Discard all custom commands
+          if (*argument=='*' && !argument[1]) { // Discard all custom commands
             cimg::mutex(23);
             unsigned int nb_commands = 0;
             for (unsigned int i = 0; i<gmic_comslots; ++i) {
