@@ -34676,6 +34676,15 @@ x_whirl : check "${1=0.2}>=0" check_display $0
 #
 #-------------------------------------
 
+_preview_crop :
+  z 0$_preview_x0,0$_preview_y0,0$_preview_x1,0$_preview_y1
+
+_preview_resize :
+  r {vmax(1,[0$_preview_width,0$_preview_height])},100%,100%,2
+
+_preview_crop_resize :
+  _preview_crop _preview_resize
+
 # Function that returns the list of external sources to be included in the plug-in.
 # This command can be superseded on the user '.gmic' file to add sources for the plug-in.
 # $1 = try network update
@@ -42663,7 +42672,7 @@ fx_curvature :
 fx_curvature_preview :
   gui_split_preview "fx_curvature ${^0}",${-3--1}
 
-#@gui Difference of Gaussians : fx_dog, fx_dog_preview(1)
+#@gui Difference of Gaussians : fx_dog, fx_dog_preview(1)*
 #@gui : 1st Variance = float(1.4,0,5)
 #@gui : 2nd Variance = float(1.5,0,5)
 #@gui : Threshold = float(0,0,49)
@@ -42684,7 +42693,7 @@ fx_dog :
   n 0,255
 
 fx_dog_preview :
-  gui_split_preview "fx_dog ${^0}",${-3--1}
+  gui_split_preview "fx_dog ${^0} _preview_crop_resize",${-3--1}
 
 #@gui Distance Transform : fx_distance, fx_distance_preview(0)
 #@gui : Value = int(128,0,255)
