@@ -6740,7 +6740,7 @@ parse_gui_thumbnails :
   e[] "  >> Generate output, in 'thumbnails' mode.\n"
   if !isdir('thumbnails') x "mkdir -p thumbnails" fi
   sp landscape r2dy 256 r 256,256,1,3,0,0,0.5,0.5 store img
-  _preview_width,_preview_height=256
+  _preview_area_width,_preview_area_height=256
 
   repeat $_nbfilters { f=$>
     nb$f=${_f${f}_nbparams}
@@ -8623,7 +8623,7 @@ update_gallery_html : check "isbool(${1=0})"
             }
 
             ('${example$nex}') replace_str. "https://gmic.eu/samples/","../../resources/samples/" example$nex={t} rm.
-            m "_run : _preview_width,_preview_height=450,300 "${example$nex}
+            m "_run : _preview_area_width,_preview_area_height=450,300 "${example$nex}
 
             if $is_input sample_=${sample}_ else sample_= fi
             filename_original=img/${category}_${sample_}original_$nex.jpg
@@ -34710,7 +34710,7 @@ gui_filter_sources : skip ${1=0},${2=1}
 
 # Function that always returns a valid preview size.
 gui_preview_wh :
-  u {0$_preview_width?[0$_preview_width,0$_preview_height]:[400,400]}
+  u {0$_preview_area_width?[0$_preview_area_width,0$_preview_area_height]:[400,400]}
 
 # Function used for filters based on parallelization with spatial splitting.
 gui_parallel_overlap :
@@ -34910,7 +34910,7 @@ gui_print_preview : skip "${1=},${3=}" check "${2=32}>=0 && ${4=20}>=0"
   # Resize image to output resolution.
   if $! k[0] fi
   drgba
-  siz={0$_preview_width?[0$_preview_width,0$_preview_height]:[${fitscreen\ {[max(w,1),max(h,1),1]},400,800}]}
+  siz={0$_preview_area_width?[0$_preview_area_width,0$_preview_area_height]:[${fitscreen\ {[max(w,1),max(h,1),1]},400,800}]}
   sizw={arg(1,$siz)-8}
   if $! rr2d $siz,2,3 drgba else $siz,1,3,128 fi
   (1;0.5^1;0.5^0;1)
@@ -35928,7 +35928,7 @@ fx_gmicky :
   fi
 
 fx_gmicky_preview :
-  fx_gmicky $* rr2d $_preview_width,$_preview_height,0,2
+  fx_gmicky $* rr2d $_preview_area_width,$_preview_area_height,0,2
 
 #@gui Privacy Notice : _none_, _none_
 #@gui : note = note{"This plugin may download up-to-date filter definitions from the
@@ -36329,8 +36329,8 @@ _fx_drawn_montage :
     # Render thumbnail of current layer, for preview.
     l={1+$1}
     if $l<=$nb_layers
-      if {$l,w>h} +r2dx[$l] {(0$_preview_width?0$_preview_width:400)/6}
-      else +r2dy[$l] {(0$_preview_height?0$_preview_height:400)/6} fi
+      if {$l,w>h} +r2dx[$l] {(0$_preview_area_width?0$_preview_area_width:400)/6}
+      else +r2dy[$l] {(0$_preview_area_height?0$_preview_area_height:400)/6} fi
       frame. 1,1,0,0,0,255 drgba. to. "#"$l,0,-2,13 to_rgba.
       mv. -3
       thumbnail=1
@@ -40726,7 +40726,7 @@ fx_colorful_blobs :
 
 fx_colorful_blobs_preview :
   _is_preview=1
-  rm {s=min($_preview_width,$_preview_height)/2;[s,s]},1,1
+  rm {s=min($_preview_area_width,$_preview_area_height)/2;[s,s]},1,1
   fx_colorful_blobs $*
 
 #@gui Colormap : fx_colormap,fx_colormap_preview
@@ -41733,7 +41733,7 @@ fx_clut_from_ab_preview : skip "${3=},${4=}"
     +r3dx. 24 _fx_clut_from_ab_preview.
     S={arg(1+$2,16,25,36,49,64,81,100,121,144,169,225,256)} if $S!=w#0 r[0] $S,$S,$S,3,3 fi
     r[0] {0,r=round(whd^0.5);[r,r]},1,3,-1
-    rr2d[0] $_preview_width,$_preview_height,2,1 r2dx. 70%
+    rr2d[0] $_preview_area_width,$_preview_area_height,2,1 r2dx. 70%
     sh. 100% b. 1% n. 0,255 rm.
     blend alpha
   }
@@ -41762,7 +41762,7 @@ _fx_clut_from_ab_preview :
     # Render 3D snapshot.
     pose3d 1.2451,0.120715,-0.893986,-58.3864,-0.572953,1.28275,-0.62477,-11.6557,\
            0.696784,0.839071,1.08374,-333.008,0,0,217,1
-    snapshot3d {max(512,0$_preview_width,0$_preview_height)},1.22,255,255,255
+    snapshot3d {max(512,0$_preview_area_width,0$_preview_area_height)},1.22,255,255,255
     autocrop frame 10,10,255
     to_rgba flood 0,0,0,20,1,1,255,255,255,0
   }
@@ -42253,7 +42253,7 @@ fx_transfer_rgb_preview :
 
   mv[$ref] $!
   repeat $!-1 { l[$>,-1] {
-    rr2d[0] $_preview_width,$_preview_height,0,3 rr2d. {0,[w,h]/3},0,3
+    rr2d[0] $_preview_area_width,$_preview_area_height,0,3 rr2d. {0,[w,h]/3},0,3
     to. Reference,2,2,13,1,1,255 frame. 2,2,255 frame. 1,1,0
     j[0] .,$6%,$7%
     rm.
@@ -42296,7 +42296,7 @@ fx_transfer_histogram_preview :
 
   mv[$ref] $!
   repeat $!-1 { l[$>,-1] {
-    rr2d[0] $_preview_width,$_preview_height,0,3 rr2d. {0,[w,h]/3},0,3
+    rr2d[0] $_preview_area_width,$_preview_area_height,0,3 rr2d. {0,[w,h]/3},0,3
     to. Reference,2,2,13,1,1,255 frame. 2,2,255 frame. 1,1,0
     j[0] .,$3%,$4%
     rm.
@@ -42339,7 +42339,7 @@ fx_transfer_pca_preview :
 
   mv[$ref] $!
   repeat $!-1 { l[$>,-1] {
-    rr2d[0] $_preview_width,$_preview_height,0,3 rr2d. {0,[w,h]/3},0,3
+    rr2d[0] $_preview_area_width,$_preview_area_height,0,3 rr2d. {0,[w,h]/3},0,3
     to. Reference,2,2,13,1,1,255 frame. 2,2,255 frame. 1,1,0
     j[0] .,$3%,$4%
     rm.
@@ -42533,7 +42533,7 @@ fx_tune_hsv_preview :
     gui_split_preview "_is_preview=1 _fx_tune_hsv $*",${-3--1}
     if $preview_mapping
       $__preview_mapping
-      if narg($_preview_width) rr2d[0] $_preview_width,$_preview_height,0,2 fi
+      if narg($_preview_area_width) rr2d[0] $_preview_area_width,$_preview_area_height,0,2 fi
       s. c,-3 to_colormode.. {-3,s}
       j... ..,$__px~,$__py~,0,0,1,.,255 rm[-2,-1]
     fi
@@ -43993,7 +43993,7 @@ fx_warp_interactive :
 fx_warp_interactive_preview :
   if [$4][0]!=-1 __x_warp_keypoints=$4 fi
   foreach {
-    rr2d $_preview_width,$_preview_height,0,3 to_color drgba
+    rr2d $_preview_area_width,$_preview_area_height,0,3 to_color drgba
     if narg($__x_warp_keypoints) ($__x_warp_keypoints) r. 1,{w/4},1,4,-1
     else
 
@@ -46249,7 +46249,7 @@ fx_frame_mirror :
 fx_frame_mirror_preview :
   foreach {
     ws,hs={[w,h]} fx_frame_mirror $* wd,hd={[w,h]}
-    rr2d $_preview_width,$_preview_height wp,hp={[w,h]}
+    rr2d $_preview_area_width,$_preview_area_height wp,hp={[w,h]}
     ws,hs={[$ws,$hs]*[$wp,$hp]/[$wd,$hd]}
 
     coords={off=([$wp,$hp]-[$ws,$hs])*[$3,$4]%;[off,off+[$ws,$hs]-1]}
@@ -48307,8 +48307,8 @@ fx_random_pattern :
   _fx_random_pattern $*
 
 fx_random_pattern_preview :
-  _fx_random_pattern {max($_preview_width,$_preview_height)},${2--1}
-  k[0] rr2d $_preview_width,$_preview_height,2,2
+  _fx_random_pattern {max($_preview_area_width,$_preview_area_height)},${2--1}
+  k[0] rr2d $_preview_area_width,$_preview_area_height,2,2
   to "Seed: \#"$_seed,5,5,5%,2
   u "{$1}{$2}{"{$4?$_seed:$3}"}{0}{$5}{$6}{$7}{$8}{$9}"
 
@@ -51097,7 +51097,7 @@ fx_sine_curve :
   fi
 
   # Change unit for some variables.
-  W,H={w#0?[w#0,h#0]:0$_is_preview" && "0$_preview_width?[0$_preview_width,0$_preview_height]:[1024,1024]}
+  W,H={w#0?[w#0,h#0]:0$_is_preview" && "0$_preview_area_width?[0$_preview_area_width,0$_preview_area_height]:[1024,1024]}
   nresolution={max(1,round($periods*1000000*($resolution%)^2))}
   nfocale={arg($focale,0.05,0.1,0.2,0.3,0.4,0.5,0.75,1,1.25,1.5,1.75,2,3,4,8,16,32,128,1024,16384)}
   noxa,noxb,noya,noyb,noza,nozb={[$oxa,$oxb,$oya,$oyb,$oza,$ozb]*pi/180}
@@ -51945,7 +51945,7 @@ fx_animate_lissajous_preview : skip "${4=}"
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2020/03/02</i>.</small>")
 fx_moire :
-  if 0$_is_preview" && "!narg($_preview_width) _preview_width,_preview_height=512 fi
+  if 0$_is_preview" && "!narg($_preview_area_width) _preview_area_width,_preview_area_height=512 fi
 
   # Reconstruct frames from base image.
   if $2 repeat $! { if $>" && "{$<,s==2||s==4} blend[$<] [{$<+1}],alpha,1,1 fi } fi
@@ -51978,7 +51978,7 @@ fx_moire :
 
   # Constrain size of frames.
   if 0$_is_preview
-    W,H=$_preview_width,$_preview_height
+    W,H=$_preview_area_width,$_preview_area_height
     if $3
       if $W>$H W={$H/sqrt(2)} else H={$W*sqrt(2)} fi
       fW,fH=$W,$H
@@ -52394,7 +52394,7 @@ fx_custom_code_preview : skip "${1=-skip ,}"
   if $4 # Display debug infos on preview
     if !$3 % 256 fi
     if $!>1 gui_preview fi
-    rr2d $_preview_width,$_preview_height,0,1
+    rr2d $_preview_area_width,$_preview_area_height,0,1
     siz0=13 siz1=17 siz2=19 siz3=22
     if ['$_status_out']==0 _status_out=(empty) fi
     info="Input images: "#$_nb_in"\n"\
