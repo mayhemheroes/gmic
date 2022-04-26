@@ -2575,7 +2575,7 @@ _display3d :
     disp_size0={*,w,h}
 
     (1,0,0,0;0,1,0,0;0,0,1,0) store. pose3d
-    posx,posy,zoomfactor=50,50,1
+    posx,posy,zoom_factor=50,50,1
     is_fullscreen,is_zbuffer,is_axes3d,is_outline,is_boundingbox,is_animate,is_outvideo={*,f},1,1,0,0,0,0
     mode_render=4
     mode_drender={$nbp<2048?$mode_render:-1}
@@ -2611,7 +2611,7 @@ _display3d :
 
       # Init normalized 3D object.
       if !narg($object3d)
-        +c3d[0] n3d. *3d. {background,$zoomfactor*0.65*min(w,h)}
+        +c3d[0] n3d. *3d. {background,$zoom_factor*0.65*min(w,h)}
         if $mode_orientation==1 rv3d. fi
         rmn boundingbox3d
         if $is_boundingbox +boundingbox3d. o3d. 0.35 => boundingbox3d +3d.. . rv[-2,-1] fi
@@ -2876,14 +2876,14 @@ _display3d :
           mx0,my0=$mx1,$my1
         elif $mb&2 # Zoom with mouse button
           fact={1+($my0-$my1)/100}
-          zoomfactor*=$fact
+          zoom_factor*=$fact
           *3d[object3d] $fact if narg($boundingbox3d) *3d[boundingbox3d] $fact fi
           mx0,my0=$mx1,$my1
         fi
       fi
       if {*,o} # Zoom with mousewheel
         fact={1+{*,-o}/10}
-        zoomfactor*=$fact
+        zoom_factor*=$fact
         *3d[object3d] $fact if narg($boundingbox3d) *3d[boundingbox3d] $fact fi
         rmn render
       fi
@@ -6397,13 +6397,13 @@ _gmd_write :
 #@cli : * '$_fF_path' : Full path.
 #@cli : * '$_fF_locale' : Filter locale (empty, if not specified).
 #@cli : * '$_fF_command' : Filter command.
-#@cli : * '$_fF_commandpreview' : Filter preview command (empty, if not specified).
-#@cli : * '$_fF_zoomfactor' : Default zoom factor (empty, if not specified).
-#@cli : * '$_fF_zoomaccurate' : Is preview accurate when zoom changes ? (can be { 0=false | 1=true }).
-#@cli : * '$_fF_inputmode' : Default preferred input mode (empty, if not specified).
+#@cli : * '$_fF_command_preview' : Filter preview command (empty, if not specified).
+#@cli : * '$_fF_zoom_factor' : Default zoom factor (empty, if not specified).
+#@cli : * '$_fF_preview_accuracy' : Preview accuracy (can be { 0=no | 1=according to zoom changes | 2=pixel-perfect }).
+#@cli : * '$_fF_input_mode' : Default preferred input mode (empty, if not specified).
 #@cli : * '$_fF_hide' : Path of filter hid by current filter (for localized filters, empty if not specified).
-#@cli : * '$_fF_nbparams' : Number of parameters.\n
-#@cli : For each parameter `\#P` of the filter \#F ('P' in range `[0,$_fF_nbparams-1]`):
+#@cli : * '$_fF_nb_params' : Number of parameters.\n
+#@cli : For each parameter `\#P` of the filter \#F ('P' in range `[0,$_fF_nb_params-1]`):
 #@cli : * '$_fF_pP_name' : Parameter name.
 #@cli : * '$_fF_pP_type' : Parameter type.
 #@cli : * '$_fF_pP_responsivity' : Parameter responsivity (can be { 0 | 1 }).
@@ -6556,11 +6556,11 @@ parse_gui : skip "${1=print},${2=*}"
 
     # Init variables.
     _f${f}_locale=
-    _f${f}_commandpreview=
-    _f${f}_zoomfactor=
-    _f${f}_zoomaccurate=
-    _f${f}_inputmode=
-    _f${f}_nbparams=0
+    _f${f}_command_preview=
+    _f${f}_zoom_factor=
+    _f${f}_preview_accuracy=
+    _f${f}_input_mode=
+    _f${f}_nb_params=0
     _f${f}_hide=
 
     # Detect locale.
@@ -6598,7 +6598,7 @@ parse_gui : skip "${1=print},${2=*}"
 
     # Parse filter definition.
     l[0] {
-      _f${f}_zoomaccurate=0
+      _f${f}_preview_accuracy=0
       s -,{':'} autocrop {'" "'}
       _f${f}_name={`$macros" name=[['"{0,t}"'],0]; clean(name); name"`} rm[0] # Filter name
       if $! l[0] {
@@ -6606,17 +6606,17 @@ parse_gui : skip "${1=print},${2=*}"
         _f${f}_command={0,t} # Filter command
         if $!>1 l[1] {
           s -,{'('}
-          _f${f}_commandpreview={0,t} # Filter preview command
+          _f${f}_command_preview={0,t} # Filter preview command
           if $!>1 l[1] {
             s +,{'+'}
             discard[0] {')'}
-            _f${f}_zoomfactor={0,t} # Default zoom factor
-            if $!>1" && "i[0]==_'+' _f${f}_zoomaccurate=1 fi # Is zoom accurate ?
+            _f${f}_zoom_factor={0,t} # Default zoom factor
+            if $!>1" && "i[0]==_'+' _f${f}_preview_accuracy=1 fi # Is zoom accurate ?
           } fi
         } fi
         rm
       } fi
-      if $! _f${f}_inputmode={0,t} fi # Default input mode
+      if $! _f${f}_input_mode={0,t} fi # Default input mode
       rm
     }
     e[] "\r  > "$_vt100_c[#$f]$_vt100_n" "{`copy(vector48(_'" "'),['${_f${f}_path}${_f${f}_name}'])`}
@@ -6625,7 +6625,7 @@ parse_gui : skip "${1=print},${2=*}"
     parseparams=1
     l[] { parseparams=${-parse_gui_parseparams_$1} onfail }
 
-    if !$!" || "!$parseparams _f${f}_nbparams=0
+    if !$!" || "!$parseparams _f${f}_nb_params=0
     else
       eval $macros"
         ref(crop(),source);
@@ -6633,7 +6633,7 @@ parse_gui : skip "${1=print},${2=*}"
         ref(vector256(),type);
         ref(vector65536(),argument);
 
-        p = nbparams = 0;
+        p = nb_params = 0;
         while (p<size(source),
           q = find(source,_'=',p)%size(source);
           source[q]==_'='?( # Found new parameter
@@ -6654,8 +6654,8 @@ parse_gui : skip "${1=print},${2=*}"
             source[p]==_'_'?(responsivity = 0; ++p);
             copy(type,source[p],q-p+1); type[q-p+1] = 0; # Parameter type
             for (i = 0, type[i], ++i, type[i] = lowercase(type[i])); # Force lowercase
-            run('$tmparg _f"${f}"_p',nbparams,'_name={t} rm. _f"${f}"_p',nbparams,'_type=',
-                 type,' _f"${f}"_p',nbparams,'_responsivity=',responsivity);
+            run('$tmparg _f"${f}"_p',nb_params,'_name={t} rm. _f"${f}"_p',nb_params,'_type=',
+                 type,' _f"${f}"_p',nb_params,'_responsivity=',responsivity);
 
             # Parse list of arguments.
             p = r;
@@ -6675,7 +6675,7 @@ parse_gui : skip "${1=print},${2=*}"
                 pe = r;
                 while (is_blank(--pe),0);
                 copy(argument,source[p],pe-p+1); argument[pe-p+1] = 0; # Parameter argument
-                store(argument,'tmparg',1,pe-p+1); run('$tmparg _f"${f}"_p',nbparams,'_a0={t} rm.');
+                store(argument,'tmparg',1,pe-p+1); run('$tmparg _f"${f}"_p',nb_params,'_a0={t} rm.');
                 nbargs = 1;
               ):(argument[0] = 0);
               p = r + 1;
@@ -6685,28 +6685,28 @@ parse_gui : skip "${1=print},${2=*}"
                 pe = q = min(r,find(source,_',',p)%size(source));
                 while (is_blank(--pe),0);
                 copy(argument,source[p],pe-p+1); argument[pe-p+1] = 0; # Parameter argument
-                store(argument,'tmparg',1,pe-p+1); run('$tmparg _f"${f}"_p',nbparams,'_a',nbargs,'={t} rm.');
+                store(argument,'tmparg',1,pe-p+1); run('$tmparg _f"${f}"_p',nb_params,'_a',nbargs,'={t} rm.');
                 ++nbargs;
                 p = q + 1;
               );
             );
-            run('_f"${f}"_p',nbparams,'_nbargs=',nbargs);
+            run('_f"${f}"_p',nb_params,'_nbargs=',nbargs);
 
             # Extract visibility state.
             p = r + 1;
             p<size(source) && source[p]==_'_' && isin(source[p+1],_'0',_'1',_'2')?(
               r = p + 1;
-              run('_f"${f}"_p',nbparams,'_visibility=',source[r]-_'0');
-              isin(source[r+1],_'+',_'-',_'*')?run('_f"${f}"_p',nbparams,'_propagation=',[source[++r]]);
+              run('_f"${f}"_p',nb_params,'_visibility=',source[r]-_'0');
+              isin(source[r+1],_'+',_'-',_'*')?run('_f"${f}"_p',nb_params,'_propagation=',[source[++r]]);
             );
 
             p = r + 1;
             skip_blank(p);
             source[p]==_','?++p;
-            ++nbparams;
+            ++nb_params;
           ):++p;
         );
-        run('_f"${f}"_nbparams=',nbparams)"
+        run('_f"${f}"_nb_params=',nb_params)"
     fi
     if !$! 0 fi
     f+=1
@@ -6743,17 +6743,17 @@ parse_gui_thumbnails :
   _preview_area_width,_preview_area_height=256
 
   repeat $_nbfilters { f=$>
-    nb$f=${_f${f}_nbparams}
+    nb$f=${_f${f}_nb_params}
   }
 
   repeat $_nbfilters { f=$>
-    command=${_f${f}_commandpreview}
+    command=${_f${f}_command_preview}
     if ['$command']==0 command=${_f${f}_command} fi
     pipeline=
     c=
     if s='$command';s!='_none_'&&s!='fx_whatsnew_preview'
       pipeline.=$command" "
-      repeat ${_f${f}_nbparams} { p=$>
+      repeat ${_f${f}_nb_params} { p=$>
         type=${_f${f}_p${p}_type}
         arg0=${_f${f}_p${p}_a0}
         if s='$type';s=='file'||s=='filein'||s=='fileout'||s=='folder'||s=='value'
@@ -6918,17 +6918,17 @@ parse_gui_update :
 
     path=${_f${f}_path}
 
-    if narg(${_f${f}_commandpreview}) commandpreview=,${_f${f}_commandpreview} else commandpreview= fi
+    if narg(${_f${f}_command_preview}) command_preview=,${_f${f}_command_preview} else command_preview= fi
     if narg(${_f${f}_locale}) locale=_${_f${f}_locale} else locale= fi
-    if narg(${_f${f}_zoomfactor}) zoomfactor=(${_f${f}_zoomfactor}) else zoomfactor= fi
-    if ${_f${f}_zoomaccurate} zoomaccurate=+ else zoomaccurate= fi
-    if narg(${_f${f}_inputmode}) inputmode=" : "${_f${f}_inputmode} else inputmode= fi
+    if narg(${_f${f}_zoom_factor}) zoom_factor=(${_f${f}_zoom_factor}) else zoom_factor= fi
+    if ${_f${f}_preview_accuracy} preview_accuracy=+ else preview_accuracy= fi
+    if narg(${_f${f}_input_mode}) input_mode=" : "${_f${f}_input_mode} else input_mode= fi
     strcapitalize ${_f${f}_name} name=${}
 
     if ['${_f${f}_hide}']!=0 ('"#@gui"$locale" hide("${_f${f}_hide}")\n"') fi
-    ('"#@gui"$locale" "$name:${_f${f}_command}$commandpreview$zoomfactor$zoomaccurate$inputmode\n')
+    ('"#@gui"$locale" "$name:${_f${f}_command}$command_preview$zoom_factor$preview_accuracy$input_mode\n')
 
-    repeat ${_f${f}_nbparams} { p=$>
+    repeat ${_f${f}_nb_params} { p=$>
       responsivity,visibility=
       if !${_f${f}_p${p}_responsivity} responsivity=_ fi
       if narg(${_f${f}_p${p}_visibility}) visibility=_${_f${f}_p${p}_visibility}${_f${f}_p${p}_propagation} fi
@@ -7064,11 +7064,11 @@ parse_gui_json :
     if narg(${_f${f}_locale}) locale=${_f${f}_locale} fi
 
     ('"    {\n      \"name\": \""$fname"\", \"lang\": \""$locale"\", \"command\": \""${_f${f}_command}"\", "\
-      "\"command_preview\": \""${_f${f}_commandpreview}"\", \"parameters\": [\n"')
+      "\"command_preview\": \""${_f${f}_command_preview}"\", \"parameters\": [\n"')
 
     sepf={`$<?_',':0`}
     ppos=1
-    repeat ${_f${f}_nbparams} { p=$>
+    repeat ${_f${f}_nb_params} { p=$>
       _parse_gui_json ${_f${f}_p{$p}_name} name={/${}}
       type=${_f${f}_p{$p}_type}
       nbargs=${_f${f}_p{$p}_nbargs}
@@ -7244,17 +7244,17 @@ parse_gui_gmicol :
     locale=en
     if narg(${_f${f}_locale}) locale=${_f${f}_locale} fi
     zoom_factor=
-    if narg(${_f${f}_zoomfactor}) zoom_factor=" zoom_factor=\""${_f${f}_zoomfactor}"\"" fi
+    if narg(${_f${f}_zoom_factor}) zoom_factor=" zoom_factor=\""${_f${f}_zoom_factor}"\"" fi
     zoom_accurate=
-    if ${_f${f}_zoomaccurate}!=0 zoom_accurate=" zoom_accurate=\""${_f${f}_zoomaccurate}"\"" fi
+    if ${_f${f}_preview_accuracy}!=0 zoom_accurate=" zoom_accurate=\""${_f${f}_preview_accuracy}"\"" fi
 
     ('"\n  <!-- Filter: "$fname" -->\n"\
-      "  <filter name=\""$fname"\" command=\""${_f${f}_command}"\" preview_command=\""${_f${f}_commandpreview}"\""\
+      "  <filter name=\""$fname"\" command=\""${_f${f}_command}"\" preview_command=\""${_f${f}_command_preview}"\""\
       $zoom_factor" "$zoom_accurate\
       ">\n"')
 
     sepf={`$<?_',':0`}
-    repeat ${_f${f}_nbparams} { p=$>
+    repeat ${_f${f}_nb_params} { p=$>
       ({'${_f${f}_p{$p}_name}'}) _gmd_ascii2html. name={t} rm.
       type=${_f${f}_p{$p}_type}
       nbargs=${_f${f}_p{$p}_nbargs}
@@ -7373,7 +7373,7 @@ parse_gui_strings :
     if !narg(${_f${f}_locale})" && "find(['${_f${f}_path}'],'Testing/')<0  # Consider only English, non-Testing filters
       e[] "\r  >> "$_vt100_c[#$f/$N]$_vt100_n" "{`copy(vector48(_'" "'),['${_f${f}_path}${_f${f}_name}'])`}
       _parse_gui_strings ${_f${f}_name}
-      repeat ${_f${f}_nbparams} { p=$>
+      repeat ${_f${f}_nb_params} { p=$>
         type=${_f${f}_p${p}_type}
         if s=['$type'];s!='link'&&s!='note'&&s!='separator'&&s!='value' _parse_gui_strings ${_f${f}_p${p}_name} fi
         if ['$type']==['choice']
@@ -9504,8 +9504,8 @@ parse_gui_zart :
 
     +e[] "<!-- "$path/$fname" -->"
     +e[] "<preset name=\""$fname"\">"
-    +e[] "  <command>"${_f${f}_commandpreview}" $""*</command>"
-    repeat ${_f${f}_nbparams} { p=$>
+    +e[] "  <command>"${_f${f}_command_preview}" $""*</command>"
+    repeat ${_f${f}_nb_params} { p=$>
       _parse_gui_zart ${_f${f}_p{$p}_name} name=${}
       type=${_f${f}_p{$p}_type}
       nbargs=${_f${f}_p{$p}_nbargs}
