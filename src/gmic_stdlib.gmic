@@ -34676,14 +34676,17 @@ x_whirl : check "${1=0.2}>=0" check_display $0
 #
 #-------------------------------------
 
-_preview_crop :
-  z 0$_preview_x0,0$_preview_y0,0$_preview_x1,0$_preview_y1
+gui_crop_preview :
+  if narg($_preview_x0) z 0$_preview_x0,0$_preview_y0,0$_preview_x1,0$_preview_y1 fi
 
-_preview_resize :
-  r {vmax(1,[0$_preview_width,0$_preview_height])},100%,100%,2
+gui_resize__preview :
+  if narg($_preview_width) r $_preview_width,$_preview_height,100%,100%,2 fi
 
-_preview_crop_resize :
-  _preview_crop _preview_resize
+gui_resize_preview_area :
+  if narg($_preview_area_width) r $_preview_width,$_preview_height,100%,100%,2 fi
+
+gui_crop_resize_preview :
+  gui_crop_preview gui_resize_preview
 
 # Function that returns the list of external sources to be included in the plug-in.
 # This command can be superseded on the user '.gmic' file to add sources for the plug-in.
@@ -42693,7 +42696,7 @@ fx_dog :
   n 0,255
 
 fx_dog_preview :
-  gui_split_preview "fx_dog ${^0} _preview_crop_resize",${-3--1}
+  gui_split_preview "gui_crop_preview fx_dog ${^0} gui_resize_preview",${-3--1}
 
 #@gui Distance Transform : fx_distance, fx_distance_preview(0)
 #@gui : Value = int(128,0,255)
