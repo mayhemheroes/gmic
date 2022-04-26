@@ -6866,7 +6866,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           const CImg<char> &s = callstack.back();
           if (s[0]!='*' || (s[1]!='f' && s[1]!='l' && s[1]!='r'))
             error(true,images,0,0,
-                  "Command 'done': Not associated to a 'for', 'foreach' or 'repeat' command "
+                  "Command 'done': Not associated to a 'for', 'foreach', 'local' or 'repeat' command "
                   "within the same scope.");
 
           if (s[1]=='f') {
