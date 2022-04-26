@@ -6609,10 +6609,10 @@ parse_gui : skip "${1=print},${2=*}"
           s -,{'('}
           _f${f}_command_preview={0,t} # Filter preview command
           if $!>1 l[1] {
-            s +,{'+'}
+            s +,{'+'} s +,{'*'}
             discard[0] {')'}
             _f${f}_zoom_factor={0,t} # Default zoom factor
-            if $!>1" && "i[0]==_'+' _f${f}_preview_accuracy=1 fi # Is zoom accurate ?
+            if $!>1" && "(i[0]==_'+'" || "i[0]==_'*') _f${f}_preview_accuracy:=i[0]==_'+'?1:2 fi # Preview accuracy
           } fi
         } fi
         rm
@@ -6922,7 +6922,10 @@ parse_gui_update :
     if narg(${_f${f}_command_preview}) command_preview=,${_f${f}_command_preview} else command_preview= fi
     if narg(${_f${f}_locale}) locale=_${_f${f}_locale} else locale= fi
     if narg(${_f${f}_zoom_factor}) zoom_factor=(${_f${f}_zoom_factor}) else zoom_factor= fi
-    if ${_f${f}_preview_accuracy} preview_accuracy=+ else preview_accuracy= fi
+    if ${_f${f}_preview_accuracy}==1 preview_accuracy=+
+    elif ${_f${f}_preview_accuracy}==2 preview_accuracy=*
+    else preview_accuracy=
+    fi
     if narg(${_f${f}_input_mode}) input_mode=" : "${_f${f}_input_mode} else input_mode= fi
     strcapitalize ${_f${f}_name} name=${}
 
@@ -7247,7 +7250,7 @@ parse_gui_gmicol :
     zoom_factor=
     if narg(${_f${f}_zoom_factor}) zoom_factor=" zoom_factor=\""${_f${f}_zoom_factor}"\"" fi
     zoom_accurate=
-    if ${_f${f}_preview_accuracy}!=0 zoom_accurate=" zoom_accurate=\""${_f${f}_preview_accuracy}"\"" fi
+    if ${_f${f}_preview_accuracy}!=0 zoom_accurate=" preview_accuracy=\""${_f${f}_preview_accuracy}"\"" fi
 
     ('"\n  <!-- Filter: "$fname" -->\n"\
       "  <filter name=\""$fname"\" command=\""${_f${f}_command}"\" preview_command=\""${_f${f}_command_preview}"\""\
