@@ -10585,22 +10585,14 @@ balance_gamma : check "isnum(${1=128})"
 # { uint8 | int8 | uint16 | int16 | uint32 | int32 | uint64 | int64 | float32 | float64 }.
 cast :
   e[^-1] "Cast datatype of image buffer$? from '$1' to '$2'."
-  stype="$1"
-  if s='$stype';s[0]==_'u'" && "s[1]!=_'n' stype="unsigned_"{`s='$stype';s[1,size(s)-1]`}
-  elif s='$stype';s[0]==_'u'" && "s[0,9]=='"unsigned "' stype="unsigned_"{`s='$stype';s[9,size(s)-9]`}
-  fi
-  dtype="$2"
-  if s='$dtype';s[0]==_'u'" && "s[1]!=_'n' dtype="unsigned_"{`s='$dtype';s[1,size(s)-1]`}
-  elif s='$dtype';s[0]==_'u'" && "s[0,9]=='"unsigned "' dtype="unsigned_"{`s='$dtype';s[9,size(s)-9]`}
-  fi
-  ssize:=s='$stype';s=='"uint8"'||s=='int8'?1:s=='"uint16"'||s=='int16'?2:s=='"uint32"'||s=='int32'||s=='float32'?4:8
-  dsize:=s='$dtype';s=='"uint8"'||s=='int8'?1:s=='"uint16"'||s=='int16'?2:s=='"uint32"'||s=='int32'||s=='float32'?4:8
+  ssize:=s='"$1"';s=='"uint8"'||s=='int8'?1:s=='"uint16"'||s=='int16'?2:s=='"uint32"'||s=='int32'||s=='float32'?4:8
+  dsize:=s='"$2"';s=='"uint8"'||s=='int8'?1:s=='"uint16"'||s=='int16'?2:s=='"uint32"'||s=='int32'||s=='float32'?4:8
   foreach {
     w,h,d,s:=[w,h,d,s]
     serialize $1,0,0
     s -,{'\n$w\ $h\ $d\ $s\n'}
     i[1] ('\n1\ {int($w*$h*$d*$s*$ssize/$dsize)}\ 1\ 1\n') y[1]
-    replace_str[0] $stype,$dtype
+    replace_str[0] "$1","$2"
     a y unserialize
   }
 
