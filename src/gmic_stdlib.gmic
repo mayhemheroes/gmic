@@ -39470,6 +39470,41 @@ fx_apply_haldclut_preview : skip "${2=}"
   if $1<2 gui_warning_preview "No preview available in this mode" return fi
   gui_split_preview "fx_apply_haldclut $1,\"$2\",${3--2}",${-3--1}
 
+#@gui Apply From CLUT Set : apply_from_clut_set, apply_from_clut_set_preview(1)+
+#@gui : CLUT Set (.gmz File) = file("")
+#@gui : Index = int(0,0,1024)
+#@gui : sep = separator()
+#@gui : Preview Type = choice("Full","Forward Horizontal","Forward Vertical","Backward Horizontal",
+#@gui : "Backward Vertical","Duplicate Top","Duplicate Left","Duplicate Bottom","Duplicate Right",
+#@gui : "Duplicate Horizontal","Duplicate Vertical","Checkered","Checkered Inverse")
+#@gui : Preview Split = point(50,50,0,0,200,200,200,0,10)_0
+#@gui : sep = separator()
+#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2022/05/08</i>.</small>")
+apply_from_clut_set : skip "${1=}"
+  m "_title : ('\"$""*\"') replace_str. \"_\",\" \" replace_str. \"iii\",\"III\" f. \"(!y || j(0,-1)==32) &&
+     i>=_'a' && i<=_'z'?uppercase(i):i\" u {t} rm."
+  is_file_error=0
+  l[] {
+    "$1" nb_cluts,ind:=l-1,$2%l k[$ind]
+    onfail rm is_file_error=1
+  }
+  if $is_file_error
+    gui_error_preview "Unable to load specified CLUT set"
+  else
+    _title {n} clut_name=${}
+    decompress_clut. {0$_is_preview?17:33}
+    if 0$_is_preview
+      store. _clut
+      foreach { gui_split_preview "$_clut map_clut.. . rm.",${-3--1} }
+      to $ind"/"$nb_cluts":\n"$clut_name,0.01~,1~,5%
+    else map_clut[^-1] . rm.
+    fi
+  fi
+
+apply_from_clut_set_preview : skip "${1=}"
+  _is_preview=1
+  k[0] apply_from_clut_set $"*"
+
 #@gui Basic Adjustments : fx_adjust_colors, fx_adjust_colors_preview
 #@gui : Brightness (%) = float(0,-100,100)
 #@gui : Contrast (%) = float(0,-100,100)
