@@ -26531,32 +26531,35 @@ watermark_visible : check "${2=0.3}>0 && $2<1 && ${3=53}>0 && ${6=0.5}>=0"
 # ex softdodge,softlight,stamp,subtract,value,vividlight,xor
 #@cli blend : [layer],blending_mode,_opacity[%],_selection_is={ 0=base-layers | 1=top-layers } : \
 # blending_mode,_opacity[%]
-blend : check "isbool(${4=0}) && isin(${5=1},0,1,2)" skip "${1=alpha},${2=1},${3=1}"
+blend : skip "${1=},${2=},${3=},${4=}"
   if !${"is_image_arg $1"}
-    if $#>0 mode=$1 else mode=alpha fi
-    if $#>1 opacity=$2 else opacity=1 fi
-    e[0--3] "Blend image$? together, using '$1' mode and opacity $2."
+    if ['$1']!=0 mode=$1 else mode=alpha fi
+    if ['$2']!=0 opacity=$2 else opacity=1 fi
+    e[0--3] "Blend image$? together, using '"$mode"' mode and opacity "$opacity"."
     repeat $!-1 { $0.. .,$mode,$opacity rm. }
     return
   fi
-  if $4 s0,s1=foreground,background else s0,s1=background,foreground fi
-  e[^-1] "Blend "$s0" image$? with "$s1" image $1, using '$2' mode and opacity $3."
-  if !$3 return fi
-  opacity:=$3
+  if ['$2']!=0 mode=$2 else mode=alpha fi
+  if ['$3']!=0 opacity:=$3 else opacity=1 fi
+  if ['$4']!=0 selection_mode=$4 else selection_mode=0 fi
+  if $selection_mode s0,s1=foreground,background else s0,s1=background,foreground fi
+
+  e[^-1] "Blend "$s0" image$? with "$s1" image $1, using '"$mode"' mode and opacity "$opacity"."
+  if !$opacity return fi
   pass$1 1
   foreach[^-1] { nm={n}
-    pass. 0 if $4 rv fi # -> [0] = background, [1] = foreground
+    pass. 0 if $selection_mode rv fi # -> [0] = background, [1] = foreground
     nb_col_channels,is_alpha_b,is_alpha_f:=max(s#0,s)>=3?3:1,!(s#0%2),!(s%2)||w<w#0||h<h#0||d<d#0||$opacity!=1
     to_colormode[0] {$nb_col_channels+$is_alpha_b}
     to_colormode[1] {$nb_col_channels+$is_alpha_f}
     if $opacity<1 sh[1] 100% *. $opacity rm. fi
     r[1] [0],[0],[0],100%,0,0,0.5,0.5
-    if ['$2']=='seamless' blend_seamless 0
-    elif ['$2']=='seamless_mixed' blend_seamless 1
+    if ['$mode']=='seamless' blend_seamless 0
+    elif ['$mode']=='seamless_mixed' blend_seamless 1
     else
       s[0,1] c,-$nb_col_channels
       if $is_alpha_b # Background has alpha
-        _$0_$2[0,2]
+        _$0_$mode[0,2]
         if $is_alpha_f # Foreground has alpha
           *[0] [1] /[0] 255 j[0] [2],0,0,0,0,1,[3],255 # Co = Cf*Af + Cb*Ab*(1-Af)
           +f. 255 j[1] .,0,0,0,0,1,[3],255 # Ao = Af + Ab*(1 - Af)
@@ -26564,7 +26567,7 @@ blend : check "isbool(${4=0}) && isin(${5=1},0,1,2)" skip "${1=alpha},${2=1},${3
         else j[0] [2],0,0,0,0,1 rm. f. 255 a c # Foreground has no alpha
         fi
       else # Background has no alpha
-        _$0_$2[0,1]
+        _$0_$mode[0,1]
         if $is_alpha_f j[0] [1],0,0,0,0,1,.,255 k[0] # Foreground has alpha
         else k[1] # Foreground has no alpha
         fi
