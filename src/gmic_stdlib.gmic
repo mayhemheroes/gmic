@@ -46519,14 +46519,16 @@ fx_display_fft :
 fx_fourier_transform :
   if $1 remove_opacity fi
   ind=0
+  _preview_error=0
   for $ind<$! {
     gui_layer_name[$ind] nm=${}
     p:="s=['"$nm"'];find(s,' [FFT Magnitude] | ',size(s)-1,-1)"
     if $p>=0
       if $ind+1>=$!
         gui_resize_preview_area[$ind]
-        gui_error_preview[$ind] "Two input layers are required. Please set 'Input Layers' option accordingly."
+        gui_error_preview[$ind] "Two input layers are required. Please set 'Input Layers' mode accordingly."
         ind=$!
+        _preview_error=1
       else l[$ind,{$ind+1}] { # Inverse transform
         ('$nm') +z. {$p+19},100% a0,b0=${u\ {t}} rm. z. 0,{$p-1} nm={t} rm.
         /.. $a0 +.. $b0          # Denormalize magnitude
@@ -46550,7 +46552,7 @@ fx_fourier_transform :
 
 fx_fourier_transform_preview :
   fx_fourier_transform $* k[0]
-  gui_resize_preview
+  if !$_preview_error gui_resize_preview fi
 
 
 #@gui Fourier Transform [Old] : fx_fourier_old,fx_fourier_old_preview(1)* : *
