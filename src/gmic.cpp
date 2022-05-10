@@ -2443,7 +2443,7 @@ double gmic::mp_run(char *const str,
   const CImg<void*> gr = get_current_run("Function 'run()'",p_list,pixel_type);
   double res = cimg::type<double>::nan();
 
-  cimg_pragma_openmp(critical(mp_run))
+//  cimg_pragma_openmp(critical(mp_run))
   {
     gmic &gmic_instance = *(gmic*)gr[0];
     CImgList<T> &images = *(CImgList<T>*)gr[1];
