@@ -46522,15 +46522,21 @@ fx_fourier_transform :
   for $ind<$! {
     gui_layer_name[$ind] nm=${}
     p:="s=['"$nm"'];find(s,' [FFT Magnitude] | ',size(s)-1,-1)"
-    if $p>=0 l[$ind,{$ind+1}] { # Inverse transform
-      ('$nm') +z. {$p+19},100% a0,b0=${u\ {t}} rm. z. 0,{$p-1} nm={t} rm.
-      /.. $a0 +.. $b0          # Denormalize magnitude
-      /. {255/(2*pi)} -. {pi}  # Denormalize phase
-      exp.. -.. 1 ifftpolar
-      c 0,255
-      gui_set_layer_name $nm
-      ind+=1
-    } else l[$ind] { # Direct transform
+    if $p>=0
+      if $ind+1>=$!
+        gui_crop_resize_preview[$ind]
+        gui_error_preview[$ind] "Two input layers are required. Please set 'Input Layers' option accordingly."
+        ind=$!
+      else l[$ind,{$ind+1}] { # Inverse transform
+        ('$nm') +z. {$p+19},100% a0,b0=${u\ {t}} rm. z. 0,{$p-1} nm={t} rm.
+        /.. $a0 +.. $b0          # Denormalize magnitude
+        /. {255/(2*pi)} -. {pi}  # Denormalize phase
+        exp.. -.. 1 ifftpolar
+        c 0,255
+        gui_set_layer_name $nm
+        ind+=1
+      } fi
+    else l[$ind] { # Direct transform
       fftpolar +.. 1 log..
       a0,b0={0,_[255/(iM-im),im]}
       -.. $b0 *.. $a0         # Normalize magnitude
