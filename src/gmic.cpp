@@ -13480,7 +13480,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               continue;
             }
 
-            if (nb_levels || position>=commands_line.size())
+            if (nb_levels)
               error(true,images,0,0,
                     "Command '%s': Missing associated '%s' command.",stb,ste);
             if (is_continue || callstack_local || callstack_foreach) {
