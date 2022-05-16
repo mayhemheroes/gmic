@@ -4020,8 +4020,8 @@ template<typename T>
 bool gmic::check_cond(const char *const expr, CImgList<T>& images, const char *const command) {
   CImg<T> &img = images.size()?images.back():CImg<T>::empty();
   bool res = false;
-  float _res = 0;
-  if (img.__eval(expr,_res)) return (bool)_res;
+  float _resu = 0;
+  if (img.__eval(expr,_resu)) return (bool)_resu;
   CImg<char> _expr(expr,(unsigned int)std::strlen(expr) + 1);
   strreplace_fw(_expr);
   try { if (img.eval(_expr,0,0,0,0,&images)) res = true; }
