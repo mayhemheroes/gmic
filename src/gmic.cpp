@@ -13130,7 +13130,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           unsigned int mode = 0;
           float nb_frames = 1;
           interpolation = 1;
-          boundary = 1;
+          boundary = 0;
           sep = 0;
           if (((cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]%c%c",
                             gmic_use_indices,&sep,&end)==2 && sep==']')||
