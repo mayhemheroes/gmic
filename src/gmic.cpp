@@ -11342,7 +11342,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                       (cimg_sscanf(argy,"%f%c%c",&cy,&sep1,&end)==2 && sep1=='%')) &&
                      (!*argz ||
                       cimg_sscanf(argz,"%f%c",&cz,&end)==1 ||
-                      (cimg_sscanf(argz,"%f%c%c",&cz,&sep1,&end)==2 && sep2=='%')) &&
+                      (cimg_sscanf(argz,"%f%c%c",&cz,&sep2,&end)==2 && sep2=='%')) &&
                      interpolation<=2 && boundary<=3) { // 3D rotation
             if (*argx) {
               print(images,0,"Rotate image%s around axis (%g,%g,%g) with angle %g deg., %s interpolation, "
