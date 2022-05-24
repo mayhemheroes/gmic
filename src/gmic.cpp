@@ -14056,7 +14056,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           else
             sep0 = '=';
           is_cond = sep0=='+' || sep0=='-' || sep0=='*' || sep0=='/' || sep0=='%' || sep0=='&' || sep0=='|' ||
-            sep0=='^' || sep0==':'; // Right-hand side must be evaluated as a single math expression?
+            sep0=='^' || sep0==':' || sep0=='<' || sep0=='>'; // Right-hand side must be evaluated as a single math expression?
           const char *const s_operation = sep0=='='?"":sep0==':'?":":sep0=='+'?"+":sep0=='-'?"-":sep0=='*'?"*":
             sep0=='/'?"/":sep0=='%'?"%":sep0=='&'?"&":sep0=='|'?"|":sep0=='^'?"^":sep0=='<'?"<<":">>";
 
