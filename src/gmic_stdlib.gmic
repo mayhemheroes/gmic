@@ -27028,7 +27028,10 @@ apply_camera : check_opencv $0 skip "${1=},${4=}" check "${2=0}>=0 && ${3=0}>=0"
       camera $2,1,$3
       _apply_camera_com.
       if !$! 640,480,1,3 else k. fi
-      if {*} +r2din. {*,d,e},1,0,0.5,0.5 r. {*,d,e},1,100%,0,0,0.5,0.5 else . fi
+      if {*}" && "[w,h]!=[{*,d,e}]
+        +r2din. {*,d,e},1,0,0.5,0.5 r. {*,d,e},1,100%,0,0,0.5,0.5
+      else .
+      fi
       w. -1,-1,"[G'MIC] Camera ""#$2 ("{0,w}x{0,h}")"
       k[0]
 
@@ -27042,11 +27045,11 @@ apply_camera : check_opencv $0 skip "${1=},${4=}" check "${2=0}>=0 && ${3=0}>=0"
       if !$is_fs" && "$is_ctrl" && "{*,-D} w[] {{*,w}*1.5},{{*,h}*1.5} fi # Increase window size
       if !$is_fs" && "$is_ctrl" && "{*,-C} w[] {{*,w}/1.5},{{*,h}/1.5} fi # Decrease window size
       if $is_ctrl" && "{*,-F} # Switch fullscreen mode
-        if !$is_fs fs_wh={*,w,h} w[] {*,u,v},0,1 is_fs=1
-        else w[] $fs_wh,0,0 is_fs=0
+        if !$is_fs fs_wh={*,w,h} w[] {*,u,v},1,1 is_fs=1
+        else w[] $fs_wh,1,0 is_fs=0
         fi
       fi
-      if $is_ctrl" && "{*,-R} w[] {0,w},{0,h},0,0 is_fs=0 fi # Reset window size
+      if $is_ctrl" && "{*,-R} w[] {0,w},{0,h},1,0 is_fs=0 fi # Reset window size
       rm
     while {*}" && "!{*,ESC}" && "!{*,Q}
     camera $2,0
