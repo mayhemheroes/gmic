@@ -2122,7 +2122,8 @@ inline char *_gmic_argument_text(const char *const argument, char *const argumen
     uind = selection[l]; \
     gmic_check(images[uind]); \
     if (is_get) { \
-      CImg<gmic_pixel_type> itmp(images[uind],false); itmp.sqr().move_to(images); \
+      images[uind].get_##function.move_to(images); \
+/*      CImg<gmic_pixel_type> itmp(images[uind],false); itmp.sqr().move_to(images); */ \
       images_names[uind].get_copymark().move_to(images_names); \
     } else images[uind].function; \
   }
