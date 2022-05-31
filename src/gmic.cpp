@@ -2122,8 +2122,7 @@ inline char *_gmic_argument_text(const char *const argument, char *const argumen
     uind = selection[l]; \
     gmic_check(images[uind]); \
     if (is_get) { \
-      images[uind].get_##function.move_to(images); \
-/*      CImg<gmic_pixel_type> itmp(images[uind],false); itmp.sqr().move_to(images); */ \
+      CImg<gmic_pixel_type>(images[uind],false).function.move_to(images); \
       images_names[uind].get_copymark().move_to(images_names); \
     } else images[uind].function; \
   }
@@ -2133,7 +2132,7 @@ inline char *_gmic_argument_text(const char *const argument, char *const argumen
     uind = selection[l]; \
     gmic_check(images[uind]); \
     if (is_get) { \
-      CImg<double>(images[uind],false).get_##function.move_to(images); \
+      CImg<double>(images[uind],false).function.move_to(images); \
       images_names[uind].get_copymark().move_to(images_names); \
     } else CImg<double>(images[uind],false).function.move_to(images[uind]); \
   }
@@ -2379,7 +2378,7 @@ double gmic::mp_get(Ts *const ptr, const unsigned int siz, const bool to_string,
             if (dest._width>1) dest.get_shared_points(1,dest._width - 1).fill(0);
           } else try {
               dest.fill(0);
-              dest.fill(value,false,false);
+              dest._fill_from_values(value,false);
             } catch (...) {
               throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
                                           "Variable '%s' has value '%s', cannot be returned as a vector.",
