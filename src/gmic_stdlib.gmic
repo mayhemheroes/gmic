@@ -14903,7 +14903,7 @@ split_tiles : skip ${2=$1},${3=0}
   if $3 e[^-1] "Split image$? as a $1x$2 array of homogeneous tiles."
   else e[^-1] "Split image$? as a $1x$2 array of tiles."
   fi
-  foreach { s y,$2 s x,$1 if $3 r [0],[0],100%,100%,0 fi }
+  foreach { nm={n} s y,$2 s x,$1 if $3 r [0],[0],100%,100%,0 fi =>[^] $nm }
 
 #@cli undistort : -1<=_amplitude<=1,_aspect_ratio,_zoom,_center_x[%],_center_y[%],_boundary_conditions
 #@cli : Correct barrel/pincushion distortions occurring with wide-angle lens.
@@ -47096,12 +47096,15 @@ fx_stroke :
 fx_stroke_preview :
   foreach { fx_stroke $* => foo gui_merge_layers }
 
-#@gui Tiles to Layers : split_tiles, fx_tiles2layers_preview(1)
+#@gui Tiles to Layers : fx_tiles2layers, fx_tiles2layers_preview(1)
 #@gui : X-Tiles = int(3,1,100)
 #@gui : Y-Tiles = int(3,1,100)
 #@gui : Force Tiles to Have Same Size = _bool(false)
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2010/29/12</i>.</small>")
+fx_tiles2layers :
+  split_tiles
+
 fx_tiles2layers_preview :
   split_tiles $1,$2,$3 to_rgba frame 1,1,0,0,0,255 frame 3,3,0,0,0,0 append_tiles ,
 
