@@ -22192,10 +22192,17 @@ surfels3d : check "min(inrange([${1=1},${2=1},${3=1}],0,1))"
           da_push(#cols,val*$2);
         );
       ); I;
-      end(resize(#pts,1,da_size(#pts),1,s#pts,0); resize(#prims,1,da_size(#prims),1,s#prims,0))"
+      end(
+        resize(#pts,1,da_size(#pts),1,s#pts,0);
+        resize(#prims,1,da_size(#prims),1,s#prims,0);
+        resize(#cols,1,da_size(#cols),1,s#cols,0);
+      )"
 
-      to_rgb[cols]
-      k[pts,prims,cols] permute cyzx i[1] 1,{0,h},1,1,0 a[0,1] x i[1] 1,{1,h},1,1,2 a[1,2] x =>.. prims
+      if !w rm # Empty object
+      else
+        to_rgb[cols]
+        k[pts,prims,cols] permute cyzx i[1] 1,{0,h},1,1,0 a[0,1] x i[1] 1,{1,h},1,1,2 a[1,2] x =>.. prims
+      fi
 
     else # 3D
       {[w,h,d]+1},1,-1 1,1,1,3 1,1,1,4 1,1,1,{0,s} => ind,pts,prims,cols
@@ -22256,11 +22263,16 @@ surfels3d : check "min(inrange([${1=1},${2=1},${3=1}],0,1))"
         resize(#prims,1,da_size(#prims),1,s#prims,0);
         resize(#cols,1,da_size(#cols),1,s#cols,0);
       )"
-      to_rgb[cols]
-      k[pts,prims,cols] permute cyzx i[1] 1,{1,h},1,1,4 a[1,2] x =>.. prims
+
+      if !w rm # Empty object
+      else
+        to_rgb[cols]
+        k[pts,prims,cols] permute cyzx i[1] 1,{1,h},1,1,4 a[1,2] x =>.. prims
+      fi
     fi
 
-    i[0] ({'CImg3d'},{pts,h},{prims,h}:y) 1,100%,1,1,1 y a y => $nm
+    if !$! empty3d else i[0] ({'CImg3d'},{pts,h},{prims,h}:y) 1,100%,1,1,1 y a y fi
+    => $nm
   }
 
 #@cli tensors3d : _radius_factor>=0,_shape={ 0=box | >=N=ellipsoid },_radius_min>=0
