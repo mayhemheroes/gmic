@@ -3832,7 +3832,7 @@ _input_glob :
 +input_obj :
   e[^-1] "Input .obj Wavefront file '"{/"$*"}"'."
   l[] {
-    it "$1" f "i<=_' '&&i!=_'\n'?_' ':i" # Normalize blank characters.
+    it "$1" f "i<=_' ' && i!=_'\n'?_' ':i" # Normalize blank characters.
     0 => "$1" folder={f} rm. # Retrieve file folder
     1 # [1]: pts (unrolled)
     1 # [2]: primitives (unrolled)
@@ -3910,25 +3910,25 @@ _input_glob :
           da_push(#3,p_RGB[0],p_RGB[1],p_RGB[2]);
           da_push(#4,p_A);
           ++nbp;
-        # ):line[0,7]==id_mtllib?( # Material file
-        #   q = 0; next_item();
-        #   len = find(line,0,q);
-        #   len>0?(
-        #     copy(line,line[q],len + 1);
-        #     run('_input_obj_parse_mtl[] \""$folder"\",\"',line,'\"');
-        #   );
-        # ):line[0,7]==id_usemtl?( # Change material
-        #   q = 0; next_item();
-        #   len = find(line,0,q);
-        #   len>0?(
-        #     copy(line,line[q],len + 1);
-        #     mtl_varname = string(#1024,'_input_obj_RGB_',line);
-        #     prim_RGB = get(mtl_varname,3);
-        #     mtl_varname = string(#1024,'_input_obj_A_',line);
-        #     prim_A = get(mtl_varname,1);
+        ):line[0,7]==id_mtllib?( # Material file
+          q = 0; next_item();
+          len = find(line,0,q);
+          len>0?(
+            copy(line,line[q],len + 1);
+            run('_input_obj_parse_mtl[] \""$folder"\",\"',line,'\"');
+          );
+        ):line[0,7]==id_usemtl?( # Change material
+          q = 0; next_item();
+          len = find(line,0,q);
+          len>0?(
+            copy(line,line[q],len + 1);
+            mtl_varname = string(#1024,'_input_obj_RGB_',line);
+            p_RGB = get(mtl_varname,3);
+            mtl_varname = string(#1024,'_input_obj_A_',line);
+            p_A = get(mtl_varname);
 
-        #     echo('USE MTL : ',mtl_varname,' -> ',vtos(RGB));
-        #  );
+            echo('USE MTL : ',mtl_varname,' -> ',vtos(p_RGB));
+         );
         );
         p = ++np;
         ++line_number;
@@ -3944,7 +3944,9 @@ _input_glob :
   }
 
 _input_obj_parse_mtl : skip "${1=}"
-  it "$1$2" f "i<=_' '&&i!=_'\n'?_' ':i" # Normalize blank characters.
+  mtl_filename="$1$2"
+  if !isfile(['{/$mtl_filename}']) return fi
+  it $mtl_filename f "i<=_' ' && i!=_'\n'?_' ':i" # Normalize blank characters.
   s -,{'\n'} autocrop {'" "'}
   m=default _input_obj_RGB_$m=200,200,200 _input_obj_A_$m=1
   foreach { if i!=_'#'
