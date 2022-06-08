@@ -3833,15 +3833,6 @@ _input_glob :
   e[^-1] "Input .obj Wavefront file '"{/"$*"}"'."
   l[] {
 
-    # Import object materials.
-    0 => "$1" bnm={f}{b} rm. mat_filename=$bnm.mtl
-    if !isfile(['$mat_filename']) mat_filename="$1".mtl fi
-
-    if isfile(['$mat_filename']) l[] {
-      it $mat_filename
-    } fi
-    rm
-
     # Import object structure.
     it "$1"
     f "i<=_' '&&i!=_'\n'?_' ':i" # Normalize blank characters.
@@ -3853,24 +3844,25 @@ _input_glob :
         while (line[q] && line[q]!=_' ' && line[q]!=_'/',++q);
         while (line[q] && line[q]==_' ', ++q);
       );
-
+      id_v = 'v '; id_f = 'f '; id_l = 'l '; id_p = 'p '; id_mtllib = 'mtllib ';
       line = vector1024(0);
       line_number = 1;
       p = 0;
+
       while (p<h#0,
         np = find(#0,_'\n',p);
         np==p?(++p; continue()):np<0?(np = h#0);
         q = min(np,p + size(line) - 1);
         copy(line,i[#0,p],q - p); line[q - p] = 0;
 
-        line[0,2]=='v '?( # Vertex
+        line[0,2]==id_v?( # Vertex
           q = 0; next_item();
           X = stov(line,q); next_item();
           Y = stov(line,q); next_item();
           Z = stov(line,q); next_item();
           line[q]?(W = stov(line,q));
           da_push(#1,[X,Y,Z]);
-        ):line[0,2]=='f '?( # Face
+        ):line[0,2]==id_f?( # Face
           q = 0; next_item();
           v0 = stov(line,q) - 1; next_item();
           line[q]=='/'?(++q; next_item());
@@ -3891,7 +3883,7 @@ _input_glob :
               da_push(#2,[4,v0,v1,v2,v3]);
             );
           );
-        ):line[0,2]=='l '?( # Polyline
+        ):line[0,2]==id_l?( # Polyline
           q = 0; next_item();
           v0 = stov(line,q) - 1; next_item();
           while (line[q],
@@ -3899,10 +3891,17 @@ _input_glob :
             da_push(#2,[2,v0,v1,-1,-1]);
             v0 = v1;
           );
-        ):line[0,2]=='p '?( # Point
+        ):line[0,2]==id_p?( # Point
           q = 0; next_item();
           v0 = stov(line,q) - 1;
           da_push(#2,[1,v0,-1,-1,-1]);
+        ):line[0,7]==id_mtllib?( # Material file
+          q = 0; next_item();
+          len = find(line,0,q);
+          len>0?(
+            copy(line,line[q],len + 1);
+            isfile(line)?run('_input_obj_parse_mtl[] \"',line,'\"');
+          );
         );
         p = ++np;
         ++line_number;
@@ -3919,6 +3918,10 @@ _input_glob :
     y a y
     => "$1"
   }
+
+_input_obj_parse_mtl :
+  skip $*
+#  it "$1"
 
 #@cli it : eq. to 'input_text'.
 +it :
