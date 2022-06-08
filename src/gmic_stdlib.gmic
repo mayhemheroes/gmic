@@ -3863,23 +3863,34 @@ _input_glob :
           q = 0; next_item();
           v0 = stov(line,q) - 1; next_item();
           line[q]=='/'?(++q; next_item());
-          line[q]=='/'?(++q; next_item());
+          line[q]=='/'?(++q; next_item()); # Skip normal index
           v1 = stov(line,q) - 1; next_item();
           line[q]=='/'?(++q; next_item());
-          line[q]=='/'?(++q; next_item());
+          line[q]=='/'?(++q; next_item()); # Skip normal index
           v2 = stov(line,q) - 1; next_item();
           line[q]=='/'?(++q; next_item());
-          line[q]=='/'?(++q; next_item());
+          line[q]=='/'?(++q; next_item()); # Skip normal index
           !line[q]?( # Triangle
             da_push(#2,[3,v0,v1,v2,-1]);
           ):(
             v3 = stov(line,q) - 1; next_item();
             line[q]=='/'?(++q; next_item());
-            line[q]=='/'?(++q; next_item());
+            line[q]=='/'?(++q; next_item()); # Skip normal index
             !line[q]?( # Quadrangle
               da_push(#2,[4,v0,v1,v2,v3]);
             );
           );
+        ):line[0,2]=='l '?( # Polyline
+          q = 0; next_item();
+          v0 = stov(line,q) - 1; next_item();
+          v1 = stov(line,q) - 1; next_item();
+          !line[q]?( # Segment
+            da_push(#2,[2,v0,v1,-1,-1]);
+          );
+        ):line[0,2]=='p '?( # Point
+          q = 0; next_item();
+          v0 = stov(line,q) - 1;
+          da_push(#2,[1,v0,-1,-1,-1]);
         );
         p = ++np;
         ++line_number;
