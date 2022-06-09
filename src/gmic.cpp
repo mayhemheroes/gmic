@@ -2359,42 +2359,43 @@ double gmic::mp_get(Ts *const ptr, const unsigned int siz, const bool to_string,
         if (dest.width()>value.width()) dest.get_shared_points(value.width(),dest.width() - 1).fill(0);
       }
     } else { // Convert variable content as numbers
-      if (!value)
-        throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
-                                    "Undefined variable '%s'.",
-                                    cimg::type<T>::string(),str);
-      double dvalue = 0;
-      if (!siz) { // Scalar result
-        if (cimg_sscanf(value,"%lf",&dvalue)!=1)
-          throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
-                                      "Variable '%s' has value '%s', cannot be returned as a scalar.",
-                                      cimg::type<T>::string(),str,value.data());
-        *ptr = dvalue;
-
-      } else { // Vector result
-        CImg<Ts> dest(ptr,siz,1,1,1,true);
-        if (*value==gmic_store) { // Image-encoded variable
-          const char *const zero = (char*)::std::memchr(value,0,value.size());
-          CImgList<T> list;
-          if (zero) CImgList<T>::get_unserialize(value,zero + 1 - value.data()).move_to(list);
-          if (list.size()!=2)
+      if (!value) { // Undefined variable
+        if (!siz) *ptr = cimg::type<double>::nan();
+        else CImg<Ts>(ptr,siz,1,1,1,true).fill(cimg::type<double>::nan());
+      } else {
+        double dvalue = 0;
+        if (!siz) { // Scalar result
+          if (cimg_sscanf(value,"%lf",&dvalue)!=1)
             throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
-                                        "Variable '%s' stores %u images, cannot be returned as a single vector.",
-                                        cimg::type<T>::string(),str,list.size());
-          dest = list[0].resize(siz,1,1,1,-1);
+                                        "Variable '%s' has value '%s', cannot be returned as a scalar.",
+                                        cimg::type<T>::string(),str,value.data());
+          *ptr = dvalue;
 
-        } else { // Regular string variable
-          if (cimg_sscanf(value,"%lf%c",&dvalue,&end)==1) {
-            dest[0] = (Ts)dvalue;
-            if (dest._width>1) dest.get_shared_points(1,dest._width - 1).fill(0);
-          } else try {
-              dest.fill(0);
-              dest._fill_from_values(value,false);
-            } catch (...) {
+        } else { // Vector result
+          CImg<Ts> dest(ptr,siz,1,1,1,true);
+          if (*value==gmic_store) { // Image-encoded variable
+            const char *const zero = (char*)::std::memchr(value,0,value.size());
+            CImgList<T> list;
+            if (zero) CImgList<T>::get_unserialize(value,zero + 1 - value.data()).move_to(list);
+            if (list.size()!=2)
               throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
-                                          "Variable '%s' has value '%s', cannot be returned as a vector.",
-                                          cimg::type<T>::string(),str,value.data());
-            }
+                                          "Variable '%s' stores %u images, cannot be returned as a single vector.",
+                                          cimg::type<T>::string(),str,list.size());
+            dest = list[0].resize(siz,1,1,1,-1);
+
+          } else { // Regular string variable
+            if (cimg_sscanf(value,"%lf%c",&dvalue,&end)==1) {
+              dest[0] = (Ts)dvalue;
+              if (dest._width>1) dest.get_shared_points(1,dest._width - 1).fill(0);
+            } else try {
+                dest.fill(0);
+                dest._fill_from_values(value,false);
+              } catch (...) {
+                throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
+                                            "Variable '%s' has value '%s', cannot be returned as a vector.",
+                                            cimg::type<T>::string(),str,value.data());
+              }
+          }
         }
       }
     }
