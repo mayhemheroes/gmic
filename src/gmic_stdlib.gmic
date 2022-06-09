@@ -3873,16 +3873,16 @@ _input_glob :
           line[q]?(Y = stov(line,q); next_item()):(Y = 0);
           line[q]?(Z = stov(line,q)):(Z = 0);
           da_push(#5,[X,Y]);
-        ):line[0,2]==id_f?( # Face
+        ):line[0,2]==id_f?( # Colored or textured face
           q = 0; next_item();
           v0 = stov(line,q) - 1; next_item();
-          line[q]=='/'?(++q; next_item());
+          line[q]=='/'?(++q; vt0 = stov(line,q); isnan(vt0)?(vt0 = -1); next_item()); # Texture coords
           line[q]=='/'?(++q; next_item()); # Skip normal index
           v1 = stov(line,q) - 1; next_item();
-          line[q]=='/'?(++q; next_item());
+          line[q]=='/'?(++q; vt1 = stov(line,q); isnan(vt1)?(vt1 = -1); next_item()); # Texture coords
           line[q]=='/'?(++q; next_item()); # Skip normal index
           v2 = stov(line,q) - 1; next_item();
-          line[q]=='/'?(++q; next_item());
+          line[q]=='/'?(++q; vt2 = stov(line,q); isnan(vt2)?(vt2 = -1); next_item()); # Texture coords
           line[q]=='/'?(++q; next_item()); # Skip normal index
           !line[q]?( # Triangle
             da_push(#2,3,v0,v1,v2);
@@ -3891,7 +3891,7 @@ _input_glob :
             ++nbp;
           ):(
             v3 = stov(line,q) - 1; next_item();
-            line[q]=='/'?(++q; next_item());
+            line[q]=='/'?(++q; vt3 = stov(line,q); isnan(vt3)?(vt3 = -1); next_item()); # Texture coords
             line[q]=='/'?(++q; next_item()); # Skip normal index
             !line[q]?( # Quadrangle
               da_push(#2,4,v0,v1,v2,v3);
