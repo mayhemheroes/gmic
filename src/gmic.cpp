@@ -2433,17 +2433,17 @@ double gmic::mp_set(Ts *const ptr, const unsigned int siz, const char *const str
   return siz?cimg::type<double>::nan():*ptr;
 }
 
-template<typename T, typename Ts>
-double gmic::mp_name(const unsigned int ind, Ts *const out_str, const unsigned int siz,
+template<typename T>
+double gmic::mp_name(const unsigned int ind, double *const out_str, const unsigned int siz,
                      void *const p_list, const T& pixel_type) {
   const CImg<void*> gr = get_current_run("Function 'name()'",p_list,pixel_type);
   CImgList<char> &images_names = *(CImgList<char>*)gr[2];
 
-  std::memset(out_str,0,siz*sizeof(Ts));
+  std::memset(out_str,0,siz*sizeof(double));
   if (ind<images_names.size()) {
     const char *ptrs = images_names[ind];
     unsigned int k;
-    for (k = 0; k<siz && ptrs[k]; ++k) out_str[k] = (Ts)ptrs[k];
+    for (k = 0; k<siz && ptrs[k]; ++k) out_str[k] = (double)ptrs[k];
     if (k<siz) out_str[k] = 0;
   }
   return cimg::type<double>::nan();

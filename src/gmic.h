@@ -226,8 +226,8 @@ inline double gmic_mp_set(Ts *const ptr, const unsigned int siz, const char *con
 #define cimg_mp_func_set(ptr,siz,str) \
   return ::gmic_mp_set(ptr,siz,str,&mp.imglist,(T)0)
 
-template<typename T, typename Ts>
-inline double gmic_mp_name(const unsigned int ind, Ts *const out_str, const unsigned int siz,
+template<typename T>
+inline double gmic_mp_name(const unsigned int ind, double *const out_str, const unsigned int siz,
                            void *const p_list, const T& pixel_type);
 #define cimg_mp_func_name(ind,out_str,siz) \
   return ::gmic_mp_name(ind,out_str,siz,&mp.imglist,(T)0)
@@ -321,8 +321,8 @@ struct gmic {
   template<typename Ts, typename T>
   static double mp_set(Ts *const ptr, const unsigned int siz, const char *const str,
                        void *const p_list, const T& pixel_type);
-  template<typename T, typename Ts>
-  static double mp_name(const unsigned int ind, Ts *const out_str, const unsigned int siz,
+  template<typename T>
+  static double mp_name(const unsigned int ind, double *const out_str, const unsigned int siz,
                         void *const p_list, const T& pixel_type);
   template<typename T>
   static double mp_run(char *const str,
@@ -550,8 +550,8 @@ inline double gmic_mp_set(Ts *const ptr, const unsigned int siz, const char *con
   return gmic::mp_set(ptr,siz,str,p_list,pixel_type);
 }
 
-template<typename T, typename Ts>
-inline double gmic_mp_name(const unsigned int ind, Ts *const out_str, const unsigned int siz,
+template<typename T>
+inline double gmic_mp_name(const unsigned int ind, double *const out_str, const unsigned int siz,
                            void *const p_list, const T& pixel_type) {
   return gmic::mp_name(ind,out_str,siz,p_list,pixel_type);
 }
