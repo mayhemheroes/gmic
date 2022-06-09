@@ -234,8 +234,8 @@ inline double gmic_mp_run(char *const str,
 #define cimg_mp_func_run(str) \
   return ::gmic_mp_run(str,&mp.imglist,(T)0)
 
-template<typename Ts, typename T>
-inline double gmic_mp_store(const Ts *const ptrs, const unsigned int siz,
+template<typename T>
+inline double gmic_mp_store(const double *const ptrs, const unsigned int siz,
                             const unsigned int w, const unsigned int h, const unsigned int d, const unsigned int s,
                             const bool is_compressed, const char *const str,
                             void *const p_list, const T& pixel_type);
@@ -319,8 +319,8 @@ struct gmic {
   template<typename T>
   static double mp_run(char *const str,
                        void *const p_list, const T& pixel_type);
-  template<typename Ts, typename T>
-  static double mp_store(const Ts *const ptrs, const unsigned int siz,
+  template<typename T>
+  static double mp_store(const double *const ptrs, const unsigned int siz,
                          const unsigned int w, const unsigned int h, const unsigned int d, const unsigned int s,
                          const bool is_compressed, const char *const str,
                          void *const p_list, const T& pixel_type);
@@ -550,8 +550,8 @@ inline double gmic_mp_run(char *const str,
   return gmic::mp_run(str,p_list,pixel_type);
 }
 
-template<typename Ts, typename T>
-inline double gmic_mp_store(const Ts *const ptrs, const unsigned int siz,
+template<typename T>
+inline double gmic_mp_store(const double *const ptrs, const unsigned int siz,
                             const unsigned int w, const unsigned int h, const unsigned int d, const unsigned int s,
                             const bool is_compressed, const char *const str,
                             void *const p_list, const T& pixel_type) {

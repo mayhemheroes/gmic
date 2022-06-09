@@ -2484,8 +2484,8 @@ double gmic::mp_run(char *const str,
   return res;
 }
 
-template<typename Ts, typename T>
-double gmic::mp_store(const Ts *const ptrs, const unsigned int siz,
+template<typename T>
+double gmic::mp_store(const double *const ptrs, const unsigned int siz,
                       const unsigned int w, const unsigned int h, const unsigned d, const unsigned int s,
                       const bool is_compressed, const char *const str,
                       void *const p_list, const T& pixel_type) {
