@@ -2403,8 +2403,7 @@ double gmic::mp_get(double *const ptr, const unsigned int siz, const bool to_str
   return siz?cimg::type<double>::nan():*ptr;
 }
 
-template<typename Ts>
-double gmic::mp_set(Ts *const ptr, const unsigned int siz, const char *const str,
+double gmic::mp_set(const double *const ptr, const unsigned int siz, const char *const str,
                     void *const p_list) {
   const CImg<void*> gr = get_current_run("Function 'set()'",p_list);
   gmic &gmic_instance = *(gmic*)gr[0];
