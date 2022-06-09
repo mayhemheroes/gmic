@@ -2348,7 +2348,8 @@ double gmic::mp_get(double *const ptrd, const unsigned int siz, const bool to_st
     CImg<char> value = gmic_instance.get_variable(varname,variables_sizes,&images_names);
 
     if (to_string) { // Return variable content as a string
-      if (!siz) *ptrd = 0;
+      if (!value) value.assign(1,1,1,1,0);
+      if (!siz) *ptrd = *value;
       else {
         CImg<double> dest(ptrd,siz,1,1,1,true);
         strreplace_fw(value);
