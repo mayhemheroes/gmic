@@ -2351,11 +2351,13 @@ double gmic::mp_get(Ts *const ptr, const unsigned int siz, const bool to_string,
     CImg<char> value = gmic_instance.get_variable(varname,variables_sizes,&images_names);
 
     if (to_string) { // Return variable content as a string
-      CImg<Ts> dest(ptr,siz,1,1,1,true);
-      strreplace_fw(value);
-      dest.draw_image(value);
-      if (dest.width()>value.width()) dest.get_shared_points(value.width(),dest.width() - 1).fill(0);
-
+      if (!siz) *ptr = 0;
+      else {
+        CImg<Ts> dest(ptr,siz,1,1,1,true);
+        strreplace_fw(value);
+        dest.draw_image(value);
+        if (dest.width()>value.width()) dest.get_shared_points(value.width(),dest.width() - 1).fill(0);
+      }
     } else { // Convert variable content as numbers
       if (!value)
         throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
