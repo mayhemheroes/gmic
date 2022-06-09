@@ -2358,7 +2358,7 @@ double gmic::mp_get(double *const ptrd, const unsigned int siz, const bool to_st
     } else { // Convert variable content as numbers
       if (!value) { // Undefined variable
         if (!siz) *ptrd = cimg::type<double>::nan();
-        else CImg<double>(ptrd,siz,1,1,1,true).fill(cimg::type<double>::nan());
+        else for (unsigned int i = 0; i<siz; ++i) ptrd[i] = cimg::type<double>::nan();
       } else {
         double dvalue = 0;
         if (!siz) { // Scalar result
