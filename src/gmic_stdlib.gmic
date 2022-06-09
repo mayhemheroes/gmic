@@ -4166,19 +4166,19 @@ output_obj : check "isbool(${2=1})" check3d 0
         s_opac = vector32();
         repeat (nbp,p,
           !(p%10000)?run('e[] \"\r    - Export materials: ',round(100*p/nbp),' %  \"');
-
+          s_opac[0] = 0;
+          opac = i[#0,off_o];
           i[off_p]!=-128?( # RGB[A] color
             ref(cut(round(crop(0,off_p,1,4)),0,255),rgba);
-            rgba[3] = round(255*i[#0,off_o]);
+            rgba[3] = opac!=-128?round(255*cut(opac,0,1)):255;
             strhex(rgba,s_rgba);
             vname = string('mat_',s_rgba);
             m = get(vname);
             !m?(
               ++nb_materials;
-              rgba[3]>=255?(s_opac[0] = 0):(copy(s_opac,string('d ',tos(rgba[3]/255),'\n')); 0);
+              opac!=-128 && opac<1?copy(s_opac,string('d ',tos(cut(opac,0,1)),'\n'));
               ref(string('newmtl m',nb_materials,'\n',
-                         'Kd ',tos(rgba[0]/255),' ',tos(rgba[1]/255),' ',tos(rgba[2]/255),'\n',
-                         s_opac),str);
+                         'Kd ',tos(rgba[0]/255),' ',tos(rgba[1]/255),' ',tos(rgba[2]/255),'\n',s_opac),str);
               write(#"$out_mtl",str);
               set(vname,vtos(m = nb_materials));
             );
@@ -4188,14 +4188,12 @@ output_obj : check "isbool(${2=1})" check3d 0
           ):i[off_p + 2]?( # Non-shared texture
             ++nb_materials; ++nb_textures;
             wt = i[off_p + 1]; ht = i[off_p + 2]; st = i[off_p + 3];
-            opac = i[off_o];
-#            opac==128 || opac>=1?(s_opac[0] = 0):(copy(s_opac,string('d ',tos(opac),'\n')); 0);
-
+            opac!=-128 && opac<1?copy(s_opac,string('d ',tos(cut(opac,0,1)),'\n'));
             run('+rows. ',off_p + 4,',',off_p + 3 + wt*ht*st,' r. ',wt,',',ht,',1,',st,',-1 tfn=$folder${basename}_t',
                 nb_textures,'.png o. $tfn rm.');
             tfile = get('tfn',1024,1);
             ref(string('newmtl m',nb_materials,'\n',
-                       'map_Kd ',get('tfn',1024,1),'\n'),str);
+                       'map_Kd ',get('tfn',1024,1),'\n',s_opac),str);
             write(#"$out_mtl",str);
             I[#"$materials",p] = [ nb_materials,wt,ht ];
             off_p+=4 + wt*ht*st;
@@ -4206,7 +4204,7 @@ output_obj : check "isbool(${2=1})" check3d 0
             off_p+=4;
           );
 
-          off_o+=(i[off_o]==-128?4 + prod(crop(#0,0,off_o + 1,1,3)):1);
+          off_o+=(opac==-128?4 + prod(crop(#0,0,off_o + 1,1,3)):1);
         );
         resize(#"$out_mtl",1,out,1,1,0);
         run('nb_materials,nb_textures=',nb_materials,',',nb_textures)"
