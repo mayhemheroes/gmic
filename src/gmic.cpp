@@ -2337,8 +2337,8 @@ double gmic::mp_dollar(const char *const str,
   return res;
 }
 
-template<typename Ts, typename T>
-double gmic::mp_get(Ts *const ptr, const unsigned int siz, const bool to_string, const char *const str,
+template<typename T>
+double gmic::mp_get(double *const ptr, const unsigned int siz, const bool to_string, const char *const str,
                     void *const p_list, const T& pixel_type) {
   const CImg<void*> gr = get_current_run("Function 'get()'",p_list,pixel_type);
   gmic &gmic_instance = *(gmic*)gr[0];
@@ -2353,7 +2353,7 @@ double gmic::mp_get(Ts *const ptr, const unsigned int siz, const bool to_string,
     if (to_string) { // Return variable content as a string
       if (!siz) *ptr = 0;
       else {
-        CImg<Ts> dest(ptr,siz,1,1,1,true);
+        CImg<double> dest(ptr,siz,1,1,1,true);
         strreplace_fw(value);
         dest.draw_image(value);
         if (dest.width()>value.width()) dest.get_shared_points(value.width(),dest.width() - 1).fill(0);
@@ -2361,7 +2361,7 @@ double gmic::mp_get(Ts *const ptr, const unsigned int siz, const bool to_string,
     } else { // Convert variable content as numbers
       if (!value) { // Undefined variable
         if (!siz) *ptr = cimg::type<double>::nan();
-        else CImg<Ts>(ptr,siz,1,1,1,true).fill(cimg::type<double>::nan());
+        else CImg<double>(ptr,siz,1,1,1,true).fill(cimg::type<double>::nan());
       } else {
         double dvalue = 0;
         if (!siz) { // Scalar result
@@ -2372,7 +2372,7 @@ double gmic::mp_get(Ts *const ptr, const unsigned int siz, const bool to_string,
           *ptr = dvalue;
 
         } else { // Vector result
-          CImg<Ts> dest(ptr,siz,1,1,1,true);
+          CImg<double> dest(ptr,siz,1,1,1,true);
           if (*value==gmic_store) { // Image-encoded variable
             const char *const zero = (char*)::std::memchr(value,0,value.size());
             CImgList<T> list;
@@ -2385,7 +2385,7 @@ double gmic::mp_get(Ts *const ptr, const unsigned int siz, const bool to_string,
 
           } else { // Regular string variable
             if (cimg_sscanf(value,"%lf%c",&dvalue,&end)==1) {
-              dest[0] = (Ts)dvalue;
+              dest[0] = dvalue;
               if (dest._width>1) dest.get_shared_points(1,dest._width - 1).fill(0);
             } else try {
                 dest.fill(0);

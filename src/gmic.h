@@ -214,8 +214,8 @@ inline double gmic_mp_dollar(const char *const str,
 #define cimg_mp_operator_dollar(str) \
   ::gmic_mp_dollar(str,&imglist,(T)0)
 
-template<typename Ts, typename T>
-inline double gmic_mp_get(Ts *const ptr, const unsigned int siz, const bool to_string, const char *const str,
+template<typename T>
+inline double gmic_mp_get(double *const ptr, const unsigned int siz, const bool to_string, const char *const str,
                           void *const p_list, const T& pixel_type);
 #define cimg_mp_func_get(ptr,siz,to_string,str) \
   return ::gmic_mp_get(ptr,siz,to_string,str,&mp.imglist,(T)0)
@@ -315,8 +315,8 @@ struct gmic {
   template<typename T>
   static double mp_dollar(const char *const str,
                           void *const p_list, const T& pixel_type);
-  template<typename Ts, typename T>
-  static double mp_get(Ts *const ptr, const unsigned int siz, const bool to_string, const char *const str,
+  template<typename T>
+  static double mp_get(double *const ptr, const unsigned int siz, const bool to_string, const char *const str,
                        void *const p_list, const T& pixel_type);
   template<typename Ts, typename T>
   static double mp_set(Ts *const ptr, const unsigned int siz, const char *const str,
@@ -538,8 +538,8 @@ inline double gmic_mp_dollar(const char *const str,
   return gmic::mp_dollar(str,p_list,pixel_type);
 }
 
-template<typename Ts, typename T>
-inline double gmic_mp_get(Ts *const ptr, const unsigned int siz, const bool to_string, const char *const str,
+template<typename T>
+inline double gmic_mp_get(double *const ptr, const unsigned int siz, const bool to_string, const char *const str,
                           void *const p_list, const T& pixel_type) {
   return gmic::mp_get(ptr,siz,to_string,str,p_list,pixel_type);
 }
