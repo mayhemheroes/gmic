@@ -931,7 +931,7 @@ reference : skip "${2=}"
 "expression."\n\
 "* 'set(\\'variable_name\\',A)' set the G'MIC variable '$variable_name' with the value of expression 'A'. If 'A' is"\
 " a vector-valued variable, it is assumed to encode a string."\n\
-"* 'store(A,\\'variable_name\\',_w,_h,_d,_s,_is_compressed)' transfers the data of vector 'A' as a "\
+"* 'store(\\'variable_name\\',A,_w,_h,_d,_s,_is_compressed)' transfers the data of vector 'A' as a "\
 "`w x h x d x s` image to the G'MIC variable '$variable_name'. Thus, the data becomes available outside the math "\
 "expression (that is equivalent to using the regular command ''store'', but directly in the math expression)."\n\
 "* 'get(\\'variable_name\\',_size,_return_as_string)' returns the value of the specified variable, as a vector of "\
@@ -6797,7 +6797,7 @@ parse_gui : skip "${1=print},${2=*}"
             r = q + 1; skip_blank(r);
             while (is_blank(--q),0);
             copy(name,source[p],q-p+1); name[q-p+1] = 0; # Parameter name
-            store(name,'tmparg',q-p+1);
+            store('tmparg',name,q-p+1);
             p = r;
             q = min(find(source,_'(',p)%size(source),
                     find(source,_'{',p)%size(source),
@@ -6831,7 +6831,7 @@ parse_gui : skip "${1=print},${2=*}"
                 pe = r;
                 while (is_blank(--pe),0);
                 copy(argument,source[p],pe-p+1); argument[pe-p+1] = 0; # Parameter argument
-                store(argument,'tmparg',1,pe-p+1); run('$tmparg _f"${f}"_p',nb_params,'_a0={t} rm.');
+                store('tmparg',argument,1,pe-p+1); run('$tmparg _f"${f}"_p',nb_params,'_a0={t} rm.');
                 nbargs = 1;
               ):(argument[0] = 0);
               p = r + 1;
@@ -6841,7 +6841,7 @@ parse_gui : skip "${1=print},${2=*}"
                 pe = q = min(r,find(source,_',',p)%size(source));
                 while (is_blank(--pe),0);
                 copy(argument,source[p],pe-p+1); argument[pe-p+1] = 0; # Parameter argument
-                store(argument,'tmparg',1,pe-p+1); run('$tmparg _f"${f}"_p',nb_params,'_a',nbargs,'={t} rm.');
+                store('tmparg',argument,1,pe-p+1); run('$tmparg _f"${f}"_p',nb_params,'_a',nbargs,'={t} rm.');
                 ++nbargs;
                 p = q + 1;
               );
@@ -9809,7 +9809,7 @@ utf82html :
           write_seq();
         );
       );
-      store(res,'res',1,q)"
+      store('res',res,1,q)"
     rm. $res
   fi
 
@@ -9883,7 +9883,7 @@ upload_filters :
   x "cd "$HOME"/work/src/gmic-community && git pull"
 
   # Define the list of compatible versions.
-  (310,311,312,313,$_version) sort. discard. store. compat
+  (313,$_version) sort. discard. store. compat
 
   # Import filters from stdlib and community.
   files $HOME/work/src/gmic-community/include/*.gmic
@@ -17091,9 +17091,10 @@ phase_correlation : check ${"is_image_arg $1"}
     normalized_cross_correlation[$>] .
     l[$>] {
       eval "
-        store([xM>=w/2?xM - w:xM,
+        store('res',
+              [xM>=w/2?xM - w:xM,
                yM>=h/2?yM - h:yM,
-               zM>=d/2?zM - d:zM]*=-1,'res',1,1,1,3)"
+               zM>=d/2?zM - d:zM]*=-1,1,1,1,3)"
     }
     $res => "[phase correlation]" rv[$>,-1] rm.
   } rm.
@@ -20434,7 +20435,7 @@ meigen : check "isint($1) && $1>0"
   foreach {
     nm={n}
     if w!=h" || "d!=1" || "s!=1 v 1 error[0--5] "Command 'meigen': Image '"$nm"' is not a square matrix." fi
-    eval ${-math_lib}" store(meig(crop(),$1,h),'val',1,min($1,h))" $val k. => $nm
+    eval ${-math_lib}" store('val',meig(crop(),$1,h),1,min($1,h))" $val k. => $nm
   }
 
 #@cli mproj : [dictionary],_method,_max_iter={ 0=auto | >0 },_max_residual>=0 : (+)
@@ -23322,7 +23323,7 @@ nn_lib :
         dL_params#_g2 = get(dL_params#_name_g2,size(dL_params));
       );
       dL_params#_g2 = lerp(dL_params^2,dL_params#_g2,nn_optimizer_rmsprop_beta);
-      store(dL_params#_g2,dL_params#_name_g2,size(dL_params));
+      store(dL_params#_name_g2,dL_params#_g2,size(dL_params));
       L_params#-=nn_learning_rate*dL_params/sqrt(1e-8 + dL_params#_g2);
     );
 
@@ -23349,8 +23350,8 @@ nn_lib :
       );
       dL_params#_m = lerp(dL_params,dL_params#_m,nn_optimizer_adam_beta1);
       dL_params#_v = lerp(dL_params^2,dL_params#_v,nn_optimizer_adam_beta2);
-      store(dL_params#_m,dL_params#_name_m,size(dL_params));
-      store(dL_params#_v,dL_params#_name_v,size(dL_params));
+      store(dL_params#_name_m,dL_params#_m,size(dL_params));
+      store(dL_params#_name_v,dL_params#_v,size(dL_params));
       L_params#-=nn_learning_rate*nn_optimizer_adam_alpha_t*dL_params#_m/sqrt(1e-8 + dL_params#_v);
     );
 
@@ -23375,8 +23376,8 @@ nn_lib :
       );
       dL_params#_m = lerp(dL_params,dL_params#_m,nn_optimizer_adamax_beta1);
       dL_params#_v = vmax(abs(dL_params),nn_optimizer_adamax_beta2*dL_params#_v);
-      store(dL_params#_m,dL_params#_name_m,size(dL_params));
-      store(dL_params#_v,dL_params#_name_v,size(dL_params));
+      store(dL_params#_name_m,dL_params#_m,size(dL_params));
+      store(dL_params#_name_v,dL_params#_v,size(dL_params));
 
       L_params#-=(nn_learning_rate/nn_optimizer_adamax_ombeta1_t)*dL_params#_m/sqrt(1e-8 + dL_params#_v);
     );
@@ -23890,7 +23891,7 @@ nn_lib :
 
     nn_layer_run_forward(L,IN) = (
       critical(
-        store(IN#_out,'nn_#IN#_out',IN#_out_width,IN#_out_height,IN#_out_depth,IN#_out_spectrum);
+        store('nn_#IN#_out',IN#_out,IN#_out_width,IN#_out_height,IN#_out_depth,IN#_out_spectrum);
         run(L#_pipeline);
         L#_out = get(L#_varname,L#_out_width*L#_out_height*L#_out_depth*L#_out_spectrum);
       );
@@ -29274,7 +29275,7 @@ ovh2stats : skip "${1=gmic.eu-*-*-*.log.gz}"
       to_keep = vectorl();
       p = 0;
       repeat (l,k, find(#k,str)>=0?(to_keep[p++] = k));
-      store(to_keep,'to_keep',p);
+      store('to_keep',to_keep,p);
       run('$to_keep k[{^}]')"
     if $!>1 i[1--2] ('\n') fi
     a y => $nm
@@ -29317,7 +29318,7 @@ _ovh2stats :
       );
       tab = sort(tab,1,N,2);
       for (i = 0, i<size(tab) - 1, ++i, tab[2*i]==tab[2*i + 2]?tab[2*i] = tab[2*i + 1] = -1);
-      store(tab,'tab')"
+      store('tab',tab)"
     $tab discard. -1 r. 2,{h/2},1,1,-1 z. 1,1 k[{^}]
 
     # Analyze G'MIC version, host software and OS.
@@ -29350,9 +29351,9 @@ _ovh2stats :
 
         ++ips;
       );
-      store([ips,gimp,krita,_8bf,paintdotnet,digikam,standalone,windows,linux,macos,bsd,unknown,prereleases],
-            'features');
-      store(versions,'versions')"
+      store('features',
+            [ips,gimp,krita,_8bf,paintdotnet,digikam,standalone,windows,linux,macos,bsd,unknown,prereleases]);
+      store('versions',versions)"
     rm $features
     ips,gimp,krita,_8bf,paintdotnet,digikam,standalone,windows,linux,macos,bsd,unknown,prereleases={^}
     $versions
