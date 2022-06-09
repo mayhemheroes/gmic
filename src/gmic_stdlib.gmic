@@ -3849,7 +3849,7 @@ _input_glob :
       id_v = 'v '; id_f = 'f '; id_l = 'l '; id_p = 'p '; id_vt = 'vt ';
       id_mtllib = 'mtllib '; id_usemtl = 'usemtl ';
       line = vector1024(0);
-      p_rgb = [ 200,200,200 ]; p_alpha = 1;
+      p_rgb = [ 200,200,200 ]; p_alpha = 1; p_img_whs = [ 0,0,0 ];
       line_number = 1;
       nbv = nbp = p = 0;
 
@@ -3886,6 +3886,7 @@ _input_glob :
           line[q]=='/'?(++q; next_item()); # Skip normal index
           is_colored = min(vt0,vt1,vt2)<0;
           !is_colored?(xyt0 = I[#5,vt0]; xyt1 = I[#5,vt1]; xyt2 = I[#5,vt2]);
+
           !line[q]?( # Triangle
             da_push(#2,3,v0,v1,v2);
             da_push(#3,p_rgb[0],p_rgb[1],p_rgb[2]);
@@ -3939,7 +3940,13 @@ _input_glob :
           len>0?(
             copy(line,line[q],len + 1);
             run('_input_obj_get_mtl ',line);
-            p_rgb = get('_input_obj_rgb',3);
+            p_img_whs = get('_input_obj_whs',3);
+            isnan(p_img_whs[0])?( # Color
+              p_img_whs = 0;
+              p_rgb = get('_input_obj_rgb',3);
+            ):( # Texture
+              p_rgb = [ 200,200,200 ];
+            );
             p_alpha = get('_input_obj_alpha');
          );
         );
@@ -3965,7 +3972,11 @@ _input_obj_parse_mtl : skip "${1=}"
       rows 3,100% s -,{'" "'} _input_obj_rgb_$m:="255*["{0,t},{1,t},{2,t}"]" k[0]
     elif "crop(0,0,1,7)=='map_Kd '" # Diffuse texture
       rows 7,100% s -,{'" "'}
-      l[] { {t} _input_obj_whs_$m:=w,h,d store. _input_obj_img_$m onfail _input_obj_rgb_$m=255,255,255 }
+      l[] {
+        {t} _input_obj_whs_$m:=w,h,d store. _input_obj_img_$m _input_obj_rgb_$m=
+      onfail
+        _input_obj_rgb_$m=255,255,255
+      }
     elif "crop(0,0,1,2)=='d '" # Opacity
       rows 2,100% _input_obj_alpha_$m:={0,t}
     fi
