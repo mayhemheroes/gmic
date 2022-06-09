@@ -2250,9 +2250,7 @@ double gmic_round(const double x) {
 // Manage list of all gmic runs.
 inline gmic_list<void*>& gmic_runs() { static gmic_list<void*> val; return val; }
 
-template<typename T>
-const CImg<void*> get_current_run(const char *const func_name,void *const p_list, const T& pixel_type) {
-  cimg::unused(pixel_type);
+const CImg<void*> get_current_run(const char *const func_name, void *const p_list) {
   cimg::mutex(24);
   CImgList<void*> &grl = gmic_runs();
   int p;
@@ -2263,22 +2261,20 @@ const CImg<void*> get_current_run(const char *const func_name,void *const p_list
   const CImg<void*> gr = grl[p].get_shared(); // Return shared image
   cimg::mutex(24,0);
   if (p<0) // Instance not found!
-    throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function '%s': "
+    throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<>: Function '%s': "
                                 "Cannot determine instance of the G'MIC interpreter.",
-                                cimg::type<T>::string(),func_name);
+                                func_name);
   return gr;
 }
 
-template<typename T>
-double gmic::mp_dollar(const char *const str,
-                       void *const p_list, const T& pixel_type) {
-  if (!(CImg<T>::_cimg_math_parser::is_varname(str) ||
+double gmic::mp_dollar(const char *const str, void *const p_list) {
+  if (!(CImg<>::_cimg_math_parser::is_varname(str) ||
         ((*str=='>' || *str=='<' || *str=='!' || *str=='^' || *str=='|') && !str[1])))
-    throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Operator '$': "
+    throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<>: Operator '$': "
                                 "Invalid variable name '%s'.",
-                                cimg::type<T>::string(),str);
+                                str);
 
-  const CImg<void*> gr = get_current_run("Operator '$'",p_list,pixel_type);
+  const CImg<void*> gr = get_current_run("Operator '$'",p_list);
   gmic &gmic_instance = *(gmic*)gr[0];
   CImgList<char> &images_names = *(CImgList<char>*)gr[2];
   const unsigned int *const variables_sizes = (const unsigned int*)gr[5];
@@ -2340,7 +2336,7 @@ double gmic::mp_dollar(const char *const str,
 template<typename T>
 double gmic::mp_get(double *const ptr, const unsigned int siz, const bool to_string, const char *const str,
                     void *const p_list, const T& pixel_type) {
-  const CImg<void*> gr = get_current_run("Function 'get()'",p_list,pixel_type);
+  const CImg<void*> gr = get_current_run("Function 'get()'",p_list);
   gmic &gmic_instance = *(gmic*)gr[0];
   CImgList<char>& images_names = *(CImgList<char>*)gr[2];
   const unsigned int *const variables_sizes = (const unsigned int*)gr[5];
@@ -2409,7 +2405,7 @@ double gmic::mp_get(double *const ptr, const unsigned int siz, const bool to_str
 template<typename Ts, typename T>
 double gmic::mp_set(Ts *const ptr, const unsigned int siz, const char *const str,
                     void *const p_list, const T& pixel_type) {
-  const CImg<void*> gr = get_current_run("Function 'set()'",p_list,pixel_type);
+  const CImg<void*> gr = get_current_run("Function 'set()'",p_list);
   gmic &gmic_instance = *(gmic*)gr[0];
   const unsigned int *const variables_sizes = (const unsigned int*)gr[5];
   CImg<char> _varname(256);
@@ -2433,10 +2429,9 @@ double gmic::mp_set(Ts *const ptr, const unsigned int siz, const char *const str
   return siz?cimg::type<double>::nan():*ptr;
 }
 
-template<typename T>
 double gmic::mp_name(const unsigned int ind, double *const out_str, const unsigned int siz,
-                     void *const p_list, const T& pixel_type) {
-  const CImg<void*> gr = get_current_run("Function 'name()'",p_list,pixel_type);
+                     void *const p_list) {
+  const CImg<void*> gr = get_current_run("Function 'name()'",p_list);
   CImgList<char> &images_names = *(CImgList<char>*)gr[2];
 
   std::memset(out_str,0,siz*sizeof(double));
@@ -2453,7 +2448,7 @@ double gmic::mp_name(const unsigned int ind, double *const out_str, const unsign
 template<typename T>
 double gmic::mp_run(char *const str,
                     void *const p_list, const T& pixel_type) {
-  const CImg<void*> gr = get_current_run("Function 'run()'",p_list,pixel_type);
+  const CImg<void*> gr = get_current_run("Function 'run()'",p_list);
   double res = cimg::type<double>::nan();
 
   gmic &gmic_instance = *(gmic*)gr[0];
@@ -2493,7 +2488,7 @@ double gmic::mp_store(const Ts *const ptr, const unsigned int siz,
                       const unsigned int w, const unsigned int h, const unsigned d, const unsigned int s,
                       const bool is_compressed, const char *const str,
                       void *const p_list, const T& pixel_type) {
-  const CImg<void*> gr = get_current_run("Function 'store()'",p_list,pixel_type);
+  const CImg<void*> gr = get_current_run("Function 'store()'",p_list);
   cimg_pragma_openmp(critical(mp_store))
   {
     gmic &gmic_instance = *(gmic*)gr[0];

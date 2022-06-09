@@ -208,11 +208,9 @@ inline bool *gmic_abort_ptr(bool *const p_is_abort);
 #define cimg_abort_test if (*gmic_is_abort) throw CImgAbortException()
 #endif
 
-template<typename T>
-inline double gmic_mp_dollar(const char *const str,
-                             void *const p_list, const T& pixel_type);
+inline double gmic_mp_dollar(const char *const str, void *const p_list);
 #define cimg_mp_operator_dollar(str) \
-  ::gmic_mp_dollar(str,&imglist,(T)0)
+  ::gmic_mp_dollar(str,&imglist)
 
 template<typename T>
 inline double gmic_mp_get(double *const ptr, const unsigned int siz, const bool to_string, const char *const str,
@@ -226,11 +224,10 @@ inline double gmic_mp_set(Ts *const ptr, const unsigned int siz, const char *con
 #define cimg_mp_func_set(ptr,siz,str) \
   return ::gmic_mp_set(ptr,siz,str,&mp.imglist,(T)0)
 
-template<typename T>
 inline double gmic_mp_name(const unsigned int ind, double *const out_str, const unsigned int siz,
-                           void *const p_list, const T& pixel_type);
+                           void *const p_list);
 #define cimg_mp_func_name(ind,out_str,siz) \
-  return ::gmic_mp_name(ind,out_str,siz,&mp.imglist,(T)0)
+  return ::gmic_mp_name(ind,out_str,siz,&mp.imglist)
 
 template<typename T>
 inline double gmic_mp_run(char *const str,
@@ -312,18 +309,15 @@ struct gmic {
   // Functions below should be considered as *private*, and should not be used in user's code.
   template<typename T>
   static bool search_sorted(const char *const str, const T& list, const unsigned int length, unsigned int &out_ind);
-  template<typename T>
-  static double mp_dollar(const char *const str,
-                          void *const p_list, const T& pixel_type);
+  static double mp_dollar(const char *const str, void *const p_list);
   template<typename T>
   static double mp_get(double *const ptr, const unsigned int siz, const bool to_string, const char *const str,
                        void *const p_list, const T& pixel_type);
   template<typename Ts, typename T>
   static double mp_set(Ts *const ptr, const unsigned int siz, const char *const str,
                        void *const p_list, const T& pixel_type);
-  template<typename T>
   static double mp_name(const unsigned int ind, double *const out_str, const unsigned int siz,
-                        void *const p_list, const T& pixel_type);
+                        void *const p_list);
   template<typename T>
   static double mp_run(char *const str,
                        void *const p_list, const T& pixel_type);
@@ -532,10 +526,8 @@ inline bool *gmic_abort_ptr(bool *const p_is_abort) {
   return gmic::abort_ptr(p_is_abort);
 }
 
-template<typename T>
-inline double gmic_mp_dollar(const char *const str,
-                             void *const p_list, const T& pixel_type) {
-  return gmic::mp_dollar(str,p_list,pixel_type);
+inline double gmic_mp_dollar(const char *const str, void *const p_list) {
+  return gmic::mp_dollar(str,p_list);
 }
 
 template<typename T>
@@ -550,10 +542,9 @@ inline double gmic_mp_set(Ts *const ptr, const unsigned int siz, const char *con
   return gmic::mp_set(ptr,siz,str,p_list,pixel_type);
 }
 
-template<typename T>
 inline double gmic_mp_name(const unsigned int ind, double *const out_str, const unsigned int siz,
-                           void *const p_list, const T& pixel_type) {
-  return gmic::mp_name(ind,out_str,siz,p_list,pixel_type);
+                           void *const p_list) {
+  return gmic::mp_name(ind,out_str,siz,p_list);
 }
 
 template<typename T>
