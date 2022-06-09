@@ -2403,9 +2403,9 @@ double gmic::mp_get(double *const ptr, const unsigned int siz, const bool to_str
   return siz?cimg::type<double>::nan():*ptr;
 }
 
-template<typename Ts, typename T>
+template<typename Ts>
 double gmic::mp_set(Ts *const ptr, const unsigned int siz, const char *const str,
-                    void *const p_list, const T& pixel_type) {
+                    void *const p_list) {
   const CImg<void*> gr = get_current_run("Function 'set()'",p_list);
   gmic &gmic_instance = *(gmic*)gr[0];
   const unsigned int *const variables_sizes = (const unsigned int*)gr[5];
@@ -2424,9 +2424,9 @@ double gmic::mp_set(Ts *const ptr, const unsigned int siz, const char *const str
     }
     gmic_instance.set_variable(str,'=',s_value,0,variables_sizes);
   } else
-    throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'set()': "
+    throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<>: Function 'set()': "
                                 "Invalid variable name '%s'.",
-                                cimg::type<T>::string(),str);
+                                str);
   return siz?cimg::type<double>::nan():*ptr;
 }
 
