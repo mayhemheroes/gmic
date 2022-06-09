@@ -2334,7 +2334,7 @@ double gmic::mp_dollar(const char *const str, void *const p_list) {
 }
 
 template<typename T>
-double gmic::mp_get(double *const ptr, const unsigned int siz, const bool to_string, const char *const str,
+double gmic::mp_get(double *const ptrd, const unsigned int siz, const bool to_string, const char *const str,
                     void *const p_list, const T& pixel_type) {
   cimg::unused(pixel_type);
   const CImg<void*> gr = get_current_run("Function 'get()'",p_list);
@@ -2348,17 +2348,17 @@ double gmic::mp_get(double *const ptr, const unsigned int siz, const bool to_str
     CImg<char> value = gmic_instance.get_variable(varname,variables_sizes,&images_names);
 
     if (to_string) { // Return variable content as a string
-      if (!siz) *ptr = 0;
+      if (!siz) *ptrd = 0;
       else {
-        CImg<double> dest(ptr,siz,1,1,1,true);
+        CImg<double> dest(ptrd,siz,1,1,1,true);
         strreplace_fw(value);
         dest.draw_image(value);
         if (dest.width()>value.width()) dest.get_shared_points(value.width(),dest.width() - 1).fill(0);
       }
     } else { // Convert variable content as numbers
       if (!value) { // Undefined variable
-        if (!siz) *ptr = cimg::type<double>::nan();
-        else CImg<double>(ptr,siz,1,1,1,true).fill(cimg::type<double>::nan());
+        if (!siz) *ptrd = cimg::type<double>::nan();
+        else CImg<double>(ptrd,siz,1,1,1,true).fill(cimg::type<double>::nan());
       } else {
         double dvalue = 0;
         if (!siz) { // Scalar result
@@ -2366,10 +2366,10 @@ double gmic::mp_get(double *const ptr, const unsigned int siz, const bool to_str
             throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
                                         "Variable '%s' has value '%s', cannot be returned as a scalar.",
                                         cimg::type<T>::string(),str,value.data());
-          *ptr = dvalue;
+          *ptrd = dvalue;
 
         } else { // Vector result
-          CImg<double> dest(ptr,siz,1,1,1,true);
+          CImg<double> dest(ptrd,siz,1,1,1,true);
           if (*value==gmic_store) { // Image-encoded variable
             const char *const zero = (char*)::std::memchr(value,0,value.size());
             CImgList<T> list;
@@ -2400,10 +2400,10 @@ double gmic::mp_get(double *const ptr, const unsigned int siz, const bool to_str
     throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
                                 "Invalid variable name '%s'.",
                                 cimg::type<T>::string(),str);
-  return siz?cimg::type<double>::nan():*ptr;
+  return siz?cimg::type<double>::nan():*ptrd;
 }
 
-double gmic::mp_set(const double *const ptr, const unsigned int siz, const char *const str,
+double gmic::mp_set(const double *const ptrs, const unsigned int siz, const char *const str,
                     void *const p_list) {
   const CImg<void*> gr = get_current_run("Function 'set()'",p_list);
   gmic &gmic_instance = *(gmic*)gr[0];
@@ -2415,18 +2415,18 @@ double gmic::mp_set(const double *const ptr, const unsigned int siz, const char 
     CImg<char> s_value;
     if (siz) { // Value is a string
       s_value.assign(siz + 1);
-      cimg_for_inX(s_value,0,s_value.width() - 1,i) s_value[i] = (char)ptr[i];
+      cimg_for_inX(s_value,0,s_value.width() - 1,i) s_value[i] = (char)ptrs[i];
       s_value.back() = 0;
     } else { // Value is a scalar
       s_value.assign(24);
-      cimg_snprintf(s_value,s_value.width(),"%.17g",*ptr);
+      cimg_snprintf(s_value,s_value.width(),"%.17g",*ptrs);
     }
     gmic_instance.set_variable(str,'=',s_value,0,variables_sizes);
   } else
     throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<>: Function 'set()': "
                                 "Invalid variable name '%s'.",
                                 str);
-  return siz?cimg::type<double>::nan():*ptr;
+  return siz?cimg::type<double>::nan():*ptrs;
 }
 
 double gmic::mp_name(const unsigned int ind, double *const out_str, const unsigned int siz,
@@ -2485,7 +2485,7 @@ double gmic::mp_run(char *const str,
 }
 
 template<typename Ts, typename T>
-double gmic::mp_store(const Ts *const ptr, const unsigned int siz,
+double gmic::mp_store(const Ts *const ptrs, const unsigned int siz,
                       const unsigned int w, const unsigned int h, const unsigned d, const unsigned int s,
                       const bool is_compressed, const char *const str,
                       void *const p_list, const T& pixel_type) {
@@ -2502,8 +2502,8 @@ double gmic::mp_store(const Ts *const ptr, const unsigned int siz,
         (*varname<'0' || *varname>'9')) {
       CImgList<T> g_list;
       const unsigned int rsiz = w*h*d*s;
-      if (rsiz<=siz) CImg<T>(ptr,w,h,d,s).move_to(g_list);
-      else CImg<T>(ptr,siz,1,1,1).resize(w,h,d,s,-1).move_to(g_list);
+      if (rsiz<=siz) CImg<T>(ptrs,w,h,d,s).move_to(g_list);
+      else CImg<T>(ptrs,siz,1,1,1).resize(w,h,d,s,-1).move_to(g_list);
 
       CImg<char> name = CImg<char>::string(varname);
       name.resize(name.width() + 4,1,1,1,0,0,1);

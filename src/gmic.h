@@ -213,15 +213,15 @@ inline double gmic_mp_dollar(const char *const str, void *const p_list);
   ::gmic_mp_dollar(str,&imglist)
 
 template<typename T>
-inline double gmic_mp_get(double *const ptr, const unsigned int siz, const bool to_string, const char *const str,
+inline double gmic_mp_get(double *const ptrd, const unsigned int siz, const bool to_string, const char *const str,
                           void *const p_list, const T& pixel_type);
-#define cimg_mp_func_get(ptr,siz,to_string,str) \
-  return ::gmic_mp_get(ptr,siz,to_string,str,&mp.imglist,(T)0)
+#define cimg_mp_func_get(ptrd,siz,to_string,str) \
+  return ::gmic_mp_get(ptrd,siz,to_string,str,&mp.imglist,(T)0)
 
-inline double gmic_mp_set(const double *const ptr, const unsigned int siz, const char *const str,
+inline double gmic_mp_set(const double *const ptrs, const unsigned int siz, const char *const str,
                           void *const p_list);
-#define cimg_mp_func_set(ptr,siz,str) \
-  return ::gmic_mp_set(ptr,siz,str,&mp.imglist)
+#define cimg_mp_func_set(ptrs,siz,str) \
+  return ::gmic_mp_set(ptrs,siz,str,&mp.imglist)
 
 inline double gmic_mp_name(const unsigned int ind, double *const out_str, const unsigned int siz,
                            void *const p_list);
@@ -235,12 +235,12 @@ inline double gmic_mp_run(char *const str,
   return ::gmic_mp_run(str,&mp.imglist,(T)0)
 
 template<typename Ts, typename T>
-inline double gmic_mp_store(const Ts *const ptr, const unsigned int siz,
+inline double gmic_mp_store(const Ts *const ptrs, const unsigned int siz,
                             const unsigned int w, const unsigned int h, const unsigned int d, const unsigned int s,
                             const bool is_compressed, const char *const str,
                             void *const p_list, const T& pixel_type);
-#define cimg_mp_func_store(ptr,siz,w,h,d,s,is_compressed,str) \
-  return ::gmic_mp_store(ptr,siz,w,h,d,s,is_compressed,str,&mp.imglist,(T)0)
+#define cimg_mp_func_store(ptrs,siz,w,h,d,s,is_compressed,str) \
+  return ::gmic_mp_store(ptrs,siz,w,h,d,s,is_compressed,str,&mp.imglist,(T)0)
 
 #ifndef cimg_display
 #define cimg_display 0
@@ -310,9 +310,9 @@ struct gmic {
   static bool search_sorted(const char *const str, const T& list, const unsigned int length, unsigned int &out_ind);
   static double mp_dollar(const char *const str, void *const p_list);
   template<typename T>
-  static double mp_get(double *const ptr, const unsigned int siz, const bool to_string, const char *const str,
+  static double mp_get(double *const ptrd, const unsigned int siz, const bool to_string, const char *const str,
                        void *const p_list, const T& pixel_type);
-  static double mp_set(const double *const ptr, const unsigned int siz, const char *const str,
+  static double mp_set(const double *const ptrs, const unsigned int siz, const char *const str,
                        void *const p_list);
   static double mp_name(const unsigned int ind, double *const out_str, const unsigned int siz,
                         void *const p_list);
@@ -320,7 +320,7 @@ struct gmic {
   static double mp_run(char *const str,
                        void *const p_list, const T& pixel_type);
   template<typename Ts, typename T>
-  static double mp_store(const Ts *const ptr, const unsigned int siz,
+  static double mp_store(const Ts *const ptrs, const unsigned int siz,
                          const unsigned int w, const unsigned int h, const unsigned int d, const unsigned int s,
                          const bool is_compressed, const char *const str,
                          void *const p_list, const T& pixel_type);
@@ -529,14 +529,14 @@ inline double gmic_mp_dollar(const char *const str, void *const p_list) {
 }
 
 template<typename T>
-inline double gmic_mp_get(double *const ptr, const unsigned int siz, const bool to_string, const char *const str,
+inline double gmic_mp_get(double *const ptrd, const unsigned int siz, const bool to_string, const char *const str,
                           void *const p_list, const T& pixel_type) {
-  return gmic::mp_get(ptr,siz,to_string,str,p_list,pixel_type);
+  return gmic::mp_get(ptrd,siz,to_string,str,p_list,pixel_type);
 }
 
-inline double gmic_mp_set(const double *const ptr, const unsigned int siz, const char *const str,
+inline double gmic_mp_set(const double *const ptrs, const unsigned int siz, const char *const str,
                           void *const p_list) {
-  return gmic::mp_set(ptr,siz,str,p_list);
+  return gmic::mp_set(ptrs,siz,str,p_list);
 }
 
 inline double gmic_mp_name(const unsigned int ind, double *const out_str, const unsigned int siz,
@@ -551,11 +551,11 @@ inline double gmic_mp_run(char *const str,
 }
 
 template<typename Ts, typename T>
-inline double gmic_mp_store(const Ts *const ptr, const unsigned int siz,
+inline double gmic_mp_store(const Ts *const ptrs, const unsigned int siz,
                             const unsigned int w, const unsigned int h, const unsigned int d, const unsigned int s,
                             const bool is_compressed, const char *const str,
                             void *const p_list, const T& pixel_type) {
-  return gmic::mp_store(ptr,siz,w,h,d,s,is_compressed,str,p_list,pixel_type);
+  return gmic::mp_store(ptrs,siz,w,h,d,s,is_compressed,str,p_list,pixel_type);
 }
 
 #endif // #ifndef gmic_version
