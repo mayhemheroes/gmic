@@ -2336,6 +2336,7 @@ double gmic::mp_dollar(const char *const str, void *const p_list) {
 template<typename T>
 double gmic::mp_get(double *const ptr, const unsigned int siz, const bool to_string, const char *const str,
                     void *const p_list, const T& pixel_type) {
+  cimg::unused(pixel_type);
   const CImg<void*> gr = get_current_run("Function 'get()'",p_list);
   gmic &gmic_instance = *(gmic*)gr[0];
   CImgList<char>& images_names = *(CImgList<char>*)gr[2];
@@ -2448,6 +2449,7 @@ double gmic::mp_name(const unsigned int ind, double *const out_str, const unsign
 template<typename T>
 double gmic::mp_run(char *const str,
                     void *const p_list, const T& pixel_type) {
+  cimg::unused(pixel_type);
   const CImg<void*> gr = get_current_run("Function 'run()'",p_list);
   double res = cimg::type<double>::nan();
 
@@ -2488,6 +2490,7 @@ double gmic::mp_store(const Ts *const ptr, const unsigned int siz,
                       const unsigned int w, const unsigned int h, const unsigned d, const unsigned int s,
                       const bool is_compressed, const char *const str,
                       void *const p_list, const T& pixel_type) {
+  cimg::unused(pixel_type);
   const CImg<void*> gr = get_current_run("Function 'store()'",p_list);
   cimg_pragma_openmp(critical(mp_store))
   {
