@@ -3927,8 +3927,7 @@ _input_glob :
                 fact = p_whs[0,2] - 1;
                 xyt0*=fact; xyt1*=fact; xyt2*=fact; xyt3*=fact;
                 da_push(#2,12,v0,v1,v2,v3,xyt0[0],xyt0[1],xyt1[0],xyt1[1],xyt2[0],xyt2[1],xyt3[0],xyt3[1]);
-                da_push(#3,-128,p_whs[0],p_whs[1],p_whs[2]);
-                run('_input_obj_insert_texture_data');
+                run('_input_obj_insert_texture');
               );
               da_push(#4,p_alpha);
               ++nbp;
@@ -3963,11 +3962,10 @@ _input_glob :
     rm[0,5] i[0] ({'CImg3d'},$nbv,$nbp:y) a y => "$1"
   }
 
-_input_obj_insert_texture_data :
-   siz,dsiz,isiz:="i[#3,h-1]","da_size(#3)",prod($_input_obj_whs)
-   r[3] 1,{h#3+$isiz},1,1,0
-   $_input_obj_img y. j[3] .,0,$dsiz,0,0 rm.
-   =[3] {$dsiz+$isiz},0,100%
+_input_obj_insert_texture :
+   m=$_input_obj_mtl
+   eval "resize(#3,1,da_size(#3),1,1,0)"
+   (-128,$_input_obj_whs:y) ${_input_obj_img_$m} y. (0) a[3,-3,-2,-1] y =[3] {h#3-1},0,100%
 
 _input_obj_parse_mtl : skip "${1=}"
   mtl_filename="$1$2"
@@ -3997,21 +3995,15 @@ _input_obj_parse_mtl : skip "${1=}"
 
 _input_obj_set_mtl :
   strcasevar "$1" m=${}
-  if ['${_input_obj_whs_$m}']!=0
-    _input_obj_whs=${_input_obj_whs_$m}
-    ${_input_obj_img_$m} store. _input_obj_img
-  else
-    _input_obj_whs=0,0,0 _input_obj_img=
+  _input_obj_mtl=$m
+  if ['${_input_obj_whs_$m}']!=0 _input_obj_whs=${_input_obj_whs_$m}
+  else _input_obj_whs=0,0,0 _input_obj_img=
   fi
-  if ['${_input_obj_rgb_$m}']!=0
-    _input_obj_rgb=${_input_obj_rgb_$m}
-  else
-    _input_obj_rgb=200,200,200
+  if ['${_input_obj_rgb_$m}']!=0 _input_obj_rgb=${_input_obj_rgb_$m}
+  else _input_obj_rgb=200,200,200
   fi
-  if ['${_input_obj_alpha_$m}']!=0
-    _input_obj_alpha=${_input_obj_alpha_$m}
-  else
-    _input_obj_alpha=1
+  if ['${_input_obj_alpha_$m}']!=0 _input_obj_alpha=${_input_obj_alpha_$m}
+  else _input_obj_alpha=1
   fi
 
 #@cli it : eq. to 'input_text'.
