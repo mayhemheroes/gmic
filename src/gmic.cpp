@@ -2210,6 +2210,63 @@ inline char *_gmic_argument_text(const char *const argument, char *const argumen
        }}} is_change = true; continue; \
    }
 
+// Return true if specified character is considered as 'blank'.
+inline bool is_blank(const char x) {
+  return (x>1 && x<gmic_dollar) || (x>gmic_store && x<=' ');
+}
+
+inline void _strreplace_fw(char &c) {
+  switch (c) {
+  case gmic_dollar : c = '$'; break;
+  case gmic_lbrace : c = '{'; break;
+  case gmic_rbrace : c = '}'; break;
+  case gmic_comma : c = ','; break;
+  case gmic_dquote : c = '\"'; break;
+  }
+}
+
+inline void _strreplace_bw(char &c) {
+  switch (c) {
+  case '$' : c = gmic_dollar; break;
+  case '{' : c = gmic_lbrace; break;
+  case '}' : c = gmic_rbrace; break;
+  case ',' : c = gmic_comma; break;
+  case '\"' : c = gmic_dquote; break;
+  }
+}
+
+// Replace special characters in a string.
+char *gmic::strreplace_fw(char *const str) {
+  if (str) for (char *s = str ; *s; ++s) _strreplace_fw(*s);
+  return str;
+}
+
+char *gmic::strreplace_bw(char *const str) {
+  if (str) for (char *s = str ; *s; ++s) _strreplace_bw(*s);
+  return str;
+}
+
+//! Escape a string.
+// 'res' must be a C-string large enough ('4*strlen(str) + 1' is always safe).
+unsigned int gmic::strescape(const char *const str, char *const res) {
+  const char *const esc = "abtnvfr";
+  char *ptrd = res;
+  for (const unsigned char *ptrs = (unsigned char*)str; *ptrs; ++ptrs) {
+    const unsigned char c = *ptrs;
+    if (c=='\\' || c=='\'' || c=='\"') { *(ptrd++) = '\\'; *(ptrd++) = c; }
+    else if (c>='\a' && c<='\r') { *(ptrd++) = '\\'; *(ptrd++) = esc[c - 7]; }
+    else if (c>=' ' && c<='~') *(ptrd++) = c;
+    else if (c<gmic_dollar || c>gmic_dquote) {
+      *(ptrd++) = '\\';
+      *(ptrd++) = (char)('0' + (c>>6));
+      *(ptrd++) = (char)('0' + ((c>>3)&7));
+      *(ptrd++) = (char)('0' + (c&7));
+    } else *(ptrd++) = c;
+  }
+  *ptrd = 0;
+  return (unsigned int)(ptrd - res);
+}
+
 // Parse debug info string (eq. to std::sscanf(s,"%x,%x",&line_number,&file_number).
 bool gmic::get_debug_info(const char *s, unsigned int &line_number, unsigned int &file_number) {
   char c = *(++s);
@@ -2349,7 +2406,7 @@ double gmic::mp_get(double *const ptrd, const unsigned int siz, const bool to_st
 
     if (to_string) { // Return variable content as a string
       if (!value) value.assign(1,1,1,1,0);
-      if (!siz) *ptrd = *value;
+      else if (!siz) { char c = *value; _strreplace_fw(c); *ptrd = c; }
       else {
         CImg<double> dest(ptrd,siz,1,1,1,true);
         strreplace_fw(value);
@@ -2381,7 +2438,8 @@ double gmic::mp_get(double *const ptrd, const unsigned int siz, const bool to_st
             if (cimg_sscanf(value,"%lf%c",&dvalue,&end)==1) {
               dest[0] = dvalue;
               if (dest._width>1) dest.get_shared_points(1,dest._width - 1).fill(0);
-            } else dest.fill(0)._fill_from_values(value,false);
+            } else if (dest.fill(0)._fill_from_values(value,false))
+              for (unsigned int i = 0; i<siz; ++i) ptrd[i] = cimg::type<double>::nan();
           }
         }
       }
@@ -2763,63 +2821,6 @@ const char* gmic::basename(const char *const str)  {
   np = p;
   while (np>=str && (p=np)) np = std::strchr(np,'\\') + 1;
   return p;
-}
-
-// Return true if specified character is considered as 'blank'.
-inline bool is_blank(const char x) {
-  return (x>1 && x<gmic_dollar) || (x>gmic_store && x<=' ');
-}
-
-inline void _strreplace_fw(char &c) {
-  switch (c) {
-  case gmic_dollar : c = '$'; break;
-  case gmic_lbrace : c = '{'; break;
-  case gmic_rbrace : c = '}'; break;
-  case gmic_comma : c = ','; break;
-  case gmic_dquote : c = '\"'; break;
-  }
-}
-
-inline void _strreplace_bw(char &c) {
-  switch (c) {
-  case '$' : c = gmic_dollar; break;
-  case '{' : c = gmic_lbrace; break;
-  case '}' : c = gmic_rbrace; break;
-  case ',' : c = gmic_comma; break;
-  case '\"' : c = gmic_dquote; break;
-  }
-}
-
-// Replace special characters in a string.
-char *gmic::strreplace_fw(char *const str) {
-  if (str) for (char *s = str ; *s; ++s) _strreplace_fw(*s);
-  return str;
-}
-
-char *gmic::strreplace_bw(char *const str) {
-  if (str) for (char *s = str ; *s; ++s) _strreplace_bw(*s);
-  return str;
-}
-
-//! Escape a string.
-// 'res' must be a C-string large enough ('4*strlen(str) + 1' is always safe).
-unsigned int gmic::strescape(const char *const str, char *const res) {
-  const char *const esc = "abtnvfr";
-  char *ptrd = res;
-  for (const unsigned char *ptrs = (unsigned char*)str; *ptrs; ++ptrs) {
-    const unsigned char c = *ptrs;
-    if (c=='\\' || c=='\'' || c=='\"') { *(ptrd++) = '\\'; *(ptrd++) = c; }
-    else if (c>='\a' && c<='\r') { *(ptrd++) = '\\'; *(ptrd++) = esc[c - 7]; }
-    else if (c>=' ' && c<='~') *(ptrd++) = c;
-    else if (c<gmic_dollar || c>gmic_dquote) {
-      *(ptrd++) = '\\';
-      *(ptrd++) = (char)('0' + (c>>6));
-      *(ptrd++) = (char)('0' + ((c>>3)&7));
-      *(ptrd++) = (char)('0' + (c&7));
-    } else *(ptrd++) = c;
-  }
-  *ptrd = 0;
-  return (unsigned int)(ptrd - res);
 }
 
 // Constructors / destructors.
