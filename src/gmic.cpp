@@ -2403,10 +2403,11 @@ double gmic::mp_get(double *const ptrd, const unsigned int siz, const bool to_st
 
   if (cimg_sscanf(str,"%255[a-zA-Z0-9_]%c",&(*varname=0),&end)==1 && (*varname<'0' || *varname>'9')) {
     CImg<char> value = gmic_instance.get_variable(varname,variables_sizes,&images_names);
-
-    if (to_string) { // Return variable content as a string
-      if (!value) value.assign(1,1,1,1,0);
-      else if (!siz) { char c = *value; _strreplace_fw(c); *ptrd = c; }
+    if (!value) { // Undefined variable
+      if (!siz) *ptrd = cimg::type<double>::nan();
+      else for (unsigned int i = 0; i<siz; ++i) ptrd[i] = cimg::type<double>::nan();
+    } else if (to_string) { // Return variable content as a string
+      if (!siz) { char c = *value; _strreplace_fw(c); *ptrd = c; }
       else {
         CImg<double> dest(ptrd,siz,1,1,1,true);
         strreplace_fw(value);
@@ -2414,33 +2415,28 @@ double gmic::mp_get(double *const ptrd, const unsigned int siz, const bool to_st
         if (dest.width()>value.width()) dest.get_shared_points(value.width(),dest.width() - 1).fill(0);
       }
     } else { // Convert variable content as numbers
-      if (!value) { // Undefined variable
-        if (!siz) *ptrd = cimg::type<double>::nan();
-        else for (unsigned int i = 0; i<siz; ++i) ptrd[i] = cimg::type<double>::nan();
-      } else {
-        double dvalue = 0;
-        if (!siz) { // Scalar result
-          if (cimg_sscanf(value,"%lf",&dvalue)!=1) *ptrd = cimg::type<double>::nan();
-          else *ptrd = dvalue;
-        } else { // Vector result
-          CImg<double> dest(ptrd,siz,1,1,1,true);
-          if (*value==gmic_store) { // Image-encoded variable
-            const char *const zero = (char*)::std::memchr(value,0,value.size());
-            CImgList<T> list;
-            if (zero) CImgList<T>::get_unserialize(value,zero + 1 - value.data()).move_to(list);
-            if (list.size()!=2)
-              throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
-                                          "Variable '%s' stores %u images, cannot be returned as a single vector.",
-                                          cimg::type<T>::string(),str,list.size());
-            dest = list[0].resize(siz,1,1,1,-1);
+      double dvalue = 0;
+      if (!siz) { // Scalar result
+        if (cimg_sscanf(value,"%lf",&dvalue)!=1) *ptrd = cimg::type<double>::nan();
+        else *ptrd = dvalue;
+      } else { // Vector result
+        CImg<double> dest(ptrd,siz,1,1,1,true);
+        if (*value==gmic_store) { // Image-encoded variable
+          const char *const zero = (char*)::std::memchr(value,0,value.size());
+          CImgList<T> list;
+          if (zero) CImgList<T>::get_unserialize(value,zero + 1 - value.data()).move_to(list);
+          if (list.size()!=2)
+            throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
+                                        "Variable '%s' stores %u images, cannot be returned as a single vector.",
+                                        cimg::type<T>::string(),str,list.size());
+          dest = list[0].resize(siz,1,1,1,-1);
 
-          } else { // Regular string variable
-            if (cimg_sscanf(value,"%lf%c",&dvalue,&end)==1) {
-              dest[0] = dvalue;
-              if (dest._width>1) dest.get_shared_points(1,dest._width - 1).fill(0);
-            } else if (dest.fill(0)._fill_from_values(value,false))
-              for (unsigned int i = 0; i<siz; ++i) ptrd[i] = cimg::type<double>::nan();
-          }
+        } else { // Regular string variable
+          if (cimg_sscanf(value,"%lf%c",&dvalue,&end)==1) {
+            dest[0] = dvalue;
+            if (dest._width>1) dest.get_shared_points(1,dest._width - 1).fill(0);
+          } else if (dest.fill(0)._fill_from_values(value,false))
+            for (unsigned int i = 0; i<siz; ++i) ptrd[i] = cimg::type<double>::nan();
         }
       }
     }
