@@ -2363,12 +2363,8 @@ double gmic::mp_get(double *const ptrd, const unsigned int siz, const bool to_st
       } else {
         double dvalue = 0;
         if (!siz) { // Scalar result
-          if (cimg_sscanf(value,"%lf",&dvalue)!=1)
-            throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
-                                        "Variable '%s' has value '%s', cannot be returned as a scalar.",
-                                        cimg::type<T>::string(),str,value.data());
-          *ptrd = dvalue;
-
+          if (cimg_sscanf(value,"%lf",&dvalue)!=1) *ptrd = cimg::type<double>::nan();
+          else *ptrd = dvalue;
         } else { // Vector result
           CImg<double> dest(ptrd,siz,1,1,1,true);
           if (*value==gmic_store) { // Image-encoded variable
@@ -2385,14 +2381,7 @@ double gmic::mp_get(double *const ptrd, const unsigned int siz, const bool to_st
             if (cimg_sscanf(value,"%lf%c",&dvalue,&end)==1) {
               dest[0] = dvalue;
               if (dest._width>1) dest.get_shared_points(1,dest._width - 1).fill(0);
-            } else try {
-                dest.fill(0);
-                dest._fill_from_values(value,false);
-              } catch (...) {
-                throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
-                                            "Variable '%s' has value '%s', cannot be returned as a vector.",
-                                            cimg::type<T>::string(),str,value.data());
-              }
+            } else dest.fill(0)._fill_from_values(value,false);
           }
         }
       }
