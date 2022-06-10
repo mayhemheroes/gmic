@@ -3855,6 +3855,7 @@ _input_glob :
           dsiz = da_size(#3); isiz = prod(p_whs);
           resize(#3,1,h(#3) + isiz,1,1,0);
           copy(i[#3,dsiz],i[#p_img,0],isiz);
+          echo('DEBUG1');
           i[#3,h(#3) - 1] = dsiz + isiz;
           set(s_ind_prim,nbp);
         ):( # Texture used before -> shared version
@@ -3991,16 +3992,17 @@ _input_obj_parse_mtl : skip "${1=}"
     it $mtl_filename f "i<=_' ' && i!=_'\n'?_' ':i" # Normalize blank characters.
     s -,{'\n'} autocrop {'" "'} N:=$!-1
     m=default _input_obj_rgb_$m=200,200,200 _input_obj_alpha_$m=1 _input_obj_whs_$m=0,0,0
-    foreach { if i!=_'#'
-      if "crop(0,0,1,7)=='newmtl '" # New material
-        rows 7,100% strcasevar {t} m=${}
+
+    repeat $! { if {$>,i!=_'#'}
+      if "crop(#$>,0,0,1,7)=='newmtl '" # New material
+        rows[$>] 7,100% strcasevar {$>,t} m=${}
         _input_obj_rgb_$m=200,200,200 _input_obj_alpha_$m=1 _input_obj_whs_$m=0,0,0
-      elif "crop(0,0,1,3)=='Kd '" # Diffuse color
-        rows 3,100% s -,{'" "'} _input_obj_rgb_$m:="255*["{0,t},{1,t},{2,t}"]" k[0]
-      elif "crop(0,0,1,2)=='d '" # Opacity
-        rows 2,100% _input_obj_alpha_$m:={0,t}
-      elif "crop(0,0,1,7)=='map_Kd '" # Diffuse texture
-        rows 7,100% s -,{'" "'} img_filename={t}
+      elif "crop(#$>,0,0,1,3)=='Kd '" # Diffuse color
+        l[$>] { rows 3,100% s -,{'" "'} _input_obj_rgb_$m:="255*["{0,t},{1,t},{2,t}"]" k[0] }
+      elif "crop(#$>,0,0,1,2)=='d '" # Opacity
+        rows[$>] 2,100% _input_obj_alpha_$m:={$>,t}
+      elif "crop(#$>,0,0,1,7)=='map_Kd '" # Diffuse texture
+        rows[$>] 7,100% img_filename={$>,t}
         l[] {
           $img_filename
           _input_obj_img_$m:=$img_ind img_ind+=1
