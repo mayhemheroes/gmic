@@ -3846,6 +3846,22 @@ _input_glob :
         while (line[q] && line[q]!=_' ' && line[q]!=_'/',++q);
         while (line[q] && line[q]==_' ', ++q);
       );
+
+      push_texture() = (
+        s_ind_prim = string('ind_prim',p_img);
+        ind_prim = get(s_ind_prim);
+        isnan(ind_prim)?( # Texture never used before
+          da_push(#3,-128,p_whs[0],p_whs[1],p_whs[2]);
+          dsiz = da_size(#3); isiz = prod(p_whs);
+          resize(#3,1,h(#3) + isiz,1,1,0);
+          copy(i[#3,dsiz],i[#p_img,0],isiz);
+          i[#3,h(#3) - 1] = dsiz + isiz;
+          set(s_ind_prim,nbp);
+        ):( # Texture used before -> shared version
+          da_push(#3,-128,ind_prim,0,0);
+        );
+      );
+
       id_v = 'v '; id_f = 'f '; id_l = 'l '; id_p = 'p '; id_vt = 'vt ';
       id_mtllib = 'mtllib '; id_usemtl = 'usemtl ';
       line = vector1024(0);
@@ -3916,7 +3932,7 @@ _input_glob :
               fact = [ w(#p_img),h(#p_img) ] - 1;
               xyt0*=fact; xyt1*=fact; xyt2*=fact;
               da_push(#2,8,v0,v1,v2,xyt0[0],xyt0[1],xyt1[0],xyt1[1],xyt2[0],xyt2[1]);
-              da_push(#3,-128,2,2,1,0,64,128,255);
+              push_texture();
             );
             da_push(#4,p_alpha);
             ++nbp;
@@ -3934,12 +3950,7 @@ _input_glob :
                 fact = p_whs[0,2] - 1;
                 xyt0*=fact; xyt1*=fact; xyt2*=fact; xyt3*=fact;
                 da_push(#2,12,v0,v1,v2,v3,xyt0[0],xyt0[1],xyt1[0],xyt1[1],xyt2[0],xyt2[1],xyt3[0],xyt3[1]);
-
-                da_push(#3,-128,p_whs[0],p_whs[1],p_whs[2]);
-                dsiz = da_size(#3); isiz = prod(p_whs);
-                resize(#3,1,h(#3) + isiz,1,1,0);
-                copy(i[#3,dsiz],i[#p_img,0],isiz);
-                i[#3,h(#3) - 1] = dsiz + isiz;
+                push_texture();
               );
               da_push(#4,p_alpha);
               ++nbp;
