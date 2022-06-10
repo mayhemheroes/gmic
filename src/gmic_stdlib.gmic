@@ -3964,27 +3964,24 @@ _input_obj_parse_mtl : skip "${1=}"
   if !isfile(['{/$mtl_filename}']) return fi
   it $mtl_filename f "i<=_' ' && i!=_'\n'?_' ':i" # Normalize blank characters.
   s -,{'\n'} autocrop {'" "'}
-  m=default _input_obj_rgb_$m=200,200,200 _input_obj_alpha_$m=1
+  m=default _input_obj_rgb_$m,_input_obj_alpha_$m,_input_obj_whs_$m,_input_obj_img_$m=
   foreach { if i!=_'#'
     if "crop(0,0,1,7)=='newmtl '" # New material
-      rows 7,100% strcasevar {t} m=${} _input_obj_rgb_$m=200,200,200 _input_obj_alpha_$m=1
+      rows 7,100% strcasevar {t} m=${} _input_obj_rgb_$m,_input_obj_alpha_$m,_input_obj_whs_$m,_input_obj_img_$m=
     elif "crop(0,0,1,3)=='Kd '" # Diffuse color
       rows 3,100% s -,{'" "'} _input_obj_rgb_$m:="255*["{0,t},{1,t},{2,t}"]" k[0]
-    elif "crop(0,0,1,7)=='map_Kd '" # Diffuse texture
-      rows 7,100% s -,{'" "'}
-      l[] {
-        {t} _input_obj_whs_$m:=w,h,d store. _input_obj_img_$m _input_obj_rgb_$m=
-      onfail
-        _input_obj_rgb_$m=255,255,255
-      }
     elif "crop(0,0,1,2)=='d '" # Opacity
       rows 2,100% _input_obj_alpha_$m:={0,t}
+    elif "crop(0,0,1,7)=='map_Kd '" # Diffuse texture
+      rows 7,100% s -,{'" "'}
+      l[] { {t} _input_obj_whs_$m:=w,h,d store. _input_obj_img_$m onfail _input_obj_rgb_$m=255,128,64 }
     fi
   fi }
   rm
 
 _input_obj_get_mtl :
   strcasevar "$1" m=${}
+  if ['${_input_obj_whs_$m}']!=0 _input_obj_whs=${_input_obj_whs} _input_obj_img=${_input_obj_img_$m} else _input_obj_whs,_input_obj_img= fi
   if ['${_input_obj_rgb_$m}']!=0 _input_obj_rgb=${_input_obj_rgb_$m} else _input_obj_rgb=200,200,200 fi
   if ['${_input_obj_alpha_$m}']!=0 _input_obj_alpha=${_input_obj_alpha_$m} else _input_obj_alpha=1 fi
 
