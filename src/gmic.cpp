@@ -6944,7 +6944,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           } else { // Discard sequence of values or neighboring duplicate values
             unsigned int nb_values = *argument?1U:0U;
             for (const char *s = argument; *s; ++s) if (*s==',') ++nb_values;
-            try { values.assign(nb_values,1,1,1).fill(argument,true,false); }
+            try { values.assign(nb_values,1,1,1)._fill_from_values(argument,true); }
             catch (CImgException&) { values.assign(); }
             if (values) {
               print(images,0,"Discard sequence of values '%s' in image%s.",
