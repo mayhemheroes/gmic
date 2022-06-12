@@ -211,7 +211,7 @@ endif
 FLTO = -flto
 OPT_CFLAGS =
 ifdef IS_GCC
-OPT_CFLAGS += -Ofast -mtune=generic # $(FLTO)
+OPT_CFLAGS += -O3 -mtune=generic # $(FLTO)
 OPT_LIBS = # $(FLTO)
 endif
 ifdef icpc
@@ -374,7 +374,7 @@ endif
 	$(MAKE) lib cli gimp gmic_qt libc zart
 
 native:
-	$(MAKE) "CFLAGS+=$(GMIC_STD_CFLAGS) -Ofast -march=native" "LIBS+=$(GMIC_STD_LIBS)" cli
+	$(MAKE) "CFLAGS+=$(GMIC_STD_CFLAGS) -O3 -march=native" "LIBS+=$(GMIC_STD_LIBS)" cli
 
 # libgmic.
 #---------

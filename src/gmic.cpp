@@ -5866,7 +5866,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         if (!std::strcmp("autocrop",command)) {
           gmic_substitute_args(false);
           if (*argument && cimg_sscanf(argument,"%4095[0-9.,eEinfa+-]%c",gmic_use_formula,&end)==1)
-            try { CImg<T>(1).fill(argument,true,false).move_to(g_img); }
+            try { CImg<T>(1).fill_from_values(argument,true).move_to(g_img); }
             catch (CImgException&) { g_img.assign(); }
           if (g_img) {
             print(images,0,"Auto-crop image%s by vector '%s'.",
@@ -5878,7 +5878,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           cimg_forY(selection,l) {
             if (g_img) {
               CImg<T>& img = images[selection[l]];
-              g_img.assign(img.spectrum()).fill(argument,true,false);
+              g_img.assign(img.spectrum()).fill_from_values(argument,true);
               gmic_apply(gmic_autocrop(g_img));
             } else gmic_apply(gmic_autocrop());
           }
@@ -6931,7 +6931,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             // Discard sequence of values along axes.
             unsigned int nb_values = 1, s_argx = (unsigned int)std::strlen(argx) + 1;
             for (const char *s = argument + s_argx; *s; ++s) if (*s==',') ++nb_values;
-            try { values.assign(nb_values,1,1,1).fill(argument + s_argx,true,false); }
+            try { values.assign(nb_values,1,1,1).fill_from_values(argument + s_argx,true); }
             catch (CImgException&) { arg_error("discard"); }
             print(images,0,"Discard sequence of values '%s' along '%s'-ax%cs, in image%s.",
                   gmic_argument_text_printed() + s_argx,
@@ -6944,7 +6944,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           } else { // Discard sequence of values or neighboring duplicate values
             unsigned int nb_values = *argument?1U:0U;
             for (const char *s = argument; *s; ++s) if (*s==',') ++nb_values;
-            try { values.assign(nb_values,1,1,1)._fill_from_values(argument,true); }
+            try { values.assign(nb_values,1,1,1).fill_from_values(argument,true); }
             catch (CImgException&) { values.assign(); }
             if (values) {
               print(images,0,"Discard sequence of values '%s' in image%s.",
@@ -7594,7 +7594,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   *color?color:"default");
             cimg_forY(selection,l) {
               CImg<T> &img = images[selection[l]];
-              g_img.assign(img.spectrum(),1,1,1,(T)0).fill(color,true,false);
+              g_img.assign(img.spectrum(),1,1,1,(T)0).fill_from_values(color,true);
               const float rmax = std::sqrt((float)cimg::sqr(img.width()) +
                                            cimg::sqr(img.height()));
               const int
@@ -8035,7 +8035,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   *color?color:"default");
             cimg_forY(selection,l) {
               CImg<T> &img = images[selection[l]];
-              g_img.assign(img.spectrum(),1,1,1,(T)0).fill(color,true,false);
+              g_img.assign(img.spectrum(),1,1,1,(T)0).fill_from_values(color,true);
               const int
                 nx = (int)cimg::round(sepx=='%'?x*(img.width() - 1)/100:x),
                 ny = (int)cimg::round(sepy=='%'?y*(img.height() - 1)/100:y),
@@ -8235,7 +8235,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
             cimg_forY(selection,l) {
               CImg<T> &img = images[selection[l]];
-              g_img.assign(img.spectrum(),1,1,1,(T)0).fill(color,true,false);
+              g_img.assign(img.spectrum(),1,1,1,(T)0).fill_from_values(color,true);
               gmic_apply(gmic_draw_graph(values,g_img.data(),opacity,
                                          plot_type,vertex_type,ymin,ymax,pattern));
             }
@@ -8280,7 +8280,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             const CImg<T> values = gmic_image_arg(*ind);
             cimg_forY(selection,l) {
               CImg<T> &img = images[selection[l]];
-              g_img.assign(img.spectrum(),1,1,1,(T)0).fill(color,true,false);
+              g_img.assign(img.spectrum(),1,1,1,(T)0).fill_from_values(color,true);
               gmic_apply(draw_graph(values,g_img.data(),opacity,plot_type,vertex_type,ymin,ymax,pattern));
             }
           } else arg_error("graph");
@@ -9022,7 +9022,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   *color?color:"default");
             cimg_forY(selection,l) {
               CImg<T> &img = images[selection[l]];
-              g_img.assign(img.spectrum(),1,1,1,(T)0).fill(color,true,false);
+              g_img.assign(img.spectrum(),1,1,1,(T)0).fill_from_values(color,true);
               const int
                 nx0 = (int)cimg::round(sepx0=='%'?x0*(img.width() - 1)/100:x0),
                 ny0 = (int)cimg::round(sepy0=='%'?y0*(img.height() - 1)/100:y0),
@@ -10865,7 +10865,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   *color?color:"default");
             cimg_forY(selection,l) {
               CImg<T> &img = images[selection[l]];
-              g_img.assign(img.spectrum(),1,1,1,(T)0).fill(color,true,false);
+              g_img.assign(img.spectrum(),1,1,1,(T)0).fill_from_values(color,true);
               const int
                 nx = (int)cimg::round(sepx=='%'?x*(img.width() - 1)/100:x),
                 ny = (int)cimg::round(sepy=='%'?y*(img.height() - 1)/100:y),
@@ -10944,7 +10944,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   coords(p,1) = (int)cimg::round(vertices(p,1)*(img.height() - 1)/100);
                 else coords(p,1) = (int)cimg::round(vertices(p,1));
               }
-              g_img.assign(img.spectrum(),1,1,1,(T)0).fill(p_color,true,false);
+              g_img.assign(img.spectrum(),1,1,1,(T)0).fill_from_values(p_color,true);
               if (sep1=='x') { gmic_apply(draw_polygon(coords,g_img.data(),opacity,pattern)); }
               else gmic_apply(draw_polygon(coords,g_img.data(),opacity));
             }
@@ -11659,7 +11659,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             unsigned int nb_values = 1;
             for (const char *s = s_values; *s; ++s) if (*s==',') ++nb_values;
             CImg<T> values;
-            try { values.assign(nb_values,1,1,1).fill(s_values,true,false); }
+            try { values.assign(nb_values,1,1,1).fill_from_values(s_values,true); }
             catch (CImgException&) { values.assign(); }
             if (values) {
               if (*argx)
@@ -12722,7 +12722,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 CImg<T> &img = images[selection[l]];
                 const unsigned int font_height = (unsigned int)cimg::round(sep=='%'?
                                                                            height*img.height()/100:height);
-                g_img.assign(std::max(img.spectrum(),(int)nb_cols),1,1,1,(T)0).fill(color,true,false);
+                g_img.assign(std::max(img.spectrum(),(int)nb_cols),1,1,1,(T)0).fill_from_values(color,true);
                 gmic_apply(gmic_draw_text(x,y,sepx,sepy,name,g_img,0,opacity,font_height,nb_cols));
               }
             }
