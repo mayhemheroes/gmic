@@ -50489,7 +50489,7 @@ fx_mesh3d : skip "${1=},${2=}"
     file_tmp=${-path_tmp}/gmic_fx_mesh3d.gmz
     if ['$filename']==['$old_filename'] $file_tmp
     elif ['$filename']!=0 $filename o. $file_tmp
-    else torus3d 100,40,24,11 s3d r.. 3,{h#2/3},1,1,-1 f.. y%2?160-20*x:128+50*x y a y => "Default Torus" o $file_tmp
+    else torus3d 100,40,32,17 s3d r.. 3,{h#2/3},1,1,-1 f.. y%2?160-20*x:128+50*x y a y => "Default Torus" o $file_tmp
     fi
   }
   nbv,nbp:=i[6],i[7]
@@ -50510,10 +50510,12 @@ fx_mesh3d : skip "${1=},${2=}"
     j3d.. .,$cx%,$cy%,0,1,$rendering_mode,$is_double,1,$foc
     rm.
   else
-    [0],[0],1,3,-0.1
+    W,H,afact:=w#0,h#0,arg0($antialias,1,1.5,2,3,4)
+    {[$W,$H]*$afact},1,3,-0.1
+    if $afact>1 foc*=$afact *3d.. $afact fi
     j3d. ..,$cx%,$cy%,0,1,$rendering_mode,$is_double,1,$foc
     rm..
-    to_rgba. replace_color. 0,0,-0.1,-0.1,-0.1,255,0,0,0,0
+    to_rgba. replace_color. 0,0,-0.1,-0.1,-0.1,255,0,0,0,0 r. $W,$H,1,4,2
     mv. 0
   fi
 
@@ -50528,7 +50530,6 @@ fx_mesh3d : skip "${1=},${2=}"
   # Return update filter parameters.
   u "{"$filename"}{"$filename"}{"$rendering_mode"}{"$face_orientation"}{"$materials"}{"$focale"}{"$antialias"}\
     {"$cx,$cy"}{"{[$cx+$ux,$cy+$uy]}"}{"{[$cx+$vx,$cy+$vy]}"}{"{[$cx+$sx,$cy+$sy]}"}{"$cx,$cy"}"
-
 
 fx_mesh3d_preview : skip "${1=},${2=}"
   gui_merge_layers
