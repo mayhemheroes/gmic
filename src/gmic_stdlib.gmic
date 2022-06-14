@@ -50440,31 +50440,34 @@ fx_lathing3d_preview :
 #@gui : note = note{"(supported file formats are: <b>.obj</b>, <b>.off</b> and <b>.gmz</b>)."}
 #@gui : sep = separator()
 #@gui : Old File = value("[default]")
+#@gui : X-Axis = point(80,50,0,1,255,0,128,164,1%)_0
+#@gui : Y-Axis = point(50,70,0,1,128,255,0,164,1%)_0
+#@gui : Scale = point(60,60,0,1,255,200,128,164,0.75%)_0
+#@gui : Center = point(50,50,0,1,255,255,255,-100,2%)_0
+#@gui : Old Center X = value(-1)
+#@gui : Old Center Y = value(-1)
 #@gui : Pre-Rotate / X = choice("0 deg.","45 deg.","90 deg.","135 deg.","180 deg.","225 deg.","270 deg.","315 deg.")
 #@gui : Pre-Rotate / Y = choice("0 deg.","45 deg.","90 deg.","135 deg.","180 deg.","225 deg.","270 deg.","315 deg.")
 #@gui : Pre-Rotate / Z = choice("0 deg.","45 deg.","90 deg.","135 deg.","180 deg.","225 deg.","270 deg.","315 deg.")
 #@gui : Rendering Mode = choice(3,"Dots","Wireframe","Flat","Flat Shaded","Gouraud Shaded","Phong Shaded")
 #@gui : Face Orientation = choice("Normal","Reverted","Double-Sided")
 #@gui : Materials = choice(2,"Discard Colors","Discard Textures","Keep Textures")
+#@gui : Recovery Color = color(200,200,200)
 #@gui : Focale (%) = float(100,0,500)
 #@gui : Anti-aliasing = _choice("None","x1.5","x2","x3","x4")
+#@gui : Custom Light = point(50,50,-1,1,255,255,0,-100,5%)
 #@gui : Reset 3D View = button()
-#@gui : X-Axis = point(80,50,0,1,255,0,128,164,1%)_0
-#@gui : Y-Axis = point(50,70,0,1,128,255,0,164,1%)_0
-#@gui : Scale = point(60,60,0,1,255,200,128,164,0.75%)_0
-#@gui : Center = point(50,50,0,1,255,255,255,-100,2%)_0
-#@gui : Old Center = value(-1,-1)
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>
 #@gui :       Latest Update: <i>2022/06/13</i>.</small>")
 fx_mesh3d : skip "${1=},${2=}"
 
   # Parse filter parameters.
-  filename,old_filename,rotx,roty,rotz,rendering_mode,face_orientation,materials,focale,antialias,\
-  reset_pos,xx,xy,yx,yy,sx,sy,cx,cy="$1","$2",${3-19}
-  ocx,ocy=$20
+  filename,old_filename,xx,xy,yx,yy,sx,sy,cx,cy,ocx,ocy,\
+  rotx,roty,rotz,rendering_mode,face_orientation,materials,\
+  recR,recG,recB,focale,antialias,lx,ly,reset_view="$1","$2",${3-26}
   R=30 # Radii (in %) of the virtual ellipse
-  if $reset_pos xx,xy,yx,yy,sx,sy,cx,cy,ocx,ocy:=50+$R,50,50,50+$R,60,60,50,50,-1,-1 fi
+  if $reset_view xx,xy,yx,yy,sx,sy,cx,cy,ocx,ocy:=50+$R,50,50,50+$R,60,60,50,50,-1,-1 fi
   if $! W,H=${-max_wh} else W,H=1024,1024 fi # Size of output layer
 
   # Get 2D vectors.
@@ -50513,15 +50516,15 @@ fx_mesh3d : skip "${1=},${2=}"
   is_double:=$face_orientation==2
   if $face_orientation==1 rv3d. fi
   foc:=$fact*$focale%
-  if $materials<2 p3d. 2 if !$materials col3d. 200 fi fi
-
+  if $materials<2 p3d. 2 if !$materials col3d. $recR,$recG,$recB fi fi
+  nlx,nly,nlz:=isnan($lx)?[0,0,-5e8]:[$W*($lx)%,$H*($ly)%,-3*$foc]
   if 0$_is_preview
-    j3d[0] .,$cx%,$cy%,0,1,$rendering_mode,$is_double,1,$foc rm.
+     j3d[0] .,$cx%,$cy%,0,1,$rendering_mode,$is_double,1,$foc,$nlx,$nly,$nlz rm.
   else
     afact:=arg0($antialias,1,1.5,2,3,4)
     {[$W,$H]*$afact},1,3,-0.1
     if $afact>1 foc*=$afact *3d.. $afact fi
-    j3d. ..,$cx%,$cy%,0,1,$rendering_mode,$is_double,1,$foc rm..
+    j3d. ..,$cx%,$cy%,0,1,$rendering_mode,$is_double,1,$foc,$nlx,$nly,$nlz rm..
     to_rgba. replace_color. 0,0,-0.1,-0.1,-0.1,255,0,0,0,0 r. $W,$H,1,4,2
     mv. 0
   fi
@@ -50537,9 +50540,10 @@ fx_mesh3d : skip "${1=},${2=}"
   =>[0] "name("$obj_name"),pos(0,0)"
 
   # Return update filter parameters.
-  u "{"$filename"}{"$filename"}{"$rotx"}{"$roty"}{"$rotz"}{"$rendering_mode"}{"$face_orientation"}{"$materials"}"\
-    "{"$focale"}{"$antialias"}{"$reset_pos"}"\
-    "{"{[$cx+$ux,$cy+$uy]}"}{"{[$cx+$vx,$cy+$vy]}"}{"{[$cx+$sx,$cy+$sy]}"}{"$cx,$cy"}{"$cx,$cy"}"
+  u "{"$filename"}{"$filename"}"\
+    "{"{[$cx+$ux,$cy+$uy]}"}{"{[$cx+$vx,$cy+$vy]}"}{"{[$cx+$sx,$cy+$sy]}"}{"$cx,$cy"}{"$cx"}{"$cy"}"\
+    "{"$rotx"}{"$roty"}{"$rotz"}{"$rendering_mode"}{"$face_orientation"}{"$materials"}"\
+    "{"$recR,$recG,$recB"}{"$focale"}{"$antialias"}{"$lx,$ly"}{"$reset_view"}"
 
 fx_mesh3d_preview : skip "${1=},${2=}"
   if !$! $_preview_area_width,$_preview_area_height,1,4
