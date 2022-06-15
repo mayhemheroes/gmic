@@ -50502,10 +50502,16 @@ fx_mesh3d : skip "${1=},${2=}"
 
   # Load 3D mesh.
   l[] {
-    file_tmp=${-path_tmp}/gmic_fx_mesh3d.gmz
-    if ['$filename']==['$old_filename'] $file_tmp
-    elif ['$filename']!=0 $filename o. $file_tmp
-    else torus3d 100,40,32,17 s3d r.. 3,{h#2/3},1,1,-1 f.. y%2?160-20*x:128+50*x y a y => "Default Torus" o $file_tmp
+    if narg($_fx_mesh3d_obj)
+      +e "STORE!"
+      $_fx_mesh3d_obj
+    else
+      file_tmp=${-path_tmp}/gmic_fx_mesh3d.gmz
+      if ['$filename']==['$old_filename'] $file_tmp
+      elif ['$filename']!=0 $filename o. $file_tmp
+      else torus3d 100,40,32,17 s3d r.. 3,{h#2/3},1,1,-1 f.. y%2?160-20*x:128+50*x y a y => "Default Torus" o $file_tmp
+      fi
+      +store _fx_mesh3d_obj
     fi
   }
   nbv,nbp:=i[6],i[7]
