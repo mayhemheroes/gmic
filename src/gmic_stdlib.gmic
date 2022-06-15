@@ -530,7 +530,7 @@ reference : skip "${2=}"
 "'filename[,datatype]'. 'datatype' can be the same as for `.cimg[z]` files."\n\
 "  - `.gmic` __files:__ These filenames are assumed to be G'MIC custom commands files. Loading such a "\
 "file will add the commands it defines to the interpreter. Debug information can be "\
-"enabled/disabled by the input expression 'filename.gmic[,add_debug_info' where 'debug_info' can be "\
+"enabled/disabled by the input expression 'filename.gmic[,add_debug_info]' where 'debug_info' can be "\
 "{ 0=false | 1=true }. "\n\
 "  - Inserting 'ext:' on the beginning of a filename (e.g. 'jpg:filename') forces G'MIC to "\
 "read/write the file as it would have been done if it had the specified extension `.ext`."\n\
@@ -50502,16 +50502,13 @@ fx_mesh3d : skip "${1=},${2=}"
 
   # Load 3D mesh.
   l[] {
-    if narg($_fx_mesh3d_obj)
-      +e "STORE!"
-      $_fx_mesh3d_obj
+    file_tmp=${-path_tmp}/gmic_fx_mesh3d.gmz
+    if ['$filename']==['$old_filename']
+      if narg($_gmic_qt_persistent) $_gmic_qt_persistent else $file_tmp fi
+    elif ['$filename']!=0 $filename o. $file_tmp +store. _gmic_qt_persistent
     else
-      file_tmp=${-path_tmp}/gmic_fx_mesh3d.gmz
-      if ['$filename']==['$old_filename'] $file_tmp
-      elif ['$filename']!=0 $filename o. $file_tmp
-      else torus3d 100,40,32,17 s3d r.. 3,{h#2/3},1,1,-1 f.. y%2?160-20*x:128+50*x y a y => "Default Torus" o $file_tmp
-      fi
-      +store _fx_mesh3d_obj
+      torus3d 100,40,32,17 s3d r.. 3,{h#2/3},1,1,-1 f.. y%2?160-20*x:128+50*x y a y
+      => "Default Torus" o $file_tmp +store. _gmic_qt_persistent
     fi
   }
   nbv,nbp:=i[6],i[7]

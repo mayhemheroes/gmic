@@ -285,6 +285,17 @@ struct gmic {
        gmic_list<T>& images, gmic_list<char>& images_names, const char *const custom_commands=0,
        const bool include_stdlib=true, float *const p_progress=0, bool *const p_is_abort=0);
 
+  gmic& assign();
+
+  template<typename T>
+  gmic& assign(const char *const commands_line, const char *const custom_commands=0, const bool include_stdlib=true,
+               float *const p_progress=0, bool *const p_is_abort=0, const T& pixel_type=(T)0);
+
+  template<typename T>
+  gmic& assign(const char *const commands_line,
+               gmic_list<T>& images, gmic_list<char>& images_names, const char *const custom_commands=0,
+               const bool include_stdlib=true, float *const p_progress=0, bool *const p_is_abort=0);
+
   // Run G'MIC pipeline on an already-constructed object.
   template<typename T>
   gmic& run(const char *const commands_line, float *const p_progress=0, bool *const p_is_abort=0,
@@ -328,9 +339,9 @@ struct gmic {
   static bool *abort_ptr(bool *const p_is_abort);
 
   template<typename T>
-  void _gmic(const char *const commands_line, gmic_list<T>& images, gmic_list<char>& images_names,
-             const char *const custom_commands, const bool include_stdlib,
-             float *const p_progress, bool *const p_is_abort);
+  gmic& _gmic(const char *const commands_line, gmic_list<T>& images, gmic_list<char>& images_names,
+              const char *const custom_commands, const bool include_stdlib,
+              float *const p_progress, bool *const p_is_abort);
 
   gmic_image<char> get_variable(const char *const name, const unsigned int *const variables_sizes=0,
                                 const gmic_list<char> *const images_names=0) const;
@@ -432,7 +443,7 @@ struct gmic {
              const unsigned int *const variables_sizes, bool *const is_noargs, const char *const parent_arguments,
              const gmic_image<unsigned int> *const command_selection);
 
-  // Class variables.
+  // Class attributes.
   static const char *builtin_commands_names[];
   static gmic_image<int> builtin_commands_inds;
   static gmic_image<char> stdlib;
@@ -450,7 +461,7 @@ struct gmic {
   gmic_uint64 reference_time;
   unsigned int nb_dowhiles, nb_fordones, nb_foreachdones, nb_repeatdones, nb_carriages_default, nb_carriages_stdout,
     debug_filename, debug_line, cimg_exception_mode;
-  int verbosity,render3d, renderd3d, network_timeout;
+  int verbosity, render3d, renderd3d, network_timeout;
   bool allow_entrypoint, is_change, is_debug, is_running, is_start, is_return, is_quit, is_double3d, is_debug_info,
     _is_abort, *is_abort, is_abort_thread;
   const char *starting_commands_line;

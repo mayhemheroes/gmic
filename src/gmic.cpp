@@ -2821,37 +2821,57 @@ const char* gmic::basename(const char *const str)  {
 
 // Constructors / destructors.
 //----------------------------
-#define gmic_new_attr commands(new CImgList<char>[gmic_comslots]), commands_names(new CImgList<char>[gmic_comslots]), \
-    commands_has_arguments(new CImgList<char>[gmic_comslots]), \
-    _variables(new CImgList<char>[gmic_varslots]), _variables_names(new CImgList<char>[gmic_varslots]), \
-    variables(new CImgList<char>*[gmic_varslots]), variables_names(new CImgList<char>*[gmic_varslots]), \
-    is_running(false)
+#define gmic_new_attr commands(0), commands_names(0), commands_has_arguments(0), \
+    _variables(0), _variables_names(0), variables(0), variables_names(0)
 
 #define display_window(n) (*(CImgDisplay*)display_windows[n])
 
 CImg<char> gmic::stdlib = CImg<char>::empty();
 
 gmic::gmic():gmic_new_attr {
+  assign();
+}
+
+gmic& gmic::assign() {
   CImgList<gmic_pixel_type> images;
   CImgList<char> images_names;
-  _gmic(0,images,images_names,0,true,0,0);
+  return _gmic(0,images,images_names,0,true,0,0);
 }
 
 template<typename T>
 gmic::gmic(const char *const commands_line, const char *const custom_commands,
            const bool include_stdlib, float *const p_progress, bool *const p_is_abort,
-           const T& pixel_type):
-  gmic_new_attr {
+           const T& pixel_type):gmic_new_attr {
+  assign(commands_line,custom_commands,include_stdlib,p_progress,p_is_abort,pixel_type);
+}
+
+template<typename T>
+gmic& gmic::assign(const char *const commands_line, const char *const custom_commands,
+                   const bool include_stdlib, float *const p_progress, bool *const p_is_abort,
+                   const T& pixel_type) {
   cimg::unused(pixel_type);
   CImgList<T> images;
   CImgList<char> images_names;
-  _gmic(commands_line,
-        images,images_names,custom_commands,
-        include_stdlib,p_progress,p_is_abort);
+  return _gmic(commands_line,
+               images,images_names,custom_commands,
+               include_stdlib,p_progress,p_is_abort);
+}
+
+template<typename T>
+gmic::gmic(const char *const commands_line, CImgList<T>& images, CImgList<char>& images_names,
+           const char *const custom_commands, const bool include_stdlib,
+           float *const p_progress, bool *const p_is_abort):gmic_new_attr {
+  assign(commands_line,images,images_names,custom_commands,include_stdlib,p_progress,p_is_abort);
+}
+
+template<typename T>
+gmic& gmic::assign(const char *const commands_line, CImgList<T>& images, CImgList<char>& images_names,
+             const char *const custom_commands, const bool include_stdlib,
+             float *const p_progress, bool *const p_is_abort) {
+  return _gmic(commands_line,images,images_names,custom_commands,include_stdlib,p_progress,p_is_abort);
 }
 
 gmic::~gmic() {
-  cimg::exception_mode(cimg_exception_mode);
   cimg_forX(display_windows,l) delete &display_window(l);
   cimg::mutex(21);
 #if defined(__MACOSX__) || defined(__APPLE__)
@@ -2876,6 +2896,7 @@ gmic::~gmic() {
   delete[] _variables_names;
   delete[] variables;
   delete[] variables_names;
+  cimg::exception_mode(cimg_exception_mode);
 }
 
 // Decompress G'MIC standard library commands.
@@ -4133,27 +4154,15 @@ gmic& gmic::remove_images(CImgList<T> &images, CImgList<char> &images_names,
   return *this;
 }
 
-// Template constructor.
-//----------------------
-template<typename T>
-gmic::gmic(const char *const commands_line, CImgList<T>& images, CImgList<char>& images_names,
-           const char *const custom_commands, const bool include_stdlib,
-           float *const p_progress, bool *const p_is_abort):gmic_new_attr {
-  _gmic(commands_line,
-        images,images_names,
-        custom_commands,include_stdlib,
-        p_progress,p_is_abort);
-}
-
 // This method is shared by all constructors. It initializes all the interpreter environment.
 template<typename T>
-void gmic::_gmic(const char *const commands_line,
-                 CImgList<T>& images, CImgList<char>& images_names,
-                 const char *const custom_commands, const bool include_stdlib,
-                 float *const p_progress, bool *const p_is_abort) {
-  static bool is_first = true;
+gmic& gmic::_gmic(const char *const commands_line,
+                  CImgList<T>& images, CImgList<char>& images_names,
+                  const char *const custom_commands, const bool include_stdlib,
+                  float *const p_progress, bool *const p_is_abort) {
+  static bool is_first_call = true;
 
-  // Initialize class variables and default G'MIC environment.
+  // Initialize class attributes.
   cimg::mutex(22);
   if (!builtin_commands_inds) {
     builtin_commands_inds.assign(128,2,1,1,-1);
@@ -4163,47 +4172,92 @@ void gmic::_gmic(const char *const commands_line,
       builtin_commands_inds(c,1) = (int)i;
     }
   }
+  if (is_first_call) {
+    try { is_display_available = (bool)CImgDisplay::screen_width(); } catch (CImgDisplayException&) { }
+    is_first_call = false;
+  }
   cimg::mutex(22,0);
 
+  // Initialize instance attributes.
   cimg::srand();
   setlocale(LC_NUMERIC,"C");
-  cimg_exception_mode = cimg::exception_mode();
-  cimg::exception_mode(0);
-  allow_entrypoint = false;
-  is_debug = false;
-  is_double3d = true;
-  nb_carriages_default = nb_carriages_stdout = 0;
-  verbosity = 0;
-  render3d = 4;
-  renderd3d = -1;
-  network_timeout = 0;
-  focale3d = 700;
-  light3d.assign();
-  light3d_x = light3d_y = 0;
-  light3d_z = -5e8f;
-  specular_lightness3d = 0.15f;
-  specular_shininess3d = 0.8f;
-  starting_commands_line = commands_line;
-  reference_time = cimg::time();
-  if (is_first) {
-    try { is_display_available = (bool)CImgDisplay::screen_width(); } catch (CImgDisplayException&) { }
-    is_first = false;
-  }
-  if (is_display_available) {
-    display_windows.assign(gmic_winslots);
-    cimg_forX(display_windows,l) display_windows[l] = new CImgDisplay;
-  }
+
+  delete[] commands;
+  delete[] commands_names;
+  delete[] commands_has_arguments;
+  delete[] _variables;
+  delete[] _variables_names;
+  delete[] variables;
+  delete[] _variables_names;
+  commands = new CImgList<char>[gmic_comslots];
+  commands_names = new CImgList<char>[gmic_comslots];
+  commands_has_arguments = new CImgList<char>[gmic_comslots];
   for (unsigned int l = 0; l<gmic_comslots; ++l) {
     commands_names[l].assign();
     commands[l].assign();
     commands_has_arguments[l].assign();
   }
+
+  _variables = new CImgList<char>[gmic_varslots];
+  _variables_names = new CImgList<char>[gmic_varslots];
+  variables = new CImgList<char>*[gmic_varslots];
+  variables_names = new CImgList<char>*[gmic_varslots];
   for (unsigned int l = 0; l<gmic_varslots; ++l) {
     _variables[l].assign();
     variables[l] = &_variables[l];
     _variables_names[l].assign();
     variables_names[l] = &_variables_names[l];
   }
+
+  commands_files.assign();
+  callstack.assign();
+  dowhiles.assign();
+  fordones.assign();
+  foreachdones.assign();
+  repeatdones.assign();
+  light3d.assign();
+
+  if (is_display_available) {
+    display_windows.assign(gmic_winslots);
+    cimg_forX(display_windows,l) display_windows[l] = new CImgDisplay;
+  } else display_windows.assign();
+  status.assign();
+
+  focale3d = 700;
+  light3d_x = light3d_y = 0;
+  light3d_z = -5e8f;
+  specular_lightness3d = 0.15f;
+  specular_shininess3d = 0.8f;
+  _progress = 0;
+  progress = &_progress;
+
+  reference_time = cimg::time();
+
+  nb_dowhiles = nb_fordones = nb_foreachdones = nb_repeatdones = 0;
+  nb_carriages_default = nb_carriages_stdout = 0;
+  debug_filename = debug_line = ~0U;
+  cimg_exception_mode = cimg::exception_mode();
+
+  verbosity = 0;
+  render3d = 4;
+  renderd3d = -1;
+  network_timeout = 0;
+
+  allow_entrypoint = false;
+  is_change = false;
+  is_debug = false;
+  is_running = false;
+  is_start = true;
+  is_return = is_quit = false;
+  is_double3d = true;
+  is_debug_info = false;
+  _is_abort = false;
+  is_abort = &_is_abort;
+  is_abort_thread = false;
+
+  starting_commands_line = commands_line;
+
+  // Import standard library and custom commands.
   if (include_stdlib) add_commands(gmic::decompress_stdlib().data());
   add_commands(custom_commands);
 
@@ -4314,7 +4368,8 @@ void gmic::_gmic(const char *const commands_line,
   set_variable("_flags",0,s_flags + 1);
   set_variable("_pixeltype",0,cimg::type<gmic_pixel_type>::string());
 
-  // Launch the G'MIC interpreter.
+  // Launch G'MIC interpreter.
+  cimg::exception_mode(0);
   const CImgList<char> items = commands_line?commands_line_to_CImgList(commands_line):CImgList<char>::empty();
   try {
     _run(items,images,images_names,p_progress,p_is_abort);
@@ -4322,6 +4377,7 @@ void gmic::_gmic(const char *const commands_line,
     print(images,0,"Abort G'MIC interpreter (caught exception).\n");
     throw;
   }
+  return *this;
 }
 bool gmic::is_display_available = false;
 
@@ -5227,20 +5283,16 @@ gmic& gmic::_run(const gmic_list<char>& commands_line,
   callstack[0].assign(2,1,1,1);
   callstack[0][0] = '.';
   callstack[0][1] = 0;
-  dowhiles.assign(nb_dowhiles = 0U);
-  fordones.assign(nb_fordones = 0U);
-  foreachdones.assign(nb_foreachdones = 0U);
-  repeatdones.assign(nb_repeatdones = 0U);
-  status.assign(0U);
+  dowhiles.assign(); nb_dowhiles = 0;
+  fordones.assign(); nb_fordones = 0;
+  foreachdones.assign(); nb_foreachdones = 0;
+  repeatdones.assign(); nb_repeatdones = 0;
+  status.assign();
   nb_carriages_default = nb_carriages_stdout = 0;
   debug_filename = ~0U;
   debug_line = ~0U;
-  is_change = false;
-  is_debug_info = false;
-  is_debug = false;
+  is_change = is_debug_info = is_debug = is_quit = is_return = false;
   is_start = true;
-  is_quit = false;
-  is_return = false;
   if (p_progress) progress = p_progress; else { _progress = -1; progress = &_progress; }
   if (p_is_abort) is_abort = p_is_abort; else { _is_abort = false; is_abort = &_is_abort; }
   is_abort_thread = false;
@@ -15399,6 +15451,13 @@ template gmic::gmic(const char *const commands_line, \
                     gmic_list<pt>& images, gmic_list<char>& images_names, \
                     const char *const custom_commands, const bool include_stdlib, \
                     float *const p_progress, bool *const p_is_abort); \
+template gmic& gmic::assign(const char *const commands_line, const char *const custom_commands, \
+                            const bool include_stdlib, float *const p_progress, bool *const p_is_abort, \
+                            const pt& pixel_type); \
+template gmic& gmic::assign(const char *const commands_line, \
+                            gmic_list<pt>& images, gmic_list<char>& images_names, \
+                            const char *const custom_commands, const bool include_stdlib, \
+                            float *const p_progress, bool *const p_is_abort); \
 template gmic& gmic::run(const char *const commands_line, \
                          float *const p_progress, bool *const p_is_abort,\
                          const pt& pixel_type); \
