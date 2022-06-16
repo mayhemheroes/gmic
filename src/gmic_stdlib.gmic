@@ -50449,12 +50449,12 @@ fx_lathing3d_preview :
 #@gui : Pre-Rotate / X = choice("0 deg.","45 deg.","90 deg.","135 deg.","180 deg.","225 deg.","270 deg.","315 deg.")
 #@gui : Pre-Rotate / Y = choice("0 deg.","45 deg.","90 deg.","135 deg.","180 deg.","225 deg.","270 deg.","315 deg.")
 #@gui : Pre-Rotate / Z = choice("0 deg.","45 deg.","90 deg.","135 deg.","180 deg.","225 deg.","270 deg.","315 deg.")
-#@gui : Rendering Mode = choice(3,"Dots","Wireframe","Flat","Flat Shaded","Gouraud Shaded","Phong Shaded")
+#@gui : Rendering Mode = choice(4,"Dots","Wireframe","Flat","Flat Shaded","Gouraud Shaded","Phong Shaded")
 #@gui : Face Orientation = choice("Normal","Reverted","Double-Sided")
 #@gui : Materials = choice(2,"Discard Colors","Discard Textures","Keep Textures")
 #@gui : Recovery Color = color(200,200,200)
 #@gui : Focale (%) = float(100,0,500)
-#@gui : Anti-aliasing = _choice("None","x1.5","x2","x3","x4")
+#@gui : Anti-aliasing = _choice(1,"None","x1.5","x2","x3","x4")
 #@gui : Custom Light = point(50,50,-1,1,255,255,0,-100,3%)
 #@gui : Reset 3D Position = button()
 #@gui : sep = separator()
@@ -50502,13 +50502,11 @@ fx_mesh3d : skip "${1=},${2=}"
 
   # Load 3D mesh.
   l[] {
-    file_tmp=${-path_tmp}/gmic_fx_mesh3d.gmz
-    if ['$filename']==['$old_filename']
-      if narg($_gmic_qt_persistent) $_gmic_qt_persistent else $file_tmp +store. _gmic_qt_persistent fi
-    elif ['$filename']!=0 $filename o. $file_tmp +store. _gmic_qt_persistent
-    else
+    if ['$filename']==['$old_filename']" && "narg($_persistent) $_persistent
+    elif ['$filename']!=0 $filename +store. _persistent
+    else # Default object
       torus3d 100,40,32,17 s3d r.. 3,{h#2/3},1,1,-1 f.. y%2?160-20*x:128+50*x y a y
-      => "Default Torus" o $file_tmp +store. _gmic_qt_persistent
+      => "Default Torus" +store. _persistent
     fi
   }
   nbv,nbp:=i[6],i[7]
