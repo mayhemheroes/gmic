@@ -11988,7 +11988,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               name.resize(name.width() + 4,1,1,1,0,0,1);
               name[0] = 'G'; name[1] = 'M'; name[2] = 'Z'; name[3] = 0;
               name.unroll('y').move_to(g_list);
-              g_list.get_serialize((bool)is_compressed,9 + std::strlen(formula)).move_to(name);
+              g_list.get_serialize((bool)is_compressed,(unsigned int)(9 + std::strlen(formula))).move_to(name);
               std::sprintf(name,"%c*store/%s",gmic_store,_formula.data());
               set_variable(formula,name,variables_sizes);
             } else for (unsigned int n = 0; n<pattern; ++n) { // Assignment to multiple variables
@@ -14121,8 +14121,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               is_valid_expr&=(item + std::strlen(title)==s_end_left);
               if (is_valid_expr) {
                 s = s_equal + 1;
-                varnames.insert(1).back().assign(title,std::strlen(title) + 1,1,1,1,true);
-                varvalues.insert(1).back().assign(s,std::strlen(s) + 1,1,1,1,true);
+                varnames.insert(1).back().assign(title,(unsigned int)std::strlen(title) + 1,1,1,1,true);
+                varvalues.insert(1).back().assign(s,(unsigned int)std::strlen(s) + 1,1,1,1,true);
               }
             } else { // Multiple variable names
 
@@ -14158,7 +14158,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               // Split list of variable values in 'varvalues'.
               s = s_equal + 1;
               if (is_cond || !*s)
-                varvalues.insert(1).back().assign(s,std::strlen(s) + 1,1,1,1,true);
+                varvalues.insert(1).back().assign(s,(unsigned int)std::strlen(s) + 1,1,1,1,true);
               else {
                 const char *const s_end = item + std::strlen(item);
                 while (s<s_end) {
@@ -14221,7 +14221,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   varvalues_d.assign(1)[0] = is_rounded?gmic_round(value):value;
                 else { // Evaluate right-hand side as a math expression.
                   CImg<T> &img = images.size()?images.back():CImg<T>::empty();
-                  name.assign(std::strlen(s) + 4);
+                  name.assign((unsigned int)std::strlen(s) + 4);
                   *name = '['; name[1] = ';'; name[name._width - 2] = ']'; name.back() = 0;
                   std::memcpy(name.data() + 2,s,name.width() - 4);
                   strreplace_fw(name);
