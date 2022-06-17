@@ -50439,7 +50439,7 @@ fx_lathing3d_preview :
 #@gui : 3D Mesh Filename = file("")
 #@gui : note = note{"(supported file formats are: <b>.obj</b>, <b>.off</b> and <b>.gmz</b>)."}
 #@gui : sep = separator()
-#@gui : Old File = value("[default]")
+#@gui : Old File = value(0)
 #@gui : X-Axis = point(80,50,0,1,255,0,128,164,1%)_0
 #@gui : Y-Axis = point(50,70,0,1,128,255,0,164,1%)_0
 #@gui : Scale = point(60,60,0,1,255,200,128,164,0.75%)_0
@@ -50463,9 +50463,12 @@ fx_lathing3d_preview :
 fx_mesh3d : skip "${1=},${2=}"
 
   # Parse filter parameters.
-  filename,old_filename,xx,xy,yx,yy,sx,sy,cx,cy,ocx,ocy,\
+  filename="$1"
+  old_filename=$2 # Stored as a list of ascii codes
+  xx,xy,yx,yy,sx,sy,cx,cy,ocx,ocy,\
   rotx,roty,rotz,rendering_mode,face_orientation,materials,\
-  recR,recG,recB,focale,antialias,lx,ly,reset_pos="$1","$2",${3-26}
+  recR,recG,recB,focale,antialias,lx,ly,reset_pos=${3-26}
+
   R=30 # Radii (in %) of the virtual ellipse
   if $reset_pos xx,xy,yx,yy,sx,sy,cx,cy,ocx,ocy:=50+$R,50,50,50+$R,60,60,50,50,-1,-1 fi
   if $! W,H=${-max_wh} else W,H=1024,1024 fi # Size of output layer
@@ -50502,7 +50505,7 @@ fx_mesh3d : skip "${1=},${2=}"
 
   # Load 3D mesh.
   l[] {
-    if ['$filename']==['$old_filename']" && "narg($_persistent) $_persistent
+    if ['$filename']==[$old_filename]" && "narg($_persistent) $_persistent
     elif ['$filename']!=0 $filename +store. _persistent
     else # Default object
       torus3d 100,40,32,17 s3d r.. 3,{h#2/3},1,1,-1 f.. y%2?160-20*x:128+50*x y a y
@@ -50546,7 +50549,7 @@ fx_mesh3d : skip "${1=},${2=}"
   =>[0] "name("$obj_name"),pos(0,0)"
 
   # Return update filter parameters.
-  u "{"$filename"}{"$filename"}"\
+  u "{"$filename"}{"{'$filename'}"}"\
     "{"{[$cx+$ux,$cy+$uy]}"}{"{[$cx+$vx,$cy+$vy]}"}{"{[$cx+$sx,$cy+$sy]}"}{"$cx,$cy"}{"$cx"}{"$cy"}"\
     "{"$rotx"}{"$roty"}{"$rotz"}{"$rendering_mode"}{"$face_orientation"}{"$materials"}"\
     "{"$recR,$recG,$recB"}{"$focale"}{"$antialias"}{"$lx,$ly"}{"$reset_pos"}"
