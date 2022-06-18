@@ -6803,8 +6803,9 @@ parse_gui : skip "${1=print},${2=*}"
       is_first = 1;
       p = 0;
       while (p<size(source),
-        p = find(source,'#@gui',p)%size(source);
-        !p || (p>0 && source[p - 1]==_'\n')?( # Found line starting with '#@gui'
+        q = find(source,'#@gui',p);
+        p = q%size(source);
+        !q || (q>0 && source[q - 1]==_'\n')?( # Found line starting with '#@gui'
           p0 = p; # Remember starting position of line
           p+=5;
           source[p]==_'_' && (l = find(source,_' ',++p))>=0?(p = l + 1); # Skip locale
@@ -6816,7 +6817,7 @@ parse_gui : skip "${1=print},${2=*}"
           copy(i[#0,p0],-1,min(r,size(source)-1)-p0+1,1,0); # Part to be discarded
           p = r + 1;
           is_first = 0;
-        ):++p
+        ):++p;
       )"
     a[^0] y discard.. -1
     autocrop[0] {'\n'} store[0] nongui$c
