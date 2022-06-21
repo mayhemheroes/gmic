@@ -50438,8 +50438,8 @@ fx_lathing3d_preview :
 #@gui 3D Mesh : fx_mesh3d, fx_mesh3d_preview(1) : *
 #@gui : 3D Mesh Filename = file("")
 #@gui : note = note{"(supported file formats are: <b>.obj</b>, <b>.off</b> and <b>.gmz</b>)."}
-#@gui : sep = separator()
 #@gui : Old File = value("0")
+#@gui : sep = separator()
 #@gui : X-Axis = point(80,50,0,1,255,0,128,164,1%)_0
 #@gui : Y-Axis = point(50,70,0,1,128,255,0,164,1%)_0
 #@gui : Scale = point(60,60,0,1,255,200,128,164,0.75%)_0
@@ -50449,7 +50449,7 @@ fx_lathing3d_preview :
 #@gui : Pre-Rotate / X = choice("0 deg.","45 deg.","90 deg.","135 deg.","180 deg.","225 deg.","270 deg.","315 deg.")
 #@gui : Pre-Rotate / Y = choice("0 deg.","45 deg.","90 deg.","135 deg.","180 deg.","225 deg.","270 deg.","315 deg.")
 #@gui : Pre-Rotate / Z = choice("0 deg.","45 deg.","90 deg.","135 deg.","180 deg.","225 deg.","270 deg.","315 deg.")
-#@gui : Rendering Mode = choice(4,"Dots","Wireframe","Flat","Flat Shaded","Gouraud Shaded","Phong Shaded")
+#@gui : Rendering Mode = choice(5,"Bounding Box","Dots","Wireframe","Flat","Flat Shaded","Gouraud Shaded","Phong Shaded")
 #@gui : Face Orientation = choice("Normal","Reverted","Double-Sided")
 #@gui : Materials = choice(2,"Discard Colors","Discard Textures","Keep Textures")
 #@gui : Recovery Color = color(200,200,200)
@@ -50459,7 +50459,7 @@ fx_lathing3d_preview :
 #@gui : Reset 3D Position = button()
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>
-#@gui :       Latest Update: <i>2022/06/13</i>.</small>")
+#@gui :       Latest Update: <i>2022/06/21</i>.</small>")
 fx_mesh3d : skip "${1=},${2=}"
 
   # Parse filter parameters.
@@ -50470,6 +50470,7 @@ fx_mesh3d : skip "${1=},${2=}"
   recR,recG,recB,focale,antialias,lx,ly,reset_pos=${3-26}
 
   R=30 # Radii (in %) of the virtual ellipse
+  show_bb:=!$rendering_mode
   if $reset_pos xx,xy,yx,yy,sx,sy,cx,cy,ocx,ocy:=50+$R,50,50,50+$R,60,60,50,50,-1,-1 fi
   if $! W,H=${-max_wh} else W,H=1024,1024 fi # Size of output layer
   0 => $filename ext={x} rm.
@@ -50506,11 +50507,12 @@ fx_mesh3d : skip "${1=},${2=}"
   # Load 3D mesh.
   l[] {
     if ['$filename']==['$old_filename']" && "narg($_persistent) $_persistent
-    elif ['$filename']!=0 $filename +store. _persistent
+    elif ['$filename']!=0 $filename +boundingbox3d. +store _persistent
     else # Default object
       torus3d 100,40,32,17 s3d r.. 3,{h#2/3},1,1,-1 f.. y%2?160-20*x:128+50*x y a y
-      => "Default Torus" +store. _persistent
+      => "Default Torus" +boundingbox3d. +store _persistent
     fi
+    if $show_bb k. else rm. fi
   }
   nbv,nbp:=i[6],i[7]
   obj_name={b}
@@ -50528,12 +50530,12 @@ fx_mesh3d : skip "${1=},${2=}"
   if $materials<2 p3d. 2 if !$materials col3d. $recR,$recG,$recB fi fi
   nlx,nly,nlz:=isnan($lx)?[$W*$cx%,$H*$cy%,-5e8]:[$W*($cx+4*($lx-$cx))%,$H*($cy+4*($ly-$cy))%,-10*$foc]
   if 0$_is_preview
-     j3d[0] .,$cx%,$cy%,0,1,$rendering_mode,$is_double,1,$foc,$nlx,$nly,$nlz rm.
+     j3d[0] .,$cx%,$cy%,0,1,{$rendering_mode>0?$rendering_mode-1:1},$is_double,1,$foc,$nlx,$nly,$nlz rm.
   else
     afact:=arg0($antialias,1,1.5,2,3,4)
     if $afact>1 foc*=$afact *3d. $afact fi
     {[$W,$H]*$afact},1,3,-0.1
-    j3d. ..,$cx%,$cy%,0,1,$rendering_mode,$is_double,1,$foc,$nlx,$nly,$nlz rm..
+    j3d. ..,$cx%,$cy%,0,1,{$rendering_mode>0?$rendering_mode-1:1},$is_double,1,$foc,$nlx,$nly,$nlz rm..
     to_rgba. replace_color. 0,0,-0.1,-0.1,-0.1,255,0,0,0,0 r. $W,$H,1,4,2
     if 0$_output_mode>0 k. else blend alpha fi
   fi
