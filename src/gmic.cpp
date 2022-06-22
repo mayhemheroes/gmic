@@ -2118,7 +2118,7 @@ inline char *_gmic_argument_text(const char *const argument, char *const argumen
 #define gmic_argument_text() _gmic_argument_text(argument,gmic_use_argument_text,true)
 
 // Macro for having 'get' or 'non-get' versions of G'MIC commands.
-// Set 'optim_inplace' to true, only for a command that is implemented to act 'in-place'.
+// Set 'optim_inplace' to true, only for function implementations that act 'in-place'.
 #define gmic_apply(function,optim_inplace) { \
     uind = selection[l]; \
     gmic_check(images[uind]); \
