@@ -2118,11 +2118,13 @@ inline char *_gmic_argument_text(const char *const argument, char *const argumen
 #define gmic_argument_text() _gmic_argument_text(argument,gmic_use_argument_text,true)
 
 // Macro for having 'get' or 'non-get' versions of G'MIC commands.
-#define gmic_apply(function,is_optim) { \
+// Set 'optim_inplace' to true, only for a command that is implemented to act 'in-place'.
+#define gmic_apply(function,optim_inplace) { \
     uind = selection[l]; \
     gmic_check(images[uind]); \
     if (is_get) { \
-      if (is_optim) CImg<gmic_pixel_type>(images[uind],false).function.move_to(images); /* Surprisingly faster */ \
+      if (optim_inplace) \
+        CImg<gmic_pixel_type>(images[uind],false).function.move_to(images); /* Surprisingly faster */ \
       else images[uind].get_##function.move_to(images); \
       images_names[uind].get_copymark().move_to(images_names); \
     } else images[uind].function; \
