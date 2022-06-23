@@ -25795,7 +25795,15 @@ pixelsort : check "(str1='${1=+}'; str1=='+' || str1=='-') && "\
   fi
   repeat $! {
     if '$3'!=0 pass$3 0 else +compose_channels[$>] + fi
+    if [w#1,h#1,d#1,s#1]!=[w#0,h#0,d#0,1]
+      error[0--4] "Command 'pixelsort': Invalid specified sorting criterion (size=("{1,[w,h,d,s]}")) for image ["$>"] "\
+                  "(size=("{0,[w,h,d,s]}"))."
+    fi
     if '$4'!=0 pass$4 0 else [$>],[$>],[$>],1,1 fi
+    if [w#2,h#2,d#2,s#2]!=[w#0,h#0,d#0,1]
+      error[0--4] "Command 'pixelsort': Invalid specified mask (size=("{1,[w,h,d,s]}")) for image ["$>"] "\
+                  "(size=("{0,[w,h,d,s]}"))."
+    fi
     l[$>,-2,-1] {
       nm={0,n} >=. 50% mv.. 0 a c
       if '$2'=='x';
@@ -25809,7 +25817,7 @@ pixelsort : check "(str1='${1=+}'; str1=='+' || str1=='-') && "\
       elif '$2'=='yx';
         permute yxzc _pixelsort $1 permute yxzc _pixelsort $1
       fi
-      => $nm
+      channels 1,{s-2} => $nm
     }
   }
 
@@ -25821,7 +25829,7 @@ _pixelsort :
       for (xe = x + 1, i(xe,y,z) && xe<w, ++xe);
       --xe>x?(dx = xe - x + 1; Ndx = N*dx; Nx = N*x; copy(V,i(#0,Nx),Ndx); copy(i(#0,Nx),sort(V,$sort,dx,N),Ndx));
     );"
-  rm. r. {[$N,w/$N,h,d]},-1 permute. yzcx channels. 1,100%
+  r.. {-2,[$N,w/$N,h,d]},-1 permute.. yzcx a c
 
 #@cli polaroid : _size1>=0,_size2>=0
 #@cli : Create polaroid effect in selected images.
