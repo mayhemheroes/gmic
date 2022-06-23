@@ -25799,26 +25799,29 @@ pixelsort : check "(str1='${1=+}'; str1=='+' || str1=='-') && "\
     l[$>,-2,-1] {
       nm={0,n} >=. 50% mv.. 0 a c
       if '$2'=='x';
-        _pixelsort $1 channels 1,{s-2}
+        _pixelsort $1
       elif '$2'=='y';
-        permute yxzc _pixelsort $1 channels 1,{s-2} permute yxzc
+        permute yxzc _pixelsort $1 permute yxzc
       elif '$2'=='z';
-        permute zxyc _pixelsort $1 channels 1,{s-2} permute yzxc
+        permute zxyc _pixelsort $1 permute yzxc
       elif '$2'=='xy';
-        _pixelsort $1 permute yxzc _pixelsort $1 channels 1,{s-2} permute yxzc
+        _pixelsort $1 permute yxzc _pixelsort $1 permute yxzc
       elif '$2'=='yx';
-        permute yxzc _pixelsort $1 permute yxzc _pixelsort $1 channels 1,{s-2}
+        permute yxzc _pixelsort $1 permute yxzc _pixelsort $1
       fi
       => $nm
     }
   }
 
 _pixelsort :
-  eval. ">begin(ret = [ 0 ]; const m = s - 1);
-          i(x,y,z,m) && !i(#-1,x - 1,y,z,m)?(
-            for (x1 = x + 1, x1<w && i(x1,y,z,m), ++x1);
-            --x1>x?run('+z[0] ',x,',',y,',',z,',',0,',',x1,',',y,',',z,',',m - 1,' sort. $1,x j.. .,',x,',',y,' rm.');
-          ); ret"
+  s. c,-{s-1}
+  N={-2,s} permute.. cxyz r.. {-2,[w*h,d,s,1]},-1 # Merge image + criterion into a single image.
+  eval. "*begin(ret = 0; V = vector(#w#0); const N = $N);
+    i && !j(-1)?( # Start of a segment
+      for (xe = x + 1, i(xe,y,z) && xe<w, ++xe);
+      --xe>x?(dx = xe - x + 1; Ndx = N*dx; Nx = N*x; copy(V,i(#0,Nx),Ndx); copy(i(#0,Nx),sort(V,1,dx,N),Ndx));
+    );"
+  rm. r. {[$N,w/$N,h,d]},-1 permute. yzcx channels. 1,100%
 
 #@cli polaroid : _size1>=0,_size2>=0
 #@cli : Create polaroid effect in selected images.
