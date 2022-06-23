@@ -25815,10 +25815,11 @@ pixelsort : check "(str1='${1=+}'; str1=='+' || str1=='-') && "\
 
 _pixelsort :
   s. c,-{s-1} N={-2,s} permute.. cxyz r.. {-2,[w*h,d,s,1]},-1 # Merge image + criterion into a single image
+  sort:=;_'$1'==_'+';
   eval. "*begin(ret = 0; V = vector(#w#0); const N = $N);
     i && !j(-1)?( # Start of a segment
       for (xe = x + 1, i(xe,y,z) && xe<w, ++xe);
-      --xe>x?(dx = xe - x + 1; Ndx = N*dx; Nx = N*x; copy(V,i(#0,Nx),Ndx); copy(i(#0,Nx),sort(V,1,dx,N),Ndx));
+      --xe>x?(dx = xe - x + 1; Ndx = N*dx; Nx = N*x; copy(V,i(#0,Nx),Ndx); copy(i(#0,Nx),sort(V,$sort,dx,N),Ndx));
     );"
   rm. r. {[$N,w/$N,h,d]},-1 permute. yzcx channels. 1,100%
 
