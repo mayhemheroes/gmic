@@ -4190,8 +4190,6 @@ gmic& gmic::_gmic(const char *const commands_line,
   delete[] commands_has_arguments;
   delete[] _variables;
   delete[] _variables_names;
-  delete[] variables;
-  delete[] _variables_names;
   commands = new CImgList<char>[gmic_comslots];
   commands_names = new CImgList<char>[gmic_comslots];
   commands_has_arguments = new CImgList<char>[gmic_comslots];
