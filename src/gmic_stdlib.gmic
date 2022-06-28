@@ -43045,6 +43045,36 @@ fx_custom_transform :
     fi
   mv. 0 }
 
+#@gui Vibrance : fx_vibrance, fx_vibrance_preview(1)+
+#@gui : Strength = float(1.5,0,4)
+#@gui : sep = separator()
+#@gui : Preview Type = choice("Full","Forward Horizontal","Forward Vertical","Backward Horizontal",
+#@gui : "Backward Vertical","Duplicate Top","Duplicate Left","Duplicate Bottom","Duplicate Right",
+#@gui : "Duplicate Horizontal","Duplicate Vertical","Checkered","Checkered Inverse")
+#@gui : Preview Split = point(50,50,0,0,200,200,200,0,10)_0
+#@gui : sep = separator()
+#@gui : note = note("<small>Author: <i>Age / Pixls.us</i>.      Latest Update: <i>2022/06/28</i>.</small>")
+fx_vibrance :
+  foreach {
+    split_opacity l[0] {
+      to_rgb
+      f "const vibrance = $1;
+         vib(val) = (
+           v = val/255;
+           vv = (v - lum)*vibrance + lum;
+           (vv*(1 - sat) + v*sat)*255
+         );
+         min = min(R,G,B)/255;
+         lum = (R*0.2 + G*0.7 + B*0.1)/255;
+         sat = cut(1 - min/lum,0,1);
+         [ vib(R),vib(G),vib(B) ]"
+      }
+      a c
+    }
+
+fx_vibrance_preview :
+  gui_split_preview "fx_vibrance $*",${-3--1}
+
 #@gui ____<b>Contours</b>
 #------------------------
 
