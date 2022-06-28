@@ -2308,14 +2308,17 @@ double gmic_round(const double x) {
 }
 
 // Manage list of all gmic runs.
-inline gmic_list<void*>& gmic_runs() { static gmic_list<void*> val; return val; }
+inline CImgList<void*>& gmic_runs() {
+  static CImgList<void*> val;
+  return val;
+}
 
 const CImg<void*> get_current_run(const char *const func_name, void *const p_list) {
   cimg::mutex(24);
   CImgList<void*> &grl = gmic_runs();
   int p;
   for (p = grl.width() - 1; p>=0; --p) {
-    CImg<void*> &gr = grl[p];
+    const CImg<void*> &gr = grl[p];
     if (gr[1]==(void*)p_list) break;
   }
   const CImg<void*> gr = grl[p].get_shared(); // Return shared image
@@ -2570,7 +2573,11 @@ double gmic::mp_store(const double *const ptrs, const unsigned int siz,
 }
 
 // Manage correspondence between abort pointers and thread ids.
-CImgList<void*> gmic::list_p_is_abort = CImgList<void*>();
+inline CImgList<void*> &gmic_abort_ptrs() {
+  static CImgList<void*> val;
+  return val;
+}
+
 bool *gmic::abort_ptr(bool *const p_is_abort) {
 #if defined(__MACOSX__) || defined(__APPLE__)
   void* tid = (void*)(cimg_ulong)getpid();
@@ -2582,16 +2589,19 @@ bool *gmic::abort_ptr(bool *const p_is_abort) {
   void* tid = (void*)0;
 #endif // #if defined(__MACOSX__) || defined(__APPLE__)
   cimg::mutex(21);
+  CImgList<void*> &gapl = gmic_abort_ptrs();
   bool *res = p_is_abort;
   int ind = -1;
-  cimglist_for(list_p_is_abort,l)
-    if (list_p_is_abort(l,0)==tid) { ind = l; break; }
+  cimglist_for(gapl,p) {
+    const CImg<void*> &gap = gapl[p];
+    if (gap[0]==(void*)tid) { ind = p; break; }
+  }
   if (p_is_abort) { // Set pointer
-    if (ind>=0) list_p_is_abort(ind,1) = (void*)p_is_abort;
-    else CImg<void*>::vector(tid,(void*)p_is_abort).move_to(list_p_is_abort);
+    if (ind>=0) gapl(ind,1) = (void*)p_is_abort;
+    else CImg<void*>::vector(tid,(void*)p_is_abort).move_to(gapl);
   } else { // Get pointer
-    static bool _is_abort;
-    res = ind<0?&_is_abort:(bool*)list_p_is_abort(ind,1);
+    static bool _is_abort = false;
+    res = ind<0?&_is_abort:(bool*)gapl(ind,1);
   }
   cimg::mutex(21,0);
   return res;
@@ -2887,9 +2897,12 @@ gmic::~gmic() {
   void* tid = (void*)0;
 #endif
   int ind = -1;
-  cimglist_for(list_p_is_abort,l)
-    if (list_p_is_abort(l,0)==tid) { ind = l; break; }
-  if (ind>=0) list_p_is_abort.remove(ind);
+  CImgList<void*> &gapl = gmic_abort_ptrs();
+  cimglist_for(gapl,p) {
+    const CImg<void*> &gap = gapl[p];
+    if (gap[0]==tid) { ind = p; break; }
+  }
+  if (ind>=0) gapl.remove(ind);
   cimg::mutex(21,0);
 
   delete[] commands;
@@ -5249,15 +5262,15 @@ gmic& gmic::run(const char *const commands_line,
                 float *const p_progress, bool *const p_is_abort,
                 const T& pixel_type) {
   cimg::unused(pixel_type);
-  gmic_list<T> images;
-  gmic_list<char> images_names;
+  CImgList<T> images;
+  CImgList<char> images_names;
   return run(commands_line,images,images_names,
              p_progress,p_is_abort);
 }
 
 template<typename T>
 gmic& gmic::run(const char *const commands_line,
-                gmic_list<T> &images, gmic_list<char> &images_names,
+                CImgList<T> &images, CImgList<char> &images_names,
                 float *const p_progress, bool *const p_is_abort) {
   cimg::mutex(26);
   if (is_running)
@@ -5274,8 +5287,8 @@ gmic& gmic::run(const char *const commands_line,
 }
 
 template<typename T>
-gmic& gmic::_run(const gmic_list<char>& commands_line,
-                 gmic_list<T> &images, gmic_list<char> &images_names,
+gmic& gmic::_run(const CImgList<char>& commands_line,
+                 CImgList<T> &images, CImgList<char> &images_names,
                  float *const p_progress, bool *const p_is_abort) {
   CImg<unsigned int> variables_sizes(gmic_varslots,1,1,1,0);
   unsigned int position = 0;
@@ -15449,21 +15462,21 @@ template gmic::gmic(const char *const commands_line, const char *const custom_co
                     const bool include_stdlib, float *const p_progress, bool *const p_is_abort, \
                     const pt& pixel_type); \
 template gmic::gmic(const char *const commands_line, \
-                    gmic_list<pt>& images, gmic_list<char>& images_names, \
+                    CImgList<pt>& images, CImgList<char>& images_names, \
                     const char *const custom_commands, const bool include_stdlib, \
                     float *const p_progress, bool *const p_is_abort); \
 template gmic& gmic::assign(const char *const commands_line, const char *const custom_commands, \
                             const bool include_stdlib, float *const p_progress, bool *const p_is_abort, \
                             const pt& pixel_type); \
 template gmic& gmic::assign(const char *const commands_line, \
-                            gmic_list<pt>& images, gmic_list<char>& images_names, \
+                            CImgList<pt>& images, CImgList<char>& images_names, \
                             const char *const custom_commands, const bool include_stdlib, \
                             float *const p_progress, bool *const p_is_abort); \
 template gmic& gmic::run(const char *const commands_line, \
                          float *const p_progress, bool *const p_is_abort,\
                          const pt& pixel_type); \
 template gmic& gmic::run(const char *const commands_line, \
-                         gmic_list<pt> &images, gmic_list<char> &images_names, \
+                         CImgList<pt> &images, CImgList<char> &images_names, \
                          float *const p_progress, bool *const p_is_abort); \
 template CImg<pt>& CImg<pt>::assign(const unsigned int size_x, const unsigned int size_y, \
                                     const unsigned int size_z, const unsigned int size_c); \
@@ -15477,7 +15490,7 @@ export_gmic(gmic_pixel_type2);
 #endif
 template CImgList<char>::~CImgList();
 template CImgList<char>& CImgList<char>::assign(const unsigned int n);
-template bool gmic::search_sorted(const char *const str, const gmic_list<char>& list,
+template bool gmic::search_sorted(const char *const str, const CImgList<char>& list,
                                   const unsigned int length, unsigned int &out_ind);
 
 #endif // #ifdef cimg_plugin
