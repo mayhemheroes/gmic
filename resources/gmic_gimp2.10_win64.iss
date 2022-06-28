@@ -117,9 +117,7 @@ Name: Dutch; MessagesFile: compiler:Languages\Dutch.isl
 Name: Finnish; MessagesFile: compiler:Languages\Finnish.isl
 Name: German; MessagesFile: compiler:Languages\German.isl
 Name: Hebrew; MessagesFile: compiler:Languages\Hebrew.isl
-Name: Hungarian; MessagesFile: compiler:Languages\Hungarian.isl
 Name: Italian; MessagesFile: compiler:Languages\Italian.isl
-Name: Japanese; MessagesFile: compiler:Languages\Japanese.isl
 Name: Norwegian; MessagesFile: compiler:Languages\Norwegian.isl
 Name: Polish; MessagesFile: compiler:Languages\Polish.isl
 Name: Portuguese; MessagesFile: compiler:Languages\Portuguese.isl
