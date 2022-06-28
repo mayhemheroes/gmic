@@ -2329,10 +2329,11 @@ inline void* get_tid() {
 const CImg<void*> get_current_run(const char *const func_name, void *const p_list) { // Search by image list
   cimg::mutex(24);
   CImgList<void*> &grl = gmic_runs();
+  void *const tid = get_tid();
   int p;
   for (p = grl.width() - 1; p>=0; --p) {
     const CImg<void*> &gr = grl[p];
-    if (gr[1]==(void*)p_list) break;
+    if (gr[1]==(void*)p_list && gr[7]==tid) break;
   }
   const CImg<void*> gr = grl[p].get_shared(); // Return shared image
   cimg::mutex(24,0);
@@ -15437,6 +15438,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
   // Remove current run from managed list of gmic runs.
   if (push_run) {
     cimg::mutex(24);
+    void *const tid = get_tid();
     for (int k = grl.width() - 1; k>=0; --k) {
       CImg<void*> &_gr = grl[k];
       if (_gr[0]==(void*)this &&
@@ -15445,7 +15447,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           _gr[3]==(void*)&parent_images &&
           _gr[4]==(void*)&parent_images_names &&
           _gr[5]==(void*)variables_sizes &&
-          _gr[6]==(void*)command_selection) {
+          _gr[6]==(void*)command_selection &&
+          _gr[7]==tid) {
         grl.remove(k); break;
       }
     }
