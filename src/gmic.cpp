@@ -2313,6 +2313,19 @@ inline CImgList<void*>& gmic_runs() {
   return val;
 }
 
+inline void* get_tid() {
+#if defined(__MACOSX__) || defined(__APPLE__)
+  void* tid = (void*)(cimg_ulong)getpid();
+#elif cimg_OS==1
+  void* tid = (void*)(cimg_ulong)syscall(SYS_gettid);
+#elif cimg_OS==2
+  void* tid = (void*)(cimg_ulong)GetCurrentThreadId();
+#else
+  void* tid = (void*)0;
+#endif // #if defined(__MACOSX__) || defined(__APPLE__)
+  return tid;
+}
+
 const CImg<void*> get_current_run(const char *const func_name, void *const p_list) { // Search by image list
   cimg::mutex(24);
   CImgList<void*> &grl = gmic_runs();
@@ -2580,16 +2593,8 @@ inline CImgList<void*> &gmic_abort_ptrs() {
 }
 
 bool *gmic::abort_ptr(bool *const p_is_abort) {
-#if defined(__MACOSX__) || defined(__APPLE__)
-  void* tid = (void*)(cimg_ulong)getpid();
-#elif cimg_OS==1
-  void* tid = (void*)(cimg_ulong)syscall(SYS_gettid);
-#elif cimg_OS==2
-  void* tid = (void*)(cimg_ulong)GetCurrentThreadId();
-#else
-  void* tid = (void*)0;
-#endif // #if defined(__MACOSX__) || defined(__APPLE__)
   cimg::mutex(21);
+  void *const tid = get_tid();
   CImgList<void*> &gapl = gmic_abort_ptrs();
   bool *res = p_is_abort;
   int ind = -1;
@@ -2888,15 +2893,7 @@ gmic& gmic::assign(const char *const commands_line, CImgList<T>& images, CImgLis
 gmic::~gmic() {
   cimg_forX(display_windows,l) delete &display_window(l);
   cimg::mutex(21);
-#if defined(__MACOSX__) || defined(__APPLE__)
-  void* tid = (void*)(cimg_ulong)getpid();
-#elif cimg_OS==1
-  void* tid = (void*)(cimg_ulong)syscall(SYS_gettid);
-#elif cimg_OS==2
-  void* tid = (void*)(cimg_ulong)GetCurrentThreadId();
-#else
-  void* tid = (void*)0;
-#endif
+  void *const tid = get_tid();
   int ind = -1;
   CImgList<void*> &gapl = gmic_abort_ptrs();
   cimglist_for(gapl,p) {
