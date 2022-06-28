@@ -5341,7 +5341,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
   const CImg<void*> &grb = grl.back();
   const bool push_run = !grl || grb[0]!=this || grb[1]!=&images;
   if (push_run) {
-    CImg<void*> gr(7);
+    CImg<void*> gr(8);
     gr[0] = (void*)this;
     gr[1] = (void*)&images;
     gr[2] = (void*)&images_names;
@@ -5349,6 +5349,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     gr[4] = (void*)&parent_images_names;
     gr[5] = (void*)variables_sizes;
     gr[6] = (void*)command_selection;
+    gr[7] = get_tid();
     gr.move_to(grl);
   }
   cimg::mutex(24,0);
