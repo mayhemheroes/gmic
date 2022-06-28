@@ -2326,22 +2326,27 @@ inline void* get_tid() {
   return tid;
 }
 
-const CImg<void*> get_current_run(const char *const func_name, void *const p_list) { // Search by image list
+// Search G'MIC by image list and thread_id. If 'p_list==0', search only by thread_id.
+const CImg<void*> get_current_run(const char *const func_name, void *const p_list) {
   cimg::mutex(24);
   CImgList<void*> &grl = gmic_runs();
   void *const tid = get_tid();
   int p;
   for (p = grl.width() - 1; p>=0; --p) {
     const CImg<void*> &gr = grl[p];
-    if (gr[1]==(void*)p_list && gr[7]==tid) break;
+    if ((!p_list || gr[1]==(void*)p_list) && gr[7]==tid) break;
   }
   const CImg<void*> gr = grl[p].get_shared(); // Return shared image
   cimg::mutex(24,0);
   if (p<0) // Instance not found!
-    throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<>: Function '%s': "
+    throw CImgArgumentException("[" cimg_appname "] Function '%s': "
                                 "Cannot determine instance of the G'MIC interpreter.",
                                 func_name);
   return gr;
+}
+
+inline bool *get_current_is_abort() {
+  return ((gmic*)(get_current_run("gmic_abort_init()",0)[0]))->is_abort;
 }
 
 // G'MIC-related functions for the mathematical expression evaluator.
@@ -2587,33 +2592,6 @@ double gmic::mp_store(const double *const ptrs, const unsigned int siz,
   return cimg::type<double>::nan();
 }
 
-// Manage correspondence between abort pointers and thread ids.
-inline CImgList<void*> &gmic_abort_ptrs() {
-  static CImgList<void*> val;
-  return val;
-}
-
-bool *gmic::abort_ptr(bool *const p_is_abort) {
-  cimg::mutex(21);
-  void *const tid = get_tid();
-  CImgList<void*> &gapl = gmic_abort_ptrs();
-  bool *res = p_is_abort;
-  int ind = -1;
-  cimglist_for(gapl,p) {
-    const CImg<void*> &gap = gapl[p];
-    if (gap[0]==(void*)tid) { ind = p; break; }
-  }
-  if (p_is_abort) { // Set pointer
-    if (ind>=0) gapl(ind,1) = (void*)p_is_abort;
-    else CImg<void*>::vector(tid,(void*)p_is_abort).move_to(gapl);
-  } else { // Get pointer
-    static bool _is_abort = false;
-    res = ind<0?&_is_abort:(bool*)gapl(ind,1);
-  }
-  cimg::mutex(21,0);
-  return res;
-}
-
 // Manage mutexes.
 struct _gmic_mutex {
 #if cimg_OS==1 && (defined(cimg_use_pthread) || cimg_display==1)
@@ -2664,7 +2642,6 @@ static void *gmic_parallel(void *arg) {
   _gmic_parallel<T> &st = *(_gmic_parallel<T>*)arg;
   try {
     unsigned int pos = 0;
-    st.gmic_instance.abort_ptr(st.gmic_instance.is_abort);
     st.gmic_instance.is_debug_info = false;
     st.gmic_instance._run(st.commands_line,pos,*st.images,*st.images_names,
                           *st.parent_images,*st.parent_images_names,
@@ -2893,17 +2870,6 @@ gmic& gmic::assign(const char *const commands_line, CImgList<T>& images, CImgLis
 
 gmic::~gmic() {
   cimg_forX(display_windows,l) delete &display_window(l);
-  cimg::mutex(21);
-  void *const tid = get_tid();
-  int ind = -1;
-  CImgList<void*> &gapl = gmic_abort_ptrs();
-  cimglist_for(gapl,p) {
-    const CImg<void*> &gap = gapl[p];
-    if (gap[0]==tid) { ind = p; break; }
-  }
-  if (ind>=0) gapl.remove(ind);
-  cimg::mutex(21,0);
-
   delete[] commands;
   delete[] commands_names;
   delete[] commands_has_arguments;
@@ -5309,7 +5275,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line,
   if (p_progress) progress = p_progress; else { _progress = -1; progress = &_progress; }
   if (p_is_abort) is_abort = p_is_abort; else { _is_abort = false; is_abort = &_is_abort; }
   is_abort_thread = false;
-  abort_ptr(is_abort);
   *progress = -1;
   cimglist_for(commands_line,l) {
     const char *it = commands_line[l].data();

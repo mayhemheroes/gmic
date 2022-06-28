@@ -52,7 +52,7 @@
 */
 
 #ifndef gmic_version
-#define gmic_version 314
+#define gmic_version 315
 
 #ifndef gmic_pixel_type
 #define gmic_pixel_type float
@@ -203,8 +203,8 @@ namespace cimg_library {
 #endif
 
 #ifdef cimg_use_abort
-inline bool *gmic_abort_ptr(bool *const p_is_abort);
-#define cimg_abort_init bool *const gmic_is_abort = ::gmic_abort_ptr(0); cimg::unused(gmic_is_abort)
+inline bool *get_current_is_abort();
+#define cimg_abort_init bool *const gmic_is_abort = get_current_is_abort()
 #define cimg_abort_test if (*gmic_is_abort) throw CImgAbortException()
 #endif
 
@@ -336,7 +336,6 @@ struct gmic {
   static char *strreplace_bw(char *const str);
   static unsigned int strescape(const char *const str, char *const res);
   static const gmic_image<char>& decompress_stdlib();
-  static bool *abort_ptr(bool *const p_is_abort);
 
   template<typename T>
   gmic& _gmic(const char *const commands_line, gmic_list<T>& images, gmic_list<char>& images_names,
@@ -447,7 +446,6 @@ struct gmic {
   static const char *builtin_commands_names[];
   static gmic_image<int> builtin_commands_inds;
   static gmic_image<char> stdlib;
-  static gmic_list<void*> list_p_is_abort;
   static bool is_display_available;
 
   gmic_list<char> *commands, *commands_names, *commands_has_arguments, *_variables, *_variables_names,
@@ -495,10 +493,6 @@ struct gmic_exception {
     return _command._data?_command._data:"";
   }
 };
-
-inline bool *gmic_abort_ptr(bool *const p_is_abort) {
-  return gmic::abort_ptr(p_is_abort);
-}
 
 inline double gmic_mp_dollar(const char *const str, void *const p_list) {
   return gmic::mp_dollar(str,p_list);
