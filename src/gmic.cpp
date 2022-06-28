@@ -2313,7 +2313,7 @@ inline CImgList<void*>& gmic_runs() {
   return val;
 }
 
-const CImg<void*> get_current_run(const char *const func_name, void *const p_list) {
+const CImg<void*> get_current_run(const char *const func_name, void *const p_list) { // Search by image list
   cimg::mutex(24);
   CImgList<void*> &grl = gmic_runs();
   int p;
@@ -2330,6 +2330,7 @@ const CImg<void*> get_current_run(const char *const func_name, void *const p_lis
   return gr;
 }
 
+// G'MIC-related functions for the mathematical expression evaluator.
 double gmic::mp_dollar(const char *const str, void *const p_list) {
   if (!(CImg<>::_cimg_math_parser::is_varname(str) ||
         ((*str=='>' || *str=='<' || *str=='!' || *str=='^' || *str=='|') && !str[1])))
