@@ -2739,8 +2739,8 @@ int gmic::levenshtein(const char *const s, const char *const t) {
 template<typename T>
 void gmic::wait_threads(void *const p_gmic_threads, const bool try_abort, const T& pixel_type) {
   cimg::unused(pixel_type);
-  CImg<_gmic_parallel<T> > &gmic_threads = *(CImg<_gmic_parallel<T> >*)p_gmic_threads;
 #ifdef gmic_is_parallel
+  CImg<_gmic_parallel<T> > &gmic_threads = *(CImg<_gmic_parallel<T> >*)p_gmic_threads;
   cimg_forY(gmic_threads,l) {
     if (try_abort && gmic_threads[l].is_thread_running)
       gmic_threads[l].gmic_instance.is_abort_thread = true;
