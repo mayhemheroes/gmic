@@ -498,7 +498,9 @@ struct gmic_exception {
 };
 
 inline bool *gmic_current_is_abort() {
-  return ((gmic*)(gmic::current_run("gmic_abort_init()",0)[0]))->is_abort;
+  static bool def = false;
+  gmic_image<void*> gr = gmic::current_run("gmic_abort_init()",0);
+  return gr?((gmic*)(gr[0]))->is_abort:&def;
 }
 
 inline double gmic_mp_dollar(const char *const str, void *const p_list) {

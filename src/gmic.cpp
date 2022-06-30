@@ -2330,19 +2330,21 @@ inline void* get_tid() {
 const CImg<void*> gmic::current_run(const char *const func_name, void *const p_list) {
   cimg::mutex(24);
   CImgList<void*> &grl = gmic_runs();
-  void *const tid = get_tid();
+  void *const tid = p_list?(void*)0:get_tid();
   int p;
   for (p = grl.width() - 1; p>=0; --p) {
     const CImg<void*> &gr = grl[p];
-    if ((!p_list || gr[1]==(void*)p_list) && gr[7]==tid) break;
+    if ((p_list && gr[1]==(void*)p_list) || (!p_list && gr[7]==tid)) break;
   }
-  const CImg<void*> gr = grl[p].get_shared(); // Return shared image
   cimg::mutex(24,0);
-  if (p<0) // Instance not found!
-    throw CImgArgumentException("[" cimg_appname "] Function '%s': "
-                                "Cannot determine instance of the G'MIC interpreter.",
-                                func_name);
-  return gr;
+  if (p<0) { // Instance not found!
+    if (p_list)
+      throw CImgArgumentException("[" cimg_appname "] Function '%s': "
+                                  "Cannot determine instance of the G'MIC interpreter.",
+                                  func_name);
+    else return CImg<void*>::empty(); // Happens only when called from 'gmic_current_is_abort()'
+  }
+  return grl[p].get_shared(); // Return shared image
 }
 
 // G'MIC-related functions for the mathematical expression evaluator.
@@ -2738,9 +2740,9 @@ int gmic::levenshtein(const char *const s, const char *const t) {
 // Wait for threads to finish.
 template<typename T>
 void gmic::wait_threads(void *const p_gmic_threads, const bool try_abort, const T& pixel_type) {
-  cimg::unused(pixel_type);
-  CImg<_gmic_parallel<T> > &gmic_threads = *(CImg<_gmic_parallel<T> >*)p_gmic_threads;
+  cimg::unused(p_gmic_threads,try_abort,pixel_type);
 #ifdef gmic_is_parallel
+  CImg<_gmic_parallel<T> > &gmic_threads = *(CImg<_gmic_parallel<T> >*)p_gmic_threads;
   cimg_forY(gmic_threads,l) {
     if (try_abort && gmic_threads[l].is_thread_running)
       gmic_threads[l].gmic_instance.is_abort_thread = true;
