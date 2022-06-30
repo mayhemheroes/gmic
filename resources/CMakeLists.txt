@@ -157,7 +157,7 @@ if(BUILD_LIB)
   )
   target_include_directories(libgmic
     PUBLIC
-      $<INSTALL_INTERFACE:include>
+      $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
       $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
   )
 
@@ -181,7 +181,7 @@ if(BUILD_LIB_STATIC)
   )
   target_include_directories(libgmicstatic
     PUBLIC
-      $<INSTALL_INTERFACE:include>
+      $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
       $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
   )
 
