@@ -1,15 +1,26 @@
-set(HEADER_URL "https://github.com/dtschump/CImg/raw/master/CImg.h")
-set(HEADER_DIR ${PROJECT_SOURCE_DIR}/src)
+option(USE_SYSTEM_CIMG "Use CImg from the system" OFF)
+
 set(HEADER_NAME CImg.h)
-set(HEADER_PATH ${HEADER_DIR}/${HEADER_NAME})
 
-# CImg.h header
-if(NOT EXISTS ${HEADER_PATH})
-  file(DOWNLOAD ${HEADER_URL} ${HEADER_PATH} STATUS download_status)
+if(USE_SYSTEM_CIMG)
+  find_path(
+    HEADER_PATH "${HEADER_NAME}"
+    DOC "Directory where the CImg header is located"
+    REQUIRED
+  )
+else()
+  set(HEADER_URL "https://github.com/dtschump/CImg/raw/master/CImg.h")
+  set(HEADER_DIR ${PROJECT_SOURCE_DIR}/src)
+  set(HEADER_PATH ${HEADER_DIR}/${HEADER_NAME})
 
-  list(GET download_status 0 status_code)
-  if(NOT ${status_code} EQUAL 0)
-    message(FATAL_ERROR "Missing ${HEADER_NAME} and unable to obtain it. Please download it from ${HEADER_URL} and save it to src/ directory.")
+  # CImg.h header
+  if(NOT EXISTS ${HEADER_PATH})
+    file(DOWNLOAD ${HEADER_URL} ${HEADER_PATH} STATUS download_status)
+
+    list(GET download_status 0 status_code)
+    if(NOT ${status_code} EQUAL 0)
+      message(FATAL_ERROR "Missing ${HEADER_NAME} and unable to obtain it. Please download it from ${HEADER_URL} and save it to src/ directory.")
+    endif()
   endif()
 endif()
 
@@ -173,3 +184,12 @@ target_compile_definitions(CImg::CImg INTERFACE ${COMPILE_FLAGS} ${CLI_COMPILE_F
 target_link_options(CImg::CImg INTERFACE ${LINK_FLAGS})
 target_link_libraries(CImg::CImg INTERFACE ${EXTRA_LIBRARY_TARGETS})
 target_include_directories(CImg::CImg INTERFACE ${HEADER_DIR})
+
+if(NOT USE_SYSTEM_CIMG)
+  if(CMAKE_INSTALL_INCLUDEDIR)
+    set(CIMG_HEADERS_INSTALL_DIR "${CMAKE_INSTALL_INCLUDEDIR}")
+  else()
+    set(CIMG_HEADERS_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/include")
+  endif()
+  install(FILES src/CImg.h DESTINATION "${CIMG_HEADERS_INSTALL_DIR}")
+endif()

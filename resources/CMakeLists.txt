@@ -157,7 +157,7 @@ if(BUILD_LIB)
   )
   target_include_directories(libgmic
     PUBLIC
-      $<INSTALL_INTERFACE:include>
+      $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
       $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
   )
 
@@ -167,7 +167,7 @@ if(BUILD_LIB)
     RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
     ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
   )
-  install(FILES src/gmic.h src/CImg.h DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
+  install(FILES src/gmic.h DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}")
 endif()
 
 
@@ -181,7 +181,7 @@ if(BUILD_LIB_STATIC)
   )
   target_include_directories(libgmicstatic
     PUBLIC
-      $<INSTALL_INTERFACE:include>
+      $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
       $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
   )
 
