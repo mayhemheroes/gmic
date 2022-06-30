@@ -2330,13 +2330,11 @@ inline void* get_tid() {
 const CImg<void*> gmic::current_run(const char *const func_name, void *const p_list) {
   cimg::mutex(24);
   CImgList<void*> &grl = gmic_runs();
-  void *const tid = get_tid();
+  void *const tid = p_list?(void*)0:get_tid();
   int p;
   for (p = grl.width() - 1; p>=0; --p) {
     const CImg<void*> &gr = grl[p];
-    if ((!p_list || gr[1]==(void*)p_list) && gr[7]==tid) break;
-//    if ((!p_list && gr[7]==tid) || (p_list && gr[1]==(void*)p_list)) break;
-//    if (gr[1]==(void*)p_list) break;
+    if ((p_list && gr[1]==(void*)p_list) || (!p_list && gr[7]==tid)) break;
   }
   cimg::mutex(24,0);
   if (p<0) { // Instance not found!
