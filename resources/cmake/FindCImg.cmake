@@ -85,10 +85,10 @@ if(ENABLE_X)
   find_package(X11)
 
   if(X11_FOUND)
-    list(APPEND COMPILE_FLAGS "cimg_display=1" "cimg_appname=\"gmic\"")
+    list(APPEND COMPILE_FLAGS "cimg_display=1")
     list(APPEND EXTRA_LIBRARY_TARGETS X11::X11)
   else()
-    list(APPEND COMPILE_FLAGS "cimg_display=0" "cimg_appname=\"gmic\"")
+    list(APPEND COMPILE_FLAGS "cimg_display=0")
   endif()
 
   if(ENABLE_XSHM AND X11_XShm_FOUND)
