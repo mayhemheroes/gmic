@@ -2335,14 +2335,18 @@ const CImg<void*> gmic::current_run(const char *const func_name, void *const p_l
   for (p = grl.width() - 1; p>=0; --p) {
     const CImg<void*> &gr = grl[p];
     if ((!p_list || gr[1]==(void*)p_list) && gr[7]==tid) break;
+//    if ((!p_list && gr[7]==tid) || (p_list && gr[1]==(void*)p_list)) break;
+//    if (gr[1]==(void*)p_list) break;
   }
-  const CImg<void*> gr = grl[p].get_shared(); // Return shared image
   cimg::mutex(24,0);
-  if (p<0) // Instance not found!
-    throw CImgArgumentException("[" cimg_appname "] Function '%s': "
-                                "Cannot determine instance of the G'MIC interpreter.",
-                                func_name);
-  return gr;
+  if (p<0) { // Instance not found!
+    if (p_list)
+      throw CImgArgumentException("[" cimg_appname "] Function '%s': "
+                                  "Cannot determine instance of the G'MIC interpreter.",
+                                  func_name);
+    else return CImg<void*>::empty(); // Happens only when called from 'gmic_current_is_abort()'
+  }
+  return grl[p].get_shared(); // Return shared image
 }
 
 // G'MIC-related functions for the mathematical expression evaluator.
