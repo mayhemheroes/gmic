@@ -95,6 +95,8 @@ if(ENABLE_X)
     list(APPEND COMPILE_FLAGS "cimg_use_xshm")
     list(APPEND EXTRA_LIBRARY_TARGETS X11::Xext)
   endif()
+else()
+  list(APPEND COMPILE_FLAGS "cimg_display=0")
 endif()
 
 if(ENABLE_FFTW)
