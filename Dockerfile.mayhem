@@ -1,0 +1,21 @@
+FROM --platform=linux/amd64 ubuntu:22.04 as builder
+
+RUN apt-get update
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y git build-essential libgimp2.0-dev libcurl4-openssl-dev libfftw3-dev libtiff-dev libjpeg-dev libopenexr-dev qtbase5-dev qttools5-dev-tools wget
+
+RUN git clone --depth=1 https://github.com/dtschump/CImg.git
+RUN git clone --depth=1 https://github.com/c-koi/gmic-qt.git
+RUN git clone --depth=1 https://github.com/c-koi/zart.git
+
+COPY . /gmic
+WORKDIR /gmic/src
+RUN make -j8 cli
+
+RUN mkdir -p /deps
+RUN ldd /gmic/src/gmic | tr -s '[:blank:]' '\n' | grep '^/' | xargs -I % sh -c 'cp % /deps;'
+
+FROM ubuntu:22.04 as package
+
+COPY --from=builder /deps /deps
+COPY --from=builder /gmic/src/gmic /gmic/src/gmic
+ENV LD_LIBRARY_PATH=/deps
