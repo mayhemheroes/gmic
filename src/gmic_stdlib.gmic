@@ -914,7 +914,7 @@ reference : skip "${2=}"
 "'expr', e.g. `V = vector16(); repeat(16,k,V[k] = k^2 + k + 1);`. "\
 "It is basically equivalent to: "\
 "`for (iter_name = 0, iter_name<nb_iters, ++iter_name, expr);`."\n\
-"* 'break()' and 'continue()' respectively breaks and continues the current running bloc "\
+"* 'break()' and 'continue()' respectively breaks and continues the current running block "\
 "(loop, init or main environment)."\n\
 "* 'fsize('filename')' returns the size of the specified 'filename' (or '-1' if file does not exist)."\n\
 "* 'date(attr,'path')' returns the date attribute for the given 'path' (file or directory), "\
@@ -4520,7 +4520,7 @@ parse_cli : skip "${1=print},${2=*}"
   i[0] ('\n') y a y
   merge_multiline_comments
 
-  # Split commands/section into different blocs.
+  # Split commands/section into different blocks.
   eval "
     for (p = 0, p<h,
 
@@ -4551,7 +4551,7 @@ parse_cli : skip "${1=print},${2=*}"
       p = r)"
   s -,0
 
-  # Keep only command blocs and name them.
+  # Keep only command blocks and name them.
   if $!
     $!,1,1,1,">
       begin(
@@ -4578,7 +4578,7 @@ parse_cli : skip "${1=print},${2=*}"
   fi
   parse_cli_$1
 
-# Return 1 if last of the selected bloc describes a shortcut command, 0 otherwise.
+# Return 1 if last of the selected block describes a shortcut command, 0 otherwise.
 parse_cli_is_eqto :
   nbl:="n = 1; for (p = 0, (q = find(#-1,_'\n',p))>=0, ++n, p = ++q); n"
   u {$nbl"==1 && find(#-1,'eq. to \'')>=0"}
@@ -9282,7 +9282,7 @@ _update_gmicol : # Keep only a subset of existing filters
   "Degradations/Chromatic Aberrations",\
   "Degradations/CRT Sub-Pixels",\
   "Degradations/Dirty",\
-  "Degradations/Flip & Rotate Blocs",\
+  "Degradations/Flip & Rotate Blocks",\
   "Degradations/Fragment Blur",\
   "Degradations/JPEG Artefacts",\
   "Degradations/Lomo",\
@@ -9295,7 +9295,7 @@ _update_gmicol : # Keep only a subset of existing filters
   "Degradations/Pixel Sort",\
   "Degradations/Rain & Snow",\
   "Degradations/Random Shade Stripes",\
-  "Degradations/Rebuild From Similar Blocs",\
+  "Degradations/Rebuild From Similar Blocks",\
   "Degradations/Scanlines",\
   "Degradations/Self Glitching",\
   "Degradations/Streak",\
@@ -11637,18 +11637,18 @@ replace_seq : skip "${2=''}"
     1,100%
     eval "ref([ $1 ],str1);
           ref([ ${2--1} ],str2);
-          copy_bloc(pd,src,len) = (
+          copy_block(pd,src,len) = (
             l = len;
             pd + l>=h#1?resize(#1,1,h(#1) + 3*l,1,1,0);
             copy(i[pd],src,l);
             pd+=l;
           );
           for (ps = pd = 0, ps<h#0 && (qs = find(#0,str1,ps))>=0,
-            qs>ps?copy_bloc(pd,i[#0,ps],qs - ps);
-            copy_bloc(pd,str2,size(str2));
+            qs>ps?copy_block(pd,i[#0,ps],qs - ps);
+            copy_block(pd,str2,size(str2));
             ps = qs + size(str1);
           );
-          ps<h#0?copy_bloc(pd,i[#0,ps],h#0 - ps);
+          ps<h#0?copy_block(pd,i[#0,ps],h#0 - ps);
           resize(#1,1,pd,1,1,0)"
     k. => $nm
   }
@@ -24397,7 +24397,7 @@ nn_trainer : nn_check_layer "$2"
   o_sgd,o_rmsprop,o_adam,o_adamax=0,1,2,3
   s_constant,s_linear,s_exponential,s_adaptive=0,1,2,3
   _nn_backward..="begin(nn_trainer_init_backward($1,$2,"${o_$4},${s_$5}"));"
-  _nn_update.="end(nn_trainer_update($1,$2));" # <- Keep this as the last thing done in an 'end()' bloc!
+  _nn_update.="end(nn_trainer_update($1,$2));" # <- Keep this as the last thing done in an 'end()' block!
   _nn_init.="$0 $* "
   _nn_parameters.="$1,"
 
@@ -26500,7 +26500,7 @@ raindrops : check "${2=0.1}>=0 && ${3=1}>=0 && isint(${4=0}) && $4>=0" skip ${1=
     warp.. .,1,1,1 rm.
   }
 
-#@cli ripple : _amplitude,_bandwidth,_shape={ 0=bloc | 1=triangle | 2=sine | 3=sine+ | 4=random },_angle,_offset
+#@cli ripple : _amplitude,_bandwidth,_shape={ 0=block | 1=triangle | 2=sine | 3=sine+ | 4=random },_angle,_offset
 #@cli : Apply ripple deformation on selected images.
 #@cli : Default values: 'amplitude=10', 'bandwidth=10', 'shape=2', 'angle=0' and 'offset=0'.
 #@cli : $ image.jpg +ripple ,
@@ -26762,7 +26762,7 @@ pixelize : skip ${1=20},${2=$1},${3=$1}
   e[^-1] "Pixelize image$? with scales ($1%,$2%,$3%)."
   foreach { whd={w},{h},{d} r $1%,$2%,$3%,100%,2 r $whd }
 
-#@cli scanlines : _amplitude,_bandwidth,_shape={ 0=bloc | 1=triangle | 2=sine | 3=sine+ | 4=random },_angle,_offset
+#@cli scanlines : _amplitude,_bandwidth,_shape={ 0=block | 1=triangle | 2=sine | 3=sine+ | 4=random },_angle,_offset
 #@cli : Apply ripple deformation on selected images.
 #@cli : Default values: 'amplitude=60', 'bandwidth=2', 'shape=0', 'angle=0' and 'offset=0'.
 #@cli : $ image.jpg +scanlines ,
@@ -44127,7 +44127,7 @@ fx_quadrangle_preview :
 #@gui Ripple : ripple, ripple(0)
 #@gui : Amplitude = float(10,0,100)
 #@gui : Bandwidth = float(20,1,300)
-#@gui : Shape = choice(2,"Bloc","Triangle","Sine","Sine+","Random")
+#@gui : Shape = choice(2,"Block","Triangle","Sine","Sine+","Random")
 #@gui : Angle = float(0,0,360)
 #@gui : Offset = float(0,0,500)
 #@gui : sep = separator()
@@ -45103,7 +45103,7 @@ _fx_dirty :
     * idct c 0,255
   }
 
-#@gui Flip & Rotate Blocs : fx_flip_blocs,fx_flip_blocs_preview(0)
+#@gui Flip & Rotate Blocks : fx_flip_blocks,fx_flip_blocks_preview(0)
 #@gui : X-Size (px) = int(4,1,128)
 #@gui : Y-Size (px) = int(4,1,128)
 #@gui : Flip = choice(3,"None","X-axis","Y-axis","XY-axes")
@@ -45123,14 +45123,14 @@ _fx_dirty :
 #@gui : Preview Split = point(50,50,0,0,200,200,200,0,10)_0
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2016/01/09</i>.</small>")
-fx_flip_blocs :
+fx_flip_blocks :
   foreach {
-    if $5 ac "_fx_flip_blocs ${1-4}",$5
-    else _fx_flip_blocs ${1-4}
+    if $5 ac "_fx_flip_blocks ${1-4}",$5
+    else _fx_flip_blocks ${1-4}
     fi
   }
 
-_fx_flip_blocs :
+_fx_flip_blocks :
   if ($3%2)" && "$1>1 s x,-$1 mirror x a x fi
   if ($3>1)" && "$2>1 s y,-$2 mirror y a y fi
   if $4!=1" && "$1>1" && "$2>1
@@ -45140,12 +45140,12 @@ _fx_flip_blocs :
     append_tiles $M,$N
   fi
 
-fx_flip_blocs_preview :
-  gui_split_preview "fx_flip_blocs $*",${-3--1}
+fx_flip_blocks_preview :
+  gui_split_preview "fx_flip_blocks $*",${-3--1}
 
 #@gui JPEG Artefacts : fx_jpeg_artefacts, fx_jpeg_artefacts_preview(0)
 #@gui : note = note("<small>This filter simulates the JPEG compression artifacts,
-#@gui : using DCT quantization on 8x8 blocs.</small>")
+#@gui : using DCT quantization on 8x8 blocks.</small>")
 #@gui : Quality (%) = int(50,1,100)
 #@gui : sep = separator()
 #@gui : Preview Type = choice("Full","Forward Horizontal","Forward Vertical","Backward Horizontal",
@@ -45238,7 +45238,7 @@ fx_jpeg_artefacts :
     l[0] { w,h={[w,h]} r {w+(-w%16)},{h+(-h%16)},1,100%,0,3 rgb2ycbcr s c r[-2,-1] 50%,50%,1,1,2 round. }
 
     repeat 3 {
-      # Compute DCT of image with 8x8 blocs.
+      # Compute DCT of image with 8x8 blocks.
       [$>]
       f[$>] "begin(boundary = 2; ref(vector64(),res));
         if (!(x%8) && !(y%8),
@@ -45251,7 +45251,7 @@ fx_jpeg_artefacts :
       # Compute DCT quantization.
       +r[Q] {$>,w},100%,1,1,0,2 /.. . round.. *[-2,-1]
 
-      # Compute iDCT of 8x8 blocs.
+      # Compute iDCT of 8x8 blocks.
       f. "begin(boundary = 2; ref(vector64(),res));
         if (!(x%8) && !(y%8),
           ref(crop(x,y,8,8),src);
@@ -45605,32 +45605,32 @@ fx_shade_stripes :
 fx_shade_stripes_preview :
   gui_split_preview "fx_shade_stripes $*",${-3--1}
 
-#@gui Rebuild From Similar Blocs : fx_rebuild_from_similar_blocs, fx_rebuild_from_similar_blocs(1)
-#@gui : Bloc Size (%) = float(5,2,50)
+#@gui Rebuild From Similar Blocks : fx_rebuild_from_similar_blocks, fx_rebuild_from_similar_blocks(1)
+#@gui : Block Size (%) = float(5,2,50)
 #@gui : sep = separator()
 #@gui : Regularization factor = float(10,0,20)
 #@gui : Luminance factor = float(0.75,0,3)
 #@gui : Norm type = choice(1,"L1","L2")
 #@gui : sep = separator()
-#@gui : note = note{"This filter subdivides the image into blocs, and replace each bloc by the most similar bloc
-#@gui : found in the other blocs."}
+#@gui : note = note{"This filter subdivides the image into blocks, and replace each block by the most similar block
+#@gui : found in the other blocks."}
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2020/09/17</i>.</small>")
-fx_rebuild_from_similar_blocs :
+fx_rebuild_from_similar_blocks :
   foreach {
     split_opacity l[0] {
-      to_rgb w0,h0,S={[w,h,round(min(w,h)*$1%)]} # S: Bloc size
+      to_rgb w0,h0,S={[w,h,round(min(w,h)*$1%)]} # S: Block size
 
-      # Split image into regular blocs.
+      # Split image into regular blocks.
       r {ceil([w,h]/$S)*$S},1,100%,0,3,0.5,0.5
       M,N={[w,h]/$S}
 
-      s yx,-$S a z # Original RGB blocs
+      s yx,-$S a z # Original RGB blocks
 #    +mirror x +mirror y a z # + all xy mirrors
 #    repeat 3 { +rotate. 90 } a z # + all 90° rotations
-      +l { b xy,$2% rgb2ycbcr sh. 0 *. $3 rm. } # Blocs to compare, in YCbCr space
+      +l { b xy,$2% rgb2ycbcr sh. 0 *. $3 rm. } # Blocks to compare, in YCbCr space
 
-      # For each bloc, find most similar bloc.
+      # For each block, find most similar block.
       $M,$N,1,1,-1
       f. ":
         i<0?(
@@ -45659,7 +45659,7 @@ fx_rebuild_from_similar_blocs :
 #@gui Scanlines : fx_scanlines, fx_scanlines_preview(0)
 #@gui : Amplitude = float(60,0,255)
 #@gui : Bandwidth = float(2,1,300)
-#@gui : Shape = choice(0,"Bloc","Triangle","Sine","Sine+","Random")
+#@gui : Shape = choice(0,"Block","Triangle","Sine","Sine+","Random")
 #@gui : Angle = float(0,0,360)
 #@gui : Offset = float(0,0,500)
 #@gui : sep = separator()
@@ -47344,7 +47344,7 @@ fx_morph_layers :
 #@gui : Starting Scale (%) = float(25,0,400)
 #@gui : Ending Scale (%) = float(100,0,400)
 #@gui : Non-Linearity = float(0,-1,1)
-#@gui : Rescaling = choice(3,"Bloc","Linear","Cubic","Lanczsos")
+#@gui : Rescaling = choice(3,"Block","Linear","Cubic","Lanczsos")
 #@gui : sep = separator()
 #@gui : X-Centering = float(0.5,0,1)
 #@gui : Y-Centering = float(0.5,0,1)
@@ -47356,7 +47356,7 @@ fx_morph_layers :
 #@gui : Ending Angle = float(0,-180,180)
 #@gui : sep = separator()
 #@gui : G'MIC Operator = text("")
-#@gui : Return Scaling = choice("None","Bloc","Linear","Cubic","Lanczos")
+#@gui : Return Scaling = choice("None","Block","Linear","Cubic","Lanczos")
 #@gui : Lock Return Scaling to Source Layer = bool(0)
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2016/30/03</i>.</small>")
@@ -49433,7 +49433,7 @@ fx_inpaint_matchpatch_preview :
 #@gui : Allow Outer Blending = _bool(1)
 #@gui : Mask Color = _color(255,0,0,255)
 #@gui : Mask Dilation = _int(0,0,32)
-#@gui : Process by Blocs of Size = _choice("100%","75%","50%","25%","10%","5%","2%","1%")
+#@gui : Process by Blocks of Size = _choice("100%","75%","50%","25%","10%","5%","2%","1%")
 #@gui : sep = separator()
 #@gui : note = note("<small>A quick tutorial on how to use this filter can be found here:</small>")
 #@gui : url = link("G'MIC Inpainting tutorial on Patrick David's blog.",
