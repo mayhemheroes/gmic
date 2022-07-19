@@ -18737,22 +18737,26 @@ ssd_patch : check ${is_image_arg\ $1} skip ${2=0},${3=0}
     } } +
   } }
 
-#@cli ssim : [reference],_patch_size>0,_max_value>0,_spatial_factor>=1
+#@cli ssim : [reference],_patch_size>0,_max_value>0,_spatial_factor[%]>0
 #@cli : Compute the Structural Similarity Index Measure (SSIM) between selected image and specified reference image.
 #@cli : This command does not modify the images, it just returns a value or a list of values in the status.
+#@cli : When 'spatial_factor' is specified with a ending '%', its value is equal to \
+# '1+(patch_size-1)*spatial_factor%'.
 #@cli : \nSSIM is a measure introduced int the following paper:
 #@cli : *Wang, Zhou, et al.*, "Image quality assessment: from error visibility to structural similarity.",
 #@cli : in IEEE transactions on image processing 13.4 (2004): 600-612.
-#@cli : Default values: 'patch_size=11', 'max_value=255' and 'spatial_factor=1'.
-ssim : check ${"is_image_arg $1"}" && isint(${2=11}) && $2>0 && ${3=255}>0 && ${4=1}>=1"
+#@cli : Default values: 'patch_size=11', 'max_value=255' and 'spatial_factor=50%'.
+ssim : check ${"is_image_arg $1"}" && isint(${2=11}) && $2>0 && ${3=255}>0 && ${4=50%}>=0"
   e[^-1] "Compute the SSIM between image$? and reference image $1, with patch size $2, max_value $3 "\
-         "and spatial factor $3."
+         "and spatial factor $4."
   $2,$2 gaussian. 1.5 /. {is} store. gauss
-  pass$1
+  sf:="s = ['$4']; max(1,round(s[size(s) - 1]=='%'?1 + ($2-1)*$4:$2))"
   res,sep=
+  pass$1
   foreach[^-1] {
     pass.
-    100%,100%,100%,100%,"*begin(
+    {[max(1,round(w/$sf)),max(1,round(h/$sf)),max(1,round(d/$sf))]},100%,"*
+      begin(
         const psiz = $2;
         gauss = get('gauss',psiz^2);
         const psiz1 = int((psiz - 1)/2);
@@ -18762,17 +18766,21 @@ ssim : check ${"is_image_arg $1"}" && isint(${2=11}) && $2>0 && ${3=255}>0 && ${
         const C1 = (K1*L)^2;
         const C2 = (K2*L)^2;
         const boundary = 3;
+        const sf = $sf;
       );
-      X = crop(#0,x - psiz1,y - psiz1,z,c,psiz,psiz,1,1);
-      Y = crop(#1,x - psiz1,y - psiz1,z,c,psiz,psiz,1,1);
-      muX = sum(gauss*X);
-      muY = sum(gauss*Y);
-      X-=muX;
-      Y-=muY;
-      sigX2 = sum(gauss*X^2);
-      sigY2 = sum(gauss*Y^2);
-      sigXY = sum(gauss*X*Y);
-      (2*muX*muY + C1)*(2*sigXY + C2)/((muX^2 + muY^2 + C1)*(sigX2 + sigY2 + C2))"
+      X = round(x*sf);
+      Y = round(y*sf);
+      Z = round(z*sf);
+      A = crop(#0,X - psiz1,Y - psiz1,Z,c,psiz,psiz,1,1);
+      B = crop(#1,X - psiz1,Y - psiz1,Z,c,psiz,psiz,1,1);
+      muA = sum(gauss*A);
+      muB = sum(gauss*B);
+      A-=muA;
+      B-=muB;
+      sigA2 = sum(gauss*A^2);
+      sigB2 = sum(gauss*B^2);
+      sigAB = sum(gauss*A*B);
+      (2*muA*muB + C1)*(2*sigAB + C2)/((muA^2 + muB^2 + C1)*(sigA2 + sigB2 + C2))"
     res.=$sep{ia} sep=,
     k[0]
   }
