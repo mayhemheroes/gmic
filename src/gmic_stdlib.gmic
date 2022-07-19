@@ -18737,6 +18737,45 @@ ssd_patch : check ${is_image_arg\ $1} skip ${2=0},${3=0}
     } } +
   } }
 
+#@cli ssim : [reference],_patch_size>0,_max_value>0,_spatial_factor>=1
+#@cli : Compute the Structural Similarity Index Measure (SSIM) between selected image and specified reference image.
+#@cli : This command does not modify the images, it just returns a value or a list of values in the status.
+#@cli : SSIM is a measure introduced int the following paper:
+#@cli : Wang, Zhou, et al. "Image quality assessment: from error visibility to structural similarity." IEEE transactions on image processing 13.4 (2004): 600-612.
+#@cli : Default values: 'patch_size=11', 'max_value=255' and 'spatial_factor=1'.
+ssim : check ${"is_image_arg $1"}" && isint(${2=11}) && $2>0 && ${3=255}>0 && ${4=1}>=1"
+  e[^-1] "Compute the SSIM between image$? and reference image $1, with patch size $2, max_value $3 and spatial factor $3."
+  $2,$2 gaussian. 1.5 /. {is} store. gauss
+  pass$1
+  res,sep=
+  foreach[^-1] {
+    pass.
+    100%,100%,100%,100%,"*begin(
+        const psiz = $2;
+        gauss = get('gauss',psiz^2);
+        const psiz1 = int((psiz - 1)/2);
+        const K1 = 0.01;
+        const K2 = 0.03;
+        const L = $3;
+        const C1 = (K1*L)^2;
+        const C2 = (K2*L)^2;
+        const boundary = 3;
+      );
+      X = crop(#0,x - psiz1,y - psiz1,z,c,psiz,psiz,1,1);
+      Y = crop(#1,x - psiz1,y - psiz1,z,c,psiz,psiz,1,1);
+      muX = sum(gauss*X);
+      muY = sum(gauss*Y);
+      X-=muX;
+      Y-=muY;
+      sigX2 = sum(gauss*X^2);
+      sigY2 = sum(gauss*Y^2);
+      sigXY = sum(gauss*X*Y);
+      (2*muX*muY + C1)*(2*sigXY + C2)/((muX^2 + muY^2 + C1)*(sigX2 + sigY2 + C2))"
+    res.=$sep{ia} sep=,
+    k[0]
+  }
+  rm. u $res
+
 #@cli thinning : _boundary_conditions={ 0=dirichlet | 1=neumann }
 #@cli : Compute skeleton of binary shapes using morphological thinning
 #@cli : (beware, this is a quite slow iterative process)
@@ -19675,7 +19714,7 @@ close_binary :
 #@cli : Default values: 'sigma1=3', 'sigma2=sigma1' and 'angle=0'.
 #@cli : $ 400,400 gaussian 100,30,45
 #@cli : $$ https://gmic.eu/oldtutorial/_gaussian
-gaussian : skip ${1=3},${2=$1},${3=0}
+gaussian : skip ${1=15%},${2=$1},${3=0}
   e[^-1] "Draw centered gaussian on image$? with standard deviations ($1,$2) and angle $3 deg."
   u={cos($3*pi/180)}
   v={sin($3*pi/180)}
