@@ -15598,7 +15598,7 @@ compose_freq :
 #@cli : 'channel_mode' can be { 0=sum input channels | 1=one-for-one | 2=expand }.
 #@cli : 'interpolation_type' can be { 0=nearest-neighbor | 1=linear }.
 #@cli : Default values: 'boundary_conditions=1', 'is_normalized=0', 'channel_mode=1', \
-# 'xcenter=ycenter=zcenter=-1' (-1=centered), 'xstart=ystart=zstart=0', 'xend=yend=zend=(max-coordinates)', \
+# 'xcenter=ycenter=zcenter=(undefined)', 'xstart=ystart=zstart=0', 'xend=yend=zend=(max-coordinates)', \
 # 'xstride=ystride=zstride=1', 'xdilation=ydilation=zdilation=1' and 'interpolation_type=0'.
 #@cli : $ image.jpg (0,1,0;1,-4,1;0,1,0) convolve[-2] [-1] keep[-2]
 #@cli : $ image.jpg (0,1,0) resize[-1] 130,1,1,1,3 +convolve[0] [1]
@@ -15633,7 +15633,7 @@ convolve_fft : check ${is_image_arg\ $1}" && isin(${2=2},0,1,2,3)"
 #@cli : 'channel_mode' can be { 0=sum input channels | 1=one-for-one | 2=expand }.
 #@cli : 'interpolation_type' can be { 0=nearest-neighbor | 1=linear }.
 #@cli : Default values: 'boundary_conditions=1', 'is_normalized=0', 'channel_mode=1', \
-# 'xcenter=ycenter=zcenter=-1' (-1=centered), 'xstart=ystart=zstart=0', 'xend=yend=zend=(max-coordinates)', \
+# 'xcenter=ycenter=zcenter=-1', 'xstart=ystart=zstart=0', 'xend=yend=zend=(max-coordinates)', \
 # 'xstride=ystride=zstride=1', 'xdilation=ydilation=zdilation=1' and 'interpolation_type=0'.
 #@cli : $ image.jpg (0,1,0;1,-4,1;0,1,0) correlate[-2] [-1] keep[-2]
 #@cli : $ image.jpg +crop 40%,40%,60%,60% +correlate[0] [-1],0,1
@@ -18737,52 +18737,47 @@ ssd_patch : check ${is_image_arg\ $1} skip ${2=0},${3=0}
     } } +
   } }
 
-#@cli ssim : [reference],_patch_size>0,_max_value>0,_spatial_factor[%]>0
+#@cli ssim : [reference],_patch_size>0,_max_value>0
 #@cli : Compute the Structural Similarity Index Measure (SSIM) between selected image and specified reference image.
 #@cli : This command does not modify the images, it just returns a value or a list of values in the status.
-#@cli : When 'spatial_factor' is specified with a ending '%', its value is equal to \
+#@cli : When 'downsampling_factor' is specified with a ending '%', its value is equal to \
 # '1+(patch_size-1)*spatial_factor%'.
 #@cli : \nSSIM is a measure introduced int the following paper:
 #@cli : *Wang, Zhou, et al.*, "Image quality assessment: from error visibility to structural similarity.",
 #@cli : in IEEE transactions on image processing 13.4 (2004): 600-612.
-#@cli : Default values: 'patch_size=11', 'max_value=255' and 'spatial_factor=50%'.
-+ssim : check ${"is_image_arg $1"}" && isint(${2=11}) && $2>0 && ${3=255}>0 && ${4=50%}>=0"
-  e[^-1] "Compute the SSIM between image$? and reference image $1, with patch size $2, max_value $3 "\
-         "and spatial factor $4."
-  $2,$2 gaussian. 1.5 /. {is} store. gauss
-  sf:="s = ['$4']; max(1,round(s[size(s) - 1]=='%'?1 + ($2-1)*$4:$2))"
+#@cli : \nThe implementation of this command is a direct translation of the reference code (in Matlab), found at :
+#@cli : https://ece.uwaterloo.ca/~z70wang/research/ssim/
+#@cli : Default values: 'patch_size=11', and 'max_value=255'.
++ssim : check ${"is_image_arg $1"}" && isint(${2=11}) && $2>0 && ${3=255}>0"
+  e[^-1] "Compute the SSIM between image$? and reference image $1, with patch size $2 and max_value $3."
+  C1,C2:=([0.01,0.03]*$3)^2
+  $2,$2 gaussian. 1.5 /. {is} store. gaussian_weights
   res,sep=
   pass$1
-  foreach[^-1] {
-    pass.
-    {[max(1,round(w/$sf)),max(1,round(h/$sf)),max(1,round(d/$sf))]},100%,"*
-      begin(
-        const psiz = $2;
-        gauss = get('gauss',psiz^2);
-        const psiz1 = int((psiz - 1)/2);
-        const K1 = 0.01;
-        const K2 = 0.03;
-        const L = $3;
-        const C1 = (K1*L)^2;
-        const C2 = (K2*L)^2;
-        const boundary = 3;
-        const sf = $sf;
-      );
-      X = round(x*sf);
-      Y = round(y*sf);
-      Z = round(z*sf);
-      A = crop(#0,X - psiz1,Y - psiz1,Z,c,psiz,psiz,1,1);
-      B = crop(#1,X - psiz1,Y - psiz1,Z,c,psiz,psiz,1,1);
-      muA = sum(gauss*A);
-      muB = sum(gauss*B);
-      A-=muA;
-      B-=muB;
-      sigA2 = sum(gauss*A^2);
-      sigB2 = sum(gauss*B^2);
-      sigAB = sum(gauss*A*B);
-      (2*muA*muB + C1)*(2*sigAB + C2)/((muA^2 + muB^2 + C1)*(sigA2 + sigB2 + C2))"
-    res.=$sep{ia} sep=,
-    k[0]
+  +foreach[^-1] {
+
+    # Check image dimensions.
+    pass. 0
+    if [w#0,h#0,d#0,s#0]!=[w#1,h#1,d#1,s#1]
+      error[0--4] "Command 'ssim': Image dimensions ("{0,[w,h,d,s]}") and ("{1,[w,h,d,s]}") do not match."
+    fi
+
+    # Automatic downsampling.
+    f:=max(1,round(min(w,h)/256));
+    if $f>1 r {round([w,h,d]/$f,1,1)},100%,2 fi
+    => A,B
+
+    # Compute SSIM map.
+    $gaussian_weights nm. W
+    p0,p1:="p0 = round(w/2,1,-1); [ p0,w-1-p0 ]"
+    +correlate[A,B] [W],0,0,1,$p0,$p0,0,$p0,$p0,0,{A,[w,h]-1-$p1},0 +mul[-2,-1] sqr[-3,-2] => muA2,muB2,muAB
+    +mul[A,B] sqr[A,B] =>[A,B,-1] A2,B2,AB
+    correlate[A2,B2,AB] [W],0,0,1,$p0,$p0,0,$p0,$p0,0,{A2,[w,h]-1-$p1},0 -[A2] [muA2] -[B2] [muB2] -[AB] [muAB]
+    =>[A2,B2,AB] sigA2,sigB2,sigAB
+    *[muAB] 2 +[muAB] $C1 *[sigAB] 2 +[sigAB] $C2 *[muAB,sigAB] =>[muAB] num
+    +[muA2,muB2] +[muA2] $C1 +[sigA2,sigB2] +[sigA2] $C2 *[sigA2,muA2] =>[sigA2] den
+    /[num] [den]
+    res.=$sep{ia} sep=, rm
   }
   rm. u $res
 
