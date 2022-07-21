@@ -18339,10 +18339,13 @@ minimal_path : check "$1>=0 && $2>=0 && $3>=0" skip ${7=0}
 #@cli : This command does not modify the images, it just returns a value or a list of values in the status.
 mse :
   e[^-1] "Compute MSE between image$? and reference image $1."
-  pass$1 1 +mse[^-1] . rm.
+  pass$1 1 +_mse[^-1] . rm.
 
-+mse : check ${"is_image_arg $1"}
++mse :
   e[^-1] "Compute MSE between image$? and reference image $1."
+  pass$1 1 +_mse[^-1] . rm.
+
++_mse : check ${"is_image_arg $1"}
   rep,sep=
   pass$1 1
   +foreach[^-1] {
@@ -18350,7 +18353,7 @@ mse :
     # Check image dimensions.
     pass. 1
     if [w#0,h#0,d#0,s#0]!=[w#1,h#1,d#1,s#1]
-      error[0--4] "Command 'mse': Image dimensions ("{0,[w,h,d,s]}") and ("{1,[w,h,d,s]}") do not match."
+      error[0--5] "Command 'mse': Image dimensions ("{0,[w,h,d,s]}") and ("{1,[w,h,d,s]}") do not match."
     fi
 
     # Compute MSE.
@@ -18481,10 +18484,13 @@ pointcloud : check "${1=0}<=3 && ${2=0}>=0 && ${3=0}>=0 && ${4=0}>=0"
 #@cli : Default value: 'max_value=255'.
 psnr : check ${"is_image_arg $1"}" && ${2=255}>0"
   e[^-1] "Compute PSNR between image$? and reference image $1, with max value $2."
-  pass$1 1 +psnr[^-1] .,$2 rm.
+  pass$1 1 +_psnr[^-1] .,$2 rm.
 
 +psnr : check ${"is_image_arg $1"}" && ${2=255}>0"
   e[^-1] "Compute PSNR between image$? and reference image $1, with max value $2."
+  pass$1 1 +_psnr[^-1] .,$2 rm.
+
++_psnr : check ${"is_image_arg $1"}" && ${2=255}>0"
   rep,sep=
   pass$1 1
   +foreach[^-1] {
@@ -18492,7 +18498,7 @@ psnr : check ${"is_image_arg $1"}" && ${2=255}>0"
     # Check image dimensions.
     pass. 1
     if [w#0,h#0,d#0,s#0]!=[w#1,h#1,d#1,s#1]
-      error[0--4] "Command 'mse': Image dimensions ("{0,[w,h,d,s]}") and ("{1,[w,h,d,s]}") do not match."
+      error[0--5] "Command 'psnr': Image dimensions ("{0,[w,h,d,s]}") and ("{1,[w,h,d,s]}") do not match."
     fi
 
     # Compute PSNR.
