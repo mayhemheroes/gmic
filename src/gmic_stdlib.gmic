@@ -18500,6 +18500,24 @@ psnr : check ${"is_image_arg $1"}" && ${2=255}>0"
   }
   rm. u $res
 
+#@cli psnr_matrix
+#@cli : Compute PSNR (Peak Signal-to-Noise Ratio) matrix between selected images.
+#@cli : $ image.jpg +noise 30 +noise[0] 35 +noise[0] 38 cut. 0,255 +psnr_matrix
+psnr_matrix :
+  e[^-1] "Compute the "$!x$!" matrix of PSNR values, for image$?."
+  +psnr_matrix k.
+
++psnr_matrix :
+  e[^-1] "Compute the "$!x$!" matrix of PSNR values, for images$?."
+  N=$! $N,$N
+  repeat $N { i=$>
+    j:=$i+1 for $j<$N {
+      +psnr[$i] [$j] =. ${},$i,$j =. ${},$j,$i
+      j+=1
+    }
+    =. inf,$i,$i
+  }
+
 #@cli segment_watershed : _threshold>=0
 #@cli : Apply watershed segmentation on selected images.
 #@cli : Default values: 'threshold=2'.
