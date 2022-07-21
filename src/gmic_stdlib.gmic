@@ -18334,26 +18334,29 @@ minimal_path : check "$1>=0 && $2>=0 && $3>=0" skip ${7=0}
     rm. => $nm
   }
 
-#@cli mse
-#@cli : Compute MSE (Mean-Squared Error) matrix between selected images.
-#@cli : $ image.jpg +noise 30 +noise[0] 35 +noise[0] 38 cut. 0,255 mse
+#@cli mse : [reference]
+#@cli : Compute MSE (Mean-Squared Error) between selected images and specified reference image.
+#@cli : This command does not modify the images, it just returns a value or a list of values in the status.
 mse :
-  e[^-1] "Compute the "$!x$!" matrix of MSE values, for image$?."
-  +mse k.
+  e[^-1] "Compute MSE between image$? and reference image $1."
+  pass$1 1 +mse[^-1] . rm.
 
-+mse :
-  e[^-1] "Compute the "$!x$!" matrix of MSE values, for image$?."
-  N=$! $N,$N
-  repeat $N { q=$>
-    repeat $q { p=$>
-      if "const p = "$p"; const q = "$q"; [w#p,h#p,d#p,s#p]!=[w#q,h#q,d#q,s#q]"
-        error[0--4] "Image ["$p"] = '"{$p,n}"' ("{$p,[w,h,d,s]}") and ["$q"] = '"{$q,n}"' ("{$q,[w,h,d,s]}") "\
-                    "have different sizes."
-      fi
-      +-[$p,$q] sqr. mse={ia} rm.
-      =. $mse,$p,$q =. $mse,$q,$p
-    }
++mse : check ${"is_image_arg $1"}
+  e[^-1] "Compute MSE between image$? and reference image $1."
+  rep,sep=
+  pass$1 1
+  +foreach[^-1] {
+
+    # Check image dimensions.
+    pass. 1
+    if [w#0,h#0,d#0,s#0]!=[w#1,h#1,d#1,s#1]
+      error[0--4] "Command 'mse': Image dimensions ("{0,[w,h,d,s]}") and ("{1,[w,h,d,s]}") do not match."
+    fi
+
+    # Compute MSE.
+    - sqr res.=$sep{ia} sep=, rm
   }
+  rm. u $res
 
 #@cli patches : patch_width>0,patch_height>0,patch_depth>0,x0,y0,z0,_x1,_y1,_z1,...,_xN,_yN,_zN
 #@cli : Extract N+1 patches from selected images, centered at specified locations.
@@ -18455,30 +18458,30 @@ pointcloud : check "${1=0}<=3 && ${2=0}>=0 && ${3=0}>=0 && ${4=0}>=0"
     k. => $nm
   }
 
-#@cli psnr : _max_value
-#@cli : Compute PSNR (Peak Signal-to-Noise Ratio) matrix between selected images.
+#@cli psnr : [reference],_max_value
+#@cli : Compute PSNR (Peak Signal-to-Noise Ratio) between selected images and specified reference image.
+#@cli : This command does not modify the images, it just returns a value or a list of values in the status.
 #@cli : Default value: 'max_value=255'.
-#@cli : $ image.jpg +noise 30 +noise[0] 35 +noise[0] 38 cut[-1] 0,255 psnr 255 replace_inf 0
-+psnr : skip "${1=}"
-  if isnum("$1")
-    e[0--3] "Compute the "$!x$!" matrix of PSNR values, from image$? with maximum value $1."
-    if $! +mse f. ">x==y?inf:y>x?i(y,x):10*log10(($1)^2/i)" else 0 fi
-  else
-    e[0--3] "Compute the "$!x$!" matrix of PSNR values, from image$?."
-    noarg
-    if $! $!,1,1,1,iM#x +mse[^-1] f. ">x==y?inf:y>x?i(y,x):10*log10(max(i[#-2,x],i[#-2,y])^2/i)" rm.. else 0 fi
-  fi
-  => [PSNR]
+psnr : check ${"is_image_arg $1"}" && ${2=255}>0"
+  e[^-1] "Compute PSNR between image$? and reference image $1, with max value $2."
+  pass$1 1 +psnr[^-1] .,$2 rm.
 
-psnr : skip "${1=}"
-  if isnum("$1")
-    e[0--3] "Compute the "$!x$!" matrix of PSNR values, from image$? with maximum value $1."
-    +psnr $1
-  else
-    e[0--3] "Compute the "$!x$!" matrix of PSNR values, from image$?."
-    noarg +psnr
-  fi
-  k.
++psnr : check ${"is_image_arg $1"}" && ${2=255}>0"
+  e[^-1] "Compute PSNR between image$? and reference image $1, with max value $2."
+  rep,sep=
+  pass$1 1
+  +foreach[^-1] {
+
+    # Check image dimensions.
+    pass. 1
+    if [w#0,h#0,d#0,s#0]!=[w#1,h#1,d#1,s#1]
+      error[0--4] "Command 'mse': Image dimensions ("{0,[w,h,d,s]}") and ("{1,[w,h,d,s]}") do not match."
+    fi
+
+    # Compute PSNR.
+    - sqr res.=$sep{"const m2 = ($2)^2; 10*log10(m2/ia)"} sep=, rm
+  }
+  rm. u $res
 
 #@cli segment_watershed : _threshold>=0
 #@cli : Apply watershed segmentation on selected images.
@@ -18738,7 +18741,7 @@ ssd_patch : check ${is_image_arg\ $1} skip ${2=0},${3=0}
   } }
 
 #@cli ssim : [reference],_patch_size>0,_max_value>0
-#@cli : Compute the Structural Similarity Index Measure (SSIM) between selected image and specified reference image.
+#@cli : Compute the Structural Similarity Index Measure (SSIM) between selected images and specified reference image.
 #@cli : This command does not modify the images, it just returns a value or a list of values in the status.
 #@cli : When 'downsampling_factor' is specified with a ending '%', its value is equal to \
 # '1+(patch_size-1)*spatial_factor%'.
