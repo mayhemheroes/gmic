@@ -18475,7 +18475,7 @@ pointcloud : check "${1=0}<=3 && ${2=0}>=0 && ${3=0}>=0 && ${4=0}>=0"
     k. => $nm
   }
 
-#@cli psnr : [reference],_max_value
+#@cli psnr : [reference],_max_value>0
 #@cli : Compute PSNR (Peak Signal-to-Noise Ratio) between selected images and specified reference image.
 #@cli : This command does not modify the images, it just returns a value or a list of values in the status.
 #@cli : Default value: 'max_value=255'.
@@ -18500,19 +18500,20 @@ psnr : check ${"is_image_arg $1"}" && ${2=255}>0"
   }
   rm. u $res
 
-#@cli psnr_matrix
+#@cli psnr_matrix : _max_value>0
 #@cli : Compute PSNR (Peak Signal-to-Noise Ratio) matrix between selected images.
+#@cli : Default value: 'max_value=255'.
 #@cli : $ image.jpg +noise 30 +noise[0] 35 +noise[0] 38 cut. 0,255 +psnr_matrix
-psnr_matrix :
-  e[^-1] "Compute the "$!x$!" matrix of PSNR values, for image$?."
-  +psnr_matrix k.
+psnr_matrix : check "${1=255}>0"
+  e[^-1] "Compute the "$!x$!" matrix of PSNR values, for image$?, with max value $1."
+  +psnr_matrix $1 k.
 
-+psnr_matrix :
-  e[^-1] "Compute the "$!x$!" matrix of PSNR values, for images$?."
++psnr_matrix : check "${1=255}>0"
+  e[^-1] "Compute the "$!x$!" matrix of PSNR values, for images$?, with max value $1."
   N=$! $N,$N
   repeat $N { i=$>
     j:=$i+1 for $j<$N {
-      +psnr[$i] [$j] =. ${},$i,$j =. ${},$j,$i
+      +psnr[$i] [$j],$1 =. ${},$i,$j =. ${},$j,$i
       j+=1
     }
     =. inf,$i,$i
@@ -18820,6 +18821,25 @@ ssd_patch : check ${is_image_arg\ $1} skip ${2=0},${3=0}
     res.=$sep{ia} sep=, rm
   }
   rm. u $res
+
+#@cli ssim_matrix : _patch_size>0,_max_value>0
+#@cli : Compute SSIM (Structural Similarity Index Measure) matrix between selected images.
+#@cli : Default values: 'patch_size=11', and 'max_value=255'.
+#@cli : $ image.jpg +noise 30 +noise[0] 35 +noise[0] 38 cut. 0,255 +ssim_matrix
+ssim_matrix : check "isint(${1=11}) && $1>0 && ${2=255}>0"
+  e[^-1] "Compute the "$!x$!" matrix of SSIM values, for image$?, with patch size $1 and max value $2."
+  +ssim_matrix ${1,2} k.
+
++ssim_matrix : check "isint(${1=11}) && $1>0 && ${2=255}>0"
+  e[^-1] "Compute the "$!x$!" matrix of SSIM values, for image$?, with patch size $1 and max value $2."
+  N=$! $N,$N
+  repeat $N { i=$>
+    j:=$i+1 for $j<$N {
+      +ssim[$i] [$j],${1,2} =. ${},$i,$j =. ${},$j,$i
+      j+=1
+    }
+    =. 1,$i,$i
+  }
 
 #@cli thinning : _boundary_conditions={ 0=dirichlet | 1=neumann }
 #@cli : Compute skeleton of binary shapes using morphological thinning
