@@ -18358,6 +18358,23 @@ mse :
   }
   rm. u $res
 
+#@cli mse_matrix
+#@cli : Compute MSE (Mean-Squared Error) matrix between selected images.
+#@cli : $ image.jpg +noise 30 +noise[0] 35 +noise[0] 38 cut. 0,255 +mse_matrix
+mse_matrix :
+  e[^-1] "Compute the "$!x$!" matrix of MSE values, for image$?."
+  +mse_matrix k.
+
++mse_matrix :
+  e[^-1] "Compute the "$!x$!" matrix of MSE values, for images$?."
+  N=$! $N,$N
+  repeat $N { i=$>
+    j:=$i+1 for $j<$N {
+      +mse[$i] [$j] =. ${},$i,$j =. ${},$j,$i
+      j+=1
+    }
+  }
+
 #@cli patches : patch_width>0,patch_height>0,patch_depth>0,x0,y0,z0,_x1,_y1,_z1,...,_xN,_yN,_zN
 #@cli : Extract N+1 patches from selected images, centered at specified locations.
 #@cli : $ image.jpg +patches 64,64,1,153,124,0,184,240,0,217,126,0,275,38,0
