@@ -17261,7 +17261,8 @@ rbf :
           const fx = ("$x1-$x0")/(w-1);
         );
         ref(vectors(),res); x = (x - "$x0")*fx;
-        repeat (h#0,k, r = abs(x - X[k]); res+=W[s*k,s]*phi(r))"
+        repeat (h#0,k, r = abs(x - X[k]); res+=W[s*k,s]*phi(r));
+        res"
       k. => $nm
     fi }
 
@@ -17291,7 +17292,8 @@ rbf :
           const fy = ("$y1-$y0")/(h-1);
         );
         ref(vectors(),res); x = (x - "$x0")*fx; y = (y - "$y0")*fy;
-        repeat (h#0,k, r = norm(x - X[k], y - Y[k]); res+=W[s*k,s]*phi(r))"
+        repeat (h#0,k, r = norm(x - X[k], y - Y[k]); res+=W[s*k,s]*phi(r));
+        res"
       k. => $nm
     fi }
 
@@ -17323,7 +17325,8 @@ rbf :
           const fz = ("$z1-$z0")/(d - 1);
         );
         ref(vectors(),res); x = (x - "$x0")*fx; y = (y - "$y0")*fy; z = (z - "$z0")*fz;
-        repeat (h#0,k, r = norm(x - X[k], y - Y[k], z - Z[k]); res+=W[s*k,s]*phi(r))"
+        repeat (h#0,k, r = norm(x - X[k], y - Y[k], z - Z[k]); res+=W[s*k,s]*phi(r));
+        res"
       k. => $nm
     fi }
 
@@ -18334,24 +18337,47 @@ minimal_path : check "$1>=0 && $2>=0 && $3>=0" skip ${7=0}
     rm. => $nm
   }
 
-#@cli mse
-#@cli : Compute MSE (Mean-Squared Error) matrix between selected images.
-#@cli : $ image.jpg +noise 30 +noise[0] 35 +noise[0] 38 cut. 0,255 mse
+#@cli mse : [reference]
+#@cli : Compute MSE (Mean-Squared Error) between selected images and specified reference image.
+#@cli : This command does not modify the images, it just returns a value or a list of values in the status.
 mse :
-  e[^-1] "Compute the "$!x$!" matrix of MSE values, for image$?."
-  +mse k.
+  e[^-1] "Compute MSE between image$? and reference image $1."
+  pass$1 1 +_mse[^-1] . rm.
 
 +mse :
+  e[^-1] "Compute MSE between image$? and reference image $1."
+  pass$1 1 +_mse[^-1] . rm.
+
++_mse : check ${"is_image_arg $1"}
+  rep,sep=
+  pass$1 1
+  +foreach[^-1] {
+
+    # Check image dimensions.
+    pass. 1
+    if [w#0,h#0,d#0,s#0]!=[w#1,h#1,d#1,s#1]
+      error[0--5] "Command 'mse': Image dimensions ("{0,[w,h,d,s]}") and ("{1,[w,h,d,s]}") do not match."
+    fi
+
+    # Compute MSE.
+    - sqr res.=$sep{ia} sep=, rm
+  }
+  rm. u $res
+
+#@cli mse_matrix
+#@cli : Compute MSE (Mean-Squared Error) matrix between selected images.
+#@cli : $ image.jpg +noise 30 +noise[0] 35 +noise[0] 38 cut. 0,255 +mse_matrix
+mse_matrix :
   e[^-1] "Compute the "$!x$!" matrix of MSE values, for image$?."
+  +mse_matrix k.
+
++mse_matrix :
+  e[^-1] "Compute the "$!x$!" matrix of MSE values, for images$?."
   N=$! $N,$N
-  repeat $N { q=$>
-    repeat $q { p=$>
-      if "const p = "$p"; const q = "$q"; [w#p,h#p,d#p,s#p]!=[w#q,h#q,d#q,s#q]"
-        error[0--4] "Image ["$p"] = '"{$p,n}"' ("{$p,[w,h,d,s]}") and ["$q"] = '"{$q,n}"' ("{$q,[w,h,d,s]}") "\
-                    "have different sizes."
-      fi
-      +-[$p,$q] sqr. mse={ia} rm.
-      =. $mse,$p,$q =. $mse,$q,$p
+  repeat $N { i=$>
+    j:=$i+1 for $j<$N {
+      +mse[$i] [$j] =. ${},$i,$j =. ${},$j,$i
+      j+=1
     }
   }
 
@@ -18455,30 +18481,52 @@ pointcloud : check "${1=0}<=3 && ${2=0}>=0 && ${3=0}>=0 && ${4=0}>=0"
     k. => $nm
   }
 
-#@cli psnr : _max_value
+#@cli psnr : [reference],_max_value>0
+#@cli : Compute PSNR (Peak Signal-to-Noise Ratio) between selected images and specified reference image.
+#@cli : This command does not modify the images, it just returns a value or a list of values in the status.
+#@cli : Default value: 'max_value=255'.
+psnr : check ${"is_image_arg $1"}" && ${2=255}>0"
+  e[^-1] "Compute PSNR between image$? and reference image $1, with max value $2."
+  pass$1 1 +_psnr[^-1] .,$2 rm.
+
++psnr : check ${"is_image_arg $1"}" && ${2=255}>0"
+  e[^-1] "Compute PSNR between image$? and reference image $1, with max value $2."
+  pass$1 1 +_psnr[^-1] .,$2 rm.
+
++_psnr : check ${"is_image_arg $1"}" && ${2=255}>0"
+  rep,sep=
+  pass$1 1
+  +foreach[^-1] {
+
+    # Check image dimensions.
+    pass. 1
+    if [w#0,h#0,d#0,s#0]!=[w#1,h#1,d#1,s#1]
+      error[0--5] "Command 'psnr': Image dimensions ("{0,[w,h,d,s]}") and ("{1,[w,h,d,s]}") do not match."
+    fi
+
+    # Compute PSNR.
+    - sqr res.=$sep{"const m2 = ($2)^2; 10*log10(m2/ia)"} sep=, rm
+  }
+  rm. u $res
+
+#@cli psnr_matrix : _max_value>0
 #@cli : Compute PSNR (Peak Signal-to-Noise Ratio) matrix between selected images.
 #@cli : Default value: 'max_value=255'.
-#@cli : $ image.jpg +noise 30 +noise[0] 35 +noise[0] 38 cut[-1] 0,255 psnr 255 replace_inf 0
-+psnr : skip "${1=}"
-  if isnum("$1")
-    e[0--3] "Compute the "$!x$!" matrix of PSNR values, from image$? with maximum value $1."
-    if $! +mse f. ">x==y?inf:y>x?i(y,x):10*log10(($1)^2/i)" else 0 fi
-  else
-    e[0--3] "Compute the "$!x$!" matrix of PSNR values, from image$?."
-    noarg
-    if $! $!,1,1,1,iM#x +mse[^-1] f. ">x==y?inf:y>x?i(y,x):10*log10(max(i[#-2,x],i[#-2,y])^2/i)" rm.. else 0 fi
-  fi
-  => [PSNR]
+#@cli : $ image.jpg +noise 30 +noise[0] 35 +noise[0] 38 cut. 0,255 +psnr_matrix
+psnr_matrix : check "${1=255}>0"
+  e[^-1] "Compute the "$!x$!" matrix of PSNR values, for image$?, with max value $1."
+  +psnr_matrix $1 k.
 
-psnr : skip "${1=}"
-  if isnum("$1")
-    e[0--3] "Compute the "$!x$!" matrix of PSNR values, from image$? with maximum value $1."
-    +psnr $1
-  else
-    e[0--3] "Compute the "$!x$!" matrix of PSNR values, from image$?."
-    noarg +psnr
-  fi
-  k.
++psnr_matrix : check "${1=255}>0"
+  e[^-1] "Compute the "$!x$!" matrix of PSNR values, for images$?, with max value $1."
+  N=$! $N,$N
+  repeat $N { i=$>
+    j:=$i+1 for $j<$N {
+      +psnr[$i] [$j],$1 =. ${},$i,$j =. ${},$j,$i
+      j+=1
+    }
+    =. inf,$i,$i
+  }
 
 #@cli segment_watershed : _threshold>=0
 #@cli : Apply watershed segmentation on selected images.
@@ -18738,7 +18786,7 @@ ssd_patch : check ${is_image_arg\ $1} skip ${2=0},${3=0}
   } }
 
 #@cli ssim : [reference],_patch_size>0,_max_value>0
-#@cli : Compute the Structural Similarity Index Measure (SSIM) between selected image and specified reference image.
+#@cli : Compute the Structural Similarity Index Measure (SSIM) between selected images and specified reference image.
 #@cli : This command does not modify the images, it just returns a value or a list of values in the status.
 #@cli : When 'downsampling_factor' is specified with a ending '%', its value is equal to \
 # '1+(patch_size-1)*spatial_factor%'.
@@ -18782,6 +18830,25 @@ ssd_patch : check ${is_image_arg\ $1} skip ${2=0},${3=0}
     res.=$sep{ia} sep=, rm
   }
   rm. u $res
+
+#@cli ssim_matrix : _patch_size>0,_max_value>0
+#@cli : Compute SSIM (Structural Similarity Index Measure) matrix between selected images.
+#@cli : Default values: 'patch_size=11', and 'max_value=255'.
+#@cli : $ image.jpg +noise 30 +noise[0] 35 +noise[0] 38 cut. 0,255 +ssim_matrix
+ssim_matrix : check "isint(${1=11}) && $1>0 && ${2=255}>0"
+  e[^-1] "Compute the "$!x$!" matrix of SSIM values, for image$?, with patch size $1 and max value $2."
+  +ssim_matrix ${1,2} k.
+
++ssim_matrix : check "isint(${1=11}) && $1>0 && ${2=255}>0"
+  e[^-1] "Compute the "$!x$!" matrix of SSIM values, for image$?, with patch size $1 and max value $2."
+  N=$! $N,$N
+  repeat $N { i=$>
+    j:=$i+1 for $j<$N {
+      +ssim[$i] [$j],${1,2} =. ${},$i,$j =. ${},$j,$i
+      j+=1
+    }
+    =. 1,$i,$i
+  }
 
 #@cli thinning : _boundary_conditions={ 0=dirichlet | 1=neumann }
 #@cli : Compute skeleton of binary shapes using morphological thinning
