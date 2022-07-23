@@ -10253,10 +10253,6 @@ keep_named :
 #@cli : $ image.jpg split x,3 move[1] 0
 #@cli : $ image.jpg split x move[50%--1:2] 0 append x
 
-# nm : eq. to 'name' (old shortcut, keep it for compatibility reasons).
-nm :
-  if narg($[])==1 => "$*" else => $"*" fi
-
 #@cli name : "name1","name2",... : (+)
 #@cli : Set names of selected images.
 #@cli : - If selection is empty or not explicitely specified, it represents the last 'N' images of the list, where\
@@ -16721,7 +16717,7 @@ inpaint_matchpatch : check ${is_image_arg\ $1}"&& ${2=0}>=0 && isint(${3=9}) && 
     nm={0,n}
 
     # Init variables and images.
-    nm img,mask
+    => img,mask
     nb_scales:=max(1,round(if($2,$2,log2(min(w,h)/16)),1,1))
     visu_size=${fitscreen[]" "{0,[w,h,1]},25%,50%}
     slices[img] 0 r[mask] [img],[img],1,1,0 !=[mask] 0
@@ -39746,7 +39742,7 @@ fx_engrave :
  }
 
 fx_engrave_preview :
-  foreach { gui_split_preview "nm foo fx_engrave $* gui_merge_layers",${-3--1} }
+  foreach { gui_split_preview "=> foo fx_engrave $* gui_merge_layers",${-3--1} }
 
 #@gui Freaky B&W : fx_freaky_bw, fx_freaky_bw_preview
 #@gui : Strength (%) = float(90,0,100)
@@ -47157,7 +47153,7 @@ fx_fourier_old : skip ${2=0}
         elif $1==1 ({'$magic,$m0,$M0,$m1,$M1'},0) a y
         else ({'$magic,$m0,$M0'},0) a[-3,-1] y ({'$magic,$m1,$M1'},0) a[-2,-1] y
         fi
-        nm $nm
+        => $nm
       }
     else
       if $is_ifft==1 columns[$i] 0,{$i,w-2} s[$i] x,2
