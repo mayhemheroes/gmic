@@ -4140,6 +4140,8 @@ gmic& gmic::_gmic(const char *const commands_line,
                   const char *const custom_commands, const bool include_stdlib,
                   float *const p_progress, bool *const p_is_abort) {
   static bool is_first_call = true;
+  cimg_exception_mode = cimg::exception_mode();
+  cimg::exception_mode(0);
 
   // Initialize class attributes.
   cimg::mutex(22);
@@ -4213,7 +4215,6 @@ gmic& gmic::_gmic(const char *const commands_line,
   nb_dowhiles = nb_fordones = nb_foreachdones = nb_repeatdones = 0;
   nb_carriages_default = nb_carriages_stdout = 0;
   debug_filename = debug_line = ~0U;
-  cimg_exception_mode = cimg::exception_mode();
 
   verbosity = 0;
   render3d = 4;
@@ -4346,7 +4347,6 @@ gmic& gmic::_gmic(const char *const commands_line,
   set_variable("_pixeltype",0,cimg::type<gmic_pixel_type>::string());
 
   // Launch G'MIC interpreter.
-  cimg::exception_mode(0);
   const CImgList<char> items = commands_line?commands_line_to_CImgList(commands_line):CImgList<char>::empty();
   try {
     _run(items,images,images_names,p_progress,p_is_abort);
