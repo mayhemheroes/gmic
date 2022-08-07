@@ -37373,6 +37373,42 @@ fx_puzzle :
 fx_puzzle_preview :
   fx_puzzle ${1-15},0
 
+#@gui Shuffle Patches : fx_shuffle_patches, fx_shuffle_patches_preview(0)*
+#@gui : Reconstruction Mode = choice("Standard","Gradient","Laplacian")
+#@gui : Patch Size = int(64,4,512)
+#@gui : Overlap (%) = float(0,0,50)
+#@gui : Overlap Std (%) = float(20,0,100)
+#@gui : Seed = int(0,0,65535)
+fx_shuffle_patches_preview :
+  fx_shuffle_patches $*
+  gui_crop_resize_preview
+
+fx_shuffle_patches :
+  mode,patch_size,overlap,overlap_std,seed=${1-5}
+
+  foreach {
+    nm={n} w,h:=w,h
+    s c foreach { avg$>,std$>:=ia,sqrt(iv) } a c
+
+    # Shuffle patches.
+    ps:=min(w,h,$patch_size)
+    if $mode==1 g xy,1 a c
+    elif $mode==2 laplacian
+    fi
+
+    img2patches $ps,$overlap%,3
+    s z srand $seed sort_list +,u a z
+    patches2img $w,$h,$overlap%,$overlap_std%
+
+    if $mode==1 s c,2 g.. x,-1,2 g. y,-1,2 + ilaplacian 0
+    elif $mode==2 ilaplacian 0
+    fi
+
+    # Renormalize result.
+    s c foreach { - {ia} / {sqrt(iv)} * ${std$>} + ${avg$>} } a c
+    c 0,255
+  }
+
 #@gui Taquin : fx_taquin, fx_taquin(1)
 #@gui : X-Tiles = int(7,1,20)
 #@gui : Y-Tiles = int(7,1,20)
