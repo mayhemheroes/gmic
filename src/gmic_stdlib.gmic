@@ -37374,36 +37374,42 @@ fx_puzzle_preview :
   fx_puzzle ${1-15},0
 
 #@gui Shuffle Patches : fx_shuffle_patches, fx_shuffle_patches_preview(0)*
+#@gui : Mode = choice("Shuffle","Rotate","Shuffle & Rotate")
 #@gui : Reconstruct From = choice("Colors","Gradients","Laplacians")
 #@gui : Patch Size = int(64,4,512)
 #@gui : Overlap (%) = float(0,0,50)
 #@gui : Overlap Std (%) = float(20,0,100)
 #@gui : Random Seed = int(0,0,65535)
 #@gui : sep = separator()
-#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2022/08/07</i>.</small>")
+#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2022/08/08</i>.</small>")
 fx_shuffle_patches_preview :
   fx_shuffle_patches $*
   gui_crop_resize_preview
 
 fx_shuffle_patches :
-  mode,patch_size,overlap,overlap_std,seed=${1-5}
+  mode,recons,patch_size,overlap,overlap_std,seed=${1-6}
 
   foreach {
     nm={n} w,h:=w,h
     s c foreach { avg$>,std$>:=ia,sqrt(iv) } a c
 
-    # Shuffle patches.
+    # Shuffle & rotate patches.
     ps:=min(w,h,$patch_size)
-    if $mode==1 g xy,1 a c
-    elif $mode==2 laplacian
+    if $recons==1 g xy,1 a c
+    elif $recons==2 laplacian
     fi
 
     img2patches $ps,$overlap%,3
-    s z srand $seed sort_list +,u a z
+
+    s z srand $seed
+    if isin($mode,0,2) sort_list +,u fi
+    if $mode>0 foreach { rotate {90*round(u(3))} } fi
+    a z
+
     patches2img $w,$h,$overlap%,$overlap_std%
 
-    if $mode==1 s c,2 g.. x,-1,2 g. y,-1,2 + ilaplacian 0
-    elif $mode==2 ilaplacian 0
+    if $recons==1 s c,2 g.. x,-1,2 g. y,-1,2 + ilaplacian 0
+    elif $recons==2 ilaplacian 0
     fi
 
     # Renormalize result.
