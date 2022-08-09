@@ -51590,7 +51590,7 @@ fx_memoakten_algorithm_a :
 
     # Draw random non-intersecting segments.
     1,1,1,2
-    1,{"max(16,round($rate_ps*da_size(#0)%))"},1,1,">"${-math_lib}"
+    1,{"max(1,round($rate_ps*da_size(#0)%))"},1,1,">"${-math_lib}"
       begin(
         const mwh = min($W,$H);
         da_push(#1,[0,1],[1,2],[2,3],[3,0]);
@@ -51612,7 +51612,7 @@ fx_memoakten_algorithm_a :
     " rm.
 
     # Link segments together.
-    1,{"max(16,round($rate_ss*da_size(#1)))*100"},1,1,">"${-math_lib}"
+    1,{"max(1,round($rate_ss*da_size(#1)))*100"},1,1,">"${-math_lib}"
       const mwh = min($W,$H);
       const angt = 1 - $angt%;
       nb_seg = da_size(#1);
@@ -51646,15 +51646,16 @@ fx_memoakten_algorithm_a :
     # Fill regions with random colors.
     srand $seed
     +label_fg. 0,0
-    1,{iM+1},1,5,[0,y,0,0,0] eval.. ">++i[#-1,i]" f. "[ i + u(-i,i),y,0,0,0 ]" sort. +,y
-    f. "begin(N = max(8,h*$color_density%));
-      y>N || i0<16?[i0,i1,$Rb,$Gb,$Bb]:(
-        rand = u;
-        rand<0.25?[i0,i1,$R0,$G0,$B0]:
-        rand<0.5?[i0,i1,$R1,$G1,$B1]:
-        rand<0.75?[i0,i1,$R2,$G2,$B2]:
-                  [i0,i1,$R3,$G3,$B3]
-      )"
+    1,{iM+1},1,6,[0,0,y,0,0,0] eval.. ">++i[#-1,i]" sh. 0 area_max:=iM rm.
+    f. "[ i0*u(0.25,1),i0,y,0,0,0 ]" sort. +,y channels. 1,100%
+    f. "begin(N = max(1,h*$color_density%));
+        y>N || i0<8 || i0>=$area_max?[i0,i1,$Rb,$Gb,$Bb]:(
+          rand = u;
+          rand<0.25?[i0,i1,$R0,$G0,$B0]:
+          rand<0.5?[i0,i1,$R1,$G1,$B1]:
+          rand<0.75?[i0,i1,$R2,$G2,$B2]:
+                    [i0,i1,$R3,$G3,$B3]
+        )"
     channels. 1,100% sort. +,y channels. 1,100%
     point. 0,0,0,1,$Rf,$Gf,$Bf
     map.. . rm.
