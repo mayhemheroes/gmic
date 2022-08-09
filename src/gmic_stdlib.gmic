@@ -29244,6 +29244,28 @@ math_lib :
     is_intriangle(P,A,B,D) || is_intriangle(P,B,C,D);
   );
 
+  # Check if two segments [p0,p1] and [q0,q1] intersect.
+  do_intersect(p0x,p0y,p1x,p1y,q0x,q0y,q1x,q1y) = (
+    _o1 = _doi_orientation(p0x,p0y,p1x,p1y,q0x,q0y);
+    _o2 = _doi_orientation(p0x,p0y,p1x,p1y,q1x,q1y);
+    _o3 = _doi_orientation(q0x,q0y,q1x,q1y,p0x,p0y);
+    _o4 = _doi_orientation(q0x,q0y,q1x,q1y,p1x,p1y);
+    (_o1!=_o2 && _o3!=_o4) ||
+    (!_o1 && _doi_on_segment(p0x,p0y,q0x,q0y,p1x,p1y)) ||
+    (!_o2 && _doi_on_segment(p0x,p0y,q1x,q1y,p1x,p1y)) ||
+    (!_o3 && _doi_on_segment(q0x,q0y,p0x,p0y,q1x,q1y)) ||
+    (!_o4 && _doi_on_segment(q0x,q0y,p1x,p1y,q1x,q1y))
+  );
+
+  _doi_on_segment(px,py,qx,qy,rx,ry) = (
+    inrange(qx,min(px,rx),max(px,rx)) && inrange(qy,min(py,ry),max(py,ry));
+  );
+
+  _doi_orientation(px,py,qx,qy,rx,ry) = (
+    _doi_orientation_val = (qy - py)*(rx - qx) - (qx - px)*(ry - qy);
+    _doi_orientation_val==0?0:_doi_orientation_val>0?1:2;
+  );
+
   is_percent(str) = (unref(_is_pct); _is_pct=['#str']; _is_pct[size(_is_pct) - 1]==_'%');
 
   length_spline(P0,T0,P1,T1) = ( # Compute the length of a spline P0-P1 with tangents T0,T1
