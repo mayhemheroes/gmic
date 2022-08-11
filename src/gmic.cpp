@@ -3322,7 +3322,7 @@ CImg<char> gmic::get_variable(const char *const name,
     is_thread_global = is_global && name[1]=='_';
   const int l_max = is_global || !variables_sizes?0:(int)variables_sizes[hash];
   if (is_thread_global) cimg::mutex(30);
-  const CImgList<char>
+  CImgList<char>
     &__variables = *variables[hash],
     &__variables_names = *variables_names[hash];
 
@@ -3333,7 +3333,11 @@ CImg<char> gmic::get_variable(const char *const name,
     if (!std::strcmp(__variables_names[l],name)) {
       is_name_found = true; ind = l; break;
     }
-  if (is_name_found) res.assign(__variables[ind],true); // Regular variable
+  if (is_name_found) { // Regular variable
+    res.assign(__variables[ind],true);
+    __variables[ind].swap(__variables.back()); // Ensure direct access to this variable next time
+    __variables_names[ind].swap(__variables_names.back());
+  }
   else {
     if (images_names) {
       const CImgList<char> &_images_names = *images_names;
