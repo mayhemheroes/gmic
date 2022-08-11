@@ -2054,7 +2054,7 @@ using namespace cimg_library;
 #undef min
 #undef max
 
-// Define number of hash slots to store variables and commands.
+// Define number of hash slots to store variables and commands (both must be 2^n).
 #ifndef gmic_varslots
 #define gmic_varslots 2048
 // gmic_varslots are divided in three parts:
@@ -2769,14 +2769,14 @@ unsigned int gmic::hashcode(const char *const str, const bool is_variable) {
   if (!str) return 0U;
   unsigned int hash = 5381U;
   if (is_variable) {
-    for (const char *s = str; *s; ++s) (hash*=31)+=*s;
+    int k = 0; for (const char *s = str; *s && k++<32; ++s) (hash*=31)+=*s;
     if (*str=='_') {
       if (str[1]=='_') return 6*gmic_varslots/7 + (hash%(gmic_varslots - 6*gmic_varslots/7));
       return gmic_varslots/2 + (hash%(6*gmic_varslots/7 - gmic_varslots/2));
     }
-    return hash%(gmic_varslots/2);
+    return hash&(gmic_varslots/2 - 1);
   }
-  for (const char *s = str; *s; ++s) (hash*=31)+=*s;
+  int k = 0; for (const char *s = str; *s && k++<32; ++s) (hash*=31)+=*s;
   return hash&(gmic_comslots - 1);
 }
 
