@@ -3335,8 +3335,10 @@ CImg<char> gmic::get_variable(const char *const name,
     }
   if (is_name_found) { // Regular variable
     res.assign(__variables[ind],true);
-    __variables[ind].swap(__variables.back()); // Ensure direct access to this variable next time
-    __variables_names[ind].swap(__variables_names.back());
+    if (ind!=__variables.width() - 1) {
+      __variables[ind].swap(__variables.back()); // Ensure direct access to this variable next time
+      __variables_names[ind].swap(__variables_names.back());
+    }
   } else {
     if (images_names) {
       const CImgList<char> &_images_names = *images_names;
@@ -3401,6 +3403,10 @@ const char *gmic::set_variable(const char *const name, const char operation,
       __cvariables[ind].get_resize((unsigned int)(__cvariables[ind].width() + std::strlen(name) - std::strlen(cname)),
                                    1,1,1,0,0,1).move_to(s_value);
       std::sprintf(s_value,"%c*store/%s",gmic_store,name);
+      if (ind!=__cvariables.width() - 1) {
+        __cvariables[ind].swap(__cvariables.back()); // Ensure direct access to this variable next time
+        __cvariables_names[ind].swap(__cvariables_names.back());
+      }
     } else s_value.assign(1,1,1,1,0);
     is_name_found = false;
   } else if (!operation || operation=='=' || operation==':' || operation=='.' || operation==',') {
@@ -3480,6 +3486,10 @@ const char *gmic::set_variable(const char *const name, const char operation,
 #endif
   }
 
+  if (!is_new_variable && ind!=__variables.width() - 1) {
+    __variables[ind].swap(__variables.back()); // Ensure direct access to this variable next time
+    __variables_names[ind].swap(__variables_names.back());
+  }
   if (is_thread_global) cimg::mutex(30,0);
   return __variables[ind].data();
 }
