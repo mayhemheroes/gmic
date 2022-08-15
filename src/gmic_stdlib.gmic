@@ -23418,8 +23418,8 @@ nn_lib :
     );
 
     begin_t(
-      nn_thread = t;
-      nn_nb_threads_used = nn_thread + 1;
+      nn_thread_id = t;
+      nn_nb_threads_used = nn_thread_id + 1;
       nn_batch_size = 0;
     );
 
@@ -23792,9 +23792,9 @@ nn_lib :
     );
 
     nn_layer_batchnorm_backward(L,IN,learning_mode) = (
-      L#_nb1 = L#_threads_nbs[nn_thread];
-      L#_mu1 = L#_threads_mus[nn_thread*L#_out_spectrum,L#_out_spectrum];
-      L#_sigma1 = L#_threads_sigmas[nn_thread*L#_out_spectrum,L#_out_spectrum];
+      L#_nb1 = L#_threads_nbs[nn_thread_id];
+      L#_mu1 = L#_threads_mus[nn_thread_id*L#_out_spectrum,L#_out_spectrum];
+      L#_sigma1 = L#_threads_sigmas[nn_thread_id*L#_out_spectrum,L#_out_spectrum];
       L#_mu2 = vector(##L#_out_spectrum);
       L#_sigma2 = vector(##L#_out_spectrum);
       repeat (L#_out_spectrum,_k,
@@ -23802,12 +23802,12 @@ nn_lib :
         L#_mu2[_k] = avg(L#_feature);
         L#_sigma2[_k] = var(L#_feature);
       );
-      L#_nbc = ++L#_threads_nbs[nn_thread];
+      L#_nbc = ++L#_threads_nbs[nn_thread_id];
       L#_in_mean = L#_mu1 + (L#_mu2 - L#_mu1)/L#_nbc;
       L#_in_variance = L#_sigma1 + (L#_sigma2 - L#_sigma1 +
                                     L#_nb1*(L#_mu1 - L#_in_mean)^2 + (L#_mu2 - L#_in_mean)^2)/L#_nbc;
-      copy(L#_threads_mus[nn_thread*L#_out_spectrum],L#_in_mean);
-      copy(L#_threads_sigmas[nn_thread*L#_out_spectrum],L#_in_variance);
+      copy(L#_threads_mus[nn_thread_id*L#_out_spectrum],L#_in_mean);
+      copy(L#_threads_sigmas[nn_thread_id*L#_out_spectrum],L#_in_variance);
 
       learning_mode&1?( # Learn gamma
         L#_tmp = L#_deriv_out*L#_xhat;
