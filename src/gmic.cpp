@@ -248,6 +248,10 @@ CImg<T> get_color_CImg3d(const float R, const float G, const float B,
   return (+*this).color_CImg3d(R,G,B,opacity,set_RGB,set_opacity);
 }
 
+CImg<T>& copymark() {
+  return get_copymark().move_to(*this);
+}
+
 CImg<T> get_copymark() const {
   if (is_empty() || !*_data) return CImg<T>::string("_c1");
   const char *pe = _data + _width - 1, *ext = cimg::split_filename(_data);
@@ -5878,7 +5882,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               name = images_names[selection[0]];
               if (is_get) {
                 img.move_to(images);
-                images_names.insert(name);
+                images_names.insert(name.copymark());
               } else if (selection.height()>=2) {
                 remove_images(images,images_names,selection,1,selection.height() - 1);
                 img.move_to(images[selection[0]].assign());
@@ -6018,7 +6022,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               name = images_names[selection[0]];
               if (is_get) {
                 img.move_to(images);
-                images_names.insert(name);
+                images_names.insert(name.copymark());
               } else if (selection.height()>=2) {
                 remove_images(images,images_names,selection,1,selection.height() - 1);
                 img.move_to(images[selection[0]].assign());
@@ -7093,7 +7097,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 CImg<T> path(1),
                   dist = img.get_distance_dijkstra((T)nvalue,custom_metric,algorithm==4,path);
                 dist.append(path,'c');
-                if (is_get) { images_names.insert(name); dist.move_to(images,~0U); }
+                if (is_get) { images_names.insert(name.copymark()); dist.move_to(images,~0U); }
                 else { dist.move_to(images[uind].assign()); images_names[uind] = name; }
               }
           } else arg_error("distance");
@@ -7280,7 +7284,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 CImg<T> path, dist = gmic_check(images[uind]).get_dijkstra((unsigned int)snode,
                                                                            (unsigned int)enode,
                                                                            path);
-                images_names.insert(2,name);
+                images_names.insert(name.copymark());
+                name.move_to(images_names);
                 dist.move_to(images);
                 path.move_to(images);
               } else {
@@ -7767,7 +7772,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             CImg<float> val, vec;
             gmic_check(images[uind]).gmic_symmetric_eigen(val,vec);
             if (is_get) {
-              images_names.insert(2,name);
+              images_names.insert(name.copymark());
+              name.move_to(images_names);
               val.move_to(images);
               vec.move_to(images);
             } else {
@@ -8830,7 +8836,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             cimg_forY(selection,l) {
               uind = selection[l];
               g_list[l].assign(images[uind]);
-              g_list_c[l].assign(images_names[uind]);
+              g_list_c[l].assign(images_names[uind]).copymark();
             }
             g_list.move_to(images,~0U);
             g_list_c.move_to(images_names,~0U);
@@ -8877,7 +8883,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           if (is_get) cimg_forY(selection,l) {
               uind = selection[l];
               g_list[l].assign(images[uind]);
-              g_list_c[l].assign(images_names[uind]);
+              g_list_c[l].assign(images_names[uind]).copymark();
             } else {
             cimg::mutex(27);
             cimg_forY(selection,l) {
@@ -11673,7 +11679,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   }
                 }
                 if (is_get) {
-                  images_names.insert(g_list.size(),name);
+                  images_names.insert(g_list.size(),name.copymark());
                   g_list.move_to(images,~0U);
                 } else {
                   images.remove(uind); images_names.remove(uind);
@@ -11733,7 +11739,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
                   if (is_get) {
                     if (g_list) {
-                      images_names.insert(g_list.size(),name);
+                      images_names.insert(g_list.size(),name.copymark());
                       g_list.move_to(images,~0U);
                     }
                   } else {
@@ -11770,7 +11776,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 g_list = CImg<T>(img.data(),1,(unsigned int)img.size(),1,1,true).get_split('y',0);
                 name = images_names[uind];
                 if (is_get) {
-                  images_names.insert(g_list.size(),name);
+                  images_names.insert(g_list.size(),name.copymark());
                   g_list.move_to(images,~0U);
                 } else {
                   images.remove(uind); images_names.remove(uind);
@@ -12302,7 +12308,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               else throw;
             }
             if (is_get) {
-              images_names.insert(g_list.size(),name);
+              images_names.insert(g_list.size(),name.copymark());
               g_list.move_to(images,~0U);
             } else {
               images.remove(uind);
@@ -12369,7 +12375,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             name = images_names[uind];
             img.SVD(U,S,V,true,100);
             if (is_get) {
-              images_names.insert(3,name);
+              images_names.insert(2,name.copymark());
+              name.move_to(images_names);
               U.move_to(images);
               S.move_to(images);
               V.move_to(images);
@@ -13216,7 +13223,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                     g_list[t] = img.get_warp(_warp,mode,interpolation,boundary);
                   }
                 if (is_get) {
-                  images_names.insert((int)nb_frames,name);
+                  images_names.insert((int)nb_frames,name.copymark());
                   g_list.move_to(images,~0U);
                 } else {
                   off+=(int)nb_frames - 1;
@@ -13570,7 +13577,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   if (is_valid_argument) for (const char *s = argument; *s; ++s) g_list.FFT(*s,inv_fft);
                   else g_list.FFT(inv_fft);
                   g_list.move_to(images,~0U);
-                  images_names.insert(2,name);
+                  images_names.insert(2,name.copymark());
                 } else {
                   g_list.assign(2);
                   g_list[0].swap(img0);
@@ -13598,7 +13605,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   if (is_valid_argument) for (const char *s = argument; *s; ++s) g_list.FFT(*s,inv_fft);
                   else g_list.FFT(inv_fft);
                   g_list.move_to(images,~0U);
-                  images_names.insert(2,name);
+                  images_names.insert(2,name.copymark());
                 } else {
                   g_list.assign(1);
                   g_list[0].swap(img0);
@@ -13995,6 +14002,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               }
 
               g_list.move_to(images,~0U);
+              cimglist_for(g_list_c,l) g_list_c[l].copymark();
               g_list_c.move_to(images_names,~0U);
             } else { // Call to 'command'
               cimg::mutex(27);
@@ -14726,7 +14734,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             if (g_list) {
               g_list_c.insert(__filename0);
               if (g_list.size()>1)
-                g_list_c.insert(g_list.size() - 1,__filename0);
+                g_list_c.insert(g_list.size() - 1,__filename0.copymark());
             }
           } else
             error(true,images,0,0,
@@ -14772,7 +14780,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           if (g_list) {
             g_list_c.insert(__filename0);
             if (g_list.size()>1)
-              g_list_c.insert(g_list.size() - 1,__filename0);
+              g_list_c.insert(g_list.size() - 1,__filename0.copymark());
           }
 
         } else if (!std::strcmp(uext,"avi") ||
@@ -14843,7 +14851,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           if (g_list) {
             g_list_c.insert(__filename0);
             if (g_list.size()>1)
-              g_list_c.insert(g_list.size() - 1,__filename0);
+              g_list_c.insert(g_list.size() - 1,__filename0.copymark());
           }
         } else if (!std::strcmp(uext,"raw")) {
 
@@ -14958,7 +14966,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             if (g_list) {
               g_list_c.insert(__filename0);
               if (g_list.size()>1)
-                g_list_c.insert(g_list.size() - 1,__filename0);
+                g_list_c.insert(g_list.size() - 1,__filename0.copymark());
             }
           } else
             error(true,images,0,0,
@@ -15007,7 +15015,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           if (g_list) {
             g_list_c.insert(__filename0);
             if (g_list.size()>1)
-              g_list_c.insert(g_list.size() - 1,__filename0);
+              g_list_c.insert(g_list.size() - 1,__filename0.copymark());
           }
           std::sprintf(gmic_use_argx,"%d",bits_per_value);
           CImg<char>::string(argx).move_to(status);
@@ -15154,7 +15162,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               if (g_list && !is_gmz) {
                 g_list_c.insert(__filename0);
                 if (g_list.size()>1) {
-                  g_list_c.insert(g_list.size() - 1,__filename0);
+                  g_list_c.insert(g_list.size() - 1,__filename0.copymark());
                 }
               }
             } catch (CImgException&) {
