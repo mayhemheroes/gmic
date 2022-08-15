@@ -23420,14 +23420,14 @@ nn_lib :
     begin_t(
       nn_thread = t;
       nn_nb_threads_used = nn_thread + 1;
-      nn_nb_samples = 0;
+      nn_batch_size = 0;
     );
 
-    ++nn_nb_samples;
+    ++nn_batch_size;
 
     end(
       merge(nn_nb_threads_used,max);
-      merge(nn_nb_samples,+);
+      merge(nn_batch_size,+);
     );
 
     nn_display(L) = display(L#_out,L#_out_width,L#_out_height,L#_out_depth,L#_out_spectrum);
@@ -23824,8 +23824,8 @@ nn_lib :
     nn_layer_batchnorm_end_backward(L) = (
       merge(L#_batch_deriv_gamma,+);
       merge(L#_batch_deriv_beta,+);
-      L#_batch_deriv_gamma/=nn_nb_samples;
-      L#_batch_deriv_beta/=nn_nb_samples;
+      L#_batch_deriv_gamma/=nn_batch_size;
+      L#_batch_deriv_beta/=nn_batch_size;
 
       merge(L#_threads_nbs,+);
       merge(L#_threads_mus,+);
@@ -23978,8 +23978,8 @@ nn_lib :
     nn_layer_conv2d_end_backward(L) = (
       merge(L#_batch_deriv_weights,+);
       merge(L#_batch_deriv_biases,+);
-      L#_batch_deriv_weights/=nn_nb_samples;
-      L#_batch_deriv_biases/=nn_nb_samples;
+      L#_batch_deriv_weights/=nn_batch_size;
+      L#_batch_deriv_biases/=nn_batch_size;
     );
 
     nn_layer_conv2d_update(L) = (
@@ -24048,8 +24048,8 @@ nn_lib :
     nn_layer_fc_end_backward(L) = (
       merge(L#_batch_deriv_weights,+);
       merge(L#_batch_deriv_biases,+);
-      L#_batch_deriv_weights/=nn_nb_samples;
-      L#_batch_deriv_biases/=nn_nb_samples;
+      L#_batch_deriv_weights/=nn_batch_size;
+      L#_batch_deriv_biases/=nn_batch_size;
     );
 
     nn_layer_fc_update(L) = (
@@ -24277,7 +24277,7 @@ nn_lib :
 
     nn_loss_bce_end_backward(L) = (
       merge(L#_batch_out,+);
-      L#_batch_out/=nn_nb_samples;
+      L#_batch_out/=nn_batch_size;
       L#_out = L#_batch_out;
     );
 
@@ -24295,7 +24295,7 @@ nn_lib :
 
     nn_loss_mse_end_backward(L) = (
       merge(L#_batch_out,+);
-      L#_batch_out/=nn_nb_samples;
+      L#_batch_out/=nn_batch_size;
       L#_out = L#_batch_out;
     );"
 
