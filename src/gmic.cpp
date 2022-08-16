@@ -5885,7 +5885,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               name = images_names[selection[0]];
               if (is_get) {
                 img.move_to(images);
-                images_names.insert(name.copymark());
+                name.get_copymark().move_to(images_names);
               } else if (selection.height()>=2) {
                 remove_images(images,images_names,selection,1,selection.height() - 1);
                 img.move_to(images[selection[0]].assign());
@@ -6028,7 +6028,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               name = images_names[selection[0]];
               if (is_get) {
                 img.move_to(images);
-                images_names.insert(name.copymark());
+                name.get_copymark().move_to(images_names);
               } else if (selection.height()>=2) {
                 remove_images(images,images_names,selection,1,selection.height() - 1);
                 img.move_to(images[selection[0]].assign());
@@ -7124,8 +7124,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 CImg<T> path(1),
                   dist = img.get_distance_dijkstra((T)nvalue,custom_metric,algorithm==4,path);
                 dist.append(path,'c');
-                if (is_get) { images_names.insert(name.copymark()); dist.move_to(images,~0U); }
-                else { dist.move_to(images[uind].assign()); images_names[uind] = name; }
+                if (is_get) { name.get_copymark().move_to(images_names); dist.move_to(images,~0U); }
+                else { dist.move_to(images[uind].assign()); name.move_to(images_names[uind]); }
               }
           } else arg_error("distance");
           is_change = true;
@@ -7319,7 +7319,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 CImg<T> path, dist = gmic_check(images[uind]).get_dijkstra((unsigned int)snode,
                                                                            (unsigned int)enode,
                                                                            path);
-                images_names.insert(name.copymark());
+                name.get_copymark().move_to(images_names);
                 name.move_to(images_names);
                 dist.move_to(images);
                 path.move_to(images);
