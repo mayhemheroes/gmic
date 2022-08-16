@@ -2898,8 +2898,8 @@ const CImg<char>& gmic::decompress_stdlib() {
   return stdlib;
 }
 
-// Gets the value of an environment variable.
-//--------------------------------------------
+// Get the value of an environment variable.
+//-------------------------------------------
 static const char* gmic_getenv(const char *const varname) {
 #if cimg_OS==2
   static CImg<char> utf8Buffer(768);
@@ -8946,7 +8946,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           if (is_get) cimg_forY(selection,l) {
               uind = selection[l];
               g_list[l].assign(images[uind]);
-              images_names[uind].get_copymark().move_to(g_list_c[l]);
+              g_list_c[l] = images_names[uind];
             } else {
             cimg::mutex(27);
             cimg_forY(selection,l) {
@@ -9016,6 +9016,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           cimg::mutex(27);
           if (is_get) {
             g_list.move_to(images,~0U);
+            cimglist_for(g_list_c,i) g_list_c[i].get_copymark().move_to(g_list_c[i]);
             g_list_c.move_to(images_names,~0U);
           } else {
             const unsigned int nb = std::min((unsigned int)selection.height(),g_list.size());
