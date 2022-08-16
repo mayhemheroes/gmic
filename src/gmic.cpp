@@ -13762,8 +13762,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 uind0 = selection[l],
                 uind1 = l + 1<selection.height()?selection[l + 1]:~0U;
               CImg<T> &img0 = gmic_check(images[uind0]),
-                              &img1 = uind1!=~0U?gmic_check(images[uind1]):CImg<T>::empty();
-              name = images_names[uind0];
+                      &img1 = uind1!=~0U?gmic_check(images[uind1]):CImg<T>::empty();
               if (uind1!=~0U) { // Complex transform
                 if (is_verbose) {
                   cimg::mutex(29);
@@ -13777,7 +13776,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   if (is_valid_argument) for (const char *s = argument; *s; ++s) g_list.FFT(*s,inv_fft);
                   else g_list.FFT(inv_fft);
                   g_list.move_to(images,~0U);
-                  images_names.insert(2,name.copymark());
+                  images_names[uind0].get_copymark().move_to(images_names);
+                  images_names.back().get_copymark().move_to(images_names);
                 } else {
                   g_list.assign(2);
                   g_list[0].swap(img0);
@@ -13786,8 +13786,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   else g_list.FFT(inv_fft);
                   g_list[0].swap(img0);
                   g_list[1].swap(img1);
-                  name.get_copymark().move_to(images_names[uind1]);
-                  name.move_to(images_names[uind0]);
+                  images_names[uind0].get_copymark().move_to(images_names[uind1]);
                 }
                 ++l;
               } else { // Real transform
@@ -13805,7 +13804,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   if (is_valid_argument) for (const char *s = argument; *s; ++s) g_list.FFT(*s,inv_fft);
                   else g_list.FFT(inv_fft);
                   g_list.move_to(images,~0U);
-                  images_names.insert(2,name.copymark());
+                  images_names[uind0].get_copymark().move_to(images_names);
+                  images_names.back().get_copymark().move_to(images_names);
                 } else {
                   g_list.assign(1);
                   g_list[0].swap(img0);
@@ -13815,8 +13815,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   else g_list.FFT(inv_fft);
                   g_list[0].swap(img0);
                   g_list[1].move_to(images,uind0 + 1);
-                  name.get_copymark().move_to(images_names,uind0 + 1);
-                  name.move_to(images_names[uind0]);
+                  images_names[uind0].get_copymark().move_to(images_names,uind0 + 1);
                 }
               }
             }
