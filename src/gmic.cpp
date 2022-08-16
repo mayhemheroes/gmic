@@ -9643,7 +9643,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           } else CImg<char>::string(argument).move_to(g_list_c);
 
           // Check correctness of specified arguments.
-          if (is_selection && selection.height()!=1 && g_list_c.size()>selection._height)
+          if (is_selection && g_list_c.size()>selection._height)
             error(true,images,0,0,
                   "Command 'name': Number of arguments (%u) cannot be higher than "
                   "the number of images in the selection (%u).",
