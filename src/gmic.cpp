@@ -14319,7 +14319,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 nb,_gmic_selection.data());
         g_list.assign(nb);
         CImg<char>::string("[empty]").move_to(g_list_c);
-        if (--nb) g_list_c.insert(nb,g_list_c[0]);
+        if (--nb) for (int i = 0; i<nb; ++i) {
+          name = g_list_c.back().get_copymark();
+          name.move_to(g_list_c);
+        }
+
       } else if (*arg_input=='(' && arg_input[(larg = (unsigned int)std::strlen(arg_input)) - 1]==')') {
         CImg<T> img;
         char delimiter = 0;
@@ -14397,8 +14401,14 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 gmic_argument_text_printed());
         }
         img.move_to(g_list);
-        arg_input.move_to(g_list_c);
-        if (--nb) { g_list.insert(nb,g_list[0]); g_list_c.insert(nb,g_list_c[0]); }
+        CImg<char>::string(arg_input).move_to(g_list_c);
+        if (--nb) {
+          g_list.insert(nb,g_list[0]);
+          for (int i = 0; i<nb; ++i) {
+            name = g_list_c.back().get_copymark();
+            name.move_to(g_list_c);
+          }
+        }
 
       } else if (*arg_input==gmic_store &&
                  cimg_sscanf(arg_input.data() + 1,"*store/%255[a-zA-Z0-9_]%c",&(*gmic_use_argx=0),&end)==1 &&
@@ -14455,7 +14465,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           print(images,0,"Input copy of image%s at position%s",
                 s_tmp.data(),
                 _gmic_selection.data());
-        for (unsigned int i = 0; i<(unsigned int)nb; ++i) cimg_foroff(inds,l) {
+        for (int i = 0; i<nb; ++i) cimg_foroff(inds,l) {
             g_list.insert(gmic_check(images[inds[l]]));
             name = (i?g_list_c[l + (i - 1)*inds.height()]:images_names[inds[l]]).get_copymark();
             name.move_to(g_list_c);
@@ -14547,7 +14557,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           CImg<char>::string(title).move_to(g_list_c);
         } else { new_image.fill((T)0); CImg<char>::string("[unnamed]").move_to(g_list_c); }
         new_image.move_to(g_list);
-        if (--nb) { g_list.insert(nb,g_list[0]); g_list_c.insert(nb,g_list_c[0]); }
+        if (--nb) {
+          g_list.insert(nb,g_list[0]);
+          for (int i = 0; i<nb; ++i) {
+            name = g_list_c.back().get_copymark();
+            name.move_to(g_list_c);
+          }
+        }
 
       } else {
 
