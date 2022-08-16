@@ -12551,14 +12551,12 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             nvalue1 = cimg::round(nvalue1);
             cimg_snprintf(title,_title.width(),"[Screenshot (%g,%g)-(%g,%g)]",
                           value0,value1,nvalue0,nvalue1);
-            images.insert(1);
-            CImgDisplay::screenshot((int)value0,(int)value1,(int)nvalue0,(int)nvalue1,images.back());
+            CImgDisplay::screenshot((int)value0,(int)value1,(int)nvalue0,(int)nvalue1,images.insert(1).back());
             ++position;
           } else {
             print(images,0,"Take screenshot.");
             cimg_snprintf(title,_title.width(),"[Screenshot]");
-            images.insert(1);
-            CImgDisplay::screenshot(images.back());
+            CImgDisplay::screenshot(images.insert(1).back());
           }
           CImg<char>::string(title).move_to(images_names);
           is_change = true;
