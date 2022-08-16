@@ -12522,17 +12522,16 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             name = images_names[uind];
             img.SVD(U,S,V,true,100);
             if (is_get) {
-              images_names.insert(2,name.copymark());
-              name.move_to(images_names);
               U.move_to(images);
               S.move_to(images);
               V.move_to(images);
+              for (int i = 0; i<3; ++i) images_names.insert(name.copymark());
             } else {
-              images_names.insert(2,name.get_copymark(),uind + 1);
-              name.move_to(images_names[uind]);
               U.move_to(images[uind].assign());
               images.insert(S,uind + 1);
               images.insert(V,uind + 2);
+              images_names.insert(2,uind + 1);
+              for (int i = 0; i<2; ++i) images_names[uind + i + 1 ] = name.copymark();
               off+=2;
             }
           }
