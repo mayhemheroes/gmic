@@ -3686,8 +3686,8 @@ gmic& gmic::add_commands(std::FILE *const file, const char *const commands_file,
   return *this;
 }
 
-// Return subset indices from a selection string.
-//-----------------------------------------------
+// Return subset indices from a selection string, as a 1-column vector.
+//---------------------------------------------------------------------
 CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned int index_max,
                                         const CImgList<char>& names,
                                         const char *const command, const bool is_selection) {
@@ -14457,7 +14457,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 _gmic_selection.data());
         for (unsigned int i = 0; i<(unsigned int)nb; ++i) cimg_foroff(inds,l) {
             g_list.insert(gmic_check(images[inds[l]]));
-            g_list_c.insert(images_names[inds[l]].get_copymark());
+            name = (i?g_list_c[l + (i - 1)*inds.height()]:images_names[inds[l]]).get_copymark();
+            name.move_to(g_list_c);
           }
 
       } else if ((sep=0,true) &&
