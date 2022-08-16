@@ -15116,7 +15116,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             g_list.load_video(filename);
           } else
             error(true,images,0,0,
-                  "Command 'input': video file '%s', invalid file options '%s'.",
+                  "Command 'input': Video file '%s', invalid file options '%s'.",
                   filename0,options.data());
           if (g_list) {
             g_list_c.assign(g_list.size());
@@ -15151,7 +15151,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             dc = cimg::round(dc);
             if (dx<0 || dy<=0 || dz<=0 || dc<=0)
               error(true,images,0,0,
-                    "Command 'input': raw file '%s', invalid specified "
+                    "Command 'input': Raw file '%s', invalid specified "
                     "dimensions %gx%gx%gx%g.",
                     filename0,dx,dy,dz,dc);
 
@@ -15182,13 +15182,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                             else gmic_load_raw("float32",cimg_float32)
                               else gmic_load_raw("double64",cimg_float64)
                                 else error(true,images,0,0,
-                                           "Command 'input': raw file '%s', "
+                                           "Command 'input': Raw file '%s', "
                                            "invalid specified pixel type '%s'.\n",
                                            filename0,stype);
             _filename0.move_to(g_list_c);
           } else
             error(true,images,0,0,
-                  "Command 'input': raw file '%s', invalid file options '%s'.",
+                  "Command 'input': Raw file '%s', invalid file options '%s'.",
                   filename0,options.data());
         } else if (!std::strcmp(uext,"yuv")) {
 
