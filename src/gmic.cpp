@@ -7809,17 +7809,17 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           unsigned int off = 0;
           cimg_forY(selection,l) {
             uind = selection[l] + off;
-            name = images_names[uind];
             CImg<float> val, vec;
             gmic_check(images[uind]).gmic_symmetric_eigen(val,vec);
             if (is_get) {
               val.move_to(images);
               vec.move_to(images);
-              for (int i = 0; i<2; ++i) images_names.insert(name.copymark());
+              images_names[uind].get_copymark().move_to(images_names);
+              images_names.back().get_copymark().move_to(images_names);
             } else {
               val.move_to(images[uind].assign());
-              images.insert(vec,uind + 1);
-              name.get_copymark().move_to(images_names,uind + 1);
+              vec.move_to(images,uind + 1);
+              images_names[uind].get_copymark().move_to(images_names,uind + 1);
               ++off;
             }
           }
@@ -11803,17 +11803,19 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   }
                 }
                 if (is_get) {
-                  uind = images_names.size();
+                  pattern = images_names.size();
                   images_names.insert(g_list.size());
-                  cimglist_for(g_list,i) images_names[uind + i] = name.copymark();
+                  images_names[uind].get_copymark().move_to(images_names[pattern]);
+                  for (unsigned int i = 1; i<g_list.size(); ++i)
+                    images_names[pattern + i - 1].get_copymark().move_to(images_names[pattern + i]);
                   g_list.move_to(images,~0U);
                 } else {
-                  images.remove(uind);
-                  images_names.remove(uind);
-                  off+=(int)g_list.size() - 1;
-                  images_names.insert(g_list.size(),name.get_copymark(),uind);
-                  name.move_to(images_names[uind]);
-                  g_list.move_to(images,uind);
+                  images.insert(g_list.size() - 1,uind + 1);
+                  images_names.insert(g_list.size() - 1,uind + 1);
+                  cimglist_for(g_list,i) {
+                    g_list[i].move_to(images[uind + i]);
+                    if (i>0) images_names[uind + i - 1].get_copymark().move_to(images_names[uind + i]);
+                  }
                 }
               }
             }
