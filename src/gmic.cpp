@@ -11418,12 +11418,19 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         if (!std::strcmp("reverse",command)) {
           print(images,0,"Reverse positions of image%s.",
                 gmic_selection.data());
-          if (is_get) cimg_forY(selection,l) {
-              const unsigned int i = selection[selection.height() - 1 - l];
-              images.insert(images[i]);
-              images_names.insert(images_names[i]);
-            } else for (unsigned int l = 0; l<selection._height/2; ++l) {
-              const unsigned int i0 = selection[l], i1 = selection[selection.height() - 1 - l];
+          if (is_get) {
+            pattern = images.size();
+            images.insert(selection.height());
+            images_names.insert(selection.height());
+            cimg_forY(selection,l) {
+              uind = selection[selection.height() - 1 - l];
+              images[pattern + l].assign(images[uind],false);
+              images_names[uind].get_copymark().move_to(images_names[pattern + l]);
+            }
+          } else for (int l = 0; l<selection.height()/2; ++l) {
+              const unsigned int
+                i0 = selection[l],
+                i1 = selection[selection.height() - 1 - l];
               images[i0].swap(images[i1]);
               images_names[i0].swap(images_names[i1]);
             }
