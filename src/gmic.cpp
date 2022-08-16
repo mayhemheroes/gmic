@@ -13049,7 +13049,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           cimg_forY(selection,l) {
             uind = selection[l] + off;
             const CImg<T>& img = gmic_check(images[uind]);
-            g_list = CImgList<T>::get_unserialize(img);
+            CImgList<T>::get_unserialize(img).move_to(g_list);
             if (g_list) {
               const CImg<T>& back = g_list.back();
               if (back.width()==1 && back.depth()==1 && back.spectrum()==1 &&
@@ -13065,8 +13065,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 cimglist_for(g_list_c,q) g_list_c[q].unroll('x');
                 if (g_list_c) g_list.remove();
               } else { // .cimg[z] serialization
-                g_list_c.insert(images_names[uind]);
-                g_list_c.insert(g_list.width() - 1,images_names[uind].get_copymark());
+                g_list_c.assign(g_list.size());
+                if (is_get) images_names[uind].get_copymark().move_to(g_list_c[0]);
+                else g_list_c[0] = images_names[uind];
+                for (unsigned int i = 1; i<g_list_c.size(); ++i) g_list_c[i - 1].get_copymark().move_to(g_list_c[i]);
               }
               if (g_list_c.width()>g_list.width())
                 g_list_c.remove(g_list.width(),g_list_c.width() - 1);
@@ -13076,12 +13078,15 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 g_list.move_to(images,~0U);
                 g_list_c.move_to(images_names,~0U);
               } else {
-                images.remove(uind); images_names.remove(uind);
+                images.insert(g_list.size() - 1,uind + 1);
+                images_names.insert(g_list.size() - 1,uind + 1);
+                cimglist_for(g_list,i) {
+                  g_list[i].move_to(images[uind + i]);
+                  g_list_c[i].move_to(images_names[uind + i]);
+                }
                 off+=(int)g_list.size() - 1;
-                g_list.move_to(images,uind);
-                g_list_c.move_to(images_names,uind);
               }
-            }
+            } else if (!is_get) { images.remove(uind); images_names.remove(uind); --off; }
           }
           g_list.assign();
           g_list_c.assign();
