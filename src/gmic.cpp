@@ -5485,6 +5485,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         (*item=='u' && item[1]=='m' && is_com2) || // Shortcut 'um'
         (*item=='!' && item[1]=='=' && is_com2) || // Shortcut '!='
         (*item=='=' && item[1]=='>' && is_com2) || // Shortcut '=>'
+        (*item=='n' && item[1]=='m' && is_com2) || // Shortcut 'nm'
         ((*item=='%' || *item=='&' || *item=='^' || *item=='|') && is_com1) || // Shortcuts '%','&','^' and '|'
         ((*item=='*' || *item=='+' || *item=='-' || *item=='/') && // Shortcuts '*','+','-','/',
          (is_com1 || (item[1]=='3' && item[2]=='d' && is_com3))) || // '*3d','+3d','-3d' and '/3d'
@@ -5623,7 +5624,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         }
 
         if (err==1) { // No selection -> all images
-          if (siz && ((*command=='=' && command[1]=='>' && !command[2]) || !std::strcmp(command,"name"))) {
+          if (siz && ((((*command=='=' && command[1]=='>') || (*command=='n' && command[1]=='m')) && !command[2]) ||
+                      !std::strcmp(command,"name"))) {
             selection.assign(); selection._is_shared = true; // Empty shared selection -> depends on number of arguments
           } else {
             if (!std::strcmp(command,"pass")) selection.assign(1,parent_images.size());
@@ -5774,7 +5776,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         } else if (!command2) { // Two-chars shortcuts
           if (command0=='s' && command1=='h') std::strcpy(command,"shared");
           else if (command0=='m' && command1=='v') std::strcpy(command,"move");
-          else if ((command0=='=' && command1=='>') && !is_get) std::strcpy(command,"name");
+          else if (((command0=='=' && command1=='>') || (command0=='n' && command1=='m')) &&
+                   !is_get) std::strcpy(command,"name");
           else if (command0=='r' && command1=='m') std::strcpy(command,"remove");
           else if (command0=='r' && command1=='v') std::strcpy(command,"reverse");
           else if (command0=='<' && command1=='<') std::strcpy(command,"bsl");
