@@ -11752,7 +11752,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
         // Split.
         if (!std::strcmp("split",command)) {
-          bool is_valid_argument = false;
           gmic_substitute_args(false);
           float nb = -1;
           char pm = 0;
@@ -11791,10 +11790,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               uind = selection[l] + off;
               const CImg<T>& img = gmic_check(images[uind]);
               if (!img) {
-                if (!is_get) { images.remove(uind); images_names.remove(uind); off-=1; }
+                if (!is_get) { images.remove(uind); images_names.remove(uind); --off; }
               } else {
                 g_list.assign(img,true);
-                name = images_names[uind];
                 for (const char *p_axis = argx; *p_axis; ++p_axis) {
                   const unsigned int N = g_list.size();
                   for (unsigned int q = 0; q<N; ++q) {
@@ -11816,11 +11814,15 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                     g_list[i].move_to(images[uind + i]);
                     if (i>0) images_names[uind + i - 1].get_copymark().move_to(images_names[uind + i]);
                   }
+                  off+=(int)g_list.size() - 1;
                 }
               }
             }
             g_list.assign();
-            is_valid_argument = true;
+            is_change = true;
+            ++position;
+            continue;
+
           } else if (cimg_sscanf(argument,"%c%c",&pm,&end)==2 && (pm=='+' || pm=='-') && end==',') {
 
             // Split according to values sequence (opt. with axes too).
@@ -11845,15 +11847,14 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                       gmic_selection.data(),
                       pm=='-'?"discard":"keep",
                       gmic_argument_text_printed() + 2);
+
               int off = 0;
               cimg_forY(selection,l) {
                 uind = selection[l] + off;
                 const CImg<T>& img = gmic_check(images[uind]);
                 if (!img) {
-                  if (!is_get) { images.remove(uind); images_names.remove(uind); off-=1; }
+                  if (!is_get) { images.remove(uind); images_names.remove(uind); --off; }
                 } else {
-                  name = images_names[uind];
-
                   if (*argx) { // Along axes
                     g_list.assign(img,true);
                     for (const char *p_axis = argx; *p_axis; ++p_axis) {
@@ -11868,52 +11869,60 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
                   if (is_get) {
                     if (g_list) {
-                      images_names.insert(g_list.size(),name.copymark());
+                      pattern = images_names.size();
+                      images_names.insert(g_list.size());
+                      images_names[uind].get_copymark().move_to(images_names[pattern]);
+                      for (unsigned int i = 1; i<g_list.size(); ++i)
+                        images_names[pattern + i - 1].get_copymark().move_to(images_names[pattern + i]);
                       g_list.move_to(images,~0U);
                     }
                   } else {
-                    images.remove(uind);
-                    images_names.remove(uind);
-                    off+=(int)g_list.size() - 1;
                     if (g_list) {
-                      images_names.insert(g_list.size(),name.get_copymark(),uind);
-                      name.move_to(images_names[uind]);
-                      g_list.move_to(images,uind);
-                    }
+                      images.insert(g_list.size() - 1,uind + 1);
+                      images_names.insert(g_list.size() - 1,uind + 1);
+                      cimglist_for(g_list,i) {
+                        g_list[i].move_to(images[uind + i]);
+                        if (i>0) images_names[uind + i - 1].get_copymark().move_to(images_names[uind + i]);
+                      }
+                      off+=(int)g_list.size() - 1;
+                    } else { images.remove(uind); images_names.remove(uind); --off; }
                   }
                 }
               }
               g_list.assign();
-              is_valid_argument = true;
+              is_change = true;
+              ++position;
+              continue;
             }
           }
 
-          if (is_valid_argument) ++position;
-          else {
+          // Split as constant one-column vectors.
+          print(images,0,"Split image%s as constant one-column vectors.",
+                gmic_selection.data());
 
-            // Split as constant one-column vectors.
-            print(images,0,"Split image%s as constant one-column vectors.",
-                  gmic_selection.data());
-
-            int off = 0;
-            cimg_forY(selection,l) {
-              uind = selection[l] + off;
-              CImg<T>& img = gmic_check(images[uind]);
-              if (!img) {
-                if (!is_get) { images.remove(uind); images_names.remove(uind); off-=1; }
+          int off = 0;
+          cimg_forY(selection,l) {
+            uind = selection[l] + off;
+            CImg<T>& img = gmic_check(images[uind]);
+            if (!img) {
+              if (!is_get) { images.remove(uind); images_names.remove(uind); --off; }
+            } else {
+              CImg<T>(img.data(),1,(unsigned int)img.size(),1,1,true).get_split('y',0).move_to(g_list);
+              if (is_get) {
+                pattern = images_names.size();
+                images_names.insert(g_list.size());
+                images_names[uind].get_copymark().move_to(images_names[pattern]);
+                for (unsigned int i = 1; i<g_list.size(); ++i)
+                  images_names[pattern + i - 1].get_copymark().move_to(images_names[pattern + i]);
+                g_list.move_to(images,~0U);
               } else {
-                g_list = CImg<T>(img.data(),1,(unsigned int)img.size(),1,1,true).get_split('y',0);
-                name = images_names[uind];
-                if (is_get) {
-                  images_names.insert(g_list.size(),name.copymark());
-                  g_list.move_to(images,~0U);
-                } else {
-                  images.remove(uind); images_names.remove(uind);
-                  off+=(int)g_list.size() - 1;
-                  images_names.insert(g_list.size(),name.get_copymark(),uind);
-                  name.move_to(images_names[uind]);
-                  g_list.move_to(images,uind);
+                images.insert(g_list.size() - 1,uind + 1);
+                images_names.insert(g_list.size() - 1,uind + 1);
+                cimglist_for(g_list,i) {
+                  g_list[i].move_to(images[uind + i]);
+                  if (i>0) images_names[uind + i - 1].get_copymark().move_to(images_names[uind + i]);
                 }
+                off+=(int)g_list.size() - 1;
               }
             }
           }
