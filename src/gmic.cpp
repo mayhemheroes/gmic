@@ -7307,18 +7307,18 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             unsigned int off = 0;
             cimg_forY(selection,l) {
               uind = selection[l] + off;
+              CImg<T> path;
               if (is_get) {
-                CImg<T> path, dist = gmic_check(images[uind]).get_dijkstra((unsigned int)snode,
-                                                                           (unsigned int)enode,
-                                                                           path);
+                CImg<T> dist = gmic_check(images[uind]).get_dijkstra((unsigned int)snode,
+                                                                     (unsigned int)enode,
+                                                                     path);
                 dist.move_to(images);
                 path.move_to(images);
                 images_names[uind].get_copymark().move_to(images_names);
                 images_names.back().get_copymark().move_to(images_names);
               } else {
-                CImg<T> path;
                 gmic_check(images[uind]).dijkstra((unsigned int)snode,(unsigned int)enode,path);
-                images.insert(path,uind + 1);
+                path.move_to(images,uind + 1);
                 images_names[uind].get_copymark().move_to(images_names,uind + 1);
                 ++off;
               }
@@ -12533,19 +12533,22 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           cimg_forY(selection,l) {
             uind = selection[l] + off;
             const CImg<T>& img = gmic_check(images[uind]);
-            name = images_names[uind];
             img.SVD(U,S,V,true,100);
             if (is_get) {
               U.move_to(images);
               S.move_to(images);
               V.move_to(images);
-              for (int i = 0; i<3; ++i) images_names.insert(name.copymark());
+              images_names[uind].get_copymark().move_to(images_names);
+              images_names.back().get_copymark().move_to(images_names);
+              images_names.back().get_copymark().move_to(images_names);
             } else {
+              images.insert(2,uind + 1);
               U.move_to(images[uind].assign());
-              images.insert(S,uind + 1);
-              images.insert(V,uind + 2);
+              S.move_to(images[uind + 1]);
+              V.move_to(images[uind + 2]);
               images_names.insert(2,uind + 1);
-              for (int i = 0; i<2; ++i) images_names[uind + i + 1 ] = name.copymark();
+              images_names[uind].get_copymark().move_to(images_names[uind + 1]);
+              images_names[uind + 1].get_copymark().move_to(images_names[uind + 2]);
               off+=2;
             }
           }
