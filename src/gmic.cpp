@@ -13395,10 +13395,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               if (!(mode%2)) _warp.assign(warping_field,false);
 
               cimg_forY(selection,l) {
-                const unsigned int _ind = selection[l] + off;
-                CImg<T>& img = gmic_check(images[_ind]);
+                uind = selection[l] + off;
+                CImg<T>& img = gmic_check(images[uind]);
                 g_list.assign((int)nb_frames);
-                name = images_names[_ind];
                 cimglist_for(g_list,t)
                   if (mode%2) g_list[t] = img.get_warp(warping_field*(t/(nb_frames - 1)),mode,interpolation,boundary);
                   else {
@@ -13411,12 +13410,20 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                     g_list[t] = img.get_warp(_warp,mode,interpolation,boundary);
                   }
                 if (is_get) {
-                  images_names.insert((int)nb_frames,name.copymark());
+                  pattern = images_names.size();
+                  images_names.insert((int)nb_frames);
+                  images_names[uind].get_copymark().move_to(images_names[pattern]);
+                  for (unsigned int i = 1; i<g_list.size(); ++i)
+                    images_names[pattern + i - 1].get_copymark().move_to(images_names[pattern + i]);
                   g_list.move_to(images,~0U);
                 } else {
+                  images.insert((int)nb_frames - 1,uind + 1);
+                  images_names.insert((int)nb_frames - 1,uind + 1);
+                  cimglist_for(g_list,i) {
+                    g_list[i].move_to(images[uind + i]);
+                    if (i>0) images_names[uind + i - 1].get_copymark().move_to(images_names[uind + i]);
+                  }
                   off+=(int)nb_frames - 1;
-                  images_names.insert((int)nb_frames - 1,name.get_copymark(),_ind);
-                  images.remove(_ind); g_list.move_to(images,_ind);
                 }
               }
               g_list.assign();
