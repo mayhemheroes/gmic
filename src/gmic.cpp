@@ -10758,9 +10758,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                         "Command 'pass': Unreferenced image [%d] from parent context "
                                         "(has been re-allocated in current context or reserved by another thread).",
                                         selection[l]);
-              } else { // Easy case, parent image not in the current selection
+              } else { // Parent image not in the current selection
                 images.insert(img,~0U,(bool)err);
-                parent_images_names[selection[l]].get_copymark().move_to(images_names);
+                images_names.insert(parent_images_names[selection[l]]);
               }
             }
           }
