@@ -14714,6 +14714,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           print(images,0,"Input copy of image%s at position%s",
                 s_tmp.data(),
                 _gmic_selection.data());
+
         for (int i = 0; i<nb; ++i) cimg_foroff(inds,l) {
             g_list.insert(gmic_check(images[inds[l]]));
             (i?g_list_c[l + (i - 1)*inds.height()]:images_names[inds[l]]).get_copymark().move_to(g_list_c);
