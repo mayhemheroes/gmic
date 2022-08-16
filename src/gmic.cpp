@@ -13500,32 +13500,25 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Wait for a given delay of for user events on display window.
         if (!is_get && !std::strcmp("wait",command)) {
           gmic_substitute_args(false);
-          if (!is_selection)
-            CImg<unsigned int>::vector(0,1,2,3,4,5,6,7,8,9).move_to(selection);
+
+          const char *const s_nodisplay = " (skipped, no display available).";
           float delay = 0;
-          if (cimg_sscanf(argument,"%f%c",
-                          &delay,&end)==1) ++position;
+          if (cimg_sscanf(argument,"%f%c",&delay,&end)==1) ++position;
           else delay = 0;
 
-          if (!is_display_available) {
-            if (!delay)
-              print(images,0,
-                    "Wait for user events on display window%s (skipped, no display support).",
-                    gmic_selection.data());
-            else {
-              delay = cimg::round(delay);
-              print(images,0,
-                    "%s for %g milliseconds according to display window%s.",
-                    delay<0?"Sleep":"Wait",delay,
-                    gmic_selection.data());
-              if (delay<0) cimg::sleep((unsigned int)-delay);
-              else cimg::wait((unsigned int)delay);
-            }
-          } else {
-            if (!delay) {
-              print(images,0,"Wait for user events on display window%s.",
-                    gmic_selection.data());
-              switch (selection.height()) {
+          if (!is_selection) {
+            if (is_display_available) { // Put all active windows in selection
+              uind = 0; for (unsigned int l = 0; l<gmic_winslots; ++l) if (display_window(l)) ++uind;
+              CImg<unsigned int>(1,uind).move_to(selection);
+              uind = 0; for (unsigned int l = 0; l<gmic_winslots; ++l) if (display_window(l)) selection[uind++] = l;
+            } else selection.assign();
+            if (is_verbose) selection2string(selection,images_names,1,gmic_selection);
+          }
+
+          if (!delay) {
+            print(images,0,"Wait for user events on display window%s%s.",
+                  gmic_selection.data(),is_display_available?"":s_nodisplay);
+            if (is_display_available) switch (selection.height()) {
               case 1 : CImgDisplay::wait(display_window(selection[0])); break;
               case 2 : CImgDisplay::wait(display_window(selection[0]),display_window(selection[1])); break;
               case 3 : CImgDisplay::wait(display_window(selection[0]),display_window(selection[1]),
@@ -13565,23 +13558,32 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                           display_window(selection[8]),display_window(selection[9]));
                 break;
               }
-            } else if (delay<0) {
-              delay = cimg::round(-delay);
+
+          } else if (delay<0) {
+            delay = cimg::round(-delay);
+            if (selection) {
               print(images,0,
-                    "Flush display events of display window%s and wait for %g milliseconds.",
-                    gmic_selection.data(),delay);
-              cimg_forY(selection,l) display_window(selection[l]).flush();
-              if (selection && display_window(selection[0]))
-                display_window(selection[0]).wait((unsigned int)delay);
-              else cimg::wait((unsigned int)delay);
+                    "Flush display events of display window%s and wait for %g milliseconds%s.",
+                    gmic_selection.data(),delay,is_display_available?"":s_nodisplay);
+              cimg_forY(selection,l) display_window(selection[l]).flush().wait((unsigned int)delay);
             } else {
-              delay = cimg::round(delay);
-              print(images,0,"Wait for %g milliseconds according to display window%s.",
-                    delay,
-                    gmic_selection.data());
-              if (selection && display_window(selection[0]))
-                display_window(selection[0]).wait((unsigned int)delay);
-              else cimg::sleep((unsigned int)delay);
+              print(images,0,
+                    "Wait for %g milliseconds.",
+                    delay);
+              cimg::wait((unsigned int)delay);
+            }
+
+          } else { // delay>0
+            delay = cimg::round(delay);
+            if (selection) {
+              print(images,0,"Wait for %g milliseconds, according to display window%s%s.",
+                    delay,gmic_selection.data(),is_display_available?"":s_nodisplay);
+              cimg_forY(selection,l) display_window(selection[l]).wait((unsigned int)delay);
+            } else {
+              print(images,0,
+                    "Sleep for %g milliseconds.",
+                    delay);
+              cimg::sleep((unsigned int)delay);
             }
           }
           continue;
