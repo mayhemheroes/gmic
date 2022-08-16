@@ -11938,6 +11938,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           char sep2 = 0, sep3 = 0, sep4 = 0;
           float a0 = 0, a1 = 0, a2 = 0, a3 = 0, a4 = 0;
           sep0 = sep1 = *st0 = *st1 = *st2 = *st3 = *st4 = 0;
+          pattern = images.size();
+          images.insert(selection.height());
+          images_names.insert(selection.height());
           if (cimg_sscanf(argument,
                           "%255[0-9.eE%+],%255[0-9.eE%+],%255[0-9.eE%+],%255[0-9.eE%+],"
                           "%255[0-9.eE%+]%c",
@@ -11961,6 +11964,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   a3,sep3=='%'?"%":"",
                   a4,sep4=='%'?"%":"",
                   gmic_selection.data());
+
             cimg_forY(selection,l) {
               CImg<T>& img = images[selection[l]];
               nvalue0 = cimg::round(sep0=='%'?a0*(img.width() - 1)/100:a0);
@@ -11969,8 +11973,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 y =  (unsigned int)cimg::round(sep2=='%'?a2*(img.height() - 1)/100:a2),
                 z =  (unsigned int)cimg::round(sep3=='%'?a3*(img.depth() - 1)/100:a3),
                 c =  (unsigned int)cimg::round(sep4=='%'?a4*(img.spectrum() - 1)/100:a4);
-              images.insert(img.get_shared_points((unsigned int)nvalue0,(unsigned int)nvalue1,y,z,c),~0U,true);
-              images_names.insert(images_names[selection[l]].get_copymark());
+              images[pattern + l].assign(img.get_shared_points((unsigned int)nvalue0,(unsigned int)nvalue1,y,z,c),true);
+              images_names[selection[l]].get_copymark().move_to(images_names[pattern + l]);
             }
             ++position;
           } else if (cimg_sscanf(argument,
@@ -11992,6 +11996,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   a2,sep2=='%'?"%":"",
                   a3,sep3=='%'?"%":"",
                   gmic_selection.data());
+
             cimg_forY(selection,l) {
               CImg<T>& img = images[selection[l]];
               nvalue0 = cimg::round(sep0=='%'?a0*(img.height() - 1)/100:a0);
@@ -11999,8 +12004,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               const unsigned int
                 z =  (unsigned int)cimg::round(sep2=='%'?a2*(img.depth() - 1)/100:a2),
                 c =  (unsigned int)cimg::round(sep3=='%'?a3*(img.spectrum() - 1)/100:a3);
-              images.insert(img.get_shared_rows((unsigned int)nvalue0,(unsigned int)nvalue1,z,c),~0U,true);
-              images_names.insert(images_names[selection[l]].get_copymark());
+              images[pattern + l].assign(img.get_shared_rows((unsigned int)nvalue0,(unsigned int)nvalue1,z,c),true);
+              images_names[selection[l]].get_copymark().move_to(images_names[pattern + l]);
             }
             ++position;
           } else if (cimg_sscanf(argument,"%255[0-9.eE%+],%255[0-9.eE%+],%255[0-9.eE%+]%c",
@@ -12023,8 +12028,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               nvalue1 = cimg::round(sep1=='%'?a1*(img.depth() - 1)/100:a1);
               const unsigned int
                 c =  (unsigned int)cimg::round(sep2=='%'?a2*(img.spectrum() - 1)/100:a2);
-              images.insert(img.get_shared_slices((unsigned int)nvalue0,(unsigned int)nvalue1,c),~0U,true);
-              images_names.insert(images_names[selection[l]].get_copymark());
+              images[pattern + l].assign(img.get_shared_slices((unsigned int)nvalue0,(unsigned int)nvalue1,c),true);
+              images_names[selection[l]].get_copymark().move_to(images_names[pattern + l]);
             }
             ++position;
           } else if (cimg_sscanf(argument,"%255[0-9.eE%+],%255[0-9.eE%+]%c",
@@ -12042,8 +12047,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               CImg<T>& img = images[selection[l]];
               nvalue0 = cimg::round(sep0=='%'?a0*(img.spectrum() - 1)/100:a0);
               nvalue1 = cimg::round(sep1=='%'?a1*(img.spectrum() - 1)/100:a1);
-              images.insert(img.get_shared_channels((unsigned int)nvalue0,(unsigned int)nvalue1),~0U,true);
-              images_names.insert(images_names[selection[l]].get_copymark());
+              images[pattern + l].assign(img.get_shared_channels((unsigned int)nvalue0,(unsigned int)nvalue1),true);
+              images_names[selection[l]].get_copymark().move_to(images_names[pattern + l]);
             }
             ++position;
           } else if (cimg_sscanf(argument,"%255[0-9.eE%+]%c",
@@ -12057,8 +12062,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             cimg_forY(selection,l) {
               CImg<T>& img = images[selection[l]];
               nvalue0 = cimg::round(sep0=='%'?a0*(img.spectrum() - 1)/100:a0);
-              images.insert(img.get_shared_channel((unsigned int)nvalue0),~0U,true);
-              images_names.insert(images_names[selection[l]].get_copymark());
+              images[pattern + l].assign(img.get_shared_channel((unsigned int)nvalue0),true);
+              images_names[selection[l]].get_copymark().move_to(images_names[pattern + l]);
             }
             ++position;
           } else {
@@ -12067,8 +12072,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   gmic_selection.data());
             cimg_forY(selection,l) {
               CImg<T> &img = images[selection[l]];
-              images.insert(img,~0U,true);
-              images_names.insert(images_names[selection[l]].get_copymark());
+              images[pattern + l].assign(img,true);
+              images_names[selection[l]].get_copymark().move_to(images_names[pattern + l]);
             }
           }
           is_change = true;
@@ -12447,7 +12452,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           cimg_forY(selection,l) {
             uind = selection[l] + off;
             const CImg<T> &img = gmic_check(images[uind]);
-            name = images_names[uind];
             try {
               img.get_split_CImg3d(full_split).move_to(g_list);
             } catch (CImgException&) {
@@ -12458,15 +12462,20 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               else throw;
             }
             if (is_get) {
-              images_names.insert(g_list.size(),name.copymark());
+              pattern = images_names.size();
+              images_names.insert(g_list.size());
+              images_names[uind].get_copymark().move_to(images_names[pattern]);
+              for (unsigned int i = 1; i<g_list.size(); ++i)
+                images_names[pattern + i - 1].get_copymark().move_to(images_names[pattern + i]);
               g_list.move_to(images,~0U);
             } else {
-              images.remove(uind);
-              images_names.remove(uind);
-              off+=g_list.size() - 1;
-              images_names.insert(g_list.size(),name.get_copymark(),uind);
-              name.move_to(images_names[uind]);
-              g_list.move_to(images,uind);
+              images.insert(g_list.size() - 1,uind + 1);
+              images_names.insert(g_list.size() - 1,uind + 1);
+              cimglist_for(g_list,i) {
+                g_list[i].move_to(images[uind + i]);
+                if (i>0) images_names[uind + i - 1].get_copymark().move_to(images_names[uind + i]);
+              }
+              off+=(int)g_list.size() - 1;
             }
           }
           g_list.assign();
