@@ -13561,7 +13561,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
           } else if (delay<0) {
             delay = cimg::round(-delay);
-            if (selection) {
+            if (selection && is_display_available) {
               print(images,0,
                     "Flush display events of display window%s and wait for %g milliseconds%s.",
                     gmic_selection.data(),delay,is_display_available?"":s_nodisplay);
@@ -13573,7 +13573,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   if (!is_cond) { disp.wait((unsigned int)delay); is_cond = true; }
                 }
               }
-
             } else {
               print(images,0,
                     "Wait for %g milliseconds.",
@@ -13583,7 +13582,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
           } else { // delay>0
             delay = cimg::round(delay);
-            if (selection) {
+            if (selection && is_display_available) {
               print(images,0,"Wait for %g milliseconds, according to display window%s%s.",
                     delay,gmic_selection.data(),is_display_available?"":s_nodisplay);
               is_cond = false;
