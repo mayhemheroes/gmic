@@ -24295,7 +24295,9 @@ nn_layer_input : check "isvarname('$1') && isint($2) && $2>0 && isint(${3=1}) &&
 
 #@cli nn_layer_add : name,in0,in1
 #@cli : Add an 'add' layer to the network.
-nn_layer_add : nn_check_layer "$2" nn_check_layer "$3" check "isvarname('$1') && [$_nn_$2_out_size]==[$_nn_$3_out_size]"
+nn_layer_add : nn_check_layer "$2"
+               nn_check_layer "$3"
+               check "isvarname('$1') && [$_nn_$2_out_size]==[$_nn_$3_out_size]"
   e[^-1] "[nn_lib] Add 'add' layer '$1', with inputs '$2' and '$3'."
   _nn_$1_out_size=$_nn_$2_out_size
   _nn_forward.="begin(nn_layer_add_init_forward($1,$2));"\
@@ -24305,7 +24307,9 @@ nn_layer_add : nn_check_layer "$2" nn_check_layer "$3" check "isvarname('$1') &&
 
 #@cli nn_layer_append : name,in0,in1
 #@cli : Add an 'append' layer to the network.
-nn_layer_append : check "isvarname('$1')" nn_check_layer "$2" nn_check_layer "$3"
+nn_layer_append : nn_check_layer "$2"
+                  nn_check_layer "$3"
+                  check "isvarname('$1')"
   e[^-1] "[nn_lib] Add 'append' layer '$1', with inputs '$2' and '$3'."
   if s1=[$_nn_$2_out_size];s2=[$_nn_$3_out_size];s1[0,3]!=s2[0,3]
     error "nn_layer_append: Cannot append inputs $2("$_nn_$2_out_size") and $3("$_nn_$3_out_size") together."
@@ -24318,7 +24322,8 @@ nn_layer_append : check "isvarname('$1')" nn_check_layer "$2" nn_check_layer "$3
 
 #@cli nn_layer_avgpool2d : name,in
 #@cli : Add a 'avgpool2d' layer (2d average pooling) to the network.
-nn_layer_avgpool2d : check "isvarname('$1')" nn_check_layer "$2"
+nn_layer_avgpool2d : nn_check_layer "$2"
+                     check "isvarname('$1')"
   e[^-1] "[nn_lib] Add 'avgpool2d' layer '$1', with input '$2'."
   _nn_$1_out_size={s=[$_nn_$2_out_size];[int(s[0,2]/2),s[2,2]]}
   _nn_forward.="begin(nn_layer_avgpool2d_init_forward($1,$2));"\
@@ -24330,7 +24335,8 @@ nn_layer_avgpool2d : check "isvarname('$1')" nn_check_layer "$2"
 #@cli : Add a 'batchnorm' layer to the network.
 #@cli : 'learning_mode' can be { 0=learn no parameters | 1=learn gamma | 2=learn beta | 3=learn gamma and beta}.
 #@cli : Default value: 'learning_mode=3'.
-nn_layer_batchnorm : nn_check_layer "$2" check "isvarname('$1') && isint(${3=3}) && inrange($3,0,3)"
+nn_layer_batchnorm : nn_check_layer "$2"
+                     check "isvarname('$1') && isint(${3=3}) && inrange($3,0,3)"
   s0,s1,s2,s3="no parameters","gamma-only","beta-only","gamma & beta"
   e[^-1] "[nn_lib] Add 'batchnorm' layer '$1' to the network, with input '$2' and learning mode '"${s$3}"'."
   _nn_$1_out_size=$_nn_$2_out_size
@@ -24346,7 +24352,8 @@ nn_layer_batchnorm : nn_check_layer "$2" check "isvarname('$1') && isint(${3=3})
 
 #@cli nn_layer_clone : name0,name1,in
 #@cli : Add a 'clone' layer to the network.
-nn_layer_clone : nn_check_layer "$3" check "isvarname('$1') && isvarname('$2')"
+nn_layer_clone : nn_check_layer "$3"
+                 check "isvarname('$1') && isvarname('$2')"
   e[^-1] "[nn_lib] Add 'clone' layer with input '$3' and outputs '$1' and '$2'."
   _nn_$1_out_size=$_nn_$3_out_size
   _nn_$2_out_size=$_nn_$3_out_size
@@ -24358,8 +24365,9 @@ nn_layer_clone : nn_check_layer "$3" check "isvarname('$1') && isvarname('$2')"
 #@cli nn_layer_conv2d : name,in,nb_channels>0,_kernel_size>0,_stride>0,_dilation,_is_updated={ 0 | 1 }
 #@cli : Add a 'conv2d' layer (2D convolutional layer) to the network.
 #@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1' and 'is_updated=1'.
-nn_layer_conv2d : nn_check_layer "$2" check "isvarname('$1') && isint($3) && $3>0 && isint(${4=3}) && $4>0 && "\
-                                            "${5=1}>0 && isbool(${7=1})" skip "${6=1}"
+nn_layer_conv2d : nn_check_layer "$2"
+                  check "isvarname('$1') && isint($3) && $3>0 && isint(${4=3}) && $4>0 && "\
+                        "${5=1}>0 && isbool(${7=1})" skip "${6=1}"
   e[^-1] "[nn_lib] Add 'conv2d' layer '$1', with input '$2', $3 channels, $4x$4 kernels, stride $5 and dilation $6."
   _nn_$1_out_size={s=[$_nn_$2_out_size];[max(1,int(s[0]/$5)),max(1,int(s[1]/$5)),s[2],$3]}
   if !isint($$1) {[$_nn_$2_out_size][3]*$4^2+1},$3 if $4>1 f. 4*g/(w-1) else f. 1 fi => $1 fi
@@ -24398,9 +24406,22 @@ nn_layer_conv2dnl : nn_check_layer "$2"
   nn_layer_conv2d $1_0,$2,$3,$4,$5,$6,$8
   nn_layer_nl $1,$1_0,$7
 
+#@cli nn_layer_resconv2d : name,in,_kernel_size>0,_stride>0,_dilation>0,_is_updated={ 0 | 1 }
+#@cli : Add a 'rescon2d' (residual 2D convolutional layer), to the network.
+#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1' and 'is_updated=1'.
+nn_layer_resconv2d : nn_check_layer "$2"
+                     check "isvarname('$1') && isint(${3=3}) && $3>0 && ${4=1}>0 && isbool(${6=1})"
+                     skip "${5=1}"
+  e[^-1] "[nn_lib] Add 'resconv2d' layer '$1', with input '$2', $3x$3 kernels, "\
+         "stride $4 and dilation $5."
+  nn_layer_clone $1_0,$1_1,$2
+  nn_layer_conv2d $1_2,$1_1,{[$_nn_$2_out_size][3]}
+  nn_layer_add $1,$1_2,$1_0
+
 #@cli nn_layer_crop : name,in,x0,y0,z0,x1,y1,z1
 #@cli : Add a 'crop' layer to the network.
-nn_layer_crop : nn_check_layer "$2" check "min(isint([${3-8}]))"
+nn_layer_crop : nn_check_layer "$2"
+               check "min(isint([${3-8}]))"
   e[^1] "[nn_lin] Add 'crop' layer '$1', with input '$2' and coordinates (${3-5})-(${6-8})."
   cmin={vmin([${3-5}],[${6-8}])}
   cmax={vmax([${3-5}],[${6-8}])}
@@ -24413,7 +24434,8 @@ nn_layer_crop : nn_check_layer "$2" check "min(isint([${3-8}]))"
 #@cli nn_layer_fc : name,in,nb_channels>0,_is_updated={ 0 | 1 }
 #@cli : Add a 'fc' layer (fully connected layer) to the network.
 #@cli : Default value: 'is_updated=1'.
-nn_layer_fc : nn_check_layer "$2" check "isvarname('$1') && isint($3) && $3>0 && isbool(${4=1})"
+nn_layer_fc : nn_check_layer "$2"
+              check "isvarname('$1') && isint($3) && $3>0 && isbool(${4=1})"
   e[^-1] "[nn_lib] Add 'fc' layer '$1', with input '$2' and $3 channels."
   _nn_$1_out_size=1,1,1,$3
   if !isint($$1) {prod($_nn_$2_out_size)+1},$3 f. 4*g/(w-1) => $1 fi
@@ -24429,7 +24451,9 @@ nn_layer_fc : nn_check_layer "$2" check "isvarname('$1') && isint($3) && $3>0 &&
 #@cli nn_layer_fcbnnl : name,in,nb_neurons>0,_activation,_is_updated={ 0 | 1 }
 #@cli : Add a 'fcbnnl' layer (fully connected layer followed by batchnorm, then a non-linearity), to the network.
 #@cli : Default value: 'activation=leakyrelu' and 'is_updated=1'.
-nn_layer_fcbnnl : nn_check_layer "$2" check "isvarname('$1') && isint($3) && $3>0 && isbool(${5=1})" skip ${4=leakyrelu}
+nn_layer_fcbnnl : nn_check_layer "$2"
+                  check "isvarname('$1') && isint($3) && $3>0 && isbool(${5=1})"
+                  skip ${4=leakyrelu}
   e[^-1] "[nn_lib] Add 'fc+bn+nl' layer '$1' to the network, with input '$2', $3 channels and '$4' activation."
   nn_layer_fc $1_0,$2,$3,$5
   nn_layer_batchnorm $1_1,$1_0
@@ -24438,14 +24462,17 @@ nn_layer_fcbnnl : nn_check_layer "$2" check "isvarname('$1') && isint($3) && $3>
 #@cli nn_layer_fcnl : name,in,nb_neurons>0,_activation,_is_updated={ 0 | 1 }
 #@cli : Add a 'fcnl' layer (fully connected layer followed by a non-linearity), to the network.
 #@cli : Default value: 'activation=leakyrelu' and 'is_updated=1'.
-nn_layer_fcnl : nn_check_layer "$2" check "isvarname('$1') && isint($3) && $3>0 && isbool(${5=1})" skip ${4=leakyrelu}
+nn_layer_fcnl : nn_check_layer "$2"
+                check "isvarname('$1') && isint($3) && $3>0 && isbool(${5=1})"
+                skip ${4=leakyrelu}
   e[^-1] "[nn_lib] Add 'fc+nl' layer '$1' to the network, with input '$2', $3 channels and '$4' activation."
   nn_layer_fc $1_0,$2,$3,$5
   nn_layer_nl $1,$1_0,$4
 
 #@cli nn_layer_maxpool2d : name,in
 #@cli : Add a 'maxpool2d' layer (2d max pooling) to the network.
-nn_layer_maxpool2d : nn_check_layer "$2" check "isvarname('$1')"
+nn_layer_maxpool2d : nn_check_layer "$2"
+                     check "isvarname('$1')"
   e[^-1] "[nn_lib] Add 'maxpool2d' layer '$1', with input '$2'."
   _nn_$1_out_size={s=[$_nn_$2_out_size];[int(s[0,2]/2),s[2,2]]}
   _nn_forward.="begin(nn_layer_maxpool2d_init_forward($1,$2));"\
@@ -24457,7 +24484,9 @@ nn_layer_maxpool2d : nn_check_layer "$2" check "isvarname('$1')"
 #@cli : Add a 'nl' (nonlinearity) layer to the network.
 #@cli : 'activation' can be { elu | gelu | leakyrelu | linear | relu | sigmoid | softmax | sqr | sqrt | swish | tanh }.
 #@cli : Default value: 'activation=leakyrelu'.
-nn_layer_nl : nn_check_layer "$2" check "isvarname('$1')" skip ${3=leakyrelu}
+nn_layer_nl : nn_check_layer "$2"
+              check "isvarname('$1')"
+              skip ${3=leakyrelu}
   e[^-1] "[nn_lib] Add 'nl' layer '$1', with input '$2' and '$3' activation."
   _nn_$1_out_size=$_nn_$2_out_size
   if s=['$3'];s=='softmax'
@@ -24473,7 +24502,8 @@ nn_layer_nl : nn_check_layer "$2" check "isvarname('$1')" skip ${3=leakyrelu}
 
 #@cli nn_layer_rename : name,in
 #@cli : Add a 'rename' layer to the network.
-nn_layer_rename : nn_check_layer "$2" check "isvarname('$1')"
+nn_layer_rename : nn_check_layer "$2"
+                  check "isvarname('$1')"
   e[^-1] "[nn_lib] Add 'rename' layer '$1', with input '$2'."
   _nn_$1_out_size=$_nn_$2_out_size
   _nn_forward.="begin(nn_layer_rename_init_forward($1,$2));"
@@ -24482,7 +24512,8 @@ nn_layer_rename : nn_check_layer "$2" check "isvarname('$1')"
 
 #@cli nn_layer_reshape : name,in,width>0,height>0,depth>0,spectrum>0
 #@cli : Add a 'reshape' layer to the network.
-nn_layer_reshape : nn_check_layer "$2" check "isvarname('$1')"
+nn_layer_reshape : nn_check_layer "$2"
+                   check "isvarname('$1')"
   e[^-1] "[nn_lib] Add 'reshape' layer '$1', with input '$2' and size ($3,$4,$5,$6)."
   _nn_$1_out_size=$3,$4,$5,$6
   if prod($_nn_$1_out_size)!=prod($_nn_$2_out_size)
@@ -24495,7 +24526,8 @@ nn_layer_reshape : nn_check_layer "$2" check "isvarname('$1')"
 #@cli nn_layer_resize : name,in,width[%]>0,_height[%]>0,_depth[%]>0,_spectrum[%]>0,_interpolation
 #@cli : Add a 'resize' layer to the network.
 #@cli : Default values: 'height=depth=spectrum=100%'.
-nn_layer_resize : nn_check_layer "$2" check "isvarname('$1') && $3>0 && ${4=100%}>0 && ${5=100%}>0 && ${6=100%}>0"
+nn_layer_resize : nn_check_layer "$2"
+                  check "isvarname('$1') && $3>0 && ${4=100%}>0 && ${5=100%}>0 && ${6=100%}>0"
                   skip ${7=3}
   if ${"is_percent $3"} w={max(1,round([$_nn_$2_out_size][1]*$3))} else w=$3 fi
   if ${"is_percent $4"} h={max(1,round([$_nn_$2_out_size][1]*$4))} else h=$4 fi
@@ -24511,7 +24543,8 @@ nn_layer_resize : nn_check_layer "$2" check "isvarname('$1') && $3>0 && ${4=100%
 #@cli nn_layer_run : name,in,"command",_width[%]>0,_height[%]>0,_depth[%]>0,_spectrum[%]>0
 #@cli : Add a 'run' layer to the network.
 #@cli : Default values: 'width=height=depth=spectrum=100%'.
-nn_layer_run : nn_check_layer "$2" check "isvarname('$1') && ${4=100%}>0 && ${5=100%}>0 && ${6=100%}>0 && ${7=100%}>0"
+nn_layer_run : nn_check_layer "$2"
+               check "isvarname('$1') && ${4=100%}>0 && ${5=100%}>0 && ${6=100%}>0 && ${7=100%}>0"
   if ${"is_percent $4"} w={max(1,round([$_nn_$2_out_size][0]*$4))} else w=$4 fi
   if ${"is_percent $5"} h={max(1,round([$_nn_$2_out_size][1]*$5))} else h=$5 fi
   if ${"is_percent $6"} d={max(1,round([$_nn_$2_out_size][2]*$6))} else d=$6 fi
@@ -24525,7 +24558,8 @@ nn_layer_run : nn_check_layer "$2" check "isvarname('$1') && ${4=100%}>0 && ${5=
 
 #@cli nn_layer_split : name0,name1,in,nb_channels0
 #@cli : Add a 'split' layer to the network.
-nn_layer_split : nn_check_layer "$3" check "isvarname('$1') && isvarname('$2')"
+nn_layer_split : nn_check_layer "$3"
+                 check "isvarname('$1') && isvarname('$2')"
   e[^-1] "[nn_lib] Add 'split' layer, with input '$3' and outputs '$1' and '$2'."
   _nn_$1_out_size={[[$_nn_$3_out_size][0,3],$4]}
   _nn_$2_out_size={[$_nn_$3_out_size]-[0,0,0,$4]}
@@ -24536,7 +24570,8 @@ nn_layer_split : nn_check_layer "$3" check "isvarname('$1') && isvarname('$2')"
 
 #@cli nn_loss_bce : name,in,ground_truth
 #@cli : Add a 'bce' loss to the network (binary cross entropy).
-nn_loss_bce : nn_check_layer "$2" check "isvarname('$1') && isvarname('$3')"
+nn_loss_bce : nn_check_layer "$2"
+              check "isvarname('$1') && isvarname('$3')"
   e[^-1] "[nn_lib] Add BCE loss '$1', with input '$2' and ground truth '$3'."
   _nn_$1_out_size=1,1,1,1
   _nn_backward..="begin(nn_loss_bce_init_backward($1));"\
@@ -24546,7 +24581,8 @@ nn_loss_bce : nn_check_layer "$2" check "isvarname('$1') && isvarname('$3')"
 
 #@cli nn_loss_mse : name,in,ground_truth
 #@cli : Add a 'mse' loss to the network (mean-squared error).
-nn_loss_mse : nn_check_layer "$2" check "isvarname('$1') && isvarname('$3')"
+nn_loss_mse : nn_check_layer "$2"
+              check "isvarname('$1') && isvarname('$3')"
   e[^-1] "[nn_lib] Add MSE loss '$1', with input '$2' and ground truth '$3'."
   _nn_$1_out_size=1,1,1,1
   _nn_backward..="begin(nn_loss_mse_init_backward($1));"\
