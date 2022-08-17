@@ -24415,8 +24415,19 @@ nn_layer_resconv2d : nn_check_layer "$2"
   e[^-1] "[nn_lib] Add 'resconv2d' layer '$1', with input '$2', $3x$3 kernels, "\
          "stride $4 and dilation $5."
   nn_layer_clone $1_0,$1_1,$2
-  nn_layer_conv2d $1_2,$1_1,{[$_nn_$2_out_size][3]}
+  nn_layer_conv2d $1_2,$1_1,{[$_nn_$2_out_size][3]},$3,$4,$5,$6
   nn_layer_add $1,$1_2,$1_0
+
+#@cli nn_layer_resconv2dnl : name,in,_kernel_size>0,_stride>0,_dilation>0,_activation,_is_updated={ 0 | 1 }
+#@cli : Add a 'rescon2dnl' (residual 2D convolutional layer followed by a non-linearity), to the network.
+#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1', activation='leakyrelu' and 'is_updated=1'.
+nn_layer_resconv2dnl : nn_check_layer "$2"
+                       check "isvarname('$1') && isint(${3=3}) && $3>0 && ${4=1}>0 && isbool(${7=1})"
+                       skip "${5=1}","${6=leakyrelu}"
+  e[^-1] "[nn_lib] Add 'resconv2d' layer '$1', with input '$2', $3x$3 kernels, "\
+         "stride $4, dilation $5 and '$6' activation."
+  nn_layer_resconv2d $1_0,$2,$3,$4,$5,$7
+  nn_layer_nl $1,$1_0,$6
 
 #@cli nn_layer_crop : name,in,x0,y0,z0,x1,y1,z1
 #@cli : Add a 'crop' layer to the network.
