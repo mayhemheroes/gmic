@@ -24271,7 +24271,7 @@ nn_lib :
 #@cli : Initialize a new network.
 nn_init :
   e[^-1] "[nn_lib] Initialize new network."
-  _nn_forward,_nn_backward,_nn_parameters_nn_learned_parameters=
+  _nn_modules_names,_nn_modules,_nn_forward,_nn_backward=
   _nn_init="$0 "
 
 #@cli nn_check_layer : name
@@ -24289,6 +24289,8 @@ nn_check_layer :
 nn_layer_input : check "isvarname('$1') && isint($2) && $2>0 && isint(${3=1}) && $3>0 && isint(${4=1}) && $4>0 && "\
                        "isint(${5=1}) && $5>0"
   e[^-1] "[nn_lib] Add input layer '$1', with size ($2,$3,$4,$5)."
+  _nn_modules_names.=$1,
+  _nn_modules_types.=input,
   _nn_$1_out_size=$2,$3,$4,$5
   _nn_forward.="begin(nn_layer_input_init_forward($1,$2,$3,$4,$5));"
   _nn_init.="$0 $* "
@@ -24299,6 +24301,8 @@ nn_layer_add : nn_check_layer "$2"
                nn_check_layer "$3"
                check "isvarname('$1') && [$_nn_$2_out_size]==[$_nn_$3_out_size]"
   e[^-1] "[nn_lib] Add 'add' layer '$1', with inputs '$2' and '$3'."
+  _nn_modules_names.=$1,
+  _nn_modules_types.=add,
   _nn_$1_out_size=$_nn_$2_out_size
   _nn_forward.="begin(nn_layer_add_init_forward($1,$2));"\
                "nn_layer_add_forward($1,$2,$3);"
@@ -24314,6 +24318,8 @@ nn_layer_append : nn_check_layer "$2"
   if s1=[$_nn_$2_out_size];s2=[$_nn_$3_out_size];s1[0,3]!=s2[0,3]
     error "nn_layer_append: Cannot append inputs $2("$_nn_$2_out_size") and $3("$_nn_$3_out_size") together."
   fi
+  _nn_modules_names.=$1,
+  _nn_modules_types.=append,
   _nn_$1_out_size={[$_nn_$2_out_size]+[0,0,0,[$_nn_$3_out_size][3]]}
   _nn_forward.="begin(nn_layer_append_init_forward($1,$2,$3));"\
                "nn_layer_append_forward($1,$2,$3);"
@@ -24325,6 +24331,8 @@ nn_layer_append : nn_check_layer "$2"
 nn_layer_avgpool2d : nn_check_layer "$2"
                      check "isvarname('$1')"
   e[^-1] "[nn_lib] Add 'avgpool2d' layer '$1', with input '$2'."
+  _nn_modules_names.=$1,
+  _nn_modules_types.=avgpool2d,
   _nn_$1_out_size={s=[$_nn_$2_out_size];[int(s[0,2]/2),s[2,2]]}
   _nn_forward.="begin(nn_layer_avgpool2d_init_forward($1,$2));"\
                "nn_layer_avgpool2d_forward($1,$2);"
@@ -24339,6 +24347,8 @@ nn_layer_batchnorm : nn_check_layer "$2"
                      check "isvarname('$1') && isint(${3=3}) && inrange($3,0,3)"
   s0,s1,s2,s3="no parameters","gamma-only","beta-only","gamma & beta"
   e[^-1] "[nn_lib] Add 'batchnorm' layer '$1' to the network, with input '$2' and learning mode '"${s$3}"'."
+  _nn_modules_names.=$1,
+  _nn_modules_types.=batchnorm,
   _nn_$1_out_size=$_nn_$2_out_size
   if !isint($$1) 4,{[$_nn_$2_out_size][3]} f. 0,1,1,0 => $1 fi
   _nn_forward.="begin(nn_layer_batchnorm_init_forward($1,$2));"\
@@ -24348,14 +24358,14 @@ nn_layer_batchnorm : nn_check_layer "$2"
                  "end(nn_layer_batchnorm_end_backward($1));"
   _nn_update..="end(nn_layer_batchnorm_update($1,$3));"
   _nn_init.="$0 $* "
-  _nn_parameters.="$1,"
-  if $3 _nn_learned_parameters.="$1," fi
 
 #@cli nn_layer_clone : name0,name1,in
 #@cli : Add a 'clone' layer to the network.
 nn_layer_clone : nn_check_layer "$3"
                  check "isvarname('$1') && isvarname('$2')"
   e[^-1] "[nn_lib] Add 'clone' layer with input '$3' and outputs '$1' and '$2'."
+  _nn_modules_names.=$1,$2,
+  _nn_modules_types.=clone0,clone1,
   _nn_$1_out_size=$_nn_$3_out_size
   _nn_$2_out_size=$_nn_$3_out_size
   _nn_forward.="begin(nn_layer_clone_init_forward($1,$2,$3));"\
@@ -24370,6 +24380,8 @@ nn_layer_conv2d : nn_check_layer "$2"
                   check "isvarname('$1') && isint($3) && $3>0 && isint(${4=3}) && $4>0 && "\
                         "${5=1}>0 && isbool(${7=1})" skip "${6=1}"
   e[^-1] "[nn_lib] Add 'conv2d' layer '$1', with input '$2', $3 channels, $4x$4 kernels, stride $5 and dilation $6."
+  _nn_modules_names.=$1,
+  _nn_modules_types.=conv2d,
   _nn_$1_out_size={s=[$_nn_$2_out_size];[max(1,int(s[0]/$5)),max(1,int(s[1]/$5)),s[2],$3]}
   if !isint($$1) {[$_nn_$2_out_size][3]*$4^2+1},$3 if $4>1 f. 4*g/(w-1) else f. 1 fi => $1 fi
   _nn_forward.="begin(nn_layer_conv2d_init_forward($1,$2,$4,$5,$6));"\
@@ -24382,7 +24394,6 @@ nn_layer_conv2d : nn_check_layer "$2"
     _nn_learned_parameters.="$1,"
   fi
   _nn_init.="$0 $* "
-  _nn_parameters.="$1,"
 
 #@cli nn_layer_conv2dbnnl : name,in,nb_channels>0,_kernel_size>0,_stride>0,_dilation>0,_activation,\
 # _is_learned={ 0 | 1 }
@@ -24438,6 +24449,8 @@ nn_layer_resconv2dnl : nn_check_layer "$2"
 nn_layer_crop : nn_check_layer "$2"
                check "min(isint([${3-8}]))"
   e[^1] "[nn_lin] Add 'crop' layer '$1', with input '$2' and coordinates (${3-5})-(${6-8})."
+  _nn_modules_names.=$1,
+  _nn_modules_types.=crop,
   cmin={vmin([${3-5}],[${6-8}])}
   cmax={vmax([${3-5}],[${6-8}])}
   _nn_$1_out_size={[[$cmax]-[$cmin]+1,arg(4,$_nn_$2_out_size)]}
@@ -24452,6 +24465,8 @@ nn_layer_crop : nn_check_layer "$2"
 nn_layer_fc : nn_check_layer "$2"
               check "isvarname('$1') && isint($3) && $3>0 && isbool(${4=1})"
   e[^-1] "[nn_lib] Add 'fc' layer '$1', with input '$2' and $3 channels."
+  _nn_modules_names.=$1,
+  _nn_modules_types.=fc,
   _nn_$1_out_size=1,1,1,$3
   if !isint($$1) {prod($_nn_$2_out_size)+1},$3 f. 4*g/(w-1) => $1 fi
   _nn_forward.="begin(nn_layer_fc_init_forward($1));"\
@@ -24464,7 +24479,6 @@ nn_layer_fc : nn_check_layer "$2"
     _nn_learned_parameters.="$1,"
   fi
   _nn_init.="$0 $* "
-  _nn_parameters.="$1,"
 
 #@cli nn_layer_fcbnnl : name,in,nb_neurons>0,_activation,_is_learned={ 0 | 1 }
 #@cli : Add a 'fcbnnl' layer (fully connected layer followed by batchnorm, then a non-linearity), to the network.
@@ -24492,6 +24506,8 @@ nn_layer_fcnl : nn_check_layer "$2"
 nn_layer_maxpool2d : nn_check_layer "$2"
                      check "isvarname('$1')"
   e[^-1] "[nn_lib] Add 'maxpool2d' layer '$1', with input '$2'."
+  _nn_modules_names.=$1,
+  _nn_modules_types.=maxpool2d,
   _nn_$1_out_size={s=[$_nn_$2_out_size];[int(s[0,2]/2),s[2,2]]}
   _nn_forward.="begin(nn_layer_maxpool2d_init_forward($1,$2));"\
                "nn_layer_maxpool2d_forward($1,$2);"
@@ -24506,6 +24522,8 @@ nn_layer_nl : nn_check_layer "$2"
               check "isvarname('$1')"
               skip ${3=leakyrelu}
   e[^-1] "[nn_lib] Add 'nl' layer '$1', with input '$2' and '$3' activation."
+  _nn_modules_names.=$1,
+  _nn_modules_types.=nl,
   _nn_$1_out_size=$_nn_$2_out_size
   if s=['$3'];s=='softmax'
     _nn_forward.="begin(nn_layer_$3_init_forward($1,$2));"\
@@ -24523,6 +24541,8 @@ nn_layer_nl : nn_check_layer "$2"
 nn_layer_rename : nn_check_layer "$2"
                   check "isvarname('$1')"
   e[^-1] "[nn_lib] Add 'rename' layer '$1', with input '$2'."
+  _nn_modules_names.=$1,
+  _nn_modules_types.=rename,
   _nn_$1_out_size=$_nn_$2_out_size
   _nn_forward.="begin(nn_layer_rename_init_forward($1,$2));"
   _nn_backward..="nn_layer_rename_backward($1,$2);"
@@ -24533,6 +24553,8 @@ nn_layer_rename : nn_check_layer "$2"
 nn_layer_reshape : nn_check_layer "$2"
                    check "isvarname('$1')"
   e[^-1] "[nn_lib] Add 'reshape' layer '$1', with input '$2' and size ($3,$4,$5,$6)."
+  _nn_modules_names.=$1,
+  _nn_modules_types.=reshape,
   _nn_$1_out_size=$3,$4,$5,$6
   if prod($_nn_$1_out_size)!=prod($_nn_$2_out_size)
     error "nn_layer_reshape: Cannot reshape input ("$_nn_$2_out_size") to output ("$_nn_$1_out_size")."
@@ -24552,6 +24574,8 @@ nn_layer_resize : nn_check_layer "$2"
   if ${"is_percent $5"} d={max(1,round([$_nn_$2_out_size][2]*$5))} else d=$5 fi
   if ${"is_percent $6"} s={max(1,round([$_nn_$2_out_size][3]*$6))} else s=$6 fi
   e[^-1] "[nn_lib] Add 'resize' layer '$1', with input '$2' and output size ("$w","$h","$d","$s")."
+  _nn_modules_names.=$1,
+  _nn_modules_types.=resize,
   _nn_$1_out_size=$w,$h,$d,$s
   _nn_forward.="begin(nn_layer_resize_init_forward($1,$2,"$w","$h","$d","$s"));"\
                "nn_layer_resize_forward($1,$2,$7);"
@@ -24568,6 +24592,8 @@ nn_layer_run : nn_check_layer "$2"
   if ${"is_percent $6"} d={max(1,round([$_nn_$2_out_size][2]*$6))} else d=$6 fi
   if ${"is_percent $7"} s={max(1,round([$_nn_$2_out_size][3]*$7))} else s=$7 fi
   e[^-1] "[nn_lib] Add 'run' layer '$1', with input '$2', command '$3' and output size ("$w","$h","$d","$s")."
+  _nn_modules_names.=$1,
+  _nn_modules_types.=run,
   _nn_$1_out_size=$w,$h,$d,$s
   _nn_forward.="begin(nn_layer_run_init_forward($1,$2,'$3',"$w","$h","$d","$s"));"\
                "nn_layer_run_forward($1,$2);"
@@ -24579,6 +24605,8 @@ nn_layer_run : nn_check_layer "$2"
 nn_layer_split : nn_check_layer "$3"
                  check "isvarname('$1') && isvarname('$2')"
   e[^-1] "[nn_lib] Add 'split' layer, with input '$3' and outputs '$1' and '$2'."
+  _nn_modules_names.=$1,$2,
+  _nn_modules_types.=split0,split1,
   _nn_$1_out_size={[[$_nn_$3_out_size][0,3],$4]}
   _nn_$2_out_size={[$_nn_$3_out_size]-[0,0,0,$4]}
   _nn_forward.="begin(nn_layer_split_init_forward($1,$2,$3,$4));"\
@@ -24591,6 +24619,8 @@ nn_layer_split : nn_check_layer "$3"
 nn_loss_bce : nn_check_layer "$2"
               check "isvarname('$1') && isvarname('$3')"
   e[^-1] "[nn_lib] Add BCE loss '$1', with input '$2' and ground truth '$3'."
+  _nn_modules_names.=$1,
+  _nn_modules_types.=loss_bce,
   _nn_$1_out_size=1,1,1,1
   _nn_backward..="begin(nn_loss_bce_init_backward($1));"\
                  "nn_loss_bce_backward(${1-3});"\
@@ -24602,6 +24632,8 @@ nn_loss_bce : nn_check_layer "$2"
 nn_loss_mse : nn_check_layer "$2"
               check "isvarname('$1') && isvarname('$3')"
   e[^-1] "[nn_lib] Add MSE loss '$1', with input '$2' and ground truth '$3'."
+  _nn_modules_names.=$1,
+  _nn_modules_types.=loss_mse,
   _nn_$1_out_size=1,1,1,1
   _nn_backward..="begin(nn_loss_mse_init_backward($1));"\
                  "nn_loss_mse_backward(${1-3});"\
@@ -24616,6 +24648,8 @@ nn_loss_mse : nn_check_layer "$2"
 nn_trainer : nn_check_layer "$2"
              check "isvarname('$1') && ${3=1e-6}>0 && isvarname('${4=adam}') && isvarname('${5=constant}')"
   e[^-1] "[nn_lib] Add trainer '$1' for loss '$2', with learning rate '$3', $4 optimizer and $5 scheduler."
+  _nn_modules_names.=$1,
+  _nn_modules_types.=trainer,
   _nn_$1_out_size=0,0,0,0
   if !isint($$1)
     # (iteration,learning_rate,initial_learning_rate,previous_loss,best_loss;
@@ -24628,7 +24662,6 @@ nn_trainer : nn_check_layer "$2"
   _nn_backward..="begin(nn_trainer_init_backward($1,$2,"${o_$4},${s_$5}"));"
   _nn_update.="end(nn_trainer_update($1,$2));" # <- Keep this as the last thing done in an 'end()' block!
   _nn_init.="$0 $* "
-  _nn_parameters.="$1,"
 
   # Allocate data for learned parameters.
   # if "['$4']=='adam'"
@@ -24660,9 +24693,13 @@ nn_load : check "s=['$1']; find(s,'.gmz')==size(s) - 4"
 #@cli : Neural network files can be only saved in .gmz format.
 nn_save : check "s=['$1']; find(s,'.gmz')==size(s) - 4"
   e[^-1] "[nn_lib] Save current network as file '$1'."
-  ('$_nn_parameters') autocrop. {','} sel={t} rm.
-  ('$_nn_init') autocrop. {'" "'}
-  => _nn_init
+  sel,c=
+  repeat narg($_nn_modules_names)-1 {
+    m=${arg0\ $>,$_nn_modules_types}
+    n=${arg0\ $>,$_nn_modules_names}
+    if m='$m';m=='batchnorm'||m=='conv2d'||m=='fc'||m=='trainer' sel.=$c$n c=, fi
+  }
+  ('$_nn_init') autocrop. {'" "'} => _nn_init
   o[$sel,-1] "$1"
   rm.
 
