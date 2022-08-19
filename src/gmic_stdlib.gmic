@@ -23401,7 +23401,7 @@ nn_lib :
     );
 
     nn_display(L) = display(L#_out,L#_out_width,L#_out_height,L#_out_depth,L#_out_spectrum);
-    nn_display_deriv(L) = display(L#_deriv_out,L#_out_width,L#_out_height,L#_out_depth,L#_out_spectrum);
+    nn_display_d(L) = display(d#L#_out,L#_out_width,L#_out_height,L#_out_depth,L#_out_spectrum);
 
     #--------------------------------------------
     # Activation functions and their derivatives.
@@ -23412,72 +23412,72 @@ nn_lib :
     # ELU: Exponential Linear Unit.
     #-------------------------------
     nn_activation_elu(z) = (z<0?exp(z) - 1:z);
-    nn_activation_deriv_elu(z) = (z<0?exp(z):1);
+    nn_activation_d_elu(z) = (z<0?exp(z):1);
     nn_activate_elu(Z) = _nn_activate_pointwise(Z,elu);
-    nn_activate_deriv_elu(Z) = _nn_activate_pointwise(Z,deriv_elu);
+    nn_activate_d_elu(Z) = _nn_activate_pointwise(Z,d_elu);
 
     # GELU: Gaussian Error Linear Unit.
     #-----------------------------------
     nn_activation_gelu(z) = (0.5*z*(1 + erf(z/sqrt(2))));
-    nn_activation_deriv_gelu(z) = (0.5 + 0.5*erf(z/sqrt(2)) + z*exp(-z^2/2)/sqrt(2*pi));
+    nn_activation_d_gelu(z) = (0.5 + 0.5*erf(z/sqrt(2)) + z*exp(-z^2/2)/sqrt(2*pi));
     nn_activate_gelu(Z) = _nn_activate_pointwise(Z,gelu);
-    nn_activate_deriv_gelu(Z) = _nn_activate_pointwise(Z,deriv_gelu);
+    nn_activate_d_gelu(Z) = _nn_activate_pointwise(Z,d_gelu);
 
     # LeakyRELU: Leaky Rectified Linear Unit.
     #-----------------------------------------
     nn_activation_leakyrelu(z) = (z<0?0.05*z:z);
-    nn_activation_deriv_leakyrelu(z) = (z<0?0.05:1);
+    nn_activation_d_leakyrelu(z) = (z<0?0.05:1);
     nn_activate_leakyrelu(Z) = _nn_activate_pointwise(Z,leakyrelu);
-    nn_activate_deriv_leakyrelu(Z) = _nn_activate_pointwise(Z,deriv_leakyrelu);
+    nn_activate_d_leakyrelu(Z) = _nn_activate_pointwise(Z,d_leakyrelu);
 
     # Linear.
     #--------
     nn_activate_linear(Z) = (0);
-    nn_activate_deriv_linear(Z) = (#Z = 1);
+    nn_activate_d_linear(Z) = (#Z = 1);
 
     # RELU: Rectified Linear Unit.
     #------------------------------
     nn_activation_relu(z) = (z<0?0:z);
-    nn_activation_deriv_relu(z) = (z<0?0:1);
+    nn_activation_d_relu(z) = (z<0?0:1);
     nn_activate_relu(Z) = _nn_activate_pointwise(Z,relu);
-    nn_activate_deriv_relu(Z) = _nn_activate_pointwise(Z,deriv_relu);
+    nn_activate_d_relu(Z) = _nn_activate_pointwise(Z,d_relu);
 
     # Sigmoid.
     #---------
     nn_activation_sigmoid(z) = (0.5 + 0.5*tanh(z/2));
-    nn_activation_deriv_sigmoid(z) = (_nn_sig = nn_activation_sigmoid(z); _nn_sig*(1 - _nn_sig));
+    nn_activation_d_sigmoid(z) = (_nn_sig = nn_activation_sigmoid(z); _nn_sig*(1 - _nn_sig));
     nn_activate_sigmoid(Z) = _nn_activate_pointwise(Z,sigmoid);
-    nn_activate_deriv_sigmoid(Z) = _nn_activate_pointwise(Z,deriv_sigmoid);
+    nn_activate_d_sigmoid(Z) = _nn_activate_pointwise(Z,d_sigmoid);
 
     # Sqr: Square.
     #-------------
     nn_activate_sqr(Z) = (Z*=Z);
-    nn_activate_deriv_sqr(Z) = (Z*=2);
+    nn_activate_d_sqr(Z) = (Z*=2);
 
     # Sqrt: sqrt(|z|).
     #-----------------
     nn_activation_sqrt(z) = (sqrt(abs(z)));
-    nn_activation_deriv_sqrt(z) = (0.5*sign(x)/sqrt(max(1e-8,abs(z))));
+    nn_activation_d_sqrt(z) = (0.5*sign(x)/sqrt(max(1e-8,abs(z))));
     nn_activate_sqrt(Z) = _nn_activate_pointwise(Z,sqrt);
-    nn_activate_deriv_sqrt(Z) = _nn_activate_pointwise(Z,deriv_sqrt);
+    nn_activate_d_sqrt(Z) = _nn_activate_pointwise(Z,d_sqrt);
 
     # Swish.
     #--------
     nn_activation_swish(z) = (z*nn_activation_sigmoid(z));
-    nn_activation_deriv_swish(z) = (
+    nn_activation_d_swish(z) = (
       _nn_sig = nn_activation_sigmoid(z);
       _nn_swi = z*_nn_sig;
       _nn_swi + _nn_sig*(1 - _nn_swi)
     );
     nn_activate_swish(Z) = _nn_activate_pointwise(Z,swish);
-    nn_activate_deriv_swish(Z) = _nn_activate_pointwise(Z,deriv_swish);
+    nn_activate_d_swish(Z) = _nn_activate_pointwise(Z,d_swish);
 
     # Tanh.
     #------
     nn_activation_tanh(z) = (tanh(z));
-    nn_activation_deriv_tanh(z) = (1 - tanh(z)^2);
+    nn_activation_d_tanh(z) = (1 - tanh(z)^2);
     nn_activate_tanh(Z) = _nn_activate_pointwise(Z,tanh);
-    nn_activate_deriv_tanh(Z) = _nn_activate_pointwise(Z,deriv_tanh);
+    nn_activate_d_tanh(Z) = _nn_activate_pointwise(Z,d_tanh);
 
     #---------
     # Trainer.
@@ -23563,17 +23563,17 @@ nn_lib :
     #------------
     # Optimizers.
     #------------
-    nn_optimizer_update_layer(L,dL) = (
-      !nn_optimizer?nn_optimizer_sgd_update_layer(#L,#dL):       # Stochastic gradient descent
-      nn_optimizer==1?nn_optimizer_rmsprop_update_layer(#L,#dL): # RMSprop
-      nn_optimizer==2?nn_optimizer_adam_update_layer(#L,#dL):    # Adam
-      nn_optimizer==3?nn_optimizer_adamax_update_layer(#L,#dL);  # Adamax
+    nn_optimizer_update_layer(W,dW) = (
+      !nn_optimizer?nn_optimizer_sgd_update_layer(#W,#dW):       # Stochastic gradient descent
+      nn_optimizer==1?nn_optimizer_rmsprop_update_layer(#W,#dW): # RMSprop
+      nn_optimizer==2?nn_optimizer_adam_update_layer(#W,#dW):    # Adam
+      nn_optimizer==3?nn_optimizer_adamax_update_layer(#W,#dW);  # Adamax
     );
 
     # Stochastic gradient descent.
     #-----------------------------
-    nn_optimizer_sgd_update_layer(L_params,dL_params) = (
-      L_params#-=nn_learning_rate*#dL_params;
+    nn_optimizer_sgd_update_layer(W,dW) = (
+      W#-=nn_learning_rate*#dW;
     );
 
     # RMSprop optimizer.
@@ -23582,16 +23582,16 @@ nn_lib :
       const nn_optimizer_rmsprop_beta = 0.9;
     );
 
-    nn_optimizer_rmsprop_update_layer(L_params,dL_params) = (
-      dL_params#_name_g2 = '_nn_#dL_params#_g2';
-      !nn_iteration || isnan($_nn_#dL_params#_g2)?(
-        dL_params#_g2 = vector(#size(dL_params));
+    nn_optimizer_rmsprop_update_layer(W,dW) = (
+      dW#_name_g2 = '_nn_#dW#_g2';
+      !nn_iteration || isnan($_nn_#dW#_g2)?(
+        dW#_g2 = vector(#size(dW));
       ):(
-        dL_params#_g2 = get(dL_params#_name_g2,size(dL_params));
+        dW#_g2 = get(dW#_name_g2,size(dW));
       );
-      dL_params#_g2 = lerp(dL_params^2,dL_params#_g2,nn_optimizer_rmsprop_beta);
-      store(dL_params#_name_g2,dL_params#_g2,size(dL_params));
-      L_params#-=nn_learning_rate*dL_params/sqrt(1e-8 + dL_params#_g2);
+      dW#_g2 = lerp(dW^2,dW#_g2,nn_optimizer_rmsprop_beta);
+      store(dW#_name_g2,dW#_g2,size(dW));
+      W#-=nn_learning_rate*dW/sqrt(1e-8 + dW#_g2);
     );
 
     # Adam optimizer.
@@ -23606,20 +23606,20 @@ nn_lib :
       );
     );
 
-    nn_optimizer_adam_update_layer(L_params,dL_params) = (
-      dL_params#_name_m = '_nn_#dL_params#_m';
-      dL_params#_name_v = '_nn_#dL_params#_v';
-      !nn_iteration || isnan($_nn_#dL_params#_m)?(
-        dL_params#_m = dL_params#_v = vector(#size(dL_params));
+    nn_optimizer_adam_update_layer(W,dW) = (
+      dW#_name_m = '_nn_#dW#_m';
+      dW#_name_v = '_nn_#dW#_v';
+      !nn_iteration || isnan($_nn_#dW#_m)?(
+        dW#_m = dW#_v = vector(#size(dW));
       ):(
-        dL_params#_m = get(dL_params#_name_m,size(dL_params));
-        dL_params#_v = get(dL_params#_name_v,size(dL_params));
+        dW#_m = get(dW#_name_m,size(dW));
+        dW#_v = get(dW#_name_v,size(dW));
       );
-      dL_params#_m = lerp(dL_params,dL_params#_m,nn_optimizer_adam_beta1);
-      dL_params#_v = lerp(dL_params^2,dL_params#_v,nn_optimizer_adam_beta2);
-      store(dL_params#_name_m,dL_params#_m,size(dL_params));
-      store(dL_params#_name_v,dL_params#_v,size(dL_params));
-      L_params#-=nn_learning_rate*nn_optimizer_adam_alpha_t*dL_params#_m/sqrt(1e-8 + dL_params#_v);
+      dW#_m = lerp(dW,dW#_m,nn_optimizer_adam_beta1);
+      dW#_v = lerp(dW^2,dW#_v,nn_optimizer_adam_beta2);
+      store(dW#_name_m,dW#_m,size(dW));
+      store(dW#_name_v,dW#_v,size(dW));
+      W#-=nn_learning_rate*nn_optimizer_adam_alpha_t*dW#_m/sqrt(1e-8 + dW#_v);
     );
 
     # Adamax optimizer.
@@ -23632,21 +23632,21 @@ nn_lib :
       );
     );
 
-    nn_optimizer_adamax_update_layer(L_params,dL_params) = (
-      dL_params#_name_m = '_nn_#dL_params#_m';
-      dL_params#_name_v = '_nn_#dL_params#_v';
-      !nn_iteration || isnan($_nn_#dL_params#_m)?(
-        dL_params#_m = dL_params#_v = vector(#size(dL_params));
+    nn_optimizer_adamax_update_layer(W,dW) = (
+      dW#_name_m = '_nn_#dW#_m';
+      dW#_name_v = '_nn_#dW#_v';
+      !nn_iteration || isnan($_nn_#dW#_m)?(
+        dW#_m = dW#_v = vector(#size(dW));
       ):(
-        dL_params#_m = get(dL_params#_name_m,size(dL_params));
-        dL_params#_v = get(dL_params#_name_v,size(dL_params));
+        dW#_m = get(dW#_name_m,size(dW));
+        dW#_v = get(dW#_name_v,size(dW));
       );
-      dL_params#_m = lerp(dL_params,dL_params#_m,nn_optimizer_adamax_beta1);
-      dL_params#_v = vmax(abs(dL_params),nn_optimizer_adamax_beta2*dL_params#_v);
-      store(dL_params#_name_m,dL_params#_m,size(dL_params));
-      store(dL_params#_name_v,dL_params#_v,size(dL_params));
+      dW#_m = lerp(dW,dW#_m,nn_optimizer_adamax_beta1);
+      dW#_v = vmax(abs(dW),nn_optimizer_adamax_beta2*dW#_v);
+      store(dW#_name_m,dW#_m,size(dW));
+      store(dW#_name_v,dW#_v,size(dW));
 
-      L_params#-=(nn_learning_rate/nn_optimizer_adamax_ombeta1_t)*dL_params#_m/sqrt(1e-8 + dL_params#_v);
+      W#-=(nn_learning_rate/nn_optimizer_adamax_ombeta1_t)*dW#_m/sqrt(1e-8 + dW#_v);
     );
 
     #----------------
@@ -23667,7 +23667,7 @@ nn_lib :
     );
 
     nn_layer_add_backward(L,IN0,IN1) = (
-      IN0#_deriv_out = IN1#_deriv_out = L#_deriv_out/2;
+      d#IN0#_out = d#IN1#_out = d#L#_out/2;
     );
 
     # append: Append two inputs as a new output.
@@ -23686,8 +23686,8 @@ nn_lib :
     );
 
     nn_layer_append_backward(L,IN0,IN1) = (
-      IN0#_deriv_out = L#_deriv_out[0,size(IN0#_out)];
-      IN1#_deriv_out = L#_deriv_out[size(IN0#_out),size(IN1#_out)];
+      d#IN0#_out = d#L#_out[0,size(IN0#_out)];
+      d#IN1#_out = d#L#_out[size(IN0#_out),size(IN1#_out)];
     );
 
     # avgpool2d : 2D average pooling.
@@ -23713,16 +23713,16 @@ nn_lib :
     );
 
     nn_layer_avgpool2d_backward(L,IN) = (
-      IN#_deriv_out = correlate(L#_deriv_out,
-                                L#_out_width,L#_out_height,L#_out_depth,L#_out_spectrum,
-                                nn_avgpool2d_kernel_backward,2,2,1,1,
-                                0,0,1,
-                                0,0,0,
-                                0,0,0,
-                                IN#_out_width - 1,IN#_out_height - 1,IN#_out_depth - 1,
-                                0.5,0.5,1,
-                                1,1,1,
-                                0);
+      d#IN#_out = correlate(d#L#_out,
+                            L#_out_width,L#_out_height,L#_out_depth,L#_out_spectrum,
+                            nn_avgpool2d_kernel_backward,2,2,1,1,
+                            0,0,1,
+                            0,0,0,
+                            0,0,0,
+                            IN#_out_width - 1,IN#_out_height - 1,IN#_out_depth - 1,
+                            0.5,0.5,1,
+                            1,1,1,
+                            0);
     );
 
     # batchnorm: Batch-normalization layer.
@@ -23757,8 +23757,8 @@ nn_lib :
       L#_threads_nbs = vector(#nn_nb_threads_max);
       L#_threads_mus = vector(#nn_nb_threads_max*L#_out_spectrum);
       L#_threads_sigmas = vector(#nn_nb_threads_max*L#_out_spectrum);
-      L#_batch_deriv_gamma = vector(##L#_out_spectrum);
-      L#_batch_deriv_beta = vector(##L#_out_spectrum);
+      d#L#_batch_gamma = vector(##L#_out_spectrum);
+      d#L#_batch_beta = vector(##L#_out_spectrum);
     );
 
     nn_layer_batchnorm_backward(L,IN,learning_mode) = (
@@ -23780,22 +23780,22 @@ nn_lib :
       copy(L#_threads_sigmas[nn_thread_id*L#_out_spectrum],L#_in_variance);
 
       learning_mode&1?( # Learn gamma
-        L#_tmp = L#_deriv_out*L#_xhat;
-        repeat(L#_out_spectrum,_k,L#_batch_deriv_gamma[_k]+=sum(L#_tmp[_k*L#_out_whd,L#_out_whd]));
+        L#_tmp = d#L#_out*L#_xhat;
+        repeat(L#_out_spectrum,_k,d#L#_batch_gamma[_k]+=sum(L#_tmp[_k*L#_out_whd,L#_out_whd]));
       );
       learning_mode&2?( # Learn beta
-        repeat(L#_out_spectrum,_k,L#_batch_deriv_beta[_k]+=sum(L#_deriv_out[_k*L#_out_whd,L#_out_whd]));
+        repeat(L#_out_spectrum,_k,d#L#_batch_beta[_k]+=sum(d#L#_out[_k*L#_out_whd,L#_out_whd]));
       );
 
-      IN#_deriv_out = L#_deriv_out*L#_gamma_whds;
-      IN#_deriv_out/=L#_sigma_whds;
+      d#IN#_out = d#L#_out*L#_gamma_whds;
+      d#IN#_out/=L#_sigma_whds;
     );
 
     nn_layer_batchnorm_end_backward(L) = (
-      merge(L#_batch_deriv_gamma,+);
-      merge(L#_batch_deriv_beta,+);
-      L#_batch_deriv_gamma/=nn_batch_size;
-      L#_batch_deriv_beta/=nn_batch_size;
+      merge(d#L#_batch_gamma,+);
+      merge(d#L#_batch_beta,+);
+      d#L#_gamma/=nn_batch_size;
+      d#L#_beta/=nn_batch_size;
 
       merge(L#_threads_nbs,+);
       merge(L#_threads_mus,+);
@@ -23822,11 +23822,11 @@ nn_lib :
       draw(##L#_ind,L#_in_mean,0,0,0,0,1,h##L#_ind,1,1,L#_momentum);
       draw(##L#_ind,L#_in_variance,1,0,0,0,1,h##L#_ind,1,1,L#_momentum);
       learning_mode&1?(
-        nn_optimizer_update_layer(L#_gamma,L#_batch_deriv_gamma);
+        nn_optimizer_update_layer(L#_gamma,d#L#_batch_gamma);
         draw(##L#_ind,L#_gamma,2,0,0,0,1,h##L#_ind);
       );
       learning_mode&2?(
-        nn_optimizer_update_layer(L#_beta,L#_batch_deriv_beta);
+        nn_optimizer_update_layer(L#_beta,d#L#_batch_beta);
         draw(##L#_ind,L#_beta,3,0,0,0,1,h##L#_ind);
       );
     );
@@ -23850,7 +23850,7 @@ nn_lib :
     );
 
     nn_layer_clone_backward(L0,L1,IN) = (
-      IN#_deriv_out = L0#_deriv_out + L1#_deriv_out;
+      d#IN#_out = d#L0#_out + d#L1#_out;
     );
 
     # conv2d: 2D convolutional layer.
@@ -23889,8 +23889,8 @@ nn_lib :
     );
 
     nn_layer_conv2d_init_backward(L,IN) = (
-      L#_batch_deriv_weights = vector(#size(L#_weights));
-      L#_batch_deriv_biases = vector(#size(L#_biases));
+      d#L#_batch_weights = vector(#size(L#_weights));
+      d#L#_batch_biases = vector(#size(L#_biases));
     );
 
     nn_layer_conv2d_backward(L,IN) = (
@@ -23907,31 +23907,31 @@ nn_lib :
                L#_weights[_l*(w##L#_ind - 1) + _k*_sizw],_sizw,-1,1);
         );
       );
-      IN#_deriv_out = convolve(L#_deriv_out,
-                               L#_out_width,L#_out_height,L#_out_depth,L#_out_spectrum,
-                               L#_weights_mirrored,
-                               L#_kernel_size,L#_kernel_size,1,L#_out_spectrum*IN#_out_spectrum,
-                               0,0,2,
-                               L#_kernel_size - 1 - L#_kernel_center,
-                               L#_kernel_size - 1 - L#_kernel_center,0,
-                               0,0,0,IN#_out_width - 1,IN#_out_height - 1,IN#_out_depth - 1,
-                               1/L#_stride,1/L#_stride,1,
-                               L#_dilation/L#_stride,L#_dilation/L#_stride,1);
+      d#IN#_out = convolve(d#L#_out,
+                           L#_out_width,L#_out_height,L#_out_depth,L#_out_spectrum,
+                           L#_weights_mirrored,
+                           L#_kernel_size,L#_kernel_size,1,L#_out_spectrum*IN#_out_spectrum,
+                           0,0,2,
+                           L#_kernel_size - 1 - L#_kernel_center,
+                           L#_kernel_size - 1 - L#_kernel_center,0,
+                           0,0,0,IN#_out_width - 1,IN#_out_height - 1,IN#_out_depth - 1,
+                           1/L#_stride,1/L#_stride,1,
+                           L#_dilation/L#_stride,L#_dilation/L#_stride,1);
 
       # Compute dL/dbl.
-      L#_deriv_biases = vector(#size(L#_biases));
-      fill(L#_deriv_biases,_l,sum(L#_deriv_out[_l*_sizl,_sizl]));
-      L#_batch_deriv_biases+=L#_deriv_biases;
+      d#L#_biases = vector(#size(L#_biases));
+      fill(d#L#_biases,_l,sum(d#L#_out[_l*_sizl,_sizl]));
+      d#L#_batch_biases+=d#L#_biases;
 
       # Compute dL/dwlk.
       L#_xk_mirrored = vector(#_sizk);
-      L#_deriv_weights = vector(#size(L#_weights));
+      d#L#_weights = vector(#size(L#_weights));
       repeat (L#_out_spectrum,_l,
         repeat (IN#_out_spectrum,_k,
           copy(L#_xk_mirrored[_sizk - 1],IN#_out[_k*_sizk],_sizk,-1,1);
           L#_dwlk = convolve(L#_xk_mirrored,
                              IN#_out_width,IN#_out_height,IN#_out_depth,1,
-                             L#_deriv_out[_l*_sizl,_sizl],
+                             d#L#_out[_l*_sizl,_sizl],
                              L#_out_width,L#_out_height,L#_out_depth,1,
                              0,0,1,
                              1/L#_stride*(IN#_out_width - 1 - L#_dilation*L#_kernel_center),
@@ -23939,22 +23939,22 @@ nn_lib :
                              0,0,0,L#_kernel_size - 1,L#_kernel_size - 1,0,
                              L#_dilation,L#_dilation,1,
                              L#_stride,L#_stride,1);
-          copy(L#_deriv_weights[_l*(w##L#_ind - 1) + _k*_sizw],L#_dwlk,_sizw);
+          copy(d#L#_weights[_l*(w##L#_ind - 1) + _k*_sizw],L#_dwlk,_sizw);
         );
       );
-      L#_batch_deriv_weights+=L#_deriv_weights;
+      d#L#_batch_weights+=d#L#_weights;
     );
 
     nn_layer_conv2d_end_backward(L) = (
-      merge(L#_batch_deriv_weights,+);
-      merge(L#_batch_deriv_biases,+);
-      L#_batch_deriv_weights/=nn_batch_size;
-      L#_batch_deriv_biases/=nn_batch_size;
+      merge(d#L#_batch_weights,+);
+      merge(d#L#_batch_biases,+);
+      d#L#_batch_weights/=nn_batch_size;
+      d#L#_batch_biases/=nn_batch_size;
     );
 
     nn_layer_conv2d_update(L) = (
-      nn_optimizer_update_layer(L#_weights,L#_batch_deriv_weights);
-      nn_optimizer_update_layer(L#_biases,L#_batch_deriv_biases);
+      nn_optimizer_update_layer(L#_weights,d#L#_batch_weights);
+      nn_optimizer_update_layer(L#_biases,d#L#_batch_biases);
       draw(##L#_ind,L#_weights,0,0,0,0,w##L#_ind - 1,h##L#_ind);
       draw(##L#_ind,L#_biases,w##L#_ind - 1,0,0,0,1,h##L#_ind);
     );
@@ -23978,12 +23978,12 @@ nn_lib :
     );
 
     nn_layer_crop_backward(L,IN,x0,y0,z0,x1,y1,z1) = (
-      IN#_deriv_out = convolve(L#_deriv_out,L#_out_width,L#_out_height,L#_out_depth,L#_out_spectrum,
-                               [1],1,1,1,1,
-                               0,0,1,
-                               0,0,0,
-                               -x0,-y0,-z0,
-                               -x0 + IN#_out_width - 1,-y0 + IN#_out_height - 1,-z0 + IN#_out_depth - 1);
+      d#IN#_out = convolve(d#L#_out,L#_out_width,L#_out_height,L#_out_depth,L#_out_spectrum,
+                           [1],1,1,1,1,
+                           0,0,1,
+                           0,0,0,
+                           -x0,-y0,-z0,
+                           -x0 + IN#_out_width - 1,-y0 + IN#_out_height - 1,-z0 + IN#_out_depth - 1);
     );
 
     # fc: Fully-connected layer.
@@ -24004,27 +24004,27 @@ nn_lib :
     );
 
     nn_layer_fc_init_backward(L) = (
-      L#_batch_deriv_weights = vector(#size(L#_weights));
-      L#_batch_deriv_biases = vector(#size(L#_biases));
+      d#L#_batch_weights = vector(#size(L#_weights));
+      d#L#_batch_biases = vector(#size(L#_biases));
     );
 
     nn_layer_fc_backward(L,IN) = (
-      IN#_deriv_out = mul(transpose(L#_weights,size(IN#_out)),L#_deriv_out);
-      L#_deriv_weights = mul(L#_deriv_out,IN#_out,size(IN#_out));
-      L#_batch_deriv_weights+=L#_deriv_weights;
-      L#_batch_deriv_biases+=L#_deriv_out;
+      d#IN#_out = mul(transpose(L#_weights,size(IN#_out)),d#L#_out);
+      d#L#_weights = mul(d#L#_out,IN#_out,size(IN#_out));
+      d#L#_batch_weights+=d#L#_weights;
+      d#L#_batch_biases+=d#L#_out;
     );
 
     nn_layer_fc_end_backward(L) = (
-      merge(L#_batch_deriv_weights,+);
-      merge(L#_batch_deriv_biases,+);
-      L#_batch_deriv_weights/=nn_batch_size;
-      L#_batch_deriv_biases/=nn_batch_size;
+      merge(d#L#_batch_weights,+);
+      merge(d#L#_batch_biases,+);
+      d#L#_batch_weights/=nn_batch_size;
+      d#L#_batch_biases/=nn_batch_size;
     );
 
     nn_layer_fc_update(L) = (
-      nn_optimizer_update_layer(L#_weights,L#_batch_deriv_weights);
-      nn_optimizer_update_layer(L#_biases,L#_batch_deriv_biases);
+      nn_optimizer_update_layer(L#_weights,d#L#_batch_weights);
+      nn_optimizer_update_layer(L#_biases,d#L#_batch_biases);
       draw(##L#_ind,L#_weights,0,0,0,0,w##L#_ind - 1,h##L#_ind);
       draw(##L#_ind,L#_biases,w##L#_ind - 1,0,0,0,1,h##L#_ind);
     );
@@ -24064,9 +24064,9 @@ nn_lib :
     );
 
     nn_layer_maxpool2d_backward(L,IN) = (
-      IN#_deriv_out = vector(#size(IN#_out),0);
+      d#IN#_out = vector(#size(IN#_out),0);
       repeat (size(L#_out),_l,
-        IN#_deriv_out[L#_from[_l]] = L#_deriv_out[_l];
+        d#IN#_out[L#_from[_l]] = d#L#_out[_l];
       );
     );
 
@@ -24085,9 +24085,9 @@ nn_lib :
     );
 
     nn_layer_nl_backward(L,IN,activation) = (
-      IN#_deriv_out = IN#_out;
-      nn_activate(IN#_deriv_out,deriv_#activation);
-      IN#_deriv_out*=L#_deriv_out;
+      d#IN#_out = IN#_out;
+      nn_activate(d#IN#_out,d_#activation);
+      d#IN#_out*=d#L#_out;
     );
 
     # rename: Rename input.
@@ -24101,7 +24101,7 @@ nn_lib :
     );
 
     nn_layer_rename_backward(L,IN) = (
-      ref(L#_deriv_out,IN#_deriv_out);
+      ref(d#L#_out,d#IN#_out);
     );
 
     # reshape: Reshape input to output with compatible size.
@@ -24115,7 +24115,7 @@ nn_lib :
     );
 
     nn_layer_reshape_init_backward(L,IN) = (
-      ref(L#_deriv_out,IN#_deriv_out);
+      ref(d#L#_out,d#IN#_out);
     );
 
     # resize: Resize input.
@@ -24135,10 +24135,10 @@ nn_lib :
     );
 
     nn_layer_resize_backward(L,IN) = (
-      IN#_deriv_out = resize(L#_deriv_out,
-                             L#_out_width,L#_out_height,L#_out_depth,L#_out_spectrum,
-                             IN#_out_width,IN#_out_height,IN#_out_depth,IN#_out_spectrum,
-                             3);
+      d#IN#_out = resize(d#L#_out,
+                         L#_out_width,L#_out_height,L#_out_depth,L#_out_spectrum,
+                         IN#_out_width,IN#_out_height,IN#_out_depth,IN#_out_spectrum,
+                         3);
     );
 
     # run: Transform input with G'MIC command.
@@ -24163,10 +24163,10 @@ nn_lib :
     );
 
     nn_layer_run_backward(L,IN) = (
-      IN#_deriv_out = resize(L#_deriv_out,
-                             L#_out_width,L#_out_height,L#_out_depth,L#_out_spectrum,
-                             IN#_out_width,IN#_out_height,IN#_out_depth,IN#_out_spectrum,
-                             3);
+      d#IN#_out = resize(d#L#_out,
+                         L#_out_width,L#_out_height,L#_out_depth,L#_out_spectrum,
+                         IN#_out_width,IN#_out_height,IN#_out_depth,IN#_out_spectrum,
+                         3);
     );
 
     # softmax: Softmax function.
@@ -24190,12 +24190,12 @@ nn_lib :
     );
 
     nn_layer_softmax_backward(L,IN) = (
-      IN#_deriv_out = vector(#size(IN#_out));
+      d#IN#_out = vector(#size(IN#_out));
       L#_fact = (L#_sumexp - 1)/L#_sumexp;
-      fill(IN#_deriv_out,i,
+      fill(d#IN#_out,i,
         _sm_val = 0;
         repeat(size(L#_out),j,
-          _sm_val+=L#_deriv_out[j]*(i!=j?-L#_out[j]/L#_sumexp:L#_out[i]*L#_fact);
+          _sm_val+=d#L#_out[j]*(i!=j?-L#_out[j]/L#_sumexp:L#_out[i]*L#_fact);
         );
         _sm_val;
       );
@@ -24222,9 +24222,9 @@ nn_lib :
     );
 
     nn_layer_split_backward(L0,L1,IN) = (
-      IN#_deriv_out = vector(#size(IN#_out));
-      copy(IN#_deriv_out,L0#_deriv_out,size(L0#_out));
-      copy(IN#_deriv_out[size(L0#_out)],L1#_deriv_out,size(L1#_out));
+      d#IN#_out = vector(#size(IN#_out));
+      copy(d#IN#_out,d#L0#_out,size(L0#_out));
+      copy(d#IN#_out[size(L0#_out)],d#L1#_out,size(L1#_out));
     );
 
     #----------------
@@ -24239,7 +24239,7 @@ nn_lib :
 
     nn_loss_bce_backward(L,IN,TRUTH) = (
       L#_out = -sum(TRUTH*log(IN#_out) + (1 - TRUTH)*log(1 - IN#_out));
-      IN#_deriv_out = vsum((IN#_out - TRUTH)/(IN#_out*(1 - IN#_out)));
+      d#IN#_out = vsum((IN#_out - TRUTH)/(IN#_out*(1 - IN#_out)));
       L#_batch_out+=L#_out;
     );
 
@@ -24256,8 +24256,8 @@ nn_lib :
     );
 
     nn_loss_mse_backward(L,IN,TRUTH) = (
-      IN#_deriv_out = 2*(IN#_out - TRUTH);
-      L#_out = norm(IN#_deriv_out/2)^2/size(IN#_deriv_out);
+      d#IN#_out = 2*(IN#_out - TRUTH);
+      L#_out = norm(d#IN#_out/2)^2/size(d#IN#_out);
       L#_batch_out+=L#_out;
     );
 
@@ -24634,7 +24634,7 @@ nn_trainer : nn_check_layer "$2"
   if "['$4']=='adam'"
     repeat narg($_nn_learned_parameters)-1 {
       p=${arg0\ $>,$_nn_learned_parameters}
-      +f[$p] 0 . => ${p}_deriv_m,${p}_deriv_v
+      +f[$p] 0 . => d${p}_m,d${p}_v
     }
   fi
 
