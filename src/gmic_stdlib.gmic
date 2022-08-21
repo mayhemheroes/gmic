@@ -6628,7 +6628,7 @@ _gmd_write :
 
 #@cli parse_gui : _outputmode,_{ * | filter_name}
 #@cli : Parse selected filter definitions and generate info about filters in selected output mode.
-#@cli : 'outputmode' can be { gmicol | json | list | print | ts | update | zart }.\n
+#@cli : 'outputmode' can be { gmicol | json | list | print | strings | update | zart }.\n
 #@cli : It is possible to define a custom output mode, by implementing the following commands
 #@cli : ('outputmode' must be replaced by the name of the custom user output mode):
 #@cli : . 'parse_gui_outputmode' : A command that outputs the parsing information with a custom format.
@@ -6637,9 +6637,9 @@ _gmd_write :
 #@cli : . 'parse_gui_trigger_outputmode' (optional): A command that is called by the parser just before parsing \
 # the set of each matching filters.\n
 #@cli : Here is the list of global variables set by the parser, accessible in command 'parse_gui_outputmode':\n
-#@cli : '$_nbfilters': Number of matching filters.
+#@cli : '$_nb_filters': Number of matching filters.
 #@cli : '$_nongui' (stored as an image): All merged lines in the file that do not correspond to '#@gui' lines.\n
-#@cli : For each filter `\#F` ('F' in range `[0,$_nbfilters-1]`):
+#@cli : For each filter `\#F` ('F' in range `[0,$_nb_filters-1]`):
 #@cli : * '$_fF_name' : Filter name.
 #@cli : * '$_fF_path' : Full path.
 #@cli : * '$_fF_locale' : Filter locale (empty, if not specified).
@@ -6960,7 +6960,7 @@ parse_gui : skip "${1=print},${2=*}"
     if !$! 0 fi
     f+=1
   } fi }
-  _nbfilters=$f rm
+  _nb_filters=$f rm
 
   # Merge all non-gui code.
   repeat $nbchunks { if narg(${nongui$>}) ${nongui$>} if !w rm. fi fi }
@@ -6979,7 +6979,7 @@ parse_gui_trigger_print : sort_list +,n
 parse_gui_print :
   e[] "\r"${_vt100_g}{`vector68(_'" "')`}$_vt100_n
   e[] "  > "${_vt100_g}"List of matching filters:"$_vt100_n"\n\n"
-  repeat $_nbfilters {
+  repeat $_nb_filters {
     +e[] "  [#"{1+$>}"] "${_f$>_path}${_f$>_name}
   }
 
@@ -6991,11 +6991,11 @@ parse_gui_thumbnails :
   sp landscape r2dy 256 r 256,256,1,3,0,0,0.5,0.5 store img
   _preview_area_width,_preview_area_height=256
 
-  repeat $_nbfilters { f=$>
+  repeat $_nb_filters { f=$>
     nb$f=${_f${f}_nb_params}
   }
 
-  repeat $_nbfilters { f=$>
+  repeat $_nb_filters { f=$>
     command=${_f${f}_command_preview}
     if ['$command']==0 command=${_f${f}_command} fi
     pipeline=
@@ -7072,8 +7072,8 @@ parse_gui_thumbnails :
 parse_gui_parseparams_whatsnew : u 0 # Tell parser to not parse filter parameters
 parse_gui_whatsnew :
   e[] "  >> Generate output, in 'whatsnew' mode.\n"
-  l[] { if $_nbfilters
-    1,1,1,1x$_nbfilters
+  l[] { if $_nb_filters
+    1,1,1,1x$_nb_filters
     repeat $! { =>[$>] -${_f$>_path}${_f$>_name} f[$>] $> }
     sort_list +,n a x
     repeat w { n={0,i[$>]} ('${_f${n}_path}" "${_f${n}_name}\n') }
@@ -7088,7 +7088,7 @@ parse_gui_whatsnew :
 parse_gui_parseparams_list : u 0 # Tell parser to not parse filter parameters
 parse_gui_list :
   e[] "  >> Generate output, in 'list' mode.\n"
-  ('"*** List of filters in the G\47MIC plug-in ("$_nbfilters" filters, on "\
+  ('"*** List of filters in the G\47MIC plug-in ("$_nb_filters" filters, on "\
                {date(0)}"/"\
                {`v=date(1);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}"/"\
                {`v=date(2);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}", "\
@@ -7097,7 +7097,7 @@ parse_gui_list :
 
   ('"* List of filters, sorted by path:\n\n"')
   l[] {
-    1,1,1,1x$_nbfilters
+    1,1,1,1x$_nb_filters
     repeat $! { =>[$>] -${_f$>_path}${_f$>_name} f[$>] $> }
     sort_list +,n a x
     repeat w {
@@ -7109,7 +7109,7 @@ parse_gui_list :
 
   ('"\n* List of filters, sorted alphabetically:\n\n"')
   l[] {
-    1,1,1,1x$_nbfilters
+    1,1,1,1x$_nb_filters
     repeat $! { =>[$>] -${_f$>_name} f[$>] $> }
     sort_list +,n a x
     repeat w {
@@ -7130,9 +7130,9 @@ parse_gui_parseparams_update : u 1 # Tell parser to parse filter parameters
 parse_gui_update :
   e[] "  >> Generate output, in 'update' mode.\n"
   path=/
-  N:=$_nbfilters-1
+  N:=$_nb_filters-1
   is_af:="date([1,2])==[4,1] && (date(4)%2)" # April fool mode ?
-  repeat $_nbfilters f=$> {
+  repeat $_nb_filters f=$> {
     e[] "\r  >> "$_vt100_c[#$f/$N]$_vt100_n" "{`s=vector48(_'" "');copy(s,['${_f${f}_path}${_f${f}_name}']);s`}
 
     # Insert directives to change folder if necessary.
@@ -7293,8 +7293,8 @@ parse_gui_json :
   ('"{\n  \"format_version\": \"gmic_json_1.0\",\n  \"gmic_version\": \""${-strver}"\",\n  \"categories\": [\n"')
 
   current_category=
-  N:=$_nbfilters-1
-  repeat $_nbfilters { f=$>
+  N:=$_nb_filters-1
+  repeat $_nb_filters { f=$>
     e[] "\r  >> "$_vt100_c[#$f/$N]$_vt100_n" "{`s=vector48(_'" "');copy(s,['${_f${f}_path}${_f${f}_name}']);s`}
 
     # Manage categories.
@@ -7478,8 +7478,8 @@ parse_gui_gmicol :
     "<categories>\n"')
 
   current_category=
-  N:=$_nbfilters-1
-  repeat $_nbfilters { f=$>
+  N:=$_nb_filters-1
+  repeat $_nb_filters { f=$>
     e[] "\r  >> "$_vt100_c[#$f/$N]$_vt100_n" "{`s=vector48(_'" "');copy(s,['${_f${f}_path}${_f${f}_name}']);s`}
 
     # Manage categories.
@@ -7620,8 +7620,8 @@ parse_gui_gmicol :
 #
 parse_gui_strings :
   e[] "  >> Generate output, in 'strings' mode.\n"
-  N:=$_nbfilters-1
-  repeat $_nbfilters { f=$>
+  N:=$_nb_filters-1
+  repeat $_nb_filters { f=$>
     if !narg(${_f${f}_locale})" && "find(['${_f${f}_path}'],'Testing/')<0  # Consider only English, non-Testing filters
       e[] "\r  >> "$_vt100_c[#$f/$N]$_vt100_n" "{`s=vector48(_'" "');copy(s,['${_f${f}_path}${_f${f}_name}']);s`}
       _parse_gui_strings ${_f${f}_name}
@@ -9738,8 +9738,8 @@ parse_gui_zart :
   +e[] "<document name=\"Presets\">\n"
 
   current_group=
-  N:=$_nbfilters-1
-  repeat $_nbfilters { f=$>
+  N:=$_nb_filters-1
+  repeat $_nb_filters { f=$>
     e[] "\r  >> "$_vt100_c[#$f/$N]$_vt100_n" "{`s=vector48(_'" "');copy(s,['${_f${f}_path}${_f${f}_name}']);s`}
 
     # Manage groups.
