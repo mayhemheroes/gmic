@@ -6657,8 +6657,8 @@ _gmd_write :
 #@cli : * '$_fF_pP_responsivity' : Parameter responsivity (can be { 0 | 1 }).
 #@cli : * '$_fF_pP_visibility' : Parameter visibility.
 #@cli : * '$_fF_pP_propagation' : Propagation of the parameter visibility.
-#@cli : * '$_fF_pP_nbargs' : Number of parameter arguments.\n
-#@cli : For each argument `\#A` of the parameter \#P ('A' in range `[0,$_fF_pP_nbargs-1]`):
+#@cli : * '$_fF_pP_nb_args' : Number of parameter arguments.\n
+#@cli : For each argument `\#A` of the parameter \#P ('A' in range `[0,$_fF_pP_nb_args-1]`):
 #@cli : * '$_fF_pP_aA' : Argument value\n
 #@cli : Default parameters: 'filter_name=*' and 'output_format=print'.
 parse_gui : skip "${1=print},${2=*}"
@@ -6939,7 +6939,7 @@ parse_gui : skip "${1=print},${2=*}"
                 p = q + 1;
               );
             );
-            run('_f"${f}"_p',nb_params,'_nbargs=',nbargs);
+            run('_f"${f}"_p',nb_params,'_nb_args=',nbargs);
 
             # Extract visibility state.
             p = r + 1;
@@ -7006,10 +7006,10 @@ parse_gui_thumbnails :
         type=${_f${f}_p${p}_type}
         arg0=${_f${f}_p${p}_a0}
         if s='$type';s=='file'||s=='filein'||s=='fileout'||s=='folder'||s=='value'
-          if !${_f{$f}_p${p}_nbargs} pipeline.=$c\"\"
+          if !${_f{$f}_p${p}_nb_args} pipeline.=$c\"\"
           else
             args= ac=
-            repeat ${_f${f}_p${p}_nbargs} { a=$> args.=$ac${_f${f}_p${p}_a${a}} ac=, }
+            repeat ${_f${f}_p${p}_nb_args} { a=$> args.=$ac${_f${f}_p${p}_a${a}} ac=, }
             s=\"
             if ['$args']==0 s=\" elif ['$args'][0]==_'\"' s= fi
             pipeline.=$c$s$args$s
@@ -7017,7 +7017,7 @@ parse_gui_thumbnails :
           c=,
         elif s='$type';s=='text'
           val,off=0
-          N=${_f${f}_p${p}_nbargs}
+          N=${_f${f}_p${p}_nb_args}
           l[] { if isint($arg0) val=$arg0 N-=1 off=1 fi onfail }
           args= ac=
           repeat $N { a=$> na:=$a+$off args.=$ac${_f${f}_p${p}_a${na}} ac=, }
@@ -7038,13 +7038,13 @@ parse_gui_thumbnails :
           l[] { if isint($arg0) val=$arg0 fi onfail }
           pipeline.=$c$val c=,
         elif s='$type';s=='color'
-          if ${_f${f}_p${p}_nbargs}==1" && "['$arg0'][0]==_'#' # Convert colors specified as '#RRGGBB[AA]'
+          if ${_f${f}_p${p}_nb_args}==1" && "['$arg0'][0]==_'#' # Convert colors specified as '#RRGGBB[AA]'
             l[] {
-              ('$arg0') autocrop. {'#'} s x,-2 _f${f}_p${p}_nbargs=$!
+              ('$arg0') autocrop. {'#'} s x,-2 _f${f}_p${p}_nb_args=$!
               repeat $! { a=$> hex2dec {$>,t} _f${f}_p${p}_a${a}=${} } rm
             }
           fi
-          repeat ${_f${f}_p${p}_nbargs} { a=$> pipeline.=$c${_f${f}_p${p}_a${a}} c=, }
+          repeat ${_f${f}_p${p}_nb_args} { a=$> pipeline.=$c${_f${f}_p${p}_a${a}} c=, }
         elif s='$type';s=='point'
           pipeline.=$c$arg0,${_f${f}_p${p}_a1} c=,
         fi
@@ -7190,27 +7190,27 @@ parse_gui_update :
       # Build list of arguments.
       args= c=
       if $is_choice # Capitalize arguments of choice()
-        repeat ${_f${f}_p${p}_nbargs} { a=$>
+        repeat ${_f${f}_p${p}_nb_args} { a=$>
           if $is_af straprilfool ${_f${f}_p${p}_a${a}}
           else strcapitalize ${_f${f}_p${p}_a${a}}
           fi
           args.=$c${} c=,
         }
       elif $is_color # Force html color code for color()
-        if inrange(${_f${f}_p${p}_nbargs},3,4)" && "\
+        if inrange(${_f${f}_p${p}_nb_args},3,4)" && "\
            inrange(${_f${f}_p${p}_a0},0,255)" && "\
            inrange(${_f${f}_p${p}_a1},0,255)" && "\
            inrange(${_f${f}_p${p}_a2},0,255)" && "\
-           (${_f${f}_p${p}_nbargs}==3" || "inrange(${_f${f}_p${p}_a3},0,255))
+           (${_f${f}_p${p}_nb_args}==3" || "inrange(${_f${f}_p${p}_a3},0,255))
           args=#
-          repeat ${_f${f}_p${p}_nbargs} { a=$>
+          repeat ${_f${f}_p${p}_nb_args} { a=$>
             args.={`"tab = [ _'0',_'1',_'2',_'3',_'4',_'5',_'6',_'7',_'8',_'9',_'a',_'b',_'c',_'d',_'e',_'f' ];
                      const v = "${_f${f}_p${p}_a${a}}"; [ tab[(v>>4)&15],tab[v&15] ]"`}
           }
-        else repeat ${_f${f}_p${p}_nbargs} { a=$> args.=$c${_f${f}_p${p}_a${a}} c=, }
+        else repeat ${_f${f}_p${p}_nb_args} { a=$> args.=$c${_f${f}_p${p}_a${a}} c=, }
         fi
       else
-        repeat ${_f${f}_p${p}_nbargs} { a=$> args.=$c${_f${f}_p${p}_a${a}} c=, }
+        repeat ${_f${f}_p${p}_nb_args} { a=$> args.=$c${_f${f}_p${p}_a${a}} c=, }
       fi
 
       sep1,sep2={`"
@@ -7323,7 +7323,7 @@ parse_gui_json :
     repeat ${_f${f}_nb_params} { p=$>
       _parse_gui_json ${_f${f}_p{$p}_name} name={/${}}
       type=${_f${f}_p{$p}_type}
-      nbargs=${_f${f}_p{$p}_nbargs}
+      nbargs=${_f${f}_p{$p}_nb_args}
       arg0= repeat $nbargs { ('${_f${f}_p${p}_a$>}') autocrop. {'\"'} _parse_gui_json {t} arg$>=${} rm. }
       sepp={`$<?_',':0`}
       if narg(${_f${f}_p{$p}_visibility})
@@ -7509,7 +7509,7 @@ parse_gui_gmicol :
     repeat ${_f${f}_nb_params} { p=$>
       ({'${_f${f}_p{$p}_name}'}) _gmd_ascii2html. name={t} rm.
       type=${_f${f}_p{$p}_type}
-      nbargs=${_f${f}_p{$p}_nbargs}
+      nbargs=${_f${f}_p{$p}_nb_args}
       arg0= repeat $nbargs { ('${_f${f}_p${p}_a$>}') autocrop. {'\"'} _gmd_ascii2html. arg$>={/{t}} rm. }
       sepp={`$<?_',':0`}
 
@@ -7629,7 +7629,7 @@ parse_gui_strings :
         type=${_f${f}_p${p}_type}
         if s=['$type'];s!='link'&&s!='note'&&s!='separator'&&s!='value' _parse_gui_strings ${_f${f}_p${p}_name} fi
         if ['$type']==['choice']
-          repeat ${_f${f}_p${p}_nbargs} { a=$>
+          repeat ${_f${f}_p${p}_nb_args} { a=$>
             arg=${_f${f}_p${p}_a${a}}
             l[] { if !isnum($arg) ({'$arg'}) discard. {'\"'} arg={t} rm. _parse_gui_strings $arg fi onfail }
           }
@@ -9760,7 +9760,7 @@ parse_gui_zart :
     repeat ${_f${f}_nb_params} { p=$>
       _parse_gui_zart ${_f${f}_p{$p}_name} name=${}
       type=${_f${f}_p{$p}_type}
-      nbargs=${_f${f}_p{$p}_nbargs}
+      nbargs=${_f${f}_p{$p}_nb_args}
       arg0= repeat $nbargs { ('${_f${f}_p${p}_a$>}') autocrop. {'\"'} _parse_gui_zart {t} arg$>=${} rm. }
 
       if ['$type']=='bool'
