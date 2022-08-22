@@ -6983,7 +6983,90 @@ parse_gui_print :
     +e[] "  [#"{1+$>}"] "${_f$>_path}${_f$>_name}
   }
 
+#
+# Implements 'images' mode for command 'parse_gui'.
+# (specify input image by storing it in image-encoded variable '$_input_image').
+#
+parse_gui_parseparams_images : u 1 # Tell parser to parse filter parameters
+parse_gui_images :
+  e[] "  >> Generate output, in 'images' mode.\n"
+  _preview_area_width,_preview_area_height=256
+  if !narg($_input_image) sp landscape,800 store. _input_image fi
+
+  repeat $_nb_filters { f=$> if '${_f${f}_locale}'==0
+    command=${_f${f}_command_preview}
+    if ['$command']==0 command=${_f${f}_command} fi
+    pipeline=
+    c=
+    if s='$command';s!='_none_'&&s!='fx_whatsnew_preview'
+      pipeline.=$command" "
+      repeat ${_f${f}_nb_params} { p=$>
+        type=${_f${f}_p${p}_type}
+        arg0=${_f${f}_p${p}_a0}
+        if s='$type';s=='file'||s=='filein'||s=='fileout'||s=='folder'||s=='value'
+          if !${_f{$f}_p${p}_nb_args} pipeline.=$c\"\"
+          else
+            args= ac=
+            repeat ${_f${f}_p${p}_nb_args} { a=$> args.=$ac${_f${f}_p${p}_a${a}} ac=, }
+            s=\"
+            if ['$args']==0 s=\" elif ['$args'][0]==_'\"' s= fi
+            pipeline.=$c$s$args$s
+          fi
+          c=,
+        elif s='$type';s=='text'
+          val,off=0
+          N=${_f${f}_p${p}_nb_args}
+          l[] { if isint($arg0) val=$arg0 N-=1 off=1 fi onfail }
+          args= ac=
+          repeat $N { a=$> na:=$a+$off args.=$ac{/${_f${f}_p${p}_a${na}}} ac=, }
+          s=\"
+          if ['$args']==0 s=\" elif ['$args'][0]==_'\"' s= fi
+          pipeline.=$c$s$args$s
+          c=,
+        elif s='$type';s=='float'||s=='int'
+          pipeline.=$c$arg0 c=,
+        elif s='$type';s=='button'
+          pipeline.=${c}0 c=,
+        elif s='$type';s=='bool'
+          val=0
+          if s='$arg0';s==1||s=='true' val=1 fi
+          pipeline.=$c$val c=,
+        elif s='$type';s=='choice'
+          val=0
+          l[] { if isint($arg0) val=$arg0 fi onfail }
+          pipeline.=$c$val c=,
+        elif s='$type';s=='color'
+          if ${_f${f}_p${p}_nb_args}==1" && "['$arg0'][0]==_'#' # Convert colors specified as '#RRGGBB[AA]'
+            l[] {
+              ('$arg0') autocrop. {'#'} s x,-2 _f${f}_p${p}_nb_args=$!
+              repeat $! { a=$> hex2dec {$>,t} _f${f}_p${p}_a${a}=${} } rm
+            }
+          fi
+          repeat ${_f${f}_p${p}_nb_args} { a=$> pipeline.=$c${_f${f}_p${p}_a${a}} c=, }
+        elif s='$type';s=='point'
+          pipeline.=$c$arg0,${_f${f}_p${p}_a1} c=,
+        fi
+      }
+    fi
+    +e[] ${_vt100_c}"  [#"{1+$>}"] "${_vt100_n}${_f${f}_name}": "${_vt100_g}$pipeline${_vt100_n}
+    if ['$pipeline']!=0
+      file_out=${_f${f}_name}.png
+      l[] {
+        $_input_image run $pipeline gui_merge_layers
+        onfail e[] "Error "$_vt100_r${}$_vt100_n"\n" rm
+      }
+    fi
+
+    if !$! $_input_image gui_no_preview , fi
+    c. 0,255 r. 100%,100%,1,{min(s,4)} to_rgba.
+    if {*} w. ${"fitscreen ."} fi
+    o. $file_out rm.
+  fi }
+  e[] "  >> "${_vt100_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_vt100_n
+
+#
 # Implements 'thumbnails' mode for command 'parse_gui'.
+#
 parse_gui_parseparams_thumbnails : u 1 # Tell parser to parse filter parameters
 parse_gui_thumbnails :
   e[] "  >> Generate output, in 'thumbnails' mode.\n"
@@ -7020,9 +7103,9 @@ parse_gui_thumbnails :
           N=${_f${f}_p${p}_nb_args}
           l[] { if isint($arg0) val=$arg0 N-=1 off=1 fi onfail }
           args= ac=
-          repeat $N { a=$> na:=$a+$off args.=$ac${_f${f}_p${p}_a${na}} ac=, }
+          repeat $N { a=$> na:=$a+$off args.=$ac{/${_f${f}_p${p}_a${na}}} ac=, }
           s=\"
-          if ['{/$args}']==0 s=\" elif ['{/$args}'][0]==_'\"' s= fi
+          if ['$args']==0 s=\" elif ['$args'][0]==_'\"' s= fi
           pipeline.=$c$s$args$s
           c=,
         elif s='$type';s=='float'||s=='int'
