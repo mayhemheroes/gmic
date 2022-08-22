@@ -23572,8 +23572,8 @@ nn_lib :
       nn_learning_rate0 = i[##T#_ind,2];
       nn_previous_loss = i[##T#_ind,3];
       nn_best_loss = i[##T#_ind,4];
-      nn_scheduler_#S#_init();
       nn_optimizer_#O#_init();
+      nn_scheduler_#S#_init();
     );
 
     nn_trainer_update(T,L,S) = (
@@ -23649,36 +23649,38 @@ nn_lib :
 
     # Generic.
     #---------
-    nn_optimizer_update_batchnorm(O,L,learning_mode) = (
-      L#_momentum = lerp(1,1e-5,tanh(nn_iteration/100));
-      draw(##L#_ind,L#_in_mean,0,0,0,0,1,h##L#_ind,1,1,L#_momentum);
-      draw(##L#_ind,L#_in_variance,1,0,0,0,1,h##L#_ind,1,1,L#_momentum);
+    nn_optimizer_update_batchnorm(O,M,learning_mode) = (
+      M#_momentum = lerp(1,1e-5,tanh(nn_iteration/100));
+      draw(##M#_ind,M#_in_mean,0,0,0,0,1,h##M#_ind,1,1,M#_momentum);
+      draw(##M#_ind,M#_in_variance,1,0,0,0,1,h##M#_ind,1,1,M#_momentum);
       learning_mode&1?(
-        nn_optimizer_#O#_update(L#_gamma,d#L#_batch_gamma);
-        draw(##L#_ind,L#_gamma,2,0,0,0,1,h##L#_ind);
+        nn_optimizer_#O#_update(M#_gamma,d#M#_batch_gamma);
+        draw(##M#_ind,M#_gamma,2,0,0,0,1,h##M#_ind);
       );
       learning_mode&2?(
-        nn_optimizer_#O#_update(L#_beta,d#L#_batch_beta);
-        draw(##L#_ind,L#_beta,3,0,0,0,1,h##L#_ind);
+        nn_optimizer_#O#_update(M#_beta,d#M#_batch_beta);
+        draw(##M#_ind,M#_beta,3,0,0,0,1,h##M#_ind);
       );
     );
 
-    nn_optimizer_update_conv2d(O,L) = (
-      nn_optimizer_#O#_update(L#_weights,d#L#_batch_weights);
-      nn_optimizer_#O#_update(L#_biases,d#L#_batch_biases);
-      draw(##L#_ind,L#_weights,0,0,0,0,w##L#_ind - 1,h##L#_ind);
-      draw(##L#_ind,L#_biases,w##L#_ind - 1,0,0,0,1,h##L#_ind);
+    nn_optimizer_update_conv2d(O,M) = (
+      nn_optimizer_#O#_update(M#_weights);
+      nn_optimizer_#O#_update(M#_biases);
+      draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind - 1,h##M#_ind);
+      draw(##M#_ind,M#_biases,w##M#_ind - 1,0,0,0,1,h##M#_ind);
     );
+
+    nn_optimizer_update_fc(O,M) = nn_optimize_update_conv2d(O,M);
 
     # Stochastic gradient descent.
     #-----------------------------
-    nn_optimizer_sgd_update(W,dW) = (
-      W#-=nn_learning_rate*#dW;
+    nn_optimizer_sgd_update(W) = (
+      W#-=nn_learning_rate*d#W;
     );
 
-    nn_optimizer_sgd_update_batchnorm(W,learning_mode) = nn_optimizer_update_batchnorm(sgd,#W,#learning_mode);
-    nn_optimizer_sgd_update_conv2d(W) = nn_optimizer_update_conv2d(sgd,#W);
-    nn_optimizer_sgd_update_fc(W) = nn_optimizer_update_conv2d(sgd,#W);
+    nn_optimizer_sgd_update_batchnorm(M,learning_mode) = nn_optimizer_update_batchnorm(sgd,#M,#learning_mode);
+    nn_optimizer_sgd_update_conv2d(M) = nn_optimizer_update_conv2d(sgd,#M);
+    nn_optimizer_sgd_update_fc(M) = nn_optimizer_update_conv2d(sgd,#M);
 
     # RMSprop optimizer.
     #-------------------
@@ -23686,21 +23688,21 @@ nn_lib :
       const nn_optimizer_rmsprop_beta = 0.9;
     );
 
-    nn_optimizer_rmsprop_update(W,dW) = (
-      dW#_name_g2 = '_nn_#dW#_g2';
-      !nn_iteration || isnan($_nn_#dW#_g2)?(
-        dW#_g2 = vector(#size(dW));
+    nn_optimizer_rmsprop_update(W) = (
+      d#W#_name_g2 = '_nn_d#W#_g2';
+      !nn_iteration || isnan($_nn_d#W#_g2)?(
+        d#W#_g2 = vector(#size(d#W));
       ):(
-        dW#_g2 = get(dW#_name_g2,size(dW));
+        d#W#_g2 = get(d#W#_name_g2,size(d#W));
       );
-      dW#_g2 = lerp(dW^2,dW#_g2,nn_optimizer_rmsprop_beta);
-      store(dW#_name_g2,dW#_g2,size(dW));
-      W#-=nn_learning_rate*dW/sqrt(1e-8 + dW#_g2);
+      d#W#_g2 = lerp(d#W^2,d#W#_g2,nn_optimizer_rmsprop_beta);
+      store(d#W#_name_g2,d#W#_g2,size(d#W));
+      W#-=nn_learning_rate*d#W/sqrt(1e-8 + d#W#_g2);
     );
 
-    nn_optimizer_rmsprop_update_batchnorm(W,learning_mode) = nn_optimizer_update_batchnorm(rmsprop,#W,#learning_mode);
-    nn_optimizer_rmsprop_update_conv2d(W) = nn_optimizer_update_conv2d(rmsprop,#W);
-    nn_optimizer_rmsprop_update_fc(W) = nn_optimizer_update_conv2d(rmsprop,#W);
+    nn_optimizer_rmsprop_update_batchnorm(M,learning_mode) = nn_optimizer_update_batchnorm(rmsprop,#M,#learning_mode);
+    nn_optimizer_rmsprop_update_conv2d(M) = nn_optimizer_update_conv2d(rmsprop,#M);
+    nn_optimizer_rmsprop_update_fc(M) = nn_optimizer_update_conv2d(rmsprop,#M);
 
     # Adam optimizer.
     #----------------
@@ -23714,25 +23716,25 @@ nn_lib :
       );
     );
 
-    nn_optimizer_adam_update(W,dW) = (
-      dW#_name_m = '_nn_#dW#_m';
-      dW#_name_v = '_nn_#dW#_v';
-      !nn_iteration || isnan($_nn_#dW#_m)?(
-        dW#_m = dW#_v = vector(#size(dW));
+    nn_optimizer_adam_update(W) = (
+      d#W#_name_m = '_nn_d#W#_m';
+      d#W#_name_v = '_nn_d#W#_v';
+      !nn_iteration || isnan($_nn_d#W#_m)?(
+        d#W#_m = d#W#_v = vector(#size(d#W));
       ):(
-        dW#_m = get(dW#_name_m,size(dW));
-        dW#_v = get(dW#_name_v,size(dW));
+        d#W#_m = get(d#W#_name_m,size(d#W));
+        d#W#_v = get(d#W#_name_v,size(d#W));
       );
-      dW#_m = lerp(dW,dW#_m,nn_optimizer_adam_beta1);
-      dW#_v = lerp(dW^2,dW#_v,nn_optimizer_adam_beta2);
-      store(dW#_name_m,dW#_m,size(dW));
-      store(dW#_name_v,dW#_v,size(dW));
-      W#-=nn_learning_rate*nn_optimizer_adam_alpha_t*dW#_m/sqrt(1e-8 + dW#_v);
+      d#W#_m = lerp(d#W,d#W#_m,nn_optimizer_adam_beta1);
+      d#W#_v = lerp(d#W^2,d#W#_v,nn_optimizer_adam_beta2);
+      store(d#W#_name_m,d#W#_m,size(d#W));
+      store(d#W#_name_v,d#W#_v,size(d#W));
+      W#-=nn_learning_rate*nn_optimizer_adam_alpha_t*d#W#_m/sqrt(1e-8 + d#W#_v);
     );
 
-    nn_optimizer_adam_update_batchnorm(W,learning_mode) = nn_optimizer_update_batchnorm(adam,#W,#learning_mode);
-    nn_optimizer_adam_update_conv2d(W) = nn_optimizer_update_conv2d(adam,#W);
-    nn_optimizer_adam_update_fc(W) = nn_optimizer_update_conv2d(adam,#W);
+    nn_optimizer_adam_update_batchnorm(M,learning_mode) = nn_optimizer_update_batchnorm(adam,#M,#learning_mode);
+    nn_optimizer_adam_update_conv2d(M) = nn_optimizer_update_conv2d(adam,#M);
+    nn_optimizer_adam_update_fc(M) = nn_optimizer_update_conv2d(adam,#M);
 
     # Adamax optimizer.
     #------------------
@@ -23744,26 +23746,26 @@ nn_lib :
       );
     );
 
-    nn_optimizer_adamax_update(W,dW) = (
-      dW#_name_m = '_nn_#dW#_m';
-      dW#_name_v = '_nn_#dW#_v';
-      !nn_iteration || isnan($_nn_#dW#_m)?(
-        dW#_m = dW#_v = vector(#size(dW));
+    nn_optimizer_adamax_update(W) = (
+      d#W#_name_m = '_nn_d#W#_m';
+      d#W#_name_v = '_nn_d#W#_v';
+      !nn_iteration || isnan($_nn_d#W#_m)?(
+        d#W#_m = d#W#_v = vector(#size(d#W));
       ):(
-        dW#_m = get(dW#_name_m,size(dW));
-        dW#_v = get(dW#_name_v,size(dW));
+        d#W#_m = get(d#W#_name_m,size(d#W));
+        d#W#_v = get(d#W#_name_v,size(d#W));
       );
-      dW#_m = lerp(dW,dW#_m,nn_optimizer_adamax_beta1);
-      dW#_v = vmax(abs(dW),nn_optimizer_adamax_beta2*dW#_v);
-      store(dW#_name_m,dW#_m,size(dW));
-      store(dW#_name_v,dW#_v,size(dW));
+      d#W#_m = lerp(d#W,d#W#_m,nn_optimizer_adamax_beta1);
+      d#W#_v = vmax(abs(d#W),nn_optimizer_adamax_beta2*d#W#_v);
+      store(d#W#_name_m,d#W#_m,size(d#W));
+      store(d#W#_name_v,d#W#_v,size(d#W));
 
-      W#-=(nn_learning_rate/nn_optimizer_adamax_ombeta1_t)*dW#_m/sqrt(1e-8 + dW#_v);
+      W#-=(nn_learning_rate/nn_optimizer_adamax_ombeta1_t)*d#W#_m/sqrt(1e-8 + d#W#_v);
     );
 
-    nn_optimizer_adamax_update_batchnorm(W,learning_mode) = nn_optimizer_update_batchnorm(adamax,#W,#learning_mode);
-    nn_optimizer_adamax_update_conv2d(W) = nn_optimizer_update_conv2d(adamax,#W);
-    nn_optimizer_adamax_update_fc(W) = nn_optimizer_update_conv2d(adamax,#W);
+    nn_optimizer_adamax_update_batchnorm(M,learning_mode) = nn_optimizer_update_batchnorm(adamax,#M,#learning_mode);
+    nn_optimizer_adamax_update_conv2d(M) = nn_optimizer_update_conv2d(adamax,#M);
+    nn_optimizer_adamax_update_fc(M) = nn_optimizer_update_conv2d(adamax,#M);
 
     #----------------
     # Network layers.
@@ -23771,66 +23773,66 @@ nn_lib :
 
     # add: Add two inputs.
     #---------------------
-    nn_layer_add_init_forward(L,IN) = (
-      const L#_out_width = IN#_out_width;
-      const L#_out_height = IN#_out_height;
-      const L#_out_depth = IN#_out_depth;
-      const L#_out_spectrum = IN#_out_spectrum;
+    nn_layer_add_init_forward(M,IN) = (
+      const M#_out_width = IN#_out_width;
+      const M#_out_height = IN#_out_height;
+      const M#_out_depth = IN#_out_depth;
+      const M#_out_spectrum = IN#_out_spectrum;
     );
 
-    nn_layer_add_forward(L,IN0,IN1) = (
-      L#_out = IN0#_out + IN1#_out;
+    nn_layer_add_forward(M,IN0,IN1) = (
+      M#_out = IN0#_out + IN1#_out;
     );
 
-    nn_layer_add_backward(L,IN0,IN1) = (
-      d#IN0#_out = d#IN1#_out = d#L#_out/2;
+    nn_layer_add_backward(M,IN0,IN1) = (
+      d#IN0#_out = d#IN1#_out = d#M#_out/2;
     );
 
     # append: Append two inputs as a new output.
     #--------------------------------------------
-    nn_layer_append_init_forward(L,IN0,IN1) = (
-      const L#_out_width = IN0#_out_width;
-      const L#_out_height = IN0#_out_height;
-      const L#_out_depth = IN0#_out_depth;
-      const L#_out_spectrum = IN0#_out_spectrum + IN1#_out_spectrum;
+    nn_layer_append_init_forward(M,IN0,IN1) = (
+      const M#_out_width = IN0#_out_width;
+      const M#_out_height = IN0#_out_height;
+      const M#_out_depth = IN0#_out_depth;
+      const M#_out_spectrum = IN0#_out_spectrum + IN1#_out_spectrum;
     );
 
-    nn_layer_append_forward(L,IN0,IN1) = (
-      L#_out = vector(#size(IN0#_out) + size(IN1#_out));
-      copy(L#_out,IN0#_out,size(IN0#_out));
-      copy(L#_out[size(IN0#_out)],IN1#_out,size(IN1#_out));
+    nn_layer_append_forward(M,IN0,IN1) = (
+      M#_out = vector(#size(IN0#_out) + size(IN1#_out));
+      copy(M#_out,IN0#_out,size(IN0#_out));
+      copy(M#_out[size(IN0#_out)],IN1#_out,size(IN1#_out));
     );
 
-    nn_layer_append_backward(L,IN0,IN1) = (
-      d#IN0#_out = d#L#_out[0,size(IN0#_out)];
-      d#IN1#_out = d#L#_out[size(IN0#_out),size(IN1#_out)];
+    nn_layer_append_backward(M,IN0,IN1) = (
+      d#IN0#_out = d#M#_out[0,size(IN0#_out)];
+      d#IN1#_out = d#M#_out[size(IN0#_out),size(IN1#_out)];
     );
 
     # avgpool2d : 2D average pooling.
     #--------------------------------
-    nn_layer_avgpool2d_init_forward(L,IN) = (
-      const L#_out_width = int(IN#_out_width/2);
-      const L#_out_height = int(IN#_out_height/2);
-      const L#_out_depth = IN#_out_depth;
-      const L#_out_spectrum = IN#_out_spectrum;
+    nn_layer_avgpool2d_init_forward(M,IN) = (
+      const M#_out_width = int(IN#_out_width/2);
+      const M#_out_height = int(IN#_out_height/2);
+      const M#_out_depth = IN#_out_depth;
+      const M#_out_spectrum = IN#_out_spectrum;
       nn_avgpool2d_kernel_forward = vector4(0.25);
       nn_avgpool2d_kernel_backward = [ 1,0,0,0 ];
     );
 
-    nn_layer_avgpool2d_forward(L,IN) = (
-      L#_out = correlate(IN#_out,
+    nn_layer_avgpool2d_forward(M,IN) = (
+      M#_out = correlate(IN#_out,
                          IN#_out_width,IN#_out_height,IN#_out_depth,IN#_out_spectrum,
                          nn_avgpool2d_kernel_forward,2,2,1,1,
                          1,0,1,
                          0,0,0,
                          0,0,0,
-                         L#_out_width - 1,L#_out_height - 1,L#_out_depth - 1,
+                         M#_out_width - 1,M#_out_height - 1,M#_out_depth - 1,
                          2,2,1);
     );
 
-    nn_layer_avgpool2d_backward(L,IN) = (
-      d#IN#_out = correlate(d#L#_out,
-                            L#_out_width,L#_out_height,L#_out_depth,L#_out_spectrum,
+    nn_layer_avgpool2d_backward(M,IN) = (
+      d#IN#_out = correlate(d#M#_out,
+                            M#_out_width,M#_out_height,M#_out_depth,M#_out_spectrum,
                             nn_avgpool2d_kernel_backward,2,2,1,1,
                             0,0,1,
                             0,0,0,
@@ -23843,228 +23845,228 @@ nn_lib :
 
     # batchnorm: Batch-normalization layer.
     #---------------------------------------
-    nn_layer_batchnorm_init_forward(L,IN) = (
-      const L#_ind = $L#;
-      const L#_out_width = IN#_out_width;
-      const L#_out_height = IN#_out_height;
-      const L#_out_depth = IN#_out_depth;
-      const L#_out_spectrum = IN#_out_spectrum;
-      const L#_out_whd = L#_out_width*L#_out_height*L#_out_depth;
-      L#_mu = crop(##L#_ind,0,0,1,h##L#_ind);
-      L#_sigma = crop(##L#_ind,1,0,1,h##L#_ind);
-      L#_gamma = crop(##L#_ind,2,0,1,h##L#_ind);
-      L#_beta = crop(##L#_ind,3,0,1,h##L#_ind);
-      L#_out = vector(#size(IN#_out));
-      L#_mu_whds = resize(L#_mu,size(L#_out),1);
-      L#_sigma_whds = resize(sqrt(L#_sigma + 1e-9),size(L#_out),1);
-      L#_gamma_whds = resize(L#_gamma,size(L#_out),1);
-      L#_beta_whds = resize(L#_beta,size(L#_out),1);
+    nn_layer_batchnorm_init_forward(M,IN) = (
+      const M#_ind = $M#;
+      const M#_out_width = IN#_out_width;
+      const M#_out_height = IN#_out_height;
+      const M#_out_depth = IN#_out_depth;
+      const M#_out_spectrum = IN#_out_spectrum;
+      const M#_out_whd = M#_out_width*M#_out_height*M#_out_depth;
+      M#_mu = crop(##M#_ind,0,0,1,h##M#_ind);
+      M#_sigma = crop(##M#_ind,1,0,1,h##M#_ind);
+      M#_gamma = crop(##M#_ind,2,0,1,h##M#_ind);
+      M#_beta = crop(##M#_ind,3,0,1,h##M#_ind);
+      M#_out = vector(#size(IN#_out));
+      M#_mu_whds = resize(M#_mu,size(M#_out),1);
+      M#_sigma_whds = resize(sqrt(M#_sigma + 1e-9),size(M#_out),1);
+      M#_gamma_whds = resize(M#_gamma,size(M#_out),1);
+      M#_beta_whds = resize(M#_beta,size(M#_out),1);
     );
 
-    nn_layer_batchnorm_forward(L,IN) = (
-      L#_xhat = IN#_out;
-      L#_xhat-=L#_mu_whds;
-      L#_xhat/=L#_sigma_whds;
-      L#_out = L#_gamma_whds*L#_xhat;
-      L#_out+=L#_beta_whds;
+    nn_layer_batchnorm_forward(M,IN) = (
+      M#_xhat = IN#_out;
+      M#_xhat-=M#_mu_whds;
+      M#_xhat/=M#_sigma_whds;
+      M#_out = M#_gamma_whds*M#_xhat;
+      M#_out+=M#_beta_whds;
     );
 
-    nn_layer_batchnorm_init_backward(L) = (
-      L#_threads_nbs = vector(#nn_nb_threads_max);
-      L#_threads_mus = vector(#nn_nb_threads_max*L#_out_spectrum);
-      L#_threads_sigmas = vector(#nn_nb_threads_max*L#_out_spectrum);
-      d#L#_batch_gamma = vector(##L#_out_spectrum);
-      d#L#_batch_beta = vector(##L#_out_spectrum);
+    nn_layer_batchnorm_init_backward(M) = (
+      M#_threads_nbs = vector(#nn_nb_threads_max);
+      M#_threads_mus = vector(#nn_nb_threads_max*M#_out_spectrum);
+      M#_threads_sigmas = vector(#nn_nb_threads_max*M#_out_spectrum);
+      d#M#_batch_gamma = vector(##M#_out_spectrum);
+      d#M#_batch_beta = vector(##M#_out_spectrum);
     );
 
-    nn_layer_batchnorm_backward(L,IN,learning_mode) = (
-      L#_nb1 = L#_threads_nbs[nn_thread_id];
-      L#_mu1 = L#_threads_mus[nn_thread_id*L#_out_spectrum,L#_out_spectrum];
-      L#_sigma1 = L#_threads_sigmas[nn_thread_id*L#_out_spectrum,L#_out_spectrum];
-      L#_mu2 = vector(##L#_out_spectrum);
-      L#_sigma2 = vector(##L#_out_spectrum);
-      repeat (L#_out_spectrum,_k,
-        L#_feature = IN#_out[_k*L#_out_whd,L#_out_whd];
-        L#_mu2[_k] = avg(L#_feature);
-        L#_sigma2[_k] = var(L#_feature);
+    nn_layer_batchnorm_backward(M,IN,learning_mode) = (
+      M#_nb1 = M#_threads_nbs[nn_thread_id];
+      M#_mu1 = M#_threads_mus[nn_thread_id*M#_out_spectrum,M#_out_spectrum];
+      M#_sigma1 = M#_threads_sigmas[nn_thread_id*M#_out_spectrum,M#_out_spectrum];
+      M#_mu2 = vector(##M#_out_spectrum);
+      M#_sigma2 = vector(##M#_out_spectrum);
+      repeat (M#_out_spectrum,_k,
+        M#_feature = IN#_out[_k*M#_out_whd,M#_out_whd];
+        M#_mu2[_k] = avg(M#_feature);
+        M#_sigma2[_k] = var(M#_feature);
       );
-      L#_nbc = ++L#_threads_nbs[nn_thread_id];
-      L#_in_mean = L#_mu1 + (L#_mu2 - L#_mu1)/L#_nbc;
-      L#_in_variance = L#_sigma1 + (L#_sigma2 - L#_sigma1 +
-                                    L#_nb1*(L#_mu1 - L#_in_mean)^2 + (L#_mu2 - L#_in_mean)^2)/L#_nbc;
-      copy(L#_threads_mus[nn_thread_id*L#_out_spectrum],L#_in_mean);
-      copy(L#_threads_sigmas[nn_thread_id*L#_out_spectrum],L#_in_variance);
+      M#_nbc = ++M#_threads_nbs[nn_thread_id];
+      M#_in_mean = M#_mu1 + (M#_mu2 - M#_mu1)/M#_nbc;
+      M#_in_variance = M#_sigma1 + (M#_sigma2 - M#_sigma1 +
+                                    M#_nb1*(M#_mu1 - M#_in_mean)^2 + (M#_mu2 - M#_in_mean)^2)/M#_nbc;
+      copy(M#_threads_mus[nn_thread_id*M#_out_spectrum],M#_in_mean);
+      copy(M#_threads_sigmas[nn_thread_id*M#_out_spectrum],M#_in_variance);
 
       learning_mode&1?( # Learn gamma
-        L#_tmp = d#L#_out*L#_xhat;
-        repeat(L#_out_spectrum,_k,d#L#_batch_gamma[_k]+=sum(L#_tmp[_k*L#_out_whd,L#_out_whd]));
+        M#_tmp = d#M#_out*M#_xhat;
+        repeat(M#_out_spectrum,_k,d#M#_batch_gamma[_k]+=sum(M#_tmp[_k*M#_out_whd,M#_out_whd]));
       );
       learning_mode&2?( # Learn beta
-        repeat(L#_out_spectrum,_k,d#L#_batch_beta[_k]+=sum(d#L#_out[_k*L#_out_whd,L#_out_whd]));
+        repeat(M#_out_spectrum,_k,d#M#_batch_beta[_k]+=sum(d#M#_out[_k*M#_out_whd,M#_out_whd]));
       );
 
-      d#IN#_out = d#L#_out*L#_gamma_whds;
-      d#IN#_out/=L#_sigma_whds;
+      d#IN#_out = d#M#_out*M#_gamma_whds;
+      d#IN#_out/=M#_sigma_whds;
     );
 
-    nn_layer_batchnorm_end_backward(L) = (
-      merge(d#L#_batch_gamma,+);
-      merge(d#L#_batch_beta,+);
-      d#L#_gamma/=nn_batch_size;
-      d#L#_beta/=nn_batch_size;
+    nn_layer_batchnorm_end_backward(M) = (
+      merge(d#M#_batch_gamma,+);
+      merge(d#M#_batch_beta,+);
+      d#M#_gamma/=nn_batch_size;
+      d#M#_beta/=nn_batch_size;
 
-      merge(L#_threads_nbs,+);
-      merge(L#_threads_mus,+);
-      merge(L#_threads_sigmas,+);
-      L#_nbc = 0;
-      L#_in_mean = 0;
-      L#_in_variance = 0;
-      repeat (size(L#_threads_nbs),_k,
-        L#_nb1 = L#_nbc;
-        L#_mu1 = L#_in_mean;
-        L#_sigma1 = L#_in_variance;
-        L#_nb2 = L#_threads_nbs[_k];
-        L#_mu2 = L#_threads_mus[_k*size(L#_mu2),size(L#_mu2)];
-        L#_sigma2 = L#_threads_sigmas[_k*size(L#_mu2),size(L#_mu2)];
-        L#_nbc = L#_nb1 + L#_nb2;
-        L#_in_mean = (L#_nb1*L#_mu1 + L#_nb2*L#_mu2)/L#_nbc;
-        L#_in_variance = (L#_nb1*(L#_sigma1 + (L#_mu1 - L#_in_mean)^2) +
-                          L#_nb2*(L#_sigma2 + (L#_mu2 - L#_in_mean)^2))/L#_nbc;
+      merge(M#_threads_nbs,+);
+      merge(M#_threads_mus,+);
+      merge(M#_threads_sigmas,+);
+      M#_nbc = 0;
+      M#_in_mean = 0;
+      M#_in_variance = 0;
+      repeat (size(M#_threads_nbs),_k,
+        M#_nb1 = M#_nbc;
+        M#_mu1 = M#_in_mean;
+        M#_sigma1 = M#_in_variance;
+        M#_nb2 = M#_threads_nbs[_k];
+        M#_mu2 = M#_threads_mus[_k*size(M#_mu2),size(M#_mu2)];
+        M#_sigma2 = M#_threads_sigmas[_k*size(M#_mu2),size(M#_mu2)];
+        M#_nbc = M#_nb1 + M#_nb2;
+        M#_in_mean = (M#_nb1*M#_mu1 + M#_nb2*M#_mu2)/M#_nbc;
+        M#_in_variance = (M#_nb1*(M#_sigma1 + (M#_mu1 - M#_in_mean)^2) +
+                          M#_nb2*(M#_sigma2 + (M#_mu2 - M#_in_mean)^2))/M#_nbc;
       );
     );
 
     # clone: Duplicate input as two new outputs.
     #-------------------------------------------
-    nn_layer_clone_init_forward(L0,L1,IN) = (
-      const L0#_out_width = IN#_out_width;
-      const L0#_out_height = IN#_out_height;
-      const L0#_out_depth = IN#_out_depth;
-      const L0#_out_spectrum = IN#_out_spectrum;
-      const L1#_out_width = IN#_out_width;
-      const L1#_out_height = IN#_out_height;
-      const L1#_out_depth = IN#_out_depth;
-      const L1#_out_spectrum = IN#_out_spectrum;
+    nn_layer_clone_init_forward(M0,M1,IN) = (
+      const M0#_out_width = IN#_out_width;
+      const M0#_out_height = IN#_out_height;
+      const M0#_out_depth = IN#_out_depth;
+      const M0#_out_spectrum = IN#_out_spectrum;
+      const M1#_out_width = IN#_out_width;
+      const M1#_out_height = IN#_out_height;
+      const M1#_out_depth = IN#_out_depth;
+      const M1#_out_spectrum = IN#_out_spectrum;
     );
 
-    nn_layer_clone_forward(L0,L1,IN) = (
-      L0#_out = IN#_out;
-      L1#_out = IN#_out;
+    nn_layer_clone_forward(M0,M1,IN) = (
+      M0#_out = IN#_out;
+      M1#_out = IN#_out;
     );
 
-    nn_layer_clone_backward(L0,L1,IN) = (
-      d#IN#_out = d#L0#_out + d#L1#_out;
+    nn_layer_clone_backward(M0,M1,IN) = (
+      d#IN#_out = d#M0#_out + d#M1#_out;
     );
 
     # conv2d: 2D convolutional layer.
     #--------------------------------
-    nn_layer_conv2d_init_forward(L,IN,size,stride,dilation) = (
-      const L#_ind = $L#;
-      const L#_out_width = max(1,int(IN#_out_width/stride));
-      const L#_out_height = max(1,int(IN#_out_height/stride));
-      const L#_out_depth = IN#_out_depth;
-      const L#_out_spectrum = h##L#_ind;
-      const L#_kernel_size = size;
-      const L#_kernel_center = L#_kernel_size - 1 - int(L#_kernel_size/2);
-      const L#_stride = stride;
-      const L#_dilation = dilation;
-      L#_weights = crop(##L#_ind,0,0,w##L#_ind - 1,h##L#_ind);
-      L#_biases = crop(##L#_ind,w##L#_ind - 1,0,1,h##L#_ind);
-      L#_out = vector(##L#_out_width*L#_out_height*L#_out_depth*h##L#_ind);
+    nn_layer_conv2d_init_forward(M,IN,size,stride,dilation) = (
+      const M#_ind = $M#;
+      const M#_out_width = max(1,int(IN#_out_width/stride));
+      const M#_out_height = max(1,int(IN#_out_height/stride));
+      const M#_out_depth = IN#_out_depth;
+      const M#_out_spectrum = h##M#_ind;
+      const M#_kernel_size = size;
+      const M#_kernel_center = M#_kernel_size - 1 - int(M#_kernel_size/2);
+      const M#_stride = stride;
+      const M#_dilation = dilation;
+      M#_weights = crop(##M#_ind,0,0,w##M#_ind - 1,h##M#_ind);
+      M#_biases = crop(##M#_ind,w##M#_ind - 1,0,1,h##M#_ind);
+      M#_out = vector(##M#_out_width*M#_out_height*M#_out_depth*h##M#_ind);
     );
 
-    nn_layer_conv2d_forward(L,IN) = (
+    nn_layer_conv2d_forward(M,IN) = (
       unref(_sizl);
-      const _sizl = size(L#_out)/L#_out_spectrum; # Size of output plane
-      L#_out = convolve(IN#_out,
+      const _sizl = size(M#_out)/M#_out_spectrum; # Size of output plane
+      M#_out = convolve(IN#_out,
                         IN#_out_width,IN#_out_height,IN#_out_depth,IN#_out_spectrum,
-                        L#_weights,
-                        L#_kernel_size,L#_kernel_size,1,IN#_out_spectrum*L#_out_spectrum,
+                        M#_weights,
+                        M#_kernel_size,M#_kernel_size,1,IN#_out_spectrum*M#_out_spectrum,
                         1,0,2,
-                        L#_kernel_center,L#_kernel_center,0,
+                        M#_kernel_center,M#_kernel_center,0,
                         0,0,0,
-                        L#_out_width - 1,L#_out_height - 1,L#_out_depth - 1,
-                        L#_stride,L#_stride,1,
-                        L#_dilation,L#_dilation,1);
-      repeat (L#_out_spectrum,_l,
-        copy(L#_out[_l*_sizl],L#_biases[_l],_sizl,1,0,-1); # Add biases
+                        M#_out_width - 1,M#_out_height - 1,M#_out_depth - 1,
+                        M#_stride,M#_stride,1,
+                        M#_dilation,M#_dilation,1);
+      repeat (M#_out_spectrum,_l,
+        copy(M#_out[_l*_sizl],M#_biases[_l],_sizl,1,0,-1); # Add biases
       );
     );
 
-    nn_layer_conv2d_init_backward(L,IN) = (
-      d#L#_batch_weights = vector(#size(L#_weights));
-      d#L#_batch_biases = vector(#size(L#_biases));
+    nn_layer_conv2d_init_backward(M,IN) = (
+      d#M#_batch_weights = vector(#size(M#_weights));
+      d#M#_batch_biases = vector(#size(M#_biases));
     );
 
-    nn_layer_conv2d_backward(L,IN) = (
+    nn_layer_conv2d_backward(M,IN) = (
       unref(_sizk,_sizl,_sizw);
       const _sizk = size(IN#_out)/IN#_out_spectrum; # Size of input plane
-      const _sizl = size(L#_out)/L#_out_spectrum;   # Size of output plane
-      const _sizw = L#_kernel_size^2;               # Size of kernel^2
+      const _sizl = size(M#_out)/M#_out_spectrum;   # Size of output plane
+      const _sizw = M#_kernel_size^2;               # Size of kernel^2
 
-      # Compute dL/dxk(x,y).
-      L#_weights_mirrored = vector(#size(L#_weights));
+      # Compute dM/dxk(x,y).
+      M#_weights_mirrored = vector(#size(M#_weights));
       repeat (IN#_out_spectrum,_k,
-        repeat (L#_out_spectrum,_l,
-          copy(L#_weights_mirrored[_k*L#_out_spectrum*_sizw + _l*_sizw + _sizw - 1],
-               L#_weights[_l*(w##L#_ind - 1) + _k*_sizw],_sizw,-1,1);
+        repeat (M#_out_spectrum,_l,
+          copy(M#_weights_mirrored[_k*M#_out_spectrum*_sizw + _l*_sizw + _sizw - 1],
+               M#_weights[_l*(w##M#_ind - 1) + _k*_sizw],_sizw,-1,1);
         );
       );
-      d#IN#_out = convolve(d#L#_out,
-                           L#_out_width,L#_out_height,L#_out_depth,L#_out_spectrum,
-                           L#_weights_mirrored,
-                           L#_kernel_size,L#_kernel_size,1,L#_out_spectrum*IN#_out_spectrum,
+      d#IN#_out = convolve(d#M#_out,
+                           M#_out_width,M#_out_height,M#_out_depth,M#_out_spectrum,
+                           M#_weights_mirrored,
+                           M#_kernel_size,M#_kernel_size,1,M#_out_spectrum*IN#_out_spectrum,
                            0,0,2,
-                           L#_kernel_size - 1 - L#_kernel_center,
-                           L#_kernel_size - 1 - L#_kernel_center,0,
+                           M#_kernel_size - 1 - M#_kernel_center,
+                           M#_kernel_size - 1 - M#_kernel_center,0,
                            0,0,0,IN#_out_width - 1,IN#_out_height - 1,IN#_out_depth - 1,
-                           1/L#_stride,1/L#_stride,1,
-                           L#_dilation/L#_stride,L#_dilation/L#_stride,1);
+                           1/M#_stride,1/M#_stride,1,
+                           M#_dilation/M#_stride,M#_dilation/M#_stride,1);
 
-      # Compute dL/dbl.
-      d#L#_biases = vector(#size(L#_biases));
-      fill(d#L#_biases,_l,sum(d#L#_out[_l*_sizl,_sizl]));
-      d#L#_batch_biases+=d#L#_biases;
+      # Compute dM/dbl.
+      d#M#_biases = vector(#size(M#_biases));
+      fill(d#M#_biases,_l,sum(d#M#_out[_l*_sizl,_sizl]));
+      d#M#_batch_biases+=d#M#_biases;
 
-      # Compute dL/dwlk.
-      L#_xk_mirrored = vector(#_sizk);
-      d#L#_weights = vector(#size(L#_weights));
-      repeat (L#_out_spectrum,_l,
+      # Compute dM/dwlk.
+      M#_xk_mirrored = vector(#_sizk);
+      d#M#_weights = vector(#size(M#_weights));
+      repeat (M#_out_spectrum,_l,
         repeat (IN#_out_spectrum,_k,
-          copy(L#_xk_mirrored[_sizk - 1],IN#_out[_k*_sizk],_sizk,-1,1);
-          L#_dwlk = convolve(L#_xk_mirrored,
+          copy(M#_xk_mirrored[_sizk - 1],IN#_out[_k*_sizk],_sizk,-1,1);
+          M#_dwlk = convolve(M#_xk_mirrored,
                              IN#_out_width,IN#_out_height,IN#_out_depth,1,
-                             d#L#_out[_l*_sizl,_sizl],
-                             L#_out_width,L#_out_height,L#_out_depth,1,
+                             d#M#_out[_l*_sizl,_sizl],
+                             M#_out_width,M#_out_height,M#_out_depth,1,
                              0,0,1,
-                             1/L#_stride*(IN#_out_width - 1 - L#_dilation*L#_kernel_center),
-                             1/L#_stride*(IN#_out_height - 1 - L#_dilation*L#_kernel_center),0,
-                             0,0,0,L#_kernel_size - 1,L#_kernel_size - 1,0,
-                             L#_dilation,L#_dilation,1,
-                             L#_stride,L#_stride,1);
-          copy(d#L#_weights[_l*(w##L#_ind - 1) + _k*_sizw],L#_dwlk,_sizw);
+                             1/M#_stride*(IN#_out_width - 1 - M#_dilation*M#_kernel_center),
+                             1/M#_stride*(IN#_out_height - 1 - M#_dilation*M#_kernel_center),0,
+                             0,0,0,M#_kernel_size - 1,M#_kernel_size - 1,0,
+                             M#_dilation,M#_dilation,1,
+                             M#_stride,M#_stride,1);
+          copy(d#M#_weights[_l*(w##M#_ind - 1) + _k*_sizw],M#_dwlk,_sizw);
         );
       );
-      d#L#_batch_weights+=d#L#_weights;
+      d#M#_batch_weights+=d#M#_weights;
     );
 
-    nn_layer_conv2d_end_backward(L) = (
-      merge(d#L#_batch_weights,+);
-      merge(d#L#_batch_biases,+);
-      d#L#_batch_weights/=nn_batch_size;
-      d#L#_batch_biases/=nn_batch_size;
+    nn_layer_conv2d_end_backward(M) = (
+      merge(d#M#_batch_weights,+);
+      merge(d#M#_batch_biases,+);
+      d#M#_batch_weights/=nn_batch_size;
+      d#M#_batch_biases/=nn_batch_size;
     );
 
     # crop : Crop layer.
     #--------------------
-    nn_layer_crop_init_forward(L,IN,x0,y0,z0,x1,y1,z1) = (
-      const L#_out_width = abs(x1 - x0) + 1;
-      const L#_out_height = abs(y1 - y0) + 1;
-      const L#_out_depth = abs(z1 - z0) + 1;
-      const L#_out_spectrum = IN#_out_spectrum;
+    nn_layer_crop_init_forward(M,IN,x0,y0,z0,x1,y1,z1) = (
+      const M#_out_width = abs(x1 - x0) + 1;
+      const M#_out_height = abs(y1 - y0) + 1;
+      const M#_out_depth = abs(z1 - z0) + 1;
+      const M#_out_spectrum = IN#_out_spectrum;
     );
 
-    nn_layer_crop_forward(L,IN,x0,y0,z0,x1,y1,z1) = (
-      L#_out = convolve(IN#_out,IN#_out_width,IN#_out_height,IN#_out_depth,IN#_out_spectrum,
+    nn_layer_crop_forward(M,IN,x0,y0,z0,x1,y1,z1) = (
+      M#_out = convolve(IN#_out,IN#_out_width,IN#_out_height,IN#_out_depth,IN#_out_spectrum,
                         [1],1,1,1,1,
                         0,0,1,
                         0,0,0,
@@ -24072,8 +24074,8 @@ nn_lib :
                         x1,y1,z1);
     );
 
-    nn_layer_crop_backward(L,IN,x0,y0,z0,x1,y1,z1) = (
-      d#IN#_out = convolve(d#L#_out,L#_out_width,L#_out_height,L#_out_depth,L#_out_spectrum,
+    nn_layer_crop_backward(M,IN,x0,y0,z0,x1,y1,z1) = (
+      d#IN#_out = convolve(d#M#_out,M#_out_width,M#_out_height,M#_out_depth,M#_out_spectrum,
                            [1],1,1,1,1,
                            0,0,1,
                            0,0,0,
@@ -24083,207 +24085,207 @@ nn_lib :
 
     # fc: Fully-connected layer.
     #---------------------------
-    nn_layer_fc_init_forward(L) = (
-      const L#_ind = $L#;
-      const L#_out_width = 1;
-      const L#_out_height = 1;
-      const L#_out_depth = 1;
-      const L#_out_spectrum = h##L#_ind;
-      L#_weights = crop(##L#_ind,0,0,w##L#_ind - 1,h##L#_ind);
-      L#_biases = crop(##L#_ind,w##L#_ind - 1,0,1,h##L#_ind);
+    nn_layer_fc_init_forward(M) = (
+      const M#_ind = $M#;
+      const M#_out_width = 1;
+      const M#_out_height = 1;
+      const M#_out_depth = 1;
+      const M#_out_spectrum = h##M#_ind;
+      M#_weights = crop(##M#_ind,0,0,w##M#_ind - 1,h##M#_ind);
+      M#_biases = crop(##M#_ind,w##M#_ind - 1,0,1,h##M#_ind);
     );
 
-    nn_layer_fc_forward(L,IN) = (
-      L#_out = mul(L#_weights,IN#_out);
-      L#_out+=L#_biases;
+    nn_layer_fc_forward(M,IN) = (
+      M#_out = mul(M#_weights,IN#_out);
+      M#_out+=M#_biases;
     );
 
-    nn_layer_fc_init_backward(L) = (
-      d#L#_batch_weights = vector(#size(L#_weights));
-      d#L#_batch_biases = vector(#size(L#_biases));
+    nn_layer_fc_init_backward(M) = (
+      d#M#_batch_weights = vector(#size(M#_weights));
+      d#M#_batch_biases = vector(#size(M#_biases));
     );
 
-    nn_layer_fc_backward(L,IN) = (
-      d#IN#_out = mul(transpose(L#_weights,size(IN#_out)),d#L#_out);
-      d#L#_weights = mul(d#L#_out,IN#_out,size(IN#_out));
-      d#L#_batch_weights+=d#L#_weights;
-      d#L#_batch_biases+=d#L#_out;
+    nn_layer_fc_backward(M,IN) = (
+      d#IN#_out = mul(transpose(M#_weights,size(IN#_out)),d#M#_out);
+      d#M#_weights = mul(d#M#_out,IN#_out,size(IN#_out));
+      d#M#_batch_weights+=d#M#_weights;
+      d#M#_batch_biases+=d#M#_out;
     );
 
-    nn_layer_fc_end_backward(L) = (
-      merge(d#L#_batch_weights,+);
-      merge(d#L#_batch_biases,+);
-      d#L#_batch_weights/=nn_batch_size;
-      d#L#_batch_biases/=nn_batch_size;
+    nn_layer_fc_end_backward(M) = (
+      merge(d#M#_batch_weights,+);
+      merge(d#M#_batch_biases,+);
+      d#M#_batch_weights/=nn_batch_size;
+      d#M#_batch_biases/=nn_batch_size;
     );
 
     # input: Input image or vector data.
     #-----------------------------------
-    nn_layer_input_init_forward(L,w,h,d,s) = (
-      const L#_out_width = w;
-      const L#_out_height = h;
-      const L#_out_depth = d;
-      const L#_out_spectrum = s;
-      ref(#L,L#_out);
+    nn_layer_input_init_forward(M,w,h,d,s) = (
+      const M#_out_width = w;
+      const M#_out_height = h;
+      const M#_out_depth = d;
+      const M#_out_spectrum = s;
+      ref(#M,M#_out);
     );
 
     # maxpool2d : 2D max pooling.
     #----------------------------
-    nn_layer_maxpool2d_init_forward(L,IN) = (
-      const L#_out_width = int(IN#_out_width/2);
-      const L#_out_height = int(IN#_out_height/2);
-      const L#_out_depth = IN#_out_depth;
-      const L#_out_spectrum = IN#_out_spectrum;
+    nn_layer_maxpool2d_init_forward(M,IN) = (
+      const M#_out_width = int(IN#_out_width/2);
+      const M#_out_height = int(IN#_out_height/2);
+      const M#_out_depth = IN#_out_depth;
+      const M#_out_spectrum = IN#_out_spectrum;
     );
 
-    nn_layer_maxpool2d_forward(L,IN) = (
-      L#_out = vector(##L#_out_width*L#_out_height*L#_out_depth*L#_out_spectrum);
-      L#_from = vector(#size(L#_out));
-      repeat (size(L#_out),_l,
-        _x = _l%L#_out_width;
-        _y = int(_l/L#_out_width)%L#_out_height;
-        _z = int(_l/(L#_out_width*L#_out_height))%L#_out_depth;
-        _c = int(_l/(L#_out_width*L#_out_height*L#_out_depth));
+    nn_layer_maxpool2d_forward(M,IN) = (
+      M#_out = vector(##M#_out_width*M#_out_height*M#_out_depth*M#_out_spectrum);
+      M#_from = vector(#size(M#_out));
+      repeat (size(M#_out),_l,
+        _x = _l%M#_out_width;
+        _y = int(_l/M#_out_width)%M#_out_height;
+        _z = int(_l/(M#_out_width*M#_out_height))%M#_out_depth;
+        _c = int(_l/(M#_out_width*M#_out_height*M#_out_depth));
         _k = 2*_x + IN#_out_width*(2*_y + IN#_out_height*(_z + IN#_out_depth*_c));
         _k+=arg0(argmax([ IN#_out[_k,2],IN#_out[_k + IN#_out_width,2] ]),0,1,IN#_out_width,IN#_out_width + 1);
-        L#_from[_l] = _k;
-        L#_out[_l] = IN#_out[_k];
+        M#_from[_l] = _k;
+        M#_out[_l] = IN#_out[_k];
       );
     );
 
-    nn_layer_maxpool2d_backward(L,IN) = (
+    nn_layer_maxpool2d_backward(M,IN) = (
       d#IN#_out = vector(#size(IN#_out),0);
-      repeat (size(L#_out),_l,
-        d#IN#_out[L#_from[_l]] = d#L#_out[_l];
+      repeat (size(M#_out),_l,
+        d#IN#_out[M#_from[_l]] = d#M#_out[_l];
       );
     );
 
     # nl: Non-linearity.
     #-------------------
-    nn_layer_nl_init_forward(L,IN) = (
-      const L#_out_width = IN#_out_width;
-      const L#_out_height = IN#_out_height;
-      const L#_out_depth = IN#_out_depth;
-      const L#_out_spectrum = IN#_out_spectrum;
+    nn_layer_nl_init_forward(M,IN) = (
+      const M#_out_width = IN#_out_width;
+      const M#_out_height = IN#_out_height;
+      const M#_out_depth = IN#_out_depth;
+      const M#_out_spectrum = IN#_out_spectrum;
     );
 
-    nn_layer_nl_forward(L,IN,activation) = (
-      L#_out = IN#_out;
-      nn_activate(L#_out,#activation);
+    nn_layer_nl_forward(M,IN,activation) = (
+      M#_out = IN#_out;
+      nn_activate(M#_out,#activation);
     );
 
-    nn_layer_nl_backward(L,IN,activation) = (
+    nn_layer_nl_backward(M,IN,activation) = (
       d#IN#_out = IN#_out;
       nn_activate(d#IN#_out,d_#activation);
-      d#IN#_out*=d#L#_out;
+      d#IN#_out*=d#M#_out;
     );
 
     # rename: Rename input.
     #----------------------
-    nn_layer_rename_init_forward(L,IN) = (
-      const L#_out_width = IN#_out_width;
-      const L#_out_height = IN#_out_height;
-      const L#_out_depth = IN#_out_depth;
-      const L#_out_spectrum = IN#_out_spectrum;
-      ref(IN#_out,L#_out);
+    nn_layer_rename_init_forward(M,IN) = (
+      const M#_out_width = IN#_out_width;
+      const M#_out_height = IN#_out_height;
+      const M#_out_depth = IN#_out_depth;
+      const M#_out_spectrum = IN#_out_spectrum;
+      ref(IN#_out,M#_out);
     );
 
-    nn_layer_rename_backward(L,IN) = (
-      ref(d#L#_out,d#IN#_out);
+    nn_layer_rename_backward(M,IN) = (
+      ref(d#M#_out,d#IN#_out);
     );
 
     # reshape: Reshape input to output with compatible size.
     #-------------------------------------------------------
-    nn_layer_reshape_init_forward(L,IN,w,h,d,s) = (
-      const L#_out_width = w;
-      const L#_out_height = h;
-      const L#_out_depth = d;
-      const L#_out_spectrum = s;
-      ref(IN#_out,L#_out);
+    nn_layer_reshape_init_forward(M,IN,w,h,d,s) = (
+      const M#_out_width = w;
+      const M#_out_height = h;
+      const M#_out_depth = d;
+      const M#_out_spectrum = s;
+      ref(IN#_out,M#_out);
     );
 
-    nn_layer_reshape_init_backward(L,IN) = (
-      ref(d#L#_out,d#IN#_out);
+    nn_layer_reshape_init_backward(M,IN) = (
+      ref(d#M#_out,d#IN#_out);
     );
 
     # resize: Resize input.
     #----------------------
-    nn_layer_resize_init_forward(L,IN,w,h,d,s) = (
-      const L#_out_width = w;
-      const L#_out_height = h;
-      const L#_out_depth = d;
-      const L#_out_spectrum = s;
+    nn_layer_resize_init_forward(M,IN,w,h,d,s) = (
+      const M#_out_width = w;
+      const M#_out_height = h;
+      const M#_out_depth = d;
+      const M#_out_spectrum = s;
     );
 
-    nn_layer_resize_forward(L,IN,interpolation) = (
-      L#_out = resize(IN#_out,
+    nn_layer_resize_forward(M,IN,interpolation) = (
+      M#_out = resize(IN#_out,
                       IN#_out_width,IN#_out_height,IN#_out_depth,IN#_out_spectrum,
-                      L#_out_width,L#_out_height,L#_out_depth,L#_out_spectrum,
+                      M#_out_width,M#_out_height,M#_out_depth,M#_out_spectrum,
                       interpolation);
     );
 
-    nn_layer_resize_backward(L,IN) = (
-      d#IN#_out = resize(d#L#_out,
-                         L#_out_width,L#_out_height,L#_out_depth,L#_out_spectrum,
+    nn_layer_resize_backward(M,IN) = (
+      d#IN#_out = resize(d#M#_out,
+                         M#_out_width,M#_out_height,M#_out_depth,M#_out_spectrum,
                          IN#_out_width,IN#_out_height,IN#_out_depth,IN#_out_spectrum,
                          3);
     );
 
     # run: Transform input with G'MIC command.
     #-----------------------------------------
-    nn_layer_run_init_forward(L,IN,command,w,h,d,s) = (
-      const L#_out_width = w;
-      const L#_out_height = h;
-      const L#_out_depth = d;
-      const L#_out_spectrum = s;
-      L#_varname = 'nn_#L#_out';
-      L#_pipeline = string('l[] { $nn_#IN#_out ',command,' k. r ',
-                           L#_out_width,',',L#_out_height,',',L#_out_depth,',',L#_out_spectrum,
-                           ',3 k. store ',L#_varname,' }');
+    nn_layer_run_init_forward(M,IN,command,w,h,d,s) = (
+      const M#_out_width = w;
+      const M#_out_height = h;
+      const M#_out_depth = d;
+      const M#_out_spectrum = s;
+      M#_varname = 'nn_#M#_out';
+      M#_pipeline = string('l[] { $nn_#IN#_out ',command,' k. r ',
+                           M#_out_width,',',M#_out_height,',',M#_out_depth,',',M#_out_spectrum,
+                           ',3 k. store ',M#_varname,' }');
     );
 
-    nn_layer_run_forward(L,IN) = (
+    nn_layer_run_forward(M,IN) = (
       critical(
         store('nn_#IN#_out',IN#_out,IN#_out_width,IN#_out_height,IN#_out_depth,IN#_out_spectrum);
-        run(L#_pipeline);
-        L#_out = get(L#_varname,L#_out_width*L#_out_height*L#_out_depth*L#_out_spectrum);
+        run(M#_pipeline);
+        M#_out = get(M#_varname,M#_out_width*M#_out_height*M#_out_depth*M#_out_spectrum);
       );
     );
 
-    nn_layer_run_backward(L,IN) = (
-      d#IN#_out = resize(d#L#_out,
-                         L#_out_width,L#_out_height,L#_out_depth,L#_out_spectrum,
+    nn_layer_run_backward(M,IN) = (
+      d#IN#_out = resize(d#M#_out,
+                         M#_out_width,M#_out_height,M#_out_depth,M#_out_spectrum,
                          IN#_out_width,IN#_out_height,IN#_out_depth,IN#_out_spectrum,
                          3);
     );
 
     # softmax: Softmax function.
     #---------------------------
-    nn_layer_softmax_init_forward(L,IN) = (
-      const L#_out_width = IN#_out_width;
-      const L#_out_height = IN#_out_height;
-      const L#_out_depth = IN#_out_depth;
-      const L#_out_spectrum = IN#_out_spectrum;
+    nn_layer_softmax_init_forward(M,IN) = (
+      const M#_out_width = IN#_out_width;
+      const M#_out_height = IN#_out_height;
+      const M#_out_depth = IN#_out_depth;
+      const M#_out_spectrum = IN#_out_spectrum;
     );
 
-    nn_layer_softmax_forward(L,IN) = (
-      L#_out = vector(#size(IN#_out));
-      L#_sumexp = 0;
-      fill(L#_out,k,
+    nn_layer_softmax_forward(M,IN) = (
+      M#_out = vector(#size(IN#_out));
+      M#_sumexp = 0;
+      fill(M#_out,k,
         _sm_val = exp(IN#_out[k]);
-        L#_sumexp+=_sm_val;
+        M#_sumexp+=_sm_val;
         _sm_val;
       );
-      L#_out/=L#_sumexp;
+      M#_out/=M#_sumexp;
     );
 
-    nn_layer_softmax_backward(L,IN) = (
+    nn_layer_softmax_backward(M,IN) = (
       d#IN#_out = vector(#size(IN#_out));
-      L#_fact = (L#_sumexp - 1)/L#_sumexp;
+      M#_fact = (M#_sumexp - 1)/M#_sumexp;
       fill(d#IN#_out,i,
         _sm_val = 0;
-        repeat(size(L#_out),j,
-          _sm_val+=d#L#_out[j]*(i!=j?-L#_out[j]/L#_sumexp:L#_out[i]*L#_fact);
+        repeat(size(M#_out),j,
+          _sm_val+=d#M#_out[j]*(i!=j?-M#_out[j]/M#_sumexp:M#_out[i]*M#_fact);
         );
         _sm_val;
       );
@@ -24291,28 +24293,28 @@ nn_lib :
 
     # split: Split input as two outputs.
     #-----------------------------------
-    nn_layer_split_init_forward(L0,L1,IN,nb_channels0) = (
-      const L0#_out_width = IN#_out_width;
-      const L0#_out_height = IN#_out_height;
-      const L0#_out_depth = IN#_out_depth;
-      const L0#_out_spectrum = nb_channels0;
-      const L1#_out_width = IN#_out_width;
-      const L1#_out_height = IN#_out_height;
-      const L1#_out_depth = IN#_out_depth;
-      const L1#_out_spectrum = IN#_out_spectrum - nb_channels0;
+    nn_layer_split_init_forward(M0,M1,IN,nb_channels0) = (
+      const M0#_out_width = IN#_out_width;
+      const M0#_out_height = IN#_out_height;
+      const M0#_out_depth = IN#_out_depth;
+      const M0#_out_spectrum = nb_channels0;
+      const M1#_out_width = IN#_out_width;
+      const M1#_out_height = IN#_out_height;
+      const M1#_out_depth = IN#_out_depth;
+      const M1#_out_spectrum = IN#_out_spectrum - nb_channels0;
     );
 
-    nn_layer_split_forward(L0,L1,IN) = (
+    nn_layer_split_forward(M0,M1,IN) = (
       unref(_siz0);
-      const siz0 = L0#_out_width*L0#_out_height*L0#_out_depth*L0#_out_spectrum;
-      L0#_out = IN#_out[0,siz0];
-      L1#_out = IN#_out[siz0,L1#_out_width*L1#_out_height*L1#_out_depth*L1#_out_spectrum];
+      const siz0 = M0#_out_width*M0#_out_height*M0#_out_depth*M0#_out_spectrum;
+      M0#_out = IN#_out[0,siz0];
+      M1#_out = IN#_out[siz0,M1#_out_width*M1#_out_height*M1#_out_depth*M1#_out_spectrum];
     );
 
-    nn_layer_split_backward(L0,L1,IN) = (
+    nn_layer_split_backward(M0,M1,IN) = (
       d#IN#_out = vector(#size(IN#_out));
-      copy(d#IN#_out,d#L0#_out,size(L0#_out));
-      copy(d#IN#_out[size(L0#_out)],d#L1#_out,size(L1#_out));
+      copy(d#IN#_out,d#M0#_out,size(M0#_out));
+      copy(d#IN#_out[size(M0#_out)],d#M1#_out,size(M1#_out));
     );
 
     #----------------
@@ -24753,6 +24755,9 @@ nn_trainer : nn_check_layer "$2"
     elif m='$m';m=='conv2d'||m=='fc' # isin('$m','conv2d','fc')
       if ${_nn_${n}_learning_mode}
         _nn_update.="nn_optimizer_$4_update_"${m}"("$n");"
+      fi
+      if '$4'=='adam' # Allocate data for storing moments
+        +f[$n] 0 . => d${n}_m,d${n}_v
       fi
     fi
   }
