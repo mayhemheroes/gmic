@@ -23646,18 +23646,39 @@ nn_lib :
     #------------
     # Optimizers.
     #------------
-    nn_optimizer_update_layer(W,dW) = (
-      !nn_optimizer?nn_optimizer_sgd_update_layer(#W,#dW):       # Stochastic gradient descent
-      nn_optimizer==1?nn_optimizer_rmsprop_update_layer(#W,#dW): # RMSprop
-      nn_optimizer==2?nn_optimizer_adam_update_layer(#W,#dW):    # Adam
-      nn_optimizer==3?nn_optimizer_adamax_update_layer(#W,#dW);  # Adamax
+
+    # Generic.
+    #---------
+    nn_optimizer_update_batchnorm(O,L,learning_mode) = (
+      L#_momentum = lerp(1,1e-5,tanh(nn_iteration/100));
+      draw(##L#_ind,L#_in_mean,0,0,0,0,1,h##L#_ind,1,1,L#_momentum);
+      draw(##L#_ind,L#_in_variance,1,0,0,0,1,h##L#_ind,1,1,L#_momentum);
+      learning_mode&1?(
+        nn_optimizer_#O#_update(L#_gamma,d#L#_batch_gamma);
+        draw(##L#_ind,L#_gamma,2,0,0,0,1,h##L#_ind);
+      );
+      learning_mode&2?(
+        nn_optimizer_#O#_update(L#_beta,d#L#_batch_beta);
+        draw(##L#_ind,L#_beta,3,0,0,0,1,h##L#_ind);
+      );
+    );
+
+    nn_optimizer_update_conv2d(O,L) = (
+      nn_optimizer_#O#_update(L#_weights,d#L#_batch_weights);
+      nn_optimizer_#O#_update(L#_biases,d#L#_batch_biases);
+      draw(##L#_ind,L#_weights,0,0,0,0,w##L#_ind - 1,h##L#_ind);
+      draw(##L#_ind,L#_biases,w##L#_ind - 1,0,0,0,1,h##L#_ind);
     );
 
     # Stochastic gradient descent.
     #-----------------------------
-    nn_optimizer_sgd_update_layer(W,dW) = (
+    nn_optimizer_sgd_update(W,dW) = (
       W#-=nn_learning_rate*#dW;
     );
+
+    nn_optimizer_sgd_update_batchnorm(W,learning_mode) = nn_optimizer_update_batchnorm(sgd,#W,#learning_mode);
+    nn_optimizer_sgd_update_conv2d(W) = nn_optimizer_update_conv2d(sgd,#W);
+    nn_optimizer_sgd_update_fc(W) = nn_optimizer_update_conv2d(sgd,#W);
 
     # RMSprop optimizer.
     #-------------------
@@ -23665,7 +23686,7 @@ nn_lib :
       const nn_optimizer_rmsprop_beta = 0.9;
     );
 
-    nn_optimizer_rmsprop_update_layer(W,dW) = (
+    nn_optimizer_rmsprop_update(W,dW) = (
       dW#_name_g2 = '_nn_#dW#_g2';
       !nn_iteration || isnan($_nn_#dW#_g2)?(
         dW#_g2 = vector(#size(dW));
@@ -23676,6 +23697,10 @@ nn_lib :
       store(dW#_name_g2,dW#_g2,size(dW));
       W#-=nn_learning_rate*dW/sqrt(1e-8 + dW#_g2);
     );
+
+    nn_optimizer_rmsprop_update_batchnorm(W,learning_mode) = nn_optimizer_update_batchnorm(rmsprop,#W,#learning_mode);
+    nn_optimizer_rmsprop_update_conv2d(W) = nn_optimizer_update_conv2d(rmsprop,#W);
+    nn_optimizer_rmsprop_update_fc(W) = nn_optimizer_update_conv2d(rmsprop,#W);
 
     # Adam optimizer.
     #----------------
@@ -23689,7 +23714,7 @@ nn_lib :
       );
     );
 
-    nn_optimizer_adam_update_layer(W,dW) = (
+    nn_optimizer_adam_update(W,dW) = (
       dW#_name_m = '_nn_#dW#_m';
       dW#_name_v = '_nn_#dW#_v';
       !nn_iteration || isnan($_nn_#dW#_m)?(
@@ -23705,6 +23730,10 @@ nn_lib :
       W#-=nn_learning_rate*nn_optimizer_adam_alpha_t*dW#_m/sqrt(1e-8 + dW#_v);
     );
 
+    nn_optimizer_adam_update_batchnorm(W,learning_mode) = nn_optimizer_update_batchnorm(adam,#W,#learning_mode);
+    nn_optimizer_adam_update_conv2d(W) = nn_optimizer_update_conv2d(adam,#W);
+    nn_optimizer_adam_update_fc(W) = nn_optimizer_update_conv2d(adam,#W);
+
     # Adamax optimizer.
     #------------------
     nn_optimizer_adamax_init() = (
@@ -23715,7 +23744,7 @@ nn_lib :
       );
     );
 
-    nn_optimizer_adamax_update_layer(W,dW) = (
+    nn_optimizer_adamax_update(W,dW) = (
       dW#_name_m = '_nn_#dW#_m';
       dW#_name_v = '_nn_#dW#_v';
       !nn_iteration || isnan($_nn_#dW#_m)?(
@@ -23731,6 +23760,10 @@ nn_lib :
 
       W#-=(nn_learning_rate/nn_optimizer_adamax_ombeta1_t)*dW#_m/sqrt(1e-8 + dW#_v);
     );
+
+    nn_optimizer_adamax_update_batchnorm(W,learning_mode) = nn_optimizer_update_batchnorm(adamax,#W,#learning_mode);
+    nn_optimizer_adamax_update_conv2d(W) = nn_optimizer_update_conv2d(adamax,#W);
+    nn_optimizer_adamax_update_fc(W) = nn_optimizer_update_conv2d(adamax,#W);
 
     #----------------
     # Network layers.
@@ -23900,20 +23933,6 @@ nn_lib :
       );
     );
 
-    nn_layer_batchnorm_update(L,learning_mode) = (
-      L#_momentum = lerp(1,1e-5,tanh(nn_iteration/100));
-      draw(##L#_ind,L#_in_mean,0,0,0,0,1,h##L#_ind,1,1,L#_momentum);
-      draw(##L#_ind,L#_in_variance,1,0,0,0,1,h##L#_ind,1,1,L#_momentum);
-      learning_mode&1?(
-        nn_optimizer_update_layer(L#_gamma,d#L#_batch_gamma);
-        draw(##L#_ind,L#_gamma,2,0,0,0,1,h##L#_ind);
-      );
-      learning_mode&2?(
-        nn_optimizer_update_layer(L#_beta,d#L#_batch_beta);
-        draw(##L#_ind,L#_beta,3,0,0,0,1,h##L#_ind);
-      );
-    );
-
     # clone: Duplicate input as two new outputs.
     #-------------------------------------------
     nn_layer_clone_init_forward(L0,L1,IN) = (
@@ -24035,13 +24054,6 @@ nn_lib :
       d#L#_batch_biases/=nn_batch_size;
     );
 
-    nn_layer_conv2d_update(L) = (
-      nn_optimizer_update_layer(L#_weights,d#L#_batch_weights);
-      nn_optimizer_update_layer(L#_biases,d#L#_batch_biases);
-      draw(##L#_ind,L#_weights,0,0,0,0,w##L#_ind - 1,h##L#_ind);
-      draw(##L#_ind,L#_biases,w##L#_ind - 1,0,0,0,1,h##L#_ind);
-    );
-
     # crop : Crop layer.
     #--------------------
     nn_layer_crop_init_forward(L,IN,x0,y0,z0,x1,y1,z1) = (
@@ -24106,8 +24118,8 @@ nn_lib :
     );
 
     nn_layer_fc_update(L) = (
-      nn_optimizer_update_layer(L#_weights,d#L#_batch_weights);
-      nn_optimizer_update_layer(L#_biases,d#L#_batch_biases);
+      nn_optimizer_update(L#_weights,d#L#_batch_weights);
+      nn_optimizer_update(L#_biases,d#L#_batch_biases);
       draw(##L#_ind,L#_weights,0,0,0,0,w##L#_ind - 1,h##L#_ind);
       draw(##L#_ind,L#_biases,w##L#_ind - 1,0,0,0,1,h##L#_ind);
     );
@@ -24745,10 +24757,13 @@ nn_trainer : nn_check_layer "$2"
     m=${arg0\ $<,$_nn_modules_types}
     n=${arg0\ $<,$_nn_modules_names}
     if '$m'=='batchnorm'
-      _nn_update.="nn_layer_"${m}"_update("$n,${_nn_${n}_learning_mode}");"
+#      _nn_update.="nn_layer_"${m}"_update("$n,${_nn_${n}_learning_mode}");"
+      _nn_update.="nn_optimizer_$4_update_"${m}"("$n,${_nn_${n}_learning_mode}");"
+
     elif m='$m';m=='conv2d'||m=='fc' # isin('$m','conv2d','fc')
       if ${_nn_${n}_learning_mode}
-        _nn_update.="nn_layer_"${m}"_update("$n");"
+#        _nn_update.="nn_layer_"${m}"_update("$n");"
+        _nn_update.="nn_optimizer_$4_update_"${m}"("$n");"
       fi
     fi
   }
