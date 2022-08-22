@@ -23680,7 +23680,7 @@ nn_lib :
 
     nn_optimizer_sgd_update_batchnorm(M,learning_mode) = nn_optimizer_update_batchnorm(sgd,#M,#learning_mode);
     nn_optimizer_sgd_update_conv2d(M) = nn_optimizer_update_conv2d(sgd,#M);
-    nn_optimizer_sgd_update_fc(M) = nn_optimizer_update_conv2d(sgd,#M);
+    nn_optimizer_sgd_update_fc(M) = nn_optimizer_sgd_update_conv2d(#M);
 
     # RMSprop optimizer.
     #-------------------
@@ -23702,7 +23702,7 @@ nn_lib :
 
     nn_optimizer_rmsprop_update_batchnorm(M,learning_mode) = nn_optimizer_update_batchnorm(rmsprop,#M,#learning_mode);
     nn_optimizer_rmsprop_update_conv2d(M) = nn_optimizer_update_conv2d(rmsprop,#M);
-    nn_optimizer_rmsprop_update_fc(M) = nn_optimizer_update_conv2d(rmsprop,#M);
+    nn_optimizer_rmsprop_update_fc(M) = nn_optimizer_rmsprop_update_conv2d(#M);
 
     # Adam optimizer.
     #----------------
@@ -23717,24 +23717,24 @@ nn_lib :
     );
 
     nn_optimizer_adam_update(W) = (
-      d#W#_name_m = '_nn_d#W#_m';
-      d#W#_name_v = '_nn_d#W#_v';
-      !nn_iteration || isnan($_nn_d#W#_m)?(
-        d#W#_m = d#W#_v = vector(#size(d#W));
-      ):(
-        d#W#_m = get(d#W#_name_m,size(d#W));
-        d#W#_v = get(d#W#_name_v,size(d#W));
-      );
       d#W#_m = lerp(d#W,d#W#_m,nn_optimizer_adam_beta1);
       d#W#_v = lerp(d#W^2,d#W#_v,nn_optimizer_adam_beta2);
-      store(d#W#_name_m,d#W#_m,size(d#W));
-      store(d#W#_name_v,d#W#_v,size(d#W));
       W#-=nn_learning_rate*nn_optimizer_adam_alpha_t*d#W#_m/sqrt(1e-8 + d#W#_v);
     );
 
     nn_optimizer_adam_update_batchnorm(M,learning_mode) = nn_optimizer_update_batchnorm(adam,#M,#learning_mode);
-    nn_optimizer_adam_update_conv2d(M) = nn_optimizer_update_conv2d(adam,#M);
-    nn_optimizer_adam_update_fc(M) = nn_optimizer_update_conv2d(adam,#M);
+    nn_optimizer_adam_update_conv2d(M) = (
+      d#M#_weights_m = crop(#$d#M#_m,0,0,w##M#_ind - 1,h##M#_ind);
+      d#M#_weights_v = crop(#$d#M#_v,0,0,w##M#_ind - 1,h##M#_ind);
+      d#M#_biases_m = crop(#$d#M#_m,w##M#_ind - 1,0,1,h##M#_ind);
+      d#M#_biases_v = crop(#$d#M#_v,w##M#_ind - 1,0,1,h##M#_ind);
+      nn_optimizer_update_conv2d(adam,#M);
+      draw(#$d#M#_m,d#M#_weights_m,0,0,0,0,w##M#_ind - 1,h##M#_ind);
+      draw(#$d#M#_m,d#M#_biases_m,w##M#_ind - 1,0,0,0,1,h##M#_ind);
+      draw(#$d#M#_v,d#M#_weights_v,0,0,0,0,w##M#_ind - 1,h##M#_ind);
+      draw(#$d#M#_v,d#M#_biases_v,w##M#_ind - 1,0,0,0,1,h##M#_ind);
+    );
+    nn_optimizer_adam_update_fc(M) = nn_optimizer_adam_update_conv2d(#M);
 
     # Adamax optimizer.
     #------------------
@@ -23765,7 +23765,7 @@ nn_lib :
 
     nn_optimizer_adamax_update_batchnorm(M,learning_mode) = nn_optimizer_update_batchnorm(adamax,#M,#learning_mode);
     nn_optimizer_adamax_update_conv2d(M) = nn_optimizer_update_conv2d(adamax,#M);
-    nn_optimizer_adamax_update_fc(M) = nn_optimizer_update_conv2d(adamax,#M);
+    nn_optimizer_adamax_update_fc(M) = nn_optimizer_adamax_update_conv2d(#M);
 
     #----------------
     # Network layers.
