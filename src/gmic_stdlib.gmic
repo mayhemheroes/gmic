@@ -23663,13 +23663,6 @@ nn_lib :
       );
     );
 
-    nn_optimizer_generic_update_conv2d_or_fc(O,M) = (
-      nn_optimizer_#O#_update_weights(M#_weights);
-      nn_optimizer_#O#_update_weights(M#_biases);
-      draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind - 1,h##M#_ind);
-      draw(##M#_ind,M#_biases,w##M#_ind - 1,0,0,0,1,h##M#_ind);
-    );
-
     # Stochastic gradient descent.
     #-----------------------------
     nn_optimizer_sgd_init() = 0;
@@ -23682,12 +23675,19 @@ nn_lib :
       nn_optimizer_generic_update_batchnorm(sgd,#M,#learning_mode);
     );
 
+    nn_optimizer_sgd_update_conv2d_or_fc(M) = (
+      nn_optimizer_sgd_update_weights(M#_weights);
+      nn_optimizer_sgd_update_weights(M#_biases);
+      draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind - 1,h##M#_ind);
+      draw(##M#_ind,M#_biases,w##M#_ind - 1,0,0,0,1,h##M#_ind);
+    );
+
     nn_optimizer_sgd_update_conv2d(M) = (
-      nn_optimizer_generic_update_conv2d_or_fc(sgd,#M);
+      nn_optimizer_sgd_update_conv2d_or_fc(#M);
     );
 
     nn_optimizer_sgd_update_fc(M) = (
-      nn_optimizer_generic_update_conv2d_or_fc(sgd,#M);
+      nn_optimizer_sgd_update_conv2d_or_fc(#M);
     );
 
     # RMSprop optimizer.
@@ -23708,7 +23708,10 @@ nn_lib :
     nn_optimizer_rmsprop_update_conv2d_or_fc(M) = (
       d#M#_weights_g2 = crop(#$d#M#_g2,0,0,w##M#_ind - 1,h##M#_ind);
       d#M#_biases_g2 = crop(#$d#M#_g2,w##M#_ind - 1,0,1,h##M#_ind);
-      nn_optimizer_generic_update_conv2d_or_fc(rmsprop,#M);
+      nn_optimizer_rmsprop_update_weights(M#_weights);
+      nn_optimizer_rmsprop_update_weights(M#_biases);
+      draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind - 1,h##M#_ind);
+      draw(##M#_ind,M#_biases,w##M#_ind - 1,0,0,0,1,h##M#_ind);
       draw(#$d#M#_g2,d#M#_weights_g2,0,0,0,0,w##M#_ind - 1,h##M#_ind);
       draw(#$d#M#_g2,d#M#_biases_g2,w##M#_ind - 1,0,0,0,1,h##M#_ind);
     );
@@ -23748,7 +23751,10 @@ nn_lib :
       d#M#_biases_m = crop(#$d#M#_m,w##M#_ind - 1,0,1,h##M#_ind);
       d#M#_weights_v = crop(#$d#M#_v,0,0,w##M#_ind - 1,h##M#_ind);
       d#M#_biases_v = crop(#$d#M#_v,w##M#_ind - 1,0,1,h##M#_ind);
-      nn_optimizer_generic_update_conv2d_or_fc(adam,#M);
+      nn_optimizer_adam_update_weights(M#_weights);
+      nn_optimizer_adam_update_weights(M#_biases);
+      draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind - 1,h##M#_ind);
+      draw(##M#_ind,M#_biases,w##M#_ind - 1,0,0,0,1,h##M#_ind);
       draw(#$d#M#_m,d#M#_weights_m,0,0,0,0,w##M#_ind - 1,h##M#_ind);
       draw(#$d#M#_m,d#M#_biases_m,w##M#_ind - 1,0,0,0,1,h##M#_ind);
       draw(#$d#M#_v,d#M#_weights_v,0,0,0,0,w##M#_ind - 1,h##M#_ind);
@@ -23788,7 +23794,10 @@ nn_lib :
       d#M#_biases_m = crop(#$d#M#_m,w##M#_ind - 1,0,1,h##M#_ind);
       d#M#_weights_v = crop(#$d#M#_v,0,0,w##M#_ind - 1,h##M#_ind);
       d#M#_biases_v = crop(#$d#M#_v,w##M#_ind - 1,0,1,h##M#_ind);
-      nn_optimizer_generic_update_conv2d_or_fc(adamax,#M);
+      nn_optimizer_adamax_update_weights(M#_weights);
+      nn_optimizer_adamax_update_weights(M#_biases);
+      draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind - 1,h##M#_ind);
+      draw(##M#_ind,M#_biases,w##M#_ind - 1,0,0,0,1,h##M#_ind);
       draw(#$d#M#_m,d#M#_weights_m,0,0,0,0,w##M#_ind - 1,h##M#_ind);
       draw(#$d#M#_m,d#M#_biases_m,w##M#_ind - 1,0,0,0,1,h##M#_ind);
       draw(#$d#M#_v,d#M#_weights_v,0,0,0,0,w##M#_ind - 1,h##M#_ind);
