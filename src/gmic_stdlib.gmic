@@ -23697,8 +23697,18 @@ nn_lib :
     );
 
     nn_optimizer_rmsprop_update_weights(W) = (
-      d#W#_g2 = lerp(batch_d#W^2,d#W#_g2,nn_optimizer_rmsprop_beta);
-      W#-=nn_learning_rate*batch_d#W/sqrt(1e-8 + d#W#_g2);
+#      d#W#_g2 = lerp(batch_d#W^2,d#W#_g2,nn_optimizer_rmsprop_beta);
+#      W#-=nn_learning_rate*batch_d#W/sqrt(1e-8 + d#W#_g2);
+
+      d#W#_name_g2 = '_nn_d#W#_g2';
+      !nn_iteration || isnan($_nn_d#W#_g2)?(
+        d#W#_g2 = vector(#size(d#W));
+      ):(
+        d#W#_g2 = get(d#W#_name_g2,size(d#W));
+      );
+      d#W#_g2 = lerp(d#W^2,d#W#_g2,nn_optimizer_rmsprop_beta);
+      store(d#W#_name_g2,d#W#_g2,size(d#W));
+      W#-=nn_learning_rate*d#W/sqrt(1e-8 + d#W#_g2);
     );
 
     nn_optimizer_rmsprop_update_batchnorm(M,learning_mode) = (
