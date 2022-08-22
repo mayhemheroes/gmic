@@ -23572,19 +23572,12 @@ nn_lib :
       nn_learning_rate0 = i[##T#_ind,2];
       nn_previous_loss = i[##T#_ind,3];
       nn_best_loss = i[##T#_ind,4];
-
-      const nn_optimizer = O;
-      const nn_scheduler = S;
-      nn_scheduler==3?nn_scheduler_adaptive_init(#T);
-      nn_optimizer==1?nn_optimizer_rmsprop_init():
-      nn_optimizer==2?nn_optimizer_adam_init():
-      nn_optimizer==3?nn_optimizer_adamax_init();
+      nn_scheduler_#S#_init();
+      nn_optimizer_#O#_init();
     );
 
-    nn_trainer_update(T,L) = (
-      nn_scheduler==1?nn_scheduler_linear_update():
-      nn_scheduler==2?nn_scheduler_exponential_update():
-      nn_scheduler==3?nn_scheduler_adaptive_update(#T,#L);
+    nn_trainer_update(T,L,S) = (
+      nn_scheduler_#S#_update(#T,#L);
       i[##T#_ind,0] = ++nn_iteration;
       i[##T#_ind,1] = nn_learning_rate;
       i[##T#_ind,3] = L#_out;
@@ -23595,15 +23588,22 @@ nn_lib :
     # Schedulers.
     #-------------
 
+    # Constant.
+    #----------
+    nn_scheduler_constant_init() = 0;
+    nn_scheduler_constant_update(T,L) = 0;
+
     # Linear Decrease.
     #-----------------
-    nn_scheduler_linear_update() = (
+    nn_scheduler_linear_init() = 0;
+    nn_scheduler_linear_update(T,L) = (
       nn_learning_rate = lerp(nn_learning_rate0,1e-8,min(1,nn_iteration/1000));
     );
 
     # Exponential Decrease.
     #----------------------
-    nn_scheduler_exponential_update() = (
+    nn_scheduler_exponential_init() = 0;
+    nn_scheduler_exponential_update(T,L) = (
       nn_learning_rate*=0.999;
     );
 
@@ -24115,13 +24115,6 @@ nn_lib :
       merge(d#L#_batch_biases,+);
       d#L#_batch_weights/=nn_batch_size;
       d#L#_batch_biases/=nn_batch_size;
-    );
-
-    nn_layer_fc_update(L) = (
-      nn_optimizer_update(L#_weights,d#L#_batch_weights);
-      nn_optimizer_update(L#_biases,d#L#_batch_biases);
-      draw(##L#_ind,L#_weights,0,0,0,0,w##L#_ind - 1,h##L#_ind);
-      draw(##L#_ind,L#_biases,w##L#_ind - 1,0,0,0,1,h##L#_ind);
     );
 
     # input: Input image or vector data.
@@ -24746,28 +24739,24 @@ nn_trainer : nn_check_layer "$2"
     # {scheduler variables})
     l[] { (0,$3,$3,inf,inf) _nn_optimizer_$4 _nn_scheduler_$5 a y => $1 }
   fi
-  o_sgd,o_rmsprop,o_adam,o_adamax=0,1,2,3
-  s_constant,s_linear,s_exponential,s_adaptive=0,1,2,3
-  _nn_backward..="begin(nn_trainer_init_backward($1,$2,"${o_$4},${s_$5}"));"
+  _nn_backward..="begin(nn_trainer_init_backward($1,$2,$4,$5));"
   _nn_init.="$0 $* "
 
-  # Generate sequence for updating network weights.
+  # Generate code for updating network weights.
   _nn_update="end("
   repeat narg($_nn_modules_names)-1 {
     m=${arg0\ $<,$_nn_modules_types}
     n=${arg0\ $<,$_nn_modules_names}
     if '$m'=='batchnorm'
-#      _nn_update.="nn_layer_"${m}"_update("$n,${_nn_${n}_learning_mode}");"
       _nn_update.="nn_optimizer_$4_update_"${m}"("$n,${_nn_${n}_learning_mode}");"
 
     elif m='$m';m=='conv2d'||m=='fc' # isin('$m','conv2d','fc')
       if ${_nn_${n}_learning_mode}
-#        _nn_update.="nn_layer_"${m}"_update("$n");"
         _nn_update.="nn_optimizer_$4_update_"${m}"("$n");"
       fi
     fi
   }
-  _nn_update.="nn_trainer_update($1,$2));" # <- Keep this as the last thing done in an 'end()' block!
+  _nn_update.="nn_trainer_update($1,$2,$5));" # <- Keep this as the last thing done in an 'end()' block!
 
   # Allocate data for learned parameters.
   # if "['$4']=='adam'"
