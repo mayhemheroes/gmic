@@ -23654,18 +23654,18 @@ nn_lib :
       draw(##M#_ind,M#_in_mean,0,0,0,0,1,h##M#_ind,1,1,M#_momentum);
       draw(##M#_ind,M#_in_variance,1,0,0,0,1,h##M#_ind,1,1,M#_momentum);
       learning_mode&1?(
-        nn_optimizer_#O#_update(M#_gamma,d#M#_batch_gamma);
+        nn_optimizer_#O#_update_weights(M#_gamma);
         draw(##M#_ind,M#_gamma,2,0,0,0,1,h##M#_ind);
       );
       learning_mode&2?(
-        nn_optimizer_#O#_update(M#_beta,d#M#_batch_beta);
+        nn_optimizer_#O#_update_weights(M#_beta);
         draw(##M#_ind,M#_beta,3,0,0,0,1,h##M#_ind);
       );
     );
 
     nn_optimizer_update_conv2d(O,M) = (
-      nn_optimizer_#O#_update(M#_weights);
-      nn_optimizer_#O#_update(M#_biases);
+      nn_optimizer_#O#_update_weights(M#_weights);
+      nn_optimizer_#O#_update_weights(M#_biases);
       draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind - 1,h##M#_ind);
       draw(##M#_ind,M#_biases,w##M#_ind - 1,0,0,0,1,h##M#_ind);
     );
@@ -23674,7 +23674,7 @@ nn_lib :
 
     # Stochastic gradient descent.
     #-----------------------------
-    nn_optimizer_sgd_update(W) = (
+    nn_optimizer_sgd_update_weights(W) = (
       W#-=nn_learning_rate*d#W;
     );
 
@@ -23690,15 +23690,8 @@ nn_lib :
       const nn_optimizer_rmsprop_beta = 0.9;
     );
 
-    nn_optimizer_rmsprop_update(W) = (
-      d#W#_name_g2 = '_nn_d#W#_g2';
-      !nn_iteration || isnan($_nn_d#W#_g2)?(
-        d#W#_g2 = vector(#size(d#W));
-      ):(
-        d#W#_g2 = get(d#W#_name_g2,size(d#W));
-      );
+    nn_optimizer_rmsprop_update_weights(W) = (
       d#W#_g2 = lerp(d#W^2,d#W#_g2,nn_optimizer_rmsprop_beta);
-      store(d#W#_name_g2,d#W#_g2,size(d#W));
       W#-=nn_learning_rate*d#W/sqrt(1e-8 + d#W#_g2);
     );
 
@@ -23726,7 +23719,7 @@ nn_lib :
       );
     );
 
-    nn_optimizer_adam_update(W) = (
+    nn_optimizer_adam_update_weights(W) = (
       d#W#_m = lerp(d#W,d#W#_m,nn_optimizer_adam_beta1);
       d#W#_v = lerp(d#W^2,d#W#_v,nn_optimizer_adam_beta2);
       W#-=nn_learning_rate*nn_optimizer_adam_alpha_t*d#W#_m/sqrt(1e-8 + d#W#_v);
@@ -23758,20 +23751,9 @@ nn_lib :
       );
     );
 
-    nn_optimizer_adamax_update(W) = (
-      d#W#_name_m = '_nn_d#W#_m';
-      d#W#_name_v = '_nn_d#W#_v';
-      !nn_iteration || isnan($_nn_d#W#_m)?(
-        d#W#_m = d#W#_v = vector(#size(d#W));
-      ):(
-        d#W#_m = get(d#W#_name_m,size(d#W));
-        d#W#_v = get(d#W#_name_v,size(d#W));
-      );
+    nn_optimizer_adamax_update_weights(W) = (
       d#W#_m = lerp(d#W,d#W#_m,nn_optimizer_adamax_beta1);
       d#W#_v = vmax(abs(d#W),nn_optimizer_adamax_beta2*d#W#_v);
-      store(d#W#_name_m,d#W#_m,size(d#W));
-      store(d#W#_name_v,d#W#_v,size(d#W));
-
       W#-=(nn_learning_rate/nn_optimizer_adamax_ombeta1_t)*d#W#_m/sqrt(1e-8 + d#W#_v);
     );
 
