@@ -23677,7 +23677,7 @@ nn_lib :
     nn_optimizer_sgd_init() = 0;
 
     nn_optimizer_sgd_update_weights(W) = (
-      W#-=nn_learning_rate*d#W;
+      W#-=nn_learning_rate*batch_d#W;
     );
 
     nn_optimizer_sgd_update_batchnorm(M,learning_mode) = nn_optimizer_update_batchnorm(sgd,#M,#learning_mode);
@@ -23693,8 +23693,8 @@ nn_lib :
     );
 
     nn_optimizer_rmsprop_update_weights(W) = (
-      d#W#_g2 = lerp(d#W^2,d#W#_g2,nn_optimizer_rmsprop_beta);
-      W#-=nn_learning_rate*d#W/sqrt(1e-8 + d#W#_g2);
+      d#W#_g2 = lerp(batch_d#W^2,d#W#_g2,nn_optimizer_rmsprop_beta);
+      W#-=nn_learning_rate*batch_d#W/sqrt(1e-8 + d#W#_g2);
     );
 
     nn_optimizer_rmsprop_update_batchnorm(M,learning_mode) = nn_optimizer_update_batchnorm(rmsprop,#M,#learning_mode);
@@ -23722,8 +23722,8 @@ nn_lib :
     );
 
     nn_optimizer_adam_update_weights(W) = (
-      d#W#_m = lerp(d#W,d#W#_m,nn_optimizer_adam_beta1);
-      d#W#_v = lerp(d#W^2,d#W#_v,nn_optimizer_adam_beta2);
+      d#W#_m = lerp(batch_d#W,d#W#_m,nn_optimizer_adam_beta1);
+      d#W#_v = lerp(batch_d#W^2,d#W#_v,nn_optimizer_adam_beta2);
       W#-=nn_learning_rate*nn_optimizer_adam_alpha_t*d#W#_m/sqrt(1e-8 + d#W#_v);
     );
 
@@ -23754,8 +23754,8 @@ nn_lib :
     );
 
     nn_optimizer_adamax_update_weights(W) = (
-      d#W#_m = lerp(d#W,d#W#_m,nn_optimizer_adamax_beta1);
-      d#W#_v = vmax(abs(d#W),nn_optimizer_adamax_beta2*d#W#_v);
+      d#W#_m = lerp(batch_d#W,d#W#_m,nn_optimizer_adamax_beta1);
+      d#W#_v = vmax(abs(batch_d#W),nn_optimizer_adamax_beta2*d#W#_v);
       W#-=(nn_learning_rate/nn_optimizer_adamax_ombeta1_t)*d#W#_m/sqrt(1e-8 + d#W#_v);
     );
 
@@ -23873,8 +23873,8 @@ nn_lib :
       M#_threads_nbs = vector(#nn_nb_threads_max);
       M#_threads_mus = vector(#nn_nb_threads_max*M#_out_spectrum);
       M#_threads_sigmas = vector(#nn_nb_threads_max*M#_out_spectrum);
-      d#M#_batch_gamma = vector(##M#_out_spectrum);
-      d#M#_batch_beta = vector(##M#_out_spectrum);
+      batch_d#M#_gamma = vector(##M#_out_spectrum);
+      batch_d#M#_beta = vector(##M#_out_spectrum);
     );
 
     nn_layer_batchnorm_backward(M,IN,learning_mode) = (
@@ -23897,10 +23897,10 @@ nn_lib :
 
       learning_mode&1?( # Learn gamma
         M#_tmp = d#M#_out*M#_xhat;
-        repeat(M#_out_spectrum,_k,d#M#_batch_gamma[_k]+=sum(M#_tmp[_k*M#_out_whd,M#_out_whd]));
+        repeat(M#_out_spectrum,_k,batch_d#M#_gamma[_k]+=sum(M#_tmp[_k*M#_out_whd,M#_out_whd]));
       );
       learning_mode&2?( # Learn beta
-        repeat(M#_out_spectrum,_k,d#M#_batch_beta[_k]+=sum(d#M#_out[_k*M#_out_whd,M#_out_whd]));
+        repeat(M#_out_spectrum,_k,batch_d#M#_beta[_k]+=sum(d#M#_out[_k*M#_out_whd,M#_out_whd]));
       );
 
       d#IN#_out = d#M#_out*M#_gamma_whds;
@@ -23908,8 +23908,8 @@ nn_lib :
     );
 
     nn_layer_batchnorm_end_backward(M) = (
-      merge(d#M#_batch_gamma,+);
-      merge(d#M#_batch_beta,+);
+      merge(batch_d#M#_gamma,+);
+      merge(batch_d#M#_beta,+);
       d#M#_gamma/=nn_batch_size;
       d#M#_beta/=nn_batch_size;
 
@@ -23991,8 +23991,8 @@ nn_lib :
     );
 
     nn_layer_conv2d_init_backward(M,IN) = (
-      d#M#_batch_weights = vector(#size(M#_weights));
-      d#M#_batch_biases = vector(#size(M#_biases));
+      batch_d#M#_weights = vector(#size(M#_weights));
+      batch_d#M#_biases = vector(#size(M#_biases));
     );
 
     nn_layer_conv2d_backward(M,IN) = (
@@ -24023,7 +24023,7 @@ nn_lib :
       # Compute dM/dbl.
       d#M#_biases = vector(#size(M#_biases));
       fill(d#M#_biases,_l,sum(d#M#_out[_l*_sizl,_sizl]));
-      d#M#_batch_biases+=d#M#_biases;
+      batch_d#M#_biases+=d#M#_biases;
 
       # Compute dM/dwlk.
       M#_xk_mirrored = vector(#_sizk);
@@ -24044,14 +24044,14 @@ nn_lib :
           copy(d#M#_weights[_l*(w##M#_ind - 1) + _k*_sizw],M#_dwlk,_sizw);
         );
       );
-      d#M#_batch_weights+=d#M#_weights;
+      batch_d#M#_weights+=d#M#_weights;
     );
 
     nn_layer_conv2d_end_backward(M) = (
-      merge(d#M#_batch_weights,+);
-      merge(d#M#_batch_biases,+);
-      d#M#_batch_weights/=nn_batch_size;
-      d#M#_batch_biases/=nn_batch_size;
+      merge(batch_d#M#_weights,+);
+      merge(batch_d#M#_biases,+);
+      batch_d#M#_weights/=nn_batch_size;
+      batch_d#M#_biases/=nn_batch_size;
     );
 
     # crop : Crop layer.
@@ -24099,23 +24099,22 @@ nn_lib :
     );
 
     nn_layer_fc_init_backward(M) = (
-      d#M#_batch_weights = vector(#size(M#_weights));
-      d#M#_batch_biases = vector(#size(M#_biases));
+      batch_d#M#_weights = vector(#size(M#_weights));
+      batch_d#M#_biases = vector(#size(M#_biases));
     );
 
     nn_layer_fc_backward(M,IN) = (
       d#IN#_out = mul(transpose(M#_weights,size(IN#_out)),d#M#_out);
       d#M#_weights = mul(d#M#_out,IN#_out,size(IN#_out));
-      ref(d#M#_out,d#M#_biases);
-      d#M#_batch_weights+=d#M#_weights;
-      d#M#_batch_biases+=d#M#_biases;
+      batch_d#M#_weights+=d#M#_weights;
+      batch_d#M#_biases+=d#M#_out;
     );
 
     nn_layer_fc_end_backward(M) = (
-      merge(d#M#_batch_weights,+);
-      merge(d#M#_batch_biases,+);
-      d#M#_batch_weights/=nn_batch_size;
-      d#M#_batch_biases/=nn_batch_size;
+      merge(batch_d#M#_weights,+);
+      merge(batch_d#M#_biases,+);
+      batch_d#M#_weights/=nn_batch_size;
+      batch_d#M#_biases/=nn_batch_size;
     );
 
     # input: Input image or vector data.
@@ -24323,37 +24322,37 @@ nn_lib :
     # bce : Binary cross entropy.
     #-----------------------------
     nn_loss_bce_init_backward(L) = (
-      L#_batch_out = 0;
+      batch_#L#_out = 0;
     );
 
     nn_loss_bce_backward(L,IN,TRUTH) = (
       L#_out = -sum(TRUTH*log(IN#_out) + (1 - TRUTH)*log(1 - IN#_out));
       d#IN#_out = vsum((IN#_out - TRUTH)/(IN#_out*(1 - IN#_out)));
-      L#_batch_out+=L#_out;
+      batch_#L#_out+=L#_out;
     );
 
     nn_loss_bce_end_backward(L) = (
-      merge(L#_batch_out,+);
-      L#_batch_out/=nn_batch_size;
-      L#_out = L#_batch_out;
+      merge(batch_#L#_out,+);
+      batch_#L#_out/=nn_batch_size;
+      L#_out = batch_#L#_out;
     );
 
     # mse : Mean-squared error.
     #--------------------------
     nn_loss_mse_init_backward(L) = (
-      L#_batch_out = 0;
+      batch_#L#_out = 0;
     );
 
     nn_loss_mse_backward(L,IN,TRUTH) = (
       d#IN#_out = 2*(IN#_out - TRUTH);
       L#_out = norm(d#IN#_out/2)^2/size(d#IN#_out);
-      L#_batch_out+=L#_out;
+      batch_#L#_out+=L#_out;
     );
 
     nn_loss_mse_end_backward(L) = (
-      merge(L#_batch_out,+);
-      L#_batch_out/=nn_batch_size;
-      L#_out = L#_batch_out;
+      merge(batch_#L#_out,+);
+      batch_#L#_out/=nn_batch_size;
+      L#_out = batch_#L#_out;
     );"
 
 #@cli nn_init
