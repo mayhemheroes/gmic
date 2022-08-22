@@ -24399,7 +24399,7 @@ nn_lib :
 #@cli : Initialize a new network.
 nn_init :
   e[^-1] "[nn_lib] Initialize new network."
-  _nn_modules_names,_nn_modules,_nn_forward,_nn_backward,_nn_update=
+  _nn_modules_names,_nn_modules_types,_nn_additional_data,_nn_forward,_nn_backward,_nn_update=
   _nn_init="$0 "
 
 #@cli nn_check_layer : name
@@ -24796,8 +24796,8 @@ nn_trainer : nn_check_layer "$2"
       fi
 
       # Allocate data for storing optimizer extra data (moments,...).
-      if '$4'=='rmsprop' +f[$n] 0 => d${n}_g2
-      elif '$4'=='adam' +f[$n] 0 . => d${n}_m,d${n}_v
+      if '$4'=='rmsprop' +f[$n] 0 => d${n}_g2 _nn_additional_data.={n},
+      elif '$4'=='adam' +f[$n] 0 . => d${n}_m,d${n}_v _nn_additional_data.={-2,n},{n},
       fi
     fi
   }
@@ -24825,7 +24825,7 @@ _nn_scheduler_adaptive : (0,0,0)
 #@cli nn_load : 'filename.gmz'
 #@cli : Load and initialize network saved as a .gmz file.
 #@cli : Neural network files can be only loaded in .gmz format.
-nn_load : check "s=['$1']; find(s,'.gmz')==size(s) - 4"
++nn_load : check "s=['$1']; find(s,'.gmz')==size(s) - 4"
   e[^-1] "[nn_lib] Load network from file '$1'."
   i "$1" run {t} rm.
 
@@ -24834,7 +24834,7 @@ nn_load : check "s=['$1']; find(s,'.gmz')==size(s) - 4"
 #@cli : Neural network files can be only saved in .gmz format.
 nn_save : check "s=['$1']; find(s,'.gmz')==size(s) - 4"
   e[^-1] "[nn_lib] Save current network as file '$1'."
-  sel,c=
+  sel=$_nn_additional_data c=
   repeat narg($_nn_modules_names)-1 {
     m=${arg0\ $>,$_nn_modules_types}
     n=${arg0\ $>,$_nn_modules_names}
