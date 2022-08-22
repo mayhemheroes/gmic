@@ -23679,7 +23679,9 @@ nn_lib :
     );
 
     nn_optimizer_sgd_update_batchnorm(M,learning_mode) = nn_optimizer_update_batchnorm(sgd,#M,#learning_mode);
+
     nn_optimizer_sgd_update_conv2d(M) = nn_optimizer_update_conv2d(sgd,#M);
+
     nn_optimizer_sgd_update_fc(M) = nn_optimizer_sgd_update_conv2d(#M);
 
     # RMSprop optimizer.
@@ -23701,7 +23703,15 @@ nn_lib :
     );
 
     nn_optimizer_rmsprop_update_batchnorm(M,learning_mode) = nn_optimizer_update_batchnorm(rmsprop,#M,#learning_mode);
-    nn_optimizer_rmsprop_update_conv2d(M) = nn_optimizer_update_conv2d(rmsprop,#M);
+
+    nn_optimizer_rmsprop_update_conv2d(M) = (
+      d#M#_weights_g2 = crop(#$d#M#_g2,0,0,w##M#_ind - 1,h##M#_ind);
+      d#M#_weights_g2 = crop(#$d#M#_g2,0,0,w##M#_ind - 1,h##M#_ind);
+      nn_optimizer_update_conv2d(rmsprop,#M);
+      draw(#$d#M#_g2,d#M#_weights_g2,0,0,0,0,w##M#_ind - 1,h##M#_ind);
+      draw(#$d#M#_g2,d#M#_biases_g2,w##M#_ind - 1,0,0,0,1,h##M#_ind);
+    );
+
     nn_optimizer_rmsprop_update_fc(M) = nn_optimizer_rmsprop_update_conv2d(#M);
 
     # Adam optimizer.
@@ -23723,6 +23733,7 @@ nn_lib :
     );
 
     nn_optimizer_adam_update_batchnorm(M,learning_mode) = nn_optimizer_update_batchnorm(adam,#M,#learning_mode);
+
     nn_optimizer_adam_update_conv2d(M) = (
       d#M#_weights_m = crop(#$d#M#_m,0,0,w##M#_ind - 1,h##M#_ind);
       d#M#_weights_v = crop(#$d#M#_v,0,0,w##M#_ind - 1,h##M#_ind);
@@ -23734,6 +23745,7 @@ nn_lib :
       draw(#$d#M#_v,d#M#_weights_v,0,0,0,0,w##M#_ind - 1,h##M#_ind);
       draw(#$d#M#_v,d#M#_biases_v,w##M#_ind - 1,0,0,0,1,h##M#_ind);
     );
+
     nn_optimizer_adam_update_fc(M) = nn_optimizer_adam_update_conv2d(#M);
 
     # Adamax optimizer.
@@ -23764,7 +23776,9 @@ nn_lib :
     );
 
     nn_optimizer_adamax_update_batchnorm(M,learning_mode) = nn_optimizer_update_batchnorm(adamax,#M,#learning_mode);
-    nn_optimizer_adamax_update_conv2d(M) = nn_optimizer_update_conv2d(adamax,#M);
+
+    nn_optimizer_adamax_update_conv2d(M) = nn_optimizer_adam_update_conv2d(#M);
+
     nn_optimizer_adamax_update_fc(M) = nn_optimizer_adamax_update_conv2d(#M);
 
     #----------------
@@ -24756,8 +24770,10 @@ nn_trainer : nn_check_layer "$2"
       if ${_nn_${n}_learning_mode}
         _nn_update.="nn_optimizer_$4_update_"${m}"("$n");"
       fi
-      if '$4'=='adam' # Allocate data for storing moments
-        +f[$n] 0 . => d${n}_m,d${n}_v
+
+      # Allocate data for storing optimizer extra data (moments,...).
+      if '$4'=='rmsprop' +f[$n] 0 => d${n}_g2
+      elif '$4'=='adam' +f[$n] 0 . => d${n}_m,d${n}_v
       fi
     fi
   }
