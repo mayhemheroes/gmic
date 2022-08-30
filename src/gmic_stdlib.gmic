@@ -24373,8 +24373,9 @@ nn_lib :
     );
 
     nn_loss_bce_backward(L,IN,TRUTH) = (
-      L#_out = -sum(TRUTH*log(IN#_out) + (1 - TRUTH)*log(1 - IN#_out));
-      d#IN#_out = vsum((IN#_out - TRUTH)/(IN#_out*(1 - IN#_out)));
+      const L#_epsilon = 1e-7;
+      L#_out = -sum(TRUTH*log(vmax(L#_epsilon,IN#_out)) + (1 - TRUTH)*log(vmax(L#_epsilon,1 - IN#_out)));
+      d#IN#_out = vsum((IN#_out - TRUTH)/vmax(L#_epsilon,IN#_out*(1 - IN#_out)));
       batch_#L#_out+=L#_out;
     );
 
