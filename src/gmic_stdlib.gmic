@@ -24791,19 +24791,21 @@ nn_trainer : nn_check_layer "$2"
   # Generate code for updating network weights.
   _nn_update="begin(nn_trainer_init_backward($1,$2,$4,$5));end("
   repeat narg($_nn_modules_names)-1 {
-    m=${arg0\ $>,$_nn_modules_types}
-    n=${arg0\ $>,$_nn_modules_names}
-    if '$m'=='batchnorm'
-      _nn_update.="nn_optimizer_$4_update_"${m}"("$n,${_nn_${n}_learning_mode}");"
+    type=${arg0\ $>,$_nn_modules_types}
+    name=${arg0\ $>,$_nn_modules_names}
+    learning_mode=${_nn_${name}_learning_mode}
 
-    elif m='$m';m=='conv2d'||m=='fc'
-      if ${_nn_${n}_learning_mode}
-        _nn_update.="nn_optimizer_$4_update_"${m}"("$n");"
+    if '$type'=='batchnorm'
+      _nn_update.="nn_optimizer_$4_update_"$type"("$name,$learning_mode");"
+
+    elif type='$type';type=='conv2d'||type=='fc'
+      if $learning_mode
+        _nn_update.="nn_optimizer_$4_update_"$type"("$name");"
       fi
 
       # Allocate data for storing optimizer extra data (moments,...).
-      if '$4'=='rmsprop' +f[$n] 0 => d${n}_g2 _nn_additional_data.={n},
-      elif '$4'=='adam' +f[$n] 0 . => d${n}_m,d${n}_v _nn_additional_data.={-2,n},{n},
+      if '$4'=='rmsprop' +f[$name] 0 => d${name}_g2 _nn_additional_data.={n},
+      elif '$4'=='adam' +f[$name] 0 . => d${name}_m,d${name}_v _nn_additional_data.={-2,n},{n},
       fi
     fi
   }
