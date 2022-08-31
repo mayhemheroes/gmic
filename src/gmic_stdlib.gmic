@@ -10410,7 +10410,7 @@ sort_list : skip ${1=+},${2=i}
   s0="descending" s1="ascending"
   e[^-1] "Sort list of image$? in "${s{_'+'=='$1'}}" order, according to the image criterion '$2'."
   if $!
-    if '$2'=='n'||'$2'=='N' # Special case : lexicographic order from image names (n: ignore case, N: consider case)
+    if isin('$2','n','N') # Special case : lexicographic order from image names (n: ignore case, N: consider case)
       op={`;'$1'=='-'?_'>':_'<'`}
       if '$2'=='n' fn=lowercase else fn= fi
       $!,1,1,1,"n = name(#x,1024); find(n,0)%1025" slen:=iM rm. # Largest name length.
@@ -24806,20 +24806,11 @@ nn_trainer : nn_check_layer "$2"
 
       # Allocate data for storing optimizer extra data (moments,...).
       if '$4'=='rmsprop' +f[$name] 0 => d${name}_g2 _nn_additional_data.={n},
-      elif '$4'=='adam'||'$4'=='adamax' +f[$name] 0 . => d${name}_m,d${name}_v _nn_additional_data.={-2,n},{n},
+      elif isin('$4','adam','adamax') +f[$name] 0 . => d${name}_m,d${name}_v _nn_additional_data.={-2,n},{n},
       fi
     fi
   }
   _nn_update.="nn_trainer_update($1,$2,$5));" # <- Keep this as the last thing done in an 'end()' block!
-
-  # Allocate data for learned parameters.
-  # if "['$4']=='adam'"
-  #   repeat narg($_nn_modules_names)-1 {
-  #     m=${arg0\ $>,$_nn_modules_types}
-  #     n=${arg0\ $>,$_nn_modules_names}
-  #     if isin('$m','batchnorm','conv2d','fc') +f[$n] 0 . => d${n}_m,d${n}_v fi
-  #   }
-  # fi
 
 _nn_optimizer_sgd : 1
 _nn_optimizer_rmsprop : 1
