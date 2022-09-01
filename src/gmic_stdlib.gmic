@@ -24419,18 +24419,6 @@ nn_check_layer :
     error[0--3] "nn_check_layer: Layer with name '$1' does not exist."
   fi
 
-#@cli nn_layer_input : name,width,_height,_depth,_spectrum
-#@cli : Add an 'input' layer to the network.
-#@cli : Default values: 'height=1', 'depth=1' and 'spectrum=1'.
-nn_layer_input : check "isvarname('$1') && isint($2) && $2>0 && isint(${3=1}) && $3>0 && isint(${4=1}) && $4>0 && "\
-                       "isint(${5=1}) && $5>0"
-  e[^-1] "[nn_lib] Add input layer '$1', with size ($2,$3,$4,$5)."
-  _nn_modules_names.=$1,
-  _nn_modules_types.=input,
-  _nn_$1_out_size=$2,$3,$4,$5
-  _nn_forward.="begin(nn_layer_input_init_forward($1,$2,$3,$4,$5));"
-  _nn_init.="$0 $* "
-
 #@cli nn_layer_add : name,in0,in1
 #@cli : Add an 'add' layer to the network.
 nn_layer_add : nn_check_layer "$2"
@@ -24553,6 +24541,18 @@ nn_layer_conv2dnl : nn_check_layer "$2"
          "stride $5, dilation $6 and '$7' activation."
   nn_layer_conv2d $1_0,$2,$3,$4,$5,$6,$8
   nn_layer_nl $1,$1_0,$7
+
+#@cli nn_layer_input : name,width,_height,_depth,_spectrum
+#@cli : Add an 'input' layer to the network.
+#@cli : Default values: 'height=1', 'depth=1' and 'spectrum=1'.
+nn_layer_input : check "isvarname('$1') && isint($2) && $2>0 && isint(${3=1}) && $3>0 && isint(${4=1}) && $4>0 && "\
+                       "isint(${5=1}) && $5>0"
+  e[^-1] "[nn_lib] Add input layer '$1', with size ($2,$3,$4,$5)."
+  _nn_modules_names.=$1,
+  _nn_modules_types.=input,
+  _nn_$1_out_size=$2,$3,$4,$5
+  _nn_forward.="begin(nn_layer_input_init_forward($1,$2,$3,$4,$5));"
+  _nn_init.="$0 $* "
 
 #@cli nn_layer_resconv2d : name,in,_kernel_size>0,_stride>0,_dilation>0,_is_learned={ 0 | 1 }
 #@cli : Add a 'rescon2d' (residual 2D convolutional layer), to the network.
