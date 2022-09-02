@@ -24805,9 +24805,14 @@ nn_trainer : nn_check_layer "$2"
       fi
 
       # Allocate data for storing optimizer extra data (moments,...).
-      if '$4'=='rmsprop' +f[$name] 0 => d${name}_g2 _nn_additional_data.={n},
+      if '$4'=='rmsprop'
+        dname_g2=d${name}_g2
+        if !isint(${$dname_g2}) +f[$name] 0 => $dname_g2 fi
+        _nn_additional_data.={n},
       elif isin('$4','adam','adamax')
-        if !isint($name) +f[$name] 0 . => d${name}_m,d${name}_v fi
+        dname_m,dname_v=d${name}_m,d${name}_v
+        if !isint(${$dname_m}) +f[$name] 0 => $dname_m fi
+        if !isint(${$dname_v}) +f[$name] 0 => $dname_v fi
         _nn_additional_data.={-2,n},{n},
       fi
     fi
