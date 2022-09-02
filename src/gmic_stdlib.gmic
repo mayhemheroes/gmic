@@ -24808,12 +24808,13 @@ nn_trainer : nn_check_layer "$2"
       if '$4'=='rmsprop'
         dname_g2=d${name}_g2
         if !isint(${$dname_g2}) +f[$name] 0 => $dname_g2 fi
-        _nn_additional_data.={n},
+        _nn_additional_data.=$dname_g2,
+
       elif isin('$4','adam','adamax')
         dname_m,dname_v=d${name}_m,d${name}_v
         if !isint(${$dname_m}) +f[$name] 0 => $dname_m fi
         if !isint(${$dname_v}) +f[$name] 0 => $dname_v fi
-        _nn_additional_data.={-2,n},{n},
+        _nn_additional_data.=$dname_m,$dname_v,
       fi
     fi
   }
@@ -24834,7 +24835,7 @@ _nn_scheduler_adaptive : (0,0,0)
 #@cli : Neural network files can be only loaded in .gmz format.
 +nn_load : check "s=['$1']; find(s,'.gmz')==size(s) - 4"
   e[^-1] "[nn_lib] Load network from file '$1'."
-  i "$1" run {t} rm.
+  i "$1" init_code={t} rm. run $init_code
 
 #@cli nn_save : 'filename.gmz'
 #@cli : Save current network as a .gmz file.
