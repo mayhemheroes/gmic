@@ -80,10 +80,10 @@
 
 # Try to auto-detect target OS.
 OS = $(shell uname)
-PREFIX = /usr
-LIB = lib
-BIN = bin
-INCLUDE = include
+PREFIX ?= /usr
+LIB ?= lib
+BIN ?= bin
+INCLUDE ?= include
 PIC = -fPIC
 EXE =
 WGET = wget --no-check-certificate --quiet -O
