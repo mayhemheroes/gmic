@@ -88,6 +88,7 @@ PIC = -fPIC
 EXE =
 WGET = wget --no-check-certificate --quiet -O
 PLUGINDIR = $(shell gimptool-2.0 --gimpplugindir)/plug-ins
+BASH_COMPLETIONSDIR = $(shell pkg-config --variable completionsdir bash-completion || echo $(PREFIX)/share/bash-completion/completions)
 VERSION = $(shell grep 'gmic_version\ ' gmic.h | tail -c4 | head -c3)
 VERSION1 = $(shell grep 'gmic_version\ ' gmic.h | tail -c4 | head -c1)
 VERSION2 = $(shell grep 'gmic_version\ ' gmic.h | tail -c3 | head -c1)
@@ -849,14 +850,8 @@ install:
 	  cp -f ../man/gmic.1.gz $(DESTDIR)$(PREFIX)/share/man/fr/man1/gmic.1.gz; \
 	fi
 	@if [ -f ../resources/gmic_bashcompletion.sh ]; then \
-	  if [ -d /usr/share/bash-completion/completions ]; then \
-	    mkdir -p $(DESTDIR)/usr/share/bash-completion/completions; \
-            cp -f ../resources/gmic_bashcompletion.sh $(DESTDIR)/usr/share/bash-completion/completions/gmic; \
-	  fi; \
-	  if [ -d /opt/local/etc/bash_completion.d/ ]; then \
-            mkdir -p $(DESTDIR)/opt/local/etc/bash_completion.d; \
-            cp -f ../resources/gmic_bashcompletion.sh $(DESTDIR)/opt/local/etc/bash_completion.d/gmic; \
-          fi; \
+	  mkdir -p $(DESTDIR)$(BASH_COMPLETIONSDIR); \
+          cp -f ../resources/gmic_bashcompletion.sh $(DESTDIR)$(BASH_COMPLETIONSDIR)/gmic; \
         fi
 	@if [ -f ../zart/zart ]; then \
 	  mkdir -p $(DESTDIR)$(PREFIX)/share/applications; \
