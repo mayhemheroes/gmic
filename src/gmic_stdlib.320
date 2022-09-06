@@ -808,9 +808,9 @@ reference : skip "${2=}"
 "* `_'character'` returns the (scalar) byte code of the specified character (e.g. `_'A'` is equal to '65')."\n\
 "* A special case happens for __empty__ strings: Values of both expressions `['']` and `''` are '0'."\n\
 "* Functions 'lowercase()' and 'uppercase()' return string with all string characters lowercased or uppercased."\n\
-"* Function 'stov(str,_starting_index,_is_strict)' parses specified string 'str' and returns the value contained "\
+"* Function 's2v(str,_starting_index,_is_strict)' parses specified string 'str' and returns the value contained "\
 "in it."\n\
-"* Function 'vtos(expr,_nb_digits,_siz)' returns a vector of size 'siz' which contains the character representation "\
+"* Function 'v2s(expr,_nb_digits,_siz)' returns a vector of size 'siz' which contains the character representation "\
 "of values described by expression 'expr'. "\
 "'nb_digits' can be { -1=auto-reduced | 0=all | >0=max number of digits }."\n\
 "* Function 'echo(str1,str2,...,strN)' prints the concatenation of given string arguments on the console."\n\
@@ -3317,7 +3317,7 @@ _display_parallel : check ${1=0}>=0
     _d2d_names=
   else
     if $!<=1 v - d v + return fi
-    14,$! eval. "!x?copy(i(),[[',d['],vtos(y,10,10),_']'])" =. 0 discard. 0 str={t} rm.
+    14,$! eval. "!x?copy(i(),[[',d['],v2s(y,10,10),_']'])" =. 0 discard. 0 str={t} rm.
     m "__dp : parallel "$str __dp um __dp
   fi
   v -1 d[]
@@ -3689,7 +3689,7 @@ _input_csv_val :
   $=arg
   repeat $# {
     arg=${arg{1+$>}}
-    if ['$arg']!=0 ({stov(['$arg'])}) else (nan) fi
+    if ['$arg']!=0 ({s2v(['$arg'])}) else (nan) fi
   }
   a x
 
@@ -3713,40 +3713,40 @@ _input_csv_val :
         copy(line[linesiz],0,size(line) - linesiz,1,0);
         same(line,'LUT_1D_SIZE ',12)?(
           copy(line[0],line[12],size(line) - 12);
-          size = stov(line);
+          size = s2v(line);
           dim = 1;
           resize(#0,3,size,1,1,0);
         ):same(line,'LUT_3D_SIZE ',12)?(
           copy(line[0],line[12],size(line) - 12);
-          size = stov(line);
+          size = s2v(line);
           dim = 3;
           resize(#0,3,size,size,size,0);
         ):same(line,'DOMAIN_MIN ',11)?(
           copy(line[0],line[11],size(line) - 11);
-          dmin[0] = stov(line);
+          dmin[0] = s2v(line);
           ind = find(line,_' ');
           copy(line[0],line[ind + 1],size(line) - ind);
-          dmin[1] = stov(line);
+          dmin[1] = s2v(line);
           ind = find(line,_' ');
           copy(line[0],line[ind + 1],size(line) - ind);
-          dmin[2] = stov(line);
+          dmin[2] = s2v(line);
         ):same(line,'DOMAIN_MAX ',11)?(
           copy(line[0],line[11],size(line) - 11);
-          dmax[0] = stov(line);
+          dmax[0] = s2v(line);
           ind = find(line,_' ');
           copy(line[0],line[ind + 1],size(line) - ind);
-          dmax[1] = stov(line);
+          dmax[1] = s2v(line);
           ind = find(line,_' ');
           copy(line[0],line[ind + 1],size(line) - ind);
-          dmax[2] = stov(line);
+          dmax[2] = s2v(line);
         ):(
-          val = stov(line);
+          val = s2v(line);
           !isnan(val)?do (
             i[#0,target++] = val;
             ind = find(line,_' ');
             ind<0?break();
             copy(line[0],line[ind + 1],size(line) - ind);
-            val = stov(line);
+            val = s2v(line);
           ,_(while); !isnan(val));
         );
       );
@@ -3897,23 +3897,23 @@ _input_glob :
 
         line[0,2]==id_v?( # Coordinates: vertex
           q = 0; next_item();
-          X = stov(line,q); next_item();
-          Y = stov(line,q); next_item();
-          Z = stov(line,q); next_item();
-          line[q]?(W = stov(line,q)):(W = 0);
+          X = s2v(line,q); next_item();
+          Y = s2v(line,q); next_item();
+          Z = s2v(line,q); next_item();
+          line[q]?(W = s2v(line,q)):(W = 0);
           da_push(#1,X,Y,Z);
           ++nbv;
 
         ):line[0,3]==id_vt?( # Coordinates: texture
           q = 0; next_item();
-          X = stov(line,q); next_item();
-          line[q]?(Y = stov(line,q); next_item()):(Y = 0);
-          line[q]?(Z = stov(line,q)):(Z = 0);
+          X = s2v(line,q); next_item();
+          line[q]?(Y = s2v(line,q); next_item()):(Y = 0);
+          line[q]?(Z = s2v(line,q)):(Z = 0);
           da_push(#5,[X,1 - Y]);
 
         ):line[0,2]==id_p?( # Primitive: point
           q = 0; next_item();
-          v0 = stov(line,q) - 1;
+          v0 = s2v(line,q) - 1;
           da_push(#2,1,v0);
           da_push(#3,p_rgb[0],p_rgb[1],p_rgb[2]);
           da_push(#4,p_alpha);
@@ -3921,9 +3921,9 @@ _input_glob :
 
         ):line[0,2]==id_l?( # Primitive: polyline
           q = 0; next_item();
-          v0 = stov(line,q) - 1; next_item();
+          v0 = s2v(line,q) - 1; next_item();
           while (line[q],
-            v1 = stov(line,q) - 1; next_item();
+            v1 = s2v(line,q) - 1; next_item();
             da_push(#2,2,v0,v1);
             da_push(#3,p_rgb[0],p_rgb[1],p_rgb[2]);
             da_push(#4,p_alpha);
@@ -3933,14 +3933,14 @@ _input_glob :
 
         ):line[0,2]==id_f?( # Primitive: colored or textured face
           q = 0; next_item();
-          v0 = stov(line,q) - 1; next_item();
-          vt0 = -1; line[q]=='/'?(++q; vt0 = stov(line,q) - 1; isnan(vt0)?(vt0 = -1); next_item()); # Texture coords
+          v0 = s2v(line,q) - 1; next_item();
+          vt0 = -1; line[q]=='/'?(++q; vt0 = s2v(line,q) - 1; isnan(vt0)?(vt0 = -1); next_item()); # Texture coords
           line[q]=='/'?(++q; next_item()); # Skip normal index
-          v1 = stov(line,q) - 1; next_item();
-          vt1 = -1; line[q]=='/'?(++q; vt1 = stov(line,q) - 1; isnan(vt1)?(vt1 = -1); next_item()); # Texture coords
+          v1 = s2v(line,q) - 1; next_item();
+          vt1 = -1; line[q]=='/'?(++q; vt1 = s2v(line,q) - 1; isnan(vt1)?(vt1 = -1); next_item()); # Texture coords
           line[q]=='/'?(++q; next_item()); # Skip normal index
-          v2 = stov(line,q) - 1; next_item();
-          vt2 = -1; line[q]=='/'?(++q; vt2 = stov(line,q) - 1; isnan(vt2)?(vt2 = -1); next_item()); # Texture coords
+          v2 = s2v(line,q) - 1; next_item();
+          vt2 = -1; line[q]=='/'?(++q; vt2 = s2v(line,q) - 1; isnan(vt2)?(vt2 = -1); next_item()); # Texture coords
           line[q]=='/'?(++q; next_item()); # Skip normal index
           is_colored = min(vt0,vt1,vt2)<0 || p_img<0;
           !is_colored?(xyt0 = I[#5,vt0]; xyt1 = I[#5,vt1]; xyt2 = I[#5,vt2]);
@@ -3957,8 +3957,8 @@ _input_glob :
             da_push(#4,p_alpha);
             ++nbp;
           ):(
-            v3 = stov(line,q) - 1; next_item();
-            vt3 = -1; line[q]=='/'?(++q; vt3 = stov(line,q) - 1; isnan(vt3)?(vt3 = -1); next_item()); # Texture coords
+            v3 = s2v(line,q) - 1; next_item();
+            vt3 = -1; line[q]=='/'?(++q; vt3 = s2v(line,q) - 1; isnan(vt3)?(vt3 = -1); next_item()); # Texture coords
             line[q]=='/'?(++q; next_item()); # Skip normal index
             is_colored|=vt3<0;
             !line[q]?( # Quadrangle
@@ -4208,7 +4208,7 @@ output_obj : check "isbool(${2=1})" check3d 0
     if $N>1 filename=${"filename \"$1\",$>"} else filename="$1" fi
     0 => $filename basename={b} folder={f} ext={x} if narg($ext) ext=.$ext fi rm.
     fnobj="begin(out = 0; s_rgba = vector8());
-           tos(x) = vtos(x,6);
+           tos(x) = v2s(x,6);
            strhex(v,str) = (
              ref(v,_v);
              hex(x) = (_x = int(x); _x + (_x<10?_'0':_'A' - 10));
@@ -4266,7 +4266,7 @@ output_obj : check "isbool(${2=1})" check3d 0
               ref(string('newmtl m',nb_materials,'\n',
                          'Kd ',tos(rgba[0]/255),' ',tos(rgba[1]/255),' ',tos(rgba[2]/255),'\n',s_opac),str);
               write(#"$out_mtl",str);
-              set(vname,vtos(m = nb_materials));
+              set(vname,v2s(m = nb_materials));
             );
             i[#"$materials",p] = m;
             off_p+=3;
@@ -4381,7 +4381,7 @@ output_obj : check "isbool(${2=1})" check3d 0
            "# Primitives: "$nb_primitives\n\
            "# Materials: "$nb_materials\n\
            "# Textures: "$nb_textures\n\
-           {`"d2(x) = (s = date(x); s>9?vtos(s,-1,2):[0,s]+_'0');
+           {`"d2(x) = (s = date(x); s>9?v2s(s,-1,2):[0,s]+_'0');
               string('# Generated on ',date(0),'/',d2(1),'/',d2(2),' at ',d2(4),':',d2(5),':',d2(6),
                      ' by G\47MIC (https://gmic.eu).\n')"`}
 
@@ -7173,10 +7173,10 @@ parse_gui_list :
   e[] "  >> Generate output, in 'list' mode.\n"
   ('"*** List of filters in the G\47MIC plug-in ("$_nb_filters" filters, on "\
                {date(0)}"/"\
-               {`v=date(1);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}"/"\
-               {`v=date(2);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}", "\
-               {`v=date(4);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}":"\
-               {`v=date(5);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}") ***\n\n"')
+               {`v=date(1);sv=v2s(v);v<10?[_'0',sv]:[sv,0]`}"/"\
+               {`v=date(2);sv=v2s(v);v<10?[_'0',sv]:[sv,0]`}", "\
+               {`v=date(4);sv=v2s(v);v<10?[_'0',sv]:[sv,0]`}":"\
+               {`v=date(5);sv=v2s(v);v<10?[_'0',sv]:[sv,0]`}") ***\n\n"')
 
   ('"* List of filters, sorted by path:\n\n"')
   l[] {
@@ -7329,10 +7329,10 @@ parse_gui_update :
          "#"\n\
          "#  Generated on : "\
          {date(0)}"/"\
-         {`v=date(1);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}"/"\
-         {`v=date(2);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}", "\
-         {`v=date(4);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}":"\
-         {`v=date(5);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}\n\
+         {`v=date(1);sv=v2s(v);v<10?[_'0',sv]:[sv,0]`}"/"\
+         {`v=date(2);sv=v2s(v);v<10?[_'0',sv]:[sv,0]`}", "\
+         {`v=date(4);sv=v2s(v);v<10?[_'0',sv]:[sv,0]`}":"\
+         {`v=date(5);sv=v2s(v);v<10?[_'0',sv]:[sv,0]`}\n\
          "#"\n')
   ('"\n# Local Variables:"\n\
     "# mode: sh"\n\
@@ -7552,10 +7552,10 @@ parse_gui_gmicol :
     "   -\n"\
     "   -  Generated on : "\
     {date(0)}"/"\
-    {`v=date(1);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}"/"\
-    {`v=date(2);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}", "\
-    {`v=date(4);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}":"\
-    {`v=date(5);sv=vtos(v);v<10?[_'0',sv]:[sv,0]`}\n\
+    {`v=date(1);sv=v2s(v);v<10?[_'0',sv]:[sv,0]`}"/"\
+    {`v=date(2);sv=v2s(v);v<10?[_'0',sv]:[sv,0]`}", "\
+    {`v=date(4);sv=v2s(v);v<10?[_'0',sv]:[sv,0]`}":"\
+    {`v=date(5);sv=v2s(v);v<10?[_'0',sv]:[sv,0]`}\n\
     "   -\n"\
     "   -->\n\n"\
     "<categories>\n"')
@@ -9933,9 +9933,9 @@ html2utf8 :
         p+=2;
         p>=size(source)?break();
         q = find(source,';',p);
-        q>p && q<=p+8 && !isnan(val=stov(source,p))?(
+        q>p && q<=p+8 && !isnan(val=s2v(source,p))?(
           copy(svalue,source[p],q-p); svalue[q-p] = 0;
-          val = stov(svalue,0,1);
+          val = s2v(svalue,0,1);
           !isnan(val) && isint(val) && val>0?(
 
             # Encode in UTF-8.
@@ -9966,7 +9966,7 @@ html2utf8 :
 utf82html :
   if h
     eval "
-      write_seq() = ( copy(res[q],'&#'); q+=2; s = vtos(val); l = find(s,0); copy(res[q],s,l); q+=l; res[q++]=_';' );
+      write_seq() = ( copy(res[q],'&#'); q+=2; s = v2s(val); l = find(s,0); copy(res[q],s,l); q+=l; res[q++]=_';' );
       ref(vector(#4*wh),res);
       q = 0;
       repeat (wh,p,
@@ -10060,7 +10060,7 @@ upload_filters :
   x "cd "$HOME"/work/src/gmic-community && git pull"
 
   # Define the list of compatible versions.
-  (316) sort. discard. store. compat
+  (316,$_version) sort. discard. store. compat
 
   # Import filters from stdlib and community.
   files $HOME/work/src/gmic-community/include/*.gmic
@@ -10497,7 +10497,7 @@ sort_list : skip ${1=+},${2=i}
 argmax :
   e[^-1] "Compute argmax of image$?."
   if !$! return fi
-  13,$! eval. "!x?copy(i(),[[',i#'],vtos(y,10,10)])" =. 0 discard. 0 str={t} rm.
+  13,$! eval. "!x?copy(i(),[[',i#'],v2s(y,10,10)])" =. 0 discard. 0 str={t} rm.
   ${-max_whds},"argmax("$str")" k. => [argmax]
 
 #@cli argmaxabs
@@ -10506,7 +10506,7 @@ argmax :
 argmaxabs :
   e[^-1] "Compute argmaxabs of image$?."
   if !$! return fi
-  13,$! eval. "!x?copy(i(),[[',i#'],vtos(y,10,10)])" =. 0 discard. 0 str={t} rm.
+  13,$! eval. "!x?copy(i(),[[',i#'],v2s(y,10,10)])" =. 0 discard. 0 str={t} rm.
   ${-max_whds},"argmaxabs("$str")" k. => [argmaxabs]
 
 #@cli argmin
@@ -10516,7 +10516,7 @@ argmaxabs :
 argmin :
   e[^-1] "Compute argmin of image$?."
   if !$! return fi
-  13,$! eval. "!x?copy(i(),[[',i#'],vtos(y,10,10)])" =. 0 discard. 0 str={t} rm.
+  13,$! eval. "!x?copy(i(),[[',i#'],v2s(y,10,10)])" =. 0 discard. 0 str={t} rm.
   ${-max_whds},"argmin("$str")" k. => [argmin]
 
 #@cli argminabs
@@ -10525,7 +10525,7 @@ argmin :
 argminabs :
   e[^-1] "Compute argminabs of image$?."
   if !$! return fi
-  13,$! eval. "!x?copy(i(),[[',i#'],vtos(y,10,10)])" =. 0 discard. 0 str={t} rm.
+  13,$! eval. "!x?copy(i(),[[',i#'],v2s(y,10,10)])" =. 0 discard. 0 str={t} rm.
   ${-max_whds},"argminabs("$str")" k. => [argminabs]
 
 #@cli asin : (+)
@@ -10706,7 +10706,7 @@ div_complex : check ${3=1e-8}>=0
 med :
   e[^-1] "Compute median of image$?."
   if !$! return fi
-  13,$! eval. "!x?copy(i(),[[',i#'],vtos(y,10,10)])" =. 0 discard. 0 str={t} rm.
+  13,$! eval. "!x?copy(i(),[[',i#'],v2s(y,10,10)])" =. 0 discard. 0 str={t} rm.
   ${-max_whds},"med("$str")" k. => [med]
 
 #@cli min : value[%] : [image] : 'formula' : (no arg) : (+)
@@ -26171,9 +26171,9 @@ linify : check "${1=40}>=0 && $1<=100 && ${2=2}>=0 && ${3=40%}>0 && ${4=10}>=0 &
         P = P0*fact; while (is_in(#1,P), i(#1,P)-=om2add*opacity*spreading; P-=dP);
         if (!(nb_lines%250),
           progress = density==ref0?100:round(100*(ref - ref0)/(density - ref0));
-          run('progress ',vtos(progress));
+          run('progress ',v2s(progress));
           if (narg("$_debug"),
-            run('+c[1] 0,255 r. {*,w},{*,h},1,3,2 to. ',vtos(progress),'%,1%,1%,5%,1 w. -1,-1,0 rm.')
+            run('+c[1] 0,255 r. {*,w},{*,h},1,3,2 to. ',v2s(progress),'%,1%,1%,5%,1 w. -1,-1,0 rm.')
           );
         );
         ++nb_lines;
@@ -28733,7 +28733,7 @@ bin2dec :
   $=arg res,sep= repeat $# { res=$res$sep${_$0\ ${arg{$>+1}}} sep=, } u $res
 
 _bin2dec :
-  u {"str = vtos(abs($1));
+  u {"str = v2s(abs($1));
       for (k = val = 0, str[k], ++k,
         c = str[k];
         (val<<=1)+=(c==_'0'?0:c==_'1'?1:nan);
@@ -28782,7 +28782,7 @@ covariance_vectors : skip "${1=avg}"
   eval. "*begin(avg = [ "$""$1" ]; C = vector(#s^2,0));
          mI = I - avg;
          C+=mul(mI,mI,s);
-         end(merge(C,+); C/=whd - 1; run('u ',vtos(C)))"
+         end(merge(C,+); C/=whd - 1; run('u ',v2s(C)))"
 
 #@cli dec : decimal_int1,...
 #@cli : Print specified decimal integers into their binary, octal, hexadecimal and string representations.
@@ -29010,7 +29010,7 @@ hex2dec :
   $=arg res,sep= repeat $# { res=$res$sep${_$0\ ${arg{$>+1}}} sep=, } u $res
 
 _hex2dec :
-  u {"str = ['$1']; str[0]==_'-'?-stov([['0x'],str[1,max(1,size(str)-1)]]):stov([['0x'],str])"}
+  u {"str = ['$1']; str[0]==_'-'?-s2v([['0x'],str[1,max(1,size(str)-1)]]):s2v([['0x'],str])"}
 
 #@cli hex2img : "hexadecimal_string"
 #@cli : Insert new image 1xN at the end of the list with values specified by the given hexadecimal-encoded string.
@@ -29057,7 +29057,7 @@ img2str :
   i[-2] 256
   eval. ">begin(off = 0);
     sep = x==w - 1?(y==h - 1?(z==d - 1?(c==s - 1?0:_'^'):_'/'):_';'):_',';
-    it = vtos(i);
+    it = v2s(i);
     off + size(it) + 1>=w(#-2)?resize(#-2,round(1.5*w(#-2)),1,1,1,0);
     for (k = 0, k<size(it) && it[k], ++k, i[#-2,off++] = it[k]);
     i[#-2,off++] = sep"
@@ -29775,7 +29775,7 @@ oct2dec :
   $=arg res,sep= repeat $# { res=$res$sep${_$0\ ${arg{$>+1}}} sep=, } u $res
 
 _oct2dec :
-  u {"str = vtos(abs($1));
+  u {"str = v2s(abs($1));
       for (k = val = 0, str[k], ++k,
         c = str[k];
         (val<<=3)+=(c>=_'0' && c<=_'7'?c - _'0':nan);
@@ -29802,9 +29802,9 @@ ovh2stats : skip "${1=gmic.eu-*-*-*.log.gz}"
       t2 = find(str,_'-',t1) + 1;
       t3 = find(str,_'-',t2) + 1;
       t1>0 && t2>t1 && t3>t2?(
-        day = stov(str,t1);
-        month = stov(str,t2);
-        year = stov(str,t3);
+        day = s2v(str,t1);
+        month = s2v(str,t2);
+        year = s2v(str,t3);
         [ day,month,year ];
       ):[0,0,0]"}
     if !$day&&!$month&&!$year day,month,year=n.a fi
@@ -29840,7 +29840,7 @@ _ovh2stats :
   v + N=$!
   foreach {
     ('{n}') replace. {'_'},{'^'} ({t})
-    date={`[vtos(i0,0,4),_'/',i1<10?[_'0',i1+_'0']:vtos(i1,0,2),_'/',i2<10?[_'0',i2+_'0']:vtos(i2,0,2)]`}
+    date={`[v2s(i0,0,4),_'/',i1<10?[_'0',i1+_'0']:v2s(i1,0,2),_'/',i2<10?[_'0',i2+_'0']:v2s(i2,0,2)]`}
     s -,{'\n'}
 
     # Name each image by the IP address.
@@ -29860,7 +29860,7 @@ _ovh2stats :
       repeat (N,k,
         ref(name(#k,256),nam);
         for (i = j = 0, i<size(nam) && nam[i], ++i, nam[i]!=_'.'?(nam[j++] = nam[i])); nam[j] = 0;
-        tab[2*k] = stov(nam);
+        tab[2*k] = s2v(nam);
         tab[2*k + 1] = k;
       );
       tab = sort(tab,1,N,2);
@@ -42512,7 +42512,7 @@ fx_mix_pca :
 
          if ("0$_is_preview",
            L = [ 2,5,10]*sqrt(1e-5 + eig[0,3]);
-           run('__cols=',vtos(round([
+           run('__cols=',v2s(round([
              avg - L[0]*eig[3,3],
              avg + L[0]*eig[3,3],
              avg - L[1]*eig[6,3],
@@ -43414,12 +43414,12 @@ _fx_tune_hsv :
       test_color(blue,0,0,255);
       test_color(magenta,255,0,255);
       end(
-        run(' red=',vtos(red),
-            ' yellow=',vtos(yellow),
-            ' green=',vtos(green),
-            ' cyan=',vtos(cyan),
-            ' blue=',vtos(blue),
-            ' magenta=',vtos(magenta))
+        run(' red=',v2s(red),
+            ' yellow=',v2s(yellow),
+            ' green=',v2s(green),
+            ' cyan=',v2s(cyan),
+            ' blue=',v2s(blue),
+            ' magenta=',v2s(magenta))
       ); I"
 
     # Compute color mapping.
