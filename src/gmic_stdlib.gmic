@@ -30034,15 +30034,19 @@ path_tmp :
   fi
   u $_path_tmp
 
-#@cli remove_copymark : "image_name"
-#@cli : Remove copy mark from names of selected images.
+#@cli remove_copymark
+#@cli : Remove copymark suffix in names of selected images.
 remove_copymark :
-  u {`"name = ['$1'];
-       i = find(name,'_c');
-       i>=0 && i<size(name) - 2 && (c=name[i+2])>=_'1' && c<=_'9'?(
-         ext = ['"{$>,x}"'];
-         size(ext)?copy(name[i],[_'.',ext,0]):(name[i]=0);
-       ); name"`}
+  foreach {
+    => {`"
+      nm = ['"{n}'"];
+      const siz = size(nm);
+      i = find(nm,'_c',siz - 1,-1);
+      inrange(i,0,siz - 3) && inrange(nm[i + 2],_'1',_'9')?(
+        ext = ['"{x}"'];
+        size(ext)?copy(nm[i],[_'.',ext,0]):(nm[i] = 0);
+      ); nm;"`}
+  }
 
 # render_donations: Parse the PayPal .CSV file and generate 'latest-months' donation gfx.
 # $1 = filename.csv
