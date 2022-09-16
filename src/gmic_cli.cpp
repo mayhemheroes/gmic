@@ -50,6 +50,7 @@
 
 #undef gmic_core
 #include <signal.h>
+#define cimg_appname "gmic"
 #include "CImg.h"
 #include "gmic.h"
 using namespace cimg_library;
