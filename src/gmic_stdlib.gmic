@@ -20809,6 +20809,23 @@ meigen : check "isint($1) && $1>0"
 #@cli : such that the matrix product D*W is an approximation of the input matrix.
 #@cli : Default values: 'method=0', 'max_iter=0' and 'max_residual=1e-6'.
 
+#@cli pseudoinvert : _solver,_lambda>=0
+#@cli : Compute the Moore-Penrose inverse of selected matrices.
+#@cli : 'solver' can be { 0=LU | 1=SVD }.
+pseudoinvert : check "isbool(${1=0}) && ${2=0}>=0"
+  s0=LU s1=SVD
+  e[^-1] "Compute Moore-Penrose pseudoinverse of matrix image$?, with "${s$1}" solver and lambda $2."
+  foreach {
+    eval "repeat (s,c,
+            repeat (d,z,
+              M = crop(0,0,z,c,w,h,1,1);
+              resize(#-1,h,w,d,s,-1);
+              draw(pseudoinvert(M,w,$1,$2),0,0,z,c,h,w,1,1);
+            )
+          )"
+  }
+  is_change 1
+
 #@cli solve : [image] : (+)
 #@cli : Solve linear system AX = B for selected B-matrices and specified A-matrix.
 #@cli : If the system is under- or over-determined, the least squares solution is returned
