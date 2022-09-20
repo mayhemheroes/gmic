@@ -8571,15 +8571,19 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           goto gmic_commands_others;
         }
 
-        // Matrix inverse.
+        // Matrix inverse (or pseudoinverse).
         if (!std::strcmp("invert",command)) {
           gmic_substitute_args(false);
-          if (cimg_sscanf(argument,"%u%c",
-                          &pattern,&end)==1 && pattern<=1) ++position;
-          else pattern = 1;
-          print(images,0,"Invert matrix image%s, using %s-based solver.",
-                gmic_selection.data(),pattern?"LU":"SVD");
-          cimg_forY(selection,l) gmic_apply(invert((bool)pattern),false);
+          pattern = 0; value = 0;
+          if ((cimg_sscanf(argument,"%u%c",
+                           &pattern,&end)==1 ||
+               cimg_sscanf(argument,"%u,%lf%c",
+                           &pattern,&value,&end)==2) &&
+              pattern<=1) ++position;
+          else pattern = 0;
+          print(images,0,"Invert matrix image%s, using %s solver and lambda %g.",
+                gmic_selection.data(),pattern?"LU":"SVD",value);
+          cimg_forY(selection,l) gmic_apply(invert((bool)pattern,value),false);
           is_change = true;
           continue;
         }
