@@ -20813,16 +20813,17 @@ meigen : check "isint($1) && $1>0"
 #@cli : Compute the Moore-Penrose inverse of selected matrices.
 #@cli : 'solver' can be { 0=LU | 1=SVD }.
 pseudoinvert : check "isbool(${1=0}) && ${2=0}>=0"
-  s0=LU s1=SVD
+  s0,S1=LU,SVD
   e[^-1] "Compute Moore-Penrose pseudoinverse of matrix image$?, with "${s$1}" solver and lambda $2."
   foreach {
+    {[h,w,d,s]}
     eval "repeat (s,c,
             repeat (d,z,
-              M = crop(0,0,z,c,w,h,1,1);
-              resize(#-1,h,w,d,s,-1);
-              draw(pseudoinvert(M,w,$1,$2),0,0,z,c,h,w,1,1);
+              M = crop(#0,0,0,z,c,w#0,h#0,1,1);
+              draw(#1,pseudoinvert(M,w#0,$1,$2),0,0,z,c,w#1,h#1,1,1);
             )
           )"
+    rm..
   }
   is_change 1
 
