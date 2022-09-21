@@ -8579,7 +8579,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                            &pattern,&end)==1 ||
                cimg_sscanf(argument,"%u,%lf%c",
                            &pattern,&value,&end)==2) &&
-              pattern<=1) ++position;
+              pattern<=1 && value>=0) ++position;
           else pattern = 0;
           print(images,0,"Invert matrix image%s, using %s solver and lambda %g.",
                 gmic_selection.data(),pattern?"LU":"SVD",value);
