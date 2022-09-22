@@ -8571,15 +8571,19 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           goto gmic_commands_others;
         }
 
-        // Matrix inverse.
+        // Matrix inverse (or pseudoinverse).
         if (!std::strcmp("invert",command)) {
           gmic_substitute_args(false);
-          if (cimg_sscanf(argument,"%u%c",
-                          &pattern,&end)==1 && pattern<=1) ++position;
-          else pattern = 1;
-          print(images,0,"Invert matrix image%s, using %s-based solver.",
-                gmic_selection.data(),pattern?"LU":"SVD");
-          cimg_forY(selection,l) gmic_apply(invert((bool)pattern),false);
+          pattern = 0; value = 0;
+          if ((cimg_sscanf(argument,"%u%c",
+                           &pattern,&end)==1 ||
+               cimg_sscanf(argument,"%u,%lf%c",
+                           &pattern,&value,&end)==2) &&
+              pattern<=1 && value>=0) ++position;
+          else pattern = 0;
+          print(images,0,"Invert matrix image%s, using %s solver and lambda %g.",
+                gmic_selection.data(),pattern?"LU":"SVD",value);
+          cimg_forY(selection,l) gmic_apply(invert((bool)pattern,value),false);
           is_change = true;
           continue;
         }
@@ -12292,13 +12296,15 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         if (!std::strcmp("solve",command)) {
           gmic_substitute_args(true);
           sep = *indices = 0;
-          if (cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]%c%c",gmic_use_indices,&sep,&end)==2 &&
-              sep==']' &&
-              (ind=selection2cimg(indices,images.size(),images_names,"solve")).height()==1) {
-            print(images,0,"Solve linear system AX = B, with B-vector%s and A-matrix [%d].",
-                  gmic_selection.data(),*ind);
+          pattern = 0;
+          if (((cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]%c%c",gmic_use_indices,&sep,&end)==2 && sep==']') ||
+               cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%u%c",gmic_use_indices,&pattern,&end)==2) &&
+              (ind=selection2cimg(indices,images.size(),images_names,"solve")).height()==1 &&
+              pattern<=1) {
+            print(images,0,"Solve linear system AX = B, with B-vector%s, A-matrix [%d] and %s solver.",
+                  gmic_selection.data(),*ind,pattern?"LU":"SVD");
             const CImg<double> A = gmic_image_arg(*ind);
-            cimg_forY(selection,l) gmic_apply_double(solve(A));
+            cimg_forY(selection,l) gmic_apply_double(solve(A,(bool)pattern));
           } else arg_error("solve");
           is_change = true;
           ++position;

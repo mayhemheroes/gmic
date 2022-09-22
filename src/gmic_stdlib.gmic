@@ -789,10 +789,10 @@ reference : skip "${2=}"
 "'csinh()' (complex hyperbolic sine) and 'ctanh()' (complex hyperbolic tangent)."\n\
 "* A `MN`-dimensional vector may be seen as a `M` x `N` matrix and used in those particular functions/operators: "\
 "'*' (matrix-vector multiplication), 'det(A)' (determinant), 'diag(V)' (diagonal matrix from a vector), "\
-"'eig(A)' (eigenvalues/eigenvectors), 'eye(n)' (n x n identity matrix), 'invert(A,_solver)' (matrix inverse), "\
-"'mul(A,B,_nb_colsB)' (matrix-matrix multiplication), 'pseudoinvert(A,_nb_colsA,_solver)', "\
+"'eig(A)' (eigenvalues/eigenvectors), 'eye(n)' (n x n identity matrix), 'invert(A,_nb_colsA,_use_LU,_lambda)' "\
+"(matrix inverse), 'mul(A,B,_nb_colsB)' (matrix-matrix multiplication), "\
 "'rot(u,v,w,angle)' (3D rotation matrix), 'rot(angle)' (2D rotation matrix), "\
-"'solve(A,B,_nb_colsB)' (solver of linear system A.X = B), 'svd(A,_nb_colsA)' (singular value decomposition), "\
+"'solve(A,B,_nb_colsB,_use_LU)' (solver of linear system A.X = B), 'svd(A,_nb_colsA)' (singular value decomposition), "\
 "'trace(A)' (matrix trace) and 'transpose(A,nb_colsA)' (matrix transpose). Argument 'nb_colsB' may be omitted if "\
 "it is equal to `1`".\n\
 "* 'mproj(S,nb_colsS,D,nb_colsD,method,max_iter,max_residual)' projects a matrix 'S' onto a dictionary (matrix) "\
@@ -20740,10 +20740,11 @@ yinyang :
   e[^-1] "Input $1x$1 identity matrix."
   if $1 $1,$1,1,1,x==y else 0 fi
 
-#@cli invert : solver={ 0=SVD | 1=LU } : (+)
-#@cli : Compute the inverse of the selected matrices.
-#@cli : SVD solver is slower but less numerically instable than LU.
-#@cli : Default value: 'solver=1'.
+#@cli invert : _use_LU={ 0=SVD | 1=LU },_lambda>=0 : (+)
+#@cli : Inverse selected matrices (or compute Moore-Penrose pseudoinverse for non-square matrices).
+#@cli : SVD solver is slower but more precise than LU.
+#@cli : 'lambda' is used only in the Moore-Penrose pseudoinverse, by estimating A^t.(A^t.A + lambda.Id)^-1.
+#@cli : Default value: 'use_LU=0' and 'lambda=0'.
 #@cli : $ (0,1,0;0,0,1;1,0,0) +invert
 
 #@cli orthogonalize : _mode = { 0=orthogonalize | 1=orthonormalize }
@@ -20809,10 +20810,10 @@ meigen : check "isint($1) && $1>0"
 #@cli : such that the matrix product D*W is an approximation of the input matrix.
 #@cli : Default values: 'method=0', 'max_iter=0' and 'max_residual=1e-6'.
 
-#@cli solve : [image] : (+)
+#@cli solve : [image],_use_LU={ 0=SVD | 1=LU } : (+)
 #@cli : Solve linear system AX = B for selected B-matrices and specified A-matrix.
-#@cli : If the system is under- or over-determined, the least squares solution is returned
-#@cli : (using SVD-based solver).
+#@cli : If the system is under- or over-determined, the least squares solution is returned.
+#@cli : Default value: 'use_LU=0'.
 #@cli : $ (0,1,0;1,0,0;0,0,1) (1;2;3) +solve[-1] [-2]
 
 #@cli svd : (+)
@@ -32943,7 +32944,6 @@ _x_mask_color : # Estimate color mask image.
       N_sub={h} M_sub={"M = vectorw(); fill(M,k,med(crop(k,1)));M"} rm.
     fi
     f. "begin(
-          invert(A,nA) = inv(A,nA); # For <v.2.9.2
           const is_add = "$is_add";
           const is_sub = "$is_sub";
           const ss = sqrt(2)*$1;
