@@ -23683,6 +23683,11 @@ nn_lib :
       draw(##M#_ind,M#_biases,w##M#_ind - 1,0,0,0,1,h##M#_ind);
     );
 
+    nn_optimizer_sgd_update_dict(M) = (
+      nn_optimizer_sgd_update_weights(M#_weights);
+      draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind,h##M#_ind);
+    );
+
     nn_optimizer_sgd_update_conv2d(M) = (
       nn_optimizer_sgd_update_conv2d_or_fc(#M);
     );
@@ -23715,6 +23720,13 @@ nn_lib :
       draw(##M#_ind,M#_biases,w##M#_ind - 1,0,0,0,1,h##M#_ind);
       draw(#$d#M#_g2,d#M#_weights_g2,0,0,0,0,w##M#_ind - 1,h##M#_ind);
       draw(#$d#M#_g2,d#M#_biases_g2,w##M#_ind - 1,0,0,0,1,h##M#_ind);
+    );
+
+    nn_optimizer_rmsprop_update_dict(M) = (
+      d#M#_weights_g2 = crop(#$d#M#_g2,0,0,w##M#_ind,h##M#_ind);
+      nn_optimizer_rmsprop_update_weights(M#_weights);
+      draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind,h##M#_ind);
+      draw(#$d#M#_g2,d#M#_weights_g2,0,0,0,0,w##M#_ind,h##M#_ind);
     );
 
     nn_optimizer_rmsprop_update_conv2d(M) = (
@@ -23762,6 +23774,15 @@ nn_lib :
       draw(#$d#M#_v,d#M#_biases_v,w##M#_ind - 1,0,0,0,1,h##M#_ind);
     );
 
+    nn_optimizer_adam_update_dict(M) = (
+      d#M#_weights_m = crop(#$d#M#_m,0,0,w##M#_ind,h##M#_ind);
+      d#M#_weights_v = crop(#$d#M#_v,0,0,w##M#_ind,h##M#_ind);
+      nn_optimizer_adam_update_weights(M#_weights);
+      draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind,h##M#_ind);
+      draw(#$d#M#_m,d#M#_weights_m,0,0,0,0,w##M#_ind,h##M#_ind);
+      draw(#$d#M#_v,d#M#_weights_v,0,0,0,0,w##M#_ind,h##M#_ind);
+    );
+
     nn_optimizer_adam_update_conv2d(M) = (
       nn_optimizer_adam_update_conv2d_or_fc(#M);
     );
@@ -23803,6 +23824,15 @@ nn_lib :
       draw(#$d#M#_m,d#M#_biases_m,w##M#_ind - 1,0,0,0,1,h##M#_ind);
       draw(#$d#M#_v,d#M#_weights_v,0,0,0,0,w##M#_ind - 1,h##M#_ind);
       draw(#$d#M#_v,d#M#_biases_v,w##M#_ind - 1,0,0,0,1,h##M#_ind);
+    );
+
+    nn_optimizer_adamax_update_dict(M) = (
+      d#M#_weights_m = crop(#$d#M#_m,0,0,w##M#_ind,h##M#_ind);
+      d#M#_weights_v = crop(#$d#M#_v,0,0,w##M#_ind,h##M#_ind);
+      nn_optimizer_adamax_update_weights(M#_weights);
+      draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind,h##M#_ind);
+      draw(#$d#M#_m,d#M#_weights_m,0,0,0,0,w##M#_ind,h##M#_ind);
+      draw(#$d#M#_v,d#M#_weights_v,0,0,0,0,w##M#_ind,h##M#_ind);
     );
 
     nn_optimizer_adamax_update_conv2d(M) = (
@@ -24127,6 +24157,39 @@ nn_lib :
                            0,0,0,
                            -x0,-y0,-z0,
                            -x0 + IN#_out_width - 1,-y0 + IN#_out_height - 1,-z0 + IN#_out_depth - 1);
+    );
+
+    # dict: Dictionnary learning layer.
+    #----------------------------------
+    nn_layer_dict_init_forward(M,IN) = (
+      const M#_ind = $M#;
+      const M#_out_width = IN#_out_width;
+      const M#_out_height = IN#_out_height;
+      const M#_out_depth = 1;
+      const M#_out_spectrum = IN#_out_spectrum;
+      M#_weights = crop(##M#_ind,0,0,w##M#_ind,h##M#_ind);
+    );
+
+    nn_layer_dict_forward(M,IN) = (
+      M#_alpha_fwd = solve(IN#_out,M#_weights,w##M#_ind);
+      M#_out = mul(M#_weights,M#_alpha_fws,1);
+    );
+
+    nn_layer_dict_init_backward(M) = (
+      batch_d#M#_weights = vector(#size(M#_weights));
+    );
+
+    nn_layer_dict_backward(M,IN) = (
+      M#_alpha_bwd = solve(d#M#_out,M#_weights,w##M#_ind);
+      d#IN#_out = mul(M#_weights,M#_alpha_bwd,1);
+      d#M#_weights = mul(d#M#_out,M#_alpha_fwd,size(M#_alpha_fwd));
+      batch_d#M#_weights+=d#M#_weights;
+      batch_d#M#_biases+=d#M#_out;
+    );
+
+    nn_layer_dict_end_backward(M) = (
+      merge(batch_d#M#_weights,+);
+      batch_d#M#_weights/=nn_batch_size;
     );
 
     # fc: Fully-connected layer.
@@ -24609,6 +24672,24 @@ nn_layer_fc : nn_check_layer "$2"
   _nn_backward..="begin(nn_layer_fc_init_backward($1));"\
                  "nn_layer_fc_backward($1,$2);"\
                  "end(nn_layer_fc_end_backward($1));"
+  _nn_init.="$0 $* "
+
+#@cli nn_layer_dict : name,in,nb_atoms>0,_is_learned={ 0 | 1 }
+#@cli : Add a 'dict' layer (dictionnary learning layer) to the network.
+#@cli : Default value: 'is_learned=1'.
+nn_layer_dict : nn_check_layer "$2"
+                check "isvarname('$1') && isint($3) && $3>0 && isbool(${4=1})"
+  e[^-1] "[nn_lib] Add 'dict' layer '$1', with input '$2' and $3 atoms."
+  _nn_modules_names.=$1,
+  _nn_modules_types.=dict,
+  _nn_$1_out_size=$_nn_$2_out_size
+  _nn_$1_learning_mode=$4
+  if !isint($$1) $3,{prod($_nn_$2_out_size)} f. 4*g/(w-1) => $1 fi
+  _nn_forward.="begin(nn_layer_dict_init_forward($1,$2));"\
+               "nn_layer_dict_forward($1,$2);"
+  _nn_backward..="begin(nn_layer_dict_init_backward($1));"\
+                 "nn_layer_dict_backward($1,$2);"\
+                 "end(nn_layer_dict_end_backward($1));"
   _nn_init.="$0 $* "
 
 #@cli nn_layer_fcbnnl : name,in,nb_neurons>0,_activation,_is_learned={ 0 | 1 }
