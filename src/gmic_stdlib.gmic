@@ -23683,17 +23683,17 @@ nn_lib :
       draw(##M#_ind,M#_biases,w##M#_ind - 1,0,0,0,1,h##M#_ind);
     );
 
-    nn_optimizer_sgd_update_dict(M) = (
-      nn_optimizer_sgd_update_weights(M#_weights);
-      draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind,h##M#_ind);
-    );
-
     nn_optimizer_sgd_update_conv2d(M) = (
       nn_optimizer_sgd_update_conv2d_or_fc(#M);
     );
 
     nn_optimizer_sgd_update_fc(M) = (
       nn_optimizer_sgd_update_conv2d_or_fc(#M);
+    );
+
+    nn_optimizer_sgd_update_dict(M) = (
+      nn_optimizer_sgd_update_weights(M#_weights);
+      draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind,h##M#_ind);
     );
 
     # RMSprop optimizer.
@@ -23722,19 +23722,19 @@ nn_lib :
       draw(#$d#M#_g2,d#M#_biases_g2,w##M#_ind - 1,0,0,0,1,h##M#_ind);
     );
 
-    nn_optimizer_rmsprop_update_dict(M) = (
-      d#M#_weights_g2 = crop(#$d#M#_g2,0,0,w##M#_ind,h##M#_ind);
-      nn_optimizer_rmsprop_update_weights(M#_weights);
-      draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind,h##M#_ind);
-      draw(#$d#M#_g2,d#M#_weights_g2,0,0,0,0,w##M#_ind,h##M#_ind);
-    );
-
     nn_optimizer_rmsprop_update_conv2d(M) = (
       nn_optimizer_rmsprop_update_conv2d_or_fc(#M);
     );
 
     nn_optimizer_rmsprop_update_fc(M) = (
       nn_optimizer_rmsprop_update_conv2d_or_fc(#M);
+    );
+
+    nn_optimizer_rmsprop_update_dict(M) = (
+      d#M#_weights_g2 = crop(#$d#M#_g2,0,0,w##M#_ind,h##M#_ind);
+      nn_optimizer_rmsprop_update_weights(M#_weights);
+      draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind,h##M#_ind);
+      draw(#$d#M#_g2,d#M#_weights_g2,0,0,0,0,w##M#_ind,h##M#_ind);
     );
 
     # Adam optimizer.
@@ -23774,6 +23774,14 @@ nn_lib :
       draw(#$d#M#_v,d#M#_biases_v,w##M#_ind - 1,0,0,0,1,h##M#_ind);
     );
 
+    nn_optimizer_adam_update_conv2d(M) = (
+      nn_optimizer_adam_update_conv2d_or_fc(#M);
+    );
+
+    nn_optimizer_adam_update_fc(M) = (
+      nn_optimizer_adam_update_conv2d_or_fc(#M);
+    );
+
     nn_optimizer_adam_update_dict(M) = (
       d#M#_weights_m = crop(#$d#M#_m,0,0,w##M#_ind,h##M#_ind);
       d#M#_weights_v = crop(#$d#M#_v,0,0,w##M#_ind,h##M#_ind);
@@ -23781,14 +23789,6 @@ nn_lib :
       draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind,h##M#_ind);
       draw(#$d#M#_m,d#M#_weights_m,0,0,0,0,w##M#_ind,h##M#_ind);
       draw(#$d#M#_v,d#M#_weights_v,0,0,0,0,w##M#_ind,h##M#_ind);
-    );
-
-    nn_optimizer_adam_update_conv2d(M) = (
-      nn_optimizer_adam_update_conv2d_or_fc(#M);
-    );
-
-    nn_optimizer_adam_update_fc(M) = (
-      nn_optimizer_adam_update_conv2d_or_fc(#M);
     );
 
     # Adamax optimizer.
@@ -23826,6 +23826,14 @@ nn_lib :
       draw(#$d#M#_v,d#M#_biases_v,w##M#_ind - 1,0,0,0,1,h##M#_ind);
     );
 
+    nn_optimizer_adamax_update_conv2d(M) = (
+      nn_optimizer_adamax_update_conv2d_or_fc(#M);
+    );
+
+    nn_optimizer_adamax_update_fc(M) = (
+      nn_optimizer_adamax_update_conv2d_or_fc(#M);
+    );
+
     nn_optimizer_adamax_update_dict(M) = (
       d#M#_weights_m = crop(#$d#M#_m,0,0,w##M#_ind,h##M#_ind);
       d#M#_weights_v = crop(#$d#M#_v,0,0,w##M#_ind,h##M#_ind);
@@ -23833,14 +23841,6 @@ nn_lib :
       draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind,h##M#_ind);
       draw(#$d#M#_m,d#M#_weights_m,0,0,0,0,w##M#_ind,h##M#_ind);
       draw(#$d#M#_v,d#M#_weights_v,0,0,0,0,w##M#_ind,h##M#_ind);
-    );
-
-    nn_optimizer_adamax_update_conv2d(M) = (
-      nn_optimizer_adamax_update_conv2d_or_fc(#M);
-    );
-
-    nn_optimizer_adamax_update_fc(M) = (
-      nn_optimizer_adamax_update_conv2d_or_fc(#M);
     );
 
     #----------------
@@ -24880,7 +24880,7 @@ nn_trainer : nn_check_layer "$2"
     if '$type'=='batchnorm'
       _nn_update.="nn_optimizer_$4_update_"$type"("$name,$learning_mode");"
 
-    elif type='$type';type=='conv2d'||type=='fc'
+    elif type='$type';type=='conv2d'||type=='fc'||type=='dict'
       if $learning_mode
         _nn_update.="nn_optimizer_$4_update_"$type"("$name");"
       fi
