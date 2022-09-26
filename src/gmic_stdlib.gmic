@@ -24418,15 +24418,15 @@ nn_lib :
     #----------------
 
     # crossentropy : Cross entropy.
-    #--------------------------------
+    #------------------------------
     nn_loss_crossentropy_init_backward(L) = (
       batch_#L#_out = 0;
     );
 
     nn_loss_crossentropy_backward(L,IN,TRUTH) = (
-      const L#_epsilon = 1e-7;
-      L#_out = -sum(TRUTH*log(vmax(L#_epsilon,IN#_out)));
-      d#IN#_out = vsum((IN#_out - TRUTH)/vmax(L#_epsilon,IN#_out*(1 - IN#_out)));
+      L#_epsiloned = IN#_out + 1e-7;
+      L#_out = -sum(TRUTH*log(L#_epsiloned));
+      d#IN#_out = -TRUTH/L#_epsiloned;
       batch_#L#_out+=L#_out;
     );
 
