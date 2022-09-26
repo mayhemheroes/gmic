@@ -23529,8 +23529,8 @@ nn_lib :
     nn_activate_relu(Z) = _nn_activate_pointwise(Z,relu);
     nn_activate_d_relu(Z) = _nn_activate_pointwise(Z,d_relu);
 
-    # Sigmoid.
-    #---------
+    # Sigmoid (a.k.a Logistic).
+    #--------------------------
     nn_activation_sigmoid(z) = (0.5 + 0.5*tanh(z/2));
     nn_activation_d_sigmoid(z) = (_nn_sig = nn_activation_sigmoid(z); _nn_sig*(1 - _nn_sig));
     nn_activate_sigmoid(Z) = _nn_activate_pointwise(Z,sigmoid);
@@ -24291,6 +24291,23 @@ nn_lib :
       d#IN#_out*=d#M#_out;
     );
 
+    # Special case: Softmax function.
+    nn_layer_softmax_forward(M,IN) = (
+      M#_out = vector(#size(IN#_out));
+      M#_sumexp = 0;
+      fill(M#_out,M#_k,
+        _sm_val = exp(IN#_out[M#_k]);
+        M#_sumexp+=_sm_val;
+        _sm_val;
+      );
+      M#_out/=M#_sumexp;
+    );
+
+    nn_layer_softmax_backward(M,IN) = (
+      d#IN#_out = d#M#_out - dot(d#M#_out,M#_out);
+      d#IN#_out*=M#_out;
+    );
+
     # rename: Rename input.
     #----------------------
     nn_layer_rename_init_forward(M,IN) = (
@@ -24368,38 +24385,6 @@ nn_lib :
                          M#_out_width,M#_out_height,M#_out_depth,M#_out_spectrum,
                          IN#_out_width,IN#_out_height,IN#_out_depth,IN#_out_spectrum,
                          3);
-    );
-
-    # softmax: Softmax function.
-    #---------------------------
-    nn_layer_softmax_init_forward(M,IN) = (
-      const M#_out_width = IN#_out_width;
-      const M#_out_height = IN#_out_height;
-      const M#_out_depth = IN#_out_depth;
-      const M#_out_spectrum = IN#_out_spectrum;
-    );
-
-    nn_layer_softmax_forward(M,IN) = (
-      M#_out = vector(#size(IN#_out));
-      M#_sumexp = 0;
-      fill(M#_out,k,
-        _sm_val = exp(IN#_out[k]);
-        M#_sumexp+=_sm_val;
-        _sm_val;
-      );
-      M#_out/=M#_sumexp;
-    );
-
-    nn_layer_softmax_backward(M,IN) = (
-      d#IN#_out = vector(#size(IN#_out));
-      M#_fact = (M#_sumexp - 1)/M#_sumexp;
-      fill(d#IN#_out,i,
-        _sm_val = 0;
-        repeat(size(M#_out),j,
-          _sm_val+=d#M#_out[j]*(i!=j?-M#_out[j]/M#_sumexp:M#_out[i]*M#_fact);
-        );
-        _sm_val;
-      );
     );
 
     # split: Split input as two outputs.
@@ -24739,13 +24724,12 @@ nn_layer_nl : nn_check_layer "$2"
   _nn_modules_names.=$1,
   _nn_modules_types.=nl,
   _nn_$1_out_size=$_nn_$2_out_size
+  _nn_forward.="begin(nn_layer_nl_init_forward($1,$2));"
   if s=['$3'];s=='softmax'
-    _nn_forward.="begin(nn_layer_$3_init_forward($1,$2));"\
-                 "nn_layer_$3_forward($1,$2);"
+    _nn_forward.="nn_layer_$3_forward($1,$2);"
     _nn_backward..="nn_layer_$3_backward($1,$2);"
   else
-    _nn_forward.="begin(nn_layer_nl_init_forward($1,$2));"\
-                 "nn_layer_nl_forward($1,$2,$3);"
+    _nn_forward.="nn_layer_nl_forward($1,$2,$3);"
     _nn_backward..="nn_layer_nl_backward($1,$2,$3);"
   fi
   _nn_init.="$0 $* "
