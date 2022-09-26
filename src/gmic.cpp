@@ -9913,9 +9913,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Exception handling in local environments.
         if (!is_get && !std::strcmp("onfail",item)) {
           const CImg<char> &s = callstack.back();
-          if (s[0]!='*' || (s[1]!='l' && (s[1]!='f' || s[4]!='e')))
+          if (s[0]!='*' || s[1]!='l')
             error(true,images,0,0,
-                  "Command 'onfail': Not associated to a 'foreach' or 'local' command within the same scope.");
+                  "Command 'onfail': Not associated to a 'local' command within the same scope.");
           for (int nb_levels = 1; nb_levels && position<commands_line.size(); ++position) {
             it = commands_line[position].data();
             if (*it==1)
