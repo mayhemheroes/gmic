@@ -24293,14 +24293,8 @@ nn_lib :
 
     # Special case: Softmax.
     nn_layer_softmax_forward(M,IN) = (
-      M#_out = vector(#size(IN#_out));
-      M#_sumexp = 0;
-      fill(M#_out,M#_k,
-        _sm_val = exp(IN#_out[M#_k]);
-        M#_sumexp+=_sm_val;
-        _sm_val;
-      );
-      M#_out/=M#_sumexp;
+      M#_out = exp(IN#_out);
+      M#_out/=sum(M#_out);
     );
 
     nn_layer_softmax_backward(M,IN) = (
@@ -24449,6 +24443,27 @@ nn_lib :
     );
 
     nn_loss_mse_end_backward(L) = (
+      merge(batch_#L#_out,+);
+      batch_#L#_out/=nn_batch_size;
+      L#_out = batch_#L#_out;
+    );
+
+    # softmax_crossentropy : Softmax + cross entropy.
+    #------------------------------------------------
+    nn_loss_softmax_crossentropy_init_backward(L) = (
+      batch_#L#_out = 0;
+    );
+
+    nn_loss_softmax_crossentropy_backward(L,IN,TRUTH) = (
+      L#_softmax_out = exp(IN#_out);
+      L#_softmax_out/=sum(L#_softmax_out);
+      L#_softmax_out+=1e-7;
+      L#_out = -sum(TRUTH*log(L#_softmax_out));
+      d#IN#_out = L#_softmax_out - TRUTH;
+      batch_#L#_out+=L#_out;
+    );
+
+    nn_loss_softmax_crossentropy_end_backward(L) = (
       merge(batch_#L#_out,+);
       batch_#L#_out/=nn_batch_size;
       L#_out = batch_#L#_out;
@@ -24836,6 +24851,19 @@ nn_loss_mse : nn_check_layer "$2"
   _nn_backward..="begin(nn_loss_mse_init_backward($1));"\
                  "nn_loss_mse_backward(${1-3});"\
                  "end(nn_loss_mse_end_backward($1));"
+  _nn_init.="$0 $* "
+
+#@cli nn_loss_softmax_crossentropy : name,in,ground_truth
+#@cli : Add a 'softmax_crossentropy' loss to the network (softmax followed by cross entropy).
+nn_loss_softmax_crossentropy : nn_check_layer "$2"
+                               check "isvarname('$1') && isvarname('$3')"
+  e[^-1] "[nn_lib] Add softmax + cross entropy loss '$1', with input '$2' and ground truth '$3'."
+  _nn_modules_names.=$1,
+  _nn_modules_types.=loss_softmax_crossentropy,
+  _nn_$1_out_size=1,1,1,1
+  _nn_backward..="begin(nn_loss_softmax_crossentropy_init_backward($1));"\
+                 "nn_loss_softmax_crossentropy_backward(${1-3});"\
+                 "end(nn_loss_softmax_crossentropy_end_backward($1));"
   _nn_init.="$0 $* "
 
 #@cli nn_trainer : name,loss,_learning_rate>0,_optimizer,_scheduler
