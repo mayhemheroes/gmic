@@ -24432,20 +24432,20 @@ nn_lib :
     # Loss functions.
     #----------------
 
-    # bce : Binary cross entropy.
-    #-----------------------------
-    nn_loss_bce_init_backward(L) = (
+    # crossentropy : Cross entropy.
+    #--------------------------------
+    nn_loss_crossentropy_init_backward(L) = (
       batch_#L#_out = 0;
     );
 
-    nn_loss_bce_backward(L,IN,TRUTH) = (
+    nn_loss_crossentropy_backward(L,IN,TRUTH) = (
       const L#_epsilon = 1e-7;
-      L#_out = -sum(TRUTH*log(vmax(L#_epsilon,IN#_out)) + (1 - TRUTH)*log(vmax(L#_epsilon,1 - IN#_out)));
+      L#_out = -sum(TRUTH*log(vmax(L#_epsilon,IN#_out)));
       d#IN#_out = vsum((IN#_out - TRUTH)/vmax(L#_epsilon,IN#_out*(1 - IN#_out)));
       batch_#L#_out+=L#_out;
     );
 
-    nn_loss_bce_end_backward(L) = (
+    nn_loss_crossentropy_end_backward(L) = (
       merge(batch_#L#_out,+);
       batch_#L#_out/=nn_batch_size;
       L#_out = batch_#L#_out;
@@ -24828,17 +24828,17 @@ nn_layer_split : nn_check_layer "$3"
   _nn_backward..="nn_layer_split_backward($1,$2,$3);"
   _nn_init.="$0 $* "
 
-#@cli nn_loss_bce : name,in,ground_truth
-#@cli : Add a 'bce' loss to the network (binary cross entropy).
-nn_loss_bce : nn_check_layer "$2"
-              check "isvarname('$1') && isvarname('$3')"
-  e[^-1] "[nn_lib] Add BCE loss '$1', with input '$2' and ground truth '$3'."
+#@cli nn_loss_crossentropy : name,in,ground_truth
+#@cli : Add a 'crossentropy' loss to the network (cross entropy).
+nn_loss_crossentropy : nn_check_layer "$2"
+                       check "isvarname('$1') && isvarname('$3')"
+  e[^-1] "[nn_lib] Add cross entropy loss '$1', with input '$2' and ground truth '$3'."
   _nn_modules_names.=$1,
-  _nn_modules_types.=loss_bce,
+  _nn_modules_types.=loss_crossentropy,
   _nn_$1_out_size=1,1,1,1
-  _nn_backward..="begin(nn_loss_bce_init_backward($1));"\
-                 "nn_loss_bce_backward(${1-3});"\
-                 "end(nn_loss_bce_end_backward($1));"
+  _nn_backward..="begin(nn_loss_crossentropy_init_backward($1));"\
+                 "nn_loss_crossentropy_backward(${1-3});"\
+                 "end(nn_loss_crossentropy_end_backward($1));"
   _nn_init.="$0 $* "
 
 #@cli nn_loss_mse : name,in,ground_truth
