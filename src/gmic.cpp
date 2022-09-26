@@ -7927,7 +7927,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
             const unsigned int _position = position;
             int off = 0;
-            is_cond = false; // is_exception?
 
             cimg_forY(selection,l) {
               uind = selection[l] + off;
@@ -7954,7 +7953,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 cimg::mutex(27,0);
               }
 
-              const int o_verbosity = verbosity;
               gmic_exception exception;
               try {
                 if (next_debug_line!=~0U) { debug_line = next_debug_line; next_debug_line = ~0U; }
@@ -7976,25 +7974,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                       it+=(_is_get || *it=='-');
                       gmic_if_flr ++nb_levels;
                       else if (!_is_get && ((*it=='}' && !it[1]) || !std::strcmp("done",it))) --nb_levels;
-                      else if (!_is_get && nb_levels==1 && !std::strcmp("onfail",it)) break;
                     }
                   }
                 }
-                if (nb_levels==1 && position<commands_line.size()) { // Onfail block found
-                  verbosity = o_verbosity; // Restore verbosity
-                  if (is_very_verbose) print(images,0,"Reach 'onfail' block.");
-                  is_cond = true;
-                  try {
-                    _run(commands_line,++position,g_list,g_list_c,
-                         parent_images,parent_images_names,variables_sizes,is_noarg,0,0);
-                  } catch (gmic_exception &e2) {
-                    cimg::swap(exception._command,e2._command);
-                    cimg::swap(exception._message,e2._message);
-                  }
-                } else {
-                  cimg::swap(exception._command,e._command);
-                  cimg::swap(exception._message,e._message);
-                }
+                cimg::swap(exception._command,e._command);
+                cimg::swap(exception._message,e._message);
               }
 
               // Transfer back images to saved list of images.
@@ -8030,7 +8014,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
               cimg::mutex(27,0);
               if (exception._message) throw exception;
-              if (is_cond) break;
             }
 
             --nb_foreachdones;
@@ -9913,9 +9896,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Exception handling in local environments.
         if (!is_get && !std::strcmp("onfail",item)) {
           const CImg<char> &s = callstack.back();
-          if (s[0]!='*' || (s[1]!='l' && (s[1]!='f' || s[4]!='e')))
+          if (s[0]!='*' || s[1]!='l')
             error(true,images,0,0,
-                  "Command 'onfail': Not associated to a 'foreach' or 'local' command within the same scope.");
+                  "Command 'onfail': Not associated to a 'local' command within the same scope.");
           for (int nb_levels = 1; nb_levels && position<commands_line.size(); ++position) {
             it = commands_line[position].data();
             if (*it==1)
