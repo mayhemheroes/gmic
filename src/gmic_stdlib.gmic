@@ -24292,7 +24292,7 @@ nn_lib :
 
     # Special case: Softmax.
     nn_layer_softmax_forward(M,IN) = (
-      M#_out = exp(IN#_out);
+      M#_out = exp(IN#_out - max(IN#_out));
       M#_out/=sum(M#_out);
     );
 
@@ -24455,7 +24455,7 @@ nn_lib :
     );
 
     nn_loss_softmax_crossentropy_backward(L,IN,TRUTH) = (
-      L#_softmax_out = exp(IN#_out);
+      L#_softmax_out = exp(IN#_out - max(IN#_out));
       L#_softmax_out/=sum(L#_softmax_out);
       L#_softmax_out+=1e-7;
       L#_out = -sum(TRUTH*log(L#_softmax_out));
