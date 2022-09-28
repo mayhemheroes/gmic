@@ -24251,22 +24251,22 @@ nn_lib :
     nn_layer_maxpool2d_forward(M,IN) = (
       M#_out = vector(##M#_out_width*M#_out_height*M#_out_depth*M#_out_spectrum);
       M#_from = vector(#size(M#_out));
-      repeat (size(M#_out),_l,
-        _x = _l%M#_out_width;
-        _y = int(_l/M#_out_width)%M#_out_height;
-        _z = int(_l/(M#_out_width*M#_out_height))%M#_out_depth;
-        _c = int(_l/(M#_out_width*M#_out_height*M#_out_depth));
-        _k = 2*_x + IN#_out_width*(2*_y + IN#_out_height*(_z + IN#_out_depth*_c));
-        _k+=arg0(argmax([ IN#_out[_k,2],IN#_out[_k + IN#_out_width,2] ]),0,1,IN#_out_width,IN#_out_width + 1);
-        M#_from[_l] = _k;
-        M#_out[_l] = IN#_out[_k];
+      repeat (size(M#_out),_nn_l,
+        _nn_x = _nn_l%M#_out_width;
+        _nn_y = int(_nn_l/M#_out_width)%M#_out_height;
+        _nn_z = int(_nn_l/(M#_out_width*M#_out_height))%M#_out_depth;
+        _nn_c = int(_nn_l/(M#_out_width*M#_out_height*M#_out_depth));
+        _nn_k = 2*_nn_x + IN#_out_width*(2*_nn_y + IN#_out_height*(_nn_z + IN#_out_depth*_nn_c));
+        _nn_k+=arg0(argmax([ IN#_out[_nn_k,2],IN#_out[_nn_k + IN#_out_width,2] ]),0,1,IN#_out_width,IN#_out_width + 1);
+        M#_from[_nn_l] = _nn_k;
+        M#_out[_nn_l] = IN#_out[_nn_k];
       );
     );
 
     nn_layer_maxpool2d_backward(M,IN) = (
       d#IN#_out = vector(#size(IN#_out),0);
-      repeat (size(M#_out),_l,
-        d#IN#_out[M#_from[_l]] = d#M#_out[_l];
+      repeat (size(M#_out),_nn_l,
+        d#IN#_out[M#_from[_nn_l]] = d#M#_out[_nn_l];
       );
     );
 
@@ -24299,6 +24299,32 @@ nn_lib :
     nn_layer_softmax_backward(M,IN) = (
       d#IN#_out = d#M#_out - dot(d#M#_out,M#_out);
       d#IN#_out*=M#_out;
+    );
+
+    # nl: Patch-to-vector.
+    #---------------------
+    nn_layer_patch2vector_init_forward(M,IN,P) = (
+      const M#_out_width = int(IN#_out_width/P);
+      const M#_out_height = int(IN#_out_height/P);
+      const M#_out_depth = IN#_out_depth;
+      const M#_out_spectrum = P^2*IN#_out_spectrum;
+    );
+
+    nn_layer_patch2vector_forward(M,IN,P) = (
+      M#_out = vector(##M#_out_width*M#_out_height*M#_out_depth*M#_out_spectrum);
+      _nn_off = 0;
+      repeat (M#_out_height,_nn_y,
+        _nn_Py = P*_nn_y;
+        repeat (M#_out_width,_nn_x,
+          copy(M#_out[_nn_off++],crop(#0,P*_nn_x,_nn_Py,P,P,3),
+               M#_out_spectrum,M#_out_width*M#_out_height*M#_out_depth);
+        );
+      );
+    );
+
+    nn_layer_patch2vector_backward(M,IN,P) = (
+      d#IN#_out = IN#_out;
+      d#IN#_out = -pi;
     );
 
     # rename: Rename input.
@@ -24757,7 +24783,7 @@ nn_layer_maxpool2d : nn_check_layer "$2"
   e[^-1] "[nn_lib] Add 'maxpool2d' layer '$1', with input '$2'."
   _nn_modules_names.=$1,
   _nn_modules_types.=maxpool2d,
-  _nn_$1_out_size={s=[$_nn_$2_out_size];[int(s[0,2]/2),s[2,2]]}
+  _nn_$1_out_size:="s=["$_nn_$2_out_size"];[int(s[0,2]/2),s[2,2]]"
   _nn_forward.="begin(nn_layer_maxpool2d_init_forward($1,$2));"\
                "nn_layer_maxpool2d_forward($1,$2);"
   _nn_backward..="nn_layer_maxpool2d_backward($1,$2);"
@@ -24782,6 +24808,20 @@ nn_layer_nl : nn_check_layer "$2"
     _nn_forward.="nn_layer_nl_forward($1,$2,$3);"
     _nn_backward..="nn_layer_nl_backward($1,$2,$3);"
   fi
+  _nn_init.="$0 $* "
+
+#@cli nn_layer_patch2vector : name,in,_patch_size>1
+#@cli : Add a 'patch2vector' (patch-to-vector transformation) layer to the network.
+#@cli : Default value: '_patch_size=2'.
+nn_layer_patch2vector : nn_check_layer "$2"
+                        check "isvarname('$1') && isint(${3=2}) && $3>1"
+  e[^-1] "[nn_lib] Add 'patch2vector' layer '$1', with input '$2' and patch size $3."
+  _nn_modules_names.=$1,
+  _nn_modules_types.=patch2vector,
+  _nn_$1_out_size:="s=["$_nn_$2_out_size"];[int(s[0,2]/$3),s[2],s[3]*$3^2]"
+  _nn_forward.="begin(nn_layer_patch2vector_init_forward($1,$2,$3));"\
+               "nn_layer_patch2vector_forward($1,$2,$3);"
+  _nn_backward..="nn_layer_patch2vector_backward($1,$2,$3);"
   _nn_init.="$0 $* "
 
 #@cli nn_layer_rename : name,in
