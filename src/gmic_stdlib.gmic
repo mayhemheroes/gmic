@@ -24324,7 +24324,20 @@ nn_lib :
 
     nn_layer_patch2vector_backward(M,IN,P) = (
       d#IN#_out = vector(#size(IN#_out));
-      d#IN#_out = -pi;
+
+      _nn_off = 0;
+      repeat (IN#_out_spectrum,_nn_c,
+        repeat (P,_nn_l,
+          repeat (P,_nn_k,
+
+            repeat (M#_out_height,_nn_y,
+              repeat (M#_out_width,_nn_x,
+                d#IN#_out[_nn_k + _nn_x*P + (_nn_l + _nn_y*P)*IN#_out_width + _nn_c*IN#_out_width*IN#_out_height] = M#_out[_nn_off++];
+              );
+            );
+          );
+        );
+      );
     );
 
     # rename: Rename input.
