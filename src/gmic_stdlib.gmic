@@ -24819,6 +24819,9 @@ nn_layer_patch2vector : nn_check_layer "$2"
   _nn_modules_names.=$1,
   _nn_modules_types.=patch2vector,
   _nn_$1_out_size:="s=["$_nn_$2_out_size"];[int(s[0,2]/$3),s[2],s[3]*$3^2]"
+  if !min($_nn_$1_out_size)
+    error[0--3] "nn_layer_patch2vector: Specified patch size ($3) is higher than input size ("$_nn_$2_out_size")."
+  fi
   _nn_forward.="begin(nn_layer_patch2vector_init_forward($1,$2,$3));"\
                "nn_layer_patch2vector_forward($1,$2,$3);"
   _nn_backward..="nn_layer_patch2vector_backward($1,$2,$3);"
@@ -24845,7 +24848,7 @@ nn_layer_reshape : nn_check_layer "$2"
   _nn_modules_types.=reshape,
   _nn_$1_out_size=$3,$4,$5,$6
   if prod($_nn_$1_out_size)!=prod($_nn_$2_out_size)
-    error "nn_layer_reshape: Cannot reshape input ("$_nn_$2_out_size") to output ("$_nn_$1_out_size")."
+    error[0--3] "nn_layer_reshape: Cannot reshape input ("$_nn_$2_out_size") to output ("$_nn_$1_out_size")."
   fi
   _nn_forward.="begin(nn_layer_reshape_init_forward($1,$2,$3,$4,$5,$6));"
   _nn_backward..="begin(nn_layer_reshape_init_backward($1,$2));"
