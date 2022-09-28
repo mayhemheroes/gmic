@@ -24312,35 +24312,24 @@ nn_lib :
 
     nn_layer_patch2vector_forward(M,IN,P) = (
       M#_out = vector(##M#_out_width*M#_out_height*M#_out_depth*M#_out_spectrum);
-      repeat (M#_out_height,_nn_y,
-        _nn_Py = P*_nn_y;
-        _nn_chan = 0;
-        repeat (IN#_out_spectrum,_nn_c,
-          repeat (P,_nn_q,
-            repeat (P,_nn_p,
-              copy(M#_out[M#_out_width*(_nn_y + M#_out_height*M#_out_depth*_nn_chan++)],
-                   IN#_out[ _nn_p + IN#_out_width*(_nn_Py + _nn_q + IN#_out_height*IN#_out_depth*_nn_c) ],
+      _nn_off = 0;
+      repeat (IN#_out_spectrum,_nn_c,
+        repeat (P,_nn_q,
+          repeat (P,_nn_p,
+            repeat (M#_out_height,_nn_y,
+              copy(M#_out[_nn_off],
+                   IN#_out[_nn_p + IN#_out_width*(P*_nn_y + _nn_q + IN#_out_height*IN#_out_depth*_nn_c)],
                    M#_out_width,1,P);
-            );
-          );
-        );
+              _nn_off+=M#_out_width;
+            )
+          )
+        )
       );
     );
 
     nn_layer_patch2vector_backward(M,IN,P) = (
       d#IN#_out = vector(#size(IN#_out));
-      _nn_off = 0;
-      repeat (IN#_out_spectrum,_nn_c,
-        repeat (P,_nn_l,
-          repeat (P,_nn_k,
-            repeat (M#_out_height,_nn_y,
-              copy(d#IN#_out[_nn_k + (_nn_l + _nn_y*P + _nn_c*IN#_out_height)*IN#_out_width],
-                   d#M#_out[_nn_off],M#_out_width,P,1);
-              _nn_off+=M#_out_width;
-            );
-          );
-        );
-      );
+      d#IN#_out = -pi;
     );
 
     # vector2patch: Vector to patch.
@@ -24360,7 +24349,8 @@ nn_lib :
           repeat (P,_nn_p,
             repeat (IN#_out_height,_nn_y,
               copy(M#_out[ _nn_p + M#_out_width*(P*_nn_y + _nn_q + M#_out_height*M#_out_depth*_nn_c)],
-                   IN#_out[_nn_off],IN#_out_width,P,1);
+                   IN#_out[_nn_off],
+                   IN#_out_width,P,1);
               _nn_off+=IN#_out_width;
             );
           );
@@ -24371,16 +24361,6 @@ nn_lib :
     nn_layer_vector2patch_backward(M,IN,P) = (
       d#IN#_out = vector(#size(IN#_out));
       d#IN#_out = -pi;
-
-      # _nn_off = 0;
-      # repeat (M#_out_height,_nn_y,
-      #   _nn_Py = P*_nn_y;
-      #   repeat (M#_out_width,_nn_x,
-      #     copy(M#_out[_nn_off++],crop(#0,P*_nn_x,_nn_Py,P,P,3),
-      #          M#_out_spectrum,M#_out_width*M#_out_height*M#_out_depth);
-      #   );
-      # );
-
     );
 
     # rename: Rename input.
