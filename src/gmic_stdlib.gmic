@@ -24301,16 +24301,16 @@ nn_lib :
       d#IN#_out*=M#_out;
     );
 
-    # patch2vector: Patch to vector.
+    # patchdown: Downscale by patch.
     #-------------------------------
-    nn_layer_patch2vector_init_forward(M,IN,P) = (
+    nn_layer_patchdown_init_forward(M,IN,P) = (
       const M#_out_width = int(IN#_out_width/P);
       const M#_out_height = int(IN#_out_height/P);
       const M#_out_depth = IN#_out_depth;
       const M#_out_spectrum = P^2*IN#_out_spectrum;
     );
 
-    nn_layer_patch2vector_forward(M,IN,P) = (
+    nn_layer_patchdown_forward(M,IN,P) = (
       M#_out = vector(##M#_out_width*M#_out_height*M#_out_depth*M#_out_spectrum);
       _nn_off = 0;
       repeat (IN#_out_spectrum,_nn_c,
@@ -24327,7 +24327,7 @@ nn_lib :
       );
     );
 
-    nn_layer_patch2vector_backward(M,IN,P) = (
+    nn_layer_patchdown_backward(M,IN,P) = (
       d#IN#_out = vector(#size(IN#_out));
       _nn_off = 0;
       repeat (IN#_out_spectrum,_nn_c,
@@ -24344,16 +24344,16 @@ nn_lib :
       );
     );
 
-    # vector2patch: Vector to patch.
-    #-------------------------------
-    nn_layer_vector2patch_init_forward(M,IN,P) = (
+    # patchup: Upscale by patch.
+    #---------------------------
+    nn_layer_patchup_init_forward(M,IN,P) = (
       const M#_out_width = IN#_out_width*P;
       const M#_out_height = IN#_out_height*P;
       const M#_out_depth = IN#_out_depth;
       const M#_out_spectrum = IN#_out_spectrum/(P^2);
     );
 
-    nn_layer_vector2patch_forward(M,IN,P) = (
+    nn_layer_patchup_forward(M,IN,P) = (
       M#_out = vector(##M#_out_width*M#_out_height*M#_out_depth*M#_out_spectrum);
       _nn_off = 0;
       repeat (M#_out_spectrum,_nn_c,
@@ -24370,7 +24370,7 @@ nn_lib :
       );
     );
 
-    nn_layer_vector2patch_backward(M,IN,P) = (
+    nn_layer_patchup_backward(M,IN,P) = (
       d#IN#_out = vector(#size(IN#_out));
       _nn_off = 0;
       repeat (M#_out_spectrum,_nn_c,
@@ -24893,36 +24893,36 @@ nn_layer_nl : nn_check_layer "$2"
   fi
   _nn_init.="$0 $* "
 
-#@cli nn_layer_patch2vector : name,in,_patch_size>1
-#@cli : Add a 'patch2vector' (patch-to-vector transformation) layer to the network.
+#@cli nn_layer_patchdown : name,in,_patch_size>1
+#@cli : Add a 'patchdown' (downscale by patch) layer to the network.
 #@cli : Default value: '_patch_size=2'.
-nn_layer_patch2vector : nn_check_layer "$2"
+nn_layer_patchdown : nn_check_layer "$2"
                         check "isvarname('$1') && isint(${3=2}) && $3>1"
-  e[^-1] "[nn_lib] Add 'patch2vector' layer '$1', with input '$2' and patch size $3."
+  e[^-1] "[nn_lib] Add 'patchdown' layer '$1', with input '$2' and patch size $3."
   _nn_modules_names.=$1,
-  _nn_modules_types.=patch2vector,
+  _nn_modules_types.=patchdown,
   _nn_$1_out_size:="s=["$_nn_$2_out_size"];[int(s[0,2]/$3),s[2],s[3]*$3^2]"
   if !min($_nn_$1_out_size)
-    error[0--3] "Command 'nn_layer_patch2vector': Specified patch size ($3) is higher than "\
+    error[0--3] "Command 'nn_layer_patchdown': Specified patch size ($3) is higher than "\
                 "input size ("$_nn_$2_out_size")."
   fi
-  _nn_forward.="begin(nn_layer_patch2vector_init_forward($1,$2,$3));"\
-               "nn_layer_patch2vector_forward($1,$2,$3);"
-  _nn_backward..="nn_layer_patch2vector_backward($1,$2,$3);"
+  _nn_forward.="begin(nn_layer_patchdown_init_forward($1,$2,$3));"\
+               "nn_layer_patchdown_forward($1,$2,$3);"
+  _nn_backward..="nn_layer_patchdown_backward($1,$2,$3);"
   _nn_init.="$0 $* "
 
-#@cli nn_layer_vector2patch : name,in,_patch_size>1
-#@cli : Add a 'vector2patch' (vector-to-patch transformation) layer to the network.
+#@cli nn_layer_patchup : name,in,_patch_size>1
+#@cli : Add a 'patchup' (upscale by patch) layer to the network.
 #@cli : Default value: '_patch_size=2'.
-nn_layer_vector2patch : nn_check_layer "$2"
+nn_layer_patchup : nn_check_layer "$2"
                         check "isvarname('$1') && isint(${3=2}) && $3>1"
-  e[^-1] "[nn_lib] Add 'vector2patch' layer '$1', with input '$2' and patch size $3."
+  e[^-1] "[nn_lib] Add 'patchup' layer '$1', with input '$2' and patch size $3."
   _nn_modules_names.=$1,
-  _nn_modules_types.=vector2patch,
+  _nn_modules_types.=patchup,
   _nn_$1_out_size:="s=["$_nn_$2_out_size"];[int(s[0,2]*$3),s[2],s[3]/($3^2)]"
-  _nn_forward.="begin(nn_layer_vector2patch_init_forward($1,$2,$3));"\
-               "nn_layer_vector2patch_forward($1,$2,$3);"
-  _nn_backward..="nn_layer_vector2patch_backward($1,$2,$3);"
+  _nn_forward.="begin(nn_layer_patchup_init_forward($1,$2,$3));"\
+               "nn_layer_patchup_forward($1,$2,$3);"
+  _nn_backward..="nn_layer_patchup_backward($1,$2,$3);"
   _nn_init.="$0 $* "
 
 #@cli nn_layer_rename : name,in
