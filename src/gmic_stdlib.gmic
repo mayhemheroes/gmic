@@ -24321,15 +24321,27 @@ nn_lib :
                    IN#_out[_nn_p + IN#_out_width*(P*_nn_y + _nn_q + IN#_out_height*IN#_out_depth*_nn_c)],
                    M#_out_width,1,P);
               _nn_off+=M#_out_width;
-            )
-          )
-        )
+            );
+          );
+        );
       );
     );
 
     nn_layer_patch2vector_backward(M,IN,P) = (
       d#IN#_out = vector(#size(IN#_out));
-      d#IN#_out = -pi;
+      _nn_off = 0;
+      repeat (IN#_out_spectrum,_nn_c,
+        repeat (P,_nn_q,
+          repeat (P,_nn_p,
+            repeat (M#_out_height,_nn_y,
+              copy(d#IN#_out[ _nn_p + IN#_out_width*(P*_nn_y + _nn_q + IN#_out_height*IN#_out_depth*_nn_c)],
+                   d#M#_out[_nn_off],
+                   M#_out_width,P,1);
+              _nn_off+=M#_out_width;
+            );
+          );
+        );
+      );
     );
 
     # vector2patch: Vector to patch.
@@ -24360,7 +24372,19 @@ nn_lib :
 
     nn_layer_vector2patch_backward(M,IN,P) = (
       d#IN#_out = vector(#size(IN#_out));
-      d#IN#_out = -pi;
+      _nn_off = 0;
+      repeat (M#_out_spectrum,_nn_c,
+        repeat (P,_nn_q,
+          repeat (P,_nn_p,
+            repeat (IN#_out_height,_nn_y,
+              copy(IN#_out[_nn_off],
+                   M#_out[_nn_p + M#_out_width*(P*_nn_y + _nn_q + M#_out_height*M#_out_depth*_nn_c)],
+                   IN#_out_width,1,P);
+              _nn_off+=IN#_out_width;
+            );
+          );
+        );
+      );
     );
 
     # rename: Rename input.
