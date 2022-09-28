@@ -24312,24 +24312,19 @@ nn_lib :
 
     nn_layer_patch2vector_forward(M,IN,P) = (
       M#_out = vector(##M#_out_width*M#_out_height*M#_out_depth*M#_out_spectrum);
-      _nn_off = 0;
-
-      out(x,y,z,c) = M#_out[ x + M#_out_width*(y + M#_out_height*(z + M#_out_depth*c)) ];
-      in(x,y,z,c) = IN#_out[ x + IN#_out_width*(y + IN#_out_height*(z + IN#_out_depth*c)) ];
-
-      repeat (IN#_out_spectrum,_nn_c,
-        repeat (M#_out_height,_nn_y,
-          _nn_off = P*P*_nn_c;
+      repeat (M#_out_height,_nn_y,
+        _nn_Py = P*_nn_y;
+        _nn_chan = 0;
+        repeat (IN#_out_spectrum,_nn_c,
           repeat (P,_nn_q,
             repeat (P,_nn_p,
-              copy(out(0,_nn_y,0,_nn_off++),in(_nn_p,P*_nn_y + _nn_q,0,_nn_c),M#_out_width,1,P);
+              copy(M#_out[M#_out_width*(_nn_y + M#_out_height*M#_out_depth*_nn_chan++)],
+                   IN#_out[ _nn_p + IN#_out_width*(_nn_Py + _nn_q + IN#_out_height*IN#_out_depth*_nn_c) ],
+                   M#_out_width,1,P);
             );
           );
         );
       );
-
-
-
     );
 
     nn_layer_patch2vector_backward(M,IN,P) = (
