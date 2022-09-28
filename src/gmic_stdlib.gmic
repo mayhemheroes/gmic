@@ -24317,16 +24317,18 @@ nn_lib :
       out(x,y,z,c) = M#_out[ x + M#_out_width*(y + M#_out_height*(z + M#_out_depth*c)) ];
       in(x,y,z,c) = IN#_out[ x + IN#_out_width*(y + IN#_out_height*(z + IN#_out_depth*c)) ];
 
-      repeat (M#_out_spectrum,_nn_c,
+      repeat (IN#_out_spectrum,_nn_c,
         repeat (M#_out_height,_nn_y,
-          repeat (M#_out_width,_nn_x,
-            _nn_r = int(_nn_c/(P^2));
-            _nn_q = int((_nn_c%(P^2))/P);
-            _nn_p = _nn_c%P;
-            (out(_nn_x,_nn_y,0,_nn_c)) = in(P*_nn_x + _nn_p,P*_nn_y + _nn_q,0,_nn_r);
-          )
-        )
+          _nn_off = P*P*_nn_c;
+          repeat (P,_nn_q,
+            repeat (P,_nn_p,
+              copy(out(0,_nn_y,0,_nn_off++),in(_nn_p,P*_nn_y + _nn_q,0,_nn_c),M#_out_width,1,P);
+            );
+          );
+        );
       );
+
+
 
     );
 
