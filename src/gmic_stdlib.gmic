@@ -24496,7 +24496,30 @@ nn_lib :
     # Loss functions.
     #----------------
 
-    # crossentropy : Cross entropy.
+    # binary_crossentropy : Binary cross-entropy.
+    #--------------------------------------------
+    nn_loss_binary_crossentropy_init_forward(L) = (
+      batch_#L#_out = 0;
+    );
+
+    nn_loss_binary_crossentropy_forward(L,IN,TRUTH) = (
+      L#_epsiloned = IN#_out + 1e-7;
+      L#_epsiloned1 = 1 - IN#_out + 1e-7;
+      L#_out = -sum(TRUTH*log(L#_epsiloned) + (1 - TRUTH)*log(L#_epsiloned1));
+      batch_#L#_out+=L#_out;
+    );
+
+    nn_loss_binary_crossentropy_end_forward(L) = (
+      merge(batch_#L#_out,+);
+      batch_#L#_out/=nn_batch_size;
+      L#_out = batch_#L#_out;
+    );
+
+    nn_loss_binary_crossentropy_backward(L,IN,TRUTH) = (
+      d#IN#_out = (IN#_out - TRUTH)/(L#_epsiloned*L#_epsiloned1);
+    );
+
+    # crossentropy : Cross-entropy.
     #------------------------------
     nn_loss_crossentropy_init_forward(L) = (
       batch_#L#_out = 0;
@@ -24581,9 +24604,9 @@ nn_init :
 #@cli : Check that the layer with specified name exists in the network.
 nn_check_layer :
   if !isvarname('"$1"')
-    error[0--3] "nn_check_layer: Invalid layer name '$1'."
+    error[0--3] "Command 'nn_check_layer': Invalid layer name '$1'."
   elif narg($_nn_$1_out_size)!=4
-    error[0--3] "nn_check_layer: Layer with name '$1' does not exist."
+    error[0--3] "Command 'nn_check_layer': Layer with name '$1' does not exist."
   fi
 
 #@cli nn_layer_add : name,in0,in1
@@ -24607,7 +24630,7 @@ nn_layer_append : nn_check_layer "$2"
                   check "isvarname('$1')"
   e[^-1] "[nn_lib] Add 'append' layer '$1', with inputs '$2' and '$3'."
   if s1=[$_nn_$2_out_size];s2=[$_nn_$3_out_size];s1[0,3]!=s2[0,3]
-    error "nn_layer_append: Cannot append inputs $2("$_nn_$2_out_size") and $3("$_nn_$3_out_size") together."
+    error "Command 'nn_layer_append': Cannot append inputs $2("$_nn_$2_out_size") and $3("$_nn_$3_out_size") together."
   fi
   _nn_modules_names.=$1,
   _nn_modules_types.=append,
@@ -24880,7 +24903,8 @@ nn_layer_patch2vector : nn_check_layer "$2"
   _nn_modules_types.=patch2vector,
   _nn_$1_out_size:="s=["$_nn_$2_out_size"];[int(s[0,2]/$3),s[2],s[3]*$3^2]"
   if !min($_nn_$1_out_size)
-    error[0--3] "nn_layer_patch2vector: Specified patch size ($3) is higher than input size ("$_nn_$2_out_size")."
+    error[0--3] "Command 'nn_layer_patch2vector': Specified patch size ($3) is higher than "\
+                "input size ("$_nn_$2_out_size")."
   fi
   _nn_forward.="begin(nn_layer_patch2vector_init_forward($1,$2,$3));"\
                "nn_layer_patch2vector_forward($1,$2,$3);"
@@ -24922,7 +24946,7 @@ nn_layer_reshape : nn_check_layer "$2"
   _nn_modules_types.=reshape,
   _nn_$1_out_size=$3,$4,$5,$6
   if prod($_nn_$1_out_size)!=prod($_nn_$2_out_size)
-    error[0--3] "nn_layer_reshape: Cannot reshape input ("$_nn_$2_out_size") to output ("$_nn_$1_out_size")."
+    error[0--3] "Command 'nn_layer_reshape': Cannot reshape input ("$_nn_$2_out_size") to output ("$_nn_$1_out_size")."
   fi
   _nn_forward.="begin(nn_layer_reshape_init_forward($1,$2,$3,$4,$5,$6));"
   _nn_backward..="begin(nn_layer_reshape_init_backward($1,$2));"
@@ -24977,6 +25001,20 @@ nn_layer_split : nn_check_layer "$3"
   _nn_forward.="begin(nn_layer_split_init_forward($1,$2,$3,$4));"\
                "nn_layer_split_forward($1,$2,$3);"
   _nn_backward..="nn_layer_split_backward($1,$2,$3);"
+  _nn_init.="$0 $* "
+
+#@cli nn_loss_binary_crossentropy : name,in,ground_truth
+#@cli : Add a 'binary_crossentropy' loss to the network (binary cross entropy).
+nn_loss_binary_crossentropy : nn_check_layer "$2"
+                              check "isvarname('$1') && isvarname('$3')"
+  e[^-1] "[nn_lib] Add binary cross entropy loss '$1', with input '$2' and ground truth '$3'."
+  _nn_modules_names.=$1,
+  _nn_modules_types.=loss_binary_crossentropy,
+  _nn_$1_out_size=1,1,1,1
+  _nn_loss.="begin(nn_loss_binary_crossentropy_init_forward($1));"\
+            "nn_loss_binary_crossentropy_forward(${1-3});"\
+            "end(nn_loss_binary_crossentropy_end_forward($1));"
+  _nn_backward..="nn_loss_binary_crossentropy_backward(${1-3});"
   _nn_init.="$0 $* "
 
 #@cli nn_loss_crossentropy : name,in,ground_truth
@@ -25635,7 +25673,7 @@ pack : skip ${1=0},${2=max(w,h)}
   e[^-1] "Pack image$? into a single image."
   if $!<2 return fi
   if ${-max_d}>1 error[0--3] "Command '$0': Selected images contain at least one volumetric image (depth>1).
-                             Should all be 2D." fi
+                              Should all be 2D." fi
   nm={0,n} to_colormode 0
 
   # Sort images by decreasing size.
