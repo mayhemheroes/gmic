@@ -23471,6 +23471,7 @@ nn_lib :
     #---------------------------------------------------------------------------
     begin(
       const nn_nb_threads_max = n;
+      const nn_is_training = $_nn_is_training!=0; # works also when $_nn_is_training is nan, aka 'undefined'.
     );
 
     begin_t(
@@ -24204,14 +24205,13 @@ nn_lib :
       M#_weights = crop(##M#_ind,0,0,w##M#_ind - 1,h##M#_ind);
       M#_biases = crop(##M#_ind,w##M#_ind - 1,0,1,h##M#_ind);
 
-      !isnan($_nn_#M#_dropout)?(
+      nn_is_training && $_nn_#M#_dropout>0?(
         M#_dropout_biases = vector(#h##M#_ind);
         fill(M#_dropout_biases,u>=$_nn_#M#_dropout);
         M#_dropout_weights = resize(M#_dropout_biases,size(M#_weights),1);
         M#_weights*=M#_dropout_weights;
         M#_biases*=M#_dropout_biases;
       );
-
     );
 
     nn_layer_fc_forward(M,IN) = (
@@ -24237,7 +24237,7 @@ nn_lib :
       batch_d#M#_weights/=nn_batch_size;
       batch_d#M#_biases/=nn_batch_size;
 
-      !isnan($_nn_#M#_dropout)?(
+      nn_is_training && $_nn_#M#_dropout>0?(
         batch_d#M#_weights*=M#_dropout_weights;
         batch_d#M#_biases*=M#_dropout_biases;
       );
