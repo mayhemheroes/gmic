@@ -24203,6 +24203,15 @@ nn_lib :
       const M#_out_spectrum = h##M#_ind;
       M#_weights = crop(##M#_ind,0,0,w##M#_ind - 1,h##M#_ind);
       M#_biases = crop(##M#_ind,w##M#_ind - 1,0,1,h##M#_ind);
+
+      !isnan($_nn_#M#_dropout)?(
+        M#_dropout_biases = vector(#h##M#_ind);
+        fill(M#_dropout_biases,u>=$_nn_#M#_dropout);
+        M#_dropout_weights = resize(M#_dropout_biases,size(M#_weights),1);
+        M#_weights*=M#_dropout_weights;
+        M#_biases*=M#_dropout_biases;
+      );
+
     );
 
     nn_layer_fc_forward(M,IN) = (
@@ -24227,6 +24236,11 @@ nn_lib :
       merge(batch_d#M#_biases,+);
       batch_d#M#_weights/=nn_batch_size;
       batch_d#M#_biases/=nn_batch_size;
+
+      !isnan($_nn_#M#_dropout)?(
+        batch_d#M#_weights*=M#_dropout_weights;
+        batch_d#M#_biases*=M#_dropout_biases;
+      );
     );
 
     # input: Input image or vector data.
