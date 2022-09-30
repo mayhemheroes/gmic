@@ -24209,7 +24209,9 @@ nn_lib :
       M#_dropout_rate?(
         M#_dropout_biases = vector(#h##M#_ind);
         fill(M#_dropout_biases,u>=M#_dropout_rate);
-        M#_dropout_biases/=1 - M#_dropout_rate;
+        M#_dropout_sum = sum(M#_dropout_biases);
+        !M#_dropout_sum?(M#_dropout_biases = 1; M#_dropout_sum = size(M#_dropout_biases));
+        M#_dropout_biases/=sum(M#_dropout_biases)/size(M#_dropout_biases);
         M#_dropout_weights = resize(M#_dropout_biases,size(M#_weights),1);
         M#_weights*=M#_dropout_weights;
         M#_biases*=M#_dropout_biases;
