@@ -23680,6 +23680,10 @@ nn_lib :
     );
 
     nn_optimizer_sgd_update_conv2d_or_fc(M) = (
+      M#_dropout_rate?( # Re-read original weights in case of dropout
+        M#_weights = crop(##M#_ind,0,0,w##M#_ind - 1,h##M#_ind);
+        M#_biases = crop(##M#_ind,w##M#_ind - 1,0,1,h##M#_ind);
+      );
       nn_optimizer_sgd_update_weights(M#_weights);
       nn_optimizer_sgd_update_weights(M#_biases);
       draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind - 1,h##M#_ind);
@@ -23715,6 +23719,10 @@ nn_lib :
     );
 
     nn_optimizer_rmsprop_update_conv2d_or_fc(M) = (
+      M#_dropout_rate?( # Re-read original weights in case of dropout
+        M#_weights = crop(##M#_ind,0,0,w##M#_ind - 1,h##M#_ind);
+        M#_biases = crop(##M#_ind,w##M#_ind - 1,0,1,h##M#_ind);
+      );
       d#M#_weights_g2 = crop(#$d#M#_g2,0,0,w##M#_ind - 1,h##M#_ind);
       d#M#_biases_g2 = crop(#$d#M#_g2,w##M#_ind - 1,0,1,h##M#_ind);
       nn_optimizer_rmsprop_update_weights(M#_weights);
@@ -23763,6 +23771,10 @@ nn_lib :
     );
 
     nn_optimizer_adam_update_conv2d_or_fc(M) = (
+      M#_dropout_rate?( # Re-read original weights in case of dropout
+        M#_weights = crop(##M#_ind,0,0,w##M#_ind - 1,h##M#_ind);
+        M#_biases = crop(##M#_ind,w##M#_ind - 1,0,1,h##M#_ind);
+      );
       d#M#_weights_m = crop(#$d#M#_m,0,0,w##M#_ind - 1,h##M#_ind);
       d#M#_biases_m = crop(#$d#M#_m,w##M#_ind - 1,0,1,h##M#_ind);
       d#M#_weights_v = crop(#$d#M#_v,0,0,w##M#_ind - 1,h##M#_ind);
@@ -23815,6 +23827,10 @@ nn_lib :
     );
 
     nn_optimizer_adamax_update_conv2d_or_fc(M) = (
+      M#_dropout_rate?( # Re-read original weights in case of dropout
+        M#_weights = crop(##M#_ind,0,0,w##M#_ind - 1,h##M#_ind);
+        M#_biases = crop(##M#_ind,w##M#_ind - 1,0,1,h##M#_ind);
+      );
       d#M#_weights_m = crop(#$d#M#_m,0,0,w##M#_ind - 1,h##M#_ind);
       d#M#_biases_m = crop(#$d#M#_m,w##M#_ind - 1,0,1,h##M#_ind);
       d#M#_weights_v = crop(#$d#M#_v,0,0,w##M#_ind - 1,h##M#_ind);
@@ -24210,6 +24226,7 @@ nn_lib :
         M#_dropout_biases = vector(#h##M#_ind);
 #        fill(M#_dropout_biases,u>=M#_dropout_rate);
         fill(M#_dropout_biases,k,k<=size(M#_dropout_biases)/2);
+
         M#_dropout_sum = sum(M#_dropout_biases);
         !M#_dropout_sum?(M#_dropout_biases = 1; M#_dropout_sum = size(M#_dropout_biases));
         M#_dropout_biases/=sum(M#_dropout_biases)/size(M#_dropout_biases);
