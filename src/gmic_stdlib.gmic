@@ -24224,15 +24224,13 @@ nn_lib :
 
       M#_dropout_rate?(
         M#_dropout_biases = vector(#h##M#_ind);
-#        fill(M#_dropout_biases,u>=M#_dropout_rate);
-        fill(M#_dropout_biases,k,k<=size(M#_dropout_biases)/2);
-
+        fill(M#_dropout_biases,u>=M#_dropout_rate);
         M#_dropout_sum = sum(M#_dropout_biases);
         !M#_dropout_sum?(M#_dropout_biases = 1; M#_dropout_sum = size(M#_dropout_biases));
-        M#_dropout_biases/=sum(M#_dropout_biases)/size(M#_dropout_biases);
         M#_dropout_weights = resize(M#_dropout_biases,size(M#_weights),1);
-        M#_weights*=M#_dropout_weights;
-        M#_biases*=M#_dropout_biases;
+        M#_dropout_fact = size(M#_dropout_biases)/M#_dropout_sum;
+        (M#_weights*=M#_dropout_weights)*=M#_dropout_fact;
+        (M#_biases*=M#_dropout_biases)*=M#_dropout_fact;
       );
     );
 
@@ -24260,8 +24258,8 @@ nn_lib :
       batch_d#M#_biases/=nn_batch_size;
 
       M#_dropout_rate?(
-        batch_d#M#_weights*=M#_dropout_weights;
-        batch_d#M#_biases*=M#_dropout_biases;
+        (batch_d#M#_weights*=M#_dropout_weights)*=M#_dropout_fact;
+        (batch_d#M#_biases*=M#_dropout_biases)*=M#_dropout_fact;
       );
     );
 
