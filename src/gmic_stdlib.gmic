@@ -24096,14 +24096,25 @@ nn_lib :
       const M#_kernel_center = M#_kernel_size - 1 - int(M#_kernel_size/2);
       const M#_stride = stride;
       const M#_dilation = dilation;
+      const M#_dropout_rate = nn_is_training && $_nn_#M#_dropout>0?min($_nn_#M#_dropout,1):0;
       M#_weights = crop(##M#_ind,0,0,w##M#_ind - 1,h##M#_ind);
       M#_biases = crop(##M#_ind,w##M#_ind - 1,0,1,h##M#_ind);
       M#_out = vector(##M#_out_width*M#_out_height*M#_out_depth*h##M#_ind);
+
+      M#_dropout_rate?(
+        M#_dropout_biases = vector(#h##M#_ind);
+        fill(M#_dropout_biases,u>=M#_dropout_rate);
+        M#_dropout_sum = sum(M#_dropout_biases);
+        !M#_dropout_sum?(M#_dropout_biases = 1; M#_dropout_sum = size(M#_dropout_biases));
+        M#_dropout_weights = resize(M#_dropout_biases,size(M#_weights),1);
+        M#_dropout_fact = size(M#_dropout_biases)/M#_dropout_sum;
+        (M#_weights*=M#_dropout_weights)*=M#_dropout_fact;
+        (M#_biases*=M#_dropout_biases)*=M#_dropout_fact;
+      );
     );
 
     nn_layer_conv2d_forward(M,IN) = (
-      unref(_sizl);
-      const _sizl = size(M#_out)/M#_out_spectrum; # Size of output plane
+      const M#_sizl = size(M#_out)/M#_out_spectrum; # Size of output plane
       M#_out = convolve(IN#_out,
                         IN#_out_width,IN#_out_height,IN#_out_depth,IN#_out_spectrum,
                         M#_weights,
@@ -24115,7 +24126,7 @@ nn_lib :
                         M#_stride,M#_stride,1,
                         M#_dilation,M#_dilation,1);
       repeat (M#_out_spectrum,_l,
-        copy(M#_out[_l*_sizl],M#_biases[_l],_sizl,1,0,-1); # Add biases
+        copy(M#_out[_l*M#_sizl],M#_biases[_l],M#_sizl,1,0,-1); # Add biases
       );
     );
 
@@ -24125,17 +24136,15 @@ nn_lib :
     );
 
     nn_layer_conv2d_backward(M,IN) = (
-      unref(_sizk,_sizl,_sizw);
-      const _sizk = size(IN#_out)/IN#_out_spectrum; # Size of input plane
-      const _sizl = size(M#_out)/M#_out_spectrum;   # Size of output plane
-      const _sizw = M#_kernel_size^2;               # Size of kernel^2
+      const M#_sizk = size(IN#_out)/IN#_out_spectrum; # Size of input plane
+      const M#_sizw = M#_kernel_size^2;               # Size of kernel^2
 
       # Compute dM/dxk(x,y).
       M#_weights_mirrored = vector(#size(M#_weights));
       repeat (IN#_out_spectrum,_k,
         repeat (M#_out_spectrum,_l,
-          copy(M#_weights_mirrored[_k*M#_out_spectrum*_sizw + _l*_sizw + _sizw - 1],
-               M#_weights[_l*(w##M#_ind - 1) + _k*_sizw],_sizw,-1,1);
+          copy(M#_weights_mirrored[_k*M#_out_spectrum*M#_sizw + _l*M#_sizw + M#_sizw - 1],
+               M#_weights[_l*(w##M#_ind - 1) + _k*M#_sizw],M#_sizw,-1,1);
         );
       );
       d#IN#_out = convolve(d#M#_out,
@@ -24151,18 +24160,18 @@ nn_lib :
 
       # Compute dM/dbl.
       d#M#_biases = vector(#size(M#_biases));
-      fill(d#M#_biases,_l,sum(d#M#_out[_l*_sizl,_sizl]));
+      fill(d#M#_biases,_l,sum(d#M#_out[_l*M#_sizl,M#_sizl]));
       batch_d#M#_biases+=d#M#_biases;
 
       # Compute dM/dwlk.
-      M#_xk_mirrored = vector(#_sizk);
+      M#_xk_mirrored = vector(##M#_sizk);
       d#M#_weights = vector(#size(M#_weights));
       repeat (M#_out_spectrum,_l,
         repeat (IN#_out_spectrum,_k,
-          copy(M#_xk_mirrored[_sizk - 1],IN#_out[_k*_sizk],_sizk,-1,1);
+          copy(M#_xk_mirrored[M#_sizk - 1],IN#_out[_k*M#_sizk],M#_sizk,-1,1);
           M#_dwlk = convolve(M#_xk_mirrored,
                              IN#_out_width,IN#_out_height,IN#_out_depth,1,
-                             d#M#_out[_l*_sizl,_sizl],
+                             d#M#_out[_l*M#_sizl,M#_sizl],
                              M#_out_width,M#_out_height,M#_out_depth,1,
                              0,0,1,
                              1/M#_stride*(IN#_out_width - 1 - M#_dilation*M#_kernel_center),
@@ -24170,7 +24179,7 @@ nn_lib :
                              0,0,0,M#_kernel_size - 1,M#_kernel_size - 1,0,
                              M#_dilation,M#_dilation,1,
                              M#_stride,M#_stride,1);
-          copy(d#M#_weights[_l*(w##M#_ind - 1) + _k*_sizw],M#_dwlk,_sizw);
+          copy(d#M#_weights[_l*(w##M#_ind - 1) + _k*M#_sizw],M#_dwlk,M#_sizw);
         );
       );
       batch_d#M#_weights+=d#M#_weights;
@@ -24181,6 +24190,10 @@ nn_lib :
       merge(batch_d#M#_biases,+);
       batch_d#M#_weights/=nn_batch_size;
       batch_d#M#_biases/=nn_batch_size;
+      M#_dropout_rate?(
+        (batch_d#M#_weights*=M#_dropout_weights)*=M#_dropout_fact;
+        (batch_d#M#_biases*=M#_dropout_biases)*=M#_dropout_fact;
+      );
     );
 
     # crop : Crop layer.
@@ -24288,7 +24301,6 @@ nn_lib :
       merge(batch_d#M#_biases,+);
       batch_d#M#_weights/=nn_batch_size;
       batch_d#M#_biases/=nn_batch_size;
-
       M#_dropout_rate?(
         (batch_d#M#_weights*=M#_dropout_weights)*=M#_dropout_fact;
         (batch_d#M#_biases*=M#_dropout_biases)*=M#_dropout_fact;
@@ -24546,10 +24558,9 @@ nn_lib :
     );
 
     nn_layer_split_forward(M0,M1,IN) = (
-      unref(_siz0);
-      const siz0 = M0#_out_width*M0#_out_height*M0#_out_depth*M0#_out_spectrum;
-      M0#_out = IN#_out[0,siz0];
-      M1#_out = IN#_out[siz0,M1#_out_width*M1#_out_height*M1#_out_depth*M1#_out_spectrum];
+      const M0#_siz0 = M0#_out_width*M0#_out_height*M0#_out_depth*M0#_out_spectrum;
+      M0#_out = IN#_out[0,M0#_siz0];
+      M1#_out = IN#_out[M0#_siz0,M1#_out_width*M1#_out_height*M1#_out_depth*M1#_out_spectrum];
     );
 
     nn_layer_split_backward(M0,M1,IN) = (
