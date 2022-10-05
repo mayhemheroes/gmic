@@ -6293,7 +6293,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               error(true,images,0,callstack.back(),"Command '%s': Invalid argument '%s'.",
                     callstack.back().data(),_gmic_argument_text(parent_arguments,gmic_use_argument_text,true));
             else error(true,images,0,0,
-                       "Command 'check': Expression '%s' evaluated to false.",
+                       "Command 'check': Expression '%s' is false.",
                        gmic_argument_text());
           }
           ++position;
