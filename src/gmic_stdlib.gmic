@@ -4071,7 +4071,7 @@ _input_text :
 #@cli : Default values: 'width=height=800'.
 +lorem : check "isint(${1=800}) && $1>0 && isint(${2=$1}) && $2>0"
   e[^-1] "Input random image of size $1x$2."
-  i "https://picsum.photos/$1/$2" => lorem
+  i jpg:"https://picsum.photos/$1/$2" => lorem
 
 # Merge multi-lines (lines continued by backslash before NL) in a string image.
 merge_multiline :
@@ -23680,19 +23680,10 @@ nn_lib :
     );
 
     nn_optimizer_sgd_update_conv2d_or_fc(M) = (
-      M#_dropout_rate?( # Re-read original weights in case of dropout
-        M#_weights = crop(##M#_ind,0,0,w##M#_ind - 1,h##M#_ind);
-        M#_biases = crop(##M#_ind,w##M#_ind - 1,0,1,h##M#_ind);
-      );
       nn_optimizer_sgd_update_weights(M#_weights);
       nn_optimizer_sgd_update_weights(M#_biases);
-      M#_dropout_rate?(
-        draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind - 1,h##M#_ind,1,1,1,M#_dropout_weights);
-        draw(##M#_ind,M#_biases,w##M#_ind - 1,0,0,0,1,h##M#_ind,1,1,1,M#_dropout_biases);
-      ):(
-        draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind - 1,h##M#_ind);
-        draw(##M#_ind,M#_biases,w##M#_ind - 1,0,0,0,1,h##M#_ind);
-      ):
+      draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind - 1,h##M#_ind);
+      draw(##M#_ind,M#_biases,w##M#_ind - 1,0,0,0,1,h##M#_ind);
     );
 
     nn_optimizer_sgd_update_conv2d(M) = (
@@ -23724,26 +23715,14 @@ nn_lib :
     );
 
     nn_optimizer_rmsprop_update_conv2d_or_fc(M) = (
-      M#_dropout_rate?( # Re-read original weights in case of dropout
-        M#_weights = crop(##M#_ind,0,0,w##M#_ind - 1,h##M#_ind);
-        M#_biases = crop(##M#_ind,w##M#_ind - 1,0,1,h##M#_ind);
-      );
       d#M#_weights_g2 = crop(#$d#M#_g2,0,0,w##M#_ind - 1,h##M#_ind);
       d#M#_biases_g2 = crop(#$d#M#_g2,w##M#_ind - 1,0,1,h##M#_ind);
       nn_optimizer_rmsprop_update_weights(M#_weights);
       nn_optimizer_rmsprop_update_weights(M#_biases);
-
-      M#_dropout_rate?(
-        draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind - 1,h##M#_ind,1,1,1,M#_dropout_weights);
-        draw(##M#_ind,M#_biases,w##M#_ind - 1,0,0,0,1,h##M#_ind,1,1,1,M#_dropout_biases);
-        draw(#$d#M#_g2,d#M#_weights_g2,0,0,0,0,w##M#_ind - 1,h##M#_ind,1,1,1,M#_dropout_weights);
-        draw(#$d#M#_g2,d#M#_biases_g2,w##M#_ind - 1,0,0,0,1,h##M#_ind,1,1,1,M#_dropout_biases);
-      ):(
-        draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind - 1,h##M#_ind);
-        draw(##M#_ind,M#_biases,w##M#_ind - 1,0,0,0,1,h##M#_ind);
-        draw(#$d#M#_g2,d#M#_weights_g2,0,0,0,0,w##M#_ind - 1,h##M#_ind);
-        draw(#$d#M#_g2,d#M#_biases_g2,w##M#_ind - 1,0,0,0,1,h##M#_ind);
-      );
+      draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind - 1,h##M#_ind);
+      draw(##M#_ind,M#_biases,w##M#_ind - 1,0,0,0,1,h##M#_ind);
+      draw(#$d#M#_g2,d#M#_weights_g2,0,0,0,0,w##M#_ind - 1,h##M#_ind);
+      draw(#$d#M#_g2,d#M#_biases_g2,w##M#_ind - 1,0,0,0,1,h##M#_ind);
     );
 
     nn_optimizer_rmsprop_update_conv2d(M) = (
@@ -23784,32 +23763,18 @@ nn_lib :
     );
 
     nn_optimizer_adam_update_conv2d_or_fc(M) = (
-      M#_dropout_rate?( # Re-read original weights in case of dropout
-        M#_weights = crop(##M#_ind,0,0,w##M#_ind - 1,h##M#_ind);
-        M#_biases = crop(##M#_ind,w##M#_ind - 1,0,1,h##M#_ind);
-      );
       d#M#_weights_m = crop(#$d#M#_m,0,0,w##M#_ind - 1,h##M#_ind);
       d#M#_biases_m = crop(#$d#M#_m,w##M#_ind - 1,0,1,h##M#_ind);
       d#M#_weights_v = crop(#$d#M#_v,0,0,w##M#_ind - 1,h##M#_ind);
       d#M#_biases_v = crop(#$d#M#_v,w##M#_ind - 1,0,1,h##M#_ind);
       nn_optimizer_adam_update_weights(M#_weights);
       nn_optimizer_adam_update_weights(M#_biases);
-
-      M#_dropout_rate?(
-        draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind - 1,h##M#_ind,1,1,1,M#_dropout_weights);
-        draw(##M#_ind,M#_biases,w##M#_ind - 1,0,0,0,1,h##M#_ind,1,1,1,M#_dropout_biases);
-        draw(#$d#M#_m,d#M#_weights_m,0,0,0,0,w##M#_ind - 1,h##M#_ind,1,1,1,M#_dropout_weights);
-        draw(#$d#M#_m,d#M#_biases_m,w##M#_ind - 1,0,0,0,1,h##M#_ind,1,1,1,M#_dropout_biases);
-        draw(#$d#M#_v,d#M#_weights_v,0,0,0,0,w##M#_ind - 1,h##M#_ind,1,1,1,M#_dropout_weights);
-        draw(#$d#M#_v,d#M#_biases_v,w##M#_ind - 1,0,0,0,1,h##M#_ind,1,1,1,M#_dropout_biases);
-      ):(
-        draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind - 1,h##M#_ind);
-        draw(##M#_ind,M#_biases,w##M#_ind - 1,0,0,0,1,h##M#_ind);
-        draw(#$d#M#_m,d#M#_weights_m,0,0,0,0,w##M#_ind - 1,h##M#_ind);
-        draw(#$d#M#_m,d#M#_biases_m,w##M#_ind - 1,0,0,0,1,h##M#_ind);
-        draw(#$d#M#_v,d#M#_weights_v,0,0,0,0,w##M#_ind - 1,h##M#_ind);
-        draw(#$d#M#_v,d#M#_biases_v,w##M#_ind - 1,0,0,0,1,h##M#_ind);
-      );
+      draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind - 1,h##M#_ind);
+      draw(##M#_ind,M#_biases,w##M#_ind - 1,0,0,0,1,h##M#_ind);
+      draw(#$d#M#_m,d#M#_weights_m,0,0,0,0,w##M#_ind - 1,h##M#_ind);
+      draw(#$d#M#_m,d#M#_biases_m,w##M#_ind - 1,0,0,0,1,h##M#_ind);
+      draw(#$d#M#_v,d#M#_weights_v,0,0,0,0,w##M#_ind - 1,h##M#_ind);
+      draw(#$d#M#_v,d#M#_biases_v,w##M#_ind - 1,0,0,0,1,h##M#_ind);
     );
 
     nn_optimizer_adam_update_conv2d(M) = (
@@ -23850,31 +23815,18 @@ nn_lib :
     );
 
     nn_optimizer_adamax_update_conv2d_or_fc(M) = (
-      M#_dropout_rate?( # Re-read original weights in case of dropout
-        M#_weights = crop(##M#_ind,0,0,w##M#_ind - 1,h##M#_ind);
-        M#_biases = crop(##M#_ind,w##M#_ind - 1,0,1,h##M#_ind);
-      );
       d#M#_weights_m = crop(#$d#M#_m,0,0,w##M#_ind - 1,h##M#_ind);
       d#M#_biases_m = crop(#$d#M#_m,w##M#_ind - 1,0,1,h##M#_ind);
       d#M#_weights_v = crop(#$d#M#_v,0,0,w##M#_ind - 1,h##M#_ind);
       d#M#_biases_v = crop(#$d#M#_v,w##M#_ind - 1,0,1,h##M#_ind);
       nn_optimizer_adamax_update_weights(M#_weights);
       nn_optimizer_adamax_update_weights(M#_biases);
-      M#_dropout_rate?(
-        draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind - 1,h##M#_ind,1,1,1,M#_dropout_weights);
-        draw(##M#_ind,M#_biases,w##M#_ind - 1,0,0,0,1,h##M#_ind,1,1,1,M#_dropout_biases);
-        draw(#$d#M#_m,d#M#_weights_m,0,0,0,0,w##M#_ind - 1,h##M#_ind,1,1,1,M#_dropout_weights);
-        draw(#$d#M#_m,d#M#_biases_m,w##M#_ind - 1,0,0,0,1,h##M#_ind,1,1,1,M#_dropout_biases);
-        draw(#$d#M#_v,d#M#_weights_v,0,0,0,0,w##M#_ind - 1,h##M#_ind,1,1,1,M#_dropout_weights);
-        draw(#$d#M#_v,d#M#_biases_v,w##M#_ind - 1,0,0,0,1,h##M#_ind,1,1,1,M#_dropout_biases);
-      ):(
-        draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind - 1,h##M#_ind);
-        draw(##M#_ind,M#_biases,w##M#_ind - 1,0,0,0,1,h##M#_ind);
-        draw(#$d#M#_m,d#M#_weights_m,0,0,0,0,w##M#_ind - 1,h##M#_ind);
-        draw(#$d#M#_m,d#M#_biases_m,w##M#_ind - 1,0,0,0,1,h##M#_ind);
-        draw(#$d#M#_v,d#M#_weights_v,0,0,0,0,w##M#_ind - 1,h##M#_ind);
-        draw(#$d#M#_v,d#M#_biases_v,w##M#_ind - 1,0,0,0,1,h##M#_ind);
-      );
+      draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind - 1,h##M#_ind);
+      draw(##M#_ind,M#_biases,w##M#_ind - 1,0,0,0,1,h##M#_ind);
+      draw(#$d#M#_m,d#M#_weights_m,0,0,0,0,w##M#_ind - 1,h##M#_ind);
+      draw(#$d#M#_m,d#M#_biases_m,w##M#_ind - 1,0,0,0,1,h##M#_ind);
+      draw(#$d#M#_v,d#M#_weights_v,0,0,0,0,w##M#_ind - 1,h##M#_ind);
+      draw(#$d#M#_v,d#M#_biases_v,w##M#_ind - 1,0,0,0,1,h##M#_ind);
     );
 
     nn_optimizer_adamax_update_conv2d(M) = (
@@ -24096,21 +24048,9 @@ nn_lib :
       const M#_kernel_center = M#_kernel_size - 1 - int(M#_kernel_size/2);
       const M#_stride = stride;
       const M#_dilation = dilation;
-      const M#_dropout_rate = nn_is_training && $_nn_#M#_dropout>0?min($_nn_#M#_dropout,1):0;
       M#_weights = crop(##M#_ind,0,0,w##M#_ind - 1,h##M#_ind);
       M#_biases = crop(##M#_ind,w##M#_ind - 1,0,1,h##M#_ind);
       M#_out = vector(##M#_out_width*M#_out_height*M#_out_depth*h##M#_ind);
-
-      M#_dropout_rate?(
-        M#_dropout_biases = vector(#h##M#_ind);
-        fill(M#_dropout_biases,u>=M#_dropout_rate);
-        M#_dropout_sum = sum(M#_dropout_biases);
-        !M#_dropout_sum?(M#_dropout_biases = 1; M#_dropout_sum = size(M#_dropout_biases));
-        M#_dropout_weights = resize(M#_dropout_biases,size(M#_weights),1);
-        M#_dropout_fact = size(M#_dropout_biases)/M#_dropout_sum;
-        (M#_weights*=M#_dropout_weights)*=M#_dropout_fact;
-        (M#_biases*=M#_dropout_biases)*=M#_dropout_fact;
-      );
     );
 
     nn_layer_conv2d_forward(M,IN) = (
@@ -24190,10 +24130,6 @@ nn_lib :
       merge(batch_d#M#_biases,+);
       batch_d#M#_weights/=nn_batch_size;
       batch_d#M#_biases/=nn_batch_size;
-      M#_dropout_rate?(
-        (batch_d#M#_weights*=M#_dropout_weights)*=M#_dropout_fact;
-        (batch_d#M#_biases*=M#_dropout_biases)*=M#_dropout_fact;
-      );
     );
 
     # crop : Crop layer.
@@ -24255,6 +24191,26 @@ nn_lib :
       batch_d#M#_weights/=nn_batch_size;
     );
 
+    # dropout : Dropout layer (inplace).
+    #-----------------------------------
+    nn_layer_dropout_init_forward(M,rate) = (
+      const M#_dropout_rate = nn_is_training?cut(rate,0,1):0;
+      M#_dropout_channels = vector(##M#_out_spectrum);
+      fill(M#_dropout_channels,u>=M#_dropout_rate);
+      M#_dropout_sum = sum(M#_dropout_channels);
+      !M#_dropout_sum?(M#_dropout_channels = 1; M#_dropout_sum = size(M#_dropout_channels));
+      M#_dropout_mask = resize(M#_dropout_channels,size(M#_out),1);
+      M#_dropout_mask*=size(M#_dropout_channels)/M#_dropout_sum;
+    );
+
+    nn_layer_dropout_forward(M) = (
+      M#_out*=M#_dropout_mask;
+    );
+
+    nn_layer_dropout_backward(M) = (
+      d#M#_out*=M#_dropout_mask;
+    );
+
     # fc: Fully-connected layer.
     #---------------------------
     nn_layer_fc_init_forward(M) = (
@@ -24263,20 +24219,8 @@ nn_lib :
       const M#_out_height = 1;
       const M#_out_depth = 1;
       const M#_out_spectrum = h##M#_ind;
-      const M#_dropout_rate = nn_is_training && $_nn_#M#_dropout>0?min($_nn_#M#_dropout,1):0;
       M#_weights = crop(##M#_ind,0,0,w##M#_ind - 1,h##M#_ind);
       M#_biases = crop(##M#_ind,w##M#_ind - 1,0,1,h##M#_ind);
-
-      M#_dropout_rate?(
-        M#_dropout_biases = vector(#h##M#_ind);
-        fill(M#_dropout_biases,u>=M#_dropout_rate);
-        M#_dropout_sum = sum(M#_dropout_biases);
-        !M#_dropout_sum?(M#_dropout_biases = 1; M#_dropout_sum = size(M#_dropout_biases));
-        M#_dropout_weights = resize(M#_dropout_biases,size(M#_weights),1);
-        M#_dropout_fact = size(M#_dropout_biases)/M#_dropout_sum;
-        (M#_weights*=M#_dropout_weights)*=M#_dropout_fact;
-        (M#_biases*=M#_dropout_biases)*=M#_dropout_fact;
-      );
     );
 
     nn_layer_fc_forward(M,IN) = (
@@ -24301,10 +24245,6 @@ nn_lib :
       merge(batch_d#M#_biases,+);
       batch_d#M#_weights/=nn_batch_size;
       batch_d#M#_biases/=nn_batch_size;
-      M#_dropout_rate?(
-        (batch_d#M#_weights*=M#_dropout_weights)*=M#_dropout_fact;
-        (batch_d#M#_biases*=M#_dropout_biases)*=M#_dropout_fact;
-      );
     );
 
     # input: Input image or vector data.
@@ -24686,18 +24626,6 @@ nn_check_layer :
     error[0--3] "Command 'nn_check_layer': Layer with name '$1' does not exist."
   fi
 
-#@cli nn_dropout : 0<=drop_rate<1,name0,name1,...
-#@cli : Set dropout rate for specified layers.
-nn_dropout : check "inrange($1,0,1,1,0)"
-  e[^-1] "[nn_lib] Set dropout rate $1 to layer(s) ${2--1}."
-  $=arg
-  repeat $#-1 {
-    name=${arg{$>+2}} check isvarname(['$name'])
-    if isint(${$name}) _nn_${name}_dropout=$1
-    elif isint(${${name}_0}) _nn_${name}_0_dropout=$1
-    fi
-  }
-
 #@cli nn_layer_add : name,in0,in1
 #@cli : Add an 'add' layer to the network.
 nn_layer_add : nn_check_layer "$2"
@@ -24853,6 +24781,17 @@ nn_layer_dict : nn_check_layer "$2"
                  "nn_layer_dict_backward($1,$2);"\
                  "end(nn_layer_dict_end_backward($1));"
   _nn_init.="$0 $* "
+
+#@cli nn_layer_dropout : name,0<=dropout_rate<1
+#@cli : Add a 'dropout' layer (inplace) to the network.
+nn_layer_dropout : nn_check_layer "$1" check "inrange($2,0,1,1,0)"
+  e[^-1] "[nn_lib] Add 'dropout' layer to input '$1' with dropout rate $2."
+  if $2
+    _nn_forward.="begin(nn_layer_dropout_init_forward($1,$2));"\
+                 "nn_layer_dropout_forward($1);"
+    _nn_backward..="nn_layer_dropout_backward($1);"
+    _nn_init.="$0 $* "
+  fi
 
 #@cli nn_layer_input : name,width,_height,_depth,_spectrum
 #@cli : Add an 'input' layer to the network.
