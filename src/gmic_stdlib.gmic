@@ -24195,20 +24195,26 @@ nn_lib :
     #-----------------------------------
     nn_layer_dropout_init_forward(M,rate) = (
       const M#_dropout_rate = nn_is_training?cut(rate,0,1):0;
-      M#_dropout_channels = vector(##M#_out_spectrum);
-      fill(M#_dropout_channels,u>=M#_dropout_rate);
-      M#_dropout_sum = sum(M#_dropout_channels);
-      !M#_dropout_sum?(M#_dropout_channels = 1; M#_dropout_sum = size(M#_dropout_channels));
-      M#_dropout_mask = resize(M#_dropout_channels,size(M#_out),1);
-      M#_dropout_mask*=size(M#_dropout_channels)/M#_dropout_sum;
+      M#_dropout_rate?(
+        M#_dropout_channels = vector(##M#_out_spectrum);
+        fill(M#_dropout_channels,u>=M#_dropout_rate);
+        M#_dropout_sum = sum(M#_dropout_channels);
+        !M#_dropout_sum?(M#_dropout_channels = 1; M#_dropout_sum = size(M#_dropout_channels));
+        M#_dropout_mask = resize(M#_dropout_channels,size(M#_out),1);
+        M#_dropout_mask*=size(M#_dropout_channels)/M#_dropout_sum;
+      );
     );
 
     nn_layer_dropout_forward(M) = (
-      M#_out*=M#_dropout_mask;
+      M#_dropout_rate?(
+        M#_out*=M#_dropout_mask;
+      );
     );
 
     nn_layer_dropout_backward(M) = (
-      d#M#_out*=M#_dropout_mask;
+      M#_dropout_rate?(
+        d#M#_out*=M#_dropout_mask;
+      );
     );
 
     # fc: Fully-connected layer.
