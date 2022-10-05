@@ -24191,29 +24191,37 @@ nn_lib :
       batch_d#M#_weights/=nn_batch_size;
     );
 
-    # dropout : Dropout layer (inplace).
-    #-----------------------------------
-    nn_layer_dropout_init_forward(M,rate) = (
+    # dropout : Dropout layer.
+    #-------------------------
+    nn_layer_dropout_init_forward(M,IN,rate) = (
+      const M#_out_width = IN#_out_width;
+      const M#_out_height = IN#_out_height;
+      const M#_out_depth = IN#_out_depth;
+      const M#_out_spectrum = IN#_out_spectrum;
       const M#_dropout_rate = nn_is_training?cut(rate,0,1):0;
       M#_dropout_rate?(
-        M#_dropout_channels = vector(##M#_out_spectrum);
+        M#_dropout_channels = vector(##IN#_out_spectrum);
         fill(M#_dropout_channels,u>=M#_dropout_rate);
         M#_dropout_sum = sum(M#_dropout_channels);
         !M#_dropout_sum?(M#_dropout_channels = 1; M#_dropout_sum = size(M#_dropout_channels));
-        M#_dropout_mask = resize(M#_dropout_channels,size(M#_out),1);
+        M#_dropout_mask = resize(M#_dropout_channels,size(IN#_out),1);
         M#_dropout_mask*=size(M#_dropout_channels)/M#_dropout_sum;
       );
     );
 
-    nn_layer_dropout_forward(M) = (
+    nn_layer_dropout_forward(M,IN) = (
       M#_dropout_rate?(
-        M#_out*=M#_dropout_mask;
+        M#_out = IN#_out*M#_dropout_mask;
+      ):(
+        M#_out = IN#_out;
       );
     );
 
-    nn_layer_dropout_backward(M) = (
+    nn_layer_dropout_backward(M,IN) = (
       M#_dropout_rate?(
-        d#M#_out*=M#_dropout_mask;
+        d#IN#_out = d#M#_out*M#_dropout_mask;
+      ):(
+        d#IN#_out = d#M#_out;
       );
     );
 
@@ -24788,14 +24796,20 @@ nn_layer_dict : nn_check_layer "$2"
                  "end(nn_layer_dict_end_backward($1));"
   _nn_init.="$0 $* "
 
-#@cli nn_layer_dropout : name,0<=dropout_rate<1
-#@cli : Add a 'dropout' layer (inplace) to the network.
-nn_layer_dropout : nn_check_layer "$1" check "inrange($2,0,1,1,0)"
-  e[^-1] "[nn_lib] Add 'dropout' layer to input '$1' with dropout rate $2."
-  if $2
-    _nn_forward.="begin(nn_layer_dropout_init_forward($1,$2));"\
-                 "nn_layer_dropout_forward($1);"
-    _nn_backward..="nn_layer_dropout_backward($1);"
+#@cli nn_layer_dropout : name,in,0<=dropout_rate<1
+#@cli : Add a 'dropout' layer to the network.
+nn_layer_dropout : nn_check_layer "$2"
+                   check "isvarname('$1') && inrange($3,0,1,1,0)"
+  e[^-1] "[nn_lib] Add 'dropout' layer '$1', with input '$2' and dropout rate $3."
+  if !$3" || "0$_nn_is_training!=1
+    nn_layer_rename $1,$2
+  else
+    _nn_modules_names.=$1,
+    _nn_modules_types.=dropout,
+    _nn_$1_out_size=$_nn_$2_out_size
+    _nn_forward.="begin(nn_layer_dropout_init_forward($1,$2,$3));"\
+                 "nn_layer_dropout_forward($1,$2);"
+    _nn_backward..="nn_layer_dropout_backward($1,$2);"
     _nn_init.="$0 $* "
   fi
 
