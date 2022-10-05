@@ -23686,8 +23686,13 @@ nn_lib :
       );
       nn_optimizer_sgd_update_weights(M#_weights);
       nn_optimizer_sgd_update_weights(M#_biases);
-      draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind - 1,h##M#_ind);
-      draw(##M#_ind,M#_biases,w##M#_ind - 1,0,0,0,1,h##M#_ind);
+      M#_dropout_rate?(
+        draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind - 1,h##M#_ind,1,1,1,M#_dropout_weights);
+        draw(##M#_ind,M#_biases,w##M#_ind - 1,0,0,0,1,h##M#_ind,1,1,1,M#_dropout_biases);
+      ):(
+        draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind - 1,h##M#_ind);
+        draw(##M#_ind,M#_biases,w##M#_ind - 1,0,0,0,1,h##M#_ind);
+      ):
     );
 
     nn_optimizer_sgd_update_conv2d(M) = (
@@ -23727,12 +23732,15 @@ nn_lib :
       d#M#_biases_g2 = crop(#$d#M#_g2,w##M#_ind - 1,0,1,h##M#_ind);
       nn_optimizer_rmsprop_update_weights(M#_weights);
       nn_optimizer_rmsprop_update_weights(M#_biases);
-      draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind - 1,h##M#_ind);
-      draw(##M#_ind,M#_biases,w##M#_ind - 1,0,0,0,1,h##M#_ind);
+
       M#_dropout_rate?(
+        draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind - 1,h##M#_ind,1,1,1,M#_dropout_weights);
+        draw(##M#_ind,M#_biases,w##M#_ind - 1,0,0,0,1,h##M#_ind,1,1,1,M#_dropout_biases);
         draw(#$d#M#_g2,d#M#_weights_g2,0,0,0,0,w##M#_ind - 1,h##M#_ind,1,1,1,M#_dropout_weights);
         draw(#$d#M#_g2,d#M#_biases_g2,w##M#_ind - 1,0,0,0,1,h##M#_ind,1,1,1,M#_dropout_biases);
       ):(
+        draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind - 1,h##M#_ind);
+        draw(##M#_ind,M#_biases,w##M#_ind - 1,0,0,0,1,h##M#_ind);
         draw(#$d#M#_g2,d#M#_weights_g2,0,0,0,0,w##M#_ind - 1,h##M#_ind);
         draw(#$d#M#_g2,d#M#_biases_g2,w##M#_ind - 1,0,0,0,1,h##M#_ind);
       );
@@ -23786,12 +23794,22 @@ nn_lib :
       d#M#_biases_v = crop(#$d#M#_v,w##M#_ind - 1,0,1,h##M#_ind);
       nn_optimizer_adam_update_weights(M#_weights);
       nn_optimizer_adam_update_weights(M#_biases);
-      draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind - 1,h##M#_ind);
-      draw(##M#_ind,M#_biases,w##M#_ind - 1,0,0,0,1,h##M#_ind);
-      draw(#$d#M#_m,d#M#_weights_m,0,0,0,0,w##M#_ind - 1,h##M#_ind);
-      draw(#$d#M#_m,d#M#_biases_m,w##M#_ind - 1,0,0,0,1,h##M#_ind);
-      draw(#$d#M#_v,d#M#_weights_v,0,0,0,0,w##M#_ind - 1,h##M#_ind);
-      draw(#$d#M#_v,d#M#_biases_v,w##M#_ind - 1,0,0,0,1,h##M#_ind);
+
+      M#_dropout_rate?(
+        draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind - 1,h##M#_ind,1,1,1,M#_dropout_weights);
+        draw(##M#_ind,M#_biases,w##M#_ind - 1,0,0,0,1,h##M#_ind,1,1,1,M#_dropout_biases);
+        draw(#$d#M#_m,d#M#_weights_m,0,0,0,0,w##M#_ind - 1,h##M#_ind,1,1,1,M#_dropout_weights);
+        draw(#$d#M#_m,d#M#_biases_m,w##M#_ind - 1,0,0,0,1,h##M#_ind,1,1,1,M#_dropout_biases);
+        draw(#$d#M#_v,d#M#_weights_v,0,0,0,0,w##M#_ind - 1,h##M#_ind,1,1,1,M#_dropout_weights);
+        draw(#$d#M#_v,d#M#_biases_v,w##M#_ind - 1,0,0,0,1,h##M#_ind,1,1,1,M#_dropout_biases);
+      ):(
+        draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind - 1,h##M#_ind);
+        draw(##M#_ind,M#_biases,w##M#_ind - 1,0,0,0,1,h##M#_ind);
+        draw(#$d#M#_m,d#M#_weights_m,0,0,0,0,w##M#_ind - 1,h##M#_ind);
+        draw(#$d#M#_m,d#M#_biases_m,w##M#_ind - 1,0,0,0,1,h##M#_ind);
+        draw(#$d#M#_v,d#M#_weights_v,0,0,0,0,w##M#_ind - 1,h##M#_ind);
+        draw(#$d#M#_v,d#M#_biases_v,w##M#_ind - 1,0,0,0,1,h##M#_ind);
+      );
     );
 
     nn_optimizer_adam_update_conv2d(M) = (
@@ -23842,12 +23860,21 @@ nn_lib :
       d#M#_biases_v = crop(#$d#M#_v,w##M#_ind - 1,0,1,h##M#_ind);
       nn_optimizer_adamax_update_weights(M#_weights);
       nn_optimizer_adamax_update_weights(M#_biases);
-      draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind - 1,h##M#_ind);
-      draw(##M#_ind,M#_biases,w##M#_ind - 1,0,0,0,1,h##M#_ind);
-      draw(#$d#M#_m,d#M#_weights_m,0,0,0,0,w##M#_ind - 1,h##M#_ind);
-      draw(#$d#M#_m,d#M#_biases_m,w##M#_ind - 1,0,0,0,1,h##M#_ind);
-      draw(#$d#M#_v,d#M#_weights_v,0,0,0,0,w##M#_ind - 1,h##M#_ind);
-      draw(#$d#M#_v,d#M#_biases_v,w##M#_ind - 1,0,0,0,1,h##M#_ind);
+      M#_dropout_rate?(
+        draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind - 1,h##M#_ind,1,1,1,M#_dropout_weights);
+        draw(##M#_ind,M#_biases,w##M#_ind - 1,0,0,0,1,h##M#_ind,1,1,1,M#_dropout_biases);
+        draw(#$d#M#_m,d#M#_weights_m,0,0,0,0,w##M#_ind - 1,h##M#_ind,1,1,1,M#_dropout_weights);
+        draw(#$d#M#_m,d#M#_biases_m,w##M#_ind - 1,0,0,0,1,h##M#_ind,1,1,1,M#_dropout_biases);
+        draw(#$d#M#_v,d#M#_weights_v,0,0,0,0,w##M#_ind - 1,h##M#_ind,1,1,1,M#_dropout_weights);
+        draw(#$d#M#_v,d#M#_biases_v,w##M#_ind - 1,0,0,0,1,h##M#_ind,1,1,1,M#_dropout_biases);
+      ):(
+        draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind - 1,h##M#_ind);
+        draw(##M#_ind,M#_biases,w##M#_ind - 1,0,0,0,1,h##M#_ind);
+        draw(#$d#M#_m,d#M#_weights_m,0,0,0,0,w##M#_ind - 1,h##M#_ind);
+        draw(#$d#M#_m,d#M#_biases_m,w##M#_ind - 1,0,0,0,1,h##M#_ind);
+        draw(#$d#M#_v,d#M#_weights_v,0,0,0,0,w##M#_ind - 1,h##M#_ind);
+        draw(#$d#M#_v,d#M#_biases_v,w##M#_ind - 1,0,0,0,1,h##M#_ind);
+      );
     );
 
     nn_optimizer_adamax_update_conv2d(M) = (
@@ -24234,15 +24261,14 @@ nn_lib :
         !M#_dropout_sum?(M#_dropout_biases = 1; M#_dropout_sum = size(M#_dropout_biases));
         M#_dropout_weights = resize(M#_dropout_biases,size(M#_weights),1);
         M#_dropout_fact = size(M#_dropout_biases)/M#_dropout_sum;
-        M#_weights*=M#_dropout_weights;
-        M#_biases*=M#_dropout_biases;
+        (M#_weights*=M#_dropout_weights)*=M#_dropout_fact;
+        (M#_biases*=M#_dropout_biases)*=M#_dropout_fact;
       );
     );
 
     nn_layer_fc_forward(M,IN) = (
       M#_out = mul(M#_weights,IN#_out);
       M#_out+=M#_biases;
-      M#_dropout_rate?(M#_out*=M#_dropout_fact);
     );
 
     nn_layer_fc_init_backward(M) = (
@@ -24252,7 +24278,6 @@ nn_lib :
 
     nn_layer_fc_backward(M,IN) = (
       d#IN#_out = mul(transpose(M#_weights,size(IN#_out)),d#M#_out);
-      M#_dropout_rate?(d#IN#_out*=M#_dropout_fact);
       d#M#_weights = mul(d#M#_out,IN#_out,size(IN#_out));
       batch_d#M#_weights+=d#M#_weights;
       batch_d#M#_biases+=d#M#_out;
