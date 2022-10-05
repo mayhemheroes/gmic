@@ -24213,7 +24213,7 @@ nn_lib :
       M#_dropout_rate?(
         M#_out = IN#_out*M#_dropout_mask;
       ):(
-        M#_out = IN#_out;
+        ref(IN#_out,M#_out);
       );
     );
 
@@ -24221,7 +24221,7 @@ nn_lib :
       M#_dropout_rate?(
         d#IN#_out = d#M#_out*M#_dropout_mask;
       ):(
-        d#IN#_out = d#M#_out;
+        ref(d#M#_out,d#IN#_out);
       );
     );
 
@@ -24801,17 +24801,13 @@ nn_layer_dict : nn_check_layer "$2"
 nn_layer_dropout : nn_check_layer "$2"
                    check "isvarname('$1') && inrange($3,0,1,1,0)"
   e[^-1] "[nn_lib] Add 'dropout' layer '$1', with input '$2' and dropout rate $3."
-  if !$3" || "0$_nn_is_training!=1
-    nn_layer_rename $1,$2
-  else
-    _nn_modules_names.=$1,
-    _nn_modules_types.=dropout,
-    _nn_$1_out_size=$_nn_$2_out_size
-    _nn_forward.="begin(nn_layer_dropout_init_forward($1,$2,$3));"\
-                 "nn_layer_dropout_forward($1,$2);"
-    _nn_backward..="nn_layer_dropout_backward($1,$2);"
-    _nn_init.="$0 $* "
-  fi
+  _nn_modules_names.=$1,
+  _nn_modules_types.=dropout,
+  _nn_$1_out_size=$_nn_$2_out_size
+  _nn_forward.="begin(nn_layer_dropout_init_forward($1,$2,$3));"\
+               "nn_layer_dropout_forward($1,$2);"
+  _nn_backward..="nn_layer_dropout_backward($1,$2);"
+  _nn_init.="$0 $* "
 
 #@cli nn_layer_input : name,width,_height,_depth,_spectrum
 #@cli : Add an 'input' layer to the network.
