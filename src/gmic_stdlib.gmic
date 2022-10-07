@@ -25145,21 +25145,21 @@ nn_trainer : nn_check_layer "$2"
     learning_mode=${_nn_${name}_learning_mode}
 
     if type='$type';type=='conv2d'||type=='fc'||type=='dict'||type=='normalize'
-      if $learning_mode
-        _nn_update.="nn_optimizer_$4_update_"$type"("$name,$learning_mode");"
-      fi
+      _nn_update.="nn_optimizer_$4_update_"$type"("$name,$learning_mode");"
 
       # Allocate data for storing optimizer extra data (moments,...).
-      if '$4'=='rmsprop'
-        dname_g2=d${name}_g2
-        if !isint(${$dname_g2}) +f[$name] 0 => $dname_g2 fi
-        _nn_additional_data.=$dname_g2,
+      if $learning_mode
+        if '$4'=='rmsprop'
+          dname_g2=d${name}_g2
+          if !isint(${$dname_g2}) +f[$name] 0 => $dname_g2 fi
+          _nn_additional_data.=$dname_g2,
 
-      elif isin('$4','adam','adamax')
-        dname_m,dname_v=d${name}_m,d${name}_v
-        if !isint(${$dname_m}) +f[$name] 0 => $dname_m fi
-        if !isint(${$dname_v}) +f[$name] 0 => $dname_v fi
-        _nn_additional_data.=$dname_m,$dname_v,
+        elif isin('$4','adam','adamax')
+          dname_m,dname_v=d${name}_m,d${name}_v
+          if !isint(${$dname_m}) +f[$name] 0 => $dname_m fi
+          if !isint(${$dname_v}) +f[$name] 0 => $dname_v fi
+          _nn_additional_data.=$dname_m,$dname_v,
+        fi
       fi
     fi
   }
