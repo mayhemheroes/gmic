@@ -23653,17 +23653,16 @@ nn_lib :
 
     # Generic.
     #---------
-    nn_optimizer_generic_update_batchnorm(O,M,learning_mode) = (
-      M#_momentum = lerp(1,1e-5,tanh(nn_iteration/100));
-      draw(##M#_ind,M#_in_mean,0,0,0,0,1,h##M#_ind,1,1,M#_momentum);
-      draw(##M#_ind,M#_in_variance,1,0,0,0,1,h##M#_ind,1,1,M#_momentum);
+    nn_optimize_generic_update_normalize(O,M,learning_mode) = (
+      i[##M#_ind,2] = lerp(M#_avg,batch_#M#_avg,0.1);
+      i[##M#_ind,3] = lerp(M#_var,batch_#M#_var,0.1);
       learning_mode&1?(
-        nn_optimizer_#O#_update_weights(M#_gamma);
-        draw(##M#_ind,M#_gamma,2,0,0,0,1,h##M#_ind);
+        nn_optimizer_#O#_update_weights(M#_alpha);
+        i[##M#_ind,0] = M#_alpha;
       );
       learning_mode&2?(
         nn_optimizer_#O#_update_weights(M#_beta);
-        draw(##M#_ind,M#_beta,3,0,0,0,1,h##M#_ind);
+        i[##M#_ind,1] = M#_beta;
       );
     );
 
@@ -23675,10 +23674,6 @@ nn_lib :
       W#-=nn_learning_rate*batch_d#W;
     );
 
-    nn_optimizer_sgd_update_batchnorm(M,learning_mode) = (
-      nn_optimizer_generic_update_batchnorm(sgd,#M,#learning_mode);
-    );
-
     nn_optimizer_sgd_update_conv2d_or_fc(M) = (
       nn_optimizer_sgd_update_weights(M#_weights);
       nn_optimizer_sgd_update_weights(M#_biases);
@@ -23686,17 +23681,23 @@ nn_lib :
       draw(##M#_ind,M#_biases,w##M#_ind - 1,0,0,0,1,h##M#_ind);
     );
 
-    nn_optimizer_sgd_update_conv2d(M) = (
-      nn_optimizer_sgd_update_conv2d_or_fc(#M);
+    nn_optimizer_sgd_update_conv2d(M,learning_mode) = (
+      learning_mode?nn_optimizer_sgd_update_conv2d_or_fc(#M);
     );
 
-    nn_optimizer_sgd_update_fc(M) = (
-      nn_optimizer_sgd_update_conv2d_or_fc(#M);
+    nn_optimizer_sgd_update_dict(M,learning_mode) = (
+      learning_mode?(
+        nn_optimizer_sgd_update_weights(M#_weights);
+        draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind,h##M#_ind);
+      );
     );
 
-    nn_optimizer_sgd_update_dict(M) = (
-      nn_optimizer_sgd_update_weights(M#_weights);
-      draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind,h##M#_ind);
+    nn_optimizer_sgd_update_fc(M,learning_mode) = (
+      learning_mode?nn_optimizer_sgd_update_conv2d_or_fc(#M);
+    );
+
+    nn_optimizer_sgd_update_normalize(M,learning_mode) = (
+      nn_optimizer_generic_update_normalize(sgd,#M,#learning_mode);
     );
 
     # RMSprop optimizer.
@@ -23710,10 +23711,6 @@ nn_lib :
       W#-=nn_learning_rate*batch_d#W/sqrt(1e-8 + d#W#_g2);
     );
 
-    nn_optimizer_rmsprop_update_batchnorm(M,learning_mode) = (
-      nn_optimizer_generic_update_batchnorm(rmsprop,#M,#learning_mode);
-    );
-
     nn_optimizer_rmsprop_update_conv2d_or_fc(M) = (
       d#M#_weights_g2 = crop(#$d#M#_g2,0,0,w##M#_ind - 1,h##M#_ind);
       d#M#_biases_g2 = crop(#$d#M#_g2,w##M#_ind - 1,0,1,h##M#_ind);
@@ -23725,19 +23722,27 @@ nn_lib :
       draw(#$d#M#_g2,d#M#_biases_g2,w##M#_ind - 1,0,0,0,1,h##M#_ind);
     );
 
-    nn_optimizer_rmsprop_update_conv2d(M) = (
-      nn_optimizer_rmsprop_update_conv2d_or_fc(#M);
+    nn_optimizer_rmsprop_update_conv2d(M,learning_mode) = (
+      learning_mode?nn_optimizer_rmsprop_update_conv2d_or_fc(#M);
     );
 
-    nn_optimizer_rmsprop_update_fc(M) = (
-      nn_optimizer_rmsprop_update_conv2d_or_fc(#M);
+    nn_optimizer_rmsprop_update_fc(M,learning_mode) = (
+      learning_mode?nn_optimizer_rmsprop_update_conv2d_or_fc(#M);
     );
 
-    nn_optimizer_rmsprop_update_dict(M) = (
-      d#M#_weights_g2 = crop(#$d#M#_g2,0,0,w##M#_ind,h##M#_ind);
-      nn_optimizer_rmsprop_update_weights(M#_weights);
-      draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind,h##M#_ind);
-      draw(#$d#M#_g2,d#M#_weights_g2,0,0,0,0,w##M#_ind,h##M#_ind);
+    nn_optimizer_rmsprop_update_dict(M,learning_mode) = (
+      learning_mode?(
+        d#M#_weights_g2 = crop(#$d#M#_g2,0,0,w##M#_ind,h##M#_ind);
+        nn_optimizer_rmsprop_update_weights(M#_weights);
+        draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind,h##M#_ind);
+        draw(#$d#M#_g2,d#M#_weights_g2,0,0,0,0,w##M#_ind,h##M#_ind);
+      );
+    );
+
+    nn_optimizer_rmsprop_update_normalize(M,learning_mode) = (
+      d#M#_alpha_g2 = i[#$d#M#_g2,0];
+      d#M#_beta_g2 = i[#$d#M#_g2,1];
+      nn_optimizer_generic_update_normalize(rmsprop,#M,#learning_mode);
     );
 
     # Adam optimizer.
@@ -23758,10 +23763,6 @@ nn_lib :
       W#-=nn_learning_rate*nn_optimizer_adam_alpha_t*d#W#_m/sqrt(1e-8 + d#W#_v);
     );
 
-    nn_optimizer_adam_update_batchnorm(M,learning_mode) = (
-      nn_optimizer_generic_update_batchnorm(adam,#M,#learning_mode);
-    );
-
     nn_optimizer_adam_update_conv2d_or_fc(M) = (
       d#M#_weights_m = crop(#$d#M#_m,0,0,w##M#_ind - 1,h##M#_ind);
       d#M#_biases_m = crop(#$d#M#_m,w##M#_ind - 1,0,1,h##M#_ind);
@@ -23777,21 +23778,31 @@ nn_lib :
       draw(#$d#M#_v,d#M#_biases_v,w##M#_ind - 1,0,0,0,1,h##M#_ind);
     );
 
-    nn_optimizer_adam_update_conv2d(M) = (
-      nn_optimizer_adam_update_conv2d_or_fc(#M);
+    nn_optimizer_adam_update_conv2d(M,learning_mode) = (
+      learning_mode?nn_optimizer_adam_update_conv2d_or_fc(#M);
     );
 
-    nn_optimizer_adam_update_fc(M) = (
-      nn_optimizer_adam_update_conv2d_or_fc(#M);
+    nn_optimizer_adam_update_fc(M,learning_mode) = (
+      learning_mode?nn_optimizer_adam_update_conv2d_or_fc(#M);
     );
 
-    nn_optimizer_adam_update_dict(M) = (
-      d#M#_weights_m = crop(#$d#M#_m,0,0,w##M#_ind,h##M#_ind);
-      d#M#_weights_v = crop(#$d#M#_v,0,0,w##M#_ind,h##M#_ind);
-      nn_optimizer_adam_update_weights(M#_weights);
-      draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind,h##M#_ind);
-      draw(#$d#M#_m,d#M#_weights_m,0,0,0,0,w##M#_ind,h##M#_ind);
-      draw(#$d#M#_v,d#M#_weights_v,0,0,0,0,w##M#_ind,h##M#_ind);
+    nn_optimizer_adam_update_dict(M,learning_mode) = (
+      learning_mode?(
+        d#M#_weights_m = crop(#$d#M#_m,0,0,w##M#_ind,h##M#_ind);
+        d#M#_weights_v = crop(#$d#M#_v,0,0,w##M#_ind,h##M#_ind);
+        nn_optimizer_adam_update_weights(M#_weights);
+        draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind,h##M#_ind);
+        draw(#$d#M#_m,d#M#_weights_m,0,0,0,0,w##M#_ind,h##M#_ind);
+        draw(#$d#M#_v,d#M#_weights_v,0,0,0,0,w##M#_ind,h##M#_ind);
+      );
+    );
+
+    nn_optimizer_adam_update_normalize(M,learning_mode) = (
+      d#M#_alpha_m = i[#$d#M#_m,0];
+      d#M#_beta_m = i[#$d#M#_m,1];
+      d#M#_alpha_v = i[#$d#M#_v,0];
+      d#M#_beta_v = i[#$d#M#_v,1];
+      nn_optimizer_generic_update_normalize(adam,#M,#learning_mode);
     );
 
     # Adamax optimizer.
@@ -23810,10 +23821,6 @@ nn_lib :
       W#-=(nn_learning_rate/nn_optimizer_adamax_ombeta1_t)*d#W#_m/sqrt(1e-8 + d#W#_v);
     );
 
-    nn_optimizer_adamax_update_batchnorm(M,learning_mode) = (
-      nn_optimizer_generic_update_batchnorm(adamax,#M,#learning_mode);
-    );
-
     nn_optimizer_adamax_update_conv2d_or_fc(M) = (
       d#M#_weights_m = crop(#$d#M#_m,0,0,w##M#_ind - 1,h##M#_ind);
       d#M#_biases_m = crop(#$d#M#_m,w##M#_ind - 1,0,1,h##M#_ind);
@@ -23829,21 +23836,31 @@ nn_lib :
       draw(#$d#M#_v,d#M#_biases_v,w##M#_ind - 1,0,0,0,1,h##M#_ind);
     );
 
-    nn_optimizer_adamax_update_conv2d(M) = (
-      nn_optimizer_adamax_update_conv2d_or_fc(#M);
+    nn_optimizer_adamax_update_conv2d(M,learning_mode) = (
+      learning_mode?nn_optimizer_adamax_update_conv2d_or_fc(#M);
     );
 
-    nn_optimizer_adamax_update_fc(M) = (
-      nn_optimizer_adamax_update_conv2d_or_fc(#M);
+    nn_optimizer_adamax_update_fc(M,learning_mode) = (
+      learning_mode?nn_optimizer_adamax_update_conv2d_or_fc(#M);
     );
 
-    nn_optimizer_adamax_update_dict(M) = (
-      d#M#_weights_m = crop(#$d#M#_m,0,0,w##M#_ind,h##M#_ind);
-      d#M#_weights_v = crop(#$d#M#_v,0,0,w##M#_ind,h##M#_ind);
-      nn_optimizer_adamax_update_weights(M#_weights);
-      draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind,h##M#_ind);
-      draw(#$d#M#_m,d#M#_weights_m,0,0,0,0,w##M#_ind,h##M#_ind);
-      draw(#$d#M#_v,d#M#_weights_v,0,0,0,0,w##M#_ind,h##M#_ind);
+    nn_optimizer_adamax_update_dict(M,learning_mode) = (
+      learning_mode?(
+        d#M#_weights_m = crop(#$d#M#_m,0,0,w##M#_ind,h##M#_ind);
+        d#M#_weights_v = crop(#$d#M#_v,0,0,w##M#_ind,h##M#_ind);
+        nn_optimizer_adamax_update_weights(M#_weights);
+        draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind,h##M#_ind);
+        draw(#$d#M#_m,d#M#_weights_m,0,0,0,0,w##M#_ind,h##M#_ind);
+        draw(#$d#M#_v,d#M#_weights_v,0,0,0,0,w##M#_ind,h##M#_ind);
+      );
+    );
+
+    nn_optimizer_adamax_update_normalize(M,learning_mode) = (
+      d#M#_alpha_m = i[#$d#M#_m,0];
+      d#M#_beta_m = i[#$d#M#_m,1];
+      d#M#_alpha_v = i[#$d#M#_v,0];
+      d#M#_beta_v = i[#$d#M#_v,1];
+      nn_optimizer_generic_update_normalize(adamax,#M,#learning_mode);
     );
 
     #----------------
@@ -23920,98 +23937,6 @@ nn_lib :
                             0.5,0.5,1,
                             1,1,1,
                             0);
-    );
-
-    # batchnorm: Batch-normalization layer.
-    #---------------------------------------
-    nn_layer_batchnorm_init_forward(M,IN) = (
-      const M#_ind = $M#;
-      const M#_out_width = IN#_out_width;
-      const M#_out_height = IN#_out_height;
-      const M#_out_depth = IN#_out_depth;
-      const M#_out_spectrum = IN#_out_spectrum;
-      const M#_out_whd = M#_out_width*M#_out_height*M#_out_depth;
-      M#_mu = crop(##M#_ind,0,0,1,h##M#_ind);
-      M#_sigma = crop(##M#_ind,1,0,1,h##M#_ind);
-      M#_gamma = crop(##M#_ind,2,0,1,h##M#_ind);
-      M#_beta = crop(##M#_ind,3,0,1,h##M#_ind);
-      M#_out = vector(#size(IN#_out));
-      M#_mu_whds = resize(M#_mu,size(M#_out),1);
-      M#_sigma_whds = resize(sqrt(M#_sigma + 1e-9),size(M#_out),1);
-      M#_gamma_whds = resize(M#_gamma,size(M#_out),1);
-      M#_beta_whds = resize(M#_beta,size(M#_out),1);
-    );
-
-    nn_layer_batchnorm_forward(M,IN) = (
-      M#_xhat = IN#_out;
-      M#_xhat-=M#_mu_whds;
-      M#_xhat/=M#_sigma_whds;
-      M#_out = M#_gamma_whds*M#_xhat;
-      M#_out+=M#_beta_whds;
-    );
-
-    nn_layer_batchnorm_init_backward(M) = (
-      M#_threads_nbs = vector(#nn_nb_threads_max);
-      M#_threads_mus = vector(#nn_nb_threads_max*M#_out_spectrum);
-      M#_threads_sigmas = vector(#nn_nb_threads_max*M#_out_spectrum);
-      batch_d#M#_gamma = vector(##M#_out_spectrum);
-      batch_d#M#_beta = vector(##M#_out_spectrum);
-    );
-
-    nn_layer_batchnorm_backward(M,IN,learning_mode) = (
-      M#_nb1 = M#_threads_nbs[nn_thread_id];
-      M#_mu1 = M#_threads_mus[nn_thread_id*M#_out_spectrum,M#_out_spectrum];
-      M#_sigma1 = M#_threads_sigmas[nn_thread_id*M#_out_spectrum,M#_out_spectrum];
-      M#_mu2 = vector(##M#_out_spectrum);
-      M#_sigma2 = vector(##M#_out_spectrum);
-      repeat (M#_out_spectrum,_k,
-        M#_feature = IN#_out[_k*M#_out_whd,M#_out_whd];
-        M#_mu2[_k] = avg(M#_feature);
-        M#_sigma2[_k] = var(M#_feature);
-      );
-      M#_nbc = ++M#_threads_nbs[nn_thread_id];
-      M#_in_mean = M#_mu1 + (M#_mu2 - M#_mu1)/M#_nbc;
-      M#_in_variance = M#_sigma1 + (M#_sigma2 - M#_sigma1 +
-                                    M#_nb1*(M#_mu1 - M#_in_mean)^2 + (M#_mu2 - M#_in_mean)^2)/M#_nbc;
-      copy(M#_threads_mus[nn_thread_id*M#_out_spectrum],M#_in_mean);
-      copy(M#_threads_sigmas[nn_thread_id*M#_out_spectrum],M#_in_variance);
-
-      learning_mode&1?( # Learn gamma
-        M#_tmp = d#M#_out*M#_xhat;
-        repeat(M#_out_spectrum,_k,batch_d#M#_gamma[_k]+=sum(M#_tmp[_k*M#_out_whd,M#_out_whd]));
-      );
-      learning_mode&2?( # Learn beta
-        repeat(M#_out_spectrum,_k,batch_d#M#_beta[_k]+=sum(d#M#_out[_k*M#_out_whd,M#_out_whd]));
-      );
-
-      d#IN#_out = d#M#_out*M#_gamma_whds;
-      d#IN#_out/=M#_sigma_whds;
-    );
-
-    nn_layer_batchnorm_end_backward(M) = (
-      merge(batch_d#M#_gamma,+);
-      merge(batch_d#M#_beta,+);
-      d#M#_gamma/=nn_batch_size;
-      d#M#_beta/=nn_batch_size;
-
-      merge(M#_threads_nbs,+);
-      merge(M#_threads_mus,+);
-      merge(M#_threads_sigmas,+);
-      M#_nbc = 0;
-      M#_in_mean = 0;
-      M#_in_variance = 0;
-      repeat (size(M#_threads_nbs),_k,
-        M#_nb1 = M#_nbc;
-        M#_mu1 = M#_in_mean;
-        M#_sigma1 = M#_in_variance;
-        M#_nb2 = M#_threads_nbs[_k];
-        M#_mu2 = M#_threads_mus[_k*size(M#_mu2),size(M#_mu2)];
-        M#_sigma2 = M#_threads_sigmas[_k*size(M#_mu2),size(M#_mu2)];
-        M#_nbc = M#_nb1 + M#_nb2;
-        M#_in_mean = (M#_nb1*M#_mu1 + M#_nb2*M#_mu2)/M#_nbc;
-        M#_in_variance = (M#_nb1*(M#_sigma1 + (M#_mu1 - M#_in_mean)^2) +
-                          M#_nb2*(M#_sigma2 + (M#_mu2 - M#_in_mean)^2))/M#_nbc;
-      );
     );
 
     # clone: Duplicate input as two new outputs.
@@ -24331,6 +24256,50 @@ nn_lib :
     nn_layer_softmax_backward(M,IN) = (
       d#IN#_out = d#M#_out - dot(d#M#_out,M#_out);
       d#IN#_out*=M#_out;
+    );
+
+    # normalize: Layer normalization.
+    #--------------------------------
+    nn_layer_normalize_init_forward(M,IN) = (
+      const M#_ind = $M#;
+      const M#_out_width = IN#_out_width;
+      const M#_out_height = IN#_out_height;
+      const M#_out_depth = IN#_out_depth;
+      const M#_out_spectrum = IN#_out_spectrum;
+      M#_alpha = i[##M#_ind,0];
+      M#_beta = i[##M#_ind,1];
+      M#_avg = i[##M#_ind,2];
+      M#_var = i[##M#_ind,3];
+      M#_std = sqrt(M#_var) + 1e-7;
+    );
+
+    nn_layer_normalize_forward(M,IN) = (
+      M#_out = IN#_out - M#_avg;
+      M#_out*=M#_alpha/M#_std;
+      M#_out+=M#_beta;
+    );
+
+    nn_layer_normalize_init_backward(M) = (
+      batch_d#M#_alpha = batch_d#M#_beta = batch_#M#_avg = batch_#M#_var = 0;
+    );
+
+    nn_layer_normalize_backward(M,IN) = (
+      d#IN#_out = d#M#_out*M#_alpha/M#_std;
+      batch_d#M#_alpha+=dot(d#M#_out,IN#_out);
+      batch_d#M#_beta+=sum(d#M#_out);
+      batch_#M#_avg+=avg(IN#_out);
+      batch_#M#_var+=var(IN#_out);
+    );
+
+    nn_layer_normalize_end_backward(M) = (
+      merge(batch_d#M#_alpha,+);
+      merge(batch_d#M#_beta,+);
+      merge(batch_#M#_avg,+);
+      merge(batch_#M#_var,+);
+      batch_d#M#_alpha/=nn_batch_size;
+      batch_d#M#_beta/=nn_batch_size;
+      batch_#M#_avg/=nn_batch_size;
+      batch_#M#_var/=nn_batch_size;
     );
 
     # patchdown: Downscale by patch.
@@ -24684,26 +24653,6 @@ nn_layer_avgpool2d : nn_check_layer "$2"
   _nn_backward..="nn_layer_avgpool2d_backward($1,$2);"
   _nn_init.="$0 $* "
 
-#@cli nn_layer_batchnorm : name,in,_learning_mode.
-#@cli : Add a 'batchnorm' layer to the network.
-#@cli : 'learning_mode' can be { 0=learn no parameters | 1=learn gamma | 2=learn beta | 3=learn gamma and beta}.
-#@cli : Default value: 'learning_mode=3'.
-nn_layer_batchnorm : nn_check_layer "$2"
-                     check "isvarname('$1') && isint(${3=3}) && inrange($3,0,3)"
-  s0,s1,s2,s3="no parameters","gamma-only","beta-only","gamma & beta"
-  e[^-1] "[nn_lib] Add 'batchnorm' layer '$1' to the network, with input '$2' and learning mode '"${s$3}"'."
-  _nn_modules_names.=$1,
-  _nn_modules_types.=batchnorm,
-  _nn_$1_out_size=$_nn_$2_out_size
-  _nn_$1_learning_mode=$3
-  if !isint($$1) 4,{[$_nn_$2_out_size][3]} f. 0,1,1,0 => $1 fi
-  _nn_forward.="begin(nn_layer_batchnorm_init_forward($1,$2));"\
-               "nn_layer_batchnorm_forward($1,$2);"
-  _nn_backward..="begin(nn_layer_batchnorm_init_backward($1));"\
-                 "nn_layer_batchnorm_backward($1,$2,$3);"\
-                 "end(nn_layer_batchnorm_end_backward($1));"
-  _nn_init.="$0 $* "
-
 #@cli nn_layer_clone : name0,name1,in
 #@cli : Add a 'clone' layer to the network.
 nn_layer_clone : nn_check_layer "$3"
@@ -24736,20 +24685,6 @@ nn_layer_conv2d : nn_check_layer "$2"
                  "nn_layer_conv2d_backward($1,$2);"\
                  "end(nn_layer_conv2d_end_backward($1));"
   _nn_init.="$0 $* "
-
-#@cli nn_layer_conv2dbnnl : name,in,nb_channels>0,_kernel_size>0,_stride>0,_dilation>0,_activation,\
-# _is_learned={ 0 | 1 }
-#@cli : Add a 'con2dbnnl' (2D convolutional layer followed by a batchnorm, then a non-linearity), to the network.
-#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1', 'activation=leakyrelu' and 'is_learned=1'.
-nn_layer_conv2dbnnl : nn_check_layer "$2"
-                      check "isvarname('$1') && isint($3) && $3>0 && isint(${4=3}) && $4>0 && ${5=1}>0 && "\
-                            "isbool(${8=1})"
-                      skip "${6=1}","${7=leakyrelu}"
-  e[^-1] "[nn_lib] Add 'conv2d+bn+nl' layer '$1', with input '$2', $3 channels, $4x$4 kernels, "\
-         "stride $5, dilation $6 and '$7' activation."
-  nn_layer_conv2d $1_0,$2,$3,$4,$5,$6,$8
-  nn_layer_batchnorm $1_1,$1_0
-  nn_layer_nl $1,$1_1,$7
 
 #@cli nn_layer_conv2dnl : name,in,nb_channels>0,_kernel_size>0,_stride>0,_dilation>0,_activation,\
 # _is_learned={ 0 | 1 }
@@ -24839,17 +24774,6 @@ nn_layer_fc : nn_check_layer "$2"
                  "end(nn_layer_fc_end_backward($1));"
   _nn_init.="$0 $* "
 
-#@cli nn_layer_fcbnnl : name,in,nb_neurons>0,_activation,_is_learned={ 0 | 1 }
-#@cli : Add a 'fcbnnl' layer (fully connected layer followed by batchnorm, then a non-linearity), to the network.
-#@cli : Default value: 'activation=leakyrelu' and 'is_learned=1'.
-nn_layer_fcbnnl : nn_check_layer "$2"
-                  check "isvarname('$1') && isint($3) && $3>0 && isbool(${5=1})"
-                  skip ${4=leakyrelu}
-  e[^-1] "[nn_lib] Add 'fc+bn+nl' layer '$1' to the network, with input '$2', $3 channels and '$4' activation."
-  nn_layer_fc $1_0,$2,$3,$5
-  nn_layer_batchnorm $1_1,$1_0
-  nn_layer_nl $1,$1_1,$4
-
 #@cli nn_layer_fcnl : name,in,nb_neurons>0,_activation,_is_learned={ 0 | 1 }
 #@cli : Add a 'fcnl' layer (fully connected layer followed by a non-linearity), to the network.
 #@cli : Default value: 'activation=leakyrelu' and 'is_learned=1'.
@@ -24892,6 +24816,22 @@ nn_layer_nl : nn_check_layer "$2"
     _nn_forward.="nn_layer_nl_forward($1,$2,$3);"
     _nn_backward..="nn_layer_nl_backward($1,$2,$3);"
   fi
+  _nn_init.="$0 $* "
+
+#@cli nn_layer_normalize : name,in
+#@cli : Add a 'normalize' layer to the network.
+nn_layer_normalize : nn_check_layer "$2"
+                     check "isvarname('$1')"
+  e[^-1] "[nn_lib] Add 'normalize' layer '$1', with input '$2'."
+  _nn_modules_names.=$1,
+  _nn_modules_types.=normalize,
+  _nn_$1_out_size=$_nn_$2_out_size
+  if !isint($$1) (1,0,0,1) => $1 fi # (alpha,beta,avg,std)
+  _nn_forward.="begin(nn_layer_normalize_init_forward($1,$2));"\
+               "nn_layer_normalize_forward($1,$2);"
+  _nn_backward..="begin(nn_layer_normalize_init_backward($1));"\
+                 "nn_layer_normalize_backward($1,$2);"\
+                 "end(nn_layer_normalize_end_backward($1));"
   _nn_init.="$0 $* "
 
 #@cli nn_layer_patchdown : name,in,_patch_size>1
@@ -25150,12 +25090,9 @@ nn_trainer : nn_check_layer "$2"
     name=${arg0\ $>,$_nn_modules_names}
     learning_mode=${_nn_${name}_learning_mode}
 
-    if '$type'=='batchnorm'
-      _nn_update.="nn_optimizer_$4_update_"$type"("$name,$learning_mode");"
-
-    elif type='$type';type=='conv2d'||type=='fc'||type=='dict'
+    if type='$type';type=='conv2d'||type=='fc'||type=='dict'||type=='normalize'
       if $learning_mode
-        _nn_update.="nn_optimizer_$4_update_"$type"("$name");"
+        _nn_update.="nn_optimizer_$4_update_"$type"("$name,$learning_mode");"
       fi
 
       # Allocate data for storing optimizer extra data (moments,...).
@@ -25214,7 +25151,7 @@ nn_save : check "s=['$1']; find(s,'.gmz')==size(s) - 4"
   repeat narg($_nn_modules_names)-1 {
     m=${arg0\ $>,$_nn_modules_types}
     n=${arg0\ $>,$_nn_modules_names}
-    if isin('$m','batchnorm','conv2d','fc','trainer') sel.=$c$n c=, fi
+    if isin('$m','conv2d','fc','normalize','trainer') sel.=$c$n c=, fi
   }
   ('$_nn_init') autocrop. {'" "'} => _nn_init
   o[$sel,-1] "$1"
