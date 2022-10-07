@@ -23653,7 +23653,7 @@ nn_lib :
 
     # Generic.
     #---------
-    nn_optimize_generic_update_normalize(O,M,learning_mode) = (
+    nn_optimizer_generic_update_normalize(O,M,learning_mode) = (
       i[##M#_ind,2] = lerp(M#_avg,batch_#M#_avg,0.1);
       i[##M#_ind,3] = lerp(M#_var,batch_#M#_var,0.1);
       learning_mode&1?(
@@ -24818,14 +24818,17 @@ nn_layer_nl : nn_check_layer "$2"
   fi
   _nn_init.="$0 $* "
 
-#@cli nn_layer_normalize : name,in
+#@cli nn_layer_normalize : name,in,_learning_mode
 #@cli : Add a 'normalize' layer to the network.
+#@cli : 'learning_mode' can be { 0=do not learn | 1=learn alpha | 2=learn beta | 3=learn alpha+beta }
+#@cli : Default value: 'learning_mode=3'.
 nn_layer_normalize : nn_check_layer "$2"
-                     check "isvarname('$1')"
-  e[^-1] "[nn_lib] Add 'normalize' layer '$1', with input '$2'."
+                     check "isvarname('$1') && isint(${3=3}) && inrange($3,0,3)"
+  e[^-1] "[nn_lib] Add 'normalize' layer '$1', with input '$2' and learning mode $3."
   _nn_modules_names.=$1,
   _nn_modules_types.=normalize,
   _nn_$1_out_size=$_nn_$2_out_size
+  _nn_$1_learning_mode=$3
   if !isint($$1) (1,0,0,1) => $1 fi # (alpha,beta,avg,std)
   _nn_forward.="begin(nn_layer_normalize_init_forward($1,$2));"\
                "nn_layer_normalize_forward($1,$2);"
