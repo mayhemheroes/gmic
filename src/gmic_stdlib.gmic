@@ -23570,7 +23570,7 @@ nn_lib :
     # Trainer.
     #---------
     nn_trainer_init_backward(T,L,O,S) = (
-      const T#_ind = $T#;
+      const T#_ind = $trainer_#T;
       nn_iteration = i[##T#_ind,0];
       nn_learning_rate = i[##T#_ind,1];
       nn_learning_rate0 = i[##T#_ind,2];
@@ -23711,37 +23711,40 @@ nn_lib :
       W#-=nn_learning_rate*batch_d#W/sqrt(1e-8 + d#W#_g2);
     );
 
-    nn_optimizer_rmsprop_update_conv2d_or_fc(M) = (
-      d#M#_weights_g2 = crop(#$d#M#_g2,0,0,w##M#_ind - 1,h##M#_ind);
-      d#M#_biases_g2 = crop(#$d#M#_g2,w##M#_ind - 1,0,1,h##M#_ind);
+    nn_optimizer_rmsprop_update_conv2d_or_fc(M,type) = (
+      unref(M#_ind_g2); const M#_ind_g2 = $d#type#_#M#_g2;
+      d#M#_weights_g2 = crop(##M#_ind_g2,0,0,w##M#_ind - 1,h##M#_ind);
+      d#M#_biases_g2 = crop(##M#_ind_g2,w##M#_ind - 1,0,1,h##M#_ind);
       nn_optimizer_rmsprop_update_weights(M#_weights);
       nn_optimizer_rmsprop_update_weights(M#_biases);
       draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind - 1,h##M#_ind);
       draw(##M#_ind,M#_biases,w##M#_ind - 1,0,0,0,1,h##M#_ind);
-      draw(#$d#M#_g2,d#M#_weights_g2,0,0,0,0,w##M#_ind - 1,h##M#_ind);
-      draw(#$d#M#_g2,d#M#_biases_g2,w##M#_ind - 1,0,0,0,1,h##M#_ind);
+      draw(##M#_ind_g2,d#M#_weights_g2,0,0,0,0,w##M#_ind - 1,h##M#_ind);
+      draw(##M#_ind_g2,d#M#_biases_g2,w##M#_ind - 1,0,0,0,1,h##M#_ind);
     );
 
     nn_optimizer_rmsprop_update_conv2d(M,learning_mode) = (
-      learning_mode?nn_optimizer_rmsprop_update_conv2d_or_fc(#M);
+      learning_mode?nn_optimizer_rmsprop_update_conv2d_or_fc(#M,conv2d);
     );
 
     nn_optimizer_rmsprop_update_fc(M,learning_mode) = (
-      learning_mode?nn_optimizer_rmsprop_update_conv2d_or_fc(#M);
+      learning_mode?nn_optimizer_rmsprop_update_conv2d_or_fc(#M,fc);
     );
 
     nn_optimizer_rmsprop_update_dict(M,learning_mode) = (
+      unref(M#_ind_g2); const M#_ind_g2 = $ddict_#M#_g2;
       learning_mode?(
-        d#M#_weights_g2 = crop(#$d#M#_g2,0,0,w##M#_ind,h##M#_ind);
+        d#M#_weights_g2 = crop(##M#_ind_g2,0,0,w##M#_ind,h##M#_ind);
         nn_optimizer_rmsprop_update_weights(M#_weights);
         draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind,h##M#_ind);
-        draw(#$d#M#_g2,d#M#_weights_g2,0,0,0,0,w##M#_ind,h##M#_ind);
+        draw(##M#_ind_g2,d#M#_weights_g2,0,0,0,0,w##M#_ind,h##M#_ind);
       );
     );
 
     nn_optimizer_rmsprop_update_normalize(M,learning_mode) = (
-      d#M#_alpha_g2 = i[#$d#M#_g2,0];
-      d#M#_beta_g2 = i[#$d#M#_g2,1];
+      unref(M#_ind_g2); const M#_ind_g2 = $dnormalize_#M#_g2;
+      d#M#_alpha_g2 = i[##M#_ind_g2,0];
+      d#M#_beta_g2 = i[##M#_ind_g2,1];
       nn_optimizer_generic_update_normalize(rmsprop,#M,#learning_mode);
     );
 
@@ -23763,45 +23766,53 @@ nn_lib :
       W#-=nn_learning_rate*nn_optimizer_adam_alpha_t*d#W#_m/sqrt(1e-8 + d#W#_v);
     );
 
-    nn_optimizer_adam_update_conv2d_or_fc(M) = (
-      d#M#_weights_m = crop(#$d#M#_m,0,0,w##M#_ind - 1,h##M#_ind);
-      d#M#_biases_m = crop(#$d#M#_m,w##M#_ind - 1,0,1,h##M#_ind);
-      d#M#_weights_v = crop(#$d#M#_v,0,0,w##M#_ind - 1,h##M#_ind);
-      d#M#_biases_v = crop(#$d#M#_v,w##M#_ind - 1,0,1,h##M#_ind);
+    nn_optimizer_adam_update_conv2d_or_fc(M,type) = (
+      unref(M#_ind_m); const M#_ind_m = $d#type#_#M#_m;
+      unref(M#_ind_v); const M#_ind_v = $d#type#_#M#_v;
+      d#M#_weights_m = crop(##M#_ind_m,0,0,w##M#_ind - 1,h##M#_ind);
+      d#M#_biases_m = crop(##M#_ind_m,w##M#_ind - 1,0,1,h##M#_ind);
+      d#M#_weights_v = crop(##M#_ind_v,0,0,w##M#_ind - 1,h##M#_ind);
+      d#M#_biases_v = crop(##M#_ind_v,w##M#_ind - 1,0,1,h##M#_ind);
       nn_optimizer_adam_update_weights(M#_weights);
       nn_optimizer_adam_update_weights(M#_biases);
       draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind - 1,h##M#_ind);
       draw(##M#_ind,M#_biases,w##M#_ind - 1,0,0,0,1,h##M#_ind);
-      draw(#$d#M#_m,d#M#_weights_m,0,0,0,0,w##M#_ind - 1,h##M#_ind);
-      draw(#$d#M#_m,d#M#_biases_m,w##M#_ind - 1,0,0,0,1,h##M#_ind);
-      draw(#$d#M#_v,d#M#_weights_v,0,0,0,0,w##M#_ind - 1,h##M#_ind);
-      draw(#$d#M#_v,d#M#_biases_v,w##M#_ind - 1,0,0,0,1,h##M#_ind);
+      draw(##M#_ind_m,d#M#_weights_m,0,0,0,0,w##M#_ind - 1,h##M#_ind);
+      draw(##M#_ind_m,d#M#_biases_m,w##M#_ind - 1,0,0,0,1,h##M#_ind);
+      draw(##M#_ind_v,d#M#_weights_v,0,0,0,0,w##M#_ind - 1,h##M#_ind);
+      draw(##M#_ind_v,d#M#_biases_v,w##M#_ind - 1,0,0,0,1,h##M#_ind);
     );
 
     nn_optimizer_adam_update_conv2d(M,learning_mode) = (
-      learning_mode?nn_optimizer_adam_update_conv2d_or_fc(#M);
+      learning_mode?nn_optimizer_adam_update_conv2d_or_fc(#M,conv2d);
     );
 
     nn_optimizer_adam_update_fc(M,learning_mode) = (
-      learning_mode?nn_optimizer_adam_update_conv2d_or_fc(#M);
+      learning_mode?nn_optimizer_adam_update_conv2d_or_fc(#M,fc);
     );
 
     nn_optimizer_adam_update_dict(M,learning_mode) = (
       learning_mode?(
-        d#M#_weights_m = crop(#$d#M#_m,0,0,w##M#_ind,h##M#_ind);
-        d#M#_weights_v = crop(#$d#M#_v,0,0,w##M#_ind,h##M#_ind);
+        unref(M#_ind_m); const M#_ind_m = $ddict_#M#_m;
+        unref(M#_ind_v); const M#_ind_v = $ddict_#M#_v;
+        d#M#_weights_m = crop(##M#_ind_m,0,0,w##M#_ind,h##M#_ind);
+        d#M#_weights_v = crop(##M#_ind_v,0,0,w##M#_ind,h##M#_ind);
         nn_optimizer_adam_update_weights(M#_weights);
         draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind,h##M#_ind);
-        draw(#$d#M#_m,d#M#_weights_m,0,0,0,0,w##M#_ind,h##M#_ind);
-        draw(#$d#M#_v,d#M#_weights_v,0,0,0,0,w##M#_ind,h##M#_ind);
+        draw(##M#_ind_m,d#M#_weights_m,0,0,0,0,w##M#_ind,h##M#_ind);
+        draw(##M#_ind_v,d#M#_weights_v,0,0,0,0,w##M#_ind,h##M#_ind);
       );
     );
 
     nn_optimizer_adam_update_normalize(M,learning_mode) = (
-      d#M#_alpha_m = i[#$d#M#_m,0];
-      d#M#_beta_m = i[#$d#M#_m,1];
-      d#M#_alpha_v = i[#$d#M#_v,0];
-      d#M#_beta_v = i[#$d#M#_v,1];
+      unref(M#_ind_m); const M#_ind_m = $dnormalize_#M#_m;
+      unref(M#_ind_v); const M#_ind_v = $dnormalize_#M#_v;
+      learning_mode?(
+        d#M#_alpha_m = i[##M#_ind_m,0];
+        d#M#_beta_m = i[##M#_ind_m,1];
+        d#M#_alpha_v = i[##M#_ind_v,0];
+        d#M#_beta_v = i[##M#_ind_v,1];
+      );
       nn_optimizer_generic_update_normalize(adam,#M,#learning_mode);
     );
 
@@ -23821,45 +23832,53 @@ nn_lib :
       W#-=(nn_learning_rate/nn_optimizer_adamax_ombeta1_t)*d#W#_m/sqrt(1e-8 + d#W#_v);
     );
 
-    nn_optimizer_adamax_update_conv2d_or_fc(M) = (
-      d#M#_weights_m = crop(#$d#M#_m,0,0,w##M#_ind - 1,h##M#_ind);
-      d#M#_biases_m = crop(#$d#M#_m,w##M#_ind - 1,0,1,h##M#_ind);
-      d#M#_weights_v = crop(#$d#M#_v,0,0,w##M#_ind - 1,h##M#_ind);
-      d#M#_biases_v = crop(#$d#M#_v,w##M#_ind - 1,0,1,h##M#_ind);
+    nn_optimizer_adamax_update_conv2d_or_fc(M,type) = (
+      unref(M#_ind_m); const M#_ind_m = $d#type#_#M#_m;
+      unref(M#_ind_v); const M#_ind_v = $d#type#_#M#_v;
+      d#M#_weights_m = crop(##M#_ind_m,0,0,w##M#_ind - 1,h##M#_ind);
+      d#M#_biases_m = crop(##M#_ind_m,w##M#_ind - 1,0,1,h##M#_ind);
+      d#M#_weights_v = crop(##M#_ind_v,0,0,w##M#_ind - 1,h##M#_ind);
+      d#M#_biases_v = crop(##M#_ind_v,w##M#_ind - 1,0,1,h##M#_ind);
       nn_optimizer_adamax_update_weights(M#_weights);
       nn_optimizer_adamax_update_weights(M#_biases);
       draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind - 1,h##M#_ind);
       draw(##M#_ind,M#_biases,w##M#_ind - 1,0,0,0,1,h##M#_ind);
-      draw(#$d#M#_m,d#M#_weights_m,0,0,0,0,w##M#_ind - 1,h##M#_ind);
-      draw(#$d#M#_m,d#M#_biases_m,w##M#_ind - 1,0,0,0,1,h##M#_ind);
-      draw(#$d#M#_v,d#M#_weights_v,0,0,0,0,w##M#_ind - 1,h##M#_ind);
-      draw(#$d#M#_v,d#M#_biases_v,w##M#_ind - 1,0,0,0,1,h##M#_ind);
+      draw(##M#_ind_m,d#M#_weights_m,0,0,0,0,w##M#_ind - 1,h##M#_ind);
+      draw(##M#_ind_m,d#M#_biases_m,w##M#_ind - 1,0,0,0,1,h##M#_ind);
+      draw(##M#_ind_v,d#M#_weights_v,0,0,0,0,w##M#_ind - 1,h##M#_ind);
+      draw(##M#_ind_v,d#M#_biases_v,w##M#_ind - 1,0,0,0,1,h##M#_ind);
     );
 
     nn_optimizer_adamax_update_conv2d(M,learning_mode) = (
-      learning_mode?nn_optimizer_adamax_update_conv2d_or_fc(#M);
+      learning_mode?nn_optimizer_adamax_update_conv2d_or_fc(#M,conv2d);
     );
 
     nn_optimizer_adamax_update_fc(M,learning_mode) = (
-      learning_mode?nn_optimizer_adamax_update_conv2d_or_fc(#M);
+      learning_mode?nn_optimizer_adamax_update_conv2d_or_fc(#M,fc);
     );
 
     nn_optimizer_adamax_update_dict(M,learning_mode) = (
       learning_mode?(
-        d#M#_weights_m = crop(#$d#M#_m,0,0,w##M#_ind,h##M#_ind);
-        d#M#_weights_v = crop(#$d#M#_v,0,0,w##M#_ind,h##M#_ind);
+        unref(M#_ind_m); const M#_ind_m = $ddict_#M#_m;
+        unref(M#_ind_v); const M#_ind_v = $ddict_#M#_v;
+        d#M#_weights_m = crop(##M#_ind_m,0,0,w##M#_ind,h##M#_ind);
+        d#M#_weights_v = crop(##M#_ind_v,0,0,w##M#_ind,h##M#_ind);
         nn_optimizer_adamax_update_weights(M#_weights);
         draw(##M#_ind,M#_weights,0,0,0,0,w##M#_ind,h##M#_ind);
-        draw(#$d#M#_m,d#M#_weights_m,0,0,0,0,w##M#_ind,h##M#_ind);
-        draw(#$d#M#_v,d#M#_weights_v,0,0,0,0,w##M#_ind,h##M#_ind);
+        draw(##M#_ind_m,d#M#_weights_m,0,0,0,0,w##M#_ind,h##M#_ind);
+        draw(##M#_ind_v,d#M#_weights_v,0,0,0,0,w##M#_ind,h##M#_ind);
       );
     );
 
     nn_optimizer_adamax_update_normalize(M,learning_mode) = (
-      d#M#_alpha_m = i[#$d#M#_m,0];
-      d#M#_beta_m = i[#$d#M#_m,1];
-      d#M#_alpha_v = i[#$d#M#_v,0];
-      d#M#_beta_v = i[#$d#M#_v,1];
+      unref(M#_ind_m); const M#_ind_m = $dnormalize_#M#_m;
+      unref(M#_ind_v); const M#_ind_v = $dnormalize_#M#_v;
+      learning_mode?(
+        d#M#_alpha_m = i[##M#_ind_m,0];
+        d#M#_beta_m = i[##M#_ind_m,1];
+        d#M#_alpha_v = i[##M#_ind_v,0];
+        d#M#_beta_v = i[##M#_ind_v,1];
+      );
       nn_optimizer_generic_update_normalize(adamax,#M,#learning_mode);
     );
 
@@ -23964,7 +23983,7 @@ nn_lib :
     # conv2d: 2D convolutional layer.
     #--------------------------------
     nn_layer_conv2d_init_forward(M,IN,size,stride,dilation) = (
-      const M#_ind = $M#;
+      const M#_ind = $conv2d_#M;
       const M#_out_width = max(1,int(IN#_out_width/stride));
       const M#_out_height = max(1,int(IN#_out_height/stride));
       const M#_out_depth = IN#_out_depth;
@@ -24087,7 +24106,7 @@ nn_lib :
     # dict: Dictionnary learning layer.
     #----------------------------------
     nn_layer_dict_init_forward(M,IN) = (
-      const M#_ind = $M#;
+      const M#_ind = $dict_#M;
       const M#_out_width = IN#_out_width;
       const M#_out_height = IN#_out_height;
       const M#_out_depth = IN#_out_depth;
@@ -24153,7 +24172,7 @@ nn_lib :
     # fc: Fully-connected layer.
     #---------------------------
     nn_layer_fc_init_forward(M) = (
-      const M#_ind = $M#;
+      const M#_ind = $fc_#M;
       const M#_out_width = 1;
       const M#_out_height = 1;
       const M#_out_depth = 1;
@@ -24261,7 +24280,7 @@ nn_lib :
     # normalize: Layer normalization.
     #--------------------------------
     nn_layer_normalize_init_forward(M,IN) = (
-      const M#_ind = $M#;
+      const M#_ind = $normalize_#M;
       const M#_out_width = IN#_out_width;
       const M#_out_height = IN#_out_height;
       const M#_out_depth = IN#_out_depth;
@@ -24678,7 +24697,7 @@ nn_layer_conv2d : nn_check_layer "$2"
   _nn_modules_types.=conv2d,
   _nn_$1_out_size={s=[$_nn_$2_out_size];[max(1,int(s[0]/$5)),max(1,int(s[1]/$5)),s[2],$3]}
   _nn_$1_learning_mode=$7
-  if !isint($$1) {[$_nn_$2_out_size][3]*$4^2+1},$3 if $4>1 f. 4*g/(w-1) else f. 1 fi => $1 fi
+  if !isint($conv2d_$1) {[$_nn_$2_out_size][3]*$4^2+1},$3 if $4>1 f. 4*g/(w-1) else f. 1 fi => conv2d_$1 fi
   _nn_forward.="begin(nn_layer_conv2d_init_forward($1,$2,$4,$5,$6));"\
                "nn_layer_conv2d_forward($1,$2);"
   _nn_backward..="begin(nn_layer_conv2d_init_backward($1,$2));"\
@@ -24737,7 +24756,7 @@ nn_layer_dict : nn_check_layer "$2"
   _nn_modules_types.=dict,
   _nn_$1_out_size=$_nn_$2_out_size
   _nn_$1_learning_mode=$4
-  if !isint($$1) $3,{prod($_nn_$2_out_size)} f. 4*g/(w-1) => $1 fi
+  if !isint($dict_$1) $3,{prod($_nn_$2_out_size)} f. 4*g/(w-1) => dict_$1 fi
   _nn_forward.="begin(nn_layer_dict_init_forward($1,$2));"\
                "nn_layer_dict_forward($1,$2);"
   _nn_backward..="begin(nn_layer_dict_init_backward($1));"\
@@ -24780,7 +24799,7 @@ nn_layer_fc : nn_check_layer "$2"
   _nn_modules_types.=fc,
   _nn_$1_out_size=1,1,1,$3
   _nn_$1_learning_mode=$4
-  if !isint($$1) {prod($_nn_$2_out_size)+1},$3 f. 4*g/(w-1) => $1 fi
+  if !isint($fc_$1) {prod($_nn_$2_out_size)+1},$3 f. 4*g/(w-1) => fc_$1 fi
   _nn_forward.="begin(nn_layer_fc_init_forward($1));"\
                "nn_layer_fc_forward($1,$2);"
   _nn_backward..="begin(nn_layer_fc_init_backward($1));"\
@@ -24855,7 +24874,7 @@ nn_layer_normalize : nn_check_layer "$2"
   _nn_modules_types.=normalize,
   _nn_$1_out_size=$_nn_$2_out_size
   _nn_$1_learning_mode=$3
-  if !isint($$1) (1,0,0,1) => $1 fi # (alpha,beta,running_avg,running_var)
+  if !isint($normalize_$1) (1,0,0,1) => normalize_$1 fi # (alpha,beta,running_avg,running_var)
   _nn_forward.="begin(nn_layer_normalize_init_forward($1,$2));"\
                "nn_layer_normalize_forward($1,$2);"
   _nn_backward..="begin(nn_layer_normalize_init_backward($1));"\
@@ -25126,14 +25145,14 @@ nn_trainer : nn_check_layer "$2"
   _nn_modules_names.=$1,
   _nn_modules_types.=trainer,
   _nn_$1_out_size=0,0,0,0
-  if !isint($$1)
+  if !isint($trainer_$1)
     # (iteration,learning_rate,initial_learning_rate,previous_loss,best_loss;
     # {optimizer variables};
     # {scheduler variables})
-    l[] { (0,$3,$3,inf,inf) _nn_optimizer_$4 _nn_scheduler_$5 a y => $1 }
+    l[] { (0,$3,$3,inf,inf) _nn_optimizer_$4 _nn_scheduler_$5 a y => trainer_$1 }
   else
-    =[$1] $3,1,0 # Set learning rate in existing trainer
-    =[$1] $3,2,0
+    =[trainer_$1] $3,1,0 # Set learning rate in existing trainer
+    =[trainer_$1] $3,2,0
   fi
   _nn_init.="$0 $* "
 
@@ -25150,14 +25169,14 @@ nn_trainer : nn_check_layer "$2"
       # Allocate data for storing optimizer extra data (moments,...).
       if $learning_mode
         if '$4'=='rmsprop'
-          dname_g2=d${name}_g2
-          if !isint(${$dname_g2}) +f[$name] 0 => $dname_g2 fi
+          dname_g2=d${type}_${name}_g2
+          if !isint(${$dname_g2}) +f[${type}_$name] 0 => $dname_g2 fi
           _nn_additional_data.=$dname_g2,
 
         elif isin('$4','adam','adamax')
-          dname_m,dname_v=d${name}_m,d${name}_v
-          if !isint(${$dname_m}) +f[$name] 0 => $dname_m fi
-          if !isint(${$dname_v}) +f[$name] 0 => $dname_v fi
+          dname_m,dname_v=d${type}_${name}_m,d${type}_${name}_v
+          if !isint(${$dname_m}) +f[${type}_$name] 0 => $dname_m fi
+          if !isint(${$dname_v}) +f[${type}_$name] 0 => $dname_v fi
           _nn_additional_data.=$dname_m,$dname_v,
         fi
       fi
@@ -25184,7 +25203,7 @@ nn_size :
     type=${arg0\ $>,$_nn_modules_types}
     name=${arg0\ $>,$_nn_modules_names}
     if type='$type';type=='conv2d'||type=='fc'||type=='dict'
-      siz+={$name,whds}
+      siz+={${type}_$name,whds}
     fi
   }
   u $siz
@@ -25203,9 +25222,9 @@ nn_save : check "s=['$1']; find(s,'.gmz')==size(s) - 4"
   e[^-1] "[nn_lib] Save current network as file '$1'."
   sel=$_nn_additional_data c=
   repeat narg($_nn_modules_names)-1 {
-    m=${arg0\ $>,$_nn_modules_types}
-    n=${arg0\ $>,$_nn_modules_names}
-    if isin('$m','conv2d','fc','normalize','trainer') sel.=$c$n c=, fi
+    type=${arg0\ $>,$_nn_modules_types}
+    name=${arg0\ $>,$_nn_modules_names}
+    if isin('$type','conv2d','fc','normalize','trainer') sel.=$c${type}_$name c=, fi
   }
   ('$_nn_init') autocrop. {'" "'} => _nn_init
   o[$sel,-1] "$1"
