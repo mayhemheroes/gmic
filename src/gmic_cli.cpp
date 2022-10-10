@@ -254,8 +254,8 @@ int main(int argc, char **argv) {
         images.insert(gmic::stdlib);
         CImg<char> tmp_line(1024);
         cimg_snprintf(tmp_line,tmp_line.width(),
-                      "l[] it \"%s\" m \"%s\" onfail rm done "
-                      "l[] it \"%s\" m \"%s\" onfail rm done "
+                      "l[] i raw:\"%s\",uint8 m \"%s\" onfail rm done "
+                      "l[] i raw:\"%s\",uint8 m \"%s\" onfail rm done "
                       "rv help \"%s\",0",
                       filename_update.data(),filename_update.data(),
                       filename_user,filename_user,
