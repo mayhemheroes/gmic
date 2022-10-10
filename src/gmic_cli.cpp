@@ -184,8 +184,8 @@ int main(int argc, char **argv) {
             }
             gmic_instance.allow_entrypoint = allow_entrypoint;
           }
+          std::fclose(gmic_file);
         }
-        std::fclose(gmic_file);
       }
     }
 
