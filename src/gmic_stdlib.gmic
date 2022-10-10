@@ -24694,8 +24694,10 @@ nn_layer_conv2d : nn_check_layer "$2"
                   check "isvarname('$1') && isint($3) && $3>0 && isint(${4=3}) && $4>0 && "\
                         "${5=1}>0 && isbool(${7=1})" skip "${6=1}"
   e[^-1] "[nn_lib] Add 'conv2d' layer '$1', with input '$2', $3 channels, $4x$4 kernels, stride $5 and dilation $6."
+  init=$_nn_init
   _nn_layer_conv2d $1_conv2d,${2-7}
   nn_layer_rename $1,$1_conv2d
+  _nn_init=${init}"$0 $* "
 
 # [Internal] Insert 'conv2d' layer, with parameter image having name '$1'.
 _nn_layer_conv2d :
@@ -24720,8 +24722,10 @@ nn_layer_conv2dnl : nn_check_layer "$2"
                     skip "${6=1}","${7=leakyrelu}"
   e[^-1] "[nn_lib] Add 'conv2d+nl' layer '$1', with input '$2', $3 channels, $4x$4 kernels, "\
          "stride $5, dilation $6 and '$7' activation."
+  init=$_nn_init
   _nn_layer_conv2d $1_conv2d,${2-6},$8
   nn_layer_nl $1,$1_conv2d,$7
+  _nn_init=${init}"$0 $* "
 
 #@cli nn_layer_conv2dnnl : name,in,nb_channels>0,_kernel_size>0,_stride>0,_dilation>0,_activation,\
 # _is_learned={ 0 | 1 }
@@ -24733,9 +24737,11 @@ nn_layer_conv2dnnl : nn_check_layer "$2"
                      skip "${6=1}","${7=leakyrelu}"
   e[^-1] "[nn_lib] Add 'conv2d+normalize+nl' layer '$1', with input '$2', $3 channels, $4x$4 kernels, "\
          "stride $5, dilation $6 and '$7' activation."
+  init=$_nn_init
   _nn_layer_conv2d $1_conv2d,${2-6},$8
   _nn_layer_normalize $1_normalize,$1_conv2d,3
   nn_layer_nl $1,$1_normalize,$7
+  _nn_init=${init}"$0 $* "
 
 #@cli nn_layer_crop : name,in,x0,y0,z0,x1,y1,z1
 #@cli : Add a 'crop' layer to the network.
@@ -24806,8 +24812,10 @@ nn_layer_input : check "isvarname('$1') && isint($2) && $2>0 && isint(${3=1}) &&
 nn_layer_fc : nn_check_layer "$2"
               check "isvarname('$1') && isint($3) && $3>0 && isbool(${4=1})"
   e[^-1] "[nn_lib] Add 'fc' layer '$1', with input '$2' and $3 channels."
+  init=$_nn_init
   _nn_layer_fc $1_fc,${2-4}
   nn_layer_rename $1,$1_fc
+  _nn_init=${init}"$0 $* "
 
 # [Internal] Insert 'fc' layer, with parameter image having name '$1'.
 _nn_layer_fc :
@@ -24830,8 +24838,10 @@ nn_layer_fcnl : nn_check_layer "$2"
                 check "isvarname('$1') && isint($3) && $3>0 && isbool(${5=1})"
                 skip ${4=leakyrelu}
   e[^-1] "[nn_lib] Add 'fc+nl' layer '$1' to the network, with input '$2', $3 channels and '$4' activation."
+  init=$_nn_init
   _nn_layer_fc $1_fc,${2-3},$5
   nn_layer_nl $1,$1_fc,$4
+  _nn_init=${init}"$0 $* "
 
 #@cli nn_layer_fcnnl : name,in,nb_neurons>0,_activation,_is_learned={ 0 | 1 }
 #@cli : Add a 'fcnnl' layer (fully connected layer followed by a normalization layer, then a non-linearity) \
@@ -24841,9 +24851,11 @@ nn_layer_fcnnl : nn_check_layer "$2"
                 check "isvarname('$1') && isint($3) && $3>0 && isbool(${5=1})"
                 skip ${4=leakyrelu}
   e[^-1] "[nn_lib] Add 'fc+normalize+nl' layer '$1' to the network, with input '$2', $3 channels and '$4' activation."
+  init=$_nn_init
   _nn_layer_fc $1_fc,${2-3},$5
   _nn_layer_normalize $1_normalize,$1_fc,3
   nn_layer_nl $1,$1_normalize,$4
+  _nn_init=${init}"$0 $* "
 
 #@cli nn_layer_maxpool2d : name,in
 #@cli : Add a 'maxpool2d' layer (2d max pooling) to the network.
@@ -24955,9 +24967,11 @@ nn_layer_resconv2d : nn_check_layer "$2"
                      skip "${5=1}"
   e[^-1] "[nn_lib] Add 'resconv2d' layer '$1', with input '$2', $3x$3 kernels, "\
          "stride $4 and dilation $5."
+  init=$_nn_init
   nn_layer_clone $1_clone0,$1_clone1,$2
   _nn_layer_conv2d $1_conv2d,$1_clone1,{[$_nn_$2_out_size][3]},${3-6}
   nn_layer_add $1,$1_conv2d,$1_clone0
+  _nn_init=${init}"$0 $* "
 
 #@cli nn_layer_resconv2dnl : name,in,_kernel_size>0,_stride>0,_dilation>0,_activation,_is_learned={ 0 | 1 }
 #@cli : Add a 'rescon2dnl' (residual 2D convolutional layer followed by a non-linearity) to the network.
@@ -24967,10 +24981,12 @@ nn_layer_resconv2dnl : nn_check_layer "$2"
                        skip "${5=1}","${6=leakyrelu}"
   e[^-1] "[nn_lib] Add 'resconv2dnl' layer '$1', with input '$2', $3x$3 kernels, "\
          "stride $4, dilation $5 and '$6' activation."
+  init=$_nn_init
   nn_layer_clone $1_clone0,$1_clone1,$2
   _nn_layer_conv2d $1_conv2d,$1_clone1,{[$_nn_$2_out_size][3]},${3-5},$7
   nn_layer_add $1_add,$1_conv2d,$1_clone0
   nn_layer_nl $1,$1_add,$6
+  _nn_init=${init}"$0 $* "
 
 #@cli nn_layer_resconv2dnnl : name,in,_kernel_size>0,_stride>0,_dilation>0,_activation,_is_learned={ 0 | 1 }
 #@cli : Add a 'rescon2dnnl' (residual 2D convolutional layer followed by a normalization layer, then a non-linearity)\
@@ -24981,11 +24997,13 @@ nn_layer_resconv2dnnl : nn_check_layer "$2"
                         skip "${5=1}","${6=leakyrelu}"
   e[^-1] "[nn_lib] Add 'resconv2dnnl' layer '$1', with input '$2', $3x$3 kernels, "\
          "stride $4, dilation $5 and '$6' activation."
+  init=$_nn_init
   nn_layer_clone $1_clone0,$1_clone1,$2
   _nn_layer_conv2d $1_conv2d,$1_clone1,{[$_nn_$2_out_size][3]},${3-5},$7
   nn_layer_normalize $1_normalize,$1_conv2d
   nn_layer_add $1_add,$1_normalize,$1_clone0
   nn_layer_nl $1,$1_add,$6
+  _nn_init=${init}"$0 $* "
 
 #@cli nn_layer_resfc : name,in,_is_learned={ 0 | 1 }
 #@cli : Add a 'resfc' (residual fully connecter layer) to the network.
@@ -24993,9 +25011,11 @@ nn_layer_resconv2dnnl : nn_check_layer "$2"
 nn_layer_resfc : nn_check_layer "$2"
                  check "isvarname('$1') && isbool(${3=1})"
   e[^-1] "[nn_lib] Add 'resfc' layer '$1', with input '$2'."
+  init=$_nn_init
   nn_layer_clone $1_clone0,$1_clone1,$2
   _nn_layer_fc $1_fc,$1_clone1,{prod($_nn_$2_out_size)},$3
   nn_layer_add $1,$1_fc,$1_clone0
+  _nn_init=${init}"$0 $* "
 
 #@cli nn_layer_resfcnl : name,in,_activation,_is_learned={ 0 | 1 }
 #@cli : Add a 'resfcnl' (residual fully connecter layer followed by a non-linearity) to the network.
@@ -25004,10 +25024,12 @@ nn_layer_resfcnl : nn_check_layer "$2"
                    check "isvarname('$1') && isbool(${4=1})"
                    skip ${3=leakyrelu}
   e[^-1] "[nn_lib] Add 'resfc+nl' layer '$1' to the network, with input '$2' and '$4' activation."
+  init=$_nn_init
   nn_layer_clone $1_clone0,$1_clone1,$2
   _nn_layer_fc $1_fc,$1_clone1,{prod($_nn_$2_out_size)},$4
   nn_layer_add $1_add,$1_fc,$1_clone0
   nn_layer_nl $1,$1_add,$3
+  _nn_init=${init}"$0 $* "
 
 #@cli nn_layer_resfcnnl : name,in,_activation,_is_learned={ 0 | 1 }
 #@cli : Add a 'resfcnnl' (residual fully connecter layer followed by a normalization layer, then a non-linearity) \
@@ -25017,11 +25039,13 @@ nn_layer_resfcnnl : nn_check_layer "$2"
                     check "isvarname('$1') && isbool(${4=1})"
                     skip ${3=leakyrelu}
   e[^-1] "[nn_lib] Add 'resfc+normalize+nl' layer '$1' to the network, with input '$2' and '$4' activation."
+  init=$_nn_init
   nn_layer_clone $1_clone0,$1_clone1,$2
   _nn_layer_fc $1_fc,$1_clone1,{prod($_nn_$2_out_size)},$4
   nn_layer_normalize $1_normalize,$1_fc
   nn_layer_add $1_add,$1_normalize,$1_clone0
   nn_layer_nl $1,$1_add,$3
+  _nn_init=${init}"$0 $* "
 
 #@cli nn_layer_reshape : name,in,width>0,height>0,depth>0,spectrum>0
 #@cli : Add a 'reshape' layer to the network.
