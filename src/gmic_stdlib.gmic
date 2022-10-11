@@ -24320,14 +24320,15 @@ nn_lib :
 
     nn_layer_normalize_forward(M,IN) = (
       size(M#_avg)?( # Channel-by-channel normalization
-        unref(_nn_tmp);
         const M#_out_whd = M#_out_width*M#_out_height*M#_out_depth;
-        M#_out = vector(#size(#IN));
+        M#_hat = M#_out = vector(#size(#IN));
         repeat (size(#M#_avg),_nn_k,
-          _nn_tmp = IN#_out[_nn_k*M#_out_whd,M#_out_whd] - M#_avg[_nn_k];
-          _nn_tmp*=M#_alpha[_nn_k]/M#_std[_nn_k];
-          _nn_tmp+=M#_beta[_nn_k];
-          copy(M#_out[_nn_k*M#_out_whd,M#_out_whd],_nn_tmp);
+          M#_tmp = IN#_out[_nn_k*M#_out_whd,M#_out_whd] - M#_avg[_nn_k]; # One channel of IN#_out
+          M#_tmp/=M#_std[_nn_k];
+          copy(M#_hat[_nn_k*M#_out_whd],M#_tmp);
+          M#_tmp*=M#_alpha[_nn_k];
+          M#_tmp+=M#_beta[_nn_k];
+          copy(M#_out[_nn_k*M#_out_whd],M#_tmp);
         );
       ):( # Global normalization
         M#_hat = IN#_out - M#_avg;
@@ -24342,20 +24343,14 @@ nn_lib :
     );
 
     nn_layer_normalize_backward(M,IN) = (
-
       size(M#_avg)?( # Channel-by-channel normalization
-        unref(_nn_tmp);
         d#IN#_out = vector(#size(#IN));
         repeat (size(#M#_avg),_nn_k,
-          _nn_tmp = d#M#_out[_nn_k*M#_out_whd,M#_out_whd];
-          _nn_tmp*=M#_alpha[_nn_k]/M#_std[_nn_k];
-          copy(d#IN#_out[_nn_k*M#_out_whd,M#_out_whd],_nn_tmp);
+          M#_tmp = d#M#_out[_nn_k*M#_out_whd,M#_out_whd]; # One channel of d#M#_out
+          copy(d#IN#_out[_nn_k*M#_out_whd],M#_tmp*M#_alpha[_nn_k]/M#_std[_nn_k]);
+          batch_d#M#_alpha[_nn_k]+=dot(M#_tmp,M#_hat[_nn_k*M#_out_whd,M#_out_whd]);
+          batch_d#M#_beta[_nn_k]+=sum(M#_tmp);
         );
-
-
-        0;
-
-
       ):( # Global normalization
         d#IN#_out = d#M#_out*M#_alpha/M#_std;
         batch_d#M#_alpha+=dot(d#M#_out,M#_hat);
