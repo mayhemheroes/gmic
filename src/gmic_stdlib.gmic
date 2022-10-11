@@ -23654,15 +23654,28 @@ nn_lib :
     # Generic.
     #---------
     nn_optimizer_generic_update_normalize(O,M,learning_mode) = (
-      i[##M#_ind,2] = lerp(M#_avg,batch_#M#_avg,0.01);
-      i[##M#_ind,3] = lerp(M#_var,batch_#M#_var,0.01);
-      learning_mode&1?(
-        nn_optimizer_#O#_update_weights(M#_alpha);
-        i[##M#_ind,0] = M#_alpha;
-      );
-      learning_mode&2?(
-        nn_optimizer_#O#_update_weights(M#_beta);
-        i[##M#_ind,1] = M#_beta;
+      M#_is_channelwise?( # Channel-by-channel normalization
+        draw(##M#_ind,batch_#M#_avg,2,0,0,0,1,h##M#_ind,1,1,0.01);
+        draw(##M#_ind,batch_#M#_var,3,0,0,0,1,h##M#_ind,1,1,0.01);
+        learning_mode&1?(
+          nn_optimizer_#O#_update_weights(M#_alpha);
+          draw(##M#_ind,M#_alpha,0,0,0,0,1,h##M#_ind);
+        );
+        learning_mode&2?(
+          nn_optimizer_#O#_update_weights(M#_beta);
+          draw(##M#_ind,M#_beta,1,0,0,0,1,h##M#_ind);
+        );
+      ):( # Global normalization
+        i[##M#_ind,2] = lerp(M#_avg,batch_#M#_avg,0.01);
+        i[##M#_ind,3] = lerp(M#_var,batch_#M#_var,0.01);
+        learning_mode&1?(
+          nn_optimizer_#O#_update_weights(M#_alpha);
+          i[##M#_ind,0] = M#_alpha;
+        );
+        learning_mode&2?(
+          nn_optimizer_#O#_update_weights(M#_beta);
+          i[##M#_ind,1] = M#_beta;
+        );
       );
     );
 
@@ -23751,8 +23764,15 @@ nn_lib :
 
     nn_optimizer_rmsprop_update_normalize(M,learning_mode) = (
       const M#_ind_g2 = $M#_g2;
-      d#M#_alpha_g2 = i[##M#_ind_g2,0];
-      d#M#_beta_g2 = i[##M#_ind_g2,1];
+      learning_mode?(
+        M#_is_channelwise?( # Channel-by-channel normalization
+          d#M#_alpha_g2 = crop(##M#_ind_g2,0,1);
+          d#M#_beta_g2 = crop(##M#_ind_g2,1,1);
+        ):( # Global normalization
+          d#M#_alpha_g2 = i[##M#_ind_g2,0];
+          d#M#_beta_g2 = i[##M#_ind_g2,1];
+        );
+      );
       nn_optimizer_generic_update_normalize(rmsprop,#M,#learning_mode);
     );
 
@@ -23820,10 +23840,17 @@ nn_lib :
       const M#_ind_m = $M#_m;
       const M#_ind_v = $M#_v;
       learning_mode?(
-        d#M#_alpha_m = i[##M#_ind_m,0];
-        d#M#_beta_m = i[##M#_ind_m,1];
-        d#M#_alpha_v = i[##M#_ind_v,0];
-        d#M#_beta_v = i[##M#_ind_v,1];
+        M#_is_channelwise?( # Channel-by-channel normalization
+          d#M#_alpha_m = crop(##M#_ind_m,0,1);
+          d#M#_beta_m = crop(##M#_ind_m,1,1);
+          d#M#_alpha_v = crop(##M#_ind_v,0,1);
+          d#M#_beta_v = crop(##M#_ind_v,1,1);
+        ):( # Global normalization
+          d#M#_alpha_m = i[##M#_ind_m,0];
+          d#M#_beta_m = i[##M#_ind_m,1];
+          d#M#_alpha_v = i[##M#_ind_v,0];
+          d#M#_beta_v = i[##M#_ind_v,1];
+        );
       );
       nn_optimizer_generic_update_normalize(adam,#M,#learning_mode);
     );
@@ -23891,10 +23918,17 @@ nn_lib :
       const M#_ind_m = $M#_m;
       const M#_ind_v = $M#_v;
       learning_mode?(
-        d#M#_alpha_m = i[##M#_ind_m,0];
-        d#M#_beta_m = i[##M#_ind_m,1];
-        d#M#_alpha_v = i[##M#_ind_v,0];
-        d#M#_beta_v = i[##M#_ind_v,1];
+        M#_is_channelwise?( # Channel-by-channel normalization
+          d#M#_alpha_m = crop(##M#_ind_m,0,1);
+          d#M#_beta_m = crop(##M#_ind_m,1,1);
+          d#M#_alpha_v = crop(##M#_ind_v,0,1);
+          d#M#_beta_v = crop(##M#_ind_v,1,1);
+        ):( # Global normalization
+          d#M#_alpha_m = i[##M#_ind_m,0];
+          d#M#_beta_m = i[##M#_ind_m,1];
+          d#M#_alpha_v = i[##M#_ind_v,0];
+          d#M#_beta_v = i[##M#_ind_v,1];
+        );
       );
       nn_optimizer_generic_update_normalize(adamax,#M,#learning_mode);
     );
@@ -24296,14 +24330,15 @@ nn_lib :
 
     # normalize: Layer normalization.
     #--------------------------------
-    nn_layer_normalize_init_forward(M,IN,normalization_mode) = (
+    nn_layer_normalize_init_forward(M,IN,is_channelwise) = (
       const M#_ind = $M#;
       const M#_out_width = IN#_out_width;
       const M#_out_height = IN#_out_height;
       const M#_out_depth = IN#_out_depth;
       const M#_out_spectrum = IN#_out_spectrum;
+      const M#_is_channelwise = is_channelwise;
 
-      normalization_mode?( # Channel-by-channel normalization
+      M#_is_channelwise?( # Channel-by-channel normalization
         M#_alpha = crop(##M#_ind,0,1);
         M#_beta = crop(##M#_ind,1,1);
         M#_avg = crop(##M#_ind,2,1);
