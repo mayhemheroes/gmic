@@ -24026,8 +24026,8 @@ nn_lib :
                         M#_out_width - 1,M#_out_height - 1,M#_out_depth - 1,
                         M#_stride,M#_stride,1,
                         M#_dilation,M#_dilation,1);
-      repeat (M#_out_spectrum,_l,
-        copy(M#_out[_l*M#_sizl],M#_biases[_l],M#_sizl,1,0,-1); # Add biases
+      repeat (M#_out_spectrum,_nn_l,
+        copy(M#_out[_nn_l*M#_sizl],M#_biases[_nn_l],M#_sizl,1,0,-1); # Add biases
       );
     );
 
@@ -24042,10 +24042,10 @@ nn_lib :
 
       # Compute dM/dxk(x,y).
       M#_weights_mirrored = vector(#size(M#_weights));
-      repeat (IN#_out_spectrum,_k,
-        repeat (M#_out_spectrum,_l,
-          copy(M#_weights_mirrored[_k*M#_out_spectrum*M#_sizw + _l*M#_sizw + M#_sizw - 1],
-               M#_weights[_l*(w##M#_ind - 1) + _k*M#_sizw],M#_sizw,-1,1);
+      repeat (IN#_out_spectrum,_nn_k,
+        repeat (M#_out_spectrum,_nn_l,
+          copy(M#_weights_mirrored[_nn_k*M#_out_spectrum*M#_sizw + _nn_l*M#_sizw + M#_sizw - 1],
+               M#_weights[_nn_l*(w##M#_ind - 1) + _nn_k*M#_sizw],M#_sizw,-1,1);
         );
       );
       d#IN#_out = convolve(d#M#_out,
@@ -24067,12 +24067,12 @@ nn_lib :
       # Compute dM/dwlk.
       M#_xk_mirrored = vector(##M#_sizk);
       d#M#_weights = vector(#size(M#_weights));
-      repeat (M#_out_spectrum,_l,
-        repeat (IN#_out_spectrum,_k,
-          copy(M#_xk_mirrored[M#_sizk - 1],IN#_out[_k*M#_sizk],M#_sizk,-1,1);
+      repeat (M#_out_spectrum,_nn_l,
+        repeat (IN#_out_spectrum,_nn_k,
+          copy(M#_xk_mirrored[M#_sizk - 1],IN#_out[_nn_k*M#_sizk],M#_sizk,-1,1);
           M#_dwlk = convolve(M#_xk_mirrored,
                              IN#_out_width,IN#_out_height,IN#_out_depth,1,
-                             d#M#_out[_l*M#_sizl,M#_sizl],
+                             d#M#_out[_nn_l*M#_sizl,M#_sizl],
                              M#_out_width,M#_out_height,M#_out_depth,1,
                              0,0,1,
                              1/M#_stride*(IN#_out_width - 1 - M#_dilation*M#_kernel_center),
@@ -24080,7 +24080,7 @@ nn_lib :
                              0,0,0,M#_kernel_size - 1,M#_kernel_size - 1,0,
                              M#_dilation,M#_dilation,1,
                              M#_stride,M#_stride,1);
-          copy(d#M#_weights[_l*(w##M#_ind - 1) + _k*M#_sizw],M#_dwlk,M#_sizw);
+          copy(d#M#_weights[_nn_l*(w##M#_ind - 1) + _nn_k*M#_sizw],M#_dwlk,M#_sizw);
         );
       );
       batch_d#M#_weights+=d#M#_weights;
@@ -24296,33 +24296,59 @@ nn_lib :
 
     # normalize: Layer normalization.
     #--------------------------------
-    nn_layer_normalize_init_forward(M,IN) = (
+    nn_layer_normalize_init_forward(M,IN,normalization_mode) = (
       const M#_ind = $M#;
       const M#_out_width = IN#_out_width;
       const M#_out_height = IN#_out_height;
       const M#_out_depth = IN#_out_depth;
       const M#_out_spectrum = IN#_out_spectrum;
-      M#_alpha = i[##M#_ind,0];
-      M#_beta = i[##M#_ind,1];
-      M#_avg = i[##M#_ind,2];
-      M#_var = i[##M#_ind,3];
-      M#_std = sqrt(M#_var) + 1e-7;
+
+      normalization_mode?( # Channel-by-channel normalization
+        M#_alpha = crop(##M#_ind,0,1);
+        M#_beta = crop(##M#_ind,1,1);
+        M#_avg = crop(##M#_ind,2,1);
+        M#_var = crop(##M#_ind,3,1);
+      ):( # Global normalization
+        M#_alpha = i[##M#_ind,0];
+        M#_beta = i[##M#_ind,1];
+        M#_avg = i[##M#_ind,2];
+        M#_var = i[##M#_ind,3];
+      );
+      M#_std = sqrt(M#_var);
+      M#_std+=1e-7;
     );
 
     nn_layer_normalize_forward(M,IN) = (
-      M#_out = IN#_out - M#_avg;
-      M#_out*=M#_alpha/M#_std;
-      M#_out+=M#_beta;
+      size(M#_alpha)?( # Channel-by-channel normalization
+        unref(_nn_tmp);
+        const M#_out_whd = M#_out_width*M#_out_height*M#_out_depth;
+        M#_out = vector(#size(#IN));
+        repeat (size(#M#_alpha),_nn_k,
+          _nn_tmp = IN#_out[_nn_k*M#_out_whd,M#_out_whd] - M#_avg[_nn_k];
+          _nn_tmp*=M#_alpha[_nn_k]/M#_std[_nn_k];
+          _nn_tmp+=M#_beta[_nn_k];
+          copy(M#_out[_nn_k*M#_out_whd,M#_out_whd] - M#_avg[_nn_k],_nn_tmp);
+        );
+      ):( # Global normalization
+        M#_out = IN#_out - M#_avg;
+        M#_out*=M#_alpha/M#_std;
+        M#_out+=M#_beta;
+      );
     );
 
     nn_layer_normalize_init_backward(M) = (
-      batch_d#M#_alpha = batch_d#M#_beta = batch_#M#_avg = batch_#M#_var = 0;
+      batch_d#M#_alpha = batch_d#M#_beta = batch_#M#_avg = batch_#M#_var = size(M#_alpha)?vector(#size(M#_alpha)):0;
     );
 
     nn_layer_normalize_backward(M,IN) = (
-      d#IN#_out = d#M#_out*M#_alpha/M#_std;
-      batch_d#M#_alpha+=dot(d#M#_out,IN#_out);
-      batch_d#M#_beta+=sum(d#M#_out);
+
+      size(M#_alpha)?( # Channel-by-channel normalization
+        0;
+      ):( # Global normalization
+        d#IN#_out = d#M#_out*M#_alpha/M#_std;
+        batch_d#M#_alpha+=dot(d#M#_out,IN#_out);
+        batch_d#M#_beta+=sum(d#M#_out);
+      );
       batch_#M#_avg+=avg(IN#_out);
       batch_#M#_var+=var(IN#_out);
     );
@@ -24769,7 +24795,7 @@ nn_layer_conv2dnnl : nn_check_layer "$2"
          "stride $5, dilation $6 and '$7' activation."
   init=$_nn_init
   _nn_layer_conv2d $1_conv2d,${2-6},$8
-  _nn_layer_normalize $1_normalize,$1_conv2d,3
+  _nn_layer_normalize $1_normalize,$1_conv2d,0,3
   nn_layer_nl $1,$1_normalize,$7
   _nn_init=${init}"$0 $* "
 
@@ -24891,7 +24917,7 @@ nn_layer_fcnnl : nn_check_layer "$2"
   e[^-1] "[nn_lib] Add 'fc+normalize+nl' layer '$1' to the network, with input '$2', $3 channels and '$4' activation."
   init=$_nn_init
   _nn_layer_fc $1_fc,${2-3},$5
-  _nn_layer_normalize $1_normalize,$1_fc,3
+  _nn_layer_normalize $1_normalize,$1_fc,0,3
   nn_layer_nl $1,$1_normalize,$4
   _nn_init=${init}"$0 $* "
 
@@ -24929,14 +24955,16 @@ nn_layer_nl : nn_check_layer "$2"
   fi
   _nn_init.="$0 $* "
 
-#@cli nn_layer_normalize : name,in,0<=_learning_mode<=3
+#@cli nn_layer_normalize : name,in,_normalization_mode_,0<=_learning_mode<=3
 #@cli : Add a 'normalize' layer to the network.
+#@cli : 'normalization_mode' can be { 0=global parameters | 1=channel-by-channel parameters }
 #@cli : 'learning_mode' can be { 0=no learning | 1=alpha only | 2=beta only | 3=alpha+beta }
-#@cli : Default value: 'learning_mode=3'.
+#@cli : Default value: 'parameter_mode=0' and 'learning_mode=3'.
 nn_layer_normalize : nn_check_layer "$2"
-                     check "isvarname('$1') && isint(${3=3}) && inrange($3,0,3)"
-  e[^-1] "[nn_lib] Add 'normalize' layer '$1', with input '$2' and learning mode $3."
-  _nn_layer_normalize $1_normalize,${2-3}
+                     check "isvarname('$1') && isbool(${3=0}) && isint(${4=3}) && inrange($4,0,3)"
+  s0,s1=global,channel-by-channel
+  e[^-1] "[nn_lib] Add 'normalize' layer '$1', with input '$2' and "${s$3}" normalization."
+  _nn_layer_normalize $1_normalize,${2-4}
   nn_layer_rename $1,$1_normalize
 
 # [Internal] Insert 'normalize' layer, with parameter image having name '$1'.
@@ -24944,9 +24972,13 @@ _nn_layer_normalize :
   _nn_modules_names.=$1,
   _nn_modules_types.=normalize,
   _nn_$1_out_size=$_nn_$2_out_size
-  _nn_$1_learning_mode=$3
-  if !isint($$1) (1,0,0,1) => $1 fi # (alpha,beta,running_avg,running_var)
-  _nn_forward.="begin(nn_layer_normalize_init_forward($1,$2));"\
+  _nn_$1_learning_mode=$4
+  if !isint($$1)
+    (1,0,0,1) # alpha,beta,running_avg,running_var
+    if $3 r. 100%,{[$_nn_$2_out_size][3]} fi # channel-by-channel normalization
+    => $1
+  fi
+  _nn_forward.="begin(nn_layer_normalize_init_forward($1,$2,$3));"\
                "nn_layer_normalize_forward($1,$2);"
   _nn_backward..="begin(nn_layer_normalize_init_backward($1));"\
                  "nn_layer_normalize_backward($1,$2);"\
@@ -25041,7 +25073,7 @@ nn_layer_resconv2dnnl : nn_check_layer "$2"
   init=$_nn_init
   nn_layer_clone $1_clone0,$1_clone1,$2
   _nn_layer_conv2d $1_conv2d,$1_clone1,{[$_nn_$2_out_size][3]},${3-5},$7
-  _nn_layer_normalize $1_normalize,$1_conv2d,3
+  _nn_layer_normalize $1_normalize,$1_conv2d,0,3
   nn_layer_add $1_add,$1_normalize,$1_clone0
   nn_layer_nl $1,$1_add,$6
   _nn_init=${init}"$0 $* "
@@ -25086,7 +25118,7 @@ nn_layer_resfcnnl : nn_check_layer "$2"
   init=$_nn_init
   nn_layer_clone $1_clone0,$1_clone1,$2
   _nn_layer_fc $1_fc,$1_clone1,{prod($_nn_$2_out_size)},1 # $4
-  _nn_layer_normalize $1_normalize,$1_fc,3
+  _nn_layer_normalize $1_normalize,$1_fc,0,3
   nn_layer_add $1_add,$1_normalize,$1_clone0
   nn_layer_nl $1,$1_add,$3
   _nn_init=${init}"$0 $* "
