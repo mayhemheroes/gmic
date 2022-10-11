@@ -24385,14 +24385,17 @@ nn_lib :
           copy(d#IN#_out[_nn_k*M#_out_whd],M#_tmp*M#_alpha[_nn_k]/M#_std[_nn_k]);
           batch_d#M#_alpha[_nn_k]+=dot(M#_tmp,M#_hat[_nn_k*M#_out_whd,M#_out_whd]);
           batch_d#M#_beta[_nn_k]+=sum(M#_tmp);
+          M#_tmp = IN_out[_nn_k*M#_out_whd,M#_out_whd]; # One channel of IN#_out
+          batch_#M#_avg[_nn_k]+=avg(M#_tmp);
+          batch_#M#_var[_nn_k]+=var(M#_tmp);
         );
       ):( # Global normalization
         d#IN#_out = d#M#_out*M#_alpha/M#_std;
         batch_d#M#_alpha+=dot(d#M#_out,M#_hat);
         batch_d#M#_beta+=sum(d#M#_out);
+        batch_#M#_avg+=avg(IN#_out);
+        batch_#M#_var+=var(IN#_out);
       );
-      batch_#M#_avg+=avg(IN#_out);
-      batch_#M#_var+=var(IN#_out);
     );
 
     nn_layer_normalize_end_backward(M) = (
