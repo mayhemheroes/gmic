@@ -24716,7 +24716,7 @@ nn_lib :
 #@cli : Initialize a new network.
 nn_init :
   e[^-1] "[nn_lib] Initialize new network."
-  _nn_modules_names,_nn_modules_types,_nn_optimizer_data,_nn_forward,_nn_loss,_nn_backward,_nn_update=
+  _nn_modules_names,_nn_modules_types,_nn_trainer_data,_nn_forward,_nn_loss,_nn_backward,_nn_update=
   _nn_init="$0 "
 
 #@cli nn_check_layer : name
@@ -25347,13 +25347,13 @@ nn_trainer : nn_check_layer "$2"
         if '$4'=='rmsprop'
           name_g2=${name}_g2
           if !isint(${$name_g2}) +f[$name] 0 => $name_g2 fi
-          _nn_optimizer_data.=$name_g2,
+          _nn_trainer_data.=$name_g2,
 
         elif isin('$4','adam','adamax')
           name_m,name_v=${name}_m,${name}_v
           if !isint(${$name_m}) +f[$name] 0 => $name_m fi
           if !isint(${$name_v}) +f[$name] 0 => $name_v fi
-          _nn_optimizer_data.=$name_m,$name_v,
+          _nn_trainer_data.=$name_m,$name_v,
         fi
       fi
     fi
@@ -25391,12 +25391,14 @@ nn_size :
   e[^-1] "[nn_lib] Load network from file '$1'."
   i "$1" init_code={t} rm. run $init_code
 
-#@cli nn_save : 'filename.gmz'
+#@cli nn_save : 'filename.gmz',_include_trainer_data={ 0=no | 1=yes }
 #@cli : Save current network as a .gmz file.
-#@cli : Neural network files can be only saved in .gmz format.
-nn_save : check "s=['$1']; find(s,'.gmz')==size(s) - 4"
-  e[^-1] "[nn_lib] Save current network as file '$1'."
-  sel=$_nn_optimizer_data c=
+#@cli : `.gmz` is mandatory extension, specifying another file extension will throw an error.
+#@cli : Default value: 'include_trainer_data=1'.
+nn_save : check "s=['$1']; find(s,'.gmz')==size(s) - 4 && isbool(${2=1})"
+  s0,s1=""," (include trainer data)"
+  e[^-1] "[nn_lib] Save current network as file '$1'"$s$2"."
+  if $2 sel=$_nn_trainer_data fi c=
   repeat narg($_nn_modules_names)-1 {
     type=${arg0\ $>,$_nn_modules_types}
     name=${arg0\ $>,$_nn_modules_names}
