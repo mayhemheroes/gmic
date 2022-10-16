@@ -24200,10 +24200,11 @@ nn_lib :
     );
 
     nn_layer_distance_backward(M,IN0,IN1,metric) = (
+      M#_diff = IN0#_out - IN1#_out;
       metric>0?(
-        d#IN0_out = 0;
+        d#IN0_out = (abs(M#_diff)/M#_out[0])^(#metric - 1)*sign(M#_diff);
       ):(
-        d#IN0#_out = 2*(IN0#_out - IN1#_out);
+        d#IN0#_out = 2*M#_diff;
       );
       d#IN1#_out = -d#IN0#_out;
     );
