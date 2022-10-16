@@ -24196,12 +24196,15 @@ nn_lib :
     );
 
     nn_layer_distance_forward(M,IN0,IN1,metric) = (
-      M#_diff = IN0#_out - IN1#_out;
-      M#_out = [ norm(M#_diff)^2 ];
+      M#_out = [ metric>0?norm#metric(IN0#_out - IN1#_out):norm(IN0#_out - IN1#_out)^2 ];
     );
 
     nn_layer_distance_backward(M,IN0,IN1,metric) = (
-      d#IN0#_out = M#_diff*2;
+      metric>0?(
+        d#IN0_out = 0;
+      ):(
+        d#IN0#_out = 2*(IN0#_out - IN1#_out);
+      );
       d#IN1#_out = -d#IN0#_out;
     );
 
