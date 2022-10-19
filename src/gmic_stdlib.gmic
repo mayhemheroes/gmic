@@ -29447,13 +29447,6 @@ file_mv :
   e[^-1] "Move file '$1' to location '$2'."
   if ${-is_windows} x "move "$1" "$2 else x "mv "$1" "$2 fi
 
-#@cli filename_rand
-#@cli : Return a random filename for storing temporary data.
-filename_rand :
-  do filename=${-path_tmp}gmic$_pid{`round(u(vector6(_'0'),vector6(_'9')))`}
-  while isfile(['{/$filename}'])
-  u $filename
-
 #@cli filename : filename,_number1,_number2,...,_numberN
 #@cli : Return a filename numbered with specified indices.
 filename : skip "${1=default}"
@@ -29467,6 +29460,28 @@ filename : skip "${1=default}"
   if narg({'{x}'}) u ${}.{x} fi
   rm.
   fi
+
+#@cli filename_rand
+#@cli : Return a random filename for storing temporary data.
+filename_rand :
+  do filename=${-path_tmp}gmic$_pid{`round(u(vector6(_'0'),vector6(_'9')))`}
+  while isfile(['{/$filename}'])
+  u $filename
+
+#@cli filename_dated : filename
+#@cli : Convert specified filename to one stamped with the current date (YYYYMMDD_HHMMSS).
+filename_dated :
+  0 => "$1" ext={x} folder={f} basename={b} rm.
+  if ['$ext']!=0 ext..=. fi
+  u ${folder}${basename}_{`"
+      str='00000000_000000';
+      copy(str,v2s(date(0)),4);
+      v = date(1); copy(str[4 + (v<10)],v2s(v),2);
+      v = date(2); copy(str[6 + (v<10)],v2s(v),2);
+      v = date(4); copy(str[9 + (v<10)],v2s(v),2);
+      v = date(5); copy(str[11 + (v<10)],v2s(v),2);
+      v = date(6); copy(str[13 + (v<10)],v2s(v),v<10?1:2);
+      str"`}$ext
 
 #@cli files : _mode,path : (+)
 #@cli : Return the list of files and/or subfolders from specified path.
