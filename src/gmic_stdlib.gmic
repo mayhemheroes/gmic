@@ -23335,7 +23335,7 @@ _exec_out :
   }
   s0,s1,s2=stdout,stderr,stdout+stderr
   e[0--3] "Execute external command '"$command"', and return "${s$mode}" output."
-  file_rand filename=${}
+  filename_rand filename=${}
   if $mode==0 x $command" > "$filename
   elif $mode==1 x $command" 2> "$filename
   else x $command"  >"$filename" 2>&1"
@@ -29447,9 +29447,9 @@ file_mv :
   e[^-1] "Move file '$1' to location '$2'."
   if ${-is_windows} x "move "$1" "$2 else x "mv "$1" "$2 fi
 
-#@cli file_rand
+#@cli filename_rand
 #@cli : Return a random filename for storing temporary data.
-file_rand :
+filename_rand :
   do filename=${-path_tmp}gmic$_pid{`round(u(vector6(_'0'),vector6(_'9')))`}
   while isfile(['{/$filename}'])
   u $filename
@@ -30853,7 +30853,7 @@ RGBA : rgba
 shell_cols :
   if ${-is_windows}" || "${-is_macos} u 80
   else
-    file_rand filename=${}
+    filename_rand filename=${}
     l[] { cols=80 x "tput cols > "$filename it $filename if isint({t}) cols={{t}} fi rm onfail cols=80 rm }
     delete $filename
     u $cols
