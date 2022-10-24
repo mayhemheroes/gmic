@@ -24321,6 +24321,24 @@ nn_lib :
       );
     );
 
+    # mul: Multiply two inputs.
+    #---------------------------
+    nn_layer_mul_init_forward(OUT,IN) = (
+      const OUT#_width = IN#_width;
+      const OUT#_height = IN#_height;
+      const OUT#_depth = IN#_depth;
+      const OUT#_spectrum = IN#_spectrum;
+    );
+
+    nn_layer_mul_forward(OUT,IN0,IN1) = (
+      OUT# = IN0# * IN1#;
+    );
+
+    nn_layer_mul_backward(OUT,IN0,IN1) = (
+      d#IN0 = #IN0 * d#OUT;
+      d#IN1 = #IN1 * d#OUT;
+    );
+
     # nl: Non-linearity.
     #-------------------
     nn_layer_nl_init_forward(OUT,IN) = (
@@ -25024,6 +25042,20 @@ nn_layer_maxpool2d : nn_check_layer "$2"
   _nn_forward.="begin(nn_layer_maxpool2d_init_forward($1,$2));"\
                "nn_layer_maxpool2d_forward($1,$2);"
   _nn_backward..="nn_layer_maxpool2d_backward($1,$2);"
+  _nn_init.="$0 $* "
+
+#@cli nn_layer_mul : out,in0,in1
+#@cli : Add an 'mul' layer to the network.
+nn_layer_mul : nn_check_layer "$2"
+               nn_check_layer "$3"
+               check "isvarname('$1') && [$_nn_$2_size]==[$_nn_$3_size]"
+  e[^-1] "[nn_lib] Add 'mul' layer '$1', with inputs '$2' and '$3'."
+  _nn_modules_names.=$1,
+  _nn_modules_types.=mul,
+  _nn_$1_size=$_nn_$2_size
+  _nn_forward.="begin(nn_layer_mul_init_forward($1,$2));"\
+               "nn_layer_mul_forward($1,$2,$3);"
+  _nn_backward..="nn_layer_mul_backward($1,$2,$3);"
   _nn_init.="$0 $* "
 
 #@cli nn_layer_nl : out,in,_activation
