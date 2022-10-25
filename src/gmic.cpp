@@ -5377,15 +5377,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 #define gmic_use_message gmic_use_var(message,1024)
 #define gmic_use_formula gmic_use_var(formula,4096)
 #define gmic_use_color gmic_use_var(color,4096)
-#define gmic_if_flr \
-  if ((!_is_get && !std::strcmp("repeat",it)) || \
-      (*it=='l' && ((!std::strncmp("local",it,5) && (!it[5] || it[5]=='.' || it[5]=='[')) || \
-                    (!it[1] || it[1]=='.' || it[1]=='['))) || \
-      (*it=='f' && ((!_is_get && !std::strcmp("for",it)) || \
-                    (!std::strncmp("foreach",it,7) && (!it[7] || it[7]=='.' || it[7]=='[')))))
-
-#define gmic_elif_flr \
-  else if (!_is_get && ((*it=='}' && !it[1]) || !std::strcmp("done",it)))
 
 #define gmic_if_diflr \
   if ((!_is_get && *it=='d' && it[1]=='o' && !it[2]) || \
