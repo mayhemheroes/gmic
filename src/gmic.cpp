@@ -7899,7 +7899,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               else {
                 _is_get = *it=='+';
                 it+=(_is_get || *it=='-');
-                gmic_if_flr ++nb_levels; gmic_elif_flr --nb_levels;
+                gmic_if_diflr ++nb_levels; gmic_elif_diflr --nb_levels;
               }
             }
             if (nb_levels)
@@ -7933,7 +7933,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               else {
                 _is_get = *it=='+';
                 it+=(_is_get || *it=='-');
-                gmic_if_flr ++nb_levels; gmic_elif_flr --nb_levels;
+                gmic_if_diflr ++nb_levels; gmic_elif_diflr --nb_levels;
               }
             }
             if (nb_levels)
@@ -8003,7 +8003,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                       is_debug_info|=get_debug_info(commands_line[position].data(),next_debug_line,next_debug_filename);
                     else {
                       it+=(_is_get || *it=='-');
-                      gmic_if_flr ++nb_levels; gmic_elif_flr --nb_levels;
+                      gmic_if_diflr ++nb_levels; gmic_elif_diflr --nb_levels;
                     }
                   }
                 }
@@ -9008,7 +9008,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   is_debug_info|=get_debug_info(commands_line[position].data(),next_debug_line,next_debug_filename);
                 else {
                   it+=(_is_get || *it=='-');
-                  gmic_if_flr ++nb_levels; gmic_elif_flr --nb_levels;
+                  gmic_if_diflr ++nb_levels; gmic_elif_diflr --nb_levels;
                   else if (!_is_get && nb_levels==1 && !std::strcmp("onfail",it)) break;
                 }
               }
@@ -9935,7 +9935,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             else {
               _is_get = *it=='+';
               it+=(_is_get || *it=='-');
-              gmic_if_flr ++nb_levels; gmic_elif_flr { --nb_levels; if (!nb_levels) --position; }
+              gmic_if_diflr ++nb_levels; gmic_elif_diflr { --nb_levels; if (!nb_levels) --position; }
             }
           }
           continue;
@@ -11290,7 +11290,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               else {
                 _is_get = *it=='+';
                 it+=(_is_get || *it=='-');
-                gmic_if_flr ++nb_levels; gmic_elif_flr --nb_levels;
+                gmic_if_diflr ++nb_levels; gmic_elif_diflr --nb_levels;
               }
             }
             if (nb_levels)
