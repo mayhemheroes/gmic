@@ -5487,7 +5487,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       CImg<char> item_eob;
       if (*item=='}' && !item[1]) {
         it = callstack.back().data();
-//        std::fprintf(stderr,"\nDEBUG : it = '%s'\n",it);
         if (*it=='*' && it[1]=='i') item = CImg<char>::string("fi").move_to(item_eob); // End 'if...'
         else if (*it=='*' && it[1]=='d') { ++position; continue; } // End 'do...'
         else item = CImg<char>::string("done").move_to(item_eob);
@@ -5512,7 +5511,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       if (!is_builtin_command)
         is_builtin_command = is_command =
           (*item>='a' && *item<='z' && is_com1) || // Alphabetical shortcut commands
-// DEBUG :       (*item=='}' && !item[1]) || // Shortcut for 'done'
           (*item=='m' && (item[1]=='*' || item[1]=='/') && is_com2) || // Shortcuts 'm*' and 'm/'
           (*item=='f' && item[1]=='i' && is_com2) || // Shortcuts 'fi'
           (*item=='u' && item[1]=='m' && is_com2) || // Shortcut 'um'
@@ -5788,7 +5786,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         if (!command1) { // Single-char shortcut
           const bool
             is_mquvx = command0=='m' || command0=='q' || command0=='u' || command0=='v' || command0=='x',
-// DEBUG :           || command0=='}',
             is_deiowx = command0=='d' || command0=='e' || command0=='i' || command0=='o' || command0=='w' ||
                         command0=='x';
           if ((unsigned int)command0<128 && onechar_shortcuts[(unsigned int)command0] &&
