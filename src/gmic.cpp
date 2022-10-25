@@ -7471,7 +7471,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           check_elif = false;
           if (is_very_verbose) print(images,0,"Reach 'else' block.");
           for (int nb_levels = 1; nb_levels && position<commands_line.size(); ++position) {
-            it = commands_line[position].data();
+            it = commands_line[position];
             if (*it==1)
               is_debug_info|=get_debug_info(commands_line[position].data(),next_debug_line,next_debug_filename);
             else {
@@ -7864,7 +7864,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           if (!is_cond) {
             int nb_levels = 0;
             for (nb_levels = 1; nb_levels && position<commands_line.size(); ++position) {
-              it = commands_line[position].data();
+              it = commands_line[position];
               if (*it==1)
                 is_debug_info|=get_debug_info(commands_line[position].data(),next_debug_line,next_debug_filename);
               else {
@@ -7898,7 +7898,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             if (is_very_verbose) print(images,0,"Skip 'foreach...done' block.");
             int nb_levels = 0;
             for (nb_levels = 1; nb_levels && position<commands_line.size(); ++position) {
-              it = commands_line[position].data();
+              it = commands_line[position];
               if (*it==1)
                 is_debug_info|=get_debug_info(commands_line[position].data(),next_debug_line,next_debug_filename);
               else {
@@ -7965,7 +7965,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 check_elif = false;
                 int nb_levels = 0;
                 for (nb_levels = 1; nb_levels && position<commands_line.size(); ++position) {
-                  it = commands_line[position].data();
+                  it = commands_line[position];
                   if (*it==1)
                     is_debug_info|=get_debug_info(commands_line[position].data(),next_debug_line,next_debug_filename);
                   else {
@@ -8970,7 +8970,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             check_elif = false;
             int nb_levels = 0;
             for (nb_levels = 1; nb_levels && position<commands_line.size(); ++position) {
-              it = commands_line[position].data();
+              it = commands_line[position];
               if (*it==1)
                 is_debug_info|=get_debug_info(commands_line[position].data(),next_debug_line,next_debug_filename);
               else {
@@ -9900,7 +9900,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             error(true,images,0,0,
                   "Command 'onfail': Not associated to a 'local' command within the same scope.");
           for (int nb_levels = 1; nb_levels && position<commands_line.size(); ++position) {
-            it = commands_line[position].data();
+            it = commands_line[position];
             if (*it==1)
               is_debug_info|=get_debug_info(commands_line[position].data(),next_debug_line,next_debug_filename);
             else {
@@ -11255,7 +11255,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             if (is_very_verbose) print(images,0,"Skip 'repeat...done' block (0 iterations).");
             int nb_levels = 0;
             for (nb_levels = 1; nb_levels && position<commands_line.size(); ++position) {
-              it = commands_line[position].data();
+              it = commands_line[position];
               if (*it==1)
                 is_debug_info|=get_debug_info(commands_line[position].data(),next_debug_line,next_debug_filename);
               else {
@@ -13633,7 +13633,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                               is_cond?"holds":"does not hold");
             if (!is_cond) {
               for (int nb_levels = 1; nb_levels && position<commands_line.size(); ++position) {
-                it = commands_line[position].data();
+                it = commands_line[position];
                 if (*it==1)
                   is_debug_info|=get_debug_info(commands_line[position].data(),next_debug_line,next_debug_filename);
                 else {
@@ -13679,7 +13679,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               print(images,0,"%s %scurrent 'repeat...done' block.",
                     Com,is_continue?"to next iteration of ":"");
               for (nb_levels = 1; nb_levels && position<commands_line.size(); ++position) {
-                it = commands_line[position].data();
+                it = commands_line[position];
                 if (*it==1)
                   is_debug_info|=get_debug_info(commands_line[position].data(),next_debug_line,next_debug_filename);
                 else {
@@ -13694,7 +13694,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               print(images,0,"%s %scurrent 'do...while' block.",
                     Com,is_continue?"to next iteration of ":"");
               for (nb_levels = 1; nb_levels && position<commands_line.size(); ++position) {
-                it = commands_line[position].data();
+                it = commands_line[position];
                 it+=*it=='-';
                 if (!std::strcmp("do",it)) ++nb_levels;
                 else if (!std::strcmp("while",it)) --nb_levels;
@@ -13705,7 +13705,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               print(images,0,"%s %scurrent 'for...done' block.",
                     Com,is_continue?"to next iteration of ":"");
               for (nb_levels = 1; nb_levels && position<commands_line.size(); ++position) {
-                it = commands_line[position].data();
+                it = commands_line[position];
                 if (*it==1)
                   is_debug_info|=get_debug_info(commands_line[position].data(),next_debug_line,next_debug_filename);
                 else {
@@ -13720,7 +13720,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               print(images,0,"%s %scurrent 'foreach...done' block.",
                     Com,is_continue?"to next iteration of ":"");
               for (nb_levels = 1; nb_levels && position<commands_line.size(); ++position) {
-                it = commands_line[position].data();
+                it = commands_line[position];
                 if (*it==1)
                   is_debug_info|=get_debug_info(commands_line[position].data(),next_debug_line,next_debug_filename);
                 else {
@@ -13735,7 +13735,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               print(images,0,"%s %scurrent local environment.",
                     Com,is_continue?"to end of ":"");
               for (nb_levels = 1; nb_levels && position<commands_line.size(); ++position) {
-                it = commands_line[position].data();
+                it = commands_line[position];
                 if (*it==1)
                   is_debug_info|=get_debug_info(commands_line[position].data(),next_debug_line,next_debug_filename);
                 else {
