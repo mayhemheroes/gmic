@@ -5377,21 +5377,15 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 #define gmic_use_message gmic_use_var(message,1024)
 #define gmic_use_formula gmic_use_var(formula,4096)
 #define gmic_use_color gmic_use_var(color,4096)
-
-#define gmic_if_diflr \
-  if ((!_is_get && *it=='d' && it[1]=='o' && !it[2]) || \
-      (!_is_get && *it=='i' && it[1]=='f' && !it[2]) || \
-      (*it=='f' && ((!_is_get && !std::strcmp("for",it)) || \
-                   (!std::strncmp("foreach",it,7) && (!it[7] || it[7]=='.' || it[7]=='[')))) || \
+#define gmic_if_flr \
+  if ((!_is_get && !std::strcmp("repeat",it)) || \
       (*it=='l' && ((!std::strncmp("local",it,5) && (!it[5] || it[5]=='.' || it[5]=='[')) || \
-                   (!it[1] || it[1]=='.' || it[1]=='['))) || \
-      (!_is_get && !std::strcmp("repeat",it)))
+                    (!it[1] || it[1]=='.' || it[1]=='['))) || \
+      (*it=='f' && ((!_is_get && !std::strcmp("for",it)) || \
+                    (!std::strncmp("foreach",it,7) && (!it[7] || it[7]=='.' || it[7]=='[')))))
 
-#define gmic_elif_diflr \
-  else if (!_is_get && ((*it=='}' && !it[1]) || \
-                        !std::strcmp("while",it) || \
-                        (*it=='f' && it[1]=='i' && !it[2]) || \
-                        !std::strcmp("done",it)))
+#define gmic_elif_flr \
+  else if (!_is_get && ((*it=='}' && !it[1]) || !std::strcmp("done",it)))
 
   unsigned int next_debug_line = ~0U, next_debug_filename = ~0U, is_high_connectivity, uind = 0,
     boundary = 0, pattern = 0, exit_on_anykey = 0, wind = 0, interpolation = 0, hash = 0;
@@ -5471,19 +5465,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       const char *argument = initial_argument;
       if ((*item==',' || *item=='{') && !item[1]) { ++position; continue; }
 
-      bool is_builtin_command = false, is_command = false;
-
-      // Manage special case, when item=='}' (end block).
-      // Replace 'item' with appropriate ending command '', 'done' or 'fi'.
-      CImg<char> item_eob;
-      if (*item=='}' && !item[1]) {
-        it = callstack.back().data();
-        if (*it=='*' && it[1]=='i') item = CImg<char>::string("fi").move_to(item_eob); // End 'if...'
-        else if (*it=='*' && it[1]=='d') { ++position; continue; } // End 'do...'
-        else item = CImg<char>::string("done").move_to(item_eob);
-        is_builtin_command = is_command = true;
-      }
-
       // Check if current item is a known command.
       const bool
         is_hyphen = *item=='-' && item[1] &&
@@ -5499,20 +5480,21 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         is_com1 = *item && _gmic_eok(1),
         is_com2 = *item && item[1] && _gmic_eok(2),
         is_com3 = *item && item[1] && item[2] && _gmic_eok(3);
-      if (!is_builtin_command)
-        is_builtin_command = is_command =
-          (*item>='a' && *item<='z' && is_com1) || // Alphabetical shortcut commands
-          (*item=='m' && (item[1]=='*' || item[1]=='/') && is_com2) || // Shortcuts 'm*' and 'm/'
-          (*item=='f' && item[1]=='i' && is_com2) || // Shortcuts 'fi'
-          (*item=='u' && item[1]=='m' && is_com2) || // Shortcut 'um'
-          (*item=='!' && item[1]=='=' && is_com2) || // Shortcut '!='
-          (*item=='=' && item[1]=='>' && is_com2) || // Shortcut '=>'
-          (*item=='n' && item[1]=='m' && is_com2) || // Shortcut 'nm'
-          ((*item=='%' || *item=='&' || *item=='^' || *item=='|') && is_com1) || // Shortcuts '%','&','^' and '|'
-          ((*item=='*' || *item=='+' || *item=='-' || *item=='/') && // Shortcuts '*','+','-','/',
-           (is_com1 || (item[1]=='3' && item[2]=='d' && is_com3))) || // '*3d','+3d','-3d' and '/3d'
-          ((*item=='<' || *item=='=' || *item=='>') && // Shortcuts '<','=','>','<=','==' and '>='
-           (is_com1 || ((item[1]==*item || item[1]=='=') && is_com2)));
+      bool is_builtin_command =
+        (*item>='a' && *item<='z' && is_com1) || // Alphabetical shortcut commands
+        (*item=='}' && !item[1]) || // Shortcut for 'done'
+        (*item=='m' && (item[1]=='*' || item[1]=='/') && is_com2) || // Shortcuts 'm*' and 'm/'
+        (*item=='f' && item[1]=='i' && is_com2) || // Shortcuts 'fi'
+        (*item=='u' && item[1]=='m' && is_com2) || // Shortcut 'um'
+        (*item=='!' && item[1]=='=' && is_com2) || // Shortcut '!='
+        (*item=='=' && item[1]=='>' && is_com2) || // Shortcut '=>'
+        (*item=='n' && item[1]=='m' && is_com2) || // Shortcut 'nm'
+        ((*item=='%' || *item=='&' || *item=='^' || *item=='|') && is_com1) || // Shortcuts '%','&','^' and '|'
+        ((*item=='*' || *item=='+' || *item=='-' || *item=='/') && // Shortcuts '*','+','-','/',
+         (is_com1 || (item[1]=='3' && item[2]=='d' && is_com3))) || // '*3d','+3d','-3d' and '/3d'
+        ((*item=='<' || *item=='=' || *item=='>') && // Shortcuts '<','=','>','<=','==' and '>='
+         (is_com1 || ((item[1]==*item || item[1]=='=') && is_com2))),
+        is_command = is_builtin_command;
 
       if (!is_builtin_command) {
         *command = sep0 = sep1 = sep = 0;
@@ -5771,12 +5753,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"pow",0, // 64-95
           0,"append","blur","cut","display","echo","fill",0,0,"input","image","keep", // 96-107
           "local","command","normalize","output","print","quit","resize","split","text","status", // 108-117
-          "verbose","window","exec","unroll","crop",0,"or","}",0,0 // 118-127
+          "verbose","window","exec","unroll","crop",0,"or","done",0,0 // 118-127
         };
 
         if (!command1) { // Single-char shortcut
           const bool
-            is_mquvx = command0=='m' || command0=='q' || command0=='u' || command0=='v' || command0=='x',
+            is_mquvx = command0=='m' || command0=='q' || command0=='u' || command0=='v' || command0=='x' ||
+                       command0=='}',
             is_deiowx = command0=='d' || command0=='e' || command0=='i' || command0=='o' || command0=='w' ||
                         command0=='x';
           if ((unsigned int)command0<128 && onechar_shortcuts[(unsigned int)command0] &&
@@ -5843,7 +5826,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             if (!is_get && !is_selection) CImg<char>::string("specs3d").move_to(_item);
           }
         }
-        if (item!=_item.data() + (is_hyphen || is_plus?1:0) && item!=item_eob.data()) item = _item;
+        if (item!=_item.data() + (is_hyphen || is_plus?1:0)) item = _item;
         command0 = *command?*command:*item;
 
         // Dispatch to dedicated parsing code, regarding the first character of the command.
@@ -7493,7 +7476,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               is_debug_info|=get_debug_info(commands_line[position].data(),next_debug_line,next_debug_filename);
             else {
               it+=*it=='-';
-              gmic_if_diflr ++nb_levels; gmic_elif_diflr { --nb_levels; if (!nb_levels) --position; }
+              if (!std::strcmp("if",it)) ++nb_levels;
+              else if (!std::strcmp("fi",it)) { if (!--nb_levels) --position; }
             }
           }
           continue;
@@ -7886,7 +7870,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               else {
                 _is_get = *it=='+';
                 it+=(_is_get || *it=='-');
-                gmic_if_diflr ++nb_levels; gmic_elif_diflr --nb_levels;
+                gmic_if_flr ++nb_levels; gmic_elif_flr --nb_levels;
               }
             }
             if (nb_levels)
@@ -7920,7 +7904,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               else {
                 _is_get = *it=='+';
                 it+=(_is_get || *it=='-');
-                gmic_if_diflr ++nb_levels; gmic_elif_diflr --nb_levels;
+                gmic_if_flr ++nb_levels; gmic_elif_flr --nb_levels;
               }
             }
             if (nb_levels)
@@ -7990,7 +7974,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                       is_debug_info|=get_debug_info(commands_line[position].data(),next_debug_line,next_debug_filename);
                     else {
                       it+=(_is_get || *it=='-');
-                      gmic_if_diflr ++nb_levels; gmic_elif_diflr --nb_levels;
+                      gmic_if_flr ++nb_levels; gmic_elif_flr --nb_levels;
                     }
                   }
                 }
@@ -8995,7 +8979,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   is_debug_info|=get_debug_info(commands_line[position].data(),next_debug_line,next_debug_filename);
                 else {
                   it+=(_is_get || *it=='-');
-                  gmic_if_diflr ++nb_levels; gmic_elif_diflr --nb_levels;
+                  gmic_if_flr ++nb_levels; gmic_elif_flr --nb_levels;
                   else if (!_is_get && nb_levels==1 && !std::strcmp("onfail",it)) break;
                 }
               }
@@ -9922,7 +9906,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             else {
               _is_get = *it=='+';
               it+=(_is_get || *it=='-');
-              gmic_if_diflr ++nb_levels; gmic_elif_diflr { --nb_levels; if (!nb_levels) --position; }
+              gmic_if_flr ++nb_levels; gmic_elif_flr { if (!--nb_levels) --position; }
             }
           }
           continue;
@@ -11277,7 +11261,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               else {
                 _is_get = *it=='+';
                 it+=(_is_get || *it=='-');
-                gmic_if_diflr ++nb_levels; gmic_elif_diflr --nb_levels;
+                gmic_if_flr ++nb_levels; gmic_elif_flr --nb_levels;
               }
             }
             if (nb_levels)
@@ -13654,7 +13638,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   is_debug_info|=get_debug_info(commands_line[position].data(),next_debug_line,next_debug_filename);
                 else {
                   it+=*it=='-';
-                  gmic_if_diflr ++nb_levels; gmic_elif_diflr { --nb_levels; if (!nb_levels) --position; }
+                  if (!std::strcmp("if",it)) ++nb_levels;
+                  else if (!std::strcmp("fi",it)) { if (!--nb_levels) --position; }
                   else if (nb_levels==1) {
                     if (!std::strcmp("else",it)) --nb_levels;
                     else if (!std::strcmp("elif",it)) { --nb_levels; check_elif = true; --position; }
@@ -13675,7 +13660,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               *const com = is_continue?"continue":"break",
               *const Com = is_continue?"Continue":"Break";
             unsigned int callstack_repeat = 0, callstack_do = 0, callstack_for = 0, callstack_foreach = 0,
-              callstack_local = 0, nb_ifs = 0;
+              callstack_local = 0;
             for (unsigned int l = callstack.size() - 1; l; --l) {
               const char *const s = callstack[l].data();
               if (s[0]=='*' && s[1]=='r') { callstack_repeat = l; break; }
@@ -13685,24 +13670,22 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 break;
               }
               else if (s[0]=='*' && s[1]=='l') { callstack_local = l; break; }
-              else if (s[0]=='*' && s[1]=='i') ++nb_ifs;
-              else if (s[0]!='*') break;
+              else if (s[0]!='*' || s[1]!='i') break;
             }
-
             const char *stb = 0, *ste = 0;
             unsigned int callstack_ind = 0;
             int nb_levels = 0;
             if (callstack_repeat) {
               print(images,0,"%s %scurrent 'repeat...done' block.",
                     Com,is_continue?"to next iteration of ":"");
-              for (nb_levels = 1 + (int)nb_ifs; nb_levels && position<commands_line.size(); ++position) {
+              for (nb_levels = 1; nb_levels && position<commands_line.size(); ++position) {
                 it = commands_line[position].data();
                 if (*it==1)
                   is_debug_info|=get_debug_info(commands_line[position].data(),next_debug_line,next_debug_filename);
                 else {
                   _is_get = *it=='+';
                   it+=(_is_get || *it=='-');
-                  gmic_if_diflr ++nb_levels; gmic_elif_diflr --nb_levels;
+                  gmic_if_flr ++nb_levels; gmic_elif_flr --nb_levels;
                 }
               }
               callstack_ind = callstack_repeat;
@@ -13710,24 +13693,25 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             } else if (callstack_do) {
               print(images,0,"%s %scurrent 'do...while' block.",
                     Com,is_continue?"to next iteration of ":"");
-              for (nb_levels = 1 + (int)nb_ifs; nb_levels && position<commands_line.size(); ++position) {
+              for (nb_levels = 1; nb_levels && position<commands_line.size(); ++position) {
                 it = commands_line[position].data();
                 it+=*it=='-';
-                gmic_if_diflr ++nb_levels; gmic_elif_diflr --nb_levels;
+                if (!std::strcmp("do",it)) ++nb_levels;
+                else if (!std::strcmp("while",it)) --nb_levels;
               }
               callstack_ind = callstack_do;
               stb = "do"; ste = "while";
             } else if (callstack_for) {
               print(images,0,"%s %scurrent 'for...done' block.",
                     Com,is_continue?"to next iteration of ":"");
-              for (nb_levels = 1 + (int)nb_ifs; nb_levels && position<commands_line.size(); ++position) {
+              for (nb_levels = 1; nb_levels && position<commands_line.size(); ++position) {
                 it = commands_line[position].data();
                 if (*it==1)
                   is_debug_info|=get_debug_info(commands_line[position].data(),next_debug_line,next_debug_filename);
                 else {
                   _is_get = *it=='+';
                   it+=(_is_get || *it=='-');
-                  gmic_if_diflr ++nb_levels; gmic_elif_diflr --nb_levels;
+                  gmic_if_flr ++nb_levels; gmic_elif_flr --nb_levels;
                 }
               }
               callstack_ind = callstack_for;
@@ -13735,14 +13719,14 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             } else if (callstack_foreach) {
               print(images,0,"%s %scurrent 'foreach...done' block.",
                     Com,is_continue?"to next iteration of ":"");
-              for (nb_levels = 1 + (int)nb_ifs; nb_levels && position<commands_line.size(); ++position) {
+              for (nb_levels = 1; nb_levels && position<commands_line.size(); ++position) {
                 it = commands_line[position].data();
                 if (*it==1)
                   is_debug_info|=get_debug_info(commands_line[position].data(),next_debug_line,next_debug_filename);
                 else {
                   _is_get = *it=='+';
                   it+=(_is_get || *it=='-');
-                  gmic_if_diflr ++nb_levels; gmic_elif_diflr --nb_levels;
+                  gmic_if_flr ++nb_levels; gmic_elif_flr --nb_levels;
                 }
               }
               callstack_ind = callstack_foreach;
@@ -13750,14 +13734,14 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             } else if (callstack_local) {
               print(images,0,"%s %scurrent local environment.",
                     Com,is_continue?"to end of ":"");
-              for (nb_levels = 1 + (int)nb_ifs; nb_levels && position<commands_line.size(); ++position) {
+              for (nb_levels = 1; nb_levels && position<commands_line.size(); ++position) {
                 it = commands_line[position].data();
                 if (*it==1)
                   is_debug_info|=get_debug_info(commands_line[position].data(),next_debug_line,next_debug_filename);
                 else {
                   _is_get = *it=='+';
                   it+=(_is_get || *it=='-');
-                  gmic_if_diflr ++nb_levels; gmic_elif_diflr --nb_levels;
+                  gmic_if_flr ++nb_levels; gmic_elif_flr --nb_levels;
                 }
               }
               callstack_ind = callstack_local;
