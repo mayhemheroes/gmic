@@ -13695,6 +13695,27 @@ to_rgba :
     fi
   }
 
+#@cli to_automode
+#@cli : Force selected images to be in the most significant color mode.
+#@cli : This commands checks for useless alpha channel (all values equal to 255), as well as
+#@cli : detects grayscale images encoded as color images.
+to_automode :
+  e[^-1] "Force image$? to be in most significant color mode."
+  foreach {
+
+    # Check for useless alpha channel.
+    if s==2||s==4 # GREYA or RGBA
+      sh 100%
+      if im==iM" && "im==255 rm. channels 0,{s-2} else rm. fi # Detect useless A
+    fi
+
+    # Check for useless color.
+    if s==3||s==4 # RGB or RGBA
+      eval. "begin(is_gray = 1); is_gray && (i0!=i1 || i0!=i2)?(is_gray = 0); end(merge(is_gray,&&); set('is_gray',is_gray))"
+      if $is_gray s c,-3 channels[0] 0 a c fi
+    fi
+  }
+
 #@cli transfer_histogram : [reference_image],_nb_levels>0,_color_channels
 #@cli : Transfer histogram of the specified reference image to selected images.
 #@cli : Argument 'color channels' is the same as with command 'apply_channels'.
