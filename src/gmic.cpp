@@ -7881,7 +7881,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               else {
                 _is_get = *it=='+';
                 it+=(_is_get || *it=='-');
-                gmic_if_flr ++nb_levels; else if ((*it=='}' && !it[1]) || !std::strcmp("done",it)) --nb_levels;
+                gmic_if_flr ++nb_levels;
+                else if ((*it=='}' && !it[1]) || !std::strcmp("done",it)) --nb_levels;
               }
             }
             if (nb_levels)
