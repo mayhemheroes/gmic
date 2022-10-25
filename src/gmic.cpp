@@ -5397,8 +5397,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       (!_is_get && !std::strcmp("repeat",it)))
 
 #define gmic_elif_diflr \
-  else if (!_is_get && ((*it=='}' && !it[1]) || !std::strcmp("while",it) || \
-          (*it=='f' && it[1]=='i' && !it[2]) || !std::strcmp("done",it)))
+  else if (!_is_get && ((*it=='}' && !it[1]) || \
+                        !std::strcmp("while",it) || \
+                        (*it=='f' && it[1]=='i' && !it[2]) || \
+                        !std::strcmp("done",it)))
 
   unsigned int next_debug_line = ~0U, next_debug_filename = ~0U, is_high_connectivity, uind = 0,
     boundary = 0, pattern = 0, exit_on_anykey = 0, wind = 0, interpolation = 0, hash = 0;
@@ -7897,8 +7899,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               else {
                 _is_get = *it=='+';
                 it+=(_is_get || *it=='-');
-                gmic_if_flr ++nb_levels;
-                gmic_elif_flr --nb_levels;
+                gmic_if_flr ++nb_levels; gmic_elif_flr --nb_levels;
               }
             }
             if (nb_levels)
@@ -7932,8 +7933,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               else {
                 _is_get = *it=='+';
                 it+=(_is_get || *it=='-');
-                gmic_if_flr ++nb_levels;
-                gmic_elif_flr --nb_levels;
+                gmic_if_flr ++nb_levels; gmic_elif_flr --nb_levels;
               }
             }
             if (nb_levels)
