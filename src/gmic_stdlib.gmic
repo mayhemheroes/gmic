@@ -1505,7 +1505,7 @@ reference_end_pdf :
   e[] "  > Clean temporary files."
   delete style.css,reference_pdf.html,reference_pdf.png,reference_pdf.pdf,reference_pdf-pdfjam.pdf
   e[] "  > Upload file 'gmic_reference.pdf' to G'MIC server."
-  x "lftp sftp://"$GMIC_LOGIN":@"$GMIC_FTP" -e \"put -O /home/"$GMIC_LOGIN"/www/gmic/reference gmic_reference.pdf; "\
+  x "lftp sftp://"$GMIC_LOGIN":@ovh -e \"put -O /home/"$GMIC_LOGIN"/www/gmic/reference gmic_reference.pdf; "\
     "quit\" >/dev/null"
 
 # use_vt100
@@ -8765,7 +8765,7 @@ update_color_presets_html : check "isbool(${1=0})"
   x "ln -fs "${category}_$basename0.html" index.html"
   if $1
     e[] "\n  * Transfer color presets on G'MIC server.\n"
-    x "lftp sftp://"$GMIC_LOGIN":@"$GMIC_FTP" -e \"mirror -eRL . /home/"$GMIC_LOGIN"/www/gmic/color_presets ; quit\""
+    x "lftp sftp://"$GMIC_LOGIN":@ovh -e \"mirror -eRL . /home/"$GMIC_LOGIN"/www/gmic/color_presets ; quit\""
   fi
   e[] "\n > All done, for "$nb_presets" presets.\n"
 
@@ -8946,7 +8946,7 @@ update_gallery_html : check "isbool(${1=0})"
                       filename_codesample="../../resources/samples"/$basename_codesample
                       url_codesample="https://gmic.eu/samples/"$basename_codesample
                       if $1
-                        x "lftp sftp://"$GMIC_LOGIN":@"$GMIC_FTP" -e \"put -O /home/"$GMIC_LOGIN"/www/gmic/samples "\
+                        x "lftp sftp://"$GMIC_LOGIN":@ovh -e \"put -O /home/"$GMIC_LOGIN"/www/gmic/samples "\
                           "\\\""$filename_codesample"\\\"; quit\" >/dev/null" fi
                       i[0] ('"<a onclick=\"javascript:$( '\#dialog"$nex"' ).dialog( 'open' );\"
                               style=\"cursor: pointer;\">"')
@@ -9101,7 +9101,7 @@ update_gallery_html : check "isbool(${1=0})"
   x "ln -fs "$HOME/work/src/gmic/html/footer.html" ."
   if $1
     e[] "\n  * Transfer gallery on G'MIC server.\n"
-    x "lftp sftp://"$GMIC_LOGIN":@"$GMIC_FTP" -e \"mirror -eRL . /home/"$GMIC_LOGIN"/www/gmic/gallery ; quit\""
+    x "lftp sftp://"$GMIC_LOGIN":@ovh -e \"mirror -eRL . /home/"$GMIC_LOGIN"/www/gmic/gallery ; quit\""
   fi
   e[] "  * All done!\n"
 
@@ -9651,7 +9651,7 @@ update_reference_html : check "isbool(${1=0})"
   # Upload to G'MIC server.
   if $1
     e[] "\n > Transfer reference documentation on G'MIC server.\n"
-    x "lftp sftp://"$GMIC_LOGIN":@"$GMIC_FTP" -e \"mirror -RL . /home/"$GMIC_LOGIN"/www/gmic/reference ; quit\""
+    x "lftp sftp://"$GMIC_LOGIN":@ovh -e \"mirror -RL . /home/"$GMIC_LOGIN"/www/gmic/reference ; quit\""
   fi
   e[] "\n > All done.\n"
 
@@ -9712,7 +9712,7 @@ update_tutorial_html : check "isbool(${1=0})"
   # Upload to G'MIC server.
   if $1
     e[] "\n > Transfer tutorial pages on G'MIC server.\n"
-    x "lftp sftp://"$GMIC_LOGIN":@"$GMIC_FTP" -e \"mirror -RL . /home/"$GMIC_LOGIN"/www/gmic/tutorial ; quit\""
+    x "lftp sftp://"$GMIC_LOGIN":@ovh -e \"mirror -RL . /home/"$GMIC_LOGIN"/www/gmic/tutorial ; quit\""
   fi
   e[] "\n > All done.\n"
 
@@ -10135,10 +10135,9 @@ _upload : skip "${2=""}","${3=0}"
   if !narg($GMIC_LOGIN)
     GMIC_LOGIN=${"gmic_ftp 0"}
     GMIC_PASSWD=${"gmic_ftp 1"}
-    GMIC_FTP=${"gmic_ftp 2"}
   fi
   if narg($GMIC_LOGIN)
-    x $3,"lftp sftp://"$GMIC_LOGIN":@"$GMIC_FTP" -e \"put -O /home/"$GMIC_LOGIN"/www/gmic/ "\
+    x $3,"lftp sftp://"$GMIC_LOGIN":@ovh -e \"put -O /home/"$GMIC_LOGIN"/www/gmic/ "\
          "\\\"$1\\\" -o \\\""$out"\\\"; quit\" >/dev/null"
   fi
 
