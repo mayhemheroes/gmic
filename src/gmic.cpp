@@ -13681,7 +13681,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             continue;
           }
 
-          // Break and continue.
+          // Break or continue.
           bool is_continue = false;
           if (!is_get && (!std::strcmp("break",item) ||
                           (!std::strcmp("continue",item) && (is_continue=true)==true))) {
