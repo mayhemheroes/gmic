@@ -23707,7 +23707,7 @@ nn_lib :
       W#-=nn_learning_rate*batch_d#W;
     );
 
-    nn_optimizer_sgd_update_conv2d_or_fc(P,learning_mode) = (
+    nn_optimizer_sgd_update_conv_or_fc(P,learning_mode) = (
       learning_mode&1?(
         nn_optimizer_sgd_update_weights(P#_weights);
         draw(##P#_ind,P#_weights,0,0,0,0,w##P#_ind - 1,h##P#_ind);
@@ -23719,7 +23719,11 @@ nn_lib :
     );
 
     nn_optimizer_sgd_update_conv2d(P,learning_mode) = (
-      learning_mode?nn_optimizer_sgd_update_conv2d_or_fc(#P,learning_mode);
+      learning_mode?nn_optimizer_sgd_update_conv_or_fc(#P,learning_mode);
+    );
+
+    nn_optimizer_sgd_update_conv3d(P,learning_mode) = (
+      learning_mode?nn_optimizer_sgd_update_conv_or_fc(#P,learning_mode);
     );
 
     nn_optimizer_sgd_update_dict(P,learning_mode) = (
@@ -23730,7 +23734,7 @@ nn_lib :
     );
 
     nn_optimizer_sgd_update_fc(P,learning_mode) = (
-      learning_mode?nn_optimizer_sgd_update_conv2d_or_fc(#P,learning_mode);
+      learning_mode?nn_optimizer_sgd_update_conv_or_fc(#P,learning_mode);
     );
 
     nn_optimizer_sgd_update_normalize(P,learning_mode) = (
@@ -23748,7 +23752,7 @@ nn_lib :
       W#-=nn_learning_rate*batch_d#W/sqrt(1e-8 + d#W#_g2);
     );
 
-    nn_optimizer_rmsprop_update_conv2d_or_fc(P,learning_mode) = (
+    nn_optimizer_rmsprop_update_conv_or_fc(P,learning_mode) = (
       const P#_ind_g2 = $P#_g2;
       learning_mode&1?(
         d#P#_weights_g2 = crop(##P#_ind_g2,0,0,w##P#_ind - 1,h##P#_ind);
@@ -23765,7 +23769,11 @@ nn_lib :
     );
 
     nn_optimizer_rmsprop_update_conv2d(P,learning_mode) = (
-      learning_mode?nn_optimizer_rmsprop_update_conv2d_or_fc(#P,learning_mode);
+      learning_mode?nn_optimizer_rmsprop_update_conv_or_fc(#P,learning_mode);
+    );
+
+    nn_optimizer_rmsprop_update_conv3d(P,learning_mode) = (
+      learning_mode?nn_optimizer_rmsprop_update_conv_or_fc(#P,learning_mode);
     );
 
     nn_optimizer_rmsprop_update_dict(P,learning_mode) = (
@@ -23779,7 +23787,7 @@ nn_lib :
     );
 
     nn_optimizer_rmsprop_update_fc(P,learning_mode) = (
-      learning_mode?nn_optimizer_rmsprop_update_conv2d_or_fc(#P,learning_mode);
+      learning_mode?nn_optimizer_rmsprop_update_conv_or_fc(#P,learning_mode);
     );
 
     nn_optimizer_rmsprop_update_normalize(P,learning_mode) = (
@@ -23814,7 +23822,7 @@ nn_lib :
       W#-=nn_learning_rate*nn_optimizer_adam_alpha_t*d#W#_m/sqrt(1e-8 + d#W#_v);
     );
 
-    nn_optimizer_adam_update_conv2d_or_fc(P,learning_mode) = (
+    nn_optimizer_adam_update_conv_or_fc(P,learning_mode) = (
       const P#_ind_m = $P#_m;
       const P#_ind_v = $P#_v;
       learning_mode&1?(
@@ -23836,7 +23844,11 @@ nn_lib :
     );
 
     nn_optimizer_adam_update_conv2d(P,learning_mode) = (
-      learning_mode?nn_optimizer_adam_update_conv2d_or_fc(#P,learning_mode);
+      learning_mode?nn_optimizer_adam_update_conv_or_fc(#P,learning_mode);
+    );
+
+    nn_optimizer_adam_update_conv3d(P,learning_mode) = (
+      learning_mode?nn_optimizer_adam_update_conv_or_fc(#P,learning_mode);
     );
 
     nn_optimizer_adam_update_dict(P,learning_mode) = (
@@ -23853,7 +23865,7 @@ nn_lib :
     );
 
     nn_optimizer_adam_update_fc(P,learning_mode) = (
-      learning_mode?nn_optimizer_adam_update_conv2d_or_fc(#P,learning_mode);
+      learning_mode?nn_optimizer_adam_update_conv_or_fc(#P,learning_mode);
     );
 
     nn_optimizer_adam_update_normalize(P,learning_mode) = (
@@ -23891,7 +23903,7 @@ nn_lib :
       W#-=(nn_learning_rate/nn_optimizer_adamax_ombeta1_t)*d#W#_m/sqrt(1e-8 + d#W#_v);
     );
 
-    nn_optimizer_adamax_update_conv2d_or_fc(P,learning_mode) = (
+    nn_optimizer_adamax_update_conv_or_fc(P,learning_mode) = (
       const P#_ind_m = $P#_m;
       const P#_ind_v = $P#_v;
 
@@ -23914,7 +23926,11 @@ nn_lib :
     );
 
     nn_optimizer_adamax_update_conv2d(P,learning_mode) = (
-      learning_mode?nn_optimizer_adamax_update_conv2d_or_fc(#P,learning_mode);
+      learning_mode?nn_optimizer_adamax_update_conv_or_fc(#P,learning_mode);
+    );
+
+    nn_optimizer_adamax_update_conv3d(P,learning_mode) = (
+      learning_mode?nn_optimizer_adamax_update_conv_or_fc(#P,learning_mode);
     );
 
     nn_optimizer_adamax_update_dict(P,learning_mode) = (
@@ -23931,7 +23947,7 @@ nn_lib :
     );
 
     nn_optimizer_adamax_update_fc(P,learning_mode) = (
-      learning_mode?nn_optimizer_adamax_update_conv2d_or_fc(#P,learning_mode);
+      learning_mode?nn_optimizer_adamax_update_conv_or_fc(#P,learning_mode);
     );
 
     nn_optimizer_adamax_update_normalize(P,learning_mode) = (
@@ -24150,6 +24166,104 @@ nn_lib :
     );
 
     nn_layer_conv2d_end_backward(OUT) = (
+      merge(batch_d#OUT#_weights,+);
+      merge(batch_d#OUT#_biases,+);
+      batch_d#OUT#_weights/=nn_batch_size;
+      batch_d#OUT#_biases/=nn_batch_size;
+    );
+
+    # conv3d: 3D convolutional layer.
+    #--------------------------------
+    nn_layer_conv3d_init_forward(OUT,IN,size,stride,dilation) = (
+      const OUT#_ind = $OUT#;
+      const OUT#_width = max(1,int(IN#_width/stride));
+      const OUT#_height = max(1,int(IN#_height/stride));
+      const OUT#_depth = max(1,int(IN#_depth/stride));
+      const OUT#_spectrum = h##OUT#_ind;
+      const OUT#_kernel_size = size;
+      const OUT#_kernel_center = OUT#_kernel_size - 1 - int(OUT#_kernel_size/2);
+      const OUT#_stride = stride;
+      const OUT#_dilation = dilation;
+      OUT#_weights = crop(##OUT#_ind,0,0,w##OUT#_ind - 1,h##OUT#_ind);
+      OUT#_biases = crop(##OUT#_ind,w##OUT#_ind - 1,0,1,h##OUT#_ind);
+      OUT# = vector(##OUT#_width*OUT#_height*OUT#_depth*h##OUT#_ind);
+    );
+
+    nn_layer_conv3d_forward(OUT,IN) = (
+      const OUT#_sizl = size(OUT#)/OUT#_spectrum; # Size of output plane
+      OUT# = convolve(IN#,
+                      IN#_width,IN#_height,IN#_depth,IN#_spectrum,
+                      OUT#_weights,
+                      OUT#_kernel_size,OUT#_kernel_size,OUT#_kernel_size,IN#_spectrum*OUT#_spectrum,
+                      1,0,2,
+                      OUT#_kernel_center,OUT#_kernel_center,OUT#_kernel_center,
+                      0,0,0,
+                      OUT#_width - 1,OUT#_height - 1,OUT#_depth - 1,
+                      OUT#_stride,OUT#_stride,OUT#_stride,
+                      OUT#_dilation,OUT#_dilation,OUT#_dilation);
+      repeat (OUT#_spectrum,_nn_l,
+        copy(OUT#[_nn_l*OUT#_sizl],OUT#_biases[_nn_l],OUT#_sizl,1,0,-1); # Add biases
+      );
+    );
+
+    nn_layer_conv3d_init_backward(OUT,IN) = (
+      batch_d#OUT#_weights = vector(#size(OUT#_weights));
+      batch_d#OUT#_biases = vector(#size(OUT#_biases));
+    );
+
+    nn_layer_conv3d_backward(OUT,IN) = (
+      const OUT#_sizk = size(IN#)/IN#_spectrum; # Size of input plane
+      const OUT#_sizw = OUT#_kernel_size^3;     # Size of kernel^3
+
+      # Compute dOUT/dxk(x,y).
+      OUT#_weights_mirrored = vector(#size(OUT#_weights));
+      repeat (IN#_spectrum,_nn_k,
+        repeat (OUT#_spectrum,_nn_l,
+          copy(OUT#_weights_mirrored[_nn_k*OUT#_spectrum*OUT#_sizw + _nn_l*OUT#_sizw + OUT#_sizw - 1],
+               OUT#_weights[_nn_l*(w##OUT#_ind - 1) + _nn_k*OUT#_sizw],OUT#_sizw,-1,1);
+        );
+      );
+      d#IN = convolve(d#OUT,
+                      OUT#_width,OUT#_height,OUT#_depth,OUT#_spectrum,
+                      OUT#_weights_mirrored,
+                      OUT#_kernel_size,OUT#_kernel_size,OUT#_kernel_size,OUT#_spectrum*IN#_spectrum,
+                      0,0,2,
+                      OUT#_kernel_size - 1 - OUT#_kernel_center,
+                      OUT#_kernel_size - 1 - OUT#_kernel_center,
+                      OUT#_kernel_size - 1 - OUT#_kernel_center,
+                      0,0,0,IN#_width - 1,IN#_height - 1,IN#_depth - 1,
+                      1/OUT#_stride,1/OUT#_stride,1/OUT#_stride,1,
+                      OUT#_dilation/OUT#_stride,OUT#_dilation/OUT#_stride,OUT#_dilation/OUT#_stride);
+
+      # Compute dOUT/dbl.
+      d#OUT#_biases = vector(#size(OUT#_biases));
+      fill(d#OUT#_biases,_l,sum(d#OUT[_l*OUT#_sizl,OUT#_sizl]));
+      batch_d#OUT#_biases+=d#OUT#_biases;
+
+      # Compute dOUT/dwlk.
+      OUT#_xk_mirrored = vector(##OUT#_sizk);
+      d#OUT#_weights = vector(#size(OUT#_weights));
+      repeat (OUT#_spectrum,_nn_l,
+        repeat (IN#_spectrum,_nn_k,
+          copy(OUT#_xk_mirrored[OUT#_sizk - 1],IN#[_nn_k*OUT#_sizk],OUT#_sizk,-1,1);
+          OUT#_dwlk = convolve(OUT#_xk_mirrored,
+                               IN#_width,IN#_height,IN#_depth,1,
+                               d#OUT[_nn_l*OUT#_sizl,OUT#_sizl],
+                               OUT#_width,OUT#_height,OUT#_depth,1,
+                               0,0,1,
+                               1/OUT#_stride*(IN#_width - 1 - OUT#_dilation*OUT#_kernel_center),
+                               1/OUT#_stride*(IN#_height - 1 - OUT#_dilation*OUT#_kernel_center),
+                               1/OUT#_stride*(IN#_depth - 1 - OUT#_dilation*OUT#_kernel_center),
+                               0,0,0,OUT#_kernel_size - 1,OUT#_kernel_size - 1,OUT#_kernel_size - 1,
+                               OUT#_dilation,OUT#_dilation,OUT#_dilation,
+                               OUT#_stride,OUT#_stride,OUT#_stride);
+          copy(d#OUT#_weights[_nn_l*(w##OUT#_ind - 1) + _nn_k*OUT#_sizw],OUT#_dwlk,OUT#_sizw);
+        );
+      );
+      batch_d#OUT#_weights+=d#OUT#_weights;
+    );
+
+    nn_layer_conv3d_end_backward(OUT) = (
       merge(batch_d#OUT#_weights,+);
       merge(batch_d#OUT#_biases,+);
       batch_d#OUT#_weights/=nn_batch_size;
@@ -24922,6 +25036,71 @@ nn_layer_conv2dnnl : nn_check_layer "$2"
   nn_layer_nl $1,$1_normalize,$7
   _nn_init=${init}"$0 $* "
 
+#@cli nn_layer_conv3d : out,in,nb_channels>0,_kernel_size>0,_stride>0,_dilation,0<=_learning_mode<=3
+#@cli : Add a 'conv3d' layer (3D convolutional layer) to the network.
+#@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
+#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1' and 'learning_mode=3'.
+nn_layer_conv3d : nn_check_layer "$2"
+                  check "isvarname('$1') && isint($3) && $3>0 && isint(${4=3}) && $4>0 && "\
+                        "${5=1}>0 && isint(${7=3}) && inrange($7,0,3)" skip "${6=1}"
+  e[^-1] "[nn_lib] Add 'conv3d' layer '$1', with input '$2', $3 channels, $4x$4x$4 kernels, stride $5 and dilation $6."
+  init=$_nn_init
+  _nn_layer_conv3d $1_conv3d,${2-7}
+  nn_layer_rename $1,$1_conv3d
+  _nn_init=${init}"$0 $* "
+
+# [Internal] Insert 'conv3d' layer, with parameter image having name '$1'.
+_nn_layer_conv3d :
+  _nn_modules_names.=$1,
+  _nn_modules_types.=conv3d,
+  _nn_$1_size={s=[$_nn_$2_size];[max(1,int(s[0]/$5)),max(1,int(s[1]/$5)),max(1,int(s[2]/$5)),$3]}
+  _nn_$1_learning_mode=$7
+  if !isint($$1)
+    {[$_nn_$2_size][3]*$4^3+1},$3,1,1,4*g/(w-1)
+    if $7<2 1,100% j.. .,100% rm. fi # Set biases to 0 if they are not learnt
+    => $1
+  fi
+  _nn_forward.="begin(nn_layer_conv3d_init_forward($1,$2,$4,$5,$6));"\
+               "nn_layer_conv3d_forward($1,$2);"
+  _nn_backward..="begin(nn_layer_conv3d_init_backward($1,$2));"\
+                 "nn_layer_conv3d_backward($1,$2);"\
+                 "end(nn_layer_conv3d_end_backward($1));"
+  _nn_init.="$0 $* "
+
+#@cli nn_layer_conv3dnl : out,in,nb_channels>0,_kernel_size>0,_stride>0,_dilation>0,_activation,\
+# 0<=_learning_mode<=3
+#@cli : Add a 'conv3dnl' (3D convolutional layer followed by a non-linearity) to the network.
+#@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
+#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1', 'activation=leakyrelu' and 'learning_mode=3'.
+nn_layer_conv3dnl : nn_check_layer "$2"
+                    check "isvarname('$1') && isint($3) && $3>0 && isint(${4=3}) && $4>0 && ${5=1}>0 && "\
+                          "isint(${8=3}) && inrange($8,0,3)"
+                    skip "${6=1}","${7=leakyrelu}"
+  e[^-1] "[nn_lib] Add 'conv3d+nl' layer '$1', with input '$2', $3 channels, $4x$4x$4 kernels, "\
+         "stride $5, dilation $6 and '$7' activation."
+  init=$_nn_init
+  _nn_layer_conv3d $1_conv3d,${2-6},$8
+  nn_layer_nl $1,$1_conv3d,$7
+  _nn_init=${init}"$0 $* "
+
+#@cli nn_layer_conv3dnnl : out,in,nb_channels>0,_kernel_size>0,_stride>0,_dilation>0,_activation,\
+# 0<=_learning_mode<=3
+#@cli : Add a 'conv3dnnl' (3D convolutional layer followed by a normalization layer, then a non-linearity) \
+# to the network.
+#@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
+#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1', 'activation=leakyrelu' and 'learning_mode=3'.
+nn_layer_conv3dnnl : nn_check_layer "$2"
+                     check "isvarname('$1') && isint($3) && $3>0 && isint(${4=3}) && $4>0 && ${5=1}>0 && "\
+                           "isint(${8=3}) && inrange($8,0,3)"
+                     skip "${6=1}","${7=leakyrelu}"
+  e[^-1] "[nn_lib] Add 'conv3d+normalize+nl' layer '$1', with input '$2', $3 channels, $4x$4x$4 kernels, "\
+         "stride $5, dilation $6 and '$7' activation."
+  init=$_nn_init
+  _nn_layer_conv3d $1_conv3d,${2-6},$8
+  _nn_layer_normalize $1_normalize,$1_conv3d,1,3
+  nn_layer_nl $1,$1_normalize,$7
+  _nn_init=${init}"$0 $* "
+
 #@cli nn_layer_crop : out,in,x0,y0,z0,x1,y1,z1
 #@cli : Add a 'crop' layer to the network.
 nn_layer_crop : nn_check_layer "$2"
@@ -25174,7 +25353,7 @@ nn_layer_rename : nn_check_layer "$2"
   _nn_init.="$0 $* "
 
 #@cli nn_layer_resconv2d : out,in,_kernel_size>0,_stride>0,_dilation>0,0<=_learning_mode<=3
-#@cli : Add a 'rescon2d' (residual 2D convolutional layer) to the network.
+#@cli : Add a 'resconv2d' (residual 2D convolutional layer) to the network.
 #@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
 #@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1' and 'learning_mode=3'.
 nn_layer_resconv2d : nn_check_layer "$2"
@@ -25189,7 +25368,7 @@ nn_layer_resconv2d : nn_check_layer "$2"
   _nn_init=${init}"$0 $* "
 
 #@cli nn_layer_resconv2dnl : out,in,_kernel_size>0,_stride>0,_dilation>0,_activation,0<=_learning_mode<=3
-#@cli : Add a 'rescon2dnl' (residual 2D convolutional layer followed by a non-linearity) to the network.
+#@cli : Add a 'resconv2dnl' (residual 2D convolutional layer followed by a non-linearity) to the network.
 #@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
 #@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1', activation='leakyrelu' and 'learning_mode=3'.
 nn_layer_resconv2dnl : nn_check_layer "$2"
@@ -25205,7 +25384,7 @@ nn_layer_resconv2dnl : nn_check_layer "$2"
   _nn_init=${init}"$0 $* "
 
 #@cli nn_layer_resconv2dnnl : out,in,_kernel_size>0,_stride>0,_dilation>0,_activation,0<=_learning_mode<=3
-#@cli : Add a 'rescon2dnnl' (residual 2D convolutional layer followed by a normalization layer, then a non-linearity)\
+#@cli : Add a 'resconv2dnnl' (residual 2D convolutional layer followed by a normalization layer, then a non-linearity)\
 # to the network.
 #@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
 #@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1', activation='leakyrelu' and 'learning_mode=3'.
@@ -25218,6 +25397,55 @@ nn_layer_resconv2dnnl : nn_check_layer "$2"
   nn_layer_clone $1_clone0,$1_clone1,$2
   _nn_layer_conv2d $1_conv2d,$1_clone1,{[$_nn_$2_size][3]},${3-5},$7
   _nn_layer_normalize $1_normalize,$1_conv2d,1,3
+  nn_layer_add $1_add,$1_normalize,$1_clone0
+  nn_layer_nl $1,$1_add,$6
+  _nn_init=${init}"$0 $* "
+
+#@cli nn_layer_resconv3d : out,in,_kernel_size>0,_stride>0,_dilation>0,0<=_learning_mode<=3
+#@cli : Add a 'resconv3d' (residual 3D convolutional layer) to the network.
+#@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
+#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1' and 'learning_mode=3'.
+nn_layer_resconv3d : nn_check_layer "$2"
+                     check "isvarname('$1') && isint(${3=3}) && $3>0 && ${4=1}>0 && isint(${6=3}) && inrange($6,0,3)"
+                     skip "${5=1}"
+  e[^-1] "[nn_lib] Add 'resconv3d' layer '$1', with input '$2', $3x$3x$3 kernels, "\
+         "stride $4 and dilation $5."
+  init=$_nn_init
+  nn_layer_clone $1_clone0,$1_clone1,$2
+  _nn_layer_conv3d $1_conv3d,$1_clone1,{[$_nn_$2_size][3]},${3-6}
+  nn_layer_add $1,$1_conv3d,$1_clone0
+  _nn_init=${init}"$0 $* "
+
+#@cli nn_layer_resconv3dnl : out,in,_kernel_size>0,_stride>0,_dilation>0,_activation,0<=_learning_mode<=3
+#@cli : Add a 'resconv3dnl' (residual 3D convolutional layer followed by a non-linearity) to the network.
+#@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
+#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1', activation='leakyrelu' and 'learning_mode=3'.
+nn_layer_resconv3dnl : nn_check_layer "$2"
+                       check "isvarname('$1') && isint(${3=3}) && $3>0 && ${4=1}>0 && isint(${7=1}) && inrange($7,0,3)"
+                       skip "${5=1}","${6=leakyrelu}"
+  e[^-1] "[nn_lib] Add 'resconv3dnl' layer '$1', with input '$2', $3x$3x$3 kernels, "\
+         "stride $4, dilation $5 and '$6' activation."
+  init=$_nn_init
+  nn_layer_clone $1_clone0,$1_clone1,$2
+  _nn_layer_conv3d $1_conv3d,$1_clone1,{[$_nn_$2_size][3]},${3-5},$7
+  nn_layer_add $1_add,$1_conv3d,$1_clone0
+  nn_layer_nl $1,$1_add,$6
+  _nn_init=${init}"$0 $* "
+
+#@cli nn_layer_resconv3dnnl : out,in,_kernel_size>0,_stride>0,_dilation>0,_activation,0<=_learning_mode<=3
+#@cli : Add a 'resconv3dnnl' (residual 3D convolutional layer followed by a normalization layer, then a non-linearity)\
+# to the network.
+#@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
+#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1', activation='leakyrelu' and 'learning_mode=3'.
+nn_layer_resconv3dnnl : nn_check_layer "$2"
+                        check "isvarname('$1') && isint(${3=3}) && $3>0 && ${4=1}>0 && isint(${7=3}) && inrange($7,0,3)"
+                        skip "${5=1}","${6=leakyrelu}"
+  e[^-1] "[nn_lib] Add 'resconv3dnnl' layer '$1', with input '$2', $3x$3x$3 kernels, "\
+         "stride $4, dilation $5 and '$6' activation."
+  init=$_nn_init
+  nn_layer_clone $1_clone0,$1_clone1,$2
+  _nn_layer_conv3d $1_conv3d,$1_clone1,{[$_nn_$2_size][3]},${3-5},$7
+  _nn_layer_normalize $1_normalize,$1_conv3d,1,3
   nn_layer_add $1_add,$1_normalize,$1_clone0
   nn_layer_nl $1,$1_add,$6
   _nn_init=${init}"$0 $* "
@@ -25431,7 +25659,7 @@ nn_trainer : nn_check_layer "$2"
     name=${arg0\ $>,$_nn_modules_names}
     learning_mode=${_nn_${name}_learning_mode}
 
-    if type='$type';type=='conv2d'||type=='fc'||type=='dict'||type=='normalize'
+    if isin('$type','conv2d','conv3d','fc','dict','normalize')
       _nn_$1_update.="nn_optimizer_$4_update_"$type"("$name,$learning_mode");"
 
       # Allocate data for storing optimizer extra data (moments,...).
@@ -25471,9 +25699,7 @@ nn_size :
   repeat narg($_nn_modules_names)-1 {
     type=${arg0\ $>,$_nn_modules_types}
     name=${arg0\ $>,$_nn_modules_names}
-    if type='$type';type=='conv2d'||type=='fc'||type=='dict'
-      siz+={$name,whds}
-    fi
+    if isin('$type','conv2d','conv3d','fc','dict') siz+={$name,whds} fi
   }
   u $siz
 
@@ -25495,7 +25721,7 @@ nn_save : check "s=['$1']; find(s,'.gmz')==size(s) - 4 && isbool(${2=1})"
   repeat narg($_nn_modules_names)-1 {
     type=${arg0\ $>,$_nn_modules_types}
     name=${arg0\ $>,$_nn_modules_names}
-    if isin('$type','conv2d','dict','fc','normalize','trainer') sel.=$c$name c=, fi
+    if isin('$type','conv2d','conv3d','dict','fc','normalize','trainer') sel.=$c$name c=, fi
   }
   ('$_nn_init') autocrop. {'" "'} => _nn_init
   o[$sel,-1] "$1"
