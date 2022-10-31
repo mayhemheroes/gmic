@@ -24283,21 +24283,15 @@ nn_lib :
     );
 
     nn_layer_crop_forward(OUT,IN,x0,y0,z0,x1,y1,z1) = (
-      OUT# = convolve(IN#,IN#_width,IN#_height,IN#_depth,IN#_spectrum,
-                      [1],1,1,1,1,
-                      0,0,1,
-                      0,0,0,
-                      x0,y0,z0,
-                      x1,y1,z1);
+      OUT# = crop(IN#,IN#_width,IN#_height,IN#_depth,IN#_spectrum,
+                  x0,y0,z0,
+                  OUT#_width,OUT#_height,OUT#_depth);
     );
 
     nn_layer_crop_backward(OUT,IN,x0,y0,z0,x1,y1,z1) = (
-      d#IN = convolve(d#OUT,OUT#_width,OUT#_height,OUT#_depth,OUT#_spectrum,
-                      [1],1,1,1,1,
-                      0,0,1,
-                      0,0,0,
-                      -x0,-y0,-z0,
-                      -x0 + IN#_width - 1,-y0 + IN#_height - 1,-z0 + IN#_depth - 1);
+      d#IN = crop(d#OUT,OUT#_width,OUT#_height,OUT#_depth,OUT#_spectrum,
+                  -x0,-y0,-z0,
+                  IN#_width,IN#_height,IN#_depth);
     );
 
     # dict: Dictionnary learning layer.
