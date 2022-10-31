@@ -6631,7 +6631,7 @@ _gmd_write :
 
 #@cli parse_gui : _outputmode,_{ * | filter_name}
 #@cli : Parse selected filter definitions and generate info about filters in selected output mode.
-#@cli : 'outputmode' can be { gmicol | json | list | print | strings | update | zart }.\n
+#@cli : 'outputmode' can be { gmicol | images | json | list | print | strings | update | zart }.\n
 #@cli : It is possible to define a custom output mode, by implementing the following commands
 #@cli : ('outputmode' must be replaced by the name of the custom user output mode):
 #@cli : . 'parse_gui_outputmode' : A command that outputs the parsing information with a custom format.
@@ -7055,7 +7055,8 @@ parse_gui_images :
     if ['$pipeline']!=0
       file_out=${_f${f}_name}.png
       l[] {
-        $_input_image run $pipeline gui_merge_layers
+        $_input_image run $pipeline
+        gui_merge_layers
         onfail e[] "Error "$_vt100_r${}$_vt100_n"\n" rm
       }
     fi
@@ -23461,7 +23462,8 @@ rprogress : skip ${2=""}
 #@cli : Run specified G'MIC pipeline.
 #@cli : This is only useful when used from a shell, e.g. to avoid shell substitutions to happen in argument.
 run :
-  $*
+  m "__run : $*" __run um __run
+#  $*
 
 #@cli skip : item : (+)
 #@cli : Do nothing but skip specified item.
