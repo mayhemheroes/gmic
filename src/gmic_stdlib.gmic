@@ -20786,14 +20786,14 @@ orthogonalize :
           ref(crop(q,0,1,h),u);
           v-=proj(u,v);
         );
-        draw(v,p,0,0,0,1,h);
+        draw(v,p,0,0,1,h);
       )"
     if $mode
       eval. "*!y?(
         ref(crop(x,0,1,h),v);
         n = norm(v);
         v/=n?norm(v):1;
-        draw(v,x,0,0,0,1,h);
+        draw(v,x,0,0,1,h);
       )"
     fi
   }
@@ -23219,7 +23219,7 @@ _apply_tiles :
       for (z = 0, z<d#0, z+="$sd",
         for (y = 0, y<h#0, y+="$sh",
           for (x = 0, x<w#0, x+="$sw",
-            draw(crop(#0,x,y,z,w,h,d,$8),0,0,0,0,w,h,d);
+            draw(crop(#0,x,y,z,w,h,d,$8),0,0,0,w,h,d);
             run('__at.');
             breakpoint();
             draw(#1,crop(#-1),x,y,z,0,w,h,d,s#0,-1,mask);
@@ -23677,15 +23677,15 @@ nn_lib :
     #---------
     nn_optimizer_generic_update_normalize(O,P,learning_mode) = (
       P#_is_channelwise?( # Channel-by-channel normalization
-        draw(##P#_ind,batch_#P#_avg,2,0,0,0,1,h##P#_ind,1,1,0.01);
-        draw(##P#_ind,batch_#P#_var,3,0,0,0,1,h##P#_ind,1,1,0.01);
+        draw(##P#_ind,batch_#P#_avg,2,0,1,h##P#_ind,0.01);
+        draw(##P#_ind,batch_#P#_var,3,0,1,h##P#_ind,0.01);
         learning_mode&1?(
           nn_optimizer_#O#_update_weights(P#_alpha);
-          draw(##P#_ind,P#_alpha,0,0,0,0,1,h##P#_ind);
+          draw(##P#_ind,P#_alpha,0,0,1,h##P#_ind);
         );
         learning_mode&2?(
           nn_optimizer_#O#_update_weights(P#_beta);
-          draw(##P#_ind,P#_beta,1,0,0,0,1,h##P#_ind);
+          draw(##P#_ind,P#_beta,1,0,1,h##P#_ind);
         );
       ):( # Global normalization
         i[##P#_ind,2] = lerp(P#_avg,batch_#P#_avg,0.01);
@@ -23712,11 +23712,11 @@ nn_lib :
     nn_optimizer_sgd_update_conv_or_fc(P,learning_mode) = (
       learning_mode&1?(
         nn_optimizer_sgd_update_weights(P#_weights);
-        draw(##P#_ind,P#_weights,0,0,0,0,w##P#_ind - 1,h##P#_ind);
+        draw(##P#_ind,P#_weights,0,0,w##P#_ind - 1,h##P#_ind);
       );
       learning_mode&2?(
         nn_optimizer_sgd_update_weights(P#_biases);
-        draw(##P#_ind,P#_biases,w##P#_ind - 1,0,0,0,1,h##P#_ind);
+        draw(##P#_ind,P#_biases,w##P#_ind - 1,0,1,h##P#_ind);
       );
     );
 
@@ -23731,7 +23731,7 @@ nn_lib :
     nn_optimizer_sgd_update_dict(P,learning_mode) = (
       learning_mode?(
         nn_optimizer_sgd_update_weights(P#_weights);
-        draw(##P#_ind,P#_weights,0,0,0,0,w##P#_ind,h##P#_ind);
+        draw(##P#_ind,P#_weights,0,0,w##P#_ind,h##P#_ind);
       );
     );
 
@@ -23759,14 +23759,14 @@ nn_lib :
       learning_mode&1?(
         d#P#_weights_g2 = crop(##P#_ind_g2,0,0,w##P#_ind - 1,h##P#_ind);
         nn_optimizer_rmsprop_update_weights(P#_weights);
-        draw(##P#_ind,P#_weights,0,0,0,0,w##P#_ind - 1,h##P#_ind);
-        draw(##P#_ind_g2,d#P#_weights_g2,0,0,0,0,w##P#_ind - 1,h##P#_ind);
+        draw(##P#_ind,P#_weights,0,0,w##P#_ind - 1,h##P#_ind);
+        draw(##P#_ind_g2,d#P#_weights_g2,0,0,w##P#_ind - 1,h##P#_ind);
       );
       learning_mode&2?(
         d#P#_biases_g2 = crop(##P#_ind_g2,w##P#_ind - 1,0,1,h##P#_ind);
         nn_optimizer_rmsprop_update_weights(P#_biases);
-        draw(##P#_ind,P#_biases,w##P#_ind - 1,0,0,0,1,h##P#_ind);
-        draw(##P#_ind_g2,d#P#_biases_g2,w##P#_ind - 1,0,0,0,1,h##P#_ind);
+        draw(##P#_ind,P#_biases,w##P#_ind - 1,0,1,h##P#_ind);
+        draw(##P#_ind_g2,d#P#_biases_g2,w##P#_ind - 1,0,1,h##P#_ind);
       );
     );
 
@@ -23783,8 +23783,8 @@ nn_lib :
       learning_mode?(
         d#P#_weights_g2 = crop(##P#_ind_g2,0,0,w##P#_ind,h##P#_ind);
         nn_optimizer_rmsprop_update_weights(P#_weights);
-        draw(##P#_ind,P#_weights,0,0,0,0,w##P#_ind,h##P#_ind);
-        draw(##P#_ind_g2,d#P#_weights_g2,0,0,0,0,w##P#_ind,h##P#_ind);
+        draw(##P#_ind,P#_weights,0,0,w##P#_ind,h##P#_ind);
+        draw(##P#_ind_g2,d#P#_weights_g2,0,0,w##P#_ind,h##P#_ind);
       );
     );
 
@@ -23831,17 +23831,17 @@ nn_lib :
         d#P#_weights_m = crop(##P#_ind_m,0,0,w##P#_ind - 1,h##P#_ind);
         d#P#_weights_v = crop(##P#_ind_v,0,0,w##P#_ind - 1,h##P#_ind);
         nn_optimizer_adam_update_weights(P#_weights);
-        draw(##P#_ind,P#_weights,0,0,0,0,w##P#_ind - 1,h##P#_ind);
-        draw(##P#_ind_m,d#P#_weights_m,0,0,0,0,w##P#_ind - 1,h##P#_ind);
-        draw(##P#_ind_v,d#P#_weights_v,0,0,0,0,w##P#_ind - 1,h##P#_ind);
+        draw(##P#_ind,P#_weights,0,0,w##P#_ind - 1,h##P#_ind);
+        draw(##P#_ind_m,d#P#_weights_m,0,0,w##P#_ind - 1,h##P#_ind);
+        draw(##P#_ind_v,d#P#_weights_v,0,0,w##P#_ind - 1,h##P#_ind);
       );
       learning_mode&2?(
         d#P#_biases_m = crop(##P#_ind_m,w##P#_ind - 1,0,1,h##P#_ind);
         d#P#_biases_v = crop(##P#_ind_v,w##P#_ind - 1,0,1,h##P#_ind);
         nn_optimizer_adam_update_weights(P#_biases);
-        draw(##P#_ind,P#_biases,w##P#_ind - 1,0,0,0,1,h##P#_ind);
-        draw(##P#_ind_m,d#P#_biases_m,w##P#_ind - 1,0,0,0,1,h##P#_ind);
-        draw(##P#_ind_v,d#P#_biases_v,w##P#_ind - 1,0,0,0,1,h##P#_ind);
+        draw(##P#_ind,P#_biases,w##P#_ind - 1,0,1,h##P#_ind);
+        draw(##P#_ind_m,d#P#_biases_m,w##P#_ind - 1,0,1,h##P#_ind);
+        draw(##P#_ind_v,d#P#_biases_v,w##P#_ind - 1,0,1,h##P#_ind);
       );
     );
 
@@ -23860,9 +23860,9 @@ nn_lib :
         d#P#_weights_m = crop(##P#_ind_m,0,0,w##P#_ind,h##P#_ind);
         d#P#_weights_v = crop(##P#_ind_v,0,0,w##P#_ind,h##P#_ind);
         nn_optimizer_adam_update_weights(P#_weights);
-        draw(##P#_ind,P#_weights,0,0,0,0,w##P#_ind,h##P#_ind);
-        draw(##P#_ind_m,d#P#_weights_m,0,0,0,0,w##P#_ind,h##P#_ind);
-        draw(##P#_ind_v,d#P#_weights_v,0,0,0,0,w##P#_ind,h##P#_ind);
+        draw(##P#_ind,P#_weights,0,0,w##P#_ind,h##P#_ind);
+        draw(##P#_ind_m,d#P#_weights_m,0,0,w##P#_ind,h##P#_ind);
+        draw(##P#_ind_v,d#P#_weights_v,0,0,w##P#_ind,h##P#_ind);
       );
     );
 
@@ -23913,17 +23913,17 @@ nn_lib :
         d#P#_weights_m = crop(##P#_ind_m,0,0,w##P#_ind - 1,h##P#_ind);
         d#P#_weights_v = crop(##P#_ind_v,0,0,w##P#_ind - 1,h##P#_ind);
         nn_optimizer_adamax_update_weights(P#_weights);
-        draw(##P#_ind,P#_weights,0,0,0,0,w##P#_ind - 1,h##P#_ind);
-        draw(##P#_ind_m,d#P#_weights_m,0,0,0,0,w##P#_ind - 1,h##P#_ind);
-        draw(##P#_ind_v,d#P#_weights_v,0,0,0,0,w##P#_ind - 1,h##P#_ind);
+        draw(##P#_ind,P#_weights,0,0,w##P#_ind - 1,h##P#_ind);
+        draw(##P#_ind_m,d#P#_weights_m,0,0,w##P#_ind - 1,h##P#_ind);
+        draw(##P#_ind_v,d#P#_weights_v,0,0,w##P#_ind - 1,h##P#_ind);
       );
       learning_mode&2?(
         d#P#_biases_m = crop(##P#_ind_m,w##P#_ind - 1,0,1,h##P#_ind);
         d#P#_biases_v = crop(##P#_ind_v,w##P#_ind - 1,0,1,h##P#_ind);
         nn_optimizer_adamax_update_weights(P#_biases);
-        draw(##P#_ind,P#_biases,w##P#_ind - 1,0,0,0,1,h##P#_ind);
-        draw(##P#_ind_m,d#P#_biases_m,w##P#_ind - 1,0,0,0,1,h##P#_ind);
-        draw(##P#_ind_v,d#P#_biases_v,w##P#_ind - 1,0,0,0,1,h##P#_ind);
+        draw(##P#_ind,P#_biases,w##P#_ind - 1,0,1,h##P#_ind);
+        draw(##P#_ind_m,d#P#_biases_m,w##P#_ind - 1,0,1,h##P#_ind);
+        draw(##P#_ind_v,d#P#_biases_v,w##P#_ind - 1,0,1,h##P#_ind);
       );
     );
 
@@ -23942,9 +23942,9 @@ nn_lib :
         d#P#_weights_m = crop(##P#_ind_m,0,0,w##P#_ind,h##P#_ind);
         d#P#_weights_v = crop(##P#_ind_v,0,0,w##P#_ind,h##P#_ind);
         nn_optimizer_adamax_update_weights(P#_weights);
-        draw(##P#_ind,P#_weights,0,0,0,0,w##P#_ind,h##P#_ind);
-        draw(##P#_ind_m,d#P#_weights_m,0,0,0,0,w##P#_ind,h##P#_ind);
-        draw(##P#_ind_v,d#P#_weights_v,0,0,0,0,w##P#_ind,h##P#_ind);
+        draw(##P#_ind,P#_weights,0,0,w##P#_ind,h##P#_ind);
+        draw(##P#_ind_m,d#P#_weights_m,0,0,w##P#_ind,h##P#_ind);
+        draw(##P#_ind_v,d#P#_weights_v,0,0,w##P#_ind,h##P#_ind);
       );
     );
 
@@ -46629,7 +46629,7 @@ fx_jpeg_artefacts :
         if (!(x%8) && !(y%8),
           ref(crop(x,y,8,8),src);
           repeat (8,l, repeat (8,k, off = k + 8*l; res[off] = sum(src*crop(#"$dct",0,0,off,8,8,1))));
-          draw(#-1,res,x,y,0,0,8,8);
+          draw(#-1,res,x,y,8,8);
         ); i"
       round.
 
@@ -46641,7 +46641,7 @@ fx_jpeg_artefacts :
         if (!(x%8) && !(y%8),
           ref(crop(x,y,8,8),src);
           repeat (8,l, repeat (8,k, off = k + 8*l; res[off] = sum(src*crop(#"$idct",0,0,off,8,8,1))));
-          draw(#"$>",res,x,y,0,0,8,8);
+          draw(#"$>",res,x,y,8,8);
         ); i"
       rm.
       round[$>]
@@ -47035,7 +47035,7 @@ fx_rebuild_from_similar_blocks :
 
       # Reconstruct image.
       {[$M,$N]*$S},1,{0,s}
-      eval.. "draw(#-1,crop(#0,0,0,i,w#0,h#0,1),x*w#0,y*h#0,0,0,w#0,h#0)"
+      eval.. "draw(#-1,crop(#0,0,0,i,w#0,h#0,1),x*w#0,y*h#0,w#0,h#0)"
       k. r $w0,$h0,1,100%,0,0,0.5,0.5
     }
     a c
