@@ -25232,17 +25232,18 @@ nn_layer_fcnnl : nn_check_layer "$2"
   nn_layer_nl $1,$1_normalize,$4
   _nn_init=${init}"$0 $* "
 
-#@cli nn_layer_maxpool2d : out,in
+#@cli nn_layer_maxpool2d : out,in,_patch_size>1
 #@cli : Add a 'maxpool2d' layer (2d max pooling) to the network.
+#@cli : Default value: 'patch_size=2'.
 nn_layer_maxpool2d : nn_check_layer "$2"
-                     check "isvarname('$1')"
-  e[^-1] "[nn_lib] Add 'maxpool2d' layer '$1', with input '$2'."
+                     check "isvarname('$1') && isint(${3=2}) && $3>1"
+  e[^-1] "[nn_lib] Add 'maxpool2d' layer '$1', with input '$2' and patch size $3."
   _nn_modules_names.=$1,
   _nn_modules_types.=maxpool2d,
-  _nn_$1_size:="s=["$_nn_$2_size"];[int(s[0,2]/2),s[2,2]]"
-  _nn_forward.="begin(nn_layer_maxpool2d_init_forward($1,$2));"\
-               "nn_layer_maxpool2d_forward($1,$2);"
-  _nn_backward..="nn_layer_maxpool2d_backward($1,$2);"
+  _nn_$1_size:="s=["$_nn_$2_size"];[int(s[0,2]/$3),s[2,2]]"
+  _nn_forward.="begin(nn_layer_maxpool2d_init_forward($1,$2,$3));"\
+               "nn_layer_maxpool2d_forward($1,$2,$3);"
+  _nn_backward..="nn_layer_maxpool2d_backward($1,$2,$3);"
   _nn_init.="$0 $* "
 
 #@cli nn_layer_mul : out,in0,in1
@@ -25312,7 +25313,7 @@ _nn_layer_normalize :
 
 #@cli nn_layer_patchdown2d : out,in,_patch_size>1
 #@cli : Add a 'patchdown2d' (2D downscale by patch) layer to the network.
-#@cli : Default value: '_patch_size=2'.
+#@cli : Default value: 'patch_size=2'.
 nn_layer_patchdown2d : nn_check_layer "$2"
                        check "isvarname('$1') && isint(${3=2}) && $3>1"
   e[^-1] "[nn_lib] Add 'patchdown2d' layer '$1', with input '$2' and patch size $3."
@@ -25330,7 +25331,7 @@ nn_layer_patchdown2d : nn_check_layer "$2"
 
 #@cli nn_layer_patchup2d : out,in,_patch_size>1
 #@cli : Add a 'patchup2d' (2D upscale by patch) layer to the network.
-#@cli : Default value: '_patch_size=2'.
+#@cli : Default value: 'patch_size=2'.
 nn_layer_patchup2d : nn_check_layer "$2"
                         check "isvarname('$1') && isint(${3=2}) && $3>1"
   e[^-1] "[nn_lib] Add 'patchup2d' layer '$1', with input '$2' and patch size $3."
