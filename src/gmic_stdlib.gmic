@@ -24614,16 +24614,13 @@ nn_lib :
 
     nn_layer_patchdown2d_backward(OUT,IN,P) = (
       d#IN = vector(#size(IN#));
-      _nn_off = 0;
-      repeat (IN#_spectrum,_nn_c,
-        repeat (P,_nn_q,
-          repeat (P,_nn_p,
-            repeat (OUT#_height,_nn_y,
-              copy(d#IN[ _nn_p + IN#_width*(P*_nn_y + _nn_q + IN#_height*IN#_depth*_nn_c)],
-                   d#OUT[_nn_off],
-                   OUT#_width,P,1);
-              _nn_off+=OUT#_width;
-            );
+      repeat (OUT#_depth,_nn_z,
+        repeat (OUT#_height,_nn_y,
+          _nn_yP = _nn_y*P;
+          repeat (OUT#_width,_nn_x,
+            draw(d#IN#,IN#_width,IN#_height,IN#_depth,IN#_spectrum,
+                 crop(d#OUT,OUT#_width,OUT#_height,OUT#_depth,OUT#_spectrum,_nn_x,_nn_y,_nn_z,1,1,1),
+                 _nn_x*P,_nn_yP,_nn_z,P,P,1);
           );
         );
       );
