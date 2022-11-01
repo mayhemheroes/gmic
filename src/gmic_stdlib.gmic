@@ -24651,16 +24651,13 @@ nn_lib :
 
     nn_layer_patchup2d_backward(OUT,IN,P) = (
       d#IN = vector(#size(IN#));
-      _nn_off = 0;
-      repeat (OUT#_spectrum,_nn_c,
-        repeat (P,_nn_q,
-          repeat (P,_nn_p,
-            repeat (IN#_height,_nn_y,
-              copy(d#IN[_nn_off],
-                   d#OUT[_nn_p + OUT#_width*(P*_nn_y + _nn_q + OUT#_height*OUT#_depth*_nn_c)],
-                   IN#_width,1,P);
-              _nn_off+=IN#_width;
-            );
+      repeat (IN#_depth,_nn_z,
+        repeat (IN#_height,_nn_y,
+          _nn_yP = _nn_y*P;
+          repeat (IN#_width,_nn_x,
+            draw(d#IN,IN#_width,IN#_height,IN#_depth,IN#_spectrum,
+                 crop(d#OUT,OUT#_width,OUT#_height,OUT#_depth,OUT#_spectrum,_nn_x*P,_nn_yP,_nn_z,P,P,1),
+                 _nn_x,_nn_y,_nn_z,1,1,1);
           );
         );
       );
