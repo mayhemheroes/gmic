@@ -24422,32 +24422,50 @@ nn_lib :
 
     # maxpool2d : 2D max pooling.
     #----------------------------
-    nn_layer_maxpool2d_init_forward(OUT,IN) = (
-      const OUT#_width = int(IN#_width/2);
-      const OUT#_height = int(IN#_height/2);
+    nn_layer_maxpool2d_init_forward(OUT,IN,P) = (
+      const OUT#_width = int(IN#_width/P);
+      const OUT#_height = int(IN#_height/P);
       const OUT#_depth = IN#_depth;
       const OUT#_spectrum = IN#_spectrum;
     );
 
-    nn_layer_maxpool2d_forward(OUT,IN) = (
+    nn_layer_maxpool2d_forward(OUT,IN,P) = (
       OUT# = vector(##OUT#_width*OUT#_height*OUT#_depth*OUT#_spectrum);
       OUT#_from = vector(#size(OUT#));
-      repeat (size(OUT#),_nn_l,
-        _nn_x = _nn_l%OUT#_width;
-        _nn_y = int(_nn_l/OUT#_width)%OUT#_height;
-        _nn_z = int(_nn_l/(OUT#_width*OUT#_height))%OUT#_depth;
-        _nn_c = int(_nn_l/(OUT#_width*OUT#_height*OUT#_depth));
-        _nn_k = 2*_nn_x + IN#_width*(2*_nn_y + IN#_height*(_nn_z + IN#_depth*_nn_c));
-        _nn_k+=arg0(argmax([ IN#[_nn_k,2],IN#[_nn_k + IN#_width,2] ]),0,1,IN#_width,IN#_width + 1);
-        OUT#_from[_nn_l] = _nn_k;
-        OUT#[_nn_l] = IN#[_nn_k];
+      repeat (OUT#_spectrum,_nn_c,
+        repeat (OUT#_depth,_nn_z,
+          repeat (OUT#_height,_nn_y,
+            _nn_yP = _nn_y*P;
+            repeat (OUT#_width,_nn_x,
+              OUT#_P = crop(IN#,IN#_width,IN#_height,IN#_depth,IN#_spectrum,
+                            _nn_x*P,_nn_yP,_nn_z,_nn_c,P,P,1,1);
+              _nn_argmax = argmax(OUT#_P);
+              _nn_off = _nn_x + OUT#_width*(_nn_y + OUT_#height*(_nn_z + OUT#_spectrum*_nn_c));
+              OUT#[_nn_off] = OUT#_P[_nn_argmax];
+              OUT#_from[_nn_off] = _nn_argmax;
+            );
+          );
+        );
       );
     );
 
-    nn_layer_maxpool2d_backward(OUT,IN) = (
+    nn_layer_maxpool2d_backward(OUT,IN,P) = (
       d#IN = vector(#size(IN#));
-      repeat (size(OUT#),_nn_l,
-        d#IN[OUT#_from[_nn_l]] = d#OUT[_nn_l];
+      _nn_off = 0;
+      repeat (OUT#_spectrum,_nn_c,
+        repeat (OUT#_depth,_nn_z,
+          repeat (OUT#_height,_nn_y,
+            _nn_yP = _nn_y*P;
+            repeat (OUT#_width,_nn_x,
+              _nn_from = OUT#_from[_nn_off++];
+              _nn_from_x = _nn_from%P;
+              _nn_from_y = int(_nn_from/P);
+              _nn_offIN = _nn_x*P + _nn_from_x + IN#_width*(_nn_yP + _nn_from_y + IN#_height*(_nn_z + IN#_depth*_nn_c));
+              _nn_offOUT = _nn_x + IN#_width*(_nn_y + IN#_height*(_nn_z + IN#_depth*_nn_c));
+              d#IN[_nn_offIN] = d#OUT[_nn_offOUT];
+            );
+          );
+        );
       );
     );
 
