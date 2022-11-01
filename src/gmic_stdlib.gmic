@@ -24604,10 +24604,9 @@ nn_lib :
         repeat (OUT#_height,_nn_y,
           _nn_yP = _nn_y*P;
           repeat (OUT#_width,_nn_x,
-            _nn_P = crop(IN#,IN#_width,IN#_height,IN#_depth,IN#_spectrum,
-                         _nn_x*P,_nn_yP,_nn_z,0,P,P,1,3);
             draw(OUT#,OUT#_width,OUT#_height,OUT#_depth,OUT#_spectrum,
-                 _nn_P,_nn_x,_nn_y,1,1);
+                 crop(IN#,IN#_width,IN#_height,IN#_depth,IN#_spectrum,_nn_x*P,_nn_yP,_nn_z,P,P,1),
+                 _nn_x,_nn_y,_nn_z,1,1,1);
           );
         );
       );
@@ -24641,16 +24640,13 @@ nn_lib :
 
     nn_layer_patchup2d_forward(OUT,IN,P) = (
       OUT# = vector(##OUT#_width*OUT#_height*OUT#_depth*OUT#_spectrum);
-      _nn_off = 0;
-      repeat (OUT#_spectrum,_nn_c,
-        repeat (P,_nn_q,
-          repeat (P,_nn_p,
-            repeat (IN#_height,_nn_y,
-              copy(OUT#[ _nn_p + OUT#_width*(P*_nn_y + _nn_q + OUT#_height*OUT#_depth*_nn_c)],
-                   IN#[_nn_off],
-                   IN#_width,P,1);
-              _nn_off+=IN#_width;
-            );
+      repeat (IN#_depth,_nn_z,
+        repeat (IN#_height,_nn_y,
+          _nn_yP = _nn_y*P;
+          repeat (IN#_width,_nn_x,
+            draw(OUT#,OUT#_width,OUT#_height,OUT#_depth,OUT#_spectrum,
+                 crop(#IN,IN#_width,IN#_height,IN#_depth,IN#_spectrum,_nn_x,_nn_y,_nn_z,1,1,1),
+                 _nn_x*P,_nn_yP,_nn_z,P,P,1);
           );
         );
       );
