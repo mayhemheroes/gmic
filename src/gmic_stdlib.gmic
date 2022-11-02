@@ -24471,6 +24471,59 @@ nn_lib :
       );
     );
 
+    # maxpool3d : 3D max pooling.
+    #----------------------------
+    nn_layer_maxpool3d_init_forward(OUT,IN,P) = (
+      const OUT#_width = int(IN#_width/P);
+      const OUT#_height = int(IN#_height/P);
+      const OUT#_depth = int(IN#_depth/P);
+      const OUT#_spectrum = IN#_spectrum;
+    );
+
+    nn_layer_maxpool3d_forward(OUT,IN,P) = (
+      OUT# = vector(##OUT#_width*OUT#_height*OUT#_depth*OUT#_spectrum);
+      OUT#_from = vector(#size(OUT#));
+      _nn_off = 0;
+      repeat (OUT#_spectrum,_nn_c,
+        repeat (OUT#_depth,_nn_z,
+          _nn_zP = _nn_z*P;
+          repeat (OUT#_height,_nn_y,
+            _nn_yP = _nn_y*P;
+            repeat (OUT#_width,_nn_x,
+              OUT#_P = crop(IN#,IN#_width,IN#_height,IN#_depth,IN#_spectrum,
+                            _nn_x*P,_nn_yP,_nn_zP,_nn_c,P,P,P,1);
+              _nn_argmax = argmax(OUT#_P);
+              OUT#[_nn_off] = OUT#_P[_nn_argmax];
+              OUT#_from[_nn_off++] = _nn_argmax;
+            );
+          );
+        );
+      );
+    );
+
+    nn_layer_maxpool3d_backward(OUT,IN,P) = (
+      d#IN = vector(#size(IN#));
+      _nn_offOUT = 0;
+      repeat (OUT#_spectrum,_nn_c,
+        _nn_offIN0 = IN#_width*IN#_height*IN#_depth*_nn_c;
+        repeat (OUT#_depth,_nn_z,
+          _nn_zP = _nn_z*P;
+          repeat (OUT#_height,_nn_y,
+            _nn_yP = _nn_y*P;
+            repeat (OUT#_width,_nn_x,
+              _nn_from = OUT#_from[_nn_offOUT];
+              _nn_from_x = _nn_from%P;
+              _nn_from_y = int(_nn_from/P)%P;
+              _nn_from_z = int(_nn_from/P^2);
+              _nn_offIN = _nn_offIN0 + _nn_x*P + _nn_from_x +
+                          IN#_width*(_nn_yP + _nn_from_y + IN#_height*(_nn_zP + _nn_from_z));
+              d#IN[_nn_offIN] = d#OUT[_nn_offOUT++];
+            );
+          );
+        );
+      );
+    );
+
     # mul: Multiply two inputs.
     #---------------------------
     nn_layer_mul_init_forward(OUT,IN) = (
@@ -25246,6 +25299,20 @@ nn_layer_maxpool2d : nn_check_layer "$2"
   _nn_forward.="begin(nn_layer_maxpool2d_init_forward($1,$2,$3));"\
                "nn_layer_maxpool2d_forward($1,$2,$3);"
   _nn_backward..="nn_layer_maxpool2d_backward($1,$2,$3);"
+  _nn_init.="$0 $* "
+
+#@cli nn_layer_maxpool3d : out,in,_patch_size>1
+#@cli : Add a 'maxpool3d' layer (3d max pooling) to the network.
+#@cli : Default value: 'patch_size=2'.
+nn_layer_maxpool3d : nn_check_layer "$2"
+                     check "isvarname('$1') && isint(${3=2}) && $3>1"
+  e[^-1] "[nn_lib] Add 'maxpool3d' layer '$1', with input '$2' and patch size $3."
+  _nn_modules_names.=$1,
+  _nn_modules_types.=maxpool3d,
+  _nn_$1_size:="s=["$_nn_$2_size"];[int(s[0,3]/$3),s[3]]"
+  _nn_forward.="begin(nn_layer_maxpool3d_init_forward($1,$2,$3));"\
+               "nn_layer_maxpool3d_forward($1,$2,$3);"
+  _nn_backward..="nn_layer_maxpool3d_backward($1,$2,$3);"
   _nn_init.="$0 $* "
 
 #@cli nn_layer_mul : out,in0,in1
