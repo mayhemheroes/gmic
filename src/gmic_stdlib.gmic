@@ -24699,13 +24699,52 @@ nn_lib :
       );
     );
 
+    # patchdown3d: 3D downscale by patch.
+    #------------------------------------
+    nn_layer_patchdown3d_init_forward(OUT,IN,P) = (
+      const OUT#_width = int(IN#_width/P);
+      const OUT#_height = int(IN#_height/P);
+      const OUT#_depth = int(IN#_depth/P);
+      const OUT#_spectrum = IN#_spectrum*P^3;
+    );
+
+    nn_layer_patchdown3d_forward(OUT,IN,P) = (
+      OUT# = vector(##OUT#_width*OUT#_height*OUT#_depth*OUT#_spectrum);
+      repeat (OUT#_depth,_nn_z,
+        _nn_zP = _nn_z*P;
+        repeat (OUT#_height,_nn_y,
+          _nn_yP = _nn_y*P;
+          repeat (OUT#_width,_nn_x,
+            draw(OUT#,OUT#_width,OUT#_height,OUT#_depth,OUT#_spectrum,
+                 crop(IN#,IN#_width,IN#_height,IN#_depth,IN#_spectrum,_nn_x*P,_nn_yP,_nn_zP,P,P,P),
+                 _nn_x,_nn_y,_nn_z,1,1,1);
+          );
+        );
+      );
+    );
+
+    nn_layer_patchdown3d_backward(OUT,IN,P) = (
+      d#IN = vector(#size(IN#));
+      repeat (OUT#_depth,_nn_z,
+        _nn_zP = _nn_z*P;
+        repeat (OUT#_height,_nn_y,
+          _nn_yP = _nn_y*P;
+          repeat (OUT#_width,_nn_x,
+            draw(d#IN#,IN#_width,IN#_height,IN#_depth,IN#_spectrum,
+                 crop(d#OUT,OUT#_width,OUT#_height,OUT#_depth,OUT#_spectrum,_nn_x,_nn_y,_nn_z,1,1,1),
+                 _nn_x*P,_nn_yP,_nn_zP,P,P,P);
+          );
+        );
+      );
+    );
+
     # patchup2d: 2D upscale by patch.
     #--------------------------------
     nn_layer_patchup2d_init_forward(OUT,IN,P) = (
       const OUT#_width = IN#_width*P;
       const OUT#_height = IN#_height*P;
       const OUT#_depth = IN#_depth;
-      const OUT#_spectrum = IN#_spectrum/(P^2);
+      const OUT#_spectrum = IN#_spectrum/P^2;
     );
 
     nn_layer_patchup2d_forward(OUT,IN,P) = (
@@ -24735,6 +24774,46 @@ nn_lib :
         );
       );
     );
+
+    # patchup3d: 3D upscale by patch.
+    #--------------------------------
+    nn_layer_patchup3d_init_forward(OUT,IN,P) = (
+      const OUT#_width = IN#_width*P;
+      const OUT#_height = IN#_height*P;
+      const OUT#_depth = IN#_depth*P;
+      const OUT#_spectrum = IN#_spectrum/P^3;
+    );
+
+    nn_layer_patchup3d_forward(OUT,IN,P) = (
+      OUT# = vector(##OUT#_width*OUT#_height*OUT#_depth*OUT#_spectrum);
+      repeat (IN#_depth,_nn_z,
+        _nn_zP = _nn_z*P;
+        repeat (IN#_height,_nn_y,
+          _nn_yP = _nn_y*P;
+          repeat (IN#_width,_nn_x,
+            draw(OUT#,OUT#_width,OUT#_height,OUT#_depth,OUT#_spectrum,
+                 crop(#IN,IN#_width,IN#_height,IN#_depth,IN#_spectrum,_nn_x,_nn_y,_nn_z,1,1,1),
+                 _nn_x*P,_nn_yP,_nn_zP,P,P,P);
+          );
+        );
+      );
+    );
+
+    nn_layer_patchup3d_backward(OUT,IN,P) = (
+      d#IN = vector(#size(IN#));
+      repeat (IN#_depth,_nn_z,
+        _nn_zP = _nn_z*P;
+        repeat (IN#_height,_nn_y,
+          _nn_yP = _nn_y*P;
+          repeat (IN#_width,_nn_x,
+            draw(d#IN,IN#_width,IN#_height,IN#_depth,IN#_spectrum,
+                 crop(d#OUT,OUT#_width,OUT#_height,OUT#_depth,OUT#_spectrum,_nn_x*P,_nn_yP,_nn_zP,P,P,P),
+                 _nn_x,_nn_y,_nn_z,1,1,1);
+          );
+        );
+      );
+    );
+
 
     # rename: Rename input.
     #----------------------
@@ -25381,7 +25460,7 @@ _nn_layer_normalize :
   _nn_init.="$0 $* "
 
 #@cli nn_layer_patchdown2d : out,in,_patch_size>1
-#@cli : Add a 'patchdown2d' (2D downscale by patch) layer to the network.
+#@cli : Add a 'patchdown2d' (2d downscale by patch) layer to the network.
 #@cli : Default value: 'patch_size=2'.
 nn_layer_patchdown2d : nn_check_layer "$2"
                        check "isvarname('$1') && isint(${3=2}) && $3>1"
@@ -25398,18 +25477,50 @@ nn_layer_patchdown2d : nn_check_layer "$2"
   _nn_backward..="nn_layer_patchdown2d_backward($1,$2,$3);"
   _nn_init.="$0 $* "
 
+#@cli nn_layer_patchdown3d : out,in,_patch_size>1
+#@cli : Add a 'patchdown3d' (3d downscale by patch) layer to the network.
+#@cli : Default value: 'patch_size=2'.
+nn_layer_patchdown3d : nn_check_layer "$2"
+                       check "isvarname('$1') && isint(${3=2}) && $3>1"
+  e[^-1] "[nn_lib] Add 'patchdown3d' layer '$1', with input '$2' and patch size $3."
+  _nn_modules_names.=$1,
+  _nn_modules_types.=patchdown3d,
+  _nn_$1_size:="s=["$_nn_$2_size"];[int(s[0,3]/$3),s[3]*$3^3]"
+  if !min($_nn_$1_size)
+    error[0--3] "Command 'nn_layer_patchdown3d': Specified patch size ($3) is higher than "\
+                "input size ("$_nn_$2_size")."
+  fi
+  _nn_forward.="begin(nn_layer_patchdown3d_init_forward($1,$2,$3));"\
+               "nn_layer_patchdown3d_forward($1,$2,$3);"
+  _nn_backward..="nn_layer_patchdown3d_backward($1,$2,$3);"
+  _nn_init.="$0 $* "
+
 #@cli nn_layer_patchup2d : out,in,_patch_size>1
-#@cli : Add a 'patchup2d' (2D upscale by patch) layer to the network.
+#@cli : Add a 'patchup2d' (2d upscale by patch) layer to the network.
 #@cli : Default value: 'patch_size=2'.
 nn_layer_patchup2d : nn_check_layer "$2"
-                        check "isvarname('$1') && isint(${3=2}) && $3>1"
+                     check "isvarname('$1') && isint(${3=2}) && $3>1"
   e[^-1] "[nn_lib] Add 'patchup2d' layer '$1', with input '$2' and patch size $3."
   _nn_modules_names.=$1,
   _nn_modules_types.=patchup2d,
-  _nn_$1_size:="s=["$_nn_$2_size"];[int(s[0,2]*$3),s[2],s[3]/($3^2)]"
+  _nn_$1_size:="s=["$_nn_$2_size"];[int(s[0,2]*$3),s[2],s[3]/$3^2]"
   _nn_forward.="begin(nn_layer_patchup2d_init_forward($1,$2,$3));"\
                "nn_layer_patchup2d_forward($1,$2,$3);"
   _nn_backward..="nn_layer_patchup2d_backward($1,$2,$3);"
+  _nn_init.="$0 $* "
+
+#@cli nn_layer_patchup3d : out,in,_patch_size>1
+#@cli : Add a 'patchup3d' (3d upscale by patch) layer to the network.
+#@cli : Default value: 'patch_size=2'.
+nn_layer_patchup3d : nn_check_layer "$2"
+                     check "isvarname('$1') && isint(${3=2}) && $3>1"
+  e[^-1] "[nn_lib] Add 'patchup3d' layer '$1', with input '$2' and patch size $3."
+  _nn_modules_names.=$1,
+  _nn_modules_types.=patchup3d,
+  _nn_$1_size:="s=["$_nn_$2_size"];[int(s[0,3]*$3),s[3]/$3^3]"
+  _nn_forward.="begin(nn_layer_patchup3d_init_forward($1,$2,$3));"\
+               "nn_layer_patchup3d_forward($1,$2,$3);"
+  _nn_backward..="nn_layer_patchup3d_backward($1,$2,$3);"
   _nn_init.="$0 $* "
 
 #@cli nn_layer_rename : out,in
