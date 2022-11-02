@@ -24453,18 +24453,18 @@ nn_lib :
 
     nn_layer_maxpool2d_backward(OUT,IN,P) = (
       d#IN = vector(#size(IN#));
-      _nn_off = 0;
       repeat (OUT#_spectrum,_nn_c,
         repeat (OUT#_depth,_nn_z,
+          _nn_off0 = IN#_width*IN#_height*(_nn_z + IN#_depth*_nn_c);
+          _nn_off = _nn_off0;
           repeat (OUT#_height,_nn_y,
             _nn_yP = _nn_y*P;
             repeat (OUT#_width,_nn_x,
-              _nn_from = OUT#_from[_nn_off++];
+              _nn_from = OUT#_from[_nn_off];
               _nn_from_x = _nn_from%P;
               _nn_from_y = int(_nn_from/P);
-              _nn_offIN = _nn_x*P + _nn_from_x + IN#_width*(_nn_yP + _nn_from_y + IN#_height*(_nn_z + IN#_depth*_nn_c));
-              _nn_offOUT = _nn_x + IN#_width*(_nn_y + IN#_height*(_nn_z + IN#_depth*_nn_c));
-              d#IN[_nn_offIN] = d#OUT[_nn_offOUT];
+              _nn_offIN = _nn_off0 + _nn_x*P + _nn_from_x + IN#_width*(_nn_yP + _nn_from_y);
+              d#IN[_nn_offIN] = d#OUT[_nn_off++];
             );
           );
         );
