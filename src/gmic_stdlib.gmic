@@ -25890,12 +25890,18 @@ nn_size :
   }
   u $siz
 
-#@cli nn_load : 'filename.gmz'
+#@cli nn_load : 'filename.gmz',_include_trainer_data={ 0=no | 1=yes }
 #@cli : Load and initialize network saved as a .gmz file.
 #@cli : Neural network files can be only loaded in .gmz format.
-+nn_load : check "s=['$1']; find(s,'.gmz')==size(s) - 4"
+#@cli : Default value: 'include_trainer_data=1'.
++nn_load : check "s=['$1']; find(s,'.gmz')==size(s) - 4 && isbool(${2=1})"
   e[^-1] "[nn_lib] Load network from file '$1'."
-  i "$1" init_code={t} rm. run $init_code
+  l[] {
+    "$1" run {t} rm.
+    if !$2 # Discard training data
+      nmd $_nn_modules_names k[${}]
+    fi
+  }
 
 #@cli nn_save : 'filename.gmz',_include_trainer_data={ 0=no | 1=yes }
 #@cli : Save current network as a .gmz file.
