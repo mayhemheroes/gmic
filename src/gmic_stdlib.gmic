@@ -50069,7 +50069,7 @@ fx_halftone_preview :
 #@gui : Black & White = bool()
 #@gui : sep = separator()
 #@gui : note = note("<span color="#EE5500"><small><b>Halftoning Shape:</b></small></span>")
-#@gui : Shape = choice{5,"Custom (Top Layer)","Grid","Lines","Random","Self","Spiral"}
+#@gui : Shape = choice{5,"Custom (Top Layer)","Dots","Lines","Random","Self","Spiral"}
 #@gui : Density (%) = float(75,0,100)
 #@gui : Smoothness (%) = float(25,0,100)_0
 #@gui : Angle = float(0,0,360)_0
@@ -50095,30 +50095,28 @@ fx_generic_halftone :
 
     # Generate halftoning shape.
     ws,hs:=round([w,h]*$afact)
-    delta:=round($afact*(100-$shape_density)) # Inter-shape distance
+    delta:=max(2,round($afact*(100-$shape_density))) # Inter-shape distance
 
     if $shape==0 # Custom (top layer)
       pass[0] 0
       if {s==2||s==4} channels. 100% ge. 90% else l. { s c neq. 0 max } fi
       b. $shape_smoothness ge. 35%
 
-    elif $shape==1 # Regular grid
-      50,50,1,1,1
-      r. $ws,$hs,1,1,4,0,0.5,0.5
+    elif $shape==1 # Regular dots
+      {round([$ws,$hs]/$delta)},1,1,1 r. $ws,$hs,1,1,4,0,0.5,0.5
 
     elif $shape==2 # Lines
       $ws,$hs,1,1,"const ang = $shape_angle°;
                    const ca = cos(ang);
                    const sa = sin(ang);
-                   const delta = max(2,$delta);
-                   !(round(sa*x-ca*y)%delta)"
+                   !(round(sa*x-ca*y)%$delta)"
 
     elif $shape==3 # Random
       $ws,$hs,1,1,u<0.5*($shape_density%)^4
 
     elif $shape==4 # Self
       ++ b. {$shape_smoothness/50}% r. $ws,$hs,1,1,3 otsu. 256 (0,1,0;1,1,1;0,1,0) +dilate.. . rm.. rv[-2,-1] -[-2,-1]
-      distance. 1 round. mod. {max(2,$delta)} ==. 0
+      distance. 1 round. mod. $delta ==. 0
 
     elif $shape==5 # Spiral
       $ws,$hs
