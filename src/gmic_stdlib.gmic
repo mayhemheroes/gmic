@@ -50502,6 +50502,60 @@ fx_paper :
 fx_paper_preview :
   gui_split_preview "fx_paper $*",${-3--1}
 
+#@gui Pills : fx_pills, fx_pills_preview
+#@gui : Mode = choice("Gray","RGB")
+#@gui : sep = separator()
+#@gui : note = note("<span color="#EE5500"><small><b>Gray Settings:</b></small></span>")
+#@gui : Cycles = float(4,0,32)_2-
+#@gui : Angle = float(0,0,360)_2
+#@gui : sep = separator()
+#@gui : note = note("<span color="#EE5500"><small><b>Red Settings:</b></small></span>")
+#@gui : Cycles = float(4,0,32)_0-
+#@gui : Angle = float(0,0,360)_0
+#@gui : sep = separator()
+#@gui : note = note("<span color="#EE5500"><small><b>Green Settings:</b></small></span>")
+#@gui : Cycles = float(4,0,32)_0-
+#@gui : Angle = float(0,0,360)_0
+#@gui : sep = separator()
+#@gui : note = note("<span color="#EE5500"><small><b>Blue Settings:</b></small></span>")
+#@gui : Cycles = float(4,0,32)_0-
+#@gui : Angle = float(0,0,360)_0
+#@gui : sep = separator()
+#@gui : note = note{"<small><b>Note:</b> This filter evaluates the awesome math formula proposed by Miloslav Číž
+#@gui : (a.k.a. <i>DrummyFish</i>) on
+#@gui : <a href=\"https://commons.wikimedia.org/wiki/File:2D_function_pills.png\">this Wikipedia page</a>.
+#@gui : </small>"}
+#@gui : sep = separator()
+#@gui : note = note("<small>Authors: <i>Miloslav Číž</i> and <i>David Tschumperlé</i>.
+#@gui :       Latest Update: <i>2022/11/08</i>.</small>")
+fx_pills :
+  $=arg n:=$1?4:2
+  foreach {
+    w,h:=w,h rm
+    repeat $1?3:1 {
+      $w,$h,1,1,"begin(
+          const cyc = "${arg$n}"*pi;
+          const ang = "${arg{1+$n}}"°;
+          const M = min(w,h);
+          R = rot(ang);
+        );
+        x0 = lerp(-cyc,cyc,x/M);
+        y0 = lerp(-cyc,cyc,y/M);
+        x = x0*R[0] + y0*R[1];
+        y = x0*R[2] + y0*R[3];
+        sqrt(abs(sin(x + cos(y + sin(x + cos(y)))) * sin(y + cos(x + sin(y + cos(x))))))"
+      n+=2
+    }
+    n 0,255
+    a c
+  }
+
+fx_pills_preview :
+  fx_pills $*
+  u "{$1}"\
+    "{$2}_"{$1?0:2}"{$3}_"{$1?0:2}\
+    "{$4}_"{$1?2:0}"{$5}_"{$1?2:0}"{$6}_"{$1?2:0}"{$7}_"{$1?2:0}"{$8}_"{$1?2:0}"{$9}_"{$1?2:0}
+
 #@gui Plaid : fx_plaid_texture,fx_plaid_texture(1)
 #@gui : Line = float(50,0,100)
 #@gui : Number of Angles = int(2,1,8)
