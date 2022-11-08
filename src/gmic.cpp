@@ -9615,19 +9615,19 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Set image name.
         if (!is_get && !std::strcmp("name",command)) {
           gmic_substitute_args(false);
-          if (selection.height()!=1) {
-            const CImg<T> arg = CImg<char>::string(argument);
-            const unsigned int pend = (unsigned int)arg.size();
-            for (unsigned int p = 0; p<pend; ) { // Retrieve list of image names
-              unsigned int np = p;
-              while (np<pend && arg[np] && arg[np]!=',') ++np;
-              if (np<pend) {
-                CImg<T>(arg.data(p),++np - p,1,1,1,true).move_to(g_list_c);
-                g_list_c.back().back() = 0;
-              }
-              p = np;
-            }
-          } else CImg<char>::string(argument).move_to(g_list_c);
+          if (is_selection && !selection)
+            error(true,images,0,0,
+                  "Command 'name': Empty image selection is not allowed.");
+
+          // Extract list of specified arguments.
+          const char *p = argument, *np;
+          while (*p) {
+            np = p; while (*np && *np!=',') ++np;
+            CImg<char>(p,np - p + 1,1,1,1,true).move_to(g_list_c);
+            g_list_c.back().back() = 0;
+            p = np + (*np?1:0);
+            if (*np && !*p) CImg<char>::vector(0).move_to(g_list_c);
+          }
 
           // Check correctness of specified arguments.
           if (is_selection && g_list_c.size()>selection._height)
@@ -9641,6 +9641,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                     "Command 'name': Number of arguments (%u) cannot be higher than "
                     "the number of images in the list (%u).",
                     g_list_c.size(),images._width);
+
+            // Retrieve implicit selection.
             selection.assign(1,g_list_c.size());
             cimg_forY(selection,l) selection[l] = images._width - g_list_c.size() + l;
           }
