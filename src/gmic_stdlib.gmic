@@ -50071,7 +50071,7 @@ fx_halftone_preview :
 #@gui : Shape = choice{4,"Custom (Top Layer)","Dots","Lines","Self","Spiral"}
 #@gui : Layout = choice("Regular","Semi-Regular","Random")_0
 #@gui : Density (%) = float(75,0,100)
-#@gui : Smoothness (%) = float(25,0,100)_0
+#@gui : Smoothness (%) = float(1,0,100)_0
 #@gui : Angle = float(0,0,360)_0
 #@gui : sep = separator()
 #@gui : note = note{"<small><b>Note:</b>
@@ -50099,8 +50099,11 @@ fx_generic_halftone :
 
     if $shape==0 # Custom (top layer)
       pass[0] 0
-      if {s==2||s==4} channels. 100% ge. 90% else l. { s c neq. 0 max } fi
-      b. $shape_smoothness ge. 35%
+      if {s==2||s==4} channels. 100% else l. { s c + } fi
+      r. {0,[w,h]},1,1,0,0 r. $ws,$hs,1,1,3
+      b. $shape_smoothness ge. 0.5
+      (0,1,0;1,1,1;0,1,0) +dilate.. . rm.. rv[-2,-1] -[-2,-1]
+      if $shape_density distance. 1 round. mod. $delta ==. 0 fi
 
     elif $shape==1 # Dots
       if $shape_layout==0 # Layout: Regular
@@ -50183,7 +50186,7 @@ fx_generic_halftone_preview :
   gui_crop_resize_preview
   u "{$1}{$2}{$3}{$4}{$5}{$6}{$7}"\
     "{"$shape_layout"}"_{$shape==1?2:0}\
-    "{"$shape_density"}"_{$shape?2:0}\
+    "{"$shape_density"}"\
     "{"$shape_smoothness"}"_{isin($shape,0,3)?2:0}\
     "{"$shape_angle"}"_{isin($shape,2)?2:0}\
     "{${1--2}}"
