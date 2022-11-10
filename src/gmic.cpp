@@ -3910,7 +3910,7 @@ gmic& gmic::print(const CImgList<T>& list, const CImg<unsigned int> *const calls
   if (is_cr) std::fputc('\r',cimg::output());
   else for (unsigned int i = 0; i<nb_carriages; ++i) std::fputc('\n',cimg::output());
   nb_carriages = 1;
-  if (callstack_selection && *callstack_selection)
+  if (!callstack_selection || *callstack_selection)
     std::fprintf(cimg::output(),
                  "[gmic]-%u%s %s",
                  list.size(),callstack2string(callstack_selection).data(),message.data() + (is_cr?1:0));
@@ -3943,7 +3943,7 @@ gmic& gmic::warn(const CImgList<T>& list, const CImg<unsigned int> *const callst
   if (is_cr) std::fputc('\r',cimg::output());
   else for (unsigned int i = 0; i<nb_carriages; ++i) std::fputc('\n',cimg::output());
   nb_carriages = 1;
-  if (callstack_selection && *callstack_selection) {
+  if (!callstack_selection || *callstack_selection) {
     if (debug_filename<commands_files.size() && debug_line!=~0U)
       std::fprintf(cimg::output(),
                    "[gmic]-%u%s %s%s*** Warning (file '%s', %sline #%u) *** %s%s",
@@ -3986,7 +3986,7 @@ gmic& gmic::error(const bool output_header, const CImgList<T>& list,
     if (is_cr) std::fputc('\r',cimg::output());
     else for (unsigned int i = 0; i<nb_carriages_default; ++i) std::fputc('\n',cimg::output());
     nb_carriages_default = 1;
-    if (callstack_selection && *callstack_selection) {
+    if (!callstack_selection || *callstack_selection) {
       if (output_header) {
         if (debug_filename<commands_files.size() && debug_line!=~0U)
           std::fprintf(cimg::output(),
@@ -7537,7 +7537,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             std::FILE *_file = 0;
             if (is_get) { _file = cimg::output(); verbosity = 1; cimg::output(stdout); }
             if (is_selection) print(images,&selection,"%s",name.data());
-            else print(images,0,"%s",name.data());
+            else print(images,&CImg<unsigned int>::empty(),"%s",name.data());
             if (is_get) { verbosity = _verbosity; cimg::output(_file); }
             --verbosity;
           }
@@ -7587,7 +7587,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           name.assign(argument,(unsigned int)std::strlen(argument) + 1);
           cimg::strunescape(name);
           if (is_selection) error(true,images,&selection,0,"%s",name.data());
-          else error(true,images,0,0,"%s",name.data());
+          else error(true,images,&CImg<unsigned int>::empty(),0,"%s",name.data());
         }
 
         // Invert endianness.
@@ -13228,7 +13228,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             std::FILE *_file = 0;
             if (is_get) { _file = cimg::output(); verbosity = 1; cimg::output(stdout); }
             if (is_selection) warn(images,&selection,force_visible,"%s",name.data());
-            else warn(images,0,force_visible,"%s",name.data());
+            else warn(images,&CImg<unsigned int>::empty(),force_visible,"%s",name.data());
             if (is_get) { verbosity = _verbosity; cimg::output(_file); }
             --verbosity;
           }
