@@ -6545,24 +6545,27 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           strreplace_fw(arg_command);
 
           bool add_debug_info = is_debug;
-          if ((*arg_command=='0' || *arg_command=='1') && arg_command[1]==',') {
+          const bool is_debug_arg = (*arg_command=='0' || *arg_command=='1') && arg_command[1]==',';
+          if (is_debug_arg) {
             add_debug_info = (*arg_command=='1');
             arg_command+=2; arg_command_text+=2; offset_argument_text = 2;
           }
 
           std::FILE *file = cimg::std_fopen(arg_command,"rb");
           if (file) {
+            if (!is_debug_arg) add_debug_info = true;
             print(images,0,"Import commands from file '%s'%s",
                   arg_command_text,
-                  add_debug_info?" with debug info":"");
+                  add_debug_info?", with debug info":"");
             add_commands(file,arg_command,add_debug_info,&count_new,&count_replaced);
             cimg::fclose(file);
 
           } else if (!cimg::strncasecmp(arg_command,"http://",7) ||
                      !cimg::strncasecmp(arg_command,"https://",8)) { // Try to read from network
+            if (!is_debug_arg) add_debug_info = true;
             print(images,0,"Import commands from URL '%s'%s",
                   arg_command_text,
-                  add_debug_info?" with debug info":"");
+                  add_debug_info?", with debug info":"");
             try {
               file = cimg::std_fopen(cimg::load_network(arg_command,gmic_use_argx,network_timeout,true,0,"gmic"),"r");
             } catch (...) {
@@ -6591,9 +6594,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                     "from network.",
                     gmic_argument_text() + offset_argument_text);
             std::remove(argx);
-          } else {
-            print(images,0,"Import custom commands from expression '%s'",
-                  arg_command_text);
+          } else { // Import commands from a string
+            if (!is_debug_arg) add_debug_info = false;
+            print(images,0,"Import custom commands from expression '%s'%s",
+                  arg_command_text,
+                  add_debug_info?", with debug info":"");
             cimg::strunescape(arg_command);
             add_commands(arg_command,0,add_debug_info,&count_new,&count_replaced);
           }
