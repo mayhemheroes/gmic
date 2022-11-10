@@ -3910,7 +3910,7 @@ gmic& gmic::print(const CImgList<T>& list, const CImg<unsigned int> *const calls
   if (is_cr) std::fputc('\r',cimg::output());
   else for (unsigned int i = 0; i<nb_carriages; ++i) std::fputc('\n',cimg::output());
   nb_carriages = 1;
-  if (!callstack_selection || *callstack_selection)
+  if (callstack_selection && *callstack_selection)
     std::fprintf(cimg::output(),
                  "[gmic]-%u%s %s",
                  list.size(),callstack2string(callstack_selection).data(),message.data() + (is_cr?1:0));
@@ -3943,7 +3943,7 @@ gmic& gmic::warn(const CImgList<T>& list, const CImg<unsigned int> *const callst
   if (is_cr) std::fputc('\r',cimg::output());
   else for (unsigned int i = 0; i<nb_carriages; ++i) std::fputc('\n',cimg::output());
   nb_carriages = 1;
-  if (!callstack_selection || *callstack_selection) {
+  if (callstack_selection && *callstack_selection) {
     if (debug_filename<commands_files.size() && debug_line!=~0U)
       std::fprintf(cimg::output(),
                    "[gmic]-%u%s %s%s*** Warning (file '%s', %sline #%u) *** %s%s",
@@ -3956,7 +3956,7 @@ gmic& gmic::warn(const CImgList<T>& list, const CImg<unsigned int> *const callst
                    "[gmic]-%u%s %s%s*** Warning *** %s%s",
                    list.size(),s_callstack.data(),cimg::t_magenta,cimg::t_bold,
                    message.data() + (is_cr?1:0),cimg::t_normal);
-  } else std::fprintf(cimg::output(),"%s%s%s%s",
+  } else std::fprintf(cimg::output(),"%s%s*** Warning *** %s%s",
                       cimg::t_magenta,cimg::t_bold,message.data() + (is_cr?1:0),cimg::t_normal);
   std::fflush(cimg::output());
   cimg::mutex(29,0);
@@ -3986,7 +3986,7 @@ gmic& gmic::error(const bool output_header, const CImgList<T>& list,
     if (is_cr) std::fputc('\r',cimg::output());
     else for (unsigned int i = 0; i<nb_carriages_default; ++i) std::fputc('\n',cimg::output());
     nb_carriages_default = 1;
-    if (!callstack_selection || *callstack_selection) {
+    if (callstack_selection && *callstack_selection) {
       if (output_header) {
         if (debug_filename<commands_files.size() && debug_line!=~0U)
           std::fprintf(cimg::output(),
@@ -4005,7 +4005,10 @@ gmic& gmic::error(const bool output_header, const CImgList<T>& list,
                      "[gmic]-%u%s %s%s%s%s",
                      list.size(),s_callstack.data(),cimg::t_red,cimg::t_bold,
                      message.data() + (is_cr?1:0),cimg::t_normal);
-    } else std::fprintf(cimg::output(),"%s",message.data() + (is_cr?1:0));
+    } else std::fprintf(cimg::output(),
+                        "%s%s*** Error *** %s%s",
+                        cimg::t_red,cimg::t_bold,
+                        message.data() + (is_cr?1:0),cimg::t_normal);
     std::fflush(cimg::output());
     cimg::mutex(29,0);
   }

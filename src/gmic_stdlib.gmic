@@ -198,13 +198,13 @@
 # This command is run when the cli tool 'gmic' is invoked without arguments on the command line.
 cli_noarg :
   v 0 use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r _cli_noarg=1 version
-  +e[] "\n[gmic] No commands, options or data provided."
+  +e "\n[gmic] No commands, options or data provided."
   gmic_help="gmic help"
   if !${-is_macos}" && "!${-is_windows} gmic_help.=" | less" if $_vt100 gmic_help.=" -r" fi fi
   if {*,u}>0
-    +e[] "[gmic] (type "${c}"'"$gmic_help"'"$n" to print help, "${c}"'gmic demos'"$n" to launch demos)."
+    +e "[gmic] (type "${c}"'"$gmic_help"'"$n" to print help, "${c}"'gmic demos'"$n" to launch demos)."
   else
-    +e[] "[gmic] (type "${c}"'"$gmic_help"'"$n" to print help)."
+    +e "[gmic] (type "${c}"'"$gmic_help"'"$n" to print help)."
   fi
   file_update=${_path_rc}update$_version.gmic
   need_update={"Y = date(0); M = date(1); D = date(2); date_current = Y*365 + M*31 + D;
@@ -212,15 +212,15 @@ cli_noarg :
                 D = date(2,'"{/$file_update}"'); date_file = Y*365 + M*31 + D;
                 date_current - date_file>=7"}
   if $need_update
-    +e[] "[gmic] Updating commands..."
+    +e "[gmic] Updating commands..."
     l[] {
       update
-      +e[] "\r[gmic] Updating commands: "${g}"Succeeded!"$n
+      +e "\r[gmic] Updating commands: "${g}"Succeeded!"$n
     onfail
-      +e[] "\r[gmic] Updating commands: "${r}"Failed!"$n
+      +e "\r[gmic] Updating commands: "${r}"Failed!"$n
     }
   fi
-  +e[] "\n"
+  +e "\n"
 
 # cli_start
 # This command is called each time the cli interface 'gmic' starts.
@@ -282,8 +282,8 @@ help : skip ${1=""}
         onfail ('${}') s -,{'"; did you mean "'} if $!>1 s[1] -,39 k[1] misspelling={t} fi rm
       }
       if narg($misspelling) misspelling="; did you mean '"$_vt100_g$misspelling$_vt100_n"' ?" fi
-      +e[] "\n[gmic] No help available for command '"$_vt100_r$command$_vt100_n"'"$misspelling". "\
-           "\n       Try '"${_vt100_c}"gmic help"$_vt100_n"' for global help."
+      +e "\n[gmic] No help available for command '"$_vt100_r$command$_vt100_n"'"$misspelling". "\
+         "\n       Try '"${_vt100_c}"gmic help"$_vt100_n"' for global help."
     else
       a y
       _no_categories=1
@@ -291,7 +291,7 @@ help : skip ${1=""}
       if narg(${}) parse_cli ascii,${} fi # In case of shortcut, display also help for shortcut command.
     fi
   fi
-  +e[] "\n" rm q
+  +e "\n" rm q
 
 # Command to write reference documentation with various output modes.
 # $1 = output mode, can be { ascii | html | man | pdf }.
@@ -1188,7 +1188,7 @@ reference_begin_ascii :
   use_vt100
   if !narg($_shell_cols) _shell_cols={${-shell_cols}-5} fi
   _section=0
-  +e[] ""
+  +e ""
 
 reference_header_ascii :
   str=\n\
@@ -1198,14 +1198,14 @@ reference_header_ascii :
       \n\
       "        Copyright (c) Since 2008, David Tschumperlé / GREYC / CNRS."\n\
       "        "$_vt100_g$_vt100_u"(https://www.greyc.fr)"$_vt100_n
-  +e[] $str
+  +e $str
 
 reference_section_ascii :
   _section+=1
-  +e[] ""
+  +e ""
   ('$_section." "') ('"$*"') +f.. {'" "'} +f.. {'-'} a[-4,-3] x a[-2,-1] x
-  +e[] "  "$_vt100_r$_vt100_b{-2,t}$_vt100_n
-  +e[] "  "$_vt100_r{t}$_vt100_n\n
+  +e "  "$_vt100_r$_vt100_b{-2,t}$_vt100_n
+  +e "  "$_vt100_r{t}$_vt100_n\n
   rm[-2,-1]
 
 reference_text_ascii :
@@ -1220,7 +1220,7 @@ reference_text_ascii :
             i(#p)==_'\n' && h(#p)>2?resize(#p,1,2,1,1,0):
             (resize(#p,1,h#p + 2,1,1,0,0,0,1); copy(i[#p,0],_' ',2,1,0)))"
     a y
-    +e[] {/{t}}
+    +e {/{t}}
     rm
   }
 
@@ -1230,13 +1230,13 @@ reference_list_of_commands_ascii :
     parse_cli ascii
   onfail
     rm
-    +e[] \n"  "$_vt100_r${_vt100_b}"No command descriptions available!"$_vt100_n
-    +e[] "  "${_vt100_r}"Try updating your command files, with command "$_vt100_b"'update'."$_vt100_n
+    +e \n"  "$_vt100_r${_vt100_b}"No command descriptions available!"$_vt100_n
+    +e "  "${_vt100_r}"Try updating your command files, with command "$_vt100_b"'update'."$_vt100_n
   }
 
 reference_footer_ascii :
-  +e[] \n"  "$_vt100_r$_vt100_b"** G\47MIC comes with ABSOLUTELY NO WARRANTY; "\
-       "for details visit: https://gmic.eu **"$_vt100_n
+  +e \n"  "$_vt100_r$_vt100_b"** G\47MIC comes with ABSOLUTELY NO WARRANTY; "\
+     "for details visit: https://gmic.eu **"$_vt100_n
 
 #
 # Implement output mode 'html' for command 'reference'.
@@ -1398,11 +1398,11 @@ reference_end_html :
 #
 reference_begin_man :
   _section=0
-  +e[] ".TH G\47MIC 1\n\
-        .SH NAME\n\
-        gmic \\- Perform image processing operations using the G\47MIC framework.\n\
-        \n\
-        .SH HELP\n"
+  +e ".TH G\47MIC 1\n\
+      .SH NAME\n\
+      gmic \\- Perform image processing operations using the G\47MIC framework.\n\
+      \n\
+      .SH HELP\n"
 
 reference_header_man :
   _vt100_b="\\fB"
@@ -1498,15 +1498,15 @@ reference_end_pdf :
   # (There is a bug in wkhtmltopdf that prevents all images to appear in the generated document!
   #  I have to print the .pdf manually 'in a file' first).
   delete reference_pdf.pdf
-  v 0 e[] "  > Waiting for file 'reference_pdf.pdf'."
+  v 0 e "  > Waiting for file 'reference_pdf.pdf'."
   for { !isfile('reference_pdf.pdf') wait 5000 }
-  e[] "  > Removing links in file 'reference_pdf.pdf'."
+  e "  > Removing links in file 'reference_pdf.pdf'."
   x "pdfjam reference_pdf.pdf"
-  e[] "  > Compressing file 'reference_pdf.pdf' to 'gmic_reference.pdf'."
+  e "  > Compressing file 'reference_pdf.pdf' to 'gmic_reference.pdf'."
   x "gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=gmic_reference.pdf reference_pdf-pdfjam.pdf"
-  e[] "  > Clean temporary files."
+  e "  > Clean temporary files."
   delete style.css,reference_pdf.html,reference_pdf.png,reference_pdf.pdf,reference_pdf-pdfjam.pdf
-  e[] "  > Upload file 'gmic_reference.pdf' to G'MIC server."
+  e "  > Upload file 'gmic_reference.pdf' to G'MIC server."
   x "lftp sftp://"$GMIC_LOGIN":@ovh -e \"put -O /home/"$GMIC_LOGIN"/www/gmic/reference gmic_reference.pdf; "\
     "quit\" >/dev/null"
 
@@ -1529,7 +1529,7 @@ use_vt100 :
 version :
   use_vt100
   reference_header_ascii[]
-  if !0$_cli_noarg +e[] "\n" fi
+  if !0$_cli_noarg +e "\n" fi
 
 v : # Allow 'gmic +v' to get the version number.
   version
@@ -1846,11 +1846,11 @@ clean_cluts :
   # Search for duplicates and sort.
   p=0 for $p<$! {
     nm0={$p,n}
-    e[] "\r- Search duplicates for ["$p"] = '"$nm0"'                        "
+    e "\r- Search duplicates for ["$p"] = '"$nm0"'                        "
     q:=$p+1 for $q<$! {
       nm={$q,n}
       if ['$nm0']==['$nm']
-        e[] "   > Found duplicate ["$q"] -> Original 1x"{$p,h}", new 1x"{$q,h}"\n"
+        e "   > Found duplicate ["$q"] -> Original 1x"{$p,h}", new 1x"{$q,h}"\n"
         rv[$p,$q] rm[$q]
       else q+=1
       fi
@@ -1880,7 +1880,7 @@ clean_cluts :
   doc=${doc}"\n"\
       "#@cli : Default values: 'resolution=33' and 'cut_and_round=1'.\n"\
       "#@cli : $ clut summer clut alien_green,17 clut orange_dark4,48\n"
-  e[] "\n"$doc
+  e "\n"$doc
 
 #@cli m : eq. to 'command'. : (+)
 
@@ -2825,7 +2825,7 @@ _display3d :
           o[0] ${}
           notification="Save Copy:\n"${}
         elif {*,-P} # Print 3D pose on console
-          $pose3d v 0 e[] "  > 3D Pose = [ "{^}" ]." rm.
+          $pose3d v 0 e "  > 3D Pose = [ "{^}" ]." rm.
         elif {*,-R} # Reset window
           w[] $disp_size0
           notification="Reset Window Size" fontsize_notif=
@@ -4227,25 +4227,25 @@ output_obj : check "isbool(${2=1})" check3d 0
 
     # Decompose into vertices, primitives and colors.
     s3d 0 nb_vertices,nbp={1,f2ui([i[0],i[1]])} rm[0,1]
-    e[] "  > File '"$folder$basename$ext"' ("$nb_vertices" vertices, "$nbp" primitives)."
+    e "  > File '"$folder$basename$ext"' ("$nb_vertices" vertices, "$nbp" primitives)."
 
     # Export vertices.
     l[0] {
-      e[] "    - Export vertices."
+      e "    - Export vertices."
       r 3,{h/3},1,1,-1 permute zycx
       0 => out_obj
       eval.. ">"$fnobj";
-        !(y%10000)?run('e[] \"\r    - Export vertices: ',round(100*y/h),' %  \"');
+        !(y%10000)?run('e \"\r    - Export vertices: ',round(100*y/h),' %  \"');
         ref(string('v ',tos(i0),' ',tos(i1),' ',tos(i2),'\n'),str);
          write(#"$out_obj",str); I;
         end(resize(#"$out_obj",1,out,1,1,0))"
       rm[0] i[0] ('"\n# Vertices.\n"':y) a y => out_obj
-      e[] "\r    - Export vertices: Done."
+      e "\r    - Export vertices: Done."
     }
 
     # Export materials (colors/textures + opacities).
     if $2 l[2,3] {
-      e[] "    - Export materials."
+      e "    - Export materials."
       1,$nbp,1,3 => materials
       0 => out_mtl
       mv[0] $!
@@ -4255,7 +4255,7 @@ output_obj : check "isbool(${2=1})" check3d 0
         rgba = vector4();
         s_opac = vector32();
         repeat (nbp,p,
-          !(p%10000)?run('e[] \"\r    - Export materials: ',round(100*p/nbp),' %  \"');
+          !(p%10000)?run('e \"\r    - Export materials: ',round(100*p/nbp),' %  \"');
           s_opac[0] = 0;
           opac = i[#0,off_o];
           i[off_p]!=-128?( # RGB[A] color
@@ -4298,12 +4298,12 @@ output_obj : check "isbool(${2=1})" check3d 0
         );
         resize(#"$out_mtl",1,out,1,1,0);
         run('nb_materials,nb_textures=',nb_materials,',',nb_textures)"
-      e[] "\r    - Export materials: Done."
+      e "\r    - Export materials: Done."
       k[materials,out_mtl]
     } fi
 
     # Export primitives.
-    e[] "    - Export primitives."
+    e "    - Export primitives."
     0 => out_prim
     mv[1] $!
     eval $fnobj";
@@ -4311,7 +4311,7 @@ output_obj : check "isbool(${2=1})" check3d 0
       const nbp = "$nbp";
       off = p_material = material = nb_primitives = nb_tcoords = 0;
       repeat (nbp,p,
-        !(p%10000)?run('e[] \"\r    - Export primitives: ',round(100*p/nbp),' %  \"');
+        !(p%10000)?run('e \"\r    - Export primitives: ',round(100*p/nbp),' %  \"');
 
         type = i[off];
         $2?material = i[#materials,p];
@@ -4366,7 +4366,7 @@ output_obj : check "isbool(${2=1})" check3d 0
           ++nb_primitives;
 
         ):( # Unsupported primitive
-          run(['warn[] \"Command 'output_obj': Cannot convert primitive \#'],p,'/',nbp - 1,
+          run(['warn \"Command 'output_obj': Cannot convert primitive \#'],p,'/',nbp - 1,
                ' (size ',type,'). Ignoring it.\"');
         );
 
@@ -4375,7 +4375,7 @@ output_obj : check "isbool(${2=1})" check3d 0
       );
       resize(#"$out_prim",1,out,1,1,0);
       run('nb_primitives=',nb_primitives)"
-    e[] "\r    - Export primitives: Done."
+    e "\r    - Export primitives: Done."
     l[out_obj,out_prim] { i[1] ('"\n# Primitives.\n"':y) a y }
     if $2 k[out_mtl,out_obj] else k[out_obj] fi
 
@@ -4597,24 +4597,24 @@ parse_cli_is_eqto :
 parse_cli_bashcompletion :
   v 0 use_vt100
   sort_list +,n
-  +e[] "#"\n\
-    "#  Bash completion rules for 'gmic'."\n\
-    "#"\n\
-    "# This file has been generated automatically."\n\
-    "# Do not edit!"\n\
-    "#"\n\
-    "# This file should be copied/renamed in '/usr/share/bash-completion/completions/gmic'."\n\
-    "#"\n\n\
-    "_gmic()"\n\
-    "{"\n\
-    "    local cur prev opts coms"\n\
-    "    if type -t _init_completion >/dev/null; then"\n\
-    "        _init_completion -n = || return"\n\
-    "    else"\n\
-    "        COMPREPLY=()"\n\
-    "        cur=\"${COMP_WORDS[COMP_CWORD]}\""\n\
-    "        prev=\"${COMP_WORDS[COMP_CWORD-1]}\""\n\
-    "    fi"
+  +e "#"\n\
+     "#  Bash completion rules for 'gmic'."\n\
+     "#"\n\
+     "# This file has been generated automatically."\n\
+     "# Do not edit!"\n\
+     "#"\n\
+     "# This file should be copied/renamed in '/usr/share/bash-completion/completions/gmic'."\n\
+     "#"\n\n\
+     "_gmic()"\n\
+     "{"\n\
+     "    local cur prev opts coms"\n\
+     "    if type -t _init_completion >/dev/null; then"\n\
+     "        _init_completion -n = || return"\n\
+     "    else"\n\
+     "        COMPREPLY=()"\n\
+     "        cur=\"${COMP_WORDS[COMP_CWORD]}\""\n\
+     "        prev=\"${COMP_WORDS[COMP_CWORD-1]}\""\n\
+     "    fi"
   coms="    coms=\"" c=
 
   # Extract list of available commands.
@@ -4623,8 +4623,8 @@ parse_cli_bashcompletion :
     ('{n}') l. { s -,{'@'} name={0,t} rm } => $name
     coms.=$c$name c=" "
   }
-  +e[] $coms"\""\n\
-    "    opts=$(echo \"$coms\" | sed \"s: \\([^ ]\\+\\): \\1 -\\1 \\+\\1:g\")"\n
+  +e $coms"\""\n\
+     "    opts=$(echo \"$coms\" | sed \"s: \\([^ ]\\+\\): \\1 -\\1 \\+\\1:g\")"\n
 
   # Duplicate list of arguments for command shortcuts.
   repeat $! {
@@ -4635,8 +4635,8 @@ parse_cli_bashcompletion :
       l[$>] {
         pass[$eqto] 0 k. => $name
         onfail
-          warn[] "Warning: Ignoring shortcut '"$_vt100_c$name$_vt100_m$_vt100_b"', "\
-                 "links to unknown command '"$_vt100_c$eqto$_vt100_m$_vt100_b"'."
+          warn "Warning: Ignoring shortcut '"$_vt100_c$name$_vt100_m$_vt100_b"', "\
+               "links to unknown command '"$_vt100_c$eqto$_vt100_m$_vt100_b"'."
           => __to_discard__
       }
     fi
@@ -4644,7 +4644,7 @@ parse_cli_bashcompletion :
   rmn __to_discard__
 
   # Extract list of arguments.
-  +e[] "    case \"${prev}\" in"
+  +e "    case \"${prev}\" in"
   repeat $! {
     if s=['{$>,n}'];s[0]==_'_' continue fi
     l[$>] {
@@ -4653,16 +4653,16 @@ parse_cli_bashcompletion :
                      "find(n,'load')<0 && find(n,'save')<0 && "\
                      "n!='i' && n!='o' && n!='m' && n!='it' && n!='ot'"
         if s=['$name'];s=='help'||s=='h'
-          +e[] "        \""$name"\" | \"-"$name"\" | \"+"$name"\")"
-          +e[] "            COMPREPLY=( $(compgen -W \"$coms\" -- \"$cur\") ); return 0;;"
+          +e "        \""$name"\" | \"-"$name"\" | \"+"$name"\")"
+          +e "            COMPREPLY=( $(compgen -W \"$coms\" -- \"$cur\") ); return 0;;"
         else
           s -,{'\n'} k[0] discard {'#@cli'} max {'" "'} autocrop {'" "'}
           s -,{':'} autocrop {'" "'} rm[0] replace {'" "'},{'_'}
           n_args=0 args,c= repeat $! { if ['{/{$>,t}}']!='(+)' args.=$c{$>,t} c=" " n_args+=1 fi }
           if $n_args==1 args="> "$args fi
           if ['$args']!=0
-            +e[] "        \""$name"\" | \"-"$name"\" | \"+"$name"\")"
-            +e[] "            COMPREPLY=( $(compgen -W \""{/{/$args}}"\") ); return 0;;"
+            +e "        \""$name"\" | \"-"$name"\" | \"+"$name"\")"
+            +e "            COMPREPLY=( $(compgen -W \""{/{/$args}}"\") ); return 0;;"
           fi
         fi
         rm 0
@@ -4670,7 +4670,7 @@ parse_cli_bashcompletion :
     }
   }
 
-  +e[] "    esac"\n\n\
+  +e "    esac"\n\n\
 "    COMPREPLY=( $(compgen -W \"$opts\" -- \"$cur\") )"\n\
 "    if type -t _filedir >/dev/null; then"\n\
 "        _filedir"\n\
@@ -4703,8 +4703,8 @@ parse_cli_ascii :
         n_category+=1
         category=$cat
         ('$_section.$n_category." "') ('$category') +f.. {'" "'} +f.. {'-'} a[-4,-3] x a[-2,-1] x
-        +e[] \n"  "$_vt100_r$_vt100_b{-2,t}$_vt100_n
-        +e[] "  "$_vt100_r{t}$_vt100_n
+        +e \n"  "$_vt100_r$_vt100_b{-2,t}$_vt100_n
+        +e "  "$_vt100_r{t}$_vt100_n
         rm[-2,-1]
       fi
     fi
@@ -4719,16 +4719,16 @@ parse_cli_ascii :
         is_builtin:="find(#-1,'(+)')>=0"
         if $is_builtin rm. fi
       fi
-      +e[] "\n  "$_vt100_m$_vt100_b$name${"s1,s0=\" (+)\", u $s"$is_builtin}:$_vt100_n
+      +e "\n  "$_vt100_m$_vt100_b$name${"s1,s0=\" (+)\", u $s"$is_builtin}:$_vt100_n
       foreach {
         if ${parse_cli_is_eqto.}
           s -,39 eqto={1,t} k[0]
-          +e[] "      "${_vt100_i}"Shortcut for command '"$_vt100_m$_vt100_b$eqto$_vt100_n"'."
+          +e "      "${_vt100_i}"Shortcut for command '"$_vt100_m$_vt100_b$eqto$_vt100_n"'."
         else
           eqto=
           l. { _gmd2ascii_cut $_shell_cols,8 if $!>1 i[1--2] ('"\\\\\n       "':y) a y fi }
           str="      "{t}${"if "$<" u \" |\" else u \"\" fi"}
-          +e[] ${_vt100_c}$str$_vt100_n
+          +e ${_vt100_c}$str$_vt100_n
         fi
       }
       rm
@@ -4742,7 +4742,7 @@ parse_cli_ascii :
       rows {1+(i[1]==_'" "')},100%
       if "find(#0,'(eq. to ')>=0" # Found 'Eq. to' description.
         +l { s -,{'\47'} shortcut={1,t} rm onfail shortcut="(unknown)" rm }
-        +e[] $nl"    ("${_vt100_i}"equivalent to shortcut command '"$_vt100_m$_vt100_b$shortcut$_vt100_n"')." nl="\n"
+        +e $nl"    ("${_vt100_i}"equivalent to shortcut command '"$_vt100_m$_vt100_b$shortcut$_vt100_n"')." nl="\n"
       elif "find(#0,'Default value:')>=0 || find(#0,'Default values:')>=0" # Found 'Default value(s):' description
         if !0$_no_default_values
           s +,{':'}
@@ -4751,7 +4751,7 @@ parse_cli_ascii :
           fi
           a y gmd2ascii $_shell_cols,5
           if $!>1 i[1--2] ('"\n      "':y) a y fi autocrop {'\n'}
-          +e[] "\n    "{/{t}} nl=
+          +e "\n    "{/{t}} nl=
         fi
       elif i==_'$'" && "i[1]!=_'$' # Found example description
         if !0$_no_examples
@@ -4763,7 +4763,7 @@ parse_cli_ascii :
           if $n_example==1 example_str=${_vt100_b}"Example:"$_vt100_n"\n      "[#$n_example] nl="\n"
           else example_str="  "[#$n_example]
           fi
-          +e[] $nl"    "$example_str" "$_vt100_c$example$_vt100_n nl=
+          +e $nl"    "$example_str" "$_vt100_c$example$_vt100_n nl=
         fi
       elif i==_'$'" && "i[1]==_'$' # Found link to tutorial page
         if !0$_no_tutorial_link
@@ -4772,11 +4772,11 @@ parse_cli_ascii :
           else
             rows 2,100 autocrop {'" "'} url={t}
           fi
-          +e[] "\n    "${_vt100_b}"Tutorial: "$_vt100_n$_vt100_u$url$_vt100_n nl=
+          +e "\n    "${_vt100_b}"Tutorial: "$_vt100_n$_vt100_u$url$_vt100_n nl=
         fi
       else # Other kind of description line
         parse_cli_text_ascii.
-        if w +e[] $nl{/{t}} nl= fi
+        if w +e $nl{/{t}} nl= fi
       fi
 
     } fi }
@@ -4815,7 +4815,7 @@ parse_cli_trigger_ascii :
 # Implements 'html' mode for command 'parse_cli'.
 #
 parse_cli_html :
-  v 0 use_vt100 e[] ""
+  v 0 use_vt100 e ""
 
   # Sort by categories.
 #  repeat $! { ('{$>,n}') l. { s +,{'@'} rv a y nm={t} } rm. =>[$>] $nm } # Rename as 'category@name'
@@ -4950,7 +4950,7 @@ parse_cli_html :
   # Generate html page for each command.
   foreach {
     ('{n}') l. { s -,{'@'} name={0,t} if $!>1 category={1,t} else category= fi rm }
-    e[] "\r  > "$_vt100_c[#{1+$>}]$_vt100_n" "{`s=vector48(_'" "');copy(s,['$category" / "$name']);s`}
+    e "\r  > "$_vt100_c[#{1+$>}]$_vt100_n" "{`s=vector48(_'" "');copy(s,['$category" / "$name']);s`}
 
     # Find previous and next commands.
     if !$> previous= else pass[{$>-1}] 1 ('{n}') discard. {'_c1'} previous={t} rm[-2,-1] fi
@@ -5169,7 +5169,7 @@ parse_cli_html :
     => $name ot $url_name
   }
   rm
-  e[] "\r  > "${_vt100_g}{`s=vector64(_'" "');copy(s,'"Parsing done!"');s`}$_vt100_n
+  e "\r  > "${_vt100_g}{`s=vector64(_'" "');copy(s,'"Parsing done!"');s`}$_vt100_n
 
 parse_cli_trigger_html :
   parse_cli_trigger_print $*
@@ -5178,7 +5178,7 @@ parse_cli_trigger_html :
 # Implements 'image' mode for command 'parse_cli'.
 #
 parse_cli_images :
-  v 0 use_vt100 e[] ""
+  v 0 use_vt100 e ""
   old_category,category= n_category,n_example=0
   if !isfile('image.jpg') l[] { sp bottles,640 onfail testimage2d 500 } o. image.jpg rm. fi
   n_global=0
@@ -5189,7 +5189,7 @@ parse_cli_images :
 
       if ['$category']!=['$old_category']
         n_category+=1
-        e[] $_vt100_r"\n ** Section \#"$n_category": "$category"."$_vt100_n"\n"
+        e $_vt100_r"\n ** Section \#"$n_category": "$category"."$_vt100_n"\n"
       fi
       s -,{'\n'} discard {'#@cli'} max {'" "'} autocrop {'" "'}
       n_example=0
@@ -5207,7 +5207,7 @@ parse_cli_images :
           else
             basename=${name}.jpg
           fi
-          e[] $_vt100_c[$n_global]$_vt100_n" Command '"$_vt100_g$name$_vt100_n"': $ "$example
+          e $_vt100_c[$n_global]$_vt100_n" Command '"$_vt100_g$name$_vt100_n"': $ "$example
           skip_rendering:="['"$name"'][0]==_'_' || "\
                           "(isfile(['"{/${_parse_cli_images_path}f_$basename}"']) &&"\
                           " isfile(['"{/${_parse_cli_images_path}t_$basename}"'])) || "\
@@ -5240,8 +5240,8 @@ parse_cli_images :
             um run_example
           else etime="skipped"
           fi
-          e[] "\r"$_vt100_c[$n_global]$_vt100_n" Command '"$_vt100_g$name$_vt100_n"': $ "\
-              $example" "${_vt100_m}"("$etime")."$_vt100_n
+          e "\r"$_vt100_c[$n_global]$_vt100_n" Command '"$_vt100_g$name$_vt100_n"': $ "\
+            $example" "${_vt100_m}"("$etime")."$_vt100_n
         fi
       }
       old_category=$category
@@ -5325,11 +5325,11 @@ parse_cli_list :
 # Implements 'print' mode for command 'parse_cli'.
 #
 parse_cli_print :
-  v 0 e[] ""
+  v 0 e ""
   sort_list +,n
   foreach {
     ('{n}') l. { s -,{'@'} name={0,t} rm }
-    +e[] $name
+    +e $name
   }
   rm
 
@@ -6682,8 +6682,8 @@ parse_gui : skip "${1=print},${2=*}"
   y a y merge_multiline_comments
 
   # Extract all filter chunks with full path.
-  e[] ""
-  e[] "\r  > Extract filter chunks."
+  e ""
+  e "\r  > Extract filter chunks."
   macros="
     is_blank(p) = ((_c=source[p])<=_' ' && _c!=_'\n');
     skip_blank(p) = (while (is_blank(p), ++p));
@@ -6873,7 +6873,7 @@ parse_gui : skip "${1=print},${2=*}"
       if $! _f${f}_input_mode={0,t} fi # Default input mode
       rm
     }
-    e[] "\r  > "$_vt100_c[#$f]$_vt100_n" "{`s=vector48(_'" "');copy(s,['${_f${f}_path}${_f${f}_name}']);s`}
+    e "\r  > "$_vt100_c[#$f]$_vt100_n" "{`s=vector48(_'" "');copy(s,['${_f${f}_path}${_f${f}_name}']);s`}
 
     # Parse filter parameters.
     parseparams=1
@@ -6973,7 +6973,7 @@ parse_gui : skip "${1=print},${2=*}"
   store. _nongui
 
   # Done!
-  e[] "\r  > "${_vt100_g}{`s=vector64(_'" "');copy(s,'"Parsing done!"');s`}$_vt100_n
+  e "\r  > "${_vt100_g}{`s=vector64(_'" "');copy(s,'"Parsing done!"');s`}$_vt100_n
   v + parse_gui_$1 # Output result of the parsing.
 
 #
@@ -6982,10 +6982,10 @@ parse_gui : skip "${1=print},${2=*}"
 parse_gui_parseparams_print : u 0 # Tell parser to not parse filter parameters
 parse_gui_trigger_print : sort_list +,n
 parse_gui_print :
-  e[] "\r"${_vt100_g}{`vector68(_'" "')`}$_vt100_n
-  e[] "  > "${_vt100_g}"List of matching filters:"$_vt100_n"\n\n"
+  e "\r"${_vt100_g}{`vector68(_'" "')`}$_vt100_n
+  e "  > "${_vt100_g}"List of matching filters:"$_vt100_n"\n\n"
   repeat $_nb_filters {
-    +e[] "  [#"{1+$>}"] "${_f$>_path}${_f$>_name}
+    +e "  [#"{1+$>}"] "${_f$>_path}${_f$>_name}
   }
 
 #
@@ -6994,7 +6994,7 @@ parse_gui_print :
 #
 parse_gui_parseparams_images : u 1 # Tell parser to parse filter parameters
 parse_gui_images :
-  e[] "  >> Generate output, in 'images' mode.\n"
+  e "  >> Generate output, in 'images' mode.\n"
   _preview_area_width,_preview_area_height=256
   if !narg($_input_image) sp landscape,800 store. _input_image fi
 
@@ -7053,13 +7053,13 @@ parse_gui_images :
         fi
       }
     fi
-    +e[] ${_vt100_c}"  [#"{1+$>}"] "${_vt100_n}${_f${f}_name}": "${_vt100_g}$pipeline${_vt100_n}
+    +e ${_vt100_c}"  [#"{1+$>}"] "${_vt100_n}${_f${f}_name}": "${_vt100_g}$pipeline${_vt100_n}
     if ['$pipeline']!=0
       file_out=${_f${f}_name}.png
       l[] {
         $_input_image run $pipeline
         gui_merge_layers
-        onfail e[] "Error "$_vt100_r${}$_vt100_n"\n" rm
+        onfail e "Error "$_vt100_r${}$_vt100_n"\n" rm
       }
     fi
 
@@ -7068,14 +7068,14 @@ parse_gui_images :
     if {*} w. ${"fitscreen ."} fi
     o. $file_out rm.
   fi }
-  e[] "  >> "${_vt100_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_vt100_n
+  e "  >> "${_vt100_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_vt100_n
 
 #
 # Implements 'thumbnails' mode for command 'parse_gui'.
 #
 parse_gui_parseparams_thumbnails : u 1 # Tell parser to parse filter parameters
 parse_gui_thumbnails :
-  e[] "  >> Generate output, in 'thumbnails' mode.\n"
+  e "  >> Generate output, in 'thumbnails' mode.\n"
   if !isdir('thumbnails') x "mkdir -p thumbnails" fi
   sp landscape r2dy 256 r 256,256,1,3,0,0,0.5,0.5 store img
   _preview_area_width,_preview_area_height=256
@@ -7139,12 +7139,12 @@ parse_gui_thumbnails :
         fi
       }
     fi
-    +e[] ${_vt100_c}"  [#"{1+$>}"] "${_vt100_n}${_f${f}_name}": "${_vt100_g}$pipeline${_vt100_n}
+    +e ${_vt100_c}"  [#"{1+$>}"] "${_vt100_n}${_f${f}_name}": "${_vt100_g}$pipeline${_vt100_n}
     if ['$pipeline']!=0
       filename thumbnails/thumb.png,$f file_out=${}
       l[] {
         $img run $pipeline gui_merge_layers r2din 200,200,2
-        onfail e[] "Error "$_vt100_r${}$_vt100_n"\n" rm
+        onfail e "Error "$_vt100_r${}$_vt100_n"\n" rm
       }
     fi
 
@@ -7153,14 +7153,14 @@ parse_gui_thumbnails :
     if {*} w. ${"fitscreen ."} fi
     o. $file_out rm.
   }
-  e[] "  >> "${_vt100_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_vt100_n
+  e "  >> "${_vt100_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_vt100_n
 
 #
 # Implements 'whatsnew' mode for command 'parse_gui'.
 #
 parse_gui_parseparams_whatsnew : u 0 # Tell parser to not parse filter parameters
 parse_gui_whatsnew :
-  e[] "  >> Generate output, in 'whatsnew' mode.\n"
+  e "  >> Generate output, in 'whatsnew' mode.\n"
   l[] { if $_nb_filters
     1,1,1,1x$_nb_filters
     repeat $! { =>[$>] -${_f$>_path}${_f$>_name} f[$>] $> }
@@ -7169,14 +7169,14 @@ parse_gui_whatsnew :
     rm[0]
   fi }
   y a y
-  e[] "\r  >> "${_vt100_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_vt100_n
+  e "\r  >> "${_vt100_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_vt100_n
 
 #
 # Implements 'list' mode for command 'parse_gui'.
 #
 parse_gui_parseparams_list : u 0 # Tell parser to not parse filter parameters
 parse_gui_list :
-  e[] "  >> Generate output, in 'list' mode.\n"
+  e "  >> Generate output, in 'list' mode.\n"
   ('"*** List of filters in the G\47MIC plug-in ("$_nb_filters" filters, on "\
                {date(0)}"/"\
                {`v=date(1);sv=v2s(v);v<10?[_'0',sv]:[sv,0]`}"/"\
@@ -7210,19 +7210,19 @@ parse_gui_list :
 
   ('"\n*** End of list ***\n"')
   y a y
-  e[] "\r  >> "${_vt100_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_vt100_n
+  e "\r  >> "${_vt100_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_vt100_n
 
 #
 # Implements 'update' mode for command 'parse_gui'.
 #
 parse_gui_parseparams_update : u 1 # Tell parser to parse filter parameters
 parse_gui_update :
-  e[] "  >> Generate output, in 'update' mode.\n"
+  e "  >> Generate output, in 'update' mode.\n"
   path=/
   N:=$_nb_filters-1
   is_af:="date([1,2])==[4,1] && (date(4)%2)" # April fool mode ?
   repeat $_nb_filters f=$> {
-    e[] "\r  >> "$_vt100_c[#$f/$N]$_vt100_n" "{`s=vector48(_'" "');copy(s,['${_f${f}_path}${_f${f}_name}']);s`}
+    e "\r  >> "$_vt100_c[#$f/$N]$_vt100_n" "{`s=vector48(_'" "');copy(s,['${_f${f}_path}${_f${f}_name}']);s`}
 
     # Insert directives to change folder if necessary.
     if ;['$path']!=['${_f${f}_path}']
@@ -7346,7 +7346,7 @@ parse_gui_update :
     "#"\n\
     "# (End of G\47MIC update file)"')
   y a y
-  e[] "\r  >> "${_vt100_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_vt100_n
+  e "\r  >> "${_vt100_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_vt100_n
 
 # April Fool version!
 straprilfool : skip "${1=}"
@@ -7378,13 +7378,13 @@ parse_gui_trigger_json :
   sort_list +,n
 
 parse_gui_json :
-  e[] "  >> Generate output, in 'json' mode.\n"
+  e "  >> Generate output, in 'json' mode.\n"
   ('"{\n  \"format_version\": \"gmic_json_1.0\",\n  \"gmic_version\": \""${-strver}"\",\n  \"categories\": [\n"')
 
   current_category=
   N:=$_nb_filters-1
   repeat $_nb_filters { f=$>
-    e[] "\r  >> "$_vt100_c[#$f/$N]$_vt100_n" "{`s=vector48(_'" "');copy(s,['${_f${f}_path}${_f${f}_name}']);s`}
+    e "\r  >> "$_vt100_c[#$f/$N]$_vt100_n" "{`s=vector48(_'" "');copy(s,['${_f${f}_path}${_f${f}_name}']);s`}
 
     # Manage categories.
     0 => {`s=['${_f${f}_path}'];s[0,size(s)-1]`} _parse_gui_json[] {b} path=${} rm.
@@ -7511,7 +7511,7 @@ parse_gui_json :
   if ['$current_category']!=0 ('"    ]\n  }\n"') fi
   ('"  ]\n}\n"')
   y a y html2utf8
-  e[] "\r  >> "${_vt100_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_vt100_n
+  e "\r  >> "${_vt100_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_vt100_n
 
 _parse_gui_json :
   l[] {
@@ -7543,7 +7543,7 @@ parse_gui_trigger_gmicol :
   sort_list +,n
 
 parse_gui_gmicol :
-  e[] "  >> Generate output, in 'gmicol' mode.\n"
+  e "  >> Generate output, in 'gmicol' mode.\n"
   ('"<?xml version=\"1.0\"?>\n"\
     "<!--\n"\
     "   -\n"\
@@ -7569,7 +7569,7 @@ parse_gui_gmicol :
   current_category=
   N:=$_nb_filters-1
   repeat $_nb_filters { f=$>
-    e[] "\r  >> "$_vt100_c[#$f/$N]$_vt100_n" "{`s=vector48(_'" "');copy(s,['${_f${f}_path}${_f${f}_name}']);s`}
+    e "\r  >> "$_vt100_c[#$f/$N]$_vt100_n" "{`s=vector48(_'" "');copy(s,['${_f${f}_path}${_f${f}_name}']);s`}
 
     # Manage categories.
     0 => {`s=['${_f${f}_path}'];s[0,size(s)-1]`} ('{b}') _gmd_ascii2html. path={t} rm[-2,-1]
@@ -7701,18 +7701,18 @@ parse_gui_gmicol :
   if ['$current_category']!=0 ('"\n</category>\n"') fi
   ('"\n</categories>"')
   y a y html2utf8
-  e[] "\r  >> "${_vt100_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_vt100_n
+  e "\r  >> "${_vt100_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_vt100_n
 
 #
 # Implements 'strings' mode for command 'parse_gui'.
 # (Extract all strings from filters, for translation purpose, and put them in a .csv file format).
 #
 parse_gui_strings :
-  e[] "  >> Generate output, in 'strings' mode.\n"
+  e "  >> Generate output, in 'strings' mode.\n"
   N:=$_nb_filters-1
   repeat $_nb_filters { f=$>
     if !narg(${_f${f}_locale})" && "find(['${_f${f}_path}'],'Testing/')<0  # Consider only English, non-Testing filters
-      e[] "\r  >> "$_vt100_c[#$f/$N]$_vt100_n" "{`s=vector48(_'" "');copy(s,['${_f${f}_path}${_f${f}_name}']);s`}
+      e "\r  >> "$_vt100_c[#$f/$N]$_vt100_n" "{`s=vector48(_'" "');copy(s,['${_f${f}_path}${_f${f}_name}']);s`}
       _parse_gui_strings ${_f${f}_name}
       repeat ${_f${f}_nb_params} { p=$>
         type=${_f${f}_p${p}_type}
@@ -8531,22 +8531,22 @@ update_color_presets_html : check "isbool(${1=0})"
     nb_presets+=narg({/$presets})
   }
 
-  e[] "\n > Update 'Color Presets' pages, for "$!" image samples and "$nb_presets" presets."
+  e "\n > Update 'Color Presets' pages, for "$!" image samples and "$nb_presets" presets."
 
   # Prepare folder structure.
-  e[] $_vt100_g"\n  * Prepare folder structure."$_vt100_n
+  e $_vt100_g"\n  * Prepare folder structure."$_vt100_n
   x "ln -fs "$HOME/work/src/gmic/html/header1.html" ."
   x "ln -fs "$HOME/work/src/gmic/html/footer.html" ."
   x "mkdir -p img"
 
   # Generate thumbnails.
-  e[] $_vt100_g"\n  * Generate thumbnails from samples.\n"$_vt100_n
+  e $_vt100_g"\n  * Generate thumbnails from samples.\n"$_vt100_n
   x "mkdir -p original"
   nb_samples=$!
   to_rgb repeat $nb_samples { l[$<] {
     =>[0] sample_{1+$<}
     basename={0,b} basename$<=$basename
-    e[] "    - "$basename
+    e "    - "$basename
     +r2dx $thumb_width
     +to[0] "Reference",4,{0,h-28},20,2 frame. 1,1,0
     o. original/$basename.jpg,$jpeg_quality rm.
@@ -8561,13 +8561,13 @@ update_color_presets_html : check "isbool(${1=0})"
     category=${arg\ {1+$>},$categories}
     presets=${-_fx_cluts_$category}
 
-    e[] $_vt100_g"\n  * Category ""#"{1+$>}": "$_vt100_b$category"\n"$_vt100_n
+    e $_vt100_g"\n  * Category ""#"{1+$>}": "$_vt100_b$category"\n"$_vt100_n
     x "mkdir -p "$category
     x "mkdir -p "$category/clut
 
     repeat narg({/$presets}) {
       preset=${arg\ {1+$>},$presets}
-      e[] "    - "$preset
+      e "    - "$preset
       clut $preset,64 to_rgb.
       s:=sqrt(w*h*d) +r. $s,$s,1,3,-1
       if iM<=255 *. 257 fi  # Force PNG to be saved in 16bits.
@@ -8604,7 +8604,7 @@ update_color_presets_html : check "isbool(${1=0})"
   rm[1--1:2]  # Remove thumbnails.
 
   # Generate html gallery code.
-  e[] "\n  * Generate html code.\n"
+  e "\n  * Generate html code.\n"
 
   repeat narg($categories) {
     category=${arg\ {1+$>},$categories}
@@ -8616,7 +8616,7 @@ update_color_presets_html : check "isbool(${1=0})"
     repeat $nb_samples {
       width:=64+w#$> height:=64+h#$>
       basename={$>,b}
-      e[] "    - "$category_name" / "$basename
+      e "    - "$category_name" / "$basename
 
       ('"<!DOCTYPE html>"\n\
 "<html lang=\"en\">"\n\
@@ -8768,10 +8768,10 @@ update_color_presets_html : check "isbool(${1=0})"
   category=${arg\ 1,$categories}
   x "ln -fs "${category}_$basename0.html" index.html"
   if $1
-    e[] "\n  * Transfer color presets on G'MIC server.\n"
+    e "\n  * Transfer color presets on G'MIC server.\n"
     x "lftp sftp://"$GMIC_LOGIN":@ovh -e \"mirror -eRL . /home/"$GMIC_LOGIN"/www/gmic/color_presets ; quit\""
   fi
-  e[] "\n > All done, for "$nb_presets" presets.\n"
+  e "\n > All done, for "$nb_presets" presets.\n"
 
 # Generate gallery page for the G'MIC website.
 # $1 = upload to G'MIC server, can be { 0 | 1 }.
@@ -8816,7 +8816,7 @@ update_gallery_html : check "isbool(${1=0})"
   repeat $nb_categories { ncat=$>
     category=${arg\ 1+$>,$categories}
     if isfile('{/$category.html}') continue fi
-    e[] "\n  * Process category '"$_vt100_b$category$_vt100_n"'."
+    e "\n  * Process category '"$_vt100_b$category$_vt100_n"'."
 
     commands=${commands_$category}
     nb_commands:=narg($commands)
@@ -8887,11 +8887,11 @@ update_gallery_html : check "isbool(${1=0})"
       command=${"arg "1+$>,$commands}
       is_stylization:=['$command']=='_gallery_stylization'
 
-      e[] $_vt100_m"    - Command '"$_vt100_b$command$_vt100_n"' ["{1+$>}/$nb_commands"]."
+      e $_vt100_m"    - Command '"$_vt100_b$command$_vt100_n"' ["{1+$>}/$nb_commands"]."
       +l { # Parse command definition and examples
         s -,{'"#@cli "$command" :"'}
         if $!<2 s -,{'"#@cli "$command"\n"'} i[1] ('\n') a[-2,-1] y fi
-        if $!<2 warn[] "    ** Command '"$command"' not found! **"
+        if $!<2 warn "    ** Command '"$command"' not found! **"
         else
           k.
           eval "
@@ -8913,7 +8913,7 @@ update_gallery_html : check "isbool(${1=0})"
           repeat $nb_examples { # For each example found
             example$nex={$>,t}
 
-            e[] $_vt100_g"        $ "${example$nex}$_vt100_n
+            e $_vt100_g"        $ "${example$nex}$_vt100_n
             sample=${"arg 1+"{($nex+8*$ncat)%narg($pics)},$pics}
             is_codesample=0
 
@@ -8997,7 +8997,7 @@ update_gallery_html : check "isbool(${1=0})"
                 width,height:=[w,h]
                 if $_is_animated o $filename_full,$_fps else o $filename_full,70 fi
               fi
-              e[] "\r"$_vt100_g"        $ "${example$nex}" (done in "$_vt100_n${etime}"s"$_vt100_g")."$_vt100_n
+              e "\r"$_vt100_g"        $ "${example$nex}" (done in "$_vt100_n${etime}"s"$_vt100_g")."$_vt100_n
 
               crop 5,5,{w-6},{h-6} # Remove frame added by '_gallery'
               frame 3%,3%,255 rr2d 440,440,0,3 drop_shadow 2,2,2
@@ -9104,10 +9104,10 @@ update_gallery_html : check "isbool(${1=0})"
   x "ln -fs "$HOME/work/src/gmic/html/header1.html" ."
   x "ln -fs "$HOME/work/src/gmic/html/footer.html" ."
   if $1
-    e[] "\n  * Transfer gallery on G'MIC server.\n"
+    e "\n  * Transfer gallery on G'MIC server.\n"
     x "lftp sftp://"$GMIC_LOGIN":@ovh -e \"mirror -eRL . /home/"$GMIC_LOGIN"/www/gmic/gallery ; quit\""
   fi
-  e[] "  * All done!\n"
+  e "  * All done!\n"
 
 # Generate a single image from a list of images, for the gallery.
 _gallery :
@@ -9654,10 +9654,10 @@ update_reference_html : check "isbool(${1=0})"
 
   # Upload to G'MIC server.
   if $1
-    e[] "\n > Transfer reference documentation on G'MIC server.\n"
+    e "\n > Transfer reference documentation on G'MIC server.\n"
     x "lftp sftp://"$GMIC_LOGIN":@ovh -e \"mirror -RL . /home/"$GMIC_LOGIN"/www/gmic/reference ; quit\""
   fi
-  e[] "\n > All done.\n"
+  e "\n > All done.\n"
 
 # Generate tutorial pages for the G'MIC website.
 # $1 = upload to G'MIC server, can be { 0 | 1 }.
@@ -9674,7 +9674,7 @@ update_tutorial_html : check "isbool(${1=0})"
   use_vt100
 
   # Build directory structure.
-  e[] " > Build directory structure."
+  e " > Build directory structure."
   x "ln -fs "$HOME/work/src/gmic/html/header1.html" ."
   x "ln -fs "$HOME/work/src/gmic/html/footer.html" ."
   x "mkdir -p images scripts"
@@ -9702,23 +9702,23 @@ update_tutorial_html : check "isbool(${1=0})"
   files 0,*.gmd files=${}
   repeat narg({/$files}) {
     arg0 $>,$files file=${}
-    e[] " > Generate '"$_vt100_c$file$_vt100_n"'."
+    e " > Generate '"$_vt100_c$file$_vt100_n"'."
     t0=$|
     it $file
     replace_str. "../listmanip/",""
     gmd2html 2
     ot {n} rm.
     t1=$|
-    e[] "\r > Generate '"$_vt100_c$file$_vt100_n"' (done in "$_vt100_g{_round($t1-$t0,0.1)}"s"$_vt100_n")."
+    e "\r > Generate '"$_vt100_c$file$_vt100_n"' (done in "$_vt100_g{_round($t1-$t0,0.1)}"s"$_vt100_n")."
   }
   x "rm -f *.gmd"
 
   # Upload to G'MIC server.
   if $1
-    e[] "\n > Transfer tutorial pages on G'MIC server.\n"
+    e "\n > Transfer tutorial pages on G'MIC server.\n"
     x "lftp sftp://"$GMIC_LOGIN":@ovh -e \"mirror -RL . /home/"$GMIC_LOGIN"/www/gmic/tutorial ; quit\""
   fi
-  e[] "\n > All done.\n"
+  e "\n > All done.\n"
 
 # string2ts : ts_file.ts,strings_en.txt,strings_fr.txt
 # Regenerate .ts file from new translated strings (separated by newline in files strings_*).
@@ -9737,7 +9737,7 @@ strings2ts : skip "${1=}"
         q = find(#-1,'\">',p);
         q>=0?copy(lang,i[p],q - p);
       ); lang"`}
-    e[] "  > File '$1', detected language : "$lang.
+    e "  > File '$1', detected language : "$lang.
     s -,10
     N0=0
     foreach {
@@ -9752,11 +9752,11 @@ strings2ts : skip "${1=}"
     rm
   } else N0=0 lang=
   fi
-  if $N0 e[] "  > File '$1' contains "$N0" strings." fi
+  if $N0 e "  > File '$1' contains "$N0" strings." fi
   l[] { it "$2" s -,10 N1=$! repeat $! { nsrc$>={$>,t} } rm }
   l[] { it "$3" replace_str " ;",";" s -,10 N2=$! repeat $! { ndest$>={$>,t} } rm }
   if $N1!=$N2 error[0--3] "Command 'strings2ts': Number of lines do not match in files '$2' and '$3'." fi
-  e[] "  > Files '$2' and '$3' contain "$N1" strings."
+  e "  > Files '$2' and '$3' contain "$N1" strings."
 
   # Merge all strings together (set higher priority to strings that were already in the .ts file).
   l[] { repeat $N1 { ({'${ndest$>}'}) => ${nsrc$>} } y }
@@ -9767,7 +9767,7 @@ strings2ts : skip "${1=}"
     if lowercase(['$src'])==lowercase(['$dest']) rm fi
   }
   sort_list +,n
-  e[] "  > "$!" strings remain after cleaning/merging ("{$!-$N0}" new)."
+  e "  > "$!" strings remain after cleaning/merging ("{$!-$N0}" new)."
 
   # Generate .ts file.
   foreach {
@@ -9823,30 +9823,30 @@ parse_gui_trigger_zart :
   sort_list +,n
 
 parse_gui_zart :
-  e[] "  >> Generate output, in 'zart' mode.\n"
-  +e[] "<?xml version=\"1.0\" ?>"
-  +e[] "<document name=\"Presets\">\n"
+  e "  >> Generate output, in 'zart' mode.\n"
+  +e "<?xml version=\"1.0\" ?>"
+  +e "<document name=\"Presets\">\n"
 
   current_group=
   N:=$_nb_filters-1
   repeat $_nb_filters { f=$>
-    e[] "\r  >> "$_vt100_c[#$f/$N]$_vt100_n" "{`s=vector48(_'" "');copy(s,['${_f${f}_path}${_f${f}_name}']);s`}
+    e "\r  >> "$_vt100_c[#$f/$N]$_vt100_n" "{`s=vector48(_'" "');copy(s,['${_f${f}_path}${_f${f}_name}']);s`}
 
     # Manage groups.
     0 => {`s=['${_f${f}_path}'];s[0,size(s)-1]`} path={b} rm.
     if ['$current_group']!=['$path']
-      if ['$current_group']!=0 +e[] "</preset_group>\n" fi
-      +e[] "<!-- ******** \n\n    "$path"\n\n ******** -->"
-      +e[] "<preset_group name=\""$path"\">\n"
+      if ['$current_group']!=0 +e "</preset_group>\n" fi
+      +e "<!-- ******** \n\n    "$path"\n\n ******** -->"
+      +e "<preset_group name=\""$path"\">\n"
       current_group=$path
     fi
 
     # Filter definition.
     _parse_gui_zart[] ${_f${f}_name} fname=${}
 
-    +e[] "<!-- "$path/$fname" -->"
-    +e[] "<preset name=\""$fname"\">"
-    +e[] "  <command>"${_f${f}_command_preview}" $""*</command>"
+    +e "<!-- "$path/$fname" -->"
+    +e "<preset name=\""$fname"\">"
+    +e "  <command>"${_f${f}_command_preview}" $""*</command>"
     repeat ${_f${f}_nb_params} { p=$>
       _parse_gui_zart ${_f${f}_p{$p}_name} name=${}
       type=${_f${f}_p{$p}_type}
@@ -9855,29 +9855,29 @@ parse_gui_zart :
 
       if ['$type']=='bool'
         if lowercase(['$arg0'])=='false' arg0=0 elif lowercase(['$arg0'])=='true' arg0=1 elif !isnum($arg0) arg0=0 fi
-        +e[] "  <bool name=\""$name"\" default=\""$arg0"\" />"
+        +e "  <bool name=\""$name"\" default=\""$arg0"\" />"
 
       elif ['$type']=='choice'
         default=0 n=0 args=
         l[] { if isint($arg0) default=$arg0 n+=1 fi onfail }
         c= repeat $nbargs-$n { a=$> args.=${c}"choice"$>"=\""${arg{$n+$a}}"\"" c=" " }
-        +e[] "  <choice name=\""$name"\" default=\""$default"\" "$args" />"
+        +e "  <choice name=\""$name"\" default=\""$default"\" "$args" />"
 
       elif ['$type']=='color'
         if $nbargs==1" && "['$arg0'][0]==_'#' # Convert colors specified as '#RRGGBB[AA]'
           l[] { ('$arg0') autocrop. {'#'} s x,-2 nbargs=$! repeat $! { a=$> hex2dec {$>,t} arg$a=${} } rm }
         fi
         args= c= repeat $nbargs { a=$> args.=$c${arg$a} c="," }
-        +e[] "  <color name=\""$name"\" default=\""$args"\" />"
+        +e "  <color name=\""$name"\" default=\""$args"\" />"
 
       elif s=['$type'];s=='int'" || "s=='float'
-        +e[] "  <"$type" name=\""$name"\" default=\""$arg0"\" min=\""$arg1"\" max=\""$arg2"\" />"
+        +e "  <"$type" name=\""$name"\" default=\""$arg0"\" min=\""$arg1"\" max=\""$arg2"\" />"
 
       elif ['$type']=='file'" || "['$type']=='filein'" || "['$type']=='fileout'
-        +e[] "  <file name=\""$name"\" default=\""$arg0"\" />"
+        +e "  <file name=\""$name"\" default=\""$arg0"\" />"
 
       elif ['$type']=='folder'
-        +e[] "  <folder name=\""$name"\" default=\""$arg0"\" />"
+        +e "  <folder name=\""$name"\" default=\""$arg0"\" />"
 
       elif ['$type']=='link'
         align=-1 name= url= n=0
@@ -9886,34 +9886,34 @@ parse_gui_zart :
         else url,name=${arg$n}
         fi
         if $align==0 align=left elif $align==1 align=right else align=center fi
-        +e[] "  <link name=\""$name"\" url=\""$url"\" align=\""$align"\" />"
+        +e "  <link name=\""$name"\" url=\""$url"\" align=\""$align"\" />"
 
       elif ['$type']=='note'
         text={/$arg0}
-        +e[] "  <note text=\""$text"\" />"
+        +e "  <note text=\""$text"\" />"
 
       elif ['$type']=='point'
-        +e[] "  <point name=\""$name"\" position=\""$arg0,$arg1"\" />"
+        +e "  <point name=\""$name"\" position=\""$arg0,$arg1"\" />"
 
       elif ['$type']=='separator'
-        +e[] "  <separator />"
+        +e "  <separator />"
 
       elif ['$type']=='text'
-        +e[] "  <text name=\""$name"\" default=\""$arg0"\" />"
+        +e "  <text name=\""$name"\" default=\""$arg0"\" />"
 
       elif ['$type']=='value'
-        +e[] "  <value value=\""$arg0"\" />"
+        +e "  <value value=\""$arg0"\" />"
 
       else # Unsupported parameter
-        +e[] "  <value value=\""$arg0"\" />"
+        +e "  <value value=\""$arg0"\" />"
       fi
 
     }
-    +e[] "</preset>\n"
+    +e "</preset>\n"
   }
-  if narg($current_group) +e[] "</preset_group>" fi
-  +e[] "</document>"
-  e[] "\r  >> "${_vt100_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_vt100_n
+  if narg($current_group) +e "</preset_group>" fi
+  +e "</document>"
+  e "\r  >> "${_vt100_g}{`s=vector64(_'" "');copy(s,'"Output done!"');s`}$_vt100_n
 
 _parse_gui_zart :
   l[] {
@@ -10085,13 +10085,13 @@ upload_filters :
 
   # Create update file.
   +l. {
-    e[] "** Generate filter update file."
+    e "** Generate filter update file."
     m "parse_gui_trigger_update : _upload_filters_move"
     v + parse_gui. update v -
     um parse_gui_trigger_update
 
     # Upload filter files on G'MIC server.
-    e[] "** Upload filter update."
+    e "** Upload filter update."
     ot ${_path_rc}update$_version.gmic
     if "d = date(3); h = date(4); h>=7 && d>=1 && d<=5" url=http://bit.ly/2CmhX65 # url=http://bit.ly/2uaBRMB
     else url=https://bit.ly/33lRzX4 # https://bit.ly/2WeKVPv url=http://bit.ly/2uaBRMB #
@@ -10110,11 +10110,11 @@ upload_filters :
 
   # Create JSON file.
   +l. {
-    e[] "** Generate JSON filters file."
+    e "** Generate JSON filters file."
     v + parse_gui. json v -
 
     # Upload filter files on G'MIC server.
-    e[] "** Upload JSON filters."
+    e "** Upload JSON filters."
     ot ${_path_rc}/update$_version.json
 
     $compat
@@ -10127,7 +10127,7 @@ upload_filters :
 
   # Create filter listing.
   +l. {
-    e[] "** Generate filter listing."
+    e "** Generate filter listing."
     v + parse_gui. list v -
     ot /tmp/gui_filters.txt
     rm
@@ -10175,15 +10175,15 @@ upload_binaries : check "isbool(${2=1})"
       file=${file$>}
       is_win=${strcontains[]" "$file,win}
       if $is_win folder="windows" else folder="linux" fi
-      e[] "http://gmic.eu/files/"$folder/$file
+      e "http://gmic.eu/files/"$folder/$file
     }
-    e[] ""
+    e ""
 
   else # Upload files
     e[0--3] "Upload released binaries ($1) on the G'MIC web server."
 
     t0=$| n=0 t=0
-    e[] "- Waiting for binary files to be build."
+    e "- Waiting for binary files to be build."
     do
       repeat $N {
         file=${file$>}
@@ -10192,10 +10192,10 @@ upload_binaries : check "isbool(${2=1})"
           file_short=${}
           is_win=${strcontains[]" "$file,win}
           if $is_win folder="windows" else folder="linux" fi
-          e[] "- Upload file '"$file"' to 'https://gmic.eu/files/prerelease/"$file_short"'."
+          e "- Upload file '"$file"' to 'https://gmic.eu/files/prerelease/"$file_short"'."
           _upload[] $file,"files/prerelease/"$file_short
           if !$is_pre
-            e[] "- Upload file '"$file"' to 'https://gmic.eu/files/"$folder/$file"'."
+            e "- Upload file '"$file"' to 'https://gmic.eu/files/"$folder/$file"'."
             _upload[] $file,"files/"$folder/$file
           fi
 
@@ -10206,13 +10206,13 @@ upload_binaries : check "isbool(${2=1})"
         if !($t%4)
           remaining= sep=
           repeat $N { if narg(${file$>}) remaining.=${sep}${file$>} sep=", " fi }
-          e[] "- Waiting for files: "$remaining"."
+          e "- Waiting for files: "$remaining"."
         fi
         wait 30000 t+=1
       fi
     while $n<$N" && "$|<$t0+60*60*6
-    if $n<$N e[] "- Partial uploads done (timeout reached)."
-    else e[] "- All uploads done !"
+    if $n<$N e "- Partial uploads done (timeout reached)."
+    else e "- All uploads done !"
     fi
   fi
 
@@ -10963,7 +10963,7 @@ compress_clut : check "${1=1.5}>0 && ${2=0.75}>0 && isint(${3=2048}) && (!$3 || 
     nm={b}
     if iM>1024 / 257 fi # When input is 16bits
     if d==1 S:=round(cbrt(wh)) r $S,$S,$S,100%,-1 fi # When input is a 2D haldclut image
-    e[] "\n* Process CLUT '"$nm"' ("{w}"x"{h}"x"{d}")."
+    e "\n* Process CLUT '"$nm"' ("{w}"x"{h}"x"{d}")."
 
     # Detect B&W cluts.
     if "s==3 &&
@@ -10990,7 +10990,7 @@ compress_clut : check "${1=1.5}>0 && ${2=0.75}>0 && isint(${3=2048}) && (!$3 || 
       +decompress_clut_$method. {0,[w,h,d]},$colorspace
       if !$_metric -. [0] norm. else srgb2lab. deltaE. [1],{$_metric-1}," " fi
       emax,eavg:=[iM,ia]
-      e[] "\r"$sep"  > Add [#"{-2,h}"] Max_Err = "{_$emax}", Avg_Err = "{_$eavg}"         " sep=""
+      e "\r"$sep"  > Add [#"{-2,h}"] Max_Err = "{_$emax}", Avg_Err = "{_$eavg}"         " sep=""
       if $emax<=$max_error" && "$eavg<=$avg_error rm. break fi
       1,1,1,{0,s+3},{"P = [ xM,yM,zM ]; [ P*255/[max(1,w#0-1),max(1,h#0-1),max(1,d#0-1)], I(#0,P) ]"} rm..
       a[-2,-1] y
@@ -11014,7 +11014,7 @@ compress_clut : check "${1=1.5}>0 && ${2=0.75}>0 && isint(${3=2048}) && (!$3 || 
         emax,eavg:=[iM,ia] rm.
 
         if $emax<=$max_error" && "$eavg<=$avg_error rv[-2,-1] else index+=1 fi
-        e[] "\r"$sep"  > Rem [#"{min($index,h-1)}"/"{h}"] Max_Err = "{_$emax}", Avg_Err = "{_$eavg}"       "
+        e "\r"$sep"  > Rem [#"{min($index,h-1)}"/"{h}"] Max_Err = "{_$emax}", Avg_Err = "{_$eavg}"       "
         sep=""
         rm.
       while $index<h
@@ -11046,10 +11046,10 @@ compress_cluts : check "${2=1.5}>0 && ${3=0.75}>0 && isint(${4=2048}) && $4>8"
       if "dat = (date(5) + 60*(date(4) + date(2)*24));
           fdat = (date(5,'"{/$cclut}"') + 60*(date(4,'"{/$cclut}"') + date(2,'"{/$cclut}"')*24));
           !h && dat-fdat<30"
-        e[] "* Skip file '"$filename"' (CLUT already being compressed)."
+        e "* Skip file '"$filename"' (CLUT already being compressed)."
         need_compression=0
       elif h>0" && "h!=2048
-        e[] "* Skip file '"$filename"' (CLUT already compressed)."
+        e "* Skip file '"$filename"' (CLUT already compressed)."
         need_compression=0
       fi
       rm.
@@ -11059,10 +11059,10 @@ compress_cluts : check "${2=1.5}>0 && ${3=0.75}>0 && isint(${4=2048}) && $4>8"
       0 o. $cclut rm. # Lock current file
       if lowercase(['$ext'])=='cube' input_cube $filename c. 0,255
       elif lowercase(['$ext'])=='png' i $filename S:=round(cbrt(wh)) r $S,$S,$S,100%,-1
-      else e[] "* Skip file '"$filename"' (unknown CLUT format)." continue
+      else e "* Skip file '"$filename"' (unknown CLUT format)." continue
       fi
 
-      e[] "* Compress file '"$filename"'."
+      e "* Compress file '"$filename"'."
       if w>33 r3dx 33 fi
       to_rgb
       tic compress_clut $2,$3,$4 toc
@@ -12551,12 +12551,12 @@ lightness :
     # Initialization by farthest point sampling of the RGB cube.
     64,64,64,1 eval "repeat (8,k, x = !!(k&1); y = !!(k&2); z = !!(k&4); i([x,y,z]*(w-1)) = 1)"
     N:=is
-    e[] ""
+    e ""
     do
       +neq. 0 distance. 1 xyzM:=[xM,yM,zM] rm.
       col:=round([$xyzM]*255/(w-1))
       if max($col)>=$2 =. 1,$xyzM N+=1 else =. -1,$xyzM fi
-      e[] "\r  [ Init ] > Colors \#"$N
+      e "\r  [ Init ] > Colors \#"$N
     while $N<$1
     >. 0 {is},1,1,3
     eval.. ">begin(k = 0); i>0?(I[#-1,k++] = round([ x,y,z ]*255/63))"
@@ -12572,12 +12572,12 @@ lightness :
     } a x
 
     # Functional optimization.
-    e[] ""
+    e ""
     +srgb2lab a c
     energy_max=${-_lut_contrast.}
     nb_attempts=1000
     do
-      e[] "\r  [ Optim ] > Score = "{_$energy_max}", Attempts = "$nb_attempts"      "
+      e "\r  [ Optim ] > Score = "{_$energy_max}", Attempts = "$nb_attempts"      "
       . eval "
         do(
           k0 = round(u("$N0",w-1));
@@ -12678,10 +12678,10 @@ _palette2code : # Convert a set of input palettes
   foreach {
     r {whd},1,1,100%,-1
     img2base64 0,0
-    e[] "_palette_"{n}" : "
+    e "_palette_"{n}" : "
     b64=\"${}\"
     l[] { ('$b64') s x,-119 ('\\\\\n') a[0--3] .,x rm. a x b64={t} rm } # No more than 120 char / lines
-    e[] "  base642img \\\n"$b64"\n"
+    e "  base642img \\\n"$b64"\n"
   }
 
 # The color palettes below comes from the CImg library 'http://cimg.eu/'.
@@ -13050,11 +13050,11 @@ compress_palette :
     ri. ..,3 round.
     deltaE. ..
     dEavg,dEmax="[ia,iM]" rm.
-    e[] "N = "$N", dEavg = "$dEavg", dEmax = "$dEmax
+    e "N = "$N", dEavg = "$dEavg", dEmax = "$dEmax
   while $dEavg<0.75" && "$dEmax<1.25
   N+=1
   r $N,1,1,3,2 round.
-  e[] ""
+  e ""
   img2base64 0,0 rm
   str=\"${}\"
   ('$str') s. x,-119 ('\\\n') if $!>2 a[0--3] .,x fi rm.
@@ -14204,7 +14204,7 @@ autocrop_components : skip ${1=0%} check "${2=0.1%}>=0 && isbool(${3=0}) && isin
     # Extract detected objects.
     N:=iM repeat iM {
       n:=1+$>
-      e[] "\r  > "$n/$N
+      e "\r  > "$n/$N
       rprogress {100*$n/$N}
       +==[1] $n +*[0,-1] rm..
       if $4==0 coords=${autocrop_coords.\ auto} rm. +z[0] $coords
@@ -16807,7 +16807,7 @@ inpaint_matchpatch : check ${is_image_arg\ $1}"&& ${2=0}>=0 && isint(${3=9}) && 
     first_iter=1 iter=0
     repeat $nb_scales {
       scale:=100*(0.5^$<)
-      e[] "> Process scale "{1+$>}"/"$nb_scales" -> "$scale%
+      e "> Process scale "{1+$>}"/"$nb_scales" -> "$scale%
       progress {100*$>/max(1,$nb_scales-1)}
 
       # Compute image and mask at current scales.
@@ -20892,10 +20892,10 @@ animate3d : check "isint($1) && $1>0 && isnum(${2=0}) && isnum(${3=5}) && isnum(
   => anim3d_bg
   repeat {$!-1} { l[$>,-1] {
     check ${-is_3d..} nm={0,n} bn={0,b}
-    e[] "  * Object '"$bn"': 0/$1"
+    e "  * Object '"$bn"': 0/$1"
     c3d[0] n3d[0] *3d[0] {1,$5*min(w,h)/2}
     repeat $1 {
-      e[] "\r  * Object '"$bn"': "{1+$>}"/$1"
+      e "\r  * Object '"$bn"': "{1+$>}"/$1"
       +r3d[0] 0,0,1,{$>*$4} r3d. 0,1,0,{$>*$3} r3d. 1,0,0,{$>*$2}
       {1,[w,h,d,4]},-1 j3d. ..,50%,50%,0,1
       sh. 0,{s-2} sh.. 100% !=. -1 mul.. . mul. 255 rm[-2,-1]
@@ -25804,18 +25804,18 @@ nn_loss_softmax_crossentropy : nn_check_layer "$2"
 nn_print :
   e[^-1] "[nn_lib] Print info on current neural network."
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r b=$_vt100_b v 0
-  e[] " * List of modules:"
+  e " * List of modules:"
   repeat narg($_nn_modules_names)-1 {
     type=${arg0\ $>,$_nn_modules_types}
     name=${arg0\ $>,$_nn_modules_names}
     learning_mode=${_nn_${name}_learning_mode}
-    e[] "    - Module: "$b$name$n" (type: "$g$type$n")"
-    e[] "        * Output: "$c${_nn_${name}_size}$n
+    e "    - Module: "$b$name$n" (type: "$g$type$n")"
+    e "        * Output: "$c${_nn_${name}_size}$n
     if ${$name}
-      e[] "        * Parameters: "$c{$name,whds}$n
+      e "        * Parameters: "$c{$name,whds}$n
     fi
   }
-  e[] "\n * Total: "${b}{narg($_nn_modules_names)}$n" modules, "$b${-nn_size}$n" parameters.\n"
+  e "\n * Total: "${b}{narg($_nn_modules_names)}$n" modules, "$b${-nn_size}$n" parameters.\n"
 
 #@cli nn_trainer : name,loss,_learning_rate>0,_optimizer,_scheduler
 #@cli : Add a network trainer to the network.
@@ -28852,13 +28852,13 @@ animate : skip ${1=30},${2=0},${3=""},${4=10},${5=1},"${6=}"
     ($2) ($3) y[-2,-1] x a[-2,-1] y r. 100%,$4,1,1,3 mv. 0 rprogress 0
     repeat $!-1 {
       u=$>
-      e[] " > Animate image ["$>"]"
+      e " > Animate image ["$>"]"
       repeat $4 { +l[0,1] {
         -$1. {0,@{$>*{0,w}}-{($>+1)*{0,w}-1}} rm[0]
         if narg("$6") o ${filename\ "$6",$u,$>} fi
         if !$5 rm fi
         rprogress {100*($>+1)/$4}
-        e[] "\r > Animate image ["$u"] : Frame "{$>+1}"/$4    "
+        e "\r > Animate image ["$u"] : Frame "{$>+1}"/$4    "
       } }
       rm[1]
     }
@@ -28942,7 +28942,7 @@ _apply_stream : skip "${2=},${6=}"
   do
     l[] { $1 onfail go_on=0 }
     if $go_on
-      e[] "\r  > Frame ""#"$frame$_N"        "
+      e "\r  > Frame ""#"$frame$_N"        "
       frame+=$5
       l { $2 onfail error[0--5] "Command 'apply_stream': Specified command errored: "${} }
       if !$! continue fi
@@ -28995,7 +28995,7 @@ _average_stream : skip "${5=}"
   do
     l[] { $1 onfail go_on=0 }
     if $go_on
-      e[] "\r  > Frame ""#"$frame$_N"        "
+      e "\r  > Frame ""#"$frame$_N"        "
       imM={v=[$imM];[min(im,v[0]),max(iM,v[1])]}
       N+=1
       if $!>1 r ${-max_whds} + fi
@@ -29065,7 +29065,7 @@ _fade_stream : skip "${6=}"
     repeat $2+2 {
       if $<
         title="[G'MIC] Frame ""#"$pframe" -> ""#"$frame$_N" ("{1+$>}/$2")"
-        e[] "\r  - "$title
+        e "\r  - "$title
         +j[0] [1],0,0,0,0,{$>/($2+1)}
         if narg("$6")
           if $is_outavi||$is_outmp4 z. 0,{w-(w%8)-1} o. "$6",25,mp4v,1 else filename "$6",$i i+=1 o. ${} fi
@@ -29098,10 +29098,10 @@ files2video : check "isint(${3=25}) && $3>0" skip "${2=output.mp4}",${4=mp4v}
   repeat $nb_files { l[] {
     file=${_file{$>+1}}
     _file=${basename\ $file}
-    e[] "\r - Image "{1+$>}/$nb_files" ["$_file"] -> [$2]                    "
+    e "\r - Image "{1+$>}/$nb_files" ["$_file"] -> [$2]                    "
     i $file o "$2",$3,$4,1
     rm
-  onfail e[] "\n - Error occurred on input file '"$file"'.\n"
+  onfail e "\n - Error occurred on input file '"$file"'.\n"
   } }
   o $"$2",0,0,0
 
@@ -29144,13 +29144,13 @@ _median_stream :
 
   # Retrieve min/max values of all frames when fast method is used.
   if $6
-    e[] "- Retrieve min/max values of all frames.\n"
+    e "- Retrieve min/max values of all frames.\n"
     frame=$2 go_on=1
     imM=inf,-inf
     do
       l[] { $1 onfail go_on=0 }
       if $go_on
-        e[] "\r    > Frame ""#"$frame$_N"        "
+        e "\r    > Frame ""#"$frame$_N"        "
         imM={v=[$imM];[min(im,v[0]),max(iM,v[1])]}
         if {*}
           title="[G'MIC] Frame ""#"$frame
@@ -29171,7 +29171,7 @@ _median_stream :
   nb_iter={round(h/$drows,1,1)}
   repeat $nb_iter {
     row0={$drows*$>} row1={0,min(h,$row0+$drows-1)}
-    e[] "- Iteration \#"{$>+1}/$nb_iter": Load rows "$row0-$row1/$h1".\n"
+    e "- Iteration \#"{$>+1}/$nb_iter": Load rows "$row0-$row1/$h1".\n"
     frame=$2 go_on=1
 
     if $6
@@ -29181,7 +29181,7 @@ _median_stream :
       do
         l[] { $1 => img onfail go_on=0 }
         if $img
-          e[] "\r    > Frame ""#"$frame$_N"        "
+          e "\r    > Frame ""#"$frame$_N"        "
           if {*}" && "!$>
             title="[G'MIC] Frame ""#"$frame
             if !narg($wh) wh=${fitscreen[]\ {img,[w,h]}} w[img] $wh,1,$title
@@ -29214,7 +29214,7 @@ _median_stream :
         do
           l[] { $1 => img onfail go_on=0 }
           if $go_on
-            e[] "\r    > Frame ""#"$frame$_N"        "
+            e "\r    > Frame ""#"$frame$_N"        "
             if {*}" && "!$>
               title="[G'MIC] Frame ""#"$frame
               if !narg($wh) wh=${fitscreen[]\ {[w,h]}} w. $wh,1,$title
@@ -29225,7 +29225,7 @@ _median_stream :
             frame+=$4
           fi
         while $go_on" && "($3==-1" || "$frame<=$3)
-        e[] "\r    > Compute median blending of "$!" frames."
+        e "\r    > Compute median blending of "$!" frames."
         __median_stream
       }
     fi
@@ -29236,7 +29236,7 @@ _median_stream :
     rm.
 
   }
-  e[] "- Done!"
+  e "- Done!"
 
 # Median blending optimized to deal with a lot of input frames.
 __median_stream :
@@ -29279,7 +29279,7 @@ morph : check "$1>=0.5 && ${2=0.1}>=0 && ${3=4}>=0"
   repeat $!-1 {
     nm={$>,n}
     l[$<,{$<+1}] {
-      e[] "\r > Morph image "$>" to image "{$>+1}".    "
+      e "\r > Morph image "$>" to image "{$>+1}".    "
       +equalize[0,1] n[-2,-1] 0,255
       +displacement[3] [2],$2,$3 +displacement[2] [3],$2,$3 rm[-4,-3]
       repeat $nbf+2 {
@@ -29320,7 +29320,7 @@ morph_rbf : check "$1>=0.5"
   if int($N)!=$N error[0--2] "Command 'morph_rbf': Wrong number of arguments ($#)." fi
   ri[^0] [0],3
   repeat $!-1 { nm={$>,n} l[$<,{$<+1}] {
-    e[] "\r > Morph image "$>" to image "{$>+1}".    "
+    e "\r > Morph image "$>" to image "{$>+1}".    "
 
     # Retrieve absolute keypoints coordinates.
     4,$N
@@ -29381,13 +29381,13 @@ _morph_stream : skip "${8=}"
     if !$go_on break fi
     to_colormode. $s r. $w,$h
     cutvals={[min(im#0,im#1),max(iM#0,iM#1)]}
-    e[] "\r  - Frame ""#"$pframe" -> ""#"$frame"            "
+    e "\r  - Frame ""#"$pframe" -> ""#"$frame"            "
     +equalize[0,1] n[-2,-1] 0,255
     +displacement[3] [2],$3,$4 +displacement[2] [3],$3,$4 rm[-4,-3]
     repeat $2+2 {
       if $<
         title="Frame ""#"$pframe" -> ""#"$frame" ("$>/$2")        "
-        e[] "\r  - "$title
+        e "\r  - "$title
         t={$>/($2+1)} omt={1-$t}
         +*[2] $t +warp[0] .,1,1,1 rm.. *. $omt
         +*[3] {1-$t} +warp[1] .,1,1,1 rm.. *. $t
@@ -29509,7 +29509,7 @@ transition3d : check "isint(${1=10}) && $1>=2 && isint(${2=3}) && $2>0 && isint(
   if $!<2 return fi
   slices 0 to_rgb r ${-max_whds},3
   off=0 repeat $!-1 { l[{$>+$off},{$>+$off+1}] {
-    e[] "\r > Generate transition from image "$>" to image "{$>+1}".    "
+    e "\r > Generate transition from image "$>" to image "{$>+1}".    "
 
     # Create 3D rotation vectors.
     $2,$3,1,1,'$4'
@@ -29566,7 +29566,7 @@ video2files : check "isint(${3=0}) && $3>=0 && isint(${4=-1}) && ($4>=0 || $4==-
     i "$1",$frame
     if $!
       o ${"filename \"$2\","$frame} rm
-      e[] "\r  > Frame ""#"$frame
+      e "\r  > Frame ""#"$frame
       frame+=$5
     else stopflag=1
     fi
@@ -29820,13 +29820,13 @@ _check120 :
     r. 1,{h/2},1,2,-1
     repeat h {
       l,L={I[$>]}
-      e[] $_vt100_c"  - [Line "$_vt100_b$L$_vt100_n$_vt100_c", "\
-              $_vt100_b{$l,h}$_vt100_n$_vt100_c" chars]: "$_vt100_n{$l,t}
+      e $_vt100_c"  - [Line "$_vt100_b$L$_vt100_n$_vt100_c", "\
+        $_vt100_b{$l,h}$_vt100_n$_vt100_c" chars]: "$_vt100_n{$l,t}
     }
   fi
   rm
   _total_lines+=$lines
-  e[] "  - Scanned : "${lines}" lines"
+  e "  - Scanned : "${lines}" lines"
 
 check120 :
   _total_lines=0
@@ -29836,10 +29836,10 @@ check120 :
   files 0,*.gmic c={`narg($files)?',':0`} if narg(${}) files=$files$c${} fi
   repeat narg($files) {
     arg 1+$>,$files file=${}
-    e[] " * File '"$file"'."
+    e " * File '"$file"'."
     v + _check120 $file v -
   }
-  e[] " - Total scanned : "${_total_lines}" lines"
+  e " - Total scanned : "${_total_lines}" lines"
 
 #@cli covariance_vectors : _avg_outvarname
 #@cli : Return the covariance matrix of the vector-valued colors in the latest of the selected images
@@ -30026,7 +30026,7 @@ font2cimgh :
   e[^-1] "Encode font image$? as a C-style string for CImg.h."
   foreach {
     bnm={0,b} W,H={[w/256,h]}
-    e[] "  > Encode font '"$bnm"'."
+    e "  > Encode font '"$bnm"'."
     if !isint($W) error[0--4] "Font image '"$bnm"' has wrong dimensions ("{[w,h,d,s]}")." fi
     +f "i==im || i==iM" is_binary={im==1} rm.
 
@@ -30039,8 +30039,8 @@ font2cimgh :
     while $iM!=126
     k. nb_chunks={1+int(h/65536)}
 
-    e[] "\r  > Encode font '"$bnm"' -> W = "$W", H = "$H", M = "$M", is_binary = "$is_binary",
-             nb_chunks = "$nb_chunks"."
+    e "\r  > Encode font '"$bnm"' -> W = "$W", H = "$H", M = "$M", is_binary = "$is_binary",
+       nb_chunks = "$nb_chunks"."
 
     # Generate C-style string for storing font data.
     replace_str "\\","\\\\"
@@ -30880,7 +30880,7 @@ ovh2stats : skip "${1=gmic.eu-*-*-*.log.gz}"
 
   # Load log files.
   files "$1" files=${}
-  e[] "* Load log files."
+  e "* Load log files."
   if !narg(${}) error[0--2] "No OVH logfiles matching name '$1' have been found." fi
 
   repeat narg(${}) {
@@ -30896,7 +30896,7 @@ ovh2stats : skip "${1=gmic.eu-*-*-*.log.gz}"
         [ day,month,year ];
       ):[0,0,0]"}
     if !$day&&!$month&&!$year day,month,year=n.a fi
-    e[] "  > "$year/$month/$day:" "$_vt100_g$file$_vt100_n
+    e "  > "$year/$month/$day:" "$_vt100_g$file$_vt100_n
     it $file
     => ${year}_${month}_${day}
   }
@@ -30917,10 +30917,10 @@ ovh2stats : skip "${1=gmic.eu-*-*-*.log.gz}"
   }
 
   # Analyze log files.
-  e[] "\n* Analyze log files (day by day)."
+  e "\n* Analyze log files (day by day)."
   +_ovh2stats    # Display stats, day by day.
 
-  e[] "\n* Analyze log files (all days)."
+  e "\n* Analyze log files (all days)."
   a y _ovh2stats # Display stats, all days.
 
 
@@ -30995,22 +30995,22 @@ _ovh2stats :
     a y
 
     if $N>1
-      e[] "  > "$date": "\
-          ${_vt100_b}"Unique IPs"${_vt100_n}" = "$ips" (100%),"
-      e[] "                "\
-          ${_vt100_m}${_vt100_b}"GIMP"${_vt100_n}" = "$gimp" ("{_round($gimp/$ips*100,0.1)}"%), "\
-          ${_vt100_c}${_vt100_b}"Krita"${_vt100_n}" = "$krita" ("{_round($krita/$ips*100,0.1)}"%), "\
-          ${_vt100_g}${_vt100_b}"8bf"${_vt100_n}" = "$_8bf" ("{_round($_8bf/$ips*100,0.1)}"%), "\
-          ${_vt100_r}${_vt100_b}"Paint.NET"${_vt100_n}" = "$paintdotnet" ("{_round($paintdotnet/$ips*100,0.1)}"%), "\
-          ${_vt100_m}${_vt100_b}"Digikam"${_vt100_n}" = "$digikam" ("{_round($digikam/$ips*100,0.1)}"%), "\
-          ${_vt100_c}${_vt100_b}"Standalone"${_vt100_n}" = "$standalone" ("{_round($standalone/$ips*100,0.1)}"%)."
-      e[] "                "\
-          ${_vt100_r}${_vt100_b}"Windows"${_vt100_n}" = "$windows" ("{_round($windows/$ips*100,0.1)}"%), "\
-          ${_vt100_g}${_vt100_b}"Linux"${_vt100_n}" = "$linux" ("{_round($linux/$ips*100,0.1)}"%), "\
-          ${_vt100_m}${_vt100_b}"Mac OS"${_vt100_n}" = "$macos" ("{_round($macos/$ips*100,0.1)}"%), "\
-          ${_vt100_c}${_vt100_b}"BSD"${_vt100_n}" = "$bsd" ("{_round($bsd/$ips*100,0.1)}"%), "\
-          ${_vt100_c}${_vt100_b}"Unknown"${_vt100_n}" = "$unknown" ("{_round($unknown/$ips*100,0.1)}"%)."
-      e[] "                "\
+      e "  > "$date": "\
+        ${_vt100_b}"Unique IPs"${_vt100_n}" = "$ips" (100%),"
+      e "                "\
+        ${_vt100_m}${_vt100_b}"GIMP"${_vt100_n}" = "$gimp" ("{_round($gimp/$ips*100,0.1)}"%), "\
+        ${_vt100_c}${_vt100_b}"Krita"${_vt100_n}" = "$krita" ("{_round($krita/$ips*100,0.1)}"%), "\
+        ${_vt100_g}${_vt100_b}"8bf"${_vt100_n}" = "$_8bf" ("{_round($_8bf/$ips*100,0.1)}"%), "\
+        ${_vt100_r}${_vt100_b}"Paint.NET"${_vt100_n}" = "$paintdotnet" ("{_round($paintdotnet/$ips*100,0.1)}"%), "\
+        ${_vt100_m}${_vt100_b}"Digikam"${_vt100_n}" = "$digikam" ("{_round($digikam/$ips*100,0.1)}"%), "\
+        ${_vt100_c}${_vt100_b}"Standalone"${_vt100_n}" = "$standalone" ("{_round($standalone/$ips*100,0.1)}"%)."
+      e "                "\
+        ${_vt100_r}${_vt100_b}"Windows"${_vt100_n}" = "$windows" ("{_round($windows/$ips*100,0.1)}"%), "\
+        ${_vt100_g}${_vt100_b}"Linux"${_vt100_n}" = "$linux" ("{_round($linux/$ips*100,0.1)}"%), "\
+        ${_vt100_m}${_vt100_b}"Mac OS"${_vt100_n}" = "$macos" ("{_round($macos/$ips*100,0.1)}"%), "\
+        ${_vt100_c}${_vt100_b}"BSD"${_vt100_n}" = "$bsd" ("{_round($bsd/$ips*100,0.1)}"%), "\
+        ${_vt100_c}${_vt100_b}"Unknown"${_vt100_n}" = "$unknown" ("{_round($unknown/$ips*100,0.1)}"%)."
+      e "                "\
           ${_vt100_b}"Prereleases"${_vt100_n}" = "$prereleases" ("{_round($prereleases/$ips*100,0.1)}"%)."
       _ovh2stats_versions
     fi
@@ -31019,23 +31019,23 @@ _ovh2stats :
   + / $N round.
   +z. 0,0,12,0 ips,gimp,krita,_8bf,paintdotnet,digikam,standalone,windows,linux,macos,bsd,unknown,prereleases={^} rm.
   summary0,summary1="Total:      ","Average:    "
-  e[] "  > "${summary{$N>1}}\
-      ${_vt100_b}"Unique IPs"${_vt100_n}" = "$ips" (100%),"
-  e[] "                "\
-      ${_vt100_m}${_vt100_b}"GIMP"${_vt100_n}" = "$gimp" ("{_round($gimp/$ips*100,0.1)}"%), "\
-      ${_vt100_c}${_vt100_b}"Krita"${_vt100_n}" = "$krita" ("{_round($krita/$ips*100,0.1)}"%), "\
-      ${_vt100_g}${_vt100_b}"8bf"${_vt100_n}" = "$_8bf" ("{_round($_8bf/$ips*100,0.1)}"%), "\
-      ${_vt100_r}${_vt100_b}"Paint.NET"${_vt100_n}" = "$paintdotnet" ("{_round($paintdotnet/$ips*100,0.1)}"%), "\
-      ${_vt100_m}${_vt100_b}"Digikam"${_vt100_n}" = "$digikam" ("{_round($digikam/$ips*100,0.1)}"%), "\
-      ${_vt100_c}${_vt100_b}"Standalone"${_vt100_n}" = "$standalone" ("{_round($standalone/$ips*100,0.1)}"%)."
-  e[] "                "\
-      ${_vt100_r}${_vt100_b}"Windows"${_vt100_n}" = "$windows" ("{_round($windows/$ips*100,0.1)}"%), "\
-      ${_vt100_g}${_vt100_b}"Linux"${_vt100_n}" = "$linux" ("{_round($linux/$ips*100,0.1)}"%), "\
-      ${_vt100_m}${_vt100_b}"Mac OS"${_vt100_n}" = "$macos" ("{_round($macos/$ips*100,0.1)}"%), "\
-      ${_vt100_c}${_vt100_b}"BSD"${_vt100_n}" = "$bsd" ("{_round($bsd/$ips*100,0.1)}"%), "\
-      ${_vt100_c}${_vt100_b}"Unknown"${_vt100_n}" = "$unknown" ("{_round($unknown/$ips*100,0.1)}"%)."
-  e[] "                "\
-      ${_vt100_b}"Prereleases"${_vt100_n}" = "$prereleases" ("{_round($prereleases/$ips*100,0.1)}"%)."
+  e "  > "${summary{$N>1}}\
+    ${_vt100_b}"Unique IPs"${_vt100_n}" = "$ips" (100%),"
+  e "                "\
+    ${_vt100_m}${_vt100_b}"GIMP"${_vt100_n}" = "$gimp" ("{_round($gimp/$ips*100,0.1)}"%), "\
+    ${_vt100_c}${_vt100_b}"Krita"${_vt100_n}" = "$krita" ("{_round($krita/$ips*100,0.1)}"%), "\
+    ${_vt100_g}${_vt100_b}"8bf"${_vt100_n}" = "$_8bf" ("{_round($_8bf/$ips*100,0.1)}"%), "\
+    ${_vt100_r}${_vt100_b}"Paint.NET"${_vt100_n}" = "$paintdotnet" ("{_round($paintdotnet/$ips*100,0.1)}"%), "\
+    ${_vt100_m}${_vt100_b}"Digikam"${_vt100_n}" = "$digikam" ("{_round($digikam/$ips*100,0.1)}"%), "\
+    ${_vt100_c}${_vt100_b}"Standalone"${_vt100_n}" = "$standalone" ("{_round($standalone/$ips*100,0.1)}"%)."
+  e "                "\
+    ${_vt100_r}${_vt100_b}"Windows"${_vt100_n}" = "$windows" ("{_round($windows/$ips*100,0.1)}"%), "\
+    ${_vt100_g}${_vt100_b}"Linux"${_vt100_n}" = "$linux" ("{_round($linux/$ips*100,0.1)}"%), "\
+    ${_vt100_m}${_vt100_b}"Mac OS"${_vt100_n}" = "$macos" ("{_round($macos/$ips*100,0.1)}"%), "\
+    ${_vt100_c}${_vt100_b}"BSD"${_vt100_n}" = "$bsd" ("{_round($bsd/$ips*100,0.1)}"%), "\
+    ${_vt100_c}${_vt100_b}"Unknown"${_vt100_n}" = "$unknown" ("{_round($unknown/$ips*100,0.1)}"%)."
+  e "                "\
+    ${_vt100_b}"Prereleases"${_vt100_n}" = "$prereleases" ("{_round($prereleases/$ips*100,0.1)}"%)."
   _ovh2stats_versions
   rm
 
@@ -31050,7 +31050,7 @@ _ovh2stats_versions :
         str.=$c${_vt100_b}{i($v,1)}${_vt100_n}" ("{i($v,0)}": "{_round(i($v,0)/$ips*100,0.1)}"%)"
         v+=1 c=", "
       }
-      e[] "                "${_vt100_c}${_vt100_b}"Version"${_vt100_n}" = "$str".\n"
+      e "                "${_vt100_c}${_vt100_b}"Version"${_vt100_n}" = "$str".\n"
     fi
     rm
   }
@@ -31180,18 +31180,18 @@ render_donations : skip "${1="$HOME"/work/src/private_tschumperle/gmic_donations
 
       # Print infos.
       if ${donation_$e}>=10 col=$_vt100_r else col= fi
-      e[] "- ["$_vt100_c$_vt100_b"#"$e$_vt100_n" - "$_vt100_c${date_$e}$_vt100_n"] "\
-          $col$_vt100_b{_${donation_$e}}" "${currency_$e}$_vt100_n\
-          " (paypal: "{_${charge_paypal_$e}}" "${currency_$e},\
-          " lila: "{_${charge_lila_$e}}" "${currency_$e}" ->"\
-          " "{_${donation_charged_$e}}" "${currency_$e}" ="\
-          " "{_${donation_charged_eur_$e}}" eur),"\
-          " from "${name_$e}" ("${mail_$e}") : '"$_vt100_b${message_$e}$_vt100_n"'"
+      e "- ["$_vt100_c$_vt100_b"#"$e$_vt100_n" - "$_vt100_c${date_$e}$_vt100_n"] "\
+        $col$_vt100_b{_${donation_$e}}" "${currency_$e}$_vt100_n\
+        " (paypal: "{_${charge_paypal_$e}}" "${currency_$e},\
+        " lila: "{_${charge_lila_$e}}" "${currency_$e}" ->"\
+        " "{_${donation_charged_$e}}" "${currency_$e}" ="\
+        " "{_${donation_charged_eur_$e}}" eur),"\
+        " from "${name_$e}" ("${mail_$e}") : '"$_vt100_b${message_$e}$_vt100_n"'"
     }
     rm
 
     # Compute image for donations of the last months.
-    e[] ""
+    e ""
     all_eur,all_usd,all_charged_eur,all_charged_usd,asep_eur,asep_usd=
     repeat $nb_months {
       edate={y=date(0);m=date(1)-1-$>;while(m<=0,--y;m+=12);100*y+m}
@@ -31229,10 +31229,10 @@ render_donations : skip "${1="$HOME"/work/src/private_tschumperle/gmic_donations
       month_sum_eur={sum(0$month_eur)+sum(0$month_usd)/$eur2usd}
       month_sum_charged_eur={sum(0$month_charged_eur)+sum(0$month_charged_usd)/$eur2usd}
 
-      e[] "* "$_vt100_c$_vt100_b$s_month" "$s_year": "$_vt100_n\
-          $_vt100_b{_$month_sum_eur}" eur"$_vt100_n" (charged: "{_$month_sum_charged_eur}" eur)"\
-          " = "{_sum(0$month_eur)}" eur"$_vt100_n" (charged: "{_sum(0$month_charged_eur)}" eur)"\
-          " + "{_sum(0$month_usd)}" usd (charged: "{_sum(0$month_charged_usd)}" usd)"
+      e "* "$_vt100_c$_vt100_b$s_month" "$s_year": "$_vt100_n\
+        $_vt100_b{_$month_sum_eur}" eur"$_vt100_n" (charged: "{_$month_sum_charged_eur}" eur)"\
+        " = "{_sum(0$month_eur)}" eur"$_vt100_n" (charged: "{_sum(0$month_charged_eur)}" eur)"\
+        " + "{_sum(0$month_usd)}" usd (charged: "{_sum(0$month_charged_usd)}" usd)"
 
       600,30,1,3,'x<$month_sum_eur?[139,181,173]+(y>h/2?0:40):[220,230,240]' r. 500,30,1,3 c. 0,255
       shape_circle 24 s. x,2 s[-2,-1] y,2
@@ -31268,10 +31268,10 @@ render_donations : skip "${1="$HOME"/work/src/private_tschumperle/gmic_donations
 
   total_eur={$all_sum_eur+$all_sum_usd/$eur2usd}
   total_charged_eur={$all_sum_charged_eur+$all_sum_charged_usd/$eur2usd}
-  e[] "\n==> "$_vt100_c${_vt100_b}"TOTAL : "$_vt100_n\
-      $_vt100_b{_floor($total_eur)}" eur"$_vt100_n" (charged : "{_floor($total_charged_eur)}" eur)"\
-      " = "{_floor($all_sum_eur)}" eur (charged: "{_floor($all_sum_charged_eur)}" eur)"\
-      " + "{_floor($all_sum_usd)}" usd (charged: "{_floor($all_sum_charged_usd)}" usd)\n"
+  e "\n==> "$_vt100_c${_vt100_b}"TOTAL : "$_vt100_n\
+    $_vt100_b{_floor($total_eur)}" eur"$_vt100_n" (charged : "{_floor($total_charged_eur)}" eur)"\
+    " = "{_floor($all_sum_eur)}" eur (charged: "{_floor($all_sum_charged_eur)}" eur)"\
+    " + "{_floor($all_sum_usd)}" usd (charged: "{_floor($all_sum_charged_usd)}" usd)\n"
 
   # Generate report image for Twitter.
   sp gmicky,{h}
@@ -31520,7 +31520,7 @@ uint82base64 : skip "${1=0}"
 demos : check "isint(${1=2}) && $1>=0 && $1<=2" check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
   strver=${strver" "$_version,$_prerelease}
-  e[] "\n
+  e "\n
 ------ "${g}"G\47MIC demos"$n" ------------------\n
 ----\n
 ---- "${c}"Mouse button"$n" to select a demo.\n
@@ -31660,12 +31660,12 @@ demos : check "isint(${1=2}) && $1>=0 && $1<=2" check_display $0
 
     wait 20
   while {*}" && "!{*,ESC}" && "!{*,Q}
-  rm w 0 } v 0 e[] ""
+  rm w 0 } v 0 e ""
 
 _demo_color_curves :
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
   if !narg($__demo_color_curve)
-    e[] "\n
+    e "\n
 ------ "${g}"Color curves"$n" ----------------------------------------------------------------------------\n
 ----\n
 ---- "${c}"Left mouse button"$n" on a curve creates a new control point (or moves an existing one).\n
@@ -31681,7 +31681,7 @@ _demo_color_curves :
 ------------------------------------------------------------------------------------------------"
     __demo_color_curve=1 l[] { do rm sp ? while s!=3 } x_color_curves rgb __demo_color_curve=
   else
-    e[] "\n
+    e "\n
 ------ "${g}"Color curves"$n" ----------------------------------------------------------------------------\n
 ----\n
 ---- Only "${c}"one session"$n" allowed at the same time !\n
@@ -31714,7 +31714,7 @@ tixy : skip "${1=sin(t-sqrt((x-8)^2+(y-8)^2))}" check_display $0
     rm
   }
 
-  e[] "\n
+  e "\n
 ------ "${g}"tixy"$n" ------------------------------------------------------------------------------------\n
 ----\n
 ---- tixy - creative code golfing: "${g}"https://tixy.land"$n"\n
@@ -31807,7 +31807,7 @@ tixy : skip "${1=sin(t-sqrt((x-8)^2+(y-8)^2))}" check_display $0
 #@cli : Launch the 2048 game.
 x_2048 : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
-  e[] "\n
+  e "\n
 ------ "${g}"2048"$n" -----------------------------------------------\n
 ----\n
 ---- Join the numbers and get to the "${g}"2048"$n" tile!\n
@@ -31963,7 +31963,7 @@ x_2048 : check_display $0
 #@cli : ![x_blobs](../img/x_blobs.jpg)
 x_blobs : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
-  e[] "\n
+  e "\n
 ------ "${g}"Blobs editor"$n" --------------------------\n
 ----\n
 ---- "${c}"Mouse"$n" to insert/move/delete blobs.\n
@@ -32042,7 +32042,7 @@ x_blobs : check_display $0
 #@cli : Launch the bouncing balls demo.
 x_bouncing : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
-  e[] "\n
+  e "\n
 ------ "${g}"Bouncing balls"$n" ------------------------------\n
 ----\n
 ---- Keys '"${c}"CTRL+D"$n"' to increase window size.\n
@@ -32102,7 +32102,7 @@ x_color_curves : skip ${1=rgb}
     if !narg($_xcc_colorbase) return fi
     __x_color_curves[] $_xcc_colorbase
   else
-    e[] "\n
+    e "\n
 ------------------------------------------------------------------------------------------------\n
 ----\n
 ---- "${c}"Left mouse button"$n" on a curve creates a new control point (or moves an existing one).\n
@@ -32283,7 +32283,7 @@ __x_color_curves :
 x_colorize : skip ${1=0},${3=0},${4=0},${5=0},${6=0} check "${2=1024}==0 || $2>=128" check_display $0
   s0="image" s1="lineart" s2="multichannel" s3="merged" use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
   e[^-1] "Colorize selected B&W "${s{!$1}}"$? interactively, with maximum resolution $2 and "${s{2+!$3}}" output."
-  e[] "\n
+  e "\n
 --------------------------------------------------------------------------------------\n
 ----\n
 ---- "${c}"Left mouse button"$n" creates a new colored control point (or moves an existing one).\n
@@ -32603,7 +32603,7 @@ __x_colorize :
 #@cli : Launch the Connect Four game.
 x_connect4 : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
-  e[] "\n
+  e "\n
 ------ "${g}"Connect Four"$n" --------------------------------------------\n
 ----\n
 ---- Connect four tokens in a row, column or diagonally\n
@@ -32856,7 +32856,7 @@ x_cut :
 #@cli : Launch the fire effect demo.
 x_fire : skip "${1=G\47MIC}" check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
-  e[] "\n
+  e "\n
 ------ "${g}"Fire effect"$n" ------------------------\n
 ----\n
 ---- Keys '"${c}"CTRL+D"$n"' to increase window size.\n
@@ -32898,7 +32898,7 @@ x_fire : skip "${1=G\47MIC}" check_display $0
 #@cli : Launch the fireworks demo.
 x_fireworks : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
-  e[] "\n
+  e "\n
 ------ "${g}"Fireworks"$n" --------------------------\n
 ----\n
 ---- Keys '"${c}"CTRL+D"$n"' to increase window size.\n
@@ -32954,7 +32954,7 @@ x_fireworks : check_display $0
 #@cli : Launch the fish-eye effect demo.
 x_fisheye : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
-  e[] "\n
+  e "\n
 ------ "${g}"Fish-eye effect"$n" --------------------\n
 ----\n
 ---- "${c}"Mouse pointer"$n" moves fish-eye center.\n
@@ -32992,7 +32992,7 @@ x_fisheye : check_display $0
 #@cli : Launch the fourier filtering demo.
 x_fourier : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
-  e[] "\n
+  e "\n
 ------ "${g}"Fourier-filtering"$n" ----------------------------------------\n
 ----\n
 ---- "${c}"Mouse buttons"$n" on the right image to set min/max frequencies.\n
@@ -33172,7 +33172,7 @@ _x_grab_color :
 #@cli : Launch the Tower of Hanoi game.
 x_hanoi : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
-  e[] "\n
+  e "\n
 ------ "${g}"Tower of Hanoï"$n" ---------------------\n
 ----\n
 ---- "${c}"Left button"$n" and "${c}"mouse"$n" to move a disk.\n
@@ -33289,7 +33289,7 @@ x_hanoi : check_display $0
 #@cli : Launch the histogram demo.
 x_histogram : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
-  e[] "\n
+  e "\n
 ------ "${g}"Histogram demo"$n" -------------------------------\n
 ----\n
 ---- "${c}"Mouse"$n" to set parameters.\n
@@ -33393,7 +33393,7 @@ _x_histogram :
 #@cli : Launch the hough transform demo.
 x_hough : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
-  e[] "\n
+  e "\n
 ------ "${g}"Hough-transform"$n" -----------------------------------------\n
 ----\n
 ---- "${c}"Mouse buttons"$n" on the vote image to draw corresponding line.\n
@@ -33479,7 +33479,7 @@ x_hough : check_display $0
 #@cli : Launch the Jawbreaker game.
 x_jawbreaker : check "${1=12}>0 && $1<20 && ${2=13}>0 && $2<20 && ${3=5}>0 && $3<=8" check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
-  e[] "\n
+  e "\n
 ------ "${g}"Jawbreaker"$n" --------------------------------------------\n
 ----\n
 ---- The goal of the game is to "${c}"remove the maximum number of\n
@@ -33624,7 +33624,7 @@ _x_jawbreaker_ball :
 #@cli : Launch the virtual landscape demo.
 x_landscape : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
-  e[] "\n
+  e "\n
 ------ "${g}"Virtual landscape"$n" -------------------------------------\n
 ----\n
 ---- Enjoy the view!\n
@@ -33717,7 +33717,7 @@ x_landscape : check_display $0
 #@cli : Launch the game of life.
 x_life : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
-  e[] "\n
+  e "\n
 ------ "${g}"The game of life"$n" --------------------------------------\n
 ----\n
 ---- The goal is to create the "${c}"biggest possible biological\n
@@ -33806,7 +33806,7 @@ x_life : check_display $0
 #@cli : Launch the light effect demo.
 x_light : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
-  e[] "\n
+  e "\n
 ------ "${g}"Light effect"$n" ------------------------\n
 ----\n
 ---- Move light position with "${c}"mouse"$n".\n
@@ -33863,7 +33863,7 @@ x_light : check_display $0
 #@cli : Launch Mandelbrot/Julia explorer.
 x_mandelbrot : skip ${1=0},${2=0.317},${3=0.03} check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
-  e[] "\n
+  e "\n
 ------ "${g}"Mandelbrot/Julia explorer"$n" -----------------\n
 ----\n
 ---- Select zooming region with "${c}"mouse"$n".\n
@@ -33895,8 +33895,8 @@ x_mandelbrot : skip ${1=0},${2=0.317},${3=0.03} check_display $0
     fi
     rm.                                                                     # Delete latest rendering.
     if {*,C}                                                                # If 'C' key has been pressed.
-      if $1 e[] "Julia set, at c = ("{0,@0-1}")-("{0,@2-3}"), with c0 = ($2,$3)."
-      else e[] "Mandelbrot set, at c = ("{0,@0-1}")-("{0,@2-3}")."
+      if $1 e "Julia set, at c = ("{0,@0-1}")-("{0,@2-3}"), with c0 = ($2,$3)."
+      else e "Mandelbrot set, at c = ("{0,@0-1}")-("{0,@2-3}")."
       fi
     fi
     if !{*}" || "{*,ESC}" || "{*,Q} break fi
@@ -33921,7 +33921,7 @@ x_mask_color : check "${2=5}>=0 && ${3=5}>=0" skip ${1=all} check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
   e[^-1] "Interactively create color mask for image$?, with color space $1, spatial tolerance $2 and
           color tolerance $3."
-  e[] "\n
+  e "\n
 ----------------------------------------------------------------------------------------------------\n
 ----\n
 ---- "${c}"Left mouse button"$n" adds a wanted color to the selection.\n
@@ -34067,7 +34067,7 @@ _x_mask_color : # Estimate color mask image.
 #@cli : Launch the 3D metaballs demo.
 x_metaballs3d : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
-  e[] "\n
+  e "\n
 ------ "${g}"3D metaballs"$n" ---------------------------------------\n
 ----\n
 ---- "${c}"Mouse button"$n" or '"${c}"SPACE"$n"' key to toggle rendering mode.\n
@@ -34113,7 +34113,7 @@ x_metaballs3d : check_display $0
 #@cli : Launch the Minesweeper game.
 x_minesweeper : check "${1=20}>=8 && $1<=30 && ${2=$1}>=8 && $2<=30" check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
-  e[] "\n
+  e "\n
 ------ "${g}"Minesweeper"$n" -------------------------------------------\n
 ----\n
 ---- The goal is to "${c}"clear the minefield"$n" without detonating a\n
@@ -34210,7 +34210,7 @@ x_minesweeper : check "${1=20}>=8 && $1<=30 && ${2=$1}>=8 && $2<=30" check_displ
 #@cli : Launch the minimal path demo.
 x_minimal_path : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
-  e[] "\n
+  e "\n
 ------ "${g}"Minimal path"$n" ------------------------------------------\n
 ----\n
 ---- "${c}"Click on two points"$n" to compute and display the minimal\n
@@ -34276,7 +34276,7 @@ x_minimal_path : check_display $0
 x_morph : check "isint(${1=16}) && isint(${2=3}) && $2>=0 && $2<=4" check_display $0
   if $!<2 error[0--3] "Command '$0': Requires at least two input images!" return fi
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r b=$_vt100_b
-  e[] "\n
+  e "\n
 ------ "${g}"Interactive image morpher"$n" ---------------------------\n
 ----\n
 ---- "${b}"Source/target window:"$n"\n
@@ -34456,7 +34456,7 @@ x_morph : check "isint(${1=16}) && isint(${2=3}) && $2>=0 && $2<=4" check_displa
 #@cli : Launch pacman game.
 x_pacman : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
-  e[] "\n
+  e "\n
 ------ "${g}"Pacman"$n" -----------------------------------------------\n
 ----\n
 ---- This is a G\47MIC implementation of the "${g}"pacman"$n" game.\n
@@ -34754,7 +34754,7 @@ _pacman_map_level6 :
 #@cli : Launch the interactive painter.
 x_paint : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
-  e[] "\n
+  e "\n
 ------ "${g}"Interactive painter"$n" -----------------------\n
 ----\n
 ---- Use "${c}"mouse"$n" to select color and brush.\n
@@ -34880,7 +34880,7 @@ _x_paint :
 #@cli : Launch the plasma effect demo.
 x_plasma : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
-  e[] "\n
+  e "\n
 ------ "${g}"Plasma effect"$n" ----------------------\n
 ----\n
 ---- Keys '"${c}"CTRL+D"$n"' to increase window size.\n
@@ -34945,7 +34945,7 @@ x_plasma : check_display $0
 #@cli : Launch the RGB color quantization demo.
 x_quantize_rgb : check "isint(${1=16}) && $1>1" check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
-  e[] "\n
+  e "\n
 ------ "${g}"RGB Quantization"$n" --------------------------------------\n
 ----\n
 ---- This demo shows how RGB colors can be quantified using\n
@@ -35114,7 +35114,7 @@ _x_quantize_rgb_text :
 #@cli : Launch the 3D reflection demo.
 x_reflection3d : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
-  e[] "\n
+  e "\n
 ------ "${g}"3D reflection"$n" ----------------------\n
 ----\n
 ---- Keys '"${c}"CTRL+D"$n"' to increase window size.\n
@@ -35177,7 +35177,7 @@ x_reflection3d : check_display $0
 #@cli : Launch the 3D rubber object demo.
 x_rubber3d : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
-  e[] "\n
+  e "\n
 ------ "${g}"3D rubber object"$n" -------------------\n
 ----\n
 ---- Keys '"${c}"CTRL+D"$n"' to increase window size.\n
@@ -35215,7 +35215,7 @@ x_rubber3d : check_display $0
 x_segment : check "${1=1024}==0 || $1>=128" check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
   e[^-1] "Extract foreground from background in image$? interactively, with maximum resolution $1."
-  e[] "\n
+  e "\n
 ----------------------------------------------------------------------------------------------------\n
 ----\n
 ---- "${c}"Left mouse button"$n" or key '"${c}"F"$n"' create a new foreground control point
@@ -35820,7 +35820,7 @@ x_select_palette : skip ${1=xsp_variable},${2=0} check_display $0
 #@cli : Launch the shade bobs demo.
 x_shadebobs : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
-  e[] "\n
+  e "\n
 ------ "${g}"Shade bobs"$n" -------------------------------\n
 ----\n
 ---- Keys '"${c}"CTRL+D"$n"' to increase window size.\n
@@ -35864,7 +35864,7 @@ x_shadebobs : check_display $0
 #@cli : Launch spline curve editor.
 x_spline : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
-  e[] "\n
+  e "\n
 ------ "${g}"Spline curve editor"$n" --------------------------\n
 ----\n
 ---- "${c}"Mouse"$n" to insert/move/delete points.\n
@@ -35982,7 +35982,7 @@ x_spline : check_display $0
 #@cli : Launch the 3D starfield demo.
 x_starfield3d : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
-  e[] "\n
+  e "\n
 ------ "${g}"3D starfield"$n" ---------------------------------------\n
 ----\n
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' to exit.\n
@@ -36044,7 +36044,7 @@ x_starfield3d : check_display $0
 #@cli : Launch tetris game.
 x_tetris : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
-  e[] "\n
+  e "\n
 ------ "${g}"Tetris"$n" --------------------------------------------\n
 ----\n
 ---- This is a G\47MIC implementation of the "${g}"Tetris"$n" game.\n
@@ -36210,7 +36210,7 @@ x_threshold :
 #@cli : Launch tic-tac-toe game.
 x_tictactoe : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
-  e[] "\n
+  e "\n
 ------ "${g}"Tic-Tac-Toe game"$n" -----------------\n
 ----\n
 ---- Use "${c}"mouse"$n" to select positions of the\n
@@ -36336,7 +36336,7 @@ x_warp : check "isint(${1=2}) && $1>=2 && isint(${2=$1}) && $2>=2 && isint(${3=0
                 isint(${4=1}) && $4>=0 && $4<=4 && ${6=0.5}>=0 && $6<=1" skip "${5=}" check_display $0
   if !$! error[0--3] "Command '$0': Requires at least one input image!" return fi
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
-  e[] "\n
+  e "\n
 ------ "${g}"Interactive image warper"$n" -----------------------------\n
 ----\n
 ---- "${c}"Left mouse button"$n": Add and move keypoint.\n
@@ -36527,7 +36527,7 @@ _x_warp_rbf :
 #@cli : Launch the image waves demo.
 x_waves : check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
-  e[] "\n
+  e "\n
 ------ "${g}"Image waves"$n" --------------------------\n
 ----\n
 ---- "${c}"Left mouse button"$n" to drop balls.\n
@@ -36594,7 +36594,7 @@ x_waves : check_display $0
 #@cli : Default values: 'opacity=0.2'.
 x_whirl : check "${1=0.2}>=0" check_display $0
   use_vt100 g=$_vt100_g c=$_vt100_c n=$_vt100_n r=$_vt100_r
-  e[] "\n
+  e "\n
 ------ "${g}"Fractal whirls"$n" ----------------------------\n
 ----\n
 ---- Keys '"${c}"CTRL+D"$n"' to increase window size.\n
@@ -37568,7 +37568,7 @@ gui_download_all_data :
 _gui_download_all_data :
    repeat narg(${_filenames_$1}) {
      filename=${_prefix_$1}${arg\ 1+$>,${_filenames_$1}}.${_ext_$1}
-     e[] "Download "$filename
+     e "Download "$filename
      if $2" || "!isfile(['{/${-path_cache}$filename}']) l[] {
        ${_url_$1}/$filename o ${-path_cache}$filename rm onfail
      } fi
