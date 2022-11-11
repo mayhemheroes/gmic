@@ -2491,7 +2491,9 @@ double gmic::mp_set(const double *const ptrs, const unsigned int siz, const char
       s_value.assign(24);
       cimg_snprintf(s_value,s_value.width(),"%.17g",*ptrs);
     }
+    cimg::mutex(24);
     gmic_instance.set_variable(str,'=',s_value,0,variables_sizes);
+    cimg::mutex(24,0);
   } else
     throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<>: Function 'set()': "
                                 "Invalid variable name '%s'.",
