@@ -24345,11 +24345,11 @@ nn_lib :
     );
 
     nn_layer_distance_backward(OUT,IN0,IN1,metric) = (
-      !metric?(
+      !metric?( # L2-squared
         d#IN0 = 2*OUT#_diff;
-      ):metric==2?(
+      ):metric==2?( # L2
         d#IN0 = OUT#_diff/(1e-8 + OUT#[0]);
-      ):(
+      ):( # L
         d#IN0 = (abs(OUT#_diff)/(1e-8 + OUT#[0]))^(#metric - 1)*sign(OUT#_diff);
       );
       d#IN1 = -d#IN0;
@@ -24991,6 +24991,34 @@ nn_lib :
 
     nn_loss_mse_backward(L,IN,TRUTH) = (
       d#IN*=2;
+    );
+
+    # normp : p-norm.
+    #-----------------
+    nn_loss_normp_init_forward(L) = (
+      batch_#L = 0;
+    );
+
+    nn_loss_normp_forward(L,IN,TRUTH,metric) = (
+      d#IN = IN# - TRUTH;
+      L# = (!metric?norm(d#IN)^2:norm#metric(d#IN))/size(d#IN);
+      batch_#L+=L#;
+    );
+
+    nn_loss_normp_end_forward(L) = (
+      merge(batch_#L,+);
+      batch_#L/=nn_batch_size;
+      L# = batch_#L;
+    );
+
+    nn_loss_normp_backward(L,IN,TRUTH,metric) = (
+      !metric?( # L2-squared
+        d#IN*=2;
+      ):metric==2?( # L2
+        d#IN/=(1e-8 + L#);
+      ):( # Lp
+        d#IN = (abs(d#IN)/(1e-8 + L#))^(metric - 1)*sign(d#IN);
+      );
     );
 
     # softmax_crossentropy : Softmax + cross entropy.
@@ -25785,6 +25813,20 @@ nn_loss_mse : nn_check_layer "$2"
             "nn_loss_mse_forward(${1-3});"\
             "end(nn_loss_mse_end_forward($1));"
   _nn_backward..="nn_loss_mse_backward(${1-3});"
+
+#@cli nn_loss_normp : out,in,ground_truth,_metric={ 0=squared-L2 | p>0 = Lp-norm }
+#@cli : Add a 'normp' loss to the network (||out - ground_truth||_p).
+#@cli : Default value: 'metric=1'.
+nn_loss_normp : nn_check_layer "$2"
+                check "isvarname('$1') && isvarname('$3') && isint(${4=1}) && $4>=0"
+  e[^-1] "[nn_lib] Add normp loss '$1', with input '$2', ground truth '$3' and metric $4."
+  _nn_modules_names.=$1,
+  _nn_modules_types.=loss_normp,
+  _nn_$1_size=1,1,1,1
+  _nn_loss.="begin(nn_loss_normp_init_forward($1));"\
+            "nn_loss_normp_forward(${1-4});"\
+            "end(nn_loss_normp_end_forward($1));"
+  _nn_backward..="nn_loss_normp_backward(${1-4});"
 
 #@cli nn_loss_softmax_crossentropy : out,in,ground_truth
 #@cli : Add a 'softmax_crossentropy' loss to the network (softmax followed by cross entropy).
