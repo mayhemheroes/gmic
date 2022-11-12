@@ -2330,7 +2330,6 @@ inline void* get_tid() {
 
 // Search G'MIC by image list and thread_id. If 'p_list==0', search only by thread_id.
 const CImg<void*> gmic::current_run(const char *const func_name, void *const p_list) {
-  cimg::mutex(24);
   CImgList<void*> &grl = gmic_runs();
   void *const tid = p_list?(void*)0:get_tid();
   int p;
@@ -2338,7 +2337,6 @@ const CImg<void*> gmic::current_run(const char *const func_name, void *const p_l
     const CImg<void*> &gr = grl[p];
     if ((p_list && gr[1]==(void*)p_list) || (!p_list && gr[7]==tid)) break;
   }
-  cimg::mutex(24,0);
   if (p<0) { // Instance not found!
     if (p_list)
       throw CImgArgumentException("[" cimg_appname "] Function '%s': "
@@ -2356,7 +2354,7 @@ double gmic::mp_dollar(const char *const str, void *const p_list) {
     throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<>: Operator '$': "
                                 "Invalid variable name '%s'.",
                                 str);
-
+  cimg::mutex(24);
   const CImg<void*> gr = current_run("Operator '$'",p_list);
   gmic &gmic_instance = *(gmic*)gr[0];
   CImgList<char> &images_names = *(CImgList<char>*)gr[2];
@@ -2413,6 +2411,7 @@ double gmic::mp_dollar(const char *const str, void *const p_list) {
     }
   }
   }
+  cimg::mutex(24,0);
   return res;
 }
 
@@ -2420,6 +2419,7 @@ template<typename T>
 double gmic::mp_get(double *const ptrd, const unsigned int siz, const bool to_string, const char *const str,
                     void *const p_list, const T& pixel_type) {
   cimg::unused(pixel_type);
+  cimg::mutex(24);
   const CImg<void*> gr = current_run("Function 'get()'",p_list);
   gmic &gmic_instance = *(gmic*)gr[0];
   CImgList<char>& images_names = *(CImgList<char>*)gr[2];
@@ -2451,10 +2451,12 @@ double gmic::mp_get(double *const ptrd, const unsigned int siz, const bool to_st
           const char *const zero = (char*)::std::memchr(value,0,value.size());
           CImgList<T> list;
           if (zero) CImgList<T>::get_unserialize(value,zero + 1 - value.data()).move_to(list);
-          if (list.size()!=2)
+          if (list.size()!=2) {
+            cimg::mutex(24,0);
             throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
                                         "Variable '%s' stores %u images, cannot be returned as a single vector.",
                                         cimg::type<T>::string(),str,list.size());
+          }
           dest = list[0].resize(siz,1,1,1,-1);
 
         } else { // Regular string variable
@@ -2466,15 +2468,19 @@ double gmic::mp_get(double *const ptrd, const unsigned int siz, const bool to_st
         }
       }
     }
-  } else
+  } else {
+    cimg::mutex(24,0);
     throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'get()': "
                                 "Invalid variable name '%s'.",
                                 cimg::type<T>::string(),str);
+  }
+  cimg::mutex(24,0);
   return siz?cimg::type<double>::nan():*ptrd;
 }
 
 double gmic::mp_set(const double *const ptrs, const unsigned int siz, const char *const str,
                     void *const p_list) {
+  cimg::mutex(24);
   const CImg<void*> gr = current_run("Function 'set()'",p_list);
   gmic &gmic_instance = *(gmic*)gr[0];
   const unsigned int *const variables_sizes = (const unsigned int*)gr[5];
@@ -2491,21 +2497,22 @@ double gmic::mp_set(const double *const ptrs, const unsigned int siz, const char
       s_value.assign(24);
       cimg_snprintf(s_value,s_value.width(),"%.17g",*ptrs);
     }
-    cimg::mutex(24);
     gmic_instance.set_variable(str,'=',s_value,0,variables_sizes);
+  } else {
     cimg::mutex(24,0);
-  } else
     throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<>: Function 'set()': "
                                 "Invalid variable name '%s'.",
                                 str);
+  }
+  cimg::mutex(24,0);
   return siz?cimg::type<double>::nan():*ptrs;
 }
 
 double gmic::mp_name(const unsigned int ind, double *const out_str, const unsigned int siz,
                      void *const p_list) {
+  cimg::mutex(24);
   const CImg<void*> gr = current_run("Function 'name()'",p_list);
   CImgList<char> &images_names = *(CImgList<char>*)gr[2];
-
   std::memset(out_str,0,siz*sizeof(double));
   if (ind<images_names.size()) {
     const char *ptrs = images_names[ind];
@@ -2513,6 +2520,7 @@ double gmic::mp_name(const unsigned int ind, double *const out_str, const unsign
     for (k = 0; k<siz && ptrs[k]; ++k) out_str[k] = (double)ptrs[k];
     if (k<siz) out_str[k] = 0;
   }
+  cimg::mutex(24,0);
   return cimg::type<double>::nan();
 }
 
@@ -2562,6 +2570,7 @@ double gmic::mp_store(const double *const ptrs, const unsigned int siz,
                       const bool is_compressed, const char *const str,
                       void *const p_list, const T& pixel_type) {
   cimg::unused(pixel_type);
+  cimg::mutex(24);
   const CImg<void*> gr = current_run("Function 'store()'",p_list);
   cimg_pragma_openmp(critical(mp_store))
   {
@@ -2586,11 +2595,14 @@ double gmic::mp_store(const double *const ptrs, const unsigned int siz,
       name.resize((unsigned int)(name.width() + 9 + std::strlen(varname)),1,1,1,0,0,1);
       std::sprintf(name,"%c*store/%s",gmic_store,_varname.data());
       gmic_instance.set_variable(_varname.data(),name,variables_sizes);
-    } else
+    } else {
+      cimg::mutex(24,0);
       throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<%s>: Function 'store()': "
                                   "Invalid variable name '%s'.",
                                   cimg::type<T>::string(),str);
+    }
   }
+  cimg::mutex(24,0);
   return cimg::type<double>::nan();
 }
 
