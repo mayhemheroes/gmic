@@ -23586,6 +23586,29 @@ nn_lib :
     nn_activate_swish(Z) = _nn_activate_pointwise(Z,swish);
     nn_activate_d_swish(Z) = _nn_activate_pointwise(Z,d_swish);
 
+    # Stairs.
+    #--------
+    const nn_S0 = 3;
+    const nn_S1 = 0;
+    const nn_a = 4*nn_S1 + 4*nn_S0 - 8;
+    const nn_b = -2*nn_S1 - 4*nn_S0 + 6;
+    const nn_c = nn_S0;
+
+    nn_activation_stairs(z) = (
+      nn_ez = floor(z);
+      nn_dz = z - nn_ez;
+      nn_as(zz) = (nn_a*zz^3 + nn_b*zz^2 + nn_c*zz);
+      nn_ez + (nn_dz<0.5?nn_as(nn_dz):1 - nn_as(1 - nn_dz));
+    );
+    nn_activation_d_stairs(z) = (
+      nn_ez = floor(z);
+      nn_dz = z - nn_ez;
+      nn_d_as(zz) = (3*nn_a*zz^2 + 2*nn_b*zz + nn_c);
+      (nn_dz<0.5?nn_d_as(nn_dz):nn_d_as(1 - nn_dz));
+    );
+    nn_activate_stairs(Z) = _nn_activate_pointwise(Z,stairs);
+    nn_activate_d_stairs(Z) = _nn_activate_pointwise(Z,d_stairs);
+
     # Tanh.
     #------
     nn_activation_tanh(z) = (tanh(z));
