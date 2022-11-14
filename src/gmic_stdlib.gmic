@@ -23589,76 +23589,27 @@ nn_lib :
     # Stairs.
     #--------
     begin(
-      const _nn_stairs_S0 = isnan($_nn_stairs_S0)?0:$_nn_stairs_S0;
-      const _nn_stairs_S1 = isnan($_nn_stairs_S1)?4:$_nn_stairs_S1;
-      const _nn_stairs_eps = isnan($_nn_stairs_eps)?0:$_nn_stairs_eps;
-      _nn_stairs_M = [ _nn_stairs_eps^3, _nn_stairs_eps^2, _nn_stairs_eps, 1,
-                       1/8, 1/4, 1/2, 1,
-                       3*_nn_stairs_eps^2, 2*_nn_stairs_eps, 1, 0,
-                       3/4, 1, 1, 0 ];
-      _nn_stairs_Y = [ _nn_stairs_S0*_nn_stairs_eps, 1/2, _nn_stairs_S0, _nn_stairs_S1 ];
-      _nn_stairs_X = solve(_nn_stairs_M,_nn_stairs_Y,1);
-      _nn_stairs_a = _nn_stairs_X[0];
-      _nn_stairs_b = _nn_stairs_X[1];
-      _nn_stairs_c = _nn_stairs_X[2];
-      _nn_stairs_d = _nn_stairs_X[3];
-
-      # const _nn_stairs_S0 = -0.25;
-      # const _nn_stairs_S1 = 4;
-      # const _nn_stairs_eps = 0.25;
-      # const _nn_stairs_a = -12;
-      # const _nn_stairs_b = 22;
-      # const _nn_stairs_c = -9;
-      # const _nn_stairs_d = 1;
+      const _nn_stairs_S0 = isnan($_nn_stairs_S0)?4:$_nn_stairs_S0;
+      const _nn_stairs_S1 = isnan($_nn_stairs_S1)?-0.25:$_nn_stairs_S1;
+      const _nn_stairs_a = -8 + 4*_nn_stairs_S1 + 4*_nn_stairs_S0;
+      const _nn_stairs_b = 6 - 4*_nn_stairs_S0 - 2*_nn_stairs_S1;
+      const _nn_stairs_c = _nn_stairs_S0;
     );
 
     nn_activation_stairs(z) = (
-      _nn_stairs_ez = floor(z + 0.5);
-      _nn_stairs_dz = z + 0.5 - _nn_stairs_ez;
-      _nn_stairs_p(zz) = (_nn_stairs_a*zz^3 + _nn_stairs_b*zz^2 + _nn_stairs_c*zz + _nn_stairs_d);
-      -0.5 + _nn_stairs_ez + (_nn_stairs_dz<_nn_stairs_eps?_nn_stairs_S0*_nn_stairs_dz:
-                       _nn_stairs_dz<0.5?_nn_stairs_p(_nn_stairs_dz):
-                       _nn_stairs_dz<1 - _nn_stairs_eps?1 - _nn_stairs_p(1 - _nn_stairs_dz):
-                       1 - _nn_stairs_S0*(1 - _nn_stairs_dz));
+      _nn_stairs_ez = round(z);
+      _nn_stairs_dz = z - _nn_stairs_ez;
+      _nn_stairs_p(zz) = (_nn_stairs_a*zz^3 + _nn_stairs_b*zz^2 + _nn_stairs_c*zz);
+      _nn_stairs_ez + sign(_nn_stairs_dz)*_nn_stairs_p(abs(_nn_stairs_dz));
     );
     nn_activation_d_stairs(z) = (
-      _nn_stairs_ez = floor(z + 0.5);
-      _nn_stairs_dz = z + 0.5 - _nn_stairs_ez;
+      _nn_stairs_ez = round(z);
+      _nn_stairs_dz = z - _nn_stairs_ez;
       _nn_stairs_dp(zz) = (3*_nn_stairs_a*zz^2 + 2*_nn_stairs_b*zz + _nn_stairs_c);
-      _nn_stairs_dz<_nn_stairs_eps?_nn_stairs_S0:
-      _nn_stairs_dz<0.5?_nn_stairs_dp(_nn_stairs_dz):
-      _nn_stairs_dz<1 - _nn_stairs_eps?_nn_stairs_dp(1 - _nn_stairs_dz):
-      _nn_stairs_S0;
+      _nn_stairs_dp(abs(_nn_stairs_dz));
     );
     nn_activate_stairs(Z) = _nn_activate_pointwise(Z,stairs);
     nn_activate_d_stairs(Z) = _nn_activate_pointwise(Z,d_stairs);
-
-    # Hardstairs.
-    #------------
-    begin(
-      const _nn_hardstairs_S0 = isnan($_nn_hardstairs_S0)?0:$_nn_hardstairs_S0;
-      const _nn_hardstairs_eps = isnan($_nn_hardstairs_eps)?0.25:$_nn_hardstairs_eps;
-      const _nn_hardstairs_b = _nn_hardstairs_eps*(_nn_hardstairs_S0 - 1)/(1 - 2*_nn_hardstairs_eps);
-      const _nn_hardstairs_a = 1 - 2*_nn_hardstairs_b;
-    );
-
-    nn_activation_hardstairs(z) = (
-      _nn_hardstairs_ez = floor(z + 0.5);
-      _nn_hardstairs_dz = z + 0.5 - _nn_hardstairs_ez;
-      _nn_hardstairs_p(zz) = (_nn_hardstairs_a*zz + _nn_hardstairs_b);
-      -0.5 + _nn_hardstairs_ez + (_nn_hardstairs_dz<_nn_hardstairs_eps?_nn_hardstairs_S0*_nn_hardstairs_dz:
-                       _nn_hardstairs_dz<1 - _nn_hardstairs_eps?_nn_hardstairs_p(_nn_hardstairs_dz):
-                       1 - _nn_hardstairs_S0*(1 - _nn_hardstairs_dz));
-    );
-    nn_activation_d_hardstairs(z) = (
-      _nn_hardstairs_ez = floor(z + 0.5);
-      _nn_hardstairs_dz = z + 0.5 - _nn_hardstairs_ez;
-      _nn_hardstairs_dz<_nn_hardstairs_eps?_nn_hardstairs_S0:
-      _nn_hardstairs_dz<1 - _nn_hardstairs_eps?_nn_hardstairs_a:
-      _nn_hardstairs_S0;
-    );
-    nn_activate_hardstairs(Z) = _nn_activate_pointwise(Z,hardstairs);
-    nn_activate_d_hardstairs(Z) = _nn_activate_pointwise(Z,d_hardstairs);
 
     # Tanh.
     #------
