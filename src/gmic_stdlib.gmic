@@ -23589,8 +23589,8 @@ nn_lib :
     # Stairs.
     #--------
     begin(
-      const _nn_stairs_S0 = isnan($_nn_stairs_S0)?3:$_nn_stairs_S0;
-      const _nn_stairs_S1 = isnan($_nn_stairs_S1)?-1.5:$_nn_stairs_S1;
+      const _nn_stairs_S0 = isnan($_nn_stairs_S0)?4:$_nn_stairs_S0;
+      const _nn_stairs_S1 = isnan($_nn_stairs_S1)?-2:$_nn_stairs_S1;
       const _nn_stairs_a = -8 + 4*_nn_stairs_S1 + 4*_nn_stairs_S0;
       const _nn_stairs_b = 6 - 4*_nn_stairs_S0 - 2*_nn_stairs_S1;
       const _nn_stairs_c = _nn_stairs_S0;
@@ -23617,6 +23617,23 @@ nn_lib :
     nn_activation_d_tanh(z) = (1 - tanh(z)^2);
     nn_activate_tanh(Z) = _nn_activate_pointwise(Z,tanh);
     nn_activate_d_tanh(Z) = _nn_activate_pointwise(Z,d_tanh);
+
+    # Waves.
+    #-------
+    nn_activation_waves(z) = (
+      _nn_waves_ez = round(z);
+      _nn_waves_dz = z - _nn_waves_ez;
+      _nn_waves_p(zz) = (-6*zz^2 + 4*zz);
+      _nn_waves_ez + sign(_nn_waves_dz)*_nn_waves_p(abs(_nn_waves_dz));
+    );
+    nn_activation_d_waves(z) = (
+      _nn_waves_ez = round(z);
+      _nn_waves_dz = z - _nn_waves_ez;
+      _nn_waves_dp(zz) = (-12*zz + 4);
+      _nn_waves_dp(abs(_nn_waves_dz));
+    );
+    nn_activate_waves(Z) = _nn_activate_pointwise(Z,waves);
+    nn_activate_d_waves(Z) = _nn_activate_pointwise(Z,d_waves);
 
     #---------
     # Trainer.
