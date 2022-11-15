@@ -23586,8 +23586,49 @@ nn_lib :
     nn_activate_swish(Z) = _nn_activate_pointwise(Z,swish);
     nn_activate_d_swish(Z) = _nn_activate_pointwise(Z,d_swish);
 
-    # Stairs.
-    #--------
+    # Tanh.
+    #------
+    nn_activation_tanh(z) = (tanh(z));
+    nn_activation_d_tanh(z) = (1 - tanh(z)^2);
+    nn_activate_tanh(Z) = _nn_activate_pointwise(Z,tanh);
+    nn_activate_d_tanh(Z) = _nn_activate_pointwise(Z,d_tanh);
+
+    # Waves (family of functions: 'waves1','waves2','waves3','waves4').
+    #------------------------------------------------------------------
+    nn_activation_waves(z,a,b,c) = (
+      _nn_waves_p(x,pa,pb,pc) = (pa*x^3 + pb*x^2 + pc*x);
+      _nn_waves_iz = round(z);
+      _nn_waves_fz = z - _nn_waves_iz;
+      _nn_waves_iz + sign(_nn_waves_fz)*_nn_waves_p(abs(_nn_waves_fz),a,b,c);
+    );
+    nn_activation_d_waves(z,a,b,c) = (
+      _nn_waves_dp(x,pa,pb,pc) = (3*pa*x^2 + 2*pb*x + pc);
+      _nn_waves_iz = round(z);
+      _nn_waves_fz = z - _nn_waves_iz;
+      _nn_waves_dp(abs(_nn_waves_fz),a,b,c);
+    );
+
+    nn_activation_waves1(z) = nn_activation_waves(z,-6,3,1); # Waves 1
+    nn_activation_d_waves1(z) = nn_activation_d_waves(z,-6,3,1);
+    nn_activate_waves1(Z) = _nn_activate_pointwise(Z,waves1);
+    nn_activate_d_waves1(Z) = _nn_activate_pointwise(Z,d_waves1);
+
+    nn_activation_waves2(z) = nn_activation_waves(z,-4,0,2); # Waves 2
+    nn_activation_d_waves2(z) = nn_activation_d_waves(z,-4,0,2);
+    nn_activate_waves2(Z) = _nn_activate_pointwise(Z,waves2);
+    nn_activate_d_waves2(Z) = _nn_activate_pointwise(Z,d_waves2);
+
+    nn_activation_waves3(z) = nn_activation_waves(z,-2,-3,3); # Waves 2
+    nn_activation_d_waves3(z) = nn_activation_d_waves(z,-2,-3,3);
+    nn_activate_waves3(Z) = _nn_activate_pointwise(Z,waves3);
+    nn_activate_d_waves3(Z) = _nn_activate_pointwise(Z,d_waves3);
+
+    nn_activation_waves4(z) = nn_activation_waves(z,0,-6,4); # Waves 4
+    nn_activation_d_waves4(z) = nn_activation_d_waves(z,0,-6,4);
+    nn_activate_waves4(Z) = _nn_activate_pointwise(Z,waves4);
+    nn_activate_d_waves4(Z) = _nn_activate_pointwise(Z,d_waves4);
+
+    # Generic 'stairs' function, kept for tests.
     begin(
       const _nn_stairs_S0 = isnan($_nn_stairs_S0)?4:$_nn_stairs_S0;
       const _nn_stairs_S1 = isnan($_nn_stairs_S1)?-2:$_nn_stairs_S1;
@@ -23595,7 +23636,6 @@ nn_lib :
       const _nn_stairs_b = 6 - 4*_nn_stairs_S0 - 2*_nn_stairs_S1;
       const _nn_stairs_c = _nn_stairs_S0;
     );
-
     nn_activation_stairs(z) = (
       _nn_stairs_ez = round(z);
       _nn_stairs_dz = z - _nn_stairs_ez;
@@ -23610,47 +23650,6 @@ nn_lib :
     );
     nn_activate_stairs(Z) = _nn_activate_pointwise(Z,stairs);
     nn_activate_d_stairs(Z) = _nn_activate_pointwise(Z,d_stairs);
-
-    nn_activation_mstairs(z) = (
-      fz8 = 8*nn_activation_stairs(z/8);
-      fz4 = 4*nn_activation_stairs(z/4);
-      fz2 = 2*nn_activation_stairs(z/2);
-      fz = nn_activation_stairs(z);
-      (fz8 + fz4 + fz2 + fz)/4;
-    );
-    nn_activation_d_mstairs(z) = (
-      dfz8 = nn_activation_d_stairs(z/8);
-      dfz4 = nn_activation_d_stairs(z/4);
-      dfz2 = nn_activation_d_stairs(z/2);
-      dfz = nn_activation_d_stairs(z);
-      (dfz8 + dfz4 + dfz2 + dfz)/4;
-    );
-    nn_activate_mstairs(Z) = _nn_activate_pointwise(Z,mstairs);
-    nn_activate_d_mstairs(Z) = _nn_activate_pointwise(Z,d_mstairs);
-
-    # Tanh.
-    #------
-    nn_activation_tanh(z) = (tanh(z));
-    nn_activation_d_tanh(z) = (1 - tanh(z)^2);
-    nn_activate_tanh(Z) = _nn_activate_pointwise(Z,tanh);
-    nn_activate_d_tanh(Z) = _nn_activate_pointwise(Z,d_tanh);
-
-    # Waves.
-    #-------
-    nn_activation_waves(z) = (
-      _nn_waves_ez = round(z);
-      _nn_waves_dz = z - _nn_waves_ez;
-      _nn_waves_p(zz) = (-6*zz^2 + 4*zz);
-      _nn_waves_ez + sign(_nn_waves_dz)*_nn_waves_p(abs(_nn_waves_dz));
-    );
-    nn_activation_d_waves(z) = (
-      _nn_waves_ez = round(z);
-      _nn_waves_dz = z - _nn_waves_ez;
-      _nn_waves_dp(zz) = (-12*zz + 4);
-      _nn_waves_dp(abs(_nn_waves_dz));
-    );
-    nn_activate_waves(Z) = _nn_activate_pointwise(Z,waves);
-    nn_activate_d_waves(Z) = _nn_activate_pointwise(Z,d_waves);
 
     #---------
     # Trainer.
