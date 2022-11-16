@@ -23614,6 +23614,11 @@ nn_lib :
       3*a*_nn_waves_zf^2 + 2*b*abs(_nn_waves_zf) + c;
     );
 
+    nn_activation_waves0(z) = nn_activation_waves(z,$_a,$_b,$_c);
+    nn_activation_d_waves0(z) = nn_activation_d_waves(z,$_a,$_b,$_c);
+    nn_activate_waves0(Z) = _nn_activate_pointwise(Z,waves0);
+    nn_activate_d_waves0(Z) = _nn_activate_pointwise(Z,d_waves0);
+
     nn_activation_waves1(z) = nn_activation_waves(z,-6,3,1); # Waves 1
     nn_activation_d_waves1(z) = nn_activation_d_waves(z,-6,3,1);
     nn_activate_waves1(Z) = _nn_activate_pointwise(Z,waves1);
@@ -25237,11 +25242,11 @@ _nn_layer_conv2d :
 # 0<=_learning_mode<=3
 #@cli : Add a 'conv2dnl' (2D convolutional layer followed by a non-linearity) to the network.
 #@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
-#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1', 'activation=waves3' and 'learning_mode=3'.
+#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1', 'activation=waves2' and 'learning_mode=3'.
 nn_layer_conv2dnl : nn_check_layer "$2"
                     check "isvarname('$1') && isint($3) && $3>0 && isint(${4=3}) && $4>0 && ${5=1}>0 && "\
                           "isint(${8=3}) && inrange($8,0,3)"
-                    skip "${6=1}","${7=waves3}"
+                    skip "${6=1}","${7=waves2}"
   e[^-1] "[nn_lib] Add 'conv2d+nl' layer '$1', with input '$2', $3 channels, $4x$4 kernels, "\
          "stride $5, dilation $6 and '$7' activation."
   init=$_nn_init
@@ -25254,11 +25259,11 @@ nn_layer_conv2dnl : nn_check_layer "$2"
 #@cli : Add a 'conv2dnnl' (2D convolutional layer followed by a normalization layer, then a non-linearity) \
 # to the network.
 #@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
-#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1', 'activation=waves3' and 'learning_mode=3'.
+#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1', 'activation=waves2' and 'learning_mode=3'.
 nn_layer_conv2dnnl : nn_check_layer "$2"
                      check "isvarname('$1') && isint($3) && $3>0 && isint(${4=3}) && $4>0 && ${5=1}>0 && "\
                            "isint(${8=3}) && inrange($8,0,3)"
-                     skip "${6=1}","${7=waves3}"
+                     skip "${6=1}","${7=waves2}"
   e[^-1] "[nn_lib] Add 'conv2d+normalize+nl' layer '$1', with input '$2', $3 channels, $4x$4 kernels, "\
          "stride $5, dilation $6 and '$7' activation."
   init=$_nn_init
@@ -25302,11 +25307,11 @@ _nn_layer_conv3d :
 # 0<=_learning_mode<=3
 #@cli : Add a 'conv3dnl' (3D convolutional layer followed by a non-linearity) to the network.
 #@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
-#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1', 'activation=waves3' and 'learning_mode=3'.
+#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1', 'activation=waves2' and 'learning_mode=3'.
 nn_layer_conv3dnl : nn_check_layer "$2"
                     check "isvarname('$1') && isint($3) && $3>0 && isint(${4=3}) && $4>0 && ${5=1}>0 && "\
                           "isint(${8=3}) && inrange($8,0,3)"
-                    skip "${6=1}","${7=waves3}"
+                    skip "${6=1}","${7=waves2}"
   e[^-1] "[nn_lib] Add 'conv3d+nl' layer '$1', with input '$2', $3 channels, $4x$4x$4 kernels, "\
          "stride $5, dilation $6 and '$7' activation."
   init=$_nn_init
@@ -25319,11 +25324,11 @@ nn_layer_conv3dnl : nn_check_layer "$2"
 #@cli : Add a 'conv3dnnl' (3D convolutional layer followed by a normalization layer, then a non-linearity) \
 # to the network.
 #@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
-#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1', 'activation=waves3' and 'learning_mode=3'.
+#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1', 'activation=waves2' and 'learning_mode=3'.
 nn_layer_conv3dnnl : nn_check_layer "$2"
                      check "isvarname('$1') && isint($3) && $3>0 && isint(${4=3}) && $4>0 && ${5=1}>0 && "\
                            "isint(${8=3}) && inrange($8,0,3)"
-                     skip "${6=1}","${7=waves3}"
+                     skip "${6=1}","${7=waves2}"
   e[^-1] "[nn_lib] Add 'conv3d+normalize+nl' layer '$1', with input '$2', $3 channels, $4x$4x$4 kernels, "\
          "stride $5, dilation $6 and '$7' activation."
   init=$_nn_init
@@ -25436,10 +25441,10 @@ _nn_layer_fc :
 #@cli nn_layer_fcnl : out,in,nb_neurons>0,_activation,0<=_learning_mode<=3
 #@cli : Add a 'fcnl' layer (fully connected layer followed by a non-linearity) to the network.
 #@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
-#@cli : Default value: 'activation=waves3' and 'learning_mode=3'.
+#@cli : Default value: 'activation=waves2' and 'learning_mode=3'.
 nn_layer_fcnl : nn_check_layer "$2"
                 check "isvarname('$1') && isint($3) && $3>0 && isint(${5=3}) && inrange($5,0,3)"
-                skip ${4=waves3}
+                skip ${4=waves2}
   e[^-1] "[nn_lib] Add 'fc+nl' layer '$1' to the network, with input '$2', $3 channels and '$4' activation."
   init=$_nn_init
   _nn_layer_fc $1_fc,${2-3},$5
@@ -25450,10 +25455,10 @@ nn_layer_fcnl : nn_check_layer "$2"
 #@cli : Add a 'fcnnl' layer (fully connected layer followed by a normalization layer, then a non-linearity) \
 # to the network.
 #@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
-#@cli : Default value: 'activation=waves3' and 'learning_mode=3'.
+#@cli : Default value: 'activation=waves2' and 'learning_mode=3'.
 nn_layer_fcnnl : nn_check_layer "$2"
                 check "isvarname('$1') && isint($3) && $3>0 && isint(${5=3})"
-                skip ${4=waves3}
+                skip ${4=waves2}
   e[^-1] "[nn_lib] Add 'fc+normalize+nl' layer '$1' to the network, with input '$2', $3 channels and '$4' activation."
   init=$_nn_init
   _nn_layer_fc $1_fc,${2-3},$5
@@ -25506,10 +25511,10 @@ nn_layer_mul : nn_check_layer "$2"
 #@cli nn_layer_nl : out,in,_activation
 #@cli : Add a 'nl' (nonlinearity) layer to the network.
 #@cli : 'activation' can be { elu | gelu | leakyrelu | linear | relu | sigmoid | softmax | sqr | sqrt | swish | tanh }.
-#@cli : Default value: 'activation=waves3'.
+#@cli : Default value: 'activation=waves2'.
 nn_layer_nl : nn_check_layer "$2"
               check "isvarname('$1')"
-              skip ${3=waves3}
+              skip ${3=waves2}
   e[^-1] "[nn_lib] Add 'nl' layer '$1', with input '$2' and '$3' activation."
   _nn_modules_names.=$1,
   _nn_modules_types.=nl,
@@ -25648,10 +25653,10 @@ nn_layer_resconv2d : nn_check_layer "$2"
 #@cli nn_layer_resconv2dnl : out,in,_kernel_size>0,_stride>0,_dilation>0,_activation,0<=_learning_mode<=3
 #@cli : Add a 'resconv2dnl' (residual 2D convolutional layer followed by a non-linearity) to the network.
 #@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
-#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1', activation='waves3' and 'learning_mode=3'.
+#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1', activation='waves2' and 'learning_mode=3'.
 nn_layer_resconv2dnl : nn_check_layer "$2"
                        check "isvarname('$1') && isint(${3=3}) && $3>0 && ${4=1}>0 && isint(${7=1}) && inrange($7,0,3)"
-                       skip "${5=1}","${6=waves3}"
+                       skip "${5=1}","${6=waves2}"
   e[^-1] "[nn_lib] Add 'resconv2dnl' layer '$1', with input '$2', $3x$3 kernels, "\
          "stride $4, dilation $5 and '$6' activation."
   init=$_nn_init
@@ -25665,10 +25670,10 @@ nn_layer_resconv2dnl : nn_check_layer "$2"
 #@cli : Add a 'resconv2dnnl' (residual 2D convolutional layer followed by a normalization layer, then a non-linearity)\
 # to the network.
 #@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
-#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1', activation='waves3' and 'learning_mode=3'.
+#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1', activation='waves2' and 'learning_mode=3'.
 nn_layer_resconv2dnnl : nn_check_layer "$2"
                         check "isvarname('$1') && isint(${3=3}) && $3>0 && ${4=1}>0 && isint(${7=3}) && inrange($7,0,3)"
-                        skip "${5=1}","${6=waves3}"
+                        skip "${5=1}","${6=waves2}"
   e[^-1] "[nn_lib] Add 'resconv2dnnl' layer '$1', with input '$2', $3x$3 kernels, "\
          "stride $4, dilation $5 and '$6' activation."
   init=$_nn_init
@@ -25697,10 +25702,10 @@ nn_layer_resconv3d : nn_check_layer "$2"
 #@cli nn_layer_resconv3dnl : out,in,_kernel_size>0,_stride>0,_dilation>0,_activation,0<=_learning_mode<=3
 #@cli : Add a 'resconv3dnl' (residual 3D convolutional layer followed by a non-linearity) to the network.
 #@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
-#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1', activation='waves3' and 'learning_mode=3'.
+#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1', activation='waves2' and 'learning_mode=3'.
 nn_layer_resconv3dnl : nn_check_layer "$2"
                        check "isvarname('$1') && isint(${3=3}) && $3>0 && ${4=1}>0 && isint(${7=1}) && inrange($7,0,3)"
-                       skip "${5=1}","${6=waves3}"
+                       skip "${5=1}","${6=waves2}"
   e[^-1] "[nn_lib] Add 'resconv3dnl' layer '$1', with input '$2', $3x$3x$3 kernels, "\
          "stride $4, dilation $5 and '$6' activation."
   init=$_nn_init
@@ -25714,10 +25719,10 @@ nn_layer_resconv3dnl : nn_check_layer "$2"
 #@cli : Add a 'resconv3dnnl' (residual 3D convolutional layer followed by a normalization layer, then a non-linearity)\
 # to the network.
 #@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
-#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1', activation='waves3' and 'learning_mode=3'.
+#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1', activation='waves2' and 'learning_mode=3'.
 nn_layer_resconv3dnnl : nn_check_layer "$2"
                         check "isvarname('$1') && isint(${3=3}) && $3>0 && ${4=1}>0 && isint(${7=3}) && inrange($7,0,3)"
-                        skip "${5=1}","${6=waves3}"
+                        skip "${5=1}","${6=waves2}"
   e[^-1] "[nn_lib] Add 'resconv3dnnl' layer '$1', with input '$2', $3x$3x$3 kernels, "\
          "stride $4, dilation $5 and '$6' activation."
   init=$_nn_init
@@ -25744,10 +25749,10 @@ nn_layer_resfc : nn_check_layer "$2"
 #@cli nn_layer_resfcnl : out,in,_activation,0<=_learning_mode<=3
 #@cli : Add a 'resfcnl' (residual fully connecter layer followed by a non-linearity) to the network.
 #@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
-#@cli : Default values: 'activation=waves3' and 'learning_mode=3'.
+#@cli : Default values: 'activation=waves2' and 'learning_mode=3'.
 nn_layer_resfcnl : nn_check_layer "$2"
                    check "isvarname('$1') && isint(${4=3}) && inrange($4,0,3)"
-                   skip ${3=waves3}
+                   skip ${3=waves2}
   e[^-1] "[nn_lib] Add 'resfc+nl' layer '$1' to the network, with input '$2' and '$4' activation."
   init=$_nn_init
   nn_layer_clone $1_clone0,$1_clone1,$2
@@ -25760,10 +25765,10 @@ nn_layer_resfcnl : nn_check_layer "$2"
 #@cli : Add a 'resfcnnl' (residual fully connecter layer followed by a normalization layer, then a non-linearity) \
 # to the network.
 #@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
-#@cli : Default values: 'activation=waves3' and 'learning_mode=3'.
+#@cli : Default values: 'activation=waves2' and 'learning_mode=3'.
 nn_layer_resfcnnl : nn_check_layer "$2"
                     check "isvarname('$1') && isint(${4=3}) && inrange($4,0,3)"
-                    skip ${3=waves3}
+                    skip ${3=waves2}
   e[^-1] "[nn_lib] Add 'resfc+normalize+nl' layer '$1' to the network, with input '$2' and '$4' activation."
   init=$_nn_init
   nn_layer_clone $1_clone0,$1_clone1,$2
