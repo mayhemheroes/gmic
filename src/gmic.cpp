@@ -5151,7 +5151,8 @@ CImg<char> gmic::substitute_item(const char *const source,
           switch (loop_type) {
           case 0 : { // repeat...done
             const unsigned int *const rd = repeatdones.data(0,nb_repeatdones - 1);
-            cimg_snprintf(substr,substr.width(),"%u",nsource[1]=='>'?rd[1]:rd[2] - 1);
+            if (rd[2]==~0U && nsource[1]=='<') cimg_snprintf(substr,substr.width(),"inf");
+            else cimg_snprintf(substr,substr.width(),"%u",nsource[1]=='>'?rd[1]:rd[2] - 1);
           } break;
           case 1 : { // do...while
             const unsigned int *const dw = dowhiles.data(0,nb_dowhiles - 1);
@@ -6966,7 +6967,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           } else if (s[1]=='r') { // End a 'repeat...done' block
             unsigned int *const rd = repeatdones.data(0,nb_repeatdones - 1);
             ++rd[1];
-            if (--rd[2]) {
+            if (rd[2]!=~0U) --rd[2];
+            if (rd[2]) {
               position = rd[0] + 2;
               next_debug_line = rd[3];
               next_debug_filename = debug_filename;
