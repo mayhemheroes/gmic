@@ -23600,6 +23600,23 @@ nn_lib :
     nn_activate_tanh(Z) = _nn_activate_pointwise(Z,tanh);
     nn_activate_d_tanh(Z) = _nn_activate_pointwise(Z,d_tanh);
 
+    # Steps.
+    #-------
+    const _nn_steps_eps = isnan($_eps)?0.25:$_eps;
+    nn_activation_steps(z) = (
+      _nn_steps_zi = round(z);
+      _nn_steps_zf = z - _nn_steps_zi;
+      _nn_steps_zi + (_nn_steps_zf<-_nn_steps_eps?-0.5:
+                      _nn_steps_zf>_nn_steps_eps?0.5:_nn_steps_zf/(2*_nn_steps_eps));
+    );
+    nn_activation_d_steps(z) = (
+      _nn_steps_zi = round(z);
+      _nn_steps_zf = z - _nn_steps_zi;
+      abs(_nn_steps_zf)<_nn_steps_eps?1/(2*_nn_steps_eps):0;
+    );
+    nn_activate_steps(Z) = _nn_activate_pointwise(Z,steps);
+    nn_activate_d_steps(Z) = _nn_activate_pointwise(Z,d_steps);
+
     # Waves (family of functions: 'waves1','waves2','waves3','waves4').
     #------------------------------------------------------------------
     nn_activation_waves(z,a,b,c) = (
@@ -23614,8 +23631,13 @@ nn_lib :
       3*a*_nn_waves_zf^2 + 2*b*abs(_nn_waves_zf) + c;
     );
 
-    nn_activation_waves0(z) = nn_activation_waves(z,$_a,$_b,$_c);
-    nn_activation_d_waves0(z) = nn_activation_d_waves(z,$_a,$_b,$_c);
+    const _nn_waves0_S0 = isnan($_S0)?2:$_S0;
+    const _nn_waves0_S1 = isnan($_S1)?-1:$_S1;
+    const _nn_waves0_a = 4*_nn_waves0_S0 + 4*_nn_waves0_S1 - 8;
+    const _nn_waves0_b = -4*_nn_waves0_S0 - 2*_nn_waves0_S1 + 6;
+    const _nn_waves0_c = _nn_waves0_S0;
+    nn_activation_waves0(z) = nn_activation_waves(z,_nn_waves0_a,_nn_waves0_b,_nn_waves0_c);
+    nn_activation_d_waves0(z) = nn_activation_d_waves(z,_nn_waves0_a,_nn_waves0_b,_nn_waves0_c);
     nn_activate_waves0(Z) = _nn_activate_pointwise(Z,waves0);
     nn_activate_d_waves0(Z) = _nn_activate_pointwise(Z,d_waves0);
 
