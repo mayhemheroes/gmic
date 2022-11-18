@@ -23602,17 +23602,21 @@ nn_lib :
 
     # Steps.
     #-------
-    const _nn_steps_eps = isnan($_eps)?0.25:$_eps;
+    const _nn_steps_S0 = isnan($_S0)?2:$_S0;
+    const _nn_steps_S1 = isnan($_S1)?0.5:$_S1;
+    const _nn_steps_b = (1 - _nn_steps_S1)/2;
+    const _nn_steps_eps = _nn_steps_b/max(1e-10,_nn_steps_S0 - _nn_steps_S1);
     nn_activation_steps(z) = (
       _nn_steps_zi = round(z);
       _nn_steps_zf = z - _nn_steps_zi;
-      _nn_steps_zi + (_nn_steps_zf<-_nn_steps_eps?-0.5:
-                      _nn_steps_zf>_nn_steps_eps?0.5:_nn_steps_zf/(2*_nn_steps_eps));
+      _nn_steps_zi + (_nn_steps_zf<-_nn_steps_eps?_nn_steps_S1*_nn_steps_zf - _nn_steps_b:
+                      _nn_steps_zf<_nn_steps_eps?_nn_steps_S0*_nn_steps_zf:
+                      _nn_steps_S1*_nn_steps_zf + _nn_steps_b);
     );
     nn_activation_d_steps(z) = (
       _nn_steps_zi = round(z);
       _nn_steps_zf = z - _nn_steps_zi;
-      abs(_nn_steps_zf)<_nn_steps_eps?1/(2*_nn_steps_eps):0;
+      abs(_nn_steps_zf)<_nn_steps_eps?_nn_steps_S0:_nn_steps_S1;
     );
     nn_activate_steps(Z) = _nn_activate_pointwise(Z,steps);
     nn_activate_d_steps(Z) = _nn_activate_pointwise(Z,d_steps);
