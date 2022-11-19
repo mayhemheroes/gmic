@@ -8032,7 +8032,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
               if (!exception._message && nb_foreachdones>0 && foreachdones._height>=nb_foreachdones) {
                 fed = foreachdones.data(0,nb_foreachdones - 1);
-                ++fed[0]; --fed[1];
+                if (!fed[1]) l = selection.height(); // when case break() happened, force loop to stop
+                else { ++fed[0]; --fed[1]; }
                 next_debug_line = fed[2];
                 next_debug_filename = debug_filename;
               }
@@ -13783,8 +13784,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               error(true,images,0,0,
                     "Command '%s': Missing associated '%s' command.",stb,ste);
             if (is_continue || callstack_local || callstack_foreach) {
-              if (callstack_foreach && !is_continue) // Break 'foreach...done' loop
-                foreachdones(2,nb_foreachdones - 1) = 1; // Force loop to end at next 'done'
+              if (callstack_foreach && !is_continue) { // Break 'foreach...done' loop
+                unsigned int *const fed = foreachdones.data(0,nb_foreachdones - 1);
+                fed[0]+=fed[1]; // Force loop to end at next 'done'
+                fed[1] = 0;
+              }
               if (callstack_ind<callstack.size() - 1) callstack.remove(callstack_ind + 1,callstack.size() - 1);
               --position;
             } else {
