@@ -23520,74 +23520,56 @@ nn_lib :
     #--------------------------------------------
     # Activation functions and their derivatives.
     #--------------------------------------------
-    _nn_activate_pointwise(Z,activation) = (fill(#Z,_nn_k,nn_activation_#activation(#Z[_nn_k])));
-    nn_activate(Z,activation) = nn_activate_#activation(#Z);
 
     # ELU: Exponential Linear Unit.
     #-------------------------------
     nn_activation_elu(z) = (z<0?exp(z) - 1:z);
     nn_activation_d_elu(z) = (z<0?exp(z):1);
-    nn_activate_elu(Z) = _nn_activate_pointwise(Z,elu);
-    nn_activate_d_elu(Z) = _nn_activate_pointwise(Z,d_elu);
 
     # GELU: Gaussian Error Linear Unit.
     #-----------------------------------
     nn_activation_gelu(z) = (0.5*z*(1 + erf(z/sqrt(2))));
     nn_activation_d_gelu(z) = (0.5 + 0.5*erf(z/sqrt(2)) + z*exp(-z^2/2)/sqrt(2*pi));
-    nn_activate_gelu(Z) = _nn_activate_pointwise(Z,gelu);
-    nn_activate_d_gelu(Z) = _nn_activate_pointwise(Z,d_gelu);
 
     # LeakyRELU: Leaky Rectified Linear Unit.
     #-----------------------------------------
     nn_activation_leakyrelu(z) = (z<0?0.05*z:z);
     nn_activation_d_leakyrelu(z) = (z<0?0.05:1);
-    nn_activate_leakyrelu(Z) = _nn_activate_pointwise(Z,leakyrelu);
-    nn_activate_d_leakyrelu(Z) = _nn_activate_pointwise(Z,d_leakyrelu);
 
     # Linear.
     #--------
-    nn_activate_linear(Z) = (0);
-    nn_activate_d_linear(Z) = (#Z = 1);
+    nn_activation_linear(z) = (z);
+    nn_activation_d_linear(Z) = (1);
 
     # RELU: Rectified Linear Unit.
     #------------------------------
     nn_activation_relu(z) = (z<0?0:z);
     nn_activation_d_relu(z) = (z<0?0:1);
-    nn_activate_relu(Z) = _nn_activate_pointwise(Z,relu);
-    nn_activate_d_relu(Z) = _nn_activate_pointwise(Z,d_relu);
 
     # Sigmoid (a.k.a Logistic).
     #--------------------------
     nn_activation_sigmoid(z) = (0.5 + 0.5*tanh(z/2));
     nn_activation_d_sigmoid(z) = (_nn_sig = nn_activation_sigmoid(z); _nn_sig*(1 - _nn_sig));
-    nn_activate_sigmoid(Z) = _nn_activate_pointwise(Z,sigmoid);
-    nn_activate_d_sigmoid(Z) = _nn_activate_pointwise(Z,d_sigmoid);
 
     # Sin: Sine.
     #-----------
     nn_activation_sin(z) = (sin(z));
     nn_activation_d_sin(z) = (cos(z));
-    nn_activate_sin(Z) = _nn_activate_pointwise(Z,sin);
-    nn_activate_d_sin(Z) = _nn_activate_pointwise(Z,d_sin);
 
     # Sinc: Sinc.
     #------------
     nn_activation_sinc(z) = (sinc(z));
     nn_activation_d_sinc(z) = ((cos(z) - sinc(z))/(1e-10+z));
-    nn_activate_sinc(Z) = _nn_activate_pointwise(Z,sinc);
-    nn_activate_d_sinc(Z) = _nn_activate_pointwise(Z,d_sinc);
 
     # Sqr: Square.
     #-------------
-    nn_activate_sqr(Z) = (Z*=Z);
-    nn_activate_d_sqr(Z) = (Z*=2);
+    nn_activation_sqr(Z) = (Z^2);
+    nn_activation_d_sqr(Z) = (2*Z);
 
     # Sqrt: sqrt(|z|).
     #-----------------
     nn_activation_sqrt(z) = (sqrt(abs(z)));
     nn_activation_d_sqrt(z) = (0.5*sign(x)/sqrt(max(1e-16,abs(z))));
-    nn_activate_sqrt(Z) = _nn_activate_pointwise(Z,sqrt);
-    nn_activate_d_sqrt(Z) = _nn_activate_pointwise(Z,d_sqrt);
 
     # Steps.
     #-------
@@ -23607,8 +23589,6 @@ nn_lib :
       _nn_steps_zf = z - _nn_steps_zi;
       abs(_nn_steps_zf)<_nn_steps_eps?_nn_steps_S0:_nn_steps_S1;
     );
-    nn_activate_steps(Z) = _nn_activate_pointwise(Z,steps);
-    nn_activate_d_steps(Z) = _nn_activate_pointwise(Z,d_steps);
 
     # Swish.
     #--------
@@ -23618,15 +23598,11 @@ nn_lib :
       _nn_swi = z*_nn_sig;
       _nn_swi + _nn_sig*(1 - _nn_swi)
     );
-    nn_activate_swish(Z) = _nn_activate_pointwise(Z,swish);
-    nn_activate_d_swish(Z) = _nn_activate_pointwise(Z,d_swish);
 
     # Tanh.
     #------
     nn_activation_tanh(z) = (tanh(z));
     nn_activation_d_tanh(z) = (1 - tanh(z)^2);
-    nn_activate_tanh(Z) = _nn_activate_pointwise(Z,tanh);
-    nn_activate_d_tanh(Z) = _nn_activate_pointwise(Z,d_tanh);
 
     # Waves (family of functions: 'waves1','waves2','waves3','waves4').
     #------------------------------------------------------------------
@@ -23649,35 +23625,23 @@ nn_lib :
     const _nn_waves0_c = _nn_waves0_S0;
     nn_activation_waves0(z) = nn_activation_waves(z,_nn_waves0_a,_nn_waves0_b,_nn_waves0_c);
     nn_activation_d_waves0(z) = nn_activation_d_waves(z,_nn_waves0_a,_nn_waves0_b,_nn_waves0_c);
-    nn_activate_waves0(Z) = _nn_activate_pointwise(Z,waves0);
-    nn_activate_d_waves0(Z) = _nn_activate_pointwise(Z,d_waves0);
 
     nn_activation_waves1(z) = nn_activation_waves(z,-6,3,1); # Waves 1
     nn_activation_d_waves1(z) = nn_activation_d_waves(z,-6,3,1);
-    nn_activate_waves1(Z) = _nn_activate_pointwise(Z,waves1);
-    nn_activate_d_waves1(Z) = _nn_activate_pointwise(Z,d_waves1);
 
     nn_activation_waves2(z) = nn_activation_waves(z,-4,0,2); # Waves 2
     nn_activation_d_waves2(z) = nn_activation_d_waves(z,-4,0,2);
-    nn_activate_waves2(Z) = _nn_activate_pointwise(Z,waves2);
-    nn_activate_d_waves2(Z) = _nn_activate_pointwise(Z,d_waves2);
 
     nn_activation_waves3(z) = nn_activation_waves(z,-2,-3,3); # Waves 2
     nn_activation_d_waves3(z) = nn_activation_d_waves(z,-2,-3,3);
-    nn_activate_waves3(Z) = _nn_activate_pointwise(Z,waves3);
-    nn_activate_d_waves3(Z) = _nn_activate_pointwise(Z,d_waves3);
 
     nn_activation_waves4(z) = nn_activation_waves(z,0,-6,4); # Waves 4
     nn_activation_d_waves4(z) = nn_activation_d_waves(z,0,-6,4);
-    nn_activate_waves4(Z) = _nn_activate_pointwise(Z,waves4);
-    nn_activate_d_waves4(Z) = _nn_activate_pointwise(Z,d_waves4);
 
     # Zpsinz.
     #--------
     nn_activation_zpsinz(z) = (z + 0.5*sin(2*pi*z));
     nn_activation_d_zpsinz(z) = (1 + pi*cos(2*pi*z));
-    nn_activate_zpsinz(Z) = _nn_activate_pointwise(Z,zpsinz);
-    nn_activate_d_zpsinz(Z) = _nn_activate_pointwise(Z,d_zpsinz);
 
     #---------
     # Trainer.
@@ -24641,14 +24605,13 @@ nn_lib :
     );
 
     nn_layer_nl_forward(OUT,IN,activation) = (
-      OUT# = IN#;
-      nn_activate(OUT#,activation#);
+     OUT# = vector(#size(IN#));
+     fill(OUT#,_nn_k,OUT#[_nn_k] = nn_activation_#activation(IN#[_nn_k]));
     );
 
     nn_layer_nl_backward(OUT,IN,activation) = (
-      d#IN = IN#;
-      nn_activate(d#IN,d_#activation);
-      d#IN*=d#OUT;
+      d#IN = vector(#size(IN#));
+      fill(d#IN,_nn_k,d#OUT[_nn_k]*nn_activation_d_#activation(IN#[_nn_k]));
     );
 
     # Special case: Softmax.
