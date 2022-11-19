@@ -23563,6 +23563,20 @@ nn_lib :
     nn_activate_sigmoid(Z) = _nn_activate_pointwise(Z,sigmoid);
     nn_activate_d_sigmoid(Z) = _nn_activate_pointwise(Z,d_sigmoid);
 
+    # Sin: Sine.
+    #-----------
+    nn_activation_sin(z) = (sin(z));
+    nn_activation_d_sin(z) = (cos(z));
+    nn_activate_sin(Z) = _nn_activate_pointwise(Z,sin);
+    nn_activate_d_sin(Z) = _nn_activate_pointwise(Z,d_sin);
+
+    # Sinc: Sinc.
+    #------------
+    nn_activation_sinc(z) = (sinc(z));
+    nn_activation_d_sinc(z) = ((cos(z) - sinc(z))/(1e-10+z));
+    nn_activate_sinc(Z) = _nn_activate_pointwise(Z,sinc);
+    nn_activate_d_sinc(Z) = _nn_activate_pointwise(Z,d_sinc);
+
     # Sqr: Square.
     #-------------
     nn_activate_sqr(Z) = (Z*=Z);
@@ -23574,31 +23588,6 @@ nn_lib :
     nn_activation_d_sqrt(z) = (0.5*sign(x)/sqrt(max(1e-16,abs(z))));
     nn_activate_sqrt(Z) = _nn_activate_pointwise(Z,sqrt);
     nn_activate_d_sqrt(Z) = _nn_activate_pointwise(Z,d_sqrt);
-
-    # Swish.
-    #--------
-    nn_activation_swish(z) = (z*nn_activation_sigmoid(z));
-    nn_activation_d_swish(z) = (
-      _nn_sig = nn_activation_sigmoid(z);
-      _nn_swi = z*_nn_sig;
-      _nn_swi + _nn_sig*(1 - _nn_swi)
-    );
-    nn_activate_swish(Z) = _nn_activate_pointwise(Z,swish);
-    nn_activate_d_swish(Z) = _nn_activate_pointwise(Z,d_swish);
-
-    # Zpsinz.
-    #--------
-    nn_activation_zpsinz(z) = (z + 0.5*sin(2*pi*z));
-    nn_activation_d_zpsinz(z) = (1 + pi*cos(2*pi*z));
-    nn_activate_zpsinz(Z) = _nn_activate_pointwise(Z,zpsinz);
-    nn_activate_d_zpsinz(Z) = _nn_activate_pointwise(Z,d_zpsinz);
-
-    # Tanh.
-    #------
-    nn_activation_tanh(z) = (tanh(z));
-    nn_activation_d_tanh(z) = (1 - tanh(z)^2);
-    nn_activate_tanh(Z) = _nn_activate_pointwise(Z,tanh);
-    nn_activate_d_tanh(Z) = _nn_activate_pointwise(Z,d_tanh);
 
     # Steps.
     #-------
@@ -23620,6 +23609,24 @@ nn_lib :
     );
     nn_activate_steps(Z) = _nn_activate_pointwise(Z,steps);
     nn_activate_d_steps(Z) = _nn_activate_pointwise(Z,d_steps);
+
+    # Swish.
+    #--------
+    nn_activation_swish(z) = (z*nn_activation_sigmoid(z));
+    nn_activation_d_swish(z) = (
+      _nn_sig = nn_activation_sigmoid(z);
+      _nn_swi = z*_nn_sig;
+      _nn_swi + _nn_sig*(1 - _nn_swi)
+    );
+    nn_activate_swish(Z) = _nn_activate_pointwise(Z,swish);
+    nn_activate_d_swish(Z) = _nn_activate_pointwise(Z,d_swish);
+
+    # Tanh.
+    #------
+    nn_activation_tanh(z) = (tanh(z));
+    nn_activation_d_tanh(z) = (1 - tanh(z)^2);
+    nn_activate_tanh(Z) = _nn_activate_pointwise(Z,tanh);
+    nn_activate_d_tanh(Z) = _nn_activate_pointwise(Z,d_tanh);
 
     # Waves (family of functions: 'waves1','waves2','waves3','waves4').
     #------------------------------------------------------------------
@@ -23665,28 +23672,12 @@ nn_lib :
     nn_activate_waves4(Z) = _nn_activate_pointwise(Z,waves4);
     nn_activate_d_waves4(Z) = _nn_activate_pointwise(Z,d_waves4);
 
-    # Generic 'stairs' function, kept for tests.
-    begin(
-      const _nn_stairs_S0 = isnan($_nn_stairs_S0)?4:$_nn_stairs_S0;
-      const _nn_stairs_S1 = isnan($_nn_stairs_S1)?-2:$_nn_stairs_S1;
-      const _nn_stairs_a = -8 + 4*_nn_stairs_S1 + 4*_nn_stairs_S0;
-      const _nn_stairs_b = 6 - 4*_nn_stairs_S0 - 2*_nn_stairs_S1;
-      const _nn_stairs_c = _nn_stairs_S0;
-    );
-    nn_activation_stairs(z) = (
-      _nn_stairs_ez = round(z);
-      _nn_stairs_dz = z - _nn_stairs_ez;
-      _nn_stairs_p(zz) = (_nn_stairs_a*zz^3 + _nn_stairs_b*zz^2 + _nn_stairs_c*zz);
-      _nn_stairs_ez + sign(_nn_stairs_dz)*_nn_stairs_p(abs(_nn_stairs_dz));
-    );
-    nn_activation_d_stairs(z) = (
-      _nn_stairs_ez = round(z);
-      _nn_stairs_dz = z - _nn_stairs_ez;
-      _nn_stairs_dp(zz) = (3*_nn_stairs_a*zz^2 + 2*_nn_stairs_b*zz + _nn_stairs_c);
-      _nn_stairs_dp(abs(_nn_stairs_dz));
-    );
-    nn_activate_stairs(Z) = _nn_activate_pointwise(Z,stairs);
-    nn_activate_d_stairs(Z) = _nn_activate_pointwise(Z,d_stairs);
+    # Zpsinz.
+    #--------
+    nn_activation_zpsinz(z) = (z + 0.5*sin(2*pi*z));
+    nn_activation_d_zpsinz(z) = (1 + pi*cos(2*pi*z));
+    nn_activate_zpsinz(Z) = _nn_activate_pointwise(Z,zpsinz);
+    nn_activate_d_zpsinz(Z) = _nn_activate_pointwise(Z,d_zpsinz);
 
     #---------
     # Trainer.
