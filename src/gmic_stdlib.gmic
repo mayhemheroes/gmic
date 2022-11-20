@@ -24031,69 +24031,60 @@ nn_lib :
     # Network layers.
     #----------------
 
-    # input: Input image or vector data.
-    #-----------------------------------
-    nn_input_init_forward(OUT,w,h,d,s) = (
-      const OUT#_width = w;
-      const OUT#_height = h;
-      const OUT#_depth = d;
-      const OUT#_spectrum = s;
-    );
-
     # add: Add two inputs.
     #---------------------
-    nn_layer_add_init_forward(OUT,IN) = (
+    nn_add_init_forward(OUT,IN) = (
       const OUT#_width = IN#_width;
       const OUT#_height = IN#_height;
       const OUT#_depth = IN#_depth;
       const OUT#_spectrum = IN#_spectrum;
     );
 
-    nn_layer_add_forward(OUT,IN0,IN1) = (
+    nn_add_forward(OUT,IN0,IN1) = (
       OUT# = IN0# + IN1#;
     );
 
-    nn_layer_add_backward(OUT,IN0,IN1) = (
+    nn_add_backward(OUT,IN0,IN1) = (
       d#IN0 = d#IN1 = d#OUT/2;
     );
 
     # append: Append two inputs as a new output.
     #--------------------------------------------
-    nn_layer_append_init_forward(OUT,IN0,IN1) = (
+    nn_append_init_forward(OUT,IN0,IN1) = (
       const OUT#_width = IN0#_width;
       const OUT#_height = IN0#_height;
       const OUT#_depth = IN0#_depth;
       const OUT#_spectrum = IN0#_spectrum + IN1#_spectrum;
     );
 
-    nn_layer_append_forward(OUT,IN0,IN1) = (
+    nn_append_forward(OUT,IN0,IN1) = (
       OUT# = vector(#size(IN0#) + size(IN1#));
       copy(OUT#,IN0#,size(IN0#));
       copy(OUT#[size(IN0#)],IN1#,size(IN1#));
     );
 
-    nn_layer_append_backward(OUT,IN0,IN1) = (
+    nn_append_backward(OUT,IN0,IN1) = (
       d#IN0 = d#OUT[0,size(IN0#)];
       d#IN1 = d#OUT[size(IN0#),size(IN1#)];
     );
 
     # avgpool2d : 2D average pooling.
     #--------------------------------
-    nn_layer_avgpool2d_init_forward(OUT,IN,P) = (
+    nn_avgpool2d_init_forward(OUT,IN,P) = (
       const OUT#_width = int(IN#_width/P);
       const OUT#_height = int(IN#_height/P);
       const OUT#_depth = IN#_depth;
       const OUT#_spectrum = IN#_spectrum;
     );
 
-    nn_layer_avgpool2d_forward(OUT,IN) = (
+    nn_avgpool2d_forward(OUT,IN) = (
       OUT# = resize(IN#,
                     IN#_width,IN#_height,IN#_depth,IN#_spectrum,
                     OUT#_width,OUT#_height,OUT#_depth,OUT#_spectrum,
                     2);
     );
 
-    nn_layer_avgpool2d_backward(OUT,IN) = (
+    nn_avgpool2d_backward(OUT,IN) = (
       d#IN = resize(d#OUT,
                     OUT#_width,OUT#_height,OUT#_depth,OUT#_spectrum,
                     IN#_width,IN#_height,IN#_depth,IN#_spectrum,
@@ -24102,19 +24093,19 @@ nn_lib :
 
     # avgpool3d : 3D average pooling.
     #--------------------------------
-    nn_layer_avgpool3d_init_forward(OUT,IN,P) = (
+    nn_avgpool3d_init_forward(OUT,IN,P) = (
       const OUT#_width = int(IN#_width/P);
       const OUT#_height = int(IN#_height/P);
       const OUT#_depth = int(IN#_depth/P);
       const OUT#_spectrum = IN#_spectrum;
     );
 
-    nn_layer_avgpool3d_forward(OUT,IN) = nn_layer_avgpool2d_forward(OUT#,IN#);   # Same as avgpool2d
-    nn_layer_avgpool3d_backward(OUT,IN) = nn_layer_avgpool2d_backward(OUT#,IN#); # Same as avgpool2d
+    nn_avgpool3d_forward(OUT,IN) = nn_avgpool2d_forward(OUT#,IN#);   # Same as avgpool2d
+    nn_avgpool3d_backward(OUT,IN) = nn_avgpool2d_backward(OUT#,IN#); # Same as avgpool2d
 
     # clone: Duplicate input as two new outputs.
     #-------------------------------------------
-    nn_layer_clone_init_forward(OUT0,OUT1,IN) = (
+    nn_clone_init_forward(OUT0,OUT1,IN) = (
       const OUT0#_width = IN#_width;
       const OUT0#_height = IN#_height;
       const OUT0#_depth = IN#_depth;
@@ -24125,18 +24116,18 @@ nn_lib :
       const OUT1#_spectrum = IN#_spectrum;
     );
 
-    nn_layer_clone_forward(OUT0,OUT1,IN) = (
+    nn_clone_forward(OUT0,OUT1,IN) = (
       OUT0# = IN#;
       OUT1# = IN#;
     );
 
-    nn_layer_clone_backward(OUT0,OUT1,IN) = (
+    nn_clone_backward(OUT0,OUT1,IN) = (
       d#IN = d#OUT0 + d#OUT1;
     );
 
     # conv2d: 2D convolutional layer.
     #--------------------------------
-    nn_layer_conv2d_init_forward(OUT,IN,size,stride,dilation) = (
+    nn_conv2d_init_forward(OUT,IN,size,stride,dilation) = (
       const OUT#_ind = $OUT#;
       const OUT#_width = max(1,int(IN#_width/stride));
       const OUT#_height = max(1,int(IN#_height/stride));
@@ -24151,7 +24142,7 @@ nn_lib :
       OUT# = vector(##OUT#_width*OUT#_height*OUT#_depth*h##OUT#_ind);
     );
 
-    nn_layer_conv2d_forward(OUT,IN) = (
+    nn_conv2d_forward(OUT,IN) = (
       const OUT#_sizl = size(OUT#)/OUT#_spectrum; # Size of output plane
       OUT# = convolve(IN#,
                       IN#_width,IN#_height,IN#_depth,IN#_spectrum,
@@ -24168,12 +24159,12 @@ nn_lib :
       );
     );
 
-    nn_layer_conv2d_init_backward(OUT,IN) = (
+    nn_conv2d_init_backward(OUT,IN) = (
       batch_d#OUT#_weights = vector(#size(OUT#_weights));
       batch_d#OUT#_biases = vector(#size(OUT#_biases));
     );
 
-    nn_layer_conv2d_backward(OUT,IN) = (
+    nn_conv2d_backward(OUT,IN) = (
       const OUT#_sizk = size(IN#)/IN#_spectrum; # Size of input plane
       const OUT#_sizw = OUT#_kernel_size^2;     # Size of kernel^2
 
@@ -24223,7 +24214,7 @@ nn_lib :
       batch_d#OUT#_weights+=d#OUT#_weights;
     );
 
-    nn_layer_conv2d_end_backward(OUT) = (
+    nn_conv2d_end_backward(OUT) = (
       merge(batch_d#OUT#_weights,+);
       merge(batch_d#OUT#_biases,+);
       batch_d#OUT#_weights/=nn_batch_size;
@@ -24232,7 +24223,7 @@ nn_lib :
 
     # conv3d: 3D convolutional layer.
     #--------------------------------
-    nn_layer_conv3d_init_forward(OUT,IN,size,stride,dilation) = (
+    nn_conv3d_init_forward(OUT,IN,size,stride,dilation) = (
       const OUT#_ind = $OUT#;
       const OUT#_width = max(1,int(IN#_width/stride));
       const OUT#_height = max(1,int(IN#_height/stride));
@@ -24247,7 +24238,7 @@ nn_lib :
       OUT# = vector(##OUT#_width*OUT#_height*OUT#_depth*h##OUT#_ind);
     );
 
-    nn_layer_conv3d_forward(OUT,IN) = (
+    nn_conv3d_forward(OUT,IN) = (
       const OUT#_sizl = size(OUT#)/OUT#_spectrum; # Size of output plane
       OUT# = convolve(IN#,
                       IN#_width,IN#_height,IN#_depth,IN#_spectrum,
@@ -24264,12 +24255,12 @@ nn_lib :
       );
     );
 
-    nn_layer_conv3d_init_backward(OUT,IN) = (
+    nn_conv3d_init_backward(OUT,IN) = (
       batch_d#OUT#_weights = vector(#size(OUT#_weights));
       batch_d#OUT#_biases = vector(#size(OUT#_biases));
     );
 
-    nn_layer_conv3d_backward(OUT,IN) = (
+    nn_conv3d_backward(OUT,IN) = (
       const OUT#_sizk = size(IN#)/IN#_spectrum; # Size of input plane
       const OUT#_sizw = OUT#_kernel_size^3;     # Size of kernel^3
 
@@ -24321,7 +24312,7 @@ nn_lib :
       batch_d#OUT#_weights+=d#OUT#_weights;
     );
 
-    nn_layer_conv3d_end_backward(OUT) = (
+    nn_conv3d_end_backward(OUT) = (
       merge(batch_d#OUT#_weights,+);
       merge(batch_d#OUT#_biases,+);
       batch_d#OUT#_weights/=nn_batch_size;
@@ -24330,20 +24321,20 @@ nn_lib :
 
     # crop : Crop layer.
     #--------------------
-    nn_layer_crop_init_forward(OUT,IN,x0,y0,z0,x1,y1,z1) = (
+    nn_crop_init_forward(OUT,IN,x0,y0,z0,x1,y1,z1) = (
       const OUT#_width = abs(x1 - x0) + 1;
       const OUT#_height = abs(y1 - y0) + 1;
       const OUT#_depth = abs(z1 - z0) + 1;
       const OUT#_spectrum = IN#_spectrum;
     );
 
-    nn_layer_crop_forward(OUT,IN,x0,y0,z0,x1,y1,z1) = (
+    nn_crop_forward(OUT,IN,x0,y0,z0,x1,y1,z1) = (
       OUT# = crop(IN#,IN#_width,IN#_height,IN#_depth,IN#_spectrum,
                   x0,y0,z0,
                   OUT#_width,OUT#_height,OUT#_depth);
     );
 
-    nn_layer_crop_backward(OUT,IN,x0,y0,z0,x1,y1,z1) = (
+    nn_crop_backward(OUT,IN,x0,y0,z0,x1,y1,z1) = (
       d#IN = crop(d#OUT,OUT#_width,OUT#_height,OUT#_depth,OUT#_spectrum,
                   -x0,-y0,-z0,
                   IN#_width,IN#_height,IN#_depth);
@@ -24351,7 +24342,7 @@ nn_lib :
 
     # dict: Dictionnary learning layer.
     #----------------------------------
-    nn_layer_dict_init_forward(OUT,IN) = (
+    nn_dict_init_forward(OUT,IN) = (
       const OUT#_ind = $OUT#;
       const OUT#_width = IN#_width;
       const OUT#_height = IN#_height;
@@ -24360,42 +24351,42 @@ nn_lib :
       OUT#_weights = crop(##OUT#_ind,0,0,w##OUT#_ind,h##OUT#_ind);
     );
 
-    nn_layer_dict_forward(OUT,IN) = (
+    nn_dict_forward(OUT,IN) = (
       OUT#_alpha_fwd = solve(IN#,OUT#_weights,w##OUT#_ind);
       OUT# = mul(OUT#_weights,OUT#_alpha_fwd);
     );
 
-    nn_layer_dict_init_backward(OUT) = (
+    nn_dict_init_backward(OUT) = (
       batch_d#OUT#_weights = vector(#size(OUT#_weights));
     );
 
-    nn_layer_dict_backward(OUT,IN) = (
+    nn_dict_backward(OUT,IN) = (
       OUT#_alpha_bwd = solve(d#OUT,OUT#_weights,w##OUT#_ind);
       d#IN = mul(OUT#_weights,OUT#_alpha_bwd);
       d#OUT#_weights = mul(d#OUT,OUT#_alpha_fwd,size(OUT#_alpha_fwd));
       batch_d#OUT#_weights+=d#OUT#_weights;
     );
 
-    nn_layer_dict_end_backward(OUT) = (
+    nn_dict_end_backward(OUT) = (
       merge(batch_d#OUT#_weights,+);
       batch_d#OUT#_weights/=nn_batch_size;
     );
 
     # distance : Distance between two inputs.
     #----------------------------------------
-    nn_layer_distance_init_forward(OUT) = (
+    nn_distance_init_forward(OUT) = (
       const OUT#_width = 1;
       const OUT#_height = 1;
       const OUT#_depth = 1;
       const OUT#_spectrum = 1;
     );
 
-    nn_layer_distance_forward(OUT,IN0,IN1,metric) = (
+    nn_distance_forward(OUT,IN0,IN1,metric) = (
       OUT#_diff = IN0# - IN1#;
       OUT# = [ metric>0?norm#metric(OUT#_diff):norm(OUT#_diff)^2 ];
     );
 
-    nn_layer_distance_backward(OUT,IN0,IN1,metric) = (
+    nn_distance_backward(OUT,IN0,IN1,metric) = (
       !metric?( # L2-squared
         d#IN0 = 2*OUT#_diff;
       ):metric==2?( # L2
@@ -24408,7 +24399,7 @@ nn_lib :
 
     # dropout : Dropout layer.
     #-------------------------
-    nn_layer_dropout_init_forward(OUT,IN,rate) = (
+    nn_dropout_init_forward(OUT,IN,rate) = (
       const OUT#_width = IN#_width;
       const OUT#_height = IN#_height;
       const OUT#_depth = IN#_depth;
@@ -24424,7 +24415,7 @@ nn_lib :
       );
     );
 
-    nn_layer_dropout_forward(OUT,IN) = (
+    nn_dropout_forward(OUT,IN) = (
       OUT#_dropout_rate?(
         OUT# = IN#*OUT#_dropout_mask;
       ):(
@@ -24432,7 +24423,7 @@ nn_lib :
       );
     );
 
-    nn_layer_dropout_backward(OUT,IN) = (
+    nn_dropout_backward(OUT,IN) = (
       OUT#_dropout_rate?(
         d#IN = d#OUT*OUT#_dropout_mask;
       ):(
@@ -24442,7 +24433,7 @@ nn_lib :
 
     # fc: Fully-connected layer.
     #---------------------------
-    nn_layer_fc_init_forward(OUT) = (
+    nn_fc_init_forward(OUT) = (
       const OUT#_ind = $OUT#;
       const OUT#_width = 1;
       const OUT#_height = 1;
@@ -24452,40 +24443,49 @@ nn_lib :
       OUT#_biases = crop(##OUT#_ind,w##OUT#_ind - 1,0,1,h##OUT#_ind);
     );
 
-    nn_layer_fc_forward(OUT,IN) = (
+    nn_fc_forward(OUT,IN) = (
       OUT# = mul(OUT#_weights,IN#);
       OUT#+=OUT#_biases;
     );
 
-    nn_layer_fc_init_backward(OUT) = (
+    nn_fc_init_backward(OUT) = (
       batch_d#OUT#_weights = vector(#size(OUT#_weights));
       batch_d#OUT#_biases = vector(#size(OUT#_biases));
     );
 
-    nn_layer_fc_backward(OUT,IN) = (
+    nn_fc_backward(OUT,IN) = (
       d#IN = mul(transpose(OUT#_weights,size(IN#)),d#OUT);
       d#OUT#_weights = mul(d#OUT,IN#,size(IN#));
       batch_d#OUT#_weights+=d#OUT#_weights;
       batch_d#OUT#_biases+=d#OUT;
     );
 
-    nn_layer_fc_end_backward(OUT) = (
+    nn_fc_end_backward(OUT) = (
       merge(batch_d#OUT#_weights,+);
       merge(batch_d#OUT#_biases,+);
       batch_d#OUT#_weights/=nn_batch_size;
       batch_d#OUT#_biases/=nn_batch_size;
     );
 
+    # input: Input image or vector data.
+    #-----------------------------------
+    nn_input_init_forward(OUT,w,h,d,s) = (
+      const OUT#_width = w;
+      const OUT#_height = h;
+      const OUT#_depth = d;
+      const OUT#_spectrum = s;
+    );
+
     # maxpool2d : 2D max pooling.
     #----------------------------
-    nn_layer_maxpool2d_init_forward(OUT,IN,P) = (
+    nn_maxpool2d_init_forward(OUT,IN,P) = (
       const OUT#_width = int(IN#_width/P);
       const OUT#_height = int(IN#_height/P);
       const OUT#_depth = IN#_depth;
       const OUT#_spectrum = IN#_spectrum;
     );
 
-    nn_layer_maxpool2d_forward(OUT,IN,P) = (
+    nn_maxpool2d_forward(OUT,IN,P) = (
       OUT# = vector(##OUT#_width*OUT#_height*OUT#_depth*OUT#_spectrum);
       OUT#_from = vector(#size(OUT#));
       _nn_off = 0;
@@ -24505,7 +24505,7 @@ nn_lib :
       );
     );
 
-    nn_layer_maxpool2d_backward(OUT,IN,P) = (
+    nn_maxpool2d_backward(OUT,IN,P) = (
       d#IN = vector(#size(IN#));
       _nn_offOUT = 0;
       repeat (OUT#_spectrum,_nn_c,
@@ -24527,14 +24527,14 @@ nn_lib :
 
     # maxpool3d : 3D max pooling.
     #----------------------------
-    nn_layer_maxpool3d_init_forward(OUT,IN,P) = (
+    nn_maxpool3d_init_forward(OUT,IN,P) = (
       const OUT#_width = int(IN#_width/P);
       const OUT#_height = int(IN#_height/P);
       const OUT#_depth = int(IN#_depth/P);
       const OUT#_spectrum = IN#_spectrum;
     );
 
-    nn_layer_maxpool3d_forward(OUT,IN,P) = (
+    nn_maxpool3d_forward(OUT,IN,P) = (
       OUT# = vector(##OUT#_width*OUT#_height*OUT#_depth*OUT#_spectrum);
       OUT#_from = vector(#size(OUT#));
       _nn_off = 0;
@@ -24555,7 +24555,7 @@ nn_lib :
       );
     );
 
-    nn_layer_maxpool3d_backward(OUT,IN,P) = (
+    nn_maxpool3d_backward(OUT,IN,P) = (
       d#IN = vector(#size(IN#));
       _nn_offOUT = 0;
       repeat (OUT#_spectrum,_nn_c,
@@ -24580,55 +24580,55 @@ nn_lib :
 
     # mul: Multiply two inputs.
     #---------------------------
-    nn_layer_mul_init_forward(OUT,IN) = (
+    nn_mul_init_forward(OUT,IN) = (
       const OUT#_width = IN#_width;
       const OUT#_height = IN#_height;
       const OUT#_depth = IN#_depth;
       const OUT#_spectrum = IN#_spectrum;
     );
 
-    nn_layer_mul_forward(OUT,IN0,IN1) = (
+    nn_mul_forward(OUT,IN0,IN1) = (
       OUT# = IN0#*IN1#;
     );
 
-    nn_layer_mul_backward(OUT,IN0,IN1) = (
+    nn_mul_backward(OUT,IN0,IN1) = (
       d#IN0 = IN1#*d#OUT;
       d#IN1 = IN0#*d#OUT;
     );
 
     # nl: Non-linearity.
     #-------------------
-    nn_layer_nl_init_forward(OUT,IN) = (
+    nn_nl_init_forward(OUT,IN) = (
       const OUT#_width = IN#_width;
       const OUT#_height = IN#_height;
       const OUT#_depth = IN#_depth;
       const OUT#_spectrum = IN#_spectrum;
     );
 
-    nn_layer_nl_forward(OUT,IN,activation) = (
+    nn_nl_forward(OUT,IN,activation) = (
      OUT# = vector(#size(IN#));
      fill(OUT#,_nn_k,OUT#[_nn_k] = nn_activation_#activation(IN#[_nn_k]));
     );
 
-    nn_layer_nl_backward(OUT,IN,activation) = (
+    nn_nl_backward(OUT,IN,activation) = (
       d#IN = vector(#size(IN#));
       fill(d#IN,_nn_k,d#OUT[_nn_k]*nn_activation_d_#activation(IN#[_nn_k]));
     );
 
     # Special case: Softmax.
-    nn_layer_softmax_forward(OUT,IN) = (
+    nn_softmax_forward(OUT,IN) = (
       OUT# = exp(IN# - max(IN#));
       OUT#/=sum(OUT#);
     );
 
-    nn_layer_softmax_backward(OUT,IN) = (
+    nn_softmax_backward(OUT,IN) = (
       d#IN = d#OUT - dot(d#OUT,OUT#);
       d#IN*=OUT#;
     );
 
     # normalize: Layer normalization.
     #--------------------------------
-    nn_layer_normalize_init_forward(OUT,IN,is_channelwise) = (
+    nn_normalize_init_forward(OUT,IN,is_channelwise) = (
       const OUT#_ind = $OUT#;
       const OUT#_width = IN#_width;
       const OUT#_height = IN#_height;
@@ -24651,7 +24651,7 @@ nn_lib :
       OUT#_std+=1e-16;
     );
 
-    nn_layer_normalize_forward(OUT,IN) = (
+    nn_normalize_forward(OUT,IN) = (
       OUT#_is_channelwise?( # Channel-by-channel normalization
         const OUT#_whd = OUT#_width*OUT#_height*OUT#_depth;
         OUT#_hat = vector(#size(IN#));
@@ -24672,7 +24672,7 @@ nn_lib :
       );
     );
 
-    nn_layer_normalize_init_backward(OUT) = (
+    nn_normalize_init_backward(OUT) = (
       OUT#_is_channelwise?( # Channel-by-channel normalization
         batch_d#OUT#_alpha = vector(#size(OUT#_avg));
         batch_d#OUT#_beta = vector(#size(OUT#_avg));
@@ -24683,7 +24683,7 @@ nn_lib :
       );
     );
 
-    nn_layer_normalize_backward(OUT,IN) = (
+    nn_normalize_backward(OUT,IN) = (
       OUT#_is_channelwise?( # Channel-by-channel normalization
         d#IN = vector(#size(IN#));
         repeat (size(#OUT#_avg),_nn_k,
@@ -24704,7 +24704,7 @@ nn_lib :
       );
     );
 
-    nn_layer_normalize_end_backward(OUT) = (
+    nn_normalize_end_backward(OUT) = (
       merge(batch_d#OUT#_alpha,+);
       merge(batch_d#OUT#_beta,+);
       merge(batch_#OUT#_avg,+);
@@ -24717,14 +24717,14 @@ nn_lib :
 
     # patchdown2d: 2D downscale by patch.
     #------------------------------------
-    nn_layer_patchdown2d_init_forward(OUT,IN,P) = (
+    nn_patchdown2d_init_forward(OUT,IN,P) = (
       const OUT#_width = int(IN#_width/P);
       const OUT#_height = int(IN#_height/P);
       const OUT#_depth = IN#_depth;
       const OUT#_spectrum = IN#_spectrum*P^2;
     );
 
-    nn_layer_patchdown2d_forward(OUT,IN,P) = (
+    nn_patchdown2d_forward(OUT,IN,P) = (
       OUT# = vector(##OUT#_width*OUT#_height*OUT#_depth*OUT#_spectrum);
       repeat (OUT#_depth,_nn_z,
         repeat (OUT#_height,_nn_y,
@@ -24738,7 +24738,7 @@ nn_lib :
       );
     );
 
-    nn_layer_patchdown2d_backward(OUT,IN,P) = (
+    nn_patchdown2d_backward(OUT,IN,P) = (
       d#IN = vector(#size(IN#));
       repeat (OUT#_depth,_nn_z,
         repeat (OUT#_height,_nn_y,
@@ -24754,14 +24754,14 @@ nn_lib :
 
     # patchdown3d: 3D downscale by patch.
     #------------------------------------
-    nn_layer_patchdown3d_init_forward(OUT,IN,P) = (
+    nn_patchdown3d_init_forward(OUT,IN,P) = (
       const OUT#_width = int(IN#_width/P);
       const OUT#_height = int(IN#_height/P);
       const OUT#_depth = int(IN#_depth/P);
       const OUT#_spectrum = IN#_spectrum*P^3;
     );
 
-    nn_layer_patchdown3d_forward(OUT,IN,P) = (
+    nn_patchdown3d_forward(OUT,IN,P) = (
       OUT# = vector(##OUT#_width*OUT#_height*OUT#_depth*OUT#_spectrum);
       repeat (OUT#_depth,_nn_z,
         _nn_zP = _nn_z*P;
@@ -24776,7 +24776,7 @@ nn_lib :
       );
     );
 
-    nn_layer_patchdown3d_backward(OUT,IN,P) = (
+    nn_patchdown3d_backward(OUT,IN,P) = (
       d#IN = vector(#size(IN#));
       repeat (OUT#_depth,_nn_z,
         _nn_zP = _nn_z*P;
@@ -24793,14 +24793,14 @@ nn_lib :
 
     # patchup2d: 2D upscale by patch.
     #--------------------------------
-    nn_layer_patchup2d_init_forward(OUT,IN,P) = (
+    nn_patchup2d_init_forward(OUT,IN,P) = (
       const OUT#_width = IN#_width*P;
       const OUT#_height = IN#_height*P;
       const OUT#_depth = IN#_depth;
       const OUT#_spectrum = IN#_spectrum/P^2;
     );
 
-    nn_layer_patchup2d_forward(OUT,IN,P) = (
+    nn_patchup2d_forward(OUT,IN,P) = (
       OUT# = vector(##OUT#_width*OUT#_height*OUT#_depth*OUT#_spectrum);
       repeat (IN#_depth,_nn_z,
         repeat (IN#_height,_nn_y,
@@ -24814,7 +24814,7 @@ nn_lib :
       );
     );
 
-    nn_layer_patchup2d_backward(OUT,IN,P) = (
+    nn_patchup2d_backward(OUT,IN,P) = (
       d#IN = vector(#size(IN#));
       repeat (IN#_depth,_nn_z,
         repeat (IN#_height,_nn_y,
@@ -24830,14 +24830,14 @@ nn_lib :
 
     # patchup3d: 3D upscale by patch.
     #--------------------------------
-    nn_layer_patchup3d_init_forward(OUT,IN,P) = (
+    nn_patchup3d_init_forward(OUT,IN,P) = (
       const OUT#_width = IN#_width*P;
       const OUT#_height = IN#_height*P;
       const OUT#_depth = IN#_depth*P;
       const OUT#_spectrum = IN#_spectrum/P^3;
     );
 
-    nn_layer_patchup3d_forward(OUT,IN,P) = (
+    nn_patchup3d_forward(OUT,IN,P) = (
       OUT# = vector(##OUT#_width*OUT#_height*OUT#_depth*OUT#_spectrum);
       repeat (IN#_depth,_nn_z,
         _nn_zP = _nn_z*P;
@@ -24852,7 +24852,7 @@ nn_lib :
       );
     );
 
-    nn_layer_patchup3d_backward(OUT,IN,P) = (
+    nn_patchup3d_backward(OUT,IN,P) = (
       d#IN = vector(#size(IN#));
       repeat (IN#_depth,_nn_z,
         _nn_zP = _nn_z*P;
@@ -24870,7 +24870,7 @@ nn_lib :
 
     # rename: Rename input.
     #----------------------
-    nn_layer_rename_init_forward(OUT,IN) = (
+    nn_rename_init_forward(OUT,IN) = (
       const OUT#_width = IN#_width;
       const OUT#_height = IN#_height;
       const OUT#_depth = IN#_depth;
@@ -24878,13 +24878,13 @@ nn_lib :
       ref(IN#,OUT#);
     );
 
-    nn_layer_rename_backward(OUT,IN) = (
+    nn_rename_backward(OUT,IN) = (
       ref(d#OUT,d#IN);
     );
 
     # reshape: Reshape input to output with compatible size.
     #-------------------------------------------------------
-    nn_layer_reshape_init_forward(OUT,IN,w,h,d,s) = (
+    nn_reshape_init_forward(OUT,IN,w,h,d,s) = (
       const OUT#_width = w;
       const OUT#_height = h;
       const OUT#_depth = d;
@@ -24892,27 +24892,27 @@ nn_lib :
       ref(IN#,OUT#);
     );
 
-    nn_layer_reshape_init_backward(OUT,IN) = (
+    nn_reshape_init_backward(OUT,IN) = (
       ref(d#OUT,d#IN);
     );
 
     # resize: Resize input.
     #----------------------
-    nn_layer_resize_init_forward(OUT,IN,w,h,d,s) = (
+    nn_resize_init_forward(OUT,IN,w,h,d,s) = (
       const OUT#_width = w;
       const OUT#_height = h;
       const OUT#_depth = d;
       const OUT#_spectrum = s;
     );
 
-    nn_layer_resize_forward(OUT,IN,interpolation) = (
+    nn_resize_forward(OUT,IN,interpolation) = (
       OUT# = resize(IN#,
                   IN#_width,IN#_height,IN#_depth,IN#_spectrum,
                   OUT#_width,OUT#_height,OUT#_depth,OUT#_spectrum,
                   interpolation);
     );
 
-    nn_layer_resize_backward(OUT,IN) = (
+    nn_resize_backward(OUT,IN) = (
       d#IN = resize(d#OUT,
                     OUT#_width,OUT#_height,OUT#_depth,OUT#_spectrum,
                     IN#_width,IN#_height,IN#_depth,IN#_spectrum,
@@ -24921,7 +24921,7 @@ nn_lib :
 
     # run: Transform input with G'MIC command.
     #-----------------------------------------
-    nn_layer_run_init_forward(OUT,IN,command,w,h,d,s) = (
+    nn_run_init_forward(OUT,IN,command,w,h,d,s) = (
       const OUT#_width = w;
       const OUT#_height = h;
       const OUT#_depth = d;
@@ -24932,7 +24932,7 @@ nn_lib :
                              ',3 k. store ',OUT#_varname,' }');
     );
 
-    nn_layer_run_forward(OUT,IN) = (
+    nn_run_forward(OUT,IN) = (
       critical(
         store('nn_#IN',IN#,IN#_width,IN#_height,IN#_depth,IN#_spectrum);
         run(OUT#_pipeline);
@@ -24940,7 +24940,7 @@ nn_lib :
       );
     );
 
-    nn_layer_run_backward(OUT,IN) = (
+    nn_run_backward(OUT,IN) = (
       d#IN = resize(d#OUT,
                     OUT#_width,OUT#_height,OUT#_depth,OUT#_spectrum,
                     IN#_width,IN#_height,IN#_depth,IN#_spectrum,
@@ -24949,7 +24949,7 @@ nn_lib :
 
     # split: Split input as two outputs.
     #-----------------------------------
-    nn_layer_split_init_forward(OUT0,OUT1,IN,nb_channels0) = (
+    nn_split_init_forward(OUT0,OUT1,IN,nb_channels0) = (
       const OUT0#_width = IN#_width;
       const OUT0#_height = IN#_height;
       const OUT0#_depth = IN#_depth;
@@ -24960,13 +24960,13 @@ nn_lib :
       const OUT1#_spectrum = IN#_spectrum - nb_channels0;
     );
 
-    nn_layer_split_forward(OUT0,OUT1,IN) = (
+    nn_split_forward(OUT0,OUT1,IN) = (
       const OUT0#_siz0 = OUT0#_width*OUT0#_height*OUT0#_depth*OUT0#_spectrum;
       OUT0# = IN#[0,OUT0#_siz0];
       OUT1# = IN#[OUT0#_siz0,OUT1#_width*OUT1#_height*OUT1#_depth*OUT1#_spectrum];
     );
 
-    nn_layer_split_backward(OUT0,OUT1,IN) = (
+    nn_split_backward(OUT0,OUT1,IN) = (
       d#IN = vector(#size(IN#));
       copy(d#IN,d#OUT0,size(OUT0#));
       copy(d#IN[size(OUT0#)],d#OUT1,size(OUT1#));
@@ -25101,6 +25101,366 @@ nn_lib :
       batch_#L+=L#;
     );"
 
+#@cli nn_add : out,in0,in1
+#@cli : Add an 'add' layer to the network.
+nn_add : nn_check_layer "$2"
+         nn_check_layer "$3"
+         check "isvarname('$1') && [$_nn_$2_size]==[$_nn_$3_size]"
+  e[^-1] "[nn_lib] Add 'add' layer '$1', with inputs '$2' and '$3'."
+  _nn_modules_names.=$1,
+  _nn_modules_types.=add,
+  _nn_$1_size=$_nn_$2_size
+  _nn_$1_input=$2,$3
+  _nn_forward.="begin(nn_add_init_forward($1,$2));"\
+               "nn_add_forward($1,$2,$3);"
+  _nn_backward..="nn_add_backward($1,$2,$3);"
+  _nn_init.="$0 $* "
+
+#@cli nn_append : out,in0,in1
+#@cli : Add an 'append' layer to the network.
+nn_append : nn_check_layer "$2"
+            nn_check_layer "$3"
+            check "isvarname('$1')"
+  e[^-1] "[nn_lib] Add 'append' layer '$1', with inputs '$2' and '$3'."
+  if s1=[$_nn_$2_size];s2=[$_nn_$3_size];s1[0,3]!=s2[0,3]
+    error "Command 'nn_append': Incompatible inputs '$2' (size:"$_nn_$2_size") "\
+          "and '$3' (size: "$_nn_$3_size")."
+  fi
+  _nn_modules_names.=$1,
+  _nn_modules_types.=append,
+  _nn_$1_size={[$_nn_$2_size]+[0,0,0,[$_nn_$3_size][3]]}
+  _nn_$1_input=$2,$3
+  _nn_forward.="begin(nn_append_init_forward($1,$2,$3));"\
+               "nn_append_forward($1,$2,$3);"
+  _nn_backward..="nn_append_backward($1,$2,$3);"
+  _nn_init.="$0 $* "
+
+#@cli nn_avgpool2d : out,in,_patch_size>1
+#@cli : Add a 'avgpool2d' layer (2D average pooling) to the network.
+nn_avgpool2d : nn_check_layer "$2"
+               check "isvarname('$1') && isint(${3=2}) && $3>1"
+  e[^-1] "[nn_lib] Add 'avgpool2d' layer '$1', with input '$2' and patch size $3x$3."
+  _nn_modules_names.=$1,
+  _nn_modules_types.=avgpool2d,
+  _nn_$1_size:="s=["$_nn_$2_size"];[int(s[0,2]/$3),s[2,2]]"
+  _nn_$1_input=$2
+  _nn_$1_properties="patch_size=$3x$3"
+  _nn_forward.="begin(nn_avgpool2d_init_forward($1,$2,$3));"\
+               "nn_avgpool2d_forward($1,$2);"
+  _nn_backward..="nn_avgpool2d_backward($1,$2);"
+  _nn_init.="$0 $* "
+
+#@cli nn_avgpool3d : out,in,_patch_size>1
+#@cli : Add a 'avgpool3d' layer (3D average pooling) to the network.
+nn_avgpool3d : nn_check_layer "$2"
+               check "isvarname('$1') && isint(${3=2}) && $3>1"
+  e[^-1] "[nn_lib] Add 'avgpool3d' layer '$1', with input '$2' and patch size $3x$3x$3."
+  _nn_modules_names.=$1,
+  _nn_modules_types.=avgpool3d,
+  _nn_$1_size:="s=["$_nn_$2_size"];[int(s[0,3]/$3),s[3]]"
+  _nn_$1_input=$2
+  _nn_$1_properties="patch_size=$3x$3x$3"
+  _nn_forward.="begin(nn_avgpool3d_init_forward($1,$2,$3));"\
+               "nn_avgpool3d_forward($1,$2);"
+  _nn_backward..="nn_avgpool3d_backward($1,$2);"
+  _nn_init.="$0 $* "
+
+#@cli nn_check_layer : name
+#@cli : Check that the layer with specified name already exists in the network.
+nn_check_layer :
+  if !isvarname('"$1"')
+    error[0--3] "Command 'nn_check_layer': Invalid layer name '$1'."
+  elif narg($_nn_$1_size)!=4
+    error[0--3] "Command 'nn_check_layer': Layer with name '$1' does not exist."
+  fi
+
+#@cli nn_clone : name0,name1,in
+#@cli : Add a 'clone' layer to the network.
+nn_clone : nn_check_layer "$3"
+           check "isvarname('$1') && isvarname('$2')"
+  e[^-1] "[nn_lib] Add 'clone' layer with input '$3' and outputs '$1' and '$2'."
+  _nn_modules_names.=$1,$2,
+  _nn_modules_types.=clone,clone,
+  _nn_$1_size=$_nn_$3_size
+  _nn_$1_input=$3
+  _nn_$2_size=$_nn_$3_size
+  _nn_$2_input=$3
+  _nn_forward.="begin(nn_clone_init_forward($1,$2,$3));"\
+               "nn_clone_forward($1,$2,$3);"
+  _nn_backward..="nn_clone_backward($1,$2,$3);"
+  _nn_init.="$0 $* "
+
+#@cli nn_conv2d : out,in,nb_channels>0,_kernel_size>0,_stride>0,_dilation,0<=_learning_mode<=3
+#@cli : Add a 'conv2d' layer (2D convolutional layer) to the network.
+#@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
+#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1' and 'learning_mode=3'.
+nn_conv2d : nn_check_layer "$2"
+            check "isvarname('$1') && isint($3) && $3>0 && isint(${4=3}) && $4>0 && "\
+                  "${5=1}>0 && isint(${7=3}) && inrange($7,0,3)" skip "${6=1}"
+  e[^-1] "[nn_lib] Add 'conv2d' layer '$1', with input '$2', $3 channels, $4x$4 kernels, stride $5 and dilation $6."
+  init=$_nn_init
+  _nn_conv2d $1_conv2d,${2-7}
+  nn_rename $1,$1_conv2d
+  _nn_init=${init}"$0 $* "
+
+# [Internal] Insert 'conv2d' layer, with parameter image having name '$1'.
+_nn_conv2d :
+  _nn_modules_names.=$1,
+  _nn_modules_types.=conv2d,
+  _nn_$1_size={s=[$_nn_$2_size];[max(1,int(s[0]/$5)),max(1,int(s[1]/$5)),s[2],$3]}
+  _nn_$1_learning_mode=$7
+  _nn_$1_input=$2
+  _nn_$1_properties="kernel=$4x$4, stride=$5, dilation=$6, learning_mode=$7"
+  if !isint($$1)
+    {[$_nn_$2_size][3]*$4^2+1},$3,1,1,4*g/(w-1)
+    if $7<2 1,100% j.. .,100% rm. fi # Set biases to 0 if they are not learnt
+    => $1
+  fi
+  _nn_forward.="begin(nn_conv2d_init_forward($1,$2,$4,$5,$6));"\
+               "nn_conv2d_forward($1,$2);"
+  _nn_backward..="begin(nn_conv2d_init_backward($1,$2));"\
+                 "nn_conv2d_backward($1,$2);"\
+                 "end(nn_conv2d_end_backward($1));"
+  _nn_init.="$0 $* "
+
+#@cli nn_conv2dnl : out,in,nb_channels>0,_kernel_size>0,_stride>0,_dilation>0,_activation,\
+# 0<=_learning_mode<=3
+#@cli : Add a 'conv2dnl' (2D convolutional layer followed by a non-linearity) to the network.
+#@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
+#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1', 'activation=leakyrelu' and 'learning_mode=3'.
+nn_conv2dnl : nn_check_layer "$2"
+              check "isvarname('$1') && isint($3) && $3>0 && isint(${4=3}) && $4>0 && ${5=1}>0 && "\
+                    "isint(${8=3}) && inrange($8,0,3)"
+              skip "${6=1}","${7=leakyrelu}"
+  e[^-1] "[nn_lib] Add 'conv2d+nl' layer '$1', with input '$2', $3 channels, $4x$4 kernels, "\
+         "stride $5, dilation $6 and '$7' activation."
+  init=$_nn_init
+  _nn_conv2d $1_conv2d,${2-6},$8
+  nn_nl $1,$1_conv2d,$7
+  _nn_init=${init}"$0 $* "
+
+#@cli nn_conv2dnnl : out,in,nb_channels>0,_kernel_size>0,_stride>0,_dilation>0,_activation,\
+# 0<=_learning_mode<=3
+#@cli : Add a 'conv2dnnl' (2D convolutional layer followed by a normalization layer, then a non-linearity) \
+# to the network.
+#@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
+#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1', 'activation=leakyrelu' and 'learning_mode=3'.
+nn_conv2dnnl : nn_check_layer "$2"
+               check "isvarname('$1') && isint($3) && $3>0 && isint(${4=3}) && $4>0 && ${5=1}>0 && "\
+                     "isint(${8=3}) && inrange($8,0,3)"
+               skip "${6=1}","${7=leakyrelu}"
+  e[^-1] "[nn_lib] Add 'conv2d+normalize+nl' layer '$1', with input '$2', $3 channels, $4x$4 kernels, "\
+         "stride $5, dilation $6 and '$7' activation."
+  init=$_nn_init
+  _nn_conv2d $1_conv2d,${2-6},$8
+  _nn_normalize $1_normalize,$1_conv2d,1,3
+  nn_nl $1,$1_normalize,$7
+  _nn_init=${init}"$0 $* "
+
+#@cli nn_conv3d : out,in,nb_channels>0,_kernel_size>0,_stride>0,_dilation,0<=_learning_mode<=3
+#@cli : Add a 'conv3d' layer (3D convolutional layer) to the network.
+#@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
+#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1' and 'learning_mode=3'.
+nn_conv3d : nn_check_layer "$2"
+            check "isvarname('$1') && isint($3) && $3>0 && isint(${4=3}) && $4>0 && "\
+                  "${5=1}>0 && isint(${7=3}) && inrange($7,0,3)" skip "${6=1}"
+  e[^-1] "[nn_lib] Add 'conv3d' layer '$1', with input '$2', $3 channels, $4x$4x$4 kernels, stride $5 and dilation $6."
+  init=$_nn_init
+  _nn_conv3d $1_conv3d,${2-7}
+  nn_rename $1,$1_conv3d
+  _nn_init=${init}"$0 $* "
+
+# [Internal] Insert 'conv3d' layer, with parameter image having name '$1'.
+_nn_conv3d :
+  _nn_modules_names.=$1,
+  _nn_modules_types.=conv3d,
+  _nn_$1_size={s=[$_nn_$2_size];[max(1,int(s[0]/$5)),max(1,int(s[1]/$5)),max(1,int(s[2]/$5)),$3]}
+  _nn_$1_learning_mode=$7
+  _nn_$1_input=$2
+  _nn_$1_properties="kernel=$4x$4x$4, stride=$5, dilation=$6, learning_mode=$7"
+  if !isint($$1)
+    {[$_nn_$2_size][3]*$4^3+1},$3,1,1,4*g/(w-1)
+    if $7<2 1,100% j.. .,100% rm. fi # Set biases to 0 if they are not learnt
+    => $1
+  fi
+  _nn_forward.="begin(nn_conv3d_init_forward($1,$2,$4,$5,$6));"\
+               "nn_conv3d_forward($1,$2);"
+  _nn_backward..="begin(nn_conv3d_init_backward($1,$2));"\
+                 "nn_conv3d_backward($1,$2);"\
+                 "end(nn_conv3d_end_backward($1));"
+  _nn_init.="$0 $* "
+
+#@cli nn_conv3dnl : out,in,nb_channels>0,_kernel_size>0,_stride>0,_dilation>0,_activation,\
+# 0<=_learning_mode<=3
+#@cli : Add a 'conv3dnl' (3D convolutional layer followed by a non-linearity) to the network.
+#@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
+#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1', 'activation=leakyrelu' and 'learning_mode=3'.
+nn_conv3dnl : nn_check_layer "$2"
+              check "isvarname('$1') && isint($3) && $3>0 && isint(${4=3}) && $4>0 && ${5=1}>0 && "\
+                    "isint(${8=3}) && inrange($8,0,3)"
+              skip "${6=1}","${7=leakyrelu}"
+  e[^-1] "[nn_lib] Add 'conv3d+nl' layer '$1', with input '$2', $3 channels, $4x$4x$4 kernels, "\
+         "stride $5, dilation $6 and '$7' activation."
+  init=$_nn_init
+  _nn_conv3d $1_conv3d,${2-6},$8
+  nn_nl $1,$1_conv3d,$7
+  _nn_init=${init}"$0 $* "
+
+#@cli nn_conv3dnnl : out,in,nb_channels>0,_kernel_size>0,_stride>0,_dilation>0,_activation,\
+# 0<=_learning_mode<=3
+#@cli : Add a 'conv3dnnl' (3D convolutional layer followed by a normalization layer, then a non-linearity) \
+# to the network.
+#@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
+#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1', 'activation=leakyrelu' and 'learning_mode=3'.
+nn_conv3dnnl : nn_check_layer "$2"
+               check "isvarname('$1') && isint($3) && $3>0 && isint(${4=3}) && $4>0 && ${5=1}>0 && "\
+                     "isint(${8=3}) && inrange($8,0,3)"
+               skip "${6=1}","${7=leakyrelu}"
+  e[^-1] "[nn_lib] Add 'conv3d+normalize+nl' layer '$1', with input '$2', $3 channels, $4x$4x$4 kernels, "\
+         "stride $5, dilation $6 and '$7' activation."
+  init=$_nn_init
+  _nn_conv3d $1_conv3d,${2-6},$8
+  _nn_normalize $1_normalize,$1_conv3d,1,3
+  nn_nl $1,$1_normalize,$7
+  _nn_init=${init}"$0 $* "
+
+#@cli nn_crop : out,in,x0,y0,z0,x1,y1,z1
+#@cli : Add a 'crop' layer to the network.
+nn_crop : nn_check_layer "$2"
+          check "min(isint([${3-8}]))"
+  e[^1] "[nn_lin] Add 'crop' layer '$1', with input '$2' and coordinates (${3-5})-(${6-8})."
+  _nn_modules_names.=$1,
+  _nn_modules_types.=crop,
+  cmin={vmin([${3-5}],[${6-8}])}
+  cmax={vmax([${3-5}],[${6-8}])}
+  _nn_$1_size={[[$cmax]-[$cmin]+1,arg(4,$_nn_$2_size)]}
+  _nn_$1_input=$2
+  _nn_$1_properties="coordinates=(${3-5})x(${6-8})"
+  _nn_forward.="begin(nn_crop_init_forward($1,$2,${3-8}));"\
+               "nn_crop_forward($1,$2,${3-8});"
+  _nn_backward..="nn_crop_backward($1,$2,${3-8});"
+  _nn_init.="$0 $* "
+
+#@cli nn_dict : out,in,nb_atoms>0,_learning_mode={ 0 | 1 }
+#@cli : Add a 'dict' layer (dictionnary learning layer) to the network.
+#@cli : Default value: 'learning_mode=1'.
+nn_dict : nn_check_layer "$2"
+          check "isvarname('$1') && isint($3) && $3>0 && isbool(${4=1})"
+  e[^-1] "[nn_lib] Add 'dict' layer '$1', with input '$2' and $3 atoms."
+  _nn_dict $1_dict,${2-4}
+  nn_rename $1,$1_dict
+
+# [Internal] Insert 'dict' layer, with parameter image having name '$1'.
+_nn_dict :
+  _nn_modules_names.=$1,
+  _nn_modules_types.=dict,
+  _nn_$1_size=$_nn_$2_size
+  _nn_$1_learning_mode=$4
+  if !isint($$1) $3,{prod($_nn_$2_size)},1,1,4*g/(w-1) => $1 fi
+  _nn_forward.="begin(nn_dict_init_forward($1,$2));"\
+               "nn_dict_forward($1,$2);"
+  _nn_backward..="begin(nn_dict_init_backward($1));"\
+                 "nn_dict_backward($1,$2);"\
+                 "end(nn_dict_end_backward($1));"
+  _nn_init.="$0 $* "
+
+#@cli nn_distance : out,in0,in1,_metric={ 0=squared-L2 | p>0 = Lp-norm }
+#@cli : Add a 'distance' layer to the network (distance between two inputs, with specified metric).
+nn_distance : nn_check_layer "$2"
+              nn_check_layer "$3"
+              check "isvarname('$1') && ${4=0}>=0"
+  s0,s1="squared-L2 norm","L$4 norm"
+  e[^-1] "[nn_lib] Add 'distance' layer '$1' ("${s{$4>0}}"), with inputs '$2' and '$3'."
+  if s1=[$_nn_$2_size];s2=[$_nn_$3_size];s1[0,3]!=s2[0,3]
+    error "Command 'nn_distance': Incompatible inputs '$2' (size: "$_nn_$2_size") and "\
+          "'$3' (size:"$_nn_$3_size")."
+  fi
+  _nn_modules_names.=$1,
+  _nn_modules_types.=distance,
+  _nn_$1_size=1,1,1,1
+  _nn_$1_input=$2,$3
+  _nn_$1_properties="metric="${s$4}
+  _nn_forward.="begin(nn_distance_init_forward($1));"\
+               "nn_distance_forward(${1-4});"
+  _nn_backward..="nn_distance_backward(${1-4});"
+  _nn_init.="$0 $*"
+
+#@cli nn_dropout : out,in,0<=dropout_rate<1
+#@cli : Add a 'dropout' layer to the network.
+nn_dropout : nn_check_layer "$2"
+             check "isvarname('$1') && inrange($3,0,1,1,0)"
+  e[^-1] "[nn_lib] Add 'dropout' layer '$1', with input '$2' and dropout rate $3."
+  _nn_modules_names.=$1,
+  _nn_modules_types.=dropout,
+  _nn_$1_size=$_nn_$2_size
+  _nn_$1_input=$2
+  _nn_$1_properties="dropout_rate=$3"
+  _nn_forward.="begin(nn_dropout_init_forward($1,$2,$3));"\
+               "nn_dropout_forward($1,$2);"
+  _nn_backward..="nn_dropout_backward($1,$2);"
+  _nn_init.="$0 $* "
+
+#@cli nn_fc : out,in,nb_channels>0,0<=_learning_mode<=3
+#@cli : Add a 'fc' layer (fully connected layer) to the network.
+#@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
+#@cli : Default value: 'learning_mode=3'.
+nn_fc : nn_check_layer "$2"
+        check "isvarname('$1') && isint($3) && $3>0 && isint(${4=3}) && inrange($4,0,3)"
+  e[^-1] "[nn_lib] Add 'fc' layer '$1', with input '$2' and $3 channels."
+  init=$_nn_init
+  _nn_fc $1_fc,${2-4}
+  nn_rename $1,$1_fc
+  _nn_init=${init}"$0 $* "
+
+# [Internal] Insert 'fc' layer, with parameter image having name '$1'.
+_nn_fc :
+  _nn_modules_names.=$1,
+  _nn_modules_types.=fc,
+  _nn_$1_size=1,1,1,$3
+  _nn_$1_learning_mode=$4
+  _nn_$1_input=$2
+  _nn_$1_properties="learning_mode=$4"
+  if !isint($$1)
+    {prod($_nn_$2_size)+1},$3
+    f. 4*g/(w-1)
+    if $4<2 1,100% j.. .,100% rm. fi # Set biases to 0 if they are not learnt
+    => $1
+  fi
+  _nn_forward.="begin(nn_fc_init_forward($1));"\
+               "nn_fc_forward($1,$2);"
+  _nn_backward..="begin(nn_fc_init_backward($1));"\
+                 "nn_fc_backward($1,$2);"\
+                 "end(nn_fc_end_backward($1));"
+  _nn_init.="$0 $* "
+
+#@cli nn_fcnl : out,in,nb_neurons>0,_activation,0<=_learning_mode<=3
+#@cli : Add a 'fcnl' layer (fully connected layer followed by a non-linearity) to the network.
+#@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
+#@cli : Default value: 'activation=leakyrelu' and 'learning_mode=3'.
+nn_fcnl : nn_check_layer "$2"
+          check "isvarname('$1') && isint($3) && $3>0 && isint(${5=3}) && inrange($5,0,3)"
+          skip ${4=leakyrelu}
+  e[^-1] "[nn_lib] Add 'fc+nl' layer '$1' to the network, with input '$2', $3 channels and '$4' activation."
+  init=$_nn_init
+  _nn_fc $1_fc,${2-3},$5
+  nn_nl $1,$1_fc,$4
+  _nn_init=${init}"$0 $* "
+
+#@cli nn_fcnnl : out,in,nb_neurons>0,_activation,0<=_learning_mode<=3
+#@cli : Add a 'fcnnl' layer (fully connected layer followed by a normalization layer, then a non-linearity) \
+# to the network.
+#@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
+#@cli : Default value: 'activation=leakyrelu' and 'learning_mode=3'.
+nn_fcnnl : nn_check_layer "$2"
+           check "isvarname('$1') && isint($3) && $3>0 && isint(${5=3})"
+           skip ${4=leakyrelu}
+  e[^-1] "[nn_lib] Add 'fc+normalize+nl' layer '$1' to the network, with input '$2', $3 channels and '$4' activation."
+  init=$_nn_init
+  _nn_fc $1_fc,${2-3},$5
+  _nn_normalize $1_normalize,$1_fc,0,3
+  nn_nl $1,$1_normalize,$4
+  _nn_init=${init}"$0 $* "
+
 #@cli nn_init
 #@cli : Initialize a new network.
 nn_init :
@@ -25120,450 +25480,90 @@ nn_input : check "isvarname('$1') && isint($2) && $2>0 && isint(${3=1}) && $3>0 
   _nn_forward.="begin(nn_input_init_forward($1,$2,$3,$4,$5));"
   _nn_init.="$0 $* "
 
-#@cli nn_check_layer : name
-#@cli : Check that the layer with specified name already exists in the network.
-nn_check_layer :
-  if !isvarname('"$1"')
-    error[0--3] "Command 'nn_check_layer': Invalid layer name '$1'."
-  elif narg($_nn_$1_size)!=4
-    error[0--3] "Command 'nn_check_layer': Layer with name '$1' does not exist."
-  fi
-
-#@cli nn_layer_add : out,in0,in1
-#@cli : Add an 'add' layer to the network.
-nn_layer_add : nn_check_layer "$2"
-               nn_check_layer "$3"
-               check "isvarname('$1') && [$_nn_$2_size]==[$_nn_$3_size]"
-  e[^-1] "[nn_lib] Add 'add' layer '$1', with inputs '$2' and '$3'."
-  _nn_modules_names.=$1,
-  _nn_modules_types.=add,
-  _nn_$1_size=$_nn_$2_size
-  _nn_$1_input=$2,$3
-  _nn_forward.="begin(nn_layer_add_init_forward($1,$2));"\
-               "nn_layer_add_forward($1,$2,$3);"
-  _nn_backward..="nn_layer_add_backward($1,$2,$3);"
-  _nn_init.="$0 $* "
-
-#@cli nn_layer_append : out,in0,in1
-#@cli : Add an 'append' layer to the network.
-nn_layer_append : nn_check_layer "$2"
-                  nn_check_layer "$3"
-                  check "isvarname('$1')"
-  e[^-1] "[nn_lib] Add 'append' layer '$1', with inputs '$2' and '$3'."
-  if s1=[$_nn_$2_size];s2=[$_nn_$3_size];s1[0,3]!=s2[0,3]
-    error "Command 'nn_layer_append': Incompatible inputs '$2' (size:"$_nn_$2_size") "\
-          "and '$3' (size: "$_nn_$3_size")."
-  fi
-  _nn_modules_names.=$1,
-  _nn_modules_types.=append,
-  _nn_$1_size={[$_nn_$2_size]+[0,0,0,[$_nn_$3_size][3]]}
-  _nn_$1_input=$2,$3
-  _nn_forward.="begin(nn_layer_append_init_forward($1,$2,$3));"\
-               "nn_layer_append_forward($1,$2,$3);"
-  _nn_backward..="nn_layer_append_backward($1,$2,$3);"
-  _nn_init.="$0 $* "
-
-#@cli nn_layer_avgpool2d : out,in,_patch_size>1
-#@cli : Add a 'avgpool2d' layer (2D average pooling) to the network.
-nn_layer_avgpool2d : nn_check_layer "$2"
-                     check "isvarname('$1') && isint(${3=2}) && $3>1"
-  e[^-1] "[nn_lib] Add 'avgpool2d' layer '$1', with input '$2' and patch size $3x$3."
-  _nn_modules_names.=$1,
-  _nn_modules_types.=avgpool2d,
-  _nn_$1_size:="s=["$_nn_$2_size"];[int(s[0,2]/$3),s[2,2]]"
-  _nn_$1_input=$2
-  _nn_$1_properties="patch_size=$3x$3"
-  _nn_forward.="begin(nn_layer_avgpool2d_init_forward($1,$2,$3));"\
-               "nn_layer_avgpool2d_forward($1,$2);"
-  _nn_backward..="nn_layer_avgpool2d_backward($1,$2);"
-  _nn_init.="$0 $* "
-
-#@cli nn_layer_avgpool3d : out,in,_patch_size>1
-#@cli : Add a 'avgpool3d' layer (3D average pooling) to the network.
-nn_layer_avgpool3d : nn_check_layer "$2"
-                     check "isvarname('$1') && isint(${3=2}) && $3>1"
-  e[^-1] "[nn_lib] Add 'avgpool3d' layer '$1', with input '$2' and patch size $3x$3x$3."
-  _nn_modules_names.=$1,
-  _nn_modules_types.=avgpool3d,
-  _nn_$1_size:="s=["$_nn_$2_size"];[int(s[0,3]/$3),s[3]]"
-  _nn_$1_input=$2
-  _nn_$1_properties="patch_size=$3x$3x$3"
-  _nn_forward.="begin(nn_layer_avgpool3d_init_forward($1,$2,$3));"\
-               "nn_layer_avgpool3d_forward($1,$2);"
-  _nn_backward..="nn_layer_avgpool3d_backward($1,$2);"
-  _nn_init.="$0 $* "
-
-#@cli nn_layer_clone : name0,name1,in
-#@cli : Add a 'clone' layer to the network.
-nn_layer_clone : nn_check_layer "$3"
-                 check "isvarname('$1') && isvarname('$2')"
-  e[^-1] "[nn_lib] Add 'clone' layer with input '$3' and outputs '$1' and '$2'."
-  _nn_modules_names.=$1,$2,
-  _nn_modules_types.=clone,clone,
-  _nn_$1_size=$_nn_$3_size
-  _nn_$1_input=$3
-  _nn_$2_size=$_nn_$3_size
-  _nn_$2_input=$3
-  _nn_forward.="begin(nn_layer_clone_init_forward($1,$2,$3));"\
-               "nn_layer_clone_forward($1,$2,$3);"
-  _nn_backward..="nn_layer_clone_backward($1,$2,$3);"
-  _nn_init.="$0 $* "
-
-#@cli nn_layer_conv2d : out,in,nb_channels>0,_kernel_size>0,_stride>0,_dilation,0<=_learning_mode<=3
-#@cli : Add a 'conv2d' layer (2D convolutional layer) to the network.
-#@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
-#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1' and 'learning_mode=3'.
-nn_layer_conv2d : nn_check_layer "$2"
-                  check "isvarname('$1') && isint($3) && $3>0 && isint(${4=3}) && $4>0 && "\
-                        "${5=1}>0 && isint(${7=3}) && inrange($7,0,3)" skip "${6=1}"
-  e[^-1] "[nn_lib] Add 'conv2d' layer '$1', with input '$2', $3 channels, $4x$4 kernels, stride $5 and dilation $6."
-  init=$_nn_init
-  _nn_layer_conv2d $1_conv2d,${2-7}
-  nn_layer_rename $1,$1_conv2d
-  _nn_init=${init}"$0 $* "
-
-# [Internal] Insert 'conv2d' layer, with parameter image having name '$1'.
-_nn_layer_conv2d :
-  _nn_modules_names.=$1,
-  _nn_modules_types.=conv2d,
-  _nn_$1_size={s=[$_nn_$2_size];[max(1,int(s[0]/$5)),max(1,int(s[1]/$5)),s[2],$3]}
-  _nn_$1_learning_mode=$7
-  _nn_$1_input=$2
-  _nn_$1_properties="kernel=$4x$4, stride=$5, dilation=$6, learning_mode=$7"
-  if !isint($$1)
-    {[$_nn_$2_size][3]*$4^2+1},$3,1,1,4*g/(w-1)
-    if $7<2 1,100% j.. .,100% rm. fi # Set biases to 0 if they are not learnt
-    => $1
-  fi
-  _nn_forward.="begin(nn_layer_conv2d_init_forward($1,$2,$4,$5,$6));"\
-               "nn_layer_conv2d_forward($1,$2);"
-  _nn_backward..="begin(nn_layer_conv2d_init_backward($1,$2));"\
-                 "nn_layer_conv2d_backward($1,$2);"\
-                 "end(nn_layer_conv2d_end_backward($1));"
-  _nn_init.="$0 $* "
-
-#@cli nn_layer_conv2dnl : out,in,nb_channels>0,_kernel_size>0,_stride>0,_dilation>0,_activation,\
-# 0<=_learning_mode<=3
-#@cli : Add a 'conv2dnl' (2D convolutional layer followed by a non-linearity) to the network.
-#@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
-#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1', 'activation=leakyrelu' and 'learning_mode=3'.
-nn_layer_conv2dnl : nn_check_layer "$2"
-                    check "isvarname('$1') && isint($3) && $3>0 && isint(${4=3}) && $4>0 && ${5=1}>0 && "\
-                          "isint(${8=3}) && inrange($8,0,3)"
-                    skip "${6=1}","${7=leakyrelu}"
-  e[^-1] "[nn_lib] Add 'conv2d+nl' layer '$1', with input '$2', $3 channels, $4x$4 kernels, "\
-         "stride $5, dilation $6 and '$7' activation."
-  init=$_nn_init
-  _nn_layer_conv2d $1_conv2d,${2-6},$8
-  nn_layer_nl $1,$1_conv2d,$7
-  _nn_init=${init}"$0 $* "
-
-#@cli nn_layer_conv2dnnl : out,in,nb_channels>0,_kernel_size>0,_stride>0,_dilation>0,_activation,\
-# 0<=_learning_mode<=3
-#@cli : Add a 'conv2dnnl' (2D convolutional layer followed by a normalization layer, then a non-linearity) \
-# to the network.
-#@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
-#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1', 'activation=leakyrelu' and 'learning_mode=3'.
-nn_layer_conv2dnnl : nn_check_layer "$2"
-                     check "isvarname('$1') && isint($3) && $3>0 && isint(${4=3}) && $4>0 && ${5=1}>0 && "\
-                           "isint(${8=3}) && inrange($8,0,3)"
-                     skip "${6=1}","${7=leakyrelu}"
-  e[^-1] "[nn_lib] Add 'conv2d+normalize+nl' layer '$1', with input '$2', $3 channels, $4x$4 kernels, "\
-         "stride $5, dilation $6 and '$7' activation."
-  init=$_nn_init
-  _nn_layer_conv2d $1_conv2d,${2-6},$8
-  _nn_layer_normalize $1_normalize,$1_conv2d,1,3
-  nn_layer_nl $1,$1_normalize,$7
-  _nn_init=${init}"$0 $* "
-
-#@cli nn_layer_conv3d : out,in,nb_channels>0,_kernel_size>0,_stride>0,_dilation,0<=_learning_mode<=3
-#@cli : Add a 'conv3d' layer (3D convolutional layer) to the network.
-#@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
-#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1' and 'learning_mode=3'.
-nn_layer_conv3d : nn_check_layer "$2"
-                  check "isvarname('$1') && isint($3) && $3>0 && isint(${4=3}) && $4>0 && "\
-                        "${5=1}>0 && isint(${7=3}) && inrange($7,0,3)" skip "${6=1}"
-  e[^-1] "[nn_lib] Add 'conv3d' layer '$1', with input '$2', $3 channels, $4x$4x$4 kernels, stride $5 and dilation $6."
-  init=$_nn_init
-  _nn_layer_conv3d $1_conv3d,${2-7}
-  nn_layer_rename $1,$1_conv3d
-  _nn_init=${init}"$0 $* "
-
-# [Internal] Insert 'conv3d' layer, with parameter image having name '$1'.
-_nn_layer_conv3d :
-  _nn_modules_names.=$1,
-  _nn_modules_types.=conv3d,
-  _nn_$1_size={s=[$_nn_$2_size];[max(1,int(s[0]/$5)),max(1,int(s[1]/$5)),max(1,int(s[2]/$5)),$3]}
-  _nn_$1_learning_mode=$7
-  _nn_$1_input=$2
-  _nn_$1_properties="kernel=$4x$4x$4, stride=$5, dilation=$6, learning_mode=$7"
-  if !isint($$1)
-    {[$_nn_$2_size][3]*$4^3+1},$3,1,1,4*g/(w-1)
-    if $7<2 1,100% j.. .,100% rm. fi # Set biases to 0 if they are not learnt
-    => $1
-  fi
-  _nn_forward.="begin(nn_layer_conv3d_init_forward($1,$2,$4,$5,$6));"\
-               "nn_layer_conv3d_forward($1,$2);"
-  _nn_backward..="begin(nn_layer_conv3d_init_backward($1,$2));"\
-                 "nn_layer_conv3d_backward($1,$2);"\
-                 "end(nn_layer_conv3d_end_backward($1));"
-  _nn_init.="$0 $* "
-
-#@cli nn_layer_conv3dnl : out,in,nb_channels>0,_kernel_size>0,_stride>0,_dilation>0,_activation,\
-# 0<=_learning_mode<=3
-#@cli : Add a 'conv3dnl' (3D convolutional layer followed by a non-linearity) to the network.
-#@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
-#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1', 'activation=leakyrelu' and 'learning_mode=3'.
-nn_layer_conv3dnl : nn_check_layer "$2"
-                    check "isvarname('$1') && isint($3) && $3>0 && isint(${4=3}) && $4>0 && ${5=1}>0 && "\
-                          "isint(${8=3}) && inrange($8,0,3)"
-                    skip "${6=1}","${7=leakyrelu}"
-  e[^-1] "[nn_lib] Add 'conv3d+nl' layer '$1', with input '$2', $3 channels, $4x$4x$4 kernels, "\
-         "stride $5, dilation $6 and '$7' activation."
-  init=$_nn_init
-  _nn_layer_conv3d $1_conv3d,${2-6},$8
-  nn_layer_nl $1,$1_conv3d,$7
-  _nn_init=${init}"$0 $* "
-
-#@cli nn_layer_conv3dnnl : out,in,nb_channels>0,_kernel_size>0,_stride>0,_dilation>0,_activation,\
-# 0<=_learning_mode<=3
-#@cli : Add a 'conv3dnnl' (3D convolutional layer followed by a normalization layer, then a non-linearity) \
-# to the network.
-#@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
-#@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1', 'activation=leakyrelu' and 'learning_mode=3'.
-nn_layer_conv3dnnl : nn_check_layer "$2"
-                     check "isvarname('$1') && isint($3) && $3>0 && isint(${4=3}) && $4>0 && ${5=1}>0 && "\
-                           "isint(${8=3}) && inrange($8,0,3)"
-                     skip "${6=1}","${7=leakyrelu}"
-  e[^-1] "[nn_lib] Add 'conv3d+normalize+nl' layer '$1', with input '$2', $3 channels, $4x$4x$4 kernels, "\
-         "stride $5, dilation $6 and '$7' activation."
-  init=$_nn_init
-  _nn_layer_conv3d $1_conv3d,${2-6},$8
-  _nn_layer_normalize $1_normalize,$1_conv3d,1,3
-  nn_layer_nl $1,$1_normalize,$7
-  _nn_init=${init}"$0 $* "
-
-#@cli nn_layer_crop : out,in,x0,y0,z0,x1,y1,z1
-#@cli : Add a 'crop' layer to the network.
-nn_layer_crop : nn_check_layer "$2"
-               check "min(isint([${3-8}]))"
-  e[^1] "[nn_lin] Add 'crop' layer '$1', with input '$2' and coordinates (${3-5})-(${6-8})."
-  _nn_modules_names.=$1,
-  _nn_modules_types.=crop,
-  cmin={vmin([${3-5}],[${6-8}])}
-  cmax={vmax([${3-5}],[${6-8}])}
-  _nn_$1_size={[[$cmax]-[$cmin]+1,arg(4,$_nn_$2_size)]}
-  _nn_$1_input=$2
-  _nn_$1_properties="coordinates=(${3-5})x(${6-8})"
-  _nn_forward.="begin(nn_layer_crop_init_forward($1,$2,${3-8}));"\
-               "nn_layer_crop_forward($1,$2,${3-8});"
-  _nn_backward..="nn_layer_crop_backward($1,$2,${3-8});"
-  _nn_init.="$0 $* "
-
-#@cli nn_layer_dict : out,in,nb_atoms>0,_learning_mode={ 0 | 1 }
-#@cli : Add a 'dict' layer (dictionnary learning layer) to the network.
-#@cli : Default value: 'learning_mode=1'.
-nn_layer_dict : nn_check_layer "$2"
-                check "isvarname('$1') && isint($3) && $3>0 && isbool(${4=1})"
-  e[^-1] "[nn_lib] Add 'dict' layer '$1', with input '$2' and $3 atoms."
-  _nn_layer_dict $1_dict,${2-4}
-  nn_layer_rename $1,$1_dict
-
-# [Internal] Insert 'dict' layer, with parameter image having name '$1'.
-_nn_layer_dict :
-  _nn_modules_names.=$1,
-  _nn_modules_types.=dict,
-  _nn_$1_size=$_nn_$2_size
-  _nn_$1_learning_mode=$4
-  if !isint($$1) $3,{prod($_nn_$2_size)},1,1,4*g/(w-1) => $1 fi
-  _nn_forward.="begin(nn_layer_dict_init_forward($1,$2));"\
-               "nn_layer_dict_forward($1,$2);"
-  _nn_backward..="begin(nn_layer_dict_init_backward($1));"\
-                 "nn_layer_dict_backward($1,$2);"\
-                 "end(nn_layer_dict_end_backward($1));"
-  _nn_init.="$0 $* "
-
-#@cli nn_layer_distance : out,in0,in1,_metric={ 0=squared-L2 | p>0 = Lp-norm }
-#@cli : Add a 'distance' layer to the network (distance between two inputs, with specified metric).
-nn_layer_distance : nn_check_layer "$2"
-                    nn_check_layer "$3"
-                    check "isvarname('$1') && ${4=0}>=0"
-  s0,s1="squared-L2 norm","L$4 norm"
-  e[^-1] "[nn_lib] Add 'distance' layer '$1' ("${s{$4>0}}"), with inputs '$2' and '$3'."
-  if s1=[$_nn_$2_size];s2=[$_nn_$3_size];s1[0,3]!=s2[0,3]
-    error "Command 'nn_distance': Incompatible inputs '$2' (size: "$_nn_$2_size") and "\
-          "'$3' (size:"$_nn_$3_size")."
-  fi
-  _nn_modules_names.=$1,
-  _nn_modules_types.=distance,
-  _nn_$1_size=1,1,1,1
-  _nn_$1_input=$2,$3
-  _nn_$1_properties="metric="${s$4}
-  _nn_forward.="begin(nn_layer_distance_init_forward($1));"\
-               "nn_layer_distance_forward(${1-4});"
-  _nn_backward..="nn_layer_distance_backward(${1-4});"
-  _nn_init.="$0 $*"
-
-#@cli nn_layer_dropout : out,in,0<=dropout_rate<1
-#@cli : Add a 'dropout' layer to the network.
-nn_layer_dropout : nn_check_layer "$2"
-                   check "isvarname('$1') && inrange($3,0,1,1,0)"
-  e[^-1] "[nn_lib] Add 'dropout' layer '$1', with input '$2' and dropout rate $3."
-  _nn_modules_names.=$1,
-  _nn_modules_types.=dropout,
-  _nn_$1_size=$_nn_$2_size
-  _nn_$1_input=$2
-  _nn_$1_properties="dropout_rate=$3"
-  _nn_forward.="begin(nn_layer_dropout_init_forward($1,$2,$3));"\
-               "nn_layer_dropout_forward($1,$2);"
-  _nn_backward..="nn_layer_dropout_backward($1,$2);"
-  _nn_init.="$0 $* "
-
-#@cli nn_layer_fc : out,in,nb_channels>0,0<=_learning_mode<=3
-#@cli : Add a 'fc' layer (fully connected layer) to the network.
-#@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
-#@cli : Default value: 'learning_mode=3'.
-nn_layer_fc : nn_check_layer "$2"
-              check "isvarname('$1') && isint($3) && $3>0 && isint(${4=3}) && inrange($4,0,3)"
-  e[^-1] "[nn_lib] Add 'fc' layer '$1', with input '$2' and $3 channels."
-  init=$_nn_init
-  _nn_layer_fc $1_fc,${2-4}
-  nn_layer_rename $1,$1_fc
-  _nn_init=${init}"$0 $* "
-
-# [Internal] Insert 'fc' layer, with parameter image having name '$1'.
-_nn_layer_fc :
-  _nn_modules_names.=$1,
-  _nn_modules_types.=fc,
-  _nn_$1_size=1,1,1,$3
-  _nn_$1_learning_mode=$4
-  _nn_$1_input=$2
-  _nn_$1_properties="learning_mode=$4"
-  if !isint($$1)
-    {prod($_nn_$2_size)+1},$3
-    f. 4*g/(w-1)
-    if $4<2 1,100% j.. .,100% rm. fi # Set biases to 0 if they are not learnt
-    => $1
-  fi
-  _nn_forward.="begin(nn_layer_fc_init_forward($1));"\
-               "nn_layer_fc_forward($1,$2);"
-  _nn_backward..="begin(nn_layer_fc_init_backward($1));"\
-                 "nn_layer_fc_backward($1,$2);"\
-                 "end(nn_layer_fc_end_backward($1));"
-  _nn_init.="$0 $* "
-
-#@cli nn_layer_fcnl : out,in,nb_neurons>0,_activation,0<=_learning_mode<=3
-#@cli : Add a 'fcnl' layer (fully connected layer followed by a non-linearity) to the network.
-#@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
-#@cli : Default value: 'activation=leakyrelu' and 'learning_mode=3'.
-nn_layer_fcnl : nn_check_layer "$2"
-                check "isvarname('$1') && isint($3) && $3>0 && isint(${5=3}) && inrange($5,0,3)"
-                skip ${4=leakyrelu}
-  e[^-1] "[nn_lib] Add 'fc+nl' layer '$1' to the network, with input '$2', $3 channels and '$4' activation."
-  init=$_nn_init
-  _nn_layer_fc $1_fc,${2-3},$5
-  nn_layer_nl $1,$1_fc,$4
-  _nn_init=${init}"$0 $* "
-
-#@cli nn_layer_fcnnl : out,in,nb_neurons>0,_activation,0<=_learning_mode<=3
-#@cli : Add a 'fcnnl' layer (fully connected layer followed by a normalization layer, then a non-linearity) \
-# to the network.
-#@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
-#@cli : Default value: 'activation=leakyrelu' and 'learning_mode=3'.
-nn_layer_fcnnl : nn_check_layer "$2"
-                check "isvarname('$1') && isint($3) && $3>0 && isint(${5=3})"
-                skip ${4=leakyrelu}
-  e[^-1] "[nn_lib] Add 'fc+normalize+nl' layer '$1' to the network, with input '$2', $3 channels and '$4' activation."
-  init=$_nn_init
-  _nn_layer_fc $1_fc,${2-3},$5
-  _nn_layer_normalize $1_normalize,$1_fc,0,3
-  nn_layer_nl $1,$1_normalize,$4
-  _nn_init=${init}"$0 $* "
-
-#@cli nn_layer_maxpool2d : out,in,_patch_size>1
+#@cli nn_maxpool2d : out,in,_patch_size>1
 #@cli : Add a 'maxpool2d' layer (2D max pooling) to the network.
 #@cli : Default value: 'patch_size=2'.
-nn_layer_maxpool2d : nn_check_layer "$2"
-                     check "isvarname('$1') && isint(${3=2}) && $3>1"
+nn_maxpool2d : nn_check_layer "$2"
+               check "isvarname('$1') && isint(${3=2}) && $3>1"
   e[^-1] "[nn_lib] Add 'maxpool2d' layer '$1', with input '$2' and patch size $3x$3."
   _nn_modules_names.=$1,
   _nn_modules_types.=maxpool2d,
   _nn_$1_size:="s=["$_nn_$2_size"];[int(s[0,2]/$3),s[2,2]]"
   _nn_$1_input=$2
   _nn_$1_properties="patch_size=$3x$3"
-  _nn_forward.="begin(nn_layer_maxpool2d_init_forward($1,$2,$3));"\
-               "nn_layer_maxpool2d_forward($1,$2,$3);"
-  _nn_backward..="nn_layer_maxpool2d_backward($1,$2,$3);"
+  _nn_forward.="begin(nn_maxpool2d_init_forward($1,$2,$3));"\
+               "nn_maxpool2d_forward($1,$2,$3);"
+  _nn_backward..="nn_maxpool2d_backward($1,$2,$3);"
   _nn_init.="$0 $* "
 
-#@cli nn_layer_maxpool3d : out,in,_patch_size>1
+#@cli nn_maxpool3d : out,in,_patch_size>1
 #@cli : Add a 'maxpool3d' layer (3d max pooling) to the network.
 #@cli : Default value: 'patch_size=2'.
-nn_layer_maxpool3d : nn_check_layer "$2"
-                     check "isvarname('$1') && isint(${3=2}) && $3>1"
+nn_maxpool3d : nn_check_layer "$2"
+               check "isvarname('$1') && isint(${3=2}) && $3>1"
   e[^-1] "[nn_lib] Add 'maxpool3d' layer '$1', with input '$2' and patch size $3x$3x$3."
   _nn_modules_names.=$1,
   _nn_modules_types.=maxpool3d,
   _nn_$1_size:="s=["$_nn_$2_size"];[int(s[0,3]/$3),s[3]]"
   _nn_$1_input=$2
   _nn_$1_properties="patch_size=$3x$3x$3"
-  _nn_forward.="begin(nn_layer_maxpool3d_init_forward($1,$2,$3));"\
-               "nn_layer_maxpool3d_forward($1,$2,$3);"
-  _nn_backward..="nn_layer_maxpool3d_backward($1,$2,$3);"
+  _nn_forward.="begin(nn_maxpool3d_init_forward($1,$2,$3));"\
+               "nn_maxpool3d_forward($1,$2,$3);"
+  _nn_backward..="nn_maxpool3d_backward($1,$2,$3);"
   _nn_init.="$0 $* "
 
-#@cli nn_layer_mul : out,in0,in1
+#@cli nn_mul : out,in0,in1
 #@cli : Add an 'mul' layer to the network.
-nn_layer_mul : nn_check_layer "$2"
-               nn_check_layer "$3"
-               check "isvarname('$1') && [$_nn_$2_size]==[$_nn_$3_size]"
+nn_mul : nn_check_layer "$2"
+         nn_check_layer "$3"
+         check "isvarname('$1') && [$_nn_$2_size]==[$_nn_$3_size]"
   e[^-1] "[nn_lib] Add 'mul' layer '$1', with inputs '$2' and '$3'."
   _nn_modules_names.=$1,
   _nn_modules_types.=mul,
   _nn_$1_size=$_nn_$2_size
   _nn_$1_input=$2,$3
-  _nn_forward.="begin(nn_layer_mul_init_forward($1,$2));"\
-               "nn_layer_mul_forward($1,$2,$3);"
-  _nn_backward..="nn_layer_mul_backward($1,$2,$3);"
+  _nn_forward.="begin(nn_mul_init_forward($1,$2));"\
+               "nn_mul_forward($1,$2,$3);"
+  _nn_backward..="nn_mul_backward($1,$2,$3);"
   _nn_init.="$0 $* "
 
-#@cli nn_layer_nl : out,in,_activation
+#@cli nn_nl : out,in,_activation
 #@cli : Add a 'nl' (nonlinearity) layer to the network.
 #@cli : 'activation' can be { elu | gelu | leakyrelu | linear | relu | sigmoid | softmax | sqr | sqrt | swish | tanh }.
 #@cli : Default value: 'activation=leakyrelu'.
-nn_layer_nl : nn_check_layer "$2"
-              check "isvarname('$1')"
-              skip ${3=leakyrelu}
+nn_nl : nn_check_layer "$2"
+        check "isvarname('$1')"
+        skip ${3=leakyrelu}
   e[^-1] "[nn_lib] Add 'nl' layer '$1', with input '$2' and '$3' activation."
   _nn_modules_names.=$1,
   _nn_modules_types.=nl,
   _nn_$1_size=$_nn_$2_size
   _nn_$1_input=$2
   _nn_$1_properties="activation=$3"
-  _nn_forward.="begin(nn_layer_nl_init_forward($1,$2));"
+  _nn_forward.="begin(nn_nl_init_forward($1,$2));"
   if s=['$3'];s=='softmax'
-    _nn_forward.="nn_layer_$3_forward($1,$2);"
-    _nn_backward..="nn_layer_$3_backward($1,$2);"
+    _nn_forward.="nn_$3_forward($1,$2);"
+    _nn_backward..="nn_$3_backward($1,$2);"
   else
-    _nn_forward.="nn_layer_nl_forward($1,$2,$3);"
-    _nn_backward..="nn_layer_nl_backward($1,$2,$3);"
+    _nn_forward.="nn_nl_forward($1,$2,$3);"
+    _nn_backward..="nn_nl_backward($1,$2,$3);"
   fi
   _nn_init.="$0 $* "
 
-#@cli nn_layer_normalize : out,in,_normalization_mode_,0<=_learning_mode<=3
+#@cli nn_normalize : out,in,_normalization_mode_,0<=_learning_mode<=3
 #@cli : Add a 'normalize' layer to the network.
 #@cli : 'normalization_mode' can be { 0=global parameters | 1=channel-by-channel parameters }
 #@cli : 'learning_mode' can be { 0=no learning | 1=alpha only | 2=beta only | 3=alpha+beta }
 #@cli : Default value: 'parameter_mode=0' and 'learning_mode=3'.
-nn_layer_normalize : nn_check_layer "$2"
-                     check "isvarname('$1') && isbool(${3=0}) && isint(${4=3}) && inrange($4,0,3)"
+nn_normalize : nn_check_layer "$2"
+               check "isvarname('$1') && isbool(${3=0}) && isint(${4=3}) && inrange($4,0,3)"
   s0,s1=global,channel-by-channel
   e[^-1] "[nn_lib] Add 'normalize' layer '$1', with input '$2' and "${s$3}" normalization."
-  _nn_layer_normalize $1_normalize,${2-4}
-  nn_layer_rename $1,$1_normalize
+  _nn_normalize $1_normalize,${2-4}
+  nn_rename $1,$1_normalize
 
 # [Internal] Insert 'normalize' layer, with parameter image having name '$1'.
-_nn_layer_normalize :
+_nn_normalize :
   s0,s1=global,channel-by-channel
   _nn_modules_names.=$1,
   _nn_modules_types.=normalize,
@@ -25576,18 +25576,18 @@ _nn_layer_normalize :
     if $3 r. 100%,{[$_nn_$2_size][3]} fi # channel-by-channel normalization
     => $1
   fi
-  _nn_forward.="begin(nn_layer_normalize_init_forward($1,$2,$3));"\
-               "nn_layer_normalize_forward($1,$2);"
-  _nn_backward..="begin(nn_layer_normalize_init_backward($1));"\
-                 "nn_layer_normalize_backward($1,$2);"\
-                 "end(nn_layer_normalize_end_backward($1));"
+  _nn_forward.="begin(nn_normalize_init_forward($1,$2,$3));"\
+               "nn_normalize_forward($1,$2);"
+  _nn_backward..="begin(nn_normalize_init_backward($1));"\
+                 "nn_normalize_backward($1,$2);"\
+                 "end(nn_normalize_end_backward($1));"
   _nn_init.="$0 $* "
 
-#@cli nn_layer_patchdown2d : out,in,_patch_size>1
+#@cli nn_patchdown2d : out,in,_patch_size>1
 #@cli : Add a 'patchdown2d' (2D downscale by patch) layer to the network.
 #@cli : Default value: 'patch_size=2'.
-nn_layer_patchdown2d : nn_check_layer "$2"
-                       check "isvarname('$1') && isint(${3=2}) && $3>1"
+nn_patchdown2d : nn_check_layer "$2"
+                 check "isvarname('$1') && isint(${3=2}) && $3>1"
   e[^-1] "[nn_lib] Add 'patchdown2d' layer '$1', with input '$2' and patch size $3x$3."
   _nn_modules_names.=$1,
   _nn_modules_types.=patchdown2d,
@@ -25595,19 +25595,19 @@ nn_layer_patchdown2d : nn_check_layer "$2"
   _nn_$1_input=$2
   _nn_$1_properties="patch_size=$3x$3"
   if !min($_nn_$1_size)
-    error[0--3] "Command 'nn_layer_patchdown2d': Specified patch size ($3x$3) is higher than "\
+    error[0--3] "Command 'nn_patchdown2d': Specified patch size ($3x$3) is higher than "\
                 "input size ("$_nn_$2_size")."
   fi
-  _nn_forward.="begin(nn_layer_patchdown2d_init_forward($1,$2,$3));"\
-               "nn_layer_patchdown2d_forward($1,$2,$3);"
-  _nn_backward..="nn_layer_patchdown2d_backward($1,$2,$3);"
+  _nn_forward.="begin(nn_patchdown2d_init_forward($1,$2,$3));"\
+               "nn_patchdown2d_forward($1,$2,$3);"
+  _nn_backward..="nn_patchdown2d_backward($1,$2,$3);"
   _nn_init.="$0 $* "
 
-#@cli nn_layer_patchdown3d : out,in,_patch_size>1
+#@cli nn_patchdown3d : out,in,_patch_size>1
 #@cli : Add a 'patchdown3d' (3D downscale by patch) layer to the network.
 #@cli : Default value: 'patch_size=2'.
-nn_layer_patchdown3d : nn_check_layer "$2"
-                       check "isvarname('$1') && isint(${3=2}) && $3>1"
+nn_patchdown3d : nn_check_layer "$2"
+                 check "isvarname('$1') && isint(${3=2}) && $3>1"
   e[^-1] "[nn_lib] Add 'patchdown3d' layer '$1', with input '$2' and patch size $3x$3x$3."
   _nn_modules_names.=$1,
   _nn_modules_types.=patchdown3d,
@@ -25615,224 +25615,224 @@ nn_layer_patchdown3d : nn_check_layer "$2"
   _nn_$1_input=$2
   _nn_$1_properties="patch_size=$3x$3x$3"
   if !min($_nn_$1_size)
-    error[0--3] "Command 'nn_layer_patchdown3d': Specified patch size ($3x$3x$3) is higher than "\
+    error[0--3] "Command 'nn_patchdown3d': Specified patch size ($3x$3x$3) is higher than "\
                 "input size ("$_nn_$2_size")."
   fi
-  _nn_forward.="begin(nn_layer_patchdown3d_init_forward($1,$2,$3));"\
-               "nn_layer_patchdown3d_forward($1,$2,$3);"
-  _nn_backward..="nn_layer_patchdown3d_backward($1,$2,$3);"
+  _nn_forward.="begin(nn_patchdown3d_init_forward($1,$2,$3));"\
+               "nn_patchdown3d_forward($1,$2,$3);"
+  _nn_backward..="nn_patchdown3d_backward($1,$2,$3);"
   _nn_init.="$0 $* "
 
-#@cli nn_layer_patchup2d : out,in,_patch_size>1
+#@cli nn_patchup2d : out,in,_patch_size>1
 #@cli : Add a 'patchup2d' (2D upscale by patch) layer to the network.
 #@cli : Default value: 'patch_size=2'.
-nn_layer_patchup2d : nn_check_layer "$2"
-                     check "isvarname('$1') && isint(${3=2}) && $3>1"
+nn_patchup2d : nn_check_layer "$2"
+               check "isvarname('$1') && isint(${3=2}) && $3>1"
   e[^-1] "[nn_lib] Add 'patchup2d' layer '$1', with input '$2' and patch size $3x$3."
   _nn_modules_names.=$1,
   _nn_modules_types.=patchup2d,
   _nn_$1_size:="s=["$_nn_$2_size"];[int(s[0,2]*$3),s[2],s[3]/$3^2]"
   _nn_$1_input=$2
   _nn_$1_properties="patch_size=$3x$3"
-  _nn_forward.="begin(nn_layer_patchup2d_init_forward($1,$2,$3));"\
-               "nn_layer_patchup2d_forward($1,$2,$3);"
-  _nn_backward..="nn_layer_patchup2d_backward($1,$2,$3);"
+  _nn_forward.="begin(nn_patchup2d_init_forward($1,$2,$3));"\
+               "nn_patchup2d_forward($1,$2,$3);"
+  _nn_backward..="nn_patchup2d_backward($1,$2,$3);"
   _nn_init.="$0 $* "
 
-#@cli nn_layer_patchup3d : out,in,_patch_size>1
+#@cli nn_patchup3d : out,in,_patch_size>1
 #@cli : Add a 'patchup3d' (3D upscale by patch) layer to the network.
 #@cli : Default value: 'patch_size=2'.
-nn_layer_patchup3d : nn_check_layer "$2"
-                     check "isvarname('$1') && isint(${3=2}) && $3>1"
+nn_patchup3d : nn_check_layer "$2"
+               check "isvarname('$1') && isint(${3=2}) && $3>1"
   e[^-1] "[nn_lib] Add 'patchup3d' layer '$1', with input '$2' and patch size $3x$3x$3."
   _nn_modules_names.=$1,
   _nn_modules_types.=patchup3d,
   _nn_$1_size:="s=["$_nn_$2_size"];[int(s[0,3]*$3),s[3]/$3^3]"
   _nn_$1_input=$2
   _nn_$1_properties="patch_size=$3x$3x$3"
-  _nn_forward.="begin(nn_layer_patchup3d_init_forward($1,$2,$3));"\
-               "nn_layer_patchup3d_forward($1,$2,$3);"
-  _nn_backward..="nn_layer_patchup3d_backward($1,$2,$3);"
+  _nn_forward.="begin(nn_patchup3d_init_forward($1,$2,$3));"\
+               "nn_patchup3d_forward($1,$2,$3);"
+  _nn_backward..="nn_patchup3d_backward($1,$2,$3);"
   _nn_init.="$0 $* "
 
-#@cli nn_layer_rename : out,in
+#@cli nn_rename : out,in
 #@cli : Add a 'rename' layer to the network.
-nn_layer_rename : nn_check_layer "$2"
-                  check "isvarname('$1')"
+nn_rename : nn_check_layer "$2"
+            check "isvarname('$1')"
   e[^-1] "[nn_lib] Add 'rename' layer '$1', with input '$2'."
   _nn_modules_names.=$1,
   _nn_modules_types.=rename,
   _nn_$1_size=$_nn_$2_size
   _nn_$1_input=$2
-  _nn_forward.="begin(nn_layer_rename_init_forward($1,$2));"
-  _nn_backward..="nn_layer_rename_backward($1,$2);"
+  _nn_forward.="begin(nn_rename_init_forward($1,$2));"
+  _nn_backward..="nn_rename_backward($1,$2);"
   _nn_init.="$0 $* "
 
-#@cli nn_layer_resconv2d : out,in,_kernel_size>0,_stride>0,_dilation>0,0<=_learning_mode<=3
+#@cli nn_resconv2d : out,in,_kernel_size>0,_stride>0,_dilation>0,0<=_learning_mode<=3
 #@cli : Add a 'resconv2d' (residual 2D convolutional layer) to the network.
 #@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
 #@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1' and 'learning_mode=3'.
-nn_layer_resconv2d : nn_check_layer "$2"
-                     check "isvarname('$1') && isint(${3=3}) && $3>0 && ${4=1}>0 && isint(${6=3}) && inrange($6,0,3)"
-                     skip "${5=1}"
+nn_resconv2d : nn_check_layer "$2"
+               check "isvarname('$1') && isint(${3=3}) && $3>0 && ${4=1}>0 && isint(${6=3}) && inrange($6,0,3)"
+               skip "${5=1}"
   e[^-1] "[nn_lib] Add 'resconv2d' layer '$1', with input '$2', $3x$3 kernels, "\
          "stride $4 and dilation $5."
   init=$_nn_init
-  nn_layer_clone $1_clone0,$1_clone1,$2
-  _nn_layer_conv2d $1_conv2d,$1_clone1,{[$_nn_$2_size][3]},${3-6}
-  nn_layer_add $1,$1_conv2d,$1_clone0
+  nn_clone $1_clone0,$1_clone1,$2
+  _nn_conv2d $1_conv2d,$1_clone1,{[$_nn_$2_size][3]},${3-6}
+  nn_add $1,$1_conv2d,$1_clone0
   _nn_init=${init}"$0 $* "
 
-#@cli nn_layer_resconv2dnl : out,in,_kernel_size>0,_stride>0,_dilation>0,_activation,0<=_learning_mode<=3
+#@cli nn_resconv2dnl : out,in,_kernel_size>0,_stride>0,_dilation>0,_activation,0<=_learning_mode<=3
 #@cli : Add a 'resconv2dnl' (residual 2D convolutional layer followed by a non-linearity) to the network.
 #@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
 #@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1', activation='leakyrelu' and 'learning_mode=3'.
-nn_layer_resconv2dnl : nn_check_layer "$2"
-                       check "isvarname('$1') && isint(${3=3}) && $3>0 && ${4=1}>0 && isint(${7=1}) && inrange($7,0,3)"
-                       skip "${5=1}","${6=leakyrelu}"
+nn_resconv2dnl : nn_check_layer "$2"
+                 check "isvarname('$1') && isint(${3=3}) && $3>0 && ${4=1}>0 && isint(${7=1}) && inrange($7,0,3)"
+                 skip "${5=1}","${6=leakyrelu}"
   e[^-1] "[nn_lib] Add 'resconv2dnl' layer '$1', with input '$2', $3x$3 kernels, "\
          "stride $4, dilation $5 and '$6' activation."
   init=$_nn_init
-  nn_layer_clone $1_clone0,$1_clone1,$2
-  _nn_layer_conv2d $1_conv2d,$1_clone1,{[$_nn_$2_size][3]},${3-5},$7
-  nn_layer_add $1_add,$1_conv2d,$1_clone0
-  nn_layer_nl $1,$1_add,$6
+  nn_clone $1_clone0,$1_clone1,$2
+  _nn_conv2d $1_conv2d,$1_clone1,{[$_nn_$2_size][3]},${3-5},$7
+  nn_add $1_add,$1_conv2d,$1_clone0
+  nn_nl $1,$1_add,$6
   _nn_init=${init}"$0 $* "
 
-#@cli nn_layer_resconv2dnnl : out,in,_kernel_size>0,_stride>0,_dilation>0,_activation,0<=_learning_mode<=3
+#@cli nn_resconv2dnnl : out,in,_kernel_size>0,_stride>0,_dilation>0,_activation,0<=_learning_mode<=3
 #@cli : Add a 'resconv2dnnl' (residual 2D convolutional layer followed by a normalization layer, then a non-linearity)\
 # to the network.
 #@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
 #@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1', activation='leakyrelu' and 'learning_mode=3'.
-nn_layer_resconv2dnnl : nn_check_layer "$2"
-                        check "isvarname('$1') && isint(${3=3}) && $3>0 && ${4=1}>0 && isint(${7=3}) && inrange($7,0,3)"
-                        skip "${5=1}","${6=leakyrelu}"
+nn_resconv2dnnl : nn_check_layer "$2"
+                  check "isvarname('$1') && isint(${3=3}) && $3>0 && ${4=1}>0 && isint(${7=3}) && inrange($7,0,3)"
+                  skip "${5=1}","${6=leakyrelu}"
   e[^-1] "[nn_lib] Add 'resconv2dnnl' layer '$1', with input '$2', $3x$3 kernels, "\
          "stride $4, dilation $5 and '$6' activation."
   init=$_nn_init
-  nn_layer_clone $1_clone0,$1_clone1,$2
-  _nn_layer_conv2d $1_conv2d,$1_clone1,{[$_nn_$2_size][3]},${3-5},$7
-  _nn_layer_normalize $1_normalize,$1_conv2d,1,3
-  nn_layer_add $1_add,$1_normalize,$1_clone0
-  nn_layer_nl $1,$1_add,$6
+  nn_clone $1_clone0,$1_clone1,$2
+  _nn_conv2d $1_conv2d,$1_clone1,{[$_nn_$2_size][3]},${3-5},$7
+  _nn_normalize $1_normalize,$1_conv2d,1,3
+  nn_add $1_add,$1_normalize,$1_clone0
+  nn_nl $1,$1_add,$6
   _nn_init=${init}"$0 $* "
 
-#@cli nn_layer_resconv3d : out,in,_kernel_size>0,_stride>0,_dilation>0,0<=_learning_mode<=3
+#@cli nn_resconv3d : out,in,_kernel_size>0,_stride>0,_dilation>0,0<=_learning_mode<=3
 #@cli : Add a 'resconv3d' (residual 3D convolutional layer) to the network.
 #@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
 #@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1' and 'learning_mode=3'.
-nn_layer_resconv3d : nn_check_layer "$2"
-                     check "isvarname('$1') && isint(${3=3}) && $3>0 && ${4=1}>0 && isint(${6=3}) && inrange($6,0,3)"
-                     skip "${5=1}"
+nn_resconv3d : nn_check_layer "$2"
+               check "isvarname('$1') && isint(${3=3}) && $3>0 && ${4=1}>0 && isint(${6=3}) && inrange($6,0,3)"
+               skip "${5=1}"
   e[^-1] "[nn_lib] Add 'resconv3d' layer '$1', with input '$2', $3x$3x$3 kernels, "\
          "stride $4 and dilation $5."
   init=$_nn_init
-  nn_layer_clone $1_clone0,$1_clone1,$2
-  _nn_layer_conv3d $1_conv3d,$1_clone1,{[$_nn_$2_size][3]},${3-6}
-  nn_layer_add $1,$1_conv3d,$1_clone0
+  nn_clone $1_clone0,$1_clone1,$2
+  _nn_conv3d $1_conv3d,$1_clone1,{[$_nn_$2_size][3]},${3-6}
+  nn_add $1,$1_conv3d,$1_clone0
   _nn_init=${init}"$0 $* "
 
-#@cli nn_layer_resconv3dnl : out,in,_kernel_size>0,_stride>0,_dilation>0,_activation,0<=_learning_mode<=3
+#@cli nn_resconv3dnl : out,in,_kernel_size>0,_stride>0,_dilation>0,_activation,0<=_learning_mode<=3
 #@cli : Add a 'resconv3dnl' (residual 3D convolutional layer followed by a non-linearity) to the network.
 #@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
 #@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1', activation='leakyrelu' and 'learning_mode=3'.
-nn_layer_resconv3dnl : nn_check_layer "$2"
-                       check "isvarname('$1') && isint(${3=3}) && $3>0 && ${4=1}>0 && isint(${7=1}) && inrange($7,0,3)"
-                       skip "${5=1}","${6=leakyrelu}"
+nn_resconv3dnl : nn_check_layer "$2"
+                 check "isvarname('$1') && isint(${3=3}) && $3>0 && ${4=1}>0 && isint(${7=1}) && inrange($7,0,3)"
+                 skip "${5=1}","${6=leakyrelu}"
   e[^-1] "[nn_lib] Add 'resconv3dnl' layer '$1', with input '$2', $3x$3x$3 kernels, "\
          "stride $4, dilation $5 and '$6' activation."
   init=$_nn_init
-  nn_layer_clone $1_clone0,$1_clone1,$2
-  _nn_layer_conv3d $1_conv3d,$1_clone1,{[$_nn_$2_size][3]},${3-5},$7
-  nn_layer_add $1_add,$1_conv3d,$1_clone0
-  nn_layer_nl $1,$1_add,$6
+  nn_clone $1_clone0,$1_clone1,$2
+  _nn_conv3d $1_conv3d,$1_clone1,{[$_nn_$2_size][3]},${3-5},$7
+  nn_add $1_add,$1_conv3d,$1_clone0
+  nn_nl $1,$1_add,$6
   _nn_init=${init}"$0 $* "
 
-#@cli nn_layer_resconv3dnnl : out,in,_kernel_size>0,_stride>0,_dilation>0,_activation,0<=_learning_mode<=3
+#@cli nn_resconv3dnnl : out,in,_kernel_size>0,_stride>0,_dilation>0,_activation,0<=_learning_mode<=3
 #@cli : Add a 'resconv3dnnl' (residual 3D convolutional layer followed by a normalization layer, then a non-linearity)\
 # to the network.
 #@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
 #@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1', activation='leakyrelu' and 'learning_mode=3'.
-nn_layer_resconv3dnnl : nn_check_layer "$2"
-                        check "isvarname('$1') && isint(${3=3}) && $3>0 && ${4=1}>0 && isint(${7=3}) && inrange($7,0,3)"
-                        skip "${5=1}","${6=leakyrelu}"
+nn_resconv3dnnl : nn_check_layer "$2"
+                  check "isvarname('$1') && isint(${3=3}) && $3>0 && ${4=1}>0 && isint(${7=3}) && inrange($7,0,3)"
+                  skip "${5=1}","${6=leakyrelu}"
   e[^-1] "[nn_lib] Add 'resconv3dnnl' layer '$1', with input '$2', $3x$3x$3 kernels, "\
          "stride $4, dilation $5 and '$6' activation."
   init=$_nn_init
-  nn_layer_clone $1_clone0,$1_clone1,$2
-  _nn_layer_conv3d $1_conv3d,$1_clone1,{[$_nn_$2_size][3]},${3-5},$7
-  _nn_layer_normalize $1_normalize,$1_conv3d,1,3
-  nn_layer_add $1_add,$1_normalize,$1_clone0
-  nn_layer_nl $1,$1_add,$6
+  nn_clone $1_clone0,$1_clone1,$2
+  _nn_conv3d $1_conv3d,$1_clone1,{[$_nn_$2_size][3]},${3-5},$7
+  _nn_normalize $1_normalize,$1_conv3d,1,3
+  nn_add $1_add,$1_normalize,$1_clone0
+  nn_nl $1,$1_add,$6
   _nn_init=${init}"$0 $* "
 
-#@cli nn_layer_resfc : out,in,0<=_learning_mode<=3
+#@cli nn_resfc : out,in,0<=_learning_mode<=3
 #@cli : Add a 'resfc' (residual fully connecter layer) to the network.
 #@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
 #@cli : Default values: 'learning_mode=3'.
-nn_layer_resfc : nn_check_layer "$2"
-                 check "isvarname('$1') && isint(${3=3}) && inrange($3,0,3)"
+nn_resfc : nn_check_layer "$2"
+           check "isvarname('$1') && isint(${3=3}) && inrange($3,0,3)"
   e[^-1] "[nn_lib] Add 'resfc' layer '$1', with input '$2'."
   init=$_nn_init
-  nn_layer_clone $1_clone0,$1_clone1,$2
-  _nn_layer_fc $1_fc,$1_clone1,{prod($_nn_$2_size)},$3
-  nn_layer_add $1,$1_fc,$1_clone0
+  nn_clone $1_clone0,$1_clone1,$2
+  _nn_fc $1_fc,$1_clone1,{prod($_nn_$2_size)},$3
+  nn_add $1,$1_fc,$1_clone0
   _nn_init=${init}"$0 $* "
 
-#@cli nn_layer_resfcnl : out,in,_activation,0<=_learning_mode<=3
+#@cli nn_resfcnl : out,in,_activation,0<=_learning_mode<=3
 #@cli : Add a 'resfcnl' (residual fully connecter layer followed by a non-linearity) to the network.
 #@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
 #@cli : Default values: 'activation=leakyrelu' and 'learning_mode=3'.
-nn_layer_resfcnl : nn_check_layer "$2"
-                   check "isvarname('$1') && isint(${4=3}) && inrange($4,0,3)"
-                   skip ${3=leakyrelu}
+nn_resfcnl : nn_check_layer "$2"
+             check "isvarname('$1') && isint(${4=3}) && inrange($4,0,3)"
+             skip ${3=leakyrelu}
   e[^-1] "[nn_lib] Add 'resfc+nl' layer '$1' to the network, with input '$2' and '$4' activation."
   init=$_nn_init
-  nn_layer_clone $1_clone0,$1_clone1,$2
-  _nn_layer_fc $1_fc,$1_clone1,{prod($_nn_$2_size)},$4
-  nn_layer_add $1_add,$1_fc,$1_clone0
-  nn_layer_nl $1,$1_add,$3
+  nn_clone $1_clone0,$1_clone1,$2
+  _nn_fc $1_fc,$1_clone1,{prod($_nn_$2_size)},$4
+  nn_add $1_add,$1_fc,$1_clone0
+  nn_nl $1,$1_add,$3
   _nn_init=${init}"$0 $* "
 
-#@cli nn_layer_resfcnnl : out,in,_activation,0<=_learning_mode<=3
+#@cli nn_resfcnnl : out,in,_activation,0<=_learning_mode<=3
 #@cli : Add a 'resfcnnl' (residual fully connecter layer followed by a normalization layer, then a non-linearity) \
 # to the network.
 #@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
 #@cli : Default values: 'activation=leakyrelu' and 'learning_mode=3'.
-nn_layer_resfcnnl : nn_check_layer "$2"
-                    check "isvarname('$1') && isint(${4=3}) && inrange($4,0,3)"
-                    skip ${3=leakyrelu}
+nn_resfcnnl : nn_check_layer "$2"
+              check "isvarname('$1') && isint(${4=3}) && inrange($4,0,3)"
+              skip ${3=leakyrelu}
   e[^-1] "[nn_lib] Add 'resfc+normalize+nl' layer '$1' to the network, with input '$2' and '$4' activation."
   init=$_nn_init
-  nn_layer_clone $1_clone0,$1_clone1,$2
-  _nn_layer_fc $1_fc,$1_clone1,{prod($_nn_$2_size)},1 # $4
-  _nn_layer_normalize $1_normalize,$1_fc,0,3
-  nn_layer_add $1_add,$1_normalize,$1_clone0
-  nn_layer_nl $1,$1_add,$3
+  nn_clone $1_clone0,$1_clone1,$2
+  _nn_fc $1_fc,$1_clone1,{prod($_nn_$2_size)},1 # $4
+  _nn_normalize $1_normalize,$1_fc,0,3
+  nn_add $1_add,$1_normalize,$1_clone0
+  nn_nl $1,$1_add,$3
   _nn_init=${init}"$0 $* "
 
-#@cli nn_layer_reshape : out,in,width>0,height>0,depth>0,spectrum>0
+#@cli nn_reshape : out,in,width>0,height>0,depth>0,spectrum>0
 #@cli : Add a 'reshape' layer to the network.
-nn_layer_reshape : nn_check_layer "$2"
-                   check "isvarname('$1')"
+nn_reshape : nn_check_layer "$2"
+             check "isvarname('$1')"
   e[^-1] "[nn_lib] Add 'reshape' layer '$1', with input '$2' and size ($3,$4,$5,$6)."
   _nn_modules_names.=$1,
   _nn_modules_types.=reshape,
   _nn_$1_size=$3,$4,$5,$6
   _nn_$1_input=$2
   if prod($_nn_$1_size)!=prod($_nn_$2_size)
-    error[0--3] "Command 'nn_layer_reshape': Cannot reshape input ("$_nn_$2_size") to output ("$_nn_$1_size")."
+    error[0--3] "Command 'nn_reshape': Cannot reshape input ("$_nn_$2_size") to output ("$_nn_$1_size")."
   fi
-  _nn_forward.="begin(nn_layer_reshape_init_forward($1,$2,$3,$4,$5,$6));"
-  _nn_backward..="begin(nn_layer_reshape_init_backward($1,$2));"
+  _nn_forward.="begin(nn_reshape_init_forward($1,$2,$3,$4,$5,$6));"
+  _nn_backward..="begin(nn_reshape_init_backward($1,$2));"
   _nn_init.="$0 $* "
 
-#@cli nn_layer_resize : out,in,width[%]>0,_height[%]>0,_depth[%]>0,_spectrum[%]>0,_interpolation
+#@cli nn_resize : out,in,width[%]>0,_height[%]>0,_depth[%]>0,_spectrum[%]>0,_interpolation
 #@cli : Add a 'resize' layer to the network.
 #@cli : Default values: 'height=depth=spectrum=100%'.
-nn_layer_resize : nn_check_layer "$2"
-                  check "isvarname('$1') && $3>0 && ${4=100%}>0 && ${5=100%}>0 && ${6=100%}>0"
-                  skip ${7=3}
+nn_resize : nn_check_layer "$2"
+            check "isvarname('$1') && $3>0 && ${4=100%}>0 && ${5=100%}>0 && ${6=100%}>0"
+            skip ${7=3}
   if ${"is_percent $3"} w={max(1,round([$_nn_$2_size][1]*$3))} else w=$3 fi
   if ${"is_percent $4"} h={max(1,round([$_nn_$2_size][1]*$4))} else h=$4 fi
   if ${"is_percent $5"} d={max(1,round([$_nn_$2_size][2]*$5))} else d=$5 fi
@@ -25843,16 +25843,16 @@ nn_layer_resize : nn_check_layer "$2"
   _nn_$1_size=$w,$h,$d,$s
   _nn_$1_input=$2
   _nn_$1_properties="interpolation=$7"
-  _nn_forward.="begin(nn_layer_resize_init_forward($1,$2,"$w","$h","$d","$s"));"\
-               "nn_layer_resize_forward($1,$2,$7);"
-  _nn_backward..="nn_layer_resize_backward($1,$2);"
+  _nn_forward.="begin(nn_resize_init_forward($1,$2,"$w","$h","$d","$s"));"\
+               "nn_resize_forward($1,$2,$7);"
+  _nn_backward..="nn_resize_backward($1,$2);"
   _nn_init.="$0 $* "
 
-#@cli nn_layer_run : out,in,"command",_width[%]>0,_height[%]>0,_depth[%]>0,_spectrum[%]>0
+#@cli nn_run : out,in,"command",_width[%]>0,_height[%]>0,_depth[%]>0,_spectrum[%]>0
 #@cli : Add a 'run' layer to the network.
 #@cli : Default values: 'width=height=depth=spectrum=100%'.
-nn_layer_run : nn_check_layer "$2"
-               check "isvarname('$1') && ${4=100%}>0 && ${5=100%}>0 && ${6=100%}>0 && ${7=100%}>0"
+nn_run : nn_check_layer "$2"
+         check "isvarname('$1') && ${4=100%}>0 && ${5=100%}>0 && ${6=100%}>0 && ${7=100%}>0"
   if ${"is_percent $4"} w={max(1,round([$_nn_$2_size][0]*$4))} else w=$4 fi
   if ${"is_percent $5"} h={max(1,round([$_nn_$2_size][1]*$5))} else h=$5 fi
   if ${"is_percent $6"} d={max(1,round([$_nn_$2_size][2]*$6))} else d=$6 fi
@@ -25863,15 +25863,15 @@ nn_layer_run : nn_check_layer "$2"
   _nn_$1_size=$w,$h,$d,$s
   _nn_$1_input=$2
   _nn_$1_properties="command='$3'"
-  _nn_forward.="begin(nn_layer_run_init_forward($1,$2,'$3',"$w","$h","$d","$s"));"\
-               "nn_layer_run_forward($1,$2);"
-  _nn_backward..="nn_layer_run_backward($1,$2);"
+  _nn_forward.="begin(nn_run_init_forward($1,$2,'$3',"$w","$h","$d","$s"));"\
+               "nn_run_forward($1,$2);"
+  _nn_backward..="nn_run_backward($1,$2);"
   _nn_init.="$0 $* "
 
-#@cli nn_layer_split : name0,name1,in,nb_channels0
+#@cli nn_split : name0,name1,in,nb_channels0
 #@cli : Add a 'split' layer to the network.
-nn_layer_split : nn_check_layer "$3"
-                 check "isvarname('$1') && isvarname('$2')"
+nn_split : nn_check_layer "$3"
+           check "isvarname('$1') && isvarname('$2')"
   e[^-1] "[nn_lib] Add 'split' layer, with input '$3' and outputs '$1' and '$2'."
   _nn_modules_names.=$1,$2,
   _nn_modules_types.=split,split,
@@ -25879,9 +25879,9 @@ nn_layer_split : nn_check_layer "$3"
   _nn_$1_input=$2
   _nn_$2_size={[$_nn_$3_size]-[0,0,0,$4]}
   _nn_$2_input=$2
-  _nn_forward.="begin(nn_layer_split_init_forward($1,$2,$3,$4));"\
-               "nn_layer_split_forward($1,$2,$3);"
-  _nn_backward..="nn_layer_split_backward($1,$2,$3);"
+  _nn_forward.="begin(nn_split_init_forward($1,$2,$3,$4));"\
+               "nn_split_forward($1,$2,$3);"
+  _nn_backward..="nn_split_backward($1,$2,$3);"
   _nn_init.="$0 $* "
 
 #@cli nn_loss_binary_crossentropy : out,in,ground_truth
