@@ -11486,7 +11486,7 @@ noise_poissondisk : check "${1=8}>0 && isint(${2=30}) && $2>0 && ${3=2}>0"
         X = I[#$points,i[#$active,indX]];
 
         for (k = 0, k<$K, ++k,
-          U = [ $W>1?u(-1,1):0, $H>1?u(-1,1):0, $D>1?u(-1,1):0 ];
+          U = [ $W>1?v:0, $H>1?v:0, $D>1?v:0 ];
           U*=u($R,2*$R)/(norm(U) + eps);
           Y = round(X + U);
           min(inrange(Y,0,[$W,$H,$D] - 1))?(
@@ -25138,6 +25138,7 @@ nn_layer_add : nn_check_layer "$2"
   _nn_modules_names.=$1,
   _nn_modules_types.=add,
   _nn_$1_size=$_nn_$2_size
+  _nn_$1_input=$2,$3
   _nn_forward.="begin(nn_layer_add_init_forward($1,$2));"\
                "nn_layer_add_forward($1,$2,$3);"
   _nn_backward..="nn_layer_add_backward($1,$2,$3);"
@@ -25156,6 +25157,7 @@ nn_layer_append : nn_check_layer "$2"
   _nn_modules_names.=$1,
   _nn_modules_types.=append,
   _nn_$1_size={[$_nn_$2_size]+[0,0,0,[$_nn_$3_size][3]]}
+  _nn_$1_input=$2,$3
   _nn_forward.="begin(nn_layer_append_init_forward($1,$2,$3));"\
                "nn_layer_append_forward($1,$2,$3);"
   _nn_backward..="nn_layer_append_backward($1,$2,$3);"
@@ -25169,6 +25171,7 @@ nn_layer_avgpool2d : nn_check_layer "$2"
   _nn_modules_names.=$1,
   _nn_modules_types.=avgpool2d,
   _nn_$1_size={s=[$_nn_$2_size];[int(s[0,2]/2),s[2,2]]}
+  _nn_$1_input=$2
   _nn_forward.="begin(nn_layer_avgpool2d_init_forward($1,$2));"\
                "nn_layer_avgpool2d_forward($1,$2);"
   _nn_backward..="nn_layer_avgpool2d_backward($1,$2);"
@@ -25182,7 +25185,9 @@ nn_layer_clone : nn_check_layer "$3"
   _nn_modules_names.=$1,$2,
   _nn_modules_types.=clone,clone,
   _nn_$1_size=$_nn_$3_size
+  _nn_$1_input=$3
   _nn_$2_size=$_nn_$3_size
+  _nn_$2_input=$3
   _nn_forward.="begin(nn_layer_clone_init_forward($1,$2,$3));"\
                "nn_layer_clone_forward($1,$2,$3);"
   _nn_backward..="nn_layer_clone_backward($1,$2,$3);"
@@ -25207,6 +25212,8 @@ _nn_layer_conv2d :
   _nn_modules_types.=conv2d,
   _nn_$1_size={s=[$_nn_$2_size];[max(1,int(s[0]/$5)),max(1,int(s[1]/$5)),s[2],$3]}
   _nn_$1_learning_mode=$7
+  _nn_$1_input=$2
+  _nn_$1_properties="kernel=$4x$4, stride=$5, dilation=$6, learning_mode=$7"
   if !isint($$1)
     {[$_nn_$2_size][3]*$4^2+1},$3,1,1,4*g/(w-1)
     if $7<2 1,100% j.. .,100% rm. fi # Set biases to 0 if they are not learnt
@@ -25272,6 +25279,8 @@ _nn_layer_conv3d :
   _nn_modules_types.=conv3d,
   _nn_$1_size={s=[$_nn_$2_size];[max(1,int(s[0]/$5)),max(1,int(s[1]/$5)),max(1,int(s[2]/$5)),$3]}
   _nn_$1_learning_mode=$7
+  _nn_$1_input=$2
+  _nn_$1_properties="kernel=$4x$4x$4, stride=$5, dilation=$6, learning_mode=$7"
   if !isint($$1)
     {[$_nn_$2_size][3]*$4^3+1},$3,1,1,4*g/(w-1)
     if $7<2 1,100% j.. .,100% rm. fi # Set biases to 0 if they are not learnt
@@ -25328,6 +25337,8 @@ nn_layer_crop : nn_check_layer "$2"
   cmin={vmin([${3-5}],[${6-8}])}
   cmax={vmax([${3-5}],[${6-8}])}
   _nn_$1_size={[[$cmax]-[$cmin]+1,arg(4,$_nn_$2_size)]}
+  _nn_$1_input=$2
+  _nn_$1_properties="coordinates=(${3-5})x(${6-8})"
   _nn_forward.="begin(nn_layer_crop_init_forward($1,$2,${3-8}));"\
                "nn_layer_crop_forward($1,$2,${3-8});"
   _nn_backward..="nn_layer_crop_backward($1,$2,${3-8});"
@@ -25370,6 +25381,8 @@ nn_layer_distance : nn_check_layer "$2"
   _nn_modules_names.=$1,
   _nn_modules_types.=distance,
   _nn_$1_size=1,1,1,1
+  _nn_$1_input=$2,$3
+  _nn_$1_properties="metric="${s$4}
   _nn_forward.="begin(nn_layer_distance_init_forward($1));"\
                "nn_layer_distance_forward(${1-4});"
   _nn_backward..="nn_layer_distance_backward(${1-4});"
@@ -25383,6 +25396,8 @@ nn_layer_dropout : nn_check_layer "$2"
   _nn_modules_names.=$1,
   _nn_modules_types.=dropout,
   _nn_$1_size=$_nn_$2_size
+  _nn_$1_input=$2
+  _nn_$1_properties="dropout_rate=$3"
   _nn_forward.="begin(nn_layer_dropout_init_forward($1,$2,$3));"\
                "nn_layer_dropout_forward($1,$2);"
   _nn_backward..="nn_layer_dropout_backward($1,$2);"
@@ -25406,6 +25421,8 @@ _nn_layer_fc :
   _nn_modules_types.=fc,
   _nn_$1_size=1,1,1,$3
   _nn_$1_learning_mode=$4
+  _nn_$1_input=$2
+  _nn_$1_properties="learning_mode=$4"
   if !isint($$1)
     {prod($_nn_$2_size)+1},$3
     f. 4*g/(w-1)
@@ -25456,6 +25473,8 @@ nn_layer_maxpool2d : nn_check_layer "$2"
   _nn_modules_names.=$1,
   _nn_modules_types.=maxpool2d,
   _nn_$1_size:="s=["$_nn_$2_size"];[int(s[0,2]/$3),s[2,2]]"
+  _nn_$1_input=$2
+  _nn_$1_properties="patch_size=$3x$3"
   _nn_forward.="begin(nn_layer_maxpool2d_init_forward($1,$2,$3));"\
                "nn_layer_maxpool2d_forward($1,$2,$3);"
   _nn_backward..="nn_layer_maxpool2d_backward($1,$2,$3);"
@@ -25470,6 +25489,8 @@ nn_layer_maxpool3d : nn_check_layer "$2"
   _nn_modules_names.=$1,
   _nn_modules_types.=maxpool3d,
   _nn_$1_size:="s=["$_nn_$2_size"];[int(s[0,3]/$3),s[3]]"
+  _nn_$1_input=$2
+  _nn_$1_properties="patch_size=$3x$3x$3"
   _nn_forward.="begin(nn_layer_maxpool3d_init_forward($1,$2,$3));"\
                "nn_layer_maxpool3d_forward($1,$2,$3);"
   _nn_backward..="nn_layer_maxpool3d_backward($1,$2,$3);"
@@ -25484,6 +25505,7 @@ nn_layer_mul : nn_check_layer "$2"
   _nn_modules_names.=$1,
   _nn_modules_types.=mul,
   _nn_$1_size=$_nn_$2_size
+  _nn_$1_input=$2,$3
   _nn_forward.="begin(nn_layer_mul_init_forward($1,$2));"\
                "nn_layer_mul_forward($1,$2,$3);"
   _nn_backward..="nn_layer_mul_backward($1,$2,$3);"
@@ -25500,6 +25522,8 @@ nn_layer_nl : nn_check_layer "$2"
   _nn_modules_names.=$1,
   _nn_modules_types.=nl,
   _nn_$1_size=$_nn_$2_size
+  _nn_$1_input=$2
+  _nn_$1_properties="activation=$3"
   _nn_forward.="begin(nn_layer_nl_init_forward($1,$2));"
   if s=['$3'];s=='softmax'
     _nn_forward.="nn_layer_$3_forward($1,$2);"
@@ -25528,6 +25552,8 @@ _nn_layer_normalize :
   _nn_modules_types.=normalize,
   _nn_$1_size=$_nn_$2_size
   _nn_$1_learning_mode=$4
+  _nn_$1_input=$2
+  _nn_$1_properties="normalization="${s$3}", learning_mode=$4"
   if !isint($$1)
     (1,0,0,1) # alpha,beta,running_avg,running_var
     if $3 r. 100%,{[$_nn_$2_size][3]} fi # channel-by-channel normalization
@@ -25549,6 +25575,8 @@ nn_layer_patchdown2d : nn_check_layer "$2"
   _nn_modules_names.=$1,
   _nn_modules_types.=patchdown2d,
   _nn_$1_size:="s=["$_nn_$2_size"];[int(s[0,2]/$3),s[2],s[3]*$3^2]"
+  _nn_$1_input=$2
+  _nn_$1_properties="patch_size=$3x$3"
   if !min($_nn_$1_size)
     error[0--3] "Command 'nn_layer_patchdown2d': Specified patch size ($3) is higher than "\
                 "input size ("$_nn_$2_size")."
@@ -25567,6 +25595,8 @@ nn_layer_patchdown3d : nn_check_layer "$2"
   _nn_modules_names.=$1,
   _nn_modules_types.=patchdown3d,
   _nn_$1_size:="s=["$_nn_$2_size"];[int(s[0,3]/$3),s[3]*$3^3]"
+  _nn_$1_input=$2
+  _nn_$1_properties="patch_size=$3x$3x$3"
   if !min($_nn_$1_size)
     error[0--3] "Command 'nn_layer_patchdown3d': Specified patch size ($3) is higher than "\
                 "input size ("$_nn_$2_size")."
@@ -25585,6 +25615,8 @@ nn_layer_patchup2d : nn_check_layer "$2"
   _nn_modules_names.=$1,
   _nn_modules_types.=patchup2d,
   _nn_$1_size:="s=["$_nn_$2_size"];[int(s[0,2]*$3),s[2],s[3]/$3^2]"
+  _nn_$1_input=$2
+  _nn_$1_properties="patch_size=$3x$3"
   _nn_forward.="begin(nn_layer_patchup2d_init_forward($1,$2,$3));"\
                "nn_layer_patchup2d_forward($1,$2,$3);"
   _nn_backward..="nn_layer_patchup2d_backward($1,$2,$3);"
@@ -25599,6 +25631,8 @@ nn_layer_patchup3d : nn_check_layer "$2"
   _nn_modules_names.=$1,
   _nn_modules_types.=patchup3d,
   _nn_$1_size:="s=["$_nn_$2_size"];[int(s[0,3]*$3),s[3]/$3^3]"
+  _nn_$1_input=$2
+  _nn_$1_properties="patch_size=$3x$3x$3"
   _nn_forward.="begin(nn_layer_patchup3d_init_forward($1,$2,$3));"\
                "nn_layer_patchup3d_forward($1,$2,$3);"
   _nn_backward..="nn_layer_patchup3d_backward($1,$2,$3);"
@@ -25612,6 +25646,7 @@ nn_layer_rename : nn_check_layer "$2"
   _nn_modules_names.=$1,
   _nn_modules_types.=rename,
   _nn_$1_size=$_nn_$2_size
+  _nn_$1_input=$2
   _nn_forward.="begin(nn_layer_rename_init_forward($1,$2));"
   _nn_backward..="nn_layer_rename_backward($1,$2);"
   _nn_init.="$0 $* "
@@ -25767,6 +25802,7 @@ nn_layer_reshape : nn_check_layer "$2"
   _nn_modules_names.=$1,
   _nn_modules_types.=reshape,
   _nn_$1_size=$3,$4,$5,$6
+  _nn_$1_input=$2
   if prod($_nn_$1_size)!=prod($_nn_$2_size)
     error[0--3] "Command 'nn_layer_reshape': Cannot reshape input ("$_nn_$2_size") to output ("$_nn_$1_size")."
   fi
@@ -25788,6 +25824,8 @@ nn_layer_resize : nn_check_layer "$2"
   _nn_modules_names.=$1,
   _nn_modules_types.=resize,
   _nn_$1_size=$w,$h,$d,$s
+  _nn_$1_input=$2
+  _nn_$1_properties="interpolation=$7"
   _nn_forward.="begin(nn_layer_resize_init_forward($1,$2,"$w","$h","$d","$s"));"\
                "nn_layer_resize_forward($1,$2,$7);"
   _nn_backward..="nn_layer_resize_backward($1,$2);"
@@ -25806,6 +25844,8 @@ nn_layer_run : nn_check_layer "$2"
   _nn_modules_names.=$1,
   _nn_modules_types.=run,
   _nn_$1_size=$w,$h,$d,$s
+  _nn_$1_input=$2
+  _nn_$1_properties="command='$3'"
   _nn_forward.="begin(nn_layer_run_init_forward($1,$2,'$3',"$w","$h","$d","$s"));"\
                "nn_layer_run_forward($1,$2);"
   _nn_backward..="nn_layer_run_backward($1,$2);"
@@ -25819,7 +25859,9 @@ nn_layer_split : nn_check_layer "$3"
   _nn_modules_names.=$1,$2,
   _nn_modules_types.=split,split,
   _nn_$1_size={[[$_nn_$3_size][0,3],$4]}
+  _nn_$1_input=$2
   _nn_$2_size={[$_nn_$3_size]-[0,0,0,$4]}
+  _nn_$2_input=$2
   _nn_forward.="begin(nn_layer_split_init_forward($1,$2,$3,$4));"\
                "nn_layer_split_forward($1,$2,$3);"
   _nn_backward..="nn_layer_split_backward($1,$2,$3);"
@@ -25833,6 +25875,8 @@ nn_loss_binary_crossentropy : nn_check_layer "$2"
   _nn_modules_names.=$1,
   _nn_modules_types.=loss_binary_crossentropy,
   _nn_$1_size=1,1,1,1
+  _nn_$1_input=$2
+  _nn_$1_properties="ground_truth=$3"
   _nn_loss.="begin(nn_loss_binary_crossentropy_init_forward($1));"\
             "nn_loss_binary_crossentropy_forward(${1-3});"\
             "end(nn_loss_binary_crossentropy_end_forward($1));"
@@ -25846,6 +25890,8 @@ nn_loss_crossentropy : nn_check_layer "$2"
   _nn_modules_names.=$1,
   _nn_modules_types.=loss_crossentropy,
   _nn_$1_size=1,1,1,1
+  _nn_$1_input=$2
+  _nn_$1_properties="ground_truth=$3"
   _nn_loss.="begin(nn_loss_crossentropy_init_forward($1));"\
             "nn_loss_crossentropy_forward(${1-3});"\
             "end(nn_loss_crossentropy_end_forward($1));"
@@ -25859,6 +25905,8 @@ nn_loss_mse : nn_check_layer "$2"
   _nn_modules_names.=$1,
   _nn_modules_types.=loss_mse,
   _nn_$1_size=1,1,1,1
+  _nn_$1_input=$2
+  _nn_$1_properties="ground_truth=$3"
   _nn_loss.="begin(nn_loss_mse_init_forward($1));"\
             "nn_loss_mse_forward(${1-3});"\
             "end(nn_loss_mse_end_forward($1));"
@@ -25873,6 +25921,8 @@ nn_loss_normp : nn_check_layer "$2"
   _nn_modules_names.=$1,
   _nn_modules_types.=loss_normp,
   _nn_$1_size=1,1,1,1
+  _nn_$1_input=$2
+  _nn_$1_properties="ground_truth=$3"
   _nn_loss.="begin(nn_loss_normp_init_forward($1));"\
             "nn_loss_normp_forward(${1-4});"\
             "end(nn_loss_normp_end_forward($1));"
@@ -25886,6 +25936,8 @@ nn_loss_softmax_crossentropy : nn_check_layer "$2"
   _nn_modules_names.=$1,
   _nn_modules_types.=loss_softmax_crossentropy,
   _nn_$1_size=1,1,1,1
+  _nn_$1_input=$2
+  _nn_$1_properties="ground_truth=$3"
   _nn_loss.="begin(nn_loss_softmax_crossentropy_init_forward($1));"\
             "nn_loss_softmax_crossentropy_forward(${1-3});"\
             "end(nn_loss_softmax_crossentropy_end_forward($1));"
@@ -25902,9 +25954,15 @@ nn_print :
     name=${arg0\ $>,$_nn_modules_names}
     learning_mode=${_nn_${name}_learning_mode}
     e "    - Module: "$b$name$n" (type: "$g$type$n")"
-    e "        * Output: "$c${_nn_${name}_size}$n
+    if ['${_nn_${name}_input}']!=0
+      e "        * Input: "$c${_nn_${name}_input}$n
+    fi
+    e "        * Output size: "$c${_nn_${name}_size}$n
+    if ['${_nn_${name}_properties}']!=0
+      e "        * Properties: "$c${_nn_${name}_properties}$n
+    fi
     if ${$name}
-      e "        * Parameters: "$c{$name,whds}$n
+      e "        * Number of parameters: "$c{$name,whds}$n
     fi
   }
   e "\n * Total: "${b}{narg($_nn_modules_names)}$n" modules, "$b${-nn_size}$n" parameters.\n"
@@ -25920,6 +25978,7 @@ nn_trainer : nn_check_layer "$2"
   _nn_modules_names.=$1,
   _nn_modules_types.=trainer,
   _nn_$1_size=0,0,0,0
+  _nn_$1_properties="loss=$2, learning_rate=$3, optimizer=$4, scheduler=$5"
   if !isint($$1)
     # (iteration,learning_rate,initial_learning_rate,previous_loss,best_loss;
     # {optimizer variables};
@@ -30486,7 +30545,7 @@ math_lib :
     # Initialize data.
     ref(vector(#meig_m*meig_n),meig_V);
     ref(vector(#meig_m^2),meig_H);
-    ref(expr('u(-1,1)',1,meig_n),meig_vj); meig_vj/=norm(meig_vj);
+    ref(expr('v',1,meig_n),meig_vj); meig_vj/=norm(meig_vj);
 
     # Iteration loop.
     repeat (meig_m,meig_j,
@@ -35941,7 +36000,7 @@ x_shadebobs : check_display $0
   do
     t+=0.015
     if $t>4*pi" || "{*,b} # Reset motions variables if necessary.
-      rx={u(-1,1)} ry={u(-1,1)} rz={u(-1,1)} rt={u(-1,1)} rcx={u(-0.6*0.6)} t=0
+      rx={v} ry={v} rz={v} rt={v} rcx={u(-0.6*0.6)} t=0
       N={20+round(u(80))} R={(2+round(u(40)))*min({*,w},{*,h})/300}
       if $obj3d rm[colormap,img,obj3d] fi
       {4+round(u(12))},1,1,3 noise[0] 255,2 ==. 1 r[0] 256,1,1,3,3 *[0] 255 shift[0] 1 => colormap
@@ -38785,7 +38844,7 @@ fx_puzzle :
 
       if $16 # One piece by layer.
         foreach {
-          r2dy {max(0.1,$10+$11*u(-1,1))}% rotate {$12+$13*u(-1,1)}
+          r2dy {max(0.1,$10+$11*v)}% rotate {$12+$13*v}
           if $15 expand_xy 1,0 fi
           cx={round(w/2)} cy={round(h/2)}
           sh 100% if $15 dilate. 3 fi
@@ -38796,7 +38855,7 @@ fx_puzzle :
       else # All pieces on the same layer.
         i[0] $w,$h,1,{s}
         repeat $!-1 {
-          r2dy. {max(0.1,$10+$11*u(-1,1))}% rotate. {$12+$13*u(-1,1)}
+          r2dy. {max(0.1,$10+$11*v)}% rotate. {$12+$13*v}
           if $15 expand_xy. 1,0 fi
           cx={round(w/2)} cy={round(h/2)}
           sh. 100% if $15 dilate. 3 fi
@@ -52521,7 +52580,7 @@ fx_random3d :
     repeat $2 {
       ({1,@0}) +. {1,@1} *. $3 /. 100 _fx_random3d$1 {^} rm..
       r3d. 1,1,0,{u(0,360)}
-      ({u(-1,1)}) *. {1,@0} ({u(-1,1)}) *. {1,@1}
+      ({v}) *. {1,@0} ({v}) *. {1,@1}
       +3d... {-2,^},{^},{u(-$4,$4)} rm[-2,-1]
       col3d. {u(255)},{u(255)},{u(255)}
     }
@@ -54110,18 +54169,18 @@ _fx_tree:
         AB = B - A;
         thickness = norm(B - P2);
 
-        N = round(cut("$avg_branching" + u(-1,1)*"$std_branching",1,6));
+        N = round(cut("$avg_branching" + v*"$std_branching",1,6));
         Nm1 = N<=1?1:N - 1;
 
         repeat (N,n,
-          ang = cut("$avg_leftangle" + dangle*n/Nm1 + u(-1,1)*"$std_angle",-90,90);
+          ang = cut("$avg_leftangle" + dangle*n/Nm1 + v*"$std_angle",-90,90);
           len = cut("$avg_length" + u(-1,-1)*"$std_length",0,200);
           rot = rot(ang°);
           nB = B + len%*rot*AB;
           orth = (nB - B);
           orth/=norm(orth);
           orth = [ -orth[1],orth[0] ];
-          nthickness = thickness*("$avg_thickness" + u(-1,1)*"$std_thickness")%;
+          nthickness = thickness*("$avg_thickness" + v*"$std_thickness")%;
           Q0 = nB + nthickness*orth;
           Q1 = nB - nthickness*orth;
           da_push([ P3,P2,Q1,Q0,ndepth ]);
