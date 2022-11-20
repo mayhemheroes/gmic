@@ -24079,37 +24079,25 @@ nn_lib :
 
     # avgpool2d : 2D average pooling.
     #--------------------------------
-    nn_layer_avgpool2d_init_forward(OUT,IN) = (
-      const OUT#_width = int(IN#_width/2);
-      const OUT#_height = int(IN#_height/2);
+    nn_layer_avgpool2d_init_forward(OUT,IN,P) = (
+      const OUT#_width = int(IN#_width/P);
+      const OUT#_height = int(IN#_height/P);
       const OUT#_depth = IN#_depth;
       const OUT#_spectrum = IN#_spectrum;
-      nn_avgpool2d_kernel_forward = vector4(0.25);
-      nn_avgpool2d_kernel_backward = [ 1,0,0,0 ];
     );
 
     nn_layer_avgpool2d_forward(OUT,IN) = (
-      OUT# = correlate(IN#,
-                       IN#_width,IN#_height,IN#_depth,IN#_spectrum,
-                       nn_avgpool2d_kernel_forward,2,2,1,1,
-                       1,0,1,
-                       0,0,0,
-                       0,0,0,
-                       OUT#_width - 1,OUT#_height - 1,OUT#_depth - 1,
-                       2,2,1);
+      OUT# = resize(IN#,
+                    IN#_width,IN#_height,IN#_depth,IN#_spectrum,
+                    OUT#_width,OUT#_height,OUT#_depth,OUT#_spectrum,
+                    2);
     );
 
     nn_layer_avgpool2d_backward(OUT,IN) = (
-      d#IN = correlate(d#OUT,
-                       OUT#_width,OUT#_height,OUT#_depth,OUT#_spectrum,
-                       nn_avgpool2d_kernel_backward,2,2,1,1,
-                       0,0,1,
-                       0,0,0,
-                       0,0,0,
-                       IN#_width - 1,IN#_height - 1,IN#_depth - 1,
-                       0.5,0.5,1,
-                       1,1,1,
-                       0);
+      d#IN = resize(d#OUT,
+                    OUT#_width,OUT#_height,OUT#_depth,OUT#_spectrum,
+                    IN#_width,IN#_height,IN#_depth,IN#_spectrum,
+                    1);
     );
 
     # clone: Duplicate input as two new outputs.
@@ -25163,16 +25151,17 @@ nn_layer_append : nn_check_layer "$2"
   _nn_backward..="nn_layer_append_backward($1,$2,$3);"
   _nn_init.="$0 $* "
 
-#@cli nn_layer_avgpool2d : out,in
+#@cli nn_layer_avgpool2d : out,in,_patch_size>1
 #@cli : Add a 'avgpool2d' layer (2D average pooling) to the network.
 nn_layer_avgpool2d : nn_check_layer "$2"
-                     check "isvarname('$1')"
-  e[^-1] "[nn_lib] Add 'avgpool2d' layer '$1', with input '$2'."
+                     check "isvarname('$1') && isint(${3=2}) && $3>1"
+  e[^-1] "[nn_lib] Add 'avgpool2d' layer '$1', with input '$2' and patch size $3."
   _nn_modules_names.=$1,
   _nn_modules_types.=avgpool2d,
-  _nn_$1_size={s=[$_nn_$2_size];[int(s[0,2]/2),s[2,2]]}
+  _nn_$1_size:="s=["$_nn_$2_size"];[int(s[0,2]/$3),s[2,2]]"
   _nn_$1_input=$2
-  _nn_forward.="begin(nn_layer_avgpool2d_init_forward($1,$2));"\
+  _nn_$1_properties="patch_size=$3x$3"
+  _nn_forward.="begin(nn_layer_avgpool2d_init_forward($1,$2,$3));"\
                "nn_layer_avgpool2d_forward($1,$2);"
   _nn_backward..="nn_layer_avgpool2d_backward($1,$2);"
   _nn_init.="$0 $* "
