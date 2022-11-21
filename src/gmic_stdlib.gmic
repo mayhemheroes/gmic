@@ -23639,13 +23639,6 @@ nn_lib :
     nn_activation_waves4(z) = nn_activation_waves(z,0,-6,4); # Waves 4
     nn_activation_d_waves4(z) = nn_activation_d_waves(z,0,-6,4);
 
-    const walpha = 2;
-    nn_activation_waves5(z) = nn_activation_waves2(sign(z)*sqrt(abs(z)));
-    nn_activation_d_waves5(z) = (
-        nn_activation_d_waves2(sign(z)*sqrt(abs(z)))*(walpha*z*sign(z)*abs(z)^(walpha-2));
-    );
-
-
     # Zpsinz.
     #--------
     nn_activation_zpsinz(z) = (z + 0.5*sin(2*pi*z));
@@ -24236,7 +24229,7 @@ nn_lib :
       const OUT#_shrink = shrink;
       const OUT#_width = int(IN#_width/stride) - 2*OUT#_shrink;
       const OUT#_height = int(IN#_height/stride) - 2*OUT#_shrink;
-      const OUT#_depth = int(IN#_depth/stride);
+      const OUT#_depth = int(IN#_depth/stride) - 2*OUT#_shrink;
       const OUT#_spectrum = h##OUT#_ind;
       const OUT#_kernel_size = size;
       const OUT#_kernel_center = OUT#_kernel_size - 1 - int(OUT#_kernel_size/2);
@@ -25275,7 +25268,7 @@ nn_conv2dnnl : nn_check_layer "$2"
 #@cli : Default values: 'kernel_size=3', 'stride=1', 'dilation=1', 'border_shrink=0' and 'learning_mode=3'.
 nn_conv3d : nn_check_layer "$2"
             check "isvarname('$1') && isint($3) && $3>0 && isint(${4=3}) && $4>0 && "\
-                  "isint(${7=0}) && $7>=0 && ${5=1}>0 && isint(${8=3}) && inrange($8,0,3)" skip "${6=1}"
+                  "${5=1}>0 && isint(${7=0}) && $7>=0 && isint(${8=3}) && inrange($8,0,3)" skip "${6=1}"
   e[^-1] "[nn_lib] Add 'conv3d' layer '$1', with input '$2', $3 channels, $4x$4x$4 kernels, stride $5, dilation $6 "\
          "and border shrink $7."
   init=$_nn_init
