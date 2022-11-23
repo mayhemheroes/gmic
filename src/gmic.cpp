@@ -560,7 +560,6 @@ CImg<T> get_gmic_draw_text(const float x, const float y,
   return (+*this).gmic_draw_text(x,y,sepx,sepy,text,col,bg,opacity,font,nb_cols);
 }
 
-
 CImg<T>& gmic_invert_endianness(const char *const stype) {
 
 #define _gmic_invert_endianness(svalue_type,value_type) \
@@ -13023,9 +13022,15 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                     *color?color:"default");
               if (!is_cond) {
                 CImgList<T> font;
-                const CImg<char> s_font = get_variable(argz,variables_sizes,&images_names);
-                const char *const zero = (char*)::std::memchr(s_font,0,s_font.size());
-                if (zero) CImgList<T>::get_unserialize(s_font,zero + 1 - s_font.data()).move_to(font);
+                try {
+                  const CImg<char> s_font = get_variable(argz,variables_sizes,&images_names);
+                  const char *const zero = (char*)::std::memchr(s_font,0,s_font.size());
+                  if (zero) CImgList<T>::get_unserialize(s_font,zero + 1 - s_font.data()).move_to(font);
+                } catch (CImgException& e) {
+                  error(true,images,0,0,
+                        "Command 'text': Specified custom font '%s' is invalid.",
+                        argz);
+                }
                 cimg_forY(selection,l) {
                   CImg<T> &img = images[selection[l]];
                   g_img.assign(std::max(img.spectrum(),(int)nb_vals),1,1,1,(T)0).fill_from_values(color,true);
