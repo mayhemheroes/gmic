@@ -2349,7 +2349,7 @@ const CImg<void*> gmic::current_run(const char *const func_name, void *const p_l
 
 // G'MIC-related functions for the mathematical expression evaluator.
 double gmic::mp_dollar(const char *const str, void *const p_list) {
-  if (!(CImg<>::_cimg_math_parser::is_varname(str) ||
+  if (!(cimg::is_varname(str) ||
         ((*str=='>' || *str=='<' || *str=='!' || *str=='^' || *str=='|') && !str[1])))
     throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<>: Operator '$': "
                                 "Invalid variable name '%s'.",
@@ -12948,11 +12948,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                            name.data(),gmic_use_argx,&end)==2 ||
                cimg_sscanf(p_argument,"%4095[^,],%255[0-9.eE%~+-],%255[0-9.eE%~+-]%c",
                            name.data(),argx,gmic_use_argy,&end)==3 ||
-               cimg_sscanf(p_argument,"%4095[^,],%255[0-9.eE%~+-],%255[0-9.eE%~+-],%255[0-9.eE%+-]%c",
+               cimg_sscanf(p_argument,"%4095[^,],%255[0-9.eE%~+-],%255[0-9.eE%~+-],%255[a-zA-Z_0-9.eE%+-]%c",
                            name.data(),argx,argy,gmic_use_argz,&end)==4 ||
-               cimg_sscanf(p_argument,"%4095[^,],%255[0-9.eE%~+-],%255[0-9.eE%~+-],%255[0-9.eE%+-],%f%c",
+               cimg_sscanf(p_argument,"%4095[^,],%255[0-9.eE%~+-],%255[0-9.eE%~+-],%255[a-zA-Z_0-9.eE%+-],%f%c",
                            name.data(),argx,argy,argz,&opacity,&end)==5 ||
-               cimg_sscanf(p_argument,"%4095[^,],%255[0-9.eE%~+-],%255[0-9.eE%~+-],%255[0-9.eE%+-],%f,"
+               cimg_sscanf(p_argument,"%4095[^,],%255[0-9.eE%~+-],%255[0-9.eE%~+-],%255[a-zA-Z_0-9.eE%+-],%f,"
                            "%4095[0-9.eEinfa,+-]%c",
                            name.data(),argx,argy,argz,&opacity,gmic_use_color,&end)==6) &&
               (!*argx ||
@@ -12963,7 +12963,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                (cimg_sscanf(argy,"%f%c%c",&y,&sepy,&end)==2 && (sepy=='%' || sepy=='~'))) &&
               (!*argz ||
                cimg_sscanf(argz,"%f%c",&height,&end)==1 ||
-               (cimg_sscanf(argz,"%f%c%c",&height,&sep,&end)==2 && sep=='%')) &&
+               (cimg_sscanf(argz,"%f%c%c",&height,&sep,&end)==2 && sep=='%') ||
+               0
+               ) &&
               height>=0) {
             strreplace_fw(name);
             print(images,0,"Draw text '%s' at position (%g%s,%g%s) on image%s, with font "
