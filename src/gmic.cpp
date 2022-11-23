@@ -525,6 +525,42 @@ CImg<T> get_gmic_draw_text(const float x, const float y,
   return (+*this).gmic_draw_text(x,y,sepx,sepy,text,col,bg,opacity,siz,nb_cols);
 }
 
+CImg<T>& gmic_draw_text(const float x, const float y,
+                        const char sepx, const char sepy,
+                        const char *const text, const T *const col,
+                        const int bg, const float opacity, const CImgList<T>& font,
+                        const unsigned int nb_cols) {
+  float fx = 0, fy = 0;
+  if (is_empty()) {
+    const T one[] = { (T)1 };
+    fx = sepx=='%' || sepx=='~'?0:x;
+    fy = sepy=='%' || sepy=='~'?0:y;
+    draw_text((int)cimg::round(fx),(int)cimg::round(fy),"%s",one,0,opacity,font,text).resize(-100,-100,1,nb_cols);
+    cimg_forC(*this,c) get_shared_channel(c)*=col[c];
+    return *this;
+  }
+  if (sepx=='~' || sepy=='~') {
+    const char one[] = { 1 };
+    CImg<ucharT> foo;
+    foo.draw_text(0,0,"%s",one,0,1,font,text);
+    fx = sepx=='~'?x*(width() - foo.width()):sepx=='%'?x*(width() - 1)/100:x;
+    fy = sepy=='~'?y*(height() - foo.height()):sepy=='%'?y*(height() - 1)/100:y;
+  } else {
+    fx = sepx=='%'?x*(width() - 1)/100:x;
+    fy = sepy=='%'?y*(height() - 1)/100:y;
+  }
+  return draw_text((int)cimg::round(fx),(int)cimg::round(fy),"%s",col,bg,opacity,font,text);
+}
+
+CImg<T> get_gmic_draw_text(const float x, const float y,
+                           const char sepx, const char sepy,
+                           const char *const text, const T *const col,
+                           const int bg, const float opacity, const CImgList<T>& font,
+                           const unsigned int nb_cols) const {
+  return (+*this).gmic_draw_text(x,y,sepx,sepy,text,col,bg,opacity,font,nb_cols);
+}
+
+
 CImg<T>& gmic_invert_endianness(const char *const stype) {
 
 #define _gmic_invert_endianness(svalue_type,value_type) \
@@ -12940,6 +12976,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           name.assign(4096);
           *argx = *argy = *argz = *name = *color = 0;
           float x = 0, y = 0, height = 16;
+          bool is_custom_font = false;
+          unsigned int nb_vals = 0;
           sep = sepx = sepy = sep0 = 0;
           opacity = 1;
           if ((cimg_sscanf(p_argument,"%4095[^,]%c",
@@ -12964,29 +13002,53 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               (!*argz ||
                cimg_sscanf(argz,"%f%c",&height,&end)==1 ||
                (cimg_sscanf(argz,"%f%c%c",&height,&sep,&end)==2 && sep=='%') ||
-               0
-               ) &&
+               (is_custom_font = cimg::is_varname(argz))) &&
               height>=0) {
-            strreplace_fw(name);
-            print(images,0,"Draw text '%s' at position (%g%s,%g%s) on image%s, with font "
-                  "height %s, opacity %g and color (%s).",
-                  is_cond?"":name.data(),
-                  x,sepx=='%'?"%":sepx=='~'?"~":"",
-                  y,sepy=='%'?"%":sepy=='~'?"~":"",
-                  gmic_selection.data(),
-                  argz,opacity,
-                  *color?color:"default");
+
             if (!is_cond) {
+              strreplace_fw(name);
               cimg::strunescape(name);
-              unsigned int nb_cols = 1;
-              for (const char *s = color; *s; ++s) if (*s==',') ++nb_cols;
-              cimg_forY(selection,l) {
-                CImg<T> &img = images[selection[l]];
-                const unsigned int font_height = (unsigned int)cimg::round(sep=='%'?
-                                                                           height*img.height()/100:height);
-                g_img.assign(std::max(img.spectrum(),(int)nb_cols),1,1,1,(T)0).fill_from_values(color,true);
-                gmic_apply(gmic_draw_text(x,y,sepx,sepy,name,g_img,0,opacity,font_height,nb_cols),true);
+              if (*color) nb_vals = 1;
+              for (const char *s = color; *s; ++s) if (*s==',') ++nb_vals;
+            }
+
+            if (is_custom_font) {
+              print(images,0,"Draw text '%s' at position (%g%s,%g%s) on image%s, with font '%s', "
+                    "opacity %g and color (%s).",
+                    is_cond?"":name.data(),
+                    x,sepx=='%'?"%":sepx=='~'?"~":"",
+                    y,sepy=='%'?"%":sepy=='~'?"~":"",
+                    gmic_selection.data(),
+                    argz,opacity,
+                    *color?color:"default");
+              if (!is_cond) {
+                CImgList<T> font;
+                const CImg<char> s_font = get_variable(argz,variables_sizes,&images_names);
+                const char *const zero = (char*)::std::memchr(s_font,0,s_font.size());
+                if (zero) CImgList<T>::get_unserialize(s_font,zero + 1 - s_font.data()).move_to(font);
+                cimg_forY(selection,l) {
+                  CImg<T> &img = images[selection[l]];
+                  g_img.assign(std::max(img.spectrum(),(int)nb_vals),1,1,1,(T)0).fill_from_values(color,true);
+                  gmic_apply(gmic_draw_text(x,y,sepx,sepy,name,g_img,0,opacity,font,nb_vals),true);
+                }
               }
+            } else {
+              print(images,0,"Draw text '%s' at position (%g%s,%g%s) on image%s, with font height %s, "
+                    "opacity %g and color (%s).",
+                    is_cond?"":name.data(),
+                    x,sepx=='%'?"%":sepx=='~'?"~":"",
+                    y,sepy=='%'?"%":sepy=='~'?"~":"",
+                    gmic_selection.data(),
+                    argz,opacity,
+                    *color?color:"default");
+              if (!is_cond)
+                cimg_forY(selection,l) {
+                  CImg<T> &img = images[selection[l]];
+                  const unsigned int font_height = (unsigned int)cimg::round(sep=='%'?
+                                                                             height*img.height()/100:height);
+                  g_img.assign(std::max(img.spectrum(),(int)nb_vals),1,1,1,(T)0).fill_from_values(color,true);
+                  gmic_apply(gmic_draw_text(x,y,sepx,sepy,name,g_img,0,opacity,font_height,nb_vals),true);
+                }
             }
           } else arg_error("text");
           g_img.assign();
