@@ -24170,7 +24170,7 @@ nn_lib :
       # Compute dLOSS/dIN.
       const OUT#_offset = -int(OUT#_shrink/OUT#_stride);
       const OUT#_invstride = 1/OUT#_stride;
-      const OUT#_ds = OUT#_dilation/OUT#_stride;
+      const OUT#_dons = OUT#_dilation/OUT#_stride;
       d#IN = vector(#size(IN#));
       repeat (IN#_spectrum,_nn_k,
         draw(d#IN,IN#_width,IN#_height,IN#_depth,IN#_spectrum,
@@ -24183,7 +24183,7 @@ nn_lib :
                        OUT#_offset,OUT#_offset,0,
                        IN#_width - 1 + OUT#_offset,IN#_height - 1 + OUT#_offset,IN#_depth - 1,
                        OUT#_invstride,OUT#_invstride,1,
-                       OUT#_ds,OUT#_ds,1),
+                       OUT#_dons,OUT#_dons,1),
              0,0,0,_nn_k,IN#_width,IN#_height,IN#_depth,1);
       );
 
@@ -24193,7 +24193,7 @@ nn_lib :
       batch_d#OUT#_biases+=d#OUT#_biases;
 
       # Compute dLOSS/dweights.
-      const OUT#_dc = OUT#_dilation*OUT#_kernel_center;
+      const OUT#_dcenter = OUT#_dilation*OUT#_kernel_center;
       d#OUT#_weights = vector(#size(OUT#_weights));
       repeat (OUT#_spectrum,_nn_k,
         draw(d#OUT#_weights,
@@ -24204,10 +24204,10 @@ nn_lib :
                        IN#,
                        IN#_width,IN#_height,IN#_depth,IN#_spectrum,
                        0,0,1,
-                       OUT#_dc,OUT#_dc,0,
+                       OUT#_dcenter,OUT#_dcenter,0,
                        OUT#_offset,OUT#_offset,0,
                        OUT#_kernel_size - 1 + OUT#_offset,OUT#_kernel_size - 1 + OUT#_offset,0,
-                       OUT#_ds,OUT#_ds,1,
+                       OUT#_dons,OUT#_dons,1,
                        OUT#_invstride,OUT#_invstride,1),
              0,0,0,_nn_k*IN#_spectrum,
              OUT#_kernel_size,OUT#_kernel_size,1,IN#_spectrum);
@@ -24264,7 +24264,7 @@ nn_lib :
     nn_conv3d_backward(OUT,IN) = (
 
       # Compute dLOSS/dIN.
-      const OUT#_ds = OUT#_dilation/OUT#_stride;
+      const OUT#_dons = OUT#_dilation/OUT#_stride;
       const OUT#_invstride = 1/OUT#_stride;
       const OUT#_offset = -int(OUT#_shrink*OUT#_dilation/OUT#_stride);
       d#IN = correlate(d#OUT,
@@ -24276,7 +24276,7 @@ nn_lib :
                        OUT#_offset,OUT#_offset,OUT#_offset,
                        IN#_width - 1 + OUT#_offset,IN#_height - 1 + OUT#_offset,IN#_depth - 1 + OUT#_offset,
                        OUT#_invstride,OUT#_invstride,OUT#_invstride,1,
-                       OUT#_ds,OUT#_ds,OUT#_ds);
+                       OUT#_dons,OUT#_dons,OUT#_dons);
 
       # Compute dLOSS/dbiases.
       d#OUT#_biases = vector(#size(OUT#_biases));
