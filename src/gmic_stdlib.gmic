@@ -24136,17 +24136,16 @@ nn_lib :
       const OUT#_height = int(IN#_height/stride) - 2*OUT#_shrink;
       const OUT#_depth = IN#_depth;
       const OUT#_spectrum = h##OUT#_ind;
+      const OUT#_whd = OUT#_width*OUT#_height*OUT#_depth;
       const OUT#_kernel_size = size;
       const OUT#_kernel_center = OUT#_kernel_size - 1 - int(OUT#_kernel_size/2);
       const OUT#_stride = stride;
       const OUT#_dilation = dilation;
       OUT#_weights = crop(##OUT#_ind,0,0,w##OUT#_ind - 1,h##OUT#_ind);
       OUT#_biases = crop(##OUT#_ind,w##OUT#_ind - 1,0,1,h##OUT#_ind);
-      OUT# = vector(##OUT#_width*OUT#_height*OUT#_depth*h##OUT#_ind);
     );
 
     nn_conv2d_forward(OUT,IN) = (
-      const OUT#_sizl = size(OUT#)/OUT#_spectrum; # Size of output plane
       OUT# = convolve(IN#,
                       IN#_width,IN#_height,IN#_depth,IN#_spectrum,
                       OUT#_weights,
@@ -24157,9 +24156,7 @@ nn_lib :
                       OUT#_width + OUT#_shrink - 1,OUT#_height + OUT#_shrink - 1,OUT#_depth - 1,
                       OUT#_stride,OUT#_stride,1,
                       OUT#_dilation,OUT#_dilation,1);
-      repeat (OUT#_spectrum,_nn_l,
-        copy(OUT#[_nn_l*OUT#_sizl],OUT#_biases[_nn_l],OUT#_sizl,1,0,-1); # Add biases
-      );
+      repeat (OUT#_spectrum,_nn_k, copy(OUT#[_nn_k*OUT#_whd],OUT#_biases[_nn_k],OUT#_whd,1,0,-1)); # Add biases
     );
 
     nn_conv2d_init_backward(OUT,IN) = (
@@ -24193,7 +24190,7 @@ nn_lib :
 
       # Compute dOUT/dbl.
       d#OUT#_biases = vector(#size(OUT#_biases));
-      fill(d#OUT#_biases,_nn_l,sum(d#OUT[_nn_l*OUT#_sizl,OUT#_sizl]));
+      fill(d#OUT#_biases,_nn_l,sum(d#OUT[_nn_l*OUT#_whd,OUT#_whd]));
       batch_d#OUT#_biases+=d#OUT#_biases;
 
       # Compute dOUT/dwlk.
@@ -24204,7 +24201,7 @@ nn_lib :
           copy(OUT#_xk_mirrored[OUT#_sizk - 1],IN#[_nn_k*OUT#_sizk],OUT#_sizk,-1,1);
           OUT#_dwlk = convolve(OUT#_xk_mirrored,
                                IN#_width,IN#_height,IN#_depth,1,
-                               d#OUT[_nn_l*OUT#_sizl,OUT#_sizl],
+                               d#OUT[_nn_l*OUT#_whd,OUT#_whd],
                                OUT#_width,OUT#_height,OUT#_depth,1,
                                0,0,1,
                                1/OUT#_stride*(IN#_width - 1 - OUT#_dilation*OUT#_kernel_center),
@@ -24235,17 +24232,16 @@ nn_lib :
       const OUT#_height = int(IN#_height/stride) - 2*OUT#_shrink;
       const OUT#_depth = int(IN#_depth/stride) - 2*OUT#_shrink;
       const OUT#_spectrum = h##OUT#_ind;
+      const OUT#_whd = OUT#_width*OUT#_height*OUT#_depth;
       const OUT#_kernel_size = size;
       const OUT#_kernel_center = OUT#_kernel_size - 1 - int(OUT#_kernel_size/2);
       const OUT#_stride = stride;
       const OUT#_dilation = dilation;
       OUT#_weights = crop(##OUT#_ind,0,0,w##OUT#_ind - 1,h##OUT#_ind);
       OUT#_biases = crop(##OUT#_ind,w##OUT#_ind - 1,0,1,h##OUT#_ind);
-      OUT# = vector(##OUT#_width*OUT#_height*OUT#_depth*h##OUT#_ind);
     );
 
     nn_conv3d_forward(OUT,IN) = (
-      const OUT#_sizl = size(OUT#)/OUT#_spectrum; # Size of output plane
       OUT# = convolve(IN#,
                       IN#_width,IN#_height,IN#_depth,IN#_spectrum,
                       OUT#_weights,
@@ -24257,7 +24253,7 @@ nn_lib :
                       OUT#_stride,OUT#_stride,OUT#_stride,
                       OUT#_dilation,OUT#_dilation,OUT#_dilation);
       repeat (OUT#_spectrum,_nn_l,
-        copy(OUT#[_nn_l*OUT#_sizl],OUT#_biases[_nn_l],OUT#_sizl,1,0,-1); # Add biases
+        copy(OUT#[_nn_l*OUT#_whd],OUT#_biases[_nn_l],OUT#_whd,1,0,-1); # Add biases
       );
     );
 
@@ -24293,7 +24289,7 @@ nn_lib :
 
       # Compute dOUT/dbl.
       d#OUT#_biases = vector(#size(OUT#_biases));
-      fill(d#OUT#_biases,_nn_l,sum(d#OUT[_nn_l*OUT#_sizl,OUT#_sizl]));
+      fill(d#OUT#_biases,_nn_l,sum(d#OUT[_nn_l*OUT#_whd,OUT#_whd]));
       batch_d#OUT#_biases+=d#OUT#_biases;
 
       # Compute dOUT/dwlk.
@@ -24304,7 +24300,7 @@ nn_lib :
           copy(OUT#_xk_mirrored[OUT#_sizk - 1],IN#[_nn_k*OUT#_sizk],OUT#_sizk,-1,1);
           OUT#_dwlk = convolve(OUT#_xk_mirrored,
                                IN#_width,IN#_height,IN#_depth,1,
-                               d#OUT[_nn_l*OUT#_sizl,OUT#_sizl],
+                               d#OUT[_nn_l*OUT#_whd,OUT#_whd],
                                OUT#_width,OUT#_height,OUT#_depth,1,
                                0,0,1,
                                1/OUT#_stride*(IN#_width - 1 - OUT#_dilation*OUT#_kernel_center),
