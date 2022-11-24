@@ -24168,38 +24168,24 @@ nn_lib :
     nn_conv2d_backward(OUT,IN) = (
 
       # Compute dLOSS/dIN.
-      const OUT#_ds = OUT#_dilation/OUT#_stride;
+      const OUT#_offset = -int(OUT#_shrink/OUT#_stride);
       const OUT#_invstride = 1/OUT#_stride;
-      const OUT#_offset = -int(OUT#_shrink*OUT#_dilation/OUT#_stride);
-      d#IN = correlate(d#OUT,
+      const OUT#_ds = OUT#_dilation/OUT#_stride;
+      d#IN = vector(#size(IN#));
+      repeat (IN#_spectrum,_nn_k,
+        draw(d#IN,IN#_width,IN#_height,IN#_depth,IN#_spectrum,
+             correlate(d#OUT,
                        OUT#_width,OUT#_height,OUT#_depth,OUT#_spectrum,
-                       OUT#_weights,
-                       OUT#_kernel_size,OUT#_kernel_size,1,OUT#_spectrum*IN#_spectrum,
+                       crop(##OUT#_ind,_nn_k*OUT#_kernel_size2,0,OUT#_kernel_size2,h##OUT#_ind),
+                       OUT#_kernel_size,OUT#_kernel_size,1,OUT#_spectrum,
                        0,0,2,
                        OUT#_kernel_center,OUT#_kernel_center,0,
                        OUT#_offset,OUT#_offset,0,
                        IN#_width - 1 + OUT#_offset,IN#_height - 1 + OUT#_offset,IN#_depth - 1,
                        OUT#_invstride,OUT#_invstride,1,
-                       OUT#_ds,OUT#_ds,1);
-
-      # const OUT#_offset = -int(OUT#_shrink/OUT#_stride);
-      # const OUT#_invstride = 1/OUT#_stride;
-      # const OUT#_ds = OUT#_dilation/OUT#_stride;
-      # d#IN = vector(#size(IN#));
-      # repeat (IN#_spectrum,_nn_k,
-      #   draw(d#IN,IN#_width,IN#_height,IN#_depth,IN#_spectrum,
-      #        correlate(d#OUT,
-      #                  OUT#_width,OUT#_height,OUT#_depth,OUT#_spectrum,
-      #                  crop(##OUT#_ind,_nn_k*OUT#_kernel_size2,0,OUT#_kernel_size2,h##OUT#_ind),
-      #                  OUT#_kernel_size,OUT#_kernel_size,1,OUT#_spectrum,
-      #                  0,0,2,
-      #                  OUT#_kernel_center,OUT#_kernel_center,0,
-      #                  OUT#_offset,OUT#_offset,0,
-      #                  OUT#_width - 1 + OUT#_offset,OUT#_height - 1 + OUT#_offset,OUT#_depth - 1,
-      #                  OUT#_invstride,OUT#_invstride,1,
-      #                  OUT#_ds,OUT#_ds,1),
-      #        0,0,0,_nn_k,IN#_width,IN#_height,IN#_depth,1);
-      # );
+                       OUT#_ds,OUT#_ds,1),
+             0,0,0,_nn_k,IN#_width,IN#_height,IN#_depth,1);
+      );
 
       # Compute dLOSS/dbiases.
       d#OUT#_biases = vector(#size(OUT#_biases));
@@ -24207,28 +24193,6 @@ nn_lib :
       batch_d#OUT#_biases+=d#OUT#_biases;
 
       # Compute dLOSS/dweights.
-
-      # const OUT#_sizk = size(IN#)/IN#_spectrum; # Size of input plane
-      # OUT#_xk_mirrored = vector(##OUT#_sizk);
-      # d#OUT#_weights = vector(#size(OUT#_weights));
-      # repeat (OUT#_spectrum,_nn_l,
-      #   repeat (IN#_spectrum,_nn_k,
-      #     copy(OUT#_xk_mirrored[OUT#_sizk - 1],IN#[_nn_k*OUT#_sizk],OUT#_sizk,-1,1);
-      #     OUT#_dwlk = convolve(OUT#_xk_mirrored,
-      #                          IN#_width,IN#_height,IN#_depth,1,
-      #                          d#OUT[_nn_l*OUT#_whd,OUT#_whd],
-      #                          OUT#_width,OUT#_height,OUT#_depth,1,
-      #                          0,0,1,
-      #                          1/OUT#_stride*(IN#_width - 1 - OUT#_dilation*OUT#_kernel_center),
-      #                          1/OUT#_stride*(IN#_height - 1 - OUT#_dilation*OUT#_kernel_center),0,
-      #                          0,0,0,
-      #                          OUT#_kernel_size - 1,OUT#_kernel_size - 1,0,
-      #                          OUT#_dilation,OUT#_dilation,1,
-      #                          OUT#_stride,OUT#_stride,1);
-      #     copy(d#OUT#_weights[_nn_l*(w##OUT#_ind - 1) + _nn_k*OUT#_kernel_size2],OUT#_dwlk,OUT#_kernel_size2);
-      #   );
-      # );
-
       const OUT#_dc = OUT#_dilation*OUT#_kernel_center;
       d#OUT#_weights = vector(#size(OUT#_weights));
       repeat (OUT#_spectrum,_nn_k,
@@ -24248,7 +24212,6 @@ nn_lib :
              0,0,0,_nn_k*IN#_spectrum,
              OUT#_kernel_size,OUT#_kernel_size,1,IN#_spectrum);
       );
-
       batch_d#OUT#_weights+=d#OUT#_weights;
     );
 
