@@ -15717,7 +15717,7 @@ compose_freq :
 # _xdilation,_ydilation,_zdilation,interpolation_type : (+)
 #@cli : Convolve selected images by specified mask.
 #@cli : 'boundary_conditions' can be { 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }.
-#@cli : 'channel_mode' can be { 0=sum input channels | 1=one-for-one | 2=expand }.
+#@cli : 'channel_mode' can be { 0=all | 1=one-for-one | 2=partial sum | 3=full sum }.
 #@cli : 'interpolation_type' can be { 0=nearest-neighbor | 1=linear }.
 #@cli : Default values: 'boundary_conditions=1', 'is_normalized=0', 'channel_mode=1', \
 # 'xcenter=ycenter=zcenter=(undefined)', 'xstart=ystart=zstart=0', 'xend=yend=zend=(max-coordinates)', \
@@ -15752,7 +15752,7 @@ convolve_fft : check ${is_image_arg\ $1}" && isin(${2=2},0,1,2,3)"
 # _xdilation,_ydilation,_zdilation,interpolation_type : (+)
 #@cli : Correlate selected images by specified mask.
 #@cli : 'boundary_conditions' can be { 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }.
-#@cli : 'channel_mode' can be { 0=sum input channels | 1=one-for-one | 2=expand }.
+#@cli : 'channel_mode' can be { 0=all | 1=one-for-one | 2=partial sum | 3=full sum }.
 #@cli : 'interpolation_type' can be { 0=nearest-neighbor | 1=linear }.
 #@cli : Default values: 'boundary_conditions=1', 'is_normalized=0', 'channel_mode=1', \
 # 'xcenter=ycenter=zcenter=-1', 'xstart=ystart=zstart=0', 'xend=yend=zend=(max-coordinates)', \
@@ -24153,7 +24153,7 @@ nn_lib :
                       1,0,2,
                       OUT#_kernel_center,OUT#_kernel_center,0,
                       OUT#_shrink,OUT#_shrink,0,
-                      OUT#_width + OUT#_shrink - 1,OUT#_height + OUT#_shrink - 1,OUT#_depth - 1,
+                      OUT#_width - 1 + OUT#_shrink,OUT#_height - 1 + OUT#_shrink,OUT#_depth - 1,
                       OUT#_stride,OUT#_stride,1,
                       OUT#_dilation,OUT#_dilation,1);
       repeat (OUT#_spectrum,_nn_k, copy(OUT#[_nn_k*OUT#_whd],OUT#_biases[_nn_k],OUT#_whd,1,0,-1)); # Add biases
@@ -24165,35 +24165,30 @@ nn_lib :
     );
 
     nn_conv2d_backward(OUT,IN) = (
-      const OUT#_sizk = size(IN#)/IN#_spectrum; # Size of input plane
-      const OUT#_sizw = OUT#_kernel_size^2;     # Size of kernel^2
 
-      # Compute dOUT/dxk(x,y).
-      OUT#_kernel_mirrored = vector(#size(OUT#_weights));
-      repeat (IN#_spectrum,_nn_k,
-        repeat (OUT#_spectrum,_nn_l,
-          copy(OUT#_kernel_mirrored[_nn_k*OUT#_spectrum*OUT#_sizw + _nn_l*OUT#_sizw + OUT#_sizw - 1],
-               OUT#_weights[_nn_l*(w##OUT#_ind - 1) + _nn_k*OUT#_sizw],OUT#_sizw,-1,1);
-        );
-      );
-      d#IN = convolve(d#OUT,
-                      OUT#_width,OUT#_height,OUT#_depth,OUT#_spectrum,
-                      OUT#_kernel_mirrored,
-                      OUT#_kernel_size,OUT#_kernel_size,1,OUT#_spectrum*IN#_spectrum,
-                      0,0,2,
-                      OUT#_kernel_size - 1 - OUT#_kernel_center,
-                      OUT#_kernel_size - 1 - OUT#_kernel_center,0,
-                      -OUT#_shrink,-OUT#_shrink,0,
-                      IN#_width - OUT#_shrink - 1,IN#_height - OUT#_shrink - 1,IN#_depth - 1,
-                      1/OUT#_stride,1/OUT#_stride,1,
-                      OUT#_dilation/OUT#_stride,OUT#_dilation/OUT#_stride,1);
+      # Compute dLOSS/dIN.
+      const OUT#_ds = OUT#_dilation/OUT#_stride;
+      const OUT#_invstride = 1/OUT#_stride;
+      const OUT#_offset = -int(OUT#_shrink*OUT#_dilation/OUT#_stride);
+      d#IN = correlate(d#OUT,
+                       OUT#_width,OUT#_height,OUT#_depth,OUT#_spectrum,
+                       OUT#_weights,
+                       OUT#_kernel_size,OUT#_kernel_size,1,OUT#_spectrum*IN#_spectrum,
+                       0,0,2,
+                       OUT#_kernel_center,OUT#_kernel_center,0,
+                       OUT#_offset,OUT#_offset,0,
+                       IN#_width - 1 + OUT#_offset,IN#_height - 1 + OUT#_offset,IN#_depth - 1,
+                       OUT#_invstride,OUT#_invstride,1,
+                       OUT#_ds,OUT#_ds,1);
 
-      # Compute dOUT/dbl.
+      # Compute dLOSS/dbiases.
       d#OUT#_biases = vector(#size(OUT#_biases));
       fill(d#OUT#_biases,_nn_l,sum(d#OUT[_nn_l*OUT#_whd,OUT#_whd]));
       batch_d#OUT#_biases+=d#OUT#_biases;
 
-      # Compute dOUT/dwlk.
+      # Compute dLOSS/dweights.
+      const OUT#_sizk = size(IN#)/IN#_spectrum; # Size of input plane
+      const OUT#_sizw = OUT#_kernel_size^2;     # Size of kernel^2
       OUT#_xk_mirrored = vector(##OUT#_sizk);
       d#OUT#_weights = vector(#size(OUT#_weights));
       repeat (OUT#_spectrum,_nn_l,
@@ -24249,7 +24244,7 @@ nn_lib :
                       1,0,2,
                       OUT#_kernel_center,OUT#_kernel_center,OUT#_kernel_center,
                       OUT#_shrink,OUT#_shrink,OUT#_shrink,
-                      OUT#_width + OUT#_shrink - 1,OUT#_height + OUT#_shrink - 1,OUT#_depth + OUT#_shrink - 1,
+                      OUT#_width - 1 + OUT#_shrink,OUT#_height - 1 + OUT#_shrink,OUT#_depth - 1 + OUT#_shrink,
                       OUT#_stride,OUT#_stride,OUT#_stride,
                       OUT#_dilation,OUT#_dilation,OUT#_dilation);
       repeat (OUT#_spectrum,_nn_l,
@@ -24263,36 +24258,30 @@ nn_lib :
     );
 
     nn_conv3d_backward(OUT,IN) = (
-      const OUT#_sizk = size(IN#)/IN#_spectrum; # Size of input plane
-      const OUT#_sizw = OUT#_kernel_size^3;     # Size of kernel^3
 
-      # Compute dOUT/dxk(x,y).
-      OUT#_kernel_mirrored = vector(#size(OUT#_weights));
-      repeat (IN#_spectrum,_nn_k,
-        repeat (OUT#_spectrum,_nn_l,
-          copy(OUT#_kernel_mirrored[_nn_k*OUT#_spectrum*OUT#_sizw + _nn_l*OUT#_sizw + OUT#_sizw - 1],
-               OUT#_weights[_nn_l*(w##OUT#_ind - 1) + _nn_k*OUT#_sizw],OUT#_sizw,-1,1);
-        );
-      );
-      d#IN = convolve(d#OUT,
-                      OUT#_width,OUT#_height,OUT#_depth,OUT#_spectrum,
-                      OUT#_kernel_mirrored,
-                      OUT#_kernel_size,OUT#_kernel_size,OUT#_kernel_size,OUT#_spectrum*IN#_spectrum,
-                      0,0,2,
-                      OUT#_kernel_size - 1 - OUT#_kernel_center,
-                      OUT#_kernel_size - 1 - OUT#_kernel_center,
-                      OUT#_kernel_size - 1 - OUT#_kernel_center,
-                      -OUT#_shrink,-OUT#_shrink,-OUT#_shrink,
-                      IN#_width - OUT#_shrink - 1,IN#_height - OUT#_shrink - 1,IN#_depth - OUT#_shrink - 1,
-                      1/OUT#_stride,1/OUT#_stride,1/OUT#_stride,1,
-                      OUT#_dilation/OUT#_stride,OUT#_dilation/OUT#_stride,OUT#_dilation/OUT#_stride);
+      # Compute dLOSS/dIN.
+      const OUT#_ds = OUT#_dilation/OUT#_stride;
+      const OUT#_invstride = 1/OUT#_stride;
+      const OUT#_offset = -int(OUT#_shrink*OUT#_dilation/OUT#_stride);
+      d#IN = correlate(d#OUT,
+                       OUT#_width,OUT#_height,OUT#_depth,OUT#_spectrum,
+                       OUT#_weights,
+                       OUT#_kernel_size,OUT#_kernel_size,OUT#_kernel_size,OUT#_spectrum*IN#_spectrum,
+                       0,0,2,
+                       OUT#_kernel_center,OUT#_kernel_center,OUT#_kernel_center,
+                       OUT#_offset,OUT#_offset,OUT#_offset,
+                       IN#_width - 1 + OUT#_offset,IN#_height - 1 + OUT#_offset,IN#_depth - 1 + OUT#_offset,
+                       OUT#_invstride,OUT#_invstride,OUT#_invstride,1,
+                       OUT#_ds,OUT#_ds,OUT#_ds);
 
-      # Compute dOUT/dbl.
+      # Compute dLOSS/dbiases.
       d#OUT#_biases = vector(#size(OUT#_biases));
       fill(d#OUT#_biases,_nn_l,sum(d#OUT[_nn_l*OUT#_whd,OUT#_whd]));
       batch_d#OUT#_biases+=d#OUT#_biases;
 
-      # Compute dOUT/dwlk.
+      # Compute dLOSS/dweights.
+      const OUT#_sizk = size(IN#)/IN#_spectrum; # Size of input plane
+      const OUT#_sizw = OUT#_kernel_size^3;     # Size of kernel^3
       OUT#_xk_mirrored = vector(##OUT#_sizk);
       d#OUT#_weights = vector(#size(OUT#_weights));
       repeat (OUT#_spectrum,_nn_l,

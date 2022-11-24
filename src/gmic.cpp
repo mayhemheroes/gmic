@@ -6791,7 +6791,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   is_normalized?"":"out",
                   channel_mode==0?"all":
                   channel_mode==1?"one for one":
-                  channel_mode==2?"partial sum":"sum",
+                  channel_mode==2?"partial sum":"full sum",
                   *argx?argx:"",*argy?argy:"",*argz?argz:"",*argc?argc:"",
                   interpolation_type?"linear":"nearest-neighbor");
             const CImg<T> kernel = gmic_image_arg(*ind);
