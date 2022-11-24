@@ -23786,13 +23786,6 @@ nn_lib :
       learning_mode?nn_optimizer_sgd_update_conv_or_fc(#P,learning_mode);
     );
 
-    nn_optimizer_sgd_update_dict(P,learning_mode) = (
-      learning_mode?(
-        nn_optimizer_sgd_update_weights(P#_weights);
-        draw(##P#_ind,P#_weights,0,0,w##P#_ind,h##P#_ind);
-      );
-    );
-
     nn_optimizer_sgd_update_fc(P,learning_mode) = (
       learning_mode?nn_optimizer_sgd_update_conv_or_fc(#P,learning_mode);
     );
@@ -23834,16 +23827,6 @@ nn_lib :
 
     nn_optimizer_rmsprop_update_conv3d(P,learning_mode) = (
       learning_mode?nn_optimizer_rmsprop_update_conv_or_fc(#P,learning_mode);
-    );
-
-    nn_optimizer_rmsprop_update_dict(P,learning_mode) = (
-      const P#_ind_g2 = $P#_g2;
-      learning_mode?(
-        d#P#_weights_g2 = crop(##P#_ind_g2,0,0,w##P#_ind,h##P#_ind);
-        nn_optimizer_rmsprop_update_weights(P#_weights);
-        draw(##P#_ind,P#_weights,0,0,w##P#_ind,h##P#_ind);
-        draw(##P#_ind_g2,d#P#_weights_g2,0,0,w##P#_ind,h##P#_ind);
-      );
     );
 
     nn_optimizer_rmsprop_update_fc(P,learning_mode) = (
@@ -23909,19 +23892,6 @@ nn_lib :
 
     nn_optimizer_adam_update_conv3d(P,learning_mode) = (
       learning_mode?nn_optimizer_adam_update_conv_or_fc(#P,learning_mode);
-    );
-
-    nn_optimizer_adam_update_dict(P,learning_mode) = (
-      learning_mode?(
-        const P#_ind_m = $P#_m;
-        const P#_ind_v = $P#_v;
-        d#P#_weights_m = crop(##P#_ind_m,0,0,w##P#_ind,h##P#_ind);
-        d#P#_weights_v = crop(##P#_ind_v,0,0,w##P#_ind,h##P#_ind);
-        nn_optimizer_adam_update_weights(P#_weights);
-        draw(##P#_ind,P#_weights,0,0,w##P#_ind,h##P#_ind);
-        draw(##P#_ind_m,d#P#_weights_m,0,0,w##P#_ind,h##P#_ind);
-        draw(##P#_ind_v,d#P#_weights_v,0,0,w##P#_ind,h##P#_ind);
-      );
     );
 
     nn_optimizer_adam_update_fc(P,learning_mode) = (
@@ -23991,19 +23961,6 @@ nn_lib :
 
     nn_optimizer_adamax_update_conv3d(P,learning_mode) = (
       learning_mode?nn_optimizer_adamax_update_conv_or_fc(#P,learning_mode);
-    );
-
-    nn_optimizer_adamax_update_dict(P,learning_mode) = (
-      learning_mode?(
-        const P#_ind_m = $P#_m;
-        const P#_ind_v = $P#_v;
-        d#P#_weights_m = crop(##P#_ind_m,0,0,w##P#_ind,h##P#_ind);
-        d#P#_weights_v = crop(##P#_ind_v,0,0,w##P#_ind,h##P#_ind);
-        nn_optimizer_adamax_update_weights(P#_weights);
-        draw(##P#_ind,P#_weights,0,0,w##P#_ind,h##P#_ind);
-        draw(##P#_ind_m,d#P#_weights_m,0,0,w##P#_ind,h##P#_ind);
-        draw(##P#_ind_v,d#P#_weights_v,0,0,w##P#_ind,h##P#_ind);
-      );
     );
 
     nn_optimizer_adamax_update_fc(P,learning_mode) = (
@@ -24142,8 +24099,8 @@ nn_lib :
       const OUT#_kernel_center = OUT#_kernel_size - 1 - int(OUT#_kernel_size/2);
       const OUT#_stride = stride;
       const OUT#_dilation = dilation;
-      OUT#_weights = crop(##OUT#_ind,0,0,w##OUT#_ind - 1,h##OUT#_ind);
-      OUT#_biases = crop(##OUT#_ind,w##OUT#_ind - 1,0,1,h##OUT#_ind);
+      OUT#_weights = crop(##OUT#_ind,0,0,w##OUT#_ind - 1,OUT#_spectrum);
+      OUT#_biases = crop(##OUT#_ind,w##OUT#_ind - 1,0,1,OUT#_spectrum);
     );
 
     nn_conv2d_forward(OUT,IN) = (
@@ -24176,8 +24133,8 @@ nn_lib :
         draw(d#IN,IN#_width,IN#_height,IN#_depth,IN#_spectrum,
              correlate(d#OUT,
                        OUT#_width,OUT#_height,OUT#_depth,OUT#_spectrum,
-                       crop(OUT#_weights,w##OUT#_ind - 1,h##OUT#_ind,1,1,
-                            _nn_k*OUT#_kernel_size2,0,OUT#_kernel_size2,h##OUT#_ind),
+                       crop(OUT#_weights,w##OUT#_ind - 1,OUT#_spectrum,1,1,
+                            _nn_k*OUT#_kernel_size2,0,OUT#_kernel_size2,OUT#_spectrum),
                        OUT#_kernel_size,OUT#_kernel_size,1,OUT#_spectrum,
                        0,0,2,
                        OUT#_kernel_center,OUT#_kernel_center,0,
@@ -24223,100 +24180,6 @@ nn_lib :
       batch_d#OUT#_biases/=nn_batch_size;
     );
 
-    # conv3d: 3D convolutional layer.
-    #--------------------------------
-    nn_conv3d_init_forward(OUT,IN,size,stride,dilation,shrink) = (
-      const OUT#_ind = $OUT#;
-      const OUT#_shrink = shrink;
-      const OUT#_width = int(IN#_width/stride) - 2*OUT#_shrink;
-      const OUT#_height = int(IN#_height/stride) - 2*OUT#_shrink;
-      const OUT#_depth = int(IN#_depth/stride) - 2*OUT#_shrink;
-      const OUT#_spectrum = h##OUT#_ind;
-      const OUT#_whd = OUT#_width*OUT#_height*OUT#_depth;
-      const OUT#_kernel_size = size;
-      const OUT#_kernel_center = OUT#_kernel_size - 1 - int(OUT#_kernel_size/2);
-      const OUT#_stride = stride;
-      const OUT#_dilation = dilation;
-      OUT#_weights = crop(##OUT#_ind,0,0,w##OUT#_ind - 1,h##OUT#_ind);
-      OUT#_biases = crop(##OUT#_ind,w##OUT#_ind - 1,0,1,h##OUT#_ind);
-    );
-
-    nn_conv3d_forward(OUT,IN) = (
-      OUT# = convolve(IN#,
-                      IN#_width,IN#_height,IN#_depth,IN#_spectrum,
-                      OUT#_weights,
-                      OUT#_kernel_size,OUT#_kernel_size,OUT#_kernel_size,IN#_spectrum*OUT#_spectrum,
-                      1,0,2,
-                      OUT#_kernel_center,OUT#_kernel_center,OUT#_kernel_center,
-                      OUT#_shrink,OUT#_shrink,OUT#_shrink,
-                      OUT#_width - 1 + OUT#_shrink,OUT#_height - 1 + OUT#_shrink,OUT#_depth - 1 + OUT#_shrink,
-                      OUT#_stride,OUT#_stride,OUT#_stride,
-                      OUT#_dilation,OUT#_dilation,OUT#_dilation);
-      repeat (OUT#_spectrum,_nn_l,
-        copy(OUT#[_nn_l*OUT#_whd],OUT#_biases[_nn_l],OUT#_whd,1,0,-1); # Add biases
-      );
-    );
-
-    nn_conv3d_init_backward(OUT,IN) = (
-      batch_d#OUT#_weights = vector(#size(OUT#_weights));
-      batch_d#OUT#_biases = vector(#size(OUT#_biases));
-    );
-
-    nn_conv3d_backward(OUT,IN) = (
-
-      # Compute dLOSS/dIN.
-      const OUT#_dons = OUT#_dilation/OUT#_stride;
-      const OUT#_invstride = 1/OUT#_stride;
-      const OUT#_offset = -int(OUT#_shrink*OUT#_dilation/OUT#_stride);
-      d#IN = correlate(d#OUT,
-                       OUT#_width,OUT#_height,OUT#_depth,OUT#_spectrum,
-                       OUT#_weights,
-                       OUT#_kernel_size,OUT#_kernel_size,OUT#_kernel_size,OUT#_spectrum*IN#_spectrum,
-                       0,0,2,
-                       OUT#_kernel_center,OUT#_kernel_center,OUT#_kernel_center,
-                       OUT#_offset,OUT#_offset,OUT#_offset,
-                       IN#_width - 1 + OUT#_offset,IN#_height - 1 + OUT#_offset,IN#_depth - 1 + OUT#_offset,
-                       OUT#_invstride,OUT#_invstride,OUT#_invstride,1,
-                       OUT#_dons,OUT#_dons,OUT#_dons);
-
-      # Compute dLOSS/dbiases.
-      d#OUT#_biases = vector(#size(OUT#_biases));
-      fill(d#OUT#_biases,_nn_l,sum(d#OUT[_nn_l*OUT#_whd,OUT#_whd]));
-      batch_d#OUT#_biases+=d#OUT#_biases;
-
-      # Compute dLOSS/dweights.
-      const OUT#_sizk = size(IN#)/IN#_spectrum; # Size of input plane
-      const OUT#_sizw = OUT#_kernel_size^3;     # Size of kernel^3
-      OUT#_xk_mirrored = vector(##OUT#_sizk);
-      d#OUT#_weights = vector(#size(OUT#_weights));
-      repeat (OUT#_spectrum,_nn_l,
-        repeat (IN#_spectrum,_nn_k,
-          copy(OUT#_xk_mirrored[OUT#_sizk - 1],IN#[_nn_k*OUT#_sizk],OUT#_sizk,-1,1);
-          OUT#_dwlk = convolve(OUT#_xk_mirrored,
-                               IN#_width,IN#_height,IN#_depth,1,
-                               d#OUT[_nn_l*OUT#_whd,OUT#_whd],
-                               OUT#_width,OUT#_height,OUT#_depth,1,
-                               0,0,1,
-                               1/OUT#_stride*(IN#_width - 1 - OUT#_dilation*OUT#_kernel_center),
-                               1/OUT#_stride*(IN#_height - 1 - OUT#_dilation*OUT#_kernel_center),
-                               1/OUT#_stride*(IN#_depth - 1 - OUT#_dilation*OUT#_kernel_center),
-                               0,0,0,
-                               OUT#_kernel_size - 1,OUT#_kernel_size - 1,OUT#_kernel_size - 1,
-                               OUT#_dilation,OUT#_dilation,OUT#_dilation,
-                               OUT#_stride,OUT#_stride,OUT#_stride);
-          copy(d#OUT#_weights[_nn_l*(w##OUT#_ind - 1) + _nn_k*OUT#_sizw],OUT#_dwlk,OUT#_sizw);
-        );
-      );
-      batch_d#OUT#_weights+=d#OUT#_weights;
-    );
-
-    nn_conv3d_end_backward(OUT) = (
-      merge(batch_d#OUT#_weights,+);
-      merge(batch_d#OUT#_biases,+);
-      batch_d#OUT#_weights/=nn_batch_size;
-      batch_d#OUT#_biases/=nn_batch_size;
-    );
-
     # crop : Crop layer.
     #--------------------
     nn_crop_init_forward(OUT,IN,x0,y0,z0,x1,y1,z1) = (
@@ -24336,38 +24199,6 @@ nn_lib :
       d#IN = crop(d#OUT,OUT#_width,OUT#_height,OUT#_depth,OUT#_spectrum,
                   -x0,-y0,-z0,
                   IN#_width,IN#_height,IN#_depth);
-    );
-
-    # dict: Dictionnary learning layer.
-    #----------------------------------
-    nn_dict_init_forward(OUT,IN) = (
-      const OUT#_ind = $OUT#;
-      const OUT#_width = IN#_width;
-      const OUT#_height = IN#_height;
-      const OUT#_depth = IN#_depth;
-      const OUT#_spectrum = IN#_spectrum;
-      OUT#_weights = crop(##OUT#_ind,0,0,w##OUT#_ind,h##OUT#_ind);
-    );
-
-    nn_dict_forward(OUT,IN) = (
-      OUT#_alpha_fwd = solve(IN#,OUT#_weights,w##OUT#_ind);
-      OUT# = mul(OUT#_weights,OUT#_alpha_fwd);
-    );
-
-    nn_dict_init_backward(OUT) = (
-      batch_d#OUT#_weights = vector(#size(OUT#_weights));
-    );
-
-    nn_dict_backward(OUT,IN) = (
-      OUT#_alpha_bwd = solve(d#OUT,OUT#_weights,w##OUT#_ind);
-      d#IN = mul(OUT#_weights,OUT#_alpha_bwd);
-      d#OUT#_weights = mul(d#OUT,OUT#_alpha_fwd,size(OUT#_alpha_fwd));
-      batch_d#OUT#_weights+=d#OUT#_weights;
-    );
-
-    nn_dict_end_backward(OUT) = (
-      merge(batch_d#OUT#_weights,+);
-      batch_d#OUT#_weights/=nn_batch_size;
     );
 
     # distance : Distance between two inputs.
@@ -25345,29 +25176,6 @@ nn_crop : nn_check_layer "$2"
   _nn_backward..="nn_crop_backward($1,$2,${3-8});"
   _nn_init.="$0 $* "
 
-#@cli nn_dict : out,in,nb_atoms>0,_learning_mode={ 0 | 1 }
-#@cli : Add a 'dict' layer (dictionnary learning layer) to the network.
-#@cli : Default value: 'learning_mode=1'.
-nn_dict : nn_check_layer "$2"
-          check "isvarname('$1') && isint($3) && $3>0 && isbool(${4=1})"
-  e[^-1] "[nn_lib] Add 'dict' layer '$1', with input '$2' and $3 atoms."
-  _nn_dict $1_dict,${2-4}
-  nn_rename $1,$1_dict
-
-# [Internal] Insert 'dict' layer, with parameter image having name '$1'.
-_nn_dict :
-  _nn_modules_names.=$1,
-  _nn_modules_types.=dict,
-  _nn_$1_size=$_nn_$2_size
-  _nn_$1_learning_mode=$4
-  if !isint($$1) $3,{prod($_nn_$2_size)},1,1,4*g/(w-1) => $1 fi
-  _nn_forward.="begin(nn_dict_init_forward($1,$2));"\
-               "nn_dict_forward($1,$2);"
-  _nn_backward..="begin(nn_dict_init_backward($1));"\
-                 "nn_dict_backward($1,$2);"\
-                 "end(nn_dict_end_backward($1));"
-  _nn_init.="$0 $* "
-
 #@cli nn_distance : out,in0,in1,_metric={ 0=squared-L2 | p>0 = Lp-norm }
 #@cli : Add a 'distance' layer to the network (distance between two inputs, with specified metric).
 nn_distance : nn_check_layer "$2"
@@ -26012,7 +25820,7 @@ nn_trainer : nn_check_layer "$2"
     name=${arg0\ $>,$_nn_modules_names}
     learning_mode=${_nn_${name}_learning_mode}
 
-    if isin('$type','conv2d','conv3d','fc','dict','normalize')
+    if isin('$type','conv2d','conv3d','fc','normalize')
       _nn_$1_update.="nn_optimizer_$4_update_"$type"("$name,$learning_mode");"
 
       # Allocate data for storing optimizer extra data (moments,...).
@@ -26052,7 +25860,7 @@ nn_size :
   repeat narg($_nn_modules_names)-1 {
     type=${arg0\ $>,$_nn_modules_types}
     name=${arg0\ $>,$_nn_modules_names}
-    if isin('$type','conv2d','conv3d','fc','dict') siz+={$name,whds} fi
+    if isin('$type','conv2d','conv3d','fc','normalize') siz+={$name,whds} fi
   }
   u $siz
 
@@ -26080,7 +25888,7 @@ nn_save : check "s=['$1']; find(s,'.gmz')==size(s) - 4 && isbool(${2=1})"
   repeat narg($_nn_modules_names)-1 {
     type=${arg0\ $>,$_nn_modules_types}
     name=${arg0\ $>,$_nn_modules_names}
-    if isin('$type','conv2d','conv3d','dict','fc','normalize','trainer') sel.=$c$name c=, fi
+    if isin('$type','conv2d','conv3d','fc','normalize','trainer') sel.=$c$name c=, fi
   }
   ('$_nn_init') autocrop. {'" "'} => _nn_init
   o[$sel,-1] "$1"
@@ -26096,7 +25904,7 @@ nn_store : check "isbool(${2=1})"
   repeat narg($_nn_modules_names)-1 {
     type=${arg0\ $>,$_nn_modules_types}
     name=${arg0\ $>,$_nn_modules_names}
-    if isin('$type','conv2d','conv3d','dict','fc','normalize','trainer') sel.=$c$name c=, fi
+    if isin('$type','conv2d','conv3d','fc','normalize','trainer') sel.=$c$name c=, fi
   }
   ('$_nn_init') autocrop. {'" "'} => _nn_init
   +store[$sel,-1] "$1"
