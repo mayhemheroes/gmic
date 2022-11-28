@@ -7789,7 +7789,7 @@ _parse_gui_strings :
       expr="z = [ "{u(20)}"*((x+0.5)/w-0.5), "{u(20)}"*((y+0.5)/h-0.5) + 0.5/h ]; "${-_random_pattern_expr}
       {round([$1,$2]*128/min($1,$2))},1,2,*$expr
       replace_naninf. 0 norm. n. 0,255 equalize. 256 c. 0,255
-      cond=${-_random_pattern_check_image.\ $3}
+      cond=${"_random_pattern_check_image. $3"}
       if !$cond rm. fi
     while !$cond
     rm. $1,$2,1,2,*$expr
@@ -7798,10 +7798,11 @@ _parse_gui_strings :
   a[-3--1] c
 
   # Convert result from random colorspace to RGB.
-  ${"arg "{1+int(u(6))%6}",ycbcr2rgb,hsi82rgb,hsl82rgb,hsv82rgb,lab82rgb,rgb2rgb"}.
+  ${"arg0 "{int(u(6))%6}",ycbcr2rgb,hsi82rgb,hsl82rgb,hsv82rgb,lab82rgb,rgb2rgb"}.
+  c. 0,255
 
   # Local normalization in random colorspace.
-  ac. "normalize_local {[u(2,15),u(2,max(w,h)/2)]}",${"arg "{1+int(u(4))%4}",lab_l,ycbcr_y,hsl_l,rgb"}
+  ac. "normalize_local {[u(2,15),u(2,max(w,h)/2)]}",${"arg0 "{int(u(4))%4}",lab_l,ycbcr_y,hsl_l,rgb"}
 
   # Random color balance.
   ac. "*. '[{u([0.25,0.25,0.25],[2,2,2])}]'",${"arg "{1+int(u(6))%6}",lab,ycbcr,hsi,hsl,hsv,rgb"}
@@ -7859,10 +7860,9 @@ _random_pattern_check_image :
   +s. xy,4
   foreach[^0] {
     gradient_norm
-    if ic<$1 cond=0 rm break fi
-    rm
+    if ic<$1 cond=0 break fi
   }
-  u $cond
+  k[0] u $cond
 
 #@cli screen : _x0[%],_y0[%],_x1[%],_y1[%] : (+)
 #@cli : Take screenshot, optionally grabbed with specified coordinates, and insert it
