@@ -23525,17 +23525,17 @@ nn_lib :
     # Activation functions and their derivatives.
     #--------------------------------------------
 
-    # ELU: Exponential Linear Unit.
+    # elu: Exponential Linear Unit.
     #-------------------------------
     nn_activation_elu(z) = (z<0?exp(z) - 1:z);
     nn_activation_d_elu(z) = (z<0?exp(z):1);
 
-    # GELU: Gaussian Error Linear Unit.
+    # gelu: Gaussian Error Linear Unit.
     #-----------------------------------
     nn_activation_gelu(z) = (0.5*z*(1 + erf(z/sqrt(2))));
     nn_activation_d_gelu(z) = (0.5 + 0.5*erf(z/sqrt(2)) + z*exp(-z^2/2)/sqrt(2*pi));
 
-    # LeakyRELU: Leaky Rectified Linear Unit.
+    # leakyrelu: Leaky Rectified Linear Unit.
     #-----------------------------------------
     nn_activation_leakyrelu(z) = (z<0?0.05*z:z);
     nn_activation_d_leakyrelu(z) = (z<0?0.05:1);
@@ -23545,37 +23545,37 @@ nn_lib :
     nn_activation_linear(z) = z;
     nn_activation_d_linear(z) = 1;
 
-    # ReLU: Rectified Linear Unit.
+    # relu: Rectified Linear Unit.
     #------------------------------
     nn_activation_relu(z) = (z<0?0:z);
     nn_activation_d_relu(z) = (z<0?0:1);
 
-    # Sigmoid (a.k.a Logistic).
-    #--------------------------
+    # sigmoid : Sigmoid (a.k.a Logistic).
+    #------------------------------------
     nn_activation_sigmoid(z) = (0.5 + 0.5*tanh(z/2));
     nn_activation_d_sigmoid(z) = (_nn_sig = nn_activation_sigmoid(z); _nn_sig*(1 - _nn_sig));
 
-    # Sin: Sine.
+    # sin: Sine.
     #-----------
     nn_activation_sin(z) = sin(z);
     nn_activation_d_sin(z) = cos(z);
 
-    # Sinc: Sinc.
+    # sinc: Sinc.
     #------------
     nn_activation_sinc(z) = sinc(z);
     nn_activation_d_sinc(z) = ((cos(z) - sinc(z))/(1e-10+z));
 
-    # Sqr: Square.
+    # sqr: Square.
     #-------------
     nn_activation_sqr(z) = (z^2);
     nn_activation_d_sqr(z) = (2*z);
 
-    # Sqrt: sqrt(|z|).
+    # sqrt: sqrt(|z|).
     #-----------------
     nn_activation_sqrt(z) = (sqrt(abs(z)));
     nn_activation_d_sqrt(z) = (0.5*sign(x)/sqrt(max(1e-16,abs(z))));
 
-    # Steps.
+    # steps.
     #-------
     const _nn_steps_S0 = isnan($_S0)?2:$_S0;
     const _nn_steps_S1 = isnan($_S1)?0.5:$_S1;
@@ -23594,7 +23594,7 @@ nn_lib :
       abs(_nn_steps_zf)<_nn_steps_eps?_nn_steps_S0:_nn_steps_S1;
     );
 
-    # Swish.
+    # swish.
     #--------
     nn_activation_swish(z) = (z*nn_activation_sigmoid(z));
     nn_activation_d_swish(z) = (
@@ -23603,13 +23603,13 @@ nn_lib :
       _nn_swi + _nn_sig*(1 - _nn_swi)
     );
 
-    # Tanh.
+    # tanh.
     #------
     nn_activation_tanh(z) = (tanh(z));
     nn_activation_d_tanh(z) = (1 - tanh(z)^2);
 
-    # Waves family.
-    #--------------
+    # waves.
+    #-------
     nn_activation_waves(z,a,b,c) = (
       _nn_waves_zi = round(z);
       _nn_waves_zf = z - _nn_waves_zi;
@@ -23642,7 +23642,7 @@ nn_lib :
     nn_activation_waves4(z) = nn_activation_waves(z,0,-6,4); # Waves 4
     nn_activation_d_waves4(z) = nn_activation_d_waves(z,0,-6,4);
 
-    # Zpsinz.
+    # zpsinz.
     #--------
     nn_activation_zpsinz(z) = (z + 0.5*sin(2*pi*z));
     nn_activation_d_zpsinz(z) = (1 + pi*cos(2*pi*z));
