@@ -23603,6 +23603,21 @@ nn_lib :
       _nn_swi + _nn_sig*(1 - _nn_swi)
     );
 
+    # tab: tabulated activation.
+    #---------------------------
+    begin(
+      _nn_tab_custom = expr('z = lerp(-32,32,x/(w-1)); "$_expr"',65537);
+      _nn_tab_d_custom = vector(#size(_nn_tab_custom));
+      const _nn_custom_delta = 64/(size(_nn_tab_custom) - 1);
+      fill(_nn_tab_d_custom,_nn_k,
+        _nn_pk = _nn_k?_nn_k - 1:_nn_k;
+        _nn_nk = _nn_k<size(_nn_tab_custom) - 1?_nn_k + 1:_nn_k;
+        (_nn_tab_custom[_nn_nk] - _nn_tab_custom[_nn_pk])/(2*_nn_custom_delta);
+      );
+    );
+    nn_activation_tab(z) = _nn_tab_custom[cut((z + 32)/64,0,1)*(size(_nn_tab_custom) - 1)];
+    nn_activation_d_tab(z) = _nn_tab_d_custom[cut((z + 32)/64,0,1)*(size(_nn_tab_custom) - 1)];
+
     # tanh.
     #------
     nn_activation_tanh(z) = (tanh(z));
