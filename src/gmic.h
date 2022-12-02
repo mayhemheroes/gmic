@@ -75,9 +75,6 @@
 const char gmic_dollar = 23, gmic_lbrace = 24, gmic_rbrace = 25, gmic_comma = 26, gmic_dquote = 28,
   gmic_store = 29; // <- this one is only used in variable names.
 
-#include <cstdio>
-#include <cstring>
-
 //---------------------------------------------------------
 // Public API for the 'gmic_image' and 'gmic_list' classes.
 //---------------------------------------------------------
@@ -279,6 +276,8 @@ inline double gmic_mp_store(const double *const ptrs, const unsigned int siz,
 //-------------------------------------------------
 // API for the 'gmic' and 'gmic_exception' classes.
 //-------------------------------------------------
+#include <cstdio>
+#include <cstring>
 
 // Class 'gmic'.
 //--------------
