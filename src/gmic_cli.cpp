@@ -51,9 +51,10 @@
 #undef gmic_core
 #include <signal.h>
 #define cimg_appname "gmic"
+#define cimg_namespace_suffix gmic
 #include "CImg.h"
 #include "gmic.h"
-using namespace cimg_library;
+using namespace cimg_library_gmic;
 
 // Fallback function for segfault signals.
 #if cimg_OS==1

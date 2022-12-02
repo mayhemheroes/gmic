@@ -78,114 +78,109 @@ const char gmic_dollar = 23, gmic_lbrace = 24, gmic_rbrace = 25, gmic_comma = 26
 #include <cstdio>
 #include <cstring>
 
-//------------
-// Public API
-//------------
+//------------------------------------------------------
+// Public API for 'gmic_image' and 'gmic_list' classes.
+//------------------------------------------------------
 #ifndef gmic_core
 
 // Define classes 'gmic_image<T>' and 'gmic_list<T>'.
 //---------------------------------------------------
-#ifndef cimg_version
+#ifdef cimg_version
+#define gmic_image cimg_library_suffixed::CImg
+#define gmic_list cimg_library_suffixed::CImgList
 
-#define gmic_image CImg
-#define gmic_list CImgList
+#else // #ifdef cimg_version
 
-namespace cimg_library {
+// Class 'gmic_image<T>'.
+template<typename T> struct gmic_image {
+  unsigned int _width;       // Number of image columns (dimension along the X-axis)
+  unsigned int _height;      // Number of image lines (dimension along the Y-axis)
+  unsigned int _depth;       // Number of image slices (dimension along the Z-axis)
+  unsigned int _spectrum;    // Number of image channels (dimension along the C-axis)
+  bool _is_shared;           // Tells if the data buffer has been allocated by another object
+  T *_data;                  // Pointer to the first pixel value
 
-  // Class 'gmic_image<T>'.
-  template<typename T> struct gmic_image {
-    unsigned int _width;       // Number of image columns (dimension along the X-axis)
-    unsigned int _height;      // Number of image lines (dimension along the Y-axis)
-    unsigned int _depth;       // Number of image slices (dimension along the Z-axis)
-    unsigned int _spectrum;    // Number of image channels (dimension along the C-axis)
-    bool _is_shared;           // Tells if the data buffer has been allocated by another object
-    T *_data;                  // Pointer to the first pixel value
+  // Destructor.
+  ~gmic_image() {
+    if (!_is_shared) delete[] _data;
+  }
 
-    // Destructor.
-    ~gmic_image() {
-      if (!_is_shared) delete[] _data;
-    }
+  // Constructor.
+  gmic_image():_width(0),_height(0),_depth(0),_spectrum(0),_is_shared(false),_data(0) { }
 
-    // Constructor.
-    gmic_image():_width(0),_height(0),_depth(0),_spectrum(0),_is_shared(false),_data(0) { }
+  // Allocate memory for specified image dimensions.
+  gmic_image<T>& assign(const unsigned int size_x, const unsigned int size_y=1,
+                        const unsigned int size_z=1, const unsigned int size_c=1);
 
-    // Allocate memory for specified image dimensions.
-    gmic_image<T>& assign(const unsigned int size_x, const unsigned int size_y=1,
-                          const unsigned int size_z=1, const unsigned int size_c=1);
+  // Create image by copying existing buffer of t values.
+  template<typename t>
+  gmic_image<T>& assign(const t *const values, const unsigned int size_x, const unsigned int size_y=1,
+                        const unsigned int size_z=1, const unsigned int size_c=1);
 
-    // Create image by copying existing buffer of t values.
-    template<typename t>
-    gmic_image<T>& assign(const t *const values, const unsigned int size_x, const unsigned int size_y=1,
-                          const unsigned int size_z=1, const unsigned int size_c=1);
+  gmic_image<T>& assign(const T *const values, const unsigned int size_x, const unsigned int size_y,
+                        const unsigned int size_z, const unsigned int size_c, const bool is_shared);
 
-    gmic_image<T>& assign(const T *const values, const unsigned int size_x, const unsigned int size_y,
-                          const unsigned int size_z, const unsigned int size_c, const bool is_shared);
+  // Pixel access.
+  operator T*() {
+    return _data;
+  }
 
-    // Pixel access.
-    operator T*() {
-      return _data;
-    }
+  operator const T*() const {
+    return _data;
+  }
 
-    operator const T*() const {
-      return _data;
-    }
+  T& operator()(const unsigned int x, const unsigned int y=0, const unsigned z=0, const unsigned c=0) {
+    return _data[x + y*_width + z*_width*_height + c*_width*_height*_depth ];
+  }
 
-    T& operator()(const unsigned int x, const unsigned int y=0, const unsigned z=0, const unsigned c=0) {
-      return _data[x + y*_width + z*_width*_height + c*_width*_height*_depth ];
-    }
+  const T& operator()(const unsigned int x, const unsigned int y=0, const unsigned z=0, const unsigned c=0) const {
+    return _data[x + y*_width + z*_width*_height + c*_width*_height*_depth ];
+  }
 
-    const T& operator()(const unsigned int x, const unsigned int y=0, const unsigned z=0, const unsigned c=0) const {
-      return _data[x + y*_width + z*_width*_height + c*_width*_height*_depth ];
-    }
+};
 
-  };
+// Class 'gmic_list<T>'.
+template<typename T> struct gmic_list {
+  unsigned int _width;           // Number of images in the list
+  unsigned int _allocated_width; // Allocated items in the list (must be 2^N and >size)
+  gmic_image<T> *_data;          // Pointer to the first image of the list
 
-  // Class 'gmic_list<T>'.
-  template<typename T> struct gmic_list {
-    unsigned int _width;           // Number of images in the list
-    unsigned int _allocated_width; // Allocated items in the list (must be 2^N and >size)
-    gmic_image<T> *_data;          // Pointer to the first image of the list
+  // Destructor.
+  ~gmic_list() {
+    delete[] _data;
+  }
 
-    // Destructor.
-    ~gmic_list() {
-      delete[] _data;
-    }
+  // Constructor.
+  gmic_list():_width(0),_allocated_width(0),_data(0) {}
 
-    // Constructor.
-    gmic_list():_width(0),_allocated_width(0),_data(0) {}
+  // Allocate memory for specified list dimension.
+  gmic_list<T>& assign(const unsigned int n);
 
-    // Allocate memory for specified list dimension.
-    gmic_list<T>& assign(const unsigned int n);
+  // Image access.
+  operator gmic_image<T>*() {
+    return _data;
+  }
 
-    // Image access.
-    operator gmic_image<T>*() {
-      return _data;
-    }
+  operator const gmic_image<T>*() const {
+    return _data;
+  }
 
-    operator const gmic_image<T>*() const {
-      return _data;
-    }
+  gmic_image<T>& operator()(const unsigned int l) {
+    return _data[l];
+  }
 
-    gmic_image<T>& operator()(const unsigned int l) {
-      return _data[l];
-    }
+  const gmic_image<T>& operator()(const unsigned int l) const {
+    return _data[l];
+  }
 
-    const gmic_image<T>& operator()(const unsigned int l) const {
-      return _data[l];
-    }
-
-  };
-}
-#undef gmic_image
-#undef gmic_list
-#endif // #ifndef cimg_version
+};
+#endif // #ifdef cimg_version
 
 #else // #ifndef gmic_core
 
-//---------------------------------------
-// Private API (used to compile libgmic).
-//---------------------------------------
-
+//---------------------------------------------------------------------------------
+// Private API for 'gmic_image' and 'gmic_list' classes (used to compile libgmic).
+//---------------------------------------------------------------------------------
 #ifdef _MSC_VER
 #pragma comment(linker,"/STACK:6291456")
 #pragma inline_depth(2)
@@ -214,6 +209,10 @@ namespace cimg_library {
 
 #ifndef cimg_appname
 #define cimg_appname "gmic"
+#endif
+
+#ifndef cimg_namespace_suffix
+#define cimg_namespace_suffix gmic
 #endif
 
 #ifdef cimg_use_abort
@@ -270,12 +269,14 @@ inline double gmic_mp_store(const double *const ptrs, const unsigned int siz,
 #include <signal.h>
 
 #endif // #if cimg_OS==2
+
+#define gmic_image cimg_library_gmic::CImg
+#define gmic_list cimg_library_gmic::CImgList
+
 #endif // #ifndef gmic_core
 
 // Define main libgmic class 'gmic'.
 //----------------------------------
-#define gmic_image cimg_library::CImg
-#define gmic_list cimg_library::CImgList
 
 // Class 'gmic'.
 struct gmic {
