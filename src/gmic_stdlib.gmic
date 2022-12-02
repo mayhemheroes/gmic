@@ -18056,6 +18056,52 @@ barycenter :
     => "[barycenter of '"$nm"']"
   }
 
+#@cli betti
+#@cli : Compute Betti numbers B0,B1 and B2 from selected binary 3D shapes.
+#@cli : Values B0,B1 and B2 are returned in the status. \
+# When multiple images are selected, the B0,B1,B2 of each image are concatenated in the status.
+#@cli : (see 'https://en.wikipedia.org/wiki/Betti_number' for details about Betti numbers).
+betti :
+  e[^-1] "Compute Betti numbers B0,B1 and B2 from binary shape$?."
+  res,c=
+  foreach {
+
+    # Compute Euler characteristic.
+    {[2*w+1,2*h+1,2*d+1]}
+    eval.. "*i?( # Compute volume of 0D,1D,2D and 3D primitives.
+      X = 2*x; Y = 2*y; Z = 2*z;
+      X1 = X + 1; Y1 = Y + 1; Z1 = Z + 1;
+      X2 = X + 2; Y2 = Y + 2; Z2 = Z + 2;
+
+      # Set 8 points
+      i(#-1,X,Y,Z) = i(#-1,X2,Y,Z) = i(#-1,X2,Y2,Z) = i(#-1,X,Y2,Z) =
+      i(#-1,X,Y,Z2) = i(#-1,X2,Y,Z2) = i(#-1,X2,Y2,Z2) = i(#-1,X,Y2,Z2) = 1;
+
+      # Set 12 segments.
+      i(#-1,X1,Y,Z) = i(#-1,X2,Y1,Z) = i(#-1,X1,Y2,Z) = i(#-1,X,Y1,Z) =
+      i(#-1,X1,Y,Z2) = i(#-1,X2,Y1,Z2) = i(#-1,X1,Y2,Z2) = i(#-1,X,Y1,Z2) =
+      i(#-1,X,Y,Z1) = i(#-1,X2,Y,Z1) = i(#-1,X,Y2,Z1) = i(#-1,X2,Y2,Z1) = 2;
+
+      # Set 6 surfaces.
+      i(#-1,X1,Y1,Z) = i(#-1,X1,Y1,Z2) =
+      i(#-1,X1,Y,Z1) = i(#-1,X1,Y2,Z1) =
+      i(#-1,X,Y1,Z1) = i(#-1,X2,Y1,Z1) = 3;
+
+      # Set 1 volume.
+      i(#-1,X1,Y1,Z1) = 4;
+    )"
+    histogram. 4,1,4 Xi:=i[0]-i[1]+i[2]-i[3] rm. # Euler characteristic
+
+    # Compute Betti numbers B0, B1 and B2.
+    expand_xyz. 1,0 # Make sure borders are 0
+    +label. 0,1 {iM+1} eval.. "*i(#-3)?(i[#-1,i] = 1)" B0:=is rm[-2,-1] # Number of connected components
+    +label. 0,0 {iM+1} eval.. "*!i(#-3) && i?(i[#-1,i] = 1)" B2:=is rm[-2,-1] # Number of cavities
+    B1:=$B0+$B2-$Xi
+    shrink_xyz. 1
+    res.=$c$B0,$B1,$B2 c=,
+  }
+  u $res
+
 #@cli delaunay : _output_type={ 0=image | 1=coordinates/triangles }
 #@cli : Generate discrete 2D Delaunay triangulation of non-zero pixels in selected images.
 #@cli : Input images must be scalar.
