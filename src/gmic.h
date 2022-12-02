@@ -78,13 +78,11 @@ const char gmic_dollar = 23, gmic_lbrace = 24, gmic_rbrace = 25, gmic_comma = 26
 #include <cstdio>
 #include <cstring>
 
-//------------------------------------------------------
-// Public API for 'gmic_image' and 'gmic_list' classes.
-//------------------------------------------------------
+//---------------------------------------------------------
+// Public API for the 'gmic_image' and 'gmic_list' classes.
+//---------------------------------------------------------
 #ifndef gmic_core
 
-// Define classes 'gmic_image<T>' and 'gmic_list<T>'.
-//---------------------------------------------------
 #ifdef cimg_version
 #define gmic_image cimg_library_suffixed::CImg
 #define gmic_list cimg_library_suffixed::CImgList
@@ -110,7 +108,8 @@ template<typename T> struct gmic_image {
 
   // Allocate memory for specified image dimensions.
   gmic_image<T>& assign(const unsigned int size_x, const unsigned int size_y=1,
-                        const unsigned int size_z=1, const unsigned int size_c=1);
+                        const unsigned int size_z=1, const unsigned int size_c=1) {
+  }
 
   // Create image by copying existing buffer of t values.
   template<typename t>
@@ -178,9 +177,9 @@ template<typename T> struct gmic_list {
 
 #else // #ifndef gmic_core
 
-//---------------------------------------------------------------------------------
-// Private API for 'gmic_image' and 'gmic_list' classes (used to compile libgmic).
-//---------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------------
+// Private API for the 'gmic_image' and 'gmic_list' classes (used to compile gmic components only).
+//-------------------------------------------------------------------------------------------------
 #ifdef _MSC_VER
 #pragma comment(linker,"/STACK:6291456")
 #pragma inline_depth(2)
@@ -275,10 +274,9 @@ inline double gmic_mp_store(const double *const ptrs, const unsigned int siz,
 
 #endif // #ifndef gmic_core
 
-// Define main libgmic class 'gmic'.
-//----------------------------------
-
-// Class 'gmic'.
+//--------------------------
+// API for the 'gmic' class.
+//--------------------------
 struct gmic {
 
   // Destructor.
