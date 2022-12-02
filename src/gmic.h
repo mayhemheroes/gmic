@@ -90,6 +90,7 @@ const char gmic_dollar = 23, gmic_lbrace = 24, gmic_rbrace = 25, gmic_comma = 26
 #else // #ifdef cimg_version
 
 // Class 'gmic_image<T>'.
+//-----------------------
 template<typename T> struct gmic_image {
   unsigned int _width;       // Number of image columns (dimension along the X-axis)
   unsigned int _height;      // Number of image lines (dimension along the Y-axis)
@@ -139,6 +140,7 @@ template<typename T> struct gmic_image {
 };
 
 // Class 'gmic_list<T>'.
+//----------------------
 template<typename T> struct gmic_list {
   unsigned int _width;           // Number of images in the list
   unsigned int _allocated_width; // Allocated items in the list (must be 2^N and >size)
@@ -274,9 +276,12 @@ inline double gmic_mp_store(const double *const ptrs, const unsigned int siz,
 
 #endif // #ifndef gmic_core
 
-//--------------------------
-// API for the 'gmic' class.
-//--------------------------
+//-------------------------------------------------
+// API for the 'gmic' and 'gmic_exception' classes.
+//-------------------------------------------------
+
+// Class 'gmic'.
+//--------------
 struct gmic {
 
   // Destructor.
@@ -504,6 +509,8 @@ struct gmic_exception {
   }
 };
 
+// Explicit declarations of functions.
+//-------------------------------------
 inline bool *gmic_current_is_abort() {
   static bool def = false;
   gmic_image<void*> gr = gmic::current_run("gmic_abort_init()",0);
