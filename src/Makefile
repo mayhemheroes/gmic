@@ -399,7 +399,7 @@ endif
 libgmic.o: gmic.cpp gmic.h gmic_stdlib.h CImg.h
 	$(CXX) -o libgmic.o -c gmic.cpp -Dgmic_core $(PIC) $(CFLAGS)
 
-use_libgmic : use_libgmic.cpp
+use_libgmic : use_libgmic.cpp libgmic.so
 	$(CXX) -o use_libgmic use_libgmic.cpp -std=c++11 -pedantic -lgmic $(LIBS)
 
 # CLI.
