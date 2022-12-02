@@ -58,9 +58,6 @@
 #define gmic_pixel_type float
 #endif
 
-#include <cstdio>
-#include <cstring>
-
 // Define gmic_uint64 type.
 #ifndef gmic_uint64
 #if cimg_OS==2
@@ -78,6 +75,12 @@
 const char gmic_dollar = 23, gmic_lbrace = 24, gmic_rbrace = 25, gmic_comma = 26, gmic_dquote = 28,
   gmic_store = 29; // <- this one is only used in variable names.
 
+#include <cstdio>
+#include <cstring>
+
+//------------
+// Public API
+//------------
 #ifndef gmic_core
 
 // Define classes 'gmic_image<T>' and 'gmic_list<T>'.
@@ -179,12 +182,9 @@ namespace cimg_library {
 
 #else // #ifndef gmic_core
 
-// Define private functions, used to compile libgmic.
-//---------------------------------------------------
-
-#ifndef cimg_verbosity
-#define cimg_verbosity 1
-#endif
+//---------------------------------------
+// Private API (used to compile libgmic).
+//---------------------------------------
 
 #ifdef _MSC_VER
 #pragma comment(linker,"/STACK:6291456")
@@ -195,11 +195,25 @@ namespace cimg_library {
 #ifdef cimg_version
 #error "[gmic] *** Error *** File 'CImg.h' has been already included (should have been done first in file 'gmic.h')."
 #endif
+
 #ifndef cimg_plugin
 #define cimg_plugin "gmic.cpp"
 #endif
+
 #ifndef cimglist_plugin
 #define cimglist_plugin "gmic.cpp"
+#endif
+
+#ifndef cimg_verbosity
+#define cimg_verbosity 1
+#endif
+
+#ifndef cimg_display
+#define cimg_display 0
+#endif
+
+#ifndef cimg_appname
+#define cimg_appname "gmic"
 #endif
 
 #ifdef cimg_use_abort
@@ -243,12 +257,6 @@ inline double gmic_mp_store(const double *const ptrs, const unsigned int siz,
 #define cimg_mp_func_store(ptrs,siz,w,h,d,s,is_compressed,str) \
   return ::gmic_mp_store(ptrs,siz,w,h,d,s,is_compressed,str,&mp.imglist,(T)0)
 
-#ifndef cimg_display
-#define cimg_display 0
-#endif
-#ifndef cimg_appname
-#define cimg_appname "gmic"
-#endif
 #include "CImg.h"
 
 #if cimg_OS==2
