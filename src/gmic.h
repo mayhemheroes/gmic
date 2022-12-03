@@ -79,15 +79,12 @@ const char gmic_dollar = 23, gmic_lbrace = 24, gmic_rbrace = 25, gmic_comma = 26
 // Public API for the 'gmic_image' and 'gmic_list' classes.
 //---------------------------------------------------------
 #ifndef gmic_core
-#define gmic_image gmic_library::CImg
-#define gmic_list gmic_library::CImgList
 
-#if !defined(cimg_version)
 namespace gmic_library {
 
   // Class 'gmic_image<T>'.
   //-----------------------
-  template<typename T> struct CImg {
+  template<typename T> struct gmic_image {
     unsigned int _width;       // Number of image columns (dimension along the X-axis)
     unsigned int _height;      // Number of image lines (dimension along the Y-axis)
     unsigned int _depth;       // Number of image slices (dimension along the Z-axis)
@@ -96,24 +93,24 @@ namespace gmic_library {
     T *_data;                  // Pointer to the first pixel value
 
     // Destructor.
-    ~CImg() {
+    ~gmic_image() {
       if (!_is_shared) delete[] _data;
     }
 
     // Constructor.
-    CImg():_width(0),_height(0),_depth(0),_spectrum(0),_is_shared(false),_data(0) { }
+    gmic_image():_width(0),_height(0),_depth(0),_spectrum(0),_is_shared(false),_data(0) { }
 
     // Allocate memory for specified image dimensions.
-    CImg<T>& assign(const unsigned int size_x, const unsigned int size_y=1,
-                    const unsigned int size_z=1, const unsigned int size_c=1);
+    gmic_image<T>& assign(const unsigned int size_x, const unsigned int size_y=1,
+                          const unsigned int size_z=1, const unsigned int size_c=1);
 
     // Create image by copying existing buffer of t values.
     template<typename t>
-    CImg<T>& assign(const t *const values, const unsigned int size_x, const unsigned int size_y=1,
-                    const unsigned int size_z=1, const unsigned int size_c=1);
+    gmic_image<T>& assign(const t *const values, const unsigned int size_x, const unsigned int size_y=1,
+                          const unsigned int size_z=1, const unsigned int size_c=1);
 
-    CImg<T>& assign(const T *const values, const unsigned int size_x, const unsigned int size_y,
-                    const unsigned int size_z, const unsigned int size_c, const bool is_shared);
+    gmic_image<T>& assign(const T *const values, const unsigned int size_x, const unsigned int size_y,
+                          const unsigned int size_z, const unsigned int size_c, const bool is_shared);
 
     // Pixel access.
     operator T*() {
@@ -136,21 +133,21 @@ namespace gmic_library {
 
   // Class 'gmic_list<T>'.
   //----------------------
-  template<typename T> struct CImgList {
+  template<typename T> struct gmic_list {
     unsigned int _width;           // Number of images in the list
     unsigned int _allocated_width; // Allocated items in the list (must be 2^N and >size)
     gmic_image<T> *_data;          // Pointer to the first image of the list
 
     // Destructor.
-    ~CImgList() {
+    ~gmic_list() {
       delete[] _data;
     }
 
     // Constructor.
-    CImgList():_width(0),_allocated_width(0),_data(0) {}
+    gmic_list():_width(0),_allocated_width(0),_data(0) {}
 
     // Allocate memory for specified list dimension.
-    CImgList<T>& assign(const unsigned int n);
+    gmic_list<T>& assign(const unsigned int n);
 
     // Image access.
     operator gmic_image<T>*() {
@@ -171,7 +168,6 @@ namespace gmic_library {
 
   };
 }
-#endif // #if !defined(cimg_version) || !defined(cimg_namespace_suffix)
 
 #else // #ifndef gmic_core
 
@@ -209,6 +205,8 @@ namespace gmic_library {
 #endif
 
 #define cimg_library gmic_library
+#define CImg gmic_image
+#define CImgList gmic_list
 
 #ifdef cimg_use_abort
 inline bool *gmic_current_is_abort();
@@ -265,9 +263,6 @@ inline double gmic_mp_store(const double *const ptrs, const unsigned int siz,
 
 #endif // #if cimg_OS==2
 
-#define gmic_image gmic_library::CImg
-#define gmic_list gmic_library::CImgList
-
 #endif // #ifndef gmic_core
 
 //-------------------------------------------------
@@ -277,6 +272,8 @@ inline double gmic_mp_store(const double *const ptrs, const unsigned int siz,
 #include <cstring>
 #define gmic_new_attr commands(0), commands_names(0), commands_has_arguments(0), \
     _variables(0), _variables_names(0), variables(0), variables_names(0)
+
+using namespace gmic_library;
 
 // Class 'gmic'.
 //--------------
