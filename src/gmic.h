@@ -319,7 +319,7 @@ struct gmic {
   gmic& run(const char *const commands_line, gmic_list<T> &images, gmic_list<char> &images_names,
             float *const p_progress=0, bool *const p_is_abort=0);
 
-  // Bridge for calling gmic with compatible classes.
+  // Bridge for calling gmic with classes compatible with 'gmic_list'.
   template<typename ti, typename tn>
   gmic(const char *const commands_line,
        ti& images, tn& images_names,
