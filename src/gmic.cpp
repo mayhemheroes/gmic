@@ -2867,9 +2867,6 @@ const char* gmic::basename(const char *const str)  {
 
 // Constructors / destructors.
 //----------------------------
-#define gmic_new_attr commands(0), commands_names(0), commands_has_arguments(0), \
-    _variables(0), _variables_names(0), variables(0), variables_names(0)
-
 #define display_window(n) (*(CImgDisplay*)display_windows[n])
 
 CImg<char> gmic::stdlib = CImg<char>::empty();
@@ -4232,6 +4229,7 @@ gmic& gmic::_gmic(const char *const commands_line,
   delete[] commands_has_arguments;
   delete[] _variables;
   delete[] _variables_names;
+
   commands = new CImgList<char>[gmic_comslots];
   commands_names = new CImgList<char>[gmic_comslots];
   commands_has_arguments = new CImgList<char>[gmic_comslots];
@@ -15840,5 +15838,4 @@ template CImgList<char>::~CImgList();
 template CImgList<char>& CImgList<char>::assign(const unsigned int n);
 template bool gmic::search_sorted(const char *const str, const CImgList<char>& list,
                                   const unsigned int length, unsigned int &out_ind);
-
 #endif // #ifdef cimg_plugin

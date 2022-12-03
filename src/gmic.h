@@ -277,6 +277,8 @@ inline double gmic_mp_store(const double *const ptrs, const unsigned int siz,
 //-------------------------------------------------
 #include <cstdio>
 #include <cstring>
+#define gmic_new_attr commands(0), commands_names(0), commands_has_arguments(0), \
+    _variables(0), _variables_names(0), variables(0), variables_names(0)
 
 // Class 'gmic'.
 //--------------
@@ -324,7 +326,7 @@ struct gmic {
   gmic(const char *const commands_line,
        cimg_library::CImgList<T>& images, cimg_library::CImgList<char>& images_names,
        const char *const custom_commands=0,
-       const bool include_stdlib=true, float *const p_progress=0, bool *const p_is_abort=0) {
+       const bool include_stdlib=true, float *const p_progress=0, bool *const p_is_abort=0):gmic_new_attr {
     assign(commands_line,
            *(gmic_list<T>*)&images,*(gmic_list<char>*)&images_names,
            custom_commands,include_stdlib,p_progress,p_is_abort);
