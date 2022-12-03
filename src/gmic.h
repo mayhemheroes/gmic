@@ -319,39 +319,35 @@ struct gmic {
   gmic& run(const char *const commands_line, gmic_list<T> &images, gmic_list<char> &images_names,
             float *const p_progress=0, bool *const p_is_abort=0);
 
-  // Bridge for calling gmic with CImg classes.
-#if defined(cimg_version) && !defined(cimg_namespace_suffix)
-
-  template<typename T>
+  // Bridge for calling gmic with compatible classes.
+  template<typename ti, typename tn>
   gmic(const char *const commands_line,
-       cimg_library::CImgList<T>& images, cimg_library::CImgList<char>& images_names,
+       ti& images, tn& images_names,
        const char *const custom_commands=0,
        const bool include_stdlib=true, float *const p_progress=0, bool *const p_is_abort=0):gmic_new_attr {
     assign(commands_line,
-           *(gmic_list<T>*)&images,*(gmic_list<char>*)&images_names,
+           *(gmic_list<gmic_pixel_type>*)&images,*(gmic_list<char>*)&images_names,
            custom_commands,include_stdlib,p_progress,p_is_abort);
   }
 
-  template<typename T>
+  template<typename ti, typename tn>
   gmic& assign(const char *const commands_line,
-               cimg_library::CImgList<T>& images, cimg_library::CImgList<char>& images_names,
+               ti& images, tn& images_names,
                const char *const custom_commands=0,
                const bool include_stdlib=true, float *const p_progress=0, bool *const p_is_abort=0) {
     return assign(commands_line,
-                  *(gmic_list<T>*)&images,*(gmic_list<char>*)&images_names,
+                  *(gmic_list<gmic_pixel_type>*)&images,*(gmic_list<char>*)&images_names,
                   custom_commands,include_stdlib,p_progress,p_is_abort);
   }
 
-  template<typename T>
+  template<typename ti, typename tn>
   gmic& run(const char *const commands_line,
-            cimg_library::CImgList<T>& images, cimg_library::CImgList<char>& images_names,
+            ti& images, tn& images_names,
             float *const p_progress=0, bool *const p_is_abort=0) {
     return run(commands_line,
-               *(gmic_list<T>*)&images,*(gmic_list<char>*)&images_names,
+               *(gmic_list<gmic_pixel_type>*)&images,*(gmic_list<char>*)&images_names,
                p_progress, p_is_abort);
   }
-
-#endif // #ifdef cimg_version
 
   // These functions return (or init) G'MIC-specific paths.
   static const char* path_user(const char *const custom_path=0);
