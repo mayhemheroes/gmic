@@ -315,6 +315,40 @@ struct gmic {
   gmic& run(const char *const commands_line, gmic_list<T> &images, gmic_list<char> &images_names,
             float *const p_progress=0, bool *const p_is_abort=0);
 
+  // Bridge to allow calling gmic with CImg classes.
+#if defined(cimg_version) && !defined(cimg_namespace_suffix)
+
+  template<typename T>
+  gmic(const char *const commands_line,
+       cimg_library::CImgList<T>& images, cimg_library::CImgList<char>& images_names,
+       const char *const custom_commands=0,
+       const bool include_stdlib=true, float *const p_progress=0, bool *const p_is_abort=0) {
+    assign(commands_line,
+           *(gmic_list<T>*)&images,*(gmic_list<char>*)&images_names,
+           custom_commands,include_stdlib,p_progress,p_is_abort);
+  }
+
+  template<typename T>
+  gmic& assign(const char *const commands_line,
+               cimg_library::CImgList<T>& images, cimg_library::CImgList<char>& images_names,
+               const char *const custom_commands=0,
+               const bool include_stdlib=true, float *const p_progress=0, bool *const p_is_abort=0) {
+    return assign(commands_line,
+                  *(gmic_list<T>*)&images,*(gmic_list<char>*)&images_names,
+                  custom_commands,include_stdlib,p_progress,p_is_abort);
+  }
+
+  template<typename T>
+  gmic& run(const char *const commands_line,
+            cimg_library::CImgList<T>& images, cimg_library::CImgList<char>& images_names,
+            float *const p_progress=0, bool *const p_is_abort=0) {
+    return run(commands_line,
+               *(gmic_list<T>*)&images,*(gmic_list<char>*)&images_names,
+               p_progress, p_is_abort);
+  }
+
+#endif // #ifdef cimg_version
+
   // These functions return (or init) G'MIC-specific paths.
   static const char* path_user(const char *const custom_path=0);
   static const char* path_rc(const char *const custom_path=0);
