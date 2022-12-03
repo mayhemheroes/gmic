@@ -317,7 +317,7 @@ struct gmic {
   gmic& run(const char *const commands_line, gmic_list<T> &images, gmic_list<char> &images_names,
             float *const p_progress=0, bool *const p_is_abort=0);
 
-  // Bridge to allow calling gmic with CImg classes.
+  // Bridge for calling gmic with CImg classes.
 #if defined(cimg_version) && !defined(cimg_namespace_suffix)
 
   template<typename T>
