@@ -79,11 +79,11 @@ const char gmic_dollar = 23, gmic_lbrace = 24, gmic_rbrace = 25, gmic_comma = 26
 // Public API for the 'gmic_image' and 'gmic_list' classes.
 //---------------------------------------------------------
 #ifndef gmic_core
-#define gmic_image cimg_library_gmic::CImg
-#define gmic_list cimg_library_gmic::CImgList
+#define gmic_image gmic_library::CImg
+#define gmic_list gmic_library::CImgList
 
-#if !defined(cimg_version) || !defined(cimg_namespace_suffix)
-namespace cimg_library_gmic {
+#if !defined(cimg_version)
+namespace gmic_library {
 
   // Class 'gmic_image<T>'.
   //-----------------------
@@ -208,9 +208,7 @@ namespace cimg_library_gmic {
 #define cimg_appname "gmic"
 #endif
 
-#ifndef cimg_namespace_suffix
-#define cimg_namespace_suffix gmic
-#endif
+#define cimg_library gmic_library
 
 #ifdef cimg_use_abort
 inline bool *gmic_current_is_abort();
@@ -267,8 +265,8 @@ inline double gmic_mp_store(const double *const ptrs, const unsigned int siz,
 
 #endif // #if cimg_OS==2
 
-#define gmic_image cimg_library_gmic::CImg
-#define gmic_list cimg_library_gmic::CImgList
+#define gmic_image gmic_library::CImg
+#define gmic_list gmic_library::CImgList
 
 #endif // #ifndef gmic_core
 

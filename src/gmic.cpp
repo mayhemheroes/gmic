@@ -2073,7 +2073,7 @@ const CImgList<T>& _gmic_display(CImgDisplay &disp, const char *const title, con
 #else // #if defined(cimg_plugin) .. #elif defined(cimglist_plugin)
 
 #include "gmic.h"
-using namespace cimg_library_gmic;
+using namespace gmic_library;
 
 #ifdef gmic_community
 #include "gmic_stdlib_community.h"
