@@ -171,9 +171,9 @@ namespace gmic_library {
 
 #else // #ifndef gmic_core
 
-//-------------------------------------------------------------------------------------------------
-// Private API for the 'gmic_image' and 'gmic_list' classes (used to compile gmic components only).
-//-------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------
+// Private API (used when compiling gmic core components only).
+//-------------------------------------------------------------
 #ifdef _MSC_VER
 #pragma comment(linker,"/STACK:6291456")
 #pragma inline_depth(2)
@@ -265,9 +265,9 @@ inline double gmic_mp_store(const double *const ptrs, const unsigned int siz,
 
 #endif // #ifndef gmic_core
 
-//-------------------------------------------------
-// API for the 'gmic' and 'gmic_exception' classes.
-//-------------------------------------------------
+//--------------------------------------------------------
+// Public API for the 'gmic' and 'gmic_exception' classes.
+//--------------------------------------------------------
 #include <cstdio>
 #include <cstring>
 #define gmic_new_attr commands(0), commands_names(0), commands_has_arguments(0), \
