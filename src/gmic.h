@@ -80,6 +80,8 @@ const char gmic_dollar = 23, gmic_lbrace = 24, gmic_rbrace = 25, gmic_comma = 26
 //---------------------------------------------------------
 #ifndef gmic_core
 
+#ifndef cimg_library
+
 namespace gmic_library {
 
   // Class 'gmic_image<T>'.
@@ -128,7 +130,6 @@ namespace gmic_library {
     const T& operator()(const unsigned int x, const unsigned int y=0, const unsigned z=0, const unsigned c=0) const {
       return _data[x + y*_width + z*_width*_height + c*_width*_height*_depth ];
     }
-
   };
 
   // Class 'gmic_list<T>'.
@@ -165,9 +166,11 @@ namespace gmic_library {
     const gmic_image<T>& operator()(const unsigned int l) const {
       return _data[l];
     }
-
   };
+
 }
+
+#endif // #ifndef cimg_library
 
 #else // #ifndef gmic_core
 
