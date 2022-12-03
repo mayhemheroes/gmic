@@ -82,6 +82,7 @@ const char gmic_dollar = 23, gmic_lbrace = 24, gmic_rbrace = 25, gmic_comma = 26
 #define gmic_image cimg_library_gmic::CImg
 #define gmic_list cimg_library_gmic::CImgList
 
+#if !defined(cimg_version) || !defined(cimg_namespace_suffix)
 namespace cimg_library_gmic {
 
   // Class 'gmic_image<T>'.
@@ -170,6 +171,7 @@ namespace cimg_library_gmic {
 
   };
 }
+#endif // #if !defined(cimg_version) || !defined(cimg_namespace_suffix)
 
 #else // #ifndef gmic_core
 
