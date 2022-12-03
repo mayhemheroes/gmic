@@ -79,11 +79,10 @@ const char gmic_dollar = 23, gmic_lbrace = 24, gmic_rbrace = 25, gmic_comma = 26
 // Public API for the 'gmic_image' and 'gmic_list' classes.
 //---------------------------------------------------------
 #ifndef gmic_core
-
-namespace cimg_library_gmic {
-
 #define gmic_image cimg_library_gmic::CImg
 #define gmic_list cimg_library_gmic::CImgList
+
+namespace cimg_library_gmic {
 
   // Class 'gmic_image<T>'.
   //-----------------------

@@ -2892,6 +2892,13 @@ gmic::gmic(const char *const commands_line, const char *const custom_commands,
 }
 
 template<typename T>
+gmic::gmic(const char *const commands_line, CImgList<T>& images, CImgList<char>& images_names,
+           const char *const custom_commands, const bool include_stdlib,
+           float *const p_progress, bool *const p_is_abort):gmic_new_attr {
+  assign(commands_line,images,images_names,custom_commands,include_stdlib,p_progress,p_is_abort);
+}
+
+template<typename T>
 gmic& gmic::assign(const char *const commands_line, const char *const custom_commands,
                    const bool include_stdlib, float *const p_progress, bool *const p_is_abort,
                    const T& pixel_type) {
@@ -2901,13 +2908,6 @@ gmic& gmic::assign(const char *const commands_line, const char *const custom_com
   return _gmic(commands_line,
                images,images_names,custom_commands,
                include_stdlib,p_progress,p_is_abort);
-}
-
-template<typename T>
-gmic::gmic(const char *const commands_line, CImgList<T>& images, CImgList<char>& images_names,
-           const char *const custom_commands, const bool include_stdlib,
-           float *const p_progress, bool *const p_is_abort):gmic_new_attr {
-  assign(commands_line,images,images_names,custom_commands,include_stdlib,p_progress,p_is_abort);
 }
 
 template<typename T>
