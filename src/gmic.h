@@ -320,31 +320,6 @@ struct gmic {
   static const char* path_rc(const char *const custom_path=0);
   static bool init_rc(const char *const custom_path=0);
 
-  // Bridge with the CImg Library classes 'CImg<T>' and 'CImgList<T>'.
-#if defined(cimg_version) && !defined(cimg_namespace_suffix)
-
-  template<typename T> static void swap_instances(cimg_library::CImgList<T>& i0, gmic_list<T>& i1) {
-    cimg_library::cimg::swap(i0._width,i1._width);
-    cimg_library::cimg::swap(i0._allocated_width,i1._allocated_width);
-    void *const p0 = (void*)i0._data, *const p1 = (void*)i1._data;
-    i1._data = (gmic_image<T>*)p0;
-    i0._data = (cimg_library::CImg<T>*)p1;
-  }
-
-  template<typename T>
-  gmic(const char *const commands_line,
-       cimg_library::CImgList<T>& images, cimg_library::CImgList<char>& images_names, const char *const custom_commands=0,
-       const bool include_stdlib=true, float *const p_progress=0, bool *const p_is_abort=0) {
-    gmic_list<T> _images;
-    gmic_list<char> _images_names;
-    swap_instances(images,_images);
-    swap_instances(images_names,_images_names);
-    gmic(commands_line,_images,_images_names,custom_commands,include_stdlib,p_progress,p_is_abort);
-    swap_instances(images,_images);
-    swap_instances(images_names,_images_names);
-  }
-#endif // #if defined(cimg_version) && !defined(cimg_namespace_suffix)
-
   // Functions below should be considered as *private*, and should not be used in user's code.
   template<typename T>
   static bool search_sorted(const char *const str, const T& list, const unsigned int length, unsigned int &out_ind);
