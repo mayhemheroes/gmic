@@ -23636,7 +23636,7 @@ nn_lib :
     # sqrt: sqrt(|z|).
     #-----------------
     nn_activation_sqrt(z) = (sqrt(abs(z)));
-    nn_activation_d_sqrt(z) = (0.5*sign(x)/sqrt(max(1e-16,abs(z))));
+    nn_activation_d_sqrt(z) = (0.5*sign(x)/sqrt(max(1e-8,abs(z))));
 
     # steps.
     #-------
@@ -23745,7 +23745,7 @@ nn_lib :
     #-----------------
     nn_scheduler_linear_init() = 0;
     nn_scheduler_linear_update(T,L) = (
-      nn_learning_rate = lerp(nn_learning_rate0,1e-16,min(1,nn_iteration/1000));
+      nn_learning_rate = lerp(nn_learning_rate0,1e-8,min(1,nn_iteration/1000));
     );
 
     # Exponential Decrease.
@@ -23766,7 +23766,7 @@ nn_lib :
     nn_scheduler_adaptive_update(T,L) = (
       nn_iteration?(
         # Compute trend: percentage of loss decrease(<0) or increase(>0).
-        nn_adaptive_trend = (L# - nn_previous_loss)/max(1e-16,nn_previous_loss);
+        nn_adaptive_trend = (L# - nn_previous_loss)/max(1e-8,nn_previous_loss);
         nn_adaptive_trend_moment = lerp(sign(nn_adaptive_trend),nn_adaptive_trend_moment,0.75);
 
         # Adapt strategy regarding to trend.
@@ -23866,7 +23866,7 @@ nn_lib :
 
     nn_optimizer_rmsprop_update_weights(W) = (
       d#W#_g2 = lerp(batch_d#W^2,d#W#_g2,nn_optimizer_rmsprop_beta);
-      W#-=nn_learning_rate*batch_d#W/sqrt(1e-16 + d#W#_g2);
+      W#-=nn_learning_rate*batch_d#W/sqrt(1e-8 + d#W#_g2);
     );
 
     nn_optimizer_rmsprop_update_conv_or_fc(P,learning_mode) = (
@@ -23926,7 +23926,7 @@ nn_lib :
     nn_optimizer_adam_update_weights(W) = (
       d#W#_m = lerp(batch_d#W,d#W#_m,nn_optimizer_adam_beta1);
       d#W#_v = lerp(batch_d#W^2,d#W#_v,nn_optimizer_adam_beta2);
-      W#-=nn_learning_rate*nn_optimizer_adam_alpha_t*d#W#_m/sqrt(1e-16 + d#W#_v);
+      W#-=nn_learning_rate*nn_optimizer_adam_alpha_t*d#W#_m/sqrt(1e-8 + d#W#_v);
     );
 
     nn_optimizer_adam_update_conv_or_fc(P,learning_mode) = (
@@ -23994,7 +23994,7 @@ nn_lib :
     nn_optimizer_adamax_update_weights(W) = (
       d#W#_m = lerp(batch_d#W,d#W#_m,nn_optimizer_adamax_beta1);
       d#W#_v = vmax(abs(batch_d#W),nn_optimizer_adamax_beta2*d#W#_v);
-      W#-=(nn_learning_rate/nn_optimizer_adamax_ombeta1_t)*d#W#_m/sqrt(1e-16 + d#W#_v);
+      W#-=(nn_learning_rate/nn_optimizer_adamax_ombeta1_t)*d#W#_m/sqrt(1e-8 + d#W#_v);
     );
 
     nn_optimizer_adamax_update_conv_or_fc(P,learning_mode) = (
@@ -24381,9 +24381,9 @@ nn_lib :
       !metric?( # L2-squared
         d#IN0 = 2*OUT#_diff;
       ):metric==2?( # L2
-        d#IN0 = OUT#_diff/(1e-16 + OUT#[0]);
+        d#IN0 = OUT#_diff/(1e-8 + OUT#[0]);
       ):( # L
-        d#IN0 = (abs(OUT#_diff)/(1e-16 + OUT#[0]))^(#metric - 1)*sign(OUT#_diff);
+        d#IN0 = (abs(OUT#_diff)/(1e-8 + OUT#[0]))^(#metric - 1)*sign(OUT#_diff);
       );
       d#IN1 = -d#IN0;
     );
@@ -24639,7 +24639,7 @@ nn_lib :
         OUT#_var = i[##OUT#_ind,3];
       );
       OUT#_std = sqrt(OUT#_var);
-      OUT#_std+=1e-16;
+      OUT#_std+=1e-8;
     );
 
     nn_normalize_forward(OUT,IN) = (
@@ -24997,7 +24997,7 @@ nn_lib :
     );
 
     nn_loss_crossentropy_forward(L,IN,TRUTH) = (
-      L#_epsiloned = IN# + 1e-16;
+      L#_epsiloned = IN# + 1e-8;
       L# = -sum(TRUTH*log(L#_epsiloned));
       batch_#L+=L#;
     );
@@ -25056,9 +25056,9 @@ nn_lib :
       !metric?( # L2-squared
         d#IN*=2;
       ):metric==2?( # L2
-        d#IN/=(1e-16 + L#);
+        d#IN/=(1e-8 + L#);
       ):( # Lp
-        d#IN = (abs(d#IN)/(1e-16 + L#))^(metric - 1)*sign(d#IN);
+        d#IN = (abs(d#IN)/(1e-8 + L#))^(metric - 1)*sign(d#IN);
       );
     );
 
@@ -25071,7 +25071,7 @@ nn_lib :
     nn_loss_softmax_crossentropy_forward(L,IN,TRUTH) = (
       L#_softmax = exp(IN# - max(IN#));
       L#_softmax/=sum(L#_softmax);
-      L#_softmax+=1e-16;
+      L#_softmax+=1e-8;
       L# = -sum(TRUTH*log(L#_softmax));
       d#IN = L#_softmax - TRUTH;
       batch_#L+=L#;
@@ -25086,7 +25086,7 @@ nn_lib :
     nn_loss_softmax_crossentropy_backward(L,IN,TRUTH) = (
       L#_softmax = exp(IN# - max(IN#));
       L#_softmax/=sum(L#_softmax);
-      L#_softmax+=1e-16;
+      L#_softmax+=1e-8;
       L# = -sum(TRUTH*log(L#_softmax));
       d#IN = L#_softmax - TRUTH;
       batch_#L+=L#;
