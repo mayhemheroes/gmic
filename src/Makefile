@@ -495,7 +495,7 @@ ifneq ($(OS),Windows)
 endif
 
 libcgmic.o: gmic_libc.cpp CImg.h gmic_libc.h gmic.h
-	$(CXX) -o libcgmic.o -c gmic_libc.cpp $(PIC) $(CFLAGS)
+	$(CXX) -o libcgmic.o -c gmic_libc.cpp -Dgmic_core $(PIC) $(CFLAGS)
 
 use_libcgmic: use_libcgmic.c gmic_libc.h
 	$(CC) -std=c99 -o use_libcgmic use_libcgmic.c -lcgmic $(LIBS)
