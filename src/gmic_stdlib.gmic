@@ -25061,13 +25061,14 @@ nn_lib :
 
     # normp : p-norm.
     #-----------------
-    nn_loss_normp_init_forward(L) = (
+    nn_loss_normp_init_forward(L,metric) = (
+      const L#_metric = metric;
       batch_#L = 0;
     );
 
-    nn_loss_normp_forward(L,IN,TRUTH,metric) = (
+    nn_loss_normp_forward(L,IN,TRUTH) = (
       d#IN = IN# - TRUTH;
-      L# = (!metric?norm(d#IN)^2:norm#metric(d#IN))/size(d#IN);
+      L# = (!L#_metric?norm(d#IN)^2:norm#L#_metric(d#IN))/size(d#IN);
       batch_#L+=L#;
     );
 
@@ -25077,13 +25078,13 @@ nn_lib :
       L# = batch_#L;
     );
 
-    nn_loss_normp_backward(L,IN,TRUTH,metric) = (
-      !metric?( # L2-squared
+    nn_loss_normp_backward(L,IN,TRUTH) = (
+      !L#_metric?( # L2-squared
         d#IN*=2;
-      ):metric==2?( # L2
+      ):L#_metric==2?( # L2
         d#IN/=(1e-8 + L#);
       ):( # Lp
-        d#IN = (abs(d#IN)/(1e-8 + L#))^(metric - 1)*sign(d#IN);
+        d#IN = (abs(d#IN)/(1e-8 + L#))^(L#_metric - 1)*sign(d#IN);
       );
     );
 
@@ -25934,10 +25935,10 @@ nn_loss_normp : nn_check_layer "$2"
   _nn_$1_size=1,1,1,1
   _nn_$1_input=$2
   _nn_$1_properties="ground_truth=$3"
-  _nn_loss.="begin(nn_loss_normp_init_forward($1));"\
-            "nn_loss_normp_forward(${1-4});"\
+  _nn_loss.="begin(nn_loss_normp_init_forward($1,$4));"\
+            "nn_loss_normp_forward(${1-3});"\
             "end(nn_loss_normp_end_forward($1));"
-  _nn_backward..="nn_loss_normp_backward(${1-4});"
+  _nn_backward..="nn_loss_normp_backward(${1-3});"
 
 #@cli nn_loss_softmax_crossentropy : out,in,ground_truth
 #@cli : Add a 'softmax_crossentropy' loss to the network (softmax followed by cross entropy).
