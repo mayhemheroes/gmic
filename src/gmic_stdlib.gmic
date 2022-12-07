@@ -24455,14 +24455,14 @@ nn_lib :
 
     # fc: Fully-connected layer.
     #---------------------------
-    nn_fc_init_forward(OUT) = (
+    nn_fc_init_forward(OUT,IN) = (
       const OUT#_ind = $OUT#;
       const OUT#_width = 1;
       const OUT#_height = 1;
       const OUT#_depth = 1;
       const OUT#_spectrum = h##OUT#_ind;
-      OUT#_weights = crop(##OUT#_ind,0,0,w##OUT#_ind - 1,h##OUT#_ind);
-      OUT#_biases = crop(##OUT#_ind,w##OUT#_ind - 1,0,1,h##OUT#_ind);
+      OUT#_weights = crop(##OUT#_ind,0,0,size(IN#),h##OUT#_ind);
+      OUT#_biases = crop(##OUT#_ind,size(IN#),0,1,h##OUT#_ind);
     );
 
     nn_fc_forward(OUT,IN) = (
@@ -24507,7 +24507,7 @@ nn_lib :
         _nn_res = 0;
         repeat (size(IN#),_nn_j,
           _nn_off = _nn_i*size(IN#) + _nn_j;
-          _nn_res+=nn_activation_leakyrelu(OUT#_weights[_nn_off]*IN#[_nn_j] + OUT#_biases[_nn_off]);
+          _nn_res+=nn_activation_linear(OUT#_weights[_nn_off]*IN#[_nn_j] + OUT#_biases[_nn_off]);
         );
         OUT#[_nn_i] = _nn_res;
       );
@@ -24525,7 +24525,7 @@ nn_lib :
         repeat (OUT#_spectrum,_nn_i,
           _nn_off = _nn_i*size(IN#) + _nn_j;
           _nn_Wij = OUT#_weights[_nn_off];
-          _nn_res+=nn_activation_d_leakyrelu(_nn_Wij*IN#[_nn_j] + OUT#_biases[_nn_off])*_nn_Wij;
+          _nn_res+=nn_activation_d_linear(_nn_Wij*IN#[_nn_j] + OUT#_biases[_nn_off])*_nn_Wij;
         );
         d#IN[_nn_j] = _nn_res;
       );
@@ -24537,7 +24537,7 @@ nn_lib :
         repeat (size(IN#),_nn_j,
           _nn_off = _nn_i*size(IN#) + _nn_j;
           _nn_Wij = OUT#_weights[_nn_off];
-          _nn_sigmap = nn_activation_d_leakyrelu(_nn_Wij*IN#[_nn_j] + OUT#_biases[_nn_off]);
+          _nn_sigmap = nn_activation_d_linear(_nn_Wij*IN#[_nn_j] + OUT#_biases[_nn_off]);
           d#OUT#_weights[_nn_ptr] = _nn_sigmap*IN#[_nn_j];
           d#OUT#_biases[_nn_ptr] = _nn_sigmap;
           ++_nn_ptr;
@@ -25521,7 +25521,7 @@ _nn_fc :
     if $4<2 1,100% j.. .,100% rm. fi # Set biases to 0 if they are not learnt
     => $1
   fi
-  _nn_forward.="begin(nn_fc_init_forward($1));"\
+  _nn_forward.="begin(nn_fc_init_forward($1,$2));"\
                "nn_fc_forward($1,$2);"
   _nn_backward..="begin(nn_fc_init_backward($1));"\
                  "nn_fc_backward($1,$2);"\
