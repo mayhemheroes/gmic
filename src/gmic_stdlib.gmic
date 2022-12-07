@@ -24093,9 +24093,9 @@ nn_lib :
 
     # avgpool2d : 2D average pooling.
     #--------------------------------
-    nn_avgpool2d_init_forward(OUT,IN,P) = (
-      const OUT#_width = int(IN#_width/P);
-      const OUT#_height = int(IN#_height/P);
+    nn_avgpool2d_init_forward(OUT,IN,patch_size) = (
+      const OUT#_width = int(IN#_width/patch_size);
+      const OUT#_height = int(IN#_height/patch_size);
       const OUT#_depth = IN#_depth;
       const OUT#_spectrum = IN#_spectrum;
     );
@@ -24116,10 +24116,10 @@ nn_lib :
 
     # avgpool3d : 3D average pooling.
     #--------------------------------
-    nn_avgpool3d_init_forward(OUT,IN,P) = (
-      const OUT#_width = int(IN#_width/P);
-      const OUT#_height = int(IN#_height/P);
-      const OUT#_depth = int(IN#_depth/P);
+    nn_avgpool3d_init_forward(OUT,IN,patch_size) = (
+      const OUT#_width = int(IN#_width/patch_size);
+      const OUT#_height = int(IN#_height/patch_size);
+      const OUT#_depth = int(IN#_depth/patch_size);
       const OUT#_spectrum = IN#_spectrum;
     );
 
@@ -24393,12 +24393,12 @@ nn_lib :
 
     # dropout : Dropout layer.
     #-------------------------
-    nn_dropout_init_forward(OUT,IN,rate) = (
+    nn_dropout_init_forward(OUT,IN,dropout_rate) = (
       const OUT#_width = IN#_width;
       const OUT#_height = IN#_height;
       const OUT#_depth = IN#_depth;
       const OUT#_spectrum = IN#_spectrum;
-      const OUT#_dropout_rate = nn_is_training?cut(rate,0,1):0;
+      const OUT#_dropout_rate = nn_is_training?cut(dropout_rate,0,1):0;
       OUT#_dropout_rate?(
         OUT#_dropout_channels = vector(##OUT#_spectrum);
         fill(OUT#_dropout_channels,u>=OUT#_dropout_rate);
@@ -24912,18 +24912,19 @@ nn_lib :
 
     # resize: Resize input.
     #----------------------
-    nn_resize_init_forward(OUT,IN,w,h,d,s) = (
+    nn_resize_init_forward(OUT,IN,w,h,d,s,interpolation) = (
       const OUT#_width = w;
       const OUT#_height = h;
       const OUT#_depth = d;
       const OUT#_spectrum = s;
+      const OUT#_interpolation = interpolation;
     );
 
-    nn_resize_forward(OUT,IN,interpolation) = (
+    nn_resize_forward(OUT,IN) = (
       OUT# = resize(IN#,
                   IN#_width,IN#_height,IN#_depth,IN#_spectrum,
                   OUT#_width,OUT#_height,OUT#_depth,OUT#_spectrum,
-                  interpolation);
+                  OUT#_interpolation);
     );
 
     nn_resize_backward(OUT,IN) = (
@@ -25835,8 +25836,8 @@ nn_resize : nn_check_layer "$2"
   _nn_$1_size=$w,$h,$d,$s
   _nn_$1_input=$2
   _nn_$1_properties="interpolation=$7"
-  _nn_forward.="begin(nn_resize_init_forward($1,$2,"$w","$h","$d","$s"));"\
-               "nn_resize_forward($1,$2,$7);"
+  _nn_forward.="begin(nn_resize_init_forward($1,$2,"$w","$h","$d","$s",$7));"\
+               "nn_resize_forward($1,$2);"
   _nn_backward..="nn_resize_backward($1,$2);"
   _nn_init.="$0 $* "
 
