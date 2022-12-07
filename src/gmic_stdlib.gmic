@@ -24344,26 +24344,30 @@ nn_lib :
 
     # crop : Crop layer.
     #--------------------
-    nn_crop_init_forward(OUT,IN,x0,y0,z0,x1,y1,z1) = (
+    nn_crop_init_forward(OUT,IN,x0,y0,z0,c0,x1,y1,z1,c1,boundary_conditions) = (
       const OUT#_x0 = x0;
       const OUT#_y0 = y0;
       const OUT#_z0 = z0;
+      const OUT#_c0 = c0;
       const OUT#_width = abs(x1 - x0) + 1;
       const OUT#_height = abs(y1 - y0) + 1;
       const OUT#_depth = abs(z1 - z0) + 1;
-      const OUT#_spectrum = IN#_spectrum;
+      const OUT#_spectrum = abs(c1 - c0) + 1;
+      const OUT#_boundary_conditions = boundary_conditions;
     );
 
     nn_crop_forward(OUT,IN) = (
       OUT# = crop(IN#,IN#_width,IN#_height,IN#_depth,IN#_spectrum,
-                  OUT#_x0,OUT#_y0,OUT#_z0,
-                  OUT#_width,OUT#_height,OUT#_depth);
+                  OUT#_x0,OUT#_y0,OUT#_z0,OUT#_c0,
+                  OUT#_width,OUT#_height,OUT#_depth,OUT#_spectrum,
+                  OUT#_boundary_conditions);
     );
 
     nn_crop_backward(OUT,IN) = (
       d#IN = crop(d#OUT,OUT#_width,OUT#_height,OUT#_depth,OUT#_spectrum,
-                  -OUT#_x0,-OUT#_y0,-OUT#_z0,
-                  IN#_width,IN#_height,IN#_depth);
+                  -OUT#_x0,-OUT#_y0,-OUT#_z0,-OUT#_c0,
+                  IN#_width,IN#_height,IN#_depth,IN#_spectrum,
+                  0);
     );
 
     # distance : Distance between two inputs.
@@ -25347,19 +25351,21 @@ nn_conv3dnnl : nn_check_layer "$2"
   nn_nl $1,$1_normalize,$8
   _nn_init=${init}"$0 $* "
 
-#@cli nn_crop : out,in,x0,y0,z0,x1,y1,z1
+#@cli nn_crop : out,in,x0,y0,z0,c0,x1,y1,z1,c1,_boundary_conditions
 #@cli : Add a 'crop' layer to the network.
+#@cli : 'boundary_conditions' can be { 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }.
+#@cli : Default value: 'boundary_conditions=0'.
 nn_crop : nn_check_layer "$2"
-          check "min(isint([${3-8}]))"
-  e[^1] "[nn_lin] Add 'crop' layer '$1', with input '$2' and coordinates (${3-5})-(${6-8})."
+          check "inrange(${11=0},0,3) && min(isint([${3-11}]))"
+  e[^1] "[nn_lin] Add 'crop' layer '$1', with input '$2' and coordinates (${3-6})-(${7-10})."
   _nn_modules_names.=$1,
   _nn_modules_types.=crop,
-  cmin={vmin([${3-5}],[${6-8}])}
-  cmax={vmax([${3-5}],[${6-8}])}
-  _nn_$1_size={[[$cmax]-[$cmin]+1,arg(4,$_nn_$2_size)]}
+  cmin={vmin([${3-6}],[${7-10}])}
+  cmax={vmax([${3-6}],[${7-10}])}
+  _nn_$1_size={[[$cmax]-[$cmin]+1]}
   _nn_$1_input=$2
-  _nn_$1_properties="coordinates=(${3-5})x(${6-8})"
-  _nn_forward.="begin(nn_crop_init_forward($1,$2,${3-8}));"\
+  _nn_$1_properties="coordinates=(${3-6})x(${7-10})"
+  _nn_forward.="begin(nn_crop_init_forward($1,$2,${3-11}));"\
                "nn_crop_forward($1,$2);"
   _nn_backward..="nn_crop_backward($1,$2);"
   _nn_init.="$0 $* "
