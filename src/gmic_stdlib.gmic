@@ -24345,27 +24345,30 @@ nn_lib :
     # crop : Crop layer.
     #--------------------
     nn_crop_init_forward(OUT,IN,x0,y0,z0,x1,y1,z1) = (
+      const OUT#_x0 = x0;
+      const OUT#_y0 = y0;
+      const OUT#_z0 = z0;
       const OUT#_width = abs(x1 - x0) + 1;
       const OUT#_height = abs(y1 - y0) + 1;
       const OUT#_depth = abs(z1 - z0) + 1;
       const OUT#_spectrum = IN#_spectrum;
     );
 
-    nn_crop_forward(OUT,IN,x0,y0,z0,x1,y1,z1) = (
+    nn_crop_forward(OUT,IN) = (
       OUT# = crop(IN#,IN#_width,IN#_height,IN#_depth,IN#_spectrum,
-                  x0,y0,z0,
+                  OUT#_x0,OUT#_y0,OUT#_z0,
                   OUT#_width,OUT#_height,OUT#_depth);
     );
 
-    nn_crop_backward(OUT,IN,x0,y0,z0,x1,y1,z1) = (
+    nn_crop_backward(OUT,IN) = (
       d#IN = crop(d#OUT,OUT#_width,OUT#_height,OUT#_depth,OUT#_spectrum,
-                  -x0,-y0,-z0,
+                  -OUT#_x0,-OUT#_y0,-OUT#_z0,
                   IN#_width,IN#_height,IN#_depth);
     );
 
     # distance : Distance between two inputs.
     #----------------------------------------
-    nn_distance_init_forward(OUT) = (
+    nn_distance_init_forward(OUT,metric) = (
       const OUT#_width = 1;
       const OUT#_height = 1;
       const OUT#_depth = 1;
@@ -24518,27 +24521,29 @@ nn_lib :
 
     # maxpool3d : 3D max pooling.
     #----------------------------
-    nn_maxpool3d_init_forward(OUT,IN,P) = (
-      const OUT#_width = int(IN#_width/P);
-      const OUT#_height = int(IN#_height/P);
-      const OUT#_depth = int(IN#_depth/P);
+    nn_maxpool3d_init_forward(OUT,IN,patchsize) = (
+      const OUT#_width = int(IN#_width/patchsize);
+      const OUT#_height = int(IN#_height/patchsize);
+      const OUT#_depth = int(IN#_depth/patchsize);
       const OUT#_spectrum = IN#_spectrum;
+      const OUT#_patchsize = patchsize;
     );
 
-    nn_maxpool3d_forward(OUT,IN,P) = (
+    nn_maxpool3d_forward(OUT,IN) = (
       OUT# = vector(##OUT#_width*OUT#_height*OUT#_depth*OUT#_spectrum);
       OUT#_from = vector(#size(OUT#));
       _nn_off = 0;
       repeat (OUT#_spectrum,_nn_c,
         repeat (OUT#_depth,_nn_z,
-          _nn_zP = _nn_z*P;
+          _nn_zp = _nn_z*OUT#_patchsize;
           repeat (OUT#_height,_nn_y,
-            _nn_yP = _nn_y*P;
+            _nn_yp = _nn_y*OUT#_patchsize;
             repeat (OUT#_width,_nn_x,
-              OUT#_P = crop(IN#,IN#_width,IN#_height,IN#_depth,IN#_spectrum,
-                            _nn_x*P,_nn_yP,_nn_zP,_nn_c,P,P,P,1);
-              _nn_argmax = argmax(OUT#_P);
-              OUT#[_nn_off] = OUT#_P[_nn_argmax];
+              OUT#_patch = crop(IN#,IN#_width,IN#_height,IN#_depth,IN#_spectrum,
+                                _nn_x*OUT#_patchsize,_nn_yp,_nn_zp,_nn_c,
+                                OUT#_patchsize,OUT#_patchsize,OUT#_patchsize,1);
+              _nn_argmax = argmax(OUT#_patch);
+              OUT#[_nn_off] = OUT#_patch[_nn_argmax];
               OUT#_from[_nn_off++] = _nn_argmax;
             );
           );
@@ -24546,22 +24551,22 @@ nn_lib :
       );
     );
 
-    nn_maxpool3d_backward(OUT,IN,P) = (
+    nn_maxpool3d_backward(OUT,IN) = (
       d#IN = vector(#size(IN#));
       _nn_offOUT = 0;
       repeat (OUT#_spectrum,_nn_c,
         _nn_offIN0 = IN#_width*IN#_height*IN#_depth*_nn_c;
         repeat (OUT#_depth,_nn_z,
-          _nn_zP = _nn_z*P;
+          _nn_zp = _nn_z*OUT#_patchsize;
           repeat (OUT#_height,_nn_y,
-            _nn_yP = _nn_y*P;
+            _nn_yp = _nn_y*OUT#_patchsize;
             repeat (OUT#_width,_nn_x,
               _nn_from = OUT#_from[_nn_offOUT];
-              _nn_from_x = _nn_from%P;
-              _nn_from_y = int(_nn_from/P)%P;
-              _nn_from_z = int(_nn_from/P^2);
-              _nn_offIN = _nn_offIN0 + _nn_x*P + _nn_from_x +
-                          IN#_width*(_nn_yP + _nn_from_y + IN#_height*(_nn_zP + _nn_from_z));
+              _nn_from_x = _nn_from%OUT#_patchsize;
+              _nn_from_y = int(_nn_from/OUT#_patchsize)%OUT#_patchsize;
+              _nn_from_z = int(_nn_from/OUT#_patchsize^2);
+              _nn_offIN = _nn_offIN0 + _nn_x*OUT#_patchsize + _nn_from_x +
+                          IN#_width*(_nn_yp + _nn_from_y + IN#_height*(_nn_zp + _nn_from_z));
               d#IN[_nn_offIN] = d#OUT[_nn_offOUT++];
             );
           );
@@ -25334,8 +25339,8 @@ nn_crop : nn_check_layer "$2"
   _nn_$1_input=$2
   _nn_$1_properties="coordinates=(${3-5})x(${6-8})"
   _nn_forward.="begin(nn_crop_init_forward($1,$2,${3-8}));"\
-               "nn_crop_forward($1,$2,${3-8});"
-  _nn_backward..="nn_crop_backward($1,$2,${3-8});"
+               "nn_crop_forward($1,$2);"
+  _nn_backward..="nn_crop_backward($1,$2);"
   _nn_init.="$0 $* "
 
 #@cli nn_distance : out,in0,in1,_metric={ 0=squared-L2 | p>0 = Lp-norm }
@@ -25482,8 +25487,8 @@ nn_maxpool3d : nn_check_layer "$2"
   _nn_$1_input=$2
   _nn_$1_properties="patch_size=$3x$3x$3"
   _nn_forward.="begin(nn_maxpool3d_init_forward($1,$2,$3));"\
-               "nn_maxpool3d_forward($1,$2,$3);"
-  _nn_backward..="nn_maxpool3d_backward($1,$2,$3);"
+               "nn_maxpool3d_forward($1,$2);"
+  _nn_backward..="nn_maxpool3d_backward($1,$2);"
   _nn_init.="$0 $* "
 
 #@cli nn_mul : out,in0,in1
