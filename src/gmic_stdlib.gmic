@@ -24472,26 +24472,28 @@ nn_lib :
 
     # maxpool2d : 2D max pooling.
     #----------------------------
-    nn_maxpool2d_init_forward(OUT,IN,P) = (
+    nn_maxpool2d_init_forward(OUT,IN,patchsize) = (
       const OUT#_width = int(IN#_width/P);
       const OUT#_height = int(IN#_height/P);
       const OUT#_depth = IN#_depth;
       const OUT#_spectrum = IN#_spectrum;
+      const OUT#_patchsize = patchsize;
     );
 
-    nn_maxpool2d_forward(OUT,IN,P) = (
+    nn_maxpool2d_forward(OUT,IN) = (
       OUT# = vector(##OUT#_width*OUT#_height*OUT#_depth*OUT#_spectrum);
       OUT#_from = vector(#size(OUT#));
       _nn_off = 0;
       repeat (OUT#_spectrum,_nn_c,
         repeat (OUT#_depth,_nn_z,
           repeat (OUT#_height,_nn_y,
-            _nn_yP = _nn_y*P;
+            _nn_yp = _nn_y*OUT#_patchsize;
             repeat (OUT#_width,_nn_x,
-              OUT#_P = crop(IN#,IN#_width,IN#_height,IN#_depth,IN#_spectrum,
-                            _nn_x*P,_nn_yP,_nn_z,_nn_c,P,P,1,1);
-              _nn_argmax = argmax(OUT#_P);
-              OUT#[_nn_off] = OUT#_P[_nn_argmax];
+              OUT#_patch = crop(IN#,IN#_width,IN#_height,IN#_depth,IN#_spectrum,
+                                _nn_x*OUT#_patchsize,_nn_yp,_nn_z,_nn_c,
+                                OUT#_patchsize,OUT#_patchsize,1,1);
+              _nn_argmax = argmax(OUT#_patch);
+              OUT#[_nn_off] = OUT#_patch[_nn_argmax];
               OUT#_from[_nn_off++] = _nn_argmax;
             );
           );
@@ -24499,19 +24501,19 @@ nn_lib :
       );
     );
 
-    nn_maxpool2d_backward(OUT,IN,P) = (
+    nn_maxpool2d_backward(OUT,IN) = (
       d#IN = vector(#size(IN#));
       _nn_offOUT = 0;
       repeat (OUT#_spectrum,_nn_c,
         repeat (OUT#_depth,_nn_z,
           _nn_offIN0 = IN#_width*IN#_height*(_nn_z + IN#_depth*_nn_c);
           repeat (OUT#_height,_nn_y,
-            _nn_yP = _nn_y*P;
+            _nn_yp = _nn_y*OUT#_patchsize;
             repeat (OUT#_width,_nn_x,
               _nn_from = OUT#_from[_nn_offOUT];
-              _nn_from_x = _nn_from%P;
-              _nn_from_y = int(_nn_from/P);
-              _nn_offIN = _nn_offIN0 + _nn_x*P + _nn_from_x + IN#_width*(_nn_yP + _nn_from_y);
+              _nn_from_x = _nn_from%OUT#_patchsize;
+              _nn_from_y = int(_nn_from/OUT#_patchsize);
+              _nn_offIN = _nn_offIN0 + _nn_x*OUT#_patchsize + _nn_from_x + IN#_width*(_nn_yp + _nn_from_y);
               d#IN[_nn_offIN] = d#OUT[_nn_offOUT++];
             );
           );
@@ -25471,8 +25473,8 @@ nn_maxpool2d : nn_check_layer "$2"
   _nn_$1_input=$2
   _nn_$1_properties="patch_size=$3x$3"
   _nn_forward.="begin(nn_maxpool2d_init_forward($1,$2,$3));"\
-               "nn_maxpool2d_forward($1,$2,$3);"
-  _nn_backward..="nn_maxpool2d_backward($1,$2,$3);"
+               "nn_maxpool2d_forward($1,$2);"
+  _nn_backward..="nn_maxpool2d_backward($1,$2);"
   _nn_init.="$0 $* "
 
 #@cli nn_maxpool3d : out,in,_patch_size>1
