@@ -25261,37 +25261,33 @@ nn_lib :
 
 #@cli nn_add : out,in0,in1
 #@cli : Add an 'add' layer to the network.
-nn_add : nn_check_layer "$2"
-         nn_check_layer "$3"
-         check "isvarname('$1') && [$_nn_$2_size]==[$_nn_$3_size]"
-  e[^-1] "[nn_lib] Add 'add' layer '$1', with inputs '$2' and '$3'."
+nn_add : if ['$2']=='.' in0=$_nn_previous else in0=$2 fi nn_check_layer $in0
+         if ['$3']=='.' in1=$_nn_previous else in1=$3 fi nn_check_layer $in1
+         check "isvarname('$1') && [$_nn_"${in0}"_size]==[$_nn_"${in1}"_size]"
+  e[^-1] "[nn_lib] Add 'add' layer '$1', with inputs '"$in0"' and '"$in1"'."
   _nn_modules_names.=$1,
   _nn_modules_types.=add,
-  _nn_$1_size=$_nn_$2_size
-  _nn_$1_input=$2,$3
-  _nn_forward.="begin(nn_add_init_forward($1,$2));"\
-               "nn_add_forward($1,$2,$3);"
-  _nn_backward..="nn_add_backward($1,$2,$3);"
+  _nn_$1_size=$_nn_${in0}_size
+  _nn_$1_input=$in0,$in1
+  _nn_forward.="begin(nn_add_init_forward($1,"$in0"));"\
+               "nn_add_forward($1,"$in0","$in1");"
+  _nn_backward..="nn_add_backward($1,"$in0","$in1");"
   _nn_init.="$0 $* "
   _nn_previous=$1
 
 #@cli nn_append : out,in0,in1
 #@cli : Add an 'append' layer to the network.
-nn_append : nn_check_layer "$2"
-            nn_check_layer "$3"
-            check "isvarname('$1')"
-  e[^-1] "[nn_lib] Add 'append' layer '$1', with inputs '$2' and '$3'."
-  if s1=[$_nn_$2_size];s2=[$_nn_$3_size];s1[0,3]!=s2[0,3]
-    error "Command 'nn_append': Incompatible inputs '$2' (size:"$_nn_$2_size") "\
-          "and '$3' (size: "$_nn_$3_size")."
-  fi
+nn_append : if ['$2']=='.' in0=$_nn_previous else in0=$2 fi nn_check_layer $in0
+            if ['$3']=='.' in1=$_nn_previous else in1=$3 fi nn_check_layer $in1
+            check "isvarname('$1') && [$_nn_"${in0}"_size][0,3]==[$_nn_"${in1}"_size][0,3]"
+  e[^-1] "[nn_lib] Add 'append' layer '$1', with inputs '"$in0"' and '"$in1"'."
   _nn_modules_names.=$1,
   _nn_modules_types.=append,
-  _nn_$1_size={[$_nn_$2_size]+[0,0,0,[$_nn_$3_size][3]]}
-  _nn_$1_input=$2,$3
-  _nn_forward.="begin(nn_append_init_forward($1,$2,$3));"\
-               "nn_append_forward($1,$2,$3);"
-  _nn_backward..="nn_append_backward($1,$2,$3);"
+  _nn_$1_size={[$_nn_${in0}_size]+[0,0,0,[$_nn_${in1}_size][3]]}
+  _nn_$1_input=$in0,$in1
+  _nn_forward.="begin(nn_append_init_forward($1,"$in0","$in1"));"\
+               "nn_append_forward($1,"$in0","$in1");"
+  _nn_backward..="nn_append_backward($1,"$in0","$in1");"
   _nn_init.="$0 $* "
   _nn_previous=$1
 
@@ -25330,12 +25326,10 @@ nn_avgpool3d : nn_check_layer "$2"
 #@cli nn_check_layer : name
 #@cli : Check that the layer with specified name already exists in the network.
 nn_check_layer :
-  if ["'$1'!='.'"]
-    if !isvarname('"$1"')
-      error[0--3] "Command 'nn_check_layer': Invalid layer name '$1'."
-    elif narg($_nn_$1_size)!=4
-      error[0--3] "Command 'nn_check_layer': Layer with name '$1' does not exist."
-    fi
+  if !isvarname('"$1"')
+    error[0--3] "Command 'nn_check_layer': Invalid layer name '$1'."
+  elif narg($_nn_$1_size)!=4
+    error[0--3] "Command 'nn_check_layer': Layer with name '$1' does not exist."
   fi
 
 #@cli nn_clone : name0,name1,in
