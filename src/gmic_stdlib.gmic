@@ -25272,11 +25272,11 @@ nn_check_layer :
 #@cli : Add an 'add' layer to the network.
 nn_add : if ['$2']=='.' in0=$_nn_previous else in0=$2 fi nn_check_layer $in0
          if ['$3']=='.' in1=$_nn_previous else in1=$3 fi nn_check_layer $in1
-         check "isvarname('$1') && [$_nn_"${in0}"_size]==[$_nn_"${in1}"_size]"
+         check "isvarname('$1') && "[${_nn_${in0}_size}]==[${_nn_${in1}_size}]
   e[^-1] "[nn_lib] Add 'add' layer '$1', with inputs '"$in0"' and '"$in1"'."
   _nn_modules_names.=$1,
   _nn_modules_types.=add,
-  _nn_$1_size=$_nn_${in0}_size
+  _nn_$1_size=${_nn_${in0}_size}
   _nn_$1_input=$in0,$in1
   _nn_forward.="begin(nn_add_init_forward($1,"$in0"));"\
                "nn_add_forward($1,"$in0","$in1");"
@@ -25288,11 +25288,11 @@ nn_add : if ['$2']=='.' in0=$_nn_previous else in0=$2 fi nn_check_layer $in0
 #@cli : Add an 'append' layer to the network.
 nn_append : if ['$2']=='.' in0=$_nn_previous else in0=$2 fi nn_check_layer $in0
             if ['$3']=='.' in1=$_nn_previous else in1=$3 fi nn_check_layer $in1
-            check "isvarname('$1') && [$_nn_"${in0}"_size][0,3]==[$_nn_"${in1}"_size][0,3]"
+            check "isvarname('$1') && "[${_nn_${in0}_size}][0,3]==[${_nn_${in1}_size}][0,3]
   e[^-1] "[nn_lib] Add 'append' layer '$1', with inputs '"$in0"' and '"$in1"'."
   _nn_modules_names.=$1,
   _nn_modules_types.=append,
-  _nn_$1_size={[$_nn_${in0}_size]+[0,0,0,[$_nn_${in1}_size][3]]}
+  _nn_$1_size:=[${_nn_${in0}_size}]+[0,0,0,[${_nn_${in1}_size}][3]]
   _nn_$1_input=$in0,$in1
   _nn_forward.="begin(nn_append_init_forward($1,"$in0","$in1"));"\
                "nn_append_forward($1,"$in0","$in1");"
@@ -25307,7 +25307,7 @@ nn_avgpool2d : if ['$2']=='.' in=$_nn_previous else in=$2 fi nn_check_layer $in
   e[^-1] "[nn_lib] Add 'avgpool2d' layer '$1', with input '"$in"' and patch size $3x$3."
   _nn_modules_names.=$1,
   _nn_modules_types.=avgpool2d,
-  _nn_$1_size:="s=["$_nn_${in}_size"];[int(s[0,2]/$3),s[2,2]]"
+  _nn_$1_size:=s=[${_nn_${in}_size}];[int(s[0,2]/$3),s[2,2]]
   _nn_$1_input=$in
   _nn_$1_properties="patch_size=$3x$3"
   _nn_forward.="begin(nn_avgpool2d_init_forward($1,"$in",$3));"\
@@ -25323,7 +25323,7 @@ nn_avgpool3d : if ['$2']=='.' in=$_nn_previous else in=$2 fi nn_check_layer $in
   e[^-1] "[nn_lib] Add 'avgpool3d' layer '$1', with input '"$in"' and patch size $3x$3x$3."
   _nn_modules_names.=$1,
   _nn_modules_types.=avgpool3d,
-  _nn_$1_size:="s=["$_nn_${in}_size"];[int(s[0,3]/$3),s[3]]"
+  _nn_$1_size:=s=[${_nn_${in}_size}];[int(s[0,3]/$3),s[3]]
   _nn_$1_input=$in
   _nn_$1_properties="patch_size=$3x$3x$3"
   _nn_forward.="begin(nn_avgpool3d_init_forward($1,"$in",$3));"\
@@ -25339,10 +25339,9 @@ nn_clone : if ['$3']=='.' in=$_nn_previous else in=$3 fi nn_check_layer $in
   e[^-1] "[nn_lib] Add 'clone' layer with input '"$in"' and outputs '$1' and '$2'."
   _nn_modules_names.=$1,$2,
   _nn_modules_types.=clone,clone,
-  _nn_$1_size=$_nn_${in}_size
-  _nn_$1_input=$in
-  _nn_$2_size=$_nn_${in}_size
-  _nn_$2_input=$in
+  _nn_$1_size=${_nn_${in}_size}
+  _nn_$2_size=${_nn_${in}_size}
+  _nn_$1_input,_nn_$2_input=$in
   _nn_forward.="begin(nn_clone_init_forward($1,$2,"$in"));"\
                "nn_clone_forward($1,$2,"$in");"
   _nn_backward..="nn_clone_backward($1,$2,"$in");"
@@ -25373,7 +25372,7 @@ nn_conv2d : if ['$2']=='.' in=$_nn_previous else in=$2 fi nn_check_layer $in
 _nn_conv2d :
   _nn_modules_names.=$1,
   _nn_modules_types.=conv2d,
-  _nn_$1_size={s=[$_nn_$2_size];[int(s[0,2]/$5)-2*$7,s[2],$3]}
+  _nn_$1_size:=s=[$_nn_$2_size];[int(s[0,2]/$5)-2*$7,s[2],$3]
   _nn_$1_learning_mode=$9
   _nn_$1_input=$2
   s0,s1,s2,s3=dirichlet,neumann,periodic,mirror
@@ -25457,7 +25456,7 @@ nn_conv3d : if ['$2']=='.' in=$_nn_previous else in=$2 fi nn_check_layer $in
 _nn_conv3d :
   _nn_modules_names.=$1,
   _nn_modules_types.=conv3d,
-  _nn_$1_size={s=[$_nn_$2_size];[int(s[0,3]/$5)-2*$7,$3]}
+  _nn_$1_size:=s=[$_nn_$2_size];[int(s[0,3]/$5)-2*$7,$3]
   _nn_$1_learning_mode=$9
   _nn_$1_input=$2
   s0,s1,s2,s3=dirichlet,neumann,periodic,mirror
@@ -25543,7 +25542,7 @@ nn_crop : if ['$2']=='.' in=$_nn_previous else in=$2 fi nn_check_layer $in
 #@cli : Add a 'distance' layer to the network (distance between two inputs, with specified metric).
 nn_distance : if ['$2']=='.' in0=$_nn_previous else in0=$2 fi nn_check_layer $in0
               if ['$3']=='.' in1=$_nn_previous else in1=$3 fi nn_check_layer $in1
-              check "isvarname('$1') && ${4=0}>=0 && [$_nn_"${in0}"_size]==[$_nn_"${in1}"_size]"
+              check "isvarname('$1') && ${4=0}>=0 && "[${_nn_${in0}_size}]==[${_nn_${in1}_size}]
   s0,s1="squared-L2 norm","L$4"
   e[^-1] "[nn_lib] Add 'distance' layer '$1' ("${s{$4>0}}"), with inputs '"$in0"' and '"$in1"'."
   _nn_modules_names.=$1,
@@ -25559,17 +25558,17 @@ nn_distance : if ['$2']=='.' in0=$_nn_previous else in0=$2 fi nn_check_layer $in
 
 #@cli nn_dropout : out,in,0<=dropout_rate<1
 #@cli : Add a 'dropout' layer to the network.
-nn_dropout : nn_check_layer "$2"
+nn_dropout : if ['$2']=='.' in=$_nn_previous else in=$2 fi nn_check_layer $in
              check "isvarname('$1') && inrange($3,0,1,1,0)"
-  e[^-1] "[nn_lib] Add 'dropout' layer '$1', with input '$2' and dropout rate $3."
+  e[^-1] "[nn_lib] Add 'dropout' layer '$1', with input '"$in"' and dropout rate $3."
   _nn_modules_names.=$1,
   _nn_modules_types.=dropout,
-  _nn_$1_size=$_nn_$2_size
-  _nn_$1_input=$2
+  _nn_$1_size=${_nn_${in}_size}
+  _nn_$1_input=$in
   _nn_$1_properties="dropout_rate=$3"
-  _nn_forward.="begin(nn_dropout_init_forward($1,$2,$3));"\
-               "nn_dropout_forward($1,$2);"
-  _nn_backward..="nn_dropout_backward($1,$2);"
+  _nn_forward.="begin(nn_dropout_init_forward($1,"$in",$3));"\
+               "nn_dropout_forward($1,"$in");"
+  _nn_backward..="nn_dropout_backward($1,"$in");"
   _nn_init.="$0 $* "
   _nn_previous=$1
 
