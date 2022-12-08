@@ -25273,6 +25273,7 @@ nn_add : nn_check_layer "$2"
                "nn_add_forward($1,$2,$3);"
   _nn_backward..="nn_add_backward($1,$2,$3);"
   _nn_init.="$0 $* "
+  _nn_previous=$1
 
 #@cli nn_append : out,in0,in1
 #@cli : Add an 'append' layer to the network.
@@ -25292,6 +25293,7 @@ nn_append : nn_check_layer "$2"
                "nn_append_forward($1,$2,$3);"
   _nn_backward..="nn_append_backward($1,$2,$3);"
   _nn_init.="$0 $* "
+  _nn_previous=$1
 
 #@cli nn_avgpool2d : out,in,_patch_size>1
 #@cli : Add a 'avgpool2d' layer (2D average pooling) to the network.
@@ -25307,6 +25309,7 @@ nn_avgpool2d : nn_check_layer "$2"
                "nn_avgpool2d_forward($1,$2);"
   _nn_backward..="nn_avgpool2d_backward($1,$2);"
   _nn_init.="$0 $* "
+  _nn_previous=$1
 
 #@cli nn_avgpool3d : out,in,_patch_size>1
 #@cli : Add a 'avgpool3d' layer (3D average pooling) to the network.
@@ -25322,14 +25325,17 @@ nn_avgpool3d : nn_check_layer "$2"
                "nn_avgpool3d_forward($1,$2);"
   _nn_backward..="nn_avgpool3d_backward($1,$2);"
   _nn_init.="$0 $* "
+  _nn_previous=$1
 
 #@cli nn_check_layer : name
 #@cli : Check that the layer with specified name already exists in the network.
 nn_check_layer :
-  if !isvarname('"$1"')
-    error[0--3] "Command 'nn_check_layer': Invalid layer name '$1'."
-  elif narg($_nn_$1_size)!=4
-    error[0--3] "Command 'nn_check_layer': Layer with name '$1' does not exist."
+  if ["'$1'!='.'"]
+    if !isvarname('"$1"')
+      error[0--3] "Command 'nn_check_layer': Invalid layer name '$1'."
+    elif narg($_nn_$1_size)!=4
+      error[0--3] "Command 'nn_check_layer': Layer with name '$1' does not exist."
+    fi
   fi
 
 #@cli nn_clone : name0,name1,in
@@ -25347,6 +25353,7 @@ nn_clone : nn_check_layer "$3"
                "nn_clone_forward($1,$2,$3);"
   _nn_backward..="nn_clone_backward($1,$2,$3);"
   _nn_init.="$0 $* "
+  _nn_previous=$1
 
 #@cli nn_conv2d : out,in,nb_channels>0,_kernel_size>0,_stride>0,_dilation,_border_shrink>=0,_boundary_conditions,\
 # 0<=_learning_mode<=3
@@ -25366,6 +25373,7 @@ nn_conv2d : nn_check_layer "$2"
   _nn_conv2d $1_conv2d,${2-9}
   nn_rename $1,$1_conv2d
   _nn_init=${init}"$0 $* "
+  _nn_previous=$1
 
 # [Internal] Insert 'conv2d' layer, with parameter image having name '$1'.
 _nn_conv2d :
@@ -25407,6 +25415,7 @@ nn_conv2dnl : nn_check_layer "$2"
   _nn_conv2d $1_conv2d,${2-8},$10
   nn_nl $1,$1_conv2d,$9
   _nn_init=${init}"$0 $* "
+  _nn_previous=$1
 
 #@cli nn_conv2dnnl : out,in,nb_channels>0,_kernel_size>0,_stride>0,_dilation>0,_border_shrink>=0,_boundary_conditions,\
 # _activation,0<=_learning_mode<=3
@@ -25428,6 +25437,7 @@ nn_conv2dnnl : nn_check_layer "$2"
   _nn_normalize $1_normalize,$1_conv2d,1,3
   nn_nl $1,$1_normalize,$9
   _nn_init=${init}"$0 $* "
+  _nn_previous=$1
 
 #@cli nn_conv3d : out,in,nb_channels>0,_kernel_size>0,_stride>0,_dilation,_border_shrink>=0,_boundary_conditions,\
 # 0<=_learning_mode<=3
@@ -25447,6 +25457,7 @@ nn_conv3d : nn_check_layer "$2"
   _nn_conv3d $1_conv3d,${2-9}
   nn_rename $1,$1_conv3d
   _nn_init=${init}"$0 $* "
+  _nn_previous=$1
 
 # [Internal] Insert 'conv3d' layer, with parameter image having name '$1'.
 _nn_conv3d :
@@ -25488,6 +25499,7 @@ nn_conv3dnl : nn_check_layer "$2"
   _nn_conv3d $1_conv3d,${2-8},$10
   nn_nl $1,$1_conv3d,$9
   _nn_init=${init}"$0 $* "
+  _nn_previous=$1
 
 #@cli nn_conv3dnnl : out,in,nb_channels>0,_kernel_size>0,_stride>0,_dilation>0,_border_shrink>=0,_boundary_conditions,\
 # _activation,0<=_learning_mode<=3
@@ -25509,6 +25521,7 @@ nn_conv3dnnl : nn_check_layer "$2"
   _nn_normalize $1_normalize,$1_conv3d,1,3
   nn_nl $1,$1_normalize,$9
   _nn_init=${init}"$0 $* "
+  _nn_previous=$1
 
 #@cli nn_crop : out,in,x0,y0,z0,c0,x1,y1,z1,c1,_boundary_conditions
 #@cli : Add a 'crop' layer to the network.
@@ -25530,6 +25543,7 @@ nn_crop : nn_check_layer "$2"
                "nn_crop_forward($1,$2);"
   _nn_backward..="nn_crop_backward($1,$2);"
   _nn_init.="$0 $* "
+  _nn_previous=$1
 
 #@cli nn_distance : out,in0,in1,_metric={ 0=squared-L2 | p>0 = Lp-norm }
 #@cli : Add a 'distance' layer to the network (distance between two inputs, with specified metric).
@@ -25551,6 +25565,7 @@ nn_distance : nn_check_layer "$2"
                "nn_distance_forward(${1-3});"
   _nn_backward..="nn_distance_backward(${1-3});"
   _nn_init.="$0 $*"
+  _nn_previous=$1
 
 #@cli nn_dropout : out,in,0<=dropout_rate<1
 #@cli : Add a 'dropout' layer to the network.
@@ -25566,6 +25581,7 @@ nn_dropout : nn_check_layer "$2"
                "nn_dropout_forward($1,$2);"
   _nn_backward..="nn_dropout_backward($1,$2);"
   _nn_init.="$0 $* "
+  _nn_previous=$1
 
 #@cli nn_fc : out,in,nb_channels>0,0<=_learning_mode<=3
 #@cli : Add a 'fc' layer (fully connected layer) to the network.
@@ -25578,6 +25594,7 @@ nn_fc : nn_check_layer "$2"
   _nn_fc $1_fc,${2-4}
   nn_rename $1,$1_fc
   _nn_init=${init}"$0 $* "
+  _nn_previous=$1
 
 # [Internal] Insert 'fc' layer, with parameter image having name '$1'.
 _nn_fc :
@@ -25612,6 +25629,7 @@ nn_nlfc : nn_check_layer "$2"
   _nn_nlfc $1_nlfc,${2-5}
   nn_rename $1,$1_nlfc
   _nn_init=${init}"$0 $* "
+  _nn_previous=$1
 
 # [Internal] Insert 'fc' layer, with parameter image having name '$1'.
 _nn_nlfc :
@@ -25646,6 +25664,7 @@ nn_fcnl : nn_check_layer "$2"
   _nn_fc $1_fc,${2-3},$5
   nn_nl $1,$1_fc,$4
   _nn_init=${init}"$0 $* "
+  _nn_previous=$1
 
 #@cli nn_fcnnl : out,in,nb_neurons>0,_activation,0<=_learning_mode<=3
 #@cli : Add a 'fcnnl' layer (fully connected layer followed by a normalization layer, then a non-linearity) \
@@ -25661,6 +25680,7 @@ nn_fcnnl : nn_check_layer "$2"
   _nn_normalize $1_normalize,$1_fc,0,3
   nn_nl $1,$1_normalize,$4
   _nn_init=${init}"$0 $* "
+  _nn_previous=$1
 
 #@cli nn_init
 #@cli : Initialize a new network.
@@ -25680,6 +25700,7 @@ nn_input : check "isvarname('$1') && isint($2) && $2>0 && isint(${3=1}) && $3>0 
   _nn_$1_size=$2,$3,$4,$5
   _nn_forward.="begin(nn_input_init_forward($1,$2,$3,$4,$5));"
   _nn_init.="$0 $* "
+  _nn_previous=$1
 
 #@cli nn_maxpool2d : out,in,_patch_size>1
 #@cli : Add a 'maxpool2d' layer (2D max pooling) to the network.
@@ -25696,6 +25717,7 @@ nn_maxpool2d : nn_check_layer "$2"
                "nn_maxpool2d_forward($1,$2);"
   _nn_backward..="nn_maxpool2d_backward($1,$2);"
   _nn_init.="$0 $* "
+  _nn_previous=$1
 
 #@cli nn_maxpool3d : out,in,_patch_size>1
 #@cli : Add a 'maxpool3d' layer (3d max pooling) to the network.
@@ -25712,6 +25734,7 @@ nn_maxpool3d : nn_check_layer "$2"
                "nn_maxpool3d_forward($1,$2);"
   _nn_backward..="nn_maxpool3d_backward($1,$2);"
   _nn_init.="$0 $* "
+  _nn_previous=$1
 
 #@cli nn_mul : out,in0,in1
 #@cli : Add an 'mul' layer to the network.
@@ -25727,6 +25750,7 @@ nn_mul : nn_check_layer "$2"
                "nn_mul_forward($1,$2,$3);"
   _nn_backward..="nn_mul_backward($1,$2,$3);"
   _nn_init.="$0 $* "
+  _nn_previous=$1
 
 #@cli nn_nl : out,in,_activation
 #@cli : Add a 'nl' (nonlinearity) layer to the network.
@@ -25751,6 +25775,7 @@ nn_nl : nn_check_layer "$2"
     _nn_backward..="nn_nl_backward($1,$2,$3);"
   fi
   _nn_init.="$0 $* "
+  _nn_previous=$1
 
 #@cli nn_normalize : out,in,_normalization_mode_,0<=_learning_mode<=3
 #@cli : Add a 'normalize' layer to the network.
@@ -25763,6 +25788,7 @@ nn_normalize : nn_check_layer "$2"
   e[^-1] "[nn_lib] Add 'normalize' layer '$1', with input '$2' and "${s$3}" normalization."
   _nn_normalize $1_normalize,${2-4}
   nn_rename $1,$1_normalize
+  _nn_previous=$1
 
 # [Internal] Insert 'normalize' layer, with parameter image having name '$1'.
 _nn_normalize :
@@ -25804,6 +25830,7 @@ nn_patchdown2d : nn_check_layer "$2"
                "nn_patchdown2d_forward($1,$2);"
   _nn_backward..="nn_patchdown2d_backward($1,$2);"
   _nn_init.="$0 $* "
+  _nn_previous=$1
 
 #@cli nn_patchdown3d : out,in,_patch_size>1
 #@cli : Add a 'patchdown3d' (3D downscale by patch) layer to the network.
@@ -25824,6 +25851,7 @@ nn_patchdown3d : nn_check_layer "$2"
                "nn_patchdown3d_forward($1,$2);"
   _nn_backward..="nn_patchdown3d_backward($1,$2);"
   _nn_init.="$0 $* "
+  _nn_previous=$1
 
 #@cli nn_patchup2d : out,in,_patch_size>1
 #@cli : Add a 'patchup2d' (2D upscale by patch) layer to the network.
@@ -25840,6 +25868,7 @@ nn_patchup2d : nn_check_layer "$2"
                "nn_patchup2d_forward($1,$2);"
   _nn_backward..="nn_patchup2d_backward($1,$2);"
   _nn_init.="$0 $* "
+  _nn_previous=$1
 
 #@cli nn_patchup3d : out,in,_patch_size>1
 #@cli : Add a 'patchup3d' (3D upscale by patch) layer to the network.
@@ -25856,6 +25885,7 @@ nn_patchup3d : nn_check_layer "$2"
                "nn_patchup3d_forward($1,$2);"
   _nn_backward..="nn_patchup3d_backward($1,$2);"
   _nn_init.="$0 $* "
+  _nn_previous=$1
 
 #@cli nn_rename : out,in
 #@cli : Add a 'rename' layer to the network.
@@ -25869,6 +25899,7 @@ nn_rename : nn_check_layer "$2"
   _nn_forward.="begin(nn_rename_init_forward($1,$2));"
   _nn_backward..="nn_rename_backward($1,$2);"
   _nn_init.="$0 $* "
+  _nn_previous=$1
 
 #@cli nn_resconv2d : out,in,_kernel_size>0,_dilation>0,_boundary_conditions,0<=_learning_mode<=3
 #@cli : Add a 'resconv2d' (residual 2D convolutional layer) to the network.
@@ -25887,6 +25918,7 @@ nn_resconv2d : nn_check_layer "$2"
   _nn_conv2d $1_conv2d,$1_clone1,{[$_nn_$2_size][3]},$3,1,$4,0,$5,$6
   nn_add $1,$1_conv2d,$1_clone0
   _nn_init=${init}"$0 $* "
+  _nn_previous=$1
 
 #@cli nn_resconv2dnl : out,in,_kernel_size>0,_dilation>0,_boundary_conditions,_activation,0<=_learning_mode<=3
 #@cli : Add a 'resconv2dnl' (residual 2D convolutional layer followed by a non-linearity) to the network.
@@ -25907,6 +25939,7 @@ nn_resconv2dnl : nn_check_layer "$2"
   nn_add $1_add,$1_conv2d,$1_clone0
   nn_nl $1,$1_add,$6
   _nn_init=${init}"$0 $* "
+  _nn_previous=$1
 
 #@cli nn_resconv2dnnl : out,in,_kernel_size>0,_dilation>0,_boundary_conditions,_activation,0<=_learning_mode<=3
 #@cli : Add a 'resconv2dnnl' (residual 2D convolutional layer followed by a normalization layer, then a non-linearity)\
@@ -25929,6 +25962,7 @@ nn_resconv2dnnl : nn_check_layer "$2"
   nn_add $1_add,$1_normalize,$1_clone0
   nn_nl $1,$1_add,$6
   _nn_init=${init}"$0 $* "
+  _nn_previous=$1
 
 #@cli nn_resconv3d : out,in,_kernel_size>0,_dilation>0,_boundary_conditions,0<=_learning_mode<=3
 #@cli : Add a 'resconv3d' (residual 3D convolutional layer) to the network.
@@ -25946,6 +25980,7 @@ nn_resconv3d : nn_check_layer "$2"
   _nn_conv3d $1_conv3d,$1_clone1,{[$_nn_$2_size][3]},$3,1,$4,0,$5,$6
   nn_add $1,$1_conv3d,$1_clone0
   _nn_init=${init}"$0 $* "
+  _nn_previous=$1
 
 #@cli nn_resconv3dnl : out,in,_kernel_size>0,_dilation>0,_boundary_conditions,_activation,0<=_learning_mode<=3
 #@cli : Add a 'resconv3dnl' (residual 3D convolutional layer followed by a non-linearity) to the network.
@@ -25966,6 +26001,7 @@ nn_resconv3dnl : nn_check_layer "$2"
   nn_add $1_add,$1_conv3d,$1_clone0
   nn_nl $1,$1_add,$6
   _nn_init=${init}"$0 $* "
+  _nn_previous=$1
 
 #@cli nn_resconv3dnnl : out,in,_kernel_size>0,_dilation>0,_boundary_conditions,_activation,0<=_learning_mode<=3
 #@cli : Add a 'resconv3dnnl' (residual 3D convolutional layer followed by a normalization layer, then a non-linearity)\
@@ -25988,6 +26024,7 @@ nn_resconv3dnnl : nn_check_layer "$2"
   nn_add $1_add,$1_normalize,$1_clone0
   nn_nl $1,$1_add,$6
   _nn_init=${init}"$0 $* "
+  _nn_previous=$1
 
 #@cli nn_resfc : out,in,0<=_learning_mode<=3
 #@cli : Add a 'resfc' (residual fully connecter layer) to the network.
@@ -26001,6 +26038,7 @@ nn_resfc : nn_check_layer "$2"
   _nn_fc $1_fc,$1_clone1,{prod($_nn_$2_size)},$3
   nn_add $1,$1_fc,$1_clone0
   _nn_init=${init}"$0 $* "
+  _nn_previous=$1
 
 #@cli nn_resfcnl : out,in,_activation,0<=_learning_mode<=3
 #@cli : Add a 'resfcnl' (residual fully connecter layer followed by a non-linearity) to the network.
@@ -26016,6 +26054,7 @@ nn_resfcnl : nn_check_layer "$2"
   nn_add $1_add,$1_fc,$1_clone0
   nn_nl $1,$1_add,$3
   _nn_init=${init}"$0 $* "
+  _nn_previous=$1
 
 #@cli nn_resfcnnl : out,in,_activation,0<=_learning_mode<=3
 #@cli : Add a 'resfcnnl' (residual fully connecter layer followed by a normalization layer, then a non-linearity) \
@@ -26033,6 +26072,7 @@ nn_resfcnnl : nn_check_layer "$2"
   nn_add $1_add,$1_normalize,$1_clone0
   nn_nl $1,$1_add,$3
   _nn_init=${init}"$0 $* "
+  _nn_previous=$1
 
 #@cli nn_reshape : out,in,width>0,height>0,depth>0,spectrum>0
 #@cli : Add a 'reshape' layer to the network.
@@ -26049,6 +26089,7 @@ nn_reshape : nn_check_layer "$2"
   _nn_forward.="begin(nn_reshape_init_forward($1,$2,$3,$4,$5,$6));"
   _nn_backward..="begin(nn_reshape_init_backward($1,$2));"
   _nn_init.="$0 $* "
+  _nn_previous=$1
 
 #@cli nn_resize : out,in,width[%]>0,_height[%]>0,_depth[%]>0,_spectrum[%]>0,_interpolation
 #@cli : Add a 'resize' layer to the network.
@@ -26070,6 +26111,7 @@ nn_resize : nn_check_layer "$2"
                "nn_resize_forward($1,$2);"
   _nn_backward..="nn_resize_backward($1,$2);"
   _nn_init.="$0 $* "
+  _nn_previous=$1
 
 #@cli nn_run : out,in,"command",_width[%]>0,_height[%]>0,_depth[%]>0,_spectrum[%]>0
 #@cli : Add a 'run' layer to the network.
@@ -26090,6 +26132,7 @@ nn_run : nn_check_layer "$2"
                "nn_run_forward($1,$2);"
   _nn_backward..="nn_run_backward($1,$2);"
   _nn_init.="$0 $* "
+  _nn_previous=$1
 
 #@cli nn_split : name0,name1,in,nb_channels0
 #@cli : Add a 'split' layer to the network.
@@ -26106,6 +26149,7 @@ nn_split : nn_check_layer "$3"
                "nn_split_forward($1,$2,$3);"
   _nn_backward..="nn_split_backward($1,$2,$3);"
   _nn_init.="$0 $* "
+  _nn_previous=$1
 
 #@cli nn_loss_binary_crossentropy : out,in,ground_truth
 #@cli : Add a 'binary_crossentropy' loss to the network (binary cross entropy).
@@ -26121,6 +26165,7 @@ nn_loss_binary_crossentropy : nn_check_layer "$2"
             "nn_loss_binary_crossentropy_forward(${1-3});"\
             "end(nn_loss_binary_crossentropy_end_forward($1));"
   _nn_backward..="nn_loss_binary_crossentropy_backward(${1-3});"
+  _nn_previous=$1
 
 #@cli nn_loss_crossentropy : out,in,ground_truth
 #@cli : Add a 'crossentropy' loss to the network (cross entropy).
@@ -26136,6 +26181,7 @@ nn_loss_crossentropy : nn_check_layer "$2"
             "nn_loss_crossentropy_forward(${1-3});"\
             "end(nn_loss_crossentropy_end_forward($1));"
   _nn_backward..="nn_loss_crossentropy_backward(${1-3});"
+  _nn_previous=$1
 
 #@cli nn_loss_mse : out,in,ground_truth
 #@cli : Add a 'mse' loss to the network (mean-squared error).
@@ -26151,6 +26197,7 @@ nn_loss_mse : nn_check_layer "$2"
             "nn_loss_mse_forward(${1-3});"\
             "end(nn_loss_mse_end_forward($1));"
   _nn_backward..="nn_loss_mse_backward(${1-3});"
+  _nn_previous=$1
 
 #@cli nn_loss_normp : out,in,ground_truth,_metric={ 0=squared-L2 | p>0 = Lp-norm }
 #@cli : Add a 'normp' loss to the network (||out - ground_truth||_p).
@@ -26167,6 +26214,7 @@ nn_loss_normp : nn_check_layer "$2"
             "nn_loss_normp_forward(${1-3});"\
             "end(nn_loss_normp_end_forward($1));"
   _nn_backward..="nn_loss_normp_backward(${1-3});"
+  _nn_previous=$1
 
 #@cli nn_loss_softmax_crossentropy : out,in,ground_truth
 #@cli : Add a 'softmax_crossentropy' loss to the network (softmax followed by cross entropy).
@@ -26182,6 +26230,7 @@ nn_loss_softmax_crossentropy : nn_check_layer "$2"
             "nn_loss_softmax_crossentropy_forward(${1-3});"\
             "end(nn_loss_softmax_crossentropy_end_forward($1));"
   _nn_backward..="nn_loss_softmax_crossentropy_backward(${1-3});"
+  _nn_previous=$1
 
 #@cli nn_print
 #@cli : Print info on current neural network.
