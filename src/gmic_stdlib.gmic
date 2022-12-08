@@ -25543,21 +25543,17 @@ nn_crop : if ['$2']=='.' in=$_nn_previous else in=$2 fi nn_check_layer $in
 #@cli : Add a 'distance' layer to the network (distance between two inputs, with specified metric).
 nn_distance : if ['$2']=='.' in0=$_nn_previous else in0=$2 fi nn_check_layer $in0
               if ['$3']=='.' in1=$_nn_previous else in1=$3 fi nn_check_layer $in1
-              check "isvarname('$1') && ${4=0}>=0"
+              check "isvarname('$1') && ${4=0}>=0 && [$_nn_"${in0}"_size]==[$_nn_"${in1}"_size]"
   s0,s1="squared-L2 norm","L$4"
   e[^-1] "[nn_lib] Add 'distance' layer '$1' ("${s{$4>0}}"), with inputs '"$in0"' and '"$in1"'."
-  if s1=[$_nn_${in0}_size];s2=[$_nn_${in1}_size];s1[0,3]!=s2[0,3]
-    error "Command 'nn_distance': Incompatible inputs '"$in0"' (size: "$_nn_${in0}_size") and "\
-          "'"$in1"' (size:"$_nn_${in1}_size")."
-  fi
   _nn_modules_names.=$1,
   _nn_modules_types.=distance,
   _nn_$1_size=1,1,1,1
   _nn_$1_input=$in0,$in1
   _nn_$1_properties="metric="${s{$4>0}}
   _nn_forward.="begin(nn_distance_init_forward($1,$4));"\
-               "nn_distance_forward(${1-3});"
-  _nn_backward..="nn_distance_backward(${1-3});"
+               "nn_distance_forward($1,"$in0","$in1");"
+  _nn_backward..="nn_distance_backward($1,"$in0","$in1");"
   _nn_init.="$0 $*"
   _nn_previous=$1
 
