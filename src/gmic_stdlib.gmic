@@ -25771,11 +25771,11 @@ nn_nl : if ['$2']=='.' in=$_nn_previous else in=$2 fi nn_check_layer $in
 #@cli : 'normalization_mode' can be { 0=global parameters | 1=channel-by-channel parameters }
 #@cli : 'learning_mode' can be { 0=no learning | 1=alpha only | 2=beta only | 3=alpha+beta }
 #@cli : Default value: 'parameter_mode=0' and 'learning_mode=3'.
-nn_normalize : nn_check_layer "$2"
+nn_normalize : if ['$2']=='.' in=$_nn_previous else in=$2 fi nn_check_layer $in
                check "isvarname('$1') && isbool(${3=0}) && isint(${4=3}) && inrange($4,0,3)"
   s0,s1=global,channel-by-channel
-  e[^-1] "[nn_lib] Add 'normalize' layer '$1', with input '$2' and "${s$3}" normalization."
-  _nn_normalize $1_normalize,${2-4}
+  e[^-1] "[nn_lib] Add 'normalize' layer '$1', with input '"$in"' and "${s$3}" normalization."
+  _nn_normalize $1_normalize,$in,${3-4}
   nn_rename $1,$1_normalize
   _nn_previous=$1
 
@@ -25803,90 +25803,90 @@ _nn_normalize :
 #@cli nn_patchdown2d : out,in,_patch_size>1
 #@cli : Add a 'patchdown2d' (2D downscale by patch) layer to the network.
 #@cli : Default value: 'patch_size=2'.
-nn_patchdown2d : nn_check_layer "$2"
+nn_patchdown2d : if ['$2']=='.' in=$_nn_previous else in=$2 fi nn_check_layer $in
                  check "isvarname('$1') && isint(${3=2}) && $3>1"
-  e[^-1] "[nn_lib] Add 'patchdown2d' layer '$1', with input '$2' and patch size $3x$3."
+  e[^-1] "[nn_lib] Add 'patchdown2d' layer '$1', with input '"$in"' and patch size $3x$3."
   _nn_modules_names.=$1,
   _nn_modules_types.=patchdown2d,
-  _nn_$1_size:="s=["$_nn_$2_size"];[int(s[0,2]/$3),s[2],s[3]*$3^2]"
-  _nn_$1_input=$2
+  _nn_$1_size:=s=[${_nn_${in}_size}];[int(s[0,2]/$3),s[2],s[3]*$3^2]
+  _nn_$1_input=$in
   _nn_$1_properties="patch_size=$3x$3"
   if !min($_nn_$1_size)
     error[0--3] "Command 'nn_patchdown2d': Specified patch size ($3x$3) is higher than "\
-                "input size ("$_nn_$2_size")."
+                "input size ("${_nn_${in}_size}")."
   fi
-  _nn_forward.="begin(nn_patchdown2d_init_forward($1,$2,$3));"\
-               "nn_patchdown2d_forward($1,$2);"
-  _nn_backward..="nn_patchdown2d_backward($1,$2);"
+  _nn_forward.="begin(nn_patchdown2d_init_forward($1,"$in",$3));"\
+               "nn_patchdown2d_forward($1,"$in");"
+  _nn_backward..="nn_patchdown2d_backward($1,"$in");"
   _nn_init.="$0 $* "
   _nn_previous=$1
 
 #@cli nn_patchdown3d : out,in,_patch_size>1
 #@cli : Add a 'patchdown3d' (3D downscale by patch) layer to the network.
 #@cli : Default value: 'patch_size=2'.
-nn_patchdown3d : nn_check_layer "$2"
+nn_patchdown3d : if ['$2']=='.' in=$_nn_previous else in=$2 fi nn_check_layer $in
                  check "isvarname('$1') && isint(${3=2}) && $3>1"
-  e[^-1] "[nn_lib] Add 'patchdown3d' layer '$1', with input '$2' and patch size $3x$3x$3."
+  e[^-1] "[nn_lib] Add 'patchdown3d' layer '$1', with input '"$in"' and patch size $3x$3x$3."
   _nn_modules_names.=$1,
   _nn_modules_types.=patchdown3d,
-  _nn_$1_size:="s=["$_nn_$2_size"];[int(s[0,3]/$3),s[3]*$3^3]"
-  _nn_$1_input=$2
+  _nn_$1_size:=s=[${_nn_${in}_size}];[int(s[0,3]/$3),s[3]*$3^3]
+  _nn_$1_input=$in
   _nn_$1_properties="patch_size=$3x$3x$3"
   if !min($_nn_$1_size)
     error[0--3] "Command 'nn_patchdown3d': Specified patch size ($3x$3x$3) is higher than "\
-                "input size ("$_nn_$2_size")."
+                "input size ("${_nn_${in}_size}")."
   fi
-  _nn_forward.="begin(nn_patchdown3d_init_forward($1,$2,$3));"\
-               "nn_patchdown3d_forward($1,$2);"
-  _nn_backward..="nn_patchdown3d_backward($1,$2);"
+  _nn_forward.="begin(nn_patchdown3d_init_forward($1,"$in",$3));"\
+               "nn_patchdown3d_forward($1,"$in");"
+  _nn_backward..="nn_patchdown3d_backward($1,"$in");"
   _nn_init.="$0 $* "
   _nn_previous=$1
 
 #@cli nn_patchup2d : out,in,_patch_size>1
 #@cli : Add a 'patchup2d' (2D upscale by patch) layer to the network.
 #@cli : Default value: 'patch_size=2'.
-nn_patchup2d : nn_check_layer "$2"
+nn_patchup2d : if ['$2']=='.' in=$_nn_previous else in=$2 fi nn_check_layer $in
                check "isvarname('$1') && isint(${3=2}) && $3>1"
-  e[^-1] "[nn_lib] Add 'patchup2d' layer '$1', with input '$2' and patch size $3x$3."
+  e[^-1] "[nn_lib] Add 'patchup2d' layer '$1', with input '"$in"' and patch size $3x$3."
   _nn_modules_names.=$1,
   _nn_modules_types.=patchup2d,
-  _nn_$1_size:="s=["$_nn_$2_size"];[int(s[0,2]*$3),s[2],s[3]/$3^2]"
-  _nn_$1_input=$2
+  _nn_$1_size:=s=[${_nn_${in}_size}];[int(s[0,2]*$3),s[2],s[3]/$3^2]
+  _nn_$1_input=$in
   _nn_$1_properties="patch_size=$3x$3"
-  _nn_forward.="begin(nn_patchup2d_init_forward($1,$2,$3));"\
-               "nn_patchup2d_forward($1,$2);"
-  _nn_backward..="nn_patchup2d_backward($1,$2);"
+  _nn_forward.="begin(nn_patchup2d_init_forward($1,"$in",$3));"\
+               "nn_patchup2d_forward($1,"$in");"
+  _nn_backward..="nn_patchup2d_backward($1,"$in");"
   _nn_init.="$0 $* "
   _nn_previous=$1
 
 #@cli nn_patchup3d : out,in,_patch_size>1
 #@cli : Add a 'patchup3d' (3D upscale by patch) layer to the network.
 #@cli : Default value: 'patch_size=2'.
-nn_patchup3d : nn_check_layer "$2"
+nn_patchup3d : if ['$2']=='.' in=$_nn_previous else in=$2 fi nn_check_layer $in
                check "isvarname('$1') && isint(${3=2}) && $3>1"
-  e[^-1] "[nn_lib] Add 'patchup3d' layer '$1', with input '$2' and patch size $3x$3x$3."
+  e[^-1] "[nn_lib] Add 'patchup3d' layer '$1', with input '"$in"' and patch size $3x$3x$3."
   _nn_modules_names.=$1,
   _nn_modules_types.=patchup3d,
-  _nn_$1_size:="s=["$_nn_$2_size"];[int(s[0,3]*$3),s[3]/$3^3]"
-  _nn_$1_input=$2
+  _nn_$1_size:=s=[${_nn_${in}_size}];[int(s[0,3]*$3),s[3]/$3^3]
+  _nn_$1_input=$in
   _nn_$1_properties="patch_size=$3x$3x$3"
-  _nn_forward.="begin(nn_patchup3d_init_forward($1,$2,$3));"\
-               "nn_patchup3d_forward($1,$2);"
-  _nn_backward..="nn_patchup3d_backward($1,$2);"
+  _nn_forward.="begin(nn_patchup3d_init_forward($1,"$in",$3));"\
+               "nn_patchup3d_forward($1,"$in");"
+  _nn_backward..="nn_patchup3d_backward($1,"$in");"
   _nn_init.="$0 $* "
   _nn_previous=$1
 
 #@cli nn_rename : out,in
 #@cli : Add a 'rename' layer to the network.
-nn_rename : nn_check_layer "$2"
+nn_rename : if ['$2']=='.' in=$_nn_previous else in=$2 fi nn_check_layer $in
             check "isvarname('$1')"
-  e[^-1] "[nn_lib] Add 'rename' layer '$1', with input '$2'."
+  e[^-1] "[nn_lib] Add 'rename' layer '$1', with input '"$in"'."
   _nn_modules_names.=$1,
   _nn_modules_types.=rename,
-  _nn_$1_size=$_nn_$2_size
-  _nn_$1_input=$2
-  _nn_forward.="begin(nn_rename_init_forward($1,$2));"
-  _nn_backward..="nn_rename_backward($1,$2);"
+  _nn_$1_size=${_nn_${in}_size}
+  _nn_$1_input=$in
+  _nn_forward.="begin(nn_rename_init_forward($1,"$in"));"
+  _nn_backward..="nn_rename_backward($1,"$in");"
   _nn_init.="$0 $* "
   _nn_previous=$1
 
@@ -25895,16 +25895,16 @@ nn_rename : nn_check_layer "$2"
 #@cli : 'boundary_conditions' can be { 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }.
 #@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
 #@cli : Default values: 'kernel_size=3', 'dilation=1', 'boundary_conditions=1' and 'learning_mode=3'.
-nn_resconv2d : nn_check_layer "$2"
+nn_resconv2d : if ['$2']=='.' in=$_nn_previous else in=$2 fi nn_check_layer $in
                check "isvarname('$1') && isint(${3=3}) && $3>0 && isint(${5=1}) && inrange($5,0,3) && "\
                      "isint(${6=3}) && inrange($6,0,3)"
                skip "${4=1}"
   s0,s1,s2,s3=dirichlet,neumann,periodic,mirror
-  e[^-1] "[nn_lib] Add 'resconv2d' layer '$1', with input '$2', $3x$3 kernels, dilation $4 and "\
+  e[^-1] "[nn_lib] Add 'resconv2d' layer '$1', with input '"$in"', $3x$3 kernels, dilation $4 and "\
          $s$5" boundary conditions."
   init=$_nn_init
-  nn_clone $1_clone0,$1_clone1,$2
-  _nn_conv2d $1_conv2d,$1_clone1,{[$_nn_$2_size][3]},$3,1,$4,0,$5,$6
+  nn_clone $1_clone0,$1_clone1,$in
+  _nn_conv2d $1_conv2d,$1_clone1,{[${_nn_${in}_size}][3]},$3,1,$4,0,$5,$6
   nn_add $1,$1_conv2d,$1_clone0
   _nn_init=${init}"$0 $* "
   _nn_previous=$1
@@ -25915,16 +25915,16 @@ nn_resconv2d : nn_check_layer "$2"
 #@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
 #@cli : Default values: 'kernel_size=3', 'dilation=1', 'boundary_conditions=1', 'activation=leakyrelu' \
 # and 'learning_mode=3'.
-nn_resconv2dnl : nn_check_layer "$2"
+nn_resconv2dnl : if ['$2']=='.' in=$_nn_previous else in=$2 fi nn_check_layer $in
                  check "isvarname('$1') && isint(${3=3}) && $3>0 && isint(${5=1}) && inrange($5,0,3) && "\
                        "isint(${7=3}) && inrange($7,0,3)"
                  skip "${4=1}","${6=leakyrelu}"
   s0,s1,s2,s3=dirichlet,neumann,periodic,mirror
-  e[^-1] "[nn_lib] Add 'resconv2dnl' layer '$1', with input '$2', $3x$3 kernels, dilation $4, "\
+  e[^-1] "[nn_lib] Add 'resconv2dnl' layer '$1', with input '"$in"', $3x$3 kernels, dilation $4, "\
          $s$5" boundary conditions and '$6' activation."
   init=$_nn_init
-  nn_clone $1_clone0,$1_clone1,$2
-  _nn_conv2d $1_conv2d,$1_clone1,{[$_nn_$2_size][3]},$3,1,$4,0,$5,$7
+  nn_clone $1_clone0,$1_clone1,$in
+  _nn_conv2d $1_conv2d,$1_clone1,{[${_nn_${in}_size}][3]},$3,1,$4,0,$5,$7
   nn_add $1_add,$1_conv2d,$1_clone0
   nn_nl $1,$1_add,$6
   _nn_init=${init}"$0 $* "
@@ -25937,16 +25937,16 @@ nn_resconv2dnl : nn_check_layer "$2"
 #@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
 #@cli : Default values: 'kernel_size=3', 'dilation=1', 'boundary_conditions=1', 'activation=leakyrelu' \
 # and 'learning_mode=3'.
-nn_resconv2dnnl : nn_check_layer "$2"
+nn_resconv2dnnl : if ['$2']=='.' in=$_nn_previous else in=$2 fi nn_check_layer $in
                   check "isvarname('$1') && isint(${3=3}) && $3>0 && isint(${5=1}) && inrange($5,0,3) && "\
                         "isint(${7=3}) && inrange($7,0,3)"
                   skip "${4=1}","${6=leakyrelu}"
   s0,s1,s2,s3=dirichlet,neumann,periodic,mirror
-  e[^-1] "[nn_lib] Add 'resconv2dnnl' layer '$1', with input '$2', $3x$3 kernels, dilation $4, "\
+  e[^-1] "[nn_lib] Add 'resconv2dnnl' layer '$1', with input '"$in"', $3x$3 kernels, dilation $4, "\
          $s$5" boundary conditions and '$6' activation."
   init=$_nn_init
-  nn_clone $1_clone0,$1_clone1,$2
-  _nn_conv2d $1_conv2d,$1_clone1,{[$_nn_$2_size][3]},$3,1,$4,0,$5,$7
+  nn_clone $1_clone0,$1_clone1,$in
+  _nn_conv2d $1_conv2d,$1_clone1,{[${_nn_${in}_size}][3]},$3,1,$4,0,$5,$7
   _nn_normalize $1_normalize,$1_conv2d,1,3
   nn_add $1_add,$1_normalize,$1_clone0
   nn_nl $1,$1_add,$6
@@ -25958,15 +25958,15 @@ nn_resconv2dnnl : nn_check_layer "$2"
 #@cli : 'boundary_conditions' can be { 0=dirichlet | 1=neumann | 2=periodic | 3=mirror }.
 #@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
 #@cli : Default values: 'kernel_size=3', 'dilation=1', 'boundary_conditions=1' and 'learning_mode=3'.
-nn_resconv3d : nn_check_layer "$2"
+nn_resconv3d : if ['$2']=='.' in=$_nn_previous else in=$2 fi nn_check_layer $in
                check "isvarname('$1') && isint(${3=3}) && $3>0 && isint(${5=1}) && inrange($5,0,3) && "\
                      "isint(${6=3}) && inrange($6,0,3)"
                skip "${4=1}"
-  e[^-1] "[nn_lib] Add 'resconv3d' layer '$1', with input '$2', $3x$3x$3 kernels, dilation $4 and "\
+  e[^-1] "[nn_lib] Add 'resconv3d' layer '$1', with input '"$in"', $3x$3x$3 kernels, dilation $4 and "\
          $s$5" boundary conditions."
   init=$_nn_init
-  nn_clone $1_clone0,$1_clone1,$2
-  _nn_conv3d $1_conv3d,$1_clone1,{[$_nn_$2_size][3]},$3,1,$4,0,$5,$6
+  nn_clone $1_clone0,$1_clone1,$in
+  _nn_conv3d $1_conv3d,$1_clone1,{[${_nn_${in}_size}][3]},$3,1,$4,0,$5,$6
   nn_add $1,$1_conv3d,$1_clone0
   _nn_init=${init}"$0 $* "
   _nn_previous=$1
@@ -25977,16 +25977,16 @@ nn_resconv3d : nn_check_layer "$2"
 #@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
 #@cli : Default values: 'kernel_size=3', 'dilation=1', 'boundary_conditions=1', activation='leakyrelu' \
 # and 'learning_mode=3'.
-nn_resconv3dnl : nn_check_layer "$2"
+nn_resconv3dnl : if ['$2']=='.' in=$_nn_previous else in=$2 fi nn_check_layer $in
                  check "isvarname('$1') && isint(${3=3}) && $3>0 && isint(${5=1}) && inrange($5,0,3) && "\
                        "isint(${7=1}) && inrange($7,0,3)"
                  skip "${4=1}","${6=leakyrelu}"
   s0,s1,s2,s3=dirichlet,neumann,periodic,mirror
-  e[^-1] "[nn_lib] Add 'resconv3dnl' layer '$1', with input '$2', $3x$3x$3 kernels, dilation $4, "\
+  e[^-1] "[nn_lib] Add 'resconv3dnl' layer '$1', with input '"$in"', $3x$3x$3 kernels, dilation $4, "\
          $s$5" boundary conditions and '$6' activation."
   init=$_nn_init
-  nn_clone $1_clone0,$1_clone1,$2
-  _nn_conv3d $1_conv3d,$1_clone1,{[$_nn_$2_size][3]},$3,1,$4,0,$5,$7
+  nn_clone $1_clone0,$1_clone1,$in
+  _nn_conv3d $1_conv3d,$1_clone1,{[${_nn_${in}_size}][3]},$3,1,$4,0,$5,$7
   nn_add $1_add,$1_conv3d,$1_clone0
   nn_nl $1,$1_add,$6
   _nn_init=${init}"$0 $* "
@@ -25999,16 +25999,16 @@ nn_resconv3dnl : nn_check_layer "$2"
 #@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
 #@cli : Default values: 'kernel_size=3', 'dilation=1', 'boundary_conditions=1', 'activation=leakyrelu' \
 # and 'learning_mode=3'.
-nn_resconv3dnnl : nn_check_layer "$2"
+nn_resconv3dnnl : if ['$2']=='.' in=$_nn_previous else in=$2 fi nn_check_layer $in
                   check "isvarname('$1') && isint(${3=3}) && $3>0 && isint(${5=1}) && inrange($5,0,3) && "\
                         "isint(${7=3}) && inrange($7,0,3)"
                   skip "${4=1}","${6=leakyrelu}"
   s0,s1,s2,s3=dirichlet,neumann,periodic,mirror
-  e[^-1] "[nn_lib] Add 'resconv3dnnl' layer '$1', with input '$2', $3x$3x$3 kernels, dilation $4, "\
+  e[^-1] "[nn_lib] Add 'resconv3dnnl' layer '$1', with input '"$in"', $3x$3x$3 kernels, dilation $4, "\
          $s$5" boundary conditions and '$6' activation."
   init=$_nn_init
-  nn_clone $1_clone0,$1_clone1,$2
-  _nn_conv3d $1_conv3d,$1_clone1,{[$_nn_$2_size][3]},$3,1,$4,0,$5,$7
+  nn_clone $1_clone0,$1_clone1,$in
+  _nn_conv3d $1_conv3d,$1_clone1,{[${_nn_${in}_size}][3]},$3,1,$4,0,$5,$7
   _nn_normalize $1_normalize,$1_conv3d,1,3
   nn_add $1_add,$1_normalize,$1_clone0
   nn_nl $1,$1_add,$6
@@ -26019,12 +26019,12 @@ nn_resconv3dnnl : nn_check_layer "$2"
 #@cli : Add a 'resfc' (residual fully connecter layer) to the network.
 #@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
 #@cli : Default values: 'learning_mode=3'.
-nn_resfc : nn_check_layer "$2"
+nn_resfc : if ['$2']=='.' in=$_nn_previous else in=$2 fi nn_check_layer $in
            check "isvarname('$1') && isint(${3=3}) && inrange($3,0,3)"
-  e[^-1] "[nn_lib] Add 'resfc' layer '$1', with input '$2'."
+  e[^-1] "[nn_lib] Add 'resfc' layer '$1', with input '"$in"'."
   init=$_nn_init
-  nn_clone $1_clone0,$1_clone1,$2
-  _nn_fc $1_fc,$1_clone1,{prod($_nn_$2_size)},$3
+  nn_clone $1_clone0,$1_clone1,$in
+  _nn_fc $1_fc,$1_clone1,{prod(${_nn_${in}_size})},$3
   nn_add $1,$1_fc,$1_clone0
   _nn_init=${init}"$0 $* "
   _nn_previous=$1
@@ -26033,13 +26033,13 @@ nn_resfc : nn_check_layer "$2"
 #@cli : Add a 'resfcnl' (residual fully connecter layer followed by a non-linearity) to the network.
 #@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
 #@cli : Default values: 'activation=leakyrelu' and 'learning_mode=3'.
-nn_resfcnl : nn_check_layer "$2"
+nn_resfcnl : if ['$2']=='.' in=$_nn_previous else in=$2 fi nn_check_layer $in
              check "isvarname('$1') && isint(${4=3}) && inrange($4,0,3)"
              skip ${3=leakyrelu}
-  e[^-1] "[nn_lib] Add 'resfc+nl' layer '$1' to the network, with input '$2' and '$4' activation."
+  e[^-1] "[nn_lib] Add 'resfc+nl' layer '$1' to the network, with input '"$in"' and '$4' activation."
   init=$_nn_init
-  nn_clone $1_clone0,$1_clone1,$2
-  _nn_fc $1_fc,$1_clone1,{prod($_nn_$2_size)},$4
+  nn_clone $1_clone0,$1_clone1,$in
+  _nn_fc $1_fc,$1_clone1,{prod(${_nn_${in}_size})},$4
   nn_add $1_add,$1_fc,$1_clone0
   nn_nl $1,$1_add,$3
   _nn_init=${init}"$0 $* "
@@ -26050,13 +26050,13 @@ nn_resfcnl : nn_check_layer "$2"
 # to the network.
 #@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
 #@cli : Default values: 'activation=leakyrelu' and 'learning_mode=3'.
-nn_resfcnnl : nn_check_layer "$2"
+nn_resfcnnl : if ['$2']=='.' in=$_nn_previous else in=$2 fi nn_check_layer $in
               check "isvarname('$1') && isint(${4=3}) && inrange($4,0,3)"
               skip ${3=leakyrelu}
-  e[^-1] "[nn_lib] Add 'resfc+normalize+nl' layer '$1' to the network, with input '$2' and '$4' activation."
+  e[^-1] "[nn_lib] Add 'resfc+normalize+nl' layer '$1' to the network, with input '"$in"' and '$4' activation."
   init=$_nn_init
-  nn_clone $1_clone0,$1_clone1,$2
-  _nn_fc $1_fc,$1_clone1,{prod($_nn_$2_size)},1 # $4
+  nn_clone $1_clone0,$1_clone1,$in
+  _nn_fc $1_fc,$1_clone1,{prod(${_nn_${in}_size})},1 # $4
   _nn_normalize $1_normalize,$1_fc,0,3
   nn_add $1_add,$1_normalize,$1_clone0
   nn_nl $1,$1_add,$3
@@ -26065,18 +26065,18 @@ nn_resfcnnl : nn_check_layer "$2"
 
 #@cli nn_reshape : out,in,width>0,height>0,depth>0,spectrum>0
 #@cli : Add a 'reshape' layer to the network.
-nn_reshape : nn_check_layer "$2"
+nn_reshape : if ['$2']=='.' in=$_nn_previous else in=$2 fi nn_check_layer $in
              check "isvarname('$1')"
-  e[^-1] "[nn_lib] Add 'reshape' layer '$1', with input '$2' and size ($3,$4,$5,$6)."
+  e[^-1] "[nn_lib] Add 'reshape' layer '$1', with input '"$in"' and size ($3,$4,$5,$6)."
   _nn_modules_names.=$1,
   _nn_modules_types.=reshape,
   _nn_$1_size=$3,$4,$5,$6
-  _nn_$1_input=$2
-  if prod($_nn_$1_size)!=prod($_nn_$2_size)
-    error[0--3] "Command 'nn_reshape': Cannot reshape input ("$_nn_$2_size") to output ("$_nn_$1_size")."
+  _nn_$1_input=$in
+  if prod($_nn_$1_size)!=prod(${_nn_${in}_size})
+    error[0--3] "Command 'nn_reshape': Cannot reshape input ("${_nn_${in}_size}") to output ("$_nn_$1_size")."
   fi
-  _nn_forward.="begin(nn_reshape_init_forward($1,$2,$3,$4,$5,$6));"
-  _nn_backward..="begin(nn_reshape_init_backward($1,$2));"
+  _nn_forward.="begin(nn_reshape_init_forward($1,"$in",${3-6}));"
+  _nn_backward..="begin(nn_reshape_init_backward($1,"$in"));"
   _nn_init.="$0 $* "
   _nn_previous=$1
 
