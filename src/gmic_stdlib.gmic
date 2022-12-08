@@ -25259,6 +25259,15 @@ nn_lib :
       batch_#L+=L#;
     );"
 
+#@cli nn_check_layer : name
+#@cli : Check that the layer with specified name already exists in the network.
+nn_check_layer :
+  if !isvarname('"$1"')
+    error[0--3] "Command 'nn_check_layer': Invalid layer name '$1'."
+  elif narg($_nn_$1_size)!=4
+    error[0--3] "Command 'nn_check_layer': Layer with name '$1' does not exist."
+  fi
+
 #@cli nn_add : out,in0,in1
 #@cli : Add an 'add' layer to the network.
 nn_add : if ['$2']=='.' in0=$_nn_previous else in0=$2 fi nn_check_layer $in0
@@ -25293,59 +25302,50 @@ nn_append : if ['$2']=='.' in0=$_nn_previous else in0=$2 fi nn_check_layer $in0
 
 #@cli nn_avgpool2d : out,in,_patch_size>1
 #@cli : Add a 'avgpool2d' layer (2D average pooling) to the network.
-nn_avgpool2d : nn_check_layer "$2"
+nn_avgpool2d : if ['$2']=='.' in=$_nn_previous else in=$2 fi nn_check_layer $in
                check "isvarname('$1') && isint(${3=2}) && $3>1"
-  e[^-1] "[nn_lib] Add 'avgpool2d' layer '$1', with input '$2' and patch size $3x$3."
+  e[^-1] "[nn_lib] Add 'avgpool2d' layer '$1', with input '"$in"' and patch size $3x$3."
   _nn_modules_names.=$1,
   _nn_modules_types.=avgpool2d,
-  _nn_$1_size:="s=["$_nn_$2_size"];[int(s[0,2]/$3),s[2,2]]"
-  _nn_$1_input=$2
+  _nn_$1_size:="s=["$_nn_${in}_size"];[int(s[0,2]/$3),s[2,2]]"
+  _nn_$1_input=$in
   _nn_$1_properties="patch_size=$3x$3"
-  _nn_forward.="begin(nn_avgpool2d_init_forward($1,$2,$3));"\
-               "nn_avgpool2d_forward($1,$2);"
-  _nn_backward..="nn_avgpool2d_backward($1,$2);"
+  _nn_forward.="begin(nn_avgpool2d_init_forward($1,"$in",$3));"\
+               "nn_avgpool2d_forward($1,"$in");"
+  _nn_backward..="nn_avgpool2d_backward($1,"$in");"
   _nn_init.="$0 $* "
   _nn_previous=$1
 
 #@cli nn_avgpool3d : out,in,_patch_size>1
 #@cli : Add a 'avgpool3d' layer (3D average pooling) to the network.
-nn_avgpool3d : nn_check_layer "$2"
+nn_avgpool3d : if ['$2']=='.' in=$_nn_previous else in=$2 fi nn_check_layer $in
                check "isvarname('$1') && isint(${3=2}) && $3>1"
-  e[^-1] "[nn_lib] Add 'avgpool3d' layer '$1', with input '$2' and patch size $3x$3x$3."
+  e[^-1] "[nn_lib] Add 'avgpool3d' layer '$1', with input '"$in"' and patch size $3x$3x$3."
   _nn_modules_names.=$1,
   _nn_modules_types.=avgpool3d,
-  _nn_$1_size:="s=["$_nn_$2_size"];[int(s[0,3]/$3),s[3]]"
-  _nn_$1_input=$2
+  _nn_$1_size:="s=["$_nn_${in}_size"];[int(s[0,3]/$3),s[3]]"
+  _nn_$1_input=$in
   _nn_$1_properties="patch_size=$3x$3x$3"
-  _nn_forward.="begin(nn_avgpool3d_init_forward($1,$2,$3));"\
-               "nn_avgpool3d_forward($1,$2);"
-  _nn_backward..="nn_avgpool3d_backward($1,$2);"
+  _nn_forward.="begin(nn_avgpool3d_init_forward($1,"$in",$3));"\
+               "nn_avgpool3d_forward($1,"$in");"
+  _nn_backward..="nn_avgpool3d_backward($1,"$in");"
   _nn_init.="$0 $* "
   _nn_previous=$1
 
-#@cli nn_check_layer : name
-#@cli : Check that the layer with specified name already exists in the network.
-nn_check_layer :
-  if !isvarname('"$1"')
-    error[0--3] "Command 'nn_check_layer': Invalid layer name '$1'."
-  elif narg($_nn_$1_size)!=4
-    error[0--3] "Command 'nn_check_layer': Layer with name '$1' does not exist."
-  fi
-
 #@cli nn_clone : name0,name1,in
 #@cli : Add a 'clone' layer to the network.
-nn_clone : nn_check_layer "$3"
+nn_clone : if ['$3']=='.' in=$_nn_previous else in=$3 fi nn_check_layer $in
            check "isvarname('$1') && isvarname('$2')"
-  e[^-1] "[nn_lib] Add 'clone' layer with input '$3' and outputs '$1' and '$2'."
+  e[^-1] "[nn_lib] Add 'clone' layer with input '"$in"' and outputs '$1' and '$2'."
   _nn_modules_names.=$1,$2,
   _nn_modules_types.=clone,clone,
-  _nn_$1_size=$_nn_$3_size
-  _nn_$1_input=$3
-  _nn_$2_size=$_nn_$3_size
-  _nn_$2_input=$3
-  _nn_forward.="begin(nn_clone_init_forward($1,$2,$3));"\
-               "nn_clone_forward($1,$2,$3);"
-  _nn_backward..="nn_clone_backward($1,$2,$3);"
+  _nn_$1_size=$_nn_${in}_size
+  _nn_$1_input=$in
+  _nn_$2_size=$_nn_${in}_size
+  _nn_$2_input=$in
+  _nn_forward.="begin(nn_clone_init_forward($1,$2,"$in"));"\
+               "nn_clone_forward($1,$2,"$in");"
+  _nn_backward..="nn_clone_backward($1,$2,"$in");"
   _nn_init.="$0 $* "
   _nn_previous=$1
 
