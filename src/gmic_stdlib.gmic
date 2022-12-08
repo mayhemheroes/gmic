@@ -25576,11 +25576,11 @@ nn_dropout : if ['$2']=='.' in=$_nn_previous else in=$2 fi nn_check_layer $in
 #@cli : Add a 'fc' layer (fully connected layer) to the network.
 #@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
 #@cli : Default value: 'learning_mode=3'.
-nn_fc : nn_check_layer "$2"
+nn_fc : if ['$2']=='.' in=$_nn_previous else in=$2 fi nn_check_layer $in
         check "isvarname('$1') && isint($3) && $3>0 && isint(${4=3}) && inrange($4,0,3)"
-  e[^-1] "[nn_lib] Add 'fc' layer '$1', with input '$2' and $3 channels."
+  e[^-1] "[nn_lib] Add 'fc' layer '$1', with input '"$in"' and $3 channels."
   init=$_nn_init
-  _nn_fc $1_fc,${2-4}
+  _nn_fc $1_fc,$in,${3-4}
   nn_rename $1,$1_fc
   _nn_init=${init}"$0 $* "
   _nn_previous=$1
@@ -25610,12 +25610,12 @@ _nn_fc :
 #@cli : Add a 'nlfc' layer (nonlinear fully connected layer) to the network.
 #@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
 #@cli : Default value: 'activation=leakyrelu' and 'learning_mode=3'.
-nn_nlfc : nn_check_layer "$2"
+nn_nlfc : if ['$2']=='.' in=$_nn_previous else in=$2 fi nn_check_layer $in
           check "isvarname('$1') && isint($3) && $3>0 && isint(${5=3}) && inrange($5,0,3)"
           skip ${4=leakyrelu}
-  e[^-1] "[nn_lib] Add 'nlfc' layer '$1', with input '$2', $3 channels and '$4' activation."
+  e[^-1] "[nn_lib] Add 'nlfc' layer '$1', with input '"$in"', $3 channels and '$4' activation."
   init=$_nn_init
-  _nn_nlfc $1_nlfc,${2-5}
+  _nn_nlfc $1_nlfc,$in,${3-5}
   nn_rename $1,$1_nlfc
   _nn_init=${init}"$0 $* "
   _nn_previous=$1
@@ -25645,12 +25645,12 @@ _nn_nlfc :
 #@cli : Add a 'fcnl' layer (fully connected layer followed by a non-linearity) to the network.
 #@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
 #@cli : Default value: 'activation=leakyrelu' and 'learning_mode=3'.
-nn_fcnl : nn_check_layer "$2"
+nn_fcnl : if ['$2']=='.' in=$_nn_previous else in=$2 fi nn_check_layer $in
           check "isvarname('$1') && isint($3) && $3>0 && isint(${5=3}) && inrange($5,0,3)"
           skip ${4=leakyrelu}
-  e[^-1] "[nn_lib] Add 'fc+nl' layer '$1' to the network, with input '$2', $3 channels and '$4' activation."
+  e[^-1] "[nn_lib] Add 'fc+nl' layer '$1' to the network, with input '"$in"', $3 channels and '$4' activation."
   init=$_nn_init
-  _nn_fc $1_fc,${2-3},$5
+  _nn_fc $1_fc,$in,$3,$5
   nn_nl $1,$1_fc,$4
   _nn_init=${init}"$0 $* "
   _nn_previous=$1
@@ -25660,12 +25660,12 @@ nn_fcnl : nn_check_layer "$2"
 # to the network.
 #@cli : 'learning_mode' can be { 0=no learning | 1=weights only | 2=biases only | 3=weights+biases }.
 #@cli : Default value: 'activation=leakyrelu' and 'learning_mode=3'.
-nn_fcnnl : nn_check_layer "$2"
+nn_fcnnl : if ['$2']=='.' in=$_nn_previous else in=$2 fi nn_check_layer $in
            check "isvarname('$1') && isint($3) && $3>0 && isint(${5=3})"
            skip ${4=leakyrelu}
-  e[^-1] "[nn_lib] Add 'fc+normalize+nl' layer '$1' to the network, with input '$2', $3 channels and '$4' activation."
+  e[^-1] "[nn_lib] Add 'fc+normalize+nl' layer '$1' to the network, with input '"$in"', $3 channels and '$4' activation."
   init=$_nn_init
-  _nn_fc $1_fc,${2-3},$5
+  _nn_fc $1_fc,$in,$3,$5
   _nn_normalize $1_normalize,$1_fc,0,3
   nn_nl $1,$1_normalize,$4
   _nn_init=${init}"$0 $* "
@@ -25694,50 +25694,50 @@ nn_input : check "isvarname('$1') && isint($2) && $2>0 && isint(${3=1}) && $3>0 
 #@cli nn_maxpool2d : out,in,_patch_size>1
 #@cli : Add a 'maxpool2d' layer (2D max pooling) to the network.
 #@cli : Default value: 'patch_size=2'.
-nn_maxpool2d : nn_check_layer "$2"
+nn_maxpool2d : if ['$2']=='.' in=$_nn_previous else in=$2 fi nn_check_layer $in
                check "isvarname('$1') && isint(${3=2}) && $3>1"
-  e[^-1] "[nn_lib] Add 'maxpool2d' layer '$1', with input '$2' and patch size $3x$3."
+  e[^-1] "[nn_lib] Add 'maxpool2d' layer '$1', with input '"$in"' and patch size $3x$3."
   _nn_modules_names.=$1,
   _nn_modules_types.=maxpool2d,
-  _nn_$1_size:="s=["$_nn_$2_size"];[int(s[0,2]/$3),s[2,2]]"
-  _nn_$1_input=$2
+  _nn_$1_size:=s=[${_nn_${in}_size}];[int(s[0,2]/$3),s[2,2]]
+  _nn_$1_input=$in
   _nn_$1_properties="patch_size=$3x$3"
-  _nn_forward.="begin(nn_maxpool2d_init_forward($1,$2,$3));"\
-               "nn_maxpool2d_forward($1,$2);"
-  _nn_backward..="nn_maxpool2d_backward($1,$2);"
+  _nn_forward.="begin(nn_maxpool2d_init_forward($1,"$in",$3));"\
+               "nn_maxpool2d_forward($1,"$in");"
+  _nn_backward..="nn_maxpool2d_backward($1,"$in");"
   _nn_init.="$0 $* "
   _nn_previous=$1
 
 #@cli nn_maxpool3d : out,in,_patch_size>1
 #@cli : Add a 'maxpool3d' layer (3d max pooling) to the network.
 #@cli : Default value: 'patch_size=2'.
-nn_maxpool3d : nn_check_layer "$2"
+nn_maxpool3d : if ['$2']=='.' in=$_nn_previous else in=$2 fi nn_check_layer $in
                check "isvarname('$1') && isint(${3=2}) && $3>1"
-  e[^-1] "[nn_lib] Add 'maxpool3d' layer '$1', with input '$2' and patch size $3x$3x$3."
+  e[^-1] "[nn_lib] Add 'maxpool3d' layer '$1', with input '"$in"' and patch size $3x$3x$3."
   _nn_modules_names.=$1,
   _nn_modules_types.=maxpool3d,
-  _nn_$1_size:="s=["$_nn_$2_size"];[int(s[0,3]/$3),s[3]]"
-  _nn_$1_input=$2
+  _nn_$1_size:=s=[${_nn_${in}_size}];[int(s[0,3]/$3),s[3]]
+  _nn_$1_input=$in
   _nn_$1_properties="patch_size=$3x$3x$3"
-  _nn_forward.="begin(nn_maxpool3d_init_forward($1,$2,$3));"\
-               "nn_maxpool3d_forward($1,$2);"
-  _nn_backward..="nn_maxpool3d_backward($1,$2);"
+  _nn_forward.="begin(nn_maxpool3d_init_forward($1,"$in",$3));"\
+               "nn_maxpool3d_forward($1,"$in");"
+  _nn_backward..="nn_maxpool3d_backward($1,"$in");"
   _nn_init.="$0 $* "
   _nn_previous=$1
 
 #@cli nn_mul : out,in0,in1
 #@cli : Add an 'mul' layer to the network.
-nn_mul : nn_check_layer "$2"
-         nn_check_layer "$3"
-         check "isvarname('$1') && [$_nn_$2_size]==[$_nn_$3_size]"
-  e[^-1] "[nn_lib] Add 'mul' layer '$1', with inputs '$2' and '$3'."
+nn_mul : if ['$2']=='.' in0=$_nn_previous else in0=$2 fi nn_check_layer $in0
+         if ['$3']=='.' in1=$_nn_previous else in1=$3 fi nn_check_layer $in1
+         check "isvarname('$1') && "[${_nn_${in0}_size}]==[${_nn_${in1}_size}]
+  e[^-1] "[nn_lib] Add 'mul' layer '$1', with inputs '"$in0"' and '"$in1"'."
   _nn_modules_names.=$1,
   _nn_modules_types.=mul,
-  _nn_$1_size=$_nn_$2_size
-  _nn_$1_input=$2,$3
-  _nn_forward.="begin(nn_mul_init_forward($1,$2));"\
-               "nn_mul_forward($1,$2,$3);"
-  _nn_backward..="nn_mul_backward($1,$2,$3);"
+  _nn_$1_size=${_nn_${in0}_size}
+  _nn_$1_input=$in0,$in1
+  _nn_forward.="begin(nn_mul_init_forward($1,"$in0"));"\
+               "nn_mul_forward($1,"$in0","$in1");"
+  _nn_backward..="nn_mul_backward($1,"$in0","$in1");"
   _nn_init.="$0 $* "
   _nn_previous=$1
 
@@ -25746,22 +25746,22 @@ nn_mul : nn_check_layer "$2"
 #@cli : 'activation' can be { elu | gelu | leakyrelu | linear | relu | sigmoid | sin | sinc | softmax | sqr | sqrt | \
 # swish | tanh }.
 #@cli : Default value: 'activation=leakyrelu'.
-nn_nl : nn_check_layer "$2"
+nn_nl : if ['$2']=='.' in=$_nn_previous else in=$2 fi nn_check_layer $in
         check "isvarname('$1')"
         skip ${3=leakyrelu}
-  e[^-1] "[nn_lib] Add 'nl' layer '$1', with input '$2' and '$3' activation."
+  e[^-1] "[nn_lib] Add 'nl' layer '$1', with input '"$in"' and '$3' activation."
   _nn_modules_names.=$1,
   _nn_modules_types.=nl,
-  _nn_$1_size=$_nn_$2_size
-  _nn_$1_input=$2
+  _nn_$1_size=${_nn_${in}_size}
+  _nn_$1_input=$in
   _nn_$1_properties="activation=$3"
-  _nn_forward.="begin(nn_nl_init_forward($1,$2));"
+  _nn_forward.="begin(nn_nl_init_forward($1,"$in"));"
   if s=['$3'];s=='softmax'
-    _nn_forward.="nn_$3_forward($1,$2);"
-    _nn_backward..="nn_$3_backward($1,$2);"
+    _nn_forward.="nn_$3_forward($1,"$in");"
+    _nn_backward..="nn_$3_backward($1,"$in");"
   else
-    _nn_forward.="nn_nl_forward($1,$2,$3);"
-    _nn_backward..="nn_nl_backward($1,$2,$3);"
+    _nn_forward.="nn_nl_forward($1,"$in",$3);"
+    _nn_backward..="nn_nl_backward($1,"$in",$3);"
   fi
   _nn_init.="$0 $* "
   _nn_previous=$1
