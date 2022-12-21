@@ -254,23 +254,22 @@ CImg<T> get_copymark() const {
   if (is_empty() || !*_data) return CImg<T>::string("_c1");
   const char *pe = _data + _width - 1, *ext = cimg::split_filename(_data);
   if (*ext) pe = --ext;
-  unsigned int num = 0, fact = 1, baselength = _width;
+  unsigned int num = 0, fact = 1;
   if (pe>_data+2) { // Try to find ending number if any
     const char *npe = pe - 1;
     while (npe>_data && *npe>='0' && *npe<='9') { num+=fact*(*(npe--) - '0'); fact*=10; }
     if (npe>_data && npe!=pe - 1 && *(npe-1)=='_' && *npe=='c' && npe[1]!='0') {
       pe = npe - 1;
-      baselength = pe + _width - ext;
     }
     else num = 0;
   }
   ++num;
   const unsigned int
     ndigits = (unsigned int)std::max(1.,std::ceil(std::log10(num + 1.))),
-    lext = std::strlen(ext);
-  CImg<T> res(baselength + ndigits + 2 + lext);
-  std::memcpy(res,_data,pe - _data);
-  cimg_snprintf(res._data + (pe - _data),ndigits + lext + 3,"_c%u%s",num,ext);
+    delta = (unsigned int)(pe - _data);
+  CImg<T> res(_width + ndigits + 2);
+  std::memcpy(res,_data,delta);
+  cimg_snprintf(res._data + delta,res._width - delta,"_c%u%s",num,ext);
   return res;
 }
 
@@ -537,21 +536,21 @@ CImg<T>& gmic_draw_text(const float x, const float y,
     const T one[] = { (T)1 };
     fx = sepx=='%' || sepx=='~'?0:x;
     fy = sepy=='%' || sepy=='~'?0:y;
-    draw_text((int)cimg::round(fx),(int)cimg::round(fy),"%s",one,0,opacity,font,text).resize(-100,-100,1,nb_cols);
+    draw_text((int)cimg::round(fx),(int)cimg::round(fy),"%s",one,0,opacity,&font,text).resize(-100,-100,1,nb_cols);
     cimg_forC(*this,c) get_shared_channel(c)*=col[c];
     return *this;
   }
   if (sepx=='~' || sepy=='~') {
     const char one[] = { 1 };
     CImg<ucharT> foo;
-    foo.draw_text(0,0,"%s",one,0,1,font,text);
+    foo.draw_text(0,0,"%s",one,0,1,&font,text);
     fx = sepx=='~'?x*(width() - foo.width()):sepx=='%'?x*(width() - 1)/100:x;
     fy = sepy=='~'?y*(height() - foo.height()):sepy=='%'?y*(height() - 1)/100:y;
   } else {
     fx = sepx=='%'?x*(width() - 1)/100:x;
     fy = sepy=='%'?y*(height() - 1)/100:y;
   }
-  return draw_text((int)cimg::round(fx),(int)cimg::round(fy),"%s",col,bg,opacity,font,text);
+  return draw_text((int)cimg::round(fx),(int)cimg::round(fy),"%s",col,bg,opacity,&font,text);
 }
 
 CImg<T> get_gmic_draw_text(const float x, const float y,
