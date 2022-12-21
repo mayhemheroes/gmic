@@ -265,10 +265,12 @@ CImg<T> get_copymark() const {
     else num = 0;
   }
   ++num;
-  const unsigned int ndigits = (unsigned int)std::max(1.,std::ceil(std::log10(num + 1.)));
-  CImg<T> res(baselength + ndigits + 2);
+  const unsigned int
+    ndigits = (unsigned int)std::max(1.,std::ceil(std::log10(num + 1.))),
+    lext = std::strlen(ext);
+  CImg<T> res(baselength + ndigits + 2 + lext);
   std::memcpy(res,_data,pe - _data);
-  cimg_snprintf(res._data + (pe - _data),ndigits + std::strlen(ext) + 3,"_c%u%s",num,ext);
+  cimg_snprintf(res._data + (pe - _data),ndigits + lext + 3,"_c%u%s",num,ext);
   return res;
 }
 
