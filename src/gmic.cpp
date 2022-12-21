@@ -268,7 +268,7 @@ CImg<T> get_copymark() const {
   const unsigned int ndigits = (unsigned int)std::max(1.,std::ceil(std::log10(num + 1.)));
   CImg<T> res(baselength + ndigits + 2);
   std::memcpy(res,_data,pe - _data);
-  std::sprintf(res._data + (pe - _data),"_c%u%s",num,ext);
+  cimg_snprintf(res._data + (pe - _data),ndigits + 2,"_c%u%s",num,ext);
   return res;
 }
 
@@ -2009,7 +2009,7 @@ const CImgList<T>& _gmic_display(CImgDisplay &disp, const char *const title, con
       CImgList<charT> _images_names(dtitle,true);
       CImg<charT> com(128);
       bool is_exception = false;
-      std::sprintf(com,"_d2d_core %d",(int)!is_first_call);
+      cimg_snprintf(com,com._width,"_d2d_core %d",(int)!is_first_call);
       t gmic_instance;
       cimg::swap(gmic_instance.commands,gmic_instance0.commands);
       cimg::swap(gmic_instance.commands_names,gmic_instance0.commands_names);
@@ -2628,7 +2628,7 @@ double gmic::mp_store(const double *const ptrs, const unsigned int siz,
 
       g_list.get_serialize(is_compressed).unroll('x').move_to(name);
       name.resize((unsigned int)(name.width() + 9 + std::strlen(varname)),1,1,1,0,0,1);
-      std::sprintf(name,"%c*store/%s",gmic_store,_varname.data());
+      cimg_snprintf(name,name._width,"%c*store/%s",gmic_store,_varname.data());
       gmic_instance.set_variable(_varname.data(),name,variables_sizes);
     } else {
       cimg::mutex(24,0);
@@ -3025,7 +3025,7 @@ const char* gmic::path_rc(const char *const custom_path) {
     _path_rc = gmic_getenv("HOME");
     if (_path_rc) {
       path_tmp.assign(std::strlen(_path_rc) + 10);
-      cimg_sprintf(path_tmp,"%s/.config",_path_rc);
+      cimg_snprintf(path_tmp,path_tmp._width,"%s/.config",_path_rc);
       if (cimg::is_directory(path_tmp)) _path_rc = path_tmp;
     }
 #else
@@ -3450,7 +3450,7 @@ const char *gmic::set_variable(const char *const name, const char operation,
     if (is_name_found) {
       __cvariables[ind].get_resize((unsigned int)(__cvariables[ind].width() + std::strlen(name) - std::strlen(cname)),
                                    1,1,1,0,0,1).move_to(s_value);
-      std::sprintf(s_value,"%c*store/%s",gmic_store,name);
+      cimg_snprintf(s_value,s_value._width,"%c*store/%s",gmic_store,name);
       if (ind!=__cvariables.width() - 1) {
         __cvariables[ind].swap(__cvariables.back()); // Ensure direct access to this variable next time
         __cvariables_names[ind].swap(__cvariables_names.back());
@@ -3596,7 +3596,7 @@ gmic& gmic::add_commands(const char *const data_commands, const char *const comm
     ltmp.get_serialize(false).unroll('x').move_to(tmp);
     const char *const _command_files = "_path_commands";
     tmp.resize((unsigned int)(tmp.width() + 9 + std::strlen(_command_files)),1,1,1,0,0,1);
-    std::sprintf((char*)tmp.data(),"%c*store/%s",gmic_store,_command_files);
+    cimg_snprintf((char*)tmp.data(),tmp._width,"%c*store/%s",gmic_store,_command_files);
     set_variable(_command_files,tmp,0);
   }
   if (count_new) *count_new = 0;
@@ -12195,7 +12195,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               name[0] = 'G'; name[1] = 'M'; name[2] = 'Z'; name[3] = 0;
               name.unroll('y').move_to(g_list);
               g_list.get_serialize((bool)is_compressed,(unsigned int)(9 + std::strlen(formula))).move_to(name);
-              std::sprintf(name,"%c*store/%s",gmic_store,_formula.data());
+              cimg_snprintf(name,name._width,"%c*store/%s",gmic_store,_formula.data());
               set_variable(formula,name,variables_sizes);
             } else for (unsigned int n = 0; n<pattern; ++n) { // Assignment to multiple variables
               if (!*current)
@@ -12213,7 +12213,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               g_list[n].move_to(tmp[0]);
               tmp.get_serialize((bool)is_compressed).unroll('x').move_to(name);
               name.resize((unsigned int)(name.width() + 9 + std::strlen(current)),1,1,1,0,0,1);
-              std::sprintf(name,"%c*store/%s",gmic_store,current);
+              cimg_snprintf(name,name._width,"%c*store/%s",gmic_store,current);
               set_variable(current,name,variables_sizes);
 
               if (saved) { // Other variables names follow
@@ -15382,7 +15382,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 g_list_c[i - 1].get_copymark().move_to(g_list_c[i]);
             }
           }
-          std::sprintf(gmic_use_argx,"%d",bits_per_value);
+          cimg_snprintf(gmic_use_argx,256,"%d",bits_per_value);
           CImg<char>::string(argx).move_to(status);
 
         } else if (!std::strcmp(uext,"png")) {
@@ -15393,7 +15393,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
           CImg<T>::get_load_png(filename,&bits_per_value).move_to(g_list);
           _filename0.move_to(g_list_c);
-          std::sprintf(gmic_use_argx,"%d",bits_per_value);
+          cimg_snprintf(gmic_use_argx,256,"%d",bits_per_value);
           CImg<char>::string(argx).move_to(status);
 
         } else if (!std::strcmp(uext,"pdf")) {
