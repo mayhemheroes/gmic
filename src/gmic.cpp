@@ -252,24 +252,26 @@ CImg<T> get_color_CImg3d(const float R, const float G, const float B,
 // This method has no 'in-place' version, at it is always better to call the new instance version.
 CImg<T> get_copymark() const {
   if (is_empty() || !*_data) return CImg<T>::string("_c1");
+
   const char *pe = _data + _width - 1, *ext = cimg::split_filename(_data);
   if (*ext) pe = --ext;
   unsigned int num = 0, fact = 1;
-  if (pe>_data+2) { // Try to find ending number if any
-    const char *npe = pe - 1;
-    while (npe>_data && *npe>='0' && *npe<='9') { num+=fact*(*(npe--) - '0'); fact*=10; }
-    if (npe>_data && npe!=pe - 1 && *(npe-1)=='_' && *npe=='c' && npe[1]!='0') {
-      pe = npe - 1;
+  if (pe>_data + 2) { // Try to find ending number if any
+    const char *ppe = pe - 1;
+    while (ppe>_data && *ppe>='0' && *ppe<='9') { num+=fact*(*(ppe--) - '0'); fact*=10; }
+    if (ppe>_data && ppe!=pe - 1 && *(ppe - 1)=='_' && *ppe=='c' && ppe[1]!='0') {
+      pe = ppe - 1;
     }
     else num = 0;
   }
   ++num;
   const unsigned int
     ndigits = (unsigned int)std::max(1.,std::ceil(std::log10(num + 1.))),
-    delta = (unsigned int)(pe - _data);
-  CImg<T> res(_width + ndigits + 2);
-  std::memcpy(res,_data,delta);
-  cimg_snprintf(res._data + delta,res._width - delta,"_c%u%s",num,ext);
+    lbase = (unsigned int)(pe - _data),
+    lext = std::strlen(ext);
+  CImg<T> res(lbase + 2 + ndigits + lext + 1);
+  std::memcpy(res,_data,lbase);
+  cimg_snprintf(res._data + lbase,res._width - lbase,"_c%u%s",num,ext);
   return res;
 }
 
