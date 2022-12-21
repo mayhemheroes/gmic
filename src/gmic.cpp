@@ -268,7 +268,7 @@ CImg<T> get_copymark() const {
   const unsigned int
     ndigits = (unsigned int)std::max(1.,std::ceil(std::log10(num + 1.))),
     lbase = (unsigned int)(pe - _data),
-    lext = std::strlen(ext);
+    lext = _data + _width - ext - 1;
   CImg<T> res(lbase + 2 + ndigits + lext + 1);
   std::memcpy(res,_data,lbase);
   cimg_snprintf(res._data + lbase,res._width - lbase,"_c%u%s",num,ext);
