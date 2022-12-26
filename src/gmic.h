@@ -213,10 +213,8 @@ namespace gmic_library {
 
 #ifdef cimg_use_abort
 inline bool *gmic_current_is_abort();
-#define cimg_abort_init \
-  bool *const gmic_is_abort = ::gmic_current_is_abort()
-#define cimg_abort_test \
-  if (*gmic_is_abort) throw CImgAbortException()
+#define cimg_abort_init bool *const gmic_is_abort = ::gmic_current_is_abort()
+#define cimg_abort_test if (*gmic_is_abort) throw CImgAbortException()
 #endif
 
 inline double gmic_mp_dollar(const char *const str, void *const p_list);
