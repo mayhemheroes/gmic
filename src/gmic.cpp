@@ -2385,6 +2385,16 @@ const CImg<void*> gmic::current_run(const char *const func_name, void *const p_l
   return grl[p].get_shared(); // Return shared image
 }
 
+// Return 'is_abort' value related to current G'MIC instance.
+bool* gmic::current_is_abort() {
+  static bool def = false;
+  cimg::mutex(24);
+  CImg<void*> gr = gmic::current_run("gmic_abort_init()",0);
+  bool *const res = gr?((gmic*)(gr[0]))->is_abort:&def;
+  cimg::mutex(24,0);
+  return res;
+}
+
 // G'MIC-related functions for the mathematical expression evaluator.
 double gmic::mp_dollar(const char *const str, void *const p_list) {
   if (!(cimg::is_varname(str) ||
