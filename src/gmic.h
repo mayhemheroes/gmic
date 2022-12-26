@@ -539,8 +539,11 @@ struct gmic_exception {
 //-------------------------------------
 inline bool *gmic_current_is_abort() {
   static bool def = false;
+  cimg::mutex(24);
   gmic_image<void*> gr = gmic::current_run("gmic_abort_init()",0);
-  return gr?((gmic*)(gr[0]))->is_abort:&def;
+  bool *const res = gr?((gmic*)(gr[0]))->is_abort:&def;
+  cimg::mutex(24,0);
+  return res;
 }
 
 inline double gmic_mp_dollar(const char *const str, void *const p_list) {
