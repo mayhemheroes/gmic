@@ -213,10 +213,8 @@ namespace gmic_library {
 
 #ifdef cimg_use_abort
 inline bool *gmic_current_is_abort();
-#define cimg_abort_init \
-  bool *const gmic_is_abort = ::gmic_current_is_abort()
-#define cimg_abort_test \
-  if (*gmic_is_abort) throw CImgAbortException()
+#define cimg_abort_init bool *const gmic_is_abort = ::gmic_current_is_abort()
+#define cimg_abort_test if (*gmic_is_abort) throw CImgAbortException()
 #endif
 
 inline double gmic_mp_dollar(const char *const str, void *const p_list);
@@ -356,6 +354,7 @@ struct gmic {
   template<typename T>
   static bool search_sorted(const char *const str, const T& list, const unsigned int length, unsigned int &out_ind);
   static const gmic_image<void*> current_run(const char *const func_name, void *const p_list);
+  static bool* current_is_abort();
   static double mp_dollar(const char *const str, void *const p_list);
   template<typename T>
   static double mp_get(double *const ptrd, const unsigned int siz, const bool to_string, const char *const str,
@@ -540,9 +539,7 @@ struct gmic_exception {
 // Explicit declarations of functions.
 //-------------------------------------
 inline bool *gmic_current_is_abort() {
-  static bool def = false;
-  gmic_image<void*> gr = gmic::current_run("gmic_abort_init()",0);
-  return gr?((gmic*)(gr[0]))->is_abort:&def;
+  return gmic::current_is_abort();
 }
 
 inline double gmic_mp_dollar(const char *const str, void *const p_list) {
