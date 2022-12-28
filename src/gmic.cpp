@@ -14898,7 +14898,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         if (s_values) {
           new_image.fill(s_values.data(),true,true,&images);
           gmic_use_title;
-          cimg_snprintf(title,_title.width(),"[image of '%s']",s_values.data());
+          cimg_snprintf(title,_title.width(),"[%s]",s_values.data());
           CImg<char>::string(title).move_to(g_list_c);
         } else { new_image.fill((T)0); CImg<char>::string("[unnamed]").move_to(g_list_c); }
         new_image.move_to(g_list);
