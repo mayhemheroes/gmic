@@ -2638,7 +2638,6 @@ double gmic::mp_store(const double *const ptrs, const unsigned int siz,
       name.resize(name.width() + 4,1,1,1,0,0,1);
       name[0] = 'G'; name[1] = 'M'; name[2] = 'Z'; name[3] = 0;
       name.unroll('y').move_to(g_list);
-
       g_list.get_serialize(is_compressed,(unsigned int)(9 + std::strlent(varname))).move_to(name);
       cimg_snprintf(name,name._height,"%c*store/%s",gmic_store,_varname.data());
       gmic_instance.set_variable(_varname.data(),name,variables_sizes);
