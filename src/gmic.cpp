@@ -3604,10 +3604,9 @@ gmic& gmic::add_commands(const char *const data_commands, const char *const comm
     tmp.resize(tmp.width() + 4,1,1,1,0,0,1);
     tmp[0] = 'G'; tmp[1] = 'M'; tmp[2] = 'Z'; tmp[3] = 0;
     tmp.unroll('y').move_to(ltmp);
-    ltmp.get_serialize(false).unroll('x').move_to(tmp);
     const char *const _command_files = "_path_commands";
-    tmp.resize((unsigned int)(tmp.width() + 9 + std::strlen(_command_files)),1,1,1,0,0,1);
-    cimg_snprintf((char*)tmp.data(),tmp._width,"%c*store/%s",gmic_store,_command_files);
+    ltmp.get_serialize(false,(unsigned int)(9 + std::strlen(_command_files))).move_to(tmp);
+    cimg_snprintf((char*)tmp.data(),tmp._height,"%c*store/%s",gmic_store,_command_files);
     set_variable(_command_files,tmp,0);
   }
   if (count_new) *count_new = 0;
