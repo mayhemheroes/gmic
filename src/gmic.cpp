@@ -2639,9 +2639,8 @@ double gmic::mp_store(const double *const ptrs, const unsigned int siz,
       name[0] = 'G'; name[1] = 'M'; name[2] = 'Z'; name[3] = 0;
       name.unroll('y').move_to(g_list);
 
-      g_list.get_serialize(is_compressed).unroll('x').move_to(name);
-      name.resize((unsigned int)(name.width() + 9 + std::strlen(varname)),1,1,1,0,0,1);
-      cimg_snprintf(name,name._width,"%c*store/%s",gmic_store,_varname.data());
+      g_list.get_serialize(is_compressed,(unsigned int)(9 + std::strlent(varname))).move_to(name);
+      cimg_snprintf(name,name._height,"%c*store/%s",gmic_store,_varname.data());
       gmic_instance.set_variable(_varname.data(),name,variables_sizes);
     } else {
       cimg::mutex(24,0);
