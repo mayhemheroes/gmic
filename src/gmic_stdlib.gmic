@@ -12127,12 +12127,11 @@ colormap : check "isint($1) && $1>=0" skip ${2=1},${3=1}
 
     if $1 # Estimate quantized colormap.
       r {whd},1,1,100%,-1
-      if !$2 +_colormap $1 # Just run the median-cut algorithm
-      else
-        +_colormap $1
+      +_colormap $1 # Median-cut algorithm
+      if $2 # Add k-means step
         max_diff:=(iM-im+1)/8192
         do
-           +index.. . # Find nearest cluster for each color
+          +index.. . # Find nearest cluster for each color
           if $is_half
             ..,1,1,{1,s}
             eval "
