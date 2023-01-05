@@ -3437,6 +3437,7 @@ const char *gmic::set_variable(const char *const name, const char operation,
   const char *const s_operation = !is_arithmetic?0:
     operation=='+'?"+":operation=='-'?"-":operation=='*'?"*":operation=='/'?"/":operation=='%'?"%":
     operation=='&'?"&":operation=='|'?"|":operation=='^'?"^":operation=='<'?"<<":">>";
+  char end;
 
   if (is_thread_global) cimg::mutex(30);
 
@@ -3460,11 +3461,8 @@ const char *gmic::set_variable(const char *const name, const char operation,
     CImg<char>::string(name).move_to(varnames);
   }
 
-  double lvalue = 0, rvalue = 0;
-  CImg<char> s_value;
-  char end;
-
   // Get target value in string 's_value' (except for arithmetic self-operators).
+  CImg<char> s_value;
   if ((!operation || operation=='=') && value && *value==gmic_store &&
       !std::strncmp(value + 1,"*store/",7) && value[8]) { // Get value from image-encoded variable.
     const char *const cname = value + 8;
@@ -3501,6 +3499,7 @@ const char *gmic::set_variable(const char *const name, const char operation,
     else if (*value) CImg<char>::string(value,false,false).append(vars[ind],'x').move_to(vars[ind]);
     break;
   default : { // Arithmetic operator
+    double lvalue = 0, rvalue = 0;
     if (cimg_sscanf(vars[ind],"%lf%c",&lvalue,&end)!=1) {
       if (is_thread_global) cimg::mutex(30,0);
       error(true,"Operator '%s=' on non-numerical variable '%s=%s'.",
