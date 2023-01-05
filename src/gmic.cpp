@@ -3430,18 +3430,20 @@ const char *gmic::set_variable(const char *const name, const char operation,
                                const char *const value, const double *const pvalue,
                                const unsigned int *const variables_sizes) {
   if (!name || (!value && !pvalue)) return "";
-
   const bool
     is_global = *name=='_',
-    is_thread_global = is_global && name[1]=='_';
+    is_thread_global = is_global && name[1]=='_',
+    is_arithmetic = operation && operation!='=' && operation!='.' && operation!=',';
+  const char *const s_operation = !is_arithmetic?0:
+    operation=='+'?"+":operation=='-'?"-":operation=='*'?"*":operation=='/'?"/":operation=='%'?"%":
+    operation=='&'?"&":operation=='|'?"|":operation=='^'?"^":operation=='<'?"<<":">>";
+
   if (is_thread_global) cimg::mutex(30);
 
   // Check if variable already exists.
   const unsigned int hash = hashcode(name,true);
   const int lmin = is_global || !variables_sizes?0:(int)variables_sizes[hash];
-  CImgList<char>
-    &vars = *variables[hash],
-    &varnames = *variables_names[hash];
+  CImgList<char> &vars = *variables[hash], &varnames = *variables_names[hash];
   unsigned int ind = ~0U;
 
   bool is_new_variable = false;
@@ -3456,9 +3458,7 @@ const char *gmic::set_variable(const char *const name, const char operation,
     const bool is_cglobal = *cname=='_';
     const unsigned int chash = hashcode(cname,true);
     const int clmin = is_cglobal || !variables_sizes?0:(int)variables_sizes[chash];
-    CImgList<char>
-      &cvars = *variables[chash],
-      &cvarnames = *variables_names[chash];
+    CImgList<char> &cvars = *variables[chash], &cvarnames = *variables_names[chash];
     unsigned int cind = ~0U;
     for (int l = cvars.width() - 1; l>=clmin; --l) if (!std::strcmp(cvarnames[l],cname)) { cind = l; break; }
     if (cind!=~0U) {
@@ -3494,9 +3494,6 @@ const char *gmic::set_variable(const char *const name, const char operation,
       else if (*value)
         CImg<char>::string(value,false,false).append(vars[ind],'x').move_to(vars[ind]);
     } else {
-      const char *const s_operation = operation=='+'?"+":operation=='-'?"-":operation=='*'?"*":operation=='/'?"/":
-        operation=='%'?"%":operation=='&'?"&":operation=='|'?"|":operation=='^'?"^":operation=='<'?"<<":">>";
-
       if (ind==~0U) {
         if (is_thread_global) cimg::mutex(30,0);
         error(true,"Operator '%s=' on undefined variable '%s'.",
