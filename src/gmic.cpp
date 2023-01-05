@@ -3459,19 +3459,17 @@ const char *gmic::set_variable(const char *const name, const char operation,
     CImgList<char>
       &cvars = *variables[chash],
       &cvarnames = *variables_names[chash];
-    for (int l = cvars.width() - 1; l>=clmin; --l) if (!std::strcmp(cvarnames[l],cname)) {
-        is_name_found = true; ind = l; break;
-      }
-    if (is_name_found) {
-      cvars[ind].get_resize((unsigned int)(cvars[ind].width() + std::strlen(name) - std::strlen(cname)),
+    unsigned int cvarind = ~0U;
+    for (int l = cvars.width() - 1; l>=clmin; --l) if (!std::strcmp(cvarnames[l],cname)) { cvarind = l; break; }
+    if (cvarind!=~0U) {
+      cvars[cvarind].get_resize((unsigned int)(cvars[cvarind].width() + std::strlen(name) - std::strlen(cname)),
                                    1,1,1,0,0,1).move_to(s_value);
       cimg_snprintf(s_value,s_value._width,"%c*store/%s",gmic_store,name);
-      if (ind!=cvars.width() - 1) {
-        cvars[ind].swap(cvars.back()); // Ensure direct access to this variable next time
-        cvarnames[ind].swap(cvarnames.back());
+      if (cvarind!=cvars._width - 1) {
+        cvars[cvarind].swap(cvars.back()); // Ensure direct access to this variable next time
+        cvarnames[cvarind].swap(cvarnames.back());
       }
     } else s_value.assign(1,1,1,1,0);
-    is_name_found = false;
   } else if (!operation || operation=='=' || operation==':' || operation=='.' || operation==',') {
     if (value) s_value.assign(value,(unsigned int)(std::strlen(value) + 1),1,1,1,true);
     else { s_value.assign(24); s_value._width = 1 + cimg_snprintf(s_value,s_value.width(),"%.17g",*pvalue); }
