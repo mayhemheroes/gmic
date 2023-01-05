@@ -30281,13 +30281,16 @@ _bin2dec :
 #@cli cat : filename,_display_line_numbers={ 0 | 1 },_line_selection,
 #@cli : Print specified line selection of given filename on stdout.
 #@cli : Default values: 'display_line_numbers=1' and 'line_selection=^'.
-cat : check "isbool(${2=1})" skip "${3=^}"
+cat : skip "${2=},${3=}"
+  if "isbool($2)" dln=$2 if "['$3']!=0" ls=${3--1} else ls=^ fi
+  else dln=1 if "['$2']!=0" ls=${2--1} else ls=^ fi
+  fi
   it "$1"
   1 eval.. ">i==10 && j[-1]==10?da_push(0,10):i!=13?da_push(i); end(da_freeze())"
   s. -,10 0 rv[0,-1] rm.
-  m "_$0 : u $""[]" sel=${"-_$0[${3--1}]"} um _$0 k[${3--1}]
+  m "_$0 : u $""[]" sel=${"-_$0["$ls"]"} um _$0 k[$ls]
   e ""
-  if $2 ($sel) foreach[^-1] { pass. 1 +e "#"{i[$>]}:" "{/{0,t}} rm. }
+  if $dln ($sel) foreach[^-1] { pass. 1 +e "#"{i[$>]}:" "{/{0,t}} rm. }
   else foreach { +e {/{t}} }
   fi
   rm
