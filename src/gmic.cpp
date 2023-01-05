@@ -3445,6 +3445,8 @@ const char *gmic::set_variable(const char *const name, const char operation,
   const int lmin = is_global || !variables_sizes?0:(int)variables_sizes[hash];
   CImgList<char> &vars = *variables[hash], &varnames = *variables_names[hash];
   unsigned int ind = ~0U;
+  if (operation)
+    for (int l = vars.width() - 1; l>=lmin; --l) if (!std::strcmp(varnames[l],name)) { ind = l; break; }
 
   bool is_new_variable = false;
   double lvalue = 0, rvalue = 0;
@@ -3479,7 +3481,6 @@ const char *gmic::set_variable(const char *const name, const char operation,
   if (!operation) is_new_variable = true;
   else {
     // Retrieve index of current definition.
-    for (int l = vars.width() - 1; l>=lmin; --l) if (!std::strcmp(varnames[l],name)) { ind = l; break; }
     if (operation=='=') {
       if (ind==~0U) is_new_variable = true;
       else s_value.move_to(vars[ind]);
