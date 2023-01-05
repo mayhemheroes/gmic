@@ -3448,16 +3448,18 @@ const char *gmic::set_variable(const char *const name, const char operation,
   if (operation)
     for (int l = vars.width() - 1; l>=lmin; --l) if (!std::strcmp(varnames[l],name)) { ind = l; break; }
 
-  // Create new variable if necessary.
+  // Create new variable, if needed.
   if (ind==~0U) {
     if (is_arithmetic) {
       if (is_thread_global) cimg::mutex(30,0);
       error(true,"Operator '%s=' on undefined variable '%s'.",
             s_operation,name);
     }
+    ind = vars._width;
+    vars.insert(1);
+    CImg<char>::string(name).move_to(varnames);
   }
 
-  bool is_new_variable = false;
   double lvalue = 0, rvalue = 0;
   CImg<char> s_value;
   char end;
@@ -3487,23 +3489,20 @@ const char *gmic::set_variable(const char *const name, const char operation,
   } else s_value.assign(24); // Arithmetic self-operator : value will be determined later
 
   // Check state of existing variable and update if it exists.
-  if (!operation) is_new_variable = true;
+  if (!operation) s_value.move_to(vars[ind]);
   else {
     // Retrieve index of current definition.
-    if (operation=='=') {
-      if (ind==~0U) is_new_variable = true;
-      else s_value.move_to(vars[ind]);
-    } else if (operation=='.') {
-      if (ind==~0U) is_new_variable = true;
+    if (operation=='=') s_value.move_to(vars[ind]);
+    else if (operation=='.') {
+      if (!vars[ind]) s_value.move_to(vars[ind]);
       else if (*value) {
         --vars[ind]._width;
         vars[ind].append(CImg<char>::string(value,true,true),'x');
       }
     } else if (operation==',') {
-      if (ind==~0U) is_new_variable = true;
-      else if (*value)
-        CImg<char>::string(value,false,false).append(vars[ind],'x').move_to(vars[ind]);
-    } else {
+      if (!vars[ind]) s_value.move_to(vars[ind]);
+      else if (*value) CImg<char>::string(value,false,false).append(vars[ind],'x').move_to(vars[ind]);
+    } else { // Arithmetic operation
       if (cimg_sscanf(vars[ind],"%lf%c",&lvalue,&end)!=1) {
         if (is_thread_global) cimg::mutex(30,0);
         error(true,"Operator '%s=' on non-numerical variable '%s=%s'.",
@@ -3523,15 +3522,8 @@ const char *gmic::set_variable(const char *const name, const char operation,
                     operation=='^'?std::pow(lvalue,rvalue):
                     operation=='<'?(double)((cimg_long)lvalue << (unsigned int)rvalue):
                     (double)((cimg_long)lvalue >> (unsigned int)rvalue));
-      if (!is_new_variable) CImg<char>::string(s_value).move_to(vars[ind]);
+      CImg<char>::string(s_value).move_to(vars[ind]);
     }
-  }
-
-  // Otherwise, create new variable.
-  if (is_new_variable) { // New variable
-    ind = vars._width;
-    CImg<char>::string(name).move_to(varnames);
-    s_value.move_to(vars);
   }
 
   if (!std::strcmp(name,"_cpus")) { // Set max number of threads for multi-threaded operators
@@ -3547,10 +3539,11 @@ const char *gmic::set_variable(const char *const name, const char operation,
 #endif
   }
 
-  if (!is_new_variable && ind!=vars._width - 1) {
+/*  if (!is_new_variable && ind!=vars._width - 1) {
     vars[ind].swap(vars.back()); // Ensure direct access to this variable next time
     varnames[ind].swap(varnames.back());
   }
+*/
   if (is_thread_global) cimg::mutex(30,0);
   return vars[ind].data();
 }
