@@ -3448,6 +3448,15 @@ const char *gmic::set_variable(const char *const name, const char operation,
   if (operation)
     for (int l = vars.width() - 1; l>=lmin; --l) if (!std::strcmp(varnames[l],name)) { ind = l; break; }
 
+  // Create new variable if necessary.
+  if (ind==~0U) {
+    if (is_arithmetic) {
+      if (is_thread_global) cimg::mutex(30,0);
+      error(true,"Operator '%s=' on undefined variable '%s'.",
+            s_operation,name);
+    }
+  }
+
   bool is_new_variable = false;
   double lvalue = 0, rvalue = 0;
   CImg<char> s_value;
@@ -3495,11 +3504,6 @@ const char *gmic::set_variable(const char *const name, const char operation,
       else if (*value)
         CImg<char>::string(value,false,false).append(vars[ind],'x').move_to(vars[ind]);
     } else {
-      if (ind==~0U) {
-        if (is_thread_global) cimg::mutex(30,0);
-        error(true,"Operator '%s=' on undefined variable '%s'.",
-              s_operation,name);
-      }
       if (cimg_sscanf(vars[ind],"%lf%c",&lvalue,&end)!=1) {
         if (is_thread_global) cimg::mutex(30,0);
         error(true,"Operator '%s=' on non-numerical variable '%s=%s'.",
