@@ -3488,42 +3488,40 @@ const char *gmic::set_variable(const char *const name, const char operation,
     else { s_value.assign(24); s_value._width = 1 + cimg_snprintf(s_value,s_value.width(),"%.17g",*pvalue); }
   } else s_value.assign(24); // Arithmetic self-operator : value will be determined later
 
-  // Check state of existing variable and update if it exists.
-  if (!operation) s_value.move_to(vars[ind]);
-  else {
-    // Retrieve index of current definition.
-    if (operation=='=') s_value.move_to(vars[ind]);
-    else if (operation=='.') {
-      if (!vars[ind]) s_value.move_to(vars[ind]);
-      else if (*value) {
-        --vars[ind]._width;
-        vars[ind].append(CImg<char>::string(value,true,true),'x');
-      }
-    } else if (operation==',') {
-      if (!vars[ind]) s_value.move_to(vars[ind]);
-      else if (*value) CImg<char>::string(value,false,false).append(vars[ind],'x').move_to(vars[ind]);
-    } else { // Arithmetic operation
-      if (cimg_sscanf(vars[ind],"%lf%c",&lvalue,&end)!=1) {
-        if (is_thread_global) cimg::mutex(30,0);
-        error(true,"Operator '%s=' on non-numerical variable '%s=%s'.",
-              s_operation,name,vars[ind].data());
-      }
-      if (pvalue) rvalue = *pvalue; // For self-operators, right-hand side *must* be passed as a double value
-      else error(true,"Operator '%s=' on variable '%s': Right-hand side '%s' not defined as a double value.",
-                 s_operation,name,cimg::strellipsize(s_value,64,false));
-      cimg_snprintf(s_value,s_value.width(),"%.17g",
-                    operation=='+'?lvalue + rvalue:
-                    operation=='-'?lvalue - rvalue:
-                    operation=='*'?lvalue*rvalue:
-                    operation=='/'?lvalue/rvalue:
-                    operation=='%'?cimg::mod(lvalue,rvalue):
-                    operation=='&'?(double)((cimg_ulong)lvalue & (cimg_ulong)rvalue):
-                    operation=='|'?(double)((cimg_ulong)lvalue | (cimg_ulong)rvalue):
-                    operation=='^'?std::pow(lvalue,rvalue):
-                    operation=='<'?(double)((cimg_long)lvalue << (unsigned int)rvalue):
-                    (double)((cimg_long)lvalue >> (unsigned int)rvalue));
-      CImg<char>::string(s_value).move_to(vars[ind]);
+  // Store variable content.
+  switch (operation) {
+  case 0 : case '=' : // Assign
+    s_value.move_to(vars[ind]); break;
+  case '.' : // Append
+    if (!vars[ind]) s_value.move_to(vars[ind]);
+    else if (*value) { --vars[ind]._width; vars[ind].append(CImg<char>::string(value,true,true),'x'); }
+    break;
+  case ';' : // Prepend
+    if (!vars[ind]) s_value.move_to(vars[ind]);
+    else if (*value) CImg<char>::string(value,false,false).append(vars[ind],'x').move_to(vars[ind]);
+    break;
+  default : { // Arithmetic operator
+    if (cimg_sscanf(vars[ind],"%lf%c",&lvalue,&end)!=1) {
+      if (is_thread_global) cimg::mutex(30,0);
+      error(true,"Operator '%s=' on non-numerical variable '%s=%s'.",
+            s_operation,name,vars[ind].data());
     }
+    if (pvalue) rvalue = *pvalue; // For self-operators, right-hand side *must* be passed as a double value
+    else error(true,"Operator '%s=' on variable '%s': Right-hand side '%s' not defined as a double value.",
+               s_operation,name,cimg::strellipsize(s_value,64,false));
+    cimg_snprintf(s_value,s_value.width(),"%.17g",
+                  operation=='+'?lvalue + rvalue:
+                  operation=='-'?lvalue - rvalue:
+                  operation=='*'?lvalue*rvalue:
+                  operation=='/'?lvalue/rvalue:
+                  operation=='%'?cimg::mod(lvalue,rvalue):
+                  operation=='&'?(double)((cimg_ulong)lvalue & (cimg_ulong)rvalue):
+                  operation=='|'?(double)((cimg_ulong)lvalue | (cimg_ulong)rvalue):
+                  operation=='^'?std::pow(lvalue,rvalue):
+                  operation=='<'?(double)((cimg_long)lvalue << (unsigned int)rvalue):
+                  (double)((cimg_long)lvalue >> (unsigned int)rvalue));
+    CImg<char>::string(s_value).move_to(vars[ind]);
+  } break;
   }
 
   if (!std::strcmp(name,"_cpus")) { // Set max number of threads for multi-threaded operators
