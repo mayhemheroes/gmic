@@ -3382,21 +3382,21 @@ CImg<char> gmic::get_variable(const char *const name,
   const int l_max = is_global || !variables_sizes?0:(int)variables_sizes[hash];
   if (is_thread_global) cimg::mutex(30);
   CImgList<char>
-    &__variables = *variables[hash],
-    &__variables_names = *variables_names[hash];
+    &vars = *variables[hash],
+    &varnames = *variables_names[hash];
 
   bool is_name_found = false;
   int ind = -1;
 
-  for (int l = __variables.width() - 1; l>=l_max; --l)
-    if (!std::strcmp(__variables_names[l],name)) {
+  for (int l = vars.width() - 1; l>=l_max; --l)
+    if (!std::strcmp(varnames[l],name)) {
       is_name_found = true; ind = l; break;
     }
   if (is_name_found) { // Regular variable
-    res.assign(__variables[ind],true);
-    if (ind!=__variables.width() - 1) {
-      __variables[ind].swap(__variables.back()); // Ensure direct access to this variable next time
-      __variables_names[ind].swap(__variables_names.back());
+    res.assign(vars[ind],true);
+    if (ind!=vars.width() - 1) {
+      vars[ind].swap(vars.back()); // Ensure direct access to this variable next time
+      varnames[ind].swap(varnames.back());
     }
   } else {
     if (images_names) {
@@ -3430,20 +3430,24 @@ const char *gmic::set_variable(const char *const name, const char operation,
                                const char *const value, const double *const pvalue,
                                const unsigned int *const variables_sizes) {
   if (!name || (!value && !pvalue)) return "";
+
+  const bool
+    is_global = *name=='_',
+    is_thread_global = is_global && name[1]=='_';
+  if (is_thread_global) cimg::mutex(30);
+
+  // Check if variable already exists.
+  const unsigned int hash = hashcode(name,true);
+  const int lmin = is_global || !variables_sizes?0:(int)variables_sizes[hash];
+  CImgList<char>
+    &vars = *variables[hash],
+    &varnames = *variables_names[hash];
+
   bool is_name_found = false, is_new_variable = false;
   double lvalue = 0, rvalue = 0;
   CImg<char> s_value;
   int ind = 0;
   char end;
-  const bool
-    is_global = *name=='_',
-    is_thread_global = is_global && name[1]=='_';
-  if (is_thread_global) cimg::mutex(30);
-  const unsigned int hash = hashcode(name,true);
-  const int lind = is_global || !variables_sizes?0:(int)variables_sizes[hash];
-  CImgList<char>
-    &__variables = *variables[hash],
-    &__variables_names = *variables_names[hash];
 
   // Get target value in string 's_value' (except for arithmetic self-operators).
   if ((!operation || operation=='=') && value && *value==gmic_store &&
@@ -3451,11 +3455,11 @@ const char *gmic::set_variable(const char *const name, const char operation,
     const char *const cname = value + 8;
     const bool is_cglobal = *cname=='_';
     const unsigned int chash = hashcode(cname,true);
-    const int clind = is_cglobal || !variables_sizes?0:(int)variables_sizes[chash];
+    const int clmin = is_cglobal || !variables_sizes?0:(int)variables_sizes[chash];
     CImgList<char>
       &__cvariables = *variables[chash],
       &__cvariables_names = *variables_names[chash];
-    for (int l = __cvariables.width() - 1; l>=clind; --l) if (!std::strcmp(__cvariables_names[l],cname)) {
+    for (int l = __cvariables.width() - 1; l>=clmin; --l) if (!std::strcmp(__cvariables_names[l],cname)) {
         is_name_found = true; ind = l; break;
       }
     if (is_name_found) {
@@ -3477,22 +3481,22 @@ const char *gmic::set_variable(const char *const name, const char operation,
   if (!operation) is_new_variable = true;
   else {
     // Retrieve index of current definition.
-    for (int l = __variables.width() - 1; l>=lind; --l) if (!std::strcmp(__variables_names[l],name)) {
+    for (int l = vars.width() - 1; l>=lmin; --l) if (!std::strcmp(varnames[l],name)) {
         is_name_found = true; ind = l; break;
       }
     if (operation=='=' || operation==':') {
       if (!is_name_found) is_new_variable = true;
-      else s_value.move_to(__variables[ind]);
+      else s_value.move_to(vars[ind]);
     } else if (operation=='.') {
       if (!is_name_found) is_new_variable = true;
       else if (*value) {
-        --__variables[ind]._width;
-        __variables[ind].append(CImg<char>::string(value,true,true),'x');
+        --vars[ind]._width;
+        vars[ind].append(CImg<char>::string(value,true,true),'x');
       }
     } else if (operation==',') {
       if (!is_name_found) is_new_variable = true;
       else if (*value)
-        CImg<char>::string(value,false,false).append(__variables[ind],'x').move_to(__variables[ind]);
+        CImg<char>::string(value,false,false).append(vars[ind],'x').move_to(vars[ind]);
     } else {
       const char *const s_operation = operation=='+'?"+":operation=='-'?"-":operation=='*'?"*":operation=='/'?"/":
         operation=='%'?"%":operation=='&'?"&":operation=='|'?"|":operation=='^'?"^":operation=='<'?"<<":">>";
@@ -3502,10 +3506,10 @@ const char *gmic::set_variable(const char *const name, const char operation,
         error(true,"Operator '%s=' on undefined variable '%s'.",
               s_operation,name);
       }
-      if (cimg_sscanf(__variables[ind],"%lf%c",&lvalue,&end)!=1) {
+      if (cimg_sscanf(vars[ind],"%lf%c",&lvalue,&end)!=1) {
         if (is_thread_global) cimg::mutex(30,0);
         error(true,"Operator '%s=' on non-numerical variable '%s=%s'.",
-              s_operation,name,__variables[ind].data());
+              s_operation,name,vars[ind].data());
       }
       if (pvalue) rvalue = *pvalue; // For self-operators, right-hand side *must* be passed as a double value
       else error(true,"Operator '%s=' on variable '%s': Right-hand side '%s' not defined as a double value.",
@@ -3521,36 +3525,36 @@ const char *gmic::set_variable(const char *const name, const char operation,
                     operation=='^'?std::pow(lvalue,rvalue):
                     operation=='<'?(double)((cimg_long)lvalue << (unsigned int)rvalue):
                     (double)((cimg_long)lvalue >> (unsigned int)rvalue));
-      if (!is_new_variable) CImg<char>::string(s_value).move_to(__variables[ind]);
+      if (!is_new_variable) CImg<char>::string(s_value).move_to(vars[ind]);
     }
   }
 
   // Otherwise, create new variable.
   if (is_new_variable) { // New variable
-    ind = __variables.width();
-    CImg<char>::string(name).move_to(__variables_names);
-    s_value.move_to(__variables);
+    ind = vars.width();
+    CImg<char>::string(name).move_to(varnames);
+    s_value.move_to(vars);
   }
 
   if (!std::strcmp(name,"_cpus")) { // Set max number of threads for multi-threaded operators
     int nb_cpus = 0;
-    if (cimg_sscanf(__variables[ind],"%d%c",&nb_cpus,&end)!=1 || nb_cpus<=0) {
+    if (cimg_sscanf(vars[ind],"%d%c",&nb_cpus,&end)!=1 || nb_cpus<=0) {
       s_value.assign(8);
       nb_cpus = (int)cimg::nb_cpus();
       cimg_snprintf(s_value,s_value.width(),"%d",nb_cpus);
-      CImg<char>::string(s_value).move_to(__variables[ind]);
+      CImg<char>::string(s_value).move_to(vars[ind]);
     }
 #if cimg_use_openmp!=0
     omp_set_num_threads(nb_cpus);
 #endif
   }
 
-  if (!is_new_variable && ind!=__variables.width() - 1) {
-    __variables[ind].swap(__variables.back()); // Ensure direct access to this variable next time
-    __variables_names[ind].swap(__variables_names.back());
+  if (!is_new_variable && ind!=vars.width() - 1) {
+    vars[ind].swap(vars.back()); // Ensure direct access to this variable next time
+    varnames[ind].swap(varnames.back());
   }
   if (is_thread_global) cimg::mutex(30,0);
-  return __variables[ind].data();
+  return vars[ind].data();
 }
 
 const char *gmic::set_variable(const char *const name, const CImg<unsigned char>& value,
@@ -3564,23 +3568,23 @@ const char *gmic::set_variable(const char *const name, const CImg<unsigned char>
     is_thread_global = is_global && name[1]=='_';
   if (is_thread_global) cimg::mutex(30);
   const unsigned int hash = hashcode(name,true);
-  const int lind = is_global || !variables_sizes?0:(int)variables_sizes[hash];
+  const int lmin = is_global || !variables_sizes?0:(int)variables_sizes[hash];
   CImgList<char>
-    &__variables = *variables[hash],
-    &__variables_names = *variables_names[hash];
+    &vars = *variables[hash],
+    &varnames = *variables_names[hash];
 
   // Retrieve index of current definition.
-  for (int l = __variables.width() - 1; l>=lind; --l) if (!std::strcmp(__variables_names[l],name)) {
+  for (int l = vars.width() - 1; l>=lmin; --l) if (!std::strcmp(varnames[l],name)) {
       is_name_found = true; ind = l; break;
     }
-  if (is_name_found) s_value.move_to(__variables[ind]); // Update variable
+  if (is_name_found) s_value.move_to(vars[ind]); // Update variable
   else  { // New variable
-    ind = __variables.width();
-    CImg<char>::string(name).move_to(__variables_names);
-    s_value.move_to(__variables);
+    ind = vars.width();
+    CImg<char>::string(name).move_to(varnames);
+    s_value.move_to(vars);
   }
   if (is_thread_global) cimg::mutex(30,0);
-  return __variables[ind].data();
+  return vars[ind].data();
 }
 
 // Add custom commands from a char* buffer.
