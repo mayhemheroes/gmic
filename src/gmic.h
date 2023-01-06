@@ -272,7 +272,7 @@ inline double gmic_mp_store(const double *const ptrs, const unsigned int siz,
 #include <cstdio>
 #include <cstring>
 #define gmic_new_attr commands(0), commands_names(0), commands_has_arguments(0), \
-    _variables(0), _variables_names(0), variables(0), variables_names(0)
+    _variables(0), _variables_names(0), variables(0), variables_names(0), _variables_lengths(0), variables_lengths(0)
 
 using namespace gmic_library;
 
@@ -385,9 +385,9 @@ struct gmic {
               float *const p_progress, bool *const p_is_abort);
 
   gmic_image<char> get_variable(const char *const name, const unsigned int *const variables_sizes=0,
-                                const gmic_list<char> *const images_names=0) const;
+                                const gmic_list<char> *const images_names=0, unsigned int *const varlength=0) const;
   const char *set_variable(const char *const name, const char operation='=', const char *const value=0,
-                           const double *const pvalue=0, const unsigned int *const variables_sizes=0);
+                           const double dvalue=0, const unsigned int *const variables_sizes=0);
   const char *set_variable(const char *const name, const gmic_image<unsigned char>& value,
                            const unsigned int *const variables_sizes=0);
 
@@ -490,8 +490,9 @@ struct gmic {
   static gmic_image<char> stdlib;
   static bool is_display_available;
 
-  gmic_list<char> *commands, *commands_names, *commands_has_arguments, *_variables, *_variables_names,
-    **variables, **variables_names, commands_files, callstack;
+  gmic_list<char> *commands, *commands_names, *commands_has_arguments, commands_files, callstack,
+    *_variables, *_variables_names, **variables, **variables_names;
+  gmic_list<unsigned int> *_variables_lengths, **variables_lengths;
   gmic_image<unsigned int> dowhiles, fordones, foreachdones, repeatdones;
   gmic_image<unsigned char> light3d;
   gmic_image<void*> display_windows;
