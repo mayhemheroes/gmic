@@ -3374,49 +3374,44 @@ gmic& gmic::debug(const char *format, ...) {
 CImg<char> gmic::get_variable(const char *const name,
                               const unsigned int *const variables_sizes,
                               const CImgList<char> *const images_names) const {
-  CImg<char> res;
-  const unsigned int hash = hashcode(name,true);
   const bool
     is_global = *name=='_',
     is_thread_global = is_global && name[1]=='_';
-  const int l_max = is_global || !variables_sizes?0:(int)variables_sizes[hash];
+
   if (is_thread_global) cimg::mutex(30);
-  CImgList<char>
-    &vars = *variables[hash],
-    &varnames = *variables_names[hash];
 
-  bool is_name_found = false;
-  int ind = -1;
+  // Check if variable slot exists.
+  const unsigned int hash = hashcode(name,true);
+  const int lmin = is_global || !variables_sizes?0:(int)variables_sizes[hash];
+  CImgList<char> &vars = *variables[hash], &varnames = *variables_names[hash];
+  unsigned int ind = ~0U;
+  for (int l = vars.width() - 1; l>=lmin; --l) if (!std::strcmp(varnames[l],name)) { ind = l; break; }
 
-  for (int l = vars.width() - 1; l>=l_max; --l)
-    if (!std::strcmp(varnames[l],name)) {
-      is_name_found = true; ind = l; break;
-    }
-  if (is_name_found) { // Regular variable
+  // Get variable value.
+  CImg<char> res;
+  if (ind!=~0U) { // Regular variable name
     res.assign(vars[ind],true);
-    if (ind!=vars.width() - 1) {
-      vars[ind].swap(vars.back()); // Ensure direct access to this variable next time
-      varnames[ind].swap(varnames.back());
+    if (ind!=vars._width - 1) { // Modify slot position of variable to make it more accessible next time.
+      unsigned int indm = (vars._width + ind)/2;
+      vars[ind].swap(vars[indm]);
+      varnames[ind].swap(varnames[indm]);
     }
   } else {
-    if (images_names) {
+    if (images_names) { // Variable name may stand for an image index (highest index)
       const CImgList<char> &_images_names = *images_names;
-      cimglist_rof(_images_names,l)
-        if (_images_names[l] && !std::strcmp(_images_names[l],name)) {
-          is_name_found = true; ind = l; break;
-        }
+      cimglist_rof(_images_names,l) if (_images_names[l] && !std::strcmp(_images_names[l],name)) { ind = l; break; }
     }
-    if (is_name_found) { // Latest image index
-      int tmp = std::max(1,ind);
-      unsigned int l_tmp = 0;
+    if (ind!=~0U) {
+      unsigned int tmp = std::max(1U,ind), l_tmp;
       while (tmp) { ++l_tmp; tmp/=10; }
       res.assign(l_tmp + 1,1,1,1,0);
-      cimg_snprintf(res,res.width(),"%d",ind);
-    } else { // Environment variable
+      cimg_snprintf(res,res.width(),"%u",ind);
+    } else { // Variable name may stand for an environment variable
       const char *const env = std::getenv(name);
       if (env) res.assign(CImg<char>::string(env,true,true),true); // Otherwise, 'res' is empty
     }
   }
+
   if (is_thread_global) cimg::mutex(30,0);
   return res;
 }
