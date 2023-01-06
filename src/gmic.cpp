@@ -5282,10 +5282,11 @@ CImg<char> gmic::substitute_item(const char *const source,
                   (cimg_sscanf(nsource + 1,"%255[a-zA-Z0-9_]",substr.assign(256).data())==1)) &&
                  (*substr<'0' || *substr>'9')) {
         const CImg<char>& name = is_braces?inbraces:substr;
-        CImg<char> value = get_variable(name,variables_sizes,&images_names);
+
+        unsigned int l_value = 0;
+        CImg<char> value = get_variable(name,variables_sizes,&images_names,&l_value);
         const unsigned int l_name = is_braces?l_inbraces + 3:(unsigned int)std::strlen(name) + 1;
-        if (value)
-          CImg<char>::string(value.data(),false,true).append_string_to(substituted_items,ptr_sub);
+        if (value) CImg<char>(value.data(),l_value,1,1,1,true).append_string_to(substituted_items,ptr_sub);
         nsource+=l_name;
 
         // Substitute '${"command"}' -> Status value after command execution.
