@@ -2932,10 +2932,8 @@ gmic::~gmic() {
   delete[] commands_has_arguments;
   delete[] _variables;
   delete[] _variables_names;
-  delete[] _variables_strlen;
   delete[] variables;
   delete[] variables_names;
-  delete[] variables_strlen;
   cimg::exception_mode(cimg_exception_mode);
 }
 
@@ -4241,7 +4239,6 @@ gmic& gmic::_gmic(const char *const commands_line,
   delete[] commands_has_arguments;
   delete[] _variables;
   delete[] _variables_names;
-  delete[] _variables_strlen;
 
   commands = new CImgList<char>[gmic_comslots];
   commands_names = new CImgList<char>[gmic_comslots];
@@ -4254,17 +4251,13 @@ gmic& gmic::_gmic(const char *const commands_line,
 
   _variables = new CImgList<char>[gmic_varslots];
   _variables_names = new CImgList<char>[gmic_varslots];
-  _variables_strlen = new CImgList<unsigned int>[gmic_varslots];
   variables = new CImgList<char>*[gmic_varslots];
   variables_names = new CImgList<char>*[gmic_varslots];
-  variables_strlen = new CImgList<unsigned int>*[gmic_varslots];
   for (unsigned int l = 0; l<gmic_varslots; ++l) {
     _variables[l].assign();
     variables[l] = &_variables[l];
     _variables_names[l].assign();
     variables_names[l] = &_variables_names[l];
-    _variables_strlen[l].assign();
-    variables_strlen[l] = &_variables_strlen[l];
   }
 
   commands_files.assign();
@@ -5278,9 +5271,8 @@ CImg<char> gmic::substitute_item(const char *const source,
                   "Item substitution '${\"%s\"}': Expression incorrectly changes the number of images (from %u to %u).",
                   cimg::strellipsize(inbraces,64,false),psize,images.size());
           for (unsigned int l = 0; l<gmic_varslots/2; ++l) if (variables[l]->size()>nvariables_sizes[l]) {
-              variables[l]->remove(nvariables_sizes[l],variables[l]->size() - 1);
               variables_names[l]->remove(nvariables_sizes[l],variables[l]->size() - 1);
-              variables_strlen[l]->remove(nvariables_sizes[l],variables[l]->size() - 1);
+              variables[l]->remove(nvariables_sizes[l],variables[l]->size() - 1);
             }
           callstack.remove();
           is_return = false;
@@ -10863,17 +10855,14 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 if (i>=6*gmic_varslots/7) { // Share inter-thread global variables
                   gmic_instance.variables[i] = variables[i];
                   gmic_instance.variables_names[i] = variables_names[i];
-                  gmic_instance.variables_strlen[i] = variables_strlen[i];
                 } else {
                   if (i>=gmic_varslots/2) { // Make a copy of single-thread global variables
                     gmic_instance._variables[i].assign(_variables[i]);
                     gmic_instance._variables_names[i].assign(_variables_names[i]);
-                    gmic_instance._variables_strlen[i].assign(_variables_strlen[i]);
                     _gmic_threads[l].variables_sizes[i] = variables_sizes[i];
                   } else _gmic_threads[l].variables_sizes[i] = 0;
                   gmic_instance.variables[i] = &gmic_instance._variables[i];
                   gmic_instance.variables_names[i] = &gmic_instance._variables_names[i];
-                  gmic_instance.variables_strlen[i] = &gmic_instance._variables_strlen[i];
                 }
               }
               gmic_instance.callstack.assign(callstack);
@@ -14413,9 +14402,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               }
             }
             for (unsigned int l = 0; l<gmic_varslots/2; ++l) if (variables[l]->size()>nvariables_sizes[l]) {
-                variables[l]->remove(nvariables_sizes[l],variables[l]->size() - 1);
                 variables_names[l]->remove(nvariables_sizes[l],variables[l]->size() - 1);
-                variables_strlen[l]->remove(nvariables_sizes[l],variables[l]->size() - 1);
+                variables[l]->remove(nvariables_sizes[l],variables[l]->size() - 1);
               }
             callstack.remove();
             debug_filename = previous_debug_filename;
