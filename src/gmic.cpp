@@ -3427,9 +3427,8 @@ CImg<char> gmic::get_variable(const char *const name,
 //                      '+', '-', '*', '/', '%', '&', '|', '^', '<', '>' }
 // Return the new variable value.
 const char *gmic::set_variable(const char *const name, const char operation,
-                               const char *const value, const double *const pvalue,
+                               const char *const value, const double pvalue,
                                const unsigned int *const variables_sizes) {
-  if (!name || (!value && !pvalue)) return "";
   const bool
     is_global = *name=='_',
     is_thread_global = is_global && name[1]=='_',
@@ -3483,7 +3482,7 @@ const char *gmic::set_variable(const char *const name, const char operation,
     } else s_value.assign(1,1,1,1,0);
   } else if (!operation || operation=='=' || operation=='.' || operation==',') {
     if (value) s_value.assign(value,(unsigned int)(std::strlen(value) + 1),1,1,1,true);
-    else { s_value.assign(24); s_value._width = 1 + cimg_snprintf(s_value,s_value.width(),"%.17g",*pvalue); }
+    else { s_value.assign(24); s_value._width = 1 + cimg_snprintf(s_value,s_value.width(),"%.17g",pvalue); }
   } else s_value.assign(24); // Arithmetic self-operator : value will be determined later
 
   // Store variable content.
@@ -3505,7 +3504,7 @@ const char *gmic::set_variable(const char *const name, const char operation,
       error(true,"Operator '%s=' on non-numerical variable '%s=%s'.",
             s_operation,name,vars[ind].data());
     }
-    if (pvalue) rvalue = *pvalue; // For self-operators, right-hand side *must* be passed as a double value
+    if (!value) rvalue = pvalue; // For self-operators, right-hand side *must* be passed as a double value
     else error(true,"Operator '%s=' on variable '%s': Right-hand side '%s' not defined as a double value.",
                s_operation,name,cimg::strellipsize(s_value,64,false));
     cimg_snprintf(s_value,s_value.width(),"%.17g",
@@ -14584,7 +14583,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   cimglist_for(varnames,k) {
                     const int l = k%varvalues_d.height();
                     const double vvd = is_rounded?gmic_round(varvalues_d[l]):varvalues_d[l];
-                    new_value = set_variable(varnames[k],sep0==':'?'=':sep0,0,&vvd,variables_sizes);
+                    new_value = set_variable(varnames[k],sep0==':'?'=':sep0,0,vvd,variables_sizes);
                     if (is_verbose) {
                       cimg::strellipsize(varnames[k],gmic_use_argx,80,true);
                       cimg::strellipsize(new_value,gmic_use_argz,80,true);
