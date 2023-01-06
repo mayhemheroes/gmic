@@ -3494,7 +3494,7 @@ const char *gmic::set_variable(const char *const name, const char operation,
                   operation=='<'?(double)((cimg_long)cvalue << (unsigned int)dvalue):
                   (double)((cimg_long)cvalue >> (unsigned int)dvalue));
   } else if ((!operation || operation=='=') && *value==gmic_store &&
-             !std::strncmp(value + 1,"*store/",7) && value[8]) { // Get value from image-encoded variable.
+             !std::strncmp(value + 1,"*store/",7) && value[8]) { // Get value from image-encoded variable
     const char *const cname = value + 8;
     const bool is_cglobal = *cname=='_';
     const unsigned int chash = hashcode(cname,true);
@@ -3516,8 +3516,6 @@ const char *gmic::set_variable(const char *const name, const char operation,
 
   // Store variable content.
   switch (operation) {
-  case 0 : case '=' : // Assign
-    s_value.move_to(vars[ind]); break;
   case '.' : // Append
     if (!vars[ind]) s_value.move_to(vars[ind]);
     else if (*value) { --vars[ind]._width; vars[ind].append(CImg<char>::string(value,true,true),'x'); }
@@ -3526,9 +3524,9 @@ const char *gmic::set_variable(const char *const name, const char operation,
     if (!vars[ind]) s_value.move_to(vars[ind]);
     else if (*value) CImg<char>::string(value,false,false).append(vars[ind],'x').move_to(vars[ind]);
     break;
-  default : { // Arithmetic operator
-    CImg<char>::string(s_value).move_to(vars[ind]);
-  } break;
+  default : // Assign and arithmetic operators
+    s_value.move_to(vars[ind]);
+    break;
   }
 
   if (!std::strcmp(name,"_cpus")) { // Set max number of threads for multi-threaded operators
