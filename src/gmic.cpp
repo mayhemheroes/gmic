@@ -186,7 +186,7 @@ static CImg<T> append_CImg3d(const CImgList<T>& images) {
 CImg<T>& append_string_to(CImg<T>& img, T* &ptrd) const {
   if (!_width) return img;
   if (ptrd + _width>=img.end()) {
-    CImg<T> tmp(3*img._width/2 + _width + 1);
+    CImg<T> tmp(std::max(8U,2*img._width + _width + 1));
     std::memcpy(tmp,img,img._width*sizeof(T));
     ptrd = tmp._data + (ptrd - img._data);
     tmp.move_to(img);
@@ -198,7 +198,7 @@ CImg<T>& append_string_to(CImg<T>& img, T* &ptrd) const {
 
 static CImg<T>& append_string_to(const char c, CImg<T>& img, T* &ptrd) {
   if (ptrd + 1>=img.end()) {
-    CImg<T> tmp(3*img._width/2 + 2);
+    CImg<T> tmp(std::max(8U,2*img._width + 1));
     std::memcpy(tmp,img,img._width*sizeof(T));
     ptrd = tmp._data + (ptrd - img._data);
     tmp.move_to(img);
@@ -3471,7 +3471,7 @@ const char *gmic::set_variable(const char *const name, const char operation,
     ind = vars._width;
     vars.insert(1);
     CImg<char>::string(name).move_to(varnames);
-    if (ind>=varlengths._width) varlengths.resize(2*varlengths._width + 1,1,1,1,0);
+    if (ind>=varlengths._width) varlengths.resize(std::max(8U,2*varlengths._width + 1),1,1,1,0);
     varlengths[ind] = 0;
   }
 
@@ -3619,7 +3619,7 @@ const char *gmic::set_variable(const char *const name, const CImg<unsigned char>
     ind = vars._width;
     vars.insert(1);
     CImg<char>::string(name).move_to(varnames);
-    if (ind>=varlengths._width) varlengths.resize(2*varlengths._width + 1,1,1,1,0);
+    if (ind>=varlengths._width) varlengths.resize(std::max(8U,2*varlengths._width + 1),1,1,1,0);
     varlengths[ind] = 0;
   }
   s_value.move_to(vars[ind]); // Update variable
