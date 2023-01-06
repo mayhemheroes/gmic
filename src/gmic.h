@@ -272,7 +272,7 @@ inline double gmic_mp_store(const double *const ptrs, const unsigned int siz,
 #include <cstdio>
 #include <cstring>
 #define gmic_new_attr commands(0), commands_names(0), commands_has_arguments(0), \
-    _variables(0), _variables_names(0), variables(0), variables_names(0), _variables_strlen(0), variables_strlen(0)
+    _variables(0), _variables_names(0), variables(0), variables_names(0), _variables_lengths(0), variables_lengths(0)
 
 using namespace gmic_library;
 
@@ -492,7 +492,7 @@ struct gmic {
 
   gmic_list<char> *commands, *commands_names, *commands_has_arguments, commands_files, callstack,
     *_variables, *_variables_names, **variables, **variables_names;
-  gmic_list<unsigned int> *_variables_strlen, **variables_strlen;
+  gmic_list<unsigned int> *_variables_lengths, **variables_lengths;
   gmic_image<unsigned int> dowhiles, fordones, foreachdones, repeatdones;
   gmic_image<unsigned char> light3d;
   gmic_image<void*> display_windows;
