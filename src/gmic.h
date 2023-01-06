@@ -492,8 +492,7 @@ struct gmic {
 
   gmic_list<char> *commands, *commands_names, *commands_has_arguments, commands_files, callstack,
     *_variables, *_variables_names, **variables, **variables_names;
-  gmic_list<unsigned int> *_variables_lengths, **variables_lengths;
-  gmic_image<unsigned int> dowhiles, fordones, foreachdones, repeatdones;
+  gmic_image<unsigned int> dowhiles, fordones, foreachdones, repeatdones, *_variables_lengths, **variables_lengths;
   gmic_image<unsigned char> light3d;
   gmic_image<void*> display_windows;
   gmic_image<char> status;
