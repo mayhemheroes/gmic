@@ -3470,7 +3470,7 @@ const char *gmic::set_variable(const char *const name, const char operation,
     ind = vars._width;
     vars.insert(1);
     CImg<char>::string(name).move_to(varnames);
-    CImg<unsigned int>(1).move_to(varlengths);
+    CImg<unsigned int>::vector(0).move_to(varlengths);
   }
 
   // If arithmetic operation, get current variable value ('cvalue').
@@ -3545,8 +3545,19 @@ const char *gmic::set_variable(const char *const name, const char operation,
     }
 
     if (operation=='.') { // Append
-      if (l_value) { --vars[ind]._width; vars[ind].append(CImg<char>::string(value,true,true),'x'); }
-      *varlengths[ind]+=l_value;
+      if (l_value) {
+        //        --vars[ind]._width;
+        //        vars[ind].append(CImg<char>::string(value,true,true),'x');
+        if (varwidth) {
+          const unsigned int varlength = *varlengths[ind];
+          char *ptrd = vars[ind].data() + varlength;
+          CImg<char>(s_value._data,l_value + 1,1,1,1,true).append_string_to(vars[ind],ptrd);
+          *varlengths[ind]+=l_value;
+        } else {
+          CImg<char>(s_value._data,l_value + 1,1,1,1,true).move_to(vars[ind]);
+          *varlengths[ind] = l_value;
+        }
+      }
     } else if (operation==',') { // Prepend
       if (l_value) CImg<char>::string(value,false,false).append(vars[ind],'x').move_to(vars[ind]);
       *varlengths[ind]+=l_value;
@@ -3604,7 +3615,7 @@ const char *gmic::set_variable(const char *const name, const CImg<unsigned char>
     ind = vars._width;
     vars.insert(1);
     CImg<char>::string(name).move_to(varnames);
-    CImg<unsigned int>(1).move_to(varlengths);
+    CImg<unsigned int>::vector(0).move_to(varlengths);
   }
   s_value.move_to(vars[ind]); // Update variable
   *varlengths[ind] = 7 + varnames[ind]._width;
