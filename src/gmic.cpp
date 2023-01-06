@@ -3448,7 +3448,7 @@ const char *gmic::set_variable(const char *const name, const char operation,
   if (operation)
     for (int l = vars.width() - 1; l>=lmin; --l) if (!std::strcmp(varnames[l],name)) { ind = l; break; }
 
-  // Create new variable, if needed.
+  // Create new variable slot, if needed.
   if (ind==~0U) {
     if (is_arithmetic) {
       if (is_thread_global) cimg::mutex(30,0);
@@ -3458,6 +3458,16 @@ const char *gmic::set_variable(const char *const name, const char operation,
     ind = vars._width;
     vars.insert(1);
     CImg<char>::string(name).move_to(varnames);
+  }
+
+  // If arithmeic operation, get current variable value ('cvalue').
+  double cvalue;
+  if (is_arithmetic) {
+    if (cimg_sscanf(vars[ind],"%lf%c",&cvalue,&end)!=1) {
+      if (is_thread_global) cimg::mutex(30,0);
+      error(true,"Operator '%s=' on non-numerical variable '%s=%s'.",
+            s_operation,name,vars[ind].data());
+    }
   }
 
   // Get target value in string 's_value' (except for arithmetic self-operators).
@@ -3498,26 +3508,21 @@ const char *gmic::set_variable(const char *const name, const char operation,
     else if (*value) CImg<char>::string(value,false,false).append(vars[ind],'x').move_to(vars[ind]);
     break;
   default : { // Arithmetic operator
-    double lvalue = 0, rvalue = 0;
-    if (cimg_sscanf(vars[ind],"%lf%c",&lvalue,&end)!=1) {
-      if (is_thread_global) cimg::mutex(30,0);
-      error(true,"Operator '%s=' on non-numerical variable '%s=%s'.",
-            s_operation,name,vars[ind].data());
-    }
+    double rvalue = 0;
     if (!value) rvalue = pvalue; // For self-operators, right-hand side *must* be passed as a double value
     else error(true,"Operator '%s=' on variable '%s': Right-hand side '%s' not defined as a double value.",
                s_operation,name,cimg::strellipsize(s_value,64,false));
     cimg_snprintf(s_value,s_value.width(),"%.17g",
-                  operation=='+'?lvalue + rvalue:
-                  operation=='-'?lvalue - rvalue:
-                  operation=='*'?lvalue*rvalue:
-                  operation=='/'?lvalue/rvalue:
-                  operation=='%'?cimg::mod(lvalue,rvalue):
-                  operation=='&'?(double)((cimg_ulong)lvalue & (cimg_ulong)rvalue):
-                  operation=='|'?(double)((cimg_ulong)lvalue | (cimg_ulong)rvalue):
-                  operation=='^'?std::pow(lvalue,rvalue):
-                  operation=='<'?(double)((cimg_long)lvalue << (unsigned int)rvalue):
-                  (double)((cimg_long)lvalue >> (unsigned int)rvalue));
+                  operation=='+'?cvalue + rvalue:
+                  operation=='-'?cvalue - rvalue:
+                  operation=='*'?cvalue*rvalue:
+                  operation=='/'?cvalue/rvalue:
+                  operation=='%'?cimg::mod(cvalue,rvalue):
+                  operation=='&'?(double)((cimg_ulong)cvalue & (cimg_ulong)rvalue):
+                  operation=='|'?(double)((cimg_ulong)cvalue | (cimg_ulong)rvalue):
+                  operation=='^'?std::pow(cvalue,rvalue):
+                  operation=='<'?(double)((cimg_long)cvalue << (unsigned int)rvalue):
+                  (double)((cimg_long)cvalue >> (unsigned int)rvalue));
     CImg<char>::string(s_value).move_to(vars[ind]);
   } break;
   }
