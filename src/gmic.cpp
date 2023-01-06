@@ -3425,7 +3425,8 @@ CImg<char> gmic::get_variable(const char *const name,
 //--------------------
 // 'operation' can be { 0 (add new variable), '=' (replace or add), '.' (append), ',' (prepend),
 //                      '+', '-', '*', '/', '%', '&', '|', '^', '<', '>' }
-// If 'operation' is arithmetic (in { +,-,*,/,%,&,|,^,<,> }), 'value' must be 0 and 'dvalue' must be defined.
+// If 'operation' is arithmetic (in { +,-,*,/,%,&,|,^,<,> }), 'value' must be ==0 and 'dvalue' must be defined.
+// Otherwise, 'value' must be !=0.
 // Return the new variable value.
 const char *gmic::set_variable(const char *const name, const char operation,
                                const char *const value, const double dvalue,
@@ -3433,7 +3434,13 @@ const char *gmic::set_variable(const char *const name, const char operation,
   const bool
     is_global = *name=='_',
     is_thread_global = is_global && name[1]=='_',
-    is_arithmetic = value==0;
+    is_arithmetic = operation && operation!='=' && operation!='.' && operation!=',';
+
+  if ((is_arithmetic && value) || (!is_arithmetic && !value))
+    error(true,"Internal error: Invalid arguments to gmic::set_variable(); "
+          "name='%s', operation=%d, value='%s' and dvalue='%g'.",
+          name,operation,value,dvalue);
+
   const char *const s_operation = !is_arithmetic?0:
     operation=='+'?"+":operation=='-'?"-":operation=='*'?"*":operation=='/'?"/":operation=='%'?"%":
     operation=='&'?"&":operation=='|'?"|":operation=='^'?"^":operation=='<'?"<<":">>";
@@ -3461,7 +3468,7 @@ const char *gmic::set_variable(const char *const name, const char operation,
     CImg<char>::string(name).move_to(varnames);
   }
 
-  // If arithmeic operation, get current variable value ('cvalue').
+  // If arithmetic operation, get current variable value ('cvalue').
   double cvalue;
   if (is_arithmetic) {
     if (cimg_sscanf(vars[ind],"%lf%c",&cvalue,&end)!=1) {
@@ -3471,10 +3478,23 @@ const char *gmic::set_variable(const char *const name, const char operation,
     }
   }
 
-  // Get target value in string 's_value' (except for arithmetic self-operators).
+  // Get target value (in string 's_value').
   CImg<char> s_value;
-  if ((!operation || operation=='=') && value && *value==gmic_store &&
-      !std::strncmp(value + 1,"*store/",7) && value[8]) { // Get value from image-encoded variable.
+  if (is_arithmetic) { // Perform arithmetic operation
+    s_value.assign(24);
+    cimg_snprintf(s_value,s_value.width(),"%.17g",
+                  operation=='+'?cvalue + dvalue:
+                  operation=='-'?cvalue - dvalue:
+                  operation=='*'?cvalue*dvalue:
+                  operation=='/'?cvalue/dvalue:
+                  operation=='%'?cimg::mod(cvalue,dvalue):
+                  operation=='&'?(double)((cimg_ulong)cvalue & (cimg_ulong)dvalue):
+                  operation=='|'?(double)((cimg_ulong)cvalue | (cimg_ulong)dvalue):
+                  operation=='^'?std::pow(cvalue,dvalue):
+                  operation=='<'?(double)((cimg_long)cvalue << (unsigned int)dvalue):
+                  (double)((cimg_long)cvalue >> (unsigned int)dvalue));
+  } else if ((!operation || operation=='=') && *value==gmic_store &&
+             !std::strncmp(value + 1,"*store/",7) && value[8]) { // Get value from image-encoded variable.
     const char *const cname = value + 8;
     const bool is_cglobal = *cname=='_';
     const unsigned int chash = hashcode(cname,true);
@@ -3484,17 +3504,15 @@ const char *gmic::set_variable(const char *const name, const char operation,
     for (int l = cvars.width() - 1; l>=clmin; --l) if (!std::strcmp(cvarnames[l],cname)) { cind = l; break; }
     if (cind!=~0U) {
       cvars[cind].get_resize((unsigned int)(cvars[cind].width() + std::strlen(name) - std::strlen(cname)),
-                                   1,1,1,0,0,1).move_to(s_value);
+                             1,1,1,0,0,1).move_to(s_value);
       cimg_snprintf(s_value,s_value._width,"%c*store/%s",gmic_store,name);
-      if (cind!=cvars._width - 1) {
+/*      if (cind!=cvars._width - 1) {
         cvars[cind].swap(cvars.back()); // Ensure direct access to this variable next time
         cvarnames[cind].swap(cvarnames.back());
       }
+*/
     } else s_value.assign(1,1,1,1,0);
-  } else if (!operation || operation=='=' || operation=='.' || operation==',') {
-    if (value) s_value.assign(value,(unsigned int)(std::strlen(value) + 1),1,1,1,true);
-    else { s_value.assign(24); s_value._width = 1 + cimg_snprintf(s_value,s_value.width(),"%.17g",dvalue); }
-  } else s_value.assign(24); // Arithmetic self-operator : value will be determined later
+  } else s_value.assign(value,(unsigned int)(std::strlen(value) + 1),1,1,1,true);
 
   // Store variable content.
   switch (operation) {
@@ -3509,21 +3527,6 @@ const char *gmic::set_variable(const char *const name, const char operation,
     else if (*value) CImg<char>::string(value,false,false).append(vars[ind],'x').move_to(vars[ind]);
     break;
   default : { // Arithmetic operator
-    double rvalue = 0;
-    if (!value) rvalue = dvalue; // For self-operators, right-hand side *must* be passed as a double value
-    else error(true,"Operator '%s=' on variable '%s': Right-hand side '%s' not defined as a double value.",
-               s_operation,name,cimg::strellipsize(s_value,64,false));
-    cimg_snprintf(s_value,s_value.width(),"%.17g",
-                  operation=='+'?cvalue + rvalue:
-                  operation=='-'?cvalue - rvalue:
-                  operation=='*'?cvalue*rvalue:
-                  operation=='/'?cvalue/rvalue:
-                  operation=='%'?cimg::mod(cvalue,rvalue):
-                  operation=='&'?(double)((cimg_ulong)cvalue & (cimg_ulong)rvalue):
-                  operation=='|'?(double)((cimg_ulong)cvalue | (cimg_ulong)rvalue):
-                  operation=='^'?std::pow(cvalue,rvalue):
-                  operation=='<'?(double)((cimg_long)cvalue << (unsigned int)rvalue):
-                  (double)((cimg_long)cvalue >> (unsigned int)rvalue));
     CImg<char>::string(s_value).move_to(vars[ind]);
   } break;
   }
