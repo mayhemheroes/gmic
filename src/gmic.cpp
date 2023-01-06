@@ -3523,7 +3523,11 @@ const char *gmic::set_variable(const char *const name, const char operation,
       if (*value) { --vars[ind]._width; vars[ind].append(CImg<char>::string(value,true,true),'x'); }
     } else if (operation==',') { // Prepend
       if (*value) CImg<char>::string(value,false,false).append(vars[ind],'x').move_to(vars[ind]);
-    } else s_value.move_to(vars[ind]); // Assign
+    } else { // Assign
+      if (s_value._width<=varwidth && varwidth<=8*s_value._width) // Replace in-place
+        std::memcpy(vars[ind],s_value,s_value._width);
+      else s_value.move_to(vars[ind]);
+    }
   }
 
   // Manage particular case of variable '_cpus': Set max number of threads for multi-threaded operators.
