@@ -3497,7 +3497,12 @@ const char *gmic::set_variable(const char *const name, const char operation,
   } else if ((!operation || operation=='=') && value && *value==gmic_store &&
              !std::strncmp(value + 1,"*store/",7) && value[8]) { // Assign from another image-encoded variable
     const char *const cname = value + 8;
-    const bool is_cglobal = *cname=='_';
+    const bool
+      is_cglobal = *cname=='_',
+      is_cthread_global = is_cglobal && cname[1]=='_';
+
+    if (is_cthread_global && !is_thread_global) cimg::mutex(30);
+
     const unsigned int chash = hashcode(cname,true);
     const int clmin = is_cglobal || !variables_sizes?0:(int)variables_sizes[chash];
     CImgList<char> &cvars = *variables[chash], &cvarnames = *variables_names[chash];
@@ -3514,6 +3519,8 @@ const char *gmic::set_variable(const char *const name, const char operation,
       }
     } else s_value.assign(1,1,1,1,0);
     s_value.move_to(vars[ind]);
+
+    if (is_cthread_global && !is_thread_global) cimg::mutex(30,0);
 
   } else {
     if (value) s_value.assign(value,(unsigned int)(std::strlen(value) + 1),1,1,1,true);
