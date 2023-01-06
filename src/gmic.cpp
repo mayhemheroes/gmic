@@ -3479,9 +3479,10 @@ const char *gmic::set_variable(const char *const name, const char operation,
 
   // Store variable content.
   CImg<char> s_value;
+  const unsigned int varwidth = vars[ind]._width;
   if (is_arithmetic) { // Assign with arithmetic operation
-    s_value.assign(24);
-    cimg_snprintf(s_value,s_value.width(),"%.17g",
+    if (varwidth<24 || varwidth>256) vars[ind].assign(24);
+    cimg_snprintf(vars[ind],vars[ind].width(),"%.17g",
                   operation=='+'?cvalue + dvalue:
                   operation=='-'?cvalue - dvalue:
                   operation=='*'?cvalue*dvalue:
@@ -3492,7 +3493,6 @@ const char *gmic::set_variable(const char *const name, const char operation,
                   operation=='^'?std::pow(cvalue,dvalue):
                   operation=='<'?(double)((cimg_long)cvalue << (unsigned int)dvalue):
                   (double)((cimg_long)cvalue >> (unsigned int)dvalue));
-    s_value.move_to(vars[ind]);
 
   } else if ((!operation || operation=='=') && value && *value==gmic_store &&
              !std::strncmp(value + 1,"*store/",7) && value[8]) { // Assign from another image-encoded variable
