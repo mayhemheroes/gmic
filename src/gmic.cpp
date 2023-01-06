@@ -3374,7 +3374,8 @@ gmic& gmic::debug(const char *format, ...) {
 // Returned image is a shared image, when possible.
 CImg<char> gmic::get_variable(const char *const name,
                               const unsigned int *const variables_sizes,
-                              const CImgList<char> *const images_names) const {
+                              const CImgList<char> *const images_names,
+                              unsigned int *const varlength) const {
   const bool
     is_global = *name=='_',
     is_thread_global = is_global && name[1]=='_';
@@ -3393,6 +3394,7 @@ CImg<char> gmic::get_variable(const char *const name,
   CImg<char> res;
   if (ind!=~0U) { // Regular variable name
     res.assign(vars[ind],true);
+    if (varlength) *varlength = *varlengths[ind];
     if (ind!=vars._width - 1) { // Modify slot position of variable to make it more accessible next time.
       unsigned int indm = (vars._width + ind)/2;
       vars[ind].swap(vars[indm]);
@@ -3409,9 +3411,13 @@ CImg<char> gmic::get_variable(const char *const name,
       while (tmp) { ++l_tmp; tmp/=10; }
       res.assign(l_tmp + 1,1,1,1,0);
       cimg_snprintf(res,res.width(),"%u",ind);
+      if (varlength) *varlength = res._width - 1;
     } else { // Variable name may stand for an environment variable
       const char *const env = std::getenv(name);
-      if (env) res.assign(CImg<char>::string(env,true,true),true);
+      if (env) {
+        res.assign(CImg<char>::string(env,true,true),true);
+        if (varlength) *varlength = res._width - 1;
+      } else if (varlength) *varlength = 0;
     } // Otherwise, 'res' is empty
   }
 
@@ -3601,6 +3607,7 @@ const char *gmic::set_variable(const char *const name, const CImg<unsigned char>
     CImg<unsigned int>(1).move_to(varlengths);
   }
   s_value.move_to(vars[ind]); // Update variable
+  *varlengths[ind] = 8 + varnames[ind]._width;
 
   if (is_thread_global) cimg::mutex(30,0);
   return vars[ind].data();
