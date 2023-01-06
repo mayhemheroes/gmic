@@ -3607,7 +3607,7 @@ const char *gmic::set_variable(const char *const name, const CImg<unsigned char>
     CImg<unsigned int>(1).move_to(varlengths);
   }
   s_value.move_to(vars[ind]); // Update variable
-  *varlengths[ind] = 8 + varnames[ind]._width;
+  *varlengths[ind] = 7 + varnames[ind]._width;
 
   if (is_thread_global) cimg::mutex(30,0);
   return vars[ind].data();
@@ -13067,9 +13067,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               if (!is_cond) {
                 CImgList<T> font;
                 try {
-                  const CImg<char> s_font = get_variable(argz,variables_sizes,&images_names);
-                  const char *const zero = (char*)::std::memchr(s_font,0,s_font.size());
-                  if (zero) CImgList<T>::get_unserialize(s_font,zero + 1 - s_font.data()).move_to(font);
+                  unsigned int l_font = 0;
+                  const CImg<char> s_font = get_variable(argz,variables_sizes,&images_names,&l_font);
+                  CImgList<T>::get_unserialize(s_font,l_font + 1).move_to(font);
                 } catch (CImgException& e) {
                   error(true,images,0,0,
                         "Command 'text': Specified custom font '%s' is invalid.",
@@ -14802,12 +14802,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         print(images,0,
               "Input image from variable '%s', at position%s",
               argx,_gmic_selection.data());
-        const CImg<char> svalue = get_variable(argx,0,0);
+        unsigned int l_value = 0;
+        const CImg<char> svalue = get_variable(argx,0,0,&l_value);
         try {
           if (!svalue) throw CImgArgumentException(0);
-          const char *const zero = (char*)std::memchr(svalue,0,svalue.size());
-          if (!zero) throw CImgArgumentException(0);
-          CImgList<T>::get_unserialize(svalue,zero + 1 - svalue.data()).move_to(g_list);
+          CImgList<T>::get_unserialize(svalue,l_value + 1).move_to(g_list);
         } catch (CImgArgumentException&) {
           error(true,images,0,0,
                 "Command 'input': Variable '%s' has not been assigned with command 'store'.",
