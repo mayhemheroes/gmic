@@ -3550,15 +3550,14 @@ const char *gmic::set_variable(const char *const name, const char operation,
           const unsigned int varlength = *varlengths[ind];
           char *ptrd = vars[ind].data() + varlength;
           CImg<char>(s_value._data,l_value + 1,1,1,1,true).append_string_to(vars[ind],ptrd);
-          *varlengths[ind]+=l_value;
-        } else {
-          CImg<char>(s_value._data,l_value + 1,1,1,1,true).move_to(vars[ind]);
-          *varlengths[ind] = l_value;
-        }
+        } else CImg<char>(s_value._data,l_value + 1,1,1,1,true).move_to(vars[ind]);
+        *varlengths[ind]+=l_value;
       }
     } else if (operation==',') { // Prepend
-      if (l_value) CImg<char>::string(value,false,false).append(vars[ind],'x').move_to(vars[ind]);
-      *varlengths[ind]+=l_value;
+      if (l_value) {
+        CImg<char>::string(value,false,false).append(vars[ind],'x').move_to(vars[ind]);
+        *varlengths[ind]+=l_value;
+      }
     } else { // Assign
       if (s_value._width<=varwidth && varwidth<=8*s_value._width) // Replace in-place
         std::memcpy(vars[ind],s_value,s_value._width);
