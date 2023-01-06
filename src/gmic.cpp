@@ -3368,8 +3368,7 @@ gmic& gmic::debug(const char *format, ...) {
 
 // Get variable value.
 //--------------------
-// May return an empty image, when requested variable is not assigned.
-// For image-encoded variables, only the string header is returned.
+// May return an empty image, if requested variable is unknown.
 // Returned image is a shared image, when possible.
 CImg<char> gmic::get_variable(const char *const name,
                               const unsigned int *const variables_sizes,
