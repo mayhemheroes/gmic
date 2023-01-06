@@ -3506,11 +3506,12 @@ const char *gmic::set_variable(const char *const name, const char operation,
       cvars[cind].get_resize((unsigned int)(cvars[cind].width() + std::strlen(name) - std::strlen(cname)),
                              1,1,1,0,0,1).move_to(s_value);
       cimg_snprintf(s_value,s_value._width,"%c*store/%s",gmic_store,name);
-/*      if (cind!=cvars._width - 1) {
-        cvars[cind].swap(cvars.back()); // Ensure direct access to this variable next time
-        cvarnames[cind].swap(cvarnames.back());
+
+      if (cind!=vars._width - 1) { // Modify slot position of referenced image to make it more accessible next time
+        unsigned int cindm = (vars._width + cind)/2;
+        vars[cind].swap(vars[cindm]);
+        varnames[cind].swap(varnames[cindm]);
       }
-*/
     } else s_value.assign(1,1,1,1,0);
   } else s_value.assign(value,(unsigned int)(std::strlen(value) + 1),1,1,1,true);
 
@@ -3542,11 +3543,13 @@ const char *gmic::set_variable(const char *const name, const char operation,
 #endif
   }
 
-/*  if (!is_new_variable && ind!=vars._width - 1) {
-    vars[ind].swap(vars.back()); // Ensure direct access to this variable next time
-    varnames[ind].swap(varnames.back());
+  // Modify slot position of modified/created variable to make it more accessible next time.
+  if (ind!=vars._width - 1) {
+    unsigned int indm = (vars._width + ind)/2;
+    vars[ind].swap(vars[indm]);
+    varnames[ind].swap(varnames[indm]);
   }
-*/
+
   if (is_thread_global) cimg::mutex(30,0);
   return vars[ind].data();
 }
@@ -3568,12 +3571,13 @@ const char *gmic::set_variable(const char *const name, const CImg<unsigned char>
 
   // Retrieve index of current definition.
   for (int l = vars.width() - 1; l>=lmin; --l) if (!std::strcmp(varnames[l],name)) { ind = l; break; }
-  if (ind!=~0U) s_value.move_to(vars[ind]); // Update variable
-  else  { // New variable
+  if (ind==~0U) { // Create new variable slot if needed
     ind = vars._width;
+    vars.insert(1);
     CImg<char>::string(name).move_to(varnames);
-    s_value.move_to(vars);
   }
+  s_value.move_to(vars[ind]); // Update variable
+
   if (is_thread_global) cimg::mutex(30,0);
   return vars[ind].data();
 }
