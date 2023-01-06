@@ -3546,8 +3546,6 @@ const char *gmic::set_variable(const char *const name, const char operation,
 
     if (operation=='.') { // Append
       if (l_value) {
-        //        --vars[ind]._width;
-        //        vars[ind].append(CImg<char>::string(value,true,true),'x');
         if (varwidth) {
           const unsigned int varlength = *varlengths[ind];
           char *ptrd = vars[ind].data() + varlength;
