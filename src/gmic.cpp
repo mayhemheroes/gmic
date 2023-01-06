@@ -3425,14 +3425,15 @@ CImg<char> gmic::get_variable(const char *const name,
 //--------------------
 // 'operation' can be { 0 (add new variable), '=' (replace or add), '.' (append), ',' (prepend),
 //                      '+', '-', '*', '/', '%', '&', '|', '^', '<', '>' }
+// If 'operation' is arithmetic (in { +,-,*,/,%,&,|,^,<,> }), 'value' must be 0 and 'dvalue' must be defined.
 // Return the new variable value.
 const char *gmic::set_variable(const char *const name, const char operation,
-                               const char *const value, const double pvalue,
+                               const char *const value, const double dvalue,
                                const unsigned int *const variables_sizes) {
   const bool
     is_global = *name=='_',
     is_thread_global = is_global && name[1]=='_',
-    is_arithmetic = operation && operation!='=' && operation!='.' && operation!=',';
+    is_arithmetic = value==0;
   const char *const s_operation = !is_arithmetic?0:
     operation=='+'?"+":operation=='-'?"-":operation=='*'?"*":operation=='/'?"/":operation=='%'?"%":
     operation=='&'?"&":operation=='|'?"|":operation=='^'?"^":operation=='<'?"<<":">>";
@@ -3492,7 +3493,7 @@ const char *gmic::set_variable(const char *const name, const char operation,
     } else s_value.assign(1,1,1,1,0);
   } else if (!operation || operation=='=' || operation=='.' || operation==',') {
     if (value) s_value.assign(value,(unsigned int)(std::strlen(value) + 1),1,1,1,true);
-    else { s_value.assign(24); s_value._width = 1 + cimg_snprintf(s_value,s_value.width(),"%.17g",pvalue); }
+    else { s_value.assign(24); s_value._width = 1 + cimg_snprintf(s_value,s_value.width(),"%.17g",dvalue); }
   } else s_value.assign(24); // Arithmetic self-operator : value will be determined later
 
   // Store variable content.
@@ -3509,7 +3510,7 @@ const char *gmic::set_variable(const char *const name, const char operation,
     break;
   default : { // Arithmetic operator
     double rvalue = 0;
-    if (!value) rvalue = pvalue; // For self-operators, right-hand side *must* be passed as a double value
+    if (!value) rvalue = dvalue; // For self-operators, right-hand side *must* be passed as a double value
     else error(true,"Operator '%s=' on variable '%s': Right-hand side '%s' not defined as a double value.",
                s_operation,name,cimg::strellipsize(s_value,64,false));
     cimg_snprintf(s_value,s_value.width(),"%.17g",
