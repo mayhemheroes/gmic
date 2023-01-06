@@ -3535,7 +3535,7 @@ const char *gmic::set_variable(const char *const name, const char operation,
 
     if (c_is_thread_global && !is_thread_global) cimg::mutex(30,0);
 
-  } else {
+  } else { // Append, prepend and assign
     unsigned int l_value = 0;
     if (value) { l_value = (unsigned int)std::strlen(value); s_value.assign(value,l_value + 1U,1,1,1,true); }
     else {
@@ -3544,20 +3544,25 @@ const char *gmic::set_variable(const char *const name, const char operation,
       l_value = (unsigned int)std::strlen(s_value);
     }
 
-    if (operation=='.') { // Append
-      if (l_value) {
-        if (varwidth) {
-          const unsigned int varlength = *varlengths[ind];
-          char *ptrd = vars[ind].data() + varlength;
-          CImg<char>(s_value._data,l_value + 1,1,1,1,true).append_string_to(vars[ind],ptrd);
-        } else CImg<char>(s_value._data,l_value + 1,1,1,1,true).move_to(vars[ind]);
-        *varlengths[ind]+=l_value;
+    if (operation=='.' || operation==',') { // Append and prepend
+      const unsigned int varlength = *varlengths[ind];
+      if (!varwidth) CImg<char>(s_value._data,l_value + 1,1,1,1,true).move_to(vars[ind]);
+      else if (l_value && operation=='.') { // Append
+        if (varlength + l_value + 1>varwidth) { // Reallocation needed
+          CImg<char> tmp(2*varwidth + l_value + 1);
+          std::memcpy(tmp,vars[ind],varlength);
+          tmp.move_to(vars[ind]);
+        }
+        std::memcpy(vars[ind]._data + varlength,s_value,l_value + 1);
+      } else if (l_value && operation==',') { // Prepend
+        if (varlength + l_value + 1>varwidth) { // Reallocation needed
+          CImg<char> tmp(2*varwidth + l_value + 1);
+          std::memcpy(tmp._data + l_value,vars[ind],varlength + 1);
+          tmp.move_to(vars[ind]);
+        } else std::memmove(vars[ind]._data + l_value,vars[ind]._data,varlength + 1);
+        std::memcpy(vars[ind],s_value,l_value);
       }
-    } else if (operation==',') { // Prepend
-      if (l_value) {
-        CImg<char>::string(value,false,false).append(vars[ind],'x').move_to(vars[ind]);
-        *varlengths[ind]+=l_value;
-      }
+      *varlengths[ind]+=l_value;
     } else { // Assign
       if (s_value._width<=varwidth && varwidth<=8*s_value._width) // Replace in-place
         std::memcpy(vars[ind],s_value,s_value._width);
