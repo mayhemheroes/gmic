@@ -3402,7 +3402,7 @@ CImg<char> gmic::get_variable(const char *const name,
       cimglist_rof(_images_names,l) if (_images_names[l] && !std::strcmp(_images_names[l],name)) { ind = l; break; }
     }
     if (ind!=~0U) {
-      unsigned int tmp = std::max(1U,ind), l_tmp;
+      unsigned int tmp = std::max(1U,ind), l_tmp = 0;
       while (tmp) { ++l_tmp; tmp/=10; }
       res.assign(l_tmp + 1,1,1,1,0);
       cimg_snprintf(res,res.width(),"%u",ind);
