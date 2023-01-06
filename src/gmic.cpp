@@ -3408,8 +3408,8 @@ CImg<char> gmic::get_variable(const char *const name,
       cimg_snprintf(res,res.width(),"%u",ind);
     } else { // Variable name may stand for an environment variable
       const char *const env = std::getenv(name);
-      if (env) res.assign(CImg<char>::string(env,true,true),true); // Otherwise, 'res' is empty
-    }
+      if (env) res.assign(CImg<char>::string(env,true,true),true);
+    } // Otherwise, 'res' is empty
   }
 
   if (is_thread_global) cimg::mutex(30,0);
