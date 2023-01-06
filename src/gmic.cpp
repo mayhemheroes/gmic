@@ -3426,7 +3426,6 @@ CImg<char> gmic::get_variable(const char *const name,
 // 'operation' can be { 0 (add new variable), '=' (replace or add), '.' (append), ',' (prepend),
 //                      '+', '-', '*', '/', '%', '&', '|', '^', '<', '>' }
 // If 'operation' is arithmetic (in { +,-,*,/,%,&,|,^,<,> }), 'value' must be ==0 and 'dvalue' must be defined.
-// Otherwise, 'value' must be !=0.
 // Return the new variable value.
 const char *gmic::set_variable(const char *const name, const char operation,
                                const char *const value, const double dvalue,
@@ -3436,7 +3435,7 @@ const char *gmic::set_variable(const char *const name, const char operation,
     is_thread_global = is_global && name[1]=='_',
     is_arithmetic = operation && operation!='=' && operation!='.' && operation!=',';
 
-  if ((is_arithmetic && value) || (!is_arithmetic && !value))
+  if (is_arithmetic && value)
     error(true,"Internal error: Invalid arguments to gmic::set_variable(); "
           "name='%s', operation=%d, value='%s' and dvalue='%g'.",
           name,operation,value,dvalue);
@@ -3493,7 +3492,7 @@ const char *gmic::set_variable(const char *const name, const char operation,
                   operation=='^'?std::pow(cvalue,dvalue):
                   operation=='<'?(double)((cimg_long)cvalue << (unsigned int)dvalue):
                   (double)((cimg_long)cvalue >> (unsigned int)dvalue));
-  } else if ((!operation || operation=='=') && *value==gmic_store &&
+  } else if ((!operation || operation=='=') && value && *value==gmic_store &&
              !std::strncmp(value + 1,"*store/",7) && value[8]) { // Get value from image-encoded variable
     const char *const cname = value + 8;
     const bool is_cglobal = *cname=='_';
@@ -3513,7 +3512,10 @@ const char *gmic::set_variable(const char *const name, const char operation,
         varnames[cind].swap(varnames[cindm]);
       }
     } else s_value.assign(1,1,1,1,0);
-  } else s_value.assign(value,(unsigned int)(std::strlen(value) + 1),1,1,1,true);
+  } else {
+    if (value) s_value.assign(value,(unsigned int)(std::strlen(value) + 1),1,1,1,true);
+    else { s_value.assign(24); cimg_snprintf(s_value,s_value.width(),"%.17g",dvalue); }
+  }
 
   // Store variable content.
   switch (operation) {
