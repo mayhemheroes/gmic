@@ -3477,9 +3477,9 @@ const char *gmic::set_variable(const char *const name, const char operation,
     }
   }
 
-  // Get target value (in string 's_value').
+  // Store variable content.
   CImg<char> s_value;
-  if (is_arithmetic) { // Perform arithmetic operation
+  if (is_arithmetic) { // Assign with arithmetic operation
     s_value.assign(24);
     cimg_snprintf(s_value,s_value.width(),"%.17g",
                   operation=='+'?cvalue + dvalue:
@@ -3492,8 +3492,10 @@ const char *gmic::set_variable(const char *const name, const char operation,
                   operation=='^'?std::pow(cvalue,dvalue):
                   operation=='<'?(double)((cimg_long)cvalue << (unsigned int)dvalue):
                   (double)((cimg_long)cvalue >> (unsigned int)dvalue));
+    s_value.move_to(vars[ind]);
+
   } else if ((!operation || operation=='=') && value && *value==gmic_store &&
-             !std::strncmp(value + 1,"*store/",7) && value[8]) { // Get value from image-encoded variable
+             !std::strncmp(value + 1,"*store/",7) && value[8]) { // Assign from another image-encoded variable
     const char *const cname = value + 8;
     const bool is_cglobal = *cname=='_';
     const unsigned int chash = hashcode(cname,true);
@@ -3505,34 +3507,27 @@ const char *gmic::set_variable(const char *const name, const char operation,
       cvars[cind].get_resize((unsigned int)(cvars[cind].width() + std::strlen(name) - std::strlen(cname)),
                              1,1,1,0,0,1).move_to(s_value);
       cimg_snprintf(s_value,s_value._width,"%c*store/%s",gmic_store,name);
-
       if (cind!=vars._width - 1) { // Modify slot position of referenced image to make it more accessible next time
         unsigned int cindm = (vars._width + cind)/2;
         vars[cind].swap(vars[cindm]);
         varnames[cind].swap(varnames[cindm]);
       }
     } else s_value.assign(1,1,1,1,0);
+    s_value.move_to(vars[ind]);
+
   } else {
     if (value) s_value.assign(value,(unsigned int)(std::strlen(value) + 1),1,1,1,true);
     else { s_value.assign(24); cimg_snprintf(s_value,s_value.width(),"%.17g",dvalue); }
+
+    if (operation=='.') { // Append
+      if (*value) { --vars[ind]._width; vars[ind].append(CImg<char>::string(value,true,true),'x'); }
+    } else if (operation==',') { // Prepend
+      if (*value) CImg<char>::string(value,false,false).append(vars[ind],'x').move_to(vars[ind]);
+    } else s_value.move_to(vars[ind]); // Assign
   }
 
-  // Store variable content.
-  switch (operation) {
-  case '.' : // Append
-    if (!vars[ind]) s_value.move_to(vars[ind]);
-    else if (*value) { --vars[ind]._width; vars[ind].append(CImg<char>::string(value,true,true),'x'); }
-    break;
-  case ';' : // Prepend
-    if (!vars[ind]) s_value.move_to(vars[ind]);
-    else if (*value) CImg<char>::string(value,false,false).append(vars[ind],'x').move_to(vars[ind]);
-    break;
-  default : // Assign and arithmetic operators
-    s_value.move_to(vars[ind]);
-    break;
-  }
-
-  if (!std::strcmp(name,"_cpus")) { // Set max number of threads for multi-threaded operators
+  // Manage particular case of variable '_cpus': Set max number of threads for multi-threaded operators.
+  if (!std::strcmp(name,"_cpus")) {
     int nb_cpus = 0;
     if (cimg_sscanf(vars[ind],"%d%c",&nb_cpus,&end)!=1 || nb_cpus<=0) {
       s_value.assign(8);
@@ -14527,7 +14522,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   new_value = set_variable(varnames[k],sep0,varvalues[l],0,variables_sizes);
                   if (is_verbose) {
                     cimg::strellipsize(varnames[k],gmic_use_argx,80,true);
-                    cimg::strellipsize(varvalues[l],gmic_use_argy,80,true);
+                    cimg::strellipsize(new_value,gmic_use_argy,80,true);
                     const char *const s_sep = k==varnames.width() - 2?" and":",";
                     gmic_use_message;
                     cimg_snprintf(message,_message.width(),"'%s=%s'%s ",
@@ -14587,8 +14582,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                     cimg::strellipsize(varnames[0],gmic_use_argx,80,true);
                     cimg::strellipsize(varvalues[0],gmic_use_argy,80,true);
                     cimg::strellipsize(new_value,gmic_use_argz,80,true);
-                    print(images,0,"Set %s variable '%s:=%s'->'%s'.",
-                          *item=='_'?"global":"local",
+                    print(images,0,"Set %svariable '%s:=%s'->'%s'.",
+                          *item=='_'?"global ":"local ",
                           argx,argy,argz);
                   }
                 } else {
