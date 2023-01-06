@@ -3464,7 +3464,7 @@ const char *gmic::set_variable(const char *const name, const char operation,
     ind = vars._width;
     vars.insert(1);
     CImg<char>::string(name).move_to(varnames);
-    CImg<unsigned int>::vector(1976).move_to(varlengths);
+    CImg<unsigned int>(1).move_to(varlengths);
   }
 
   // If arithmetic operation, get current variable value ('cvalue').
@@ -3493,6 +3493,7 @@ const char *gmic::set_variable(const char *const name, const char operation,
                   operation=='^'?std::pow(cvalue,dvalue):
                   operation=='<'?(double)((cimg_long)cvalue << (unsigned int)dvalue):
                   (double)((cimg_long)cvalue >> (unsigned int)dvalue));
+    *varlengths[ind] = std::strlen(vars[ind]);
 
   } else if ((!operation || operation=='=') && value && *value==gmic_store &&
              !std::strncmp(value + 1,"*store/",7) && value[8]) { // Assign from another image-encoded variable
@@ -3509,7 +3510,8 @@ const char *gmic::set_variable(const char *const name, const char operation,
     unsigned int c_ind = ~0U;
     for (int l = c_vars.width() - 1; l>=c_lmin; --l) if (!std::strcmp(c_varnames[l],c_name)) { c_ind = l; break; }
     if (c_ind!=~0U) {
-      c_vars[c_ind].get_resize((unsigned int)(c_vars[c_ind].width() + std::strlen(name) - std::strlen(c_name)),
+      const unsigned int l_name = (unsigned int)std::strlen(name);
+      c_vars[c_ind].get_resize(c_vars[c_ind]._width + l_name - (unsigned int)std::strlen(c_name),
                                1,1,1,0,0,1).move_to(s_value);
       cimg_snprintf(s_value,s_value._width,"%c*store/%s",gmic_store,name);
       if (c_ind!=c_vars._width - 1) { // Modify slot position of referenced image to make it more accessible next time
@@ -3519,22 +3521,34 @@ const char *gmic::set_variable(const char *const name, const char operation,
         c_varlengths[c_ind].swap(c_varlengths[c_indm]);
       }
       s_value.move_to(vars[ind]);
-    } else if (varwidth>0 && varwidth<24) *vars[ind] = 0; else vars[ind].assign(1,1,1,1,0);
+      *varlengths[ind] = l_name + 8;
+    } else {
+      if (varwidth>0 && varwidth<24) *vars[ind] = 0; else vars[ind].assign(1,1,1,1,0);
+      *varlengths[ind] = 0;
+    }
 
     if (c_is_thread_global && !is_thread_global) cimg::mutex(30,0);
 
   } else {
-    if (value) s_value.assign(value,(unsigned int)(std::strlen(value) + 1),1,1,1,true);
-    else { s_value.assign(24); cimg_snprintf(s_value,s_value.width(),"%.17g",dvalue); }
+    unsigned int l_value = 0;
+    if (value) { l_value = (unsigned int)std::strlen(value); s_value.assign(value,l_value + 1U,1,1,1,true); }
+    else {
+      s_value.assign(24);
+      cimg_snprintf(s_value,s_value.width(),"%.17g",dvalue);
+      l_value = (unsigned int)std::strlen(s_value);
+    }
 
     if (operation=='.') { // Append
-      if (*value) { --vars[ind]._width; vars[ind].append(CImg<char>::string(value,true,true),'x'); }
+      if (l_value) { --vars[ind]._width; vars[ind].append(CImg<char>::string(value,true,true),'x'); }
+      *varlengths[ind]+=l_value;
     } else if (operation==',') { // Prepend
-      if (*value) CImg<char>::string(value,false,false).append(vars[ind],'x').move_to(vars[ind]);
+      if (l_value) CImg<char>::string(value,false,false).append(vars[ind],'x').move_to(vars[ind]);
+      *varlengths[ind]+=l_value;
     } else { // Assign
       if (s_value._width<=varwidth && varwidth<=8*s_value._width) // Replace in-place
         std::memcpy(vars[ind],s_value,s_value._width);
       else s_value.move_to(vars[ind]);
+      *varlengths[ind] = l_value;
     }
   }
 
@@ -3584,7 +3598,7 @@ const char *gmic::set_variable(const char *const name, const CImg<unsigned char>
     ind = vars._width;
     vars.insert(1);
     CImg<char>::string(name).move_to(varnames);
-    CImg<unsigned int>::vector(1976).move_to(varlengths);
+    CImg<unsigned int>(1).move_to(varlengths);
   }
   s_value.move_to(vars[ind]); // Update variable
 
