@@ -3496,31 +3496,30 @@ const char *gmic::set_variable(const char *const name, const char operation,
 
   } else if ((!operation || operation=='=') && value && *value==gmic_store &&
              !std::strncmp(value + 1,"*store/",7) && value[8]) { // Assign from another image-encoded variable
-    const char *const cname = value + 8;
+    const char *const c_name = value + 8;
     const bool
-      is_cglobal = *cname=='_',
-      is_cthread_global = is_cglobal && cname[1]=='_';
+      c_is_global = *c_name=='_',
+      c_is_thread_global = c_is_global && c_name[1]=='_';
+    if (c_is_thread_global && !is_thread_global) cimg::mutex(30);
 
-    if (is_cthread_global && !is_thread_global) cimg::mutex(30);
-
-    const unsigned int chash = hashcode(cname,true);
-    const int clmin = is_cglobal || !variables_sizes?0:(int)variables_sizes[chash];
-    CImgList<char> &cvars = *variables[chash], &cvarnames = *variables_names[chash];
-    unsigned int cind = ~0U;
-    for (int l = cvars.width() - 1; l>=clmin; --l) if (!std::strcmp(cvarnames[l],cname)) { cind = l; break; }
-    if (cind!=~0U) {
-      cvars[cind].get_resize((unsigned int)(cvars[cind].width() + std::strlen(name) - std::strlen(cname)),
-                             1,1,1,0,0,1).move_to(s_value);
+    const unsigned int c_hash = hashcode(c_name,true);
+    const int c_lmin = c_is_global || !variables_sizes?0:(int)variables_sizes[c_hash];
+    CImgList<char> &c_vars = *variables[c_hash], &c_varnames = *variables_names[c_hash];
+    unsigned int c_ind = ~0U;
+    for (int l = c_vars.width() - 1; l>=c_lmin; --l) if (!std::strcmp(c_varnames[l],c_name)) { c_ind = l; break; }
+    if (c_ind!=~0U) {
+      c_vars[c_ind].get_resize((unsigned int)(c_vars[c_ind].width() + std::strlen(name) - std::strlen(c_name)),
+                               1,1,1,0,0,1).move_to(s_value);
       cimg_snprintf(s_value,s_value._width,"%c*store/%s",gmic_store,name);
-      if (cind!=vars._width - 1) { // Modify slot position of referenced image to make it more accessible next time
-        unsigned int cindm = (vars._width + cind)/2;
-        vars[cind].swap(vars[cindm]);
-        varnames[cind].swap(varnames[cindm]);
+      if (c_ind!=c_vars._width - 1) { // Modify slot position of referenced image to make it more accessible next time
+        unsigned int c_indm = (c_vars._width + c_ind)/2;
+        c_vars[c_ind].swap(c_vars[c_indm]);
+        c_varnames[c_ind].swap(c_varnames[c_indm]);
       }
-    } else s_value.assign(1,1,1,1,0);
-    s_value.move_to(vars[ind]);
+      s_value.move_to(vars[ind]);
+    } else if (varwidth>0 && varwidth<24) *vars[ind] = 0; else vars[ind].assign(1,1,1,1,0);
 
-    if (is_cthread_global && !is_thread_global) cimg::mutex(30,0);
+    if (c_is_thread_global && !is_thread_global) cimg::mutex(30,0);
 
   } else {
     if (value) s_value.assign(value,(unsigned int)(std::strlen(value) + 1),1,1,1,true);
