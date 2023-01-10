@@ -153,13 +153,13 @@ EXE = .exe
 PIC =
 endif
 
-ifeq ($(shell echo $(notdir $(CXX)) | head -c3),g++)
+ifneq (,$(findstring g++,$(CXX)))
 IS_GCC = 1
 endif
-ifeq ($(shell echo $(notdir $(CXX)) | head -c7),clang++)
+ifneq (,$(findstring clang++,$(CXX)))
 IS_CLANG = 1
 endif
-ifeq ($(shell echo $(notdir $(CXX)) | head -c4),icpc)
+ifneq (,$(findstring icpc,$(CXX)))
 IS_ICPC = 1
 endif
 
@@ -214,6 +214,9 @@ OPT_CFLAGS =
 ifdef IS_GCC
 OPT_CFLAGS += -O3 -mtune=generic # $(FLTO)
 OPT_LIBS = # $(FLTO)
+endif
+ifdef IS_CLANG
+OPT_CFLAGS += -O3 -mtune=generic # $(FLTO)
 endif
 ifdef icpc
 OPT_CFLAGS += -fast
