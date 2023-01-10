@@ -230,8 +230,13 @@ endif
 
 # Enable parallelization in CImg, using OpenMP.
 # (http://www.openmp.org/)
+ifdef IS_CLANG
+OPENMP_CFLAGS = -I/usr/lib/gcc/x86_64-linux-gnu/9/include -Dcimg_use_openmp -fopenmp=libomp
+OPENMP_LIBS =
+else
 OPENMP_CFLAGS = -fopenmp -Dcimg_use_openmp
 OPENMP_LIBS = -lgomp
+endif
 
 # Enable software debugging.
 # (Use address sanitizer and thus slows down the code)
