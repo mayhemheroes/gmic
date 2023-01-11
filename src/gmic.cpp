@@ -3476,7 +3476,7 @@ const char *gmic::set_variable(const char *const name, const char operation,
   }
 
   // If arithmetic operation, get current variable value ('cvalue').
-  double cvalue;
+  double cvalue = 0;
   if (is_arithmetic) {
     if (cimg_sscanf(vars[ind],"%lf%c",&cvalue,&end)!=1) {
       if (is_thread_global) cimg::mutex(30,0);
@@ -3501,7 +3501,7 @@ const char *gmic::set_variable(const char *const name, const char operation,
                   operation=='^'?std::pow(cvalue,dvalue):
                   operation=='<'?(double)((cimg_long)cvalue << (unsigned int)dvalue):
                   (double)((cimg_long)cvalue >> (unsigned int)dvalue));
-    varlengths[ind] = std::strlen(vars[ind]);
+    varlengths[ind] = (unsigned int)std::strlen(vars[ind]);
 
   } else if ((!operation || operation=='=') && value && *value==gmic_store &&
              !std::strncmp(value + 1,"*store/",7) && value[8]) { // Assign from another image-encoded variable
@@ -13087,7 +13087,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   unsigned int l_font = 0;
                   const CImg<char> s_font = get_variable(argz,variables_sizes,&images_names,&l_font);
                   CImgList<T>::get_unserialize(s_font,l_font + 1).move_to(font);
-                } catch (CImgException& e) {
+                } catch (CImgException&) {
                   error(true,images,0,0,
                         "Command 'text': Specified custom font '%s' is invalid.",
                         argz);

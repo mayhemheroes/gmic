@@ -153,13 +153,13 @@ EXE = .exe
 PIC =
 endif
 
-ifeq ($(shell echo $(notdir $(CXX)) | head -c3),g++)
+ifneq (,$(findstring g++,$(CXX)))
 IS_GCC = 1
 endif
-ifeq ($(shell echo $(notdir $(CXX)) | head -c7),clang++)
+ifneq (,$(findstring clang++,$(CXX)))
 IS_CLANG = 1
 endif
-ifeq ($(shell echo $(notdir $(CXX)) | head -c4),icpc)
+ifneq (,$(findstring icpc,$(CXX)))
 IS_ICPC = 1
 endif
 
@@ -215,6 +215,9 @@ ifdef IS_GCC
 OPT_CFLAGS += -O3 -mtune=generic # $(FLTO)
 OPT_LIBS = # $(FLTO)
 endif
+ifdef IS_CLANG
+OPT_CFLAGS += -O3 -mtune=generic # $(FLTO)
+endif
 ifdef icpc
 OPT_CFLAGS += -fast
 endif
@@ -227,8 +230,13 @@ endif
 
 # Enable parallelization in CImg, using OpenMP.
 # (http://www.openmp.org/)
+ifdef IS_CLANG
+OPENMP_CFLAGS = -I/usr/lib/gcc/x86_64-linux-gnu/9/include -Dcimg_use_openmp -fopenmp=libomp
+OPENMP_LIBS =
+else
 OPENMP_CFLAGS = -fopenmp -Dcimg_use_openmp
 OPENMP_LIBS = -lgomp
+endif
 
 # Enable software debugging.
 # (Use address sanitizer and thus slows down the code)
