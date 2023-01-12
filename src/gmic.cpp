@@ -4355,6 +4355,8 @@ gmic& gmic::_gmic(const char *const commands_line,
   _is_abort = false;
   is_abort = &_is_abort;
   is_abort_thread = false;
+  if (p_progress) progress = p_progress; else { _progress = -1; progress = &_progress; }
+  if (p_is_abort) is_abort = p_is_abort; else { _is_abort = false; is_abort = &_is_abort; }
 
   starting_commands_line = commands_line;
 
@@ -4472,7 +4474,7 @@ gmic& gmic::_gmic(const char *const commands_line,
   // Launch G'MIC interpreter.
   const CImgList<char> items = commands_line?commands_line_to_CImgList(commands_line):CImgList<char>::empty();
   try {
-    _run(items,images,images_names,p_progress,p_is_abort);
+    _run(items,images,images_names);
   } catch (gmic_exception&) {
     print(images,0,"Abort G'MIC interpreter (caught exception).\n");
     throw;
@@ -5345,20 +5347,16 @@ CImg<char> gmic::substitute_item(const char *const source,
 // Main parsing procedures.
 //-------------------------
 template<typename T>
-gmic& gmic::run(const char *const commands_line,
-                float *const p_progress, bool *const p_is_abort,
-                const T& pixel_type) {
+gmic& gmic::run(const char *const commands_line, const T& pixel_type) {
   cimg::unused(pixel_type);
   CImgList<T> images;
   CImgList<char> images_names;
-  return run(commands_line,images,images_names,
-             p_progress,p_is_abort);
+  return run(commands_line,images,images_names);
 }
 
 template<typename T>
 gmic& gmic::run(const char *const commands_line,
-                CImgList<T> &images, CImgList<char> &images_names,
-                float *const p_progress, bool *const p_is_abort) {
+                CImgList<T> &images, CImgList<char> &images_names) {
   cimg::mutex(26);
   if (is_running)
     error(true,images,0,0,
@@ -5367,16 +5365,14 @@ gmic& gmic::run(const char *const commands_line,
   is_running = true;
   cimg::mutex(26,0);
   starting_commands_line = commands_line;
-  _run(commands_line_to_CImgList(commands_line),
-       images,images_names,p_progress,p_is_abort);
+  _run(commands_line_to_CImgList(commands_line),images,images_names);
   is_running = false;
   return *this;
 }
 
 template<typename T>
 gmic& gmic::_run(const CImgList<char>& commands_line,
-                 CImgList<T> &images, CImgList<char> &images_names,
-                 float *const p_progress, bool *const p_is_abort) {
+                 CImgList<T> &images, CImgList<char> &images_names) {
   CImg<unsigned int> variables_sizes(gmic_varslots,1,1,1,0);
   unsigned int position = 0;
   setlocale(LC_NUMERIC,"C");
@@ -5394,8 +5390,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line,
   debug_line = ~0U;
   is_change = is_debug_info = is_debug = is_quit = is_return = false;
   is_start = true;
-  if (p_progress) progress = p_progress; else { _progress = -1; progress = &_progress; }
-  if (p_is_abort) is_abort = p_is_abort; else { _is_abort = false; is_abort = &_is_abort; }
   is_abort_thread = false;
   *progress = -1;
   cimglist_for(commands_line,l) {
@@ -15882,12 +15876,9 @@ template gmic& gmic::assign(const char *const commands_line, \
                             CImgList<pt>& images, CImgList<char>& images_names, \
                             const char *const custom_commands, const bool include_stdlib, \
                             float *const p_progress, bool *const p_is_abort); \
+template gmic& gmic::run(const char *const commands_line, const pt& pixel_type); \
 template gmic& gmic::run(const char *const commands_line, \
-                         float *const p_progress, bool *const p_is_abort,\
-                         const pt& pixel_type); \
-template gmic& gmic::run(const char *const commands_line, \
-                         CImgList<pt> &images, CImgList<char> &images_names, \
-                         float *const p_progress, bool *const p_is_abort); \
+                         CImgList<pt> &images, CImgList<char> &images_names); \
 template CImg<pt>& CImg<pt>::assign(const unsigned int size_x, const unsigned int size_y, \
                                     const unsigned int size_z, const unsigned int size_c); \
 template CImgList<pt>& CImgList<pt>::assign(const unsigned int n)

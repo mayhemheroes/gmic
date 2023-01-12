@@ -213,8 +213,8 @@ namespace gmic_library {
 
 #ifdef cimg_use_abort
 inline bool *gmic_current_is_abort();
-//#define cimg_abort_init bool *const gmic_is_abort = ::gmic_current_is_abort()
-//#define cimg_abort_test if (*gmic_is_abort) throw CImgAbortException()
+#define cimg_abort_init bool *const gmic_is_abort = ::gmic_current_is_abort()
+#define cimg_abort_test if (*gmic_is_abort) throw CImgAbortException()
 #endif
 
 inline double gmic_mp_dollar(const char *const str, void *const p_list);
@@ -308,12 +308,10 @@ struct gmic {
 
   // Run G'MIC pipeline on an already-constructed object.
   template<typename T>
-  gmic& run(const char *const commands_line, float *const p_progress=0, bool *const p_is_abort=0,
-            const T& pixel_type=(T)0);
+  gmic& run(const char *const commands_line, const T& pixel_type=(T)0);
 
   template<typename T>
-  gmic& run(const char *const commands_line, gmic_list<T> &images, gmic_list<char> &images_names,
-            float *const p_progress=0, bool *const p_is_abort=0);
+  gmic& run(const char *const commands_line, gmic_list<T> &images, gmic_list<char> &images_names);
 
   // Bridge for calling gmic with classes compatible with 'gmic_list'.
   template<typename ti, typename tn>
@@ -337,12 +335,9 @@ struct gmic {
   }
 
   template<typename ti, typename tn>
-  gmic& run(const char *const commands_line,
-            ti& images, tn& images_names,
-            float *const p_progress=0, bool *const p_is_abort=0) {
+  gmic& run(const char *const commands_line, ti& images, tn& images_names) {
     return run(commands_line,
-               *(gmic_list<gmic_pixel_type>*)&images,*(gmic_list<char>*)&images_names,
-               p_progress, p_is_abort);
+               *(gmic_list<gmic_pixel_type>*)&images,*(gmic_list<char>*)&images_names);
   }
 
   // These functions return (or init) G'MIC-specific paths.
@@ -475,8 +470,7 @@ struct gmic {
                       const unsigned int start, const unsigned int end);
 
   template<typename T>
-  gmic& _run(const gmic_list<char>& commands_line, gmic_list<T> &images, gmic_list<char> &images_names,
-             float *const p_progress, bool *const p_is_abort);
+  gmic& _run(const gmic_list<char>& commands_line, gmic_list<T> &images, gmic_list<char> &images_names);
 
   template<typename T>
   gmic& _run(const gmic_list<char>& commands_line, unsigned int& position, gmic_list<T>& images,
