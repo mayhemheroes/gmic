@@ -4330,8 +4330,8 @@ gmic& gmic::_gmic(const char *const commands_line,
   light3d_z = -5e8f;
   specular_lightness3d = 0.15f;
   specular_shininess3d = 0.8f;
-  _progress = 0;
-  progress = &_progress;
+  progress = p_progress?p_progress:&_progress;
+  *progress = -1;
 
   reference_time = cimg::time();
 
@@ -4352,12 +4352,9 @@ gmic& gmic::_gmic(const char *const commands_line,
   is_return = is_quit = false;
   is_double3d = true;
   is_debug_info = false;
-  _is_abort = false;
-  is_abort = &_is_abort;
+  is_abort = p_is_abort?p_is_abort:&_is_abort;
+  *is_abort = false;
   is_abort_thread = false;
-  if (p_progress) progress = p_progress; else { _progress = -1; progress = &_progress; }
-  if (p_is_abort) is_abort = p_is_abort; else { _is_abort = false; is_abort = &_is_abort; }
-
   starting_commands_line = commands_line;
 
   // Import standard library and custom commands.
