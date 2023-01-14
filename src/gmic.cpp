@@ -14196,14 +14196,18 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                            cimg_sscanf(nsource + 2,"%255[a-zA-Z0-9_]",gmic_use_title)==1 &&
                            (*title<'0' || *title>'9')) {
                   nsource+=2 + std::strlen(title);
+                  CImg<char>::append_string_to(' ',substituted_command,ptr_sub);
                   for (unsigned int i = 0; i<=nb_arguments; ++i) {
-                    cimg_snprintf(substr,substr.width()," %s%u=\"",title,i);
+                    cimg_snprintf(substr,substr.width(),"%s%u%c",title,i,i==nb_arguments?'=':',');
                     CImg<char>(substr.data(),(unsigned int)std::strlen(substr),1,1,1,true).
                       append_string_to(substituted_command,ptr_sub);
+                  }
+                  for (unsigned int i = 0; i<=nb_arguments; ++i) {
+                    CImg<char>::append_string_to('\"',substituted_command,ptr_sub);
                     CImg<char>(arguments[i].data(),arguments[i].width() - 1,1,1,1,true).
                       append_string_to(substituted_command,ptr_sub);
                     CImg<char>::append_string_to('\"',substituted_command,ptr_sub);
-                    CImg<char>::append_string_to(' ',substituted_command,ptr_sub);
+                    CImg<char>::append_string_to(i==nb_arguments?' ':',',substituted_command,ptr_sub);
                   }
                   has_arguments = true;
 
