@@ -221,6 +221,10 @@ inline double gmic_mp_dollar(const char *const str, void *const p_list);
 #define cimg_mp_operator_dollar(str) \
   ::gmic_mp_dollar(str,&imglist)
 
+inline double gmic_mp_abort();
+#define cimg_mp_func_abort() \
+  return ::gmic_mp_abort()
+
 template<typename T>
 inline double gmic_mp_get(double *const ptrd, const unsigned int siz, const bool to_string, const char *const str,
                           void *const p_list, const T& pixel_type);
@@ -351,6 +355,7 @@ struct gmic {
   static const gmic_image<void*> current_run(const char *const func_name, void *const p_list);
   static bool* current_is_abort();
   static double mp_dollar(const char *const str, void *const p_list);
+  static double mp_abort();
   template<typename T>
   static double mp_get(double *const ptrd, const unsigned int siz, const bool to_string, const char *const str,
                        void *const p_list, const T& pixel_type);
@@ -538,6 +543,10 @@ inline bool *gmic_current_is_abort() {
 
 inline double gmic_mp_dollar(const char *const str, void *const p_list) {
   return gmic::mp_dollar(str,p_list);
+}
+
+inline double gmic_mp_abort() {
+  return gmic::mp_abort();
 }
 
 template<typename T>

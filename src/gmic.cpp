@@ -2463,6 +2463,13 @@ double gmic::mp_dollar(const char *const str, void *const p_list) {
   return res;
 }
 
+double gmic::mp_abort() {
+  cimg_abort_init;
+  *gmic_is_abort = true;
+  cimg_abort_test;
+  return cimg::type<double>::nan();
+}
+
 template<typename T>
 double gmic::mp_get(double *const ptrd, const unsigned int siz, const bool to_string, const char *const str,
                     void *const p_list, const T& pixel_type) {
