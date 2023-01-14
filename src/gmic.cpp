@@ -2464,9 +2464,11 @@ double gmic::mp_dollar(const char *const str, void *const p_list) {
 }
 
 double gmic::mp_abort() {
+#if defined(cimg_use_abort) && !defined(__MACOSX__) && !defined(__APPLE__)
   cimg_abort_init;
   *gmic_is_abort = true;
   cimg_abort_test;
+#endif
   return cimg::type<double>::nan();
 }
 
