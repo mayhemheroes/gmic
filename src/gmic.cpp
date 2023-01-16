@@ -2463,6 +2463,15 @@ double gmic::mp_dollar(const char *const str, void *const p_list) {
   return res;
 }
 
+double gmic::mp_abort() {
+#if defined(cimg_use_abort) && !defined(__MACOSX__) && !defined(__APPLE__)
+  cimg_abort_init;
+  *gmic_is_abort = true;
+  cimg_abort_test;
+#endif
+  return cimg::type<double>::nan();
+}
+
 template<typename T>
 double gmic::mp_get(double *const ptrd, const unsigned int siz, const bool to_string, const char *const str,
                     void *const p_list, const T& pixel_type) {
@@ -4330,8 +4339,8 @@ gmic& gmic::_gmic(const char *const commands_line,
   light3d_z = -5e8f;
   specular_lightness3d = 0.15f;
   specular_shininess3d = 0.8f;
-  _progress = 0;
-  progress = &_progress;
+  progress = p_progress?p_progress:&_progress;
+  *progress = -1;
 
   reference_time = cimg::time();
 
@@ -4352,10 +4361,9 @@ gmic& gmic::_gmic(const char *const commands_line,
   is_return = is_quit = false;
   is_double3d = true;
   is_debug_info = false;
-  _is_abort = false;
-  is_abort = &_is_abort;
+  is_abort = p_is_abort?p_is_abort:&_is_abort;
+  *is_abort = false;
   is_abort_thread = false;
-
   starting_commands_line = commands_line;
 
   // Import standard library and custom commands.
@@ -4472,7 +4480,7 @@ gmic& gmic::_gmic(const char *const commands_line,
   // Launch G'MIC interpreter.
   const CImgList<char> items = commands_line?commands_line_to_CImgList(commands_line):CImgList<char>::empty();
   try {
-    _run(items,images,images_names,p_progress,p_is_abort);
+    _run(items,images,images_names);
   } catch (gmic_exception&) {
     print(images,0,"Abort G'MIC interpreter (caught exception).\n");
     throw;
@@ -5345,20 +5353,16 @@ CImg<char> gmic::substitute_item(const char *const source,
 // Main parsing procedures.
 //-------------------------
 template<typename T>
-gmic& gmic::run(const char *const commands_line,
-                float *const p_progress, bool *const p_is_abort,
-                const T& pixel_type) {
+gmic& gmic::run(const char *const commands_line, const T& pixel_type) {
   cimg::unused(pixel_type);
   CImgList<T> images;
   CImgList<char> images_names;
-  return run(commands_line,images,images_names,
-             p_progress,p_is_abort);
+  return run(commands_line,images,images_names);
 }
 
 template<typename T>
 gmic& gmic::run(const char *const commands_line,
-                CImgList<T> &images, CImgList<char> &images_names,
-                float *const p_progress, bool *const p_is_abort) {
+                CImgList<T> &images, CImgList<char> &images_names) {
   cimg::mutex(26);
   if (is_running)
     error(true,images,0,0,
@@ -5367,16 +5371,14 @@ gmic& gmic::run(const char *const commands_line,
   is_running = true;
   cimg::mutex(26,0);
   starting_commands_line = commands_line;
-  _run(commands_line_to_CImgList(commands_line),
-       images,images_names,p_progress,p_is_abort);
+  _run(commands_line_to_CImgList(commands_line),images,images_names);
   is_running = false;
   return *this;
 }
 
 template<typename T>
 gmic& gmic::_run(const CImgList<char>& commands_line,
-                 CImgList<T> &images, CImgList<char> &images_names,
-                 float *const p_progress, bool *const p_is_abort) {
+                 CImgList<T> &images, CImgList<char> &images_names) {
   CImg<unsigned int> variables_sizes(gmic_varslots,1,1,1,0);
   unsigned int position = 0;
   setlocale(LC_NUMERIC,"C");
@@ -5394,8 +5396,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line,
   debug_line = ~0U;
   is_change = is_debug_info = is_debug = is_quit = is_return = false;
   is_start = true;
-  if (p_progress) progress = p_progress; else { _progress = -1; progress = &_progress; }
-  if (p_is_abort) is_abort = p_is_abort; else { _is_abort = false; is_abort = &_is_abort; }
   is_abort_thread = false;
   *progress = -1;
   cimglist_for(commands_line,l) {
@@ -14205,14 +14205,18 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                            cimg_sscanf(nsource + 2,"%255[a-zA-Z0-9_]",gmic_use_title)==1 &&
                            (*title<'0' || *title>'9')) {
                   nsource+=2 + std::strlen(title);
+                  CImg<char>::append_string_to(' ',substituted_command,ptr_sub);
                   for (unsigned int i = 0; i<=nb_arguments; ++i) {
-                    cimg_snprintf(substr,substr.width()," %s%u=\"",title,i);
+                    cimg_snprintf(substr,substr.width(),"%s%u%c",title,i,i==nb_arguments?'=':',');
                     CImg<char>(substr.data(),(unsigned int)std::strlen(substr),1,1,1,true).
                       append_string_to(substituted_command,ptr_sub);
+                  }
+                  for (unsigned int i = 0; i<=nb_arguments; ++i) {
+                    CImg<char>::append_string_to('\"',substituted_command,ptr_sub);
                     CImg<char>(arguments[i].data(),arguments[i].width() - 1,1,1,1,true).
                       append_string_to(substituted_command,ptr_sub);
                     CImg<char>::append_string_to('\"',substituted_command,ptr_sub);
-                    CImg<char>::append_string_to(' ',substituted_command,ptr_sub);
+                    CImg<char>::append_string_to(i==nb_arguments?' ':',',substituted_command,ptr_sub);
                   }
                   has_arguments = true;
 
@@ -14612,29 +14616,34 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   varvalues_d.assign(1)[0] = is_rounded?gmic_round(value):value;
                 else { // Evaluate right-hand side as a math expression.
                   CImg<T> &img = images.size()?images.back():CImg<T>::empty();
-                  name.assign((unsigned int)std::strlen(s) + 4);
-                  *name = '['; name[1] = ';'; name[name._width - 2] = ']'; name.back() = 0;
-                  std::memcpy(name.data() + 2,s,name.width() - 4);
-                  strreplace_fw(name);
-                  try { img.eval(varvalues_d,name,0,0,0,0,&images); }
-                  catch (CImgException &e) {
-                    name.assign(item,s_end_left - item + 1).back() = 0;
-                    cimg::strellipsize(name,80,true);
-                    const char *const e_ptr = std::strstr(e.what(),": ");
-                    error(true,images,0,0,
-                          "Operator '%s=' on variable%s '%s': Invalid right-hand side; %s",
-                          s_operation,varnames.width()==1?"":"s",name.data(),e_ptr?e_ptr + 2:e.what());
-                  }
-                  if (varnames.width()>1 && varvalues_d.height()!=1 && varvalues_d.height()!=varnames.width()) {
-                    name.assign(item,s_end_left - item + 1).back() = 0;
-                    cimg::strellipsize(name,80,true);
-                    cimg::strellipsize(s_equal + 1,gmic_use_argx,80,true);
-                    error(true,images,0,0,
-                          "Operator '%s=' on variable%s '%s': "
-                          "Right-hand side '%s' defines %s%d values for %s%d variables.",
-                          s_operation,varnames.size()!=1?"s":"",name.data(),argx,
-                          varvalues_d.height()<varnames.width()?"only ":"",varvalues_d.height(),
-                          varvalues_d.height()>varnames.width()?"only ":"",varnames.width());
+                  double fast_res;
+                  if (img.__eval(s,fast_res)) // Try to get fast approximation for a single scalar first
+                    varvalues_d.assign(1)[0] = fast_res;
+                  else {
+                    name.assign((unsigned int)std::strlen(s) + 4);
+                    *name = '['; name[1] = ';'; name[name._width - 2] = ']'; name.back() = 0;
+                    std::memcpy(name.data() + 2,s,name.width() - 4);
+                    strreplace_fw(name);
+                    try { img.eval(varvalues_d,name,0,0,0,0,&images); }
+                    catch (CImgException &e) {
+                      name.assign(item,s_end_left - item + 1).back() = 0;
+                      cimg::strellipsize(name,80,true);
+                      const char *const e_ptr = std::strstr(e.what(),": ");
+                      error(true,images,0,0,
+                            "Operator '%s=' on variable%s '%s': Invalid right-hand side; %s",
+                            s_operation,varnames.width()==1?"":"s",name.data(),e_ptr?e_ptr + 2:e.what());
+                    }
+                    if (varnames.width()>1 && varvalues_d.height()!=1 && varvalues_d.height()!=varnames.width()) {
+                      name.assign(item,s_end_left - item + 1).back() = 0;
+                      cimg::strellipsize(name,80,true);
+                      cimg::strellipsize(s_equal + 1,gmic_use_argx,80,true);
+                      error(true,images,0,0,
+                            "Operator '%s=' on variable%s '%s': "
+                            "Right-hand side '%s' defines %s%d values for %s%d variables.",
+                            s_operation,varnames.size()!=1?"s":"",name.data(),argx,
+                            varvalues_d.height()<varnames.width()?"only ":"",varvalues_d.height(),
+                            varvalues_d.height()>varnames.width()?"only ":"",varnames.width());
+                    }
                   }
                 }
                 if (sep0==':' && varnames.width()==1) {
@@ -15882,12 +15891,9 @@ template gmic& gmic::assign(const char *const commands_line, \
                             CImgList<pt>& images, CImgList<char>& images_names, \
                             const char *const custom_commands, const bool include_stdlib, \
                             float *const p_progress, bool *const p_is_abort); \
+template gmic& gmic::run(const char *const commands_line, const pt& pixel_type); \
 template gmic& gmic::run(const char *const commands_line, \
-                         float *const p_progress, bool *const p_is_abort,\
-                         const pt& pixel_type); \
-template gmic& gmic::run(const char *const commands_line, \
-                         CImgList<pt> &images, CImgList<char> &images_names, \
-                         float *const p_progress, bool *const p_is_abort); \
+                         CImgList<pt> &images, CImgList<char> &images_names); \
 template CImg<pt>& CImg<pt>::assign(const unsigned int size_x, const unsigned int size_y, \
                                     const unsigned int size_z, const unsigned int size_c); \
 template CImgList<pt>& CImgList<pt>::assign(const unsigned int n)

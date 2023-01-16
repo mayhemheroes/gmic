@@ -211,7 +211,7 @@ namespace gmic_library {
 #define CImg gmic_image
 #define CImgList gmic_list
 
-#ifdef cimg_use_abort
+#if defined(cimg_use_abort) && !defined(__MACOSX__) && !defined(__APPLE__)
 inline bool *gmic_current_is_abort();
 #define cimg_abort_init bool *const gmic_is_abort = ::gmic_current_is_abort()
 #define cimg_abort_test if (*gmic_is_abort) throw CImgAbortException()
@@ -220,6 +220,10 @@ inline bool *gmic_current_is_abort();
 inline double gmic_mp_dollar(const char *const str, void *const p_list);
 #define cimg_mp_operator_dollar(str) \
   ::gmic_mp_dollar(str,&imglist)
+
+inline double gmic_mp_abort();
+#define cimg_mp_func_abort() \
+  return ::gmic_mp_abort()
 
 template<typename T>
 inline double gmic_mp_get(double *const ptrd, const unsigned int siz, const bool to_string, const char *const str,
@@ -308,12 +312,10 @@ struct gmic {
 
   // Run G'MIC pipeline on an already-constructed object.
   template<typename T>
-  gmic& run(const char *const commands_line, float *const p_progress=0, bool *const p_is_abort=0,
-            const T& pixel_type=(T)0);
+  gmic& run(const char *const commands_line, const T& pixel_type=(T)0);
 
   template<typename T>
-  gmic& run(const char *const commands_line, gmic_list<T> &images, gmic_list<char> &images_names,
-            float *const p_progress=0, bool *const p_is_abort=0);
+  gmic& run(const char *const commands_line, gmic_list<T> &images, gmic_list<char> &images_names);
 
   // Bridge for calling gmic with classes compatible with 'gmic_list'.
   template<typename ti, typename tn>
@@ -337,12 +339,9 @@ struct gmic {
   }
 
   template<typename ti, typename tn>
-  gmic& run(const char *const commands_line,
-            ti& images, tn& images_names,
-            float *const p_progress=0, bool *const p_is_abort=0) {
+  gmic& run(const char *const commands_line, ti& images, tn& images_names) {
     return run(commands_line,
-               *(gmic_list<gmic_pixel_type>*)&images,*(gmic_list<char>*)&images_names,
-               p_progress, p_is_abort);
+               *(gmic_list<gmic_pixel_type>*)&images,*(gmic_list<char>*)&images_names);
   }
 
   // These functions return (or init) G'MIC-specific paths.
@@ -356,6 +355,7 @@ struct gmic {
   static const gmic_image<void*> current_run(const char *const func_name, void *const p_list);
   static bool* current_is_abort();
   static double mp_dollar(const char *const str, void *const p_list);
+  static double mp_abort();
   template<typename T>
   static double mp_get(double *const ptrd, const unsigned int siz, const bool to_string, const char *const str,
                        void *const p_list, const T& pixel_type);
@@ -475,8 +475,7 @@ struct gmic {
                       const unsigned int start, const unsigned int end);
 
   template<typename T>
-  gmic& _run(const gmic_list<char>& commands_line, gmic_list<T> &images, gmic_list<char> &images_names,
-             float *const p_progress, bool *const p_is_abort);
+  gmic& _run(const gmic_list<char>& commands_line, gmic_list<T> &images, gmic_list<char> &images_names);
 
   template<typename T>
   gmic& _run(const gmic_list<char>& commands_line, unsigned int& position, gmic_list<T>& images,
@@ -544,6 +543,10 @@ inline bool *gmic_current_is_abort() {
 
 inline double gmic_mp_dollar(const char *const str, void *const p_list) {
   return gmic::mp_dollar(str,p_list);
+}
+
+inline double gmic_mp_abort() {
+  return gmic::mp_abort();
 }
 
 template<typename T>

@@ -110,7 +110,8 @@ int main(int argc, char **argv) {
 #endif
 
   // Declare main G'MIC instance.
-  gmic gmic_instance;
+  static bool is_abort;
+  gmic gmic_instance((char*)0,(char*)0,true,(float*)0,&is_abort,(gmic_pixel_type)0);
   gmic_instance.set_variable("_host",0,"cli");
   gmic_instance.add_commands("cli_start : ");
 
