@@ -9748,6 +9748,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             p = np + (*np?1:0);
             if (*np && !*p) CImg<char>::vector(0).move_to(g_list_c);
           }
+          if (!g_list_c) CImg<char>::vector(0).move_to(g_list_c);
 
           // Check correctness of specified arguments.
           if (is_selection && g_list_c.size()>selection._height)
