@@ -20102,6 +20102,23 @@ grid : check "$1>=0 && $2>=0" skip ${3=0},${4=0},${5=1},${6=0},${7=$6}
 #@cli : $ image.jpg repeat 500 line 50%,50%,{u(w)},{u(h)},0.5,${-rgb} done line 0,0,100%,100%,1,0xCCCCCCCC,255 \
 # line 100%,0,0,100%,1,0xCCCCCCCC,255
 
+#@cli line_aa : x0[%],y0[%],x1[%],y1[%],_opacity,_color1,...
+#@cli : Draw specified antialiased colored line on selected images.
+#@cli : Default values: 'opacity=1' and 'color1=0'.
+#@cli : $ 512,512,1,3 repeat 100 line_aa {round(u([w,h,w,h])-1)},1,${-RGB} done
+line_aa : check "isnum(${5=1}) && isnum(${6=0})"
+  e[^-1] "Draw antialiased line ($1,$2) - ($3,$4) on image$?, with opacity $5 and color (${6--1})."
+  if !$5 return fi
+  foreach {
+    x0={${"is_percent $1"}?(w-1)*$1:$1}
+    y0={${"is_percent $2"}?(h-1)*$2:$2}
+    x1={${"is_percent $3"}?(w-1)*$3:$3}
+    y1={${"is_percent $4"}?(h-1)*$4:$4}
+    if $#>6 eval ${-math_lib}"line_aa($x0,$y0,$x1,$y1,$5,[${6--1}])"
+    else eval ${-math_lib}"line_aa($x0,$y0,$x1,$y1,$5,$6)"
+    fi
+  }
+
 #@cli thickline : x0[%],y0[%],x1[%],y1[%],_thickness,_opacity,_color1
 #@cli : Draw specified colored thick line on selected images.
 #@cli : Default values: 'thickness=2', 'opacity=1' and 'color1=0'.
@@ -30990,6 +31007,76 @@ math_lib :
       );
     );
     nan;
+  );
+
+  # Implementation of the Xiaolin Wu's antialiased line algorithm, as described in
+  # https://en.wikipedia.org/wiki/Xiaolin_Wu%27s_line_algorithm
+  #
+  line_aa_plot(ind,x,y,o) = (
+    _line_aa_o = o*line_aa_opacity;
+    (I(#ind,x,y)*=1 - _line_aa_o)+=line_aa_color*_line_aa_o;
+  );
+  line_aa_fpart(x) = (x - floor(x));
+  line_aa_rfpart(x) = (1 - line_aa_fpart(x));
+  line_aa(x0,y0,x1,y1,opacity,color) = line_aa(#-1,#x0,#y0,#x1,#y1,opacity,color);
+
+  line_aa(ind,x0,y0,x1,y1,opacity,color) = (
+    line_aa_x0 = x0; line_aa_y0 = y0;
+    line_aa_x1 = x1; line_aa_y1 = y1;
+    line_aa_color = color;
+    line_aa_opacity = opacity;
+
+    line_aa_steep = abs(line_aa_y1 - line_aa_y0)>abs(line_aa_x1 - line_aa_x0);
+    line_aa_steep?(swap(line_aa_x0, line_aa_y0); swap(line_aa_x1, line_aa_y1));
+    line_aa_x0>line_aa_x1?(swap(line_aa_x0, line_aa_x1); swap(line_aa_y0, line_aa_y1));
+    line_aa_dx = line_aa_x1 - line_aa_x0;
+    line_aa_dy = line_aa_y1 - line_aa_y0;
+    line_aa_gradient = line_aa_dx?line_aa_dy/line_aa_dx;1;
+
+    # Draw first endpoint.
+    line_aa_xend = round(line_aa_x0);
+    line_aa_yend = line_aa_y0 + line_aa_gradient*(line_aa_xend - line_aa_x0);
+    line_aa_xgap = line_aa_rfpart(line_aa_x0 + 0.5);
+    line_aa_xpxl1 = line_aa_xend;
+    line_aa_ypxl1 = floor(line_aa_yend);
+
+    line_aa_steep?(
+      line_aa_plot(#ind,line_aa_ypxl1,line_aa_xpxl1,line_aa_rfpart(line_aa_yend)*line_aa_xgap);
+      line_aa_plot(#ind,line_aa_ypxl1 + 1,line_aa_xpxl1,line_aa_fpart(line_aa_yend)*line_aa_xgap);
+    ):(
+      line_aa_plot(#ind,line_aa_xpxl1,line_aa_ypxl1,line_aa_rfpart(line_aa_yend)*line_aa_xgap);
+      line_aa_plot(#ind,line_aa_xpxl1,line_aa_ypxl1 + 1,line_aa_fpart(line_aa_yend)*line_aa_xgap);
+    );
+    line_aa_intery = line_aa_yend + line_aa_gradient;
+
+    # Draw second endpoint.
+    line_aa_xend = round(line_aa_x1);
+    line_aa_yend = line_aa_y1 + line_aa_gradient*(line_aa_xend - line_aa_x1);
+    line_aa_xgap = line_aa_fpart(line_aa_x1 + 0.5);
+    line_aa_xpxl2 = line_aa_xend;
+    line_aa_ypxl2 = floor(line_aa_yend);
+    line_aa_steep?(
+      line_aa_plot(#ind,line_aa_ypxl2,line_aa_xpxl2,line_aa_rfpart(line_aa_yend)*line_aa_xgap);
+      line_aa_plot(#ind,line_aa_ypxl2 + 1,line_aa_xpxl2,line_aa_fpart(line_aa_yend)*line_aa_xgap);
+    ):(
+      line_aa_plot(#ind,line_aa_xpxl2,line_aa_ypxl2,line_aa_rfpart(line_aa_yend)*line_aa_xgap);
+      line_aa_plot(#ind,line_aa_xpxl2,line_aa_ypxl2 + 1,line_aa_fpart(line_aa_yend)*line_aa_xgap);
+    );
+
+    # Draw intermediate points.
+    line_aa_steep?(
+      for (line_aa_x = line_aa_xpxl1 + 1, line_aa_x<=line_aa_xpxl2 - 1, ++line_aa_x,
+        line_aa_plot(#ind,floor(line_aa_intery),line_aa_x,line_aa_rfpart(line_aa_intery));
+        line_aa_plot(#ind,floor(line_aa_intery) + 1,line_aa_x,line_aa_fpart(line_aa_intery));
+        line_aa_intery+=line_aa_gradient;
+      );
+    ):(
+      for (line_aa_x = line_aa_xpxl1 + 1, line_aa_x<=line_aa_xpxl2 - 1, ++line_aa_x,
+        line_aa_plot(#ind,line_aa_x,floor(line_aa_intery),line_aa_rfpart(line_aa_intery));
+        line_aa_plot(#ind,line_aa_x,floor(line_aa_intery) + 1,line_aa_fpart(line_aa_intery));
+        line_aa_intery+=line_aa_gradient;
+      );
+    );
   );
 
   hsv2rgb(I) = ( # Convert HSV vector to RGB
