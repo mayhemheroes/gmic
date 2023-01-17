@@ -4146,6 +4146,7 @@ bool gmic::check_cond(const char *const expr, CImgList<T>& images, const char *c
   CImg<T> &img = images.size()?images.back():CImg<T>::empty();
   bool res = false;
   float _resu = 0;
+  if (!expr || !*expr) return false;
   if (img.__eval(expr,_resu)) return (bool)_resu;
   CImg<char> _expr(expr,(unsigned int)std::strlen(expr) + 1);
   strreplace_fw(_expr);
