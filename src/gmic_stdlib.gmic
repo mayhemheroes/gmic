@@ -8372,7 +8372,7 @@ update_deprecate : check "isint($1) && $1>0 && $1<999"
 
 # update_download_version.
 # Update file versions on G'MIC download page, with specified version number.
-# $1 = version number (e.g. '3.2.0').
+# $1 = version number (e.g. '3.2.1').
 update_download_version : check "
     is_digit(c)=(c>=_'0' && c<=_'9');
     ver = ['${1=undefined}'];
@@ -10072,7 +10072,7 @@ upload_filters :
   x "cd "$HOME"/work/src/gmic-community && git pull"
 
   # Define the list of compatible versions.
-  (320,$_version) sort. discard. store. compat
+  (320,321,$_version) sort. discard. store. compat
 
   # Import filters from stdlib and community.
   files $HOME/work/src/gmic-community/include/*.gmic
@@ -20101,6 +20101,23 @@ grid : check "$1>=0 && $2>=0" skip ${3=0},${4=0},${5=1},${6=0},${7=$6}
 #@cli : Default values: 'opacity=1', 'pattern=(undefined)' and 'color1=0'.
 #@cli : $ image.jpg repeat 500 line 50%,50%,{u(w)},{u(h)},0.5,${-rgb} done line 0,0,100%,100%,1,0xCCCCCCCC,255 \
 # line 100%,0,0,100%,1,0xCCCCCCCC,255
+
+#@cli line_aa : x0[%],y0[%],x1[%],y1[%],_opacity,_color1,...
+#@cli : Draw specified antialiased colored line on selected images.
+#@cli : Default values: 'opacity=1' and 'color1=0'.
+#@cli : $ 512,512,1,3 repeat 100 line_aa {round(u([w,h,w,h])-1)},1,${-RGB} done
+line_aa : check "isnum(${5=1}) && isnum(${6=0})"
+  e[^-1] "Draw antialiased line ($1,$2) - ($3,$4) on image$?, with opacity $5 and color (${6--1})."
+  if !$5 return fi
+  foreach {
+    x0={${"is_percent $1"}?(w-1)*$1:$1}
+    y0={${"is_percent $2"}?(h-1)*$2:$2}
+    x1={${"is_percent $3"}?(w-1)*$3:$3}
+    y1={${"is_percent $4"}?(h-1)*$4:$4}
+    if $#>6 eval ${-math_lib}"line_aa($x0,$y0,$x1,$y1,$5,[${6--1}])"
+    else eval ${-math_lib}"line_aa($x0,$y0,$x1,$y1,$5,$6)"
+    fi
+  }
 
 #@cli thickline : x0[%],y0[%],x1[%],y1[%],_thickness,_opacity,_color1
 #@cli : Draw specified colored thick line on selected images.
@@ -30992,6 +31009,76 @@ math_lib :
     nan;
   );
 
+  # Implementation of the Xiaolin Wu's antialiased line algorithm, as described in
+  # https://en.wikipedia.org/wiki/Xiaolin_Wu%27s_line_algorithm
+  #
+  line_aa_plot(ind,x,y,o) = (
+    _line_aa_o = o*line_aa_opacity;
+    (I(#ind,x,y)*=1 - _line_aa_o)+=line_aa_color*_line_aa_o;
+  );
+  line_aa_fpart(x) = (x - floor(x));
+  line_aa_rfpart(x) = (1 - line_aa_fpart(x));
+  line_aa(x0,y0,x1,y1,opacity,color) = line_aa(#-1,#x0,#y0,#x1,#y1,opacity,color);
+
+  line_aa(ind,x0,y0,x1,y1,opacity,color) = (
+    line_aa_x0 = x0; line_aa_y0 = y0;
+    line_aa_x1 = x1; line_aa_y1 = y1;
+    line_aa_color = color;
+    line_aa_opacity = opacity;
+
+    line_aa_steep = abs(line_aa_y1 - line_aa_y0)>abs(line_aa_x1 - line_aa_x0);
+    line_aa_steep?(swap(line_aa_x0, line_aa_y0); swap(line_aa_x1, line_aa_y1));
+    line_aa_x0>line_aa_x1?(swap(line_aa_x0, line_aa_x1); swap(line_aa_y0, line_aa_y1));
+    line_aa_dx = line_aa_x1 - line_aa_x0;
+    line_aa_dy = line_aa_y1 - line_aa_y0;
+    line_aa_gradient = line_aa_dx?line_aa_dy/line_aa_dx;1;
+
+    # Draw first endpoint.
+    line_aa_xend = round(line_aa_x0);
+    line_aa_yend = line_aa_y0 + line_aa_gradient*(line_aa_xend - line_aa_x0);
+    line_aa_xgap = line_aa_rfpart(line_aa_x0 + 0.5);
+    line_aa_xpxl1 = line_aa_xend;
+    line_aa_ypxl1 = floor(line_aa_yend);
+
+    line_aa_steep?(
+      line_aa_plot(#ind,line_aa_ypxl1,line_aa_xpxl1,line_aa_rfpart(line_aa_yend)*line_aa_xgap);
+      line_aa_plot(#ind,line_aa_ypxl1 + 1,line_aa_xpxl1,line_aa_fpart(line_aa_yend)*line_aa_xgap);
+    ):(
+      line_aa_plot(#ind,line_aa_xpxl1,line_aa_ypxl1,line_aa_rfpart(line_aa_yend)*line_aa_xgap);
+      line_aa_plot(#ind,line_aa_xpxl1,line_aa_ypxl1 + 1,line_aa_fpart(line_aa_yend)*line_aa_xgap);
+    );
+    line_aa_intery = line_aa_yend + line_aa_gradient;
+
+    # Draw second endpoint.
+    line_aa_xend = round(line_aa_x1);
+    line_aa_yend = line_aa_y1 + line_aa_gradient*(line_aa_xend - line_aa_x1);
+    line_aa_xgap = line_aa_fpart(line_aa_x1 + 0.5);
+    line_aa_xpxl2 = line_aa_xend;
+    line_aa_ypxl2 = floor(line_aa_yend);
+    line_aa_steep?(
+      line_aa_plot(#ind,line_aa_ypxl2,line_aa_xpxl2,line_aa_rfpart(line_aa_yend)*line_aa_xgap);
+      line_aa_plot(#ind,line_aa_ypxl2 + 1,line_aa_xpxl2,line_aa_fpart(line_aa_yend)*line_aa_xgap);
+    ):(
+      line_aa_plot(#ind,line_aa_xpxl2,line_aa_ypxl2,line_aa_rfpart(line_aa_yend)*line_aa_xgap);
+      line_aa_plot(#ind,line_aa_xpxl2,line_aa_ypxl2 + 1,line_aa_fpart(line_aa_yend)*line_aa_xgap);
+    );
+
+    # Draw intermediate points.
+    line_aa_steep?(
+      for (line_aa_x = line_aa_xpxl1 + 1, line_aa_x<=line_aa_xpxl2 - 1, ++line_aa_x,
+        line_aa_plot(#ind,floor(line_aa_intery),line_aa_x,line_aa_rfpart(line_aa_intery));
+        line_aa_plot(#ind,floor(line_aa_intery) + 1,line_aa_x,line_aa_fpart(line_aa_intery));
+        line_aa_intery+=line_aa_gradient;
+      );
+    ):(
+      for (line_aa_x = line_aa_xpxl1 + 1, line_aa_x<=line_aa_xpxl2 - 1, ++line_aa_x,
+        line_aa_plot(#ind,line_aa_x,floor(line_aa_intery),line_aa_rfpart(line_aa_intery));
+        line_aa_plot(#ind,line_aa_x,floor(line_aa_intery) + 1,line_aa_fpart(line_aa_intery));
+        line_aa_intery+=line_aa_gradient;
+      );
+    );
+  );
+
   hsv2rgb(I) = ( # Convert HSV vector to RGB
     ref(I,_I);
     _I[0]%=360;
@@ -32041,8 +32128,10 @@ demos : check "isint(${1=2}) && $1>=0 && $1<=2" check_display $0
     +f[0] z+1
     1,1,100%,3,u(128,255) r. 1,[0],[0],3 *. 'y/(h-1)' r. [0],[0],[0],3,3
 
-    100%,100%,1,1,"x = min(x,w-1-x); y = min(y,h-1-y); (x*y/wh)^0.7>0.01"
+    200%,200%,1,1,"x = min(x,w-1-x); y = min(y,h-1-y); (x*y/wh)^0.7>0.01"
     +dilate. 3 xor.. .
+    distance.. 1 c.. 0,2 negate.. distance. 0 c. 0,2
+    r2dx[-2,-1] 50% n[-2,-1] 0,1
     +[0] ..
     *.. 100 +[1,-2]
     *[2,3] .
@@ -35478,9 +35567,10 @@ x_quantize_rgb : check "isint(${1=16}) && $1>1" check_display $0
 
     # Create and display visualization.
     if !narg($visu_3d) # Update 3D visualization.
-      +-[centroids] 2 ++[centroids] 2 a[-2,-1] x permute. cxyz y. -. 128
+      +-[centroids] 3 ++[centroids] 3 a[-2,-1] x permute. cxyz y. -. 128
       j[obj3d] .,0,8 rm.  # Update centroids position in 3D object.
       [obj3d]
+
       if $clustering
         if {colors,iM}<256 # Estimate nearest centroids for all colors.
           +index[colors] [centroids] *. 256 +[colors,-1]
@@ -35488,7 +35578,8 @@ x_quantize_rgb : check "isint(${1=16}) && $1>1" check_display $0
         +channels[colors] 0 >>. 8 map. 2 permute. cxyz y. j.. .,0,{{-2,h}-$_N-h} rm.
       fi
 
-      pose3d. {pose3d,^} 300,300,1,3 j3d. ..,50%,50%,100,1,2,0,0,300 rm..
+      pose3d. {pose3d,^}
+      600,600,1,3 j3d. ..,50%,50%,-150,1,2,0,0,600 *. 1.5 b. 0.75 c. 0,255 rm.. r2dx. 50%
       j. [clustering$clustering],2,0,0,0,1,[mclustering$clustering],255
       => visu_3d j[visu] [visu_3d],5,5
     fi
@@ -35588,7 +35679,7 @@ x_quantize_rgb : check "isint(${1=16}) && $1>1" check_display $0
   if $obj3d rm[obj3d] fi
   +distribution3d[centroids] circles3d. 5 col3d. 255      # Pre-compute 3D object.
   colorcube3d p3d. 1
-  +&[colors] 255 distribution3d. circles3d. 3 o3d. 0.25 +3d[-3--1]
+  +&[colors] 255 distribution3d. circles3d. 5 o3d. 0.2 +3d[-3--1]
   -3d. 128,128,128 => obj3d _N={i[7]}
 
 _x_quantize_rgb_text :

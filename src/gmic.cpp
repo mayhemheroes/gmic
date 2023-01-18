@@ -4146,6 +4146,7 @@ bool gmic::check_cond(const char *const expr, CImgList<T>& images, const char *c
   CImg<T> &img = images.size()?images.back():CImg<T>::empty();
   bool res = false;
   float _resu = 0;
+  if (!expr || !*expr) return false;
   if (img.__eval(expr,_resu)) return (bool)_resu;
   CImg<char> _expr(expr,(unsigned int)std::strlen(expr) + 1);
   strreplace_fw(_expr);
@@ -9747,6 +9748,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             p = np + (*np?1:0);
             if (*np && !*p) CImg<char>::vector(0).move_to(g_list_c);
           }
+          if (!g_list_c) CImg<char>::vector(0).move_to(g_list_c);
 
           // Check correctness of specified arguments.
           if (is_selection && g_list_c.size()>selection._height)
