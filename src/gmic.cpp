@@ -8103,8 +8103,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
               // Transfer back images to saved list of images.
               cimg::mutex(27);
-              if (is_get) { // is_get?
+              if (is_get) {
                 g_list.move_to(images,~0U);
+                cimglist_for(g_list_c,i) g_list_c[i].get_copymark().move_to(g_list_c[i]);
                 g_list_c.move_to(images_names,~0U);
               } else {
                 if (!g_list) {
