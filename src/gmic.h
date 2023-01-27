@@ -500,7 +500,7 @@ struct gmic {
   gmic_uint64 reference_time;
   unsigned int nb_dowhiles, nb_fordones, nb_foreachdones, nb_repeatdones, nb_carriages_default, nb_carriages_stdout,
     debug_filename, debug_line, cimg_exception_mode;
-  int verbosity, render3d, network_timeout;
+  int verbosity, network_timeout;
   bool allow_entrypoint, is_change, is_debug, is_running, is_start, is_return, is_quit, is_double3d, is_debug_info,
     _is_abort, *is_abort, is_abort_thread;
   const char *starting_commands_line;

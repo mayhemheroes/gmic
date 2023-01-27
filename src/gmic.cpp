@@ -2746,7 +2746,7 @@ const char *gmic::builtin_commands_names[] = {
   "k","keep",
   "l","l3d","label","le","light3d","line","local","log","log10","log2","lt",
   "m","m*","m/","m3d","mandelbrot","map","matchpatch","max","maxabs","md3d","mdiv","median","min","minabs","mirror",
-    "mmul","mod","mode3d","move","mproj","mul","mul3d","mutex","mv",
+    "mmul","mod","move","mproj","mul","mul3d","mutex","mv",
   "n","name","named","neq","network","nmd","noarg","noise","normalize",
   "o","o3d","object3d","onfail","opacity3d","or","output",
   "p","parallel","pass","permute","plasma","plot","point","polygon","pow","print","progress",
@@ -4350,7 +4350,6 @@ gmic& gmic::_gmic(const char *const commands_line,
   debug_filename = debug_line = ~0U;
 
   verbosity = 0;
-  render3d = 4;
   network_timeout = 0;
 
   allow_entrypoint = false;
@@ -4396,6 +4395,9 @@ gmic& gmic::_gmic(const char *const commands_line,
   set_variable("_cpus",0,str.data());
 
   set_variable("_version",0,cimg_str2(gmic_version));
+
+  set_variable("_mode3d",0,"4");
+  set_variable("_moded3d",0,"-1");
 
 #if cimg_OS==1
   cimg_snprintf(str,str.width(),"%u",(unsigned int)getpid());
@@ -5912,9 +5914,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             break;
           case 'l' : if (!is_get && !is_selection)
               CImg<char>::string("light3d").move_to(_item);
-            break;
-          case 'm' : if (!is_get && !is_selection)
-              CImg<char>::string("mode3d").move_to(_item);
             break;
           case '*' : std::strcpy(command,"mul3d"); break;
           case 'o' : std::strcpy(command,"opacity3d"); break;
@@ -9518,23 +9517,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           continue;
         }
 
-        // Set 3D rendering modes.
-        if (!is_get && !std::strcmp("mode3d",item)) {
-          gmic_substitute_args(false);
-          float mode = 4;
-          if (cimg_sscanf(argument,"%f%c",
-                          &mode,&end)==1 &&
-              (mode=cimg::round(mode))>=-1 && mode<=5) ++position;
-          else mode = 4;
-          render3d = (int)mode;
-          print(images,0,"Set static 3D rendering mode to %s.",
-                render3d==-1?"bounding-box":
-                render3d==0?"pointwise":render3d==1?"linear":render3d==2?"flat":
-                render3d==3?"flat-shaded":render3d==4?"Gouraud-shaded":
-                render3d==5?"Phong-shaded":"none");
-          continue;
-        }
-
         // Get patch-matching correspondence map.
         if (!std::strcmp("matchpatch",command)) {
           gmic_substitute_args(true);
@@ -10019,11 +10001,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Draw 3D object.
         if (!std::strcmp("object3d",command)) {
           gmic_substitute_args(true);
+          unsigned int is_zbuffer = 1, _is_double3d = is_double3d?1U:0U;
           float x = 0, y = 0, z = 0;
-          unsigned int
-            is_zbuffer = 1,
-            _render3d = (unsigned int)std::max(0,render3d),
-            _is_double3d = is_double3d?1U:0U;
+          int _render3d = 4;
+          const CImg<char> s_mode3d = get_variable("_mode3d",variables_sizes,0,0);
+          if (std::sscanf(s_mode3d,"%d%c",&_render3d,&end)==1 && _render3d>=-1 && _render3d<5)
+            _render3d = std::max(0,_render3d);
+          else _render3d = 4;
           float
             _focale3d = focale3d,
             _light3d_x = light3d_x,
@@ -10046,30 +10030,30 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                            "%f,%f%c",
                            indices,argx,argy,&z,&opacity,&end)==5 ||
                cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%255[0-9.eE%+-],%255[0-9.eE%+-],"
-                           "%f,%f,%u%c",
+                           "%f,%f,%d%c",
                            indices,argx,argy,&z,&opacity,&_render3d,&end)==6 ||
                cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%255[0-9.eE%+-],%255[0-9.eE%+-],"
-                           "%f,%f,%u,%u%c",
+                           "%f,%f,%d,%u%c",
                            indices,argx,argy,&z,&opacity,&_render3d,&_is_double3d,&end)==7 ||
                cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%255[0-9.eE%+-],%255[0-9.eE%+-],"
-                           "%f,%f,%u,%u,%u%c",
+                           "%f,%f,%d,%u,%u%c",
                            indices,argx,argy,&z,&opacity,&_render3d,&_is_double3d,&is_zbuffer,
                            &end)==8 ||
                cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%255[0-9.eE%+-],%255[0-9.eE%+-],"
-                           "%f,%f,%u,%u,%u,%f%c",
+                           "%f,%f,%d,%u,%u,%f%c",
                            indices,argx,argy,&z,&opacity,&_render3d,&_is_double3d,&is_zbuffer,
                            &_focale3d,&end)==9 ||
                cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%255[0-9.eE%+-],%255[0-9.eE%+-],"
-                           "%f,%f,%u,%u,%u,%f,%f,%f,%f%c",
+                           "%f,%f,%d,%u,%u,%f,%f,%f,%f%c",
                            indices,argx,argy,&z,&opacity,&_render3d,&_is_double3d,&is_zbuffer,
                            &_focale3d,&_light3d_x,&_light3d_y,&_light3d_z,&end)==12 ||
                cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%255[0-9.eE%+-],%255[0-9.eE%+-],"
-                           "%f,%f,%u,%u,%u,%f,%f,%f,%f,%f%c",
+                           "%f,%f,%d,%u,%u,%f,%f,%f,%f,%f%c",
                            indices,argx,argy,&z,&opacity,&_render3d,&_is_double3d,&is_zbuffer,
                            &_focale3d,&_light3d_x,&_light3d_y,&_light3d_z,
                            &_specular_lightness3d,&end)==13 ||
                cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%255[0-9.eE%+-],%255[0-9.eE%+-],"
-                           "%f,%f,%u,%u,%u,%f,%f,%f,%f,%f,%f%c",
+                           "%f,%f,%d,%u,%u,%f,%f,%f,%f,%f,%f%c",
                            indices,argx,argy,&z,&opacity,&_render3d,&_is_double3d,&is_zbuffer,
                            &_focale3d,&_light3d_x,&_light3d_y,&_light3d_z,
                            &_specular_lightness3d,&_specular_shininess3d,&end)==14) &&
@@ -10080,7 +10064,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               (!*argy ||
                cimg_sscanf(argy,"%f%c",&y,&end)==1 ||
                (cimg_sscanf(argy,"%f%c%c",&y,&sepy,&end)==2 && sepy=='%')) &&
-              _render3d<=5 && is_zbuffer<=1 && _is_double3d<=1) {
+              _render3d>=0 && _render3d<=5 && is_zbuffer<=1 && _is_double3d<=1) {
             const CImg<T> img0 = gmic_image_arg(*ind);
 
             print(images,0,"Draw 3D object [%u] at (%g%s,%g%s,%g) on image%s, with opacity %g, "
@@ -10123,14 +10107,14 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               CImg<float> zbuffer(is_zbuffer?img.width():0,is_zbuffer?img.height():0,1,1,0);
               if (g_list_f) {
                 gmic_apply(draw_object3d(nx,ny,z,vertices,primitives,g_list_f,opacities,
-                                         _render3d,_is_double3d,_focale3d,
+                                         (unsigned int)_render3d,_is_double3d,_focale3d,
                                          _light3d_x,_light3d_y,_light3d_z,
                                          _specular_lightness3d,_specular_shininess3d,
                                          opacity,zbuffer),true);
 
               } else {
                 gmic_apply(draw_object3d(nx,ny,z,vertices,primitives,g_list_uc,opacities,
-                                         _render3d,_is_double3d,_focale3d,
+                                         (unsigned int)_render3d,_is_double3d,_focale3d,
                                          _light3d_x,_light3d_y,_light3d_z,
                                          _specular_lightness3d,_specular_shininess3d,
                                          opacity,zbuffer),true);
@@ -10929,7 +10913,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               gmic_instance.is_return = false;
               gmic_instance.is_double3d = is_double3d;
               gmic_instance.verbosity = verbosity;
-              gmic_instance.render3d = render3d;
               gmic_instance._is_abort = _is_abort;
               gmic_instance.is_abort = is_abort;
               gmic_instance.is_abort_thread = false;
