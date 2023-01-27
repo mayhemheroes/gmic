@@ -4395,10 +4395,6 @@ gmic& gmic::_gmic(const char *const commands_line,
 
   set_variable("_version",0,cimg_str2(gmic_version));
 
-  set_variable("_mode3d",0,"4");
-  set_variable("_moded3d",0,"-1");
-  set_variable("_double3d",0,"1");
-
 #if cimg_OS==1
   cimg_snprintf(str,str.width(),"%u",(unsigned int)getpid());
 #elif cimg_OS==2 // #if cimg_OS==1
