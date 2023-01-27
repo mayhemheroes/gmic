@@ -4351,7 +4351,6 @@ gmic& gmic::_gmic(const char *const commands_line,
 
   verbosity = 0;
   render3d = 4;
-  renderd3d = -1;
   network_timeout = 0;
 
   allow_entrypoint = false;
@@ -10931,7 +10930,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               gmic_instance.is_double3d = is_double3d;
               gmic_instance.verbosity = verbosity;
               gmic_instance.render3d = render3d;
-              gmic_instance.renderd3d = renderd3d;
               gmic_instance._is_abort = _is_abort;
               gmic_instance.is_abort = is_abort;
               gmic_instance.is_abort_thread = false;
