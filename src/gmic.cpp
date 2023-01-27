@@ -2754,7 +2754,7 @@ const char *gmic::builtin_commands_names[] = {
   "r","r3d","rand","remove","repeat","resize","return","reverse","reverse3d",
     "rm","rol","ror","rotate","rotate3d","round","rv","rv3d",
   "s","s3d","screen","select","serialize","set","sh","shared","shift","sign","sin","sinc","sinh","skip",
-    "sl3d","smooth","solve","sort","sphere3d","split","split3d","sqr","sqrt","srand",
+    "sl3d","smooth","solve","sort","split","split3d","sqr","sqrt","srand",
     "ss3d","status","store","streamline3d","sub","sub3d","svd",
   "t","tan","tanh","text","trisolve",
   "u","um","uncommand","unroll","unserialize",
@@ -12637,29 +12637,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             }
           }
           is_change = true;
-          continue;
-        }
-
-        // Input 3D sphere.
-        if (!std::strcmp("sphere3d",item)) {
-          gmic_substitute_args(false);
-          float radius = 100, recursions = 3;
-          if ((cimg_sscanf(argument,"%f%c",
-                           &radius,&end)==1 ||
-               cimg_sscanf(argument,"%f,%f%c",
-                           &radius,&recursions,&end)==2) &&
-              recursions>=0) {
-            recursions = cimg::round(recursions);
-            print(images,0,"Input 3D sphere, with radius %g and %g recursions.",
-                  radius,
-                  recursions);
-            CImg<T>::sphere3d(primitives,radius,(unsigned int)recursions).move_to(vertices);
-            vertices.object3dtoCImg3d(primitives,false).move_to(images);
-            primitives.assign();
-            CImg<char>::string("[3D sphere]").move_to(images_names);
-          } else arg_error("sphere3d");
-          is_change = true;
-          ++position;
           continue;
         }
 
