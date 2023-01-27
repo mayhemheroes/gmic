@@ -5898,13 +5898,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           else if (command0=='u' && command1=='m') CImg<char>::string("uncommand").move_to(_item);
 
         } else if (!command3 && command1=='3' && command2=='d') switch (command0) {
-            // Three-chars shortcuts (ending with '3d').
+            // Three-chars shortcuts, ending with '3d'.
           case 'j' : std::strcpy(command,"object3d"); break;
           case '+' : std::strcpy(command,"add3d"); break;
           case '/' : std::strcpy(command,"div3d"); break;
-          case 'l' : if (!is_get && !is_selection)
-              CImg<char>::string("light3d").move_to(_item);
-            break;
+          case 'l' : if (!is_get && !is_selection) CImg<char>::string("light3d").move_to(_item); break;
           case '*' : std::strcpy(command,"mul3d"); break;
           case 'o' : std::strcpy(command,"opacity3d"); break;
           case 'r' : std::strcpy(command,"rotate3d"); break;
@@ -5913,7 +5911,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           } else if (!is_get && !command3 && command0=='n' && command1=='m' && command2=='d') {
           std::strcpy(command,"named"); // Shortcut 'nmd' for 'named".
         } else if (!command4 && command2=='3' && command3=='d') {
-          // Four-chars shortcuts (ending with '3d').
+          // Four-chars shortcuts, ending with '3d'.
           if (command0=='r' && command1=='v') std::strcpy(command,"reverse3d");
         }
         if (item!=_item.data() + (is_hyphen || is_plus?1:0)) item = _item;
