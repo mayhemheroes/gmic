@@ -10001,14 +10001,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Draw 3D object.
         if (!std::strcmp("object3d",command)) {
           gmic_substitute_args(true);
-          unsigned int is_zbuffer = 1, _is_double3d = is_double3d?1U:0U;
-          float x = 0, y = 0, z = 0;
-          int _render3d = 4;
-          const CImg<char> s_mode3d = get_variable("_mode3d",variables_sizes,0,0);
-          if (std::sscanf(s_mode3d,"%d%c",&_render3d,&end)==1 && _render3d>=-1 && _render3d<5)
-            _render3d = std::max(0,_render3d);
-          else _render3d = 4;
-          float
+          unsigned int is_zbuffer = 1, _is_double3d = is_double3d?1U:0U, _render3d = ~0U;
+          float x = 0, y = 0, z = 0,
             _focale3d = focale3d,
             _light3d_x = light3d_x,
             _light3d_y = light3d_y,
@@ -10030,30 +10024,30 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                            "%f,%f%c",
                            indices,argx,argy,&z,&opacity,&end)==5 ||
                cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%255[0-9.eE%+-],%255[0-9.eE%+-],"
-                           "%f,%f,%d%c",
+                           "%f,%f,%u%c",
                            indices,argx,argy,&z,&opacity,&_render3d,&end)==6 ||
                cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%255[0-9.eE%+-],%255[0-9.eE%+-],"
-                           "%f,%f,%d,%u%c",
+                           "%f,%f,%u,%u%c",
                            indices,argx,argy,&z,&opacity,&_render3d,&_is_double3d,&end)==7 ||
                cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%255[0-9.eE%+-],%255[0-9.eE%+-],"
-                           "%f,%f,%d,%u,%u%c",
+                           "%f,%f,%u,%u,%u%c",
                            indices,argx,argy,&z,&opacity,&_render3d,&_is_double3d,&is_zbuffer,
                            &end)==8 ||
                cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%255[0-9.eE%+-],%255[0-9.eE%+-],"
-                           "%f,%f,%d,%u,%u,%f%c",
+                           "%f,%f,%u,%u,%u,%f%c",
                            indices,argx,argy,&z,&opacity,&_render3d,&_is_double3d,&is_zbuffer,
                            &_focale3d,&end)==9 ||
                cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%255[0-9.eE%+-],%255[0-9.eE%+-],"
-                           "%f,%f,%d,%u,%u,%f,%f,%f,%f%c",
+                           "%f,%f,%u,%u,%u,%f,%f,%f,%f%c",
                            indices,argx,argy,&z,&opacity,&_render3d,&_is_double3d,&is_zbuffer,
                            &_focale3d,&_light3d_x,&_light3d_y,&_light3d_z,&end)==12 ||
                cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%255[0-9.eE%+-],%255[0-9.eE%+-],"
-                           "%f,%f,%d,%u,%u,%f,%f,%f,%f,%f%c",
+                           "%f,%f,%u,%u,%u,%f,%f,%f,%f,%f%c",
                            indices,argx,argy,&z,&opacity,&_render3d,&_is_double3d,&is_zbuffer,
                            &_focale3d,&_light3d_x,&_light3d_y,&_light3d_z,
                            &_specular_lightness3d,&end)==13 ||
                cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%255[0-9.eE%+-],%255[0-9.eE%+-],"
-                           "%f,%f,%d,%u,%u,%f,%f,%f,%f,%f,%f%c",
+                           "%f,%f,%u,%u,%u,%f,%f,%f,%f,%f,%f%c",
                            indices,argx,argy,&z,&opacity,&_render3d,&_is_double3d,&is_zbuffer,
                            &_focale3d,&_light3d_x,&_light3d_y,&_light3d_z,
                            &_specular_lightness3d,&_specular_shininess3d,&end)==14) &&
@@ -10064,8 +10058,16 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               (!*argy ||
                cimg_sscanf(argy,"%f%c",&y,&end)==1 ||
                (cimg_sscanf(argy,"%f%c%c",&y,&sepy,&end)==2 && sepy=='%')) &&
-              _render3d>=0 && _render3d<=5 && is_zbuffer<=1 && _is_double3d<=1) {
-            const CImg<T> img0 = gmic_image_arg(*ind);
+              (_render3d==~0U || _render3d<=5) && is_zbuffer<=1 && _is_double3d<=1) {
+
+            if (_render3d==~0U) { // Get current default rendering mode
+              _render3d = 4;
+              const CImg<char> s_mode3d = get_variable("_mode3d",variables_sizes,0,0);
+              if (s_mode3d && *s_mode3d) {
+                if (*s_mode3d>='0' && *s_mode3d<='5' && !s_mode3d[1]) _render3d = (unsigned int)(*s_mode3d - '0');
+                else if (*s_mode3d=='-' && s_mode3d[1]=='1' && !s_mode3d[2]) _render3d = 0;
+              }
+            }
 
             print(images,0,"Draw 3D object [%u] at (%g%s,%g%s,%g) on image%s, with opacity %g, "
                   "%s rendering, %s-sided mode, %sz-buffer, focale %g, 3D light at (%g,%g,%g) "
@@ -10082,6 +10084,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   is_zbuffer?"":"no ",
                   _focale3d,_light3d_x,_light3d_y,_light3d_z,
                   _specular_lightness3d,_specular_shininess3d);
+
+            const CImg<T> img0 = gmic_image_arg(*ind);
             CImgList<float> opacities;
             vertices.assign(img0,false);
 
