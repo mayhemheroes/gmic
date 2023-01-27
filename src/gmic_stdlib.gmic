@@ -21863,14 +21863,22 @@ lathe3d : check "${1=128}>0 && ${2=0.5%}>=0 && ${3=361}>=0"
 #@cli : $ (0,1,2,3,4,5) double3d 0 repeat w { torus3d 100,30 rotate3d[-1] 1,1,0,60 mode3d {0,@$>} \
 # snapshot3d[-1] 300 } remove[0]
 
-#@cli md3d : eq. to 'moded3d'. : (+)
+#@cli md3d : eq. to 'moded3d'.
+md3d :
+  _gmic_s="$?" v + _moded3d $"*"
 
-#@cli moded3d : _mode : (+)
+#@cli moded3d : _mode
 #@cli : Set dynamic 3D rendering mode for interactive 3D viewer.
 #@cli : (eq. to 'md3d').\n
 #@cli : 'mode' can be { -1=bounding-box | 0=dots | 1=wireframe | 2=flat | 3=flat-shaded | 4=gouraud-shaded | \
 # 5=phong-shaded }.
 #@cli : Default value: 'mode=-1'.
+moded3d :
+  _gmic_s="$?" v + _moded3d $"*"
+
+_moded3d : check "isint(${1=-1}) && inrange($1,-1,5)"
+  e[0--3] "Set dynamic 3D rendering mode to "${s$1}"."
+  _moded3d=$1
 
 #@cli *3d : eq. to 'mul3d'. : (+)
 

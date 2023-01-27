@@ -2746,7 +2746,7 @@ const char *gmic::builtin_commands_names[] = {
   "k","keep",
   "l","l3d","label","le","light3d","line","local","log","log10","log2","lt",
   "m","m*","m/","m3d","mandelbrot","map","matchpatch","max","maxabs","md3d","mdiv","median","min","minabs","mirror",
-    "mmul","mod","mode3d","moded3d","move","mproj","mul","mul3d","mutex","mv",
+    "mmul","mod","mode3d","move","mproj","mul","mul3d","mutex","mv",
   "n","name","named","neq","network","nmd","noarg","noise","normalize",
   "o","o3d","object3d","onfail","opacity3d","or","output",
   "p","parallel","pass","permute","plasma","plot","point","polygon","pow","print","progress",
@@ -5928,10 +5928,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           // Four-chars shortcuts (ending with '3d').
           if (command0=='d' && command1=='b') {
             if (!is_get && !is_selection) CImg<char>::string("double3d").move_to(_item);
-          } else if (command0=='m' && command1=='d') {
-            if (!is_get && !is_selection) CImg<char>::string("moded3d").move_to(_item);
-          }
-          else if (command0=='r' && command1=='v') std::strcpy(command,"reverse3d");
+          } else if (command0=='r' && command1=='v') std::strcpy(command,"reverse3d");
           else if (command0=='s' && command1=='l') {
             if (!is_get && !is_selection) CImg<char>::string("specl3d").move_to(_item);
           }
@@ -9536,22 +9533,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 render3d==0?"pointwise":render3d==1?"linear":render3d==2?"flat":
                 render3d==3?"flat-shaded":render3d==4?"Gouraud-shaded":
                 render3d==5?"Phong-shaded":"none");
-          continue;
-        }
-
-        if (!is_get && !std::strcmp("moded3d",item)) {
-          gmic_substitute_args(false);
-          float mode = -1;
-          if (cimg_sscanf(argument,"%f%c",
-                          &mode,&end)==1 &&
-              (mode=cimg::round(mode))>=-1 && mode<=5) ++position;
-          else mode = -1;
-          renderd3d = (int)mode;
-          print(images,0,"Set dynamic 3D rendering mode to %s.",
-                renderd3d==-1?"bounding-box":
-                renderd3d==0?"pointwise":renderd3d==1?"linear":renderd3d==2?"flat":
-                renderd3d==3?"flat-shaded":renderd3d==4?"Gouraud-shaded":
-                renderd3d==5?"Phong-shaded":"none");
           continue;
         }
 
