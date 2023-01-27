@@ -2738,7 +2738,7 @@ const char *gmic::builtin_commands_names[] = {
     "div","div3d","do","done",
   "e","echo","eigen","eikonal","elif","ellipse","else","endian","eq","equalize","erf","erode","error","eval","exec",
     "exp",
-  "f","f3d","fft","fi","files","fill","flood","focale3d","for","foreach",
+  "f","f3d","fft","fi","files","fill","flood","for","foreach",
   "ge","graph","gt","guided",
   "h","histogram",
   "i","if","ifft","image","index","inpaint","input","invert","isoline3d","isosurface3d",
@@ -4335,7 +4335,6 @@ gmic& gmic::_gmic(const char *const commands_line,
   } else display_windows.assign();
   status.assign();
 
-  focale3d = 700;
   light3d_x = light3d_y = 0;
   light3d_z = -5e8f;
   specular_lightness3d = 0.15f;
@@ -5905,9 +5904,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           case 'j' : std::strcpy(command,"object3d"); break;
           case '+' : std::strcpy(command,"add3d"); break;
           case '/' : std::strcpy(command,"div3d"); break;
-          case 'f' : if (!is_get && !is_selection)
-              CImg<char>::string("focale3d").move_to(_item);
-            break;
           case 'l' : if (!is_get && !is_selection)
               CImg<char>::string("light3d").move_to(_item);
             break;
@@ -8240,18 +8236,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           continue;
         }
 
-        // Set 3D focale.
-        if (!is_get && !std::strcmp("focale3d",item)) {
-          gmic_substitute_args(false);
-          value = 700;
-          if (cimg_sscanf(argument,"%lf%c",&value,&end)==1) ++position;
-          else value = 700;
-          focale3d = (float)value;
-          print(images,0,"Set 3D focale to %g.",
-                focale3d);
-          continue;
-        }
-
         goto gmic_commands_others;
 
         //-----------------------------
@@ -9983,7 +9967,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           gmic_substitute_args(true);
           unsigned int is_zbuffer = 1, _double3d = ~0U, _render3d = ~0U;
           float x = 0, y = 0, z = 0,
-            _focale3d = focale3d,
+            _focale3d = cimg::type<float>::nan(),
             _light3d_x = light3d_x,
             _light3d_y = light3d_y,
             _light3d_z = light3d_z,
@@ -10040,7 +10024,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                (cimg_sscanf(argy,"%f%c%c",&y,&sepy,&end)==2 && sepy=='%')) &&
               (_render3d==~0U || _render3d<=5) && is_zbuffer<=1 && _double3d<=1) {
 
-            if (_render3d==~0U) { // Get current default rendering mode
+            // Get default rendering options.
+            if (_render3d==~0U) { // Rendering mode
               _render3d = 4;
               const CImg<char> s_mode3d = get_variable("_mode3d",variables_sizes,0,0);
               if (s_mode3d && *s_mode3d) {
@@ -10049,11 +10034,16 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               }
             }
 
-            if (_double3d==~0U) { // Get current simple/double face property
+            if (_double3d==~0U) { // Simple/double face property
               _double3d = 1;
               const CImg<char> s_double3d = get_variable("_double3d",variables_sizes,0,0);
               if (s_double3d && *s_double3d>='0' && *s_double3d<='1' && !s_double3d[1])
                 _double3d = (unsigned int)(*s_double3d - '0');
+            }
+
+            if (cimg::type<float>::is_nan(_focale3d)) { // Focale
+              const CImg<char> s_focale3d = get_variable("_focale3d",variables_sizes,0,0);
+              if (!s_focale3d || std::sscanf(s_focale3d,"%f%c",&_focale3d,&end)!=1) _focale3d = 700;
             }
 
             print(images,0,"Draw 3D object [%u] at (%g%s,%g%s,%g) on image%s, with opacity %g, "
@@ -10889,7 +10879,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               gmic_instance.status.assign(status);
               gmic_instance.debug_filename = debug_filename;
               gmic_instance.debug_line = debug_line;
-              gmic_instance.focale3d = focale3d;
               gmic_instance.light3d_x = light3d_x;
               gmic_instance.light3d_y = light3d_y;
               gmic_instance.light3d_z = light3d_z;

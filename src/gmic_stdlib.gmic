@@ -21484,15 +21484,25 @@ extrude3d : check "${1=16}>0 && ${2=1024}>0 && ${3=0.5%}>=0"
     isosurface3d 50% *3d 1,1,$fact rv3d => $nm
   }
 
-#@cli f3d : eq. to 'focale3d'. : (+)
+#@cli f3d : eq. to 'focale3d'.
+f3d :
+  l[] { check "isnum(${1=700})" focale=$1 onfail noarg focale=700 }
+  v + _focale3d $focale
 
-#@cli focale3d : focale : (+)
+#@cli focale3d : focale
 #@cli : Set 3D focale.
 #@cli : (eq. to 'f3d').\n
 #@cli : Set 'focale' to 0 to enable parallel projection (instead of perspective).
 #@cli : Set negative 'focale' will disable 3D sprite zooming.
 #@cli : Default value: 'focale=700'.
 #@cli : $ repeat 5 { torus3d 100,30 rotate3d[-1] 1,1,0,60 focale3d {$<*90} snapshot3d[-1] 400 } remove[0]
+focale3d :
+  l[] { check "isnum(${1=700})" focale=$1 onfail noarg focale=700 }
+  v + _$0 $focale
+
+_focale3d :
+  e[0--3] "Set 3D focale to $1."
+  _focale3d=$1
 
 #@cli gaussians3d : _size>0,_opacity
 #@cli : Convert selected 3D objects into set of 3D gaussian-shaped sprites.
