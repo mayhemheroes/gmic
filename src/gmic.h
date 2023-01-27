@@ -496,7 +496,7 @@ struct gmic {
   gmic_image<void*> display_windows;
   gmic_image<char> status;
 
-  float light3d_x, light3d_y, light3d_z, specular_lightness3d, specular_shininess3d, _progress, *progress;
+  float light3d_x, light3d_y, light3d_z, _progress, *progress;
   gmic_uint64 reference_time;
   unsigned int nb_dowhiles, nb_fordones, nb_foreachdones, nb_repeatdones, nb_carriages_default, nb_carriages_stdout,
     debug_filename, debug_line, cimg_exception_mode;

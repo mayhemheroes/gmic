@@ -2754,7 +2754,7 @@ const char *gmic::builtin_commands_names[] = {
   "r","r3d","rand","remove","repeat","resize","return","reverse","reverse3d",
     "rm","rol","ror","rotate","rotate3d","round","rv","rv3d",
   "s","s3d","screen","select","serialize","set","sh","shared","shift","sign","sin","sinc","sinh","skip",
-    "sl3d","smooth","solve","sort","specl3d","specs3d","sphere3d","split","split3d","sqr","sqrt","srand",
+    "sl3d","smooth","solve","sort","sphere3d","split","split3d","sqr","sqrt","srand",
     "ss3d","status","store","streamline3d","sub","sub3d","svd",
   "t","tan","tanh","text","trisolve",
   "u","um","uncommand","unroll","unserialize",
@@ -4337,8 +4337,6 @@ gmic& gmic::_gmic(const char *const commands_line,
 
   light3d_x = light3d_y = 0;
   light3d_z = -5e8f;
-  specular_lightness3d = 0.15f;
-  specular_shininess3d = 0.8f;
   progress = p_progress?p_progress:&_progress;
   *progress = -1;
 
@@ -5917,12 +5915,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         } else if (!command4 && command2=='3' && command3=='d') {
           // Four-chars shortcuts (ending with '3d').
           if (command0=='r' && command1=='v') std::strcpy(command,"reverse3d");
-          else if (command0=='s' && command1=='l') {
-            if (!is_get && !is_selection) CImg<char>::string("specl3d").move_to(_item);
-          }
-          else if (command0=='s' && command1=='s') {
-            if (!is_get && !is_selection) CImg<char>::string("specs3d").move_to(_item);
-          }
         }
         if (item!=_item.data() + (is_hyphen || is_plus?1:0)) item = _item;
         command0 = *command?*command:*item;
@@ -9968,11 +9960,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           unsigned int is_zbuffer = 1, _double3d = ~0U, _render3d = ~0U;
           float x = 0, y = 0, z = 0,
             _focale3d = cimg::type<float>::nan(),
+            _specl3d = cimg::type<float>::nan(),
+            _specs3d = cimg::type<float>::nan(),
             _light3d_x = light3d_x,
             _light3d_y = light3d_y,
-            _light3d_z = light3d_z,
-            _specular_lightness3d = specular_lightness3d,
-            _specular_shininess3d = specular_shininess3d;
+            _light3d_z = light3d_z;
           sep = sepx = sepy = *argx = *argy = 0;
           opacity = 1;
           if (((cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]%c%c",
@@ -10009,12 +10001,12 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                            "%f,%f,%u,%u,%u,%f,%f,%f,%f,%f%c",
                            indices,argx,argy,&z,&opacity,&_render3d,&_double3d,&is_zbuffer,
                            &_focale3d,&_light3d_x,&_light3d_y,&_light3d_z,
-                           &_specular_lightness3d,&end)==13 ||
+                           &_specl3d,&end)==13 ||
                cimg_sscanf(argument,"[%255[a-zA-Z0-9_.%+-]],%255[0-9.eE%+-],%255[0-9.eE%+-],"
                            "%f,%f,%u,%u,%u,%f,%f,%f,%f,%f,%f%c",
                            indices,argx,argy,&z,&opacity,&_render3d,&_double3d,&is_zbuffer,
                            &_focale3d,&_light3d_x,&_light3d_y,&_light3d_z,
-                           &_specular_lightness3d,&_specular_shininess3d,&end)==14) &&
+                           &_specl3d,&_specs3d,&end)==14) &&
               (ind=selection2cimg(indices,images.size(),images_names,"object3d")).height()==1 &&
               (!*argx ||
                cimg_sscanf(argx,"%f%c",&x,&end)==1 ||
@@ -10033,17 +10025,26 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 else if (*s_mode3d=='-' && s_mode3d[1]=='1' && !s_mode3d[2]) _render3d = 0;
               }
             }
-
             if (_double3d==~0U) { // Simple/double face property
               _double3d = 1;
               const CImg<char> s_double3d = get_variable("_double3d",variables_sizes,0,0);
               if (s_double3d && *s_double3d>='0' && *s_double3d<='1' && !s_double3d[1])
                 _double3d = (unsigned int)(*s_double3d - '0');
             }
-
             if (cimg::type<float>::is_nan(_focale3d)) { // Focale
               const CImg<char> s_focale3d = get_variable("_focale3d",variables_sizes,0,0);
-              if (!s_focale3d || std::sscanf(s_focale3d,"%f%c",&_focale3d,&end)!=1) _focale3d = 700;
+              if (!s_focale3d || std::sscanf(s_focale3d,"%f%c",&_focale3d,&end)!=1)
+                _focale3d = 700;
+            }
+            if (cimg::type<float>::is_nan(_specl3d)) { // Specular lightness
+              const CImg<char> s_specl3d = get_variable("_specl3d",variables_sizes,0,0);
+              if (!s_specl3d || std::sscanf(s_specl3d,"%f%c",&_specl3d,&end)!=1 || _specl3d<0)
+                _specl3d = 0.15f;
+            }
+            if (cimg::type<float>::is_nan(_specs3d)) { // Specular shininess
+              const CImg<char> s_specs3d = get_variable("_specs3d",variables_sizes,0,0);
+              if (!s_specs3d || std::sscanf(s_specs3d,"%f%c",&_specs3d,&end)!=1 || _specs3d<0)
+                _specs3d = 0.15f;
             }
 
             print(images,0,"Draw 3D object [%u] at (%g%s,%g%s,%g) on image%s, with opacity %g, "
@@ -10060,7 +10061,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   _double3d?"double":"simple",
                   is_zbuffer?"":"no ",
                   _focale3d,_light3d_x,_light3d_y,_light3d_z,
-                  _specular_lightness3d,_specular_shininess3d);
+                  _specl3d,_specs3d);
 
             const CImg<T> img0 = gmic_image_arg(*ind);
             CImgList<float> opacities;
@@ -10090,14 +10091,14 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 gmic_apply(draw_object3d(nx,ny,z,vertices,primitives,g_list_f,opacities,
                                          _render3d,_double3d,_focale3d,
                                          _light3d_x,_light3d_y,_light3d_z,
-                                         _specular_lightness3d,_specular_shininess3d,
+                                         _specl3d,_specs3d,
                                          opacity,zbuffer),true);
 
               } else {
                 gmic_apply(draw_object3d(nx,ny,z,vertices,primitives,g_list_uc,opacities,
                                          _render3d,_double3d,_focale3d,
                                          _light3d_x,_light3d_y,_light3d_z,
-                                         _specular_lightness3d,_specular_shininess3d,
+                                         _specl3d,_specs3d,
                                          opacity,zbuffer),true);
               }
             }
@@ -10882,8 +10883,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               gmic_instance.light3d_x = light3d_x;
               gmic_instance.light3d_y = light3d_y;
               gmic_instance.light3d_z = light3d_z;
-              gmic_instance.specular_lightness3d = specular_lightness3d;
-              gmic_instance.specular_shininess3d = specular_shininess3d;
               gmic_instance._progress = 0;
               gmic_instance.progress = &gmic_instance._progress;
               gmic_instance.is_change = is_change;
@@ -12663,31 +12662,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           } else arg_error("sphere3d");
           is_change = true;
           ++position;
-          continue;
-        }
-
-        // Set 3D specular light parameters.
-        if (!is_get && !std::strcmp("specl3d",item)) {
-          gmic_substitute_args(false);
-          value = 0.15;
-          if (cimg_sscanf(argument,"%lf%c",
-                          &value,&end)==1 && value>=0) ++position;
-          else value = 0.15;
-          specular_lightness3d = (float)value;
-          print(images,0,"Set lightness of 3D specular light to %g.",
-                specular_lightness3d);
-          continue;
-        }
-
-        if (!is_get && !std::strcmp("specs3d",item)) {
-          gmic_substitute_args(false);
-          value = 0.8;
-          if (cimg_sscanf(argument,"%lf%c",
-                          &value,&end)==1 && value>=0) ++position;
-          else value = 0.8;
-          specular_shininess3d = (float)value;
-          print(images,0,"Set shininess of 3D specular light to %g.",
-                specular_shininess3d);
           continue;
         }
 
