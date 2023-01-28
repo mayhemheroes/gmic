@@ -32297,7 +32297,7 @@ demos : check "isint(${1=2}) && $1>=0 && $1<=2" check_display $0
   # Generate background.
   {menu_fgcol,[w,h]},1,3 +plasma. 1,1,5 n. 0,230 water. 100
   (0.1;0.3^0.1;0.2^0.5;0.3) ri. ..,3 *[-2,-1]
-  (0;1) r. ..,..,1,1,3 pow. 1.5 n. 0.2,1.15 *[-2,-1] n. 0,128
+  (0;1) r. ..,..,1,1,3 ^. 1.5 n. 0.2,1.15 *[-2,-1] n. 0,128
   => background
   w. -1,-1,0,"[G'MIC - "$strver"]" cursor 0 w[] -1,-1,0,0,{([{*,u,v}]-[{*,w,h}])/2}
 
@@ -33313,7 +33313,7 @@ x_connect4 : check_display $0
   to_rgba. circle. 50%,50%,27%,1,0
 
   {4*$R},{4*$R} circle. 50%,50%,20%,1,1 b. 1% g. xy +[-2,-1] n. 0,1 negate.
-  pow. 0.5 +n. -1,0.8 abs. negate. +f. 10 rv[-3--1] a[-3--1] c
+  sqrt. +n. -1,0.8 abs. negate. +f. 10 rv[-3--1] a[-3--1] c
   . sh. 0 f. 60 rm. hsv2rgb[-2,-1]
   100%,100% circle. 50%,50%,30%,1,255 a[-3,-2] .,c rm.
 
@@ -39970,7 +39970,7 @@ fx_feltpen_preview :
 fx_ghost :
   foreach {
     split_opacity l[0] {
-      diffusiontensors. 1,1,$2,$3 eigen. compose_channels.. + sqrt.. n.. 1,100 pow.. $4 n.. 0,$1
+      diffusiontensors. 1,1,$2,$3 eigen. compose_channels.. + sqrt.. n.. 1,100 ^.. $4 n.. 0,$1
       100%,100%
       eval.. "*
         ca = i(x,y,0,0);
@@ -47413,8 +47413,8 @@ _fx_chromatic_aberrations :
   fi
   if $5 # Center/Borders attenuation
     100%,100% =. 1,50%,50% distance. 1 n. 0,1.4142 c. 0,1
-    if $5>0 pow. {0.1+$6} n. {1-$5%},1
-    else negate. 1 pow. $6 n. {1+$5%},1
+    if $5>0 ^. {0.1+$6} n. {1-$5%},1
+    else negate. 1 ^. $6 n. {1+$5%},1
     fi
     *[-2,-1]
   fi
@@ -48447,7 +48447,7 @@ _fx_magic_details :
   foreach {
     +bilateral $2,$3
     +gradient_norm.. +. 1
-    pow. {$4>=0?3.1-$4:-3.1-$4}
+    ^. {$4>=0?3.1-$4:-3.1-$4}
     b. $5 n. 1,{1+$1}
     -... .. *[-3,-1] + c 0,255
   }
@@ -50093,7 +50093,7 @@ fx_guided_lightrays :
         polygon(#-1,2,xl,yl,xl + L*u,yl + L*v,-1,255);
      )"
 
-    equalize. 65536,1,{iM} n. 0,1 power={10^(-$1%)} pow. {max(1e-2,$power)} b. $5% n. 0,255
+    equalize. 65536,1,{iM} n. 0,1 power={10^(-$1%)} ^. {max(1e-2,$power)} b. $5% n. 0,255
     i[-2] (${9-11}:cyzx) r.. .,.,1,3 a[-2,-1] c
     k. gui_set_layer_mode $bmode gui_set_layer_opacity $13
   }
