@@ -10012,7 +10012,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               (!*argy ||
                cimg_sscanf(argy,"%f%c",&y,&end)==1 ||
                (cimg_sscanf(argy,"%f%c%c",&y,&sepy,&end)==2 && sepy=='%')) &&
-              (_render3d==~0U || _render3d<=5) && is_zbuffer<=1 && _double3d<=1) {
+              (_render3d==~0U || _render3d<=5) && is_zbuffer<=1 &&
+              (_double3d==~0U || _double3d<=1)) {
 
             // Get default rendering options.
             if (_render3d==~0U) { // Rendering mode
