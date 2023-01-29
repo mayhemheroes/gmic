@@ -9297,10 +9297,12 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               images.remove(l); images_names.remove(l--); // Remove special items
             }
             if (is_get) {
-              cimglist_for(images,l) // Replace shared items by non-shared one for a get version
+              cimglist_for(images,l) { // Replace shared items by non-shared ones for a get version
                 if (images[l].is_shared()) {
                   CImg<T> tmp; (images[l].move_to(tmp)).swap(images[l]);
                 }
+                images_names[l].get_copymark().move_to(images_names[l]);
+              }
               images.insert(_images.size(),0);
               cimglist_for(_images,l) images[l].swap(_images[l]);
               _images_names.move_to(images_names,0);
@@ -11279,9 +11281,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         if (!std::strcmp("remove",command)) {
           print(images,0,"Remove image%s",
                 gmic_selection.data());
-          if (is_get) { g_list.assign(images); g_list_c.assign(images_names); }
+          if (is_get) {
+            g_list.assign(images);
+            g_list_c.assign(images_names);
+          }
           remove_images(images,images_names,selection,0,selection.height() - 1);
           if (is_get) {
+            cimglist_for(images,l) images_names[l].get_copymark().move_to(images_names[l]);
             g_list.move_to(images,0);
             g_list_c.move_to(images_names,0);
           }
