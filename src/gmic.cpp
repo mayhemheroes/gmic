@@ -7212,8 +7212,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 CImg<T> path(1),
                   dist = img.get_distance_dijkstra((T)nvalue,custom_metric,algorithm==4,path);
                 dist.append(path,'c');
-                if (is_get) { images_names[uind].get_copymark().move_to(images_names); dist.move_to(images,~0U); }
-                else dist.move_to(images[uind].assign());
+                if (is_get) {
+                  images_names[uind].get_copymark().move_to(images_names);
+                  dist.move_to(images,~0U);
+                } else dist.move_to(images[uind].assign());
               }
           } else arg_error("distance");
           is_change = true;
