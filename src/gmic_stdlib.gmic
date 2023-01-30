@@ -22755,40 +22755,28 @@ _specs3d :
   fi
   => "[3D sphere]"
 
-#@cli spherical3d : _nb_azimuth>=3,_nb_zenith>=3,_radius_function(phi,theta)
+#@cli spherical3d : "radius_function(phi,theta)",_nb_recursions!=0 : "radius_function(phi,theta)",_nb_phi>=3,_nb_theta>=3
 #@cli : Input 3D spherical object at (0,0,0), with specified geometry.
-#@cli : Default values: 'nb_zenith=nb_azimut=64' and 'radius_function="abs(1+0.5*cos(3*phi)*sin(4*theta))"'.
-#@cli : $ spherical3d 64 +primitives3d 1
-+spherical3d : check "${1=64}>=3 && ${2=$1}>=3" skip "${3=abs(1+0.5*cos(3*phi)*sin(4*theta))}"
-  e[^-1] "Input 3D spherical object, with subdivisions ($1,$2) and height function '$3'."
-  ('CImg3d':y) # Magic number.
-  n1={round($1)} n2={round($2)}
-
-  # Define 3D vertices.
-  $n1,{$n2-1},1,3,"phi = 2*pi*(x+0.5)/w;\
-                   theta = -pi/2+pi*(y+0.5)/h;\
-                   cp = cos(phi);\
-                   sp = sin(phi);\
-                   ct = cos(theta);\
-                   ($3)*if(c==0,ct*cp,if(c==1,ct*sp,sin(theta)))"
-  r. {w*h},3,1,1,-1 permute. yxzc
-  i.. (0,0,{phi=0;theta=-pi/2;-$3};0,0,{phi=0;theta=pi/2;$3}) a[-2,-1] y  # Add the two poles.
-  nbv={h} y.
-
-  # Define 3D primitives.
-  $n1,{$n2-2},1,4,"nx=(x+1)%w;ny=(y+1);2+if(c==0,x+y*"$n1",if(c==1,nx+y*"$n1",if(c==2,nx+ny*"$n1",x+ny*"$n1")))"
-  r. {w*h},4,1,1,-1 permute. yxzc i.. 1,{h},1,1,4 a[-2,-1] x
-  2,$n1,1,1,3,0 1,$n1,1,1,'y' ++. 1 %. {h} 2,$n1,1,1,3,1 [-3,-2]  # Connect the two poles.
-  +[-5,-4] 2 rv[-5,-4] +[-2,-1] {$nbv-$n1} a[-3--1] x a[-4--2] x
-  nbp={h+{-2,h}+{-3,h}}
-  y[-3--1] a[-3--1] y
-
-  # Define other object information (properties, colors and opacities).
-  i... ($nbv;$nbp)
-  1,{3*$nbp},1,1,200 1,$nbp,1,1,1 a[-2,-1] y
-
-  # Append as a 3D object.
-  a[-5--1] y => "[3D spherical surface '$3']"
+#@cli : Second and third arguments are the same as in command ''sphere3d''.
+#@cli : Default values: 'nb_recursions=5'.
+#@cli : $ spherical3d "abs(1+0.5*cos(3*phi)*sin(4*theta))" +primitives3d 1
++spherical3d : check "${2=5}!=0" skip "${3=}"
+  e[^-1] "Input 3D spherical object, with radius function '$1'."
+  l[] {
+    sphere3d 1,${2--1}
+    s3d
+    r[2] 3,{2,h/3},1,1,-1 permute[2] zycx
+    f[2] "
+      V = [ i0,i1,i2 ];
+      V/=norm(V);
+      theta = -acos(V[2]);
+      phi = atan2(V[1],V[0]);
+      R = ($1);
+      st = sin(theta);
+      [ R*cos(phi)*st,R*sin(phi)*st,R*cos(theta) ]"
+    permute[2] cyzx y[2] a y
+    => "[3D spherical surface '$1']"
+  }
 
 #@cli spline3d : x0[%],y0[%],z0[%],u0[%],v0[%],w0[%],x1[%],y1[%],z1[%],u1[%],v1[%],w1[%],_nb_vertices>=2
 #@cli : Input 3D spline with specified geometry.
@@ -35886,8 +35874,8 @@ x_reflection3d : check_display $0
 
   # Create 3D objects.
   torus3d 30,10 col3d. 255,200,0
-  spherical3d 47,34,"80+20*abs(cos(2*theta))" s3d. rm.. i.. 3,{h},1,1,150,220,255,200,255,255 y.. a[-6--1] y
-  spherical3d 47,34,"100*abs(1+0.6*cos(3*phi)*sin(4*theta))"
+  spherical3d "80+20*abs(cos(2*theta))",51,50 s3d. rm.. i.. 3,{h},1,1,150,220,255,200,255,255 y.. a[-6--1] y
+  spherical3d "100*abs(1+0.6*cos(3*phi)*sin(4*theta))",51,50
   r3d[-2,-1] 0,1,0,90 db3d 0
 
   # Start animation loop.
