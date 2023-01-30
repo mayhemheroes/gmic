@@ -11890,7 +11890,7 @@ _apply_channels : check "isint(${3=0}) && $3>=0 && $3<=2"
   ('$/') id:="h=0;for(k=0,k<w,((h*=31)+=i[k++])%=1048576)" rm.
   _ac_$channels m _ac_precond$id:$_p m _ac_forward$id:$_f m _ac_backward$id:$_b
   foreach {
-    _ac_precond$id is_alpha:="s==2 || s==4"
+    s={s} _ac_precond$id is_alpha:="s==2 || s==4"
     if $is_alpha s c,{1-s} fi
     _ac_forward$id[0] a c
     sh $_s _ac. "$1"
@@ -11898,6 +11898,7 @@ _apply_channels : check "isint(${3=0}) && $3>=0 && $3<=2"
     rm.
     if $is_alpha s c,{1-s} fi
     _ac_backward$id[0] a c
+    to_colormode $s
   }
   um _ac_precond$id,_ac_forward$id,_ac_backward$id
 
@@ -11918,13 +11919,13 @@ _ac :
 
 _ac_all : _p="" _f="" _b="" _s=0,100%
 
-_ac_rgba : _p="to_rgba" _f="" _b="" _s=0,3
-_ac_rgba_r : _p="to_color" _f="" _b="" _s=0
-_ac_rgba_g : _p="to_color" _f="" _b="" _s=1
-_ac_rgba_b : _p="to_color" _f="" _b="" _s=2
-_ac_rgba_a : _p="to_rgba" _f="" _b="" _s=3
+_ac_rgba : _p="to_rgba" _f,_b= _s=0,3
+_ac_rgba_r : _p="to_color" _f,_b= _s=0
+_ac_rgba_g : _p="to_color" _f,_b= _s=1
+_ac_rgba_b : _p="to_color" _f,_b= _s=2
+_ac_rgba_a : _p="to_rgba" _f,_b= _s=3
 
-_ac_rgb : _p="to_color" _f="" _b="" _s=0,2
+_ac_rgb : _p="to_color" _f,_b _s=0,2
 _ac_rgb_r : _ac_rgba_r
 _ac_rgb_g : _ac_rgba_g
 _ac_rgb_b : _ac_rgba_b
