@@ -22653,47 +22653,76 @@ _specs3d :
   e[0--3] "Set shininess of 3D specular light to $1."
   _specs3d=$1
 
-#@cli sphere3d : radius,_nb_recursions>=0
+#@cli sphere3d : radius,_nb_recursions>=0 : radius,_nb_phi>=3,_nb_theta>=3
 #@cli : Input 3D sphere at (0,0,0), with specified geometry.
 #@cli : Default value: 'nb_recursions=3'.
 #@cli : $ sphere3d 100 +primitives3d 1 color3d[-2] ${-rgb}
-+sphere3d : check "isint(${2=3}) && $2>=0"
-  e[^-1] "Input 3D sphere, with radius $1 and $2 subdivision iterations."
-  l[] {
++sphere3d : check "isnum(${1=1}) && ${2=3}>=0" skip "${3=}"
 
-    # Generate initial icosahedron.
-    (1;3;1;3;2;2;2;2;4;0;4;0^2;2;2;2;4;4;0;0;3;3;1;1^4;4;0;0;3;1;3;1;2;2;2;2) # List of vertices
-    (-0.850650808352039932,-0.525731112119133606,0,0.525731112119133606,0.850650808352039932)
-    map.. . rm. (12) a[-2,-1] y
+  if !narg($3)  # Generate with recursive subdivisions of an icosahedron
+    e[0--3] "Input 3D sphere, with radius $1 and $2 subdivision iterations."
+    l[] {
 
-    (0;0;9;4;4;8;8;5;5;2;7;7;7;11;0;6;9;9;9;7^\ # List of triangles
-     1;4;4;8;1;1;10;8;3;3;3;10;6;6;6;10;11;2;5;11^\
-     4;9;5;5;8;10;3;3;2;7;10;6;11;0;1;1;0;11;2;2) (20) a[-2,-1] y
+      # Generate initial icosahedron.
+      (1;3;1;3;2;2;2;2;4;0;4;0^2;2;2;2;4;4;0;0;3;3;1;1^4;4;0;0;3;1;3;1;2;2;2;2) # List of vertices
+      (-0.850650808352039932,-0.525731112119133606,0,0.525731112119133606,0.850650808352039932)
+      map.. . rm. (12) a[-2,-1] y
 
-    # Subdivide recursively.
-    repeat $2 {
-      0 # Next primitives
-      1,{1,@{1,h-1}},1,1,"
-        unit(V) = (ref(V,_V); _V/norm(_V));
-        p = I[#1,y];
-        P0 = I[#0,p[0]]; P1 = I[#0,p[1]]; P2 = I[#0,p[2]];
-        ref(string(#48,'p',min(p[0],p[1]),'_',max(p[0],p[1])),varname); p01 = get(varname);
-        isnan(p01)?(set(varname,p01 = da_size(#0)); da_push(#0,unit((P0 + P1)/2)));
-        ref(string(#48,'p',min(p[0],p[2]),'_',max(p[0],p[2])),varname); p02 = get(varname);
-        isnan(p02)?(set(varname,p02 = da_size(#0)); da_push(#0,unit((P0 + P2)/2)));
-        ref(string(#48,'p',min(p[1],p[2]),'_',max(p[1],p[2])),varname); p12 = get(varname);
-        isnan(p12)?(set(varname,p12 = da_size(#0)); da_push(#0,unit((P1 + P2)/2)));
-        da_push([p[0],p01,p02],[p01,p[1],p12],[p02,p12,p[2]],[p01,p12,p02])"
-      rm[1,-1]
+      (0;0;9;4;4;8;8;5;5;2;7;7;7;11;0;6;9;9;9;7^\ # List of triangles
+       1;4;4;8;1;1;10;8;3;3;3;10;6;6;6;10;11;2;5;11^\
+       4;9;5;5;8;10;3;3;2;7;10;6;11;0;1;1;0;11;2;2) (20) a[-2,-1] y
+
+      # Subdivide recursively.
+      repeat $2 {
+        0 # Next primitives
+        1,{1,@{1,h-1}},1,1,"
+          unit(V) = (ref(V,_V); _V/norm(_V));
+          p = I[#1,y];
+          P0 = I[#0,p[0]]; P1 = I[#0,p[1]]; P2 = I[#0,p[2]];
+          ref(string(#48,'p',min(p[0],p[1]),'_',max(p[0],p[1])),varname); p01 = get(varname);
+          isnan(p01)?(set(varname,p01 = da_size(#0)); da_push(#0,unit((P0 + P1)/2)));
+          ref(string(#48,'p',min(p[0],p[2]),'_',max(p[0],p[2])),varname); p02 = get(varname);
+          isnan(p02)?(set(varname,p02 = da_size(#0)); da_push(#0,unit((P0 + P2)/2)));
+          ref(string(#48,'p',min(p[1],p[2]),'_',max(p[1],p[2])),varname); p12 = get(varname);
+          isnan(p12)?(set(varname,p12 = da_size(#0)); da_push(#0,unit((P1 + P2)/2)));
+          da_push([p[0],p01,p02],[p01,p[1],p12],[p02,p12,p[2]],[p01,p12,p02])"
+        rm[1,-1]
+      }
+
+      # Convert coordinates/primitives to a 3D object.
+      da_freeze nbp={1,h}
+      *[0] $1 permute cyzx i.. 1,100%,1,1,3 a[-2,-1] x
+      i[0] ({'CImg3d'},{0,h},$nbp) 3,$nbp,1,1,200 1,$nbp,1,1,1 y a y
     }
+  else # Generate with spherical coordinates
+    e[0--3] "Input 3D sphere, with radius $1 and angular discretizations ($2,$3)."
+    l[] {
+      nb_phi,nb_theta={max(3,$2)},{max(3,$3)}
 
-    # Convert coordinates/primitives to a 3D object.
-    da_freeze nbp={1,h}
-    *[0] $1 permute cyzx i.. 1,100%,1,1,3 a[-2,-1] x
-    i[0] ({'CImg3d'},{0,h},$nbp)
-    3,$nbp,1,1,200 1,$nbp,1,1,1
-    y a y => "[3D sphere]"
-  }
+      # Generate vertices.
+      1 $nb_phi,{$nb_theta-2},1,1,"
+        begin(da_push(#0,0,0,-1));
+        theta = lerp(-pi/2,pi/2,(y + 1)/(h + 1));
+        phi = lerp(0,2*pi,x/w);
+        ct = cos(theta);
+        da_push(#0,cos(phi)*ct,sin(phi)*ct,sin(theta));
+        end(da_push(#0,0,0,1); da_freeze())" rm.
+
+      # Generate primitives.
+      1 $nb_phi,{$nb_theta-2},1,1,"
+        const p = w; const ptm2 = p*h;
+        xp1 = x + 1; xp1mpp1 = xp1%p + 1;
+        yp = y*p; yp1p = yp + p;
+        !y?da_push(3,0,xp1mpp1,xp1);
+        y!=h-1?da_push(4,xp1 + yp,xp1mpp1 + yp,xp1mpp1 + yp1p,xp1 + yp1p):
+               da_push(3,ptm2 + 1,xp1 + yp,yp + xp1mpp1);
+        end(da_freeze())" rm.
+
+      nbp:=$nb_phi*($nb_theta-1)
+      i[0] ({'CImg3d'},{0,h/3},$nbp:y) 3,$nbp,1,1,200 1,$nbp,1,1,1 y a y
+    }
+  fi
+  => "[3D sphere]"
 
 #@cli spherical3d : _nb_azimuth>=3,_nb_zenith>=3,_radius_function(phi,theta)
 #@cli : Input 3D spherical object at (0,0,0), with specified geometry.
