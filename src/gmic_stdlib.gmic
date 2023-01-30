@@ -2588,7 +2588,8 @@ _display3d :
       onfail l[] { ({'${}'}) s +,{'"'check3d': "'} k. msg={t} rm } error[] "Command 'display3d': "$msg
     }
     nm={n}
-    bnm={b} if ['{x}']!=0 bnm.=.{x} fi
+    bnm={b} l. { if ['{x}']!=0 bnm.=.{x} fi onfail bnm.=.{x} }
+
     nbv,nbp={f2ui([i[6],i[7]])}
     e[0--4] "Display 3D object ["{arg(1+$>,$[])}"] = '"$nm"' ("$nbv" vertices, "$nbp" primitives)."
 
@@ -2604,13 +2605,13 @@ _display3d :
     (1,0,0,0;0,1,0,0;0,0,1,0) store. pose3d
     posx,posy,zoom_factor=50,50,1
     is_fullscreen,is_zbuffer,is_axes3d,is_outline,is_boundingbox,is_animate,is_outvideo={*,f},1,1,0,0,0,0
-    mode_render=4
-    mode_drender={$nbp<2048?$mode_render:-1}
+    mode_render:=isint($_mode3d)?$_mode3d:4
+    mode_drender:=isint($_moded3d)?$_moded3d:-1
     mode_background={$is_user_background?7:3}
-    mode_orientation=2
+    mode_orientation:=!isbool($_double3d)?2:$_double3d==1?2:0;
     mode_animate=1
     speed_animate=1
-    focale=800
+    focale:=isnum($_focale3d)?$_focale3d:800
     mx0,my0,mx1,my1=
     notification= fontsize_notif=
     wait_event=1
@@ -21369,13 +21370,26 @@ distribution3d :
 #@cli : Default value: 'factor_z=1'.
 #@cli : $ torus3d 5,2 repeat 5 { +add3d[-1] 12,0,0 div3d[-1] 1.2 color3d[-1] ${-rgb} } add3d
 
-#@cli db3d : eq. to 'double3d'. : (+)
+#@cli db3d : eq. to 'double3d'.
+db3d :
+  l[] { check "isbool(${1=1})" mode=$1 onfail noarg mode=1 }
+  v + _double3d $mode
 
-#@cli double3d : _is_double_sided={ 0 | 1 } : (+)
+#@cli double3d : _is_double_sided={ 0 | 1 }
 #@cli : Enable/disable double-sided mode for 3D rendering.
 #@cli : (eq. to 'db3d').
 #@cli : Default value: 'is_double_sided=1'.
 #@cli : $ mode3d 1 repeat 2 { torus3d 100,30 rotate3d[-1] 1,1,0,60 double3d $> snapshot3d[-1] 400 }
+double3d :
+  l[] { check "isbool(${1=1})" mode=$1 onfail noarg mode=1 }
+  v + _$0 $mode
+
+_double3d :
+  if $^>=0
+    s0,s1=Disable,Enable
+    e[0--4] ${s$1}" double-sided mode for 3D rendering."
+  fi
+  _double3d=$1
 
 #@cli elevation3d : { z-factor | [elevation_map] | 'formula' },base_height={ -1 | >=0 } : (no arg)
 #@cli : Generate 3D elevation of selected images, opt. with a specified elevation map.
@@ -21471,15 +21485,25 @@ extrude3d : check "${1=16}>0 && ${2=1024}>0 && ${3=0.5%}>=0"
     isosurface3d 50% *3d 1,1,$fact rv3d => $nm
   }
 
-#@cli f3d : eq. to 'focale3d'. : (+)
+#@cli f3d : eq. to 'focale3d'.
+f3d :
+  l[] { check "isnum(${1=700})" focale=$1 onfail noarg focale=700 }
+  v + _focale3d $focale
 
-#@cli focale3d : focale : (+)
+#@cli focale3d : focale
 #@cli : Set 3D focale.
 #@cli : (eq. to 'f3d').\n
 #@cli : Set 'focale' to 0 to enable parallel projection (instead of perspective).
 #@cli : Set negative 'focale' will disable 3D sprite zooming.
 #@cli : Default value: 'focale=700'.
 #@cli : $ repeat 5 { torus3d 100,30 rotate3d[-1] 1,1,0,60 focale3d {$<*90} snapshot3d[-1] 400 } remove[0]
+focale3d :
+  l[] { check "isnum(${1=700})" focale=$1 onfail noarg focale=700 }
+  v + _$0 $focale
+
+_focale3d :
+  e[0--3] "Set 3D focale to $1."
+  _focale3d=$1
 
 #@cli gaussians3d : _size>0,_opacity
 #@cli : Convert selected 3D objects into set of 3D gaussian-shaped sprites.
@@ -21851,9 +21875,12 @@ lathe3d : check "${1=128}>0 && ${2=0.5%}>=0 && ${3=361}>=0"
   1,{$res-1},1,1,2 (0;{$res-2}) r. 1,{$res-1},1,1,3 ++. 1 a[-3--1] x round. 1 r. 1,{w*h},1,1,-1
   1,{3*($res-1)},1,1,200 1,{$res-1},1,1,1 a[-5--1] y => [3D\ lissajou]
 
-#@cli m3d : eq. to 'mode3d'. : (+)
+#@cli m3d : eq. to 'mode3d'.
+m3d :
+  l[] { check "isint(${1=4}) && inrange($1,-1,5)" mode=$1 onfail noarg mode=4 }
+  v + _mode3d $mode
 
-#@cli mode3d : _mode : (+)
+#@cli mode3d : _mode
 #@cli : Set static 3D rendering mode.
 #@cli : (eq. to 'm3d').\n
 #@cli : 'mode' can be { -1=bounding-box | 0=dots | 1=wireframe | 2=flat | 3=flat-shaded | 4=gouraud-shaded | \
@@ -21862,15 +21889,38 @@ lathe3d : check "${1=128}>0 && ${2=0.5%}>=0 && ${3=361}>=0"
 #@cli : Default value: 'mode=4'.
 #@cli : $ (0,1,2,3,4,5) double3d 0 repeat w { torus3d 100,30 rotate3d[-1] 1,1,0,60 mode3d {0,@$>} \
 # snapshot3d[-1] 300 } remove[0]
+mode3d :
+  l[] { check "isint(${1=4}) && inrange($1,-1,5)" mode=$1 onfail noarg mode=4 }
+  v + _$0 $mode
 
-#@cli md3d : eq. to 'moded3d'. : (+)
+_mode3d :
+  if $^>=0
+    s0,s1,s2,s3,s4,s5,s6=bounding-box,dots,wireframe,flat,flat-shaded,gouraud-shaded,phong-shaded
+    e[0--4] "Set static 3D rendering mode to "${s{$1+1}}"."
+  fi
+  _mode3d=$1
 
-#@cli moded3d : _mode : (+)
+#@cli md3d : eq. to 'moded3d'.
+md3d :
+  l[] { check "isint(${1=-1}) && inrange($1,-1,5)" mode=$1 onfail noarg mode=-1 }
+  v + _moded3d $mode
+
+#@cli moded3d : _mode
 #@cli : Set dynamic 3D rendering mode for interactive 3D viewer.
 #@cli : (eq. to 'md3d').\n
 #@cli : 'mode' can be { -1=bounding-box | 0=dots | 1=wireframe | 2=flat | 3=flat-shaded | 4=gouraud-shaded | \
 # 5=phong-shaded }.
 #@cli : Default value: 'mode=-1'.
+moded3d :
+  l[] { check "isint(${1=-1}) && inrange($1,-1,5)" mode=$1 onfail noarg mode=-1 }
+  v + _$0 $mode
+
+_moded3d :
+  if $^>=0
+    s0,s1,s2,s3,s4,s5,s6=bounding-box,dots,wireframe,flat,flat-shaded,gouraud-shaded,phong-shaded
+    e[0--4] "Set dynamic 3D rendering mode to "${s{$1+1}}"."
+  fi
+  _moded3d=$1
 
 #@cli *3d : eq. to 'mul3d'. : (+)
 
@@ -22565,28 +22615,145 @@ snapshot3d : check "${2=1}>=0" skip ${1=512},${3=""}
    =>[1] {-2,n} rm[0]
   } } rm.
 
-#@cli sl3d : eq. to 'specl3d'. : (+)
+#@cli sl3d : eq. to 'specl3d'.
+sl3d :
+  l[] { check "${1=0.15}>=0" value=$1 onfail noarg value=0.15 }
+  v + _specl3d $value
 
-#@cli specl3d : value>=0 : (+)
+#@cli specl3d : value>=0
 #@cli : Set lightness of 3D specular light.
 #@cli : (eq. to 'sl3d').
 #@cli : Default value: 'value=0.15'.
 #@cli : $ (0,0.3,0.6,0.9,1.2) repeat w { torus3d 100,30 rotate3d[-1] 1,1,0,60 color3d[-1] 255,0,0 specl3d {0,@$>} \
 # snapshot3d[-1] 400 } remove[0]
+specl3d :
+  l[] { check "${1=0.15}>=0" value=$1 onfail noarg value=0.15 }
+  v + _$0 $value
 
-#@cli ss3d : eq. to 'specs3d'. : (+)
+_specl3d :
+  e[0--3] "Set lightness of 3D specular light to $1."
+  _specl3d=$1
 
-#@cli specs3d : value>=0 : (+)
+#@cli ss3d : eq. to 'specs3d'.
+ss3d :
+  l[] { check "${1=0.8}>=0" value=$1 onfail noarg value=0.8 }
+  v + _specs3d $value
+
+#@cli specs3d : value>=0
 #@cli : Set shininess of 3D specular light.
 #@cli : (eq. to 'ss3d').
 #@cli : Default value: 'value=0.8'.
 #@cli : $ (0,0.3,0.6,0.9,1.2) repeat w { torus3d 100,30 rotate3d[-1] 1,1,0,60 color3d[-1] 255,0,0 specs3d {0,@$>} \
 # snapshot3d[-1] 400 } remove[0]
+specs3d :
+  l[] { check "${1=0.8}>=0" value=$1 onfail noarg value=0.8 }
+  v + _$0 $value
 
-#@cli sphere3d : radius,_nb_recursions>=0 : (+)
+_specs3d :
+  e[0--3] "Set shininess of 3D specular light to $1."
+  _specs3d=$1
+
+#@cli sphere3d : radius,_nb_recursions!=0 : radius,_nb_phi>=3,_nb_theta>=3
 #@cli : Input 3D sphere at (0,0,0), with specified geometry.
+#@cli : - If 2 arguments are specified:
+#@cli :   - If 'nb_recursions>0', the sphere is generated using recursive subdivisions of an **icosahedron**.
+#@cli :   - If 'nb_recursions<0', the sphere is generated using recursive subdividions of a **cube**.
+#@cli : - If 3 arguments are specified, the sphere is generated using spherical coordinates discretization.
 #@cli : Default value: 'nb_recursions=3'.
 #@cli : $ sphere3d 100 +primitives3d 1 color3d[-2] ${-rgb}
++sphere3d : check "isnum(${1=1}) && ${2=3}!=0" skip "${3=}"
+
+  if !narg($3) # Generate 3D sphere with recursive subdivisions
+    e[0--3] "Input 3D sphere, with radius $1 and $2 subdivision iterations."
+    l[] {
+
+      if $2>0 # Subdivide icosahedron
+        # Generate initial icosahedron.
+        (1;3;1;3;2;2;2;2;4;0;4;0^2;2;2;2;4;4;0;0;3;3;1;1^4;4;0;0;3;1;3;1;2;2;2;2) # List of vertices
+        (-0.850650808352039932,-0.525731112119133606,0,0.525731112119133606,0.850650808352039932)
+        map.. . rm. (12) a[-2,-1] y
+
+        (0;0;9;4;4;8;8;5;5;2;7;7;7;11;0;6;9;9;9;7^\ # List of triangles
+         1;4;4;8;1;1;10;8;3;3;3;10;6;6;6;10;11;2;5;11^\
+         4;9;5;5;8;10;3;3;2;7;10;6;11;0;1;1;0;11;2;2) (20) a[-2,-1] y
+
+        # Subdivide recursively.
+        repeat $2 {
+          0 # Next primitives
+          1,{1,@{1,h-1}},1,1,"
+            unit(V) = (ref(V,_V); _V/norm(_V));
+            p = I[#1,y];
+            P0 = I[#0,p[0]]; P1 = I[#0,p[1]]; P2 = I[#0,p[2]];
+            ref(string(#48,'p',min(p[0],p[1]),'_',max(p[0],p[1])),varname); p01 = get(varname);
+            isnan(p01)?(set(varname,p01 = da_size(#0)); da_push(#0,unit((P0 + P1)/2)));
+            ref(string(#48,'p',min(p[0],p[2]),'_',max(p[0],p[2])),varname); p02 = get(varname);
+            isnan(p02)?(set(varname,p02 = da_size(#0)); da_push(#0,unit((P0 + P2)/2)));
+            ref(string(#48,'p',min(p[1],p[2]),'_',max(p[1],p[2])),varname); p12 = get(varname);
+            isnan(p12)?(set(varname,p12 = da_size(#0)); da_push(#0,unit((P1 + P2)/2)));
+            da_push([p[0],p01,p02],[p01,p[1],p12],[p02,p12,p[2]],[p01,p12,p02])"
+          rm[1,-1]
+        }
+      else # Subdivide cube
+        # Generate initial cube.
+        (-1;1;1;-1;-1;1;1;-1^-1;-1;1;1;-1;-1;1;1^-1;-1;-1;-1;1;1;1;1) /. {sqrt(3)} (8) a[-2,-1] y # List of vertices
+        (0;4;0;3;0;1^3;5;1;7;4;2^2;6;5;6;7;6^1;7;4;2;3;5) (6) a[-2,-1] y # List of triangles
+
+        # Subdivide recursively.
+        repeat -$2 {
+          0 # Next primitives
+          1,{1,@{1,h-1}},1,1,"
+            unit(V) = (ref(V,_V); _V/norm(_V));
+            p = I[#1,y];
+            P0 = I[#0,p[0]]; P1 = I[#0,p[1]]; P2 = I[#0,p[2]]; P3 = I[#0,p[3]];
+            ref(string(#48,'p',min(p[0],p[1]),'_',max(p[0],p[1])),varname); p01 = get(varname);
+            isnan(p01)?(set(varname,p01 = da_size(#0)); da_push(#0,unit((P0 + P1)/2)));
+            ref(string(#48,'p',min(p[1],p[2]),'_',max(p[1],p[2])),varname); p12 = get(varname);
+            isnan(p12)?(set(varname,p12 = da_size(#0)); da_push(#0,unit((P1 + P2)/2)));
+            ref(string(#48,'p',min(p[2],p[3]),'_',max(p[2],p[3])),varname); p23 = get(varname);
+            isnan(p23)?(set(varname,p23 = da_size(#0)); da_push(#0,unit((P2 + P3)/2)));
+            ref(string(#48,'p',min(p[0],p[3]),'_',max(p[0],p[3])),varname); p03 = get(varname);
+            isnan(p03)?(set(varname,p03 = da_size(#0)); da_push(#0,unit((P0 + P3)/2)));
+            pc = da_size(#0);
+            da_push(#0,unit((P0 + P1 + P2 + P3)/4));
+            da_push([p[0],p01,pc,p03],[p01,p[1],p12,pc],[pc,p12,p[2],p23],[p03,pc,p23,p[3]])"
+          rm[1,-1]
+        }
+      fi
+
+      # Convert coordinates/primitives to a 3D object.
+      da_freeze nbp={1,h}
+      *[0] $1 permute cyzx i.. 1,100%,1,1,{w} a[-2,-1] x
+      i[0] ({'CImg3d'},{0,h},$nbp) 3,$nbp,1,1,200 1,$nbp,1,1,1 y a y
+    }
+  else # Generate 3D sphere with discretization of spherical coordinates
+    e[0--3] "Input 3D sphere, with radius $1 and angular discretizations ($2,$3)."
+    l[] {
+      nb_phi,nb_theta={max(3,$2)},{max(3,$3)}
+
+      # Generate vertices.
+      1 $nb_phi,{$nb_theta-2},1,1,"
+        begin(da_push(#0,0,0,-1));
+        theta = lerp(-pi/2,pi/2,(y + 1)/(h + 1));
+        phi = lerp(0,2*pi,x/w);
+        ct = cos(theta);
+        da_push(#0,cos(phi)*ct,sin(phi)*ct,sin(theta));
+        end(da_push(#0,0,0,1); da_freeze())" rm.
+
+      # Generate primitives.
+      1 $nb_phi,{$nb_theta-2},1,1,"
+        const p = w; const ptm2 = p*h;
+        xp1 = x + 1; xp1mpp1 = xp1%p + 1;
+        yp = y*p; yp1p = yp + p;
+        !y?da_push(3,0,xp1mpp1,xp1);
+        y!=h-1?da_push(4,xp1 + yp,xp1mpp1 + yp,xp1mpp1 + yp1p,xp1 + yp1p):
+               da_push(3,ptm2 + 1,xp1 + yp,yp + xp1mpp1);
+        end(da_freeze())" rm.
+
+      nbp:=$nb_phi*($nb_theta-1)
+      i[0] ({'CImg3d'},{0,h/3},$nbp:y) 3,$nbp,1,1,200 1,$nbp,1,1,1 y a y
+    }
+  fi
+  => "[3D sphere]"
 
 #@cli spherical3d : _nb_azimuth>=3,_nb_zenith>=3,_radius_function(phi,theta)
 #@cli : Input 3D spherical object at (0,0,0), with specified geometry.
@@ -30354,6 +30521,12 @@ covariance_vectors : skip "${1=avg}"
          C+=mul(mI,mI,s);
          end(merge(C,+); C/=whd - 1; run('u ',v2s(C)))"
 
+#@cli da_freeze
+#@cli : Convert each of the selected dynamic arrays into a 1-column image whose height is the number of array elements.
+da_freeze :
+  e[^-1] "Freeze dynamic array$?."
+  foreach { r 1,{@{h-1}},1,100%,0 }
+
 #@cli dec : decimal_int1,...
 #@cli : Print specified decimal integers into their binary, octal, hexadecimal and string representations.
 dec :
@@ -30749,6 +30922,11 @@ is_macos :
 is_windows :
   if !narg($_is_windows) _is_windows={['$OS']!=0" && "['$WINDIR']!=0} fi
   u $_is_windows
+
+#@cli lof : feature
+#@cli : Return the list of specified features (separated by commas) for each selected images.
+lof :
+  foreach { res.=$c{"$*"} c=, } u $res
 
 #@cli math_lib
 #@cli : Return string that defines a set of several useful macros for the embedded math evaluator.
@@ -31718,7 +31896,8 @@ render_donations : skip "${1="$HOME"/work/src/private_tschumperle/gmic_donations
     # Parse CSV data.
     "$1"
 #    eur2usd={1/0.7988} # Change rate from EUR to USD (Paypal conversion rate in 2020).
-    eur2usd={1/0.8568} # Change rate from EUR to USD (Paypal conversion rate in 2021).
+#    eur2usd={1/0.8568} # Change rate from EUR to USD (Paypal conversion rate in 2021).
+    eur2usd={1/0.873824} # Change rate from EUR to USD (Paypal conversion rate in 2023/01).
     nb_entries={h}
     repeat $nb_entries { e=$>
       date_$e={`I(0,$e)`}
@@ -32185,7 +32364,7 @@ demos : check "isint(${1=2}) && $1>=0 && $1<=2" check_display $0
   # Generate background.
   {menu_fgcol,[w,h]},1,3 +plasma. 1,1,5 n. 0,230 water. 100
   (0.1;0.3^0.1;0.2^0.5;0.3) ri. ..,3 *[-2,-1]
-  (0;1) r. ..,..,1,1,3 pow. 1.5 n. 0.2,1.15 *[-2,-1] n. 0,128
+  (0;1) r. ..,..,1,1,3 ^. 1.5 n. 0.2,1.15 *[-2,-1] n. 0,128
   => background
   w. -1,-1,0,"[G'MIC - "$strver"]" cursor 0 w[] -1,-1,0,0,{([{*,u,v}]-[{*,w,h}])/2}
 
@@ -33201,7 +33380,7 @@ x_connect4 : check_display $0
   to_rgba. circle. 50%,50%,27%,1,0
 
   {4*$R},{4*$R} circle. 50%,50%,20%,1,1 b. 1% g. xy +[-2,-1] n. 0,1 negate.
-  pow. 0.5 +n. -1,0.8 abs. negate. +f. 10 rv[-3--1] a[-3--1] c
+  sqrt. +n. -1,0.8 abs. negate. +f. 10 rv[-3--1] a[-3--1] c
   . sh. 0 f. 60 rm. hsv2rgb[-2,-1]
   100%,100% circle. 50%,50%,30%,1,255 a[-3,-2] .,c rm.
 
@@ -33482,8 +33661,8 @@ x_fireworks : check_display $0
 --------------------------------------------"
   l[] {
   (16;64^64;32^128;32) r 320,160,1,3,3             # [-2] = Background (color gradient).
-  .                                                 # [-1] = Rendered image.
-  w. {1.5*w},{1.5*h},0,"[G"{`39`}"MIC] Fireworks"  # Display window.
+  .                                                # [-1] = Rendered image.
+  w. ${"fitscreen .,35%"},0,"[G"{`39`}"MIC] Fireworks"  # Display window.
   time=0
   do                                               # Start animation loop.
     time-=1
@@ -35713,7 +35892,7 @@ x_reflection3d : check_display $0
 
   # Start animation loop.
   xb,xl,anim=0
-  w[] 400,400,0,"[G"{`39`}"MIC] 3D Reflection"
+  w[] ${"fitscreen 400,400,1,35%"},0,"[G"{`39`}"MIC] 3D Reflection"
   do
 
     tic=$|
@@ -35768,7 +35947,7 @@ x_rubber3d : check_display $0
   400,400,64,3
   {w},{h},1,3,'if(c==0,x,if(c==1,y,y*{1,d}/h))'
   {w},{h},1,3
-  w[] {w},{h},0,"[G"{`39`}"MIC] 3D Rubber Object"
+  w[] ${"fitscreen .,35%"},0,"[G"{`39`}"MIC] 3D Rubber Object"
   frame=0
   do
     fps=${-fps}
@@ -36404,7 +36583,7 @@ x_shadebobs : check_display $0
 ---- Keys '"${c}"ESC"$n"' or '"${c}"Q"$n"' to exit.\n
 ----\n
 -------------------------------------------------"
-  rm t=100 w 512,512,0,"[G"{`39`}"MIC] Shade Bobs"
+  rm t=100 w ${"fitscreen 512,512,1,35%"},0,"[G"{`39`}"MIC] Shade Bobs"
 
   # Start animation loop.
   do
@@ -36572,7 +36751,7 @@ x_starfield3d : check_display $0
     0 t. "Version "${-strver},0,0,48,1,1 r2dy. 18 +f. 255 to_rgb.
     random3d 2500 col3d. 255 *3d. 320,200,1000 -3d. 160,100
     l3d 0,0,-600
-    w[] 640,400,0,"[G"{`39`}"MIC] 3D Starfield"
+    w[] ${"fitscreen 640,400,1,35%"},0,"[G"{`39`}"MIC] 3D Starfield"
     t0=0 t=0
 
     do
@@ -36708,7 +36887,7 @@ x_tetris : check_display $0
 
     +shift[background] 0,{round(-13*$|*1.04^$score)},0,0,2
     j. [curr_render],0,0,0,0,1,[curr_render_mask],255
-    w. {2.25*w},{2.25*h},0,"[G"{`39`}"MIC] Tetris" rm. cursor[0] 0
+    w. ${"fitscreen .,20%"},0,"[G"{`39`}"MIC] Tetris" rm. cursor[0] 0
 
     # Manage user interactions.
     if {*,SPACE} fall_mode=1 fi
@@ -37124,7 +37303,8 @@ x_waves : check_display $0
     shape_fern {2*w},70%,25 r2dx. {-2,3*w/4} to_rgb. ri. ..,0,0,0.5,0.5 n. 0,196 +[-2,-1] c. 0,255
   } else k[0] r[0] 100,100,1,3,2 fi
   i[0] (20;80;0^20;80;0^20;80;0) r[0] 400,300,1,3,3 water[0] 100,2
-  w[0] {0,1.25*w},{0,1.25*h},0,"[G"{`39`}"MIC] Image Waves"
+
+  w[0] ${"fitscreen [0],35%"},0,"[G"{`39`}"MIC] Image Waves"
   w={w} elevation3d. 0 rv3d.
   sh. 8,{7+3*i[6]},0,0 r. 3,{h/3},1,1,-1
   (0,1,0;1,0,1;0,1,0) /. 2
@@ -37179,7 +37359,7 @@ x_whirl : check "${1=0.2}>=0" check_display $0
 ----\n
 --------------------------------------------------"
 
-  5,5,1,3 256,256,1,3 [-1] w. 384,384,0,"[G"{`39`}"MIC] Fractal Whirls"
+  5,5,1,3 256,256,1,3 [-1] w. ${"fitscreen 384,384,1,35%"},0,"[G"{`39`}"MIC] Fractal Whirls"
   tangle=0 tzoom=0 xc={(w-{-3,w})/2} yc={(h-{-3,h})/2}
   do
     rand... 0,255 j.. [-3],$xc,$yc,0,0
@@ -39858,7 +40038,7 @@ fx_feltpen_preview :
 fx_ghost :
   foreach {
     split_opacity l[0] {
-      diffusiontensors. 1,1,$2,$3 eigen. compose_channels.. + sqrt.. n.. 1,100 pow.. $4 n.. 0,$1
+      diffusiontensors. 1,1,$2,$3 eigen. compose_channels.. + sqrt.. n.. 1,100 ^.. $4 n.. 0,$1
       100%,100%
       eval.. "*
         ca = i(x,y,0,0);
@@ -47301,8 +47481,8 @@ _fx_chromatic_aberrations :
   fi
   if $5 # Center/Borders attenuation
     100%,100% =. 1,50%,50% distance. 1 n. 0,1.4142 c. 0,1
-    if $5>0 pow. {0.1+$6} n. {1-$5%},1
-    else negate. 1 pow. $6 n. {1+$5%},1
+    if $5>0 ^. {0.1+$6} n. {1-$5%},1
+    else negate. 1 ^. $6 n. {1+$5%},1
     fi
     *[-2,-1]
   fi
@@ -48335,7 +48515,7 @@ _fx_magic_details :
   foreach {
     +bilateral $2,$3
     +gradient_norm.. +. 1
-    pow. {$4>=0?3.1-$4:-3.1-$4}
+    ^. {$4>=0?3.1-$4:-3.1-$4}
     b. $5 n. 1,{1+$1}
     -... .. *[-3,-1] + c 0,255
   }
@@ -49981,7 +50161,7 @@ fx_guided_lightrays :
         polygon(#-1,2,xl,yl,xl + L*u,yl + L*v,-1,255);
      )"
 
-    equalize. 65536,1,{iM} n. 0,1 power={10^(-$1%)} pow. {max(1e-2,$power)} b. $5% n. 0,255
+    equalize. 65536,1,{iM} n. 0,1 power={10^(-$1%)} ^. {max(1e-2,$power)} b. $5% n. 0,255
     i[-2] (${9-11}:cyzx) r.. .,.,1,3 a[-2,-1] c
     k. gui_set_layer_mode $bmode gui_set_layer_opacity $13
   }
