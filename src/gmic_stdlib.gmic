@@ -8806,8 +8806,7 @@ update_gallery_html : check "isbool(${1=0})"
                      distance,gradient_norm,normalize_local,sharpen,solidify
   commands_patterns=_gallery_patterns,tsp,chessboard,mandelbrot,maze_mask,plasma,shape_fern,shape_snowflake,\
                     sierpinski,syntexturize_matchpatch,truchet,turbulence,watermark_visible,weave
-  commands_3dmeshes=_gallery_3dmeshes,add3d,distribution3d,elevation3d,gmic3d,imageblocks3d,imagerubik3d,\
-                    skeleton3d,spherical3d,tensors3d,text3d,torus3d,weird3d
+  commands_3dmeshes=_gallery_3dmeshes
   commands_stylization=_gallery_stylization
   commands_codesamples=_gallery_codesamples
 
@@ -9120,7 +9119,8 @@ update_gallery_html : check "isbool(${1=0})"
 _gallery :
   foreach {
     if ${-_is_3d}
-      r3d 1,1,0,-80 r3d 0,1,0,80 snapshot3d 400
+      r3d 1,1,0,-80 r3d 0,1,0,30
+      animate3d 20,0,5,0,1.5 s z +rv[1--2]
     else
       if w>8192 z 0,8191 elif h>8192 rows 0,8191 fi
       n 0,255
@@ -20965,7 +20965,8 @@ transpose :
 #@cli : Generate 3D animation frames of rotating 3D objects.
 #@cli : Frames are stacked along the z-axis (volumetric image).
 #@cli : Frame size is the same as the size of the '[background]' image (or 800x800 if no background specified).
-#@cli : Default values: 'filename=(undefined)'.
+#@cli : Default values: 'step_angle_x=0', 'step_angle_y=5', 'step_angle_z=0', 'zoom_factor=1', 'fake_shadow_level=50' \
+# and 'background=(undefined)'.
 animate3d : check "isint($1) && $1>0 && isnum(${2=0}) && isnum(${3=5}) && isnum(${4=0}) && ${5=1}>0 && "\
                   "inrange(${6=50},0,100)" skip "${7=}"
   e[^-1] "Generate 3D animation frames from 3D object$?, with $1 frames, angle steps (${2-4}), zoom factor $5 "\
@@ -56280,6 +56281,23 @@ fx_solve_maze_preview :
 #@cli : $ sample leno,lion,leno resize 400,400 transition3d 20,5,5 rm. _fps=10 _label="transition3d"
 #@cli : $ 256,192 fx_text_pointcloud3d 64,"G'MIC","Rocks!",1,200,220,255,255,255,255,255,2,2,1,19 _fps=10 \
 # _label="3D~text~pointcloud"
+#@cli : $ sphere3d 10 repeat 5 { +add3d[-1] 10,{u(-10,10)},0 color3d[-1] ${-rgb} } add3d _fps=10 _label="3D Spheres"
+#@cli : $ repeat 20 { torus3d 15,2 color3d[-1] ${-rgb} mul3d[-1] 0.5,1 if $>%2 rotate3d[-1] 0,1,0,90 fi add3d[-1] 70 \
+# add3d rotate3d[-1] 0,0,1,18 } double3d 0 _fps=10 _label="3D Ring"
+#@cli : $ image.jpg distribution3d circles3d 1 o3d 0.5 colorcube3d primitives3d[-1] 1 add3d _fps=10 \
+# _label="RGB Color Distribution"
+#@cli : $ image.jpg blur 5 elevation3d. 0.75 _fps=10 _label="3D Elevation"
+#@cli : 128,128,1,3,u(255) plasma 10,3 blur 4 sharpen 10000 n 0,255 \
+# elevation3d[-1] 'X=(x-64)/6;Y=(y-64)/6;-100*exp(-(X^2+Y^2)/30)*abs(cos(X)*sin(Y))' _fps=10 _label="3D Elevation"
+#@cli : $ gmic3d _fps=10 _label="3D G'MIC Logo"
+#@cli : $ image.jpg resize2dy 32 imageblocks3d -20 mode3d 3 _fps=10 _label="3D Image Blocks"
+#@cli : $ image.jpg imagerubik3d , _fps=10 _label="Rubik Cube"
+#@cli : $ shape_cupid 480 skeleton3d , _fps=10 _label="3D Skeleton"
+#@cli : $ spherical3d "abs(1+0.5*cos(3*phi)*sin(4*theta))" _fps=10 _label="3D Spherical Function"
+#@cli : $ 6,6,6,9,"U = [x,y,z] - [w,h,d]/2; U/=norm(U); mul(U,U,3) + 0.3*eye(3)" tensors3d 0.8 _fps=10 _label="3D Tensors"
+#@cli : $ text3d "G'MIC Rocks!" _fps=10 _label="3D Text"
+#@cli : $ torus3d 10,3 color3d[-2] ${-rgb} _fps=10 _label="3D Torus"
+#@cli : $ weird3d 48 color3d[-2] ${-rgb} _fps=10 _label="3D Weird"
 
 #@cli _gallery_stylization
 #@cli : This entry defines some examples of image stylization for the G'MIC gallery page.
