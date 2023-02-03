@@ -23320,6 +23320,21 @@ to_voxels3d : check "${1=128}>0 && ${2=$1}>0 && ${3=$1}>0 && isbool(${4=1})" che
           _rasterize_triangle(P1#,P2#,P0#);
         );
 
+        rasterize_sphere(P0,P1) = (
+          C = (P0 + P1)/2;
+          R = norm(P1 - P0)/2;
+          xm = floor(C[0] - R); xM = ceil(C[0] + R);
+          ym = floor(C[1] - R); yM = ceil(C[1] + R);
+          zm = floor(C[2] - R); zM = ceil(C[2] + R);
+          for (z = zm, z<=zM, ++z,
+            for (y = ym, y<=yM, ++y,
+              for (x = xm, x<=xM, ++x,
+                norm([x,y,z] - C)<=R?(i(#$out,x,y,z) = 1);
+              );
+            );
+          );
+        );
+
       );
 
       N = i[#$prims,p++];
@@ -23329,12 +23344,14 @@ to_voxels3d : check "${1=128}>0 && ${2=$1}>0 && ${3=$1}>0 && isbool(${4=1})" che
       N>1?(P1 = round(I[#$pts,i[#$prims,p++]]*whdm1));
       N>2?(P2 = round(I[#$pts,i[#$prims,p++]]*whdm1));
       N>3?(P3 = round(I[#$pts,i[#$prims,p++]]*whdm1));
+      N>4?(p+=N-4);
 
       # Draw primitives.
       N==1?rasterize_point(P0):
-      N==2?rasterize_line(P0,P1):
-      N==3?rasterize_triangle(P0,P1,P2):
-      N==4?(rasterize_triangle(P0,P1,P2); rasterize_triangle(P0,P2,P3));
+      N==2 || N==6?rasterize_line(P0,P1):
+      N==3 || N==9?rasterize_triangle(P0,P1,P2):
+      N==4 || N==12?(rasterize_triangle(P0,P1,P2); rasterize_triangle(P0,P2,P3)):
+      N==5?rasterize_sphere(P0,P1);
     " rm. k[out]
 
     if $4 expand_xyz 1,0 flood 0,0,0,0,0,1,2 != 2 shrink_xyz 1 fi # Fill interior
