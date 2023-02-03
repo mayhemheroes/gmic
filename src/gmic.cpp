@@ -14522,10 +14522,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   if (img.__eval(s,fast_res)) // Try to get fast approximation for a single scalar first
                     varvalues_d.assign(1)[0] = fast_res;
                   else {
-                    name.assign((unsigned int)std::strlen(s) + 4);
-                    *name = '['; name[1] = ';'; name[name._width - 2] = ']'; name.back() = 0;
-                    std::memcpy(name.data() + 2,s,name.width() - 4);
+                    if (*s!='[' && varnames.width()>1) {
+                      name.assign((unsigned int)std::strlen(s) + 4);
+                      *name = '['; name[1] = ';'; name[name._width - 2] = ']'; name.back() = 0;
+                      std::memcpy(name.data() + 2,s,name.width() - 4);
+                    } else CImg<char>::string(s).move_to(name);
                     strreplace_fw(name);
+
                     try { img.eval(varvalues_d,name,0,0,0,0,&images); }
                     catch (CImgException &e) {
                       name.assign(item,s_end_left - item + 1).back() = 0;
