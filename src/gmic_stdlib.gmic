@@ -23269,6 +23269,78 @@ _texturize3d :
   3,{h},1,1,200 1,{h},1,1,1 y[-4--2] a[-5--1] y
   => [3D\ torus]
 
+#@cli to_voxels3d : _width>0,_height>0,_depth>0,_fill_interior={ 0 | 1 }
+#@cli : Convert selected 3D objects as 3D binary images, using 3D mesh rasterization.
+#@cli : Default values: 'width=height=depth=128' and 'fill_interior=1'.
+to_voxels3d : check "${1=128}>0 && ${2=$1}>0 && ${3=$1}>0 && isbool(${4=1})" check3d
+  s0,s1="",", with interior filling"
+  e[^-1] "Convert 3D object$? to $1x$2$x3 volumetric image"$s$4"."
+  foreach {
+    nm={n} s3d 0 nbp={1,@1} k[2,3] => pts,prims
+    r[pts] 3,{pts,h/3},1,1,-1 permute[pts] zycx n[pts] 0,1
+    $1,$2,$3 => out
+
+    1,$nbp,1,1,">
+      begin(
+        p = 0;
+        P0 = P1 = P2 = P3 = vector3();
+        whdm1 = [ w#$out,h#$out,d#$out ] - 1;
+
+        rasterize_point(P) = (
+          i(#$out,P#) = 1;
+        );
+
+        rasterize_line(P0,P1) = (
+          l01 = max(1,abs(P1# - P0#));
+          repeat (l01 + 1,l,
+            ln = l/l01;
+            P = round(lerp(P0#,P1#,ln));
+            i(#$out,P) = 1;
+          );
+        );
+
+        rasterize_triangle(P0,P1,P2) = (
+          _rasterize_triangle(P0#,P1#,P2#) = (
+            l01 = max(1,abs(P1# - P0#));
+            l02 = max(1,abs(P2# - P0#));
+            l12 = max(1,abs(P2# - P1#));
+            repeat (l01 + 1,l,
+              ln = l/l01;
+              Q = round(lerp(P0#,P1#,ln));
+              lq2 = max(1,abs(P2# - Q));
+              repeat (lq2 + 1,k,
+                kn = k/lq2;
+                P = round(lerp(Q,P2#,kn));
+                i(#$out,P) = 1;
+              );
+            );
+          );
+          _rasterize_triangle(P0#,P1#,P2#);
+          _rasterize_triangle(P0#,P2#,P1#);
+          _rasterize_triangle(P1#,P2#,P0#);
+        );
+
+      );
+
+      N = i[#$prims,p++];
+
+      # Get coordinates of vertices in voxel space.
+      P0 = round(I[#$pts,i[#$prims,p++]]*whdm1);
+      N>1?(P1 = round(I[#$pts,i[#$prims,p++]]*whdm1));
+      N>2?(P2 = round(I[#$pts,i[#$prims,p++]]*whdm1));
+      N>3?(P3 = round(I[#$pts,i[#$prims,p++]]*whdm1));
+
+      # Draw primitives.
+      N==1?rasterize_point(P0):
+      N==2?rasterize_line(P0,P1):
+      N==3?rasterize_triangle(P0,P1,P2):
+      N==4?(rasterize_triangle(P0,P1,P2); rasterize_triangle(P0,P2,P3));
+    " rm. k[out]
+
+    if $4 expand_xyz 1,0 flood 0,0,0,0,0,1,2 != 2 shrink_xyz 1 fi # Fill interior
+    => $nm
+  }
+
 #@cli triangle3d : x0,y0,z0,x1,y1,z1,x2,y2,z2
 #@cli : Input 3D triangle at specified coordinates.
 #@cli : $ repeat 100 { a={$>*pi/50} triangle3d 0,0,0,0,0,3,{cos(3*$a)},{sin(2*$a)},0 color3d[-1] ${-rgb} } add3d
