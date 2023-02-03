@@ -14522,7 +14522,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   if (img.__eval(s,fast_res)) // Try to get fast approximation for a single scalar first
                     varvalues_d.assign(1)[0] = fast_res;
                   else {
-                    if (varnames.width()>1) {
+                    if (*s!='[' && varnames.width()>1) {
                       name.assign((unsigned int)std::strlen(s) + 4);
                       *name = '['; name[1] = ';'; name[name._width - 2] = ']'; name.back() = 0;
                       std::memcpy(name.data() + 2,s,name.width() - 4);
