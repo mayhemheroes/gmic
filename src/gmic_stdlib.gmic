@@ -23310,7 +23310,7 @@ to_voxels3d : check "${1=128}>0 && isbool(${2=1}) && isbool(${3=1})" check3d
   s0,s1,t0,t1=""," interior filling"," no",""
   e[^-1] "Convert 3D object$? to volumetric image, with max resolution $1"$s$2" and"$t$3" color preservation."
   foreach {
-    nm={n} s3d 0 nbp={1,@1} k[2,3] => pts,prims
+    nm={n} p3d 2 s3d 0 nbp={1,@1} k[2,3,4] => pts,prims,cols
     l[pts] {
       r 3,{h/3},1,1,-1 s x
       w,h,d:="dx = iM#0 - im#0;
@@ -23321,6 +23321,7 @@ to_voxels3d : check "${1=128}>0 && isbool(${2=1}) && isbool(${3=1})" check3d
       n[0] 0,{$w-1} n[1] 0,{$h-1} n[2] 0,{$d-1}
       round a c
     }
+    l[cols] { r 3,{h/3},1,1,-1 permute zycx }
     $w,$h,$d => out
 
     1,$nbp,1,1,">
@@ -23400,8 +23401,8 @@ to_voxels3d : check "${1=128}>0 && isbool(${2=1}) && isbool(${3=1})" check3d
       N==3 || N==9?rasterize_triangle(P0,P1,P2):
       N==4 || N==12?(rasterize_triangle(P0,P1,P2); rasterize_triangle(P0,P2,P3)):
       N==5?rasterize_sphere(P0,P1);
-    " rm. k[out]
-
+    "
+    k[out]
     if $2 expand_xyz 1,0 flood 0,0,0,0,0,1,-2 >= 0 shrink_xyz 1 fi # Fill interior
     => $nm
   }
