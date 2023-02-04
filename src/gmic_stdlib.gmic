@@ -23321,16 +23321,17 @@ to_voxels3d : check "${1=128}>0 && isbool(${2=1}) && isbool(${3=1})" check3d
       n[0] 0,{$w-1} n[1] 0,{$h-1} n[2] 0,{$d-1}
       round a c
     }
-    l[cols] { r 3,{h/3},1,1,-1 permute zycx }
+    if $3 l[cols] { r 3,{h/3},1,1,-1 permute zycx } else rm[cols] fi
     $w,$h,$d => out
 
     1,$nbp,1,1,">
       begin(
         p = 0;
+        label = 2;
         P0 = P1 = P2 = P3 = vector3();
 
         rasterize_point(P) = (
-          i(#$out,P#) = 1;
+          i(#$out,P#) = label;
         );
 
         rasterize_line(P0,P1) = (
@@ -23338,7 +23339,7 @@ to_voxels3d : check "${1=128}>0 && isbool(${2=1}) && isbool(${3=1})" check3d
           repeat (l01 + 1,l,
             ln = l/l01;
             P = round(lerp(P0#,P1#,ln));
-            i(#$out,P) = 1;
+            i(#$out,P) = label;
           );
         );
 
@@ -23358,9 +23359,10 @@ to_voxels3d : check "${1=128}>0 && isbool(${2=1}) && isbool(${3=1})" check3d
               repeat (lq2 + 1,k,
                 kn = k/lq2;
                 P = lerp(Q,P2#,kn);
-                i(#$out,round(P)) = 1;
-#                i(#$out,floor(P)) = 1;
-#                i(#$out,ceil(P)) = 1;
+                i(#$out,round(P)) = label;
+
+#                i(#$out,floor(P)) = label;
+#                i(#$out,ceil(P)) = label;
               );
             );
           );
@@ -23401,10 +23403,14 @@ to_voxels3d : check "${1=128}>0 && isbool(${2=1}) && isbool(${3=1})" check3d
       N==3 || N==9?rasterize_triangle(P0,P1,P2):
       N==4 || N==12?(rasterize_triangle(P0,P1,P2); rasterize_triangle(P0,P2,P3)):
       N==5?rasterize_sphere(P0,P1);
-    "
-    k[out]
-    if $2 expand_xyz 1,0 flood 0,0,0,0,0,1,-2 >= 0 shrink_xyz 1 fi # Fill interior
-    => $nm
+
+      $3?++label" rm.
+
+    if $2 expand_xyz[out] 1,0 flood[out] 0,0,0,0,0,1,-1 +<[out] 2 +[out,-1] shrink_xyz[out] 1 fi # Fill interior
+    if $3 r[cols] 1,{cols,h+2},1,100%,0,0,0,1 point[cols] 0,1,0,1,1 map[out] [cols] # Map colors
+    else >[out] 0 # Scalar output
+    fi
+    k[out] => $nm
   }
 
 #@cli triangle3d : x0,y0,z0,x1,y1,z1,x2,y2,z2
