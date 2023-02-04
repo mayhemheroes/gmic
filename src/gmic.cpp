@@ -10691,6 +10691,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   gmic_selection.data(),
                   uext.data(),_filename.data(),
                   fps,*name?name.data():"(default)");
+
+#ifndef cimg_use_opencv
+            if (keep_open)
+              warn(images,0,false,
+                   "Command 'output': Cannot output streamed video, as this requires features from the "
+                   "OpenCV library (not enabled at compilation time).");
+#endif
             g_list.save_video(filename,(unsigned int)fps,name,(bool)keep_open);
             if (!cimg::fsize(filename)) throw CImgException("Output file '%s' is empty. Something went wrong!",
                                                             _filename.data());
