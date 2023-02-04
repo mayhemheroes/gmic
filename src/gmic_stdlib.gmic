@@ -3532,7 +3532,9 @@ display_voxels3d :
 
 _display_voxels3d :
   e[0--3] "Display images$? as set of 3D voxels."
-  foreach {
+  mode3d,moded3d,double3d=$_mode3d,$_moded3d,$_double3d
+  m3d 2 md3d 2 db3d 0
+  +foreach {
     if s==1
       im,iM:=im,iM
       eval. "*begin(is_binary = 1); i!=$im && i!=$iM?(is_binary = 0; break()); end(set('is_binary',is_binary))"
@@ -3543,10 +3545,8 @@ _display_voxels3d :
       args=0.75,1,1.25
     fi
     surfels3d $args +boundingbox3d. o3d. 0.2 axes3d 10,10,10,16 o3d. 0.5 col3d. 255,128,0 +3d
+    d3d 0 rm
   }
-  mode3d,moded3d,double3d=$_mode3d,$_moded3d,$_double3d
-  m3d 2 md3d 2 db3d 0
-  d3d 0
   _mode3d,_moded3d,_double3d=$mode3d,$moded3d,$double3d
 
 #@cli dw : eq. to 'display_warp'.
@@ -23300,8 +23300,8 @@ _texturize3d :
 
 #@cli to_voxels3d : _max_resolution>0,_fill_interior={ 0 | 1 }
 #@cli : Convert selected 3D objects as 3D volumetric images of binary voxels, using 3D mesh rasterization.
-#@cli : Default values: 'max_resolution=256' and 'fill_interior=1'.
-to_voxels3d : check "${1=256}>0 && isbool(${2=1})" check3d
+#@cli : Default values: 'max_resolution=128' and 'fill_interior=1'.
+to_voxels3d : check "${1=128}>0 && isbool(${2=1})" check3d
   s0,s1=""," and interior filling"
   e[^-1] "Convert 3D object$? to volumetric image, with max resolution $1"$s$2"."
   foreach {
