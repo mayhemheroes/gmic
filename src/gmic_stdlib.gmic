@@ -23276,11 +23276,15 @@ to_voxels3d : check "${1=128}>0 && ${2=$1}>0 && ${3=$1}>0 && isbool(${4=1})" che
   s0,s1="",", with interior filling"
   e[^-1] "Convert 3D object$? to $1x$2x$3 volumetric image"$s$4"."
   foreach {
-    nm={n} c3d s3d 0 nbp={1,@1} k[2,3] => pts,prims
+    nm={n} s3d 0 nbp={1,@1} k[2,3] => pts,prims
     l[pts] {
       r 3,{h/3},1,1,-1 s x
-      f:="arg0(argmin($1/(iM#0-im#0),$2/(iM#1-im#1),$3/(iM#2-im#2)),iM#0-im#0,iM#1-im#1,iM#2-im#2)"
-      a c / $f
+      f:=min(($1-1)/(iM#0-im#0),($2-1)/(iM#1-im#1),($3-1)/(iM#2-im#2))
+      * $f round
+      +[0] {int(($1-iM#0-im#0)/2)}
+      +[1] {int(($2-iM#1-im#1)/2)}
+      +[2] {int(($3-iM#2-im#2)/2)}
+      a c
     }
     $1,$2,$3 => out
 
@@ -23289,7 +23293,6 @@ to_voxels3d : check "${1=128}>0 && ${2=$1}>0 && ${3=$1}>0 && isbool(${4=1})" che
         p = 0;
         P0 = P1 = P2 = P3 = vector3();
         C = [ $1,$2,$3 ]/2;
-        whdm1 = [ w#$out,h#$out,d#$out ] - 2;
 
         rasterize_point(P) = (
           i(#$out,P#) = 1;
@@ -23345,10 +23348,10 @@ to_voxels3d : check "${1=128}>0 && ${2=$1}>0 && ${3=$1}>0 && isbool(${4=1})" che
       N = i[#$prims,p++];
 
       # Get coordinates of vertices in voxel space.
-      P0 = round(C + I[#$pts,i[#$prims,p++]]*whdm1);
-      N>1?(P1 = round(C + I[#$pts,i[#$prims,p++]]*whdm1));
-      N>2?(P2 = round(C + I[#$pts,i[#$prims,p++]]*whdm1));
-      N>3?(P3 = round(C + I[#$pts,i[#$prims,p++]]*whdm1));
+      P0 = I[#$pts,i[#$prims,p++]];
+      N>1?(P1 = I[#$pts,i[#$prims,p++]]);
+      N>2?(P2 = I[#$pts,i[#$prims,p++]]);
+      N>3?(P3 = I[#$pts,i[#$prims,p++]]);
       N>4?(p+=N-4);
 
       # Draw primitives.
