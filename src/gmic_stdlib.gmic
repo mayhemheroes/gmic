@@ -3534,11 +3534,16 @@ _display_voxels3d :
   e[0--3] "Display images$? as set of 3D voxels."
   foreach {
     if s==1
-      sigma:=min(w,h,d)*2%
-      +expand_xyz. 1 b. $sigma,0  g. xyz a[-3--1] c n. 0,220 shrink_xyz. 1 *. ..
-      k.
+      im,iM:=im,iM
+      eval. "*begin(is_binary = 1); i!=$im && i!=$iM?(is_binary = 0; break()); end(set('is_binary',is_binary))"
+      if $is_binary # Colorize binary images according to normal
+        sigma:=min(w,h,d)*2%
+        +expand_xyz. 1 b. $sigma,0  g. xyz a[-3--1] c n. 0,220 shrink_xyz. 1 *. .. k. args=0.9,1,1.1
+      fi
+    else
+      args=0.75,1,1.25
     fi
-    surfels3d 0.9,1,1.1
+    surfels3d $args
   }
   mode3d,moded3d,double3d=$_mode3d,$_moded3d,$_double3d
   m3d 2 md3d 2 db3d 0 l3d 0,0,-800
