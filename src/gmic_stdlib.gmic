@@ -23341,15 +23341,20 @@ to_voxels3d : check "${1=128}>0 && isbool(${2=1})" check3d
             l01 = max(1,abs(P1# - P0#));
             l02 = max(1,abs(P2# - P0#));
             l12 = max(1,abs(P2# - P1#));
+#            l01>l02?(swap(l01,l02); swap(P1#,P2#));
+#            l01>l12?(swap(l01,l12); swap(P0#,P2#));
             l01*=1.25;
+
             repeat (l01 + 1,l,
               ln = l/l01;
               Q = round(lerp(P0#,P1#,ln));
               lq2 = max(1,abs(P2# - Q));
               repeat (lq2 + 1,k,
                 kn = k/lq2;
-                P = round(lerp(Q,P2#,kn));
-                i(#$out,P) = 1;
+                P = lerp(Q,P2#,kn);
+                i(#$out,round(P)) = 1;
+#                i(#$out,floor(P)) = 1;
+#                i(#$out,ceil(P)) = 1;
               );
             );
           );
