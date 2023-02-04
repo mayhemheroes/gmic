@@ -23269,24 +23269,25 @@ _texturize3d :
   3,{h},1,1,200 1,{h},1,1,1 y[-4--2] a[-5--1] y
   => [3D\ torus]
 
-#@cli to_voxels3d : _width>0,_height>0,_depth>0,_fill_interior={ 0 | 1 }
+#@cli to_voxels3d : _max_resolution>0,_fill_interior={ 0 | 1 }
 #@cli : Convert selected 3D objects as 3D volumetric images of binary voxels, using 3D mesh rasterization.
-#@cli : Default values: 'width=height=depth=128' and 'fill_interior=1'.
-to_voxels3d : check "${1=128}>0 && ${2=$1}>0 && ${3=$1}>0 && isbool(${4=1})" check3d
-  s0,s1="",", with interior filling"
-  e[^-1] "Convert 3D object$? to $1x$2x$3 volumetric image"$s$4"."
+#@cli : Default values: 'max_resolution=256' and 'fill_interior=1'.
+to_voxels3d : check "${1=256}>0 && isbool(${2=1})" check3d
+  s0,s1=""," and interior filling"
+  e[^-1] "Convert 3D object$? to volumetric image, with max resolution $1"$s$2"."
   foreach {
     nm={n} s3d 0 nbp={1,@1} k[2,3] => pts,prims
     l[pts] {
       r 3,{h/3},1,1,-1 s x
-      f:=min(($1-1)/(iM#0-im#0),($2-1)/(iM#1-im#1),($3-1)/(iM#2-im#2))
-      * $f round
-      +[0] {round(($1-1-iM#0-im#0)/2)}
-      +[1] {round(($2-1-iM#1-im#1)/2)}
-      +[2] {round(($3-1-iM#2-im#2)/2)}
+      w,h,d:="dx = iM#0 - im#0;
+              dy = iM#1 - im#1;
+              dz = iM#2 - im#2;
+              M = max(dx,dy,dz);
+              ceil([ dx, dy, dz ]*$1/M)"
+      n[0] 0,{$w-1} n[1] 0,{$h-1} n[2] 0,{$d-1}
       a c
     }
-    $1,$2,$3 => out
+    $w,$h,$d => out
 
     1,$nbp,1,1,">
       begin(
@@ -23361,7 +23362,7 @@ to_voxels3d : check "${1=128}>0 && ${2=$1}>0 && ${3=$1}>0 && isbool(${4=1})" che
       N==5?rasterize_sphere(P0,P1);
     " rm. k[out]
 
-    if $4 expand_xyz 1,0 flood 0,0,0,0,0,1,-2 >= 0 shrink_xyz 1 fi # Fill interior
+    if $2 expand_xyz 1,0 flood 0,0,0,0,0,1,-2 >= 0 shrink_xyz 1 fi # Fill interior
     => $nm
   }
 
