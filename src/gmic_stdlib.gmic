@@ -3535,17 +3535,17 @@ _display_voxels3d :
   +foreach {
     nm={n} bnm={b} l. { if ['{x}']!=0 bnm.=.{x} fi onfail bnm.=.{x} }
     asiz:=max(w,h,d)/5
-    +abs compose_channels. + !=. 0 nbv:=is
+    +abs compose_channels. + !=. 0 nbv:=is rm.
     e[0--4] "Display image ["{arg(1+$>,$[])}"] = '"$nm"' ("$nbv" voxels)."
+    args=0.75,1,1.25
     if s==1
       im,iM:=im,iM
       eval. "*begin(is_binary = 1); i!=$im && i!=$iM?(is_binary = 0; break()); end(set('is_binary',is_binary))"
       if $is_binary # Colorize binary images according to rough normal estimation
         +expand_xyz. 1 b. {min(w,h,d)*2%},0 g. xyz a[-3--1] c n. 0,220 shrink_xyz. 1 *. .. k. args=0.9,1,1.1
       fi
-    else
-      args=0.75,1,1.25
     fi
+
     surfels3d $args +boundingbox3d. o3d. 0.2 axes3d $asiz,$asiz,$asiz,16 o3d. 0.5 col3d. 255,128,0 +3d
     _d3d_title=$bnm" ("$nbv" voxels)"
     d3d 0
@@ -23305,8 +23305,8 @@ _texturize3d :
 
 #@cli to_voxels3d : _max_resolution>0,_fill_interior={ 0 | 1 },_preserve_colors={ 0 | 1 }
 #@cli : Convert selected 3D objects as 3D volumetric images of binary voxels, using 3D mesh rasterization.
-#@cli : Default values: 'max_resolution=128', 'fill_interior=1' and 'preserve_colors=1'.
-to_voxels3d : check "${1=128}>0 && isbool(${2=1}) && isbool(${3=1})" check3d
+#@cli : Default values: 'max_resolution=128', 'fill_interior=1' and 'preserve_colors=0'.
+to_voxels3d : check "${1=128}>0 && isbool(${2=1}) && isbool(${3=0})" check3d
   s0,s1,t0,t1=""," interior filling"," no",""
   e[^-1] "Convert 3D object$? to volumetric image, with max resolution $1"$s$2" and"$t$3" color preservation."
   foreach {
