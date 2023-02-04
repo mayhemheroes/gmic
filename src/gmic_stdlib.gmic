@@ -11586,12 +11586,27 @@ normp : check "isnum(${1==2}) && $1>=0"
   else ^ $1 compose_channels + ^ {1/$1}
   fi
 
-#@cli norm
-#@cli : Compute the pointwise euclidean norm of vector-valued pixels in selected images.
+#@cli norm1
+#@cli : Compute the pointwise L1-norm of vector-valued pixels in selected images.
+#@cli : $ image.jpg +norm1
+#@cli : $$
+norm1 :
+  e[^-1] "Compute pointwise L1-norm of vectors, in image$?."
+  abs compose_channels +
+
+#@cli norm : eq. to 'norm2'.
+norm :
+  _gmic_s="$?" v + _norm2
+
+#@cli norm2
+#@cli : Compute the pointwise L2-norm (euclidean norm) of vector-valued pixels in selected images.
 #@cli : $ image.jpg +norm
 #@cli : $$
-norm :
-  e[^-1] "Compute pointwise euclidean norm of vectors, in image$?."
+norm2 :
+  _gmic_s="$?" v + _$0
+
+_norm2 :
+  e[^-1] "Compute pointwise euclidean norm of vectors, in image"$_gmic_s"."
   sqr compose_channels + sqrt
 
 #@cli n : eq. to 'normalize'. : (+)
@@ -23321,7 +23336,7 @@ to_voxels3d : check "${1=128}>0 && isbool(${2=1}) && isbool(${3=0})" check3d
       n[0] 0,{$w-1} n[1] 0,{$h-1} n[2] 0,{$d-1}
       round a c
     }
-    if $3 l[cols] { r 3,{h/3},1,1,-1 permute zycx } else rm[cols] fi
+    if $3 l[cols] { r 3,{h/3},1,1,-1 permute zycx +norm1 ==. 0 + } else rm[cols] fi
     $w,$h,$d => out
 
     1,$nbp,1,1,">
