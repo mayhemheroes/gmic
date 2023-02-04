@@ -3520,6 +3520,30 @@ _display_tensors : check "${1=16}>0 && ${2=1.5}>=0 && isint(${3=2}) && $3>=0 && 
     rm..
   }
 
+#@cli dv3d : eq. to 'display_voxels3d'.
+dv3d :
+  _gmic_s="$?" v + _display_voxels3d "$*"
+
+#@cli display_voxels3d
+#@cli : Display selected images as set of 3D voxels.
+#@cli : (eq. to 'dv3d').
+display_voxels3d :
+  _gmic_s="$?" v + _$0 "$*"
+
+_display_voxels3d :
+  e[0--3] "Display images$? as set of 3D voxels."
+  foreach {
+    +to_rgb f. "max(I)?u([255,255,255]):[0,0,0]" b. 1 *. ..
+    k.
+
+    surfels3d 0.75,1,1.25
+  }
+
+  mode3d,moded3d,double3d=$_mode3d,$_moded3d,$_double3d
+  m3d 2 md3d 2 db3d 0 l3d 0,0,-800
+  d3d
+  _mode3d,_moded3d,_double3d=$mode3d,$moded3d,$double3d
+
 #@cli dw : eq. to 'display_warp'.
 dw :
   _gmic_s="$?" v + _display_warp $*
