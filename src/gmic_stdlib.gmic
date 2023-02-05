@@ -3535,7 +3535,7 @@ _display_voxels3d :
   +foreach {
     nm={n} bnm={b} l. { if ['{x}']!=0 bnm.=.{x} fi onfail bnm.=.{x} }
     asiz:=max(w,h,d)/5
-    +abs compose_channels. + !=. 0 nbv:=is rm.
+    +norm1. !=. 0 nbv:=is rm. # Count voxels
     e[0--4] "Display image ["{arg(1+$>,$[])}"] = '"$nm"' ("$nbv" voxels)."
     args=0.5,1,0.75
     if s==1
@@ -21165,9 +21165,23 @@ _axes3d :
 boundingbox3d :
   e[^-1] "Replace 3D object$? by their 3D bounding boxes."
   foreach {
-    nbv={f2ui(i[6])} rows 8,{8+3*$nbv} r. 3,$nbv,1,1,-1 s. x
-    xc,yc,zc,sx,sy,sz={"[ (im#0 + iM#0)/2, (im#1 + iM#1)/2, (im#2 + iM#2)/2, iM#0 - im#0,iM#1 - im#1, iM#2 - im#2 ]"}
-    rm box3d $sx,$sy,$sz c3d +3d $xc,$yc,$zc p3d. 1
+    s3d 0 nbv,nbp={1,f2ui([i[0],i[1]])}
+    r[2] 3,{2,h/3},1,1,-1 permute[2] zycx ($nbv) a[2,-1] y # Convert vertices to dynamic array
+    1,$nbp,1,1,"begin(p = 0); # Manage 3D spheres by adding virtual vertices
+      N = i[#3,p++];
+      N==5?(
+        i0 = i[#3,p++]; i1 = i[#3,p++]; p+=3;
+        P0 = I[#2,i0]; P1 = I[#2,i1]; Pc = (P0 + P1)/2;
+        U = (P1 - P0)/2;
+        V = rot(-U[1],U[0],U[2],pi/2)*U;
+        W = cross(U,V)/norm(U);
+        da_push(#2,Pc + V,Pc - V,Pc + W,Pc - W);
+      ):(p+=N);
+      end(da_freeze(#2))" rm.
+    =[1] {2,ui2f(h)}
+    l[2] { s c xm,dx={0,[im,iM-im]} ym,dy={1,[im,iM-im]} zm,dz={2,[im,iM-im]} a x y }
+    a y
+    box3d $dx,$dy,$dz +3d. $xm,$ym,$zm p3d. 1 k.
   }
 
 #@cli box3d : _size_x,_size_y,_size_z
