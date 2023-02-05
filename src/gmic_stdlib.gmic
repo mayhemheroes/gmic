@@ -23340,12 +23340,15 @@ to_voxels3d : check "${1=128}>0 && isbool(${2=1}) && isbool(${3=0})" check3d
   s0,s1,t0,t1="",", interior filling","scalar","color"
   e[^-1] "Convert 3D object$? to volumetric image, with max resolution $1"$s$2" and "$t$3" output."
   foreach {
-    nm={n} p3d 2 s3d 0 nbp={1,@1} k[2,3,4] => pts,prims,cols
+    nm={n} p3d 2
+    +boundingbox3d l. { s3d store[2] bbpts rm } # Get exact bounding box (for objects containing 3d sphere primitives)
+    s3d 0 nbp={1,@1} k[2,3,4] => pts,prims,cols
     l[pts] {
+      $bbpts a y # Merge bounding box vertices
       r 3,{h/3},1,1,-1 s x
-      w,h,d:="dx = iM#0 - im#0;
-              dy = iM#1 - im#1;
-              dz = iM#2 - im#2;
+      w,h,d:="const dx = iM#0 - im#0;
+              const dy = iM#1 - im#1;
+              const dz = iM#2 - im#2;
               M = max(dx,dy,dz);
               round([ dx, dy, dz ]*$1/M)"
       n[0] 0,{$w-1} n[1] 0,{$h-1} n[2] 0,{$d-1}
