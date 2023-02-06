@@ -3546,8 +3546,8 @@ _display_voxels3d :
         shrink_xyz. 1 *. .. k. args=0.9,1.1,1
       fi
     fi
-
-    surfels3d $args +boundingbox3d. o3d. 0.2 axes3d $asiz,$asiz,$asiz,16 o3d. 0.5 col3d. 255,128,0 +3d
+    surfels3d $args +boundingbox3d. o3d. 0.2 ax,ay,az={@8-10}
+    axes3d $asiz,$asiz,$asiz,16 +3d. $ax,$ay,$az o3d. 0.5 col3d. 255,128,0 +3d
     _d3d_title=$bnm" ("$nbv" voxels)"
     d3d 0
     rm _d3d_title=
@@ -23383,6 +23383,7 @@ to_voxels3d : check "${1=128}>0 && isbool(${2=1}) && isbool(${3=0})" check3d
             l01 = max(1,abs(P1# - P0#));
             l02 = max(1,abs(P2# - P0#));
             l12 = max(1,abs(P2# - P1#));
+            l01*=1.25;
             repeat (l01 + 1,l,
               ln = l/l01;
               Q = round(lerp(P0#,P1#,ln));
@@ -23390,8 +23391,9 @@ to_voxels3d : check "${1=128}>0 && isbool(${2=1}) && isbool(${3=0})" check3d
               repeat (lq2 + 1,k,
                 kn = k/lq2;
                 P = lerp(Q,P2#,kn);
-                i(#$out,floor(P)) = label;
-                i(#$out,ceil(P)) = label;
+                i(#$out,round(P)) = label;
+#                i(#$out,floor(P)) = label;
+#                i(#$out,ceil(P)) = label;
               );
             );
           );
