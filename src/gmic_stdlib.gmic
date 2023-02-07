@@ -23380,21 +23380,27 @@ to_voxels3d : check "${1=128}>0 && isbool(${2=1}) && isbool(${3=0})" check3d
 
         rasterize_triangle_new(P0,P1,P2) = (
           N = cross(P1# - P0#,P2# - P0#); # Normal vector
-          S = -dot(N,P0#); # Affine shift
-          proj_plane = argmax(abs(N)); # Best 2D projection plane
-          proj_plane==0?( # YZ-backprojection
-            Q0 = [ P0#[1],P0#[2] ]; Q1 = [ P1#[1],P1#[2] ]; Q2 = [ P2#[1],P2#[2] ];
-            _rasterize_triangle(Q0,Q1,Q2,round((-N[1]*a - N[2]*b - S)/N[0]),a,b);
-          ):proj_plane==1?( # XZ-backprojection
-            Q0 = [ P0#[0],P0#[2] ]; Q1 = [ P1#[0],P1#[2] ]; Q2 = [ P2#[0],P2#[2] ];
-            _rasterize_triangle(Q0,Q1,Q2,a,round((-N[0]*a - N[2]*b - S)/N[1]),b);
-          ):( # XY-backprojection
-            Q0 = [ P0#[0],P0#[1] ]; Q1 = [ P1#[0],P1#[1] ]; Q2 = [ P2#[0],P2#[1] ];
-            _rasterize_triangle(Q0,Q1,Q2,a,b,round((-N[0]*a - N[1]*b - S)/N[2]));
+          norm(N)<1e-5?( # Colinear vertices
+            rasterize_line(P0#,P1#);
+            rasterize_line(P0#,P2#);
+            rasterize_line(P1#,P2#);
+          ):(
+            S = -dot(N,P0#); # Affine shift
+            proj_plane = argmax(abs(N)); # Best 2D projection plane
+            proj_plane==0?( # YZ-backprojection
+              Q0 = [ P0#[1],P0#[2] ]; Q1 = [ P1#[1],P1#[2] ]; Q2 = [ P2#[1],P2#[2] ];
+              _rasterize_triangle(Q0,Q1,Q2,round((-N[1]*a - N[2]*b - S)/N[0]),a,b);
+            ):proj_plane==1?( # XZ-backprojection
+              Q0 = [ P0#[0],P0#[2] ]; Q1 = [ P1#[0],P1#[2] ]; Q2 = [ P2#[0],P2#[2] ];
+              _rasterize_triangle(Q0,Q1,Q2,a,round((-N[0]*a - N[2]*b - S)/N[1]),b);
+            ):( # XY-backprojection
+              Q0 = [ P0#[0],P0#[1] ]; Q1 = [ P1#[0],P1#[1] ]; Q2 = [ P2#[0],P2#[1] ];
+              _rasterize_triangle(Q0,Q1,Q2,a,b,round((-N[0]*a - N[1]*b - S)/N[2]));
+            );
           );
         );
 
-        _rasterize_triangle_new(P0,P1,P2,projX,projY,projZ) = ( # Back-project 2D triangle
+        _rasterize_triangle(P0,P1,P2,projX,projY,projZ) = ( # Back-project 2D triangle
           P0#[1]>P1#[1]?swap(P0#,P1#);
           P0#[1]>P2#[1]?swap(P0#,P2#);
           P1#[1]>P2#[1]?swap(P1#,P2#);
