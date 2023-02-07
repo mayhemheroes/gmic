@@ -23378,13 +23378,12 @@ to_voxels3d : check "${1=128}>0 && isbool(${2=1}) && isbool(${3=0})" check3d
           );
         );
 
-        rasterize_triangle_new(P0,P1,P2) = (
+        rasterize_triangle(P0,P1,P2) = (
           N = cross(P1# - P0#,P2# - P0#); # Normal vector
-          norm(N)<1e-5?( # Colinear vertices
-            rasterize_line(P0#,P1#);
-            rasterize_line(P0#,P2#);
-            rasterize_line(P1#,P2#);
-          ):(
+          rasterize_line(P0#,P1#); # Hack: Ensure correct jonction between adjacent triangles
+          rasterize_line(P0#,P2#);
+          rasterize_line(P1#,P2#);
+          norm(N)>1e-5?( # Non-colinear vertices
             S = -dot(N,P0#); # Affine shift
             proj_plane = argmax(abs(N)); # Best 2D projection plane
             proj_plane==0?( # YZ-backprojection
@@ -23423,7 +23422,7 @@ to_voxels3d : check "${1=128}>0 && isbool(${2=1}) && isbool(${3=0})" check3d
           );
         );
 
-        rasterize_triangle(P0,P1,P2) = (
+        rasterize_triangle_old(P0,P1,P2) = (
           _rasterize_triangle(P0#,P1#,P2#) = (
             l01 = max(1,abs(P1# - P0#));
             l02 = max(1,abs(P2# - P0#));
