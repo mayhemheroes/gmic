@@ -10691,6 +10691,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   gmic_selection.data(),
                   uext.data(),_filename.data(),
                   fps,*name?name.data():"(default)");
+
+#ifndef cimg_use_opencv
+            if (keep_open)
+              warn(images,0,false,
+                   "Command 'output': Cannot output streamed video, as this requires features from the "
+                   "OpenCV library (not enabled at compilation time).");
+#endif
             g_list.save_video(filename,(unsigned int)fps,name,(bool)keep_open);
             if (!cimg::fsize(filename)) throw CImgException("Output file '%s' is empty. Something went wrong!",
                                                             _filename.data());
@@ -13427,10 +13434,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                       disp.normalization()==2?" 1st-time ":" auto-",
                       disp.is_fullscreen()?"":"no ",
                       disp.title());
-              if (g_list) { g_list.display(disp); is_change = false; }
+              if (g_list) g_list.display(disp);
             }
             g_list.assign();
           }
+          is_change = false;
           continue;
         }
 
@@ -14522,10 +14530,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                   if (img.__eval(s,fast_res)) // Try to get fast approximation for a single scalar first
                     varvalues_d.assign(1)[0] = fast_res;
                   else {
-                    name.assign((unsigned int)std::strlen(s) + 4);
-                    *name = '['; name[1] = ';'; name[name._width - 2] = ']'; name.back() = 0;
-                    std::memcpy(name.data() + 2,s,name.width() - 4);
+                    if (*s!='[') {
+                      name.assign((unsigned int)std::strlen(s) + 4);
+                      *name = '['; name[1] = ';'; name[name._width - 2] = ']'; name.back() = 0;
+                      std::memcpy(name.data() + 2,s,name.width() - 4);
+                    } else CImg<char>::string(s).move_to(name);
                     strreplace_fw(name);
+
                     try { img.eval(varvalues_d,name,0,0,0,0,&images); }
                     catch (CImgException &e) {
                       name.assign(item,s_end_left - item + 1).back() = 0;

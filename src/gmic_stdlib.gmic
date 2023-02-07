@@ -2587,17 +2587,16 @@ _display3d :
       check3d 0
       onfail l[] { ({'${}'}) s +,{'"'check3d': "'} k. msg={t} rm } error[] "Command 'display3d': "$msg
     }
-    nm={n}
-    bnm={b} l. { if ['{x}']!=0 bnm.=.{x} fi onfail bnm.=.{x} }
+    nm={n} bnm={b} l. { if ['{x}']!=0 bnm.=.{x} fi onfail bnm.=.{x} }
 
     nbv,nbp={f2ui([i[6],i[7]])}
     e[0--4] "Display 3D object ["{arg(1+$>,$[])}"] = '"$nm"' ("$nbv" vertices, "$nbp" primitives)."
 
     # Init display window and variables.
-    disp_title=$bnm" ("$nbv" vertices, "$nbp" primitives)"
+    if ['$_d3d_title']==0 disp_title=$bnm" ("$nbv" vertices, "$nbp" primitives)" else disp_title=$_d3d_title fi
     if !{*}
-      if narg($_d3d_wh) w[] ${fitscreen\ $_d3d_wh,1},0,$disp_title
-      else w[] {0.7*[{*,u,v}]},0,$disp_title
+      if narg($_d3d_wh) w[] ${fitscreen\ $_d3d_wh,1,128,1024},0,$disp_title
+      else w[] ${fitscreen\ {[0.5,0.6]*[{*,u,v}]},1,128,1024},0,$disp_title
       fi
     else disp_normalization={*,n} w[] -1,-1,0,$disp_title fi
     disp_size0={*,w,h}
@@ -2607,7 +2606,7 @@ _display3d :
     is_fullscreen,is_zbuffer,is_axes3d,is_outline,is_boundingbox,is_animate,is_outvideo={*,f},1,1,0,0,0,0
     mode_render:=isint($_mode3d)?$_mode3d:4
     mode_drender:=isint($_moded3d)?$_moded3d:-1
-    mode_background={$is_user_background?7:3}
+    mode_background={$is_user_background?7:5}
     mode_orientation:=!isbool($_double3d)?2:$_double3d==1?2:0;
     mode_animate=1
     speed_animate=1
@@ -2627,9 +2626,9 @@ _display3d :
       # Init background image.
       if !narg($background)
         if $mode_background<3 {*,w,h},1,3,{arg(1+$mode_background,0,255,128)}
-        elif $mode_background==3 3,2,1,1,"32,32,64,64,116,96" permute. cyzx r. {*,w,h},1,3,3 round.
+        elif $mode_background==3 3,2,1,1,"16,16,48,44,96,76" permute. cyzx r. {*,w,h},1,3,3 round.
         elif $mode_background==4 3,2,1,1,"0,0,0,0,64,96" permute. cyzx r. {*,w,h},1,3,3 round.
-        elif $mode_background==5 3,2,1,1,"8,0,0,160,90,0" permute. cyzx r. {*,w,h},1,3,3 round.
+        elif $mode_background==5 3,3,1,1,"0,0,0,0,0,100,100,0,50" permute. cyzx r. {*,w,h},1,3,3 round.
         elif $mode_background==6 2,2,1,1,110,90,90,110 r. 64,64,1,3 r. {*,w,h},1,3,0,2,0.5,0.5
         else $_d3d_background r. {*,w,h},1,3,1
         fi
@@ -2642,7 +2641,7 @@ _display3d :
         +c3d[0] n3d. *3d. {background,$zoom_factor*0.65*min(w,h)}
         if $mode_orientation==1 rv3d. fi
         rmn boundingbox3d
-        if $is_boundingbox +boundingbox3d. o3d. 0.35 => boundingbox3d +3d.. . rv[-2,-1] fi
+        if $is_boundingbox +boundingbox3d. o3d. 0.2 => boundingbox3d +3d.. . rv[-2,-1] fi
         => object3d
         rmn render
       fi
@@ -2703,7 +2702,7 @@ _display3d :
             notification="Output Video:\nDone!"
           else
             is_outvideo+=1
-            notification="Output Video:\nFrame "{$is_outvideo+1}/$nb_frames
+            notification="Output Video:\nFrame "{$is_outvideo-1}/$nb_frames
           fi
         fi
       fi
@@ -3520,6 +3519,42 @@ _display_tensors : check "${1=16}>0 && ${2=1.5}>=0 && isint(${3=2}) && $3>=0 && 
     rm..
   }
 
+#@cli dv3d : eq. to 'display_voxels3d'.
+dv3d :
+  _gmic_s="$?" v + _display_voxels3d
+
+#@cli display_voxels3d
+#@cli : Display selected images as set of 3D voxels.
+#@cli : (eq. to 'dv3d').
+display_voxels3d :
+  _gmic_s="$?" v + _$0
+
+_display_voxels3d :
+  mode3d,moded3d,double3d=$_mode3d,$_moded3d,$_double3d
+  m3d 2 md3d 2 db3d 0
+  +foreach {
+    w,h,d:=w,h,d
+    nm={n} bnm={b} l. { if ['{x}']!=0 bnm.=.{x} fi onfail bnm.=.{x} }
+    asiz:=max(w,h,d)/5
+    +norm1. !=. 0 nbv:=is rm. # Count voxels
+    e[0--4] "Display image ["{arg(1+$>,$[])}"] = '"$nm"' ("${w}x${h}x${d}", "$nbv" voxels)."
+    args=0.5,1,0.75
+    if s==1
+      im,iM:=im,iM
+      eval. "*begin(is_binary = 1); i!=$im && i!=$iM?(is_binary = 0; break()); end(set('is_binary',is_binary))"
+      if $is_binary # Colorize binary images according to rough normal estimation
+        +expand_xyz. 1 b. {min(w,h,d)*2%},0 g. xyz a[-3--1] c orientation. n. 0,220
+        shrink_xyz. 1 *. .. k. args=0.9,1.1,1
+      fi
+    fi
+    surfels3d $args box3d $w,$h,$d p3d. 1 o3d. 0.2 axes3d $asiz,$asiz,$asiz,16 o3d. 0.5 col3d. 255,128,0 +3d
+    _d3d_title=$bnm" ("${w}x${h}x${d}", "$nbv" voxels)"
+    d3d 0
+    rm _d3d_title=
+  }
+  _mode3d,_moded3d,_double3d=$mode3d,$moded3d,$double3d
+  is_change 0
+
 #@cli dw : eq. to 'display_warp'.
 dw :
   _gmic_s="$?" v + _display_warp $*
@@ -4012,6 +4047,7 @@ _input_glob :
       repeat(5,k,k1 = k + 1; resize(#k1,1,da_size(#k1),1,s#k1,0));
       set('nbp',nbp);
       set('nbv',nbv)"
+
     rm[0,5--1] i[0] ({'CImg3d'},{ui2f([$nbv,$nbp])}:y) a y => "$1"
   }
 
@@ -4036,7 +4072,7 @@ _input_obj_parse_mtl : skip "${1=}"
         l[] {
           "$1"$img_filename
           _input_obj_img_$m:=$img_ind img_ind+=1
-          _input_obj_whs_$m:=w,h,s
+          _input_obj_whs_$m:=[w,h,s]
           y
         onfail _input_obj_img_$m=-1 _input_obj_whs_$m=0,0,0
         }
@@ -8806,8 +8842,7 @@ update_gallery_html : check "isbool(${1=0})"
                      distance,gradient_norm,normalize_local,sharpen,solidify
   commands_patterns=_gallery_patterns,tsp,chessboard,mandelbrot,maze_mask,plasma,shape_fern,shape_snowflake,\
                     sierpinski,syntexturize_matchpatch,truchet,turbulence,watermark_visible,weave
-  commands_3dmeshes=_gallery_3dmeshes,add3d,distribution3d,elevation3d,gmic3d,imageblocks3d,imagerubik3d,\
-                    skeleton3d,spherical3d,tensors3d,text3d,torus3d,weird3d
+  commands_3dmeshes=_gallery_3dmeshes
   commands_stylization=_gallery_stylization
   commands_codesamples=_gallery_codesamples
 
@@ -9118,10 +9153,13 @@ update_gallery_html : check "isbool(${1=0})"
 
 # Generate a single image from a list of images, for the gallery.
 _gallery :
-  foreach { W$>,H$>,D$>,S$>:=[w,h,d,s] IS_3D$>=${-_is_3d} }
   foreach {
-    if ${IS_3D$>} r3d 1,1,0,-80 r3d 0,1,0,80 snapshot3d 400
-    else if w>8192 z 0,8191 elif h>8192 rows 0,8191 fi n 0,255
+    if ${-_is_3d}
+      r3d 1,1,0,-80 r3d 0,1,0,30
+      animate3d 20,0,5,0,1.5,0 s z +rv[1--2]
+    else
+      if w>8192 z 0,8191 elif h>8192 rows 0,8191 fi
+      n 0,255
     fi
   }
 
@@ -11549,12 +11587,27 @@ normp : check "isnum(${1==2}) && $1>=0"
   else ^ $1 compose_channels + ^ {1/$1}
   fi
 
-#@cli norm
-#@cli : Compute the pointwise euclidean norm of vector-valued pixels in selected images.
+#@cli norm1
+#@cli : Compute the pointwise L1-norm of vector-valued pixels in selected images.
+#@cli : $ image.jpg +norm1
+#@cli : $$
+norm1 :
+  e[^-1] "Compute pointwise L1-norm of vectors, in image$?."
+  abs compose_channels +
+
+#@cli norm : eq. to 'norm2'.
+norm :
+  _gmic_s="$?" v + _norm2
+
+#@cli norm2
+#@cli : Compute the pointwise L2-norm (euclidean norm) of vector-valued pixels in selected images.
 #@cli : $ image.jpg +norm
 #@cli : $$
-norm :
-  e[^-1] "Compute pointwise euclidean norm of vectors, in image$?."
+norm2 :
+  _gmic_s="$?" v + _$0
+
+_norm2 :
+  e[^-1] "Compute pointwise euclidean norm of vectors, in image"$_gmic_s"."
   sqr compose_channels + sqrt
 
 #@cli n : eq. to 'normalize'. : (+)
@@ -11890,7 +11943,7 @@ _apply_channels : check "isint(${3=0}) && $3>=0 && $3<=2"
   ('$/') id:="h=0;for(k=0,k<w,((h*=31)+=i[k++])%=1048576)" rm.
   _ac_$channels m _ac_precond$id:$_p m _ac_forward$id:$_f m _ac_backward$id:$_b
   foreach {
-    _ac_precond$id is_alpha:="s==2 || s==4"
+    s={s} _ac_precond$id is_alpha:="s==2 || s==4"
     if $is_alpha s c,{1-s} fi
     _ac_forward$id[0] a c
     sh $_s _ac. "$1"
@@ -11898,6 +11951,7 @@ _apply_channels : check "isint(${3=0}) && $3>=0 && $3<=2"
     rm.
     if $is_alpha s c,{1-s} fi
     _ac_backward$id[0] a c
+    to_colormode $s
   }
   um _ac_precond$id,_ac_forward$id,_ac_backward$id
 
@@ -11918,13 +11972,13 @@ _ac :
 
 _ac_all : _p="" _f="" _b="" _s=0,100%
 
-_ac_rgba : _p="to_rgba" _f="" _b="" _s=0,3
-_ac_rgba_r : _p="to_color" _f="" _b="" _s=0
-_ac_rgba_g : _p="to_color" _f="" _b="" _s=1
-_ac_rgba_b : _p="to_color" _f="" _b="" _s=2
-_ac_rgba_a : _p="to_rgba" _f="" _b="" _s=3
+_ac_rgba : _p="to_rgba" _f,_b= _s=0,3
+_ac_rgba_r : _p="to_color" _f,_b= _s=0
+_ac_rgba_g : _p="to_color" _f,_b= _s=1
+_ac_rgba_b : _p="to_color" _f,_b= _s=2
+_ac_rgba_a : _p="to_rgba" _f,_b= _s=3
 
-_ac_rgb : _p="to_color" _f="" _b="" _s=0,2
+_ac_rgb : _p="to_color" _f,_b= _s=0,2
 _ac_rgb_r : _ac_rgba_r
 _ac_rgb_g : _ac_rgba_g
 _ac_rgb_b : _ac_rgba_b
@@ -20962,7 +21016,8 @@ transpose :
 #@cli : Generate 3D animation frames of rotating 3D objects.
 #@cli : Frames are stacked along the z-axis (volumetric image).
 #@cli : Frame size is the same as the size of the '[background]' image (or 800x800 if no background specified).
-#@cli : Default values: 'filename=(undefined)'.
+#@cli : Default values: 'step_angle_x=0', 'step_angle_y=5', 'step_angle_z=0', 'zoom_factor=1', 'fake_shadow_level=50' \
+# and 'background=(undefined)'.
 animate3d : check "isint($1) && $1>0 && isnum(${2=0}) && isnum(${3=5}) && isnum(${4=0}) && ${5=1}>0 && "\
                   "inrange(${6=50},0,100)" skip "${7=}"
   e[^-1] "Generate 3D animation frames from 3D object$?, with $1 frames, angle steps (${2-4}), zoom factor $5 "\
@@ -21111,9 +21166,24 @@ _axes3d :
 boundingbox3d :
   e[^-1] "Replace 3D object$? by their 3D bounding boxes."
   foreach {
-    nbv={f2ui(i[6])} rows 8,{8+3*$nbv} r. 3,$nbv,1,1,-1 s. x
-    xc,yc,zc,sx,sy,sz={"[ (im#0 + iM#0)/2, (im#1 + iM#1)/2, (im#2 + iM#2)/2, iM#0 - im#0,iM#1 - im#1, iM#2 - im#2 ]"}
-    rm box3d $sx,$sy,$sz c3d +3d $xc,$yc,$zc p3d. 1
+    s3d 0 nbv,nbp={1,f2ui([i[0],i[1]])} k[2,3] => pts,prims
+    r[pts] 3,{pts,h/3},1,1,-1 permute[pts] zycx ($nbv) a[pts,-1] y # Convert vertices to dynamic array
+    1,$nbp,1,1,"begin(p = 0); # Manage 3D spheres by adding virtual vertices
+      N = i[#$prims,p++];
+      N==5?(
+        i0 = i[#$prims,p++]; i1 = i[#$prims,p++]; p+=3;
+        P0 = I[#$pts,i0]; P1 = I[#$pts,i1]; Pc = (P0 + P1)/2;
+        U = (P1 - P0)/2;
+        V = rot(-U[1],U[0],U[2],pi/2)*U;
+        W = cross(U,V)/norm(U);
+        da_push(#$pts,Pc + V,Pc - V,Pc + W,Pc - W);
+      ):(p+=N);
+      end(da_freeze(#$pts))" rm[prims,-1]
+    s c
+    xm,dx={0,[im,iM-im]}
+    ym,dy={1,[im,iM-im]}
+    zm,dz={2,[im,iM-im]}
+    rm box3d $dx,$dy,$dz +3d $xm,$ym,$zm p3d 1
   }
 
 #@cli box3d : _size_x,_size_y,_size_z
@@ -21528,7 +21598,7 @@ gaussians3d : check "${1=32}>0" skip ${2=0.3}
   text3d M,60,20,2 +3d. 50 col3d. 96,196,255
   text3d I,60,20,2 +3d. 90 col3d. 64,128,255
   text3d C,60,20,2 +3d. 100 col3d. 16,64,255
-  sphere3d 8 +3d. 102,-3,20 col3d. 192,128,255
+  sphere3d 8,-3 +3d. 102,-3,20 col3d. 192,128,255
   +3d[-6--1] c3d.
   repeat 30 {
     box3d {min(3+$</2,10)} col3d. {cut([30*$>,20+80*$>,10*$>],0,255)},0.5
@@ -22661,13 +22731,13 @@ _specs3d :
 #@cli : - If 3 arguments are specified, the sphere is generated using spherical coordinates discretization.
 #@cli : Default value: 'nb_recursions=3'.
 #@cli : $ sphere3d 100 +primitives3d 1 color3d[-2] ${-rgb}
-+sphere3d : check "isnum(${1=1}) && ${2=3}!=0" skip "${3=}"
++sphere3d : check "isnum(${1=1})" skip "${2=3},${3=}"
 
   if !narg($3) # Generate 3D sphere with recursive subdivisions
     e[0--3] "Input 3D sphere, with radius $1 and $2 subdivision iterations."
     l[] {
 
-      if $2>0 # Subdivide icosahedron
+      if $2>=0 # Subdivide icosahedron
         # Generate initial icosahedron.
         (1;3;1;3;2;2;2;2;4;0;4;0^2;2;2;2;4;4;0;0;3;3;1;1^4;4;0;0;3;1;3;1;2;2;2;2) # List of vertices
         (-0.850650808352039932,-0.525731112119133606,0,0.525731112119133606,0.850650808352039932)
@@ -22733,20 +22803,20 @@ _specs3d :
       # Generate vertices.
       1 $nb_phi,{$nb_theta-2},1,1,"
         begin(da_push(#0,0,0,-1));
-        theta = lerp(-pi/2,pi/2,(y + 1)/(h + 1));
+        theta = lerp(0,pi,(y + 1)/(h + 1));
         phi = lerp(0,2*pi,x/w);
-        ct = cos(theta);
-        da_push(#0,cos(phi)*ct,sin(phi)*ct,sin(theta));
+        st = sin(theta);
+        da_push(#0,cos(phi)*st,sin(phi)*st,-cos(theta));
         end(da_push(#0,0,0,1); da_freeze())" rm.
 
       # Generate primitives.
-      1 $nb_phi,{$nb_theta-2},1,1,"
-        const p = w; const ptm2 = p*h;
+      1 $nb_phi,{$nb_theta-1},1,1,"
+        const p = w; const ptm2p1 = p*(h - 1) + 1;
         xp1 = x + 1; xp1mpp1 = xp1%p + 1;
-        yp = y*p; yp1p = yp + p;
-        !y?da_push(3,0,xp1mpp1,xp1);
-        y!=h-1?da_push(4,xp1 + yp,xp1mpp1 + yp,xp1mpp1 + yp1p,xp1 + yp1p):
-               da_push(3,ptm2 + 1,xp1 + yp,yp + xp1mpp1);
+        yp = (y - 1)*p; yp1p = yp + p;
+        !y?da_push(3,0,xp1mpp1,xp1):
+        y<h-1?da_push(4,xp1 + yp,xp1mpp1 + yp,xp1mpp1 + yp1p,xp1 + yp1p):
+        y==h-1?da_push(3,ptm2p1,xp1 + yp,yp + xp1mpp1);
         end(da_freeze())" rm.
 
       nbp:=$nb_phi*($nb_theta-1)
@@ -22755,40 +22825,29 @@ _specs3d :
   fi
   => "[3D sphere]"
 
-#@cli spherical3d : _nb_azimuth>=3,_nb_zenith>=3,_radius_function(phi,theta)
+#@cli spherical3d : "radius_function(phi,theta)",_nb_recursions!=0 : \
+# "radius_function(phi,theta)",_nb_phi>=3,_nb_theta>=3
 #@cli : Input 3D spherical object at (0,0,0), with specified geometry.
-#@cli : Default values: 'nb_zenith=nb_azimut=64' and 'radius_function="abs(1+0.5*cos(3*phi)*sin(4*theta))"'.
-#@cli : $ spherical3d 64 +primitives3d 1
-+spherical3d : check "${1=64}>=3 && ${2=$1}>=3" skip "${3=abs(1+0.5*cos(3*phi)*sin(4*theta))}"
-  e[^-1] "Input 3D spherical object, with subdivisions ($1,$2) and height function '$3'."
-  ('CImg3d':y) # Magic number.
-  n1={round($1)} n2={round($2)}
-
-  # Define 3D vertices.
-  $n1,{$n2-1},1,3,"phi = 2*pi*(x+0.5)/w;\
-                   theta = -pi/2+pi*(y+0.5)/h;\
-                   cp = cos(phi);\
-                   sp = sin(phi);\
-                   ct = cos(theta);\
-                   ($3)*if(c==0,ct*cp,if(c==1,ct*sp,sin(theta)))"
-  r. {w*h},3,1,1,-1 permute. yxzc
-  i.. (0,0,{phi=0;theta=-pi/2;-$3};0,0,{phi=0;theta=pi/2;$3}) a[-2,-1] y  # Add the two poles.
-  nbv={h} y.
-
-  # Define 3D primitives.
-  $n1,{$n2-2},1,4,"nx=(x+1)%w;ny=(y+1);2+if(c==0,x+y*"$n1",if(c==1,nx+y*"$n1",if(c==2,nx+ny*"$n1",x+ny*"$n1")))"
-  r. {w*h},4,1,1,-1 permute. yxzc i.. 1,{h},1,1,4 a[-2,-1] x
-  2,$n1,1,1,3,0 1,$n1,1,1,'y' ++. 1 %. {h} 2,$n1,1,1,3,1 [-3,-2]  # Connect the two poles.
-  +[-5,-4] 2 rv[-5,-4] +[-2,-1] {$nbv-$n1} a[-3--1] x a[-4--2] x
-  nbp={h+{-2,h}+{-3,h}}
-  y[-3--1] a[-3--1] y
-
-  # Define other object information (properties, colors and opacities).
-  i... ($nbv;$nbp)
-  1,{3*$nbp},1,1,200 1,$nbp,1,1,1 a[-2,-1] y
-
-  # Append as a 3D object.
-  a[-5--1] y => "[3D spherical surface '$3']"
+#@cli : Second and third arguments are the same as in command ''sphere3d''.
+#@cli : Default values: 'nb_recursions=5'.
+#@cli : $ spherical3d "abs(1+0.5*cos(3*phi)*sin(4*theta))" +primitives3d 1
++spherical3d : check "${2=5}!=0" skip "${3=}"
+  e[^-1] "Input 3D spherical object, with radius function '$1'."
+  l[] {
+    sphere3d 1,${2--1}
+    s3d
+    r[2] 3,{2,h/3},1,1,-1 permute[2] zycx
+    f[2] "
+      V = [ i0,i1,i2 ];
+      V/=norm(V);
+      theta = -acos(V[2]);
+      phi = atan2(V[1],V[0]);
+      R = ($1);
+      st = sin(theta);
+      [ R*cos(phi)*st,R*sin(phi)*st,R*cos(theta) ]"
+    permute[2] cyzx y[2] a y
+    => "[3D spherical surface '$1']"
+  }
 
 #@cli spline3d : x0[%],y0[%],z0[%],u0[%],v0[%],w0[%],x1[%],y1[%],z1[%],u1[%],v1[%],w1[%],_nb_vertices>=2
 #@cli : Input 3D spline with specified geometry.
@@ -22922,8 +22981,7 @@ sprites3d : check ${is_image_arg\ $1} skip ${2=0}
 
 #@cli surfels3d : 0<=_left_right_attenuation<=1,0<=_top_bottom_attenuation<=1,0<=_closer_further_attenuation<=1
 #@cli : Convert selected images to 3D objects composed of 3D surfels (or 2D edgels for 2D images).
-#@cli : Selected images must contain binary shapes, where each value 0 is an exterior voxel, \
-# and each value !=0 is an interior voxel.
+#@cli : The binary shape is composed of all non-zero voxels.
 #@cli : The resulting 3D object is colored according to the color of non zero voxels.
 #@cli : Default values: 'left_right_attenuation=1', 'top_bottom_attenuation=1' and 'closer_further_attenuation=1'.
 #@cli : $ 100,100,100 = 1,40%,40%,40% = 1,60%,60%,60% distance 1 lt 30% blur 3 gt 50% surfels3d 0.5,0.75,1
@@ -22970,7 +23028,7 @@ surfels3d : check "${1=1}>0 && ${2=1}>0 && ${3=1}>0"
 
       if !w rm # Empty object
       else
-        to_rgb[cols]
+        c[cols] 0,255 to_rgb[cols]
         k[pts,prims,cols] permute cyzx i[1] 1,{0,h},1,1,0 a[0,1] x i[1] 1,{1,h},1,1,2 a[1,2] x =>.. prims
       fi
 
@@ -23036,7 +23094,7 @@ surfels3d : check "${1=1}>0 && ${2=1}>0 && ${3=1}>0"
 
       if !w rm # Empty object
       else
-        to_rgb[cols]
+        c[cols] 0,255 to_rgb[cols]
         k[pts,prims,cols] permute cyzx i[1] 1,{1,h},1,1,4 a[1,2] x =>.. prims
       fi
     fi
@@ -23275,6 +23333,158 @@ _texturize3d :
   # Colors / opacities.
   3,{h},1,1,200 1,{h},1,1,1 y[-4--2] a[-5--1] y
   => [3D\ torus]
+
+#@cli to_voxels3d : _max_resolution>0,_fill_interior={ 0 | 1 },_preserve_colors={ 0 | 1 }
+#@cli : Convert selected 3D objects as 3D volumetric images of binary voxels, using 3D mesh rasterization.
+#@cli : Default values: 'max_resolution=128', 'fill_interior=1' and 'preserve_colors=0'.
+to_voxels3d : check "${1=128}>0 && isbool(${2=1}) && isbool(${3=0})" check3d
+  s0,s1,t0,t1="",", interior filling","scalar","color"
+  e[^-1] "Convert 3D object$? to volumetric image, with max resolution $1"$s$2" and "$t$3" output."
+  foreach {
+    nm={n} p3d 2
+    +boundingbox3d l. { s3d store[2] bbpts rm } # Get exact bounding box (for objects containing 3d sphere primitives)
+    s3d 0 nbp={1,@1} k[2,3,4] => pts,prims,cols
+    l[pts] {
+      $bbpts a y # Merge bounding box vertices
+      r 3,{h/3},1,1,-1 s x
+      w,h,d:="const dx = iM#0 - im#0;
+              const dy = iM#1 - im#1;
+              const dz = iM#2 - im#2;
+              M = max(dx,dy,dz);
+              S = round([ dx, dy, dz ]*$1/M);
+              [ max(S[0],1), max(S[1],1), max(S[2],1) ]"
+      n[0] 0,{$w-1} n[1] 0,{$h-1} n[2] 0,{$d-1}
+      round a c
+    }
+    if $3 l[cols] { r 3,{h/3},1,1,-1 permute zycx +norm1 ==. 0 + } else rm[cols] fi
+    $w,$h,$d => out
+
+    1,$nbp,1,1,">
+      begin(
+        p = 0;
+        label = 2;
+        P0 = P1 = P2 = P3 = vector3();
+
+        rasterize_point(P) = (
+          i(#$out,P#) = label;
+        );
+
+        rasterize_segment(P0,P1) = (
+          l01 = max(1,abs(P1# - P0#));
+          repeat (l01 + 1,l,
+            ln = l/l01;
+            Q = round(lerp(P0#,P1#,ln));
+            i(#$out,Q) = label;
+          );
+        );
+
+        rasterize_triangle(P0,P1,P2) = (
+          N = cross(P1# - P0#,P2# - P0#); # Normal vector
+          rasterize_segment(P0#,P1#); # Hack: Ensure correct jonction between adjacent triangles
+          rasterize_segment(P0#,P2#);
+          rasterize_segment(P1#,P2#);
+          norm(N)?( # Non-colinear vertices
+            S = -dot(N,P0#); # Affine shift
+            proj_plane = argmax(abs(N)); # Best 2D projection plane
+            proj_plane==0?( # YZ-backprojection
+              Q0 = [ P0#[1],P0#[2] ]; Q1 = [ P1#[1],P1#[2] ]; Q2 = [ P2#[1],P2#[2] ];
+              _rasterize_triangle(Q0,Q1,Q2,round((-N[1]*a - N[2]*b - S)/N[0]),a,b);
+            ):proj_plane==1?( # XZ-backprojection
+              Q0 = [ P0#[0],P0#[2] ]; Q1 = [ P1#[0],P1#[2] ]; Q2 = [ P2#[0],P2#[2] ];
+              _rasterize_triangle(Q0,Q1,Q2,a,round((-N[0]*a - N[2]*b - S)/N[1]),b);
+            ):( # XY-backprojection
+              Q0 = [ P0#[0],P0#[1] ]; Q1 = [ P1#[0],P1#[1] ]; Q2 = [ P2#[0],P2#[1] ];
+              _rasterize_triangle(Q0,Q1,Q2,a,b,round((-N[0]*a - N[1]*b - S)/N[2]));
+            );
+          );
+        );
+
+        _rasterize_triangle(P0,P1,P2,projX,projY,projZ) = ( # Back-project 2D triangle
+          P0#[1]>P1#[1]?swap(P0#,P1#);
+          P0#[1]>P2#[1]?swap(P0#,P2#);
+          P1#[1]>P2#[1]?swap(P1#,P2#);
+          db01 = P1#[1] - P0#[1]; m1db01 = max(1,db01);
+          db02 = P2#[1] - P0#[1]; m1db02 = max(1,db02);
+          db12 = P2#[1] - P1#[1]; m1db12 = max(1,db12);
+          repeat (db01,l,
+            b = P0#[1] + l;
+            a0 = round(lerp(P0#[0],P1#[0],l/m1db01));
+            a1 = round(lerp(P0#[0],P2#[0],l/m1db02));
+            a0>a1?swap(a0,a1);
+            for (a = a0, a<=a1, ++a, i(#$out,projX#,projY#,projZ#) = label);
+          );
+          repeat (db12 + 1,l,
+            b = P1#[1] + l;
+            a0 = round(lerp(P1#[0],P2#[0],l/m1db12));
+            a1 = round(lerp(P0#[0],P2#[0],(db01 + l)/m1db02));
+            a0>a1?swap(a0,a1);
+            for (a = a0, a<=a1, ++a, i(#$out,projX#,projY#,projZ#) = label);
+          );
+        );
+
+        rasterize_triangle_old(P0,P1,P2) = (
+          _rasterize_triangle(P0#,P1#,P2#) = (
+            l01 = max(1,abs(P1# - P0#));
+            l02 = max(1,abs(P2# - P0#));
+            l12 = max(1,abs(P2# - P1#));
+            l01*=1.25;
+            repeat (l01 + 1,l,
+              ln = l/l01;
+              Q = round(lerp(P0#,P1#,ln));
+              lq2 = max(1,abs(P2# - Q));
+              repeat (lq2 + 1,k,
+                kn = k/lq2;
+                P = lerp(Q,P2#,kn);
+                i(#$out,round(P)) = label;
+              );
+            );
+          );
+          _rasterize_triangle(P0#,P1#,P2#);
+          _rasterize_triangle(P0#,P2#,P1#);
+          _rasterize_triangle(P1#,P2#,P0#);
+        );
+
+        rasterize_sphere(P0,P1) = (
+          P = (P0# + P1#)/2;
+          R = norm(P1# - P0#)/2;
+          xm = floor(P[0] - R); xM = ceil(P[0] + R);
+          ym = floor(P[1] - R); yM = ceil(P[1] + R);
+          zm = floor(P[2] - R); zM = ceil(P[2] + R);
+          for (z = zm, z<=zM, ++z,
+            for (y = ym, y<=yM, ++y,
+              for (x = xm, x<=xM, ++x,
+                norm([x,y,z] - P)<=R?(i(#$out,x,y,z) = label);
+              );
+            );
+          );
+        );
+
+      );
+
+      n = i[#$prims,p++];
+
+      # Get coordinates of vertices in voxel space.
+      P0 = I[#$pts,i[#$prims,p++]];
+      n>1?(P1 = I[#$pts,i[#$prims,p++]]);
+      n>2?(P2 = I[#$pts,i[#$prims,p++]]);
+      n>3?(P3 = I[#$pts,i[#$prims,p++]]);
+      n>4?(p+=n - 4);
+
+      # Draw primitives.
+      n==1?rasterize_point(P0):
+      n==2 || n==6?rasterize_segment(P0,P1):
+      n==3 || n==9?rasterize_triangle(P0,P1,P2):
+      n==4 || n==12?(rasterize_triangle(P0,P1,P2); rasterize_triangle(P0,P2,P3)):
+      n==5?rasterize_sphere(P0,P1);
+
+      $3?++label" rm.
+
+    if $2 expand_xyz[out] 1,0 flood[out] 0,0,0,0,0,1,-1 +<[out] 2 +[out,-1] shrink_xyz[out] 1 fi # Fill interior
+    if $3 r[cols] 1,{cols,h+2},1,100%,0,0,0,1 point[cols] 0,1,0,1,1 map[out] [cols] # Output colors
+    else >[out] 0 # Output scalars
+    fi
+    k[out] => $nm
+  }
 
 #@cli triangle3d : x0,y0,z0,x1,y1,z1,x2,y2,z2
 #@cli : Input 3D triangle at specified coordinates.
@@ -30861,7 +31071,7 @@ _is_3d :
 #@cli : Default value: 'value=1'.
 is_change :
   l[] { check "isbool(${1=1})" arg=$1 onfail noarg arg=1 }
-  if $arg 0 rm. else w9[] 0 fi
+  if $arg 0 rm. else v - p[] fi
 
 #@cli is_half
 #@cli : Return 1 if the type of image pixels is limited to half-float.
@@ -35879,15 +36089,15 @@ x_reflection3d : check_display $0
 -------------------------------------------"
 
   # Render background.
-  128,256,1,3 rand. 0,255 plasma. 1,100 blur_xy. 30,2
+  200,400,1,3 rand. 0,255 plasma. 1,100 blur_xy. 30,2
   sh. 0 n. 0,90 rm. sh. 1 n. 0,60 rm. sh. 2 n. 0,180 rm.
   +mirror. x [-2,-1] a[-4--1] x
   +luminance. mirror. x b. 2 n. 0,255
 
   # Create 3D objects.
-  torus3d 30,10 col3d. 255,200,0
-  spherical3d 47,34,"80+20*abs(cos(2*theta))" s3d. rm.. i.. 3,{h},1,1,150,220,255,200,255,255 y.. a[-6--1] y
-  spherical3d 47,34,"100*abs(1+0.6*cos(3*phi)*sin(4*theta))"
+  torus3d 45,16 col3d. 255,200,0
+  spherical3d "125+32*abs(cos(2*theta))",51,50 s3d. rm.. i.. 3,{h},1,1,150,220,255,200,255,255 y.. a[-6--1] y
+  spherical3d "150*abs(1+0.6*cos(3*phi)*sin(4*theta))",51,50
   r3d[-2,-1] 0,1,0,90 db3d 0
 
   # Start animation loop.
@@ -35900,10 +36110,10 @@ x_reflection3d : check_display $0
     +rows. 8,{8+3*i[6]-1} +j... .,0,8,0,0,{if($anim<250,0,0.5-0.5*cos(($anim-250)/100))} rm..
 
     # Render 3D background object (with flat colors).
-    +z[-6] $xb,0,{$xb+255},255 j3d. ..,75%,50%,0,1,3,0,0
+    +z[-6] $xb,0,{$xb+399},399 j3d. ..,75%,50%,0,1,3,0,0
 
     # Render light reflection map.
-    +z[-6] $xl,0,{$xl+255},255
+    +z[-6] $xl,0,{$xl+399},399
     xf={min(30,$anim-70)+20*cos(1.8*$|)}
     yf={50+20*sin(2.7*$|)}
     j3d. [-6],{20+$xf}%,$yf%,0,1,4,0,0
@@ -35919,8 +36129,8 @@ x_reflection3d : check_display $0
     w. rm.
 
     if {*,CTRLLEFT}" && "{*,D} w[] 800,800 elif {*,CTRLLEFT}" && "{*,C} w[] 400,400 fi
-    xb={($xb+6)&255}
-    xl={($xl-6)&255}
+    xb={($xb+6)%400}
+    xl={($xl-6)%400}
     anim+=1
     r3d[-2,-1] {sin(0.5*$|)},{cos($|)},1,{max(0.005,$|-$tic)*33}
     r3d... -1,0.3,0.8,{max(0.005,$|-$tic)*100}
@@ -37425,7 +37635,9 @@ gui_filter_sources : skip ${1=0},${2=1}
 
 # Function that always returns a valid preview size.
 gui_preview_wh :
-  u {0$_preview_area_width?[0$_preview_area_width,0$_preview_area_height]:[400,400]}
+  u {0$_preview_area_width?[0$_preview_area_width,0$_preview_area_height]:\
+     0$_preview_width?[0$_preview_width,0$_preview_height]:\
+     min(w,h)>=256?[w,h]:[400,400]}
 
 # Function used for filters based on parallelization with spatial splitting.
 gui_parallel_overlap :
@@ -45740,8 +45952,8 @@ fx_extract_foreground :
       sh. 3 *. -1 +. 255 rm.
       gui_autocrop_layers[0]
       pos0=${gui_layer_pos[0]} pos1=${gui_layer_pos[1]}
-      =>[0] "name("$nm" [foreground]),pos("{[$pos0]+[$initial_pos]}")"
-      =>[1] "name("$nm" [background]),pos("{[$pos1]+[$initial_pos]}")"
+      =>[0] "name("$nm" [foreground]),pos("{``{[$pos0]+[$initial_pos]}}")"
+      =>[1] "name("$nm" [background]),pos("{``{[$pos1]+[$initial_pos]}}")"
     fi
   }
   if narg($status)>=4 u \{$1\}\{$2\}\{$3\}\{$4\}\{{w},{h}\}\{$status\} else u "" fi
@@ -56286,6 +56498,24 @@ fx_solve_maze_preview :
 #@cli : $ sample leno,lion,leno resize 400,400 transition3d 20,5,5 rm. _fps=10 _label="transition3d"
 #@cli : $ 256,192 fx_text_pointcloud3d 64,"G'MIC","Rocks!",1,200,220,255,255,255,255,255,2,2,1,19 _fps=10 \
 # _label="3D~text~pointcloud"
+#@cli : $ sphere3d 10 repeat 5 { +add3d[-1] 10,{u(-10,10)},0 color3d[-1] ${-rgb} } add3d _fps=10 _label="3D Spheres"
+#@cli : $ repeat 20 { torus3d 15,2 color3d[-1] ${-rgb} mul3d[-1] 0.5,1 if $>%2 rotate3d[-1] 0,1,0,90 fi add3d[-1] 70 \
+# add3d rotate3d[-1] 0,0,1,18 } double3d 0 _fps=10 _label="3D Ring"
+#@cli : $ image.jpg distribution3d circles3d 5 o3d 0.5 colorcube3d primitives3d[-1] 1 add3d _fps=10 \
+# _label="RGB Color Distribution"
+#@cli : $ image.jpg blur 5 elevation3d. 0.75 _fps=10 _label="3D Elevation"
+#@cli : 128,128,1,3,u(255) plasma 10,3 blur 4 sharpen 10000 n 0,255 \
+# elevation3d[-1] 'X=(x-64)/6;Y=(y-64)/6;-100*exp(-(X^2+Y^2)/30)*abs(cos(X)*sin(Y))' _fps=10 _label="3D Elevation"
+#@cli : $ gmic3d _fps=10 _label="3D G'MIC Logo"
+#@cli : $ image.jpg resize2dy 32 imageblocks3d -20 mode3d 3 _fps=10 _label="3D Image Blocks"
+#@cli : $ image.jpg imagerubik3d , _fps=10 _label="Rubik Cube"
+#@cli : $ shape_cupid 480 skeleton3d , _fps=10 _label="3D Skeleton"
+#@cli : $ spherical3d "abs(1+0.5*cos(3*phi)*sin(4*theta))" _fps=10 _label="3D Spherical Function"
+#@cli : $ 6,6,6,9,"U = [x,y,z] - [w,h,d]/2; U/=norm(U); mul(U,U,3) + 0.3*eye(3)" tensors3d 0.8 _fps=10 \
+# _label="3D Tensors"
+#@cli : $ text3d "G'MIC Rocks!" _fps=10 _label="3D Text"
+#@cli : $ torus3d 10,3 color3d[-1] ${-rgb} _fps=10 _label="3D Torus"
+#@cli : $ weird3d 48 color3d[-1] ${-rgb} _fps=10 _label="3D Weird"
 
 #@cli _gallery_stylization
 #@cli : This entry defines some examples of image stylization for the G'MIC gallery page.
