@@ -23378,6 +23378,45 @@ to_voxels3d : check "${1=128}>0 && isbool(${2=1}) && isbool(${3=0})" check3d
           );
         );
 
+        rasterize_triangle_new(P0,P1,P2) = (
+          N = cross(P1# - P0#,P2# - P0#); # Normal vector
+          S = -dot(N,P0#); # Affine shift
+          proj_plane = argmax(abs(N)); # Best 2D projection plane
+          proj_plane==0?( # YZ-backprojection
+            Q0 = [ P0#[1],P0#[2] ]; Q1 = [ P1#[1],P1#[2] ]; Q2 = [ P2#[1],P2#[2] ];
+            _rasterize_triangle(Q0,Q1,Q2,round((-N[1]*a - N[2]*b - S)/N[0]),a,b);
+          ):proj_plane==1?( # XZ-backprojection
+            Q0 = [ P0#[0],P0#[2] ]; Q1 = [ P1#[0],P1#[2] ]; Q2 = [ P2#[0],P2#[2] ];
+            _rasterize_triangle(Q0,Q1,Q2,a,round((-N[0]*a - N[2]*b - S)/N[1]),b);
+          ):( # XY-backprojection
+            Q0 = [ P0#[0],P0#[1] ]; Q1 = [ P1#[0],P1#[1] ]; Q2 = [ P2#[0],P2#[1] ];
+            _rasterize_triangle(Q0,Q1,Q2,a,b,round((-N[0]*a - N[1]*b - S)/N[2]));
+          );
+        );
+
+        _rasterize_triangle_new(P0,P1,P2,projX,projY,projZ) = ( # Back-project 2D triangle
+          P0#[1]>P1#[1]?swap(P0#,P1#);
+          P0#[1]>P2#[1]?swap(P0#,P2#);
+          P1#[1]>P2#[1]?swap(P1#,P2#);
+          db01 = P1#[1] - P0#[1]; m1db01 = max(1,db01);
+          db02 = P2#[1] - P0#[1]; m1db02 = max(1,db02);
+          db12 = P2#[1] - P1#[1]; m1db12 = max(1,db12);
+          repeat (db01,l,
+            b = P0#[1] + l;
+            a0 = round(lerp(P0#[0],P1#[0],l/m1db01));
+            a1 = round(lerp(P0#[0],P2#[0],l/m1db02));
+            a0>a1?swap(a0,a1);
+            for (a = a0, a<=a1, ++a, i(#$out,projX#,projY#,projZ#) = label);
+          );
+          repeat (db12 + 1,l,
+            b = P1#[1] + l;
+            a0 = round(lerp(P1#[0],P2#[0],l/m1db12));
+            a1 = round(lerp(P0#[0],P2#[0],(db01 + l)/m1db02));
+            a0>a1?swap(a0,a1);
+            for (a = a0, a<=a1, ++a, i(#$out,projX#,projY#,projZ#) = label);
+          );
+        );
+
         rasterize_triangle(P0,P1,P2) = (
           _rasterize_triangle(P0#,P1#,P2#) = (
             l01 = max(1,abs(P1# - P0#));
@@ -23392,8 +23431,6 @@ to_voxels3d : check "${1=128}>0 && isbool(${2=1}) && isbool(${3=0})" check3d
                 kn = k/lq2;
                 P = lerp(Q,P2#,kn);
                 i(#$out,round(P)) = label;
-#                i(#$out,floor(P)) = label;
-#                i(#$out,ceil(P)) = label;
               );
             );
           );
@@ -23403,8 +23440,8 @@ to_voxels3d : check "${1=128}>0 && isbool(${2=1}) && isbool(${3=0})" check3d
         );
 
         rasterize_sphere(P0,P1) = (
-          P = (P0 + P1)/2;
-          R = norm(P1 - P0)/2;
+          P = (P0# + P1#)/2;
+          R = norm(P1# - P0#)/2;
           xm = floor(P[0] - R); xM = ceil(P[0] + R);
           ym = floor(P[1] - R); yM = ceil(P[1] + R);
           zm = floor(P[2] - R); zM = ceil(P[2] + R);
@@ -23419,21 +23456,21 @@ to_voxels3d : check "${1=128}>0 && isbool(${2=1}) && isbool(${3=0})" check3d
 
       );
 
-      N = i[#$prims,p++];
+      n = i[#$prims,p++];
 
       # Get coordinates of vertices in voxel space.
       P0 = I[#$pts,i[#$prims,p++]];
-      N>1?(P1 = I[#$pts,i[#$prims,p++]]);
-      N>2?(P2 = I[#$pts,i[#$prims,p++]]);
-      N>3?(P3 = I[#$pts,i[#$prims,p++]]);
-      N>4?(p+=N-4);
+      n>1?(P1 = I[#$pts,i[#$prims,p++]]);
+      n>2?(P2 = I[#$pts,i[#$prims,p++]]);
+      n>3?(P3 = I[#$pts,i[#$prims,p++]]);
+      n>4?(p+=n - 4);
 
       # Draw primitives.
-      N==1?rasterize_point(P0):
-      N==2 || N==6?rasterize_line(P0,P1):
-      N==3 || N==9?rasterize_triangle(P0,P1,P2):
-      N==4 || N==12?(rasterize_triangle(P0,P1,P2); rasterize_triangle(P0,P2,P3)):
-      N==5?rasterize_sphere(P0,P1);
+      n==1?rasterize_point(P0):
+      n==2 || n==6?rasterize_line(P0,P1):
+      n==3 || n==9?rasterize_triangle(P0,P1,P2):
+      n==4 || n==12?(rasterize_triangle(P0,P1,P2); rasterize_triangle(P0,P2,P3)):
+      n==5?rasterize_sphere(P0,P1);
 
       $3?++label" rm.
 
