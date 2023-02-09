@@ -4267,7 +4267,7 @@ output_obj : check "isbool(${2=1})" check3d 0
              out+=l_s)"
 
     # Decompose into vertices, primitives and colors.
-    s3d 0 nb_vertices,nbp={1,f2ui([i[0],i[1]])} rm[0,1]
+    s3d nb_vertices,nbp={1,f2ui([i[0],i[1]])} rm[0,1]
     e "  > File '"$folder$basename$ext"' ("$nb_vertices" vertices, "$nbp" primitives)."
 
     # Export vertices.
@@ -21166,7 +21166,7 @@ _axes3d :
 boundingbox3d :
   e[^-1] "Replace 3D object$? by their 3D bounding boxes."
   foreach {
-    s3d 0 nbv,nbp={1,f2ui([i[0],i[1]])} k[2,3] => pts,prims
+    s3d nbv,nbp={1,f2ui([i[0],i[1]])} k[2,3] => pts,prims
     r[pts] 3,{pts,h/3},1,1,-1 permute[pts] zycx ($nbv) a[pts,-1] y # Convert vertices to dynamic array
     1,$nbp,1,1,"begin(p = 0); # Manage 3D spheres by adding virtual vertices
       N = i[#$prims,p++];
@@ -22629,7 +22629,7 @@ skeleton3d : check "isint(${1=2}) && $1>=0 && $1<=2 && isint(${2=3}) && $2>=0 &&
 
     # Construct bones from skeleton.
     if $4 l[0] {
-      s3d 0
+      s3d
       n={1,@0}
       if $n
         r[2] 3,$n,1,1,-1 r[3] 2,$n,1,1,-1 r[4] 3,$n,1,1,-1
@@ -23383,7 +23383,7 @@ voxelize3d : check "${1=128}>0 && isbool(${2=1}) && isbool(${3=0})" check3d
   foreach {
     nm={n} p3d 2
     +boundingbox3d l. { s3d store[2] bbpts rm } # Get exact bounding box (for objects containing 3d sphere primitives)
-    s3d 0 nbp={1,@1} k[2,3,4] => pts,prims,cols
+    s3d nbp={1,@1} k[2,3,4] => pts,prims,cols
     l[pts] {
       $bbpts a y # Merge bounding box vertices
       r 3,{h/3},1,1,-1 s x
