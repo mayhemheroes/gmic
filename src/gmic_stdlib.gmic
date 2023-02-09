@@ -23334,12 +23334,35 @@ _texturize3d :
   3,{h},1,1,200 1,{h},1,1,1 y[-4--2] a[-5--1] y
   => [3D\ torus]
 
-#@cli to_voxels3d : _max_resolution>0,_fill_interior={ 0 | 1 },_preserve_colors={ 0 | 1 }
+#@cli triangle3d : x0,y0,z0,x1,y1,z1,x2,y2,z2
+#@cli : Input 3D triangle at specified coordinates.
+#@cli : $ repeat 100 { a={$>*pi/50} triangle3d 0,0,0,0,0,3,{cos(3*$a)},{sin(2*$a)},0 color3d[-1] ${-rgb} } add3d
++triangle3d :
+  e[^-1] "Input 3D triangle ($1,$2,$3)-($4,$5,$6)-($7,$8,$9)."
+  1,25,1,1,67.5,73.5,109.5,103.5,51.5,100.5,3,1,${1-9},3,0,1,2,200,200,200,1 => [3D\ triangle]
+
+#@cli volume3d
+#@cli : Transform selected 3D volumetric images as 3D parallelepipedic objects.
+#@cli : $ image.jpg animate blur,0,5,30 append z volume3d
+volume3d :
+  e[^-1] "Transform image$? as 3D parallelepipedic objects."
+  foreach {
+    w={w} h={h} d={d}
+    +slices[0] 0
+    +columns[0] 0 permute. zyxc mirror. x
+    +slices[0] 100% mirror. x
+    +columns[0] 100% permute. zyxc
+    +rows[0] 100% permute. xzyc
+    +rows[0] 0 permute. xzyc mirror. y
+    rm[0] image6cube3d *3d $w,$h,$d
+  }
+
+#@cli voxelize3d : _max_resolution>0,_fill_interior={ 0 | 1 },_preserve_colors={ 0 | 1 }
 #@cli : Convert selected 3D objects as 3D volumetric images of binary voxels, using 3D mesh rasterization.
 #@cli : Default values: 'max_resolution=128', 'fill_interior=1' and 'preserve_colors=0'.
-to_voxels3d : check "${1=128}>0 && isbool(${2=1}) && isbool(${3=0})" check3d
+voxelize3d : check "${1=128}>0 && isbool(${2=1}) && isbool(${3=0})" check3d
   s0,s1,t0,t1="",", interior filling","scalar","color"
-  e[^-1] "Convert 3D object$? to volumetric image, with max resolution $1"$s$2" and "$t$3" output."
+  e[^-1] "Voxelize 3D object$?, with max resolution $1"$s$2" and "$t$3" output."
   foreach {
     nm={n} p3d 2
     +boundingbox3d l. { s3d store[2] bbpts rm } # Get exact bounding box (for objects containing 3d sphere primitives)
@@ -23484,29 +23507,6 @@ to_voxels3d : check "${1=128}>0 && isbool(${2=1}) && isbool(${3=0})" check3d
     else >[out] 0 # Output scalars
     fi
     k[out] => $nm
-  }
-
-#@cli triangle3d : x0,y0,z0,x1,y1,z1,x2,y2,z2
-#@cli : Input 3D triangle at specified coordinates.
-#@cli : $ repeat 100 { a={$>*pi/50} triangle3d 0,0,0,0,0,3,{cos(3*$a)},{sin(2*$a)},0 color3d[-1] ${-rgb} } add3d
-+triangle3d :
-  e[^-1] "Input 3D triangle ($1,$2,$3)-($4,$5,$6)-($7,$8,$9)."
-  1,25,1,1,67.5,73.5,109.5,103.5,51.5,100.5,3,1,${1-9},3,0,1,2,200,200,200,1 => [3D\ triangle]
-
-#@cli volume3d
-#@cli : Transform selected 3D volumetric images as 3D parallelepipedic objects.
-#@cli : $ image.jpg animate blur,0,5,30 append z volume3d
-volume3d :
-  e[^-1] "Transform image$? as 3D parallelepipedic objects."
-  foreach {
-    w={w} h={h} d={d}
-    +slices[0] 0
-    +columns[0] 0 permute. zyxc mirror. x
-    +slices[0] 100% mirror. x
-    +columns[0] 100% permute. zyxc
-    +rows[0] 100% permute. xzyc
-    +rows[0] 0 permute. xzyc mirror. y
-    rm[0] image6cube3d *3d $w,$h,$d
   }
 
 #@cli weird3d : _resolution>0
