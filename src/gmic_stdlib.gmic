@@ -22453,6 +22453,142 @@ _primitives3d :
     rm[3-5] a y
   }
 
+# WIP : Better reimplementation of 'primitives3d'.
+p3d2 : check "isint($1) && inrange($1,0,2)"
+  check3d foreach {
+    s3d nbv,nbp={1,f2ui(crop())}
+    r[2] 3,{2,h/3},1,1,-1 permute[2] zycx ($nbv) a[2,-1] y # Vertices as dynamic array of 3D coordinates
+
+    # Extract textures.
+    tmp=$! 1,$nbp,1,1,">begin(p = N = 0);
+      i[#4,p++]==-128?(
+        W = i[#4,p++]; H = i[#4,p++]; S = i[#4,p++]; WHS = W*H*S;
+        WHS?(run('+z[4] 0,',p,',0,',p + WHS - 1,' r. ',W,',',H,',1,',S,',-1 => tx',N); p+=WHS);
+      ):(p+=2);
+      ++N" rm[$tmp]
+
+    # Extract opacity masks.
+    tmp=$! 1,$nbp,1,1,">begin(p = N = 0);
+      i[#5,p++]==-128?(
+        W = i[#5,p++]; H = i[#5,p++]; S = i[#5,p++]; WHS = W*H*S;
+        WHS?(run('+z[5] 0,',p,',0,',p + WHS - 1,' r. ',W,',',H,',1,',S,',-1 => ma',N); p+=WHS);
+      );
+      ++N" rm[$tmp]
+
+    # Convert object to new points/primitives/colors/opacities.
+    1x3 => prims,cols,opacs
+    1,$nbp,1,1,">
+      begin(
+        const mode = $1;
+        pp = pc = po = 0;  # Offset values for primitives,
+        M = N = 0; # Index of input / output primitives.
+        RGB0 = RGB1 = RGB2 = RGB3 = [ 0,0,0 ];
+      );
+      n = i[#3,pp++]; # Type of primitive
+
+      # Get primitive material.
+      indc = -1; R = i[#4,pc++];
+      R!=-128?(G = i[#4,pc++]; B = i[#4,pc++]):(
+        wc = i[#4,pc++]; hc = i[#4,pc++]; sc = i[#4,pc++]; whsc = wc*hc*sc;
+        vnamec = string(#24,'tx',whsc?M:wc); indc = get(vnamec); pc+=whsc;
+        R = G = B = 200;
+      );
+      indo = -1; O = i[#4,po++];
+      O==-128?(
+        wo = i[#4,po++]; ho = i[#4,po++]; so = i[#4,po++]; whso = wo*ho*so;
+        vnameo = string(#24,'ma',whso?M:wo); indo = get(vnameo); po+=whso;
+        O = 1;
+      );
+
+      # Convert primitives.
+      n==1?( # Colored point or sprite
+        i0 = f2ui(i[#3,pp++]);
+        mode==0?(
+          da_push(#$prims,1,ui2f(i0));
+          da_push(#$cols,R,G,B);
+          da_push(#$opacs,O);
+          ++N;
+        );
+      ):n==2?( # Colored segment
+        i0 = f2ui(i[#3,pp++]); i1 = f2ui(i[#3,pp++]);
+        mode==0?(
+          da_push(#$prims,1,ui2f(i0),1,ui2f(i1));
+          da_push(#$cols,R,G,B,R,G,B);
+          da_push(#$opacs,O,O);
+          N+=2;
+        );
+      ):n==3?( # Colored triangle
+        i0 = f2ui(i[#3,pp++]); i1 = f2ui(i[#3,pp++]); i2 = f2ui(i[#3,pp++]);
+        mode==0?(
+          da_push(#$prims,1,ui2f(i0),1,ui2f(i1),1,ui2f(i2));
+          da_push(#$cols,R,G,B,R,G,B,R,G,B);
+          da_push(#$opacs,O,O,O);
+          N+=3;
+        );
+      ):n==4?( # Colored quadrangle
+        i0 = f2ui(i[#3,pp++]); i1 = f2ui(i[#3,pp++]); i2 = f2ui(i[#3,pp++]); i3 = f2ui(i[#3,pp++]);
+        mode==0?(
+          da_push(#$prims,1,ui2f(i0),1,ui2f(i1),1,ui2f(i2),1,ui2f(i3));
+          da_push(#$cols,R,G,B,R,G,B,R,G,B,R,G,B);
+          da_push(#$opacs,O,O,O,O);
+          N+=4;
+        );
+      ):n==5?( # Colored sphere
+        i0 = f2ui(i[#3,pp++]); i1 = f2ui(i[#3,pp++]); is_outlined = i[#3,pp]; pp+=3;
+        mode==0?(
+          P0 = I[#2,i0]; P1 = I[#2,i1]; nind = da_size(#2); da_push(#2,(P0 + P1)/2);
+          da_push(#$prims,1,ui2f(nind));
+          da_push(#$cols,R,G,B);
+          da_push(#$opacs,O);
+          ++N;
+        );
+      ):n==6?( # Textured segment
+        i0 = f2ui(i[#3,pp++]); i1 = f2ui(i[#3,pp++]);
+        tx0 = i[#3,pp++]; ty0 = i[#3,pp++]; tx1 = i[#3,pp++]; ty1 = i[#3,pp++];
+        mode==0?(
+          da_push(#$prims,1,ui2f(i0),1,ui2f(i1));
+          copy(RGB0,i(#indc,tx0,ty0,0,0),min(3,s#indc),1,wh#indc);
+          copy(RGB1,i(#indc,tx1,ty1,0,0),min(3,s#indc),1,wh#indc);
+          da_push(#$cols,RGB0[0],RGB0[1],RGB0[1],RGB1[0],RGB1[1],RGB1[1]);
+          da_push(#$opacs,O,O);
+          N+=2;
+        );
+      ):n==9?( # Textured triangle
+        i0 = f2ui(i[#3,pp++]); i1 = f2ui(i[#3,pp++]); i2 = f2ui(i[#3,pp++]);
+        tx0 = i[#3,pp++]; ty0 = i[#3,pp++]; tx1 = i[#3,pp++]; ty1 = i[#3,pp++]; tx2 = i[#3,pp++]; ty2 = i[#3,pp++];
+        mode==0?(
+          da_push(#$prims,1,ui2f(i0),1,ui2f(i1),1,ui2f(i2));
+          copy(RGB0,i(#indc,tx0,ty0,0,0),min(3,s#indc),1,wh#indc);
+          copy(RGB1,i(#indc,tx1,ty1,0,0),min(3,s#indc),1,wh#indc);
+          copy(RGB2,i(#indc,tx2,ty2,0,0),min(3,s#indc),1,wh#indc);
+          da_push(#$cols,RGB0[0],RGB0[1],RGB0[1],RGB1[0],RGB1[1],RGB1[1],RGB2[0],RGB2[1],RGB2[1]);
+          da_push(#$opacs,O,O,O);
+          N+=3;
+        );
+      ):n==12?( # Textured quadrangle
+        i0 = f2ui(i[#3,pp++]); i1 = f2ui(i[#3,pp++]); i2 = f2ui(i[#3,pp++]); i3 = f2ui(i[#3,pp++]);
+        tx0 = i[#3,pp++]; ty0 = i[#3,pp++]; tx1 = i[#3,pp++]; ty1 = i[#3,pp++];
+        tx2 = i[#3,pp++]; ty2 = i[#3,pp++]; tx3 = i[#3,pp++]; ty3 = i[#3,pp++];
+        mode==0?(
+          da_push(#$prims,1,ui2f(i0),1,ui2f(i1),1,ui2f(i2),1,ui2f(i3));
+          copy(RGB0,i(#indc,tx0,ty0,0,0),min(3,s#indc),1,wh#indc);
+          copy(RGB1,i(#indc,tx1,ty1,0,0),min(3,s#indc),1,wh#indc);
+          copy(RGB2,i(#indc,tx2,ty2,0,0),min(3,s#indc),1,wh#indc);
+          copy(RGB3,i(#indc,tx3,ty3,0,0),min(3,s#indc),1,wh#indc);
+          da_push(#$cols,RGB0[0],RGB0[1],RGB0[1],RGB1[0],RGB1[1],RGB1[1],
+                         RGB2[0],RGB2[1],RGB2[1],RGB3[0],RGB3[1],RGB3[1]);
+          da_push(#$opacs,O,O,O,O);
+          N+=4;
+        );
+      ):(pp+=n);
+      end(set('N',N));
+    " rm.
+    da_freeze[2,prims,cols,opacs]
+    f[1] {2,h},$N
+    permute[2] cyzx y[2] rv[3,prims] rv[4,cols] rv[5,opacs] k[0-5] a y
+  }
+  check3d 1
+
 #@cli projections3d : _x[%],_y[%],_z[%],_is_bounding_box={ 0 | 1 }
 #@cli : Generate 3D xy,xz,yz projection planes from specified volumetric images.
 projections3d : skip ${1=50%},${2=50%},${3=50%},${4=1}
