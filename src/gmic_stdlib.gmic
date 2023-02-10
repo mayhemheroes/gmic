@@ -21234,12 +21234,12 @@ _center3d :
   5,0,1,0,0,0,200,200,200,1
   => [3D\ circle]
 
-#@cli circles3d : _radius>=0,_is_wireframe={ 0 | 1 }
+#@cli circles3d : _radius>=0,_is_outlined={ 0 | 1 }
 #@cli : Convert specified 3D objects to sets of 3D circles with specified radius.
-#@cli : Default values: 'radius=1' and 'is_wireframe=1'.
+#@cli : Default values: 'radius=1' and 'is_outlined=1'.
 #@cli : $ image.jpg luminance resize2dy 40 threshold 50% * 255 pointcloud3d color3d[-1] 255,255,255 circles3d 0.7
 circles3d : check "${1=1}>=0 && isbool(${2=0})"
-  e[^-1] "Convert 3D object$? to sets of 3D "${arg\ 1+$2,filled,wireframe}" circles with radius $1."
+  e[^-1] "Convert 3D object$? to sets of 3D "${arg\ 1+$2,filled,outlined}" circles with radius $1."
   p3d 0
   foreach {
     -3d {$1/2},0,0 ++3d $1,0,0 +3d[1] [0]
@@ -30746,7 +30746,7 @@ covariance_vectors : skip "${1=avg}"
 #@cli : Convert each of the selected dynamic arrays into a 1-column image whose height is the number of array elements.
 da_freeze :
   e[^-1] "Freeze dynamic array$?."
-  foreach { r 1,{@{h-1}},1,100%,0 }
+  foreach { siz={@{h-1}} if $siz r 1,$siz,1,100%,0 else rm 0 fi }
 
 #@cli dec : decimal_int1,...
 #@cli : Print specified decimal integers into their binary, octal, hexadecimal and string representations.
