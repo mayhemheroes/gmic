@@ -22483,7 +22483,7 @@ p3d2 : check "isint($1) && inrange($1,0,2)"
         pp = pc = po = 0;  # Offset values for primitives,
         M = N = 0; # Index of input / output primitives.
         RGB0 = RGB1 = RGB2 = RGB3 = [ 0,0,0 ];
-        refc = refo = vector(#$nbp); # Correspondence between old and new texture/mask indices
+        refc = vector(#$nbp); # Correspondence between old and new texture/mask indices
       );
       n = i[#3,pp++]; # Type of primitive
 
@@ -22531,6 +22531,11 @@ p3d2 : check "isint($1) && inrange($1,0,2)"
           da_push(#$cols,R,G,B,R,G,B,R,G,B);
           da_push(#$opacs,O,O,O);
           N+=3;
+        ):(
+          da_push(#$prims,3,ui2f(i0),ui2f(i1),ui2f(i2));
+          da_push(#$cols,R,G,B);
+          da_push(#$opacs,O);
+          ++N;
         );
 
       ):n==4?( # Colored quadrangle
@@ -22541,6 +22546,11 @@ p3d2 : check "isint($1) && inrange($1,0,2)"
           da_push(#$cols,R,G,B,R,G,B,R,G,B,R,G,B);
           da_push(#$opacs,O,O,O,O);
           N+=4;
+        ):(
+          da_push(#$prims,4,ui2f(i0),ui2f(i1),ui2f(i2),ui2f(i3));
+          da_push(#$cols,R,G,B);
+          da_push(#$opacs,O);
+          ++N;
         );
 
       ):n==5?( # Colored sphere
