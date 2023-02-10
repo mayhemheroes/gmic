@@ -22208,6 +22208,18 @@ _primitives3d :
         M = N = 0; # Index of input / output primitives.
         RGB0 = RGB1 = RGB2 = RGB3 = [ 0,0,0 ];
         refc = vector(#$nbp); # Correspondence old -> new indices for shared textures
+
+        add_color_point(i,R,G,B,O) = (
+          vname = string(#24,'pt',i);
+          isnan(get(vname))?(
+            da_push(#$prims,1,ui2f(i));
+            da_push(#$cols,R,G,B);
+            da_push(#$opacs,O);
+            set(vname,1);
+            ++N;
+          );
+        );
+
       );
 
       # Read primitive material.
@@ -22215,7 +22227,7 @@ _primitives3d :
       indc = -1; R = i[#4,pc++];
       R==-128?(
         wc = i[#4,pc++]; hc = i[#4,pc++]; sc = i[#4,pc++]; whsc = wc*hc*sc;
-        sharedc = whsc?-1:wc; vnamec = string(#24,'tx',whsc?M:wc); indc = get(vnamec); pc+=whsc;
+        sharedc = whsc?-1:wc; vname = string(#24,'tx',whsc?M:wc); indc = get(vname); pc+=whsc;
         R = G = B = 200;
       ):(G = i[#4,pc++]; B = i[#4,pc++]);
 
@@ -22235,12 +22247,8 @@ _primitives3d :
 
       ):n==2?( # Colored segment
         i0 = f2ui(i[#3,pp++]); i1 = f2ui(i[#3,pp++]);
-        mode==0?(
-          da_push(#$prims,1,ui2f(i0),1,ui2f(i1));
-          da_push(#$cols,R,G,B,R,G,B);
-          da_push(#$opacs,O,O);
-          N+=2;
-        ):(
+        mode==0?(add_color_point(i0,R,G,B,O); add_color_point(i1,R,G,B,O)):
+        (
           da_push(#$prims,2,ui2f(i0),ui2f(i1));
           da_push(#$cols,R,G,B);
           da_push(#$opacs,O);
@@ -22249,9 +22257,9 @@ _primitives3d :
 
       ):n==3?( # Colored triangle
         i0 = f2ui(i[#3,pp++]); i1 = f2ui(i[#3,pp++]); i2 = f2ui(i[#3,pp++]);
-        mode==0 || mode==1?(
-          mode==0?da_push(#$prims,1,ui2f(i0),1,ui2f(i1),1,ui2f(i2)):
-                  da_push(#$prims,2,ui2f(i0),ui2f(i1),2,ui2f(i1),ui2f(i2),2,ui2f(i2),ui2f(i0));
+        mode==0?(add_color_point(i0,R,G,B,O); add_color_point(i1,R,G,B,O); add_color_point(i2,R,G,B,O)):
+        mode==1?(
+          da_push(#$prims,2,ui2f(i0),ui2f(i1),2,ui2f(i1),ui2f(i2),2,ui2f(i2),ui2f(i0));
           da_push(#$cols,R,G,B,R,G,B,R,G,B);
           da_push(#$opacs,O,O,O);
           N+=3;
@@ -22264,9 +22272,10 @@ _primitives3d :
 
       ):n==4?( # Colored quadrangle
         i0 = f2ui(i[#3,pp++]); i1 = f2ui(i[#3,pp++]); i2 = f2ui(i[#3,pp++]); i3 = f2ui(i[#3,pp++]);
-        mode==0 || mode==1?(
-          mode==0?da_push(#$prims,1,ui2f(i0),1,ui2f(i1),1,ui2f(i2),1,ui2f(i3)):
-                  da_push(#$prims,2,ui2f(i0),ui2f(i1),2,ui2f(i1),ui2f(i2),2,ui2f(i2),ui2f(i3),2,ui2f(i3),ui2f(i0));
+        mode==0?(add_color_point(i0,R,G,B,O); add_color_point(i1,R,G,B,O);
+                 add_color_point(i2,R,G,B,O); add_color_point(i3,R,G,B,O)):
+        mode==1?(
+          da_push(#$prims,2,ui2f(i0),ui2f(i1),2,ui2f(i1),ui2f(i2),2,ui2f(i2),ui2f(i3),2,ui2f(i3),ui2f(i0));
           da_push(#$cols,R,G,B,R,G,B,R,G,B,R,G,B);
           da_push(#$opacs,O,O,O,O);
           N+=4;
@@ -22281,15 +22290,13 @@ _primitives3d :
         i0 = f2ui(i[#3,pp++]); i1 = f2ui(i[#3,pp++]); is_outlined = i[#3,pp]; pp+=3;
         mode==0?(
           P0 = I[#2,i0]; P1 = I[#2,i1]; nind = da_size(#2); da_push(#2,(P0 + P1)/2);
-          da_push(#$prims,1,ui2f(nind));
-          da_push(#$cols,R,G,B);
-          da_push(#$opacs,O);
+          add_color_point(nind,R,G,B,O);
         ):(
           da_push(#$prims,5,ui2f(i0),ui2f(i1),mode==1?1:is_outlined,0,0);
           da_push(#$cols,R,G,B);
           da_push(#$opacs,O);
+          ++N;
         );
-        ++N;
 
       ):n==6?( # Textured segment
         i0 = f2ui(i[#3,pp++]); i1 = f2ui(i[#3,pp++]);
