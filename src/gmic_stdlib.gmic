@@ -22483,7 +22483,7 @@ p3d2 : check "isint($1) && inrange($1,0,2)"
         pp = pc = po = 0;  # Offset values for primitives,
         M = N = 0; # Index of input / output primitives.
         RGB0 = RGB1 = RGB2 = RGB3 = [ 0,0,0 ];
-        refc = vector(#$nbp); # Correspondence between old and new texture/mask indices
+        refc = vector(#$nbp); # Correspondence old -> new primitives indices
       );
       n = i[#3,pp++]; # Type of primitive
 
@@ -22625,6 +22625,15 @@ p3d2 : check "isint($1) && inrange($1,0,2)"
           ):da_push(#$cols,-128,refc[M],0,0,-128,refc[M],0,0,-128,refc[M],0,0);
           da_push(#$opacs,O,O,O);
           N+=3;
+        ):(
+          da_push(#$prims,3,ui2f(i0),ui2f(i1),ui2f(i2));
+          copy(RGB0,i(#indc,tx0,ty0,0,0),min(3,s#indc),1,wh#indc);
+          copy(RGB1,i(#indc,tx1,ty1,0,0),min(3,s#indc),1,wh#indc);
+          copy(RGB2,i(#indc,tx2,ty2,0,0),min(3,s#indc),1,wh#indc);
+          (RGB0+=RGB1+=RGB2)/=3;
+          da_push(#$cols,RGB0[0],RGB0[1],RGB0[1]);
+          da_push(#$opacs,O);
+          ++N;
         );
 
       ):n==12?( # Textured quadrangle
@@ -22657,7 +22666,21 @@ p3d2 : check "isint($1) && inrange($1,0,2)"
           ):da_push(#$cols,-128,refc[M],0,0,-128,refc[M],0,0,-128,refc[M],0,0,-128,refc[M],0,0);
           da_push(#$opacs,O,O,O,O);
           N+=4;
+        ):(
+          da_push(#$prims,4,ui2f(i0),ui2f(i1),ui2f(i2),ui2f(i3));
+          copy(RGB0,i(#indc,tx0,ty0,0,0),min(3,s#indc),1,wh#indc);
+          copy(RGB1,i(#indc,tx1,ty1,0,0),min(3,s#indc),1,wh#indc);
+          copy(RGB2,i(#indc,tx2,ty2,0,0),min(3,s#indc),1,wh#indc);
+          copy(RGB3,i(#indc,tx3,ty3,0,0),min(3,s#indc),1,wh#indc);
+          (RGB0+=RGB1+=RGB2+=RGB3)/=4;
+
+          print(indc,RGB0);
+
+          da_push(#$cols,RGB0[0],RGB0[1],RGB0[1]);
+          da_push(#$opacs,O);
+          ++N;
         );
+
       ):(pp+=n);
       end(set('N',N));
     " rm.
