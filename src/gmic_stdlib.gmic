@@ -22486,53 +22486,55 @@ p3d2 : check "isint($1) && inrange($1,0,2)"
       );
       n = i[#3,pp++]; # Type of primitive
 
-      # Get primitive material.
+      # Read primitive material.
       indc = -1; R = i[#4,pc++];
       R!=-128?(G = i[#4,pc++]; B = i[#4,pc++]):(
         wc = i[#4,pc++]; hc = i[#4,pc++]; sc = i[#4,pc++]; whsc = wc*hc*sc;
-        vnamec = string(#24,'tx',whsc?M:wc); indc = get(vnamec); pc+=whsc;
+        sharedc = whsc?-1:wc; vnamec = string(#24,'tx',whsc?M:wc); indc = get(vnamec); pc+=whsc;
         R = G = B = 200;
       );
       indo = -1; O = i[#4,po++];
       O==-128?(
         wo = i[#4,po++]; ho = i[#4,po++]; so = i[#4,po++]; whso = wo*ho*so;
-        vnameo = string(#24,'ma',whso?M:wo); indo = get(vnameo); po+=whso;
+        sharedo = whso?-1:wo; vnameo = string(#24,'ma',whso?M:wo); indo = get(vnameo); po+=whso;
         O = 1;
       );
 
       # Convert primitives.
       n==1?( # Colored point or sprite
         i0 = f2ui(i[#3,pp++]);
-        mode==0?(
-          da_push(#$prims,1,ui2f(i0));
-          da_push(#$cols,R,G,B);
-          da_push(#$opacs,O);
-          ++N;
-        );
+        da_push(#$prims,1,ui2f(i0));
+        da_push(#$cols,R,G,B);
+        da_push(#$opacs,O);
+        ++N;
+
       ):n==2?( # Colored segment
         i0 = f2ui(i[#3,pp++]); i1 = f2ui(i[#3,pp++]);
-        mode==0?(
-          da_push(#$prims,1,ui2f(i0),1,ui2f(i1));
-          da_push(#$cols,R,G,B,R,G,B);
-          da_push(#$opacs,O,O);
-          N+=2;
-        );
+        da_push(#$prims,1,ui2f(i0),1,ui2f(i1));
+        da_push(#$cols,R,G,B,R,G,B);
+        da_push(#$opacs,O,O);
+        N+=2;
+
       ):n==3?( # Colored triangle
         i0 = f2ui(i[#3,pp++]); i1 = f2ui(i[#3,pp++]); i2 = f2ui(i[#3,pp++]);
-        mode==0?(
-          da_push(#$prims,1,ui2f(i0),1,ui2f(i1),1,ui2f(i2));
+        mode==0 || mode==1?(
+          mode==0?da_push(#$prims,1,ui2f(i0),1,ui2f(i1),1,ui2f(i2)):
+                  da_push(#$prims,2,ui2f(i0),ui2f(i1),2,ui2f(i1),ui2f(i2),2,ui2f(i2),ui2f(i0));
           da_push(#$cols,R,G,B,R,G,B,R,G,B);
           da_push(#$opacs,O,O,O);
           N+=3;
         );
+
       ):n==4?( # Colored quadrangle
         i0 = f2ui(i[#3,pp++]); i1 = f2ui(i[#3,pp++]); i2 = f2ui(i[#3,pp++]); i3 = f2ui(i[#3,pp++]);
-        mode==0?(
-          da_push(#$prims,1,ui2f(i0),1,ui2f(i1),1,ui2f(i2),1,ui2f(i3));
+        mode==0 || mode==1?(
+          mode==0?da_push(#$prims,1,ui2f(i0),1,ui2f(i1),1,ui2f(i2),1,ui2f(i3)):
+                  da_push(#$prims,2,ui2f(i0),ui2f(i1),2,ui2f(i1),ui2f(i2),2,ui2f(i2),ui2f(i3),2,ui2f(i3),ui2f(i0));
           da_push(#$cols,R,G,B,R,G,B,R,G,B,R,G,B);
           da_push(#$opacs,O,O,O,O);
           N+=4;
         );
+
       ):n==5?( # Colored sphere
         i0 = f2ui(i[#3,pp++]); i1 = f2ui(i[#3,pp++]); is_outlined = i[#3,pp]; pp+=3;
         mode==0?(
@@ -22540,8 +22542,13 @@ p3d2 : check "isint($1) && inrange($1,0,2)"
           da_push(#$prims,1,ui2f(nind));
           da_push(#$cols,R,G,B);
           da_push(#$opacs,O);
-          ++N;
+        ):mode==1?(
+          da_push(#$prims,5,ui2f(i0),ui2f(i1),1,0,0);
+          da_push(#$cols,R,G,B);
+          da_push(#$opacs,O);
         );
+        ++N;
+
       ):n==6?( # Textured segment
         i0 = f2ui(i[#3,pp++]); i1 = f2ui(i[#3,pp++]);
         tx0 = i[#3,pp++]; ty0 = i[#3,pp++]; tx1 = i[#3,pp++]; ty1 = i[#3,pp++];
@@ -22552,7 +22559,16 @@ p3d2 : check "isint($1) && inrange($1,0,2)"
           da_push(#$cols,RGB0[0],RGB0[1],RGB0[1],RGB1[0],RGB1[1],RGB1[1]);
           da_push(#$opacs,O,O);
           N+=2;
+        ):mode==1?(
+          da_push(#$prims,6,ui2f(i0),ui2f(i1),tx0,ty0,tx1,ty1);
+          da_push(#$cols,-128,wc,hc,sc);
+          !sharedc?( # Insert texture
+            run('d');
+          );
+          da_push(#$opacs,O);
+          ++N;
         );
+
       ):n==9?( # Textured triangle
         i0 = f2ui(i[#3,pp++]); i1 = f2ui(i[#3,pp++]); i2 = f2ui(i[#3,pp++]);
         tx0 = i[#3,pp++]; ty0 = i[#3,pp++]; tx1 = i[#3,pp++]; ty1 = i[#3,pp++]; tx2 = i[#3,pp++]; ty2 = i[#3,pp++];
@@ -22565,6 +22581,7 @@ p3d2 : check "isint($1) && inrange($1,0,2)"
           da_push(#$opacs,O,O,O);
           N+=3;
         );
+
       ):n==12?( # Textured quadrangle
         i0 = f2ui(i[#3,pp++]); i1 = f2ui(i[#3,pp++]); i2 = f2ui(i[#3,pp++]); i3 = f2ui(i[#3,pp++]);
         tx0 = i[#3,pp++]; ty0 = i[#3,pp++]; tx1 = i[#3,pp++]; ty1 = i[#3,pp++];
