@@ -22209,7 +22209,7 @@ _primitives3d :
         RGB0 = RGB1 = RGB2 = RGB3 = [ 0,0,0 ];
         refc = vector(#$nbp); # Correspondence old -> new indices for shared textures
 
-        add_color_point(i,R,G,B,O) = ( # Add colored point to object primitives
+        add_colored_point(i,R,G,B,O) = ( # Add colored point to object primitives
           vname = string(#24,'pt',i);
           isnan(get(vname))?(
             da_push(#$prims,1,ui2f(i));
@@ -22220,11 +22220,29 @@ _primitives3d :
           );
         );
 
-        add_color_segment(i0,i1,R,G,B,O) = ( # Add colored segment to object primitives
+        add_colored_segment(i0,i1,R,G,B,O) = ( # Add colored segment to object primitives
           vname = string(#24,'seg',min(i0,i1),'_',max(i0,i1));
           isnan(get(vname))?(
             da_push(#$prims,2,ui2f(i0),ui2f(i1));
             da_push(#$cols,R,G,B);
+            da_push(#$opacs,O);
+            set(vname,1);
+            ++N;
+          );
+        );
+
+        add_textured_segment(i0,i1) = ( # Add textured segment to object primitives
+          vname = string(#24,'seg',min(i0,i1),'_',max(i0,i1));
+          isnan(get(vname))?(
+            da_push(#$prims,6,ui2f(i0),ui2f(i1),tx0,ty0,tx1,ty1);
+            sharedc<0?( # Non-shared texture
+              da_push(#$cols,-128,wc,hc,sc);
+              off = da_size(#$cols);
+              resize(#$cols,1,h(#$cols) + whsc,1,1,0);
+              copy(i[#$cols,off],i[#indc,0],whsc);
+              i[#$cols,h(#$cols) - 1] = off + whsc;
+              refc[M] = N;
+            ):da_push(#$cols,-128,refc[M],0,0); # Shared texture
             da_push(#$opacs,O);
             set(vname,1);
             ++N;
@@ -22251,36 +22269,35 @@ _primitives3d :
       # Convert primitives.
       n==1?( # Colored point or sprite
         i0 = f2ui(i[#3,pp++]);
-        add_color_point(i0,R,G,B,O);
+        add_colored_point(i0,R,G,B,O);
 
       ):n==2?( # Colored segment
         i0 = f2ui(i[#3,pp++]); i1 = f2ui(i[#3,pp++]);
-        mode==0?(add_color_point(i0,R,G,B,O); add_color_point(i1,R,G,B,O)):
-        add_color_segment(i0,i1,R,G,B,O);
+        mode==0?(add_colored_point(i0,R,G,B,O); add_colored_point(i1,R,G,B,O)):
+        add_colored_segment(i0,i1,R,G,B,O);
 
       ):n==3?( # Colored triangle
         i0 = f2ui(i[#3,pp++]); i1 = f2ui(i[#3,pp++]); i2 = f2ui(i[#3,pp++]);
-        mode==0?(add_color_point(i0,R,G,B,O); add_color_point(i1,R,G,B,O); add_color_point(i2,R,G,B,O)):
-        mode==1?(add_color_segment(i0,i1,R,G,B,O); add_color_segment(i1,i2,R,G,B,O); add_color_segment(i2,i0,R,G,B,O)):
+        mode==0?(add_colored_point(i0,R,G,B,O); add_colored_point(i1,R,G,B,O); add_colored_point(i2,R,G,B,O)):
+        mode==1?(add_colored_segment(i0,i1,R,G,B,O); add_colored_segment(i1,i2,R,G,B,O);
+                 add_colored_segment(i2,i0,R,G,B,O)):
         (da_push(#$prims,3,ui2f(i0),ui2f(i1),ui2f(i2)); da_push(#$cols,R,G,B); da_push(#$opacs,O); ++N);
 
       ):n==4?( # Colored quadrangle
         i0 = f2ui(i[#3,pp++]); i1 = f2ui(i[#3,pp++]); i2 = f2ui(i[#3,pp++]); i3 = f2ui(i[#3,pp++]);
-        mode==0?(add_color_point(i0,R,G,B,O); add_color_point(i1,R,G,B,O);
-                 add_color_point(i2,R,G,B,O); add_color_point(i3,R,G,B,O)):
-        mode==1?(add_color_segment(i0,i1,R,G,B,O); add_color_segment(i1,i2,R,G,B,O);
-                 add_color_segment(i2,i3,R,G,B,O); add_color_segment(i3,i0,R,G,B,O)):
+        mode==0?(add_colored_point(i0,R,G,B,O); add_colored_point(i1,R,G,B,O);
+                 add_colored_point(i2,R,G,B,O); add_colored_point(i3,R,G,B,O)):
+        mode==1?(add_colored_segment(i0,i1,R,G,B,O); add_colored_segment(i1,i2,R,G,B,O);
+                 add_colored_segment(i2,i3,R,G,B,O); add_colored_segment(i3,i0,R,G,B,O)):
         (da_push(#$prims,4,ui2f(i0),ui2f(i1),ui2f(i2),ui2f(i3)); da_push(#$cols,R,G,B); da_push(#$opacs,O); ++N);
 
       ):n==5?( # Colored sphere
         i0 = f2ui(i[#3,pp++]); i1 = f2ui(i[#3,pp++]); is_outlined = i[#3,pp]; pp+=3;
         mode==0?(
           P0 = I[#2,i0]; P1 = I[#2,i1]; nind = da_size(#2); da_push(#2,(P0 + P1)/2);
-          add_color_point(nind,R,G,B,O);
+          add_colored_point(nind,R,G,B,O);
         ):(
-          da_push(#$prims,5,ui2f(i0),ui2f(i1),mode==1?1:is_outlined,0,0);
-          da_push(#$cols,R,G,B);
-          da_push(#$opacs,O);
+          da_push(#$prims,5,ui2f(i0),ui2f(i1),mode==1?1:is_outlined,0,0); da_push(#$cols,R,G,B); da_push(#$opacs,O);
           ++N;
         );
 
@@ -22290,21 +22307,9 @@ _primitives3d :
         mode==0?(
           copy(RGB0,i(#indc,tx0,ty0,0,0),min(3,s#indc),1,wh#indc);
           copy(RGB1,i(#indc,tx1,ty1,0,0),min(3,s#indc),1,wh#indc);
-          add_color_point(i0,RGB0[0],RGB0[1],RGB0[2],O);
-          add_color_point(i1,RGB1[0],RGB1[1],RGB1[2],O);
-        ):mode==1?(
-          da_push(#$prims,6,ui2f(i0),ui2f(i1),tx0,ty0,tx1,ty1);
-          sharedc<0?( # Non-shared texture
-            da_push(#$cols,-128,wc,hc,sc);
-            off = da_size(#$cols);
-            resize(#$cols,1,h(#$cols) + whsc,1,1,0);
-            copy(i[#$cols,off],i[#indc,0],whsc);
-            i[#$cols,h(#$cols) - 1] = off + whsc;
-            refc[M] = N;
-          ):da_push(#$cols,-128,refc[M],0,0); # Shared texture
-          da_push(#$opacs,O);
-          ++N;
-        ):(
+          add_colored_point(i0,RGB0[0],RGB0[1],RGB0[2],O);
+          add_colored_point(i1,RGB1[0],RGB1[1],RGB1[2],O)):
+        mode==1?add_textured_segment(i0,i1):(
           da_push(#$prims,2,ui2f(i0),ui2f(i1));
           copy(RGB0,i(#indc,tx0,ty0,0,0),min(3,s#indc),1,wh#indc);
           copy(RGB1,i(#indc,tx1,ty1,0,0),min(3,s#indc),1,wh#indc);
@@ -22321,9 +22326,9 @@ _primitives3d :
           copy(RGB0,i(#indc,tx0,ty0,0,0),min(3,s#indc),1,wh#indc);
           copy(RGB1,i(#indc,tx1,ty1,0,0),min(3,s#indc),1,wh#indc);
           copy(RGB2,i(#indc,tx2,ty2,0,0),min(3,s#indc),1,wh#indc);
-          add_color_point(i0,RGB0[0],RGB0[1],RGB0[2],O);
-          add_color_point(i1,RGB1[0],RGB1[1],RGB1[2],O);
-          add_color_point(i2,RGB2[0],RGB2[1],RGB2[2],O);
+          add_colored_point(i0,RGB0[0],RGB0[1],RGB0[2],O);
+          add_colored_point(i1,RGB1[0],RGB1[1],RGB1[2],O);
+          add_colored_point(i2,RGB2[0],RGB2[1],RGB2[2],O);
         ):mode==1?(
           da_push(#$prims,6,ui2f(i0),ui2f(i1),tx0,ty0,tx1,ty1,
                           6,ui2f(i1),ui2f(i2),tx1,ty1,tx2,ty2,
@@ -22359,10 +22364,10 @@ _primitives3d :
           copy(RGB1,i(#indc,tx1,ty1,0,0),min(3,s#indc),1,wh#indc);
           copy(RGB2,i(#indc,tx2,ty2,0,0),min(3,s#indc),1,wh#indc);
           copy(RGB3,i(#indc,tx3,ty3,0,0),min(3,s#indc),1,wh#indc);
-          add_color_point(i0,RGB0[0],RGB0[1],RGB0[2],O);
-          add_color_point(i1,RGB1[0],RGB1[1],RGB1[2],O);
-          add_color_point(i2,RGB2[0],RGB2[1],RGB2[2],O);
-          add_color_point(i3,RGB3[0],RGB3[1],RGB3[2],O);
+          add_colored_point(i0,RGB0[0],RGB0[1],RGB0[2],O);
+          add_colored_point(i1,RGB1[0],RGB1[1],RGB1[2],O);
+          add_colored_point(i2,RGB2[0],RGB2[1],RGB2[2],O);
+          add_colored_point(i3,RGB3[0],RGB3[1],RGB3[2],O);
         ):mode==1?(
           da_push(#$prims,6,ui2f(i0),ui2f(i1),tx0,ty0,tx1,ty1,
                           6,ui2f(i1),ui2f(i2),tx1,ty1,tx2,ty2,
