@@ -6712,11 +6712,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Check validity of 3D object.
         if (!is_get && !std::strcmp("check3d",command)) {
           gmic_substitute_args(false);
-          bool is_full_check = true;
+          bool is_full_check = false;
           if ((*argument=='0' || *argument=='1') && !argument[1]) {
             is_full_check = (*argument=='1');
             ++position;
-          } else is_full_check = true;
+          } else is_full_check = false;
           if (is_very_verbose)
             print(images,0,"Check validity of 3D object%s (%s check)",
                   gmic_selection.data(),
