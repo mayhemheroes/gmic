@@ -2753,8 +2753,8 @@ const char *gmic::builtin_commands_names[] = {
   "q","quit",
   "r","r3d","rand","remove","repeat","resize","return","reverse","reverse3d",
     "rm","rol","ror","rotate","rotate3d","round","rv","rv3d",
-  "s","s3d","screen","select","serialize","set","sh","shared","shift","sign","sin","sinc","sinh","skip",
-    "sl3d","smooth","solve","sort","split","split3d","sqr","sqrt","srand",
+  "s","screen","select","serialize","set","sh","shared","shift","sign","sin","sinc","sinh","skip",
+    "sl3d","smooth","solve","sort","split","sqr","sqrt","srand",
     "ss3d","status","store","streamline3d","sub","sub3d","svd",
   "t","tan","tanh","text","trisolve",
   "u","um","uncommand","unroll","unserialize",
@@ -5906,7 +5906,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           case '*' : std::strcpy(command,"mul3d"); break;
           case 'o' : std::strcpy(command,"opacity3d"); break;
           case 'r' : std::strcpy(command,"rotate3d"); break;
-          case 's' : std::strcpy(command,"split3d"); break;
           case '-' : std::strcpy(command,"sub3d"); break;
           } else if (!is_get && !command3 && command0=='n' && command1=='m' && command2=='d') {
           std::strcpy(command,"named"); // Shortcut 'nmd' for 'named".
@@ -6713,11 +6712,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Check validity of 3D object.
         if (!is_get && !std::strcmp("check3d",command)) {
           gmic_substitute_args(false);
-          bool is_full_check = true;
+          bool is_full_check = false;
           if ((*argument=='0' || *argument=='1') && !argument[1]) {
             is_full_check = (*argument=='1');
             ++position;
-          } else is_full_check = true;
+          } else is_full_check = false;
           if (is_very_verbose)
             print(images,0,"Check validity of 3D object%s (%s check)",
                   gmic_selection.data(),
@@ -12526,62 +12525,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           } else arg_error("smooth");
           is_change = true;
           ++position;
-          continue;
-        }
-
-        // Split 3D objects, into 6 vector images
-        // { header,N,vertices,primitives,colors,opacities }
-        if (!std::strcmp("split3d",command)) {
-          bool full_split = false;
-          gmic_substitute_args(false);
-          if ((*argument=='0' || *argument=='1') && !argument[1]) {
-            full_split = *argument=='1';
-            ++position;
-          }
-          print(images,0,"Split 3D object%s into property vectors%s.",
-                gmic_selection.data(),
-                full_split?"":" (full split)");
-          unsigned int off = 0;
-          cimg_forY(selection,l) {
-            uind = selection[l] + off;
-            const CImg<T> &img = gmic_check(images[uind]);
-            try {
-              img.get_split_CImg3d(full_split).move_to(g_list);
-            } catch (CImgException&) {
-              if (!img.is_CImg3d(true,&(*gmic_use_message=0)))
-                error(true,images,0,0,
-                      "Command 'split3d': Invalid 3D object [%d], in image%s (%s).",
-                      uind - off,gmic_selection_err.data(),message);
-              else throw;
-            }
-            if (is_get) {
-              if (g_list) {
-                pattern = images_names.size();
-                images_names.insert(g_list.size());
-                images_names[uind].get_copymark().move_to(images_names[pattern]);
-                for (unsigned int i = 1; i<g_list.size(); ++i)
-                  images_names[pattern + i - 1].get_copymark().move_to(images_names[pattern + i]);
-                g_list.move_to(images,~0U);
-              }
-            } else {
-              if (g_list) {
-                images.insert(g_list.size() - 1,uind + 1);
-                images_names.insert(g_list.size() - 1,uind + 1);
-                g_list[0].move_to(images[uind]);
-                for (unsigned int i = 1; i<g_list.size(); ++i) {
-                  g_list[i].move_to(images[uind + i]);
-                  images_names[uind + i - 1].get_copymark().move_to(images_names[uind + i]);
-                }
-                off+=(int)g_list.size() - 1;
-              } else {
-                images.remove(uind);
-                images_names.remove(uind);
-                --off;
-              }
-            }
-          }
-          g_list.assign();
-          is_change = true;
           continue;
         }
 
