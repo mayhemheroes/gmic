@@ -22220,6 +22220,17 @@ _primitives3d :
           );
         );
 
+        add_color_segment(i0,i1,R,G,B,O) = ( # Add colored segment to object primitives
+          vname = string(#24,'seg',min(i0,i1),'_',max(i0,i1));
+          isnan(get(vname))?(
+            da_push(#$prims,2,ui2f(i0),ui2f(i1));
+            da_push(#$cols,R,G,B);
+            da_push(#$opacs,O);
+            set(vname,1);
+            ++N;
+          );
+        );
+
       );
 
       # Read primitive material.
@@ -22245,22 +22256,13 @@ _primitives3d :
       ):n==2?( # Colored segment
         i0 = f2ui(i[#3,pp++]); i1 = f2ui(i[#3,pp++]);
         mode==0?(add_color_point(i0,R,G,B,O); add_color_point(i1,R,G,B,O)):
-        (
-          da_push(#$prims,2,ui2f(i0),ui2f(i1));
-          da_push(#$cols,R,G,B);
-          da_push(#$opacs,O);
-          ++N;
-        );
+        add_color_segment(i0,i1,R,G,B,O);
 
       ):n==3?( # Colored triangle
         i0 = f2ui(i[#3,pp++]); i1 = f2ui(i[#3,pp++]); i2 = f2ui(i[#3,pp++]);
         mode==0?(add_color_point(i0,R,G,B,O); add_color_point(i1,R,G,B,O); add_color_point(i2,R,G,B,O)):
-        mode==1?(
-          da_push(#$prims,2,ui2f(i0),ui2f(i1),2,ui2f(i1),ui2f(i2),2,ui2f(i2),ui2f(i0));
-          da_push(#$cols,R,G,B,R,G,B,R,G,B);
-          da_push(#$opacs,O,O,O);
-          N+=3;
-        ):(
+        mode==1?(add_color_segment(i0,i1,R,G,B,O); add_color_segment(i1,i2,R,G,B,O); add_color_segment(i2,i0,R,G,B,O)):
+        (
           da_push(#$prims,3,ui2f(i0),ui2f(i1),ui2f(i2));
           da_push(#$cols,R,G,B);
           da_push(#$opacs,O);
@@ -22271,12 +22273,9 @@ _primitives3d :
         i0 = f2ui(i[#3,pp++]); i1 = f2ui(i[#3,pp++]); i2 = f2ui(i[#3,pp++]); i3 = f2ui(i[#3,pp++]);
         mode==0?(add_color_point(i0,R,G,B,O); add_color_point(i1,R,G,B,O);
                  add_color_point(i2,R,G,B,O); add_color_point(i3,R,G,B,O)):
-        mode==1?(
-          da_push(#$prims,2,ui2f(i0),ui2f(i1),2,ui2f(i1),ui2f(i2),2,ui2f(i2),ui2f(i3),2,ui2f(i3),ui2f(i0));
-          da_push(#$cols,R,G,B,R,G,B,R,G,B,R,G,B);
-          da_push(#$opacs,O,O,O,O);
-          N+=4;
-        ):(
+        mode==1?(add_color_segment(i0,i1,R,G,B,O); add_color_segment(i1,i2,R,G,B,O);
+                 add_color_segment(i2,i3,R,G,B,O); add_color_segment(i3,i0,R,G,B,O)):
+        (
           da_push(#$prims,4,ui2f(i0),ui2f(i1),ui2f(i2),ui2f(i3));
           da_push(#$cols,R,G,B);
           da_push(#$opacs,O);
