@@ -21270,14 +21270,9 @@ _color3d :
   foreach {
     nbv,nbp:=f2ui([i[6],i[7]]) 1,$nbp
     eval. ">begin(p = 8 + 3*$nbv); p+=i[#0,p] + 1; end(set('p',p))" # Find beginning of color data
-    eval. ">begin(p = $p; col = ["$col"]); # Set color
-      i[#0,p]==-128?(p+=3 + prod(crop(#0,0,++p,1,3))):(copy(i[#0,p],col,3); p+=3);
-      end(set('p',p))"
-    if $#>3
-      eval. ">begin(p = $p; const opac = $arg4); # Set opacity
-        i[#0,p]==-128?(p+=3 + prod(crop(#0,0,++p,1,3))):(i[#0,p++] = opac)"
-    fi
-    rm.
+    eval. ">begin(p = $p; col = ["$col"]); i[#0,p]==-128?(p+=prod(crop(#0,0,++p,1,3))); p+=3; end(set('p',p))"
+    if $#>3 eval. ">begin(p = $p; const o = $arg4); i[#0,p]==-128?(p+=3 + prod(crop(#0,0,++p,1,3))):(i[#0,p++] = o)" fi
+    k[0]
   }
 
 #@cli colorcube3d
@@ -22056,12 +22051,9 @@ _opacity3d :
   foreach {
     nbv,nbp:=f2ui([i[6],i[7]]) 1,$nbp
     eval. ">begin(p = 8 + 3*$nbv); p+=i[#0,p] + 1; end(set('p',p))" # Find beginning of color data
-    eval. ">begin(p = $p); # Skip color data
-      i[#0,p]==-128?(p+=3 + prod(crop(#0,0,++p,1,3))):(p+=3);
-      end(set('p',p))"
-    eval. ">begin(p = $p; const opac = $1); # Set opacity
-      i[#0,p]==-128?(p+=3 + prod(crop(#0,0,++p,1,3))):(i[#0,p++] = opac)"
-    rm.
+    eval. ">begin(p = $p); i[#0,p]==-128?(p+=prod(crop(#0,0,++p,1,3))); p+=3; end(set('p',p))" # Skip color data
+    eval. ">begin(p = $p; const o = $1); i[#0,p]==-128?(p+=3 + prod(crop(#0,0,++p,1,3))):(i[#0,p++] = o)"
+    k[0]
   }
 
 #@cli parametric3d : _x(a,b),_y(a,b),_z(a,b),_amin,_amax,_bmin,_bmax,_res_a>0,_res_b>0,_res_x>0,_res_y>0,_res_z>0,\
@@ -22844,11 +22836,9 @@ _split3d :
   check3d foreach { nm={n}
     +z. 0,0,0,5 +z.. 0,6,0,7 nbv,nbp:=f2ui(crop())
     indp:=8+3*$nbv +z... 0,8,0,{$indp-1} # Vertices
-    1,$nbp,1,1,">begin(p = $indp); p+=i[#0,p] + 1; end(set('indc',p))" rm.
+    1,$nbp eval. ">begin(p = $indp); p+=i[#0,p] + 1; end(set('indc',p))" rm.
     +z[0] 0,$indp,0,{$indc-1} # Primitives
-    1,$nbp,1,1,">begin(p = $indc);
-                i[#0,p++]!=-128?(p+=2):(W = i[#0,p++]; H = i[#0,p++]; S = i[#0,p++]; p+=W*H*S);
-                end(set('indo',p))" rm.
+    1,$nbp eval. ">begin(p = $indc); i[#0,p]==-128?(p+=prod(crop(#0,0,++p,1,3))); p+=3; end(set('indo',p))" rm.
     +z[0] 0,$indc,0,{$indo-1} +z[0] 0,$indo,0,100% rm[0]
     => $nm,${nm}_c1,${nm}_c2,${nm}_c3,${nm}_c4,${nm}_c5
   }
