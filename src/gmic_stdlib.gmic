@@ -22294,7 +22294,7 @@ _primitives3d :
         R = G = B = 200;
       ):(G = i[#4,pc++]; B = i[#4,pc++]);
 
-      indo = -1; O = i[#5,po++];
+      O = i[#5,po++];
       O==-128?( # Ignore opacity mask
         wo = i[#5,po++]; ho = i[#5,po++]; so = i[#5,po++]; whso = wo*ho*so; po+=whso;
         O = 1;
@@ -22924,6 +22924,110 @@ sprites3d : check ${is_image_arg\ $1} skip ${2=0}
 #@cli : (eq. to '3d').
 #@cli : Default values: 'ty=tz=0'.
 #@cli : $ sphere3d 10 repeat 5 { +sub3d[-1] 10,{u(-10,10)},0 color3d[-1] ${-rgb} } add3d
+
+#@cli subdivide3d
+#@cli : Subdivide primitives of selected 3D objects.
+subdivide3d :
+  e[^-1] "Subdivide primitives of selected 3D objects."
+  foreach {
+    s3d nbv,nbp={1,f2ui(crop())}
+    r[2] 3,{2,h/3},1,1,-1 permute[2] zycx
+    foreach[2--1] { ({h}) a y } # Convert features to dynamic arrays
+
+    $nbp eval. ">begin(pp = pc = po = M = N = 0);
+
+      # Read primitive material.
+      n = i[#3,pp++]; # Type of primitive
+      R = i[#4,pc++];
+      R==-128?(
+        wc = i[#4,pc++]; hc = i[#4,pc++]; sc = i[#4,pc++]; whsc = wc*hc*sc; ind_texture = whsc?wc:M; pc+=whsc;
+        R = G = B = 200;
+      ):(G = i[#4,pc++]; B = i[#4,pc++]);
+
+      O = i[#5,po++];
+      O==-128?( # Ignore opacity mask
+        wo = i[#5,po++]; ho = i[#5,po++]; so = i[#5,po++]; whso = wo*ho*so; po+=whso;
+        O = 1;
+      );
+
+      # Subdivide primitives.
+      n==2 || n==6?( # Colored/textured segment
+        opp = pp; i0 = i[#3,pp++]; i1 = i[#3,pp++];
+        P0 = I[#2,i0]; P1 = I[#2,i1];
+        P01 = (P0 + P1)/2;
+        i01 = da_size(#2); da_push(#2,P01);
+        n==2?( # Colored segment
+          copy(i[#3,opp],[ i0,i01 ]);
+          da_push(#3,2,i01,i1);
+          da_push(#4,R,G,B);
+        ):( # Textured segment
+          tx0 = i[#3,pp++]; ty0 = i[#3,pp++]; tx1 = i[#3,pp++]; ty1 = i[#3,pp++];
+          tx01 = (tx0 + tx1)/2; ty01 = (ty0 + ty1)/2;
+          copy(i[#3,opp],[ i0,i01,tx0,ty0,tx01,ty01 ]);
+          da_push(#3,6,i01,i1,tx01,ty01,tx1,ty1);
+          da_push(#4,-128,M,0,0);
+        );
+        da_push(#5,O);
+        N+=2):
+
+      n==3 || n==9?( # Colored/textured triangle
+        opp = pp; i0 = i[#3,pp++]; i1 = i[#3,pp++]; i2 = i[#3,pp++];
+        P0 = I[#2,i0]; P1 = I[#2,i1]; P2 = I[#2,i2];
+        P01 = (P0 + P1)/2; P12 = (P1 + P2)/2; P20 = (P2 + P0)/2;
+        i01 = da_size(#2); i12 = i01 + 1; i20 = i12 + 1; da_push(#2,P01,P12,P20);
+        n==3?( # Colored triangle
+          copy(i[#3,opp],[ i01,i12,i20 ]);
+          da_push(#3,3,i0,i01,i20,
+                     3,i01,i1,i12,
+                     3,i20,i12,i2);
+          da_push(#4,R,G,B, R,G,B, R,G,B);
+        ):( # Textured triangle
+          tx0 = i[#3,pp++]; ty0 = i[#3,pp++]; tx1 = i[#3,pp++]; ty1 = i[#3,pp++]; tx2 = i[#3,pp++]; ty2 = i[#3,pp++];
+          tx01 = (tx0 + tx1)/2; ty01 = (ty0 + ty1)/2;
+          tx12 = (tx1 + tx2)/2; ty12 = (ty1 + ty2)/2;
+          tx20 = (tx2 + tx0)/2; ty20 = (ty2 + ty0)/2;
+          copy(i[#3,opp],[ i01,i12,i20,tx01,ty01,tx12,ty12,tx20,ty20 ]);
+          da_push(#3,9,i0,i01,i20,tx0,ty0,tx01,ty01,tx20,ty20,
+                     9,i01,i1,i12,tx01,ty01,tx1,ty1,tx12,ty12,
+                     9,i20,i12,i2,tx20,ty20,tx12,ty12,tx2,ty2);
+          da_push(#4,-128,M,0,0, -128,M,0,0, -128,M,0,0);
+        );
+        da_push(#5,O,O,O);
+        N+=4):
+
+      n==4 || n==12?( # Colored/textured quadrangle
+        opp = pp; i0 = i[#3,pp++]; i1 = i[#3,pp++]; i2 = i[#3,pp++]; i3 = i[#3,pp++];
+        P0 = I[#2,i0]; P1 = I[#2,i1]; P2 = I[#2,i2]; P3 = I[#2,i3];
+        P01 = (P0 + P1)/2; P12 = (P1 + P2)/2; P23 = (P2 + P3)/2; P30 = (P3 + P0)/2; Pc = (P0 + P1 + P2 + P3)/4;
+        i01 = da_size(#2); i12 = i01 + 1; i23 = i12 + 1; i30 = i23 + 1; ic = i30 + 1; da_push(#2,P01,P12,P23,P30,Pc);
+        n==4?( # Colored quadrangle
+          copy(i[#3,opp],[ i0,i01,ic,i30 ]);
+          da_push(#3,4,i01,i1,i12,ic,
+                     4,ic,i12,i2,i23,
+                     4,i30,ic,i23,i3);
+          da_push(#4,R,G,B, R,G,B, R,G,B);
+        ):( # Textured quadrangle
+          tx0 = i[#3,pp++]; ty0 = i[#3,pp++]; tx1 = i[#3,pp++]; ty1 = i[#3,pp++];
+          tx2 = i[#3,pp++]; ty2 = i[#3,pp++]; tx3 = i[#3,pp++]; ty3 = i[#3,pp++];
+          tx01 = (tx0 + tx1)/2; ty01 = (ty0 + ty1)/2;
+          tx12 = (tx1 + tx2)/2; ty12 = (ty1 + ty2)/2;
+          tx23 = (tx2 + tx3)/2; ty23 = (ty2 + ty3)/2;
+          tx30 = (tx3 + tx0)/2; ty30 = (ty3 + ty0)/2;
+          txc = (tx0 + tx1 + tx2 + tx3)/4; tyc = (ty0 + ty1 + ty2 + ty3)/4;
+          copy(i[#3,opp],[ i0,i01,ic,i30,tx0,ty0,tx01,ty01,txc,tyc,tx30,ty30 ]);
+          da_push(#3,12,i01,i1,i12,ic,tx01,ty01,tx1,ty1,tx12,ty12,txc,tyc,
+                     12,ic,i12,i2,i23,txc,tyc,tx12,ty12,tx2,ty2,tx23,ty23,
+                     12,i30,ic,i23,i3,tx30,ty30,txc,tyc,tx23,ty23,tx3,ty3);
+          da_push(#4,-128,M,0,0, -128,M,0,0, -128,M,0,0);
+        );
+        da_push(#5,O,O,O);
+        N+=4):
+      (pp+=n; ++N);
+      ++M;
+      end(set('nbp',N))" rm.
+
+    da_freeze[2--1] nbv={2,h} permute[2] cyzx y[2] f[1] $nbv,$nbp a y
+  }
 
 #@cli superformula3d : resolution>1,m>=1,n1,n2,n3
 #@cli : Input 2D superformula curve as a 3D object.
