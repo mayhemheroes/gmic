@@ -22952,10 +22952,11 @@ subdivide3d :
 
       # Subdivide primitives.
       n==2 || n==6?( # Colored/textured segment
-        opp = pp; i0 = i[#3,pp++]; i1 = i[#3,pp++];
+        opp = pp; i0 = f2ui(i[#3,pp++]); i1 = f2ui(i[#3,pp++]);
         P0 = I[#2,i0]; P1 = I[#2,i1];
         P01 = (P0 + P1)/2;
         i01 = da_size(#2); da_push(#2,P01);
+        i0 = ui2f(i0); i1 = ui2f(i1); i01 = ui2f(i01);
         n==2?( # Colored segment
           copy(i[#3,opp],[ i0,i01 ]);
           da_push(#3,2,i01,i1);
@@ -22975,6 +22976,7 @@ subdivide3d :
         P0 = I[#2,i0]; P1 = I[#2,i1]; P2 = I[#2,i2];
         P01 = (P0 + P1)/2; P12 = (P1 + P2)/2; P20 = (P2 + P0)/2;
         i01 = da_size(#2); i12 = i01 + 1; i20 = i12 + 1; da_push(#2,P01,P12,P20);
+        i0 = ui2f(i0); i1 = ui2f(i1); i2 = ui2f(i2); i01 = ui2f(i01); i12 = ui2f(i12); i20 = ui2f(i20);
         n==3?( # Colored triangle
           copy(i[#3,opp],[ i01,i12,i20 ]);
           da_push(#3,3,i0,i01,i20,
@@ -23000,6 +23002,8 @@ subdivide3d :
         P0 = I[#2,i0]; P1 = I[#2,i1]; P2 = I[#2,i2]; P3 = I[#2,i3];
         P01 = (P0 + P1)/2; P12 = (P1 + P2)/2; P23 = (P2 + P3)/2; P30 = (P3 + P0)/2; Pc = (P0 + P1 + P2 + P3)/4;
         i01 = da_size(#2); i12 = i01 + 1; i23 = i12 + 1; i30 = i23 + 1; ic = i30 + 1; da_push(#2,P01,P12,P23,P30,Pc);
+        i0 = ui2f(i0); i1 = ui2f(i1); i2 = ui2f(i2); i3 = ui2f(i3);
+        i01 = ui2f(i01); i12 = ui2f(i12); i23 = ui2f(i23); i30 = ui2f(i30);
         n==4?( # Colored quadrangle
           copy(i[#3,opp],[ i0,i01,ic,i30 ]);
           da_push(#3,4,i01,i1,i12,ic,
@@ -23024,9 +23028,9 @@ subdivide3d :
         N+=4):
       (pp+=n; ++N);
       ++M;
-      end(set('nbp',N))" rm.
+      end(i[#1,0] = ui2f(da_size(#2)); i[#1,1] = ui2f(N))" rm.
 
-    da_freeze[2--1] nbv={2,h} permute[2] cyzx y[2] f[1] $nbv,$nbp a y
+    da_freeze[2--1] nbv={2,h} permute[2] cyzx y[2] a y
   }
 
 #@cli superformula3d : resolution>1,m>=1,n1,n2,n3
