@@ -3828,7 +3828,7 @@ CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned
   bool is_inverse = *string=='^';
   const char *it = string + (is_inverse?1:0);
   for (bool stopflag = false; !stopflag; ) {
-    float ind0 = 0, ind1 = 0, step = 1;
+    double ind0 = 0, ind1 = 0, step = 1;
     int iind0 = 0, iind1 = 0, istep = 1;
     bool is_label = false;
     char sep = 0;
@@ -3840,10 +3840,10 @@ CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned
     char end, *it_colon = std::strchr(item,':');
     if (it_colon) {
       *(it_colon++) = sep = 0;
-      if ((cimg_sscanf(it_colon,"%f%c",&step,&end)==1 ||
-           cimg_sscanf(it_colon,"%f%c%c",&step,&sep,&end)==2) &&
+      if ((cimg_sscanf(it_colon,"%lf%c",&step,&end)==1 ||
+           cimg_sscanf(it_colon,"%lf%c%c",&step,&sep,&end)==2) &&
           (!sep || sep=='%') && step>0) {
-        if (sep=='%') step*=index_max/100.0f;
+        if (sep=='%') step*=index_max/100.;
       } else step = 0;
       istep = (int)cimg::round(step);
       if (istep<=0)
@@ -3854,9 +3854,9 @@ CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned
     if (!*item) { // Particular cases [:N] or [^:N]
       if (is_inverse) { iind0 = 0; iind1 = -1; is_inverse = false; }
       else continue;
-    } else if (cimg_sscanf(item,"%f%c",&ind0,&end)==1) { // Single index
+    } else if (cimg_sscanf(item,"%lf%c",&ind0,&end)==1) { // Single index
       iind1 = iind0 = (int)cimg::round(ind0);
-    } else if (cimg_sscanf(item,"%f-%f%c",&ind0,&ind1,&end)==2) { // Sequence between 2 indices
+    } else if (cimg_sscanf(item,"%lf-%lf%c",&ind0,&ind1,&end)==2) { // Sequence between 2 indices
       iind0 = (int)cimg::round(ind0);
       iind1 = (int)cimg::round(ind1);
     } else if (cimg_sscanf(item,"%255[a-zA-Z0-9_]%c",name.assign(256).data(),&end)==1 && // Label
@@ -3867,17 +3867,17 @@ CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned
       if (!is_label)
         error(true,"Command '%s': Invalid %s %c%s%c (undefined label '%s').",
               command,stype,ctypel,string,ctyper,name.data());
-    } else if (cimg_sscanf(item,"%f%c%c",&ind0,&sep,&end)==2 && sep=='%') { // Single percent
+    } else if (cimg_sscanf(item,"%lf%c%c",&ind0,&sep,&end)==2 && sep=='%') { // Single percent
       iind1 = iind0 = (int)cimg::round(ind0*((int)index_max - 1)/100) - (ind0<0?1:0);
-    } else if (cimg_sscanf(item,"%f%%-%f%c%c",&ind0,&ind1,&sep,&end)==3 && sep=='%') {
+    } else if (cimg_sscanf(item,"%lf%%-%lf%c%c",&ind0,&ind1,&sep,&end)==3 && sep=='%') {
       // Sequence between 2 percents.
       iind0 = (int)cimg::round(ind0*((int)index_max - 1)/100) - (ind0<0?1:0);
       iind1 = (int)cimg::round(ind1*((int)index_max - 1)/100) - (ind1<0?1:0);
-    } else if (cimg_sscanf(item,"%f%%-%f%c",&ind0,&ind1,&end)==2) {
+    } else if (cimg_sscanf(item,"%lf%%-%lf%c",&ind0,&ind1,&end)==2) {
       // Sequence between a percent and an index.
       iind0 = (int)cimg::round(ind0*((int)index_max - 1)/100) - (ind0<0?1:0);
       iind1 = (int)cimg::round(ind1);
-    } else if (cimg_sscanf(item,"%f-%f%c%c",&ind0,&ind1,&sep,&end)==3 && sep=='%') {
+    } else if (cimg_sscanf(item,"%lf-%lf%c%c",&ind0,&ind1,&sep,&end)==3 && sep=='%') {
       // Sequence between an index and a percent.
       iind0 = (int)cimg::round(ind0);
       iind1 = (int)cimg::round(ind1*((int)index_max - 1)/100) - (ind1<0?1:0);
