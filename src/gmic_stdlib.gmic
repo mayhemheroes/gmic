@@ -21250,13 +21250,35 @@ circles3d : check "${1=1}>=0 && isbool(${2=0})"
     k[0-5] a y
   }
 
-#@cli col3d : eq. to 'color3d'. : (+)
+#@cli col3d : eq. to 'color3d'.
+col3d :
+  _gmic_s="$?" v + _color3d $*
 
-#@cli color3d : R,_G,_B,_opacity : (no arg) : (+)
-#@cli : Set color and opacity of selected 3D objects.
+#@cli color3d : R,_G,_B,_opacity
+#@cli : Set color (and optionally opacity) of selected 3D objects.
 #@cli : (eq. to 'col3d').
 #@cli : Default value: 'B=G=R' and 'opacity=(undefined)'.
 #@cli : $ torus3d 100,10 double3d 0 repeat 7 { +rotate3d[-1] 1,0,0,20 color3d[-1] ${-rgb} } add3d
+color3d :
+  _gmic_s="$?" v + _$0 $*
+
+_color3d :
+  $=arg col:=$#==1?[$arg1,$arg1,$arg1]:$#==2?[$arg1,$arg2,0]:[$arg1,$arg2,$arg3]
+  if $#<4 e[0--4] "Set color of 3D object"$_gmic_s" to ("$col")."
+  else e[0--4] "Set color of 3D object"$_gmic_s" to ("$col"), with opacity "$arg4"."
+  fi
+  foreach {
+    nbv,nbp:=f2ui([i[6],i[7]]) 1,$nbp
+    eval. ">begin(p = 8 + 3*$nbv); p+=i[#0,p] + 1; end(set('p',p))" # Find beginning of color data
+    eval. ">begin(p = $p; col = ["$col"]); # Set color
+      i[#0,p]==-128?(p+=3 + prod(crop(#0,0,++p,1,3))):(copy(i[#0,p],col,3); p+=3);
+      end(set('p',p))"
+    if $#>3
+      eval. ">begin(p = $p; const opac = $arg4); # Set opacity
+        i[#0,p]==-128?(p+=3 + prod(crop(#0,0,++p,1,3))):(i[#0,p++] = opac)"
+    fi
+    rm.
+  }
 
 #@cli colorcube3d
 #@cli : Input 3D color cube.
@@ -22018,13 +22040,29 @@ _normalize3d :
     fi
   }
 
-#@cli o3d : eq. to 'opacity3d'. : (+)
+#@cli o3d : eq. to 'opacity3d'.
+o3d :
+  _gmic_s="$?" v + _opacity3d $*
 
-#@cli opacity3d : _opacity : (+)
+#@cli opacity3d : opacity
 #@cli : Set opacity of selected 3D objects.
 #@cli : (eq. to 'o3d').
-#@cli : Default value: 'opacity=1'.
 #@cli : $ torus3d 100,10 double3d 0 repeat 7 { +rotate3d[-1] 1,0,0,20 opacity3d[-1] {u} } add3d
+opacity3d :
+  _gmic_s="$?" v + _$0 $*
+
+_opacity3d :
+  e[0--3] "Set opacity of 3D object"$_gmic_s" to $1."
+  foreach {
+    nbv,nbp:=f2ui([i[6],i[7]]) 1,$nbp
+    eval. ">begin(p = 8 + 3*$nbv); p+=i[#0,p] + 1; end(set('p',p))" # Find beginning of color data
+    eval. ">begin(p = $p); # Skip color data
+      i[#0,p]==-128?(p+=3 + prod(crop(#0,0,++p,1,3))):(p+=3);
+      end(set('p',p))"
+    eval. ">begin(p = $p; const opac = $1); # Set opacity
+      i[#0,p]==-128?(p+=3 + prod(crop(#0,0,++p,1,3))):(i[#0,p++] = opac)"
+    rm.
+  }
 
 #@cli parametric3d : _x(a,b),_y(a,b),_z(a,b),_amin,_amax,_bmin,_bmax,_res_a>0,_res_b>0,_res_x>0,_res_y>0,_res_z>0,\
 # _smoothness>=0,_isovalue>=0

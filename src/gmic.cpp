@@ -2732,7 +2732,7 @@ const char *gmic::builtin_commands_names[] = {
   "!=","%","&","*","*3d","+","+3d","-","-3d","/","/3d","::","<","<<","<=","=","==",">",">=",">>",
   "a","abs","acos","acosh","add","add3d","and","append","asin","asinh","atan","atan2","atanh","autocrop","axes",
   "b","bilateral","blur","boxfilter","break","bsl","bsr",
-  "c","camera","check","check3d","col3d","color3d","command","continue","convolve","correlate","cos","cosh","crop",
+  "c","camera","check","check3d","command","continue","convolve","correlate","cos","cosh","crop",
     "cumulate","cursor","cut",
   "d","db3d","debug","delete","denoise","deriche","dijkstra","dilate","discard","displacement","display","distance",
     "div","div3d","do","done",
@@ -2748,7 +2748,7 @@ const char *gmic::builtin_commands_names[] = {
   "m","m*","m/","m3d","mandelbrot","map","matchpatch","max","maxabs","md3d","mdiv","median","min","minabs","mirror",
     "mmul","mod","move","mproj","mul","mul3d","mutex","mv",
   "n","name","named","neq","network","nmd","noarg","noise","normalize",
-  "o","o3d","object3d","onfail","opacity3d","or","output",
+  "o","object3d","onfail","or","output",
   "p","parallel","pass","permute","plasma","plot","point","polygon","pow","print","progress",
   "q","quit",
   "r","r3d","rand","remove","repeat","resize","return","reverse","reverse3d",
@@ -5904,7 +5904,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           case '/' : std::strcpy(command,"div3d"); break;
           case 'l' : if (!is_get && !is_selection) CImg<char>::string("light3d").move_to(_item); break;
           case '*' : std::strcpy(command,"mul3d"); break;
-          case 'o' : std::strcpy(command,"opacity3d"); break;
           case 'r' : std::strcpy(command,"rotate3d"); break;
           case '-' : std::strcpy(command,"sub3d"); break;
           } else if (!is_get && !command3 && command0=='n' && command1=='m' && command2=='d') {
@@ -6843,47 +6842,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           } else arg_error(is_cond?"convolve":"correlate");
           is_change = true;
           ++position;
-          continue;
-        }
-
-        // Set 3D object color.
-        if (!std::strcmp("color3d",command) || !std::strcmp("col3d",command)) {
-          gmic_substitute_args(false);
-          float R = 200, G = 200, B = 200;
-          opacity = -1;
-          if ((cimg_sscanf(argument,"%f%c",
-                           &R,&end)==1 && ((B=G=R),1)) ||
-              (cimg_sscanf(argument,"%f,%f%c",
-                           &R,&G,&end)==2 && ((B=0),1)) ||
-              cimg_sscanf(argument,"%f,%f,%f%c",
-                          &R,&G,&B,&end)==3 ||
-              cimg_sscanf(argument,"%f,%f,%f,%f%c",
-                          &R,&G,&B,&opacity,&end)==4) ++position;
-          else R = G = B = 200;
-          const bool set_opacity = (opacity>=0);
-          if (set_opacity)
-            print(images,0,"Set colors of 3D object%s to (%g,%g,%g), with opacity %g.",
-                  gmic_selection.data(),
-                  R,G,B,
-                  opacity);
-          else
-            print(images,0,"Set color of 3D object%s to (%g,%g,%g).",
-                  gmic_selection.data(),
-                  R,G,B);
-          cimg_forY(selection,l) {
-            uind = selection[l];
-            CImg<T>& img = gmic_check(images[uind]);
-            try { gmic_apply(color_CImg3d(R,G,B,opacity,true,set_opacity),true); }
-            catch (CImgException&) {
-              if (!img.is_CImg3d(true,&(*gmic_use_message=0)))
-                error(true,images,0,0,
-                      "Command 'color3d': Invalid 3D object [%d], "
-                      "in image%s (%s).",
-                      uind,gmic_selection_err.data(),message);
-              else throw;
-            }
-          }
-          is_change = true;
           continue;
         }
 
@@ -10126,33 +10084,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                 "Compute bitwise OR of image%s by expression %s",
                                 gmic_selection.data(),gmic_argument_text_printed(),
                                 "Compute sequential bitwise OR of image%s");
-
-        // Set 3d object opacity.
-        if (!std::strcmp("opacity3d",command)) {
-          gmic_substitute_args(false);
-          value = 1;
-          if (cimg_sscanf(argument,"%lf%c",
-                          &value,&end)==1) ++position;
-          else value = 1;
-          print(images,0,"Set opacity of 3D object%s to %g.",
-                gmic_selection.data(),
-                value);
-          cimg_forY(selection,l) {
-            uind = selection[l];
-            CImg<T>& img = images[uind];
-            try { gmic_apply(color_CImg3d(0,0,0,(float)value,false,true),true); }
-            catch (CImgException&) {
-              if (!img.is_CImg3d(true,&(*gmic_use_message=0)))
-                error(true,images,0,0,
-                      "Command 'opacity3d': Invalid 3D object [%d], "
-                      "in image%s (%s).",
-                      uind,gmic_selection.data(),message);
-              else throw;
-            }
-          }
-          is_change = true;
-          continue;
-        }
 
         // Output.
         if (!is_get && !std::strcmp("output",command)) {
