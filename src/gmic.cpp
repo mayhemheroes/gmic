@@ -7166,8 +7166,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Dijkstra algorithm.
         if (!std::strcmp("dijkstra",command)) {
           gmic_substitute_args(false);
-          float snode = 0, enode = 0;
-          if (cimg_sscanf(argument,"%f,%f%c",&snode,&enode,&end)==2 &&
+          double snode = 0, enode = 0;
+          if (cimg_sscanf(argument,"%lf,%lf%c",&snode,&enode,&end)==2 &&
               snode>=0 && enode>=0) {
             snode = cimg::round(snode);
             enode = cimg::round(enode);
@@ -7492,7 +7492,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Draw ellipse.
         if (!std::strcmp("ellipse",command)) {
           gmic_substitute_args(false);
-          float x = 0, y = 0, R = 0, r = 0, angle = 0;
+          double x = 0, y = 0, R = 0, r = 0, angle = 0;
           sep = sepx = sepy = sepz = sepc = *argx = *argy = *argz = *argc = *color = 0;
           pattern = ~0U; opacity = 1;
           if ((cimg_sscanf(argument,"%255[0-9.eE%+-],%255[0-9.eE%+-],%255[0-9.eE%+-]%c",
@@ -7501,33 +7501,33 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                            "%255[0-9.eE%+-]%c",
                            argx,argy,argz,gmic_use_argc,&end)==4 ||
                cimg_sscanf(argument,"%255[0-9.eE%+-],%255[0-9.eE%+-],%255[0-9.eE%+-],"
-                           "%255[0-9.eE%+-],%f%c",
+                           "%255[0-9.eE%+-],%lf%c",
                            argx,argy,argz,argc,&angle,&end)==5 ||
                cimg_sscanf(argument,"%255[0-9.eE%+-],%255[0-9.eE%+-],%255[0-9.eE%+-],"
-                           "%255[0-9.eE%+-],%f,%f%c",
+                           "%255[0-9.eE%+-],%lf,%lf%c",
                            argx,argy,argz,argc,&angle,&opacity,&end)==6 ||
                (cimg_sscanf(argument,"%255[0-9.eE%+-],%255[0-9.eE%+-],%255[0-9.eE%+-],"
-                            "%255[0-9.eE%+-],%f,%f,0%c%x%c",
+                            "%255[0-9.eE%+-],%lf,%lf,0%c%x%c",
                             argx,argy,argz,argc,&angle,&opacity,&sep,&pattern,
                             &end)==8 &&
                 sep=='x') ||
                (cimg_sscanf(argument,"%255[0-9.eE%+-],%255[0-9.eE%+-],%255[0-9.eE%+-],"
-                            "%255[0-9.eE%+-],%f,%f,0%c%x,%4095[0-9.eEinfa,+-]%c",
+                            "%255[0-9.eE%+-],%lf,%lf,0%c%x,%4095[0-9.eEinfa,+-]%c",
                             argx,argy,argz,argc,&angle,&opacity,&sep,
                             &pattern,gmic_use_color,&end)==9 &&
                 sep=='x') ||
                (cimg_sscanf(argument,"%255[0-9.eE%+-],%255[0-9.eE%+-],%255[0-9.eE%+-],"
-                            "%255[0-9.eE%+-],%f,%f,%4095[0-9.eEinfa,+-]%c",
+                            "%255[0-9.eE%+-],%lf,%lf,%4095[0-9.eEinfa,+-]%c",
                             argx,argy,argz,argc,&angle,&opacity,color,&end)==7)) &&
-              (cimg_sscanf(argx,"%f%c",&x,&end)==1 ||
-               (cimg_sscanf(argx,"%f%c%c",&x,&sepx,&end)==2 && sepx=='%')) &&
-              (cimg_sscanf(argy,"%f%c",&y,&end)==1 ||
-               (cimg_sscanf(argy,"%f%c%c",&y,&sepy,&end)==2 && sepy=='%')) &&
-              (cimg_sscanf(argz,"%f%c",&R,&end)==1 ||
-               (cimg_sscanf(argz,"%f%c%c",&R,&sepz,&end)==2 && sepz=='%')) &&
+              (cimg_sscanf(argx,"%lf%c",&x,&end)==1 ||
+               (cimg_sscanf(argx,"%lf%c%c",&x,&sepx,&end)==2 && sepx=='%')) &&
+              (cimg_sscanf(argy,"%lf%c",&y,&end)==1 ||
+               (cimg_sscanf(argy,"%lf%c%c",&y,&sepy,&end)==2 && sepy=='%')) &&
+              (cimg_sscanf(argz,"%lf%c",&R,&end)==1 ||
+               (cimg_sscanf(argz,"%lf%c%c",&R,&sepz,&end)==2 && sepz=='%')) &&
               (!*argc ||
-               cimg_sscanf(argc,"%f%c",&r,&end)==1 ||
-               (cimg_sscanf(argc,"%f%c%c",&r,&sepc,&end)==2 && sepc=='%'))) {
+               cimg_sscanf(argc,"%lf%c",&r,&end)==1 ||
+               (cimg_sscanf(argc,"%lf%c%c",&r,&sepc,&end)==2 && sepc=='%'))) {
             if (!*argc) r = R;
             print(images,0,"Draw %s ellipse at (%g%s,%g%s) with radii (%g%s,%g%s) on image%s, "
                   "with orientation %g deg., opacity %g and color (%s).",
@@ -7567,32 +7567,32 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Equalize.
         if (!std::strcmp("equalize",command)) {
           gmic_substitute_args(false);
-          float nb_levels = 256;
+          double nb_levels = 256;
           bool no_min_max = false;
           sep = sep0 = sep1 = 0;
           value0 = value1 = 0;
-          if (((cimg_sscanf(argument,"%f%c",
+          if (((cimg_sscanf(argument,"%lf%c",
                             &nb_levels,&end)==1 && (no_min_max=true)) ||
-               ((cimg_sscanf(argument,"%f%c%c",
+               ((cimg_sscanf(argument,"%lf%c%c",
                              &nb_levels,&sep,&end)==2 && sep=='%') && (no_min_max=true)) ||
-               cimg_sscanf(argument,"%f,%lf,%lf%c",
+               cimg_sscanf(argument,"%lf,%lf,%lf%c",
                            &nb_levels,&value0,&value1,&end)==3 ||
-               (cimg_sscanf(argument,"%f%c,%lf,%lf%c",
+               (cimg_sscanf(argument,"%lf%c,%lf,%lf%c",
                             &nb_levels,&sep,&value0,&value1,&end)==4 && sep=='%') ||
-               (cimg_sscanf(argument,"%f,%lf%c,%lf%c",
+               (cimg_sscanf(argument,"%lf,%lf%c,%lf%c",
                             &nb_levels,&value0,&sep0,&value1,&end)==4 && sep0=='%') ||
-               (cimg_sscanf(argument,"%f%c,%lf%c,%lf%c",
+               (cimg_sscanf(argument,"%lf%c,%lf%c,%lf%c",
                             &nb_levels,&sep,&value0,&sep0,&value1,&end)==5 && sep=='%' &&
                 sep0=='%') ||
-               (cimg_sscanf(argument,"%f,%lf,%lf%c%c",
+               (cimg_sscanf(argument,"%lf,%lf,%lf%c%c",
                             &nb_levels,&value0,&value1,&sep1,&end)==4 && sep1=='%') ||
-               (cimg_sscanf(argument,"%f%c,%lf,%lf%c%c",
+               (cimg_sscanf(argument,"%lf%c,%lf,%lf%c%c",
                             &nb_levels,&sep,&value0,&value1,&sep1,&end)==5 && sep=='%' &&
                 sep1=='%') ||
-               (cimg_sscanf(argument,"%f,%lf%c,%lf%c%c",
+               (cimg_sscanf(argument,"%lf,%lf%c,%lf%c%c",
                             &nb_levels,&value0,&sep0,&value1,&sep1,&end)==5 && sep0=='%' &&
                 sep1=='%') ||
-               (cimg_sscanf(argument,"%f%c,%lf%c,%lf%c%c",
+               (cimg_sscanf(argument,"%lf%c,%lf%c,%lf%c%c",
                             &nb_levels,&sep,&value0,&sep0,&value1,&sep1,&end)==6 && sep=='%' &&
                 sep0=='%' && sep1=='%')) &&
               nb_levels>=0.5) { nb_levels = cimg::round(nb_levels); ++position; }
