@@ -105,8 +105,8 @@ static CImg<T> append_CImg3d(const CImgList<T>& images) {
                                   l,img._width,img._height,img._depth,img._spectrum,img._data,
                                   error_message.data());
     siz+=img.size() - 8;
-    g_nbv+=cimg::T2uint(img[6]);
-    g_nbp+=cimg::T2uint(img[7]);
+    g_nbv+=cimg::float2uint((float)img[6]);
+    g_nbp+=cimg::float2uint((float)img[7]);
   }
 
   CImg<T> res(1,siz + 8);
@@ -119,7 +119,7 @@ static CImg<T> append_CImg3d(const CImgList<T>& images) {
   *(ptrd++) = (T)cimg::uint2float(g_nbp);
   cimglist_for(images,l) { // Merge object points
     const CImg<T>& img = images[l];
-    const unsigned int nbv = cimg::T2uint(img[6]);
+    const unsigned int nbv = cimg::float2uint((float)img[6]);
     std::memcpy(ptrd,img._data + 8,3*nbv*sizeof(T));
     ptrd+=3*nbv;
     ptrs[l] = img._data + 8 + 3*nbv;
@@ -127,26 +127,28 @@ static CImg<T> append_CImg3d(const CImgList<T>& images) {
   ulongT poff = 0;
   cimglist_for(images,l) { // Merge object primitives
     const unsigned int
-      nbv = cimg::T2uint(images[l][6]),
-      nbp = cimg::T2uint(images[l][7]);
+      nbv = cimg::float2uint((float)images[l][6]),
+      nbp = cimg::float2uint((float)images[l][7]);
     for (unsigned int p = 0; p<nbp; ++p) {
       const unsigned int
-        nbi = cimg::T2uint(*(ptrs[l]++)),
+        nbi = cimg::float2uint((float)*(ptrs[l]++)),
         _nbi = nbi<5?nbi:nbi==5?2:nbi/3;
       *(ptrd++) = (T)cimg::uint2float(nbi);
-      for (unsigned int i = 0; i<_nbi; ++i) *(ptrd++) = (T)cimg::uint2float(cimg::T2uint(*(ptrs[l]++)) + poff);
-      for (unsigned int i = nbi - _nbi; i; --i) *(ptrd++) = *(ptrs[l]++);
+      for (unsigned int i = 0; i<_nbi; ++i)
+        *(ptrd++) = (T)cimg::uint2float(cimg::float2uint((float)*(ptrs[l]++)) + poff);
+      for (unsigned int i = nbi - _nbi; i; --i)
+        *(ptrd++) = *(ptrs[l]++);
     }
     poff+=nbv;
   }
   ulongT voff = 0;
   cimglist_for(images,l) { // Merge object colors
-    const unsigned int nbc = cimg::T2uint(images[l][7]);
+    const unsigned int nbc = cimg::float2uint((float)images[l][7]);
     for (unsigned int c = 0; c<nbc; ++c)
       if (*(ptrs[l])==(T)-128) {
         *(ptrd++) = *(ptrs[l]++);
         const unsigned int
-          w = (unsigned int)cimg::T2uint(*(ptrs[l]++)),
+          w = (unsigned int)cimg::float2uint((float)*(ptrs[l]++)),
           h = (unsigned int)*(ptrs[l]++),
           s = (unsigned int)*(ptrs[l]++);
         if (!h && !s) { *(ptrd++) = (T)cimg::uint2float((unsigned int)(w + voff)); *(ptrd++) = 0; *(ptrd++) = 0; }
@@ -161,12 +163,12 @@ static CImg<T> append_CImg3d(const CImgList<T>& images) {
   }
   voff = 0;
   cimglist_for(images,l) { // Merge object opacities
-    const unsigned int nbo = cimg::T2uint(images[l][7]);
+    const unsigned int nbo = cimg::float2uint((float)images[l][7]);
     for (unsigned int o = 0; o<nbo; ++o)
       if (*(ptrs[l])==(T)-128) {
         *(ptrd++) = *(ptrs[l]++);
         const unsigned int
-          w = (unsigned int)cimg::T2uint(*(ptrs[l]++)),
+          w = (unsigned int)cimg::float2uint((float)*(ptrs[l]++)),
           h = (unsigned int)*(ptrs[l]++),
           s = (unsigned int)*(ptrs[l]++);
         if (!h && !s) { *(ptrd++) = (T)cimg::uint2float((unsigned int)(w + voff)); *(ptrd++) = 0; *(ptrd++) = 0; }
@@ -1708,7 +1710,7 @@ CImg<T>& rotate_CImg3d(const CImg<t>& rot) {
     throw CImgInstanceException(_cimg_instance
                                 "rotate_CImg3d(): image instance is not a CImg3d (%s).",
                                 cimg_instance,error_message.data());
-  const unsigned int nbv = cimg::T2uint((*this)[6]);
+  const unsigned int nbv = cimg::float2uint((float)(*this)[6]);
   const T *ptrs = data() + 8;
   const float
     a = (float)rot(0,0), b = (float)rot(1,0), c = (float)rot(2,0),
@@ -1740,7 +1742,7 @@ CImg<T>& scale_CImg3d(const float sx, const float sy, const float sz) {
     throw CImgInstanceException(_cimg_instance
                                 "scale_CImg3d(): image instance is not a CImg3d (%s).",
                                 cimg_instance,error_message.data());
-  const unsigned int nbv = cimg::T2uint((*this)[6]);
+  const unsigned int nbv = cimg::float2uint((float)(*this)[6]);
   T *ptrd = data() + 8;
   for (unsigned int j = 0; j<nbv; ++j) { *(ptrd++)*=(T)sx; *(ptrd++)*=(T)sy; *(ptrd++)*=(T)sz; }
   return *this;
@@ -1756,7 +1758,7 @@ CImg<T>& shift_CImg3d(const float tx, const float ty, const float tz) {
     throw CImgInstanceException(_cimg_instance
                                 "shift_CImg3d(): image instance is not a CImg3d (%s).",
                                 cimg_instance,error_message.data());
-  const unsigned int nbv = cimg::T2uint((*this)[6]);
+  const unsigned int nbv = cimg::float2uint((float)(*this)[6]);
   T *ptrd = data() + 8;
   for (unsigned int j = 0; j<nbv; ++j) { *(ptrd++)+=(T)tx; *(ptrd++)+=(T)ty; *(ptrd++)+=(T)tz; }
   return *this;
@@ -15254,8 +15256,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           if (g_list.size()==1) {
             if (g_list[0].is_CImg3d(false))
               std::fprintf(cimg::output()," (%u vertices, %u primitives).",
-                           cimg::T2uint(g_list(0,6)),
-                           cimg::T2uint(g_list(0,7)));
+                           cimg::float2uint((float)g_list(0,6)),
+                           cimg::float2uint((float)g_list(0,7)));
             else
               std::fprintf(cimg::output()," (1 image %dx%dx%dx%d).",
                            g_list[0].width(),g_list[0].height(),
