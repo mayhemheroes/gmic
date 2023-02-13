@@ -1693,35 +1693,6 @@ CImg<T> get_gmic_eval(const char *const expression, CImgList<T> &images) const {
   return (+*this).gmic_eval(expression,images);
 }
 
-CImg<T>& reverse_CImg3d() {
-  CImg<char> error_message(1024);
-  if (!is_CImg3d(false,error_message))
-    throw CImgInstanceException(_cimg_instance
-                                "reverse_CImg3d(): image instance is not a CImg3d (%s).",
-                                cimg_instance,error_message.data());
-  T *p = _data + 6;
-  const unsigned int
-    nbv = cimg::float2uint(*(p++)),
-    nbp = cimg::float2uint(*(p++));
-  p+=3*nbv;
-  for (unsigned int i = 0; i<nbp; ++i) {
-    const unsigned int nb = (unsigned int)*(p++);
-    switch(nb) {
-    case 2: case 3: cimg::swap(p[0],p[1]); break;
-    case 6: cimg::swap(p[0],p[1],p[2],p[4],p[3],p[5]); break;
-    case 9: cimg::swap(p[0],p[1],p[3],p[5],p[4],p[6]); break;
-    case 4: cimg::swap(p[0],p[1],p[2],p[3]); break;
-    case 12: cimg::swap(p[0],p[1],p[2],p[3],p[4],p[6],p[5],p[7],p[8],p[10],p[9],p[11]); break;
-    }
-    p+=nb;
-  }
-  return *this;
-}
-
-CImg<T> get_reverse_CImg3d() const {
-  return (+*this).reverse_CImg3d();
-}
-
 CImg<T>& rol(const char *const expression, CImgList<T> &images) {
   return rol((+*this)._fill(expression,true,1,&images,"rol",this));
 }
@@ -2617,8 +2588,7 @@ const char *gmic::builtin_commands_names[] = {
   "o","object3d","onfail","or","output",
   "p","parallel","pass","permute","plasma","plot","point","polygon","pow","print","progress",
   "q","quit",
-  "r","r3d","rand","remove","repeat","resize","return","reverse","reverse3d",
-    "rm","rol","ror","rotate","rotate3d","round","rv","rv3d",
+  "r","r3d","rand","remove","repeat","resize","return","reverse","rm","rol","ror","rotate","rotate3d","round","rv",
   "s","screen","select","serialize","set","sh","shared","shift","sign","sin","sinc","sinh","skip",
     "sl3d","smooth","solve","sort","split","sqr","sqrt","srand",
     "ss3d","status","store","streamline3d","sub","sub3d","svd",
@@ -5716,8 +5686,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Convert command shortcuts to full names.
         char command0 = *command;
         const char
-          command1 = command0?command[1]:0, command2 = command1?command[2]:0,
-          command3 = command2?command[3]:0, command4 = command3?command[4]:0;
+          command1 = command0?command[1]:0, command2 = command1?command[2]:0, command3 = command2?command[3]:0;
 
         static const char* onechar_shortcuts[] = {
           0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, // 0-31
@@ -5774,9 +5743,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           case '-' : std::strcpy(command,"sub3d"); break;
           } else if (!is_get && !command3 && command0=='n' && command1=='m' && command2=='d') {
           std::strcpy(command,"named"); // Shortcut 'nmd' for 'named".
-        } else if (!command4 && command2=='3' && command3=='d') {
-          // Four-chars shortcuts, ending with '3d'.
-          if (command0=='r' && command1=='v') std::strcpy(command,"reverse3d");
         }
         if (item!=_item.data() + (is_hyphen || is_plus?1:0)) item = _item;
         command0 = *command?*command:*item;
@@ -11516,27 +11482,6 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                 "Compute bitwise left rotation of image%s by expression %s",
                                 gmic_selection.data(),gmic_argument_text_printed(),
                                 "Compute sequential bitwise left rotation of image%s");
-
-        // Reverse 3D object orientation.
-        if (!std::strcmp("reverse3d",command)) {
-          print(images,0,"Reverse orientation of 3D object%s.",
-                gmic_selection.data());
-          cimg_forY(selection,l) {
-            uind = selection[l];
-            CImg<T> &img = images[uind];
-            try { gmic_apply(reverse_CImg3d(),true); }
-            catch (CImgException&) {
-              if (!img.is_CImg3d(true,&(*gmic_use_message=0)))
-                error(true,images,0,0,
-                      "Command 'reverse3d': Invalid 3D object [%d], "
-                      "in image%s (%s).",
-                      uind,gmic_selection_err.data(),message);
-              else throw;
-            }
-          }
-          is_change = true;
-          continue;
-        }
 
         goto gmic_commands_others;
 

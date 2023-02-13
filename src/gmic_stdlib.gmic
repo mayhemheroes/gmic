@@ -22276,7 +22276,7 @@ _primitives3d :
               is_shared_texture = 1;
               refc[M] = N;
               wc = M;
-            ):da_push(#$cols,-128,ui2(refc[wc]),0,0); # Shared texture
+            ):da_push(#$cols,-128,ui2f(refc[wc]),0,0); # Shared texture
             da_push(#$opacs,O);
             set(vname,1);
             ++N;
@@ -22474,12 +22474,31 @@ projections3d : skip ${1=50%},${2=50%},${3=50%},${4=1}
   } fi
   => [3D\ random\ pointcloud]
 
-#@cli rv3d : eq. to 'reverse3d'. : (+)
+#@cli rv3d : eq. to 'reverse3d'.
+rv3d :
+  _gmic_s="$?" v + _reverse3d
 
-#@cli reverse3d : (+)
+#@cli reverse3d
 #@cli : Reverse primitive orientations of selected 3D objects.
 #@cli : (eq. to 'rv3d').
 #@cli : $ torus3d 100,40 double3d 0 +reverse3d
+reverse3d :
+  _gmic_s="$?" v + _$0
+
+_reverse3d :
+  e[0--3] "Reverse primitives orientation of 3D object"$_gmic_s"."
+  check3d foreach {
+    {@7} eval. ">begin(p = 8 + 3*h);
+      n = i[#0,p++];
+      n==2?swap(i[#0,p],i[#0,p + 1]):
+      n==3?swap(i[#0,p + 1],i[#0,p + 2]):
+      n==4?swap(i[#0,p + 1],i[#0,p + 3]):
+      n==6?(swap(i[#0,p],i[#0,p + 1]); swap(i[#0,p + 2],i[#0,p + 4]); swap(i[#0,p + 3],i[#0,p + 5])):
+      n==9?(swap(i[#0,p + 1],i[#0,p + 2]); swap(i[#0,p + 5],i[#0,p + 7]); swap(i[#0,p + 6],i[#0,p + 8])):
+      n==12?(swap(i[#0,p + 1],i[#0,p + 3]); swap(i[#0,p + 6],i[#0,p + 10]); swap(i[#0,p + 7],i[#0,p + 11]));
+      p+=n"
+    rm.
+  }
 
 #@cli r3d : eq. to 'rotate3d'. : (+)
 
