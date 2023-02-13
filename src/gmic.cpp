@@ -3739,7 +3739,7 @@ CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned
     }
   }
   unsigned int index = 0;
-  cimg_for(is_selected,p,bool) if (*p) ++index;
+  cimg_for(is_selected,ptr,bool) if (*ptr) ++index;
   CImg<unsigned int> selection(1,is_inverse?index_max - index:index);
   index = 0;
   if (is_inverse) { cimg_forY(is_selected,l) if (!is_selected[l]) selection[index++] = (unsigned int)l; }
