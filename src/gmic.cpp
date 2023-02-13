@@ -146,10 +146,10 @@ static CImg<T> append_CImg3d(const CImgList<T>& images) {
       if (*(ptrs[l])==(T)-128) {
         *(ptrd++) = *(ptrs[l]++);
         const unsigned int
-          w = (unsigned int)*(ptrs[l]++),
+          w = (unsigned int)cimg::float2uint(*(ptrs[l]++)),
           h = (unsigned int)*(ptrs[l]++),
           s = (unsigned int)*(ptrs[l]++);
-        if (!h && !s) { *(ptrd++) = (T)(w + voff); *(ptrd++) = 0; *(ptrd++) = 0; }
+        if (!h && !s) { *(ptrd++) = (T)cimg::uint2float((unsigned int)(w + voff)); *(ptrd++) = 0; *(ptrd++) = 0; }
         else {
           *(ptrd++) = (T)w; *(ptrd++) = (T)h; *(ptrd++) = (T)s;
           const ulongT whs = (ulongT)w*h*s;
@@ -166,10 +166,10 @@ static CImg<T> append_CImg3d(const CImgList<T>& images) {
       if (*(ptrs[l])==(T)-128) {
         *(ptrd++) = *(ptrs[l]++);
         const unsigned int
-          w = (unsigned int)*(ptrs[l]++),
+          w = (unsigned int)cimg::float2uint(*(ptrs[l]++)),
           h = (unsigned int)*(ptrs[l]++),
           s = (unsigned int)*(ptrs[l]++);
-        if (!h && !s) { *(ptrd++) = (T)(w + voff); *(ptrd++) = 0; *(ptrd++) = 0; }
+        if (!h && !s) { *(ptrd++) = (T)cimg::uint2float((unsigned int)(w + voff)); *(ptrd++) = 0; *(ptrd++) = 0; }
         else {
           *(ptrd++) = (T)w; *(ptrd++) = (T)h; *(ptrd++) = (T)s;
           const ulongT whs = (ulongT)w*h*s;
@@ -205,47 +205,6 @@ static CImg<T>& append_string_to(const char c, CImg<T>& img, T* &ptrd) {
   }
   *(ptrd++) = c;
   return img;
-}
-
-CImg<T>& color_CImg3d(const float R, const float G, const float B, const float opacity,
-                      const bool set_RGB, const bool set_opacity) {
-  CImg<char> error_message(1024);
-  if (!is_CImg3d(false,error_message))
-    throw CImgInstanceException(_cimg_instance
-                                "color_CImg3d(): image instance is not a CImg3d (%s).",
-                                cimg_instance,error_message.data());
-  T *ptrd = data() + 6;
-  const unsigned int
-    nbv = cimg::float2uint((float)*(ptrd++)),
-    nbp = cimg::float2uint((float)*(ptrd++));
-  ptrd+=3*nbv;
-  for (unsigned int i = 0; i<nbp; ++i) { const unsigned int N = (unsigned int)*(ptrd++); ptrd+=N; }
-  for (unsigned int c = 0; c<nbp; ++c)
-    if (*ptrd==(T)-128) {
-      ++ptrd;
-      const unsigned int
-        w = (unsigned int)*(ptrd++),
-        h = (unsigned int)*(ptrd++),
-        s = (unsigned int)*(ptrd++);
-      ptrd+=w*h*s;
-    } else if (set_RGB) { *(ptrd++) = (T)R; *(ptrd++) = (T)G; *(ptrd++) = (T)B; } else ptrd+=3;
-  if (set_opacity)
-    for (unsigned int o = 0; o<nbp; ++o) {
-      if (*ptrd==(T)-128) {
-        ++ptrd;
-        const unsigned int
-          w = (unsigned int)*(ptrd++),
-          h = (unsigned int)*(ptrd++),
-          s = (unsigned int)*(ptrd++);
-        ptrd+=w*h*s;
-      } else *(ptrd++) = (T)opacity;
-    }
-  return *this;
-}
-
-CImg<T> get_color_CImg3d(const float R, const float G, const float B,
-                         const float opacity, const bool set_RGB, const bool set_opacity) const {
-  return (+*this).color_CImg3d(R,G,B,opacity,set_RGB,set_opacity);
 }
 
 // Return a copymarked version of an image name.
@@ -1834,99 +1793,6 @@ CImg<T>& shift_CImg3d(const float tx, const float ty, const float tz) {
 
 CImg<T> get_shift_CImg3d(const float tx, const float ty, const float tz) const {
   return (+*this).shift_CImg3d(tx,ty,tz);
-}
-
-CImgList<T> get_split_CImg3d(const bool full_split=false) const {
-  CImg<charT> error_message(1024);
-  if (!is_CImg3d(false,error_message))
-    throw CImgInstanceException(_cimg_instance
-                                "get_split_CImg3d(): image instance is not a CImg3d (%s).",
-                                cimg_instance,error_message.data());
-  CImgList<T> res;
-  const T *ptr0 = _data, *ptr = ptr0 + 6;
-  CImg<T>(ptr0,1,(unsigned int)(ptr - ptr0),1,1).move_to(res); // Header
-  ptr0 = ptr;
-  const unsigned int
-    nbv = cimg::float2uint(*(ptr++)),
-    nbp = cimg::float2uint(*(ptr++));
-  CImg<T>(ptr0,1,(unsigned int)(ptr - ptr0),1,1).move_to(res); // Nb vertices and primitives
-  ptr0 = ptr; ptr+=3*nbv;
-  CImg<T>(ptr0,1,(unsigned int)(ptr - ptr0),1,1).move_to(res); // Vertices
-
-  // Primitives.
-  if (full_split) for (unsigned int i = 0; i<nbp; ++i) {
-      ptr0 = ptr;
-      ptr+=(unsigned int)(*ptr) + 1;
-      CImg<T>(ptr0,1,(unsigned int)(ptr - ptr0),1,1).move_to(res);
-    }
-  else {
-    ptr0 = ptr;
-    for (unsigned int i = 0; i<nbp; ++i) ptr+=(unsigned int)(*ptr) + 1;
-    CImg<T>(ptr0,1,(unsigned int)(ptr - ptr0),1,1).move_to(res);
-  }
-
-  // Colors/Textures.
-  if (full_split) for (unsigned int i = 0; i<nbp; ++i) {
-      ptr0 = ptr;
-      const T val = *(ptr++);
-      if (val!=-128) ptr+=2;
-      else {
-        const unsigned int
-          w = cimg::float2uint(ptr[0]),
-          h = cimg::float2uint(ptr[1]),
-          s = cimg::float2uint(ptr[2]);
-        ptr+=3;
-        if (w*h*s!=0) ptr+=w*h*s;
-      }
-      CImg<T>(ptr0,1,(unsigned int)(ptr - ptr0),1,1).move_to(res);
-    }
-  else {
-    ptr0 = ptr;
-    for (unsigned int i = 0; i<nbp; ++i) {
-      const T val = *(ptr++);
-      if (val!=-128) ptr+=2;
-      else {
-        const unsigned int
-          w = cimg::float2uint(ptr[0]),
-        h = cimg::float2uint(ptr[1]),
-          s = cimg::float2uint(ptr[2]);
-        ptr+=3;
-        if (w*h*s!=0) ptr+=w*h*s;
-      }
-    }
-    CImg<T>(ptr0,1,(unsigned int)(ptr - ptr0),1,1).move_to(res);
-  }
-
-  // Opacities.
-  if (full_split) for (unsigned int i = 0; i<nbp; ++i) {
-      ptr0 = ptr;
-      const T val = *(ptr++);
-      if (val==-128) {
-        const unsigned int
-          w = cimg::float2uint(ptr[0]),
-          h = cimg::float2uint(ptr[1]),
-          s = cimg::float2uint(ptr[2]);
-        ptr+=3;
-        if (w*h*s!=0) ptr+=w*h*s;
-      }
-      CImg<T>(ptr0,1,(unsigned int)(ptr - ptr0),1,1).move_to(res);
-    }
-  else {
-    ptr0 = ptr;
-    for (unsigned int i = 0; i<nbp; ++i) {
-      const T val = *(ptr++);
-      if (val==-128) {
-        const unsigned int
-          w = cimg::float2uint(ptr[0]),
-          h = cimg::float2uint(ptr[1]),
-          s = cimg::float2uint(ptr[2]);
-        ptr+=3;
-        if (w*h*s!=0) ptr+=w*h*s;
-      }
-    }
-    CImg<T>(ptr0,1,(unsigned int)(ptr - ptr0),1,1).move_to(res);
-  }
-  return res;
 }
 
 static const CImgList<T>& save_gmz(const char *filename, const CImgList<T>& images, const CImgList<charT>& names) {
