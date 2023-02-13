@@ -3697,9 +3697,7 @@ CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned
       iind1 = (int)cimg::round(ind1);
     } else if (cimg_sscanf(item,"%255[a-zA-Z0-9_]%c",name.assign(256).data(),&end)==1 && // Label
                (*name<'0' || *name>'9')) {
-      cimglist_for(names,l) if (names[l] && !std::strcmp(names[l],name)) {
-        is_selected(l) = true; is_label = true;
-      }
+      cimglist_for(names,l) if (names[l] && !std::strcmp(names[l],name)) is_selected(l) = is_label = true;
       if (!is_label)
         error(true,"Command '%s': Invalid %s %c%s%c (undefined label '%s').",
               command,stype,ctypel,string,ctyper,name.data());
