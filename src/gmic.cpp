@@ -6228,7 +6228,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             *const st3 = name.data(0,3), *const st4 = name.data(0,4), *const st5 = name.data(0,5),
             *const st6 = name.data(0,6), *const st7 = name.data(0,7);
           char sep2 = sep0 = sep1 = 0, sep3 = 0, sep4 = 0, sep5 = 0, sep6 = 0, sep7 = 0;
-          float a0 = 0, a1 = 0, a2 = 0, a3 = 0, a4 = 0, a5 = 0, a6 = 0, a7 = 0;
+          double a0 = 0, a1 = 0, a2 = 0, a3 = 0, a4 = 0, a5 = 0, a6 = 0, a7 = 0;
           *st0 = *st1 = *st2 = *st3 = *st4 = *st5 = *st6 = *st7 = 0;
           boundary = 0;
           if ((boundary=0,cimg_sscanf(argument,"%63[0-9.eE%+-],%63[0-9.eE%+-]%c",
@@ -6237,10 +6237,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                cimg_sscanf(argument,"%63[0-9.eE%+-],%63[0-9.eE%+-],%u%c",
                            st0,
                            st1,&boundary,&end)==3) &&
-              (cimg_sscanf(st0,"%f%c",&a0,&end)==1 ||
-               (cimg_sscanf(st0,"%f%c%c",&a0,&sep0,&end)==2 && sep0=='%')) &&
-              (cimg_sscanf(st1,"%f%c",&a1,&end)==1 ||
-               (cimg_sscanf(st1,"%f%c%c",&a1,&sep1,&end)==2 && sep1=='%')) &&
+              (cimg_sscanf(st0,"%lf%c",&a0,&end)==1 ||
+               (cimg_sscanf(st0,"%lf%c%c",&a0,&sep0,&end)==2 && sep0=='%')) &&
+              (cimg_sscanf(st1,"%lf%c",&a1,&end)==1 ||
+               (cimg_sscanf(st1,"%lf%c%c",&a1,&sep1,&end)==2 && sep1=='%')) &&
               boundary<=3) {
             print(images,0,"Crop image%s with coordinates (%g%s) - (%g%s) and "
                   "%s boundary conditions.",
@@ -6266,14 +6266,14 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                   "%63[0-9.eE%+-],%63[0-9.eE%+-],"
                                   "%63[0-9.eE%+-],%63[0-9.eE%+-],%u%c",
                                   st0,st1,st2,st3,&boundary,&end)==5) &&
-                     (cimg_sscanf(st0,"%f%c",&a0,&end)==1 ||
-                      (cimg_sscanf(st0,"%f%c%c",&a0,&sep0,&end)==2 && sep0=='%')) &&
-                     (cimg_sscanf(st1,"%f%c",&a1,&end)==1 ||
-                      (cimg_sscanf(st1,"%f%c%c",&a1,&sep1,&end)==2 && sep1=='%')) &&
-                     (cimg_sscanf(st2,"%f%c",&a2,&end)==1 ||
-                      (cimg_sscanf(st2,"%f%c%c",&a2,&sep2,&end)==2 && sep2=='%')) &&
-                     (cimg_sscanf(st3,"%f%c",&a3,&end)==1 ||
-                      (cimg_sscanf(st3,"%f%c%c",&a3,&sep3,&end)==2 && sep3=='%')) &&
+                     (cimg_sscanf(st0,"%lf%c",&a0,&end)==1 ||
+                      (cimg_sscanf(st0,"%lf%c%c",&a0,&sep0,&end)==2 && sep0=='%')) &&
+                     (cimg_sscanf(st1,"%lf%c",&a1,&end)==1 ||
+                      (cimg_sscanf(st1,"%lf%c%c",&a1,&sep1,&end)==2 && sep1=='%')) &&
+                     (cimg_sscanf(st2,"%lf%c",&a2,&end)==1 ||
+                      (cimg_sscanf(st2,"%lf%c%c",&a2,&sep2,&end)==2 && sep2=='%')) &&
+                     (cimg_sscanf(st3,"%lf%c",&a3,&end)==1 ||
+                      (cimg_sscanf(st3,"%lf%c%c",&a3,&sep3,&end)==2 && sep3=='%')) &&
                      boundary<=3) {
             print(images,0,
                   "Crop image%s with coordinates (%g%s,%g%s) - (%g%s,%g%s) and "
@@ -6303,18 +6303,18 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                       cimg_sscanf(argument,"%63[0-9.eE%+-],%63[0-9.eE%+-],%63[0-9.eE%+-],"
                                   "%63[0-9.eE%+-],%63[0-9.eE%+-],%63[0-9.eE%+-],%u%c",
                                   st0,st1,st2,st3,st4,st5,&boundary,&end)==7) &&
-                     (cimg_sscanf(st0,"%f%c",&a0,&end)==1 ||
-                      (cimg_sscanf(st0,"%f%c%c",&a0,&sep0,&end)==2 && sep0=='%')) &&
-                     (cimg_sscanf(st1,"%f%c",&a1,&end)==1 ||
-                      (cimg_sscanf(st1,"%f%c%c",&a1,&sep1,&end)==2 && sep1=='%')) &&
-                     (cimg_sscanf(st2,"%f%c",&a2,&end)==1 ||
-                      (cimg_sscanf(st2,"%f%c%c",&a2,&sep2,&end)==2 && sep2=='%')) &&
-                     (cimg_sscanf(st3,"%f%c",&a3,&end)==1 ||
-                      (cimg_sscanf(st3,"%f%c%c",&a3,&sep3,&end)==2 && sep3=='%')) &&
-                     (cimg_sscanf(st4,"%f%c",&a4,&end)==1 ||
-                      (cimg_sscanf(st4,"%f%c%c",&a4,&sep4,&end)==2 && sep4=='%')) &&
-                     (cimg_sscanf(st5,"%f%c",&a5,&end)==1 ||
-                      (cimg_sscanf(st5,"%f%c%c",&a5,&sep5,&end)==2 && sep5=='%')) &&
+                     (cimg_sscanf(st0,"%lf%c",&a0,&end)==1 ||
+                      (cimg_sscanf(st0,"%lf%c%c",&a0,&sep0,&end)==2 && sep0=='%')) &&
+                     (cimg_sscanf(st1,"%lf%c",&a1,&end)==1 ||
+                      (cimg_sscanf(st1,"%lf%c%c",&a1,&sep1,&end)==2 && sep1=='%')) &&
+                     (cimg_sscanf(st2,"%lf%c",&a2,&end)==1 ||
+                      (cimg_sscanf(st2,"%lf%c%c",&a2,&sep2,&end)==2 && sep2=='%')) &&
+                     (cimg_sscanf(st3,"%lf%c",&a3,&end)==1 ||
+                      (cimg_sscanf(st3,"%lf%c%c",&a3,&sep3,&end)==2 && sep3=='%')) &&
+                     (cimg_sscanf(st4,"%lf%c",&a4,&end)==1 ||
+                      (cimg_sscanf(st4,"%lf%c%c",&a4,&sep4,&end)==2 && sep4=='%')) &&
+                     (cimg_sscanf(st5,"%lf%c",&a5,&end)==1 ||
+                      (cimg_sscanf(st5,"%lf%c%c",&a5,&sep5,&end)==2 && sep5=='%')) &&
                      boundary<=3) {
             print(images,0,"Crop image%s with coordinates (%g%s,%g%s,%g%s) - (%g%s,%g%s,%g%s) "
                   "and %s boundary conditions.",
@@ -6349,22 +6349,22 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                                   "%63[0-9.eE%+-],%63[0-9.eE%+-],%63[0-9.eE%+-],"
                                   "%63[0-9.eE%+-],%63[0-9.eE%+-],%u%c",
                                   st0,st1,st2,st3,st4,st5,st6,st7,&boundary,&end)==9) &&
-                     (cimg_sscanf(st0,"%f%c",&a0,&end)==1 ||
-                      (cimg_sscanf(st0,"%f%c%c",&a0,&sep0,&end)==2 && sep0=='%')) &&
-                     (cimg_sscanf(st1,"%f%c",&a1,&end)==1 ||
-                      (cimg_sscanf(st1,"%f%c%c",&a1,&sep1,&end)==2 && sep1=='%')) &&
-                     (cimg_sscanf(st2,"%f%c",&a2,&end)==1 ||
-                      (cimg_sscanf(st2,"%f%c%c",&a2,&sep2,&end)==2 && sep2=='%')) &&
-                     (cimg_sscanf(st3,"%f%c",&a3,&end)==1 ||
-                      (cimg_sscanf(st3,"%f%c%c",&a3,&sep3,&end)==2 && sep3=='%')) &&
-                     (cimg_sscanf(st4,"%f%c",&a4,&end)==1 ||
-                      (cimg_sscanf(st4,"%f%c%c",&a4,&sep4,&end)==2 && sep4=='%')) &&
-                     (cimg_sscanf(st5,"%f%c",&a5,&end)==1 ||
-                      (cimg_sscanf(st5,"%f%c%c",&a5,&sep5,&end)==2 && sep5=='%')) &&
-                     (cimg_sscanf(st6,"%f%c",&a6,&end)==1 ||
-                      (cimg_sscanf(st6,"%f%c%c",&a6,&sep6,&end)==2 && sep6=='%')) &&
-                     (cimg_sscanf(st7,"%f%c",&a7,&end)==1 ||
-                      (cimg_sscanf(st7,"%f%c%c",&a7,&sep7,&end)==2 && sep7=='%')) &&
+                     (cimg_sscanf(st0,"%lf%c",&a0,&end)==1 ||
+                      (cimg_sscanf(st0,"%lf%c%c",&a0,&sep0,&end)==2 && sep0=='%')) &&
+                     (cimg_sscanf(st1,"%lf%c",&a1,&end)==1 ||
+                      (cimg_sscanf(st1,"%lf%c%c",&a1,&sep1,&end)==2 && sep1=='%')) &&
+                     (cimg_sscanf(st2,"%lf%c",&a2,&end)==1 ||
+                      (cimg_sscanf(st2,"%lf%c%c",&a2,&sep2,&end)==2 && sep2=='%')) &&
+                     (cimg_sscanf(st3,"%lf%c",&a3,&end)==1 ||
+                      (cimg_sscanf(st3,"%lf%c%c",&a3,&sep3,&end)==2 && sep3=='%')) &&
+                     (cimg_sscanf(st4,"%lf%c",&a4,&end)==1 ||
+                      (cimg_sscanf(st4,"%lf%c%c",&a4,&sep4,&end)==2 && sep4=='%')) &&
+                     (cimg_sscanf(st5,"%lf%c",&a5,&end)==1 ||
+                      (cimg_sscanf(st5,"%lf%c%c",&a5,&sep5,&end)==2 && sep5=='%')) &&
+                     (cimg_sscanf(st6,"%lf%c",&a6,&end)==1 ||
+                      (cimg_sscanf(st6,"%lf%c%c",&a6,&sep6,&end)==2 && sep6=='%')) &&
+                     (cimg_sscanf(st7,"%lf%c",&a7,&end)==1 ||
+                      (cimg_sscanf(st7,"%lf%c%c",&a7,&sep7,&end)==2 && sep7=='%')) &&
                      boundary<=3) {
             print(images,0,
                   "Crop image%s with coordinates (%g%s,%g%s,%g%s,%g%s) - (%g%s,%g%s,%g%s,%g%s) "
