@@ -3639,9 +3639,101 @@ gmic& gmic::add_commands(std::FILE *const file, const char *const commands_file,
 
 // Return subset indices from a selection string, as a 1-column vector.
 //---------------------------------------------------------------------
+CImg<unsigned int> gmic::selection2cimg_new(const char *const string, const unsigned int index_max,
+                                            const CImgList<char>& names,
+                                            const char *const command, const bool is_selection) {
+  CImg<unsigned int> res;
+
+  // First, try to detect the most common cases.
+  if (string && !*string) return CImg<unsigned int>(); // Empty selection
+  if (!string || (*string=='^' && !string[1])) { // Whole selection
+    res.assign(1,index_max); cimg_forY(res,y) res[y] = (unsigned int)y; return res;
+  } else if (*string>='0' && *string<='9' && !string[1]) { // Single positive digit
+    const unsigned int ind = *string - '0';
+    if (ind<index_max) return CImg<unsigned int>::vector(ind);
+  } else if (*string=='-' && string[1]>='0' && string[2]<='9' && !string[2]) { // Single negative digit
+    const unsigned int ind = index_max - string[1] + '0';
+    if (ind<index_max) return CImg<unsigned int>::vector(ind);
+  }
+
+  const char *const stype = is_selection?"selection":"subset";
+  const int ctypel = is_selection?'[':'\'', ctyper = is_selection?']':'\'';
+
+  const char *p = string;
+  bool is_inverse = false;
+  if (*p=='^') { ++p; is_inverse = true; }
+  const char *const p0 = p;
+  CImg<char> name;
+  unsigned int uindm = ~0U, uindM = 0;
+  do {
+    double ind0, ind1;
+    int read, istep = 1, _iind0, _iind1, iind0 = -1, iind1 = -1;
+
+    if (p!=p0 && *p==',') ++p;
+
+    std::fprintf(stderr,"\nDEBUG : p = '%s' (index_max = %u) ",p,index_max);
+
+    if (cimg_sscanf(p,"%lf%n",&ind0,&read)==1) {
+      p+=read;
+      if (*p=='%') { ++p; ind0*=(index_max - 1.0f)/100; iind0 = (int)cimg::round(ind0); }
+      else { _iind0 = (int)cimg::round(ind0); iind0 = _iind0<0?_iind0 + (int)index_max:_iind0; }
+      if (iind0<0 || iind0>=(int)index_max)
+        error(true,"Command '%s': Invalid %s %c%s%c (contains index %d, not in range -%u...%u).",
+              command,stype,ctypel,string,ctyper,iind0,index_max,index_max - 1);
+      iind1 = iind0;
+
+      if (*p=='-') { // Sub-expression 'ind0-ind1'
+        if (cimg_sscanf(++p,"%lf%n",&ind1,&read)==1) {
+          p+=read;
+          if (*p=='%') { ++p; ind1*=(index_max - 1.0f)/100; iind1 = (int)cimg::round(ind1); }
+          else { _iind1 = (int)cimg::round(ind1); iind1 = _iind1<0?_iind1 + (int)index_max:_iind1; }
+          if (iind1<0 || iind1>=(int)index_max)
+            error(true,"Command '%s': Invalid %s %c%s%c (contains index %d, not in range -%u...%u).",
+                  command,stype,ctypel,string,ctyper,iind1,index_max,index_max - 1);
+
+          if (*p==':') { // Sub-expression 'ind0-ind1:step'
+            if (cimg_sscanf(++p,"%d%n",&istep,&read)!=1 || istep<1)
+              error(true,"Command '%s': Invalid %s %c%s%c (invalid step specified).",
+                    command,stype,ctypel,string,ctyper);
+            p+=read;
+          }
+        }
+      }
+    } else if (cimg_sscanf(p,"%255[a-zA-Z0-9_]%n",name.assign(256).data(),&read)==1 && (*name<'0' || *name>'9')) {
+      unsigned int lm = ~0U, lM = 0;
+      cimglist_for(names,l) if (names[l] && !std::strcmp(names[l],name)) {
+        if (l<lm) lm = l;
+        if (l>lM) lM = l;
+        p+=read;
+      }
+      if (lm==~0U)
+        error(true,"Command '%s': Invalid %s %c%s%c (undefined label '%s').",
+              command,stype,ctypel,string,ctyper,name.data());
+      iind0 = iind1 = lm;
+    }
+
+    if (iind0<0 || iind1<0)
+      error("Command '%s': Invalid %s %c%s%c.",
+            command,stype,ctypel,string,ctyper,iind1,index_max,index_max - 1);
+
+    if (iind0>iind1) cimg::swap(iind0,iind1);
+    const unsigned int uind0 = (unsigned int)iind0, uind1 = (unsigned int)iind1, ouindm = uindm, ouindM = uindM;
+    if (uind0<uindm) uindm = uind0;
+    if (uind1>uindM) uindM = uind1;
+
+    std::fprintf(stderr,"-> ind0 = %u, ind1 = %u, step = %u\n",uind0,uind1,(unsigned int)istep);
+
+  } while (*p);
+  return res;
+}
+
+// Legacy code.
 CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned int index_max,
                                         const CImgList<char>& names,
                                         const char *const command, const bool is_selection) {
+
+//  selection2cimg_new(string,index_max,names,command,is_selection);
+
   CImg<unsigned int> res;
 
   // First, try to detect the most common cases.

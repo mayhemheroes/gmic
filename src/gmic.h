@@ -408,6 +408,10 @@ struct gmic {
                                           const gmic_list<char>& names, const char *const command,
                                           const bool is_selection=true);
 
+  gmic_image<unsigned int> selection2cimg_new(const char *const string, const unsigned int indice_max,
+                                              const gmic_list<char>& names, const char *const command,
+                                              const bool is_selection=true);
+
   gmic_image<char>& selection2string(const gmic_image<unsigned int>& selection, const gmic_list<char>& images_names,
                                      const unsigned int display_selection, gmic_image<char>& res) const;
 
