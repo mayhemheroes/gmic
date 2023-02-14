@@ -13254,9 +13254,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
           if (!is_selection) {
             if (is_display_available) { // Put all active windows in selection
-              uind = 0; for (unsigned int l = 0; l<gmic_winslots; ++l) if (gmic_display_window(l)) ++uind;
+              uind = 0;
+              for (unsigned int l = 0; l<gmic_winslots; ++l) if (gmic_display_window(l)) ++uind;
               CImg<unsigned int>(1,uind).move_to(selection);
-              uind = 0; for (unsigned int l = 0; l<gmic_winslots; ++l) if (gmic_display_window(l)) selection[uind++] = l;
+              uind = 0;
+              for (unsigned int l = 0; l<gmic_winslots; ++l) if (gmic_display_window(l)) selection[uind++] = l;
             } else selection.assign();
             if (is_verbose) selection2string(selection,images_names,1,gmic_selection);
           }
