@@ -3648,7 +3648,9 @@ CImg<unsigned int> gmic::selection2cimg_new(const char *const string, const unsi
   off_intervals = 3*nb_intervals++; \
   res[off_intervals++] = (unsigned int)i0; \
   res[off_intervals++] = (unsigned int)i1; \
-  res[off_intervals] = (unsigned int)step;
+  res[off_intervals] = (unsigned int)step; \
+  if ((unsigned int)i0<uindm) uindm = (unsigned int)i0; \
+  if ((unsigned int)i1>uindM) uindM = (unsigned int)i1;
 
   // First, try to detect the most common cases.
   CImg<unsigned int> res;
@@ -3708,23 +3710,18 @@ CImg<unsigned int> gmic::selection2cimg_new(const char *const string, const unsi
         }
       }
       if (iind0>iind1) cimg::swap(iind0,iind1);
-      const unsigned int uind0 = (unsigned int)iind0, uind1 = (unsigned int)iind1, ouindm = uindm, ouindM = uindM;
-      if (uind0<uindm) uindm = uind0;
-      if (uind1>uindM) uindM = uind1;
-      _gmic_add_interval(uind0,uind1,istep)
+      _gmic_add_interval(iind0,iind1,istep)
 
     } else if (cimg_sscanf(p,"%255[a-zA-Z0-9_]%n",name.assign(256).data(),&read)==1 && (*name<'0' || *name>'9')) {
       p+=read;
-      unsigned int lm = ~0U, lM = 0;
+      bool is_label_found = false;
       cimglist_for(names,l) if (names[l] && !std::strcmp(names[l],name)) {
-        if (l<lm) lm = l;
-        if (l>lM) lM = l;
         _gmic_add_interval(l,l,1);
+        is_label_found = true;
       }
-      if (lm==~0U)
+      if (!is_label_found)
         error(true,"Command '%s': Invalid %s %c%s%c (undefined label '%s').",
               command,stype,ctypel,string,ctyper,name.data());
-      iind0 = iind1 = lm;
     }
 
     if (iind0<0 || iind1<0)
