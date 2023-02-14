@@ -3651,7 +3651,7 @@ CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned
   if ((unsigned int)i0<uindm) uindm = (unsigned int)i0; \
   if ((unsigned int)i1>uindM) uindM = (unsigned int)i1
 
-#define _gmic_percent(ind) ind==0?0:ind==100?index_end - 1.0:ind==50?(double)(index_end/2):(index_end - 1.0)*ind/100.
+#define _gmic_percent(ind) ind==0?0:ind==100?index_end - 1.:ind==50?(double)(index_end/2):(index_end - 1.)*ind/100.
 
   // Detect most common cases.
   CImg<unsigned int> res;
@@ -3702,10 +3702,12 @@ CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned
                   command,stype,ctypel,string,ctyper,iind1,index_end,index_end - 1);
 
           if (*p==':') { // Sub-expression 'ind0-ind1:step'
-            if (cimg_sscanf(++p,"%d%n",&istep,&read)!=1 || istep<1)
-              error(true,"Command '%s': Invalid %s %c%s%c (syntax error after colon ':').",
-                    command,stype,ctypel,string,ctyper);
-            p+=read;
+            if (cimg_sscanf(++p,"%d%n",&istep,&read)==1) {
+              p+=read;
+              if (istep<1) error(true,"Command '%s': Invalid %s %c%s%c (invalid step %d specified).",
+                                 command,stype,ctypel,string,ctyper,istep);
+            } else error(true,"Command '%s': Invalid %s %c%s%c (syntax error after colon ':').",
+                         command,stype,ctypel,string,ctyper);
           }
         }
       }
