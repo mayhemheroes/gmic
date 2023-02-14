@@ -3661,9 +3661,19 @@ CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned
   } else if (*string>='0' && *string<='9' && !string[1]) { // Single positive digit
     const unsigned int ind = *string - '0';
     if (ind<index_end) return CImg<unsigned int>::vector(ind);
+  } else if (*string=='-' && string[1]=='2' && string[2]==',' &&
+             string[3]=='-' && string[4]=='1' && !string[5]) { // [-2,-1]
+    if (index_end>=2) return CImg<unsigned int>::vector(index_end - 2,index_end - 1);
   } else if (*string=='-' && string[1]>='0' && string[2]<='9' && !string[2]) { // Single negative digit
     const unsigned int ind = index_end - string[1] + '0';
     if (ind<index_end) return CImg<unsigned int>::vector(ind);
+  } else if (*string=='^') {
+    if (string[1]=='-' && string[2]=='1' && !string[3]) { // ^-1
+      res.assign(1,index_end - 1); cimg_forY(res,y) res[y] = (unsigned int)y; return res;
+    }
+    if (string[1]=='0' && !string[2]) { // ^0
+      res.assign(1,index_end - 1); cimg_forY(res,y) res[y] = (unsigned int)y + 1; return res;
+    }
   }
 
   // Parse list of intervals.
