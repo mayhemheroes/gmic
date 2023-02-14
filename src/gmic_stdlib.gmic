@@ -207,18 +207,16 @@ cli_noarg :
     +e "[gmic] (type "${c}"'"$gmic_help"'"$n" to print help)."
   fi
   file_update=${_path_rc}update$_version.gmic
-  need_update={"Y = date(0); M = date(1); D = date(2); date_current = Y*365 + M*31 + D;
-                Y = date(0,'"{/$file_update}"'); M = date(1,'"{/$file_update}"');
-                D = date(2,'"{/$file_update}"'); date_file = Y*365 + M*31 + D;
-                date_current - date_file>=7"}
-  if $need_update
-    +e "[gmic] Updating commands..."
-    l[] {
-      update
-      +e "\r[gmic] Updating commands: "${g}"Succeeded!"$n
-    onfail
-      +e "\r[gmic] Updating commands: "${r}"Failed!"$n
-    }
+  if isfile(['{/$file_update}'])
+    update_old={"Y = date(0); M = date(1); D = date(2); date_current = Y*365 + M*31 + D;
+                 Y = date(0,'"{/$file_update}"'); M = date(1,'"{/$file_update}"');
+                 D = date(2,'"{/$file_update}"'); date_file = Y*365 + M*31 + D;
+                 date_current - date_file"}
+    if $update_old>=14
+      +e "[gmic] Command update file is "$update_old" days old, type "$g"'gmic up'"$n" to update it."
+    fi
+  else
+    +e "[gmic] Command update file not found, type "$g"'gmic up'"$n" to get it."
   fi
   +e "\n"
 
