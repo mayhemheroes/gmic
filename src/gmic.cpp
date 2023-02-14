@@ -3644,13 +3644,13 @@ CImg<unsigned int> gmic::selection2cimg_new(const char *const string, const unsi
                                             const char *const command, const bool is_selection) {
 
 #define _gmic_add_interval(i0,i1,step) \
-  if (nb_intervals>=res._height) res.resize(3,std::max(8U,res._height),1,1,0); \
+  if (nb_intervals>=res._height) res.resize(3,std::max(8U,2*res._height),1,1,0); \
   off_intervals = 3*nb_intervals++; \
   res[off_intervals++] = (unsigned int)i0; \
   res[off_intervals++] = (unsigned int)i1; \
   res[off_intervals] = (unsigned int)step; \
   if ((unsigned int)i0<uindm) uindm = (unsigned int)i0; \
-  if ((unsigned int)i1>uindM) uindM = (unsigned int)i1;
+  if ((unsigned int)i1>uindM) uindM = (unsigned int)i1
 
   // Detect most common cases.
   CImg<unsigned int> res;
@@ -3684,11 +3684,13 @@ CImg<unsigned int> gmic::selection2cimg_new(const char *const string, const unsi
       p+=read;
       if (*p=='%') { ++p; ind0*=(index_end - 1.0f)/100; iind0 = (int)cimg::round(ind0); }
       else { _iind0 = (int)cimg::round(ind0); iind0 = _iind0<0?_iind0 + (int)index_end:_iind0; }
-      if (iind0<0 || iind0>=(int)index_end)
+      if (iind0<0 || iind0>=(int)index_end) {
+        if (!index_end) error(true,"Command '%s': Invalid %s %c%s%c (no item available).",
+                              command,stype,ctypel,string,ctyper);
         error(true,"Command '%s': Invalid %s %c%s%c (contains index %d, not in range -%u...%u).",
               command,stype,ctypel,string,ctyper,iind0,index_end,index_end - 1);
+      }
       iind1 = iind0;
-
       if (*p=='-') { // Sub-expression 'ind0-ind1'
         if (cimg_sscanf(++p,"%lf%n",&ind1,&read)==1) {
           p+=read;
@@ -3700,22 +3702,20 @@ CImg<unsigned int> gmic::selection2cimg_new(const char *const string, const unsi
 
           if (*p==':') { // Sub-expression 'ind0-ind1:step'
             if (cimg_sscanf(++p,"%d%n",&istep,&read)!=1 || istep<1)
-              error(true,"Command '%s': Invalid %s %c%s%c (invalid step specified).",
+              error(true,"Command '%s': Invalid %s %c%s%c (syntax error after colon ':').",
                     command,stype,ctypel,string,ctyper);
             p+=read;
           }
         }
       }
       if (iind0>iind1) cimg::swap(iind0,iind1);
-      _gmic_add_interval(iind0,iind1,istep)
+      _gmic_add_interval(iind0,iind1,istep);
 
     } else if (cimg_sscanf(p,"%255[a-zA-Z0-9_]%n",name.assign(256).data(),&read)==1 && (*name<'0' || *name>'9')) {
       p+=read;
       bool is_label_found = false;
-      cimglist_for(names,l) if (names[l] && !std::strcmp(names[l],name)) {
-        _gmic_add_interval(l,l,1);
-        is_label_found = true;
-      }
+      cimglist_for(names,l)
+        if (names[l] && !std::strcmp(names[l],name)) { _gmic_add_interval(l,l,1); is_label_found = true; }
       if (!is_label_found)
         error(true,"Command '%s': Invalid %s %c%s%c (undefined label '%s').",
               command,stype,ctypel,string,ctyper,name.data());
@@ -3723,8 +3723,33 @@ CImg<unsigned int> gmic::selection2cimg_new(const char *const string, const unsi
                  command,stype,ctypel,string,ctyper,iind1,index_end,index_end - 1);
   } while (*p);
 
-  res.print("DEBUG : intervals");
+  // Convert list of intervals to list of indices.
+  CImg<char> is_selected;
+  unsigned int uind0, uind1, ustep, siz, off;
 
+  if (res) {
+    if (!is_inverse && res.height()==1) { // Single interval: optimized code
+      uind0 = res[0]; uind1 = res[1]; ustep = res[2]; siz = (uind1 - uind0 + 1)/ustep;
+      res.assign(1,siz); off = 0;
+      for (unsigned int uind = uind0; uind<=uind1; uind+=ustep) res[off++] = uind;
+    } else if (is_inverse) {
+      is_selected.assign(1,index_end,1,1,1);
+      for (unsigned int y = 0; y<nb_intervals; ++y) {
+        uind0 = res(0,y); uind1 = res(1,y); ustep = res(2,y); siz = (uind1 - uind0 + 1)/ustep;
+        for (unsigned int uind = uind0; uind<=uind1; uind+=ustep) is_selected[uind] = 0;
+      }
+      res.assign(1,(unsigned int)is_selected.sum()); off = 0;
+      cimg_forY(is_selected,y) if (is_selected[y]) res[off++] = y;
+    } else {
+      is_selected.assign(1,uindM - uindm + 1,1,1,0);
+      for (unsigned int y = 0; y<nb_intervals; ++y) {
+        uind0 = res(0,y); uind1 = res(1,y); ustep = res(2,y); siz = (uind1 - uind0 + 1)/ustep;
+        for (unsigned int uind = uind0; uind<=uind1; uind+=ustep) is_selected[uind - uindm] = 1;
+      }
+      res.assign(1,(unsigned int)is_selected.sum()); off = 0;
+      cimg_forY(is_selected,y) if (is_selected[y]) res[off++] = y + uindm;
+    }
+  }
   return res;
 }
 
@@ -3733,7 +3758,7 @@ CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned
                                         const CImgList<char>& names,
                                         const char *const command, const bool is_selection) {
 
-  selection2cimg_new(string,index_end,names,command,is_selection);
+  const CImg<unsigned int> res_new = selection2cimg_new(string,index_end,names,command,is_selection);
 
   CImg<unsigned int> res;
 
@@ -3838,6 +3863,13 @@ CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned
   index = 0;
   if (is_inverse) { cimg_forY(is_selected,l) if (!is_selected[l]) res[index++] = (unsigned int)l; }
   else cimg_forY(is_selected,l) if (is_selected[l]) res[index++] = (unsigned int)l;
+
+  if (res_new!=res) {
+    std::fprintf(stderr,"\nDEBUG : %s",string);
+    res.print("RES");
+    res_new.print("RES_NEW");
+  }
+
   return res;
 }
 
