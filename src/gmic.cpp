@@ -3667,8 +3667,10 @@ CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned
   }
 
   // Parse list of intervals.
-  const char *const stype = is_selection?"selection":"subset";
-  const int ctypel = is_selection?'[':'\'', ctyper = is_selection?']':'\'';
+  const char
+    *const stype = is_selection?"selection":"subset",
+    *const ctypel = is_selection?"[":"",
+    *const ctyper = is_selection?"]":"";
 
   const char *p = string;
   bool is_inverse = false;
@@ -3686,9 +3688,9 @@ CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned
       if (*p=='%') { ++p; ind0 = _gmic_percent(ind0); iind0 = (int)cimg::round(ind0); }
       else { _iind0 = (int)cimg::round(ind0); iind0 = _iind0<0?_iind0 + (int)index_end:_iind0; }
       if (iind0<0 || iind0>=(int)index_end) {
-        if (!index_end) error(true,"Command '%s': Invalid %s %c%s%c (no item available).",
+        if (!index_end) error(true,"Command '%s': Invalid %s '%s%s%s' (no item available).",
                               command,stype,ctypel,string,ctyper);
-        error(true,"Command '%s': Invalid %s %c%s%c (contains index %d, not in range -%u...%u).",
+        error(true,"Command '%s': Invalid %s '%s%s%s' (contains index %d, not in range -%u...%u).",
               command,stype,ctypel,string,ctyper,iind0,index_end,index_end - 1);
       }
       iind1 = iind0;
@@ -3698,15 +3700,15 @@ CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned
           if (*p=='%') { ++p; ind1 = _gmic_percent(ind1); iind1 = (int)cimg::round(ind1); }
           else { _iind1 = (int)cimg::round(ind1); iind1 = _iind1<0?_iind1 + (int)index_end:_iind1; }
           if (iind1<0 || iind1>=(int)index_end)
-            error(true,"Command '%s': Invalid %s %c%s%c (contains index %d, not in range -%u...%u).",
+            error(true,"Command '%s': Invalid %s '%s%s%s' (contains index %d, not in range -%u...%u).",
                   command,stype,ctypel,string,ctyper,iind1,index_end,index_end - 1);
 
           if (*p==':') { // Sub-expression 'ind0-ind1:step'
             if (cimg_sscanf(++p,"%d%n",&istep,&read)==1) {
               p+=read;
-              if (istep<1) error(true,"Command '%s': Invalid %s %c%s%c (invalid step %d specified).",
+              if (istep<1) error(true,"Command '%s': Invalid %s '%s%s%s' (invalid step %d).",
                                  command,stype,ctypel,string,ctyper,istep);
-            } else error(true,"Command '%s': Invalid %s %c%s%c (syntax error after colon ':').",
+            } else error(true,"Command '%s': Invalid %s '%s%s%s' (syntax error after colon ':').",
                          command,stype,ctypel,string,ctyper);
           }
         }
@@ -3720,10 +3722,12 @@ CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned
       cimglist_for(names,l)
         if (names[l] && !std::strcmp(names[l],name)) { _gmic_add_interval(l,l,1); is_label_found = true; }
       if (!is_label_found)
-        error(true,"Command '%s': Invalid %s %c%s%c (undefined label '%s').",
+        error(true,"Command '%s': Invalid %s '%s%s%s' (undefined label '%s').",
               command,stype,ctypel,string,ctyper,name.data());
-    } else error(true,"Command '%s': Invalid %s %c%s%c.",
-                 command,stype,ctypel,string,ctyper,iind1,index_end,index_end - 1);
+    }
+    if (*p && *p!=',')
+      error(true,"Command '%s': Invalid %s '%s%s%s' (cannot parse '%s').",
+            command,stype,ctypel,string,ctyper,p);
   } while (*p);
 
   // Convert list of intervals to list of indices.
