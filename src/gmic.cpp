@@ -3639,10 +3639,9 @@ gmic& gmic::add_commands(std::FILE *const file, const char *const commands_file,
 
 // Return subset indices from a selection string, as a 1-column vector.
 //---------------------------------------------------------------------
-CImg<unsigned int> gmic::selection2cimg_new(const char *const string, const unsigned int index_end,
-                                            const CImgList<char>& names,
-                                            const char *const command, const bool is_selection) {
-
+CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned int index_end,
+                                        const CImgList<char>& names,
+                                        const char *const command, const bool is_selection) {
 #define _gmic_add_interval(i0,i1,step) \
   if (nb_intervals>=res._height) res.resize(3,std::max(8U,2*res._height),1,1,0); \
   off_intervals = 3*nb_intervals++; \
@@ -3719,7 +3718,7 @@ CImg<unsigned int> gmic::selection2cimg_new(const char *const string, const unsi
       if (!is_label_found)
         error(true,"Command '%s': Invalid %s %c%s%c (undefined label '%s').",
               command,stype,ctypel,string,ctyper,name.data());
-    } else error("Command '%s': Invalid %s %c%s%c.",
+    } else error(true,"Command '%s': Invalid %s %c%s%c.",
                  command,stype,ctypel,string,ctyper,iind1,index_end,index_end - 1);
   } while (*p);
 
@@ -3750,126 +3749,6 @@ CImg<unsigned int> gmic::selection2cimg_new(const char *const string, const unsi
       cimg_forY(is_selected,y) if (is_selected[y]) res[off++] = y + uindm;
     }
   }
-  return res;
-}
-
-// Legacy code.
-CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned int index_end,
-                                        const CImgList<char>& names,
-                                        const char *const command, const bool is_selection) {
-
-  const CImg<unsigned int> res_new = selection2cimg_new(string,index_end,names,command,is_selection);
-
-  CImg<unsigned int> res;
-
-  // First, try to detect the most common cases.
-  if (string && !*string) return CImg<unsigned int>(); // Empty selection
-  if (!string || (*string=='^' && !string[1])) { // Whole selection
-    res.assign(1,index_end); cimg_forY(res,y) res[y] = (unsigned int)y; return res;
-  } else if (*string>='0' && *string<='9' && !string[1]) { // Single positive digit
-    const unsigned int ind = *string - '0';
-    if (ind<index_end) return CImg<unsigned int>::vector(ind);
-  } else if (*string=='-' && string[1]>='0' && string[2]<='9' && !string[2]) { // Single negative digit
-    const unsigned int ind = index_end - string[1] + '0';
-    if (ind<index_end) return CImg<unsigned int>::vector(ind);
-  }
-
-  // Manage remaining cases.
-  const char *const stype = is_selection?"selection":"subset";
-  const int
-    ctypel = is_selection?'[':'\'',
-    ctyper = is_selection?']':'\'';
-
-  CImg<bool> is_selected(1,index_end,1,1,false);
-  CImg<char> name, item;
-  bool is_inverse = *string=='^';
-  const char *it = string + (is_inverse?1:0);
-  for (bool stopflag = false; !stopflag; ) {
-    double ind0 = 0, ind1 = 0, step = 1;
-    int iind0 = 0, iind1 = 0, istep = 1;
-    bool is_label = false;
-    char sep = 0;
-
-    const char *const it_comma = std::strchr(it,',');
-    if (it_comma) { item.assign(it,(unsigned int)(it_comma - it + 1)); item.back() = 0; it = it_comma + 1; }
-    else { CImg<char>::string(it).move_to(item); stopflag = true; }
-
-    char end, *it_colon = std::strchr(item,':');
-    if (it_colon) {
-      *(it_colon++) = sep = 0;
-      if ((cimg_sscanf(it_colon,"%lf%c",&step,&end)==1 ||
-           cimg_sscanf(it_colon,"%lf%c%c",&step,&sep,&end)==2) &&
-          (!sep || sep=='%') && step>0) {
-        if (sep=='%') step*=index_end/100.;
-      } else step = 0;
-      istep = (int)cimg::round(step);
-      if (istep<=0)
-        error(true,"Command '%s': Invalid %s %c%s%c (syntax error after colon ':').",
-              command,stype,ctypel,string,ctyper);
-    }
-
-    if (!*item) { // Particular cases [:N] or [^:N]
-      if (is_inverse) { iind0 = 0; iind1 = -1; is_inverse = false; }
-      else continue;
-    } else if (cimg_sscanf(item,"%lf%c",&ind0,&end)==1) { // Single index
-      iind1 = iind0 = (int)cimg::round(ind0);
-    } else if (cimg_sscanf(item,"%lf-%lf%c",&ind0,&ind1,&end)==2) { // Sequence between 2 indices
-      iind0 = (int)cimg::round(ind0);
-      iind1 = (int)cimg::round(ind1);
-    } else if (cimg_sscanf(item,"%255[a-zA-Z0-9_]%c",name.assign(256).data(),&end)==1 && // Label
-               (*name<'0' || *name>'9')) {
-      cimglist_for(names,l) if (names[l] && !std::strcmp(names[l],name)) is_selected(l) = is_label = true;
-      if (!is_label)
-        error(true,"Command '%s': Invalid %s %c%s%c (undefined label '%s').",
-              command,stype,ctypel,string,ctyper,name.data());
-    } else if (cimg_sscanf(item,"%lf%c%c",&ind0,&sep,&end)==2 && sep=='%') { // Single percent
-      iind1 = iind0 = (int)cimg::round(ind0*((int)index_end - 1)/100) - (ind0<0?1:0);
-    } else if (cimg_sscanf(item,"%lf%%-%lf%c%c",&ind0,&ind1,&sep,&end)==3 && sep=='%') {
-      // Sequence between 2 percents.
-      iind0 = (int)cimg::round(ind0*((int)index_end - 1)/100) - (ind0<0?1:0);
-      iind1 = (int)cimg::round(ind1*((int)index_end - 1)/100) - (ind1<0?1:0);
-    } else if (cimg_sscanf(item,"%lf%%-%lf%c",&ind0,&ind1,&end)==2) {
-      // Sequence between a percent and an index.
-      iind0 = (int)cimg::round(ind0*((int)index_end - 1)/100) - (ind0<0?1:0);
-      iind1 = (int)cimg::round(ind1);
-    } else if (cimg_sscanf(item,"%lf-%lf%c%c",&ind0,&ind1,&sep,&end)==3 && sep=='%') {
-      // Sequence between an index and a percent.
-      iind0 = (int)cimg::round(ind0);
-      iind1 = (int)cimg::round(ind1*((int)index_end - 1)/100) - (ind1<0?1:0);
-    } else error(true,"Command '%s': Invalid %s %c%s%c.",
-                 command,stype,ctypel,string,ctyper);
-
-    if (!index_end) error(true,"Command '%s': Invalid %s %c%s%c (no data available).",
-                          command,stype,ctypel,string,ctyper);
-    if (!is_label) {
-      int
-        uind0 = (int)(iind0<0?iind0 + index_end:iind0),
-        uind1 = (int)(iind1<0?iind1 + index_end:iind1);
-      if (uind0>uind1) { cimg::swap(uind0,uind1); cimg::swap(iind0,iind1); }
-      if (uind0<0 || uind0>=(int)index_end)
-        error(true,"Command '%s': Invalid %s %c%s%c (contains index %d, "
-              "not in range -%u...%u).",
-              command,stype,ctypel,string,ctyper,iind0,index_end,index_end - 1);
-      if (uind1<0 || uind1>=(int)index_end)
-        error(true,"Command '%s': Invalid %s %c%s%c (contains index %d, "
-              "not in range -%u...%u).",
-              command,stype,ctypel,string,ctyper,iind1,index_end,index_end - 1);
-      for (int l = uind0; l<=uind1; l+=istep) is_selected[l] = true;
-    }
-  }
-  unsigned int index = 0;
-  cimg_for(is_selected,ptr,bool) if (*ptr) ++index;
-  res.assign(1,is_inverse?index_end - index:index);
-  index = 0;
-  if (is_inverse) { cimg_forY(is_selected,l) if (!is_selected[l]) res[index++] = (unsigned int)l; }
-  else cimg_forY(is_selected,l) if (is_selected[l]) res[index++] = (unsigned int)l;
-
-  if (res_new!=res) {
-    std::fprintf(stderr,"\nDEBUG : %s",string);
-    res.print("RES");
-    res_new.print("RES_NEW");
-  }
-
   return res;
 }
 
