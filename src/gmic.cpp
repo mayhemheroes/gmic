@@ -3652,7 +3652,7 @@ CImg<unsigned int> gmic::selection2cimg_new(const char *const string, const unsi
   if ((unsigned int)i0<uindm) uindm = (unsigned int)i0; \
   if ((unsigned int)i1>uindM) uindM = (unsigned int)i1;
 
-  // First, try to detect the most common cases.
+  // Detect most common cases.
   CImg<unsigned int> res;
   if (string && !*string) return CImg<unsigned int>(); // Empty selection
   if (!string || (*string=='^' && !string[1])) { // Whole selection
@@ -3665,7 +3665,7 @@ CImg<unsigned int> gmic::selection2cimg_new(const char *const string, const unsi
     if (ind<index_end) return CImg<unsigned int>::vector(ind);
   }
 
-  // First step: parse list of intervals.
+  // Parse list of intervals.
   const char *const stype = is_selection?"selection":"subset";
   const int ctypel = is_selection?'[':'\'', ctyper = is_selection?']':'\'';
 
@@ -3680,9 +3680,6 @@ CImg<unsigned int> gmic::selection2cimg_new(const char *const string, const unsi
     int read, istep = 1, _iind0, _iind1, iind0 = -1, iind1 = -1;
 
     if (p!=p0 && *p==',') ++p;
-
-    std::fprintf(stderr,"\nDEBUG : p = '%s' (index_end = %u) ",p,index_end);
-
     if (cimg_sscanf(p,"%lf%n",&ind0,&read)==1) {
       p+=read;
       if (*p=='%') { ++p; ind0*=(index_end - 1.0f)/100; iind0 = (int)cimg::round(ind0); }
@@ -3722,13 +3719,12 @@ CImg<unsigned int> gmic::selection2cimg_new(const char *const string, const unsi
       if (!is_label_found)
         error(true,"Command '%s': Invalid %s %c%s%c (undefined label '%s').",
               command,stype,ctypel,string,ctyper,name.data());
-    }
-
-    if (iind0<0 || iind1<0)
-      error("Command '%s': Invalid %s %c%s%c.",
-            command,stype,ctypel,string,ctyper,iind1,index_end,index_end - 1);
-
+    } else error("Command '%s': Invalid %s %c%s%c.",
+                 command,stype,ctypel,string,ctyper,iind1,index_end,index_end - 1);
   } while (*p);
+
+  res.print("DEBUG : intervals");
+
   return res;
 }
 
@@ -3737,7 +3733,7 @@ CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned
                                         const CImgList<char>& names,
                                         const char *const command, const bool is_selection) {
 
-//  selection2cimg_new(string,index_end,names,command,is_selection);
+  selection2cimg_new(string,index_end,names,command,is_selection);
 
   CImg<unsigned int> res;
 
