@@ -3651,6 +3651,8 @@ CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned
   if ((unsigned int)i0<uindm) uindm = (unsigned int)i0; \
   if ((unsigned int)i1>uindM) uindM = (unsigned int)i1
 
+#define _gmic_percent(ind) ind==0?0:ind==100?index_end - 1.0:ind==50?(double)(index_end/2):(index_end - 1.0)*ind/100.
+
   // Detect most common cases.
   CImg<unsigned int> res;
   if (string && !*string) return CImg<unsigned int>(); // Empty selection
@@ -3681,7 +3683,7 @@ CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned
     if (p!=p0 && *p==',') ++p;
     if (cimg_sscanf(p,"%lf%n",&ind0,&read)==1) {
       p+=read;
-      if (*p=='%') { ++p; ind0*=(index_end - 1.0f)/100; iind0 = (int)cimg::round(ind0); }
+      if (*p=='%') { ++p; ind0 = _gmic_percent(ind0); iind0 = (int)cimg::round(ind0); }
       else { _iind0 = (int)cimg::round(ind0); iind0 = _iind0<0?_iind0 + (int)index_end:_iind0; }
       if (iind0<0 || iind0>=(int)index_end) {
         if (!index_end) error(true,"Command '%s': Invalid %s %c%s%c (no item available).",
@@ -3693,7 +3695,7 @@ CImg<unsigned int> gmic::selection2cimg(const char *const string, const unsigned
       if (*p=='-') { // Sub-expression 'ind0-ind1'
         if (cimg_sscanf(++p,"%lf%n",&ind1,&read)==1) {
           p+=read;
-          if (*p=='%') { ++p; ind1*=(index_end - 1.0f)/100; iind1 = (int)cimg::round(ind1); }
+          if (*p=='%') { ++p; ind1 = _gmic_percent(ind1); iind1 = (int)cimg::round(ind1); }
           else { _iind1 = (int)cimg::round(ind1); iind1 = _iind1<0?_iind1 + (int)index_end:_iind1; }
           if (iind1<0 || iind1>=(int)index_end)
             error(true,"Command '%s': Invalid %s %c%s%c (contains index %d, not in range -%u...%u).",
