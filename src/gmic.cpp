@@ -1690,8 +1690,7 @@ CImg<T> get_replace(const CImg<t>& img) const {
 CImg<T>& gmic_eval(const char *const expression, CImgList<T> &images, CImg<charT>& status) {
   CImg<doubleT> result_end;
   _fill(expression,true,6,&images,"eval",0,&result_end);
-  if (result_end) result_end.value_string().move_to(status);
-  else status.assign();
+  if (result_end) result_end.value_string().move_to(status); else status.assign();
   return *this;
 }
 
