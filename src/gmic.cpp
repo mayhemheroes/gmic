@@ -1462,35 +1462,35 @@ CImg<T> get_inpaint_patch(const CImg<t>& mask, const unsigned int patch_size=11,
 }
 
 CImg<T>& max(const char *const expression, CImgList<T> &images) {
-  return max((+*this)._fill(expression,true,1,&images,"max",this));
+  return max((+*this)._fill(expression,true,3,&images,"max",this,0));
 }
 
 CImg<T>& maxabs(const char *const expression, CImgList<T> &images) {
-  return maxabs((+*this)._fill(expression,true,1,&images,"maxabs",this));
+  return maxabs((+*this)._fill(expression,true,3,&images,"maxabs",this,0));
 }
 
 CImg<T>& min(const char *const expression, CImgList<T> &images) {
-  return min((+*this)._fill(expression,true,1,&images,"min",this));
+  return min((+*this)._fill(expression,true,3,&images,"min",this,0));
 }
 
 CImg<T>& minabs(const char *const expression, CImgList<T> &images) {
-  return minabs((+*this)._fill(expression,true,1,&images,"minabs",this));
+  return minabs((+*this)._fill(expression,true,3,&images,"minabs",this,0));
 }
 
 CImg<T>& operator_andeq(const char *const expression, CImgList<T> &images) {
-  return operator&=((+*this)._fill(expression,true,1,&images,"operator&=",this));
+  return operator&=((+*this)._fill(expression,true,3,&images,"operator&=",this,0));
 }
 
 CImg<T>& operator_brseq(const char *const expression, CImgList<T> &images) {
-  return operator<<=((+*this)._fill(expression,true,1,&images,"operator<<=",this));
+  return operator<<=((+*this)._fill(expression,true,3,&images,"operator<<=",this,0));
 }
 
 CImg<T>& operator_blseq(const char *const expression, CImgList<T> &images) {
-  return operator>>=((+*this)._fill(expression,true,1,&images,"operator>>=",this));
+  return operator>>=((+*this)._fill(expression,true,3,&images,"operator>>=",this,0));
 }
 
 CImg<T>& operator_diveq(const char *const expression, CImgList<T> &images) {
-  return div((+*this)._fill(expression,true,1,&images,"operator/=",this));
+  return div((+*this)._fill(expression,true,3,&images,"operator/=",this,0));
 }
 
 template<typename t>
@@ -1501,7 +1501,7 @@ CImg<T>& operator_eq(const t value) {
 }
 
 CImg<T>& operator_eq(const char *const expression, CImgList<T> &images) {
-  return operator_eq((+*this)._fill(expression,true,1,&images,"operator_eq",this));
+  return operator_eq((+*this)._fill(expression,true,3,&images,"operator_eq",this,0));
 }
 
 template<typename t>
@@ -1527,7 +1527,7 @@ CImg<T>& operator_ge(const t value) {
 }
 
 CImg<T>& operator_ge(const char *const expression, CImgList<T> &images) {
-  return operator_ge((+*this)._fill(expression,true,1,&images,"operator_ge",this));
+  return operator_ge((+*this)._fill(expression,true,3,&images,"operator_ge",this,0));
 }
 
 template<typename t>
@@ -1553,7 +1553,7 @@ CImg<T>& operator_gt(const t value) {
 }
 
 CImg<T>& operator_gt(const char *const expression, CImgList<T> &images) {
-  return operator_gt((+*this)._fill(expression,true,1,&images,"operator_gt",this));
+  return operator_gt((+*this)._fill(expression,true,3,&images,"operator_gt",this,0));
 }
 
 template<typename t>
@@ -1579,7 +1579,7 @@ CImg<T>& operator_le(const t value) {
 }
 
 CImg<T>& operator_le(const char *const expression, CImgList<T> &images) {
-  return operator_le((+*this)._fill(expression,true,1,&images,"operator_le",this));
+  return operator_le((+*this)._fill(expression,true,3,&images,"operator_le",this,0));
 }
 
 template<typename t>
@@ -1605,7 +1605,7 @@ CImg<T>& operator_lt(const t value) {
 }
 
 CImg<T>& operator_lt(const char *const expression, CImgList<T> &images) {
-  return operator_lt((+*this)._fill(expression,true,1,&images,"operator_lt",this));
+  return operator_lt((+*this)._fill(expression,true,3,&images,"operator_lt",this,0));
 }
 
 template<typename t>
@@ -1624,15 +1624,15 @@ CImg<T>& operator_lt(const CImg<t>& img) {
 }
 
 CImg<T>& operator_minuseq(const char *const expression, CImgList<T> &images) {
-  return operator-=((+*this)._fill(expression,true,1,&images,"operator-=",this));
+  return operator-=((+*this)._fill(expression,true,3,&images,"operator-=",this,0));
 }
 
 CImg<T>& operator_modeq(const char *const expression, CImgList<T> &images) {
-  return operator%=((+*this)._fill(expression,true,1,&images,"operator%=",this));
+  return operator%=((+*this)._fill(expression,true,3,&images,"operator%=",this,0));
 }
 
 CImg<T>& operator_muleq(const char *const expression, CImgList<T> &images) {
-  return mul((+*this)._fill(expression,true,1,&images,"operator*=",this));
+  return mul((+*this)._fill(expression,true,3,&images,"operator*=",this,0));
 }
 
 template<typename t>
@@ -1643,7 +1643,7 @@ CImg<T>& operator_neq(const t value) {
 }
 
 CImg<T>& operator_neq(const char *const expression, CImgList<T> &images) {
-  return operator_neq((+*this)._fill(expression,true,1,&images,"operator_neq",this));
+  return operator_neq((+*this)._fill(expression,true,3,&images,"operator_neq",this,0));
 }
 
 template<typename t>
@@ -1662,19 +1662,19 @@ CImg<T>& operator_neq(const CImg<t>& img) {
 }
 
 CImg<T>& operator_oreq(const char *const expression, CImgList<T> &images) {
-  return operator|=((+*this)._fill(expression,true,1,&images,"operator|=",this));
+  return operator|=((+*this)._fill(expression,true,3,&images,"operator|=",this,0));
 }
 
 CImg<T>& operator_pluseq(const char *const expression, CImgList<T> &images) {
-  return operator+=((+*this)._fill(expression,true,1,&images,"operator+=",this));
+  return operator+=((+*this)._fill(expression,true,3,&images,"operator+=",this,0));
 }
 
 CImg<T>& operator_xoreq(const char *const expression, CImgList<T> &images) {
-  return operator^=((+*this)._fill(expression,true,1,&images,"operator^=",this));
+  return operator^=((+*this)._fill(expression,true,3,&images,"operator^=",this,0));
 }
 
 CImg<T>& pow(const char *const expression, CImgList<T> &images) {
-  return pow((+*this)._fill(expression,true,1,&images,"pow",this));
+  return pow((+*this)._fill(expression,true,3,&images,"pow",this,0));
 }
 
 template<typename t>
@@ -1688,19 +1688,27 @@ CImg<T> get_replace(const CImg<t>& img) const {
 }
 
 CImg<T>& gmic_eval(const char *const expression, CImgList<T> &images) {
-  return _fill(expression,true,2,&images,"eval",0);
+  return _fill(expression,true,6,&images,"eval",0,0);
 }
 
 CImg<T> get_gmic_eval(const char *const expression, CImgList<T> &images) const {
   return (+*this).gmic_eval(expression,images);
 }
 
+CImg<T>& gmic_fill(const char *const expression, CImgList<T> &images) {
+  return _fill(expression,true,3,&images,"eval",0,0);
+}
+
+CImg<T> get_gmic_fill(const char *const expression, CImgList<T> &images) const {
+  return (+*this).gmic_fill(expression,images);
+}
+
 CImg<T>& rol(const char *const expression, CImgList<T> &images) {
-  return rol((+*this)._fill(expression,true,1,&images,"rol",this));
+  return rol((+*this)._fill(expression,true,3,&images,"rol",this,0));
 }
 
 CImg<T>& ror(const char *const expression, CImgList<T> &images) {
-  return ror((+*this)._fill(expression,true,1,&images,"ror",this));
+  return ror((+*this)._fill(expression,true,3,&images,"ror",this,0));
 }
 
 template<typename t>
@@ -2237,7 +2245,8 @@ bool* gmic::current_is_abort() {
 // G'MIC-related functions for the mathematical expression evaluator.
 double gmic::mp_dollar(const char *const str, void *const p_list) {
   if (!(cimg::is_varname(str) ||
-        ((*str=='>' || *str=='<' || *str=='!' || *str=='^' || *str=='|') && !str[1])))
+        ((*str=='>' || *str=='<' || *str=='!' || *str=='^' || *str=='|') && !str[1]) ||
+        (*str=='{' && str[1]=='}' && !str[2])))
     throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<>: Operator '$': "
                                 "Invalid variable name '%s'.",
                                 str);
@@ -2291,7 +2300,8 @@ double gmic::mp_dollar(const char *const str, void *const p_list) {
     res = (cimg::time() - gmic_instance.reference_time)/1000.;
     break;
   default : {
-    CImg<char> value = gmic_instance.get_variable(str,variables_sizes,&images_names);
+    const CImg<char> value = *str=='{'?gmic_instance.status.get_shared():
+      gmic_instance.get_variable(str,variables_sizes,&images_names);
     if (value && *value) {
       char end;
       if (std::sscanf(value,"%lf%c",&res,&end)!=1) res = 0;
@@ -2323,8 +2333,11 @@ double gmic::mp_get(double *const ptrd, const unsigned int siz, const bool to_st
   CImg<char> _varname(256);
   char *const varname = _varname.data(), end;
 
-  if (cimg_sscanf(str,"%255[a-zA-Z0-9_]%c",&(*varname=0),&end)==1 && (*varname<'0' || *varname>'9')) {
-    CImg<char> value = gmic_instance.get_variable(varname,variables_sizes,&images_names);
+  if ((cimg_sscanf(str,"%255[a-zA-Z0-9_]%c",&(*varname=0),&end)==1 && (*varname<'0' || *varname>'9')) ||
+      (*str=='{' && str[1]=='}' && !str[2])) {
+    const CImg<char> value = *str=='{'?gmic_instance.status.get_shared():
+      gmic_instance.get_variable(varname,variables_sizes,&images_names);
+
     if (!value) { // Undefined variable
       if (!siz) *ptrd = cimg::type<double>::nan();
       else for (unsigned int i = 0; i<siz; ++i) ptrd[i] = cimg::type<double>::nan();
@@ -2332,9 +2345,10 @@ double gmic::mp_get(double *const ptrd, const unsigned int siz, const bool to_st
       if (!siz) { char c = *value; _strreplace_fw(c); *ptrd = c; }
       else {
         CImg<double> dest(ptrd,siz,1,1,1,true);
-        strreplace_fw(value);
-        dest.draw_image(value);
-        if (dest.width()>value.width()) dest.get_shared_points(value.width(),dest.width() - 1).fill(0);
+        CImg<char> _value(value,false);
+        strreplace_fw(_value);
+        dest.draw_image(_value);
+        if (dest.width()>_value.width()) dest.get_shared_points(_value.width(),dest.width() - 1).fill(0);
       }
     } else { // Convert variable content as numbers
       double dvalue = 0;
@@ -2383,7 +2397,8 @@ double gmic::mp_set(const double *const ptrs, const unsigned int siz, const char
   CImg<char> _varname(256);
   char *const varname = _varname.data(), end;
 
-  if (cimg_sscanf(str,"%255[a-zA-Z0-9_]%c",&(*varname=0),&end)==1 && (*varname<'0' || *varname>'9')) {
+  if ((cimg_sscanf(str,"%255[a-zA-Z0-9_]%c",&(*varname=0),&end)==1 && (*varname<'0' || *varname>'9')) ||
+      (*str=='{' && str[1]=='}' && !str[2])) {
     CImg<char> s_value;
     if (siz) { // Value is a string
       s_value.assign(siz + 1);
@@ -2393,7 +2408,8 @@ double gmic::mp_set(const double *const ptrs, const unsigned int siz, const char
       s_value.assign(24);
       cimg_snprintf(s_value,s_value.width(),"%.17g",*ptrs);
     }
-    gmic_instance.set_variable(str,'=',s_value,0,variables_sizes);
+    if (*str=='{') CImg<char>::string(s_value).move_to(gmic_instance.status);
+    else gmic_instance.set_variable(str,'=',s_value,0,variables_sizes);
   } else {
     cimg::mutex(24,0);
     throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<>: Function 'set()': "
@@ -2573,18 +2589,18 @@ const char *gmic::builtin_commands_names[] = {
   "b","bilateral","blur","boxfilter","break","bsl","bsr",
   "c","camera","check","check3d","command","continue","convolve","correlate","cos","cosh","crop",
     "cumulate","cursor","cut",
-  "d","db3d","debug","delete","denoise","deriche","dijkstra","dilate","discard","displacement","display","distance",
+  "d","debug","delete","denoise","deriche","dijkstra","dilate","discard","displacement","display","distance",
     "div","div3d","do","done",
   "e","echo","eigen","eikonal","elif","ellipse","else","endian","eq","equalize","erf","erode","error","eval","exec",
     "exp",
-  "f","f3d","fft","fi","files","fill","flood","for","foreach",
+  "f","fft","fi","files","fill","flood","for","foreach",
   "ge","graph","gt","guided",
   "h","histogram",
   "i","if","ifft","image","index","inpaint","input","invert","isoline3d","isosurface3d",
   "j","j3d",
   "k","keep",
   "l","l3d","label","le","light3d","line","local","log","log10","log2","lt",
-  "m","m*","m/","m3d","mandelbrot","map","matchpatch","max","maxabs","md3d","mdiv","median","min","minabs","mirror",
+  "m","m*","m/","mandelbrot","map","matchpatch","max","maxabs","mdiv","median","min","minabs","mirror",
     "mmul","mod","move","mproj","mul","mul3d","mutex","mv",
   "n","name","named","neq","network","nmd","noarg","noise","normalize",
   "o","object3d","onfail","or","output",
@@ -2592,8 +2608,7 @@ const char *gmic::builtin_commands_names[] = {
   "q","quit",
   "r","r3d","rand","remove","repeat","resize","return","reverse","rm","rol","ror","rotate","rotate3d","round","rv",
   "s","screen","select","serialize","set","sh","shared","shift","sign","sin","sinc","sinh","skip",
-    "sl3d","smooth","solve","sort","split","sqr","sqrt","srand",
-    "ss3d","status","store","streamline3d","sub","sub3d","svd",
+    "smooth","solve","sort","split","sqr","sqrt","srand","status","store","streamline3d","sub","sub3d","svd",
   "t","tan","tanh","text","trisolve",
   "u","um","uncommand","unroll","unserialize",
   "v","vanvliet","verbose",
@@ -7948,7 +7963,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             name.assign(argument,(unsigned int)std::strlen(argument) + 1);
             cimg::strpare(name,'\'',true,false);
             strreplace_fw(name);
-            cimg_forY(selection,l) gmic_apply(fill(name.data(),true,true,&images),false);
+            cimg_forY(selection,l) gmic_apply(gmic_fill(name.data(),images),false);
           }
           is_change = true;
           ++position;

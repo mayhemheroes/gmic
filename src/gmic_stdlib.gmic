@@ -207,18 +207,16 @@ cli_noarg :
     +e "[gmic] (type "${c}"'"$gmic_help"'"$n" to print help)."
   fi
   file_update=${_path_rc}update$_version.gmic
-  need_update={"Y = date(0); M = date(1); D = date(2); date_current = Y*365 + M*31 + D;
-                Y = date(0,'"{/$file_update}"'); M = date(1,'"{/$file_update}"');
-                D = date(2,'"{/$file_update}"'); date_file = Y*365 + M*31 + D;
-                date_current - date_file>=7"}
-  if $need_update
-    +e "[gmic] Updating commands..."
-    l[] {
-      update
-      +e "\r[gmic] Updating commands: "${g}"Succeeded!"$n
-    onfail
-      +e "\r[gmic] Updating commands: "${r}"Failed!"$n
-    }
+  if "isfile(['"{/$file_update}"'])"
+    update_old={"Y = date(0); M = date(1); D = date(2); date_current = Y*365 + M*31 + D;
+                 Y = date(0,'"{/$file_update}"'); M = date(1,'"{/$file_update}"');
+                 D = date(2,'"{/$file_update}"'); date_file = Y*365 + M*31 + D;
+                 date_current - date_file"}
+    if $update_old>=14
+      +e "[gmic] Command update file is "$update_old" days old, type "$g"'gmic up'"$n" to update it."
+    fi
+  else
+    +e "[gmic] Command update file not found, type "$g"'gmic up'"$n" to get it."
   fi
   +e "\n"
 
@@ -3914,7 +3912,7 @@ _input_glob :
           dsiz = da_size(#3); isiz = prod(p_whs);
           resize(#3,1,h(#3) + isiz,1,1,0);
           copy(i[#3,dsiz],i[#p_img,0],isiz);
-          i[#3,h(#3) - 1] = dsiz + isiz;
+          i[#3,h(#3) - 1] = ui2f(dsiz + isiz);
           set(s_ind_prim,nbp);
         ):( # Texture used before -> shared version
           da_push(#3,-128,ind_prim,0,0);
@@ -3933,8 +3931,9 @@ _input_glob :
         np==p?(++p; continue()):np<0?(np = h#0);
         q = min(np,p + size(line) - 1);
         copy(line,i[#0,p],q - p); line[q - p] = 0;
+        line02 = line[0,2];
 
-        line[0,2]==id_v?( # Coordinates: vertex
+        line02==id_v?( # Coordinates: vertex
           q = 0; next_item();
           X = s2v(line,q); next_item();
           Y = s2v(line,q); next_item();
@@ -3950,7 +3949,7 @@ _input_glob :
           line[q]?(Z = s2v(line,q)):(Z = 0);
           da_push(#5,[X,1 - Y]);
 
-        ):line[0,2]==id_p?( # Primitive: point
+        ):line02==id_p?( # Primitive: point
           q = 0; next_item();
           v0 = s2v(line,q) - 1;
           da_push(#2,1,v0);
@@ -3958,7 +3957,7 @@ _input_glob :
           da_push(#4,p_alpha);
           ++nbp;
 
-        ):line[0,2]==id_l?( # Primitive: polyline
+        ):line02==id_l?( # Primitive: polyline
           q = 0; next_item();
           v0 = s2v(line,q) - 1; next_item();
           while (line[q],
@@ -3970,7 +3969,7 @@ _input_glob :
             v0 = v1;
           );
 
-        ):line[0,2]==id_f?( # Primitive: colored or textured face
+        ):line02==id_f?( # Primitive: colored or textured face
           q = 0; next_item();
           v0 = s2v(line,q) - 1; next_item();
           vt0 = -1; line[q]=='/'?(++q; vt0 = s2v(line,q) - 1; isnan(vt0)?(vt0 = -1); next_item()); # Texture coords
@@ -21552,6 +21551,24 @@ elevation3d : skip "${1=_noarg}" check "${2=-1}==-1 || $2>=0"
   e[^-1] "Input empty 3D object."
   (67.5;73.5;109.5;103.5;51.5;100.5;0;0) => [3D\ empty]
 
+#@cli extract_textures3d
+#@cli : Extract texture data from selected 3D objects.
+#@cli : $ image.jpg imagesphere3d 10,10 +extract_textures3d
+extract_textures3d :
+  e[^-1] "Extract textures from 3D object$?."
+  check3d foreach {
+    ext={x} if ['$ext']!=0 ext..=. fi
+    bn={`"s = ['"{b}'"]; e = ['"$ext"']; p = find(s,e,size(s) - size(e),-1); p>0?s[p] = 0; s"`}
+    s3d nbv,nbp={1,f2ui(crop())}
+    tmp=$! $nbp eval. ">begin(p = N = 0);
+      i[#4,p++]==-128?(
+        W = i[#4,p++]; H = i[#4,p++]; S = i[#4,p++]; WHS = W*H*S;
+        WHS?(run('+z[4] 0,',p,',0,',p + WHS - 1,' r. ',W,',',H,',1,',S,',-1 => tx',N); p+=WHS);
+      ):(p+=2);
+      ++N"
+    rm[0-$tmp] foreach { => ${bn}_texture$> }
+  }
+
 #@cli extrude3d : _depth>0,_resolution>0,_smoothness[%]>=0
 #@cli : Generate extruded 3D object from selected binary XY-profiles.
 #@cli : Default values: 'depth=16', 'resolution=1024' and 'smoothness=0.5%'.
@@ -23857,8 +23874,9 @@ check_opencv : skip "${1=check_opencv}"
 #@cli eval : expression : (+)
 #@cli : Evaluate specified math expression.
 #@cli : - If no command selection is specified, the expression is evaluated once and its result is set to status.
-#@cli : - If command selection is specified, the evaluation is looped over selected images. Status is not modified.
-#@cli :   (in this latter case, 'eval' is similar to 'fill' without assigning the image values).
+#@cli : - If command selection is specified, the evaluation is looped over selected images. \
+# Status is set with the result of the 'end()' block (or emptied if no 'end()' block provided).\
+# In this case, 'eval' is similar to ''fill'' without assigning the image values.
 
 #@cli x : eq. to 'exec'. : (+)
 
@@ -38966,8 +38984,9 @@ fx_gmicky_preview :
 #@gui : - <b>2020/03/28</b> : version <i>2.9.0</i>.\n
 #@gui : - <b>2021/12/09</b> : version <i>3.0.0</i>.\n
 #@gui : - <b>2022/04/06</b> : version <i>3.1.0</i>.\n
-#@gui : - <span foreground="purple"><b>2023/01/16</b> : version <i>3.2.0</i> (Current stable).</span>\n
-##@gui : - <b>2023/02/XX</b> : version <i>3.2.1_pre</i> (Current pre-release).\n
+#@gui : - <b>2023/01/16</b> : version <i>3.2.0</i>.\n
+#@gui : - <span foreground="purple"><b>2023/02/15</b> : version <i>3.2.1</i> (Current stable).</span>\n
+##@gui : - <b>2023/03/XX</b> : version <i>3.2.2_pre</i> (Current pre-release).\n
 #@gui : "}
 #@gui : sep = separator()
 #@gui : url = link{"View changelog to upcoming minor version (3.3)","https://discuss.pixls.us/t/on-the-road-to-3-3"}
