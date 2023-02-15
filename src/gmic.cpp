@@ -2337,6 +2337,7 @@ double gmic::mp_get(double *const ptrd, const unsigned int siz, const bool to_st
       (*str=='{' && str[1]=='}' && !str[2])) {
     const CImg<char> value = *str=='{'?gmic_instance.status.get_shared():
       gmic_instance.get_variable(varname,variables_sizes,&images_names);
+
     if (!value) { // Undefined variable
       if (!siz) *ptrd = cimg::type<double>::nan();
       else for (unsigned int i = 0; i<siz; ++i) ptrd[i] = cimg::type<double>::nan();
