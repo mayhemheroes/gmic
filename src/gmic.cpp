@@ -1698,6 +1698,17 @@ CImg<T> get_gmic_eval(const char *const expression, CImgList<T> &images, CImg<ch
   return (+*this).gmic_eval(expression,images,status);
 }
 
+CImg<T>& gmic_fill(const char *const expression, CImgList<T> &images, CImg<charT>& status) {
+  CImg<doubleT> result_end;
+  _fill(expression,true,3,&images,"eval",0,&result_end);
+  if (result_end) result_end.value_string().move_to(status); else status.assign();
+  return *this;
+}
+
+CImg<T> get_gmic_fill(const char *const expression, CImgList<T> &images, CImg<charT>& status) const {
+  return (+*this).gmic_fill(expression,images,status);
+}
+
 CImg<T>& rol(const char *const expression, CImgList<T> &images) {
   return rol((+*this)._fill(expression,true,3,&images,"rol",this,0));
 }
@@ -7957,7 +7968,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             name.assign(argument,(unsigned int)std::strlen(argument) + 1);
             cimg::strpare(name,'\'',true,false);
             strreplace_fw(name);
-            cimg_forY(selection,l) gmic_apply(fill(name.data(),true,true,&images),false);
+            cimg_forY(selection,l) gmic_apply(gmic_fill(name.data(),images,status),false);
           }
           is_change = true;
           ++position;
