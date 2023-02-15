@@ -21551,6 +21551,24 @@ elevation3d : skip "${1=_noarg}" check "${2=-1}==-1 || $2>=0"
   e[^-1] "Input empty 3D object."
   (67.5;73.5;109.5;103.5;51.5;100.5;0;0) => [3D\ empty]
 
+#@cli extract_textures3d
+#@cli : Extract texture data from selected 3D objects.
+#@cli : $ image.jpg imagesphere3d 10,10 +extract_textures3d
+extract_textures3d :
+  e[^-1] "Extract textures from 3D object$?."
+  check3d foreach {
+    ext={x} if ['$ext']!=0 ext..=. fi
+    bn={`"s = ['"{b}'"]; e = ['"$ext"']; p = find(s,e,size(s) - size(e),-1); p>0?s[p] = 0; s"`}
+    s3d nbv,nbp={1,f2ui(crop())}
+    tmp=$! $nbp eval. ">begin(p = N = 0);
+      i[#4,p++]==-128?(
+        W = i[#4,p++]; H = i[#4,p++]; S = i[#4,p++]; WHS = W*H*S;
+        WHS?(run('+z[4] 0,',p,',0,',p + WHS - 1,' r. ',W,',',H,',1,',S,',-1 => tx',N); p+=WHS);
+      ):(p+=2);
+      ++N"
+    rm[0-$tmp] foreach { => ${bn}_texture$> }
+  }
+
 #@cli extrude3d : _depth>0,_resolution>0,_smoothness[%]>=0
 #@cli : Generate extruded 3D object from selected binary XY-profiles.
 #@cli : Default values: 'depth=16', 'resolution=1024' and 'smoothness=0.5%'.
