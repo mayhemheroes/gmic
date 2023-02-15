@@ -2388,7 +2388,8 @@ double gmic::mp_set(const double *const ptrs, const unsigned int siz, const char
   CImg<char> _varname(256);
   char *const varname = _varname.data(), end;
 
-  if (cimg_sscanf(str,"%255[a-zA-Z0-9_]%c",&(*varname=0),&end)==1 && (*varname<'0' || *varname>'9')) {
+  if ((cimg_sscanf(str,"%255[a-zA-Z0-9_]%c",&(*varname=0),&end)==1 && (*varname<'0' || *varname>'9')) ||
+      (*str=='{' && str[1]=='}' && !str[2])) {
     CImg<char> s_value;
     if (siz) { // Value is a string
       s_value.assign(siz + 1);
@@ -2398,7 +2399,8 @@ double gmic::mp_set(const double *const ptrs, const unsigned int siz, const char
       s_value.assign(24);
       cimg_snprintf(s_value,s_value.width(),"%.17g",*ptrs);
     }
-    gmic_instance.set_variable(str,'=',s_value,0,variables_sizes);
+    if (*str=='{') CImg<char>::string(s_value).move_to(gmic_instance.status);
+    else gmic_instance.set_variable(str,'=',s_value,0,variables_sizes);
   } else {
     cimg::mutex(24,0);
     throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<>: Function 'set()': "
