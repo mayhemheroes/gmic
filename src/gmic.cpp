@@ -2237,7 +2237,8 @@ bool* gmic::current_is_abort() {
 // G'MIC-related functions for the mathematical expression evaluator.
 double gmic::mp_dollar(const char *const str, void *const p_list) {
   if (!(cimg::is_varname(str) ||
-        ((*str=='>' || *str=='<' || *str=='!' || *str=='^' || *str=='|') && !str[1])))
+        ((*str=='>' || *str=='<' || *str=='!' || *str=='^' || *str=='|') && !str[1]) ||
+        (*str=='{' && str[1]=='}' && !str[2])))
     throw CImgArgumentException("[" cimg_appname "_math_parser] CImg<>: Operator '$': "
                                 "Invalid variable name '%s'.",
                                 str);
@@ -2291,7 +2292,8 @@ double gmic::mp_dollar(const char *const str, void *const p_list) {
     res = (cimg::time() - gmic_instance.reference_time)/1000.;
     break;
   default : {
-    CImg<char> value = gmic_instance.get_variable(str,variables_sizes,&images_names);
+    const CImg<char> value = *str=='{'?gmic_instance.status.get_shared():
+      gmic_instance.get_variable(str,variables_sizes,&images_names);
     if (value && *value) {
       char end;
       if (std::sscanf(value,"%lf%c",&res,&end)!=1) res = 0;
