@@ -3908,14 +3908,14 @@ _input_glob :
         s_ind_prim = string('ind_prim',p_img);
         ind_prim = get(s_ind_prim);
         isnan(ind_prim)?( # Texture never used before
-          da_push(#3,-128,p_whs[0],p_whs[1],p_whs[2]);
+          da_push(#3,-128,ui2f(p_whs[0]),p_whs[1],p_whs[2]);
           dsiz = da_size(#3); isiz = prod(p_whs);
           resize(#3,1,h(#3) + isiz,1,1,0);
           copy(i[#3,dsiz],i[#p_img,0],isiz);
           i[#3,h(#3) - 1] = ui2f(dsiz + isiz);
           set(s_ind_prim,nbp);
         ):( # Texture used before -> shared version
-          da_push(#3,-128,ind_prim,0,0);
+          da_push(#3,-128,ui2f(ind_prim),0,0);
         );
       );
 
@@ -22503,7 +22503,7 @@ reverse3d :
 _reverse3d :
   e[0--3] "Reverse primitives orientation of 3D object"$_gmic_s"."
   check3d foreach {
-    {@7} eval. ">begin(p = 8 + 3*i[#0,6]);
+    {f2ui(i[7])} eval. ">begin(p = 8 + 3*f2ui(i[#0,6]));
       n = i[#0,p++];
       n==2?swap(i[#0,p],i[#0,p + 1]):
       n==3?swap(i[#0,p + 1],i[#0,p + 2]):
@@ -23874,8 +23874,7 @@ check_opencv : skip "${1=check_opencv}"
 #@cli eval : expression : (+)
 #@cli : Evaluate specified math expression.
 #@cli : - If no command selection is specified, the expression is evaluated once and its result is set to status.
-#@cli : - If command selection is specified, the evaluation is looped over selected images. \
-# Status is set with the result of the 'end()' block (or emptied if no 'end()' block provided).\
+#@cli : - If command selection is specified, the evaluation is looped over selected images. Status is unchanged. \
 # In this case, 'eval' is similar to ''fill'' without assigning the image values.
 
 #@cli x : eq. to 'exec'. : (+)
