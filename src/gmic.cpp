@@ -2325,8 +2325,10 @@ double gmic::mp_get(double *const ptrd, const unsigned int siz, const bool to_st
   CImg<char> _varname(256);
   char *const varname = _varname.data(), end;
 
-  if (cimg_sscanf(str,"%255[a-zA-Z0-9_]%c",&(*varname=0),&end)==1 && (*varname<'0' || *varname>'9')) {
-    CImg<char> value = gmic_instance.get_variable(varname,variables_sizes,&images_names);
+  if ((cimg_sscanf(str,"%255[a-zA-Z0-9_]%c",&(*varname=0),&end)==1 && (*varname<'0' || *varname>'9')) ||
+      (*str=='{' && str[1]=='}' && !str[2])) {
+    const CImg<char> value = *str=='{'?gmic_instance.status.get_shared():
+      gmic_instance.get_variable(varname,variables_sizes,&images_names);
     if (!value) { // Undefined variable
       if (!siz) *ptrd = cimg::type<double>::nan();
       else for (unsigned int i = 0; i<siz; ++i) ptrd[i] = cimg::type<double>::nan();
@@ -2334,9 +2336,10 @@ double gmic::mp_get(double *const ptrd, const unsigned int siz, const bool to_st
       if (!siz) { char c = *value; _strreplace_fw(c); *ptrd = c; }
       else {
         CImg<double> dest(ptrd,siz,1,1,1,true);
-        strreplace_fw(value);
-        dest.draw_image(value);
-        if (dest.width()>value.width()) dest.get_shared_points(value.width(),dest.width() - 1).fill(0);
+        CImg<char> _value(value,false);
+        strreplace_fw(_value);
+        dest.draw_image(_value);
+        if (dest.width()>_value.width()) dest.get_shared_points(_value.width(),dest.width() - 1).fill(0);
       }
     } else { // Convert variable content as numbers
       double dvalue = 0;
