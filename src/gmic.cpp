@@ -1687,13 +1687,16 @@ CImg<T> get_replace(const CImg<t>& img) const {
   return +img;
 }
 
-CImg<T>& gmic_eval(const char *const expression, CImgList<T> &images) {
+CImg<T>& gmic_eval(const char *const expression, CImgList<T> &images, CImg<charT>& status) {
   CImg<doubleT> result_end;
-  return _fill(expression,true,6,&images,"eval",0,&result_end);
+  _fill(expression,true,6,&images,"eval",0,&result_end);
+  if (result_end) result_end.value_string().move_to(status);
+  else status.assign();
+  return *this;
 }
 
-CImg<T> get_gmic_eval(const char *const expression, CImgList<T> &images) const {
-  return (+*this).gmic_eval(expression,images);
+CImg<T> get_gmic_eval(const char *const expression, CImgList<T> &images, CImg<charT>& status) const {
+  return (+*this).gmic_eval(expression,images,status);
 }
 
 CImg<T>& rol(const char *const expression, CImgList<T> &images) {
@@ -7414,7 +7417,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             print(images,0,"Evaluate expression '%s' looped over image%s.",
                   _argument_text.data(),
                   gmic_selection.data());
-            cimg_forY(selection,l) gmic_apply(gmic_eval(name.data(),images),false);
+            cimg_forY(selection,l) gmic_apply(gmic_eval(name.data(),images,status),false);
             is_change = true;
           }
           ++position;
