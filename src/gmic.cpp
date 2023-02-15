@@ -1462,35 +1462,35 @@ CImg<T> get_inpaint_patch(const CImg<t>& mask, const unsigned int patch_size=11,
 }
 
 CImg<T>& max(const char *const expression, CImgList<T> &images) {
-  return max((+*this)._fill(expression,true,3,&images,"max",this));
+  return max((+*this)._fill(expression,true,3,&images,"max",this,0));
 }
 
 CImg<T>& maxabs(const char *const expression, CImgList<T> &images) {
-  return maxabs((+*this)._fill(expression,true,3,&images,"maxabs",this));
+  return maxabs((+*this)._fill(expression,true,3,&images,"maxabs",this,0));
 }
 
 CImg<T>& min(const char *const expression, CImgList<T> &images) {
-  return min((+*this)._fill(expression,true,3,&images,"min",this));
+  return min((+*this)._fill(expression,true,3,&images,"min",this,0));
 }
 
 CImg<T>& minabs(const char *const expression, CImgList<T> &images) {
-  return minabs((+*this)._fill(expression,true,3,&images,"minabs",this));
+  return minabs((+*this)._fill(expression,true,3,&images,"minabs",this,0));
 }
 
 CImg<T>& operator_andeq(const char *const expression, CImgList<T> &images) {
-  return operator&=((+*this)._fill(expression,true,3,&images,"operator&=",this));
+  return operator&=((+*this)._fill(expression,true,3,&images,"operator&=",this,0));
 }
 
 CImg<T>& operator_brseq(const char *const expression, CImgList<T> &images) {
-  return operator<<=((+*this)._fill(expression,true,3,&images,"operator<<=",this));
+  return operator<<=((+*this)._fill(expression,true,3,&images,"operator<<=",this,0));
 }
 
 CImg<T>& operator_blseq(const char *const expression, CImgList<T> &images) {
-  return operator>>=((+*this)._fill(expression,true,3,&images,"operator>>=",this));
+  return operator>>=((+*this)._fill(expression,true,3,&images,"operator>>=",this,0));
 }
 
 CImg<T>& operator_diveq(const char *const expression, CImgList<T> &images) {
-  return div((+*this)._fill(expression,true,3,&images,"operator/=",this));
+  return div((+*this)._fill(expression,true,3,&images,"operator/=",this,0));
 }
 
 template<typename t>
@@ -1501,7 +1501,7 @@ CImg<T>& operator_eq(const t value) {
 }
 
 CImg<T>& operator_eq(const char *const expression, CImgList<T> &images) {
-  return operator_eq((+*this)._fill(expression,true,3,&images,"operator_eq",this));
+  return operator_eq((+*this)._fill(expression,true,3,&images,"operator_eq",this,0));
 }
 
 template<typename t>
@@ -1527,7 +1527,7 @@ CImg<T>& operator_ge(const t value) {
 }
 
 CImg<T>& operator_ge(const char *const expression, CImgList<T> &images) {
-  return operator_ge((+*this)._fill(expression,true,3,&images,"operator_ge",this));
+  return operator_ge((+*this)._fill(expression,true,3,&images,"operator_ge",this,0));
 }
 
 template<typename t>
@@ -1553,7 +1553,7 @@ CImg<T>& operator_gt(const t value) {
 }
 
 CImg<T>& operator_gt(const char *const expression, CImgList<T> &images) {
-  return operator_gt((+*this)._fill(expression,true,3,&images,"operator_gt",this));
+  return operator_gt((+*this)._fill(expression,true,3,&images,"operator_gt",this,0));
 }
 
 template<typename t>
@@ -1579,7 +1579,7 @@ CImg<T>& operator_le(const t value) {
 }
 
 CImg<T>& operator_le(const char *const expression, CImgList<T> &images) {
-  return operator_le((+*this)._fill(expression,true,3,&images,"operator_le",this));
+  return operator_le((+*this)._fill(expression,true,3,&images,"operator_le",this,0));
 }
 
 template<typename t>
@@ -1605,7 +1605,7 @@ CImg<T>& operator_lt(const t value) {
 }
 
 CImg<T>& operator_lt(const char *const expression, CImgList<T> &images) {
-  return operator_lt((+*this)._fill(expression,true,3,&images,"operator_lt",this));
+  return operator_lt((+*this)._fill(expression,true,3,&images,"operator_lt",this,0));
 }
 
 template<typename t>
@@ -1624,15 +1624,15 @@ CImg<T>& operator_lt(const CImg<t>& img) {
 }
 
 CImg<T>& operator_minuseq(const char *const expression, CImgList<T> &images) {
-  return operator-=((+*this)._fill(expression,true,3,&images,"operator-=",this));
+  return operator-=((+*this)._fill(expression,true,3,&images,"operator-=",this,0));
 }
 
 CImg<T>& operator_modeq(const char *const expression, CImgList<T> &images) {
-  return operator%=((+*this)._fill(expression,true,3,&images,"operator%=",this));
+  return operator%=((+*this)._fill(expression,true,3,&images,"operator%=",this,0));
 }
 
 CImg<T>& operator_muleq(const char *const expression, CImgList<T> &images) {
-  return mul((+*this)._fill(expression,true,3,&images,"operator*=",this));
+  return mul((+*this)._fill(expression,true,3,&images,"operator*=",this,0));
 }
 
 template<typename t>
@@ -1643,7 +1643,7 @@ CImg<T>& operator_neq(const t value) {
 }
 
 CImg<T>& operator_neq(const char *const expression, CImgList<T> &images) {
-  return operator_neq((+*this)._fill(expression,true,3,&images,"operator_neq",this));
+  return operator_neq((+*this)._fill(expression,true,3,&images,"operator_neq",this,0));
 }
 
 template<typename t>
@@ -1662,19 +1662,19 @@ CImg<T>& operator_neq(const CImg<t>& img) {
 }
 
 CImg<T>& operator_oreq(const char *const expression, CImgList<T> &images) {
-  return operator|=((+*this)._fill(expression,true,3,&images,"operator|=",this));
+  return operator|=((+*this)._fill(expression,true,3,&images,"operator|=",this,0));
 }
 
 CImg<T>& operator_pluseq(const char *const expression, CImgList<T> &images) {
-  return operator+=((+*this)._fill(expression,true,3,&images,"operator+=",this));
+  return operator+=((+*this)._fill(expression,true,3,&images,"operator+=",this,0));
 }
 
 CImg<T>& operator_xoreq(const char *const expression, CImgList<T> &images) {
-  return operator^=((+*this)._fill(expression,true,3,&images,"operator^=",this));
+  return operator^=((+*this)._fill(expression,true,3,&images,"operator^=",this,0));
 }
 
 CImg<T>& pow(const char *const expression, CImgList<T> &images) {
-  return pow((+*this)._fill(expression,true,3,&images,"pow",this));
+  return pow((+*this)._fill(expression,true,3,&images,"pow",this,0));
 }
 
 template<typename t>
@@ -1688,7 +1688,8 @@ CImg<T> get_replace(const CImg<t>& img) const {
 }
 
 CImg<T>& gmic_eval(const char *const expression, CImgList<T> &images) {
-  return _fill(expression,true,6,&images,"eval",0);
+  CImg<doubleT> result_end;
+  return _fill(expression,true,6,&images,"eval",0,&result_end);
 }
 
 CImg<T> get_gmic_eval(const char *const expression, CImgList<T> &images) const {
@@ -1696,11 +1697,11 @@ CImg<T> get_gmic_eval(const char *const expression, CImgList<T> &images) const {
 }
 
 CImg<T>& rol(const char *const expression, CImgList<T> &images) {
-  return rol((+*this)._fill(expression,true,3,&images,"rol",this));
+  return rol((+*this)._fill(expression,true,3,&images,"rol",this,0));
 }
 
 CImg<T>& ror(const char *const expression, CImgList<T> &images) {
-  return ror((+*this)._fill(expression,true,3,&images,"ror",this));
+  return ror((+*this)._fill(expression,true,3,&images,"ror",this,0));
 }
 
 template<typename t>
