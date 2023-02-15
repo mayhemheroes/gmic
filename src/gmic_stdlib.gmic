@@ -3912,7 +3912,7 @@ _input_glob :
           dsiz = da_size(#3); isiz = prod(p_whs);
           resize(#3,1,h(#3) + isiz,1,1,0);
           copy(i[#3,dsiz],i[#p_img,0],isiz);
-          i[#3,h(#3) - 1] = dsiz + isiz;
+          i[#3,h(#3) - 1] = ui2f(dsiz + isiz);
           set(s_ind_prim,nbp);
         ):( # Texture used before -> shared version
           da_push(#3,-128,ind_prim,0,0);
@@ -3931,8 +3931,9 @@ _input_glob :
         np==p?(++p; continue()):np<0?(np = h#0);
         q = min(np,p + size(line) - 1);
         copy(line,i[#0,p],q - p); line[q - p] = 0;
+        line02 = line[0,2];
 
-        line[0,2]==id_v?( # Coordinates: vertex
+        line02==id_v?( # Coordinates: vertex
           q = 0; next_item();
           X = s2v(line,q); next_item();
           Y = s2v(line,q); next_item();
@@ -3948,7 +3949,7 @@ _input_glob :
           line[q]?(Z = s2v(line,q)):(Z = 0);
           da_push(#5,[X,1 - Y]);
 
-        ):line[0,2]==id_p?( # Primitive: point
+        ):line02==id_p?( # Primitive: point
           q = 0; next_item();
           v0 = s2v(line,q) - 1;
           da_push(#2,1,v0);
@@ -3956,7 +3957,7 @@ _input_glob :
           da_push(#4,p_alpha);
           ++nbp;
 
-        ):line[0,2]==id_l?( # Primitive: polyline
+        ):line02==id_l?( # Primitive: polyline
           q = 0; next_item();
           v0 = s2v(line,q) - 1; next_item();
           while (line[q],
@@ -3968,7 +3969,7 @@ _input_glob :
             v0 = v1;
           );
 
-        ):line[0,2]==id_f?( # Primitive: colored or textured face
+        ):line02==id_f?( # Primitive: colored or textured face
           q = 0; next_item();
           v0 = s2v(line,q) - 1; next_item();
           vt0 = -1; line[q]=='/'?(++q; vt0 = s2v(line,q) - 1; isnan(vt0)?(vt0 = -1); next_item()); # Texture coords
