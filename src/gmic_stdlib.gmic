@@ -21217,6 +21217,24 @@ _center3d :
     fi
   }
 
+#@cli chainring3d : _nb_links>=3,_x_scale>0,_y_scale>0,_z_scale>0
+#@cli : Input 3D chain ring with specified geometry.
+#@cli : 'nb_links' should be preferably even.
+#@cli : Default values: 'nb_links=16', 'x_scale=0.5', 'y_scale=1' and 'z_scale=1'.
+chainring3d : check "isint(${1=16}) && $1>=3 && ${2=0.5}>0 && ${3=1}>0 && ${4=1}>0"
+  e[^-1] "Input 3D chain ring, with $1 links and scales (${2-4})."
+  l[] {
+    torus3d 1,0.1 *3d ${2-4} shift:=0.75*$1/pi
+    repeat $1 {
+    ang:=$>*360/$1
+      ($ang^1^0.784) hsv2rgb. +col3d[0] {^} rm..
+      if $>%2 r3d. 0,1,0,90 fi
+      +3d. $shift r3d. 0,0,1,$ang
+    }
+    rm[0] +3d /3d $shift
+    => [3D\ chainring]
+  }
+
 #@cli circle3d : _x0,_y0,_z0,_radius>=0
 #@cli : Input 3D circle at specified coordinates.
 #@cli : Default values: 'x0=y0=z0=0' and 'radius=1'.
