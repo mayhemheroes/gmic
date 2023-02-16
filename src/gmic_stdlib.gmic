@@ -21784,15 +21784,16 @@ imageplane3d :
   e[^-1] "Generate 3D mapped planes from image$?."
   slices 50% to_color
   foreach {
+    w,h,s,w1,h1:=w,h,s,w-1,h-1
     nm={n}
     i.. (67.5;73.5;109.5;103.5;51.5;100.5;\   # Magick number for CImg3d.
          4;1;\                                # Number of vertices and primitives.
          0;0;0;\                              # Vertex coordinates.
-         {w};0;0;\
-         {w};{h};0;\
-         {0};{h};0;\
-         12;0;3;2;1;0;0;0;{h};{w};{h};{w};0;\ # Primitives description.
-         -128;{w};{h};{s})                    # Texture map.
+         $w;0;0;\
+         $w;$h;0;\
+         0;$h;0;\
+         12;0;3;2;1;0;0;0;$h1;$w1;$h1;$w1;0;\ # Primitives description.
+         -128;$w;$h;$s)                       # Texture map.
     y.
     (1)  # Opacity.
     a y => $nm
@@ -22324,6 +22325,7 @@ _primitives3d :
       R==-128?(
         wc = i[#4,pc++]; hc = i[#4,pc++]; sc = i[#4,pc++]; whsc = wc*hc*sc;
         is_shared_texture = whsc?0:1; vname = string(#24,'tx',whsc?M:wc); ind_texture = get(vname); pc+=whsc;
+        wt1 = w#ind_texture - 1; ht1 = h#ind_texture - 1;
         R = G = B = 200;
       ):(G = i[#4,pc++]; B = i[#4,pc++]);
 
@@ -22370,7 +22372,8 @@ _primitives3d :
 
       ):n==6?( # Textured segment
         i0 = f2ui(i[#3,pp++]); i1 = f2ui(i[#3,pp++]);
-        tx0 = i[#3,pp++]; ty0 = i[#3,pp++]; tx1 = i[#3,pp++]; ty1 = i[#3,pp++];
+        tx0 = cut(i[#3,pp++],0,wt1); ty0 = cut(i[#3,pp++],0,ht1);
+        tx1 = cut(i[#3,pp++],0,wt1); ty1 = cut(i[#3,pp++],0,ht1);
         mode==0?(
           copy(RGB0,i(#ind_texture,tx0,ty0,0,0),min(3,s#ind_texture),1,wh#ind_texture);
           copy(RGB1,i(#ind_texture,tx1,ty1,0,0),min(3,s#ind_texture),1,wh#ind_texture);
@@ -22388,7 +22391,9 @@ _primitives3d :
 
       ):n==9?( # Textured triangle
         i0 = f2ui(i[#3,pp++]); i1 = f2ui(i[#3,pp++]); i2 = f2ui(i[#3,pp++]);
-        tx0 = i[#3,pp++]; ty0 = i[#3,pp++]; tx1 = i[#3,pp++]; ty1 = i[#3,pp++]; tx2 = i[#3,pp++]; ty2 = i[#3,pp++];
+        tx0 = cut(i[#3,pp++],0,wt1); ty0 = cut(i[#3,pp++],0,ht1);
+        tx1 = cut(i[#3,pp++],0,wt1); ty1 = cut(i[#3,pp++],0,ht1);
+        tx2 = cut(i[#3,pp++],0,wt1); ty2 = cut(i[#3,pp++],0,ht1);
         mode==0?(
           copy(RGB0,i(#ind_texture,tx0,ty0,0,0),min(3,s#ind_texture),1,wh#ind_texture);
           copy(RGB1,i(#ind_texture,tx1,ty1,0,0),min(3,s#ind_texture),1,wh#ind_texture);
@@ -22410,8 +22415,10 @@ _primitives3d :
 
       ):n==12?( # Textured quadrangle
         i0 = f2ui(i[#3,pp++]); i1 = f2ui(i[#3,pp++]); i2 = f2ui(i[#3,pp++]); i3 = f2ui(i[#3,pp++]);
-        tx0 = i[#3,pp++]; ty0 = i[#3,pp++]; tx1 = i[#3,pp++]; ty1 = i[#3,pp++];
-        tx2 = i[#3,pp++]; ty2 = i[#3,pp++]; tx3 = i[#3,pp++]; ty3 = i[#3,pp++];
+        tx0 = cut(i[#3,pp++],0,wt1); ty0 = cut(i[#3,pp++],0,ht1);
+        tx1 = cut(i[#3,pp++],0,wt1); ty1 = cut(i[#3,pp++],0,ht1);
+        tx2 = cut(i[#3,pp++],0,wt1); ty2 = cut(i[#3,pp++],0,ht1);
+        tx3 = cut(i[#3,pp++],0,wt1); ty3 = cut(i[#3,pp++],0,ht1);
         mode==0?(
           copy(RGB0,i(#ind_texture,tx0,ty0,0,0),min(3,s#ind_texture),1,wh#ind_texture);
           copy(RGB1,i(#ind_texture,tx1,ty1,0,0),min(3,s#ind_texture),1,wh#ind_texture);
