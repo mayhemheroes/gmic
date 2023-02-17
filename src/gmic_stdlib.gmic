@@ -12732,7 +12732,7 @@ _match_histogram :
 #@cli : Default values: 'transformation_type=0' and 'precision=1e-2'.
 #@cli : sample lena,earth +match_icp[0] [1]
 match_icp : check ${"is_image_arg $1"}" && ${2=1e-2}>0"
-  e[^-1] "Match vector set$? with reference vector set $1, using ICP with precision $2."
+  e[^-1] "Match vector set$? with reference vector set $1, using ICP with precision $2.\n"
   pass$1
   foreach[^-1] {
     w,h,d,s,whd:=w,h,d,s,whd # Number of current points
@@ -12759,6 +12759,7 @@ match_icp : check ${"is_image_arg $1"}" && ${2=1e-2}>0"
 
       s. c,-3
       err:=is/whd rm. # Mean error
+      e "\r  > Iteration "$>": Error = "{_$err}
       if !$err" || "abs($err-$old_err)<1e-3 rm. break fi
       old_err=$err
       +warp[0] .,0,0 rm..
