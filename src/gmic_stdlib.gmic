@@ -21493,11 +21493,13 @@ cubes3d : check ${1=1}>=0
   else # Curve made of quadrangles
     +g. y,0,{$is_closed?2:1} orientation.
     0 $nb_sides,$resolution,1,1,"
-      begin(ref = [ v,v,v ]; ref/=norm(ref));
       !x?(
         P = I(#-3,0,y);
-        !y?(Pmin = P);
         W = I(#-2,0,y);
+        !y?(
+          Pmin = P;
+          do (ref = [ v,v,v ]; ref/=norm(v); crossWref = cross(W,ref), norm(crossWref)<1e-5);
+        );
         U = cross(W,ref); U/=norm(U);
         V = cross(W,U); V/=norm(V);
         M = transpose([ U,V,W ],3);
