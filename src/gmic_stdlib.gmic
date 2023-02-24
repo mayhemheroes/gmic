@@ -21486,15 +21486,32 @@ cubes3d : check ${1=1}>=0
   s0,s1="open","closed"
   e[^-1] "Input 3D "${s$is_closed}" curve with parameterization ("$xt,$yt,$zt"), resolution "$resolution", "\
          "t-range ["$tmin,$tmax"], radius "$radius" and "$nb_sides" sides."
-  ('CImg3d')
-  nbv:=$resolution*$nb_sides nbp:=($resolution-1+$is_closed)*$nb_sides ($nbv,$nbp)
-  1,$resolution,1,3,"t = lerp($tmin,$tmax,y/(h - 1)); [ ("$xt"),("$yt"),("$zt") ]"
+  ('CImg3d') (0,0)
+  1,$resolution,1,3,"t = lerp($tmin,$tmax,y/(h - 1)); [ ("$xt"),("$yt"),("$zt") ]" # Central points
   if $nb_sides==1 # Curve made of segments
-    1,$nbp,1,3,"[ 2,y,(y + 1)%$nbv ]"
+    1,{$resolution-1+$is_closed},1,3,"[ 2,y,(y + 1)%$resolution ]" nbv,nbp:=$resolution,h
+    permute[-2,-1] cyzx
   else # Curve made of quadrangles
+    0 $nb_sides,$resolution,1,3,"
+      xt = i(#-1,0,y,0,0);
+      yt = i(#-1,0,y,0,1);
+      zt = i(#-1,0,y,0,2);
+      ang = x*2*pi/w;
+      R = $radius;
+      da_push(xt + R*cos(ang), yt + R*sin(ang), zt);
+      end(da_freeze());
+    " rm[-3,-1]
 
+    d
+
+
+    rm..
+    $nb_sides,{$resolution-1+$is_closed},1,5,"
+      const nb_sides = $nb_sides;
+      b0 = y*nb_sides; b1 = ((y + 1)%$resolution)*nb_sides; nx = (x+1)%nb_sides;
+      [ 4, b0 + x, b0 + nx, b1 + nx, b1 + x ]"
   fi
-  permute[-2,-1] cxyz 3,$nbp,1,1,200 1,$nbp,1,1,1 y[-6--1] a[-6--1] y => [3D\ Curve]
+  f... $nbv,$nbp 3,$nbp,1,1,200 1,$nbp,1,1,1 y[-6--1] a[-6--1] y => [3D\ Curve]
 
 #@cli cylinder3d : _radius,_height,_nb_subdivisions>0
 #@cli : Input 3D cylinder at (0,0,0), with specified geometry.
