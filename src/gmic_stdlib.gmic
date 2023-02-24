@@ -21491,9 +21491,11 @@ cubes3d : check ${1=1}>=0
   if $nb_sides==1 # Curve made of segments
     1,{$resolution-1+$is_closed},1,3,"[ 2,y,(y + 1)%$resolution ]" nbv,nbp:=$resolution,h permute[-2,-1] cyzx
   else # Curve made of quadrangles
+    +g. y,0,{$is_closed?2:1}
     0 $nb_sides,$resolution,1,1,"begin(xmin = ymin = zmin = 0);
       t = lerp($tmin,$tmax,y/(h - 1));
-      xt = i(#-2,0,y,0,0); yt = i(#-2,0,y,0,1); zt = i(#-2,0,y,0,2);
+      xt = i(#-3,0,y,0,0); yt = i(#-3,0,y,0,1); zt = i(#-3,0,y,0,2);
+      ut = i(#-2,0,y,0,0); vt = i(#-2,0,y,0,1); wt = i(#-2,0,y,0,2);
       !y?(xmin = xt; ymin = yt; zmin = zt);
       ang = x*2*pi/w;
       R = $radius;
@@ -21501,7 +21503,7 @@ cubes3d : check ${1=1}>=0
       end(
         !$is_closed?da_push(xmin,ymin,zmin,xt,yt,zt);
         da_freeze();
-      )" rm[-3,-1]
+      )" rm[-4,-3,-1]
     nbv:={h/3}
 
     0 $nb_sides,{$resolution-1+$is_closed},1,1,"begin(nbp = 0);
