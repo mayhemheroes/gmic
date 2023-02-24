@@ -21487,13 +21487,13 @@ cubes3d : check ${1=1}>=0
   e[^-1] "Input 3D "${s$is_closed}" curve with parameterization ("$xt,$yt,$zt"), resolution "$resolution", "\
          "t-range ["$tmin,$tmax"], radius "$radius" and "$nb_sides" sides."
   ('CImg3d') (0,0)
+  1,$resolution,1,3,"t = lerp($tmin,$tmax,y/(h - 1)); [ ("$xt"),("$yt"),("$zt") ]"
   if $nb_sides==1 # Curve made of segments
-    1,$resolution,1,3,"t = lerp($tmin,$tmax,y/(h - 1)); [ ("$xt"),("$yt"),("$zt") ]"
     1,{$resolution-1+$is_closed},1,3,"[ 2,y,(y + 1)%$resolution ]" nbv,nbp:=$resolution,h permute[-2,-1] cyzx
   else # Curve made of quadrangles
     0 $nb_sides,$resolution,1,1,"begin(xmin = ymin = zmin = 0);
       t = lerp($tmin,$tmax,y/(h - 1));
-      xt = ("$xt"); yt = ("$yt"); zt = ("$zt");
+      xt = i(#-2,0,y,0,0); yt = i(#-2,0,y,0,1); zt = i(#-2,0,y,0,2);
       !y?(xmin = xt; ymin = yt; zmin = zt);
       ang = x*2*pi/w;
       R = $radius;
@@ -21501,7 +21501,7 @@ cubes3d : check ${1=1}>=0
       end(
         !$is_closed?da_push(xmin,ymin,zmin,xt,yt,zt);
         da_freeze();
-      )" rm.
+      )" rm[-3,-1]
     nbv:={h/3}
 
     0 $nb_sides,{$resolution-1+$is_closed},1,1,"begin(nbp = 0);
@@ -21513,8 +21513,8 @@ cubes3d : check ${1=1}>=0
         const indmax = indmin + 1;
         const last = indmin - $nb_sides;
         !$is_closed?(
-          repeat($nb_sides,k,da_push(3,k,indmin,(k + 1)%$nb_sides); ++nbp);
-          repeat($nb_sides,k,da_push(3,last + k,last + ((k + 1)%$nb_sides),indmax); ++nbp);
+          repeat($nb_sides,k,da_push(3,indmin,(k + 1)%$nb_sides,k); ++nbp);
+          repeat($nb_sides,k,da_push(3,indmax,last + k,last + ((k + 1)%$nb_sides)); ++nbp);
         );
         da_freeze();
         set('nbp',nbp);
