@@ -3532,11 +3532,12 @@ _display_voxels3d :
     +norm1. !=. 0 nbv:=is rm. # Count voxels
     e[0--4] "Display image ["{arg(1+$>,$[])}"] = '"$nm"' ("${w}x${h}x${d}", "$nbv" voxels)."
     args=0.5,1,0.75
+
     if s==1
       im,iM:=im,iM
-      eval. "*begin(is_binary = 1); i!=$im && i!=$iM?(is_binary = 0; break()); end(set('is_binary',is_binary))"
-      if $is_binary # Colorize binary images according to rough normal estimation
-        +expand_xyz. 1 b. {min(w,h,d)*2%},0 g. xyz a[-3--1] c orientation. n. 0,220
+      eval. "*begin(is_bin = 1); i!=$im && i!=$iM?(is_bin = 0; break()); end(merge(is_bin,&&); set('is_bin',is_bin))"
+      if $is_bin # Colorize binary images according to rough normal estimation
+        >. {lerp($im,$iM,0.5)} +expand_xyz. 1 b. {min(w,h,d)*2%},0 g. xyz a[-3--1] c orientation. n. 0,220
         shrink_xyz. 1 *. .. k. args=0.9,1.1,1
       fi
     fi
