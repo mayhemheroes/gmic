@@ -21477,9 +21477,9 @@ cubes3d : check ${1=1}>=0
 #@cli curve3d : _"x(t)",_"y(t)",_"z(t)",_resolution>1,_tmin,_tmax,_is_closed_curve={ 0 | 1 },_radius>=0,_nb_sides>=0
 #@cli : Input 3D parametric curve with specified formulas and resolution.
 #@cli : Default values: 'x(t)=cos(2*pi*t)', 'y(t)=sin(2*pi*t)', 'z(t)=t', 'resolution=1024', 'tmin=0', 'tmax=1', \
-# 'is_closed_curve=0', 'radius=0' and 'nb_sides=0'.
+# 'is_closed_curve=0', 'radius=0' and 'nb_sides=5'.
 #@cli : curve3d , circles3d. 0.01
-+curve3d : check "isint(${4=1024}) && $4>1 && isbool(${7=0}) && ${8=0}>=0 && isint(${9=0}) && $9>=0"
++curve3d : check "isint(${4=1024}) && $4>1 && isbool(${7=0}) && ${8=0}>=0 && isint(${9=5}) && $9>=0"
            skip "${1=0.25*cos(4*pi*t)},${2=0.25*sin(4*pi*t)},${3=t},${5=0},${6=1}"
   xt,yt,zt,resolution,tmin,tmax,is_closed,radius,nb_sides=${1-9}
   nb_sides:=$nb_sides<3" || "!$radius?1:$nb_sides
@@ -21487,28 +21487,38 @@ cubes3d : check ${1=1}>=0
   e[^-1] "Input 3D "${s$is_closed}" curve with parameterization ("$xt,$yt,$zt"), resolution "$resolution", "\
          "t-range ["$tmin,$tmax"], radius "$radius" and "$nb_sides" sides."
   ('CImg3d') (0,0)
-  1,$resolution,1,3,"t = lerp($tmin,$tmax,y/(h - 1)); [ ("$xt"),("$yt"),("$zt") ]" # Central points
   if $nb_sides==1 # Curve made of segments
+    1,$resolution,1,3,"t = lerp($tmin,$tmax,y/(h - 1)); [ ("$xt"),("$yt"),("$zt") ]"
     1,{$resolution-1+$is_closed},1,3,"[ 2,y,(y + 1)%$resolution ]" nbv,nbp:=$resolution,h permute[-2,-1] cyzx
   else # Curve made of quadrangles
-    0 $nb_sides,$resolution,1,3,"
-      xt = i(#-1,0,y,0,0);
-      yt = i(#-1,0,y,0,1);
-      zt = i(#-1,0,y,0,2);
+    0 $nb_sides,$resolution,1,1,"begin(xmin = ymin = zmin = 0);
+      t = lerp($tmin,$tmax,y/(h - 1));
+      xt = ("$xt"); yt = ("$yt"); zt = ("$zt");
+      !y?(xmin = xt; ymin = yt; zmin = zt);
       ang = x*2*pi/w;
       R = $radius;
       da_push(xt + R*cos(ang), yt + R*sin(ang), zt);
-      end(da_freeze());
-    " rm[-3,-1]
+      end(
+        !$is_closed?da_push(xmin,ymin,zmin,xt,yt,zt);
+        da_freeze();
+      )" rm.
+    nbv:={h/3}
 
-    d
-
-
-    rm..
-    $nb_sides,{$resolution-1+$is_closed},1,5,"
-      const nb_sides = $nb_sides;
-      b0 = y*nb_sides; b1 = ((y + 1)%$resolution)*nb_sides; nx = (x+1)%nb_sides;
-      [ 4, b0 + x, b0 + nx, b1 + nx, b1 + x ]"
+    0 $nb_sides,{$resolution-1+$is_closed},1,1,"begin(nbp = 0);
+      b0 = y*$nb_sides; b1 = ((y + 1)%$resolution)*$nb_sides; nx = (x+1)%$nb_sides;
+      da_push(4,b0 + x,b0 + nx,b1 + nx,b1 + x);
+      ++nbp;
+      end(
+        const indmin = $nb_sides*$resolution;
+        const indmax = indmin + 1;
+        const last = indmin - $nb_sides;
+        !$is_closed?(
+          repeat($nb_sides,k,da_push(3,k,indmin,(k + 1)%$nb_sides); ++nbp);
+          repeat($nb_sides,k,da_push(3,last + k,last + ((k + 1)%$nb_sides),indmax); ++nbp);
+        );
+        da_freeze();
+        set('nbp',nbp);
+      )" rm.
   fi
   f... $nbv,$nbp 3,$nbp,1,1,200 1,$nbp,1,1,1 y[-6--1] a[-6--1] y => [3D\ Curve]
 
