@@ -21474,6 +21474,27 @@ cubes3d : check ${1=1}>=0
   lathe3d. $1,2
   => [3D\ cup]
 
+#@cli curve3d : _"x(t)",_"y(t)",_"z(t)",_resolution>1,_tmin,_tmax,_is_closed_curve={ 0 | 1 }
+#@cli : Input 3D parametric curve with specified geometry.
+#@cli : Default values: 'x(t)=cos(2*pi*t)', 'y(t)=sin(2*pi*t)', 'z(t)=t', 'resolution=1024', 'tmin=0', 'tmax=1' and \
+# 'is_closed_curve=0'.
+#@cli : curve3d , circles3d. 0.01
++curve3d : check "isint(${4=1024}) && $4>1 && isbool(${7=0})"
+           skip "${1=0.25*cos(4*pi*t)},${2=0.25*sin(4*pi*t)},${3=t},${5=0},${6=1}"
+  s0,s1="open","closed"
+  e[^-1] "Input 3D "$s$7" curve with parameterization ($1,$2,$3), resolution $4, and t-range [$5,$6]."
+  l[] {
+    ('CImg3d')
+    nbv=$4 nbp:=$4-1+$7 ($nbv,$nbp)
+    1,$nbv,1,3,"t = lerp($5,$6,y/(h - 1)); [ ($1),($2),($3) ]"
+    1,$nbp,1,3,"[ 2,y,(y + 1)%$nbv ]"
+    permute[-2,-1] cyzx
+    3,$nbp,1,1,200
+    1,$nbp,1,1,1
+    y a y
+    => [3D\ Curve]
+  }
+
 #@cli cylinder3d : _radius,_height,_nb_subdivisions>0
 #@cli : Input 3D cylinder at (0,0,0), with specified geometry.
 #@cli : Default value: 'radius=1','height=1' and 'nb_subdivisions=24'.
@@ -22061,22 +22082,13 @@ lathe3d : check "${1=128}>0 && ${2=0.5%}>=0 && ${3=361}>=0"
   1,21,1,1,67.5,73.5,109.5,103.5,51.5,100.5,2,1,${1-6},2,0,1,200,200,200,1 => [3D\ line]
 
 #@cli lissajous3d : resolution>1,a,A,b,B,c,C
-#@cli : Input 3D lissajous curves __(x(t)=sin(a*t+A*2*pi), y(t)=sin(b*t+B*2*pi), z(t)=sin(c*t+C*2*pi))__.
+#@cli : Input 3D lissajous curves `x(t)=sin(a*t+A*2*pi)`, `y(t)=sin(b*t+B*2*pi)`, `z(t)=sin(c*t+C*2*pi)`.
 #@cli : Default values: 'resolution=1024', 'a=2', 'A=0', 'b=1', 'B=0', 'c=0' and 'C=0'.
 #@cli : $ lissajous3d ,
-+lissajous3d : check ${1=1024}>1 skip ${2=2},${3=0},${4=1},${5=0},${6=0},${7=0}
++lissajous3d : check "isint(${1=1024}) && $1>1" skip ${2=2},${3=0},${4=1},${5=0},${6=0},${7=0}
   e[^-1] "Input 3D lissajous curve, with resolution $1, (a,A)=($2,$3), (b,B)=($4,$5) and (c,C)=($6,$7)."
-  res={round($1)}
-
-  # Define object header and vertices.
-  (67.5;73.5;109.5;103.5;51.5;100.5;$res;{$res-1})
-  (0,{2*pi}) r. $res,1,1,1,3 [-1]x2
-  *... $2 +... {$3*2*pi} *.. $4 +.. {$5*2*pi} *. $6 +. {$7*2*pi}
-  a[-3--1] y sin. transpose. r. 1,{w*h},1,1,-1
-
-  # Define object primitives, colors and opacities.
-  1,{$res-1},1,1,2 (0;{$res-2}) r. 1,{$res-1},1,1,3 ++. 1 a[-3--1] x round. 1 r. 1,{w*h},1,1,-1
-  1,{3*($res-1)},1,1,200 1,{$res-1},1,1,1 a[-5--1] y => [3D\ lissajou]
+  curve3d[] "const pi2 = 2*pi; sin($2*t + $3*pi2)","sin($4*t + $5*pi2)","sin($6*t + $7*pi2)",$1,0,{2*pi},0
+  => [3D\ lissajou]
 
 #@cli m3d : eq. to 'mode3d'.
 m3d :
