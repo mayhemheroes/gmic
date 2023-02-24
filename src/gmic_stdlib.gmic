@@ -21487,29 +21487,24 @@ cubes3d : check ${1=1}>=0
   e[^-1] "Input 3D "${s$is_closed}" curve with parameterization ("$xt,$yt,$zt"), resolution "$resolution", "\
          "t-range ["$tmin,$tmax"], radius "$radius" and "$nb_sides" sides."
   ('CImg3d') (0,0)
-  1,$resolution,1,3,"t = lerp($tmin,$tmax,y/(h - 1)); [ ("$xt"),("$yt"),("$zt") ]"
+  1,$resolution,1,3,"t = lerp($tmin,$tmax,y/(h - ($is_closed?0:1))); [ ("$xt"),("$yt"),("$zt") ]"
   if $nb_sides==1 # Curve made of segments
     1,{$resolution-1+$is_closed},1,3,"[ 2,y,(y + 1)%$resolution ]" nbv,nbp:=$resolution,h permute[-2,-1] cyzx
   else # Curve made of quadrangles
     +g. y,0,{$is_closed?2:1} orientation.
-    0 $nb_sides,$resolution,1,1,"begin(Pmin = [ 0,0,0 ]; ref = [ 1,0,0 ]; ref/=norm(ref));
+    0 $nb_sides,$resolution,1,1,"
+      begin(
+        oW = [ 0,0,1 ]; oV = [ 0,1,0 ]; oU = [ 1,0,0 ];
+        ref = [ v,v,v ]; ref/=norm(ref)
+      );
 
       !x?(
         P = I(#-3,0,y);
         !y?(Pmin = P);
-
-        U = I(#-2,0,y);
-        V = cross(U,ref);
-        V/=norm(V);
-        W = cross(U,V);
-        W/=norm(W);
-        M = transpose([ V,W,U ],3);
-
-#        !y?(
-#          print(P,U,V,W);
-#          print(norm(U));
-#        );
-
+        W = I(#-2,0,y);
+        V = cross(W,ref); V/=norm(V);
+        U = cross(W,V); U/=norm(U);
+        M = transpose([ U,V,W ],3);
       );
 
       ang = x*2*pi/w;
