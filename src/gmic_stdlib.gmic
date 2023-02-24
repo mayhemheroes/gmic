@@ -21491,17 +21491,25 @@ cubes3d : check ${1=1}>=0
   if $nb_sides==1 # Curve made of segments
     1,{$resolution-1+$is_closed},1,3,"[ 2,y,(y + 1)%$resolution ]" nbv,nbp:=$resolution,h permute[-2,-1] cyzx
   else # Curve made of quadrangles
-    +g. y,0,{$is_closed?2:1}
-    0 $nb_sides,$resolution,1,1,"begin(xmin = ymin = zmin = 0);
+    +g. y,0,{$is_closed?2:1} orientation.
+    0 $nb_sides,$resolution,1,1,"begin(xmin = ymin = zmin = 0; ref = [ 1,1,1 ]; ref/=norm(ref));
       t = lerp($tmin,$tmax,y/(h - 1));
-      xt = i(#-3,0,y,0,0); yt = i(#-3,0,y,0,1); zt = i(#-3,0,y,0,2);
-      ut = i(#-2,0,y,0,0); vt = i(#-2,0,y,0,1); wt = i(#-2,0,y,0,2);
-      !y?(xmin = xt; ymin = yt; zmin = zt);
+      P = I(#-3,0,y);
+      !y?(Pmin = P);
+
+      U = I(#-2,0,y);
+      V = cross(U,ref);
+      V/=norm(V);
+      W = cross(U,V);
+      W/=norm(W);
+      M = transpose([ U,V,W ],3);
+
       ang = x*2*pi/w;
-      R = $radius;
-      da_push(xt + R*cos(ang), yt + R*sin(ang), zt);
+      Q = P + $radius*[ cos(ang),sin(ang),0 ];
+
+      da_push(Q[0],Q[1],Q[2]);
       end(
-        !$is_closed?da_push(xmin,ymin,zmin,xt,yt,zt);
+        !$is_closed?da_push(Pmin[0],Pmin[1],Pmin[2],P[0],P[1],P[2]);
         da_freeze();
       )" rm[-4,-3,-1]
     nbv:={h/3}
