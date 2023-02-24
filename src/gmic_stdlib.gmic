@@ -21492,20 +21492,28 @@ cubes3d : check ${1=1}>=0
     1,{$resolution-1+$is_closed},1,3,"[ 2,y,(y + 1)%$resolution ]" nbv,nbp:=$resolution,h permute[-2,-1] cyzx
   else # Curve made of quadrangles
     +g. y,0,{$is_closed?2:1} orientation.
-    0 $nb_sides,$resolution,1,1,"begin(xmin = ymin = zmin = 0; ref = [ 1,1,1 ]; ref/=norm(ref));
-      t = lerp($tmin,$tmax,y/(h - 1));
-      P = I(#-3,0,y);
-      !y?(Pmin = P);
+    0 $nb_sides,$resolution,1,1,"begin(Pmin = [ 0,0,0 ]; ref = [ 1,0,0 ]; ref/=norm(ref));
 
-      U = I(#-2,0,y);
-      V = cross(U,ref);
-      V/=norm(V);
-      W = cross(U,V);
-      W/=norm(W);
-      M = transpose([ U,V,W ],3);
+      !x?(
+        P = I(#-3,0,y);
+        !y?(Pmin = P);
+
+        U = I(#-2,0,y);
+        V = cross(U,ref);
+        V/=norm(V);
+        W = cross(U,V);
+        W/=norm(W);
+        M = transpose([ V,W,U ],3);
+
+#        !y?(
+#          print(P,U,V,W);
+#          print(norm(U));
+#        );
+
+      );
 
       ang = x*2*pi/w;
-      Q = P + $radius*[ cos(ang),sin(ang),0 ];
+      Q = P + mul(M,$radius*[ cos(ang),sin(ang),0 ]);
 
       da_push(Q[0],Q[1],Q[2]);
       end(
