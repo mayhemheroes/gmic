@@ -21485,7 +21485,7 @@ cubes3d : check ${1=1}>=0
   s0,s1="open","closed"
   e[^-1] "Input 3D "${s$is_closed}" curve with parameterization ("$xt,$yt,$zt"), resolution "$resolution", "\
          "t-range ["$tmin,$tmax"], radius "$radius" and "$nb_sides" sides."
-  l[] {
+  if !$radius" || "!$nb_sides l[] { # Curve made of segments
     ('CImg3d')
     nbv=$resolution nbp:=$resolution-1+$is_closed ($nbv,$nbp)
     1,$nbv,1,3,"t = lerp($tmin,$tmax,y/(h - 1)); [ ("$xt"),("$yt"),("$zt") ]"
@@ -21495,7 +21495,10 @@ cubes3d : check ${1=1}>=0
     1,$nbp,1,1,1
     y a y
     => [3D\ Curve]
-  }
+  } else l[] { # Curve made of quadrangles
+
+
+  } fi
 
 #@cli cylinder3d : _radius,_height,_nb_subdivisions>0
 #@cli : Input 3D cylinder at (0,0,0), with specified geometry.
