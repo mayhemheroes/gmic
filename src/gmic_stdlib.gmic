@@ -21490,14 +21490,15 @@ cubes3d : check ${1=1}>=0
   ('CImg3d') (0,0)
   1,$resolution,1,4,"t = lerp($tmin,$tmax,y/(h - ($is_closed?0:1))); [ ("$xt"),("$yt"),("$zt"),("$rt") ]" s. c,-3
   if $nb_sides==1 # Curve made of segments
-    rm. 1,{$resolution-1+$is_closed},1,3,"[ 2,y,(y + 1)%$resolution ]" nbv,nbp:=$resolution,h permute[-2,-1] cyzx
+    rm. 1,{$resolution-1+$is_closed},1,3,"[ 2,y,(y + 1)%$resolution ]" nbv=$resolution nbp:=h permute[-2,-1] cyzx
   else # Curve made of quadrangles
-    +g.. y,0,{$is_closed?2:1} orientation.
+    +g.. y,0,{$is_closed?2:1} orientation. # Unit tangent vector
     0 $nb_sides,$resolution,1,1,"
       !x?(
         P = I(#-4,0,y);
         R = i(#-3,0,y);
         W = I(#-2,0,y);
+        norm(W)==0?(W = [ 0,0,1 ]);
         !y?(
           P0 = P;
           do (ref = [ v,v,v ]; ref/=norm(v); crossWref = cross(W,ref), norm(crossWref)<1e-5);
