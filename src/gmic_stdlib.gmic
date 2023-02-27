@@ -267,9 +267,12 @@ help : skip ${1=""}
     a y
 
     # Check that requested command exist.
-    ('"$1"') autocrop. {'-'}
-    if {i[-1,2]}==_']'" && "i!=_'[' l. { s -,{'['} k[0] } fi
-    command={t} rm.
+    command={`"
+      s = ['$1']; len = size(s); z = 0;
+      (p = find(s,_'['))>0?(s[p] = 0; len = p);
+      isin(s[0],_'-',_'+') && len>1 && !(s[z + 1]=='3' && s[z + 2]=='d')?(copy(s,s[z + 1],len - 1); s[len - 1] = 0);
+      s"`}
+
     s +,{'"#@cli "$command" :"'} s +,{'"#@cli "$command":"'} s +,{'"#@cli "$command"\n"'}
     if $!==1
       l[] {
@@ -1496,7 +1499,7 @@ reference_end_pdf :
   #  I have to print the .pdf manually 'in a file' first).
   delete reference_pdf.pdf
   v 0 e "  > Waiting for file 'reference_pdf.pdf'."
-  for { !isfile('reference_pdf.pdf') wait 5000 }
+  for !isfile('reference_pdf.pdf') { wait 5000 }
   e "  > Removing links in file 'reference_pdf.pdf'."
   x "pdfjam reference_pdf.pdf"
   e "  > Compressing file 'reference_pdf.pdf' to 'gmic_reference.pdf'."
@@ -3532,15 +3535,17 @@ _display_voxels3d :
     +norm1. !=. 0 nbv:=is rm. # Count voxels
     e[0--4] "Display image ["{arg(1+$>,$[])}"] = '"$nm"' ("${w}x${h}x${d}", "$nbv" voxels)."
     args=0.5,1,0.75
+
     if s==1
       im,iM:=im,iM
-      eval. "*begin(is_binary = 1); i!=$im && i!=$iM?(is_binary = 0; break()); end(set('is_binary',is_binary))"
-      if $is_binary # Colorize binary images according to rough normal estimation
-        +expand_xyz. 1 b. {min(w,h,d)*2%},0 g. xyz a[-3--1] c orientation. n. 0,220
+      eval. "*begin(is_bin = 1); i!=$im && i!=$iM?(is_bin = 0; break()); end(merge(is_bin,&&); set('is_bin',is_bin))"
+      if $is_bin # Colorize binary images according to rough normal estimation
+        >. {lerp($im,$iM,0.5)} +expand_xyz. 1 b. {min(w,h,d)*2%},0 g. xyz a[-3--1] c orientation. n. 0,220
         shrink_xyz. 1 *. .. k. args=0.9,1.1,1
       fi
     fi
-    surfels3d $args box3d $w,$h,$d p3d. 1 o3d. 0.2 axes3d $asiz,$asiz,$asiz,16 o3d. 0.5 col3d. 255,128,0 +3d
+    surfels3d $args +3d. 0.5,0.5,0.5 box3d $w,$h,$d p3d. 1 o3d. 0.25
+    axes3d $asiz,$asiz,$asiz,16 o3d. 0.5 col3d. 255,128,0 +3d
     _d3d_title=$bnm" ("${w}x${h}x${d}", "$nbv" voxels)"
     d3d 0
     rm _d3d_title=
@@ -8111,6 +8116,26 @@ _random_pattern_check_image :
   } fi
   => "[2D heart shape]"
 
+#@cli shape_menger : _nb_iterations>=0
+#@cli : Input a 3D voxelized representation of the Menger sponge.
+#@cli : Default value: 'nb_iterations=3'.
+#@cli : $ shape_menger 4 surfels3d , color3d 200 m3d 3
++shape_menger : l[] { check "isint(${1=3}) && $1>=0" nbi=$1 onfail noarg nbi=3 }
+  e[^-1] "Input a "$nbi"-iterated Menger sponge, as a 3D binary image."
+  3,3,3,1,"norm([x,y,z]-1)>1" (1)
+  repeat $nbi { r. {3*[w,h,d]},1,0,2 +ri[0] . *[-2,-1] }
+  k. => "[3D Menger Sponge]"
+
+#@cli shape_mosely : _nb_iterations>=0
+#@cli : Input a 3D voxelized representation of the Mosely snowflake.
+#@cli : Default value: 'nb_iterations=3'.
+#@cli : $ shape_mosely 4 surfels3d , color3d 200 m3d 3
++shape_mosely : l[] { check "isint(${1=3}) && $1>=0" nbi=$1 onfail noarg nbi=3 }
+  e[^-1] "Input a "$nbi"-iterated Mosely snowflake, as a 3D binary image."
+  3,3,3,1,"norm1([x,y,z]-1)<=2" =. 0,1,1,1 (1)
+  repeat $nbi { r. {3*[w,h,d]},1,0,2 +ri[0] . *[-2,-1] }
+  k. => "[3D Mosely Snowflake]"
+
 #@cli shape_polygon : _size>=0,_nb_vertices>=3,_angle
 #@cli : Input a 2D polygonal binary shape with specified geometry.
 #@cli : Default value: 'size=512', 'nb_vertices=5' and 'angle=0'.
@@ -8126,7 +8151,7 @@ _random_pattern_check_image :
       a x n 0,{$ir-1} s x +.. {-2,0.5*($ir-im-iM)} +. {-1,0.5*($ir-im-iM)} a x
       $ir,$ir polygon. $2,{-2,^},1,1 rm..
   } fi
-  => "[2D $2-polygon shape]"
+  => "[2D $2-polygon Shape]"
 
 #@cli shape_snowflake : size>=0,0<=_nb_recursions<=6
 #@cli : Input a 2D snowflake binary shape with specified size.
@@ -8403,7 +8428,7 @@ update_deprecate : check "isint($1) && $1>0 && $1<999"
 
 # update_download_version.
 # Update file versions on G'MIC download page, with specified version number.
-# $1 = version number (e.g. '3.2.1').
+# $1 = version number (e.g. '3.2.2').
 update_download_version : check "
     is_digit(c)=(c>=_'0' && c<=_'9');
     ver = ['${1=undefined}'];
@@ -8830,7 +8855,7 @@ update_gallery_html : check "isbool(${1=0})"
   commands_artistic=_gallery_artistic,boxfitting,cartoon,cubism,draw_whirl,fractalize,halftone,sketchbw,light_relief,\
                     mosaic,linify,polaroid,polygonize,poster_hope,rodilius,stencil,stained_glass
   commands_blackandwhite=_gallery_blackandwhite,pencilbw,old_photo,sepia
-  commands_colors=_gallery_colors,solarize,hsv2rgb,transfer_rgb
+  commands_colors=_gallery_colors,solarize,hsv2rgb,match_rgb
   commands_deformations=_gallery_deformations,deform,map_sphere,seamcarve,spherize,twirl,warp_perspective,water,wave
   commands_filtering=_gallery_filtering,blur_angular,blur_linear,blur_radial,glow,smooth,bilateral,dog,deriche,\
                      distance,gradient_norm,normalize_local,sharpen,solidify
@@ -10105,7 +10130,7 @@ upload_filters :
   x "cd "$HOME"/work/src/gmic-community && git pull"
 
   # Define the list of compatible versions.
-  (320,321,$_version) sort. discard. store. compat
+  (320,321,322,$_version) sort. discard. store. compat
 
   # Import filters from stdlib and community.
   files $HOME/work/src/gmic-community/include/*.gmic
@@ -12677,6 +12702,308 @@ map_clut :
     rm[0] mv. 0 a[^-1] c =>[0] $nm
   } } rm.
 
+#@cli match_histogram : [reference_image],_nb_levels>0,_color_channels
+#@cli : Transfer histogram of the specified reference image to selected images.
+#@cli : Argument 'color channels' is the same as with command 'apply_channels'.
+#@cli : Default value: 'nb_levels=256' and 'color_channels=all'.
+#@cli : $ image.jpg 100,100,1,3,"u([256,200,100])" +match_histogram[0] [1]
+match_histogram : check ${"is_image_arg $1"}" && ${2=1024}>0" skip "${3=0}"
+  channels=${"_ac_list \"$3\""}
+  e[^-1] "Transfer histogram from image ["${"pass$1 -1"}"] to image$?, "\
+         "with $2 levels, for channels '"$channels"'."
+  pass$1 1 sref:=s rm.
+  to_colormode $sref
+  if ['$channels']!='all'
+    pass$1 {$sref==3?2:0}
+    to_color
+    ac. "+store _match_histogram_reference",$channels rm.
+    ac "_match_histogram $2",$channels,1
+  else
+    pass$1
+    store. _match_histogram_reference
+    repeat $! { _match_histogram[$>] $2 }
+  fi
+  _match_histogram_reference=
+
+_match_histogram :
+  $_match_histogram_reference
+  repeat min(s#0,s#1) {
+    sh $>
+    +histogram[-2,-1] $1 cumulate[-2,-1] /.. {-2,i[-1,2]} /. {i[-1,2]}
+    f.. "*
+      const w1 = w -1;
+      val = i; X = x;
+      val<i[#-1,X]?(
+        step = int(X/2);
+        while (X && step>=1, nX = max(0,X - step); val<i[#-1,nX]?(X = nX):(step = int(step/2)));
+        X?(vc = i[#-1,X]; vp = i[#-1,X - 1]; (vc - val)>(val - vp)?--X); # Rounding
+      ):(
+        step = int((w1 - X)/2);
+        while (X<w1 && step>=1, nX = min(w1,X + step); val>i[#-1,nX]?(X = nX):(step = int(step/2)));
+        X<w1?(vc = i[#-1,X]; vn = i[#-1,X + 1]; (val - vc)>(vn - val)?++X); # Rounding
+      );
+      im#-3 + (iM#-3 - im#-3)*X/w1"
+    n[-4] 0,{w-1} round[-4] map[-4] ..
+    k[0,1]
+  }
+  rm.
+
+#@cli match_icp : [reference_image],_precision>0,_transformation_variable
+#@cli : Transform selected set of d-dimensional vectors to match specified set of reference vectors, \
+# using ICP (*Iterative Closest Point*) algorithm.
+#@cli : A description of ICP is available at <https://en.wikipedia.org/wiki/Iterative_closest_point>.
+#@cli : Return the L2 alignment error.
+#@cli : Default values: 'transformation_type=0', 'precision=1e-2' and 'transformation_variable=(undefined)'.
+#@cli : sample lena,earth +match_icp[0] [1]
+match_icp : check ${"is_image_arg $1"}" && ${2=1e-2}>0" skip "${3=}"
+  e[^-1] "Match vector set$? with reference vector set $1, using ICP with precision $2.\n"
+  pass$1
+  foreach[^-1] {
+    w,h,d,s:=w,h,d,s
+    pass. mv. 0 # [0]: reference set, [1]: current set
+    if "['$3']!=0" +store. img fi
+    match_pca. .. # Pre-normalize for better initial estimate
+
+    # Iterate ICP steps.
+    old_err=inf
+    repeat inf {
+
+      # For each vector, find nearest reference vector.
+      100%,100%,100%,4,"*
+        P = I(#1);
+        distmin = pmin = qmin = rmin = inf;
+        repeat (d#0,r,
+          repeat (h#0,q,
+            repeat (w#0,p,
+              dist = norm(I(#0,p,q,r) - P);
+              dist<distmin?(distmin = dist; pmin = p; qmin = q; rmin = r);
+            );
+          );
+        );
+        [ pmin,qmin,rmin,distmin ]"
+
+      s. c,-3
+      err:=is/whd rm. # Mean error
+      e "\r  > Iteration "$>": Error = "{_$err}
+      if !$err" || "abs($err-$old_err)<1e-3 rm. break fi
+      old_err=$err
+      +warp[0] .,0,0 rm..
+      _match_icp[-2,-1]
+      mmul[-2,-1] r. $s,{h/$s},1,1,-1 permute. yzcx r. $w,$h,$d,$s,-1
+    }
+    k.
+    if "['$3']!=0" $img rv +_match_icp $3={^} rm[0,-2,-1] fi # Output linear transformation
+    u $err
+  }
+  rm.
+
+# Compute linear transformation between two sets of paired vectors.
+# [-2] : Set of vectors.
+# [-1] : Corresponding set of reference vectors.
+_match_icp :
+  N,s:=whd,s
+  permute. cxyz y. # Unrolled (i0_ref_k,i1_ref_k,...)
+  l.. { # Generate matrix for the linear system
+    r 1,{whd},1,100%,-1 permute cyxz 1,100%,1,1,1 a x
+    r 100%,{$s*$N},1,1 r {($s+1)^2},100%,1,1,0 r {$s*($s+1)},{($s+1)*$N},1,1,-1
+    s y rm[$s--1:{$s+1}] a y
+  }
+  solve. ..
+
+#@cli match_pca : [reference_image],_color_channels
+#@cli : Transfer mean and covariance matrix of specified vector-valued reference image to selected images.
+#@cli : Argument 'color channels' is the same as with command 'apply_channels'.
+#@cli : Default value: 'color_channels=all'.
+#@cli : $ sample lena,earth +match_pca[0] [1]
+match_pca : check ${"is_image_arg $1"} skip "${2=all}"
+  channels=${"_ac_list \"$2\""}
+  e[^-1] "Transfer mean vector and covariance matrix from image ["${"pass$1 -1"}"] to image$?, "\
+         "for channels '"$channels"'."
+  pass$1 1 sref:=s rm.
+  if $sref<=4 to_colormode[^-1] $sref fi
+  if $sref==1 # Scalar case can to be solved more easily
+    pass$1
+    var_ref,avg_ref:=[iv,ia] rm.
+    foreach { - {ia} * {sqrt($var_ref/max(1e-8,iv))} + $avg_ref }
+  elif ['$channels']!='all'
+    pass$1 {$sref==3?2:0}
+    to_color
+    ac. "+store _match_pca_reference",$channels rm.
+    ac "_match_pca",$channels,1
+  else
+    pass$1
+    store. _match_pca_reference
+    foreach { _match_pca }
+  fi
+  _match_pca_reference=
+
+_match_pca :
+  $_match_pca_reference
+  f.. "*begin(
+         cov_ref = [ "${"covariance_vectors[1] _avg_ref"}" ];
+         cov = [ "${"covariance_vectors[0] _avg"}" ];
+         avg_ref = [ "$_avg_ref" ];
+         avg = [ "$_avg" ];
+         eig_ref = eig(cov_ref);
+         eig = eig(cov);
+         lambda_ref = sqrt(eig_ref[0,s]);
+         lambda = 1/sqrt(1e-6 + eig[0,s]);
+         repeat(s,k, # Align eigenvectors.
+           sks = s + k*s;
+           Uref = eig_ref[sks,s];
+           U = eig[sks,s];
+           dot(Uref,U)<0?copy(eig[sks],U*=-1);
+         );
+         rot_ref = mul(transpose(eig_ref[s,s*s],s),diag(lambda_ref),s);
+         rot = mul(diag(lambda),eig[s,s*s],s);
+         M = mul(rot_ref,rot,s);
+       );
+       avg_ref + M*(I - avg)"
+  rm.
+
+#@cli match_rgb : [target],_gamma>=0,_regularization>=0,_luminosity_constraints>=0,_rgb_resolution>=0,\
+# _is_constraints={ 0 | 1 }
+#@cli : Transfer colors from selected source images to selected reference image (given as argument).
+#@cli : 'gamma' determines the importance of color occurrences in the matching process (0=none to 1=huge).
+#@cli : 'regularization' determines the number of guided filter iterations to remove quantization effects.
+#@cli : 'luminosity_constraints' tells if luminosity constraints must be applied on non-confident matched colors.
+#@cli : 'is_constraints' tells if additional hard color constraints must be set (opens an interactive window).
+#@cli : Default values: 'gamma=0.3','regularization=8', 'luminosity_constraints=0.1', 'rgb_resolution=64' and \
+# 'is_constraints=0'.
+#@cli : $ sample pencils,wall +match_rgb[0] [1],0,0.01
+match_rgb : check "${2=0.3}>=0 && ${3=8}>=0 && ${4=0.15}>=0 && ${5=64}>=0 && isint(${6=0})"
+  e[^-1] "Transfer colors of image $1 to image$?."
+  sigma=1.5
+  repeat $! { pass$1 0 l[$>,-1] {
+    nm_source={0,b} nm_target={1,b}
+    => source,target
+
+    # Generate matching functions from 3D RGB features.
+    +_match_rgb[source,target] $2,$sigma,$5 => fsource,ftarget
+    n[fsource,ftarget] 0,255
+
+    # Manage color constraints.
+    if $6
+      h0:=2*{*,v}/3 ws0={source,max(1,w*$h0/h)} wt0={target,max(1,w*$h0/h)}
+      w1:=2*{*,u}/3 hs1={source,max(1,h*$w1/w)} ht1={target,max(1,h*$w1/w)}
+      if abs($ws0+$wt0-$w1)<abs($hs1+$ht1-$h0) # Append along X.
+        +r2dy[source,target] $h0 +b[-2,-1] 0.5% a[-4,-3] x a[-2,-1] x
+      else # Append along Y.
+        +r2dx[source,target] $w1 +b[-2,-1] 0.5% a[-4,-3] y a[-2,-1] y
+      fi
+      if w>$w1 r2dx[-2,-1] $w1 fi
+      if h>$h0 r2dy[-2,-1] $h0 fi
+      => visu,both
+
+      w[visu] -1,-1
+      N=0 do
+        w[] -1,-1,"[G'MIC] Add Color Guide (Constraint ""#"{1+$N}")"
+        +select[$visu] 1 if i==-1 rm. break fi
+        line[$visu] {i[0]},{i[1]},{i[3]},{i[4]},1,0xF0F0F0F0,0
+        line[$visu] {i[0]},{i[1]},{i[3]},{i[4]},1,0x0F0F0F0F,255
+        circle[$visu] {i[0]},{i[1]},5,1,0,0,0 circle[$visu] {i[0]},{i[1]},3,1,255,0,0
+        circle[$visu] {i[3]},{i[4]},5,1,0,0,0 circle[$visu] {i[3]},{i[4]},3,1,0,255,0
+        s. y,2 rows[-2,-1] 0,1 a[-2,-1] x permute. xczy
+        +warp[$both] .,0,0,1 rm..
+        *. {($5-1)/255} s. x,2
+        -. .. *. -1 a[-2,-1] c
+        N+=1
+      while {*}
+      if $N a[-$N--1] x permute. xczy => constraints fi
+      rm[$visu,$both] w 0
+    fi
+
+    # Estimate warping field.
+    if $constraints
+      +pointcloud. 0 r. ...,...,...,3,0 +compose_channels. + a[-2,-1] c
+      displacement[fsource] [ftarget],0.001,5,0,10000,1,. rm[ftarget,constraints,-1]
+    else
+      displacement[fsource] [ftarget],0.005 rm[ftarget]
+    fi
+    =>[fsource] displacement
+
+    # Generate video of matching.
+    # if videos
+    #   N=$!
+    #   [displacement],[displacement],[displacement],1,x +f. y +f. z a[-3--1] c *. {255/(w-1)} +. 1
+    #   +_match_rgb[source] 0,$sigma,{w} *.. . distance. 1 *. -1 watershed.. . rm.
+    #   +_match_rgb[source] 0,$sigma,{w} a[-2,-1] c
+
+    #   [displacement],[displacement],[displacement],1,x +f. y +f. z a[-3--1] c *. {255/(w-1)} +. 1
+    #   +_match_rgb[target] 0,$sigma,{w} *.. . distance. 1 *. -1 watershed.. . rm.
+    #   +_match_rgb[target] 0,$sigma,{w} a[-2,-1] c
+    #   warp. [displacement],1,1,1,48
+
+    #   l[$N--1] {
+    #     f3d 1200
+    #     ap "s. c,-3 view_func. 6,.. rm.."
+    #     ap "makefig"
+    #     append[^0] [0],x rm[0]
+    #     r2dx 1024
+    #     [-1]x20
+    #     o videos/video_${nm_source}_to_${nm_target}.mp4,10
+    #     rm
+    #   }
+    # fi
+
+    # Estimate confidence of the color mapping.
+    +_match_rgb[target] 0,$sigma,{displacement,w}
+    warp. [displacement],1,1,1 c. 0,100% => fconfidence
+    +map_clut[source] . => confidence
+
+    # Generate transfer CLUT.
+    [displacement],[displacement],[displacement],1,x +f. y +f. z a[-3--1] c *. {255/(w-1)} +. 1
+    +_match_rgb[target] 0,0,{w} *.. .
+    warp[-2,-1] [displacement],1,0,1
+    distance. 1 *. -1 watershed.. . rm. -. 1
+    => clut
+    b[clut] $sigma%
+
+    # Enforce luminosity constraint for non-confident colors.
+    if $4>0
+      ^[fconfidence] {$4/10} *[fconfidence] -1 +[fconfidence] 1
+      +f[fconfidence] x +f. y +f. z a[-3--1] c *. {255/(w-1)}
+      rgb2hsv[clut,-1] channels. 100%
+      j[clut] .,0,0,0,2,1,[fconfidence] rm.
+      hsv2rgb[clut]
+    fi
+
+    # Map CLUT to get result.
+    +map_clut[source] [clut] => res_noregul
+
+    # Apply guided smoothing to remove quantization artifacts.
+    if !$3
+      =>[res_noregul] res
+    else
+      l[source,res_noregul] {
+        rgb2ycbcr  # Perform regularization in YCbCr to avoid creation of false colors.
+        +-[1] [0] repeat $3 { guided. [0],5,5 } +. [0] c. 0,255
+        ycbcr2rgb
+      }
+      => res
+      j[res] [res_noregul],0,0,0,0,1,[confidence]
+      rm[res_noregul]
+    fi
+
+    k[res]
+  } }
+
+# _match_rgb : _gamma>=0,_smoothness>=0,_resolution>0
+# Convert selected images into 3D volumetric scalar function for color matching.
+_match_rgb :
+  l[] {
+    check "${1=0}>=0 && ${2=1.5}>=0 && ${3=128}>0" gamma=$1 smoothness=$2 res=$3
+    onfail noarg gamma=0 smoothness=1.5 res=128
+  }
+  e[^-1] "Convert image$? as 3D volumetric scalar functions for color matching, with gamma "$gamma",
+          smoothness "$smoothness" and resolution "$res"."
+  to_rgb
+  foreach {
+    b 0.3%
+    r {w*h},3,1,1,-1 * {($res-1)/255}
+    pointcloud 1,$res,$res,$res f 'if(i,i^$gamma,0)' b $smoothness% n 0,1
+  }
+
 #@cli mix_rgb : a11,a12,a13,a21,a22,a23,a31,a32,a33
 #@cli : Apply 3x3 specified matrix to RGB colors of selected images.
 #@cli : Default values: 'a11=1', 'a12=a13=a21=0', 'a22=1', 'a23=a31=a32=0' and 'a33=1'.
@@ -13770,246 +14097,6 @@ to_automode :
              end(merge(is_gray,&&); set('is_gray',is_gray))"
       if $is_gray s c,-3 channels[0] 0 a c fi
     fi
-  }
-
-#@cli transfer_histogram : [reference_image],_nb_levels>0,_color_channels
-#@cli : Transfer histogram of the specified reference image to selected images.
-#@cli : Argument 'color channels' is the same as with command 'apply_channels'.
-#@cli : Default value: 'nb_levels=256' and 'color_channels=all'.
-#@cli : $ image.jpg 100,100,1,3,"u([256,200,100])" +transfer_histogram[0] [1]
-transfer_histogram : check ${"is_image_arg $1"}" && ${2=1024}>0" skip "${3=0}"
-  channels=${"_ac_list \"$3\""}
-  e[^-1] "Transfer histogram from image ["${"pass$1 -1"}"] to image$?, "\
-         "with $2 levels, for channels '"$channels"'."
-  pass$1 1 sref:=s rm.
-  to_colormode $sref
-  if ['$channels']!='all'
-    pass$1 {$sref==3?2:0}
-    to_color
-    ac. "+store _transfer_histogram_reference",$channels rm.
-    ac "_transfer_histogram $2",$channels,1
-  else
-    pass$1
-    store. _transfer_histogram_reference
-    repeat $! { _transfer_histogram[$>] $2 }
-  fi
-  _transfer_histogram_reference=
-
-_transfer_histogram :
-  $_transfer_histogram_reference
-  repeat min(s#0,s#1) {
-    sh $>
-    +histogram[-2,-1] $1 cumulate[-2,-1] /.. {-2,i[-1,2]} /. {i[-1,2]}
-    f.. "*
-      const w1 = w -1;
-      val = i; X = x;
-      val<i[#-1,X]?(
-        step = int(X/2);
-        while (X && step>=1, nX = max(0,X - step); val<i[#-1,nX]?(X = nX):(step = int(step/2)));
-        X?(vc = i[#-1,X]; vp = i[#-1,X - 1]; (vc - val)>(val - vp)?--X); # Rounding
-      ):(
-        step = int((w1 - X)/2);
-        while (X<w1 && step>=1, nX = min(w1,X + step); val>i[#-1,nX]?(X = nX):(step = int(step/2)));
-        X<w1?(vc = i[#-1,X]; vn = i[#-1,X + 1]; (val - vc)>(vn - val)?++X); # Rounding
-      );
-      im#-3 + (iM#-3 - im#-3)*X/w1"
-    n[-4] 0,{w-1} round[-4] map[-4] ..
-    k[0,1]
-  }
-  rm.
-
-#@cli transfer_pca : [reference_image],_color_channels
-#@cli : Transfer mean and covariance matrix of specified vector-valued reference image to selected images.
-#@cli : Argument 'color channels' is the same as with command 'apply_channels'.
-#@cli : Default value: 'color_channels=all'.
-#@cli : $ sample lena,earth +transfer_pca[0] [1]
-transfer_pca : check ${"is_image_arg $1"} skip "${2=all}"
-  channels=${"_ac_list \"$2\""}
-  e[^-1] "Transfer mean vector and covariance matrix from image ["${"pass$1 -1"}"] to image$?, "\
-         "for channels '"$channels"'."
-  pass$1 1 sref:=s rm.
-  to_colormode[^-1] $sref
-  if $sref==1 # Scalar case can to be solved more easily
-    pass$1
-    var_ref,avg_ref:=[iv,ia] rm.
-    foreach { - {ia} * {sqrt($var_ref/iv)} + $avg_ref }
-  elif ['$channels']!='all'
-    pass$1 {$sref==3?2:0}
-    to_color
-    ac. "+store _transfer_pca_reference",$channels rm.
-    ac "_transfer_pca",$channels,1
-  else
-    pass$1
-    store. _transfer_pca_reference
-    repeat $! { _transfer_pca[$>] }
-  fi
-  _transfer_pca_reference=
-
-_transfer_pca :
-  $_transfer_pca_reference
-  f.. "*begin(
-         cov_ref = [ "${"covariance_vectors[1] _avg_ref"}" ];
-         cov = [ "${"covariance_vectors[0] _avg"}" ];
-         avg_ref = [ "$_avg_ref" ];
-         avg = [ "$_avg" ];
-         eig_ref = eig(cov_ref);
-         eig = eig(cov);
-         lambda_ref = sqrt(eig_ref[0,s]);
-         lambda = 1/sqrt(1e-6 + eig[0,s]);
-         repeat(s,k, # Align eigenvectors.
-           sks = s + k*s;
-           Uref = eig_ref[sks,s];
-           U = eig[sks,s];
-           dot(Uref,U)<0?copy(eig[sks],U*=-1);
-         );
-         rot_ref = mul(transpose(eig_ref[s,s*s],s),diag(lambda_ref),s);
-         rot = mul(diag(lambda),eig[s,s*s],s);
-         M = mul(rot_ref,rot,s);
-       );
-       avg_ref + M*(I - avg)"
-  rm.
-
-#@cli transfer_rgb : [target],_gamma>=0,_regularization>=0,_luminosity_constraints>=0,_rgb_resolution>=0,\
-# _is_constraints={ 0 | 1 }
-#@cli : Transfer colors from selected source images to selected reference image (given as argument).
-#@cli : 'gamma' determines the importance of color occurrences in the matching process (0=none to 1=huge).
-#@cli : 'regularization' determines the number of guided filter iterations to remove quantization effects.
-#@cli : 'luminosity_constraints' tells if luminosity constraints must be applied on non-confident matched colors.
-#@cli : 'is_constraints' tells if additional hard color constraints must be set (opens an interactive window).
-#@cli : Default values: 'gamma=0.3','regularization=8', 'luminosity_constraints=0.1', 'rgb_resolution=64' and \
-# 'is_constraints=0'.
-#@cli : $ sample pencils,wall +transfer_rgb[0] [1],0,0.01
-transfer_rgb : check "${2=0.3}>=0 && ${3=8}>=0 && ${4=0.15}>=0 && ${5=64}>=0 && isint(${6=0})"
-  e[^-1] "Transfer colors of image $1 to image$?."
-  sigma=1.5
-  repeat $! { pass$1 0 l[$>,-1] {
-    nm_source={0,b} nm_target={1,b}
-    => source,target
-
-    # Generate matching functions from 3D RGB features.
-    +_transfer_rgb[source,target] $2,$sigma,$5 => fsource,ftarget
-    n[fsource,ftarget] 0,255
-
-    # Manage color constraints.
-    if $6
-      h0:=2*{*,v}/3 ws0={source,max(1,w*$h0/h)} wt0={target,max(1,w*$h0/h)}
-      w1:=2*{*,u}/3 hs1={source,max(1,h*$w1/w)} ht1={target,max(1,h*$w1/w)}
-      if abs($ws0+$wt0-$w1)<abs($hs1+$ht1-$h0) # Append along X.
-        +r2dy[source,target] $h0 +b[-2,-1] 0.5% a[-4,-3] x a[-2,-1] x
-      else # Append along Y.
-        +r2dx[source,target] $w1 +b[-2,-1] 0.5% a[-4,-3] y a[-2,-1] y
-      fi
-      if w>$w1 r2dx[-2,-1] $w1 fi
-      if h>$h0 r2dy[-2,-1] $h0 fi
-      => visu,both
-
-      w[visu] -1,-1
-      N=0 do
-        w[] -1,-1,"[G'MIC] Add Color Guide (Constraint ""#"{1+$N}")"
-        +select[$visu] 1 if i==-1 rm. break fi
-        line[$visu] {i[0]},{i[1]},{i[3]},{i[4]},1,0xF0F0F0F0,0
-        line[$visu] {i[0]},{i[1]},{i[3]},{i[4]},1,0x0F0F0F0F,255
-        circle[$visu] {i[0]},{i[1]},5,1,0,0,0 circle[$visu] {i[0]},{i[1]},3,1,255,0,0
-        circle[$visu] {i[3]},{i[4]},5,1,0,0,0 circle[$visu] {i[3]},{i[4]},3,1,0,255,0
-        s. y,2 rows[-2,-1] 0,1 a[-2,-1] x permute. xczy
-        +warp[$both] .,0,0,1 rm..
-        *. {($5-1)/255} s. x,2
-        -. .. *. -1 a[-2,-1] c
-        N+=1
-      while {*}
-      if $N a[-$N--1] x permute. xczy => constraints fi
-      rm[$visu,$both] w 0
-    fi
-
-    # Estimate warping field.
-    if $constraints
-      +pointcloud. 0 r. ...,...,...,3,0 +compose_channels. + a[-2,-1] c
-      displacement[fsource] [ftarget],0.001,5,0,10000,1,. rm[ftarget,constraints,-1]
-    else
-      displacement[fsource] [ftarget],0.005 rm[ftarget]
-    fi
-    =>[fsource] displacement
-
-    # Generate video of matching.
-    # if videos
-    #   N=$!
-    #   [displacement],[displacement],[displacement],1,x +f. y +f. z a[-3--1] c *. {255/(w-1)} +. 1
-    #   +_transfer_rgb[source] 0,$sigma,{w} *.. . distance. 1 *. -1 watershed.. . rm.
-    #   +_transfer_rgb[source] 0,$sigma,{w} a[-2,-1] c
-
-    #   [displacement],[displacement],[displacement],1,x +f. y +f. z a[-3--1] c *. {255/(w-1)} +. 1
-    #   +_transfer_rgb[target] 0,$sigma,{w} *.. . distance. 1 *. -1 watershed.. . rm.
-    #   +_transfer_rgb[target] 0,$sigma,{w} a[-2,-1] c
-    #   warp. [displacement],1,1,1,48
-
-    #   l[$N--1] {
-    #     f3d 1200
-    #     ap "s. c,-3 view_func. 6,.. rm.."
-    #     ap "makefig"
-    #     append[^0] [0],x rm[0]
-    #     r2dx 1024
-    #     [-1]x20
-    #     o videos/video_${nm_source}_to_${nm_target}.mp4,10
-    #     rm
-    #   }
-    # fi
-
-    # Estimate confidence of the color mapping.
-    +_transfer_rgb[target] 0,$sigma,{displacement,w}
-    warp. [displacement],1,1,1 c. 0,100% => fconfidence
-    +map_clut[source] . => confidence
-
-    # Generate transfer CLUT.
-    [displacement],[displacement],[displacement],1,x +f. y +f. z a[-3--1] c *. {255/(w-1)} +. 1
-    +_transfer_rgb[target] 0,0,{w} *.. .
-    warp[-2,-1] [displacement],1,0,1
-    distance. 1 *. -1 watershed.. . rm. -. 1
-    => clut
-    b[clut] $sigma%
-
-    # Enforce luminosity constraint for non-confident colors.
-    if $4>0
-      ^[fconfidence] {$4/10} *[fconfidence] -1 +[fconfidence] 1
-      +f[fconfidence] x +f. y +f. z a[-3--1] c *. {255/(w-1)}
-      rgb2hsv[clut,-1] channels. 100%
-      j[clut] .,0,0,0,2,1,[fconfidence] rm.
-      hsv2rgb[clut]
-    fi
-
-    # Map CLUT to get result.
-    +map_clut[source] [clut] => res_noregul
-
-    # Apply guided smoothing to remove quantization artifacts.
-    if !$3
-      =>[res_noregul] res
-    else
-      l[source,res_noregul] {
-        rgb2ycbcr  # Perform regularization in YCbCr to avoid creation of false colors.
-        +-[1] [0] repeat $3 { guided. [0],5,5 } +. [0] c. 0,255
-        ycbcr2rgb
-      }
-      => res
-      j[res] [res_noregul],0,0,0,0,1,[confidence]
-      rm[res_noregul]
-    fi
-
-    k[res]
-  } }
-
-# _transfer_rgb : _gamma>=0,_smoothness>=0,_resolution>0
-# Convert selected images into 3D volumetric scalar function for color matching.
-_transfer_rgb :
-  l[] {
-    check "${1=0}>=0 && ${2=1.5}>=0 && ${3=128}>0" gamma=$1 smoothness=$2 res=$3
-    onfail noarg gamma=0 smoothness=1.5 res=128
-  }
-  e[^-1] "Convert image$? as 3D volumetric scalar functions for color matching, with gamma "$gamma",
-          smoothness "$smoothness" and resolution "$res"."
-  to_rgb
-  foreach {
-    b 0.3%
-    r {w*h},3,1,1,-1 * {($res-1)/255}
-    pointcloud 1,$res,$res,$res f 'if(i,i^$gamma,0)' b $smoothness% n 0,1
   }
 
 #@cli xyz2jzazbz
@@ -21217,6 +21304,24 @@ _center3d :
     fi
   }
 
+#@cli chainring3d : _nb_links>=3,_x_scale>0,_y_scale>0,_z_scale>0
+#@cli : Input 3D chain ring with specified geometry.
+#@cli : 'nb_links' should be preferably even.
+#@cli : Default values: 'nb_links=16', 'x_scale=0.5', 'y_scale=1' and 'z_scale=1'.
+chainring3d : check "isint(${1=16}) && $1>=3 && ${2=0.5}>0 && ${3=1}>0 && ${4=1}>0"
+  e[^-1] "Input 3D chain ring, with $1 links and scales (${2-4})."
+  l[] {
+    torus3d 1,0.1 *3d ${2-4} shift:=0.75*$1/pi
+    repeat $1 {
+    ang:=$>*360/$1
+      ($ang^1^0.784) hsv2rgb. +col3d[0] {^} rm..
+      if $>%2 r3d. 0,1,0,90 fi
+      +3d. $shift r3d. 0,0,1,$ang
+    }
+    rm[0] +3d /3d $shift
+    => [3D\ chainring]
+  }
+
 #@cli circle3d : _x0,_y0,_z0,_radius>=0
 #@cli : Input 3D circle at specified coordinates.
 #@cli : Default values: 'x0=y0=z0=0' and 'radius=1'.
@@ -21371,6 +21476,68 @@ cubes3d : check ${1=1}>=0
   ellipse. 0%,100%,30%,10%,0,1,1 b. 0.1%
   lathe3d. $1,2
   => [3D\ cup]
+
+#@cli curve3d : _"x(t)",_"y(t)",_"z(t)",_"r(t)",_resolution>1,_tmin,_tmax,_nb_sides>=0,_is_closed_curve={ 0 | 1 }
+#@cli : Input 3D curve with specified parameterization.
+#@cli : If 'r(t)==0' or 'nb_sides<3', the generated 3D object is composed of segments only.
+#@cli : Default values: 'x(t)=cos(2*pi*t)', 'y(t)=sin(2*pi*t)', 'z(t)=t', 'r(t)=0.025', 'resolution=128', \
+# 'tmin=0', 'tmax=1', 'nb_sides=16' and 'is_closed_curve=0'.
+#@cli : $ curve3d ,
++curve3d : check "isint(${5=128}) && $5>1 && isbool(${9=0}) && isint(${8=16}) && $8>=0"
+           skip "${1=0.25*cos(4*pi*t)},${2=0.25*sin(4*pi*t)},${3=t},${4=0.025},${6=0},${7=1}"
+  xt,yt,zt,rt,resolution,tmin,tmax,nb_sides,is_closed=$"*"
+  nb_sides:="$nb_sides<3 || ['"$rt"']=='0'?1:$nb_sides"
+  s0,s1="open","closed"
+  e[^-1] "Input 3D "${s$is_closed}" curve with parameterization ("$xt,$yt,$zt"), radius '"$rt"', "\
+         "resolution "$resolution", t-range ["$tmin,$tmax"], radius and "$nb_sides" sides."
+  ('CImg3d') (0,0)
+  1,$resolution,1,4,"t = lerp($tmin,$tmax,y/(h - ($is_closed?0:1))); [ ("$xt"),("$yt"),("$zt"),("$rt") ]" s. c,-3
+  if $nb_sides==1 # Curve made of segments
+    rm. 1,{$resolution-1+$is_closed},1,3,"[ 2,y,(y + 1)%$resolution ]" nbv=$resolution nbp:=h permute[-2,-1] cyzx
+  else # Curve made of quadrangles
+    +g.. y,0,{$is_closed?2:1} orientation. # Unit tangent vector
+    0 $nb_sides,$resolution,1,1,"
+      !x?(
+        P = I(#-4,0,y);
+        R = i(#-3,0,y);
+        W = I(#-2,0,y);
+        norm(W)==0?(W = [ 0,0,1 ]);
+        !y?(
+          P0 = P;
+          do (ref = [ v,v,v ]; ref/=norm(v); crossWref = cross(W,ref), norm(crossWref)<1e-5);
+        );
+        U = cross(W,ref); U/=norm(U);
+        V = cross(W,U); V/=norm(V);
+        M = transpose([ U,V,W ],3);
+        ref = -V;
+      );
+      ang = x*2*pi/w;
+      Q = P + R*mul(M,[ cos(ang),sin(ang),0 ]);
+      da_push(Q[0],Q[1],Q[2]);
+      end(
+        !$is_closed?da_push(P0[0],P0[1],P0[2],P[0],P[1],P[2]);
+        da_freeze();
+      )" rm[-5--3,-1]
+    nbv:={h/3}
+
+    0 $nb_sides,{$resolution-1+$is_closed},1,1,"begin(nbp = 0);
+      b0 = y*$nb_sides; b1 = ((y + 1)%$resolution)*$nb_sides; nx = (x+1)%$nb_sides;
+      da_push(4,b0 + x,b0 + nx,b1 + nx,b1 + x);
+      ++nbp;
+      end(
+        const indmin = $nb_sides*$resolution;
+        const indmax = indmin + 1;
+        const last = indmin - $nb_sides;
+        !$is_closed?(
+          repeat($nb_sides,k,da_push(3,indmin,(k + 1)%$nb_sides,k); ++nbp);
+          repeat($nb_sides,k,da_push(3,indmax,last + k,last + ((k + 1)%$nb_sides)); ++nbp);
+        );
+        da_freeze();
+        set('nbp',nbp);
+      )" rm.
+  fi
+  eval "i[#-3,0] = ui2f($nbv); i[#-3,1] = ui2f($nbp)"
+  3,$nbp,1,1,200 1,$nbp,1,1,1 y[-6--1] a[-6--1] y => [3D\ Curve]
 
 #@cli cylinder3d : _radius,_height,_nb_subdivisions>0
 #@cli : Input 3D cylinder at (0,0,0), with specified geometry.
@@ -21766,17 +21933,18 @@ imageplane3d :
   e[^-1] "Generate 3D mapped planes from image$?."
   slices 50% to_color
   foreach {
+    w,h,s,w1,h1:=w,h,s,w-1,h-1
     nm={n}
     i.. (67.5;73.5;109.5;103.5;51.5;100.5;\   # Magick number for CImg3d.
          4;1;\                                # Number of vertices and primitives.
          0;0;0;\                              # Vertex coordinates.
-         {w};0;0;\
-         {w};{h};0;\
-         {0};{h};0;\
-         12;0;3;2;1;0;0;0;{h};{w};{h};{w};0;\ # Primitives description.
-         -128;{w};{h};{s})                    # Texture map.
+         $w;0;0;\
+         $w;$h;0;\
+         0;$h;0;\
+         12;0;3;2;1;0;0;0;$h1;$w1;$h1;$w1;0;\ # Primitives description.
+         -128;$w;$h;$s)                       # Texture map.
     y.
-    (1)  # Opacity.
+    (1) # Opacity.
     a y => $nm
   }
 
@@ -21958,22 +22126,13 @@ lathe3d : check "${1=128}>0 && ${2=0.5%}>=0 && ${3=361}>=0"
   1,21,1,1,67.5,73.5,109.5,103.5,51.5,100.5,2,1,${1-6},2,0,1,200,200,200,1 => [3D\ line]
 
 #@cli lissajous3d : resolution>1,a,A,b,B,c,C
-#@cli : Input 3D lissajous curves __(x(t)=sin(a*t+A*2*pi), y(t)=sin(b*t+B*2*pi), z(t)=sin(c*t+C*2*pi))__.
+#@cli : Input 3D lissajous curves `x(t)=sin(a*t+A*2*pi)`, `y(t)=sin(b*t+B*2*pi)`, `z(t)=sin(c*t+C*2*pi)`.
 #@cli : Default values: 'resolution=1024', 'a=2', 'A=0', 'b=1', 'B=0', 'c=0' and 'C=0'.
 #@cli : $ lissajous3d ,
-+lissajous3d : check ${1=1024}>1 skip ${2=2},${3=0},${4=1},${5=0},${6=0},${7=0}
++lissajous3d : check "isint(${1=1024}) && $1>1" skip ${2=2},${3=0},${4=1},${5=0},${6=0},${7=0}
   e[^-1] "Input 3D lissajous curve, with resolution $1, (a,A)=($2,$3), (b,B)=($4,$5) and (c,C)=($6,$7)."
-  res={round($1)}
-
-  # Define object header and vertices.
-  (67.5;73.5;109.5;103.5;51.5;100.5;$res;{$res-1})
-  (0,{2*pi}) r. $res,1,1,1,3 [-1]x2
-  *... $2 +... {$3*2*pi} *.. $4 +.. {$5*2*pi} *. $6 +. {$7*2*pi}
-  a[-3--1] y sin. transpose. r. 1,{w*h},1,1,-1
-
-  # Define object primitives, colors and opacities.
-  1,{$res-1},1,1,2 (0;{$res-2}) r. 1,{$res-1},1,1,3 ++. 1 a[-3--1] x round. 1 r. 1,{w*h},1,1,-1
-  1,{3*($res-1)},1,1,200 1,{$res-1},1,1,1 a[-5--1] y => [3D\ lissajou]
+  curve3d[] "const pi2 = 2*pi; sin($2*t + $3*pi2)","sin($4*t + $5*pi2)","sin($6*t + $7*pi2)",0,$1,0,{2*pi}
+  => [3D\ lissajou]
 
 #@cli m3d : eq. to 'mode3d'.
 m3d :
@@ -22306,6 +22465,7 @@ _primitives3d :
       R==-128?(
         wc = i[#4,pc++]; hc = i[#4,pc++]; sc = i[#4,pc++]; whsc = wc*hc*sc;
         is_shared_texture = whsc?0:1; vname = string(#24,'tx',whsc?M:wc); ind_texture = get(vname); pc+=whsc;
+        wt1 = w#ind_texture - 1; ht1 = h#ind_texture - 1;
         R = G = B = 200;
       ):(G = i[#4,pc++]; B = i[#4,pc++]);
 
@@ -22352,7 +22512,8 @@ _primitives3d :
 
       ):n==6?( # Textured segment
         i0 = f2ui(i[#3,pp++]); i1 = f2ui(i[#3,pp++]);
-        tx0 = i[#3,pp++]; ty0 = i[#3,pp++]; tx1 = i[#3,pp++]; ty1 = i[#3,pp++];
+        tx0 = cut(i[#3,pp++],0,wt1); ty0 = cut(i[#3,pp++],0,ht1);
+        tx1 = cut(i[#3,pp++],0,wt1); ty1 = cut(i[#3,pp++],0,ht1);
         mode==0?(
           copy(RGB0,i(#ind_texture,tx0,ty0,0,0),min(3,s#ind_texture),1,wh#ind_texture);
           copy(RGB1,i(#ind_texture,tx1,ty1,0,0),min(3,s#ind_texture),1,wh#ind_texture);
@@ -22370,7 +22531,9 @@ _primitives3d :
 
       ):n==9?( # Textured triangle
         i0 = f2ui(i[#3,pp++]); i1 = f2ui(i[#3,pp++]); i2 = f2ui(i[#3,pp++]);
-        tx0 = i[#3,pp++]; ty0 = i[#3,pp++]; tx1 = i[#3,pp++]; ty1 = i[#3,pp++]; tx2 = i[#3,pp++]; ty2 = i[#3,pp++];
+        tx0 = cut(i[#3,pp++],0,wt1); ty0 = cut(i[#3,pp++],0,ht1);
+        tx1 = cut(i[#3,pp++],0,wt1); ty1 = cut(i[#3,pp++],0,ht1);
+        tx2 = cut(i[#3,pp++],0,wt1); ty2 = cut(i[#3,pp++],0,ht1);
         mode==0?(
           copy(RGB0,i(#ind_texture,tx0,ty0,0,0),min(3,s#ind_texture),1,wh#ind_texture);
           copy(RGB1,i(#ind_texture,tx1,ty1,0,0),min(3,s#ind_texture),1,wh#ind_texture);
@@ -22392,8 +22555,10 @@ _primitives3d :
 
       ):n==12?( # Textured quadrangle
         i0 = f2ui(i[#3,pp++]); i1 = f2ui(i[#3,pp++]); i2 = f2ui(i[#3,pp++]); i3 = f2ui(i[#3,pp++]);
-        tx0 = i[#3,pp++]; ty0 = i[#3,pp++]; tx1 = i[#3,pp++]; ty1 = i[#3,pp++];
-        tx2 = i[#3,pp++]; ty2 = i[#3,pp++]; tx3 = i[#3,pp++]; ty3 = i[#3,pp++];
+        tx0 = cut(i[#3,pp++],0,wt1); ty0 = cut(i[#3,pp++],0,ht1);
+        tx1 = cut(i[#3,pp++],0,wt1); ty1 = cut(i[#3,pp++],0,ht1);
+        tx2 = cut(i[#3,pp++],0,wt1); ty2 = cut(i[#3,pp++],0,ht1);
+        tx3 = cut(i[#3,pp++],0,wt1); ty3 = cut(i[#3,pp++],0,ht1);
         mode==0?(
           copy(RGB0,i(#ind_texture,tx0,ty0,0,0),min(3,s#ind_texture),1,wh#ind_texture);
           copy(RGB1,i(#ind_texture,tx1,ty1,0,0),min(3,s#ind_texture),1,wh#ind_texture);
@@ -22659,7 +22824,7 @@ snapshot3d : check "${2=1}>=0" skip ${1=512},${3=""}
     (${3--1}) y. c r. $1,$1 to_color.
   else # Default background color.
     e[0--3] "Take $1x$1 snapshot$? of 3D object$?, with zoom factor $2 and default background."
-    1,2,1,3,32,64,32,116,64,96 r. $1,$1,1,3,3
+    3,3,1,1,"0,0,0,0,0,100,100,0,50" permute. cyzx r. $1,$1,1,3,3 round.
   fi
   repeat $!-1 { . l[$>,-1] {
     if $2!=0 c3d[0] n3d[0] *3d[0] {3*min(w,h)*$2/4} fi
@@ -28567,14 +28732,14 @@ stencilbw : skip ${1=15},${2=10}
 # 'init_max_gradient=0', 'patch_size_analysis=5', 'patch_size_synthesis=5', 'patch_size_synthesis_final=5', \
 # 'nb_matches_finest=2', 'nb_matchesc_coarsest=30', 'penalize_repetitions=2', 'matching_precision=2', \
 # 'scale_factor=1.85', 'skip_finest_scales=0' and \
-# 'image_matching_command'="s c,-3 transfer_pca[0] [2] b[0,2] xy,0.7 n[0,2] 0,255 n[1,2] 0,200 \
+# 'image_matching_command'="s c,-3 match_pca[0] [2] b[0,2] xy,0.7 n[0,2] 0,255 n[1,2] 0,200 \
 # a[0,1] c a[1,2] c"'.
 stylize :
   check ${"is_image_arg $1"}" && isnum(${2=0.5}) && isnum(${3=2}) && ${4=3}>=0 && ${5=0.5}>=0 && ${6=0.1}>=0 && "\
         "$6<=1 && isint(${7=0}) && $7>=0 && $7<=3 && isint(${8=16}) && $8>=0 && ${9=0}>=0 && isint(${10=5}) && "\
         "$10>0 && isint(${11=5}) && $11>0 && isint(${12=$11}) && $12>0 && isint(${13=2}) && isint(${14=30}) && "\
         "${15=2}>=0 && ${16=2}>=0 && ${17=1.85}>1 && isint(${18=0})>=0"
-  skip "${19=s c,-3 transfer_pca[0] [2] b[0,2] xy,0.7 n[0,2] 0,255 n[1,2] 0,200 a[0,1] c a[1,2] c}"
+  skip "${19=s c,-3 match_pca[0] [2] b[0,2] xy,0.7 n[0,2] 0,255 n[1,2] 0,200 a[0,1] c a[1,2] c}"
   e[^-1] "Stylize image$? with style image $1."
   fidelity_finest,\ # $2
   fidelity_coarsest,\ # $3
@@ -38985,7 +39150,7 @@ fx_gmicky_preview :
 #@gui : - <b>2022/04/06</b> : version <i>3.1.0</i>.\n
 #@gui : - <b>2023/01/16</b> : version <i>3.2.0</i>.\n
 #@gui : - <span foreground="purple"><b>2023/02/15</b> : version <i>3.2.1</i> (Current stable).</span>\n
-##@gui : - <b>2023/03/XX</b> : version <i>3.2.2_pre</i> (Current pre-release).\n
+#@gui : - <b>2023/02/27</b> : version <i>3.2.2_pre</i> (Current pre-release).\n
 #@gui : "}
 #@gui : sep = separator()
 #@gui : url = link{"View changelog to upcoming minor version (3.3)","https://discuss.pixls.us/t/on-the-road-to-3-3"}
@@ -41427,11 +41592,11 @@ fx_stylize :
     match_colors=$match_colors" ac[0,1] \"balance_gamma ,\","$colorspace$luma
     if narg($chroma) match_colors=$match_colors" ac[0,1] \"balance_gamma ,\","$colorspace$chroma fi
   elif $10==2
-    match_colors=$match_colors" transfer_histogram[0] [1],256,"$colorspace$luma
-    if narg($chroma) match_colors=$match_colors" transfer_histogram[0] [1],256,"$colorspace$chroma fi
+    match_colors=$match_colors" match_histogram[0] [1],256,"$colorspace$luma
+    if narg($chroma) match_colors=$match_colors" match_histogram[0] [1],256,"$colorspace$chroma fi
   elif $10==3
-    match_colors=$match_colors" transfer_pca[0] [1],"$colorspace$luma" c[0] 0,255"
-    if narg($chroma) match_colors=$match_colors" transfer_pca[0] [1],"$colorspace$chroma" c[0] 0,255" fi
+    match_colors=$match_colors" match_pca[0] [1],"$colorspace$luma" c[0] 0,255"
+    if narg($chroma) match_colors=$match_colors" match_pca[0] [1],"$colorspace$chroma" c[0] 0,255" fi
   fi
   if $12==1 match_colors=$match_colors" rgb2ycbcr[0,1] sh[0,1] 1,2 f[-2,-1] 128 rm[-2,-1] ycbcr2rgb[0,1]"
   elif $12==2 match_colors=$match_colors" srgb2lab[0,1] sh[0,1] 1,2 f[-2,-1] 0 rm[-2,-1] lab2srgb[0,1]"
@@ -42640,7 +42805,7 @@ fx_boost_fade :
   foreach {
     100%,100%,1,3 rand. 0,1 b. {10-10*($1/10)^0.5} n. 0,255
     to_colormode 0 a z
-    ac "s z transfer_histogram.. . rm.",${"arg 1+$2,ycbcr_cbcr,lab_ab"}
+    ac "s z match_histogram.. . rm.",${"arg 1+$2,ycbcr_cbcr,lab_ab"}
   }
 
 fx_boost_fade_preview :
@@ -45440,7 +45605,7 @@ _fx_cluts_colorslide :
 fx_transfer_rgb :
   to_rgb
   ref={$4?0:-1}
-  transfer_rgb[^$ref] [$ref],0.25,$1,$2,{2^(4+$3)},$5,0
+  match_rgb[^$ref] [$ref],0.25,$1,$2,{2^(4+$3)},$5,0
   c 0,255
 
 fx_transfer_rgb_preview :
@@ -45483,7 +45648,7 @@ fx_transfer_rgb_preview :
 fx_transfer_histogram :
   to_rgb
   ref={$2?0:-1}
-  transfer_histogram[^$ref] [$ref],256,$1
+  match_histogram[^$ref] [$ref],256,$1
   c 0,255
 
 fx_transfer_histogram_preview :
@@ -45526,7 +45691,7 @@ fx_transfer_histogram_preview :
 fx_transfer_pca :
   to_rgb
   ref={$2?0:-1}
-  transfer_pca[^$ref] [$ref],$1
+  match_pca[^$ref] [$ref],$1
   c 0,255
 
 fx_transfer_pca_preview :
@@ -50400,7 +50565,7 @@ _fx_equalize_light :
   foreach {
     split_opacity l[0] {
       . +b. {max(0.1,100-$1)}% -[-2,-1]
-      if $2 transfer_pca. .. else n. ..,.. fi
+      if $2 match_pca. .. else n. ..,.. fi
       rm..
     }
     a c
