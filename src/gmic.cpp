@@ -1792,6 +1792,45 @@ static const CImgList<T>& save_gmz(const char *filename, const CImgList<T>& imag
 #undef cimg_plugin
 #elif defined(cimglist_plugin)
 
+// Thread-safe versions of 'CImgList<T>::insert()' and 'CImgList<T>::remove()'.
+template<typename t>
+CImgList<T>& ts_insert(const CImg<t>& img, const unsigned int pos=~0U, const bool is_shared=false) {
+  return insert(img,pos,is_shared);
+}
+
+CImgList<T>& ts_insert(const unsigned int n, const unsigned int pos=~0U) {
+  return insert(n,pos);
+}
+
+template<typename t>
+CImgList<T>& ts_insert(const unsigned int n, const CImg<t>& img, const unsigned int pos=~0U,
+                       const bool is_shared=false) {
+  return insert(n,img,pos,is_shared);
+}
+
+template<typename t>
+CImgList<T>& ts_insert(const CImgList<t>& list, const unsigned int pos=~0U, const bool is_shared=false) {
+  return insert(list,pos,is_shared);
+}
+
+template<typename t>
+CImgList<T>& ts_insert(const unsigned int n, const CImgList<t>& list, const unsigned int pos=~0U,
+                       const bool is_shared=false) {
+  return insert(n,list,pos,is_shared);
+}
+
+CImgList<T>& ts_remove(const unsigned int pos1, const unsigned int pos2) {
+  return remove(pos1,pos2);
+}
+
+CImgList<T>& ts_remove(const unsigned int pos) {
+  return remove(pos);
+}
+
+CImgList<T>& ts_remove() {
+  return remove();
+}
+
 template<typename t>
 static CImgList<T> copy_rounded(const CImgList<t>& list) {
   if (!cimg::type<t>::is_float() || cimg::type<T>::is_float()) return list;
