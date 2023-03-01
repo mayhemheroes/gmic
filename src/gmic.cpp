@@ -4123,7 +4123,6 @@ template<typename T>
 gmic& gmic::remove_images(CImgList<T> &images, CImgList<char> &images_names,
                           const CImg<unsigned int>& selection,
                           const unsigned int start, const unsigned int end) {
-  cimg::mutex(23);
   if (start==0 && end==(unsigned int)selection.height() - 1 && selection.height()==images.width()) {
     images.assign();
     images_names.assign();
@@ -4133,7 +4132,6 @@ gmic& gmic::remove_images(CImgList<T> &images, CImgList<char> &images_names,
       images.remove(ind,eind);
       images_names.remove(ind,eind);
     }
-  cimg::mutex(23,0);
   return *this;
 }
 
