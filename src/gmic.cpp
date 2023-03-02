@@ -5296,8 +5296,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
   // Add current run to managed list of gmic runs.
   cimg::mutex(24);
   CImgList<void*> &grl = gmic_runs();
-  const CImg<void*> &grb = grl.back();
-  const bool push_run = !grl || grb[0]!=this || grb[1]!=&images;
+  bool push_run = true;
+  if (grl) {
+    const CImg<void*> &grb = grl.back();
+    push_run = grb[0]!=this || grb[1]!=&images;
+  }
   if (push_run) {
     CImg<void*> gr(8);
     gr[0] = (void*)this;
