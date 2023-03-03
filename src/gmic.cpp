@@ -2213,7 +2213,7 @@ inline void* get_tid() {
   return tid;
 }
 
-// Search G'MIC by image list and thread_id. If 'p_list==0', search only by thread_id.
+// Search G'MIC by image list (if 'p_list!=0') *or* thread_id (if 'p_list==0').
 const CImg<void*> gmic::current_run(const char *const func_name, void *const p_list) {
   CImgList<void*> &grl = gmic_runs();
   void *const tid = p_list?(void*)0:get_tid();
