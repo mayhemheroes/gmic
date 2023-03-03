@@ -2197,6 +2197,7 @@ double gmic_round(const double x) {
 // Manage list of all gmic runs.
 inline CImgList<void*>& gmic_runs() {
   static CImgList<void*> val;
+//  std::fprintf(stderr,"\nDEBUG : %d\n",val.width());
   return val;
 }
 
@@ -5296,12 +5297,16 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
   // Add current run to managed list of gmic runs.
   cimg::mutex(24);
   CImgList<void*> &grl = gmic_runs();
-  bool push_run = true;
+  unsigned int ind_run = grl.width();
+  CImg<void*> old_run;
   if (grl) {
-    const CImg<void*> &grb = grl.back();
-    push_run = grb[0]!=this || grb[1]!=&images;
+    CImg<void*> &grb = grl.back();
+    if (grb[0]==this) {
+      if (grb[1]==&images) ind_run = ~0U; // Don't push new run
+      else { grb.move_to(old_run); --ind_run; } // Will replace previous data at same position
+    }
   }
-  if (push_run) {
+  if (ind_run!=~0U) {
     CImg<void*> gr(8);
     gr[0] = (void*)this;
     gr[1] = (void*)&images;
@@ -5311,7 +5316,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     gr[5] = (void*)variables_sizes;
     gr[6] = (void*)command_selection;
     gr[7] = get_tid();
-    gr.move_to(grl);
+    if (ind_run<grl._width) gr.move_to(grl[ind_run]);
+    else gr.move_to(grl,ind_run);
   }
   cimg::mutex(24,0);
 
@@ -15511,7 +15517,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
   }
 
   // Remove current run from managed list of gmic runs.
-  if (push_run) {
+  if (ind_run!=~0U) {
     cimg::mutex(24);
     void *const tid = get_tid();
     for (int k = grl.width() - 1; k>=0; --k) {
@@ -15524,7 +15530,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           _gr[5]==(void*)variables_sizes &&
           _gr[6]==(void*)command_selection &&
           _gr[7]==tid) {
-        grl.remove(k); break;
+        if (old_run) old_run.move_to(grl[k]);
+        else grl.remove(k);
+        break;
       }
     }
     cimg::mutex(24,0);
