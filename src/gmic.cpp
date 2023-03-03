@@ -2197,7 +2197,6 @@ double gmic_round(const double x) {
 // Manage list of all gmic runs.
 inline CImgList<void*>& gmic_runs() {
   static CImgList<void*> val;
-//  std::fprintf(stderr,"\nDEBUG : %d\n",val.width());
   return val;
 }
 
@@ -5299,11 +5298,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
   CImgList<void*> &grl = gmic_runs();
   unsigned int ind_run = grl.width();
   CImg<void*> old_run;
-  if (grl) {
-    CImg<void*> &grb = grl.back();
-    if (grb[0]==this) {
-      if (grb[1]==&images) ind_run = ~0U; // Don't push new run
-      else { grb.move_to(old_run); --ind_run; } // Will replace previous data at same position
+  for (int k = grl.width() - 1; k>=0; --k) {
+    CImg<void*> &gr = grl[k];
+    if (gr[0]==this) {
+      if (gr[1]==&images) { ind_run = ~0U; break; } // Don't push new run
+      else { gr.move_to(old_run); ind_run = k; } // Will replace previous data at same position
     }
   }
   if (ind_run!=~0U) {
@@ -15520,18 +15519,19 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
   if (ind_run!=~0U) {
     cimg::mutex(24);
     void *const tid = get_tid();
-    for (int k = grl.width() - 1; k>=0; --k) {
-      CImg<void*> &_gr = grl[k];
-      if (_gr[0]==(void*)this &&
-          _gr[1]==(void*)&images &&
-          _gr[2]==(void*)&images_names &&
-          _gr[3]==(void*)&parent_images &&
-          _gr[4]==(void*)&parent_images_names &&
-          _gr[5]==(void*)variables_sizes &&
-          _gr[6]==(void*)command_selection &&
-          _gr[7]==tid) {
-        if (old_run) old_run.move_to(grl[k]);
-        else grl.remove(k);
+    for (int k = grl.width() - (ind_run<grl._width?0:1); k>=0; --k) {
+      const int _k = k>=grl.width()?ind_run:k; // First try is 'ind_run' if possible
+      CImg<void*> &gr = grl[_k];
+      if (gr[0]==(void*)this &&
+          gr[1]==(void*)&images &&
+          gr[2]==(void*)&images_names &&
+          gr[3]==(void*)&parent_images &&
+          gr[4]==(void*)&parent_images_names &&
+          gr[5]==(void*)variables_sizes &&
+          gr[6]==(void*)command_selection &&
+          gr[7]==tid) {
+        if (old_run) old_run.move_to(grl[_k]);
+        else grl.remove(_k);
         break;
       }
     }
