@@ -2197,9 +2197,6 @@ double gmic_round(const double x) {
 // Manage list of all gmic runs.
 inline CImgList<void*>& gmic_runs() {
   static CImgList<void*> val;
-
-  std::fprintf(stderr,"\nDEBUG : %d",val.width());
-
   return val;
 }
 
