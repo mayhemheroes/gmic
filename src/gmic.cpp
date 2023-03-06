@@ -2220,22 +2220,22 @@ const CImg<void*> gmic::current_run(const char *const func_name, void *const p_l
   int p;
   for (p = grl.width() - 1; p>=0; --p) {
     const CImg<void*> &gr = grl[p];
-    if ((p_list && gr[1]==(void*)p_list) || (!p_list && gr[7]==tid)) break;
+    if (gr && ((p_list && gr[1]==(void*)p_list) || (!p_list && gr[7]==tid))) break;
   }
   if (p<0) { // Instance not found!
     if (p_list)
       throw CImgArgumentException("[" cimg_appname "] Function '%s': "
                                   "Cannot determine instance of the G'MIC interpreter.",
                                   func_name);
-    else return CImg<void*>::empty(); // Happens only when called from 'gmic_current_is_abort()'
+    else return CImg<void*>::empty(); // Empty instance can be returned, only when called from 'gmic_current_is_abort()'
   }
   return grl[p].get_shared(); // Return shared image
 }
 
 // Return 'is_abort' value related to current G'MIC instance.
 bool* gmic::current_is_abort() {
-  static bool def = false;
   cimg::mutex(24);
+  static bool def = false;
   CImg<void*> gr = gmic::current_run("gmic_abort_init()",0);
   bool *const res = gr?((gmic*)(gr[0]))->is_abort:&def;
   cimg::mutex(24,0);
@@ -5300,11 +5300,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
   CImg<void*> old_run;
   for (int k = grl.width() - 1; k>=0; --k) {
     CImg<void*> &gr = grl[k];
-    if (gr[0]==this) {
-      if (gr[1]==&images) ind_run = ~0U; // Don't push new run
-      else { gr.move_to(old_run); ind_run = k; } // Will replace previous data at same position
-      break;
-    } else if (!gr[0] && ind_run==grl._width) ind_run = k; // Will use freed slot
+    if (gr) {
+      if (gr[0]==this) {
+        if (gr[1]==&images) ind_run = ~0U; // Don't push new run
+        else { gr.move_to(old_run); ind_run = k; } // Will replace previous data at same position
+        break;
+      } else if (!gr[0] && ind_run==grl._width) ind_run = k; // Will use freed slot
+    }
   }
   if (ind_run!=~0U) {
     CImg<void*> gr(8);
@@ -15523,7 +15525,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     for (int k = grl.width() - (ind_run<grl._width?0:1); k>=0; --k) {
       const int _k = k>=grl.width()?ind_run:k; // First try is 'ind_run' if possible
       CImg<void*> &gr = grl[_k];
-      if (gr[0]==(void*)this &&
+      if (gr &&
+          gr[0]==(void*)this &&
           gr[1]==(void*)&images &&
           gr[2]==(void*)&images_names &&
           gr[3]==(void*)&parent_images &&
@@ -15532,7 +15535,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           gr[6]==(void*)command_selection &&
           gr[7]==tid) {
         if (old_run) old_run.move_to(grl[_k]);
-        else grl[_k].assign(8,1,1,1,(void*)0);
+        else if (_k>=8) grl.remove(_k);
+        else grl[_k].assign();
         break;
       }
     }
