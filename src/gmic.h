@@ -207,6 +207,10 @@ namespace gmic_library {
 #define cimg_appname "gmic"
 #endif
 
+#ifdef gmic_is_parallel
+#define cimg_use_pthread
+#endif
+
 #define cimg_library gmic_library
 #define CImg gmic_image
 #define CImgList gmic_list
