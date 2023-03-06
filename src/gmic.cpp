@@ -5301,9 +5301,10 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
   for (int k = grl.width() - 1; k>=0; --k) {
     CImg<void*> &gr = grl[k];
     if (gr[0]==this) {
-      if (gr[1]==&images) { ind_run = ~0U; break; } // Don't push new run
+      if (gr[1]==&images) ind_run = ~0U; // Don't push new run
       else { gr.move_to(old_run); ind_run = k; } // Will replace previous data at same position
-    }
+      break;
+    } else if (!gr[0] && ind_run==grl._width) ind_run = k; // Will use freed slot
   }
   if (ind_run!=~0U) {
     CImg<void*> gr(8);
@@ -15531,7 +15532,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
           gr[6]==(void*)command_selection &&
           gr[7]==tid) {
         if (old_run) old_run.move_to(grl[_k]);
-        else grl.remove(_k);
+        else grl[_k].assign(8,1,1,1,(void*)0);
         break;
       }
     }
