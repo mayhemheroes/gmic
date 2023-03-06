@@ -2214,7 +2214,6 @@ inline void* get_tid() {
 }
 
 // Search G'MIC by image list (if 'p_list!=0') *or* thread_id (if 'p_list==0').
-// Return non-empty image if no exception is thrown.
 const CImg<void*> gmic::current_run(const char *const func_name, void *const p_list) {
   CImgList<void*> &grl = gmic_runs();
   void *const tid = p_list?(void*)0:get_tid();
@@ -2228,7 +2227,7 @@ const CImg<void*> gmic::current_run(const char *const func_name, void *const p_l
       throw CImgArgumentException("[" cimg_appname "] Function '%s': "
                                   "Cannot determine instance of the G'MIC interpreter.",
                                   func_name);
-    else return CImg<void*>::empty(); // Happens only when called from 'gmic_current_is_abort()'
+    else return CImg<void*>::empty(); // Empty instance can be returned, only when called from 'gmic_current_is_abort()'
   }
   return grl[p].get_shared(); // Return shared image
 }
@@ -2236,8 +2235,9 @@ const CImg<void*> gmic::current_run(const char *const func_name, void *const p_l
 // Return 'is_abort' value related to current G'MIC instance.
 bool* gmic::current_is_abort() {
   cimg::mutex(24);
+  static bool def = false;
   CImg<void*> gr = gmic::current_run("gmic_abort_init()",0);
-  bool *const res = ((gmic*)(gr[0]))->is_abort;
+  bool *const res = gr?((gmic*)(gr[0]))->is_abort:&def;
   cimg::mutex(24,0);
   return res;
 }
