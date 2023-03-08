@@ -5759,10 +5759,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             if (is_mquvx) {
               CImg<char>::string(onechar_shortcuts[(unsigned int)command0]).move_to(_item);
               *command = 0;
-            } else {
-              std::strcpy(command,onechar_shortcuts[(unsigned int)command0]);
-              *item = 0;
-            }
+            } else std::strcpy(command,onechar_shortcuts[(unsigned int)command0]);
           }
 
         } else if (!command2) { // Two-chars shortcuts
