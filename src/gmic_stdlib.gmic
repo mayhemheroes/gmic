@@ -120,7 +120,7 @@
 #      _ 'point(_X,_Y,_removable={ -1 | 0 | 1 },_burst={ 0 | 1 },_R,_G,_B,_[-]A,_radius[%])':
 #          Add X,Y parameters (as a moveable point over the preview).
 #
-#      _ 'file[_in,_out](_default_filename)':
+#      _ 'file(_default_filename)', 'file_in(_default_filename)' or 'file_out(_default_filename)':
 #          Add a filename parameter (as a filechooser).
 #
 #      _ 'float(default_value,min_value,max_value)':
@@ -15277,7 +15277,7 @@ _seamcarve :
     100%,100% +rows[1] 0
     => grad,low,seam,top
 
-    repeat h#0-1 nr:=$>+1 {
+    repeat h#0-1 { nr:=$>+1
       +rows[low] $nr
 
       # Find optimum matches between two 1D matrices.
@@ -17651,7 +17651,7 @@ remove_pixels : check "$1>=0"
 rolling_guidance : check "${1=4}>=0 && ${2=10}>=0 && ${3=0.5}>=0"
   e[^-1] "Apply rolling guidance filter on image$?, with standard deviations ($1,$2) and precision $3."
   precision:=2^-$3
-  foreach {
+  foreach { nm={n}
     +b $1
     repeat 100 {
       if c>1 +norm. +bilateral... .,$1,$2 rm..
@@ -17660,7 +17660,7 @@ rolling_guidance : check "${1=4}>=0 && ${2=10}>=0 && ${3=0.5}>=0"
       -.. . std={-2,id} rm..
       if $std<$precision break fi
     }
-    k.
+    k. => $nm
   }
 
 #@cli sharpen : amplitude>=0 : amplitude>=0,edge>=0,_alpha[%],_sigma[%]
@@ -21115,7 +21115,7 @@ animate3d : check "isint($1) && $1>0 && isnum(${2=0}) && isnum(${3=5}) && isnum(
       e "\r  * Object '"$bn"': "{1+$>}"/$1"
       +r3d[0] 0,0,1,{$>*$4} r3d. 0,1,0,{$>*$3} r3d. 1,0,0,{$>*$2}
       {1,[w,h,d,4]},-1 j3d. ..,50%,50%,0,1
-      sh. 0,{s-2} sh.. 100% !=. -1 mul.. . mul. 255 rm[-2,-1]
+      sh. 0,{s-2} +l.. { s c max } !=. -1 mul.. . mul. 255 j... .,0,0,0,{-2,s} rm[-2,-1]
       if $6 sh. 100% +b. 2% shift. {m=min(w,h)*2%;[m,m]} -. {255-$6*255%} c. 0,255 max[-2,-1] rm. fi # Add fake shadow
       +blend[1,-1] alpha rm[-3,-2]
       if {*} w. -1,-1,0 fi
@@ -24010,7 +24010,9 @@ check_opencv : skip "${1=check_opencv}"
 #@cli : Start a 'do...while' block.
 #@cli : $ image.jpg luminance i={ia+2} do set 255,{u(100)}%,{u(100)}% while ia<$i
 
-#@cli } : eq. to 'done'. : (+)
+#@cli } : (+)
+#@cli : Equivalent to 'done' if it ends a 'for { .. }', 'foreach { .. }', 'local { .. }' or a 'repeat { .. }' block.
+#@cli : Otherwise, close the corresponding '{ .. }' code block.
 
 #@cli done : (+)
 #@cli : End a 'for/foreach/local/repeat...done' block, and go to associated 'for/foreach/repeat' if iterations remain.

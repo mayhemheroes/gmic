@@ -4234,6 +4234,7 @@ gmic& gmic::_gmic(const char *const commands_line,
   is_abort = p_is_abort?p_is_abort:&_is_abort;
   *is_abort = false;
   is_abort_thread = false;
+  is_lbrace_command = false;
   starting_commands_line = commands_line;
 
   // Import standard library and custom commands.
@@ -5413,8 +5414,11 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     if (!commands_line && is_start) { print(images,0,"Start G'MIC interpreter."); is_start = false; }
 
     while (position<commands_line.size() && !is_quit && !is_return) {
-      const bool is_first_item = !position;
+      const bool
+        is_first_item = !position,
+        was_lbrace_command = is_lbrace_command;
       *command = *s_selection = 0;
+      is_lbrace_command = false;
 
       // Process debug info.
       if (next_debug_line!=~0U) { debug_line = next_debug_line; next_debug_line = ~0U; }
@@ -5456,7 +5460,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
       char *item = _item;
       const char *argument = initial_argument;
-      if ((*item==',' || *item=='{') && !item[1]) { ++position; continue; }
+      if ((*item==',' || (*item=='{' && was_lbrace_command)) && !item[1]) { ++position; continue; }
 
       // Check if current item is a known command.
       const bool
@@ -5475,7 +5479,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         is_com3 = *item && item[1] && item[2] && _gmic_eok(3);
       bool is_builtin_command =
         (*item>='a' && *item<='z' && is_com1) || // Alphabetical shortcut commands
-        (*item=='}' && !item[1]) || // Shortcut for 'done'
+        ((*item=='{' || *item=='}') && !item[1]) || // Left/right braces
         (*item=='m' && (item[1]=='*' || item[1]=='/') && is_com2) || // Shortcuts 'm*' and 'm/'
         (*item=='f' && item[1]=='i' && is_com2) || // Shortcuts 'fi'
         (*item=='u' && item[1]=='m' && is_com2) || // Shortcut 'um'
@@ -5759,10 +5763,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             if (is_mquvx) {
               CImg<char>::string(onechar_shortcuts[(unsigned int)command0]).move_to(_item);
               *command = 0;
-            } else {
-              std::strcpy(command,onechar_shortcuts[(unsigned int)command0]);
-              *item = 0;
-            }
+            } else std::strcpy(command,onechar_shortcuts[(unsigned int)command0]);
           }
 
         } else if (!command2) { // Two-chars shortcuts
@@ -6853,12 +6854,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Done.
         if (!is_get && !std::strcmp("done",item)) {
           const CImg<char> &s = callstack.back();
-          if (s[0]!='*' || (s[1]!='f' && s[1]!='l' && s[1]!='r'))
+          if (s[0]!='*' || (s[1]!='b' && s[1]!='f' && s[1]!='l' && s[1]!='r'))
             error(true,images,0,0,
                   "Command 'done': Not associated to a 'for', 'foreach', 'local' or 'repeat' command "
                   "within the same scope.");
 
-          if (s[1]=='f') {
+          if (s[1]=='b') callstack.remove(); // End a '{ .. }' block
+          else if (s[1]=='f') {
             if (s[4]!='e') { // End a 'for...done' block
               unsigned int *const fd = fordones.data(0,nb_fordones - 1);
               position = fd[0];
@@ -6881,6 +6883,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               position = rd[0] + 2;
               next_debug_line = rd[3];
               next_debug_filename = debug_filename;
+              is_lbrace_command = true;
             } else {
               if (is_very_verbose) print(images,0,"End 'repeat...done' block.");
               --nb_repeatdones;
@@ -7811,6 +7814,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             fd[1] = 0;
             fd[2] = debug_line;
           }
+          is_lbrace_command = true;
           continue;
         }
 
@@ -7877,6 +7881,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 cimg::mutex(27,0);
               }
 
+              is_lbrace_command = true;
               gmic_exception exception;
               try {
                 if (next_debug_line!=~0U) { debug_line = next_debug_line; next_debug_line = ~0U; }
@@ -8872,6 +8877,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             cimg::mutex(27,0);
           }
 
+          is_lbrace_command = true;
           const int o_verbosity = verbosity;
           gmic_exception exception;
           try {
@@ -11179,6 +11185,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             rd[2] = nb;
             rd[3] = debug_line;
           }
+          is_lbrace_command = true;
           continue;
         }
 
@@ -13435,6 +13442,16 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       gmic_commands_others :
 
         if (is_builtin_command) {
+
+          // Left brace (not ignored previously, so starts a new generic code block).
+          if (!is_get && *item=='{' && !item[1]) {
+            if (is_debug_info && debug_line!=~0U) {
+              gmic_use_argx;
+              cimg_snprintf(argx,_argx.width(),"*block#%u",debug_line);
+              CImg<char>::string(argx).move_to(callstack);
+            } else CImg<char>::string("*block").move_to(callstack);
+            continue;
+          }
 
           // If...[elif]...[else]...endif.
           if (!is_get && (!std::strcmp("if",item) || (check_elif && !std::strcmp("elif",item)))) {
