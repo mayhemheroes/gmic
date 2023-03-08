@@ -5479,7 +5479,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         is_com3 = *item && item[1] && item[2] && _gmic_eok(3);
       bool is_builtin_command =
         (*item>='a' && *item<='z' && is_com1) || // Alphabetical shortcut commands
-        (*item=='}' && !item[1]) || // Shortcut for 'done'
+        ((*item=='{' || *item=='}') && !item[1]) || // Left/right braces
         (*item=='m' && (item[1]=='*' || item[1]=='/') && is_com2) || // Shortcuts 'm*' and 'm/'
         (*item=='f' && item[1]=='i' && is_com2) || // Shortcuts 'fi'
         (*item=='u' && item[1]=='m' && is_com2) || // Shortcut 'um'
@@ -6854,12 +6854,13 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         // Done.
         if (!is_get && !std::strcmp("done",item)) {
           const CImg<char> &s = callstack.back();
-          if (s[0]!='*' || (s[1]!='f' && s[1]!='l' && s[1]!='r'))
+          if (s[0]!='*' || (s[1]!='b' && s[1]!='f' && s[1]!='l' && s[1]!='r'))
             error(true,images,0,0,
                   "Command 'done': Not associated to a 'for', 'foreach', 'local' or 'repeat' command "
                   "within the same scope.");
 
-          if (s[1]=='f') {
+          if (s[1]=='b') callstack.remove(); // End a '{ .. }' block
+          else if (s[1]=='f') {
             if (s[4]!='e') { // End a 'for...done' block
               unsigned int *const fd = fordones.data(0,nb_fordones - 1);
               position = fd[0];
@@ -13441,6 +13442,16 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
       gmic_commands_others :
 
         if (is_builtin_command) {
+
+          // Left brace (not ignored previously, so starts a new generic code block).
+          if (!is_get && *item=='{' && !item[1]) {
+            if (is_debug_info && debug_line!=~0U) {
+              gmic_use_argx;
+              cimg_snprintf(argx,_argx.width(),"*block#%u",debug_line);
+              CImg<char>::string(argx).move_to(callstack);
+            } else CImg<char>::string("*block").move_to(callstack);
+            continue;
+          }
 
           // If...[elif]...[else]...endif.
           if (!is_get && (!std::strcmp("if",item) || (check_elif && !std::strcmp("elif",item)))) {
