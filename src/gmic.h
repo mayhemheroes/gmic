@@ -506,7 +506,7 @@ struct gmic {
     debug_filename, debug_line, cimg_exception_mode;
   int verbosity, network_timeout;
   bool allow_entrypoint, is_change, is_debug, is_running, is_start, is_return, is_quit, is_debug_info,
-    _is_abort, *is_abort, is_abort_thread;
+    _is_abort, *is_abort, is_abort_thread, is_lbrace_command;
   const char *starting_commands_line;
 };
 
