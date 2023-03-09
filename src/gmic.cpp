@@ -15398,7 +15398,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     // Post-check call stack consistency.
     if (!is_quit && !is_return) {
       const CImg<char>& s = callstack.back();
-      if (s[0]=='*' && (s[1]=='d' || s[1]=='i' || s[1]=='r' ||
+      if (s[0]=='*' && (s[1]=='b' || s[1]=='d' || s[1]=='i' || s[1]=='r' ||
                         (s[1]=='f' && (s[4]!='e' || !is_end_local)) ||
                         (s[1]=='l' && !is_end_local))) {
         unsigned int reference_line = ~0U;
