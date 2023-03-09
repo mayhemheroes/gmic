@@ -15385,8 +15385,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         if (cimg_sscanf(s,"*%*[a-z]#%u",&reference_line)==1)
           error(true,images,0,0,
                 "A '%s' command is missing (for '%s', line #%u), before return point.",
-                s[1]=='d'?"while":s[1]=='i'?"fi":"done",
-                s[1]=='d'?"do":s[1]=='i'?"if":s[1]=='r'?"repeat":s[1]=='f'?(s[4]!='e'?"for":"foreach"):"local",
+                s[1]=='b'?"}":s[1]=='d'?"while":s[1]=='i'?"fi":"done",
+                s[1]=='b'?"{":s[1]=='d'?"do":s[1]=='i'?"if":s[1]=='r'?"repeat":
+                s[1]=='f'?(s[4]!='e'?"for":"foreach"):"local",
                 reference_line);
         else error(true,images,0,0,
                    "A '%s' command is missing, before return point.",
