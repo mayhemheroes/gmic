@@ -13489,25 +13489,20 @@ pseudogray : check "isint(${1=5}) && $1>=0 && ${2=2.3}>=0 && isint(${3=8}) && $3
   => pseudogray$1
 
 #@cli random_clut
-#@cli : Generate a random 3D color LUT.
+#@cli : Generate a 33x33x33 random 3D color LUT.
 #@cli : $ image.jpg random_clut +map_clut.. .
 +random_clut :
   e[^-1] "Generate a random 3D color LUT."
 
   # Generate set of keypoints that has modified colors.
-  1,{max(1,round(u(12)))},1,3 rand. 0,255 rgb2hsi. mirror. c sort. +,y mirror. c .
-  f. ">begin(Imax = 0);
-    H = i0; S = i1; I = i2;
-    u<0.3?( # Change Hue
-      H = (H + 30*g)%360;
-    ):u<0.3? ( # Change Saturation
-      S = cut(S + g/3,0,1);
-    ):u<0.3? ( # Change Lightness
-      I = cut(I + g/3,Imax,1);
-    );
-    Imax = max(Imax,I);
-    [ H,S,I ]"
-  hsi2rgb[-2,-1] a[-2,-1] c
+  1,{max(1,round(u(8)))},1,3 rand. 0,255 rgb2hsv. mirror. c sort. +,y mirror. c .
+  f. ">begin(Lmax = 0);
+    H = (i0 + 30*g)%360;
+    S = cut(i1 + g/3,0,1);
+    do (L = i2 + g/3, L<Lmax); cut(L,0,1);
+    Lmax = max(Lmax,L);
+    [ H,S,L ]"
+  hsv2rgb[-2,-1] a[-2,-1] c
 
   # Generate keypoints with constant colors.
   N:=int(u(8))
@@ -13518,7 +13513,10 @@ pseudogray : check "isint(${1=5}) && $1>=0 && ${2=2.3}>=0 && isint(${3=8}) && $3
   discard. -1 r. 1,{h/3},1,3,-1 . a[-2,-1] c
 
   # Generate color LUT.
-  a[-3--1] y round. decompress_clut_rbf. 33,33,33 c. 0,255
+  a[-3--1] y round. decompress_clut_pde. 33,33,33 c. 0,255
+
+  # Normalize, relatively to identity CLUT.
+  33,33,33,3,"[ x,y,z ]" n. 0,255 +-[-2,-1] *. {25/id} +[-2,-1]
 
 #@cli replace_color : tolerance[%]>=0,smoothness[%]>=0,src1,src2,...,dest1,dest2,...
 #@cli : Replace pixels from/to specified colors in selected images.
@@ -45166,10 +45164,10 @@ fx_mix_ycbcr_preview :
   gui_split_preview "fx_mix_ycbcr $*",${-3--1}
 
 #@gui Random Color Transformation : fx_random_color_transformation, fx_random_color_transformation_preview(1)
-#@gui : Seed = float(35297,0,100000)
+#@gui : Amplitude (%) = float(100,0,100)
+#@gui : Seed = float(80450,0,100000)
 #@gui : Randomize Seed = button()
 #@gui : sep = separator()
-#@gui : Amplitude (%) = float(100,0,100)
 #@gui : Brightness (%) = float(0,-100,100)
 #@gui : Contrast (%) = float(0,-100,100)
 #@gui : Gamma (%) = float(0,-100,100)
@@ -45183,9 +45181,9 @@ fx_mix_ycbcr_preview :
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2023/03/10</i>.</small>")
 fx_random_color_transformation :
-  if $2 srand __seed:=_round(u(100000)) else __seed=$1 fi
+  if $3 srand __seed:=_round(u(100000)) else __seed=$2 fi
   srand $__seed random_clut
-  amplitude:=$3%
+  amplitude:=$1%
   repeat $!-1 { l[$>,-1] {
     +map_clut.. .
     j... .,0,0,0,0,$amplitude rm.
@@ -45196,7 +45194,7 @@ fx_random_color_transformation :
 fx_random_color_transformation_preview :
   gui_split_preview "fx_random_color_transformation ${1--2}",${-3--1}
   to "Seed: \#"$__seed,5,5,5%,2
-  u "{"$__seed"}{0}{$3}{$4}{$5}{$6}{$7}{$8}{$9}{$10,$11}"
+  u "{$1}{"$__seed"}{0}{$4}{$5}{$6}{$7}{$8}{$9}{$10,$11}"
 
 #@gui Retinex : fx_retinex, fx_retinex_preview(0)+
 #@gui : Strength (%) = float(75,0,100)
