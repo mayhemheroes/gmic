@@ -1625,7 +1625,7 @@ clean_cluts :
       = 0,0,100% nm={t} rm
     } fi
 
-    to_clutname $nm nm=${}
+    strclut $nm nm=${}
 
     # Standardize names for 'PictureFX'.
     if "str = lowercase(['"$nm"']);
@@ -10911,7 +10911,7 @@ compress_clut : check "${1=1.5}>0 && ${2=0.75}>0 && isint(${3=2048}) && (!$3 || 
     # Sort keypoints in lexicographic order (increasing order for RBF, decreasing for PDE).
     1,100%,1,1,"P = I(#0); P[0]*65536 + P[1]*256 + P[2]" rv a x sort {`'$method'=='rbf'?_'+':_'-'`},y z. 1,100%
 
-    to_clutname $nm => ${}
+    strclut $nm => ${}
   }
 
 # compress_cluts : {"file_pattern" | "file_list.txt"},_max_error>0,_avg_error>0,_max_nb_points>=8
@@ -12112,7 +12112,7 @@ bayer2rgb : skip ${1=1},${2=1},${3=0.5}
 #@cli : Default values: 'resolution=33' and 'cut_and_round=1'.
 #@cli : $ clut summer clut alien_green,17 clut orange_dark4,48
 +clut : check "isnum(${2=33}) && $2>0 && isbool(${3=1})"
-  to_clutname "$1" name=${} l[] {
+  strclut "$1" name=${} l[] {
   e[^-1] "Input CLUT '"$name"' with resolution $2."
     path_clut=${-path_cache}
     if isfile(['{/${path_clut}clut_$name.cimgz}']) i ${path_clut}clut_$name.cimgz fi
@@ -32203,7 +32203,7 @@ _minmax_whds :
 #@cli name2color : name
 #@cli : Return the R,G,B color that matches the specified color name.
 name2color :
-  to_varname "$1" name=${}
+  strvar "$1" name=${}
   _color2name names=${"u "{n}}
   l. {
     s x => $names u {$name,^} rm
@@ -32775,6 +32775,23 @@ strcapitalize :
 strcontains :
   u {"find(['$1'],['$2'])>=0"}
 
+#@cli strclut : "string"
+#@cli : Return simplified version of the specified string that can be used as a CLUT name.
+strclut :
+  0 => "$1" nm={b} rm.
+  u {`"ss = lowercase([['"{/$nm}"'],0]);
+       const N = 2*size(ss);
+       sd = vectorN();
+       for (ps = pd = 0, ss[ps], ++ps,
+         ss[ps]<=_' '?(sd[pd++] = _'_'):
+         (ss[ps]==_'(' || ss[ps]==_')' ||
+          ss[ps]==_'{' || ss[ps]==_'}' ||
+          ss[ps]==_'[' || ss[ps]==_']' ||
+          ss[ps]==_'\'' || ss[ps]==_'\"')?0:
+         (ps && ss[ps]>=_'0' && ss[ps]<=_'9' && ss[ps-1]>=_'a' && ss[ps-1]<=_'z')?(sd[pd++] = _'_'; sd[pd++] = ss[ps]):
+         (sd[pd++] = ss[ps]);
+       ); sd[pd] = 0; sd"`}
+
 #@cli strlen : string1
 #@cli : Return the length of specified string argument.
 strlen : skip "${1=}"
@@ -32849,40 +32866,6 @@ tic :
 toc :
   v=$^ _ticpos-=1 u {_$|-${_tic$_ticpos}}
   v 0 e[^-1] "Elapsed time: "${}" s". v $v
-
-#@cli to_clutname : "string"
-#@cli : Return simplified version of the specified string that can be used as a CLUT name.
-to_clutname :
-  0 => "$1" nm={b} rm.
-  u {`"ss = lowercase([['"{/$nm}"'],0]);
-       const N = 2*size(ss);
-       sd = vectorN();
-       for (ps = pd = 0, ss[ps], ++ps,
-         ss[ps]<=_' '?(sd[pd++] = _'_'):
-         (ss[ps]==_'(' || ss[ps]==_')' ||
-          ss[ps]==_'{' || ss[ps]==_'}' ||
-          ss[ps]==_'[' || ss[ps]==_']' ||
-          ss[ps]==_'\'' || ss[ps]==_'\"')?0:
-         (ps && ss[ps]>=_'0' && ss[ps]<=_'9' && ss[ps-1]>=_'a' && ss[ps-1]<=_'z')?(sd[pd++] = _'_'; sd[pd++] = ss[ps]):
-         (sd[pd++] = ss[ps]);
-       ); sd[pd] = 0; sd"`}
-
-#@cli to_varname : "string"
-#@cli : Return simplified version of the specified string that can be used as a variable name.
-to_varname :
-  0 => "$1" nm={b} rm.
-  u {`"ss = lowercase([['"{/$nm}"'],0]);
-       const N = 2*size(ss);
-       sd = vectorN();
-       for (ps = pd = 0, ss[ps], ++ps,
-         ss[ps]<=_' '?(sd[pd++] = _'_'):
-         (ss[ps]==_'(' || ss[ps]==_')' ||
-          ss[ps]==_'{' || ss[ps]==_'}' ||
-          ss[ps]==_'[' || ss[ps]==_']' ||
-          ss[ps]==_'\'' || ss[ps]==_'\"')?0:
-         (ps && ss[ps]>=_'0' && ss[ps]<=_'9' && ss[ps-1]>=_'a' && ss[ps-1]<=_'z')?(sd[pd++] = _'_'; sd[pd++] = ss[ps]):
-         (sd[pd++] = ss[ps]);
-       ); sd[pd] = 0; sd"`}
 
 #@cli uint82base64 : _encoding={ 0=base64 | 1=base64url }
 #@cli : Encode the values of the latest of the selected images as a base64-encoded string.
