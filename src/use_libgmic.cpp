@@ -56,8 +56,8 @@
 /*
   Uncomment the two lines below if you want to use the CImg library along with the G'MIC library.
  */
-#include "CImg.h"
-using namespace cimg_library;
+// #include "CImg.h"
+// using namespace cimg_library;
 
 #include "gmic.h"
 #include <cstdio>
@@ -66,22 +66,6 @@ using namespace cimg_library;
 int main() {
 
   gmic::init_rc(); // Initialize resources folder
-
-  {
-    gmic gmic_instance;
-
-    cimg::tic();
-    CImgList<float> images;
-    CImgList<unsigned char> images_names;
-    gmic_instance.run("gui_filter_sources",images,images_names);
-    images_names.print();
-    cimg::toc();
-    std::exit(0);
-
-
-  }
-
-
 
   // First step : Create a list of input images.
   //--------------------------------------------

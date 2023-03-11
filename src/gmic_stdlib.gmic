@@ -32203,9 +32203,13 @@ _minmax_whds :
 #@cli name2color : name
 #@cli : Return the R,G,B color that matches the specified color name.
 name2color :
+  to_varname "$1" name=${}
+
+  v 0 e "DEBUG : "$name
+
   _color2name names=${"u "{n}}
   l. {
-    s x => $names u {$1,^} rm
+    s x => $names u {$name,^} rm
     onfail rm error[0--3] "Command 'name2color': Unknown color '$1'."
   }
 
@@ -32850,8 +32854,25 @@ toc :
   v 0 e[^-1] "Elapsed time: "${}" s". v $v
 
 #@cli to_clutname : "string"
-#@cli : Return simplified name that can be used as a CLUT name, from specified input string.
+#@cli : Return simplified version of the specified string that can be used as a CLUT name.
 to_clutname :
+  0 => "$1" nm={b} rm.
+  u {`"ss = lowercase([['"{/$nm}"'],0]);
+       const N = 2*size(ss);
+       sd = vectorN();
+       for (ps = pd = 0, ss[ps], ++ps,
+         ss[ps]<=_' '?(sd[pd++] = _'_'):
+         (ss[ps]==_'(' || ss[ps]==_')' ||
+          ss[ps]==_'{' || ss[ps]==_'}' ||
+          ss[ps]==_'[' || ss[ps]==_']' ||
+          ss[ps]==_'\'' || ss[ps]==_'\"')?0:
+         (ps && ss[ps]>=_'0' && ss[ps]<=_'9' && ss[ps-1]>=_'a' && ss[ps-1]<=_'z')?(sd[pd++] = _'_'; sd[pd++] = ss[ps]):
+         (sd[pd++] = ss[ps]);
+       ); sd[pd] = 0; sd"`}
+
+#@cli to_varname : "string"
+#@cli : Return simplified version of the specified string that can be used as a variable name.
+to_varname :
   0 => "$1" nm={b} rm.
   u {`"ss = lowercase([['"{/$nm}"'],0]);
        const N = 2*size(ss);
