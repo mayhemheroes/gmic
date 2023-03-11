@@ -13503,7 +13503,7 @@ pseudogray : check "isint(${1=5}) && $1>=0 && ${2=2.3}>=0 && isint(${3=8}) && $3
 
   # Determine a set of random color keypoint.
   1,1,1,3
-  1,8,1,1,"u<0.75?da_push(255*[ y&1, (y>>1)&1, (y>>2)&1 ])" rm. # Add some of the cube corners
+  1,8,1,1,"u<0.75 || !y?da_push(255*[ y&1, (y>>1)&1, (y>>2)&1 ])" rm. # Add some of the cube corners
   1,{round(u(2,12))},1,1,"
     do (
       RGB = u([255,255,255]);
@@ -13521,7 +13521,7 @@ pseudogray : check "isint(${1=5}) && $1>=0 && ${2=2.3}>=0 && isint(${3=8}) && $3
       do (
         nH = (H + 30*g)%360;
         nS = cut(S + g/4,0,1);
-        nL = cut(L + g/6,0,1),
+        nL = cut(L + g/8,0,1),
       _(while) nL<Lmax);
       H = nH; S = nS; L = nL;
     );
@@ -13531,11 +13531,6 @@ pseudogray : check "isint(${1=5}) && $1>=0 && ${2=2.3}>=0 && isint(${3=8}) && $3
 
   # Generate CLUT.
   decompress_clut_pde. 33,33,33 c. 0,255
-
-  # Normalize, relatively to identity CLUT.
-  33,33,33,3,"[ x,y,z ]" n. 0,255 -.. .
-  std={-2,id} *.. {-2,30/$std}
-  +[-2,-1] c. 0,255
 
 #@cli replace_color : tolerance[%]>=0,smoothness[%]>=0,src1,src2,...,dest1,dest2,...
 #@cli : Replace pixels from/to specified colors in selected images.
