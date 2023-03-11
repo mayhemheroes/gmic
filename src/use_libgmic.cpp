@@ -67,6 +67,22 @@ int main() {
 
   gmic::init_rc(); // Initialize resources folder
 
+  {
+    gmic gmic_instance;
+
+    cimg::tic();
+    CImgList<float> images;
+    CImgList<unsigned char> images_names;
+    gmic_instance.run("gui_filter_sources",images,images_names);
+    images_names.print();
+    cimg::toc();
+    std::exit(0);
+
+
+  }
+
+
+
   // First step : Create a list of input images.
   //--------------------------------------------
   std::fprintf(stderr,"\n- 1st step : Create input list of images.\n");
