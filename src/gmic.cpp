@@ -5310,13 +5310,12 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
   gr[4] = (void*)&parent_images_names;
   gr[5] = (void*)variables_sizes;
   gr[6] = (void*)command_selection;
-  gr[7] = get_tid();
-  if (push_new_run) { ind_run = gr._width; gr.move_to(grl); } // Insert new run
-  else // Modify data for existing run
+  if (!push_new_run) // Modify data for existing run
     for (int k = grl.width() - 1; k>=0; --k) {
       CImg<void*> &_gr = grl[k];
       if (_gr && _gr[0]==this) { ind_run = k; gr.swap(_gr); break; }
     }
+  if (ind_run==~0U) { ind_run = grl._width; gr[7] = get_tid(); gr.move_to(grl); } // Insert new run
   cimg::mutex(24,0);
 
   typedef typename cimg::superset<T,float>::type Tfloat;
@@ -15534,7 +15533,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
   // Remove/modify current run from managed list of gmic runs.
   cimg::mutex(24);
   for (int k = grl.width() - (ind_run<grl._width?0:1); k>=0; --k) {
-    const int _k = k>=grl.width()?ind_run:k; // First try is 'ind_run' if possible
+    const int _k = k>=grl.width()?ind_run:k; // First try is 'ind_run' if defined
     CImg<void*> &_gr = grl[_k];
     if (_gr && _gr[0]==this) {
       if (push_new_run) grl.remove(_k);
