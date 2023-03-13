@@ -15541,19 +15541,12 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
   // Remove current run from managed list of gmic runs.
   if (ind_run!=~0U) {
     cimg::mutex(24);
-    void *const tid = get_tid();
     for (int k = grl.width() - (ind_run<grl._width?0:1); k>=0; --k) {
       const int _k = k>=grl.width()?ind_run:k; // First try is 'ind_run' if possible
       CImg<void*> &gr = grl[_k];
       if (gr &&
           gr[0]==(void*)this &&
-          gr[1]==(void*)&images &&
-          gr[2]==(void*)&images_names &&
-          gr[3]==(void*)&parent_images &&
-          gr[4]==(void*)&parent_images_names &&
-          gr[5]==(void*)variables_sizes &&
-          gr[6]==(void*)command_selection &&
-          gr[7]==tid) {
+          gr[1]==(void*)&images) {
         if (old_run) old_run.move_to(grl[_k]);
         else if (_k>=8) grl.remove(_k);
         else grl[_k].assign();
