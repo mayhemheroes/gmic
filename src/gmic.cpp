@@ -2223,10 +2223,12 @@ const CImg<void*> gmic::current_run(const char *const func_name, void *const p_l
     if (gr && ((p_list && gr[1]==(void*)p_list) || (!p_list && gr[7]==tid))) break;
   }
   if (p<0) { // Instance not found!
-    if (p_list)
+    if (p_list) {
+      cimg::mutex(24,0);
       throw CImgArgumentException("[" cimg_appname "] Function '%s': "
                                   "Cannot determine instance of the G'MIC interpreter.",
                                   func_name);
+    }
     else return CImg<void*>::empty(); // Empty instance can be returned, only when called from 'gmic_current_is_abort()'
   }
   return grl[p].get_shared(); // Return shared image
@@ -2462,7 +2464,7 @@ double gmic::mp_run(char *const str,
   unsigned int pos = 0;
   try {
     gmic_instance._run(gmic_instance.commands_line_to_CImgList(gmic::strreplace_fw(str)),pos,images,images_names,
-                       parent_images,parent_images_names,variables_sizes,0,0,command_selection);
+                       parent_images,parent_images_names,variables_sizes,0,0,command_selection,false);
   } catch (gmic_exception &e) {
     CImg<char>::string(e.what()).move_to(is_error);
   }
@@ -2569,7 +2571,7 @@ static void *gmic_parallel(void *arg) {
     st.gmic_instance.is_debug_info = false;
     st.gmic_instance._run(st.commands_line,pos,*st.images,*st.images_names,
                           *st.parent_images,*st.parent_images_names,
-                          st.variables_sizes,0,0,st.command_selection);
+                          st.variables_sizes,0,0,st.command_selection,true);
   } catch (gmic_exception &e) {
     cimg_forY(*st.gmic_threads,l)
       (*st.gmic_threads)[l].gmic_instance.is_abort_thread = true;
@@ -4351,7 +4353,7 @@ gmic& gmic::_gmic(const char *const commands_line,
   // Launch G'MIC interpreter.
   const CImgList<char> items = commands_line?commands_line_to_CImgList(commands_line):CImgList<char>::empty();
   try {
-    _run(items,images,images_names);
+    _run(items,images,images_names,true);
   } catch (gmic_exception&) {
     print(images,0,"Abort G'MIC interpreter (caught exception).\n");
     throw;
@@ -5196,7 +5198,7 @@ CImg<char> gmic::substitute_item(const char *const source,
           cimg_forX(nvariables_sizes,l) nvariables_sizes[l] = variables[l]->size();
           const unsigned int psize = images.size();
           _run(ncommands_line,nposition,images,images_names,parent_images,parent_images_names,
-               nvariables_sizes,0,inbraces,command_selection);
+               nvariables_sizes,0,inbraces,command_selection,false);
           if (images.size()!=psize)
             error(true,images,0,0,
                   "Item substitution '${\"%s\"}': Expression incorrectly changes the number of images (from %u to %u).",
@@ -5242,14 +5244,15 @@ gmic& gmic::run(const char *const commands_line,
   is_running = true;
   cimg::mutex(26,0);
   starting_commands_line = commands_line;
-  _run(commands_line_to_CImgList(commands_line),images,images_names);
+  _run(commands_line_to_CImgList(commands_line),images,images_names,true);
   is_running = false;
   return *this;
 }
 
 template<typename T>
 gmic& gmic::_run(const CImgList<char>& commands_line,
-                 CImgList<T> &images, CImgList<char> &images_names) {
+                 CImgList<T> &images, CImgList<char> &images_names,
+                 const bool push_new_run) {
   CImg<unsigned int> variables_sizes(gmic_varslots,1,1,1,0);
   unsigned int position = 0;
   setlocale(LC_NUMERIC,"C");
@@ -5274,7 +5277,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line,
     it+=*it=='-';
     if (!std::strcmp("debug",it)) { is_debug = true; break; }
   }
-  return _run(commands_line,position,images,images_names,images,images_names,variables_sizes,0,0,0);
+  return _run(commands_line,position,images,images_names,images,images_names,variables_sizes,0,0,0,push_new_run);
 }
 
 #if defined(_MSC_VER) && !defined(_WIN64)
@@ -5287,41 +5290,32 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                  CImgList<T>& parent_images, CImgList<char>& parent_images_names,
                  const unsigned int *const variables_sizes,
                  bool *const is_noarg, const char *const parent_arguments,
-                 const CImg<unsigned int> *const command_selection) {
+                 const CImg<unsigned int> *const command_selection,
+                 const bool push_new_run) {
   if (*callstack.back()!='*' && (!commands_line || position>=commands_line._width)) {
     if (is_debug) debug(images,"Return from empty command '%s/'.",
                         callstack.back().data());
     return *this;
   }
 
-  // Add current run to managed list of gmic runs.
+  // Add/modify current run to managed list of gmic runs.
   cimg::mutex(24);
   CImgList<void*> &grl = gmic_runs();
-  unsigned int ind_run = grl.width();
-  CImg<void*> old_run;
-  for (int k = grl.width() - 1; k>=0; --k) {
-    CImg<void*> &gr = grl[k];
-    if (gr) {
-      if (gr[0]==this) {
-        if (gr[1]==&images) ind_run = ~0U; // Don't push new run
-        else { gr.move_to(old_run); ind_run = k; } // Will replace previous data at same position
-        break;
-      } else if (!gr[0] && ind_run==grl._width) ind_run = k; // Will use freed slot
+  unsigned int ind_run = ~0U;
+  CImg<void*> gr(8);
+  gr[0] = (void*)this;
+  gr[1] = (void*)&images;
+  gr[2] = (void*)&images_names;
+  gr[3] = (void*)&parent_images;
+  gr[4] = (void*)&parent_images_names;
+  gr[5] = (void*)variables_sizes;
+  gr[6] = (void*)command_selection;
+  if (!push_new_run) // Modify data for existing run
+    for (int k = grl.width() - 1; k>=0; --k) {
+      CImg<void*> &_gr = grl[k];
+      if (_gr && _gr[0]==this) { ind_run = k; gr[7] = _gr[7]; gr.swap(_gr); break; }
     }
-  }
-  if (ind_run!=~0U) {
-    CImg<void*> gr(8);
-    gr[0] = (void*)this;
-    gr[1] = (void*)&images;
-    gr[2] = (void*)&images_names;
-    gr[3] = (void*)&parent_images;
-    gr[4] = (void*)&parent_images_names;
-    gr[5] = (void*)variables_sizes;
-    gr[6] = (void*)command_selection;
-    gr[7] = get_tid();
-    if (ind_run<grl._width) gr.move_to(grl[ind_run]);
-    else gr.move_to(grl,ind_run);
-  }
+  if (ind_run==~0U) { ind_run = grl._width; gr[7] = get_tid(); gr.move_to(grl); } // Insert new run
   cimg::mutex(24,0);
 
   typedef typename cimg::superset<T,float>::type Tfloat;
@@ -7887,7 +7881,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 if (next_debug_line!=~0U) { debug_line = next_debug_line; next_debug_line = ~0U; }
                 if (next_debug_filename!=~0U) { debug_filename = next_debug_filename; next_debug_filename = ~0U; }
                 _run(commands_line,position = _position,g_list,g_list_c,images,images_names,variables_sizes,is_noarg,0,
-                     command_selection);
+                     command_selection,false);
               } catch (gmic_exception &e) {
                 check_elif = false;
                 int nb_levels = 0;
@@ -8884,7 +8878,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             if (next_debug_line!=~0U) { debug_line = next_debug_line; next_debug_line = ~0U; }
             if (next_debug_filename!=~0U) { debug_filename = next_debug_filename; next_debug_filename = ~0U; }
             _run(commands_line,position,g_list,g_list_c,images,images_names,variables_sizes,is_noarg,0,
-                 command_selection);
+                 command_selection,false);
           } catch (gmic_exception &e) {
             check_elif = false;
             int nb_levels = 0;
@@ -8908,7 +8902,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               if (is_very_verbose) print(images,0,"Reach 'onfail' block.");
               try {
                 _run(commands_line,++position,g_list,g_list_c,
-                     parent_images,parent_images_names,variables_sizes,is_noarg,0,0);
+                     parent_images,parent_images_names,variables_sizes,is_noarg,0,0,false);
               } catch (gmic_exception &e2) {
                 cimg::swap(exception._command,e2._command);
                 cimg::swap(exception._message,e2._message);
@@ -10538,7 +10532,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               const CImgList<char> ncommands_line = commands_line_to_CImgList(formula);
               unsigned int nposition = 0;
               CImg<char>::string("").move_to(callstack); // Anonymous scope
-              _run(ncommands_line,nposition,images,images_names,images,images_names,variables_sizes,0,0,0);
+              _run(ncommands_line,nposition,images,images_names,images,images_names,variables_sizes,0,0,0,false);
               callstack.remove();
 
             } else { // Not found -> Try generic image saver
@@ -14077,7 +14071,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 is_debug_info = false;
                 --verbosity;
                 _run(ncommands_line,nposition,g_list,g_list_c,images,images_names,nvariables_sizes,&_is_noarg,
-                     argument,&selection);
+                     argument,&selection,false);
                 ++verbosity;
               } catch (gmic_exception &e) {
                 cimg::swap(exception._command,e._command);
@@ -14115,7 +14109,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                 is_debug_info = false;
                 --verbosity;
                 _run(ncommands_line,nposition,g_list,g_list_c,images,images_names,nvariables_sizes,&_is_noarg,
-                     argument,&selection);
+                     argument,&selection,false);
                 ++verbosity;
               } catch (gmic_exception &e) {
                 cimg::swap(exception._command,e._command);
@@ -15236,7 +15230,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             const CImgList<char> ncommands_line = commands_line_to_CImgList(formula);
             unsigned int nposition = 0;
             CImg<char>::string("").move_to(callstack); // Anonymous scope
-            _run(ncommands_line,nposition,g_list,g_list_c,images,images_names,variables_sizes,0,0,0);
+            _run(ncommands_line,nposition,g_list,g_list_c,images,images_names,variables_sizes,0,0,0,false);
             callstack.remove();
 
           } else { // Not found -> Try generic image loader
@@ -15444,14 +15438,14 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
           if (is_first3d) {
             CImg<char>::string("").move_to(callstack); // Anonymous scope
-            _run(ncommands_line,nposition,images,images_names,images,images_names,variables_sizes,0,0,0);
+            _run(ncommands_line,nposition,images,images_names,images,images_names,variables_sizes,0,0,0,false);
             callstack.remove();
             if (lselection) display_images(images,images_names,lselection>'y',0,false);
           } else {
             if (lselection) display_images(images,images_names,lselection>'y',0,false);
             if (lselection3d) {
               CImg<char>::string("").move_to(callstack); // Anonymous scope
-              _run(ncommands_line,nposition,images,images_names,images,images_names,variables_sizes,0,0,0);
+              _run(ncommands_line,nposition,images,images_names,images,images_names,variables_sizes,0,0,0,false);
               callstack.remove();
             }
           }
@@ -15536,30 +15530,14 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     if (next_debug_filename!=~0U) { debug_filename = next_debug_filename; next_debug_filename = ~0U; }
   }
 
-  // Remove current run from managed list of gmic runs.
-  if (ind_run!=~0U) {
-    cimg::mutex(24);
-    void *const tid = get_tid();
-    for (int k = grl.width() - (ind_run<grl._width?0:1); k>=0; --k) {
-      const int _k = k>=grl.width()?ind_run:k; // First try is 'ind_run' if possible
-      CImg<void*> &gr = grl[_k];
-      if (gr &&
-          gr[0]==(void*)this &&
-          gr[1]==(void*)&images &&
-          gr[2]==(void*)&images_names &&
-          gr[3]==(void*)&parent_images &&
-          gr[4]==(void*)&parent_images_names &&
-          gr[5]==(void*)variables_sizes &&
-          gr[6]==(void*)command_selection &&
-          gr[7]==tid) {
-        if (old_run) old_run.move_to(grl[_k]);
-        else if (_k>=8) grl.remove(_k);
-        else grl[_k].assign();
-        break;
-      }
-    }
-    cimg::mutex(24,0);
+  // Remove/modify current run from managed list of gmic runs.
+  cimg::mutex(24);
+  for (int k = grl.width() - (ind_run<grl._width?0:1); k>=0; --k) {
+    const int _k = k>=grl.width()?ind_run:k; // First try is 'ind_run' if defined
+    CImg<void*> &_gr = grl[_k];
+    if (_gr && _gr[0]==this) { if (push_new_run) grl.remove(_k); else gr.swap(_gr); break; }
   }
+  cimg::mutex(24,0);
 
   return *this;
 }
