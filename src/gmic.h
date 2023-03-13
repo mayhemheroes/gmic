@@ -479,13 +479,14 @@ struct gmic {
                       const unsigned int start, const unsigned int end);
 
   template<typename T>
-  gmic& _run(const gmic_list<char>& commands_line, gmic_list<T> &images, gmic_list<char> &images_names);
+  gmic& _run(const gmic_list<char>& commands_line, gmic_list<T> &images, gmic_list<char> &images_names,
+             const bool push_new_run);
 
   template<typename T>
   gmic& _run(const gmic_list<char>& commands_line, unsigned int& position, gmic_list<T>& images,
              gmic_list<char>&images_names, gmic_list<T>& parent_images, gmic_list<char>& parent_images_names,
              const unsigned int *const variables_sizes, bool *const is_noargs, const char *const parent_arguments,
-             const gmic_image<unsigned int> *const command_selection);
+             const gmic_image<unsigned int> *const command_selection, const bool push_new_run);
 
   // Class attributes.
   static const char *builtin_commands_names[];
