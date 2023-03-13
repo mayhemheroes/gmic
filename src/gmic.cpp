@@ -2223,10 +2223,12 @@ const CImg<void*> gmic::current_run(const char *const func_name, void *const p_l
     if (gr && ((p_list && gr[1]==(void*)p_list) || (!p_list && gr[7]==tid))) break;
   }
   if (p<0) { // Instance not found!
-    if (p_list)
+    if (p_list) {
+      cimg::mutex(24,0);
       throw CImgArgumentException("[" cimg_appname "] Function '%s': "
                                   "Cannot determine instance of the G'MIC interpreter.",
                                   func_name);
+    }
     else return CImg<void*>::empty(); // Empty instance can be returned, only when called from 'gmic_current_is_abort()'
   }
   return grl[p].get_shared(); // Return shared image
