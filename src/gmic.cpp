@@ -5305,7 +5305,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
     CImg<void*> &gr = grl[k];
     if (gr) {
       if (gr[0]==this) {
-        if (gr[1]==&images) ind_run = ~0U; // Don't push new run
+        if (gr[1]==&images) { ind_run = ~0U; break; } // Don't push new run
         else { gr.move_to(old_run); ind_run = k; } // Will replace previous data at same position
         break;
       } else if (!gr[0] && ind_run==grl._width) ind_run = k; // Will use freed slot
