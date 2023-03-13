@@ -5313,7 +5313,7 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
   if (!push_new_run) // Modify data for existing run
     for (int k = grl.width() - 1; k>=0; --k) {
       CImg<void*> &_gr = grl[k];
-      if (_gr && _gr[0]==this) { ind_run = k; gr.swap(_gr); break; }
+      if (_gr && _gr[0]==this) { ind_run = k; gr[7] = _gr[7]; gr.swap(_gr); break; }
     }
   if (ind_run==~0U) { ind_run = grl._width; gr[7] = get_tid(); gr.move_to(grl); } // Insert new run
   cimg::mutex(24,0);
