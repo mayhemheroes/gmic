@@ -38033,39 +38033,6 @@ gui_resize_preview_area :
 gui_crop_resize_preview :
   gui_crop_preview gui_resize_preview
 
-# Function that returns the list of external sources to be included in the plug-in.
-# This command can be superseded on the user '.gmic' file to add sources for the plug-in.
-# $1 = try network update
-# $2 = try 'gui_filter_sources' defined in local update file.
-gui_filter_sources : skip ${1=0},${2=1}
-
-  # Try to update the command 'gui_filter_sources' itself.
-  if $2
-    local=${_path_rc}update$_version.gmic
-    if isfile(['{/$local}']) m $local fi
-    if isfile(['{/$_path_user}']) m $_path_user fi
-    gui_filter_sources $1,0
-    return
-  fi
-
-  # Try to clean older update files to save disk space.
-  if u>0.95 l[] {
-    files=${"files "$_path_rc"/update*.gmic"}
-    repeat narg($files) {
-      file=${arg\ 1+$>,$files}
-      ('$file') z. {[w-8,w-6]} ver={t} rm.
-      if isnum($ver)" && "$ver<$_version delete $file rm. fi
-    }
-    onfail
-  } fi
-
-  # Build list of filter sources.
-  path=https://gmic.eu/update$_version.gmic
-  ({'$path'},1) => $path # Include stdlib update (last 1 -> Override default filters).
-  l[] { _gui_filter_sources $1 onfail rm } # Invoke custom command to include other filter sources.
-  l[] { cimgz:${_path_rc}gui_filter_sources onfail } # Include other user-defined filters sources.
-  path={/$_path_user} ('$path') => $path # Include local '.gmic' (or 'user.gmic') file.
-
 # Function that always returns a valid preview size.
 gui_preview_wh :
   u {0$_preview_area_width?[0$_preview_area_width,0$_preview_area_height]:\
