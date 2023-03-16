@@ -7623,12 +7623,12 @@ _parse_gui_strings :
 #@cli : 'xmin', 'xmax', 'ymin', 'ymax' set the coordinates of the displayed xy-axes.
 #@cli : Default values: 'plot_type=1', 'vertex_type=1', 'xmin=xmax=ymin=ymax=0 (auto)' and 'exit_on_anykey=0'.
 
-#@cli portrait : _size>0
-#@cli : Input random portrait image of specified size, retrieved from Internet.
-#@cli : Default values: 'size=800'.
-+portrait : check "isint(${1=800}) && $1>0"
-  e[^-1] "Input random portrait image of size $1x$1."
-  i jpg:"https://thispersondoesnotexist.com/image" r2dx. $1 => portrait
+# #@cli portrait : _size>0
+# #@cli : Input random portrait image of specified size, retrieved from Internet.
+# #@cli : Default values: 'size=800'.
+# +portrait : check "isint(${1=800}) && $1>0"
+#   e[^-1] "Input random portrait image of size $1x$1."
+#   i jpg:"https://thispersondoesnotexist.com/image" r2dx. $1 => portrait
 
 #@cli p : eq. to 'print'. : (+)
 
@@ -11176,7 +11176,8 @@ index : check "${2=0}>=0 && $2<=1 && isbool(${3=0})"
   names=${-_palette_names} N:=narg($names)
   l[] { if isint("$1") name=${"arg 1+($1%"$N"),"$names} else name="$1" fi onfail name="$1" }
   e[^-1] "Index values in image$? by color LUT '"$name"', with dithering level $2."
-  palette $1 index[^-1] .,$2,$3 rm.
+  if ${"is_varname $1"} palette $1 else pass$1 fi
+  index[^-1] .,$2,$3 rm.
 
 #@cli ir : eq. to 'inrange'.
 ir : check "isbool(${3=1}) && isbool(${4=$3})"
@@ -21430,31 +21431,35 @@ _color3d :
 +colorcube3d : l[] { check "isbool(${1=0})" is_wireframe=$1 onfail is_wireframe=1 noarg }
   s0,s1="face","wireframe"
   e[^-1] "Input 3D RGB-color "$s$1" cube."
-  (67.5;73.5;109.5;103.5;51.5;100.5;8;6)
-  (0;0;0;\
-   255;0;0;\
-   255;255;0;\
-   0;255;0;\
-   0;0;255;\
-   255;0;255;\
-   255;255;255;\
-   0;255;255)
-  (12;0;3;2;1;0;0;0;63;63;63;63;0;\
-   12;1;2;6;5;0;0;0;63;63;63;63;0;\
-   12;0;4;7;3;0;0;63;0;63;63;0;63;\
-   12;4;5;6;7;0;0;63;0;63;63;0;63;\
-   12;0;1;5;4;0;0;63;0;63;63;0;63;\
-   12;3;7;6;2;0;0;0;63;63;63;63;0)
-  (0,255;0,255^0,0;255,255^0,0;0,0)
-  (255,255;255,255^0,0;255,255^0,255;0,255)
-  (0,0;0,0^0,0;255,255^0,255;0,255)
-  (0,255;0,255^0,0;255,255^255,255;255,255)
-  (0,255;0,255^0,0;0,0^0,0;255,255)
-  (0,255;0,255^255,255;255,255^0,0;255,255)
-  r[-6--1] 64,64,1,3,3 round[-6--1] y[-6--1] i[-7--2] (-128;64;64;3)
-  (1;1;1;1;1;1)
-  a[-16--1] y
-  if $is_wireframe p3d. 1 fi
+  if $is_wireframe l[] { # Wireframe version
+    ({'CImg3d'},8,12) # Header
+    (0,0,0;255,0,0;255,255,0;0,255,0;0,0,255;255,0,255;255,255,255;0,255,255) # Vertices
+    (6,0,1,0,0,63,0;6,1,2,0,1,63,1;6,2,3,0,2,63,2;6,3,0,0,3,63,3;\ # Primitives
+     6,0,4,0,4,63,4;6,1,5,0,5,63,5;6,2,6,0,6,63,6;6,3,7,0,7,63,7;\
+     6,4,5,0,8,63,8;6,5,6,0,9,63,9;6,6,7,0,10,63,10;6,7,4,0,11,63,11)
+    (-128,64,12,3) (0,0,0;255,0,0/255,0,0;255,255,0/255,255,0;0,255,0/0,255,0;0,0,0/\ # First texture
+     0,0,0;0,0,255/255,0,0;255,0,255/255,255,0;255,255,255/0,255,0;0,255,255/\
+     0,0,255;255,0,255/255,0,255;255,255,255/255,255,255;0,255,255/0,255,255;0,0,255)
+    permute. yzcx r. 64,100%,1,3,3
+    (-128,0,0,0)x11 # 11 other shared textures
+    1,12,1,1,1 # Opacities
+    y a y
+  } else l[] { # Face version
+    ({'CImg3d'},8,6) # Header
+    (0,0,0;255,0,0;255,255,0;0,255,0;0,0,255;255,0,255;255,255,255;0,255,255) # Vertices
+    (12,0,3,2,1,0,0,0,63,63,63,63,0;12,1,2,6,5,0,0,0,63,63,63,63,0;\ # Primitives
+     12,0,4,7,3,0,0,63,0,63,63,0,63;12,4,5,6,7,0,0,63,0,63,63,0,63;\
+     12,0,1,5,4,0,0,63,0,63,63,0,63;12,3,7,6,2,0,0,0,63,63,63,63,0)
+    (0,255;0,255^0,0;255,255^0,0;0,0) # Generate 6 textures
+    (255,255;255,255^0,0;255,255^0,255;0,255)
+    (0,0;0,0^0,0;255,255^0,255;0,255)
+    (0,255;0,255^0,0;255,255^255,255;255,255)
+    (0,255;0,255^0,0;0,0^0,0;255,255)
+    (0,255;0,255^255,255;255,255^0,0;255,255)
+    r[-6--1] 64,64,1,3,3 round[-6--1] y[-6--1] i[-7--2] (-128;64;64;3)
+    1,6,1,1,1 # Opacities
+    y a y
+  } fi
   => [3D\ colorcube]
 
 #@cli cone3d : _radius,_height,_nb_subdivisions>0
@@ -29553,7 +29558,7 @@ watermark_visible : check "${2=0.3}>0 && $2<1 && ${3=53}>0 && ${6=0.5}>=0"
 #@cli : multiply | negation | or | overlay | pinlight | red | reflect | saturation |
 #@cli : screen | seamless | seamless_mixed | shapeareamax | shapeareamax0 | shapeareamin | shapeareamin0 |
 #@cli : shapeaverage | shapeaverage0 | shapemedian | shapemedian0 | shapemin | shapemin0 | shapemax | shapemax0 |
-#@cli : softburn | softdodge | softlight | stamp | subtract | value | vividlight | xor }.
+#@cli : shapeprevalent | softburn | softdodge | softlight | stamp | subtract | value | vividlight | xor }.
 #@cli : 'opacity' must be in range '[0,1]' (or '[0%,100%]').
 #@cli : Default values: 'blending_mode=alpha', 'opacity=1' and 'selection_is=0'.
 #@cli : $ image.jpg +drop_shadow , resize2dy[-1] 200 rotate[-1] 20 +blend alpha display_rgba[-2]
@@ -29776,9 +29781,40 @@ _blend_shapemax0 :
   f[1] "begin(A = resize([ 0,(s-1)/s ],s,3));I!=0?I+A:I" norm[1] round[1] 0.01 label_fg[1] 0 {iM+1},1,1,{0,s},-inf
   f[0] ">i(#2,i(#1,x,y,z,0),0,0,c) = max(i(#2,i(#1,x,y,z,0),0,0,c),i);i"
   point. 0,0,0,1,0 map[1] [2] rm.
+
+_blend_shapeprevalent :
+  # Retrieve occurence of each color for each distinct region.
+  label. 0,0 nb_labels:=iM+1 a c
+  +n. 0,255 100%,100%,1,1,"H = 0; repeat (s#-1,p,(H*=31)+=j(#-1,0,0,0,p)); int(H)%2048" rm.. # Compute color hashcodes
+  1,1,1,{0,s+1}x2048
+  eval[1] "begin(_color = tmp = vector(#s#0));
+    color = I(#0);
+    ind = i + 2;
+    whdind = whd(#ind);
+    found = 0;
+    repeat (da_size(#ind),k,
+      copy(_color,i(#ind,0,k,0,1),s#0,1,whdind);
+      _color==color?(
+        found = 1;
+        copy(tmp,i[#ind,0],s#ind,1,whdind);
+        copy(i[#ind,0],i[#ind,k],s#ind,whdind,whdind);
+        copy(i[#ind,k],tmp,s#ind,whdind,1);
+        break();
+      );
+    );
+    found?++i[#ind,k]:da_push(#ind,[ 1,color ])"
+  da_freeze[2--1] a[2--1] y rm..
+
+  # Extract most frequent occurence for each distinct region.
+  1,$nb_labels,1,{0,s}
+  eval.. "P = I; region = P[size(P) - 1]; i[#-1,region]<P[0]?(I[#-1,region] = P[0,size(P) - 1]); I"
+  channels. 1,100% +channels[0] 100%
+  map. .. rm[-3,-2] channels.. 0,{0,s-2}
+
 _blend_softburn :
   +-[0] 255.1 ^[2] -1 *[2] [1] *[2] -127.5 +-[0] 255 ++[1] 0.1 /[3,4] *[3] 127.5 +[3] 255 +[1] [0] >[1] 255
   j[2] [3],0,0,0,0,1,[1] rm[1,3] c[1] 0,255
+
 _blend_softdodge :
   +-[1] 255.1 ^[2] -1 *[2] [0] *[2] -127.5 +-[1] 255 ++[0] 0.1 /[3,4] *[3] 127.5 +[3] 255 +[1] [0] >[1] 255
   j[2] [3],0,0,0,0,1,[1] rm[1,3] c[1] 0,255
@@ -38029,39 +38065,6 @@ gui_resize_preview_area :
 gui_crop_resize_preview :
   gui_crop_preview gui_resize_preview
 
-# Function that returns the list of external sources to be included in the plug-in.
-# This command can be superseded on the user '.gmic' file to add sources for the plug-in.
-# $1 = try network update
-# $2 = try 'gui_filter_sources' defined in local update file.
-gui_filter_sources : skip ${1=0},${2=1}
-
-  # Try to update the command 'gui_filter_sources' itself.
-  if $2
-    local=${_path_rc}update$_version.gmic
-    if isfile(['{/$local}']) m $local fi
-    if isfile(['{/$_path_user}']) m $_path_user fi
-    gui_filter_sources $1,0
-    return
-  fi
-
-  # Try to clean older update files to save disk space.
-  if u>0.95 l[] {
-    files=${"files "$_path_rc"/update*.gmic"}
-    repeat narg($files) {
-      file=${arg\ 1+$>,$files}
-      ('$file') z. {[w-8,w-6]} ver={t} rm.
-      if isnum($ver)" && "$ver<$_version delete $file rm. fi
-    }
-    onfail
-  } fi
-
-  # Build list of filter sources.
-  path=https://gmic.eu/update$_version.gmic
-  ({'$path'},1) => $path # Include stdlib update (last 1 -> Override default filters).
-  l[] { _gui_filter_sources $1 onfail rm } # Invoke custom command to include other filter sources.
-  l[] { cimgz:${_path_rc}gui_filter_sources onfail } # Include other user-defined filters sources.
-  path={/$_path_user} ('$path') => $path # Include local '.gmic' (or 'user.gmic') file.
-
 # Function that always returns a valid preview size.
 gui_preview_wh :
   u {0$_preview_area_width?[0$_preview_area_width,0$_preview_area_height]:\
@@ -38918,7 +38921,7 @@ fx_support_us :
 #@gui : url = link{"https://gmic.eu/gmic_all_data.zip"}
 #@gui : note = note{"You must then decompress all files contained in this archive at the following location:\n
 #@gui : - for <b>Unix</b>-like systems : <span color="blue"><samp>$HOME/.cache/gmic/</samp></span>\n
-#@gui : - for <b>Windows</b> systems : <span color="blue"><samp>%APPDATA/gmic/</samp></span>
+#@gui : - for <b>Windows</b> systems : <span color="blue"><samp>%APPDATA%/gmic/</samp></span>
 #@gui : "}
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2014/16/04</i>.</small>")
@@ -50323,7 +50326,7 @@ fx_blend_seamless_preview :
 #@gui : "Hard Mix","Hue","Interpolation","Lighten","Lightness","Linear Burn","Linear Light","Luminance",
 #@gui : "Multiply","Negation","Or","Overlay","Pin Light","Red","Reflect","Saturation",
 #@gui : "Shape Area Max","Shape Area Max0","Shape Area Min","Shape Area Min0","Shape Average","Shape Average0",
-#@gui : "Shape Median","Shape Median0","Shape Min","Shape Min0","Shape Max","Shape Max0",
+#@gui : "Shape Median","Shape Median0","Shape Min","Shape Min0","Shape Max","Shape Max0","Shape Prevalent",
 #@gui : "Soft Burn","Soft Dodge","Soft Light","Screen","Stamp","Subtract","Value","Vivid Light","Xor"}
 #@gui : Process As = choice("Two-by-Two","Upper Layer is the Top Layer for All Blends",
 #@gui : "Lower Layer is the Bottom Layer for All Blends")
@@ -50350,7 +50353,7 @@ fx_blend :
        multiply,negation,or,overlay,pinlight,red,reflect,saturation,\
        shapeareamax,shapeareamax0,shapeareamin,shapeareamin0,\
        shapeaverage,shapeaverage0,shapemedian,shapemedian0,\
-       shapemin,shapemin0,shapemax,shapemax0,\
+       shapemin,shapemin0,shapemax,shapemax0,shapeprevalent,\
        softburn,softdodge,softlight,screen,stamp,subtract,value,\
        vividlight,xor}
   m "_blend_custom_formula : f. \"a = i#0/255; b = i#1/255; 255*cut(($5),0,1)\""
