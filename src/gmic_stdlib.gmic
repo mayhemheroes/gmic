@@ -5092,13 +5092,13 @@ parse_cli_images :
                 else o ${_parse_cli_images_path}t_$basename,75 fi
                 rm
               fi
-            onfail
-              rm gui_error_preview "Unable to generate preview image"
-              o ${_parse_cli_images_path}f_$basename,85
-              rr2d 480,320,0,2
-              o ${_parse_cli_images_path}t_$basename,75
-              rm
-              etime="failed"
+            # onfail
+            #   rm gui_error_preview "Unable to generate preview image"
+            #   o ${_parse_cli_images_path}f_$basename,85
+            #   rr2d 480,320,0,2
+            #   o ${_parse_cli_images_path}t_$basename,75
+            #   rm
+            #   etime="failed"
             }
             um run_example
           else etime="skipped"
@@ -10616,7 +10616,7 @@ med :
 #@cli : Compute the modulo of selected images with specified value, image or mathematical \
 # expression, or compute the pointwise sequential modulo of selected images.
 #@cli : (eq. to '%').
-#@cli : $ image.jpg +mirror x mod
+#@cli : $ image.jpg +mirror x n. 1,255 round. mod
 #@cli : $ image.jpg mod 'R=((x/w-0.5)^2+(y/h-0.5)^2)^0.5;255*R'
 
 #@cli m* : eq. to 'mmul'. : (+)
@@ -11173,10 +11173,13 @@ eigen2tensor :
 #@cli : $ image.jpg (0;255;255^0;128;255^0;0;255) +index[-2] [-1],1,1
 #@cli : $$ https://gmic.eu/tutorial/gindex
 index : check "${2=0}>=0 && $2<=1 && isbool(${3=0})"
-  names=${-_palette_names} N:=narg($names)
-  l[] { if isint("$1") name=${"arg 1+($1%"$N"),"$names} else name="$1" fi onfail name="$1" }
-  e[^-1] "Index values in image$? by color LUT '"$name"', with dithering level $2."
-  if ${"is_varname $1"} palette $1 else pass$1 fi
+  if ${"is_image_arg $1"} pass$1 e[0--3] "Index values in image$? by LUT $1, with dithering level $2."
+  else
+    names=${-_palette_names} N:=narg($names)
+    l[] { if isint("$1") name=${"arg 1+($1%"$N"),"$names} else name="$1" fi onfail name="$1" }
+    e[0--3] "Index values in image$? by LUT '"$name"', with dithering level $2."
+    palette $1
+  fi
   index[^-1] .,$2,$3 rm.
 
 #@cli ir : eq. to 'inrange'.
@@ -17331,7 +17334,7 @@ normalize_local :
 #@cli : $ image.jpg +shift -30,-20 +normalized_cross_correlation[0] [1]
 normalized_cross_correlation : check ${is_image_arg\ $1}
   e[^-1] "Compute normalized cross-correlation of image$? with mask $1."
-  pass$1 0 norm repeat $!-1 . { l[$>,-1] {
+  pass$1 0 norm repeat $!-1 { . l[$>,-1] {
     fft.. fft. [-2,-1] *.. [-5] *. [-6]
     -[-2,-1] *[-5,-3] *[-3,-2] +[-3,-2] [-2,-1] a[-2,-1] c norm.
     /... . /[-2,-1] ifft rm.
