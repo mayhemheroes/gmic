@@ -2914,6 +2914,27 @@ _display_camera :
   while {*}" && "!{*,ESC}
   camera 0,0 w[] 0
 
+#@cli dclut : eq. to 'display_clut'.
+dclut : check "isint(${1=256}) && $1>0 && isint(${2=33}) && $2>0"
+  v + _display_clut $*
+
+#@cli display_clut : _image_resolution>0,_clut_resolution>0
+#@cli : Display selected 3D color LUTs.
+#@cli : Default values: 'image_resolution=320' and 'clut_resolution=33'.
+#@cli : $ clut tealorange display_clut 400
+display_clut :
+  v + _$0 $*
+
+_display_clut : check "isint(${1=320}) && $1>0 && isint(${2=33}) && $2>0"
+  e[0--3] "Display selected 3D color LUTs, with image resolution $1x1 and CLUT resolution $2x$2x$2."
+  foreach { nm={n}
+    r3dx $2 pointcloud3d circles3d 1 o3d 0.1 *3d {255/($2-1)} colorcube3d 1 +3d
+    pose3d 0.815360904,-0.144610703,-0.560602367,0,-0.149177685,0.883129835,-0.444778264,0,0.559404552,0.446283728,0.698496521,0 c3d n3d *3d. {2.10*$1}
+    {2*$1},{2*$1},1,3,-1 j3d. ..,47%,46%,0,1,2,0,0,{4*$1} rm..
+    to_rgba replace_color 0,1%,-1,-1,-1,255,64,64,64,0 r2dx $1
+    => $nm
+  }
+
 #@cli dfft : eq. to 'display_fft'.
 dfft :
   v + _display_fft
