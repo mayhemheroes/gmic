@@ -1616,7 +1616,7 @@ clean_cluts :
       replace_str " ","_"
       replace_str "xp_2","xp2"
       replace_str "hp_5","hp5"
-      repeat 8 n:=1+$> {
+      repeat 8 { n:=1+$>
         replace_str "_"${n}"_+","_+"
         replace_str "_"${n}"_-","_-"
         replace_str "_"${n}"_alt","_alt"
@@ -2848,8 +2848,8 @@ __display_array :
   +luminance. r.. {$1*24},{$2*24} grid.. {100/$1}%,{100/$2}%,0,0,1,0
   xb={24*int($1/2)} yb={24*int($2/2)} xe={$xb+24} ye={$yb+24}
   rectangle.. $xb,$yb,$xe,$ye,1,0xFFFFFFFF,$3,$4,$5
-  repeat $2 yg=$> {
-    repeat $1 xg=$> {
+  repeat $2 { yg=$>
+    repeat $1 { xg=$>
       t.. {-3,i($xg,$yg)},{5+$xg*24},{5+$yg*24},13,0.8,{i($xg,$yg)>128?0:255}
     }
   }
@@ -2927,7 +2927,7 @@ display_clut :
   v + _$0 $*
 
 _display_clut : check "isint(${1=320}) && $1>0 && isint(${2=33}) && $2>0"
-  e[0--3] "Display selected 3D color LUTs, with image resolution $1x1 and CLUT resolution $2x$2x$2."
+  e[0--3] "Display selected 3D color LUTs, with image resolution $1x$1 and CLUT resolution $2x$2x$2."
   foreach { nm={n}
     r3dx $2 pointcloud3d circles3d 1 o3d 0.1 *3d {255/($2-1)} colorcube3d 1 +3d
     pose3d 0.815360904,-0.144610703,-0.560602367,0,\
@@ -27007,7 +27007,7 @@ nn_print :
       e "        * Parameters: "$c{$name,whds}$n
     fi
   }
-  e "\n * Total: "${b}{narg($_nn_modules_names)}$n" modules, "$b${-nn_size}$n" parameters.\n"
+  e "\n * Total: "${b}{narg($_nn_modules_names)-1}$n" modules, "$b${-nn_size}$n" parameters.\n"
 
 #@cli nn_trainer : name,_loss,_learning_rate>0,_optimizer,_scheduler
 #@cli : Add a network trainer to the network.
@@ -34173,14 +34173,14 @@ x_connect4 : check_display $0
       elif ${autoplayer$turn}" || "{*,-SPACE}" || "{*,ENTER} # Computer play
         if {*,-ENTER} autoplayer$turn=1 fi
         max_score=-inf max_col=
-        repeat w#$board move1=$> {
+        repeat w#$board { move1=$>
           yM1={i("#"$ymax,$move1)}
           if $yM1>=0
             +=[board] {1+$turn},$move1,$yM1 => board1
             {board,w},1,1,1,"y = -1; repeat (h#"$board1",k, if(!i(#"$board1",x,k),y = k)); y" => ymax1
             opp_max_score=-inf opp_max_board={board,^}
             opp_turn={($turn+1)%2}
-            repeat w#$board move2=$> {
+            repeat w#$board { move2=$>
               yM2={i("#"$ymax1,$move2)}
               if $yM2>=0
                 +=[board1] {1+$opp_turn},$move2,$yM2
