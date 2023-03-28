@@ -13499,14 +13499,15 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               callstack_local = 0;
             for (unsigned int l = callstack.size() - 1; l; --l) {
               const char *const s = callstack[l].data();
-              if (s[0]=='*' && s[1]=='r') { callstack_repeat = l; break; }
-              else if (s[0]=='*' && s[1]=='d') { callstack_do = l; break; }
-              else if (s[0]=='*' && s[1]=='f') {
+              const bool is_star = *s=='*';
+              if (is_star && s[1]=='r') { callstack_repeat = l; break; }
+              else if (is_star && s[1]=='d') { callstack_do = l; break; }
+              else if (is_star && s[1]=='f') {
                 if (s[4]!='e') callstack_for = l; else callstack_foreach = l;
                 break;
               }
-              else if (s[0]=='*' && s[1]=='l') { callstack_local = l; break; }
-              else if (s[0]!='*' || s[1]!='i') break;
+              else if (is_star && s[1]=='l') { callstack_local = l; break; }
+              else if (!is_star || (s[1]!='i' && s[1]!='b')) break;
             }
             const char *stb = 0, *ste = 0;
             unsigned int callstack_ind = 0;
