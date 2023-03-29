@@ -2864,7 +2864,8 @@ const char* gmic::path_user(const char *const custom_path) {
 #if cimg_OS!=2
     _path_user = gmic_getenv("HOME");
 #else
-    _path_user = gmic_getenv("APPDATA");
+    _path_user = gmic_getenv("USERPROFILE");
+    if (!_path_user) _path_user = gmic_getenv("APPDATA");
 #endif
   }
   if (!_path_user) _path_user = gmic_getenv("TMP");
