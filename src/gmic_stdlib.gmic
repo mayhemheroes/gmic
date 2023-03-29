@@ -51999,20 +51999,21 @@ _fx_shapes17 :
   _fx_shapes9 $* expand_xy 1,0 +erode 3 -
 
 #@gui Pack Ellipses : fx_pack_ellipses, fx_pack_ellipses_preview(0)
-#@gui : Min Radius (px) = float(1,1,256)
+#@gui : Min Radius (px) = float(3,1,256)
 #@gui : Max Radius (px) = float(20,1,256)
+#@gui : Radius Dilation/Erosion (px)= float(0,-10,10)
 #@gui : Min Isotropy (%) = float(30,0,100)
 #@gui : Max Isotropy (%) = float(100,0,100)
 #@gui : Isotropy Quantization = int(6,0,16)
 #@gui : Orientation = choice{1,"Isotropic (Circles Only)","Anisotropic (Along Contours)","Anisotropic (Orthogonal to Contours)"}
-#@gui : Region Analysis (px) = int(3,0,10)
+#@gui : Region Analysis Size = int(3,0,10)
 #@gui : Background Color = color(0,0,0,255)
 #@gui : Render Resolution = _choice("x1","x2","x3","x4","x5","x6","x7","x8")
 #@gui : Preserve Image Size = _bool(0)
 #@gui : sep = separator()
 #@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2023/03/29</i>.</small>")
 fx_pack_ellipses :
-  radius_min,radius_max,isotropy_min,isotropy_max,isotropy_levels,orientation_ellipse,region_analysis,bgR,bgG,bgB,bgA,render_factor,preserve_size=$*
+  radius_min,radius_max,radius_dilation,isotropy_min,isotropy_max,isotropy_levels,orientation_ellipse,region_analysis,bgR,bgG,bgB,bgA,render_factor,preserve_size=$*
   isotropy_min,isotropy_max:="sort([ $isotropy_min,$isotropy_max ])/100"
   radius_min,radius_max:="sort([ $radius_min,$radius_max ])"
   render_factor+=1
@@ -52052,10 +52053,9 @@ fx_pack_ellipses :
         [ cut(P0[0],0,wm1), cut(P0[1],0,hm1), cut(P1[0],0,wm1), cut(P1[1],0,hm1) ]"
 
       +z[mask] $x0,$y0,$x1,$y1 r. {[w,h]+2},1,1,0,0,0.5,0.5 distance. 0
-      x,y,r:=$x0+xM-1,$y0+yM-1,min($radius_max,iM-1) rm.
+      x,y,r:=$x0+xM-1,$y0+yM-1,min($radius_max,iM-1.25) rm.
 
       if $r>$radius_min
-        r1:=$r
         r2={isotropy,max(1,$r*i($x,$y))}
         ellipse[mask] $x,$y,$r,$r2,{angles,rad2deg(i($x,$y))},1,0
         eval "da_push(#$set,[$x,$y,$r])"
@@ -52076,7 +52076,7 @@ fx_pack_ellipses :
     {img,round($render_factor*[w,h])} => mask
     eval[set] "
       const fact = $render_factor;
-      r1 = fact*i2;
+      r1 = fact*(i2 + $radius_dilation);
       r2 = max(1,r1*i(#$isotropy,i0,i1));
       ellipse(#$mask,round(fact*i0),round(fact*i1),r1,r2,i(#$angles,i0,i1),1,y + 1);
       I"
@@ -52093,7 +52093,7 @@ fx_pack_ellipses :
   }
 
 fx_pack_ellipses_preview :
-  fx_pack_ellipses ${1-11},1,0
+  gui_split_preview "fx_pack_ellipses ${1-12},1,0"
 
 #@gui Pack Sprites : fx_pack_sprites, gui_no_preview
 #@gui : Number of Scales = int(5,1,16)
