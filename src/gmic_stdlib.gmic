@@ -51999,12 +51999,12 @@ _fx_shapes17 :
   _fx_shapes9 $* expand_xy 1,0 +erode 3 -
 
 #@gui Pack Ellipses : fx_pack_ellipses, fx_pack_ellipses_preview(0)
-#@gui : Min Radius (px) = float(3,1,256)
+#@gui : Min Radius (px) = float(1,1,256)
 #@gui : Max Radius (px) = float(20,1,256)
-#@gui : Min Isotropy (%) = float(50,0,100)
+#@gui : Min Isotropy (%) = float(30,0,100)
 #@gui : Max Isotropy (%) = float(100,0,100)
 #@gui : Isotropy Quantization = int(6,0,16)
-#@gui : Orientation = choice{1,"Isotropic (Only Circles)","Anisotropic (Along Contours)","Anisotropic (Orthogonal to Contours)"}
+#@gui : Orientation = choice{1,"Isotropic (Circles Only)","Anisotropic (Along Contours)","Anisotropic (Orthogonal to Contours)"}
 #@gui : Region Analysis (px) = int(3,0,10)
 #@gui : Background Color = color(0,0,0,255)
 #@gui : Render Resolution = _choice("x1","x2","x3","x4","x5","x6","x7","x8")
@@ -52052,9 +52052,10 @@ fx_pack_ellipses :
         [ cut(P0[0],0,wm1), cut(P0[1],0,hm1), cut(P1[0],0,wm1), cut(P1[1],0,hm1) ]"
 
       +z[mask] $x0,$y0,$x1,$y1 r. {[w,h]+2},1,1,0,0,0.5,0.5 distance. 0
-      x,y,r:=$x0+xM-1,$y0+yM-1,min($radius_max,iM)-2 rm.
+      x,y,r:=$x0+xM-1,$y0+yM-1,min($radius_max,iM-1) rm.
 
       if $r>$radius_min
+        r1:=$r
         r2={isotropy,max(1,$r*i($x,$y))}
         ellipse[mask] $x,$y,$r,$r2,{angles,rad2deg(i($x,$y))},1,0
         eval "da_push(#$set,[$x,$y,$r])"
@@ -52074,8 +52075,8 @@ fx_pack_ellipses :
     W,H={img,[w,h]}
     {img,round($render_factor*[w,h])} => mask
     eval[set] "
-      const fact = $render_factor + 1;
-      r1 = fact*i2 - 1;
+      const fact = $render_factor;
+      r1 = fact*i2;
       r2 = max(1,r1*i(#$isotropy,i0,i1));
       ellipse(#$mask,round(fact*i0),round(fact*i1),r1,r2,i(#$angles,i0,i1),1,y + 1);
       I"
