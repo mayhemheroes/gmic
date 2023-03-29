@@ -2860,7 +2860,6 @@ const char* gmic::path_user(const char *const custom_path) {
   const char *_path_user = 0;
   if (custom_path && cimg::is_directory(custom_path)) _path_user = custom_path;
   if (!_path_user) _path_user = gmic_getenv("GMIC_PATH");
-  if (!_path_user) _path_user = gmic_getenv("GMIC_GIMP_PATH");
   if (!_path_user) {
 #if cimg_OS!=2
     _path_user = gmic_getenv("HOME");
@@ -2895,7 +2894,6 @@ const char* gmic::path_rc(const char *const custom_path) {
   const char *_path_rc = 0;
   if (custom_path && cimg::is_directory(custom_path)) _path_rc = custom_path;
   if (!_path_rc) _path_rc = gmic_getenv("GMIC_PATH");
-  if (!_path_rc) _path_rc = gmic_getenv("GMIC_GIMP_PATH");
   if (!_path_rc) _path_rc = gmic_getenv("XDG_CONFIG_HOME");
   if (!_path_rc) {
 #if cimg_OS!=2
