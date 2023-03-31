@@ -1866,6 +1866,7 @@ const CImgList<T>& _gmic_display(CImgDisplay &disp, const char *const title, con
       cimg::swap(gmic_instance.commands_has_arguments,gmic_instance0.commands_has_arguments);
       void *const _display_window0 = gmic_instance.display_windows[0];
       gmic_instance.display_windows[0] = &disp;
+      gmic_instance.is_abort = gmic_instance0.is_abort;
       try { gmic_instance.run(com.data(),_images,_images_names); }
       catch (...) { is_exception = true; }
       cimg::swap(gmic_instance.commands,gmic_instance0.commands);
@@ -4145,6 +4146,8 @@ gmic& gmic::_gmic(const char *const commands_line,
   static bool is_first_call = true;
   cimg_exception_mode = cimg::exception_mode();
   cimg::exception_mode(0);
+
+  std::fprintf(stderr,"\nDEBUG : NEW INSTANCE %p\n",(void*)this);
 
   // Initialize class attributes.
   cimg::mutex(22);
