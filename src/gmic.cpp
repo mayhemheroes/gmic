@@ -2807,6 +2807,7 @@ gmic::~gmic() {
 // Decompress G'MIC standard library commands.
 //---------------------------------------------
 const CImg<char>& gmic::decompress_stdlib() {
+  cimg::mutex(22);
   if (!stdlib) try {
       CImgList<char>::get_unserialize(CImg<unsigned char>(data_gmic,1,size_data_gmic,1,1,true))[0].
         move_to(stdlib);
@@ -2819,6 +2820,7 @@ const CImg<char>& gmic::decompress_stdlib() {
       cimg::mutex(29,0);
       stdlib.assign(1,1,1,1,0);
     }
+  cimg::mutex(22,0);
   return stdlib;
 }
 
