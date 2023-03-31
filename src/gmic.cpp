@@ -1866,6 +1866,7 @@ const CImgList<T>& _gmic_display(CImgDisplay &disp, const char *const title, con
       cimg::swap(gmic_instance.commands_has_arguments,gmic_instance0.commands_has_arguments);
       void *const _display_window0 = gmic_instance.display_windows[0];
       gmic_instance.display_windows[0] = &disp;
+      gmic_instance.is_abort = gmic_instance0.is_abort;
       try { gmic_instance.run(com.data(),_images,_images_names); }
       catch (...) { is_exception = true; }
       cimg::swap(gmic_instance.commands,gmic_instance0.commands);
@@ -2806,6 +2807,7 @@ gmic::~gmic() {
 // Decompress G'MIC standard library commands.
 //---------------------------------------------
 const CImg<char>& gmic::decompress_stdlib() {
+  cimg::mutex(22);
   if (!stdlib) try {
       CImgList<char>::get_unserialize(CImg<unsigned char>(data_gmic,1,size_data_gmic,1,1,true))[0].
         move_to(stdlib);
@@ -2818,6 +2820,7 @@ const CImg<char>& gmic::decompress_stdlib() {
       cimg::mutex(29,0);
       stdlib.assign(1,1,1,1,0);
     }
+  cimg::mutex(22,0);
   return stdlib;
 }
 
@@ -2860,12 +2863,11 @@ const char* gmic::path_user(const char *const custom_path) {
   const char *_path_user = 0;
   if (custom_path && cimg::is_directory(custom_path)) _path_user = custom_path;
   if (!_path_user) _path_user = gmic_getenv("GMIC_PATH");
-  if (!_path_user) _path_user = gmic_getenv("GMIC_GIMP_PATH");
   if (!_path_user) {
 #if cimg_OS!=2
     _path_user = gmic_getenv("HOME");
 #else
-    _path_user = gmic_getenv("APPDATA");
+    _path_user = gmic_getenv("USERPROFILE");
 #endif
   }
   if (!_path_user) _path_user = gmic_getenv("TMP");
@@ -2877,7 +2879,7 @@ const char* gmic::path_user(const char *const custom_path) {
   cimg_snprintf(path_user,path_user.width(),"%s%c.gmic",
                 _path_user,cimg_file_separator);
 #else
-  cimg_snprintf(path_user,path_user.width(),"%s%cuser.gmic",
+  cimg_snprintf(path_user,path_user.width(),"%s%cgmic",
                 _path_user,cimg_file_separator);
 #endif
   CImg<char>::string(path_user).move_to(path_user); // Optimize length
@@ -2895,7 +2897,6 @@ const char* gmic::path_rc(const char *const custom_path) {
   const char *_path_rc = 0;
   if (custom_path && cimg::is_directory(custom_path)) _path_rc = custom_path;
   if (!_path_rc) _path_rc = gmic_getenv("GMIC_PATH");
-  if (!_path_rc) _path_rc = gmic_getenv("GMIC_GIMP_PATH");
   if (!_path_rc) _path_rc = gmic_getenv("XDG_CONFIG_HOME");
   if (!_path_rc) {
 #if cimg_OS!=2
@@ -13499,14 +13500,15 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
               callstack_local = 0;
             for (unsigned int l = callstack.size() - 1; l; --l) {
               const char *const s = callstack[l].data();
-              if (s[0]=='*' && s[1]=='r') { callstack_repeat = l; break; }
-              else if (s[0]=='*' && s[1]=='d') { callstack_do = l; break; }
-              else if (s[0]=='*' && s[1]=='f') {
+              const bool is_star = *s=='*';
+              if (is_star && s[1]=='r') { callstack_repeat = l; break; }
+              else if (is_star && s[1]=='d') { callstack_do = l; break; }
+              else if (is_star && s[1]=='f') {
                 if (s[4]!='e') callstack_for = l; else callstack_foreach = l;
                 break;
               }
-              else if (s[0]=='*' && s[1]=='l') { callstack_local = l; break; }
-              else if (s[0]!='*' || s[1]!='i') break;
+              else if (is_star && s[1]=='l') { callstack_local = l; break; }
+              else if (!is_star || (s[1]!='i' && s[1]!='b')) break;
             }
             const char *stb = 0, *ste = 0;
             unsigned int callstack_ind = 0;

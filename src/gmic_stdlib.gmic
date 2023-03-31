@@ -51998,6 +51998,103 @@ _fx_shapes16 :
 _fx_shapes17 :
   _fx_shapes9 $* expand_xy 1,0 +erode 3 -
 
+#@gui Pack Ellipses : fx_pack_ellipses, fx_pack_ellipses_preview(0)
+#@gui : Min Radius (px) = float(3,1,256)
+#@gui : Max Radius (px) = float(20,1,256)
+#@gui : Radius Dilation/Erosion (px)= float(0,-10,10)
+#@gui : Min Isotropy (%) = float(30,0,100)
+#@gui : Max Isotropy (%) = float(100,0,100)
+#@gui : Isotropy Quantization = int(6,0,16)
+#@gui : Orientation = choice{1,"Isotropic (Circles Only)","Anisotropic (Along Contours)","Anisotropic (Orthogonal to Contours)"}
+#@gui : Region Analysis Size = int(3,0,10)
+#@gui : Background Color = color(0,0,0,255)
+#@gui : Render Resolution = _choice("x1","x2","x3","x4","x5","x6","x7","x8")
+#@gui : Preserve Image Size = _bool(0)
+#@gui : sep = separator()
+#@gui : note = note("<small>Author: <i>David Tschumperlé</i>.      Latest Update: <i>2023/03/29</i>.</small>")
+fx_pack_ellipses :
+  radius_min,radius_max,radius_dilation,isotropy_min,isotropy_max,isotropy_levels,orientation_ellipse,region_analysis,bgR,bgG,bgB,bgA,render_factor,preserve_size=$*
+  isotropy_min,isotropy_max:="sort([ $isotropy_min,$isotropy_max ])/100"
+  radius_min,radius_max:="sort([ $radius_min,$radius_max ])"
+  render_factor+=1
+
+  foreach {
+    progress -1
+    to_rgb
+
+    # Init images.
+    nm={n} => img
+    1,1,1,3 => set
+    +structuretensors[img] 1 b. 1% eigen.
+    f.. "l0 = sqrt(i0); l1 = sqrt(i1); [1 - (l1 - l0)/l1,0]" channels.. 0
+    if $isotropy_levels quantize.. $isotropy_levels,0,-1 fi
+    n.. $isotropy_min,$isotropy_max =>.. isotropy
+
+    if $orientation_ellipse==0 f[isotropy] 1 .
+    elif $orientation_ellipse==1 +f. "[ atan2(-i0,i1),0 ]"
+    else +f. "[ atan2(i1,i0),0 ]"
+    fi
+    channels. 0 => angles
+
+    if $region_analysis +norm[img] b. 0.5% slic. {30*$region_analysis},0 g. xy,1 a[-2,-1] c norm. ge. 5%
+    else 100%,100%
+    fi
+    => contours
+    +==[contours] 0 => mask
+
+    # Pack ellipses.
+    nb_attempts=0
+    repeat inf {
+      x0,y0,x1,y1:="
+        const N = 4*$radius_max;
+        wm1 = w#$mask - 1;
+        hm1 = h#$mask - 1;
+        Pc = round(u([wm1,hm1])); P0 = Pc - N/2; P1 = Pc + N/2;
+        [ cut(P0[0],0,wm1), cut(P0[1],0,hm1), cut(P1[0],0,wm1), cut(P1[1],0,hm1) ]"
+
+      +z[mask] $x0,$y0,$x1,$y1 r. {[w,h]+2},1,1,0,0,0.5,0.5 distance. 0
+      x,y,r:=$x0+xM-1,$y0+yM-1,min($radius_max,iM-1.25) rm.
+
+      if $r>$radius_min
+        r2={isotropy,max(1,$r*i($x,$y))}
+        ellipse[mask] $x,$y,$r,$r2,{angles,rad2deg(i($x,$y))},1,0
+        eval "da_push(#$set,[$x,$y,$r])"
+        nb_attempts=0
+      else
+        if narg($contours) +[mask] [contours] rm[contours]
+        else nb_attempts+=1 if $nb_attempts>10 break fi
+        fi
+      fi
+
+      if !($>%100) progress {mask,cut(400*(1-ia)^3,0$progress,100)} fi
+    }
+    rm[mask]
+
+    # Render result.
+    da_freeze[set]
+    W,H={img,[w,h]}
+    {img,round($render_factor*[w,h])} => mask
+    eval[set] "
+      const fact = $render_factor;
+      r1 = fact*(i2 + $radius_dilation);
+      r2 = max(1,r1*i(#$isotropy,i0,i1));
+      ellipse(#$mask,round(fact*i0),round(fact*i1),r1,r2,i(#$angles,i0,i1),1,y + 1);
+      I"
+
+    r[img] {mask,[w,h]},1,100%,3
+    blend[img] [mask],shapeaverage0
+    !=[mask] 0 *[mask] 255
+    a[img,mask] c
+    if $preserve_size r[img] $W,$H,1,100%,2 fi
+    k[img]
+
+    100%,100%,100%,4 fc. $bgR,$bgG,$bgB,$bgA rv blend alpha => $nm
+    progress 100
+  }
+
+fx_pack_ellipses_preview :
+  gui_split_preview "fx_pack_ellipses ${1-12},1,0"
+
 #@gui Pack Sprites : fx_pack_sprites, gui_no_preview
 #@gui : Number of Scales = int(5,1,16)
 #@gui : Minimal Scale (%) = float(25,1,100)
