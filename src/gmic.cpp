@@ -4147,8 +4147,6 @@ gmic& gmic::_gmic(const char *const commands_line,
   cimg_exception_mode = cimg::exception_mode();
   cimg::exception_mode(0);
 
-  std::fprintf(stderr,"\nDEBUG : NEW INSTANCE %p\n",(void*)this);
-
   // Initialize class attributes.
   cimg::mutex(22);
   if (!builtin_commands_inds) {
