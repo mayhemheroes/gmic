@@ -2863,13 +2863,11 @@ const char* gmic::path_user(const char *const custom_path) {
   const char *_path_user = 0;
   if (custom_path && cimg::is_directory(custom_path)) _path_user = custom_path;
   if (!_path_user) _path_user = gmic_getenv("GMIC_PATH");
-  if (!_path_user) {
 #if cimg_OS!=2
-    _path_user = gmic_getenv("HOME");
+  if (!_path_user) _path_user = gmic_getenv("HOME");
 #else
-    _path_user = gmic_getenv("USERPROFILE");
+  if (!_path_user) _path_user = gmic_getenv("USERPROFILE");
 #endif
-  }
   if (!_path_user) _path_user = gmic_getenv("TMP");
   if (!_path_user) _path_user = gmic_getenv("TEMP");
   if (!_path_user) _path_user = gmic_getenv("TMPDIR");
