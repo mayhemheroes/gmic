@@ -2896,18 +2896,18 @@ const char* gmic::path_rc(const char *const custom_path) {
   if (custom_path && cimg::is_directory(custom_path)) _path_rc = custom_path;
   if (!_path_rc) _path_rc = gmic_getenv("GMIC_PATH");
   if (!_path_rc) _path_rc = gmic_getenv("XDG_CONFIG_HOME");
-  if (!_path_rc) {
 #if cimg_OS!=2
+  if (!_path_rc) {
     _path_rc = gmic_getenv("HOME");
     if (_path_rc) {
       path_tmp.assign(std::strlen(_path_rc) + 10);
       cimg_snprintf(path_tmp,path_tmp._width,"%s/.config",_path_rc);
       if (cimg::is_directory(path_tmp)) _path_rc = path_tmp;
     }
-#else
-    _path_rc = gmic_getenv("USERPROFILE");
-#endif
   }
+#else
+  if (!path_rc) _path_rc = gmic_getenv("APPDATA");
+#endif
   if (!_path_rc) _path_rc = gmic_getenv("TMP");
   if (!_path_rc) _path_rc = gmic_getenv("TEMP");
   if (!_path_rc) _path_rc = gmic_getenv("TMPDIR");
