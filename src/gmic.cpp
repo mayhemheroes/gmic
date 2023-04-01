@@ -2907,7 +2907,7 @@ const char* gmic::path_rc(const char *const custom_path) {
       if (cimg::is_directory(path_tmp)) _path_rc = path_tmp;
     }
 #else
-    _path_rc = gmic_getenv("APPDATA");
+    _path_rc = gmic_getenv("USERPROFILE");
 #endif
   }
   if (!_path_rc) _path_rc = gmic_getenv("TMP");
