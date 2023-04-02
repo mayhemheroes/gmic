@@ -2906,7 +2906,7 @@ const char* gmic::path_rc(const char *const custom_path) {
     }
   }
 #else
-  if (!path_rc) _path_rc = gmic_getenv("APPDATA");
+  if (!_path_rc) _path_rc = gmic_getenv("APPDATA");
 #endif
   if (!_path_rc) _path_rc = gmic_getenv("TMP");
   if (!_path_rc) _path_rc = gmic_getenv("TEMP");
