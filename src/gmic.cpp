@@ -2893,8 +2893,9 @@ const char* gmic::path_rc(const char *const custom_path) {
   if (path_rc) return path_rc;
   cimg::mutex(28);
   const char *_path_rc = 0;
-  if (custom_path && cimg::is_directory(custom_path)) _path_rc = custom_path;
-  if (!_path_rc) _path_rc = gmic_getenv("GMIC_PATH");
+  bool add_gmic_subfolder = true;
+  if (custom_path && cimg::is_directory(custom_path)) { _path_rc = custom_path; add_gmic_subfolder = false; }
+  if (!_path_rc) { _path_rc = gmic_getenv("GMIC_PATH"); add_gmic_subfolder = _path_rc!=0; }
   if (!_path_rc) _path_rc = gmic_getenv("XDG_CONFIG_HOME");
 #if cimg_OS!=2
   if (!_path_rc) {
@@ -2913,8 +2914,12 @@ const char* gmic::path_rc(const char *const custom_path) {
   if (!_path_rc) _path_rc = gmic_getenv("TMPDIR");
   if (!_path_rc) _path_rc = "";
   path_rc.assign(1024);
-  cimg_snprintf(path_rc,path_rc.width(),"%s%cgmic%c",
-                _path_rc,cimg_file_separator,cimg_file_separator);
+
+  if (add_gmic_subfolder)
+    cimg_snprintf(path_rc,path_rc.width(),"%s%cgmic%c",_path_rc,cimg_file_separator,cimg_file_separator);
+  else
+    cimg_snprintf(path_rc,path_rc.width(),"%s%c",_path_rc,cimg_file_separator);
+
   CImg<char>::string(path_rc).move_to(path_rc); // Optimize length
   cimg::mutex(28,0);
   return path_rc;
