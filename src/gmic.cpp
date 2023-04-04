@@ -2895,7 +2895,7 @@ const char* gmic::path_rc(const char *const custom_path) {
   const char *_path_rc = 0;
   bool add_gmic_subfolder = true;
   if (custom_path && cimg::is_directory(custom_path)) { _path_rc = custom_path; add_gmic_subfolder = false; }
-  if (!_path_rc) { _path_rc = gmic_getenv("GMIC_PATH"); add_gmic_subfolder = _path_rc!=0; }
+  if (!_path_rc) { _path_rc = gmic_getenv("GMIC_PATH"); add_gmic_subfolder = _path_rc==0; }
   if (!_path_rc) _path_rc = gmic_getenv("XDG_CONFIG_HOME");
 #if cimg_OS!=2
   if (!_path_rc) {
