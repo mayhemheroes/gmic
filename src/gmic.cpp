@@ -2877,7 +2877,7 @@ const char* gmic::path_user(const char *const custom_path) {
   cimg_snprintf(path_user,path_user.width(),"%s%c.gmic",
                 _path_user,cimg_file_separator);
 #else
-  cimg_snprintf(path_user,path_user.width(),"%s%cgmic",
+  cimg_snprintf(path_user,path_user.width(),"%s%cuser.gmic",
                 _path_user,cimg_file_separator);
 #endif
   CImg<char>::string(path_user).move_to(path_user); // Optimize length
