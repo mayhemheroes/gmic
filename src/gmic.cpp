@@ -2588,7 +2588,7 @@ static void *gmic_parallel(void *arg) {
 // Array of G'MIC built-in commands (must be sorted in lexicographic order!).
 const char *gmic::builtin_commands_names[] = {
   "!=","%","&","*","*3d","+","+3d","-","-3d","/","/3d","::","<","<<","<=","=","==",">",">=",">>",
-  "a","abs","acos","acosh","add","add3d","and","append","asin","asinh","atan","atan2","atanh","autocrop","axes",
+  "a","abs","acos","acosh","add","add3d","and","append","asin","asinh","atan","atan2","atanh","autocrop",
   "b","bilateral","blur","boxfilter","break","bsl","bsr",
   "c","camera","check","check3d","command","continue","convolve","correlate","cos","cosh","crop",
     "cumulate","cursor","cut",
@@ -2598,7 +2598,7 @@ const char *gmic::builtin_commands_names[] = {
     "exp",
   "f","fft","fi","files","fill","flood","for","foreach",
   "ge","graph","gt","guided",
-  "h","histogram",
+  "histogram",
   "i","if","ifft","image","index","inpaint","input","invert","isoline3d","isosurface3d",
   "j","j3d",
   "k","keep",
@@ -2877,7 +2877,7 @@ const char* gmic::path_user(const char *const custom_path) {
   cimg_snprintf(path_user,path_user.width(),"%s%c.gmic",
                 _path_user,cimg_file_separator);
 #else
-  cimg_snprintf(path_user,path_user.width(),"%s%cgmic",
+  cimg_snprintf(path_user,path_user.width(),"%s%cuser.gmic",
                 _path_user,cimg_file_separator);
 #endif
   CImg<char>::string(path_user).move_to(path_user); // Optimize length
@@ -6518,7 +6518,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             arg_command+=2; arg_command_text+=2; offset_argument_text = 2;
           }
 
-          std::FILE *file = cimg::std_fopen(arg_command,"rb");
+          std::FILE *file = 0;
+          const char *const p_column = std::strchr(arg_command,':');
+          if (!p_column || p_column - arg_command<2) file = cimg::std_fopen(arg_command,"rb");
           if (file) {
             if (!is_debug_arg) add_debug_info = true;
             print(images,0,"Import commands from file '%s'%s",
