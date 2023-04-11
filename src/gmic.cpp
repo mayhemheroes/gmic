@@ -5462,10 +5462,8 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
       // Check if current item is a known command.
       const bool
-        is_hyphen = *item=='-' && item[1] &&
-          item[1]!='[' && item[1]!='.' && (item[1]!='3' || item[2]!='d'),
-        is_plus = *item=='+' && item[1] &&
-          item[1]!='[' && item[1]!='.' && (item[1]!='3' || item[2]!='d');
+        is_hyphen = *item=='-' && item[1] && item[1]!='[' && item[1]!='.' && (item[1]!='3' || item[2]!='d'),
+        is_plus = *item=='+' && item[1] && item[1]!='[' && item[1]!='.' && (item[1]!='3' || item[2]!='d');
       item+=is_hyphen || is_plus?1:0;
       bool is_get = is_plus, is_specialized_get = false;
 
