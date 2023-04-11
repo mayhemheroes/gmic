@@ -6518,7 +6518,9 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
             arg_command+=2; arg_command_text+=2; offset_argument_text = 2;
           }
 
-          std::FILE *file = cimg::std_fopen(arg_command,"rb");
+          std::FILE *file = 0;
+          const char *const p_column = std::strchr(arg_command,':');
+          if (!p_column || p_column - arg_command<2) file = cimg::std_fopen(arg_command,"rb");
           if (file) {
             if (!is_debug_arg) add_debug_info = true;
             print(images,0,"Import commands from file '%s'%s",
