@@ -5479,16 +5479,25 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         (is_length1 && ((item0>='a' && item0<='z') || // Alphabetical shortcut commands
                         item0=='%' || item0=='&' || item0=='*' || item0=='+' || item0=='-' || item0=='/' ||
                         item0=='<' || item0=='=' || item0=='>' || item0=='^' || item0=='|')) ||
-        (is_length2 && ((item0=='m' && (item1=='*' || item1=='/')) || // Shortcuts 'm*' and 'm/'
-                        (item0=='f' && item1=='i') || // Shortcuts 'fi'
-                        (item0=='u' && item1=='m') || // Shortcut 'um'
-                        (item0=='!' && item1=='=') || // Shortcut '!='
+        (is_length2 && ((item0=='!' && item1=='=') || // Shortcut '!='
                         (item0=='=' && item1=='>') || // Shortcut '=>'
+                        (item0=='d' && item1=='o') || // 'do'
+                        (item0=='e' && item1=='q') || // 'eq'
+                        (item0=='f' && item1=='i') || // Shortcuts 'fi'
+                        (item0=='g' && (item1=='e' || item1=='t')) || // 'ge' and 'gt'
+                        (item0=='i' && item1=='f') || // 'if'
+                        (item0=='l' && (item1=='e' || item1=='t')) || // 'le' and 'lt'
+                        (item0=='m' && (item1=='*' || item1=='/')) || // Shortcuts 'm*' and 'm/'
                         (item0=='n' && item1=='m') || // Shortcut 'nm'
+                        (item0=='o' && item1=='r') || // 'or'
+                        (item0=='r' && (item1=='m' || item1=='v')) || // Shortcut 'rm' and 'rv'
+                        (item0=='s' && item1=='h') || // Shortcut 'sh'
+                        (item0=='u' && item1=='m') || // Shortcut 'um'
+                        (item0=='w' && item1>='0' && item1<='9') || // Shortcuts 'w0'..'w9'
                         ((item1==item0 || item1=='=') && // Shortcuts '<','=','>','<=','==' and '>='
                          (item0=='<' || item0=='=' || item0=='>')))) ||
         (is_length3 && item1=='3' && item2=='d' && // '*3d','+3d','-3d' and '/3d'
-         (item0=='*' || item0=='+' || item0=='-' || item0=='/')),
+         (item0=='*' || item0=='+' || item0=='-' || item0=='/' || item0=='j' || item0=='l')),
         is_command = is_builtin_command;
 
       if (!is_builtin_command) {
