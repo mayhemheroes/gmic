@@ -5479,16 +5479,16 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         (is_length1 && ((item0>='a' && item0<='z') || // Alphabetical shortcut commands
                         item0=='%' || item0=='&' || item0=='*' || item0=='+' || item0=='-' || item0=='/' ||
                         item0=='<' || item0=='=' || item0=='>' || item0=='^' || item0=='|')) ||
-        (is_length2 && item0=='m' && (item1=='*' || item1=='/')) || // Shortcuts 'm*' and 'm/'
-        (is_length2 && item0=='f' && item1=='i') || // Shortcuts 'fi'
-        (is_length2 && item0=='u' && item1=='m') || // Shortcut 'um'
-        (is_length2 && item0=='!' && item1=='=') || // Shortcut '!='
-        (is_length2 && item0=='=' && item1=='>') || // Shortcut '=>'
-        (is_length2 && item0=='n' && item1=='m') || // Shortcut 'nm'
-        (is_length3 && item1=='3' && item2=='d' &&
-         (item0=='*' || item0=='+' || item0=='-' || item0=='/')) || // '*3d','+3d','-3d' and '/3d'
-        (is_length2 && (item1==item0 || item1=='=') &&
-         (item0=='<' || item0=='=' || item0=='>')), // Shortcuts '<','=','>','<=','==' and '>='
+        (is_length2 && ((item0=='m' && (item1=='*' || item1=='/')) || // Shortcuts 'm*' and 'm/'
+                        (item0=='f' && item1=='i') || // Shortcuts 'fi'
+                        (item0=='u' && item1=='m') || // Shortcut 'um'
+                        (item0=='!' && item1=='=') || // Shortcut '!='
+                        (item0=='=' && item1=='>') || // Shortcut '=>'
+                        (item0=='n' && item1=='m') || // Shortcut 'nm'
+                        ((item1==item0 || item1=='=') && // Shortcuts '<','=','>','<=','==' and '>='
+                         (item0=='<' || item0=='=' || item0=='>')))) ||
+        (is_length3 && item1=='3' && item2=='d' && // '*3d','+3d','-3d' and '/3d'
+         (item0=='*' || item0=='+' || item0=='-' || item0=='/')),
         is_command = is_builtin_command;
 
       if (!is_builtin_command) {
