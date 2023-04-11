@@ -2588,7 +2588,7 @@ static void *gmic_parallel(void *arg) {
 // Array of G'MIC built-in commands (must be sorted in lexicographic order!).
 const char *gmic::builtin_commands_names[] = {
   "!=","%","&","*","*3d","+","+3d","-","-3d","/","/3d","::","<","<<","<=","=","==",">",">=",">>",
-  "a","abs","acos","acosh","add","add3d","and","append","asin","asinh","atan","atan2","atanh","autocrop","axes",
+  "a","abs","acos","acosh","add","add3d","and","append","asin","asinh","atan","atan2","atanh","autocrop",
   "b","bilateral","blur","boxfilter","break","bsl","bsr",
   "c","camera","check","check3d","command","continue","convolve","correlate","cos","cosh","crop",
     "cumulate","cursor","cut",
@@ -2598,7 +2598,7 @@ const char *gmic::builtin_commands_names[] = {
     "exp",
   "f","fft","fi","files","fill","flood","for","foreach",
   "ge","graph","gt","guided",
-  "h","histogram",
+  "histogram",
   "i","if","ifft","image","index","inpaint","input","invert","isoline3d","isosurface3d",
   "j","j3d",
   "k","keep",
