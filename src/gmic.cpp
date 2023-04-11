@@ -2587,7 +2587,7 @@ static void *gmic_parallel(void *arg) {
 
 // Array of G'MIC built-in commands (must be sorted in lexicographic order!).
 const char *gmic::builtin_commands_names[] = {
-  "!=","%","&","*","*3d","+","+3d","-","-3d","/","/3d","::","<","<<","<=","=","==",">",">=",">>",
+  "!=","%","&","*","*3d","+","+3d","-","-3d","/","/3d","<","<<","<=","=","==",">",">=",">>",
   "a","abs","acos","acosh","add","add3d","and","append","asin","asinh","atan","atan2","atanh","autocrop",
   "b","bilateral","blur","boxfilter","break","bsl","bsr",
   "c","camera","check","check3d","command","continue","convolve","correlate","cos","cosh","crop",
@@ -5475,19 +5475,20 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         is_length2 = item0 && item1 && _gmic_eok(2),
         is_length3 = item0 && item1 && item2 && _gmic_eok(3);
       bool is_builtin_command =
-        (is_length1 && item0>='a' && item0<='z') || // Alphabetical shortcut commands
         (!item1 && (item0=='{' || item0=='}')) || // Left/right braces
+        (is_length1 && ((item0>='a' && item0<='z') || // Alphabetical shortcut commands
+                        item0=='%' || item0=='&' || item0=='*' || item0=='+' || item0=='-' || item0=='/' ||
+                        item0=='<' || item0=='=' || item0=='>' || item0=='^' || item0=='|')) ||
         (is_length2 && item0=='m' && (item1=='*' || item1=='/')) || // Shortcuts 'm*' and 'm/'
         (is_length2 && item0=='f' && item1=='i') || // Shortcuts 'fi'
         (is_length2 && item0=='u' && item1=='m') || // Shortcut 'um'
         (is_length2 && item0=='!' && item1=='=') || // Shortcut '!='
         (is_length2 && item0=='=' && item1=='>') || // Shortcut '=>'
         (is_length2 && item0=='n' && item1=='m') || // Shortcut 'nm'
-        (is_length1 && (item0=='%' || item0=='&' || item0=='^' || item0=='|')) || // Shortcuts '%','&','^' and '|'
-        ((item0=='*' || item0=='+' || item0=='-' || item0=='/') && // Shortcuts '*','+','-','/',
-         (is_length1 || (item1=='3' && item2=='d' && is_length3))) || // '*3d','+3d','-3d' and '/3d'
-        ((item0=='<' || item0=='=' || item0=='>') && // Shortcuts '<','=','>','<=','==' and '>='
-         (is_length1 || ((item1==item0 || item1=='=') && is_length2))),
+        (is_length3 && item1=='3' && item2=='d' &&
+         (item0=='*' || item0=='+' || item0=='-' || item0=='/')) || // '*3d','+3d','-3d' and '/3d'
+        (is_length2 && (item1==item0 || item1=='=') &&
+         (item0=='<' || item0=='=' || item0=='>')), // Shortcuts '<','=','>','<=','==' and '>='
         is_command = is_builtin_command;
 
       if (!is_builtin_command) {
