@@ -5471,24 +5471,25 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 
 #define _gmic_eok(i) (!item[i] || item[i]=='[' || (item[i]=='.' && (!item[i + 1] || item[i + 1]=='.')))
       unsigned int hash_custom = ~0U, ind_custom = ~0U;
+      const char item0 = *item, item1 = item0?item[1]:0, item2 = item1?item[2]:0;
       const bool
-        is_length1 = *item && _gmic_eok(1),
-        is_length2 = *item && item[1] && _gmic_eok(2),
-        is_length3 = *item && item[1] && item[2] && _gmic_eok(3);
+        is_length1 = item0 && _gmic_eok(1),
+        is_length2 = item0 && item1 && _gmic_eok(2),
+        is_length3 = item0 && item1 && item2 && _gmic_eok(3);
       bool is_builtin_command =
-        (is_length1 && *item>='a' && *item<='z') || // Alphabetical shortcut commands
-        ((*item=='{' || *item=='}') && !item[1]) || // Left/right braces
-        (is_length2 && *item=='m' && (item[1]=='*' || item[1]=='/')) || // Shortcuts 'm*' and 'm/'
-        (is_length2 && *item=='f' && item[1]=='i') || // Shortcuts 'fi'
-        (is_length2 && *item=='u' && item[1]=='m') || // Shortcut 'um'
-        (is_length2 && *item=='!' && item[1]=='=') || // Shortcut '!='
-        (is_length2 && *item=='=' && item[1]=='>') || // Shortcut '=>'
-        (is_length2 && *item=='n' && item[1]=='m') || // Shortcut 'nm'
-        (is_length1 && (*item=='%' || *item=='&' || *item=='^' || *item=='|')) || // Shortcuts '%','&','^' and '|'
-        ((*item=='*' || *item=='+' || *item=='-' || *item=='/') && // Shortcuts '*','+','-','/',
-         (is_length1 || (item[1]=='3' && item[2]=='d' && is_length3))) || // '*3d','+3d','-3d' and '/3d'
-        ((*item=='<' || *item=='=' || *item=='>') && // Shortcuts '<','=','>','<=','==' and '>='
-         (is_length1 || ((item[1]==*item || item[1]=='=') && is_length2))),
+        (is_length1 && item0>='a' && item0<='z') || // Alphabetical shortcut commands
+        (!item1 && (item0=='{' || item0=='}')) || // Left/right braces
+        (is_length2 && item0=='m' && (item1=='*' || item1=='/')) || // Shortcuts 'm*' and 'm/'
+        (is_length2 && item0=='f' && item1=='i') || // Shortcuts 'fi'
+        (is_length2 && item0=='u' && item1=='m') || // Shortcut 'um'
+        (is_length2 && item0=='!' && item1=='=') || // Shortcut '!='
+        (is_length2 && item0=='=' && item1=='>') || // Shortcut '=>'
+        (is_length2 && item0=='n' && item1=='m') || // Shortcut 'nm'
+        (is_length1 && (item0=='%' || item0=='&' || item0=='^' || item0=='|')) || // Shortcuts '%','&','^' and '|'
+        ((item0=='*' || item0=='+' || item0=='-' || item0=='/') && // Shortcuts '*','+','-','/',
+         (is_length1 || (item1=='3' && item2=='d' && is_length3))) || // '*3d','+3d','-3d' and '/3d'
+        ((item0=='<' || item0=='=' || item0=='>') && // Shortcuts '<','=','>','<=','==' and '>='
+         (is_length1 || ((item1==item0 || item1=='=') && is_length2))),
         is_command = is_builtin_command;
 
       if (!is_builtin_command) {
