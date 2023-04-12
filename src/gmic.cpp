@@ -2587,35 +2587,36 @@ static void *gmic_parallel(void *arg) {
 
 // Array of G'MIC built-in commands (must be sorted in lexicographic order!).
 const char *gmic::builtin_commands_names[] = {
-  "!=","%","&","*","*3d","+","+3d","-","-3d","/","/3d","<","<<","<=","=","==",">",">=",">>",
+
+  // Commands of length>3.
+  "*3d","+3d","-3d","/3d",
   "abs","acos","acosh","add","add3d","and","append","asin","asinh","atan","atan2","atanh","autocrop",
   "bilateral","blur","boxfilter","break","bsl","bsr",
   "camera","check","check3d","command","continue","convolve","correlate","cos","cosh","crop",
     "cumulate","cursor","cut",
   "debug","delete","denoise","deriche","dijkstra","dilate","discard","displacement","display","distance",
-    "div","div3d","do","done",
-  "echo","eigen","eikonal","elif","ellipse","else","endian","eq","equalize","erf","erode","error","eval","exec",
-    "exp",
-  "fft","fi","files","fill","flood","for","foreach",
-  "ge","graph","gt","guided",
+    "div","div3d","done",
+  "echo","eigen","eikonal","elif","ellipse","else","endian","equalize","erf","erode","error","eval","exec","exp",
+  "fft","files","fill","flood","for","foreach",
+  "graph","guided",
   "histogram",
-  "if","ifft","image","index","inpaint","input","invert","isoline3d","isosurface3d",
+  "ifft","image","index","inpaint","input","invert","isoline3d","isosurface3d",
   "j3d",
   "keep",
-  "l3d","label","le","light3d","line","local","log","log10","log2","lt",
-  "m*","m/","mandelbrot","map","matchpatch","max","maxabs","mdiv","median","min","minabs","mirror",
-    "mmul","mod","move","mproj","mul","mul3d","mutex","mv",
+  "l3d","label","light3d","line","local","log","log10","log2",
+  "mandelbrot","map","matchpatch","max","maxabs","mdiv","median","min","minabs","mirror",
+    "mmul","mod","move","mproj","mul","mul3d","mutex",
   "name","named","neq","network","nmd","noarg","noise","normalize",
-  "object3d","onfail","or","output",
+  "object3d","onfail","output",
   "parallel","pass","permute","plasma","plot","point","polygon","pow","print","progress",
   "quit",
-  "r3d","rand","remove","repeat","resize","return","reverse","rm","rol","ror","rotate","rotate3d","round","rv",
-  "screen","select","serialize","set","sh","shared","shift","sign","sin","sinc","sinh","skip",
+  "r3d","rand","remove","repeat","resize","return","reverse","rol","ror","rotate","rotate3d","round",
+  "screen","select","serialize","set","shared","shift","sign","sin","sinc","sinh","skip",
     "smooth","solve","sort","split","sqr","sqrt","srand","status","store","streamline3d","sub","sub3d","svd",
   "tan","tanh","text","trisolve",
-  "um","uncommand","unroll","unserialize",
+  "uncommand","unroll","unserialize",
   "vanvliet","verbose",
-  "w0","w1","w2","w3","w4","w5","w6","w7","w8","w9","wait","warn","warp","watershed","while","window",
+  "wait","warn","warp","watershed","while","window",
   "xor",
   0,
 
@@ -2625,6 +2626,9 @@ const char *gmic::builtin_commands_names[] = {
   "y","z","^","{","|","}"
 
   // Two-letters commands.
+  "!=","<<","<=","==","=>",">=",">>",
+  "do","eq","fi","ge","gt","if","le","lt","m*","m/","mv","nm","or","rm","rv","sh","um",
+  "w0","w1","w2","w3","w4","w5","w6","w7","w8","w9"
 
 };
 
@@ -5493,28 +5497,30 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
         is_length1 = item0 && _gmic_eok(1),
         is_length2 = item0 && item1 && _gmic_eok(2),
         is_length3 = item0 && item1 && item2 && _gmic_eok(3);
+
+      // Determine if specified command is a 'built-in' command (fast check when command length is 1,2 or 3).
       bool is_builtin_command =
         (!item1 && (item0=='{' || item0=='}')) || // Left/right braces
         (is_length1 && ((item0>='a' && item0<='z') || // Alphabetical shortcut commands
                         item0=='%' || item0=='&' || item0=='*' || item0=='+' || item0=='-' || item0=='/' ||
                         item0=='<' || item0=='=' || item0=='>' || item0=='^' || item0=='|')) ||
         (is_length2 && ((item0=='!' && item1=='=') || // '!='
-                        (item0=='=' && item1=='>') || // '=>'
+                        (item0=='<' && (item1=='<' || item1=='=')) || // '<<' and '<='
+                        (item0=='=' && (item1=='=' || item1=='>')) || // '==' and '=>'
+                        (item0=='>' && (item1=='=' || item1=='>')) || // '>=' and '>>'
                         (item0=='d' && item1=='o') || // 'do'
                         (item0=='e' && item1=='q') || // 'eq'
                         (item0=='f' && item1=='i') || // 'fi'
                         (item0=='g' && (item1=='e' || item1=='t')) || // 'ge' and 'gt'
                         (item0=='i' && item1=='f') || // 'if'
                         (item0=='l' && (item1=='e' || item1=='t')) || // 'le' and 'lt'
-                        (item0=='m' && (item1=='*' || item1=='/')) || // 'm*' and 'm/'
+                        (item0=='m' && (item1=='*' || item1=='/' || item1=='v')) || // 'm*', 'm/' and 'mv'
                         (item0=='n' && item1=='m') || // 'nm'
                         (item0=='o' && item1=='r') || // 'or'
                         (item0=='r' && (item1=='m' || item1=='v')) || // 'rm' and 'rv'
                         (item0=='s' && item1=='h') || // 'sh'
                         (item0=='u' && item1=='m') || // 'um'
-                        (item0=='w' && item1>='0' && item1<='9') || // 'w0'..'w9'
-                        ((item1==item0 || item1=='=') && // '<','=','>','<=','==' and '>='
-                         (item0=='<' || item0=='=' || item0=='>')))) ||
+                        (item0=='w' && item1>='0' && item1<='9'))) || // 'w0'..'w9'
         (is_length3 && item1=='3' && item2=='d' && // '*3d','+3d','-3d' and '/3d'
          (item0=='*' || item0=='+' || item0=='-' || item0=='/' || item0=='j' || item0=='l')),
         is_command = is_builtin_command;
