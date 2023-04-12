@@ -2589,55 +2589,34 @@ static void *gmic_parallel(void *arg) {
 const char *gmic::builtin_commands_names[] = {
 
   // Commands of length>3.
-  "*3d","+3d","-3d","/3d",
-  "abs","acos","acosh","add","add3d","and","append","asin","asinh","atan","atan2","atanh","autocrop",
-  "bilateral","blur","boxfilter","break","bsl","bsr",
-  "camera","check","check3d","command","continue","convolve","correlate","cos","cosh","crop",
-    "cumulate","cursor","cut",
-  "debug","delete","denoise","deriche","dijkstra","dilate","discard","displacement","display","distance",
-    "div","div3d","done",
-  "echo","eigen","eikonal","elif","ellipse","else","endian","equalize","erf","erode","error","eval","exec","exp",
-  "fft","files","fill","flood","for","foreach",
+  "acos","acosh","add3d","append","asin","asinh","atan","atan2","atanh","autocrop",
+  "bilateral","blur","boxfilter","break",
+  "camera","check","check3d","command","continue","convolve","correlate","cosh","crop","cumulate","cursor",
+  "debug","delete","denoise","deriche","dijkstra","dilate","discard","displacement","display","distance","div3d","done",
+  "echo","eigen","eikonal","elif","ellipse","else","endian","equalize","erode","error","eval","exec",
+  "files","fill","flood","foreach",
   "graph","guided",
   "histogram",
   "ifft","image","index","inpaint","input","invert","isoline3d","isosurface3d",
-  "j3d",
   "keep",
-  "l3d","label","light3d","line","local","log","log10","log2",
-  "mandelbrot","map","matchpatch","max","maxabs","mdiv","median","min","minabs","mirror",
-    "mmul","mod","move","mproj","mul","mul3d","mutex",
-  "name","named","neq","network","nmd","noarg","noise","normalize",
+  "label","light3d","line","local","log10","log2",
+  "mandelbrot","matchpatch","maxabs","mdiv","median","minabs","mirror","mmul","move","mproj","mul3d","mutex",
+  "name","named","network","noarg","noise","normalize",
   "object3d","onfail","output",
-  "parallel","pass","permute","plasma","plot","point","polygon","pow","print","progress",
+  "parallel","pass","permute","plasma","plot","point","polygon","print","progress",
   "quit",
-  "r3d","rand","remove","repeat","resize","return","reverse","rol","ror","rotate","rotate3d","round",
-  "screen","select","serialize","set","shared","shift","sign","sin","sinc","sinh","skip",
-    "smooth","solve","sort","split","sqr","sqrt","srand","status","store","streamline3d","sub","sub3d","svd",
-  "tan","tanh","text","trisolve",
+  "rand","remove","repeat","resize","return","reverse","rotate","rotate3d","round",
+  "screen","select","serialize","shared","shift","sign","sinc","sinh","skip",
+    "smooth","solve","sort","split","sqrt","srand","status","store","streamline3d","sub3d",
+  "tanh","text","trisolve",
   "uncommand","unroll","unserialize",
   "vanvliet","verbose",
   "wait","warn","warp","watershed","while","window",
-  "xor",
   0,
 
   // Commands of length 3.
-  "*3d","+3d","-3d","/3d",
-  "abs","add","and",
-  "bsl","bsr",
-  "cos",
-  "cut",
-  "div",
-  "erf","exp",
-  "fft","for",
-  "j3d",
-  "l3d","log",
-  "map","max","min","mod","mul",
-  "neq","nmd",
-  "pow",
-  "r3d","rol","ror",
-  "set","sin","sqr","sub","svd",
-  "tan","tanh",
-  "xor",
+  "*3d","+3d","-3d","/3d","abs","add","and","bsl","bsr","cos","cut","div","erf","exp","fft","for","j3d","l3d","log",
+  "map","max","min","mod","mul","neq","nmd","pow","r3d","rol","ror","set","sin","sqr","sub","svd","tan","xor",
 
   // Commands of length 2.
   "!=","<<","<=","==","=>",">=",">>",
@@ -2648,7 +2627,6 @@ const char *gmic::builtin_commands_names[] = {
   "%","&","*","+","-","/","<","=",">",
   "a","b","c","d","e","f","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z",
   "y","z","^","{","|","}"
-
 };
 
 CImg<int> gmic::builtin_commands_inds = CImg<int>::empty();
@@ -5540,8 +5518,31 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
                         (item0=='s' && item1=='h') || // 'sh'
                         (item0=='u' && item1=='m') || // 'um'
                         (item0=='w' && item1>='0' && item1<='9'))) || // 'w0'..'w9'
-        (is_length3 && item1=='3' && item2=='d' && // '*3d','+3d','-3d' and '/3d'
-         (item0=='*' || item0=='+' || item0=='-' || item0=='/' || item0=='j' || item0=='l')),
+        (is_length3 && ((item1=='3' && item2=='d' && // '*3d','+3d','-3d', '/3d', 'j3d', 'l3d' and 'r3d'
+                         (item0=='*' || item0=='+' || item0=='-' || item0=='/' || item0=='j' || item0=='l' ||
+                          item0=='r')) ||
+                        (item0=='a' && ((item1=='b' && item2=='s') || // 'abs', 'add' and 'and'
+                                        (item2=='d' && (item1=='d' || item1=='n')))) ||
+                        (item0=='b' && item1=='s' && (item2=='l' || item2=='r')) || // 'bsl' and 'bsr'
+                        (item0=='c' && ((item1=='o' && item2=='s') || (item1=='u' && item2=='t'))) || // 'cos' and 'cut'
+                        (item0=='d' && item1=='i' && item2=='v') || // 'div'
+                        (item0=='e' && ((item1=='r' && item2=='f') || (item1=='x' && item2=='p'))) || // 'erf' and 'exp'
+                        (item0=='f' && ((item1=='f' && item2=='t') || (item1=='o' && item2=='r'))) || // 'fft' and 'for'
+                        (item0=='l' && item1=='o' && item2=='g') || // 'log'
+                        (item0=='m' && ((item1=='a' && (item2=='p' || item2=='x')) || // 'map' and 'max'
+                                        (item1=='i' && item2=='n') || // 'min'
+                                        (item1=='o' && item2=='d') || // 'mod'
+                                        (item1=='u' && item2=='l'))) || // 'mul'
+                        (item0=='n' && ((item1=='e' && item2=='q') || (item1=='m' && item2=='d'))) || // 'neq' and 'nmd'
+                        (item0=='p' && item1=='o' && item2=='w') || // 'pow'
+                        (item0=='r' && item1=='o' && (item2=='l' || item2=='r')) || // 'rol' and 'ror'
+                        (item0=='s' && ((item1=='e' && item2=='t') || // 'set'
+                                        (item1=='i' && item2=='n') || // 'sin'
+                                        (item1=='q' && item2=='r') || // 'sqr'
+                                        (item1=='u' && item2=='b') || // 'sub'
+                                        (item1=='v' && item2=='d'))) || // 'svd'
+                        (item0=='t' && item1=='a' && item2=='n') || // 'tan'
+                        (item0=='x' && item1=='o' && item2=='r'))), // 'xor'
         is_command = is_builtin_command;
 
       if (!is_builtin_command) {
