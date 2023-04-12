@@ -5490,60 +5490,71 @@ gmic& gmic::_run(const CImgList<char>& commands_line, unsigned int& position,
 #define _gmic_eok(i) (!item[i] || item[i]=='[' || (item[i]=='.' && (!item[i + 1] || item[i + 1]=='.')))
       unsigned int hash_custom = ~0U, ind_custom = ~0U;
       const char item0 = *item, item1 = item0?item[1]:0, item2 = item1?item[2]:0;
-      const bool
-        is_length1 = item0 && _gmic_eok(1),
-        is_length2 = item0 && item1 && _gmic_eok(2),
-        is_length3 = item0 && item1 && item2 && _gmic_eok(3);
 
       // Determine if specified command is a 'built-in' command (fast check when command length is 1,2 or 3).
-      bool is_builtin_command =
-        (!item1 && (item0=='{' || item0=='}')) || // Left/right braces
-        (is_length1 && ((item0>='a' && item0<='z') || // Alphabetical shortcut commands
-                        item0=='%' || item0=='&' || item0=='*' || item0=='+' || item0=='-' || item0=='/' ||
-                        item0=='<' || item0=='=' || item0=='>' || item0=='^' || item0=='|')) ||
-        (is_length2 && ((item0=='!' && item1=='=') || // '!='
-                        (item0=='<' && (item1=='<' || item1=='=')) || // '<<' and '<='
-                        (item0=='=' && (item1=='=' || item1=='>')) || // '==' and '=>'
-                        (item0=='>' && (item1=='=' || item1=='>')) || // '>=' and '>>'
-                        (item0=='d' && item1=='o') || // 'do'
-                        (item0=='e' && item1=='q') || // 'eq'
-                        (item0=='f' && item1=='i') || // 'fi'
-                        (item0=='g' && (item1=='e' || item1=='t')) || // 'ge' and 'gt'
-                        (item0=='i' && item1=='f') || // 'if'
-                        (item0=='l' && (item1=='e' || item1=='t')) || // 'le' and 'lt'
-                        (item0=='m' && (item1=='*' || item1=='/' || item1=='v')) || // 'm*', 'm/' and 'mv'
-                        (item0=='n' && item1=='m') || // 'nm'
-                        (item0=='o' && item1=='r') || // 'or'
-                        (item0=='r' && (item1=='m' || item1=='v')) || // 'rm' and 'rv'
-                        (item0=='s' && item1=='h') || // 'sh'
-                        (item0=='u' && item1=='m') || // 'um'
-                        (item0=='w' && item1>='0' && item1<='9'))) || // 'w0'..'w9'
-        (is_length3 && ((item1=='3' && item2=='d' && // '*3d','+3d','-3d', '/3d', 'j3d', 'l3d' and 'r3d'
-                         (item0=='*' || item0=='+' || item0=='-' || item0=='/' || item0=='j' || item0=='l' ||
-                          item0=='r')) ||
-                        (item0=='a' && ((item1=='b' && item2=='s') || // 'abs', 'add' and 'and'
-                                        (item2=='d' && (item1=='d' || item1=='n')))) ||
-                        (item0=='b' && item1=='s' && (item2=='l' || item2=='r')) || // 'bsl' and 'bsr'
-                        (item0=='c' && ((item1=='o' && item2=='s') || (item1=='u' && item2=='t'))) || // 'cos' and 'cut'
-                        (item0=='d' && item1=='i' && item2=='v') || // 'div'
-                        (item0=='e' && ((item1=='r' && item2=='f') || (item1=='x' && item2=='p'))) || // 'erf' and 'exp'
-                        (item0=='f' && ((item1=='f' && item2=='t') || (item1=='o' && item2=='r'))) || // 'fft' and 'for'
-                        (item0=='l' && item1=='o' && item2=='g') || // 'log'
-                        (item0=='m' && ((item1=='a' && (item2=='p' || item2=='x')) || // 'map' and 'max'
-                                        (item1=='i' && item2=='n') || // 'min'
-                                        (item1=='o' && item2=='d') || // 'mod'
-                                        (item1=='u' && item2=='l'))) || // 'mul'
-                        (item0=='n' && ((item1=='e' && item2=='q') || (item1=='m' && item2=='d'))) || // 'neq' and 'nmd'
-                        (item0=='p' && item1=='o' && item2=='w') || // 'pow'
-                        (item0=='r' && item1=='o' && (item2=='l' || item2=='r')) || // 'rol' and 'ror'
-                        (item0=='s' && ((item1=='e' && item2=='t') || // 'set'
-                                        (item1=='i' && item2=='n') || // 'sin'
-                                        (item1=='q' && item2=='r') || // 'sqr'
-                                        (item1=='u' && item2=='b') || // 'sub'
-                                        (item1=='v' && item2=='d'))) || // 'svd'
-                        (item0=='t' && item1=='a' && item2=='n') || // 'tan'
-                        (item0=='x' && item1=='o' && item2=='r'))), // 'xor'
-        is_command = is_builtin_command;
+      bool is_builtin_command = false;
+      if (!item1 && (item0=='{' || item0=='}')) // Left/right braces
+        is_builtin_command = true;
+      else if (!is_builtin_command && item0 && _gmic_eok(1)) { switch (item0) { // Command has length 1
+        case 'a': case 'b' : case 'c' : case 'd' : case 'e' : case 'f' : case 'g' : case 'h' : case 'i' : case 'j' :
+        case 'k': case 'l' : case 'm' : case 'n' : case 'o' : case 'p' : case 'q' : case 'r' : case 's' : case 't' :
+        case 'u': case 'v' : case 'w' : case 'x' : case 'y' : case 'z' : case '%' : case '&' : case '*' : case '+' :
+        case '-': case '/' : case '<' : case '=' : case '>' : case '^' : case '|' :
+          is_builtin_command = true; break;
+        }
+      } else if (!is_builtin_command && item0 && item1 && _gmic_eok(2)) { switch(item0) { // Command has length 2
+        case '!' : is_builtin_command = item1=='='; break; // '!='
+        case '<' : is_builtin_command = item1=='<' || item1=='='; break; // '<<' and '<='
+        case '=' : is_builtin_command = item1=='=' || item1=='>'; break; // '==' and '=>'
+        case '>' : is_builtin_command = item1=='=' || item1=='>'; break; // '>=' and '>>'
+        case 'd' : is_builtin_command = item1=='o'; break; // 'do'
+        case 'e' : is_builtin_command = item1=='q'; break; // 'eq'
+        case 'f' : is_builtin_command = item1=='i'; break; // 'fi'
+        case 'g' : is_builtin_command = item1=='e' || item1=='t'; break; // 'ge' and 'gt'
+        case 'i' : is_builtin_command = item1=='f'; break; // 'if'
+        case 'l' : is_builtin_command = item1=='e' || item1=='t'; break; // 'le' and 'lt'
+        case 'm' : is_builtin_command = item1=='*' || item1=='/' || item1=='v'; break; // 'm*', 'm/' and 'mv'
+        case 'n' : is_builtin_command = item1=='m'; break; // 'nm'
+        case 'o' : is_builtin_command = item1=='r'; break; // 'or'
+        case 'r' : is_builtin_command = item1=='m' || item1=='v'; break; // 'rm' and 'rv'
+        case 's' : is_builtin_command = item1=='h'; break; // 'sh'
+        case 'u' : is_builtin_command = item1=='m'; break; // 'um'
+        case 'w' : is_builtin_command = item1>='0' && item1<='9'; break; // 'w0'..'w9'
+        }
+      } else if (!is_builtin_command && item0 && item1 && item2 && _gmic_eok(3)) { // Command has length 3
+        is_builtin_command|= item1=='3' && item2=='d' && // '*3d','+3d','-3d', '/3d', 'j3d', 'l3d' and 'r3d'
+          (item0=='*' || item0=='+' || item0=='-' || item0=='/' || item0=='j' || item0=='l' || item0=='r');
+        if (!is_builtin_command) switch (item0) {
+          case 'a' : is_builtin_command = (item1=='b' && item2=='s') || // 'abs', 'add' and 'and'
+                                     (item2=='d' && (item1=='d' || item1=='n')); break;
+          case 'b' : is_builtin_command = item1=='s' && (item2=='l' || item2=='r'); break; // 'bsl' and 'bsr'
+          case 'c' : is_builtin_command = (item1=='o' && item2=='s') || // 'cos'
+              (item1=='u' && item2=='t'); break; // 'cut'
+          case 'd' : is_builtin_command = item1=='i' && item2=='v'; break; // 'div'
+          case 'e' : is_builtin_command = (item1=='r' && item2=='f') || // 'erf'
+              (item1=='x' && item2=='p'); break; // 'exp'
+          case 'f' : is_builtin_command = (item1=='f' && item2=='t') || // 'fft'
+              (item1=='o' && item2=='r'); break; // 'for'
+          case 'l' : is_builtin_command = item1=='o' && item2=='g'; break; // 'log'
+          case 'm' : is_builtin_command = (item1=='a' && (item2=='p' || item2=='x')) || // 'map' and 'max'
+              (item1=='i' && item2=='n') || // 'min'
+              (item1=='o' && item2=='d') || // 'mod'
+              (item1=='u' && item2=='l'); break; // 'mul'
+          case 'n' : is_builtin_command = (item1=='e' && item2=='q') || // 'neq'
+              (item1=='m' && item2=='d'); break; // 'nmd'
+          case 'p' : is_builtin_command = item1=='o' && item2=='w'; break; // 'pow'
+          case 'r' : is_builtin_command = item1=='o' && (item2=='l' || item2=='r'); break; // 'rol' and 'ror'
+          case 's' : is_builtin_command = (item1=='e' && item2=='t') || // 'set'
+              (item1=='i' && item2=='n') || // 'sin'
+              (item1=='q' && item2=='r') || // 'sqr'
+              (item1=='u' && item2=='b') || // 'sub'
+              (item1=='v' && item2=='d'); break; // 'svd'
+          case 't' : is_builtin_command = item1=='a' && item2=='n'; break; // 'tan'
+          case 'x' : is_builtin_command = item1=='o' && item2=='r'; break; // 'xor'
+          }
+      }
+
+      bool is_command = is_builtin_command;
 
       if (!is_builtin_command) {
         *command = sep0 = sep1 = sep = 0;
